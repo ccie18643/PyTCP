@@ -38,12 +38,10 @@ import binascii
 class TcpHeader:
     """ Tcp header support class """
 
-    def read(self, data):
+    def read(self, data, ip_pseudo_header=None):
         """ Read RAW header data and populate it into class variables """
 
-        self.sport, self.dport, self.seq, self.ack, self.hlen, self.flags, self.win, self.cksum, self.urp = struct.unpack(
-            "! HH L L BBH HH", data[:20]
-        )
+        self.sport, self.dport, self.seq, self.ack, self.hlen, self.flags, self.win, self.cksum, self.urp = struct.unpack("! HH L L BBH HH", data[:20])
 
         self.hlen = self.hlen >> 2
 
@@ -54,19 +52,34 @@ class TcpHeader:
         self.flag_syn = bool(self.flags & 2)
         self.flag_fin = bool(self.flags & 1)
 
+        self.raw_hdr = data[: self.hlen]
+        self.data = data
+        self.ip_pseudo_header = ip_pseudo_header
+
+    def compute_cksum(self):
+        """ Compute the checksum for IP pseudo header and TCP header """
+
+        if len(self.data) % 2:
+            data = self.data + b"\x00"
+        else:
+            data = self.data
+
+        cksum_data = list(self.ip_pseudo_header) + list(struct.unpack(f"! {len(data) >> 1}H", data))
+        cksum_data[6 + 8] = 0
+        cksum = sum(cksum_data)
+        return ~((cksum & 0xFFFF) + (cksum >> 16)) & 0xFFFF
+
     def __str__(self):
         """ Easy to read string reresentation """
 
         return (
             "--------------------------------------------------------------------------------\n"
-            + f"TCP      SPORT {self.sport}  DPORT {self.dport}  SEQ {self.seq}  ACK {self.ack}  HLEN {self.hlen}\n"
+            + f"TCP      SPORT {self.sport}  DPORT {self.dport}  SEQ {self.seq}  ACK {self.ack}  URP {self.urp}\n"
             + f"         FLAGS {'|URG' if self.flag_urg else '|   '}"
             + f"{'|ACK' if self.flag_ack else '|   '}"
             + f"{'|PSH' if self.flag_psh else '|   '}"
             + f"{'|RST' if self.flag_rst else '|   '}"
             + f"{'|SYN' if self.flag_syn else '|   '}"
             + f"{'|FIN|' if self.flag_fin else '|   |'}"
-            + f"  WIN {self.win}  CKSUM {self.cksum} (??)  URP {self.urp}"
+            + f"  WIN {self.win}  CKSUM {self.cksum} ({'OK' if self.compute_cksum() == self.cksum else 'BAD'})  HLEN {self.hlen}"
         )
-
-

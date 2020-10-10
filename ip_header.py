@@ -3,20 +3,20 @@
 """
 
 PyTCP, Python TCP/IP stack simulation version 0.1 - 2020, Sebastian Majewski
-ip_header.py - contains class supporting IP header parsing and creation
+header.py - contains class supporting IP header parsing and creation
 
 """
 
 import socket
 import struct
-import binascii
+import array
 
 
 """
     0                   1                   2                   3
     0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-   |Version|  IHL  |Type of Service|          Total Length         |
+   |Version|  IHL  |   DSCP    |ECN|          Total Length         |
    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
    |         Identification        |Flags|      Fragment Offset    |
    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
@@ -34,41 +34,108 @@ import binascii
 class IpHeader:
     """ IP header support class """
 
-    def read(self, data):
-        """ Read RAW header data and populate it into class variables """
+    def __init__(self, data):
+        """ Read RAW header data """
 
-        self.ver = data[0] >> 4
-        self.hlen = (data[0] & 0b00001111) << 2
-        self.tos, self.len, self.id, self.frag, self.ttl, self.proto, self.cksum, self.src, self.dst = struct.unpack("! xBH HH BBH 4s 4s", data[:20])
+        self.header = data[: (data[0] & 0b00001111) << 2]
 
-        self.dscp = (self.tos & 0b11111100) >> 2
-        self.ecn = self.tos & 0b00000011
-        self.tos_prec = self.tos >> 5
-        self.tos_ld = bool(self.tos & 0b00010000)
-        self.tos_ht = bool(self.tos & 0b00001000)
-        self.tos_hr = bool(self.tos & 0b00000100)
+    def get_header():
+        """ Get raw ip header data """
 
-        self.frag_df = bool(self.frag & 0b0100000000000000)
-        self.frag_mf = bool(self.frag & 0b0010000000000000)
-        self.frag_offset = self.frag & 0b0001111111111111
+        return self.header
 
-        self.src = socket.inet_ntoa(self.src)
-        self.dst = socket.inet_ntoa(self.dst)
+    def get_version(self):
+        """ Retrieve Version field value from IP header """
 
-        self.raw_hdr = data[: self.hlen]
+        return self.header[0] >> 4
+
+    def get_internet_header_length(self):
+        """ Retrieve Internet Header Length field value from IP header """
+
+        return (self.header[0] & 0b00001111) << 2
+
+    def get_dscp(self):
+        """ Retrieve DSCP field value from IP header """
+
+        return (self.header[1] & 0b11111100) >> 2
+
+    def get_ecn(self):
+        """ Retrieve ECN field value from IP header """
+
+        return self.header[1] & 0b00000011
+
+    def get_total_length(self):
+        """ Retrieve Total Length field value from IP header """
+
+        return struct.unpack("!H", self.header[2:4])[0]
+
+    def get_identification(self):
+        """ Retrieve Identification field value from IP header """
+
+        return struct.unpack("!H", self.header[4:6])[0]
+
+    def get_fragment_flag_df(self):
+        """ Retrive the value of Fragment DF flag from IP header """
+
+        return bool(struct.unpack("!H", self.header[6:8])[0] & 0b0100000000000000)
+
+    def get_fragment_flag_mf(self):
+        """ Retrive the value of Fragment MF flag from IP header """
+
+        return bool(struct.unpack("!H", self.header[6:8])[0] & 0b0010000000000000)
+
+    def get_fragment_offset(self):
+        """ Retrive Fragment Offset field value from IP header """
+
+        return struct.unpack("!H", self.header[6:8])[0] & 0b0001111111111111
+
+    def get_time_to_live(self):
+        """ Retrive Time to Live field value from IP header """
+
+        return self.header[8]
+
+    def get_protocol(self):
+        """ Retrive Protocol field value from IP header """
+
+        return self.header[9]
+
+    def get_header_checksum(self):
+        """ Retrieve Header Checksum field value from IP header """
+
+        return struct.unpack("!H", self.header[10:12])[0]
+
+    def get_source_address(self):
+        """ Retrieve Source Address field value from IP header """
+
+        return socket.inet_ntoa(struct.unpack("!4s", self.header[12:16])[0])
+
+    def get_destination_address(self):
+        """ Retrieve Destination Address field value from IP header """
+
+        return socket.inet_ntoa(struct.unpack("!4s", self.header[16:20])[0])
 
     def compute_cksum(self):
         """ Compute the checksum for IP header """
 
-        cksum_hdr = list(struct.unpack(f"! {self.hlen >> 1}H", self.raw_hdr))
+        cksum_hdr = list(struct.unpack(f"! {self.get_internet_header_length() >> 1}H", self.header))
         cksum_hdr[5] = 0
-        cksum = 0
+        cksum = sum(cksum_hdr)
+        return ~((cksum & 0xFFFF) + (cksum >> 16)) & 0xFFFF
 
-        for word in cksum_hdr:
-            cksum += word
-            cksum = (cksum & 0xFFFF) + (cksum >> 16)
+    def get_pseudo_header(self):
+        """ Returns IP pseudo header that is used by TCP to compute its checksum """
 
-        return 0xFFFF - cksum
+        return struct.unpack(
+            "! HH HH HH",
+            struct.pack(
+                "! 4s 4s BBH",
+                socket.inet_aton(self.get_source_address()),
+                socket.inet_aton(self.get_destination_address()),
+                0,
+                self.get_protocol(),
+                self.get_total_length() - self.get_internet_header_length(),
+            ),
+        )
 
     def __str__(self):
         """ Easy to read string reresentation """
@@ -104,30 +171,12 @@ class IpHeader:
             0b11: "CE",
         }
 
-        tos_prec_table = {
-            0b111: "Network Contol",
-            0b110: "Internetwork Control",
-            0b101: "CRITIC/ECP",
-            0b100: "Flash Overide",
-            0b011: "Flash",
-            0b010: "Immediate",
-            0b001: "Priority",
-            0b000: "Routine",
-        }
-
-        if dscp_code := dscp_table.get(self.dscp, None):
-            qos = f"DSCP {self.dscp:0>6b} ({dscp_table[self.dscp]})  ECN {self.ecn:0>2b} ({ecn_table[self.ecn]})"
-        else:
-            qos = f"TOS {self.tos:0>8b} ({tos_prec_table[self.tos_prec]}"
-            qos += f"{' |LD' if self.tos_ld else ' |ND'}"
-            qos += f"{'|HT' if self.tos_ht else '|NT'}"
-            qos += f"{'|HR|' if self.tos_hr else '|NR|'})"
-
         return (
             "--------------------------------------------------------------------------------\n"
-            + f"IP       SRC {self.src}  DST {self.dst}  VER {self.ver}  CKSUM {self.cksum} "
-            + f"{'(OK)' if self.compute_cksum() == self.cksum else '(BAD)'}\n         {qos}\n"
-            + f"         TTL {self.ttl}  ID {self.id}  FRAG FLAGS |{'DF|' if self.frag_df else '  |'}"
-            + f"{'MF' if self.frag_mf else '  |'} OFFSET {self.frag_offset}\n"
-            + f"         HLEN {self.hlen}  PLEN {self.len}  OLEN {self.hlen - 20}  DLEN {self.len - self.hlen}  PROTO {self.proto}"
+            + f"IP       SRC {self.get_source_address()}  DST {self.get_destination_address()}  VER {self.get_version()}  CKSUM {self.get_header_checksum()} "
+            + f"({'OK' if self.compute_cksum() == self.get_header_checksum() else 'BAD'})\n"
+            + f"         DSCP {self.get_dscp():0>6b} ({dscp_table.get(self.get_dscp(), 'ERR')})  ECN {self.get_ecn():0>2b} ({ecn_table[self.get_ecn()]})  "
+            + f"HLEN {self.get_internet_header_length()}  TLEN {self.get_total_length()}\n"
+            + f"         TTL {self.get_time_to_live()}  ID {self.get_identification()}  FRAG FLAGS |{'DF|' if self.get_fragment_flag_df() else '  |'}"
+            + f"{'MF' if self.get_fragment_flag_mf() else '  |'} OFFSET {self.get_fragment_offset()}  PROTO {self.get_protocol()}"
         )

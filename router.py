@@ -30,12 +30,10 @@ class Router:
         self.packet_queue.append(packet)
 
     async def sender():
-       """ Coroutine responsible for sending out packets """
+        """ Coroutine responsible for sending out packets """
 
-       packet = self.packet_queue.pop(0)
+        packet = self.packet_queue.pop(0)
 
-       self.routing_table[packet.dst_addr](packet)
+        self.routing_table[packet.dst_addr](packet)
 
-       await asyncio.sleep(1)
-
-
+        await asyncio.sleep(1)

@@ -24,29 +24,17 @@ def main():
 
         data = data[14:]
 
-        ip_hdr = IpHeader()
-        ip_hdr.read(data)
-        data = data[ip_hdr.hlen:]
-   
+        ip_hdr = IpHeader(data)
+        data = data[ip_hdr.get_internet_header_length() :]
+
         tcp_hdr = TcpHeader()
-        tcp_hdr.read(data)
-        data = data[tcp_hdr.hlen:]
+        tcp_hdr.read(data, ip_hdr.get_pseudo_header())
+        data = data[tcp_hdr.hlen :]
 
         if tcp_hdr.dport == 7000:
             print(ip_hdr)
             print(tcp_hdr)
             print("-" * 80)
-
-        '''
-            print(f"{ip_hdr.src}:{tcp_hdr.sport} -> {ip_hdr.dst}:{tcp_hdr.dport} " + 
-                  f"{'URG ' if tcp_hdr.flag_urg else ''}" + 
-                  f"{'ACK ' if tcp_hdr.flag_ack else ''}" + 
-                  f"{'PSH ' if tcp_hdr.flag_psh else ''}" + 
-                  f"{'RST ' if tcp_hdr.flag_rst else ''}" + 
-                  f"{'SYN ' if tcp_hdr.flag_syn else ''}" + 
-                  f"{'FIN ' if tcp_hdr.flag_fin else ''}"
-            )
-        '''
 
 
 if __name__ == "__main__":
