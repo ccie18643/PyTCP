@@ -25,13 +25,12 @@ def main():
         data = data[14:]
 
         ip_hdr = IpHeader(data)
-        data = data[ip_hdr.get_internet_header_length() :]
+        data = data[ip_hdr.header_length:]
 
-        tcp_hdr = TcpHeader()
-        tcp_hdr.read(data, ip_hdr.get_pseudo_header())
-        data = data[tcp_hdr.hlen :]
+        tcp_hdr = TcpHeader(data, ip_hdr.get_pseudo_header)
+        data = data[tcp_hdr.data_offset:]
 
-        if tcp_hdr.dport == 7000:
+        if tcp_hdr.destination_port == 7000:
             print(ip_hdr)
             print(tcp_hdr)
             print("-" * 80)
