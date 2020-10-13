@@ -9,12 +9,10 @@ ph_arp.py - packet handler library for ARP protocol
 
 import socket
 import struct
-import array
-import binascii
 
 
 """
-   
+
    ARP packet header - IPv4 stack version
 
    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
@@ -54,10 +52,10 @@ class ArpPacket:
             self.hrlen = self.raw_header[4]
             self.prlen = self.raw_header[5]
             self.operation = struct.unpack("!H", self.raw_header[6:8])[0]
-            self.sha =  ":".join([f"{_:0>2x}" for _ in self.raw_header[8:14]])
-            self.spa =  socket.inet_ntoa(struct.unpack("!4s", self.raw_header[14:18])[0])
-            self.tha =  ":".join([f"{_:0>2x}" for _ in self.raw_header[18:24]])
-            self.tpa =  socket.inet_ntoa(struct.unpack("!4s", self.raw_header[24:28])[0])
+            self.sha = ":".join([f"{_:0>2x}" for _ in self.raw_header[8:14]])
+            self.spa = socket.inet_ntoa(struct.unpack("!4s", self.raw_header[14:18])[0])
+            self.tha = ":".join([f"{_:0>2x}" for _ in self.raw_header[18:24]])
+            self.tpa = socket.inet_ntoa(struct.unpack("!4s", self.raw_header[24:28])[0])
 
         else:
             self.hrtype = 1
@@ -87,7 +85,6 @@ class ArpPacket:
             socket.inet_aton(self.tpa),
         )
 
-
     def __str__(self):
         """ Easy to read string reresentation """
 
@@ -96,4 +93,3 @@ class ArpPacket:
             + f"ARP      SENDER MAC {self.sha} IP {self.spa}  OPER {'Request' if self.operation == 1 else 'Reply'}\n"
             + f"         TARGET MAC {self.tha} IP {self.tpa}"
         )
-

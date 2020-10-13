@@ -7,10 +7,7 @@ ph_ethernet.py - packet handler libary for Ethernet protocol
 
 """
 
-import socket
 import struct
-import array
-import binascii
 
 
 """
@@ -20,7 +17,7 @@ import binascii
    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
    |                                                               >
    +    Destination MAC Address    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-   >                               |                               > 
+   >                               |                               >
    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+      Source MAC Address       +
    >                                                               |
    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
@@ -45,7 +42,7 @@ class EthernetPacket:
             self.raw_data = raw_packet[14:]
 
             self.dst = ":".join([f"{_:0>2x}" for _ in self.raw_header[0:6]])
-            self.src =  ":".join([f"{_:0>2x}" for _ in self.raw_header[6:12]])
+            self.src = ":".join([f"{_:0>2x}" for _ in self.raw_header[6:12]])
             self.ethertype = struct.unpack("!H", self.raw_header[12:14])[0]
 
         else:
@@ -58,12 +55,15 @@ class EthernetPacket:
     def raw_packet(self):
         """ Get Ethernet packet in raw format """
 
-        return struct.pack(
-            "! 6s 6s H",
-            bytes.fromhex(self.dst.replace(":", "")),
-            bytes.fromhex(self.src.replace(":", "")),
-            self.ethertype,
-        ) + self.raw_data
+        return (
+            struct.pack(
+                "! 6s 6s H",
+                bytes.fromhex(self.dst.replace(":", "")),
+                bytes.fromhex(self.src.replace(":", "")),
+                self.ethertype,
+            )
+            + self.raw_data
+        )
 
     def __str__(self):
         """ Easy to read string reresentation """
