@@ -3,7 +3,7 @@
 """
 
 PyTCP, Python TCP/IP stack simulation version 0.1 - 2020, Sebastian Majewski
-header.py - contains class supporting IP header parsing and creation
+ip_header.py - contains class supporting IP header parsing and creation
 
 """
 
@@ -34,109 +34,72 @@ import array
 class IpHeader:
     """ IP header support class """
 
-    def __init__(self, data):
-        """ Read RAW header data """
+    def __init__(self, raw_header=None):
+        """ Read raw header data or create blank header """
 
-        self.header = data[: (data[0] & 0b00001111) << 2]
+        if raw_header:
+            self.version = raw_header[0] >> 4
+            self.header_length = (raw_header[0] & 0b00001111) << 2
+            self.dscp = (raw_header[1] & 0b11111100) >> 2
+            self.ecn = raw_header[1] & 0b00000011
+            self.total_length = struct.unpack("!H", raw_header[2:4])[0]
+            self.identification = struct.unpack("!H", raw_header[4:6])[0]
+            self.fragment_flag_df = bool(struct.unpack("!H", raw_header[6:8])[0] & 0b0100000000000000)
+            self.fragment_flag_mf = bool(struct.unpack("!H", raw_header[6:8])[0] & 0b0010000000000000)
+            self.fragment_offset = struct.unpack("!H", raw_header[6:8])[0] & 0b0001111111111111
+            self.time_to_live = raw_header[8]
+            self.protocol = raw_header[9]
+            self.header_checksum = struct.unpack("!H", raw_header[10:12])[0]
+            self.source_address = socket.inet_ntoa(struct.unpack("!4s", raw_header[12:16])[0])
+            self.destination_address = socket.inet_ntoa(struct.unpack("!4s", raw_header[16:20])[0])
 
-    def get_header():
+        else:
+            self.version = 4
+            self.header_length = 20
+            self.dscp = 0
+            self.ecn = 0
+            self.total_length = None
+            self.identification = 0
+            self.fragment_flag_df = False
+            self.fragment_flag_mf = False
+            self.fragment_offset = 0
+            self.time_to_live = 64
+            self.protocol = None
+            self.header_checksum = 0
+            self.source_address = None
+            self.destination_address = None
+
+    def get_raw_header(self, compute_header_checksum=True):
         """ Get raw ip header data """
 
-        return self.header
+        if compute_header_checksum:
+            self.header_checksum = self.compute_header_checksum()
 
-    @property
-    def version(self):
-        """ Retrieve Version field value from IP header """
+        raw_header = struct.pack(
+            "! BBH HH BBH 4s 4s",
+            self.version << 4 | self.header_length >> 2,
+            self.dscp << 2 | self.ecn,
+            self.total_length,
+            self.identification,
+            self.fragment_flag_df << 14 | self.fragment_flag_mf << 13 | self.fragment_offset,
+            self.time_to_live,
+            self.protocol,
+            self.header_checksum,
+            socket.inet_aton(self.source_address),
+            socket.inet_aton(self.destination_address),
+        )
 
-        return self.header[0] >> 4
-
-    @property
-    def header_length(self):
-        """ Retrieve Internet Header Length field value from IP header """
-
-        return (self.header[0] & 0b00001111) << 2
-
-    @property
-    def dscp(self):
-        """ Retrieve DSCP field value from IP header """
-
-        return (self.header[1] & 0b11111100) >> 2
-
-    @property
-    def ecn(self):
-        """ Retrieve ECN field value from IP header """
-
-        return self.header[1] & 0b00000011
-    
-    @property
-    def total_length(self):
-        """ Retrieve Total Length field value from IP header """
-
-        return struct.unpack("!H", self.header[2:4])[0]
-
-    @property
-    def identification(self):
-        """ Retrieve Identification field value from IP header """
-
-        return struct.unpack("!H", self.header[4:6])[0]
-
-    @property
-    def fragment_flag_df(self):
-        """ Retrive the value of Fragment DF flag from IP header """
-
-        return bool(struct.unpack("!H", self.header[6:8])[0] & 0b0100000000000000)
-
-    @property
-    def fragment_flag_mf(self):
-        """ Retrive the value of Fragment MF flag from IP header """
-
-        return bool(struct.unpack("!H", self.header[6:8])[0] & 0b0010000000000000)
-
-    @property
-    def fragment_offset(self):
-        """ Retrive Fragment Offset field value from IP header """
-
-        return struct.unpack("!H", self.header[6:8])[0] & 0b0001111111111111
-
-    @property
-    def time_to_live(self):
-        """ Retrive Time to Live field value from IP header """
-
-        return self.header[8]
-
-    @property
-    def protocol(self):
-        """ Retrive Protocol field value from IP header """
-
-        return self.header[9]
-
-    @property
-    def header_checksum(self):
-        """ Retrieve Header Checksum field value from IP header """
-
-        return struct.unpack("!H", self.header[10:12])[0]
-
-    @property
-    def source_address(self):
-        """ Retrieve Source Address field value from IP header """
-
-        return socket.inet_ntoa(struct.unpack("!4s", self.header[12:16])[0])
-
-    @property
-    def destination_address(self):
-        """ Retrieve Destination Address field value from IP header """
-
-        return socket.inet_ntoa(struct.unpack("!4s", self.header[16:20])[0])
+        return raw_header
 
     def compute_header_checksum(self):
         """ Compute the checksum for IP header """
 
-        cksum_hdr = list(struct.unpack(f"! {self.header_length >> 1}H", self.header))
-        cksum_hdr[5] = 0
-        cksum = sum(cksum_hdr)
-        return ~((cksum & 0xFFFF) + (cksum >> 16)) & 0xFFFF
+        checksum_header = list(struct.unpack(f"! {self.header_length >> 1}H", self.get_raw_header(compute_header_checksum=False)))
+        checksum_header[5] = 0
+        checksum = sum(checksum_header)
+        return ~((checksum & 0xFFFF) + (checksum >> 16)) & 0xFFFF
 
-    def get_pseudo_header(self):
+    def get_ip_pseudo_header(self):
         """ Returns IP pseudo header that is used by TCP to compute its checksum """
 
         return struct.unpack(
