@@ -133,7 +133,7 @@ def packet_handler(rx_ring, tx_ring):
             arp_packet_in = ph_arp.ArpPacket(ethernet_packet_in.raw_data)
 
             if arp_packet_in.operation == ph_arp.ARP_OP_REQUEST:
-                logger.info(f"Dequeued ARP {arp_packet_in}")
+                logger.info(f"Dequeued {arp_packet_in}")
 
                 # Check if the request is for our MAC address, if so the craft ARP reply packet and send it out
                 if arp_packet_in.tpa == STACK_IP_ADDRESS:
@@ -151,7 +151,7 @@ def packet_handler(rx_ring, tx_ring):
                     )
 
                     tx_ring.enqueue(ethernet_packet_out)
-                    logger.info(f"Enqueued ARP {arp_packet_out}")
+                    logger.info(f"Enqueued {arp_packet_out}")
 
         else:
             logger.debug(f"Dequeued not supported packet ({ethernet_packet_in.serial_number}) {ethernet_packet_in}")

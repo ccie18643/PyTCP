@@ -86,12 +86,22 @@ class ArpPacket:
         )
 
     def __str__(self):
-        """ Easy to read string reresentation """
+        """ Short packet log sting """
 
         if self.operation == ARP_OP_REQUEST:
-            return (f"request {self.spa} / {self.sha} > {self.tpa} / {self.tha}")
+            return (f"ARP request {self.spa} / {self.sha} > {self.tpa} / {self.tha}")
         
         if self.operation == ARP_OP_REPLY:
-            return (f"reply {self.spa} / {self.sha} > {self.tpa} / {self.tha}")
+            return (f"ARP reply {self.spa} / {self.sha} > {self.tpa} / {self.tha}")
 
-        return (f"unknown operation {self.operation}")
+        return (f"ARP unknown operation {self.operation}")
+
+
+    def __repr__(self):
+        """ Verbose packet debug string """
+
+        return (
+            "--------------------------------------------------------------------------------\n"
+            + f"ARP      SENDER MAC {self.sha} IP {self.spa}  OPER {'Request' if self.operation == 1 else 'Reply'}\n"
+            + f"         TARGET MAC {self.tha} IP {self.tpa}"
+        )

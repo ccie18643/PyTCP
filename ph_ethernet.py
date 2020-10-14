@@ -29,7 +29,14 @@ import struct
 
 ETHERTYPE_MIN = 0x0600
 ETHERTYPE_ARP = 0x0806
+ETHERTYPE_IP = 0x0800
 
+ETHERTYPE_TABLE = {
+    0x0800: "IP",
+    0x0806: "ARP",
+    0x8100: "VLAN",
+    0x86DD: "IPv6",
+}
 
 class EthernetPacket:
     """ Ethernet packet support class """
@@ -66,13 +73,14 @@ class EthernetPacket:
         )
 
     def __str__(self):
-        """ Easy to read string reresentation """
+        """ Short packet log string """
 
-        ethertype_table = {
-            0x0800: "IP",
-            0x0806: "ARP",
-            0x8100: "VLAN",
-            0x86DD: "IPv6",
-        }
+        return f"Ethernet {self.src} > {self.dst}, 0x{self.ethertype:0>4x} ({ETHERTYPE_TABLE.get(self.ethertype, '???')})"
 
-        return f"{self.src} > {self.dst}, 0x{self.ethertype:0>4x} ({ethertype_table.get(self.ethertype, '???')})"
+    def __repr__(self):
+        """ Verbose packet debug string """
+
+        return (
+            "--------------------------------------------------------------------------------\n"
+            + f"ETH      SRC {self.src}  DST {self.dst}  TYPE 0x{self.ethertype:0>4x} ({ETHERTYPE_TABLE.get(self.ethertype, '???')})"
+        )
