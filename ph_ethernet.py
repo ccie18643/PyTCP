@@ -75,7 +75,4 @@ class EthernetPacket:
             0x86DD: "IPv6",
         }
 
-        return (
-            "--------------------------------------------------------------------------------\n"
-            + f"ETH      SRC {self.src}  DST {self.dst}  TYPE 0x{self.ethertype:0>4x} ({ethertype_table.get(self.ethertype, '???')})"
-        )
+        return f"{self.src} > {self.dst}, 0x{self.ethertype:0>4x} ({ethertype_table.get(self.ethertype, '???')})"
