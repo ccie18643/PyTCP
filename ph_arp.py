@@ -85,8 +85,9 @@ class ArpPacket:
             socket.inet_aton(self.tpa),
         )
 
-    def __str__(self):
-        """ Short packet log sting """
+    @property
+    def log(self):
+        """ Short packet log string """
 
         if self.operation == ARP_OP_REQUEST:
             return (f"ARP request {self.spa} / {self.sha} > {self.tpa} / {self.tha}")
@@ -96,8 +97,8 @@ class ArpPacket:
 
         return (f"ARP unknown operation {self.operation}")
 
-
-    def __repr__(self):
+    @property
+    def dump(self):
         """ Verbose packet debug string """
 
         return (

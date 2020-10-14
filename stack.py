@@ -17,6 +17,8 @@ import threading
 
 import ph_ethernet
 import ph_arp
+import ph_ip
+
 
 TUNSETIFF = 0x400454CA
 IFF_TAP = 0x0002
@@ -41,7 +43,7 @@ class RxRing:
     def enqueue(self, packet):
         """ Enqueue inbound pakcet to RX ring """
 
-        packet.serial_number = f"RX-{self.serial_number:0>4x}"
+        packet.serial_number = f"RX{self.serial_number:0>4x}".upper()
         self.serial_number += 1
         if self.serial_number > 0xFFFF:
             self.serial_number = 0
@@ -67,16 +69,16 @@ class RxRing:
 
             # Check if received packet uses valid Ethernet II format
             if packet.ethertype < ph_ethernet.ETHERTYPE_MIN:
-                self.logger.warning("Recived packet that doesn't comply with the Ethernet II standard")
+                self.logger.opt(ansi=True).debug("<green>[RX]</green> Packet doesn't comply with the Ethernet II standard")
                 continue
 
             # Check if received packet has been sent to us directly or by broadcast
             if packet.dst not in {STACK_MAC_ADDRESS, "ff:ff:ff:ff:ff:ff"}:
-                self.logger.debug("Recived Ethernet packet that is not destined for this stack")
+                self.logger.opt(ansi=True).debug("<green>[RX]</green> Packet not destined for this stack")
                 continue
 
             self.enqueue(packet)
-            self.logger.opt(ansi=True).debug(f"<red>[RX]</red> Received inbound packet ({packet.serial_number})")
+            self.logger.opt(ansi=True).debug(f"<green>[RX]</green> {packet.serial_number}")
 
 
 class TxRing:
@@ -93,7 +95,7 @@ class TxRing:
     def enqueue(self, packet):
         """ Enqueue outbound Ethernet packet to TX ring """
 
-        packet.serial_number = f"TX-{self.serial_number:0>4x}"
+        packet.serial_number = f"TX{self.serial_number:0>4x}".upper()
         self.serial_number += 1
         if self.serial_number > 0xFFFF:
             self.serial_number = 0
@@ -116,7 +118,7 @@ class TxRing:
         while True:
             packet = self.dequeue()
             os.write(self.tap, packet.raw_packet)
-            self.logger.opt(ansi=True).debug(f"<green>[TX]</green> Sent out Ethernet packet ({packet.serial_number})")
+            self.logger.opt(ansi=True).debug(f"<magenta>[TX]</magenta> {packet.serial_number}")
 
 
 def packet_handler(rx_ring, tx_ring):
@@ -127,13 +129,14 @@ def packet_handler(rx_ring, tx_ring):
     while True:
 
         ethernet_packet_in = rx_ring.dequeue()
+        logger.debug(f"{ethernet_packet_in.serial_number} - {ethernet_packet_in.log}")
 
         # Handle ARP request
         if ethernet_packet_in.ethertype == ph_ethernet.ETHERTYPE_ARP:
             arp_packet_in = ph_arp.ArpPacket(ethernet_packet_in.raw_data)
 
             if arp_packet_in.operation == ph_arp.ARP_OP_REQUEST:
-                logger.info(f"Dequeued {arp_packet_in}")
+                logger.opt(ansi=True).info(f"<green>{ethernet_packet_in.serial_number}</green> - {arp_packet_in.log}")
 
                 # Check if the request is for our MAC address, if so the craft ARP reply packet and send it out
                 if arp_packet_in.tpa == STACK_IP_ADDRESS:
@@ -151,11 +154,12 @@ def packet_handler(rx_ring, tx_ring):
                     )
 
                     tx_ring.enqueue(ethernet_packet_out)
-                    logger.info(f"Enqueued {arp_packet_out}")
+                    logger.debug(f"{ethernet_packet_out.serial_number} - {ethernet_packet_out.log}")
+                    logger.opt(ansi=True).info(f"<magenta>{ethernet_packet_out.serial_number}</magenta> - {arp_packet_out.log}")
 
-        else:
-            logger.debug(f"Dequeued not supported packet ({ethernet_packet_in.serial_number}) {ethernet_packet_in}")
-
+        elif ethernet_packet_in.ethertype == ph_ethernet.ETHERTYPE_IP:
+            ip_packet_in = ph_ip.IpPacket(ethernet_packet_in.raw_data)
+            logger.debug(f"{ethernet_packet_in.serial_number} - {ip_packet_in.log}")
 
 def main():
     """ Main function """

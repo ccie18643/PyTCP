@@ -72,12 +72,14 @@ class EthernetPacket:
             + self.raw_data
         )
 
-    def __str__(self):
+    @property
+    def log(self):
         """ Short packet log string """
 
         return f"Ethernet {self.src} > {self.dst}, 0x{self.ethertype:0>4x} ({ETHERTYPE_TABLE.get(self.ethertype, '???')})"
 
-    def __repr__(self):
+    @property
+    def dump(self):
         """ Verbose packet debug string """
 
         return (
