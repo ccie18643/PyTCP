@@ -11,26 +11,31 @@ import os
 import sys
 import fcntl
 import struct
-import asyncio
 import loguru
+import time
+import threading
 
 import ph_ethernet
 import ph_arp
 
-
+STACK_IF = b"tap7"
 STACK_IP_ADDRESS = "10.0.0.7"
-STACK_MAC_ADDRESS = "aa:bb:cc:dd:ee:ff"
+STACK_MAC_ADDRESS = "77:77:77:77:77:77"
+
+#STACK_IF = b"tap9"
+#STACK_IP_ADDRESS = "10.0.0.9"
+#STACK_MAC_ADDRESS = "99:99:99:99:99:99"
 
 TUNSETIFF = 0x400454CA
 IFF_TAP = 0x0002
 IFF_NO_PI = 0x1000
 
 
-async def packet_handler():
+def packet_handler():
     """ Loop receiving packets and handling basic network protocols like ARP or ICMP """
 
     tap = os.open("/dev/net/tun", os.O_RDWR)
-    fcntl.ioctl(tap, TUNSETIFF, struct.pack("16sH", b"tap0", IFF_TAP | IFF_NO_PI))
+    fcntl.ioctl(tap, TUNSETIFF, struct.pack("16sH", STACK_IF, IFF_TAP | IFF_NO_PI))
 
     while True:
 
@@ -77,7 +82,7 @@ async def packet_handler():
                     loguru.logger.debug(f"Sent ARP reply for {arp_packet_out.spa} ({arp_packet_out.sha}) to {arp_packet_out.tpa} ({arp_packet_out.tha})")
 
 
-async def main():
+def main():
     """ Main function """
 
     loguru.logger.remove(0)
@@ -89,8 +94,12 @@ async def main():
         + f"|</level> <level> <normal><cyan>{{function:20}}</cyan></normal> | {{message}}</level>",
     )
 
-    await packet_handler()
+    thread_packet_handler = threading.Thread(target=packet_handler)
+    thread_packet_handler.start()
 
+
+    while True:
+        time.sleep(1)
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    sys.exit(main())
