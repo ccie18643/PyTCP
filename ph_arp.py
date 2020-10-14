@@ -88,8 +88,10 @@ class ArpPacket:
     def __str__(self):
         """ Easy to read string reresentation """
 
-        return (
-            "--------------------------------------------------------------------------------\n"
-            + f"ARP      SENDER MAC {self.sha} IP {self.spa}  OPER {'Request' if self.operation == 1 else 'Reply'}\n"
-            + f"         TARGET MAC {self.tha} IP {self.tpa}"
-        )
+        if self.operation == ARP_OP_REQUEST:
+            return (f"request {self.spa} / {self.sha} > {self.tpa} / {self.tha}")
+        
+        if self.operation == ARP_OP_REPLY:
+            return (f"reply {self.spa} / {self.sha} > {self.tpa} / {self.tha}")
+
+        return (f"unknown operation {self.operation}")
