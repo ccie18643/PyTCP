@@ -12,9 +12,10 @@ import socket
 import struct
 import binascii
 
-import ph_ethernet
+import ph_ether
 import ph_arp
 import ph_ip
+import ph_icmp
 #import ph_tcp
 
 raw_socket = socket.socket(socket.PF_PACKET, socket.SOCK_RAW, socket.htons(0x0800))
@@ -23,20 +24,24 @@ raw_socket = socket.socket(socket.PF_PACKET, socket.SOCK_RAW, socket.htons(0x080
 def main():
     while True:
         raw_packet = raw_socket.recv(2048)
-        ethernet_packet = ph_ethernet.EthernetPacket(raw_packet)
-        print(ethernet_packet.dump)
+        ether_packet = ph_ether.EtherPacketIn(raw_packet)
 
-        if ethernet_packet.ethertype == ph_ethernet.ETHERTYPE_IP:
-            ip_packet = ph_ip.IpPacket(ethernet_packet.raw_data)
-            print(ip_packet.dump)
+        if ether_packet.hdr_type == ph_ether.ETHER_TYPE_IP:
+            ip_packet = ph_ip.IpPacketIn(ether_packet.raw_data)
 
-            '''
+            if ip_packet.hdr_proto == ph_ip.IP_PROTO_ICMP:
+                icmp_packet = ph_icmp.IcmpPacket(ip_packet.raw_data)
+                print(ether_packet.dump)
+                print(ip_packet.dump)
+                print(icmp_packet.dump)
+                print("-" * 80)
+
+            ''' 
             if ip_packet.proto == ph_ip.IP_PROTO_TCP:
-                tcp_packet = ph_tcp.TcpPacket(ip_packet)
-                print(repr(tcp_packet))
+                tcp_packet = ph_tcp.TcpPacket(ip_packet.raw_data)
+                print(tcp_packet.dump)
             '''
 
-        print("-" * 80)
 
 
 if __name__ == "__main__":

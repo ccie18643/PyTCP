@@ -15,7 +15,7 @@ import loguru
 import time
 import threading
 
-import ph_ethernet
+import ph_ether
 import ph_arp
 import ph_ip
 
@@ -65,15 +65,15 @@ class RxRing:
         while True:
 
             # Read packet from the wire
-            packet = ph_ethernet.EthernetPacket(os.read(self.tap, 2048))
+            packet = ph_ether.EtherPacketIn(os.read(self.tap, 2048))
 
             # Check if received packet uses valid Ethernet II format
-            if packet.ethertype < ph_ethernet.ETHERTYPE_MIN:
+            if packet.hdr_type < ph_ether.ETHER_TYPE_MIN:
                 self.logger.opt(ansi=True).debug("<green>[RX]</green> Packet doesn't comply with the Ethernet II standard")
                 continue
 
             # Check if received packet has been sent to us directly or by broadcast
-            if packet.dst not in {STACK_MAC_ADDRESS, "ff:ff:ff:ff:ff:ff"}:
+            if packet.hdr_dst not in {STACK_MAC_ADDRESS, "ff:ff:ff:ff:ff:ff"}:
                 self.logger.opt(ansi=True).debug("<green>[RX]</green> Packet not destined for this stack")
                 continue
 
@@ -128,38 +128,57 @@ def packet_handler(rx_ring, tx_ring):
 
     while True:
 
-        ethernet_packet_in = rx_ring.dequeue()
-        logger.debug(f"{ethernet_packet_in.serial_number} - {ethernet_packet_in.log}")
+        ether_packet_in = rx_ring.dequeue()
+        logger.debug(f"{ether_packet_in.serial_number} - {ether_packet_in.log}")
 
         # Handle ARP request
-        if ethernet_packet_in.ethertype == ph_ethernet.ETHERTYPE_ARP:
-            arp_packet_in = ph_arp.ArpPacket(ethernet_packet_in.raw_data)
+        if ether_packet_in.hdr_type == ph_ether.ETHER_TYPE_ARP:
+            arp_packet_in = ph_arp.ArpPacketIn(ether_packet_in.raw_data)
 
-            if arp_packet_in.operation == ph_arp.ARP_OP_REQUEST:
-                logger.opt(ansi=True).info(f"<green>{ethernet_packet_in.serial_number}</green> - {arp_packet_in.log}")
+            if arp_packet_in.hdr_operation == ph_arp.ARP_OP_REQUEST:
+                logger.opt(ansi=True).info(f"<green>{ether_packet_in.serial_number}</green> - {arp_packet_in.log}")
 
                 # Check if the request is for our MAC address, if so the craft ARP reply packet and send it out
-                if arp_packet_in.tpa == STACK_IP_ADDRESS:
+                if arp_packet_in.hdr_tpa == STACK_IP_ADDRESS:
 
-                    arp_packet_out = ph_arp.ArpPacket(
-                        operation=ph_arp.ARP_OP_REPLY,
-                        sha=STACK_MAC_ADDRESS,
-                        spa=STACK_IP_ADDRESS,
-                        tha=arp_packet_in.sha,
-                        tpa=arp_packet_in.spa,
+                    arp_packet_out = ph_arp.ArpPacketOut(
+                        hdr_operation=ph_arp.ARP_OP_REPLY,
+                        hdr_sha=STACK_MAC_ADDRESS,
+                        hdr_spa=STACK_IP_ADDRESS,
+                        hdr_tha=arp_packet_in.hdr_sha,
+                        hdr_tpa=arp_packet_in.hdr_spa,
                     )
 
-                    ethernet_packet_out = ph_ethernet.EthernetPacket(
-                        src=STACK_MAC_ADDRESS, dst=arp_packet_out.tha, ethertype=ph_ethernet.ETHERTYPE_ARP, raw_data=arp_packet_out.raw_packet
+                    ether_packet_out = ph_ether.EtherPacketOut(
+                        hdr_src=STACK_MAC_ADDRESS, hdr_dst=arp_packet_out.hdr_tha, hdr_type=ph_ether.ETHER_TYPE_ARP, raw_data=arp_packet_out.raw_packet
                     )
 
-                    tx_ring.enqueue(ethernet_packet_out)
-                    logger.debug(f"{ethernet_packet_out.serial_number} - {ethernet_packet_out.log}")
-                    logger.opt(ansi=True).info(f"<magenta>{ethernet_packet_out.serial_number}</magenta> - {arp_packet_out.log}")
+                    tx_ring.enqueue(ether_packet_out)
+                    logger.debug(f"{ether_packet_out.serial_number} - {ether_packet_out.log}")
+                    logger.opt(ansi=True).info(f"<magenta>{ether_packet_out.serial_number}</magenta> - {arp_packet_out.log}")
 
-        elif ethernet_packet_in.ethertype == ph_ethernet.ETHERTYPE_IP:
-            ip_packet_in = ph_ip.IpPacket(ethernet_packet_in.raw_data)
-            logger.debug(f"{ethernet_packet_in.serial_number} - {ip_packet_in.log}")
+        elif ether_packet_in.hdr_type == ph_ether.ETHER_TYPE_IP:
+            ip_packet_in = ph_ip.IpPacketIn(ether_packet_in.raw_data)
+            logger.debug(f"{ether_packet_in.serial_number} - {ip_packet_in.log}")
+
+            if ip_packet_in.hdr_proto == ph_ip.IP_PROTO_ICMP:
+
+
+                ip_packet_out = ph_ip.IpPacketOut(
+                    hdr_src=STACK_IP_ADDRESS,
+                    hdr_dst=ip_packet_in.hdr_src,
+                    hdr_proto=ip_packet_in.hdr_proto,
+                    raw_options=ip_packet_in.raw_options,
+                )
+
+                ether_packet_out = ph_ether.EtherPacketOut(
+                    hdr_src=STACK_MAC_ADDRESS, hdr_dst=ether_packet_in.hdr_src, hdr_type=ph_ether.ETHER_TYPE_IP, raw_data=ip_packet_out.raw_packet
+                )
+
+                tx_ring.enqueue(ether_packet_out)
+                logger.debug(f"{ether_packet_out.serial_number} - {ether_packet_out.log}")
+                logger.opt(ansi=True).info(f"<magenta>{ether_packet_out.serial_number}</magenta> - {ip_packet_out.log}")
+
 
 def main():
     """ Main function """
