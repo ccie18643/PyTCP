@@ -33,153 +33,6 @@ STACK_MAC_ADDRESS = "02:00:00:77:77:77"
 ARP_CACHE = {}
 ARP_CACHE_UPDATE_FROM_DIRECT_REQUEST = False
 
-TX_RING_RETRY_COUNT = 3
-TX_RING_RETRY_DELAY = 0.1
-
-
-class RxRing:
-    """ Support for receiving packets from the network """
-
-    def __init__(self, tap):
-        """ Initialize access to tap interface and the inbound queue """
-
-        self.tap = tap
-        self.rx_ring = []
-        self.logger = loguru.logger.bind(object_name="rx_ring.")
-
-    def enqueue(self, ether_packet_rx):
-        """ Enqueue inbound pakcet to RX ring """
-
-        self.rx_ring.append(ether_packet_rx)
-
-    def dequeue(self):
-        """ Dequeue inboutd packet from RX ring """
-
-        while True:
-            if not self.rx_ring:
-                continue
-
-            return self.rx_ring.pop(0)
-
-    def thread(self):
-        """ Thread responsible for receiving and enqueuing incoming packets """
-
-        while True:
-
-            # Read packet from the wire
-            ether_packet_rx = ph_ether.EtherPacketIn(os.read(self.tap, 2048))
-
-            # Check if received packet uses valid Ethernet II format
-            if ether_packet_rx.hdr_type < ph_ether.ETHER_TYPE_MIN:
-                self.logger.opt(ansi=True).debug("<green>[RX]</green> Packet doesn't comply with the Ethernet II standard")
-                continue
-
-            # Check if received packet has been sent to us directly or by broadcast
-            if ether_packet_rx.hdr_dst not in {STACK_MAC_ADDRESS, "ff:ff:ff:ff:ff:ff"}:
-                self.logger.opt(ansi=True).debug("<green>[RX]</green> Packet not destined for this stack")
-                continue
-
-            self.enqueue(ether_packet_rx)
-            self.logger.opt(ansi=True).debug(f"<green>[RX]</green> {ether_packet_rx.serial_number}")
-
-
-class TxRing:
-    """ Support for sending packets to the network """
-
-    def __init__(self, tap):
-        """ Initialize access to tap interface and the outbound queue """
-
-        self.tap = tap
-        self.tx_ring = []
-        self.logger = loguru.logger.bind(object_name="tx_ring.")
-
-    def enqueue_arp_request(self, hdr_tpa):
-        """ Enqueue ARP request """
-
-        arp_packet_tx = ph_arp.ArpPacketOut(
-            hdr_operation=ph_arp.ARP_OP_REQUEST,
-            hdr_sha=STACK_MAC_ADDRESS,
-            hdr_spa=STACK_IP_ADDRESS,
-            hdr_tha="00:00:00:00:00:00",
-            hdr_tpa=hdr_tpa,
-        )
-
-        ether_packet_tx = ph_ether.EtherPacketOut(
-            hdr_src=STACK_MAC_ADDRESS, hdr_dst="ff:ff:ff:ff:ff:ff", hdr_type=ph_ether.ETHER_TYPE_ARP, raw_data=arp_packet_tx.raw_packet
-        )
-
-        self.logger.debug(f"{ether_packet_tx.serial_number} - {ether_packet_tx.log}")
-        self.logger.opt(ansi=True).info(f"<magenta>{ether_packet_tx.serial_number} </magenta> - {arp_packet_tx.log}")
-        self.enqueue(ether_packet_tx, urgent=True)
-
-    def enqueue(self, ether_packet_tx, urgent=False):
-        """ Enqueue outbound Ethernet packet to TX ring """
-
-        if urgent:
-            self.tx_ring.insert(0, ether_packet_tx)
-
-        else:
-            self.tx_ring.append(ether_packet_tx)
-
-    def dequeue(self):
-        """ Dequeue packet from TX ring """
-
-        while True:
-
-            if not self.tx_ring:
-                continue
-
-            ether_packet_tx = self.tx_ring.pop(0)
-
-            # Check if packet should be delayed
-            if ether_packet_tx.retry_timestamp and ether_packet_tx.retry_timestamp < time.time():
-                self.enqueue(ether_packet_tx)
-                continue
-
-            # In case Ethernet packet contains valid destination MAC send it out
-            if ether_packet_tx.hdr_dst != "00:00:00:00:00:00":
-                self.logger.debug(f"{ether_packet_tx.serial_number} Contains valid destination MAC address")
-                return ether_packet_tx
-
-            # If above is not true then check if Ethernet packet carries IP packet and if so try to resolve destination MAC based on IP address
-            if ether_packet_tx.hdr_type == ph_ether.ETHER_TYPE_IP:
-                ip_packet_tx = ph_ip.IpPacketIn(ether_packet_tx.raw_data)
-
-                # Try to resolve destination MAC using ARP cache
-                if arp_cache_entry := ARP_CACHE.get(ip_packet_tx.hdr_dst, None):
-                    ether_packet_tx.hdr_dst = arp_cache_entry
-                    self.logger.debug(f"{ether_packet_tx.serial_number} Resolved destiantion IP {ip_packet_tx.hdr_dst} to MAC ({ether_packet_tx.hdr_dst})")
-                    return ether_packet_tx
-
-                # If we don't have valid ARP cache entry for given destination IP send out ARP request for it and delay the packet if appropriate
-                else:
-                    self.logger.debug(
-                        f"{ether_packet_tx.serial_number} Unable to resolve destiantion IP to MAC, sending ARP request for {ip_packet_tx.hdr_dst}"
-                    )
-
-                    self.enqueue_arp_request(ip_packet_tx.hdr_dst)
-
-                    # Incremet retry counter and if its within the limit enqueue original packet with current timestamp
-                    ether_packet_tx.retry_counter += 1
-
-                    if ether_packet_tx.retry_counter <= TX_RING_RETRY_COUNT:
-                        ether_packet_tx.retry_timestamp = time.time() + TX_RING_RETRY_DELAY
-                        self.enqueue(ether_packet_tx)
-                        self.logger.debug(
-                            f"{ether_packet_tx.serial_number} Delaying packet for {TX_RING_RETRY_DELAY}s, retry counter {ether_packet_tx.retry_counter}"
-                        )
-                        continue
-                        
-            self.logger.debug(f"{ether_packet_tx.serial_number} Droping packet, no valid destination MAC could be obtained")
-
-    def thread(self):
-        """ Thread responsible for dequeuing and sending outgoing packets """
-
-        while True:
-            ether_packet_tx = self.dequeue()
-            os.write(self.tap, ether_packet_tx.raw_packet)
-            self.logger.opt(ansi=True).debug(f"<magenta>[TX]</magenta> {ether_packet_tx.serial_number} - {ether_packet_tx.log}")
-
 
 def packet_handler(rx_ring, tx_ring):
     """ Handle basic network protocols like ARP or ICMP """
@@ -283,8 +136,11 @@ def main():
     tap = os.open("/dev/net/tun", os.O_RDWR)
     fcntl.ioctl(tap, TUNSETIFF, struct.pack("16sH", STACK_IF, IFF_TAP | IFF_NO_PI))
 
-    rx_ring = RxRing(tap)
-    tx_ring = TxRing(tap)
+    from rx_ring import RxRing
+    rx_ring = RxRing(tap=tap, stack_mac_address=STACK_MAC_ADDRESS)
+
+    from tx_ring import TxRing
+    tx_ring = TxRing(tap=tap, stack_mac_address=STACK_MAC_ADDRESS, stack_ip_address=STACK_IP_ADDRESS, arp_cache=ARP_CACHE)
 
     thread_rx_ring = threading.Thread(target=rx_ring.thread)
     thread_rx_ring.start()
