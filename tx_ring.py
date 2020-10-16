@@ -17,7 +17,7 @@ import ph_ip
 
 
 TX_RING_MAX_RETRY_COUNT = 3
-TX_RING_RETRY_DELAY = 0.1
+TX_RING_RETRY_DELAY = 0.25
 
 
 class TxRing:
@@ -101,7 +101,9 @@ class TxRing:
                         f"{ether_packet_tx.serial_number} Unable to resolve destiantion IP to MAC, sending ARP request for {ip_packet_tx.hdr_dst}"
                     )
 
-                    self.enqueue_arp_request(ip_packet_tx.hdr_dst)
+                    # In case this is first time we trying to send this packet then sent out arp request to resolve its destiantion
+                    if ether_packet_tx.retry_count == 0:
+                        self.enqueue_arp_request(ip_packet_tx.hdr_dst)
 
                     # Incremet retry counter and if its within the limit enqueue original packet with current timestamp
                     ether_packet_tx.retry_count += 1
