@@ -30,7 +30,7 @@ def main():
             ip_packet = ph_ip.IpPacketIn(ether_packet.raw_data)
 
             if ip_packet.hdr_proto == ph_ip.IP_PROTO_ICMP:
-                icmp_packet = ph_icmp.IcmpPacket(ip_packet.raw_data)
+                icmp_packet = ph_icmp.IcmpPacketIn(ip_packet.raw_data)
                 print(ether_packet.dump)
                 print(ip_packet.dump)
                 print(icmp_packet.dump)

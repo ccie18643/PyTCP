@@ -18,6 +18,7 @@ import threading
 import ph_ether
 import ph_arp
 import ph_ip
+import ph_icmp
 
 
 TUNSETIFF = 0x400454CA
@@ -37,16 +38,10 @@ class RxRing:
 
         self.tap = tap
         self.rx_ring = []
-        self.serial_number = 0
         self.logger = loguru.logger.bind(object_name="rx_ring.")
 
     def enqueue(self, packet):
         """ Enqueue inbound pakcet to RX ring """
-
-        packet.serial_number = f"RX{self.serial_number:0>4x}".upper()
-        self.serial_number += 1
-        if self.serial_number > 0xFFFF:
-            self.serial_number = 0
 
         self.rx_ring.append(packet)
 
@@ -89,16 +84,10 @@ class TxRing:
 
         self.tap = tap
         self.tx_ring = []
-        self.serial_number = 0
         self.logger = loguru.logger.bind(object_name="tx_ring.")
 
     def enqueue(self, packet):
         """ Enqueue outbound Ethernet packet to TX ring """
-
-        packet.serial_number = f"TX{self.serial_number:0>4x}".upper()
-        self.serial_number += 1
-        if self.serial_number > 0xFFFF:
-            self.serial_number = 0
 
         self.tx_ring.append(packet)
 
@@ -153,31 +142,45 @@ def packet_handler(rx_ring, tx_ring):
                         hdr_src=STACK_MAC_ADDRESS, hdr_dst=arp_packet_out.hdr_tha, hdr_type=ph_ether.ETHER_TYPE_ARP, raw_data=arp_packet_out.raw_packet
                     )
 
+                    logger.debug(f"{ether_packet_out.serial_number} ({ether_packet_in.serial_number}) - {ether_packet_out.log}")
+                    logger.opt(ansi=True).info(f"<magenta>{ether_packet_out.serial_number} ({ether_packet_in.serial_number})</magenta> - {arp_packet_out.log}")
                     tx_ring.enqueue(ether_packet_out)
-                    logger.debug(f"{ether_packet_out.serial_number} - {ether_packet_out.log}")
-                    logger.opt(ansi=True).info(f"<magenta>{ether_packet_out.serial_number}</magenta> - {arp_packet_out.log}")
 
+        # Handle IP protocol
         elif ether_packet_in.hdr_type == ph_ether.ETHER_TYPE_IP:
             ip_packet_in = ph_ip.IpPacketIn(ether_packet_in.raw_data)
             logger.debug(f"{ether_packet_in.serial_number} - {ip_packet_in.log}")
 
+            # Handle IP protocol
             if ip_packet_in.hdr_proto == ph_ip.IP_PROTO_ICMP:
+                icmp_packet_in = ph_icmp.IcmpPacketIn(ip_packet_in.raw_data)
+                logger.opt(ansi=True).info(f"<green>{ether_packet_in.serial_number}</green> - {icmp_packet_in.log}")
 
+                # Respond to Echo Request pascket
+                if icmp_packet_in.hdr_type == ph_icmp.ICMP_ECHOREQUEST and icmp_packet_in.hdr_code == 0:
 
-                ip_packet_out = ph_ip.IpPacketOut(
-                    hdr_src=STACK_IP_ADDRESS,
-                    hdr_dst=ip_packet_in.hdr_src,
-                    hdr_proto=ip_packet_in.hdr_proto,
-                    raw_options=ip_packet_in.raw_options,
-                )
+                    icmp_packet_out = ph_icmp.IcmpPacketOut(
+                        hdr_type = ph_icmp.ICMP_ECHOREPLY,
+                        msg_id = icmp_packet_in.msg_id,
+                        msg_seq = icmp_packet_in.msg_seq,
+                        msg_data = icmp_packet_in.msg_data,
+                    )
 
-                ether_packet_out = ph_ether.EtherPacketOut(
-                    hdr_src=STACK_MAC_ADDRESS, hdr_dst=ether_packet_in.hdr_src, hdr_type=ph_ether.ETHER_TYPE_IP, raw_data=ip_packet_out.raw_packet
-                )
+                    ip_packet_out = ph_ip.IpPacketOut(
+                        hdr_src=STACK_IP_ADDRESS,
+                        hdr_dst=ip_packet_in.hdr_src,
+                        hdr_proto=ip_packet_in.hdr_proto,
+                        raw_data=icmp_packet_out.raw_packet,
+                    )
 
-                tx_ring.enqueue(ether_packet_out)
-                logger.debug(f"{ether_packet_out.serial_number} - {ether_packet_out.log}")
-                logger.opt(ansi=True).info(f"<magenta>{ether_packet_out.serial_number}</magenta> - {ip_packet_out.log}")
+                    ether_packet_out = ph_ether.EtherPacketOut(
+                        hdr_src=STACK_MAC_ADDRESS, hdr_dst=ether_packet_in.hdr_src, hdr_type=ph_ether.ETHER_TYPE_IP, raw_data=ip_packet_out.raw_packet
+                    )
+
+                    logger.debug(f"{ether_packet_out.serial_number} ({ether_packet_in.serial_number}) - {ether_packet_out.log}")
+                    logger.debug(f"{ether_packet_out.serial_number} ({ether_packet_in.serial_number}) - {ip_packet_out.log}")
+                    logger.opt(ansi=True).info(f"<magenta>{ether_packet_out.serial_number} ({ether_packet_in.serial_number})</magenta> - {icmp_packet_out.log}")
+                    tx_ring.enqueue(ether_packet_out)
 
 
 def main():

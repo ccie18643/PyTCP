@@ -101,6 +101,14 @@ ECN_TABLE = {
 class IpPacket:
     """ Base class fo IP packet """
 
+    def validate_cksum(self):
+        """ Validate checksum for received header """
+
+        cksum_data = list(struct.unpack(f"! {self.hdr_hlen >> 1}H", self.raw_header + self.raw_options))
+        cksum_data[5] = 0
+        cksum = sum(cksum_data)
+        return ~((cksum & 0xFFFF) + (cksum >> 16)) & 0xFFFF == self.hdr_cksum
+
     @property
     def ip_pseudo_header(self):
         """ Returns IP pseudo header that is used by TCP to compute its checksum """
@@ -176,14 +184,6 @@ class IpPacketIn(IpPacket):
         """ Get packet header in raw format """
 
         return self.raw_packet[(self.raw_packet[0] & 0b00001111) << 2:struct.unpack("!H", self.raw_header[2:4])[0]]
-
-    def validate_cksum(self):
-        """ Validate checksum for received header """
-
-        cksum_data = list(struct.unpack(f"! {self.hdr_hlen >> 1}H", self.raw_header + self.raw_options))
-        cksum_data[5] = 0
-        cksum = sum(cksum_data)
-        return ~((cksum & 0xFFFF) + (cksum >> 16)) & 0xFFFF == self.hdr_cksum
 
 
 class IpPacketOut(IpPacket):
