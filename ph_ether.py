@@ -94,7 +94,7 @@ class EtherPacketOut(EtherPacket):
 
     serial_number = 0
 
-    def __init__(self, hdr_dst, hdr_src, hdr_type, raw_data=None):
+    def __init__(self, hdr_src, hdr_dst, hdr_type, raw_data=b""):
         """ Class constructor """
 
         self.hdr_dst = hdr_dst
@@ -106,6 +106,9 @@ class EtherPacketOut(EtherPacket):
         EtherPacketOut.serial_number += 1
         if EtherPacketOut.serial_number > 0xFFFF:
             EtherPacketOut.serial_number = 0
+
+        self.retry_counter = 0
+        self.retry_timestamp = 0
 
     @property
     def raw_header(self):
