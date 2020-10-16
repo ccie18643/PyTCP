@@ -107,8 +107,8 @@ class EtherPacketOut(EtherPacket):
         if EtherPacketOut.serial_number > 0xFFFF:
             EtherPacketOut.serial_number = 0
 
-        self.retry_counter = 0
-        self.retry_timestamp = 0
+        self.retry_count = 0
+        self.retry_time = 0
 
     @property
     def raw_header(self):

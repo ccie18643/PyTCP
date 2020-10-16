@@ -35,7 +35,7 @@ class RxRing:
 
         return await self.rx_ring.get()
 
-    def thread(self):
+    def handler(self):
         """ Thread responsible for receiving and enqueuing incoming packets """
 
         while True:

@@ -31,12 +31,11 @@ STACK_IP_ADDRESS = "192.168.9.7"
 STACK_MAC_ADDRESS = "02:00:00:77:77:77"
 
 
-ARP_CACHE = {}
 ARP_CACHE_UPDATE_FROM_DIRECT_REQUEST = False
 ARP_CACHE_UPDATE_FROM_GRATITIOUS_ARP = True
 
 
-async def packet_handler(rx_ring, tx_ring):
+async def packet_handler(rx_ring, tx_ring, arp_cache):
     """ Handle basic network protocols like ARP or ICMP """
 
     logger = loguru.logger.bind(object_name="")
@@ -76,7 +75,7 @@ async def packet_handler(rx_ring, tx_ring):
                     # Update ARP cache with the maping learned from the received ARP request that was destined to this stack
                     if ARP_CACHE_UPDATE_FROM_DIRECT_REQUEST:
                         logger.debug(f"Adding/refreshing ARP cache entry from direct request - {arp_packet_rx.hdr_spa} -> {arp_packet_rx.hdr_sha}")
-                        ARP_CACHE[arp_packet_rx.hdr_spa] = arp_packet_rx.hdr_sha
+                        arp_cache.add_entry(arp_packet_rx.hdr_spa, arp_packet_rx.hdr_sha)
 
             # Handle ARP reply
             if arp_packet_rx.hdr_operation == ph_arp.ARP_OP_REPLY:
@@ -85,11 +84,11 @@ async def packet_handler(rx_ring, tx_ring):
                 # Update ARP cache with maping from received direct ARP reply 
                 if ether_packet_rx.hdr_dst == STACK_MAC_ADDRESS: 
                     logger.debug(f"Adding/refreshing ARP cache entry from direct reply - {arp_packet_rx.hdr_spa} -> {arp_packet_rx.hdr_sha}")
-                    ARP_CACHE[arp_packet_rx.hdr_spa] = arp_packet_rx.hdr_sha
+                    arp_cache.add_entry(arp_packet_rx.hdr_spa, arp_packet_rx.hdr_sha)
                 
                 if ether_packet_rx.hdr_dst == "ff:ff:ff:ff:ff:ff" and ARP_CACHE_UPDATE_FROM_GRATITIOUS_ARP: 
                     logger.debug(f"Adding/refreshing ARP cache entry from gratitious reply - {arp_packet_rx.hdr_spa} -> {arp_packet_rx.hdr_sha}")
-                    ARP_CACHE[arp_packet_rx.hdr_spa] = arp_packet_rx.hdr_sha
+                    arp_cache.add_entry(arp_packet_rx.hdr_spa, arp_packet_rx.hdr_sha)
 
 
         # Handle IP protocol
@@ -144,20 +143,27 @@ async def main():
     tap = os.open("/dev/net/tun", os.O_RDWR)
     fcntl.ioctl(tap, TUNSETIFF, struct.pack("16sH", STACK_IF, IFF_TAP | IFF_NO_PI))
 
+    # Initialize ARP cache
+    from arp_cache import ArpCache
+    arp_cache = ArpCache()
+
     # Run RX ring operation as separate thread due to its blocking nature
     from rx_ring import RxRing
     rx_ring = RxRing(tap=tap, stack_mac_address=STACK_MAC_ADDRESS)
-    thread_rx_ring = threading.Thread(target=rx_ring.thread)
+    thread_rx_ring = threading.Thread(target=rx_ring.handler)
     thread_rx_ring.start()
 
     # Run TX ring operation as separate thread due to its blocking nature
     from tx_ring import TxRing
-    tx_ring = TxRing(tap=tap, stack_mac_address=STACK_MAC_ADDRESS, stack_ip_address=STACK_IP_ADDRESS, arp_cache=ARP_CACHE)
-    thread_tx_ring = threading.Thread(target=tx_ring.thread)
+    tx_ring = TxRing(tap=tap, stack_mac_address=STACK_MAC_ADDRESS, stack_ip_address=STACK_IP_ADDRESS, arp_cache=arp_cache)
+    thread_tx_ring = threading.Thread(target=tx_ring.handler)
     thread_tx_ring.start()
 
+    # Run ARP cache handler as Asyncio coroutine
+    task_arp_cache_handler = asyncio.create_task(arp_cache.handler())
+
     # Run packet handler as Asyncio coroutine
-    task_packet_handler = asyncio.create_task(packet_handler(rx_ring, tx_ring))
+    task_packet_handler = asyncio.create_task(packet_handler(rx_ring, tx_ring, arp_cache=arp_cache))
 
     while True:
         await asyncio.sleep(1)

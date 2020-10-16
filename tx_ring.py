@@ -16,7 +16,7 @@ import ph_arp
 import ph_ip
 
 
-TX_RING_RETRY_COUNT = 3
+TX_RING_MAX_RETRY_COUNT = 3
 TX_RING_RETRY_DELAY = 0.1
 
 
@@ -30,6 +30,10 @@ class TxRing:
         self.stack_mac_address = stack_mac_address
         self.stack_ip_address = stack_ip_address
         self.arp_cache = arp_cache
+
+        # Update ARP cache object with reference to ths TX ring so ARP cache can send request packets
+        self.arp_cache.tx_ring = self
+
         self.tx_ring = []
         self.logger = loguru.logger.bind(object_name="tx_ring.")
 
@@ -72,7 +76,7 @@ class TxRing:
             ether_packet_tx = self.tx_ring.pop(0)
 
             # Check if packet should be delayed
-            if ether_packet_tx.retry_timestamp and ether_packet_tx.retry_timestamp < time.time():
+            if time.time() < ether_packet_tx.retry_time:
                 self.enqueue(ether_packet_tx)
                 continue
 
@@ -86,8 +90,8 @@ class TxRing:
                 ip_packet_tx = ph_ip.IpPacketIn(ether_packet_tx.raw_data)
 
                 # Try to resolve destination MAC using ARP cache
-                if arp_cache_entry := self.arp_cache.get(ip_packet_tx.hdr_dst, None):
-                    ether_packet_tx.hdr_dst = arp_cache_entry
+                if mac_address := self.arp_cache.get_mac_address(ip_packet_tx.hdr_dst):
+                    ether_packet_tx.hdr_dst = mac_address
                     self.logger.debug(f"{ether_packet_tx.serial_number} Resolved destiantion IP {ip_packet_tx.hdr_dst} to MAC ({ether_packet_tx.hdr_dst})")
                     return ether_packet_tx
 
@@ -100,19 +104,19 @@ class TxRing:
                     self.enqueue_arp_request(ip_packet_tx.hdr_dst)
 
                     # Incremet retry counter and if its within the limit enqueue original packet with current timestamp
-                    ether_packet_tx.retry_counter += 1
+                    ether_packet_tx.retry_count += 1
 
-                    if ether_packet_tx.retry_counter <= TX_RING_RETRY_COUNT:
-                        ether_packet_tx.retry_timestamp = time.time() + TX_RING_RETRY_DELAY
+                    if ether_packet_tx.retry_count <= TX_RING_MAX_RETRY_COUNT:
+                        ether_packet_tx.retry_time = time.time() + TX_RING_RETRY_DELAY
                         self.enqueue(ether_packet_tx)
                         self.logger.debug(
-                            f"{ether_packet_tx.serial_number} Delaying packet for {TX_RING_RETRY_DELAY}s, retry counter {ether_packet_tx.retry_counter}"
+                            f"{ether_packet_tx.serial_number} Delaying packet for {TX_RING_RETRY_DELAY}s, retry counter {ether_packet_tx.retry_count}"
                         )
                         continue
 
             self.logger.debug(f"{ether_packet_tx.serial_number} Droping packet, no valid destination MAC could be obtained")
 
-    def thread(self):
+    def handler(self):
         """ Thread responsible for dequeuing and sending outgoing packets """
 
         while True:
