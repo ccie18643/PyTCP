@@ -33,6 +33,7 @@ STACK_MAC_ADDRESS = "02:00:00:77:77:77"
 
 ARP_CACHE = {}
 ARP_CACHE_UPDATE_FROM_DIRECT_REQUEST = False
+ARP_CACHE_UPDATE_FROM_GRATITIOUS_ARP = True
 
 
 async def packet_handler(rx_ring, tx_ring):
@@ -74,16 +75,22 @@ async def packet_handler(rx_ring, tx_ring):
 
                     # Update ARP cache with the maping learned from the received ARP request that was destined to this stack
                     if ARP_CACHE_UPDATE_FROM_DIRECT_REQUEST:
-                        logger.debug(f"Adding/refreshing ARP cache entry {arp_packet_rx.hdr_spa} -> {arp_packet_rx.hdr_sha}")
+                        logger.debug(f"Adding/refreshing ARP cache entry from direct request - {arp_packet_rx.hdr_spa} -> {arp_packet_rx.hdr_sha}")
                         ARP_CACHE[arp_packet_rx.hdr_spa] = arp_packet_rx.hdr_sha
 
             # Handle ARP reply
             if arp_packet_rx.hdr_operation == ph_arp.ARP_OP_REPLY:
                 logger.opt(ansi=True).info(f"<green>{ether_packet_rx.serial_number}</green> - {arp_packet_rx.log}")
 
-                # Update ARP cache with maping from received ARP reply for the request this stack sent earlier
-                logger.debug(f"Adding/refreshing ARP cache entry {arp_packet_rx.hdr_spa} -> {arp_packet_rx.hdr_sha}")
-                ARP_CACHE[arp_packet_rx.hdr_spa] = arp_packet_rx.hdr_sha
+                # Update ARP cache with maping from received direct ARP reply 
+                if ether_packet_rx.hdr_dst == STACK_MAC_ADDRESS: 
+                    logger.debug(f"Adding/refreshing ARP cache entry from direct reply - {arp_packet_rx.hdr_spa} -> {arp_packet_rx.hdr_sha}")
+                    ARP_CACHE[arp_packet_rx.hdr_spa] = arp_packet_rx.hdr_sha
+                
+                if ether_packet_rx.hdr_dst == "ff:ff:ff:ff:ff:ff" and ARP_CACHE_UPDATE_FROM_GRATITIOUS_ARP: 
+                    logger.debug(f"Adding/refreshing ARP cache entry from gratitious reply - {arp_packet_rx.hdr_spa} -> {arp_packet_rx.hdr_sha}")
+                    ARP_CACHE[arp_packet_rx.hdr_spa] = arp_packet_rx.hdr_sha
+
 
         # Handle IP protocol
         elif ether_packet_rx.hdr_type == ph_ether.ETHER_TYPE_IP:
