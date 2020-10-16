@@ -141,11 +141,11 @@ class TxRing:
                 self.logger.debug(f"{ether_packet_tx.serial_number} Contains valid destination MAC address")
                 return ether_packet_tx
 
-            # If above is not true then check if Ethernet packet carries IP packet
+            # If above is not true then check if Ethernet packet carries IP packet and if so try to resolve destination MAC based on IP address
             if ether_packet_tx.hdr_type == ph_ether.ETHER_TYPE_IP:
                 ip_packet_tx = ph_ip.IpPacketIn(ether_packet_tx.raw_data)
 
-                # Try to resolve destination IP -> MAC using ARP cache
+                # Try to resolve destination MAC using ARP cache
                 if arp_cache_entry := ARP_CACHE.get(ip_packet_tx.hdr_dst, None):
                     ether_packet_tx.hdr_dst = arp_cache_entry
                     self.logger.debug(f"{ether_packet_tx.serial_number} Resolved destiantion IP {ip_packet_tx.hdr_dst} to MAC ({ether_packet_tx.hdr_dst})")
@@ -170,9 +170,7 @@ class TxRing:
                         )
                         continue
                         
-            self.logger.debug(
-                f"{ether_packet_tx.serial_number} Droping packet"
-            )
+            self.logger.debug(f"{ether_packet_tx.serial_number} Droping packet, no valid destination MAC could be obtained")
 
     def thread(self):
         """ Thread responsible for dequeuing and sending outgoing packets """
