@@ -13,6 +13,7 @@ import fcntl
 import struct
 import loguru
 import time
+import asyncio
 import threading
 
 import ph_ether
@@ -34,14 +35,14 @@ ARP_CACHE = {}
 ARP_CACHE_UPDATE_FROM_DIRECT_REQUEST = False
 
 
-def packet_handler(rx_ring, tx_ring):
+async def packet_handler(rx_ring, tx_ring):
     """ Handle basic network protocols like ARP or ICMP """
 
     logger = loguru.logger.bind(object_name="")
 
     while True:
 
-        ether_packet_rx = rx_ring.dequeue()
+        ether_packet_rx = await rx_ring.dequeue()
         logger.debug(f"{ether_packet_rx.serial_number} - {ether_packet_rx.log}")
 
         # Handle ARP protocol
@@ -121,7 +122,7 @@ def packet_handler(rx_ring, tx_ring):
                     tx_ring.enqueue(ether_packet_tx)
 
 
-def main():
+async def main():
     """ Main function """
 
     loguru.logger.remove(0)
@@ -136,24 +137,24 @@ def main():
     tap = os.open("/dev/net/tun", os.O_RDWR)
     fcntl.ioctl(tap, TUNSETIFF, struct.pack("16sH", STACK_IF, IFF_TAP | IFF_NO_PI))
 
+    # Run RX ring operation as separate thread due to its blocking nature
     from rx_ring import RxRing
     rx_ring = RxRing(tap=tap, stack_mac_address=STACK_MAC_ADDRESS)
-
-    from tx_ring import TxRing
-    tx_ring = TxRing(tap=tap, stack_mac_address=STACK_MAC_ADDRESS, stack_ip_address=STACK_IP_ADDRESS, arp_cache=ARP_CACHE)
-
     thread_rx_ring = threading.Thread(target=rx_ring.thread)
     thread_rx_ring.start()
 
+    # Run TX ring operation as separate thread due to its blocking nature
+    from tx_ring import TxRing
+    tx_ring = TxRing(tap=tap, stack_mac_address=STACK_MAC_ADDRESS, stack_ip_address=STACK_IP_ADDRESS, arp_cache=ARP_CACHE)
     thread_tx_ring = threading.Thread(target=tx_ring.thread)
     thread_tx_ring.start()
 
-    thread_packet_handler = threading.Thread(target=packet_handler, args=(rx_ring, tx_ring))
-    thread_packet_handler.start()
+    # Run packet handler as Asyncio coroutine
+    task_packet_handler = asyncio.create_task(packet_handler(rx_ring, tx_ring))
 
     while True:
-        time.sleep(1)
+        await asyncio.sleep(1)
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    asyncio.run(main())
