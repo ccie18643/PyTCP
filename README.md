@@ -10,7 +10,7 @@ Attempt to create working TCP/IP stack in Python for educational purposes. Stack
 
 Stll love Asyncio but for this particular purpose it just doesn't cut it :) Seem all that huge delay happened in between packet being enqueued by RX ring into asyncio.Queue() and main packet handler being able to dequeue it for further procesing. This delay usually varied from 100ms up to 1000ms avraging at around 400ms in most cases.
 
-Running asyncio
+Running Asyncio
 ![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/main/pictures/log_02.png)
 
 Running threads
