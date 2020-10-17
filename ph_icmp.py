@@ -95,7 +95,7 @@ class IcmpPacket:
         return dump_header + dump_message
 
 
-class IcmpPacketIn(IcmpPacket):
+class IcmpPacketRx(IcmpPacket):
     """ ICMP packet support class """
 
     def __init__(self, raw_packet):
@@ -130,7 +130,7 @@ class IcmpPacketIn(IcmpPacket):
         return self.raw_packet[ICMP_HEADER_LEN:]
 
 
-class IcmpPacketOut(IcmpPacket):
+class IcmpPacketTx(IcmpPacket):
     """ ICMP packet support class """
 
     def __init__(self, hdr_type, hdr_code=0, msg_id=None, msg_seq=None, msg_data=b""):

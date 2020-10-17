@@ -10,6 +10,7 @@ tx_ring.py - module contains class supporting TX operations
 import os
 import loguru
 import time
+import threading
 
 import ph_ether
 import ph_arp
@@ -37,10 +38,12 @@ class TxRing:
         self.tx_ring = []
         self.logger = loguru.logger.bind(object_name="tx_ring.")
 
+        self.packet_enqueued = threading.Semaphore(0)
+
     def enqueue_arp_request(self, hdr_tpa):
         """ Enqueue ARP request """
 
-        arp_packet_tx = ph_arp.ArpPacketOut(
+        arp_packet_tx = ph_arp.ArpPacketTx(
             hdr_operation=ph_arp.ARP_OP_REQUEST,
             hdr_sha=self.stack_mac_address,
             hdr_spa=self.stack_ip_address,
@@ -48,7 +51,7 @@ class TxRing:
             hdr_tpa=hdr_tpa,
         )
 
-        ether_packet_tx = ph_ether.EtherPacketOut(
+        ether_packet_tx = ph_ether.EtherPacketTx(
             hdr_src=self.stack_mac_address, hdr_dst="ff:ff:ff:ff:ff:ff", hdr_type=ph_ether.ETHER_TYPE_ARP, raw_data=arp_packet_tx.raw_packet
         )
 
@@ -65,13 +68,13 @@ class TxRing:
         else:
             self.tx_ring.append(ether_packet_tx)
 
+        self.packet_enqueued.release()
+
     def dequeue(self):
         """ Dequeue packet from TX ring """
 
         while True:
-
-            if not self.tx_ring:
-                continue
+            self.packet_enqueued.acquire()
 
             ether_packet_tx = self.tx_ring.pop(0)
 
@@ -87,7 +90,7 @@ class TxRing:
 
             # If above is not true then check if Ethernet packet carries IP packet and if so try to resolve destination MAC based on IP address
             if ether_packet_tx.hdr_type == ph_ether.ETHER_TYPE_IP:
-                ip_packet_tx = ph_ip.IpPacketIn(ether_packet_tx.raw_data)
+                ip_packet_tx = ph_ip.IpPacketRx(ether_packet_tx.raw_data)
 
                 # Try to resolve destination MAC using ARP cache
                 if mac_address := self.arp_cache.get_mac_address(ip_packet_tx.hdr_dst):

@@ -57,7 +57,7 @@ class EtherPacket:
         )
 
 
-class EtherPacketIn(EtherPacket):
+class EtherPacketRx(EtherPacket):
     """ Ethernet packet parse class """
 
     serial_number = 0
@@ -71,10 +71,10 @@ class EtherPacketIn(EtherPacket):
         self.hdr_src = ":".join([f"{_:0>2x}" for _ in self.raw_header[6:12]])
         self.hdr_type = struct.unpack("!H", self.raw_header[12:14])[0]
         
-        self.serial_number = f"RX{EtherPacketIn.serial_number:0>4x}".upper()
-        EtherPacketIn.serial_number += 1
-        if EtherPacketIn.serial_number > 0xFFFF:
-            EtherPacketIn.serial_number = 0
+        self.serial_number = f"RX{EtherPacketRx.serial_number:0>4x}".upper()
+        EtherPacketRx.serial_number += 1
+        if EtherPacketRx.serial_number > 0xFFFF:
+            EtherPacketRx.serial_number = 0
 
     @property
     def raw_header(self):
@@ -89,7 +89,7 @@ class EtherPacketIn(EtherPacket):
         return self.raw_packet[14:]
 
 
-class EtherPacketOut(EtherPacket):
+class EtherPacketTx(EtherPacket):
     """ Ethernet packet creation class """
 
     serial_number = 0
@@ -102,10 +102,10 @@ class EtherPacketOut(EtherPacket):
         self.hdr_type = hdr_type
         self.raw_data = raw_data
 
-        self.serial_number = f"TX{EtherPacketOut.serial_number:0>4x}".upper()
-        EtherPacketOut.serial_number += 1
-        if EtherPacketOut.serial_number > 0xFFFF:
-            EtherPacketOut.serial_number = 0
+        self.serial_number = f"TX{EtherPacketTx.serial_number:0>4x}".upper()
+        EtherPacketTx.serial_number += 1
+        if EtherPacketTx.serial_number > 0xFFFF:
+            EtherPacketTx.serial_number = 0
 
         self.retry_count = 0
         self.retry_time = 0

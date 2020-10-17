@@ -47,7 +47,7 @@ async def packet_handler(rx_ring, tx_ring, arp_cache):
 
         # Handle ARP protocol
         if ether_packet_rx.hdr_type == ph_ether.ETHER_TYPE_ARP:
-            arp_packet_rx = ph_arp.ArpPacketIn(ether_packet_rx.raw_data)
+            arp_packet_rx = ph_arp.ArpPacketRx(ether_packet_rx.raw_data)
 
             # Handle ARP request
             if arp_packet_rx.hdr_operation == ph_arp.ARP_OP_REQUEST:
@@ -56,7 +56,7 @@ async def packet_handler(rx_ring, tx_ring, arp_cache):
                 # Check if the request is for our IP address, if so the craft ARP reply packet and send it out
                 if arp_packet_rx.hdr_tpa == STACK_IP_ADDRESS:
 
-                    arp_packet_tx = ph_arp.ArpPacketOut(
+                    arp_packet_tx = ph_arp.ArpPacketTx(
                         hdr_operation=ph_arp.ARP_OP_REPLY,
                         hdr_sha=STACK_MAC_ADDRESS,
                         hdr_spa=STACK_IP_ADDRESS,
@@ -64,7 +64,7 @@ async def packet_handler(rx_ring, tx_ring, arp_cache):
                         hdr_tpa=arp_packet_rx.hdr_spa,
                     )
 
-                    ether_packet_tx = ph_ether.EtherPacketOut(
+                    ether_packet_tx = ph_ether.EtherPacketTx(
                         hdr_src=STACK_MAC_ADDRESS, hdr_dst=arp_packet_tx.hdr_tha, hdr_type=ph_ether.ETHER_TYPE_ARP, raw_data=arp_packet_tx.raw_packet
                     )
 
@@ -93,32 +93,32 @@ async def packet_handler(rx_ring, tx_ring, arp_cache):
 
         # Handle IP protocol
         elif ether_packet_rx.hdr_type == ph_ether.ETHER_TYPE_IP:
-            ip_packet_rx = ph_ip.IpPacketIn(ether_packet_rx.raw_data)
+            ip_packet_rx = ph_ip.IpPacketRx(ether_packet_rx.raw_data)
             logger.debug(f"{ether_packet_rx.serial_number} - {ip_packet_rx.log}")
 
             # Handle IP protocol
             if ip_packet_rx.hdr_proto == ph_ip.IP_PROTO_ICMP:
-                icmp_packet_rx = ph_icmp.IcmpPacketIn(ip_packet_rx.raw_data)
+                icmp_packet_rx = ph_icmp.IcmpPacketRx(ip_packet_rx.raw_data)
                 logger.opt(ansi=True).info(f"<green>{ether_packet_rx.serial_number}</green> - {icmp_packet_rx.log}")
 
                 # Respond to Echo Request pascket
                 if icmp_packet_rx.hdr_type == ph_icmp.ICMP_ECHOREQUEST and icmp_packet_rx.hdr_code == 0:
 
-                    icmp_packet_tx = ph_icmp.IcmpPacketOut(
+                    icmp_packet_tx = ph_icmp.IcmpPacketTx(
                         hdr_type=ph_icmp.ICMP_ECHOREPLY,
                         msg_id=icmp_packet_rx.msg_id,
                         msg_seq=icmp_packet_rx.msg_seq,
                         msg_data=icmp_packet_rx.msg_data,
                     )
 
-                    ip_packet_tx = ph_ip.IpPacketOut(
+                    ip_packet_tx = ph_ip.IpPacketTx(
                         hdr_src=STACK_IP_ADDRESS,
                         hdr_dst=ip_packet_rx.hdr_src,
                         hdr_proto=ip_packet_rx.hdr_proto,
                         raw_data=icmp_packet_tx.raw_packet,
                     )
 
-                    ether_packet_tx = ph_ether.EtherPacketOut(
+                    ether_packet_tx = ph_ether.EtherPacketTx(
                         hdr_src=STACK_MAC_ADDRESS, hdr_dst="00:00:00:00:00:00", hdr_type=ph_ether.ETHER_TYPE_IP, raw_data=ip_packet_tx.raw_packet
                     )
 

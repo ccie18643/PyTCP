@@ -144,7 +144,7 @@ class IpPacket:
         )
 
 
-class IpPacketIn(IpPacket):
+class IpPacketRx(IpPacket):
     """ IP packet parse class """
 
     def __init__(self, raw_packet):
@@ -186,7 +186,7 @@ class IpPacketIn(IpPacket):
         return self.raw_packet[(self.raw_packet[0] & 0b00001111) << 2:struct.unpack("!H", self.raw_header[2:4])[0]]
 
 
-class IpPacketOut(IpPacket):
+class IpPacketTx(IpPacket):
     """ IP packet creation class """
 
     def __init__(self, hdr_src, hdr_dst, hdr_proto, hdr_ttl=64, raw_options=b"", raw_data=b""):

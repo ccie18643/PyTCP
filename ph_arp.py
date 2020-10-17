@@ -64,7 +64,7 @@ class ArpPacket:
         )
 
 
-class ArpPacketIn(ArpPacket):
+class ArpPacketRx(ArpPacket):
     """ ARP packet parse class """
 
     def __init__(self, raw_packet):
@@ -89,7 +89,7 @@ class ArpPacketIn(ArpPacket):
         return self.raw_packet[:28]
 
 
-class ArpPacketOut(ArpPacket):
+class ArpPacketTx(ArpPacket):
     """ ARP packet creation class """
 
     def __init__(self, hdr_sha, hdr_spa, hdr_tpa, hdr_tha="00:00:00:00:00:00", hdr_operation=ARP_OP_REQUEST):

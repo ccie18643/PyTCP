@@ -24,13 +24,13 @@ raw_socket = socket.socket(socket.PF_PACKET, socket.SOCK_RAW, socket.htons(0x080
 def main():
     while True:
         raw_packet = raw_socket.recv(2048)
-        ether_packet = ph_ether.EtherPacketIn(raw_packet)
+        ether_packet = ph_ether.EtherPacketRx(raw_packet)
 
         if ether_packet.hdr_type == ph_ether.ETHER_TYPE_IP:
-            ip_packet = ph_ip.IpPacketIn(ether_packet.raw_data)
+            ip_packet = ph_ip.IpPacketRx(ether_packet.raw_data)
 
             if ip_packet.hdr_proto == ph_ip.IP_PROTO_ICMP:
-                icmp_packet = ph_icmp.IcmpPacketIn(ip_packet.raw_data)
+                icmp_packet = ph_icmp.IcmpPacketRx(ip_packet.raw_data)
                 print(ether_packet.dump)
                 print(ip_packet.dump)
                 print(icmp_packet.dump)

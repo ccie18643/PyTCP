@@ -41,7 +41,7 @@ class RxRing:
         while True:
 
             # Read packet from the wire
-            ether_packet_rx = ph_ether.EtherPacketIn(os.read(self.tap, 2048))
+            ether_packet_rx = ph_ether.EtherPacketRx(os.read(self.tap, 2048))
 
             # Check if received packet uses valid Ethernet II format
             if ether_packet_rx.hdr_type < ph_ether.ETHER_TYPE_MIN:
