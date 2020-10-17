@@ -8,6 +8,7 @@ ph_ethernet.py - packet handler libary for Ethernet protocol
 """
 
 import struct
+import time
 
 
 """
@@ -30,11 +31,13 @@ import struct
 ETHER_TYPE_MIN = 0x0600
 ETHER_TYPE_ARP = 0x0806
 ETHER_TYPE_IP = 0x0800
+ETHER_TYPE_IPV6 = 0x86dd
 
 
 ETHER_TYPE_TABLE = {
-    ETHER_TYPE_IP: "IP",
     ETHER_TYPE_ARP: "ARP",
+    ETHER_TYPE_IP: "IP",
+    ETHER_TYPE_IPV6: "IPv6",
 }
 
 
@@ -60,10 +63,17 @@ class EtherPacket:
 class EtherPacketRx(EtherPacket):
     """ Ethernet packet parse class """
 
-    serial_number = 0
+    serial_number_rx = 0
 
     def __init__(self, raw_packet):
         """ Class constructor """
+
+        self.timestamp_rx = time.time()
+
+        self.serial_number_rx = f"RX{EtherPacketRx.serial_number_rx:0>4x}".upper()
+        EtherPacketRx.serial_number_rx += 1
+        if EtherPacketRx.serial_number_rx > 0xFFFF:
+            EtherPacketRx.serial_number_rx = 0
 
         self.raw_packet = raw_packet
 
@@ -71,11 +81,6 @@ class EtherPacketRx(EtherPacket):
         self.hdr_src = ":".join([f"{_:0>2x}" for _ in self.raw_header[6:12]])
         self.hdr_type = struct.unpack("!H", self.raw_header[12:14])[0]
         
-        self.serial_number = f"RX{EtherPacketRx.serial_number:0>4x}".upper()
-        EtherPacketRx.serial_number += 1
-        if EtherPacketRx.serial_number > 0xFFFF:
-            EtherPacketRx.serial_number = 0
-
     @property
     def raw_header(self):
         """ Get packet header in raw format """
@@ -92,23 +97,22 @@ class EtherPacketRx(EtherPacket):
 class EtherPacketTx(EtherPacket):
     """ Ethernet packet creation class """
 
-    serial_number = 0
+    serial_number_tx = 0
 
     def __init__(self, hdr_src, hdr_dst, hdr_type, raw_data=b""):
         """ Class constructor """
+
+        self.timestamp_tx = time.time()
+
+        self.serial_number_tx = f"TX{EtherPacketTx.serial_number_tx:0>4x}".upper()
+        EtherPacketTx.serial_number_tx += 1
+        if EtherPacketTx.serial_number_tx > 0xFFFF:
+            EtherPacketTx.serial_number_tx = 0
 
         self.hdr_dst = hdr_dst
         self.hdr_src = hdr_src
         self.hdr_type = hdr_type
         self.raw_data = raw_data
-
-        self.serial_number = f"TX{EtherPacketTx.serial_number:0>4x}".upper()
-        EtherPacketTx.serial_number += 1
-        if EtherPacketTx.serial_number > 0xFFFF:
-            EtherPacketTx.serial_number = 0
-
-        self.retry_count = 0
-        self.retry_time = 0
 
     @property
     def raw_header(self):

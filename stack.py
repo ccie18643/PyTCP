@@ -43,7 +43,7 @@ async def packet_handler(rx_ring, tx_ring, arp_cache):
     while True:
 
         ether_packet_rx = await rx_ring.dequeue()
-        logger.debug(f"{ether_packet_rx.serial_number} - {ether_packet_rx.log}")
+        logger.debug(f"{ether_packet_rx.serial_number_rx} - {ether_packet_rx.log}")
 
         # Handle ARP protocol
         if ether_packet_rx.hdr_type == ph_ether.ETHER_TYPE_ARP:
@@ -51,7 +51,7 @@ async def packet_handler(rx_ring, tx_ring, arp_cache):
 
             # Handle ARP request
             if arp_packet_rx.hdr_operation == ph_arp.ARP_OP_REQUEST:
-                logger.opt(ansi=True).info(f"<green>{ether_packet_rx.serial_number}</green> - {arp_packet_rx.log}")
+                logger.opt(ansi=True).info(f"<green>{ether_packet_rx.serial_number_rx}</green> - {arp_packet_rx.log}")
 
                 # Check if the request is for our IP address, if so the craft ARP reply packet and send it out
                 if arp_packet_rx.hdr_tpa == STACK_IP_ADDRESS:
@@ -68,8 +68,11 @@ async def packet_handler(rx_ring, tx_ring, arp_cache):
                         hdr_src=STACK_MAC_ADDRESS, hdr_dst=arp_packet_tx.hdr_tha, hdr_type=ph_ether.ETHER_TYPE_ARP, raw_data=arp_packet_tx.raw_packet
                     )
 
-                    logger.debug(f"{ether_packet_tx.serial_number} ({ether_packet_rx.serial_number}) - {ether_packet_tx.log}")
-                    logger.opt(ansi=True).info(f"<magenta>{ether_packet_tx.serial_number} ({ether_packet_rx.serial_number})</magenta> - {arp_packet_tx.log}")
+                    ether_packet_tx.timestamp_rx = ether_packet_rx.timestamp_rx
+                    ether_packet_tx.serial_number_rx = ether_packet_rx.serial_number_rx
+
+                    logger.debug(f"{ether_packet_tx.serial_number_tx} ({ether_packet_tx.serial_number_rx}) - {ether_packet_tx.log}")
+                    logger.opt(ansi=True).info(f"<magenta>{ether_packet_tx.serial_number_tx} ({ether_packet_tx.serial_number_rx})</magenta> - {arp_packet_tx.log}")
                     tx_ring.enqueue(ether_packet_tx)
 
                     # Update ARP cache with the maping learned from the received ARP request that was destined to this stack
@@ -79,7 +82,7 @@ async def packet_handler(rx_ring, tx_ring, arp_cache):
 
             # Handle ARP reply
             if arp_packet_rx.hdr_operation == ph_arp.ARP_OP_REPLY:
-                logger.opt(ansi=True).info(f"<green>{ether_packet_rx.serial_number}</green> - {arp_packet_rx.log}")
+                logger.opt(ansi=True).info(f"<green>{ether_packet_rx.serial_number_rx}</green> - {arp_packet_rx.log}")
 
                 # Update ARP cache with maping from received direct ARP reply 
                 if ether_packet_rx.hdr_dst == STACK_MAC_ADDRESS: 
@@ -94,14 +97,14 @@ async def packet_handler(rx_ring, tx_ring, arp_cache):
         # Handle IP protocol
         elif ether_packet_rx.hdr_type == ph_ether.ETHER_TYPE_IP:
             ip_packet_rx = ph_ip.IpPacketRx(ether_packet_rx.raw_data)
-            logger.debug(f"{ether_packet_rx.serial_number} - {ip_packet_rx.log}")
+            logger.debug(f"{ether_packet_rx.serial_number_rx} - {ip_packet_rx.log}")
 
             # Handle IP protocol
             if ip_packet_rx.hdr_proto == ph_ip.IP_PROTO_ICMP:
                 icmp_packet_rx = ph_icmp.IcmpPacketRx(ip_packet_rx.raw_data)
-                logger.opt(ansi=True).info(f"<green>{ether_packet_rx.serial_number}</green> - {icmp_packet_rx.log}")
+                logger.opt(ansi=True).info(f"<green>{ether_packet_rx.serial_number_rx}</green> - {icmp_packet_rx.log}")
 
-                # Respond to Echo Request pascket
+                # Respond to Echo Request packet
                 if icmp_packet_rx.hdr_type == ph_icmp.ICMP_ECHOREQUEST and icmp_packet_rx.hdr_code == 0:
 
                     icmp_packet_tx = ph_icmp.IcmpPacketTx(
@@ -122,9 +125,12 @@ async def packet_handler(rx_ring, tx_ring, arp_cache):
                         hdr_src=STACK_MAC_ADDRESS, hdr_dst="00:00:00:00:00:00", hdr_type=ph_ether.ETHER_TYPE_IP, raw_data=ip_packet_tx.raw_packet
                     )
 
-                    logger.debug(f"{ether_packet_tx.serial_number} ({ether_packet_rx.serial_number}) - {ether_packet_tx.log}")
-                    logger.debug(f"{ether_packet_tx.serial_number} ({ether_packet_rx.serial_number}) - {ip_packet_tx.log}")
-                    logger.opt(ansi=True).info(f"<magenta>{ether_packet_tx.serial_number} ({ether_packet_rx.serial_number})</magenta> - {icmp_packet_tx.log}")
+                    ether_packet_tx.timestamp_rx = ether_packet_rx.timestamp_rx
+                    ether_packet_tx.serial_number_rx = ether_packet_rx.serial_number_rx
+
+                    logger.debug(f"{ether_packet_tx.serial_number_tx} ({ether_packet_tx.serial_number_rx}) - {ether_packet_tx.log}")
+                    logger.debug(f"{ether_packet_tx.serial_number_tx} ({ether_packet_tx.serial_number_rx}) - {ip_packet_tx.log}")
+                    logger.opt(ansi=True).info(f"<magenta>{ether_packet_tx.serial_number_tx} ({ether_packet_tx.serial_number_rx})</magenta> - {icmp_packet_tx.log}")
                     tx_ring.enqueue(ether_packet_tx)
 
 
@@ -145,19 +151,15 @@ async def main():
 
     # Initialize ARP cache
     from arp_cache import ArpCache
-    arp_cache = ArpCache()
+    arp_cache = ArpCache(stack_mac_address=STACK_MAC_ADDRESS, stack_ip_address=STACK_IP_ADDRESS)
 
     # Run RX ring operation as separate thread due to its blocking nature
     from rx_ring import RxRing
     rx_ring = RxRing(tap=tap, stack_mac_address=STACK_MAC_ADDRESS)
-    thread_rx_ring = threading.Thread(target=rx_ring.handler)
-    thread_rx_ring.start()
-
+    
     # Run TX ring operation as separate thread due to its blocking nature
     from tx_ring import TxRing
     tx_ring = TxRing(tap=tap, stack_mac_address=STACK_MAC_ADDRESS, stack_ip_address=STACK_IP_ADDRESS, arp_cache=arp_cache)
-    thread_tx_ring = threading.Thread(target=tx_ring.handler)
-    thread_tx_ring.start()
 
     # Run ARP cache handler as Asyncio coroutine
     task_arp_cache_handler = asyncio.create_task(arp_cache.handler())
