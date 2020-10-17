@@ -4,3 +4,14 @@ Attempt to create working TCP/IP stack in Python for educational purposes. Stack
 
 ### Sample log showing ARP resolution and handling ping packets
 ![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/main/pictures/log_01.png)
+
+
+### Interesting performance increase after switching from Asyncio to Threading... on average 100 to 250 times faster packet handling time
+
+Stll love Asyncio but for this particular purpose it just doesn't cut it :)
+
+Running Asyncio
+![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/main/pictures/log_02.png)
+
+Running Threads
+![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/main/pictures/log_03.png)
