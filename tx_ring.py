@@ -37,8 +37,7 @@ class TxRing:
 
         self.packet_enqueued = threading.Semaphore(0)
 
-        thread_tx_ring = threading.Thread(target=self.__transmit)
-        thread_tx_ring.start()
+        threading.Thread(target=self.__transmit).start()
 
     def __transmit(self):
         """ Dequeue packet from TX ring """

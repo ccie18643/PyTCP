@@ -9,7 +9,6 @@ rx_ring.py - module contains class supporting RX operations
 
 import os
 import loguru
-import asyncio
 import time
 import threading
 
@@ -24,11 +23,12 @@ class RxRing:
 
         self.tap = tap
         self.stack_mac_address = stack_mac_address
-        self.rx_ring = asyncio.Queue()
+        self.rx_ring = []
         self.logger = loguru.logger.bind(object_name="rx_ring.")
+        
+        self.packet_enqueued = threading.Semaphore(0)
 
-        thread_rx_ring = threading.Thread(target=self.__receive)
-        thread_rx_ring.start()
+        threading.Thread(target=self.__receive).start()
 
     def __receive(self):
         """ Thread responsible for receiving and enqueuing incoming packets """
@@ -49,10 +49,13 @@ class RxRing:
                 continue
 
             # Put the packet into queue
-            self.rx_ring.put_nowait(ether_packet_rx)
+            self.rx_ring.append(ether_packet_rx)
             self.logger.opt(ansi=True).debug(f"<green>[RX]</green> {ether_packet_rx.serial_number_rx} - {ether_packet_rx.log}")
+            self.packet_enqueued.release()
 
-    async def dequeue(self):
+    def dequeue(self):
         """ Dequeue inboutd packet from RX ring - asyncio coroutine"""
 
-        return await self.rx_ring.get()
+        self.packet_enqueued.acquire()
+
+        return self.rx_ring.pop(0)

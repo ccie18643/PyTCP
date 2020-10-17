@@ -10,7 +10,7 @@ ap_cache.py - module contains class supporting ARP cache
 import os
 import loguru
 import time
-import asyncio
+import threading
 
 import ph_ether
 import ph_arp
@@ -31,6 +31,28 @@ class ArpCache:
         self.arp_cache = {}
         self.tx_ring = None
         self.logger = loguru.logger.bind(object_name="arp_cache.")
+
+        threading.Thread(target=self.__maintain).start()
+
+    def __maintain(self):
+        """ Thread responsible for maintaining ARP entries """
+        
+        while True:
+            arp_cache_entries = self.arp_cache.values()
+            for arp_entry in arp_cache_entries:
+
+                # If entry age is over maximum age then discard the entry
+                if time.time() - arp_entry[2] > ARP_ENTRY_MAX_AGE:
+                    self.arp_cache.pop(arp_entry[0])
+                    self.logger.debug(f"Discarded expired ARP cache entry - {arp_entry[0]} -> {arp_entry[1]}")
+
+                # If entry age is close to maximum age but the entry has been used since last refresh then send out request in attempt to refresh it
+                elif (time.time() - arp_entry[2] > ARP_ENTRY_MAX_AGE - ARP_ENTRY_REFRESH_TIME) and arp_entry[3]:
+                    arp_entry[3] = 0
+                    self.send_arp_request(arp_entry[0])
+                    self.logger.debug(f"Trying to refresh expiring ARP cache entry for {arp_entry[0]} -> {arp_entry[1]}")
+            
+            time.sleep(1)
 
     def send_arp_request(self, hdr_tpa):
         """ Enqueue ARP request with TX ring """
@@ -66,24 +88,7 @@ class ArpCache:
 
         else:
             self.logger.debug(f"Unable to resolve {ip_address}, sending ARP request")
-            self.send_arp_request(ip_address)
 
-    async def handler(self):
-        """ Maintain arp entries """
-        
-        while True:
-            arp_cache_entries = self.arp_cache.values()
-            for arp_entry in arp_cache_entries:
+            if self.tx_ring:
+                self.send_arp_request(ip_address)
 
-                # If entry age is over maximum age then discard the entry
-                if time.time() - arp_entry[2] > ARP_ENTRY_MAX_AGE:
-                    self.arp_cache.pop(arp_entry[0])
-                    self.logger.debug(f"Discarded expired ARP cache entry - {arp_entry[0]} -> {arp_entry[1]}")
-
-                # If entry age is close to maximum age but the entry has been used since last refresh then send out request in attempt to refresh it
-                elif (time.time() - arp_entry[2] > ARP_ENTRY_MAX_AGE - ARP_ENTRY_REFRESH_TIME) and arp_entry[3]:
-                    arp_entry[3] = 0
-                    self.send_arp_request(arp_entry[0])
-                    self.logger.debug(f"Trying to refresh expiring ARP cache entry for {arp_entry[0]} -> {arp_entry[1]}")
-            
-            await asyncio.sleep(1)

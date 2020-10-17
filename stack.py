@@ -35,14 +35,14 @@ ARP_CACHE_UPDATE_FROM_DIRECT_REQUEST = False
 ARP_CACHE_UPDATE_FROM_GRATITIOUS_ARP = True
 
 
-async def packet_handler(rx_ring, tx_ring, arp_cache):
+def packet_handler(rx_ring, tx_ring, arp_cache):
     """ Handle basic network protocols like ARP or ICMP """
 
     logger = loguru.logger.bind(object_name="")
 
     while True:
 
-        ether_packet_rx = await rx_ring.dequeue()
+        ether_packet_rx = rx_ring.dequeue()
         logger.debug(f"{ether_packet_rx.serial_number_rx} - {ether_packet_rx.log}")
 
         # Handle ARP protocol
@@ -122,7 +122,7 @@ async def packet_handler(rx_ring, tx_ring, arp_cache):
                     )
 
                     ether_packet_tx = ph_ether.EtherPacketTx(
-                        hdr_src=STACK_MAC_ADDRESS, hdr_dst="00:00:00:00:00:00", hdr_type=ph_ether.ETHER_TYPE_IP, raw_data=ip_packet_tx.raw_packet
+                            hdr_src=STACK_MAC_ADDRESS, hdr_dst="00:00:00:00:00:00", hdr_type=ph_ether.ETHER_TYPE_IP, raw_data=ip_packet_tx.raw_packet
                     )
 
                     ether_packet_tx.timestamp_rx = ether_packet_rx.timestamp_rx
@@ -134,7 +134,7 @@ async def packet_handler(rx_ring, tx_ring, arp_cache):
                     tx_ring.enqueue(ether_packet_tx)
 
 
-async def main():
+def main():
     """ Main function """
 
     loguru.logger.remove(0)
@@ -149,27 +149,17 @@ async def main():
     tap = os.open("/dev/net/tun", os.O_RDWR)
     fcntl.ioctl(tap, TUNSETIFF, struct.pack("16sH", STACK_IF, IFF_TAP | IFF_NO_PI))
 
-    # Initialize ARP cache
     from arp_cache import ArpCache
     arp_cache = ArpCache(stack_mac_address=STACK_MAC_ADDRESS, stack_ip_address=STACK_IP_ADDRESS)
 
-    # Run RX ring operation as separate thread due to its blocking nature
     from rx_ring import RxRing
     rx_ring = RxRing(tap=tap, stack_mac_address=STACK_MAC_ADDRESS)
     
-    # Run TX ring operation as separate thread due to its blocking nature
     from tx_ring import TxRing
     tx_ring = TxRing(tap=tap, stack_mac_address=STACK_MAC_ADDRESS, stack_ip_address=STACK_IP_ADDRESS, arp_cache=arp_cache)
 
-    # Run ARP cache handler as Asyncio coroutine
-    task_arp_cache_handler = asyncio.create_task(arp_cache.handler())
-
-    # Run packet handler as Asyncio coroutine
-    task_packet_handler = asyncio.create_task(packet_handler(rx_ring, tx_ring, arp_cache=arp_cache))
-
-    while True:
-        await asyncio.sleep(1)
+    packet_handler(rx_ring, tx_ring, arp_cache=arp_cache)
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    main()
