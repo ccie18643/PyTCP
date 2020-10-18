@@ -39,7 +39,7 @@ ARP_OP_REPLY = 2
 
 
 class ArpPacket:
-    """ Base class for Arp packet """
+    """ Packet support base class """
 
     @property
     def log(self):
@@ -65,7 +65,7 @@ class ArpPacket:
 
 
 class ArpPacketRx(ArpPacket):
-    """ ARP packet parse class """
+    """ Packet parse class """
 
     def __init__(self, raw_packet):
         """ Class constructor """
@@ -90,7 +90,7 @@ class ArpPacketRx(ArpPacket):
 
 
 class ArpPacketTx(ArpPacket):
-    """ ARP packet creation class """
+    """ Packet creation class """
 
     def __init__(self, hdr_sha, hdr_spa, hdr_tpa, hdr_tha="00:00:00:00:00:00", hdr_operation=ARP_OP_REQUEST):
         """ Class constructor """

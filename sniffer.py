@@ -14,6 +14,7 @@ import ph_ether
 import ph_arp
 import ph_ip
 import ph_icmp
+import ph_udp
 
 # import ph_tcp
 
@@ -24,23 +25,23 @@ def main():
     while True:
         raw_packet = raw_socket.recv(2048)
         ether_packet = ph_ether.EtherPacketRx(raw_packet)
-
+        
         if ether_packet.hdr_type == ph_ether.ETHER_TYPE_IP:
             ip_packet = ph_ip.IpPacketRx(ether_packet.raw_data)
-
+            
             if ip_packet.hdr_proto == ph_ip.IP_PROTO_ICMP:
                 icmp_packet = ph_icmp.IcmpPacketRx(ip_packet.raw_data)
                 print(ether_packet.dump)
                 print(ip_packet.dump)
                 print(icmp_packet.dump)
                 print("-" * 80)
-
-            """
-            if ip_packet.proto == ph_ip.IP_PROTO_TCP:
-                tcp_packet = ph_tcp.TcpPacket(ip_packet.raw_data)
-                print(tcp_packet.dump)
-            """
-
+            
+            if ip_packet.hdr_proto == ph_ip.IP_PROTO_UDP:
+                udp_packet = ph_udp.UdpPacketRx(ip_packet.raw_data, ip_packet.ip_pseudo_header)
+                print(ether_packet.dump)
+                print(ip_packet.dump)
+                print(udp_packet.dump)
+                print("-" * 80)
 
 if __name__ == "__main__":
     sys.exit(main())

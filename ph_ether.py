@@ -28,6 +28,8 @@ import time
 """
 
 
+ETHER_HEADER_LEN = 14
+
 ETHER_TYPE_MIN = 0x0600
 ETHER_TYPE_ARP = 0x0806
 ETHER_TYPE_IP = 0x0800
@@ -38,7 +40,7 @@ ETHER_TYPE_TABLE = {ETHER_TYPE_ARP: "ARP", ETHER_TYPE_IP: "IP", ETHER_TYPE_IPV6:
 
 
 class EtherPacket:
-    """ Base class for Ethernet packet """
+    """ Packet support base class """
 
     @property
     def log(self):
@@ -52,12 +54,12 @@ class EtherPacket:
 
         return (
             "--------------------------------------------------------------------------------\n"
-            + f"ETH      SRC {self.hdr_src}  DST {self.hdr_dst}  TYPE 0x{self.hdr_type:0>4x} ({ETHER_TYPE_TABLE.get(self.hdr_type, '???')})"
+            + f"ETHER    SRC {self.hdr_src}  DST {self.hdr_dst}  TYPE 0x{self.hdr_type:0>4x} ({ETHER_TYPE_TABLE.get(self.hdr_type, '???')})"
         )
 
 
 class EtherPacketRx(EtherPacket):
-    """ Ethernet packet parse class """
+    """ Packet parse class """
 
     serial_number_rx = 0
 
@@ -81,17 +83,17 @@ class EtherPacketRx(EtherPacket):
     def raw_header(self):
         """ Get packet header in raw format """
 
-        return self.raw_packet[:14]
+        return self.raw_packet[:ETHER_HEADER_LEN]
 
     @property
     def raw_data(self):
         """ Get packet data in raw format """
 
-        return self.raw_packet[14:]
+        return self.raw_packet[ETHER_HEADER_LEN:]
 
 
 class EtherPacketTx(EtherPacket):
-    """ Ethernet packet creation class """
+    """ Packet creation class """
 
     serial_number_tx = 0
 

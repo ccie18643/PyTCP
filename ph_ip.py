@@ -90,10 +90,10 @@ ECN_TABLE = {0b00: "Non-ECT", 0b10: "ECT(0)", 0b01: "ECT(1)", 0b11: "CE"}
 
 
 class IpPacket:
-    """ Base class fo IP packet """
+    """ Packet support base class """
 
     def validate_cksum(self):
-        """ Validate checksum for received header """
+        """ Validate checksum for IP header """
 
         cksum_data = list(struct.unpack(f"! {self.hdr_hlen >> 1}H", self.raw_header + self.raw_options))
         cksum_data[5] = 0
@@ -104,10 +104,7 @@ class IpPacket:
     def ip_pseudo_header(self):
         """ Returns IP pseudo header that is used by TCP to compute its checksum """
 
-        return struct.unpack(
-            "! HH HH HH",
-            struct.pack("! 4s 4s BBH", socket.inet_aton(self.hdr_src), socket.inet_aton(self.hdr_dst), 0, self.hdr_proto, self.hdr_plen - self.hdr_hlen),
-        )
+        return struct.pack("! 4s 4s BBH", socket.inet_aton(self.hdr_src), socket.inet_aton(self.hdr_dst), 0, self.hdr_proto, self.hdr_plen - self.hdr_hlen)
 
     @property
     def log(self):
@@ -129,7 +126,7 @@ class IpPacket:
 
 
 class IpPacketRx(IpPacket):
-    """ IP packet parse class """
+    """ Packet parse class """
 
     def __init__(self, raw_packet):
         """ Class constructor """
@@ -171,7 +168,7 @@ class IpPacketRx(IpPacket):
 
 
 class IpPacketTx(IpPacket):
-    """ IP packet creation class """
+    """ Packet creation class """
 
     def __init__(self, hdr_src, hdr_dst, hdr_proto, hdr_ttl=64, raw_options=b"", raw_data=b""):
         """ Class constructor """

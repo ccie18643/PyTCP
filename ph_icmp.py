@@ -48,7 +48,7 @@ ICMP_ECHOREQUEST_LEN = 4
 
 
 class IcmpPacket:
-    """ Base class for ICMP packet """
+    """ Packet support base class """
 
     def validate_cksum(self):
         """ Validate the checksum for ICMP message """
@@ -96,7 +96,7 @@ class IcmpPacket:
 
 
 class IcmpPacketRx(IcmpPacket):
-    """ ICMP packet support class """
+    """ Packet parse class """
 
     def __init__(self, raw_packet):
         """ Class constructor """
@@ -119,19 +119,19 @@ class IcmpPacketRx(IcmpPacket):
 
     @property
     def raw_header(self):
-        """ Get ICMP packet header in raw format """
+        """ Get packet header in raw format """
 
         return self.raw_packet[:ICMP_HEADER_LEN]
 
     @property
     def raw_message(self):
-        """ Get ICMP packet message in raw format """
+        """ Get packet message in raw format """
 
         return self.raw_packet[ICMP_HEADER_LEN:]
 
 
 class IcmpPacketTx(IcmpPacket):
-    """ ICMP packet support class """
+    """ Packet creation class """
 
     def __init__(self, hdr_type, hdr_code=0, msg_id=None, msg_seq=None, msg_data=b""):
         """ Class constructor """
