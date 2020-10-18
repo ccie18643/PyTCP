@@ -27,7 +27,7 @@ UDP_HEADER_LEN = 8
 
 
 class UdpPacket:
-    """ Base class for UDP packet """
+    """ Packet support base class """
 
     protocol = "UDP"
 

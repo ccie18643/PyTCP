@@ -147,89 +147,23 @@ class TcpHeader:
         self.data = data[data[12] >> 2:]
         self.ip_pseudo_header = ip_pseudo_header
 
-    @property
-    def source_port(self):
-        """ Retrieve Source Port field value from TCP header """
-
-        return struct.unpack("!H", self.header[0:2])[0]
-
-    @property
-    def destination_port(self):
-        """ Retrieve Destination Port field value from TCP header """
-
-        return struct.unpack("!H", self.header[2:4])[0]
-
-    @property
-    def seq_number(self):
-        """ Retrieve Sequence Number field value from TCP header """
-
-        return struct.unpack("!L", self.header[4:8])[0]
-
-    @property
-    def ack_number(self):
-        """ Retrieve Acknowledge Number field value from TCP header """
-
-        return struct.unpack("!L", self.header[8:12])[0]
-
-    @property
-    def data_offset(self):
-        """ Retrieve Data Offset field value from TCP header """
-
-        return self.header[12] >> 2
-
-    @property
-    def flag_urg(self):
-        """ Retrieve value of the URG flag from TCP header """
-
-        return bool(self.header[13] & 0b00100000)
-
-    @property
-    def flag_ack(self):
-        """ Retrieve value of the ACK flag from TCP header """
-
-        return bool(self.header[13] & 0b00010000)
-
-    @property
-    def flag_psh(self):
-        """ Retrieve value of the PSH flag from TCP header """
-
-        return bool(self.header[13] & 0b00001000)
-
-    @property
-    def flag_rst(self):
-        """ Retrieve value of the RST flag from TCP header """
-
-        return bool(self.header[13] & 0b00000100)
-
-    @property
-    def flag_syn(self):
-        """ Retrieve value of the SYN flag from TCP header """
-
-        return bool(self.header[13] & 0b00000010)
-
-    @property
-    def flag_fin(self):
-        """ Retrieve value of the FIN flag from TCP header """
-
-        return bool(self.header[13] & 0b00000001)
-
-    @property
-    def window(self):
-        """ Retrieve Window field value from TCP header """
-
-        return struct.unpack("!H", self.header[14:16])[0]
-
-    @property
-    def checksum(self):
-        """ Retrieve Checksum field value from TCP header """
-
-        return struct.unpack("!H", self.header[16:18])[0]
-
-    @property
-    def urgent_pointer(self):
-        """ Retrieve Urgent Pointer field value from TCP header """
-
-        return struct.unpack("!H", self.header[18:20])[0]
+        self.hdr_sport = struct.unpack("!H", self.raw_header[0:2])[0]
+        self.hdr_dport = struct.unpack("!H", self.raw_header[2:4])[0]
+        self.hdr_seq_num = struct.unpack("!L", self.raw_header[4:8])[0]
+        self.hdr_ack_num =  struct.unpack("!L", self.raw_header[8:12])[0]
+        self.hdr_hlen = (self.raw_header[12] & 0b11110000) >> 2
+        self.hdr_flag_ns =  bool(self.header[12] & 0b00000001)
+        self.hdr_flag_crw =  bool(self.header[13] & 0b10000000)
+        self.hdr_flag_ece =  bool(self.header[13] & 0b01000000)
+        self.hdr_flag_urg =  bool(self.header[13] & 0b00100000)
+        self.hdr_flag_ack =  bool(self.header[13] & 0b00010000)
+        self.hdr_flag_psh =  bool(self.header[13] & 0b00001000)
+        self.hdr_flag_rst =  bool(self.header[13] & 0b00000100)
+        self.hdr_flag_syn =  bool(self.header[13] & 0b00000010)
+        self.hdr_flag_fin =  bool(self.header[13] & 0b00000001)
+        self.hdr_win =  struct.unpack("!H", self.header[14:16])[0]
+        self.hdr_cksum =  struct.unpack("!H", self.header[16:18])[0]
+        self.hdr_urp = struct.unpack("!H", self.header[18:20])[0]
 
     @property
     def options(self):
