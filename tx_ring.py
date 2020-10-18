@@ -52,7 +52,7 @@ class TxRing:
 
             # In case packe doesn't contain valid destination MAC address try to obtain it from ARP cache
             elif ether_packet_tx.hdr_type == ph_ether.ETHER_TYPE_IP:
-                ip_packet_tx = ph_ip.IpPacketRx(ether_packet_tx.raw_data)
+                ip_packet_tx = ph_ip.IpPacketRx(ether_packet_tx)
 
                 mac_address = self.arp_cache.get_mac_address(ip_packet_tx.hdr_dst)
                 if mac_address:

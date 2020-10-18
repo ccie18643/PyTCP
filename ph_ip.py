@@ -92,6 +92,8 @@ ECN_TABLE = {0b00: "Non-ECT", 0b10: "ECT(0)", 0b01: "ECT(1)", 0b11: "CE"}
 class IpPacket:
     """ Packet support base class """
 
+    protocol = "IP"
+
     def validate_cksum(self):
         """ Validate checksum for IP header """
 
@@ -128,10 +130,10 @@ class IpPacket:
 class IpPacketRx(IpPacket):
     """ Packet parse class """
 
-    def __init__(self, raw_packet):
+    def __init__(self, parent_packet):
         """ Class constructor """
 
-        self.raw_packet = raw_packet
+        self.raw_packet = parent_packet.raw_data
 
         self.hdr_ver = self.raw_header[0] >> 4
         self.hdr_hlen = (self.raw_header[0] & 0b00001111) << 2
@@ -170,7 +172,7 @@ class IpPacketRx(IpPacket):
 class IpPacketTx(IpPacket):
     """ Packet creation class """
 
-    def __init__(self, hdr_src, hdr_dst, hdr_proto, hdr_ttl=64, raw_options=b"", raw_data=b""):
+    def __init__(self, hdr_src, hdr_dst, child_packet, hdr_ttl=64, raw_options=b""):
         """ Class constructor """
 
         self.hdr_ver = 4
@@ -183,13 +185,27 @@ class IpPacketTx(IpPacket):
         self.hdr_frag_mf = False
         self.hdr_frag_offset = 0
         self.hdr_ttl = hdr_ttl
-        self.hdr_proto = hdr_proto
         self.hdr_cksum = None
         self.hdr_src = hdr_src
         self.hdr_dst = hdr_dst
 
         self.raw_options = raw_options
-        self.raw_data = raw_data
+
+        self.hdr_hlen = IP_HEADER_LEN + len(self.raw_options)
+
+        if child_packet.protocol == "ICMP":
+            self.hdr_proto = IP_PROTO_ICMP
+            self.raw_data = child_packet.raw_packet
+            self.hdr_plen = self.hdr_hlen + len(self.raw_data)
+
+        elif child_packet.protocol == "UDP":
+            self.hdr_proto = IP_PROTO_UDP
+            self.hdr_plen = self.hdr_hlen + child_packet.hdr_len
+            child_packet.ip_pseudo_header = self.ip_pseudo_header
+            self.raw_data = child_packet.raw_packet
+
+        else:
+            raise Exception(f"Not supported protocol: {child_packet.protocol}")
 
     @property
     def raw_header(self):
@@ -212,9 +228,6 @@ class IpPacketTx(IpPacket):
     @property
     def raw_packet(self):
         """ Get packet in raw form """
-
-        self.hdr_hlen = IP_HEADER_LEN + len(self.raw_options)
-        self.hdr_plen = IP_HEADER_LEN + len(self.raw_options) + len(self.raw_data)
 
         self.hdr_cksum = 0
         cksum = sum(list(struct.unpack(f"! {self.hdr_hlen >> 1}H", self.raw_header + self.raw_options)))

@@ -23,25 +23,26 @@ raw_socket = socket.socket(socket.PF_PACKET, socket.SOCK_RAW, socket.htons(0x080
 
 def main():
     while True:
-        raw_packet = raw_socket.recv(2048)
-        ether_packet = ph_ether.EtherPacketRx(raw_packet)
-        
-        if ether_packet.hdr_type == ph_ether.ETHER_TYPE_IP:
-            ip_packet = ph_ip.IpPacketRx(ether_packet.raw_data)
-            
-            if ip_packet.hdr_proto == ph_ip.IP_PROTO_ICMP:
-                icmp_packet = ph_icmp.IcmpPacketRx(ip_packet.raw_data)
-                print(ether_packet.dump)
-                print(ip_packet.dump)
-                print(icmp_packet.dump)
+        raw_packet_rx = raw_socket.recv(2048)
+        ether_packet_rx = ph_ether.EtherPacketRx(raw_packet_rx)
+
+        if ether_packet_rx.hdr_type == ph_ether.ETHER_TYPE_IP:
+            ip_packet_rx = ph_ip.IpPacketRx(ether_packet_rx)
+
+            if ip_packet_rx.hdr_proto == ph_ip.IP_PROTO_ICMP:
+                icmp_packet_rx = ph_icmp.IcmpPacketRx(ip_packet_rx)
+                print(ether_packet_rx.dump)
+                print(ip_packet_rx.dump)
+                print(icmp_packet_rx.dump)
                 print("-" * 80)
-            
-            if ip_packet.hdr_proto == ph_ip.IP_PROTO_UDP:
-                udp_packet = ph_udp.UdpPacketRx(ip_packet.raw_data, ip_packet.ip_pseudo_header)
-                print(ether_packet.dump)
-                print(ip_packet.dump)
-                print(udp_packet.dump)
+
+            if ip_packet_rx.hdr_proto == ph_ip.IP_PROTO_UDP:
+                udp_packet_rx = ph_udp.UdpPacketRx(ip_packet_rx)
+                print(ether_packet_rx.dump)
+                print(ip_packet_rx.dump)
+                print(udp_packet_rx.dump)
                 print("-" * 80)
+
 
 if __name__ == "__main__":
     sys.exit(main())

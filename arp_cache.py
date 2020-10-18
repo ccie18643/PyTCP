@@ -69,9 +69,7 @@ class ArpCache:
             hdr_operation=ph_arp.ARP_OP_REQUEST, hdr_sha=self.stack_mac_address, hdr_spa=self.stack_ip_address, hdr_tha="00:00:00:00:00:00", hdr_tpa=hdr_tpa
         )
 
-        ether_packet_tx = ph_ether.EtherPacketTx(
-            hdr_src=self.stack_mac_address, hdr_dst="ff:ff:ff:ff:ff:ff", hdr_type=ph_ether.ETHER_TYPE_ARP, raw_data=arp_packet_tx.raw_packet
-        )
+        ether_packet_tx = ph_ether.EtherPacketTx(hdr_src=self.stack_mac_address, hdr_dst="ff:ff:ff:ff:ff:ff", child_packet=arp_packet_tx)
 
         self.logger.debug(f"{ether_packet_tx.serial_number_tx} - {ether_packet_tx.log}")
         self.logger.opt(ansi=True).info(f"<magenta>{ether_packet_tx.serial_number_tx} </magenta> - {arp_packet_tx.log}")

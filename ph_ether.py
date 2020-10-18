@@ -61,6 +61,8 @@ class EtherPacket:
 class EtherPacketRx(EtherPacket):
     """ Packet parse class """
 
+    protocol = "Ethernet"
+
     serial_number_rx = 0
 
     def __init__(self, raw_packet):
@@ -97,7 +99,7 @@ class EtherPacketTx(EtherPacket):
 
     serial_number_tx = 0
 
-    def __init__(self, hdr_src, hdr_dst, hdr_type, raw_data=b""):
+    def __init__(self, hdr_src, hdr_dst, child_packet):
         """ Class constructor """
 
         self.timestamp_tx = time.time()
@@ -109,8 +111,17 @@ class EtherPacketTx(EtherPacket):
 
         self.hdr_dst = hdr_dst
         self.hdr_src = hdr_src
-        self.hdr_type = hdr_type
-        self.raw_data = raw_data
+
+        if child_packet.protocol == "IP":
+            self.hdr_type = ETHER_TYPE_IP
+            self.raw_data = child_packet.raw_packet
+
+        elif child_packet.protocol == "ARP":
+            self.hdr_type = ETHER_TYPE_ARP
+            self.raw_data = child_packet.raw_packet
+
+        else:
+            raise Exception(f"Not supported protocol: {child_packet.protocol}")
 
     @property
     def raw_header(self):

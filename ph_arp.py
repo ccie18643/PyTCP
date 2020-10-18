@@ -41,6 +41,8 @@ ARP_OP_REPLY = 2
 class ArpPacket:
     """ Packet support base class """
 
+    protocol = "ARP"
+
     @property
     def log(self):
         """ Short packet log string """
@@ -67,10 +69,10 @@ class ArpPacket:
 class ArpPacketRx(ArpPacket):
     """ Packet parse class """
 
-    def __init__(self, raw_packet):
+    def __init__(self, parent_packet):
         """ Class constructor """
 
-        self.raw_packet = raw_packet
+        self.raw_packet = parent_packet.raw_data
 
         self.hdr_hrtype = struct.unpack("!H", self.raw_header[0:2])[0]
         self.hdr_prtype = struct.unpack("!H", self.raw_header[2:4])[0]
