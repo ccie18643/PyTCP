@@ -151,15 +151,12 @@ def main():
     fcntl.ioctl(tap, TUNSETIFF, struct.pack("16sH", STACK_IF, IFF_TAP | IFF_NO_PI))
 
     from arp_cache import ArpCache
-
     arp_cache = ArpCache(stack_mac_address=STACK_MAC_ADDRESS, stack_ip_address=STACK_IP_ADDRESS)
 
     from rx_ring import RxRing
-
     rx_ring = RxRing(tap=tap, stack_mac_address=STACK_MAC_ADDRESS)
 
     from tx_ring import TxRing
-
     tx_ring = TxRing(tap=tap, stack_mac_address=STACK_MAC_ADDRESS, stack_ip_address=STACK_IP_ADDRESS, arp_cache=arp_cache)
 
     packet_handler(rx_ring, tx_ring, arp_cache=arp_cache)
