@@ -9,7 +9,6 @@ rx_ring.py - module contains class supporting RX operations
 
 import os
 import loguru
-import time
 import threading
 
 import ph_ether
@@ -25,7 +24,7 @@ class RxRing:
         self.stack_mac_address = stack_mac_address
         self.rx_ring = []
         self.logger = loguru.logger.bind(object_name="rx_ring.")
-        
+
         self.packet_enqueued = threading.Semaphore(0)
 
         threading.Thread(target=self.__receive).start()

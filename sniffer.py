@@ -9,14 +9,13 @@ sniffer.py - tool used to test protocol handler classes
 
 import sys
 import socket
-import struct
-import binascii
 
 import ph_ether
 import ph_arp
 import ph_ip
 import ph_icmp
-#import ph_tcp
+
+# import ph_tcp
 
 raw_socket = socket.socket(socket.PF_PACKET, socket.SOCK_RAW, socket.htons(0x0800))
 
@@ -36,12 +35,11 @@ def main():
                 print(icmp_packet.dump)
                 print("-" * 80)
 
-            ''' 
+            """
             if ip_packet.proto == ph_ip.IP_PROTO_TCP:
                 tcp_packet = ph_tcp.TcpPacket(ip_packet.raw_data)
                 print(tcp_packet.dump)
-            '''
-
+            """
 
 
 if __name__ == "__main__":

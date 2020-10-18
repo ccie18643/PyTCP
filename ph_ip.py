@@ -37,11 +37,7 @@ IP_PROTO_TCP = 6
 IP_PROTO_UDP = 17
 
 
-IP_PROTO_TABLE = {
-    IP_PROTO_ICMP: "ICMP",
-    IP_PROTO_TCP: "TCP",
-    IP_PROTO_UDP: "UDP",
-}
+IP_PROTO_TABLE = {IP_PROTO_ICMP: "ICMP", IP_PROTO_TCP: "TCP", IP_PROTO_UDP: "UDP"}
 
 
 DSCP_CS0 = 0b000000
@@ -90,12 +86,7 @@ DSCP_TABLE = {
     DSCP_CS7: "CS7",
 }
 
-ECN_TABLE = {
-    0b00: "Non-ECT",
-    0b10: "ECT(0)",
-    0b01: "ECT(1)",
-    0b11: "CE",
-}
+ECN_TABLE = {0b00: "Non-ECT", 0b10: "ECT(0)", 0b01: "ECT(1)", 0b11: "CE"}
 
 
 class IpPacket:
@@ -115,14 +106,7 @@ class IpPacket:
 
         return struct.unpack(
             "! HH HH HH",
-            struct.pack(
-                "! 4s 4s BBH",
-                socket.inet_aton(self.hdr_src),
-                socket.inet_aton(self.hdr_dst),
-                0,
-                self.hdr_proto,
-                self.hdr_plen - self.hdr_hlen,
-            ),
+            struct.pack("! 4s 4s BBH", socket.inet_aton(self.hdr_src), socket.inet_aton(self.hdr_dst), 0, self.hdr_proto, self.hdr_plen - self.hdr_hlen),
         )
 
     @property
@@ -177,13 +161,13 @@ class IpPacketRx(IpPacket):
     def raw_options(self):
         """ Get packet header options in raw format """
 
-        return self.raw_packet[IP_HEADER_LEN:(self.raw_packet[0] & 0b00001111) << 2]
+        return self.raw_packet[IP_HEADER_LEN : (self.raw_packet[0] & 0b00001111) << 2]
 
     @property
     def raw_data(self):
         """ Get packet header in raw format """
 
-        return self.raw_packet[(self.raw_packet[0] & 0b00001111) << 2:struct.unpack("!H", self.raw_header[2:4])[0]]
+        return self.raw_packet[(self.raw_packet[0] & 0b00001111) << 2 : struct.unpack("!H", self.raw_header[2:4])[0]]
 
 
 class IpPacketTx(IpPacket):

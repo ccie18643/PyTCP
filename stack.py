@@ -12,9 +12,6 @@ import sys
 import fcntl
 import struct
 import loguru
-import time
-import asyncio
-import threading
 
 import ph_ether
 import ph_arp
@@ -31,6 +28,7 @@ STACK_IP_ADDRESS = "192.168.9.7"
 STACK_MAC_ADDRESS = "02:00:00:77:77:77"
 
 
+ARP_CACHE_BYPASS_ON_RESPONSE = False
 ARP_CACHE_UPDATE_FROM_DIRECT_REQUEST = False
 ARP_CACHE_UPDATE_FROM_GRATITIOUS_ARP = True
 
@@ -72,7 +70,9 @@ def packet_handler(rx_ring, tx_ring, arp_cache):
                     ether_packet_tx.serial_number_rx = ether_packet_rx.serial_number_rx
 
                     logger.debug(f"{ether_packet_tx.serial_number_tx} ({ether_packet_tx.serial_number_rx}) - {ether_packet_tx.log}")
-                    logger.opt(ansi=True).info(f"<magenta>{ether_packet_tx.serial_number_tx} ({ether_packet_tx.serial_number_rx})</magenta> - {arp_packet_tx.log}")
+                    logger.opt(ansi=True).info(
+                        f"<magenta>{ether_packet_tx.serial_number_tx} ({ether_packet_tx.serial_number_rx})</magenta> - {arp_packet_tx.log}"
+                    )
                     tx_ring.enqueue(ether_packet_tx)
 
                     # Update ARP cache with the maping learned from the received ARP request that was destined to this stack
@@ -84,15 +84,14 @@ def packet_handler(rx_ring, tx_ring, arp_cache):
             if arp_packet_rx.hdr_operation == ph_arp.ARP_OP_REPLY:
                 logger.opt(ansi=True).info(f"<green>{ether_packet_rx.serial_number_rx}</green> - {arp_packet_rx.log}")
 
-                # Update ARP cache with maping from received direct ARP reply 
-                if ether_packet_rx.hdr_dst == STACK_MAC_ADDRESS: 
+                # Update ARP cache with maping from received direct ARP reply
+                if ether_packet_rx.hdr_dst == STACK_MAC_ADDRESS:
                     logger.debug(f"Adding/refreshing ARP cache entry from direct reply - {arp_packet_rx.hdr_spa} -> {arp_packet_rx.hdr_sha}")
                     arp_cache.add_entry(arp_packet_rx.hdr_spa, arp_packet_rx.hdr_sha)
-                
-                if ether_packet_rx.hdr_dst == "ff:ff:ff:ff:ff:ff" and ARP_CACHE_UPDATE_FROM_GRATITIOUS_ARP: 
+
+                if ether_packet_rx.hdr_dst == "ff:ff:ff:ff:ff:ff" and ARP_CACHE_UPDATE_FROM_GRATITIOUS_ARP:
                     logger.debug(f"Adding/refreshing ARP cache entry from gratitious reply - {arp_packet_rx.hdr_spa} -> {arp_packet_rx.hdr_sha}")
                     arp_cache.add_entry(arp_packet_rx.hdr_spa, arp_packet_rx.hdr_sha)
-
 
         # Handle IP protocol
         elif ether_packet_rx.hdr_type == ph_ether.ETHER_TYPE_IP:
@@ -108,29 +107,31 @@ def packet_handler(rx_ring, tx_ring, arp_cache):
                 if icmp_packet_rx.hdr_type == ph_icmp.ICMP_ECHOREQUEST and icmp_packet_rx.hdr_code == 0:
 
                     icmp_packet_tx = ph_icmp.IcmpPacketTx(
-                        hdr_type=ph_icmp.ICMP_ECHOREPLY,
-                        msg_id=icmp_packet_rx.msg_id,
-                        msg_seq=icmp_packet_rx.msg_seq,
-                        msg_data=icmp_packet_rx.msg_data,
+                        hdr_type=ph_icmp.ICMP_ECHOREPLY, msg_id=icmp_packet_rx.msg_id, msg_seq=icmp_packet_rx.msg_seq, msg_data=icmp_packet_rx.msg_data
                     )
 
                     ip_packet_tx = ph_ip.IpPacketTx(
-                        hdr_src=STACK_IP_ADDRESS,
-                        hdr_dst=ip_packet_rx.hdr_src,
-                        hdr_proto=ip_packet_rx.hdr_proto,
-                        raw_data=icmp_packet_tx.raw_packet,
+                        hdr_src=STACK_IP_ADDRESS, hdr_dst=ip_packet_rx.hdr_src, hdr_proto=ip_packet_rx.hdr_proto, raw_data=icmp_packet_tx.raw_packet
                     )
 
-                    ether_packet_tx = ph_ether.EtherPacketTx(
+                    if ARP_CACHE_BYPASS_ON_RESPONSE:
+                        ether_packet_tx = ph_ether.EtherPacketTx(
+                            hdr_src=STACK_MAC_ADDRESS, hdr_dst=ether_packet_rx.hdr_src, hdr_type=ph_ether.ETHER_TYPE_IP, raw_data=ip_packet_tx.raw_packet
+                        )
+
+                    else:
+                        ether_packet_tx = ph_ether.EtherPacketTx(
                             hdr_src=STACK_MAC_ADDRESS, hdr_dst="00:00:00:00:00:00", hdr_type=ph_ether.ETHER_TYPE_IP, raw_data=ip_packet_tx.raw_packet
-                    )
+                        )
 
                     ether_packet_tx.timestamp_rx = ether_packet_rx.timestamp_rx
                     ether_packet_tx.serial_number_rx = ether_packet_rx.serial_number_rx
 
                     logger.debug(f"{ether_packet_tx.serial_number_tx} ({ether_packet_tx.serial_number_rx}) - {ether_packet_tx.log}")
                     logger.debug(f"{ether_packet_tx.serial_number_tx} ({ether_packet_tx.serial_number_rx}) - {ip_packet_tx.log}")
-                    logger.opt(ansi=True).info(f"<magenta>{ether_packet_tx.serial_number_tx} ({ether_packet_tx.serial_number_rx})</magenta> - {icmp_packet_tx.log}")
+                    logger.opt(ansi=True).info(
+                        f"<magenta>{ether_packet_tx.serial_number_tx} ({ether_packet_tx.serial_number_rx})</magenta> - {icmp_packet_tx.log}"
+                    )
                     tx_ring.enqueue(ether_packet_tx)
 
 
@@ -150,12 +151,15 @@ def main():
     fcntl.ioctl(tap, TUNSETIFF, struct.pack("16sH", STACK_IF, IFF_TAP | IFF_NO_PI))
 
     from arp_cache import ArpCache
+
     arp_cache = ArpCache(stack_mac_address=STACK_MAC_ADDRESS, stack_ip_address=STACK_IP_ADDRESS)
 
     from rx_ring import RxRing
+
     rx_ring = RxRing(tap=tap, stack_mac_address=STACK_MAC_ADDRESS)
-    
+
     from tx_ring import TxRing
+
     tx_ring = TxRing(tap=tap, stack_mac_address=STACK_MAC_ADDRESS, stack_ip_address=STACK_IP_ADDRESS, arp_cache=arp_cache)
 
     packet_handler(rx_ring, tx_ring, arp_cache=arp_cache)

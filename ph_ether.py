@@ -31,14 +31,10 @@ import time
 ETHER_TYPE_MIN = 0x0600
 ETHER_TYPE_ARP = 0x0806
 ETHER_TYPE_IP = 0x0800
-ETHER_TYPE_IPV6 = 0x86dd
+ETHER_TYPE_IPV6 = 0x86DD
 
 
-ETHER_TYPE_TABLE = {
-    ETHER_TYPE_ARP: "ARP",
-    ETHER_TYPE_IP: "IP",
-    ETHER_TYPE_IPV6: "IPv6",
-}
+ETHER_TYPE_TABLE = {ETHER_TYPE_ARP: "ARP", ETHER_TYPE_IP: "IP", ETHER_TYPE_IPV6: "IPv6"}
 
 
 class EtherPacket:
@@ -80,7 +76,7 @@ class EtherPacketRx(EtherPacket):
         self.hdr_dst = ":".join([f"{_:0>2x}" for _ in self.raw_header[0:6]])
         self.hdr_src = ":".join([f"{_:0>2x}" for _ in self.raw_header[6:12]])
         self.hdr_type = struct.unpack("!H", self.raw_header[12:14])[0]
-        
+
     @property
     def raw_header(self):
         """ Get packet header in raw format """
@@ -118,12 +114,7 @@ class EtherPacketTx(EtherPacket):
     def raw_header(self):
         """ Get packet header in raw format """
 
-        return struct.pack(
-            "! 6s 6s H",
-            bytes.fromhex(self.hdr_dst.replace(":", "")),
-            bytes.fromhex(self.hdr_src.replace(":", "")),
-            self.hdr_type,
-        )
+        return struct.pack("! 6s 6s H", bytes.fromhex(self.hdr_dst.replace(":", "")), bytes.fromhex(self.hdr_src.replace(":", "")), self.hdr_type)
 
     @property
     def raw_packet(self):
