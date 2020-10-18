@@ -58,7 +58,7 @@ class TxRing:
 
                 if mac_address := self.arp_cache.get_mac_address(ip_packet_tx.hdr_dst):
                     ether_packet_tx.hdr_dst = mac_address
-                    self.logger.debug(f"{ether_packet_tx.serial_number_tx} Resolved destiantion IP {ip_packet_tx.hdr_dst} to MAC ({ether_packet_tx.hdr_dst})")
+                    self.logger.debug(f"{ether_packet_tx.serial_number_tx} Resolved destiantion IP {ip_packet_tx.hdr_dst} to MAC {ether_packet_tx.hdr_dst}")
 
             # If we not able to obtain valid destination MAC address from the cache then drop packet and continue the loop
             else:

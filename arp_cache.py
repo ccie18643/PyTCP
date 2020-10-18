@@ -38,19 +38,18 @@ class ArpCache:
         """ Thread responsible for maintaining ARP entries """
         
         while True:
-            arp_cache_entries = self.arp_cache.values()
-            for arp_entry in arp_cache_entries:
+            for ip_address in list(self.arp_cache):
 
                 # If entry age is over maximum age then discard the entry
-                if time.time() - arp_entry[2] > ARP_ENTRY_MAX_AGE:
-                    self.arp_cache.pop(arp_entry[0])
-                    self.logger.debug(f"Discarded expired ARP cache entry - {arp_entry[0]} -> {arp_entry[1]}")
+                if time.time() - self.arp_cache[ip_address][1] > ARP_ENTRY_MAX_AGE:
+                    mac_address = self.arp_cache.pop(ip_address)[0]
+                    self.logger.debug(f"Discarded expired ARP cache entry - {ip_address} -> {mac_address}")
 
                 # If entry age is close to maximum age but the entry has been used since last refresh then send out request in attempt to refresh it
-                elif (time.time() - arp_entry[2] > ARP_ENTRY_MAX_AGE - ARP_ENTRY_REFRESH_TIME) and arp_entry[3]:
-                    arp_entry[3] = 0
-                    self.send_arp_request(arp_entry[0])
-                    self.logger.debug(f"Trying to refresh expiring ARP cache entry for {arp_entry[0]} -> {arp_entry[1]}")
+                elif (time.time() - self.arp_cache[ip_address][1] > ARP_ENTRY_MAX_AGE - ARP_ENTRY_REFRESH_TIME) and self.arp_cache[ip_address][2]:
+                    self.arp_cache[ip_address][2] = 0
+                    self.send_arp_request(ip_address)
+                    self.logger.debug(f"Trying to refresh expiring ARP cache entry for {ip_address} -> {self.arp_cache[ip_address][0]}")
             
             time.sleep(1)
 
@@ -76,18 +75,18 @@ class ArpCache:
     def add_entry(self, ip_address, mac_address):
         """ Add / refresh entry in cache """
 
-        self.arp_cache[ip_address] = [ip_address, mac_address, time.time(), 0]
+        self.arp_cache[ip_address] = [mac_address, time.time(), 0]
 
     def get_mac_address(self, ip_address):
         """ Find entry in cache """
 
         if arp_entry := self.arp_cache.get(ip_address, None):
-            arp_entry[3] += 1
-            self.logger.debug(f"Resolved {ip_address} to {arp_entry[1]}")
-            return arp_entry[1]
+            arp_entry[2] += 1
+            self.logger.debug(f"Found {ip_address} -> {arp_entry[0]} entry")
+            return arp_entry[0]
 
         else:
-            self.logger.debug(f"Unable to resolve {ip_address}, sending ARP request")
+            self.logger.debug(f"Unable to find entry for {ip_address}, sending ARP request")
 
             if self.tx_ring:
                 self.send_arp_request(ip_address)
