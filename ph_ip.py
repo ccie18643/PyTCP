@@ -195,20 +195,18 @@ class IpPacketTx(IpPacket):
 
         if child_packet.protocol == "ICMP":
             self.hdr_proto = IP_PROTO_ICMP
-            self.raw_data = child_packet.raw_packet
+            self.raw_data = child_packet.get_raw_packet()
             self.hdr_plen = self.hdr_hlen + len(self.raw_data)
 
         elif child_packet.protocol == "UDP":
             self.hdr_proto = IP_PROTO_UDP
             self.hdr_plen = self.hdr_hlen + child_packet.hdr_len
-            child_packet.ip_pseudo_header = self.ip_pseudo_header
-            self.raw_data = child_packet.raw_packet
+            self.raw_data = child_packet.get_raw_packet(self.ip_pseudo_header)
 
         elif child_packet.protocol == "TCP":
             self.hdr_proto = IP_PROTO_TCP
             self.hdr_plen = self.hdr_hlen + child_packet.hdr_hlen + len(child_packet.raw_data)
-            child_packet.ip_pseudo_header = self.ip_pseudo_header
-            self.raw_data = child_packet.raw_packet
+            self.raw_data = child_packet.get_raw_packet(self.ip_pseudo_header)
 
         else:
             raise Exception(f"Not supported protocol: {child_packet.protocol}")
@@ -235,8 +233,14 @@ class IpPacketTx(IpPacket):
     def raw_packet(self):
         """ Get packet in raw form """
 
+        return self.raw_header + self.raw_options + self.raw_data
+
+    def get_raw_packet(self):
+        """ Get packet in raw format ready to be processed by lower level protocol """
+
         self.hdr_cksum = 0
         cksum = sum(list(struct.unpack(f"! {self.hdr_hlen >> 1}H", self.raw_header + self.raw_options)))
         self.hdr_cksum = ~((cksum & 0xFFFF) + (cksum >> 16)) & 0xFFFF
 
-        return self.raw_header + self.raw_options + self.raw_data
+        return self.raw_packet
+

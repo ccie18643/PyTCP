@@ -200,7 +200,14 @@ class IcmpPacketTx(IcmpPacket):
     def raw_packet(self):
         """ Get packet in raw format """
 
-        cksum = sum(list(struct.unpack(f"! {self.packet_len >> 1}H", self.raw_header + self.raw_message)))
+        return self.raw_header + self.raw_message
+
+    def get_raw_packet(self):
+        """ Get packet in raw format ready to be processed by lower level protocol """
+
+        cksum = sum(list(struct.unpack(f"! {self.packet_len >> 1}H", self.raw_packet)))
         self.hdr_cksum = ~((cksum & 0xFFFF) + (cksum >> 16)) & 0xFFFF
 
-        return self.raw_header + self.raw_message
+        return self.raw_packet
+
+

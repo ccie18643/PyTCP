@@ -129,3 +129,9 @@ class ArpPacketTx(ArpPacket):
         """ Get packet in raw format """
 
         return self.raw_header
+
+    def get_raw_packet(self):
+        """ Get packet in raw format ready to be processed by lower level protocol """
+
+        return self.raw_packet
+

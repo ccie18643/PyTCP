@@ -103,8 +103,6 @@ class UdpPacketTx(UdpPacket):
 
         self.raw_data = raw_data
 
-        ip_pseudo_header = None
-
     @property
     def raw_header(self):
         """ Get packet header in raw format """
@@ -113,15 +111,20 @@ class UdpPacketTx(UdpPacket):
 
     @property
     def raw_packet(self):
-        """ Get packet header in raw format """
+        """ Get packet in raw format """
+
+        return self.raw_header + self.raw_data
+
+    def get_raw_packet(self, ip_pseudo_header):
+        """ Get packet in raw format ready to be processed by lower level protocol """
 
         cksum_data = list(
             struct.unpack(
-                f"! {(len(self.ip_pseudo_header) + (self.hdr_len + 1 if self.hdr_len & 1 else self.hdr_len)) >> 1}H",
-                self.ip_pseudo_header + self.raw_header + self.raw_data + (b"\0" if self.hdr_len & 1 else b""),
+                f"! {(len(ip_pseudo_header) + (self.hdr_len + 1 if self.hdr_len & 1 else self.hdr_len)) >> 1}H",
+                ip_pseudo_header + self.raw_packet + (b"\0" if self.hdr_len & 1 else b""),
             )
         )
         cksum = sum(cksum_data)
         self.hdr_cksum = ~((cksum & 0xFFFF) + (cksum >> 16)) & 0xFFFF
 
-        return self.raw_header + self.raw_data
+        return self.raw_packet

@@ -114,11 +114,11 @@ class EtherPacketTx(EtherPacket):
 
         if child_packet.protocol == "IP":
             self.hdr_type = ETHER_TYPE_IP
-            self.raw_data = child_packet.raw_packet
+            self.raw_data = child_packet.get_raw_packet()
 
         elif child_packet.protocol == "ARP":
             self.hdr_type = ETHER_TYPE_ARP
-            self.raw_data = child_packet.raw_packet
+            self.raw_data = child_packet.get_raw_packet()
 
         else:
             raise Exception(f"Not supported protocol: {child_packet.protocol}")

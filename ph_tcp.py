@@ -179,8 +179,6 @@ class TcpPacketTx(TcpPacket):
         self.raw_options = raw_options
         self.raw_data = raw_data
 
-        ip_pseudo_header = None
-
     @property
     def raw_header(self):
         """ Get packet header in raw format """
@@ -209,15 +207,19 @@ class TcpPacketTx(TcpPacket):
     def raw_packet(self):
         """ Get packet header in raw format """
 
-        plen = TCP_HEADER_LEN + len(self.raw_options) + len(self.raw_data)
+        return self.raw_header + self.raw_options + self.raw_data
 
+    def get_raw_packet(self, ip_pseudo_header):
+        """ Get packet in raw format ready to be processed by lower level protocol """
+
+        plen = TCP_HEADER_LEN + len(self.raw_options) + len(self.raw_data)
         cksum_data = list(
             struct.unpack(
-                f"! {(len(self.ip_pseudo_header) + (plen + 1 if plen & 1 else plen)) >> 1}H",
-                self.ip_pseudo_header + self.raw_header + self.raw_options + self.raw_data + (b"\0" if plen & 1 else b""),
+                f"! {(len(ip_pseudo_header) + (plen + 1 if plen & 1 else plen)) >> 1}H",
+                ip_pseudo_header + self.raw_packet + (b"\0" if plen & 1 else b""),
             )
         )
         cksum = sum(cksum_data)
         self.hdr_cksum = ~((cksum & 0xFFFF) + (cksum >> 16)) & 0xFFFF
 
-        return self.raw_header + self.raw_data
+        return self.raw_packet
