@@ -46,13 +46,9 @@ class TcpPacket:
     def compute_cksum(self, ip_pseudo_header):
         """ Compute checksum of IP pseudo header + TCP packet """
 
-        plen = TCP_HEADER_LEN + len(self.raw_options) + len(self.raw_data)
-        cksum_data = list(
-            struct.unpack(
-                f"! {(len(ip_pseudo_header) + (plen + 1 if plen & 1 else plen)) >> 1}H",
-                ip_pseudo_header + self.raw_packet + (b"\0" if plen & 1 else b""),
-            )
-        )
+        cksum_data = ip_pseudo_header + self.raw_packet + (b"\0" if len(self.raw_packet) & 1 else b"")
+        cksum_data = list(struct.unpack(f"! {len(cksum_data) >> 1}H", cksum_data))
+        cksum_data[6 + 8] = 0
         cksum = sum(cksum_data)
         return ~((cksum & 0xFFFF) + (cksum >> 16)) & 0xFFFF
 
@@ -81,7 +77,7 @@ class TcpPacket:
         return (
             "--------------------------------------------------------------------------------\n"
             + f"TCP      SPORT {self.hdr_sport}  DPORT {self.hdr_dport}  LEN {self.hdr_hlen}  "
-            + f"CKSUM {self.hdr_cksum} ({'OK' if self.hdr_cksum == self.compute_cksum() else 'BAD'})"
+            + f"CKSUM {self.hdr_cksum} ({'OK' if self.hdr_cksum == self.compute_cksum(self.ip_pseudo_header) else 'BAD'})"
         )
 
 

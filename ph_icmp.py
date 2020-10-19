@@ -59,7 +59,10 @@ class IcmpPacket:
     def compute_cksum(self):
         """ Compute checksum of the ICMP packet """
         
-        cksum = sum(list(struct.unpack(f"! {len(self.raw_packet) >> 1}H", self.raw_packet)))
+        cksum_data = self.raw_packet
+        cksum_data = list(struct.unpack(f"! {len(cksum_data) >> 1}H", cksum_data))
+        cksum_data[1] = 0
+        cksum = sum(cksum_data)
         return ~((cksum & 0xFFFF) + (cksum >> 16)) & 0xFFFF
 
     @property

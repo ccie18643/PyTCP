@@ -94,13 +94,14 @@ class IpPacket:
 
     protocol = "IP"
 
-    def validate_cksum(self):
-        """ Validate checksum for IP header """
+    def compute_cksum(self):
+        """ Compute checksum of IP header """
 
-        cksum_data = list(struct.unpack(f"! {self.hdr_hlen >> 1}H", self.raw_header + self.raw_options))
+        cksum_data = self.raw_header + self.raw_options
+        cksum_data = list(struct.unpack(f"! {len(cksum_data) >> 1}H", cksum_data))
         cksum_data[5] = 0
         cksum = sum(cksum_data)
-        return ~((cksum & 0xFFFF) + (cksum >> 16)) & 0xFFFF == self.hdr_cksum
+        return ~((cksum & 0xFFFF) + (cksum >> 16)) & 0xFFFF
 
     @property
     def ip_pseudo_header(self):
@@ -120,7 +121,8 @@ class IpPacket:
 
         return (
             "--------------------------------------------------------------------------------\n"
-            + f"IP       SRC {self.hdr_src}  DST {self.hdr_dst}  VER {self.hdr_ver}  CKSUM {self.hdr_cksum} ({'OK' if self.validate_cksum() else 'BAD'})\n"
+            + f"IP       SRC {self.hdr_src}  DST {self.hdr_dst}  VER {self.hdr_ver}  CKSUM {self.hdr_cksum} "
+            + f"({'OK' if self.hdr_cksum == self.compute_cksum() else 'BAD'})\n"
             + f"         DSCP {self.hdr_dscp:0>6b} ({DSCP_TABLE.get(self.hdr_dscp, 'ERR')})  ECN {self.hdr_ecn:0>2b} ({ECN_TABLE[self.hdr_ecn]})  "
             + f"HLEN {self.hdr_hlen}  PLEN {self.hdr_plen}\n         TTL {self.hdr_ttl}  ID {self.hdr_id}  FRAG FLAGS |{'DF|' if self.hdr_frag_df else '  |'}"
             + f"{'MF' if self.hdr_frag_mf else '  |'} OFFSET {self.hdr_frag_offset}  PROTO {self.hdr_proto} ({IP_PROTO_TABLE.get(self.hdr_proto, '???')})"
@@ -185,7 +187,7 @@ class IpPacketTx(IpPacket):
         self.hdr_frag_mf = False
         self.hdr_frag_offset = 0
         self.hdr_ttl = hdr_ttl
-        self.hdr_cksum = None
+        self.hdr_cksum = 0
         self.hdr_src = hdr_src
         self.hdr_dst = hdr_dst
 
@@ -238,9 +240,7 @@ class IpPacketTx(IpPacket):
     def get_raw_packet(self):
         """ Get packet in raw format ready to be processed by lower level protocol """
 
-        self.hdr_cksum = 0
-        cksum = sum(list(struct.unpack(f"! {self.hdr_hlen >> 1}H", self.raw_header + self.raw_options)))
-        self.hdr_cksum = ~((cksum & 0xFFFF) + (cksum >> 16)) & 0xFFFF
+        self.hdr_cksum = self.compute_cksum()
 
         return self.raw_packet
 

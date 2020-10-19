@@ -34,12 +34,9 @@ class UdpPacket:
     def compute_cksum(self, ip_pseudo_header):
         """ Compute checksum of IP pseudo header + UDP packet """
 
-        cksum_data = list(
-            struct.unpack(
-                f"! {(len(ip_pseudo_header) + (self.hdr_len + 1 if self.hdr_len & 1 else self.hdr_len)) >> 1}H",
-                ip_pseudo_header + self.raw_packet + (b"\0" if self.hdr_len & 1 else b""),
-            )
-        )
+        cksum_data = ip_pseudo_header + self.raw_packet + (b"\0" if len(self.raw_packet) & 1 else b"")
+        cksum_data = list(struct.unpack(f"! {len(cksum_data) >> 1}H", cksum_data))
+        cksum_data[6 + 3] = 0
         cksum = sum(cksum_data)
         return ~((cksum & 0xFFFF) + (cksum >> 16)) & 0xFFFF
 
