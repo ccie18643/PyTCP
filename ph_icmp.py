@@ -56,13 +56,11 @@ class IcmpPacket:
 
     protocol = "ICMP"
 
-    def validate_cksum(self):
-        """ Validate the checksum for ICMP message """
-
-        cksum_data = list(struct.unpack(f"! {len(self.raw_packet) >> 1}H", self.raw_packet))
-        cksum_data[1] = 0
-        cksum = sum(cksum_data)
-        return ~((cksum & 0xFFFF) + (cksum >> 16)) & 0xFFFF == self.hdr_cksum
+    def compute_cksum(self):
+        """ Compute checksum of the ICMP packet """
+        
+        cksum = sum(list(struct.unpack(f"! {len(self.raw_packet) >> 1}H", self.raw_packet)))
+        return ~((cksum & 0xFFFF) + (cksum >> 16)) & 0xFFFF
 
     @property
     def log(self):
@@ -105,11 +103,11 @@ class IcmpPacket:
 
         dump_header = (
             "--------------------------------------------------------------------------------\n"
-            + f"ICMP     TYPE {self.hdr_type} {type_name}  CODE {self.hdr_code} {code_name} CKSUM {self.hdr_cksum} ({'OK' if self.validate_cksum() else 'BAD'})"
+            + f"ICMP     TYPE {self.hdr_type} {type_name}  CODE {self.hdr_code} {code_name} CKSUM {self.hdr_cksum} "
+            + f"({'OK' if self.hdr_cksum == self.validate_cksum() else 'BAD'})"
         )
 
         return dump_header + dump_message
-
 
 class IcmpPacketRx(IcmpPacket):
     """ Packet parse class """
@@ -163,17 +161,14 @@ class IcmpPacketTx(IcmpPacket):
             self.msg_id = msg_id
             self.msg_seq = msg_seq
             self.msg_data = msg_data
-            self.packet_len = ICMP_HEADER_LEN + ICMP_ECHOREPLY_LEN + len(msg_data)
 
         if self.hdr_type == ICMP_ECHOREQUEST and self.hdr_code == 0:
             self.msg_id = msg_id
             self.msg_seq = msg_seq
             self.msg_data = msg_data
-            self.packet_len = ICMP_HEADER_LEN + ICMP_ECHOREQUEST_LEN + len(msg_data)
 
         if self.hdr_type == ICMP_UNREACHABLE:
             self.msg_ip_info = ip_packet_rx.raw_header + ip_packet_rx.raw_data[:8]
-            self.packet_len = ICMP_HEADER_LEN + ICMP_UNREACHABLE_LEN
 
     @property
     def raw_header(self):
@@ -205,8 +200,7 @@ class IcmpPacketTx(IcmpPacket):
     def get_raw_packet(self):
         """ Get packet in raw format ready to be processed by lower level protocol """
 
-        cksum = sum(list(struct.unpack(f"! {self.packet_len >> 1}H", self.raw_packet)))
-        self.hdr_cksum = ~((cksum & 0xFFFF) + (cksum >> 16)) & 0xFFFF
+        self.hdr_cksum = self.compute_cksum()
 
         return self.raw_packet
 

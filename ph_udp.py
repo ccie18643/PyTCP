@@ -31,18 +31,17 @@ class UdpPacket:
 
     protocol = "UDP"
 
-    def validate_cksum(self):
-        """ Validate checksum for UDP packet """
+    def compute_cksum(self, ip_pseudo_header):
+        """ Compute checksum of IP pseudo header + UDP packet """
 
         cksum_data = list(
             struct.unpack(
-                f"! {(len(self.ip_pseudo_header) + (self.hdr_len + 1 if self.hdr_len & 1 else self.hdr_len)) >> 1}H",
-                self.ip_pseudo_header + self.raw_header + self.raw_data + (b"\0" if self.hdr_len & 1 else b""),
+                f"! {(len(ip_pseudo_header) + (self.hdr_len + 1 if self.hdr_len & 1 else self.hdr_len)) >> 1}H",
+                ip_pseudo_header + self.raw_packet + (b"\0" if self.hdr_len & 1 else b""),
             )
         )
-        cksum_data[6 + 3] = 0
         cksum = sum(cksum_data)
-        return ~((cksum & 0xFFFF) + (cksum >> 16)) & 0xFFFF == self.hdr_cksum
+        return ~((cksum & 0xFFFF) + (cksum >> 16)) & 0xFFFF
 
     @property
     def log(self):
@@ -54,11 +53,19 @@ class UdpPacket:
     def dump(self):
         """ Verbose packet debug string """
 
-        return (
+        dump = (
             "--------------------------------------------------------------------------------\n"
             + f"UDP      SPORT {self.hdr_sport}  DPORT {self.hdr_dport}  LEN {self.hdr_len}  "
-            + f"CKSUM {self.hdr_cksum} ({'OK' if self.validate_cksum() else 'BAD'})"
+            + f"CKSUM {self.hdr_cksum}"
         )
+
+        if self.hdr_cksum == 0:
+            return dump + "(N/A)"
+
+        if self.hdr_cksum == self.compute_cksum(self.ip_pseudo_header):
+            return dump + "(OK)"
+
+        return dump + "(BAD)"
 
 
 class UdpPacketRx(UdpPacket):
@@ -118,13 +125,6 @@ class UdpPacketTx(UdpPacket):
     def get_raw_packet(self, ip_pseudo_header):
         """ Get packet in raw format ready to be processed by lower level protocol """
 
-        cksum_data = list(
-            struct.unpack(
-                f"! {(len(ip_pseudo_header) + (self.hdr_len + 1 if self.hdr_len & 1 else self.hdr_len)) >> 1}H",
-                ip_pseudo_header + self.raw_packet + (b"\0" if self.hdr_len & 1 else b""),
-            )
-        )
-        cksum = sum(cksum_data)
-        self.hdr_cksum = ~((cksum & 0xFFFF) + (cksum >> 16)) & 0xFFFF
+        self.hdr_cksum = self.compute_cksum(ip_pseudo_header)
 
         return self.raw_packet
