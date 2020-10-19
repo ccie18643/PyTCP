@@ -18,6 +18,7 @@ import ph_arp
 import ph_ip
 import ph_icmp
 import ph_udp
+import ph_tcp
 
 
 TUNSETIFF = 0x400454CA
@@ -184,6 +185,45 @@ def packet_handler(rx_ring, tx_ring, arp_cache):
                         f"<magenta>{ether_packet_tx.serial_number_tx} ({ether_packet_tx.serial_number_rx})</magenta> - {icmp_packet_tx.log}"
                     )
                     tx_ring.enqueue(ether_packet_tx)
+
+
+            # Handle TCP protocol
+            if ip_packet_rx.hdr_proto == ph_ip.IP_PROTO_TCP:
+                tcp_packet_rx = ph_tcp.TcpPacketRx(ip_packet_rx)
+                logger.opt(ansi=True).info(f"<green>{ether_packet_rx.serial_number_rx}</green> - {tcp_packet_rx.log}")
+
+                if False:
+                    pass
+
+                else:
+                    logger.debug(f"Received TCP packet from {ip_packet_rx.hdr_src} to closed port {tcp_packet_rx.hdr_dport}, sending TCP Reset packet")
+
+                    tcp_packet_tx = ph_tcp.TcpPacketTx(
+                        hdr_sport=tcp_packet_rx.hdr_dport,
+                        hdr_dport=tcp_packet_rx.hdr_sport,
+                        hdr_ack_num=tcp_packet_rx.hdr_seq_num + 1,
+                        hdr_flag_rst=True,
+                        hdr_flag_ack=True,
+                    )
+
+                    ip_packet_tx = ph_ip.IpPacketTx(hdr_src=STACK_IP_ADDRESS, hdr_dst=ip_packet_rx.hdr_src, child_packet=tcp_packet_tx)
+
+                    if ARP_CACHE_BYPASS_ON_RESPONSE:
+                        ether_packet_tx = ph_ether.EtherPacketTx(hdr_src=STACK_MAC_ADDRESS, hdr_dst=ether_packet_rx.hdr_src, child_packet=ip_packet_tx)
+
+                    else:
+                        ether_packet_tx = ph_ether.EtherPacketTx(hdr_src=STACK_MAC_ADDRESS, hdr_dst="00:00:00:00:00:00", child_packet=ip_packet_tx)
+
+                    ether_packet_tx.timestamp_rx = ether_packet_rx.timestamp_rx
+                    ether_packet_tx.serial_number_rx = ether_packet_rx.serial_number_rx
+
+                    logger.debug(f"{ether_packet_tx.serial_number_tx} ({ether_packet_tx.serial_number_rx}) - {ether_packet_tx.log}")
+                    logger.debug(f"{ether_packet_tx.serial_number_tx} ({ether_packet_tx.serial_number_rx}) - {ip_packet_tx.log}")
+                    logger.opt(ansi=True).info(
+                        f"<magenta>{ether_packet_tx.serial_number_tx} ({ether_packet_tx.serial_number_rx})</magenta> - {tcp_packet_tx.log}"
+                    )
+                    tx_ring.enqueue(ether_packet_tx)
+
 
 
 def main():

@@ -204,6 +204,12 @@ class IpPacketTx(IpPacket):
             child_packet.ip_pseudo_header = self.ip_pseudo_header
             self.raw_data = child_packet.raw_packet
 
+        elif child_packet.protocol == "TCP":
+            self.hdr_proto = IP_PROTO_TCP
+            self.hdr_plen = self.hdr_hlen + child_packet.hdr_hlen + len(child_packet.raw_data)
+            child_packet.ip_pseudo_header = self.ip_pseudo_header
+            self.raw_data = child_packet.raw_packet
+
         else:
             raise Exception(f"Not supported protocol: {child_packet.protocol}")
 

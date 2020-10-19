@@ -60,7 +60,19 @@ class TcpPacket:
     def log(self):
         """ Short packet log string """
 
-        return f"TCP {self.hdr_sport} > {self.hdr_dport}, len {self.hdr_len}"
+        return (
+            f"TCP {self.hdr_sport} > {self.hdr_dport}, "
+            + f"{'N' if self.hdr_flag_ns else ''}"
+            + f"{'C' if self.hdr_flag_crw else ''}"
+            + f"{'E' if self.hdr_flag_ece else ''}"
+            + f"{'U' if self.hdr_flag_urg else ''}"
+            + f"{'A' if self.hdr_flag_ack else ''}"
+            + f"{'P' if self.hdr_flag_psh else ''}"
+            + f"{'R' if self.hdr_flag_rst else ''}"
+            + f"{'S' if self.hdr_flag_syn else ''}"
+            + f"{'F' if self.hdr_flag_fin else ''}"
+            + f", seq {self.hdr_seq_num}, ack {self.hdr_ack_num}, win {self.hdr_win}"
+        )
 
     @property
     def dump(self):
@@ -130,17 +142,17 @@ class TcpPacketTx(TcpPacket):
         hdr_dport,
         hdr_seq_num=0,
         hdr_ack_num=0,
-        hdr_flag_ns = False,
-        hdr_flag_crw = False,
-        hdr_flag_ece = False,
-        hdr_flag_urg = False,
+        hdr_flag_ns=False,
+        hdr_flag_crw=False,
+        hdr_flag_ece=False,
+        hdr_flag_urg=False,
         hdr_flag_ack=False,
-        hdr_flag_psh = False,
+        hdr_flag_psh=False,
         hdr_flag_rst=False,
         hdr_flag_syn=False,
         hdr_flag_fin=False,
         hdr_win=0,
-        hdr_urp = 0,
+        hdr_urp=0,
         raw_options=b"",
         raw_data=b"",
     ):
@@ -150,7 +162,7 @@ class TcpPacketTx(TcpPacket):
         self.hdr_dport = hdr_dport
         self.hdr_seq_num = hdr_seq_num
         self.hdr_ack_num = hdr_ack_num
-        self.hdr_hlen = None
+        self.hdr_hlen = TCP_HEADER_LEN + len(raw_options)
         self.hdr_flag_ns = False
         self.hdr_flag_crw = False
         self.hdr_flag_ece = False
@@ -161,7 +173,7 @@ class TcpPacketTx(TcpPacket):
         self.hdr_flag_syn = hdr_flag_syn
         self.hdr_flag_fin = hdr_flag_fin
         self.hdr_win = hdr_win
-        self.hdr_cksum = None
+        self.hdr_cksum = 0
         self.hdr_urp = hdr_urp
 
         self.raw_options = raw_options
@@ -173,16 +185,36 @@ class TcpPacketTx(TcpPacket):
     def raw_header(self):
         """ Get packet header in raw format """
 
-        return struct.pack("! HH HH", self.hdr_sport, self.hdr_dport, self.hdr_len, self.hdr_cksum)
+        return struct.pack(
+            "! HH L L BBH HH",
+            self.hdr_sport,
+            self.hdr_dport,
+            self.hdr_seq_num,
+            self.hdr_ack_num,
+            self.hdr_hlen << 2 | self.hdr_flag_ns,
+            self.hdr_flag_crw << 7
+            | self.hdr_flag_ece << 6
+            | self.hdr_flag_urg << 5
+            | self.hdr_flag_ack << 4
+            | self.hdr_flag_psh << 3
+            | self.hdr_flag_rst << 2
+            | self.hdr_flag_syn << 1
+            | self.hdr_flag_fin,
+            self.hdr_win,
+            self.hdr_cksum,
+            self.hdr_urp,
+        )
 
     @property
     def raw_packet(self):
         """ Get packet header in raw format """
 
+        plen = TCP_HEADER_LEN + len(self.raw_options) + len(self.raw_data)
+
         cksum_data = list(
             struct.unpack(
-                f"! {(len(self.ip_pseudo_header) + (self.hdr_len + 1 if self.hdr_len & 1 else self.hdr_len)) >> 1}H",
-                self.ip_pseudo_header + self.raw_header + self.raw_data + (b"\0" if self.hdr_len & 1 else b""),
+                f"! {(len(self.ip_pseudo_header) + (plen + 1 if plen & 1 else plen)) >> 1}H",
+                self.ip_pseudo_header + self.raw_header + self.raw_options + self.raw_data + (b"\0" if plen & 1 else b""),
             )
         )
         cksum = sum(cksum_data)
