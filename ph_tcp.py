@@ -150,6 +150,7 @@ class TcpPacketRx(TcpPacket):
                 i += self.raw_options[i + 1]
 
             else:
+                options.append(TcpOptUnk(self.raw_options[i : i + self.raw_options[i + 1]]))
                 i += self.raw_options[i + 1]
 
         return options
@@ -393,3 +394,23 @@ class TcpOptTimestamp:
     def __str__(self):
         return f"ts {self.opt_tsval}/{self.opt_tsecr}"
 
+
+class TcpOptUnk:
+    """ TCP option that is not supported by this stack """
+
+    def __init__(self, raw_option=None, raw_data=None):
+        if raw_option:
+            self.opt_kind = raw_option[0]
+            self.opt_len = raw_option[1]
+            self.raw_data = raw_option[2 : self.opt_len - 2]
+        else:
+            self.opt_kind = TCP_OPT_MSS
+            self.opt_len = 2 + len(raw_data)
+            self.raw_data = raw_data
+
+    @property
+    def raw_option(self):
+        return struct.pack("! BB", self.opt_kind, self.opt_len) + self.raw_data
+
+    def __str__(self):
+        return f"unk"
