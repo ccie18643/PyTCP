@@ -9,6 +9,7 @@ stact.py - main TCP/IP stack program
 
 import os
 import sys
+import time
 import fcntl
 import struct
 import loguru
@@ -202,8 +203,18 @@ def packet_handler(rx_ring, tx_ring, arp_cache):
                         hdr_sport=tcp_packet_rx.hdr_dport,
                         hdr_dport=tcp_packet_rx.hdr_sport,
                         hdr_ack_num=tcp_packet_rx.hdr_seq_num + 1,
-                        hdr_flag_rst=True,
+                        #hdr_flag_rst=True,
+                        hdr_flag_syn=True,
                         hdr_flag_ack=True,
+
+                        options = [
+                            ph_tcp.TcpOptMss(opt_size=1460),
+                            ph_tcp.TcpOptWscale(opt_scale=6),
+                            ph_tcp.TcpOptTimestamp(opt_tsval=0, opt_tsecr=0),
+                            ph_tcp.TcpOptNop(),
+                            ph_tcp.TcpOptNop(),
+                            ph_tcp.TcpOptNop(),
+                        ]
                     )
 
                     ip_packet_tx = ph_ip.IpPacketTx(hdr_src=STACK_IP_ADDRESS, hdr_dst=ip_packet_rx.hdr_src, child_packet=tcp_packet_tx)

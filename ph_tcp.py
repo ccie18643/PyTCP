@@ -56,7 +56,7 @@ class TcpPacket:
     def log(self):
         """ Short packet log string """
 
-        return (
+        log =  (
             f"TCP {self.hdr_sport} > {self.hdr_dport}, "
             + f"{'N' if self.hdr_flag_ns else ''}"
             + f"{'C' if self.hdr_flag_crw else ''}"
@@ -70,15 +70,34 @@ class TcpPacket:
             + f", seq {self.hdr_seq_num}, ack {self.hdr_ack_num}, win {self.hdr_win}"
         )
 
+        for option in self.options:
+            log += ", " + option.log
+
+        return log
+
     @property
     def dump(self):
         """ Verbose packet debug string """
 
-        return (
+        dump = (
             "--------------------------------------------------------------------------------\n"
             + f"TCP      SPORT {self.hdr_sport}  DPORT {self.hdr_dport}  LEN {self.hdr_hlen}  "
-            + f"CKSUM {self.hdr_cksum} ({'OK' if self.hdr_cksum == self.compute_cksum(self.ip_pseudo_header) else 'BAD'})"
+            + f"CKSUM {self.hdr_cksum} ({'OK' if self.hdr_cksum == self.compute_cksum(self.ip_pseudo_header) else 'BAD'})\n"
+            + f"         FLAGS {'|NS' if self.hdr_flag_ns else '|  '}"
+            + f"{'|CWR' if self.hdr_flag_crw else '|   '}"
+            + f"{'|ECE' if self.hdr_flag_ece else '|   '}"
+            + f"{'|URG' if self.hdr_flag_urg else '|   '}"
+            + f"{'|ACK' if self.hdr_flag_ack else '|   '}"
+            + f"{'|PSH' if self.hdr_flag_psh else '|   '}"
+            + f"{'|RST' if self.hdr_flag_rst else '|   '}"
+            + f"{'|SYN' if self.hdr_flag_syn else '|   '}"
+            + f"{'|FIN' if self.hdr_flag_fin else '|   '}"
         )
+
+        for option in self.options:
+            dump += option.dump
+
+        return dump
 
 
 class TcpPacketRx(TcpPacket):
@@ -126,6 +145,40 @@ class TcpPacketRx(TcpPacket):
 
         return self.raw_packet[(self.raw_header[12] & 0b11110000) >> 2 :]
 
+    @property
+    def options(self):
+        """ Get list of options """
+
+        options = []
+
+        i = 0
+
+        while i < len(self.raw_options):
+            if self.raw_options[i] == TCP_OPT_EOL:
+                options.append(TcpOptEol(self.raw_options[i : i + TCP_OPT_EOL_LEN]))
+                break
+
+            elif self.raw_options[i] == TCP_OPT_NOP:
+                options.append(TcpOptNop(self.raw_options[i : i + TCP_OPT_NOP_LEN]))
+                i += TCP_OPT_NOP_LEN
+
+            elif self.raw_options[i] == TCP_OPT_MSS:
+                options.append(TcpOptMss(self.raw_options[i : i + self.raw_options[i + 1]]))
+                i += self.raw_options[i + 1]
+
+            elif self.raw_options[i] == TCP_OPT_WSCALE:
+                options.append(TcpOptWscale(self.raw_options[i : i + self.raw_options[i + 1]]))
+                i += self.raw_options[i + 1]
+
+            elif self.raw_options[i] == TCP_OPT_TIMESTAMP:
+                options.append(TcpOptTimestamp(self.raw_options[i : i + self.raw_options[i + 1]]))
+                i += self.raw_options[i + 1]
+
+            else:
+                i += self.raw_options[i + 1]
+
+        return options
+
 
 class TcpPacketTx(TcpPacket):
     """ Packet creation class """
@@ -149,7 +202,7 @@ class TcpPacketTx(TcpPacket):
         hdr_flag_fin=False,
         hdr_win=0,
         hdr_urp=0,
-        raw_options=b"",
+        options=[],
         raw_data=b"",
     ):
         """ Class constructor """
@@ -158,7 +211,6 @@ class TcpPacketTx(TcpPacket):
         self.hdr_dport = hdr_dport
         self.hdr_seq_num = hdr_seq_num
         self.hdr_ack_num = hdr_ack_num
-        self.hdr_hlen = TCP_HEADER_LEN + len(raw_options)
         self.hdr_flag_ns = False
         self.hdr_flag_crw = False
         self.hdr_flag_ece = False
@@ -172,12 +224,16 @@ class TcpPacketTx(TcpPacket):
         self.hdr_cksum = 0
         self.hdr_urp = hdr_urp
 
-        self.raw_options = raw_options
+        self.options = options
         self.raw_data = raw_data
+
+        self.hdr_hlen = TCP_HEADER_LEN + len(self.raw_options)
+
+        assert self.hdr_hlen % 4 == 0, "TCP header len is not multiplcation of 4 bytes, check options" 
 
     @property
     def raw_header(self):
-        """ Get packet header in raw format """
+        """ Packet header in raw format """
 
         return struct.pack(
             "! HH L L BBH HH",
@@ -200,8 +256,19 @@ class TcpPacketTx(TcpPacket):
         )
 
     @property
+    def raw_options(self):
+        """ Packet options in raw format """
+
+        raw_options = b""
+
+        for option in self.options:
+            raw_options += option.raw_option
+
+        return raw_options
+
+    @property
     def raw_packet(self):
-        """ Get packet header in raw format """
+        """ Packet in raw format """
 
         return self.raw_header + self.raw_options + self.raw_data
 
@@ -211,3 +278,173 @@ class TcpPacketTx(TcpPacket):
         self.hdr_cksum = self.compute_cksum(ip_pseudo_header)
 
         return self.raw_packet
+
+
+"""
+
+   TCP options
+
+"""
+
+
+TCP_OPT_EOL = 0
+TCP_OPT_EOL_LEN = 1
+TCP_OPT_NOP = 1
+TCP_OPT_NOP_LEN = 1
+TCP_OPT_MSS = 2
+TCP_OPT_MSS_LEN = 4
+TCP_OPT_WSCALE = 3
+TCP_OPT_WSCALE_LEN = 3
+TCP_OPT_SACKPERM = 4
+TCP_OPT_SACKPERM_LEN = 2
+TCP_OPT_TIMESTAMP = 8
+TCP_OPT_TIMESTAMP_LEN = 10
+
+
+class TcpOptEol:
+    """ TCP option End of Option List """
+
+    def __init__(self, raw_option=None):
+        if raw_option:
+            self.opt_kind = raw_option[0]
+        else:
+            self.opt_kind = TCP_OPT_EOL
+
+    @property
+    def raw_option(self):
+        return struct.pack("!B", self.opt_kind)
+
+    @property
+    def log(self):
+        return "eol"
+
+    @property
+    def dump(self):
+        return f"\nEOL"
+
+
+class TcpOptNop:
+    """ TCP option No Operation """
+
+    def __init__(self, raw_option=None):
+        if raw_option:
+            self.opt_kind = raw_option[0]
+        else:
+            self.opt_kind = TCP_OPT_NOP
+
+    @property
+    def raw_option(self):
+        return struct.pack("!B", self.opt_kind)
+
+    @property
+    def log(self):
+        return "nop"
+
+    @property
+    def dump(self):
+        return f"\nNOP"
+
+
+class TcpOptMss:
+    """ TCP option Maximum Segment Size """
+
+    def __init__(self, raw_option=None, opt_size=None):
+        if raw_option:
+            self.opt_kind = raw_option[0]
+            self.opt_len = raw_option[1]
+            self.opt_size = struct.unpack("!H", raw_option[2:4])[0]
+        else:
+            self.opt_kind = TCP_OPT_MSS
+            self.opt_len = TCP_OPT_MSS_LEN
+            self.opt_size = opt_size
+
+    @property
+    def raw_option(self):
+        return struct.pack("! BB H", self.opt_kind, self.opt_len, self.opt_size)
+
+    @property
+    def log(self):
+        return f"mss {self.opt_size}"
+
+    @property
+    def dump(self):
+        return f"\nMSS      SIZE {self.opt_size}"
+
+
+class TcpOptSackperm:
+    """ TCP option Sack Permit """
+
+    def __init__(self, raw_option=None):
+        if raw_option:
+            self.opt_kind = raw_option[0]
+            self.opt_len = raw_option[1]
+        else:
+            self.opt_kind = TCP_OPT_SACKPERM
+            self.opt_len = TCP_OPT_SACKPERM_LEN
+
+    @property
+    def raw_option(self):
+        return struct.pack("! BB", self.opt_kind, self.opt_len)
+
+    @property
+    def log(self):
+        return f"sackperm"
+
+    @property
+    def dump(self):
+        return f"\nSACKPERM"
+
+
+class TcpOptWscale:
+    """ TCP option Window Scale """
+
+    def __init__(self, raw_option=None, opt_scale=None):
+        if raw_option:
+            self.opt_kind = raw_option[0]
+            self.opt_len = raw_option[1]
+            self.opt_scale = raw_option[2]
+        else:
+            self.opt_kind = TCP_OPT_MSS
+            self.opt_len = TCP_OPT_MSS_LEN
+            self.opt_scale = opt_scale
+
+    @property
+    def raw_option(self):
+        return struct.pack("! BB B", self.opt_kind, self.opt_len, self.opt_scale)
+
+    @property
+    def log(self):
+        return f"wscale {self.opt_scale}"
+
+    @property
+    def dump(self):
+        return f"\nWSCALE   SCALE {self.opt_scale}"
+
+
+class TcpOptTimestamp:
+    """ TCP option Timestamp """
+
+    def __init__(self, raw_option=None, opt_tsval=None, opt_tsecr=None):
+        if raw_option:
+            self.opt_kind = raw_option[0]
+            self.opt_len = raw_option[1]
+            self.opt_tsval = struct.unpack("!L", raw_option[2:6])[0]
+            self.opt_tsecr = struct.unpack("!L", raw_option[6:10])[0]
+        else:
+            self.opt_kind = TCP_OPT_MSS
+            self.opt_len = TCP_OPT_MSS_LEN
+            self.opt_tsval = opt_tsval
+            self.opt_tsecr = opt_tsecr
+
+    @property
+    def raw_option(self):
+        return struct.pack("! BB LL", self.opt_kind, self.opt_len, self.opt_tsval, self.opt_tsecr)
+
+    @property
+    def log(self):
+        return f"ts {self.opt_tsval}/{self.opt_tsecr}"
+
+    @property
+    def dump(self):
+        return f"\nTSTAMP   TSVAL {self.opt_tsval}  TSECR {self.opt_tsecr}"
+

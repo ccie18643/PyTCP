@@ -52,6 +52,8 @@ def main():
 
             if ip_packet_rx.hdr_proto == ph_ip.IP_PROTO_TCP:
                 tcp_packet_rx = ph_tcp.TcpPacketRx(ip_packet_rx)
+                if tcp_packet_rx.hdr_dport == 22:
+                     continue
                 print(ether_packet_rx.dump)
                 print(ip_packet_rx.dump)
                 print(tcp_packet_rx.dump)
