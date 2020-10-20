@@ -109,24 +109,10 @@ class IpPacket:
 
         return struct.pack("! 4s 4s BBH", socket.inet_aton(self.hdr_src), socket.inet_aton(self.hdr_dst), 0, self.hdr_proto, self.hdr_plen - self.hdr_hlen)
 
-    @property
-    def log(self):
+    def __str__(self):
         """ Short packet log string """
 
         return f"IP {self.hdr_src} > {self.hdr_dst}, proto {self.hdr_proto} ({IP_PROTO_TABLE.get(self.hdr_proto, '???')})"
-
-    @property
-    def dump(self):
-        """ Verbose packet debug string """
-
-        return (
-            "--------------------------------------------------------------------------------\n"
-            + f"IP       SRC {self.hdr_src}  DST {self.hdr_dst}  VER {self.hdr_ver}  CKSUM {self.hdr_cksum} "
-            + f"({'OK' if self.hdr_cksum == self.compute_cksum() else 'BAD'})\n"
-            + f"         DSCP {self.hdr_dscp:0>6b} ({DSCP_TABLE.get(self.hdr_dscp, 'ERR')})  ECN {self.hdr_ecn:0>2b} ({ECN_TABLE[self.hdr_ecn]})  "
-            + f"HLEN {self.hdr_hlen}  PLEN {self.hdr_plen}\n         TTL {self.hdr_ttl}  ID {self.hdr_id}  FRAG FLAGS |{'DF|' if self.hdr_frag_df else '  |'}"
-            + f"{'MF' if self.hdr_frag_mf else '  |'} OFFSET {self.hdr_frag_offset}  PROTO {self.hdr_proto} ({IP_PROTO_TABLE.get(self.hdr_proto, '???')})"
-        )
 
 
 class IpPacketRx(IpPacket):

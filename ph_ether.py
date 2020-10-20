@@ -42,20 +42,10 @@ ETHER_TYPE_TABLE = {ETHER_TYPE_ARP: "ARP", ETHER_TYPE_IP: "IP", ETHER_TYPE_IPV6:
 class EtherPacket:
     """ Packet support base class """
 
-    @property
-    def log(self):
+    def __str__(self):
         """ Short packet log string """
 
-        return f"Ethernet {self.hdr_src} > {self.hdr_dst}, 0x{self.hdr_type:0>4x} ({ETHER_TYPE_TABLE.get(self.hdr_type, '???')})"
-
-    @property
-    def dump(self):
-        """ Verbose packet debug string """
-
-        return (
-            "--------------------------------------------------------------------------------\n"
-            + f"ETHER    SRC {self.hdr_src}  DST {self.hdr_dst}  TYPE 0x{self.hdr_type:0>4x} ({ETHER_TYPE_TABLE.get(self.hdr_type, '???')})"
-        )
+        return f"ETHER {self.hdr_src} > {self.hdr_dst}, 0x{self.hdr_type:0>4x} ({ETHER_TYPE_TABLE.get(self.hdr_type, '???')})"
 
 
 class EtherPacketRx(EtherPacket):

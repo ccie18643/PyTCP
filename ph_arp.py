@@ -43,8 +43,7 @@ class ArpPacket:
 
     protocol = "ARP"
 
-    @property
-    def log(self):
+    def __str__(self):
         """ Short packet log string """
 
         if self.hdr_operation == ARP_OP_REQUEST:
@@ -54,16 +53,6 @@ class ArpPacket:
             return f"ARP reply {self.hdr_spa} / {self.hdr_sha} > {self.hdr_tpa} / {self.hdr_tha}"
 
         return f"ARP unknown operation {self.operation}"
-
-    @property
-    def dump(self):
-        """ Verbose packet debug string """
-
-        return (
-            "--------------------------------------------------------------------------------\n"
-            + f"ARP      SENDER MAC {self.hdr_sha} IP {self.hdr_spa}  OPER {'Request' if self.hdr_operation == 1 else 'Reply'}\n"
-            + f"         TARGET MAC {self.hdr_tha} IP {self.hdr_tpa}"
-        )
 
 
 class ArpPacketRx(ArpPacket):

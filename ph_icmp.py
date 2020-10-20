@@ -66,7 +66,7 @@ class IcmpPacket:
         return ~((cksum & 0xFFFF) + (cksum >> 16)) & 0xFFFF
 
     @property
-    def log(self):
+    def __str__(self):
         """ Short packet log string """
 
         log = f"ICMP type {self.hdr_type}, code {self.hdr_code}"
@@ -82,35 +82,6 @@ class IcmpPacket:
 
         return log
 
-    @property
-    def dump(self):
-        """ Verbose packet debug string """
-
-        type_name = ""
-        code_name = ""
-
-        if self.hdr_type == ICMP_ECHOREPLY:
-            dump_message = f"\n         ID {self.msg_id}  SEQ {self.msg_seq}"
-            type_name = "(Echo Reply)"
-
-        if self.hdr_type == ICMP_ECHOREQUEST:
-            dump_message = f"\n         ID {self.msg_id}  SEQ {self.msg_seq}"
-            type_name = "(Echo Request)"
-
-        if self.hdr_type == ICMP_UNREACHABLE:
-            dump_message = ""
-            type_name = "(Destination Unreachable)"
-
-            if self.hdr_code == ICMP_UNREACHABLE_PORT:
-                code_name = "(Port Unreachable)"
-
-        dump_header = (
-            "--------------------------------------------------------------------------------\n"
-            + f"ICMP     TYPE {self.hdr_type} {type_name}  CODE {self.hdr_code} {code_name} CKSUM {self.hdr_cksum} "
-            + f"({'OK' if self.hdr_cksum == self.validate_cksum() else 'BAD'})"
-        )
-
-        return dump_header + dump_message
 
 class IcmpPacketRx(IcmpPacket):
     """ Packet parse class """

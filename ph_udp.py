@@ -40,29 +40,10 @@ class UdpPacket:
         cksum = sum(cksum_data)
         return ~((cksum & 0xFFFF) + (cksum >> 16)) & 0xFFFF
 
-    @property
-    def log(self):
+    def __str__(self):
         """ Short packet log string """
 
         return f"UDP {self.hdr_sport} > {self.hdr_dport}, len {self.hdr_len}"
-
-    @property
-    def dump(self):
-        """ Verbose packet debug string """
-
-        dump = (
-            "--------------------------------------------------------------------------------\n"
-            + f"UDP      SPORT {self.hdr_sport}  DPORT {self.hdr_dport}  LEN {self.hdr_len}  "
-            + f"CKSUM {self.hdr_cksum}"
-        )
-
-        if self.hdr_cksum == 0:
-            return dump + "(N/A)"
-
-        if self.hdr_cksum == self.compute_cksum(self.ip_pseudo_header):
-            return dump + "(OK)"
-
-        return dump + "(BAD)"
 
 
 class UdpPacketRx(UdpPacket):

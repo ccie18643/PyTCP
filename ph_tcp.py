@@ -52,8 +52,7 @@ class TcpPacket:
         cksum = sum(cksum_data)
         return ~((cksum & 0xFFFF) + (cksum >> 16)) & 0xFFFF
 
-    @property
-    def log(self):
+    def __str__(self):
         """ Short packet log string """
 
         log =  (
@@ -71,33 +70,9 @@ class TcpPacket:
         )
 
         for option in self.options:
-            log += ", " + option.log
+            log += ", " + str(option)
 
         return log
-
-    @property
-    def dump(self):
-        """ Verbose packet debug string """
-
-        dump = (
-            "--------------------------------------------------------------------------------\n"
-            + f"TCP      SPORT {self.hdr_sport}  DPORT {self.hdr_dport}  LEN {self.hdr_hlen}  "
-            + f"CKSUM {self.hdr_cksum} ({'OK' if self.hdr_cksum == self.compute_cksum(self.ip_pseudo_header) else 'BAD'})\n"
-            + f"         FLAGS {'|NS' if self.hdr_flag_ns else '|  '}"
-            + f"{'|CWR' if self.hdr_flag_crw else '|   '}"
-            + f"{'|ECE' if self.hdr_flag_ece else '|   '}"
-            + f"{'|URG' if self.hdr_flag_urg else '|   '}"
-            + f"{'|ACK' if self.hdr_flag_ack else '|   '}"
-            + f"{'|PSH' if self.hdr_flag_psh else '|   '}"
-            + f"{'|RST' if self.hdr_flag_rst else '|   '}"
-            + f"{'|SYN' if self.hdr_flag_syn else '|   '}"
-            + f"{'|FIN' if self.hdr_flag_fin else '|   '}"
-        )
-
-        for option in self.options:
-            dump += option.dump
-
-        return dump
 
 
 class TcpPacketRx(TcpPacket):
@@ -314,13 +289,8 @@ class TcpOptEol:
     def raw_option(self):
         return struct.pack("!B", self.opt_kind)
 
-    @property
-    def log(self):
+    def __str__(self):
         return "eol"
-
-    @property
-    def dump(self):
-        return f"\nEOL"
 
 
 class TcpOptNop:
@@ -336,13 +306,8 @@ class TcpOptNop:
     def raw_option(self):
         return struct.pack("!B", self.opt_kind)
 
-    @property
-    def log(self):
+    def __str__(self):
         return "nop"
-
-    @property
-    def dump(self):
-        return f"\nNOP"
 
 
 class TcpOptMss:
@@ -362,13 +327,8 @@ class TcpOptMss:
     def raw_option(self):
         return struct.pack("! BB H", self.opt_kind, self.opt_len, self.opt_size)
 
-    @property
-    def log(self):
+    def __str__(self):
         return f"mss {self.opt_size}"
-
-    @property
-    def dump(self):
-        return f"\nMSS      SIZE {self.opt_size}"
 
 
 class TcpOptSackperm:
@@ -386,13 +346,8 @@ class TcpOptSackperm:
     def raw_option(self):
         return struct.pack("! BB", self.opt_kind, self.opt_len)
 
-    @property
-    def log(self):
+    def __str__(self):
         return f"sackperm"
-
-    @property
-    def dump(self):
-        return f"\nSACKPERM"
 
 
 class TcpOptWscale:
@@ -412,13 +367,8 @@ class TcpOptWscale:
     def raw_option(self):
         return struct.pack("! BB B", self.opt_kind, self.opt_len, self.opt_scale)
 
-    @property
-    def log(self):
+    def __str__(self):
         return f"wscale {self.opt_scale}"
-
-    @property
-    def dump(self):
-        return f"\nWSCALE   SCALE {self.opt_scale}"
 
 
 class TcpOptTimestamp:
@@ -440,11 +390,6 @@ class TcpOptTimestamp:
     def raw_option(self):
         return struct.pack("! BB LL", self.opt_kind, self.opt_len, self.opt_tsval, self.opt_tsecr)
 
-    @property
-    def log(self):
+    def __str__(self):
         return f"ts {self.opt_tsval}/{self.opt_tsecr}"
-
-    @property
-    def dump(self):
-        return f"\nTSTAMP   TSVAL {self.opt_tsval}  TSECR {self.opt_tsecr}"
 
