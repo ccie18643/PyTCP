@@ -106,17 +106,17 @@ class IpPacket:
         hdr_frag_df=False,
         hdr_frag_mf=False,
         hdr_frag_offset=0,
+        hdr_options=[],
         child_packet=None,
     ):
         """ Class constructor """
 
+        # Packet parsing
         if parent_packet:
             raw_packet = parent_packet.raw_data
             raw_header = raw_packet[:IP_HEADER_LEN]
+            raw_options = raw_packet[IP_HEADER_LEN : (raw_packet[0] & 0b00001111) << 2]
 
-            # Keep options in raw format in case of packet reconstruction is needed, this needs to be replaced
-            # with proper option disection in future
-            self.__raw_options = raw_packet[IP_HEADER_LEN : (raw_packet[0] & 0b00001111) << 2]
             self.raw_data = raw_packet[(raw_packet[0] & 0b00001111) << 2 : struct.unpack("!H", raw_header[2:4])[0]]
 
             self.hdr_ver = raw_header[0] >> 4
@@ -134,6 +134,24 @@ class IpPacket:
             self.hdr_src = socket.inet_ntoa(struct.unpack("!4s", raw_header[12:16])[0])
             self.hdr_dst = socket.inet_ntoa(struct.unpack("!4s", raw_header[16:20])[0])
 
+            self.hdr_options = []
+
+            i = 0
+
+            while i < len(raw_options):
+                if raw_options[i] == IP_OPT_EOL:
+                    self.hdr_options.append(IpOptEol(raw_options[i : i + IP_OPT_EOL_LEN]))
+                    break
+
+                elif raw_options[i] == IP_OPT_NOP:
+                    self.hdr_options.append(IpOptNop(raw_options[i : i + IP_OPT_NOP_LEN]))
+                    i += TCP_OPT_NOP_LEN
+
+                else:
+                    self.hdr_options.append(IpOptUnk(raw_options[i : i + raw_options[i + 1]]))
+                    i += self.raw_options[i + 1]
+
+        # Packet building
         else:
             self.hdr_ver = 4
             self.hdr_hlen = None
@@ -149,13 +167,11 @@ class IpPacket:
             self.hdr_src = hdr_src
             self.hdr_dst = hdr_dst
 
-            self.hdr_options = []
-
-            # Keep options in raw format in case of packet reconstruction is needed, this needs to be replaced
-            # with proper option disection in future
-            self.__raw_options = b""
+            self.hdr_options = hdr_options
 
             self.hdr_hlen = IP_HEADER_LEN + len(self.raw_options)
+            
+            assert self.hdr_hlen % 4 == 0, "IP header len is not multiplcation of 4 bytes, check options"
 
             assert child_packet.protocol in {"ICMP", "UDP", "TCP"}, f"Not supported protocol: {child_packet.protocol}"
 
@@ -194,9 +210,14 @@ class IpPacket:
 
     @property
     def raw_options(self):
-        """ Header Options in raw form """
+        """ PAcket options in raw format """
 
-        return self.__raw_options
+        raw_options = b""
+
+        for option in self.hdr_options:
+            raw_options += option.raw_option
+
+        return raw_options
 
     @property
     def raw_packet(self):
@@ -230,3 +251,72 @@ class IpPacket:
         """ Short packet log string """
 
         return f"IP {self.hdr_src} > {self.hdr_dst}, proto {self.hdr_proto} ({IP_PROTO_TABLE.get(self.hdr_proto, '???')})"
+
+
+"""
+
+   IP options
+
+"""
+
+
+IP_OPT_EOL = 0
+IP_OPT_EOL_LEN = 1
+IP_OPT_NOP = 1
+IP_OPT_NOP_LEN = 1
+
+
+class IpOptEol:
+    """ IP option End of Option List """
+
+    name = "EOL"
+
+    def __init__(self, raw_option=None):
+        if raw_option:
+            self.opt_kind = raw_option[0]
+        else:
+            self.opt_kind = IP_OPT_EOL
+
+    @property
+    def raw_option(self):
+        return struct.pack("!B", self.opt_kind)
+
+    def __str__(self):
+        return "eol"
+
+
+class IpOptNop:
+    """ IP option No Operation """
+
+    name = "NOP"
+
+    def __init__(self, raw_option=None):
+        if raw_option:
+            self.opt_kind = raw_option[0]
+        else:
+            self.opt_kind = IP_OPT_NOP
+
+    @property
+    def raw_option(self):
+        return struct.pack("!B", self.opt_kind)
+
+    def __str__(self):
+        return "nop"
+
+
+class TcpOptUnk:
+    """ IP option not supported by this stack """
+
+    name = "UNKNOWN"
+
+    def __init__(self, raw_option=None):
+        self.opt_kind = raw_option[0]
+        self.opt_len = raw_option[1]
+        self.raw_data = raw_option[2 : self.opt_len - 2]
+
+    @property
+    def raw_option(self):
+        return struct.pack("! BB", self.opt_kind, self.opt_len) + self.raw_data
+
+    def __str__(self):
+        return "unk"

@@ -34,6 +34,7 @@ class UdpPacket:
     def __init__(self, parent_packet=None, hdr_sport=None, hdr_dport=None, raw_data=None):
         """ Class constructor """
 
+        # Packet parsing
         if parent_packet:
             raw_packet = parent_packet.raw_data
             raw_header = raw_packet[:UDP_HEADER_LEN]
@@ -46,6 +47,7 @@ class UdpPacket:
             self.hdr_len = struct.unpack("!H", raw_header[4:6])[0]
             self.hdr_cksum = struct.unpack("!H", raw_header[6:8])[0]
 
+        # Packet building
         else:
             self.hdr_sport = hdr_sport
             self.hdr_dport = hdr_dport

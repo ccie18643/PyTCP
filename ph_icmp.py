@@ -59,6 +59,7 @@ class IcmpPacket:
     def __init__(self, parent_packet=None, hdr_type=None, hdr_code=0, msg_id=None, msg_seq=None, msg_data=b"", ip_packet_rx=None):
         """ Class constructor """
 
+        # Packet parsing
         if parent_packet:
             raw_packet = parent_packet.raw_data
             raw_header = raw_packet[:ICMP_HEADER_LEN]
@@ -80,7 +81,8 @@ class IcmpPacket:
 
             if self.hdr_type == ICMP_UNREACHABLE:
                 self.msg_ip_info = raw_message[4:]
-
+        
+        # Packet building
         else:
             self.hdr_type = hdr_type
             self.hdr_code = hdr_code

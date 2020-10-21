@@ -13,7 +13,7 @@ import struct
 
 """
 
-   ARP packet header - IPv4 stack version
+   ARP packet header - IPv4 stack version only
 
    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
    |         Hardware Type         |         Protocol Type         |
@@ -33,6 +33,7 @@ import struct
 
 """
 
+
 ARP_HEADER_LEN = 28
 
 ARP_OP_REQUEST = 1
@@ -47,6 +48,7 @@ class ArpPacket:
     def __init__(self, parent_packet=None, hdr_sha=None, hdr_spa=None, hdr_tpa=None, hdr_tha="00:00:00:00:00:00", hdr_oper=ARP_OP_REQUEST):
         """ Class constructor """
 
+        # Packet parsing
         if parent_packet:
             raw_packet = parent_packet.raw_data
             raw_header = raw_packet[:ARP_HEADER_LEN]

@@ -66,6 +66,7 @@ class TcpPacket:
     ):
         """ Class constructor """
 
+        # Packet parsing
         if parent_packet:
             raw_packet = parent_packet.raw_data
             raw_header = raw_packet[:TCP_HEADER_LEN]
@@ -121,6 +122,7 @@ class TcpPacket:
                     self.hdr_options.append(TcpOptUnk(raw_options[i : i + raw_options[i + 1]]))
                     i += self.raw_options[i + 1]
 
+        # Packet building
         else:
             self.hdr_sport = hdr_sport
             self.hdr_dport = hdr_dport
@@ -386,19 +388,14 @@ class TcpOptTimestamp:
 
 
 class TcpOptUnk:
-    """ TCP option that is not supported by this stack """
+    """ TCP not supported by this stack """
 
     name = "UNKNOWN"
 
-    def __init__(self, raw_option=None, raw_data=None):
-        if raw_option:
-            self.opt_kind = raw_option[0]
-            self.opt_len = raw_option[1]
-            self.raw_data = raw_option[2 : self.opt_len - 2]
-        else:
-            self.opt_kind = TCP_OPT_MSS
-            self.opt_len = 2 + len(raw_data)
-            self.raw_data = raw_data
+    def __init__(self, raw_option=None):
+        self.opt_kind = raw_option[0]
+        self.opt_len = raw_option[1]
+        self.raw_data = raw_option[2 : self.opt_len - 2]
 
     @property
     def raw_option(self):

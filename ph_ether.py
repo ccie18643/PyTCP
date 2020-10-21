@@ -50,6 +50,7 @@ class EtherPacket:
     def __init__(self, raw_packet=None, hdr_src=None, hdr_dst=None, child_packet=None):
         """ Class constructor """
 
+        # Packet parsing
         if raw_packet:
             self.timestamp_rx = time.time()
 
@@ -66,6 +67,7 @@ class EtherPacket:
             self.hdr_src = ":".join([f"{_:0>2x}" for _ in raw_header[6:12]])
             self.hdr_type = struct.unpack("!H", raw_header[12:14])[0]
 
+        # Packet building
         else:
             self.serial_number_tx = f"TX{EtherPacket.serial_number_tx:0>4x}".upper()
             EtherPacket.serial_number_tx += 1
