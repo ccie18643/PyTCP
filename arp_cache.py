@@ -65,14 +65,14 @@ class ArpCache:
     def __send_arp_request(self, hdr_tpa):
         """ Enqueue ARP request with TX ring """
 
-        arp_packet_tx = ph_arp.ArpPacketTx(
-            hdr_operation=ph_arp.ARP_OP_REQUEST, hdr_sha=self.stack_mac_address, hdr_spa=self.stack_ip_address, hdr_tha="00:00:00:00:00:00", hdr_tpa=hdr_tpa
+        arp_packet_tx = ph_arp.ArpPacket(
+            hdr_oper=ph_arp.ARP_OP_REQUEST, hdr_sha=self.stack_mac_address, hdr_spa=self.stack_ip_address, hdr_tha="00:00:00:00:00:00", hdr_tpa=hdr_tpa
         )
 
-        ether_packet_tx = ph_ether.EtherPacketTx(hdr_src=self.stack_mac_address, hdr_dst="ff:ff:ff:ff:ff:ff", child_packet=arp_packet_tx)
+        ether_packet_tx = ph_ether.EtherPacket(hdr_src=self.stack_mac_address, hdr_dst="ff:ff:ff:ff:ff:ff", child_packet=arp_packet_tx)
 
-        self.logger.debug(f"{ether_packet_tx.serial_number_tx} - {ether_packet_tx.log}")
-        self.logger.opt(ansi=True).info(f"<magenta>{ether_packet_tx.serial_number_tx} </magenta> - {arp_packet_tx.log}")
+        self.logger.debug(f"{ether_packet_tx.serial_number_tx} - {ether_packet_tx}")
+        self.logger.opt(ansi=True).info(f"<magenta>{ether_packet_tx.serial_number_tx} </magenta> - {arp_packet_tx}")
         self.tx_ring.enqueue(ether_packet_tx, urgent=True)
 
     def add_entry(self, ip_address, mac_address):

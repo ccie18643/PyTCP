@@ -52,7 +52,7 @@ class TxRing:
 
             # In case packe doesn't contain valid destination MAC address try to obtain it from ARP cache
             elif ether_packet_tx.hdr_type == ph_ether.ETHER_TYPE_IP:
-                ip_packet_tx = ph_ip.IpPacketRx(ether_packet_tx)
+                ip_packet_tx = ph_ip.IpPacket(ether_packet_tx)
 
                 mac_address = self.arp_cache.get_mac_address(ip_packet_tx.hdr_dst)
                 if mac_address:
@@ -65,14 +65,14 @@ class TxRing:
                 continue
 
             # In case packet contains or we are able to obtain valid destination MAC address send the packet out
-            os.write(self.tap, ether_packet_tx.raw_packet)
+            os.write(self.tap, ether_packet_tx.get_raw_packet())
             if hasattr(ether_packet_tx, "timestamp_rx"):
                 self.logger.opt(ansi=True).debug(
                     f"<magenta>[TX]</magenta> {ether_packet_tx.serial_number_tx} <yellow>({ether_packet_tx.serial_number_rx}"
-                    + f", {(time.time() - ether_packet_tx.timestamp_rx) * 1000:.3f}ms)</yellow> - {ether_packet_tx.log}"
+                    + f", {(time.time() - ether_packet_tx.timestamp_rx) * 1000:.3f}ms)</yellow> - {ether_packet_tx}"
                 )
             else:
-                self.logger.opt(ansi=True).debug(f"<magenta>[TX]</magenta> {ether_packet_tx.serial_number_tx} - {ether_packet_tx.log}")
+                self.logger.opt(ansi=True).debug(f"<magenta>[TX]</magenta> {ether_packet_tx.serial_number_tx} - {ether_packet_tx}")
 
     def enqueue(self, ether_packet_tx, urgent=False):
         """ Enqueue outbound Ethernet packet to TX ring """

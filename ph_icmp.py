@@ -52,9 +52,54 @@ ICMP_UNREACHABLE_PORT = 3
 
 
 class IcmpPacket:
-    """ Packet support base class """
+    """ ICMP packet support class """
 
     protocol = "ICMP"
+
+    def __init__(self, parent_packet=None, hdr_type=None, hdr_code=0, msg_id=None, msg_seq=None, msg_data=b"", ip_packet_rx=None):
+        """ Class constructor """
+
+        if parent_packet:
+            raw_packet = parent_packet.raw_data
+            raw_header = raw_packet[:ICMP_HEADER_LEN]
+            raw_message = raw_packet[ICMP_HEADER_LEN:]
+
+            self.hdr_type = raw_header[0]
+            self.hdr_code = raw_header[1]
+            self.hdr_cksum = struct.unpack("!H", raw_header[2:4])[0]
+
+            if self.hdr_type == ICMP_ECHOREPLY:
+                self.msg_id = struct.unpack("!H", raw_message[0:2])[0]
+                self.msg_seq = struct.unpack("!H", raw_message[2:4])[0]
+                self.msg_data = raw_message[ICMP_ECHOREPLY_LEN:]
+
+            if self.hdr_type == ICMP_ECHOREQUEST:
+                self.msg_id = struct.unpack("!H", raw_message[0:2])[0]
+                self.msg_seq = struct.unpack("!H", raw_message[2:4])[0]
+                self.msg_data = raw_message[ICMP_ECHOREQUEST_LEN:]
+
+            if self.hdr_type == ICMP_UNREACHABLE:
+                self.msg_ip_info = raw_message[4:]
+
+        else:
+            self.hdr_type = hdr_type
+            self.hdr_code = hdr_code
+            self.hdr_cksum = 0
+
+            if self.hdr_type == ICMP_ECHOREPLY and self.hdr_code == 0:
+                self.msg_id = msg_id
+                self.msg_seq = msg_seq
+                self.msg_data = msg_data
+
+            if self.hdr_type == ICMP_ECHOREQUEST and self.hdr_code == 0:
+                self.msg_id = msg_id
+                self.msg_seq = msg_seq
+                self.msg_data = msg_data
+
+            if self.hdr_type == ICMP_UNREACHABLE:
+                self.msg_ip_info = ip_packet_rx.raw_header + ip_packet_rx.raw_data[:8]
+
+
 
     def compute_cksum(self):
         """ Compute checksum of the ICMP packet """
@@ -64,85 +109,6 @@ class IcmpPacket:
         cksum_data[1] = 0
         cksum = sum(cksum_data)
         return ~((cksum & 0xFFFF) + (cksum >> 16)) & 0xFFFF
-
-    @property
-    def __str__(self):
-        """ Short packet log string """
-
-        log = f"ICMP type {self.hdr_type}, code {self.hdr_code}"
-
-        if self.hdr_type == ICMP_ECHOREPLY:
-            log += f", id {self.msg_id}, seq {self.msg_seq}"
-
-        if self.hdr_type == ICMP_ECHOREQUEST:
-            log += f", id {self.msg_id}, seq {self.msg_seq}"
-
-        if self.hdr_type == ICMP_UNREACHABLE:
-            pass
-
-        return log
-
-
-class IcmpPacketRx(IcmpPacket):
-    """ Packet parse class """
-
-    def __init__(self, parent_packet):
-        """ Class constructor """
-
-        self.raw_packet = parent_packet.raw_data
-
-        self.hdr_type = self.raw_header[0]
-        self.hdr_code = self.raw_header[1]
-        self.hdr_cksum = struct.unpack("!H", self.raw_header[2:4])[0]
-
-        if self.hdr_type == ICMP_ECHOREPLY:
-            self.msg_id = struct.unpack("!H", self.raw_message[0:2])[0]
-            self.msg_seq = struct.unpack("!H", self.raw_message[2:4])[0]
-            self.msg_data = self.raw_message[ICMP_ECHOREPLY_LEN:]
-
-        if self.hdr_type == ICMP_ECHOREQUEST:
-            self.msg_id = struct.unpack("!H", self.raw_message[0:2])[0]
-            self.msg_seq = struct.unpack("!H", self.raw_message[2:4])[0]
-            self.msg_data = self.raw_message[ICMP_ECHOREQUEST_LEN:]
-
-        if self.hdr_type == ICMP_UNREACHABLE:
-            self.msg_ip_info = self.raw_message[4:]
-
-    @property
-    def raw_header(self):
-        """ Get packet header in raw format """
-
-        return self.raw_packet[:ICMP_HEADER_LEN]
-
-    @property
-    def raw_message(self):
-        """ Get packet message in raw format """
-
-        return self.raw_packet[ICMP_HEADER_LEN:]
-
-
-class IcmpPacketTx(IcmpPacket):
-    """ Packet creation class """
-
-    def __init__(self, hdr_type, hdr_code=0, msg_id=None, msg_seq=None, msg_data=b"", ip_packet_rx=None):
-        """ Class constructor """
-
-        self.hdr_type = hdr_type
-        self.hdr_code = hdr_code
-        self.hdr_cksum = 0
-
-        if self.hdr_type == ICMP_ECHOREPLY and self.hdr_code == 0:
-            self.msg_id = msg_id
-            self.msg_seq = msg_seq
-            self.msg_data = msg_data
-
-        if self.hdr_type == ICMP_ECHOREQUEST and self.hdr_code == 0:
-            self.msg_id = msg_id
-            self.msg_seq = msg_seq
-            self.msg_data = msg_data
-
-        if self.hdr_type == ICMP_UNREACHABLE:
-            self.msg_ip_info = ip_packet_rx.raw_header + ip_packet_rx.raw_data[:8]
 
     @property
     def raw_header(self):
@@ -178,4 +144,19 @@ class IcmpPacketTx(IcmpPacket):
 
         return self.raw_packet
 
+    def __str__(self):
+        """ Short packet log string """
+
+        log = f"ICMP type {self.hdr_type}, code {self.hdr_code}"
+
+        if self.hdr_type == ICMP_ECHOREPLY:
+            log += f", id {self.msg_id}, seq {self.msg_seq}"
+
+        if self.hdr_type == ICMP_ECHOREQUEST:
+            log += f", id {self.msg_id}, seq {self.msg_seq}"
+
+        if self.hdr_type == ICMP_UNREACHABLE:
+            pass
+
+        return log
 

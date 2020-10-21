@@ -35,21 +35,21 @@ class RxRing:
         while True:
 
             # Wait till there is any packet comming and pick it up
-            ether_packet_rx = ph_ether.EtherPacketRx(os.read(self.tap, 2048))
+            ether_packet_rx = ph_ether.EtherPacket(os.read(self.tap, 2048))
 
             # Check if received packet uses valid Ethernet II format
             if ether_packet_rx.hdr_type < ph_ether.ETHER_TYPE_MIN:
-                self.logger.opt(ansi=True).debug(f"<green>[RX]</green> Packet doesn't comply with the Ethernet II standard - {ether_packet_rx.log}")
+                self.logger.opt(ansi=True).debug(f"<green>[RX]</green> Packet doesn't comply with the Ethernet II standard - {ether_packet_rx}")
                 continue
 
             # Check if received packet has been sent to us directly or by broadcast
             if ether_packet_rx.hdr_dst not in {self.stack_mac_address, "ff:ff:ff:ff:ff:ff"}:
-                self.logger.opt(ansi=True).debug(f"<green>[RX]</green> Packet not destined for this stack - {ether_packet_rx.log}")
+                self.logger.opt(ansi=True).debug(f"<green>[RX]</green> Packet not destined for this stack - {ether_packet_rx}")
                 continue
 
             # Put the packet into queue
             self.rx_ring.append(ether_packet_rx)
-            self.logger.opt(ansi=True).debug(f"<green>[RX]</green> {ether_packet_rx.serial_number_rx} - {ether_packet_rx.log}")
+            self.logger.opt(ansi=True).debug(f"<green>[RX]</green> {ether_packet_rx.serial_number_rx} - {ether_packet_rx}")
             self.packet_enqueued.release()
 
     def dequeue(self):

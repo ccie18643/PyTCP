@@ -42,85 +42,68 @@ ETHER_TYPE_TABLE = {ETHER_TYPE_ARP: "ARP", ETHER_TYPE_IP: "IP", ETHER_TYPE_IPV6:
 class EtherPacket:
     """ Packet support base class """
 
-    def __str__(self):
-        """ Short packet log string """
-
-        return f"ETHER {self.hdr_src} > {self.hdr_dst}, 0x{self.hdr_type:0>4x} ({ETHER_TYPE_TABLE.get(self.hdr_type, '???')})"
-
-
-class EtherPacketRx(EtherPacket):
-    """ Packet parse class """
-
-    protocol = "Ethernet"
+    protocol = "ETHER"
 
     serial_number_rx = 0
-
-    def __init__(self, raw_packet):
-        """ Class constructor """
-
-        self.timestamp_rx = time.time()
-
-        self.serial_number_rx = f"RX{EtherPacketRx.serial_number_rx:0>4x}".upper()
-        EtherPacketRx.serial_number_rx += 1
-        if EtherPacketRx.serial_number_rx > 0xFFFF:
-            EtherPacketRx.serial_number_rx = 0
-
-        self.raw_packet = raw_packet
-
-        self.hdr_dst = ":".join([f"{_:0>2x}" for _ in self.raw_header[0:6]])
-        self.hdr_src = ":".join([f"{_:0>2x}" for _ in self.raw_header[6:12]])
-        self.hdr_type = struct.unpack("!H", self.raw_header[12:14])[0]
-
-    @property
-    def raw_header(self):
-        """ Get packet header in raw format """
-
-        return self.raw_packet[:ETHER_HEADER_LEN]
-
-    @property
-    def raw_data(self):
-        """ Get packet data in raw format """
-
-        return self.raw_packet[ETHER_HEADER_LEN:]
-
-
-class EtherPacketTx(EtherPacket):
-    """ Packet creation class """
-
     serial_number_tx = 0
 
-    def __init__(self, hdr_src, hdr_dst, child_packet):
+    def __init__(self, raw_packet=None, hdr_src=None, hdr_dst=None, child_packet=None):
         """ Class constructor """
 
-        self.timestamp_tx = time.time()
+        if raw_packet:
+            self.timestamp_rx = time.time()
 
-        self.serial_number_tx = f"TX{EtherPacketTx.serial_number_tx:0>4x}".upper()
-        EtherPacketTx.serial_number_tx += 1
-        if EtherPacketTx.serial_number_tx > 0xFFFF:
-            EtherPacketTx.serial_number_tx = 0
+            self.serial_number_rx = f"RX{EtherPacket.serial_number_rx:0>4x}".upper()
+            EtherPacket.serial_number_rx += 1
+            if EtherPacket.serial_number_rx > 0xFFFF:
+                EtherPacket.serial_number_rx = 0
 
-        self.hdr_dst = hdr_dst
-        self.hdr_src = hdr_src
+            raw_header = raw_packet[:ETHER_HEADER_LEN]
 
-        if child_packet.protocol == "IP":
-            self.hdr_type = ETHER_TYPE_IP
-            self.raw_data = child_packet.get_raw_packet()
+            self.raw_data = raw_packet[ETHER_HEADER_LEN:]
 
-        elif child_packet.protocol == "ARP":
-            self.hdr_type = ETHER_TYPE_ARP
-            self.raw_data = child_packet.get_raw_packet()
+            self.hdr_dst = ":".join([f"{_:0>2x}" for _ in raw_header[0:6]])
+            self.hdr_src = ":".join([f"{_:0>2x}" for _ in raw_header[6:12]])
+            self.hdr_type = struct.unpack("!H", raw_header[12:14])[0]
 
         else:
-            raise Exception(f"Not supported protocol: {child_packet.protocol}")
+            self.serial_number_tx = f"TX{EtherPacket.serial_number_tx:0>4x}".upper()
+            EtherPacket.serial_number_tx += 1
+            if EtherPacket.serial_number_tx > 0xFFFF:
+                EtherPacket.serial_number_tx = 0
+
+            self.hdr_dst = hdr_dst
+            self.hdr_src = hdr_src
+
+            assert child_packet.protocol in {"IP", "ARP"}, f"Not supported protocol: {child_packet.protocol}"
+            
+            if child_packet.protocol == "IP":
+                self.hdr_type = ETHER_TYPE_IP
+                self.raw_data = child_packet.get_raw_packet()
+
+            if child_packet.protocol == "ARP":
+                self.hdr_type = ETHER_TYPE_ARP
+                self.raw_data = child_packet.get_raw_packet()
 
     @property
     def raw_header(self):
-        """ Get packet header in raw format """
+        """ Packet header in raw format """
 
         return struct.pack("! 6s 6s H", bytes.fromhex(self.hdr_dst.replace(":", "")), bytes.fromhex(self.hdr_src.replace(":", "")), self.hdr_type)
 
     @property
     def raw_packet(self):
-        """ Get packet header in raw format """
+        """ Packet in raw format """
 
         return self.raw_header + self.raw_data
+
+    def get_raw_packet(self):
+        """ Get packet in raw frmat ready to be sent out """
+
+        return self.raw_packet
+
+    def __str__(self):
+        """ Short packet log string """
+
+        return f"ETHER {self.hdr_src} > {self.hdr_dst}, 0x{self.hdr_type:0>4x} ({ETHER_TYPE_TABLE.get(self.hdr_type, '???')})"
+

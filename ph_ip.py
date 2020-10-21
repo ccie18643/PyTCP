@@ -90,9 +90,126 @@ ECN_TABLE = {0b00: "Non-ECT", 0b10: "ECT(0)", 0b01: "ECT(1)", 0b11: "CE"}
 
 
 class IpPacket:
-    """ Packet support base class """
+    """ IP packet support class """
 
     protocol = "IP"
+
+    def __init__(
+        self,
+        parent_packet=None,
+        hdr_src=None,
+        hdr_dst=None,
+        hdr_ttl=64,
+        hdr_dscp=0,
+        hdr_ecn=0,
+        hdr_id=0,
+        hdr_frag_df=False,
+        hdr_frag_mf=False,
+        hdr_frag_offset=0,
+        child_packet=None,
+    ):
+        """ Class constructor """
+
+        if parent_packet:
+            raw_packet = parent_packet.raw_data
+            raw_header = raw_packet[:IP_HEADER_LEN]
+
+            # Keep options in raw format in case of packet reconstruction is needed, this needs to be replaced
+            # with proper option disection in future
+            self.__raw_options = raw_packet[IP_HEADER_LEN : (raw_packet[0] & 0b00001111) << 2]
+            self.raw_data = raw_packet[(raw_packet[0] & 0b00001111) << 2 : struct.unpack("!H", raw_header[2:4])[0]]
+
+            self.hdr_ver = raw_header[0] >> 4
+            self.hdr_hlen = (raw_header[0] & 0b00001111) << 2
+            self.hdr_dscp = (raw_header[1] & 0b11111100) >> 2
+            self.hdr_ecn = raw_header[1] & 0b00000011
+            self.hdr_plen = struct.unpack("!H", raw_header[2:4])[0]
+            self.hdr_id = struct.unpack("!H", raw_header[4:6])[0]
+            self.hdr_frag_df = bool(struct.unpack("!H", raw_header[6:8])[0] & 0b0100000000000000)
+            self.hdr_frag_mf = bool(struct.unpack("!H", raw_header[6:8])[0] & 0b0010000000000000)
+            self.hdr_frag_offset = struct.unpack("!H", raw_header[6:8])[0] & 0b0001111111111111
+            self.hdr_ttl = raw_header[8]
+            self.hdr_proto = raw_header[9]
+            self.hdr_cksum = struct.unpack("!H", raw_header[10:12])[0]
+            self.hdr_src = socket.inet_ntoa(struct.unpack("!4s", raw_header[12:16])[0])
+            self.hdr_dst = socket.inet_ntoa(struct.unpack("!4s", raw_header[16:20])[0])
+
+        else:
+            self.hdr_ver = 4
+            self.hdr_hlen = None
+            self.hdr_dscp = hdr_dscp
+            self.hdr_ecn = hdr_ecn
+            self.hdr_plen = None
+            self.hdr_id = hdr_id
+            self.hdr_frag_df = hdr_frag_df
+            self.hdr_frag_mf = hdr_frag_mf
+            self.hdr_frag_offset = hdr_frag_offset
+            self.hdr_ttl = hdr_ttl
+            self.hdr_cksum = 0
+            self.hdr_src = hdr_src
+            self.hdr_dst = hdr_dst
+
+            self.hdr_options = []
+            
+            # Keep options in raw format in case of packet reconstruction is needed, this needs to be replaced
+            # with proper option disection in future
+            self.__raw_options = b""
+            
+            self.hdr_hlen = IP_HEADER_LEN + len(self.raw_options)
+
+            assert child_packet.protocol in {"ICMP", "UDP", "TCP"}, f"Not supported protocol: {child_packet.protocol}"
+
+            if child_packet.protocol == "ICMP":
+                self.hdr_proto = IP_PROTO_ICMP
+                self.raw_data = child_packet.get_raw_packet()
+                self.hdr_plen = self.hdr_hlen + len(self.raw_data)
+
+            if child_packet.protocol == "UDP":
+                self.hdr_proto = IP_PROTO_UDP
+                self.hdr_plen = self.hdr_hlen + child_packet.hdr_len
+                self.raw_data = child_packet.get_raw_packet(self.ip_pseudo_header)
+
+            if child_packet.protocol == "TCP":
+                self.hdr_proto = IP_PROTO_TCP
+                self.hdr_plen = self.hdr_hlen + child_packet.hdr_hlen + len(child_packet.raw_data)
+                self.raw_data = child_packet.get_raw_packet(self.ip_pseudo_header)
+
+    @property
+    def raw_header(self):
+        """ Packet header in raw form """
+
+        return struct.pack(
+            "! BBH HH BBH 4s 4s",
+            self.hdr_ver << 4 | self.hdr_hlen >> 2,
+            self.hdr_dscp << 2 | self.hdr_ecn,
+            self.hdr_plen,
+            self.hdr_id,
+            self.hdr_frag_df << 14 | self.hdr_frag_mf << 13 | self.hdr_frag_offset,
+            self.hdr_ttl,
+            self.hdr_proto,
+            self.hdr_cksum,
+            socket.inet_aton(self.hdr_src),
+            socket.inet_aton(self.hdr_dst),
+        )
+
+    @property
+    def raw_options(self):
+        """ Header Options in raw form """
+
+        return self.__raw_options
+
+    @property
+    def raw_packet(self):
+        """ Packet in raw form """
+
+        return self.raw_header + self.raw_options + self.raw_data
+
+    def get_raw_packet(self):
+        """ Get packet in raw format ready to be processed by lower level protocol """
+
+        self.hdr_cksum = self.compute_cksum()
+
+        return self.raw_packet
 
     def compute_cksum(self):
         """ Compute checksum of IP header """
@@ -113,120 +230,3 @@ class IpPacket:
         """ Short packet log string """
 
         return f"IP {self.hdr_src} > {self.hdr_dst}, proto {self.hdr_proto} ({IP_PROTO_TABLE.get(self.hdr_proto, '???')})"
-
-
-class IpPacketRx(IpPacket):
-    """ Packet parse class """
-
-    def __init__(self, parent_packet):
-        """ Class constructor """
-
-        self.raw_packet = parent_packet.raw_data
-
-        self.hdr_ver = self.raw_header[0] >> 4
-        self.hdr_hlen = (self.raw_header[0] & 0b00001111) << 2
-        self.hdr_dscp = (self.raw_header[1] & 0b11111100) >> 2
-        self.hdr_ecn = self.raw_header[1] & 0b00000011
-        self.hdr_plen = struct.unpack("!H", self.raw_header[2:4])[0]
-        self.hdr_id = struct.unpack("!H", self.raw_header[4:6])[0]
-        self.hdr_frag_df = bool(struct.unpack("!H", self.raw_header[6:8])[0] & 0b0100000000000000)
-        self.hdr_frag_mf = bool(struct.unpack("!H", self.raw_header[6:8])[0] & 0b0010000000000000)
-        self.hdr_frag_offset = struct.unpack("!H", self.raw_header[6:8])[0] & 0b0001111111111111
-        self.hdr_ttl = self.raw_header[8]
-        self.hdr_proto = self.raw_header[9]
-        self.hdr_cksum = struct.unpack("!H", self.raw_header[10:12])[0]
-        self.hdr_src = socket.inet_ntoa(struct.unpack("!4s", self.raw_header[12:16])[0])
-        self.hdr_dst = socket.inet_ntoa(struct.unpack("!4s", self.raw_header[16:20])[0])
-
-    @property
-    def raw_header(self):
-        """ Get packet header in raw format """
-
-        return self.raw_packet[:IP_HEADER_LEN]
-
-    @property
-    def raw_options(self):
-        """ Get packet header options in raw format """
-
-        return self.raw_packet[IP_HEADER_LEN : (self.raw_packet[0] & 0b00001111) << 2]
-
-    @property
-    def raw_data(self):
-        """ Get packet header in raw format """
-
-        return self.raw_packet[(self.raw_packet[0] & 0b00001111) << 2 : struct.unpack("!H", self.raw_header[2:4])[0]]
-
-
-class IpPacketTx(IpPacket):
-    """ Packet creation class """
-
-    def __init__(self, hdr_src, hdr_dst, child_packet, hdr_ttl=64, raw_options=b""):
-        """ Class constructor """
-
-        self.hdr_ver = 4
-        self.hdr_hlen = None
-        self.hdr_dscp = 0
-        self.hdr_ecn = 0
-        self.hdr_plen = None
-        self.hdr_id = 0
-        self.hdr_frag_df = False
-        self.hdr_frag_mf = False
-        self.hdr_frag_offset = 0
-        self.hdr_ttl = hdr_ttl
-        self.hdr_cksum = 0
-        self.hdr_src = hdr_src
-        self.hdr_dst = hdr_dst
-
-        self.raw_options = raw_options
-
-        self.hdr_hlen = IP_HEADER_LEN + len(self.raw_options)
-
-        if child_packet.protocol == "ICMP":
-            self.hdr_proto = IP_PROTO_ICMP
-            self.raw_data = child_packet.get_raw_packet()
-            self.hdr_plen = self.hdr_hlen + len(self.raw_data)
-
-        elif child_packet.protocol == "UDP":
-            self.hdr_proto = IP_PROTO_UDP
-            self.hdr_plen = self.hdr_hlen + child_packet.hdr_len
-            self.raw_data = child_packet.get_raw_packet(self.ip_pseudo_header)
-
-        elif child_packet.protocol == "TCP":
-            self.hdr_proto = IP_PROTO_TCP
-            self.hdr_plen = self.hdr_hlen + child_packet.hdr_hlen + len(child_packet.raw_data)
-            self.raw_data = child_packet.get_raw_packet(self.ip_pseudo_header)
-
-        else:
-            raise Exception(f"Not supported protocol: {child_packet.protocol}")
-
-    @property
-    def raw_header(self):
-        """ Get packet header in raw form """
-
-        return struct.pack(
-            "! BBH HH BBH 4s 4s",
-            self.hdr_ver << 4 | self.hdr_hlen >> 2,
-            self.hdr_dscp << 2 | self.hdr_ecn,
-            self.hdr_plen,
-            self.hdr_id,
-            self.hdr_frag_df << 14 | self.hdr_frag_mf << 13 | self.hdr_frag_offset,
-            self.hdr_ttl,
-            self.hdr_proto,
-            self.hdr_cksum,
-            socket.inet_aton(self.hdr_src),
-            socket.inet_aton(self.hdr_dst),
-        )
-
-    @property
-    def raw_packet(self):
-        """ Get packet in raw form """
-
-        return self.raw_header + self.raw_options + self.raw_data
-
-    def get_raw_packet(self):
-        """ Get packet in raw format ready to be processed by lower level protocol """
-
-        self.hdr_cksum = self.compute_cksum()
-
-        return self.raw_packet
-

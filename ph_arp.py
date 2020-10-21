@@ -33,68 +33,44 @@ import struct
 
 """
 
+ARP_HEADER_LEN = 28
 
 ARP_OP_REQUEST = 1
 ARP_OP_REPLY = 2
 
 
 class ArpPacket:
-    """ Packet support base class """
+    """ ARP packet support class """
 
     protocol = "ARP"
 
-    def __str__(self):
-        """ Short packet log string """
-
-        if self.hdr_operation == ARP_OP_REQUEST:
-            return f"ARP request {self.hdr_spa} / {self.hdr_sha} > {self.hdr_tpa} / {self.hdr_tha}"
-
-        if self.hdr_operation == ARP_OP_REPLY:
-            return f"ARP reply {self.hdr_spa} / {self.hdr_sha} > {self.hdr_tpa} / {self.hdr_tha}"
-
-        return f"ARP unknown operation {self.operation}"
-
-
-class ArpPacketRx(ArpPacket):
-    """ Packet parse class """
-
-    def __init__(self, parent_packet):
+    def __init__(self, parent_packet=None, hdr_sha=None, hdr_spa=None, hdr_tpa=None, hdr_tha="00:00:00:00:00:00", hdr_oper=ARP_OP_REQUEST):
         """ Class constructor """
 
-        self.raw_packet = parent_packet.raw_data
+        if parent_packet:
+            raw_packet = parent_packet.raw_data
+            raw_header = raw_packet[:ARP_HEADER_LEN]
 
-        self.hdr_hrtype = struct.unpack("!H", self.raw_header[0:2])[0]
-        self.hdr_prtype = struct.unpack("!H", self.raw_header[2:4])[0]
-        self.hdr_hrlen = self.raw_header[4]
-        self.hdr_prlen = self.raw_header[5]
-        self.hdr_operation = struct.unpack("!H", self.raw_header[6:8])[0]
-        self.hdr_sha = ":".join([f"{_:0>2x}" for _ in self.raw_header[8:14]])
-        self.hdr_spa = socket.inet_ntoa(struct.unpack("!4s", self.raw_header[14:18])[0])
-        self.hdr_tha = ":".join([f"{_:0>2x}" for _ in self.raw_header[18:24]])
-        self.hdr_tpa = socket.inet_ntoa(struct.unpack("!4s", self.raw_header[24:28])[0])
+            self.hdr_hrtype = struct.unpack("!H", raw_header[0:2])[0]
+            self.hdr_prtype = struct.unpack("!H", raw_header[2:4])[0]
+            self.hdr_hrlen = raw_header[4]
+            self.hdr_prlen = raw_header[5]
+            self.hdr_oper = struct.unpack("!H", raw_header[6:8])[0]
+            self.hdr_sha = ":".join([f"{_:0>2x}" for _ in raw_header[8:14]])
+            self.hdr_spa = socket.inet_ntoa(struct.unpack("!4s", raw_header[14:18])[0])
+            self.hdr_tha = ":".join([f"{_:0>2x}" for _ in raw_header[18:24]])
+            self.hdr_tpa = socket.inet_ntoa(struct.unpack("!4s", raw_header[24:28])[0])
 
-    @property
-    def raw_header(self):
-        """ Get packet header in raw format """
-
-        return self.raw_packet[:28]
-
-
-class ArpPacketTx(ArpPacket):
-    """ Packet creation class """
-
-    def __init__(self, hdr_sha, hdr_spa, hdr_tpa, hdr_tha="00:00:00:00:00:00", hdr_operation=ARP_OP_REQUEST):
-        """ Class constructor """
-
-        self.hdr_hrtype = 1
-        self.hdr_prtype = 0x0800
-        self.hdr_hrlen = 6
-        self.hdr_prlen = 4
-        self.hdr_operation = hdr_operation
-        self.hdr_sha = hdr_sha
-        self.hdr_spa = hdr_spa
-        self.hdr_tha = hdr_tha
-        self.hdr_tpa = hdr_tpa
+        else:
+            self.hdr_hrtype = 1
+            self.hdr_prtype = 0x0800
+            self.hdr_hrlen = 6
+            self.hdr_prlen = 4
+            self.hdr_oper = hdr_oper
+            self.hdr_sha = hdr_sha
+            self.hdr_spa = hdr_spa
+            self.hdr_tha = hdr_tha
+            self.hdr_tpa = hdr_tpa
 
     @property
     def raw_header(self):
@@ -106,7 +82,7 @@ class ArpPacketTx(ArpPacket):
             self.hdr_prtype,
             self.hdr_hrlen,
             self.hdr_prlen,
-            self.hdr_operation,
+            self.hdr_oper,
             bytes.fromhex(self.hdr_sha.replace(":", "")),
             socket.inet_aton(self.hdr_spa),
             bytes.fromhex(self.hdr_tha.replace(":", "")),
@@ -123,4 +99,16 @@ class ArpPacketTx(ArpPacket):
         """ Get packet in raw format ready to be processed by lower level protocol """
 
         return self.raw_packet
+
+    def __str__(self):
+        """ Short packet log string """
+
+        if self.hdr_oper == ARP_OP_REQUEST:
+            return f"ARP request {self.hdr_spa} / {self.hdr_sha} > {self.hdr_tpa} / {self.hdr_tha}"
+
+        if self.hdr_oper == ARP_OP_REPLY:
+            return f"ARP reply {self.hdr_spa} / {self.hdr_sha} > {self.hdr_tpa} / {self.hdr_tha}"
+
+        return f"ARP unknown operation {self.oper}"
+
 
