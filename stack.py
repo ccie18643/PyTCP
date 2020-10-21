@@ -9,7 +9,6 @@ stact.py - main TCP/IP stack program
 
 import os
 import sys
-import time
 import fcntl
 import struct
 import loguru
@@ -75,9 +74,7 @@ def packet_handler(rx_ring, tx_ring, arp_cache):
                     ether_packet_tx.serial_number_rx = ether_packet_rx.serial_number_rx
 
                     logger.debug(f"{ether_packet_tx.serial_number_tx} ({ether_packet_tx.serial_number_rx}) - {ether_packet_tx}")
-                    logger.opt(ansi=True).info(
-                        f"<magenta>{ether_packet_tx.serial_number_tx} ({ether_packet_tx.serial_number_rx})</magenta> - {arp_packet_tx}"
-                    )
+                    logger.opt(ansi=True).info(f"<magenta>{ether_packet_tx.serial_number_tx} ({ether_packet_tx.serial_number_rx})</magenta> - {arp_packet_tx}")
                     tx_ring.enqueue(ether_packet_tx)
 
                     # Update ARP cache with the maping learned from the received ARP request that was destined to this stack
@@ -129,9 +126,7 @@ def packet_handler(rx_ring, tx_ring, arp_cache):
 
                     logger.debug(f"{ether_packet_tx.serial_number_tx} ({ether_packet_tx.serial_number_rx}) - {ether_packet_tx}")
                     logger.debug(f"{ether_packet_tx.serial_number_tx} ({ether_packet_tx.serial_number_rx}) - {ip_packet_tx}")
-                    logger.opt(ansi=True).info(
-                        f"<magenta>{ether_packet_tx.serial_number_tx} ({ether_packet_tx.serial_number_rx})</magenta> - {icmp_packet_tx}"
-                    )
+                    logger.opt(ansi=True).info(f"<magenta>{ether_packet_tx.serial_number_tx} ({ether_packet_tx.serial_number_rx})</magenta> - {icmp_packet_tx}")
                     tx_ring.enqueue(ether_packet_tx)
 
             # Handle UDP protocol
@@ -158,9 +153,7 @@ def packet_handler(rx_ring, tx_ring, arp_cache):
 
                     logger.debug(f"{ether_packet_tx.serial_number_tx} ({ether_packet_tx.serial_number_rx}) - {ether_packet_tx}")
                     logger.debug(f"{ether_packet_tx.serial_number_tx} ({ether_packet_tx.serial_number_rx}) - {ip_packet_tx}")
-                    logger.opt(ansi=True).info(
-                        f"<magenta>{ether_packet_tx.serial_number_tx} ({ether_packet_tx.serial_number_rx})</magenta> - {udp_packet_tx}"
-                    )
+                    logger.opt(ansi=True).info(f"<magenta>{ether_packet_tx.serial_number_tx} ({ether_packet_tx.serial_number_rx})</magenta> - {udp_packet_tx}")
                     tx_ring.enqueue(ether_packet_tx)
 
                 # Respond with ICMP Port Unreachable message
@@ -182,11 +175,8 @@ def packet_handler(rx_ring, tx_ring, arp_cache):
 
                     logger.debug(f"{ether_packet_tx.serial_number_tx} ({ether_packet_tx.serial_number_rx}) - {ether_packet_tx}")
                     logger.debug(f"{ether_packet_tx.serial_number_tx} ({ether_packet_tx.serial_number_rx}) - {ip_packet_tx}")
-                    logger.opt(ansi=True).info(
-                        f"<magenta>{ether_packet_tx.serial_number_tx} ({ether_packet_tx.serial_number_rx})</magenta> - {icmp_packet_tx}"
-                    )
+                    logger.opt(ansi=True).info(f"<magenta>{ether_packet_tx.serial_number_tx} ({ether_packet_tx.serial_number_rx})</magenta> - {icmp_packet_tx}")
                     tx_ring.enqueue(ether_packet_tx)
-
 
             # Handle TCP protocol
             if ip_packet_rx.hdr_proto == ph_ip.IP_PROTO_TCP:
@@ -203,18 +193,8 @@ def packet_handler(rx_ring, tx_ring, arp_cache):
                         hdr_sport=tcp_packet_rx.hdr_dport,
                         hdr_dport=tcp_packet_rx.hdr_sport,
                         hdr_ack_num=tcp_packet_rx.hdr_seq_num + 1,
-                        #hdr_flag_rst=True,
-                        hdr_flag_syn=True,
+                        hdr_flag_rst=True,
                         hdr_flag_ack=True,
-
-                        hdr_options = [
-                            ph_tcp.TcpOptMss(opt_size=1460),
-                            ph_tcp.TcpOptWscale(opt_scale=6),
-                            ph_tcp.TcpOptTimestamp(opt_tsval=0, opt_tsecr=0),
-                            ph_tcp.TcpOptNop(),
-                            ph_tcp.TcpOptNop(),
-                            ph_tcp.TcpOptNop(),
-                        ]
                     )
 
                     ip_packet_tx = ph_ip.IpPacket(hdr_src=STACK_IP_ADDRESS, hdr_dst=ip_packet_rx.hdr_src, child_packet=tcp_packet_tx)
@@ -230,11 +210,8 @@ def packet_handler(rx_ring, tx_ring, arp_cache):
 
                     logger.debug(f"{ether_packet_tx.serial_number_tx} ({ether_packet_tx.serial_number_rx}) - {ether_packet_tx}")
                     logger.debug(f"{ether_packet_tx.serial_number_tx} ({ether_packet_tx.serial_number_rx}) - {ip_packet_tx}")
-                    logger.opt(ansi=True).info(
-                        f"<magenta>{ether_packet_tx.serial_number_tx} ({ether_packet_tx.serial_number_rx})</magenta> - {tcp_packet_tx}"
-                    )
+                    logger.opt(ansi=True).info(f"<magenta>{ether_packet_tx.serial_number_tx} ({ether_packet_tx.serial_number_rx})</magenta> - {tcp_packet_tx}")
                     tx_ring.enqueue(ether_packet_tx)
-
 
 
 def main():

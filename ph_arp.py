@@ -110,5 +110,3 @@ class ArpPacket:
             return f"ARP reply {self.hdr_spa} / {self.hdr_sha} > {self.hdr_tpa} / {self.hdr_tha}"
 
         return f"ARP unknown operation {self.oper}"
-
-

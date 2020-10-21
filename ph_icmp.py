@@ -99,11 +99,9 @@ class IcmpPacket:
             if self.hdr_type == ICMP_UNREACHABLE:
                 self.msg_ip_info = ip_packet_rx.raw_header + ip_packet_rx.raw_data[:8]
 
-
-
     def compute_cksum(self):
         """ Compute checksum of the ICMP packet """
-        
+
         cksum_data = self.raw_packet
         cksum_data = list(struct.unpack(f"! {len(cksum_data) >> 1}H", cksum_data))
         cksum_data[1] = 0
@@ -159,4 +157,3 @@ class IcmpPacket:
             pass
 
         return log
-

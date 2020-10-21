@@ -150,11 +150,11 @@ class IpPacket:
             self.hdr_dst = hdr_dst
 
             self.hdr_options = []
-            
+
             # Keep options in raw format in case of packet reconstruction is needed, this needs to be replaced
             # with proper option disection in future
             self.__raw_options = b""
-            
+
             self.hdr_hlen = IP_HEADER_LEN + len(self.raw_options)
 
             assert child_packet.protocol in {"ICMP", "UDP", "TCP"}, f"Not supported protocol: {child_packet.protocol}"

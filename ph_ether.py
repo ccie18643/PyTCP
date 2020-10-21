@@ -76,7 +76,7 @@ class EtherPacket:
             self.hdr_src = hdr_src
 
             assert child_packet.protocol in {"IP", "ARP"}, f"Not supported protocol: {child_packet.protocol}"
-            
+
             if child_packet.protocol == "IP":
                 self.hdr_type = ETHER_TYPE_IP
                 self.raw_data = child_packet.get_raw_packet()
@@ -106,4 +106,3 @@ class EtherPacket:
         """ Short packet log string """
 
         return f"ETHER {self.hdr_src} > {self.hdr_dst}, 0x{self.hdr_type:0>4x} ({ETHER_TYPE_TABLE.get(self.hdr_type, '???')})"
-

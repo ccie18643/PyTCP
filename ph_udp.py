@@ -86,4 +86,3 @@ class UdpPacket:
         """ Short packet log string """
 
         return f"UDP {self.hdr_sport} > {self.hdr_dport}, len {self.hdr_len}"
-

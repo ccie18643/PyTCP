@@ -38,7 +38,7 @@ import struct
 TCP_HEADER_LEN = 20
 
 
-class TcpPacket():
+class TcpPacket:
     """ TCP packet support class """
 
     protocol = "TCP"
@@ -140,12 +140,12 @@ class TcpPacket():
             self.hdr_urp = hdr_urp
 
             self.hdr_options = hdr_options
-        
+
             self.raw_data = raw_data
 
             self.hdr_hlen = TCP_HEADER_LEN + len(self.raw_options)
 
-            assert self.hdr_hlen % 4 == 0, "TCP header len is not multiplcation of 4 bytes, check options" 
+            assert self.hdr_hlen % 4 == 0, "TCP header len is not multiplcation of 4 bytes, check options"
 
     @property
     def raw_header(self):
@@ -195,6 +195,13 @@ class TcpPacket():
 
         return self.raw_packet
 
+    def get_option(self, name):
+        """ Find specific option by its name """
+
+        for option in self.hdr_options:
+            if option.name == name:
+                return option
+
     def compute_cksum(self, ip_pseudo_header):
         """ Compute checksum of IP pseudo header + TCP packet """
 
@@ -207,7 +214,7 @@ class TcpPacket():
     def __str__(self):
         """ Short packet log string """
 
-        log =  (
+        log = (
             f"TCP {self.hdr_sport} > {self.hdr_dport}, "
             + f"{'N' if self.hdr_flag_ns else ''}"
             + f"{'C' if self.hdr_flag_crw else ''}"
@@ -251,6 +258,8 @@ TCP_OPT_TIMESTAMP_LEN = 10
 class TcpOptEol:
     """ TCP option End of Option List """
 
+    name = "EOL"
+
     def __init__(self, raw_option=None):
         if raw_option:
             self.opt_kind = raw_option[0]
@@ -268,6 +277,8 @@ class TcpOptEol:
 class TcpOptNop:
     """ TCP option No Operation """
 
+    name = "NOP"
+
     def __init__(self, raw_option=None):
         if raw_option:
             self.opt_kind = raw_option[0]
@@ -284,6 +295,8 @@ class TcpOptNop:
 
 class TcpOptMss:
     """ TCP option Maximum Segment Size """
+
+    name = "MSS"
 
     def __init__(self, raw_option=None, opt_size=None):
         if raw_option:
@@ -306,6 +319,8 @@ class TcpOptMss:
 class TcpOptSackperm:
     """ TCP option Sack Permit """
 
+    name = "SACKPERM"
+
     def __init__(self, raw_option=None):
         if raw_option:
             self.opt_kind = raw_option[0]
@@ -319,11 +334,13 @@ class TcpOptSackperm:
         return struct.pack("! BB", self.opt_kind, self.opt_len)
 
     def __str__(self):
-        return f"sackperm"
+        return "sckp"
 
 
 class TcpOptWscale:
     """ TCP option Window Scale """
+
+    name = "WSCALE"
 
     def __init__(self, raw_option=None, opt_scale=None):
         if raw_option:
@@ -345,6 +362,8 @@ class TcpOptWscale:
 
 class TcpOptTimestamp:
     """ TCP option Timestamp """
+
+    name = "TIMESTAMP"
 
     def __init__(self, raw_option=None, opt_tsval=None, opt_tsecr=None):
         if raw_option:
@@ -369,6 +388,8 @@ class TcpOptTimestamp:
 class TcpOptUnk:
     """ TCP option that is not supported by this stack """
 
+    name = "UNKNOWN"
+
     def __init__(self, raw_option=None, raw_data=None):
         if raw_option:
             self.opt_kind = raw_option[0]
@@ -384,4 +405,4 @@ class TcpOptUnk:
         return struct.pack("! BB", self.opt_kind, self.opt_len) + self.raw_data
 
     def __str__(self):
-        return f"unk"
+        return "unk"
