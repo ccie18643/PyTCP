@@ -11,8 +11,6 @@ import loguru
 import time
 import threading
 
-from dataclasses import dataclass
-
 import ph_ether
 import ph_arp
 
@@ -24,11 +22,11 @@ ARP_ENTRY_REFRESH_TIME = 10
 class ArpCache:
     """ Support for ARP cahe operations """
 
-    @dataclass
     class __Entry:
-        mac_address: str
-        creation_time: float = time.time()
-        hit_count: int = 0
+        def __init__(self, mac_address):
+            self.mac_address = mac_address
+            self.creation_time = time.time()
+            self.hit_count = 0
 
     def __init__(self, stack_mac_address, stack_ip_address):
         """ Class constructor """
@@ -87,7 +85,9 @@ class ArpCache:
         arp_entry = self.arp_cache.get(ip_address, None)
         if arp_entry:
             arp_entry.hit_count += 1
-            self.logger.debug(f"Found {ip_address} -> {arp_entry.mac_address} entry")
+            self.logger.debug(
+                f"Found {ip_address} -> {arp_entry.mac_address} entry, age {time.time() - arp_entry.creation_time:.0f}s, hit_count {arp_entry.hit_count}"
+            )
             return arp_entry.mac_address
 
         else:
