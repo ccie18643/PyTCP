@@ -58,7 +58,7 @@ class ArpCache:
                     ip_address
                 ].hit_count:
                     self.arp_cache[ip_address].hit_count = 0
-                    self.send_arp_request(ip_address)
+                    self.__send_arp_request(ip_address)
                     self.logger.debug(f"Trying to refresh expiring ARP cache entry for {ip_address} -> {self.arp_cache[ip_address].mac_address}")
 
             time.sleep(1)
