@@ -20,6 +20,10 @@ import ph_icmp
 import ph_udp
 import ph_tcp
 
+from arp_cache import ArpCache
+from rx_ring import RxRing
+from tx_ring import TxRing
+
 
 TUNSETIFF = 0x400454CA
 IFF_TAP = 0x0002
@@ -28,7 +32,6 @@ IFF_NO_PI = 0x1000
 STACK_IF = b"tap7"
 STACK_IP_ADDRESS = "192.168.9.7"
 STACK_MAC_ADDRESS = "02:00:00:77:77:77"
-
 
 ARP_CACHE_BYPASS_ON_RESPONSE = False
 ARP_CACHE_UPDATE_FROM_DIRECT_REQUEST = False
@@ -70,6 +73,7 @@ def packet_handler(rx_ring, tx_ring, arp_cache):
 
                     ether_packet_tx = ph_ether.EtherPacket(hdr_src=STACK_MAC_ADDRESS, hdr_dst=arp_packet_tx.hdr_tha, child_packet=arp_packet_tx)
 
+                    # Pass the timestamp/serial info from request to reply packet for tracking in TX ring
                     ether_packet_tx.timestamp_rx = ether_packet_rx.timestamp_rx
                     ether_packet_tx.serial_number_rx = ether_packet_rx.serial_number_rx
 
@@ -86,11 +90,12 @@ def packet_handler(rx_ring, tx_ring, arp_cache):
             if arp_packet_rx.hdr_oper == ph_arp.ARP_OP_REPLY:
                 logger.opt(ansi=True).info(f"<green>{ether_packet_rx.serial_number_rx}</green> - {arp_packet_rx}")
 
-                # Update ARP cache with maping from received direct ARP reply
+                # Update ARP cache with maping received as direct ARP reply
                 if ether_packet_rx.hdr_dst == STACK_MAC_ADDRESS:
                     logger.debug(f"Adding/refreshing ARP cache entry from direct reply - {arp_packet_rx.hdr_spa} -> {arp_packet_rx.hdr_sha}")
                     arp_cache.add_entry(arp_packet_rx.hdr_spa, arp_packet_rx.hdr_sha)
 
+                # Update ARP cache with maping received as gratitious ARP reply
                 if ether_packet_rx.hdr_dst == "ff:ff:ff:ff:ff:ff" and ARP_CACHE_UPDATE_FROM_GRATITIOUS_ARP:
                     logger.debug(f"Adding/refreshing ARP cache entry from gratitious reply - {arp_packet_rx.hdr_spa} -> {arp_packet_rx.hdr_sha}")
                     arp_cache.add_entry(arp_packet_rx.hdr_spa, arp_packet_rx.hdr_sha)
@@ -105,7 +110,7 @@ def packet_handler(rx_ring, tx_ring, arp_cache):
                 icmp_packet_rx = ph_icmp.IcmpPacket(ip_packet_rx)
                 logger.opt(ansi=True).info(f"<green>{ether_packet_rx.serial_number_rx}</green> - {icmp_packet_rx}")
 
-                # Respond to Echo Request packet
+                # Respond to ICMP Echo Request packet
                 if icmp_packet_rx.hdr_type == ph_icmp.ICMP_ECHOREQUEST and icmp_packet_rx.hdr_code == 0:
                     logger.debug(f"Received ICMP echo packet from {ip_packet_rx.hdr_src}, sending reply")
 
@@ -115,12 +120,13 @@ def packet_handler(rx_ring, tx_ring, arp_cache):
 
                     ip_packet_tx = ph_ip.IpPacket(hdr_src=STACK_IP_ADDRESS, hdr_dst=ip_packet_rx.hdr_src, child_packet=icmp_packet_tx)
 
-                    if ARP_CACHE_BYPASS_ON_RESPONSE:
-                        ether_packet_tx = ph_ether.EtherPacket(hdr_src=STACK_MAC_ADDRESS, hdr_dst=ether_packet_rx.hdr_src, child_packet=ip_packet_tx)
+                    ether_packet_tx = ph_ether.EtherPacket(
+                        hdr_src=STACK_MAC_ADDRESS,
+                        hdr_dst=ether_packet_rx.hdr_src if ARP_CACHE_BYPASS_ON_RESPONSE else "00:00:00:00:00:00",
+                        child_packet=ip_packet_tx,
+                    )
 
-                    else:
-                        ether_packet_tx = ph_ether.EtherPacket(hdr_src=STACK_MAC_ADDRESS, hdr_dst="00:00:00:00:00:00", child_packet=ip_packet_tx)
-
+                    # Pass the timestamp/serial info from request to reply packet for tracking in TX ring
                     ether_packet_tx.timestamp_rx = ether_packet_rx.timestamp_rx
                     ether_packet_tx.serial_number_rx = ether_packet_rx.serial_number_rx
 
@@ -134,7 +140,7 @@ def packet_handler(rx_ring, tx_ring, arp_cache):
                 udp_packet_rx = ph_udp.UdpPacket(ip_packet_rx)
                 logger.opt(ansi=True).info(f"<green>{ether_packet_rx.serial_number_rx}</green> - {udp_packet_rx}")
 
-                # Support for UDP Echo protocol
+                # Support for UDP Echo protocol <-- will be moved to "user space" once socket support is completed
                 if STACK_UDP_ECHO_ENABLED and udp_packet_rx.hdr_dport == UDP_PORT_ECHO:
                     logger.debug(f"Received UDP echo packet from {ip_packet_rx.hdr_src}, sending reply")
 
@@ -142,12 +148,13 @@ def packet_handler(rx_ring, tx_ring, arp_cache):
 
                     ip_packet_tx = ph_ip.IpPacket(hdr_src=STACK_IP_ADDRESS, hdr_dst=ip_packet_rx.hdr_src, child_packet=udp_packet_tx)
 
-                    if ARP_CACHE_BYPASS_ON_RESPONSE:
-                        ether_packet_tx = ph_ether.EtherPacket(hdr_src=STACK_MAC_ADDRESS, hdr_dst=ether_packet_rx.hdr_src, child_packet=ip_packet_tx)
+                    ether_packet_tx = ph_ether.EtherPacket(
+                        hdr_src=STACK_MAC_ADDRESS,
+                        hdr_dst=ether_packet_rx.hdr_src if ARP_CACHE_BYPASS_ON_RESPONSE else "00:00:00:00:00:00",
+                        child_packet=ip_packet_tx,
+                    )
 
-                    else:
-                        ether_packet_tx = ph_ether.EtherPacket(hdr_src=STACK_MAC_ADDRESS, hdr_dst="00:00:00:00:00:00", child_packet=ip_packet_tx)
-
+                    # Pass the timestamp/serial info from request to reply packet for tracking in TX ring
                     ether_packet_tx.timestamp_rx = ether_packet_rx.timestamp_rx
                     ether_packet_tx.serial_number_rx = ether_packet_rx.serial_number_rx
 
@@ -164,11 +171,11 @@ def packet_handler(rx_ring, tx_ring, arp_cache):
 
                     ip_packet_tx = ph_ip.IpPacket(hdr_src=STACK_IP_ADDRESS, hdr_dst=ip_packet_rx.hdr_src, child_packet=icmp_packet_tx)
 
-                    if ARP_CACHE_BYPASS_ON_RESPONSE:
-                        ether_packet_tx = ph_ether.EtherPacket(hdr_src=STACK_MAC_ADDRESS, hdr_dst=ether_packet_rx.hdr_src, child_packet=ip_packet_tx)
-
-                    else:
-                        ether_packet_tx = ph_ether.EtherPacket(hdr_src=STACK_MAC_ADDRESS, hdr_dst="00:00:00:00:00:00", child_packet=ip_packet_tx)
+                    ether_packet_tx = ph_ether.EtherPacket(
+                        hdr_src=STACK_MAC_ADDRESS,
+                        hdr_dst=ether_packet_rx.hdr_src if ARP_CACHE_BYPASS_ON_RESPONSE else "00:00:00:00:00:00",
+                        child_packet=ip_packet_tx,
+                    )
 
                     ether_packet_tx.timestamp_rx = ether_packet_rx.timestamp_rx
                     ether_packet_tx.serial_number_rx = ether_packet_rx.serial_number_rx
@@ -229,20 +236,11 @@ def main():
     tap = os.open("/dev/net/tun", os.O_RDWR)
     fcntl.ioctl(tap, TUNSETIFF, struct.pack("16sH", STACK_IF, IFF_TAP | IFF_NO_PI))
 
-    from arp_cache import ArpCache
-
     arp_cache = ArpCache(stack_mac_address=STACK_MAC_ADDRESS, stack_ip_address=STACK_IP_ADDRESS)
-
-    from rx_ring import RxRing
-
     rx_ring = RxRing(tap=tap, stack_mac_address=STACK_MAC_ADDRESS)
-
-    from tx_ring import TxRing
-
     tx_ring = TxRing(tap=tap, stack_mac_address=STACK_MAC_ADDRESS, stack_ip_address=STACK_IP_ADDRESS, arp_cache=arp_cache)
-
     packet_handler(rx_ring, tx_ring, arp_cache=arp_cache)
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())

@@ -54,7 +54,7 @@ class TxRing:
             elif ether_packet_tx.hdr_type == ph_ether.ETHER_TYPE_IP:
                 ip_packet_tx = ph_ip.IpPacket(ether_packet_tx)
 
-                mac_address = self.arp_cache.get_mac_address(ip_packet_tx.hdr_dst)
+                mac_address = self.arp_cache.find_entry(ip_packet_tx.hdr_dst)
                 if mac_address:
                     ether_packet_tx.hdr_dst = mac_address
                     self.logger.debug(f"{ether_packet_tx.serial_number_tx} Resolved destiantion IP {ip_packet_tx.hdr_dst} to MAC {ether_packet_tx.hdr_dst}")

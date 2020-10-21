@@ -74,9 +74,18 @@ class ArpPacket:
             self.hdr_tha = hdr_tha
             self.hdr_tpa = hdr_tpa
 
+    def __str__(self):
+        """ Short packet log string """
+
+        if self.hdr_oper == ARP_OP_REQUEST:
+            return f"ARP request {self.hdr_spa} / {self.hdr_sha} > {self.hdr_tpa} / {self.hdr_tha}"
+        if self.hdr_oper == ARP_OP_REPLY:
+            return f"ARP reply {self.hdr_spa} / {self.hdr_sha} > {self.hdr_tpa} / {self.hdr_tha}"
+        return f"ARP unknown operation {self.oper}"
+
     @property
     def raw_header(self):
-        """ Get packet in raw format """
+        """ Packet header in raw format """
 
         return struct.pack(
             "!HH BBH 6s 4s 6s 4s",
@@ -102,13 +111,3 @@ class ArpPacket:
 
         return self.raw_packet
 
-    def __str__(self):
-        """ Short packet log string """
-
-        if self.hdr_oper == ARP_OP_REQUEST:
-            return f"ARP request {self.hdr_spa} / {self.hdr_sha} > {self.hdr_tpa} / {self.hdr_tha}"
-
-        if self.hdr_oper == ARP_OP_REPLY:
-            return f"ARP reply {self.hdr_spa} / {self.hdr_sha} > {self.hdr_tpa} / {self.hdr_tha}"
-
-        return f"ARP unknown operation {self.oper}"

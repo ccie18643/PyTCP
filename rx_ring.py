@@ -53,7 +53,7 @@ class RxRing:
             self.packet_enqueued.release()
 
     def dequeue(self):
-        """ Dequeue inboutd packet from RX ring - asyncio coroutine"""
+        """ Dequeue inboutd packet from RX ring """
 
         self.packet_enqueued.acquire()
 

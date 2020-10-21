@@ -40,7 +40,7 @@ ETHER_TYPE_TABLE = {ETHER_TYPE_ARP: "ARP", ETHER_TYPE_IP: "IP", ETHER_TYPE_IPV6:
 
 
 class EtherPacket:
-    """ Packet support base class """
+    """ Ethernet packet support class """
 
     protocol = "ETHER"
 
@@ -87,6 +87,11 @@ class EtherPacket:
                 self.hdr_type = ETHER_TYPE_ARP
                 self.raw_data = child_packet.get_raw_packet()
 
+    def __str__(self):
+        """ Short packet log string """
+
+        return f"ETHER {self.hdr_src} > {self.hdr_dst}, 0x{self.hdr_type:0>4x} ({ETHER_TYPE_TABLE.get(self.hdr_type, '???')})"
+
     @property
     def raw_header(self):
         """ Packet header in raw format """
@@ -104,7 +109,3 @@ class EtherPacket:
 
         return self.raw_packet
 
-    def __str__(self):
-        """ Short packet log string """
-
-        return f"ETHER {self.hdr_src} > {self.hdr_dst}, 0x{self.hdr_type:0>4x} ({ETHER_TYPE_TABLE.get(self.hdr_type, '???')})"

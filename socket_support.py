@@ -3,7 +3,7 @@
 """
 
 PyTCP, Python TCP/IP stack simulation version 0.1 - 2020, Sebastian Majewski
-socket.py - module contains class supporting TCP and UDP sockets
+socket_support.py - module contains class supporting TCP and UDP sockets
 
 """
 

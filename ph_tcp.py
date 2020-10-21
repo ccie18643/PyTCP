@@ -173,6 +173,30 @@ class TcpPacket:
             self.hdr_urp,
         )
 
+    def __str__(self):
+        """ Short packet log string """
+
+        log = (
+            f"TCP {self.hdr_sport} > {self.hdr_dport}, {'N' if self.hdr_flag_ns else ''}{'C' if self.hdr_flag_crw else ''}"
+            + f"{'E' if self.hdr_flag_ece else ''}{'U' if self.hdr_flag_urg else ''}{'A' if self.hdr_flag_ack else ''}"
+            + f"{'P' if self.hdr_flag_psh else ''}{'R' if self.hdr_flag_rst else ''}{'S' if self.hdr_flag_syn else ''}"
+            + f"{'F' if self.hdr_flag_fin else ''}, seq {self.hdr_seq_num}, ack {self.hdr_ack_num}, win {self.hdr_win}"
+        )
+
+        for option in self.hdr_options:
+            log += ", " + str(option)
+
+        return log
+
+    def __compute_cksum(self, ip_pseudo_header):
+        """ Compute checksum of IP pseudo header + TCP packet """
+
+        cksum_data = ip_pseudo_header + self.raw_packet + (b"\0" if len(self.raw_packet) & 1 else b"")
+        cksum_data = list(struct.unpack(f"! {len(cksum_data) >> 1}H", cksum_data))
+        cksum_data[6 + 8] = 0
+        cksum = sum(cksum_data)
+        return ~((cksum & 0xFFFF) + (cksum >> 16)) & 0xFFFF
+
     @property
     def raw_options(self):
         """ Packet options in raw format """
@@ -193,7 +217,7 @@ class TcpPacket:
     def get_raw_packet(self, ip_pseudo_header):
         """ Get packet in raw format ready to be processed by lower level protocol """
 
-        self.hdr_cksum = self.compute_cksum(ip_pseudo_header)
+        self.hdr_cksum = self.__compute_cksum(ip_pseudo_header)
 
         return self.raw_packet
 
@@ -204,36 +228,6 @@ class TcpPacket:
             if option.name == name:
                 return option
 
-    def compute_cksum(self, ip_pseudo_header):
-        """ Compute checksum of IP pseudo header + TCP packet """
-
-        cksum_data = ip_pseudo_header + self.raw_packet + (b"\0" if len(self.raw_packet) & 1 else b"")
-        cksum_data = list(struct.unpack(f"! {len(cksum_data) >> 1}H", cksum_data))
-        cksum_data[6 + 8] = 0
-        cksum = sum(cksum_data)
-        return ~((cksum & 0xFFFF) + (cksum >> 16)) & 0xFFFF
-
-    def __str__(self):
-        """ Short packet log string """
-
-        log = (
-            f"TCP {self.hdr_sport} > {self.hdr_dport}, "
-            + f"{'N' if self.hdr_flag_ns else ''}"
-            + f"{'C' if self.hdr_flag_crw else ''}"
-            + f"{'E' if self.hdr_flag_ece else ''}"
-            + f"{'U' if self.hdr_flag_urg else ''}"
-            + f"{'A' if self.hdr_flag_ack else ''}"
-            + f"{'P' if self.hdr_flag_psh else ''}"
-            + f"{'R' if self.hdr_flag_rst else ''}"
-            + f"{'S' if self.hdr_flag_syn else ''}"
-            + f"{'F' if self.hdr_flag_fin else ''}"
-            + f", seq {self.hdr_seq_num}, ack {self.hdr_ack_num}, win {self.hdr_win}"
-        )
-
-        for option in self.hdr_options:
-            log += ", " + str(option)
-
-        return log
 
 
 """

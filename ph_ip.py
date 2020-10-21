@@ -190,6 +190,20 @@ class IpPacket:
                 self.hdr_plen = self.hdr_hlen + child_packet.hdr_hlen + len(child_packet.raw_data)
                 self.raw_data = child_packet.get_raw_packet(self.ip_pseudo_header)
 
+    def __str__(self):
+        """ Short packet log string """
+
+        return f"IP {self.hdr_src} > {self.hdr_dst}, proto {self.hdr_proto} ({IP_PROTO_TABLE.get(self.hdr_proto, '???')})"
+
+    def __compute_cksum(self):
+        """ Compute checksum of IP header """
+
+        cksum_data = self.raw_header + self.raw_options
+        cksum_data = list(struct.unpack(f"! {len(cksum_data) >> 1}H", cksum_data))
+        cksum_data[5] = 0
+        cksum = sum(cksum_data)
+        return ~((cksum & 0xFFFF) + (cksum >> 16)) & 0xFFFF
+
     @property
     def raw_header(self):
         """ Packet header in raw form """
@@ -210,7 +224,7 @@ class IpPacket:
 
     @property
     def raw_options(self):
-        """ PAcket options in raw format """
+        """ Packet options in raw format """
 
         raw_options = b""
 
@@ -225,34 +239,25 @@ class IpPacket:
 
         return self.raw_header + self.raw_options + self.raw_data
 
-    def get_raw_packet(self):
-        """ Get packet in raw format ready to be processed by lower level protocol """
-
-        self.hdr_cksum = self.compute_cksum()
-
-        return self.raw_packet
-
-    def compute_cksum(self):
-        """ Compute checksum of IP header """
-
-        cksum_data = self.raw_header + self.raw_options
-        cksum_data = list(struct.unpack(f"! {len(cksum_data) >> 1}H", cksum_data))
-        cksum_data[5] = 0
-        cksum = sum(cksum_data)
-        return ~((cksum & 0xFFFF) + (cksum >> 16)) & 0xFFFF
-
     @property
     def ip_pseudo_header(self):
         """ Returns IP pseudo header that is used by TCP to compute its checksum """
 
         return struct.pack("! 4s 4s BBH", socket.inet_aton(self.hdr_src), socket.inet_aton(self.hdr_dst), 0, self.hdr_proto, self.hdr_plen - self.hdr_hlen)
 
-    def __str__(self):
-        """ Short packet log string """
+    def get_raw_packet(self):
+        """ Get packet in raw format ready to be processed by lower level protocol """
 
-        return f"IP {self.hdr_src} > {self.hdr_dst}, proto {self.hdr_proto} ({IP_PROTO_TABLE.get(self.hdr_proto, '???')})"
+        self.hdr_cksum = self.__compute_cksum()
 
+        return self.raw_packet
 
+    def get_option(self, name):
+        """ Find specific option by its name """
+
+        for option in self.hdr_options:
+            if option.name == name:
+                return option
 """
 
    IP options

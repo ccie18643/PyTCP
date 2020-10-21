@@ -56,6 +56,20 @@ class UdpPacket:
 
             self.raw_data = raw_data
 
+    def __str__(self):
+        """ Short packet log string """
+
+        return f"UDP {self.hdr_sport} > {self.hdr_dport}, len {self.hdr_len}"
+
+    def __compute_cksum(self, ip_pseudo_header):
+        """ Compute checksum of IP pseudo header + UDP packet """
+
+        cksum_data = ip_pseudo_header + self.raw_packet + (b"\0" if len(self.raw_packet) & 1 else b"")
+        cksum_data = list(struct.unpack(f"! {len(cksum_data) >> 1}H", cksum_data))
+        cksum_data[6 + 3] = 0
+        cksum = sum(cksum_data)
+        return ~((cksum & 0xFFFF) + (cksum >> 16)) & 0xFFFF
+
     @property
     def raw_header(self):
         """ Packet header in raw format """
@@ -71,20 +85,7 @@ class UdpPacket:
     def get_raw_packet(self, ip_pseudo_header):
         """ Get packet in raw format ready to be processed by lower level protocol """
 
-        self.hdr_cksum = self.compute_cksum(ip_pseudo_header)
+        self.hdr_cksum = self.__compute_cksum(ip_pseudo_header)
 
         return self.raw_packet
 
-    def compute_cksum(self, ip_pseudo_header):
-        """ Compute checksum of IP pseudo header + UDP packet """
-
-        cksum_data = ip_pseudo_header + self.raw_packet + (b"\0" if len(self.raw_packet) & 1 else b"")
-        cksum_data = list(struct.unpack(f"! {len(cksum_data) >> 1}H", cksum_data))
-        cksum_data[6 + 3] = 0
-        cksum = sum(cksum_data)
-        return ~((cksum & 0xFFFF) + (cksum >> 16)) & 0xFFFF
-
-    def __str__(self):
-        """ Short packet log string """
-
-        return f"UDP {self.hdr_sport} > {self.hdr_dport}, len {self.hdr_len}"

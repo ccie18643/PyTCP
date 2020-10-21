@@ -3,7 +3,7 @@
 """
 
 PyTCP, Python TCP/IP stack simulation version 0.1 - 2020, Sebastian Majewski
-ap_cache.py - module contains class supporting ARP cache
+arp_cache.py - module contains class supporting ARP cache
 
 """
 
@@ -15,6 +15,7 @@ from dataclasses import dataclass
 
 import ph_ether
 import ph_arp
+
 
 ARP_ENTRY_MAX_AGE = 60
 ARP_ENTRY_REFRESH_TIME = 10
@@ -80,8 +81,8 @@ class ArpCache:
 
         self.arp_cache[ip_address] = self.__Entry(mac_address)
 
-    def get_mac_address(self, ip_address):
-        """ Find entry in cache """
+    def find_entry(self, ip_address):
+        """ Find entry in cache and return MAC address """
 
         arp_entry = self.arp_cache.get(ip_address, None)
         if arp_entry:
