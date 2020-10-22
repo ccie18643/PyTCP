@@ -145,7 +145,7 @@ class IpPacket:
 
                 elif raw_options[i] == IP_OPT_NOP:
                     self.hdr_options.append(IpOptNop(raw_options[i : i + IP_OPT_NOP_LEN]))
-                    i += TCP_OPT_NOP_LEN
+                    i += IP_OPT_NOP_LEN
 
                 else:
                     self.hdr_options.append(IpOptUnk(raw_options[i : i + raw_options[i + 1]]))
@@ -311,7 +311,7 @@ class IpOptNop:
         return "nop"
 
 
-class TcpOptUnk:
+class IpOptUnk:
     """ IP option not supported by this stack """
 
     name = "UNKNOWN"

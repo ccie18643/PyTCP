@@ -27,7 +27,6 @@ def arp_packet_handler(self, ether_packet_rx, arp_packet_rx):
                 hdr_tha=arp_packet_rx.hdr_sha,
                 hdr_tpa=arp_packet_rx.hdr_spa,
             )
-
             ether_packet_tx = ph_ether.EtherPacket(hdr_src=self.stack_mac_address, hdr_dst=arp_packet_tx.hdr_tha, child_packet=arp_packet_tx)
 
             # Pass the timestamp/serial info from request to reply packet for tracking in TX ring

@@ -15,8 +15,7 @@ import struct
 import loguru
 import threading
 
-import udp_socket
-
+from udp_socket import UdpSocket
 from arp_cache import ArpCache
 from rx_ring import RxRing
 from tx_ring import TxRing
@@ -33,7 +32,7 @@ STACK_IP_ADDRESS = "192.168.9.7"
 STACK_MAC_ADDRESS = "02:00:00:77:77:77"
 
 ARP_CACHE_BYPASS_ON_RESPONSE = False
-ARP_CACHE_UPDATE_FROM_DIRECT_REQUEST = False
+ARP_CACHE_UPDATE_FROM_DIRECT_REQUEST = True
 ARP_CACHE_UPDATE_FROM_GRATITIOUS_ARP = True
 
 
@@ -88,13 +87,9 @@ def main():
 
     arp_cache = ArpCache(STACK_MAC_ADDRESS, STACK_IP_ADDRESS)
     rx_ring = RxRing(tap, STACK_MAC_ADDRESS)
-    tx_ring = TxRing(tap, STACK_MAC_ADDRESS, STACK_IP_ADDRESS, arp_cache)
+    tx_ring = TxRing(tap, STACK_MAC_ADDRESS, arp_cache)
     PacketHandler(STACK_MAC_ADDRESS, STACK_IP_ADDRESS, rx_ring, tx_ring, arp_cache)
-
-    udp_socket.stack_mac_address = STACK_MAC_ADDRESS
-    udp_socket.tx_ring = tx_ring 
-    
-
+    UdpSocket.set_tx_ring(tx_ring)
     ServiceUdpEcho()
 
     while True:

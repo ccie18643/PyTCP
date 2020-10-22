@@ -24,11 +24,8 @@ def icmp_packet_handler(self, ether_packet_rx, ip_packet_rx, icmp_packet_rx):
         icmp_packet_tx = ph_icmp.IcmpPacket(
             hdr_type=ph_icmp.ICMP_ECHOREPLY, msg_id=icmp_packet_rx.msg_id, msg_seq=icmp_packet_rx.msg_seq, msg_data=icmp_packet_rx.msg_data
         )
-
         ip_packet_tx = ph_ip.IpPacket(hdr_src=self.stack_ip_address, hdr_dst=ip_packet_rx.hdr_src, child_packet=icmp_packet_tx)
-
         ether_packet_tx = ph_ether.EtherPacket(
-            hdr_src=self.stack_mac_address,
             hdr_dst=ether_packet_rx.hdr_src if self.arp_cache_bypass_on_response else "00:00:00:00:00:00",
             child_packet=ip_packet_tx,
         )

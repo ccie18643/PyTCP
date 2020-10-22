@@ -19,12 +19,11 @@ import ph_ip
 class TxRing:
     """ Support for sending packets to the network """
 
-    def __init__(self, tap, stack_mac_address, stack_ip_address, arp_cache):
+    def __init__(self, tap, stack_mac_address, arp_cache):
         """ Initialize access to tap interface and the outbound queue """
 
         self.tap = tap
         self.stack_mac_address = stack_mac_address
-        self.stack_ip_address = stack_ip_address
         self.arp_cache = arp_cache
 
         # Update ARP cache object with reference to ths TX ring so ARP cache can send request packets
@@ -47,6 +46,11 @@ class TxRing:
             self.packet_enqueued.acquire()
             ether_packet_tx = self.tx_ring.pop(0)
 
+            # Check if packet contains valid source address, fill it out if needed
+            if ether_packet_tx.hdr_src == "00:00:00:00:00:00":
+                ether_packet_tx.hdr_src = self.stack_mac_address
+                self.logger.debug(f"{ether_packet_tx.serial_number_tx} Set source to stack MAC {ether_packet_tx.hdr_src}")
+
             # Check if packet contains valid destination MAC address
             if ether_packet_tx.hdr_dst != "00:00:00:00:00:00":
                 self.logger.debug(f"{ether_packet_tx.serial_number_tx} Contains valid destination MAC address")
@@ -67,7 +71,7 @@ class TxRing:
 
             # In case packet contains or we are able to obtain valid destination MAC address send the packet out
             os.write(self.tap, ether_packet_tx.get_raw_packet())
-            if hasattr(ether_packet_tx, "timestamp_rx"):
+            if hasattr(ether_packet_tx, "timestamp_rx") and hasattr(ether_packet_tx, "serial_number_rx"):
                 self.logger.opt(ansi=True).debug(
                     f"<magenta>[TX]</magenta> {ether_packet_tx.serial_number_tx} <yellow>({ether_packet_tx.serial_number_rx}"
                     + f", {(time.time() - ether_packet_tx.timestamp_rx) * 1000:.3f}ms)</yellow> - {ether_packet_tx}"

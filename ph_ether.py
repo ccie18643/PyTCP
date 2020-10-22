@@ -47,7 +47,7 @@ class EtherPacket:
     serial_number_rx = 0
     serial_number_tx = 0
 
-    def __init__(self, raw_packet=None, hdr_src=None, hdr_dst=None, child_packet=None):
+    def __init__(self, raw_packet=None, hdr_src="00:00:00:00:00:00", hdr_dst="00:00:00:00:00:00", child_packet=None):
         """ Class constructor """
 
         # Packet parsing

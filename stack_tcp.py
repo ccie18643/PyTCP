@@ -32,11 +32,8 @@ def tcp_packet_handler(self, ether_packet_rx, ip_packet_rx, tcp_packet_rx):
             hdr_flag_rst=True,
             hdr_flag_ack=True,
         )
-
         ip_packet_tx = ph_ip.IpPacket(hdr_src=self.stack_ip_address, hdr_dst=ip_packet_rx.hdr_src, child_packet=tcp_packet_tx)
-
         ether_packet_tx = ph_ether.EtherPacket(
-            hdr_src=self.stack_mac_address,
             hdr_dst=ether_packet_rx.hdr_src if self.arp_cache_bypass_on_response else "00:00:00:00:00:00",
             child_packet=ip_packet_tx,
         )
