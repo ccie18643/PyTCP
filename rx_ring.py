@@ -28,6 +28,7 @@ class RxRing:
         self.packet_enqueued = threading.Semaphore(0)
 
         threading.Thread(target=self.__receive).start()
+        self.logger.debug("Started RX ring")
 
     def __receive(self):
         """ Thread responsible for receiving and enqueuing incoming packets """

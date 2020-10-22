@@ -88,4 +88,3 @@ class UdpPacket:
         self.hdr_cksum = self.__compute_cksum(ip_pseudo_header)
 
         return self.raw_packet
-

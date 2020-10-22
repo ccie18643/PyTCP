@@ -81,7 +81,7 @@ class IcmpPacket:
 
             if self.hdr_type == ICMP_UNREACHABLE:
                 self.msg_ip_info = raw_message[4:]
-        
+
         # Packet building
         else:
             self.hdr_type = hdr_type

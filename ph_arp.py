@@ -110,4 +110,3 @@ class ArpPacket:
         """ Get packet in raw format ready to be processed by lower level protocol """
 
         return self.raw_packet
-

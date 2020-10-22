@@ -170,7 +170,7 @@ class IpPacket:
             self.hdr_options = hdr_options
 
             self.hdr_hlen = IP_HEADER_LEN + len(self.raw_options)
-            
+
             assert self.hdr_hlen % 4 == 0, "IP header len is not multiplcation of 4 bytes, check options"
 
             assert child_packet.protocol in {"ICMP", "UDP", "TCP"}, f"Not supported protocol: {child_packet.protocol}"
@@ -258,6 +258,8 @@ class IpPacket:
         for option in self.hdr_options:
             if option.name == name:
                 return option
+
+
 """
 
    IP options

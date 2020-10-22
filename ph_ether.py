@@ -108,4 +108,3 @@ class EtherPacket:
         """ Get packet in raw frmat ready to be sent out """
 
         return self.raw_packet
-

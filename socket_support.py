@@ -14,7 +14,7 @@ import threading
 from dataclasses import dataclass
 
 
-class Socket:
+class Sockets:
     """ Support for Socket operations """
 
     class __SocketData:
@@ -22,43 +22,79 @@ class Socket:
 
         def __init__(self):
             self_data_rx = []
+            self_data_tx = []
             self.data_ready_rx = threading.Semaphore(0)
+            self.data_ready_tx = threading.Semaphore(0)
             self.creation_time = time.time()
-            self.last_read_time = None
-            self.last_write_time = None
 
     def __init__(self, stack_mac_address, stack_ip_address):
         """ Class constructor """
 
-        self.open_sockets = {}
-        self.logger = loguru.logger.bind(object_name="socket.")
+        self.stack_mac_address = stack_mac_address
+        self.stack_ip_address = stack_ip_address
+
+        self.sockets = {}
+        self.logger = loguru.logger.bind(object_name="sockets.")
 
         threading.Thread(target=self.__maintain).start()
+        self.logger.debug("Started sockets")
 
     def __maintain(self):
-        """ Thread responsible for maintaining ARP entries """
+        """ Thread responsible for maintaining Socket entries """
 
-        time.sleep(1)
+        while True:
+            time.sleep(1)
 
-    def rx_feed(self, socket_id, data_rx):
+    def enqueue_rx(self, socket_id, data_rx):
         """ Put data into socket RX queue and release semaphore """
 
         self.open_sockets[socket_id].data_rx.append(data_rx)
         self.open_sockets[socket_id].data_ready_rx.release()
 
-    def open_socket(self, protocol, src_ip_address, src_port, dst_ip_address, dst_port):
+    def enqueue_tx(self, socket_id, data_rt):
+        """ Put data into socket TX queue and release semaphore """
+
+        self.open_sockets[socket_id].data_tx.append(data_tx)
+        self.open_sockets[socket_id].data_ready_tx.release()
+
+    def match_established(self, protocol, local_ip_address, local_port, remote_ip_address, remote_port, serial_number_rx):
+        """ Return established socket that matches incoming packet """
+
+        socket_id = f"{protocol}/{local_ip_address}/{local_port}/{remote_ip_address}/{remote_port}"
+        socket = self.sockets.get(socket_id, None)
+        if socket:
+            self.logger.debug(f"{serial_number_rx} - Found matching established socket {socket_id}")
+            return socket
+
+    def match_listening(self, protocol, local_ip_address, local_port, serial_number_rx):
+        """ Return listening socket that matches incoming packet """
+
+        socket_id = f"{protocol}/{local_ip_address}/{local_port}/0.0.0.0/0"
+        socket = self.sockets.get(socket_id, None)
+        if socket:
+            self.logger.debug(f"{serial_number_rx} - Found matching listening socket {socket_id}")
+            return socket
+
+    def open(self, protocol, local_port, remote_ip_address="0.0.0.0", remote_port=0):
         """ Create new socket """
 
-        socket_id = "{protocol}/{src_ip_address}/{src_port}/{dst_ip_address}/{dst_port}"
+        local_ip_address = self.stack_ip_address
 
-        self.open_seockets[socket_id] = __SocketData()
+        socket_id = f"{protocol}/{local_ip_address}/{local_port}/{remote_ip_address}/{remote_port}"
+
+        self.sockets[socket_id] = self.__SocketData()
 
         return socket_id
 
-    def read_socket(self, socket_id):
+    def read(self, socket_id):
         """ Read data from socket """
 
         # Wait till data is available
         self.open_sockets[socket_id].data_ready_rx.acquire()
 
         return self.open_sockts[socket_id].data_rx.pop(0)
+
+    def write(self, socket_id):
+        """ Write data to socket """
+
+        pass
