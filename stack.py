@@ -15,10 +15,11 @@ import struct
 import loguru
 import threading
 
+import udp_socket
+
 from arp_cache import ArpCache
 from rx_ring import RxRing
 from tx_ring import TxRing
-from socket_support import Sockets
 
 from service_udp_echo import ServiceUdpEcho
 
@@ -46,7 +47,7 @@ class PacketHandler:
     from stack_udp import udp_packet_handler
     from stack_tcp import tcp_packet_handler
 
-    def __init__(self, stack_mac_address, stack_ip_address, rx_ring, tx_ring, arp_cache, sockets):
+    def __init__(self, stack_mac_address, stack_ip_address, rx_ring, tx_ring, arp_cache):
         """ Class constructor """
 
         self.arp_cache_bypass_on_response = ARP_CACHE_BYPASS_ON_RESPONSE
@@ -58,7 +59,6 @@ class PacketHandler:
         self.tx_ring = tx_ring
         self.rx_ring = rx_ring
         self.arp_cache = arp_cache
-        self.sockets = sockets
         self.logger = loguru.logger.bind(object_name="packet_handler.")
 
         threading.Thread(target=self.__packet_handler).start()
@@ -89,9 +89,13 @@ def main():
     arp_cache = ArpCache(STACK_MAC_ADDRESS, STACK_IP_ADDRESS)
     rx_ring = RxRing(tap, STACK_MAC_ADDRESS)
     tx_ring = TxRing(tap, STACK_MAC_ADDRESS, STACK_IP_ADDRESS, arp_cache)
-    sockets = Sockets(STACK_MAC_ADDRESS, STACK_IP_ADDRESS)
-    ServiceUdpEcho(sockets)
-    PacketHandler(STACK_MAC_ADDRESS, STACK_IP_ADDRESS, rx_ring, tx_ring, arp_cache, sockets)
+    PacketHandler(STACK_MAC_ADDRESS, STACK_IP_ADDRESS, rx_ring, tx_ring, arp_cache)
+
+    udp_socket.stack_mac_address = STACK_MAC_ADDRESS
+    udp_socket.tx_ring = tx_ring 
+    
+
+    ServiceUdpEcho()
 
     while True:
         time.sleep(1)

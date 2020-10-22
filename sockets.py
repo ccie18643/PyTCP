@@ -21,8 +21,8 @@ class Sockets:
         """ Socket data """
 
         def __init__(self):
-            self_data_rx = []
-            self_data_tx = []
+            self.data_rx = []
+            self.data_tx = []
             self.data_ready_rx = threading.Semaphore(0)
             self.data_ready_tx = threading.Semaphore(0)
             self.creation_time = time.time()
@@ -45,17 +45,17 @@ class Sockets:
         while True:
             time.sleep(1)
 
-    def enqueue_rx(self, socket_id, data_rx):
+    def enqueue(self, socket_id, data_rx):
         """ Put data into socket RX queue and release semaphore """
 
-        self.open_sockets[socket_id].data_rx.append(data_rx)
-        self.open_sockets[socket_id].data_ready_rx.release()
+        self.sockets[socket_id].data_rx.append(data_rx)
+        self.sockets[socket_id].data_ready_rx.release()
 
     def enqueue_tx(self, socket_id, data_rt):
         """ Put data into socket TX queue and release semaphore """
 
-        self.open_sockets[socket_id].data_tx.append(data_tx)
-        self.open_sockets[socket_id].data_ready_tx.release()
+        self.sockets[socket_id].data_tx.append(data_tx)
+        self.sockets[socket_id].data_ready_tx.release()
 
     def match_established(self, protocol, local_ip_address, local_port, remote_ip_address, remote_port, serial_number_rx):
         """ Return established socket that matches incoming packet """
@@ -64,7 +64,7 @@ class Sockets:
         socket = self.sockets.get(socket_id, None)
         if socket:
             self.logger.debug(f"{serial_number_rx} - Found matching established socket {socket_id}")
-            return socket
+            return socket_id
 
     def match_listening(self, protocol, local_ip_address, local_port, serial_number_rx):
         """ Return listening socket that matches incoming packet """
@@ -73,7 +73,7 @@ class Sockets:
         socket = self.sockets.get(socket_id, None)
         if socket:
             self.logger.debug(f"{serial_number_rx} - Found matching listening socket {socket_id}")
-            return socket
+            return socket_id
 
     def open(self, protocol, local_port, remote_ip_address="0.0.0.0", remote_port=0):
         """ Create new socket """
@@ -90,9 +90,9 @@ class Sockets:
         """ Read data from socket """
 
         # Wait till data is available
-        self.open_sockets[socket_id].data_ready_rx.acquire()
+        self.sockets[socket_id].data_ready_rx.acquire()
 
-        return self.open_sockts[socket_id].data_rx.pop(0)
+        return self.sockets[socket_id].data_rx.pop(0)
 
     def write(self, socket_id):
         """ Write data to socket """
