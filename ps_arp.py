@@ -3,7 +3,7 @@
 """
 
 PyTCP, Python TCP/IP stack simulation version 0.1 - 2020, Sebastian Majewski
-ph_arp.py - packet handler library for ARP protocol
+ps_arp.py - packet handler library for ARP protocol
 
 """
 

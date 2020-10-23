@@ -3,7 +3,7 @@
 """
 
 PyTCP, Python TCP/IP stack simulation version 0.1 - 2020, Sebastian Majewski
-ph_udp.py - packet handler libary for UDP  protocol
+ps_udp.py - packet handler libary for UDP  protocol
 
 """
 

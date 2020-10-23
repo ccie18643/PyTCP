@@ -3,15 +3,15 @@
 """
 
 PyTCP, Python TCP/IP stack simulation version 0.1 - 2020, Sebastian Majewski
-stack_udp.py - part of TCP/IP stack responsible of handling UDP packets
+ps_udp_rx.py - part of TCP/IP stack responsible of handling UDP packets
 
 """
 
 from udp_socket import UdpSocket
 
-import ph_ether
-import ph_ip
-import ph_icmp
+import ps_ether
+import ps_ip
+import ps_icmp
 
 
 def udp_packet_handler(self, ether_packet_rx, ip_packet_rx, udp_packet_rx):
@@ -38,9 +38,9 @@ def udp_packet_handler(self, ether_packet_rx, ip_packet_rx, udp_packet_rx):
     # In case incoming packet did't mach any listening port respond with ICMP Port Unreachable message
     self.logger.debug(f"Received UDP packet from {ip_packet_rx.hdr_src} to closed port {udp_packet_rx.hdr_dport}, sending ICMP Port Unreachable")
 
-    icmp_packet_tx = ph_icmp.IcmpPacket(hdr_type=ph_icmp.ICMP_UNREACHABLE, hdr_code=ph_icmp.ICMP_UNREACHABLE_PORT, ip_packet_rx=ip_packet_rx)
-    ip_packet_tx = ph_ip.IpPacket(hdr_src=self.stack_ip_address, hdr_dst=ip_packet_rx.hdr_src, child_packet=icmp_packet_tx)
-    ether_packet_tx = ph_ether.EtherPacket(child_packet=ip_packet_tx)
+    icmp_packet_tx = ps_icmp.IcmpPacket(hdr_type=ps_icmp.ICMP_UNREACHABLE, hdr_code=ps_icmp.ICMP_UNREACHABLE_PORT, ip_packet_rx=ip_packet_rx)
+    ip_packet_tx = ps_ip.IpPacket(hdr_src=self.ps_ip_rx_address, hdr_dst=ip_packet_rx.hdr_src, child_packet=icmp_packet_tx)
+    ether_packet_tx = ps_ether.EtherPacket(child_packet=ip_packet_tx)
 
     # Pass the timestamp/serial info from request to reply packet for tracking in TX ring
     ether_packet_tx.timestamp_rx = ether_packet_rx.timestamp_rx

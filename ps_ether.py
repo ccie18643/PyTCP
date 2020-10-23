@@ -3,7 +3,7 @@
 """
 
 PyTCP, Python TCP/IP stack simulation version 0.1 - 2020, Sebastian Majewski
-ph_ethernet.py - packet handler libary for Ethernet protocol
+ps_ethernet.py - packet handler libary for Ethernet protocol
 
 """
 

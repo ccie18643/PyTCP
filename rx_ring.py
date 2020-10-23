@@ -11,7 +11,7 @@ import os
 import loguru
 import threading
 
-import ph_ether
+import ps_ether
 
 
 class RxRing:
@@ -36,10 +36,10 @@ class RxRing:
         while True:
 
             # Wait till there is any packet comming and pick it up
-            ether_packet_rx = ph_ether.EtherPacket(os.read(self.tap, 2048))
+            ether_packet_rx = ps_ether.EtherPacket(os.read(self.tap, 2048))
 
             # Check if received packet uses valid Ethernet II format
-            if ether_packet_rx.hdr_type < ph_ether.ETHER_TYPE_MIN:
+            if ether_packet_rx.hdr_type < ps_ether.ETHER_TYPE_MIN:
                 self.logger.opt(ansi=True).debug(f"<green>[RX]</green> Packet doesn't comply with the Ethernet II standard - {ether_packet_rx}")
                 continue
 

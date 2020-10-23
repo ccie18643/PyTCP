@@ -3,7 +3,7 @@
 """
 
 PyTCP, Python TCP/IP stack simulation version 0.1 - 2020, Sebastian Majewski
-ph_tct.py - packet handler libary for TCP  protocol
+ps_tct.py - packet handler libary for TCP  protocol
 
 """
 

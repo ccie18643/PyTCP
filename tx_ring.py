@@ -12,8 +12,8 @@ import time
 import loguru
 import threading
 
-import ph_ether
-import ph_ip
+import ps_ether
+import ps_ip
 
 
 class TxRing:
@@ -56,8 +56,8 @@ class TxRing:
                 self.logger.debug(f"{ether_packet_tx.serial_number_tx} Contains valid destination MAC address")
 
             # In case packe doesn't contain valid destination MAC address try to obtain it from ARP cache
-            elif ether_packet_tx.hdr_type == ph_ether.ETHER_TYPE_IP:
-                ip_packet_tx = ph_ip.IpPacket(ether_packet_tx)
+            elif ether_packet_tx.hdr_type == ps_ether.ETHER_TYPE_IP:
+                ip_packet_tx = ps_ip.IpPacket(ether_packet_tx)
 
                 mac_address = self.arp_cache.find_entry(ip_packet_tx.hdr_dst)
                 if mac_address:

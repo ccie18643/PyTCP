@@ -13,12 +13,13 @@ import fcntl
 import time
 import struct
 import loguru
-import threading
 
 from udp_socket import UdpSocket
 from arp_cache import ArpCache
 from rx_ring import RxRing
 from tx_ring import TxRing
+
+from ps_rx import PacketHandlerRx
 
 from service_udp_echo import ServiceUdpEcho
 
@@ -30,36 +31,6 @@ IFF_NO_PI = 0x1000
 STACK_INTERFACE = b"tap7"
 STACK_IP_ADDRESS = "192.168.9.7"
 STACK_MAC_ADDRESS = "02:00:00:77:77:77"
-
-
-class PacketHandler:
-    """ Pick up and respond to incoming packets """
-
-    from stack_ether import ether_packet_handler
-    from stack_arp import arp_packet_handler
-    from stack_ip import ip_packet_handler
-    from stack_icmp import icmp_packet_handler
-    from stack_udp import udp_packet_handler
-    from stack_tcp import tcp_packet_handler
-
-    def __init__(self, stack_mac_address, stack_ip_address, rx_ring, tx_ring, arp_cache):
-        """ Class constructor """
-
-        self.stack_ip_address = stack_ip_address
-        self.stack_mac_address = stack_mac_address
-        self.tx_ring = tx_ring
-        self.rx_ring = rx_ring
-        self.arp_cache = arp_cache
-        self.logger = loguru.logger.bind(object_name="packet_handler.")
-
-        threading.Thread(target=self.__packet_handler).start()
-        self.logger.debug("Started packet handler")
-
-    def __packet_handler(self):
-        """ Thread that picks up incoming packets from RX ring and process them """
-
-        while True:
-            self.ether_packet_handler(self.rx_ring.dequeue())
 
 
 def main():
@@ -80,7 +51,7 @@ def main():
     arp_cache = ArpCache(STACK_MAC_ADDRESS, STACK_IP_ADDRESS)
     rx_ring = RxRing(tap, STACK_MAC_ADDRESS)
     tx_ring = TxRing(tap, STACK_MAC_ADDRESS, arp_cache)
-    PacketHandler(STACK_MAC_ADDRESS, STACK_IP_ADDRESS, rx_ring, tx_ring, arp_cache)
+    PacketHandlerRx(STACK_MAC_ADDRESS, STACK_IP_ADDRESS, rx_ring, tx_ring, arp_cache)
     UdpSocket.set_tx_ring(tx_ring)
     ServiceUdpEcho()
 

@@ -3,14 +3,14 @@
 """
 
 PyTCP, Python TCP/IP stack simulation version 0.1 - 2020, Sebastian Majewski
-stack_tcp.py - part of TCP/IP stack responsible of handling TCP packets
+ps_tcp_rx.py - part of TCP/IP stack responsible of handling TCP packets
 
 """
 
 
-import ph_ether
-import ph_ip
-import ph_tcp
+import ps_ether
+import ps_ip
+import ps_tcp
 
 
 def tcp_packet_handler(self, ether_packet_rx, ip_packet_rx, tcp_packet_rx):
@@ -25,15 +25,15 @@ def tcp_packet_handler(self, ether_packet_rx, ip_packet_rx, tcp_packet_rx):
     else:
         self.logger.debug(f"Received TCP packet from {ip_packet_rx.hdr_src} to closed port {tcp_packet_rx.hdr_dport}, sending TCP Reset packet")
 
-        tcp_packet_tx = ph_tcp.TcpPacket(
+        tcp_packet_tx = ps_tcp.TcpPacket(
             hdr_sport=tcp_packet_rx.hdr_dport,
             hdr_dport=tcp_packet_rx.hdr_sport,
             hdr_ack_num=tcp_packet_rx.hdr_seq_num + 1,
             hdr_flag_rst=True,
             hdr_flag_ack=True,
         )
-        ip_packet_tx = ph_ip.IpPacket(hdr_src=self.stack_ip_address, hdr_dst=ip_packet_rx.hdr_src, child_packet=tcp_packet_tx)
-        ether_packet_tx = ph_ether.EtherPacket(child_packet=ip_packet_tx)
+        ip_packet_tx = ps_ip.IpPacket(hdr_src=self.ps_ip_rx_address, hdr_dst=ip_packet_rx.hdr_src, child_packet=tcp_packet_tx)
+        ether_packet_tx = ps_ether.EtherPacket(child_packet=ip_packet_tx)
 
         # Pass the timestamp/serial info from request to reply packet for tracking in TX ring
         ether_packet_tx.timestamp_rx = ether_packet_rx.timestamp_rx

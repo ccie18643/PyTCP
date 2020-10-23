@@ -3,12 +3,12 @@
 """
 
 PyTCP, Python TCP/IP stack simulation version 0.1 - 2020, Sebastian Majewski
-stack_arp.py - part of TCP/IP stack responsible for handling ARP incoming packets
+ps_arp_rx.py - part of TCP/IP stack responsible for handling ARP incoming packets
 
 """
 
-import ph_ether
-import ph_arp
+import ps_ether
+import ps_arp
 
 
 ARP_CACHE_UPDATE_FROM_DIRECT_REQUEST = True
@@ -19,20 +19,20 @@ ARP_CACHE_UPDATE_FROM_GRATITIOUS_ARP = True
 def arp_packet_handler(self, ether_packet_rx, arp_packet_rx):
     """ Handle incomming ARP packets """
 
-    if arp_packet_rx.hdr_oper == ph_arp.ARP_OP_REQUEST:
+    if arp_packet_rx.hdr_oper == ps_arp.ARP_OP_REQUEST:
         self.logger.opt(ansi=True).info(f"<green>{ether_packet_rx.serial_number_rx}</green> - {arp_packet_rx}")
 
         # Check if the request is for our IP address, if so the craft ARP reply packet and send it out
-        if arp_packet_rx.hdr_tpa == self.stack_ip_address:
+        if arp_packet_rx.hdr_tpa == self.ps_ip_rx_address:
 
-            arp_packet_tx = ph_arp.ArpPacket(
-                hdr_oper=ph_arp.ARP_OP_REPLY,
+            arp_packet_tx = ps_arp.ArpPacket(
+                hdr_oper=ps_arp.ARP_OP_REPLY,
                 hdr_sha=self.stack_mac_address,
-                hdr_spa=self.stack_ip_address,
+                hdr_spa=self.ps_ip_rx_address,
                 hdr_tha=arp_packet_rx.hdr_sha,
                 hdr_tpa=arp_packet_rx.hdr_spa,
             )
-            ether_packet_tx = ph_ether.EtherPacket(hdr_src=self.stack_mac_address, hdr_dst=arp_packet_tx.hdr_tha, child_packet=arp_packet_tx)
+            ether_packet_tx = ps_ether.EtherPacket(hdr_src=self.stack_mac_address, hdr_dst=arp_packet_tx.hdr_tha, child_packet=arp_packet_tx)
 
             # Pass the timestamp/serial info from request to reply packet for tracking in TX ring
             ether_packet_tx.timestamp_rx = ether_packet_rx.timestamp_rx
@@ -52,7 +52,7 @@ def arp_packet_handler(self, ether_packet_rx, arp_packet_rx):
             self.arp_cache.add_entry(arp_packet_rx.hdr_spa, arp_packet_rx.hdr_sha)
 
     # Handle ARP reply
-    elif arp_packet_rx.hdr_oper == ph_arp.ARP_OP_REPLY:
+    elif arp_packet_rx.hdr_oper == ps_arp.ARP_OP_REPLY:
         self.logger.opt(ansi=True).info(f"<green>{ether_packet_rx.serial_number_rx}</green> - {arp_packet_rx}")
 
         # Update ARP cache with maping received as direct ARP reply
