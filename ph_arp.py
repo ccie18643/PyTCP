@@ -83,6 +83,11 @@ class ArpPacket:
             return f"ARP reply {self.hdr_spa} / {self.hdr_sha} > {self.hdr_tpa} / {self.hdr_tha}"
         return f"ARP unknown operation {self.oper}"
 
+    def __len__(self):
+        """ Length of the packet """
+
+        return len(self.raw_packet)
+
     @property
     def raw_header(self):
         """ Packet header in raw format """

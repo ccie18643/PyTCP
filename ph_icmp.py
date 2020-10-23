@@ -101,6 +101,27 @@ class IcmpPacket:
             if self.hdr_type == ICMP_UNREACHABLE:
                 self.msg_ip_info = ip_packet_rx.raw_header + ip_packet_rx.raw_data[:8]
 
+    def __str__(self):
+        """ Short packet log string """
+
+        log = f"ICMP type {self.hdr_type}, code {self.hdr_code}"
+
+        if self.hdr_type == ICMP_ECHOREPLY:
+            log += f", id {self.msg_id}, seq {self.msg_seq}"
+
+        if self.hdr_type == ICMP_ECHOREQUEST:
+            log += f", id {self.msg_id}, seq {self.msg_seq}"
+
+        if self.hdr_type == ICMP_UNREACHABLE:
+            pass
+
+        return log
+
+    def __len__(self):
+        """ Length of the packet """
+
+        return len(self.raw_packet)
+
     def compute_cksum(self):
         """ Compute checksum of the ICMP packet """
 
@@ -144,18 +165,3 @@ class IcmpPacket:
 
         return self.raw_packet
 
-    def __str__(self):
-        """ Short packet log string """
-
-        log = f"ICMP type {self.hdr_type}, code {self.hdr_code}"
-
-        if self.hdr_type == ICMP_ECHOREPLY:
-            log += f", id {self.msg_id}, seq {self.msg_seq}"
-
-        if self.hdr_type == ICMP_ECHOREQUEST:
-            log += f", id {self.msg_id}, seq {self.msg_seq}"
-
-        if self.hdr_type == ICMP_UNREACHABLE:
-            pass
-
-        return log

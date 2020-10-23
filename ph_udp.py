@@ -61,6 +61,11 @@ class UdpPacket:
 
         return f"UDP {self.hdr_sport} > {self.hdr_dport}, len {self.hdr_len}"
 
+    def __len__(self):
+        """ Length of the packet """
+
+        return len(self.raw_packet)
+
     def compute_cksum(self, ip_pseudo_header):
         """ Compute checksum of IP pseudo header + UDP packet """
 

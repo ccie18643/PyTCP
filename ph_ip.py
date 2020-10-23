@@ -198,6 +198,11 @@ class IpPacket:
             + f"{', DF' if self.hdr_frag_df else ''}{', MF' if self.hdr_frag_mf else ''}, offset {self.hdr_frag_offset}"
         )
 
+    def __len__(self):
+        """ Length of the packet """
+
+        return len(self.raw_packet)
+
     def compute_cksum(self):
         """ Compute checksum of IP header """
 

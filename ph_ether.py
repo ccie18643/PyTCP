@@ -92,6 +92,11 @@ class EtherPacket:
 
         return f"ETHER {self.hdr_src} > {self.hdr_dst}, 0x{self.hdr_type:0>4x} ({ETHER_TYPE_TABLE.get(self.hdr_type, '???')})"
 
+    def __len__(self):
+        """ Length of the packet """
+
+        return len(self.raw_packet)
+
     @property
     def raw_header(self):
         """ Packet header in raw format """

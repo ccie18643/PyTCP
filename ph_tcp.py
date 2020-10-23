@@ -187,6 +187,11 @@ class TcpPacket:
             log += ", " + str(option)
 
         return log
+    
+    def __len__(self):
+        """ Length of the packet """
+
+        return len(self.raw_packet)
 
     def compute_cksum(self, ip_pseudo_header):
         """ Compute checksum of IP pseudo header + TCP packet """
