@@ -164,4 +164,3 @@ class IcmpPacket:
         self.hdr_cksum = self.compute_cksum()
 
         return self.raw_packet
-

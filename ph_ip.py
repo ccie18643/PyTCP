@@ -175,7 +175,7 @@ class IpPacket:
 
             assert self.hdr_hlen % 4 == 0, "IP header len is not multiplcation of 4 bytes, check options"
 
-            if child_packet: 
+            if child_packet:
                 assert child_packet.protocol in {"ICMP", "UDP", "TCP"}, f"Not supported protocol: {child_packet.protocol}"
 
                 if child_packet.protocol == "ICMP":

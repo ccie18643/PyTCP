@@ -187,7 +187,7 @@ class TcpPacket:
             log += ", " + str(option)
 
         return log
-    
+
     def __len__(self):
         """ Length of the packet """
 

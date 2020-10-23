@@ -11,7 +11,6 @@ import ph_ether
 import ph_arp
 
 
-
 ARP_CACHE_UPDATE_FROM_DIRECT_REQUEST = True
 ARP_CACHE_UPDATE_FROM_NON_DIRECT_REQUEST = False
 ARP_CACHE_UPDATE_FROM_GRATITIOUS_ARP = True
@@ -47,7 +46,7 @@ def arp_packet_handler(self, ether_packet_rx, arp_packet_rx):
             if ARP_CACHE_UPDATE_FROM_DIRECT_REQUEST:
                 self.logger.debug(f"Adding/refreshing ARP cache entry from direct request - {arp_packet_rx.hdr_spa} -> {arp_packet_rx.hdr_sha}")
                 self.arp_cache.add_entry(arp_packet_rx.hdr_spa, arp_packet_rx.hdr_sha)
-            
+
         elif ARP_CACHE_UPDATE_FROM_NON_DIRECT_REQUEST:
             self.logger.debug(f"Adding/refreshing ARP cache entry from non-direct request - {arp_packet_rx.hdr_spa} -> {arp_packet_rx.hdr_sha}")
             self.arp_cache.add_entry(arp_packet_rx.hdr_spa, arp_packet_rx.hdr_sha)
