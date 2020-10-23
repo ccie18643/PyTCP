@@ -193,9 +193,12 @@ class IpPacket:
     def __str__(self):
         """ Short packet log string """
 
-        return f"IP {self.hdr_src} > {self.hdr_dst}, proto {self.hdr_proto} ({IP_PROTO_TABLE.get(self.hdr_proto, '???')})"
+        return (
+            f"IP {self.hdr_src} > {self.hdr_dst}, proto {self.hdr_proto} ({IP_PROTO_TABLE.get(self.hdr_proto, '???')}), id {self.hdr_id}"
+            + f"{', DF' if self.hdr_frag_df else ''}{', MF' if self.hdr_frag_mf else ''}, offset {self.hdr_frag_offset}"
+        )
 
-    def __compute_cksum(self):
+    def compute_cksum(self):
         """ Compute checksum of IP header """
 
         cksum_data = self.raw_header + self.raw_options
@@ -248,7 +251,7 @@ class IpPacket:
     def get_raw_packet(self):
         """ Get packet in raw format ready to be processed by lower level protocol """
 
-        self.hdr_cksum = self.__compute_cksum()
+        self.hdr_cksum = self.compute_cksum()
 
         return self.raw_packet
 

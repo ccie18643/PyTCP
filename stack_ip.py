@@ -42,6 +42,12 @@ def ip_packet_handler(self, ether_packet_rx, ip_packet_rx):
             for offset in sorted(ip_fragments[ip_packet_rx.hdr_id]):
                 raw_data += ip_fragments[ip_packet_rx.hdr_id][offset]
 
+            # Craft complete IP packet based on last fragment for further processing
+            ip_packet_rx.hdr_frag_mf = False
+            ip_packet_rx.hdr_frag_offset = 0
+            ip_packet_rx.hdr_cksum = ip_packet_rx.compute_cksum()
+            ip_packet_rx.raw_data = raw_data
+
     if ip_packet_rx.hdr_proto == ph_ip.IP_PROTO_ICMP:
         self.icmp_packet_handler(ether_packet_rx, ip_packet_rx, ph_icmp.IcmpPacket(ip_packet_rx))
         return
