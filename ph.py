@@ -3,7 +3,7 @@
 """
 
 PyTCP, Python TCP/IP stack simulation version 0.1 - 2020, Sebastian Majewski
-phrx.py - protocol support for incoming packets
+ph.py - protocol support for incoming and outgoing packets
 
 """
 
@@ -11,7 +11,7 @@ import loguru
 import threading
 
 
-class PacketHandlerRx:
+class PacketHandler:
     """ Pick up and respond to incoming packets """
 
     from phrx_ether import phrx_ether

@@ -19,7 +19,7 @@ from arp_cache import ArpCache
 from rx_ring import RxRing
 from tx_ring import TxRing
 
-from phrx import PacketHandlerRx
+from ph import PacketHandler
 
 from service_udp_echo import ServiceUdpEcho
 
@@ -51,7 +51,7 @@ def main():
     arp_cache = ArpCache(STACK_MAC_ADDRESS, STACK_IP_ADDRESS)
     rx_ring = RxRing(tap, STACK_MAC_ADDRESS)
     tx_ring = TxRing(tap, STACK_MAC_ADDRESS, arp_cache)
-    PacketHandlerRx(STACK_MAC_ADDRESS, STACK_IP_ADDRESS, rx_ring, tx_ring, arp_cache)
+    PacketHandler(STACK_MAC_ADDRESS, STACK_IP_ADDRESS, rx_ring, tx_ring, arp_cache)
     UdpSocket.set_tx_ring(tx_ring)
     ServiceUdpEcho()
 
