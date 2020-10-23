@@ -127,7 +127,7 @@ class IpPacket:
             self.hdr_id = struct.unpack("!H", raw_header[4:6])[0]
             self.hdr_frag_df = bool(struct.unpack("!H", raw_header[6:8])[0] & 0b0100000000000000)
             self.hdr_frag_mf = bool(struct.unpack("!H", raw_header[6:8])[0] & 0b0010000000000000)
-            self.hdr_frag_offset = struct.unpack("!H", raw_header[6:8])[0] & 0b0001111111111111
+            self.hdr_frag_offset = (struct.unpack("!H", raw_header[6:8])[0] & 0b0001111111111111) << 3
             self.hdr_ttl = raw_header[8]
             self.hdr_proto = raw_header[9]
             self.hdr_cksum = struct.unpack("!H", raw_header[10:12])[0]
@@ -214,7 +214,7 @@ class IpPacket:
             self.hdr_dscp << 2 | self.hdr_ecn,
             self.hdr_plen,
             self.hdr_id,
-            self.hdr_frag_df << 14 | self.hdr_frag_mf << 13 | self.hdr_frag_offset,
+            self.hdr_frag_df << 14 | self.hdr_frag_mf << 13 | self.hdr_frag_offset >> 3,
             self.hdr_ttl,
             self.hdr_proto,
             self.hdr_cksum,
