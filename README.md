@@ -21,5 +21,5 @@ Running threads
 ![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/main/pictures/log_04.png)
 
 
-### Assemblig fragmented IP packet containing UDP datagram, it's content is displayed by stack for debug purposes
+### IP fragmentation - receiving fragmented 4Kb UDP datagram and sending fragmented reply
 ![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/main/pictures/log_05.png)
