@@ -60,9 +60,6 @@ class UdpSocket:
         """ Put data into TX ring """
 
         udp_packet_tx = ph_udp.UdpPacket(hdr_sport=self.local_port, hdr_dport=udp_message.remote_port, raw_data=udp_message.raw_data)
-
-        if len(udp_packet
-
         ip_packet_tx = ph_ip.IpPacket(hdr_src=self.local_ip_address, hdr_dst=udp_message.remote_ip_address, child_packet=udp_packet_tx)
         ether_packet_tx = ph_ether.EtherPacket(child_packet=ip_packet_tx)
 

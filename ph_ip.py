@@ -108,6 +108,8 @@ class IpPacket:
         hdr_frag_offset=0,
         hdr_options=[],
         child_packet=None,
+        hdr_proto=None,
+        raw_data=b"",
     ):
         """ Class constructor """
 
@@ -173,22 +175,28 @@ class IpPacket:
 
             assert self.hdr_hlen % 4 == 0, "IP header len is not multiplcation of 4 bytes, check options"
 
-            assert child_packet.protocol in {"ICMP", "UDP", "TCP"}, f"Not supported protocol: {child_packet.protocol}"
+            if child_packet: 
+                assert child_packet.protocol in {"ICMP", "UDP", "TCP"}, f"Not supported protocol: {child_packet.protocol}"
 
-            if child_packet.protocol == "ICMP":
-                self.hdr_proto = IP_PROTO_ICMP
-                self.raw_data = child_packet.get_raw_packet()
+                if child_packet.protocol == "ICMP":
+                    self.hdr_proto = IP_PROTO_ICMP
+                    self.raw_data = child_packet.get_raw_packet()
+                    self.hdr_plen = self.hdr_hlen + len(self.raw_data)
+
+                if child_packet.protocol == "UDP":
+                    self.hdr_proto = IP_PROTO_UDP
+                    self.hdr_plen = self.hdr_hlen + child_packet.hdr_len
+                    self.raw_data = child_packet.get_raw_packet(self.ip_pseudo_header)
+
+                if child_packet.protocol == "TCP":
+                    self.hdr_proto = IP_PROTO_TCP
+                    self.hdr_plen = self.hdr_hlen + child_packet.hdr_hlen + len(child_packet.raw_data)
+                    self.raw_data = child_packet.get_raw_packet(self.ip_pseudo_header)
+
+            else:
+                self.hdr_proto = hdr_proto
+                self.raw_data = raw_data
                 self.hdr_plen = self.hdr_hlen + len(self.raw_data)
-
-            if child_packet.protocol == "UDP":
-                self.hdr_proto = IP_PROTO_UDP
-                self.hdr_plen = self.hdr_hlen + child_packet.hdr_len
-                self.raw_data = child_packet.get_raw_packet(self.ip_pseudo_header)
-
-            if child_packet.protocol == "TCP":
-                self.hdr_proto = IP_PROTO_TCP
-                self.hdr_plen = self.hdr_hlen + child_packet.hdr_hlen + len(child_packet.raw_data)
-                self.raw_data = child_packet.get_raw_packet(self.ip_pseudo_header)
 
     def __str__(self):
         """ Short packet log string """
