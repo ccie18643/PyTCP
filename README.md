@@ -19,3 +19,7 @@ Running threads
 
 ### UDP Echo service receiving and sending packets using simple socket mechanism
 ![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/main/pictures/log_04.png)
+
+
+### Assemblig fragmented IP packet containing UDP datagram, it's content is displayed by stack for debug purposes
+![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/main/pictures/log_05.png)
