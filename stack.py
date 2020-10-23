@@ -31,9 +31,6 @@ STACK_INTERFACE = b"tap7"
 STACK_IP_ADDRESS = "192.168.9.7"
 STACK_MAC_ADDRESS = "02:00:00:77:77:77"
 
-ARP_CACHE_UPDATE_FROM_DIRECT_REQUEST = True
-ARP_CACHE_UPDATE_FROM_GRATITIOUS_ARP = True
-
 
 class PacketHandler:
     """ Pick up and respond to incoming packets """
@@ -47,9 +44,6 @@ class PacketHandler:
 
     def __init__(self, stack_mac_address, stack_ip_address, rx_ring, tx_ring, arp_cache):
         """ Class constructor """
-
-        self.arp_cache_update_from_direct_request = ARP_CACHE_UPDATE_FROM_DIRECT_REQUEST
-        self.arp_cahce_update_from_gratitious_arp = ARP_CACHE_UPDATE_FROM_GRATITIOUS_ARP
 
         self.stack_ip_address = stack_ip_address
         self.stack_mac_address = stack_mac_address
