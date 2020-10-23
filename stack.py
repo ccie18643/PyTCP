@@ -19,7 +19,7 @@ from arp_cache import ArpCache
 from rx_ring import RxRing
 from tx_ring import TxRing
 
-from ps_rx import PacketHandlerRx
+from phrx import PacketHandlerRx
 
 from service_udp_echo import ServiceUdpEcho
 

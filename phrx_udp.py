@@ -3,7 +3,7 @@
 """
 
 PyTCP, Python TCP/IP stack simulation version 0.1 - 2020, Sebastian Majewski
-ps_udp_rx.py - part of TCP/IP stack responsible of handling UDP packets
+phrx_udp.py - protocol support for incoming UDP packets
 
 """
 
@@ -14,7 +14,7 @@ import ps_ip
 import ps_icmp
 
 
-def udp_packet_handler(self, ether_packet_rx, ip_packet_rx, udp_packet_rx):
+def phrx_udp(self, ether_packet_rx, ip_packet_rx, udp_packet_rx):
     """ Handle incoming UDP packets """
 
     self.logger.opt(ansi=True).info(f"<green>{ether_packet_rx.serial_number_rx}</green> - {udp_packet_rx}")

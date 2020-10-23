@@ -3,7 +3,7 @@
 """
 
 PyTCP, Python TCP/IP stack simulation version 0.1 - 2020, Sebastian Majewski
-ps_icmp_rx.py - part of TCP/IP stack responsible for handling ICMP packets
+phrx_icmp.py - protocol support for incoming ICMP packets
 
 """
 
@@ -12,7 +12,7 @@ import ps_ip
 import ps_icmp
 
 
-def icmp_packet_handler(self, ether_packet_rx, ip_packet_rx, icmp_packet_rx):
+def phrx_icmp(self, ether_packet_rx, ip_packet_rx, icmp_packet_rx):
     """ Handle incoming ICMP packets """
 
     self.logger.opt(ansi=True).info(f"<green>{ether_packet_rx.serial_number_rx}</green> - {icmp_packet_rx}")

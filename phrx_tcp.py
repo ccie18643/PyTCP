@@ -3,7 +3,7 @@
 """
 
 PyTCP, Python TCP/IP stack simulation version 0.1 - 2020, Sebastian Majewski
-ps_tcp_rx.py - part of TCP/IP stack responsible of handling TCP packets
+phrx_tcp.py - protocol support for incoming TCP packets
 
 """
 
@@ -13,7 +13,7 @@ import ps_ip
 import ps_tcp
 
 
-def tcp_packet_handler(self, ether_packet_rx, ip_packet_rx, tcp_packet_rx):
+def phrx_tcp(self, ether_packet_rx, ip_packet_rx, tcp_packet_rx):
     """ Handle incoming TCP packets """
 
     self.logger.opt(ansi=True).info(f"<green>{ether_packet_rx.serial_number_rx}</green> - {tcp_packet_rx}")

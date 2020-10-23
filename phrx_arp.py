@@ -3,7 +3,7 @@
 """
 
 PyTCP, Python TCP/IP stack simulation version 0.1 - 2020, Sebastian Majewski
-ps_arp_rx.py - part of TCP/IP stack responsible for handling ARP incoming packets
+phrx_arp.py - protocol support for incoming ARP packets
 
 """
 
@@ -16,7 +16,7 @@ ARP_CACHE_UPDATE_FROM_NON_DIRECT_REQUEST = False
 ARP_CACHE_UPDATE_FROM_GRATITIOUS_ARP = True
 
 
-def arp_packet_handler(self, ether_packet_rx, arp_packet_rx):
+def phrx_arp(self, ether_packet_rx, arp_packet_rx):
     """ Handle incomming ARP packets """
 
     if arp_packet_rx.hdr_oper == ps_arp.ARP_OP_REQUEST:

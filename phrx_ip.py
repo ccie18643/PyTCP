@@ -3,7 +3,7 @@
 """
 
 PyTCP, Python TCP/IP stack simulation version 0.1 - 2020, Sebastian Majewski
-ps_ip_rx.py - part of TCP/IP stack responsible for handling IP packets
+phrx_ip.py - protocol support for incoming IP packets
 
 """
 
@@ -15,7 +15,7 @@ import ps_tcp
 ip_fragments = {}
 
 
-def ip_packet_handler(self, ether_packet_rx, ip_packet_rx):
+def phrx_ip(self, ether_packet_rx, ip_packet_rx):
     """ Handle incoming IP packets """
 
     self.logger.debug(f"{ether_packet_rx.serial_number_rx} - {ip_packet_rx}")
@@ -50,13 +50,13 @@ def ip_packet_handler(self, ether_packet_rx, ip_packet_rx):
             ip_packet_rx.raw_data = raw_data
 
     if ip_packet_rx.hdr_proto == ps_ip.IP_PROTO_ICMP:
-        self.icmp_packet_handler(ether_packet_rx, ip_packet_rx, ps_icmp.IcmpPacket(ip_packet_rx))
+        self.phrx_icmp(ether_packet_rx, ip_packet_rx, ps_icmp.IcmpPacket(ip_packet_rx))
         return
 
     if ip_packet_rx.hdr_proto == ps_ip.IP_PROTO_UDP:
-        self.udp_packet_handler(ether_packet_rx, ip_packet_rx, ps_udp.UdpPacket(ip_packet_rx))
+        self.phrx_udp(ether_packet_rx, ip_packet_rx, ps_udp.UdpPacket(ip_packet_rx))
         return
 
     if ip_packet_rx.hdr_proto == ps_ip.IP_PROTO_TCP:
-        self.tcp_packet_handler(ether_packet_rx, ip_packet_rx, ps_tcp.TcpPacket(ip_packet_rx))
+        self.phrx_tcp(ether_packet_rx, ip_packet_rx, ps_tcp.TcpPacket(ip_packet_rx))
         return
