@@ -3,12 +3,15 @@
 """
 
 PyTCP, Python TCP/IP stack simulation version 0.1 - 2020, Sebastian Majewski
-ps_arp.py - packet handler library for ARP protocol
+ps_arp.py - protocol support library for ARP
 
 """
 
+
 import socket
 import struct
+
+from tracker import Tracker
 
 
 """
@@ -45,11 +48,13 @@ class ArpPacket:
 
     protocol = "ARP"
 
-    def __init__(self, parent_packet=None, hdr_sha=None, hdr_spa=None, hdr_tpa=None, hdr_tha="00:00:00:00:00:00", hdr_oper=ARP_OP_REQUEST):
+    def __init__(self, parent_packet=None, hdr_sha=None, hdr_spa=None, hdr_tpa=None, hdr_tha="00:00:00:00:00:00", hdr_oper=ARP_OP_REQUEST, echo_tracker=None):
         """ Class constructor """
 
         # Packet parsing
         if parent_packet:
+            self.tracker = parent_packet.tracker
+
             raw_packet = parent_packet.raw_data
             raw_header = raw_packet[:ARP_HEADER_LEN]
 
@@ -63,7 +68,10 @@ class ArpPacket:
             self.hdr_tha = ":".join([f"{_:0>2x}" for _ in raw_header[18:24]])
             self.hdr_tpa = socket.inet_ntoa(struct.unpack("!4s", raw_header[24:28])[0])
 
+        # Packet building
         else:
+            self.tracker = Tracker("TX", echo_tracker)
+
             self.hdr_hrtype = 1
             self.hdr_prtype = 0x0800
             self.hdr_hrlen = 6

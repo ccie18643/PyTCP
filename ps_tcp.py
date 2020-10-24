@@ -3,11 +3,14 @@
 """
 
 PyTCP, Python TCP/IP stack simulation version 0.1 - 2020, Sebastian Majewski
-ps_tct.py - packet handler libary for TCP  protocol
+ps_tct.py - protocol support libary for TCP
 
 """
 
+
 import struct
+
+from tracker import Tracker
 
 
 """
@@ -63,11 +66,14 @@ class TcpPacket:
         hdr_urp=0,
         hdr_options=[],
         raw_data=b"",
+        echo_tracker=None,
     ):
         """ Class constructor """
 
         # Packet parsing
         if parent_packet:
+            self.tracker = parent_packet.tracker
+
             raw_packet = parent_packet.raw_data
             raw_header = raw_packet[:TCP_HEADER_LEN]
             raw_options = raw_packet[TCP_HEADER_LEN : (raw_header[12] & 0b11110000) >> 2]
@@ -124,6 +130,8 @@ class TcpPacket:
 
         # Packet building
         else:
+            self.tracker = Tracker("TX", echo_tracker)
+
             self.hdr_sport = hdr_sport
             self.hdr_dport = hdr_dport
             self.hdr_seq_num = hdr_seq_num

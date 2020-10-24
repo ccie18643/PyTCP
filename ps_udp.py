@@ -3,11 +3,14 @@
 """
 
 PyTCP, Python TCP/IP stack simulation version 0.1 - 2020, Sebastian Majewski
-ps_udp.py - packet handler libary for UDP  protocol
+ps_udp.py - protocol support libary for UDP
 
 """
 
+
 import struct
+
+from tracker import Tracker
 
 
 """
@@ -31,11 +34,13 @@ class UdpPacket:
 
     protocol = "UDP"
 
-    def __init__(self, parent_packet=None, hdr_sport=None, hdr_dport=None, raw_data=None):
+    def __init__(self, parent_packet=None, hdr_sport=None, hdr_dport=None, raw_data=None, echo_tracker=None):
         """ Class constructor """
 
         # Packet parsing
         if parent_packet:
+            self.tracker = parent_packet.tracker
+
             raw_packet = parent_packet.raw_data
             raw_header = raw_packet[:UDP_HEADER_LEN]
 
@@ -49,6 +54,8 @@ class UdpPacket:
 
         # Packet building
         else:
+            self.tracker = Tracker("TX", echo_tracker)
+
             self.hdr_sport = hdr_sport
             self.hdr_dport = hdr_dport
             self.hdr_len = UDP_HEADER_LEN + len(raw_data)

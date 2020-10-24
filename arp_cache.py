@@ -28,11 +28,11 @@ class ArpCache:
             self.creation_time = time.time()
             self.hit_count = 0
 
-    def __init__(self, stack_mac_address, ps_ip_rx_address):
+    def __init__(self, stack_mac_address, stack_ip_address):
         """ Class constructor """
 
         self.stack_mac_address = stack_mac_address
-        self.ps_ip_rx_address = ps_ip_rx_address
+        self.stack_ip_address = stack_ip_address
 
         self.arp_cache = {}
         self.tx_ring = None
@@ -66,13 +66,13 @@ class ArpCache:
         """ Enqueue ARP request with TX ring """
 
         arp_packet_tx = ps_arp.ArpPacket(
-            hdr_oper=ps_arp.ARP_OP_REQUEST, hdr_sha=self.stack_mac_address, hdr_spa=self.ps_ip_rx_address, hdr_tha="00:00:00:00:00:00", hdr_tpa=hdr_tpa
+            hdr_oper=ps_arp.ARP_OP_REQUEST, hdr_sha=self.stack_mac_address, hdr_spa=self.stack_ip_address, hdr_tha="00:00:00:00:00:00", hdr_tpa=hdr_tpa
         )
 
         ether_packet_tx = ps_ether.EtherPacket(hdr_src=self.stack_mac_address, hdr_dst="ff:ff:ff:ff:ff:ff", child_packet=arp_packet_tx)
 
-        self.logger.debug(f"{ether_packet_tx.serial_number_tx} - {ether_packet_tx}")
-        self.logger.opt(ansi=True).info(f"<magenta>{ether_packet_tx.serial_number_tx} </magenta> - {arp_packet_tx}")
+        self.logger.debug(f"{ether_packet_tx}")
+        self.logger.opt(ansi=True).info(f"{arp_packet_tx}")
         self.tx_ring.enqueue(ether_packet_tx, urgent=True)
 
     def add_entry(self, ip_address, mac_address):

@@ -8,14 +8,7 @@ udp_socket.py - module contains class supporting TCP and UDP sockets
 """
 
 import loguru
-import struct
-import socket
-import random
 import threading
-
-import ps_ether
-import ps_ip
-import ps_udp
 
 
 MTU = 1500
@@ -24,12 +17,10 @@ MTU = 1500
 class UdpMessage:
     """ Store UDP message in socket """
 
-    def __init__(self, raw_data, remote_ip_address, remote_port, serial_number_rx=None, timestamp_rx=None):
+    def __init__(self, raw_data, remote_ip_address, remote_port):
         self.remote_ip_address = remote_ip_address
         self.remote_port = remote_port
         self.raw_data = raw_data
-        self.serial_number_rx = serial_number_rx
-        self.timestamp_rx = timestamp_rx
 
 
 class UdpSocket:
@@ -53,73 +44,18 @@ class UdpSocket:
 
         self.logger.debug(f"Opened UDP socket {self.socket_id}")
 
-    def enqueue(self, src_ip_address, src_port, raw_data, serial_number_rx, timestamp_rx):
+    def enqueue(self, src_ip_address, src_port, raw_data):
         """ Put data into socket RX queue and release semaphore """
 
-        self.data_rx.append(UdpMessage(raw_data, src_ip_address, src_port, serial_number_rx, timestamp_rx))
+        self.data_rx.append(UdpMessage(raw_data, src_ip_address, src_port))
         self.data_ready_rx.release()
 
     def send(self, udp_message):
         """ Put data into TX ring """
 
-        udp_packet_tx = ps_udp.UdpPacket(hdr_sport=self.local_port, hdr_dport=udp_message.remote_port, raw_data=udp_message.raw_data)
-
-        if ps_ether.ETHER_HEADER_LEN + ps_ip.IP_HEADER_LEN + len(udp_packet_tx) <= MTU:
-            ip_packet_tx = ps_ip.IpPacket(hdr_src=self.local_ip_address, hdr_dst=udp_message.remote_ip_address, child_packet=udp_packet_tx)
-            ether_packet_tx = ps_ether.EtherPacket(child_packet=ip_packet_tx)
-
-            # Pass the timestamp/serial info from request to reply packet for tracking in TX ring
-            ether_packet_tx.timestamp_rx = udp_message.timestamp_rx
-            ether_packet_tx.serial_number_rx = udp_message.serial_number_rx
-
-            self.logger.debug(f"{ether_packet_tx.serial_number_tx} - {ether_packet_tx}")
-            self.logger.debug(f"{ether_packet_tx.serial_number_tx} - {ip_packet_tx}")
-            self.logger.opt(ansi=True).info(f"<magenta>{ether_packet_tx.serial_number_tx}</magenta> - {udp_packet_tx}")
-            UdpSocket.tx_ring.enqueue(ether_packet_tx)
-
-        else:
-            self.logger.debug("UDP packet exceeded available MTU, IP fragmentation needed...")
-            udp_mtu = (MTU - ps_ether.ETHER_HEADER_LEN - ps_ip.IP_HEADER_LEN) & 0b1111111111111000
-            raw_data = udp_packet_tx.get_raw_packet(
-                struct.pack(
-                    "! 4s 4s BBH",
-                    socket.inet_aton(self.local_ip_address),
-                    socket.inet_aton(udp_message.remote_ip_address),
-                    0,
-                    ps_ip.IP_PROTO_UDP,
-                    len(udp_packet_tx),
-                )
-            )
-
-            udp_fragments = [raw_data[_ : udp_mtu + _] for _ in range(0, len(raw_data), udp_mtu)]
-
-            n = 0
-            offset = 0
-            ip_id = random.randint(0, 65535)
-
-            for udp_fragment in udp_fragments:
-                ip_packet_tx = ps_ip.IpPacket(
-                    hdr_src=self.local_ip_address,
-                    hdr_dst=udp_message.remote_ip_address,
-                    hdr_proto=ps_ip.IP_PROTO_UDP,
-                    hdr_id=ip_id,
-                    hdr_frag_mf=True if n < len(udp_fragments) - 1 else False,
-                    hdr_frag_offset=offset,
-                    raw_data=udp_fragment,
-                )
-                n += 1
-                offset += len(udp_fragment)
-
-                ether_packet_tx = ps_ether.EtherPacket(child_packet=ip_packet_tx)
-
-                # Pass the timestamp/serial info from request to reply packet for tracking in TX ring
-                ether_packet_tx.timestamp_rx = udp_message.timestamp_rx
-                ether_packet_tx.serial_number_rx = udp_message.serial_number_rx
-
-                self.logger.debug(f"{ether_packet_tx.serial_number_tx} - {ether_packet_tx}")
-                self.logger.debug(f"{ether_packet_tx.serial_number_tx} - {ip_packet_tx}")
-                self.logger.opt(ansi=True).info(f"<magenta>{ether_packet_tx.serial_number_tx}</magenta> - {udp_packet_tx}")
-                UdpSocket.tx_ring.enqueue(ether_packet_tx)
+        self.packet_handler.phtx_udp(
+            ip_dst=udp_message.remote_ip_address, udp_sport=self.local_port, udp_dport=udp_message.remote_port, raw_data=udp_message.raw_data
+        )
 
     def receive(self):
         """ Read data from socket """
@@ -136,18 +72,18 @@ class UdpSocket:
         self.logger.debug(f"Closed UDP socket {self.socket_id}")
 
     @staticmethod
-    def set_tx_ring(tx_ring):
-        """ Class method - Sets TX ring object to be available for sockets """
+    def set_packet_handler(packet_handler):
+        """ Class method - Sets packet handler object to be available for sockets """
 
-        UdpSocket.tx_ring = tx_ring
+        UdpSocket.packet_handler = packet_handler
 
     @staticmethod
-    def match_listening(local_ip_address, local_port, serial_number_rx):
+    def match_listening(local_ip_address, local_port, tracker):
         """ Class method - Return listening socket that matches incoming packet """
 
         socket_id = f"UDP/{local_ip_address}/{local_port}/0.0.0.0/0"
         socket = UdpSocket.open_sockets.get(socket_id, None)
         if socket:
             logger = loguru.logger.bind(object_name="socket.")
-            logger.debug(f"{serial_number_rx} - Found matching listening socket {socket_id}")
+            logger.debug(f"{tracker} - Found matching listening socket {socket_id}")
             return socket

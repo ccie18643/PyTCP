@@ -51,8 +51,8 @@ def main():
     arp_cache = ArpCache(STACK_MAC_ADDRESS, STACK_IP_ADDRESS)
     rx_ring = RxRing(tap, STACK_MAC_ADDRESS)
     tx_ring = TxRing(tap, STACK_MAC_ADDRESS, arp_cache)
-    PacketHandler(STACK_MAC_ADDRESS, STACK_IP_ADDRESS, rx_ring, tx_ring, arp_cache)
-    UdpSocket.set_tx_ring(tx_ring)
+    packet_handler = PacketHandler(STACK_MAC_ADDRESS, STACK_IP_ADDRESS, rx_ring, tx_ring, arp_cache)
+    UdpSocket.set_packet_handler(packet_handler)
     ServiceUdpEcho()
 
     while True:

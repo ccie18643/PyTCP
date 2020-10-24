@@ -3,11 +3,13 @@
 """
 
 PyTCP, Python TCP/IP stack simulation version 0.1 - 2020, Sebastian Majewski
-ps_icmp.py - packet handler libary for Ethernet protocol
+ps_icmp.py - protocol support libary for ICMP
 
 """
 
 import struct
+
+from tracker import Tracker
 
 
 """
@@ -56,11 +58,13 @@ class IcmpPacket:
 
     protocol = "ICMP"
 
-    def __init__(self, parent_packet=None, hdr_type=None, hdr_code=0, msg_id=None, msg_seq=None, msg_data=b"", ip_packet_rx=None):
+    def __init__(self, parent_packet=None, hdr_type=None, hdr_code=0, msg_id=None, msg_seq=None, msg_data=b"", echo_tracker=None):
         """ Class constructor """
 
         # Packet parsing
         if parent_packet:
+            self.tracker = parent_packet.tracker
+
             raw_packet = parent_packet.raw_data
             raw_header = raw_packet[:ICMP_HEADER_LEN]
             raw_message = raw_packet[ICMP_HEADER_LEN:]
@@ -84,6 +88,8 @@ class IcmpPacket:
 
         # Packet building
         else:
+            self.tracker = Tracker("TX", echo_tracker)
+
             self.hdr_type = hdr_type
             self.hdr_code = hdr_code
             self.hdr_cksum = 0
@@ -99,7 +105,7 @@ class IcmpPacket:
                 self.msg_data = msg_data
 
             if self.hdr_type == ICMP_UNREACHABLE:
-                self.msg_ip_info = ip_packet_rx.raw_header + ip_packet_rx.raw_data[:8]
+                self.msg_data = msg_data[:520]
 
     def __str__(self):
         """ Short packet log string """
@@ -125,7 +131,7 @@ class IcmpPacket:
     def compute_cksum(self):
         """ Compute checksum of the ICMP packet """
 
-        cksum_data = self.raw_packet
+        cksum_data = self.raw_packet + (b"\0" if len(self.raw_packet) & 1 else b"")
         cksum_data = list(struct.unpack(f"! {len(cksum_data) >> 1}H", cksum_data))
         cksum_data[1] = 0
         cksum = sum(cksum_data)
@@ -148,7 +154,7 @@ class IcmpPacket:
             return struct.pack("! HH", self.msg_id, self.msg_seq) + self.msg_data
 
         if self.hdr_type == ICMP_UNREACHABLE:
-            return struct.pack("! L", 0) + self.msg_ip_info
+            return struct.pack("! L", 0) + self.msg_data
 
         return b""
 

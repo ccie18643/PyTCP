@@ -3,12 +3,14 @@
 """
 
 PyTCP, Python TCP/IP stack simulation version 0.1 - 2020, Sebastian Majewski
-ps_ethernet.py - packet handler libary for Ethernet protocol
+ps_ethernet.py - protocol suppot libary for Ethernet
 
 """
 
 import struct
 import time
+
+from tracker import Tracker
 
 
 """
@@ -44,35 +46,23 @@ class EtherPacket:
 
     protocol = "ETHER"
 
-    serial_number_rx = 0
-    serial_number_tx = 0
-
     def __init__(self, raw_packet=None, hdr_src="00:00:00:00:00:00", hdr_dst="00:00:00:00:00:00", child_packet=None):
         """ Class constructor """
 
         # Packet parsing
         if raw_packet:
-            self.timestamp_rx = time.time()
-
-            self.serial_number_rx = f"RX{EtherPacket.serial_number_rx:0>4x}".upper()
-            EtherPacket.serial_number_rx += 1
-            if EtherPacket.serial_number_rx > 0xFFFF:
-                EtherPacket.serial_number_rx = 0
+            self.tracker = Tracker("RX")
 
             raw_header = raw_packet[:ETHER_HEADER_LEN]
 
             self.raw_data = raw_packet[ETHER_HEADER_LEN:]
-
             self.hdr_dst = ":".join([f"{_:0>2x}" for _ in raw_header[0:6]])
             self.hdr_src = ":".join([f"{_:0>2x}" for _ in raw_header[6:12]])
             self.hdr_type = struct.unpack("!H", raw_header[12:14])[0]
 
         # Packet building
         else:
-            self.serial_number_tx = f"TX{EtherPacket.serial_number_tx:0>4x}".upper()
-            EtherPacket.serial_number_tx += 1
-            if EtherPacket.serial_number_tx > 0xFFFF:
-                EtherPacket.serial_number_tx = 0
+            self.tracker = child_packet.tracker
 
             self.hdr_dst = hdr_dst
             self.hdr_src = hdr_src

@@ -3,7 +3,7 @@
 """
 
 PyTCP, Python TCP/IP stack simulation version 0.1 - 2020, Sebastian Majewski
-ps_ip.py - packet handler libary for IP protocol
+ps_ip.py - protocol support libary for IP
 
 """
 
@@ -115,6 +115,8 @@ class IpPacket:
 
         # Packet parsing
         if parent_packet:
+            self.tracker = parent_packet.tracker
+
             raw_packet = parent_packet.raw_data
             raw_header = raw_packet[:IP_HEADER_LEN]
             raw_options = raw_packet[IP_HEADER_LEN : (raw_packet[0] & 0b00001111) << 2]
@@ -155,6 +157,8 @@ class IpPacket:
 
         # Packet building
         else:
+            self.tracker = child_packet.tracker
+
             self.hdr_ver = 4
             self.hdr_hlen = None
             self.hdr_dscp = hdr_dscp

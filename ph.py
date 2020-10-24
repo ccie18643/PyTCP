@@ -21,11 +21,18 @@ class PacketHandler:
     from phrx_udp import phrx_udp
     from phrx_tcp import phrx_tcp
 
-    def __init__(self, stack_mac_address, ps_ip_rx_address, rx_ring, tx_ring, arp_cache):
+    from phtx_ether import phtx_ether
+    from phtx_arp import phtx_arp
+    from phtx_ip import phtx_ip
+    from phtx_icmp import phtx_icmp
+    from phtx_udp import phtx_udp
+    from phtx_tcp import phtx_tcp
+
+    def __init__(self, stack_mac_address, stack_ip_address, rx_ring, tx_ring, arp_cache):
         """ Class constructor """
 
-        self.ps_ip_rx_address = ps_ip_rx_address
         self.stack_mac_address = stack_mac_address
+        self.stack_ip_address = stack_ip_address
         self.tx_ring = tx_ring
         self.rx_ring = rx_ring
         self.arp_cache = arp_cache
