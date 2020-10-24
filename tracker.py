@@ -42,7 +42,7 @@ class Tracker:
         """ Return serial number string """
 
         if self.echo_tracker:
-            return self.serial + " " + str(self.echo_tracker) 
+            return self.serial + " " + str(self.echo_tracker)
 
         return self.serial
 

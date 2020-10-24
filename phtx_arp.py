@@ -14,11 +14,11 @@ def phtx_arp(self, ether_dst, arp_oper, arp_sha, arp_spa, arp_tha, arp_tpa, echo
     """ Handle outbound ARP packets """
 
     arp_packet_tx = ps_arp.ArpPacket(
-        hdr_oper=arp_oper,
-        hdr_sha=arp_sha,
-        hdr_spa=arp_spa,
-        hdr_tha=arp_tha,
-        hdr_tpa=arp_tpa,
+        arp_oper=arp_oper,
+        arp_sha=arp_sha,
+        arp_spa=arp_spa,
+        arp_tha=arp_tha,
+        arp_tpa=arp_tpa,
         echo_tracker=echo_tracker,
     )
 

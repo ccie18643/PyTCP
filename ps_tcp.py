@@ -49,22 +49,22 @@ class TcpPacket:
     def __init__(
         self,
         parent_packet=None,
-        hdr_sport=None,
-        hdr_dport=None,
-        hdr_seq_num=0,
-        hdr_ack_num=0,
-        hdr_flag_ns=False,
-        hdr_flag_crw=False,
-        hdr_flag_ece=False,
-        hdr_flag_urg=False,
-        hdr_flag_ack=False,
-        hdr_flag_psh=False,
-        hdr_flag_rst=False,
-        hdr_flag_syn=False,
-        hdr_flag_fin=False,
-        hdr_win=0,
-        hdr_urp=0,
-        hdr_options=[],
+        tcp_sport=None,
+        tcp_dport=None,
+        tcp_seq_num=0,
+        tcp_ack_num=0,
+        tcp_flag_ns=False,
+        tcp_flag_crw=False,
+        tcp_flag_ece=False,
+        tcp_flag_urg=False,
+        tcp_flag_ack=False,
+        tcp_flag_psh=False,
+        tcp_flag_rst=False,
+        tcp_flag_syn=False,
+        tcp_flag_fin=False,
+        tcp_win=0,
+        tcp_urp=0,
+        tcp_options=[],
         raw_data=b"",
         echo_tracker=None,
     ):
@@ -81,81 +81,81 @@ class TcpPacket:
             self.raw_data = raw_packet[(raw_header[12] & 0b11110000) >> 2 :]
             self.ip_pseudo_header = parent_packet.ip_pseudo_header
 
-            self.hdr_sport = struct.unpack("!H", raw_header[0:2])[0]
-            self.hdr_dport = struct.unpack("!H", raw_header[2:4])[0]
-            self.hdr_seq_num = struct.unpack("!L", raw_header[4:8])[0]
-            self.hdr_ack_num = struct.unpack("!L", raw_header[8:12])[0]
-            self.hdr_hlen = (raw_header[12] & 0b11110000) >> 2
-            self.hdr_flag_ns = bool(raw_header[12] & 0b00000001)
-            self.hdr_flag_crw = bool(raw_header[13] & 0b10000000)
-            self.hdr_flag_ece = bool(raw_header[13] & 0b01000000)
-            self.hdr_flag_urg = bool(raw_header[13] & 0b00100000)
-            self.hdr_flag_ack = bool(raw_header[13] & 0b00010000)
-            self.hdr_flag_psh = bool(raw_header[13] & 0b00001000)
-            self.hdr_flag_rst = bool(raw_header[13] & 0b00000100)
-            self.hdr_flag_syn = bool(raw_header[13] & 0b00000010)
-            self.hdr_flag_fin = bool(raw_header[13] & 0b00000001)
-            self.hdr_win = struct.unpack("!H", raw_header[14:16])[0]
-            self.hdr_cksum = struct.unpack("!H", raw_header[16:18])[0]
-            self.hdr_urp = struct.unpack("!H", raw_header[18:20])[0]
+            self.tcp_sport = struct.unpack("!H", raw_header[0:2])[0]
+            self.tcp_dport = struct.unpack("!H", raw_header[2:4])[0]
+            self.tcp_seq_num = struct.unpack("!L", raw_header[4:8])[0]
+            self.tcp_ack_num = struct.unpack("!L", raw_header[8:12])[0]
+            self.tcp_hlen = (raw_header[12] & 0b11110000) >> 2
+            self.tcp_flag_ns = bool(raw_header[12] & 0b00000001)
+            self.tcp_flag_crw = bool(raw_header[13] & 0b10000000)
+            self.tcp_flag_ece = bool(raw_header[13] & 0b01000000)
+            self.tcp_flag_urg = bool(raw_header[13] & 0b00100000)
+            self.tcp_flag_ack = bool(raw_header[13] & 0b00010000)
+            self.tcp_flag_psh = bool(raw_header[13] & 0b00001000)
+            self.tcp_flag_rst = bool(raw_header[13] & 0b00000100)
+            self.tcp_flag_syn = bool(raw_header[13] & 0b00000010)
+            self.tcp_flag_fin = bool(raw_header[13] & 0b00000001)
+            self.tcp_win = struct.unpack("!H", raw_header[14:16])[0]
+            self.tcp_cksum = struct.unpack("!H", raw_header[16:18])[0]
+            self.tcp_urp = struct.unpack("!H", raw_header[18:20])[0]
 
-            self.hdr_options = []
+            self.tcp_options = []
 
             i = 0
 
             while i < len(raw_options):
                 if raw_options[i] == TCP_OPT_EOL:
-                    self.hdr_options.append(TcpOptEol(raw_options[i : i + TCP_OPT_EOL_LEN]))
+                    self.tcp_options.append(TcpOptEol(raw_options[i : i + TCP_OPT_EOL_LEN]))
                     break
 
                 elif raw_options[i] == TCP_OPT_NOP:
-                    self.hdr_options.append(TcpOptNop(raw_options[i : i + TCP_OPT_NOP_LEN]))
+                    self.tcp_options.append(TcpOptNop(raw_options[i : i + TCP_OPT_NOP_LEN]))
                     i += TCP_OPT_NOP_LEN
 
                 elif raw_options[i] == TCP_OPT_MSS:
-                    self.hdr_options.append(TcpOptMss(raw_options[i : i + raw_options[i + 1]]))
+                    self.tcp_options.append(TcpOptMss(raw_options[i : i + raw_options[i + 1]]))
                     i += self.raw_options[i + 1]
 
                 elif raw_options[i] == TCP_OPT_WSCALE:
-                    self.hdr_options.append(TcpOptWscale(raw_options[i : i + raw_options[i + 1]]))
+                    self.tcp_options.append(TcpOptWscale(raw_options[i : i + raw_options[i + 1]]))
                     i += self.raw_options[i + 1]
 
                 elif raw_options[i] == TCP_OPT_TIMESTAMP:
-                    self.hdr_options.append(TcpOptTimestamp(raw_options[i : i + raw_options[i + 1]]))
+                    self.tcp_options.append(TcpOptTimestamp(raw_options[i : i + raw_options[i + 1]]))
                     i += self.raw_options[i + 1]
 
                 else:
-                    self.hdr_options.append(TcpOptUnk(raw_options[i : i + raw_options[i + 1]]))
+                    self.tcp_options.append(TcpOptUnk(raw_options[i : i + raw_options[i + 1]]))
                     i += self.raw_options[i + 1]
 
         # Packet building
         else:
             self.tracker = Tracker("TX", echo_tracker)
 
-            self.hdr_sport = hdr_sport
-            self.hdr_dport = hdr_dport
-            self.hdr_seq_num = hdr_seq_num
-            self.hdr_ack_num = hdr_ack_num
-            self.hdr_flag_ns = hdr_flag_ns
-            self.hdr_flag_crw = hdr_flag_crw
-            self.hdr_flag_ece = hdr_flag_ece
-            self.hdr_flag_urg = hdr_flag_urg
-            self.hdr_flag_ack = hdr_flag_ack
-            self.hdr_flag_psh = hdr_flag_psh
-            self.hdr_flag_rst = hdr_flag_rst
-            self.hdr_flag_syn = hdr_flag_syn
-            self.hdr_flag_fin = hdr_flag_fin
-            self.hdr_win = hdr_win
-            self.hdr_cksum = 0
-            self.hdr_urp = hdr_urp
+            self.tcp_sport = tcp_sport
+            self.tcp_dport = tcp_dport
+            self.tcp_seq_num = tcp_seq_num
+            self.tcp_ack_num = tcp_ack_num
+            self.tcp_flag_ns = tcp_flag_ns
+            self.tcp_flag_crw = tcp_flag_crw
+            self.tcp_flag_ece = tcp_flag_ece
+            self.tcp_flag_urg = tcp_flag_urg
+            self.tcp_flag_ack = tcp_flag_ack
+            self.tcp_flag_psh = tcp_flag_psh
+            self.tcp_flag_rst = tcp_flag_rst
+            self.tcp_flag_syn = tcp_flag_syn
+            self.tcp_flag_fin = tcp_flag_fin
+            self.tcp_win = tcp_win
+            self.tcp_cksum = 0
+            self.tcp_urp = tcp_urp
 
-            self.hdr_options = hdr_options
+            self.tcp_options = tcp_options
 
             self.raw_data = raw_data
 
-            self.hdr_hlen = TCP_HEADER_LEN + len(self.raw_options)
+            self.tcp_hlen = TCP_HEADER_LEN + len(self.raw_options)
 
-            assert self.hdr_hlen % 4 == 0, "TCP header len is not multiplcation of 4 bytes, check options"
+            assert self.tcp_hlen % 4 == 0, "TCP header len is not multiplcation of 4 bytes, check options"
 
     @property
     def raw_header(self):
@@ -163,35 +163,35 @@ class TcpPacket:
 
         return struct.pack(
             "! HH L L BBH HH",
-            self.hdr_sport,
-            self.hdr_dport,
-            self.hdr_seq_num,
-            self.hdr_ack_num,
-            self.hdr_hlen << 2 | self.hdr_flag_ns,
-            self.hdr_flag_crw << 7
-            | self.hdr_flag_ece << 6
-            | self.hdr_flag_urg << 5
-            | self.hdr_flag_ack << 4
-            | self.hdr_flag_psh << 3
-            | self.hdr_flag_rst << 2
-            | self.hdr_flag_syn << 1
-            | self.hdr_flag_fin,
-            self.hdr_win,
-            self.hdr_cksum,
-            self.hdr_urp,
+            self.tcp_sport,
+            self.tcp_dport,
+            self.tcp_seq_num,
+            self.tcp_ack_num,
+            self.tcp_hlen << 2 | self.tcp_flag_ns,
+            self.tcp_flag_crw << 7
+            | self.tcp_flag_ece << 6
+            | self.tcp_flag_urg << 5
+            | self.tcp_flag_ack << 4
+            | self.tcp_flag_psh << 3
+            | self.tcp_flag_rst << 2
+            | self.tcp_flag_syn << 1
+            | self.tcp_flag_fin,
+            self.tcp_win,
+            self.tcp_cksum,
+            self.tcp_urp,
         )
 
     def __str__(self):
         """ Short packet log string """
 
         log = (
-            f"TCP {self.hdr_sport} > {self.hdr_dport}, {'N' if self.hdr_flag_ns else ''}{'C' if self.hdr_flag_crw else ''}"
-            + f"{'E' if self.hdr_flag_ece else ''}{'U' if self.hdr_flag_urg else ''}{'A' if self.hdr_flag_ack else ''}"
-            + f"{'P' if self.hdr_flag_psh else ''}{'R' if self.hdr_flag_rst else ''}{'S' if self.hdr_flag_syn else ''}"
-            + f"{'F' if self.hdr_flag_fin else ''}, seq {self.hdr_seq_num}, ack {self.hdr_ack_num}, win {self.hdr_win}"
+            f"TCP {self.tcp_sport} > {self.tcp_dport}, {'N' if self.tcp_flag_ns else ''}{'C' if self.tcp_flag_crw else ''}"
+            + f"{'E' if self.tcp_flag_ece else ''}{'U' if self.tcp_flag_urg else ''}{'A' if self.tcp_flag_ack else ''}"
+            + f"{'P' if self.tcp_flag_psh else ''}{'R' if self.tcp_flag_rst else ''}{'S' if self.tcp_flag_syn else ''}"
+            + f"{'F' if self.tcp_flag_fin else ''}, seq {self.tcp_seq_num}, ack {self.tcp_ack_num}, win {self.tcp_win}"
         )
 
-        for option in self.hdr_options:
+        for option in self.tcp_options:
             log += ", " + str(option)
 
         return log
@@ -216,7 +216,7 @@ class TcpPacket:
 
         raw_options = b""
 
-        for option in self.hdr_options:
+        for option in self.tcp_options:
             raw_options += option.raw_option
 
         return raw_options
@@ -230,14 +230,14 @@ class TcpPacket:
     def get_raw_packet(self, ip_pseudo_header):
         """ Get packet in raw format ready to be processed by lower level protocol """
 
-        self.hdr_cksum = self.compute_cksum(ip_pseudo_header)
+        self.tcp_cksum = self.compute_cksum(ip_pseudo_header)
 
         return self.raw_packet
 
     def get_option(self, name):
         """ Find specific option by its name """
 
-        for option in self.hdr_options:
+        for option in self.tcp_options:
             if option.name == name:
                 return option
 

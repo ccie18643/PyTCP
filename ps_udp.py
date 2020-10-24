@@ -34,7 +34,7 @@ class UdpPacket:
 
     protocol = "UDP"
 
-    def __init__(self, parent_packet=None, hdr_sport=None, hdr_dport=None, raw_data=None, echo_tracker=None):
+    def __init__(self, parent_packet=None, udp_sport=None, udp_dport=None, raw_data=None, echo_tracker=None):
         """ Class constructor """
 
         # Packet parsing
@@ -47,26 +47,26 @@ class UdpPacket:
             self.raw_data = raw_packet[UDP_HEADER_LEN : struct.unpack("!H", raw_header[4:6])[0]]
             self.ip_pseudo_header = parent_packet.ip_pseudo_header
 
-            self.hdr_sport = struct.unpack("!H", raw_header[0:2])[0]
-            self.hdr_dport = struct.unpack("!H", raw_header[2:4])[0]
-            self.hdr_len = struct.unpack("!H", raw_header[4:6])[0]
-            self.hdr_cksum = struct.unpack("!H", raw_header[6:8])[0]
+            self.udp_sport = struct.unpack("!H", raw_header[0:2])[0]
+            self.udp_dport = struct.unpack("!H", raw_header[2:4])[0]
+            self.udp_len = struct.unpack("!H", raw_header[4:6])[0]
+            self.udp_cksum = struct.unpack("!H", raw_header[6:8])[0]
 
         # Packet building
         else:
             self.tracker = Tracker("TX", echo_tracker)
 
-            self.hdr_sport = hdr_sport
-            self.hdr_dport = hdr_dport
-            self.hdr_len = UDP_HEADER_LEN + len(raw_data)
-            self.hdr_cksum = 0
+            self.udp_sport = udp_sport
+            self.udp_dport = udp_dport
+            self.udp_len = UDP_HEADER_LEN + len(raw_data)
+            self.udp_cksum = 0
 
             self.raw_data = raw_data
 
     def __str__(self):
         """ Short packet log string """
 
-        return f"UDP {self.hdr_sport} > {self.hdr_dport}, len {self.hdr_len}"
+        return f"UDP {self.udp_sport} > {self.udp_dport}, len {self.udp_len}"
 
     def __len__(self):
         """ Length of the packet """
@@ -86,7 +86,7 @@ class UdpPacket:
     def raw_header(self):
         """ Packet header in raw format """
 
-        return struct.pack("! HH HH", self.hdr_sport, self.hdr_dport, self.hdr_len, self.hdr_cksum)
+        return struct.pack("! HH HH", self.udp_sport, self.udp_dport, self.udp_len, self.udp_cksum)
 
     @property
     def raw_packet(self):
@@ -97,6 +97,6 @@ class UdpPacket:
     def get_raw_packet(self, ip_pseudo_header):
         """ Get packet in raw format ready to be processed by lower level protocol """
 
-        self.hdr_cksum = self.compute_cksum(ip_pseudo_header)
+        self.udp_cksum = self.compute_cksum(ip_pseudo_header)
 
         return self.raw_packet

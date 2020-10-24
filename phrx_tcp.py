@@ -8,9 +8,6 @@ phrx_tcp.py - packet handler for inbound TCP packets
 """
 
 
-import ps_tcp
-
-
 def phrx_tcp(self, ip_packet_rx, tcp_packet_rx):
     """ Handle inbound TCP packets """
 
@@ -21,13 +18,13 @@ def phrx_tcp(self, ip_packet_rx, tcp_packet_rx):
         pass
 
     else:
-        self.logger.debug(f"Received TCP packet from {ip_packet_rx.hdr_src} to closed port {tcp_packet_rx.hdr_dport}, sending TCP Reset packet")
+        self.logger.debug(f"Received TCP packet from {ip_packet_rx.ip_src} to closed port {tcp_packet_rx.tcp_dport}, sending TCP Reset packet")
 
         self.phtx_tcp(
-            ip_dst=ip_packet_rx.hdr_src,
-            tcp_sport=tcp_packet_rx.hdr_dport,
-            tcp_dport=tcp_packet_rx.hdr_sport,
-            tcp_ack_num=tcp_packet_rx.hdr_seq_num + 1,
+            ip_dst=ip_packet_rx.ip_src,
+            tcp_sport=tcp_packet_rx.tcp_dport,
+            tcp_dport=tcp_packet_rx.tcp_sport,
+            tcp_ack_num=tcp_packet_rx.tcp_seq_num + 1,
             tcp_flag_rst=True,
             tcp_flag_ack=True,
             echo_tracker=tcp_packet_rx.tracker,

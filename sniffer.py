@@ -27,17 +27,17 @@ def main():
         raw_packet_rx = raw_socket.recv(2048)
         ether_packet_rx = ps_ether.EtherPacket(raw_packet_rx)
 
-        if ether_packet_rx.hdr_type == ps_ether.ETHER_TYPE_ARP:
+        if ether_packet_rx.ether_type == ps_ether.ETHER_TYPE_ARP:
             arp_packet_rx = ps_arp.ArpPacket(ether_packet_rx)
             print("-" * 80)
             print(ether_packet_rx)
             print(arp_packet_rx)
             print("-" * 80)
 
-        if ether_packet_rx.hdr_type == ps_ether.ETHER_TYPE_IP:
+        if ether_packet_rx.ether_type == ps_ether.ETHER_TYPE_IP:
             ip_packet_rx = ps_ip.IpPacket(ether_packet_rx)
 
-            if ip_packet_rx.hdr_proto == ps_ip.IP_PROTO_ICMP:
+            if ip_packet_rx.ip_proto == ps_ip.IP_PROTO_ICMP:
                 icmp_packet_rx = ps_icmp.IcmpPacket(ip_packet_rx)
                 print("-" * 80)
                 print(ether_packet_rx)
@@ -45,7 +45,7 @@ def main():
                 print(icmp_packet_rx)
                 print("-" * 80)
 
-            if ip_packet_rx.hdr_proto == ps_ip.IP_PROTO_UDP:
+            if ip_packet_rx.ip_proto == ps_ip.IP_PROTO_UDP:
                 udp_packet_rx = ps_udp.UdpPacket(ip_packet_rx)
                 print("-" * 80)
                 print(ether_packet_rx)
@@ -53,9 +53,9 @@ def main():
                 print(udp_packet_rx)
                 print("-" * 80)
 
-            if ip_packet_rx.hdr_proto == ps_ip.IP_PROTO_TCP:
+            if ip_packet_rx.ip_proto == ps_ip.IP_PROTO_TCP:
                 tcp_packet_rx = ps_tcp.TcpPacket(ip_packet_rx)
-                if tcp_packet_rx.hdr_dport == 22:
+                if tcp_packet_rx.tcp_dport == 22:
                     continue
                 print("-" * 80)
                 print(ether_packet_rx)

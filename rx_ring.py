@@ -39,12 +39,12 @@ class RxRing:
             ether_packet_rx = ps_ether.EtherPacket(os.read(self.tap, 2048))
 
             # Check if received packet uses valid Ethernet II format
-            if ether_packet_rx.hdr_type < ps_ether.ETHER_TYPE_MIN:
+            if ether_packet_rx.ether_type < ps_ether.ETHER_TYPE_MIN:
                 self.logger.opt(ansi=True).debug(f"<green>[RX]</green> Packet doesn't comply with the Ethernet II standard - {ether_packet_rx}")
                 continue
 
             # Check if received packet has been sent to us directly or by broadcast
-            if ether_packet_rx.hdr_dst not in {self.stack_mac_address, "ff:ff:ff:ff:ff:ff"}:
+            if ether_packet_rx.ether_dst not in {self.stack_mac_address, "ff:ff:ff:ff:ff:ff"}:
                 self.logger.opt(ansi=True).debug(f"<green>[RX]</green> Packet not destined for this stack - {ether_packet_rx}")
                 continue
 

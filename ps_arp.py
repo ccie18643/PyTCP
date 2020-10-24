@@ -48,7 +48,7 @@ class ArpPacket:
 
     protocol = "ARP"
 
-    def __init__(self, parent_packet=None, hdr_sha=None, hdr_spa=None, hdr_tpa=None, hdr_tha="00:00:00:00:00:00", hdr_oper=ARP_OP_REQUEST, echo_tracker=None):
+    def __init__(self, parent_packet=None, arp_sha=None, arp_spa=None, arp_tpa=None, arp_tha="00:00:00:00:00:00", arp_oper=ARP_OP_REQUEST, echo_tracker=None):
         """ Class constructor """
 
         # Packet parsing
@@ -58,37 +58,37 @@ class ArpPacket:
             raw_packet = parent_packet.raw_data
             raw_header = raw_packet[:ARP_HEADER_LEN]
 
-            self.hdr_hrtype = struct.unpack("!H", raw_header[0:2])[0]
-            self.hdr_prtype = struct.unpack("!H", raw_header[2:4])[0]
-            self.hdr_hrlen = raw_header[4]
-            self.hdr_prlen = raw_header[5]
-            self.hdr_oper = struct.unpack("!H", raw_header[6:8])[0]
-            self.hdr_sha = ":".join([f"{_:0>2x}" for _ in raw_header[8:14]])
-            self.hdr_spa = socket.inet_ntoa(struct.unpack("!4s", raw_header[14:18])[0])
-            self.hdr_tha = ":".join([f"{_:0>2x}" for _ in raw_header[18:24]])
-            self.hdr_tpa = socket.inet_ntoa(struct.unpack("!4s", raw_header[24:28])[0])
+            self.arp_hrtype = struct.unpack("!H", raw_header[0:2])[0]
+            self.arp_prtype = struct.unpack("!H", raw_header[2:4])[0]
+            self.arp_hrlen = raw_header[4]
+            self.arp_prlen = raw_header[5]
+            self.arp_oper = struct.unpack("!H", raw_header[6:8])[0]
+            self.arp_sha = ":".join([f"{_:0>2x}" for _ in raw_header[8:14]])
+            self.arp_spa = socket.inet_ntoa(struct.unpack("!4s", raw_header[14:18])[0])
+            self.arp_tha = ":".join([f"{_:0>2x}" for _ in raw_header[18:24]])
+            self.arp_tpa = socket.inet_ntoa(struct.unpack("!4s", raw_header[24:28])[0])
 
         # Packet building
         else:
             self.tracker = Tracker("TX", echo_tracker)
 
-            self.hdr_hrtype = 1
-            self.hdr_prtype = 0x0800
-            self.hdr_hrlen = 6
-            self.hdr_prlen = 4
-            self.hdr_oper = hdr_oper
-            self.hdr_sha = hdr_sha
-            self.hdr_spa = hdr_spa
-            self.hdr_tha = hdr_tha
-            self.hdr_tpa = hdr_tpa
+            self.arp_hrtype = 1
+            self.arp_prtype = 0x0800
+            self.arp_hrlen = 6
+            self.arp_prlen = 4
+            self.arp_oper = arp_oper
+            self.arp_sha = arp_sha
+            self.arp_spa = arp_spa
+            self.arp_tha = arp_tha
+            self.arp_tpa = arp_tpa
 
     def __str__(self):
         """ Short packet log string """
 
-        if self.hdr_oper == ARP_OP_REQUEST:
-            return f"ARP request {self.hdr_spa} / {self.hdr_sha} > {self.hdr_tpa} / {self.hdr_tha}"
-        if self.hdr_oper == ARP_OP_REPLY:
-            return f"ARP reply {self.hdr_spa} / {self.hdr_sha} > {self.hdr_tpa} / {self.hdr_tha}"
+        if self.arp_oper == ARP_OP_REQUEST:
+            return f"ARP request {self.arp_spa} / {self.arp_sha} > {self.arp_tpa} / {self.arp_tha}"
+        if self.arp_oper == ARP_OP_REPLY:
+            return f"ARP reply {self.arp_spa} / {self.arp_sha} > {self.arp_tpa} / {self.arp_tha}"
         return f"ARP unknown operation {self.oper}"
 
     def __len__(self):
@@ -102,15 +102,15 @@ class ArpPacket:
 
         return struct.pack(
             "!HH BBH 6s 4s 6s 4s",
-            self.hdr_hrtype,
-            self.hdr_prtype,
-            self.hdr_hrlen,
-            self.hdr_prlen,
-            self.hdr_oper,
-            bytes.fromhex(self.hdr_sha.replace(":", "")),
-            socket.inet_aton(self.hdr_spa),
-            bytes.fromhex(self.hdr_tha.replace(":", "")),
-            socket.inet_aton(self.hdr_tpa),
+            self.arp_hrtype,
+            self.arp_prtype,
+            self.arp_hrlen,
+            self.arp_prlen,
+            self.arp_oper,
+            bytes.fromhex(self.arp_sha.replace(":", "")),
+            socket.inet_aton(self.arp_spa),
+            bytes.fromhex(self.arp_tha.replace(":", "")),
+            socket.inet_aton(self.arp_tpa),
         )
 
     @property

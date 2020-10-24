@@ -19,25 +19,25 @@ def phrx_udp(self, ip_packet_rx, udp_packet_rx):
 
     # Check if incoming packet matches any listening socket
     socket = UdpSocket.match_listening(
-        local_ip_address=ip_packet_rx.hdr_dst,
-        local_port=udp_packet_rx.hdr_dport,
+        local_ip_address=ip_packet_rx.ip_dst,
+        local_port=udp_packet_rx.udp_dport,
         tracker=udp_packet_rx.tracker,
     )
     if socket:
         socket.enqueue(
-            src_ip_address=ip_packet_rx.hdr_src,
-            src_port=udp_packet_rx.hdr_sport,
+            src_ip_address=ip_packet_rx.ip_src,
+            src_port=udp_packet_rx.udp_sport,
             raw_data=udp_packet_rx.raw_data,
         )
         return
 
     # In case incoming packet did't mach any listening port respond with ICMP Port Unreachable message
-    self.logger.debug(f"Received UDP packet from {ip_packet_rx.hdr_src} to closed port {udp_packet_rx.hdr_dport}, sending ICMP Port Unreachable")
+    self.logger.debug(f"Received UDP packet from {ip_packet_rx.ip_src} to closed port {udp_packet_rx.udp_dport}, sending ICMP Port Unreachable")
 
     self.phtx_icmp(
-        ip_dst=ip_packet_rx.hdr_src,
+        ip_dst=ip_packet_rx.ip_src,
         icmp_type=ps_icmp.ICMP_UNREACHABLE,
         icmp_code=ps_icmp.ICMP_UNREACHABLE_PORT,
-        icmp_msg_data=ip_packet_rx.get_raw_packet(),
+        icmp_raw_data=ip_packet_rx.get_raw_packet(),
         echo_tracker=udp_packet_rx.tracker,
     )

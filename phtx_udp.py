@@ -13,7 +13,7 @@ import ps_udp
 def phtx_udp(self, ip_dst, udp_sport, udp_dport, raw_data=b"", echo_tracker=None):
     """ Handle outbound UDP packets """
 
-    udp_packet_tx = ps_udp.UdpPacket(hdr_sport=udp_sport, hdr_dport=udp_dport, raw_data=raw_data, echo_tracker=echo_tracker)
+    udp_packet_tx = ps_udp.UdpPacket(udp_sport=udp_sport, udp_dport=udp_dport, raw_data=raw_data, echo_tracker=echo_tracker)
 
     self.logger.opt(ansi=True).info(f"<magenta>{udp_packet_tx.tracker}</magenta> - {udp_packet_tx}")
     self.phtx_ip(ip_dst=ip_dst, child_packet=udp_packet_tx)

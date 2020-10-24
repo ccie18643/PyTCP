@@ -18,8 +18,8 @@ def phrx_ether(self, ether_packet_rx):
 
     self.logger.debug(f"{ether_packet_rx.tracker} - {ether_packet_rx}")
 
-    if ether_packet_rx.hdr_type == ps_ether.ETHER_TYPE_ARP:
+    if ether_packet_rx.ether_type == ps_ether.ETHER_TYPE_ARP:
         self.phrx_arp(ether_packet_rx, ps_arp.ArpPacket(ether_packet_rx))
 
-    if ether_packet_rx.hdr_type == ps_ether.ETHER_TYPE_IP:
+    if ether_packet_rx.ether_type == ps_ether.ETHER_TYPE_IP:
         self.phrx_ip(ps_ip.IpPacket(ether_packet_rx))

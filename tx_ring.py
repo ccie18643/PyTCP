@@ -8,7 +8,6 @@ tx_ring.py - module contains class supporting TX operations
 """
 
 import os
-import time
 import loguru
 import threading
 
@@ -47,31 +46,33 @@ class TxRing:
             ether_packet_tx = self.tx_ring.pop(0)
 
             # Check if packet contains valid source address, fill it out if needed
-            if ether_packet_tx.hdr_src == "00:00:00:00:00:00":
-                ether_packet_tx.hdr_src = self.stack_mac_address
-                self.logger.debug(f"Set source to stack MAC {ether_packet_tx.hdr_src}")
+            if ether_packet_tx.ether_src == "00:00:00:00:00:00":
+                ether_packet_tx.ether_src = self.stack_mac_address
+                self.logger.debug(f"{ether_packet_tx.tracker} - Set source to stack MAC {ether_packet_tx.ether_src}")
 
             # Check if packet contains valid destination MAC address
-            if ether_packet_tx.hdr_dst != "00:00:00:00:00:00":
-                self.logger.debug(f"Contains valid destination MAC address")
+            if ether_packet_tx.ether_dst != "00:00:00:00:00:00":
+                self.logger.debug(f"{ether_packet_tx.tracker} - Contains valid destination MAC address")
 
             # In case packe doesn't contain valid destination MAC address try to obtain it from ARP cache
-            elif ether_packet_tx.hdr_type == ps_ether.ETHER_TYPE_IP:
+            elif ether_packet_tx.ether_type == ps_ether.ETHER_TYPE_IP:
                 ip_packet_tx = ps_ip.IpPacket(ether_packet_tx)
 
-                mac_address = self.arp_cache.find_entry(ip_packet_tx.hdr_dst)
+                mac_address = self.arp_cache.find_entry(ip_packet_tx.ip_dst)
                 if mac_address:
-                    ether_packet_tx.hdr_dst = mac_address
-                    self.logger.debug(f"Resolved destiantion IP {ip_packet_tx.hdr_dst} to MAC {ether_packet_tx.hdr_dst}")
+                    ether_packet_tx.ether_dst = mac_address
+                    self.logger.debug(f"{ether_packet_tx.tracker} - Resolved destiantion IP {ip_packet_tx.ip_dst} to MAC {ether_packet_tx.ether_dst}")
 
             # If we not able to obtain valid destination MAC address from the cache then drop packet and continue the loop
             else:
-                self.logger.debug(f"Droping packet, no valid destination MAC could be obtained")
+                self.logger.debug(f"{ether_packet_tx.tracker} - Droping packet, no valid destination MAC could be obtained")
                 continue
 
             # In case packet contains or we are able to obtain valid destination MAC address send the packet out
             os.write(self.tap, ether_packet_tx.get_raw_packet())
-            self.logger.opt(ansi=True).debug(f"<magenta>[TX] {ether_packet_tx.tracker}</magenta> <yellow>{ether_packet_tx.tracker.latency}</yellow> - {len(ether_packet_tx)} bytes")
+            self.logger.opt(ansi=True).debug(
+                f"<magenta>[TX] {ether_packet_tx.tracker}</magenta> <yellow>{ether_packet_tx.tracker.latency}</yellow> - {len(ether_packet_tx)} bytes"
+            )
 
     def enqueue(self, ether_packet_tx, urgent=False):
         """ Enqueue outbound Ethernet packet to TX ring """

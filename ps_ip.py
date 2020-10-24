@@ -97,18 +97,18 @@ class IpPacket:
     def __init__(
         self,
         parent_packet=None,
-        hdr_src=None,
-        hdr_dst=None,
-        hdr_ttl=64,
-        hdr_dscp=0,
-        hdr_ecn=0,
-        hdr_id=0,
-        hdr_frag_df=False,
-        hdr_frag_mf=False,
-        hdr_frag_offset=0,
-        hdr_options=[],
+        ip_src=None,
+        ip_dst=None,
+        ip_ttl=64,
+        ip_dscp=0,
+        ip_ecn=0,
+        ip_id=0,
+        ip_frag_df=False,
+        ip_frag_mf=False,
+        ip_frag_offset=0,
+        ip_options=[],
         child_packet=None,
-        hdr_proto=None,
+        ip_proto=None,
         raw_data=b"",
         tracker=None,
     ):
@@ -124,36 +124,36 @@ class IpPacket:
 
             self.raw_data = raw_packet[(raw_packet[0] & 0b00001111) << 2 : struct.unpack("!H", raw_header[2:4])[0]]
 
-            self.hdr_ver = raw_header[0] >> 4
-            self.hdr_hlen = (raw_header[0] & 0b00001111) << 2
-            self.hdr_dscp = (raw_header[1] & 0b11111100) >> 2
-            self.hdr_ecn = raw_header[1] & 0b00000011
-            self.hdr_plen = struct.unpack("!H", raw_header[2:4])[0]
-            self.hdr_id = struct.unpack("!H", raw_header[4:6])[0]
-            self.hdr_frag_df = bool(struct.unpack("!H", raw_header[6:8])[0] & 0b0100000000000000)
-            self.hdr_frag_mf = bool(struct.unpack("!H", raw_header[6:8])[0] & 0b0010000000000000)
-            self.hdr_frag_offset = (struct.unpack("!H", raw_header[6:8])[0] & 0b0001111111111111) << 3
-            self.hdr_ttl = raw_header[8]
-            self.hdr_proto = raw_header[9]
-            self.hdr_cksum = struct.unpack("!H", raw_header[10:12])[0]
-            self.hdr_src = socket.inet_ntoa(struct.unpack("!4s", raw_header[12:16])[0])
-            self.hdr_dst = socket.inet_ntoa(struct.unpack("!4s", raw_header[16:20])[0])
+            self.ip_ver = raw_header[0] >> 4
+            self.ip_hlen = (raw_header[0] & 0b00001111) << 2
+            self.ip_dscp = (raw_header[1] & 0b11111100) >> 2
+            self.ip_ecn = raw_header[1] & 0b00000011
+            self.ip_plen = struct.unpack("!H", raw_header[2:4])[0]
+            self.ip_id = struct.unpack("!H", raw_header[4:6])[0]
+            self.ip_frag_df = bool(struct.unpack("!H", raw_header[6:8])[0] & 0b0100000000000000)
+            self.ip_frag_mf = bool(struct.unpack("!H", raw_header[6:8])[0] & 0b0010000000000000)
+            self.ip_frag_offset = (struct.unpack("!H", raw_header[6:8])[0] & 0b0001111111111111) << 3
+            self.ip_ttl = raw_header[8]
+            self.ip_proto = raw_header[9]
+            self.ip_cksum = struct.unpack("!H", raw_header[10:12])[0]
+            self.ip_src = socket.inet_ntoa(struct.unpack("!4s", raw_header[12:16])[0])
+            self.ip_dst = socket.inet_ntoa(struct.unpack("!4s", raw_header[16:20])[0])
 
-            self.hdr_options = []
+            self.ip_options = []
 
             i = 0
 
             while i < len(raw_options):
                 if raw_options[i] == IP_OPT_EOL:
-                    self.hdr_options.append(IpOptEol(raw_options[i : i + IP_OPT_EOL_LEN]))
+                    self.ip_options.append(IpOptEol(raw_options[i : i + IP_OPT_EOL_LEN]))
                     break
 
                 elif raw_options[i] == IP_OPT_NOP:
-                    self.hdr_options.append(IpOptNop(raw_options[i : i + IP_OPT_NOP_LEN]))
+                    self.ip_options.append(IpOptNop(raw_options[i : i + IP_OPT_NOP_LEN]))
                     i += IP_OPT_NOP_LEN
 
                 else:
-                    self.hdr_options.append(IpOptUnk(raw_options[i : i + raw_options[i + 1]]))
+                    self.ip_options.append(IpOptUnk(raw_options[i : i + raw_options[i + 1]]))
                     i += self.raw_options[i + 1]
 
         # Packet building
@@ -163,55 +163,55 @@ class IpPacket:
             else:
                 self.tracker = child_packet.tracker
 
-            self.hdr_ver = 4
-            self.hdr_hlen = None
-            self.hdr_dscp = hdr_dscp
-            self.hdr_ecn = hdr_ecn
-            self.hdr_plen = None
-            self.hdr_id = hdr_id
-            self.hdr_frag_df = hdr_frag_df
-            self.hdr_frag_mf = hdr_frag_mf
-            self.hdr_frag_offset = hdr_frag_offset
-            self.hdr_ttl = hdr_ttl
-            self.hdr_cksum = 0
-            self.hdr_src = hdr_src
-            self.hdr_dst = hdr_dst
+            self.ip_ver = 4
+            self.ip_hlen = None
+            self.ip_dscp = ip_dscp
+            self.ip_ecn = ip_ecn
+            self.ip_plen = None
+            self.ip_id = ip_id
+            self.ip_frag_df = ip_frag_df
+            self.ip_frag_mf = ip_frag_mf
+            self.ip_frag_offset = ip_frag_offset
+            self.ip_ttl = ip_ttl
+            self.ip_cksum = 0
+            self.ip_src = ip_src
+            self.ip_dst = ip_dst
 
-            self.hdr_options = hdr_options
+            self.ip_options = ip_options
 
-            self.hdr_hlen = IP_HEADER_LEN + len(self.raw_options)
+            self.ip_hlen = IP_HEADER_LEN + len(self.raw_options)
 
-            assert self.hdr_hlen % 4 == 0, "IP header len is not multiplcation of 4 bytes, check options"
+            assert self.ip_hlen % 4 == 0, "IP header len is not multiplcation of 4 bytes, check options"
 
             if child_packet:
                 assert child_packet.protocol in {"ICMP", "UDP", "TCP"}, f"Not supported protocol: {child_packet.protocol}"
 
                 if child_packet.protocol == "ICMP":
-                    self.hdr_proto = IP_PROTO_ICMP
+                    self.ip_proto = IP_PROTO_ICMP
                     self.raw_data = child_packet.get_raw_packet()
-                    self.hdr_plen = self.hdr_hlen + len(self.raw_data)
+                    self.ip_plen = self.ip_hlen + len(self.raw_data)
 
                 if child_packet.protocol == "UDP":
-                    self.hdr_proto = IP_PROTO_UDP
-                    self.hdr_plen = self.hdr_hlen + child_packet.hdr_len
+                    self.ip_proto = IP_PROTO_UDP
+                    self.ip_plen = self.ip_hlen + child_packet.udp_len
                     self.raw_data = child_packet.get_raw_packet(self.ip_pseudo_header)
 
                 if child_packet.protocol == "TCP":
-                    self.hdr_proto = IP_PROTO_TCP
-                    self.hdr_plen = self.hdr_hlen + child_packet.hdr_hlen + len(child_packet.raw_data)
+                    self.ip_proto = IP_PROTO_TCP
+                    self.ip_plen = self.ip_hlen + child_packet.tcp_hlen + len(child_packet.raw_data)
                     self.raw_data = child_packet.get_raw_packet(self.ip_pseudo_header)
 
             else:
-                self.hdr_proto = hdr_proto
+                self.ip_proto = ip_proto
                 self.raw_data = raw_data
-                self.hdr_plen = self.hdr_hlen + len(self.raw_data)
+                self.ip_plen = self.ip_hlen + len(self.raw_data)
 
     def __str__(self):
         """ Short packet log string """
 
         return (
-            f"IP {self.hdr_src} > {self.hdr_dst}, proto {self.hdr_proto} ({IP_PROTO_TABLE.get(self.hdr_proto, '???')}), id {self.hdr_id}"
-            + f"{', DF' if self.hdr_frag_df else ''}{', MF' if self.hdr_frag_mf else ''}, offset {self.hdr_frag_offset}"
+            f"IP {self.ip_src} > {self.ip_dst}, proto {self.ip_proto} ({IP_PROTO_TABLE.get(self.ip_proto, '???')}), id {self.ip_id}"
+            + f"{', DF' if self.ip_frag_df else ''}{', MF' if self.ip_frag_mf else ''}, offset {self.ip_frag_offset}"
         )
 
     def __len__(self):
@@ -234,16 +234,16 @@ class IpPacket:
 
         return struct.pack(
             "! BBH HH BBH 4s 4s",
-            self.hdr_ver << 4 | self.hdr_hlen >> 2,
-            self.hdr_dscp << 2 | self.hdr_ecn,
-            self.hdr_plen,
-            self.hdr_id,
-            self.hdr_frag_df << 14 | self.hdr_frag_mf << 13 | self.hdr_frag_offset >> 3,
-            self.hdr_ttl,
-            self.hdr_proto,
-            self.hdr_cksum,
-            socket.inet_aton(self.hdr_src),
-            socket.inet_aton(self.hdr_dst),
+            self.ip_ver << 4 | self.ip_hlen >> 2,
+            self.ip_dscp << 2 | self.ip_ecn,
+            self.ip_plen,
+            self.ip_id,
+            self.ip_frag_df << 14 | self.ip_frag_mf << 13 | self.ip_frag_offset >> 3,
+            self.ip_ttl,
+            self.ip_proto,
+            self.ip_cksum,
+            socket.inet_aton(self.ip_src),
+            socket.inet_aton(self.ip_dst),
         )
 
     @property
@@ -252,7 +252,7 @@ class IpPacket:
 
         raw_options = b""
 
-        for option in self.hdr_options:
+        for option in self.ip_options:
             raw_options += option.raw_option
 
         return raw_options
@@ -267,19 +267,19 @@ class IpPacket:
     def ip_pseudo_header(self):
         """ Returns IP pseudo header that is used by TCP to compute its checksum """
 
-        return struct.pack("! 4s 4s BBH", socket.inet_aton(self.hdr_src), socket.inet_aton(self.hdr_dst), 0, self.hdr_proto, self.hdr_plen - self.hdr_hlen)
+        return struct.pack("! 4s 4s BBH", socket.inet_aton(self.ip_src), socket.inet_aton(self.ip_dst), 0, self.ip_proto, self.ip_plen - self.ip_hlen)
 
     def get_raw_packet(self):
         """ Get packet in raw format ready to be processed by lower level protocol """
 
-        self.hdr_cksum = self.compute_cksum()
+        self.ip_cksum = self.compute_cksum()
 
         return self.raw_packet
 
     def get_option(self, name):
         """ Find specific option by its name """
 
-        for option in self.hdr_options:
+        for option in self.ip_options:
             if option.name == name:
                 return option
 

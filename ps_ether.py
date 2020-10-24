@@ -8,7 +8,6 @@ ps_ethernet.py - protocol suppot libary for Ethernet
 """
 
 import struct
-import time
 
 from tracker import Tracker
 
@@ -46,7 +45,7 @@ class EtherPacket:
 
     protocol = "ETHER"
 
-    def __init__(self, raw_packet=None, hdr_src="00:00:00:00:00:00", hdr_dst="00:00:00:00:00:00", child_packet=None):
+    def __init__(self, raw_packet=None, ether_src="00:00:00:00:00:00", ether_dst="00:00:00:00:00:00", child_packet=None):
         """ Class constructor """
 
         # Packet parsing
@@ -56,31 +55,31 @@ class EtherPacket:
             raw_header = raw_packet[:ETHER_HEADER_LEN]
 
             self.raw_data = raw_packet[ETHER_HEADER_LEN:]
-            self.hdr_dst = ":".join([f"{_:0>2x}" for _ in raw_header[0:6]])
-            self.hdr_src = ":".join([f"{_:0>2x}" for _ in raw_header[6:12]])
-            self.hdr_type = struct.unpack("!H", raw_header[12:14])[0]
+            self.ether_dst = ":".join([f"{_:0>2x}" for _ in raw_header[0:6]])
+            self.ether_src = ":".join([f"{_:0>2x}" for _ in raw_header[6:12]])
+            self.ether_type = struct.unpack("!H", raw_header[12:14])[0]
 
         # Packet building
         else:
             self.tracker = child_packet.tracker
 
-            self.hdr_dst = hdr_dst
-            self.hdr_src = hdr_src
+            self.ether_dst = ether_dst
+            self.ether_src = ether_src
 
             assert child_packet.protocol in {"IP", "ARP"}, f"Not supported protocol: {child_packet.protocol}"
 
             if child_packet.protocol == "IP":
-                self.hdr_type = ETHER_TYPE_IP
+                self.ether_type = ETHER_TYPE_IP
                 self.raw_data = child_packet.get_raw_packet()
 
             if child_packet.protocol == "ARP":
-                self.hdr_type = ETHER_TYPE_ARP
+                self.ether_type = ETHER_TYPE_ARP
                 self.raw_data = child_packet.get_raw_packet()
 
     def __str__(self):
         """ Short packet log string """
 
-        return f"ETHER {self.hdr_src} > {self.hdr_dst}, 0x{self.hdr_type:0>4x} ({ETHER_TYPE_TABLE.get(self.hdr_type, '???')})"
+        return f"ETHER {self.ether_src} > {self.ether_dst}, 0x{self.ether_type:0>4x} ({ETHER_TYPE_TABLE.get(self.ether_type, '???')})"
 
     def __len__(self):
         """ Length of the packet """
@@ -91,7 +90,7 @@ class EtherPacket:
     def raw_header(self):
         """ Packet header in raw format """
 
-        return struct.pack("! 6s 6s H", bytes.fromhex(self.hdr_dst.replace(":", "")), bytes.fromhex(self.hdr_src.replace(":", "")), self.hdr_type)
+        return struct.pack("! 6s 6s H", bytes.fromhex(self.ether_dst.replace(":", "")), bytes.fromhex(self.ether_src.replace(":", "")), self.ether_type)
 
     @property
     def raw_packet(self):

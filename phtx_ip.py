@@ -21,7 +21,7 @@ def phtx_ip(self, child_packet, ip_dst):
     """ Handle outbound IP packets """
 
     if ps_ether.ETHER_HEADER_LEN + ps_ip.IP_HEADER_LEN + len(child_packet.raw_packet) <= MTU:
-        ip_packet_tx = ps_ip.IpPacket(hdr_src=self.stack_ip_address, hdr_dst=ip_dst, child_packet=child_packet)
+        ip_packet_tx = ps_ip.IpPacket(ip_src=self.stack_ip_address, ip_dst=ip_dst, child_packet=child_packet)
 
         self.logger.debug(f"{ip_packet_tx.tracker} - {ip_packet_tx}")
         self.phtx_ether(child_packet=ip_packet_tx)
@@ -67,12 +67,12 @@ def phtx_ip(self, child_packet, ip_dst):
 
         for raw_data_fragment in raw_data_fragments:
             ip_packet_tx = ps_ip.IpPacket(
-                hdr_src=self.stack_ip_address,
-                hdr_dst=ip_dst,
-                hdr_proto=ip_proto,
-                hdr_id=ip_id,
-                hdr_frag_mf=True if n < len(raw_data_fragments) - 1 else False,
-                hdr_frag_offset=offset,
+                ip_src=self.stack_ip_address,
+                ip_dst=ip_dst,
+                ip_proto=ip_proto,
+                ip_id=ip_id,
+                ip_frag_mf=True if n < len(raw_data_fragments) - 1 else False,
+                ip_frag_offset=offset,
                 raw_data=raw_data_fragment,
                 tracker=child_packet.tracker,
             )
