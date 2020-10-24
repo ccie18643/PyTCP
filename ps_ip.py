@@ -110,6 +110,7 @@ class IpPacket:
         child_packet=None,
         hdr_proto=None,
         raw_data=b"",
+        tracker=None,
     ):
         """ Class constructor """
 
@@ -157,7 +158,10 @@ class IpPacket:
 
         # Packet building
         else:
-            self.tracker = child_packet.tracker
+            if tracker:
+                self.tracker = tracker
+            else:
+                self.tracker = child_packet.tracker
 
             self.hdr_ver = 4
             self.hdr_hlen = None

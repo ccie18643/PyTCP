@@ -74,6 +74,7 @@ def phtx_ip(self, child_packet, ip_dst):
                 hdr_frag_mf=True if n < len(raw_data_fragments) - 1 else False,
                 hdr_frag_offset=offset,
                 raw_data=raw_data_fragment,
+                tracker=child_packet.tracker,
             )
             n += 1
             offset += len(raw_data_fragment)
