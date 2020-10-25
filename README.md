@@ -2,7 +2,7 @@
 
 Attempt to create working TCP/IP stack in Python for educational purposes. Stack operates as user space program attached to tap interface. It has its own MAC and IP addresses. So far it has full ARP support with cashing, aging out and refreshing entries. It responds to ARP requests and sends out ARP requests when needed. It also has basic support for IP, ICMP protocols enabling it to respond to ping packets. Recently also added UDP protocol support with UDP Echo service that runs as separate thread and communicates with the stack by using simple socket mechanism. Currently working on basic implementation of TCP protocol.
 
-Implemented features:
+####Implemented features:
 
  - Ethernet protocol - only Ethernet II standard frames
  - ARP protocol - replies, queries, ARP cache
@@ -14,14 +14,14 @@ Implemented features:
  - TCP socket mechanism - basic support, work in progress
 
 
-Not yet mplemented features:
+####Not yet mplemented features:
  
  - DHCP client service for automatic IPv4 address configuration
  - IPv6 protocol - basic support with address auto configuration
  - ICMPv6 protocol - bassic support, features needed for stack operation
 
 
-#### ARP resolution and handling ping packets
+### ARP resolution and handling ping packets
 ![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/main/pictures/log_01.png)
 
 
