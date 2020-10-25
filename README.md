@@ -13,7 +13,7 @@ Attempt to create working TCP/IP stack in Python for educational purposes. Stack
  - UDP socket mechanism - full support for single threaded and multithreaded services
  - TCP socket mechanism - basic support, work in progress
  - Single threaded UDP Echo service - standard echo service responding to message on port 7
- - Multi threaded UDP Echo servce - created to develop and test TCP specific socket mechanisms with one listening socket and multiple child sockets supporting actuall connections, its simply easier to work on it using UDP protocol before making it part of TCP socket implementation
+ - Multi threaded TCP Echo servce - created to develop and test TCP specific socket mechanisms with one listening socket and multiple child sockets supporting actuall connections
 
 
 #### Not yet mplemented features:

@@ -45,12 +45,6 @@ class TcpSocket:
 
         self.logger.debug(f"Opened TCP socket {self.socket_id}")
 
-    def enqueue(self, local_ip_address, local_port, remote_ip_address, remote_port, raw_data):
-        """ Put data into socket message queue and release semaphore """
-
-        self.messages.append(TcpMessage(raw_data, local_ip_address, local_port, remote_ip_address, remote_port))
-        self.messages_ready.release()
-
     def send(self, raw_data):
         """ Put raw_data into TX ring """
 
@@ -66,7 +60,7 @@ class TcpSocket:
         """ Read data from established socket and return raw_data """
 
         self.messages_ready.acquire()
-        return self.messages.pop(0).raw_data
+        return self.messages.pop(0)
 
     def listen(self):
         """ Wait for incoming connection to listening socket, once its received create new socket and return it """
@@ -75,7 +69,8 @@ class TcpSocket:
         message = self.messages.pop(0)
 
         established_socket = TcpSocket(message.local_ip_address, message.local_port, message.remote_ip_address, message.remote_port)
-        established_socket.enqueue(message.local_ip_address, message.local_port, message.remote_ip_address, message.remote_port, message.raw_data)
+        established_socket.messages.append(message.raw_data)
+        established_socket.messages_ready.release()
 
         return established_socket
 
@@ -92,11 +87,22 @@ class TcpSocket:
         TcpSocket.packet_handler = packet_handler
 
     @staticmethod
-    def match_socket(local_ip_address, local_port, remote_ip_address, remote_port, tracker):
-        """ Class method - Return opened socket that best matches incoming packet """
+    def match_socket(local_ip_address, local_port, remote_ip_address, remote_port, raw_data, tracker):
+        """ Class method - Try to match incoming packet with either established or listening socket """
 
+        # Check if packet is part of established connection
+        socket_id = f"TCP/{local_ip_address}/{local_port}/{remote_ip_address}/{remote_port}"
+
+        socket = TcpSocket.open_sockets.get(socket_id, None)
+        if socket:
+            logger = loguru.logger.bind(object_name="socket.")
+            logger.debug(f"{tracker} - Found matching established socket {socket_id}")
+            socket.messages.append(raw_data)
+            socket.messages_ready.release()
+            return True
+
+        # Check if packet matches any of listening sockets
         socket_ids = [
-            f"TCP/{local_ip_address}/{local_port}/{remote_ip_address}/{remote_port}",
             f"TCP/{local_ip_address}/{local_port}/0.0.0.0/0",
             f"TCP/0.0.0.0/{local_port}/0.0.0.0/0",
         ]
@@ -105,5 +111,8 @@ class TcpSocket:
             socket = TcpSocket.open_sockets.get(socket_id, None)
             if socket:
                 logger = loguru.logger.bind(object_name="socket.")
-                logger.debug(f"{tracker} - Found matching socket {socket_id}")
-                return socket
+                logger.debug(f"{tracker} - Found matching listening socket {socket_id}")
+                socket.messages.append(TcpMessage(raw_data, local_ip_address, local_port, remote_ip_address, remote_port))
+                socket.messages_ready.release()
+                return True
+

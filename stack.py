@@ -15,13 +15,15 @@ import struct
 import loguru
 
 from udp_socket import UdpSocket
+from tcp_socket import TcpSocket
 from arp_cache import ArpCache
 from rx_ring import RxRing
 from tx_ring import TxRing
 
 from ph import PacketHandler
 
-from service_udp_echo_mt import ServiceUdpEcho
+from service_udp_echo import ServiceUdpEcho
+from service_tcp_echo import ServiceTcpEcho
 
 
 TUNSETIFF = 0x400454CA
@@ -53,7 +55,9 @@ def main():
     tx_ring = TxRing(tap, STACK_MAC_ADDRESS, arp_cache)
     packet_handler = PacketHandler(STACK_MAC_ADDRESS, STACK_IP_ADDRESS, rx_ring, tx_ring, arp_cache)
     UdpSocket.set_packet_handler(packet_handler)
+    TcpSocket.set_packet_handler(packet_handler)
     ServiceUdpEcho(STACK_IP_ADDRESS)
+    ServiceTcpEcho(STACK_IP_ADDRESS)
 
     while True:
         time.sleep(1)

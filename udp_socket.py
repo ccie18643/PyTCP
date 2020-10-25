@@ -62,35 +62,6 @@ class UdpSocket:
         self.messages_ready.acquire()
         return self.messages.pop(0)
 
-    def send(self, raw_data):
-        """ Put raw_data into TX ring """
-
-        self.packet_handler.phtx_udp(
-            ip_src=self.local_ip_address,
-            udp_sport=self.local_port,
-            ip_dst=self.remote_ip_address,
-            udp_dport=self.remote_port,
-            raw_data=raw_data,
-        )
-
-    def receive(self):
-        """ Read data from established socket and return raw_data """
-
-        self.messages_ready.acquire()
-        return self.messages.pop(0)
-
-    def listen(self):
-        """ Wait for incoming connection to listening socket, once its received create new socket and return it """
-
-        self.messages_ready.acquire()
-        message = self.messages.pop(0)
-
-        established_socket = UdpSocket(message.local_ip_address, message.local_port, message.remote_ip_address, message.remote_port)
-        established_socket.messages.append(message.raw_data)
-        established_socket.messages_ready.release()
-
-        return established_socket
-
     def close(self):
         """ Close socket """
 
@@ -107,17 +78,8 @@ class UdpSocket:
     def match_socket(local_ip_address, local_port, remote_ip_address, remote_port, raw_data, tracker):
         """ Class method - Check if incoming data belongs to any socket, if so enqueue it """
 
-        socket_id = f"UDP/{local_ip_address}/{local_port}/{remote_ip_address}/{remote_port}"
-
-        socket = UdpSocket.open_sockets.get(socket_id, None)
-        if socket:
-            logger = loguru.logger.bind(object_name="socket.")
-            logger.debug(f"{tracker} - Found matching established socket {socket_id}")
-            socket.messages.append(raw_data)
-            socket.messages_ready.release()
-            return True
-
         socket_ids = [
+            f"UDP/{local_ip_address}/{local_port}/{remote_ip_address}/{remote_port}",
             f"UDP/{local_ip_address}/{local_port}/0.0.0.0/0",
             f"UDP/0.0.0.0/{local_port}/0.0.0.0/0",
         ]
