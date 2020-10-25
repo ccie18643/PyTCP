@@ -1,6 +1,6 @@
 # PyTCP
 
-Attempt to create working TCP/IP stack in Python for educational purposes. Stack operates as user space program attached to tap interface. It has its own MAC and IP addresses. So far it has full ARP support with cashing, aging out and refreshing entries. It responds to ARP requests and sends out ARP requests when needed. It also has basic support for IP, ICMP protocols enabling it to respond to ping packets. Recently also added UDP protocol support with UDP Echo service that runs as separate thread and communicates with the stack by using simple socket mechanism. Currently working on basic implementation of TCP protocol.
+Attempt to create working TCP/IP stack in Python for educational purposes. Stack operates as user space program attached to tap interface. It has its own MAC and IP address(es). So far implemented Ethernet, ARP, IP, ICMP and UDP protocols. Currently working on implementation of TCP.
 
 #### Implemented features:
 
@@ -9,9 +9,11 @@ Attempt to create working TCP/IP stack in Python for educational purposes. Stack
  - IP protocol - inbound and outbound IP fragmentation, IP options accepted but not supported
  - ICMP protocol - only ICMP messages that are needed for stack operations are implemented, eg. echo, echo reply, port unreachable
  - UDP protocol - full support
- - UDP socket mechanism - full support for single threaded and multithreaded services
  - TCP protocol - basic support, work in progress
+ - UDP socket mechanism - full support for single threaded and multithreaded services
  - TCP socket mechanism - basic support, work in progress
+ - Single threaded UDP Echo service - standard echo service responding to message on port 7
+ - Multi threaded UDP Echo servce - created to develop and test TCP specific socket mechanisms with one listening socket and multiple child sockets supporting actuall connections, its simply easier to work on it using UDP protocol before making it part of TCP socket implementation
 
 
 #### Not yet mplemented features:
