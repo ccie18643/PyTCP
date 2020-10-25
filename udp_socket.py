@@ -88,11 +88,11 @@ class UdpSocket:
     def listen(self):
         """ Wait for incoming connection to listening socket, once its received create new socket and return it """
 
-        self.messags_ready.acquire()
+        self.messages_ready.acquire()
         message = self.messages.pop(0)
 
         established_socket = UdpSocket(message.local_ip_address, message.local_port, message.remote_ip_address, message.remote_port)
-        established_socket.enqueue(message)
+        established_socket.enqueue(message.local_ip_address, message.local_port, message.remote_ip_address, message.remote_port, message.raw_data)
 
         return established_socket
 
@@ -112,16 +112,15 @@ class UdpSocket:
     def match_socket(local_ip_address, local_port, remote_ip_address, remote_port, tracker):
         """ Class method - Return opened socket that best matches incoming packet """
 
-        socket_ids = {
+        socket_ids = [
             f"UDP/{local_ip_address}/{local_port}/{remote_ip_address}/{remote_port}",
             f"UDP/{local_ip_address}/{local_port}/0.0.0.0/0",
             f"UDP/0.0.0.0/{local_port}/0.0.0.0/0",
-        }
+        ]
 
         for socket_id in socket_ids:
             socket = UdpSocket.open_sockets.get(socket_id, None)
             if socket:
                 logger = loguru.logger.bind(object_name="socket.")
-                logger.debug(f"{tracker} - Found matching listening socket {socket_id}")
+                logger.debug(f"{tracker} - Found matching socket {socket_id}")
                 return socket
-

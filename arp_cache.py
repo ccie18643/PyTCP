@@ -11,7 +11,6 @@ import loguru
 import time
 import threading
 
-import ps_ether
 import ps_arp
 
 

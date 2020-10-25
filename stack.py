@@ -21,7 +21,7 @@ from tx_ring import TxRing
 
 from ph import PacketHandler
 
-from service_udp_echo import ServiceUdpEcho
+from service_udp_echo_mt import ServiceUdpEcho
 
 
 TUNSETIFF = 0x400454CA

@@ -11,8 +11,6 @@ import os
 import loguru
 import threading
 
-import ps_ether
-
 
 class TxRing:
     """ Support for sending packets to the network """

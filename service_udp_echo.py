@@ -25,5 +25,5 @@ class ServiceUdpEcho:
     def __service(self):
         while True:
             udp_message = self.socket.receive_from()
-            # print(udp_message.raw_data)
+            print("Service UDP echo: Received message", udp_message.raw_data)
             self.socket.send_to(udp_message)
