@@ -17,24 +17,15 @@ def phrx_udp(self, ip_packet_rx, udp_packet_rx):
 
     self.logger.opt(ansi=True).info(f"<green>{udp_packet_rx.tracker}</green> - {udp_packet_rx}")
 
-    # Check if incoming packet matches open socket
-    socket = UdpSocket.match_socket(
+    # Send packet info and data to socket mechanism for further processing
+    if UdpSocket.match_socket(
         local_ip_address=ip_packet_rx.ip_dst,
         local_port=udp_packet_rx.udp_dport,
         remote_ip_address=ip_packet_rx.ip_src,
         remote_port=udp_packet_rx.udp_sport,
+        raw_data=udp_packet_rx.raw_data,
         tracker=udp_packet_rx.tracker,
-    )
-
-    # If match is found enqueue data
-    if socket:
-        socket.enqueue(
-            local_ip_address=ip_packet_rx.ip_dst,
-            local_port=udp_packet_rx.udp_dport,
-            remote_ip_address=ip_packet_rx.ip_src,
-            remote_port=udp_packet_rx.udp_sport,
-            raw_data=udp_packet_rx.raw_data,
-        )
+    ):
         return
 
     # Silently drop packet if it has all zero source IP address

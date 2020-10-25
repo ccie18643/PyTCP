@@ -45,12 +45,6 @@ class UdpSocket:
 
         self.logger.debug(f"Opened UDP socket {self.socket_id}")
 
-    def enqueue(self, local_ip_address, local_port, remote_ip_address, remote_port, raw_data):
-        """ Put data into socket message queue and release semaphore """
-
-        self.messages.append(UdpMessage(raw_data, local_ip_address, local_port, remote_ip_address, remote_port))
-        self.messages_ready.release()
-
     def send_to(self, udp_message):
         """ Put data from UdpMessage structure into TX ring """
 
@@ -83,7 +77,7 @@ class UdpSocket:
         """ Read data from established socket and return raw_data """
 
         self.messages_ready.acquire()
-        return self.messages.pop(0).raw_data
+        return self.messages.pop(0)
 
     def listen(self):
         """ Wait for incoming connection to listening socket, once its received create new socket and return it """
@@ -92,7 +86,8 @@ class UdpSocket:
         message = self.messages.pop(0)
 
         established_socket = UdpSocket(message.local_ip_address, message.local_port, message.remote_ip_address, message.remote_port)
-        established_socket.enqueue(message.local_ip_address, message.local_port, message.remote_ip_address, message.remote_port, message.raw_data)
+        established_socket.messages.append(message.raw_data)
+        established_socket.messages_ready.release()
 
         return established_socket
 
@@ -109,11 +104,20 @@ class UdpSocket:
         UdpSocket.packet_handler = packet_handler
 
     @staticmethod
-    def match_socket(local_ip_address, local_port, remote_ip_address, remote_port, tracker):
+    def match_socket(local_ip_address, local_port, remote_ip_address, remote_port, raw_data, tracker):
         """ Class method - Return opened socket that best matches incoming packet """
 
+        socket_id = f"UDP/{local_ip_address}/{local_port}/{remote_ip_address}/{remote_port}"
+
+        socket = UdpSocket.open_sockets.get(socket_id, None)
+        if socket:
+            logger = loguru.logger.bind(object_name="socket.")
+            logger.debug(f"{tracker} - Found matching established socket {socket_id}")
+            socket.messages.append(raw_data)
+            socket.messages_ready.release()
+            return True
+
         socket_ids = [
-            f"UDP/{local_ip_address}/{local_port}/{remote_ip_address}/{remote_port}",
             f"UDP/{local_ip_address}/{local_port}/0.0.0.0/0",
             f"UDP/0.0.0.0/{local_port}/0.0.0.0/0",
         ]
@@ -122,5 +126,8 @@ class UdpSocket:
             socket = UdpSocket.open_sockets.get(socket_id, None)
             if socket:
                 logger = loguru.logger.bind(object_name="socket.")
-                logger.debug(f"{tracker} - Found matching socket {socket_id}")
-                return socket
+                logger.debug(f"{tracker} - Found matching listening socket {socket_id}")
+                socket.messages.append(UdpMessage(raw_data, local_ip_address, local_port, remote_ip_address, remote_port))
+                socket.messages_ready.release()
+                return True
+
