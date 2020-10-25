@@ -21,7 +21,7 @@ Not yet mplemented features:
  - ICMPv6 protocol - bassic support, features needed for stack operation
 
 
-### ARP resolution and handling ping packets
+#### ARP resolution and handling ping packets
 ![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/main/pictures/log_01.png)
 
 
