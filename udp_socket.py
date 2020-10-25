@@ -11,9 +11,6 @@ import loguru
 import threading
 
 
-MTU = 1500
-
-
 class UdpMessage:
     """ Store UDP message in socket """
 
