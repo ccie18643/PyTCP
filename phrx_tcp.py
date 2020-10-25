@@ -8,12 +8,24 @@ phrx_tcp.py - packet handler for inbound TCP packets
 """
 
 
+from tcp_socket import TcpSocket
 
 
 def phrx_tcp(self, ip_packet_rx, tcp_packet_rx):
     """ Handle inbound TCP packets """
 
     self.logger.opt(ansi=True).info(f"<green>{tcp_packet_rx.tracker}</green> - {tcp_packet_rx}")
+
+    # Send packet info and data to socket mechanism for further processing
+    if TcpSocket.match_socket(
+        local_ip_address=ip_packet_rx.ip_dst,
+        local_port=tcp_packet_rx.tcp_dport,
+        remote_ip_address=ip_packet_rx.ip_src,
+        remote_port=tcp_packet_rx.tcp_sport,
+        raw_data=tcp_packet_rx.raw_data,
+        tracker=tcp_packet_rx.tracker,
+    ):
+        return
 
     # Silently drop packet if it has all zero source IP address
     if ip_packet_rx.ip_src == "0.0.0.0":

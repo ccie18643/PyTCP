@@ -92,4 +92,3 @@ class UdpSocket:
                 socket.messages.append(UdpMessage(raw_data, local_ip_address, local_port, remote_ip_address, remote_port))
                 socket.messages_ready.release()
                 return True
-
