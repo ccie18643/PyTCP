@@ -9,14 +9,16 @@ Python based attempt to create fully operational TCP/IP stack for educational pu
  - IP protocol - inbound and outbound IP fragmentation, IP options accepted but not supported
  - ICMP protocol - only ICMP messages that are needed for stack operations are implemented, eg. echo, echo reply, port unreachable
  - UDP protocol - full support
- - TCP protocol - basic support, work in progress
  - UDP socket mechanism - full support for single threaded and multithreaded services
- - TCP socket mechanism - basic support, work in progress
  - Single threaded UDP Echo service - standard echo service responding to message on port 7
+
+#### Work in progress
+
+ - TCP protocol - basic support
+ - TCP socket mechanism - basic support
  - Multi threaded TCP Echo servce - created to develop and test TCP specific socket mechanisms with one listening socket and multiple child sockets supporting actuall connections
 
-
-#### Not yet mplemented features:
+#### Not yet implemented features:
  
  - DHCP client service for automatic IPv4 address configuration
  - IPv6 protocol - basic support with address auto configuration
