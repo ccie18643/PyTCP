@@ -10,7 +10,7 @@ phrx_arp.py - packet handler for inbound ARP packets
 import ps_arp
 
 
-ARP_CACHE_UPDATE_FROM_DIRECT_REQUEST = True
+ARP_CACHE_UPDATE_FROM_DIRECT_REQUEST = False
 ARP_CACHE_UPDATE_FROM_NON_DIRECT_REQUEST = False
 ARP_CACHE_UPDATE_FROM_GRATITIOUS_ARP = True
 
@@ -24,6 +24,7 @@ def phrx_arp(self, ether_packet_rx, arp_packet_rx):
         # Check if the request is for our IP address, if so the craft ARP reply packet and send it out
         if arp_packet_rx.arp_tpa == self.stack_ip_address:
             self.phtx_arp(
+                ether_src=self.stack_mac_address,
                 ether_dst=arp_packet_rx.arp_sha,
                 arp_oper=ps_arp.ARP_OP_REPLY,
                 arp_sha=self.stack_mac_address,

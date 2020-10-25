@@ -35,7 +35,7 @@ class ArpCache:
         self.stack_ip_address = stack_ip_address
 
         self.arp_cache = {}
-        self.tx_ring = None
+        self.packet_handler = None
         self.logger = loguru.logger.bind(object_name="arp_cache.")
 
         threading.Thread(target=self.__maintain).start()
@@ -65,15 +65,15 @@ class ArpCache:
     def __send_arp_request(self, arp_tpa):
         """ Enqueue ARP request with TX ring """
 
-        arp_packet_tx = ps_arp.ArpPacket(
-            arp_oper=ps_arp.ARP_OP_REQUEST, arp_sha=self.stack_mac_address, arp_spa=self.stack_ip_address, arp_tha="00:00:00:00:00:00", arp_tpa=arp_tpa
+        self.packet_handler.phtx_arp(
+            ether_src=self.stack_mac_address,
+            ether_dst="ff:ff:ff:ff:ff:ff",
+            arp_oper=ps_arp.ARP_OP_REQUEST,
+            arp_sha=self.stack_mac_address,
+            arp_spa=self.stack_ip_address,
+            arp_tha="00:00:00:00:00:00",
+            arp_tpa=arp_tpa,
         )
-
-        ether_packet_tx = ps_ether.EtherPacket(ether_src=self.stack_mac_address, ether_dst="ff:ff:ff:ff:ff:ff", child_packet=arp_packet_tx)
-
-        self.logger.debug(f"{ether_packet_tx}")
-        self.logger.opt(ansi=True).info(f"{arp_packet_tx}")
-        self.tx_ring.enqueue(ether_packet_tx, urgent=True)
 
     def add_entry(self, ip_address, mac_address):
         """ Add / refresh entry in cache """
@@ -94,5 +94,5 @@ class ArpCache:
         else:
             self.logger.debug(f"Unable to find entry for {ip_address}, sending ARP request")
 
-            if self.tx_ring:
+            if self.packet_handler:
                 self.__send_arp_request(ip_address)

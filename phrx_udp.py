@@ -31,7 +31,14 @@ def phrx_udp(self, ip_packet_rx, udp_packet_rx):
         )
         return
 
-    # In case incoming packet did't mach any listening port respond with ICMP Port Unreachable message
+    # Silently drop packet if it has all zero source IP address
+    if ip_packet_rx.ip_src == "0.0.0.0":
+        self.logger.debug(
+            f"Received UDP packet from {ip_packet_rx.ip_src}:{udp_packet_rx.udp_sport} to {ip_packet_rx.ip_dst}:{udp_packet_rx.udp_dport}, droping"
+        )
+        return
+
+    # Respond with ICMP Port Unreachable message
     self.logger.debug(f"Received UDP packet from {ip_packet_rx.ip_src} to closed port {udp_packet_rx.udp_dport}, sending ICMP Port Unreachable")
 
     self.phtx_icmp(

@@ -38,6 +38,9 @@ class PacketHandler:
         self.arp_cache = arp_cache
         self.logger = loguru.logger.bind(object_name="packet_handler.")
 
+        # Update ARP cache object with reference to this packet handler so ARP cache can send out ARP requests
+        self.arp_cache.packet_handler = self
+
         threading.Thread(target=self.__packet_handler).start()
         self.logger.debug("Started packet handler")
 

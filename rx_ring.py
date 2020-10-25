@@ -49,7 +49,11 @@ class RxRing:
                 continue
 
             # Put the packet into queue
-            self.rx_ring.append(ether_packet_rx)
+            if ether_packet_rx.ether_type == ps_ether.ETHER_TYPE_ARP:
+                self.rx_ring.insert(0, ether_packet_rx)
+            else:
+                self.rx_ring.append(ether_packet_rx)
+
             self.logger.opt(ansi=True).debug(f"<green>[RX]</green> {ether_packet_rx.tracker} - {len(ether_packet_rx)} bytes")
             self.packet_enqueued.release()
 
