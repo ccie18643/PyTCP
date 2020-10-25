@@ -51,6 +51,7 @@ def phrx_tcp(self, ip_packet_rx, tcp_packet_rx):
     self.logger.debug(f"Received TCP packet from {ip_packet_rx.ip_src} to closed port {tcp_packet_rx.tcp_dport}, sending TCP Reset packet")
 
     self.phtx_tcp(
+        ip_src=ip_packet_rx.ip_dst,
         ip_dst=ip_packet_rx.ip_src,
         tcp_sport=tcp_packet_rx.tcp_dport,
         tcp_dport=tcp_packet_rx.tcp_sport,

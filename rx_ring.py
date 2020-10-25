@@ -42,7 +42,6 @@ class RxRing:
 
         self.packet_enqueued.release()
 
-
     def __receive(self):
         """ Thread responsible for receiving and enqueuing incoming packets """
 

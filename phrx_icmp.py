@@ -20,6 +20,7 @@ def phrx_icmp(self, ip_packet_rx, icmp_packet_rx):
         self.logger.debug(f"Received ICMP echo packet from {ip_packet_rx.ip_src}, sending reply")
 
         self.phtx_icmp(
+            ip_src=ip_packet_rx.ip_dst,
             ip_dst=ip_packet_rx.ip_src,
             icmp_type=ps_icmp.ICMP_ECHOREPLY,
             icmp_id=icmp_packet_rx.icmp_id,

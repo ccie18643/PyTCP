@@ -17,11 +17,11 @@ import ps_ether
 MTU = 1500
 
 
-def phtx_ip(self, child_packet, ip_dst):
+def phtx_ip(self, child_packet, ip_dst, ip_src):
     """ Handle outbound IP packets """
 
     if ps_ether.ETHER_HEADER_LEN + ps_ip.IP_HEADER_LEN + len(child_packet.raw_packet) <= MTU:
-        ip_packet_tx = ps_ip.IpPacket(ip_src=self.stack_ip_address, ip_dst=ip_dst, child_packet=child_packet)
+        ip_packet_tx = ps_ip.IpPacket(ip_src=ip_src, ip_dst=ip_dst, child_packet=child_packet)
 
         self.logger.debug(f"{ip_packet_tx.tracker} - {ip_packet_tx}")
         self.phtx_ether(child_packet=ip_packet_tx)

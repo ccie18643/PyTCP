@@ -53,7 +53,7 @@ def main():
     tx_ring = TxRing(tap, STACK_MAC_ADDRESS, arp_cache)
     packet_handler = PacketHandler(STACK_MAC_ADDRESS, STACK_IP_ADDRESS, rx_ring, tx_ring, arp_cache)
     UdpSocket.set_packet_handler(packet_handler)
-    ServiceUdpEcho()
+    ServiceUdpEcho(STACK_IP_ADDRESS)
 
     while True:
         time.sleep(1)
