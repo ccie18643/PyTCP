@@ -105,7 +105,7 @@ class UdpSocket:
 
     @staticmethod
     def match_socket(local_ip_address, local_port, remote_ip_address, remote_port, raw_data, tracker):
-        """ Class method - Return opened socket that best matches incoming packet """
+        """ Class method - Check if incoming data belongs to any socket, if so enqueue it """
 
         socket_id = f"UDP/{local_ip_address}/{local_port}/{remote_ip_address}/{remote_port}"
 
