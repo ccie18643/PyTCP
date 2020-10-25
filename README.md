@@ -2,7 +2,7 @@
 
 Python based attempt to create fully operational TCP/IP stack for educational purposes. Stack operates as user space program attached to Linux TAP interface. So far implemented Ethernet, ARP, IP, ICMP and UDP protocols. Currently working on implementation of TCP.
 
-#### Implemented features:
+#### Already implemented:
 
  - Ethernet protocol - only Ethernet II standard frames
  - ARP protocol - replies, queries, ARP cache
@@ -12,13 +12,13 @@ Python based attempt to create fully operational TCP/IP stack for educational pu
  - UDP socket mechanism - full support for single threaded and multithreaded services
  - Single threaded UDP Echo service - standard echo service responding to message on port 7
 
-#### Work in progress
+#### Work in progress:
 
  - TCP protocol - basic support
  - TCP socket mechanism - basic support
  - Multi threaded TCP Echo servce - created to develop and test TCP specific socket mechanisms with one listening socket and multiple child sockets supporting actuall connections
 
-#### Not yet implemented features:
+#### Next steps:
  
  - DHCP client service for automatic IPv4 address configuration
  - IPv6 protocol - basic support with address auto configuration
