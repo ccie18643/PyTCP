@@ -1,6 +1,6 @@
 # PyTCP
 
-Attempt to create working TCP/IP stack in Python for educational purposes. Stack operates as user space program attached to tap interface. It has its own MAC and IP address(es). So far implemented Ethernet, ARP, IP, ICMP and UDP protocols. Currently working on implementation of TCP.
+Python based attempt to create fully operational TCP/IP stack for educational purposes. Stack operates as user space program attached to Linux TAP interface. So far implemented Ethernet, ARP, IP, ICMP and UDP protocols. Currently working on implementation of TCP.
 
 #### Implemented features:
 
