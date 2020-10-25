@@ -30,6 +30,19 @@ class RxRing:
         threading.Thread(target=self.__receive).start()
         self.logger.debug("Started RX ring")
 
+    def __enqueue(self, ether_packet_rx):
+        """ Enqueue packet for further processing """
+
+        if ether_packet_rx.ether_type == ps_ether.ETHER_TYPE_ARP:
+            self.rx_ring.insert(0, ether_packet_rx)
+            self.logger.opt(ansi=True).debug(f"<green>[RX] {ether_packet_rx.tracker}</green>, priority: Urgent, queue len: {len(self.rx_ring)}")
+        else:
+            self.rx_ring.append(ether_packet_rx)
+            self.logger.opt(ansi=True).debug(f"<green>[RX] {ether_packet_rx.tracker}</green>, priority: Normal, queue len: {len(self.rx_ring)}")
+
+        self.packet_enqueued.release()
+
+
     def __receive(self):
         """ Thread responsible for receiving and enqueuing incoming packets """
 
@@ -37,25 +50,8 @@ class RxRing:
 
             # Wait till there is any packet comming and pick it up
             ether_packet_rx = ps_ether.EtherPacket(os.read(self.tap, 2048))
-
-            # Check if received packet uses valid Ethernet II format
-            if ether_packet_rx.ether_type < ps_ether.ETHER_TYPE_MIN:
-                self.logger.opt(ansi=True).debug(f"<green>[RX]</green> Packet doesn't comply with the Ethernet II standard - {ether_packet_rx}")
-                continue
-
-            # Check if received packet has been sent to us directly or by broadcast
-            if ether_packet_rx.ether_dst not in {self.stack_mac_address, "ff:ff:ff:ff:ff:ff"}:
-                self.logger.opt(ansi=True).debug(f"<green>[RX]</green> Packet not destined for this stack - {ether_packet_rx}")
-                continue
-
-            # Put the packet into queue
-            if ether_packet_rx.ether_type == ps_ether.ETHER_TYPE_ARP:
-                self.rx_ring.insert(0, ether_packet_rx)
-            else:
-                self.rx_ring.append(ether_packet_rx)
-
             self.logger.opt(ansi=True).debug(f"<green>[RX]</green> {ether_packet_rx.tracker} - {len(ether_packet_rx)} bytes")
-            self.packet_enqueued.release()
+            self.__enqueue(ether_packet_rx)
 
     def dequeue(self):
         """ Dequeue inboutd packet from RX ring """

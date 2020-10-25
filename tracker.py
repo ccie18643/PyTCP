@@ -51,6 +51,6 @@ class Tracker:
         """ Latency between echo tracker timestamp and current time """
 
         if self.echo_tracker:
-            return f"{(time.time() - self.echo_tracker.timestamp) * 1000:.3f}ms"
+            return f" {(time.time() - self.echo_tracker.timestamp) * 1000:.3f}ms"
 
         return ""

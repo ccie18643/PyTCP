@@ -29,29 +29,36 @@ class TxRing:
 
         self.packet_enqueued = threading.Semaphore(0)
 
-        threading.Thread(target=self.__transmit).start()
+        threading.Thread(target=self.__dequeue).start()
         self.logger.debug("Started TX ring")
 
-    def __transmit(self):
+    def __dequeue(self):
         """ Dequeue packet from TX ring """
 
         while True:
-
             # Wait till packets is avaiable int he queue the pick it up
             self.packet_enqueued.acquire()
             ether_packet_tx = self.tx_ring.pop(0)
-            os.write(self.tap, ether_packet_tx.get_raw_packet())
-            self.logger.opt(ansi=True).debug(
-                f"<magenta>[TX] {ether_packet_tx.tracker}</magenta> <yellow>{ether_packet_tx.tracker.latency}</yellow> - {len(ether_packet_tx)} bytes"
-            )
+            self.logger.opt(ansi=True).debug(f"<magenta>[TX] {ether_packet_tx.tracker}</magenta>")
+            self.__transmit(ether_packet_tx)
+
+    def __transmit(self, ether_packet_tx):
+        """ Transmit packet """
+
+        os.write(self.tap, ether_packet_tx.get_raw_packet())
+        self.logger.opt(ansi=True).debug(
+            f"<magenta>[TX] {ether_packet_tx.tracker}</magenta><yellow>{ether_packet_tx.tracker.latency}</yellow> - {len(ether_packet_tx)} bytes"
+        )
 
     def enqueue(self, ether_packet_tx, urgent=False):
         """ Enqueue outbound Ethernet packet to TX ring """
 
         if urgent:
             self.tx_ring.insert(0, ether_packet_tx)
+            self.logger.opt(ansi=True).debug(f"<magenta>[TX] {ether_packet_tx.tracker}</magenta>, priority: Urgent, queue len: {len(self.tx_ring)}")
 
         else:
             self.tx_ring.append(ether_packet_tx)
+            self.logger.opt(ansi=True).debug(f"<magenta>[TX] {ether_packet_tx.tracker}</magenta>, priorty: Normal, queue len: {len(self.tx_ring)}")
 
         self.packet_enqueued.release()
