@@ -20,6 +20,7 @@ class PacketHandler:
     from phrx_icmp import phrx_icmp
     from phrx_udp import phrx_udp
     from phrx_tcp import phrx_tcp
+    from phrx_tcp import phrx_tcp_session
 
     from phtx_ether import phtx_ether
     from phtx_arp import phtx_arp
@@ -37,6 +38,8 @@ class PacketHandler:
         self.rx_ring = rx_ring
         self.arp_cache = arp_cache
         self.logger = loguru.logger.bind(object_name="packet_handler.")
+
+        self.tcp_sessions = {}
 
         # Update ARP cache object with reference to this packet handler so ARP cache can send out ARP requests
         self.arp_cache.packet_handler = self
