@@ -19,12 +19,14 @@ from tcp_socket import TcpSocket
 from arp_cache import ArpCache
 from rx_ring import RxRing
 from tx_ring import TxRing
+from ptask import Ptask
 
 from ph import PacketHandler
 
 from service_udp_echo import ServiceUdpEcho
 from service_tcp_echo import ServiceTcpEcho
 
+import ps_arp
 
 TUNSETIFF = 0x400454CA
 IFF_TAP = 0x0002
@@ -54,6 +56,8 @@ def main():
     rx_ring = RxRing(tap, STACK_MAC_ADDRESS)
     tx_ring = TxRing(tap, STACK_MAC_ADDRESS, arp_cache)
     packet_handler = PacketHandler(STACK_MAC_ADDRESS, STACK_IP_ADDRESS, rx_ring, tx_ring, arp_cache)
+    # Ptask(packet_handler)
+
     UdpSocket.set_packet_handler(packet_handler)
     TcpSocket.set_packet_handler(packet_handler)
     ServiceUdpEcho(STACK_IP_ADDRESS)

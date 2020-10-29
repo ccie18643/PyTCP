@@ -7,8 +7,11 @@ ph.py - protocol support for incoming and outgoing packets
 
 """
 
+import time
 import loguru
 import threading
+
+import ps_arp
 
 
 class PacketHandler:
@@ -32,6 +35,9 @@ class PacketHandler:
     def __init__(self, stack_mac_address, stack_ip_address, rx_ring, tx_ring, arp_cache):
         """ Class constructor """
 
+        self.arp_probe_conflict_detected = False
+        self.ip_address_claimed = False
+
         self.stack_mac_address = stack_mac_address
         self.stack_ip_address = stack_ip_address
         self.tx_ring = tx_ring
@@ -46,6 +52,62 @@ class PacketHandler:
 
         threading.Thread(target=self.__packet_handler).start()
         self.logger.debug("Started packet handler")
+
+        # Send three ARP probes to test if there is any IP address conflict
+        for i in range(3):
+            self.__send_arp_probe()
+            self.logger.debug(f"Sent out ARP probe {i} for {self.stack_ip_address}")
+            time.sleep(1)
+            if self.arp_probe_conflict_detected:
+                self.logger.warning(f"Unable to claim IP address {self.stack_ip_address}, stack IP operations will not be performed")
+                return
+
+        self.__send_arp_announcement()
+        self.ip_address_claimed = True
+        self.logger.debug(f"Sent out ARP annoucement for {self.stack_ip_address}")
+
+        time.sleep(1)
+        self.__send_gratitous_arp()
+        self.logger.debug(f"Sent out gratitous ARP for {self.stack_ip_address}")
+
+    def __send_arp_probe(self):
+        """ Send out ARP probe to detect possible IP conflict """
+
+        self.phtx_arp(
+            ether_src=self.stack_mac_address,
+            ether_dst="ff:ff:ff:ff:ff:ff",
+            arp_oper=ps_arp.ARP_OP_REQUEST,
+            arp_sha=self.stack_mac_address,
+            arp_spa="0.0.0.0",
+            arp_tha="00:00:00:00:00:00",
+            arp_tpa=self.stack_ip_address,
+        )
+
+    def __send_arp_announcement(self):
+        """ Send out ARP announcement to claim IP address """
+
+        self.phtx_arp(
+            ether_src=self.stack_mac_address,
+            ether_dst="ff:ff:ff:ff:ff:ff",
+            arp_oper=ps_arp.ARP_OP_REQUEST,
+            arp_sha=self.stack_mac_address,
+            arp_spa=self.stack_ip_address,
+            arp_tha="00:00:00:00:00:00",
+            arp_tpa=self.stack_ip_address,
+        )
+
+    def __send_gratitous_arp(self):
+        """ Send out gratitous arp """
+
+        self.phtx_arp(
+            ether_src=self.stack_mac_address,
+            ether_dst="ff:ff:ff:ff:ff:ff",
+            arp_oper=ps_arp.ARP_OP_REPLY,
+            arp_sha=self.stack_mac_address,
+            arp_spa=self.stack_ip_address,
+            arp_tha="00:00:00:00:00:00",
+            arp_tpa=self.stack_ip_address,
+        )
 
     def __packet_handler(self):
         """ Thread that picks up incoming packets from RX ring and process them """

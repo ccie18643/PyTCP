@@ -89,7 +89,7 @@ class TcpSocket:
             tcp_flag_ack=True,
             tcp_seq_num=self.local_seq_num,
             tcp_ack_num=self.remote_seq_num + 1,
-            tcp_options = [TcpOptMss(opt_size=1460)],
+            tcp_options=[TcpOptMss(opt_size=1460)],
         )
 
         self.logger.info(f"*** SYN/ACK sent ***")
@@ -146,6 +146,3 @@ class TcpSocket:
                     socket.messages.append(TcpMessage(local_ip_address, local_port, remote_ip_address, remote_port, tcp_packet_rx))
                     socket.messages_ready.release()
                     return True
-
-
-

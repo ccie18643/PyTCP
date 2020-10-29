@@ -20,6 +20,11 @@ MTU = 1500
 def phtx_ip(self, child_packet, ip_dst, ip_src):
     """ Handle outbound IP packets """
 
+    # Check if stack claimed IP address
+    if not self.ip_address_claimed:
+        self.logger.warning("Unable to sent out IP packet, stack doesn't have claimed IP address")
+        return
+
     if ps_ether.ETHER_HEADER_LEN + ps_ip.IP_HEADER_LEN + len(child_packet.raw_packet) <= MTU:
         ip_packet_tx = ps_ip.IpPacket(ip_src=ip_src, ip_dst=ip_dst, child_packet=child_packet)
 

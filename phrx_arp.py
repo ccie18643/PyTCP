@@ -11,8 +11,7 @@ import ps_arp
 
 
 ARP_CACHE_UPDATE_FROM_DIRECT_REQUEST = True
-ARP_CACHE_UPDATE_FROM_NON_DIRECT_REQUEST = False
-ARP_CACHE_UPDATE_FROM_GRATITIOUS_REPLY = True
+ARP_CACHE_UPDATE_FROM_GRATUITOUS_REPLY = True
 
 
 def phrx_arp(self, ether_packet_rx, arp_packet_rx):
@@ -39,20 +38,31 @@ def phrx_arp(self, ether_packet_rx, arp_packet_rx):
                 self.logger.debug(f"Adding/refreshing ARP cache entry from direct request - {arp_packet_rx.arp_spa} -> {arp_packet_rx.arp_sha}")
                 self.arp_cache.add_entry(arp_packet_rx.arp_spa, arp_packet_rx.arp_sha)
 
-        elif ARP_CACHE_UPDATE_FROM_NON_DIRECT_REQUEST:
-            self.logger.debug(f"Adding/refreshing ARP cache entry from non-direct request - {arp_packet_rx.arp_spa} -> {arp_packet_rx.arp_sha}")
-            self.arp_cache.add_entry(arp_packet_rx.arp_spa, arp_packet_rx.arp_sha)
+            return
 
     # Handle ARP reply
     elif arp_packet_rx.arp_oper == ps_arp.ARP_OP_REPLY:
         self.logger.opt(ansi=True).info(f"<green>{arp_packet_rx.tracker}</green> - {arp_packet_rx}")
 
+        # Check for ARP reply that is response to our ARP probe, that indicates that IP address we trying to claim is in use
+        if ether_packet_rx.ether_dst == self.stack_mac_address:
+            if arp_packet_rx.arp_spa == self.stack_ip_address and arp_packet_rx.arp_tha == self.stack_mac_address and arp_packet_rx.arp_tpa == "0.0.0.0":
+                self.logger.warning(f"IP ({arp_packet_rx.arp_spa}) conflict detected with host at {arp_packet_rx.arp_sha}")
+                self.arp_probe_conflict_detected = True
+                return
+
         # Update ARP cache with maping received as direct ARP reply
         if ether_packet_rx.ether_dst == self.stack_mac_address:
             self.logger.debug(f"Adding/refreshing ARP cache entry from direct reply - {arp_packet_rx.arp_spa} -> {arp_packet_rx.arp_sha}")
             self.arp_cache.add_entry(arp_packet_rx.arp_spa, arp_packet_rx.arp_sha)
+            return
 
-        # Update ARP cache with maping received as gratitious ARP reply
-        if ether_packet_rx.ether_dst == "ff:ff:ff:ff:ff:ff" and ARP_CACHE_UPDATE_FROM_GRATITIOUS_REPLY:
-            self.logger.debug(f"Adding/refreshing ARP cache entry from gratitious reply - {arp_packet_rx.arp_spa} -> {arp_packet_rx.arp_sha}")
+        # Update ARP cache with maping received as gratuitous ARP reply
+        if (
+            ether_packet_rx.ether_dst == "ff:ff:ff:ff:ff:ff"
+            and arp_packet_rx.arp_spa == arp_packet_rx.arp_tpa
+            and ARP_CACHE_UPDATE_FROM_GRATUITOUS_REPLY
+        ):
+            self.logger.debug(f"Adding/refreshing ARP cache entry from gratuitous reply - {arp_packet_rx.arp_spa} -> {arp_packet_rx.arp_sha}")
             self.arp_cache.add_entry(arp_packet_rx.arp_spa, arp_packet_rx.arp_sha)
+            return

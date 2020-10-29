@@ -8,9 +8,6 @@ phrx_tcp.py - packet handler for inbound TCP packets
 """
 
 
-from tcp_socket import TcpSocket
-
-
 class TcpSession:
     """ Class defining all the TCP session parameters """
 
@@ -23,7 +20,7 @@ class TcpSession:
         self.remote_port = remote_port
 
     @property
-    def session_id():
+    def session_id(self):
         """ Session ID """
 
         return f"TCP/{self.local_ip_address}/{self.local_port}/{self.remote_ip_address}/{self.remote_port}"
