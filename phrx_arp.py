@@ -12,7 +12,7 @@ import ps_arp
 
 ARP_CACHE_UPDATE_FROM_DIRECT_REQUEST = True
 ARP_CACHE_UPDATE_FROM_NON_DIRECT_REQUEST = False
-ARP_CACHE_UPDATE_FROM_GRATITIOUS_ARP = True
+ARP_CACHE_UPDATE_FROM_GRATITIOUS_REPLY = True
 
 
 def phrx_arp(self, ether_packet_rx, arp_packet_rx):
@@ -53,6 +53,6 @@ def phrx_arp(self, ether_packet_rx, arp_packet_rx):
             self.arp_cache.add_entry(arp_packet_rx.arp_spa, arp_packet_rx.arp_sha)
 
         # Update ARP cache with maping received as gratitious ARP reply
-        if ether_packet_rx.ether_dst == "ff:ff:ff:ff:ff:ff" and ARP_CACHE_UPDATE_FROM_GRATITIOUS_ARP:
+        if ether_packet_rx.ether_dst == "ff:ff:ff:ff:ff:ff" and ARP_CACHE_UPDATE_FROM_GRATITIOUS_REPLY:
             self.logger.debug(f"Adding/refreshing ARP cache entry from gratitious reply - {arp_packet_rx.arp_spa} -> {arp_packet_rx.arp_sha}")
             self.arp_cache.add_entry(arp_packet_rx.arp_spa, arp_packet_rx.arp_sha)
