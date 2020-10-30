@@ -9,6 +9,7 @@ ph.py - protocol support for incoming and outgoing packets
 
 import time
 import loguru
+import random
 import threading
 
 import ps_arp
@@ -57,18 +58,18 @@ class PacketHandler:
         for i in range(3):
             self.__send_arp_probe()
             self.logger.debug(f"Sent out ARP probe {i} for {self.stack_ip_address}")
-            time.sleep(1)
+            time.sleep(random.uniform(1, 2))
             if self.arp_probe_conflict_detected:
                 self.logger.warning(f"Unable to claim IP address {self.stack_ip_address}, stack IP operations will not be performed")
                 return
 
-        self.__send_arp_announcement()
         self.ip_address_claimed = True
-        self.logger.debug(f"Sent out ARP annoucement for {self.stack_ip_address}")
 
-        time.sleep(1)
-        self.__send_gratitous_arp()
-        self.logger.debug(f"Sent out gratitous ARP for {self.stack_ip_address}")
+        # Send two ARP announcements to advertise our new IP address
+        for i in range(2):
+            self.__send_arp_announcement()
+            self.logger.debug(f"Sent out ARP annoucement for {self.stack_ip_address}")
+            time.sleep((1 - i) * 2)
 
     def __send_arp_probe(self):
         """ Send out ARP probe to detect possible IP conflict """
