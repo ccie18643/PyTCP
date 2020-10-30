@@ -68,7 +68,7 @@ class PacketHandler:
 
         self.stack_ip_address = [_ for _ in stack_ip_address if _ not in self.arp_probe_conflict_detected]
         self.stack_ip_address_candidate = []
-        
+
         for ip_address in self.stack_ip_address:
             self.logger.info(f"Succesfully claimed IP address {ip_address}")
 

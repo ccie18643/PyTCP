@@ -51,7 +51,11 @@ def phrx_arp(self, ether_packet_rx, arp_packet_rx):
 
         # Check for ARP reply that is response to our ARP probe, that indicates that IP address we trying to claim is in use
         if ether_packet_rx.ether_dst == self.stack_mac_address:
-            if arp_packet_rx.arp_spa in self.stack_ip_address_candidate and arp_packet_rx.arp_tha == self.stack_mac_address and arp_packet_rx.arp_tpa == "0.0.0.0":
+            if (
+                arp_packet_rx.arp_spa in self.stack_ip_address_candidate
+                and arp_packet_rx.arp_tha == self.stack_mac_address
+                and arp_packet_rx.arp_tpa == "0.0.0.0"
+            ):
                 self.logger.warning(f"ARP Probe detected conflict for IP {arp_packet_rx.arp_spa} with host at {arp_packet_rx.arp_sha}")
                 self.arp_probe_conflict_detected.add(arp_packet_rx.arp_spa)
                 return
@@ -63,11 +67,7 @@ def phrx_arp(self, ether_packet_rx, arp_packet_rx):
             return
 
         # Update ARP cache with maping received as gratuitous ARP reply
-        if (
-            ether_packet_rx.ether_dst == "ff:ff:ff:ff:ff:ff"
-            and arp_packet_rx.arp_spa == arp_packet_rx.arp_tpa
-            and ARP_CACHE_UPDATE_FROM_GRATUITOUS_REPLY
-        ):
+        if ether_packet_rx.ether_dst == "ff:ff:ff:ff:ff:ff" and arp_packet_rx.arp_spa == arp_packet_rx.arp_tpa and ARP_CACHE_UPDATE_FROM_GRATUITOUS_REPLY:
             self.logger.debug(f"Adding/refreshing ARP cache entry from gratuitous reply - {arp_packet_rx.arp_spa} -> {arp_packet_rx.arp_sha}")
             self.arp_cache.add_entry(arp_packet_rx.arp_spa, arp_packet_rx.arp_sha)
             return
