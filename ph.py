@@ -87,13 +87,12 @@ class PacketHandler:
         for ip_address_with_mask in self.stack_ip_address_with_mask:
             _1 = struct.unpack("!L", socket.inet_aton(ip_address_with_mask[0]))[0]
             _2 = struct.unpack("!L", socket.inet_aton(ip_address_with_mask[1]))[0]
-            self.stack_ip_broadcast.add(socket.inet_ntoa(struct.pack('!L', (_1 & _2) + (~_2 & 0xffffffff))))
+            self.stack_ip_broadcast.add(socket.inet_ntoa(struct.pack("!L", (_1 & _2) + (~_2 & 0xFFFFFFFF))))
 
         self.stack_ip_broadcast = list(self.stack_ip_broadcast)
 
         self.logger.info(f"Stack listenng on IP addresses: {self.stack_ip_address}")
         self.logger.info(f"Stack listenng on brodcast addresses: {self.stack_ip_broadcast}")
-
 
     def __send_arp_probe(self, ip_address):
         """ Send out ARP probe to detect possible IP conflict """

@@ -9,7 +9,6 @@ phtx_ip.py - packet handler for outbound IP packets
 
 import struct
 import socket
-import random
 
 import ps_ip
 import ps_ether
