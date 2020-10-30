@@ -36,15 +36,17 @@ class PacketHandler:
     def __init__(self, stack_mac_address, stack_ip_address, rx_ring, tx_ring, arp_cache):
         """ Class constructor """
 
-        self.arp_probe_conflict_detected = False
-        self.ip_address_claimed = False
-
         self.stack_mac_address = stack_mac_address
         self.stack_ip_address = stack_ip_address
         self.tx_ring = tx_ring
         self.rx_ring = rx_ring
         self.arp_cache = arp_cache
         self.logger = loguru.logger.bind(object_name="packet_handler.")
+
+        self.arp_probe_conflict_detected = False
+        self.ip_address_claimed = False
+
+        self.ip_id = 0
 
         self.tcp_sessions = {}
 
