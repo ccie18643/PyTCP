@@ -6,7 +6,7 @@ Python based attempt to create fully operational TCP/IP stack for educational pu
 
  - Ethernet protocol - only Ethernet II standard frames
  - ARP protocol - replies, queries, ARP cache, ARP Probe/Announcement IP conflict detection (ACD) mechanism
- - IP protocol - inbound and outbound IP fragmentation, IP options accepted but not supported
+ - IP protocol - inbound and outbound IP fragmentation, IP options accepted but not supported, multiple IP addresses supported
  - ICMP protocol - only ICMP messages that are needed for stack operations are implemented, eg. echo, echo reply, port unreachable
  - UDP protocol - full support
  - UDP socket mechanism - full support for single threaded services
