@@ -69,7 +69,7 @@ class ArpCache:
             ether_dst="ff:ff:ff:ff:ff:ff",
             arp_oper=ps_arp.ARP_OP_REQUEST,
             arp_sha=self.stack_mac_address,
-            arp_spa=self.stack_ip_address,
+            arp_spa=self.stack_ip_address[0] if self.stack_ip_address else "0.0.0.0",
             arp_tha="00:00:00:00:00:00",
             arp_tpa=arp_tpa,
         )

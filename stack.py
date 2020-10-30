@@ -33,7 +33,9 @@ IFF_TAP = 0x0002
 IFF_NO_PI = 0x1000
 
 STACK_INTERFACE = b"tap7"
-STACK_IP_ADDRESS = "192.168.9.7"
+STACK_IP_ADDRESS = ["192.168.9.7", "192.168.9.103", "192.168.9.9"]
+#STACK_IP_ADDRESS = ["192.168.9.7", "192.168.9.9"]
+#STACK_IP_ADDRESS = ["192.168.9.7"]
 STACK_MAC_ADDRESS = "02:00:00:77:77:77"
 
 
@@ -59,9 +61,9 @@ def main():
     # Ptask(packet_handler)
 
     UdpSocket.set_packet_handler(packet_handler)
-    TcpSocket.set_packet_handler(packet_handler)
+    #TcpSocket.set_packet_handler(packet_handler)
     ServiceUdpEcho(STACK_IP_ADDRESS)
-    ServiceTcpEcho(STACK_IP_ADDRESS)
+    #ServiceTcpEcho(STACK_IP_ADDRESS)
 
     while True:
         time.sleep(1)

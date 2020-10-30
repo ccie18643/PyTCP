@@ -20,9 +20,9 @@ MTU = 1500
 def phtx_ip(self, child_packet, ip_dst, ip_src):
     """ Handle outbound IP packets """
 
-    # Check if stack claimed IP address
-    if not self.ip_address_claimed:
-        self.logger.warning("Unable to sent out IP packet, stack doesn't have claimed IP address")
+    # Check if stack owns the IP address
+    if ip_src not in self.stack_ip_address:
+        self.logger.warning(f"Unable to sent out IP packet, stack doesn't own IP address {ip_src}")
         return
 
     # Generate new IP ID
@@ -50,7 +50,7 @@ def phtx_ip(self, child_packet, ip_dst, ip_src):
         raw_data = child_packet.get_raw_packet(
             struct.pack(
                 "! 4s 4s BBH",
-                socket.inet_aton(self.stack_ip_address),
+                socket.inet_aton(ip_src),
                 socket.inet_aton(ip_dst),
                 0,
                 ps_ip.IP_PROTO_UDP,
@@ -63,7 +63,7 @@ def phtx_ip(self, child_packet, ip_dst, ip_src):
         raw_data = child_packet.get_raw_packet(
             struct.pack(
                 "! 4s 4s BBH",
-                socket.inet_aton(self.stack_ip_address),
+                socket.inet_aton(ip_src),
                 socket.inet_aton(ip_dst),
                 0,
                 ps_ip.IP_PROTO_TCP,
@@ -79,7 +79,7 @@ def phtx_ip(self, child_packet, ip_dst, ip_src):
 
     for raw_data_fragment in raw_data_fragments:
         ip_packet_tx = ps_ip.IpPacket(
-            ip_src=self.stack_ip_address,
+            ip_src=ip_src,
             ip_dst=ip_dst,
             ip_proto=ip_proto,
             ip_id=self.ip_id,

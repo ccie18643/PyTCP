@@ -35,10 +35,10 @@ class RxRing:
 
         if ether_packet_rx.ether_type == ps_ether.ETHER_TYPE_ARP:
             self.rx_ring.insert(0, ether_packet_rx)
-            self.logger.opt(ansi=True).debug(f"<green>[RX] {ether_packet_rx.tracker}</green>, priority: Urgent, queue len: {len(self.rx_ring)}")
+            self.logger.opt(ansi=True).debug(f"{ether_packet_rx.tracker}, priority: Urgent, queue len: {len(self.rx_ring)}")
         else:
             self.rx_ring.append(ether_packet_rx)
-            self.logger.opt(ansi=True).debug(f"<green>[RX] {ether_packet_rx.tracker}</green>, priority: Normal, queue len: {len(self.rx_ring)}")
+            self.logger.opt(ansi=True).debug(f"{ether_packet_rx.tracker}, priority: Normal, queue len: {len(self.rx_ring)}")
 
         self.packet_enqueued.release()
 

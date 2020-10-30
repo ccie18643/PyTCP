@@ -25,14 +25,14 @@ def phrx_arp(self, ether_packet_rx, arp_packet_rx):
             self.logger.warning(f"IP ({arp_packet_rx.arp_spa}) conflict detected with host at {arp_packet_rx.arp_sha}")
             return
 
-        # Check if the request is for our IP address, if so the craft ARP reply packet and send it out
-        if arp_packet_rx.arp_tpa == self.stack_ip_address:
+        # Check if the request is for one of our IP addresses, if so the craft ARP reply packet and send it out
+        if arp_packet_rx.arp_tpa in self.stack_ip_address:
             self.phtx_arp(
                 ether_src=self.stack_mac_address,
                 ether_dst=arp_packet_rx.arp_sha,
                 arp_oper=ps_arp.ARP_OP_REPLY,
                 arp_sha=self.stack_mac_address,
-                arp_spa=self.stack_ip_address,
+                arp_spa=arp_packet_rx.arp_tpa,
                 arp_tha=arp_packet_rx.arp_sha,
                 arp_tpa=arp_packet_rx.arp_spa,
                 echo_tracker=arp_packet_rx.tracker,
@@ -51,9 +51,9 @@ def phrx_arp(self, ether_packet_rx, arp_packet_rx):
 
         # Check for ARP reply that is response to our ARP probe, that indicates that IP address we trying to claim is in use
         if ether_packet_rx.ether_dst == self.stack_mac_address:
-            if arp_packet_rx.arp_spa == self.stack_ip_address and arp_packet_rx.arp_tha == self.stack_mac_address and arp_packet_rx.arp_tpa == "0.0.0.0":
-                self.logger.warning(f"IP ({arp_packet_rx.arp_spa}) conflict detected with host at {arp_packet_rx.arp_sha}")
-                self.arp_probe_conflict_detected = True
+            if arp_packet_rx.arp_spa in self.stack_ip_address_candidate and arp_packet_rx.arp_tha == self.stack_mac_address and arp_packet_rx.arp_tpa == "0.0.0.0":
+                self.logger.warning(f"ARP Probe detected conflict for IP {arp_packet_rx.arp_spa} with host at {arp_packet_rx.arp_sha}")
+                self.arp_probe_conflict_detected.add(arp_packet_rx.arp_spa)
                 return
 
         # Update ARP cache with maping received as direct ARP reply
