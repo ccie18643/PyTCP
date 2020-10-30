@@ -31,10 +31,13 @@ IFF_TAP = 0x0002
 IFF_NO_PI = 0x1000
 
 STACK_INTERFACE = b"tap7"
-STACK_IP_ADDRESS = ["192.168.9.7", "192.168.9.103", "192.168.9.9"]
-# STACK_IP_ADDRESS = ["192.168.9.7", "192.168.9.9"]
-# STACK_IP_ADDRESS = ["192.168.9.7"]
 STACK_MAC_ADDRESS = "02:00:00:77:77:77"
+STACK_IP_ADDRESS = [
+    ("192.168.9.7", "255.255.255.0"),
+    ("192.168.9.102", "255.255.255.0"),
+    ("192.168.9.9", "255.255.255.0"),
+    ("172.16.128.65", "255.255.255.240"),
+]
 
 
 def main():
@@ -56,11 +59,9 @@ def main():
     rx_ring = RxRing(tap, STACK_MAC_ADDRESS)
     tx_ring = TxRing(tap, STACK_MAC_ADDRESS, arp_cache)
     packet_handler = PacketHandler(STACK_MAC_ADDRESS, STACK_IP_ADDRESS, rx_ring, tx_ring, arp_cache)
-    # Ptask(packet_handler)
-
     UdpSocket.set_packet_handler(packet_handler)
     # TcpSocket.set_packet_handler(packet_handler)
-    ServiceUdpEcho(STACK_IP_ADDRESS)
+    ServiceUdpEcho()
     # ServiceTcpEcho(STACK_IP_ADDRESS)
 
     while True:

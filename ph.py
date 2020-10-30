@@ -10,6 +10,8 @@ ph.py - protocol support for incoming and outgoing packets
 import time
 import loguru
 import random
+import socket
+import struct
 import threading
 
 import ps_arp
@@ -33,12 +35,14 @@ class PacketHandler:
     from phtx_udp import phtx_udp
     from phtx_tcp import phtx_tcp
 
-    def __init__(self, stack_mac_address, stack_ip_address, rx_ring, tx_ring, arp_cache):
+    def __init__(self, stack_mac_address, stack_ip_address_with_mask, rx_ring, tx_ring, arp_cache):
         """ Class constructor """
 
-        self.stack_ip_address_candidate = stack_ip_address
-        self.stack_ip_address = []
         self.stack_mac_address = stack_mac_address
+        self.stack_ip_address_candidate = {_[0] for _ in stack_ip_address_with_mask}
+        self.stack_ip_address = []
+        self.stack_ip_address_with_mask = []
+        self.stack_ip_broadcast = {"255.255.255.255"}
         self.tx_ring = tx_ring
         self.rx_ring = rx_ring
         self.arp_cache = arp_cache
@@ -53,9 +57,11 @@ class PacketHandler:
         # Update ARP cache object with reference to this packet handler so ARP cache can send out ARP requests
         self.arp_cache.packet_handler = self
 
+        # Start packed handler so we can receive packets from network
         threading.Thread(target=self.__packet_handler).start()
         self.logger.debug("Started packet handler")
 
+        # Create list of all IP addresses stack should listen on
         for i in range(3):
             for ip_address in self.stack_ip_address_candidate:
                 if ip_address not in self.arp_probe_conflict_detected:
@@ -66,11 +72,28 @@ class PacketHandler:
         for ip_address in self.arp_probe_conflict_detected:
             self.logger.warning(f"Unable to claim IP address {ip_address}")
 
-        self.stack_ip_address = [_ for _ in stack_ip_address if _ not in self.arp_probe_conflict_detected]
+        for ip_address_with_mask in stack_ip_address_with_mask:
+            if ip_address_with_mask[0] not in self.arp_probe_conflict_detected and ip_address_with_mask not in self.stack_ip_address_with_mask:
+                self.stack_ip_address_with_mask.append(ip_address_with_mask)
+
         self.stack_ip_address_candidate = []
+        self.stack_ip_address = [_[0] for _ in self.stack_ip_address_with_mask]
 
         for ip_address in self.stack_ip_address:
-            self.logger.info(f"Succesfully claimed IP address {ip_address}")
+            self.logger.debug(f"Succesfully claimed IP address {ip_address}")
+
+        # Create list of all broadcast addresses stack should listen on
+
+        for ip_address_with_mask in self.stack_ip_address_with_mask:
+            _1 = struct.unpack("!L", socket.inet_aton(ip_address_with_mask[0]))[0]
+            _2 = struct.unpack("!L", socket.inet_aton(ip_address_with_mask[1]))[0]
+            self.stack_ip_broadcast.add(socket.inet_ntoa(struct.pack('!L', (_1 & _2) + (~_2 & 0xffffffff))))
+
+        self.stack_ip_broadcast = list(self.stack_ip_broadcast)
+
+        self.logger.info(f"Stack listenng on IP addresses: {self.stack_ip_address}")
+        self.logger.info(f"Stack listenng on brodcast addresses: {self.stack_ip_broadcast}")
+
 
     def __send_arp_probe(self, ip_address):
         """ Send out ARP probe to detect possible IP conflict """

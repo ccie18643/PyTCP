@@ -32,7 +32,7 @@ class UdpSocket:
 
         self.messages = []
         self.messages_ready = threading.Semaphore(0)
-        self.logger = loguru.logger.bind(object_name="socket.")
+        self.logger = loguru.logger.bind(object_name="udp_socket.")
 
         self.local_ip_address = local_ip_address
         self.local_port = local_port

@@ -7,6 +7,9 @@ phrx_ip.py - packet handler for inbound IP packets
 
 """
 
+import socket
+import struct
+
 import ps_ip
 import ps_icmp
 import ps_udp
@@ -21,7 +24,7 @@ def phrx_ip(self, ip_packet_rx):
     self.logger.debug(f"{ip_packet_rx.tracker} - {ip_packet_rx}")
 
     # Check if received packet has been sent to us directly or by broadcast
-    if ip_packet_rx.ip_dst not in self.stack_ip_address + ["192.168.9.255", "255.255.255.255"]:
+    if ip_packet_rx.ip_dst not in self.stack_ip_address + list(self.stack_ip_broadcast):
         self.logger.opt(ansi=True).debug(f"{ip_packet_rx.tracker} - IP packet not destined for this stack, droping")
         return
 
