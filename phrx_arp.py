@@ -20,6 +20,11 @@ def phrx_arp(self, ether_packet_rx, arp_packet_rx):
     if arp_packet_rx.arp_oper == ps_arp.ARP_OP_REQUEST:
         self.logger.opt(ansi=True).info(f"<green>{arp_packet_rx.tracker}</green> - {arp_packet_rx}")
 
+        # Check if request contains our IP address in SPA field, this indicates IP address conflict
+        if arp_packet_rx.arp_spa == self.stack_ip_address:
+            self.logger.warning(f"IP ({arp_packet_rx.arp_spa}) conflict detected with host at {arp_packet_rx.arp_sha}")
+            return
+
         # Check if the request is for our IP address, if so the craft ARP reply packet and send it out
         if arp_packet_rx.arp_tpa == self.stack_ip_address:
             self.phtx_arp(
