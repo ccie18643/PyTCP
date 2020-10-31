@@ -93,3 +93,12 @@ class UdpPacket:
         self.udp_cksum = inet_cksum.compute_cksum(ip_pseudo_header + self.raw_packet)
 
         return self.raw_packet
+
+    def validate_cksum(self, ip_pseudo_header):
+        """ Validate packet checksum """
+
+        # Return valid checksum if checksum is not used
+        if not self.udp_cksum:
+            return True
+
+        return not bool(inet_cksum.compute_cksum(ip_pseudo_header + self.raw_packet))

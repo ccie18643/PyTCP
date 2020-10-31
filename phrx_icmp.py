@@ -15,6 +15,11 @@ def phrx_icmp(self, ip_packet_rx, icmp_packet_rx):
 
     self.logger.opt(ansi=True).info(f"<green>{icmp_packet_rx.tracker}</green> - {icmp_packet_rx}")
 
+    # Validate ICMP packet checksum
+    if not icmp_packet_rx.validate_cksum():
+        self.logger.debug(f"{icmp_packet_rx.tracker} - ICMP packet has invalid checksum, droping")
+        return
+
     # Respond to ICMP Echo Request packet
     if icmp_packet_rx.icmp_type == ps_icmp.ICMP_ECHOREQUEST and icmp_packet_rx.icmp_code == 0:
         self.logger.debug(f"Received ICMP echo packet from {ip_packet_rx.ip_src}, sending reply")

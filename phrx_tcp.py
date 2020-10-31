@@ -37,6 +37,11 @@ def phrx_tcp(self, ip_packet_rx, tcp_packet_rx):
 
     self.logger.opt(ansi=True).info(f"<green>{tcp_packet_rx.tracker}</green> - {tcp_packet_rx}")
 
+    # Validate TCP packet checksum
+    if not tcp_packet_rx.validate_cksum(ip_packet_rx.ip_pseudo_header):
+        self.logger.debug(f"{tcp_packet_rx.tracker} - TCP packet has invalid checksum, droping")
+        return
+
     # Silently drop packet if it doesn't seem to be valid
     if ip_packet_rx.ip_src == "0.0.0.0":
         self.logger.debug(

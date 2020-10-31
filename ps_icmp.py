@@ -163,3 +163,8 @@ class IcmpPacket:
         self.icmp_cksum = inet_cksum.compute_cksum(self.raw_packet)
 
         return self.raw_packet
+
+    def validate_cksum(self):
+        """ Validate packet checksum """
+
+        return not bool(inet_cksum.compute_cksum(self.raw_packet))

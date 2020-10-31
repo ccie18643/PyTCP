@@ -275,6 +275,10 @@ class IpPacket:
             if option.name == name:
                 return option
 
+    def validate_cksum(self):
+        """ Validate packet checksum """
+
+        return not bool(inet_cksum.compute_cksum(self.raw_header + self.raw_options))
 
 """
 

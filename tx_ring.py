@@ -36,7 +36,7 @@ class TxRing:
             # Wait till packets is avaiable int he queue the pick it up
             self.packet_enqueued.acquire()
             ether_packet_tx = self.tx_ring.pop(0)
-            self.logger.opt(ansi=True).debug(f"<magenta>[TX] {ether_packet_tx.tracker}</magenta>")
+            self.logger.opt(ansi=True).debug(f"{ether_packet_tx.tracker}")
             self.__transmit(ether_packet_tx)
 
     def __transmit(self, ether_packet_tx):
@@ -52,10 +52,10 @@ class TxRing:
 
         if urgent:
             self.tx_ring.insert(0, ether_packet_tx)
-            self.logger.opt(ansi=True).debug(f"<magenta>[TX] {ether_packet_tx.tracker}</magenta>, priority: Urgent, queue len: {len(self.tx_ring)}")
+            self.logger.opt(ansi=True).debug(f"{ether_packet_tx.tracker}, priority: Urgent, queue len: {len(self.tx_ring)}")
 
         else:
             self.tx_ring.append(ether_packet_tx)
-            self.logger.opt(ansi=True).debug(f"<magenta>[TX] {ether_packet_tx.tracker}</magenta>, priorty: Normal, queue len: {len(self.tx_ring)}")
+            self.logger.opt(ansi=True).debug(f"{ether_packet_tx.tracker}, priorty: Normal, queue len: {len(self.tx_ring)}")
 
         self.packet_enqueued.release()

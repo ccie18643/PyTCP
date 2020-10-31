@@ -17,6 +17,11 @@ def phrx_udp(self, ip_packet_rx, udp_packet_rx):
 
     self.logger.opt(ansi=True).info(f"<green>{udp_packet_rx.tracker}</green> - {udp_packet_rx}")
 
+    # Validate UDP packet checksum
+    if not udp_packet_rx.validate_cksum(ip_packet_rx.ip_pseudo_header):
+        self.logger.debug(f"{udp_packet_rx.tracker} - UDP packet has invalid checksum, droping")
+        return
+
     # Send packet info and data to socket mechanism for further processing
     if UdpSocket.match_socket(
         local_ip_address=ip_packet_rx.ip_dst,

@@ -26,7 +26,12 @@ def phrx_ip(self, ip_packet_rx):
         and ip_packet_rx.ip_dst not in self.stack_ip_multicast
         and ip_packet_rx.ip_dst not in self.stack_ip_broadcast
     ):
-        self.logger.opt(ansi=True).debug(f"{ip_packet_rx.tracker} - IP packet not destined for this stack, droping")
+        self.logger.debug(f"{ip_packet_rx.tracker} - IP packet not destined for this stack, droping")
+        return
+
+    # Validate IP header checksum
+    if not ip_packet_rx.validate_cksum():
+        self.logger.debug(f"{ip_packet_rx.tracker} - IP packet has invalid checksum, droping")
         return
 
     # Check if IP packet is a first fragment
