@@ -20,7 +20,7 @@ def phtx_ip(self, child_packet, ip_dst, ip_src):
     """ Handle outbound IP packets """
 
     # Check if stack owns the IP address
-    if ip_src not in self.stack_ip_address:
+    if ip_src not in self.stack_ip_unicast:
         self.logger.warning(f"Unable to sent out IP packet, stack doesn't own IP address {ip_src}")
         return
 

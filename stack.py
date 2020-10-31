@@ -55,9 +55,9 @@ def main():
     tap = os.open("/dev/net/tun", os.O_RDWR)
     fcntl.ioctl(tap, TUNSETIFF, struct.pack("16sH", STACK_INTERFACE, IFF_TAP | IFF_NO_PI))
 
-    arp_cache = ArpCache(STACK_MAC_ADDRESS, STACK_IP_ADDRESS)
     rx_ring = RxRing(tap, STACK_MAC_ADDRESS)
-    tx_ring = TxRing(tap, STACK_MAC_ADDRESS, arp_cache)
+    tx_ring = TxRing(tap, STACK_MAC_ADDRESS)
+    arp_cache = ArpCache()
     packet_handler = PacketHandler(STACK_MAC_ADDRESS, STACK_IP_ADDRESS, rx_ring, tx_ring, arp_cache)
     UdpSocket.set_packet_handler(packet_handler)
     # TcpSocket.set_packet_handler(packet_handler)

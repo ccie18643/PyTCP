@@ -27,14 +27,14 @@ class ArpCache:
             self.creation_time = time.time()
             self.hit_count = 0
 
-    def __init__(self, stack_mac_address, stack_ip_address):
+    def __init__(self):
         """ Class constructor """
 
-        self.stack_mac_address = stack_mac_address
-        self.stack_ip_address = stack_ip_address
-
         self.arp_cache = {}
+
+        # Packet handler needs to be updated by packet handler object
         self.packet_handler = None
+
         self.logger = loguru.logger.bind(object_name="arp_cache.")
 
         threading.Thread(target=self.__maintain).start()
@@ -65,11 +65,11 @@ class ArpCache:
         """ Enqueue ARP request with TX ring """
 
         self.packet_handler.phtx_arp(
-            ether_src=self.stack_mac_address,
+            ether_src=self.packet_handler.stack_mac_address,
             ether_dst="ff:ff:ff:ff:ff:ff",
             arp_oper=ps_arp.ARP_OP_REQUEST,
-            arp_sha=self.stack_mac_address,
-            arp_spa=self.stack_ip_address[0][0] if self.stack_ip_address else "0.0.0.0",
+            arp_sha=self.packet_handler.stack_mac_address,
+            arp_spa=self.packet_handler.stack_ip_address[0] if self.stack_ip_address else "0.0.0.0",
             arp_tha="00:00:00:00:00:00",
             arp_tpa=arp_tpa,
         )

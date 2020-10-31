@@ -26,7 +26,7 @@ def phrx_arp(self, ether_packet_rx, arp_packet_rx):
             return
 
         # Check if the request is for one of our IP addresses, if so the craft ARP reply packet and send it out
-        if arp_packet_rx.arp_tpa in self.stack_ip_address:
+        if arp_packet_rx.arp_tpa in self.stack_ip_unicast:
             self.phtx_arp(
                 ether_src=self.stack_mac_address,
                 ether_dst=arp_packet_rx.arp_sha,
@@ -52,12 +52,12 @@ def phrx_arp(self, ether_packet_rx, arp_packet_rx):
         # Check for ARP reply that is response to our ARP probe, that indicates that IP address we trying to claim is in use
         if ether_packet_rx.ether_dst == self.stack_mac_address:
             if (
-                arp_packet_rx.arp_spa in self.stack_ip_address_candidate
+                arp_packet_rx.arp_spa in self.stack_ip_unicast_candidate
                 and arp_packet_rx.arp_tha == self.stack_mac_address
                 and arp_packet_rx.arp_tpa == "0.0.0.0"
             ):
                 self.logger.warning(f"ARP Probe detected conflict for IP {arp_packet_rx.arp_spa} with host at {arp_packet_rx.arp_sha}")
-                self.arp_probe_conflict_detected.add(arp_packet_rx.arp_spa)
+                self.arp_probe_unicast_conflict.add(arp_packet_rx.arp_spa)
                 return
 
         # Update ARP cache with maping received as direct ARP reply

@@ -15,12 +15,11 @@ import threading
 class TxRing:
     """ Support for sending packets to the network """
 
-    def __init__(self, tap, stack_mac_address, arp_cache):
+    def __init__(self, tap, stack_mac_address):
         """ Initialize access to tap interface and the outbound queue """
 
         self.tap = tap
         self.stack_mac_address = stack_mac_address
-        self.arp_cache = arp_cache
 
         self.tx_ring = []
         self.logger = loguru.logger.bind(object_name="tx_ring.")
