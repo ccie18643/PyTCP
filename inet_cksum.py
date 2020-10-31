@@ -16,5 +16,4 @@ def compute_cksum(data):
 
     data = data + (b"\0" if len(data) & 1 else b"")
     cksum = sum(struct.unpack(f"! {len(data) >> 1}H", data))
-    return ~((cksum & 0xffff) + (cksum >> 16)) & 0xffff
-
+    return ~((cksum & 0xFFFF) + (cksum >> 16)) & 0xFFFF

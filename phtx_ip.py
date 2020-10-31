@@ -16,12 +16,50 @@ import ps_ether
 MTU = 1500
 
 
+def validate_source_ip_address(self, ip_src):
+    """ Make sure source ip address is valid, supplemt with valid one as appropriate """
+
+    # Check if the the source IP address belongs to this stack
+    if ip_src not in self.stack_ip_unicast and ip_src not in self.stack_ip_multicast and ip_src not in self.stack_ip_broadcast:
+        self.logger.warning(f"Unable to sent out IP packet, stack doesn't own IP address {ip_src}")
+        return
+
+    # If packet is a response to multicast then replace source IP address with primary IP address of the stack
+    if ip_src in self.stack_ip_multicast or ip_src == "255.255.255.255":
+        if self.stack_ip_unicast:
+            ip_src = self.stack_ip_unicast[0]
+            self.logger.debug(f"Packet is response to multicast, replaced source with stack primary IP address {ip_src}")
+        else:
+            self.logger.warning("Unable to sent out IP packet, no stack primary unicast IP address available")
+            return
+
+    # If packet is a response to limite broadcast then replace source IP address with primary IP address of the stack
+    if ip_src == "255.255.255.255":
+        if self.stack_ip_unicast:
+            ip_src = self.stack_ip_unicast[0]
+            self.logger.debug(f"Packet is response to limited broadcast, replaced source with stack primary IP address {ip_src}")
+        else:
+            self.logger.warning("Unable to sent out IP packet, no stack primary unicast IP address available")
+            return
+
+    # If packet is a response to directed braodcast then replace source IP address with first IP address that belongs to appropriate subnet
+    if ip_src in self.stack_ip_broadcast:
+        ip_src = [_[0] for _ in self.stack_ip_address if _[3] == ip_src]
+        if ip_src:
+            ip_src = ip_src[0]
+            self.logger.debug(f"Packet is response to directed broadcast, replaced source with apropriate IP address {ip_src}")
+        else:
+            self.logger.warning(f"Unable to sent out IP packet, no appropriate stack unicast IP address available")
+            return
+
+    return ip_src
+
+
 def phtx_ip(self, child_packet, ip_dst, ip_src):
     """ Handle outbound IP packets """
 
-    # Check if stack owns the IP address
-    if ip_src not in self.stack_ip_unicast:
-        self.logger.warning(f"Unable to sent out IP packet, stack doesn't own IP address {ip_src}")
+    ip_src = validate_source_ip_address(self, ip_src)
+    if not ip_src:
         return
 
     # Generate new IP ID

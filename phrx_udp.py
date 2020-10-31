@@ -22,6 +22,9 @@ def phrx_udp(self, ip_packet_rx, udp_packet_rx):
         self.logger.debug(f"{udp_packet_rx.tracker} - UDP packet has invalid checksum, droping")
         return
 
+    # Check if packet is part of stack DHCP client message exchange
+    pass
+
     # Send packet info and data to socket mechanism for further processing
     if UdpSocket.match_socket(
         local_ip_address=ip_packet_rx.ip_dst,

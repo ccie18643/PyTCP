@@ -239,6 +239,7 @@ class TcpPacket:
 
         return not bool(inet_cksum.compute_cksum(ip_pseudo_header + self.raw_packet))
 
+
 """
 
    TCP options

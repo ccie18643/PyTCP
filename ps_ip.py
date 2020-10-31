@@ -280,6 +280,7 @@ class IpPacket:
 
         return not bool(inet_cksum.compute_cksum(self.raw_header + self.raw_options))
 
+
 """
 
    IP options

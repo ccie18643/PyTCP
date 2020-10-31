@@ -40,8 +40,8 @@ class PacketHandler:
 
         self.stack_mac_address = stack_mac_address
         self.stack_ip_unicast_candidate = {_[0] for _ in stack_ip_address}
-        self.stack_ip_unicast = []
         self.stack_ip_address = []
+        self.stack_ip_unicast = []
         self.stack_ip_multicast = []
         self.stack_ip_broadcast = ["255.255.255.255"]
         self.tx_ring = tx_ring
@@ -73,23 +73,36 @@ class PacketHandler:
         for ip_unicast in self.arp_probe_unicast_conflict:
             self.logger.warning(f"Unable to claim IP address {ip_unicast}")
 
+        # Compute network and broadcast address for every ip address / mask tuple provided in configuration
+        for i, ip_address in enumerate(stack_ip_address):
+            _1 = struct.unpack("!L", socket.inet_aton(ip_address[0]))[0]
+            _2 = struct.unpack("!L", socket.inet_aton(ip_address[1]))[0]
+            stack_ip_address[i] = (
+                *ip_address,
+                socket.inet_ntoa(struct.pack("!L", _1 & _2)),
+                socket.inet_ntoa(struct.pack("!L", (_1 & _2) + (~_2 & 0xFFFFFFFF))),
+            )
+
+        # Create list containing only ip addresses that were confiremed free to claim
         for ip_address in stack_ip_address:
             if ip_address[0] not in self.arp_probe_unicast_conflict and ip_address not in self.stack_ip_address:
                 self.stack_ip_address.append(ip_address)
 
+        # Clear ip unicast candidate list so the ARP Probe/Annoucement check is disabled
         self.stack_ip_unicast_candidate = []
-        self.stack_ip_unicast = [_[0] for _ in self.stack_ip_address]
+
+        # Create list containing IP unicast adresses stack shuld listen to
+        for ip_address in self.stack_ip_address:
+            if ip_address[0] not in self.stack_ip_unicast:
+                self.stack_ip_unicast.append(ip_address[0])
 
         for ip_unicast in self.stack_ip_unicast:
             self.logger.debug(f"Succesfully claimed IP address {ip_unicast}")
 
         # Create list of all broadcast addresses stack should listen on
         for ip_address in self.stack_ip_address:
-            _1 = struct.unpack("!L", socket.inet_aton(ip_address[0]))[0]
-            _2 = struct.unpack("!L", socket.inet_aton(ip_address[1]))[0]
-            ip_broadcast = socket.inet_ntoa(struct.pack("!L", (_1 & _2) + (~_2 & 0xFFFFFFFF)))
-            if ip_broadcast not in self.stack_ip_broadcast:
-                self.stack_ip_broadcast.append(ip_broadcast)
+            if ip_address[3] not in self.stack_ip_broadcast:
+                self.stack_ip_broadcast.append(ip_address[3])
 
         self.logger.info(f"Stack listenng on unicast IP addresses: {self.stack_ip_unicast}")
         self.logger.info(f"Stack listenng on multicast IP addresses: {self.stack_ip_multicast}")
