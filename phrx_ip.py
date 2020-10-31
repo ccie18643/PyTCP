@@ -12,6 +12,9 @@ import ps_icmp
 import ps_udp
 import ps_tcp
 
+import inet_cksum
+
+
 ip_fragments = {}
 
 
@@ -45,7 +48,9 @@ def handle_ip_fragmentation(self, ip_packet_rx):
             # Craft complete IP packet based on last fragment for further processing
             ip_packet_rx.ip_frag_mf = False
             ip_packet_rx.ip_frag_offset = 0
-            ip_packet_rx.ip_cksum = ip_packet_rx.compute_cksum()
+            ip_packet_rx.ip_plen = ip_packet_rx.ip_hlen + len(raw_data)
+            ip_packet_rx.ip_cksum = 0
+            ip_packet_rx.ip_cksum = inet_cksum.compute_cksum(ip_packet_rx.raw_header)
             ip_packet_rx.raw_data = raw_data
 
     return ip_packet_rx
@@ -65,6 +70,12 @@ def phrx_ip(self, ip_packet_rx):
         self.logger.debug(f"{ip_packet_rx.tracker} - IP packet not destined for this stack, droping")
         return
 
+    # Validate IP header checksum
+    if not ip_packet_rx.validate_cksum():
+        self.logger.debug(f"{ip_packet_rx.tracker} - IP packet has invalid checksum, droping")
+        return
+
+    # Check if packet is a fragment, and if so process it accrdingly
     ip_packet_rx = handle_ip_fragmentation(self, ip_packet_rx)
     if not ip_packet_rx:
         return
