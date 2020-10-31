@@ -21,7 +21,7 @@ def phrx_arp(self, ether_packet_rx, arp_packet_rx):
         self.logger.opt(ansi=True).info(f"<green>{arp_packet_rx.tracker}</green> - {arp_packet_rx}")
 
         # Check if request contains our IP address in SPA field, this indicates IP address conflict
-        if arp_packet_rx.arp_spa == self.stack_ip_address:
+        if arp_packet_rx.arp_spa in self.stack_ip_unicast:
             self.logger.warning(f"IP ({arp_packet_rx.arp_spa}) conflict detected with host at {arp_packet_rx.arp_sha}")
             return
 

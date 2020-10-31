@@ -121,7 +121,7 @@ class PacketHandler:
             arp_tpa=ip_address,
         )
 
-    def __send_gratitous_arp(self):
+    def __send_gratitous_arp(self, ip_address):
         """ Send out gratitous arp """
 
         self.phtx_arp(
@@ -129,9 +129,9 @@ class PacketHandler:
             ether_dst="ff:ff:ff:ff:ff:ff",
             arp_oper=ps_arp.ARP_OP_REPLY,
             arp_sha=self.stack_mac_address,
-            arp_spa=self.stack_ip_address,
+            arp_spa=ip_address,
             arp_tha="00:00:00:00:00:00",
-            arp_tpa=self.stack_ip_address,
+            arp_tpa=ip_address,
         )
 
     def __packet_handler(self):

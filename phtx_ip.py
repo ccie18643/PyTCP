@@ -44,28 +44,15 @@ def phtx_ip(self, child_packet, ip_dst, ip_src):
         ip_proto = ps_ip.IP_PROTO_ICMP
         raw_data = child_packet.get_raw_packet()
 
-    if child_packet.protocol == "UDP":
-        ip_proto = ps_ip.IP_PROTO_UDP
+    if child_packet.protocol in {"UDP", "TCP"}:
+        ip_proto = ps_ip.IP_PROTO_UDP if child_packet.protocol == "UDP" else ps_ip.IP_PROTO_TCP
         raw_data = child_packet.get_raw_packet(
             struct.pack(
                 "! 4s 4s BBH",
                 socket.inet_aton(ip_src),
                 socket.inet_aton(ip_dst),
                 0,
-                ps_ip.IP_PROTO_UDP,
-                len(child_packet.raw_packet),
-            )
-        )
-
-    if child_packet.protocol == "TCP":
-        ip_proto = ps_ip.IP_PROTO_TCP
-        raw_data = child_packet.get_raw_packet(
-            struct.pack(
-                "! 4s 4s BBH",
-                socket.inet_aton(ip_src),
-                socket.inet_aton(ip_dst),
-                0,
-                ps_ip.IP_PROTO_TCP,
+                ip_proto,
                 len(child_packet.raw_packet),
             )
         )

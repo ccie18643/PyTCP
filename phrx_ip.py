@@ -44,6 +44,7 @@ def phrx_ip(self, ip_packet_rx):
 
     # Check if IP packet is last fragment
     if ip_packet_rx.ip_frag_offset != 0 and not ip_packet_rx.ip_frag_mf:
+
         # Check if packet is part of existing fagment flow
         if ip_fragments.get(ip_packet_rx.ip_id, None):
             ip_fragments[ip_packet_rx.ip_id][ip_packet_rx.ip_frag_offset] = ip_packet_rx.raw_data
@@ -58,6 +59,7 @@ def phrx_ip(self, ip_packet_rx):
             ip_packet_rx.ip_cksum = ip_packet_rx.compute_cksum()
             ip_packet_rx.raw_data = raw_data
 
+    # Non fragmented IP packet processing
     if ip_packet_rx.ip_proto == ps_ip.IP_PROTO_ICMP:
         self.phrx_icmp(ip_packet_rx, ps_icmp.IcmpPacket(ip_packet_rx))
         return

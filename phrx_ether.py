@@ -30,6 +30,8 @@ def phrx_ether(self, ether_packet_rx):
 
     if ether_packet_rx.ether_type == ps_ether.ETHER_TYPE_ARP:
         self.phrx_arp(ether_packet_rx, ps_arp.ArpPacket(ether_packet_rx))
+        return
 
     if ether_packet_rx.ether_type == ps_ether.ETHER_TYPE_IP:
         self.phrx_ip(ps_ip.IpPacket(ether_packet_rx))
+        return

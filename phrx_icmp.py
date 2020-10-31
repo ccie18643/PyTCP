@@ -28,3 +28,4 @@ def phrx_icmp(self, ip_packet_rx, icmp_packet_rx):
             icmp_raw_data=icmp_packet_rx.icmp_raw_data,
             echo_tracker=icmp_packet_rx.tracker,
         )
+        return
