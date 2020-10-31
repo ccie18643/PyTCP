@@ -2,7 +2,7 @@
 
 """
 
-PyTCP, Python TCP/IP stack simulation version 0.1 - 2020, Sebastian Majewski
+PyTCP, Python TCP/IP stack, version 0.1 - 2020, Sebastian Majewski
 arp_cache.py - module contains class supporting ARP cache
 
 """

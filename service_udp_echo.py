@@ -2,7 +2,7 @@
 
 """
 
-PyTCP, Python TCP/IP stack simulation version 0.1 - 2020, Sebastian Majewski
+PyTCP, Python TCP/IP stack, version 0.1 - 2020, Sebastian Majewski
 service_udp_echo.py - 'user space' service UDP echo, single threaded version
 
 """
