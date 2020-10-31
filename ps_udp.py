@@ -10,6 +10,8 @@ ps_udp.py - protocol support libary for UDP
 
 import struct
 
+import inet_cksum
+
 from tracker import Tracker
 
 
@@ -73,14 +75,6 @@ class UdpPacket:
 
         return len(self.raw_packet)
 
-    def compute_cksum(self, ip_pseudo_header):
-        """ Compute checksum of IP pseudo header + UDP packet """
-
-        cksum_data = ip_pseudo_header + self.raw_packet + (b"\0" if len(self.raw_packet) & 1 else b"")
-        cksum_data = list(struct.unpack(f"! {len(cksum_data) >> 1}H", cksum_data))
-        cksum = sum(cksum_data)
-        return ~((cksum & 0xFFFF) + (cksum >> 16)) & 0xFFFF
-
     @property
     def raw_header(self):
         """ Packet header in raw format """
@@ -96,6 +90,6 @@ class UdpPacket:
     def get_raw_packet(self, ip_pseudo_header):
         """ Get packet in raw format ready to be processed by lower level protocol """
 
-        self.udp_cksum = self.compute_cksum(ip_pseudo_header)
+        self.udp_cksum = inet_cksum.compute_cksum(ip_pseudo_header + self.raw_packet)
 
         return self.raw_packet

@@ -9,6 +9,8 @@ ps_icmp.py - protocol support libary for ICMP
 
 import struct
 
+import inet_cksum
+
 from tracker import Tracker
 
 
@@ -128,14 +130,6 @@ class IcmpPacket:
 
         return len(self.raw_packet)
 
-    def compute_cksum(self):
-        """ Compute checksum of the ICMP packet """
-
-        cksum_data = self.raw_packet + (b"\0" if len(self.raw_packet) & 1 else b"")
-        cksum_data = list(struct.unpack(f"! {len(cksum_data) >> 1}H", cksum_data))
-        cksum = sum(cksum_data)
-        return ~((cksum & 0xFFFF) + (cksum >> 16)) & 0xFFFF
-
     @property
     def raw_header(self):
         """ Get packet header in raw format """
@@ -166,6 +160,6 @@ class IcmpPacket:
     def get_raw_packet(self):
         """ Get packet in raw format ready to be processed by lower level protocol """
 
-        self.icmp_cksum = self.compute_cksum()
+        self.icmp_cksum = inet_cksum.compute_cksum(self.raw_packet)
 
         return self.raw_packet

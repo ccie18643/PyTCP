@@ -10,6 +10,7 @@ ps_ip.py - protocol support libary for IP
 import socket
 import struct
 
+import inet_cksum
 
 """
 
@@ -219,14 +220,6 @@ class IpPacket:
 
         return len(self.raw_packet)
 
-    def compute_cksum(self):
-        """ Compute checksum of IP header """
-
-        cksum_data = self.raw_header + self.raw_options
-        cksum_data = list(struct.unpack(f"! {len(cksum_data) >> 1}H", cksum_data))
-        cksum = sum(cksum_data)
-        return ~((cksum & 0xFFFF) + (cksum >> 16)) & 0xFFFF
-
     @property
     def raw_header(self):
         """ Packet header in raw form """
@@ -271,7 +264,7 @@ class IpPacket:
     def get_raw_packet(self):
         """ Get packet in raw format ready to be processed by lower level protocol """
 
-        self.ip_cksum = self.compute_cksum()
+        self.ip_cksum = inet_cksum.compute_cksum(self.raw_header + self.raw_options)
 
         return self.raw_packet
 
