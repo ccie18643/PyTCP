@@ -9,7 +9,9 @@ ps_dhcp.py - protocol support libary for DHCP
 
 
 import struct
-from binascii import hexlify
+
+import socket
+import binascii
 
 from tracker import Tracker
 
@@ -101,7 +103,7 @@ class DhcpPacket:
 
     protocol = "DHCP"
 
-    def __init__(self, parent_packet=None, dhcp_id=None, dhcp_client_hw_addr, echo_tracker=None):
+    def __init__(self, parent_packet=None, dhcp_xid=None, dhcp_chaddr=None, echo_tracker=None):
         """ Class constructor """
 
         # Packet parsing
@@ -113,46 +115,46 @@ class DhcpPacket:
 
             self.raw_options = raw_packet[DHCP_HEADER_LEN:]
 
-            self.dhcp_operation = raw_header[0]
-            self.dhcp_hw_type = raw_header[1]
-            self.dhcp_hw_len = raw_header[2]
+            self.dhcp_op = raw_header[0]
+            self.dhcp_htype = raw_header[1]
+            self.dhcp_hlen = raw_header[2]
             self.dhcp_hops = raw_header[3]
-            self.dhcp_id = struct.unpack("!L", raw_header[4:8])[0]
-            self.dhcp_seconds = struct.unpack("!H", raw_header[8:10])[0]
+            self.dhcp_xid = struct.unpack("!L", raw_header[4:8])[0]
+            self.dhcp_secs = struct.unpack("!H", raw_header[8:10])[0]
             self.dhcp_flag_b = bool(struct.unpack("!H", raw_header[10:12])[0] & 0b1000000000000000)
-            self.dhcp_client_ip = socket.inet_ntoa(struct.unpack("!4s", raw_header[12:16])[0])
-            self.dhcp_your_ip = socket.inet_ntoa(struct.unpack("!4s", raw_header[16:20])[0])
-            self.dhcp_server_ip = socket.inet_ntoa(struct.unpack("!4s", raw_header[20:24])[0])
-            self.dhcp_router_ip = socket.inet_ntoa(struct.unpack("!4s", raw_header[24:28])[0])
-            self.dhcp_client_hw_addr = raw_header[28 : 28 + self.dhcp_hw_len]
-            self.dhcp_server_hostname = raw_header[44:108]
-            self.dhcp_bootfile_name = raw_header[108:236]
+            self.dhcp_ciaddr = socket.inet_ntoa(struct.unpack("!4s", raw_header[12:16])[0])
+            self.dhcp_yiaddr = socket.inet_ntoa(struct.unpack("!4s", raw_header[16:20])[0])
+            self.dhcp_siaddr = socket.inet_ntoa(struct.unpack("!4s", raw_header[20:24])[0])
+            self.dhcp_giaddr = socket.inet_ntoa(struct.unpack("!4s", raw_header[24:28])[0])
+            self.dhcp_chaddr = raw_header[28 : 28 + self.dhcp_hw_len]
+            self.dhcp_sname = raw_header[44:108]
+            self.dhcp_file = raw_header[108:236]
 
         # Packet building
         else:
             self.tracker = Tracker("TX", echo_tracker)
 
-            self.dhcp_operation = 1
-            self.dhcp_hw_type = 1
-            self.dhcp_hw_len = 6
+            self.dhcp_op = 1
+            self.dhcp_htype = 1
+            self.dhcp_hlen = 6
             self.dhcp_hops = 0
-            self.dhcp_id = dhcp_id
-            self.dhcp_seconds = 0
+            self.dhcp_xid = dhcp_xid
+            self.dhcp_secs = 0
             self.dhcp_flag_b = False
-            self.dhcp_client_ip = "0.0.0.0"
-            self.dhcp_your_ip = "0.0.0.0"
-            self.dhcp_server_ip = "0.0.0.0"
-            self.dhcp_router_ip = "0.0.0.0"
-            self.dhcp_client_hw_address = dhcp_client_hw_addr
-            self.dhcp_server_hostname = b"\0" * 64
-            self.dhcp_bootfile_name = b"\0" * 128
+            self.dhcp_ciaddr = "0.0.0.0"
+            self.dhcp_yiaddr = "0.0.0.0"
+            self.dhcp_siaddr = "0.0.0.0"
+            self.dhcp_giaddr = "0.0.0.0"
+            self.dhcp_chaddr = dhcp_chaddr
+            self.dhcp_sname = b"\0" * 64
+            self.dhcp_file = b"\0" * 128
 
             self.raw_options = b""
 
     def __str__(self):
         """ Short packet log string """
 
-        return f"DHCP {self.dhcp_operation}"
+        return f"DHCP {self.dhcp_op}"
 
     def __len__(self):
         """ Length of the packet """
@@ -163,21 +165,21 @@ class DhcpPacket:
     def raw_header(self):
         """ Packet header in raw format """
 
-        return struct.pack("! BBBB L HH L L L L 16s 64s 128s 4s",
-            self.dhcp_opration,
-            self.dhcp_hw_type,
-            self.dhcp_hw_len,
+        return struct.pack("! BBBB L HH 4s 4s 4s 4s 16s 64s 128s 4s",
+            self.dhcp_op,
+            self.dhcp_htype,
+            self.dhcp_hlen,
             self.dhcp_hops,
-            self.dhcp_id,
+            self.dhcp_xid,
             self.dhcp_secs,
             self.dhcp_flag_b << 15,
-            socket.inet_aton(self.dhcp_client_address),
-            socket.inet_aton(self.dhcp_your_address),
-            socket.inet_aton(self.dhcp_server_address),
-            socket.inet_aton(self.dhcp_router_address),
-            (self.bytes.fromhex(self.dhcp_client_hw_address.replace(":", "")) + b"\0" * 16)[:16]
-            self.dhcp_server_hostname,
-            self.dhcp_bootfile_name,
+            socket.inet_aton(self.dhcp_ciaddr),
+            socket.inet_aton(self.dhcp_yiaddr),
+            socket.inet_aton(self.dhcp_siaddr),
+            socket.inet_aton(self.dhcp_giaddr),
+            (bytes.fromhex(self.dhcp_chaddr.replace(":", "")) + b"\0" * 16)[:16],
+            self.dhcp_sname,
+            self.dhcp_file,
             b"\x63\x82\x53\x63",
         )
 
@@ -187,7 +189,7 @@ class DhcpPacket:
 
         return self.raw_header + self.raw_options
 
-    def get_raw_packet(self, ip_pseudo_header):
+    def get_raw_packet(self):
         """ Get packet in raw format ready to be processed by lower level protocol """
 
         return self.raw_packet
@@ -262,7 +264,7 @@ class DhcpOptParameterRequestList:
         return struct.pack(f"! BB{self.opt_len}s", self.opt_kind, self.opt_len, self.opt_list)
 
     def __str__(self):
-        return f"param_req_list {hexlify(self.opt_list)}"
+        return f"param_req_list {binascii.hexlify(self.opt_list)}"
 
 
 

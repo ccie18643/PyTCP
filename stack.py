@@ -40,7 +40,7 @@ STACK_IP_ADDRESS = [
     ("172.16.128.65", "255.255.255.240"),
 ]
 
-# STACK_IP_ADDRESS = []
+STACK_IP_ADDRESS = []
 
 
 def main():
