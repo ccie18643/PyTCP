@@ -45,8 +45,19 @@ class UdpSocket:
 
         self.logger.debug(f"Opened UDP socket {self.socket_id}")
 
+    def send(self, raw_data):
+        """ Send out raw_data to remote destiantion - to be used with fully defined sockets"""
+
+        self.packet_handler.phtx_udp(
+            ip_src=self.local_ip_address,
+            udp_sport=self.local_port,
+            ip_dst=self.remote_ip_address,
+            udp_dport=self.remote_port,
+            raw_data=raw_data,
+        )
+
     def send_to(self, udp_message):
-        """ Put data from UdpMessage structure into TX ring """
+        """ Put data from UdpMessage structure into TX ring - to be used with listning sockets """
 
         self.packet_handler.phtx_udp(
             ip_src=udp_message.local_ip_address,

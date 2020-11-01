@@ -23,6 +23,7 @@ Python based attempt to create fully operational TCP/IP stack for educational pu
  - DHCP client service for automatic IPv4 address configuration
  - IPv6 protocol - basic support with address auto configuration
  - ICMPv6 protocol - bassic support, features needed for stack operation
+ - Ability to route packets out of local subnet
 
 
 ### ARP resolution and handling ping packets

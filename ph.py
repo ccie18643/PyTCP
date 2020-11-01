@@ -35,8 +35,6 @@ class PacketHandler:
     from phtx_udp import phtx_udp
     from phtx_tcp import phtx_tcp
 
-    from phtx_dhcp import phtx_dhcp
-
     def __init__(self, stack_mac_address, stack_ip_address, rx_ring, tx_ring, arp_cache):
         """ Class constructor """
 
@@ -76,14 +74,7 @@ class PacketHandler:
 
 
     def __dhcp_client(self):
-        """ Acquire IP address via DHCP """
-
-        self.phtx_dhcp(
-            dhcp_message_type=0,
-            dhcp_xid=0,
-            dhcp_chaddr=self.stack_mac_address
-        )
-
+        """ Acquire IP address using DHCP client """
         pass
 
     def __validate_stack_ip_addresses(self, stack_ip_address):

@@ -25,6 +25,8 @@ from ph import PacketHandler
 from service_udp_echo import ServiceUdpEcho
 from service_tcp_echo import ServiceTcpEcho
 
+from client_udp_dhcp import ClientUdpDhcp
+
 
 TUNSETIFF = 0x400454CA
 IFF_TAP = 0x0002
@@ -65,6 +67,7 @@ def main():
     UdpSocket.set_packet_handler(packet_handler)
     # TcpSocket.set_packet_handler(packet_handler)
     ServiceUdpEcho()
+    ClientUdpDhcp()
     # ServiceTcpEcho(STACK_IP_ADDRESS)
 
     while True:
