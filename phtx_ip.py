@@ -49,7 +49,7 @@ def validate_source_ip_address(self, ip_src):
             ip_src = ip_src[0]
             self.logger.debug(f"Packet is response to directed broadcast, replaced source with apropriate IP address {ip_src}")
         else:
-            self.logger.warning(f"Unable to sent out IP packet, no appropriate stack unicast IP address available")
+            self.logger.warning("Unable to sent out IP packet, no appropriate stack unicast IP address available")
             return
 
     return ip_src
