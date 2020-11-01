@@ -79,7 +79,7 @@ class TcpSocket:
         self.local_seq_num = 0
         self.remote_seq_num = tcp_packet_rx.tcp_seq_num
 
-        self.logger.info(f"*** SYN received ***")
+        self.logger.info("*** SYN received ***")
         self.packet_handler.phtx_tcp(
             ip_src=self.local_ip_address,
             ip_dst=self.remote_ip_address,
@@ -92,13 +92,13 @@ class TcpSocket:
             tcp_options=[TcpOptMss(opt_size=1460)],
         )
 
-        self.logger.info(f"*** SYN/ACK sent ***")
+        self.logger.info("*** SYN/ACK sent ***")
 
         # Wait for ACK packet for our SYN and verify it
         self.messages_ready.acquire()
         tcp_packet_rx = self.messages.pop(0)
         if tcp_packet_rx.tcp_flag_ack and tcp_packet_rx.tcp_ack_num == self.local_seq_num + 1:
-            self.logger.info(f"*** ACK Received ***")
+            self.logger.info("*** ACK Received ***")
             self.remote_seq_num = tcp_packet_rx.tcp_seq_num
             return True
 

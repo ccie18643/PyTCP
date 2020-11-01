@@ -156,7 +156,7 @@ class DhcpPacket:
 
             self.dhcp_options = []
 
-            dhcp_opt_cls = {
+            opt_cls = {
                 DHCP_OPT_SUBNET_MASK: DhcpOptSubnetMask,
                 DHCP_OPT_ROUTER: DhcpOptRouter,
                 DHCP_OPT_DNS: DhcpOptDns,
@@ -177,8 +177,12 @@ class DhcpPacket:
                     self.dhcp_options.append(DhcpOptEnd())
                     break
 
-                cls = dhcp_opt_cls.get(raw_options[i], DhcpOptUnk)
-                self.dhcp_options.append(cls(raw_options[i : i + raw_options[i + 1] + 2]))
+                if raw_options[i] == DHCP_OPT_PAD:
+                    self.dhcp_options.append(DhcpOptPad())
+                    i += DHCP_OPT_PAD_LEN
+                    continue
+
+                self.dhcp_options.append(opt_cls.get(raw_options[i], DhcpOptUnk)(raw_options[i : i + raw_options[i + 1] + 2]))
                 i += self.raw_options[i + 1] + 2
 
         # Packet building
@@ -392,6 +396,26 @@ class DhcpOptEnd:
 
     def __str__(self):
         return "end"
+
+
+# DHCP option - Pad (0)
+
+DHCP_OPT_PAD = 0
+DHCP_OPT_PAD_LEN = 0
+
+
+class DhcpOptPad:
+    """ DHCP option - Pad (0) """
+
+    def __init__(self):
+        self.opt_code = DHCP_OPT_PAD
+
+    @property
+    def raw_option(self):
+        return struct.pack("!B", self.opt_code)
+
+    def __str__(self):
+        return "pad"
 
 
 # DHCP option - Subnet Mask (1)

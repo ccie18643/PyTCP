@@ -25,7 +25,7 @@ class ClientUdpDhcp:
         self.stack_mac_address = stack_mac_address
         self.socket = udp_socket.UdpSocket(local_ip_address="0.0.0.0", local_port=68, remote_ip_address="0.0.0.0", remote_port=67)
         threading.Thread(target=self.__client).start()
-  
+
     def __send(self, dhcp_packet_tx):
         """ Send out DHCP packet """
 
@@ -44,7 +44,7 @@ class ClientUdpDhcp:
 
         dhcp_xid = random.randint(0, 0xFFFFFFFF)
 
-        # Send DHCP Discover 
+        # Send DHCP Discover
         self.__send(
             dhcp_packet_tx=ps_dhcp.DhcpPacket(
                 dhcp_xid=dhcp_xid,
@@ -72,7 +72,7 @@ class ClientUdpDhcp:
 
             # Send DHCP Reques
             self.__send(
-                dhcp_packet_tx = ps_dhcp.DhcpPacket(
+                dhcp_packet_tx=ps_dhcp.DhcpPacket(
                     dhcp_xid=dhcp_xid,
                     dhcp_chaddr=self.stack_mac_address,
                     dhcp_msg_type=ps_dhcp.DHCP_REQUEST,
@@ -82,7 +82,7 @@ class ClientUdpDhcp:
                     dhcp_host_name="PyTCP",
                 )
             )
-        
+
             print(f"ClientUdpDhcp: Sent out DHCP Request message to {dhcp_packet_rx.dhcp_srv_id}")
 
             # Wait for DHCP ACK
@@ -94,4 +94,3 @@ class ClientUdpDhcp:
                 print(f"    Router: {dhcp_packet_rx.dhcp_router}")
                 print(f"    DNS: {dhcp_packet_rx.dhcp_dns}")
                 print(f"    Domain name: {dhcp_packet_rx.dhcp_domain_name}")
-

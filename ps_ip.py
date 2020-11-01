@@ -142,20 +142,23 @@ class IpPacket:
 
             self.ip_options = []
 
+            opt_cls = {}
+
             i = 0
 
             while i < len(raw_options):
+
                 if raw_options[i] == IP_OPT_EOL:
-                    self.ip_options.append(IpOptEol(raw_options[i : i + IP_OPT_EOL_LEN]))
+                    self.tcp_options.append(IpOptEol())
                     break
 
-                elif raw_options[i] == IP_OPT_NOP:
-                    self.ip_options.append(IpOptNop(raw_options[i : i + IP_OPT_NOP_LEN]))
+                if raw_options[i] == IP_OPT_NOP:
+                    self.tcp_options.append(IpOptNop())
                     i += IP_OPT_NOP_LEN
+                    continue
 
-                else:
-                    self.ip_options.append(IpOptUnk(raw_options[i : i + raw_options[i + 1]]))
-                    i += self.raw_options[i + 1]
+                self.tcp_options.append(opt_cls.get(raw_options[i], IpOptUnk)(raw_options[i : i + raw_options[i + 1]]))
+                i += self.raw_options[i + 1]
 
         # Packet building
         else:
@@ -287,21 +290,17 @@ class IpPacket:
 
 """
 
+# IP option - End of Option Linst
 
 IP_OPT_EOL = 0
 IP_OPT_EOL_LEN = 1
-IP_OPT_NOP = 1
-IP_OPT_NOP_LEN = 1
 
 
 class IpOptEol:
-    """ IP option End of Option List """
+    """ IP option - End of Option List """
 
     def __init__(self, raw_option=None):
-        if raw_option:
-            self.opt_kind = raw_option[0]
-        else:
-            self.opt_kind = IP_OPT_EOL
+        self.opt_kind = IP_OPT_EOL
 
     @property
     def raw_option(self):
@@ -311,14 +310,17 @@ class IpOptEol:
         return "eol"
 
 
+# IP option - No Operation (1)
+
+IP_OPT_NOP = 1
+IP_OPT_NOP_LEN = 1
+
+
 class IpOptNop:
-    """ IP option No Operation """
+    """ IP option - No Operation """
 
     def __init__(self, raw_option=None):
-        if raw_option:
-            self.opt_kind = raw_option[0]
-        else:
-            self.opt_kind = IP_OPT_NOP
+        self.opt_kind = IP_OPT_NOP
 
     @property
     def raw_option(self):
@@ -326,6 +328,9 @@ class IpOptNop:
 
     def __str__(self):
         return "nop"
+
+
+# IP option not supported by this stack
 
 
 class IpOptUnk:

@@ -15,7 +15,7 @@ import struct
 import loguru
 
 from udp_socket import UdpSocket
-from tcp_socket import TcpSocket
+# from tcp_socket import TcpSocket
 from arp_cache import ArpCache
 from rx_ring import RxRing
 from tx_ring import TxRing
@@ -23,9 +23,9 @@ from tx_ring import TxRing
 from ph import PacketHandler
 
 from service_udp_echo import ServiceUdpEcho
-from service_tcp_echo import ServiceTcpEcho
+# from service_tcp_echo import ServiceTcpEcho
 
-from client_udp_dhcp import ClientUdpDhcp
+# from client_udp_dhcp import ClientUdpDhcp
 
 
 TUNSETIFF = 0x400454CA
@@ -41,8 +41,6 @@ STACK_IP_ADDRESS = [
     ("192.168.9.9", "255.255.255.0"),
     ("172.16.128.65", "255.255.255.240"),
 ]
-
-STACK_IP_ADDRESS = []
 
 
 def main():
@@ -67,7 +65,7 @@ def main():
     UdpSocket.set_packet_handler(packet_handler)
     # TcpSocket.set_packet_handler(packet_handler)
     ServiceUdpEcho()
-    ClientUdpDhcp(STACK_MAC_ADDRESS)
+    # ClientUdpDhcp(STACK_MAC_ADDRESS)
     # ServiceTcpEcho(STACK_IP_ADDRESS)
 
     while True:
