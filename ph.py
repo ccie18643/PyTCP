@@ -72,7 +72,6 @@ class PacketHandler:
         self.logger.info(f"Stack listenng on multicast IP addresses: {self.stack_ip_multicast}")
         self.logger.info(f"Stack listenng on brodcast IP addresses: {self.stack_ip_broadcast}")
 
-
     def __dhcp_client(self):
         """ Acquire IP address using DHCP client """
         pass

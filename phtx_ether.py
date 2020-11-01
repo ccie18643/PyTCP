@@ -34,7 +34,7 @@ def phtx_ether(self, child_packet, ether_src="00:00:00:00:00:00", ether_dst="00:
     # Check if we can obtain destination MAC based on IP header data
     if ether_packet_tx.ether_type == ps_ether.ETHER_TYPE_IP:
         ip_packet_tx = ps_ip.IpPacket(ether_packet_tx)
-        
+
         # Send out packet if its destinied to one of our broadcast addresses
         if ip_packet_tx.ip_dst in self.stack_ip_broadcast:
             ether_packet_tx.ether_dst = "ff:ff:ff:ff:ff:ff"
@@ -53,4 +53,3 @@ def phtx_ether(self, child_packet, ether_src="00:00:00:00:00:00", ether_dst="00:
     # Drop packet in case  we are not able to obtain valid destination MAC address
     self.logger.debug(f"{ether_packet_tx.tracker} - Droping packet, no valid destination MAC could be obtained")
     return
-

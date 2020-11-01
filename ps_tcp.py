@@ -227,13 +227,6 @@ class TcpPacket:
 
         return self.raw_packet
 
-    def get_option(self, name):
-        """ Find specific option by its name """
-
-        for option in self.tcp_options:
-            if option.name == name:
-                return option
-
     def validate_cksum(self, ip_pseudo_header):
         """ Validate packet checksum """
 
@@ -264,8 +257,6 @@ TCP_OPT_TIMESTAMP_LEN = 10
 class TcpOptEol:
     """ TCP option End of Option List """
 
-    name = "EOL"
-
     def __init__(self, raw_option=None):
         if raw_option:
             self.opt_kind = raw_option[0]
@@ -283,8 +274,6 @@ class TcpOptEol:
 class TcpOptNop:
     """ TCP option No Operation """
 
-    name = "NOP"
-
     def __init__(self, raw_option=None):
         if raw_option:
             self.opt_kind = raw_option[0]
@@ -301,8 +290,6 @@ class TcpOptNop:
 
 class TcpOptMss:
     """ TCP option Maximum Segment Size """
-
-    name = "MSS"
 
     def __init__(self, raw_option=None, opt_size=None):
         if raw_option:
@@ -325,8 +312,6 @@ class TcpOptMss:
 class TcpOptSackperm:
     """ TCP option Sack Permit """
 
-    name = "SACKPERM"
-
     def __init__(self, raw_option=None):
         if raw_option:
             self.opt_kind = raw_option[0]
@@ -345,8 +330,6 @@ class TcpOptSackperm:
 
 class TcpOptWscale:
     """ TCP option Window Scale """
-
-    name = "WSCALE"
 
     def __init__(self, raw_option=None, opt_scale=None):
         if raw_option:
@@ -369,8 +352,6 @@ class TcpOptWscale:
 class TcpOptTimestamp:
     """ TCP option Timestamp """
 
-    name = "TIMESTAMP"
-
     def __init__(self, raw_option=None, opt_tsval=None, opt_tsecr=None):
         if raw_option:
             self.opt_kind = raw_option[0]
@@ -392,18 +373,16 @@ class TcpOptTimestamp:
 
 
 class TcpOptUnk:
-    """ TCP not supported by this stack """
-
-    name = "UNKNOWN"
+    """ TCP option not supported by this stack """
 
     def __init__(self, raw_option=None):
         self.opt_kind = raw_option[0]
         self.opt_len = raw_option[1]
-        self.raw_data = raw_option[2 : self.opt_len - 2]
+        self.opt_data = raw_option[2 : self.opt_len - 2]
 
     @property
     def raw_option(self):
-        return struct.pack("! BB", self.opt_kind, self.opt_len) + self.raw_data
+        return struct.pack("! BB", self.opt_kind, self.opt_len) + self.opt_data
 
     def __str__(self):
         return "unk"

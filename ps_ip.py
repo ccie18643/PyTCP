@@ -297,8 +297,6 @@ IP_OPT_NOP_LEN = 1
 class IpOptEol:
     """ IP option End of Option List """
 
-    name = "EOL"
-
     def __init__(self, raw_option=None):
         if raw_option:
             self.opt_kind = raw_option[0]
@@ -315,8 +313,6 @@ class IpOptEol:
 
 class IpOptNop:
     """ IP option No Operation """
-
-    name = "NOP"
 
     def __init__(self, raw_option=None):
         if raw_option:
@@ -335,16 +331,14 @@ class IpOptNop:
 class IpOptUnk:
     """ IP option not supported by this stack """
 
-    name = "UNKNOWN"
-
     def __init__(self, raw_option=None):
         self.opt_kind = raw_option[0]
         self.opt_len = raw_option[1]
-        self.raw_data = raw_option[2 : self.opt_len - 2]
+        self.opt_data = raw_option[2 : self.opt_len - 2]
 
     @property
     def raw_option(self):
-        return struct.pack("! BB", self.opt_kind, self.opt_len) + self.raw_data
+        return struct.pack("! BB", self.opt_kind, self.opt_len) + self.opt_data
 
     def __str__(self):
         return "unk"

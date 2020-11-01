@@ -16,7 +16,7 @@ import binascii
 from tracker import Tracker
 
 
-DHCP_HEADER_LEN = 224
+DHCP_HEADER_LEN = 236 + 4
 
 """
 
@@ -98,22 +98,27 @@ DHCP_HEADER_LEN = 224
 """
 
 
+DHCP_DISCOVER = 1
+DHCP_OFFER = 2
+DHCP_REQUEST = 3
+DHCP_ACK = 5
+
+
 class DhcpPacket:
     """ Dhcp packet support class """
 
     protocol = "DHCP"
 
-    def __init__(self, parent_packet=None, dhcp_xid=None, dhcp_chaddr=None, echo_tracker=None):
+    def __init__(
+        self, raw_packet=None, dhcp_xid=None, dhcp_chaddr=None, dhcp_msg_type=None, dhcp_param_req_list=None, dhcp_req_ip_addr=None
+    ):
         """ Class constructor """
 
         # Packet parsing
-        if parent_packet:
-            self.tracker = parent_packet.tracker
-
-            raw_packet = parent_packet.raw_data
+        if raw_packet:
             raw_header = raw_packet[:DHCP_HEADER_LEN]
 
-            self.raw_options = raw_packet[DHCP_HEADER_LEN:]
+            raw_options = raw_packet[DHCP_HEADER_LEN:]
 
             self.dhcp_op = raw_header[0]
             self.dhcp_htype = raw_header[1]
@@ -126,14 +131,38 @@ class DhcpPacket:
             self.dhcp_yiaddr = socket.inet_ntoa(struct.unpack("!4s", raw_header[16:20])[0])
             self.dhcp_siaddr = socket.inet_ntoa(struct.unpack("!4s", raw_header[20:24])[0])
             self.dhcp_giaddr = socket.inet_ntoa(struct.unpack("!4s", raw_header[24:28])[0])
-            self.dhcp_chaddr = raw_header[28 : 28 + self.dhcp_hw_len]
+            self.dhcp_chaddr = raw_header[28 : 28 + self.dhcp_hlen]
             self.dhcp_sname = raw_header[44:108]
             self.dhcp_file = raw_header[108:236]
 
+            self.dhcp_options = []
+
+            i = 0
+
+            while i < len(raw_options):
+
+                if raw_options[i] == DHCP_OPT_END:
+                    self.dhcp_options.append(DhcpOptEnd(raw_options[i : i + DHCP_OPT_END_LEN + 1]))
+                    break
+
+                elif raw_options[i] == DHCP_OPT_PARAM_REQ_LIST:
+                    self.dhcp_options.append(DhcpOptParamReqList(raw_options[i : i + raw_options[i + 1] + 2]))
+                    i += self.raw_options[i + 1] + 2
+
+                elif raw_options[i] == DHCP_OPT_REQ_IP_ADDR:
+                    self.dhcp_options.append(DhcpOptReqIpAddr(raw_options[i : i + raw_options[i + 1] + 2]))
+                    i += self.raw_options[i + 1] + 2
+
+                elif raw_options[i] == DHCP_OPT_MSG_TYPE:
+                    self.dhcp_options.append(DhcpOptMsgType(raw_options[i : i + raw_options[i + 1] + 2]))
+                    i += self.raw_options[i + 1] + 2
+
+                else:
+                    self.dhcp_options.append(DhcpOptUnk(raw_options[i : i + raw_options[i + 1] + 2]))
+                    i += self.raw_options[i + 1] + 2
+
         # Packet building
         else:
-            self.tracker = Tracker("TX", echo_tracker)
-
             self.dhcp_op = 1
             self.dhcp_htype = 1
             self.dhcp_hlen = 6
@@ -149,12 +178,23 @@ class DhcpPacket:
             self.dhcp_sname = b"\0" * 64
             self.dhcp_file = b"\0" * 128
 
-            self.raw_options = b""
+            self.dhcp_options = []
+
+            if dhcp_msg_type:
+                self.dhcp_options.append(DhcpOptMsgType(opt_msg_type=dhcp_msg_type))
+
+            if dhcp_param_req_list:
+                self.dhcp_options.append(DhcpOptParamReqList(opt_param_req_list=dhcp_param_req_list))
+
+            if dhcp_req_ip_addr:
+                self.dhcp_options.append(DhcpOptReqIpAddr(opt_req_ip_addr=dhcp_req_ip_addr))
+
+            self.dhcp_options.append(DhcpOptEnd())
 
     def __str__(self):
         """ Short packet log string """
 
-        return f"DHCP {self.dhcp_op}"
+        return f"DHCP op {self.dhcp_op}"
 
     def __len__(self):
         """ Length of the packet """
@@ -165,7 +205,8 @@ class DhcpPacket:
     def raw_header(self):
         """ Packet header in raw format """
 
-        return struct.pack("! BBBB L HH 4s 4s 4s 4s 16s 64s 128s 4s",
+        return struct.pack(
+            "! BBBB L HH 4s 4s 4s 4s 16s 64s 128s 4s",
             self.dhcp_op,
             self.dhcp_htype,
             self.dhcp_hlen,
@@ -184,6 +225,25 @@ class DhcpPacket:
         )
 
     @property
+    def raw_options(self):
+        """ Packet options in raw format """
+
+        raw_options = b""
+
+        for option in self.dhcp_options:
+            raw_options += option.raw_option
+
+        return raw_options
+
+    @property
+    def dhcp_msg_type(self):
+        """ DHCP Message Type """
+
+        for option in self.dhcp_options:
+            if option.opt_code == DHCP_OPT_MSG_TYPE:
+                return option.opt_msg_type
+
+    @property
     def raw_packet(self):
         """ Packet in raw format """
 
@@ -195,85 +255,107 @@ class DhcpPacket:
         return self.raw_packet
 
 
+
 DHCP_OPT_END = 255
 DHCP_OPT_END_LEN = 0
-DHCP_OPT_MESSAGE_TYPE = 53
-DHCP_OPT_MESSAGE_TYPE_LEN = 1
-DHCP_OPT_PARAMETER_REQUEST_LIST = 55
+DHCP_OPT_MSG_TYPE = 53
+DHCP_OPT_MSG_TYPE_LEN = 1
+DHCP_OPT_PARAM_REQ_LIST = 55
+DHCP_OPT_REQ_IP_ADDR = 50
+DHCP_OPT_REQ_IP_ADDR_LEN = 4
 
 
 class DhcpOptEnd:
     """ DHCP option End of Option List """
 
-    name = "END"
-
     def __init__(self, raw_option=None):
         if raw_option:
-            self.opt_kind = raw_option[0]
+            self.opt_code = raw_option[0]
         else:
-            self.opt_kind = DHCP_OPT_END
+            self.opt_code = DHCP_OPT_END
 
     @property
     def raw_option(self):
-        return struct.pack("!B", self.opt_kind)
+        return struct.pack("!B", self.opt_code)
 
     def __str__(self):
         return "end"
 
 
-class DhcpOptMessageType:
+class DhcpOptMsgType:
     """ DHCP option Message Type """
 
-    name = "message_type"
-
-    def __init__(self, raw_option=None, opt_message_type=None):
+    def __init__(self, raw_option=None, opt_msg_type=None):
         if raw_option:
-            self.opt_kind = raw_option[0]
+            self.opt_code = raw_option[0]
             self.opt_len = raw_option[1]
-            self.opt_message_type = raw_option[2]
+            self.opt_msg_type = raw_option[2]
         else:
-            self.opt_kind = DHCP_OPT_MESSAGE_TYPE
-            self.opt_len = DHCP_OPT_MESSAGE_TYPE_LEN
-            self.opt_message_type = opt_message_type
+            self.opt_code = DHCP_OPT_MSG_TYPE
+            self.opt_len = DHCP_OPT_MSG_TYPE_LEN
+            self.opt_msg_type = opt_msg_type
 
     @property
     def raw_option(self):
-        return struct.pack("! BBB", self.opt_kind, self.opt_len, self.opt_message_type)
+        return struct.pack("! BB B", self.opt_code, self.opt_len, self.opt_msg_type)
 
     def __str__(self):
         return f"msg_type {self.opt_size}"
 
 
-class DhcpOptParameterRequestList:
+class DhcpOptParamReqList:
     """ DHCP option ParameterRequestList """
 
-    name = "parameter_request_list"
-
-    def __init__(self, raw_option=None, opt_list=None):
+    def __init__(self, raw_option=None, opt_param_req_list=None):
         if raw_option:
-            self.opt_kind = raw_option[0]
+            self.opt_code = raw_option[0]
             self.opt_len = raw_option[1]
-            self.opt_list = raw_option[2 : 2 + self.opt_len]
+            self.opt_param_req_list = raw_option[2 : 2 + self.opt_len]
         else:
-            self.opt_kind = DHCP_OPT_PARAMETER_REQUEST_LIST
-            self.opt_len = len(opt_list)
-            self.opt_list = opt_list
+            self.opt_code = DHCP_OPT_PARAM_REQ_LIST
+            self.opt_len = len(opt_param_req_list)
+            self.opt_param_req_list = opt_param_req_list
 
     @property
     def raw_option(self):
-        return struct.pack(f"! BB{self.opt_len}s", self.opt_kind, self.opt_len, self.opt_list)
+        return struct.pack(f"! BB{self.opt_len}s", self.opt_code, self.opt_len, self.opt_param_req_list)
 
     def __str__(self):
         return f"param_req_list {binascii.hexlify(self.opt_list)}"
 
 
+class DhcpOptReqIpAddr:
+    """ DHCP option Requested IP Address """
+
+    def __init__(self, raw_option=None, opt_req_ip_addr=None):
+        if raw_option:
+            self.opt_code = raw_option[0]
+            self.opt_len = raw_option[1]
+            self.opt_req_ip_addr = socket.inet_ntoa(struct.unpack("!4s", raw_option[2:6])[0])
+        else:
+            self.opt_code = DHCP_OPT_REQ_IP_ADDR
+            self.opt_len = DHCP_OPT_REQ_IP_ADDR_LEN
+            self.opt_req_ip_addr = opt_req_ip_addr
+
+    @property
+    def raw_option(self):
+        return struct.pack(f"! BB 4s", self.opt_code, self.opt_len, socket.inet_aton(self.opt_req_ip_addr))
+
+    def __str__(self):
+        return f"req_ip_addr {self.opt_addr}"
 
 
+class DhcpOptUnk:
+    """ DHCP option not supported by this stack """
 
+    def __init__(self, raw_option=None):
+        self.opt_code = raw_option[0]
+        self.opt_len = raw_option[1]
+        self.opt_data = raw_option[2 : 2 + self.opt_len]
 
+    @property
+    def raw_option(self):
+        return struct.pack(f"! BB{self.opt_len}s", self.opt_code, self.opt_len, self.opt_data)
 
-
-
-
-
-
+    def __str__(self):
+        return f"unk"
