@@ -19,8 +19,8 @@ MTU = 1500
 def validate_source_ip_address(self, ip_src):
     """ Make sure source ip address is valid, supplemt with valid one as appropriate """
 
-    # Check if the the source IP address belongs to this stack
-    if ip_src not in self.stack_ip_unicast and ip_src not in self.stack_ip_multicast and ip_src not in self.stack_ip_broadcast:
+    # Check if the the source IP address belongs to this stack or its set to all zeros (for DHCP client comunication)
+    if ip_src not in self.stack_ip_unicast and ip_src not in self.stack_ip_multicast and ip_src not in self.stack_ip_broadcast and ip_src != "0.0.0.0":
         self.logger.warning(f"Unable to sent out IP packet, stack doesn't own IP address {ip_src}")
         return
 

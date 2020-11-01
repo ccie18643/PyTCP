@@ -62,6 +62,24 @@ class PacketHandler:
         threading.Thread(target=self.__packet_handler).start()
         self.logger.debug("Started packet handler")
 
+        # If no stack IP address provided try to obtain it via DHCP
+        if not stack_ip_address:
+            self.__dhcp_client()
+
+        # Create list of IP addresses stack should listen on
+        self.__validate_stack_ip_addresses(stack_ip_address)
+        self.logger.info(f"Stack listenng on unicast IP addresses: {self.stack_ip_unicast}")
+        self.logger.info(f"Stack listenng on multicast IP addresses: {self.stack_ip_multicast}")
+        self.logger.info(f"Stack listenng on brodcast IP addresses: {self.stack_ip_broadcast}")
+
+
+    def __dhcp_client(self):
+        """ Acquire IP address via DHCP """
+        pass
+
+    def __validate_stack_ip_addresses(self, stack_ip_address):
+        """ Create list of IP addresses stack should listen on """
+
         # Create list of all IP unicast addresses stack should listen on
         for i in range(3):
             for ip_unicast in self.stack_ip_unicast_candidate:
@@ -103,10 +121,6 @@ class PacketHandler:
         for ip_address in self.stack_ip_address:
             if ip_address[3] not in self.stack_ip_broadcast:
                 self.stack_ip_broadcast.append(ip_address[3])
-
-        self.logger.info(f"Stack listenng on unicast IP addresses: {self.stack_ip_unicast}")
-        self.logger.info(f"Stack listenng on multicast IP addresses: {self.stack_ip_multicast}")
-        self.logger.info(f"Stack listenng on brodcast IP addresses: {self.stack_ip_broadcast}")
 
     def __send_arp_probe(self, ip_address):
         """ Send out ARP probe to detect possible IP conflict """
