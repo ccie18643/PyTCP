@@ -67,7 +67,7 @@ def main():
     UdpSocket.set_packet_handler(packet_handler)
     # TcpSocket.set_packet_handler(packet_handler)
     ServiceUdpEcho()
-    ClientUdpDhcp()
+    ClientUdpDhcp(STACK_MAC_ADDRESS)
     # ServiceTcpEcho(STACK_IP_ADDRESS)
 
     while True:
