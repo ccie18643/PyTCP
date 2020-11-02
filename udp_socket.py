@@ -56,11 +56,11 @@ class UdpSocket:
             raw_data=udp_message.raw_data,
         )
 
-    def receive_from(self, timeout = None):
+    def receive_from(self, timeout=None):
         """ Read data from listening socket and return UdpMessage structure """
 
-        self.messages_ready.acquire(timeout)
-        return self.messages.pop(0)
+        if self.messages_ready.acquire(timeout=timeout):
+            return self.messages.pop(0)
 
     def close(self):
         """ Close socket """

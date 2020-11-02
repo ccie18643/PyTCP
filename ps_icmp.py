@@ -86,7 +86,7 @@ class IcmpPacket:
                 self.icmp_raw_data = raw_message[ICMP_ECHOREQUEST_LEN:]
 
             if self.icmp_type == ICMP_UNREACHABLE:
-                self.icmp_ip_info = raw_message[4:]
+                self.icmp_raw_data = raw_message[4:]
 
         # Packet building
         else:
