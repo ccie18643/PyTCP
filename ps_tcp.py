@@ -234,7 +234,7 @@ class TcpPacket:
 
         for option in self.tcp_options:
             if option.opt_code == TCP_OPT_MSS:
-                return option.opt_size
+                return option.opt_mss
 
     @property
     def wscale(self):
@@ -242,7 +242,7 @@ class TcpPacket:
 
         for option in self.tcp_options:
             if option.opt_code == TCP_OPT_WSCALE:
-                return option.opt_scale
+                return option.opt_wscale
 
     @property
     def sackperm(self):
@@ -317,22 +317,22 @@ TCP_OPT_MSS_LEN = 4
 class TcpOptMss:
     """ TCP option - Maximum Segment Size (2) """
 
-    def __init__(self, raw_option=None, opt_size=None):
+    def __init__(self, raw_option=None, opt_mss=None):
         if raw_option:
             self.opt_kind = raw_option[0]
             self.opt_len = raw_option[1]
-            self.opt_size = struct.unpack("!H", raw_option[2:4])[0]
+            self.opt_mss = struct.unpack("!H", raw_option[2:4])[0]
         else:
             self.opt_kind = TCP_OPT_MSS
             self.opt_len = TCP_OPT_MSS_LEN
-            self.opt_size = opt_size
+            self.opt_mss = opt_mss
 
     @property
     def raw_option(self):
-        return struct.pack("! BB H", self.opt_kind, self.opt_len, self.opt_size)
+        return struct.pack("! BB H", self.opt_kind, self.opt_len, self.opt_mss)
 
     def __str__(self):
-        return f"mss {self.opt_size}"
+        return f"mss {self.opt_mss}"
 
 
 # TCP option - Window Scale (3)
@@ -344,22 +344,22 @@ TCP_OPT_WSCALE_LEN = 3
 class TcpOptWscale:
     """ TCP option - Window Scale (3) """
 
-    def __init__(self, raw_option=None, opt_scale=None):
+    def __init__(self, raw_option=None, opt_wscale=None):
         if raw_option:
             self.opt_kind = raw_option[0]
             self.opt_len = raw_option[1]
-            self.opt_scale = raw_option[2]
+            self.opt_wscale = raw_option[2]
         else:
             self.opt_kind = TCP_OPT_MSS
             self.opt_len = TCP_OPT_MSS_LEN
-            self.opt_scale = opt_scale
+            self.opt_wscale = opt_wscale
 
     @property
     def raw_option(self):
-        return struct.pack("! BB B", self.opt_kind, self.opt_len, self.opt_scale)
+        return struct.pack("! BB B", self.opt_kind, self.opt_len, self.opt_wscale)
 
     def __str__(self):
-        return f"wscale {self.opt_scale}"
+        return f"wscale {self.opt_wscale}"
 
 
 # TCP option - Sack Permit (4)
