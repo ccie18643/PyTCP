@@ -8,7 +8,7 @@ phrx_tcp.py - packet handler for inbound TCP packets
 """
 
 
-from tcp_socket import TcpSocket
+from tcp_socket import TcpSocket, TcpPacketMetadata
 
 
 def phrx_tcp(self, ip_packet_rx, tcp_packet_rx):
@@ -22,7 +22,22 @@ def phrx_tcp(self, ip_packet_rx, tcp_packet_rx):
         return
 
     # Send packet info and data to socket mechanism for further processing
-    if TcpSocket.match_socket(tcp_packt_rx):
+    if TcpSocket.match_socket(
+        TcpPacketMetadata(
+            local_ip_address=ip_packet_rx.ip_dst,
+            local_port=tcp_packet_rx.tcp_dport,
+            remote_ip_address=ip_packet_rx.ip_src,
+            remote_port=tcp_packet_rx.tcp_sport,
+            flag_syn=tcp_packet_rx.tcp_flag_syn,
+            flag_ack=tcp_packet_rx.tcp_flag_ack,
+            flag_fin=tcp_packet_rx.tcp_flag_fin,
+            flag_rst=tcp_packet_rx.tcp_flag_rst,
+            seq_num=tcp_packet_rx.tcp_seq_num,
+            ack_num=tcp_packet_rx.tcp_ack_num,
+            raw_data=tcp_packet_rx.raw_data,
+            tracker=tcp_packet_rx.tracker,
+        )
+    ):
         return
 
     self.logger.debug(f"Received TCP packet from {ip_packet_rx.ip_src} to closed port {tcp_packet_rx.tcp_dport}, sending TCP Reset packet")

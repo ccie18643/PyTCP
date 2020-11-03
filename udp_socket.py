@@ -11,8 +11,8 @@ import loguru
 import threading
 
 
-class UdpMetadata:
-    """ Store UDP metadata in socket """
+class UdpPacketMetadata:
+    """ Store UDP packet metadata """
 
     def __init__(self, local_ip_address, local_port, remote_ip_address, remote_port, raw_data, tracker):
         self.local_ip_address = local_ip_address
@@ -31,8 +31,8 @@ class UdpSocket:
     def __init__(self, local_ip_address, local_port, remote_ip_address="0.0.0.0", remote_port=0):
         """ Class constructor """
 
-        self.messages = []
-        self.messages_ready = threading.Semaphore(0)
+        self.metadata_rx = []
+        self.metadata_rx_ready = threading.Semaphore(0)
         self.logger = loguru.logger.bind(object_name="udp_socket.")
 
         self.local_ip_address = local_ip_address
@@ -46,22 +46,22 @@ class UdpSocket:
 
         self.logger.debug(f"Opened UDP socket {self.socket_id}")
 
-    def send_to(self, udp_message):
-        """ Put data from UdpMessage structure into TX ring """
+    def send_to(self, metadata):
+        """ Put data from UdpPacketMetadata structure into TX ring """
 
         self.packet_handler.phtx_udp(
-            ip_src=udp_message.local_ip_address,
-            udp_sport=udp_message.local_port,
-            ip_dst=udp_message.remote_ip_address,
-            udp_dport=udp_message.remote_port,
-            raw_data=udp_message.raw_data,
+            ip_src=metadata.local_ip_address,
+            udp_sport=metadata.local_port,
+            ip_dst=metadata.remote_ip_address,
+            udp_dport=metadata.remote_port,
+            raw_data=metadata.raw_data,
         )
 
     def receive_from(self, timeout=None):
         """ Read data from listening socket and return UdpMessage structure """
 
-        if self.messages_ready.acquire(timeout=timeout):
-            return self.messages.pop(0)
+        if self.metadata_rx_ready.acquire(timeout=timeout):
+            return self.metadata_rx.pop(0)
 
     def close(self):
         """ Close socket """
@@ -89,8 +89,7 @@ class UdpSocket:
         for socket_id in socket_ids:
             socket = UdpSocket.open_sockets.get(socket_id, None)
             if socket:
-                logger = loguru.logger.bind(object_name="socket.")
-                logger.debug(f"{metadata.tracker} - Found matching listening socket {socket_id}")
-                socket.messages.append(metadata)
-                socket.messages_ready.release()
+                loguru.logger.bind(object_name="socket.").debug(f"{metadata.tracker} - Found matching listening socket {socket_id}")
+                socket.metadata_rx.append(metadata)
+                socket.metadata_rx_ready.release()
                 return True

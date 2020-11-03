@@ -13,16 +13,51 @@ import threading
 from ps_tcp import TcpOptMss
 
 
-class TcpSession:
-    """ Class defining all the TCP session parameters """
+class TcpPacketMetadata:
+    """ Store TCP metadata """
 
-    def __init__(self, local_ip_address, local_port, remote_ip_address, remote_port):
-        """ Class constructor """
-  
+    def __init__(
+        self, local_ip_address, local_port, remote_ip_address, remote_port, flag_syn, flag_ack, flag_fin, flag_rst, seq_num, ack_num, raw_data, tracker
+    ):
         self.local_ip_address = local_ip_address
         self.local_port = local_port
         self.remote_ip_address = remote_ip_address
         self.remote_port = remote_port
+        self.flag_syn = flag_syn
+        self.flag_ack = flag_ack
+        self.flag_fin = flag_fin
+        self.flag_rst = flag_rst
+        self.seq_num = seq_num
+        self.ack_num = ack_num
+        self.raw_data = raw_data
+        self.tracker = tracker
+
+    @property
+    def session_id(self):
+        """ Session ID """
+
+        return f"TCP/{self.local_ip_address}/{self.local_port}/{self.remote_ip_address}/{self.remote_port}"
+
+    @property
+    def listening_socket_ids(self):
+        """ Session ID """
+
+        return [
+            f"TCP/{self.local_ip_address}/{self.local_port}/0.0.0.0/0",
+            f"TCP/0.0.0.0/{self.local_port}/0.0.0.0/0",
+        ]
+
+
+class TcpSession:
+    """ Class defining all the TCP session parameters """
+
+    def __init__(self, metadata):
+        """ Class constructor """
+
+        self.local_ip_address = metadata.local_ip_address
+        self.local_port = metadata.local_port
+        self.remote_ip_address = metadata.remote_ip_address
+        self.remote_port = metadata.remote_port
 
         self.state = None
 
@@ -38,20 +73,10 @@ class TcpSession:
         return f"TCP/{self.local_ip_address}/{self.local_port}/{self.remote_ip_address}/{self.remote_port}"
 
 
-class TcpMessage:
-    """ Store TCP message in socket """
-
-    def __init__(self, local_ip_address, local_port, remote_ip_address, remote_port, tcp_packet_rx):
-        self.local_ip_address = local_ip_address
-        self.local_port = local_port
-        self.remote_ip_address = remote_ip_address
-        self.remote_port = remote_port
-        self.tcp_packet_rx = tcp_packet_rx
-
-
 class TcpSocket:
     """ Support for Socket operations """
 
+    tcp_sessions = {}
     open_sockets = {}
 
     def __init__(self, local_ip_address, local_port, remote_ip_address="0.0.0.0", remote_port=0):
@@ -140,56 +165,18 @@ class TcpSocket:
         TcpSocket.packet_handler = packet_handler
 
     @staticmethod
-    def match_socket(local_ip_address, local_port, remote_ip_address, remote_port, tcp_packet_rx):
+    def match_socket(metadata):
         """ Class method - Try to match incoming packet with either established or listening socket """
 
-
-        # Check if incoming packet is part of existing connection
-        session = self.tcp_sessions.get(f"TCP/{ip_packet_rx.ip_dst}/{tcp_packet_rx.tcp_dport}/{ip_packet_rx.ip_src}/{tcp_packet_rx.tcp_sport}", None)
+        # Check if incoming packet is part of existing session
+        session = TcpSocket.tcp_sessions.get(metadata.session_id, None)
 
         if session:
-            self.logger.debug(f"{tcp_packet_rx.tracker} TCP packet is part of existing session {session}")
-            self.phrx_tcp_session(session, tcp_packet_rx)
-            return
-
-        # Check if incoming packet contains intial SYN, if so create new session
-        if tcp_packet_rx.tcp_flag_syn:
-            session = self.tcp_sessions[f"TCP/{ip_packet_rx.ip_dst}/{tcp_packet_rx.tcp_dport}/{ip_packet_rx.ip_src}/{tcp_packet_rx.tcp_sport}"] = TcpSession(
-                local_ip_address=ip_packet_rx.ip_dst, local_port=tcp_packet_rx.tcp_dport, remote_ip_address=ip_packet_rx.ip_src, remote_port=tcp_packet_rx.tcp_sport
-            )
-            self.logger.debug(f"{tcp_packet_rx.tracker} TCP packet with SYN flag, created new session {session}")
-            self.phrx_tcp_session(session, tcp_packet_rx)
-            return
-
-
-
-
-
-        # Check if packet is part of established connection
-        socket_id = f"TCP/{local_ip_address}/{local_port}/{remote_ip_address}/{remote_port}"
-
-        socket = TcpSocket.open_sockets.get(socket_id, None)
-        if socket:
-            logger = loguru.logger.bind(object_name="socket.")
-            logger.debug(f"{tcp_packet_rx.tracker} - Found matching established socket {socket_id}")
-            socket.messages.append(tcp_packet_rx)
-            socket.messages_ready.release()
+            loguru.logger.bind(object_name="socket.").debug(f"{metadata.tracker} TCP packet is part of existing session {session}")
             return True
 
-        # Check if incoming packet is the initial SYN packet
-        if tcp_packet_rx.tcp_flag_syn:
-
-            # Check if packet matches any of listening sockets
-            socket_ids = [
-                f"TCP/{local_ip_address}/{local_port}/0.0.0.0/0",
-                f"TCP/0.0.0.0/{local_port}/0.0.0.0/0",
-            ]
-
-            for socket_id in socket_ids:
-                socket = TcpSocket.open_sockets.get(socket_id, None)
-                if socket:
-                    logger = loguru.logger.bind(object_name="socket.")
-                    logger.debug(f"{tcp_packet_rx.tracker} - Found matching listening socket {socket_id}")
-                    socket.messages.append(TcpMessage(local_ip_address, local_port, remote_ip_address, remote_port, tcp_packet_rx))
-                    socket.messages_ready.release()
-                    return True
+        # Check if incoming packet contains intial SYN and there is listening socket that matches it, if so create new session
+        if metadata.flag_syn and any(_ in metadata.listening_socket_ids for _ in TcpSocket.open_sockets):
+            session = TcpSocket.tcp_sessions[metadata.session_id] = TcpSession(metadata)
+            loguru.logger.bind(object_name="socket.").debug(f"{metadata.tracker} TCP packet with SYN flag, created new session {session}")
+            return True

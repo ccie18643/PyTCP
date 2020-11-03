@@ -19,7 +19,7 @@ class ServiceTcpEcho:
         """ Class constructor """
 
         self.socket = tcp_socket.TcpSocket(local_ip_address, local_port)
-        threading.Thread(target=self.__service).start()
+        # threading.Thread(target=self.__service).start()
 
     def __connection(self, socket):
         if socket.accept():

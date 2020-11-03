@@ -52,8 +52,6 @@ class PacketHandler:
 
         self.ip_id = 0
 
-        self.tcp_sessions = {}
-
         # Update ARP cache object with reference to this packet handler so ARP cache can send out ARP requests
         self.arp_cache.packet_handler = self
 
