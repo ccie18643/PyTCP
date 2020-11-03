@@ -228,6 +228,38 @@ class TcpPacket:
 
         return not bool(inet_cksum.compute_cksum(ip_pseudo_header + self.raw_packet))
 
+    @property
+    def mss(self):
+        """ TCP option - Maximum Segment Size (2) """
+
+        for option in self.tcp_options:
+            if option.opt_code == TCP_OPT_MSS:
+                return option.opt_size
+
+    @property
+    def wscale(self):
+        """ TCP option - Window Scale (3) """
+
+        for option in self.tcp_options:
+            if option.opt_code == TCP_OPT_WSCALE:
+                return option.opt_scale
+
+    @property
+    def sackperm(self):
+        """ TCP option - Sack Permit (4) """
+
+        for option in self.tcp_options:
+            if option.opt_code == TCP_OPT_SACKPERM:
+                return True
+
+    @property
+    def timestamp(self):
+        """ TCP option - Timestamp (8) """
+
+        for option in self.tcp_options:
+            if option.opt_code == TCP_OPT_TIMESTAMP:
+                return option.opt_tsval, option.opt_tsecr
+
 
 """
 
@@ -243,7 +275,7 @@ TCP_OPT_EOL_LEN = 1
 
 
 class TcpOptEol:
-    """ TCP option - End of Option List """
+    """ TCP option - End of Option List (0) """
 
     def __init__(self):
         self.opt_kind = TCP_OPT_EOL
@@ -263,7 +295,7 @@ TCP_OPT_NOP_LEN = 1
 
 
 class TcpOptNop:
-    """ TCP option - No Operation """
+    """ TCP option - No Operation (1) """
 
     def __init__(self):
         self.opt_kind = TCP_OPT_NOP
@@ -283,7 +315,7 @@ TCP_OPT_MSS_LEN = 4
 
 
 class TcpOptMss:
-    """ TCP option - Maximum Segment Size """
+    """ TCP option - Maximum Segment Size (2) """
 
     def __init__(self, raw_option=None, opt_size=None):
         if raw_option:
@@ -310,7 +342,7 @@ TCP_OPT_WSCALE_LEN = 3
 
 
 class TcpOptWscale:
-    """ TCP option - Window Scale """
+    """ TCP option - Window Scale (3) """
 
     def __init__(self, raw_option=None, opt_scale=None):
         if raw_option:
@@ -337,7 +369,7 @@ TCP_OPT_SACKPERM_LEN = 2
 
 
 class TcpOptSackPerm:
-    """ TCP option - Sack Permit """
+    """ TCP option - Sack Permit (4) """
 
     def __init__(self, raw_option=None):
         if raw_option:
@@ -362,7 +394,7 @@ TCP_OPT_TIMESTAMP_LEN = 10
 
 
 class TcpOptTimestamp:
-    """ TCP option - Timestamp """
+    """ TCP option - Timestamp (8) """
 
     def __init__(self, raw_option=None, opt_tsval=None, opt_tsecr=None):
         if raw_option:
