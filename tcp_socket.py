@@ -13,6 +13,31 @@ import threading
 from ps_tcp import TcpOptMss
 
 
+class TcpSession:
+    """ Class defining all the TCP session parameters """
+
+    def __init__(self, local_ip_address, local_port, remote_ip_address, remote_port):
+        """ Class constructor """
+  
+        self.local_ip_address = local_ip_address
+        self.local_port = local_port
+        self.remote_ip_address = remote_ip_address
+        self.remote_port = remote_port
+
+        self.state = None
+
+    def __str__(self):
+        """ String representation """
+
+        return self.session_id
+
+    @property
+    def session_id(self):
+        """ Session ID """
+
+        return f"TCP/{self.local_ip_address}/{self.local_port}/{self.remote_ip_address}/{self.remote_port}"
+
+
 class TcpMessage:
     """ Store TCP message in socket """
 
@@ -117,6 +142,28 @@ class TcpSocket:
     @staticmethod
     def match_socket(local_ip_address, local_port, remote_ip_address, remote_port, tcp_packet_rx):
         """ Class method - Try to match incoming packet with either established or listening socket """
+
+
+        # Check if incoming packet is part of existing connection
+        session = self.tcp_sessions.get(f"TCP/{ip_packet_rx.ip_dst}/{tcp_packet_rx.tcp_dport}/{ip_packet_rx.ip_src}/{tcp_packet_rx.tcp_sport}", None)
+
+        if session:
+            self.logger.debug(f"{tcp_packet_rx.tracker} TCP packet is part of existing session {session}")
+            self.phrx_tcp_session(session, tcp_packet_rx)
+            return
+
+        # Check if incoming packet contains intial SYN, if so create new session
+        if tcp_packet_rx.tcp_flag_syn:
+            session = self.tcp_sessions[f"TCP/{ip_packet_rx.ip_dst}/{tcp_packet_rx.tcp_dport}/{ip_packet_rx.ip_src}/{tcp_packet_rx.tcp_sport}"] = TcpSession(
+                local_ip_address=ip_packet_rx.ip_dst, local_port=tcp_packet_rx.tcp_dport, remote_ip_address=ip_packet_rx.ip_src, remote_port=tcp_packet_rx.tcp_sport
+            )
+            self.logger.debug(f"{tcp_packet_rx.tracker} TCP packet with SYN flag, created new session {session}")
+            self.phrx_tcp_session(session, tcp_packet_rx)
+            return
+
+
+
+
 
         # Check if packet is part of established connection
         socket_id = f"TCP/{local_ip_address}/{local_port}/{remote_ip_address}/{remote_port}"

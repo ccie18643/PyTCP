@@ -26,7 +26,6 @@ class PacketHandler:
     from phrx_icmp import phrx_icmp
     from phrx_udp import phrx_udp
     from phrx_tcp import phrx_tcp
-    from phrx_tcp import phrx_tcp_session
 
     from phtx_ether import phtx_ether
     from phtx_arp import phtx_arp

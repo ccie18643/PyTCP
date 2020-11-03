@@ -7,7 +7,7 @@ phrx_udp.py - packet handler for inbound UDP packets
 
 """
 
-from udp_socket import UdpSocket
+from udp_socket import UdpSocket, UdpMetadata
 
 import ps_icmp
 
@@ -27,12 +27,14 @@ def phrx_udp(self, ip_packet_rx, udp_packet_rx):
 
     # Send packet info and data to socket mechanism for further processing
     if UdpSocket.match_socket(
-        local_ip_address=ip_packet_rx.ip_dst,
-        local_port=udp_packet_rx.udp_dport,
-        remote_ip_address=ip_packet_rx.ip_src,
-        remote_port=udp_packet_rx.udp_sport,
-        raw_data=udp_packet_rx.raw_data,
-        tracker=udp_packet_rx.tracker,
+        UdpMetadata(
+            local_ip_address=ip_packet_rx.ip_dst,
+            local_port=udp_packet_rx.udp_dport,
+            remote_ip_address=ip_packet_rx.ip_src,
+            remote_port=udp_packet_rx.udp_sport,
+            raw_data=udp_packet_rx.raw_data,
+            tracker=udp_packet_rx.tracker,
+        )
     ):
         return
 
