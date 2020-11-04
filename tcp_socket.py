@@ -113,7 +113,7 @@ class TcpSession:
             return
 
         # In SYN_RCVD state and got ACK packet -> Change state to ESTABLISED
-        if (self.state == "SYN_RCVD" and all({metadata.flag_ack}) and not any({metadata.flag_syn, metadata.flag_fin, metadata.flag_rst})):
+        if self.state == "SYN_RCVD" and all({metadata.flag_ack}) and not any({metadata.flag_syn, metadata.flag_fin, metadata.flag_rst}):
             self.state = "ESTABLISHED"
             self.logger.opt(ansi=True).info(f"{self.session_id} - State change: <yellow>SYN_RCVD -> ESTABLISHED</>")
             return
@@ -130,7 +130,7 @@ class TcpSession:
             if metadata.seq_num == self.local_ack_num - 1:
                 self.__send(flag_ack=True, tracker=metadata.tracker)
 
-            # Check if packet contains already known data, if so drop it 
+            # Check if packet contains already known data, if so drop it
             if metadata.seq_num < self.local_ack_num - 1:
                 return
 
@@ -145,15 +145,15 @@ class TcpSession:
 
         # In ESTABLISHED state and got FIN/ACK packet -> Send ACK and change state to CLOSE_WAIT, then wait for aplication to close socket
         if self.state == "ESTABLISHED" and all({metadata.flag_fin, metadata.flag_ack}) and not any({metadata.flag_syn, metadata.flag_rst}):
-            
+
             self.local_ack_num = metadata.seq_num + 1
-            self.__send(flag_ack=True, tracker=metadata.tracker) 
+            self.__send(flag_ack=True, tracker=metadata.tracker)
             self.state = "CLOSE_WAIT"
             self.logger.opt(ansi=True).info(f"{self.session_id} - State change: <yellow>ESTABLISHED -> CLOSE_WAIT</>")
 
             # *** Need to comunicate to socket that the session got closed ***
 
-            self.__send(flag_fin=True, flag_ack=True, tracker=metadata.tracker) 
+            self.__send(flag_fin=True, flag_ack=True, tracker=metadata.tracker)
             self.local_seq_num += 1
             self.state = "LAST_ACK"
             self.logger.opt(ansi=True).info(f"{self.session_id} - State change: <yellow>CLOSE_WAIT -> LAST_ACK</>")
