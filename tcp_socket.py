@@ -51,26 +51,22 @@ class TcpPacketMetadata:
 class TcpSession:
     """ Class defining all the TCP session parameters """
 
-    def __init__(self, metadata, state="CLOSED"):
+    def __init__(self, metadata, socket, state="CLOSED"):
         """ Class constructor """
 
         self.logger = loguru.logger.bind(object_name="tcp_session.")
 
         self.local_ip_address = metadata.local_ip_address
         self.local_port = metadata.local_port
-
         self.remote_ip_address = metadata.remote_ip_address
         self.remote_port = metadata.remote_port
-
-        self.seq_num = random.randint(0, 0xFFFFFFFF)
+        self.seq_num = random.randint(0, 0xffffffff)
         self.ack_num = 0
-
         self.local_init_seq_num = self.seq_num
         self.remote_init_seq_num = None
-
         self.win = 65535
-
         self.state = state
+        self.socket = socket
         self.logger.opt(ansi=True).info(f"{self.session_id} - State change: <yellow>CLOSED -> {self.state}</>")
 
     def __str__(self):
@@ -115,10 +111,11 @@ class TcpSession:
             self.seq_num += 1
             return
 
-        # In SYN_RCVD state and got ACK packet -> Change state to ESTABLISED
+        # In SYN_RCVD state and got ACK packet -> Change state to ESTABLISHED
         if self.state == "SYN_RCVD" and all({metadata.flag_ack}) and not any({metadata.flag_syn, metadata.flag_fin, metadata.flag_rst}):
             self.state = "ESTABLISHED"
             self.logger.opt(ansi=True).info(f"{self.session_id} - State change: <yellow>SYN_RCVD -> ESTABLISHED</>")
+            self.socket.tcp_session_established.release()
             return
 
         # In ESTABLISHED state and got ACK packet -> Send ACK packet
@@ -178,25 +175,32 @@ class TcpSocket:
 
     packet_handler = None
 
-    def __init__(self, local_ip_address, local_port, remote_ip_address="0.0.0.0", remote_port=0):
+    def __init__(self, local_ip_address=None, local_port=None, remote_ip_address="0.0.0.0", remote_port=0, tcp_session=None):
         """ Class constructor """
-
-        self.tcp_sessions = {}
-
-        self.data_rx = []
-        self.data_rx_ready = threading.Semaphore(0)
 
         self.logger = loguru.logger.bind(object_name="socket.")
 
-        self.local_ip_address = local_ip_address
-        self.local_port = local_port
-        self.remote_ip_address = remote_ip_address
-        self.remote_port = remote_port
+        self.tcp_sessions = {}
 
+        if tcp_session:
+            self.local_ip_address = tcp_session.local_ip_address
+            self.local_port = tcp_session.local_port
+            self.remote_ip_address = tcp_session.remote_ip_address
+            self.remote_port = tcp_session.remote_port
+            self.tcp_sessions[tcp_session.session_id] = tcp_session
+
+        else:
+            self.local_ip_address = local_ip_address
+            self.local_port = local_port
+            self.remote_ip_address = remote_ip_address
+            self.remote_port = remote_port
+
+        self.data_rx = []
+        self.data_rx_ready = threading.Semaphore(0)
+        self.tcp_session_established = threading.Semaphore(0)
         self.socket_id = f"TCP/{self.local_ip_address}/{self.local_port}/{self.remote_ip_address}/{self.remote_port}"
 
         TcpSocket.open_sockets[self.socket_id] = self
-
         self.logger.debug(f"Opened TCP socket {self.socket_id}")
 
     def send(self, raw_data):
@@ -209,15 +213,19 @@ class TcpSocket:
 
         pass
 
-    def listen(self):
+    def listen(self, timeout=None):
         """ Wait till there is session established on listening socket """
 
-        pass
+        self.logger.debug(f"Waiting till we have established TCP connection in listening socket {self.socket_id}")
+
+        return self.tcp_session_established.acquire(timeout=timeout)
 
     def accept(self):
         """ Pick up established session from listening socket and create new established socket for it """
 
-        pass
+        for session_id, session in self.tcp_sessions.items():
+            if session.state == "ESTABLISHED":
+                return TcpSocket(tcp_session=self.tcp_sessions.pop(session_id))
 
     def close(self):
         """ Close socket """
@@ -237,8 +245,8 @@ class TcpSocket:
         # Check if incoming packet matches any established socket
         socket = TcpSocket.open_sockets.get(metadata.session_id, None)
         if socket:
-            loguru.logger.bind(object_name="socket.").debug(f"{metadata.tracker} - TCP packet is part of existing session {session}")
-            socket.tcp_sessions[0].process(metadata)
+            loguru.logger.bind(object_name="socket.").debug(f"{metadata.tracker} - TCP packet is part of established sessin {metadata.session_id}")
+            socket.tcp_sessions[metadata.session_id].process(metadata)
             return True
 
         # Check if incoming packet is an initial SYN packet and matches any listening socket, if so create new session and assign it to that socket
@@ -246,7 +254,7 @@ class TcpSocket:
             for socket_id in metadata.listening_socket_ids:
                 socket = TcpSocket.open_sockets.get(socket_id, None)
                 if socket:
-                    session = TcpSession(metadata, state="LISTEN")
+                    session = TcpSession(metadata, socket, state="LISTEN")
                     loguru.logger.bind(object_name="socket.").debug(f"{metadata.tracker} - TCP packet with SYN flag, created new session {session}")
                     socket.tcp_sessions[session.session_id] = session
                     session.process(metadata)
@@ -261,4 +269,3 @@ class TcpSocket:
                     loguru.logger.bind(object_name="socket.").debug(f"{metadata.tracker} - TCP packet is part of existing session {session}")
                     session.process(metadata)
                     return True
-

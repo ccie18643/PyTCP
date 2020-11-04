@@ -19,6 +19,16 @@ class ServiceTcpEcho:
         """ Class constructor """
 
         self.socket = tcp_socket.TcpSocket(local_ip_address, local_port)
+        print("Service TCP Echo: Listening socket created")
+
+        self.socket.listen()
+        print("Service TCP Echo: Session established")
+
+        if self.socket.accept():
+            print("Service TCP Echo: Session accepted")
+        else:
+            print("Service TCP Echo: Session not accepted")
+
         # threading.Thread(target=self.__service).start()
 
     def __connection(self, socket):
