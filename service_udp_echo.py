@@ -27,3 +27,4 @@ class ServiceUdpEcho:
             metadata = self.socket.receive_from()
             print("Service UDP echo: Received message", metadata.raw_data)
             self.socket.send_to(metadata)
+            print("Service UDP echo: Sent out message", metadata.raw_data)

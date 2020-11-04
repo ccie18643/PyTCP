@@ -60,7 +60,7 @@ class TcpSession:
         self.local_port = metadata.local_port
         self.remote_ip_address = metadata.remote_ip_address
         self.remote_port = metadata.remote_port
-        self.seq_num = random.randint(0, 0xffffffff)
+        self.seq_num = random.randint(0, 0xFFFFFFFF)
         self.ack_num = 0
         self.local_init_seq_num = self.seq_num
         self.remote_init_seq_num = None
@@ -69,12 +69,15 @@ class TcpSession:
         self.socket = socket
         self.logger.opt(ansi=True).info(f"{self.session_id} - State change: <yellow>CLOSED -> {self.state}</>")
 
+        self.data_rx = []
+        self.data_rx_ready = threading.Semaphore(0)
+
     def __str__(self):
         """ String representation """
 
         return self.session_id
 
-    def __send(self, flag_syn=False, flag_ack=False, flag_fin=False, flag_rst=False, tracker=None):
+    def __send(self, flag_syn=False, flag_ack=False, flag_fin=False, flag_rst=False, raw_data = b"", tracker=None):
         """ Send out TCP packet """
 
         TcpSocket.packet_handler.phtx_tcp(
@@ -89,6 +92,7 @@ class TcpSession:
             tcp_flag_fin=flag_fin,
             tcp_flag_rst=flag_rst,
             tcp_win=self.win,
+            raw_data=raw_data,
             echo_tracker=tracker,
         )
 
@@ -97,6 +101,12 @@ class TcpSession:
         """ Session ID """
 
         return f"TCP/{self.local_ip_address}/{self.local_port}/{self.remote_ip_address}/{self.remote_port}"
+
+    def send(self, raw_data):
+        """ Send out raw_data passed from socket """
+
+        self.__send(flag_ack=True, raw_data=raw_data)
+        self.seq_num += len(raw_data)
 
     def process(self, metadata):
         """ Process metadata of incoming TCP packet """
@@ -126,15 +136,13 @@ class TcpSession:
                 self.logger.warning(f"TCP packet has higher sequence number ({metadata.seq_num}) than expected ({metadata.ack_num}), droping packet")
                 return
 
-            # Check if packet contains any new data, if so pass the data to socket
-            if metadata.seq_num + len(metadata.raw_data) > self.ack_num:
+            # If packet's sequence number matches what we are expecting and if packet contains any data, if so pass the data to socket and send out ACK for it
+            if metadata.seq_num == self.ack_num and len(metadata.raw_data) > 0:
                 self.ack_num = metadata.seq_num + len(metadata.raw_data)
-
-                # *** Need to send data to socket ***
-
-            # Acknowledge the amount of data we received so far (this also takes care of duplicates and responses for TCP Keep-Alive packets)
-            self.__send(flag_ack=True, tracker=metadata.tracker)
-            return
+                self.data_rx.append(metadata.raw_data)
+                self.data_rx_ready.release()
+                self.__send(flag_ack=True, tracker=metadata.tracker)
+                return
 
         # In ESTABLISHED state and got FIN/ACK packet -> Send ACK and change state to CLOSE_WAIT, then wait for aplication to close socket
         if self.state == "ESTABLISHED" and all({metadata.flag_fin, metadata.flag_ack}) and not any({metadata.flag_syn, metadata.flag_rst}):
@@ -180,23 +188,20 @@ class TcpSocket:
 
         self.logger = loguru.logger.bind(object_name="socket.")
 
-        self.tcp_sessions = {}
-
         if tcp_session:
             self.local_ip_address = tcp_session.local_ip_address
             self.local_port = tcp_session.local_port
             self.remote_ip_address = tcp_session.remote_ip_address
             self.remote_port = tcp_session.remote_port
-            self.tcp_sessions[tcp_session.session_id] = tcp_session
+            self.tcp_session = tcp_session
 
         else:
+            self.tcp_sessions = {}
             self.local_ip_address = local_ip_address
             self.local_port = local_port
             self.remote_ip_address = remote_ip_address
             self.remote_port = remote_port
 
-        self.data_rx = []
-        self.data_rx_ready = threading.Semaphore(0)
         self.tcp_session_established = threading.Semaphore(0)
         self.socket_id = f"TCP/{self.local_ip_address}/{self.local_port}/{self.remote_ip_address}/{self.remote_port}"
 
@@ -204,14 +209,16 @@ class TcpSocket:
         self.logger.debug(f"Opened TCP socket {self.socket_id}")
 
     def send(self, raw_data):
-        """ Put raw_data into TX ring """
+        """ Pass raw_data to TCP session """
 
-        pass
+        self.tcp_session.send(raw_data)
 
-    def receive(self):
+
+    def receive(self, timeout=None):
         """ Read data from established socket and return raw_data """
 
-        pass
+        if self.tcp_session.data_rx_ready.acquire(timeout=timeout):
+            return self.tcp_session.data_rx.pop(0)
 
     def listen(self, timeout=None):
         """ Wait till there is session established on listening socket """
@@ -246,7 +253,7 @@ class TcpSocket:
         socket = TcpSocket.open_sockets.get(metadata.session_id, None)
         if socket:
             loguru.logger.bind(object_name="socket.").debug(f"{metadata.tracker} - TCP packet is part of established sessin {metadata.session_id}")
-            socket.tcp_sessions[metadata.session_id].process(metadata)
+            socket.tcp_session.process(metadata)
             return True
 
         # Check if incoming packet is an initial SYN packet and matches any listening socket, if so create new session and assign it to that socket

@@ -21,32 +21,28 @@ class ServiceTcpEcho:
         self.socket = tcp_socket.TcpSocket(local_ip_address, local_port)
         print("Service TCP Echo: Listening socket created")
 
-        self.socket.listen()
-        print("Service TCP Echo: Session established")
+        threading.Thread(target=self.__service).start()
 
-        if self.socket.accept():
-            print("Service TCP Echo: Session accepted")
-        else:
-            print("Service TCP Echo: Session not accepted")
+    def __connection(self):
+        socket = self.socket.accept()
 
-        # threading.Thread(target=self.__service).start()
-
-    def __connection(self, socket):
-        if socket.accept():
+        if socket:
             print("Service TCP Echo: New connection established")
 
             while True:
                 raw_data = socket.receive()
-                if raw_data == b"\n":
+                if raw_data == b"\r\n":
                     break
                 print("Service TCP Echo: Received message", raw_data)
                 socket.send(raw_data)
+                print("Service TCP Echo: Sent out message", raw_data)
 
             socket.close()
             print("Service TCP Echo: Closed connection")
 
     def __service(self):
         while True:
-            new_socket = self.socket.listen()
-            print("Service TCP Echo: New connection incomming")
-            threading.Thread(target=self.__connection, args=(new_socket,)).start()
+            self.socket.listen()
+            print("Service TCP Echo: Session established")
+
+            threading.Thread(target=self.__connection).start()
