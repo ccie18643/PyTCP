@@ -155,20 +155,25 @@ class TcpSession:
             self.logger.opt(ansi=True).info(f"{self.session_id} - State change: <yellow>CLOSE_WAIT -> LAST_ACK</>")
             return
 
-        # In LAST_ACK state and got ACK packet -> Change state to CLOSED and delete session
+        # In LAST_ACK state and got ACK packet -> Change state to CLOSED
         if self.state == "LAST_ACK" and all({metadata.flag_ack}) and not any({metadata.flag_syn, metadata.flag_fin, metadata.flag_rst}):
             self.remote_seq_num = metadata.seq_num
             self.remote_ack_num = metadata.ack_num
             self.state = "CLOSED"
             self.logger.opt(ansi=True).info(f"{self.session_id} - State change: <yellow>LAST_ACK -> CLOSED</>")
-            TcpSocket.tcp_sessions.pop(self.session_id)
+
+            # *** Perhaps session needs to be removed from socket from here
+
             return
+
+        # *** Need to handle situation when we get RST packet
+
+        # *** Need to handle situation when we get some kind of bogus packet, send RST in response perhaps ?
 
 
 class TcpSocket:
     """ Support for Socket operations """
 
-    tcp_sessions = {}
     open_sockets = {}
 
     packet_handler = None
@@ -176,8 +181,11 @@ class TcpSocket:
     def __init__(self, local_ip_address, local_port, remote_ip_address="0.0.0.0", remote_port=0):
         """ Class constructor """
 
-        self.messages = []
-        self.messages_ready = threading.Semaphore(0)
+        self.tcp_sessions = {}
+
+        self.data_rx = []
+        self.data_rx_ready = threading.Semaphore(0)
+
         self.logger = loguru.logger.bind(object_name="socket.")
 
         self.local_ip_address = local_ip_address
@@ -226,17 +234,31 @@ class TcpSocket:
     def match_socket(metadata):
         """ Class method - Try to match incoming packet with either established or listening socket """
 
-        # Check if incoming packet is part of existing session
-        session = TcpSocket.tcp_sessions.get(metadata.session_id, None)
-
-        if session:
+        # Check if incoming packet matches any established socket
+        socket = TcpSocket.open_sockets.get(metadata.session_id, None)
+        if socket:
             loguru.logger.bind(object_name="socket.").debug(f"{metadata.tracker} - TCP packet is part of existing session {session}")
-            session.process(metadata)
+            socket.tcp_sessions[0].process(metadata)
             return True
 
-        # Check if incoming packet contains intial SYN and there is listening socket that matches it, if so create new session
-        if metadata.flag_syn and any(_ in metadata.listening_socket_ids for _ in TcpSocket.open_sockets):
-            session = TcpSocket.tcp_sessions[metadata.session_id] = TcpSession(metadata, state="LISTEN")
-            loguru.logger.bind(object_name="socket.").debug(f"{metadata.tracker} - TCP packet with SYN flag, created new session {session}")
-            session.process(metadata)
-            return True
+        # Check if incoming packet is an initial SYN packet and matches any listening socket, if so create new session and assign it to that socket
+        if all({metadata.flag_syn}) and not any({metadata.flag_ack, metadata.flag_fin, metadata.flag_rst}):
+            for socket_id in metadata.listening_socket_ids:
+                socket = TcpSocket.open_sockets.get(socket_id, None)
+                if socket:
+                    session = TcpSession(metadata, state="LISTEN")
+                    loguru.logger.bind(object_name="socket.").debug(f"{metadata.tracker} - TCP packet with SYN flag, created new session {session}")
+                    socket.tcp_sessions[session.session_id] = session
+                    session.process(metadata)
+                    return True
+
+        # Check if incoming packet matches any listening socket
+        for socket_id in metadata.listening_socket_ids:
+            socket = TcpSocket.open_sockets.get(socket_id, None)
+            if socket:
+                session = socket.tcp_sessions.get(metadata.session_id, None)
+                if session:
+                    loguru.logger.bind(object_name="socket.").debug(f"{metadata.tracker} - TCP packet is part of existing session {session}")
+                    session.process(metadata)
+                    return True
+

@@ -33,9 +33,10 @@ class UdpSocket:
     def __init__(self, local_ip_address, local_port, remote_ip_address="0.0.0.0", remote_port=0):
         """ Class constructor """
 
+        self.logger = loguru.logger.bind(object_name="socket.")
+
         self.metadata_rx = []
         self.metadata_rx_ready = threading.Semaphore(0)
-        self.logger = loguru.logger.bind(object_name="udp_socket.")
 
         self.local_ip_address = local_ip_address
         self.local_port = local_port
