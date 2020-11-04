@@ -62,9 +62,7 @@ class TcpSession:
         self.remote_port = metadata.remote_port
         self.seq_num = random.randint(0, 0xFFFFFFFF)
         self.ack_num = 0
-        self.local_init_seq_num = self.seq_num
-        self.remote_init_seq_num = None
-        self.win = 65535
+        self.win = 5
         self.state = state
         self.socket = socket
         self.logger.opt(ansi=True).info(f"{self.session_id} - State change: <yellow>CLOSED -> {self.state}</>")
@@ -115,7 +113,6 @@ class TcpSession:
         if self.state == "LISTEN" and all({metadata.flag_syn}) and not any({metadata.flag_ack, metadata.flag_fin, metadata.flag_rst}):
             self.state = "SYN_RCVD"
             self.logger.opt(ansi=True).info(f"{self.session_id} - State change: <yellow>LISTEN -> SYN_RCVD</>")
-            self.remote_init_seq_num = metadata.seq_num
             self.ack_num = metadata.seq_num + 1
             self.__send(flag_syn=True, flag_ack=True, tracker=metadata.tracker)
             self.seq_num += 1
