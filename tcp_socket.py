@@ -62,7 +62,7 @@ class TcpSession:
         self.remote_port = metadata.remote_port
         self.seq_num = random.randint(0, 0xFFFFFFFF)
         self.ack_num = 0
-        self.win = 5
+        self.win = 1024
         self.state = state
         self.socket = socket
         self.logger.opt(ansi=True).info(f"{self.session_id} - State change: <yellow>CLOSED -> {self.state}</>")

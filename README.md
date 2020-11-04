@@ -14,13 +14,13 @@ Python based attempt to create fully operational TCP/IP stack for educational pu
 
 #### Work in progress:
 
- - TCP protocol - basic support
+ - TCP protocol - basic support, we can send and receive short messages, no sliding wndow and error handling implemented yet
  - TCP socket mechanism - full support for multi threaded services
  - Multi threaded TCP Echo servce - created to develop and test TCP specific socket mechanisms with one listening socket and multiple child sockets supporting actuall connections
+ - DHCP client service for automatic IPv4 address configuration - basic implementation, need to add timeouts and error handling
 
 #### Next steps:
  
- - DHCP client service for automatic IPv4 address configuration
  - IPv6 protocol - basic support with address auto configuration
  - ICMPv6 protocol - bassic support, features needed for stack operation
  - Ability to route packets out of local subnet
