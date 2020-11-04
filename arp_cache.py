@@ -14,8 +14,8 @@ import threading
 import ps_arp
 
 
-ARP_ENTRY_MAX_AGE = 60
-ARP_ENTRY_REFRESH_TIME = 10
+ARP_ENTRY_MAX_AGE = 3600
+ARP_ENTRY_REFRESH_TIME = 300
 
 
 class ArpCache:

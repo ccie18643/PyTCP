@@ -15,8 +15,8 @@ import struct
 import loguru
 
 from udp_socket import UdpSocket
+from tcp_socket import TcpSocket
 
-# from tcp_socket import TcpSocket
 from arp_cache import ArpCache
 from rx_ring import RxRing
 from tx_ring import TxRing
@@ -64,7 +64,7 @@ def main():
     arp_cache = ArpCache()
     packet_handler = PacketHandler(STACK_MAC_ADDRESS, STACK_IP_ADDRESS, rx_ring, tx_ring, arp_cache)
     UdpSocket.set_packet_handler(packet_handler)
-    # TcpSocket.set_packet_handler(packet_handler)
+    TcpSocket.set_packet_handler(packet_handler)
     ServiceUdpEcho()
     ServiceTcpEcho()
     # ClientUdpDhcp(STACK_MAC_ADDRESS)

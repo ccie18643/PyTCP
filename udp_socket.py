@@ -28,6 +28,8 @@ class UdpSocket:
 
     open_sockets = {}
 
+    packet_handler = None
+
     def __init__(self, local_ip_address, local_port, remote_ip_address="0.0.0.0", remote_port=0):
         """ Class constructor """
 
