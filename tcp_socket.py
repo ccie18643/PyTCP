@@ -58,15 +58,17 @@ class TcpSession:
 
         self.local_ip_address = metadata.local_ip_address
         self.local_port = metadata.local_port
-        self.local_seq_num = random.randint(0, 0xFFFFFFFF)
-        self.local_ack_num = 0
 
         self.remote_ip_address = metadata.remote_ip_address
         self.remote_port = metadata.remote_port
-        self.remote_seq_num = None
-        self.remote_ack_num = None
 
-        self.win = 1200
+        self.seq_num = random.randint(0, 0xFFFFFFFF)
+        self.ack_num = 0
+
+        self.local_init_seq_num = self.seq_num
+        self.remote_init_seq_num = None
+
+        self.win = 65535
 
         self.state = state
         self.logger.opt(ansi=True).info(f"{self.session_id} - State change: <yellow>CLOSED -> {self.state}</>")
@@ -84,8 +86,8 @@ class TcpSession:
             ip_dst=self.remote_ip_address,
             tcp_sport=self.local_port,
             tcp_dport=self.remote_port,
-            tcp_seq_num=self.local_seq_num,
-            tcp_ack_num=self.local_ack_num,
+            tcp_seq_num=self.seq_num,
+            tcp_ack_num=self.ack_num,
             tcp_flag_syn=flag_syn,
             tcp_flag_ack=flag_ack,
             tcp_flag_fin=flag_fin,
@@ -107,9 +109,10 @@ class TcpSession:
         if self.state == "LISTEN" and all({metadata.flag_syn}) and not any({metadata.flag_ack, metadata.flag_fin, metadata.flag_rst}):
             self.state = "SYN_RCVD"
             self.logger.opt(ansi=True).info(f"{self.session_id} - State change: <yellow>LISTEN -> SYN_RCVD</>")
-            self.local_ack_num = metadata.seq_num + 1
+            self.remote_init_seq_num = metadata.seq_num
+            self.ack_num = metadata.seq_num + 1
             self.__send(flag_syn=True, flag_ack=True, tracker=metadata.tracker)
-            self.local_seq_num += 1
+            self.seq_num += 1
             return
 
         # In SYN_RCVD state and got ACK packet -> Change state to ESTABLISED
@@ -121,32 +124,25 @@ class TcpSession:
         # In ESTABLISHED state and got ACK packet -> Send ACK packet
         if self.state == "ESTABLISHED" and all({metadata.flag_ack}) and not any({metadata.flag_syn, metadata.flag_fin, metadata.flag_rst}):
 
-            # Check if we are missing any data due to lost packet
-            if metadata.seq_num > self.local_ack_num:
+            # Check if we are missing any data due to lost packet, if so drop the packet so need of retansmission of lost data is signalized to the peer
+            if metadata.seq_num > self.ack_num:
                 self.logger.warning(f"TCP packet has higher sequence number ({metadata.seq_num}) than expected ({metadata.ack_num}), droping packet")
                 return
 
-            # Check if packet is a TCP Keep-Alive, if so respond to it
-            if metadata.seq_num == self.local_ack_num - 1:
-                self.__send(flag_ack=True, tracker=metadata.tracker)
-
-            # Check if packet contains already known data, if so drop it
-            if metadata.seq_num < self.local_ack_num - 1:
-                return
-
-            # Check if packet contains any new data, if so respond with ACK
-            if metadata.seq_num + len(metadata.raw_data) > self.local_ack_num:
-                self.local_ack_num = metadata.seq_num + len(metadata.raw_data)
+            # Check if packet contains any new data, if so pass the data to socket
+            if metadata.seq_num + len(metadata.raw_data) > self.ack_num:
+                self.ack_num = metadata.seq_num + len(metadata.raw_data)
 
                 # *** Need to send data to socket ***
 
-                self.__send(flag_ack=True, tracker=metadata.tracker)
-                return
+            # Acknowledge the amount of data we received so far (this also takes care of duplicates and responses for TCP Keep-Alive packets)
+            self.__send(flag_ack=True, tracker=metadata.tracker)
+            return
 
         # In ESTABLISHED state and got FIN/ACK packet -> Send ACK and change state to CLOSE_WAIT, then wait for aplication to close socket
         if self.state == "ESTABLISHED" and all({metadata.flag_fin, metadata.flag_ack}) and not any({metadata.flag_syn, metadata.flag_rst}):
 
-            self.local_ack_num = metadata.seq_num + 1
+            self.ack_num = metadata.seq_num + 1
             self.__send(flag_ack=True, tracker=metadata.tracker)
             self.state = "CLOSE_WAIT"
             self.logger.opt(ansi=True).info(f"{self.session_id} - State change: <yellow>ESTABLISHED -> CLOSE_WAIT</>")
@@ -154,7 +150,7 @@ class TcpSession:
             # *** Need to comunicate to socket that the session got closed ***
 
             self.__send(flag_fin=True, flag_ack=True, tracker=metadata.tracker)
-            self.local_seq_num += 1
+            self.seq_num += 1
             self.state = "LAST_ACK"
             self.logger.opt(ansi=True).info(f"{self.session_id} - State change: <yellow>CLOSE_WAIT -> LAST_ACK</>")
             return
