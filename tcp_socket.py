@@ -103,10 +103,6 @@ class TcpSession:
     def process(self, metadata):
         """ Process metadata of incoming TCP packet """
 
-        # Check if we not missing any data, due to lost packets
-
-        #self.local_ack_num = metadata.seq_num + metadata.flag_syn + metadata.flag_fin + len(metadata.raw_data)
-
         # In LISTEN state and got SYN packet -> Change state to SYC_RCVD and send out SYN/ACK
         if self.state == "LISTEN" and all({metadata.flag_syn}) and not any({metadata.flag_ack, metadata.flag_fin, metadata.flag_rst}):
             self.state = "SYN_RCVD"
@@ -125,12 +121,25 @@ class TcpSession:
         # In ESTABLISHED state and got ACK packet -> Send ACK packet
         if self.state == "ESTABLISHED" and all({metadata.flag_ack}) and not any({metadata.flag_syn, metadata.flag_fin, metadata.flag_rst}):
 
+            # Check if we are missing any data due to lost packet
             if metadata.seq_num > self.local_ack_num:
                 self.logger.warning(f"TCP packet has higher sequence number ({metadata.seq_num}) than expected ({metadata.ack_num}), droping packet")
                 return
 
+            # Check if packet is a TCP Keep-Alive, if so respond to it
+            if metadata.seq_num == self.local_ack_num - 1:
+                self.__send(flag_ack=True, tracker=metadata.tracker)
+
+            # Check if packet contains already known data, if so drop it 
+            if metadata.seq_num < self.local_ack_num - 1:
+                return
+
+            # Check if packet contains any new data, if so respond with ACK
             if metadata.seq_num + len(metadata.raw_data) > self.local_ack_num:
                 self.local_ack_num = metadata.seq_num + len(metadata.raw_data)
+
+                # *** Need to send data to socket ***
+
                 self.__send(flag_ack=True, tracker=metadata.tracker)
                 return
 
@@ -142,7 +151,7 @@ class TcpSession:
             self.state = "CLOSE_WAIT"
             self.logger.opt(ansi=True).info(f"{self.session_id} - State change: <yellow>ESTABLISHED -> CLOSE_WAIT</>")
 
-            # Need to comunicate to socket that the session got closed
+            # *** Need to comunicate to socket that the session got closed ***
 
             self.__send(flag_fin=True, flag_ack=True, tracker=metadata.tracker) 
             self.local_seq_num += 1
