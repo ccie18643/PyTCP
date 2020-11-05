@@ -11,6 +11,8 @@ import loguru
 import threading
 import random
 
+from tracker import Tracker
+
 
 class TcpPacketMetadata:
     """ Store TCP metadata """
@@ -60,8 +62,9 @@ class TcpSession:
         self.local_port = metadata.local_port
         self.remote_ip_address = metadata.remote_ip_address
         self.remote_port = metadata.remote_port
-        self.seq_num = random.randint(0, 0xFFFFFFFF)
-        self.ack_num = 0
+        self.local_seq_num = random.randint(0, 0xFFFFFFFF)
+        self.local_ack_num = 0
+        self.remote_ack_num = 0
         self.win = 1024
         self.state = state
         self.socket = socket
@@ -75,7 +78,7 @@ class TcpSession:
 
         return self.session_id
 
-    def __send(self, flag_syn=False, flag_ack=False, flag_fin=False, flag_rst=False, raw_data=b"", tracker=None):
+    def __send(self, flag_syn=False, flag_ack=False, flag_fin=False, flag_rst=False, raw_data=b"", tracker=None, echo_tracker=None):
         """ Send out TCP packet """
 
         TcpSocket.packet_handler.phtx_tcp(
@@ -83,16 +86,19 @@ class TcpSession:
             ip_dst=self.remote_ip_address,
             tcp_sport=self.local_port,
             tcp_dport=self.remote_port,
-            tcp_seq_num=self.seq_num,
-            tcp_ack_num=self.ack_num,
+            tcp_seq_num=self.local_seq_num,
+            tcp_ack_num=self.local_ack_num,
             tcp_flag_syn=flag_syn,
             tcp_flag_ack=flag_ack,
             tcp_flag_fin=flag_fin,
             tcp_flag_rst=flag_rst,
             tcp_win=self.win,
             raw_data=raw_data,
-            echo_tracker=tracker,
+            tracker=tracker,
+            echo_tracker=echo_tracker,
         )
+
+        self.local_seq_num += len(raw_data) + flag_syn + flag_fin
 
     @property
     def session_id(self):
@@ -104,26 +110,26 @@ class TcpSession:
         """ Send out raw_data passed from socket """
 
         self.__send(flag_ack=True, raw_data=raw_data)
-        self.seq_num += len(raw_data)
 
     def close(self):
         """ Close session """
 
         self.__send(flag_fin=True, flag_ack=True)
-        self.seq_num += 1
         self.state = "LAST_ACK"
         self.logger.opt(ansi=True).info(f"{self.session_id} - State change: <yellow>CLOSE_WAIT -> LAST_ACK</>")
 
     def process(self, metadata):
         """ Process metadata of incoming TCP packet """
 
+        # Make note of remote ACK numberm that indcates how much of data we sent was received
+        self.remote_ack_num = metadata.ack_num
+
         # In LISTEN state and got SYN packet -> Change state to SYC_RCVD and send out SYN/ACK
         if self.state == "LISTEN" and all({metadata.flag_syn}) and not any({metadata.flag_ack, metadata.flag_fin, metadata.flag_rst}):
             self.state = "SYN_RCVD"
+            self.local_ack_num = metadata.seq_num + metadata.flag_syn
             self.logger.opt(ansi=True).info(f"{self.session_id} - State change: <yellow>LISTEN -> SYN_RCVD</>")
-            self.ack_num = metadata.seq_num + 1
             self.__send(flag_syn=True, flag_ack=True, tracker=metadata.tracker)
-            self.seq_num += 1
             return
 
         # In SYN_RCVD state and got ACK packet -> Change state to ESTABLISHED
@@ -137,13 +143,21 @@ class TcpSession:
         if self.state == "ESTABLISHED" and all({metadata.flag_ack}) and not any({metadata.flag_syn, metadata.flag_fin, metadata.flag_rst}):
 
             # Check if we are missing any data due to lost packet, if so drop the packet so need of retansmission of lost data is signalized to the peer
-            if metadata.seq_num > self.ack_num:
+            if metadata.seq_num > self.local_ack_num:
                 self.logger.warning(f"TCP packet has higher sequence number ({metadata.seq_num}) than expected ({metadata.ack_num}), droping packet")
                 return
 
-            # If packet's sequence number matches what we are expecting and if packet contains any data, if so pass the data to socket and send out ACK for it
-            if metadata.seq_num == self.ack_num and len(metadata.raw_data) > 0:
-                self.ack_num = metadata.seq_num + len(metadata.raw_data)
+            # Respond to TCP Keep-Alive packet
+            if metadata.seq_num == self.local_ack_num - 1:
+                self.logger.debug(f"{metadata.tracker} - Received TCP Keep-Alive packet")
+                tracker = Tracker("TX", metadata.tracker)
+                self.__send(flag_ack=True, tracker=tracker)
+                self.logger.debug(f"{tracker} - Sent TCP Keep-Alive ACK packet")
+                return
+
+            # If packet's sequence number matches what we are expecting and if packet contains any data then pass the data to socket and send out ACK for it
+            if metadata.seq_num == self.local_ack_num and len(metadata.raw_data) > 0:
+                self.local_ack_num = metadata.seq_num + len(metadata.raw_data)
                 self.data_rx.append(metadata.raw_data)
                 self.data_rx_ready.release()
                 self.__send(flag_ack=True, tracker=metadata.tracker)
@@ -152,7 +166,7 @@ class TcpSession:
         # In ESTABLISHED state and got FIN/ACK packet -> Send ACK and change state to CLOSE_WAIT, then wait for aplication to close socket
         if self.state == "ESTABLISHED" and all({metadata.flag_fin, metadata.flag_ack}) and not any({metadata.flag_syn, metadata.flag_rst}):
 
-            self.ack_num = metadata.seq_num + 1
+            self.local_ack_num = metadata.seq_num + metadata.flag_fin
             self.__send(flag_ack=True, tracker=metadata.tracker)
             self.state = "CLOSE_WAIT"
             self.logger.opt(ansi=True).info(f"{self.session_id} - State change: <yellow>ESTABLISHED -> CLOSE_WAIT</>")

@@ -68,6 +68,7 @@ class TcpPacket:
         tcp_urp=0,
         tcp_options=[],
         raw_data=b"",
+        tracker=None,
         echo_tracker=None,
     ):
         """ Class constructor """
@@ -128,7 +129,10 @@ class TcpPacket:
 
         # Packet building
         else:
-            self.tracker = Tracker("TX", echo_tracker)
+            if tracker:
+                self.tracker = tracker
+            else:
+                self.tracker = Tracker("TX", echo_tracker)
 
             self.tcp_sport = tcp_sport
             self.tcp_dport = tcp_dport

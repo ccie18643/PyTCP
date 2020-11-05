@@ -31,6 +31,7 @@ def phtx_tcp(
     tcp_urp=0,
     tcp_options=[],
     raw_data=b"",
+    tracker=None,
     echo_tracker=None,
 ):
     """ Handle outbound TCP packets """
@@ -53,6 +54,7 @@ def phtx_tcp(
         tcp_urp=tcp_urp,
         tcp_options=tcp_options,
         raw_data=raw_data,
+        tracker=tracker,
         echo_tracker=echo_tracker,
     )
 

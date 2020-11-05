@@ -44,7 +44,7 @@ class TxRing:
 
         os.write(self.tap, ether_packet_tx.get_raw_packet())
         self.logger.opt(ansi=True).debug(
-            f"<magenta>[TX] {ether_packet_tx.tracker}</magenta><yellow>{ether_packet_tx.tracker.latency}</yellow> - {len(ether_packet_tx)} bytes"
+            f"<magenta>[TX]</> {ether_packet_tx.tracker}<yellow>{ether_packet_tx.tracker.latency}</> - {len(ether_packet_tx)} bytes"
         )
 
     def enqueue(self, ether_packet_tx, urgent=False):
