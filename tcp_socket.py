@@ -162,7 +162,7 @@ class TcpSession:
             self.data_rx_ready.release()
             return
 
-        # In LAST_ACK state and got ACK packet -> Change state to CLOSED and rmove socket
+        # In LAST_ACK state and got ACK packet -> Change state to CLOSED and remove socket
         if self.state == "LAST_ACK" and all({metadata.flag_ack}) and not any({metadata.flag_syn, metadata.flag_fin, metadata.flag_rst}):
             self.remote_seq_num = metadata.seq_num
             self.remote_ack_num = metadata.ack_num
