@@ -75,7 +75,7 @@ class TcpSession:
 
         return self.session_id
 
-    def __send(self, flag_syn=False, flag_ack=False, flag_fin=False, flag_rst=False, raw_data = b"", tracker=None):
+    def __send(self, flag_syn=False, flag_ack=False, flag_fin=False, flag_rst=False, raw_data=b"", tracker=None):
         """ Send out TCP packet """
 
         TcpSocket.packet_handler.phtx_tcp(
@@ -105,6 +105,14 @@ class TcpSession:
 
         self.__send(flag_ack=True, raw_data=raw_data)
         self.seq_num += len(raw_data)
+
+    def close(self):
+        """ Close session """
+
+        self.__send(flag_fin=True, flag_ack=True)
+        self.seq_num += 1
+        self.state = "LAST_ACK"
+        self.logger.opt(ansi=True).info(f"{self.session_id} - State change: <yellow>CLOSE_WAIT -> LAST_ACK</>")
 
     def process(self, metadata):
         """ Process metadata of incoming TCP packet """
@@ -149,26 +157,21 @@ class TcpSession:
             self.state = "CLOSE_WAIT"
             self.logger.opt(ansi=True).info(f"{self.session_id} - State change: <yellow>ESTABLISHED -> CLOSE_WAIT</>")
 
-            # *** Need to comunicate to socket that the session got closed ***
-
-            self.__send(flag_fin=True, flag_ack=True, tracker=metadata.tracker)
-            self.seq_num += 1
-            self.state = "LAST_ACK"
-            self.logger.opt(ansi=True).info(f"{self.session_id} - State change: <yellow>CLOSE_WAIT -> LAST_ACK</>")
+            # Let application know that remote end closed connection
+            self.data_rx.append(None)
+            self.data_rx_ready.release()
             return
 
-        # In LAST_ACK state and got ACK packet -> Change state to CLOSED
+        # In LAST_ACK state and got ACK packet -> Change state to CLOSED and rmove socket
         if self.state == "LAST_ACK" and all({metadata.flag_ack}) and not any({metadata.flag_syn, metadata.flag_fin, metadata.flag_rst}):
             self.remote_seq_num = metadata.seq_num
             self.remote_ack_num = metadata.ack_num
             self.state = "CLOSED"
             self.logger.opt(ansi=True).info(f"{self.session_id} - State change: <yellow>LAST_ACK -> CLOSED</>")
 
-            # *** Perhaps session needs to be removed from socket from here
-
+            TcpSocket.open_sockets.pop(self.session_id)
+            self.logger.debug(f"Deleted socket {self.session_id}")
             return
-
-        # *** Need to handle situation when we get RST packet
 
         # *** Need to handle situation when we get some kind of bogus packet, send RST in response perhaps ?
 
@@ -210,7 +213,6 @@ class TcpSocket:
 
         self.tcp_session.send(raw_data)
 
-
     def receive(self, timeout=None):
         """ Read data from established socket and return raw_data """
 
@@ -232,9 +234,14 @@ class TcpSocket:
                 return TcpSocket(tcp_session=self.tcp_sessions.pop(session_id))
 
     def close(self):
-        """ Close socket """
+        """ Close session """
 
-        pass
+        if hasattr(self, "tcp_session"):
+            self.tcp_session.close()
+
+        if hasattr(self, "tcp_sessions"):
+            self.tcp_sessions.clear()
+            TcpSocket.open_sockets.pop(self.socket_id)
 
     @staticmethod
     def set_packet_handler(packet_handler):

@@ -31,7 +31,7 @@ class ServiceTcpEcho:
 
             while True:
                 raw_data = socket.receive()
-                if raw_data == b"\r\n":
+                if raw_data is None:
                     break
                 print("Service TCP Echo: Received message", raw_data)
                 socket.send(raw_data)
