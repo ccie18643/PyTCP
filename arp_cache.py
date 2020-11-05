@@ -22,15 +22,16 @@ class ArpCache:
     """ Support for ARP cahe operations """
 
     class __Entry:
-        def __init__(self, mac_address):
+        def __init__(self, mac_address, permanent=False):
             self.mac_address = mac_address
+            self.permanent = permanent
             self.creation_time = time.time()
             self.hit_count = 0
 
     def __init__(self):
         """ Class constructor """
 
-        self.arp_cache = {}
+        self.arp_cache = {"1.1.1.1": self.__Entry("08:30:6b:10:5c:01", permanent=True)}
 
         # Packet handler needs to be updated by packet handler object
         self.packet_handler = None
@@ -45,6 +46,10 @@ class ArpCache:
 
         while True:
             for ip_address in list(self.arp_cache):
+
+                # Skip permanent entries
+                if self.arp_cache[ip_address].permanent:
+                    continue
 
                 # If entry age is over maximum age then discard the entry
                 if time.time() - self.arp_cache[ip_address].creation_time > ARP_ENTRY_MAX_AGE:
