@@ -9,6 +9,7 @@ tcp_socket.py - module contains class supporting TCP sockets
 
 import loguru
 import threading
+import time
 import random
 
 from tracker import Tracker
@@ -77,9 +78,9 @@ class TcpSession:
         self.remote_ack_num = 0
         self.last_sent_local_ack_num = 0
         self.win = 1024
-        self.state = state
         self.socket = socket
-        self.logger.opt(ansi=True).info(f"{self.session_id} - State change: <yellow>CLOSED -> {self.state}</>")
+        self.state = "CLOSED"
+        self.__change_state(state)
 
         self.data_rx = []
         self.data_rx_ready = threading.Semaphore(0)
@@ -90,23 +91,6 @@ class TcpSession:
         """ String representation """
 
         return self.session_id
-
-    def thread_delayed_ack(self):
-        """ Thread supporting the Delayed ACK mechanism """
-
-        self.logger.debug("Started the Delayed ACK thread")
-
-        self.run_thread_delayed_ack = True
-
-        while self.run_thread_delayed_ack:
-            from time import sleep
-
-            sleep(0.2)
-            if self.local_ack_num > self.last_sent_local_ack_num:
-                self.__send(flag_ack=True)
-                self.logger.debug(f"{self.session_id} - Sent out delayed ACK ({self.local_ack_num})")
-
-        self.logger.debug("Terminated the Delayed ACK thread")
 
     def __send(self, flag_syn=False, flag_ack=False, flag_fin=False, flag_rst=False, raw_data=b"", tracker=None, echo_tracker=None):
         """ Send out TCP packet """
@@ -132,11 +116,53 @@ class TcpSession:
 
         self.local_seq_num += len(raw_data) + flag_syn + flag_fin
 
+    def __thread_delayed_ack(self):
+        """ Thread supporting the Delayed ACK mechanism """
+
+        self.logger.debug("Started the Delayed ACK thread")
+
+        self.run_thread_delayed_ack = True
+
+        while self.run_thread_delayed_ack:
+            from time import sleep
+
+            sleep(0.2)
+            if self.local_ack_num > self.last_sent_local_ack_num:
+                self.__send(flag_ack=True)
+                self.logger.debug(f"{self.session_id} - Sent out delayed ACK ({self.local_ack_num})")
+
+        self.logger.debug("Terminated the Delayed ACK thread")
+
+    def __change_state(self, state):
+        """ Change the state of TCP finite state machine """
+
+        old_state = self.state
+        self.state = state
+        self.logger.opt(ansi=True).info(f"{self.session_id} - State changed: <yellow> {old_state} -> {self.state}</>")
+
     @property
     def session_id(self):
         """ Session ID """
 
         return f"TCP/{self.local_ip_address}/{self.local_port}/{self.remote_ip_address}/{self.remote_port}"
+
+    def __thread_connect(self):
+        """ Start active SYN open """
+
+        self.__change_state("SYN_SENT")
+        sleep_time = 1
+        while self.state == "SYN_SENT" and sleep_time < 512:
+            self.__send(flag_syn=True)
+            self.logger.debug(f"{self.session_id} - Sent initial SYN packet")
+            time.sleep(sleep_time)
+            sleep_time *= 2
+
+    def connect(self):
+        """ Start thread that will attempt to open connection to the peer """
+
+        # In CLOSED state / got Connect call ->
+        if self.state == "CLOSED":
+            threading.Thread(target=self.__thread_connect).start()
 
     def send(self, raw_data):
         """ Send out raw_data passed from socket """
@@ -146,38 +172,54 @@ class TcpSession:
     def close(self):
         """ Close session """
 
-        self.__send(flag_fin=True, flag_ack=True)
-        self.state = "LAST_ACK"
-        self.logger.opt(ansi=True).info(f"{self.session_id} - State change: <yellow>CLOSE_WAIT -> LAST_ACK</>")
+        # In ESTABLISHED state / got Close call -> Send FIN, change state to FIN_WAIT_1
+        if self.state == "ESTABLISHED":
+            self.__send(flag_fin=True, flag_ack=True)
+            self.__change_state("FIN_WAIT_1")
+            return
 
-    def process(self, metadata):
-        """ Process metadata of incoming TCP packet """
+        # In CLOSE_WAIT state / got Close call -> Send FIN, change state to LAST_ACK
+        if self.state == "CLOSE_WAIT":
+            self.__send(flag_fin=True, flag_ack=True)
+            self.__change_state("LAST_ACK")
+            return
+
+    def process_tcp_packet(self, metadata):
+        """ Process incoming TCP packet """
 
         # Make note of remote ACK number that indcates how much of data we sent was received
         self.remote_ack_num = metadata.ack_num
 
-        # In LISTEN state and got SYN packet -> Change state to SYC_RCVD and send out SYN/ACK
+        # In SYN_SENT state / got SYN + ACK packet -> Send ACK and change state to ESTABLISHED
+        if self.state == "SYN_SENT" and all({metadata.flag_syn, metadata.flag_ack}) and not any({metadata.flag_fin, metadata.flag_rst}):
+            if metadata.ack_num == self.local_seq_num:
+                self.local_ack_num = metadata.seq_num + metadata.flag_syn
+                self.__change_state("ESTABLISHED")
+                self.__send(flag_ack=True, tracker=metadata.tracker)
+                # Inform socket that session has been established
+                self.socket.tcp_session_established.release()
+                # Start thread supporting Delayed ACK mechanism
+                threading.Thread(target=self.__thread_delayed_ack).start()
+                return
+
+        # In LISTEN state / got SYN packet -> Change state to SYN_RCVD and send out SYN + ACK
         if self.state == "LISTEN" and all({metadata.flag_syn}) and not any({metadata.flag_ack, metadata.flag_fin, metadata.flag_rst}):
-            self.state = "SYN_RCVD"
             self.local_ack_num = metadata.seq_num + metadata.flag_syn
-            self.logger.opt(ansi=True).info(f"{self.session_id} - State change: <yellow>LISTEN -> SYN_RCVD</>")
+            self.__change_state("SYN_RCVD")
             self.__send(flag_syn=True, flag_ack=True, tracker=metadata.tracker)
             return
 
-        # In SYN_RCVD state and got ACK packet -> Change state to ESTABLISHED
+        # In SYN_RCVD state / got ACK packet -> Change state to ESTABLISHED
         if self.state == "SYN_RCVD" and all({metadata.flag_ack}) and not any({metadata.flag_syn, metadata.flag_fin, metadata.flag_rst}):
-            self.state = "ESTABLISHED"
-            self.logger.opt(ansi=True).info(f"{self.session_id} - State change: <yellow>SYN_RCVD -> ESTABLISHED</>")
+            if metadata.ack_num == self.local_seq_num:
+                self.__change_state("ESTABLISHED")
+                # Inform socket that session has been established
+                self.socket.tcp_session_established.release()
+                # Start thread supporting Delayed ACK mechanism
+                threading.Thread(target=self.__thread_delayed_ack).start()
+                return
 
-            # Inform socket that sesion has been established
-            self.socket.tcp_session_established.release()
-
-            # Start thread supporting Delayed ACK mechanism
-            threading.Thread(target=self.thread_delayed_ack).start()
-
-            return
-
-        # In ESTABLISHED state and got ACK packet -> Send ACK packet
+        # In ESTABLISHED state / got ACK packet
         if self.state == "ESTABLISHED" and all({metadata.flag_ack}) and not any({metadata.flag_syn, metadata.flag_fin, metadata.flag_rst}):
 
             # Check if we are missing any data due to lost packet, if so drop the packet so need of retansmission of lost data is signalized to the peer
@@ -201,29 +243,60 @@ class TcpSession:
                 # self.__send(flag_ack=True, tracker=metadata.tracker)
                 return
 
-        # In ESTABLISHED state and got FIN/ACK packet -> Send ACK and change state to CLOSE_WAIT, then wait for aplication to close socket
-        if self.state == "ESTABLISHED" and all({metadata.flag_fin, metadata.flag_ack}) and not any({metadata.flag_syn, metadata.flag_rst}):
-
+        # In ESTABLISHED state / got FIN packet -> Send ACK and change state to CLOSE_WAIT, notifiy application that peer closed connection
+        if self.state == "ESTABLISHED" and all({metadata.flag_fin}) and not any({metadata.flag_syn, metadata.flag_rst}):
             self.local_ack_num = metadata.seq_num + metadata.flag_fin
             self.__send(flag_ack=True, tracker=metadata.tracker)
-            self.state = "CLOSE_WAIT"
-            self.logger.opt(ansi=True).info(f"{self.session_id} - State change: <yellow>ESTABLISHED -> CLOSE_WAIT</>")
-
+            self.__change_state("CLOSE_WAIT")
             # Shut down thread supporting Delayed ACK mechanism
             self.run_thread_delayed_ack = False
-
             # Let application know that remote end closed connection
             self.data_rx.append(None)
             self.data_rx_ready.release()
+            return
+
+        # In FIN_WAIT_1 state / got ACK -> Change state to FIN_WAIT_2
+        if self.state == "FIN_WAIT_1" and all({metadata.flag_ack}) and not any({metadata.flag_fin, metadata.flag_syn, metadata.flag_rst}):
+            if metadata.ack_num == self.local_seq_num:
+                self.__change_state("FIN_WAIT_2")
+                return
+
+        # In FIN_WAIT_1 state / got FIN + ACK -> Send ACK for peer's FIN and change state to TIME_WAIT
+        if self.state == "FIN_WAIT_1" and all({metadata.flag_fin, metadata.flag_ack}) and not any({metadata.flag_syn, metadata.flag_rst}):
+            if metadata.ack_num == self.local_seq_num:
+                self.local_ack_num = metadata.seq_num + metadata.flag_fin
+                self.__send(flag_ack=True, tracker=metadata.tracker)
+                self.__change_state("TIME_WAIT")
+                self.__change_state("CLOSED")
+                return
+
+        # In FIN_WAIT_1 state / got FIN -> Send ACK for peer's FIN and change state to CLOSING
+        if self.state == "FIN_WAIT_1" and all({metadata.flag_fin}) and not any({metadata.flag_syn, metadata.flag_rst}):
+            self.local_ack_num = metadata.seq_num + metadata.flag_fin
+            self.__send(flag_ack=True, tracker=metadata.tracker)
+            self.__change_state("CLOSING")
+            return
+
+        # In CLOSING state / got ACK -> Change state to TIME_WAIT
+        if self.state == "CLOSING" and all({metadata.flag_ack}) and not any({metadata.flag_fin, metadata.flag_syn, metadata.flag_rst}):
+            if metadata.ack_num == self.local_seq_num:
+                self.__change_state("TIME_WAIT")
+                self.__change_state("CLOSED")
+                return
+
+        # In FIN_WAIT_2 state / got FIN -> Change state to TIME_WAIT
+        if self.state == "FIN_WAIT_2" and all({metadata.flag_fin}) and not any({metadata.flag_syn, metadata.flag_rst}):
+            self.local_ack_num = metadata.seq_num + metadata.flag_fin
+            self.__send(flag_ack=True, tracker=metadata.tracker)
+            self.__change_state("TIME_WAIT")
+            self.__change_state("CLOSED")
             return
 
         # In LAST_ACK state and got ACK packet -> Change state to CLOSED and remove socket
         if self.state == "LAST_ACK" and all({metadata.flag_ack}) and not any({metadata.flag_syn, metadata.flag_fin, metadata.flag_rst}):
             self.remote_seq_num = metadata.seq_num
             self.remote_ack_num = metadata.ack_num
-            self.state = "CLOSED"
-            self.logger.opt(ansi=True).info(f"{self.session_id} - State change: <yellow>LAST_ACK -> CLOSED</>")
-
+            self.__change_state("CLOSED")
             TcpSocket.open_sockets.pop(self.session_id)
             self.logger.debug(f"Deleted socket {self.session_id}")
             return
@@ -255,12 +328,10 @@ class TcpSocket:
             self.remote_port = tcp_session.remote_port
 
         # Create established socket and start new TCP session
-        elif all((local_ip_address, local_port, remote_ip_address, remote_port)):
-            self.tcp_session = TcpSession(
-                local_ip_address=local_ip_address, local_port=local_port, remote_ip_address=remote_ip_address, remote_port=remote_port, socket=self
-            )
+        elif all((local_ip_address, remote_ip_address, remote_port)):
+            self.tcp_session = None
             self.local_ip_address = local_ip_address
-            self.local_port = local_port
+            self.local_port = self.__pick_random_local_port()
             self.remote_ip_address = remote_ip_address
             self.remote_port = remote_port
 
@@ -275,6 +346,32 @@ class TcpSocket:
         self.socket_id = f"TCP/{self.local_ip_address}/{self.local_port}/{self.remote_ip_address}/{self.remote_port}"
         TcpSocket.open_sockets[self.socket_id] = self
         self.logger.debug(f"Opened TCP socket {self.socket_id}")
+
+    def connect(self, timeout=None):
+        """ Attempt to establish TCP connection """
+
+        self.tcp_session = TcpSession(
+            local_ip_address=self.local_ip_address,
+            local_port=self.local_port,
+            remote_ip_address=self.remote_ip_address,
+            remote_port=self.remote_port,
+            socket=self,
+        )
+
+        self.tcp_session.connect()
+
+        if self.tcp_session_established.acquire(timeout=timeout):
+            return True
+
+        self.tcp_session.close()
+
+    def __pick_random_local_port(self):
+        """ Pick random local port, making sure it is not already being used by any socket """
+
+        used_ports = {int(_.split("/")[2]) for _ in TcpSocket.open_sockets if _.split("/")[1] in {"0.0.0.0", self.local_ip_address}}
+
+        while (port := random.randint(1024, 65535)) not in used_ports:
+            return port
 
     def send(self, raw_data):
         """ Pass raw_data to TCP session """
@@ -325,7 +422,7 @@ class TcpSocket:
         socket = TcpSocket.open_sockets.get(metadata.session_id, None)
         if socket:
             loguru.logger.bind(object_name="socket.").debug(f"{metadata.tracker} - TCP packet is part of established sessin {metadata.session_id}")
-            socket.tcp_session.process(metadata)
+            socket.tcp_session.process_tcp_packet(metadata)
             return True
 
         # Check if incoming packet is an initial SYN packet and matches any listening socket, if so create new session and assign it to that socket
@@ -336,7 +433,7 @@ class TcpSocket:
                     session = TcpSession(metadata=metadata, socket=socket, state="LISTEN")
                     loguru.logger.bind(object_name="socket.").debug(f"{metadata.tracker} - TCP packet with SYN flag, created new session {session}")
                     socket.tcp_sessions[session.session_id] = session
-                    session.process(metadata)
+                    session.process_tcp_packet(metadata)
                     return True
 
         # Check if incoming packet matches any listening socket
@@ -346,5 +443,5 @@ class TcpSocket:
                 session = socket.tcp_sessions.get(metadata.session_id, None)
                 if session:
                     loguru.logger.bind(object_name="socket.").debug(f"{metadata.tracker} - TCP packet is part of existing session {session}")
-                    session.process(metadata)
+                    session.process_tcp_packet(metadata)
                     return True

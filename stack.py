@@ -25,8 +25,8 @@ from ph import PacketHandler
 
 from service_udp_echo import ServiceUdpEcho
 from service_tcp_echo import ServiceTcpEcho
-
 # from client_udp_dhcp import ClientUdpDhcp
+from client_tcp_echo import ClientTcpEcho
 
 
 TUNSETIFF = 0x400454CA
@@ -68,6 +68,7 @@ def main():
     ServiceUdpEcho()
     ServiceTcpEcho()
     # ClientUdpDhcp(STACK_MAC_ADDRESS)
+    ClientTcpEcho(local_ip_address="192.168.9.7", remote_ip_address="192.168.9.102", remote_port=7)
 
     while True:
         time.sleep(1)
