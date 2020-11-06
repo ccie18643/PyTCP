@@ -59,6 +59,8 @@ class TcpSession:
 
         self.logger = loguru.logger.bind(object_name="tcp_session.")
 
+        self.syn_sent_event = threading.Semaphore(0)
+
         # Initialize session based on incoming packet metadata
         if metadata:
             self.local_ip_address = metadata.local_ip_address
@@ -136,9 +138,10 @@ class TcpSession:
     def __change_state(self, state):
         """ Change the state of TCP finite state machine """
 
-        old_state = self.state
-        self.state = state
-        self.logger.opt(ansi=True).info(f"{self.session_id} - State changed: <yellow> {old_state} -> {self.state}</>")
+        if state != self.state:
+            old_state = self.state
+            self.state = state
+            self.logger.opt(ansi=True).info(f"{self.session_id} - State changed: <yellow> {old_state} -> {self.state}</>")
 
     @property
     def session_id(self):
@@ -146,23 +149,24 @@ class TcpSession:
 
         return f"TCP/{self.local_ip_address}/{self.local_port}/{self.remote_ip_address}/{self.remote_port}"
 
-    def __thread_connect(self):
-        """ Start active SYN open """
-
-        self.__change_state("SYN_SENT")
-        sleep_time = 1
-        while self.state == "SYN_SENT" and sleep_time < 512:
-            self.__send(flag_syn=True)
-            self.logger.debug(f"{self.session_id} - Sent initial SYN packet")
-            time.sleep(sleep_time)
-            sleep_time *= 2
-
     def connect(self):
-        """ Start thread that will attempt to open connection to the peer """
+        """ Send initial SYN packet, repeat it till we get SYN + ACK """
 
-        # In CLOSED state / got Connect call ->
+        # In CLOSED state / got Connect call -> send SYN packet, change state to SYN_SENT
         if self.state == "CLOSED":
-            threading.Thread(target=self.__thread_connect).start()
+            attempt = 0
+            self.__change_state("SYN_SENT")
+            while (attempt := attempt + 1) <= 5:
+                self.__send(flag_syn=True)
+                self.logger.debug(f"{self.session_id} - Sent initial SYN packet, attempt {attempt}")
+                if not self.syn_sent_event.acquire(timeout=1 << attempt):
+                    continue
+
+                if self.state == "ESTABLISHED":
+                    return True
+
+                if self.state == "CLOSED":
+                    return False
 
     def send(self, raw_data):
         """ Send out raw_data passed from socket """
@@ -196,10 +200,18 @@ class TcpSession:
                 self.local_ack_num = metadata.seq_num + metadata.flag_syn
                 self.__change_state("ESTABLISHED")
                 self.__send(flag_ack=True, tracker=metadata.tracker)
-                # Inform socket that session has been established
-                self.socket.tcp_session_established.release()
+                # Notify connect method that the connection related event happened
+                self.syn_sent_event.release()
                 # Start thread supporting Delayed ACK mechanism
                 threading.Thread(target=self.__thread_delayed_ack).start()
+                return
+
+        # In SYN_SENT state / got RST + ACK packet -> Send change state to CLOSED
+        if self.state == "SYN_SENT" and all({metadata.flag_rst, metadata.flag_ack}) and not any({metadata.flag_fin, metadata.flag_syn}):
+            if metadata.ack_num == self.local_seq_num:
+                self.__change_state("CLOSED")
+                # Notify connect method that the connection related event happened
+                self.syn_sent_event.release()
                 return
 
         # In LISTEN state / got SYN packet -> Change state to SYN_RCVD and send out SYN + ACK
@@ -358,12 +370,7 @@ class TcpSocket:
             socket=self,
         )
 
-        self.tcp_session.connect()
-
-        if self.tcp_session_established.acquire(timeout=timeout):
-            return True
-
-        self.tcp_session.close()
+        return self.tcp_session.connect()
 
     def __pick_random_local_port(self):
         """ Pick random local port, making sure it is not already being used by any socket """
