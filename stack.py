@@ -11,3 +11,4 @@ rx_ring = None
 tx_ring = None
 arp_cache = None
 packet_handler = None
+open_sockets = {}

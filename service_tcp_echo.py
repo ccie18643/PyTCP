@@ -18,31 +18,37 @@ class ServiceTcpEcho:
     def __init__(self, local_ip_address="0.0.0.0", local_port=7):
         """ Class constructor """
 
-        self.socket = tcp_socket.TcpSocket(local_ip_address, local_port)
-        print("Service TCP Echo: Listening socket created")
+        threading.Thread(target=self.__thread_service, args=(local_ip_address, local_port)).start()
 
-        threading.Thread(target=self.__service).start()
+    def __thread_service(self, local_ip_address, local_port):
+        """ Service initialization """
 
-    def __connection(self):
-        socket = self.socket.accept()
+        socket = tcp_socket.TcpSocket()
+        print("Service TCP Echo: Socket created")
 
-        if socket:
-            print("Service TCP Echo: New connection established")
+        socket.bind(local_ip_address, local_port)
+        print(f"Service TCP Echo: Socket bound to {local_ip_address} on port {local_port}")
 
-            while True:
-                raw_data = socket.receive()
-                if raw_data is None:
-                    break
-                print("Service TCP Echo: Received message", raw_data)
-                socket.send(raw_data)
-                print("Service TCP Echo: Sent out message", raw_data)
+        socket.listen()
+        print("Service TCP Echo: Socket set to listening mode")
 
-            socket.close()
-            print("Service TCP Echo: Closed connection")
-
-    def __service(self):
         while True:
-            self.socket.listen()
-            print("Service TCP Echo: Session established")
+            new_socket = socket.accept()
+            print("Service TCP Echo: Inbound connection received")
 
-            threading.Thread(target=self.__connection).start()
+            threading.Thread(target=self.__thread_connection, args=(new_socket,)).start()
+
+    def __thread_connection(self, socket):
+        """ Inbound connection handler """
+
+        while True:
+            data_segment = socket.receive()
+
+            if data_segment is None:
+                break
+
+            socket.send(data_segment)
+            print("Service TCP Echo: Echo'ed out message", data_segment)
+
+        socket.close()
+        print("Service TCP Echo: Connection has been closed")

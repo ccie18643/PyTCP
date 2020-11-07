@@ -11,19 +11,35 @@ import loguru
 import threading
 import random
 
-from tcp_session import TcpSession
+import stack
 
 
 class TcpSocket:
     """ Support for Socket operations """
 
-    open_sockets = {}
-
-    def __init__(self, local_ip_address=None, local_port=None, remote_ip_address=None, remote_port=None, tcp_session=None):
+    def __init__(self, tcp_session=None):
         """ Class constructor """
 
         self.logger = loguru.logger.bind(object_name="socket.")
 
+        # Create established socket based on established TCP session, used by listening sockets only
+        if tcp_session:
+            self.tcp_session = tcp_session
+            self.local_ip_address = tcp_session.local_ip_address
+            self.local_port = tcp_session.local_port
+            self.remote_ip_address = tcp_session.remote_ip_address
+            self.remote_port = tcp_session.remote_port
+
+        # Fresh socket initialization
+        else:
+            self.local_ip_address = None
+            self.local_port = None
+            self.remote_ip_address = None
+            self.remote_port = None
+
+        self.logger.debug(f"Created TCP socket {self.socket_id}")
+
+        """
         self.tcp_session_established = threading.Semaphore(0)
 
         # Create established socket based on established TCP session, used by listening sockets only
@@ -54,7 +70,69 @@ class TcpSocket:
         self.socket_id = f"TCP/{self.local_ip_address}/{self.local_port}/{self.remote_ip_address}/{self.remote_port}"
         TcpSocket.open_sockets[self.socket_id] = self
         self.logger.debug(f"Opened TCP socket {self.socket_id}")
+        """
 
+    @property
+    def socket_id(self):
+        return f"TCP/{self.local_ip_address}/{self.local_port}/{self.remote_ip_address}/{self.remote_port}"
+
+    def bind(self, local_ip_address, local_port):
+        """ Bind the socket to locall address """
+
+        self.local_ip_address = local_ip_address
+        self.local_port = local_port
+        self.logger.debug(f"{self.socket_id} - Socket bound to local address")
+
+    def listen(self):
+        """ Starts to listen for incomming connections """
+
+        self.tcp_sessions = {}
+        self.remote_ip_address = "0.0.0.0"
+        self.remote_port = 0
+        stack.open_sockets[self.socket_id] = self
+        self.tcp_session_established = threading.Semaphore(0)
+        self.logger.debug("{self.socket_id} =  Socket started to listen for inbound connections")
+
+    def accept(self):
+        """ Wait for the established inbound connection, then create new socket for it and return it """
+
+        self.logger.debug(f"{self.socket_id} - Waiting for established inbound connection")
+        self.tcp_session_established.acquire()
+
+        for tcp_session_id, tcp_session in self.tcp_sessions.items():
+            if tcp_session.state == "ESTABLISHED":
+                new_socket = TcpSocket(tcp_session=self.tcp_sessions[tcp_session_id])
+                stack.open_sockets[new_socket.socket_id] = new_socket
+                self.tcp_sessions.pop(tcp_session_id)
+                return new_socket
+
+    def receive(self, timeout=None):
+        """ Receive data segment from socket """
+
+        if self.tcp_session.data_rx_ready.acquire(timeout=timeout):
+            self.logger.debug(f"{self.socket_id} - Received data segment")
+            return self.tcp_session.data_rx.pop(0)
+
+    def send(self, data_segment):
+        """ Pass data_segment to TCP session """
+
+        self.tcp_session.send(data_segment)
+        self.logger.debug(f"{self.socket_id} - Sent data segment")
+
+    def close(self):
+        """ Close socket and the TCP session(s) it owns """
+
+        if hasattr(self, "tcp_session"):
+            self.tcp_session.close()
+
+        if hasattr(self, "tcp_sessions"):
+            for tcp_session in self.tcp_sessions:
+                tcp_session.close()
+            
+        stack.open_sockets.pop(self.socket_id)
+        self.logger.debug(f"{self.socket_id} - Closed socket")
+
+    '''
     def connect(self, timeout=None):
         """ Attempt to establish TCP connection """
 
@@ -110,32 +188,4 @@ class TcpSocket:
         if hasattr(self, "tcp_sessions"):
             self.tcp_sessions.clear()
             TcpSocket.open_sockets.pop(self.socket_id)
-
-    @staticmethod
-    def match_socket(metadata):
-        """ Class method - Try to match incoming packet with either established or listening socket """
-
-        # Check if incoming packet matches any established socket
-        if socket := TcpSocket.open_sockets.get(metadata.session_id, None):
-            loguru.logger.bind(object_name="socket.").debug(f"{metadata.tracker} - TCP packet is part of established sessin {metadata.session_id}")
-            socket.tcp_session.tcp_fsm(metadata=metadata)
-            return True
-
-        # Check if incoming packet is an initial SYN packet and matches any listening socket, if so create new session and assign it to that socket
-        if all({metadata.flag_syn}) and not any({metadata.flag_ack, metadata.flag_fin, metadata.flag_rst}):
-            for socket_id in metadata.listening_socket_ids:
-                if socket := TcpSocket.open_sockets.get(socket_id, None):
-                    tcp_session = TcpSession(metadata=metadata, socket=socket)
-                    loguru.logger.bind(object_name="socket.").debug(f"{metadata.tracker} - TCP packet with SYN flag, created new session {tcp_session}")
-                    socket.tcp_sessions[tcp_session.session_id] = tcp_session
-                    tcp_session.listen()
-                    tcp_session.tcp_fsm(metadata=metadata)
-                    return True
-
-        # Check if incoming packet matches any listening socket
-        for socket_id in metadata.listening_socket_ids:
-            if socket := TcpSocket.open_sockets.get(socket_id, None):
-                if tcp_session := socket.tcp_sessions.get(metadata.session_id, None):
-                    loguru.logger.bind(object_name="socket.").debug(f"{metadata.tracker} - TCP packet is part of existing session {tcp_session}")
-                    tcp_session.tcp_fsm(metadata=metadata)
-                    return True
+    '''
