@@ -14,6 +14,8 @@ import time
 import struct
 import loguru
 
+
+from stack_timer import StackTimer
 from arp_cache import ArpCache
 from rx_ring import RxRing
 from tx_ring import TxRing
@@ -22,6 +24,8 @@ from ph import PacketHandler
 
 from service_udp_echo import ServiceUdpEcho
 from service_tcp_echo import ServiceTcpEcho
+from service_tcp_discard import ServiceTcpDiscard
+from service_tcp_daytime import ServiceTcpDaytime
 
 # from client_udp_dhcp import ClientUdpDhcp
 from client_tcp_echo import ClientTcpEcho
@@ -51,7 +55,7 @@ def main():
     loguru.logger.add(
         sys.stdout,
         colorize=True,
-        level="DEBUG",
+        level="TRACE",
         format="<green>{time:YY-MM-DD HH:mm:ss}</green> <level>| {level:7} "
         + "|</level> <level> <normal><cyan>{extra[object_name]}{function}:</cyan></normal> {message}</level>",
     )
@@ -59,6 +63,7 @@ def main():
     tap = os.open("/dev/net/tun", os.O_RDWR)
     fcntl.ioctl(tap, TUNSETIFF, struct.pack("16sH", STACK_INTERFACE, IFF_TAP | IFF_NO_PI))
 
+    stack.stack_timer = StackTimer()
     stack.rx_ring = RxRing(tap, STACK_MAC_ADDRESS)
     stack.tx_ring = TxRing(tap, STACK_MAC_ADDRESS)
     stack.arp_cache = ArpCache()
@@ -66,7 +71,11 @@ def main():
 
     # Start services / clinets
     ServiceUdpEcho()
+
     ServiceTcpEcho()
+    ServiceTcpDiscard()
+    ServiceTcpDaytime()
+
     # ClientUdpDhcp(STACK_MAC_ADDRESS)
     # ClientTcpEcho(local_ip_address="192.168.9.7", remote_ip_address="192.168.9.102", remote_port=7)
     # ClientTcpEcho(local_ip_address="192.168.9.7", remote_ip_address="1.1.1.1", remote_port=7)

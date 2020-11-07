@@ -36,10 +36,10 @@ class ArpCache:
 
         self.logger = loguru.logger.bind(object_name="arp_cache.")
 
-        threading.Thread(target=self.__maintain).start()
+        threading.Thread(target=self.__thread_maintain_cache).start()
         self.logger.debug("Started ARP cache")
 
-    def __maintain(self):
+    def __thread_maintain_cache(self):
         """ Thread responsible for maintaining ARP entries """
 
         while True:
