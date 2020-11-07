@@ -12,6 +12,7 @@ import time
 import threading
 
 import ps_arp
+import stack
 
 
 ARP_ENTRY_MAX_AGE = 3600
@@ -32,9 +33,6 @@ class ArpCache:
         """ Class constructor """
 
         self.arp_cache = {"1.1.1.1": self.__Entry("08:30:6b:10:5c:01", permanent=True)}
-
-        # Packet handler needs to be updated by packet handler object
-        self.packet_handler = None
 
         self.logger = loguru.logger.bind(object_name="arp_cache.")
 
@@ -69,12 +67,12 @@ class ArpCache:
     def __send_arp_request(self, arp_tpa):
         """ Enqueue ARP request with TX ring """
 
-        self.packet_handler.phtx_arp(
-            ether_src=self.packet_handler.stack_mac_address,
+        stack.packet_handler.phtx_arp(
+            ether_src=stack.packet_handler.stack_mac_address,
             ether_dst="ff:ff:ff:ff:ff:ff",
             arp_oper=ps_arp.ARP_OP_REQUEST,
-            arp_sha=self.packet_handler.stack_mac_address,
-            arp_spa=self.packet_handler.stack_ip_unicast[0] if self.packet_handler.stack_ip_unicast else "0.0.0.0",
+            arp_sha=stack.packet_handler.stack_mac_address,
+            arp_spa=stack.packet_handler.stack_ip_unicast[0] if stack.packet_handler.stack_ip_unicast else "0.0.0.0",
             arp_tha="00:00:00:00:00:00",
             arp_tpa=arp_tpa,
         )
@@ -97,6 +95,4 @@ class ArpCache:
 
         else:
             self.logger.debug(f"Unable to find entry for {ip_address}, sending ARP request")
-
-            if self.packet_handler:
-                self.__send_arp_request(ip_address)
+            self.__send_arp_request(ip_address)

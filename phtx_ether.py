@@ -9,6 +9,7 @@ phtx_ether.py - packet handler for outbound Ethernet packets
 
 import ps_ether
 import ps_ip
+import stack
 
 
 def phtx_ether(self, child_packet, ether_src="00:00:00:00:00:00", ether_dst="00:00:00:00:00:00"):
@@ -16,7 +17,7 @@ def phtx_ether(self, child_packet, ether_src="00:00:00:00:00:00", ether_dst="00:
 
     def __send_out_packet():
         self.logger.opt(depth=1).debug(f"{ether_packet_tx.tracker} - {ether_packet_tx}")
-        self.tx_ring.enqueue(ether_packet_tx, urgent=True if child_packet.protocol == "ARP" else False)
+        stack.tx_ring.enqueue(ether_packet_tx, urgent=True if child_packet.protocol == "ARP" else False)
 
     ether_packet_tx = ps_ether.EtherPacket(ether_src=ether_src, ether_dst=ether_dst, child_packet=child_packet)
 
@@ -43,7 +44,7 @@ def phtx_ether(self, child_packet, ether_src="00:00:00:00:00:00", ether_dst="00:
             return
 
         # Send out packet if we are able to obtain destinaton MAC from ARP cache
-        mac_address = self.arp_cache.find_entry(ip_packet_tx.ip_dst)
+        mac_address = stack.arp_cache.find_entry(ip_packet_tx.ip_dst)
         if mac_address:
             ether_packet_tx.ether_dst = mac_address
             self.logger.debug(f"{ether_packet_tx.tracker} - Resolved destiantion IP {ip_packet_tx.ip_dst} to MAC {ether_packet_tx.ether_dst}")

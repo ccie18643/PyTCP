@@ -16,6 +16,8 @@ import threading
 
 import ps_arp
 
+import stack
+
 
 class PacketHandler:
     """ Pick up and respond to incoming packets """
@@ -34,7 +36,7 @@ class PacketHandler:
     from phtx_udp import phtx_udp
     from phtx_tcp import phtx_tcp
 
-    def __init__(self, stack_mac_address, stack_ip_address, rx_ring, tx_ring, arp_cache):
+    def __init__(self, stack_mac_address, stack_ip_address):
         """ Class constructor """
 
         self.stack_mac_address = stack_mac_address
@@ -43,20 +45,14 @@ class PacketHandler:
         self.stack_ip_unicast = []
         self.stack_ip_multicast = []
         self.stack_ip_broadcast = ["255.255.255.255"]
-        self.tx_ring = tx_ring
-        self.rx_ring = rx_ring
-        self.arp_cache = arp_cache
         self.logger = loguru.logger.bind(object_name="packet_handler.")
 
         self.arp_probe_unicast_conflict = set()
 
         self.ip_id = 0
 
-        # Update ARP cache object with reference to this packet handler so ARP cache can send out ARP requests
-        self.arp_cache.packet_handler = self
-
         # Start packed handler so we can receive packets from network
-        threading.Thread(target=self.__packet_handler).start()
+        threading.Thread(target=self.__thread_packet_handler).start()
         self.logger.debug("Started packet handler")
 
         # If no stack IP address provided try to obtain it via DHCP
@@ -157,8 +153,8 @@ class PacketHandler:
             arp_tpa=ip_address,
         )
 
-    def __packet_handler(self):
-        """ Thread that picks up incoming packets from RX ring and process them """
+    def __thread_packet_handler(self):
+        """ Thread picks up incoming packets from RX ring and process them """
 
         while True:
-            self.phrx_ether(self.rx_ring.dequeue())
+            self.phrx_ether(stack.rx_ring.dequeue())

@@ -9,6 +9,8 @@ phrx_arp.py - packet handler for inbound ARP packets
 
 import ps_arp
 
+import stack
+
 
 ARP_CACHE_UPDATE_FROM_DIRECT_REQUEST = True
 ARP_CACHE_UPDATE_FROM_GRATUITOUS_REPLY = True
@@ -41,7 +43,7 @@ def phrx_arp(self, ether_packet_rx, arp_packet_rx):
             # Update ARP cache with the maping learned from the received ARP request that was destined to this stack
             if ARP_CACHE_UPDATE_FROM_DIRECT_REQUEST:
                 self.logger.debug(f"Adding/refreshing ARP cache entry from direct request - {arp_packet_rx.arp_spa} -> {arp_packet_rx.arp_sha}")
-                self.arp_cache.add_entry(arp_packet_rx.arp_spa, arp_packet_rx.arp_sha)
+                stack.arp_cache.add_entry(arp_packet_rx.arp_spa, arp_packet_rx.arp_sha)
 
             return
 
@@ -63,11 +65,11 @@ def phrx_arp(self, ether_packet_rx, arp_packet_rx):
         # Update ARP cache with maping received as direct ARP reply
         if ether_packet_rx.ether_dst == self.stack_mac_address:
             self.logger.debug(f"Adding/refreshing ARP cache entry from direct reply - {arp_packet_rx.arp_spa} -> {arp_packet_rx.arp_sha}")
-            self.arp_cache.add_entry(arp_packet_rx.arp_spa, arp_packet_rx.arp_sha)
+            stack.arp_cache.add_entry(arp_packet_rx.arp_spa, arp_packet_rx.arp_sha)
             return
 
         # Update ARP cache with maping received as gratuitous ARP reply
         if ether_packet_rx.ether_dst == "ff:ff:ff:ff:ff:ff" and arp_packet_rx.arp_spa == arp_packet_rx.arp_tpa and ARP_CACHE_UPDATE_FROM_GRATUITOUS_REPLY:
             self.logger.debug(f"Adding/refreshing ARP cache entry from gratuitous reply - {arp_packet_rx.arp_spa} -> {arp_packet_rx.arp_sha}")
-            self.arp_cache.add_entry(arp_packet_rx.arp_spa, arp_packet_rx.arp_sha)
+            stack.arp_cache.add_entry(arp_packet_rx.arp_spa, arp_packet_rx.arp_sha)
             return

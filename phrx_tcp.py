@@ -8,7 +8,8 @@ phrx_tcp.py - packet handler for inbound TCP packets
 """
 
 
-from tcp_socket import TcpSocket, TcpPacketMetadata
+from tcp_socket import TcpSocket
+from tcp_metadata import TcpMetadata
 
 
 def phrx_tcp(self, ip_packet_rx, tcp_packet_rx):
@@ -23,7 +24,7 @@ def phrx_tcp(self, ip_packet_rx, tcp_packet_rx):
 
     # Send packet info and data to socket mechanism for further processing
     if TcpSocket.match_socket(
-        TcpPacketMetadata(
+        TcpMetadata(
             local_ip_address=ip_packet_rx.ip_dst,
             local_port=tcp_packet_rx.tcp_dport,
             remote_ip_address=ip_packet_rx.ip_src,

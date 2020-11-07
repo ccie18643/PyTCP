@@ -10,6 +10,8 @@ udp_socket.py - module contains class supporting UDP sockets
 import loguru
 import threading
 
+import stack
+
 
 class UdpPacketMetadata:
     """ Store UDP packet metadata """
@@ -27,8 +29,6 @@ class UdpSocket:
     """ Support for Socket operations """
 
     open_sockets = {}
-
-    packet_handler = None
 
     def __init__(self, local_ip_address, local_port, remote_ip_address="0.0.0.0", remote_port=0):
         """ Class constructor """
@@ -52,7 +52,7 @@ class UdpSocket:
     def send_to(self, metadata):
         """ Put data from UdpPacketMetadata structure into TX ring """
 
-        self.packet_handler.phtx_udp(
+        stack.packet_handler.phtx_udp(
             ip_src=metadata.local_ip_address,
             udp_sport=metadata.local_port,
             ip_dst=metadata.remote_ip_address,
@@ -71,12 +71,6 @@ class UdpSocket:
 
         UdpSocket.open_sockets.pop(self.socket_id, None)
         self.logger.debug(f"Closed UDP socket {self.socket_id}")
-
-    @staticmethod
-    def set_packet_handler(packet_handler):
-        """ Class method - Sets packet handler object to be available for sockets """
-
-        UdpSocket.packet_handler = packet_handler
 
     @staticmethod
     def match_socket(metadata):
