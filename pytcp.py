@@ -55,7 +55,7 @@ def main():
     loguru.logger.add(
         sys.stdout,
         colorize=True,
-        level="TRACE",
+        level="DEBUG",
         format="<green>{time:YY-MM-DD HH:mm:ss}</green> <level>| {level:7} "
         + "|</level> <level> <normal><cyan>{extra[object_name]}{function}:</cyan></normal> {message}</level>",
     )

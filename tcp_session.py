@@ -16,6 +16,10 @@ import stack
 from tracker import Tracker
 
 
+DELAYED_ACK_DELAY = 200  # 200ms between consecutive delayed ACK outbound packets 
+TIME_WAIT_DELAY = 120000  # 2 minutes delay for the TIME_WAIT state
+
+
 class TcpSession:
     """ Class defining all the TCP session parameters """
 
@@ -82,7 +86,10 @@ class TcpSession:
 
         # Execute state specific 'state entry code'
         if self.state == "TIME_WAIT":
-            stack.stack_timer.register_timer("time_wait", 30000)
+            stack.stack_timer.register_timer("time_wait", TIME_WAIT_DELAY)
+
+        if self.state == "ESTABLISHED":
+            stack.stack_timer.register_timer("delayed_ack", DELAYED_ACK_DELAY)
 
     @property
     def tcp_session_id(self):
@@ -243,7 +250,7 @@ class TcpSession:
             if self.local_ack_num > self.last_sent_local_ack_num:
                 self.__send(flag_ack=True)
                 self.logger.debug(f"{self.tcp_session_id} - Sent out delayed ACK ({self.local_ack_num})")
-            stack.stack_timer.register_timer("delayed_ack", 200)
+            stack.stack_timer.register_timer("delayed_ack", DELAYED_ACK_DELAY)
             return
 
         # Got ACK packet
@@ -345,8 +352,7 @@ class TcpSession:
         # Got ACK packet -> Change state to CLOSED
         if packet and all({packet.flag_ack}) and not any({packet.flag_syn, packet.flag_fin, packet.flag_rst}):
             if packet.ack_num == self.local_seq_num:
-                #self.__change_state("CLOSED")
-                self.__change_state("TIME_WAIT")
+                self.__change_state("CLOSED")
             return
 
     def __tcp_fsm_time_wait(self, packet=None, syscall=None, timer=None):

@@ -149,15 +149,15 @@ class IpPacket:
             while i < len(raw_options):
 
                 if raw_options[i] == IP_OPT_EOL:
-                    self.tcp_options.append(IpOptEol())
+                    self.ip_options.append(IpOptEol())
                     break
 
                 if raw_options[i] == IP_OPT_NOP:
-                    self.tcp_options.append(IpOptNop())
+                    self.ip_options.append(IpOptNop())
                     i += IP_OPT_NOP_LEN
                     continue
 
-                self.tcp_options.append(opt_cls.get(raw_options[i], IpOptUnk)(raw_options[i : i + raw_options[i + 1]]))
+                self.ip_options.append(opt_cls.get(raw_options[i], IpOptUnk)(raw_options[i : i + raw_options[i + 1]]))
                 i += self.raw_options[i + 1]
 
         # Packet building
