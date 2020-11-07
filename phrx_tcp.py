@@ -10,7 +10,7 @@ phrx_tcp.py - packet handler for inbound TCP packets
 import stack
 
 from tcp_session import TcpSession
-from tcp_metadata import TcpMetadata
+from tcp_packet import TcpPacket
 
 
 def phrx_tcp(self, ip_packet_rx, tcp_packet_rx):
@@ -23,8 +23,8 @@ def phrx_tcp(self, ip_packet_rx, tcp_packet_rx):
         self.logger.debug(f"{tcp_packet_rx.tracker} - TCP packet has invalid checksum, droping")
         return
 
-    # Create metadata object for further processing by socket mechanism
-    metadata = TcpMetadata(
+    # Create TcpPacket object containing TCP metadata for further processing by TCP FSM
+    packet = TcpPacket(
         local_ip_address=ip_packet_rx.ip_dst,
         local_port=tcp_packet_rx.tcp_dport,
         remote_ip_address=ip_packet_rx.ip_src,
@@ -40,33 +40,14 @@ def phrx_tcp(self, ip_packet_rx, tcp_packet_rx):
         tracker=tcp_packet_rx.tracker,
     )
 
-    # Check if incoming packet matches any established socket
-    if socket := stack.open_sockets.get(metadata.session_id, None):
-        self.logger.debug(f"{metadata.tracker} - TCP packet is part of established sessin {metadata.session_id}")
-        socket.tcp_session.tcp_fsm(metadata=metadata)
-        return True
+    # Check if incoming packet matches any TCP session
+    for tcp_session_id_pattern in packet.tcp_session_id_patterns:
+        if tcp_session := stack.tcp_sessions.get(tcp_session_id_pattern, None):
+            self.logger.debug(f"{packet.tracker} - TCP packet is part of session {tcp_session.tcp_session_id}")
+            tcp_session.tcp_fsm(packet=packet)
+            return True
 
-    # Check if incoming packet is an initial SYN packet and matches any listening socket, if so create new session and assign it to that socket
-    if all({metadata.flag_syn}) and not any({metadata.flag_ack, metadata.flag_fin, metadata.flag_rst}):
-        for socket_id in metadata.listening_socket_ids:
-            if socket := stack.open_sockets.get(socket_id, None):
-                tcp_session = TcpSession(metadata=metadata, socket=socket)
-                self.logger.debug(f"{metadata.tracker} - TCP packet with SYN flag, created new session {tcp_session}")
-                socket.tcp_sessions[tcp_session.session_id] = tcp_session
-                tcp_session.listen()
-                tcp_session.tcp_fsm(metadata=metadata)
-                return True
-
-    # Check if incoming packet matches any listening socket
-    for socket_id in metadata.listening_socket_ids:
-        if socket := stack.open_sockets.get(socket_id, None):
-            if tcp_session := socket.tcp_sessions.get(metadata.session_id, None):
-                self.logger.debug(f"{metadata.tracker} - TCP packet is part of existing session {tcp_session}")
-                tcp_session.tcp_fsm(metadata=metadata)
-                return True
-
-    self.logger.debug(f"Received TCP packet from {ip_packet_rx.ip_src} to closed port {tcp_packet_rx.tcp_dport}, sending TCP Reset packet")
-
+    self.logger.debug(f"Received TCP packet from {ip_packet_rx.ip_src} to closed port {tcp_packet_rx.tcp_dport}, responding with TCP RST packet")
     self.phtx_tcp(
         ip_src=ip_packet_rx.ip_dst,
         ip_dst=ip_packet_rx.ip_src,

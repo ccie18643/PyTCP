@@ -3,12 +3,12 @@
 """
 
 PyTCP, Python TCP/IP stack, version 0.1 - 2020, Sebastian Majewski
-tcp_metadata.py - module contains storage class for incoming TCP packet's metadata
+tcp_packet.py - module contains storage class for incoming TCP packet's metadata
 
 """
 
 
-class TcpMetadata:
+class TcpPacket:
     """ Store TCP metadata """
 
     def __init__(
@@ -29,16 +29,17 @@ class TcpMetadata:
         self.tracker = tracker
 
     @property
-    def session_id(self):
+    def tcp_session_id(self):
         """ Session ID """
 
         return f"TCP/{self.local_ip_address}/{self.local_port}/{self.remote_ip_address}/{self.remote_port}"
 
     @property
-    def listening_socket_ids(self):
+    def tcp_session_id_patterns(self):
         """ Session ID """
 
         return [
+            f"TCP/{self.local_ip_address}/{self.local_port}/{self.remote_ip_address}/{self.remote_port}",
             f"TCP/{self.local_ip_address}/{self.local_port}/0.0.0.0/0",
             f"TCP/0.0.0.0/{self.local_port}/0.0.0.0/0",
         ]

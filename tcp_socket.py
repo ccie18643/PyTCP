@@ -13,6 +13,8 @@ import random
 
 import stack
 
+from tcp_session import TcpSession
+
 
 class TcpSocket:
     """ Support for Socket operations """
@@ -24,6 +26,7 @@ class TcpSocket:
 
         # Create established socket based on established TCP session, used by listening sockets only
         if tcp_session:
+            tcp_session.socket = self
             self.tcp_session = tcp_session
             self.local_ip_address = tcp_session.local_ip_address
             self.local_port = tcp_session.local_port
@@ -86,10 +89,17 @@ class TcpSocket:
     def listen(self):
         """ Starts to listen for incomming connections """
 
-        self.tcp_sessions = {}
         self.remote_ip_address = "0.0.0.0"
         self.remote_port = 0
-        stack.open_sockets[self.socket_id] = self
+        tcp_session = TcpSession(
+            local_ip_address=self.local_ip_address,
+            local_port=self.local_port,
+            remote_ip_address=self.remote_ip_address,
+            remote_port=self.remote_port,
+            socket=self,
+        )
+        tcp_session.listen()
+        stack.tcp_sessions[tcp_session.tcp_session_id] = tcp_session
         self.tcp_session_established = threading.Semaphore(0)
         self.logger.debug("{self.socket_id} =  Socket started to listen for inbound connections")
 
@@ -98,13 +108,9 @@ class TcpSocket:
 
         self.logger.debug(f"{self.socket_id} - Waiting for established inbound connection")
         self.tcp_session_established.acquire()
-
-        for tcp_session_id, tcp_session in self.tcp_sessions.items():
-            if tcp_session.state == "ESTABLISHED":
-                new_socket = TcpSocket(tcp_session=self.tcp_sessions[tcp_session_id])
-                stack.open_sockets[new_socket.socket_id] = new_socket
-                self.tcp_sessions.pop(tcp_session_id)
-                return new_socket
+        for tcp_session_id, tcp_session in stack.tcp_sessions.items():
+            if tcp_session.socket is self and tcp_session.state == "ESTABLISHED":
+                return TcpSocket(tcp_session=tcp_session)
 
     def receive(self, timeout=None):
         """ Receive data segment from socket """
@@ -122,14 +128,7 @@ class TcpSocket:
     def close(self):
         """ Close socket and the TCP session(s) it owns """
 
-        if hasattr(self, "tcp_session"):
-            self.tcp_session.close()
-
-        if hasattr(self, "tcp_sessions"):
-            for tcp_session in self.tcp_sessions:
-                tcp_session.close()
-            
-        stack.open_sockets.pop(self.socket_id)
+        self.tcp_session.close()
         self.logger.debug(f"{self.socket_id} - Closed socket")
 
     '''

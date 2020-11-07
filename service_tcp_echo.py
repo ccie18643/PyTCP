@@ -25,16 +25,14 @@ class ServiceTcpEcho:
 
         socket = tcp_socket.TcpSocket()
         print("Service TCP Echo: Socket created")
-
         socket.bind(local_ip_address, local_port)
         print(f"Service TCP Echo: Socket bound to {local_ip_address} on port {local_port}")
-
         socket.listen()
         print("Service TCP Echo: Socket set to listening mode")
 
         while True:
             new_socket = socket.accept()
-            print("Service TCP Echo: Inbound connection received")
+            print(f"Service TCP Echo: Inbound connection received from {new_socket.remote_ip_address} / {new_socket.remote_port}")
 
             threading.Thread(target=self.__thread_connection, args=(new_socket,)).start()
 
