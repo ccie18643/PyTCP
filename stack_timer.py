@@ -15,26 +15,26 @@ import threading
 class StackTimerTask:
     """ Timer task support class """
 
-    def __init__(self, method, args, kwargs, delay, delay_exp, repeat, exit_condition):
-        """ Class constructor, repeat = -1 means infinite, delay_exp means to raise delay time exponentialy after each method execution """
+    def __init__(self, method, args, kwargs, delay, delay_exp, repeat_count, stop_condition):
+        """ Class constructor, repeat_count = -1 means infinite, delay_exp means to raise delay time exponentialy after each method execution """
 
         self.method = method
         self.args = args
         self.kwargs = kwargs
         self.delay = delay
         self.delay_exp = delay_exp
-        self.repeat = repeat
-        self.exit_condition = exit_condition
+        self.repeat_count = repeat_count
+        self.stop_condition = stop_condition
 
         self.remaining_delay = delay
-        self.repeat_counter = 0
+        self.delay_exp_factor = 0
 
     def tick(self):
         """ Tick input from timer """
 
         self.remaining_delay -= 1
 
-        if self.exit_condition and self.exit_condition():
+        if self.stop_condition and self.stop_condition():
             self.remaining_delay = 0
             return
 
@@ -43,11 +43,11 @@ class StackTimerTask:
 
         self.method(*self.args, **self.kwargs)
 
-        if self.repeat:
-            self.remaining_delay = self.delay * (1 << self.repeat_counter) if self.delay_exp else self.delay
-            if self.repeat > 0:
-                self.repeat -= 1
-                self.repeat_counter += 1
+        if self.repeat_count:
+            self.remaining_delay = self.delay * (1 << self.delay_exp_factor) if self.delay_exp else self.delay
+            self.delay_exp_factor += 1
+            if self.repeat_count > 0:
+                self.repeat_count -= 1
 
 
 class StackTimer:
@@ -86,10 +86,10 @@ class StackTimer:
             # Cleanup expired methods
             self.tasks = [_ for _ in self.tasks if _.remaining_delay]
 
-    def register_method(self, method, args=[], kwargs={}, delay=1, delay_exp=False, repeat=-1, exit_condition=None):
+    def register_method(self, method, args=[], kwargs={}, delay=1, delay_exp=False, repeat_count=-1, stop_condition=None):
         """ Register method to be executed by timer """
 
-        self.tasks.append(StackTimerTask(method, args, kwargs, delay, delay_exp, repeat, exit_condition))
+        self.tasks.append(StackTimerTask(method, args, kwargs, delay, delay_exp, repeat_count, stop_condition))
 
     def register_timer(self, name, timeout):
         """ Register delay timer """
