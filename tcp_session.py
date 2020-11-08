@@ -55,7 +55,7 @@ class TcpSession:
 
         return self.tcp_session_id
 
-    def __send(self, flag_syn=False, flag_ack=False, flag_fin=False, flag_rst=False, raw_data=b"", tracker=None, echo_tracker=None):
+    def __send_packet(self, flag_syn=False, flag_ack=False, flag_fin=False, flag_rst=False, raw_data=b"", tracker=None, echo_tracker=None):
         """ Send out TCP packet, save args in case packet need to be re-sent """
 
         self.last_sent_local_ack_num = self.local_ack_num
@@ -78,7 +78,7 @@ class TcpSession:
         )
         self.local_seq_num += len(raw_data) + flag_syn + flag_fin
 
-    def __resend(self):
+    def __resend_last_packet(self):
         """ Resend last packet """
 
         stack.packet_handler.phtx_tcp(**self.packet_resend_args)
@@ -125,7 +125,7 @@ class TcpSession:
     def send(self, raw_data):
         """ Send out raw_data passed from socket """
 
-        self.__send(flag_ack=True, raw_data=raw_data)
+        self.__send_packet(flag_ack=True, raw_data=raw_data)
 
     def close(self):
         """ Close syscall """
@@ -138,7 +138,7 @@ class TcpSession:
 
         # Got CONNECT syscall -> Send SYN packet / change state to SYN_SENT
         if syscall == "CONNECT":
-            self.__send(flag_syn=True)
+            self.__send_packet(flag_syn=True)
             self.logger.debug(f"{self.tcp_session_id} - Sent initial SYN packet")
             self.__change_state("SYN_SENT")
 
@@ -175,7 +175,7 @@ class TcpSession:
 
             # Process FSM event
             self.local_ack_num = packet.seq_num + packet.flag_syn
-            self.__send(flag_syn=True, flag_ack=True, tracker=packet.tracker)
+            self.__send_packet(flag_syn=True, flag_ack=True, tracker=packet.tracker)
             self.__change_state("SYN_RCVD")
             return
 
@@ -197,7 +197,7 @@ class TcpSession:
         # Got timer event -> Resend packet if needed
         if timer and stack.stack_timer.timer_expired("packet_resend"):
             if self.packet_resend_count < PACKET_RESEND_COUNT:
-                self.__resend()
+                self.__resend_last_packet()
                 stack.stack_timer.register_timer("packet_resend", PACKET_RESEND_DELAY * (1 << self.packet_resend_count))
                 return
             self.__change_state("CLOSED")
@@ -209,7 +209,7 @@ class TcpSession:
         if packet and all({packet.flag_syn, packet.flag_ack}) and not any({packet.flag_fin, packet.flag_rst}):
             if packet.ack_num == self.local_seq_num:
                 self.local_ack_num = packet.seq_num + packet.flag_syn
-                self.__send(flag_ack=True, tracker=packet.tracker)
+                self.__send_packet(flag_ack=True, tracker=packet.tracker)
                 self.__change_state("ESTABLISHED")
                 # Inform connect syscall that connection related event happened
                 self.event_connect.release()
@@ -224,7 +224,7 @@ class TcpSession:
 
         # Got SYN packet -> Send SYN + ACK packet / change state to SYN_RCVD
         if packet and all({packet.flag_syn}) and not any({packet.flag_ack, packet.flag_fin, packet.flag_syn}):
-            self.__send(flag_syn=True, flag_ack=True, tracker=packet.tracker)
+            self.__send_packet(flag_syn=True, flag_ack=True, tracker=packet.tracker)
             self.__change_state("SYN_RCVD")
             return
 
@@ -251,7 +251,7 @@ class TcpSession:
 
         # Got CLOSE sycall -> Send FIN packet / change state to FIN_WAIT_1
         if syscall == "CLOSE":
-            self.__send(flag_fin=True, flag_ack=True)
+            self.__send_packet(flag_fin=True, flag_ack=True)
             self.__change_state("FIN_WAIT_1")
             return
 
@@ -261,7 +261,7 @@ class TcpSession:
         # Got timer event, run Delayed ACK mechanism
         if timer and stack.stack_timer.timer_expired("delayed_ack"):
             if self.local_ack_num > self.last_sent_local_ack_num:
-                self.__send(flag_ack=True)
+                self.__send_packet(flag_ack=True)
                 self.logger.debug(f"{self.tcp_session_id} - Sent out delayed ACK ({self.local_ack_num})")
             stack.stack_timer.register_timer("delayed_ack", DELAYED_ACK_DELAY * self.packet_resend_count)
             return
@@ -278,7 +278,7 @@ class TcpSession:
             if packet.seq_num == self.local_ack_num - 1:
                 self.logger.debug(f"{packet.tracker} - Received TCP Keep-Alive packet")
                 tracker = Tracker("TX", packet.tracker)
-                self.__send(flag_ack=True, tracker=tracker)
+                self.__send_packet(flag_ack=True, tracker=tracker)
                 self.logger.debug(f"{tracker} - Sent TCP Keep-Alive ACK packet")
                 return
 
@@ -292,7 +292,7 @@ class TcpSession:
         # Got FIN packet -> Send ACK packet / change state to CLOSE_WAIT / notifiy application that peer closed connection
         if packet and all({packet.flag_fin}) and not any({packet.flag_syn, packet.flag_rst}):
             self.local_ack_num = packet.seq_num + packet.flag_fin
-            self.__send(flag_ack=True, tracker=packet.tracker)
+            self.__send_packet(flag_ack=True, tracker=packet.tracker)
             self.__change_state("CLOSE_WAIT")
             # Let application know that remote end closed connection
             self.data_rx.append(None)
@@ -301,7 +301,7 @@ class TcpSession:
 
         # Got CLOSE syscall -> Send FINapcket / change state to FIN_WAIT_1
         if syscall == "CLOSE":
-            self.__send(flag_fin=True, flag_ack=True)
+            self.__send_packet(flag_fin=True, flag_ack=True)
             self.__change_state("FIN_WAIT_1")
             return
 
@@ -320,14 +320,14 @@ class TcpSession:
         if packet and all({packet.flag_fin, packet.flag_ack}) and not any({packet.flag_syn, packet.flag_rst}):
             if packet.ack_num == self.local_seq_num:
                 self.local_ack_num = packet.seq_num + packet.flag_fin
-                self.__send(flag_ack=True, tracker=packet.tracker)
+                self.__send_packet(flag_ack=True, tracker=packet.tracker)
                 self.__change_state("TIME_WAIT")
                 return
 
         # Got FIN packet -> Send ACK packet / change state to CLOSING
         if packet and all({packet.flag_fin}) and not any({packet.flag_syn, packet.flag_rst}):
             self.local_ack_num = packet.seq_num + packet.flag_fin
-            self.__send(flag_ack=True, tracker=packet.tracker)
+            self.__send_packet(flag_ack=True, tracker=packet.tracker)
             self.__change_state("CLOSING")
             return
 
@@ -337,7 +337,7 @@ class TcpSession:
         # Got FIN packet -> Send ACK packet / change state to TIME_WAIT
         if packet and all({packet.flag_fin}) and not any({packet.flag_syn, packet.flag_rst}):
             self.local_ack_num = packet.seq_num + packet.flag_fin
-            self.__send(flag_ack=True, tracker=packet.tracker)
+            self.__send_packet(flag_ack=True, tracker=packet.tracker)
             self.__change_state("TIME_WAIT")
             return
 
@@ -355,7 +355,7 @@ class TcpSession:
 
         # Got CLOSE syscall -> Send FIN packet / change state to LAST_ACK
         if syscall == "CLOSE":
-            self.__send(flag_fin=True, flag_ack=True)
+            self.__send_packet(flag_fin=True, flag_ack=True)
             self.__change_state("LAST_ACK")
             return
 
