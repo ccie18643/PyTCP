@@ -73,16 +73,16 @@ def main():
     stack.packet_handler = PacketHandler(STACK_MAC_ADDRESS, STACK_IP_ADDRESS)
 
     # Start 'userspace' services / clinets
-    ServiceUdpEcho()
-    ServiceUdpDiscard()
-    ServiceUdpDaytime()
+    # ServiceUdpEcho()
+    # ServiceUdpDiscard()
+    # ServiceUdpDaytime()
 
-    ServiceTcpEcho()
-    ServiceTcpDiscard()
-    ServiceTcpDaytime()
+    # ServiceTcpEcho()
+    # ServiceTcpDiscard()
+    # ServiceTcpDaytime()
 
     # ClientUdpDhcp(STACK_MAC_ADDRESS)
-    # ClientTcpEcho(local_ip_address="192.168.9.7", remote_ip_address="192.168.9.102", remote_port=7)
+    ClientTcpEcho(local_ip_address="192.168.9.7", remote_ip_address="192.168.9.102", remote_port=7)
     # ClientTcpEcho(local_ip_address="192.168.9.7", remote_ip_address="1.1.1.1", remote_port=7)
 
     while True:

@@ -16,6 +16,9 @@ import stack
 from tcp_session import TcpSession
 
 
+EPHEMERAL_PORT_RANGE = (32168, 60999)
+
+
 class TcpSocket:
     """ Support for Socket operations """
 
@@ -40,40 +43,16 @@ class TcpSocket:
             self.remote_ip_address = None
             self.remote_port = None
 
+        self.event_tcp_session_established = threading.Semaphore(0)
+
         self.logger.debug(f"Created TCP socket {self.socket_id}")
 
-        """
-        self.tcp_session_established = threading.Semaphore(0)
+    def __pick_random_local_port(self):
+        """ Pick random local port, making sure it is not already being used by any socket """
 
-        # Create established socket based on established TCP session, used by listening sockets only
-        if tcp_session:
-            self.tcp_session = tcp_session
-            self.tcp_session_established.release()
-            self.local_ip_address = tcp_session.local_ip_address
-            self.local_port = tcp_session.local_port
-            self.remote_ip_address = tcp_session.remote_ip_address
-            self.remote_port = tcp_session.remote_port
-
-        # Create established socket and start new TCP session
-        elif all((local_ip_address, remote_ip_address, remote_port)):
-            self.tcp_session = None
-            self.local_ip_address = local_ip_address
-            self.local_port = self.__pick_random_local_port()
-            self.remote_ip_address = remote_ip_address
-            self.remote_port = remote_port
-
-        # Create listening socket
-        else:
-            self.tcp_sessions = {}
-            self.local_ip_address = local_ip_address
-            self.local_port = local_port
-            self.remote_ip_address = "0.0.0.0"
-            self.remote_port = 0
-
-        self.socket_id = f"TCP/{self.local_ip_address}/{self.local_port}/{self.remote_ip_address}/{self.remote_port}"
-        TcpSocket.open_sockets[self.socket_id] = self
-        self.logger.debug(f"Opened TCP socket {self.socket_id}")
-        """
+        used_ports = {int(_.split("/")[2]) for _ in stack.tcp_sessions if _.split("/")[1] in {"0.0.0.0", self.local_ip_address}}
+        while (port := random.randint(*EPHEMERAL_PORT_RANGE)) not in used_ports:
+            return port
 
     @property
     def socket_id(self):
@@ -98,16 +77,31 @@ class TcpSocket:
             remote_port=self.remote_port,
             socket=self,
         )
-        tcp_session.listen()
         stack.tcp_sessions[tcp_session.tcp_session_id] = tcp_session
-        self.tcp_session_established = threading.Semaphore(0)
-        self.logger.debug("{self.socket_id} =  Socket started to listen for inbound connections")
+        self.logger.debug("{self.socket_id} -  Socket starting to listen for inbound connections")
+        tcp_session.listen()
+
+    def connect(self, remote_ip_address, remote_port):
+        """ Attempt to establish TCP connection """
+
+        self.remote_ip_address = remote_ip_address
+        self.remote_port = remote_port
+        tcp_session = TcpSession(
+            local_ip_address=self.local_ip_address,
+            local_port=self.local_port if self.local_port else self.__pick_random_local_port(),
+            remote_ip_address=self.remote_ip_address,
+            remote_port=self.remote_port,
+            socket=self,
+        )
+        stack.tcp_sessions[tcp_session.tcp_session_id] = tcp_session
+        self.logger.debug(f"{self.socket_id} -  Socket attempting connection to {remote_ip_address}:{remote_port}")
+        return tcp_session.connect()
 
     def accept(self):
         """ Wait for the established inbound connection, then create new socket for it and return it """
 
         self.logger.debug(f"{self.socket_id} - Waiting for established inbound connection")
-        self.tcp_session_established.acquire()
+        self.event_tcp_session_established.acquire()
         for tcp_session_id, tcp_session in stack.tcp_sessions.items():
             if tcp_session.socket is self and tcp_session.state == "ESTABLISHED":
                 return TcpSocket(tcp_session=tcp_session)
@@ -130,61 +124,3 @@ class TcpSocket:
 
         self.tcp_session.close()
         self.logger.debug(f"{self.socket_id} - Closed socket")
-
-    '''
-    def connect(self, timeout=None):
-        """ Attempt to establish TCP connection """
-
-        self.tcp_session = TcpSession(
-            local_ip_address=self.local_ip_address,
-            local_port=self.local_port,
-            remote_ip_address=self.remote_ip_address,
-            remote_port=self.remote_port,
-            socket=self,
-        )
-
-        return self.tcp_session.connect()
-
-    def __pick_random_local_port(self):
-        """ Pick random local port, making sure it is not already being used by any socket """
-
-        used_ports = {int(_.split("/")[2]) for _ in TcpSocket.open_sockets if _.split("/")[1] in {"0.0.0.0", self.local_ip_address}}
-
-        while (port := random.randint(1024, 65535)) not in used_ports:
-            return port
-
-    def send(self, raw_data):
-        """ Pass raw_data to TCP session """
-
-        self.tcp_session.send(raw_data)
-
-    def receive(self, timeout=None):
-        """ Read data from established socket and return raw_data """
-
-        if self.tcp_session.data_rx_ready.acquire(timeout=timeout):
-            return self.tcp_session.data_rx.pop(0)
-
-    def listen(self, timeout=None):
-        """ Wait till there is session established on listening socket """
-
-        self.logger.debug(f"Waiting till we have established TCP connection in listening socket {self.socket_id}")
-
-        return self.tcp_session_established.acquire(timeout=timeout)
-
-    def accept(self):
-        """ Pick up established session from listening socket and create new established socket for it """
-
-        for session_id, session in self.tcp_sessions.items():
-            if session.state == "ESTABLISHED":
-                return TcpSocket(tcp_session=self.tcp_sessions.pop(session_id))
-
-    def close(self):
-        """ Close session """
-
-        if hasattr(self, "tcp_session"):
-            self.tcp_session.close()
-
-        if hasattr(self, "tcp_sessions"):
-            self.tcp_sessions.clear()
-            TcpSocket.open_sockets.pop(self.socket_id)
-    '''

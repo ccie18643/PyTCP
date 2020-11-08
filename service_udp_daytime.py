@@ -39,7 +39,7 @@ class ServiceUdpDaytime:
                 local_port=packet_rx.local_port,
                 remote_ip_address=packet_rx.remote_ip_address,
                 remote_port=packet_rx.remote_port,
-                raw_data = bytes(str(datetime.now()), "utf-8"),
+                raw_data=bytes(str(datetime.now()), "utf-8"),
                 tracker=Tracker("TX", echo_tracker=packet_rx.tracker),
             )
             socket.send_to(packet_tx)

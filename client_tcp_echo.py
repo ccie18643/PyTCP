@@ -10,36 +10,34 @@ client_tcp_echo.py - 'user space' client for TCP echo, it activelly connects to 
 import time
 import threading
 
-import tcp_socket
+from tcp_socket import TcpSocket
 
 
 class ClientTcpEcho:
     """ TCP Echo client support class """
 
-    def __init__(self, local_ip_address, remote_ip_address, remote_port=7):
+    def __init__(self, local_ip_address, remote_ip_address, local_port=0, remote_port=7):
         """ Class constructor """
 
-        self.local_ip_address = local_ip_address
-        self.remote_ip_address = remote_ip_address
-        self.remote_port = remote_port
-        threading.Thread(target=self.__client).start()
+        threading.Thread(target=self.__thread_client, args=(local_ip_address, local_port, remote_ip_address, remote_port)).start()
 
-    def __client(self):
-        socket = tcp_socket.TcpSocket(local_ip_address=self.local_ip_address, remote_ip_address=self.remote_ip_address, remote_port=self.remote_port)
+    def __thread_client(self, local_ip_address, local_port, remote_ip_address, remote_port):
+        socket = TcpSocket()
+        socket.bind(local_ip_address, 0)
 
-        print(f"Client TCP Echo: opening connection ({socket.socket_id})")
-        if socket.connect(timeout=180):
-            print(f"Client TCP Echo: Connection established ({socket.socket_id})")
+        print(f"Client TCP Echo: opening connection to {remote_ip_address}:{remote_port}")
+        if socket.connect(remote_ip_address=remote_ip_address, remote_port=remote_port):
+            print(f"Client TCP Echo: Connection to {remote_ip_address}:{remote_port} has been established")
         else:
-            print(f"Client TCP Echo: Connection timed out ({socket.socket_id})")
+            print(f"Client TCP Echo: Connection to {remote_ip_address}:{remote_port} failed")
             return
 
         i = 1
         while i <= 30:
             socket.send(b"DUPA " + bytes([48 + i]) + b"\n")
-            print(f"Client TCP Echo: Sent data out ({socket.socket_id})")
+            print(f"Client TCP Echo: Sent data to {remote_ip_address}:{remote_port}")
             time.sleep(1)
             i += 1
 
         socket.close()
-        print(f"Client TCP Echo: Closed socket ({socket.socket_id})")
+        print(f"Client TCP Echo: Closed connection to {remote_ip_address}:{remote_port}")

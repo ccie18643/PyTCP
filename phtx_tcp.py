@@ -60,3 +60,9 @@ def phtx_tcp(
 
     self.logger.opt(ansi=True).info(f"<magenta>{tcp_packet_tx.tracker}</magenta> - {tcp_packet_tx}")
     self.phtx_ip(ip_src=ip_src, ip_dst=ip_dst, child_packet=tcp_packet_tx)
+
+    # Return arguments method has been invoked with so they can be used to re-send packet if needed
+    args = locals()
+    args.pop("self")
+    args.pop("tcp_packet_tx")
+    return args
