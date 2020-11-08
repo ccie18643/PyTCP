@@ -78,12 +78,31 @@ class TcpSession:
         )
         self.local_seq_num += len(raw_data) + flag_syn + flag_fin
 
-    def __resend_last_packet(self):
-        """ Resend last packet """
+    def __resend_packet(self, fail_state="CLOSED", fail_semaphore=None, fail_action=None):
+        """ Resend last packet using the same argument list """
+
+        if self.packet_resend_count == PACKET_RESEND_COUNT:
+            fail_state and self.__change_state(fail_state)
+            fail_semaphore and fail_semaphore.release()
+            fail_action and fail_action()
+            return
 
         stack.packet_handler.phtx_tcp(**self.packet_resend_args)
         self.packet_resend_count += 1
         self.logger.debug(f"{self.tcp_session_id} - Re-sent last packet")
+
+    def __send_resend_packet(self, expected_state, **kwargs):
+        """ Send packet, resend if no expected FSM state is reached """
+
+        self.__send_packet(**kwargs)
+        stack.stack_timer.register_method(
+            method=self.__resend_packet,
+            kwargs={"fail_semaphore": self.event_connect},
+            delay=1000,
+            delay_exp=True,
+            repeat_count=PACKET_RESEND_COUNT,
+            stop_condition=lambda: self.state in expected_state,
+        )
 
     def __change_state(self, state):
         """ Change the state of TCP finite state machine """
@@ -98,9 +117,6 @@ class TcpSession:
 
         if self.state == "ESTABLISHED":
             stack.stack_timer.register_timer("delayed_ack", DELAYED_ACK_DELAY)
-
-        if self.state == "SYN_SENT":
-            stack.stack_timer.register_timer("packet_resend", PACKET_RESEND_DELAY)
 
     @property
     def tcp_session_id(self):
@@ -138,7 +154,7 @@ class TcpSession:
 
         # Got CONNECT syscall -> Send SYN packet / change state to SYN_SENT
         if syscall == "CONNECT":
-            self.__send_packet(flag_syn=True)
+            self.__send_resend_packet(flag_syn=True, expected_state=("ESTABLISHED", "CLOSED", "SYN_RCVD"))
             self.logger.debug(f"{self.tcp_session_id} - Sent initial SYN packet")
             self.__change_state("SYN_SENT")
 
@@ -193,17 +209,6 @@ class TcpSession:
 
     def __tcp_fsm_syn_sent(self, packet=None, syscall=None, timer=None):
         """ TCP FSM SYN_SENT state handler """
-
-        # Got timer event -> Resend packet if needed
-        if timer and stack.stack_timer.timer_expired("packet_resend"):
-            if self.packet_resend_count < PACKET_RESEND_COUNT:
-                self.__resend_last_packet()
-                stack.stack_timer.register_timer("packet_resend", PACKET_RESEND_DELAY * (1 << self.packet_resend_count))
-                return
-            self.__change_state("CLOSED")
-            # Inform connect syscall that connection related event happened
-            self.event_connect.release()
-            return
 
         # Got SYN + ACK packet -> Send ACK / change state to ESTABLISHED
         if packet and all({packet.flag_syn, packet.flag_ack}) and not any({packet.flag_fin, packet.flag_rst}):
