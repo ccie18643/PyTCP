@@ -7,7 +7,12 @@ phrx_udp.py - packet handler for inbound UDP packets
 
 """
 
-from udp_socket import UdpSocket, UdpPacketMetadata
+import loguru
+
+import stack
+
+from udp_socket import UdpSocket
+from udp_packet import UdpPacket
 
 import ps_icmp
 
@@ -25,18 +30,22 @@ def phrx_udp(self, ip_packet_rx, udp_packet_rx):
     # Check if packet is part of stack DHCP client message exchange
     pass
 
-    # Send packet info and data to socket mechanism for further processing
-    if UdpSocket.match_socket(
-        UdpPacketMetadata(
-            local_ip_address=ip_packet_rx.ip_dst,
-            local_port=udp_packet_rx.udp_dport,
-            remote_ip_address=ip_packet_rx.ip_src,
-            remote_port=udp_packet_rx.udp_sport,
-            raw_data=udp_packet_rx.raw_data,
-            tracker=udp_packet_rx.tracker,
-        )
-    ):
-        return
+    # Create UdpPacket object containing UDP metadata and try to find matching UDP socket
+    packet = UdpPacket(
+        local_ip_address=ip_packet_rx.ip_dst,
+        local_port=udp_packet_rx.udp_dport,
+        remote_ip_address=ip_packet_rx.ip_src,
+        remote_port=udp_packet_rx.udp_sport,
+        raw_data=udp_packet_rx.raw_data,
+        tracker=udp_packet_rx.tracker,
+    )
+
+    for socket_id in packet.socket_id_patterns:
+        socket = stack.udp_sockets.get(socket_id, None)
+        if socket:
+            loguru.logger.bind(object_name="socket.").debug(f"{packet.tracker} - Found matching listening socket {socket_id}")
+            socket.process_packet(packet)
+            return
 
     # Silently drop packet if it has all zero source IP address
     if ip_packet_rx.ip_src == "0.0.0.0":

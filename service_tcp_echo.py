@@ -26,7 +26,7 @@ class ServiceTcpEcho:
         socket = tcp_socket.TcpSocket()
         socket.bind(local_ip_address, local_port)
         socket.listen()
-        print(f"Service TCP Echo: Socket creaed, bound to {local_ip_address}:{local_port} and set to listening mode")
+        print(f"Service TCP Echo: Socket created, bound to {local_ip_address}:{local_port} and set to listening mode")
 
         while True:
             new_socket = socket.accept()
@@ -44,7 +44,7 @@ class ServiceTcpEcho:
                 break
 
             socket.send(message)
-            print(f"Service TCP Echo: Echo'ed message from {socket.remote_ip_address}:{socket.remote_port} - ", message)
+            print(f"Service TCP Echo: Echo'ed message back to {socket.remote_ip_address}:{socket.remote_port} -", message)
 
         socket.close()
         print(f"Service TCP Echo: Connection from {socket.remote_ip_address}:{socket.remote_port} has been closed by peer")

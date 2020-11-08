@@ -28,7 +28,7 @@ class ServiceTcpDaytime:
         socket = tcp_socket.TcpSocket()
         socket.bind(local_ip_address, local_port)
         socket.listen()
-        print(f"Service TCP Daytime: Socket creaed, bound to {local_ip_address}:{local_port} and set to listening mode")
+        print(f"Service TCP Daytime: Socket created, bound to {local_ip_address}:{local_port} and set to listening mode")
 
         while True:
             new_socket = socket.accept()
@@ -41,6 +41,6 @@ class ServiceTcpDaytime:
 
         daytime = bytes(str(datetime.now()), "utf-8")
         socket.send(daytime)
-        print(f"Service TCP Daytime: Sent daytime message to {socket.remote_ip_address}:{socket.remote_port} - ", daytime)
+        print(f"Service TCP Daytime: Sent daytime message to {socket.remote_ip_address}:{socket.remote_port} -", daytime)
         socket.close()
         print(f"Service TCP Daytime: Closed connection from {socket.remote_ip_address}:{socket.remote_port}")

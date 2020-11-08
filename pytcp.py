@@ -23,6 +23,9 @@ from tx_ring import TxRing
 from ph import PacketHandler
 
 from service_udp_echo import ServiceUdpEcho
+from service_udp_discard import ServiceUdpDiscard
+from service_udp_daytime import ServiceUdpDaytime
+
 from service_tcp_echo import ServiceTcpEcho
 from service_tcp_discard import ServiceTcpDiscard
 from service_tcp_daytime import ServiceTcpDaytime
@@ -69,8 +72,10 @@ def main():
     stack.arp_cache = ArpCache()
     stack.packet_handler = PacketHandler(STACK_MAC_ADDRESS, STACK_IP_ADDRESS)
 
-    # Start services / clinets
+    # Start 'userspace' services / clinets
     ServiceUdpEcho()
+    ServiceUdpDiscard()
+    ServiceUdpDaytime()
 
     ServiceTcpEcho()
     ServiceTcpDiscard()

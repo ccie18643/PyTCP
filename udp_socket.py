@@ -13,80 +13,62 @@ import threading
 import stack
 
 
-class UdpPacketMetadata:
-    """ Store UDP packet metadata """
-
-    def __init__(self, local_ip_address, local_port, remote_ip_address, remote_port, raw_data, tracker):
-        self.local_ip_address = local_ip_address
-        self.local_port = local_port
-        self.remote_ip_address = remote_ip_address
-        self.remote_port = remote_port
-        self.raw_data = raw_data
-        self.tracker = tracker
-
-
 class UdpSocket:
     """ Support for Socket operations """
 
     open_sockets = {}
 
-    def __init__(self, local_ip_address, local_port, remote_ip_address="0.0.0.0", remote_port=0):
+    def __init__(self):
         """ Class constructor """
 
         self.logger = loguru.logger.bind(object_name="socket.")
 
-        self.metadata_rx = []
-        self.metadata_rx_ready = threading.Semaphore(0)
+        self.local_ip_address = None
+        self.local_port = None
+        self.remote_ip_address = "0.0.0.0"
+        self.remote_port = 0
+
+        self.packet_rx = []
+        self.packet_rx_ready = threading.Semaphore(0)
+        self.logger.debug(f"Opened UDP socket {self.socket_id}")
+
+    @property
+    def socket_id(self):
+        return f"UDP/{self.local_ip_address}/{self.local_port}/{self.remote_ip_address}/{self.remote_port}"
+
+    def bind(self, local_ip_address, local_port):
+        """ Bind the socket to local address """
 
         self.local_ip_address = local_ip_address
         self.local_port = local_port
-        self.remote_ip_address = remote_ip_address
-        self.remote_port = remote_port
+        stack.udp_sockets[self.socket_id] = self
+        self.logger.debug(f"{self.socket_id} - Socket bound to local address")
 
-        self.socket_id = f"UDP/{self.local_ip_address}/{self.local_port}/{self.remote_ip_address}/{self.remote_port}"
-
-        UdpSocket.open_sockets[self.socket_id] = self
-
-        self.logger.debug(f"Opened UDP socket {self.socket_id}")
-
-    def send_to(self, metadata):
+    def send_to(self, packet):
         """ Put data from UdpPacketMetadata structure into TX ring """
 
         stack.packet_handler.phtx_udp(
-            ip_src=metadata.local_ip_address,
-            udp_sport=metadata.local_port,
-            ip_dst=metadata.remote_ip_address,
-            udp_dport=metadata.remote_port,
-            raw_data=metadata.raw_data,
+            ip_src=packet.local_ip_address,
+            udp_sport=packet.local_port,
+            ip_dst=packet.remote_ip_address,
+            udp_dport=packet.remote_port,
+            raw_data=packet.raw_data,
         )
 
     def receive_from(self, timeout=None):
         """ Read data from listening socket and return UdpMessage structure """
 
-        if self.metadata_rx_ready.acquire(timeout=timeout):
-            return self.metadata_rx.pop(0)
+        if self.packet_rx_ready.acquire(timeout=timeout):
+            return self.packet_rx.pop(0)
 
     def close(self):
         """ Close socket """
 
-        UdpSocket.open_sockets.pop(self.socket_id, None)
+        stack.udp_sockets.pop(self.socket_id)
         self.logger.debug(f"Closed UDP socket {self.socket_id}")
 
-    @staticmethod
-    def match_socket(metadata):
-        """ Class method - Check if incoming data belongs to any socket, if so enqueue it """
+    def process_packet(self, packet):
+        """ Process incoming UDP packet's metadata """
 
-        socket_ids = [
-            f"UDP/{metadata.local_ip_address}/{metadata.local_port}/{metadata.remote_ip_address}/{metadata.remote_port}",
-            f"UDP/{metadata.local_ip_address}/{metadata.local_port}/0.0.0.0/0",
-            f"UDP/0.0.0.0/{metadata.local_port}/0.0.0.0/{metadata.remote_port}",
-            f"UDP/0.0.0.0/{metadata.local_port}/0.0.0.0/0",
-        ]
-
-        for socket_id in socket_ids:
-            socket = UdpSocket.open_sockets.get(socket_id, None)
-            if socket:
-                loguru.logger.bind(object_name="socket.").debug(f"{metadata.tracker} - Found matching listening socket {socket_id}")
-                socket.metadata_rx.append(metadata)
-                socket.metadata_rx_ready.release()
-                return True
+        self.packet_rx.append(packet)
+        self.packet_rx_ready.release()

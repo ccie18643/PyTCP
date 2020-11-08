@@ -12,3 +12,4 @@ tx_ring = None
 arp_cache = None
 packet_handler = None
 tcp_sessions = {}
+udp_sockets = {}

@@ -3,22 +3,24 @@
 """
 
 PyTCP, Python TCP/IP stack, version 0.1 - 2020, Sebastian Majewski
-service_udp_echo.py - 'user space' service UDP Echo (RFC 862)
+service_udp_daytime.py - 'user space' service UDP Daytime (RFC 867)
 
 """
 
 import threading
 
+from datetime import datetime
+
 import udp_socket
 
-from udp_packet import UdpPacket
 from tracker import Tracker
+from udp_packet import UdpPacket
 
 
-class ServiceUdpEcho:
-    """ UDP Echo service support class """
+class ServiceUdpDaytime:
+    """ UDP Daytime service support class """
 
-    def __init__(self, local_ip_address="0.0.0.0", local_port=7):
+    def __init__(self, local_ip_address="0.0.0.0", local_port=13):
         """ Class constructor """
 
         threading.Thread(target=self.__thread_service, args=(local_ip_address, local_port)).start()
@@ -28,7 +30,7 @@ class ServiceUdpEcho:
 
         socket = udp_socket.UdpSocket()
         socket.bind(local_ip_address, local_port)
-        print(f"Service UDP Echo: Socket created, bound to {local_ip_address}:{local_port}")
+        print(f"Service UDP Daytime: Socket created, bound to {local_ip_address}:{local_port}")
 
         while True:
             packet_rx = socket.receive_from()
@@ -37,8 +39,8 @@ class ServiceUdpEcho:
                 local_port=packet_rx.local_port,
                 remote_ip_address=packet_rx.remote_ip_address,
                 remote_port=packet_rx.remote_port,
-                raw_data=packet_rx.raw_data,
+                raw_data = bytes(str(datetime.now()), "utf-8"),
                 tracker=Tracker("TX", echo_tracker=packet_rx.tracker),
             )
             socket.send_to(packet_tx)
-            print(f"Service UDP Echo: Echo'ed message back to {packet_tx.remote_ip_address}:{packet_tx.remote_port} -", packet_tx.raw_data)
+            print(f"Service UDP Daytime: Sent daytime message to {packet_tx.remote_ip_address}:{packet_tx.remote_port} -", packet_tx.raw_data)

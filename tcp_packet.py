@@ -36,7 +36,7 @@ class TcpPacket:
 
     @property
     def tcp_session_id_patterns(self):
-        """ Session ID """
+        """ Session ID patterns that match this packet """
 
         return [
             f"TCP/{self.local_ip_address}/{self.local_port}/{self.remote_ip_address}/{self.remote_port}",

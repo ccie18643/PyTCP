@@ -80,7 +80,7 @@ class TcpSocket:
         return f"TCP/{self.local_ip_address}/{self.local_port}/{self.remote_ip_address}/{self.remote_port}"
 
     def bind(self, local_ip_address, local_port):
-        """ Bind the socket to locall address """
+        """ Bind the socket to local address """
 
         self.local_ip_address = local_ip_address
         self.local_port = local_port

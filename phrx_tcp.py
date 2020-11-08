@@ -45,7 +45,7 @@ def phrx_tcp(self, ip_packet_rx, tcp_packet_rx):
         if tcp_session := stack.tcp_sessions.get(tcp_session_id_pattern, None):
             self.logger.debug(f"{packet.tracker} - TCP packet is part of session {tcp_session.tcp_session_id}")
             tcp_session.tcp_fsm(packet=packet)
-            return True
+            return
 
     self.logger.debug(f"Received TCP packet from {ip_packet_rx.ip_src} to closed port {tcp_packet_rx.tcp_dport}, responding with TCP RST packet")
     self.phtx_tcp(

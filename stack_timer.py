@@ -93,4 +93,4 @@ class StackTimer:
 
         self.logger.opt(ansi=True).trace(f"<red>Active timers: {self.timers}</>")
 
-        return not self.timers.get(name, None) 
+        return not self.timers.get(name, None)

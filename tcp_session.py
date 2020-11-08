@@ -16,7 +16,7 @@ import stack
 from tracker import Tracker
 
 
-DELAYED_ACK_DELAY = 200  # 200ms between consecutive delayed ACK outbound packets 
+DELAYED_ACK_DELAY = 200  # 200ms between consecutive delayed ACK outbound packets
 TIME_WAIT_DELAY = 120000  # 2 minutes delay for the TIME_WAIT state
 
 
@@ -35,7 +35,7 @@ class TcpSession:
         self.remote_ip_address = remote_ip_address
         self.remote_port = remote_port
 
-        self.local_seq_num = random.randint(0, 0xffffffff)
+        self.local_seq_num = random.randint(0, 0xFFFFFFFF)
         self.local_ack_num = 0
         self.remote_ack_num = 0
         self.last_sent_local_ack_num = 0
