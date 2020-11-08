@@ -93,6 +93,7 @@ class TcpSocket:
             remote_port=self.remote_port,
             socket=self,
         )
+        self.tcp_session = tcp_session
         stack.tcp_sessions[tcp_session.tcp_session_id] = tcp_session
         self.logger.debug(f"{self.socket_id} -  Socket attempting connection to {remote_ip_address}:{remote_port}")
         return tcp_session.connect()
@@ -109,7 +110,7 @@ class TcpSocket:
     def receive(self, timeout=None):
         """ Receive data segment from socket """
 
-        if self.tcp_session.data_rx_ready.acquire(timeout=timeout):
+        if self.tcp_session.event_data_rx.acquire(timeout=timeout):
             self.logger.debug(f"{self.socket_id} - Received data segment")
             return self.tcp_session.data_rx.pop(0)
 

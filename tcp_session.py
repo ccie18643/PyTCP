@@ -17,7 +17,7 @@ from tracker import Tracker
 
 
 DELAYED_ACK_DELAY = 200  # 200ms between consecutive delayed ACK outbound packets
-TIME_WAIT_DELAY = 120000  # 2 minutes delay for the TIME_WAIT state
+TIME_WAIT_DELAY = 30000  # 30s delay for the TIME_WAIT state, default is 120s
 PACKET_RESEND_DELAY = 1000  # 1s for initial packet resend delay, then exponenial
 PACKET_RESEND_COUNT = 4  # 4 retries in case we get no response to packet sent
 
@@ -48,7 +48,7 @@ class TcpSession:
         self.event_connect = threading.Semaphore(0)
         self.event_data_rx = threading.Semaphore(0)
 
-        stack.stack_timer.register_method(method=self.tcp_fsm, kwargs={"timer": True}, delay=100)
+        stack.stack_timer.register_method(method=self.tcp_fsm, kwargs={"timer": True}, delay=1)
 
     def __str__(self):
         """ String representation """
@@ -77,6 +77,10 @@ class TcpSession:
             echo_tracker=echo_tracker,
         )
         self.local_seq_num += len(raw_data) + flag_syn + flag_fin
+
+        # If in ESTABLISHED state then make sure to reset ACK delay timer
+        if self.state == "ESTABLISHED":
+            stack.stack_timer.register_timer("delayed_ack", DELAYED_ACK_DELAY)
 
     def __resend_packet(self, fail_state="CLOSED", fail_semaphore=None, fail_action=None):
         """ Resend last packet using the same argument list """
@@ -191,7 +195,7 @@ class TcpSession:
 
             # Process FSM event
             self.local_ack_num = packet.seq_num + packet.flag_syn
-            self.__send_packet(flag_syn=True, flag_ack=True, tracker=packet.tracker)
+            self.__send_resend_packet(flag_syn=True, flag_ack=True, tracker=packet.tracker, expected_state=("ESTABLISHED"))
             self.__change_state("SYN_RCVD")
             return
 
@@ -241,15 +245,12 @@ class TcpSession:
     def __tcp_fsm_syn_rcvd(self, packet=None, syscall=None, timer=None):
         """ TCP FSM ESTABLISHED state handler """
 
-        # Got timer event -> Re-sent SYN + ACK packet if needed
-        pass
-
         # Got ACK packet -> Change state to ESTABLISHED
         if packet and all({packet.flag_ack}) and not any({packet.flag_syn, packet.flag_fin, packet.flag_rst}):
             if packet.ack_num == self.local_seq_num:
                 self.__change_state("ESTABLISHED")
                 # Inform socket that session has been established so accept method can pick it up
-                self.socket.tcp_session_established.release()
+                self.socket.event_tcp_session_established.release()
                 # Inform connect syscall that connection related event happened, this is needed only in case of tcp simultaneous open
                 self.event_connect.release()
                 return
@@ -268,7 +269,7 @@ class TcpSession:
             if self.local_ack_num > self.last_sent_local_ack_num:
                 self.__send_packet(flag_ack=True)
                 self.logger.debug(f"{self.tcp_session_id} - Sent out delayed ACK ({self.local_ack_num})")
-            stack.stack_timer.register_timer("delayed_ack", DELAYED_ACK_DELAY * self.packet_resend_count)
+            stack.stack_timer.register_timer("delayed_ack", DELAYED_ACK_DELAY)
             return
 
         # Got ACK packet
@@ -376,7 +377,7 @@ class TcpSession:
     def __tcp_fsm_time_wait(self, packet=None, syscall=None, timer=None):
         """ TCP FSM TIME_WAIT state handler """
 
-        # Got timer event -> Run Time Wait delay
+        # Got timer event -> Run TIME_WAIT delay
         if timer and stack.stack_timer.timer_expired("time_wait"):
             self.__change_state("CLOSED")
 
