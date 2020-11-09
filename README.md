@@ -2,7 +2,7 @@
 
 Python based attempt to create fully operational TCP/IP stack for educational purposes. Stack operates as user space program attached to Linux TAP interface.
 
-## Already implemented:
+#### Already implemented:
 
  - Ethernet protocol - *full suppot of Ethernet II standard*
  - ARP protocol - *replies, queries, ARP cache*
@@ -19,11 +19,11 @@ Python based attempt to create fully operational TCP/IP stack for educational pu
  - TCP protocol - *TCP option support for: MSS, WSCALE, SACKPERM, TIMESTAMP*
  - TCP sockets - *full support, stack's 'end user' API similar to Berkley sockets*
 
-## Work in progress:
+#### Work in progress:
 
  - TCP protocol - *working on 'sliding window' mechanism implementation*
 
-## Next steps:
+#### Next steps:
  
  - IPv6 protocol - *basic support with address auto configuration*
  - ICMPv6 protocol - *basic support, features needed for stack operation*
