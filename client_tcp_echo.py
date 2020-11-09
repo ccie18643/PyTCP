@@ -9,6 +9,8 @@ client_tcp_echo.py - 'user space' client for TCP echo, it activelly connects to 
 
 
 import threading
+import time
+
 from datetime import datetime
 
 from tcp_socket import TcpSocket
@@ -17,12 +19,12 @@ from tcp_socket import TcpSocket
 class ClientTcpEcho:
     """ TCP Echo client support class """
 
-    def __init__(self, local_ip_address, remote_ip_address, local_port=0, remote_port=7):
+    def __init__(self, local_ip_address, remote_ip_address, local_port=0, remote_port=7, message_count=10):
         """ Class constructor """
 
-        threading.Thread(target=self.__thread_client, args=(local_ip_address, local_port, remote_ip_address, remote_port)).start()
+        threading.Thread(target=self.__thread_client, args=(local_ip_address, local_port, remote_ip_address, remote_port, message_count)).start()
 
-    def __thread_client(self, local_ip_address, local_port, remote_ip_address, remote_port):
+    def __thread_client(self, local_ip_address, local_port, remote_ip_address, remote_port, message_count):
         socket = TcpSocket()
         socket.bind(local_ip_address, 0)
 
@@ -34,7 +36,7 @@ class ClientTcpEcho:
             return
 
         i = 1
-        while i <= 10:
+        while i <= message_count:
             message = bytes(str(datetime.now()) + "\n", "utf-8")
             if socket.send(message):
                 print(f"Client TCP Echo: Sent data to {remote_ip_address}:{remote_port} - {message}")

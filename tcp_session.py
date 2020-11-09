@@ -94,7 +94,7 @@ class TcpSession:
             tcp_flag_fin=flag_fin,
             tcp_flag_rst=flag_rst,
             tcp_win=self.local_win,
-            tcp_mss= self.local_mss if flag_syn else None,
+            tcp_mss=self.local_mss if flag_syn else None,
             raw_data=raw_data,
             tracker=tracker,
             echo_tracker=echo_tracker,
