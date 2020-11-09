@@ -15,6 +15,10 @@ import stack
 
 from tracker import Tracker
 
+
+TCP_MSS = 1460
+TCP_WIN = 1024
+
 DELAYED_ACK_DELAY = 200  # 200ms between consecutive delayed ACK outbound packets
 TIME_WAIT_DELAY = 15000  # 15s delay for the TIME_WAIT state, default is 120s
 PACKET_RESEND_DELAY = 1000  # 1s for initial packet resend delay, then exponenial
@@ -38,7 +42,7 @@ class TcpSession:
         self.local_ack_num = 0
         self.remote_ack_num = 0
         self.last_sent_local_ack_num = 0
-        self.win = 1024
+        self.win = TCP_WIN
         self.socket = socket
         self.state = "CLOSED"
 

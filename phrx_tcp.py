@@ -9,7 +9,6 @@ phrx_tcp.py - packet handler for inbound TCP packets
 
 import stack
 
-from tcp_session import TcpSession
 from tcp_packet import TcpPacket
 
 

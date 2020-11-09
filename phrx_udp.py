@@ -11,7 +11,6 @@ import loguru
 
 import stack
 
-from udp_socket import UdpSocket
 from udp_packet import UdpPacket
 
 import ps_icmp

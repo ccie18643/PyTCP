@@ -7,7 +7,7 @@ client_tcp_echo.py - 'user space' client for TCP echo, it activelly connects to 
 
 """
 
-import time
+
 import threading
 from datetime import datetime
 

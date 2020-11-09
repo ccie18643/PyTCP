@@ -44,10 +44,6 @@ STACK_INTERFACE = b"tap7"
 STACK_MAC_ADDRESS = "02:00:00:77:77:77"
 STACK_IP_ADDRESS = [
     ("192.168.9.7", "255.255.255.0"),
-    ("192.168.9.7", "255.255.255.0"),
-    ("192.168.9.102", "255.255.255.0"),
-    ("192.168.9.9", "255.255.255.0"),
-    ("172.16.128.65", "255.255.255.240"),
 ]
 
 
@@ -79,11 +75,12 @@ def main():
 
     # ServiceTcpEcho()
     # ServiceTcpDiscard()
-    ServiceTcpDaytime()
+    # ServiceTcpDaytime()
 
     # ClientUdpDhcp(STACK_MAC_ADDRESS)
-    # ClientTcpEcho(local_ip_address="192.168.9.7", remote_ip_address="192.168.9.102", remote_port=7)
+    ClientTcpEcho(local_ip_address="192.168.9.7", remote_ip_address="192.168.9.102", remote_port=7)
     # ClientTcpEcho(local_ip_address="192.168.9.7", remote_ip_address="1.1.1.1", remote_port=7)
+    # ClientTcpEcho(local_ip_address="192.168.9.7", remote_ip_address="192.168.9.9", remote_port=7)
 
     while True:
         time.sleep(1)
