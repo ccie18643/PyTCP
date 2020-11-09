@@ -57,6 +57,7 @@ Python based attempt to create fully operational TCP/IP stack for educational pu
 
 #### ARP Probe/Announcement mechanism
 Testing for any possible conflicts for every IP address assigned to stack
+
 ![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/main/pictures/log_06.png)
 ![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/main/pictures/log_07.png)
 ![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/main/pictures/log_08.png)
@@ -68,11 +69,13 @@ Testing for any possible conflicts for every IP address assigned to stack
 
 #### IP fragmentation
 Receiving fragmented 4Kb UDP datagram and sending fragmented reply
+
 ![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/main/pictures/log_05.png)
 
 
 #### UDP Echo service
 Receiving and sending packets using simple socket mechanism
+
 ![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/main/pictures/log_04.png)
 
 
@@ -81,9 +84,11 @@ Receiving and sending packets using simple socket mechanism
 Still love Asyncio but for this particular purpose it just doesn't cut it :) Seem all that huge delay happened in between packet being enqueued by RX ring into asyncio.Queue() and main packet handler being able to dequeue it for further procesing. This delay usually varied from 100ms up to 1000ms avraging at around 400ms in most cases.
 
 Running Asyncio
+
 ![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/main/pictures/log_02.png)
 
 Running threads
+
 ![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/main/pictures/log_03.png)
 
 
