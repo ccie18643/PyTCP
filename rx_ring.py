@@ -27,7 +27,7 @@ class RxRing:
 
         self.packet_enqueued = threading.Semaphore(0)
 
-        threading.Thread(target=self.__receive).start()
+        threading.Thread(target=self.__thread_receive).start()
         self.logger.debug("Started RX ring")
 
     def __enqueue(self, ether_packet_rx):
@@ -42,7 +42,7 @@ class RxRing:
 
         self.packet_enqueued.release()
 
-    def __receive(self):
+    def __thread_receive(self):
         """ Thread responsible for receiving and enqueuing incoming packets """
 
         while True:
