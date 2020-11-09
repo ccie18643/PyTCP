@@ -4,26 +4,30 @@ Python based attempt to create fully operational TCP/IP stack for educational pu
 
 #### Already implemented:
 
- - Ethernet protocol - only Ethernet II standard frames
- - ARP protocol - replies, queries, ARP cache, ARP Probe/Announcement IP conflict detection (ACD) mechanism
- - IP protocol - inbound and outbound IP fragmentation, IP options accepted but not supported, multiple IP addresses supported
+ - Ethernet protocol - full suppot of Ethernet II standard
+ - ARP protocol - replies, queries, ARP cache
+ - ARP protocol - ARP Probe/Announcement IP conflict detection (ACD) mechanism
+ - IP protocol - inbound and outbound IP fragmentation
+ - IP protocol - IP options accepted but not supported
+ - IP protocol -  multiple stack's IP addresses supported 
  - ICMP protocol - only ICMP messages that are needed for stack operations are implemented, eg. echo, echo reply, port unreachable
- - UDP protocol - full support
- - UDP socket mechanism - full support for single threaded services
- - Single threaded UDP Echo service - standard echo service responding to message on port 7
+ - UDP protocol - full support, stack is able to exchange data with other hosts using UDP protocol
+ - UDP socket mechanism - full support, stack's 'end user' API similar to Berkley sockets
+ - UDP services - UDP Echo, Discard, Daytime implemented for testing purposes
+ - UDP clients - DHCP service for automatic IPv4 address configuration - basic implementation, need to add timeouts and error handling
+ - TCP protocol - full implementation of TCP Finite State Machine, at this point stack is able to comunicate with other hosts over TCP protocol
+ - TCP protocol - TCP option support for: MSS, WSCALE, SACKPERM, TIMESTAMP
+ - TCP socket mechanism - full support, stack's 'end user' API similar to Berkley sockets
 
 #### Work in progress:
 
- - TCP protocol - basic support, we can send and receive short messages, no sliding wndow and error handling implemented yet
- - TCP socket mechanism - full support for multi threaded services
- - Multi threaded TCP Echo servce - created to develop and test TCP specific socket mechanisms with one listening socket and multiple child sockets supporting actuall connections
- - DHCP client service for automatic IPv4 address configuration - basic implementation, need to add timeouts and error handling
+ - TCP protocol - working on 'sliding window' mechanism implementation
 
 #### Next steps:
  
  - IPv6 protocol - basic support with address auto configuration
  - ICMPv6 protocol - bassic support, features needed for stack operation
- - Ability to route packets out of local subnet
+ - IP Routing - ability for the stack to understand concept of local and non-local IP addressing
 
 
 ### ARP resolution and handling ping packets
@@ -32,7 +36,7 @@ Python based attempt to create fully operational TCP/IP stack for educational pu
 
 ### Interesting performance increase after switching from Asyncio to threads... on average 100 to 250 times faster packet handling time
 
-Stll love Asyncio but for this particular purpose it just doesn't cut it :) Seem all that huge delay happened in between packet being enqueued by RX ring into asyncio.Queue() and main packet handler being able to dequeue it for further procesing. This delay usually varied from 100ms up to 1000ms avraging at around 400ms in most cases.
+Still love Asyncio but for this particular purpose it just doesn't cut it :) Seem all that huge delay happened in between packet being enqueued by RX ring into asyncio.Queue() and main packet handler being able to dequeue it for further procesing. This delay usually varied from 100ms up to 1000ms avraging at around 400ms in most cases.
 
 #### Running Asyncio
 ![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/main/pictures/log_02.png)
