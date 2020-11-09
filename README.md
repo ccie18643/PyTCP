@@ -29,6 +29,7 @@ Python based attempt to create fully operational TCP/IP stack for educational pu
  - ICMPv6 protocol - bassic support, features needed for stack operation
  - IP Routing - ability for the stack to understand concept of local and non-local IP addressing
 
+### Examples:
 
 #### TCP Finite State Machine - stack is running TCP Echo service
  - peer opens connection
