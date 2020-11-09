@@ -30,7 +30,7 @@ Python based attempt to create fully operational TCP/IP stack for educational pu
  - IP Routing - ability for the stack to understand concept of local and non-local IP addressing
 
 
-### TCP Finite State Machine - Server side example: clien opens connection, sends data, server echoes the data, client closes connection
+### TCP Finite State Machine - Server side example: client opens connection, sends data, server echoes the data, client closes connection
 ![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/main/pictures/tcp_fsm_srv_01.png)
 ![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/main/pictures/tcp_fsm_srv_02.png)
 ![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/main/pictures/tcp_fsm_srv_03.png)
