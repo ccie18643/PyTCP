@@ -55,7 +55,8 @@ Python based attempt to create fully operational TCP/IP stack for educational pu
 ![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/main/pictures/tcp_fsm_clt_04.png)
 
 
-#### ARP Probe/Announcement mechanism - testing for any possible conflicts for every IP address assigned to stack
+#### ARP Probe/Announcement mechanism
+Testing for any possible conflicts for every IP address assigned to stack
 ![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/main/pictures/log_06.png)
 ![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/main/pictures/log_07.png)
 ![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/main/pictures/log_08.png)
