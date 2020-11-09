@@ -107,12 +107,15 @@ class TcpSocket:
             if tcp_session.socket is self and tcp_session.state == "ESTABLISHED":
                 return TcpSocket(tcp_session=tcp_session)
 
-    def receive(self, timeout=None):
-        """ Receive data segment from socket """
+    def receive(self, byte_count=None):
+        """ Receive data from socket """
 
-        if self.tcp_session.event_data_rx.acquire(timeout=timeout):
-            self.logger.debug(f"{self.socket_id} - Received data segment")
-            return self.tcp_session.data_rx.pop(0)
+        if (data_rx := self.tcp_session.receive(byte_count)) is None:
+            self.logger.debug(f"{self.socket_id} - Received close event from TCP session")
+            return None
+
+        self.logger.debug(f"{self.socket_id} - Received {len(data_rx)} bytes of data")
+        return data_rx
 
     def send(self, data_segment):
         """ Pass data_segment to TCP session """

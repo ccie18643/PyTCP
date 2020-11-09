@@ -32,6 +32,7 @@ class ServiceUdpEcho:
 
         while True:
             packet_rx = socket.receive_from()
+            print(f"Service UDP Echo: Received message from {packet_rx.remote_ip_address}:{packet_rx.remote_port} -", packet_rx.raw_data)
             packet_tx = UdpPacket(
                 local_ip_address=packet_rx.local_ip_address,
                 local_port=packet_rx.local_port,
