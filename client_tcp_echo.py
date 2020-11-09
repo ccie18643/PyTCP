@@ -9,6 +9,7 @@ client_tcp_echo.py - 'user space' client for TCP echo, it activelly connects to 
 
 import time
 import threading
+from datetime import datetime
 
 from tcp_socket import TcpSocket
 
@@ -33,11 +34,15 @@ class ClientTcpEcho:
             return
 
         i = 1
-        while i <= 30:
-            socket.send(b"DUPA " + bytes([48 + i]) + b"\n")
-            print(f"Client TCP Echo: Sent data to {remote_ip_address}:{remote_port}")
-            time.sleep(1)
-            i += 1
+        while i <= 10:
+            message = bytes(str(datetime.now()) + "\n", "utf-8")
+            if socket.send(message):
+                print(f"Client TCP Echo: Sent data to {remote_ip_address}:{remote_port} - {message}")
+                time.sleep(1)
+                i += 1
+            else:
+                print(f"Client TCP Echo: Peer {remote_ip_address}:{remote_port} closed connection")
+                break
 
         socket.close()
         print(f"Client TCP Echo: Closed connection to {remote_ip_address}:{remote_port}")

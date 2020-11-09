@@ -117,8 +117,9 @@ class TcpSocket:
     def send(self, data_segment):
         """ Pass data_segment to TCP session """
 
-        self.tcp_session.send(data_segment)
-        self.logger.debug(f"{self.socket_id} - Sent data segment")
+        if bytes_sent := self.tcp_session.send(data_segment):
+            self.logger.debug(f"{self.socket_id} - Sent data segment, len {bytes_sent}")
+            return bytes_sent
 
     def close(self):
         """ Close socket and the TCP session(s) it owns """
