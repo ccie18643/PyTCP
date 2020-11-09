@@ -52,7 +52,6 @@ class TcpSession:
 
         self.event_connect = threading.Semaphore(0)
         self.event_data_rx = threading.Semaphore(0)
-        self.event_remote_close = None
 
         self.lock_fsm = threading.RLock()
         self.lock_data_rx = threading.Lock()
@@ -176,7 +175,7 @@ class TcpSession:
         self.event_data_rx.acquire()
 
         # If there is no data in RX buffer and remote end closed connection then notify application
-        if not self.data_rx and self.event_remote_close:
+        if not self.data_rx and self.state == "CLOSE_WAIT":
             return None
 
         # Gain exclusive access to the buffer
@@ -189,8 +188,8 @@ class TcpSession:
             data_rx = self.data_rx[:byte_count]
             del self.data_rx[:byte_count]
 
-            # If there is any data left in buffer or the emote end closed connection then release the data_rx event
-            if len(self.data_rx) or self.event_remote_close:
+            # If there is any data left in buffer or the remote end closed connection then release the data_rx event
+            if len(self.data_rx) or self.state == "CLOSE_WAIT":
                 self.event_data_rx.release()
 
         return bytes(data_rx)
@@ -363,20 +362,19 @@ class TcpSession:
                 return
 
             # If packet's sequence number matches what we are expecting and if packet contains any data then enqueue the data
-            if packet.seq_num == self.local_ack_num and len(packet.raw_data) > 0:
+            if packet.seq_num == self.local_ack_num and packet.raw_data:
                 self.local_ack_num = packet.seq_num + len(packet.raw_data)
                 self.__enqueue_data_rx(packet.raw_data)
                 return
 
-        # Got FIN packet -> Send ACK packet / change state to CLOSE_WAIT / notifiy application that peer closed connection
+        # Got FIN packet -> Send ACK packet (let delayed ACK mechanism do it) / change state to CLOSE_WAIT / notifiy application that peer closed connection
         if packet and all({packet.flag_fin}) and not any({packet.flag_syn, packet.flag_rst}):
-            self.local_ack_num = packet.seq_num + packet.flag_fin
-            self.__send_packet(flag_ack=True, tracker=packet.tracker)
-            self.__change_state("CLOSE_WAIT")
-            # Let application know that remote end closed connection
-            self.event_remote_close = True
-            self.event_data_rx.release()
-            return
+            if packet.seq_num == self.local_ack_num:
+                self.local_ack_num = packet.seq_num + len(packet.raw_data) + packet.flag_fin
+                # Enqueue data even if there is no data carried, it will trigger application to get notified about remote peer closing connection
+                self.__enqueue_data_rx(packet.raw_data)
+                self.__change_state("CLOSE_WAIT")
+                return
 
         # Got CLOSE syscall -> Send FINapcket / change state to FIN_WAIT_1
         if syscall == "CLOSE":
@@ -431,6 +429,14 @@ class TcpSession:
 
     def __tcp_fsm_close_wait(self, packet=None, syscall=None, timer=None):
         """ TCP FSM CLOSE_WAIT state handler """
+
+        # Got timer event -> run Delayed ACK mechanism
+        if timer and stack.stack_timer.timer_expired(self.tcp_session_id + "delayed_ack"):
+            if self.local_ack_num > self.last_sent_local_ack_num:
+                self.__send_packet(flag_ack=True)
+                self.logger.debug(f"{self.tcp_session_id} - Sent out delayed ACK ({self.local_ack_num})")
+            stack.stack_timer.register_timer(self.tcp_session_id + "delayed_ack", DELAYED_ACK_DELAY)
+            return
 
         # Got CLOSE syscall -> Send FIN packet / change state to LAST_ACK
         if syscall == "CLOSE":

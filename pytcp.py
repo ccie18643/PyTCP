@@ -73,8 +73,8 @@ def main():
     # ServiceUdpDiscard()
     # ServiceUdpDaytime()
 
-    ServiceTcpEcho()
-    # ServiceTcpDiscard()
+    # ServiceTcpEcho()
+    ServiceTcpDiscard()
     # ServiceTcpDaytime()
 
     # ClientUdpDhcp(STACK_MAC_ADDRESS)
