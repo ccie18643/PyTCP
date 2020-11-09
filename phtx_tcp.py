@@ -7,7 +7,8 @@ phtx_tcp.py - packet handler for outbound TCP packets
 
 """
 
-import ps_tcp
+
+from ps_tcp import TcpPacket, TcpOptMss
 
 
 def phtx_tcp(
@@ -27,16 +28,21 @@ def phtx_tcp(
     tcp_flag_rst=False,
     tcp_flag_syn=False,
     tcp_flag_fin=False,
+    tcp_mss=None,
     tcp_win=0,
     tcp_urp=0,
-    tcp_options=[],
     raw_data=b"",
     tracker=None,
     echo_tracker=None,
 ):
     """ Handle outbound TCP packets """
 
-    tcp_packet_tx = ps_tcp.TcpPacket(
+    tcp_options = []
+
+    if tcp_mss:
+        tcp_options.append(TcpOptMss(opt_mss=tcp_mss))
+
+    tcp_packet_tx = TcpPacket(
         tcp_sport=tcp_sport,
         tcp_dport=tcp_dport,
         tcp_seq_num=tcp_seq_num,
@@ -65,4 +71,5 @@ def phtx_tcp(
     args = locals()
     args.pop("self")
     args.pop("tcp_packet_tx")
+    args.pop("tcp_options")
     return args

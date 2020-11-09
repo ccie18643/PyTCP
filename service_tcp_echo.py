@@ -43,6 +43,7 @@ class ServiceTcpEcho:
             if message is None:
                 break
 
+            print(f"Service TCP Echo: Received message from {socket.remote_ip_address}:{socket.remote_port} -", message)
             socket.send(message)
             print(f"Service TCP Echo: Echo'ed message back to {socket.remote_ip_address}:{socket.remote_port} -", message)
 

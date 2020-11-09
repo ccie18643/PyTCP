@@ -215,7 +215,7 @@ class IpPacket:
 
         return (
             f"IP {self.ip_src} > {self.ip_dst}, proto {self.ip_proto} ({IP_PROTO_TABLE.get(self.ip_proto, '???')}), id {self.ip_id}"
-            + f"{', DF' if self.ip_frag_df else ''}{', MF' if self.ip_frag_mf else ''}, offset {self.ip_frag_offset}"
+            + f"{', DF' if self.ip_frag_df else ''}{', MF' if self.ip_frag_mf else ''}, offset {self.ip_frag_offset}, plen {self.ip_plen}"
         )
 
     def __len__(self):

@@ -16,9 +16,6 @@ import stack
 from tracker import Tracker
 
 
-TCP_MSS = 1460
-TCP_WIN = 1024
-
 DELAYED_ACK_DELAY = 200  # 200ms between consecutive delayed ACK outbound packets
 TIME_WAIT_DELAY = 15000  # 15s delay for the TIME_WAIT state, default is 120s
 PACKET_RESEND_DELAY = 1000  # 1s for initial packet resend delay, then exponenial
@@ -42,9 +39,13 @@ class TcpSession:
         self.local_ack_num = 0
         self.remote_ack_num = 0
         self.last_sent_local_ack_num = 0
-        self.win = TCP_WIN
         self.socket = socket
         self.state = "CLOSED"
+
+        self.local_win = stack.tcp_win
+        self.local_mss = stack.tcp_mss
+        self.remote_win = None
+        self.remote_mss = None
 
         self.data_rx = []
 
@@ -92,7 +93,8 @@ class TcpSession:
             tcp_flag_ack=flag_ack,
             tcp_flag_fin=flag_fin,
             tcp_flag_rst=flag_rst,
-            tcp_win=self.win,
+            tcp_win=self.local_win,
+            tcp_mss= self.local_mss if flag_syn else None,
             raw_data=raw_data,
             tracker=tracker,
             echo_tracker=echo_tracker,
@@ -197,7 +199,11 @@ class TcpSession:
             # Register the new listening session
             stack.tcp_sessions[tcp_session.tcp_session_id] = tcp_session
 
-            # Process FSM event
+            # Initialize session parameters
+            self.remote_win = packet.win
+            self.remote_mss = min(packet.mss, stack.mtu - 80)
+
+            # Send SYN + ACK packet / change state to SYN_RCVD
             self.local_ack_num = packet.seq_num + packet.flag_syn
             self.__send_resend_packet(flag_syn=True, flag_ack=True, tracker=packet.tracker, expected_state=("ESTABLISHED"))
             self.__change_state("SYN_RCVD")
@@ -221,9 +227,16 @@ class TcpSession:
         # Got SYN + ACK packet -> Send ACK / change state to ESTABLISHED
         if packet and all({packet.flag_syn, packet.flag_ack}) and not any({packet.flag_fin, packet.flag_rst}):
             if packet.ack_num == self.local_seq_num:
+
+                # Initialize session parameters
+                self.remote_win = packet.win
+                self.remote_mss = min(packet.mss, stack.mtu - 80)
+
+                # Send ACK / change state to ESTABLISHED
                 self.local_ack_num = packet.seq_num + packet.flag_syn
                 self.__send_packet(flag_ack=True, tracker=packet.tracker)
                 self.__change_state("ESTABLISHED")
+
                 # Inform connect syscall that connection related event happened
                 self.event_connect.release()
                 return

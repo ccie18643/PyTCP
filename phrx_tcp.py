@@ -34,7 +34,8 @@ def phrx_tcp(self, ip_packet_rx, tcp_packet_rx):
         flag_rst=tcp_packet_rx.tcp_flag_rst,
         seq_num=tcp_packet_rx.tcp_seq_num,
         ack_num=tcp_packet_rx.tcp_ack_num,
-        win=tcp_packet_rx.tcp_win,
+        win=tcp_packet_rx.tcp_win * tcp_packet_rx.tcp_wscale,
+        mss=tcp_packet_rx.tcp_mss,
         raw_data=tcp_packet_rx.raw_data,
         tracker=tcp_packet_rx.tracker,
     )

@@ -233,35 +233,39 @@ class TcpPacket:
         return not bool(inet_cksum.compute_cksum(ip_pseudo_header + self.raw_packet))
 
     @property
-    def mss(self):
+    def tcp_mss(self):
         """ TCP option - Maximum Segment Size (2) """
 
         for option in self.tcp_options:
-            if option.opt_code == TCP_OPT_MSS:
+            if option.opt_kind == TCP_OPT_MSS:
                 return option.opt_mss
 
+        return 536
+
     @property
-    def wscale(self):
+    def tcp_wscale(self):
         """ TCP option - Window Scale (3) """
 
         for option in self.tcp_options:
-            if option.opt_code == TCP_OPT_WSCALE:
-                return option.opt_wscale
+            if option.opt_kind == TCP_OPT_WSCALE:
+                return 2 << option.opt_wscale
+
+        return 1
 
     @property
-    def sackperm(self):
+    def tcp_sackperm(self):
         """ TCP option - Sack Permit (4) """
 
         for option in self.tcp_options:
-            if option.opt_code == TCP_OPT_SACKPERM:
+            if option.opt_kind == TCP_OPT_SACKPERM:
                 return True
 
     @property
-    def timestamp(self):
+    def tcp_timestamp(self):
         """ TCP option - Timestamp (8) """
 
         for option in self.tcp_options:
-            if option.opt_code == TCP_OPT_TIMESTAMP:
+            if option.opt_kind == TCP_OPT_TIMESTAMP:
                 return option.opt_tsval, option.opt_tsecr
 
 

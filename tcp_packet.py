@@ -12,7 +12,21 @@ class TcpPacket:
     """ Store TCP metadata """
 
     def __init__(
-        self, local_ip_address, local_port, remote_ip_address, remote_port, flag_syn, flag_ack, flag_fin, flag_rst, seq_num, ack_num, win, raw_data, tracker
+        self,
+        local_ip_address,
+        local_port,
+        remote_ip_address,
+        remote_port,
+        flag_syn,
+        flag_ack,
+        flag_fin,
+        flag_rst,
+        seq_num,
+        ack_num,
+        win,
+        mss,
+        raw_data,
+        tracker,
     ):
         self.local_ip_address = local_ip_address
         self.local_port = local_port
@@ -25,6 +39,7 @@ class TcpPacket:
         self.seq_num = seq_num
         self.ack_num = ack_num
         self.win = win
+        self.mss = mss
         self.raw_data = raw_data
         self.tracker = tracker
 

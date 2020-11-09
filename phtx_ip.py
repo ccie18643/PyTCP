@@ -13,7 +13,7 @@ import socket
 import ps_ip
 import ps_ether
 
-MTU = 1500
+import stack
 
 
 def validate_source_ip_address(self, ip_src):
@@ -68,7 +68,7 @@ def phtx_ip(self, child_packet, ip_dst, ip_src):
         self.ip_id = 1
 
     # Check if IP packet can be sent out without fragmentations, if so send it out
-    if ps_ether.ETHER_HEADER_LEN + ps_ip.IP_HEADER_LEN + len(child_packet.raw_packet) <= MTU:
+    if ps_ether.ETHER_HEADER_LEN + ps_ip.IP_HEADER_LEN + len(child_packet.raw_packet) <= stack.mtu:
         ip_packet_tx = ps_ip.IpPacket(ip_src=ip_src, ip_dst=ip_dst, ip_id=self.ip_id, child_packet=child_packet)
 
         self.logger.debug(f"{ip_packet_tx.tracker} - {ip_packet_tx}")
@@ -95,7 +95,7 @@ def phtx_ip(self, child_packet, ip_dst, ip_src):
             )
         )
 
-    raw_data_mtu = (MTU - ps_ether.ETHER_HEADER_LEN - ps_ip.IP_HEADER_LEN) & 0b1111111111111000
+    raw_data_mtu = (stack.mtu - ps_ether.ETHER_HEADER_LEN - ps_ip.IP_HEADER_LEN) & 0b1111111111111000
     raw_data_fragments = [raw_data[_ : raw_data_mtu + _] for _ in range(0, len(raw_data), raw_data_mtu)]
 
     n = 0

@@ -7,6 +7,11 @@ stack.py - module holds refeences to the stack components
 
 """
 
+mtu = 1500
+tcp_mss = 1460
+tcp_win = 65535
+
+
 rx_ring = None
 tx_ring = None
 arp_cache = None
