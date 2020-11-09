@@ -4,7 +4,7 @@ Python based attempt to create fully operational TCP/IP stack for educational pu
 
 #### Already implemented:
 
- - Ethernet protocol - full suppot of Ethernet II standard
+ - **Ethernet protocol** - full suppot of Ethernet II standard
  - ARP protocol - replies, queries, ARP cache
  - ARP protocol - ARP Probe/Announcement IP conflict detection (ACD) mechanism
  - IP protocol - inbound and outbound IP fragmentation
