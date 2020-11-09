@@ -7,27 +7,27 @@ Python based attempt to create fully operational TCP/IP stack for educational pu
  - Ethernet protocol - *full suppot of Ethernet II standard*
  - ARP protocol - *replies, queries, ARP cache*
  - ARP protocol - *ARP Probe/Announcement IP conflict detection (ACD) mechanism*
- - IP protocol - inbound and outbound IP fragmentation
- - IP protocol - IP options accepted but not supported
- - IP protocol -  multiple stack's IP addresses supported 
- - ICMP protocol - only ICMP messages that are needed for stack operations are implemented, eg. echo, echo reply, port unreachable
- - UDP protocol - full support, stack is able to exchange data with other hosts using UDP protocol
- - UDP sockets - full support, stack's 'end user' API similar to Berkley sockets
- - UDP services - UDP Echo, Discard, Daytime implemented for testing purposes
- - UDP clients - DHCP service for automatic IPv4 address configuration - basic implementation, need to add timeouts and error handling
- - TCP protocol - full implementation of TCP Finite State Machine, at this point stack is able to comunicate with other hosts over TCP protocol
- - TCP protocol - TCP option support for: MSS, WSCALE, SACKPERM, TIMESTAMP
- - TCP sockets - full support, stack's 'end user' API similar to Berkley sockets
+ - IP protocol - *inbound and outbound IP fragmentation*
+ - IP protocol - *IP options accepted but not supported*
+ - IP protocol -  *multiple stack's IP addresses supported* 
+ - ICMP protocol - *only ICMP messages that are needed for stack operations are implemented, eg. echo, echo reply, port unreachable*
+ - UDP protocol - *full support, stack is able to exchange data with other hosts using UDP protocol*
+ - UDP sockets - *full support, stack's 'end user' API similar to Berkley sockets*
+ - UDP services - *UDP Echo, Discard, Daytime implemented for testing purposes*
+ - UDP clients - *DHCP service for automatic IPv4 address configuration - basic implementation, need to add timeouts and error handling*
+ - TCP protocol - *full implementation of TCP Finite State Machine, at this point stack is able to comunicate with other hosts over TCP protocol*
+ - TCP protocol - *TCP option support for: MSS, WSCALE, SACKPERM, TIMESTAMP*
+ - TCP sockets - *full support, stack's 'end user' API similar to Berkley sockets*
 
 ## Work in progress:
 
- - TCP protocol - working on 'sliding window' mechanism implementation
+ - TCP protocol - *working on 'sliding window' mechanism implementation*
 
 ## Next steps:
  
- - IPv6 protocol - basic support with address auto configuration
- - ICMPv6 protocol - bassic support, features needed for stack operation
- - IP Routing - ability for the stack to understand concept of local and non-local IP addressing
+ - IPv6 protocol - *basic support with address auto configuration*
+ - ICMPv6 protocol - *basic support, features needed for stack operation*
+ - IP Routing - *ability for the stack to understand concept of local and non-local IP addressing*
 
 ### Examples:
 
