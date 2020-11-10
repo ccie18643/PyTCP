@@ -136,15 +136,15 @@ class TcpSession:
             stop_condition=lambda: self.state in expected_state,
         )
 
-    def __send_data(self):
-        """ Send out data from TX buffer """
+    def __send_data(self, flag_fin=False):
+        """ Send out data from TX buffer, set FIN flag on last packet if application is closing connection """
 
         while self.state in {"ESTABLISHED", "CLOSE_WAIT"} and self.data_tx:
             # Gain exclusive access to the TX buffer
             with self.lock_data_tx:
                 data_tx = self.data_tx[: self.local_mss]
                 del self.data_tx[: self.local_mss]
-            self.__send_packet(flag_ack=True, raw_data=bytes(data_tx))
+            self.__send_packet(flag_ack=True, flag_fin=True if flag_fin and not self.data_tx else False, raw_data=bytes(data_tx))
             self.logger.debug(f"Sent out data segment, {len(data_tx)}")
 
     def listen(self):
@@ -378,7 +378,9 @@ class TcpSession:
 
         # Got CLOSE syscall -> Send FINapcket / change state to FIN_WAIT_1
         if syscall == "CLOSE":
-            self.__send_packet(flag_fin=True, flag_ack=True)
+            # Send out remaining data with FIN flag set on last packet
+            self.__send_data(flag_fin=True)
+            #self.__send_packet(flag_fin=True, flag_ack=True)
             self.__change_state("FIN_WAIT_1")
             return
 
