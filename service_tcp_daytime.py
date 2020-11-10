@@ -44,6 +44,7 @@ class ServiceTcpDaytime:
             socket.send(daytime)
             print(f"Service TCP Daytime: Sent daytime message to {socket.remote_ip_address}:{socket.remote_port} -", daytime)
             from time import sleep
+
             sleep(1)
         socket.close()
         print(f"Service TCP Daytime: Closed connection from {socket.remote_ip_address}:{socket.remote_port}")

@@ -81,11 +81,11 @@ class TcpSession:
             self.logger.opt(ansi=True, depth=1).info(f"{self.tcp_session_id} - State changed: <yellow> {old_state} -> {self.state}</>")
 
     def __send_packet(self, flag_syn=False, flag_ack=False, flag_fin=False, flag_rst=False, raw_data=b"", tracker=None, echo_tracker=None):
-        """ Send out TCP packet, save args in case packet need to be re-sent """
+        """ Send out TCP packet, return packet_resend_kwargs in case packet need to be re-sent """
 
         self.last_sent_local_ack_num = self.local_ack_num
         self.packet_resend_count = 0
-        self.packet_resend_args = stack.packet_handler.phtx_tcp(
+        packet_resend_kwargs = stack.packet_handler.phtx_tcp(
             ip_src=self.local_ip_address,
             ip_dst=self.remote_ip_address,
             tcp_sport=self.local_port,
@@ -108,9 +108,9 @@ class TcpSession:
         if self.state == "ESTABLISHED":
             stack.stack_timer.register_timer(self.tcp_session_id + "delayed_ack", DELAYED_ACK_DELAY)
 
-        return len(raw_data)
+        return packet_resend_kwargs
 
-    def __resend_packet(self, fail_state="CLOSED", fail_semaphore=None, fail_action=None):
+    def __resend_packet(self, packet_resend_kwargs, fail_state="CLOSED", fail_semaphore=None, fail_action=None):
         """ Resend last packet using the same argument list """
 
         if self.packet_resend_count == PACKET_RESEND_COUNT:
@@ -119,17 +119,17 @@ class TcpSession:
             fail_action and fail_action()
             return
 
-        stack.packet_handler.phtx_tcp(**self.packet_resend_args)
+        stack.packet_handler.phtx_tcp(**packet_resend_kwargs)
         self.packet_resend_count += 1
         self.logger.debug(f"{self.tcp_session_id} - Re-sent last packet")
 
     def __send_resend_packet(self, **kwargs):
         """ Send pakcet, resend if ACK for it was not received """
 
-        self.__send_packet(**kwargs)
+        packet_resend_kwargs = self.__send_packet(**kwargs)
         stack.stack_timer.register_method(
             method=self.__resend_packet,
-            kwargs={"fail_semaphore": self.event_connect},
+            kwargs={"fail_semaphore": self.event_connect, "packet_resend_kwargs": packet_resend_kwargs},
             delay=1000,
             delay_exp=True,
             repeat_count=PACKET_RESEND_COUNT,
