@@ -40,7 +40,9 @@ class TcpSession:
         self.remote_ack_num = 0
         self.last_sent_local_ack_num = 0
         self.socket = socket
-        self.state = "CLOSED"
+
+        self.state = None
+        self.state_init = None
 
         self.local_win = stack.tcp_win
         self.local_mss = stack.tcp_mss
@@ -57,6 +59,7 @@ class TcpSession:
         self.lock_data_rx = threading.Lock()
         self.lock_data_tx = threading.Lock()
 
+        self.__change_state("CLOSED")
         stack.stack_timer.register_method(method=self.tcp_fsm, kwargs={"timer": True})
 
     def __str__(self):
@@ -76,8 +79,9 @@ class TcpSession:
         with self.lock_fsm:
             old_state = self.state
             self.state = state
-            self.logger.opt(ansi=True, depth=1).info(f"{self.tcp_session_id} - State changed: <yellow> {old_state} -> {self.state}</>")
-            self.tcp_fsm(init=True)
+            self.state_init = True
+            if old_state:
+                self.logger.opt(ansi=True, depth=1).info(f"{self.tcp_session_id} - State changed: <yellow> {old_state} -> {self.state}</>")
 
     def __send_packet(self, flag_syn=False, flag_ack=False, flag_fin=False, flag_rst=False, raw_data=b"", tracker=None, echo_tracker=None):
         """ Send out TCP packet """
@@ -182,8 +186,13 @@ class TcpSession:
             if not self.event_data_rx._value:
                 self.event_data_rx.release()
 
-    def __tcp_fsm_closed(self, packet, syscall, timer, init):
+    def __tcp_fsm_closed(self, packet, syscall, timer):
         """ TCP FSM CLOSED state handler """
+
+        # State initialization
+        if self.state_init:
+            self.state_init = False
+            self.logger.debug(f"State {self.state} initialized")
 
         # Got CONNECT syscall -> Send SYN packet / change state to SYN_SENT
         if syscall == "CONNECT":
@@ -195,8 +204,13 @@ class TcpSession:
         if syscall == "LISTEN":
             self.__change_state("LISTEN")
 
-    def __tcp_fsm_listen(self, packet, syscall, timer, init):
+    def __tcp_fsm_listen(self, packet, syscall, timer):
         """ TCP FSM LISTEN state handler """
+
+        # State initialization
+        if self.state_init:
+            self.state_init = False
+            self.logger.debug(f"State {self.state} initialized")
 
         # Got SYN packet -> Send SYN + ACK packet / change state to SYN_RCVD
         if packet and all({packet.flag_syn}) and not any({packet.flag_ack, packet.flag_fin, packet.flag_rst}):
@@ -244,8 +258,13 @@ class TcpSession:
 
             return
 
-    def __tcp_fsm_syn_sent(self, packet, syscall, timer, init):
+    def __tcp_fsm_syn_sent(self, packet, syscall, timer):
         """ TCP FSM SYN_SENT state handler """
+
+        # State initialization
+        if self.state_init:
+            self.state_init = False
+            self.logger.debug(f"State {self.state} initialized")
 
         # Got SYN + ACK packet -> Send ACK / change state to ESTABLISHED
         if packet and all({packet.flag_syn, packet.flag_ack}) and not any({packet.flag_fin, packet.flag_rst}):
@@ -282,8 +301,13 @@ class TcpSession:
             self.__change_state("CLOSED")
             return
 
-    def __tcp_fsm_syn_rcvd(self, packet, syscall, timer, init):
+    def __tcp_fsm_syn_rcvd(self, packet, syscall, timer):
         """ TCP FSM ESTABLISHED state handler """
+
+        # State initialization
+        if self.state_init:
+            self.state_init = False
+            self.logger.debug(f"State {self.state} initialized")
 
         # Got ACK packet -> Change state to ESTABLISHED
         if packet and all({packet.flag_ack}) and not any({packet.flag_syn, packet.flag_fin, packet.flag_rst}):
@@ -301,13 +325,14 @@ class TcpSession:
             self.__change_state("FIN_WAIT_1")
             return
 
-    def __tcp_fsm_established(self, packet, syscall, timer, init):
+    def __tcp_fsm_established(self, packet, syscall, timer):
         """ TCP FSM ESTABLISHED state handler """
 
-        # Got init even -> Start Delayed ACK timer
-        if init:
+        # State initialization
+        if self.state_init:
+            self.state_init = False
             stack.stack_timer.register_timer(self.tcp_session_id + "delayed_ack", DELAYED_ACK_DELAY)
-            return
+            self.logger.debug(f"State {self.state} initialized")
 
         # Got timer event -> send out data from TX buffer
         if timer and self.data_tx:
@@ -359,10 +384,15 @@ class TcpSession:
             self.__change_state("FIN_WAIT_1")
             return
 
-    def __tcp_fsm_fin_wait_1(self, packet, syscall, timer, init):
+    def __tcp_fsm_fin_wait_1(self, packet, syscall, timer):
         """ TCP FSM FIN_WAIT_1 state handler """
 
         # *** In this state we should still be able to receive data from peer - needs to be investigated and possibly implemented ***
+
+        # State initialization
+        if self.state_init:
+            self.state_init = False
+            self.logger.debug(f"State {self.state} initialized")
 
         # Got ACK packet -> Change state to FIN_WAIT_2
         if packet and all({packet.flag_ack}) and not any({packet.flag_fin, packet.flag_syn, packet.flag_rst}):
@@ -385,8 +415,13 @@ class TcpSession:
             self.__change_state("CLOSING")
             return
 
-    def __tcp_fsm_fin_wait_2(self, packet, syscall, timer, init):
+    def __tcp_fsm_fin_wait_2(self, packet, syscall, timer):
         """ TCP FSM FIN_WAIT_2 state handler """
+
+        # State initialization
+        if self.state_init:
+            self.state_init = False
+            self.logger.debug(f"State {self.state} initialized")
 
         # Got FIN packet -> Send ACK packet / change state to TIME_WAIT
         if packet and all({packet.flag_fin}) and not any({packet.flag_syn, packet.flag_rst}):
@@ -395,8 +430,13 @@ class TcpSession:
             self.__change_state("TIME_WAIT")
             return
 
-    def __tcp_fsm_closing(self, packet, syscall, timer, init):
+    def __tcp_fsm_closing(self, packet, syscall, timer):
         """ TCP FSM CLOSING state handler """
+
+        # State initialization
+        if self.state_init:
+            self.state_init = False
+            self.logger.debug(f"State {self.state} initialized")
 
         # Got ACK packet -> Change state to TIME_WAIT
         if packet and all({packet.flag_ack}) and not any({packet.flag_fin, packet.flag_syn, packet.flag_rst}):
@@ -404,8 +444,13 @@ class TcpSession:
                 self.__change_state("TIME_WAIT")
                 return
 
-    def __tcp_fsm_close_wait(self, packet, syscall, timer, init):
+    def __tcp_fsm_close_wait(self, packet, syscall, timer):
         """ TCP FSM CLOSE_WAIT state handler """
+
+        # State initialization
+        if self.state_init:
+            self.state_init = False
+            self.logger.debug(f"State {self.state} initialized")
 
         # Got timer event -> run Delayed ACK mechanism
         if timer and stack.stack_timer.timer_expired(self.tcp_session_id + "delayed_ack"):
@@ -421,8 +466,13 @@ class TcpSession:
             self.__change_state("LAST_ACK")
             return
 
-    def __tcp_fsm_last_ack(self, packet, syscall, timer, init):
+    def __tcp_fsm_last_ack(self, packet, syscall, timer):
         """ TCP FSM LAST_ACK state handler """
+
+        # State initialization
+        if self.state_init:
+            self.state_init = False
+            self.logger.debug(f"State {self.state} initialized")
 
         # Got ACK packet -> Change state to CLOSED
         if packet and all({packet.flag_ack}) and not any({packet.flag_syn, packet.flag_fin, packet.flag_rst}):
@@ -430,20 +480,21 @@ class TcpSession:
                 self.__change_state("CLOSED")
             return
 
-    def __tcp_fsm_time_wait(self, packet, syscall, timer, init):
+    def __tcp_fsm_time_wait(self, packet, syscall, timer):
         """ TCP FSM TIME_WAIT state handler """
 
-        # Got init event -> Start TIME_WAIT timery
-        if init:
+        # State initialization
+        if self.state_init:
+            self.state_init = False
             stack.stack_timer.register_timer(self.tcp_session_id + "time_wait", TIME_WAIT_DELAY)
-            return
+            self.logger.debug(f"State {self.state} initialized")
 
         # Got timer event -> Run TIME_WAIT delay
         if timer and stack.stack_timer.timer_expired(self.tcp_session_id + "time_wait"):
             self.__change_state("CLOSED")
             return
 
-    def tcp_fsm(self, packet=None, syscall=None, timer=False, init=False):
+    def tcp_fsm(self, packet=None, syscall=None, timer=False):
         """ Run TCP finite state machine """
 
         # Make note of remote ACK number that indcates how much of data we sent was received by peer
@@ -464,4 +515,4 @@ class TcpSession:
                 "CLOSE_WAIT": self.__tcp_fsm_close_wait,
                 "LAST_ACK": self.__tcp_fsm_last_ack,
                 "TIME_WAIT": self.__tcp_fsm_time_wait,
-            }[self.state](packet, syscall, timer, init)
+            }[self.state](packet, syscall, timer)

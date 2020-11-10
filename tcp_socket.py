@@ -78,7 +78,7 @@ class TcpSocket:
             socket=self,
         )
         stack.tcp_sessions[tcp_session.tcp_session_id] = tcp_session
-        self.logger.debug("{self.socket_id} -  Socket starting to listen for inbound connections")
+        self.logger.debug(f"{self.socket_id} -  Socket starting to listen for inbound connections")
         tcp_session.listen()
 
     def connect(self, remote_ip_address, remote_port):
