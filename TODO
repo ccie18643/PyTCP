@@ -1,2 +1,3 @@
 - Implement mre spohisticated mechanism of reasembling fragmented IP packets, curent onedoesn't check for any missing fragments
 - Need to add mechanism to cleanup orphaned IP packet fragments
+- Need to implement TCP connection half close corner cases, can test with nc connecting to Daytime service, after dt closes connection nc still can send data 

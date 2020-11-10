@@ -35,11 +35,16 @@ class TcpSession:
         self.remote_ip_address = remote_ip_address
         self.remote_port = remote_port
 
-        self.local_seq_num = random.randint(0, 0xFFFFFFFF)
-        self.local_ack_num = 0
-        self.remote_ack_num = None
-        self.last_sent_local_ack_num = 0
         self.socket = socket
+
+        self.data_rx = []
+        self.data_tx = []
+
+        self.remote_seq_rcvd = None
+        self.remote_seq_ackd = None
+        
+        self.local_seq_sent = random.randint(0, 0xFFFFFFFF)
+        self.local_seq_ackd = self.local_seq_sent
 
         self.state = None
         self.state_init = None
@@ -48,9 +53,6 @@ class TcpSession:
         self.local_mss = stack.tcp_mss
         self.remote_win = None
         self.remote_mss = None
-
-        self.data_rx = []
-        self.data_tx = []
 
         self.event_connect = threading.Semaphore(0)
         self.event_data_rx = threading.Semaphore(0)
@@ -83,17 +85,16 @@ class TcpSession:
             if old_state:
                 self.logger.opt(ansi=True, depth=1).info(f"{self.tcp_session_id} - State changed: <yellow> {old_state} -> {self.state}</>")
 
-    def __send_packet(self, seq_num=None, flag_syn=False, flag_ack=False, flag_fin=False, flag_rst=False, raw_data=b"", tracker=None, echo_tracker=None):
+    def __send_packet(self, flag_syn=False, flag_ack=False, flag_fin=False, flag_rst=False, raw_data=b"", tracker=None, echo_tracker=None):
         """ Send out TCP packet """
 
-        self.last_sent_local_ack_num = self.local_ack_num
         stack.packet_handler.phtx_tcp(
             ip_src=self.local_ip_address,
             ip_dst=self.remote_ip_address,
             tcp_sport=self.local_port,
             tcp_dport=self.remote_port,
-            tcp_seq_num=self.local_seq_num if seq_num is None else seq_num,
-            tcp_ack_num=self.local_ack_num,
+            tcp_seq_num=self.local_seq_sent,
+            tcp_ack_num=self.remote_seq_rcvd if flag_ack else 0,
             tcp_flag_syn=flag_syn,
             tcp_flag_ack=flag_ack,
             tcp_flag_fin=flag_fin,
@@ -104,7 +105,8 @@ class TcpSession:
             tracker=tracker,
             echo_tracker=echo_tracker,
         )
-        self.local_seq_num += len(raw_data) + flag_syn + flag_fin
+        self.remote_seq_ackd = self.remote_seq_rcvd
+        self.local_seq_sent += len(raw_data) + flag_syn + flag_fin
 
         # If in ESTABLISHED state then reset ACK delay timer
         if self.state == "ESTABLISHED":
@@ -241,7 +243,7 @@ class TcpSession:
             self.remote_mss = min(packet.mss, stack.mtu - 80)
 
             # Send SYN + ACK packet / change state to SYN_RCVD
-            self.local_ack_num = packet.seq_num + packet.flag_syn
+            self.remote_seq_rcvd = packet.seq_num + packet.flag_syn
             self.__send_packet(flag_syn=True, flag_ack=True, tracker=packet.tracker)
             self.logger.debug(f"{self.tcp_session_id} Sent SYN+ACK packet")
             self.__change_state("SYN_RCVD")
@@ -271,11 +273,11 @@ class TcpSession:
 
         # Got timer event / syn_sent timer expired / no ACK yet received -> Re-send SYN packet
         if timer and stack.stack_timer.timer_expired(self.tcp_session_id + "syn_sent"):
-            if self.remote_ack_num is None or self.remote_ack_num < self.local_seq_num:
+            if self.local_seq_ackd < self.local_seq_sent:
                 if self.syn_sent_resend_count == PACKET_RESEND_COUNT:
                     self.__change_state("CLOSED")
                     return
-                self.__send_packet(seq_num=self.local_seq_num - 1, flag_syn=True, flag_ack=True)
+                self.__send_packet(flag_syn=True)
                 self.syn_sent_resend_count += 1
                 self.logger.debug(f"{self.tcp_session_id} Re-sent SYN packet")
                 stack.stack_timer.register_timer(self.tcp_session_id + "syn_sent", PACKET_RESEND_DELAY * (1 << self.syn_sent_resend_count))
@@ -283,14 +285,14 @@ class TcpSession:
 
         # Got SYN + ACK packet -> Send ACK / change state to ESTABLISHED
         if packet and all({packet.flag_syn, packet.flag_ack}) and not any({packet.flag_fin, packet.flag_rst}):
-            if packet.ack_num == self.local_seq_num:
+            if packet.ack_num == self.local_seq_sent:
 
                 # Initialize session parameters
                 self.remote_win = packet.win
                 self.remote_mss = min(packet.mss, stack.mtu - 80)
 
                 # Send ACK / change state to ESTABLISHED
-                self.local_ack_num = packet.seq_num + packet.flag_syn
+                self.remote_seq_rcvd = packet.seq_num + packet.flag_syn
                 self.__send_packet(flag_ack=True, tracker=packet.tracker)
                 self.__change_state("ESTABLISHED")
 
@@ -328,7 +330,7 @@ class TcpSession:
 
         # Got timer event / syn_rcvd timer expired / no ACK yet received -> Re-send SYN + ACK packet
         if timer and stack.stack_timer.timer_expired(self.tcp_session_id + "syn_rcvd"):
-            if self.remote_ack_num is None or self.remote_ack_num < self.local_seq_num:
+            if self.local_seq_ackd < self.local_seq_sent:
                 if self.syn_rcvd_resend_count == PACKET_RESEND_COUNT:
                     self.__change_state("CLOSED")
                     return
@@ -340,7 +342,7 @@ class TcpSession:
 
         # Got ACK packet -> Change state to ESTABLISHED
         if packet and all({packet.flag_ack}) and not any({packet.flag_syn, packet.flag_fin, packet.flag_rst}):
-            if packet.ack_num == self.local_seq_num:
+            if packet.ack_num == self.local_seq_sent:
                 self.__change_state("ESTABLISHED")
                 # Inform socket that session has been established so accept method can pick it up
                 self.socket.event_tcp_session_established.release()
@@ -370,9 +372,9 @@ class TcpSession:
 
         # Got timer event -> run Delayed ACK mechanism
         if timer and stack.stack_timer.timer_expired(self.tcp_session_id + "delayed_ack"):
-            if self.local_ack_num > self.last_sent_local_ack_num:
+            if self.remote_seq_rcvd > self.remote_seq_ackd:
                 self.__send_packet(flag_ack=True)
-                self.logger.debug(f"{self.tcp_session_id} - Sent out delayed ACK ({self.local_ack_num})")
+                self.logger.debug(f"{self.tcp_session_id} - Sent out delayed ACK ({self.remote_seq_rcvd})")
             stack.stack_timer.register_timer(self.tcp_session_id + "delayed_ack", DELAYED_ACK_DELAY)
             return
 
@@ -380,12 +382,12 @@ class TcpSession:
         if packet and all({packet.flag_ack}) and not any({packet.flag_syn, packet.flag_fin, packet.flag_rst}):
 
             # Check if we are missing any data due to lost packet, if so drop the packet so need of retansmission of lost data is signalized to the peer
-            if packet.seq_num > self.local_ack_num:
+            if packet.seq_num > self.remote_seq_rcvd:
                 self.logger.warning(f"TCP packet has higher sequence number ({packet.seq_num}) than expected ({packet.ack_num}), droping packet")
                 return
 
             # Respond to TCP Keep-Alive packet
-            if packet.seq_num == self.local_ack_num - 1:
+            if packet.seq_num == self.remote_seq_rcvd - 1:
                 self.logger.debug(f"{packet.tracker} - Received TCP Keep-Alive packet")
                 tracker = Tracker("TX", packet.tracker)
                 self.__send_packet(flag_ack=True, tracker=tracker)
@@ -393,15 +395,15 @@ class TcpSession:
                 return
 
             # If packet's sequence number matches what we are expecting and if packet contains any data then enqueue the data
-            if packet.seq_num == self.local_ack_num and packet.raw_data:
-                self.local_ack_num = packet.seq_num + len(packet.raw_data)
+            if packet.seq_num == self.remote_seq_rcvd and packet.raw_data:
+                self.remote_seq_rcvd = packet.seq_num + len(packet.raw_data)
                 self.__enqueue_data_rx(packet.raw_data)
                 return
 
         # Got FIN packet -> Send ACK packet (let delayed ACK mechanism do it) / change state to CLOSE_WAIT / notifiy application that peer closed connection
         if packet and all({packet.flag_fin}) and not any({packet.flag_syn, packet.flag_rst}):
-            if packet.seq_num == self.local_ack_num:
-                self.local_ack_num = packet.seq_num + len(packet.raw_data) + packet.flag_fin
+            if packet.seq_num == self.remote_seq_rcvd:
+                self.remote_seq_rcvd = packet.seq_num + len(packet.raw_data) + packet.flag_fin
                 # Enqueue data even if there is no data carried, it will trigger application to get notified about remote peer closing connection
                 self.__enqueue_data_rx(packet.raw_data)
                 self.__change_state("CLOSE_WAIT")
@@ -425,21 +427,21 @@ class TcpSession:
 
         # Got ACK packet -> Change state to FIN_WAIT_2
         if packet and all({packet.flag_ack}) and not any({packet.flag_fin, packet.flag_syn, packet.flag_rst}):
-            if packet.ack_num == self.local_seq_num:
+            if packet.ack_num == self.local_seq_sent:
                 self.__change_state("FIN_WAIT_2")
                 return
 
         # Got FIN + ACK packet -> Send ACK packet / change state to TIME_WAIT
         if packet and all({packet.flag_fin, packet.flag_ack}) and not any({packet.flag_syn, packet.flag_rst}):
-            if packet.ack_num == self.local_seq_num:
-                self.local_ack_num = packet.seq_num + packet.flag_fin
+            if packet.ack_num == self.local_seq_sent:
+                self.remote_seq_rcvd = packet.seq_num + packet.flag_fin
                 self.__send_packet(flag_ack=True, tracker=packet.tracker)
                 self.__change_state("TIME_WAIT")
                 return
 
         # Got FIN packet -> Send ACK packet / change state to CLOSING
         if packet and all({packet.flag_fin}) and not any({packet.flag_syn, packet.flag_rst}):
-            self.local_ack_num = packet.seq_num + packet.flag_fin
+            self.remote_seq_rcvd = packet.seq_num + packet.flag_fin
             self.__send_packet(flag_ack=True, tracker=packet.tracker)
             self.__change_state("CLOSING")
             return
@@ -454,7 +456,7 @@ class TcpSession:
 
         # Got FIN packet -> Send ACK packet / change state to TIME_WAIT
         if packet and all({packet.flag_fin}) and not any({packet.flag_syn, packet.flag_rst}):
-            self.local_ack_num = packet.seq_num + packet.flag_fin
+            self.remote_seq_rcvd = packet.seq_num + packet.flag_fin
             self.__send_packet(flag_ack=True, tracker=packet.tracker)
             self.__change_state("TIME_WAIT")
             return
@@ -469,7 +471,7 @@ class TcpSession:
 
         # Got ACK packet -> Change state to TIME_WAIT
         if packet and all({packet.flag_ack}) and not any({packet.flag_fin, packet.flag_syn, packet.flag_rst}):
-            if packet.ack_num == self.local_seq_num:
+            if packet.ack_num == self.local_seq_sent:
                 self.__change_state("TIME_WAIT")
                 return
 
@@ -483,9 +485,9 @@ class TcpSession:
 
         # Got timer event -> run Delayed ACK mechanism
         if timer and stack.stack_timer.timer_expired(self.tcp_session_id + "delayed_ack"):
-            if self.local_ack_num > self.last_sent_local_ack_num:
+            if self.remote_seq_rcvd > self.remote_seq_ackd:
                 self.__send_packet(flag_ack=True)
-                self.logger.debug(f"{self.tcp_session_id} - Sent out delayed ACK ({self.local_ack_num})")
+                self.logger.debug(f"{self.tcp_session_id} - Sent out delayed ACK ({self.remote_seq_rcvd})")
             stack.stack_timer.register_timer(self.tcp_session_id + "delayed_ack", DELAYED_ACK_DELAY)
             return
 
@@ -505,7 +507,7 @@ class TcpSession:
 
         # Got ACK packet -> Change state to CLOSED
         if packet and all({packet.flag_ack}) and not any({packet.flag_syn, packet.flag_fin, packet.flag_rst}):
-            if packet.ack_num == self.local_seq_num:
+            if packet.ack_num == self.local_seq_sent:
                 self.__change_state("CLOSED")
             return
 
@@ -528,10 +530,7 @@ class TcpSession:
 
         # Make note of remote ACK number that indcates how much of data we sent was received by peer
         if packet and packet.flag_ack:
-            if self.remote_ack_num is None:
-                self.remote_ack_num == packet.ack_num
-            else:
-                self.remote_ack_num = max(self.remote_ack_num, packet.ack_num)
+            self.local_seq_ackd = max(self.local_seq_ackd, packet.ack_num)
 
         # Process event
         with self.lock_fsm:
