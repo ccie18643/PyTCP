@@ -38,7 +38,7 @@ class ClientTcpEcho:
         i = 1
         while i <= message_count:
             message = bytes(str(datetime.now()) + "\n", "utf-8")
-            #message = bytes("***START***" + "1234567890" * 1000 + "***STOP***", "utf-8")
+            # message = bytes("***START***" + "1234567890" * 1000 + "***STOP***", "utf-8")
             if socket.send(message):
                 print(f"Client TCP Echo: Sent data to {remote_ip_address}:{remote_port} - {message}")
                 time.sleep(1)

@@ -39,7 +39,7 @@ class ServiceTcpDaytime:
     def __thread_connection(self, socket):
         """ Inbound connection handler """
 
-        #daytime = bytes(str(datetime.now()) + "\n", "utf-8")
+        # daytime = bytes(str(datetime.now()) + "\n", "utf-8")
         daytime = bytes("***START***" + "1234567890" * 1000 + "***STOP***", "utf-8")
         socket.send(daytime)
         print(f"Service TCP Daytime: Sent daytime message to {socket.remote_ip_address}:{socket.remote_port} -", daytime)
