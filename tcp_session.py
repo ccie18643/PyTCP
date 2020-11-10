@@ -227,7 +227,7 @@ class TcpSession:
 
             # Initialize session parameters
             self.remote_win = packet.win
-            self.remote_mss = 1460 #min(packet.mss, stack.mtu - 80)
+            self.remote_mss = min(packet.mss, stack.mtu - 80)
 
             # Send SYN + ACK packet / change state to SYN_RCVD
             self.local_ack_num = packet.seq_num + packet.flag_syn
