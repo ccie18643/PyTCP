@@ -123,8 +123,8 @@ class TcpSession:
         self.packet_resend_count += 1
         self.logger.debug(f"{self.tcp_session_id} - Re-sent last packet")
 
-    def __send_resend_packet(self, expected_state, **kwargs):
-        """ Send packet, resend if no expected FSM state is reached """
+    def __send_resend_packet(self, **kwargs):
+        """ Send pakcet, resend if ACK for it was not received """
 
         self.__send_packet(**kwargs)
         stack.stack_timer.register_method(
@@ -133,19 +133,21 @@ class TcpSession:
             delay=1000,
             delay_exp=True,
             repeat_count=PACKET_RESEND_COUNT,
-            stop_condition=lambda: self.state in expected_state,
+            stop_condition=lambda: (self.remote_ack_num >= self.local_seq_num) or self.state == "CLOSED",
         )
 
     def __send_data(self, flag_fin=False):
         """ Send out data from TX buffer, set FIN flag on last packet if application is closing connection """
 
-        while self.state in {"ESTABLISHED", "CLOSE_WAIT"} and self.data_tx:
+        while self.state in {"ESTABLISHED", "CLOSE_WAIT"} and (self.data_tx or flag_fin):
             # Gain exclusive access to the TX buffer
             with self.lock_data_tx:
                 data_tx = self.data_tx[: self.local_mss]
                 del self.data_tx[: self.local_mss]
             self.__send_packet(flag_ack=True, flag_fin=True if flag_fin and not self.data_tx else False, raw_data=bytes(data_tx))
-            self.logger.debug(f"Sent out data segment, {len(data_tx)}")
+            self.logger.debug(f"Sent out data segment, {len(data_tx)} bytes{' + FIN' if flag_fin and not self.data_tx else ''}")
+            if flag_fin and not self.data_tx:
+                flag_fin = False
 
     def listen(self):
         """ LISTEN syscall """
@@ -164,9 +166,10 @@ class TcpSession:
     def send(self, raw_data):
         """ Send out raw_data passed from socket """
 
-        # Gain exclusive access to the TX buffer
-        with self.lock_data_tx:
-            self.data_tx.extend(list(raw_data))
+        if self.state in {"ESTABLISHED", "CLOSE_WAIT"}:
+            with self.lock_data_tx:
+                self.data_tx.extend(list(raw_data))
+                return len(raw_data)
 
     def receive(self, byte_count=None):
         """ Read bytes from RX buffer """
@@ -178,7 +181,6 @@ class TcpSession:
         if not self.data_rx and self.state == "CLOSE_WAIT":
             return None
 
-        # Gain exclusive access to the buffer
         with self.lock_data_rx:
             if byte_count is None:
                 byte_count = len(self.data_rx)
@@ -216,7 +218,7 @@ class TcpSession:
 
         # Got CONNECT syscall -> Send SYN packet / change state to SYN_SENT
         if syscall == "CONNECT":
-            self.__send_resend_packet(flag_syn=True, expected_state={"ESTABLISHED", "CLOSED", "SYN_RCVD"})
+            self.__send_resend_packet(flag_syn=True)
             self.logger.debug(f"{self.tcp_session_id} - Sent initial SYN packet")
             self.__change_state("SYN_SENT")
 
@@ -257,7 +259,7 @@ class TcpSession:
 
             # Send SYN + ACK packet / change state to SYN_RCVD
             self.local_ack_num = packet.seq_num + packet.flag_syn
-            self.__send_resend_packet(flag_syn=True, flag_ack=True, tracker=packet.tracker, expected_state={"ESTABLISHED"})
+            self.__send_resend_packet(flag_syn=True, flag_ack=True, tracker=packet.tracker)
             self.__change_state("SYN_RCVD")
             return
 
@@ -376,11 +378,10 @@ class TcpSession:
                 self.__change_state("CLOSE_WAIT")
                 return
 
-        # Got CLOSE syscall -> Send FINapcket / change state to FIN_WAIT_1
+        # Got CLOSE syscall -> Send FIN packet / change state to FIN_WAIT_1
         if syscall == "CLOSE":
             # Send out remaining data with FIN flag set on last packet
             self.__send_data(flag_fin=True)
-            #self.__send_packet(flag_fin=True, flag_ack=True)
             self.__change_state("FIN_WAIT_1")
             return
 
@@ -465,9 +466,9 @@ class TcpSession:
     def tcp_fsm(self, packet=None, syscall=None, timer=None):
         """ Run TCP finite state machine """
 
-        # Make note of remote ACK number that indcates how much of data we sent was received
+        # Make note of remote ACK number that indcates how much of data we sent was received by peer
         if packet:
-            self.remote_ack_num = packet.ack_num
+            self.remote_ack_num = max(self.remote_ack_num, packet.ack_num)
 
         # Process event
         with self.lock_fsm:
