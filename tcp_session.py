@@ -140,7 +140,6 @@ class TcpSession:
         """ Send out data from TX buffer, set FIN flag on last packet if application is closing connection """
 
         while self.state in {"ESTABLISHED", "CLOSE_WAIT"} and (self.data_tx or flag_fin):
-            # Gain exclusive access to the TX buffer
             with self.lock_data_tx:
                 data_tx = self.data_tx[: self.local_mss]
                 del self.data_tx[: self.local_mss]
