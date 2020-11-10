@@ -42,7 +42,7 @@ class TcpSession:
 
         self.remote_seq_rcvd = None
         self.remote_seq_ackd = None
-        
+
         self.local_seq_sent = random.randint(0, 0xFFFFFFFF)
         self.local_seq_ackd = self.local_seq_sent
 
@@ -93,7 +93,7 @@ class TcpSession:
             ip_dst=self.remote_ip_address,
             tcp_sport=self.local_port,
             tcp_dport=self.remote_port,
-            tcp_seq_num=self.local_seq_sent,
+            tcp_seq_num=self.local_seq_ackd,
             tcp_ack_num=self.remote_seq_rcvd if flag_ack else 0,
             tcp_flag_syn=flag_syn,
             tcp_flag_ack=flag_ack,
@@ -106,7 +106,7 @@ class TcpSession:
             echo_tracker=echo_tracker,
         )
         self.remote_seq_ackd = self.remote_seq_rcvd
-        self.local_seq_sent += len(raw_data) + flag_syn + flag_fin
+        self.local_seq_sent = self.local_seq_ackd + len(raw_data) + flag_syn + flag_fin
 
         # If in ESTABLISHED state then reset ACK delay timer
         if self.state == "ESTABLISHED":
@@ -334,7 +334,7 @@ class TcpSession:
                 if self.syn_rcvd_resend_count == PACKET_RESEND_COUNT:
                     self.__change_state("CLOSED")
                     return
-                self.__send_packet(seq_num=self.local_seq_num - 1, flag_syn=True, flag_ack=True)
+                self.__send_packet(flag_syn=True, flag_ack=True)
                 self.syn_rcvd_resend_count += 1
                 self.logger.debug(f"{self.tcp_session_id} Re-sent SYN + ACK packet")
                 stack.stack_timer.register_timer(self.tcp_session_id + "syn_rcvd", PACKET_RESEND_DELAY * (1 << self.syn_rcvd_resend_count))
