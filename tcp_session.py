@@ -11,6 +11,8 @@ import loguru
 import threading
 import random
 
+from ctypes import c_int
+
 import stack
 
 from tracker import Tracker
@@ -84,7 +86,6 @@ class TcpSession:
         """ Send out TCP packet, return packet_resend_kwargs in case packet need to be re-sent """
 
         self.last_sent_local_ack_num = self.local_ack_num
-        self.packet_resend_count = 0
         packet_resend_kwargs = stack.packet_handler.phtx_tcp(
             ip_src=self.local_ip_address,
             ip_dst=self.remote_ip_address,
@@ -110,26 +111,27 @@ class TcpSession:
 
         return packet_resend_kwargs
 
-    def __resend_packet(self, packet_resend_kwargs, fail_state="CLOSED", fail_semaphore=None, fail_action=None):
-        """ Resend last packet using the same argument list """
+    def __resend_packet(self, packet_resend_kwargs, packet_resend_count, fail_state="CLOSED", fail_semaphore=None, fail_action=None):
+        """ Resend packet using the same argument list that was used to send original packet """
 
-        if self.packet_resend_count == PACKET_RESEND_COUNT:
+        if packet_resend_count.value == PACKET_RESEND_COUNT:
             fail_state and self.__change_state(fail_state)
             fail_semaphore and fail_semaphore.release()
             fail_action and fail_action()
             return
 
         stack.packet_handler.phtx_tcp(**packet_resend_kwargs)
-        self.packet_resend_count += 1
+        packet_resend_count.value += 1
         self.logger.debug(f"{self.tcp_session_id} - Re-sent last packet")
 
     def __send_resend_packet(self, **kwargs):
         """ Send pakcet, resend if ACK for it was not received """
 
         packet_resend_kwargs = self.__send_packet(**kwargs)
+        packet_resend_count = c_int(0)
         stack.stack_timer.register_method(
             method=self.__resend_packet,
-            kwargs={"fail_semaphore": self.event_connect, "packet_resend_kwargs": packet_resend_kwargs},
+            kwargs={"fail_semaphore": self.event_connect, "packet_resend_kwargs": packet_resend_kwargs, "packet_resend_count": packet_resend_count},
             delay=1000,
             delay_exp=True,
             repeat_count=PACKET_RESEND_COUNT,
