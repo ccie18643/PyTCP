@@ -1,6 +1,6 @@
 # PyTCP
 
-Python based attempt to create fully operational TCP/IP stack for educational purposes. Stack operates as user space program attached to Linux TAP interface. Since goal of this project is purely educational (at least at this point) the clarity of code is prefered over its effeciency, eg. using lists as buffers for data carried by TCP. For the same reason security features are not being implemented unless they help to illustrate sepcific 'real word' solutions, eg. chosing random SEQ number for TCP connection.
+Python based attempt to create fully operational TCP/IP stack for educational purposes. Stack operates as user space program attached to Linux TAP interface. Since goal of this project is purely educational (at least at this point) the clarity of code is prefered over its effeciency, eg. using lists as buffers for data carried by TCP. For the same reason security features are not being implemented unless they help to illustrate sepcific 'real word' solutions, eg. chosing random SEQ number for TCP connection. Also features that cannot be reliably tested at this moment are not getting implemnted, eg. FIN packet retransmission for LAST_ACK and FIN_WAIT_1 states. Those will be added later once i have lab environment setup to let me generate certain network conditions like delay or packet loss.
 
 #### Already implemented:
 
