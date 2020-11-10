@@ -37,7 +37,7 @@ class TcpSession:
 
         self.local_seq_num = random.randint(0, 0xFFFFFFFF)
         self.local_ack_num = 0
-        self.remote_ack_num = 0
+        self.remote_ack_num = None
         self.last_sent_local_ack_num = 0
         self.socket = socket
 
@@ -83,7 +83,7 @@ class TcpSession:
             if old_state:
                 self.logger.opt(ansi=True, depth=1).info(f"{self.tcp_session_id} - State changed: <yellow> {old_state} -> {self.state}</>")
 
-    def __send_packet(self, flag_syn=False, flag_ack=False, flag_fin=False, flag_rst=False, raw_data=b"", tracker=None, echo_tracker=None):
+    def __send_packet(self, seq_num=None, flag_syn=False, flag_ack=False, flag_fin=False, flag_rst=False, raw_data=b"", tracker=None, echo_tracker=None):
         """ Send out TCP packet """
 
         self.last_sent_local_ack_num = self.local_ack_num
@@ -92,7 +92,7 @@ class TcpSession:
             ip_dst=self.remote_ip_address,
             tcp_sport=self.local_port,
             tcp_dport=self.remote_port,
-            tcp_seq_num=self.local_seq_num,
+            tcp_seq_num=self.local_seq_num if seq_num is None else seq_num,
             tcp_ack_num=self.local_ack_num,
             tcp_flag_syn=flag_syn,
             tcp_flag_ack=flag_ack,
@@ -243,6 +243,7 @@ class TcpSession:
             # Send SYN + ACK packet / change state to SYN_RCVD
             self.local_ack_num = packet.seq_num + packet.flag_syn
             self.__send_packet(flag_syn=True, flag_ack=True, tracker=packet.tracker)
+            self.logger.debug(f"{self.tcp_session_id} Sent SYN+ACK packet")
             self.__change_state("SYN_RCVD")
             return
 
@@ -264,7 +265,21 @@ class TcpSession:
         # State initialization
         if self.state_init:
             self.state_init = False
+            self.syn_sent_resend_count = 0
+            stack.stack_timer.register_timer(self.tcp_session_id + "syn_sent", PACKET_RESEND_DELAY)
             self.logger.debug(f"State {self.state} initialized")
+
+        # Got timer event / syn_sent timer expired / no ACK yet received -> Re-send SYN packet
+        if timer and stack.stack_timer.timer_expired(self.tcp_session_id + "syn_sent"):
+            if self.remote_ack_num is None or self.remote_ack_num < self.local_seq_num:
+                if self.syn_sent_resend_count == PACKET_RESEND_COUNT:
+                    self.__change_state("CLOSED")
+                    return
+                self.__send_packet(seq_num=self.local_seq_num - 1, flag_syn=True, flag_ack=True)
+                self.syn_sent_resend_count += 1
+                self.logger.debug(f"{self.tcp_session_id} Re-sent SYN packet")
+                stack.stack_timer.register_timer(self.tcp_session_id + "syn_sent", PACKET_RESEND_DELAY * (1 << self.syn_sent_resend_count))
+                return
 
         # Got SYN + ACK packet -> Send ACK / change state to ESTABLISHED
         if packet and all({packet.flag_syn, packet.flag_ack}) and not any({packet.flag_fin, packet.flag_rst}):
@@ -307,7 +322,21 @@ class TcpSession:
         # State initialization
         if self.state_init:
             self.state_init = False
+            self.syn_rcvd_resend_count = 0
+            stack.stack_timer.register_timer(self.tcp_session_id + "syn_rcvd", PACKET_RESEND_DELAY)
             self.logger.debug(f"State {self.state} initialized")
+
+        # Got timer event / syn_rcvd timer expired / no ACK yet received -> Re-send SYN + ACK packet
+        if timer and stack.stack_timer.timer_expired(self.tcp_session_id + "syn_rcvd"):
+            if self.remote_ack_num is None or self.remote_ack_num < self.local_seq_num:
+                if self.syn_rcvd_resend_count == PACKET_RESEND_COUNT:
+                    self.__change_state("CLOSED")
+                    return
+                self.__send_packet(seq_num=self.local_seq_num - 1, flag_syn=True, flag_ack=True)
+                self.syn_rcvd_resend_count += 1
+                self.logger.debug(f"{self.tcp_session_id} Re-sent SYN + ACK packet")
+                stack.stack_timer.register_timer(self.tcp_session_id + "syn_rcvd", PACKET_RESEND_DELAY * (1 << self.syn_rcvd_resend_count))
+                return
 
         # Got ACK packet -> Change state to ESTABLISHED
         if packet and all({packet.flag_ack}) and not any({packet.flag_syn, packet.flag_fin, packet.flag_rst}):
@@ -498,8 +527,11 @@ class TcpSession:
         """ Run TCP finite state machine """
 
         # Make note of remote ACK number that indcates how much of data we sent was received by peer
-        if packet:
-            self.remote_ack_num = max(self.remote_ack_num, packet.ack_num)
+        if packet and packet.flag_ack:
+            if self.remote_ack_num is None:
+                self.remote_ack_num == packet.ack_num
+            else:
+                self.remote_ack_num = max(self.remote_ack_num, packet.ack_num)
 
         # Process event
         with self.lock_fsm:
