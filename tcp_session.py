@@ -83,10 +83,10 @@ class TcpSession:
             self.logger.opt(ansi=True, depth=1).info(f"{self.tcp_session_id} - State changed: <yellow> {old_state} -> {self.state}</>")
 
     def __send_packet(self, flag_syn=False, flag_ack=False, flag_fin=False, flag_rst=False, raw_data=b"", tracker=None, echo_tracker=None):
-        """ Send out TCP packet, return packet_resend_kwargs in case packet need to be re-sent """
+        """ Send out TCP packet """
 
         self.last_sent_local_ack_num = self.local_ack_num
-        packet_resend_kwargs = stack.packet_handler.phtx_tcp(
+        stack.packet_handler.phtx_tcp(
             ip_src=self.local_ip_address,
             ip_dst=self.remote_ip_address,
             tcp_sport=self.local_port,
@@ -109,42 +109,13 @@ class TcpSession:
         if self.state == "ESTABLISHED":
             stack.stack_timer.register_timer(self.tcp_session_id + "delayed_ack", DELAYED_ACK_DELAY)
 
-        return packet_resend_kwargs
-
-    def __resend_packet(self, packet_resend_kwargs, packet_resend_count, fail_state="CLOSED", fail_semaphore=None, fail_action=None):
-        """ Resend packet using the same argument list that was used to send original packet """
-
-        if packet_resend_count.value == PACKET_RESEND_COUNT:
-            fail_state and self.__change_state(fail_state)
-            fail_semaphore and fail_semaphore.release()
-            fail_action and fail_action()
-            return
-
-        stack.packet_handler.phtx_tcp(**packet_resend_kwargs)
-        packet_resend_count.value += 1
-        self.logger.debug(f"{self.tcp_session_id} - Re-sent last packet")
-
-    def __send_resend_packet(self, **kwargs):
-        """ Send pakcet, resend if ACK for it was not received """
-
-        packet_resend_kwargs = self.__send_packet(**kwargs)
-        packet_resend_count = c_int(0)
-        stack.stack_timer.register_method(
-            method=self.__resend_packet,
-            kwargs={"fail_semaphore": self.event_connect, "packet_resend_kwargs": packet_resend_kwargs, "packet_resend_count": packet_resend_count},
-            delay=1000,
-            delay_exp=True,
-            repeat_count=PACKET_RESEND_COUNT,
-            stop_condition=lambda: (self.remote_ack_num >= self.local_seq_num) or self.state == "CLOSED",
-        )
-
     def __send_data(self, flag_fin=False):
         """ Send out data from TX buffer, set FIN flag on last packet if application is closing connection """
 
         while self.state in {"ESTABLISHED", "CLOSE_WAIT"} and (self.data_tx or flag_fin):
             with self.lock_data_tx:
-                data_tx = self.data_tx[: self.local_mss]
-                del self.data_tx[: self.local_mss]
+                data_tx = self.data_tx[: self.remote_mss]
+                del self.data_tx[: self.remote_mss]
             self.__send_packet(flag_ack=True, flag_fin=True if flag_fin and not self.data_tx else False, raw_data=bytes(data_tx))
             self.logger.debug(f"Sent out data segment, {len(data_tx)} bytes{' + FIN' if flag_fin and not self.data_tx else ''}")
             if flag_fin and not self.data_tx:
@@ -219,7 +190,7 @@ class TcpSession:
 
         # Got CONNECT syscall -> Send SYN packet / change state to SYN_SENT
         if syscall == "CONNECT":
-            self.__send_resend_packet(flag_syn=True)
+            self.__send_packet(flag_syn=True)
             self.logger.debug(f"{self.tcp_session_id} - Sent initial SYN packet")
             self.__change_state("SYN_SENT")
 
@@ -256,11 +227,11 @@ class TcpSession:
 
             # Initialize session parameters
             self.remote_win = packet.win
-            self.remote_mss = min(packet.mss, stack.mtu - 80)
+            self.remote_mss = 1460 #min(packet.mss, stack.mtu - 80)
 
             # Send SYN + ACK packet / change state to SYN_RCVD
             self.local_ack_num = packet.seq_num + packet.flag_syn
-            self.__send_resend_packet(flag_syn=True, flag_ack=True, tracker=packet.tracker)
+            self.__send_packet(flag_syn=True, flag_ack=True, tracker=packet.tracker)
             self.__change_state("SYN_RCVD")
             return
 
@@ -381,7 +352,6 @@ class TcpSession:
 
         # Got CLOSE syscall -> Send FIN packet / change state to FIN_WAIT_1
         if syscall == "CLOSE":
-            # Send out remaining data with FIN flag set on last packet
             self.__send_data(flag_fin=True)
             self.__change_state("FIN_WAIT_1")
             return

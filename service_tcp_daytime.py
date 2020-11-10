@@ -39,12 +39,9 @@ class ServiceTcpDaytime:
     def __thread_connection(self, socket):
         """ Inbound connection handler """
 
-        daytime = bytes(str(datetime.now()) + "\n", "utf-8")
-        for _ in range(3):
-            socket.send(daytime)
-            print(f"Service TCP Daytime: Sent daytime message to {socket.remote_ip_address}:{socket.remote_port} -", daytime)
-            from time import sleep
-
-            sleep(1)
+        #daytime = bytes(str(datetime.now()) + "\n", "utf-8")
+        daytime = bytes("***START***" + "1234567890" * 1000 + "***STOP***", "utf-8")
+        socket.send(daytime)
+        print(f"Service TCP Daytime: Sent daytime message to {socket.remote_ip_address}:{socket.remote_port} -", daytime)
         socket.close()
         print(f"Service TCP Daytime: Closed connection from {socket.remote_ip_address}:{socket.remote_port}")

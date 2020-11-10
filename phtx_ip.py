@@ -67,8 +67,8 @@ def phtx_ip(self, child_packet, ip_dst, ip_src):
     if self.ip_id > 65535:
         self.ip_id = 1
 
-    # Check if IP packet can be sent out without fragmentations, if so send it out
-    if ps_ether.ETHER_HEADER_LEN + ps_ip.IP_HEADER_LEN + len(child_packet.raw_packet) <= stack.mtu:
+    # Check if IP packet can be sent out without fragmentation, if so send it out
+    if ps_ip.IP_HEADER_LEN + len(child_packet.raw_packet) <= stack.mtu:
         ip_packet_tx = ps_ip.IpPacket(ip_src=ip_src, ip_dst=ip_dst, ip_id=self.ip_id, child_packet=child_packet)
 
         self.logger.debug(f"{ip_packet_tx.tracker} - {ip_packet_tx}")
