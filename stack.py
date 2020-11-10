@@ -8,8 +8,9 @@ stack.py - module holds refeences to the stack components
 """
 
 mtu = 1500
-tcp_mss = 1460
-tcp_win = 65535
+
+local_tcp_mss = 1460  # Maximum segment peer can send to us
+local_tcp_win = 65535  # Maximum amount of data peer can send to us without confirmation
 
 
 rx_ring = None

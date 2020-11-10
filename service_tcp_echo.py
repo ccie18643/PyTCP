@@ -37,15 +37,27 @@ class ServiceTcpEcho:
     def __thread_connection(self, socket):
         """ Inbound connection handler """
 
+        print(f"Service TCP Echo: Sending '***START***' message to {socket.remote_ip_address}:{socket.remote_port}")
+        socket.send(b"***START***\n")
+
         while True:
             message = socket.receive()
 
             if message is None:
+                print(f"Service TCP Echo: Connection to {socket.remote_ip_address}:{socket.remote_port} has been closed by peer")
+                print(f"Service TCP Echo: Sending '***END***' message to {socket.remote_ip_address}:{socket.remote_port}")
+                socket.send(b"***END***\n")
+                print(f"Service TCP Echo: Closng connection to {socket.remote_ip_address}:{socket.remote_port}")
+                socket.close()
                 break
 
-            print(f"Service TCP Echo: Received message from {socket.remote_ip_address}:{socket.remote_port} -", message)
-            socket.send(message)
-            print(f"Service TCP Echo: Echo'ed message back to {socket.remote_ip_address}:{socket.remote_port} -", message)
+            if message in {b"CLOSE\n", b"CLOSE\r\n"}:
+                print(f"Service TCP Echo: Sending '***END***' message to {socket.remote_ip_address}:{socket.remote_port}")
+                socket.send(b"***END***\n")
+                print(f"Service TCP Echo: Closng connection to {socket.remote_ip_address}:{socket.remote_port}")
+                socket.close()
+                continue
 
-        socket.close()
-        print(f"Service TCP Echo: Connection from {socket.remote_ip_address}:{socket.remote_port} has been closed by peer")
+            print(f"Service TCP Echo: Received message from {socket.remote_ip_address}:{socket.remote_port} -", message)
+            if socket.send(message):
+                print(f"Service TCP Echo: Echo'ed message back to {socket.remote_ip_address}:{socket.remote_port} -", message)
