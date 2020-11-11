@@ -22,11 +22,14 @@ Python based attempt to create fully operational TCP/IP stack for educational pu
 
 #### Work in progress:
 
- - TCP protocol - *working on improving code and bug fixing while simulating more advanced traffic scenarios*
+ - TCP protocol - *ongoing effort of improving code and bug fixing while simulating more advanced traffic scenarios*
+ - TCP protocol - *implementing data packet retransmision in ESTABLISHED and CLOSE_WAIT states*
  - IP Routing - *adding ability for the stack to understand concept of local and non-local IP addressing, this is needed for testing TCP connectivity over Internet*
 
 #### Next steps:
  
+ - TCP protocol - *FIN packet retransmission in FIN_WAIT_1, FIN_WAIT_2 and LAST_ACK states*
+ - TCP protocol - *proper handling on RST packets in various states, need to do research on this*
  - IPv6 protocol - *basic support with address auto configuration*
  - ICMPv6 protocol - *basic support, features needed for stack operation*
 
