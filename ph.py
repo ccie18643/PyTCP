@@ -44,6 +44,7 @@ class PacketHandler:
         self.stack_ip_address = []
         self.stack_ip_unicast = []
         self.stack_ip_multicast = []
+        self.stack_ip_network = []
         self.stack_ip_broadcast = ["255.255.255.255"]
         self.logger = loguru.logger.bind(object_name="packet_handler.")
 
@@ -61,9 +62,10 @@ class PacketHandler:
 
         # Create list of IP addresses stack should listen on
         self.__validate_stack_ip_addresses(stack_ip_address)
-        self.logger.info(f"Stack listenng on unicast IP addresses: {self.stack_ip_unicast}")
-        self.logger.info(f"Stack listenng on multicast IP addresses: {self.stack_ip_multicast}")
-        self.logger.info(f"Stack listenng on brodcast IP addresses: {self.stack_ip_broadcast}")
+        self.logger.info(f"Stack listening on unicast IP addresses: {self.stack_ip_unicast}")
+        self.logger.info(f"Stack listening on multicast IP addresses: {self.stack_ip_multicast}")
+        self.logger.info(f"Stack listening on brodcast IP addresses: {self.stack_ip_broadcast}")
+        self.logger.info(f"Stack ignoring network IP addresses: {self.stack_ip_network}")
 
     def __dhcp_client(self):
         """ Acquire IP address using DHCP client """
@@ -88,9 +90,11 @@ class PacketHandler:
             _1 = struct.unpack("!L", socket.inet_aton(ip_address[0]))[0]
             _2 = struct.unpack("!L", socket.inet_aton(ip_address[1]))[0]
             stack_ip_address[i] = (
-                *ip_address,
+                ip_address[0],
+                ip_address[1],
                 socket.inet_ntoa(struct.pack("!L", _1 & _2)),
                 socket.inet_ntoa(struct.pack("!L", (_1 & _2) + (~_2 & 0xFFFFFFFF))),
+                ip_address[2],
             )
 
         # Create list containing only ip addresses that were confiremed free to claim
@@ -113,6 +117,11 @@ class PacketHandler:
         for ip_address in self.stack_ip_address:
             if ip_address[3] not in self.stack_ip_broadcast:
                 self.stack_ip_broadcast.append(ip_address[3])
+
+        # Create list of all netwok addresses stack should ignore
+        for ip_address in self.stack_ip_address:
+            if ip_address[2] not in self.stack_ip_network:
+                self.stack_ip_network.append(ip_address[2])
 
     def __send_arp_probe(self, ip_address):
         """ Send out ARP probe to detect possible IP conflict """
