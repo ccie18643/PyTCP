@@ -12,6 +12,44 @@ import threading
 import tcp_socket
 
 
+malpka = b"""
+               .="=.
+             _/.-.-.\_     _
+            ( ( o o ) )    ))
+             |/  "  \|    //
+              \\'---'/    //
+              /`---`\\  ((
+             / /_,_\ \\  \\\\
+             \_\\_'__/ \  ))
+             /`  /`~\  |//
+            /   /    \  /
+        ,--`,--'\/\    /
+         '-- "--'  '--'\n
+"""
+
+malpa = b"""
+_______AAAA_______________AAAA________
+       VVVV               VVVV        
+       (__)               (__)
+        \ \               / /
+         \ \   \\\|||//   / /
+          > \   _   _   / <
+           > \ / \ / \ / <
+            > \\\_o_o_// <
+             > ( (_) ) <
+              >|     |<
+             / |\___/| \\
+             / (_____) \\
+             /         \\
+              /   o   \\
+               ) ___ (   
+              / /   \ \  
+             ( /     \ )
+             ><       ><
+            ///\     /\\\\
+            '''       '''\n
+"""
+
 class ServiceTcpEcho:
     """ TCP Echo service support class """
 
@@ -51,11 +89,21 @@ class ServiceTcpEcho:
                 socket.close()
                 break
 
-            if message in {b"CLOSE\n", b"CLOSE\r\n"}:
+            if message in {b"CLOSE\n", b"CLOSE\r\n", b"close\n", b"close\r\n"}:
                 print(f"Service TCP Echo: Sending '***END***' message to {socket.remote_ip_address}:{socket.remote_port}")
                 socket.send(b"***END***\n")
                 print(f"Service TCP Echo: Closng connection to {socket.remote_ip_address}:{socket.remote_port}")
                 socket.close()
+                continue
+
+            if message in {b"MALPKA\n", b"MALPKA\r\n", b"malpka\n", b"malpka\r\n"}:
+                print(f"Service TCP Echo: Sending '***END***' message to {socket.remote_ip_address}:{socket.remote_port}")
+                socket.send(malpka)
+                continue
+
+            if message in {b"MALPA\n", b"MALPA\r\n", b"malpa\n", b"malpa\r\n"}:
+                print(f"Service TCP Echo: Sending '***END***' message to {socket.remote_ip_address}:{socket.remote_port}")
+                socket.send(malpa)
                 continue
 
             print(f"Service TCP Echo: Received message from {socket.remote_ip_address}:{socket.remote_port} -", message)
