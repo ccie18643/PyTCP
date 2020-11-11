@@ -25,7 +25,7 @@ def validate_source_ip_address(self, ip_src):
         return
 
     # If packet is a response to multicast then replace source IP address with primary IP address of the stack
-    if ip_src in self.stack_ip_multicast or ip_src == "255.255.255.255":
+    if ip_src in self.stack_ip_multicast:
         if self.stack_ip_unicast:
             ip_src = self.stack_ip_unicast[0]
             self.logger.debug(f"Packet is response to multicast, replaced source with stack primary IP address {ip_src}")
@@ -33,7 +33,7 @@ def validate_source_ip_address(self, ip_src):
             self.logger.warning("Unable to sent out IP packet, no stack primary unicast IP address available")
             return
 
-    # If packet is a response to limite broadcast then replace source IP address with primary IP address of the stack
+    # If packet is a response to limited broadcast then replace source IP address with primary IP address of the stack
     if ip_src == "255.255.255.255":
         if self.stack_ip_unicast:
             ip_src = self.stack_ip_unicast[0]
