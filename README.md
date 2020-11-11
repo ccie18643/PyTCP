@@ -1,6 +1,7 @@
 # PyTCP
 
-Python based attempt to create fully operational TCP/IP stack for educational purposes. Stack operates as user space program attached to Linux TAP interface. Since goal of this project is purely educational (at least at this point) the clarity of code is prefered over its effeciency, eg. using lists as buffers for data carried by TCP. For the same reason security features are not being implemented unless they help to illustrate sepcific 'real word' solutions, eg. chosing random SEQ number for TCP connection. Also features that cannot be reliably tested at this moment are not getting implemented, eg. FIN packet retransmission for LAST_ACK and FIN_WAIT_1 states. Those will be added later once i have lab environment setup to let me generate certain network conditions like delay or packet loss.
+Python based attempt to create fully operational TCP/IP stack for educational purposes. Stack operates as user space program attached to Linux TAP interface. Since goal of this project is purely educational (at least at this point) the clarity of code is preferred over its efficiency, eg. using lists as buffers for data carried by TCP. For the same reason security features are not being implemented unless they help to illustrate specific 'real word' solutions, eg. choosing random SEQ number for TCP connection. Also features that cannot be reliably tested at this moment are not getting implemented, eg. FIN packet retransmission for LAST_ACK and FIN_WAIT_1 states. Those will be added later once i have lab environment setup to let me generate certain network conditions like delay or packet loss.
+
 
 #### Already implemented:
 
@@ -9,13 +10,14 @@ Python based attempt to create fully operational TCP/IP stack for educational pu
  - ARP protocol - *ARP Probe/Announcement IP conflict detection (ACD) mechanism*
  - IP protocol - *inbound and outbound IP fragmentation*
  - IP protocol - *IP options accepted but not supported*
- - IP protocol -  *multiple stack's IP addresses supported* 
+ - IP protocol -  *multiple stack's IP addresses supported, each of them acts as it was assigned to separate VRF* 
+ - IP protocol - *ability to route traffic to external destinations via default gateway, this was needed for testing TCP connectivity over Internet*
  - ICMP protocol - *only ICMP messages that are needed for stack operations are implemented, eg. echo, echo reply, port unreachable*
  - UDP protocol - *full support, stack is able to exchange data with other hosts using UDP protocol*
  - UDP sockets - *full support, stack's 'end user' API similar to Berkley sockets*
  - UDP services - *UDP Echo, Discard, Daytime implemented for testing purposes*
  - UDP clients - *DHCP service for automatic IPv4 address configuration - basic implementation, need to add timeouts and error handling*
- - TCP protocol - *full implementation of TCP Finite State Machine, at this point stack is able to comunicate with other hosts over TCP protocol*
+ - TCP protocol - *full implementation of TCP Finite State Machine, at this point stack is able to communicate with other hosts over TCP protocol*
  - TCP protocol - *TCP option support for: MSS, WSCALE, SACKPERM, TIMESTAMP*
  - TCP protocol - *TCP sliding window mechanism implemented*
  - TCP sockets - *full support, stack's 'end user' API similar to Berkley sockets*
@@ -23,8 +25,7 @@ Python based attempt to create fully operational TCP/IP stack for educational pu
 #### Work in progress:
 
  - TCP protocol - *ongoing effort of improving code and bug fixing while simulating more advanced traffic scenarios*
- - TCP protocol - *implementing data packet retransmision in ESTABLISHED and CLOSE_WAIT states*
- - IP Routing - *adding ability for the stack to understand concept of local and non-local IP addressing, this is needed for testing TCP connectivity over Internet*
+ - TCP protocol - *implementing data packet retransmission in ESTABLISHED and CLOSE_WAIT states*
 
 #### Next steps:
  
