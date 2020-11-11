@@ -22,7 +22,7 @@ Python based attempt to create fully operational TCP/IP stack for educational pu
 
 #### Work in progress:
 
- - TCP protocol - *woking on improving code and bug fixing while simulating more advanced traffic scenarios*
+ - TCP protocol - *working on improving code and bug fixing while simulating more advanced traffic scenarios*
  - IP Routing - *adding ability for the stack to understand concept of local and non-local IP addressing, this is needed for testing TCP connectivity over Internet*
 
 #### Next steps:
