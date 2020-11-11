@@ -76,8 +76,8 @@ def main():
     # ServiceUdpDiscard()
     # ServiceUdpDaytime()
 
-    # ServiceTcpEcho()
-    # ServiceTcpDiscard()
+    ServiceTcpEcho()
+    ServiceTcpDiscard()
     ServiceTcpDaytime(message_count=1, message_delay=1, message_size=1000)
 
     # ClientUdpDhcp(STACK_MAC_ADDRESS)

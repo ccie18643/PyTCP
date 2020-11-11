@@ -26,10 +26,17 @@ def fsm_trace(function):
     """ Decorator for tracing FSM state """
 
     def _(self, *args, **kwargs):
-        print(f"[ >>> ] local_seq_sent {self.local_seq_sent}, local_seq_ackd {self.local_seq_ackd}, remote_seq_rcvd {self.remote_seq_rcvd}, remote_seq_ackd {self.remote_seq_ackd}")
+        print(
+            f"[ >>> ] local_seq_sent {self.local_seq_sent}, local_seq_ackd {self.local_seq_ackd},",
+            f"remote_seq_rcvd {self.remote_seq_rcvd}, remote_seq_ackd {self.remote_seq_ackd}",
+        )
         retval = function(self, *args, **kwargs)
-        print(f"[ <<< ] local_seq_sent {self.local_seq_sent}, local_seq_ackd {self.local_seq_ackd}, remote_seq_rcvd {self.remote_seq_rcvd}, remote_seq_ackd {self.remote_seq_ackd}")
+        print(
+            f"[ <<< ] local_seq_sent {self.local_seq_sent}, local_seq_ackd {self.local_seq_ackd},",
+            f"remote_seq_rcvd {self.remote_seq_rcvd}, remote_seq_ackd {self.remote_seq_ackd}",
+        )
         return retval
+
     return _
 
 
@@ -72,7 +79,7 @@ class TcpSession:
         self.event_connect = threading.Semaphore(0)
         self.event_data_rx = threading.Semaphore(0)
 
-        self.lock_fsm = threading.RLock()
+        self.lock_fsm = threading.Lock()
         self.lock_data_rx = threading.Lock()
         self.lock_data_tx = threading.Lock()
 
@@ -93,16 +100,14 @@ class TcpSession:
     def __change_state(self, state):
         """ Change the state of TCP finite state machine """
 
-        with self.lock_fsm:
-            old_state = self.state
-            self.state = state
-            self.state_init = True
-            if old_state:
-                self.logger.opt(ansi=True, depth=1).info(f"{self.tcp_session_id} - State changed: <yellow> {old_state} -> {self.state}</>")
+        old_state = self.state
+        self.state = state
+        self.state_init = True
+        old_state and self.logger.opt(ansi=True, depth=1).info(f"{self.tcp_session_id} - State changed: <yellow> {old_state} -> {self.state}</>")
 
-    @fsm_trace
     def __send_packet(self, seq_num=None, flag_syn=False, flag_ack=False, flag_fin=False, flag_rst=False, raw_data=b"", tracker=None, echo_tracker=None):
         """ Send out TCP packet """
+
         stack.packet_handler.phtx_tcp(
             ip_src=self.local_ip_address,
             ip_dst=self.remote_ip_address,
@@ -121,7 +126,7 @@ class TcpSession:
             echo_tracker=echo_tracker,
         )
         self.remote_seq_ackd = self.remote_seq_rcvd
-        self.local_seq_sent = self.local_seq_ackd + len(raw_data) + flag_syn + flag_fin
+        self.local_seq_sent = (seq_num if seq_num else self.local_seq_sent) + len(raw_data) + flag_syn + flag_fin
 
         # If in ESTABLISHED state then reset ACK delay timer
         if self.state == "ESTABLISHED":
@@ -395,7 +400,7 @@ class TcpSession:
         # State initialization
         if self.state_init:
             self.state_init = False
-            stack.stack_timer.register_timer(self.tcp_session_id + "delayed_ack", DELAYED_ACK_DELAY)
+            # stack.stack_timer.register_timer(self.tcp_session_id + "delayed_ack", DELAYED_ACK_DELAY)
             self.logger.debug(f"State {self.state} initialized")
 
         # Got timer event -> Send out data and run Delayed ACK mechanism
@@ -439,6 +444,8 @@ class TcpSession:
 
         # Got CLOSE syscall -> Send FIN packet / change state to FIN_WAIT_1
         if syscall == "CLOSE":
+            while self.data_tx:
+                self.__send_data()
             self.__send_packet(flag_fin=True, flag_ack=True)
             self.__change_state("FIN_WAIT_1")
             return
@@ -453,13 +460,14 @@ class TcpSession:
             self.state_init = False
             self.logger.debug(f"State {self.state} initialized")
 
-        # Got timer event -> Send out data and run Delayed ACK mechanism
+        # Got timer event -> Delayed ACK mechanism
         if timer:
             self.__delayed_ack()
             return
 
         # Got ACK packet -> Change state to FIN_WAIT_2
         if packet and all({packet.flag_ack}) and not any({packet.flag_fin, packet.flag_syn, packet.flag_rst}):
+            print(f"Got ACK packet {packet.ack_num=} {self.local_seq_sent=}")
             if packet.ack_num == self.local_seq_sent:
                 self.local_seq_ackd = packet.ack_num
                 self.__change_state("FIN_WAIT_2")
@@ -467,6 +475,7 @@ class TcpSession:
 
         # Got FIN + ACK packet -> Send ACK packet / change state to TIME_WAIT
         if packet and all({packet.flag_fin, packet.flag_ack}) and not any({packet.flag_syn, packet.flag_rst}):
+            print(f"Got FIN + ACK packet {packet.ack_num=} {self.local_seq_sent=}")
             if packet.ack_num == self.local_seq_sent:
                 self.local_seq_ackd = packet.ack_num
                 self.remote_seq_rcvd = packet.seq_num + packet.flag_fin
@@ -476,9 +485,11 @@ class TcpSession:
 
         # Got FIN packet -> Send ACK packet / change state to CLOSING
         if packet and all({packet.flag_fin}) and not any({packet.flag_syn, packet.flag_rst}):
-            self.remote_seq_rcvd = packet.seq_num + packet.flag_fin
-            self.__send_packet(flag_ack=True, tracker=packet.tracker)
-            self.__change_state("CLOSING")
+            print(f"Got FIN packet {packet.ack_num=} {self.local_seq_sent=}")
+            if packet.ack_num == self.local_seq_sent:
+                self.remote_seq_rcvd = packet.seq_num + packet.flag_fin
+                self.__send_packet(flag_ack=True, tracker=packet.tracker)
+                self.__change_state("CLOSING")
             return
 
     def __tcp_fsm_fin_wait_2(self, packet, syscall, timer):
@@ -489,7 +500,7 @@ class TcpSession:
             self.state_init = False
             self.logger.debug(f"State {self.state} initialized")
 
-        # Got timer event -> Send out data and run Delayed ACK mechanism
+        # Got timer event -> Delayed ACK mechanism
         if timer:
             self.__delayed_ack()
             return

@@ -40,7 +40,7 @@ class ServiceTcpDaytime:
         """ Inbound connection handler """
 
         for _ in range(message_count):
-            #daytime = "bytes(str(datetime.now()) + "\n", "utf-8") * message_size
+            # daytime = "bytes(str(datetime.now()) + "\n", "utf-8") * message_size
             daytime = bytes("\n***START***\n" + "[---------] " * message_size + "\n***END***\n", "utf-8")
 
             socket.send(daytime)
