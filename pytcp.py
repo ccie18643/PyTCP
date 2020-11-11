@@ -30,7 +30,7 @@ from service_tcp_echo import ServiceTcpEcho
 from service_tcp_discard import ServiceTcpDiscard
 from service_tcp_daytime import ServiceTcpDaytime
 
-# from client_udp_dhcp import ClientUdpDhcp
+from client_udp_dhcp import ClientUdpDhcp
 from client_tcp_echo import ClientTcpEcho
 from client_icmp_echo import ClientIcmpEcho
 
@@ -72,20 +72,19 @@ def main():
     stack.arp_cache = ArpCache()
     stack.packet_handler = PacketHandler(STACK_MAC_ADDRESS, STACK_IP_ADDRESS)
 
-    # Start 'userspace' services / clinets
     # ServiceUdpEcho()
     # ServiceUdpDiscard()
     # ServiceUdpDaytime()
 
     # ServiceTcpEcho()
     # ServiceTcpDiscard()
-    # ServiceTcpDaytime(message_count=3, message_delay=1)
+    ServiceTcpDaytime(message_count=1, message_delay=1, message_size=1000)
 
     # ClientUdpDhcp(STACK_MAC_ADDRESS)
     # ClientTcpEcho(local_ip_address="192.168.9.7", remote_ip_address="192.168.9.102", remote_port=7, message_count=3)
     # ClientTcpEcho(local_ip_address="192.168.9.7", remote_ip_address="1.1.1.1", remote_port=7)
     # ClientTcpEcho(local_ip_address="192.168.9.7", remote_ip_address="192.168.9.9", remote_port=7)
-    ClientIcmpEcho(local_ip_address="192.168.9.7", remote_ip_address="8.8.8.8")
+    # ClientIcmpEcho(local_ip_address="192.168.9.7", remote_ip_address="8.8.8.8")
 
     while True:
         time.sleep(1)

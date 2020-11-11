@@ -17,12 +17,12 @@ import tcp_socket
 class ServiceTcpDaytime:
     """ TCP Daytime service support class """
 
-    def __init__(self, local_ip_address="0.0.0.0", local_port=13, message_count=1, message_delay=0):
+    def __init__(self, local_ip_address="0.0.0.0", local_port=13, message_count=1, message_delay=0, message_size=1):
         """ Class constructor """
 
-        threading.Thread(target=self.__thread_service, args=(local_ip_address, local_port, message_count, message_delay)).start()
+        threading.Thread(target=self.__thread_service, args=(local_ip_address, local_port, message_count, message_delay, message_size)).start()
 
-    def __thread_service(self, local_ip_address, local_port, message_count, message_delay):
+    def __thread_service(self, local_ip_address, local_port, message_count, message_delay, message_size):
         """ Service initialization """
 
         socket = tcp_socket.TcpSocket()
@@ -34,14 +34,15 @@ class ServiceTcpDaytime:
             new_socket = socket.accept()
             print(f"Service TCP Daytime: Inbound connection received from {new_socket.remote_ip_address}:{new_socket.remote_port}")
 
-            threading.Thread(target=self.__thread_connection, args=(new_socket, message_count, message_delay)).start()
+            threading.Thread(target=self.__thread_connection, args=(new_socket, message_count, message_delay, message_size)).start()
 
-    def __thread_connection(self, socket, message_count, message_delay):
+    def __thread_connection(self, socket, message_count, message_delay, message_size):
         """ Inbound connection handler """
 
         for _ in range(message_count):
-            daytime = bytes(str(datetime.now()) + "\n", "utf-8")
-            # daytime = bytes("***START***" + "1234567890" * 1000 + "***STOP***", "utf-8")
+            #daytime = "bytes(str(datetime.now()) + "\n", "utf-8") * message_size
+            daytime = bytes("\n***START***\n" + "[---------] " * message_size + "\n***END***\n", "utf-8")
+
             socket.send(daytime)
             print(f"Service TCP Daytime: Sent daytime message to {socket.remote_ip_address}:{socket.remote_port} -", daytime)
             time.sleep(message_delay)

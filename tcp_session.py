@@ -22,6 +22,17 @@ PACKET_RESEND_DELAY = 1000  # 1s for initial packet resend delay, then exponenia
 PACKET_RESEND_COUNT = 4  # 4 retries in case we get no response to packet sent
 
 
+def fsm_trace(function):
+    """ Decorator for tracing FSM state """
+
+    def _(self, *args, **kwargs):
+        print(f"[ >>> ] local_seq_sent {self.local_seq_sent}, local_seq_ackd {self.local_seq_ackd}, remote_seq_rcvd {self.remote_seq_rcvd}, remote_seq_ackd {self.remote_seq_ackd}")
+        retval = function(self, *args, **kwargs)
+        print(f"[ <<< ] local_seq_sent {self.local_seq_sent}, local_seq_ackd {self.local_seq_ackd}, remote_seq_rcvd {self.remote_seq_rcvd}, remote_seq_ackd {self.remote_seq_ackd}")
+        return retval
+    return _
+
+
 class TcpSession:
     """ Class defining all the TCP session parameters """
 
@@ -89,15 +100,15 @@ class TcpSession:
             if old_state:
                 self.logger.opt(ansi=True, depth=1).info(f"{self.tcp_session_id} - State changed: <yellow> {old_state} -> {self.state}</>")
 
-    def __send_packet(self, flag_syn=False, flag_ack=False, flag_fin=False, flag_rst=False, raw_data=b"", tracker=None, echo_tracker=None):
+    @fsm_trace
+    def __send_packet(self, seq_num=None, flag_syn=False, flag_ack=False, flag_fin=False, flag_rst=False, raw_data=b"", tracker=None, echo_tracker=None):
         """ Send out TCP packet """
-
         stack.packet_handler.phtx_tcp(
             ip_src=self.local_ip_address,
             ip_dst=self.remote_ip_address,
             tcp_sport=self.local_port,
             tcp_dport=self.remote_port,
-            tcp_seq_num=self.local_seq_ackd,
+            tcp_seq_num=seq_num if seq_num else self.local_seq_sent,
             tcp_ack_num=self.remote_seq_rcvd if flag_ack else 0,
             tcp_flag_syn=flag_syn,
             tcp_flag_ack=flag_ack,
@@ -294,7 +305,7 @@ class TcpSession:
                 if self.syn_sent_resend_count == PACKET_RESEND_COUNT:
                     self.__change_state("CLOSED")
                     return
-                self.__send_packet(flag_syn=True)
+                self.__send_packet(flag_syn=True, seq_num=self.local_seq_ackd)
                 self.syn_sent_resend_count += 1
                 self.logger.debug(f"{self.tcp_session_id} Re-sent SYN packet")
                 stack.stack_timer.register_timer(self.tcp_session_id + "syn_sent", PACKET_RESEND_DELAY * (1 << self.syn_sent_resend_count))
@@ -355,7 +366,7 @@ class TcpSession:
                 if self.syn_rcvd_resend_count == PACKET_RESEND_COUNT:
                     self.__change_state("CLOSED")
                     return
-                self.__send_packet(flag_syn=True, flag_ack=True)
+                self.__send_packet(flag_syn=True, flag_ack=True, seq_num=self.local_seq_ackd)
                 self.syn_rcvd_resend_count += 1
                 self.logger.debug(f"{self.tcp_session_id} Re-sent SYN + ACK packet")
                 stack.stack_timer.register_timer(self.tcp_session_id + "syn_rcvd", PACKET_RESEND_DELAY * (1 << self.syn_rcvd_resend_count))
