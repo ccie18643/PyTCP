@@ -32,7 +32,7 @@ class ArpCache:
     def __init__(self):
         """ Class constructor """
 
-        self.arp_cache = {"1.1.1.1": self.__Entry("08:30:6b:10:5c:01", permanent=True)}
+        self.arp_cache = {}
 
         self.logger = loguru.logger.bind(object_name="arp_cache.")
 
