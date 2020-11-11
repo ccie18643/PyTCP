@@ -17,17 +17,18 @@ Python based attempt to create fully operational TCP/IP stack for educational pu
  - UDP clients - *DHCP service for automatic IPv4 address configuration - basic implementation, need to add timeouts and error handling*
  - TCP protocol - *full implementation of TCP Finite State Machine, at this point stack is able to comunicate with other hosts over TCP protocol*
  - TCP protocol - *TCP option support for: MSS, WSCALE, SACKPERM, TIMESTAMP*
+ - TCP protocol - *TCP sliding window mechanism implemented*
  - TCP sockets - *full support, stack's 'end user' API similar to Berkley sockets*
 
 #### Work in progress:
 
- - TCP protocol - *working on 'sliding window' mechanism implementation*
+ - TCP protocol - *woking on improving code and bug fixing while simulating more advanced traffic scenarios*
+ - IP Routing - *adding ability for the stack to understand concept of local and non-local IP addressing, this is needed for testing TCP connectivity over Internet*
 
 #### Next steps:
  
  - IPv6 protocol - *basic support with address auto configuration*
  - ICMPv6 protocol - *basic support, features needed for stack operation*
- - IP Routing - *ability for the stack to understand concept of local and non-local IP addressing*
 
 ### Examples:
 
