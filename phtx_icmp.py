@@ -14,7 +14,7 @@ def phtx_icmp(self, ip_src, ip_dst, icmp_type, icmp_code=0, icmp_id=None, icmp_s
     """ Handle outbound ICMP packets """
 
     icmp_packet_tx = ps_icmp.IcmpPacket(
-        icmp_type=icmp_code, icmp_code=icmp_code, icmp_id=icmp_id, icmp_seq=icmp_seq, icmp_raw_data=icmp_raw_data, echo_tracker=echo_tracker
+        icmp_type=icmp_type, icmp_code=icmp_code, icmp_id=icmp_id, icmp_seq=icmp_seq, icmp_raw_data=icmp_raw_data, echo_tracker=echo_tracker
     )
 
     self.logger.opt(ansi=True).info(f"<magenta>{icmp_packet_tx.tracker}</magenta> - {icmp_packet_tx}")
