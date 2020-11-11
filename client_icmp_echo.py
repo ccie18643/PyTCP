@@ -30,7 +30,7 @@ class ClientIcmpEcho:
         icmp_id = random.randint(0, 65535)
 
         i = 0
-        while(message_count is None or i < message_count):
+        while message_count is None or i < message_count:
             message = bytes(str(datetime.now()) + "\n", "utf-8")
             stack.packet_handler.phtx_icmp(
                 ip_src=local_ip_address, ip_dst=remote_ip_address, icmp_type=8, icmp_code=0, icmp_id=icmp_id, icmp_seq=i, icmp_raw_data=message
