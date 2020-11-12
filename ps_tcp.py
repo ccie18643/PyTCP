@@ -190,7 +190,7 @@ class TcpPacket:
             f"TCP {self.tcp_sport} > {self.tcp_dport}, {'N' if self.tcp_flag_ns else ''}{'C' if self.tcp_flag_crw else ''}"
             + f"{'E' if self.tcp_flag_ece else ''}{'U' if self.tcp_flag_urg else ''}{'A' if self.tcp_flag_ack else ''}"
             + f"{'P' if self.tcp_flag_psh else ''}{'R' if self.tcp_flag_rst else ''}{'S' if self.tcp_flag_syn else ''}"
-            + f"{'F' if self.tcp_flag_fin else ''}, seq {self.tcp_seq_num}, ack {self.tcp_ack_num}, win {self.tcp_win}"
+            + f"{'F' if self.tcp_flag_fin else ''}, seq {self.tcp_seq_num}, ack {self.tcp_ack_num}, win {self.tcp_win}, dlen {len(self.raw_data)}"
         )
 
         for option in self.tcp_options:

@@ -41,14 +41,14 @@ malpa = (
     + "      VVVV               VVVV       \n"
     + "      (__)               (__)       \n"
     + "       \ \               / /        \n"
-    + "        \ \   \\\|||//   / /         \n"
-    + "         > \   _   _   / <          \n"
-    + "          > \ / \ / \ / <           \n"
+    + "        \ \              / /         \n"
+    + '         > \   .="=.   / <          \n'
+    + "          > \ /     \ / <           \n"
     + "           > \\\_o_o_// <            \n"
     + "            > ( (_) ) <             \n"
     + "             >|     |<              \n"
-    + "            / |\___/| \\             \n"
-    + "            / (_____) \\             \n"
+    + "            / |\\___/| \\             \n"
+    + "            / \_____/ \\             \n"
     + "            /         \\             \n"
     + "             /   o   \\              \n"
     + "              ) ___ (               \n"
@@ -85,23 +85,23 @@ class ServiceTcpEcho:
     def __thread_connection(self, socket):
         """ Inbound connection handler """
 
-        print(f"Service TCP Echo: Sending '***START***' message to {socket.remote_ip_address}:{socket.remote_port}")
-        socket.send(b"***START***\n")
+        print(f"Service TCP Echo: Sending first message to {socket.remote_ip_address}:{socket.remote_port}")
+        socket.send(b"***CLIENT OPEN / SERVICE OPEN***\n")
 
         while True:
             message = socket.receive()
 
             if message is None:
                 print(f"Service TCP Echo: Connection to {socket.remote_ip_address}:{socket.remote_port} has been closed by peer")
-                print(f"Service TCP Echo: Sending '***END***' message to {socket.remote_ip_address}:{socket.remote_port}")
-                socket.send(b"***END***\n")
+                print(f"Service TCP Echo: Sending last message to {socket.remote_ip_address}:{socket.remote_port}")
+                socket.send(b"***CLIENT CLOSED, SERVICE CLOSING***\n")
                 print(f"Service TCP Echo: Closng connection to {socket.remote_ip_address}:{socket.remote_port}")
                 socket.close()
                 break
 
             if message in {b"CLOSE\n", b"CLOSE\r\n", b"close\n", b"close\r\n"}:
-                print(f"Service TCP Echo: Sending '***END***' message to {socket.remote_ip_address}:{socket.remote_port}")
-                socket.send(b"***END***\n")
+                print(f"Service TCP Echo: Sending last message to {socket.remote_ip_address}:{socket.remote_port}")
+                socket.send(b"***CLIENT OPEN, SERVICE CLOSING***\n")
                 print(f"Service TCP Echo: Closng connection to {socket.remote_ip_address}:{socket.remote_port}")
                 socket.close()
                 continue
