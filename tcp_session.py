@@ -104,7 +104,7 @@ class TcpSession:
         self.state_init = True
         old_state and self.logger.opt(ansi=True, depth=1).info(f"{self.tcp_session_id} - State changed: <yellow> {old_state} -> {self.state}</>")
 
-    @fsm_trace
+    # @fsm_trace
     def __send_packet(self, seq_num=None, flag_syn=False, flag_ack=False, flag_fin=False, flag_rst=False, raw_data=b""):
         """ Send out TCP packet """
 
@@ -126,7 +126,7 @@ class TcpSession:
         self.remote_seq_ackd = self.remote_seq_rcvd
         self.local_seq_sent = (seq_num if seq_num else self.local_seq_sent) + len(raw_data) + flag_syn + flag_fin
 
-        # In case packet is FIN packet, make note of its SEQ number
+        # In case packet caries FIN flag make note of its SEQ number
         if flag_fin:
             self.local_seq_fin = self.local_seq_sent
 
@@ -221,6 +221,18 @@ class TcpSession:
                 self.logger.debug(f"{self.tcp_session_id} - Sent out delayed ACK ({self.remote_seq_rcvd})")
             stack.stack_timer.register_timer(self.tcp_session_id + "delayed_ack", DELAYED_ACK_DELAY)
 
+    def __process_ack_packet(self, packet, send_ack=False):
+        """ Process regular data packet """
+
+        # Make note of the local SEQ that has been acked by peer
+        self.local_seq_ackd = max(self.local_seq_ackd, packet.ack_num)
+        # Make note of the remote SEQ number
+        self.remote_seq_rcvd = packet.seq_num + len(packet.raw_data) + packet.flag_syn + packet.flag_fin
+        # In case packet contains data enqueue it
+        packet.raw_data and self.__enqueue_data_rx(packet.raw_data)
+        # If called for respond with ACK packet 
+        send_ack and packet.raw_data and self.__send_packet(flag_ack=True)
+
     def __tcp_fsm_closed(self, packet, syscall, timer):
         """ TCP FSM CLOSED state handler """
 
@@ -312,21 +324,16 @@ class TcpSession:
         if packet and all({packet.flag_syn, packet.flag_ack}) and not any({packet.flag_fin, packet.flag_rst}):
             # Packet sanity check
             if packet.ack_num == self.local_seq_sent and not packet.raw_data:
-                # Store ACK infomration since ACK flag is present
-                self.local_seq_ackd = packet.ack_num
+                self.__process_ack_packet(packet)
                 # Initialize session parameters
                 self.remote_win = packet.win
                 self.remote_mss = min(packet.mss, stack.mtu - 80)
                 self.remote_seq_init = packet.seq_num
-                # Make note of the remote SEQ number
-                self.remote_seq_rcvd = packet.seq_num + packet.flag_syn
-                # Send ACK packet
+                # Send initial ACK packet
                 self.__send_packet(flag_ack=True)
                 self.logger.debug(f"{self.tcp_session_id} Sent initial ACK ({self.remote_seq_ackd}) packet")
                 # Change state to ESTABLISHED
                 self.__change_state("ESTABLISHED")
-                # Inform connect syscall that connection related event happened
-                self.event_connect.release()
                 return
 
         # Got RST packet -> Change state to CLOSED
@@ -377,15 +384,10 @@ class TcpSession:
         # Got ACK packet -> Change state to ESTABLISHED
         if packet and all({packet.flag_ack}) and not any({packet.flag_syn, packet.flag_fin, packet.flag_rst}):
             # Packet sanity check
-            if packet.ack_num == self.local_seq_sent and not packet.raw_data:
-                # Make note of the local SEQ that has been acked by peer
-                self.local_seq_ackd = max(self.local_seq_ackd, packet.ack_num)
+            if packet.seq_num == self.remote_seq_rcvd and packet.ack_num == self.local_seq_sent and not packet.raw_data:
+                self.__process_ack_packet(packet)
                 # Change state to ESTABLISHED
                 self.__change_state("ESTABLISHED")
-                # Inform socket that session has been established so accept method can pick it up
-                self.socket.event_tcp_session_established.release()
-                # Inform connect syscall that connection related event happened, this is needed only in case of tcp simultaneous open
-                self.event_connect.release()
                 return
 
         # Got CLOSE sycall -> Send FIN packet / change state to FIN_WAIT_1
@@ -400,7 +402,10 @@ class TcpSession:
         # State initialization
         if self.state_init:
             self.state_init = False
-            # stack.stack_timer.register_timer(self.tcp_session_id + "delayed_ack", DELAYED_ACK_DELAY)
+            # Inform socket that session has been established so accept method can pick it up
+            self.socket.event_tcp_session_established.release()
+            # Inform connect syscall that connection related event happened, this is needed only in case of tcp simultaneous open
+            self.event_connect.release()
             self.logger.debug(f"State {self.state} initialized")
 
         # Got timer event -> Send out data and run Delayed ACK mechanism
@@ -413,24 +418,14 @@ class TcpSession:
         if packet and all({packet.flag_ack}) and not any({packet.flag_syn, packet.flag_rst, packet.flag_fin}):
             # Packet sanity check
             if packet.seq_num == self.remote_seq_rcvd:
-                # Make note of the local SEQ that has been acked by peer
-                self.local_seq_ackd = max(self.local_seq_ackd, packet.ack_num)
-                # Make note of the remote SEQ number
-                self.remote_seq_rcvd = packet.seq_num + len(packet.raw_data)
-                # In case packet contains data enqueue it
-                packet.raw_data and self.__enqueue_data_rx(packet.raw_data)
+                self.__process_ack_packet(packet)
                 return
 
         # Got FIN + ACK packet -> Send ACK packet (let delayed ACK mechanism do it) / change state to CLOSE_WAIT / notifiy app that peer closed connection
         if packet and all({packet.flag_fin, packet.flag_ack}) and not any({packet.flag_syn, packet.flag_rst}):
             # Packet sanity check
             if packet.seq_num == self.remote_seq_rcvd:
-                # Make note of the local SEQ that has been acked by peer, only if higher than already noted
-                self.local_seq_ackd = max(self.local_seq_ackd, packet.ack_num)
-                # Make note of the remote SEQ number
-                self.remote_seq_rcvd = packet.seq_num + len(packet.raw_data) + packet.flag_fin
-                # In case packet contains data enqueue it
-                packet.raw_data and self.__enqueue_data_rx(packet.raw_data)
+                self.__process_ack_packet(packet, send_ack=True)
                 # Let application know that remote peer closed connection
                 self.event_data_rx.release()
                 # Change state to CLOSE_WAIT
@@ -457,14 +452,7 @@ class TcpSession:
         if packet and all({packet.flag_ack}) and not any({packet.flag_syn, packet.flag_rst, packet.flag_fin}):
             # Packet sanity check
             if packet.seq_num == self.remote_seq_rcvd:
-                # Make note of the local SEQ that has been acked by peer
-                self.local_seq_ackd = max(self.local_seq_ackd, packet.ack_num)
-                # Make note of the remote SEQ number
-                self.remote_seq_rcvd = packet.seq_num + len(packet.raw_data)
-                # In case packet contains data enqueue it and send out ACK
-                if packet.raw_data:
-                    self.__enqueue_data_rx(packet.raw_data)
-                    self.__send_packet(flag_ack=True)
+                self.__process_ack_packet(packet, send_ack=True)
                 # Check if packet acks our FIN
                 if packet.ack_num >= self.local_seq_fin:
                     # Change state to FIN_WAIT_2
@@ -475,12 +463,7 @@ class TcpSession:
         if packet and all({packet.flag_fin, packet.flag_ack}) and not any({packet.flag_syn, packet.flag_rst}):
             # Packet sanity check
             if packet.seq_num == self.remote_seq_rcvd:
-                # Make note of the local SEQ that has been acked by peer
-                self.local_seq_ackd = max(self.local_seq_ackd, packet.ack_num)
-                # Make note of the remote SEQ number
-                self.remote_seq_rcvd = packet.seq_num + packet.flag_fin
-                # In case packet contains data enqueue it
-                packet.raw_data and self.__enqueue_data_rx(packet.raw_data)
+                self.__process_ack_packet(packet)
                 # Send out final ACK packet
                 self.__send_packet(flag_ack=True)
                 self.logger.debug(f"{self.tcp_session_id} - Sent final ACK ({self.remote_seq_rcvd}) packet")
@@ -505,26 +488,14 @@ class TcpSession:
         if packet and all({packet.flag_ack}) and not any({packet.flag_syn, packet.flag_rst, packet.flag_fin}):
             # Packet sanity check
             if packet.seq_num == self.remote_seq_rcvd:
-                # Make note of the local SEQ that has been acked by peer
-                self.local_seq_ackd = max(self.local_seq_ackd, packet.ack_num)
-                # Make note of the remote SEQ number
-                self.remote_seq_rcvd = packet.seq_num + len(packet.raw_data)
-                # In case packet contains data enqueue it and send out ACK
-                if packet.raw_data:
-                    self.__enqueue_data_rx(packet.raw_data)
-                    self.__send_packet(flag_ack=True)
+                self.__process_ack_packet(packet, send_ack=True)
                 return
 
         # Got FIN + ACK packet -> Send ACK packet / change state to TIME_WAIT
         if packet and all({packet.flag_fin, packet.flag_ack}) and not any({packet.flag_syn, packet.flag_rst}):
             # Packet sanity check
             if packet.seq_num == self.remote_seq_rcvd:
-                # Make note of the local SEQ that has been acked by peer
-                self.local_seq_ackd = max(self.local_seq_ackd, packet.ack_num)
-                # Make note of the remote SEQ number
-                self.remote_seq_rcvd = packet.seq_num + len(packet.raw_data) + packet.flag_fin
-                # In case packet contains data enqueue it
-                packet.raw_data and self.__enqueue_data_rx(packet.raw_data)  # enqueue data if present
+                self.__process_ack_packet(packet)
                 # Send out final ACK packet
                 self.__send_packet(flag_ack=True)
                 self.logger.debug(f"{self.tcp_session_id} - Sent final ACK ({self.remote_seq_rcvd}) packet")
@@ -542,7 +513,8 @@ class TcpSession:
 
         # Got ACK packet -> Change state to TIME_WAIT
         if packet and all({packet.flag_ack}) and not any({packet.flag_fin, packet.flag_syn, packet.flag_rst}):
-            if packet.ack_num == self.local_seq_sent:  # packet sanity check
+            # Packet sanity check
+            if packet.ack_num == self.local_seq_sent:
                 self.local_seq_ackd = packet.ack_num
                 self.__change_state("TIME_WAIT")
                 return
@@ -583,13 +555,15 @@ class TcpSession:
 
         # Got ACK packet -> Change state to CLOSED
         if packet and all({packet.flag_ack}) and not any({packet.flag_syn, packet.flag_fin, packet.flag_rst}):
-            if packet.ack_num == self.local_seq_sent:  # packet sanity check
+            # Packet sanity check
+            if packet.ack_num == self.local_seq_sent:
                 self.__change_state("CLOSED")
             return
 
         # Got RST packet -> Change state to CLOSED
         if packet and all({packet.flag_rst}) and not any({packet.flag_syn, packet.flag_fin, packet.flag_ack}):
-            if packet.ack_num == 0 and packet.seq_num == self.remote_seq_rcvd:  # packet sanity check
+            # Packet sanity check
+            if packet.ack_num == 0 and packet.seq_num == self.remote_seq_rcvd:
                 self.__change_state("CLOSED")
             return
 
