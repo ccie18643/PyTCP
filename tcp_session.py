@@ -221,30 +221,6 @@ class TcpSession:
                 self.logger.debug(f"{self.tcp_session_id} - Sent out delayed ACK ({self.remote_seq_rcvd})")
             stack.stack_timer.register_timer(self.tcp_session_id + "delayed_ack", DELAYED_ACK_DELAY)
 
-    def __handle_regular_ack_packet(self, packet):
-        """ Used in ESTABLISHED, FIN_WAIT_1 and FIN_WAIT_2 phases to handle regular ack packet """
-
-        # Make note of how much of our data has been ACKed by peer already
-        self.local_seq_ackd = max(self.local_seq_ackd, packet.ack_num)
-
-        # Check if we are missing any data due to lost packet, if so drop the packet so need of retansmission of lost data is signalized to the peer
-        if packet.seq_num > self.remote_seq_rcvd:
-            self.logger.warning(f"TCP packet has higher sequence number ({packet.seq_num}) than expected ({packet.ack_num}), droping packet")
-            return
-
-        # Respond to TCP Keep-Alive packet
-        if packet.seq_num == self.remote_seq_ackd - 1:
-            self.logger.debug(f"{self.tcp_session_id} - Received TCP Keep-Alive packet")
-            self.__send_packet(flag_ack=True)
-            self.logger.debug(f"{self.tcp_session_id} - Sent TCP Keep-Alive ACK packet")
-            return
-
-        # If packet's sequence number matches what we are expecting and if packet contains any data then enqueue the data
-        if packet.seq_num == self.remote_seq_rcvd and packet.raw_data:
-            self.remote_seq_rcvd = packet.seq_num + len(packet.raw_data)
-            self.__enqueue_data_rx(packet.raw_data)
-            return
-
     def __tcp_fsm_closed(self, packet, syscall, timer):
         """ TCP FSM CLOSED state handler """
 
