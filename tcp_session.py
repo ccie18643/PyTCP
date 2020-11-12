@@ -101,13 +101,13 @@ class TcpSession:
     @property
     def data_tx_seq_sent(self):
         """ 'seq_sent' number relative to TX buffer """
-        
+
         return self.local_seq_sent - self.data_tx_seq_mod
-        
+
     @property
     def data_tx_seq_ackd(self):
         """ 'seq_ackd' number relative to TX buffer """
-        
+
         return self.local_seq_ackd - self.data_tx_seq_mod
 
     def __change_state(self, state):
@@ -216,7 +216,7 @@ class TcpSession:
 
     def __send_data(self):
         """ Send out data segment from TX buffer useing TCP sliding window mechanism """
-        
+
         if len(self.data_tx) - self.data_tx_seq_sent:
             win_left = self.data_tx_seq_ackd + self.remote_win - self.data_tx_seq_sent
             self.logger.debug(f"Sliding window [{self.local_seq_ackd}|{self.local_seq_sent}|{self.local_seq_ackd + self.remote_win}], {win_left} bytes left")
@@ -248,7 +248,7 @@ class TcpSession:
         send_ack and packet.raw_data and self.__send_packet(flag_ack=True)
         # Purge acked data from TX buffer
         with self.lock_data_tx:
-            del self.data_tx[:self.data_tx_seq_ackd]
+            del self.data_tx[: self.data_tx_seq_ackd]
         self.data_tx_seq_mod += self.data_tx_seq_ackd
 
     def __tcp_fsm_closed(self, packet, syscall, timer):

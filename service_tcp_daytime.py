@@ -41,7 +41,11 @@ class ServiceTcpDaytime:
 
         for _ in range(message_count):
             # daytime = "bytes(str(datetime.now()) + "\n", "utf-8") * message_size
-            daytime = bytes("\n***START***\n" + "[---------] " * message_size + "\n***END***\n", "utf-8")
+            message = "[------START------] "
+            for i in range(message_size - 2):
+                message += f"[------{i + 1:05}------] "
+            message += "[-------END-------]\n"
+            daytime = bytes(message, "utf-8")
 
             socket.send(daytime)
             print(f"Service TCP Daytime: Sent daytime message to {socket.remote_ip_address}:{socket.remote_port} -", daytime)
