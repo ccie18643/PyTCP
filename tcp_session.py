@@ -354,14 +354,6 @@ class TcpSession:
                 self.__change_state("ESTABLISHED")
                 return
 
-        # Got RST packet -> Change state to CLOSED
-        if packet and all({packet.flag_rst}) and not any({packet.flag_fin, packet.flag_syn}):
-            # Change state to CLOSED
-            self.__change_state("CLOSED")
-            # Inform connect syscall that connection related event happened
-            self.event_connect.release()
-            return
-
         # Got SYN packet -> Send SYN + ACK packet / change state to SYN_RCVD
         if packet and all({packet.flag_syn}) and not any({packet.flag_ack, packet.flag_fin, packet.flag_syn}):
             # Packet sanity check
@@ -371,6 +363,14 @@ class TcpSession:
                 # Change state to SYN_RCVD
                 self.__change_state("SYN_RCVD")
                 return
+
+        # Got RST packet -> Change state to CLOSED
+        if packet and all({packet.flag_rst}) and not any({packet.flag_fin, packet.flag_syn}):
+            # Change state to CLOSED
+            self.__change_state("CLOSED")
+            # Inform connect syscall that connection related event happened
+            self.event_connect.release()
+            return
 
         # Got CLOSE syscall -> Change state to CLOSE
         if syscall == "CLOSE":
@@ -435,14 +435,14 @@ class TcpSession:
         # Got ACK packet -> Process data
         if packet and all({packet.flag_ack}) and not any({packet.flag_syn, packet.flag_rst, packet.flag_fin}):
             # Packet sanity check
-            if packet.seq_num == self.remote_seq_rcvd:
+            if packet.seq_num == self.remote_seq_rcvd and packet.ack_num <= self.local_seq_sent:
                 self.__process_ack_packet(packet)
                 return
 
         # Got FIN + ACK packet -> Send ACK packet (let delayed ACK mechanism do it) / change state to CLOSE_WAIT / notifiy app that peer closed connection
         if packet and all({packet.flag_fin, packet.flag_ack}) and not any({packet.flag_syn, packet.flag_rst}):
             # Packet sanity check
-            if packet.seq_num == self.remote_seq_rcvd:
+            if packet.seq_num == self.remote_seq_rcvd and packet.ack_num <= self.local_seq_sent:
                 self.__process_ack_packet(packet, send_ack=True)
                 # Let application know that remote peer closed connection
                 self.event_data_rx.release()
@@ -467,7 +467,7 @@ class TcpSession:
         # Got ACK (acking our FIN) packet -> Change state to FIN_WAIT_2
         if packet and all({packet.flag_ack}) and not any({packet.flag_syn, packet.flag_rst, packet.flag_fin}):
             # Packet sanity check
-            if packet.seq_num == self.remote_seq_rcvd:
+            if packet.seq_num == self.remote_seq_rcvd and packet.ack_num <= self.local_seq_sent:
                 self.__process_ack_packet(packet, send_ack=True)
                 # Check if packet acks our FIN
                 if packet.ack_num >= self.local_seq_fin:
@@ -478,7 +478,7 @@ class TcpSession:
         # Got FIN + ACK packet -> Send ACK packet / change state to TIME_WAIT or CLOSING
         if packet and all({packet.flag_fin, packet.flag_ack}) and not any({packet.flag_syn, packet.flag_rst}):
             # Packet sanity check
-            if packet.seq_num == self.remote_seq_rcvd:
+            if packet.seq_num == self.remote_seq_rcvd and packet.ack_num <= self.local_seq_sent:
                 self.__process_ack_packet(packet)
                 # Send out final ACK packet
                 self.__send_packet(flag_ack=True)
@@ -503,14 +503,14 @@ class TcpSession:
         # Got ACK packet -> Process data
         if packet and all({packet.flag_ack}) and not any({packet.flag_syn, packet.flag_rst, packet.flag_fin}):
             # Packet sanity check
-            if packet.seq_num == self.remote_seq_rcvd:
+            if packet.seq_num == self.remote_seq_rcvd and packet.ack_num <= self.local_seq_sent:
                 self.__process_ack_packet(packet, send_ack=True)
                 return
 
         # Got FIN + ACK packet -> Send ACK packet / change state to TIME_WAIT
         if packet and all({packet.flag_fin, packet.flag_ack}) and not any({packet.flag_syn, packet.flag_rst}):
             # Packet sanity check
-            if packet.seq_num == self.remote_seq_rcvd:
+            if packet.seq_num == self.remote_seq_rcvd and packet.ack_num <= self.local_seq_sent:
                 self.__process_ack_packet(packet)
                 # Send out final ACK packet
                 self.__send_packet(flag_ack=True)
@@ -530,7 +530,7 @@ class TcpSession:
         # Got ACK packet -> Change state to TIME_WAIT
         if packet and all({packet.flag_ack}) and not any({packet.flag_fin, packet.flag_syn, packet.flag_rst}):
             # Packet sanity check
-            if packet.ack_num == self.local_seq_sent:
+            if packet.ack_num == self.local_seq_sent and packet.ack_num <= self.local_seq_sent:
                 self.local_seq_ackd = packet.ack_num
                 self.__change_state("TIME_WAIT")
                 return
@@ -552,7 +552,7 @@ class TcpSession:
         # Got ACK packet -> Process it to update local_seq_sent number
         if packet and all({packet.flag_ack}) and not any({packet.flag_syn, packet.flag_rst, packet.flag_fin}):
             # Packet sanity check
-            if packet.seq_num == self.remote_seq_rcvd and not packet.raw_data:
+            if packet.seq_num == self.remote_seq_rcvd and packet.ack_num <= self.local_seq_sent and not packet.raw_data:
                 self.__process_ack_packet(packet)
                 return
 
@@ -564,7 +564,8 @@ class TcpSession:
 
         # Got RST packet -> Change state to CLOSED
         if packet and all({packet.flag_rst}) and not any({packet.flag_syn, packet.flag_fin, packet.flag_ack}):
-            if packet.ack_num == 0 and packet.seq_num == self.remote_seq_rcvd:  # packet sanity check
+            # Packet sanity check
+            if packet.ack_num == 0 and packet.seq_num == self.remote_seq_rcvd:
                 self.__change_state("CLOSED")
             return
 
@@ -579,7 +580,7 @@ class TcpSession:
         # Got ACK packet -> Change state to CLOSED
         if packet and all({packet.flag_ack}) and not any({packet.flag_syn, packet.flag_fin, packet.flag_rst}):
             # Packet sanity check
-            if packet.ack_num == self.local_seq_sent:
+            if packet.ack_num == self.local_seq_sent and packet.ack_num <= self.local_seq_sent:
                 self.__change_state("CLOSED")
             return
 
