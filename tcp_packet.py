@@ -21,8 +21,8 @@ class TcpPacket:
         flag_ack,
         flag_fin,
         flag_rst,
-        seq_num,
-        ack_num,
+        seq,
+        ack,
         win,
         mss,
         raw_data,
@@ -36,8 +36,8 @@ class TcpPacket:
         self.flag_ack = flag_ack
         self.flag_fin = flag_fin
         self.flag_rst = flag_rst
-        self.seq_num = seq_num
-        self.ack_num = ack_num
+        self.seq = seq
+        self.ack = ack
         self.win = win
         self.mss = mss
         self.raw_data = raw_data
@@ -50,11 +50,10 @@ class TcpPacket:
         return f"TCP/{self.local_ip_address}/{self.local_port}/{self.remote_ip_address}/{self.remote_port}"
 
     @property
-    def tcp_session_id_patterns(self):
-        """ Session ID patterns that match this packet """
+    def tcp_session_listening_patterns(self):
+        """ Session ID patterns that match listening socket """
 
         return [
-            f"TCP/{self.local_ip_address}/{self.local_port}/{self.remote_ip_address}/{self.remote_port}",
             f"TCP/{self.local_ip_address}/{self.local_port}/0.0.0.0/0",
             f"TCP/0.0.0.0/{self.local_port}/0.0.0.0/0",
         ]

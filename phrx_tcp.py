@@ -32,28 +32,37 @@ def phrx_tcp(self, ip_packet_rx, tcp_packet_rx):
         flag_ack=tcp_packet_rx.tcp_flag_ack,
         flag_fin=tcp_packet_rx.tcp_flag_fin,
         flag_rst=tcp_packet_rx.tcp_flag_rst,
-        seq_num=tcp_packet_rx.tcp_seq_num,
-        ack_num=tcp_packet_rx.tcp_ack_num,
+        seq=tcp_packet_rx.tcp_seq,
+        ack=tcp_packet_rx.tcp_ack,
         win=tcp_packet_rx.tcp_win * tcp_packet_rx.tcp_wscale,
         mss=tcp_packet_rx.tcp_mss,
         raw_data=tcp_packet_rx.raw_data,
         tracker=tcp_packet_rx.tracker,
     )
 
-    # Check if incoming packet matches any TCP session
-    for tcp_session_id_pattern in packet.tcp_session_id_patterns:
-        if tcp_session := stack.tcp_sessions.get(tcp_session_id_pattern, None):
-            self.logger.debug(f"{packet.tracker} - TCP packet is part of session {tcp_session.tcp_session_id}")
-            tcp_session.tcp_fsm(packet=packet)
-            return
+    # Check if incoming packet matches active TCP session
+    if tcp_session := stack.tcp_sessions.get(packet.tcp_session_id, None):
+        self.logger.debug(f"{packet.tracker} - TCP packet is part of active session {tcp_session.tcp_session_id}")
+        tcp_session.tcp_fsm(packet=packet)
+        return
 
+    # Check if incoming packet is an initial SYN packet and if it matches any listening TCP session
+    if all({packet.flag_syn}) and not any({packet.flag_ack, packet.flag_fin, packet.flag_rst}):
+        for tcp_session_id_pattern in packet.tcp_session_listening_patterns:
+            if tcp_session := stack.tcp_sessions.get(tcp_session_id_pattern, None):
+                self.logger.debug(f"{packet.tracker} - TCP packet matches listening session {tcp_session.tcp_session_id}")
+                tcp_session.tcp_fsm(packet=packet)
+                return
+
+    # In case packet doesn't match any session send RST packet in response to it
     self.logger.debug(f"Received TCP packet from {ip_packet_rx.ip_src} to closed port {tcp_packet_rx.tcp_dport}, responding with TCP RST packet")
     self.phtx_tcp(
         ip_src=ip_packet_rx.ip_dst,
         ip_dst=ip_packet_rx.ip_src,
         tcp_sport=tcp_packet_rx.tcp_dport,
         tcp_dport=tcp_packet_rx.tcp_sport,
-        tcp_ack_num=tcp_packet_rx.tcp_seq_num + 1,
+        tcp_seq=0,
+        tcp_ack=tcp_packet_rx.tcp_seq + 1,
         tcp_flag_rst=True,
         tcp_flag_ack=True,
         echo_tracker=tcp_packet_rx.tracker,

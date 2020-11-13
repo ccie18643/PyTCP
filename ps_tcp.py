@@ -53,8 +53,8 @@ class TcpPacket:
         parent_packet=None,
         tcp_sport=None,
         tcp_dport=None,
-        tcp_seq_num=0,
-        tcp_ack_num=0,
+        tcp_seq=0,
+        tcp_ack=0,
         tcp_flag_ns=False,
         tcp_flag_crw=False,
         tcp_flag_ece=False,
@@ -86,8 +86,8 @@ class TcpPacket:
 
             self.tcp_sport = struct.unpack("!H", raw_header[0:2])[0]
             self.tcp_dport = struct.unpack("!H", raw_header[2:4])[0]
-            self.tcp_seq_num = struct.unpack("!L", raw_header[4:8])[0]
-            self.tcp_ack_num = struct.unpack("!L", raw_header[8:12])[0]
+            self.tcp_seq = struct.unpack("!L", raw_header[4:8])[0]
+            self.tcp_ack = struct.unpack("!L", raw_header[8:12])[0]
             self.tcp_hlen = (raw_header[12] & 0b11110000) >> 2
             self.tcp_flag_ns = bool(raw_header[12] & 0b00000001)
             self.tcp_flag_crw = bool(raw_header[13] & 0b10000000)
@@ -136,8 +136,8 @@ class TcpPacket:
 
             self.tcp_sport = tcp_sport
             self.tcp_dport = tcp_dport
-            self.tcp_seq_num = tcp_seq_num
-            self.tcp_ack_num = tcp_ack_num
+            self.tcp_seq = tcp_seq
+            self.tcp_ack = tcp_ack
             self.tcp_flag_ns = tcp_flag_ns
             self.tcp_flag_crw = tcp_flag_crw
             self.tcp_flag_ece = tcp_flag_ece
@@ -167,8 +167,8 @@ class TcpPacket:
             "! HH L L BBH HH",
             self.tcp_sport,
             self.tcp_dport,
-            self.tcp_seq_num,
-            self.tcp_ack_num,
+            self.tcp_seq,
+            self.tcp_ack,
             self.tcp_hlen << 2 | self.tcp_flag_ns,
             self.tcp_flag_crw << 7
             | self.tcp_flag_ece << 6
@@ -190,7 +190,7 @@ class TcpPacket:
             f"TCP {self.tcp_sport} > {self.tcp_dport}, {'N' if self.tcp_flag_ns else ''}{'C' if self.tcp_flag_crw else ''}"
             + f"{'E' if self.tcp_flag_ece else ''}{'U' if self.tcp_flag_urg else ''}{'A' if self.tcp_flag_ack else ''}"
             + f"{'P' if self.tcp_flag_psh else ''}{'R' if self.tcp_flag_rst else ''}{'S' if self.tcp_flag_syn else ''}"
-            + f"{'F' if self.tcp_flag_fin else ''}, seq {self.tcp_seq_num}, ack {self.tcp_ack_num}, win {self.tcp_win}, dlen {len(self.raw_data)}"
+            + f"{'F' if self.tcp_flag_fin else ''}, seq {self.tcp_seq}, ack {self.tcp_ack}, win {self.tcp_win}, dlen {len(self.raw_data)}"
         )
 
         for option in self.tcp_options:
