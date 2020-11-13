@@ -32,6 +32,7 @@ Python based attempt to create fully operational TCP/IP stack for educational pu
  - TCP protocol - *FIN packet retransmission in FIN_WAIT_1, FIN_WAIT_2 and LAST_ACK states*
  - TCP protocol - *proper handling on RST packets in various states, need to do research on this*
  - TCP protocol - *need to rework the CLOSE syscall mechanism so FIN flag can be set on last data packet instead of being carried in separate one*
+ - TCP protocol - *ACK packet retransmission in case we got FIN retransmission in TIME_WAIT state*
  - IPv6 protocol - *basic support with address auto configuration*
  - ICMPv6 protocol - *basic support, features needed for stack operation*
  - ICMP protocol - *need to come up with some sort of "icmp socket" mechanism so ping client can bind to particular ICMP echo-reply stream*
@@ -45,7 +46,7 @@ Python based attempt to create fully operational TCP/IP stack for educational pu
  - stack echoes the data back
  - peer closes connection
 
-![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/main/pictures/tcp_fsm_srv_01.png)
+![Sample PyTCP log output](/ccie18643/PyTCP/blob/main/pictures/tcp_fsm_srv_01.png)
 ![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/main/pictures/tcp_fsm_srv_02.png)
 ![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/main/pictures/tcp_fsm_srv_03.png)
 ![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/main/pictures/tcp_fsm_srv_04.png)
