@@ -62,6 +62,13 @@ def main():
         format="<green>{time:YY-MM-DD HH:mm:ss}</green> <level>| {level:7} "
         + "|</level> <level> <normal><cyan>{extra[object_name]}{function}:</cyan></normal> {message}</level>",
     )
+    loguru.logger.add(
+        "log",
+        mode="w",
+        level="TRACE",
+        format="<green>{time:YY-MM-DD HH:mm:ss}</green> <level>| {level:7} "
+        + "|</level> <level> <normal><cyan>{extra[object_name]}{function}:</cyan></normal> {message}</level>",
+    )
 
     tap = os.open("/dev/net/tun", os.O_RDWR)
     fcntl.ioctl(tap, TUNSETIFF, struct.pack("16sH", STACK_INTERFACE, IFF_TAP | IFF_NO_PI))
@@ -78,7 +85,7 @@ def main():
 
     ServiceTcpEcho()
     ServiceTcpDiscard()
-    ServiceTcpDaytime(message_count=1, message_delay=1, message_size=1000)
+    ServiceTcpDaytime(message_count=-1, message_delay=1, message_size=1000)
 
     # ClientUdpDhcp(STACK_MAC_ADDRESS)
     # ClientTcpEcho(local_ip_address="192.168.9.7", remote_ip_address="192.168.9.102", remote_port=7, message_count=3)
