@@ -161,20 +161,20 @@ class TcpSession:
             stack.stack_timer.register_timer(self.tcp_session_id + "delayed_ack", DELAYED_ACK_DELAY)
 
         self.logger.debug(
-            f"{self.tcp_session_id} - Sent packet, {'S' if flag_syn else ''}{'F' if flag_fin else ''}{'R' if flag_rst else ''}"
+            f"{self.tcp_session_id} - Sent packet: {'S' if flag_syn else ''}{'F' if flag_fin else ''}{'R' if flag_rst else ''}"
             + f"{'A' if flag_ack else ''}, seq {seq}, ack {ack}, dlen {len(raw_data)}"
         )
 
     def listen(self):
         """ LISTEN syscall """
 
-        self.logger.debug(f"State {self.state} - got LISTEN syscall")
+        self.logger.debug(f"{self.tcp_session_id} - State {self.state} - got LISTEN syscall")
         return self.tcp_fsm(syscall="LISTEN")
 
     def connect(self):
         """ CONNECT syscall """
 
-        self.logger.debug(f"State {self.state} - got CONNECT syscall")
+        self.logger.debug(f"{self.tcp_session_id} - State {self.state} - got CONNECT syscall")
         self.tcp_fsm(syscall="CONNECT")
         self.event_connect.acquire()
         return self.state == "ESTABLISHED"
@@ -215,11 +215,11 @@ class TcpSession:
     def close(self):
         """ Close syscall """
 
-        self.logger.debug(f"State {self.state} - got CLOSE syscall, {len(self.tx_buffer)} bytes in TX buffer")
+        self.logger.debug(f"{self.tcp_session_id} - State {self.state} - got CLOSE syscall, {len(self.tx_buffer)} bytes in TX buffer")
         # Wait till we send out all remaining data from TX buffer
         while len(self.tx_buffer) - self.tx_buffer_seq_sent:
             time.sleep(0.1)
-        self.logger.debug(f"State {self.state} - sending CLOSE event")
+        self.logger.debug(f"{self.tcp_session_id} - State {self.state} - sending CLOSE event")
         self.tcp_fsm(syscall="CLOSE")
 
     def __enqueue_rx_buffer(self, raw_data):
@@ -234,14 +234,21 @@ class TcpSession:
     def __transmit_data(self):
         """ Send out data segment from TX buffer useing TCP sliding window mechanism """
 
-        if len(self.tx_buffer) - self.tx_buffer_seq_sent:
-            tx_win_left = self.tx_buffer_seq_ackd + self.tx_win - self.tx_buffer_seq_sent
-            self.logger.debug(f"Sliding window [{self.local_seq_ackd}|{self.local_seq_sent}|{self.local_seq_ackd + self.tx_win}], {tx_win_left} bytes left")
-            if tx_win_left > 0:
-                with self.lock_tx_buffer:
-                    data_tx = self.tx_buffer[self.tx_buffer_seq_sent : self.tx_buffer_seq_sent + min(self.remote_mss, tx_win_left)]
-                self.logger.debug(f"Transmitting data segment, seq {self.local_seq_sent} + {len(data_tx)} bytes = {self.local_seq_sent + len(data_tx)}")
-                self.__send_packet(flag_ack=True, raw_data=bytes(data_tx))
+        assert self.local_seq_ackd <= self.local_seq_sent <= self.local_seq_ackd + self.tx_win, "*** SEQ smaller than window left edge ***"
+
+        unsent_data_len = len(self.tx_buffer) - self.tx_buffer_seq_sent
+        unused_tx_win_len = self.tx_buffer_seq_ackd + self.tx_win - self.tx_buffer_seq_sent
+        data_tx_len = min(self.remote_mss, unused_tx_win_len, unsent_data_len)
+        if unsent_data_len:
+            self.logger.opt(ansi=True).debug(
+                f"{self.tcp_session_id} - Sliding window <yellow>[{self.local_seq_ackd}|{self.local_seq_sent}|{self.local_seq_ackd + self.tx_win}]</>"
+            )
+            self.logger.opt(ansi=True).debug(f"{self.tcp_session_id} - {unused_tx_win_len} left in window, {unsent_data_len} left in buffer, {data_tx_len} to be sent")
+        if data_tx_len:
+            with self.lock_tx_buffer:
+                data_tx = self.tx_buffer[self.tx_buffer_seq_sent : self.tx_buffer_seq_sent + data_tx_len]
+            self.logger.debug(f"{self.tcp_session_id} - Transmitting data segment: seq {self.local_seq_sent} len {len(data_tx)}")
+            self.__send_packet(flag_ack=True, raw_data=bytes(data_tx))
 
     def __delayed_ack(self):
         """ Run Delayed ACK mechanism """
@@ -277,7 +284,7 @@ class TcpSession:
         # State initialization
         if self.state_init:
             self.state_init = False
-            self.logger.debug(f"State {self.state} initialized")
+            self.logger.debug(f"{self.tcp_session_id} - State {self.state} initialized")
 
         # Got CONNECT syscall -> Send SYN packet / change state to SYN_SENT
         if syscall == "CONNECT":
@@ -295,7 +302,7 @@ class TcpSession:
         # State initialization
         if self.state_init:
             self.state_init = False
-            self.logger.debug(f"State {self.state} initialized")
+            self.logger.debug(f"{self.tcp_session_id} - State {self.state} initialized")
 
         # Got SYN packet -> Send SYN + ACK packet / change state to SYN_RCVD
         if packet and all({packet.flag_syn}) and not any({packet.flag_ack, packet.flag_fin, packet.flag_rst}):
@@ -328,7 +335,7 @@ class TcpSession:
                 self.remote_seq_rcvd = packet.seq + packet.flag_syn
                 # Send SYN + ACK packet / change state to SYN_RCVD
                 self.__send_packet(flag_syn=True, flag_ack=True)
-                self.logger.debug(f"{self.tcp_session_id} Sent initial SYN ({self.local_seq_sent}) + ACK ({self.remote_seq_ackd}) packet")
+                self.logger.debug(f"{self.tcp_session_id} - Sent initial SYN ({self.local_seq_sent}) + ACK ({self.remote_seq_ackd}) packet")
                 self.__change_state("SYN_RCVD")
                 return
 
@@ -345,7 +352,7 @@ class TcpSession:
             self.state_init = False
             self.syn_sent_resend_count = 0
             stack.stack_timer.register_timer(self.tcp_session_id + "syn_sent", PACKET_RESEND_DELAY)
-            self.logger.debug(f"State {self.state} initialized")
+            self.logger.debug(f"{self.tcp_session_id} - State {self.state} initialized")
 
         # Got timer event / syn_sent timer expired / no ACK yet received -> Re-send SYN packet
         if timer and stack.stack_timer.timer_expired(self.tcp_session_id + "syn_sent"):
@@ -355,7 +362,7 @@ class TcpSession:
                     return
                 self.__send_packet(flag_syn=True, seq=self.local_seq_ackd)
                 self.syn_sent_resend_count += 1
-                self.logger.debug(f"{self.tcp_session_id} Re-sent SYN packet")
+                self.logger.debug(f"{self.tcp_session_id} - Re-sent SYN packet")
                 stack.stack_timer.register_timer(self.tcp_session_id + "syn_sent", PACKET_RESEND_DELAY * (1 << self.syn_sent_resend_count))
                 return
 
@@ -371,7 +378,7 @@ class TcpSession:
                 self.tx_win = self.remote_mss
                 # Send initial ACK packet
                 self.__send_packet(flag_ack=True)
-                self.logger.debug(f"{self.tcp_session_id} Sent initial ACK ({self.remote_seq_ackd}) packet")
+                self.logger.debug(f"{self.tcp_session_id} - {self.tcp_session_id} Sent initial ACK ({self.remote_seq_ackd}) packet")
                 # Change state to ESTABLISHED
                 self.__change_state("ESTABLISHED")
                 return
@@ -409,7 +416,7 @@ class TcpSession:
             self.state_init = False
             self.syn_rcvd_resend_count = 0
             stack.stack_timer.register_timer(self.tcp_session_id + "syn_rcvd", PACKET_RESEND_DELAY)
-            self.logger.debug(f"State {self.state} initialized")
+            self.logger.debug(f"{self.tcp_session_id} - State {self.state} initialized")
 
         # Got timer event / syn_rcvd timer expired / no ACK yet received -> Re-send SYN + ACK packet
         if timer and stack.stack_timer.timer_expired(self.tcp_session_id + "syn_rcvd"):
@@ -419,7 +426,7 @@ class TcpSession:
                     return
                 self.__send_packet(flag_syn=True, flag_ack=True, seq=self.local_seq_ackd)
                 self.syn_rcvd_resend_count += 1
-                self.logger.debug(f"{self.tcp_session_id} Re-sent SYN + ACK packet")
+                self.logger.debug(f"{self.tcp_session_id} - Re-sent SYN + ACK packet")
                 stack.stack_timer.register_timer(self.tcp_session_id + "syn_rcvd", PACKET_RESEND_DELAY * (1 << self.syn_rcvd_resend_count))
                 return
 
@@ -456,7 +463,7 @@ class TcpSession:
             self.socket.event_tcp_session_established.release()
             # Inform connect syscall that connection related event happened
             self.event_connect.release()
-            self.logger.debug(f"State {self.state} initialized")
+            self.logger.debug(f"{self.tcp_session_id} - State {self.state} initialized")
 
         # Got timer event -> Send out data and run Delayed ACK mechanism
         if timer:
@@ -517,7 +524,7 @@ class TcpSession:
         # State initialization
         if self.state_init:
             self.state_init = False
-            self.logger.debug(f"State {self.state} initialized")
+            self.logger.debug(f"{self.tcp_session_id} - State {self.state} initialized")
 
         # Got ACK (acking our FIN) packet -> Change state to FIN_WAIT_2
         if packet and all({packet.flag_ack}) and not any({packet.flag_syn, packet.flag_rst, packet.flag_fin}):
@@ -563,7 +570,7 @@ class TcpSession:
         # State initialization
         if self.state_init:
             self.state_init = False
-            self.logger.debug(f"State {self.state} initialized")
+            self.logger.debug(f"{self.tcp_session_id} - State {self.state} initialized")
 
         # Got ACK packet -> Process data
         if packet and all({packet.flag_ack}) and not any({packet.flag_syn, packet.flag_rst, packet.flag_fin}):
@@ -600,7 +607,7 @@ class TcpSession:
         # State initialization
         if self.state_init:
             self.state_init = False
-            self.logger.debug(f"State {self.state} initialized")
+            self.logger.debug(f"{self.tcp_session_id} - State {self.state} initialized")
 
         # Got ACK packet -> Change state to TIME_WAIT
         if packet and all({packet.flag_ack}) and not any({packet.flag_fin, packet.flag_syn, packet.flag_rst}):
@@ -624,7 +631,7 @@ class TcpSession:
         # State initialization
         if self.state_init:
             self.state_init = False
-            self.logger.debug(f"State {self.state} initialized")
+            self.logger.debug(f"{self.tcp_session_id} - State {self.state} initialized")
 
         # Got timer event -> Send out data and run Delayed ACK mechanism
         if timer:
@@ -659,7 +666,7 @@ class TcpSession:
         # State initialization
         if self.state_init:
             self.state_init = False
-            self.logger.debug(f"State {self.state} initialized")
+            self.logger.debug(f"{self.tcp_session_id} - State {self.state} initialized")
 
         # Got ACK packet -> Change state to CLOSED
         if packet and all({packet.flag_ack}) and not any({packet.flag_syn, packet.flag_fin, packet.flag_rst}):
@@ -683,7 +690,7 @@ class TcpSession:
         if self.state_init:
             self.state_init = False
             stack.stack_timer.register_timer(self.tcp_session_id + "time_wait", TIME_WAIT_DELAY)
-            self.logger.debug(f"State {self.state} initialized")
+            self.logger.debug(f"{self.tcp_session_id} - State {self.state} initialized")
 
         # Got timer event -> Run TIME_WAIT delay
         if timer and stack.stack_timer.timer_expired(self.tcp_session_id + "time_wait"):
