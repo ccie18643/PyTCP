@@ -130,13 +130,16 @@ class TcpSession:
     def __send_packet(self, seq=None, flag_syn=False, flag_ack=False, flag_fin=False, flag_rst=False, raw_data=b""):
         """ Send out TCP packet """
 
+        seq = seq if seq else self.local_seq_sent
+        ack = self.remote_seq_rcvd if flag_ack else 0
+
         stack.packet_handler.phtx_tcp(
             ip_src=self.local_ip_address,
             ip_dst=self.remote_ip_address,
             tcp_sport=self.local_port,
             tcp_dport=self.remote_port,
-            tcp_seq=seq if seq else self.local_seq_sent,
-            tcp_ack=self.remote_seq_rcvd if flag_ack else 0,
+            tcp_seq=seq,
+            tcp_ack=ack,
             tcp_flag_syn=flag_syn,
             tcp_flag_ack=flag_ack,
             tcp_flag_fin=flag_fin,
@@ -146,7 +149,7 @@ class TcpSession:
             raw_data=raw_data,
         )
         self.remote_seq_ackd = self.remote_seq_rcvd
-        self.local_seq_sent = (seq if seq else self.local_seq_sent) + len(raw_data) + flag_syn + flag_fin
+        self.local_seq_sent = seq + len(raw_data) + flag_syn + flag_fin
         self.local_seq_sent_max = max(self.local_seq_sent_max, self.local_seq_sent)
 
         # In case packet caries FIN flag make note of its SEQ number
@@ -156,6 +159,11 @@ class TcpSession:
         # If in ESTABLISHED state then reset ACK delay timer
         if self.state == "ESTABLISHED":
             stack.stack_timer.register_timer(self.tcp_session_id + "delayed_ack", DELAYED_ACK_DELAY)
+
+        self.logger.debug(
+            f"{self.tcp_session_id} - Sent packet, {'S' if flag_syn else ''}{'F' if flag_fin else ''}{'R' if flag_rst else ''}"
+            + f"{'A' if flag_ack else ''}, seq {seq}, ack {ack}, dlen {len(raw_data)}"
+        )
 
     def listen(self):
         """ LISTEN syscall """
@@ -231,9 +239,9 @@ class TcpSession:
             self.logger.debug(f"Sliding window [{self.local_seq_ackd}|{self.local_seq_sent}|{self.local_seq_ackd + self.tx_win}], {tx_win_left} bytes left")
             if tx_win_left > 0:
                 with self.lock_tx_buffer:
-                    tx_buffer = self.tx_buffer[self.tx_buffer_seq_sent : self.tx_buffer_seq_sent + min(self.remote_mss, tx_win_left)]
-                self.__send_packet(flag_ack=True, raw_data=bytes(tx_buffer))
-                self.logger.debug(f"Sent out data segment, {len(tx_buffer)} bytes")
+                    data_tx = self.tx_buffer[self.tx_buffer_seq_sent : self.tx_buffer_seq_sent + min(self.remote_mss, tx_win_left)]
+                self.logger.debug(f"Transmitting data segment, seq {self.local_seq_sent} + {len(data_tx)} bytes = {self.local_seq_sent + len(data_tx)}")
+                self.__send_packet(flag_ack=True, raw_data=bytes(data_tx))
 
     def __delayed_ack(self):
         """ Run Delayed ACK mechanism """
@@ -244,7 +252,7 @@ class TcpSession:
                 self.logger.debug(f"{self.tcp_session_id} - Sent out delayed ACK ({self.remote_seq_rcvd})")
             stack.stack_timer.register_timer(self.tcp_session_id + "delayed_ack", DELAYED_ACK_DELAY)
 
-    def __process_ack_packet(self, packet, send_ack=False):
+    def __process_ack_packet(self, packet):
         """ Process regular data packet """
 
         # Make note of the local SEQ that has been acked by peer
@@ -253,17 +261,12 @@ class TcpSession:
         self.remote_seq_rcvd = packet.seq + len(packet.raw_data) + packet.flag_syn + packet.flag_fin
         # In case packet contains data enqueue it
         packet.raw_data and self.__enqueue_rx_buffer(packet.raw_data)
-        # If called for respond with ACK packet
-        send_ack and packet.raw_data and self.__send_packet(flag_ack=True)
         # Purge acked data from TX buffer
         with self.lock_tx_buffer:
             del self.tx_buffer[: self.tx_buffer_seq_ackd]
         self.tx_buffer_seq_mod += self.tx_buffer_seq_ackd
         # Enlage TX window
         self.tx_win = min(self.tx_win << 1, self.remote_win)
-        # Reset retransmit timer and counter
-        stack.stack_timer.register_timer(self.tcp_session_id + "data_retransmit_timer", DATA_RETRANSMIT_TIMEOUT)
-        self.data_retansmit_counter = 0
 
     def __tcp_fsm_closed(self, packet, syscall, timer):
         """ TCP FSM CLOSED state handler """
@@ -450,33 +453,12 @@ class TcpSession:
             self.socket.event_tcp_session_established.release()
             # Inform connect syscall that connection related event happened
             self.event_connect.release()
-            # Set initial retransmit timer and counter
-            stack.stack_timer.register_timer(self.tcp_session_id + "data_retransmit_timer", DATA_RETRANSMIT_TIMEOUT)
-            self.data_retransmit_counter = 0
             self.logger.debug(f"State {self.state} initialized")
 
         # Got timer event -> Send out data and run Delayed ACK mechanism
         if timer:
             self.__transmit_data()
             self.__delayed_ack()
-
-        # Got timer event / data_retransmit_timer expired / no ACK yet received -> Reset TX window and local SEQ number
-        if timer and stack.stack_timer.timer_expired(self.tcp_session_id + "data_retransmit_timer"):
-            if self.local_seq_ackd < self.local_seq_sent:
-                # In case retransmit counter expires, notify application, reset connection and change state to CLOSED
-                if self.data_retransmit_counter == DATA_RETRANSMIT_MAX_COUNT:
-                    self.event_rx_buffer.release()
-                    self.__send_packet(flag_rst=True, flag_ack=True, seq=self.local_seq_ackd)
-                    self.__change_state("CLOSED")
-                    return
-                self.tx_win = self.remote_mss
-                self.local_seq_sent = self.local_seq_ackd
-                self.logger.debug(
-                    f"{self.tcp_session_id} - data_retransmit_timer expired, retransmiting data segment {self.local_seq_sent}, reseting tx_win to {self.tx_win}"
-                )
-                self.data_retransmit_counter += 1
-                stack.stack_timer.register_timer(self.tcp_session_id + "data_retransmit_timer", DATA_RETRANSMIT_TIMEOUT * (1 << self.data_retransmit_counter))
-            return
 
         # Got ACK packet that (possibly) is retransmit request -> Reset TX window and local SEQ number
         if packet and all({packet.flag_ack}) and not any({packet.flag_syn, packet.flag_rst, packet.flag_fin}):
@@ -501,7 +483,9 @@ class TcpSession:
         if packet and all({packet.flag_fin, packet.flag_ack}) and not any({packet.flag_syn, packet.flag_rst}):
             # Packet sanity check
             if packet.seq == self.remote_seq_rcvd and self.local_seq_ackd <= packet.ack <= self.local_seq_sent_max:
-                self.__process_ack_packet(packet, send_ack=True)
+                self.__process_ack_packet(packet)
+                # Immidiately acknowledge the received data if any
+                packet.raw_data and self.__send_packet(flag_ack=True)
                 # Let application know that remote peer closed connection
                 self.event_rx_buffer.release()
                 # Change state to CLOSE_WAIT
@@ -536,7 +520,9 @@ class TcpSession:
         if packet and all({packet.flag_ack}) and not any({packet.flag_syn, packet.flag_rst, packet.flag_fin}):
             # Packet sanity check
             if packet.seq == self.remote_seq_rcvd and self.local_seq_ackd <= packet.ack <= self.local_seq_sent_max:
-                self.__process_ack_packet(packet, send_ack=True)
+                self.__process_ack_packet(packet)
+                # Immidiately acknowledge the received data if any
+                packet.raw_data and self.__send_packet(flag_ack=True)
                 # Check if packet acks our FIN
                 if packet.ack >= self.local_seq_fin:
                     # Change state to FIN_WAIT_2
@@ -580,7 +566,9 @@ class TcpSession:
         if packet and all({packet.flag_ack}) and not any({packet.flag_syn, packet.flag_rst, packet.flag_fin}):
             # Packet sanity check
             if packet.seq == self.remote_seq_rcvd and self.local_seq_ackd <= packet.ack <= self.local_seq_sent_max:
-                self.__process_ack_packet(packet, send_ack=True)
+                self.__process_ack_packet(packet)
+                # Immidiately acknowledge the received data if any
+                packet.raw_data and self.__send_packet(flag_ack=True)
                 return
 
         # Got FIN + ACK packet -> Send ACK packet / change state to TIME_WAIT
