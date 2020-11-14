@@ -463,7 +463,10 @@ class TcpSession:
         # Got timer event / data_retransmit_timer expired / no ACK yet received -> Reset TX window and local SEQ number
         if timer and stack.stack_timer.timer_expired(self.tcp_session_id + "data_retransmit_timer"):
             if self.local_seq_ackd < self.local_seq_sent:
+                # In case retransmit counter expires, notify application, reset connection and change state to CLOSED
                 if self.data_retransmit_counter == DATA_RETRANSMIT_MAX_COUNT:
+                    self.event_rx_buffer.release()
+                    self.__send_packet(flag_rst=True, flag_ack=True, seq=self.local_seq_ackd)
                     self.__change_state("CLOSED")
                     return
                 self.tx_win = self.remote_mss
@@ -645,7 +648,7 @@ class TcpSession:
                 self.__process_ack_packet(packet)
                 return
 
-       # Got RST + ACK packet -> Change state to CLOSED
+        # Got RST + ACK packet -> Change state to CLOSED
         if packet and all({packet.flag_rst, packet.flag_ack}) and not any({packet.flag_fin, packet.flag_syn}):
             # Packet sanity_check
             if packet.seq == self.remote_seq_rcvd and self.local_seq_ackd <= packet.ack <= self.local_seq_sent_max:

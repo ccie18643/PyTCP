@@ -46,9 +46,11 @@ class ServiceTcpDaytime:
                 message += f"[------{i + 1:05}------] "
             message += "[-------END-------]\n"
             daytime = bytes(message, "utf-8")
-            socket.send(daytime)
+            if not socket.send(daytime):
+                print(f"Service TCP Daytime: Connection to {socket.remote_ip_address}:{socket.remote_port} has failed or been closed remote peer")
+                break
             print(f"Service TCP Daytime: Sent daytime message to {socket.remote_ip_address}:{socket.remote_port} -", daytime)
             time.sleep(message_delay)
             message_count = min(message_count, message_count - 1)
         socket.close()
-        print(f"Service TCP Daytime: Closed connection from {socket.remote_ip_address}:{socket.remote_port}")
+        print(f"Service TCP Daytime: Closed connection to {socket.remote_ip_address}:{socket.remote_port}")
