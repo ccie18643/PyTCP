@@ -177,7 +177,7 @@ class TcpSession:
         if self.state in {"ESTABLISHED", "CLOSE_WAIT"}:
             with self.lock_tx_buffer:
                 self.tx_buffer.extend(list(raw_data))
-                return len(raw_data)
+                return len(raw_data) if self.state == "ESTABLISHED" else -1
 
     def receive(self, byte_count=None):
         """ Read bytes from RX buffer """
@@ -648,10 +648,10 @@ class TcpSession:
                 self.__process_ack_packet(packet)
                 return
 
-        # Got RST + ACK packet -> Change state to CLOSED
-        if packet and all({packet.flag_rst, packet.flag_ack}) and not any({packet.flag_fin, packet.flag_syn}):
+        # Got RST packet -> Change state to CLOSED
+        if packet and all({packet.flag_rst}) and not any({packet.flag_ack, packet.flag_fin, packet.flag_syn}):
             # Packet sanity_check
-            if packet.seq == self.remote_seq_rcvd and self.local_seq_ackd <= packet.ack <= self.local_seq_sent_max:
+            if packet.seq == self.remote_seq_rcvd:
                 # Change state to CLOSED
                 self.__change_state("CLOSED")
             return
