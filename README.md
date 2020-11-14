@@ -26,13 +26,14 @@ Python based attempt to create fully operational TCP/IP stack for educational pu
 
  - TCP protocol - *ongoing effort of improving code and bug fixing while simulating more advanced traffic scenarios*
  - TCP protocol - *implementing data packet retransmission in ESTABLISHED and CLOSE_WAIT states*
+ - TCP protocol - *proper handling on RST packets in various states, need to do research on this*
 
 #### Next steps:
  
  - TCP protocol - *FIN packet retransmission in FIN_WAIT_1, FIN_WAIT_2 and LAST_ACK states*
- - TCP protocol - *proper handling on RST packets in various states, need to do research on this*
  - TCP protocol - *need to rework the CLOSE syscall mechanism so FIN flag can be set on last data packet instead of being carried in separate one*
  - TCP protocol - *ACK packet retransmission in case we got FIN retransmission in TIME_WAIT state*
+ - TCP protocol - *implement proper response to packets containing old SEQ and/or ACK numbers*
  - IPv6 protocol - *basic support with address auto configuration*
  - ICMPv6 protocol - *basic support, features needed for stack operation*
  - ICMP protocol - *need to come up with some sort of "icmp socket" mechanism so ping client can bind to particular ICMP echo-reply stream*
