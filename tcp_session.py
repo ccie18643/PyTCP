@@ -381,11 +381,13 @@ class TcpSession:
                 return
 
         # Got RST packet -> Change state to CLOSED
-        if packet and all({packet.flag_rst}) and not any({packet.flag_fin, packet.flag_syn}):
-            # Change state to CLOSED
-            self.__change_state("CLOSED")
-            # Inform connect syscall that connection related event happened
-            self.event_connect.release()
+        if packet and all({packet.flag_rst, packet.flag_ack}) and not any({packet.flag_fin, packet.flag_syn}):
+            # Packet sanity_check
+            if packet.seq == 0 and packet.ack == self.local_seq_sent:
+                # Change state to CLOSED
+                self.__change_state("CLOSED")
+                # Inform connect syscall that connection related event happened
+                self.event_connect.release()
             return
 
         # Got CLOSE syscall -> Change state to CLOSE
