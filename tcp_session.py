@@ -257,6 +257,9 @@ class TcpSession:
 
         # Make note of the local SEQ that has been acked by peer
         self.local_seq_ackd = max(self.local_seq_ackd, packet.ack)
+        # Adjust local SEQ accordingly to what peer acked (needed after the retransmit happens and peer is jumping to previously received SEQ)
+        if self.local_seq_sent < self.local_seq_ackd <= self.local_seq_sent_max:
+            self.local_seq_sent = self.local_seq_ackd
         # Make note of the remote SEQ number
         self.remote_seq_rcvd = packet.seq + len(packet.raw_data) + packet.flag_syn + packet.flag_fin
         # In case packet contains data enqueue it
