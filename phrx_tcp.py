@@ -62,7 +62,7 @@ def phrx_tcp(self, ip_packet_rx, tcp_packet_rx):
         tcp_sport=tcp_packet_rx.tcp_dport,
         tcp_dport=tcp_packet_rx.tcp_sport,
         tcp_seq=0,
-        tcp_ack=tcp_packet_rx.tcp_seq + 1,
+        tcp_ack=tcp_packet_rx.tcp_seq + tcp_packet_rx.tcp_flag_syn + tcp_packet_rx.tcp_flag_fin + len(tcp_packet_rx.raw_data),
         tcp_flag_rst=True,
         tcp_flag_ack=True,
         echo_tracker=tcp_packet_rx.tracker,

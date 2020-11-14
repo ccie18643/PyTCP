@@ -481,14 +481,14 @@ class TcpSession:
         # Got ACK packet -> Process data
         if packet and all({packet.flag_ack}) and not any({packet.flag_syn, packet.flag_rst, packet.flag_fin}):
             # Packet sanity check
-            if packet.seq == self.remote_seq_rcvd and packet.ack <= self.local_seq_sent_max:
+            if packet.seq == self.remote_seq_rcvd and self.local_seq_ackd <= packet.ack <= self.local_seq_sent_max:
                 self.__process_ack_packet(packet)
                 return
 
         # Got FIN + ACK packet -> Send ACK packet (let delayed ACK mechanism do it) / change state to CLOSE_WAIT / notifiy app that peer closed connection
         if packet and all({packet.flag_fin, packet.flag_ack}) and not any({packet.flag_syn, packet.flag_rst}):
             # Packet sanity check
-            if packet.seq == self.remote_seq_rcvd and packet.ack <= self.local_seq_sent:
+            if packet.seq == self.remote_seq_rcvd and self.local_seq_ackd <= packet.ack <= self.local_seq_sent_max:
                 self.__process_ack_packet(packet, send_ack=True)
                 # Let application know that remote peer closed connection
                 self.event_rx_buffer.release()
@@ -513,7 +513,7 @@ class TcpSession:
         # Got ACK (acking our FIN) packet -> Change state to FIN_WAIT_2
         if packet and all({packet.flag_ack}) and not any({packet.flag_syn, packet.flag_rst, packet.flag_fin}):
             # Packet sanity check
-            if packet.seq == self.remote_seq_rcvd and packet.ack <= self.local_seq_sent:
+            if packet.seq == self.remote_seq_rcvd and self.local_seq_ackd <= packet.ack <= self.local_seq_sent_max:
                 self.__process_ack_packet(packet, send_ack=True)
                 # Check if packet acks our FIN
                 if packet.ack >= self.local_seq_fin:
@@ -524,7 +524,7 @@ class TcpSession:
         # Got FIN + ACK packet -> Send ACK packet / change state to TIME_WAIT or CLOSING
         if packet and all({packet.flag_fin, packet.flag_ack}) and not any({packet.flag_syn, packet.flag_rst}):
             # Packet sanity check
-            if packet.seq == self.remote_seq_rcvd and packet.ack <= self.local_seq_sent:
+            if packet.seq == self.remote_seq_rcvd and self.local_seq_ackd <= packet.ack <= self.local_seq_sent_max:
                 self.__process_ack_packet(packet)
                 # Send out final ACK packet
                 self.__send_packet(flag_ack=True)
@@ -549,14 +549,14 @@ class TcpSession:
         # Got ACK packet -> Process data
         if packet and all({packet.flag_ack}) and not any({packet.flag_syn, packet.flag_rst, packet.flag_fin}):
             # Packet sanity check
-            if packet.seq == self.remote_seq_rcvd and packet.ack <= self.local_seq_sent:
+            if packet.seq == self.remote_seq_rcvd and self.local_seq_ackd <= packet.ack <= self.local_seq_sent_max:
                 self.__process_ack_packet(packet, send_ack=True)
                 return
 
         # Got FIN + ACK packet -> Send ACK packet / change state to TIME_WAIT
         if packet and all({packet.flag_fin, packet.flag_ack}) and not any({packet.flag_syn, packet.flag_rst}):
             # Packet sanity check
-            if packet.seq == self.remote_seq_rcvd and packet.ack <= self.local_seq_sent:
+            if packet.seq == self.remote_seq_rcvd and self.local_seq_ackd <= packet.ack <= self.local_seq_sent_max:
                 self.__process_ack_packet(packet)
                 # Send out final ACK packet
                 self.__send_packet(flag_ack=True)
@@ -576,7 +576,7 @@ class TcpSession:
         # Got ACK packet -> Change state to TIME_WAIT
         if packet and all({packet.flag_ack}) and not any({packet.flag_fin, packet.flag_syn, packet.flag_rst}):
             # Packet sanity check
-            if packet.ack == self.local_seq_sent and packet.ack <= self.local_seq_sent:
+            if packet.ack == self.local_seq_sent and self.local_seq_ackd <= packet.ack <= self.local_seq_sent_max:
                 self.local_seq_ackd = packet.ack
                 self.__change_state("TIME_WAIT")
                 return
@@ -598,7 +598,7 @@ class TcpSession:
         # Got ACK packet -> Process it to update local_seq_sent number
         if packet and all({packet.flag_ack}) and not any({packet.flag_syn, packet.flag_rst, packet.flag_fin}):
             # Packet sanity check
-            if packet.seq == self.remote_seq_rcvd and packet.ack <= self.local_seq_sent and not packet.raw_data:
+            if packet.seq == self.remote_seq_rcvd and self.local_seq_ackd <= packet.ack <= self.local_seq_sent_max and not packet.raw_data:
                 self.__process_ack_packet(packet)
                 return
 
@@ -626,7 +626,7 @@ class TcpSession:
         # Got ACK packet -> Change state to CLOSED
         if packet and all({packet.flag_ack}) and not any({packet.flag_syn, packet.flag_fin, packet.flag_rst}):
             # Packet sanity check
-            if packet.ack == self.local_seq_sent and packet.ack <= self.local_seq_sent:
+            if packet.ack == self.local_seq_sent and self.local_seq_ackd <= packet.ack <= self.local_seq_sent_max:
                 self.__change_state("CLOSED")
             return
 
