@@ -12,6 +12,9 @@ import stack
 from tcp_packet import TcpPacket
 
 
+PACKET_LOSS = False
+
+
 def phrx_tcp(self, ip_packet_rx, tcp_packet_rx):
     """ Handle inbound TCP packets """
 
@@ -39,6 +42,13 @@ def phrx_tcp(self, ip_packet_rx, tcp_packet_rx):
         raw_data=tcp_packet_rx.raw_data,
         tracker=tcp_packet_rx.tracker,
     )
+
+    # Check if packet should be dropped due to random packet loss enabled (for TCP retansmission testing)
+    if PACKET_LOSS:
+        from random import randint
+        if randint(0, 9) == 7:
+            self.logger.critical("SIMULATED LOST RX DATA PACKET")
+            return
 
     # Check if incoming packet matches active TCP session
     if tcp_session := stack.tcp_sessions.get(packet.tcp_session_id, None):
