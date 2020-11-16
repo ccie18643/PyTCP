@@ -111,6 +111,7 @@ class PacketHandler:
                 self.stack_ip_unicast.append(ip_address[0])
 
         for ip_unicast in self.stack_ip_unicast:
+            self.__send_arp_announcement(ip_unicast)
             self.logger.debug(f"Succesfully claimed IP address {ip_unicast}")
 
         # Create list of all broadcast addresses stack should listen on
