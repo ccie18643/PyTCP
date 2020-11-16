@@ -104,7 +104,12 @@ Python based attempt to create fully functional TCP/IP stack for educational pur
 
 
 #### ARP resolution and handling ping packets
-![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/main/pictures/log_01.png)
+ - host 192.168.9.20 tries to ping the stack, to be able to do it it first sends ARP Request packet to find out stack's MAC address
+ - stack responds by sending ARP Reply packet (stack doesn't need to send out its own request since it already made note of the host's MAC from host's request)
+ - hosts sends ping packets, stack responds to them
+
+![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/main/pictures/arp_ping_01.png)
+![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/main/pictures/arp_ping_02.png)
 
 
 #### IP fragmentation
