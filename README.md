@@ -41,6 +41,18 @@ Python based attempt to create fully functional TCP/IP stack for educational pur
 
 ### Examples:
 
+#### TCP Fast Retransmit in action after lost TX packet
+
+ - outgoing packet is 'lost' as result of simulated packet loss mechanism
+ - peer notices the inconsistence in packet SEQ numbers and sends out 'fast retransmit request'
+ - stack eceives the request and retransmits lost packet
+
+![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/main/pictures/tcp_tx_fst_ret_01.png)
+![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/main/pictures/tcp_tx_fst_ret_02.png)
+![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/main/pictures/tcp_tx_fst_ret_03.png)
+![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/main/pictures/tcp_tx_fst_ret_04.png)
+
+
 #### Out of order queue in action during RX packet loss event
 
  - incoming packet is 'lost' as reult of simulated packet loss mechanism
