@@ -46,7 +46,8 @@ def phrx_tcp(self, ip_packet_rx, tcp_packet_rx):
     # Check if packet should be dropped due to random packet loss enabled (for TCP retansmission testing)
     if PACKET_LOSS:
         from random import randint
-        if randint(0, 9) == 7:
+
+        if randint(0, 99) == 7:
             self.logger.critical("SIMULATED LOST RX DATA PACKET")
             return
 

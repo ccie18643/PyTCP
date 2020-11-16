@@ -72,8 +72,9 @@ def phtx_tcp(
     # Check if packet should be dropped due to random packet loss enabled (for TCP retansmission testing)
     if PACKET_LOSS:
         from random import randint
+
         if randint(0, 9) == 7:
-            self.logger.critical("SIMULATED LOST TX DATA PACKET")
+            self.logger.critical("SIMULATED LOSS TX DATA PACKET")
             return
 
     self.phtx_ip(ip_src=ip_src, ip_dst=ip_dst, child_packet=tcp_packet_tx)
