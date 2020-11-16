@@ -126,7 +126,7 @@ Receiving and sending packets using simple socket mechanism
 
 #### Interesting performance increase after switching from Asyncio to threads... on average 100 to 250 times faster packet handling time
 
-Still love Asyncio but for this particular purpose it just doesn't cut it :) Seem all that huge delay happened in between packet being enqueued by RX ring into asyncio.Queue() and main packet handler being able to dequeue it for further procesing. This delay usually varied from 100ms up to 1000ms avraging at around 400ms in most cases.
+Still love Asyncio but for this particular purpose it just doesn't cut it :) Seem all that huge delay happened in between packet being enqueued by RX ring into asyncio.Queue() and main packet handler being able to dequeue it for further procesing. This delay usually varied from 100ms up to 1000ms averaging at around 400ms in most cases.
 
 Running Asyncio
 
