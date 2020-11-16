@@ -41,6 +41,13 @@ Python based attempt to create fully functional TCP/IP stack for educational pur
 
 ### Examples:
 
+#### Out of Order queue in actcion during RX packet loss event
+
+![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/main/pictures/tcp_ooo_ret_01.png)
+![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/main/pictures/tcp_ooo_ret_02.png)
+![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/main/pictures/tcp_ooo_ret_03.png)
+
+
 #### TCP Finite State Machine - stack is running TCP Echo service
  - peer opens connection
  - peer sends data
