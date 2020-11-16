@@ -16,7 +16,7 @@ import stack
 
 
 PACKET_RETRANSMIT_TIMEOUT = 1000  # Retransmit data if ACK not received
-PACKET_RETRANSMIT_MAX_COUNT = 5  # If data is not acked, retransit it 5 times
+PACKET_RETRANSMIT_MAX_COUNT = 3  # If data is not acked, retransit it 5 times
 DELAYED_ACK_DELAY = 200  # 200ms between consecutive delayed ACK outbound packets
 TIME_WAIT_DELAY = 30000  # 30s delay for the TIME_WAIT state, default is 30-120s
 
@@ -268,23 +268,26 @@ class TcpSession:
             self.__transmit_packet(flag_syn=True, flag_ack=True)
             return
 
-        unsent_data_len = len(self.tx_buffer) - self.tx_buffer_seq_sent
-        unused_tx_win_len = self.tx_buffer_seq_ackd + self.tx_win - self.tx_buffer_seq_sent
-        data_tx_len = min(self.remote_mss, unused_tx_win_len, unsent_data_len)
-        if unsent_data_len:
-            self.logger.opt(ansi=True).debug(
-                f"{self.tcp_session_id} - Sliding window <yellow>[{self.local_seq_ackd}|{self.local_seq_sent}|{self.local_seq_ackd + self.tx_win}]</>"
-            )
-            self.logger.opt(ansi=True).debug(
-                f"{self.tcp_session_id} - {unused_tx_win_len} left in window, {unsent_data_len} left in buffer, {data_tx_len} to be sent"
-            )
-            if data_tx_len:
-                with self.lock_tx_buffer:
-                    data_tx = self.tx_buffer[self.tx_buffer_seq_sent : self.tx_buffer_seq_sent + data_tx_len]
-                self.logger.debug(f"{self.tcp_session_id} - Transmitting data segment: seq {self.local_seq_sent} len {len(data_tx)}")
-                self.__transmit_packet(flag_ack=True, raw_data=bytes(data_tx))
-            return
+        # Make sure we in the state that allows sending data out
+        if self.state in {"ESTABLISHED", "CLOSE_WAIT"}:
+            unsent_data_len = len(self.tx_buffer) - self.tx_buffer_seq_sent
+            unused_tx_win_len = self.tx_buffer_seq_ackd + self.tx_win - self.tx_buffer_seq_sent
+            data_tx_len = min(self.remote_mss, unused_tx_win_len, unsent_data_len)
+            if unsent_data_len:
+                self.logger.opt(ansi=True).debug(
+                    f"{self.tcp_session_id} - Sliding window <yellow>[{self.local_seq_ackd}|{self.local_seq_sent}|{self.local_seq_ackd + self.tx_win}]</>"
+                )
+                self.logger.opt(ansi=True).debug(
+                    f"{self.tcp_session_id} - {unused_tx_win_len} left in window, {unsent_data_len} left in buffer, {data_tx_len} to be sent"
+                )
+                if data_tx_len:
+                    with self.lock_tx_buffer:
+                        data_tx = self.tx_buffer[self.tx_buffer_seq_sent : self.tx_buffer_seq_sent + data_tx_len]
+                    self.logger.debug(f"{self.tcp_session_id} - Transmitting data segment: seq {self.local_seq_sent} len {len(data_tx)}")
+                    self.__transmit_packet(flag_ack=True, raw_data=bytes(data_tx))
+                return
 
+        # Check if we need to (re)transmit final FIN packet
         if self.state in {"FIN_WAIT_1", "LAST_ACK"} and self.local_seq_sent != self.local_seq_fin:
             self.logger.debug(f"{self.tcp_session_id} - Transmitting final FIN packet: seq {self.local_seq_sent}")
             self.__transmit_packet(flag_fin=True, flag_ack=True)
