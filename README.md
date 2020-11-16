@@ -41,7 +41,13 @@ Python based attempt to create fully functional TCP/IP stack for educational pur
 
 ### Examples:
 
-#### Out of Order queue in actcion during RX packet loss event
+#### Out of order queue in action during RX packet loss event
+
+ - incoming packet is 'lost'
+ - stack notices that there is an inconsistence in inbound packet's SEQ number and sends out 'fast retransmit' rquest
+ - before peer receives the request it already sends multiple packets with higher SEQ than what stack is expecting, stack queues all those packets
+ - peer retransmits lost packet (that actually happens as result of timeout not the stack's request in this case)
+ - stack receives lost packet, pulls all the packets stored in ooo queue so far and acknowledges latest of them
 
 ![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/main/pictures/tcp_ooo_ret_01.png)
 ![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/main/pictures/tcp_ooo_ret_02.png)
