@@ -65,7 +65,7 @@ Python based attempt to create fully functional TCP/IP stack for educational pur
 ![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/main/pictures/tcp_ooo_ret_03.png)
 ![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/main/pictures/tcp_ooo_ret_04.png)
 ![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/main/pictures/tcp_ooo_ret_05.png)
-![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/main/pictures/tcp_ooo_ret_05.png)
+![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/main/pictures/tcp_ooo_ret_06.png)
 
 
 #### TCP Finite State Machine - stack is running TCP Echo service
