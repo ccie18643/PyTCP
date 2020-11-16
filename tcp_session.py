@@ -412,7 +412,7 @@ class TcpSession:
                 stack.tcp_sessions[tcp_session.tcp_session_id] = tcp_session
                 # Initialize session parameters
                 self.remote_mss = min(packet.mss, stack.mtu - 40)
-                self.remote_win = packet.win if USE_REMOTE_WIN else self.remote_mss
+                self.remote_win = packet.win
                 self.remote_seq_init = packet.seq
                 self.tx_win = self.remote_mss
                 # Make note of the remote SEQ number
@@ -447,7 +447,7 @@ class TcpSession:
                 self.__process_ack_packet(packet)
                 # Initialize session parameters
                 self.remote_mss = min(packet.mss, stack.mtu - 40)
-                self.remote_win = packet.win if USE_REMOTE_WIN else self.remote_mss
+                self.remote_win = packet.win
                 self.remote_seq_init = packet.seq
                 self.tx_win = self.remote_mss
                 # Send initial ACK packet
