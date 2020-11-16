@@ -10,7 +10,6 @@ tcp_session.py - module contains class supporting TCP finite state machine
 import loguru
 import threading
 import random
-import time
 
 import stack
 
@@ -738,12 +737,24 @@ class TcpSession:
                 self.__change_state("LAST_ACK")
             return
 
-        # Got ACK packet -> Process it to update local_seq_sent number
+        # Got ACK packet
         if packet and all({packet.flag_ack}) and not any({packet.flag_syn, packet.flag_rst, packet.flag_fin}):
-            # Packet sanity check
+            # Suspected retransmit request -> Reset TX window and local SEQ number
+            if packet.seq == self.remote_seq_rcvd and packet.ack == self.local_seq_ackd and not packet.raw_data:
+                self.__retransmit_packet_request(packet)
+                return
+            # Packet with higher SEQ than what we are expecting -> Store it and send 'fast retransmit' request
+            if packet.seq > self.remote_seq_rcvd and self.local_seq_ackd <= packet.ack <= self.local_seq_sent_max:
+                self.ooo_packet_queue[packet.seq] = packet
+                self.rx_retransmit_request_counter[self.remote_seq_rcvd] = self.rx_retransmit_request_counter.get(self.remote_seq_rcvd, 0) + 1
+                if self.rx_retransmit_request_counter[self.remote_seq_rcvd] <= 2:
+                    self.__transmit_packet(flag_ack=True)
+                return
+            # Regular data/ACK packet -> Process data
             if packet.seq == self.remote_seq_rcvd and self.local_seq_ackd <= packet.ack <= self.local_seq_sent_max and not packet.raw_data:
                 self.__process_ack_packet(packet)
                 return
+            return
 
         # Got RST packet -> Change state to CLOSED
         if packet and all({packet.flag_rst}) and not any({packet.flag_ack, packet.flag_fin, packet.flag_syn}):
