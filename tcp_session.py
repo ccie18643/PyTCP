@@ -399,9 +399,7 @@ class TcpSession:
                 self.tx_win = self.remote_mss
                 # Make note of the remote SEQ number
                 self.remote_seq_rcvd = packet.seq + packet.flag_syn
-                # Send SYN + ACK packet / change state to SYN_RCVD
-                self.__transmit_packet(flag_syn=True, flag_ack=True)
-                self.logger.debug(f"{self.tcp_session_id} - Sent initial SYN ({self.local_seq_sent}) + ACK ({self.remote_seq_ackd}) packet")
+                # Send SYN + ACK packet (this actually will be done in SYN_SENT state) / change state to SYN_RCVD
                 self.__change_state("SYN_RCVD")
                 return
 
