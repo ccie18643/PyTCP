@@ -1,11 +1,10 @@
 # PyTCP
 
-Python based attempt to create fully operational TCP/IP stack for educational purposes. Stack operates as user space program attached to Linux TAP interface. Since goal of this project is purely educational (at least at this point) the clarity of code is preferred over its efficiency, eg. using lists as buffers for data carried by TCP. For the same reason security features are not being implemented unless they help to illustrate specific 'real word' solutions, eg. choosing random SEQ number for TCP connection. Also features that cannot be reliably tested at this moment are not getting implemented, eg. FIN packet retransmission for LAST_ACK and FIN_WAIT_1 states. Those will be added later once i have lab environment setup to let me generate certain network conditions like delay or packet loss.
-
+Python based attempt to create fully functional TCP/IP stack for educational purposes. Stack operates as user space program attached to Linux TAP interface. Since goal of this project is purely educational (at least at this point) the clarity of code is preferred over its efficiency, eg. using lists as buffers for data carried by TCP. For the same reason security features are not being implemented unless they are integral part of TCP/IP suite protocols specification. Also certain features that cannot be reliably tested at this time are skipped for now. Those will be added later once i have lab environment setup that lets me generate specific network conditions like delay or packet loss.
 
 #### Already implemented:
 
- - Ethernet protocol - *full suppot of Ethernet II standard*
+ - Ethernet protocol - *full support of Ethernet II standard*
  - ARP protocol - *replies, queries, ARP cache*
  - ARP protocol - *ARP Probe/Announcement IP conflict detection (ACD) mechanism*
  - IP protocol - *inbound and outbound IP fragmentation*
@@ -17,23 +16,24 @@ Python based attempt to create fully operational TCP/IP stack for educational pu
  - UDP sockets - *full support, stack's 'end user' API similar to Berkley sockets*
  - UDP services - *UDP Echo, Discard, Daytime implemented for testing purposes*
  - UDP clients - *DHCP service for automatic IPv4 address configuration - basic implementation, need to add timeouts and error handling*
- - TCP protocol - *full implementation of TCP Finite State Machine, at this point stack is able to communicate with other hosts over TCP protocol*
+ - TCP protocol - *full implementation of TCP Finite State Machine, at this point stack is able to exchange bulk data with other hosts over TCP protocol*
  - TCP protocol - *TCP option support for: MSS, WSCALE, SACKPERM, TIMESTAMP*
- - TCP protocol - *TCP sliding window mechanism implemented*
+ - TCP protocol - *TCP sliding window mechanism with and data retransmission (fast retransmit and time based scenarios)*
+ - TCP protocol - *TCP backoff mechanism / basic congestion control*
+ - TCP protocol - *TCP SYN/FIN packet retransmission*
  - TCP sockets - *full support, stack's 'end user' API similar to Berkley sockets*
 
 #### Work in progress:
 
  - TCP protocol - *ongoing effort of improving code and bug fixing while simulating more advanced traffic scenarios*
- - TCP protocol - *implementing data packet retransmission in ESTABLISHED and CLOSE_WAIT states*
  - TCP protocol - *proper handling on RST packets in various states, need to do research on this*
 
 #### Next steps:
  
- - TCP protocol - *FIN packet retransmission in FIN_WAIT_1, FIN_WAIT_2 and LAST_ACK states*
  - TCP protocol - *need to rework the CLOSE syscall mechanism so FIN flag can be set on last data packet instead of being carried in separate one*
  - TCP protocol - *ACK packet retransmission in case we got FIN retransmission in TIME_WAIT state*
  - TCP protocol - *implement proper response to packets containing old SEQ and/or ACK numbers*
+ - TCP protocol - *ensure that event communication from TCP session to socket works properly (eg. connection reset by peer)*
  - IPv6 protocol - *basic support with address auto configuration*
  - ICMPv6 protocol - *basic support, features needed for stack operation*
  - ICMP protocol - *need to come up with some sort of "icmp socket" mechanism so ping client can bind to particular ICMP echo-reply stream*
