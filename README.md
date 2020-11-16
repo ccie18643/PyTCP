@@ -42,7 +42,6 @@ Python based attempt to create fully functional TCP/IP stack for educational pur
 ### Examples:
 
 #### TCP Fast Retransmit in action after lost TX packet
-
  - outgoing packet is 'lost' as result of simulated packet loss mechanism
  - peer notices the inconsistence in packet SEQ numbers and sends out 'fast retransmit request'
  - stack eceives the request and retransmits lost packet
@@ -54,7 +53,6 @@ Python based attempt to create fully functional TCP/IP stack for educational pur
 
 
 #### Out of order queue in action during RX packet loss event
-
  - incoming packet is 'lost' as reult of simulated packet loss mechanism
  - stack notices that there is an inconsistence in inbound packet's SEQ number and sends out 'fast retransmit' request
  - before peer receives the request it already sends multiple packets with higher SEQ than what stack is expecting, stack queues all those packets
@@ -95,11 +93,14 @@ Python based attempt to create fully functional TCP/IP stack for educational pur
 
 
 #### ARP Probe/Announcement mechanism
-Testing for any possible conflicts for every IP address assigned to stack
+ - stack is using ARP Probes to find any possible conflicts for every IP address that has been configured
+ - one of IP addresses (192.168.9.102) is already taken so stack gets notified about it and skips it
+ - rest of IP addesses are free so stack claims them by sending ARP Announcement for each of them
 
-![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/main/pictures/log_06.png)
-![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/main/pictures/log_07.png)
-![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/main/pictures/log_08.png)
+![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/main/pictures/ip_arp_probe_01.png)
+![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/main/pictures/ip_arp_probe_02.png)
+![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/main/pictures/ip_arp_probe_03.png)
+![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/main/pictures/ip_arp_probe_04.png)
 
 
 #### ARP resolution and handling ping packets
