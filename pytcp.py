@@ -83,12 +83,12 @@ def main():
     stack.packet_handler = PacketHandler(STACK_MAC_ADDRESS, STACK_IP_ADDRESS)
 
     ServiceUdpEcho()
-    # ServiceUdpDiscard()
-    # ServiceUdpDaytime()
+    ServiceUdpDiscard()
+    ServiceUdpDaytime()
 
-    # ServiceTcpEcho()
-    # ServiceTcpDiscard()
-    # ServiceTcpDaytime(message_count=1, message_delay=1, message_size=1000)
+    ServiceTcpEcho()
+    ServiceTcpDiscard()
+    ServiceTcpDaytime(message_count=1, message_delay=1, message_size=1000)
 
     # ClientUdpDhcp(STACK_MAC_ADDRESS)
     # ClientTcpEcho(local_ip_address="192.168.9.7", remote_ip_address="192.168.9.102", remote_port=7, message_count=10)
