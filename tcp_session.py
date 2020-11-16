@@ -17,7 +17,7 @@ import stack
 
 PACKET_RETRANSMIT_TIMEOUT = 1000  # Retransmit data if ACK not received
 PACKET_RETRANSMIT_MAX_COUNT = 3  # If data is not acked, retransit it 5 times
-DELAYED_ACK_DELAY = 200  # 200ms between consecutive delayed ACK outbound packets
+DELAYED_ACK_DELAY = 100  # Delay between consecutive delayed ACK outbound packets
 TIME_WAIT_DELAY = 30000  # 30s delay for the TIME_WAIT state, default is 30-120s
 
 
@@ -83,8 +83,9 @@ class TcpSession:
         self.local_seq_ackd = self.local_seq_init  # Highest SEQ number that peer acked
         self.local_seq_fin = None  # SEQ of FIN packet we sent, used to track peer's ACK for it and for FIN retransmit
 
-        self.retransmit_request_counter = {}  # Used to keep track of DUP packets sent from pee to determine if any of them is a retransmit request
-        self.retransmit_timeout_counter = {}  # Keeps track of the timestamps for the sent out packets, used to determine when to retransmit packet
+        self.tx_retransmit_request_counter = {}  # Keeps track of DUP packets sent from peer to determine if any of them is a retransmit request
+        self.tx_retransmit_timeout_counter = {}  # Keeps track of the timestamps for the sent out packets, used to determine when to retransmit packet
+        self.rx_retransmit_request_counter = {}  # Keeps track of us sending 'fast retransmit request' packets so we can limit their count to 2
 
         self.tx_buffer_seq_mod = self.local_seq_init  # Used to help translate local_seq_send and local_seq_ackd numbers to TX buffer pointers
 
@@ -100,11 +101,13 @@ class TcpSession:
         self.event_connect = threading.Semaphore(0)  # Used to inform CONNECT syscall that connection related event happened
         self.event_rx_buffer = threading.Semaphore(0)  # USed to inform RECV syscall that there is new data in buffer ready to be picked up
 
-        self.lock_fsm = threading.Lock()  # Used to ensure that only single event can run FSM at given time
+        self.lock_fsm = threading.RLock()  # Used to ensure that only single event can run FSM at given time
         self.lock_rx_buffer = threading.Lock()  # Used to ensure only single event has access to RX buffer at given time
         self.lock_tx_buffer = threading.Lock()  # Used to ensure only single event has access to TX buffer at given time
 
         self.closing = False  # Indicates that CLOSE syscall is in progress, this lets to finish sending data before FIN packet is transmitted
+
+        self.ooo_packet_queue = {}  # Out of order packet buffer
 
         # Start session in CLOSED state
         self.__change_state("CLOSED")
@@ -232,9 +235,9 @@ class TcpSession:
 
         # If packet contains data then Initialize / adjust packet's retransmit counter and timer
         if raw_data or flag_syn or flag_fin:
-            self.retransmit_timeout_counter[seq] = self.retransmit_timeout_counter.get(seq, -1) + 1
+            self.tx_retransmit_timeout_counter[seq] = self.tx_retransmit_timeout_counter.get(seq, -1) + 1
             stack.stack_timer.register_timer(
-                self.tcp_session_id + "-retransmit_seq-" + str(seq), PACKET_RETRANSMIT_TIMEOUT * (1 << self.retransmit_timeout_counter[seq])
+                self.tcp_session_id + "-retransmit_seq-" + str(seq), PACKET_RETRANSMIT_TIMEOUT * (1 << self.tx_retransmit_timeout_counter[seq])
             )
 
         self.logger.debug(
@@ -305,10 +308,10 @@ class TcpSession:
     def __retransmit_packet_timeout(self):
         """ Retransmit packet after expired timeout """
 
-        if self.local_seq_ackd in self.retransmit_timeout_counter and stack.stack_timer.timer_expired(
+        if self.local_seq_ackd in self.tx_retransmit_timeout_counter and stack.stack_timer.timer_expired(
             self.tcp_session_id + "-retransmit_seq-" + str(self.local_seq_ackd)
         ):
-            if self.retransmit_timeout_counter[self.local_seq_ackd] == PACKET_RETRANSMIT_MAX_COUNT:
+            if self.tx_retransmit_timeout_counter[self.local_seq_ackd] == PACKET_RETRANSMIT_MAX_COUNT:
                 # Send RST packet if we received any packet from peer already
                 if self.remote_seq_rcvd is not None:
                     self.__transmit_packet(flag_rst=True, flag_ack=True, seq=self.local_seq_ackd)
@@ -335,8 +338,8 @@ class TcpSession:
     def __retransmit_packet_request(self, packet):
         """ Retransmit packet after rceiving request from peer """
 
-        self.retransmit_request_counter[packet.ack] = self.retransmit_request_counter.get(packet.ack, 0) + 1
-        if self.retransmit_request_counter[packet.ack] > 1:
+        self.tx_retransmit_request_counter[packet.ack] = self.tx_retransmit_request_counter.get(packet.ack, 0) + 1
+        if self.tx_retransmit_request_counter[packet.ack] > 1:
             self.local_seq_sent = self.local_seq_ackd
             self.logger.debug(f"{self.tcp_session_id} - Got retransmit request, sending segment {self.local_seq_sent}, keeping tx_win at {self.tx_win}")
 
@@ -351,21 +354,36 @@ class TcpSession:
         # Make note of the remote SEQ number
         self.remote_seq_rcvd = packet.seq + len(packet.raw_data) + packet.flag_syn + packet.flag_fin
         # In case packet contains data enqueue it
-        packet.raw_data and self.__enqueue_rx_buffer(packet.raw_data)
+        if packet.raw_data:
+            self.__enqueue_rx_buffer(packet.raw_data)
+            self.logger.debug(f"{self.tcp_session_id} - Enqueued {len(packet.raw_data)} bytes starting at {packet.seq}")
         # Purge acked data from TX buffer
         with self.lock_tx_buffer:
             del self.tx_buffer[: self.tx_buffer_seq_ackd]
         self.tx_buffer_seq_mod += self.tx_buffer_seq_ackd
+        self.logger.debug(f"{self.tcp_session_id} - Purged TX buffer up to SEQ {self.local_seq_ackd}")
         # Enlage TX window
         self.tx_win = min(self.tx_win << 1, self.remote_win)
-        # Purge expired retransmit requests
-        for seq in list(self.retransmit_request_counter):
+        self.logger.debug(f"{self.tcp_session_id} - Set TX window to {self.tx_win}")
+        # Purge expired tx packet retransmit requests
+        for seq in list(self.tx_retransmit_request_counter):
             if seq < packet.ack:
-                self.retransmit_request_counter.pop(seq)
-        # Purge expired packet retransmit timeouts
-        for seq in list(self.retransmit_timeout_counter):
+                self.tx_retransmit_request_counter.pop(seq)
+                self.logger.debug(f"{self.tcp_session_id} - Purged expired TX packet retransmit request counter for {seq}")
+        # Purge expired tx packet retransmit timeouts
+        for seq in list(self.tx_retransmit_timeout_counter):
             if seq < packet.ack:
-                self.retransmit_timeout_counter.pop(seq)
+                self.tx_retransmit_timeout_counter.pop(seq)
+                self.logger.debug(f"{self.tcp_session_id} - Purged expired TX packet retransmit timeout for {seq}")
+        # Purge expired rx retransmit requests
+        for seq in list(self.rx_retransmit_request_counter):
+            if seq < self.remote_seq_rcvd:
+                self.rx_retransmit_request_counter.pop(seq)
+                self.logger.debug(f"{self.tcp_session_id} - Purged expired RX packet retransmit request counter for {seq}")
+        # Bring next packet from ooo_packet_queue if available
+        if packet := self.ooo_packet_queue.pop(self.remote_seq_rcvd, None):
+            self.logger.opt(ansi=True).debug(f"{self.tcp_session_id} - <green>Retrieving packet {self.remote_seq_rcvd} from Out of Order queue</>")
+            self.tcp_fsm(packet)
 
     def __tcp_fsm_closed(self, packet, syscall, timer):
         """ TCP FSM CLOSED state handler """
@@ -543,18 +561,23 @@ class TcpSession:
                 self.__change_state("FIN_WAIT_1")
             return
 
-        # Got ACK packet that (possibly) is retransmit request -> Reset TX window and local SEQ number
+        # Got ACK packet
         if packet and all({packet.flag_ack}) and not any({packet.flag_syn, packet.flag_rst, packet.flag_fin}):
-            # Packet sanity check
+            # Suspected retransmit request -> Reset TX window and local SEQ number
             if packet.seq == self.remote_seq_rcvd and packet.ack == self.local_seq_ackd and not packet.raw_data:
                 self.__retransmit_packet_request(packet)
                 return
-
-        # Got ACK packet -> Process data
-        if packet and all({packet.flag_ack}) and not any({packet.flag_syn, packet.flag_rst, packet.flag_fin}):
-            # Packet sanity check
+            # Packet with higher SEQ than what we are expecting -> Store it and send 'fast retransmit' request
+            if packet.seq > self.remote_seq_rcvd and self.local_seq_ackd <= packet.ack <= self.local_seq_sent_max:
+                self.ooo_packet_queue[packet.seq] = packet
+                self.rx_retransmit_request_counter[self.remote_seq_rcvd] = self.rx_retransmit_request_counter.get(self.remote_seq_rcvd, 0) + 1
+                if self.rx_retransmit_request_counter[self.remote_seq_rcvd] <= 2:
+                    self.__transmit_packet(flag_ack=True)
+                return
+            # Regular data/ACK packet -> Process data
             if packet.seq == self.remote_seq_rcvd and self.local_seq_ackd <= packet.ack <= self.local_seq_sent_max:
                 self.__process_ack_packet(packet)
+                return
             return
 
         # Got FIN + ACK packet -> Send ACK packet (let delayed ACK mechanism do it) / change state to CLOSE_WAIT / notifiy app that peer closed connection
