@@ -113,15 +113,15 @@ Python based attempt to create fully functional TCP/IP stack for educational pur
 
 
 #### IP fragmentation
-Receiving fragmented 4Kb UDP datagram and sending fragmented reply
+ - host sends 4Kb UDP datagram using three fragmented IP packet (three fragments) 
+ - stack receives packets and assembles them into single piece, then passes it (via UDP protocol handler and UDP Socket) to UDO Echo service
+ - UDP Echo service picks data up and puts it back into UDP Socket
+ - UDP datagram is being passed to IP protocol handler which creates IP packet and after checking that it exceedes link MTU fragments it into three separate IP packets
+ - IP packets are being encapsulated in Ethernet frames and put on TX ring
 
-![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/main/pictures/log_05.png)
-
-
-#### UDP Echo service
-Receiving and sending packets using simple socket mechanism
-
-![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/main/pictures/log_04.png)
+![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/main/pictures/ip_udp_frag_01.png)
+![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/main/pictures/ip_udp_frag_02.png)
+![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/main/pictures/ip_udp_frag_03.png)
 
 
 #### Interesting performance increase after switching from Asyncio to threads... on average 100 to 250 times faster packet handling time
@@ -130,11 +130,11 @@ Still love Asyncio but for this particular purpose it just doesn't cut it :) See
 
 Running Asyncio
 
-![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/main/pictures/log_02.png)
+![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/main/pictures/asyncio_01.png)
 
 Running threads
 
-![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/main/pictures/log_03.png)
+![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/main/pictures/asyncio_02.png)
 
 
 
