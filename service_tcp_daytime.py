@@ -41,15 +41,15 @@ class ServiceTcpDaytime:
 
         while message_count:
             # daytime = "bytes(str(datetime.now()) + "\n", "utf-8") * message_size
-            
+
             message = "[------START------] "
             for i in range(message_size - 2):
                 message += f"[------{i + 1:05}------] "
             message += "[-------END-------]\n"
             daytime = bytes(message, "utf-8")
-            
+
             if result := socket.send(daytime):
-                print(f"Service TCP Daytime: Sent daytime message to {socket.remote_ip_address}:{socket.remote_port} -", daytime)
+                print(f"Service TCP Daytime: Sent daytime message to {socket.remote_ip_address}:{socket.remote_port}")
                 time.sleep(message_delay)
                 message_count = min(message_count, message_count - 1)
                 if result == -1:
