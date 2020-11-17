@@ -8,7 +8,7 @@ phtx_tcp.py - packet handler for outbound TCP packets
 """
 
 
-from ps_tcp import TcpPacket, TcpOptMss
+from ps_tcp import TcpPacket, TcpOptMss, TcpOptWscale, TcpOptNop
 
 
 PACKET_LOSS = False
@@ -44,6 +44,8 @@ def phtx_tcp(
 
     if tcp_mss:
         tcp_options.append(TcpOptMss(opt_mss=tcp_mss))
+        tcp_options.append(TcpOptNop())
+        tcp_options.append(TcpOptWscale(opt_wscale=0))
 
     tcp_packet_tx = TcpPacket(
         tcp_sport=tcp_sport,

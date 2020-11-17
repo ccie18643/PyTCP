@@ -95,6 +95,7 @@ class TcpSession:
         self.local_mss = stack.local_tcp_mss  # Maximum Segment Size we advertise to peer
         self.remote_mss = 536  # Maximum Segment Size peer advertised to us, initialized with TCP minimum MSS value of 536
         self.remote_win = self.remote_mss  # Window size peer advertised to us, initialized with remote MSS value
+        self.remote_wscale = 1  # Wscale is always initialized as 1 because initial SYN / SYN + ACK packets don't use wscale for backward compatibility
         self.tx_win = self.remote_mss  # Current sliding window size, initialized with remote MSS value
 
         self.event_connect = threading.Semaphore(0)  # Used to inform CONNECT syscall that connection related event happened
@@ -436,9 +437,9 @@ class TcpSession:
                 stack.tcp_sessions[tcp_session.tcp_session_id] = tcp_session
                 # Initialize session parameters
                 self.remote_mss = min(packet.mss, stack.mtu - 40)
+                self.remote_win = packet.win * self.remote_wscale  # For SYN / SYN + ACK packets this is initialized with wscale=1
                 self.remote_wscale = packet.wscale
                 self.logger.debug(f"{self.tcp_session_id} - Initialized remote window scale at {self.remote_wscale}")
-                self.remote_win = packet.win * self.remote_wscale
                 self.remote_seq_init = packet.seq
                 self.tx_win = self.remote_mss
                 # Make note of the remote SEQ number
@@ -472,9 +473,9 @@ class TcpSession:
             if packet.ack == self.local_seq_sent and not packet.raw_data:
                 # Initialize session parameters
                 self.remote_mss = min(packet.mss, stack.mtu - 40)
+                self.remote_win = packet.win * self.remote_wscale  # For SYN / SYN + ACK packets this is initialized with wscale=1
                 self.remote_wscale = packet.wscale
                 self.logger.debug(f"{self.tcp_session_id} - Initialized remote window scale at {self.remote_wscale}")
-                self.remote_win = packet.win * self.remote_wscale
                 self.remote_seq_init = packet.seq
                 self.tx_win = self.remote_mss
                 # Process ACK packet

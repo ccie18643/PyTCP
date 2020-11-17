@@ -359,7 +359,7 @@ class TcpOptWscale:
             self.opt_wscale = raw_option[2]
         else:
             self.opt_kind = TCP_OPT_WSCALE
-            self.opt_len = TCP_OPT_WSCLAE_LEN
+            self.opt_len = TCP_OPT_WSCALE_LEN
             self.opt_wscale = opt_wscale
 
     @property
@@ -411,8 +411,8 @@ class TcpOptTimestamp:
             self.opt_tsval = struct.unpack("!L", raw_option[2:6])[0]
             self.opt_tsecr = struct.unpack("!L", raw_option[6:10])[0]
         else:
-            self.opt_kind = TCP_OPT_MSS
-            self.opt_len = TCP_OPT_MSS_LEN
+            self.opt_kind = TCP_OPT_TIMESTAMP
+            self.opt_len = TCP_OPT_TIMESTAMP_LEN
             self.opt_tsval = opt_tsval
             self.opt_tsecr = opt_tsecr
 
