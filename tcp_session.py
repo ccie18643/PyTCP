@@ -361,6 +361,10 @@ class TcpSession:
             del self.tx_buffer[: self.tx_buffer_seq_ackd]
         self.tx_buffer_seq_mod += self.tx_buffer_seq_ackd
         self.logger.debug(f"{self.tcp_session_id} - Purged TX buffer up to SEQ {self.local_seq_ackd}")
+        # Update remote window size
+        if self.remote_win != packet.win * self.remote_wscale:
+            self.logger.debug(f"{self.tcp_session_id} - Updating remote window size {self.remote_win} -> {packet.win}")
+            self.remote_win = packet.win * self.remote_wscale
         # Enlage TX window
         self.tx_win = min(self.tx_win << 1, self.remote_win)
         self.logger.debug(f"{self.tcp_session_id} - Set TX window to {self.tx_win}")
@@ -432,7 +436,9 @@ class TcpSession:
                 stack.tcp_sessions[tcp_session.tcp_session_id] = tcp_session
                 # Initialize session parameters
                 self.remote_mss = min(packet.mss, stack.mtu - 40)
-                self.remote_win = packet.win
+                self.remote_wscale = packet.wscale
+                self.logger.debug(f"{self.tcp_session_id} - Initialized remote window scale at {self.remote_wscale}")
+                self.remote_win = packet.win * self.remote_wscale
                 self.remote_seq_init = packet.seq
                 self.tx_win = self.remote_mss
                 # Make note of the remote SEQ number
@@ -464,15 +470,18 @@ class TcpSession:
         if packet and all({packet.flag_syn, packet.flag_ack}) and not any({packet.flag_fin, packet.flag_rst}):
             # Packet sanity check
             if packet.ack == self.local_seq_sent and not packet.raw_data:
-                self.__process_ack_packet(packet)
                 # Initialize session parameters
                 self.remote_mss = min(packet.mss, stack.mtu - 40)
-                self.remote_win = packet.win
+                self.remote_wscale = packet.wscale
+                self.logger.debug(f"{self.tcp_session_id} - Initialized remote window scale at {self.remote_wscale}")
+                self.remote_win = packet.win * self.remote_wscale
                 self.remote_seq_init = packet.seq
                 self.tx_win = self.remote_mss
+                # Process ACK packet
+                self.__process_ack_packet(packet)
                 # Send initial ACK packet
                 self.__transmit_packet(flag_ack=True)
-                self.logger.debug(f"{self.tcp_session_id} - {self.tcp_session_id} Sent initial ACK ({self.remote_seq_ackd}) packet")
+                self.logger.debug(f"{self.tcp_session_id} - Sent initial ACK ({self.remote_seq_ackd}) packet")
                 # Change state to ESTABLISHED
                 self.__change_state("ESTABLISHED")
                 return

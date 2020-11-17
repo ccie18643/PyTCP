@@ -24,6 +24,7 @@ class TcpPacket:
         seq,
         ack,
         win,
+        wscale,
         mss,
         raw_data,
         tracker,
@@ -39,6 +40,7 @@ class TcpPacket:
         self.seq = seq
         self.ack = ack
         self.win = win
+        self.wscale = wscale
         self.mss = mss
         self.raw_data = raw_data
         self.tracker = tracker

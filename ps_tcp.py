@@ -248,7 +248,7 @@ class TcpPacket:
 
         for option in self.tcp_options:
             if option.opt_kind == TCP_OPT_WSCALE:
-                return 2 << option.opt_wscale
+                return 1 << option.opt_wscale
 
         return 1
 
