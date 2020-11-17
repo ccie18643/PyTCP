@@ -8,7 +8,7 @@ tcp_packet.py - module contains storage class for incoming TCP packet's metadata
 """
 
 
-class TcpPacket:
+class TcpPacketMetadata:
     """ Store TCP metadata """
 
     def __init__(

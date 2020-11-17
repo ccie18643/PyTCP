@@ -9,7 +9,7 @@ phrx_tcp.py - packet handler for inbound TCP packets
 
 import stack
 
-from tcp_packet import TcpPacket
+from tcp_packet_metadata import TcpPacketMetadata
 
 
 PACKET_LOSS = False
@@ -26,7 +26,7 @@ def phrx_tcp(self, ip_packet_rx, tcp_packet_rx):
         return
 
     # Create TcpPacket object containing TCP metadata for further processing by TCP FSM
-    packet = TcpPacket(
+    packet = TcpPacketMetadata(
         local_ip_address=ip_packet_rx.ip_dst,
         local_port=tcp_packet_rx.tcp_dport,
         remote_ip_address=ip_packet_rx.ip_src,
