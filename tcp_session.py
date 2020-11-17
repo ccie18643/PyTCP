@@ -364,9 +364,9 @@ class TcpSession:
         self.logger.debug(f"{self.tcp_session_id} - Purged TX buffer up to SEQ {self.local_seq_ackd}")
         # Update remote window size
         if self.remote_win != packet.win * self.remote_wscale:
-            self.logger.debug(f"{self.tcp_session_id} - Updating remote window size {self.remote_win} -> {packet.win}")
+            self.logger.debug(f"{self.tcp_session_id} - Updating remote window size {self.remote_win} -> {packet.win * self.remote_wscale}")
             self.remote_win = packet.win * self.remote_wscale
-        # Enlage TX window
+        # Enlarge TX window
         self.tx_win = min(self.tx_win << 1, self.remote_win)
         self.logger.debug(f"{self.tcp_session_id} - Set TX window to {self.tx_win}")
         # Purge expired tx packet retransmit requests
