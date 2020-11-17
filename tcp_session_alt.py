@@ -555,7 +555,7 @@ class TcpSession:
             if packet.seq == self.rcv_nxt and packet.ack == self.snd_una and not packet.raw_data:
                 self.__retransmit_packet_request(packet)
                 return
-            # Packet with higher SEQ than what we are expecting -> Store it and send 'fast retransmit' request
+            # Packet with higher SEQ than what we are expecting -> Store it and send 'fast retransmit' request (don't send more than two)
             if packet.seq > self.rcv_nxt and self.snd_una <= packet.ack <= self.snd_max:
                 self.ooo_packet_queue[packet.seq] = packet
                 self.rx_retransmit_request_counter[self.rcv_nxt] = self.rx_retransmit_request_counter.get(self.rcv_nxt, 0) + 1
