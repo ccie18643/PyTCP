@@ -250,8 +250,6 @@ class TcpPacket:
             if option.opt_kind == TCP_OPT_WSCALE:
                 return 1 << option.opt_wscale
 
-        return 1
-
     @property
     def tcp_sackperm(self):
         """ TCP option - Sack Permit (4) """

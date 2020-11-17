@@ -438,7 +438,7 @@ class TcpSession:
                 # Initialize session parameters
                 self.remote_mss = min(packet.mss, stack.mtu - 40)
                 self.remote_win = packet.win * self.remote_wscale  # For SYN / SYN + ACK packets this is initialized with wscale=1
-                self.remote_wscale = packet.wscale
+                self.remote_wscale = packet.wscale if packet.wscale else 1  # Peer's wscale set to None means that peer desn't support window scaling
                 self.logger.debug(f"{self.tcp_session_id} - Initialized remote window scale at {self.remote_wscale}")
                 self.remote_seq_init = packet.seq
                 self.tx_win = self.remote_mss
@@ -474,7 +474,7 @@ class TcpSession:
                 # Initialize session parameters
                 self.remote_mss = min(packet.mss, stack.mtu - 40)
                 self.remote_win = packet.win * self.remote_wscale  # For SYN / SYN + ACK packets this is initialized with wscale=1
-                self.remote_wscale = packet.wscale
+                self.remote_wscale = packet.wscale if packet.wscale else 1  # Peer's wscale set to None means that peer desn't support window scaling
                 self.logger.debug(f"{self.tcp_session_id} - Initialized remote window scale at {self.remote_wscale}")
                 self.remote_seq_init = packet.seq
                 self.tx_win = self.remote_mss
