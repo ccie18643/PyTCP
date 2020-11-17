@@ -3,7 +3,7 @@
 """
 
 PyTCP, Python TCP/IP stack, version 0.1 - 2020, Sebastian Majewski
-tcp_session.py - module contains class supporting TCP finite state machine
+tcp_session_alt.py - module contains alternate version of class supporting TCP finite state machine
 
 """
 
@@ -518,7 +518,6 @@ class TcpSession:
         # State initialization
         if self.state_init:
             self.state_init = False
-            self.syn_rcvd_resend_count = 0
             self.logger.debug(f"{self.tcp_session_id} - State {self.state} initialized")
 
         # Got timer event -> Resend SYN packet if its timer expired
