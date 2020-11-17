@@ -43,7 +43,7 @@ def trace_win(self):
 
     unsent_data_len = len(self.tx_buffer) - self.tx_buffer_nxt
     unused_tx_win_len = self.tx_buffer_una + self.tx_win - self.tx_buffer_nxt
-    data_tx_len = min(self.rcv_mss, unused_tx_win_len, unsent_data_len)
+    data_tx_len = min(self.snd_mss, unused_tx_win_len, unsent_data_len)
     print("unsent_data:", unsent_data_len)
     print("unused_tx_win_len:", unused_tx_win_len)
     print("data_tx_len:", data_tx_len)
@@ -72,23 +72,23 @@ class TcpSession:
         self.rx_buffer = []  # Keeps data received from peer and not received by application yet
         self.tx_buffer = []  # Keeps data sent by application but not acknowledged by peer yet
 
-        # Receiver parameters
+        # Receiving window parameters
         self.rcv_ini = None  # Initial seq number
         self.rcv_nxt = None  # Next seq to be received
         self.rcv_una = None  # Seq we acked
-        self.rcv_mss = 536  # Maximum segment size
-        self.rcv_win = self.rcv_mss  # Window size
-        self.rcv_wsc = 1  # Window scale, this is always initialized as 1 because initial SYN / SYN + ACK packets don't use wscale for backward compatibility
+        self.rcv_mss = stack.mtu - 40  # Maximum segment size
+        self.rcv_wnd = 65535  # Window size
+        self.rcv_wsc = 1  # Window scale
         
-        # Sender paramters
+        # Sending window paramters
         self.snd_ini = random.randint(0, 0xFFFFFFFF)  # Initial seq number
         self.snd_nxt = self.snd_ini  # Next seq to be sent
         self.snd_max = self.snd_ini  # Maximum seq ever sent
         self.snd_una = self.snd_ini  # Seq not yet acknowledged by peer
         self.snd_fin = None  # Seq of FIN packet
-        self.snd_mss = stack.local_tcp_mss  # Maximum segment size
-        self.snd_wnd = stack.local_tcp_win  # Window size
-        self.snd_wsc = 1  # Window scale
+        self.snd_mss = 536  # Maximum segment size
+        self.snd_wnd = self.snd_mss  # Window size
+        self.snd_wsc = 1  # Window scale, this is always initialized as 1 because initial SYN / SYN + ACK packets don't use wscale for backward compatibility
 
         self.tx_retransmit_request_counter = {}  # Keeps track of DUP packets sent from peer to determine if any of them is a retransmit request
         self.tx_retransmit_timeout_counter = {}  # Keeps track of the timestamps for the sent out packets, used to determine when to retransmit packet
@@ -98,7 +98,7 @@ class TcpSession:
 
         self.state = None  # TCP FSM (Finite State Machine) state
 
-        self.tx_win = self.rcv_mss  # Current sliding window size, initialized with remote MSS value
+        self.tx_win = self.snd_mss  # Current sliding window size, initialized with remote MSS value
 
         self.event_connect = threading.Semaphore(0)  # Used to inform CONNECT syscall that connection related event happened
         self.event_rx_buffer = threading.Semaphore(0)  # USed to inform RECV syscall that there is new data in buffer ready to be picked up
@@ -217,8 +217,8 @@ class TcpSession:
             tcp_flag_ack=flag_ack,
             tcp_flag_fin=flag_fin,
             tcp_flag_rst=flag_rst,
-            tcp_win=self.snd_wnd,
-            tcp_mss=self.snd_mss if flag_syn else None,
+            tcp_win=self.rcv_wnd,
+            tcp_mss=self.rcv_mss if flag_syn else None,
             raw_data=raw_data,
         )
         self.rcv_una = self.rcv_nxt
@@ -276,7 +276,7 @@ class TcpSession:
         if self.state in {"ESTABLISHED", "CLOSE_WAIT"}:
             unsent_data_len = len(self.tx_buffer) - self.tx_buffer_nxt
             unused_tx_win_len = self.tx_buffer_una + self.tx_win - self.tx_buffer_nxt
-            data_tx_len = min(self.rcv_mss, unused_tx_win_len, unsent_data_len)
+            data_tx_len = min(self.snd_mss, unused_tx_win_len, unsent_data_len)
             if unsent_data_len:
                 self.logger.opt(ansi=True).debug(
                     f"{self.tcp_session_id} - Sliding window <yellow>[{self.snd_una}|{self.snd_nxt}|{self.snd_una + self.tx_win}]</>"
@@ -328,7 +328,7 @@ class TcpSession:
                 # Change state to CLOSED
                 self.__change_state("CLOSED")
                 return
-            self.tx_win = self.rcv_mss
+            self.tx_win = self.snd_mss
             self.snd_nxt = self.snd_una
             # In case we need to retransmit packt containing SYN flag adjust tx_buffer_seq_mod so it doesn't reflect SYN flag yet
             if self.snd_nxt == self.snd_ini or self.snd_nxt == self.snd_fin:
@@ -364,11 +364,11 @@ class TcpSession:
         self.tx_buffer_seq_mod += self.tx_buffer_una
         self.logger.debug(f"{self.tcp_session_id} - Purged TX buffer up to SEQ {self.snd_una}")
         # Update remote window size
-        if self.rcv_win != packet.win * self.rcv_wsc:
-            self.logger.debug(f"{self.tcp_session_id} - Updating remote window size {self.rcv_win} -> {packet.win * self.rcv_wsc}")
-            self.rcv_win = packet.win * self.rcv_wsc
+        if self.snd_wnd != packet.win * self.snd_wsc:
+            self.logger.debug(f"{self.tcp_session_id} - Updating remote window size {self.snd_wnd} -> {packet.win * self.snd_wsc}")
+            self.snd_wnd = packet.win * self.snd_wsc
         # Enlarge TX window
-        self.tx_win = min(self.tx_win << 1, self.rcv_win)
+        self.tx_win = min(self.tx_win << 1, self.snd_wnd)
         self.logger.debug(f"{self.tcp_session_id} - Set TX window to {self.tx_win}")
         # Purge expired tx packet retransmit requests
         for seq in list(self.tx_retransmit_request_counter):
@@ -427,12 +427,12 @@ class TcpSession:
                 # Register the new listening session
                 stack.tcp_sessions[tcp_session.tcp_session_id] = tcp_session
                 # Initialize session parameters
-                self.rcv_mss = min(packet.mss, stack.mtu - 40)
-                self.rcv_win = packet.win * self.rcv_wsc  # For SYN / SYN + ACK packets this is initialized with wscale=1
-                self.rcv_wsc = packet.wscale if packet.wscale else 1  # Peer's wscale set to None means that peer desn't support window scaling
-                self.logger.debug(f"{self.tcp_session_id} - Initialized remote window scale at {self.rcv_wsc}")
+                self.snd_mss = min(packet.mss, stack.mtu - 40)
+                self.snd_wnd = packet.win * self.snd_wsc  # For SYN / SYN + ACK packets this is initialized with wscale=1
+                self.snd_wsc = packet.wscale if packet.wscale else 1  # Peer's wscale set to None means that peer desn't support window scaling
+                self.logger.debug(f"{self.tcp_session_id} - Initialized remote window scale at {self.snd_wsc}")
                 self.rcv_ini = packet.seq
-                self.tx_win = self.rcv_mss
+                self.tx_win = self.snd_mss
                 # Make note of the remote SEQ number
                 self.rcv_nxt = packet.seq + packet.flag_syn
                 # Send SYN + ACK packet (this actually will be done in SYN_SENT state) / change state to SYN_RCVD
@@ -458,12 +458,12 @@ class TcpSession:
             # Packet sanity check
             if packet.ack == self.snd_nxt and not packet.raw_data:
                 # Initialize session parameters
-                self.rcv_mss = min(packet.mss, stack.mtu - 40)
-                self.rcv_win = packet.win * self.rcv_wsc  # For SYN / SYN + ACK packets this is initialized with wscale=1
-                self.rcv_wsc = packet.wscale if packet.wscale else 1  # Peer's wscale set to None means that peer desn't support window scaling
-                self.logger.debug(f"{self.tcp_session_id} - Initialized remote window scale at {self.rcv_wsc}")
+                self.snd_mss = min(packet.mss, stack.mtu - 40)
+                self.snd_wnd = packet.win * self.snd_wsc  # For SYN / SYN + ACK packets this is initialized with wscale=1
+                self.snd_wsc = packet.wscale if packet.wscale else 1  # Peer's wscale set to None means that peer desn't support window scaling
+                self.logger.debug(f"{self.tcp_session_id} - Initialized remote window scale at {self.snd_wsc}")
                 self.rcv_ini = packet.seq
-                self.tx_win = self.rcv_mss
+                self.tx_win = self.snd_mss
                 # Process ACK packet
                 self.__process_ack_packet(packet)
                 # Send initial ACK packet
@@ -545,6 +545,11 @@ class TcpSession:
             self.__delayed_ack()
             if self.closing and not self.tx_buffer:
                 self.__change_state("FIN_WAIT_1")
+            return
+
+        # Got packet that doesn't fit into receive window
+        if packet and not(self.rcv_nxt <= packet.seq <= self.rcv_nxt + self.rcv_wnd - len(packet.raw_data)):
+            self.logger.debug(f"{self.tcp_session_id} - Packet seq {packet.seq} + {len(packet.data)} doesn't fit into receive window, droping")
             return
 
         # Got ACK packet
