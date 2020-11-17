@@ -358,8 +358,8 @@ class TcpOptWscale:
             self.opt_len = raw_option[1]
             self.opt_wscale = raw_option[2]
         else:
-            self.opt_kind = TCP_OPT_MSS
-            self.opt_len = TCP_OPT_MSS_LEN
+            self.opt_kind = TCP_OPT_WSCALE
+            self.opt_len = TCP_OPT_WSCLAE_LEN
             self.opt_wscale = opt_wscale
 
     @property
