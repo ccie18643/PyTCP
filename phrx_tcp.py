@@ -12,7 +12,7 @@ import stack
 from tcp_packet_metadata import TcpPacketMetadata
 
 
-PACKET_LOSS = False
+PACKET_LOSS = True
 
 
 def phrx_tcp(self, ip_packet_rx, tcp_packet_rx):

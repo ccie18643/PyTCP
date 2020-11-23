@@ -11,7 +11,7 @@ phtx_tcp.py - packet handler for outbound TCP packets
 from ps_tcp import TcpPacket, TcpOptMss, TcpOptWscale, TcpOptNop
 
 
-PACKET_LOSS = False
+PACKET_LOSS = True
 
 
 def phtx_tcp(

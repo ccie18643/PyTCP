@@ -13,7 +13,7 @@ import random
 
 import stack
 
-from tcp_session import TcpSession
+from tcp_session_alt import TcpSession
 
 
 EPHEMERAL_PORT_RANGE = (32168, 60999)
