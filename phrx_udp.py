@@ -16,13 +16,13 @@ from udp_packet import UdpPacket
 import ps_icmp
 
 
-def phrx_udp(self, ip_packet_rx, udp_packet_rx):
+def phrx_udp(self, ipv4_packet_rx, udp_packet_rx):
     """ Handle inbound UDP packets """
 
     self.logger.opt(ansi=True).info(f"<green>{udp_packet_rx.tracker}</green> - {udp_packet_rx}")
 
     # Validate UDP packet checksum
-    if not udp_packet_rx.validate_cksum(ip_packet_rx.ip_pseudo_header):
+    if not udp_packet_rx.validate_cksum(ipv4_packet_rx.ipv4_pseudo_header):
         self.logger.debug(f"{udp_packet_rx.tracker} - UDP packet has invalid checksum, droping")
         return
 
@@ -31,9 +31,9 @@ def phrx_udp(self, ip_packet_rx, udp_packet_rx):
 
     # Create UdpPacket object containing UDP metadata and try to find matching UDP socket
     packet = UdpPacket(
-        local_ip_address=ip_packet_rx.ip_dst,
+        local_ipv4_address=ipv4_packet_rx.ipv4_dst,
         local_port=udp_packet_rx.udp_dport,
-        remote_ip_address=ip_packet_rx.ip_src,
+        remote_ipv4_address=ipv4_packet_rx.ipv4_src,
         remote_port=udp_packet_rx.udp_sport,
         raw_data=udp_packet_rx.raw_data,
         tracker=udp_packet_rx.tracker,
@@ -47,21 +47,21 @@ def phrx_udp(self, ip_packet_rx, udp_packet_rx):
             return
 
     # Silently drop packet if it has all zero source IP address
-    if ip_packet_rx.ip_src == "0.0.0.0":
+    if ipv4_packet_rx.ipv4_src == "0.0.0.0":
         self.logger.debug(
-            f"Received UDP packet from {ip_packet_rx.ip_src}:{udp_packet_rx.udp_sport} to {ip_packet_rx.ip_dst}:{udp_packet_rx.udp_dport}, droping"
+            f"Received UDP packet from {ipv4_packet_rx.ipv4_src}:{udp_packet_rx.udp_sport} to {ipv4_packet_rx.ipv4_dst}:{udp_packet_rx.udp_dport}, droping"
         )
         return
 
     # Respond with ICMP Port Unreachable message if no matching socket has been found
-    self.logger.debug(f"Received UDP packet from {ip_packet_rx.ip_src} to closed port {udp_packet_rx.udp_dport}, sending ICMP Port Unreachable")
+    self.logger.debug(f"Received UDP packet from {ipv4_packet_rx.ipv4_src} to closed port {udp_packet_rx.udp_dport}, sending ICMP Port Unreachable")
 
     self.phtx_icmp(
-        ip_src=ip_packet_rx.ip_dst,
-        ip_dst=ip_packet_rx.ip_src,
+        ipv4_src=ipv4_packet_rx.ipv4_dst,
+        ipv4_dst=ipv4_packet_rx.ipv4_src,
         icmp_type=ps_icmp.ICMP_UNREACHABLE,
         icmp_code=ps_icmp.ICMP_UNREACHABLE_PORT,
-        icmp_raw_data=ip_packet_rx.get_raw_packet(),
+        icmp_raw_data=ipv4_packet_rx.get_raw_packet(),
         echo_tracker=udp_packet_rx.tracker,
     )
     return

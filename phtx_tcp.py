@@ -16,8 +16,8 @@ PACKET_LOSS = True
 
 def phtx_tcp(
     self,
-    ip_src,
-    ip_dst,
+    ipv4_src,
+    ipv4_dst,
     tcp_sport,
     tcp_dport,
     tcp_seq=0,
@@ -79,4 +79,4 @@ def phtx_tcp(
             self.logger.critical("SIMULATED LOST TX DATA PACKET")
             return
 
-    self.phtx_ip(ip_src=ip_src, ip_dst=ip_dst, child_packet=tcp_packet_tx)
+    self.phtx_ipv4(ipv4_src=ipv4_src, ipv4_dst=ipv4_dst, child_packet=tcp_packet_tx)

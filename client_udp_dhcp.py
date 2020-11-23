@@ -23,7 +23,7 @@ class ClientUdpDhcp:
         """ Class constructor """
 
         self.stack_mac_address = stack_mac_address
-        self.socket = udp_socket.UdpSocket(local_ip_address="0.0.0.0", local_port=68, remote_ip_address="0.0.0.0", remote_port=67)
+        self.socket = udp_socket.UdpSocket(local_ipv4_address="0.0.0.0", local_port=68, remote_ipv4_address="0.0.0.0", remote_port=67)
         threading.Thread(target=self.__client).start()
 
     def __send(self, dhcp_packet_tx):
@@ -32,9 +32,9 @@ class ClientUdpDhcp:
         self.socket.send_to(
             udp_socket.UdpMessage(
                 raw_data=dhcp_packet_tx.get_raw_packet(),
-                local_ip_address="0.0.0.0",
+                local_ipv4_address="0.0.0.0",
                 local_port=68,
-                remote_ip_address="255.255.255.255",
+                remote_ipv4_address="255.255.255.255",
                 remote_port=67,
             )
         )
@@ -77,7 +77,7 @@ class ClientUdpDhcp:
                     dhcp_chaddr=self.stack_mac_address,
                     dhcp_msg_type=ps_dhcp.DHCP_REQUEST,
                     dhcp_srv_id=dhcp_srv_id,
-                    dhcp_req_ip_addr=dhcp_yiaddr,
+                    dhcp_req_ipv4_addr=dhcp_yiaddr,
                     dhcp_param_req_list=b"\x01\x1c\x02\x03\x0f\x06\x77\x0c\x2c\x2f\x1a\x79\x2a",
                     dhcp_host_name="PyTCP",
                 )

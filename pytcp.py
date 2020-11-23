@@ -45,7 +45,7 @@ STACK_INTERFACE = b"tap7"
 STACK_MAC_ADDRESS = "02:00:00:77:77:77"
 
 # IP address / mask / default gateway
-STACK_IP_ADDRESS = [
+STACK_IPV4_ADDRESS = [
     ("192.168.9.7", "255.255.255.0", "192.168.9.1"),
     ("192.168.9.77", "255.255.255.0", "192.168.9.1"),
     ("192.168.9.102", "255.255.255.0", "192.168.9.1"),
@@ -80,7 +80,7 @@ def main():
     stack.rx_ring = RxRing(tap, STACK_MAC_ADDRESS)
     stack.tx_ring = TxRing(tap, STACK_MAC_ADDRESS)
     stack.arp_cache = ArpCache()
-    stack.packet_handler = PacketHandler(STACK_MAC_ADDRESS, STACK_IP_ADDRESS)
+    stack.packet_handler = PacketHandler(STACK_MAC_ADDRESS, STACK_IPV4_ADDRESS)
 
     # ServiceUdpEcho()
     # ServiceUdpDiscard()
@@ -91,10 +91,10 @@ def main():
     ServiceTcpDaytime(message_count=-1, message_delay=1, message_size=1000)
 
     # ClientUdpDhcp(STACK_MAC_ADDRESS)
-    # ClientTcpEcho(local_ip_address="192.168.9.7", remote_ip_address="192.168.9.102", remote_port=7, message_count=10)
-    # ClientTcpEcho(local_ip_address="192.168.9.7", remote_ip_address="1.1.1.1", remote_port=7)
-    # ClientTcpEcho(local_ip_address="192.168.9.7", remote_ip_address="192.168.9.9", remote_port=7)
-    # ClientIcmpEcho(local_ip_address="192.168.9.7", remote_ip_address="8.8.8.8")
+    # ClientTcpEcho(local_ipv4_address="192.168.9.7", remote_ipv4_address="192.168.9.102", remote_port=7, message_count=10)
+    # ClientTcpEcho(local_ipv4_address="192.168.9.7", remote_ipv4_address="1.1.1.1", remote_port=7)
+    # ClientTcpEcho(local_ipv4_address="192.168.9.7", remote_ipv4_address="192.168.9.9", remote_port=7)
+    # ClientIcmpEcho(local_ipv4_address="192.168.9.7", remote_ipv4_address="8.8.8.8")
 
     while True:
         time.sleep(1)

@@ -10,7 +10,7 @@ phrx_ether.py - packet handler for inbound Ethernet packets
 
 import ps_ether
 import ps_arp
-import ps_ip
+import ps_ipv4
 
 
 def phrx_ether(self, ether_packet_rx):
@@ -33,5 +33,5 @@ def phrx_ether(self, ether_packet_rx):
         return
 
     if ether_packet_rx.ether_type == ps_ether.ETHER_TYPE_IP:
-        self.phrx_ip(ps_ip.IpPacket(ether_packet_rx))
+        self.phrx_ipv4(ps_ipv4.IpPacket(ether_packet_rx))
         return

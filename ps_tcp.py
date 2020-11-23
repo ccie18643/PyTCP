@@ -82,7 +82,7 @@ class TcpPacket:
             raw_options = raw_packet[TCP_HEADER_LEN : (raw_header[12] & 0b11110000) >> 2]
 
             self.raw_data = raw_packet[(raw_header[12] & 0b11110000) >> 2 :]
-            self.ip_pseudo_header = parent_packet.ip_pseudo_header
+            self.ipv4_pseudo_header = parent_packet.ipv4_pseudo_header
 
             self.tcp_sport = struct.unpack("!H", raw_header[0:2])[0]
             self.tcp_dport = struct.unpack("!H", raw_header[2:4])[0]
@@ -220,17 +220,17 @@ class TcpPacket:
 
         return self.raw_header + self.raw_options + self.raw_data
 
-    def get_raw_packet(self, ip_pseudo_header):
+    def get_raw_packet(self, ipv4_pseudo_header):
         """ Get packet in raw format ready to be processed by lower level protocol """
 
-        self.tcp_cksum = inet_cksum.compute_cksum(ip_pseudo_header + self.raw_packet)
+        self.tcp_cksum = inet_cksum.compute_cksum(ipv4_pseudo_header + self.raw_packet)
 
         return self.raw_packet
 
-    def validate_cksum(self, ip_pseudo_header):
+    def validate_cksum(self, ipv4_pseudo_header):
         """ Validate packet checksum """
 
-        return not bool(inet_cksum.compute_cksum(ip_pseudo_header + self.raw_packet))
+        return not bool(inet_cksum.compute_cksum(ipv4_pseudo_header + self.raw_packet))
 
     @property
     def tcp_mss(self):

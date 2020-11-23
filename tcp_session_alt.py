@@ -57,14 +57,14 @@ def trace_win(self):
 class TcpSession:
     """ Class defining all the TCP session parameters """
 
-    def __init__(self, local_ip_address=None, local_port=None, remote_ip_address=None, remote_port=None, socket=None):
+    def __init__(self, local_ipv4_address=None, local_port=None, remote_ipv4_address=None, remote_port=None, socket=None):
         """ Class constructor """
 
         self.logger = loguru.logger.bind(object_name="tcp_session.")
 
-        self.local_ip_address = local_ip_address
+        self.local_ipv4_address = local_ipv4_address
         self.local_port = local_port
-        self.remote_ip_address = remote_ip_address
+        self.remote_ipv4_address = remote_ipv4_address
         self.remote_port = remote_port
 
         self.socket = socket  # Keeps track of the socket that owns this session for the session -> socket communication purposes
@@ -125,7 +125,7 @@ class TcpSession:
     def tcp_session_id(self):
         """ Session ID """
 
-        return f"TCP/{self.local_ip_address}/{self.local_port}/{self.remote_ip_address}/{self.remote_port}"
+        return f"TCP/{self.local_ipv4_address}/{self.local_port}/{self.remote_ipv4_address}/{self.remote_port}"
 
     @property
     def tx_buffer_nxt(self):
@@ -206,8 +206,8 @@ class TcpSession:
         ack = self.rcv_nxt if flag_ack else 0
 
         stack.packet_handler.phtx_tcp(
-            ip_src=self.local_ip_address,
-            ip_dst=self.remote_ip_address,
+            ipv4_src=self.local_ipv4_address,
+            ipv4_dst=self.remote_ipv4_address,
             tcp_sport=self.local_port,
             tcp_dport=self.remote_port,
             tcp_seq=seq,
@@ -407,18 +407,18 @@ class TcpSession:
             if packet.ack == 0 and not packet.raw_data:
                 # Create new session in LISTEN state
                 tcp_session = TcpSession(
-                    local_ip_address=self.local_ip_address,
+                    local_ipv4_address=self.local_ipv4_address,
                     local_port=self.local_port,
-                    remote_ip_address=self.remote_ip_address,
+                    remote_ipv4_address=self.remote_ipv4_address,
                     remote_port=self.remote_port,
                     socket=self.socket,
                 )
                 tcp_session.listen()
                 # Adjust this session to match incoming connection
                 stack.tcp_sessions.pop(self.tcp_session_id)
-                self.local_ip_address = packet.local_ip_address
+                self.local_ipv4_address = packet.local_ipv4_address
                 self.local_port = packet.local_port
-                self.remote_ip_address = packet.remote_ip_address
+                self.remote_ipv4_address = packet.remote_ipv4_address
                 self.remote_port = packet.remote_port
                 stack.tcp_sessions[self.tcp_session_id] = self
                 # Register the new listening session

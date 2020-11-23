@@ -23,9 +23,9 @@ class UdpSocket:
 
         self.logger = loguru.logger.bind(object_name="socket.")
 
-        self.local_ip_address = None
+        self.local_ipv4_address = None
         self.local_port = None
-        self.remote_ip_address = "0.0.0.0"
+        self.remote_ipv4_address = "0.0.0.0"
         self.remote_port = 0
 
         self.packet_rx = []
@@ -34,12 +34,12 @@ class UdpSocket:
 
     @property
     def socket_id(self):
-        return f"UDP/{self.local_ip_address}/{self.local_port}/{self.remote_ip_address}/{self.remote_port}"
+        return f"UDP/{self.local_ipv4_address}/{self.local_port}/{self.remote_ipv4_address}/{self.remote_port}"
 
-    def bind(self, local_ip_address, local_port):
+    def bind(self, local_ipv4_address, local_port):
         """ Bind the socket to local address """
 
-        self.local_ip_address = local_ip_address
+        self.local_ipv4_address = local_ipv4_address
         self.local_port = local_port
         stack.udp_sockets[self.socket_id] = self
         self.logger.debug(f"{self.socket_id} - Socket bound to local address")
@@ -48,9 +48,9 @@ class UdpSocket:
         """ Put data from UdpPacketMetadata structure into TX ring """
 
         stack.packet_handler.phtx_udp(
-            ip_src=packet.local_ip_address,
+            ipv4_src=packet.local_ipv4_address,
             udp_sport=packet.local_port,
-            ip_dst=packet.remote_ip_address,
+            ipv4_dst=packet.remote_ipv4_address,
             udp_dport=packet.remote_port,
             raw_data=packet.raw_data,
         )

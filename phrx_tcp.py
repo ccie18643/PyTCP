@@ -15,21 +15,21 @@ from tcp_packet_metadata import TcpPacketMetadata
 PACKET_LOSS = True
 
 
-def phrx_tcp(self, ip_packet_rx, tcp_packet_rx):
+def phrx_tcp(self, ipv4_packet_rx, tcp_packet_rx):
     """ Handle inbound TCP packets """
 
     self.logger.opt(ansi=True).info(f"<green>{tcp_packet_rx.tracker}</green> - {tcp_packet_rx}")
 
     # Validate TCP packet checksum
-    if not tcp_packet_rx.validate_cksum(ip_packet_rx.ip_pseudo_header):
+    if not tcp_packet_rx.validate_cksum(ipv4_packet_rx.ipv4_pseudo_header):
         self.logger.debug(f"{tcp_packet_rx.tracker} - TCP packet has invalid checksum, droping")
         return
 
     # Create TcpPacket object containing TCP metadata for further processing by TCP FSM
     packet = TcpPacketMetadata(
-        local_ip_address=ip_packet_rx.ip_dst,
+        local_ipv4_address=ipv4_packet_rx.ipv4_dst,
         local_port=tcp_packet_rx.tcp_dport,
-        remote_ip_address=ip_packet_rx.ip_src,
+        remote_ipv4_address=ipv4_packet_rx.ipv4_src,
         remote_port=tcp_packet_rx.tcp_sport,
         flag_syn=tcp_packet_rx.tcp_flag_syn,
         flag_ack=tcp_packet_rx.tcp_flag_ack,
@@ -67,10 +67,10 @@ def phrx_tcp(self, ip_packet_rx, tcp_packet_rx):
                 return
 
     # In case packet doesn't match any session send RST packet in response to it
-    self.logger.debug(f"Received TCP packet from {ip_packet_rx.ip_src} to closed port {tcp_packet_rx.tcp_dport}, responding with TCP RST packet")
+    self.logger.debug(f"Received TCP packet from {ipv4_packet_rx.ipv4_src} to closed port {tcp_packet_rx.tcp_dport}, responding with TCP RST packet")
     self.phtx_tcp(
-        ip_src=ip_packet_rx.ip_dst,
-        ip_dst=ip_packet_rx.ip_src,
+        ipv4_src=ipv4_packet_rx.ipv4_dst,
+        ipv4_dst=ipv4_packet_rx.ipv4_src,
         tcp_sport=tcp_packet_rx.tcp_dport,
         tcp_dport=tcp_packet_rx.tcp_sport,
         tcp_seq=0,

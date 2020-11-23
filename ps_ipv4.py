@@ -3,7 +3,7 @@
 """
 
 PyTCP, Python TCP/IP stack, version 0.1 - 2020, Sebastian Majewski
-ps_ip.py - protocol support libary for IP
+ps_ipv4v4.py - protocol support libary for IPv4
 
 """
 
@@ -31,14 +31,14 @@ import inet_cksum
    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 """
 
-IP_HEADER_LEN = 20
+IPV4_HEADER_LEN = 20
 
-IP_PROTO_ICMP = 1
-IP_PROTO_TCP = 6
-IP_PROTO_UDP = 17
+IPV4_PROTO_ICMP = 1
+IPV4_PROTO_TCP = 6
+IPV4_PROTO_UDP = 17
 
 
-IP_PROTO_TABLE = {IP_PROTO_ICMP: "ICMP", IP_PROTO_TCP: "TCP", IP_PROTO_UDP: "UDP"}
+IPV4_PROTO_TABLE = {IPV4_PROTO_ICMP: "ICMP", IPV4_PROTO_TCP: "TCP", IPV4_PROTO_UDP: "UDP"}
 
 
 DSCP_CS0 = 0b000000
@@ -98,18 +98,18 @@ class IpPacket:
     def __init__(
         self,
         parent_packet=None,
-        ip_src=None,
-        ip_dst=None,
-        ip_ttl=64,
-        ip_dscp=0,
-        ip_ecn=0,
-        ip_id=0,
-        ip_frag_df=False,
-        ip_frag_mf=False,
-        ip_frag_offset=0,
-        ip_options=[],
+        ipv4_src=None,
+        ipv4_dst=None,
+        ipv4_ttl=64,
+        ipv4_dscp=0,
+        ipv4_ecn=0,
+        ipv4_packet_id=0,
+        ipv4_frag_df=False,
+        ipv4_frag_mf=False,
+        ipv4_frag_offset=0,
+        ipv4_options=[],
         child_packet=None,
-        ip_proto=None,
+        ipv4_proto=None,
         raw_data=b"",
         tracker=None,
     ):
@@ -120,27 +120,27 @@ class IpPacket:
             self.tracker = parent_packet.tracker
 
             raw_packet = parent_packet.raw_data
-            raw_header = raw_packet[:IP_HEADER_LEN]
-            raw_options = raw_packet[IP_HEADER_LEN : (raw_packet[0] & 0b00001111) << 2]
+            raw_header = raw_packet[:IPV4_HEADER_LEN]
+            raw_options = raw_packet[IPV4_HEADER_LEN : (raw_packet[0] & 0b00001111) << 2]
 
             self.raw_data = raw_packet[(raw_packet[0] & 0b00001111) << 2 : struct.unpack("!H", raw_header[2:4])[0]]
 
-            self.ip_ver = raw_header[0] >> 4
-            self.ip_hlen = (raw_header[0] & 0b00001111) << 2
-            self.ip_dscp = (raw_header[1] & 0b11111100) >> 2
-            self.ip_ecn = raw_header[1] & 0b00000011
-            self.ip_plen = struct.unpack("!H", raw_header[2:4])[0]
-            self.ip_id = struct.unpack("!H", raw_header[4:6])[0]
-            self.ip_frag_df = bool(struct.unpack("!H", raw_header[6:8])[0] & 0b0100000000000000)
-            self.ip_frag_mf = bool(struct.unpack("!H", raw_header[6:8])[0] & 0b0010000000000000)
-            self.ip_frag_offset = (struct.unpack("!H", raw_header[6:8])[0] & 0b0001111111111111) << 3
-            self.ip_ttl = raw_header[8]
-            self.ip_proto = raw_header[9]
-            self.ip_cksum = struct.unpack("!H", raw_header[10:12])[0]
-            self.ip_src = socket.inet_ntoa(struct.unpack("!4s", raw_header[12:16])[0])
-            self.ip_dst = socket.inet_ntoa(struct.unpack("!4s", raw_header[16:20])[0])
+            self.ipv4_ver = raw_header[0] >> 4
+            self.ipv4_hlen = (raw_header[0] & 0b00001111) << 2
+            self.ipv4_dscp = (raw_header[1] & 0b11111100) >> 2
+            self.ipv4_ecn = raw_header[1] & 0b00000011
+            self.ipv4_plen = struct.unpack("!H", raw_header[2:4])[0]
+            self.ipv4_packet_id = struct.unpack("!H", raw_header[4:6])[0]
+            self.ipv4_frag_df = bool(struct.unpack("!H", raw_header[6:8])[0] & 0b0100000000000000)
+            self.ipv4_frag_mf = bool(struct.unpack("!H", raw_header[6:8])[0] & 0b0010000000000000)
+            self.ipv4_frag_offset = (struct.unpack("!H", raw_header[6:8])[0] & 0b0001111111111111) << 3
+            self.ipv4_ttl = raw_header[8]
+            self.ipv4_proto = raw_header[9]
+            self.ipv4_cksum = struct.unpack("!H", raw_header[10:12])[0]
+            self.ipv4_src = socket.inet_ntoa(struct.unpack("!4s", raw_header[12:16])[0])
+            self.ipv4_dst = socket.inet_ntoa(struct.unpack("!4s", raw_header[16:20])[0])
 
-            self.ip_options = []
+            self.ipv4_options = []
 
             opt_cls = {}
 
@@ -148,16 +148,16 @@ class IpPacket:
 
             while i < len(raw_options):
 
-                if raw_options[i] == IP_OPT_EOL:
-                    self.ip_options.append(IpOptEol())
+                if raw_options[i] == IPV4_OPT_EOL:
+                    self.ipv4_options.append(IpOptEol())
                     break
 
-                if raw_options[i] == IP_OPT_NOP:
-                    self.ip_options.append(IpOptNop())
-                    i += IP_OPT_NOP_LEN
+                if raw_options[i] == IPV4_OPT_NOP:
+                    self.ipv4_options.append(IpOptNop())
+                    i += IPV4_OPT_NOP_LEN
                     continue
 
-                self.ip_options.append(opt_cls.get(raw_options[i], IpOptUnk)(raw_options[i : i + raw_options[i + 1]]))
+                self.ipv4_options.append(opt_cls.get(raw_options[i], IpOptUnk)(raw_options[i : i + raw_options[i + 1]]))
                 i += self.raw_options[i + 1]
 
         # Packet building
@@ -167,55 +167,55 @@ class IpPacket:
             else:
                 self.tracker = child_packet.tracker
 
-            self.ip_ver = 4
-            self.ip_hlen = None
-            self.ip_dscp = ip_dscp
-            self.ip_ecn = ip_ecn
-            self.ip_plen = None
-            self.ip_id = ip_id
-            self.ip_frag_df = ip_frag_df
-            self.ip_frag_mf = ip_frag_mf
-            self.ip_frag_offset = ip_frag_offset
-            self.ip_ttl = ip_ttl
-            self.ip_cksum = 0
-            self.ip_src = ip_src
-            self.ip_dst = ip_dst
+            self.ipv4_ver = 4
+            self.ipv4_hlen = None
+            self.ipv4_dscp = ipv4_dscp
+            self.ipv4_ecn = ipv4_ecn
+            self.ipv4_plen = None
+            self.ipv4_packet_id = ipv4_packet_id
+            self.ipv4_frag_df = ipv4_frag_df
+            self.ipv4_frag_mf = ipv4_frag_mf
+            self.ipv4_frag_offset = ipv4_frag_offset
+            self.ipv4_ttl = ipv4_ttl
+            self.ipv4_cksum = 0
+            self.ipv4_src = ipv4_src
+            self.ipv4_dst = ipv4_dst
 
-            self.ip_options = ip_options
+            self.ipv4_options = ipv4_options
 
-            self.ip_hlen = IP_HEADER_LEN + len(self.raw_options)
+            self.ipv4_hlen = IPV4_HEADER_LEN + len(self.raw_options)
 
-            assert self.ip_hlen % 4 == 0, "IP header len is not multiplcation of 4 bytes, check options"
+            assert self.ipv4_hlen % 4 == 0, "IP header len is not multiplcation of 4 bytes, check options"
 
             if child_packet:
                 assert child_packet.protocol in {"ICMP", "UDP", "TCP"}, f"Not supported protocol: {child_packet.protocol}"
 
                 if child_packet.protocol == "ICMP":
-                    self.ip_proto = IP_PROTO_ICMP
+                    self.ipv4_proto = IPV4_PROTO_ICMP
                     self.raw_data = child_packet.get_raw_packet()
-                    self.ip_plen = self.ip_hlen + len(self.raw_data)
+                    self.ipv4_plen = self.ipv4_hlen + len(self.raw_data)
 
                 if child_packet.protocol == "UDP":
-                    self.ip_proto = IP_PROTO_UDP
-                    self.ip_plen = self.ip_hlen + child_packet.udp_len
-                    self.raw_data = child_packet.get_raw_packet(self.ip_pseudo_header)
+                    self.ipv4_proto = IPV4_PROTO_UDP
+                    self.ipv4_plen = self.ipv4_hlen + child_packet.udp_len
+                    self.raw_data = child_packet.get_raw_packet(self.ipv4_pseudo_header)
 
                 if child_packet.protocol == "TCP":
-                    self.ip_proto = IP_PROTO_TCP
-                    self.ip_plen = self.ip_hlen + child_packet.tcp_hlen + len(child_packet.raw_data)
-                    self.raw_data = child_packet.get_raw_packet(self.ip_pseudo_header)
+                    self.ipv4_proto = IPV4_PROTO_TCP
+                    self.ipv4_plen = self.ipv4_hlen + child_packet.tcp_hlen + len(child_packet.raw_data)
+                    self.raw_data = child_packet.get_raw_packet(self.ipv4_pseudo_header)
 
             else:
-                self.ip_proto = ip_proto
+                self.ipv4_proto = ipv4_proto
                 self.raw_data = raw_data
-                self.ip_plen = self.ip_hlen + len(self.raw_data)
+                self.ipv4_plen = self.ipv4_hlen + len(self.raw_data)
 
     def __str__(self):
         """ Short packet log string """
 
         return (
-            f"IP {self.ip_src} > {self.ip_dst}, proto {self.ip_proto} ({IP_PROTO_TABLE.get(self.ip_proto, '???')}), id {self.ip_id}"
-            + f"{', DF' if self.ip_frag_df else ''}{', MF' if self.ip_frag_mf else ''}, offset {self.ip_frag_offset}, plen {self.ip_plen}"
+            f"IP {self.ipv4_src} > {self.ipv4_dst}, proto {self.ipv4_proto} ({IPV4_PROTO_TABLE.get(self.ipv4_proto, '???')}), id {self.ipv4_packet_id}"
+            + f"{', DF' if self.ipv4_frag_df else ''}{', MF' if self.ipv4_frag_mf else ''}, offset {self.ipv4_frag_offset}, plen {self.ipv4_plen}"
         )
 
     def __len__(self):
@@ -229,16 +229,16 @@ class IpPacket:
 
         return struct.pack(
             "! BBH HH BBH 4s 4s",
-            self.ip_ver << 4 | self.ip_hlen >> 2,
-            self.ip_dscp << 2 | self.ip_ecn,
-            self.ip_plen,
-            self.ip_id,
-            self.ip_frag_df << 14 | self.ip_frag_mf << 13 | self.ip_frag_offset >> 3,
-            self.ip_ttl,
-            self.ip_proto,
-            self.ip_cksum,
-            socket.inet_aton(self.ip_src),
-            socket.inet_aton(self.ip_dst),
+            self.ipv4_ver << 4 | self.ipv4_hlen >> 2,
+            self.ipv4_dscp << 2 | self.ipv4_ecn,
+            self.ipv4_plen,
+            self.ipv4_packet_id,
+            self.ipv4_frag_df << 14 | self.ipv4_frag_mf << 13 | self.ipv4_frag_offset >> 3,
+            self.ipv4_ttl,
+            self.ipv4_proto,
+            self.ipv4_cksum,
+            socket.inet_aton(self.ipv4_src),
+            socket.inet_aton(self.ipv4_dst),
         )
 
     @property
@@ -247,7 +247,7 @@ class IpPacket:
 
         raw_options = b""
 
-        for option in self.ip_options:
+        for option in self.ipv4_options:
             raw_options += option.raw_option
 
         return raw_options
@@ -259,22 +259,22 @@ class IpPacket:
         return self.raw_header + self.raw_options + self.raw_data
 
     @property
-    def ip_pseudo_header(self):
+    def ipv4_pseudo_header(self):
         """ Returns IP pseudo header that is used by TCP to compute its checksum """
 
-        return struct.pack("! 4s 4s BBH", socket.inet_aton(self.ip_src), socket.inet_aton(self.ip_dst), 0, self.ip_proto, self.ip_plen - self.ip_hlen)
+        return struct.pack("! 4s 4s BBH", socket.inet_aton(self.ipv4_src), socket.inet_aton(self.ipv4_dst), 0, self.ipv4_proto, self.ipv4_plen - self.ipv4_hlen)
 
     def get_raw_packet(self):
         """ Get packet in raw format ready to be processed by lower level protocol """
 
-        self.ip_cksum = inet_cksum.compute_cksum(self.raw_header + self.raw_options)
+        self.ipv4_cksum = inet_cksum.compute_cksum(self.raw_header + self.raw_options)
 
         return self.raw_packet
 
     def get_option(self, name):
         """ Find specific option by its name """
 
-        for option in self.ip_options:
+        for option in self.ipv4_options:
             if option.name == name:
                 return option
 
@@ -292,15 +292,15 @@ class IpPacket:
 
 # IP option - End of Option Linst
 
-IP_OPT_EOL = 0
-IP_OPT_EOL_LEN = 1
+IPV4_OPT_EOL = 0
+IPV4_OPT_EOL_LEN = 1
 
 
 class IpOptEol:
     """ IP option - End of Option List """
 
     def __init__(self, raw_option=None):
-        self.opt_kind = IP_OPT_EOL
+        self.opt_kind = IPV4_OPT_EOL
 
     @property
     def raw_option(self):
@@ -312,15 +312,15 @@ class IpOptEol:
 
 # IP option - No Operation (1)
 
-IP_OPT_NOP = 1
-IP_OPT_NOP_LEN = 1
+IPV4_OPT_NOP = 1
+IPV4_OPT_NOP_LEN = 1
 
 
 class IpOptNop:
     """ IP option - No Operation """
 
     def __init__(self, raw_option=None):
-        self.opt_kind = IP_OPT_NOP
+        self.opt_kind = IPV4_OPT_NOP
 
     @property
     def raw_option(self):

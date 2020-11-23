@@ -20,12 +20,12 @@ import stack
 class ClientIcmpEcho:
     """ ICMP Echo client support class """
 
-    def __init__(self, local_ip_address, remote_ip_address, local_port=0, remote_port=7, message_count=None):
+    def __init__(self, local_ipv4_address, remote_ipv4_address, local_port=0, remote_port=7, message_count=None):
         """ Class constructor """
 
-        threading.Thread(target=self.__thread_client, args=(local_ip_address, remote_ip_address, message_count)).start()
+        threading.Thread(target=self.__thread_client, args=(local_ipv4_address, remote_ipv4_address, message_count)).start()
 
-    def __thread_client(self, local_ip_address, remote_ip_address, message_count):
+    def __thread_client(self, local_ipv4_address, remote_ipv4_address, message_count):
 
         icmp_id = random.randint(0, 65535)
 
@@ -33,8 +33,8 @@ class ClientIcmpEcho:
         while message_count is None or i < message_count:
             message = bytes(str(datetime.now()) + "\n", "utf-8")
             stack.packet_handler.phtx_icmp(
-                ip_src=local_ip_address, ip_dst=remote_ip_address, icmp_type=8, icmp_code=0, icmp_id=icmp_id, icmp_seq=i, icmp_raw_data=message
+                ipv4_src=local_ipv4_address, ipv4_dst=remote_ipv4_address, icmp_type=8, icmp_code=0, icmp_id=icmp_id, icmp_seq=i, icmp_raw_data=message
             )
-            print(f"Client ICMP Echo: Sent ICMP Echo to {remote_ip_address} - {message}")
+            print(f"Client ICMP Echo: Sent ICMP Echo to {remote_ipv4_address} - {message}")
             time.sleep(1)
             i += 1
