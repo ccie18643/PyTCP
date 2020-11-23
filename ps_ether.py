@@ -66,9 +66,9 @@ class EtherPacket:
             self.ether_dst = ether_dst
             self.ether_src = ether_src
 
-            assert child_packet.protocol in {"IP", "ARP"}, f"Not supported protocol: {child_packet.protocol}"
+            assert child_packet.protocol in {"IPv4", "ARP"}, f"Not supported protocol: {child_packet.protocol}"
 
-            if child_packet.protocol == "IP":
+            if child_packet.protocol == "IPv4":
                 self.ether_type = ETHER_TYPE_IP
                 self.raw_data = child_packet.get_raw_packet()
 

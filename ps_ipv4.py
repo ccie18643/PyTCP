@@ -93,7 +93,7 @@ ECN_TABLE = {0b00: "Non-ECT", 0b10: "ECT(0)", 0b01: "ECT(1)", 0b11: "CE"}
 class IPv4Packet:
     """ IPv4 packet support class """
 
-    protocol = "IP"
+    protocol = "IPv4"
 
     def __init__(
         self,
