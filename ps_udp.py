@@ -51,7 +51,7 @@ class UdpPacket:
 
             self.udp_sport = struct.unpack("!H", raw_header[0:2])[0]
             self.udp_dport = struct.unpack("!H", raw_header[2:4])[0]
-            self.udp_len = struct.unpack("!H", raw_header[4:6])[0]
+            self.udp_plen = struct.unpack("!H", raw_header[4:6])[0]
             self.udp_cksum = struct.unpack("!H", raw_header[6:8])[0]
 
         # Packet building
@@ -60,7 +60,7 @@ class UdpPacket:
 
             self.udp_sport = udp_sport
             self.udp_dport = udp_dport
-            self.udp_len = UDP_HEADER_LEN + len(raw_data)
+            self.udp_plen = UDP_HEADER_LEN + len(raw_data)
             self.udp_cksum = 0
 
             self.raw_data = raw_data
@@ -68,7 +68,7 @@ class UdpPacket:
     def __str__(self):
         """ Short packet log string """
 
-        return f"UDP {self.udp_sport} > {self.udp_dport}, len {self.udp_len}"
+        return f"UDP {self.udp_sport} > {self.udp_dport}, len {self.udp_plen}"
 
     def __len__(self):
         """ Length of the packet """
@@ -79,7 +79,7 @@ class UdpPacket:
     def raw_header(self):
         """ Packet header in raw format """
 
-        return struct.pack("! HH HH", self.udp_sport, self.udp_dport, self.udp_len, self.udp_cksum)
+        return struct.pack("! HH HH", self.udp_sport, self.udp_dport, self.udp_plen, self.udp_cksum)
 
     @property
     def raw_packet(self):

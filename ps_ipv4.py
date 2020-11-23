@@ -197,7 +197,7 @@ class IPv4Packet:
 
                 if child_packet.protocol == "UDP":
                     self.ipv4_proto = IPV4_PROTO_UDP
-                    self.ipv4_plen = self.ipv4_hlen + child_packet.udp_len
+                    self.ipv4_plen = self.ipv4_hlen + child_packet.udp_plen
                     self.raw_data = child_packet.get_raw_packet(self.ipv4_pseudo_header)
 
                 if child_packet.protocol == "TCP":
