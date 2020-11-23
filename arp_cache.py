@@ -36,33 +36,32 @@ class ArpCache:
 
         self.logger = loguru.logger.bind(object_name="arp_cache.")
 
-        threading.Thread(target=self.__thread_maintain_cache).start()
+        # Setup timer to execute ARP Cache maintainer every second
+        stack.stack_timer.register_method(method=self.maintain_cache, delay=1000)
+        
         self.logger.debug("Started ARP cache")
 
-    def __thread_maintain_cache(self):
-        """ Thread responsible for maintaining ARP entries """
+    def maintain_cache(self):
+        """ Method responsible for maintaining ARP entries """
 
-        while True:
-            for ip_address in list(self.arp_cache):
+        for ip_address in list(self.arp_cache):
 
-                # Skip permanent entries
-                if self.arp_cache[ip_address].permanent:
-                    continue
+            # Skip permanent entries
+            if self.arp_cache[ip_address].permanent:
+                continue
 
-                # If entry age is over maximum age then discard the entry
-                if time.time() - self.arp_cache[ip_address].creation_time > ARP_ENTRY_MAX_AGE:
-                    mac_address = self.arp_cache.pop(ip_address).mac_address
-                    self.logger.debug(f"Discarded expired ARP cache entry - {ip_address} -> {mac_address}")
+            # If entry age is over maximum age then discard the entry
+            if time.time() - self.arp_cache[ip_address].creation_time > ARP_ENTRY_MAX_AGE:
+                mac_address = self.arp_cache.pop(ip_address).mac_address
+                self.logger.debug(f"Discarded expired ARP cache entry - {ip_address} -> {mac_address}")
 
-                # If entry age is close to maximum age but the entry has been used since last refresh then send out request in attempt to refresh it
-                elif (time.time() - self.arp_cache[ip_address].creation_time > ARP_ENTRY_MAX_AGE - ARP_ENTRY_REFRESH_TIME) and self.arp_cache[
-                    ip_address
-                ].hit_count:
-                    self.arp_cache[ip_address].hit_count = 0
-                    self.__send_arp_request(ip_address)
-                    self.logger.debug(f"Trying to refresh expiring ARP cache entry for {ip_address} -> {self.arp_cache[ip_address].mac_address}")
-
-            time.sleep(1)
+            # If entry age is close to maximum age but the entry has been used since last refresh then send out request in attempt to refresh it
+            elif (time.time() - self.arp_cache[ip_address].creation_time > ARP_ENTRY_MAX_AGE - ARP_ENTRY_REFRESH_TIME) and self.arp_cache[
+                ip_address
+            ].hit_count:
+                self.arp_cache[ip_address].hit_count = 0
+                self.__send_arp_request(ip_address)
+                self.logger.debug(f"Trying to refresh expiring ARP cache entry for {ip_address} -> {self.arp_cache[ip_address].mac_address}")
 
     def __send_arp_request(self, arp_tpa):
         """ Enqueue ARP request with TX ring """
