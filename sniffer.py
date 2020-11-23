@@ -35,7 +35,7 @@ def main():
             print("-" * 80)
 
         if ether_packet_rx.ether_type == ps_ether.ETHER_TYPE_IP:
-            ipv4_packet_rx = ps_ipv4.IpPacket(ether_packet_rx)
+            ipv4_packet_rx = ps_ipv4.IPv4Packet(ether_packet_rx)
 
             if ipv4_packet_rx.ipv4_proto == ps_ipv4.IPV4_PROTO_ICMP:
                 icmp_packet_rx = ps_icmp.IcmpPacket(ipv4_packet_rx)

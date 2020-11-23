@@ -40,7 +40,7 @@ def phtx_ether(self, child_packet, ether_src="00:00:00:00:00:00", ether_dst="00:
 
     # Check if we can obtain destination MAC based on IP header data
     if ether_packet_tx.ether_type == ps_ether.ETHER_TYPE_IP:
-        ipv4_packet_tx = ps_ipv4.IpPacket(ether_packet_tx)
+        ipv4_packet_tx = ps_ipv4.IPv4Packet(ether_packet_tx)
 
         # Send out packet if its destinied to limited broadcast addresses
         if ipv4_packet_tx.ipv4_dst in "255.255.255.255":

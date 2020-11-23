@@ -74,7 +74,7 @@ def phtx_ipv4(self, child_packet, ipv4_dst, ipv4_src):
 
     # Check if IP packet can be sent out without fragmentation, if so send it out
     if ps_ipv4.IPV4_HEADER_LEN + len(child_packet.raw_packet) <= stack.mtu:
-        ipv4_packet_tx = ps_ipv4.IpPacket(ipv4_src=ipv4_src, ipv4_dst=ipv4_dst, ipv4_packet_id=self.ipv4_packet_id, child_packet=child_packet)
+        ipv4_packet_tx = ps_ipv4.IPv4Packet(ipv4_src=ipv4_src, ipv4_dst=ipv4_dst, ipv4_packet_id=self.ipv4_packet_id, child_packet=child_packet)
 
         self.logger.debug(f"{ipv4_packet_tx.tracker} - {ipv4_packet_tx}")
         self.phtx_ether(child_packet=ipv4_packet_tx)
@@ -107,7 +107,7 @@ def phtx_ipv4(self, child_packet, ipv4_dst, ipv4_src):
     offset = 0
 
     for raw_data_fragment in raw_data_fragments:
-        ipv4_packet_tx = ps_ipv4.IpPacket(
+        ipv4_packet_tx = ps_ipv4.IPv4Packet(
             ipv4_src=ipv4_src,
             ipv4_dst=ipv4_dst,
             ipv4_proto=ipv4_proto,

@@ -14,7 +14,7 @@ import inet_cksum
 
 """
 
-   IP protocol header
+   IPv4 protocol header
 
    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
    |Version|  IHL  |   DSCP    |ECN|          Total Length         |
@@ -90,8 +90,8 @@ DSCP_TABLE = {
 ECN_TABLE = {0b00: "Non-ECT", 0b10: "ECT(0)", 0b01: "ECT(1)", 0b11: "CE"}
 
 
-class IpPacket:
-    """ IP packet support class """
+class IPv4Packet:
+    """ IPv4 packet support class """
 
     protocol = "IP"
 
@@ -286,11 +286,11 @@ class IpPacket:
 
 """
 
-   IP options
+   IPv4 options
 
 """
 
-# IP option - End of Option Linst
+# IPv4 option - End of Option Linst
 
 IPV4_OPT_EOL = 0
 IPV4_OPT_EOL_LEN = 1
@@ -310,7 +310,7 @@ class IpOptEol:
         return "eol"
 
 
-# IP option - No Operation (1)
+# IPv4 option - No Operation (1)
 
 IPV4_OPT_NOP = 1
 IPV4_OPT_NOP_LEN = 1
@@ -330,7 +330,7 @@ class IpOptNop:
         return "nop"
 
 
-# IP option not supported by this stack
+# IPv4 option not supported by this stack
 
 
 class IpOptUnk:

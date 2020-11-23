@@ -33,5 +33,5 @@ def phrx_ether(self, ether_packet_rx):
         return
 
     if ether_packet_rx.ether_type == ps_ether.ETHER_TYPE_IP:
-        self.phrx_ipv4(ps_ipv4.IpPacket(ether_packet_rx))
+        self.phrx_ipv4(ps_ipv4.IPv4Packet(ether_packet_rx))
         return
