@@ -61,7 +61,7 @@ def phrx_ip(self, ip_packet_rx):
 
     self.logger.debug(f"{ip_packet_rx.tracker} - {ip_packet_rx}")
 
-    # Check if received packet has been sent to us directly or by broadcast
+    # Check if received packet has been sent to us directly or by unicast/broadcast
     if (
         ip_packet_rx.ip_dst not in self.stack_ip_unicast
         and ip_packet_rx.ip_dst not in self.stack_ip_multicast
