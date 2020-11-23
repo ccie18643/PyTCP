@@ -214,8 +214,9 @@ class IPv4Packet:
         """ Short packet log string """
 
         return (
-            f"IP {self.ipv4_src} > {self.ipv4_dst}, proto {self.ipv4_proto} ({IPV4_PROTO_TABLE.get(self.ipv4_proto, '???')}), id {self.ipv4_packet_id}"
+            f"IPv4 {self.ipv4_src} > {self.ipv4_dst}, proto {self.ipv4_proto} ({IPV4_PROTO_TABLE.get(self.ipv4_proto, '???')}), id {self.ipv4_packet_id}"
             + f"{', DF' if self.ipv4_frag_df else ''}{', MF' if self.ipv4_frag_mf else ''}, offset {self.ipv4_frag_offset}, plen {self.ipv4_plen}"
+            + f", ttl {self.ipv4_ttl}"
         )
 
     def __len__(self):
