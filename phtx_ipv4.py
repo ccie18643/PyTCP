@@ -3,7 +3,7 @@
 """
 
 PyTCP, Python TCP/IP stack, version 0.1 - 2020, Sebastian Majewski
-phtx_ipv4v4.py - packet handler for outbound IPv4 packets
+phtx_ipv4.py - packet handler for outbound IPv4 packets
 
 """
 

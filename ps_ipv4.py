@@ -3,7 +3,7 @@
 """
 
 PyTCP, Python TCP/IP stack, version 0.1 - 2020, Sebastian Majewski
-ps_ipv4v4.py - protocol support libary for IPv4
+ps_ipv4.py - protocol support libary for IPv4
 
 """
 
