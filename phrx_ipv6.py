@@ -24,9 +24,9 @@ def phrx_ipv6(self, ipv6_packet_rx):
         self.logger.debug(f"{ipv6_packet_rx.tracker} - IP packet not destined for this stack, droping")
         return
 
-    # if ipv6_packet_rx.ipv6_next == ps_ipv6.IPV6_NEXT_HEADER_ICMPV6:
-    #    self.phrx_icmpv6(ipv6_packet_rx, ps_icmpv6.ICMPv6Packet(ipv6_packet_rx))
-    #    return
+    if ipv6_packet_rx.ipv6_next == ps_ipv6.IPV6_NEXT_HEADER_ICMPV6:
+        self.phrx_icmpv6(ipv6_packet_rx, ps_icmpv6.ICMPv6Packet(ipv6_packet_rx))
+        return
 
     if ipv6_packet_rx.ipv6_proto == ps_ipv6.IPV6_NEXT_HEADER_UDP:
         self.phrx_udp(ipv6_packet_rx, ps_udp.UdpPacket(ipv6_packet_rx))

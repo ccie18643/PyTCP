@@ -44,9 +44,9 @@ IPV6_HEADER_LEN = 40
 
 IPV6_NEXT_HEADER_TCP = 6
 IPV6_NEXT_HEADER_UDP = 17
-IPV6_NEXT_HEADER_ICMPv4V6 = 58
+IPV6_NEXT_HEADER_ICMPV6 = 58
 
-IPV6_NEXT_HEADER_TABLE = {IPV6_NEXT_HEADER_TCP: "TCP", IPV6_NEXT_HEADER_UDP: "UDP", IPV6_NEXT_HEADER_ICMPv4V6: "ICMPv4v6"}
+IPV6_NEXT_HEADER_TABLE = {IPV6_NEXT_HEADER_TCP: "TCP", IPV6_NEXT_HEADER_UDP: "UDP", IPV6_NEXT_HEADER_ICMPV6: "ICMPv6"}
 
 DSCP_CS0 = 0b000000
 DSCP_CS1 = 0b001000
@@ -125,7 +125,7 @@ class IPv6Packet:
             raw_packet = parent_packet.raw_data
             raw_header = raw_packet[:IPV6_HEADER_LEN]
 
-            self.raw_data = raw_packet[IPV6_HEADER_LEN : struct.unpack("!H", raw_header[4:6])[0]]
+            self.raw_data = raw_packet[IPV6_HEADER_LEN : IPV6_HEADER_LEN + struct.unpack("!H", raw_header[4:6])[0]]
 
             self.ipv6_ver = raw_header[0] >> 4
             self.ipv6_dscp = ((raw_header[0] & 0b00001111) << 2) | ((raw_header[1] & 0b11000000) >> 6)
@@ -154,10 +154,10 @@ class IPv6Packet:
             self.ipv6_dst = IPv6Address(ipv6_dst)
 
             if child_packet:
-                assert child_packet.protocol in {"ICMPv4v6", "UDP", "TCP"}, f"Not supported protocol: {child_packet.protocol}"
+                assert child_packet.protocol in {"ICMPv6", "UDP", "TCP"}, f"Not supported protocol: {child_packet.protocol}"
 
-                if child_packet.protocol == "ICMPv4v6":
-                    self.ipv6_next = IPV6_NEXT_HEADER_ICMPv4V6
+                if child_packet.protocol == "ICMPv6":
+                    self.ipv6_next = IPV6_NEXT_HEADER_ICMPV6
                     self.raw_data = child_packet.get_raw_packet()
                     self.ipv6_dlen = len(self.raw_data)
 
@@ -196,10 +196,10 @@ class IPv6Packet:
         return struct.pack(
             "! BBBB HBB 16s 16s",
             self.ipv6_ver << 4 | self.ipv6_dscp >> 4,
-            self.ipv6_dscp << 6 | self.ipv4_ecn << 4 | ((self.ipv6_flow & 0b000011110000000000000000) >> 16),
+            self.ipv6_dscp << 6 | self.ipv6_ecn << 4 | ((self.ipv6_flow & 0b000011110000000000000000) >> 16),
             (self.ipv6_flow & 0b000000001111111100000000) >> 8,
             self.ipv6_flow & 0b000000000000000011111111,
-            struct.pack("!H", self.ipv6_dlen),
+            self.ipv6_dlen,
             self.ipv6_next,
             self.ipv6_hop,
             self.ipv6_src.packed,

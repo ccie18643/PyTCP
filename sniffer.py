@@ -15,6 +15,7 @@ import ps_arp
 import ps_ipv4
 import ps_ipv6
 import ps_icmpv4
+import ps_icmpv6
 import ps_udp
 import ps_tcp
 
@@ -39,6 +40,16 @@ def main():
 
         if ether_packet_rx.ether_type == ps_ether.ETHER_TYPE_IPV6:
             ipv6_packet_rx = ps_ipv6.IPv6Packet(ether_packet_rx)
+
+            if ipv6_packet_rx.ipv6_next == ps_ipv6.IPV6_NEXT_HEADER_ICMPV6:
+                icmpv6_packet_rx = ps_icmpv6.ICMPv6Packet(ipv6_packet_rx)
+                print("-" * 160)
+                print(ether_packet_rx)
+                print(ipv6_packet_rx)
+                print(icmpv6_packet_rx)
+                print("-" * 160)
+                continue
+
             print("-" * 160)
             print(ether_packet_rx)
             print(ipv6_packet_rx)
@@ -75,6 +86,12 @@ def main():
                 print(tcp_packet_rx)
                 print("-" * 160)
                 continue
+
+            print("-" * 160)
+            print(ether_packet_rx)
+            print(ipv4_packet_rx)
+            print("-" * 160)
+            continue
 
         print("-" * 160)
         print(ether_packet_rx)

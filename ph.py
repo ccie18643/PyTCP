@@ -28,7 +28,7 @@ class PacketHandler:
     from phrx_ipv6 import phrx_ipv6
     from phrx_icmpv4 import phrx_icmpv4
 
-    # from phrx_icmpv6 import phrx_icmpv6
+    from phrx_icmpv6 import phrx_icmpv6
     from phrx_udp import phrx_udp
     from phrx_tcp import phrx_tcp
 
@@ -38,7 +38,7 @@ class PacketHandler:
     from phtx_ipv6 import phtx_ipv6
     from phtx_icmpv4 import phtx_icmpv4
 
-    # from phtx_icmpv6 import phtx_icmpv6
+    from phtx_icmpv6 import phtx_icmpv6
     from phtx_udp import phtx_udp
     from phtx_tcp import phtx_tcp
 
@@ -66,7 +66,7 @@ class PacketHandler:
         self.stack_ipv6_unicast = [mac2eui64(stack_mac_address)]
         self.logger.info(f"Stack listening on unicast IPv6 addresses: {[str(_) for _ in self.stack_ipv6_unicast]}")
 
-        # If no stack IP address provided try to obtain it via DHCP
+        # If no stack IPv4 address provided try to obtain it via DHCPv4
         # if not stack_ipv4_address:
         #    self.__dhcp_client()
 
