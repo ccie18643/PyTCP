@@ -16,7 +16,7 @@ from tracker import Tracker
 
 """
 
-   ICMPv4 packet header - simplified support, only ping echo/reply messages
+   ICMPv6 packet header
 
    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
    |     Type      |     Code      |           Checksum            |
@@ -147,7 +147,7 @@ class ICMPv4Packet:
             return struct.pack("! HH", self.icmpv4_id, self.icmpv4_seq) + self.icmpv4_raw_data
 
         if self.icmpv4_type == ICMPV4_UNREACHABLE:
-            return struct.pack("! L", 0) + self.icmpv4_raw_data
+            return struct.pack("! HH", 0, stack.mtu if self.code == 4 else 0) + self.icmpv4_raw_data
 
         return b""
 
