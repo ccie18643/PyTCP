@@ -13,13 +13,15 @@ import socket
 import ps_ether
 import ps_arp
 import ps_ipv4
-import ps_icmp
+import ps_ipv6
+import ps_icmpv4
 import ps_udp
 import ps_tcp
 
-# import ps_tcp
 
-raw_socket = socket.socket(socket.PF_PACKET, socket.SOCK_RAW, socket.htons(0x0800))
+# raw_socket = socket.socket(socket.PF_PACKET, socket.SOCK_RAW, socket.htons(0x0800))
+raw_socket = socket.socket(socket.PF_PACKET, socket.SOCK_RAW, socket.htons(0x86DD))
+# raw_socket = socket.socket(socket.PF_PACKET, socket.SOCK_RAW, socket.htons(3))
 
 
 def main():
@@ -29,39 +31,53 @@ def main():
 
         if ether_packet_rx.ether_type == ps_ether.ETHER_TYPE_ARP:
             arp_packet_rx = ps_arp.ArpPacket(ether_packet_rx)
-            print("-" * 80)
+            print("-" * 160)
             print(ether_packet_rx)
             print(arp_packet_rx)
-            print("-" * 80)
+            print("-" * 160)
+            continue
+
+        if ether_packet_rx.ether_type == ps_ether.ETHER_TYPE_IPV6:
+            ipv6_packet_rx = ps_ipv6.IPv6Packet(ether_packet_rx)
+            print("-" * 160)
+            print(ether_packet_rx)
+            print(ipv6_packet_rx)
+            continue
 
         if ether_packet_rx.ether_type == ps_ether.ETHER_TYPE_IP:
             ipv4_packet_rx = ps_ipv4.IPv4Packet(ether_packet_rx)
 
-            if ipv4_packet_rx.ipv4_proto == ps_ipv4.IPV4_PROTO_ICMP:
-                icmp_packet_rx = ps_icmp.IcmpPacket(ipv4_packet_rx)
-                print("-" * 80)
+            if ipv4_packet_rx.ipv4_proto == ps_ipv4.IPV4_PROTO_ICMPv4:
+                icmpv4_packet_rx = ps_icmpv4.ICMPv4Packet(ipv4_packet_rx)
+                print("-" * 160)
                 print(ether_packet_rx)
                 print(ipv4_packet_rx)
-                print(icmp_packet_rx)
-                print("-" * 80)
+                print(icmpv4_packet_rx)
+                print("-" * 160)
+                continue
 
             if ipv4_packet_rx.ipv4_proto == ps_ipv4.IPV4_PROTO_UDP:
                 udp_packet_rx = ps_udp.UdpPacket(ipv4_packet_rx)
-                print("-" * 80)
+                print("-" * 160)
                 print(ether_packet_rx)
                 print(ipv4_packet_rx)
                 print(udp_packet_rx)
-                print("-" * 80)
+                print("-" * 160)
+                continue
 
             if ipv4_packet_rx.ipv4_proto == ps_ipv4.IPV4_PROTO_TCP:
                 tcp_packet_rx = ps_tcp.TcpPacket(ipv4_packet_rx)
-                if tcp_packet_rx.tcp_dport == 22:
+                if 22 in {tcp_packet_rx.tcp_dport, tcp_packet_rx.tcp_sport}:
                     continue
-                print("-" * 80)
+                print("-" * 160)
                 print(ether_packet_rx)
                 print(ipv4_packet_rx)
                 print(tcp_packet_rx)
-                print("-" * 80)
+                print("-" * 160)
+                continue
+
+        print("-" * 160)
+        print(ether_packet_rx)
 
 
 if __name__ == "__main__":

@@ -33,12 +33,12 @@ import inet_cksum
 
 IPV4_HEADER_LEN = 20
 
-IPV4_PROTO_ICMP = 1
+IPV4_PROTO_ICMPv4 = 1
 IPV4_PROTO_TCP = 6
 IPV4_PROTO_UDP = 17
 
 
-IPV4_PROTO_TABLE = {IPV4_PROTO_ICMP: "ICMP", IPV4_PROTO_TCP: "TCP", IPV4_PROTO_UDP: "UDP"}
+IPV4_PROTO_TABLE = {IPV4_PROTO_ICMPv4: "ICMPv4", IPV4_PROTO_TCP: "TCP", IPV4_PROTO_UDP: "UDP"}
 
 
 DSCP_CS0 = 0b000000
@@ -188,10 +188,10 @@ class IPv4Packet:
             assert self.ipv4_hlen % 4 == 0, "IP header len is not multiplcation of 4 bytes, check options"
 
             if child_packet:
-                assert child_packet.protocol in {"ICMP", "UDP", "TCP"}, f"Not supported protocol: {child_packet.protocol}"
+                assert child_packet.protocol in {"ICMPv4", "UDP", "TCP"}, f"Not supported protocol: {child_packet.protocol}"
 
-                if child_packet.protocol == "ICMP":
-                    self.ipv4_proto = IPV4_PROTO_ICMP
+                if child_packet.protocol == "ICMPv4":
+                    self.ipv4_proto = IPV4_PROTO_ICMPv4
                     self.raw_data = child_packet.get_raw_packet()
                     self.ipv4_plen = self.ipv4_hlen + len(self.raw_data)
 

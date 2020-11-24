@@ -13,7 +13,7 @@ import stack
 
 from udp_packet import UdpPacket
 
-import ps_icmp
+import ps_icmpv4
 
 
 def phrx_udp(self, ipv4_packet_rx, udp_packet_rx):
@@ -53,15 +53,15 @@ def phrx_udp(self, ipv4_packet_rx, udp_packet_rx):
         )
         return
 
-    # Respond with ICMP Port Unreachable message if no matching socket has been found
-    self.logger.debug(f"Received UDP packet from {ipv4_packet_rx.ipv4_src} to closed port {udp_packet_rx.udp_dport}, sending ICMP Port Unreachable")
+    # Respond with ICMPv4 Port Unreachable message if no matching socket has been found
+    self.logger.debug(f"Received UDP packet from {ipv4_packet_rx.ipv4_src} to closed port {udp_packet_rx.udp_dport}, sending ICMPv4 Port Unreachable")
 
-    self.phtx_icmp(
+    self.phtx_icmpv4(
         ipv4_src=ipv4_packet_rx.ipv4_dst,
         ipv4_dst=ipv4_packet_rx.ipv4_src,
-        icmp_type=ps_icmp.ICMP_UNREACHABLE,
-        icmp_code=ps_icmp.ICMP_UNREACHABLE_PORT,
-        icmp_raw_data=ipv4_packet_rx.get_raw_packet(),
+        icmpv4_type=ps_icmpv4.ICMPv4_UNREACHABLE,
+        icmpv4_code=ps_icmpv4.ICMPv4_UNREACHABLE_PORT,
+        icmpv4_raw_data=ipv4_packet_rx.get_raw_packet(),
         echo_tracker=udp_packet_rx.tracker,
     )
     return

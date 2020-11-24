@@ -12,7 +12,7 @@ import struct
 
 
 def compute_cksum(data):
-    """ Compute Internet Checksum used by IP/TCP/UDP/ICMP protocols """
+    """ Compute Internet Checksum used by IP/TCP/UDP/ICMPv4 protocols """
 
     data = data + (b"\0" if len(data) & 1 else b"")
     cksum = sum(struct.unpack(f"! {len(data) >> 1}H", data))

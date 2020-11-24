@@ -25,14 +25,18 @@ class PacketHandler:
     from phrx_ether import phrx_ether
     from phrx_arp import phrx_arp
     from phrx_ipv4 import phrx_ipv4
-    from phrx_icmp import phrx_icmp
+    from phrx_ipv6 import phrx_ipv6
+    from phrx_icmpv4 import phrx_icmpv4
+    #from phrx_icmpv6 import phrx_icmpv6
     from phrx_udp import phrx_udp
     from phrx_tcp import phrx_tcp
 
     from phtx_ether import phtx_ether
     from phtx_arp import phtx_arp
     from phtx_ipv4 import phtx_ipv4
-    from phtx_icmp import phtx_icmp
+    from phtx_ipv6 import phtx_ipv6
+    from phtx_icmpv4 import phtx_icmpv4
+    #from phtx_icmpv6 import phtx_icmpv6
     from phtx_udp import phtx_udp
     from phtx_tcp import phtx_tcp
 

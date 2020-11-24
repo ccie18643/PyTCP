@@ -8,7 +8,7 @@ phrx_ipv4.py - packet handler for inbound IPv4 packets
 """
 
 import ps_ipv4
-import ps_icmp
+import ps_icmpv4
 import ps_udp
 import ps_tcp
 
@@ -80,8 +80,8 @@ def phrx_ipv4(self, ipv4_packet_rx):
     if not ipv4_packet_rx:
         return
 
-    if ipv4_packet_rx.ipv4_proto == ps_ipv4.IPV4_PROTO_ICMP:
-        self.phrx_icmp(ipv4_packet_rx, ps_icmp.IcmpPacket(ipv4_packet_rx))
+    if ipv4_packet_rx.ipv4_proto == ps_ipv4.IPV4_PROTO_ICMPv4:
+        self.phrx_icmpv4(ipv4_packet_rx, ps_icmpv4.ICMPv4Packet(ipv4_packet_rx))
         return
 
     if ipv4_packet_rx.ipv4_proto == ps_ipv4.IPV4_PROTO_UDP:

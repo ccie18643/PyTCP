@@ -32,7 +32,7 @@ from service_tcp_daytime import ServiceTcpDaytime
 
 from client_udp_dhcp import ClientUdpDhcp
 from client_tcp_echo import ClientTcpEcho
-from client_icmp_echo import ClientIcmpEcho
+from client_icmpv4_echo import ClientIcmpEcho
 
 import stack
 
