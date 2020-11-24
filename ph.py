@@ -74,7 +74,7 @@ class PacketHandler:
         self.stack_ipv6_unicast = [_.ip for _ in self.stack_ipv6_address]
 
         # Create list of IPv6 multicast addresses stack should listen on, also update the stack MAC multicast list
-        self.stack_ipv6_multicast = [self.__ipv6_solicited_node_multicast(_) for _ in self.stack_ipv6_unicast]
+        self.stack_ipv6_multicast = [self.ipv6_solicited_node_multicast(_) for _ in self.stack_ipv6_unicast]
         self.stack_ipv6_multicast.append(IPv6Address("ff02::1"))
         self.stack_mac_multicast = [self.ipv6_multicast_mac(_) for _ in self.stack_ipv6_multicast]
 
@@ -83,7 +83,7 @@ class PacketHandler:
 
         print("DUPA")
         self.phtx_icmpv6(
-            ipv6_src=IPv6Address("::"), ipv6_dst=IPv6Address("ff02::2"), icmpv6_type=133, icmpv6_source_link_layer_address=self.stack_mac_unicast[0]
+            ipv6_src=self.stack_ipv6_unicast[0], ipv6_dst=IPv6Address("ff02::2"), icmpv6_type=133, icmpv6_source_link_layer_address=self.stack_mac_unicast[0]
         )
         print("PIPA")
 
@@ -191,7 +191,7 @@ class PacketHandler:
         eui64 = ":".join(eui64[_ : _ + 4] for _ in range(0, 16, 4))
         return IPv6Interface(prefix + eui64 + "/64")
 
-    def __ipv6_solicited_node_multicast(self, ipv6_address):
+    def ipv6_solicited_node_multicast(self, ipv6_address):
         """ Create IPv6 solicited node multicast address """
 
         return IPv6Address("ff02::1:ff" + ipv6_address.exploded[-7:])

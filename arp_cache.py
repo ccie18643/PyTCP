@@ -19,7 +19,7 @@ ARP_ENTRY_REFRESH_TIME = 300
 
 
 class ArpCache:
-    """ Support for ARP cahe operations """
+    """ Support for ARP cache operations """
 
     class __Entry:
         def __init__(self, mac_address, permanent=False):
@@ -41,7 +41,7 @@ class ArpCache:
         self.logger.debug("Started ARP cache")
 
     def maintain_cache(self):
-        """ Method responsible for maintaining ARP entries """
+        """ Method responsible for maintaining ARP cache entries """
 
         for ipv4_address in list(self.arp_cache):
 
@@ -63,7 +63,7 @@ class ArpCache:
                 self.logger.debug(f"Trying to refresh expiring ARP cache entry for {ipv4_address} -> {self.arp_cache[ipv4_address].mac_address}")
 
     def __send_arp_request(self, arp_tpa):
-        """ Enqueue ARP request with TX ring """
+        """ Enqueue ARP request packet with TX ring """
 
         stack.packet_handler.phtx_arp(
             ether_src=stack.packet_handler.stack_mac_address,
@@ -83,8 +83,7 @@ class ArpCache:
     def find_entry(self, ipv4_address):
         """ Find entry in cache and return MAC address """
 
-        arp_entry = self.arp_cache.get(ipv4_address, None)
-        if arp_entry:
+        if arp_entry := self.arp_cache.get(ipv4_address, None)
             arp_entry.hit_count += 1
             self.logger.debug(
                 f"Found {ipv4_address} -> {arp_entry.mac_address} entry, age {time.time() - arp_entry.creation_time:.0f}s, hit_count {arp_entry.hit_count}"

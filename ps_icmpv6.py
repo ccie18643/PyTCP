@@ -64,9 +64,61 @@ from tracker import Tracker
 
    'Source link-layer address' option
    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-   |       1       |       1       |                               ~
+   |       1       |       1       |                               >
    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+                               |
-   ~                           MAC Address                         ~
+   >                           MAC Address                         |
+   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+
+
+   Neighbor Solicitation message (135/0)
+
+   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+   |     Type      |     Code      |          Checksum             |
+   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+   |                           Reserved                            |
+   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+   |                                                               >
+   +                                                               +
+   >                                                               >
+   +                       Target Address                          +
+   >                                                               >
+   +                                                               +
+   >                                                               |
+   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+   |   Options ...
+   +-+-+-+-+-+-+-+-+-+-+-+-
+
+   'Source link-layer address' option
+   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+   |       1       |       1       |                               >
+   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+                               +
+   >                           MAC Address                         |
+   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+
+
+   Neighbor Advertisement message (136/0)
+
+   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+   |     Type      |     Code      |          Checksum             |
+   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+   |R|S|O|                     Reserved                            |
+   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+   |                                                               >
+   +                                                               +
+   >                                                               >
+   +                       Target Address                          +
+   >                                                               >
+   +                                                               +
+   >                                                               |
+   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+   |   Options ...
+   +-+-+-+-+-+-+-+-+-+-+-+-
+
+   'Source link-layer address' option
+   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+   |       1       |       1       |                               >
+   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+                               +
+   >                           MAC Address                         |
    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 
 """
@@ -89,6 +141,15 @@ ICMPV6_ECHOREPLY_LEN = 4
 ICMPV6_ROUTER_SOLICITATION = 133
 ICMPV6_ROUTER_SOLICITATION_LEN = 4
 
+ICMPV6_ROUTER_ADVERTISEMENT = 134
+ICMPV6_ROUTER_ACVERTISEMENT_LEN = 4
+
+ICMPV6_NEIGHBOR_SOLICITATION = 135
+ICMPV6_NEIGHBOR_SOLICITATION_LEN = 4
+
+ICMPV6_NEIGHBOR_ADVERTISEMENT = 136
+ICMPV6_NEIGHBOR_ADVERTISEMENT_LEN = 4
+
 
 class ICMPv6Packet:
     """ ICMPv6 packet support class """
@@ -104,6 +165,7 @@ class ICMPv6Packet:
         icmpv6_seq=None,
         icmpv6_raw_data=b"",
         icmpv6_source_link_layer_address=None,
+        icmpv6_target_address=None,
         echo_tracker=None,
     ):
         """ Class constructor """
@@ -136,6 +198,15 @@ class ICMPv6Packet:
             if self.icmpv6_type == ICMPV6_ROUTER_SOLICITATION:
                 pass
 
+            if self.icmpv6_type == ICMPV6_ROUTER_ADVETISEMENT:
+                pass
+
+            if self.icmpv6_type == ICMPV6_NEIGHBOR_SOLICITATION:
+                self.icmpv6_target_address = IPv6Address(raw_message[4:20])
+
+            if self.icmpv6_type == ICMPV6_NEIGHBOR_ADVERTISEMENT:
+                self.icmpv6_target_address = IPv6Address(raw_message[4:20])
+
         # Packet building
         else:
             self.tracker = Tracker("TX", echo_tracker)
@@ -160,6 +231,17 @@ class ICMPv6Packet:
             if self.icmpv6_type == ICMPV6_ROUTER_SOLICITATION:
                 self.icmpv6_source_link_layer_address = icmpv6_source_link_layer_address
 
+            if self.icmpv6_type == ICMPV6_ROUTER_ADVERTISEMENT:
+                pass
+
+            if self.icmpv6_type == ICMPV6_NEIGHBOR_SOLICITATION:
+                self.icmpv6_target_address = icmpv6_target_address
+                self.icmpv6_source_link_layer_address = icmpv6_source_link_layer_address
+
+            if self.icmpv6_type == ICMPV6_NEIGHBOR_ADVERTISEMENT:
+                self.icmpv6_target_address = icmpv6_target_address
+                self.icmpv6_source_link_layer_address = icmpv6_source_link_layer_address
+
     def __str__(self):
         """ Short packet log string """
 
@@ -175,6 +257,15 @@ class ICMPv6Packet:
             pass
 
         if self.icmpv6_type == ICMPV6_ROUTER_SOLICITATION:
+            pass
+
+        if self.icmpv6_type == ICMPV6_ROUTER_ADVETISEMENT:
+            pass
+
+        if self.icmpv6_type == ICMPV6_NEIGHBOR_SOLICITATION:
+            self.icmpv6_target_address = 
+
+        if self.icmpv6_type == ICMPV6_NEIGHBOR_ADVETISEMENT:
             pass
 
         return log
@@ -205,6 +296,16 @@ class ICMPv6Packet:
 
         if self.icmpv6_type == ICMPV6_ROUTER_SOLICITATION:
             return struct.pack("! L BB 6s", 0, 1, 1, bytes.fromhex(self.icmpv6_source_link_layer_address.replace(":", "")))
+
+        if self.icmpv6_type == ICMPV6_ROUTER_ADVERTISEMENT:
+            # *** Need to implement this ***
+            pass
+
+        if self.icmpv6_type == ICMPV6_NEIGHBOR_SOLICITATION:
+            return struct.pack("! L 16s", 0, self.icmpv6_target_address)
+
+        if self.icmpv6_type == ICMPV6_NEIGHBOR_ADVERTISEMENT:
+            return struct.pack("! L 16s", 0, self.icmpv6_target_address)
 
         return b""
 
