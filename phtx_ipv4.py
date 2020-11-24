@@ -10,6 +10,8 @@ phtx_ipv4.py - packet handler for outbound IPv4 packets
 import struct
 import socket
 
+from ipaddress import IPv4Address
+
 import ps_ipv4
 import ps_ether
 
@@ -24,37 +26,37 @@ def validate_source_ipv4_address(self, ipv4_src):
         ipv4_src not in self.stack_ipv4_unicast
         and ipv4_src not in self.stack_ipv4_multicast
         and ipv4_src not in self.stack_ipv4_broadcast
-        and ipv4_src != "0.0.0.0"
+        and ipv4_src != IPv4Address("0.0.0.0")
     ):
-        self.logger.warning(f"Unable to sent out IP packet, stack doesn't own IP address {ipv4_src}")
+        self.logger.warning(f"Unable to sent out IPv4 packet, stack doesn't own IPv4 address {ipv4_src}")
         return
 
     # If packet is a response to multicast then replace source IP address with primary IP address of the stack
     if ipv4_src in self.stack_ipv4_multicast:
         if self.stack_ipv4_unicast:
             ipv4_src = self.stack_ipv4_unicast[0]
-            self.logger.debug(f"Packet is response to multicast, replaced source with stack primary IP address {ipv4_src}")
+            self.logger.debug(f"Packet is response to multicast, replaced source with stack primary IPv4 address {ipv4_src}")
         else:
-            self.logger.warning("Unable to sent out IP packet, no stack primary unicast IP address available")
+            self.logger.warning("Unable to sent out IPv4 packet, no stack primary unicast IPv4 address available")
             return
 
     # If packet is a response to limited broadcast then replace source IP address with primary IP address of the stack
-    if ipv4_src == "255.255.255.255":
+    if ipv4_src == IPv4Address("255.255.255.255"):
         if self.stack_ipv4_unicast:
             ipv4_src = self.stack_ipv4_unicast[0]
-            self.logger.debug(f"Packet is response to limited broadcast, replaced source with stack primary IP address {ipv4_src}")
+            self.logger.debug(f"Packet is response to limited broadcast, replaced source with stack primary IPv4 address {ipv4_src}")
         else:
-            self.logger.warning("Unable to sent out IP packet, no stack primary unicast IP address available")
+            self.logger.warning("Unable to sent out IPv4 packet, no stack primary unicast IPv4 address available")
             return
 
-    # If packet is a response to directed braodcast then replace source IP address with first IP address that belongs to appropriate subnet
+    # If packet is a response to directed braodcast then replace source IP address with first stack IP address that belongs to appropriate subnet
     if ipv4_src in self.stack_ipv4_broadcast:
-        ipv4_src = [_[0] for _ in self.stack_ipv4_address if _[3] == ipv4_src]
+        ipv4_src = [_.ip for _ in self.stack_ipv4_address if _.network.broadcast_address == ipv4_src]
         if ipv4_src:
             ipv4_src = ipv4_src[0]
-            self.logger.debug(f"Packet is response to directed broadcast, replaced source with apropriate IP address {ipv4_src}")
+            self.logger.debug(f"Packet is response to directed broadcast, replaced source with apropriate IPv4 address {ipv4_src}")
         else:
-            self.logger.warning("Unable to sent out IP packet, no appropriate stack unicast IP address available")
+            self.logger.warning("Unable to sent out IPv4 packet, no appropriate stack unicast IPv4 address available")
             return
 
     return ipv4_src

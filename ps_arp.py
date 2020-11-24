@@ -8,8 +8,9 @@ ps_arp.py - protocol support library for ARP
 """
 
 
-import socket
 import struct
+
+from ipaddress import IPv4Address
 
 from tracker import Tracker
 
@@ -64,9 +65,9 @@ class ArpPacket:
             self.arp_prlen = raw_header[5]
             self.arp_oper = struct.unpack("!H", raw_header[6:8])[0]
             self.arp_sha = ":".join([f"{_:0>2x}" for _ in raw_header[8:14]])
-            self.arp_spa = socket.inet_ntoa(struct.unpack("!4s", raw_header[14:18])[0])
+            self.arp_spa = IPv4Address(raw_header[14:18])
             self.arp_tha = ":".join([f"{_:0>2x}" for _ in raw_header[18:24]])
-            self.arp_tpa = socket.inet_ntoa(struct.unpack("!4s", raw_header[24:28])[0])
+            self.arp_tpa = IPv4Address(raw_header[24:28])
 
         # Packet building
         else:
@@ -108,9 +109,9 @@ class ArpPacket:
             self.arp_prlen,
             self.arp_oper,
             bytes.fromhex(self.arp_sha.replace(":", "")),
-            socket.inet_aton(self.arp_spa),
+            IPv4Address(self.arp_spa).packed,
             bytes.fromhex(self.arp_tha.replace(":", "")),
-            socket.inet_aton(self.arp_tpa),
+            IPv4Address(self.arp_tpa).packed,
         )
 
     @property

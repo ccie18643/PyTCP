@@ -10,9 +10,9 @@ ph.py - protocol support for incoming and outgoing packets
 import time
 import loguru
 import random
-import socket
-import struct
 import threading
+
+from ipaddress import IPv4Address
 
 import ps_arp
 import stack
@@ -42,16 +42,16 @@ class PacketHandler:
     from phtx_udp import phtx_udp
     from phtx_tcp import phtx_tcp
 
-    def __init__(self, stack_mac_address, stack_ipv4_address):
+    def __init__(self, stack_mac_address, stack_ipv4_address_candidate):
         """ Class constructor """
 
+        self.stack_ipv4_address_candidate = stack_ipv4_address_candidate
         self.stack_mac_address = stack_mac_address
-        self.stack_ipv4_unicast_candidate = {_[0] for _ in stack_ipv4_address}
         self.stack_ipv4_address = []
         self.stack_ipv4_unicast = []
         self.stack_ipv4_multicast = []
         self.stack_ipv4_network = []
-        self.stack_ipv4_broadcast = ["255.255.255.255"]
+        self.stack_ipv4_broadcast = [IPv4Address("255.255.255.255")]
         self.logger = loguru.logger.bind(object_name="packet_handler.")
 
         self.arp_probe_unicast_conflict = set()
@@ -67,26 +67,26 @@ class PacketHandler:
         self.logger.info(f"Stack listening on unicast IPv6 addresses: {[str(_) for _ in self.stack_ipv6_unicast]}")
 
         # If no stack IP address provided try to obtain it via DHCP
-        if not stack_ipv4_address:
-            self.__dhcp_client()
+        # if not stack_ipv4_address:
+        #    self.__dhcp_client()
 
         # Create list of IP addresses stack should listen on
-        self.__validate_stack_ipv4_addresses(stack_ipv4_address)
-        self.logger.info(f"Stack listening on unicast IP addresses: {self.stack_ipv4_unicast}")
-        self.logger.info(f"Stack listening on multicast IP addresses: {self.stack_ipv4_multicast}")
-        self.logger.info(f"Stack listening on brodcast IP addresses: {self.stack_ipv4_broadcast}")
-        self.logger.info(f"Stack ignoring network IP addresses: {self.stack_ipv4_network}")
+        self.__validate_stack_ipv4_addresses()
+        self.logger.info(f"Stack listening on unicast IP addresses: {[str(_) for _ in self.stack_ipv4_unicast]}")
+        self.logger.info(f"Stack listening on multicast IP addresses: {[str(_) for _ in self.stack_ipv4_multicast]}")
+        self.logger.info(f"Stack listening on brodcast IP addresses: {[str(_) for _ in self.stack_ipv4_broadcast]}")
+        self.logger.info(f"Stack ignoring network IP addresses: {[str(_) for _ in self.stack_ipv4_network]}")
 
     def __dhcp_client(self):
         """ Acquire IP address using DHCP client """
         pass
 
-    def __validate_stack_ipv4_addresses(self, stack_ipv4_address):
+    def __validate_stack_ipv4_addresses(self):
         """ Create list of IP addresses stack should listen on """
 
         # Create list of all IP unicast addresses stack should listen on
         for i in range(3):
-            for ipv4_unicast in self.stack_ipv4_unicast_candidate:
+            for ipv4_unicast in [_.ip for _ in self.stack_ipv4_address_candidate]:
                 if ipv4_unicast not in self.arp_probe_unicast_conflict:
                     self.__send_arp_probe(ipv4_unicast)
                     self.logger.debug(f"Sent out ARP Probe for {ipv4_unicast}")
@@ -95,30 +95,18 @@ class PacketHandler:
         for ipv4_unicast in self.arp_probe_unicast_conflict:
             self.logger.warning(f"Unable to claim IP address {ipv4_unicast}")
 
-        # Compute network and broadcast address for every ip address / mask tuple provided in configuration
-        for i, ipv4_address in enumerate(stack_ipv4_address):
-            _1 = struct.unpack("!L", socket.inet_aton(ipv4_address[0]))[0]
-            _2 = struct.unpack("!L", socket.inet_aton(ipv4_address[1]))[0]
-            stack_ipv4_address[i] = (
-                ipv4_address[0],
-                ipv4_address[1],
-                socket.inet_ntoa(struct.pack("!L", _1 & _2)),
-                socket.inet_ntoa(struct.pack("!L", (_1 & _2) + (~_2 & 0xFFFFFFFF))),
-                ipv4_address[2],
-            )
-
         # Create list containing only ip addresses that were confiremed free to claim
-        for ipv4_address in stack_ipv4_address:
-            if ipv4_address[0] not in self.arp_probe_unicast_conflict and ipv4_address not in self.stack_ipv4_address:
+        for ipv4_address in self.stack_ipv4_address_candidate:
+            if ipv4_address.ip not in self.arp_probe_unicast_conflict and ipv4_address not in self.stack_ipv4_address:
                 self.stack_ipv4_address.append(ipv4_address)
 
-        # Clear ip unicast candidate list so the ARP Probe/Annoucement check is disabled
-        self.stack_ipv4_unicast_candidate = []
+        # Clear IPv4 address candidate list so the ARP Probe/Annoucement check is disabled
+        self.stack_ipv4_address_candidate = []
 
         # Create list containing IP unicast adresses stack shuld listen to
         for ipv4_address in self.stack_ipv4_address:
-            if ipv4_address[0] not in self.stack_ipv4_unicast:
-                self.stack_ipv4_unicast.append(ipv4_address[0])
+            if ipv4_address.ip not in self.stack_ipv4_unicast:
+                self.stack_ipv4_unicast.append(ipv4_address.ip)
 
         for ipv4_unicast in self.stack_ipv4_unicast:
             self.__send_arp_announcement(ipv4_unicast)
@@ -126,13 +114,13 @@ class PacketHandler:
 
         # Create list of all broadcast addresses stack should listen on
         for ipv4_address in self.stack_ipv4_address:
-            if ipv4_address[3] not in self.stack_ipv4_broadcast:
-                self.stack_ipv4_broadcast.append(ipv4_address[3])
+            if ipv4_address.network.broadcast_address not in self.stack_ipv4_broadcast:
+                self.stack_ipv4_broadcast.append(ipv4_address.network.broadcast_address)
 
-        # Create list of all netwok addresses stack should ignore
+        # Create list of all network addresses stack should ignore
         for ipv4_address in self.stack_ipv4_address:
-            if ipv4_address[2] not in self.stack_ipv4_network:
-                self.stack_ipv4_network.append(ipv4_address[2])
+            if ipv4_address.network.network_address not in self.stack_ipv4_network:
+                self.stack_ipv4_network.append(ipv4_address.network.network_address)
 
     def __send_arp_probe(self, ipv4_address):
         """ Send out ARP probe to detect possible IP conflict """

@@ -14,6 +14,7 @@ import time
 import struct
 import loguru
 
+from ipaddress import IPv4Interface
 
 from stack_timer import StackTimer
 from arp_cache import ArpCache
@@ -46,10 +47,10 @@ STACK_MAC_ADDRESS = "02:00:00:77:77:77"
 
 # IP address / mask / default gateway
 STACK_IPV4_ADDRESS = [
-    ("192.168.9.7", "255.255.255.0", "192.168.9.1"),
-    ("192.168.9.77", "255.255.255.0", "192.168.9.1"),
-    ("192.168.9.102", "255.255.255.0", "192.168.9.1"),
-    ("172.16.0.7", "255.255.0.0", "172.16.0.1"),
+    IPv4Interface("192.168.9.7/24"),
+    IPv4Interface("192.168.9.77/24"),
+    IPv4Interface("192.168.9.102/24"),
+    IPv4Interface("172.16.0.7/16"),
 ]
 
 

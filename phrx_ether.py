@@ -11,6 +11,7 @@ phrx_ether.py - packet handler for inbound Ethernet packets
 import ps_ether
 import ps_arp
 import ps_ipv4
+import ps_ipv6
 
 
 def phrx_ether(self, ether_packet_rx):

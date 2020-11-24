@@ -54,7 +54,7 @@ def phrx_arp(self, ether_packet_rx, arp_packet_rx):
         # Check for ARP reply that is response to our ARP probe, that indicates that IP address we trying to claim is in use
         if ether_packet_rx.ether_dst == self.stack_mac_address:
             if (
-                arp_packet_rx.arp_spa in self.stack_ipv4_unicast_candidate
+                arp_packet_rx.arp_spa in [_.ip for _ in self.stack_ipv4_address_candidate]
                 and arp_packet_rx.arp_tha == self.stack_mac_address
                 and arp_packet_rx.arp_tpa == "0.0.0.0"
             ):

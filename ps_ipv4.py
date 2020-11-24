@@ -7,8 +7,9 @@ ps_ipv4.py - protocol support libary for IPv4
 
 """
 
-import socket
 import struct
+
+from ipaddress import IPv4Address
 
 import inet_cksum
 
@@ -137,8 +138,8 @@ class IPv4Packet:
             self.ipv4_ttl = raw_header[8]
             self.ipv4_proto = raw_header[9]
             self.ipv4_cksum = struct.unpack("!H", raw_header[10:12])[0]
-            self.ipv4_src = socket.inet_ntoa(struct.unpack("!4s", raw_header[12:16])[0])
-            self.ipv4_dst = socket.inet_ntoa(struct.unpack("!4s", raw_header[16:20])[0])
+            self.ipv4_src = IPv4Address(raw_header[12:16])
+            self.ipv4_dst = IPv4Address(raw_header[16:20])
 
             self.ipv4_options = []
 
@@ -178,8 +179,8 @@ class IPv4Packet:
             self.ipv4_frag_offset = ipv4_frag_offset
             self.ipv4_ttl = ipv4_ttl
             self.ipv4_cksum = 0
-            self.ipv4_src = ipv4_src
-            self.ipv4_dst = ipv4_dst
+            self.ipv4_src = IPv4Address(ipv4_src)
+            self.ipv4_dst = IPv4Address(ipv4_dst)
 
             self.ipv4_options = ipv4_options
 
@@ -238,8 +239,8 @@ class IPv4Packet:
             self.ipv4_ttl,
             self.ipv4_proto,
             self.ipv4_cksum,
-            socket.inet_aton(self.ipv4_src),
-            socket.inet_aton(self.ipv4_dst),
+            self.ipv4_src.packed,
+            self.ipv4_dst.packed,
         )
 
     @property
@@ -263,7 +264,7 @@ class IPv4Packet:
     def ipv4_pseudo_header(self):
         """ Returns IP pseudo header that is used by TCP to compute its checksum """
 
-        return struct.pack("! 4s 4s BBH", socket.inet_aton(self.ipv4_src), socket.inet_aton(self.ipv4_dst), 0, self.ipv4_proto, self.ipv4_plen - self.ipv4_hlen)
+        return struct.pack("! 4s 4s BBH", self.ipv4_src.packed, self.ipv4_dst.packed, 0, self.ipv4_proto, self.ipv4_plen - self.ipv4_hlen)
 
     def get_raw_packet(self):
         """ Get packet in raw format ready to be processed by lower level protocol """
