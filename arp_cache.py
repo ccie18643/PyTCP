@@ -83,7 +83,7 @@ class ArpCache:
     def find_entry(self, ipv4_address):
         """ Find entry in cache and return MAC address """
 
-        if arp_entry := self.arp_cache.get(ipv4_address, None)
+        if arp_entry := self.arp_cache.get(ipv4_address, None):
             arp_entry.hit_count += 1
             self.logger.debug(
                 f"Found {ipv4_address} -> {arp_entry.mac_address} entry, age {time.time() - arp_entry.creation_time:.0f}s, hit_count {arp_entry.hit_count}"

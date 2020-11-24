@@ -10,6 +10,7 @@ ps_icmpv4.py - protocol support libary for ICMPv4
 import struct
 
 import inet_cksum
+import stack
 
 from tracker import Tracker
 

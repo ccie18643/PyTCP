@@ -8,8 +8,7 @@ phrx_ipv6.py - packet handler for inbound IPv6 packets
 """
 
 import ps_ipv6
-
-# import ps_icmpv6
+import ps_icmpv6
 import ps_udp
 import ps_tcp
 

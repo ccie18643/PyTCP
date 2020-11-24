@@ -7,11 +7,15 @@ ps_icmpv6.py - protocol support libary for ICMPv6
 
 """
 
+from ipaddress import IPv6Address
+
 import struct
 
 import inet_cksum
 
 from tracker import Tracker
+
+import stack
 
 
 """
@@ -22,7 +26,7 @@ from tracker import Tracker
    |     Type      |     Code      |           Checksum            |
    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 
-   
+
    Destination Unreachable message (1/[0,1,3,4])
 
    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
@@ -33,7 +37,7 @@ from tracker import Tracker
    ~                             Data                              ~
    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 
-   
+
    Echo Request message (128/0)
 
    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
@@ -42,7 +46,7 @@ from tracker import Tracker
    ~                             Data                              ~
    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 
-   
+
    Echo Reply message (129/0)
 
    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
@@ -198,7 +202,7 @@ class ICMPv6Packet:
             if self.icmpv6_type == ICMPV6_ROUTER_SOLICITATION:
                 pass
 
-            if self.icmpv6_type == ICMPV6_ROUTER_ADVETISEMENT:
+            if self.icmpv6_type == ICMPV6_ROUTER_ADVERTISEMENT:
                 pass
 
             if self.icmpv6_type == ICMPV6_NEIGHBOR_SOLICITATION:
@@ -259,13 +263,13 @@ class ICMPv6Packet:
         if self.icmpv6_type == ICMPV6_ROUTER_SOLICITATION:
             pass
 
-        if self.icmpv6_type == ICMPV6_ROUTER_ADVETISEMENT:
+        if self.icmpv6_type == ICMPV6_ROUTER_ADVERTISEMENT:
             pass
 
         if self.icmpv6_type == ICMPV6_NEIGHBOR_SOLICITATION:
-            self.icmpv6_target_address = 
+            pass
 
-        if self.icmpv6_type == ICMPV6_NEIGHBOR_ADVETISEMENT:
+        if self.icmpv6_type == ICMPV6_NEIGHBOR_ADVERTISEMENT:
             pass
 
         return log
