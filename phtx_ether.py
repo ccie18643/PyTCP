@@ -38,34 +38,34 @@ def phtx_ether(self, child_packet, ether_src="00:00:00:00:00:00", ether_dst="00:
         __send_out_packet()
         return
 
-    # Check if we can obtain destination MAC based on IP header data
-    if ether_packet_tx.ether_type == ps_ether.ETHER_TYPE_IP:
+    # Check if we can obtain destination MAC based on IPv4 header data
+    if ether_packet_tx.ether_type == ps_ether.ETHER_TYPE_IPV4:
         ipv4_packet_tx = ps_ipv4.IPv4Packet(ether_packet_tx)
 
         # Send out packet if its destinied to limited broadcast addresses
         if ipv4_packet_tx.ipv4_dst in "255.255.255.255":
             ether_packet_tx.ether_dst = "ff:ff:ff:ff:ff:ff"
-            self.logger.debug(f"{ether_packet_tx.tracker} - Resolved destiantion IP {ipv4_packet_tx.ipv4_dst} to MAC {ether_packet_tx.ether_dst}")
+            self.logger.debug(f"{ether_packet_tx.tracker} - Resolved destiantion IPv4 {ipv4_packet_tx.ipv4_dst} to MAC {ether_packet_tx.ether_dst}")
             __send_out_packet()
             return
 
-        # Send out packet if its destinied to directed broadcast or netowork addresses (in relation to its source IP)
+        # Send out packet if its destinied to directed broadcast or netowork addresses (in relation to its source IPv4)
         for stack_ipv4_address in self.stack_ipv4_address:
             if stack_ipv4_address[0] == ipv4_packet_tx.ipv4_src:
                 if ipv4_packet_tx.ipv4_dst in {stack_ipv4_address[2], stack_ipv4_address[3]}:
                     ether_packet_tx.ether_dst = "ff:ff:ff:ff:ff:ff"
-                    self.logger.debug(f"{ether_packet_tx.tracker} - Resolved destiantion IP {ipv4_packet_tx.ipv4_dst} to MAC {ether_packet_tx.ether_dst}")
+                    self.logger.debug(f"{ether_packet_tx.tracker} - Resolved destiantion IPv4 {ipv4_packet_tx.ipv4_dst} to MAC {ether_packet_tx.ether_dst}")
                     __send_out_packet()
                     return
 
-        # Send out packet if is destined to external network (in relation to its source IP) and we are able to obtain MAC of default gateway from ARP cache
+        # Send out packet if is destined to external network (in relation to its source IPv4) and we are able to obtain MAC of default gateway from ARP cache
         for stack_ipv4_address in self.stack_ipv4_address:
             if stack_ipv4_address[0] == ipv4_packet_tx.ipv4_src:
                 if not __atoi(stack_ipv4_address[2]) <= __atoi(ipv4_packet_tx.ipv4_dst) <= __atoi(stack_ipv4_address[3]):
                     if mac_address := stack.arp_cache.find_entry(stack_ipv4_address[4]):
                         ether_packet_tx.ether_dst = mac_address
                         self.logger.debug(
-                            f"{ether_packet_tx.tracker} - Resolved destiantion IP {ipv4_packet_tx.ipv4_dst} to Default Gateway MAC {ether_packet_tx.ether_dst}"
+                            f"{ether_packet_tx.tracker} - Resolved destiantion IPv4 {ipv4_packet_tx.ipv4_dst} to Default Gateway MAC {ether_packet_tx.ether_dst}"
                         )
                         __send_out_packet()
                         return
@@ -73,7 +73,7 @@ def phtx_ether(self, child_packet, ether_src="00:00:00:00:00:00", ether_dst="00:
         # Send out packet if we are able to obtain destinaton MAC from ARP cache
         if mac_address := stack.arp_cache.find_entry(ipv4_packet_tx.ipv4_dst):
             ether_packet_tx.ether_dst = mac_address
-            self.logger.debug(f"{ether_packet_tx.tracker} - Resolved destiantion IP {ipv4_packet_tx.ipv4_dst} to MAC {ether_packet_tx.ether_dst}")
+            self.logger.debug(f"{ether_packet_tx.tracker} - Resolved destiantion IPv4 {ipv4_packet_tx.ipv4_dst} to MAC {ether_packet_tx.ether_dst}")
             __send_out_packet()
             return
 

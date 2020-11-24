@@ -15,8 +15,8 @@ import struct
 import threading
 
 import ps_arp
-
 import stack
+from mac2eui64 import mac2eui64
 
 
 class PacketHandler:
@@ -27,7 +27,8 @@ class PacketHandler:
     from phrx_ipv4 import phrx_ipv4
     from phrx_ipv6 import phrx_ipv6
     from phrx_icmpv4 import phrx_icmpv4
-    #from phrx_icmpv6 import phrx_icmpv6
+
+    # from phrx_icmpv6 import phrx_icmpv6
     from phrx_udp import phrx_udp
     from phrx_tcp import phrx_tcp
 
@@ -36,7 +37,8 @@ class PacketHandler:
     from phtx_ipv4 import phtx_ipv4
     from phtx_ipv6 import phtx_ipv6
     from phtx_icmpv4 import phtx_icmpv4
-    #from phtx_icmpv6 import phtx_icmpv6
+
+    # from phtx_icmpv6 import phtx_icmpv6
     from phtx_udp import phtx_udp
     from phtx_tcp import phtx_tcp
 
@@ -59,6 +61,10 @@ class PacketHandler:
         # Start packed handler so we can receive packets from network
         threading.Thread(target=self.__thread_packet_handler).start()
         self.logger.debug("Started packet handler")
+
+        # Create IPv6 link local address
+        self.stack_ipv6_unicast = [mac2eui64(stack_mac_address)]
+        self.logger.info(f"Stack listening on unicast IPv6 addresses: {[str(_) for _ in self.stack_ipv6_unicast]}")
 
         # If no stack IP address provided try to obtain it via DHCP
         if not stack_ipv4_address:
