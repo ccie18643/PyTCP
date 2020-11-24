@@ -158,23 +158,20 @@ class IPv6Packet:
 
                 if child_packet.protocol == "ICMPv6":
                     self.ipv6_next = IPV6_NEXT_HEADER_ICMPV6
-                    self.raw_data = child_packet.get_raw_packet()
-                    self.ipv6_dlen = len(self.raw_data)
 
                 if child_packet.protocol == "UDP":
                     self.ipv6_proto = IPV6_NEXT_HEADER_UDP
-                    self.ipv6_dlen = child_packet.udp_plen
-                    self.raw_data = child_packet.get_raw_packet(self.ipv6_pseudo_header)
 
                 if child_packet.protocol == "TCP":
                     self.ipv6_proto = IPV6_NEXT_HEADER_TCP
-                    self.ipv6_dlen = child_packet.tcp_hlen + len(child_packet.raw_data)
-                    self.raw_data = child_packet.get_raw_packet(self.ipv6_pseudo_header)
+
+                self.ipv6_dlen = len(child_packet.raw_packet)
+                self.raw_data = child_packet.get_raw_packet(self.ipv6_pseudo_header)
 
             else:
                 self.ipv6_next = ipv6_next
+                self.ipv6_dlen = len(raw_data)
                 self.raw_data = raw_data
-                self.ipv6_dlen = len(self.raw_data)
 
     def __str__(self):
         """ Short packet log string """

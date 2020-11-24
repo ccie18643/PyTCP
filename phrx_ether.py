@@ -24,8 +24,8 @@ def phrx_ether(self, ether_packet_rx):
         self.logger.opt(ansi=True).debug(f"{ether_packet_rx.tracker} - Packet doesn't comply with the Ethernet II standard, droping")
         return
 
-    # Check if received packet has been sent to us directly or by broadcast
-    if ether_packet_rx.ether_dst not in {self.stack_mac_address, "ff:ff:ff:ff:ff:ff"}:
+    # Check if received packet matches any of stack MAC addresses
+    if ether_packet_rx.ether_dst not in {*self.stack_mac_unicast, *self.stack_mac_multicast, *self.stack_mac_broadcast}:
         self.logger.opt(ansi=True).debug(f"{ether_packet_rx.tracker} - Ethernet packet not destined for this stack, droping")
         return
 

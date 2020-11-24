@@ -66,15 +66,18 @@ class EtherPacket:
             self.ether_dst = ether_dst
             self.ether_src = ether_src
 
-            assert child_packet.protocol in {"IPv4", "ARP"}, f"Not supported protocol: {child_packet.protocol}"
+            assert child_packet.protocol in {"IPv6", "IPv4", "ARP"}, f"Not supported protocol: {child_packet.protocol}"
+
+            if child_packet.protocol == "IPv6":
+                self.ether_type = ETHER_TYPE_IPV6
 
             if child_packet.protocol == "IPv4":
                 self.ether_type = ETHER_TYPE_IPV4
-                self.raw_data = child_packet.get_raw_packet()
 
             if child_packet.protocol == "ARP":
                 self.ether_type = ETHER_TYPE_ARP
-                self.raw_data = child_packet.get_raw_packet()
+
+            self.raw_data = child_packet.get_raw_packet()
 
     def __str__(self):
         """ Short packet log string """

@@ -52,6 +52,23 @@ from tracker import Tracker
    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 
 
+   Router Solicitation message (133/0)
+
+   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+   |     Type      |     Code      |          Checksum             |
+   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+   |                            Reserved                           |
+   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+   |   Options ...
+   +-+-+-+-+-+-+-+-+-+-+-+-
+
+   'Source link-layer address' option
+   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+   |       1       |       1       |                               ~
+   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+                               |
+   ~                           MAC Address                         ~
+   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+
 """
 
 ICMPV6_HEADER_LEN = 4
@@ -69,13 +86,26 @@ ICMPV6_ECHOREQUEST_LEN = 4
 ICMPV6_ECHOREPLY = 129
 ICMPV6_ECHOREPLY_LEN = 4
 
+ICMPV6_ROUTER_SOLICITATION = 133
+ICMPV6_ROUTER_SOLICITATION_LEN = 4
+
 
 class ICMPv6Packet:
     """ ICMPv6 packet support class """
 
     protocol = "ICMPv6"
 
-    def __init__(self, parent_packet=None, icmpv6_type=None, icmpv6_code=0, icmpv6_id=None, icmpv6_seq=None, icmpv6_raw_data=b"", echo_tracker=None):
+    def __init__(
+        self,
+        parent_packet=None,
+        icmpv6_type=None,
+        icmpv6_code=0,
+        icmpv6_id=None,
+        icmpv6_seq=None,
+        icmpv6_raw_data=b"",
+        icmpv6_source_link_layer_address=None,
+        echo_tracker=None,
+    ):
         """ Class constructor """
 
         # Packet parsing
@@ -103,6 +133,9 @@ class ICMPv6Packet:
             if self.icmpv6_type == ICMPV6_UNREACHABLE:
                 self.icmpv6_raw_data = raw_message[4:]
 
+            if self.icmpv6_type == ICMPV6_ROUTER_SOLICITATION:
+                pass
+
         # Packet building
         else:
             self.tracker = Tracker("TX", echo_tracker)
@@ -124,6 +157,9 @@ class ICMPv6Packet:
             if self.icmpv6_type == ICMPV6_UNREACHABLE:
                 self.icmpv6_raw_data = icmpv6_raw_data[:520]
 
+            if self.icmpv6_type == ICMPV6_ROUTER_SOLICITATION:
+                self.icmpv6_source_link_layer_address = icmpv6_source_link_layer_address
+
     def __str__(self):
         """ Short packet log string """
 
@@ -136,6 +172,9 @@ class ICMPv6Packet:
             log += f", id {self.icmpv6_id}, seq {self.icmpv6_seq}"
 
         if self.icmpv6_type == ICMPV6_UNREACHABLE:
+            pass
+
+        if self.icmpv6_type == ICMPV6_ROUTER_SOLICITATION:
             pass
 
         return log
@@ -164,6 +203,9 @@ class ICMPv6Packet:
         if self.icmpv6_type == ICMPV6_UNREACHABLE:
             return struct.pack("! HH", 0, stack.mtu if self.code == 4 else 0) + self.icmpv6_raw_data
 
+        if self.icmpv6_type == ICMPV6_ROUTER_SOLICITATION:
+            return struct.pack("! L BB 6s", 0, 1, 1, bytes.fromhex(self.icmpv6_source_link_layer_address.replace(":", "")))
+
         return b""
 
     @property
@@ -175,7 +217,7 @@ class ICMPv6Packet:
     def get_raw_packet(self, ipv6_pseudo_header):
         """ Get packet in raw format ready to be processed by lower level protocol """
 
-        self.icmpv6_cksum = inet_cksum.compute_cksum(ipv4_pseudo_header + self.raw_packet)
+        self.icmpv6_cksum = inet_cksum.compute_cksum(ipv6_pseudo_header + self.raw_packet)
 
         return self.raw_packet
 

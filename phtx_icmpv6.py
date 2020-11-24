@@ -11,12 +11,28 @@ import ps_icmpv6
 
 
 def phtx_icmpv6(
-    self, ipv6_src, ipv6_dst, icmpv6_type, icmpv6_code=0, icmpv6_id=None, icmpv6_seq=None, icmpv6_raw_data=None, icmpv6_ipv6_packet_rx=None, echo_tracker=None
+    self,
+    ipv6_src,
+    ipv6_dst,
+    icmpv6_type,
+    icmpv6_code=0,
+    icmpv6_id=None,
+    icmpv6_seq=None,
+    icmpv6_raw_data=None,
+    icmpv6_source_link_layer_address=None,
+    icmpv6_ipv6_packet_rx=None,
+    echo_tracker=None,
 ):
     """ Handle outbound ICMPv6 packets """
 
     icmpv6_packet_tx = ps_icmpv6.ICMPv6Packet(
-        icmpv6_type=icmpv6_type, icmpv6_code=icmpv6_code, icmpv6_id=icmpv6_id, icmpv6_seq=icmpv6_seq, icmpv6_raw_data=icmpv6_raw_data, echo_tracker=echo_tracker
+        icmpv6_type=icmpv6_type,
+        icmpv6_code=icmpv6_code,
+        icmpv6_id=icmpv6_id,
+        icmpv6_seq=icmpv6_seq,
+        icmpv6_raw_data=icmpv6_raw_data,
+        icmpv6_source_link_layer_address=icmpv6_source_link_layer_address,
+        echo_tracker=echo_tracker,
     )
 
     self.logger.opt(ansi=True).info(f"<magenta>{icmpv6_packet_tx.tracker}</magenta> - {icmpv6_packet_tx}")

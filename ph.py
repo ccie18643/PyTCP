@@ -7,16 +7,16 @@ ph.py - protocol support for incoming and outgoing packets
 
 """
 
+import re
 import time
 import loguru
 import random
 import threading
 
-from ipaddress import IPv4Address
+from ipaddress import IPv4Address, IPv6Address, IPv6Interface
 
 import ps_arp
 import stack
-from mac2eui64 import mac2eui64
 
 
 class PacketHandler:
@@ -58,24 +58,44 @@ class PacketHandler:
 
         self.ipv4_packet_id = 0
 
+        # Create list of MAC addresses stack should listen on
+        self.stack_mac_unicast = [stack_mac_address]
+        self.stack_mac_multicast = []
+        self.stack_mac_broadcast = ["ff:ff:ff:ff:ff:ff"]
+
         # Start packed handler so we can receive packets from network
         threading.Thread(target=self.__thread_packet_handler).start()
         self.logger.debug("Started packet handler")
 
         # Create IPv6 link local address
-        self.stack_ipv6_unicast = [mac2eui64(stack_mac_address)]
-        self.logger.info(f"Stack listening on unicast IPv6 addresses: {[str(_) for _ in self.stack_ipv6_unicast]}")
+        self.stack_ipv6_address = [self.__ipv6_eui64(stack_mac_address)]
 
-        # If no stack IPv4 address provided try to obtain it via DHCPv4
-        # if not stack_ipv4_address:
-        #    self.__dhcp_client()
+        # Create list of IPv6 unicast addresses stack should listen on
+        self.stack_ipv6_unicast = [_.ip for _ in self.stack_ipv6_address]
 
-        # Create list of IP addresses stack should listen on
+        # Create list of IPv6 multicast addresses stack should listen on, also update the stack MAC multicast list
+        self.stack_ipv6_multicast = [self.__ipv6_solicited_node_multicast(_) for _ in self.stack_ipv6_unicast]
+        self.stack_ipv6_multicast.append(IPv6Address("ff02::1"))
+        self.stack_mac_multicast = [self.ipv6_multicast_mac(_) for _ in self.stack_ipv6_multicast]
+
+        # Create list of IPv4 unicast/multicast/broadcast addresses stack should listen on
         self.__validate_stack_ipv4_addresses()
-        self.logger.info(f"Stack listening on unicast IP addresses: {[str(_) for _ in self.stack_ipv4_unicast]}")
-        self.logger.info(f"Stack listening on multicast IP addresses: {[str(_) for _ in self.stack_ipv4_multicast]}")
-        self.logger.info(f"Stack listening on brodcast IP addresses: {[str(_) for _ in self.stack_ipv4_broadcast]}")
-        self.logger.info(f"Stack ignoring network IP addresses: {[str(_) for _ in self.stack_ipv4_network]}")
+
+        print("DUPA")
+        self.phtx_icmpv6(
+            ipv6_src=IPv6Address("::"), ipv6_dst=IPv6Address("ff02::2"), icmpv6_type=133, icmpv6_source_link_layer_address=self.stack_mac_unicast[0]
+        )
+        print("PIPA")
+
+        # Log all the addresses stack will listen on
+        self.logger.info(f"Stack listening on unicast MAC addresses: {self.stack_mac_unicast}")
+        self.logger.info(f"Stack listening on multicast MAC addresses: {self.stack_mac_multicast}")
+        self.logger.info(f"Stack listening on brodcast MAC addresses: {self.stack_mac_broadcast}")
+        self.logger.info(f"Stack listening on unicast IPv6 addresses: {[str(_) for _ in self.stack_ipv6_unicast]}")
+        self.logger.info(f"Stack listening on multicast IPv6 addresses: {[str(_) for _ in self.stack_ipv6_multicast]}")
+        self.logger.info(f"Stack listening on unicast IPv4 addresses: {[str(_) for _ in self.stack_ipv4_unicast]}")
+        self.logger.info(f"Stack listening on multicast IPv4 addresses: {[str(_) for _ in self.stack_ipv4_multicast]}")
+        self.logger.info(f"Stack listening on brodcast IPv4 addresses: {[str(_) for _ in self.stack_ipv4_broadcast]}")
 
     def __dhcp_client(self):
         """ Acquire IP address using DHCP client """
@@ -116,11 +136,6 @@ class PacketHandler:
         for ipv4_address in self.stack_ipv4_address:
             if ipv4_address.network.broadcast_address not in self.stack_ipv4_broadcast:
                 self.stack_ipv4_broadcast.append(ipv4_address.network.broadcast_address)
-
-        # Create list of all network addresses stack should ignore
-        for ipv4_address in self.stack_ipv4_address:
-            if ipv4_address.network.network_address not in self.stack_ipv4_network:
-                self.stack_ipv4_network.append(ipv4_address.network.network_address)
 
     def __send_arp_probe(self, ipv4_address):
         """ Send out ARP probe to detect possible IP conflict """
@@ -166,3 +181,22 @@ class PacketHandler:
 
         while True:
             self.phrx_ether(stack.rx_ring.dequeue())
+
+    def __ipv6_eui64(self, mac, prefix="ff80::"):
+        """ Create IPv6 EUI64 address """
+
+        eui64 = re.sub(r"[.:-]", "", mac).lower()
+        eui64 = eui64[0:6] + "fffe" + eui64[6:]
+        eui64 = hex(int(eui64[0:2], 16) ^ 2)[2:].zfill(2) + eui64[2:]
+        eui64 = ":".join(eui64[_ : _ + 4] for _ in range(0, 16, 4))
+        return IPv6Interface(prefix + eui64 + "/64")
+
+    def __ipv6_solicited_node_multicast(self, ipv6_address):
+        """ Create IPv6 solicited node multicast address """
+
+        return IPv6Address("ff02::1:ff" + ipv6_address.exploded[-7:])
+
+    def ipv6_multicast_mac(self, ipv6_multicast_address):
+        """ Create IPv6 multicast MAC address """
+
+        return "33:33:" + ":".join(["".join(ipv6_multicast_address.exploded[-9:].split(":"))[_ : _ + 2] for _ in range(0, 8, 2)])

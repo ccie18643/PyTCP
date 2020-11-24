@@ -9,6 +9,7 @@ phtx_ether.py - packet handler for outbound Ethernet packets
 
 import ps_ether
 import ps_ipv4
+import ps_ipv6
 import stack
 
 from ipaddress import IPv4Address
@@ -33,6 +34,17 @@ def phtx_ether(self, child_packet, ether_src="00:00:00:00:00:00", ether_dst="00:
         self.logger.debug(f"{ether_packet_tx.tracker} - Contains valid destination MAC address")
         __send_out_packet()
         return
+
+    # Check if we can obtain destination MAC based on IPv6 header data
+    if ether_packet_tx.ether_type == ps_ether.ETHER_TYPE_IPV6:
+        ipv6_packet_tx = ps_ipv6.IPv6Packet(ether_packet_tx)
+
+        # Send packet out if its destined to multicast IPv6 address
+        if ipv6_packet_tx.ipv6_dst.is_multicast:
+            ether_packet_tx.ether_dst = self.ipv6_multicast_mac(ipv6_packet_tx.ipv6_dst)
+            self.logger.debug(f"{ether_packet_tx.tracker} - Resolved destiantion IPv6 {ipv6_packet_tx.ipv6_dst} to MAC {ether_packet_tx.ether_dst}")
+            __send_out_packet()
+            return
 
     # Check if we can obtain destination MAC based on IPv4 header data
     if ether_packet_tx.ether_type == ps_ether.ETHER_TYPE_IPV4:

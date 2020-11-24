@@ -53,9 +53,8 @@ def validate_source_ipv6_address(self, ipv6_src):
         else:
             self.logger.warning("Unable to sent out IP packet, no appropriate stack unicast IP address available")
             return
-
-    return ipv6_src
     """
+    return ipv6_src
 
 
 def phtx_ipv6(self, child_packet, ipv6_dst, ipv6_src):
@@ -67,7 +66,7 @@ def phtx_ipv6(self, child_packet, ipv6_dst, ipv6_src):
 
     # Check if IP packet can be sent out without fragmentation, if so send it out
     if ps_ipv6.IPV6_HEADER_LEN + len(child_packet.raw_packet) <= stack.mtu:
-        ipv6_packet_tx = ps_ipv6.IPv6Packet(ipv6_src=ipv6_src, ipv6_dst=ipv6_dst, ipv6_packet_id=self.ipv6_packet_id, child_packet=child_packet)
+        ipv6_packet_tx = ps_ipv6.IPv6Packet(ipv6_src=ipv6_src, ipv6_dst=ipv6_dst, child_packet=child_packet)
 
         self.logger.debug(f"{ipv6_packet_tx.tracker} - {ipv6_packet_tx}")
         self.phtx_ether(child_packet=ipv6_packet_tx)
