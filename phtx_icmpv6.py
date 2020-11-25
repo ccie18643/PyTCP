@@ -19,7 +19,11 @@ def phtx_icmpv6(
     icmpv6_id=None,
     icmpv6_seq=None,
     icmpv6_raw_data=None,
-    icmpv6_source_link_layer_address=None,
+    icmpv6_nd_flag_r=False,
+    icmpv6_nd_flag_s=False,
+    icmpv6_nd_flag_o=False,
+    icmpv6_nd_target_address=None,
+    icmpv6_nd_options=[],
     icmpv6_ipv6_packet_rx=None,
     echo_tracker=None,
 ):
@@ -31,7 +35,11 @@ def phtx_icmpv6(
         icmpv6_id=icmpv6_id,
         icmpv6_seq=icmpv6_seq,
         icmpv6_raw_data=icmpv6_raw_data,
-        icmpv6_source_link_layer_address=icmpv6_source_link_layer_address,
+        icmpv6_nd_flag_r=icmpv6_nd_flag_r,
+        icmpv6_nd_flag_s=icmpv6_nd_flag_s,
+        icmpv6_nd_flag_o=icmpv6_nd_flag_o,
+        icmpv6_nd_options=icmpv6_nd_options,
+        icmpv6_nd_target_address=icmpv6_nd_target_address,
         echo_tracker=echo_tracker,
     )
 

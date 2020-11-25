@@ -59,8 +59,8 @@ def phrx_udp(self, ipv4_packet_rx, udp_packet_rx):
     self.phtx_icmpv4(
         ipv4_src=ipv4_packet_rx.ipv4_dst,
         ipv4_dst=ipv4_packet_rx.ipv4_src,
-        icmpv4_type=ps_icmpv4.ICMPv4_UNREACHABLE,
-        icmpv4_code=ps_icmpv4.ICMPv4_UNREACHABLE_PORT,
+        icmpv4_type=ps_icmpv4.ICMPV4_UNREACHABLE,
+        icmpv4_code=ps_icmpv4.ICMPV4_UNREACHABLE_PORT,
         icmpv4_raw_data=ipv4_packet_rx.get_raw_packet(),
         echo_tracker=udp_packet_rx.tracker,
     )

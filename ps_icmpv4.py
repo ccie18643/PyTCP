@@ -158,7 +158,7 @@ class ICMPv4Packet:
             return struct.pack("! HH", self.icmpv4_id, self.icmpv4_seq) + self.icmpv4_raw_data
 
         if self.icmpv4_type == ICMPV4_UNREACHABLE:
-            return struct.pack("! HH", 0, stack.mtu if self.code == 4 else 0) + self.icmpv4_raw_data
+            return struct.pack("! HH", 0, stack.mtu if self.icmpv4_code == 4 else 0) + self.icmpv4_raw_data
 
         return b""
 

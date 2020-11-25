@@ -82,7 +82,7 @@ def main():
     stack.rx_ring = RxRing(tap, STACK_MAC_ADDRESS)
     stack.tx_ring = TxRing(tap, STACK_MAC_ADDRESS)
     stack.arp_cache = ArpCache()
-    stack.nd_cache = ICMPv6NdCache()
+    stack.icmpv6_nd_cache = ICMPv6NdCache()
     stack.packet_handler = PacketHandler(STACK_MAC_ADDRESS, STACK_IPV4_ADDRESS)
 
     # ServiceUdpEcho()

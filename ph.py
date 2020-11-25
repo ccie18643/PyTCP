@@ -81,12 +81,6 @@ class PacketHandler:
         # Create list of IPv4 unicast/multicast/broadcast addresses stack should listen on
         self.__validate_stack_ipv4_addresses()
 
-        print("DUPA")
-        self.phtx_icmpv6(
-            ipv6_src=self.stack_ipv6_unicast[0], ipv6_dst=IPv6Address("ff02::2"), icmpv6_type=133, icmpv6_source_link_layer_address=self.stack_mac_unicast[0]
-        )
-        print("PIPA")
-
         # Log all the addresses stack will listen on
         self.logger.info(f"Stack listening on unicast MAC addresses: {self.stack_mac_unicast}")
         self.logger.info(f"Stack listening on multicast MAC addresses: {self.stack_mac_multicast}")
@@ -182,7 +176,7 @@ class PacketHandler:
         while True:
             self.phrx_ether(stack.rx_ring.dequeue())
 
-    def __ipv6_eui64(self, mac, prefix="ff80::"):
+    def __ipv6_eui64(self, mac, prefix="fe80::"):
         """ Create IPv6 EUI64 address """
 
         eui64 = re.sub(r"[.:-]", "", mac).lower()

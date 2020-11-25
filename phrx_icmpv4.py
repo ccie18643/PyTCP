@@ -22,7 +22,7 @@ def phrx_icmpv4(self, ipv4_packet_rx, icmpv4_packet_rx):
 
     # Respond to ICMPv4 Echo Request packet
     if icmpv4_packet_rx.icmpv4_type == ps_icmpv4.ICMPV4_ECHOREQUEST and icmpv4_packet_rx.icmpv4_code == 0:
-        self.logger.debug(f"Received ICMPv4 echo packet from {ipv4_packet_rx.ipv4_src}, sending reply")
+        self.logger.debug(f"Received ICMPv4 Echo Request packet from {ipv4_packet_rx.ipv4_src}, sending reply")
 
         self.phtx_icmpv4(
             ipv4_src=ipv4_packet_rx.ipv4_dst,

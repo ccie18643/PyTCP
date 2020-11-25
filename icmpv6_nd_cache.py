@@ -46,7 +46,7 @@ class ICMPv6NdCache:
         for ipv6_address in list(self.nd_cache):
 
             # Skip permanent entries
-            if self.arp_cache[ipv6_address].permanent:
+            if self.nd_cache[ipv6_address].permanent:
                 continue
 
             # If entry age is over maximum age then discard the entry
@@ -58,7 +58,7 @@ class ICMPv6NdCache:
             elif (time.time() - self.nd_cache[ipv6_address].creation_time > ND_ENTRY_MAX_AGE - ND_ENTRY_REFRESH_TIME) and self.nd_cache[ipv6_address].hit_count:
                 self.nd_cache[ipv6_address].hit_count = 0
                 self.__send_icmpv6_neighbor_solicitation(ipv6_address)
-                self.logger.debug(f"Trying to refresh expiring ICMPv6 ND cache entry for {ipv6_address} -> {self.arp_cache[ipv6_address].mac_address}")
+                self.logger.debug(f"Trying to refresh expiring ICMPv6 ND cache entry for {ipv6_address} -> {self.nd_cache[ipv6_address].mac_address}")
 
     def __send_icmpv6_neighbor_solicitation(self, target_address):
         """ Enqueue ICMPv6 Neighbor Solicitation packet with TX ring """

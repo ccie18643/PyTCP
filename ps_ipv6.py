@@ -107,7 +107,7 @@ class IPv6Packet:
         parent_packet=None,
         ipv6_src=None,
         ipv6_dst=None,
-        ipv6_hop=64,
+        ipv6_hop=255,
         ipv6_dscp=0,
         ipv6_ecn=0,
         ipv6_flow=0,
