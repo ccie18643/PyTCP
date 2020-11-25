@@ -349,10 +349,10 @@ class ICMPv6Packet:
 
         return self.raw_header + self.raw_message
 
-    def get_raw_packet(self, ipv6_pseudo_header):
+    def get_raw_packet(self, ip_pseudo_header):
         """ Get packet in raw format ready to be processed by lower level protocol """
 
-        self.icmpv6_cksum = inet_cksum.compute_cksum(ipv6_pseudo_header + self.raw_packet)
+        self.icmpv6_cksum = inet_cksum.compute_cksum(ip_pseudo_header + self.raw_packet)
 
         return self.raw_packet
 
@@ -367,10 +367,10 @@ class ICMPv6Packet:
 
         return raw_nd_options
 
-    def validate_cksum(self, ipv6_pseudo_header):
+    def validate_cksum(self, ip_pseudo_header):
         """ Validate packet checksum """
 
-        return not bool(inet_cksum.compute_cksum(ipv6_pseudo_header + self.raw_packet))
+        return not bool(inet_cksum.compute_cksum(ip_pseudo_header + self.raw_packet))
 
     def __read_nd_options(self, raw_nd_options):
         """ Read options for Neighbor Discovery """

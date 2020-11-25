@@ -160,13 +160,13 @@ class IPv6Packet:
                     self.ipv6_next = IPV6_NEXT_HEADER_ICMPV6
 
                 if child_packet.protocol == "UDP":
-                    self.ipv6_proto = IPV6_NEXT_HEADER_UDP
+                    self.ipv6_next = IPV6_NEXT_HEADER_UDP
 
                 if child_packet.protocol == "TCP":
-                    self.ipv6_proto = IPV6_NEXT_HEADER_TCP
+                    self.ipv6_next = IPV6_NEXT_HEADER_TCP
 
                 self.ipv6_dlen = len(child_packet.raw_packet)
-                self.raw_data = child_packet.get_raw_packet(self.ipv6_pseudo_header)
+                self.raw_data = child_packet.get_raw_packet(self.ip_pseudo_header)
 
             else:
                 self.ipv6_next = ipv6_next
@@ -210,7 +210,7 @@ class IPv6Packet:
         return self.raw_header + self.raw_data
 
     @property
-    def ipv6_pseudo_header(self):
+    def ip_pseudo_header(self):
         """ Returns IPv6 pseudo header that is used by TCP to compute its checksum """
 
         # *** in the UDP/TCP length field need to account for IPv6 optional headers, current implementation assumes TCP/UDP is put right after IPv6 header ***

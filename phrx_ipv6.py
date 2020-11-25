@@ -27,10 +27,10 @@ def phrx_ipv6(self, ipv6_packet_rx):
         self.phrx_icmpv6(ipv6_packet_rx, ps_icmpv6.ICMPv6Packet(ipv6_packet_rx))
         return
 
-    if ipv6_packet_rx.ipv6_proto == ps_ipv6.IPV6_NEXT_HEADER_UDP:
+    if ipv6_packet_rx.ipv6_next == ps_ipv6.IPV6_NEXT_HEADER_UDP:
         self.phrx_udp(ipv6_packet_rx, ps_udp.UdpPacket(ipv6_packet_rx))
         return
 
-    if ipv6_packet_rx.ipv6_proto == ps_ipv6.IPV6_NEXT_HEADER_TCP:
+    if ipv6_packet_rx.ipv6_next == ps_ipv6.IPV6_NEXT_HEADER_TCP:
         self.phrx_tcp(ipv6_packet_rx, ps_tcp.TcpPacket(ipv6_packet_rx))
         return

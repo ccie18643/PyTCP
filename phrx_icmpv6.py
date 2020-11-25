@@ -18,7 +18,7 @@ def phrx_icmpv6(self, ipv6_packet_rx, icmpv6_packet_rx):
     self.logger.opt(ansi=True).info(f"<green>{icmpv6_packet_rx.tracker}</green> - {icmpv6_packet_rx}")
 
     # Validate ICMPv6 packet checksum
-    if not icmpv6_packet_rx.validate_cksum(ipv6_packet_rx.ipv6_pseudo_header):
+    if not icmpv6_packet_rx.validate_cksum(ipv6_packet_rx.ip_pseudo_header):
         self.logger.debug(f"{icmpv6_packet_rx.tracker} - ICMPv6 packet has invalid checksum, droping")
         return
 

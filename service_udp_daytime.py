@@ -14,7 +14,7 @@ from datetime import datetime
 import udp_socket
 
 from tracker import Tracker
-from udp_packet import UdpPacket
+from udp_metadata import UdpMetadata
 
 
 class ServiceUdpDaytime:
@@ -34,7 +34,7 @@ class ServiceUdpDaytime:
 
         while True:
             packet_rx = socket.receive_from()
-            packet_tx = UdpPacket(
+            packet_tx = UdpMetadata(
                 local_ipv4_address=packet_rx.local_ipv4_address,
                 local_port=packet_rx.local_port,
                 remote_ipv4_address=packet_rx.remote_ipv4_address,

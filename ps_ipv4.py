@@ -199,12 +199,12 @@ class IPv4Packet:
                 if child_packet.protocol == "UDP":
                     self.ipv4_proto = IPV4_PROTO_UDP
                     self.ipv4_plen = self.ipv4_hlen + child_packet.udp_plen
-                    self.raw_data = child_packet.get_raw_packet(self.ipv4_pseudo_header)
+                    self.raw_data = child_packet.get_raw_packet(self.ip_pseudo_header)
 
                 if child_packet.protocol == "TCP":
                     self.ipv4_proto = IPV4_PROTO_TCP
                     self.ipv4_plen = self.ipv4_hlen + child_packet.tcp_hlen + len(child_packet.raw_data)
-                    self.raw_data = child_packet.get_raw_packet(self.ipv4_pseudo_header)
+                    self.raw_data = child_packet.get_raw_packet(self.ip_pseudo_header)
 
             else:
                 self.ipv4_proto = ipv4_proto
@@ -261,8 +261,8 @@ class IPv4Packet:
         return self.raw_header + self.raw_options + self.raw_data
 
     @property
-    def ipv4_pseudo_header(self):
-        """ Returns IP pseudo header that is used by TCP to compute its checksum """
+    def ip_pseudo_header(self):
+        """ Returns IPv4 pseudo header that is used by TCP and UDP to compute their checksums """
 
         return struct.pack("! 4s 4s BBH", self.ipv4_src.packed, self.ipv4_dst.packed, 0, self.ipv4_proto, self.ipv4_plen - self.ipv4_hlen)
 

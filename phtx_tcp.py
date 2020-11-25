@@ -7,6 +7,7 @@ phtx_tcp.py - packet handler for outbound TCP packets
 
 """
 
+from ipaddress import IPv4Address, IPv6Address
 
 from ps_tcp import TcpPacket, TcpOptMss, TcpOptWscale, TcpOptNop
 
@@ -16,8 +17,8 @@ PACKET_LOSS = True
 
 def phtx_tcp(
     self,
-    ipv4_src,
-    ipv4_dst,
+    ip_src,
+    ip_dst,
     tcp_sport,
     tcp_dport,
     tcp_seq=0,
@@ -79,4 +80,12 @@ def phtx_tcp(
             self.logger.critical("SIMULATED LOST TX DATA PACKET")
             return
 
-    self.phtx_ipv4(ipv4_src=ipv4_src, ipv4_dst=ipv4_dst, child_packet=tcp_packet_tx)
+    assert type(ip_src) in {IPv4Address, IPv6Address}
+    assert type(ip_dst) in {IPv4Address, IPv6Address}
+
+    if ip_src.version == 6 and ip_dst.version == 6:
+        self.phtx_ipv6(ipv6_src=ip_src, ipv6_dst=ip_dst, child_packet=tcp_packet_tx)
+
+    if ip_src.version == 4 and ip_dst.version == 4:
+        self.phtx_ipv4(ipv4_src=ip_src, ipv4_dst=ip_dst, child_packet=tcp_packet_tx)
+    
