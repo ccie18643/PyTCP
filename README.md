@@ -11,9 +11,9 @@ Python based attempt to create fully functional TCP/IP stack for educational pur
  - IPv4 protocol - *IPv4 options accepted but not supported*
  - IPv4 protocol -  *multiple stack's IPv4 addresses supported, each of them acts as it was assigned to separate VRF* 
  - IPv4 protocol - *ability to route traffic to external destinations via default gateway, this was needed for testing TCP connectivity over Internet*
- - ICMPv4 protocol - *only ICMP messages that are needed for stack operations are implemented, eg. echo request, echo reply, port unreachable*
+ - ICMPv4 protocol - *features needed for stack operations, eg. echo request, echo reply, port unreachable*
  - IPv6 protocol - *basic support with address auto configuration*
- - ICMPv6 protocol - *basic support, features needed for stack operation, echo request, echo reply, port unreachable, Neighbor Discovery, Duplicate Address Detection*
+ - ICMPv6 protocol - *features needed for stack operation, eg. echo request, echo reply, port unreachable, Neighbor Discovery, Duplicate Address Detection*
  - UDP protocol - *full support, stack is able to exchange data with other hosts using UDP protocol*
  - UDP sockets - *full support, stack's 'end user' API similar to Berkley sockets*
  - UDP services - *UDP Echo, Discard, Daytime implemented for testing purposes*
