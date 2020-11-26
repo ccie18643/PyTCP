@@ -4,17 +4,22 @@ Python based attempt to create fully functional TCP/IP stack for educational pur
 
 #### Already implemented:
 
- - Ethernet protocol - *full support of Ethernet II standard*
- - ARP protocol - *replies, queries, ARP cache*
+ - Ethernet protocol - *support of Ethernet II standard frame*
+ - Ethernet protocol - *unicast, IPv4 multicast, IPv6 multicast and broadcast addressing supported*
+ - ARP protocol - *replies, queries, ARP cache mechanism*
  - ARP protocol - *ARP Probe/Announcement IP conflict detection (ACD) mechanism*
  - IPv4 protocol - *inbound and outbound IP fragmentation*
  - IPv4 protocol - *IPv4 options accepted but not supported*
  - IPv4 protocol -  *multiple stack's IPv4 addresses supported, each of them acts as it was assigned to separate VRF* 
  - IPv4 protocol - *ability to route traffic to external destinations via default gateway, this was needed for testing TCP connectivity over Internet*
  - ICMPv4 protocol - *echo request, echo reply, port unreachable*
- - IPv6 protocol - *basic support with address auto configuration*
+ - IPv6 protocol - *link local address auto-configuration using EUI64*
+ - IPv6 protocol - *GUA address auto configuration using Router Advertisement / EUI64*
+ - IPv6 protocol - *automatic assignment of Solicited Node Multicast addresses*
+ - IPv6 protocol - *automatic assignment of IPv6 multicast MAC addresses*
  - ICMPv6 protocol - *echo request, echo reply, port unreachable*
  - ICMPv6 protocol - *Neighbor Discovery, Duplicate Address Detection*
+ - ICMPv6 protocol - *Neighbor Discovery cache mechanism*
  - UDP protocol - *full support, stack is able to exchange data with other hosts using UDP protocol*
  - UDP sockets - *full support, stack's 'end user' API similar to Berkley sockets*
  - UDP services - *UDP Echo, Discard, Daytime implemented for testing purposes*
@@ -28,6 +33,7 @@ Python based attempt to create fully functional TCP/IP stack for educational pur
 
 #### Work in progress:
 
+ - IPv6 protocol - *ability to route traffic to external destinations via default gateway*
  - TCP protocol - *ongoing effort of improving code and bug fixing while simulating more advanced traffic scenarios*
  - TCP protocol - *proper handling on RST packets in various states, need to do research on this*
 
@@ -37,8 +43,8 @@ Python based attempt to create fully functional TCP/IP stack for educational pur
  - TCP protocol - *ACK packet retransmission in case we got FIN retransmission in TIME_WAIT state*
  - TCP protocol - *implement proper response to packets containing old SEQ and/or ACK numbers*
  - TCP protocol - *ensure that event communication from TCP session to socket works properly (eg. connection reset by peer)*
- - ICMP protocol - *need to come up with some sort of "icmp socket" mechanism so ping client can bind to particular ICMP echo-reply stream*
- - IP protocol - *improvements in IP defragmentation mechanism are needed, out of order fragment handling, purging of orphaned fragments*
+ - ICMP protocols - *need to come up with some sort of "icmp socket" mechanism so ping client can bind to particular ICMP echo-reply stream*
+ - IPv4 protocol - *improvements in IP defragmentation mechanism are needed, out of order fragment handling, purging of orphaned fragments*
 
 ### Examples:
 
