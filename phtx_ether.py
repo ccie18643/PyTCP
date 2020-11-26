@@ -7,12 +7,14 @@ phtx_ether.py - packet handler for outbound Ethernet packets
 
 """
 
+from ipaddress import IPv4Address
+
 import ps_ether
 import ps_ipv4
 import ps_ipv6
 import stack
 
-from ipaddress import IPv4Address
+from ipv6_helper import ipv6_multicast_mac
 
 
 def phtx_ether(self, child_packet, ether_src="00:00:00:00:00:00", ether_dst="00:00:00:00:00:00"):
@@ -26,7 +28,7 @@ def phtx_ether(self, child_packet, ether_src="00:00:00:00:00:00", ether_dst="00:
 
     # Check if packet contains valid source address, fill it out if needed
     if ether_packet_tx.ether_src == "00:00:00:00:00:00":
-        ether_packet_tx.ether_src = self.stack_mac_address
+        ether_packet_tx.ether_src = self.stack_mac_unicast[0]
         self.logger.debug(f"{ether_packet_tx.tracker} - Set source to stack MAC {ether_packet_tx.ether_src}")
 
     # Send out packet if it contains valid destination MAC address
@@ -41,7 +43,7 @@ def phtx_ether(self, child_packet, ether_src="00:00:00:00:00:00", ether_dst="00:
 
         # Send packet out if its destined to multicast IPv6 address
         if ipv6_packet_tx.ipv6_dst.is_multicast:
-            ether_packet_tx.ether_dst = self.ipv6_multicast_mac(ipv6_packet_tx.ipv6_dst)
+            ether_packet_tx.ether_dst = ipv6_multicast_mac(ipv6_packet_tx.ipv6_dst)
             self.logger.debug(f"{ether_packet_tx.tracker} - Resolved destiantion IPv6 {ipv6_packet_tx.ipv6_dst} to MAC {ether_packet_tx.ether_dst}")
             __send_out_packet()
             return

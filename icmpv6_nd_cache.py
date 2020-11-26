@@ -10,8 +10,12 @@ icmpv6_nd_cache.py - module contains class supporting ICMPv6 Neighbor Discovery 
 import loguru
 import time
 
+from ipaddress import IPv6Address
+
 import ps_icmpv6
 import stack
+
+from ipv6_helper import ipv6_solicited_node_multicast
 
 
 ND_ENTRY_MAX_AGE = 3600
@@ -60,14 +64,14 @@ class ICMPv6NdCache:
                 self.__send_icmpv6_neighbor_solicitation(ipv6_address)
                 self.logger.debug(f"Trying to refresh expiring ICMPv6 ND cache entry for {ipv6_address} -> {self.nd_cache[ipv6_address].mac_address}")
 
-    def __send_icmpv6_neighbor_solicitation(self, target_address):
+    def __send_icmpv6_neighbor_solicitation(self, icmpv6_nd_target_address):
         """ Enqueue ICMPv6 Neighbor Solicitation packet with TX ring """
 
         stack.packet_handler.phtx_icmpv6(
-            ipv6_src=self.stack_ipv6_unicast[0],
-            ipv6_dst=self.ipv6_solicited_node_multicast(target_address),
+            ipv6_src=IPv6Address("::"),
+            ipv6_dst=ipv6_solicited_node_multicast(icmpv6_nd_target_address),
             icmpv6_type=ps_icmpv6.ICMPV6_NEIGHBOR_SOLICITATION,
-            icmpv6_target_address=target_address,
+            icmpv6_nd_target_address=icmpv6_nd_target_address,
         )
 
     def add_entry(self, ipv6_address, mac_address):

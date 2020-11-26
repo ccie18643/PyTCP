@@ -15,6 +15,7 @@ import stack
 
 from udp_metadata import UdpMetadata
 
+import ps_icmpv6
 import ps_icmpv4
 
 

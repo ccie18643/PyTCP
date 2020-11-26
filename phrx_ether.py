@@ -29,14 +29,14 @@ def phrx_ether(self, ether_packet_rx):
         self.logger.opt(ansi=True).debug(f"{ether_packet_rx.tracker} - Ethernet packet not destined for this stack, droping")
         return
 
-    if ether_packet_rx.ether_type == ps_ether.ETHER_TYPE_ARP:
+    if ether_packet_rx.ether_type == ps_ether.ETHER_TYPE_ARP and self.stack_ipv4_support:
         self.phrx_arp(ether_packet_rx, ps_arp.ArpPacket(ether_packet_rx))
         return
 
-    if ether_packet_rx.ether_type == ps_ether.ETHER_TYPE_IPV4:
+    if ether_packet_rx.ether_type == ps_ether.ETHER_TYPE_IPV4 and self.stack_ipv4_support:
         self.phrx_ipv4(ps_ipv4.IPv4Packet(ether_packet_rx))
         return
 
-    if ether_packet_rx.ether_type == ps_ether.ETHER_TYPE_IPV6:
+    if ether_packet_rx.ether_type == ps_ether.ETHER_TYPE_IPV6 and self.stack_ipv6_support:
         self.phrx_ipv6(ps_ipv6.IPv6Packet(ether_packet_rx))
         return

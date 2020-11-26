@@ -66,10 +66,10 @@ class ArpCache:
         """ Enqueue ARP request packet with TX ring """
 
         stack.packet_handler.phtx_arp(
-            ether_src=stack.packet_handler.stack_mac_address,
+            ether_src=stack.packet_handler.stack_mac_unicast[0],
             ether_dst="ff:ff:ff:ff:ff:ff",
             arp_oper=ps_arp.ARP_OP_REQUEST,
-            arp_sha=stack.packet_handler.stack_mac_address,
+            arp_sha=stack.packet_handler.stack_mac_unicast[0],
             arp_spa=stack.packet_handler.stack_ipv4_unicast[0] if stack.packet_handler.stack_ipv4_unicast else "0.0.0.0",
             arp_tha="00:00:00:00:00:00",
             arp_tpa=arp_tpa,

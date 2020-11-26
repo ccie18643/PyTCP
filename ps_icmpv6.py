@@ -172,8 +172,6 @@ class ICMPv6Packet:
         icmpv6_nd_flag_s=False,
         icmpv6_nd_flag_o=False,
         icmpv6_nd_target_address=None,
-        icmpv6_nd_slla=None,
-        icmpv6_nd_tlla=None,
         icmpv6_nd_options=[],
         echo_tracker=None,
     ):
@@ -187,6 +185,9 @@ class ICMPv6Packet:
             raw_header = raw_packet[:ICMPV6_HEADER_LEN]
             raw_message = raw_packet[ICMPV6_HEADER_LEN:]
 
+            # from binascii import hexlify
+            # print(hexlify(raw_packet))
+
             self.icmpv6_type = raw_header[0]
             self.icmpv6_code = raw_header[1]
             self.icmpv6_cksum = struct.unpack("!H", raw_header[2:4])[0]
@@ -197,28 +198,36 @@ class ICMPv6Packet:
                 self.icmpv6_id = struct.unpack("!H", raw_message[0:2])[0]
                 self.icmpv6_seq = struct.unpack("!H", raw_message[2:4])[0]
                 self.icmpv6_raw_data = raw_message[ICMPV6_ECHOREPLY_LEN:]
+                return
 
             if self.icmpv6_type == ICMPV6_ECHOREQUEST:
                 self.icmpv6_id = struct.unpack("!H", raw_message[0:2])[0]
                 self.icmpv6_seq = struct.unpack("!H", raw_message[2:4])[0]
                 self.icmpv6_raw_data = raw_message[ICMPV6_ECHOREQUEST_LEN:]
+                return
 
             if self.icmpv6_type == ICMPV6_UNREACHABLE:
                 self.icmpv6_raw_data = raw_message[4:]
+                return
 
             if self.icmpv6_type == ICMPV6_ROUTER_SOLICITATION:
-                pass
+                return
 
             if self.icmpv6_type == ICMPV6_ROUTER_ADVERTISEMENT:
-                pass
+                return
 
             if self.icmpv6_type == ICMPV6_NEIGHBOR_SOLICITATION:
                 self.icmpv6_nd_target_address = IPv6Address(raw_message[4:20])
                 self.icmpv6_nd_options = self.__read_nd_options(raw_message[20:])
+                return
 
             if self.icmpv6_type == ICMPV6_NEIGHBOR_ADVERTISEMENT:
                 self.icmpv6_nd_target_address = IPv6Address(raw_message[4:20])
+                self.icmpv6_nd_flag_r = bool(raw_message[0] & 0b10000000)
+                self.icmpv6_nd_flag_s = bool(raw_message[0] & 0b01000000)
+                self.icmpv6_nd_flag_o = bool(raw_message[0] & 0b00100000)
                 self.icmpv6_nd_options = self.__read_nd_options(raw_message[20:])
+                return
 
         # Packet building
         else:
@@ -234,29 +243,34 @@ class ICMPv6Packet:
                 self.icmpv6_id = icmpv6_id
                 self.icmpv6_seq = icmpv6_seq
                 self.icmpv6_raw_data = icmpv6_raw_data
+                return
 
             if self.icmpv6_type == ICMPV6_ECHOREQUEST and self.icmpv6_code == 0:
                 self.icmpv6_id = icmpv6_id
                 self.icmpv6_seq = icmpv6_seq
                 self.icmpv6_raw_data = icmpv6_raw_data
+                return
 
             if self.icmpv6_type == ICMPV6_UNREACHABLE:
                 self.icmpv6_raw_data = icmpv6_raw_data[:520]
+                return
 
             if self.icmpv6_type == ICMPV6_ROUTER_SOLICITATION:
-                self.icmpv6_nd_slla = icmpv6_nd_slla
+                return
 
             if self.icmpv6_type == ICMPV6_ROUTER_ADVERTISEMENT:
-                pass
+                return
 
             if self.icmpv6_type == ICMPV6_NEIGHBOR_SOLICITATION:
                 self.icmpv6_nd_target_address = icmpv6_nd_target_address
+                return
 
             if self.icmpv6_type == ICMPV6_NEIGHBOR_ADVERTISEMENT:
                 self.icmpv6_nd_target_address = icmpv6_nd_target_address
                 self.icmpv6_nd_flag_r = icmpv6_nd_flag_r
                 self.icmpv6_nd_flag_s = icmpv6_nd_flag_s
                 self.icmpv6_nd_flag_o = icmpv6_nd_flag_o
+                return
 
     def __str__(self):
         """ Short packet log string """
@@ -370,6 +384,9 @@ class ICMPv6Packet:
     def validate_cksum(self, ip_pseudo_header):
         """ Validate packet checksum """
 
+        # from binascii import hexlify
+        # print(hexlify(self.raw_packet))
+
         return not bool(inet_cksum.compute_cksum(ip_pseudo_header + self.raw_packet))
 
     def __read_nd_options(self, raw_nd_options):
@@ -472,14 +489,14 @@ class ICMPv6NdOptTLLA:
 class ICMPv6NdOptUnk:
     """ ICMPv6 ND  option not supported by this stack """
 
-    def __init__(self, raw_option=None):
+    def __init__(self, raw_option):
         self.opt_code = raw_option[0]
         self.opt_len = raw_option[1] << 3
-        self.opt_data = raw_option[2 : self.opt_len - 2]
+        self.opt_data = raw_option[2 : self.opt_len]
 
     @property
     def raw_option(self):
-        return struct.pack("! BB", self.opt_code, self.opt_len) + self.opt_data
+        return struct.pack("! BB", self.opt_code, self.opt_len >> 3) + self.opt_data
 
     def __str__(self):
         return "unk"

@@ -41,6 +41,14 @@ def phtx_tcp(
 ):
     """ Handle outbound TCP packets """
 
+    # Check if IPv4 protocol support is enabled, if not then silently drop the IPv4 packet
+    if not self.stack_ipv4_support and ip_dst.version == 4:
+        return
+
+    # Check if IPv6 protocol support is enabled, if not then silently drop the IPv6 packet
+    if not self.stack_ipv6_support and ip_dst.version == 6:
+        return
+
     tcp_options = []
 
     if tcp_mss:
@@ -88,4 +96,3 @@ def phtx_tcp(
 
     if ip_src.version == 4 and ip_dst.version == 4:
         self.phtx_ipv4(ipv4_src=ip_src, ipv4_dst=ip_dst, child_packet=tcp_packet_tx)
-    

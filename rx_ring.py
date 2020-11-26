@@ -17,11 +17,10 @@ import ps_ether
 class RxRing:
     """ Support for receiving packets from the network """
 
-    def __init__(self, tap, stack_mac_address):
+    def __init__(self, tap):
         """ Initialize access to tap interface and the inbound queue """
 
         self.tap = tap
-        self.stack_mac_address = stack_mac_address
         self.rx_ring = []
         self.logger = loguru.logger.bind(object_name="rx_ring.")
 

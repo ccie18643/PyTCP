@@ -19,10 +19,10 @@ import ps_dhcp
 class ClientUdpDhcp:
     """ DHCP client support class """
 
-    def __init__(self, stack_mac_address):
+    def __init__(self, stack_mac_unicast):
         """ Class constructor """
 
-        self.stack_mac_address = stack_mac_address
+        self.stack_mac_unicast = stack_mac_unicast
         self.socket = udp_socket.UdpSocket(local_ipv4_address="0.0.0.0", local_port=68, remote_ipv4_address="0.0.0.0", remote_port=67)
         threading.Thread(target=self.__client).start()
 
@@ -48,7 +48,7 @@ class ClientUdpDhcp:
         self.__send(
             dhcp_packet_tx=ps_dhcp.DhcpPacket(
                 dhcp_xid=dhcp_xid,
-                dhcp_chaddr=self.stack_mac_address,
+                dhcp_chaddr=self.stack_mac_unicast,
                 dhcp_msg_type=ps_dhcp.DHCP_DISCOVER,
                 dhcp_param_req_list=b"\x01\x1c\x02\x03\x0f\x06\x77\x0c\x2c\x2f\x1a\x79\x2a",
                 dhcp_host_name="PyTCP",
@@ -74,7 +74,7 @@ class ClientUdpDhcp:
             self.__send(
                 dhcp_packet_tx=ps_dhcp.DhcpPacket(
                     dhcp_xid=dhcp_xid,
-                    dhcp_chaddr=self.stack_mac_address,
+                    dhcp_chaddr=self.stack_mac_unicast,
                     dhcp_msg_type=ps_dhcp.DHCP_REQUEST,
                     dhcp_srv_id=dhcp_srv_id,
                     dhcp_req_ipv4_addr=dhcp_yiaddr,

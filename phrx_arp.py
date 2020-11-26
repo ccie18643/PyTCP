@@ -30,10 +30,10 @@ def phrx_arp(self, ether_packet_rx, arp_packet_rx):
         # Check if the request is for one of our IP addresses, if so the craft ARP reply packet and send it out
         if arp_packet_rx.arp_tpa in self.stack_ipv4_unicast:
             self.phtx_arp(
-                ether_src=self.stack_mac_address,
+                ether_src=self.stack_mac_unicast[0],
                 ether_dst=arp_packet_rx.arp_sha,
                 arp_oper=ps_arp.ARP_OP_REPLY,
-                arp_sha=self.stack_mac_address,
+                arp_sha=self.stack_mac_unicast[0],
                 arp_spa=arp_packet_rx.arp_tpa,
                 arp_tha=arp_packet_rx.arp_sha,
                 arp_tpa=arp_packet_rx.arp_spa,
@@ -52,10 +52,10 @@ def phrx_arp(self, ether_packet_rx, arp_packet_rx):
         self.logger.opt(ansi=True).info(f"<green>{arp_packet_rx.tracker}</green> - {arp_packet_rx}")
 
         # Check for ARP reply that is response to our ARP probe, that indicates that IP address we trying to claim is in use
-        if ether_packet_rx.ether_dst == self.stack_mac_address:
+        if ether_packet_rx.ether_dst == self.stack_mac_unicast[0]:
             if (
                 arp_packet_rx.arp_spa in [_.ip for _ in self.stack_ipv4_address_candidate]
-                and arp_packet_rx.arp_tha == self.stack_mac_address
+                and arp_packet_rx.arp_tha == self.stack_mac_unicast[0]
                 and arp_packet_rx.arp_tpa == "0.0.0.0"
             ):
                 self.logger.warning(f"ARP Probe detected conflict for IP {arp_packet_rx.arp_spa} with host at {arp_packet_rx.arp_sha}")
@@ -63,7 +63,7 @@ def phrx_arp(self, ether_packet_rx, arp_packet_rx):
                 return
 
         # Update ARP cache with maping received as direct ARP reply
-        if ether_packet_rx.ether_dst == self.stack_mac_address:
+        if ether_packet_rx.ether_dst == self.stack_mac_unicast[0]:
             self.logger.debug(f"Adding/refreshing ARP cache entry from direct reply - {arp_packet_rx.arp_spa} -> {arp_packet_rx.arp_sha}")
             stack.arp_cache.add_entry(arp_packet_rx.arp_spa, arp_packet_rx.arp_sha)
             return

@@ -18,16 +18,11 @@ import ps_ether
 import stack
 
 
-def validate_source_ipv4_address(self, ipv4_src):
+def validate_src_ipv4_address(self, ipv4_src):
     """ Make sure source ip address is valid, supplemt with valid one as appropriate """
 
     # Check if the the source IP address belongs to this stack or its set to all zeros (for DHCP client comunication)
-    if (
-        ipv4_src not in self.stack_ipv4_unicast
-        and ipv4_src not in self.stack_ipv4_multicast
-        and ipv4_src not in self.stack_ipv4_broadcast
-        and ipv4_src != IPv4Address("0.0.0.0")
-    ):
+    if ipv4_src not in {*self.stack_ipv4_unicast, *self.stack_ipv4_multicast, *self.stack_ipv4_broadcast, IPv4Address("0.0.0.0")}:
         self.logger.warning(f"Unable to sent out IPv4 packet, stack doesn't own IPv4 address {ipv4_src}")
         return
 
@@ -65,16 +60,21 @@ def validate_source_ipv4_address(self, ipv4_src):
 def phtx_ipv4(self, child_packet, ipv4_dst, ipv4_src):
     """ Handle outbound IP packets """
 
-    ipv4_src = validate_source_ipv4_address(self, ipv4_src)
+    # Check if IPv4 protocol support is enabled, if not then silently drop the packet
+    if not self.stack_ipv4_support:
+        return
+
+    # Validate source address
+    ipv4_src = validate_src_ipv4_address(self, ipv4_src)
     if not ipv4_src:
         return
 
-    # Generate new IP ID
+    # Generate new IPv4 ID
     self.ipv4_packet_id += 1
     if self.ipv4_packet_id > 65535:
         self.ipv4_packet_id = 1
 
-    # Check if IP packet can be sent out without fragmentation, if so send it out
+    # Check if packet can be sent out without fragmentation, if so send it out
     if ps_ipv4.IPV4_HEADER_LEN + len(child_packet.raw_packet) <= stack.mtu:
         ipv4_packet_tx = ps_ipv4.IPv4Packet(ipv4_src=ipv4_src, ipv4_dst=ipv4_dst, ipv4_packet_id=self.ipv4_packet_id, child_packet=child_packet)
 

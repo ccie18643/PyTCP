@@ -14,7 +14,7 @@ import time
 import struct
 import loguru
 
-from ipaddress import IPv4Interface
+from ipaddress import IPv4Interface, IPv6Interface
 
 from stack_timer import StackTimer
 from arp_cache import ArpCache
@@ -46,8 +46,14 @@ IFF_NO_PI = 0x1000
 STACK_INTERFACE = b"tap7"
 STACK_MAC_ADDRESS = "02:00:00:77:77:77"
 
-# IP address / mask / default gateway
-STACK_IPV4_ADDRESS = [
+STACK_IPV6_ADDRESS_CANDIDATE = [
+    # IPv6Interface("FE80::7/64"),
+    # IPv6Interface("FE80::77/64"),
+    # IPv6Interface("FE80::777/64"),
+    # IPv6Interface("FE80::7777/64"),
+]
+
+STACK_IPV4_ADDRESS_CANDIDATE = [
     IPv4Interface("192.168.9.7/24"),
     IPv4Interface("192.168.9.77/24"),
     IPv4Interface("192.168.9.102/24"),
@@ -79,11 +85,17 @@ def main():
     fcntl.ioctl(tap, TUNSETIFF, struct.pack("16sH", STACK_INTERFACE, IFF_TAP | IFF_NO_PI))
 
     stack.stack_timer = StackTimer()
-    stack.rx_ring = RxRing(tap, STACK_MAC_ADDRESS)
-    stack.tx_ring = TxRing(tap, STACK_MAC_ADDRESS)
+    stack.rx_ring = RxRing(tap)
+    stack.tx_ring = TxRing(tap)
     stack.arp_cache = ArpCache()
     stack.icmpv6_nd_cache = ICMPv6NdCache()
-    stack.packet_handler = PacketHandler(STACK_MAC_ADDRESS, STACK_IPV4_ADDRESS)
+    stack.packet_handler = PacketHandler(
+        stack_mac_address=STACK_MAC_ADDRESS,
+        stack_ipv6_support=True,
+        stack_ipv6_address_candidate=STACK_IPV6_ADDRESS_CANDIDATE,
+        stack_ipv4_support=False,
+        stack_ipv4_address_candidate=STACK_IPV4_ADDRESS_CANDIDATE,
+    )
 
     # ServiceUdpEcho()
     # ServiceUdpDiscard()

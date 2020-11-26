@@ -29,6 +29,10 @@ def phtx_icmpv6(
 ):
     """ Handle outbound ICMPv6 packets """
 
+    # Check if IPv6 protocol support is enabled, if not then silently drop the packet
+    if not self.stack_ipv6_support:
+        return
+
     icmpv6_packet_tx = ps_icmpv6.ICMPv6Packet(
         icmpv6_type=icmpv6_type,
         icmpv6_code=icmpv6_code,
