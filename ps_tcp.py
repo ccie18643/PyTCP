@@ -428,10 +428,10 @@ class TcpOptTimestamp:
 class TcpOptUnk:
     """ TCP option not supported by this stack """
 
-    def __init__(self, raw_option=None):
+    def __init__(self, raw_option):
         self.opt_kind = raw_option[0]
         self.opt_len = raw_option[1]
-        self.opt_data = raw_option[2 : self.opt_len - 2]
+        self.opt_data = raw_option[2 : self.opt_len]
 
     @property
     def raw_option(self):
