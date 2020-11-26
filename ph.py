@@ -123,7 +123,11 @@ class PacketHandler:
 
         # Check if there are any statically assigned link local addresses
         for ipv6_address_candidate in list(self.stack_ipv6_address_candidate):
-            if ipv6_address_candidate.ip.is_link_local and self.__perform_ipv6_nd_dad(ipv6_address_candidate.ip):
+            if (
+                ipv6_address_candidate.ip.is_link_local
+                and ipv6_address_candidate not in self.stack_ipv6_address
+                and self.__perform_ipv6_nd_dad(ipv6_address_candidate.ip)
+            ):
                 self.stack_ipv6_address_candidate.remove(ipv6_address_candidate)
                 self.stack_ipv6_address.append(ipv6_address_candidate)
                 self.__assign_ipv6_unicast(ipv6_address_candidate.ip)
@@ -139,6 +143,18 @@ class PacketHandler:
         if not self.stack_ipv6_address:
             self.logger.warning("Unable to assign any IPv6 link local address, disabling IPv6 protocol")
             self.stack_ipv6_support = False
+            return
+
+        # Check if there are any other statically assigned addresses
+        for ipv6_address_candidate in list(self.stack_ipv6_address_candidate):
+            if (
+                (ipv6_address_candidate.ip.is_global or ipv6_address_candidate.ip.is_private)
+                and ipv6_address_candidate not in self.stack_ipv6_address
+                and self.__perform_ipv6_nd_dad(ipv6_address_candidate.ip)
+            ):
+                self.stack_ipv6_address_candidate.remove(ipv6_address_candidate)
+                self.stack_ipv6_address.append(ipv6_address_candidate)
+                self.__assign_ipv6_unicast(ipv6_address_candidate.ip)
 
     def __create_stack_ipv4_addresses(self):
         """ Create list of IPv4 addresses stack should listen on """

@@ -36,6 +36,8 @@ from client_udp_dhcp import ClientUdpDhcp
 from client_tcp_echo import ClientTcpEcho
 from client_icmpv4_echo import ClientIcmpEcho
 
+from ipv6_helper import ipv6_eui64
+
 import stack
 
 
@@ -51,6 +53,9 @@ STACK_IPV6_ADDRESS_CANDIDATE = [
     # IPv6Interface("FE80::77/64"),
     # IPv6Interface("FE80::777/64"),
     # IPv6Interface("FE80::7777/64"),
+    IPv6Interface("2007::7/64"),
+    IPv6Interface("2007::7/64"),
+    ipv6_eui64(STACK_MAC_ADDRESS, prefix="2007::/64"),
 ]
 
 STACK_IPV4_ADDRESS_CANDIDATE = [

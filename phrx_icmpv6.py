@@ -52,7 +52,7 @@ def phrx_icmpv6(self, ipv6_packet_rx, icmpv6_packet_rx):
             ipv6_src=icmpv6_packet_rx.icmpv6_nd_target_address,
             ipv6_dst=ipv6_packet_rx.ipv6_src,
             icmpv6_type=ps_icmpv6.ICMPV6_NEIGHBOR_ADVERTISEMENT,
-            icmpv6_nd_flag_s=False if ipv6_packet_rx.ipv6_src == IPv6Address("::") else True,
+            icmpv6_nd_flag_s=False if ipv6_packet_rx.ipv6_src.is_unspecified else True,
             icmpv6_nd_flag_o=False,
             icmpv6_nd_target_address=icmpv6_packet_rx.icmpv6_nd_target_address,
             icmpv6_nd_options=[ps_icmpv6.ICMPv6NdOptTLLA(opt_tlla=self.stack_mac_unicast[0])],

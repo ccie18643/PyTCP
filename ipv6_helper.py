@@ -11,14 +11,15 @@ from re import sub
 from ipaddress import IPv6Interface, IPv6Address
 
 
-def ipv6_eui64(mac, prefix="fe80::"):
+def ipv6_eui64(mac, prefix="fe80::/64"):
     """ Create IPv6 EUI64 address """
 
+    prefix_network, prefix_mask = prefix.split("/")
     eui64 = sub(r"[.:-]", "", mac).lower()
     eui64 = eui64[0:6] + "fffe" + eui64[6:]
     eui64 = hex(int(eui64[0:2], 16) ^ 2)[2:].zfill(2) + eui64[2:]
     eui64 = ":".join(eui64[_ : _ + 4] for _ in range(0, 16, 4))
-    return IPv6Interface(prefix + eui64 + "/64")
+    return IPv6Interface(prefix_network + eui64 + "/" + prefix_mask)
 
 
 def ipv6_solicited_node_multicast(ipv6_address):

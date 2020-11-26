@@ -41,19 +41,21 @@ def validate_src_ipv6_address(self, ipv6_src):
             return
 
     # If packet has all zeros source address set but the link local address is available then replace it
-    if ipv6_src == IPv6Address("::") and self.stack_ipv6_unicast:
+    if ipv6_src.is_unspecified and self.stack_ipv6_unicast:
         ipv6_src = self.stack_ipv6_unicast[0]
 
     return ipv6_src
+
 
 def validate_dst_ipv6_address(self, ipv6_dst):
     """ Make sure destination ip address is valid, supplemt with valid one as appropriate """
 
     # Check if destiantion address is all zeroes, substitute it with All IPv6 Nodes multicast address
-    if ipv6_dst == IPv6Address("::"):
+    if ipv6_dst.is_unspecified:
         ipv6_dst = IPv6Address("ff02::1")
 
     return ipv6_dst
+
 
 def phtx_ipv6(self, child_packet, ipv6_dst, ipv6_src):
     """ Handle outbound IP packets """
