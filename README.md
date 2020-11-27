@@ -33,12 +33,13 @@ Python based attempt to create fully functional TCP/IP stack for educational pur
 
 #### Work in progress:
 
- - IPv6 protocol - *ability to route traffic to external destinations via default gateway*
+ - ICMPv6 protocol - *Multicast Listner Discovery v2 (MLDv2) protocol implementation (only messages needed by stack)*
  - TCP protocol - *ongoing effort of improving code and bug fixing while simulating more advanced traffic scenarios*
  - TCP protocol - *proper handling on RST packets in various states, need to do research on this*
 
 #### Next steps:
  
+ - IPv6 protocol - *ability to route traffic to external destinations via default gateway*
  - TCP protocol - *need to rework the CLOSE syscall mechanism so FIN flag can be set on last data packet instead of being carried in separate one*
  - TCP protocol - *ACK packet retransmission in case we got FIN retransmission in TIME_WAIT state*
  - TCP protocol - *implement proper response to packets containing old SEQ and/or ACK numbers*
