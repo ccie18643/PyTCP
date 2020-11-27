@@ -10,60 +10,72 @@ ps_icmpv4.py - protocol support libary for ICMPv4
 import struct
 
 import inet_cksum
-import stack
 
 from tracker import Tracker
 
 
 """
 
-   ICMPv6 packet header
+   Echo reply message (0/0)
 
    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
    |     Type      |     Code      |           Checksum            |
    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-
-
-   Echo reply message (0/0)
-
-   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
    |              Id               |              Seq              |
    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
    ~                             Data                              ~
    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 
 
-   Echo message (8/0)
+   Destination Unreachable message (3/[0-3, 5-15])
 
+   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+   |     Type      |     Code      |           Checksum            |
+   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+   |              Id               |              Seq              |
+   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+   |                           Reserved                            |
+   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+   ~                             Data                              ~
+   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+
+
+   Destination Unreachable message (3/4)
+
+   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+   |     Type      |     Code      |           Checksum            |
+   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+   |              Id               |              Seq              |
+   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+   |           Reserved            |          Link MTU / 0         |
+   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+   ~                             Data                              ~
+   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+
+
+   Echo Request message (8/0)
+
+   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+   |     Type      |     Code      |           Checksum            |
    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
    |              Id               |              Seq              |
    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
    ~                             Data                              ~
    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 
-   Destination Unreachable message (3/[0-15])
-
-   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-   |              Id               |              Seq              |
-   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-   |              0                |          Link MTU / 0         |
-   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-   ~                             Data                              ~
-   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 
 """
 
-ICMPV4_HEADER_LEN = 4
 
 ICMPV4_ECHOREPLY = 0
-ICMPV4_ECHOREPLY_LEN = 4
-
-ICMPV4_ECHOREQUEST = 8
-ICMPV4_ECHOREQUEST_LEN = 4
-
 ICMPV4_UNREACHABLE = 3
-ICMPV4_UNREACHABLE_LEN = 32
+ICMPV4_UNREACHABLE_NET = 0
+ICMPV4_UNREACHABLE_HOST = 1
+ICMPV4_UNREACHABLE_PROTOCOL = 2
 ICMPV4_UNREACHABLE_PORT = 3
+ICMPV4_UNREACHABLE_FAGMENTATION = 4
+ICMPV4_UNREACHABLE_SOURCE_ROUTE_FAILED = 5
+ICMPV4_ECHOREQUEST = 8
 
 
 class ICMPv4Packet:
@@ -71,33 +83,42 @@ class ICMPv4Packet:
 
     protocol = "ICMPv4"
 
-    def __init__(self, parent_packet=None, icmpv4_type=None, icmpv4_code=0, icmpv4_id=None, icmpv4_seq=None, icmpv4_raw_data=b"", echo_tracker=None):
+    def __init__(
+        self,
+        parent_packet=None,
+        icmpv4_type=None,
+        icmpv4_code=0,
+        icmpv4_ec_id=None,
+        icmpv4_ec_seq=None,
+        icmpv4_ec_raw_data=b"",
+        icmpv4_un_raw_data=b"",
+        echo_tracker=None,
+    ):
         """ Class constructor """
 
         # Packet parsing
         if parent_packet:
             self.tracker = parent_packet.tracker
 
-            raw_packet = parent_packet.raw_data
-            raw_header = raw_packet[:ICMPV4_HEADER_LEN]
-            raw_message = raw_packet[ICMPV4_HEADER_LEN:]
+            raw_message = parent_packet.raw_data
 
-            self.icmpv4_type = raw_header[0]
-            self.icmpv4_code = raw_header[1]
-            self.icmpv4_cksum = struct.unpack("!H", raw_header[2:4])[0]
+            self.icmpv4_type = raw_message[0]
+            self.icmpv4_code = raw_message[1]
+            self.icmpv4_cksum = struct.unpack("!H", raw_message[2:4])[0]
 
             if self.icmpv4_type == ICMPV4_ECHOREPLY:
-                self.icmpv4_id = struct.unpack("!H", raw_message[0:2])[0]
-                self.icmpv4_seq = struct.unpack("!H", raw_message[2:4])[0]
-                self.icmpv4_raw_data = raw_message[ICMPV4_ECHOREPLY_LEN:]
-
-            if self.icmpv4_type == ICMPV4_ECHOREQUEST:
-                self.icmpv4_id = struct.unpack("!H", raw_message[0:2])[0]
-                self.icmpv4_seq = struct.unpack("!H", raw_message[2:4])[0]
-                self.icmpv4_raw_data = raw_message[ICMPV4_ECHOREQUEST_LEN:]
+                self.icmpv4_ec_id = struct.unpack("!H", raw_message[4:6])[0]
+                self.icmpv4_ec_seq = struct.unpack("!H", raw_message[6:8])[0]
+                self.icmpv4_ec_raw_data = raw_message[8:]
 
             if self.icmpv4_type == ICMPV4_UNREACHABLE:
-                self.icmpv4_raw_data = raw_message[4:]
+                self.icmpv4_un_reserved = struct.unpack("!L", raw_message[4:6])[0]
+                self.icmpv4_un_raw_data = raw_message[8:]
+
+            if self.icmpv4_type == ICMPV4_ECHOREQUEST:
+                self.icmpv4_ec_id = struct.unpack("!H", raw_message[4:6])[0]
+                self.icmpv4_ec_seq = struct.unpack("!H", raw_message[6:8])[0]
+                self.icmpv4_ec_raw_data = raw_message[8:]
 
         # Packet building
         else:
@@ -108,17 +129,18 @@ class ICMPv4Packet:
             self.icmpv4_cksum = 0
 
             if self.icmpv4_type == ICMPV4_ECHOREPLY and self.icmpv4_code == 0:
-                self.icmpv4_id = icmpv4_id
-                self.icmpv4_seq = icmpv4_seq
-                self.icmpv4_raw_data = icmpv4_raw_data
+                self.icmpv4_ec_id = icmpv4_ec_id
+                self.icmpv4_ec_seq = icmpv4_ec_seq
+                self.icmpv4_ec_raw_data = icmpv4_ec_raw_data
+
+            if self.icmpv4_type == ICMPV4_UNREACHABLE and self.icmpv4_code == ICMPV4_UNREACHABLE_PORT:
+                self.icmpv4_un_reserved = 0
+                self.icmpv4_un_raw_data = icmpv4_un_raw_data[:520]
 
             if self.icmpv4_type == ICMPV4_ECHOREQUEST and self.icmpv4_code == 0:
-                self.icmpv4_id = icmpv4_id
-                self.icmpv4_seq = icmpv4_seq
-                self.icmpv4_raw_data = icmpv4_raw_data
-
-            if self.icmpv4_type == ICMPV4_UNREACHABLE:
-                self.icmpv4_raw_data = icmpv4_raw_data[:520]
+                self.icmpv4_ec_id = icmpv4_ec_id
+                self.icmpv4_ec_seq = icmpv4_ec_seq
+                self.icmpv4_ec_raw_data = icmpv4_ec_raw_data
 
     def __str__(self):
         """ Short packet log string """
@@ -126,13 +148,13 @@ class ICMPv4Packet:
         log = f"ICMPv4 type {self.icmpv4_type}, code {self.icmpv4_code}"
 
         if self.icmpv4_type == ICMPV4_ECHOREPLY:
-            log += f", id {self.icmpv4_id}, seq {self.icmpv4_seq}"
+            log += f", id {self.icmpv4_ec_id}, seq {self.icmpv4_ec_seq}"
+
+        if self.icmpv4_type == ICMPV4_UNREACHABLE and self.icmpv4_code == ICMPV4_UNREACHABLE_PORT:
+            pass
 
         if self.icmpv4_type == ICMPV4_ECHOREQUEST:
-            log += f", id {self.icmpv4_id}, seq {self.icmpv4_seq}"
-
-        if self.icmpv4_type == ICMPV4_UNREACHABLE:
-            pass
+            log += f", id {self.icmpv4_ec_id}, seq {self.icmpv4_ec_seq}"
 
         return log
 
@@ -142,31 +164,27 @@ class ICMPv4Packet:
         return len(self.raw_packet)
 
     @property
-    def raw_header(self):
-        """ Get packet header in raw format """
-
-        return struct.pack("! BBH", self.icmpv4_type, self.icmpv4_code, self.icmpv4_cksum)
-
-    @property
     def raw_message(self):
         """ Get packet message in raw format """
 
         if self.icmpv4_type == ICMPV4_ECHOREPLY:
-            return struct.pack("! HH", self.icmpv4_id, self.icmpv4_seq) + self.icmpv4_raw_data
+            return (
+                struct.pack("! BBH HH", self.icmpv4_type, self.icmpv4_code, self.icmpv4_cksum, self.icmpv4_ec_id, self.icmpv4_ec_seq) + self.icmpv4_ec_raw_data
+            )
+
+        if self.icmpv4_type == ICMPV4_UNREACHABLE and self.icmpv4_code == ICMPV4_UNREACHABLE_PORT:
+            return struct.pack("! BBH L", self.icmpv4_type, self.icmpv4_code, self.icmpv4_cksum, self.icmpv4_un_reserved) + self.icmpv4_un_raw_data
 
         if self.icmpv4_type == ICMPV4_ECHOREQUEST:
-            return struct.pack("! HH", self.icmpv4_id, self.icmpv4_seq) + self.icmpv4_raw_data
-
-        if self.icmpv4_type == ICMPV4_UNREACHABLE:
-            return struct.pack("! HH", 0, stack.mtu if self.icmpv4_code == 4 else 0) + self.icmpv4_raw_data
-
-        return b""
+            return (
+                struct.pack("! BBH HH", self.icmpv4_type, self.icmpv4_code, self.icmpv4_cksum, self.icmpv4_ec_id, self.icmpv4_ec_seq) + self.icmpv4_ec_raw_data
+            )
 
     @property
     def raw_packet(self):
         """ Get packet in raw format """
 
-        return self.raw_header + self.raw_message
+        return self.raw_message
 
     def get_raw_packet(self):
         """ Get packet in raw format ready to be processed by lower level protocol """
