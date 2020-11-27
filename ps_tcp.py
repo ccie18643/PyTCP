@@ -79,7 +79,7 @@ class TcpPacket:
             self.tcp_seq = struct.unpack("!L", raw_header[4:8])[0]
             self.tcp_ack = struct.unpack("!L", raw_header[8:12])[0]
             self.tcp_hlen = (raw_header[12] & 0b11110000) >> 2
-            self.tcp_reserved = raw_header[12] &0b00001110
+            self.tcp_reserved = raw_header[12] & 0b00001110
             self.tcp_flag_ns = bool(raw_header[12] & 0b00000001)
             self.tcp_flag_crw = bool(raw_header[13] & 0b10000000)
             self.tcp_flag_ece = bool(raw_header[13] & 0b01000000)
@@ -129,6 +129,7 @@ class TcpPacket:
             self.tcp_dport = tcp_dport
             self.tcp_seq = tcp_seq
             self.tcp_ack = tcp_ack
+            self.tcp_reserved = 0
             self.tcp_flag_ns = tcp_flag_ns
             self.tcp_flag_crw = tcp_flag_crw
             self.tcp_flag_ece = tcp_flag_ece

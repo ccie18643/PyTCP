@@ -85,6 +85,22 @@ def phrx_icmpv6(self, ipv6_packet_rx, icmpv6_packet_rx):
             stack.icmpv6_nd_cache.add_entry(icmpv6_packet_rx.icmpv6_na_target_address, icmpv6_packet_rx.icmpv6_nd_opt_tlla)
             return
 
+    # ICMPv6 Router Advertisement packet
+    if icmpv6_packet_rx.icmpv6_type == ps_icmpv6.ICMPV6_ROUTER_ADVERTISEMENT and icmpv6_packet_rx.icmpv6_code == 0:
+
+        # Sanity check on packet's hop limit field, this must be set to 255
+        if ipv6_packet_rx.ipv6_hop != 255:
+            self.logger.debug(
+                f"Received ICMPv6 Router Advertisement packet from {ipv6_packet_rx.ipv6_src}, wrong hop limit value {ipv6_packet_rx.ipv6_hop}, droping"
+            )
+            return
+
+        self.logger.debug(f"Received ICMPv6 Router Advertisement packet from {ipv6_packet_rx.ipv6_src}")
+
+        # Make note of prefixes that can be used for address autoconfiguration
+        self.icmpv6_ra_prefixes = icmpv6_packet_rx.icmpv6_nd_opt_pi
+        self.event_icmpv6_ra.release()
+
     # Respond to ICMPv6 Echo Request packet
     if icmpv6_packet_rx.icmpv6_type == ps_icmpv6.ICMPV6_ECHOREQUEST and icmpv6_packet_rx.icmpv6_code == 0:
         self.logger.debug(f"Received ICMPv6 Echo Request packet from {ipv6_packet_rx.ipv6_src}, sending reply")

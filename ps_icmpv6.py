@@ -442,6 +442,12 @@ class ICMPv6Packet:
             if option.opt_code == ICMPV6_ND_OPT_TLLA:
                 return option.opt_tlla
 
+    @property
+    def icmpv6_nd_opt_pi(self):
+        """ ICMPv6 ND option - Prefix Info (3) - Returns list of prefixes that can be used for address autoconfiguration"""
+
+        return [_.opt_prefix for _ in self.icmpv6_nd_options if _.opt_code == ICMPV6_ND_OPT_PI and _.opt_flag_a and _.opt_prefix.prefixlen == 64]
+
 
 """
 
@@ -518,7 +524,7 @@ class ICMPv6NdOptTLLA:
 # ICMPv6 ND option - Prefix Information (3)
 
 # +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-# |     Type      |    Length     | Prefix Length |L|A| Reserved1 |
+# |     Type      |    Length     | Prefix Length |L|A|R|  Res1  |
 # +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 # |                         Valid Lifetime                        |
 # +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
@@ -545,7 +551,7 @@ class ICMPv6NdOptPI:
     def __init__(
         self,
         raw_option=None,
-        opt_flag_o=False,
+        opt_flag_l=False,
         opt_flag_a=False,
         opt_flag_r=False,
         opt_valid_lifetime=None,
@@ -555,7 +561,7 @@ class ICMPv6NdOptPI:
         if raw_option:
             self.opt_code = raw_option[0]
             self.opt_len = raw_option[1] << 3
-            self.opt_flag_o = bool(raw_option[3] & 0b10000000)
+            self.opt_flag_l = bool(raw_option[3] & 0b10000000)
             self.opt_flag_a = bool(raw_option[3] & 0b01000000)
             self.opt_flag_r = bool(raw_option[3] & 0b00100000)
             self.opt_reserved_1 = raw_option[3] & 0b00011111
@@ -566,7 +572,7 @@ class ICMPv6NdOptPI:
         else:
             self.opt_code = ICMPV6_ND_OPT_PI
             self.opt_len = ICMPV6_ND_OPT_PI_LEN
-            self.opt_flag_o = opt_flag_o
+            self.opt_flag_l = opt_flag_l
             self.opt_flag_a = opt_flag_a
             self.opt_flag_r = opt_flag_r
             self.opt_reserved_1 = 0
@@ -582,7 +588,7 @@ class ICMPv6NdOptPI:
             self.opt_code,
             self.opt_len >> 3,
             self.opt_prefix.prefixlen,
-            (self.opt_flag_o << 7) | (self.opt_flag_a << 6) | (self.opt_flag_r << 6) | self.opt_reserved_1,
+            (self.opt_flag_l << 7) | (self.opt_flag_a << 6) | (self.opt_flag_r << 6) | self.opt_reserved_1,
             self.opt_valid_lifetime,
             self.opt_preferred_lifetime,
             self.opt_reserved_2,
