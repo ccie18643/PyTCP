@@ -14,6 +14,8 @@ from ipaddress import IPv6Interface, IPv6Network, IPv6Address
 def ipv6_eui64(mac, prefix=IPv6Network("fe80::/64")):
     """ Create IPv6 EUI64 address """
 
+    assert prefix.prefixlen == 64
+
     eui64 = sub(r"[.:-]", "", mac).lower()
     eui64 = eui64[0:6] + "fffe" + eui64[6:]
     eui64 = hex(int(eui64[0:2], 16) ^ 2)[2:].zfill(2) + eui64[2:]
