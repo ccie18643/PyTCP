@@ -28,13 +28,13 @@ def phrx_icmpv6(self, ipv6_packet_rx, icmpv6_packet_rx):
     if icmpv6_packet_rx.icmpv6_type == ps_icmpv6.ICMPV6_NEIGHBOR_SOLICITATION and icmpv6_packet_rx.icmpv6_code == 0:
 
         # Check if request is for one of stack's IPv6 unicast addresses
-        if icmpv6_packet_rx.icmpv6_nd_target_address not in self.stack_ipv6_unicast:
+        if icmpv6_packet_rx.icmpv6_ns_target_address not in self.stack_ipv6_unicast:
             self.logger.debug(
                 f"Received ICMPv6 Neighbor Solicitation packet from {ipv6_packet_rx.ipv6_src}, not matching any of stack's IPv6 unicast addresses, droping"
             )
             return
 
-        # Sanity check on packets hop limit field, this must be set to 255
+        # Sanity check on packet's hop limit field, this must be set to 255
         if ipv6_packet_rx.ipv6_hop != 255:
             self.logger.debug(
                 f"Received ICMPv6 Neighbor Solicitation packet from {ipv6_packet_rx.ipv6_src}, wrong hop limit value {ipv6_packet_rx.ipv6_hop}, droping"
@@ -49,12 +49,13 @@ def phrx_icmpv6(self, ipv6_packet_rx, icmpv6_packet_rx):
 
         # Send response (for ND DAD to work the S flag must not be set)
         self.phtx_icmpv6(
-            ipv6_src=icmpv6_packet_rx.icmpv6_nd_target_address,
+            ipv6_src=icmpv6_packet_rx.icmpv6_ns_target_address,
             ipv6_dst=ipv6_packet_rx.ipv6_src,
+            ipv6_hop=255,
             icmpv6_type=ps_icmpv6.ICMPV6_NEIGHBOR_ADVERTISEMENT,
-            icmpv6_nd_flag_s=False if ipv6_packet_rx.ipv6_src.is_unspecified else True,
-            icmpv6_nd_flag_o=False,
-            icmpv6_nd_target_address=icmpv6_packet_rx.icmpv6_nd_target_address,
+            icmpv6_na_flag_s=False if ipv6_packet_rx.ipv6_src.is_unspecified else True,
+            icmpv6_na_flag_o=False,
+            icmpv6_na_target_address=icmpv6_packet_rx.icmpv6_ns_target_address,
             icmpv6_nd_options=[ps_icmpv6.ICMPv6NdOptTLLA(opt_tlla=self.stack_mac_unicast[0])],
             echo_tracker=icmpv6_packet_rx.tracker,
         )
@@ -64,14 +65,14 @@ def phrx_icmpv6(self, ipv6_packet_rx, icmpv6_packet_rx):
     # ICMPv6 Neighbor Advertisement packet
     if icmpv6_packet_rx.icmpv6_type == ps_icmpv6.ICMPV6_NEIGHBOR_ADVERTISEMENT and icmpv6_packet_rx.icmpv6_code == 0:
 
-        # Sanity check on packets hop limit field, this must be set to 255
+        # Sanity check on packet's hop limit field, this must be set to 255
         if ipv6_packet_rx.ipv6_hop != 255:
             self.logger.debug(
                 f"Received ICMPv6 Neighbor Advertisement packet from {ipv6_packet_rx.ipv6_src}, wrong hop limit value {ipv6_packet_rx.ipv6_hop}, droping"
             )
             return
 
-        self.logger.debug(f"Received ICMPv6 Neighbor Advertisement packet for {icmpv6_packet_rx.icmpv6_nd_target_address} from {ipv6_packet_rx.ipv6_src}")
+        self.logger.debug(f"Received ICMPv6 Neighbor Advertisement packet for {icmpv6_packet_rx.icmpv6_na_target_address} from {ipv6_packet_rx.ipv6_src}")
 
         # Run ND Duplicate Address Detection check
         if icmpv6_packet_rx.icmpv6_nd_target_address == self.ipv6_unicast_candidate:
@@ -81,7 +82,7 @@ def phrx_icmpv6(self, ipv6_packet_rx, icmpv6_packet_rx):
 
         # Update ICMPv6 ND cache
         if icmpv6_packet_rx.icmpv6_nd_opt_tlla:
-            stack.icmpv6_nd_cache.add_entry(icmpv6_packet_rx.icmpv6_nd_target_address, icmpv6_packet_rx.icmpv6_nd_opt_tlla)
+            stack.icmpv6_nd_cache.add_entry(icmpv6_packet_rx.icmpv6_na_target_address, icmpv6_packet_rx.icmpv6_nd_opt_tlla)
             return
 
     # Respond to ICMPv6 Echo Request packet
@@ -91,10 +92,11 @@ def phrx_icmpv6(self, ipv6_packet_rx, icmpv6_packet_rx):
         self.phtx_icmpv6(
             ipv6_src=ipv6_packet_rx.ipv6_dst,
             ipv6_dst=ipv6_packet_rx.ipv6_src,
+            ipv6_hop=255,
             icmpv6_type=ps_icmpv6.ICMPV6_ECHOREPLY,
-            icmpv6_id=icmpv6_packet_rx.icmpv6_id,
-            icmpv6_seq=icmpv6_packet_rx.icmpv6_seq,
-            icmpv6_raw_data=icmpv6_packet_rx.icmpv6_raw_data,
+            icmpv6_ec_id=icmpv6_packet_rx.icmpv6_ec_id,
+            icmpv6_ec_seq=icmpv6_packet_rx.icmpv6_ec_seq,
+            icmpv6_ec_raw_data=icmpv6_packet_rx.icmpv6_ec_raw_data,
             echo_tracker=icmpv6_packet_rx.tracker,
         )
         return

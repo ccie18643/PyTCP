@@ -57,7 +57,7 @@ def validate_dst_ipv6_address(self, ipv6_dst):
     return ipv6_dst
 
 
-def phtx_ipv6(self, child_packet, ipv6_dst, ipv6_src):
+def phtx_ipv6(self, child_packet, ipv6_dst, ipv6_src, ipv6_hop=64):
     """ Handle outbound IP packets """
 
     # Check if IPv6 protocol support is enabled, if not then silently drop the packet
@@ -76,7 +76,7 @@ def phtx_ipv6(self, child_packet, ipv6_dst, ipv6_src):
 
     # Check if IP packet can be sent out without fragmentation, if so send it out
     if ps_ipv6.IPV6_HEADER_LEN + len(child_packet.raw_packet) <= stack.mtu:
-        ipv6_packet_tx = ps_ipv6.IPv6Packet(ipv6_src=ipv6_src, ipv6_dst=ipv6_dst, child_packet=child_packet)
+        ipv6_packet_tx = ps_ipv6.IPv6Packet(ipv6_src=ipv6_src, ipv6_dst=ipv6_dst, ipv6_hop=ipv6_hop, child_packet=child_packet)
 
         self.logger.debug(f"{ipv6_packet_tx.tracker} - {ipv6_packet_tx}")
         self.phtx_ether(child_packet=ipv6_packet_tx)

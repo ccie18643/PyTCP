@@ -69,7 +69,7 @@ def phrx_udp(self, ip_packet_rx, udp_packet_rx):
             ipv6_dst=ip_packet_rx.ipv6_src,
             icmpv6_type=ps_icmpv6.ICMPV6_UNREACHABLE,
             icmpv6_code=ps_icmpv6.ICMPV6_UNREACHABLE_PORT,
-            icmpv6_raw_data=ip_packet_rx.get_raw_packet(),
+            icmpv6_un_raw_data=ip_packet_rx.get_raw_packet(),
             echo_tracker=udp_packet_rx.tracker,
         )
 
