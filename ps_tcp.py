@@ -9,35 +9,25 @@ ps_tct.py - protocol support libary for TCP
 
 
 import struct
-
 import inet_cksum
-
 from tracker import Tracker
 
 
-"""
+# TCP packet header (RFC 793)
 
-   TCP packet header (RFC 793)
-
-   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-   |          Source Port          |       Destination Port        |
-   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-   |                        Sequence Number                        |
-   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-   |                    Acknowledgment Number                      |
-   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-   |  Data |           |U|A|P|R|S|F|                               |
-   | Offset| Reserved  |R|C|S|S|Y|I|            Window             |
-   |       |           |G|K|H|T|N|N|                               |
-   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-   |           Checksum            |         Urgent Pointer        |
-   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-   |                    Options                    |    Padding    |
-   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-   |                             data                              |
-   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-
-"""
+# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+# |          Source Port          |       Destination Port        |
+# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+# |                        Sequence Number                        |
+# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+# |                    Acknowledgment Number                      |
+# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+# |  Hlen | Res |N|C|E|U|A|P|R|S|F|            Window             |
+# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+# |           Checksum            |         Urgent Pointer        |
+# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+# ~                    Options                    ~    Padding    ~
+# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 
 
 TCP_HEADER_LEN = 20
@@ -89,6 +79,7 @@ class TcpPacket:
             self.tcp_seq = struct.unpack("!L", raw_header[4:8])[0]
             self.tcp_ack = struct.unpack("!L", raw_header[8:12])[0]
             self.tcp_hlen = (raw_header[12] & 0b11110000) >> 2
+            self.tcp_reserved = raw_header[12] &0b00001110
             self.tcp_flag_ns = bool(raw_header[12] & 0b00000001)
             self.tcp_flag_crw = bool(raw_header[13] & 0b10000000)
             self.tcp_flag_ece = bool(raw_header[13] & 0b01000000)
@@ -169,7 +160,7 @@ class TcpPacket:
             self.tcp_dport,
             self.tcp_seq,
             self.tcp_ack,
-            self.tcp_hlen << 2 | self.tcp_flag_ns,
+            self.tcp_hlen << 2 | self.tcp_reserved | self.tcp_flag_ns,
             self.tcp_flag_crw << 7
             | self.tcp_flag_ece << 6
             | self.tcp_flag_urg << 5

@@ -157,7 +157,7 @@ class PacketHandler:
                 self.__assign_ipv6_unicast(ipv6_address_candidate.ip)
 
         # Start ND Router Solicitation process
-        # self.__send_icmpv6_nd_router_solicitation()
+        self.__send_icmpv6_nd_router_solicitation()
 
     def __create_stack_ipv4_addresses(self):
         """ Create list of IPv4 addresses stack should listen on """
@@ -255,7 +255,7 @@ class PacketHandler:
         """ Send out ICMPv6 ND Router Solicitation """
 
         self.phtx_icmpv6(
-            ipv6_src=self.stack_ipv6_address[0],
+            ipv6_src=self.stack_ipv6_unicast[0],
             ipv6_dst=IPv6Address("ff02::2"),
             ipv6_hop=255,
             icmpv6_type=ps_icmpv6.ICMPV6_ROUTER_SOLICITATION,

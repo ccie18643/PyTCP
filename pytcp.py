@@ -14,7 +14,7 @@ import time
 import struct
 import loguru
 
-from ipaddress import IPv4Interface, IPv6Interface
+from ipaddress import IPv4Interface, IPv6Network, IPv6Interface
 
 from stack_timer import StackTimer
 from arp_cache import ArpCache
@@ -55,7 +55,7 @@ STACK_IPV6_ADDRESS_CANDIDATE = [
     # IPv6Interface("FE80::7777/64"),
     IPv6Interface("2007::7/64"),
     IPv6Interface("2007::7/64"),
-    ipv6_eui64(STACK_MAC_ADDRESS, prefix="2007::/64"),
+    ipv6_eui64(STACK_MAC_ADDRESS, IPv6Network("2007::/64")),
 ]
 
 STACK_IPV4_ADDRESS_CANDIDATE = [
@@ -96,9 +96,9 @@ def main():
     stack.icmpv6_nd_cache = ICMPv6NdCache()
     stack.packet_handler = PacketHandler(
         stack_mac_address=STACK_MAC_ADDRESS,
-        stack_ipv6_support=False,
+        stack_ipv6_support=True,
         stack_ipv6_address_candidate=STACK_IPV6_ADDRESS_CANDIDATE,
-        stack_ipv4_support=True,
+        stack_ipv4_support=False,
         stack_ipv4_address_candidate=STACK_IPV4_ADDRESS_CANDIDATE,
     )
 
