@@ -20,7 +20,7 @@ def ipv6_eui64(mac, prefix=IPv6Network("fe80::/64")):
     eui64 = eui64[0:6] + "fffe" + eui64[6:]
     eui64 = hex(int(eui64[0:2], 16) ^ 2)[2:].zfill(2) + eui64[2:]
     eui64 = ":".join(eui64[_ : _ + 4] for _ in range(0, 16, 4))
-    return IPv6Interface(str(prefix.network_address) + eui64 + "/" + str(prefix.prefixlen))
+    return IPv6Interface(prefix.network_address.exploded[0:20] + eui64 + "/" + str(prefix.prefixlen))
 
 
 def ipv6_solicited_node_multicast(ipv6_address):
