@@ -75,7 +75,7 @@ def phrx_icmpv6(self, ipv6_packet_rx, icmpv6_packet_rx):
         self.logger.debug(f"Received ICMPv6 Neighbor Advertisement packet for {icmpv6_packet_rx.icmpv6_na_target_address} from {ipv6_packet_rx.ipv6_src}")
 
         # Run ND Duplicate Address Detection check
-        if icmpv6_packet_rx.icmpv6_nd_target_address == self.ipv6_unicast_candidate:
+        if icmpv6_packet_rx.icmpv6_na_target_address == self.ipv6_unicast_candidate:
             self.icmpv6_nd_dad_tlla = icmpv6_packet_rx.icmpv6_nd_opt_tlla
             self.event_icmpv6_nd_dad.release()
             return

@@ -160,63 +160,63 @@ class ICMPv6Packet:
         if parent_packet:
             self.tracker = parent_packet.tracker
 
-            raw_message = parent_packet.raw_data
+            raw_packet = parent_packet.raw_data
 
             # from binascii import hexlify
             # print(hexlify(raw_packet))
 
-            self.icmpv6_type = raw_message[0]
-            self.icmpv6_code = raw_message[1]
-            self.icmpv6_cksum = struct.unpack("!H", raw_message[2:4])[0]
+            self.icmpv6_type = raw_packet[0]
+            self.icmpv6_code = raw_packet[1]
+            self.icmpv6_cksum = struct.unpack("!H", raw_packet[2:4])[0]
 
             self.icmpv6_nd_options = []
 
             if self.icmpv6_type == ICMPV6_UNREACHABLE:
-                self.icmpv6_un_reserved = struct.unpack("!L", raw_message[4:8])[0]
-                self.icmpv6_un_raw_data = raw_message[8:]
+                self.icmpv6_un_reserved = struct.unpack("!L", raw_packet[4:8])[0]
+                self.icmpv6_un_raw_data = raw_packet[8:]
                 return
 
             if self.icmpv6_type == ICMPV6_ECHOREQUEST:
-                self.icmpv6_ec_id = struct.unpack("!H", raw_message[4:6])[0]
-                self.icmpv6_ec_seq = struct.unpack("!H", raw_message[6:8])[0]
-                self.icmpv6_ec_raw_data = raw_message[8:]
+                self.icmpv6_ec_id = struct.unpack("!H", raw_packet[4:6])[0]
+                self.icmpv6_ec_seq = struct.unpack("!H", raw_packet[6:8])[0]
+                self.icmpv6_ec_raw_data = raw_packet[8:]
                 return
 
             if self.icmpv6_type == ICMPV6_ECHOREPLY:
-                self.icmpv6_ec_id = struct.unpack("!H", raw_message[4:6])[0]
-                self.icmpv6_ec_seqq = struct.unpack("!H", raw_message[6:8])[0]
-                self.icmpv6_ec_raw_data = raw_message[8:]
+                self.icmpv6_ec_id = struct.unpack("!H", raw_packet[4:6])[0]
+                self.icmpv6_ec_seqq = struct.unpack("!H", raw_packet[6:8])[0]
+                self.icmpv6_ec_raw_data = raw_packet[8:]
                 return
 
             if self.icmpv6_type == ICMPV6_ROUTER_SOLICITATION:
-                self.icmpv6_rs_reserved = struct.unpack("!L", raw_message[4:8])[0]
-                self.icmpv6_nd_options = self.__read_nd_options(raw_message[12:])
+                self.icmpv6_rs_reserved = struct.unpack("!L", raw_packet[4:8])[0]
+                self.icmpv6_nd_options = self.__read_nd_options(raw_packet[12:])
                 return
 
             if self.icmpv6_type == ICMPV6_ROUTER_ADVERTISEMENT:
-                self.icmpv6_ra_hop = raw_message[4]
-                self.icmpv6_ra_flag_m = bool(raw_message[5] & 0b10000000)
-                self.icmpv6_ra_flag_o = bool(raw_message[5] & 0b01000000)
-                self.icmpv6_ra_reserved = raw_message[5] & 0b00111111
-                self.icmpv6_ra_router_lifetime = struct.unpack("!H", raw_message[6:8])[0]
-                self.icmpv6_ra_reachable_time = struct.unpack("!L", raw_message[8:12])[0]
-                self.icmpv6_ra_retrans_timer = struct.unpack("!L", raw_message[12:16])[0]
-                self.icmpv6_nd_options = self.__read_nd_options(raw_message[16:])
+                self.icmpv6_ra_hop = raw_packet[4]
+                self.icmpv6_ra_flag_m = bool(raw_packet[5] & 0b10000000)
+                self.icmpv6_ra_flag_o = bool(raw_packet[5] & 0b01000000)
+                self.icmpv6_ra_reserved = raw_packet[5] & 0b00111111
+                self.icmpv6_ra_router_lifetime = struct.unpack("!H", raw_packet[6:8])[0]
+                self.icmpv6_ra_reachable_time = struct.unpack("!L", raw_packet[8:12])[0]
+                self.icmpv6_ra_retrans_timer = struct.unpack("!L", raw_packet[12:16])[0]
+                self.icmpv6_nd_options = self.__read_nd_options(raw_packet[16:])
                 return
 
             if self.icmpv6_type == ICMPV6_NEIGHBOR_SOLICITATION:
-                self.icmpv6_ns_reserved = struct.unpack("!L", raw_message[4:8])[0]
-                self.icmpv6_ns_target_address = IPv6Address(raw_message[8:24])
-                self.icmpv6_nd_options = self.__read_nd_options(raw_message[24:])
+                self.icmpv6_ns_reserved = struct.unpack("!L", raw_packet[4:8])[0]
+                self.icmpv6_ns_target_address = IPv6Address(raw_packet[8:24])
+                self.icmpv6_nd_options = self.__read_nd_options(raw_packet[24:])
                 return
 
             if self.icmpv6_type == ICMPV6_NEIGHBOR_ADVERTISEMENT:
-                self.icmpv6_na_flag_r = bool(raw_message[4] & 0b10000000)
-                self.icmpv6_na_flag_s = bool(raw_message[4] & 0b01000000)
-                self.icmpv6_na_flag_o = bool(raw_message[4] & 0b00100000)
-                self.icmpv6_na_reserved = struct.unpack("!L", raw_message[4:8])[0] & 0b00011111111111111111111111111111
-                self.icmpv6_na_target_address = IPv6Address(raw_message[4:20])
-                self.icmpv6_nd_options = self.__read_nd_options(raw_message[20:])
+                self.icmpv6_na_flag_r = bool(raw_packet[4] & 0b10000000)
+                self.icmpv6_na_flag_s = bool(raw_packet[4] & 0b01000000)
+                self.icmpv6_na_flag_o = bool(raw_packet[4] & 0b00100000)
+                self.icmpv6_na_reserved = struct.unpack("!L", raw_packet[4:8])[0] & 0b00011111111111111111111111111111
+                self.icmpv6_na_target_address = IPv6Address(raw_packet[8:24])
+                self.icmpv6_nd_options = self.__read_nd_options(raw_packet[24:])
                 return
 
         # Packet building
@@ -312,8 +312,8 @@ class ICMPv6Packet:
         return len(self.raw_packet)
 
     @property
-    def raw_message(self):
-        """ Get packet message in raw format """
+    def raw_packet(self):
+        """ Get packet in raw format """
 
         if self.icmpv6_type == ICMPV6_UNREACHABLE:
             return (
@@ -375,12 +375,6 @@ class ICMPv6Packet:
                 )
                 + self.raw_nd_options
             )
-
-    @property
-    def raw_packet(self):
-        """ Get packet in raw format """
-
-        return self.raw_message
 
     def get_raw_packet(self, ip_pseudo_header):
         """ Get packet in raw format ready to be processed by lower level protocol """

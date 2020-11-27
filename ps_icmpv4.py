@@ -93,25 +93,25 @@ class ICMPv4Packet:
         if parent_packet:
             self.tracker = parent_packet.tracker
 
-            raw_message = parent_packet.raw_data
+            raw_packet = parent_packet.raw_data
 
-            self.icmpv4_type = raw_message[0]
-            self.icmpv4_code = raw_message[1]
-            self.icmpv4_cksum = struct.unpack("!H", raw_message[2:4])[0]
+            self.icmpv4_type = raw_packet[0]
+            self.icmpv4_code = raw_packet[1]
+            self.icmpv4_cksum = struct.unpack("!H", raw_packet[2:4])[0]
 
             if self.icmpv4_type == ICMPV4_ECHOREPLY:
-                self.icmpv4_ec_id = struct.unpack("!H", raw_message[4:6])[0]
-                self.icmpv4_ec_seq = struct.unpack("!H", raw_message[6:8])[0]
-                self.icmpv4_ec_raw_data = raw_message[8:]
+                self.icmpv4_ec_id = struct.unpack("!H", raw_packet[4:6])[0]
+                self.icmpv4_ec_seq = struct.unpack("!H", raw_packet[6:8])[0]
+                self.icmpv4_ec_raw_data = raw_packet[8:]
 
             if self.icmpv4_type == ICMPV4_UNREACHABLE:
-                self.icmpv4_un_reserved = struct.unpack("!L", raw_message[4:6])[0]
-                self.icmpv4_un_raw_data = raw_message[8:]
+                self.icmpv4_un_reserved = struct.unpack("!L", raw_packet[4:6])[0]
+                self.icmpv4_un_raw_data = raw_packet[8:]
 
             if self.icmpv4_type == ICMPV4_ECHOREQUEST:
-                self.icmpv4_ec_id = struct.unpack("!H", raw_message[4:6])[0]
-                self.icmpv4_ec_seq = struct.unpack("!H", raw_message[6:8])[0]
-                self.icmpv4_ec_raw_data = raw_message[8:]
+                self.icmpv4_ec_id = struct.unpack("!H", raw_packet[4:6])[0]
+                self.icmpv4_ec_seq = struct.unpack("!H", raw_packet[6:8])[0]
+                self.icmpv4_ec_raw_data = raw_packet[8:]
 
         # Packet building
         else:
@@ -157,8 +157,8 @@ class ICMPv4Packet:
         return len(self.raw_packet)
 
     @property
-    def raw_message(self):
-        """ Get packet message in raw format """
+    def raw_packet(self):
+        """ Get packet in raw format """
 
         if self.icmpv4_type == ICMPV4_ECHOREPLY:
             return (
@@ -172,12 +172,6 @@ class ICMPv4Packet:
             return (
                 struct.pack("! BBH HH", self.icmpv4_type, self.icmpv4_code, self.icmpv4_cksum, self.icmpv4_ec_id, self.icmpv4_ec_seq) + self.icmpv4_ec_raw_data
             )
-
-    @property
-    def raw_packet(self):
-        """ Get packet in raw format """
-
-        return self.raw_message
 
     def get_raw_packet(self):
         """ Get packet in raw format ready to be processed by lower level protocol """
