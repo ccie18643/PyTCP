@@ -96,9 +96,9 @@ def main():
     stack.icmpv6_nd_cache = ICMPv6NdCache()
     stack.packet_handler = PacketHandler(
         stack_mac_address=STACK_MAC_ADDRESS,
-        stack_ipv6_support=True,
+        stack_ipv6_support=False,
         stack_ipv6_address_candidate=STACK_IPV6_ADDRESS_CANDIDATE,
-        stack_ipv4_support=False,
+        stack_ipv4_support=True,
         stack_ipv4_address_candidate=STACK_IPV4_ADDRESS_CANDIDATE,
     )
 

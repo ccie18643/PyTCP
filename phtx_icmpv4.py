@@ -11,7 +11,17 @@ import ps_icmpv4
 
 
 def phtx_icmpv4(
-    self, ipv4_src, ipv4_dst, icmpv4_type, icmpv4_code=0, icmpv4_id=None, icmpv4_seq=None, icmpv4_raw_data=None, icmpv4_ipv4_packet_rx=None, echo_tracker=None
+    self,
+    ipv4_src,
+    ipv4_dst,
+    icmpv4_type,
+    icmpv4_code=0,
+    icmpv4_ec_id=None,
+    icmpv4_ec_seq=None,
+    icmpv4_ec_raw_data=None,
+    icmpv4_un_raw_data=None,
+    icmpv4_ipv4_packet_rx=None,
+    echo_tracker=None,
 ):
     """ Handle outbound ICMPv4 packets """
 
@@ -20,7 +30,13 @@ def phtx_icmpv4(
         return
 
     icmpv4_packet_tx = ps_icmpv4.ICMPv4Packet(
-        icmpv4_type=icmpv4_type, icmpv4_code=icmpv4_code, icmpv4_id=icmpv4_id, icmpv4_seq=icmpv4_seq, icmpv4_raw_data=icmpv4_raw_data, echo_tracker=echo_tracker
+        icmpv4_type=icmpv4_type,
+        icmpv4_code=icmpv4_code,
+        icmpv4_ec_id=icmpv4_ec_id,
+        icmpv4_ec_seq=icmpv4_ec_seq,
+        icmpv4_ec_raw_data=icmpv4_ec_raw_data,
+        icmpv4_un_raw_data=icmpv4_un_raw_data,
+        echo_tracker=echo_tracker,
     )
 
     self.logger.opt(ansi=True).info(f"<magenta>{icmpv4_packet_tx.tracker}</magenta> - {icmpv4_packet_tx}")

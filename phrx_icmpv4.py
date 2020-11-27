@@ -28,9 +28,9 @@ def phrx_icmpv4(self, ipv4_packet_rx, icmpv4_packet_rx):
             ipv4_src=ipv4_packet_rx.ipv4_dst,
             ipv4_dst=ipv4_packet_rx.ipv4_src,
             icmpv4_type=ps_icmpv4.ICMPV4_ECHOREPLY,
-            icmpv4_id=icmpv4_packet_rx.icmpv4_id,
-            icmpv4_seq=icmpv4_packet_rx.icmpv4_seq,
-            icmpv4_raw_data=icmpv4_packet_rx.icmpv4_raw_data,
+            icmpv4_ec_id=icmpv4_packet_rx.icmpv4_ec_id,
+            icmpv4_ec_seq=icmpv4_packet_rx.icmpv4_ec_seq,
+            icmpv4_ec_raw_data=icmpv4_packet_rx.icmpv4_ec_raw_data,
             echo_tracker=icmpv4_packet_rx.tracker,
         )
         return
