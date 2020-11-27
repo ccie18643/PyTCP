@@ -45,7 +45,6 @@ Python based attempt to create fully functional TCP/IP stack for educational pur
  - TCP protocol - *ensure that event communication from TCP session to socket works properly (eg. connection reset by peer)*
  - ICMP protocols - *need to come up with some sort of "icmp socket" mechanism so ping client can bind to particular ICMP echo-reply stream*
  - IPv4 protocol - *improvements in IP defragmentation mechanism are needed, out of order fragment handling, purging of orphaned fragments*
- - All protocols - *"futue-proofing", need to make sure all reserved fields are being stored as is instead of just being initialized as '0' when packet is recreated for checksum validation
 
 ### Examples:
 
