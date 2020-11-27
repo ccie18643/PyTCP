@@ -438,4 +438,4 @@ class TcpOptUnk:
         return struct.pack("! BB", self.opt_kind, self.opt_len) + self.opt_data
 
     def __str__(self):
-        return "unk"
+        return f"unk-{self.opt_kind}-{self.opt_len}"
