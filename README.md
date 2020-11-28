@@ -2,6 +2,9 @@
 
 Python based attempt to create fully functional TCP/IP stack for educational purposes. Stack operates as user space program attached to Linux TAP interface. Since goal of this project is purely educational (at least at this point) the clarity of code is preferred over its efficiency, eg. using lists as buffers for data carried by TCP. For the same reason security features are not being implemented unless they are integral part of TCP/IP suite protocols specification. Also certain features that cannot be reliably tested at this time are skipped for now. Those will be added later once i have lab environment setup that lets me generate specific network conditions like delay or packet loss.
 
+This program is a work in progress and it changes on daily basis due to new features being implemented, changes being made to already implemented features, bug fixes, etc. Therefore if the current version is not working as expected try to clone it again the next day or shoot me an email describing the problem. Any input is appreciated. Also keep in mind that some features may be implemented only partially (as needed for stack operation) or they may be implemented in sub-optimal or not 100% RFC compliant way (due to lack of time) or last but not least they may contain bug(s) that i didn't notice yet.
+
+
 #### Already implemented:
 
  - Ethernet protocol - *support of Ethernet II standard frame*
@@ -46,6 +49,7 @@ Python based attempt to create fully functional TCP/IP stack for educational pur
  - TCP protocol - *ensure that event communication from TCP session to socket works properly (eg. connection reset by peer)*
  - ICMP protocols - *need to come up with some sort of "icmp socket" mechanism so ping client can bind to particular ICMP echo-reply stream*
  - IPv4 protocol - *improvements in IP defragmentation mechanism are needed, out of order fragment handling, purging of orphaned fragments*
+
 
 ### Examples:
 
