@@ -43,7 +43,7 @@ ARP_ENTRY_REFRESH_TIME = 300
 class ArpCache:
     """ Support for ARP cache operations """
 
-    class ArpEntry:
+    class CacheEntry:
         def __init__(self, mac_address, permanent=False):
             self.mac_address = mac_address
             self.permanent = permanent
@@ -52,6 +52,8 @@ class ArpCache:
 
     def __init__(self):
         """ Class constructor """
+
+        stack.arp_cache = self
 
         self.arp_cache = {}
 
@@ -100,7 +102,7 @@ class ArpCache:
     def add_entry(self, ipv4_address, mac_address):
         """ Add / refresh entry in cache """
 
-        self.arp_cache[ipv4_address] = self.ArpEntry(mac_address)
+        self.arp_cache[ipv4_address] = self.CacheEntry(mac_address)
 
     def find_entry(self, ipv4_address):
         """ Find entry in cache and return MAC address """

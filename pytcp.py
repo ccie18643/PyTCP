@@ -104,17 +104,17 @@ def main():
     tap = os.open("/dev/net/tun", os.O_RDWR)
     fcntl.ioctl(tap, TUNSETIFF, struct.pack("16sH", STACK_INTERFACE, IFF_TAP | IFF_NO_PI))
 
-    stack.stack_timer = StackTimer()
-    stack.rx_ring = RxRing(tap)
-    stack.tx_ring = TxRing(tap)
-    stack.arp_cache = ArpCache()
-    stack.icmpv6_nd_cache = ICMPv6NdCache()
-    stack.packet_handler = PacketHandler(
+    # Initialize stack components
+    StackTimer()
+    RxRing(tap)
+    TxRing(tap)
+    ArpCache()
+    ICMPv6NdCache()
+    PacketHandler(
         stack_mac_address=STACK_MAC_ADDRESS,
         stack_ipv6_address_candidate=STACK_IPV6_ADDRESS_CANDIDATE,
         stack_ipv4_address_candidate=STACK_IPV4_ADDRESS_CANDIDATE,
     )
-    stack.packet_handler.initialize_stack_ip_addresses()
 
     # ServiceUdpEcho()
     # ServiceUdpDiscard()

@@ -45,7 +45,7 @@ ND_ENTRY_REFRESH_TIME = 300
 class ICMPv6NdCache:
     """ Support for ICMPv6 ND cache operations """
 
-    class __Entry:
+    class CacheEntry:
         def __init__(self, mac_address, permanent=False):
             self.mac_address = mac_address
             self.permanent = permanent
@@ -54,6 +54,8 @@ class ICMPv6NdCache:
 
     def __init__(self):
         """ Class constructor """
+
+        stack.icmpv6_nd_cache = self
 
         self.nd_cache = {}
 
@@ -98,7 +100,7 @@ class ICMPv6NdCache:
     def add_entry(self, ipv6_address, mac_address):
         """ Add / refresh entry in cache """
 
-        self.nd_cache[ipv6_address] = self.__Entry(mac_address)
+        self.nd_cache[ipv6_address] = self.CacheEntry(mac_address)
 
     def find_entry(self, ipv6_address):
         """ Find entry in cache and return MAC address """

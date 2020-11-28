@@ -34,12 +34,16 @@ import threading
 
 import loguru
 
+import stack
+
 
 class TxRing:
     """ Support for sending packets to the network """
 
     def __init__(self, tap):
         """ Initialize access to tap interface and the outbound queue """
+
+        stack.tx_ring = self
 
         self.tap = tap
 

@@ -39,8 +39,7 @@ import loguru
 import ps_arp
 import ps_icmpv6
 import stack
-from ipv6_helper import (ipv6_eui64, ipv6_multicast_mac,
-                         ipv6_solicited_node_multicast)
+from ipv6_helper import ipv6_eui64, ipv6_multicast_mac, ipv6_solicited_node_multicast
 
 
 class PacketHandler:
@@ -65,6 +64,8 @@ class PacketHandler:
 
     def __init__(self, stack_mac_address, stack_ipv6_address_candidate=[], stack_ipv4_address_candidate=[]):
         """ Class constructor """
+
+        stack.packet_handler = self
 
         # MAC and IPv6 Multicast lists hold duplicate entries by design. This is to accomodate IPv6 Solicited Node Multicast mechanism where multiple
         # IPv6 unicast addresses can be tied to the same SNM address (and the same multicast MAC). This is important when removing one of unicast addresses,
@@ -104,9 +105,6 @@ class PacketHandler:
         # Start packed handler so we can receive packets from network
         threading.Thread(target=self.__thread_packet_handler).start()
         self.logger.debug("Started packet handler")
-
-    def initialize_stack_ip_addresses(self):
-        """ Initialize stack's IPv6/IPv4 addresses """
 
         if stack.ipv6_support:
             # Assign All IPv6 Nodes multicast address

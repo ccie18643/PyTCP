@@ -34,6 +34,8 @@ import time
 
 import loguru
 
+import stack
+
 
 class StackTimerTask:
     """ Timer task support class """
@@ -78,6 +80,8 @@ class StackTimer:
 
     def __init__(self):
         """ Class constructor """
+
+        stack.stack_timer = self
 
         self.logger = loguru.logger.bind(object_name="stack_timer.")
 
