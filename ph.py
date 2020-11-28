@@ -50,6 +50,10 @@ class PacketHandler:
         self.stack_ipv6_support = stack_ipv6_support
         self.stack_ipv4_support = stack_ipv4_support
 
+        # MAC and IPv6 Multicast lists hold duplicate entries by design. This is to accomodate IPv6 Solicited Node Multicast mechanism where multiple
+        # IPv6 unicast addresses can be tied to the same SNM address (and the same multicast MAC). This is important when removing one of unicast addresses,
+        # so the other ones keep it's SNM entry in multicast list. Its the simplest solution and imho perfectly valid one in this case.
+
         self.stack_mac_unicast = [stack_mac_address]
         self.stack_mac_multicast = []
         self.stack_mac_broadcast = ["ff:ff:ff:ff:ff:ff"]
@@ -97,12 +101,12 @@ class PacketHandler:
 
         # Log all the addresses stack will listen on
         self.logger.info(f"Stack listening on unicast MAC addresses: {self.stack_mac_unicast}")
-        self.logger.info(f"Stack listening on multicast MAC addresses: {self.stack_mac_multicast}")
+        self.logger.info(f"Stack listening on multicast MAC addresses: {list(set(self.stack_mac_multicast))}")
         self.logger.info(f"Stack listening on brodcast MAC addresses: {self.stack_mac_broadcast}")
 
         if self.stack_ipv6_support:
             self.logger.info(f"Stack listening on unicast IPv6 addresses: {[str(_) for _ in self.stack_ipv6_unicast]}")
-            self.logger.info(f"Stack listening on multicast IPv6 addresses: {[str(_) for _ in self.stack_ipv6_multicast]}")
+            self.logger.info(f"Stack listening on multicast IPv6 addresses: {list(set(str(_) for _ in self.stack_ipv6_multicast))}")
 
         if self.stack_ipv4_support:
             self.logger.info(f"Stack listening on unicast IPv4 addresses: {[str(_) for _ in self.stack_ipv4_unicast]}")
@@ -259,19 +263,21 @@ class PacketHandler:
     def send_icmpv6_multicast_listener_report(self):
         """ Send out ICMPv6 Multicast Listener Report for given list of addresses """
 
-        if icmpv6_mlr2_multicast_address_record := [
-            ps_icmpv6.MulticastAddressRecord(record_type=ps_icmpv6.ICMPV6_MART_CHANGE_TO_EXCLUDE, multicast_address=_)
+        # Need to use set here to avoid re-using duplicate multicast entries from stack_ipv6_multicast list,
+        # also All Multicast Nodes address is not being advertised as this is not neccessary
+        if icmpv6_mlr2_multicast_address_record := {
+            ps_icmpv6.MulticastAddressRecord(record_type=ps_icmpv6.ICMPV6_MART_CHANGE_TO_EXCLUDE, multicast_address=str(_))
             for _ in self.stack_ipv6_multicast
             if _ not in {IPv6Address("ff02::1")}
-        ]:
+        }:
             self.phtx_icmpv6(
                 ipv6_src=self.stack_ipv6_unicast[0] if self.stack_ipv6_unicast else IPv6Address("::"),
                 ipv6_dst=IPv6Address("ff02::16"),
                 ipv6_hop=1,
                 icmpv6_type=ps_icmpv6.ICMPV6_MULTICAST_LISTENER_REPORT_V2,
-                icmpv6_mlr2_multicast_address_record=icmpv6_mlr2_multicast_address_record
+                icmpv6_mlr2_multicast_address_record=icmpv6_mlr2_multicast_address_record,
             )
-            self.logger.debug(f"Sent out ICMPv6 Multicast Listener Report  message for {[_.multicast_address for _ in icmpv6_mlr2_multicast_address_record]}")
+            self.logger.debug(f"Sent out ICMPv6 Multicast Listener Report message for {[_.multicast_address for _ in icmpv6_mlr2_multicast_address_record]}")
 
     def send_icmpv6_nd_dad_message(self, ipv6_unicast_candidate):
         """ Send out ICMPv6 ND Duplicate Address Detection message """

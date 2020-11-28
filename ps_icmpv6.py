@@ -282,6 +282,16 @@ class MulticastAddressRecord:
 
         return len(self.raw_record)
 
+    def __hash__(self):
+        """ Hash of raw record """
+
+        return hash(self.raw_record)
+
+    def __eq__(self, other):
+        """ Compare two records """
+
+        return self.raw_record == other.raw_record
+
     @property
     def raw_record(self):
         """ Get record in raw format """

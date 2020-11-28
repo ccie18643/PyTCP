@@ -53,16 +53,16 @@ STACK_IPV6_ADDRESS_CANDIDATE = [
     # IPv6Interface("FE80::77/64"),
     # IPv6Interface("FE80::777/64"),
     # IPv6Interface("FE80::7777/64"),
-    IPv6Interface("2007::7/64"),
-    IPv6Interface("2007::7/64"),
-    ipv6_eui64(STACK_MAC_ADDRESS, IPv6Network("2007::/64")),
+    # IPv6Interface("2007::7/64"),
+    # IPv6Interface("2007::7/64"),
+    # ipv6_eui64(STACK_MAC_ADDRESS, IPv6Network("2007::/64")),
 ]
 
 STACK_IPV4_ADDRESS_CANDIDATE = [
     IPv4Interface("192.168.9.7/24"),
-    IPv4Interface("192.168.9.77/24"),
-    IPv4Interface("192.168.9.102/24"),
-    IPv4Interface("172.16.0.7/16"),
+    # IPv4Interface("192.168.9.77/24"),
+    # IPv4Interface("192.168.9.102/24"),
+    # IPv4Interface("172.16.0.7/16"),
 ]
 
 
