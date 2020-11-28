@@ -41,7 +41,13 @@ This program is a work in progress and it changes on daily basis due to new feat
  - TCP protocol - *proper handling on RST packets in various states, need to do research on this*
 
 #### Next steps:
- 
+
+ - QUIC protocol - *research and plan for the implementation, this depends on ability to create lab environment for it*
+ - IPv6 protocol - *validate and possibly re-implements certain IPv6 mechanisms/processes acoording to RFC rules*
+ - IPv6 protocol - *research and implement fragmentation*
+ - IPv6 protocol - *research and possibly implement support for ceratin optional IPv6 headers*
+ - ICMPv6 protocol - *validate and possibly re-implements certain IPv6 mechanisms/processes acoording to RFC rules*
+ - ICMPv6 protocol - *Multicast Listner Discovery v2 (MLDv2) full implementation <-- it may be requied by stack to respond to MLD queries*
  - IPv6 protocol - *ability to route traffic to external destinations via default gateway*
  - TCP protocol - *need to rework the CLOSE syscall mechanism so FIN flag can be set on last data packet instead of being carried in separate one*
  - TCP protocol - *ACK packet retransmission in case we got FIN retransmission in TIME_WAIT state <-- need to investigate this*
@@ -49,6 +55,7 @@ This program is a work in progress and it changes on daily basis due to new feat
  - TCP protocol - *ensure that event communication from TCP session to socket works properly (eg. connection reset by peer)*
  - ICMP protocols - *need to come up with some sort of "icmp socket" mechanism so ping client can bind to particular ICMP echo-reply stream*
  - IPv4 protocol - *improvements in IP defragmentation mechanism are needed, out of order fragment handling, purging of orphaned fragments*
+ - IPv6/IPv4 protocols - *proper routing mechanism, route table, etc...*
 
 
 ### Examples:
