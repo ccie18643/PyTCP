@@ -23,6 +23,18 @@
 #                                                                          #
 ############################################################################
 
+##############################################################################################
+#                                                                                            #
+#  This program is a work in progress and it changes on daily basis due to new features      #
+#  being implemented, changes being made to already implemented features, bug fixes, etc.    #
+#  Therefore if the current version is not working as expected try to clone it again the     #
+#  next day or shoot me an email describing the problem. Any input is appreciated. Also      #
+#  keep in mind that some features may be implemented only partially (as needed for stack    #
+#  operation) or they may be implemented in sub-optimal or not 100% RFC compliant way (due   #
+#  to lack of time) or last but not least they may contain bug(s) that i didn't notice yet.  #
+#                                                                                            #
+##############################################################################################
+
 
 #
 # ph.py - protocol support for incoming and outgoing packets
@@ -62,7 +74,7 @@ class PacketHandler:
     from phtx_tcp import phtx_tcp
     from phtx_udp import phtx_udp
 
-    def __init__(self, stack_mac_address, stack_ipv6_address_candidate=[], stack_ipv4_address_candidate=[]):
+    def __init__(self):
         """ Class constructor """
 
         stack.packet_handler = self
@@ -71,16 +83,16 @@ class PacketHandler:
         # IPv6 unicast addresses can be tied to the same SNM address (and the same multicast MAC). This is important when removing one of unicast addresses,
         # so the other ones keep it's SNM entry in multicast list. Its the simplest solution and imho perfectly valid one in this case.
 
-        self.stack_mac_unicast = [stack_mac_address]
+        self.stack_mac_unicast = stack.mac_address_candidate
         self.stack_mac_multicast = []
         self.stack_mac_broadcast = ["ff:ff:ff:ff:ff:ff"]
 
-        self.stack_ipv6_address_candidate = stack_ipv6_address_candidate
+        self.stack_ipv6_address_candidate = stack.ipv6_address_candidate
         self.stack_ipv6_address = []
         self.stack_ipv6_unicast = []
         self.stack_ipv6_multicast = []
 
-        self.stack_ipv4_address_candidate = stack_ipv4_address_candidate
+        self.stack_ipv4_address_candidate = stack.ipv4_address_candidate
         self.stack_ipv4_address = []
         self.stack_ipv4_unicast = []
         self.stack_ipv4_multicast = []

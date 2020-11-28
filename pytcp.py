@@ -23,6 +23,18 @@
 #                                                                          #
 ############################################################################
 
+##############################################################################################
+#                                                                                            #
+#  This program is a work in progress and it changes on daily basis due to new features      #
+#  being implemented, changes being made to already implemented features, bug fixes, etc.    #
+#  Therefore if the current version is not working as expected try to clone it again the     #
+#  next day or shoot me an email describing the problem. Any input is appreciated. Also      #
+#  keep in mind that some features may be implemented only partially (as needed for stack    #
+#  operation) or they may be implemented in sub-optimal or not 100% RFC compliant way (due   #
+#  to lack of time) or last but not least they may contain bug(s) that i didn't notice yet.  #
+#                                                                                            #
+##############################################################################################
+
 
 #
 # pytcp.py - main TCP/IP stack program
@@ -40,7 +52,7 @@ import loguru
 
 import stack
 from arp_cache import ArpCache
-from client_icmpv4_echo import ClientIcmpEcho
+from client_icmpv4_echo import ClientICMPv4Echo
 from client_tcp_echo import ClientTcpEcho
 from client_udp_dhcp import ClientUdpDhcp
 from icmpv6_nd_cache import ICMPv6NdCache
@@ -60,25 +72,15 @@ TUNSETIFF = 0x400454CA
 IFF_TAP = 0x0002
 IFF_NO_PI = 0x1000
 
-STACK_INTERFACE = b"tap7"
-STACK_MAC_ADDRESS = "02:00:00:77:77:77"
 
-STACK_IPV6_ADDRESS_CANDIDATE = [
-    # IPv6Interface("FE80::7/64"),
-    # IPv6Interface("FE80::77/64"),
-    # IPv6Interface("FE80::777/64"),
-    # IPv6Interface("FE80::7777/64"),
-    # IPv6Interface("2007::7/64"),
-    # IPv6Interface("2007::7/64"),
-    # ipv6_eui64(STACK_MAC_ADDRESS, IPv6Network("2007::/64")),
-]
-
-STACK_IPV4_ADDRESS_CANDIDATE = [
-    IPv4Interface("192.168.9.7/24"),
-    # IPv4Interface("192.168.9.77/24"),
-    # IPv4Interface("192.168.9.102/24"),
-    # IPv4Interface("172.16.0.7/16"),
-]
+########################################################
+#                                                      #
+#  For any configuration options edit 'stack.py' file  #
+#                                                      #
+#  For the TAP interface configuration check the       #
+#  'setup_tap.sh script'                               #
+#                                                      #
+########################################################
 
 
 def main():
@@ -102,7 +104,7 @@ def main():
     )
 
     tap = os.open("/dev/net/tun", os.O_RDWR)
-    fcntl.ioctl(tap, TUNSETIFF, struct.pack("16sH", STACK_INTERFACE, IFF_TAP | IFF_NO_PI))
+    fcntl.ioctl(tap, TUNSETIFF, struct.pack("16sH", stack.interface, IFF_TAP | IFF_NO_PI))
 
     # Initialize stack components
     StackTimer()
@@ -110,7 +112,7 @@ def main():
     TxRing(tap)
     ArpCache()
     ICMPv6NdCache()
-    PacketHandler(STACK_MAC_ADDRESS, STACK_IPV6_ADDRESS_CANDIDATE, STACK_IPV4_ADDRESS_CANDIDATE)
+    PacketHandler()
 
     # Set proper local IP address pattern for services depending on whch version of IP is enabled
     if stack.ipv6_support and stack.ipv4_support:
@@ -121,20 +123,22 @@ def main():
         local_ip_address = "0.0.0.0"
 
     # Initialize UDP test services
-    ServiceUdpEcho(local_ip_address=local_ip_address)
-    ServiceUdpDiscard(local_ip_address=local_ip_address)
-    ServiceUdpDaytime(local_ip_address=local_ip_address)
+    stack.service_udp_echo and ServiceUdpEcho(local_ip_address=local_ip_address)
+    stack.service_udp_discard and ServiceUdpDiscard(local_ip_address=local_ip_address)
+    stack.service_udp_daytime and ServiceUdpDaytime(local_ip_address=local_ip_address)
 
     # Initialize TCP test services
-    ServiceTcpEcho(local_ip_address=local_ip_address)
-    ServiceTcpDiscard(local_ip_address=local_ip_address)
-    ServiceTcpDaytime(local_ip_address=local_ip_address, message_count=-1, message_delay=1, message_size=1000)
+    stack.service_tcp_echo and ServiceTcpEcho(local_ip_address=local_ip_address)
+    stack.service_tcp_discard and ServiceTcpDiscard(local_ip_address=local_ip_address)
+    stack.service_tcp_daytime and ServiceTcpDaytime(local_ip_address=local_ip_address, message_count=-1, message_delay=1, message_size=1000)
 
-    # ClientUdpDhcp(STACK_MAC_ADDRESS)
-    # ClientTcpEcho(local_ipv4_address="192.168.9.7", remote_ipv4_address="192.168.9.102", remote_port=7, message_count=10)
-    # ClientTcpEcho(local_ipv4_address="192.168.9.7", remote_ipv4_address="1.1.1.1", remote_port=7)
-    # ClientTcpEcho(local_ipv4_address="192.168.9.7", remote_ipv4_address="192.168.9.9", remote_port=7)
-    # ClientIcmpEcho(local_ipv4_address="192.168.9.7", remote_ipv4_address="8.8.8.8")
+    # Initialize TCP test clients
+    stack.client_tcp_echo and ClientTcpEcho(local_ipv4_address="192.168.9.7", remote_ipv4_address="192.168.9.102", remote_port=7, message_count=10)
+    # stack.client_tcp_echo andClientTcpEcho(local_ipv4_address="192.168.9.7", remote_ipv4_address="1.1.1.1", remote_port=7)
+    # stack.client_tcp_echo andClientTcpEcho(local_ipv4_address="192.168.9.7", remote_ipv4_address="192.168.9.9", remote_port=7)
+
+    # Initialize ICMPv4 test clients
+    stack.client_icmpv4_echo and ClientICMPv4Echo(local_ipv4_address="192.168.9.7", remote_ipv4_address="8.8.8.8")
 
     while True:
         time.sleep(1)
