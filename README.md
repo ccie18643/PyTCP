@@ -47,6 +47,7 @@ This program is a work in progress and it changes on daily basis due to new feat
  - IPv6 protocol - *research and implement fragmentation*
  - IPv6 protocol - *research and possibly implement support for ceratin optional IPv6 headers*
  - ICMPv6 protocol - *validate and possibly re-implements certain IPv6 mechanisms/processes acoording to RFC rules*
+ - ICMPv6 protocol - *implement ND Redirect message*
  - ICMPv6 protocol - *Multicast Listner Discovery v2 (MLDv2) full implementation <-- it may be requied by stack to respond to MLD queries*
  - IPv6 protocol - *ability to route traffic to external destinations via default gateway*
  - TCP protocol - *need to rework the CLOSE syscall mechanism so FIN flag can be set on last data packet instead of being carried in separate one*
