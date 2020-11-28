@@ -1,11 +1,33 @@
 #!/usr/bin/env python3
 
-"""
+############################################################################
+#                                                                          #
+#  PyTCP - Python TCP/IP stack                                             #
+#  Copyright (C) 2020  Sebastian Majewski                                  #
+#                                                                          #
+#  This program is free software: you can redistribute it and/or modify    #
+#  it under the terms of the GNU General Public License as published by    #
+#  the Free Software Foundation, either version 3 of the License, or       #
+#  (at your option) any later version.                                     #
+#                                                                          #
+#  This program is distributed in the hope that it will be useful,         #
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of          #
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the           #
+#  GNU General Public License for more details.                            #
+#                                                                          #
+#  You should have received a copy of the GNU General Public License       #
+#  along with this program.  If not, see <https://www.gnu.org/licenses/>.  #
+#                                                                          #
+#  Author's email: ccie18643@gmail.com                                     #
+#  Github repository: https://github.com/ccie18643/PyTCP                   #
+#                                                                          #
+############################################################################
 
-PyTCP, Python TCP/IP stack, version 0.1 - 2020, Sebastian Majewski
-ph.py - protocol support for incoming and outgoing packets
 
-"""
+#
+# ph.py - protocol support for incoming and outgoing packets
+#
+
 
 import time
 import loguru
@@ -44,11 +66,8 @@ class PacketHandler:
     from phtx_udp import phtx_udp
     from phtx_tcp import phtx_tcp
 
-    def __init__(self, stack_mac_address, stack_ipv6_support=True, stack_ipv6_address_candidate=[], stack_ipv4_support=True, stack_ipv4_address_candidate=[]):
+    def __init__(self, stack_mac_address, stack_ipv6_address_candidate=[], stack_ipv4_address_candidate=[]):
         """ Class constructor """
-
-        self.stack_ipv6_support = stack_ipv6_support
-        self.stack_ipv4_support = stack_ipv4_support
 
         # MAC and IPv6 Multicast lists hold duplicate entries by design. This is to accomodate IPv6 Solicited Node Multicast mechanism where multiple
         # IPv6 unicast addresses can be tied to the same SNM address (and the same multicast MAC). This is important when removing one of unicast addresses,
@@ -89,13 +108,13 @@ class PacketHandler:
         threading.Thread(target=self.__thread_packet_handler).start()
         self.logger.debug("Started packet handler")
 
-        if self.stack_ipv6_support:
+        if stack.ipv6_support:
             # Assign All IPv6 Nodes multicast address
             self.assign_ipv6_multicast(IPv6Address("ff02::1"))
             # Create list of IPv6 unicast/multicast addresses stack should listen on
             self.create_stack_ipv6_addresses()
 
-        if self.stack_ipv4_support:
+        if stack.ipv4_support:
             # Create list of IPv4 unicast/multicast/broadcast addresses stack should listen on
             self.create_stack_ipv4_addresses()
 
@@ -104,11 +123,11 @@ class PacketHandler:
         self.logger.info(f"Stack listening on multicast MAC addresses: {list(set(self.stack_mac_multicast))}")
         self.logger.info(f"Stack listening on brodcast MAC addresses: {self.stack_mac_broadcast}")
 
-        if self.stack_ipv6_support:
+        if stack.ipv6_support:
             self.logger.info(f"Stack listening on unicast IPv6 addresses: {[str(_) for _ in self.stack_ipv6_unicast]}")
             self.logger.info(f"Stack listening on multicast IPv6 addresses: {list(set(str(_) for _ in self.stack_ipv6_multicast))}")
 
-        if self.stack_ipv4_support:
+        if stack.ipv4_support:
             self.logger.info(f"Stack listening on unicast IPv4 addresses: {[str(_) for _ in self.stack_ipv4_unicast]}")
             self.logger.info(f"Stack listening on multicast IPv4 addresses: {[str(_) for _ in self.stack_ipv4_multicast]}")
             self.logger.info(f"Stack listening on brodcast IPv4 addresses: {[str(_) for _ in self.stack_ipv4_broadcast]}")
@@ -158,7 +177,7 @@ class PacketHandler:
         # If we still don't have any link local address set disable IPv6 protocol operations
         if not self.stack_ipv6_address:
             self.logger.warning("Unable to assign any IPv6 link local address, disabling IPv6 protocol")
-            self.stack_ipv6_support = False
+            stack.ipv6_support = False
             return
 
         # Check if there are any other statically assigned addresses
