@@ -73,10 +73,6 @@ def validate_src_ipv6_address(self, ipv6_src):
             self.logger.warning("Unable to sent out IPv6 packet, no stack link local unicast IP address available")
             return
 
-    # If packet has all zeros source address set but the link local address is available then replace it
-    if ipv6_src.is_unspecified and self.stack_ipv6_unicast:
-        ipv6_src = self.stack_ipv6_unicast[0]
-
     return ipv6_src
 
 

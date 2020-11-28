@@ -48,7 +48,7 @@ interface = b"tap7"
 
 # Support for IPv6 and IPv4, at least one should be anabled
 ipv6_support = True
-ipv4_support = True
+ipv4_support = False
 
 # Unicast MAC addresses assigned to stack, currently there is not any kind of duplicate MAC detection performed
 mac_address_candidate = ["02:00:00:77:77:77"]
@@ -83,12 +83,12 @@ local_tcp_win = 65535  # Maximum amount of data peer can send to us without conf
 # Test services and clients, for detailed configuation of each reffer to pytcp.py and respective service/client file
 # Those are being used for testing various stack components are therefore their 'default' funcionality may be altered fro specific tst needs
 # Eg. TCP daytime service generates large amount of text data used to verify TCP protocol funcionality
-service_udp_echo = True
-service_udp_discard = True
-service_udp_daytime = True
-service_tcp_echo = True
-service_tcp_discard = True
-service_tcp_daytime = True
+service_udp_echo = False
+service_udp_discard = False
+service_udp_daytime = False
+service_tcp_echo = False
+service_tcp_discard = False
+service_tcp_daytime = False
 client_tcp_echo = False
 client_icmpv4_echo = False
 

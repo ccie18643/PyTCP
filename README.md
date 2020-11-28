@@ -49,6 +49,24 @@ Python based attempt to create fully functional TCP/IP stack for educational pur
 
 ### Examples:
 
+#### IPv6 Neighbor Discovery / Duplicate Address Detection / Address Auto Configuration
+ - stack tries to auto configure it's link local address, it joins apropriate solicited node multicast group and sends neighbor solicitation for the EUI64 address
+ - stack tries to assign static address, it joins apropriate solicited node multicast group and sends neighbor solicitation for the static address
+ - stack sends out Router Solicitation message to check if there are any global prefixes it should use
+ - router responds with Router Advertisement containing additional prefix
+ - stack tries to assign address based on received prefix and EUI64 host portion, it joins apropriate solicited node multicast group and sends neighbor solicitation for the static address
+ - after all addresses are assigned stacks sends out one more Multicast Listener report listing all of the multicas addresses it wants to listen to
+
+
+![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/main/pictures/ipv6_nd_dad_01.png)
+![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/main/pictures/ipv6_nd_dad_02.png)
+![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/main/pictures/ipv6_nd_dad_03.png)
+![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/main/pictures/ipv6_nd_dad_04.png)
+![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/main/pictures/ipv6_nd_dad_05.png)
+![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/main/pictures/ipv6_nd_dad_06.png)
+![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/main/pictures/ipv6_nd_dad_07.png)
+
+
 #### TCP Fast Retransmit in action after lost TX packet
  - outgoing packet is 'lost' as result of simulated packet loss mechanism
  - peer notices the inconsistence in packet SEQ numbers and sends out 'fast retransmit request'

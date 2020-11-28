@@ -100,9 +100,8 @@ class ICMPv6NdCache:
 
     def __send_icmpv6_neighbor_solicitation(self, icmpv6_ns_target_address):
         """ Enqueue ICMPv6 Neighbor Solicitation packet with TX ring """
-
         stack.packet_handler.phtx_icmpv6(
-            ipv6_src=IPv6Address("::"),
+            ipv6_src=IPv6Address(stack.packet_handler.stack_ipv6_unicast[0] if stack.packet_handler.stack_ipv6_unicast else "::"),
             ipv6_dst=ipv6_solicited_node_multicast(icmpv6_ns_target_address),
             ipv6_hop=255,
             icmpv6_type=ps_icmpv6.ICMPV6_NEIGHBOR_SOLICITATION,
