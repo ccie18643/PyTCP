@@ -60,6 +60,21 @@ This program is a work in progress and it changes on daily basis due to new feat
 
 ### Examples:
 
+#### Couple ping packets and two monkeys sent out via TCP over IPv6 protocol
+
+![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/main/pictures/malpi_00.png)
+![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/main/pictures/malpi_01.png)
+![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/main/pictures/malpi_02.png)
+![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/main/pictures/malpi_03.png)
+![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/main/pictures/malpi_04.png)
+![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/main/pictures/malpi_05.png)
+![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/main/pictures/malpi_06.png)
+![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/main/pictures/malpi_07.png)
+![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/main/pictures/malpi_08.png)
+![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/main/pictures/malpi_09.png)
+![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/main/pictures/malpi_10.png)
+
+
 #### IPv6 Neighbor Discovery / Duplicate Address Detection / Address Auto Configuration
  - stack tries to auto configure it's link local address, it generates it as EUI64 address, as part od DAD process it joins appropriate solicited node multicast group and sends neighbor solicitation for the address it generated
  - stack doesn't receive any Neighbor Advertisement for the address it generated so assigns it to its interface
