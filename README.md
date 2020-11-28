@@ -60,7 +60,7 @@ This program is a work in progress and it changes on daily basis due to new feat
 
 ### Examples:
 
-#### Couple ping packets and two monkeys sent out via TCP over IPv6 protocol
+#### Couple ping packets and two monkeys delivered via TCP over IPv6 protocol
 
 ![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/main/pictures/malpi_00.png)
 ![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/main/pictures/malpi_01.png)
