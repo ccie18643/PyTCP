@@ -110,11 +110,7 @@ def main():
     TxRing(tap)
     ArpCache()
     ICMPv6NdCache()
-    PacketHandler(
-        stack_mac_address=STACK_MAC_ADDRESS,
-        stack_ipv6_address_candidate=STACK_IPV6_ADDRESS_CANDIDATE,
-        stack_ipv4_address_candidate=STACK_IPV4_ADDRESS_CANDIDATE,
-    )
+    PacketHandler(STACK_MAC_ADDRESS, STACK_IPV6_ADDRESS_CANDIDATE, STACK_IPV4_ADDRESS_CANDIDATE)
 
     # ServiceUdpEcho()
     # ServiceUdpDiscard()
