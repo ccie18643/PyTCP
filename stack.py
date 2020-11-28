@@ -64,7 +64,7 @@ ipv6_address_candidate = [
     # ipv6_eui64(STACK_MAC_ADDRESS, IPv6Network("2007::/64")),
 ]
 
-# Static IPv6 adrsses may be configured here (they will still be subject to Duplicate Address Detection mechanism)
+# Static IPv4 adrsses need to be configured here (they will still be subject to ARP Probe/Announcement mechanism)
 # IPv4 DHCP address autoconfiguration is not implemented yet (DHCP support is ready, just need to tie it to stack)
 # Basic IPv4 routing is implemented and stack assumes that default gateway is the first host address on given subnet
 # At least one static IPv4 address should be configured here
