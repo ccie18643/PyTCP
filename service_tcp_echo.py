@@ -84,7 +84,7 @@ malpa = (
 class ServiceTcpEcho:
     """ TCP Echo service support class """
 
-    def __init__(self, local_ip_address="0.0.0.0", local_port=7):
+    def __init__(self, local_ip_address="*", local_port=7):
         """ Class constructor """
 
         threading.Thread(target=self.__thread_service, args=(local_ip_address, local_port)).start()

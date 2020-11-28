@@ -29,6 +29,8 @@
 #
 
 
+from ipaddress import IPv4Address
+
 import ps_arp
 import stack
 
@@ -76,7 +78,7 @@ def phrx_arp(self, ether_packet_rx, arp_packet_rx):
             if (
                 arp_packet_rx.arp_spa in [_.ip for _ in self.stack_ipv4_address_candidate]
                 and arp_packet_rx.arp_tha == self.stack_mac_unicast[0]
-                and arp_packet_rx.arp_tpa == "0.0.0.0"
+                and arp_packet_rx.arp_tpa == IPv4Address("0.0.0.0")
             ):
                 self.logger.warning(f"ARP Probe detected conflict for IP {arp_packet_rx.arp_spa} with host at {arp_packet_rx.arp_sha}")
                 self.arp_probe_unicast_conflict.add(arp_packet_rx.arp_spa)

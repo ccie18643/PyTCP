@@ -50,9 +50,22 @@ class UdpMetadata:
     def socket_id_patterns(self):
         """ Socket ID patterns that match this packet """
 
-        return [
-            f"UDP/{self.local_ip_address}/{self.local_port}/{self.remote_ip_address}/{self.remote_port}",
-            f"UDP/{self.local_ip_address}/{self.local_port}/0.0.0.0/0",
-            f"UDP/0.0.0.0/{self.local_port}/0.0.0.0/{self.remote_port}",
-            f"UDP/0.0.0.0/{self.local_port}/0.0.0.0/0",
-        ]
+        if self.remote_ip_address.version == 6:
+            return [
+                f"UDP/{self.local_ip_address}/{self.local_port}/{self.remote_ip_address}/{self.remote_port}",
+                f"UDP/{self.local_ip_address}/{self.local_port}/*/*",
+                f"UDP/::/{self.local_port}/*/{self.remote_port}",
+                f"UDP/*/{self.local_port}/*/{self.remote_port}",
+                f"UDP/::/{self.local_port}/*/*",
+                f"UDP/*/{self.local_port}/*/*",
+            ]
+
+        if self.remote_ip_address.version == 4:
+            return [
+                f"UDP/{self.local_ip_address}/{self.local_port}/{self.remote_ip_address}/{self.remote_port}",
+                f"UDP/{self.local_ip_address}/{self.local_port}/*/*",
+                f"UDP/0.0.0.0/{self.local_port}/*/{self.remote_port}",
+                f"UDP/*/{self.local_port}/*/{self.remote_port}",
+                f"UDP/0.0.0.0/{self.local_port}/*/*",
+                f"UDP/*/{self.local_port}/*/*",
+            ]

@@ -112,13 +112,23 @@ def main():
     ICMPv6NdCache()
     PacketHandler(STACK_MAC_ADDRESS, STACK_IPV6_ADDRESS_CANDIDATE, STACK_IPV4_ADDRESS_CANDIDATE)
 
-    # ServiceUdpEcho()
-    # ServiceUdpDiscard()
-    # ServiceUdpDaytime()
+    # Set proper local IP address pattern for services depending on whch version of IP is enabled
+    if stack.ipv6_support and stack.ipv4_support:
+        local_ip_address = "*"
+    elif stack.ipv6_support:
+        local_ip_address = "::"
+    elif stack.ipv4_support:
+        local_ip_address = "0.0.0.0"
 
-    ServiceTcpEcho()
-    ServiceTcpDiscard()
-    ServiceTcpDaytime(message_count=-1, message_delay=1, message_size=1000)
+    # Initialize UDP test services
+    ServiceUdpEcho(local_ip_address=local_ip_address)
+    ServiceUdpDiscard(local_ip_address=local_ip_address)
+    ServiceUdpDaytime(local_ip_address=local_ip_address)
+
+    # Initialize TCP test services
+    ServiceTcpEcho(local_ip_address=local_ip_address)
+    ServiceTcpDiscard(local_ip_address=local_ip_address)
+    ServiceTcpDaytime(local_ip_address=local_ip_address, message_count=-1, message_delay=1, message_size=1000)
 
     # ClientUdpDhcp(STACK_MAC_ADDRESS)
     # ClientTcpEcho(local_ipv4_address="192.168.9.7", remote_ipv4_address="192.168.9.102", remote_port=7, message_count=10)

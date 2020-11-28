@@ -71,7 +71,7 @@ class TcpSocket:
     def __pick_random_local_port(self):
         """ Pick random local port, making sure it is not already being used by any socket """
 
-        used_ports = {int(_.split("/")[2]) for _ in stack.tcp_sessions if _.split("/")[1] in {"0.0.0.0", self.local_ip_address}}
+        used_ports = {int(_.split("/")[2]) for _ in stack.tcp_sessions if _.split("/")[1] in {"*", self.local_ip_address}}
         while (port := random.randint(*EPHEMERAL_PORT_RANGE)) not in used_ports:
             return port
 
@@ -89,8 +89,8 @@ class TcpSocket:
     def listen(self):
         """ Starts to listen for incomming connections """
 
-        self.remote_ip_address = "0.0.0.0"
-        self.remote_port = 0
+        self.remote_ip_address = "*"
+        self.remote_port = "*"
         tcp_session = TcpSession(
             local_ip_address=self.local_ip_address,
             local_port=self.local_port,

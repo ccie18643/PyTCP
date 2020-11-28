@@ -94,9 +94,9 @@ class ArpPacket:
             self.arp_prlen = 4
             self.arp_oper = arp_oper
             self.arp_sha = arp_sha
-            self.arp_spa = arp_spa
+            self.arp_spa = IPv4Address(arp_spa)
             self.arp_tha = arp_tha
-            self.arp_tpa = arp_tpa
+            self.arp_tpa = IPv4Address(arp_tpa)
 
     def __str__(self):
         """ Short packet log string """

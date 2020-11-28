@@ -243,7 +243,7 @@ class PacketHandler:
             ether_dst="ff:ff:ff:ff:ff:ff",
             arp_oper=ps_arp.ARP_OP_REQUEST,
             arp_sha=self.stack_mac_unicast[0],
-            arp_spa="0.0.0.0",
+            arp_spa=IPv4Address("0.0.0.0"),
             arp_tha="00:00:00:00:00:00",
             arp_tpa=ipv4_unicast,
         )

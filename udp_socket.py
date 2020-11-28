@@ -48,8 +48,8 @@ class UdpSocket:
 
         self.local_ip_address = None
         self.local_port = None
-        self.remote_ip_address = "0.0.0.0"
-        self.remote_port = 0
+        self.remote_ip_address = "*"
+        self.remote_port = "*"
 
         self.packet_rx = []
         self.packet_rx_ready = threading.Semaphore(0)

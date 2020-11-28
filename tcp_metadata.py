@@ -76,7 +76,16 @@ class TcpMetadata:
     def tcp_session_listening_patterns(self):
         """ Session ID patterns that match listening socket """
 
-        return [
-            f"TCP/{self.local_ip_address}/{self.local_port}/0.0.0.0/0",
-            f"TCP/0.0.0.0/{self.local_port}/0.0.0.0/0",
-        ]
+        if self.remote_ip_address.version == 6:
+            return [
+                f"TCP/{self.local_ip_address}/{self.local_port}/*/*",
+                f"TCP/::/{self.local_port}/*/*",
+                f"TCP/*/{self.local_port}/*/*",
+            ]
+
+        if self.remote_ip_address.version == 4:
+            return [
+                f"TCP/{self.local_ip_address}/{self.local_port}/*/*",
+                f"TCP/0.0.0.0/{self.local_port}/*/*",
+                f"TCP/*/{self.local_port}/*/*",
+            ]

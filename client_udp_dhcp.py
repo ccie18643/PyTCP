@@ -31,6 +31,7 @@
 
 import random
 import threading
+from ipaddress import IPv4Address
 
 import ps_dhcp
 import udp_socket
@@ -52,9 +53,9 @@ class ClientUdpDhcp:
         self.socket.send_to(
             udp_socket.UdpMessage(
                 raw_data=dhcp_packet_tx.get_raw_packet(),
-                local_ipv4_address="0.0.0.0",
+                local_ipv4_address=IPv4Address("0.0.0.0"),
                 local_port=68,
-                remote_ipv4_address="255.255.255.255",
+                remote_ipv4_address=IPv4Address("255.255.255.255"),
                 remote_port=67,
             )
         )

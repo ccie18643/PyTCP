@@ -39,7 +39,7 @@ import tcp_socket
 class ServiceTcpDaytime:
     """ TCP Daytime service support class """
 
-    def __init__(self, local_ip_address="0.0.0.0", local_port=13, message_count=1, message_delay=0, message_size=1):
+    def __init__(self, local_ip_address="*", local_port=13, message_count=1, message_delay=0, message_size=1):
         """ Class constructor """
 
         threading.Thread(target=self.__thread_service, args=(local_ip_address, local_port, message_count, message_delay, message_size)).start()

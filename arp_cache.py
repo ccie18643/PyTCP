@@ -30,6 +30,7 @@
 
 
 import time
+from ipaddress import IPv4Address
 
 import loguru
 
@@ -94,7 +95,7 @@ class ArpCache:
             ether_dst="ff:ff:ff:ff:ff:ff",
             arp_oper=ps_arp.ARP_OP_REQUEST,
             arp_sha=stack.packet_handler.stack_mac_unicast[0],
-            arp_spa=stack.packet_handler.stack_ipv4_unicast[0] if stack.packet_handler.stack_ipv4_unicast else "0.0.0.0",
+            arp_spa=stack.packet_handler.stack_ipv4_unicast[0] if stack.packet_handler.stack_ipv4_unicast else IPv4Address("0.0.0.0"),
             arp_tha="00:00:00:00:00:00",
             arp_tpa=arp_tpa,
         )
