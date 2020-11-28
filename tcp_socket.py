@@ -29,14 +29,13 @@
 #
 
 
-import loguru
-import threading
 import random
+import threading
+
+import loguru
 
 import stack
-
 from tcp_session_alt import TcpSession
-
 
 EPHEMERAL_PORT_RANGE = (32168, 60999)
 
@@ -117,7 +116,7 @@ class TcpSocket:
         )
         self.tcp_session = tcp_session
         stack.tcp_sessions[tcp_session.tcp_session_id] = tcp_session
-        self.logger.debug(f"{self.socket_id} -  Socket attempting connection to {remote_ip_address}:{remote_port}")
+        self.logger.debug(f"{self.socket_id} -  Socket attempting connection to {remote_ip_address}, port {remote_port}")
         return tcp_session.connect()
 
     def accept(self):

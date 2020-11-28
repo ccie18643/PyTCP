@@ -29,12 +29,12 @@
 #
 
 
-import loguru
 import time
+
+import loguru
 
 import ps_arp
 import stack
-
 
 ARP_ENTRY_MAX_AGE = 3600
 ARP_ENTRY_REFRESH_TIME = 300
@@ -43,7 +43,7 @@ ARP_ENTRY_REFRESH_TIME = 300
 class ArpCache:
     """ Support for ARP cache operations """
 
-    class __Entry:
+    class ArpEntry:
         def __init__(self, mac_address, permanent=False):
             self.mac_address = mac_address
             self.permanent = permanent
@@ -100,7 +100,7 @@ class ArpCache:
     def add_entry(self, ipv4_address, mac_address):
         """ Add / refresh entry in cache """
 
-        self.arp_cache[ipv4_address] = self.__Entry(mac_address)
+        self.arp_cache[ipv4_address] = self.ArpEntry(mac_address)
 
     def find_entry(self, ipv4_address):
         """ Find entry in cache and return MAC address """

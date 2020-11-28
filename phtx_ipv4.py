@@ -29,14 +29,12 @@
 #
 
 
-import struct
 import socket
-
+import struct
 from ipaddress import IPv4Address
 
-import ps_ipv4
 import ps_ether
-
+import ps_ipv4
 import stack
 
 

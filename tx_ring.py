@@ -30,8 +30,9 @@
 
 
 import os
-import loguru
 import threading
+
+import loguru
 
 
 class TxRing:

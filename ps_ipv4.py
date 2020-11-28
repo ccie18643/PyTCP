@@ -31,8 +31,8 @@
 
 import struct
 from ipaddress import IPv4Address
-import inet_cksum
 
+import inet_cksum
 
 # IPv4 protocol header
 

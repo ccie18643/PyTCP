@@ -42,5 +42,6 @@ tx_ring = None
 arp_cache = None
 icmpv6_nd_cache = None
 packet_handler = None
+stack_timer = None
 tcp_sessions = {}
 udp_sockets = {}

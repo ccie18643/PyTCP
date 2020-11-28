@@ -32,7 +32,6 @@
 import struct
 from ipaddress import IPv6Address
 
-
 # IPv6 protocol header
 
 # +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+

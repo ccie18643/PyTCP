@@ -30,11 +30,11 @@
 
 
 from ipaddress import IPv4Address, IPv6Address
-from ps_tcp import TcpPacket, TcpOptMss, TcpOptWscale, TcpOptNop
+
 import stack
+from ps_tcp import TcpOptMss, TcpOptNop, TcpOptWscale, TcpPacket
 
-
-PACKET_LOSS = True
+PACKET_LOSS = False
 
 
 def phtx_tcp(

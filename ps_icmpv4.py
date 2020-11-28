@@ -30,9 +30,9 @@
 
 
 import struct
+
 import inet_cksum
 from tracker import Tracker
-
 
 # Echo reply message (0/0)
 

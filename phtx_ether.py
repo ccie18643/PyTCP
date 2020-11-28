@@ -35,7 +35,6 @@ import ps_ether
 import ps_ipv4
 import ps_ipv6
 import stack
-
 from ipv6_helper import ipv6_multicast_mac
 
 

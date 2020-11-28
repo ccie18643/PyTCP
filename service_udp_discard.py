@@ -47,8 +47,8 @@ class ServiceUdpDiscard:
 
         socket = udp_socket.UdpSocket()
         socket.bind(local_ipv4_address, local_port)
-        print(f"Service UDP Discard: Socket created, bound to {local_ipv4_address}:{local_port}")
+        print(f"Service UDP Discard: Socket created, bound to {local_ipv4_address}, port {local_port}")
 
         while True:
             packet = socket.receive_from()
-            print(f"Service UDP Discard: Discarded message from {packet.remote_ipv4_address}:{packet.remote_port} -", packet.raw_data)
+            print(f"Service UDP Discard: Discarded message from {packet.remote_ipv4_address}, port {packet.remote_port} -", packet.raw_data)

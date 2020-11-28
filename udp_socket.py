@@ -29,8 +29,9 @@
 #
 
 
-import loguru
 import threading
+
+import loguru
 
 import stack
 

@@ -30,8 +30,8 @@
 
 
 import struct
-from tracker import Tracker
 
+from tracker import Tracker
 
 # Ethernet packet header
 

@@ -29,9 +29,10 @@
 #
 
 
-import loguru
-import time
 import threading
+import time
+
+import loguru
 
 
 class StackTimerTask:

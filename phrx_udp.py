@@ -29,16 +29,14 @@
 #
 
 
-import loguru
-
 from ipaddress import IPv4Address, IPv6Address
 
-import stack
+import loguru
 
-from udp_metadata import UdpMetadata
-
-import ps_icmpv6
 import ps_icmpv4
+import ps_icmpv6
+import stack
+from udp_metadata import UdpMetadata
 
 
 def phrx_udp(self, ip_packet_rx, udp_packet_rx):
@@ -78,7 +76,7 @@ def phrx_udp(self, ip_packet_rx, udp_packet_rx):
     # Silently drop packet if it has all zero source IP address
     if ip_packet_rx.ip_src in {IPv4Address("0.0.0.0"), IPv6Address("::")}:
         self.logger.debug(
-            f"Received UDP packet from {ip_packet_rx.ip_src}:{udp_packet_rx.udp_sport} to {ip_packet_rx.ip_dst}:{udp_packet_rx.udp_dport}, droping"
+            f"Received UDP packet from {ip_packet_rx.ip_src}, port {udp_packet_rx.udp_sport} to {ip_packet_rx.ip_dst}, port {udp_packet_rx.udp_dport}, droping"
         )
         return
 

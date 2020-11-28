@@ -30,11 +30,9 @@
 
 
 import threading
-
 from datetime import datetime
 
 import udp_socket
-
 from tracker import Tracker
 from udp_metadata import UdpMetadata
 
@@ -52,7 +50,7 @@ class ServiceUdpDaytime:
 
         socket = udp_socket.UdpSocket()
         socket.bind(local_ipv4_address, local_port)
-        print(f"Service UDP Daytime: Socket created, bound to {local_ipv4_address}:{local_port}")
+        print(f"Service UDP Daytime: Socket created, bound to {local_ipv4_address}, port {local_port}")
 
         while True:
             packet_rx = socket.receive_from()
@@ -65,4 +63,4 @@ class ServiceUdpDaytime:
                 tracker=Tracker("TX", echo_tracker=packet_rx.tracker),
             )
             socket.send_to(packet_tx)
-            print(f"Service UDP Daytime: Sent daytime message to {packet_tx.remote_ipv4_address}:{packet_tx.remote_port} -", packet_tx.raw_data)
+            print(f"Service UDP Daytime: Sent daytime message to {packet_tx.remote_ipv4_address}, port {packet_tx.remote_port} -", packet_tx.raw_data)

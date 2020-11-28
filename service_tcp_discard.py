@@ -48,11 +48,11 @@ class ServiceTcpDiscard:
         socket = tcp_socket.TcpSocket()
         socket.bind(local_ip_address, local_port)
         socket.listen()
-        print(f"Service TCP Discard: Socket created, bound to {local_ip_address}:{local_port} and set to listening mode")
+        print(f"Service TCP Discard: Socket created, bound to {local_ip_address}, port {local_port} and set to listening mode")
 
         while True:
             new_socket = socket.accept()
-            print(f"Service TCP Discard: Inbound connection received from {new_socket.remote_ip_address}:{new_socket.remote_port}")
+            print(f"Service TCP Discard: Inbound connection received from {new_socket.remote_ip_address}, port {new_socket.remote_port}")
 
             threading.Thread(target=self.__thread_connection, args=(new_socket,)).start()
 
@@ -65,7 +65,7 @@ class ServiceTcpDiscard:
             if message is None:
                 break
 
-            print(f"Service TCP Discard: Discarded message from {socket.remote_ip_address}:{socket.remote_port} -", message)
+            print(f"Service TCP Discard: Discarded message from {socket.remote_ip_address}, port {socket.remote_port} -", message)
 
         socket.close()
-        print(f"Service TCP Discard: Connection from {socket.remote_ip_address}:{socket.remote_port} has been closed by peer")
+        print(f"Service TCP Discard: Connection from {socket.remote_ip_address}, port {socket.remote_port} has been closed by peer")

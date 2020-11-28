@@ -29,11 +29,11 @@
 #
 
 
-import threading
 import random
+import threading
 
-import udp_socket
 import ps_dhcp
+import udp_socket
 
 
 class ClientUdpDhcp:

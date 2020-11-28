@@ -30,9 +30,9 @@
 
 
 import struct
+
 import inet_cksum
 from tracker import Tracker
-
 
 # UDP packet header (RFC 768)
 

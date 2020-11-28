@@ -29,10 +29,9 @@
 #
 
 
-import struct
-import socket
 import binascii
-
+import socket
+import struct
 
 # DHCP packet header (RFC 2131)
 

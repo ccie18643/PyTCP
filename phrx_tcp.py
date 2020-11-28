@@ -30,11 +30,9 @@
 
 
 import stack
-
 from tcp_metadata import TcpMetadata
 
-
-PACKET_LOSS = True
+PACKET_LOSS = False
 
 
 def phrx_tcp(self, ip_packet_rx, tcp_packet_rx):

@@ -29,10 +29,10 @@
 #
 
 
-import ps_ipv6
 import ps_icmpv6
-import ps_udp
+import ps_ipv6
 import ps_tcp
+import ps_udp
 
 
 def phrx_ipv6(self, ipv6_packet_rx):

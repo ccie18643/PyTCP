@@ -29,42 +29,39 @@
 #
 
 
-import time
-import loguru
 import random
 import threading
-
+import time
 from ipaddress import IPv4Address, IPv6Address
 
-import ps_icmpv6
-import ps_arp
-import stack
+import loguru
 
-from ipv6_helper import ipv6_eui64, ipv6_multicast_mac, ipv6_solicited_node_multicast
+import ps_arp
+import ps_icmpv6
+import stack
+from ipv6_helper import (ipv6_eui64, ipv6_multicast_mac,
+                         ipv6_solicited_node_multicast)
 
 
 class PacketHandler:
     """ Pick up and respond to incoming packets """
 
-    from phrx_ether import phrx_ether
     from phrx_arp import phrx_arp
+    from phrx_ether import phrx_ether
+    from phrx_icmpv4 import phrx_icmpv4
+    from phrx_icmpv6 import phrx_icmpv6
     from phrx_ipv4 import phrx_ipv4
     from phrx_ipv6 import phrx_ipv6
-    from phrx_icmpv4 import phrx_icmpv4
-
-    from phrx_icmpv6 import phrx_icmpv6
-    from phrx_udp import phrx_udp
     from phrx_tcp import phrx_tcp
-
-    from phtx_ether import phtx_ether
+    from phrx_udp import phrx_udp
     from phtx_arp import phtx_arp
+    from phtx_ether import phtx_ether
+    from phtx_icmpv4 import phtx_icmpv4
+    from phtx_icmpv6 import phtx_icmpv6
     from phtx_ipv4 import phtx_ipv4
     from phtx_ipv6 import phtx_ipv6
-    from phtx_icmpv4 import phtx_icmpv4
-
-    from phtx_icmpv6 import phtx_icmpv6
-    from phtx_udp import phtx_udp
     from phtx_tcp import phtx_tcp
+    from phtx_udp import phtx_udp
 
     def __init__(self, stack_mac_address, stack_ipv6_address_candidate=[], stack_ipv4_address_candidate=[]):
         """ Class constructor """
@@ -107,6 +104,9 @@ class PacketHandler:
         # Start packed handler so we can receive packets from network
         threading.Thread(target=self.__thread_packet_handler).start()
         self.logger.debug("Started packet handler")
+
+    def initialize_stack_ip_addresses(self):
+        """ Initialize stack's IPv6/IPv4 addresses """
 
         if stack.ipv6_support:
             # Assign All IPv6 Nodes multicast address

@@ -32,7 +32,6 @@
 from ipaddress import IPv6Address
 
 import ps_ipv6
-
 import stack
 
 

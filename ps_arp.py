@@ -31,8 +31,8 @@
 
 import struct
 from ipaddress import IPv4Address
-from tracker import Tracker
 
+from tracker import Tracker
 
 # ARP packet header - IPv4 stack version only
 

@@ -30,9 +30,7 @@
 
 
 import ps_arp
-
 import stack
-
 
 ARP_CACHE_UPDATE_FROM_DIRECT_REQUEST = True
 ARP_CACHE_UPDATE_FROM_GRATUITOUS_REPLY = True

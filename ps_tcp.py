@@ -30,9 +30,9 @@
 
 
 import struct
+
 import inet_cksum
 from tracker import Tracker
-
 
 # TCP packet header (RFC 793)
 
@@ -252,7 +252,6 @@ class TcpPacket:
         for option in self.tcp_options:
             if option.opt_kind == TCP_OPT_MSS:
                 return option.opt_mss
-
         return 536
 
     @property
@@ -262,6 +261,7 @@ class TcpPacket:
         for option in self.tcp_options:
             if option.opt_kind == TCP_OPT_WSCALE:
                 return 1 << option.opt_wscale
+        return None
 
     @property
     def tcp_sackperm(self):
@@ -270,6 +270,7 @@ class TcpPacket:
         for option in self.tcp_options:
             if option.opt_kind == TCP_OPT_SACKPERM:
                 return True
+        return None
 
     @property
     def tcp_timestamp(self):
@@ -278,13 +279,12 @@ class TcpPacket:
         for option in self.tcp_options:
             if option.opt_kind == TCP_OPT_TIMESTAMP:
                 return option.opt_tsval, option.opt_tsecr
+        return None
 
 
-"""
-
-   TCP options
-
-"""
+#
+# TCP options
+#
 
 
 # TCP option - End of Option List (0)

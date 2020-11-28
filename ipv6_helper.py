@@ -29,8 +29,8 @@
 #
 
 
+from ipaddress import IPv6Address, IPv6Interface, IPv6Network
 from re import sub
-from ipaddress import IPv6Interface, IPv6Network, IPv6Address
 
 
 def ipv6_eui64(mac, prefix=IPv6Network("fe80::/64")):

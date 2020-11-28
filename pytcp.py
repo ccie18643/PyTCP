@@ -29,39 +29,32 @@
 #
 
 
-import os
-import sys
 import fcntl
-import time
+import os
 import struct
+import sys
+import time
+from ipaddress import IPv4Interface, IPv6Interface, IPv6Network
+
 import loguru
 
-from ipaddress import IPv4Interface, IPv6Network, IPv6Interface
-
-from stack_timer import StackTimer
-from arp_cache import ArpCache
-from icmpv6_nd_cache import ICMPv6NdCache
-from rx_ring import RxRing
-from tx_ring import TxRing
-
-from ph import PacketHandler
-
-from service_udp_echo import ServiceUdpEcho
-from service_udp_discard import ServiceUdpDiscard
-from service_udp_daytime import ServiceUdpDaytime
-
-from service_tcp_echo import ServiceTcpEcho
-from service_tcp_discard import ServiceTcpDiscard
-from service_tcp_daytime import ServiceTcpDaytime
-
-from client_udp_dhcp import ClientUdpDhcp
-from client_tcp_echo import ClientTcpEcho
-from client_icmpv4_echo import ClientIcmpEcho
-
-from ipv6_helper import ipv6_eui64
-
 import stack
-
+from arp_cache import ArpCache
+from client_icmpv4_echo import ClientIcmpEcho
+from client_tcp_echo import ClientTcpEcho
+from client_udp_dhcp import ClientUdpDhcp
+from icmpv6_nd_cache import ICMPv6NdCache
+from ipv6_helper import ipv6_eui64
+from ph import PacketHandler
+from rx_ring import RxRing
+from service_tcp_daytime import ServiceTcpDaytime
+from service_tcp_discard import ServiceTcpDiscard
+from service_tcp_echo import ServiceTcpEcho
+from service_udp_daytime import ServiceUdpDaytime
+from service_udp_discard import ServiceUdpDiscard
+from service_udp_echo import ServiceUdpEcho
+from stack_timer import StackTimer
+from tx_ring import TxRing
 
 TUNSETIFF = 0x400454CA
 IFF_TAP = 0x0002
@@ -121,6 +114,7 @@ def main():
         stack_ipv6_address_candidate=STACK_IPV6_ADDRESS_CANDIDATE,
         stack_ipv4_address_candidate=STACK_IPV4_ADDRESS_CANDIDATE,
     )
+    stack.packet_handler.initialize_stack_ip_addresses()
 
     # ServiceUdpEcho()
     # ServiceUdpDiscard()

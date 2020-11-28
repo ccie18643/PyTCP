@@ -29,13 +29,11 @@
 #
 
 
-import ps_ipv4
-import ps_icmpv4
-import ps_udp
-import ps_tcp
-
 import inet_cksum
-
+import ps_icmpv4
+import ps_ipv4
+import ps_tcp
+import ps_udp
 
 ipv4_fragments = {}
 

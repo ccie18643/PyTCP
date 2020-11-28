@@ -29,18 +29,17 @@
 #
 
 
-import sys
 import socket
+import sys
 
-import ps_ether
 import ps_arp
-import ps_ipv4
-import ps_ipv6
+import ps_ether
 import ps_icmpv4
 import ps_icmpv6
-import ps_udp
+import ps_ipv4
+import ps_ipv6
 import ps_tcp
-
+import ps_udp
 
 # raw_socket = socket.socket(socket.PF_PACKET, socket.SOCK_RAW, socket.htons(0x0800))
 raw_socket = socket.socket(socket.PF_PACKET, socket.SOCK_RAW, socket.htons(0x86DD))

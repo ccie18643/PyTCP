@@ -29,12 +29,12 @@
 #
 
 
-from ipaddress import IPv6Address, IPv6Network
 import struct
+from ipaddress import IPv6Address, IPv6Network
+
 import inet_cksum
 import stack
 from tracker import Tracker
-
 
 # Destination Unreachable message (1/[0,1,3,4])
 
