@@ -50,12 +50,16 @@ Python based attempt to create fully functional TCP/IP stack for educational pur
 ### Examples:
 
 #### IPv6 Neighbor Discovery / Duplicate Address Detection / Address Auto Configuration
- - stack tries to auto configure it's link local address, it joins apropriate solicited node multicast group and sends neighbor solicitation for the EUI64 address
- - stack tries to assign static address, it joins apropriate solicited node multicast group and sends neighbor solicitation for the static address
+ - stack tries to auto configure it's link local address, it generates it as EUI64 address, as part od DAD process it joins appropriate solicited node multicast group and sends neighbor solicitation for the address it generated
+ - stack doesn't receive any Neighbor Advertisement for the address it generated so assigns it to its interface
+ - stack tries to assign preconfigured static address, as part of DAD process it joins appropriate solicited node multicast group and sends neighbor solicitation for the static address
+ - another host that has the same address already assigned replies with Neighbor Advertisement message, this tells the stack that the address its trying to assign has been already
+y assigned by another host so stack cannot us it
  - stack sends out Router Solicitation message to check if there are any global prefixes it should use
  - router responds with Router Advertisement containing additional prefix
- - stack tries to assign address based on received prefix and EUI64 host portion, it joins apropriate solicited node multicast group and sends neighbor solicitation for the static address
- - after all addresses are assigned stacks sends out one more Multicast Listener report listing all of the multicas addresses it wants to listen to
+ - stack tries to assign address generated based on received prefix and EUI64 host portion, as part of DAD process it joins appropriate solicited node multicast group and sends neighbor solicitation for the static address
+ - stack doesn't receive any Neighbor Advertisement for the address it generated so assigns it to its interface
+ - after all addresses are assigned stacks sends out one more Multicast Listener report listing all of the multicast addresses it wants to listen to
 
 ![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/main/pictures/ipv6_nd_dad_01.png)
 ![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/main/pictures/ipv6_nd_dad_02.png)
