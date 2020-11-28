@@ -23,6 +23,7 @@ This program is a work in progress and it changes on daily basis due to new feat
  - ICMPv6 protocol - *echo request, echo reply, port unreachable*
  - ICMPv6 protocol - *Neighbor Discovery, Duplicate Address Detection*
  - ICMPv6 protocol - *Neighbor Discovery cache mechanism*
+ - ICMPv6 protocol - *Multicast Listner Discovery v2 (MLDv2) protocol implementation (only messages needed by stack)*
  - UDP protocol - *full support, stack is able to exchange data with other hosts using UDP protocol*
  - UDP sockets - *full support, stack's 'end user' API similar to Berkley sockets*
  - UDP services - *UDP Echo, Discard, Daytime implemented for testing purposes*
@@ -36,7 +37,6 @@ This program is a work in progress and it changes on daily basis due to new feat
 
 #### Work in progress:
 
- - ICMPv6 protocol - *Multicast Listner Discovery v2 (MLDv2) protocol implementation (only messages needed by stack)*
  - TCP protocol - *ongoing effort of improving code and bug fixing while simulating more advanced traffic scenarios*
  - TCP protocol - *proper handling on RST packets in various states, need to do research on this*
 
@@ -44,8 +44,8 @@ This program is a work in progress and it changes on daily basis due to new feat
  
  - IPv6 protocol - *ability to route traffic to external destinations via default gateway*
  - TCP protocol - *need to rework the CLOSE syscall mechanism so FIN flag can be set on last data packet instead of being carried in separate one*
- - TCP protocol - *ACK packet retransmission in case we got FIN retransmission in TIME_WAIT state*
- - TCP protocol - *implement proper response to packets containing old SEQ and/or ACK numbers*
+ - TCP protocol - *ACK packet retransmission in case we got FIN retransmission in TIME_WAIT state <-- need to investigate this*
+ - TCP protocol - *implement proper response to packets containing old SEQ and/or ACK numbersi <-- need to investigate this*
  - TCP protocol - *ensure that event communication from TCP session to socket works properly (eg. connection reset by peer)*
  - ICMP protocols - *need to come up with some sort of "icmp socket" mechanism so ping client can bind to particular ICMP echo-reply stream*
  - IPv4 protocol - *improvements in IP defragmentation mechanism are needed, out of order fragment handling, purging of orphaned fragments*
