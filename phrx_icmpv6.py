@@ -7,8 +7,6 @@ phrx_icmpv6.py - packet handler for inbound ICMPv6 packets
 
 """
 
-from ipaddress import IPv6Address
-
 import ps_icmpv6
 
 import stack

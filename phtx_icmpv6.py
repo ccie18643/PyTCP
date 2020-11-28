@@ -27,6 +27,7 @@ def phtx_icmpv6(
     icmpv6_na_flag_o=False,
     icmpv6_na_target_address=None,
     icmpv6_nd_options=[],
+    icmpv6_mlr2_multicast_address_record=[],
     icmpv6_ipv6_packet_rx=None,
     echo_tracker=None,
 ):
@@ -49,6 +50,7 @@ def phtx_icmpv6(
         icmpv6_na_flag_o=icmpv6_na_flag_o,
         icmpv6_na_target_address=icmpv6_na_target_address,
         icmpv6_nd_options=icmpv6_nd_options,
+        icmpv6_mlr2_multicast_address_record=icmpv6_mlr2_multicast_address_record,
         echo_tracker=echo_tracker,
     )
 

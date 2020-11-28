@@ -119,6 +119,7 @@ class PacketHandler:
         """ Perform IPv6 ND Duplicate Address Detection, return True if passed """
 
         self.logger.debug(f"ICMPv6 ND DAD - Starting process for {ipv6_unicast_candidate}")
+        self.assign_ipv6_multicast(ipv6_solicited_node_multicast(ipv6_unicast_candidate))
         self.ipv6_unicast_candidate = ipv6_unicast_candidate
         self.send_icmpv6_nd_dad_message(ipv6_unicast_candidate)
         if event := self.event_icmpv6_nd_dad.acquire(timeout=1):
@@ -126,6 +127,7 @@ class PacketHandler:
         else:
             self.logger.debug(f"ICMPv6 ND DAD - No duplicate address detected for {ipv6_unicast_candidate}")
         self.ipv6_unicast_candidate = None
+        self.remove_ipv6_multicast(ipv6_solicited_node_multicast(ipv6_unicast_candidate))
         return not event
 
     def create_stack_ipv6_addresses(self):
@@ -254,6 +256,23 @@ class PacketHandler:
         )
         self.logger.debug(f"Sent out Gratitous ARP for {ipv4_unicast}")
 
+    def send_icmpv6_multicast_listener_report(self):
+        """ Send out ICMPv6 Multicast Listener Report for given list of addresses """
+
+        if icmpv6_mlr2_multicast_address_record := [
+            ps_icmpv6.MulticastAddressRecord(record_type=ps_icmpv6.ICMPV6_MART_CHANGE_TO_EXCLUDE, multicast_address=_)
+            for _ in self.stack_ipv6_multicast
+            if _ not in {IPv6Address("ff02::1")}
+        ]:
+            self.phtx_icmpv6(
+                ipv6_src=self.stack_ipv6_unicast[0] if self.stack_ipv6_unicast else IPv6Address("::"),
+                ipv6_dst=IPv6Address("ff02::16"),
+                ipv6_hop=1,
+                icmpv6_type=ps_icmpv6.ICMPV6_MULTICAST_LISTENER_REPORT_V2,
+                icmpv6_mlr2_multicast_address_record=icmpv6_mlr2_multicast_address_record
+            )
+            self.logger.debug(f"Sent out ICMPv6 Multicast Listener Report  message for {[_.multicast_address for _ in icmpv6_mlr2_multicast_address_record]}")
+
     def send_icmpv6_nd_dad_message(self, ipv6_unicast_candidate):
         """ Send out ICMPv6 ND Duplicate Address Detection message """
 
@@ -298,6 +317,10 @@ class PacketHandler:
         self.stack_ipv6_multicast.append(ipv6_multicast)
         self.logger.debug(f"Assigned IPv6 multicast {ipv6_multicast}")
         self.assign_mac_multicast(ipv6_multicast_mac(ipv6_multicast))
+
+        # Send out the ICMPv6 Multicast Listener Report
+        for _ in range(1):
+            self.send_icmpv6_multicast_listener_report()
 
     def remove_ipv6_multicast(self, ipv6_multicast):
         """ Remove IPv6 multicast address from the list stack listens on """

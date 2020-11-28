@@ -49,6 +49,53 @@ from tracker import Tracker
 # +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 
 
+# MLDv2 - Multicast Listener Query message (130/0)
+
+# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+# |      Type     |      Code     |           Checksum            |
+# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+# |    Maximum Response Code      |           Reserved            |
+# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+# |                                                               |
+# +                                                               *
+# |                                                               |
+# +                       Multicast Address                       *
+# |                                                               |
+# +                                                               *
+# |                                                               |
+# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+# | Resv  |S| QRV |     QQIC      |     Number of Sources (N)     |
+# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+# |                                                               |
+# +                                                               +
+# |                                                               |
+# +                       Source Address [1]                      +
+# |                                                               |
+# +                                                               +
+# |                                                               |
+# +---------------------------------------------------------------+
+# |                                                               |
+# +                                                               +
+# |                                                               |
+# +                       Source Address [2]                      +
+# |                                                               |
+# +                                                               +
+# |                                                               |
+# +---------------------------------------------------------------+
+# .                               .                               .
+# .                               .                               .
+# .                               .                               .
+# +---------------------------------------------------------------+
+# |                                                               |
+# +                                                               +
+# |                                                               |
+# +                       Source Address [N]                      +
+# |                                                               |
+# +                                                               +
+# |                                                               |
+# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+
+
 # Router Solicitation message (133/0)
 
 # +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
@@ -113,6 +160,77 @@ from tracker import Tracker
 # +-+-+-+-+-+-+-+-+-+-+-+-
 
 
+# MLDv2 - Multicast Listener Report message (143/0)
+
+# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+# |      Type     |      Code     |           Checksum            |
+# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+# |           Reserved            |Nr of Mcast Address Records (M)|
+# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+# ~                                                               ~
+# ~                  Multicast Address Record [1]                 ~
+# ~                                                               ~
+# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+# ~                                                               ~
+# ~                  Multicast Address Record [2]                 ~
+# ~                                                               ~
+# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+# .                               .                               .
+# .                               .                               .
+# .                               .                               .
+# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+# ~                                                               ~
+# ~                  Multicast Address Record [M]                 ~
+# ~                                                               ~
+# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+
+# Each Multicast Address Record has the following internal format:
+
+# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+# |  Record Type  |  Aux Data Len |     Number of Sources (N)     |
+# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+# |                                                               |
+# +                                                               +
+# |                                                               |
+# +                       Multicast Address                       +
+# |                                                               |
+# +                                                               +
+# |                                                               |
+# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+# |                                                               |
+# +                                                               +
+# |                                                               |
+# +                       Source Address [1]                      +
+# |                                                               |
+# +                                                               +
+# |                                                               |
+# +---------------------------------------------------------------+
+# |                                                               |
+# +                                                               +
+# |                                                               |
+# +                       Source Address [2]                      +
+# |                                                               |
+# +                                                               +
+# |                                                               |
+# +---------------------------------------------------------------+
+# .                               .                               .
+# .                               .                               .
+# .                               .                               .
+# +---------------------------------------------------------------+
+# |                                                               |
+# +                                                               +
+# |                                                               |
+# +                       Source Address [N]                      +
+# |                                                               |
+# +                                                               +
+# |                                                               |
+# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+# ~                                                               ~
+# ~                         Auxiliary Data                        ~
+# ~                                                               ~
+# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+
+
 ICMPV6_UNREACHABLE = 1
 ICMPV6_UNREACHABLE_NOROUTE = 0
 ICMPV6_UNREACHABLE_PROHIBITED = 1
@@ -120,10 +238,59 @@ ICMPV6_UNREACHABLE_ADDRESS = 2
 ICMPV6_UNREACHABLE_PORT = 4
 ICMPV6_ECHOREQUEST = 128
 ICMPV6_ECHOREPLY = 129
+ICMPV6_MLDV2_QUERY = 130
 ICMPV6_ROUTER_SOLICITATION = 133
 ICMPV6_ROUTER_ADVERTISEMENT = 134
 ICMPV6_NEIGHBOR_SOLICITATION = 135
 ICMPV6_NEIGHBOR_ADVERTISEMENT = 136
+ICMPV6_MULTICAST_LISTENER_REPORT_V2 = 143
+
+ICMPV6_MART_MODE_IS_INCLUDE = 1
+ICMPV6_MART_MODE_IS_EXCLUDE = 2
+ICMPV6_MART_CHANGE_TO_INCLUDE = 3
+ICMPV6_MART_CHANGE_TO_EXCLUDE = 4
+ICMPV6_MART_ALLOW_NEW_SOURCES = 5
+ICMPV6_MART_BLOCK_OLD_SOURCES = 6
+
+
+class MulticastAddressRecord:
+    """ Multicast Address Record used by MLDv2 Report message """
+
+    def __init__(self, raw_record=None, record_type=None, multicast_address=None, source_address=[], aux_data=b""):
+        """ Class constuctor """
+
+        # Record parsing
+        if raw_record:
+            self.record_type = raw_record[0]
+            self.aux_data_len = raw_record[1]
+            self.number_of_sources = struct.unpack("!H", raw_record[2:4])[0]
+            self.multicast_address = IPv6Address(raw_record[4:8])
+            self.source_address = [IPv6Address(raw_record[8 + 16 * _ : 8 + 16 * (_ + 1)]) for _ in range(self.number_of_sources)]
+            self.aux_data = raw_record[8 + 16 * self.number_of_sources :]
+
+        # Record building
+        else:
+            self.record_type = record_type
+            self.aux_data_len = len(aux_data)
+            self.number_of_sources = len(source_address)
+            self.multicast_address = IPv6Address(multicast_address)
+            self.source_address = source_address
+            self.aux_data = aux_data
+
+    def __len__(self):
+        """ Length of raw record """
+
+        return len(self.raw_record)
+
+    @property
+    def raw_record(self):
+        """ Get record in raw format """
+
+        return (
+            struct.pack("! BBH 16s", self.record_type, self.aux_data_len, self.number_of_sources, self.multicast_address.packed)
+            + b"".join([_.packed for _ in self.source_address])
+            + self.aux_data
+        )
 
 
 class ICMPv6Packet:
@@ -152,6 +319,7 @@ class ICMPv6Packet:
         icmpv6_na_flag_o=False,
         icmpv6_na_target_address=None,
         icmpv6_nd_options=[],
+        icmpv6_mlr2_multicast_address_record=[],
         echo_tracker=None,
     ):
         """ Class constructor """
@@ -171,29 +339,29 @@ class ICMPv6Packet:
 
             self.icmpv6_nd_options = []
 
-            if self.icmpv6_type == ICMPV6_UNREACHABLE:
+            if self.icmpv6_type == ICMPV6_UNREACHABLE and self.icmpv6_code in range(0, 7):
                 self.icmpv6_un_reserved = struct.unpack("!L", raw_packet[4:8])[0]
                 self.icmpv6_un_raw_data = raw_packet[8:]
                 return
 
-            if self.icmpv6_type == ICMPV6_ECHOREQUEST:
+            if self.icmpv6_type == ICMPV6_ECHOREQUEST and self.icmpv6_code == 0:
                 self.icmpv6_ec_id = struct.unpack("!H", raw_packet[4:6])[0]
                 self.icmpv6_ec_seq = struct.unpack("!H", raw_packet[6:8])[0]
                 self.icmpv6_ec_raw_data = raw_packet[8:]
                 return
 
-            if self.icmpv6_type == ICMPV6_ECHOREPLY:
+            if self.icmpv6_type == ICMPV6_ECHOREPLY and self.icmpv6_code == 0:
                 self.icmpv6_ec_id = struct.unpack("!H", raw_packet[4:6])[0]
                 self.icmpv6_ec_seqq = struct.unpack("!H", raw_packet[6:8])[0]
                 self.icmpv6_ec_raw_data = raw_packet[8:]
                 return
 
-            if self.icmpv6_type == ICMPV6_ROUTER_SOLICITATION:
+            if self.icmpv6_type == ICMPV6_ROUTER_SOLICITATION and self.icmpv6_code == 0:
                 self.icmpv6_rs_reserved = struct.unpack("!L", raw_packet[4:8])[0]
                 self.icmpv6_nd_options = self.__read_nd_options(raw_packet[12:])
                 return
 
-            if self.icmpv6_type == ICMPV6_ROUTER_ADVERTISEMENT:
+            if self.icmpv6_type == ICMPV6_ROUTER_ADVERTISEMENT and self.icmpv6_code == 0:
                 self.icmpv6_ra_hop = raw_packet[4]
                 self.icmpv6_ra_flag_m = bool(raw_packet[5] & 0b10000000)
                 self.icmpv6_ra_flag_o = bool(raw_packet[5] & 0b01000000)
@@ -204,13 +372,13 @@ class ICMPv6Packet:
                 self.icmpv6_nd_options = self.__read_nd_options(raw_packet[16:])
                 return
 
-            if self.icmpv6_type == ICMPV6_NEIGHBOR_SOLICITATION:
+            if self.icmpv6_type == ICMPV6_NEIGHBOR_SOLICITATION and self.icmpv6_code == 0:
                 self.icmpv6_ns_reserved = struct.unpack("!L", raw_packet[4:8])[0]
                 self.icmpv6_ns_target_address = IPv6Address(raw_packet[8:24])
                 self.icmpv6_nd_options = self.__read_nd_options(raw_packet[24:])
                 return
 
-            if self.icmpv6_type == ICMPV6_NEIGHBOR_ADVERTISEMENT:
+            if self.icmpv6_type == ICMPV6_NEIGHBOR_ADVERTISEMENT and self.icmpv6_code == 0:
                 self.icmpv6_na_flag_r = bool(raw_packet[4] & 0b10000000)
                 self.icmpv6_na_flag_s = bool(raw_packet[4] & 0b01000000)
                 self.icmpv6_na_flag_o = bool(raw_packet[4] & 0b00100000)
@@ -218,6 +386,16 @@ class ICMPv6Packet:
                 self.icmpv6_na_target_address = IPv6Address(raw_packet[8:24])
                 self.icmpv6_nd_options = self.__read_nd_options(raw_packet[24:])
                 return
+
+            if self.icmpv6_type == ICMPV6_MULTICAST_LISTENER_REPORT_V2:
+                self.icmpv6_mlr2_reserved = struct.unpack("!H", raw_packet[4:6])[0]
+                self.icmpv6_mlr2_number_of_multicast_address_records = struct.unpack("!H", raw_packet[6:8])[0]
+                self.icmpv6_mlr2_multicast_address_record = []
+                raw_records = raw_packet[8:]
+                for _ in range(self.icmpv6_mlr2_number_of_multicast_address_records):
+                    record = MulticastAddressRecord(raw_records)
+                    raw_records = raw_records[len(record) :]
+                    self.multicast_address_record.append(record)
 
         # Packet building
         else:
@@ -272,6 +450,11 @@ class ICMPv6Packet:
                 self.icmpv6_na_target_address = icmpv6_na_target_address
                 return
 
+            if self.icmpv6_type == ICMPV6_MULTICAST_LISTENER_REPORT_V2:
+                self.icmpv6_mlr2_reserved = 0
+                self.icmpv6_mlr2_number_of_multicast_address_records = len(icmpv6_mlr2_multicast_address_record)
+                self.icmpv6_mlr2_multicast_address_record = icmpv6_mlr2_multicast_address_record
+
     def __str__(self):
         """ Short packet log string """
 
@@ -287,22 +470,29 @@ class ICMPv6Packet:
             log += f", id {self.icmpv6_ec_id}, seq {self.icmpv6_ec_seq}"
 
         if self.icmpv6_type == ICMPV6_ROUTER_SOLICITATION:
-            pass
+            for nd_option in self.icmpv6_nd_options:
+                log += ", " + str(nd_option)
 
         if self.icmpv6_type == ICMPV6_ROUTER_ADVERTISEMENT:
             log += f", hop {self.icmpv6_ra_hop}"
             log += f"flags {'M' if self.icmpv6_ra_flag_m else '-'}{'O' if self.icmpv6_ra_flag_o else '-'}"
             log += f"rlft {self.icmpv6_ra_router_lifetime}, reacht {self.icmpv6_ra_reachable_time}, retrt {self.icmpv6_ra_retrans_timer}"
+            for nd_option in self.icmpv6_nd_options:
+                log += ", " + str(nd_option)
 
         if self.icmpv6_type == ICMPV6_NEIGHBOR_SOLICITATION:
             log += f", target {self.icmpv6_ns_target_address}"
+            for nd_option in self.icmpv6_nd_options:
+                log += ", " + str(nd_option)
 
         if self.icmpv6_type == ICMPV6_NEIGHBOR_ADVERTISEMENT:
             log += f", target {self.icmpv6_na_target_address}"
             log += f", flags {'R' if self.icmpv6_na_flag_r else '-'}{'S' if self.icmpv6_na_flag_s else '-'}{'O' if self.icmpv6_na_flag_o else '-'}"
+            for nd_option in self.icmpv6_nd_options:
+                log += ", " + str(nd_option)
 
-        for nd_option in self.icmpv6_nd_options:
-            log += ", " + str(nd_option)
+        if self.icmpv6_type == ICMPV6_MULTICAST_LISTENER_REPORT_V2:
+            pass
 
         return log
 
@@ -374,6 +564,19 @@ class ICMPv6Packet:
                     self.icmpv6_na_target_address.packed,
                 )
                 + self.raw_nd_options
+            )
+
+        if self.icmpv6_type == ICMPV6_MULTICAST_LISTENER_REPORT_V2:
+            return (
+                struct.pack(
+                    "! BBH HH",
+                    self.icmpv6_type,
+                    self.icmpv6_code,
+                    self.icmpv6_cksum,
+                    self.icmpv6_mlr2_reserved,
+                    self.icmpv6_mlr2_number_of_multicast_address_records,
+                )
+                + b"".join([_.raw_record for _ in self.icmpv6_mlr2_multicast_address_record])
             )
 
     def get_raw_packet(self, ip_pseudo_header):
