@@ -11,12 +11,13 @@ This program is a work in progress and it changes on daily basis due to new feat
  - Ethernet protocol - *unicast, IPv4 multicast, IPv6 multicast and broadcast addressing supported*
  - ARP protocol - *replies, queries, ARP cache mechanism*
  - ARP protocol - *ARP Probe/Announcement IP conflict detection (ACD) mechanism*
+ - IPv4 protocol - *default routing, stack can talk to hosts over Internet using IPv4 protocol*
  - IPv4 protocol - *automatic address configuration using DHCP protocol*
  - IPv4 protocol - *inbound and outbound IP fragmentation*
  - IPv4 protocol - *IPv4 options accepted but not supported*
  - IPv4 protocol -  *multiple stack's IPv4 addresses supported, each of them acts as it was assigned to separate VRF* 
- - IPv4 protocol - *ability to route traffic to external destinations via default gateway, this was needed for testing TCP connectivity over Internet*
  - ICMPv4 protocol - *echo request, echo reply, port unreachable*
+ - IPv6 protocol - *default routing, stack can talk to hosts over Internet using IPv6 protocol*
  - IPv6 protocol - *automatic Link Local address configuration using EUI64 and Duplicate Address Detection*
  - IPv6 protocol - *automatic GUA address configuration using Router Advertisement / EUI64*
  - IPv6 protocol - *automatic assignment of Solicited Node Multicast addresses*
@@ -56,7 +57,8 @@ This program is a work in progress and it changes on daily basis due to new feat
  - TCP protocol - *ensure that event communication from TCP session to socket works properly (eg. connection reset by peer)*
  - ICMP protocols - *need to come up with some sort of "icmp socket" mechanism so ping client can bind to particular ICMP echo-reply stream*
  - IPv4 protocol - *improvements in IP defragmentation mechanism are needed, out of order fragment handling, purging of orphaned fragments*
- - IPv6/IPv4 protocols - *proper routing mechanism, route table, etc...*
+ - IPv6/IPv4 protocols - *proper routing mechanism, route tables, etc...*
+ - IPv6/IPv4 protocols - *ability of stack to act as a router*
 
 
 ### Examples:
