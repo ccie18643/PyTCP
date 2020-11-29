@@ -177,19 +177,3 @@ y assigned by another host so stack cannot us it
 ![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/main/pictures/ip_udp_frag_02.png)
 ![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/main/pictures/ip_udp_frag_03.png)
 
-
-#### Interesting performance increase after switching from Asyncio to threads... on average 100 to 250 times faster packet handling time
-
-Still love Asyncio but for this particular purpose it just doesn't cut it :) Seem all that huge delay happened in between packet being enqueued by RX ring into asyncio.Queue() and main packet handler being able to dequeue it for further procesing. This delay usually varied from 100ms up to 1000ms averaging at around 400ms in most cases.
-
-Running Asyncio
-
-![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/main/pictures/asyncio_01.png)
-
-Running threads
-
-![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/main/pictures/asyncio_02.png)
-
-
-
-
