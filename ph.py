@@ -52,7 +52,7 @@ import ps_arp
 import ps_dhcp
 import ps_icmpv6
 import stack
-from ipv6_helper import ipv6_eui64, ipv6_multicast_mac, ipv6_solicited_node_multicast
+from ip_helper import ipv6_eui64, ipv6_multicast_mac, ipv6_solicited_node_multicast
 from udp_metadata import UdpMetadata
 from udp_socket import UdpSocket
 
@@ -411,7 +411,7 @@ class PacketHandler:
             ipv6_dst=IPv6Address("ff02::2"),
             ipv6_hop=255,
             icmpv6_type=ps_icmpv6.ICMP6_ROUTER_SOLICITATION,
-            icmpv6_nd_options=[ps_icmpv6.ICMPv6NdOptSLLA(opt_slla=self.stack_mac_unicast[0])],
+            icmpv6_nd_options=[ps_icmpv6.Icmp6NdOptSLLA(opt_slla=self.stack_mac_unicast[0])],
         )
         self.logger.debug("Sent out ICMPv6 ND Router Solicitation")
 

@@ -104,14 +104,14 @@ local_tcp_win = 65535  # Maximum amount of data peer can send to us without conf
 # Test services and clients, for detailed configuation of each reffer to pytcp.py and respective service/client file
 # Those are being used for testing various stack components are therefore their 'default' funcionality may be altered fro specific tst needs
 # Eg. TCP daytime service generates large amount of text data used to verify TCP protocol funcionality
-service_udp_echo = True
-service_udp_discard = True
-service_udp_daytime = True
-service_tcp_echo = True
-service_tcp_discard = True
-service_tcp_daytime = True
+service_udp_echo = False
+service_udp_discard = False
+service_udp_daytime = False
+service_tcp_echo = False
+service_tcp_discard = False
+service_tcp_daytime = False
 client_tcp_echo = False
-client_icmpv4_echo = True
+client_icmp_echo = True
 
 # References to stack components
 rx_ring = None

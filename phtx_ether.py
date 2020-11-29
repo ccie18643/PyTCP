@@ -47,7 +47,7 @@ import ps_ether
 import ps_ipv4
 import ps_ipv6
 import stack
-from ipv6_helper import ipv6_multicast_mac
+from ip_helper import ipv6_multicast_mac
 
 
 def phtx_ether(self, child_packet, ether_src="00:00:00:00:00:00", ether_dst="00:00:00:00:00:00"):
@@ -81,6 +81,23 @@ def phtx_ether(self, child_packet, ether_src="00:00:00:00:00:00", ether_dst="00:
             __send_out_packet()
             return
 
+        # Send out packet if is destined to external network (in relation to its source address) and we are able to obtain MAC of default gateway from ND cache
+        if not (ipv6_packet_tx.ipv6_src.is_link_local or ipv6_packet_tx.ipv6_dst.is_link_local):
+            for stack_ipv6_address in self.stack_ipv6_address:
+                if stack_ipv6_address.ip == ipv6_packet_tx.ipv6_src:
+                    if ipv6_packet_tx.ipv6_dst not in stack_ipv6_address.network:
+                        if stack_ipv6_address.gateway is None:
+                            self.logger.debug(f"{ether_packet_tx.tracker} - No default gateway set for {stack_ipv6_address} source address, droping packet...")
+                            return
+                        if mac_address := stack.icmpv6_nd_cache.find_entry(stack_ipv6_address.gateway):
+                            ether_packet_tx.ether_dst = mac_address
+                            self.logger.debug(
+                                f"{ether_packet_tx.tracker} - Resolved destiantion IPv6 {ipv6_packet_tx.ipv6_dst}"
+                                + f" to Default Gateway MAC {ether_packet_tx.ether_dst}"
+                            )
+                            __send_out_packet()
+                            return
+
         # Send out packet if we are able to obtain destinaton MAC from ICMPv6 ND cache
         if mac_address := stack.icmpv6_nd_cache.find_entry(ipv6_packet_tx.ipv6_dst):
             ether_packet_tx.ether_dst = mac_address
@@ -99,7 +116,7 @@ def phtx_ether(self, child_packet, ether_src="00:00:00:00:00:00", ether_dst="00:
             __send_out_packet()
             return
 
-        # Send out packet if its destinied to directed broadcast or network addresses (in relation to its source IPv4)
+        # Send out packet if its destinied to directed broadcast or network addresses (in relation to its source address)
         for stack_ipv4_address in self.stack_ipv4_address:
             if stack_ipv4_address.ip == ipv4_packet_tx.ipv4_src:
                 if ipv4_packet_tx.ipv4_dst in {stack_ipv4_address.network[0], stack_ipv4_address.network[-1]}:
@@ -108,7 +125,7 @@ def phtx_ether(self, child_packet, ether_src="00:00:00:00:00:00", ether_dst="00:
                     __send_out_packet()
                     return
 
-        # Send out packet if is destined to external network (in relation to its source IPv4) and we are able to obtain MAC of default gateway from ARP cache
+        # Send out packet if is destined to external network (in relation to its source address) and we are able to obtain MAC of default gateway from ARP cache
         for stack_ipv4_address in self.stack_ipv4_address:
             if stack_ipv4_address.ip == ipv4_packet_tx.ipv4_src:
                 if ipv4_packet_tx.ipv4_dst not in stack_ipv4_address.network:

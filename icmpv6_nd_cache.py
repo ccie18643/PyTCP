@@ -48,7 +48,7 @@ import loguru
 
 import ps_icmpv6
 import stack
-from ipv6_helper import ipv6_solicited_node_multicast
+from ip_helper import ipv6_solicited_node_multicast
 
 ND_ENTRY_MAX_AGE = 3600
 ND_ENTRY_REFRESH_TIME = 300

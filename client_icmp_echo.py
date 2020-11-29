@@ -37,33 +37,61 @@
 
 
 #
-# ipv6_helper.py - module contains IPv6 helper functions
+# client_icmp_echo.py - 'user space' client for ICMPv4/v6 echo
 #
 
 
-from ipaddress import IPv6Address, IPv6Interface, IPv6Network
-from re import sub
+import random
+import threading
+import time
+from datetime import datetime
+
+import stack
+from ip_helper import ip_pick_version
 
 
-def ipv6_eui64(mac, prefix=IPv6Network("fe80::/64")):
-    """ Create IPv6 EUI64 address """
+class ClientIcmpEcho:
+    """ ICMPv4/v6 Echo client support class """
 
-    assert prefix.prefixlen == 64
+    def __init__(self, local_ip_address, remote_ip_address, message_count=None):
+        """ Class constructor """
 
-    eui64 = sub(r"[.:-]", "", mac).lower()
-    eui64 = eui64[0:6] + "fffe" + eui64[6:]
-    eui64 = hex(int(eui64[0:2], 16) ^ 2)[2:].zfill(2) + eui64[2:]
-    eui64 = ":".join(eui64[_ : _ + 4] for _ in range(0, 16, 4))
-    return IPv6Interface(prefix.network_address.exploded[0:20] + eui64 + "/" + str(prefix.prefixlen))
+        local_ip_address = ip_pick_version(local_ip_address)
+        remote_ip_address = ip_pick_version(remote_ip_address)
 
+        threading.Thread(target=self.__thread_client, args=(local_ip_address, remote_ip_address, message_count)).start()
 
-def ipv6_solicited_node_multicast(ipv6_address):
-    """ Create IPv6 solicited node multicast address """
+    @staticmethod
+    def __thread_client(local_ip_address, remote_ip_address, message_count):
 
-    return IPv6Address("ff02::1:ff" + ipv6_address.exploded[-7:])
+        flow_id = random.randint(0, 65535)
 
+        message_seq = 0
+        while message_count is None or message_seq < message_count:
+            message = bytes(str(datetime.now()) + "\n", "utf-8")
 
-def ipv6_multicast_mac(ipv6_multicast_address):
-    """ Create IPv6 multicast MAC address """
+            if local_ip_address.version == 4:
+                stack.packet_handler.phtx_icmpv4(
+                    ipv4_src=local_ip_address,
+                    ipv4_dst=remote_ip_address,
+                    icmpv4_type=8,
+                    icmpv4_code=0,
+                    icmpv4_ec_id=flow_id,
+                    icmpv4_ec_seq=message_seq,
+                    icmpv4_ec_raw_data=message,
+                )
 
-    return "33:33:" + ":".join(["".join(ipv6_multicast_address.exploded[-9:].split(":"))[_ : _ + 2] for _ in range(0, 8, 2)])
+            if local_ip_address.version == 6:
+                stack.packet_handler.phtx_icmpv6(
+                    ipv6_src=local_ip_address,
+                    ipv6_dst=remote_ip_address,
+                    icmpv6_type=128,
+                    icmpv6_code=0,
+                    icmpv6_ec_id=flow_id,
+                    icmpv6_ec_seq=message_seq,
+                    icmpv6_ec_raw_data=message,
+                )
+
+            print(f"Client ICMP Echo: Sent ICMP Echo ({flow_id}/{message_seq}) to {remote_ip_address} - {message}")
+            time.sleep(1)
+            message_seq += 1

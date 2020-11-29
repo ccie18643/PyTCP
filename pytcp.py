@@ -52,10 +52,10 @@ import loguru
 
 import stack
 from arp_cache import ArpCache
-from client_icmpv4_echo import ClientICMPv4Echo
+from client_icmp_echo import ClientIcmpEcho
 from client_tcp_echo import ClientTcpEcho
 from icmpv6_nd_cache import ICMPv6NdCache
-from ipv6_helper import ipv6_eui64
+from ip_helper import ipv6_eui64
 from ph import PacketHandler
 from rx_ring import RxRing
 from service_tcp_daytime import ServiceTcpDaytime
@@ -140,12 +140,13 @@ def main():
     # Initialize TCP test clients
     if stack.client_tcp_echo:
         ClientTcpEcho(local_ip_address="192.168.9.7", remote_ip_address="192.168.9.102", remote_port=7, message_count=10)
-        # stack.client_tcp_echo andClientTcpEcho(local_ip_address="192.168.9.7", remote_ip_address="1.1.1.1", remote_port=7)
-        # stack.client_tcp_echo andClientTcpEcho(local_ip_address="192.168.9.7", remote_ip_address="192.168.9.9", remote_port=7)
+        # ClientTcpEcho(local_ip_address="192.168.9.7", remote_ip_address="1.1.1.1", remote_port=7)
+        # ClientTcpEcho(local_ip_address="192.168.9.7", remote_ip_address="192.168.9.9", remote_port=7)
 
-    # Initialize ICMPv4 test clients
-    if stack.client_icmpv4_echo:
-        ClientICMPv4Echo(local_ipv4_address="192.168.9.7", remote_ipv4_address="8.8.8.8")
+    # Initialize ICMP test client
+    if stack.client_icmp_echo:
+        # ClientIcmpEcho(local_ip_address="192.168.9.7", remote_ip_address="8.8.8.8")
+        ClientIcmpEcho(local_ip_address="fdd1:c296:f24f:9:0:ff:fe77:7777", remote_ip_address="fdd1:c296:f24f:100:5054:ff:fef9:99aa")
 
     while True:
         time.sleep(1)

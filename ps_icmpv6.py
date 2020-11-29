@@ -345,7 +345,7 @@ class Icmp6Packet:
 
             if self.icmpv6_type == ICMP6_ECHOREPLY and self.icmpv6_code == 0:
                 self.icmpv6_ec_id = struct.unpack("!H", raw_packet[4:6])[0]
-                self.icmpv6_ec_seqq = struct.unpack("!H", raw_packet[6:8])[0]
+                self.icmpv6_ec_seq = struct.unpack("!H", raw_packet[6:8])[0]
                 self.icmpv6_ec_raw_data = raw_packet[8:]
                 return
 
@@ -602,16 +602,16 @@ class Icmp6Packet:
         """ Read options for Neighbor Discovery """
 
         opt_cls = {
-            ICMP6_ND_OPT_SLLA: ICMPv6NdOptSLLA,
-            ICMP6_ND_OPT_TLLA: ICMPv6NdOptTLLA,
-            ICMP6_ND_OPT_PI: ICMPv6NdOptPI,
+            ICMP6_ND_OPT_SLLA: Icmp6NdOptSLLA,
+            ICMP6_ND_OPT_TLLA: Icmp6NdOptTLLA,
+            ICMP6_ND_OPT_PI: Icmp6NdOptPI,
         }
 
         i = 0
         nd_options = []
 
         while i < len(raw_nd_options):
-            nd_options.append(opt_cls.get(raw_nd_options[i], ICMPv6NdOptUnk)(raw_nd_options[i : i + (raw_nd_options[i + 1] << 3)]))
+            nd_options.append(opt_cls.get(raw_nd_options[i], Icmp6NdOptUnk)(raw_nd_options[i : i + (raw_nd_options[i + 1] << 3)]))
             i += raw_nd_options[i + 1] << 3
 
         return nd_options
@@ -658,7 +658,7 @@ ICMP6_ND_OPT_SLLA = 1
 ICMP6_ND_OPT_SLLA_LEN = 8
 
 
-class ICMPv6NdOptSLLA:
+class Icmp6NdOptSLLA:
     """ ICMPv6 ND option - Source Link Layer Address (1) """
 
     def __init__(self, raw_option=None, opt_slla=None):
@@ -691,7 +691,7 @@ ICMP6_ND_OPT_TLLA = 2
 ICMP6_ND_OPT_TLLA_LEN = 8
 
 
-class ICMPv6NdOptTLLA:
+class Icmp6NdOptTLLA:
     """ ICMPv6 ND option - Target Link Layer Address (2) """
 
     def __init__(self, raw_option=None, opt_tlla=None):
@@ -736,7 +736,7 @@ ICMP6_ND_OPT_PI = 3
 ICMP6_ND_OPT_PI_LEN = 32
 
 
-class ICMPv6NdOptPI:
+class Icmp6NdOptPI:
     """ ICMPv6 ND option - Prefix Information (3) """
 
     def __init__(
@@ -793,7 +793,7 @@ class ICMPv6NdOptPI:
 # ICMPv6 ND option not supported by this stack
 
 
-class ICMPv6NdOptUnk:
+class Icmp6NdOptUnk:
     """ ICMPv6 ND  option not supported by this stack """
 
     def __init__(self, raw_option):

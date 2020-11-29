@@ -87,7 +87,7 @@ def phrx_icmpv6(self, ipv6_packet_rx, icmpv6_packet_rx):
             icmpv6_na_flag_s=not ipv6_packet_rx.ipv6_src.is_unspecified,
             icmpv6_na_flag_o=False,
             icmpv6_na_target_address=icmpv6_packet_rx.icmpv6_ns_target_address,
-            icmpv6_nd_options=[ps_icmpv6.ICMPv6NdOptTLLA(opt_tlla=self.stack_mac_unicast[0])],
+            icmpv6_nd_options=[ps_icmpv6.Icmp6NdOptTLLA(opt_tlla=self.stack_mac_unicast[0])],
             echo_tracker=icmpv6_packet_rx.tracker,
         )
         return
