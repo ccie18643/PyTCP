@@ -93,6 +93,10 @@ def phtx_ipv6(self, child_packet, ipv6_dst, ipv6_src, ipv6_hop=64):
     if not stack.ipv6_support:
         return
 
+    # Make sure source and destination addresses are the right object type
+    ipv6_src = IPv6Address(ipv6_src)
+    ipv6_dst = IPv6Address(ipv6_dst)
+
     # Validate source address
     ipv6_src = validate_src_ipv6_address(self, ipv6_src)
     if not ipv6_src:

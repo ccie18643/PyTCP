@@ -70,12 +70,24 @@ ipv6_address_candidate = [
 ipv4_address_dhcp_enabled = True
 
 # Static IPv4 adrsses may to be configured here (they will still be subject to ARP Probe/Announcement mechanism)
-# Basic IPv4 routing is implemented and stack assumes that default gateway is the first host address on given subnet
+# Each entry is a tuple interface address/prefix length and second is defaut gateway for this subnet
+# Basic routing is implmented and each subnet can have its own gateway
 ipv4_address_candidate = [
-    IPv4Interface("192.168.9.7/24"),
-    # IPv4Interface("192.168.9.77/24"),
-    # IPv4Interface("192.168.9.102/24"),
-    # IPv4Interface("172.16.0.7/16"),
+    ("192.168.9.7/24", "192.168.9.1"),
+    # ("192.168.9.77/24", "192.168.9.1"),
+    # ("DUPA", "192.168.9.1"),  # test invalid address format
+    # ("192.168.9.99/24", "DUPA"),  # test invalid gateway format
+    # ("192.168.9.77/24", "192.168.9.1"),  # test duplicate address
+    # ("192.168.9.170/24", "10.0.0.1"),  # test invalid gateway
+    # ("192.168.9.171/24", "192.168.9.0"),  # test invalid gateway
+    # ("192.168.9.172/24", "192.168.9.172"),  # test invalid gateway
+    # ("192.168.9.173/24", "192.168.9.255"),  # test invalid gateway
+    # ("192.168.9.0/24", "192.168.9.1"),  # test invalid address
+    # ("192.168.9.255/24", "192.168.9.1"),  # test invalid address
+    # ("0.0.0.0/0", None),  # test invalid address
+    # ("192.168.9.102/24", None),  # test no gateway
+    # ("172.16.17.7/24", "172.16.17.1"),
+    # ("10.10.10.7/24", "10.10.10.1"),
 ]
 
 mtu = 1500  # TAP interface MTU
@@ -93,7 +105,7 @@ service_tcp_echo = True
 service_tcp_discard = True
 service_tcp_daytime = True
 client_tcp_echo = False
-client_icmpv4_echo = False
+client_icmpv4_echo = True
 
 # References to stack components
 rx_ring = None

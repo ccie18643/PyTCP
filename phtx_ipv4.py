@@ -96,6 +96,10 @@ def phtx_ipv4(self, child_packet, ipv4_dst, ipv4_src):
     if not stack.ipv4_support:
         return
 
+    # Make sure source and destination addresses are the right object type
+    ipv4_src = IPv4Address(ipv4_src)
+    ipv4_dst = IPv4Address(ipv4_dst)
+
     # Validate source address
     ipv4_src = validate_src_ipv4_address(self, ipv4_src)
     if not ipv4_src:

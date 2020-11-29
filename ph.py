@@ -44,7 +44,7 @@
 import random
 import threading
 import time
-from ipaddress import IPv4Address, IPv4Interface, IPv6Address
+from ipaddress import AddressValueError, IPv4Address, IPv4Interface, IPv6Address
 
 import loguru
 
@@ -82,6 +82,8 @@ class PacketHandler:
 
         stack.packet_handler = self
 
+        self.logger = loguru.logger.bind(object_name="packet_handler.")
+
         # MAC and IPv6 Multicast lists hold duplicate entries by design. This is to accomodate IPv6 Solicited Node Multicast mechanism where multiple
         # IPv6 unicast addresses can be tied to the same SNM address (and the same multicast MAC). This is important when removing one of unicast addresses,
         # so the other ones keep it's SNM entry in multicast list. Its the simplest solution and imho perfectly valid one in this case.
@@ -95,13 +97,10 @@ class PacketHandler:
         self.stack_ipv6_unicast = []
         self.stack_ipv6_multicast = []
 
-        self.stack_ipv4_address_candidate = stack.ipv4_address_candidate
         self.stack_ipv4_address = []
         self.stack_ipv4_unicast = []
         self.stack_ipv4_multicast = []
         self.stack_ipv4_broadcast = [IPv4Address("255.255.255.255")]
-
-        self.logger = loguru.logger.bind(object_name="packet_handler.")
 
         self.arp_probe_unicast_conflict = set()
 
@@ -125,15 +124,16 @@ class PacketHandler:
             # Assign All IPv6 Nodes multicast address
             self.assign_ipv6_multicast(IPv6Address("ff02::1"))
             # Create list of IPv6 unicast/multicast addresses stack should listen on
-            self.create_stack_ipv6_addresses()
+            self.create_stack_ipv6_addressing()
 
         if stack.ipv4_support:
             # Create list of IPv4 unicast/multicast/broadcast addresses stack should listen on, use DHCP if enabled
             if stack.ipv4_address_dhcp_enabled:
-                ipv4_address_dhcp, _ = self.__dhcp_client()
-                if ipv4_address_dhcp:
-                    self.stack_ipv4_address_candidate.append(ipv4_address_dhcp)
-            self.create_stack_ipv4_addresses()
+                address, gateway = self.__dhcp_client()
+                if address:
+                    stack.ipv4_address_candidate.append((address, gateway))
+            self.stack_ipv4_address_candidate = self.parse_stack_ipv4_address_candidate()
+            self.create_stack_ipv4_addressing()
 
         # Log all the addresses stack will listen on
         self.logger.info(f"Stack listening on unicast MAC addresses: {self.stack_mac_unicast}")
@@ -170,8 +170,8 @@ class PacketHandler:
         self.remove_ipv6_multicast(ipv6_solicited_node_multicast(ipv6_unicast_candidate))
         return not event
 
-    def create_stack_ipv6_addresses(self):
-        """ Create list of IPv6 addresses stack should listen on """
+    def create_stack_ipv6_addressing(self):
+        """ Create lists of IPv6 unicast and multicast addresses stack should listen on """
 
         # Check if there are any statically assigned link local addresses
         for ipv6_address_candidate in list(self.stack_ipv6_address_candidate):
@@ -219,8 +219,47 @@ class PacketHandler:
                     self.stack_ipv6_address.append(ipv6_address_candidate)
                     self.assign_ipv6_unicast(ipv6_address_candidate.ip)
 
-    def create_stack_ipv4_addresses(self):
-        """ Create list of IPv4 addresses stack should listen on """
+    def parse_stack_ipv4_address_candidate(self):
+        """ Parse IPv4 candidate addresses configured in stack.py module """
+
+        address_candidate = []
+
+        for address, gateway in stack.ipv4_address_candidate:
+            self.logger.debug(f"Parsing ('{address}', '{gateway}') entry")
+            try:
+                address = IPv4Interface(address)
+            except AddressValueError:
+                self.logger.warning(f"Invalid host address '{address}' format, skiping...")
+                continue
+
+            if address.ip == address.network.network_address or address.ip == address.network.broadcast_address:
+                self.logger.warning(f"Invalid host address '{address.ip}' configured for network '{address.network}', skiping...")
+                continue
+            if address.ip in [_.ip for _ in address_candidate]:
+                self.logger.warning(f"Duplicate host address '{address.ip}' configured, skiping...")
+                continue
+            if gateway is not None:
+                try:
+                    gateway = IPv4Address(gateway)
+                    if (
+                        gateway not in address.network
+                        or gateway == address.network.network_address
+                        or gateway == address.network.broadcast_address
+                        or gateway == address.ip
+                    ):
+                        self.logger.warning(f"Invalid gateway '{gateway}' configured for interface address '{address}', skiping...")
+                        gateway = None
+                except AddressValueError:
+                    self.logger.warning(f"Invalid gateway address '{address}' format configured for interface address '{address}' skiping...")
+                    gateway = None
+            address.gateway = gateway
+            address_candidate.append(address)
+            self.logger.debug(f"Configured ('{address}', '{address.gateway}' entry")
+
+        return address_candidate
+
+    def create_stack_ipv4_addressing(self):
+        """ Create lists of IPv4 unicast, multicast and broadcast addresses stack should listen on """
 
         # Perform Duplicate Address Detection
         for _ in range(3):
@@ -235,7 +274,7 @@ class PacketHandler:
 
         # Create list containing only IPv4 addresses that were confiremed free to claim
         for ipv4_address in self.stack_ipv4_address_candidate:
-            if ipv4_address.ip not in self.arp_probe_unicast_conflict and ipv4_address not in self.stack_ipv4_address:
+            if ipv4_address.ip not in self.arp_probe_unicast_conflict:
                 self.stack_ipv4_address.append(ipv4_address)
 
         # Clear IPv4 address candidate list so the ARP Probe/Annoucement check is disabled

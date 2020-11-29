@@ -112,7 +112,10 @@ def phtx_ether(self, child_packet, ether_src="00:00:00:00:00:00", ether_dst="00:
         for stack_ipv4_address in self.stack_ipv4_address:
             if stack_ipv4_address.ip == ipv4_packet_tx.ipv4_src:
                 if ipv4_packet_tx.ipv4_dst not in stack_ipv4_address.network:
-                    if mac_address := stack.arp_cache.find_entry(stack_ipv4_address.network[1]):
+                    if stack_ipv4_address.gateway is None:
+                        self.logger.debug(f"{ether_packet_tx.tracker} - No default gateway set for {stack_ipv4_address} source address, droping packet...")
+                        return
+                    if mac_address := stack.arp_cache.find_entry(stack_ipv4_address.gateway):
                         ether_packet_tx.ether_dst = mac_address
                         self.logger.debug(
                             f"{ether_packet_tx.tracker} - Resolved destiantion IPv4 {ipv4_packet_tx.ipv4_dst}"
@@ -129,5 +132,5 @@ def phtx_ether(self, child_packet, ether_src="00:00:00:00:00:00", ether_dst="00:
             return
 
     # Drop packet in case  we are not able to obtain valid destination MAC address
-    self.logger.debug(f"{ether_packet_tx.tracker} - Droping packet, no valid destination MAC could be obtained")
+    self.logger.debug(f"{ether_packet_tx.tracker} - No valid destination MAC could be obtainedi, droping packet...")
     return

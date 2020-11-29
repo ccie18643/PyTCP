@@ -60,20 +60,20 @@ class ClientICMPv4Echo:
     @staticmethod
     def __thread_client(local_ipv4_address, remote_ipv4_address, message_count):
 
-        icmpv4_id = random.randint(0, 65535)
+        flow_id = random.randint(0, 65535)
 
-        i = 0
-        while message_count is None or i < message_count:
+        message_seq = 0
+        while message_count is None or message_seq < message_count:
             message = bytes(str(datetime.now()) + "\n", "utf-8")
             stack.packet_handler.phtx_icmpv4(
                 ipv4_src=local_ipv4_address,
                 ipv4_dst=remote_ipv4_address,
                 icmpv4_type=8,
                 icmpv4_code=0,
-                icmpv4_id=icmpv4_id,
-                icmpv4_seq=i,
-                icmpv4_raw_data=message,
+                icmpv4_ec_id=flow_id,
+                icmpv4_ec_seq=message_seq,
+                icmpv4_ec_raw_data=message,
             )
-            print(f"Client ICMPv4 Echo: Sent ICMPv4 Echo to {remote_ipv4_address} - {message}")
+            print(f"Client ICMPv4 Echo: Sent ICMPv4 Echo ({flow_id}/{message_seq})to {remote_ipv4_address} - {message}")
             time.sleep(1)
-            i += 1
+            message_seq += 1
