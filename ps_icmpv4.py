@@ -137,15 +137,20 @@ class Icmp4Packet:
                 self.icmpv4_ec_id = struct.unpack("!H", raw_packet[4:6])[0]
                 self.icmpv4_ec_seq = struct.unpack("!H", raw_packet[6:8])[0]
                 self.icmpv4_ec_raw_data = raw_packet[8:]
+                return
 
             if self.icmpv4_type == ICMP4_UNREACHABLE:
                 self.icmpv4_un_reserved = struct.unpack("!L", raw_packet[4:6])[0]
                 self.icmpv4_un_raw_data = raw_packet[8:]
+                return
 
             if self.icmpv4_type == ICMP4_ECHOREQUEST:
                 self.icmpv4_ec_id = struct.unpack("!H", raw_packet[4:6])[0]
                 self.icmpv4_ec_seq = struct.unpack("!H", raw_packet[6:8])[0]
                 self.icmpv4_ec_raw_data = raw_packet[8:]
+                return
+
+            self.unknown_message = raw_packet[4:]
 
         # Packet building
         else:
@@ -159,15 +164,18 @@ class Icmp4Packet:
                 self.icmpv4_ec_id = icmpv4_ec_id
                 self.icmpv4_ec_seq = icmpv4_ec_seq
                 self.icmpv4_ec_raw_data = icmpv4_ec_raw_data
+                return
 
             if self.icmpv4_type == ICMP4_UNREACHABLE and self.icmpv4_code == ICMP4_UNREACHABLE_PORT:
                 self.icmpv4_un_reserved = 0
                 self.icmpv4_un_raw_data = icmpv4_un_raw_data[:520]
+                return
 
             if self.icmpv4_type == ICMP4_ECHOREQUEST and self.icmpv4_code == 0:
                 self.icmpv4_ec_id = icmpv4_ec_id
                 self.icmpv4_ec_seq = icmpv4_ec_seq
                 self.icmpv4_ec_raw_data = icmpv4_ec_raw_data
+                return
 
     def __str__(self):
         """ Short packet log string """
@@ -207,7 +215,7 @@ class Icmp4Packet:
                 struct.pack("! BBH HH", self.icmpv4_type, self.icmpv4_code, self.icmpv4_cksum, self.icmpv4_ec_id, self.icmpv4_ec_seq) + self.icmpv4_ec_raw_data
             )
 
-        return None
+        return struct.pack("! BBH", self.icmpv4_type, self.icmpv4_code, self.icmpv4_cksum) + self.unknown_message
 
     def get_raw_packet(self):
         """ Get packet in raw format ready to be processed by lower level protocol """

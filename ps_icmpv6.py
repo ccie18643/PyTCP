@@ -389,6 +389,9 @@ class Icmp6Packet:
                     record = MulticastAddressRecord(raw_records)
                     raw_records = raw_records[len(record) :]
                     self.icmpv6_mlr2_multicast_address_record.append(record)
+                return
+
+            self.unknown_message = raw_packet[4:]
 
         # Packet building
         else:
@@ -447,6 +450,7 @@ class Icmp6Packet:
                 self.icmpv6_mlr2_reserved = 0
                 self.icmpv6_mlr2_multicast_address_record = [] if icmpv6_mlr2_multicast_address_record is None else icmpv6_mlr2_multicast_address_record
                 self.icmpv6_mlr2_number_of_multicast_address_records = len(self.icmpv6_mlr2_multicast_address_record)
+                return
 
     def __str__(self):
         """ Short packet log string """
@@ -569,7 +573,7 @@ class Icmp6Packet:
                 + b"".join([_.raw_record for _ in self.icmpv6_mlr2_multicast_address_record])
             )
 
-        return None
+        return struct.pack("! BBH", self.icmpv6_type, self.icmpv6_code, self.icmpv6_cksum) + self.unknown_message
 
     def get_raw_packet(self, ip_pseudo_header):
         """ Get packet in raw format ready to be processed by lower level protocol """
