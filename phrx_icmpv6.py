@@ -130,7 +130,7 @@ def phrx_icmpv6(self, ipv6_packet_rx, icmpv6_packet_rx):
         self.logger.debug(f"Received ICMPv6 Router Advertisement packet from {ipv6_packet_rx.ipv6_src}")
 
         # Make note of prefixes that can be used for address autoconfiguration
-        self.icmpv6_ra_prefixes = icmpv6_packet_rx.icmpv6_nd_opt_pi
+        self.icmpv6_ra_prefixes = [(_, ipv6_packet_rx.ipv6_src) for _ in icmpv6_packet_rx.icmpv6_nd_opt_pi]
         self.event_icmpv6_ra.release()
         return
 

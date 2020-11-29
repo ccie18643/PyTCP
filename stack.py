@@ -48,26 +48,31 @@ interface = b"tap7"
 
 # Support for IPv6 and IPv4, at least one should be anabled
 ipv6_support = True
-ipv4_support = True
+ipv4_support = False
 
 # Unicast MAC addresses assigned to stack, currently there is not any kind of duplicate MAC detection performed
 mac_address_candidate = ["02:00:00:77:77:77"]
 
 # IPv6 address auto configuration is implemented using EUI64 addressing and ICMPv6 Router Advertisement messages
-ipv6_address_autoconfig_enabled = True
+ipv6_lla_autoconfig = True
+ipv6_gua_autoconfig = True
 
 # There is no IPv6 routing implemented yet so we do not care about the IPv6 default gateway address
 ipv6_address_candidate = [
-    # IPv6Interface("FE80::7/64"),
-    # IPv6Interface("FE80::77/64"),
-    # IPv6Interface("FE80::777/64"),
-    # IPv6Interface("FE80::7777/64"),
-    IPv6Interface("2007::7/64"),
-    # ipv6_eui64(STACK_MAC_ADDRESS, IPv6Network("2007::/64")),
+    ("FE80::7/64", None),
+    # ("FE80::77/64", None),
+    # ("FE80::7777/64", None),
+    # ("FE80::7777/64", None),  # test duplicate address
+    # ("FE80::9999/64", "FE80::1"),  # test link local address with default gateway
+    # ("2007::1111/64", "DUPA"),  # test link local address with default gateway
+    # ("DUPA", None),  # test invalid address
+    # ("2099::99/64", "2009::99"),  # test invalid gateway
+    ("2007::7/64", "FE80::1"),
+    # ("2009::9/64", "2009::1"),
 ]
 
 # IPv4 DHCP based address configuration
-ipv4_address_dhcp_enabled = True
+ipv4_address_dhcp_config = True
 
 # Static IPv4 adrsses may to be configured here (they will still be subject to ARP Probe/Announcement mechanism)
 # Each entry is a tuple interface address/prefix length and second is defaut gateway for this subnet
@@ -75,6 +80,7 @@ ipv4_address_dhcp_enabled = True
 ipv4_address_candidate = [
     ("192.168.9.7/24", "192.168.9.1"),
     # ("192.168.9.77/24", "192.168.9.1"),
+    # ("224.0.0.1/24", "192.168.9.1"), # test invalid address type
     # ("DUPA", "192.168.9.1"),  # test invalid address format
     # ("192.168.9.99/24", "DUPA"),  # test invalid gateway format
     # ("192.168.9.77/24", "192.168.9.1"),  # test duplicate address

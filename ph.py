@@ -44,7 +44,7 @@
 import random
 import threading
 import time
-from ipaddress import AddressValueError, IPv4Address, IPv4Interface, IPv6Address
+from ipaddress import AddressValueError, IPv4Address, IPv4Interface, IPv6Address, IPv6Interface
 
 import loguru
 
@@ -92,7 +92,6 @@ class PacketHandler:
         self.stack_mac_multicast = []
         self.stack_mac_broadcast = ["ff:ff:ff:ff:ff:ff"]
 
-        self.stack_ipv6_address_candidate = stack.ipv6_address_candidate
         self.stack_ipv6_address = []
         self.stack_ipv6_unicast = []
         self.stack_ipv6_multicast = []
@@ -124,11 +123,12 @@ class PacketHandler:
             # Assign All IPv6 Nodes multicast address
             self.assign_ipv6_multicast(IPv6Address("ff02::1"))
             # Create list of IPv6 unicast/multicast addresses stack should listen on
+            self.stack_ipv6_address_candidate = self.parse_stack_ipv6_address_candidate()
             self.create_stack_ipv6_addressing()
 
         if stack.ipv4_support:
             # Create list of IPv4 unicast/multicast/broadcast addresses stack should listen on, use DHCP if enabled
-            if stack.ipv4_address_dhcp_enabled:
+            if stack.ipv4_address_dhcp_config:
                 address, gateway = self.__dhcp_client()
                 if address:
                     stack.ipv4_address_candidate.append((address, gateway))
@@ -170,54 +170,82 @@ class PacketHandler:
         self.remove_ipv6_multicast(ipv6_solicited_node_multicast(ipv6_unicast_candidate))
         return not event
 
+    def parse_stack_ipv6_address_candidate(self):
+        """ Parse IPv6 candidate addresses configured in stack.py module """
+
+        address_candidate = []
+
+        for address, gateway in stack.ipv6_address_candidate:
+            self.logger.debug(f"Parsing ('{address}', '{gateway}') entry")
+            try:
+                address = IPv6Interface(address)
+            except AddressValueError:
+                self.logger.warning(f"Invalid host address '{address}' format, skiping...")
+                return None
+            if address.ip.is_multicast or address.ip.is_reserved or address.ip.is_loopback or address.ip.is_unspecified:
+                self.logger.warning(f"Invalid host address '{address.ip}' type, skiping...")
+                return None
+            if address.ip in [_.ip for _ in address_candidate]:
+                self.logger.warning(f"Duplicate host address '{address.ip}' configured, skiping...")
+                return None
+            if gateway is not None:
+                try:
+                    gateway = IPv6Address(gateway)
+                    if not (gateway.is_link_local or (gateway in address.network and gateway != address.ip)):
+                        self.logger.warning(f"Invalid gateway '{gateway}' configured for interface address '{address}', skiping...")
+                        gateway = None
+                except AddressValueError:
+                    self.logger.warning(f"Invalid gateway '{gateway}' format configured for interface address '{address}' skiping...")
+                    gateway = None
+            if address.ip.is_link_local and gateway is not None:
+                self.logger.warning("Gateway cannot be configured for link local address skiping...")
+                gateway = None
+            address.gateway = gateway
+            address_candidate.append(address)
+            self.logger.debug(f"Parsed ('{address}', '{address.gateway}') entry")
+
+        return address_candidate
+
     def create_stack_ipv6_addressing(self):
         """ Create lists of IPv6 unicast and multicast addresses stack should listen on """
 
-        # Check if there are any statically assigned link local addresses
+        def __():
+            if ipv6_address_candidate not in self.stack_ipv6_address and self.perform_ipv6_nd_dad(ipv6_address_candidate.ip):
+                self.stack_ipv6_address.append(ipv6_address_candidate)
+                self.assign_ipv6_unicast(ipv6_address_candidate.ip)
+
+        # Configure Link Local address(es) staticaly
         for ipv6_address_candidate in list(self.stack_ipv6_address_candidate):
-            if (
-                ipv6_address_candidate.ip.is_link_local
-                and ipv6_address_candidate not in self.stack_ipv6_address
-                and self.perform_ipv6_nd_dad(ipv6_address_candidate.ip)
-            ):
+            if ipv6_address_candidate.ip.is_link_local:
                 self.stack_ipv6_address_candidate.remove(ipv6_address_candidate)
-                self.stack_ipv6_address.append(ipv6_address_candidate)
-                self.assign_ipv6_unicast(ipv6_address_candidate.ip)
+                __()
 
-        # Check if we succeded in assigning any link local address, if not try to assign one automaticaly
-        if not self.stack_ipv6_address:
+        # Configure Link Local address automaticaly
+        if stack.ipv6_lla_autoconfig:
             ipv6_address_candidate = ipv6_eui64(self.stack_mac_unicast[0])
-            if self.perform_ipv6_nd_dad(ipv6_address_candidate.ip):
-                self.stack_ipv6_address.append(ipv6_address_candidate)
-                self.assign_ipv6_unicast(ipv6_address_candidate.ip)
+            ipv6_address_candidate.gateway = None
+            __()
 
-        # If we still don't have any link local address set disable IPv6 protocol operations
+        # If we don't have any link local address set disable IPv6 protocol operations
         if not self.stack_ipv6_address:
             self.logger.warning("Unable to assign any IPv6 link local address, disabling IPv6 protocol")
             stack.ipv6_support = False
             return
 
-        # Check if there are any other statically assigned addresses
+        # Check if there are any statically configures GUA addresses
         for ipv6_address_candidate in list(self.stack_ipv6_address_candidate):
-            if (
-                (ipv6_address_candidate.ip.is_global or ipv6_address_candidate.ip.is_private)
-                and ipv6_address_candidate not in self.stack_ipv6_address
-                and self.perform_ipv6_nd_dad(ipv6_address_candidate.ip)
-            ):
-                self.stack_ipv6_address_candidate.remove(ipv6_address_candidate)
-                self.stack_ipv6_address.append(ipv6_address_candidate)
-                self.assign_ipv6_unicast(ipv6_address_candidate.ip)
+            self.stack_ipv6_address_candidate.remove(ipv6_address_candidate)
+            __()
 
         # Send out IPv6 Router Solicitation message and wait for response in attempt to auto configure addresses based on ICMPv6 Router Advertisement
-        if stack.ipv6_address_autoconfig_enabled:
+        if stack.ipv6_gua_autoconfig:
             self.send_icmpv6_nd_router_solicitation()
             self.event_icmpv6_ra.acquire(timeout=1)
-            for icmpv6_ra_prefix in list(self.icmpv6_ra_prefixes):
-                self.logger.debug(f"Attempting IPv6 address auto configuration for RA prefix {icmpv6_ra_prefix}")
-                ipv6_address_candidate = ipv6_eui64(self.stack_mac_unicast[0], icmpv6_ra_prefix)
-                if self.perform_ipv6_nd_dad(ipv6_address_candidate.ip):
-                    self.stack_ipv6_address.append(ipv6_address_candidate)
-                    self.assign_ipv6_unicast(ipv6_address_candidate.ip)
+            for prefix, gateway in list(self.icmpv6_ra_prefixes):
+                self.logger.debug(f"Attempting IPv6 address auto configuration for RA prefix {prefix}")
+                ipv6_address_candidate = ipv6_eui64(self.stack_mac_unicast[0], prefix)
+                ipv6_address_candidate.gateway = gateway
+                __()
 
     def parse_stack_ipv4_address_candidate(self):
         """ Parse IPv4 candidate addresses configured in stack.py module """
@@ -231,7 +259,9 @@ class PacketHandler:
             except AddressValueError:
                 self.logger.warning(f"Invalid host address '{address}' format, skiping...")
                 continue
-
+            if address.ip.is_multicast or address.ip.is_reserved or address.ip.is_loopback or address.ip.is_unspecified:
+                self.logger.warning(f"Invalid host address '{address.ip}' type, skiping...")
+                continue
             if address.ip == address.network.network_address or address.ip == address.network.broadcast_address:
                 self.logger.warning(f"Invalid host address '{address.ip}' configured for network '{address.network}', skiping...")
                 continue
@@ -250,11 +280,11 @@ class PacketHandler:
                         self.logger.warning(f"Invalid gateway '{gateway}' configured for interface address '{address}', skiping...")
                         gateway = None
                 except AddressValueError:
-                    self.logger.warning(f"Invalid gateway address '{address}' format configured for interface address '{address}' skiping...")
+                    self.logger.warning(f"Invalid gateway '{gateway}' format configured for interface address '{address}' skiping...")
                     gateway = None
             address.gateway = gateway
             address_candidate.append(address)
-            self.logger.debug(f"Configured ('{address}', '{address.gateway}' entry")
+            self.logger.debug(f"Parsed ('{address}', '{address.gateway}') entry")
 
         return address_candidate
 
