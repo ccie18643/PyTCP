@@ -194,7 +194,7 @@ class DhcpPacket:
                 DHCP_OPT_DNS: DhcpOptDns,
                 DHCP_OPT_HOST_NAME: DhcpOptHostName,
                 DHCP_OPT_DOMAIN_NAME: DhcpOptDomainName,
-                DHCP_OPT_REQ_IPV4_ADDR: DhcpOptReqIpAddr,
+                DHCP_OPT_REQ_IP4_ADDR: DhcpOptReqIpAddr,
                 DHCP_OPT_ADDR_LEASE_TIME: DhcpOptAddrLeaseTime,
                 DHCP_OPT_PARAM_REQ_LIST: DhcpOptParamReqList,
                 DHCP_OPT_SRV_ID: DhcpOptSrvId,
@@ -319,6 +319,7 @@ class DhcpPacket:
         for option in self.dhcp_options:
             if option.opt_code == DHCP_OPT_SUBNET_MASK:
                 return option.opt_subnet_mask
+        return None
 
     @property
     def dhcp_router(self):
@@ -327,6 +328,7 @@ class DhcpPacket:
         for option in self.dhcp_options:
             if option.opt_code == DHCP_OPT_ROUTER:
                 return option.opt_router
+        return None
 
     @property
     def dhcp_dns(self):
@@ -335,6 +337,7 @@ class DhcpPacket:
         for option in self.dhcp_options:
             if option.opt_code == DHCP_OPT_DNS:
                 return option.opt_dns
+        return None
 
     @property
     def dhcp_host_name(self):
@@ -343,6 +346,7 @@ class DhcpPacket:
         for option in self.dhcp_options:
             if option.opt_code == DHCP_OPT_HOST_NAME:
                 return option.opt_host_name
+        return None
 
     @property
     def dhcp_domain_name(self):
@@ -351,14 +355,16 @@ class DhcpPacket:
         for option in self.dhcp_options:
             if option.opt_code == DHCP_OPT_DOMAIN_NAME:
                 return option.opt_domain_name
+        return None
 
     @property
     def dhcp_req_ipv4_addr(self):
         """ DHCP option - Requested IP Address (50) """
 
         for option in self.dhcp_options:
-            if option.opt_code == DHCP_OPT_REQ_IPV4_ADDR:
+            if option.opt_code == DHCP_OPT_REQ_IP4_ADDR:
                 return option.opt_req_ipv4_addr
+        return None
 
     @property
     def dhcp_addr_lease_time(self):
@@ -367,6 +373,7 @@ class DhcpPacket:
         for option in self.dhcp_options:
             if option.opt_code == DHCP_OPT_ADDR_LEASE_TIME:
                 return option.opt_addr_lease_time
+        return None
 
     @property
     def dhcp_msg_type(self):
@@ -375,6 +382,7 @@ class DhcpPacket:
         for option in self.dhcp_options:
             if option.opt_code == DHCP_OPT_MSG_TYPE:
                 return option.opt_msg_type
+        return None
 
     @property
     def dhcp_srv_id(self):
@@ -383,6 +391,7 @@ class DhcpPacket:
         for option in self.dhcp_options:
             if option.opt_code == DHCP_OPT_SRV_ID:
                 return option.opt_srv_id
+        return None
 
     @property
     def dhcp_param_req_list(self):
@@ -391,6 +400,7 @@ class DhcpPacket:
         for option in self.dhcp_options:
             if option.opt_code == DHCP_OPT_PARAM_REQ_LIST:
                 return option.opt_param_req_list
+        return None
 
     @property
     def raw_packet(self):
@@ -404,11 +414,10 @@ class DhcpPacket:
         return self.raw_packet
 
 
-"""
+#
+#   DHCP options
+#
 
-   DHCP options
-
-"""
 
 # DHCP option - End (255)
 
@@ -501,7 +510,7 @@ class DhcpOptRouter:
         return struct.pack(f"! BB {len(self.opt_router) * 4}s", self.opt_code, self.opt_len, b"".join(_.packed for _ in self.opt_router))
 
     def __str__(self):
-        return f"router {self.router}"
+        return f"router {self.opt_router}"
 
 
 # DHCP option - Domain Name Server (6)
@@ -528,7 +537,7 @@ class DhcpOptDns:
         return struct.pack(f"! BB {len(self.opt_dns) * 4}s", self.opt_code, self.opt_len, b"".join(_.packed for _ in self.opt_dns))
 
     def __str__(self):
-        return f"router {self.dns}"
+        return f"router {self.opt_dns}"
 
 
 # DHCP option - Host Name (12)
@@ -587,8 +596,8 @@ class DhcpOptDomainName:
 
 # DHCP option - Requested IP Address (50)
 
-DHCP_OPT_REQ_IPV4_ADDR = 50
-DHCP_OPT_REQ_IPV4_ADDR_LEN = 4
+DHCP_OPT_REQ_IP4_ADDR = 50
+DHCP_OPT_REQ_IP4_ADDR_LEN = 4
 
 
 class DhcpOptReqIpAddr:
@@ -600,8 +609,8 @@ class DhcpOptReqIpAddr:
             self.opt_len = raw_option[1]
             self.opt_req_ipv4_addr = IPv4Address(raw_option[2:6])
         else:
-            self.opt_code = DHCP_OPT_REQ_IPV4_ADDR
-            self.opt_len = DHCP_OPT_REQ_IPV4_ADDR_LEN
+            self.opt_code = DHCP_OPT_REQ_IP4_ADDR
+            self.opt_len = DHCP_OPT_REQ_IP4_ADDR_LEN
             self.opt_req_ipv4_addr = IPv4Address(opt_req_ipv4_addr)
 
     @property
@@ -609,7 +618,7 @@ class DhcpOptReqIpAddr:
         return struct.pack("! BB 4s", self.opt_code, self.opt_len, self.opt_req_ipv4_addr.packed)
 
     def __str__(self):
-        return f"req_ipv4_addr {self.opt_addr}"
+        return f"req_ipv4_addr {self.opt_req_ipv4_addr}"
 
 
 # DHCP option - Address Lease Time (51)
@@ -636,7 +645,7 @@ class DhcpOptAddrLeaseTime:
         return struct.pack("! BB L", self.opt_code, self.opt_len, self.opt_addr_lease_time)
 
     def __str__(self):
-        return f"addr_lease_time {self.addr_lease_time}s"
+        return f"addr_lease_time {self.opt_addr_lease_time}s"
 
 
 # DHCP option - Message Type (53)
@@ -663,7 +672,7 @@ class DhcpOptMsgType:
         return struct.pack("! BB B", self.opt_code, self.opt_len, self.opt_msg_type)
 
     def __str__(self):
-        return f"msg_type {self.opt_size}"
+        return f"msg_type {self.opt_msg_type}"
 
 
 # DHCP option - Server Identifier (54)
@@ -690,7 +699,7 @@ class DhcpOptSrvId:
         return struct.pack("! BB 4s", self.opt_code, self.opt_len, self.opt_srv_id.packed)
 
     def __str__(self):
-        return f"srv_id {self.srv_id}"
+        return f"srv_id {self.opt_srv_id}"
 
 
 # DHCP option - Parameter Request List (55)
@@ -717,7 +726,7 @@ class DhcpOptParamReqList:
         return struct.pack(f"! BB {self.opt_len}s", self.opt_code, self.opt_len, self.opt_param_req_list)
 
     def __str__(self):
-        return f"param_req_list {binascii.hexlify(self.opt_list)}"
+        return f"param_req_list {binascii.hexlify(self.opt_param_req_list)}"
 
 
 # DHCP option not supported by this stack

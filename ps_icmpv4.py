@@ -94,18 +94,18 @@ from tracker import Tracker
 # +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 
 
-ICMPV4_ECHOREPLY = 0
-ICMPV4_UNREACHABLE = 3
-ICMPV4_UNREACHABLE_NET = 0
-ICMPV4_UNREACHABLE_HOST = 1
-ICMPV4_UNREACHABLE_PROTOCOL = 2
-ICMPV4_UNREACHABLE_PORT = 3
-ICMPV4_UNREACHABLE_FAGMENTATION = 4
-ICMPV4_UNREACHABLE_SOURCE_ROUTE_FAILED = 5
-ICMPV4_ECHOREQUEST = 8
+ICMP4_ECHOREPLY = 0
+ICMP4_UNREACHABLE = 3
+ICMP4_UNREACHABLE_NET = 0
+ICMP4_UNREACHABLE_HOST = 1
+ICMP4_UNREACHABLE_PROTOCOL = 2
+ICMP4_UNREACHABLE_PORT = 3
+ICMP4_UNREACHABLE_FAGMENTATION = 4
+ICMP4_UNREACHABLE_SOURCE_ROUTE_FAILED = 5
+ICMP4_ECHOREQUEST = 8
 
 
-class ICMPv4Packet:
+class Icmp4Packet:
     """ ICMPv4 packet support class """
 
     protocol = "ICMPv4"
@@ -133,16 +133,16 @@ class ICMPv4Packet:
             self.icmpv4_code = raw_packet[1]
             self.icmpv4_cksum = struct.unpack("!H", raw_packet[2:4])[0]
 
-            if self.icmpv4_type == ICMPV4_ECHOREPLY:
+            if self.icmpv4_type == ICMP4_ECHOREPLY:
                 self.icmpv4_ec_id = struct.unpack("!H", raw_packet[4:6])[0]
                 self.icmpv4_ec_seq = struct.unpack("!H", raw_packet[6:8])[0]
                 self.icmpv4_ec_raw_data = raw_packet[8:]
 
-            if self.icmpv4_type == ICMPV4_UNREACHABLE:
+            if self.icmpv4_type == ICMP4_UNREACHABLE:
                 self.icmpv4_un_reserved = struct.unpack("!L", raw_packet[4:6])[0]
                 self.icmpv4_un_raw_data = raw_packet[8:]
 
-            if self.icmpv4_type == ICMPV4_ECHOREQUEST:
+            if self.icmpv4_type == ICMP4_ECHOREQUEST:
                 self.icmpv4_ec_id = struct.unpack("!H", raw_packet[4:6])[0]
                 self.icmpv4_ec_seq = struct.unpack("!H", raw_packet[6:8])[0]
                 self.icmpv4_ec_raw_data = raw_packet[8:]
@@ -155,16 +155,16 @@ class ICMPv4Packet:
             self.icmpv4_code = icmpv4_code
             self.icmpv4_cksum = 0
 
-            if self.icmpv4_type == ICMPV4_ECHOREPLY and self.icmpv4_code == 0:
+            if self.icmpv4_type == ICMP4_ECHOREPLY and self.icmpv4_code == 0:
                 self.icmpv4_ec_id = icmpv4_ec_id
                 self.icmpv4_ec_seq = icmpv4_ec_seq
                 self.icmpv4_ec_raw_data = icmpv4_ec_raw_data
 
-            if self.icmpv4_type == ICMPV4_UNREACHABLE and self.icmpv4_code == ICMPV4_UNREACHABLE_PORT:
+            if self.icmpv4_type == ICMP4_UNREACHABLE and self.icmpv4_code == ICMP4_UNREACHABLE_PORT:
                 self.icmpv4_un_reserved = 0
                 self.icmpv4_un_raw_data = icmpv4_un_raw_data[:520]
 
-            if self.icmpv4_type == ICMPV4_ECHOREQUEST and self.icmpv4_code == 0:
+            if self.icmpv4_type == ICMP4_ECHOREQUEST and self.icmpv4_code == 0:
                 self.icmpv4_ec_id = icmpv4_ec_id
                 self.icmpv4_ec_seq = icmpv4_ec_seq
                 self.icmpv4_ec_raw_data = icmpv4_ec_raw_data
@@ -174,13 +174,13 @@ class ICMPv4Packet:
 
         log = f"ICMPv4 type {self.icmpv4_type}, code {self.icmpv4_code}"
 
-        if self.icmpv4_type == ICMPV4_ECHOREPLY:
+        if self.icmpv4_type == ICMP4_ECHOREPLY:
             log += f", id {self.icmpv4_ec_id}, seq {self.icmpv4_ec_seq}"
 
-        if self.icmpv4_type == ICMPV4_UNREACHABLE and self.icmpv4_code == ICMPV4_UNREACHABLE_PORT:
+        if self.icmpv4_type == ICMP4_UNREACHABLE and self.icmpv4_code == ICMP4_UNREACHABLE_PORT:
             pass
 
-        if self.icmpv4_type == ICMPV4_ECHOREQUEST:
+        if self.icmpv4_type == ICMP4_ECHOREQUEST:
             log += f", id {self.icmpv4_ec_id}, seq {self.icmpv4_ec_seq}"
 
         return log
@@ -194,18 +194,20 @@ class ICMPv4Packet:
     def raw_packet(self):
         """ Get packet in raw format """
 
-        if self.icmpv4_type == ICMPV4_ECHOREPLY:
+        if self.icmpv4_type == ICMP4_ECHOREPLY:
             return (
                 struct.pack("! BBH HH", self.icmpv4_type, self.icmpv4_code, self.icmpv4_cksum, self.icmpv4_ec_id, self.icmpv4_ec_seq) + self.icmpv4_ec_raw_data
             )
 
-        if self.icmpv4_type == ICMPV4_UNREACHABLE and self.icmpv4_code == ICMPV4_UNREACHABLE_PORT:
+        if self.icmpv4_type == ICMP4_UNREACHABLE and self.icmpv4_code == ICMP4_UNREACHABLE_PORT:
             return struct.pack("! BBH L", self.icmpv4_type, self.icmpv4_code, self.icmpv4_cksum, self.icmpv4_un_reserved) + self.icmpv4_un_raw_data
 
-        if self.icmpv4_type == ICMPV4_ECHOREQUEST:
+        if self.icmpv4_type == ICMP4_ECHOREQUEST:
             return (
                 struct.pack("! BBH HH", self.icmpv4_type, self.icmpv4_code, self.icmpv4_cksum, self.icmpv4_ec_id, self.icmpv4_ec_seq) + self.icmpv4_ec_raw_data
             )
+
+        return None
 
     def get_raw_packet(self):
         """ Get packet in raw format ready to be processed by lower level protocol """

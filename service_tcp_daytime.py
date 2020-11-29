@@ -70,7 +70,8 @@ class ServiceTcpDaytime:
 
             threading.Thread(target=self.__thread_connection, args=(new_socket, message_count, message_delay, message_size)).start()
 
-    def __thread_connection(self, socket, message_count, message_delay, message_size):
+    @staticmethod
+    def __thread_connection(socket, message_count, message_delay, message_size):
         """ Inbound connection handler """
 
         while message_count:

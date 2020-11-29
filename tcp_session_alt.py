@@ -194,6 +194,7 @@ class TcpSession:
             with self.lock_tx_buffer:
                 self.tx_buffer.extend(list(raw_data))
                 return len(raw_data) if self.state == "ESTABLISHED" else -1
+        return None
 
     def receive(self, byte_count=None):
         """ RECEIVE syscall """
@@ -215,7 +216,7 @@ class TcpSession:
             del self.rx_buffer[:byte_count]
 
             # If there is any data left in buffer or the remote end closed connection then release the rx_buffer event
-            if len(self.rx_buffer) or self.state == "CLOSE_WAIT":
+            if self.rx_buffer or self.state == "CLOSE_WAIT":
                 self.event_rx_buffer.release()
 
         return bytes(rx_buffer)
@@ -231,7 +232,8 @@ class TcpSession:
 
         old_state = self.state
         self.state = state
-        old_state and self.logger.opt(ansi=True, depth=1).info(f"{self.tcp_session_id} - State changed: <yellow> {old_state} -> {self.state}</>")
+        if old_state:
+            self.logger.opt(ansi=True, depth=1).info(f"{self.tcp_session_id} - State changed: <yellow> {old_state} -> {self.state}</>")
 
     def __transmit_packet(self, seq=None, flag_syn=False, flag_ack=False, flag_fin=False, flag_rst=False, raw_data=b""):
         """ Send out TCP packet """
@@ -579,7 +581,7 @@ class TcpSession:
             return
 
         # Got packet that doesn't fit into receive window
-        if packet and not (self.rcv_nxt <= packet.seq <= self.rcv_nxt + self.rcv_wnd - len(packet.raw_data)):
+        if packet and not self.rcv_nxt <= packet.seq <= self.rcv_nxt + self.rcv_wnd - len(packet.raw_data):
             self.logger.debug(f"{self.tcp_session_id} - Packet seq {packet.seq} + {len(packet.raw_data)} doesn't fit into receive window, droping")
             return
 
@@ -608,7 +610,8 @@ class TcpSession:
             if packet.seq == self.rcv_nxt and self.snd_una <= packet.ack <= self.snd_max:
                 self.__process_ack_packet(packet)
                 # Immidiately acknowledge the received data if any
-                packet.raw_data and self.__transmit_packet(flag_ack=True)
+                if packet.raw_data:
+                    self.__transmit_packet(flag_ack=True)
                 # Let application know that remote peer closed connection
                 self.event_rx_buffer.release()
                 # Change state to CLOSE_WAIT
@@ -645,7 +648,8 @@ class TcpSession:
             if packet.seq == self.rcv_nxt and self.snd_una <= packet.ack <= self.snd_max:
                 self.__process_ack_packet(packet)
                 # Immidiately acknowledge the received data if any
-                packet.raw_data and self.__transmit_packet(flag_ack=True)
+                if packet.raw_data:
+                    self.__transmit_packet(flag_ack=True)
                 # Check if packet acks our FIN
                 if packet.ack >= self.snd_fin:
                     # Change state to FIN_WAIT_2
@@ -688,7 +692,8 @@ class TcpSession:
             if packet.seq == self.rcv_nxt and self.snd_una <= packet.ack <= self.snd_max:
                 self.__process_ack_packet(packet)
                 # Immidiately acknowledge the received data if any
-                packet.raw_data and self.__transmit_packet(flag_ack=True)
+                if packet.raw_data:
+                    self.__transmit_packet(flag_ack=True)
                 return
 
         # Got FIN + ACK packet -> Send ACK packet / change state to TIME_WAIT

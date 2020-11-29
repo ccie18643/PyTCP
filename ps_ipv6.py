@@ -69,13 +69,13 @@ from ipaddress import IPv6Address
 # +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 
 
-IPV6_HEADER_LEN = 40
+IP6_HEADER_LEN = 40
 
-IPV6_NEXT_HEADER_TCP = 6
-IPV6_NEXT_HEADER_UDP = 17
-IPV6_NEXT_HEADER_ICMPV6 = 58
+IP6_NEXT_HEADER_TCP = 6
+IP6_NEXT_HEADER_UDP = 17
+IP6_NEXT_HEADER_ICMP6 = 58
 
-IPV6_NEXT_HEADER_TABLE = {IPV6_NEXT_HEADER_TCP: "TCP", IPV6_NEXT_HEADER_UDP: "UDP", IPV6_NEXT_HEADER_ICMPV6: "ICMPv6"}
+IP6_NEXT_HEADER_TABLE = {IP6_NEXT_HEADER_TCP: "TCP", IP6_NEXT_HEADER_UDP: "UDP", IP6_NEXT_HEADER_ICMP6: "ICMPv6"}
 
 DSCP_CS0 = 0b000000
 DSCP_CS1 = 0b001000
@@ -126,7 +126,7 @@ DSCP_TABLE = {
 ECN_TABLE = {0b00: "Non-ECT", 0b10: "ECT(0)", 0b01: "ECT(1)", 0b11: "CE"}
 
 
-class IPv6Packet:
+class Ip6Packet:
     """ IPv6 packet support class """
 
     protocol = "IPv6"
@@ -152,9 +152,9 @@ class IPv6Packet:
             self.tracker = parent_packet.tracker
 
             raw_packet = parent_packet.raw_data
-            raw_header = raw_packet[:IPV6_HEADER_LEN]
+            raw_header = raw_packet[:IP6_HEADER_LEN]
 
-            self.raw_data = raw_packet[IPV6_HEADER_LEN : IPV6_HEADER_LEN + struct.unpack("!H", raw_header[4:6])[0]]
+            self.raw_data = raw_packet[IP6_HEADER_LEN : IP6_HEADER_LEN + struct.unpack("!H", raw_header[4:6])[0]]
 
             self.ipv6_ver = raw_header[0] >> 4
             self.ipv6_dscp = ((raw_header[0] & 0b00001111) << 2) | ((raw_header[1] & 0b11000000) >> 6)
@@ -186,13 +186,13 @@ class IPv6Packet:
                 assert child_packet.protocol in {"ICMPv6", "UDP", "TCP"}, f"Not supported protocol: {child_packet.protocol}"
 
                 if child_packet.protocol == "ICMPv6":
-                    self.ipv6_next = IPV6_NEXT_HEADER_ICMPV6
+                    self.ipv6_next = IP6_NEXT_HEADER_ICMP6
 
                 if child_packet.protocol == "UDP":
-                    self.ipv6_next = IPV6_NEXT_HEADER_UDP
+                    self.ipv6_next = IP6_NEXT_HEADER_UDP
 
                 if child_packet.protocol == "TCP":
-                    self.ipv6_next = IPV6_NEXT_HEADER_TCP
+                    self.ipv6_next = IP6_NEXT_HEADER_TCP
 
                 self.ipv6_dlen = len(child_packet.raw_packet)
                 self.raw_data = child_packet.get_raw_packet(self.ip_pseudo_header)
@@ -206,7 +206,7 @@ class IPv6Packet:
         """ Short packet log string """
 
         return (
-            f"IPv6 {self.ipv6_src} > {self.ipv6_dst}, next {self.ipv6_next} ({IPV6_NEXT_HEADER_TABLE.get(self.ipv6_next, '???')}), flow {self.ipv6_flow}"
+            f"IPv6 {self.ipv6_src} > {self.ipv6_dst}, next {self.ipv6_next} ({IP6_NEXT_HEADER_TABLE.get(self.ipv6_next, '???')}), flow {self.ipv6_flow}"
             + f", dlen {self.ipv6_dlen}, hop {self.ipv6_hop}"
         )
 

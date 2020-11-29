@@ -101,3 +101,5 @@ class TcpMetadata:
                 f"TCP/0.0.0.0/{self.local_port}/*/*",
                 f"TCP/*/{self.local_port}/*/*",
             ]
+
+        return None

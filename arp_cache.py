@@ -57,6 +57,8 @@ class ArpCache:
     """ Support for ARP cache operations """
 
     class CacheEntry:
+        """ Container class for cache entries """
+
         def __init__(self, mac_address, permanent=False):
             self.mac_address = mac_address
             self.permanent = permanent
@@ -99,19 +101,6 @@ class ArpCache:
                 self.__send_arp_request(ipv4_address)
                 self.logger.debug(f"Trying to refresh expiring ARP cache entry for {ipv4_address} -> {self.arp_cache[ipv4_address].mac_address}")
 
-    def __send_arp_request(self, arp_tpa):
-        """ Enqueue ARP request packet with TX ring """
-
-        stack.packet_handler.phtx_arp(
-            ether_src=stack.packet_handler.stack_mac_unicast[0],
-            ether_dst="ff:ff:ff:ff:ff:ff",
-            arp_oper=ps_arp.ARP_OP_REQUEST,
-            arp_sha=stack.packet_handler.stack_mac_unicast[0],
-            arp_spa=stack.packet_handler.stack_ipv4_unicast[0] if stack.packet_handler.stack_ipv4_unicast else IPv4Address("0.0.0.0"),
-            arp_tha="00:00:00:00:00:00",
-            arp_tpa=arp_tpa,
-        )
-
     def add_entry(self, ipv4_address, mac_address):
         """ Add / refresh entry in cache """
 
@@ -127,6 +116,20 @@ class ArpCache:
             )
             return arp_entry.mac_address
 
-        else:
-            self.logger.debug(f"Unable to find entry for {ipv4_address}, sending ARP request")
-            self.__send_arp_request(ipv4_address)
+        self.logger.debug(f"Unable to find entry for {ipv4_address}, sending ARP request")
+        self.__send_arp_request(ipv4_address)
+        return None
+
+    @staticmethod
+    def __send_arp_request(arp_tpa):
+        """ Enqueue ARP request packet with TX ring """
+
+        stack.packet_handler.phtx_arp(
+            ether_src=stack.packet_handler.stack_mac_unicast[0],
+            ether_dst="ff:ff:ff:ff:ff:ff",
+            arp_oper=ps_arp.ARP_OP_REQUEST,
+            arp_sha=stack.packet_handler.stack_mac_unicast[0],
+            arp_spa=stack.packet_handler.stack_ipv4_unicast[0] if stack.packet_handler.stack_ipv4_unicast else IPv4Address("0.0.0.0"),
+            arp_tha="00:00:00:00:00:00",
+            arp_tpa=arp_tpa,
+        )

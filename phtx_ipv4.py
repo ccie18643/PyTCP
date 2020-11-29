@@ -56,7 +56,7 @@ def validate_src_ipv4_address(self, ipv4_src):
     # Check if the the source IP address belongs to this stack or its set to all zeros (for DHCP client comunication)
     if ipv4_src not in {*self.stack_ipv4_unicast, *self.stack_ipv4_multicast, *self.stack_ipv4_broadcast, IPv4Address("0.0.0.0")}:
         self.logger.warning(f"Unable to sent out IPv4 packet, stack doesn't own IPv4 address {ipv4_src}")
-        return
+        return None
 
     # If packet is a response to multicast then replace source IP address with primary IP address of the stack
     if ipv4_src in self.stack_ipv4_multicast:
@@ -65,7 +65,7 @@ def validate_src_ipv4_address(self, ipv4_src):
             self.logger.debug(f"Packet is response to multicast, replaced source with stack primary IPv4 address {ipv4_src}")
         else:
             self.logger.warning("Unable to sent out IPv4 packet, no stack primary unicast IPv4 address available")
-            return
+            return None
 
     # If packet is a response to limited broadcast then replace source IP address with primary IP address of the stack
     if ipv4_src == IPv4Address("255.255.255.255"):
@@ -74,7 +74,7 @@ def validate_src_ipv4_address(self, ipv4_src):
             self.logger.debug(f"Packet is response to limited broadcast, replaced source with stack primary IPv4 address {ipv4_src}")
         else:
             self.logger.warning("Unable to sent out IPv4 packet, no stack primary unicast IPv4 address available")
-            return
+            return None
 
     # If packet is a response to directed braodcast then replace source IP address with first stack IP address that belongs to appropriate subnet
     if ipv4_src in self.stack_ipv4_broadcast:
@@ -84,7 +84,7 @@ def validate_src_ipv4_address(self, ipv4_src):
             self.logger.debug(f"Packet is response to directed broadcast, replaced source with apropriate IPv4 address {ipv4_src}")
         else:
             self.logger.warning("Unable to sent out IPv4 packet, no appropriate stack unicast IPv4 address available")
-            return
+            return None
 
     return ipv4_src
 
@@ -107,8 +107,8 @@ def phtx_ipv4(self, child_packet, ipv4_dst, ipv4_src):
         self.ipv4_packet_id = 1
 
     # Check if packet can be sent out without fragmentation, if so send it out
-    if ps_ipv4.IPV4_HEADER_LEN + len(child_packet.raw_packet) <= stack.mtu:
-        ipv4_packet_tx = ps_ipv4.IPv4Packet(ipv4_src=ipv4_src, ipv4_dst=ipv4_dst, ipv4_packet_id=self.ipv4_packet_id, child_packet=child_packet)
+    if ps_ipv4.IP4_HEADER_LEN + len(child_packet.raw_packet) <= stack.mtu:
+        ipv4_packet_tx = ps_ipv4.Ip4Packet(ipv4_src=ipv4_src, ipv4_dst=ipv4_dst, ipv4_packet_id=self.ipv4_packet_id, child_packet=child_packet)
 
         self.logger.debug(f"{ipv4_packet_tx.tracker} - {ipv4_packet_tx}")
         self.phtx_ether(child_packet=ipv4_packet_tx)
@@ -118,11 +118,11 @@ def phtx_ipv4(self, child_packet, ipv4_dst, ipv4_src):
     self.logger.debug("Packet exceedes available MTU, IP fragmentation needed...")
 
     if child_packet.protocol == "ICMPv4":
-        ipv4_proto = ps_ipv4.IPV4_PROTO_ICMPv4
+        ipv4_proto = ps_ipv4.IP4_PROTO_ICMP4
         raw_data = child_packet.get_raw_packet()
 
     if child_packet.protocol in {"UDP", "TCP"}:
-        ipv4_proto = ps_ipv4.IPV4_PROTO_UDP if child_packet.protocol == "UDP" else ps_ipv4.IPV4_PROTO_TCP
+        ipv4_proto = ps_ipv4.IP4_PROTO_UDP if child_packet.protocol == "UDP" else ps_ipv4.IP4_PROTO_TCP
         raw_data = child_packet.get_raw_packet(
             struct.pack(
                 "! 4s 4s BBH",
@@ -134,24 +134,24 @@ def phtx_ipv4(self, child_packet, ipv4_dst, ipv4_src):
             )
         )
 
-    raw_data_mtu = (stack.mtu - ps_ether.ETHER_HEADER_LEN - ps_ipv4.IPV4_HEADER_LEN) & 0b1111111111111000
+    raw_data_mtu = (stack.mtu - ps_ether.ETHER_HEADER_LEN - ps_ipv4.IP4_HEADER_LEN) & 0b1111111111111000
     raw_data_fragments = [raw_data[_ : raw_data_mtu + _] for _ in range(0, len(raw_data), raw_data_mtu)]
 
-    n = 0
+    pointer = 0
     offset = 0
 
     for raw_data_fragment in raw_data_fragments:
-        ipv4_packet_tx = ps_ipv4.IPv4Packet(
+        ipv4_packet_tx = ps_ipv4.Ip4Packet(
             ipv4_src=ipv4_src,
             ipv4_dst=ipv4_dst,
             ipv4_proto=ipv4_proto,
             ipv4_packet_id=self.ipv4_packet_id,
-            ipv4_frag_mf=True if n < len(raw_data_fragments) - 1 else False,
+            ipv4_frag_mf=pointer < len(raw_data_fragments) - 1,
             ipv4_frag_offset=offset,
             raw_data=raw_data_fragment,
             tracker=child_packet.tracker,
         )
-        n += 1
+        pointer += 1
         offset += len(raw_data_fragment)
 
         self.logger.debug(f"{ipv4_packet_tx.tracker} - {ipv4_packet_tx}")

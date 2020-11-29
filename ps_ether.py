@@ -62,11 +62,11 @@ ETHER_HEADER_LEN = 14
 
 ETHER_TYPE_MIN = 0x0600
 ETHER_TYPE_ARP = 0x0806
-ETHER_TYPE_IPV4 = 0x0800
-ETHER_TYPE_IPV6 = 0x86DD
+ETHER_TYPE_IP4 = 0x0800
+ETHER_TYPE_IP6 = 0x86DD
 
 
-ETHER_TYPE_TABLE = {ETHER_TYPE_ARP: "ARP", ETHER_TYPE_IPV4: "IPv4", ETHER_TYPE_IPV6: "IPv6"}
+ETHER_TYPE_TABLE = {ETHER_TYPE_ARP: "ARP", ETHER_TYPE_IP4: "IPv4", ETHER_TYPE_IP6: "IPv6"}
 
 
 class EtherPacket:
@@ -98,10 +98,10 @@ class EtherPacket:
             assert child_packet.protocol in {"IPv6", "IPv4", "ARP"}, f"Not supported protocol: {child_packet.protocol}"
 
             if child_packet.protocol == "IPv6":
-                self.ether_type = ETHER_TYPE_IPV6
+                self.ether_type = ETHER_TYPE_IP6
 
             if child_packet.protocol == "IPv4":
-                self.ether_type = ETHER_TYPE_IPV4
+                self.ether_type = ETHER_TYPE_IP4
 
             if child_packet.protocol == "ARP":
                 self.ether_type = ETHER_TYPE_ARP

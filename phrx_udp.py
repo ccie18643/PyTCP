@@ -61,9 +61,6 @@ def phrx_udp(self, ip_packet_rx, udp_packet_rx):
         self.logger.debug(f"{udp_packet_rx.tracker} - UDP packet has invalid checksum, droping")
         return
 
-    # Check if packet is part of stack DHCP client message exchange
-    pass
-
     # Set universal names for src and dst IP addresses whether packet was delivered by IPv6 or IPv4 protocol
     ip_packet_rx.ip_dst = ip_packet_rx.ipv6_dst if ip_packet_rx.protocol == "IPv6" else ip_packet_rx.ipv4_dst
     ip_packet_rx.ip_src = ip_packet_rx.ipv6_src if ip_packet_rx.protocol == "IPv6" else ip_packet_rx.ipv4_src
@@ -99,8 +96,8 @@ def phrx_udp(self, ip_packet_rx, udp_packet_rx):
         self.phtx_icmpv6(
             ipv6_src=ip_packet_rx.ipv6_dst,
             ipv6_dst=ip_packet_rx.ipv6_src,
-            icmpv6_type=ps_icmpv6.ICMPV6_UNREACHABLE,
-            icmpv6_code=ps_icmpv6.ICMPV6_UNREACHABLE_PORT,
+            icmpv6_type=ps_icmpv6.ICMP6_UNREACHABLE,
+            icmpv6_code=ps_icmpv6.ICMP6_UNREACHABLE_PORT,
             icmpv6_un_raw_data=ip_packet_rx.get_raw_packet(),
             echo_tracker=udp_packet_rx.tracker,
         )
@@ -109,8 +106,8 @@ def phrx_udp(self, ip_packet_rx, udp_packet_rx):
         self.phtx_icmpv4(
             ipv4_src=ip_packet_rx.ip_dst,
             ipv4_dst=ip_packet_rx.ip_src,
-            icmpv4_type=ps_icmpv4.ICMPV4_UNREACHABLE,
-            icmpv4_code=ps_icmpv4.ICMPV4_UNREACHABLE_PORT,
+            icmpv4_type=ps_icmpv4.ICMP4_UNREACHABLE,
+            icmpv4_code=ps_icmpv4.ICMP4_UNREACHABLE_PORT,
             icmpv4_un_raw_data=ip_packet_rx.get_raw_packet(),
             echo_tracker=udp_packet_rx.tracker,
         )

@@ -61,9 +61,8 @@ def phtx_icmpv6(
     icmpv6_na_flag_s=False,
     icmpv6_na_flag_o=False,
     icmpv6_na_target_address=None,
-    icmpv6_nd_options=[],
-    icmpv6_mlr2_multicast_address_record=[],
-    icmpv6_ipv6_packet_rx=None,
+    icmpv6_nd_options=None,
+    icmpv6_mlr2_multicast_address_record=None,
     echo_tracker=None,
 ):
     """ Handle outbound ICMPv6 packets """
@@ -72,7 +71,7 @@ def phtx_icmpv6(
     if not stack.ipv6_support:
         return
 
-    icmpv6_packet_tx = ps_icmpv6.ICMPv6Packet(
+    icmpv6_packet_tx = ps_icmpv6.Icmp6Packet(
         icmpv6_type=icmpv6_type,
         icmpv6_code=icmpv6_code,
         icmpv6_un_raw_data=icmpv6_un_raw_data,
@@ -84,8 +83,8 @@ def phtx_icmpv6(
         icmpv6_na_flag_s=icmpv6_na_flag_s,
         icmpv6_na_flag_o=icmpv6_na_flag_o,
         icmpv6_na_target_address=icmpv6_na_target_address,
-        icmpv6_nd_options=icmpv6_nd_options,
-        icmpv6_mlr2_multicast_address_record=icmpv6_mlr2_multicast_address_record,
+        icmpv6_nd_options=[] if icmpv6_nd_options is None else icmpv6_nd_options,
+        icmpv6_mlr2_multicast_address_record=[] if icmpv6_mlr2_multicast_address_record is None else icmpv6_mlr2_multicast_address_record,
         echo_tracker=echo_tracker,
     )
 

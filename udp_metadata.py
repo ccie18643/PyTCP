@@ -81,3 +81,5 @@ class UdpMetadata:
                 f"UDP/0.0.0.0/{self.local_port}/*/*",
                 f"UDP/*/{self.local_port}/*/*",
             ]
+
+        return None

@@ -215,7 +215,7 @@ class PacketHandler:
         """ Create list of IPv4 addresses stack should listen on """
 
         # Perform Duplicate Address Detection
-        for i in range(3):
+        for _ in range(3):
             for ipv4_unicast in [_.ip for _ in self.stack_ipv4_address_candidate]:
                 if ipv4_unicast not in self.arp_probe_unicast_conflict:
                     self.send_arp_probe(ipv4_unicast)
@@ -295,7 +295,7 @@ class PacketHandler:
         # Need to use set here to avoid re-using duplicate multicast entries from stack_ipv6_multicast list,
         # also All Multicast Nodes address is not being advertised as this is not neccessary
         if icmpv6_mlr2_multicast_address_record := {
-            ps_icmpv6.MulticastAddressRecord(record_type=ps_icmpv6.ICMPV6_MART_CHANGE_TO_EXCLUDE, multicast_address=str(_))
+            ps_icmpv6.MulticastAddressRecord(record_type=ps_icmpv6.ICMP6_MART_CHANGE_TO_EXCLUDE, multicast_address=str(_))
             for _ in self.stack_ipv6_multicast
             if _ not in {IPv6Address("ff02::1")}
         }:
@@ -303,7 +303,7 @@ class PacketHandler:
                 ipv6_src=self.stack_ipv6_unicast[0] if self.stack_ipv6_unicast else IPv6Address("::"),
                 ipv6_dst=IPv6Address("ff02::16"),
                 ipv6_hop=1,
-                icmpv6_type=ps_icmpv6.ICMPV6_MULTICAST_LISTENER_REPORT_V2,
+                icmpv6_type=ps_icmpv6.ICMP6_MULTICAST_LISTENER_REPORT_V2,
                 icmpv6_mlr2_multicast_address_record=icmpv6_mlr2_multicast_address_record,
             )
             self.logger.debug(f"Sent out ICMPv6 Multicast Listener Report message for {[_.multicast_address for _ in icmpv6_mlr2_multicast_address_record]}")
@@ -315,7 +315,7 @@ class PacketHandler:
             ipv6_src=IPv6Address("::"),
             ipv6_dst=ipv6_solicited_node_multicast(ipv6_unicast_candidate),
             ipv6_hop=255,
-            icmpv6_type=ps_icmpv6.ICMPV6_NEIGHBOR_SOLICITATION,
+            icmpv6_type=ps_icmpv6.ICMP6_NEIGHBOR_SOLICITATION,
             icmpv6_ns_target_address=ipv6_unicast_candidate,
         )
         self.logger.debug(f"Sent out ICMPv6 ND DAD message for {ipv6_unicast_candidate}")
@@ -327,7 +327,7 @@ class PacketHandler:
             ipv6_src=self.stack_ipv6_unicast[0],
             ipv6_dst=IPv6Address("ff02::2"),
             ipv6_hop=255,
-            icmpv6_type=ps_icmpv6.ICMPV6_ROUTER_SOLICITATION,
+            icmpv6_type=ps_icmpv6.ICMP6_ROUTER_SOLICITATION,
             icmpv6_nd_options=[ps_icmpv6.ICMPv6NdOptSLLA(opt_slla=self.stack_mac_unicast[0])],
         )
         self.logger.debug("Sent out ICMPv6 ND Router Solicitation")

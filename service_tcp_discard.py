@@ -68,7 +68,8 @@ class ServiceTcpDiscard:
 
             threading.Thread(target=self.__thread_connection, args=(new_socket,)).start()
 
-    def __thread_connection(self, socket):
+    @staticmethod
+    def __thread_connection(socket):
         """ Inbound connection handler """
 
         while True:

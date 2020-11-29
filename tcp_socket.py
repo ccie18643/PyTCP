@@ -136,9 +136,10 @@ class TcpSocket:
 
         self.logger.debug(f"{self.socket_id} - Waiting for established inbound connection")
         self.event_tcp_session_established.acquire()
-        for tcp_session_id, tcp_session in stack.tcp_sessions.items():
+        for tcp_session in stack.tcp_sessions.values():
             if tcp_session.socket is self and tcp_session.state == "ESTABLISHED":
                 return TcpSocket(tcp_session=tcp_session)
+        return None
 
     def receive(self, byte_count=None):
         """ Receive data from socket """
@@ -156,6 +157,7 @@ class TcpSocket:
         if bytes_sent := self.tcp_session.send(data_segment):
             self.logger.debug(f"{self.socket_id} - Sent data segment, len {bytes_sent}")
             return bytes_sent
+        return None
 
     def close(self):
         """ Close socket and the TCP session(s) it owns """

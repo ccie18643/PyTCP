@@ -58,6 +58,8 @@ class ICMPv6NdCache:
     """ Support for ICMPv6 ND cache operations """
 
     class CacheEntry:
+        """ Container class fo cache entries """
+
         def __init__(self, mac_address, permanent=False):
             self.mac_address = mac_address
             self.permanent = permanent
@@ -98,16 +100,6 @@ class ICMPv6NdCache:
                 self.__send_icmpv6_neighbor_solicitation(ipv6_address)
                 self.logger.debug(f"Trying to refresh expiring ICMPv6 ND cache entry for {ipv6_address} -> {self.nd_cache[ipv6_address].mac_address}")
 
-    def __send_icmpv6_neighbor_solicitation(self, icmpv6_ns_target_address):
-        """ Enqueue ICMPv6 Neighbor Solicitation packet with TX ring """
-        stack.packet_handler.phtx_icmpv6(
-            ipv6_src=IPv6Address(stack.packet_handler.stack_ipv6_unicast[0] if stack.packet_handler.stack_ipv6_unicast else "::"),
-            ipv6_dst=ipv6_solicited_node_multicast(icmpv6_ns_target_address),
-            ipv6_hop=255,
-            icmpv6_type=ps_icmpv6.ICMPV6_NEIGHBOR_SOLICITATION,
-            icmpv6_ns_target_address=icmpv6_ns_target_address,
-        )
-
     def add_entry(self, ipv6_address, mac_address):
         """ Add / refresh entry in cache """
 
@@ -123,6 +115,17 @@ class ICMPv6NdCache:
             )
             return nd_entry.mac_address
 
-        else:
-            self.logger.debug(f"Unable to find entry for {ipv6_address}, sending ICMPv6 Neighbor Solicitation message")
-            self.__send_icmpv6_neighbor_solicitation(ipv6_address)
+        self.logger.debug(f"Unable to find entry for {ipv6_address}, sending ICMPv6 Neighbor Solicitation message")
+        self.__send_icmpv6_neighbor_solicitation(ipv6_address)
+        return None
+
+    @staticmethod
+    def __send_icmpv6_neighbor_solicitation(icmpv6_ns_target_address):
+        """ Enqueue ICMPv6 Neighbor Solicitation packet with TX ring """
+        stack.packet_handler.phtx_icmpv6(
+            ipv6_src=IPv6Address(stack.packet_handler.stack_ipv6_unicast[0] if stack.packet_handler.stack_ipv6_unicast else "::"),
+            ipv6_dst=ipv6_solicited_node_multicast(icmpv6_ns_target_address),
+            ipv6_hop=255,
+            icmpv6_type=ps_icmpv6.ICMP6_NEIGHBOR_SOLICITATION,
+            icmpv6_ns_target_address=icmpv6_ns_target_address,
+        )

@@ -51,20 +51,21 @@ from tcp_socket import TcpSocket
 class ClientTcpEcho:
     """ TCP Echo client support class """
 
-    def __init__(self, local_ipv4_address, remote_ipv4_address, local_port=0, remote_port=7, message_count=10):
+    def __init__(self, local_ip_address, remote_ip_address, local_port=0, remote_port=7, message_count=10):
         """ Class constructor """
 
-        threading.Thread(target=self.__thread_client, args=(local_ipv4_address, local_port, remote_ipv4_address, remote_port, message_count)).start()
+        threading.Thread(target=self.__thread_client, args=(local_ip_address, local_port, remote_ip_address, remote_port, message_count)).start()
 
-    def __thread_client(self, local_ipv4_address, local_port, remote_ipv4_address, remote_port, message_count):
+    @staticmethod
+    def __thread_client(local_ip_address, local_port, remote_ip_address, remote_port, message_count):
         socket = TcpSocket()
-        socket.bind(local_ipv4_address, 0)
+        socket.bind(local_ip_address, local_port)
 
-        print(f"Client TCP Echo: opening connection to {remote_ipv4_address}, port {remote_port}")
-        if socket.connect(remote_ipv4_address=remote_ipv4_address, remote_port=remote_port):
-            print(f"Client TCP Echo: Connection to {remote_ipv4_address}, port {remote_port} has been established")
+        print(f"Client TCP Echo: opening connection to {remote_ip_address}, port {remote_port}")
+        if socket.connect(remote_ip_address=remote_ip_address, remote_port=remote_port):
+            print(f"Client TCP Echo: Connection to {remote_ip_address}, port {remote_port} has been established")
         else:
-            print(f"Client TCP Echo: Connection to {remote_ipv4_address}, port {remote_port} failed")
+            print(f"Client TCP Echo: Connection to {remote_ip_address}, port {remote_port} failed")
             return
 
         i = 1
@@ -72,12 +73,12 @@ class ClientTcpEcho:
             message = bytes(str(datetime.now()) + "\n", "utf-8")
             # message = bytes("***START***" + "1234567890" * 1000 + "***STOP***", "utf-8")
             if socket.send(message):
-                print(f"Client TCP Echo: Sent data to {remote_ipv4_address}, port {remote_port} - {message}")
+                print(f"Client TCP Echo: Sent data to {remote_ip_address}, port {remote_port} - {message}")
                 time.sleep(1)
                 i += 1
             else:
-                print(f"Client TCP Echo: Peer {remote_ipv4_address}, port {remote_port} closed connection")
+                print(f"Client TCP Echo: Peer {remote_ip_address}, port {remote_port} closed connection")
                 break
 
         socket.close()
-        print(f"Client TCP Echo: Closed connection to {remote_ipv4_address}, port {remote_port}")
+        print(f"Client TCP Echo: Closed connection to {remote_ip_address}, port {remote_port}")

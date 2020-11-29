@@ -125,10 +125,12 @@ class StackTimer:
             # Cleanup expired methods
             self.tasks = [_ for _ in self.tasks if _.remaining_delay]
 
-    def register_method(self, method, args=[], kwargs={}, delay=1, delay_exp=False, repeat_count=-1, stop_condition=None):
+    def register_method(self, method, args=None, kwargs=None, delay=1, delay_exp=False, repeat_count=-1, stop_condition=None):
         """ Register method to be executed by timer """
 
-        self.tasks.append(StackTimerTask(method, args, kwargs, delay, delay_exp, repeat_count, stop_condition))
+        self.tasks.append(
+            StackTimerTask(method, [] if args is None else args, {} if kwargs is None else kwargs, delay, delay_exp, repeat_count, stop_condition)
+        )
 
     def register_timer(self, name, timeout):
         """ Register delay timer """

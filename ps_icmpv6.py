@@ -45,7 +45,6 @@ import struct
 from ipaddress import IPv6Address, IPv6Network
 
 import inet_cksum
-import stack
 from tracker import Tracker
 
 # Destination Unreachable message (1/[0,1,3,4])
@@ -265,79 +264,29 @@ from tracker import Tracker
 # +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 
 
-ICMPV6_UNREACHABLE = 1
-ICMPV6_UNREACHABLE_NOROUTE = 0
-ICMPV6_UNREACHABLE_PROHIBITED = 1
-ICMPV6_UNREACHABLE_ADDRESS = 2
-ICMPV6_UNREACHABLE_PORT = 4
-ICMPV6_ECHOREQUEST = 128
-ICMPV6_ECHOREPLY = 129
-ICMPV6_MLDV2_QUERY = 130
-ICMPV6_ROUTER_SOLICITATION = 133
-ICMPV6_ROUTER_ADVERTISEMENT = 134
-ICMPV6_NEIGHBOR_SOLICITATION = 135
-ICMPV6_NEIGHBOR_ADVERTISEMENT = 136
-ICMPV6_MULTICAST_LISTENER_REPORT_V2 = 143
+ICMP6_UNREACHABLE = 1
+ICMP6_UNREACHABLE_NOROUTE = 0
+ICMP6_UNREACHABLE_PROHIBITED = 1
+ICMP6_UNREACHABLE_ADDRESS = 2
+ICMP6_UNREACHABLE_PORT = 4
+ICMP6_ECHOREQUEST = 128
+ICMP6_ECHOREPLY = 129
+ICMP6_MLDV2_QUERY = 130
+ICMP6_ROUTER_SOLICITATION = 133
+ICMP6_ROUTER_ADVERTISEMENT = 134
+ICMP6_NEIGHBOR_SOLICITATION = 135
+ICMP6_NEIGHBOR_ADVERTISEMENT = 136
+ICMP6_MULTICAST_LISTENER_REPORT_V2 = 143
 
-ICMPV6_MART_MODE_IS_INCLUDE = 1
-ICMPV6_MART_MODE_IS_EXCLUDE = 2
-ICMPV6_MART_CHANGE_TO_INCLUDE = 3
-ICMPV6_MART_CHANGE_TO_EXCLUDE = 4
-ICMPV6_MART_ALLOW_NEW_SOURCES = 5
-ICMPV6_MART_BLOCK_OLD_SOURCES = 6
-
-
-class MulticastAddressRecord:
-    """ Multicast Address Record used by MLDv2 Report message """
-
-    def __init__(self, raw_record=None, record_type=None, multicast_address=None, source_address=[], aux_data=b""):
-        """ Class constuctor """
-
-        # Record parsing
-        if raw_record:
-            self.record_type = raw_record[0]
-            self.aux_data_len = raw_record[1]
-            self.number_of_sources = struct.unpack("!H", raw_record[2:4])[0]
-            self.multicast_address = IPv6Address(raw_record[4:8])
-            self.source_address = [IPv6Address(raw_record[8 + 16 * _ : 8 + 16 * (_ + 1)]) for _ in range(self.number_of_sources)]
-            self.aux_data = raw_record[8 + 16 * self.number_of_sources :]
-
-        # Record building
-        else:
-            self.record_type = record_type
-            self.aux_data_len = len(aux_data)
-            self.number_of_sources = len(source_address)
-            self.multicast_address = IPv6Address(multicast_address)
-            self.source_address = source_address
-            self.aux_data = aux_data
-
-    def __len__(self):
-        """ Length of raw record """
-
-        return len(self.raw_record)
-
-    def __hash__(self):
-        """ Hash of raw record """
-
-        return hash(self.raw_record)
-
-    def __eq__(self, other):
-        """ Compare two records """
-
-        return self.raw_record == other.raw_record
-
-    @property
-    def raw_record(self):
-        """ Get record in raw format """
-
-        return (
-            struct.pack("! BBH 16s", self.record_type, self.aux_data_len, self.number_of_sources, self.multicast_address.packed)
-            + b"".join([_.packed for _ in self.source_address])
-            + self.aux_data
-        )
+ICMP6_MART_MODE_IS_INCLUDE = 1
+ICMP6_MART_MODE_IS_EXCLUDE = 2
+ICMP6_MART_CHANGE_TO_INCLUDE = 3
+ICMP6_MART_CHANGE_TO_EXCLUDE = 4
+ICMP6_MART_ALLOW_NEW_SOURCES = 5
+ICMP6_MART_BLOCK_OLD_SOURCES = 6
 
 
-class ICMPv6Packet:
+class Icmp6Packet:
     """ ICMPv6 packet support class """
 
     protocol = "ICMPv6"
@@ -362,8 +311,8 @@ class ICMPv6Packet:
         icmpv6_na_flag_s=False,
         icmpv6_na_flag_o=False,
         icmpv6_na_target_address=None,
-        icmpv6_nd_options=[],
-        icmpv6_mlr2_multicast_address_record=[],
+        icmpv6_nd_options=None,
+        icmpv6_mlr2_multicast_address_record=None,
         echo_tracker=None,
     ):
         """ Class constructor """
@@ -383,29 +332,29 @@ class ICMPv6Packet:
 
             self.icmpv6_nd_options = []
 
-            if self.icmpv6_type == ICMPV6_UNREACHABLE and self.icmpv6_code in range(0, 7):
+            if self.icmpv6_type == ICMP6_UNREACHABLE and self.icmpv6_code in range(0, 7):
                 self.icmpv6_un_reserved = struct.unpack("!L", raw_packet[4:8])[0]
                 self.icmpv6_un_raw_data = raw_packet[8:]
                 return
 
-            if self.icmpv6_type == ICMPV6_ECHOREQUEST and self.icmpv6_code == 0:
+            if self.icmpv6_type == ICMP6_ECHOREQUEST and self.icmpv6_code == 0:
                 self.icmpv6_ec_id = struct.unpack("!H", raw_packet[4:6])[0]
                 self.icmpv6_ec_seq = struct.unpack("!H", raw_packet[6:8])[0]
                 self.icmpv6_ec_raw_data = raw_packet[8:]
                 return
 
-            if self.icmpv6_type == ICMPV6_ECHOREPLY and self.icmpv6_code == 0:
+            if self.icmpv6_type == ICMP6_ECHOREPLY and self.icmpv6_code == 0:
                 self.icmpv6_ec_id = struct.unpack("!H", raw_packet[4:6])[0]
                 self.icmpv6_ec_seqq = struct.unpack("!H", raw_packet[6:8])[0]
                 self.icmpv6_ec_raw_data = raw_packet[8:]
                 return
 
-            if self.icmpv6_type == ICMPV6_ROUTER_SOLICITATION and self.icmpv6_code == 0:
+            if self.icmpv6_type == ICMP6_ROUTER_SOLICITATION and self.icmpv6_code == 0:
                 self.icmpv6_rs_reserved = struct.unpack("!L", raw_packet[4:8])[0]
                 self.icmpv6_nd_options = self.__read_nd_options(raw_packet[12:])
                 return
 
-            if self.icmpv6_type == ICMPV6_ROUTER_ADVERTISEMENT and self.icmpv6_code == 0:
+            if self.icmpv6_type == ICMP6_ROUTER_ADVERTISEMENT and self.icmpv6_code == 0:
                 self.icmpv6_ra_hop = raw_packet[4]
                 self.icmpv6_ra_flag_m = bool(raw_packet[5] & 0b10000000)
                 self.icmpv6_ra_flag_o = bool(raw_packet[5] & 0b01000000)
@@ -416,13 +365,13 @@ class ICMPv6Packet:
                 self.icmpv6_nd_options = self.__read_nd_options(raw_packet[16:])
                 return
 
-            if self.icmpv6_type == ICMPV6_NEIGHBOR_SOLICITATION and self.icmpv6_code == 0:
+            if self.icmpv6_type == ICMP6_NEIGHBOR_SOLICITATION and self.icmpv6_code == 0:
                 self.icmpv6_ns_reserved = struct.unpack("!L", raw_packet[4:8])[0]
                 self.icmpv6_ns_target_address = IPv6Address(raw_packet[8:24])
                 self.icmpv6_nd_options = self.__read_nd_options(raw_packet[24:])
                 return
 
-            if self.icmpv6_type == ICMPV6_NEIGHBOR_ADVERTISEMENT and self.icmpv6_code == 0:
+            if self.icmpv6_type == ICMP6_NEIGHBOR_ADVERTISEMENT and self.icmpv6_code == 0:
                 self.icmpv6_na_flag_r = bool(raw_packet[4] & 0b10000000)
                 self.icmpv6_na_flag_s = bool(raw_packet[4] & 0b01000000)
                 self.icmpv6_na_flag_o = bool(raw_packet[4] & 0b00100000)
@@ -431,7 +380,7 @@ class ICMPv6Packet:
                 self.icmpv6_nd_options = self.__read_nd_options(raw_packet[24:])
                 return
 
-            if self.icmpv6_type == ICMPV6_MULTICAST_LISTENER_REPORT_V2:
+            if self.icmpv6_type == ICMP6_MULTICAST_LISTENER_REPORT_V2:
                 self.icmpv6_mlr2_reserved = struct.unpack("!H", raw_packet[4:6])[0]
                 self.icmpv6_mlr2_number_of_multicast_address_records = struct.unpack("!H", raw_packet[6:8])[0]
                 self.icmpv6_mlr2_multicast_address_record = []
@@ -439,7 +388,7 @@ class ICMPv6Packet:
                 for _ in range(self.icmpv6_mlr2_number_of_multicast_address_records):
                     record = MulticastAddressRecord(raw_records)
                     raw_records = raw_records[len(record) :]
-                    self.multicast_address_record.append(record)
+                    self.icmpv6_mlr2_multicast_address_record.append(record)
 
         # Packet building
         else:
@@ -449,30 +398,30 @@ class ICMPv6Packet:
             self.icmpv6_code = icmpv6_code
             self.icmpv6_cksum = 0
 
-            self.icmpv6_nd_options = icmpv6_nd_options
+            self.icmpv6_nd_options = [] if icmpv6_nd_options is None else icmpv6_nd_options
 
-            if self.icmpv6_type == ICMPV6_UNREACHABLE:
+            if self.icmpv6_type == ICMP6_UNREACHABLE:
                 self.icmpv6_un_reserved = 0
                 self.icmpv6_un_raw_data = icmpv6_un_raw_data[:520]
                 return
 
-            if self.icmpv6_type == ICMPV6_ECHOREQUEST and self.icmpv6_code == 0:
+            if self.icmpv6_type == ICMP6_ECHOREQUEST and self.icmpv6_code == 0:
                 self.icmpv6_ec_id = icmpv6_ec_id
                 self.icmpv6_ec_seq = icmpv6_ec_seq
                 self.icmpv6_ec_raw_data = icmpv6_ec_raw_data
                 return
 
-            if self.icmpv6_type == ICMPV6_ECHOREPLY and self.icmpv6_code == 0:
+            if self.icmpv6_type == ICMP6_ECHOREPLY and self.icmpv6_code == 0:
                 self.icmpv6_ec_id = icmpv6_ec_id
                 self.icmpv6_ec_seq = icmpv6_ec_seq
                 self.icmpv6_ec_raw_data = icmpv6_ec_raw_data
                 return
 
-            if self.icmpv6_type == ICMPV6_ROUTER_SOLICITATION:
+            if self.icmpv6_type == ICMP6_ROUTER_SOLICITATION:
                 self.icmpv6_rs_reserved = 0
                 return
 
-            if self.icmpv6_type == ICMPV6_ROUTER_ADVERTISEMENT:
+            if self.icmpv6_type == ICMP6_ROUTER_ADVERTISEMENT:
                 self.icmpv6_ra_hop = icmpv6_ra_hop
                 self.icmpv6_ra_flag_m = icmpv6_ra_flag_m
                 self.icmpv6_ra_flag_o = icmpv6_ra_flag_o
@@ -481,12 +430,12 @@ class ICMPv6Packet:
                 self.icmpv6_ra_retrans_timer = icmpv6_ra_retrans_timer
                 return
 
-            if self.icmpv6_type == ICMPV6_NEIGHBOR_SOLICITATION:
+            if self.icmpv6_type == ICMP6_NEIGHBOR_SOLICITATION:
                 self.icmpv6_ns_reserved = 0
                 self.icmpv6_ns_target_address = icmpv6_ns_target_address
                 return
 
-            if self.icmpv6_type == ICMPV6_NEIGHBOR_ADVERTISEMENT:
+            if self.icmpv6_type == ICMP6_NEIGHBOR_ADVERTISEMENT:
                 self.icmpv6_na_flag_r = icmpv6_na_flag_r
                 self.icmpv6_na_flag_s = icmpv6_na_flag_s
                 self.icmpv6_na_flag_o = icmpv6_na_flag_o
@@ -494,48 +443,48 @@ class ICMPv6Packet:
                 self.icmpv6_na_target_address = icmpv6_na_target_address
                 return
 
-            if self.icmpv6_type == ICMPV6_MULTICAST_LISTENER_REPORT_V2:
+            if self.icmpv6_type == ICMP6_MULTICAST_LISTENER_REPORT_V2:
                 self.icmpv6_mlr2_reserved = 0
-                self.icmpv6_mlr2_number_of_multicast_address_records = len(icmpv6_mlr2_multicast_address_record)
-                self.icmpv6_mlr2_multicast_address_record = icmpv6_mlr2_multicast_address_record
+                self.icmpv6_mlr2_multicast_address_record = [] if icmpv6_mlr2_multicast_address_record is None else icmpv6_mlr2_multicast_address_record
+                self.icmpv6_mlr2_number_of_multicast_address_records = len(self.icmpv6_mlr2_multicast_address_record)
 
     def __str__(self):
         """ Short packet log string """
 
         log = f"ICMPv6 type {self.icmpv6_type}, code {self.icmpv6_code}"
 
-        if self.icmpv6_type == ICMPV6_UNREACHABLE:
+        if self.icmpv6_type == ICMP6_UNREACHABLE:
             pass
 
-        if self.icmpv6_type == ICMPV6_ECHOREQUEST:
+        if self.icmpv6_type == ICMP6_ECHOREQUEST:
             log += f", id {self.icmpv6_ec_id}, seq {self.icmpv6_ec_seq}"
 
-        if self.icmpv6_type == ICMPV6_ECHOREPLY:
+        if self.icmpv6_type == ICMP6_ECHOREPLY:
             log += f", id {self.icmpv6_ec_id}, seq {self.icmpv6_ec_seq}"
 
-        if self.icmpv6_type == ICMPV6_ROUTER_SOLICITATION:
+        if self.icmpv6_type == ICMP6_ROUTER_SOLICITATION:
             for nd_option in self.icmpv6_nd_options:
                 log += ", " + str(nd_option)
 
-        if self.icmpv6_type == ICMPV6_ROUTER_ADVERTISEMENT:
+        if self.icmpv6_type == ICMP6_ROUTER_ADVERTISEMENT:
             log += f", hop {self.icmpv6_ra_hop}"
             log += f"flags {'M' if self.icmpv6_ra_flag_m else '-'}{'O' if self.icmpv6_ra_flag_o else '-'}"
             log += f"rlft {self.icmpv6_ra_router_lifetime}, reacht {self.icmpv6_ra_reachable_time}, retrt {self.icmpv6_ra_retrans_timer}"
             for nd_option in self.icmpv6_nd_options:
                 log += ", " + str(nd_option)
 
-        if self.icmpv6_type == ICMPV6_NEIGHBOR_SOLICITATION:
+        if self.icmpv6_type == ICMP6_NEIGHBOR_SOLICITATION:
             log += f", target {self.icmpv6_ns_target_address}"
             for nd_option in self.icmpv6_nd_options:
                 log += ", " + str(nd_option)
 
-        if self.icmpv6_type == ICMPV6_NEIGHBOR_ADVERTISEMENT:
+        if self.icmpv6_type == ICMP6_NEIGHBOR_ADVERTISEMENT:
             log += f", target {self.icmpv6_na_target_address}"
             log += f", flags {'R' if self.icmpv6_na_flag_r else '-'}{'S' if self.icmpv6_na_flag_s else '-'}{'O' if self.icmpv6_na_flag_o else '-'}"
             for nd_option in self.icmpv6_nd_options:
                 log += ", " + str(nd_option)
 
-        if self.icmpv6_type == ICMPV6_MULTICAST_LISTENER_REPORT_V2:
+        if self.icmpv6_type == ICMP6_MULTICAST_LISTENER_REPORT_V2:
             pass
 
         return log
@@ -549,26 +498,23 @@ class ICMPv6Packet:
     def raw_packet(self):
         """ Get packet in raw format """
 
-        if self.icmpv6_type == ICMPV6_UNREACHABLE:
-            return (
-                struct.pack("! BBH HH", self.icmpv6_type, self.icmpv6_code, self.icmpv6_cksum, self.icmv6_un_reserved, stack.mtu if self.code == 4 else 0)
-                + self.icmpv6_un_raw_data
-            )
+        if self.icmpv6_type == ICMP6_UNREACHABLE:
+            return struct.pack("! BBH L", self.icmpv6_type, self.icmpv6_code, self.icmpv6_cksum, self.icmpv6_un_reserved) + self.icmpv6_un_raw_data
 
-        if self.icmpv6_type == ICMPV6_ECHOREQUEST:
+        if self.icmpv6_type == ICMP6_ECHOREQUEST:
             return (
                 struct.pack("! BBH HH", self.icmpv6_type, self.icmpv6_code, self.icmpv6_cksum, self.icmpv6_ec_id, self.icmpv6_ec_seq) + self.icmpv6_ec_raw_data
             )
 
-        if self.icmpv6_type == ICMPV6_ECHOREPLY:
+        if self.icmpv6_type == ICMP6_ECHOREPLY:
             return (
                 struct.pack("! BBH HH", self.icmpv6_type, self.icmpv6_code, self.icmpv6_cksum, self.icmpv6_ec_id, self.icmpv6_ec_seq) + self.icmpv6_ec_raw_data
             )
 
-        if self.icmpv6_type == ICMPV6_ROUTER_SOLICITATION:
+        if self.icmpv6_type == ICMP6_ROUTER_SOLICITATION:
             return struct.pack("! BBH L", self.icmpv6_type, self.icmpv6_code, self.icmpv6_cksum, self.icmpv6_rs_reserved) + self.raw_nd_options
 
-        if self.icmpv6_type == ICMPV6_ROUTER_ADVERTISEMENT:
+        if self.icmpv6_type == ICMP6_ROUTER_ADVERTISEMENT:
             return (
                 struct.pack(
                     "! BBH BBH L L",
@@ -584,7 +530,7 @@ class ICMPv6Packet:
                 + self.raw_nd_options
             )
 
-        if self.icmpv6_type == ICMPV6_NEIGHBOR_SOLICITATION:
+        if self.icmpv6_type == ICMP6_NEIGHBOR_SOLICITATION:
             return (
                 struct.pack(
                     "! BBH L 16s",
@@ -597,7 +543,7 @@ class ICMPv6Packet:
                 + self.raw_nd_options
             )
 
-        if self.icmpv6_type == ICMPV6_NEIGHBOR_ADVERTISEMENT:
+        if self.icmpv6_type == ICMP6_NEIGHBOR_ADVERTISEMENT:
             return (
                 struct.pack(
                     "! BBH L 16s",
@@ -610,7 +556,7 @@ class ICMPv6Packet:
                 + self.raw_nd_options
             )
 
-        if self.icmpv6_type == ICMPV6_MULTICAST_LISTENER_REPORT_V2:
+        if self.icmpv6_type == ICMP6_MULTICAST_LISTENER_REPORT_V2:
             return (
                 struct.pack(
                     "! BBH HH",
@@ -622,6 +568,8 @@ class ICMPv6Packet:
                 )
                 + b"".join([_.raw_record for _ in self.icmpv6_mlr2_multicast_address_record])
             )
+
+        return None
 
     def get_raw_packet(self, ip_pseudo_header):
         """ Get packet in raw format ready to be processed by lower level protocol """
@@ -649,13 +597,14 @@ class ICMPv6Packet:
 
         return not bool(inet_cksum.compute_cksum(ip_pseudo_header + self.raw_packet))
 
-    def __read_nd_options(self, raw_nd_options):
+    @staticmethod
+    def __read_nd_options(raw_nd_options):
         """ Read options for Neighbor Discovery """
 
         opt_cls = {
-            ICMPV6_ND_OPT_SLLA: ICMPv6NdOptSLLA,
-            ICMPV6_ND_OPT_TLLA: ICMPv6NdOptTLLA,
-            ICMPV6_ND_OPT_PI: ICMPv6NdOptPI,
+            ICMP6_ND_OPT_SLLA: ICMPv6NdOptSLLA,
+            ICMP6_ND_OPT_TLLA: ICMPv6NdOptTLLA,
+            ICMP6_ND_OPT_PI: ICMPv6NdOptPI,
         }
 
         i = 0
@@ -672,29 +621,30 @@ class ICMPv6Packet:
         """ ICMPv6 ND option - Source Link Layer Address (1) """
 
         for option in self.icmpv6_nd_options:
-            if option.opt_code == ICMPV6_ND_OPT_SLLA:
+            if option.opt_code == ICMP6_ND_OPT_SLLA:
                 return option.opt_slla
+        return None
 
     @property
     def icmpv6_nd_opt_tlla(self):
         """ ICMPv6 ND option - Target Link Layer Address (2) """
 
         for option in self.icmpv6_nd_options:
-            if option.opt_code == ICMPV6_ND_OPT_TLLA:
+            if option.opt_code == ICMP6_ND_OPT_TLLA:
                 return option.opt_tlla
+        return None
 
     @property
     def icmpv6_nd_opt_pi(self):
         """ ICMPv6 ND option - Prefix Info (3) - Returns list of prefixes that can be used for address autoconfiguration"""
 
-        return [_.opt_prefix for _ in self.icmpv6_nd_options if _.opt_code == ICMPV6_ND_OPT_PI and _.opt_flag_a and _.opt_prefix.prefixlen == 64]
+        return [_.opt_prefix for _ in self.icmpv6_nd_options if _.opt_code == ICMP6_ND_OPT_PI and _.opt_flag_a and _.opt_prefix.prefixlen == 64]
 
 
-"""
+#
+#   ICMPv6 Neighbor Discovery options
+#
 
-    ICMPv6 Neighbor Discovery options
-
-"""
 
 # ICMPv6 ND option - Source Link Layer Address (1)
 
@@ -704,8 +654,8 @@ class ICMPv6Packet:
 # >                           MAC Address                         |
 # +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 
-ICMPV6_ND_OPT_SLLA = 1
-ICMPV6_ND_OPT_SLLA_LEN = 8
+ICMP6_ND_OPT_SLLA = 1
+ICMP6_ND_OPT_SLLA_LEN = 8
 
 
 class ICMPv6NdOptSLLA:
@@ -717,8 +667,8 @@ class ICMPv6NdOptSLLA:
             self.opt_len = raw_option[1] << 3
             self.opt_slla = ":".join([f"{_:0>2x}" for _ in raw_option[2:8]])
         else:
-            self.opt_code = ICMPV6_ND_OPT_SLLA
-            self.opt_len = ICMPV6_ND_OPT_SLLA_LEN
+            self.opt_code = ICMP6_ND_OPT_SLLA
+            self.opt_len = ICMP6_ND_OPT_SLLA_LEN
             self.opt_slla = opt_slla
 
     @property
@@ -737,8 +687,8 @@ class ICMPv6NdOptSLLA:
 # >                           MAC Address                         |
 # +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 
-ICMPV6_ND_OPT_TLLA = 2
-ICMPV6_ND_OPT_TLLA_LEN = 8
+ICMP6_ND_OPT_TLLA = 2
+ICMP6_ND_OPT_TLLA_LEN = 8
 
 
 class ICMPv6NdOptTLLA:
@@ -750,8 +700,8 @@ class ICMPv6NdOptTLLA:
             self.opt_len = raw_option[1] << 3
             self.opt_tlla = ":".join([f"{_:0>2x}" for _ in raw_option[2:8]])
         else:
-            self.opt_code = ICMPV6_ND_OPT_TLLA
-            self.opt_len = ICMPV6_ND_OPT_TLLA_LEN
+            self.opt_code = ICMP6_ND_OPT_TLLA
+            self.opt_len = ICMP6_ND_OPT_TLLA_LEN
             self.opt_tlla = opt_tlla
 
     @property
@@ -782,8 +732,8 @@ class ICMPv6NdOptTLLA:
 # |                                                               |
 # +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 
-ICMPV6_ND_OPT_PI = 3
-ICMPV6_ND_OPT_PI_LEN = 32
+ICMP6_ND_OPT_PI = 3
+ICMP6_ND_OPT_PI_LEN = 32
 
 
 class ICMPv6NdOptPI:
@@ -811,8 +761,8 @@ class ICMPv6NdOptPI:
             self.opt_reserved_2 = struct.unpack("!L", raw_option[12:16])[0]
             self.opt_prefix = IPv6Network((raw_option[16:32], raw_option[2]))
         else:
-            self.opt_code = ICMPV6_ND_OPT_PI
-            self.opt_len = ICMPV6_ND_OPT_PI_LEN
+            self.opt_code = ICMP6_ND_OPT_PI
+            self.opt_len = ICMP6_ND_OPT_PI_LEN
             self.opt_flag_l = opt_flag_l
             self.opt_flag_a = opt_flag_a
             self.opt_flag_r = opt_flag_r
@@ -857,3 +807,58 @@ class ICMPv6NdOptUnk:
 
     def __str__(self):
         return f"unk-{self.opt_code}-{self.opt_len}"
+
+
+#
+#   ICMPv6 Multicast support classes
+#
+
+
+class MulticastAddressRecord:
+    """ Multicast Address Record used by MLDv2 Report message """
+
+    def __init__(self, raw_record=None, record_type=None, multicast_address=None, source_address=None, aux_data=b""):
+        """ Class constuctor """
+
+        # Record parsing
+        if raw_record:
+            self.record_type = raw_record[0]
+            self.aux_data_len = raw_record[1]
+            self.number_of_sources = struct.unpack("!H", raw_record[2:4])[0]
+            self.multicast_address = IPv6Address(raw_record[4:8])
+            self.source_address = [IPv6Address(raw_record[8 + 16 * _ : 8 + 16 * (_ + 1)]) for _ in range(self.number_of_sources)]
+            self.aux_data = raw_record[8 + 16 * self.number_of_sources :]
+
+        # Record building
+        else:
+            self.record_type = record_type
+            self.aux_data_len = len(aux_data)
+            self.multicast_address = IPv6Address(multicast_address)
+            self.source_address = [] if source_address is None else source_address
+            self.number_of_sources = len(self.source_address)
+            self.aux_data = aux_data
+
+    def __len__(self):
+        """ Length of raw record """
+
+        return len(self.raw_record)
+
+    def __hash__(self):
+        """ Hash of raw record """
+
+        return hash(self.raw_record)
+
+    def __eq__(self, other):
+        """ Compare two records """
+
+        return self.raw_record == other.raw_record
+
+    @property
+    def raw_record(self):
+        """ Get record in raw format """
+
+        return (
+            struct.pack("! BBH 16s", self.record_type, self.aux_data_len, self.number_of_sources, self.multicast_address.packed)
+            + b"".join([_.packed for _ in self.source_address])
+            + self.aux_data
+        )

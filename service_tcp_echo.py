@@ -115,7 +115,8 @@ class ServiceTcpEcho:
 
             threading.Thread(target=self.__thread_connection, args=(new_socket,)).start()
 
-    def __thread_connection(self, socket):
+    @staticmethod
+    def __thread_connection(socket):
         """ Inbound connection handler """
 
         print(f"Service TCP Echo: Sending first message to {socket.remote_ip_address}, port {socket.remote_port}")

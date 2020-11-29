@@ -56,7 +56,7 @@ def phrx_icmpv6(self, ipv6_packet_rx, icmpv6_packet_rx):
         return
 
     # ICMPv6 Neighbor Solicitation packet
-    if icmpv6_packet_rx.icmpv6_type == ps_icmpv6.ICMPV6_NEIGHBOR_SOLICITATION and icmpv6_packet_rx.icmpv6_code == 0:
+    if icmpv6_packet_rx.icmpv6_type == ps_icmpv6.ICMP6_NEIGHBOR_SOLICITATION and icmpv6_packet_rx.icmpv6_code == 0:
 
         # Check if request is for one of stack's IPv6 unicast addresses
         if icmpv6_packet_rx.icmpv6_ns_target_address not in self.stack_ipv6_unicast:
@@ -83,18 +83,17 @@ def phrx_icmpv6(self, ipv6_packet_rx, icmpv6_packet_rx):
             ipv6_src=icmpv6_packet_rx.icmpv6_ns_target_address,
             ipv6_dst=ipv6_packet_rx.ipv6_src,
             ipv6_hop=255,
-            icmpv6_type=ps_icmpv6.ICMPV6_NEIGHBOR_ADVERTISEMENT,
-            icmpv6_na_flag_s=False if ipv6_packet_rx.ipv6_src.is_unspecified else True,
+            icmpv6_type=ps_icmpv6.ICMP6_NEIGHBOR_ADVERTISEMENT,
+            icmpv6_na_flag_s=not ipv6_packet_rx.ipv6_src.is_unspecified,
             icmpv6_na_flag_o=False,
             icmpv6_na_target_address=icmpv6_packet_rx.icmpv6_ns_target_address,
             icmpv6_nd_options=[ps_icmpv6.ICMPv6NdOptTLLA(opt_tlla=self.stack_mac_unicast[0])],
             echo_tracker=icmpv6_packet_rx.tracker,
         )
-
         return
 
     # ICMPv6 Neighbor Advertisement packet
-    if icmpv6_packet_rx.icmpv6_type == ps_icmpv6.ICMPV6_NEIGHBOR_ADVERTISEMENT and icmpv6_packet_rx.icmpv6_code == 0:
+    if icmpv6_packet_rx.icmpv6_type == ps_icmpv6.ICMP6_NEIGHBOR_ADVERTISEMENT and icmpv6_packet_rx.icmpv6_code == 0:
 
         # Sanity check on packet's hop limit field, this must be set to 255
         if ipv6_packet_rx.ipv6_hop != 255:
@@ -116,8 +115,10 @@ def phrx_icmpv6(self, ipv6_packet_rx, icmpv6_packet_rx):
             stack.icmpv6_nd_cache.add_entry(icmpv6_packet_rx.icmpv6_na_target_address, icmpv6_packet_rx.icmpv6_nd_opt_tlla)
             return
 
+        return
+
     # ICMPv6 Router Advertisement packet
-    if icmpv6_packet_rx.icmpv6_type == ps_icmpv6.ICMPV6_ROUTER_ADVERTISEMENT and icmpv6_packet_rx.icmpv6_code == 0:
+    if icmpv6_packet_rx.icmpv6_type == ps_icmpv6.ICMP6_ROUTER_ADVERTISEMENT and icmpv6_packet_rx.icmpv6_code == 0:
 
         # Sanity check on packet's hop limit field, this must be set to 255
         if ipv6_packet_rx.ipv6_hop != 255:
@@ -131,16 +132,17 @@ def phrx_icmpv6(self, ipv6_packet_rx, icmpv6_packet_rx):
         # Make note of prefixes that can be used for address autoconfiguration
         self.icmpv6_ra_prefixes = icmpv6_packet_rx.icmpv6_nd_opt_pi
         self.event_icmpv6_ra.release()
+        return
 
     # Respond to ICMPv6 Echo Request packet
-    if icmpv6_packet_rx.icmpv6_type == ps_icmpv6.ICMPV6_ECHOREQUEST and icmpv6_packet_rx.icmpv6_code == 0:
+    if icmpv6_packet_rx.icmpv6_type == ps_icmpv6.ICMP6_ECHOREQUEST and icmpv6_packet_rx.icmpv6_code == 0:
         self.logger.debug(f"Received ICMPv6 Echo Request packet from {ipv6_packet_rx.ipv6_src}, sending reply")
 
         self.phtx_icmpv6(
             ipv6_src=ipv6_packet_rx.ipv6_dst,
             ipv6_dst=ipv6_packet_rx.ipv6_src,
             ipv6_hop=255,
-            icmpv6_type=ps_icmpv6.ICMPV6_ECHOREPLY,
+            icmpv6_type=ps_icmpv6.ICMP6_ECHOREPLY,
             icmpv6_ec_id=icmpv6_packet_rx.icmpv6_ec_id,
             icmpv6_ec_seq=icmpv6_packet_rx.icmpv6_ec_seq,
             icmpv6_ec_raw_data=icmpv6_packet_rx.icmpv6_ec_raw_data,

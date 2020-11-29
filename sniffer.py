@@ -71,11 +71,11 @@ def main():
             print("-" * 160)
             continue
 
-        if ether_packet_rx.ether_type == ps_ether.ETHER_TYPE_IPV6:
-            ipv6_packet_rx = ps_ipv6.IPv6Packet(ether_packet_rx)
+        if ether_packet_rx.ether_type == ps_ether.ETHER_TYPE_IP6:
+            ipv6_packet_rx = ps_ipv6.Ip6Packet(ether_packet_rx)
 
-            if ipv6_packet_rx.ipv6_next == ps_ipv6.IPV6_NEXT_HEADER_ICMPV6:
-                icmpv6_packet_rx = ps_icmpv6.ICMPv6Packet(ipv6_packet_rx)
+            if ipv6_packet_rx.ipv6_next == ps_ipv6.IP6_NEXT_HEADER_ICMP6:
+                icmpv6_packet_rx = ps_icmpv6.Icmp6Packet(ipv6_packet_rx)
                 print("-" * 160)
                 print(ether_packet_rx)
                 print(ipv6_packet_rx)
@@ -88,11 +88,11 @@ def main():
             print(ipv6_packet_rx)
             continue
 
-        if ether_packet_rx.ether_type == ps_ether.ETHER_TYPE_IP:
-            ipv4_packet_rx = ps_ipv4.IPv4Packet(ether_packet_rx)
+        if ether_packet_rx.ether_type == ps_ether.ETHER_TYPE_IP6:
+            ipv4_packet_rx = ps_ipv4.Ip4Packet(ether_packet_rx)
 
-            if ipv4_packet_rx.ipv4_proto == ps_ipv4.IPV4_PROTO_ICMPv4:
-                icmpv4_packet_rx = ps_icmpv4.ICMPv4Packet(ipv4_packet_rx)
+            if ipv4_packet_rx.ipv4_proto == ps_ipv4.IP4_PROTO_ICMP4:
+                icmpv4_packet_rx = ps_icmpv4.Icmp4Packet(ipv4_packet_rx)
                 print("-" * 160)
                 print(ether_packet_rx)
                 print(ipv4_packet_rx)
@@ -100,7 +100,7 @@ def main():
                 print("-" * 160)
                 continue
 
-            if ipv4_packet_rx.ipv4_proto == ps_ipv4.IPV4_PROTO_UDP:
+            if ipv4_packet_rx.ipv4_proto == ps_ipv4.IP4_PROTO_UDP:
                 udp_packet_rx = ps_udp.UdpPacket(ipv4_packet_rx)
                 print("-" * 160)
                 print(ether_packet_rx)
@@ -109,7 +109,7 @@ def main():
                 print("-" * 160)
                 continue
 
-            if ipv4_packet_rx.ipv4_proto == ps_ipv4.IPV4_PROTO_TCP:
+            if ipv4_packet_rx.ipv4_proto == ps_ipv4.IP4_PROTO_TCP:
                 tcp_packet_rx = ps_tcp.TcpPacket(ipv4_packet_rx)
                 if 22 in {tcp_packet_rx.tcp_dport, tcp_packet_rx.tcp_sport}:
                     continue

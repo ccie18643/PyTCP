@@ -79,8 +79,9 @@ class UdpSocket:
         stack.udp_sockets[self.socket_id] = self
         self.logger.debug(f"{self.socket_id} - Socket bound to local address")
 
-    def send_to(self, packet):
-        """ Put data from UdpPacketMetadata structure into TX ring """
+    @staticmethod
+    def send_to(packet):
+        """ Put data from UdpMetadata structure into TX ring """
 
         stack.packet_handler.phtx_udp(
             ip_src=packet.local_ip_address,
@@ -95,6 +96,7 @@ class UdpSocket:
 
         if self.packet_rx_ready.acquire(timeout=timeout):
             return self.packet_rx.pop(0)
+        return None
 
     def close(self):
         """ Close socket """

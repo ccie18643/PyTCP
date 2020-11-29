@@ -47,6 +47,7 @@ from ipaddress import IPv4Address
 
 import ps_dhcp
 import udp_socket
+from udp_metadata import UdpMetadata
 
 
 class ClientUdpDhcp:
@@ -56,19 +57,20 @@ class ClientUdpDhcp:
         """ Class constructor """
 
         self.stack_mac_unicast = stack_mac_unicast
-        self.socket = udp_socket.UdpSocket(local_ipv4_address="0.0.0.0", local_port=68, remote_ipv4_address="0.0.0.0", remote_port=67)
+        self.socket = udp_socket.UdpSocket()
+        self.socket.bind(local_ip_address="0.0.0.0", local_port=68)
         threading.Thread(target=self.__client).start()
 
     def __send(self, dhcp_packet_tx):
         """ Send out DHCP packet """
 
         self.socket.send_to(
-            udp_socket.UdpMessage(
-                raw_data=dhcp_packet_tx.get_raw_packet(),
-                local_ipv4_address=IPv4Address("0.0.0.0"),
+            UdpMetadata(
+                local_ip_address=IPv4Address("0.0.0.0"),
                 local_port=68,
-                remote_ipv4_address=IPv4Address("255.255.255.255"),
+                remote_ip_address=IPv4Address("255.255.255.255"),
                 remote_port=67,
+                raw_data=dhcp_packet_tx.get_raw_packet(),
             )
         )
 

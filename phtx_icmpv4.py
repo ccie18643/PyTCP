@@ -55,7 +55,6 @@ def phtx_icmpv4(
     icmpv4_ec_seq=None,
     icmpv4_ec_raw_data=None,
     icmpv4_un_raw_data=None,
-    icmpv4_ipv4_packet_rx=None,
     echo_tracker=None,
 ):
     """ Handle outbound ICMPv4 packets """
@@ -64,7 +63,7 @@ def phtx_icmpv4(
     if not stack.ipv4_support:
         return
 
-    icmpv4_packet_tx = ps_icmpv4.ICMPv4Packet(
+    icmpv4_packet_tx = ps_icmpv4.Icmp4Packet(
         icmpv4_type=icmpv4_type,
         icmpv4_code=icmpv4_code,
         icmpv4_ec_id=icmpv4_ec_id,

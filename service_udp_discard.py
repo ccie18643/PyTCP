@@ -54,7 +54,8 @@ class ServiceUdpDiscard:
 
         threading.Thread(target=self.__thread_service, args=(local_ip_address, local_port)).start()
 
-    def __thread_service(self, local_ip_address, local_port):
+    @staticmethod
+    def __thread_service(local_ip_address, local_port):
         """ Service initialization and rx/tx loop """
 
         socket = udp_socket.UdpSocket()

@@ -89,7 +89,7 @@ class TcpPacket:
         tcp_flag_fin=False,
         tcp_win=0,
         tcp_urp=0,
-        tcp_options=[],
+        tcp_options=None,
         raw_data=b"",
         tracker=None,
         echo_tracker=None,
@@ -176,7 +176,7 @@ class TcpPacket:
             self.tcp_cksum = 0
             self.tcp_urp = tcp_urp
 
-            self.tcp_options = tcp_options
+            self.tcp_options = [] if tcp_options is None else tcp_options
 
             self.raw_data = raw_data
 

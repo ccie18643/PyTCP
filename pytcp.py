@@ -123,22 +123,30 @@ def main():
         local_ip_address = "0.0.0.0"
 
     # Initialize UDP test services
-    stack.service_udp_echo and ServiceUdpEcho(local_ip_address=local_ip_address)
-    stack.service_udp_discard and ServiceUdpDiscard(local_ip_address=local_ip_address)
-    stack.service_udp_daytime and ServiceUdpDaytime(local_ip_address=local_ip_address)
+    if stack.service_udp_echo:
+        ServiceUdpEcho(local_ip_address=local_ip_address)
+    if stack.service_udp_discard:
+        ServiceUdpDiscard(local_ip_address=local_ip_address)
+    if stack.service_udp_daytime:
+        ServiceUdpDaytime(local_ip_address=local_ip_address)
 
     # Initialize TCP test services
-    stack.service_tcp_echo and ServiceTcpEcho(local_ip_address=local_ip_address)
-    stack.service_tcp_discard and ServiceTcpDiscard(local_ip_address=local_ip_address)
-    stack.service_tcp_daytime and ServiceTcpDaytime(local_ip_address=local_ip_address, message_count=-1, message_delay=1, message_size=1000)
+    if stack.service_tcp_echo:
+        ServiceTcpEcho(local_ip_address=local_ip_address)
+    if stack.service_tcp_discard:
+        ServiceTcpDiscard(local_ip_address=local_ip_address)
+    if stack.service_tcp_daytime:
+        ServiceTcpDaytime(local_ip_address=local_ip_address, message_count=-1, message_delay=1, message_size=1000)
 
     # Initialize TCP test clients
-    stack.client_tcp_echo and ClientTcpEcho(local_ipv4_address="192.168.9.7", remote_ipv4_address="192.168.9.102", remote_port=7, message_count=10)
-    # stack.client_tcp_echo andClientTcpEcho(local_ipv4_address="192.168.9.7", remote_ipv4_address="1.1.1.1", remote_port=7)
-    # stack.client_tcp_echo andClientTcpEcho(local_ipv4_address="192.168.9.7", remote_ipv4_address="192.168.9.9", remote_port=7)
+    if stack.client_tcp_echo:
+        ClientTcpEcho(local_ip_address="192.168.9.7", remote_ip_address="192.168.9.102", remote_port=7, message_count=10)
+        # stack.client_tcp_echo andClientTcpEcho(local_ip_address="192.168.9.7", remote_ip_address="1.1.1.1", remote_port=7)
+        # stack.client_tcp_echo andClientTcpEcho(local_ip_address="192.168.9.7", remote_ip_address="192.168.9.9", remote_port=7)
 
     # Initialize ICMPv4 test clients
-    stack.client_icmpv4_echo and ClientICMPv4Echo(local_ipv4_address="192.168.9.7", remote_ipv4_address="8.8.8.8")
+    if stack.client_icmpv4_echo:
+        ClientICMPv4Echo(local_ipv4_address="192.168.9.7", remote_ipv4_address="8.8.8.8")
 
     while True:
         time.sleep(1)

@@ -52,12 +52,13 @@ import stack
 class ClientICMPv4Echo:
     """ ICMPv4 Echo client support class """
 
-    def __init__(self, local_ipv4_address, remote_ipv4_address, local_port=0, remote_port=7, message_count=None):
+    def __init__(self, local_ipv4_address, remote_ipv4_address, message_count=None):
         """ Class constructor """
 
         threading.Thread(target=self.__thread_client, args=(local_ipv4_address, remote_ipv4_address, message_count)).start()
 
-    def __thread_client(self, local_ipv4_address, remote_ipv4_address, message_count):
+    @staticmethod
+    def __thread_client(local_ipv4_address, remote_ipv4_address, message_count):
 
         icmpv4_id = random.randint(0, 65535)
 
