@@ -44,10 +44,10 @@
 from ipaddress import IPv4Address
 
 import ps_ether
-import ps_ipv4
-import ps_ipv6
+import ps_ip4
+import ps_ip6
 import stack
-from ip_helper import ipv6_multicast_mac
+from ip_helper import ip6_multicast_mac
 
 
 def phtx_ether(self, child_packet, ether_src="00:00:00:00:00:00", ether_dst="00:00:00:00:00:00"):
@@ -72,79 +72,79 @@ def phtx_ether(self, child_packet, ether_src="00:00:00:00:00:00", ether_dst="00:
 
     # Check if we can obtain destination MAC based on IPv6 header data
     if ether_packet_tx.ether_type == ps_ether.ETHER_TYPE_IP6:
-        ipv6_packet_tx = ps_ipv6.Ip6Packet(ether_packet_tx)
+        ip6_packet_tx = ps_ip6.Ip6Packet(ether_packet_tx)
 
         # Send packet out if its destined to multicast IPv6 address
-        if ipv6_packet_tx.ipv6_dst.is_multicast:
-            ether_packet_tx.ether_dst = ipv6_multicast_mac(ipv6_packet_tx.ipv6_dst)
-            self.logger.debug(f"{ether_packet_tx.tracker} - Resolved destiantion IPv6 {ipv6_packet_tx.ipv6_dst} to MAC {ether_packet_tx.ether_dst}")
+        if ip6_packet_tx.ip6_dst.is_multicast:
+            ether_packet_tx.ether_dst = ip6_multicast_mac(ip6_packet_tx.ip6_dst)
+            self.logger.debug(f"{ether_packet_tx.tracker} - Resolved destiantion IPv6 {ip6_packet_tx.ip6_dst} to MAC {ether_packet_tx.ether_dst}")
             __send_out_packet()
             return
 
         # Send out packet if is destined to external network (in relation to its source address) and we are able to obtain MAC of default gateway from ND cache
-        if not (ipv6_packet_tx.ipv6_src.is_link_local or ipv6_packet_tx.ipv6_dst.is_link_local):
-            for stack_ipv6_address in self.stack_ipv6_address:
-                if stack_ipv6_address.ip == ipv6_packet_tx.ipv6_src:
-                    if ipv6_packet_tx.ipv6_dst not in stack_ipv6_address.network:
-                        if stack_ipv6_address.gateway is None:
-                            self.logger.debug(f"{ether_packet_tx.tracker} - No default gateway set for {stack_ipv6_address} source address, droping packet...")
+        if not (ip6_packet_tx.ip6_src.is_link_local or ip6_packet_tx.ip6_dst.is_link_local):
+            for stack_ip6_address in self.stack_ip6_address:
+                if stack_ip6_address.ip == ip6_packet_tx.ip6_src:
+                    if ip6_packet_tx.ip6_dst not in stack_ip6_address.network:
+                        if stack_ip6_address.gateway is None:
+                            self.logger.debug(f"{ether_packet_tx.tracker} - No default gateway set for {stack_ip6_address} source address, droping packet...")
                             return
-                        if mac_address := stack.icmpv6_nd_cache.find_entry(stack_ipv6_address.gateway):
+                        if mac_address := stack.icmp6_nd_cache.find_entry(stack_ip6_address.gateway):
                             ether_packet_tx.ether_dst = mac_address
                             self.logger.debug(
-                                f"{ether_packet_tx.tracker} - Resolved destiantion IPv6 {ipv6_packet_tx.ipv6_dst}"
+                                f"{ether_packet_tx.tracker} - Resolved destiantion IPv6 {ip6_packet_tx.ip6_dst}"
                                 + f" to Default Gateway MAC {ether_packet_tx.ether_dst}"
                             )
                             __send_out_packet()
                             return
 
         # Send out packet if we are able to obtain destinaton MAC from ICMPv6 ND cache
-        if mac_address := stack.icmpv6_nd_cache.find_entry(ipv6_packet_tx.ipv6_dst):
+        if mac_address := stack.icmp6_nd_cache.find_entry(ip6_packet_tx.ip6_dst):
             ether_packet_tx.ether_dst = mac_address
-            self.logger.debug(f"{ether_packet_tx.tracker} - Resolved destiantion IPv6 {ipv6_packet_tx.ipv6_dst} to MAC {ether_packet_tx.ether_dst}")
+            self.logger.debug(f"{ether_packet_tx.tracker} - Resolved destiantion IPv6 {ip6_packet_tx.ip6_dst} to MAC {ether_packet_tx.ether_dst}")
             __send_out_packet()
             return
 
     # Check if we can obtain destination MAC based on IPv4 header data
     if ether_packet_tx.ether_type == ps_ether.ETHER_TYPE_IP4:
-        ipv4_packet_tx = ps_ipv4.Ip4Packet(ether_packet_tx)
+        ip4_packet_tx = ps_ip4.Ip4Packet(ether_packet_tx)
 
         # Send out packet if its destinied to limited broadcast addresses
-        if ipv4_packet_tx.ipv4_dst == IPv4Address("255.255.255.255"):
+        if ip4_packet_tx.ip4_dst == IPv4Address("255.255.255.255"):
             ether_packet_tx.ether_dst = "ff:ff:ff:ff:ff:ff"
-            self.logger.debug(f"{ether_packet_tx.tracker} - Resolved destiantion IPv4 {ipv4_packet_tx.ipv4_dst} to MAC {ether_packet_tx.ether_dst}")
+            self.logger.debug(f"{ether_packet_tx.tracker} - Resolved destiantion IPv4 {ip4_packet_tx.ip4_dst} to MAC {ether_packet_tx.ether_dst}")
             __send_out_packet()
             return
 
         # Send out packet if its destinied to directed broadcast or network addresses (in relation to its source address)
-        for stack_ipv4_address in self.stack_ipv4_address:
-            if stack_ipv4_address.ip == ipv4_packet_tx.ipv4_src:
-                if ipv4_packet_tx.ipv4_dst in {stack_ipv4_address.network[0], stack_ipv4_address.network[-1]}:
+        for stack_ip4_address in self.stack_ip4_address:
+            if stack_ip4_address.ip == ip4_packet_tx.ip4_src:
+                if ip4_packet_tx.ip4_dst in {stack_ip4_address.network[0], stack_ip4_address.network[-1]}:
                     ether_packet_tx.ether_dst = "ff:ff:ff:ff:ff:ff"
-                    self.logger.debug(f"{ether_packet_tx.tracker} - Resolved destiantion IPv4 {ipv4_packet_tx.ipv4_dst} to MAC {ether_packet_tx.ether_dst}")
+                    self.logger.debug(f"{ether_packet_tx.tracker} - Resolved destiantion IPv4 {ip4_packet_tx.ip4_dst} to MAC {ether_packet_tx.ether_dst}")
                     __send_out_packet()
                     return
 
         # Send out packet if is destined to external network (in relation to its source address) and we are able to obtain MAC of default gateway from ARP cache
-        for stack_ipv4_address in self.stack_ipv4_address:
-            if stack_ipv4_address.ip == ipv4_packet_tx.ipv4_src:
-                if ipv4_packet_tx.ipv4_dst not in stack_ipv4_address.network:
-                    if stack_ipv4_address.gateway is None:
-                        self.logger.debug(f"{ether_packet_tx.tracker} - No default gateway set for {stack_ipv4_address} source address, droping packet...")
+        for stack_ip4_address in self.stack_ip4_address:
+            if stack_ip4_address.ip == ip4_packet_tx.ip4_src:
+                if ip4_packet_tx.ip4_dst not in stack_ip4_address.network:
+                    if stack_ip4_address.gateway is None:
+                        self.logger.debug(f"{ether_packet_tx.tracker} - No default gateway set for {stack_ip4_address} source address, droping packet...")
                         return
-                    if mac_address := stack.arp_cache.find_entry(stack_ipv4_address.gateway):
+                    if mac_address := stack.arp_cache.find_entry(stack_ip4_address.gateway):
                         ether_packet_tx.ether_dst = mac_address
                         self.logger.debug(
-                            f"{ether_packet_tx.tracker} - Resolved destiantion IPv4 {ipv4_packet_tx.ipv4_dst}"
+                            f"{ether_packet_tx.tracker} - Resolved destiantion IPv4 {ip4_packet_tx.ip4_dst}"
                             + f" to Default Gateway MAC {ether_packet_tx.ether_dst}"
                         )
                         __send_out_packet()
                         return
 
         # Send out packet if we are able to obtain destinaton MAC from ARP cache
-        if mac_address := stack.arp_cache.find_entry(ipv4_packet_tx.ipv4_dst):
+        if mac_address := stack.arp_cache.find_entry(ip4_packet_tx.ip4_dst):
             ether_packet_tx.ether_dst = mac_address
-            self.logger.debug(f"{ether_packet_tx.tracker} - Resolved destiantion IPv4 {ipv4_packet_tx.ipv4_dst} to MAC {ether_packet_tx.ether_dst}")
+            self.logger.debug(f"{ether_packet_tx.tracker} - Resolved destiantion IPv4 {ip4_packet_tx.ip4_dst} to MAC {ether_packet_tx.ether_dst}")
             __send_out_packet()
             return
 

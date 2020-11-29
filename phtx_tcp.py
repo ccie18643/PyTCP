@@ -76,11 +76,11 @@ def phtx_tcp(
     """ Handle outbound TCP packets """
 
     # Check if IPv4 protocol support is enabled, if not then silently drop the IPv4 packet
-    if not stack.ipv4_support and ip_dst.version == 4:
+    if not stack.ip4_support and ip_dst.version == 4:
         return
 
     # Check if IPv6 protocol support is enabled, if not then silently drop the IPv6 packet
-    if not stack.ipv6_support and ip_dst.version == 6:
+    if not stack.ip6_support and ip_dst.version == 6:
         return
 
     tcp_options = []
@@ -126,7 +126,7 @@ def phtx_tcp(
     assert type(ip_dst) in {IPv4Address, IPv6Address}
 
     if ip_src.version == 6 and ip_dst.version == 6:
-        self.phtx_ipv6(ipv6_src=ip_src, ipv6_dst=ip_dst, child_packet=tcp_packet_tx)
+        self.phtx_ip6(ip6_src=ip_src, ip6_dst=ip_dst, child_packet=tcp_packet_tx)
 
     if ip_src.version == 4 and ip_dst.version == 4:
-        self.phtx_ipv4(ipv4_src=ip_src, ipv4_dst=ip_dst, child_packet=tcp_packet_tx)
+        self.phtx_ip4(ip4_src=ip_src, ip4_dst=ip_dst, child_packet=tcp_packet_tx)

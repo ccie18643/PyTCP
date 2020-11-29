@@ -58,8 +58,8 @@ def phrx_tcp(self, ip_packet_rx, tcp_packet_rx):
         return
 
     # Set universal names for src and dst IP addresses whether packet was delivered by IPv6 or IPv4 protocol
-    ip_packet_rx.ip_dst = ip_packet_rx.ipv6_dst if ip_packet_rx.protocol == "IPv6" else ip_packet_rx.ipv4_dst
-    ip_packet_rx.ip_src = ip_packet_rx.ipv6_src if ip_packet_rx.protocol == "IPv6" else ip_packet_rx.ipv4_src
+    ip_packet_rx.ip_dst = ip_packet_rx.ip6_dst if ip_packet_rx.protocol == "IPv6" else ip_packet_rx.ip4_dst
+    ip_packet_rx.ip_src = ip_packet_rx.ip6_src if ip_packet_rx.protocol == "IPv6" else ip_packet_rx.ip4_src
 
     # Create TcpPacket object for further processing by TCP FSM
     packet = TcpMetadata(

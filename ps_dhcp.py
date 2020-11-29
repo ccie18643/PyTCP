@@ -157,7 +157,7 @@ class DhcpPacket:
         dhcp_dns=None,
         dhcp_host_name=None,
         dhcp_domain_name=None,
-        dhcp_req_ipv4_addr=None,
+        dhcp_req_ip4_addr=None,
         dhcp_addr_lease_time=None,
         dhcp_srv_id=None,
         dhcp_param_req_list=None,
@@ -251,8 +251,8 @@ class DhcpPacket:
             if dhcp_domain_name:
                 self.dhcp_options.append(DhcpOptDomainName(opt_domain_name=dhcp_domain_name))
 
-            if dhcp_req_ipv4_addr:
-                self.dhcp_options.append(DhcpOptReqIpAddr(opt_req_ipv4_addr=dhcp_req_ipv4_addr))
+            if dhcp_req_ip4_addr:
+                self.dhcp_options.append(DhcpOptReqIpAddr(opt_req_ip4_addr=dhcp_req_ip4_addr))
 
             if dhcp_addr_lease_time:
                 self.dhcp_options.append(DhcpOptAddrLeaseTime(opt_addr_lease_time=dhcp_addr_lease_time))
@@ -358,12 +358,12 @@ class DhcpPacket:
         return None
 
     @property
-    def dhcp_req_ipv4_addr(self):
+    def dhcp_req_ip4_addr(self):
         """ DHCP option - Requested IP Address (50) """
 
         for option in self.dhcp_options:
             if option.opt_code == DHCP_OPT_REQ_IP4_ADDR:
-                return option.opt_req_ipv4_addr
+                return option.opt_req_ip4_addr
         return None
 
     @property
@@ -603,22 +603,22 @@ DHCP_OPT_REQ_IP4_ADDR_LEN = 4
 class DhcpOptReqIpAddr:
     """ DHCP option - Requested IP Address (50) """
 
-    def __init__(self, raw_option=None, opt_req_ipv4_addr=None):
+    def __init__(self, raw_option=None, opt_req_ip4_addr=None):
         if raw_option:
             self.opt_code = raw_option[0]
             self.opt_len = raw_option[1]
-            self.opt_req_ipv4_addr = IPv4Address(raw_option[2:6])
+            self.opt_req_ip4_addr = IPv4Address(raw_option[2:6])
         else:
             self.opt_code = DHCP_OPT_REQ_IP4_ADDR
             self.opt_len = DHCP_OPT_REQ_IP4_ADDR_LEN
-            self.opt_req_ipv4_addr = IPv4Address(opt_req_ipv4_addr)
+            self.opt_req_ip4_addr = IPv4Address(opt_req_ip4_addr)
 
     @property
     def raw_option(self):
-        return struct.pack("! BB 4s", self.opt_code, self.opt_len, self.opt_req_ipv4_addr.packed)
+        return struct.pack("! BB 4s", self.opt_code, self.opt_len, self.opt_req_ip4_addr.packed)
 
     def __str__(self):
-        return f"req_ipv4_addr {self.opt_req_ipv4_addr}"
+        return f"req_ip4_addr {self.opt_req_ip4_addr}"
 
 
 # DHCP option - Address Lease Time (51)

@@ -45,8 +45,8 @@ from ipaddress import IPv4Address, IPv6Address
 
 import loguru
 
-import ps_icmpv4
-import ps_icmpv6
+import ps_icmp4
+import ps_icmp6
 import stack
 from udp_metadata import UdpMetadata
 
@@ -62,8 +62,8 @@ def phrx_udp(self, ip_packet_rx, udp_packet_rx):
         return
 
     # Set universal names for src and dst IP addresses whether packet was delivered by IPv6 or IPv4 protocol
-    ip_packet_rx.ip_dst = ip_packet_rx.ipv6_dst if ip_packet_rx.protocol == "IPv6" else ip_packet_rx.ipv4_dst
-    ip_packet_rx.ip_src = ip_packet_rx.ipv6_src if ip_packet_rx.protocol == "IPv6" else ip_packet_rx.ipv4_src
+    ip_packet_rx.ip_dst = ip_packet_rx.ip6_dst if ip_packet_rx.protocol == "IPv6" else ip_packet_rx.ip4_dst
+    ip_packet_rx.ip_src = ip_packet_rx.ip6_src if ip_packet_rx.protocol == "IPv6" else ip_packet_rx.ip4_src
 
     # Create UdpMetadata object and try to find matching UDP socket
     packet = UdpMetadata(
@@ -93,22 +93,22 @@ def phrx_udp(self, ip_packet_rx, udp_packet_rx):
     self.logger.debug(f"Received UDP packet from {ip_packet_rx.ip_src} to closed port {udp_packet_rx.udp_dport}, sending ICMPv4 Port Unreachable")
 
     if ip_packet_rx.protocol == "IPv6":
-        self.phtx_icmpv6(
-            ipv6_src=ip_packet_rx.ipv6_dst,
-            ipv6_dst=ip_packet_rx.ipv6_src,
-            icmpv6_type=ps_icmpv6.ICMP6_UNREACHABLE,
-            icmpv6_code=ps_icmpv6.ICMP6_UNREACHABLE_PORT,
-            icmpv6_un_raw_data=ip_packet_rx.get_raw_packet(),
+        self.phtx_icmp6(
+            ip6_src=ip_packet_rx.ip6_dst,
+            ip6_dst=ip_packet_rx.ip6_src,
+            icmp6_type=ps_icmp6.ICMP6_UNREACHABLE,
+            icmp6_code=ps_icmp6.ICMP6_UNREACHABLE_PORT,
+            icmp6_un_raw_data=ip_packet_rx.get_raw_packet(),
             echo_tracker=udp_packet_rx.tracker,
         )
 
     if ip_packet_rx.protocol == "IPv4":
-        self.phtx_icmpv4(
-            ipv4_src=ip_packet_rx.ip_dst,
-            ipv4_dst=ip_packet_rx.ip_src,
-            icmpv4_type=ps_icmpv4.ICMP4_UNREACHABLE,
-            icmpv4_code=ps_icmpv4.ICMP4_UNREACHABLE_PORT,
-            icmpv4_un_raw_data=ip_packet_rx.get_raw_packet(),
+        self.phtx_icmp4(
+            ip4_src=ip_packet_rx.ip_dst,
+            ip4_dst=ip_packet_rx.ip_src,
+            icmp4_type=ps_icmp4.ICMP4_UNREACHABLE,
+            icmp4_code=ps_icmp4.ICMP4_UNREACHABLE_PORT,
+            icmp4_un_raw_data=ip_packet_rx.get_raw_packet(),
             echo_tracker=udp_packet_rx.tracker,
         )
 

@@ -54,8 +54,8 @@ import stack
 from arp_cache import ArpCache
 from client_icmp_echo import ClientIcmpEcho
 from client_tcp_echo import ClientTcpEcho
-from icmpv6_nd_cache import ICMPv6NdCache
-from ip_helper import ipv6_eui64
+from icmp6_nd_cache import ICMPv6NdCache
+from ip_helper import ip6_eui64
 from ph import PacketHandler
 from rx_ring import RxRing
 from service_tcp_daytime import ServiceTcpDaytime
@@ -114,11 +114,11 @@ def main():
     PacketHandler()
 
     # Set proper local IP address pattern for services depending on whch version of IP is enabled
-    if stack.ipv6_support and stack.ipv4_support:
+    if stack.ip6_support and stack.ip4_support:
         local_ip_address = "*"
-    elif stack.ipv6_support:
+    elif stack.ip6_support:
         local_ip_address = "::"
-    elif stack.ipv4_support:
+    elif stack.ip4_support:
         local_ip_address = "0.0.0.0"
 
     # Initialize UDP test services

@@ -37,56 +37,41 @@
 
 
 #
-# phtx_icmpv6.py - packet handler for outbound ICMPv6 packets
+# phtx_icmp4.py - packet handler for outbound ICMPv4 packets
 #
 
 
-import ps_icmpv6
+import ps_icmp4
 import stack
 
 
-def phtx_icmpv6(
+def phtx_icmp4(
     self,
-    ipv6_src,
-    ipv6_dst,
-    icmpv6_type,
-    icmpv6_code=0,
-    ipv6_hop=64,
-    icmpv6_un_raw_data=None,
-    icmpv6_ec_id=None,
-    icmpv6_ec_seq=None,
-    icmpv6_ec_raw_data=None,
-    icmpv6_ns_target_address=None,
-    icmpv6_na_flag_r=False,
-    icmpv6_na_flag_s=False,
-    icmpv6_na_flag_o=False,
-    icmpv6_na_target_address=None,
-    icmpv6_nd_options=None,
-    icmpv6_mlr2_multicast_address_record=None,
+    ip4_src,
+    ip4_dst,
+    icmp4_type,
+    icmp4_code=0,
+    icmp4_ec_id=None,
+    icmp4_ec_seq=None,
+    icmp4_ec_raw_data=None,
+    icmp4_un_raw_data=None,
     echo_tracker=None,
 ):
-    """ Handle outbound ICMPv6 packets """
+    """ Handle outbound ICMPv4 packets """
 
-    # Check if IPv6 protocol support is enabled, if not then silently drop the packet
-    if not stack.ipv6_support:
+    # Check if IPv4 protocol support is enabled, if not then silently drop the packet
+    if not stack.ip4_support:
         return
 
-    icmpv6_packet_tx = ps_icmpv6.Icmp6Packet(
-        icmpv6_type=icmpv6_type,
-        icmpv6_code=icmpv6_code,
-        icmpv6_un_raw_data=icmpv6_un_raw_data,
-        icmpv6_ec_id=icmpv6_ec_id,
-        icmpv6_ec_seq=icmpv6_ec_seq,
-        icmpv6_ec_raw_data=icmpv6_ec_raw_data,
-        icmpv6_ns_target_address=icmpv6_ns_target_address,
-        icmpv6_na_flag_r=icmpv6_na_flag_r,
-        icmpv6_na_flag_s=icmpv6_na_flag_s,
-        icmpv6_na_flag_o=icmpv6_na_flag_o,
-        icmpv6_na_target_address=icmpv6_na_target_address,
-        icmpv6_nd_options=[] if icmpv6_nd_options is None else icmpv6_nd_options,
-        icmpv6_mlr2_multicast_address_record=[] if icmpv6_mlr2_multicast_address_record is None else icmpv6_mlr2_multicast_address_record,
+    icmp4_packet_tx = ps_icmp4.Icmp4Packet(
+        icmp4_type=icmp4_type,
+        icmp4_code=icmp4_code,
+        icmp4_ec_id=icmp4_ec_id,
+        icmp4_ec_seq=icmp4_ec_seq,
+        icmp4_ec_raw_data=icmp4_ec_raw_data,
+        icmp4_un_raw_data=icmp4_un_raw_data,
         echo_tracker=echo_tracker,
     )
 
-    self.logger.opt(ansi=True).info(f"<magenta>{icmpv6_packet_tx.tracker}</magenta> - {icmpv6_packet_tx}")
-    self.phtx_ipv6(ipv6_src=ipv6_src, ipv6_dst=ipv6_dst, ipv6_hop=ipv6_hop, child_packet=icmpv6_packet_tx)
+    self.logger.opt(ansi=True).info(f"<magenta>{icmp4_packet_tx.tracker}</magenta> - {icmp4_packet_tx}")
+    self.phtx_ip4(ip4_src=ip4_src, ip4_dst=ip4_dst, child_packet=icmp4_packet_tx)

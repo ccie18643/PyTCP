@@ -50,9 +50,9 @@ import loguru
 
 import ps_arp
 import ps_dhcp
-import ps_icmpv6
+import ps_icmp6
 import stack
-from ip_helper import ipv6_eui64, ipv6_multicast_mac, ipv6_solicited_node_multicast
+from ip_helper import ip6_eui64, ip6_multicast_mac, ip6_solicited_node_multicast
 from udp_metadata import UdpMetadata
 from udp_socket import UdpSocket
 
@@ -62,18 +62,18 @@ class PacketHandler:
 
     from phrx_arp import phrx_arp
     from phrx_ether import phrx_ether
-    from phrx_icmpv4 import phrx_icmpv4
-    from phrx_icmpv6 import phrx_icmpv6
-    from phrx_ipv4 import phrx_ipv4
-    from phrx_ipv6 import phrx_ipv6
+    from phrx_icmp4 import phrx_icmp4
+    from phrx_icmp6 import phrx_icmp6
+    from phrx_ip4 import phrx_ip4
+    from phrx_ip6 import phrx_ip6
     from phrx_tcp import phrx_tcp
     from phrx_udp import phrx_udp
     from phtx_arp import phtx_arp
     from phtx_ether import phtx_ether
-    from phtx_icmpv4 import phtx_icmpv4
-    from phtx_icmpv6 import phtx_icmpv6
-    from phtx_ipv4 import phtx_ipv4
-    from phtx_ipv6 import phtx_ipv6
+    from phtx_icmp4 import phtx_icmp4
+    from phtx_icmp6 import phtx_icmp6
+    from phtx_ip4 import phtx_ip4
+    from phtx_ip6 import phtx_ip6
     from phtx_tcp import phtx_tcp
     from phtx_udp import phtx_udp
 
@@ -92,62 +92,62 @@ class PacketHandler:
         self.stack_mac_multicast = []
         self.stack_mac_broadcast = ["ff:ff:ff:ff:ff:ff"]
 
-        self.stack_ipv6_address = []
-        self.stack_ipv6_unicast = []
-        self.stack_ipv6_multicast = []
+        self.stack_ip6_address = []
+        self.stack_ip6_unicast = []
+        self.stack_ip6_multicast = []
 
-        self.stack_ipv4_address = []
-        self.stack_ipv4_unicast = []
-        self.stack_ipv4_multicast = []
-        self.stack_ipv4_broadcast = [IPv4Address("255.255.255.255")]
+        self.stack_ip4_address = []
+        self.stack_ip4_unicast = []
+        self.stack_ip4_multicast = []
+        self.stack_ip4_broadcast = [IPv4Address("255.255.255.255")]
 
         self.arp_probe_unicast_conflict = set()
 
         # Used for the ICMPv6 ND DAD process
-        self.ipv6_unicast_candidate = None
-        self.event_icmpv6_nd_dad = threading.Semaphore(0)
-        self.icmpv6_nd_dad_tlla = None
+        self.ip6_unicast_candidate = None
+        self.event_icmp6_nd_dad = threading.Semaphore(0)
+        self.icmp6_nd_dad_tlla = None
 
         # Used for the IcMPv6 ND RA address auto configuration
-        self.icmpv6_ra_prefixes = []
-        self.event_icmpv6_ra = threading.Semaphore(0)
+        self.icmp6_ra_prefixes = []
+        self.event_icmp6_ra = threading.Semaphore(0)
 
         # Used to keep IPv4 packet ID last value
-        self.ipv4_packet_id = 0
+        self.ip4_packet_id = 0
 
         # Start packed handler so we can receive packets from network
         threading.Thread(target=self.__thread_packet_handler).start()
         self.logger.debug("Started packet handler")
 
-        if stack.ipv6_support:
+        if stack.ip6_support:
             # Assign All IPv6 Nodes multicast address
-            self.assign_ipv6_multicast(IPv6Address("ff02::1"))
+            self.assign_ip6_multicast(IPv6Address("ff02::1"))
             # Create list of IPv6 unicast/multicast addresses stack should listen on
-            self.stack_ipv6_address_candidate = self.parse_stack_ipv6_address_candidate()
-            self.create_stack_ipv6_addressing()
+            self.stack_ip6_address_candidate = self.parse_stack_ip6_address_candidate()
+            self.create_stack_ip6_addressing()
 
-        if stack.ipv4_support:
+        if stack.ip4_support:
             # Create list of IPv4 unicast/multicast/broadcast addresses stack should listen on, use DHCP if enabled
-            if stack.ipv4_address_dhcp_config:
+            if stack.ip4_address_dhcp_config:
                 address, gateway = self.__dhcp_client()
                 if address:
-                    stack.ipv4_address_candidate.append((address, gateway))
-            self.stack_ipv4_address_candidate = self.parse_stack_ipv4_address_candidate()
-            self.create_stack_ipv4_addressing()
+                    stack.ip4_address_candidate.append((address, gateway))
+            self.stack_ip4_address_candidate = self.parse_stack_ip4_address_candidate()
+            self.create_stack_ip4_addressing()
 
         # Log all the addresses stack will listen on
         self.logger.info(f"Stack listening on unicast MAC addresses: {self.stack_mac_unicast}")
         self.logger.info(f"Stack listening on multicast MAC addresses: {list(set(self.stack_mac_multicast))}")
         self.logger.info(f"Stack listening on brodcast MAC addresses: {self.stack_mac_broadcast}")
 
-        if stack.ipv6_support:
-            self.logger.info(f"Stack listening on unicast IPv6 addresses: {[str(_) for _ in self.stack_ipv6_unicast]}")
-            self.logger.info(f"Stack listening on multicast IPv6 addresses: {list(set(str(_) for _ in self.stack_ipv6_multicast))}")
+        if stack.ip6_support:
+            self.logger.info(f"Stack listening on unicast IPv6 addresses: {[str(_) for _ in self.stack_ip6_unicast]}")
+            self.logger.info(f"Stack listening on multicast IPv6 addresses: {list(set(str(_) for _ in self.stack_ip6_multicast))}")
 
-        if stack.ipv4_support:
-            self.logger.info(f"Stack listening on unicast IPv4 addresses: {[str(_) for _ in self.stack_ipv4_unicast]}")
-            self.logger.info(f"Stack listening on multicast IPv4 addresses: {[str(_) for _ in self.stack_ipv4_multicast]}")
-            self.logger.info(f"Stack listening on brodcast IPv4 addresses: {[str(_) for _ in self.stack_ipv4_broadcast]}")
+        if stack.ip4_support:
+            self.logger.info(f"Stack listening on unicast IPv4 addresses: {[str(_) for _ in self.stack_ip4_unicast]}")
+            self.logger.info(f"Stack listening on multicast IPv4 addresses: {[str(_) for _ in self.stack_ip4_multicast]}")
+            self.logger.info(f"Stack listening on brodcast IPv4 addresses: {[str(_) for _ in self.stack_ip4_broadcast]}")
 
     def __thread_packet_handler(self):
         """ Thread picks up incoming packets from RX ring and process them """
@@ -155,27 +155,27 @@ class PacketHandler:
         while True:
             self.phrx_ether(stack.rx_ring.dequeue())
 
-    def perform_ipv6_nd_dad(self, ipv6_unicast_candidate):
+    def perform_ip6_nd_dad(self, ip6_unicast_candidate):
         """ Perform IPv6 ND Duplicate Address Detection, return True if passed """
 
-        self.logger.debug(f"ICMPv6 ND DAD - Starting process for {ipv6_unicast_candidate}")
-        self.assign_ipv6_multicast(ipv6_solicited_node_multicast(ipv6_unicast_candidate))
-        self.ipv6_unicast_candidate = ipv6_unicast_candidate
-        self.send_icmpv6_nd_dad_message(ipv6_unicast_candidate)
-        if event := self.event_icmpv6_nd_dad.acquire(timeout=1):
-            self.logger.warning(f"ICMPv6 ND DAD - Duplicate IPv6 address detected, {ipv6_unicast_candidate} advertised by {self.icmpv6_nd_dad_tlla}")
+        self.logger.debug(f"ICMPv6 ND DAD - Starting process for {ip6_unicast_candidate}")
+        self.assign_ip6_multicast(ip6_solicited_node_multicast(ip6_unicast_candidate))
+        self.ip6_unicast_candidate = ip6_unicast_candidate
+        self.send_icmp6_nd_dad_message(ip6_unicast_candidate)
+        if event := self.event_icmp6_nd_dad.acquire(timeout=1):
+            self.logger.warning(f"ICMPv6 ND DAD - Duplicate IPv6 address detected, {ip6_unicast_candidate} advertised by {self.icmp6_nd_dad_tlla}")
         else:
-            self.logger.debug(f"ICMPv6 ND DAD - No duplicate address detected for {ipv6_unicast_candidate}")
-        self.ipv6_unicast_candidate = None
-        self.remove_ipv6_multicast(ipv6_solicited_node_multicast(ipv6_unicast_candidate))
+            self.logger.debug(f"ICMPv6 ND DAD - No duplicate address detected for {ip6_unicast_candidate}")
+        self.ip6_unicast_candidate = None
+        self.remove_ip6_multicast(ip6_solicited_node_multicast(ip6_unicast_candidate))
         return not event
 
-    def parse_stack_ipv6_address_candidate(self):
+    def parse_stack_ip6_address_candidate(self):
         """ Parse IPv6 candidate addresses configured in stack.py module """
 
         address_candidate = []
 
-        for address, gateway in stack.ipv6_address_candidate:
+        for address, gateway in stack.ip6_address_candidate:
             self.logger.debug(f"Parsing ('{address}', '{gateway}') entry")
             try:
                 address = IPv6Interface(address)
@@ -206,53 +206,53 @@ class PacketHandler:
 
         return address_candidate
 
-    def create_stack_ipv6_addressing(self):
+    def create_stack_ip6_addressing(self):
         """ Create lists of IPv6 unicast and multicast addresses stack should listen on """
 
         def __():
-            if ipv6_address_candidate not in self.stack_ipv6_address and self.perform_ipv6_nd_dad(ipv6_address_candidate.ip):
-                self.stack_ipv6_address.append(ipv6_address_candidate)
-                self.assign_ipv6_unicast(ipv6_address_candidate.ip)
+            if ip6_address_candidate not in self.stack_ip6_address and self.perform_ip6_nd_dad(ip6_address_candidate.ip):
+                self.stack_ip6_address.append(ip6_address_candidate)
+                self.assign_ip6_unicast(ip6_address_candidate.ip)
 
         # Configure Link Local address(es) staticaly
-        for ipv6_address_candidate in list(self.stack_ipv6_address_candidate):
-            if ipv6_address_candidate.ip.is_link_local:
-                self.stack_ipv6_address_candidate.remove(ipv6_address_candidate)
+        for ip6_address_candidate in list(self.stack_ip6_address_candidate):
+            if ip6_address_candidate.ip.is_link_local:
+                self.stack_ip6_address_candidate.remove(ip6_address_candidate)
                 __()
 
         # Configure Link Local address automaticaly
-        if stack.ipv6_lla_autoconfig:
-            ipv6_address_candidate = ipv6_eui64(self.stack_mac_unicast[0])
-            ipv6_address_candidate.gateway = None
+        if stack.ip6_lla_autoconfig:
+            ip6_address_candidate = ip6_eui64(self.stack_mac_unicast[0])
+            ip6_address_candidate.gateway = None
             __()
 
         # If we don't have any link local address set disable IPv6 protocol operations
-        if not self.stack_ipv6_address:
+        if not self.stack_ip6_address:
             self.logger.warning("Unable to assign any IPv6 link local address, disabling IPv6 protocol")
-            stack.ipv6_support = False
+            stack.ip6_support = False
             return
 
         # Check if there are any statically configures GUA addresses
-        for ipv6_address_candidate in list(self.stack_ipv6_address_candidate):
-            self.stack_ipv6_address_candidate.remove(ipv6_address_candidate)
+        for ip6_address_candidate in list(self.stack_ip6_address_candidate):
+            self.stack_ip6_address_candidate.remove(ip6_address_candidate)
             __()
 
         # Send out IPv6 Router Solicitation message and wait for response in attempt to auto configure addresses based on ICMPv6 Router Advertisement
-        if stack.ipv6_gua_autoconfig:
-            self.send_icmpv6_nd_router_solicitation()
-            self.event_icmpv6_ra.acquire(timeout=1)
-            for prefix, gateway in list(self.icmpv6_ra_prefixes):
+        if stack.ip6_gua_autoconfig:
+            self.send_icmp6_nd_router_solicitation()
+            self.event_icmp6_ra.acquire(timeout=1)
+            for prefix, gateway in list(self.icmp6_ra_prefixes):
                 self.logger.debug(f"Attempting IPv6 address auto configuration for RA prefix {prefix}")
-                ipv6_address_candidate = ipv6_eui64(self.stack_mac_unicast[0], prefix)
-                ipv6_address_candidate.gateway = gateway
+                ip6_address_candidate = ip6_eui64(self.stack_mac_unicast[0], prefix)
+                ip6_address_candidate.gateway = gateway
                 __()
 
-    def parse_stack_ipv4_address_candidate(self):
+    def parse_stack_ip4_address_candidate(self):
         """ Parse IPv4 candidate addresses configured in stack.py module """
 
         address_candidate = []
 
-        for address, gateway in stack.ipv4_address_candidate:
+        for address, gateway in stack.ip4_address_candidate:
             self.logger.debug(f"Parsing ('{address}', '{gateway}') entry")
             try:
                 address = IPv4Interface(address)
@@ -288,49 +288,49 @@ class PacketHandler:
 
         return address_candidate
 
-    def create_stack_ipv4_addressing(self):
+    def create_stack_ip4_addressing(self):
         """ Create lists of IPv4 unicast, multicast and broadcast addresses stack should listen on """
 
         # Perform Duplicate Address Detection
         for _ in range(3):
-            for ipv4_unicast in [_.ip for _ in self.stack_ipv4_address_candidate]:
-                if ipv4_unicast not in self.arp_probe_unicast_conflict:
-                    self.send_arp_probe(ipv4_unicast)
-                    self.logger.debug(f"Sent out ARP Probe for {ipv4_unicast}")
+            for ip4_unicast in [_.ip for _ in self.stack_ip4_address_candidate]:
+                if ip4_unicast not in self.arp_probe_unicast_conflict:
+                    self.send_arp_probe(ip4_unicast)
+                    self.logger.debug(f"Sent out ARP Probe for {ip4_unicast}")
             time.sleep(random.uniform(1, 2))
 
-        for ipv4_unicast in self.arp_probe_unicast_conflict:
-            self.logger.warning(f"Unable to claim IPv4 address {ipv4_unicast}")
+        for ip4_unicast in self.arp_probe_unicast_conflict:
+            self.logger.warning(f"Unable to claim IPv4 address {ip4_unicast}")
 
         # Create list containing only IPv4 addresses that were confiremed free to claim
-        for ipv4_address in self.stack_ipv4_address_candidate:
-            if ipv4_address.ip not in self.arp_probe_unicast_conflict:
-                self.stack_ipv4_address.append(ipv4_address)
+        for ip4_address in self.stack_ip4_address_candidate:
+            if ip4_address.ip not in self.arp_probe_unicast_conflict:
+                self.stack_ip4_address.append(ip4_address)
 
         # Clear IPv4 address candidate list so the ARP Probe/Annoucement check is disabled
-        self.stack_ipv4_address_candidate = []
+        self.stack_ip4_address_candidate = []
 
         # If don't have any IPv4 address assigned disable IPv4 protocol operations
-        if not self.stack_ipv4_address:
+        if not self.stack_ip4_address:
             self.logger.warning("Unable to assign any IPv4 address, disabling IPv4 protocol")
-            stack.ipv4_support = False
+            stack.ip4_support = False
             return
 
         # Create list containing IP unicast adresses stack shuld listen to
-        for ipv4_address in self.stack_ipv4_address:
-            if ipv4_address.ip not in self.stack_ipv4_unicast:
-                self.stack_ipv4_unicast.append(ipv4_address.ip)
+        for ip4_address in self.stack_ip4_address:
+            if ip4_address.ip not in self.stack_ip4_unicast:
+                self.stack_ip4_unicast.append(ip4_address.ip)
 
-        for ipv4_unicast in self.stack_ipv4_unicast:
-            self.send_arp_announcement(ipv4_unicast)
-            self.logger.debug(f"Succesfully claimed IP address {ipv4_unicast}")
+        for ip4_unicast in self.stack_ip4_unicast:
+            self.send_arp_announcement(ip4_unicast)
+            self.logger.debug(f"Succesfully claimed IP address {ip4_unicast}")
 
         # Create list of all broadcast addresses stack should listen on
-        for ipv4_address in self.stack_ipv4_address:
-            if ipv4_address.network.broadcast_address not in self.stack_ipv4_broadcast:
-                self.stack_ipv4_broadcast.append(ipv4_address.network.broadcast_address)
+        for ip4_address in self.stack_ip4_address:
+            if ip4_address.network.broadcast_address not in self.stack_ip4_broadcast:
+                self.stack_ip4_broadcast.append(ip4_address.network.broadcast_address)
 
-    def send_arp_probe(self, ipv4_unicast):
+    def send_arp_probe(self, ip4_unicast):
         """ Send out ARP probe to detect possible IP conflict """
 
         self.phtx_arp(
@@ -340,11 +340,11 @@ class PacketHandler:
             arp_sha=self.stack_mac_unicast[0],
             arp_spa=IPv4Address("0.0.0.0"),
             arp_tha="00:00:00:00:00:00",
-            arp_tpa=ipv4_unicast,
+            arp_tpa=ip4_unicast,
         )
-        self.logger.debug(f"Sent out ARP probe for {ipv4_unicast}")
+        self.logger.debug(f"Sent out ARP probe for {ip4_unicast}")
 
-    def send_arp_announcement(self, ipv4_unicast):
+    def send_arp_announcement(self, ip4_unicast):
         """ Send out ARP announcement to claim IP address """
 
         self.phtx_arp(
@@ -352,13 +352,13 @@ class PacketHandler:
             ether_dst="ff:ff:ff:ff:ff:ff",
             arp_oper=ps_arp.ARP_OP_REQUEST,
             arp_sha=self.stack_mac_unicast[0],
-            arp_spa=ipv4_unicast,
+            arp_spa=ip4_unicast,
             arp_tha="00:00:00:00:00:00",
-            arp_tpa=ipv4_unicast,
+            arp_tpa=ip4_unicast,
         )
-        self.logger.debug(f"Sent out ARP Announcement for {ipv4_unicast}")
+        self.logger.debug(f"Sent out ARP Announcement for {ip4_unicast}")
 
-    def send_gratitous_arp(self, ipv4_unicast):
+    def send_gratitous_arp(self, ip4_unicast):
         """ Send out gratitous arp """
 
         self.phtx_arp(
@@ -366,86 +366,86 @@ class PacketHandler:
             ether_dst="ff:ff:ff:ff:ff:ff",
             arp_oper=ps_arp.ARP_OP_REPLY,
             arp_sha=self.stack_mac_unicast[0],
-            arp_spa=ipv4_unicast,
+            arp_spa=ip4_unicast,
             arp_tha="00:00:00:00:00:00",
-            arp_tpa=ipv4_unicast,
+            arp_tpa=ip4_unicast,
         )
-        self.logger.debug(f"Sent out Gratitous ARP for {ipv4_unicast}")
+        self.logger.debug(f"Sent out Gratitous ARP for {ip4_unicast}")
 
-    def send_icmpv6_multicast_listener_report(self):
+    def send_icmp6_multicast_listener_report(self):
         """ Send out ICMPv6 Multicast Listener Report for given list of addresses """
 
-        # Need to use set here to avoid re-using duplicate multicast entries from stack_ipv6_multicast list,
+        # Need to use set here to avoid re-using duplicate multicast entries from stack_ip6_multicast list,
         # also All Multicast Nodes address is not being advertised as this is not neccessary
-        if icmpv6_mlr2_multicast_address_record := {
-            ps_icmpv6.MulticastAddressRecord(record_type=ps_icmpv6.ICMP6_MART_CHANGE_TO_EXCLUDE, multicast_address=str(_))
-            for _ in self.stack_ipv6_multicast
+        if icmp6_mlr2_multicast_address_record := {
+            ps_icmp6.MulticastAddressRecord(record_type=ps_icmp6.ICMP6_MART_CHANGE_TO_EXCLUDE, multicast_address=str(_))
+            for _ in self.stack_ip6_multicast
             if _ not in {IPv6Address("ff02::1")}
         }:
-            self.phtx_icmpv6(
-                ipv6_src=self.stack_ipv6_unicast[0] if self.stack_ipv6_unicast else IPv6Address("::"),
-                ipv6_dst=IPv6Address("ff02::16"),
-                ipv6_hop=1,
-                icmpv6_type=ps_icmpv6.ICMP6_MULTICAST_LISTENER_REPORT_V2,
-                icmpv6_mlr2_multicast_address_record=icmpv6_mlr2_multicast_address_record,
+            self.phtx_icmp6(
+                ip6_src=self.stack_ip6_unicast[0] if self.stack_ip6_unicast else IPv6Address("::"),
+                ip6_dst=IPv6Address("ff02::16"),
+                ip6_hop=1,
+                icmp6_type=ps_icmp6.ICMP6_MULTICAST_LISTENER_REPORT_V2,
+                icmp6_mlr2_multicast_address_record=icmp6_mlr2_multicast_address_record,
             )
-            self.logger.debug(f"Sent out ICMPv6 Multicast Listener Report message for {[_.multicast_address for _ in icmpv6_mlr2_multicast_address_record]}")
+            self.logger.debug(f"Sent out ICMPv6 Multicast Listener Report message for {[_.multicast_address for _ in icmp6_mlr2_multicast_address_record]}")
 
-    def send_icmpv6_nd_dad_message(self, ipv6_unicast_candidate):
+    def send_icmp6_nd_dad_message(self, ip6_unicast_candidate):
         """ Send out ICMPv6 ND Duplicate Address Detection message """
 
-        self.phtx_icmpv6(
-            ipv6_src=IPv6Address("::"),
-            ipv6_dst=ipv6_solicited_node_multicast(ipv6_unicast_candidate),
-            ipv6_hop=255,
-            icmpv6_type=ps_icmpv6.ICMP6_NEIGHBOR_SOLICITATION,
-            icmpv6_ns_target_address=ipv6_unicast_candidate,
+        self.phtx_icmp6(
+            ip6_src=IPv6Address("::"),
+            ip6_dst=ip6_solicited_node_multicast(ip6_unicast_candidate),
+            ip6_hop=255,
+            icmp6_type=ps_icmp6.ICMP6_NEIGHBOR_SOLICITATION,
+            icmp6_ns_target_address=ip6_unicast_candidate,
         )
-        self.logger.debug(f"Sent out ICMPv6 ND DAD message for {ipv6_unicast_candidate}")
+        self.logger.debug(f"Sent out ICMPv6 ND DAD message for {ip6_unicast_candidate}")
 
-    def send_icmpv6_nd_router_solicitation(self):
+    def send_icmp6_nd_router_solicitation(self):
         """ Send out ICMPv6 ND Router Solicitation """
 
-        self.phtx_icmpv6(
-            ipv6_src=self.stack_ipv6_unicast[0],
-            ipv6_dst=IPv6Address("ff02::2"),
-            ipv6_hop=255,
-            icmpv6_type=ps_icmpv6.ICMP6_ROUTER_SOLICITATION,
-            icmpv6_nd_options=[ps_icmpv6.Icmp6NdOptSLLA(opt_slla=self.stack_mac_unicast[0])],
+        self.phtx_icmp6(
+            ip6_src=self.stack_ip6_unicast[0],
+            ip6_dst=IPv6Address("ff02::2"),
+            ip6_hop=255,
+            icmp6_type=ps_icmp6.ICMP6_ROUTER_SOLICITATION,
+            icmp6_nd_options=[ps_icmp6.Icmp6NdOptSLLA(opt_slla=self.stack_mac_unicast[0])],
         )
         self.logger.debug("Sent out ICMPv6 ND Router Solicitation")
 
-    def assign_ipv6_unicast(self, ipv6_unicast):
+    def assign_ip6_unicast(self, ip6_unicast):
         """ Assign IPv6 unicast address to the list stack listens on """
 
-        self.stack_ipv6_unicast.append(ipv6_unicast)
-        self.logger.debug(f"Assigned IPv6 unicast {ipv6_unicast}")
-        self.assign_ipv6_multicast(ipv6_solicited_node_multicast(ipv6_unicast))
+        self.stack_ip6_unicast.append(ip6_unicast)
+        self.logger.debug(f"Assigned IPv6 unicast {ip6_unicast}")
+        self.assign_ip6_multicast(ip6_solicited_node_multicast(ip6_unicast))
 
-    def remove_ipv6_unicast(self, ipv6_unicast):
+    def remove_ip6_unicast(self, ip6_unicast):
         """ Remove IPv6 unicast address from the list stack listens on """
 
-        self.stack_ipv6_unicast.remove(ipv6_unicast)
-        self.logger.debug(f"Removed IPv6 unicast {ipv6_unicast}")
-        self.remove_ipv6_multicast(ipv6_solicited_node_multicast(ipv6_unicast))
+        self.stack_ip6_unicast.remove(ip6_unicast)
+        self.logger.debug(f"Removed IPv6 unicast {ip6_unicast}")
+        self.remove_ip6_multicast(ip6_solicited_node_multicast(ip6_unicast))
 
-    def assign_ipv6_multicast(self, ipv6_multicast):
+    def assign_ip6_multicast(self, ip6_multicast):
         """ Assign IPv6 multicast address to the list stack listens on """
 
-        self.stack_ipv6_multicast.append(ipv6_multicast)
-        self.logger.debug(f"Assigned IPv6 multicast {ipv6_multicast}")
-        self.assign_mac_multicast(ipv6_multicast_mac(ipv6_multicast))
+        self.stack_ip6_multicast.append(ip6_multicast)
+        self.logger.debug(f"Assigned IPv6 multicast {ip6_multicast}")
+        self.assign_mac_multicast(ip6_multicast_mac(ip6_multicast))
 
         # Send out the ICMPv6 Multicast Listener Report
         for _ in range(1):
-            self.send_icmpv6_multicast_listener_report()
+            self.send_icmp6_multicast_listener_report()
 
-    def remove_ipv6_multicast(self, ipv6_multicast):
+    def remove_ip6_multicast(self, ip6_multicast):
         """ Remove IPv6 multicast address from the list stack listens on """
 
-        self.stack_ipv6_multicast.remove(ipv6_multicast)
-        self.logger.debug(f"Removed IPv6 multicast {ipv6_multicast}")
-        self.remove_mac_multicast(ipv6_multicast_mac(ipv6_multicast))
+        self.stack_ip6_multicast.remove(ip6_multicast)
+        self.logger.debug(f"Removed IPv6 multicast {ip6_multicast}")
+        self.remove_mac_multicast(ip6_multicast_mac(ip6_multicast))
 
     def assign_mac_unicast(self, mac_unicast):
         """ Assign MAC unicast address to the list stack listens on """
@@ -528,7 +528,7 @@ class PacketHandler:
                 dhcp_chaddr=self.stack_mac_unicast[0],
                 dhcp_msg_type=ps_dhcp.DHCP_REQUEST,
                 dhcp_srv_id=dhcp_srv_id,
-                dhcp_req_ipv4_addr=dhcp_yiaddr,
+                dhcp_req_ip4_addr=dhcp_yiaddr,
                 dhcp_param_req_list=b"\x01\x1c\x02\x03\x0f\x06\x77\x0c\x2c\x2f\x1a\x79\x2a",
                 dhcp_host_name="PyTCP",
             )

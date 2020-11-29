@@ -45,7 +45,7 @@ from ipaddress import AddressValueError, IPv4Address, IPv6Address, IPv6Interface
 from re import sub
 
 
-def ipv6_eui64(mac, prefix=IPv6Network("fe80::/64")):
+def ip6_eui64(mac, prefix=IPv6Network("fe80::/64")):
     """ Create IPv6 EUI64 address """
 
     assert prefix.prefixlen == 64
@@ -57,16 +57,16 @@ def ipv6_eui64(mac, prefix=IPv6Network("fe80::/64")):
     return IPv6Interface(prefix.network_address.exploded[0:20] + eui64 + "/" + str(prefix.prefixlen))
 
 
-def ipv6_solicited_node_multicast(ipv6_address):
+def ip6_solicited_node_multicast(ip6_address):
     """ Create IPv6 solicited node multicast address """
 
-    return IPv6Address("ff02::1:ff" + ipv6_address.exploded[-7:])
+    return IPv6Address("ff02::1:ff" + ip6_address.exploded[-7:])
 
 
-def ipv6_multicast_mac(ipv6_multicast_address):
+def ip6_multicast_mac(ip6_multicast_address):
     """ Create IPv6 multicast MAC address """
 
-    return "33:33:" + ":".join(["".join(ipv6_multicast_address.exploded[-9:].split(":"))[_ : _ + 2] for _ in range(0, 8, 2)])
+    return "33:33:" + ":".join(["".join(ip6_multicast_address.exploded[-9:].split(":"))[_ : _ + 2] for _ in range(0, 8, 2)])
 
 
 def ip_pick_version(ip_address):

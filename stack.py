@@ -47,21 +47,21 @@ from ipaddress import IPv4Interface, IPv6Interface
 interface = b"tap7"
 
 # Support for IPv6 and IPv4, at least one should be anabled
-ipv6_support = True
-ipv4_support = True
+ip6_support = True
+ip4_support = True
 
 # Unicast MAC addresses assigned to stack, currently there is not any kind of duplicate MAC detection performed
 mac_address_candidate = ["02:00:00:77:77:77"]
 
 # IPv6 address auto configuration is implemented using EUI64 addressing and ICMPv6 Router Advertisement messages
-ipv6_lla_autoconfig = True
-ipv6_gua_autoconfig = True
+ip6_lla_autoconfig = True
+ip6_gua_autoconfig = True
 
 # Static IPv6 adrsses may to be configured here (they will still be subject to CICMPv6 ND DAD  mechanism)
 # Each entry is a tuple interface address/prefix length and second is defaut gateway for this subnet
 # Basic routing is implmented and each subnet can have its own gateway
 # Link local addresses should have default gateway set to 'None'
-ipv6_address_candidate = [
+ip6_address_candidate = [
     ("FE80::7/64", None),
     # ("FE80::77/64", None),
     # ("FE80::7777/64", None),
@@ -75,12 +75,12 @@ ipv6_address_candidate = [
 ]
 
 # IPv4 DHCP based address configuration
-ipv4_address_dhcp_config = True
+ip4_address_dhcp_config = True
 
 # Static IPv4 adrsses may to be configured here (they will still be subject to ARP Probe/Announcement mechanism)
 # Each entry is a tuple interface address/prefix length and second is defaut gateway for this subnet
 # Basic routing is implmented and each subnet can have its own gateway
-ipv4_address_candidate = [
+ip4_address_candidate = [
     ("192.168.9.7/24", "192.168.9.1"),
     # ("192.168.9.77/24", "192.168.9.1"),
     # ("224.0.0.1/24", "192.168.9.1"), # test invalid address type
@@ -122,7 +122,7 @@ client_icmp_echo = False
 rx_ring = None
 tx_ring = None
 arp_cache = None
-icmpv6_nd_cache = None
+icmp6_nd_cache = None
 packet_handler = None
 stack_timer = None
 

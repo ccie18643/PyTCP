@@ -37,34 +37,34 @@
 
 
 #
-# phrx_ipv6.py - packet handler for inbound IPv6 packets
+# phrx_icmp4.py - packet handler for inbound ICMPv4 packets
 #
 
 
-import ps_icmpv6
-import ps_ipv6
-import ps_tcp
-import ps_udp
+import ps_icmp4
 
 
-def phrx_ipv6(self, ipv6_packet_rx):
-    """ Handle inbound IP packets """
+def phrx_icmp4(self, ip4_packet_rx, icmp4_packet_rx):
+    """ Handle inbound ICMPv4 packets """
 
-    self.logger.debug(f"{ipv6_packet_rx.tracker} - {ipv6_packet_rx}")
+    self.logger.opt(ansi=True).info(f"<green>{icmp4_packet_rx.tracker}</green> - {icmp4_packet_rx}")
 
-    # Check if received packet has been sent to us directly or by unicast or multicast
-    if ipv6_packet_rx.ipv6_dst not in {*self.stack_ipv6_unicast, *self.stack_ipv6_multicast}:
-        self.logger.debug(f"{ipv6_packet_rx.tracker} - IP packet not destined for this stack, droping")
+    # Validate ICMPv4 packet checksum
+    if not icmp4_packet_rx.validate_cksum():
+        self.logger.debug(f"{icmp4_packet_rx.tracker} - ICMPv4 packet has invalid checksum, droping")
         return
 
-    if ipv6_packet_rx.ipv6_next == ps_ipv6.IP6_NEXT_HEADER_ICMP6:
-        self.phrx_icmpv6(ipv6_packet_rx, ps_icmpv6.Icmp6Packet(ipv6_packet_rx))
-        return
+    # Respond to ICMPv4 Echo Request packet
+    if icmp4_packet_rx.icmp4_type == ps_icmp4.ICMP4_ECHOREQUEST and icmp4_packet_rx.icmp4_code == 0:
+        self.logger.debug(f"Received ICMPv4 Echo Request packet from {ip4_packet_rx.ip4_src}, sending reply")
 
-    if ipv6_packet_rx.ipv6_next == ps_ipv6.IP6_NEXT_HEADER_UDP:
-        self.phrx_udp(ipv6_packet_rx, ps_udp.UdpPacket(ipv6_packet_rx))
-        return
-
-    if ipv6_packet_rx.ipv6_next == ps_ipv6.IP6_NEXT_HEADER_TCP:
-        self.phrx_tcp(ipv6_packet_rx, ps_tcp.TcpPacket(ipv6_packet_rx))
+        self.phtx_icmp4(
+            ip4_src=ip4_packet_rx.ip4_dst,
+            ip4_dst=ip4_packet_rx.ip4_src,
+            icmp4_type=ps_icmp4.ICMP4_ECHOREPLY,
+            icmp4_ec_id=icmp4_packet_rx.icmp4_ec_id,
+            icmp4_ec_seq=icmp4_packet_rx.icmp4_ec_seq,
+            icmp4_ec_raw_data=icmp4_packet_rx.icmp4_ec_raw_data,
+            echo_tracker=icmp4_packet_rx.tracker,
+        )
         return

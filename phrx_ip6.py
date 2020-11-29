@@ -37,41 +37,34 @@
 
 
 #
-# phtx_icmpv4.py - packet handler for outbound ICMPv4 packets
+# phrx_ip6.py - packet handler for inbound IPv6 packets
 #
 
 
-import ps_icmpv4
-import stack
+import ps_icmp6
+import ps_ip6
+import ps_tcp
+import ps_udp
 
 
-def phtx_icmpv4(
-    self,
-    ipv4_src,
-    ipv4_dst,
-    icmpv4_type,
-    icmpv4_code=0,
-    icmpv4_ec_id=None,
-    icmpv4_ec_seq=None,
-    icmpv4_ec_raw_data=None,
-    icmpv4_un_raw_data=None,
-    echo_tracker=None,
-):
-    """ Handle outbound ICMPv4 packets """
+def phrx_ip6(self, ip6_packet_rx):
+    """ Handle inbound IP packets """
 
-    # Check if IPv4 protocol support is enabled, if not then silently drop the packet
-    if not stack.ipv4_support:
+    self.logger.debug(f"{ip6_packet_rx.tracker} - {ip6_packet_rx}")
+
+    # Check if received packet has been sent to us directly or by unicast or multicast
+    if ip6_packet_rx.ip6_dst not in {*self.stack_ip6_unicast, *self.stack_ip6_multicast}:
+        self.logger.debug(f"{ip6_packet_rx.tracker} - IP packet not destined for this stack, droping")
         return
 
-    icmpv4_packet_tx = ps_icmpv4.Icmp4Packet(
-        icmpv4_type=icmpv4_type,
-        icmpv4_code=icmpv4_code,
-        icmpv4_ec_id=icmpv4_ec_id,
-        icmpv4_ec_seq=icmpv4_ec_seq,
-        icmpv4_ec_raw_data=icmpv4_ec_raw_data,
-        icmpv4_un_raw_data=icmpv4_un_raw_data,
-        echo_tracker=echo_tracker,
-    )
+    if ip6_packet_rx.ip6_next == ps_ip6.IP6_NEXT_HEADER_ICMP6:
+        self.phrx_icmp6(ip6_packet_rx, ps_icmp6.Icmp6Packet(ip6_packet_rx))
+        return
 
-    self.logger.opt(ansi=True).info(f"<magenta>{icmpv4_packet_tx.tracker}</magenta> - {icmpv4_packet_tx}")
-    self.phtx_ipv4(ipv4_src=ipv4_src, ipv4_dst=ipv4_dst, child_packet=icmpv4_packet_tx)
+    if ip6_packet_rx.ip6_next == ps_ip6.IP6_NEXT_HEADER_UDP:
+        self.phrx_udp(ip6_packet_rx, ps_udp.UdpPacket(ip6_packet_rx))
+        return
+
+    if ip6_packet_rx.ip6_next == ps_ip6.IP6_NEXT_HEADER_TCP:
+        self.phrx_tcp(ip6_packet_rx, ps_tcp.TcpPacket(ip6_packet_rx))
+        return

@@ -37,7 +37,7 @@
 
 
 #
-# icmpv6_nd_cache.py - module contains class supporting ICMPv6 Neighbor Discovery cache
+# icmp6_nd_cache.py - module contains class supporting ICMPv6 Neighbor Discovery cache
 #
 
 
@@ -46,9 +46,9 @@ from ipaddress import IPv6Address
 
 import loguru
 
-import ps_icmpv6
+import ps_icmp6
 import stack
-from ip_helper import ipv6_solicited_node_multicast
+from ip_helper import ip6_solicited_node_multicast
 
 ND_ENTRY_MAX_AGE = 3600
 ND_ENTRY_REFRESH_TIME = 300
@@ -69,11 +69,11 @@ class ICMPv6NdCache:
     def __init__(self):
         """ Class constructor """
 
-        stack.icmpv6_nd_cache = self
+        stack.icmp6_nd_cache = self
 
         self.nd_cache = {}
 
-        self.logger = loguru.logger.bind(object_name="icmpv6_nd_cache.")
+        self.logger = loguru.logger.bind(object_name="icmp6_nd_cache.")
 
         # Setup timer to execute ND Cache maintainer every second
         stack.stack_timer.register_method(method=self.maintain_cache, delay=1000)
@@ -83,49 +83,49 @@ class ICMPv6NdCache:
     def maintain_cache(self):
         """ Method responsible for maintaining ND cache entries """
 
-        for ipv6_address in list(self.nd_cache):
+        for ip6_address in list(self.nd_cache):
 
             # Skip permanent entries
-            if self.nd_cache[ipv6_address].permanent:
+            if self.nd_cache[ip6_address].permanent:
                 continue
 
             # If entry age is over maximum age then discard the entry
-            if time.time() - self.nd_cache[ipv6_address].creation_time > ND_ENTRY_MAX_AGE:
-                mac_address = self.nd_cache.pop(ipv6_address).mac_address
-                self.logger.debug(f"Discarded expired ICMPv6 ND cache entry - {ipv6_address} -> {mac_address}")
+            if time.time() - self.nd_cache[ip6_address].creation_time > ND_ENTRY_MAX_AGE:
+                mac_address = self.nd_cache.pop(ip6_address).mac_address
+                self.logger.debug(f"Discarded expired ICMPv6 ND cache entry - {ip6_address} -> {mac_address}")
 
             # If entry age is close to maximum age but the entry has been used since last refresh then send out request in attempt to refresh it
-            elif (time.time() - self.nd_cache[ipv6_address].creation_time > ND_ENTRY_MAX_AGE - ND_ENTRY_REFRESH_TIME) and self.nd_cache[ipv6_address].hit_count:
-                self.nd_cache[ipv6_address].hit_count = 0
-                self.__send_icmpv6_neighbor_solicitation(ipv6_address)
-                self.logger.debug(f"Trying to refresh expiring ICMPv6 ND cache entry for {ipv6_address} -> {self.nd_cache[ipv6_address].mac_address}")
+            elif (time.time() - self.nd_cache[ip6_address].creation_time > ND_ENTRY_MAX_AGE - ND_ENTRY_REFRESH_TIME) and self.nd_cache[ip6_address].hit_count:
+                self.nd_cache[ip6_address].hit_count = 0
+                self.__send_icmp6_neighbor_solicitation(ip6_address)
+                self.logger.debug(f"Trying to refresh expiring ICMPv6 ND cache entry for {ip6_address} -> {self.nd_cache[ip6_address].mac_address}")
 
-    def add_entry(self, ipv6_address, mac_address):
+    def add_entry(self, ip6_address, mac_address):
         """ Add / refresh entry in cache """
 
-        self.nd_cache[ipv6_address] = self.CacheEntry(mac_address)
+        self.nd_cache[ip6_address] = self.CacheEntry(mac_address)
 
-    def find_entry(self, ipv6_address):
+    def find_entry(self, ip6_address):
         """ Find entry in cache and return MAC address """
 
-        if nd_entry := self.nd_cache.get(ipv6_address, None):
+        if nd_entry := self.nd_cache.get(ip6_address, None):
             nd_entry.hit_count += 1
             self.logger.debug(
-                f"Found {ipv6_address} -> {nd_entry.mac_address} entry, age {time.time() - nd_entry.creation_time:.0f}s, hit_count {nd_entry.hit_count}"
+                f"Found {ip6_address} -> {nd_entry.mac_address} entry, age {time.time() - nd_entry.creation_time:.0f}s, hit_count {nd_entry.hit_count}"
             )
             return nd_entry.mac_address
 
-        self.logger.debug(f"Unable to find entry for {ipv6_address}, sending ICMPv6 Neighbor Solicitation message")
-        self.__send_icmpv6_neighbor_solicitation(ipv6_address)
+        self.logger.debug(f"Unable to find entry for {ip6_address}, sending ICMPv6 Neighbor Solicitation message")
+        self.__send_icmp6_neighbor_solicitation(ip6_address)
         return None
 
     @staticmethod
-    def __send_icmpv6_neighbor_solicitation(icmpv6_ns_target_address):
+    def __send_icmp6_neighbor_solicitation(icmp6_ns_target_address):
         """ Enqueue ICMPv6 Neighbor Solicitation packet with TX ring """
-        stack.packet_handler.phtx_icmpv6(
-            ipv6_src=IPv6Address(stack.packet_handler.stack_ipv6_unicast[0] if stack.packet_handler.stack_ipv6_unicast else "::"),
-            ipv6_dst=ipv6_solicited_node_multicast(icmpv6_ns_target_address),
-            ipv6_hop=255,
-            icmpv6_type=ps_icmpv6.ICMP6_NEIGHBOR_SOLICITATION,
-            icmpv6_ns_target_address=icmpv6_ns_target_address,
+        stack.packet_handler.phtx_icmp6(
+            ip6_src=IPv6Address(stack.packet_handler.stack_ip6_unicast[0] if stack.packet_handler.stack_ip6_unicast else "::"),
+            ip6_dst=ip6_solicited_node_multicast(icmp6_ns_target_address),
+            ip6_hop=255,
+            icmp6_type=ps_icmp6.ICMP6_NEIGHBOR_SOLICITATION,
+            icmp6_ns_target_address=icmp6_ns_target_address,
         )

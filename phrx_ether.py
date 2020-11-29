@@ -43,8 +43,8 @@
 
 import ps_arp
 import ps_ether
-import ps_ipv4
-import ps_ipv6
+import ps_ip4
+import ps_ip6
 import stack
 
 
@@ -63,14 +63,14 @@ def phrx_ether(self, ether_packet_rx):
         self.logger.opt(ansi=True).debug(f"{ether_packet_rx.tracker} - Ethernet packet not destined for this stack, droping")
         return
 
-    if ether_packet_rx.ether_type == ps_ether.ETHER_TYPE_ARP and stack.ipv4_support:
+    if ether_packet_rx.ether_type == ps_ether.ETHER_TYPE_ARP and stack.ip4_support:
         self.phrx_arp(ether_packet_rx, ps_arp.ArpPacket(ether_packet_rx))
         return
 
-    if ether_packet_rx.ether_type == ps_ether.ETHER_TYPE_IP4 and stack.ipv4_support:
-        self.phrx_ipv4(ps_ipv4.Ip4Packet(ether_packet_rx))
+    if ether_packet_rx.ether_type == ps_ether.ETHER_TYPE_IP4 and stack.ip4_support:
+        self.phrx_ip4(ps_ip4.Ip4Packet(ether_packet_rx))
         return
 
-    if ether_packet_rx.ether_type == ps_ether.ETHER_TYPE_IP6 and stack.ipv6_support:
-        self.phrx_ipv6(ps_ipv6.Ip6Packet(ether_packet_rx))
+    if ether_packet_rx.ether_type == ps_ether.ETHER_TYPE_IP6 and stack.ip6_support:
+        self.phrx_ip6(ps_ip6.Ip6Packet(ether_packet_rx))
         return

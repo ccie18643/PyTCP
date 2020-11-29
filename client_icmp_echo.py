@@ -71,25 +71,25 @@ class ClientIcmpEcho:
             message = bytes(str(datetime.now()) + "\n", "utf-8")
 
             if local_ip_address.version == 4:
-                stack.packet_handler.phtx_icmpv4(
-                    ipv4_src=local_ip_address,
-                    ipv4_dst=remote_ip_address,
-                    icmpv4_type=8,
-                    icmpv4_code=0,
-                    icmpv4_ec_id=flow_id,
-                    icmpv4_ec_seq=message_seq,
-                    icmpv4_ec_raw_data=message,
+                stack.packet_handler.phtx_icmp4(
+                    ip4_src=local_ip_address,
+                    ip4_dst=remote_ip_address,
+                    icmp4_type=8,
+                    icmp4_code=0,
+                    icmp4_ec_id=flow_id,
+                    icmp4_ec_seq=message_seq,
+                    icmp4_ec_raw_data=message,
                 )
 
             if local_ip_address.version == 6:
-                stack.packet_handler.phtx_icmpv6(
-                    ipv6_src=local_ip_address,
-                    ipv6_dst=remote_ip_address,
-                    icmpv6_type=128,
-                    icmpv6_code=0,
-                    icmpv6_ec_id=flow_id,
-                    icmpv6_ec_seq=message_seq,
-                    icmpv6_ec_raw_data=message,
+                stack.packet_handler.phtx_icmp6(
+                    ip6_src=local_ip_address,
+                    ip6_dst=remote_ip_address,
+                    icmp6_type=128,
+                    icmp6_code=0,
+                    icmp6_ec_id=flow_id,
+                    icmp6_ec_seq=message_seq,
+                    icmp6_ec_raw_data=message,
                 )
 
             print(f"Client ICMP Echo: Sent ICMP Echo ({flow_id}/{message_seq}) to {remote_ip_address} - {message}")
