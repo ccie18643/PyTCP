@@ -11,13 +11,14 @@ This program is a work in progress and it changes on daily basis due to new feat
  - Ethernet protocol - *unicast, IPv4 multicast, IPv6 multicast and broadcast addressing supported*
  - ARP protocol - *replies, queries, ARP cache mechanism*
  - ARP protocol - *ARP Probe/Announcement IP conflict detection (ACD) mechanism*
+ - IPv4 protocol - *automatic address configuration using DHCP protocol*
  - IPv4 protocol - *inbound and outbound IP fragmentation*
  - IPv4 protocol - *IPv4 options accepted but not supported*
  - IPv4 protocol -  *multiple stack's IPv4 addresses supported, each of them acts as it was assigned to separate VRF* 
  - IPv4 protocol - *ability to route traffic to external destinations via default gateway, this was needed for testing TCP connectivity over Internet*
  - ICMPv4 protocol - *echo request, echo reply, port unreachable*
- - IPv6 protocol - *link local address auto-configuration using EUI64*
- - IPv6 protocol - *GUA address auto configuration using Router Advertisement / EUI64*
+ - IPv6 protocol - *automatic Link Local address configuration using EUI64 and Duplicate Address Detection*
+ - IPv6 protocol - *automatic GUA address configuration using Router Advertisement / EUI64*
  - IPv6 protocol - *automatic assignment of Solicited Node Multicast addresses*
  - IPv6 protocol - *automatic assignment of IPv6 multicast MAC addresses*
  - ICMPv6 protocol - *echo request, echo reply, port unreachable*
@@ -27,7 +28,6 @@ This program is a work in progress and it changes on daily basis due to new feat
  - UDP protocol - *full support, stack is able to exchange data with other hosts using UDP protocol*
  - UDP sockets - *full support, stack's 'end user' API similar to Berkley sockets*
  - UDP services - *UDP Echo, Discard, Daytime implemented for testing purposes*
- - UDP clients - *DHCP service for automatic IPv4 address configuration - basic implementation, need to add timeouts and error handling*
  - TCP protocol - *full implementation of TCP Finite State Machine, at this point stack is able to exchange bulk data with other hosts over TCP protocol*
  - TCP protocol - *TCP option support for: MSS, WSCALE, SACKPERM, TIMESTAMP*
  - TCP protocol - *TCP sliding window mechanism with and data retransmission (fast retransmit and time based scenarios)*
