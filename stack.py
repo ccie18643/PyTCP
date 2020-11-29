@@ -54,6 +54,8 @@ ipv4_support = True
 mac_address_candidate = ["02:00:00:77:77:77"]
 
 # IPv6 address auto configuration is implemented using EUI64 addressing and ICMPv6 Router Advertisement messages
+ipv6_address_autoconfig_enabled = True
+
 # There is no IPv6 routing implemented yet so we do not care about the IPv6 default gateway address
 ipv6_address_candidate = [
     # IPv6Interface("FE80::7/64"),
@@ -64,10 +66,11 @@ ipv6_address_candidate = [
     # ipv6_eui64(STACK_MAC_ADDRESS, IPv6Network("2007::/64")),
 ]
 
-# Static IPv4 adrsses need to be configured here (they will still be subject to ARP Probe/Announcement mechanism)
-# IPv4 DHCP address autoconfiguration is not implemented yet (DHCP support is ready, just need to tie it to stack)
+# IPv4 DHCP based address configuration
+ipv4_address_dhcp_enabled = True
+
+# Static IPv4 adrsses may to be configured here (they will still be subject to ARP Probe/Announcement mechanism)
 # Basic IPv4 routing is implemented and stack assumes that default gateway is the first host address on given subnet
-# At least one static IPv4 address should be configured here
 ipv4_address_candidate = [
     IPv4Interface("192.168.9.7/24"),
     # IPv4Interface("192.168.9.77/24"),
