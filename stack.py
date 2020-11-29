@@ -48,7 +48,7 @@ interface = b"tap7"
 
 # Support for IPv6 and IPv4, at least one should be anabled
 ipv6_support = True
-ipv4_support = False
+ipv4_support = True
 
 # Unicast MAC addresses assigned to stack, currently there is not any kind of duplicate MAC detection performed
 mac_address_candidate = ["02:00:00:77:77:77"]
@@ -57,7 +57,10 @@ mac_address_candidate = ["02:00:00:77:77:77"]
 ipv6_lla_autoconfig = True
 ipv6_gua_autoconfig = True
 
-# There is no IPv6 routing implemented yet so we do not care about the IPv6 default gateway address
+# Static IPv6 adrsses may to be configured here (they will still be subject to CICMPv6 ND DAD  mechanism)
+# Each entry is a tuple interface address/prefix length and second is defaut gateway for this subnet
+# Basic routing is implmented and each subnet can have its own gateway
+# Link local addresses should have default gateway set to 'None'
 ipv6_address_candidate = [
     ("FE80::7/64", None),
     # ("FE80::77/64", None),
@@ -67,7 +70,7 @@ ipv6_address_candidate = [
     # ("2007::1111/64", "DUPA"),  # test link local address with default gateway
     # ("DUPA", None),  # test invalid address
     # ("2099::99/64", "2009::99"),  # test invalid gateway
-    ("2007::7/64", "FE80::1"),
+    # ("2007::7/64", "FE80::1"),
     # ("2009::9/64", "2009::1"),
 ]
 
@@ -101,17 +104,19 @@ mtu = 1500  # TAP interface MTU
 local_tcp_mss = 1460  # Maximum segment peer can send to us
 local_tcp_win = 65535  # Maximum amount of data peer can send to us without confirmation
 
-# Test services and clients, for detailed configuation of each reffer to pytcp.py and respective service/client file
+# Test services, for detailed configuation of each reffer to pytcp.py and respective service/client file
 # Those are being used for testing various stack components are therefore their 'default' funcionality may be altered fro specific tst needs
 # Eg. TCP daytime service generates large amount of text data used to verify TCP protocol funcionality
-service_udp_echo = False
-service_udp_discard = False
-service_udp_daytime = False
-service_tcp_echo = False
-service_tcp_discard = False
-service_tcp_daytime = False
+service_udp_echo = True
+service_udp_discard = True
+service_udp_daytime = True
+service_tcp_echo = True
+service_tcp_discard = True
+service_tcp_daytime = True
+
+# For using test clients proper IP addressing needs to be set up in file 'pytcp.py'
 client_tcp_echo = False
-client_icmp_echo = True
+client_icmp_echo = False
 
 # References to stack components
 rx_ring = None

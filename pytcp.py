@@ -139,14 +139,17 @@ def main():
 
     # Initialize TCP test clients
     if stack.client_tcp_echo:
-        ClientTcpEcho(local_ip_address="192.168.9.7", remote_ip_address="192.168.9.102", remote_port=7, message_count=10)
+        ClientTcpEcho(local_ip_address="192.168.9.7", remote_ip_address="192.168.100.101", remote_port=7, message_count=10)
+        ClientTcpEcho(
+            local_ip_address="fdd1:c296:f24f:9:0:ff:fe77:7777", remote_ip_address="fdd1:c296:f24f:100:5054:ff:fef9:99aa", remote_port=7, message_count=10
+        )
         # ClientTcpEcho(local_ip_address="192.168.9.7", remote_ip_address="1.1.1.1", remote_port=7)
         # ClientTcpEcho(local_ip_address="192.168.9.7", remote_ip_address="192.168.9.9", remote_port=7)
 
     # Initialize ICMP test client
     if stack.client_icmp_echo:
-        # ClientIcmpEcho(local_ip_address="192.168.9.7", remote_ip_address="8.8.8.8")
-        ClientIcmpEcho(local_ip_address="fdd1:c296:f24f:9:0:ff:fe77:7777", remote_ip_address="fdd1:c296:f24f:100:5054:ff:fef9:99aa")
+        ClientIcmpEcho(local_ip_address="192.168.9.7", remote_ip_address="8.8.8.8", message_count=10)
+        ClientIcmpEcho(local_ip_address="fdd1:c296:f24f:9:0:ff:fe77:7777", remote_ip_address="fdd1:c296:f24f:100:5054:ff:fef9:99aa", message_count=10)
 
     while True:
         time.sleep(1)

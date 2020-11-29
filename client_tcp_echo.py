@@ -45,6 +45,7 @@ import threading
 import time
 from datetime import datetime
 
+from ip_helper import ip_pick_version
 from tcp_socket import TcpSocket
 
 
@@ -53,6 +54,9 @@ class ClientTcpEcho:
 
     def __init__(self, local_ip_address, remote_ip_address, local_port=0, remote_port=7, message_count=10):
         """ Class constructor """
+
+        local_ip_address = ip_pick_version(local_ip_address)
+        remote_ip_address = ip_pick_version(remote_ip_address)
 
         threading.Thread(target=self.__thread_client, args=(local_ip_address, local_port, remote_ip_address, remote_port, message_count)).start()
 
