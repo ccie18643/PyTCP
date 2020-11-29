@@ -54,7 +54,6 @@ import stack
 from arp_cache import ArpCache
 from client_icmpv4_echo import ClientICMPv4Echo
 from client_tcp_echo import ClientTcpEcho
-from client_udp_dhcp import ClientUdpDhcp
 from icmpv6_nd_cache import ICMPv6NdCache
 from ipv6_helper import ipv6_eui64
 from ph import PacketHandler

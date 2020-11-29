@@ -93,8 +93,8 @@ def phrx_ipv4(self, ipv4_packet_rx):
 
     self.logger.debug(f"{ipv4_packet_rx.tracker} - {ipv4_packet_rx}")
 
-    # Check if received packet has been sent to us directly or by unicast/broadcast
-    if ipv4_packet_rx.ipv4_dst not in {*self.stack_ipv4_unicast, *self.stack_ipv4_multicast, *self.stack_ipv4_broadcast}:
+    # Check if received packet has been sent to us directly or by unicast/broadcast, allow any destination if no unicast address is configured (for DHCP client)
+    if self.stack_ipv4_unicast and ipv4_packet_rx.ipv4_dst not in {*self.stack_ipv4_unicast, *self.stack_ipv4_multicast, *self.stack_ipv4_broadcast}:
         self.logger.debug(f"{ipv4_packet_rx.tracker} - IP packet not destined for this stack, droping")
         return
 

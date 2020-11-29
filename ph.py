@@ -44,14 +44,17 @@
 import random
 import threading
 import time
-from ipaddress import IPv4Address, IPv6Address
+from ipaddress import IPv4Address, IPv4Interface, IPv6Address
 
 import loguru
 
 import ps_arp
+import ps_dhcp
 import ps_icmpv6
 import stack
 from ipv6_helper import ipv6_eui64, ipv6_multicast_mac, ipv6_solicited_node_multicast
+from udp_metadata import UdpMetadata
+from udp_socket import UdpSocket
 
 
 class PacketHandler:
@@ -125,7 +128,11 @@ class PacketHandler:
             self.create_stack_ipv6_addresses()
 
         if stack.ipv4_support:
-            # Create list of IPv4 unicast/multicast/broadcast addresses stack should listen on
+            # Create list of IPv4 unicast/multicast/broadcast addresses stack should listen on, use DHCP if enabled
+            if stack.ipv4_address_dhcp_enabled:
+                ipv4_address_dhcp, _ = self.__dhcp_client()
+                if ipv4_address_dhcp:
+                    self.stack_ipv4_address_candidate.append(ipv4_address_dhcp)
             self.create_stack_ipv4_addresses()
 
         # Log all the addresses stack will listen on
@@ -202,14 +209,15 @@ class PacketHandler:
                 self.assign_ipv6_unicast(ipv6_address_candidate.ip)
 
         # Send out IPv6 Router Solicitation message and wait for response in attempt to auto configure addresses based on ICMPv6 Router Advertisement
-        self.send_icmpv6_nd_router_solicitation()
-        self.event_icmpv6_ra.acquire(timeout=1)
-        for icmpv6_ra_prefix in list(self.icmpv6_ra_prefixes):
-            self.logger.debug(f"Attempting IPv6 address auto configuration for RA prefix {icmpv6_ra_prefix}")
-            ipv6_address_candidate = ipv6_eui64(self.stack_mac_unicast[0], icmpv6_ra_prefix)
-            if self.perform_ipv6_nd_dad(ipv6_address_candidate.ip):
-                self.stack_ipv6_address.append(ipv6_address_candidate)
-                self.assign_ipv6_unicast(ipv6_address_candidate.ip)
+        if stack.ipv6_address_autoconfig_enabled:
+            self.send_icmpv6_nd_router_solicitation()
+            self.event_icmpv6_ra.acquire(timeout=1)
+            for icmpv6_ra_prefix in list(self.icmpv6_ra_prefixes):
+                self.logger.debug(f"Attempting IPv6 address auto configuration for RA prefix {icmpv6_ra_prefix}")
+                ipv6_address_candidate = ipv6_eui64(self.stack_mac_unicast[0], icmpv6_ra_prefix)
+                if self.perform_ipv6_nd_dad(ipv6_address_candidate.ip):
+                    self.stack_ipv6_address.append(ipv6_address_candidate)
+                    self.assign_ipv6_unicast(ipv6_address_candidate.ip)
 
     def create_stack_ipv4_addresses(self):
         """ Create list of IPv4 addresses stack should listen on """
@@ -232,6 +240,12 @@ class PacketHandler:
 
         # Clear IPv4 address candidate list so the ARP Probe/Annoucement check is disabled
         self.stack_ipv4_address_candidate = []
+
+        # If don't have any IPv4 address assigned disable IPv4 protocol operations
+        if not self.stack_ipv4_address:
+            self.logger.warning("Unable to assign any IPv4 address, disabling IPv4 protocol")
+            stack.ipv4_support = False
+            return
 
         # Create list containing IP unicast adresses stack shuld listen to
         for ipv4_address in self.stack_ipv4_address:
@@ -387,3 +401,90 @@ class PacketHandler:
 
         self.stack_mac_multicast.remove(mac_multicast)
         self.logger.debug(f"Removed MAC multicast {mac_multicast}")
+
+    def __dhcp_client(self):
+        """ Obtain IPv4 address and default gateway using DHCP """
+
+        def __send_dhcp_packet(dhcp_packet_tx):
+            socket.send_to(
+                UdpMetadata(
+                    local_ip_address=IPv4Address("0.0.0.0"),
+                    local_port=68,
+                    remote_ip_address=IPv4Address("255.255.255.255"),
+                    remote_port=67,
+                    raw_data=dhcp_packet_tx.get_raw_packet(),
+                )
+            )
+
+        socket = UdpSocket()
+        socket.bind(local_ip_address="0.0.0.0", local_port=68)
+        dhcp_xid = random.randint(0, 0xFFFFFFFF)
+
+        # Send DHCP Discover
+        __send_dhcp_packet(
+            dhcp_packet_tx=ps_dhcp.DhcpPacket(
+                dhcp_xid=dhcp_xid,
+                dhcp_chaddr=self.stack_mac_unicast[0],
+                dhcp_msg_type=ps_dhcp.DHCP_DISCOVER,
+                dhcp_param_req_list=b"\x01\x1c\x02\x03\x0f\x06\x77\x0c\x2c\x2f\x1a\x79\x2a",
+                dhcp_host_name="PyTCP",
+            )
+        )
+        self.logger.debug("Sent out DHCP Discover message")
+
+        # Wait for DHCP Offer
+        if not (packet := socket.receive_from(timeout=5)):
+            self.logger.warning("Timeout waiting for DHCP Offer message")
+            socket.close()
+            return None, None
+
+        dhcp_packet_rx = ps_dhcp.DhcpPacket(packet.raw_data)
+        if dhcp_packet_rx.dhcp_msg_type != ps_dhcp.DHCP_OFFER:
+            self.logger.warning("Didn't receive DHCP Offer message")
+            socket.close()
+            return None, None
+
+        dhcp_srv_id = dhcp_packet_rx.dhcp_srv_id
+        dhcp_yiaddr = dhcp_packet_rx.dhcp_yiaddr
+        self.logger.debug(
+            f"ClientUdpDhcp: Received DHCP Offer from {dhcp_packet_rx.dhcp_srv_id}"
+            + f"IP: {dhcp_packet_rx.dhcp_yiaddr}, Mask: {dhcp_packet_rx.dhcp_subnet_mask}, Router: {dhcp_packet_rx.dhcp_router}"
+            + f"DNS: {dhcp_packet_rx.dhcp_dns}, Domain: {dhcp_packet_rx.dhcp_domain_name}"
+        )
+
+        # Send DHCP Request
+        __send_dhcp_packet(
+            dhcp_packet_tx=ps_dhcp.DhcpPacket(
+                dhcp_xid=dhcp_xid,
+                dhcp_chaddr=self.stack_mac_unicast[0],
+                dhcp_msg_type=ps_dhcp.DHCP_REQUEST,
+                dhcp_srv_id=dhcp_srv_id,
+                dhcp_req_ipv4_addr=dhcp_yiaddr,
+                dhcp_param_req_list=b"\x01\x1c\x02\x03\x0f\x06\x77\x0c\x2c\x2f\x1a\x79\x2a",
+                dhcp_host_name="PyTCP",
+            )
+        )
+
+        self.logger.debug(f"Sent out DHCP Request message to {dhcp_packet_rx.dhcp_srv_id}")
+
+        # Wait for DHCP Ack
+        if not (packet := socket.receive_from(timeout=5)):
+            self.logger.warning("Timeout waiting for DHCP Ack message")
+            return None, None
+
+        dhcp_packet_rx = ps_dhcp.DhcpPacket(packet.raw_data)
+        if dhcp_packet_rx.dhcp_msg_type != ps_dhcp.DHCP_ACK:
+            self.logger.warning("Didn't receive DHCP Offer message")
+            socket.close()
+            return None, None
+
+        self.logger.debug(
+            f"Received DHCP Offer from {dhcp_packet_rx.dhcp_srv_id}"
+            + f"IP: {dhcp_packet_rx.dhcp_yiaddr}, Mask: {dhcp_packet_rx.dhcp_subnet_mask}, Router: {dhcp_packet_rx.dhcp_router}"
+            + f"DNS: {dhcp_packet_rx.dhcp_dns}, Domain: {dhcp_packet_rx.dhcp_domain_name}"
+        )
+        socket.close()
+        return (
+            IPv4Interface(str(dhcp_packet_rx.dhcp_yiaddr) + "/" + str(IPv4Address._make_netmask(str(dhcp_packet_rx.dhcp_subnet_mask))[1])),
+            dhcp_packet_rx.dhcp_router[0],
+        )
