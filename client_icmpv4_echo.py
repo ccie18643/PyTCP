@@ -74,6 +74,6 @@ class ClientICMPv4Echo:
                 icmpv4_ec_seq=message_seq,
                 icmpv4_ec_raw_data=message,
             )
-            print(f"Client ICMPv4 Echo: Sent ICMPv4 Echo ({flow_id}/{message_seq})to {remote_ipv4_address} - {message}")
+            print(f"Client ICMPv4 Echo: Sent ICMPv4 Echo ({flow_id}/{message_seq}) to {remote_ipv4_address} - {message}")
             time.sleep(1)
             message_seq += 1
