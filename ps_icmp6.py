@@ -272,12 +272,12 @@ ICMP6_UNREACHABLE_ADDRESS = 2
 ICMP6_UNREACHABLE_PORT = 4
 ICMP6_ECHOREQUEST = 128
 ICMP6_ECHOREPLY = 129
-ICMP6_MLDV2_QUERY = 130
+ICMP6_MLD2_QUERY = 130
 ICMP6_ROUTER_SOLICITATION = 133
 ICMP6_ROUTER_ADVERTISEMENT = 134
 ICMP6_NEIGHBOR_SOLICITATION = 135
 ICMP6_NEIGHBOR_ADVERTISEMENT = 136
-ICMP6_MULTICAST_LISTENER_REPORT_V2 = 143
+ICMP6_MLD2_REPORT = 143
 
 ICMP6_MART_MODE_IS_INCLUDE = 1
 ICMP6_MART_MODE_IS_EXCLUDE = 2
@@ -381,7 +381,7 @@ class Icmp6Packet:
                 self.icmp6_nd_options = self.__read_nd_options(raw_packet[24:])
                 return
 
-            if self.icmp6_type == ICMP6_MULTICAST_LISTENER_REPORT_V2:
+            if self.icmp6_type == ICMP6_MLD2_REPORT:
                 self.icmp6_mlr2_reserved = struct.unpack("!H", raw_packet[4:6])[0]
                 self.icmp6_mlr2_number_of_multicast_address_records = struct.unpack("!H", raw_packet[6:8])[0]
                 self.icmp6_mlr2_multicast_address_record = []
@@ -447,7 +447,7 @@ class Icmp6Packet:
                 self.icmp6_na_target_address = icmp6_na_target_address
                 return
 
-            if self.icmp6_type == ICMP6_MULTICAST_LISTENER_REPORT_V2:
+            if self.icmp6_type == ICMP6_MLD2_REPORT:
                 self.icmp6_mlr2_reserved = 0
                 self.icmp6_mlr2_multicast_address_record = [] if icmp6_mlr2_multicast_address_record is None else icmp6_mlr2_multicast_address_record
                 self.icmp6_mlr2_number_of_multicast_address_records = len(self.icmp6_mlr2_multicast_address_record)
@@ -489,7 +489,7 @@ class Icmp6Packet:
             for nd_option in self.icmp6_nd_options:
                 log += ", " + str(nd_option)
 
-        if self.icmp6_type == ICMP6_MULTICAST_LISTENER_REPORT_V2:
+        if self.icmp6_type == ICMP6_MLD2_REPORT:
             pass
 
         return log
@@ -557,7 +557,7 @@ class Icmp6Packet:
                 + self.raw_nd_options
             )
 
-        if self.icmp6_type == ICMP6_MULTICAST_LISTENER_REPORT_V2:
+        if self.icmp6_type == ICMP6_MLD2_REPORT:
             return (
                 struct.pack(
                     "! BBH HH",
@@ -826,9 +826,9 @@ class MulticastAddressRecord:
             self.record_type = raw_record[0]
             self.aux_data_len = raw_record[1]
             self.number_of_sources = struct.unpack("!H", raw_record[2:4])[0]
-            self.multicast_address = IPv6Address(raw_record[4:8])
-            self.source_address = [IPv6Address(raw_record[8 + 16 * _ : 8 + 16 * (_ + 1)]) for _ in range(self.number_of_sources)]
-            self.aux_data = raw_record[8 + 16 * self.number_of_sources :]
+            self.multicast_address = IPv6Address(raw_record[4:20])
+            self.source_address = [IPv6Address(raw_record[20 + 16 * _ : 20 + 16 * (_ + 1)]) for _ in range(self.number_of_sources)]
+            self.aux_data = raw_record[20 + 16 * self.number_of_sources :]
 
         # Record building
         else:
@@ -875,7 +875,7 @@ def __nd_option_len_fail(raw_packet, index, logger):
 
     while index < len(raw_packet):
         if raw_packet[index] < 1:
-            logger.debug("ICMPv6 Sanity check fail - ND option length set to 0")
+            logger.critical("ICMPv6 Sanity check fail - ND option length set to 0")
             return True
         index += raw_packet[index] << 3
         if index - 1 > len(raw_packet):
@@ -893,54 +893,104 @@ def preliminary_sanity_check(ip_packet, logger):
     ip_pseudo_header = ip_packet.ip_pseudo_header
 
     if len(raw_packet) < 4:
-        logger.debug("ICMPv6 Sanity check fail - packet length less than 4 bytes")
+        logger.critical("ICMPv6 Sanity check fail - wrong packet length (I)")
         return False
 
     if raw_packet[0] == ICMP6_UNREACHABLE:
+        if raw_packet[1] not in {0,1,2,3,4,5,6}:
+            logger.critical("ICMPv6 Sanity check fail - wrong packet code")
+            return False
         if len(raw_packet) < 12:
-            logger.debug("ICMPv6 Sanity check fail - packet length less than 12 bytes")
+            logger.critical("ICMPv6 Sanity check fail - wrong packet length (II)")
             return False
 
     if raw_packet[0] == ICMP6_ECHOREQUEST:
+        if raw_packet[1] not in {0}:
+            logger.critical("ICMPv6 Sanity check fail - wrong packet code")
+            return False
         if len(raw_packet) < 8:
-            logger.debug("ICMPv6 Sanity check fail - packet length less than 8 bytes")
+            logger.critical("ICMPv6 Sanity check fail - wrong packet length (II)")
             return False
 
     if raw_packet[0] == ICMP6_ECHOREPLY:
+        if raw_packet[1] not in {0}:
+            logger.critical("ICMPv6 Sanity check fail - wrong packet code")
+            return False
         if len(raw_packet) < 8:
-            logger.debug("ICMPv6 Sanity check fail - packet length less than 8 bytes")
+            logger.critical("ICMPv6 Sanity check fail - wrong packet length (II)")
+            return False
+
+    if raw_packet[0] == ICMP6_MLD2_QUERY:
+        if raw_packet[1] not in {0}:
+            logger.critical("ICMPv6 Sanity check fail - wrong packet code")
+            return False
+        if len(raw_packet) < 28:
+            logger.critical("ICMPv6 Sanity check fail - wrong packet length (II)")
+            return False
+        if len(raw_packet) != 28 + struct.unpack("! H", raw_packet[26:28])[0] * 16:
+            logger.critical("ICMPv6 Sanity check fail - wrong packet length (III)")
             return False
 
     if raw_packet[0] == ICMP6_ROUTER_SOLICITATION:
+        if raw_packet[1] not in {0}:
+            logger.critical("ICMPv6 Sanity check fail - wrong packet code")
+            return False
         if len(raw_packet) < 8:
-            logger.debug("ICMPv6 Sanity check fail - packet length less than 8 bytes")
+            logger.critical("ICMPv6 Sanity check fail - wrong packet length (II)")
             return False
         if __nd_option_len_fail(raw_packet, 9, logger):
             return False
 
     if raw_packet[0] == ICMP6_ROUTER_ADVERTISEMENT:
+        if raw_packet[1] not in {0}:
+            logger.critical("ICMPv6 Sanity check fail - wrong packet code")
+            return False
         if len(raw_packet) < 16:
-            logger.debug("ICMPv6 Sanity check fail - packet length less than 16 bytes")
+            logger.critical("ICMPv6 Sanity check fail - wrong packet length (II)")
             return False
         if __nd_option_len_fail(raw_packet, 17, logger):
             return False
 
     if raw_packet[0] == ICMP6_NEIGHBOR_SOLICITATION:
+        if raw_packet[1] not in {0}:
+            logger.critical("ICMPv6 Sanity check fail - wrong packet code")
+            return False
         if len(raw_packet) < 24:
-            logger.debug("ICMPv6 Sanity check fail - packet length less than 24 bytes")
+            logger.critical("ICMPv6 Sanity check fail - wrong packet length (II)")
             return False
         if __nd_option_len_fail(raw_packet, 25, logger):
             return False
 
     if raw_packet[0] == ICMP6_NEIGHBOR_ADVERTISEMENT:
+        if raw_packet[1] not in {0}:
+            logger.critical("ICMPv6 Sanity check fail - wrong packet code")
+            return False
         if len(raw_packet) < 24:
-            logger.debug("ICMPv6 Sanity check fail - packet length less than 24 bytes")
+            logger.critical("ICMPv6 Sanity check fail - wrong packet length (II)")
             return False
         if __nd_option_len_fail(raw_packet, 25, logger):
             return False
 
+    if raw_packet[0] == ICMP6_MLD2_REPORT:
+        if raw_packet[1] not in {0}:
+            logger.critical("ICMPv6 Sanity check fail - wrong packet code")
+            return False
+        if len(raw_packet) < 8:
+            logger.critical("ICMPv6 Sanity check fail - wrong packet length (II)")
+            return False
+        index = 8
+        for address_record_number in range(struct.unpack("! H", raw_packet[6:8])[0]):
+            if index + 20 > len(raw_packet):
+                logger.critical("ICMPv6 Sanity check fail - wrong packet length (III)")
+                return False
+            index += 20 + raw_packet[index + 1] + struct.unpack("! H", raw_packet[index + 2:index + 4])[0] * 16
+        if index != len(raw_packet):
+            logger.critical("ICMPv6 Sanity check fail - wrong packet lenght (IV)")
+            return False
+
+
     if inet_cksum.compute_cksum(ip_pseudo_header + raw_packet):
-        logger.debug("ICMPv6 Sanity check fail - wrong checksum")
+        logger.critical("ICMPv6 Sanity check fail - wrong checksum")
         return False
 
     return True

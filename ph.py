@@ -386,7 +386,7 @@ class PacketHandler:
                 ip6_src=self.stack_ip6_unicast[0] if self.stack_ip6_unicast else IPv6Address("::"),
                 ip6_dst=IPv6Address("ff02::16"),
                 ip6_hop=1,
-                icmp6_type=ps_icmp6.ICMP6_MULTICAST_LISTENER_REPORT_V2,
+                icmp6_type=ps_icmp6.ICMP6_MLD2_REPORT,
                 icmp6_mlr2_multicast_address_record=icmp6_mlr2_multicast_address_record,
             )
             self.logger.debug(f"Sent out ICMPv6 Multicast Listener Report message for {[_.multicast_address for _ in icmp6_mlr2_multicast_address_record]}")
