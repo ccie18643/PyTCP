@@ -38,7 +38,7 @@ This program is a work in progress and it changes on daily basis due to new feat
 
 #### Work in progress:
 
- - All protocols - *Implementing preliminary packet sanity check - mechanism that prevents protocol support parsers from being exposed to malformed or malicious packets. It does the progressive packet integrity check by making sure that any field that need to be checked doesn't extend over the packet length. Also checks option's lenght field against being set to zero or exetending over the packet length. Last but not least it computes checksum before packet is being parsed.
+ - All protocols - *Implementing preliminary packet sanity check - mechanism that prevents protocol support parsers from being exposed to malformed or malicious packets. It does the progressive packet integrity check by making sure that any field that need to be checked doesn't extend over the packet length. Also checks option's lenght field against being set to zero or exetending over the packet length. Last but not least it computes checksum before packet is being parsed.*
 
 #### Next steps:
 
