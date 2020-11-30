@@ -50,7 +50,7 @@ interface = b"tap7"
 ip6_support = True
 ip4_support = True
 
-# Preliminary packet sanity check, if enabled it protects the Protocol Support classes to be exposed to malformed or malicious packets
+# Preliminary packet sanity check, if enabled it protects the Protocol Support classes from being exposed to malformed or malicious packets
 # that could cause them to crash during packet parsing. It check minimum length and checksum. It doesn't do any deep packet sanity check.
 # That is being done by Packet Handler RX function after the packet has been already parsed...
 preliminary_packet_sanity_check = True
