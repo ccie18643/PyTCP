@@ -38,8 +38,7 @@ This program is a work in progress and it changes on daily basis due to new feat
 
 #### Work in progress:
 
- - TCP protocol - *ongoing effort of improving code and bug fixing while simulating more advanced traffic scenarios*
- - TCP protocol - *proper handling on RST packets in various states, need to do research on this*
+ - All protocols - *Implementing preliminary packet sanity check - mechanism that prevents protocol support parsers from being exposed to malformed or malicious packets. It does the progressive packet integrity check by making sure that any field that need to be checked doesn't extend over the packet length. Also checks option's lenght field against being set to zero or exetending over the packet length. Last but not least it computes checksum before packet is being parsed.
 
 #### Next steps:
 
@@ -51,6 +50,8 @@ This program is a work in progress and it changes on daily basis due to new feat
  - ICMPv6 protocol - *implement ND Redirect message*
  - ICMPv6 protocol - *Multicast Listner Discovery v2 (MLDv2) full implementation <-- it may be requied by stack to respond to MLD queries*
  - IPv6 protocol - *ability to route traffic to external destinations via default gateway*
+ - TCP protocol - *ongoing effort of improving code and bug fixing while simulating more advanced traffic scenarios*
+ - TCP protocol - *proper handling on RST packets in various states, need to do research on this*
  - TCP protocol - *need to rework the CLOSE syscall mechanism so FIN flag can be set on last data packet instead of being carried in separate one*
  - TCP protocol - *ACK packet retransmission in case we got FIN retransmission in TIME_WAIT state <-- need to investigate this*
  - TCP protocol - *implement proper response to packets containing old SEQ and/or ACK numbersi <-- need to investigate this*
