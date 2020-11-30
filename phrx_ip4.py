@@ -108,14 +108,18 @@ def phrx_ip4(self, ip4_packet_rx):
     if not ip4_packet_rx:
         return
 
-    if ip4_packet_rx.ip4_proto == ps_ip4.IP4_PROTO_ICMP4 and ps_icmp4.preliminary_sanity_check(ip4_packet_rx.raw_data, self.logger):
+    if ip4_packet_rx.ip4_proto == ps_ip4.IP4_PROTO_ICMP4 and ps_icmp4.preliminary_sanity_check(ip4_packet_rx.raw_data, ip4_packet_rx.tracker, self.logger):
         self.phrx_icmp4(ip4_packet_rx, ps_icmp4.Icmp4Packet(ip4_packet_rx))
         return
 
-    if ip4_packet_rx.ip4_proto == ps_ip4.IP4_PROTO_UDP and ps_udp.preliminary_sanity_check(ip4_packet_rx.raw_data, ip4_packet_rx.ip_pseudo_header, self.logger):
+    if ip4_packet_rx.ip4_proto == ps_ip4.IP4_PROTO_UDP and ps_udp.preliminary_sanity_check(
+        ip4_packet_rx.raw_data, ip4_packet_rx.ip_pseudo_header, ip4_packet_rx.tracker, self.logger
+    ):
         self.phrx_udp(ip4_packet_rx, ps_udp.UdpPacket(ip4_packet_rx))
         return
 
-    if ip4_packet_rx.ip4_proto == ps_ip4.IP4_PROTO_TCP and ps_tcp.preliminary_sanity_check(ip4_packet_rx.raw_data, ip4_packet_rx.ip_pseudo_header, self.logger):
+    if ip4_packet_rx.ip4_proto == ps_ip4.IP4_PROTO_TCP and ps_tcp.preliminary_sanity_check(
+        ip4_packet_rx.raw_data, ip4_packet_rx.ip_pseudo_header, ip4_packet_rx.tracker, self.logger
+    ):
         self.phrx_tcp(ip4_packet_rx, ps_tcp.TcpPacket(ip4_packet_rx))
         return

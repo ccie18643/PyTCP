@@ -870,128 +870,128 @@ class MulticastAddressRecord:
 #
 
 
-def __nd_option_check(raw_packet, index, logger):
+def __nd_option_check(raw_packet, index, logger, tracker):
     """ Check integrity of ICMPv6 ND options """
 
     while index < len(raw_packet):
         if index + 1 > len(raw_packet):
-            logger.critical("ICMPv6 Sanity check fail - wrong option length (I)")
+            logger.critical(f"{tracker} - ICMPv6 Sanity check fail - wrong option length (I)")
             return False
         if raw_packet[index + 1] == 0:
-            logger.critical("ICMPv6 Sanity check fail - wrong option length (II)")
+            logger.critical(f"{tracker} - ICMPv6 Sanity check fail - wrong option length (II)")
             return False
         index += raw_packet[index + 1] << 3
         if index > len(raw_packet):
-            logger.critical("ICMPv6 Sanity check fail - wrong option length (III)")
+            logger.critical(f"{tracker} - ICMPv6 Sanity check fail - wrong option length (III)")
             return False
 
     return True
 
 
-def preliminary_sanity_check(raw_packet, ip_pseudo_header, logger):
+def preliminary_sanity_check(raw_packet, ip_pseudo_header, tracker, logger):
     """ Preliminary sanity check to be run on raw ICMPv6 packet prior to packet parsing """
 
     if not stack.preliminary_packet_sanity_check:
         return True
 
     if len(raw_packet) < 4:
-        logger.critical("ICMPv6 Sanity check fail - wrong packet length (I)")
+        logger.critical(f"{tracker} - ICMPv6 Sanity check fail - wrong packet length (I)")
         return False
 
     if inet_cksum.compute_cksum(ip_pseudo_header + raw_packet):
-        logger.critical("ICMPv6 Sanity check fail - wrong checksum")
+        logger.critical(f"{tracker} - ICMPv6 Sanity check fail - wrong checksum")
         return False
 
     if raw_packet[0] == ICMP6_UNREACHABLE:
         if raw_packet[1] not in {0, 1, 2, 3, 4, 5, 6}:
-            logger.critical("ICMPv6 Sanity check fail - wrong packet code")
+            logger.critical(f"{tracker} - ICMPv6 Sanity check fail - wrong packet code")
             return False
         if len(raw_packet) < 12:
-            logger.critical("ICMPv6 Sanity check fail - wrong packet length (II)")
+            logger.critical(f"{tracker} - ICMPv6 Sanity check fail - wrong packet length (II)")
             return False
 
     elif raw_packet[0] == ICMP6_ECHOREQUEST:
         if raw_packet[1] not in {0}:
-            logger.critical("ICMPv6 Sanity check fail - wrong packet code")
+            logger.critical(f"{tracker} - ICMPv6 Sanity check fail - wrong packet code")
             return False
         if len(raw_packet) < 8:
-            logger.critical("ICMPv6 Sanity check fail - wrong packet length (II)")
+            logger.critical(f"{tracker} - ICMPv6 Sanity check fail - wrong packet length (II)")
             return False
 
     elif raw_packet[0] == ICMP6_ECHOREPLY:
         if raw_packet[1] not in {0}:
-            logger.critical("ICMPv6 Sanity check fail - wrong packet code")
+            logger.critical(f"{tracker} - ICMPv6 Sanity check fail - wrong packet code")
             return False
         if len(raw_packet) < 8:
-            logger.critical("ICMPv6 Sanity check fail - wrong packet length (II)")
+            logger.critical(f"{tracker} - ICMPv6 Sanity check fail - wrong packet length (II)")
             return False
 
     elif raw_packet[0] == ICMP6_MLD2_QUERY:
         if raw_packet[1] not in {0}:
-            logger.critical("ICMPv6 Sanity check fail - wrong packet code")
+            logger.critical(f"{tracker} - ICMPv6 Sanity check fail - wrong packet code")
             return False
         if len(raw_packet) < 28:
-            logger.critical("ICMPv6 Sanity check fail - wrong packet length (II)")
+            logger.critical(f"{tracker} - ICMPv6 Sanity check fail - wrong packet length (II)")
             return False
         if len(raw_packet) != 28 + struct.unpack("! H", raw_packet[26:28])[0] * 16:
-            logger.critical("ICMPv6 Sanity check fail - wrong packet length (III)")
+            logger.critical(f"{tracker} - ICMPv6 Sanity check fail - wrong packet length (III)")
             return False
 
     elif raw_packet[0] == ICMP6_ROUTER_SOLICITATION:
         if raw_packet[1] not in {0}:
-            logger.critical("ICMPv6 Sanity check fail - wrong packet code")
+            logger.critical(f"{tracker} - ICMPv6 Sanity check fail - wrong packet code")
             return False
         if len(raw_packet) < 8:
-            logger.critical("ICMPv6 Sanity check fail - wrong packet length (II)")
+            logger.critical(f"{tracker} - ICMPv6 Sanity check fail - wrong packet length (II)")
             return False
-        if __nd_option_check(raw_packet, 8, logger) is False:
+        if __nd_option_check(raw_packet, 8, logger, tracker) is False:
             return False
 
     elif raw_packet[0] == ICMP6_ROUTER_ADVERTISEMENT:
         if raw_packet[1] not in {0}:
-            logger.critical("ICMPv6 Sanity check fail - wrong packet code")
+            logger.critical(f"{tracker} - ICMPv6 Sanity check fail - wrong packet code")
             return False
         if len(raw_packet) < 16:
-            logger.critical("ICMPv6 Sanity check fail - wrong packet length (II)")
+            logger.critical(f"{tracker} - ICMPv6 Sanity check fail - wrong packet length (II)")
             return False
-        if __nd_option_check(raw_packet, 16, logger) is False:
+        if __nd_option_check(raw_packet, 16, logger, tracker) is False:
             return False
 
     elif raw_packet[0] == ICMP6_NEIGHBOR_SOLICITATION:
         if raw_packet[1] not in {0}:
-            logger.critical("ICMPv6 Sanity check fail - wrong packet code")
+            logger.critical(f"{tracker} - ICMPv6 Sanity check fail - wrong packet code")
             return False
         if len(raw_packet) < 24:
-            logger.critical("ICMPv6 Sanity check fail - wrong packet length (II)")
+            logger.critical(f"{tracker} - ICMPv6 Sanity check fail - wrong packet length (II)")
             return False
-        if __nd_option_check(raw_packet, 24, logger) is False:
+        if __nd_option_check(raw_packet, 24, logger, tracker) is False:
             return False
 
     elif raw_packet[0] == ICMP6_NEIGHBOR_ADVERTISEMENT:
         if raw_packet[1] not in {0}:
-            logger.critical("ICMPv6 Sanity check fail - wrong packet code")
+            logger.critical(f"{tracker} - ICMPv6 Sanity check fail - wrong packet code")
             return False
         if len(raw_packet) < 24:
-            logger.critical("ICMPv6 Sanity check fail - wrong packet length (II)")
+            logger.critical(f"{tracker} - ICMPv6 Sanity check fail - wrong packet length (II)")
             return False
-        if __nd_option_check(raw_packet, 24, logger) is False:
+        if __nd_option_check(raw_packet, 24, logger, tracker) is False:
             return False
 
     elif raw_packet[0] == ICMP6_MLD2_REPORT:
         if raw_packet[1] not in {0}:
-            logger.critical("ICMPv6 Sanity check fail - wrong packet code")
+            logger.critical(f"{tracker} - ICMPv6 Sanity check fail - wrong packet code")
             return False
         if len(raw_packet) < 8:
-            logger.critical("ICMPv6 Sanity check fail - wrong packet length (II)")
+            logger.critical(f"{tracker} - ICMPv6 Sanity check fail - wrong packet length (II)")
             return False
         index = 8
         for address_record_number in range(struct.unpack("! H", raw_packet[6:8])[0]):
             if index + 20 > len(raw_packet):
-                logger.critical("ICMPv6 Sanity check fail - wrong packet length (III)")
+                logger.critical(f"{tracker} - ICMPv6 Sanity check fail - wrong packet length (III)")
                 return False
             index += 20 + raw_packet[index + 1] + struct.unpack("! H", raw_packet[index + 2 : index + 4])[0] * 16
         if index != len(raw_packet):
-            logger.critical("ICMPv6 Sanity check fail - wrong packet lenght (IV)")
+            logger.critical(f"{tracker} - ICMPv6 Sanity check fail - wrong packet lenght (IV)")
             return False
 
     return True

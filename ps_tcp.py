@@ -472,23 +472,23 @@ class TcpOptUnk:
 #
 
 
-def preliminary_sanity_check(raw_packet, ip_pseudo_header, logger):
+def preliminary_sanity_check(raw_packet, ip_pseudo_header, tracker, logger):
     """ Preliminary sanity check to be run on raw TCP packet prior to packet parsing """
 
     if not stack.preliminary_packet_sanity_check:
         return True
 
     if len(raw_packet) < 20:
-        logger.critical("TCP Sanity check fail - wrong packet length (I)")
+        logger.critical(f"{tracker} - TCP Sanity check fail - wrong packet length (I)")
         return False
 
     if inet_cksum.compute_cksum(ip_pseudo_header + raw_packet):
-        logger.critical("TCP Sanity check fail - wrong checksum")
+        logger.critical(f"{tracker} - TCP Sanity check fail - wrong checksum")
         return False
 
     hlen = (raw_packet[12] & 0b11110000) >> 2
     if not (20 <= hlen <= len(raw_packet)):
-        logger.critical("TCP Sanity check fail - wrong packet length (II)")
+        logger.critical(f"{tracker} - TCP Sanity check fail - wrong packet length (II)")
         return False
 
     index = 20
@@ -498,18 +498,18 @@ def preliminary_sanity_check(raw_packet, ip_pseudo_header, logger):
         if raw_packet[index] == TCP_OPT_NOP:
             index += 1
             if index > hlen:
-                logger.critical("TCP Sanity check fail - wrong option length (I)")
+                logger.critical(f"{tracker} - TCP Sanity check fail - wrong option length (I)")
                 return False
             continue
         if index + 1 > hlen:
-            logger.critical("TCP Sanity check fail - wrong option length (II)")
+            logger.critical(f"{tracker} - TCP Sanity check fail - wrong option length (II)")
             return False
         if raw_packet[index + 1] == 0:
-            logger.critical("TCP Sanity check fail - wrong option length (III)")
+            logger.critical(f"{tracker} - TCP Sanity check fail - wrong option length (III)")
             return False
         index += raw_packet[index + 1]
         if index > hlen:
-            logger.critical("TCP Sanity check fail - wrong option length (IV)")
+            logger.critical(f"{tracker} - TCP Sanity check fail - wrong option length (IV)")
             return False
 
     return True

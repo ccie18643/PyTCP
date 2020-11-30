@@ -63,11 +63,19 @@ def phrx_ether(self, ether_packet_rx):
         self.logger.opt(ansi=True).debug(f"{ether_packet_rx.tracker} - Ethernet packet not destined for this stack, droping")
         return
 
-    if ether_packet_rx.ether_type == ps_ether.ETHER_TYPE_ARP and stack.ip4_support and ps_arp.preliminary_sanity_check(ether_packet_rx.raw_data, self.logger):
+    if (
+        ether_packet_rx.ether_type == ps_ether.ETHER_TYPE_ARP
+        and stack.ip4_support
+        and ps_arp.preliminary_sanity_check(ether_packet_rx.raw_data, ether_packet_rx.tracker, self.logger)
+    ):
         self.phrx_arp(ether_packet_rx, ps_arp.ArpPacket(ether_packet_rx))
         return
 
-    if ether_packet_rx.ether_type == ps_ether.ETHER_TYPE_IP4 and stack.ip4_support and ps_ip4.preliminary_sanity_check(ether_packet_rx.raw_data, self.logger):
+    if (
+        ether_packet_rx.ether_type == ps_ether.ETHER_TYPE_IP4
+        and stack.ip4_support
+        and ps_ip4.preliminary_sanity_check(ether_packet_rx.raw_data, ether_packet_rx.tracker, self.logger)
+    ):
         self.phrx_ip4(ps_ip4.Ip4Packet(ether_packet_rx))
         return
 
