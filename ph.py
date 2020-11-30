@@ -122,6 +122,7 @@ class PacketHandler:
         if stack.ip6_support:
             # Assign All IPv6 Nodes multicast address
             self.assign_ip6_multicast(IPv6Address("ff02::1"))
+            self.assign_ip6_multicast(IPv6Address("ff02::16")) # DUPA
             # Create list of IPv6 unicast/multicast addresses stack should listen on
             self.stack_ip6_address_candidate = self.parse_stack_ip6_address_candidate()
             self.create_stack_ip6_addressing()
