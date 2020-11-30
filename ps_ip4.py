@@ -400,12 +400,8 @@ def preliminary_sanity_check(raw_packet, tracker, logger):
 
     hlen = (raw_packet[0] & 0b00001111) << 2
     plen = struct.unpack("!H", raw_packet[2:4])[0]
-    if not (20 <= hlen <= plen == len(raw_packet)):
+    if not 20 <= hlen <= plen == len(raw_packet):
         logger.critical(f"{tracker} - IPv4 Sanity check fail - wrong packet length (II)")
-        return False
-
-    if inet_cksum.compute_cksum(raw_packet[0:hlen]):
-        logger.critical(f"{tracker} - IPv4 Sanity check fail - wrong checksum")
         return False
 
     index = 20

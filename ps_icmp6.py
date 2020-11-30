@@ -888,7 +888,7 @@ def __nd_option_check(raw_packet, index, logger, tracker):
     return True
 
 
-def preliminary_sanity_check(raw_packet, ip_pseudo_header, tracker, logger):
+def preliminary_sanity_check(raw_packet, tracker, logger):
     """ Preliminary sanity check to be run on raw ICMPv6 packet prior to packet parsing """
 
     if not stack.preliminary_packet_sanity_check:
@@ -896,10 +896,6 @@ def preliminary_sanity_check(raw_packet, ip_pseudo_header, tracker, logger):
 
     if len(raw_packet) < 4:
         logger.critical(f"{tracker} - ICMPv6 Sanity check fail - wrong packet length (I)")
-        return False
-
-    if inet_cksum.compute_cksum(ip_pseudo_header + raw_packet):
-        logger.critical(f"{tracker} - ICMPv6 Sanity check fail - wrong checksum")
         return False
 
     if raw_packet[0] == ICMP6_UNREACHABLE:
@@ -985,7 +981,7 @@ def preliminary_sanity_check(raw_packet, ip_pseudo_header, tracker, logger):
             logger.critical(f"{tracker} - ICMPv6 Sanity check fail - wrong packet length (II)")
             return False
         index = 8
-        for address_record_number in range(struct.unpack("! H", raw_packet[6:8])[0]):
+        for _ in range(struct.unpack("! H", raw_packet[6:8])[0]):
             if index + 20 > len(raw_packet):
                 logger.critical(f"{tracker} - ICMPv6 Sanity check fail - wrong packet length (III)")
                 return False

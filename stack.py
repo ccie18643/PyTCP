@@ -121,7 +121,7 @@ service_tcp_daytime = True
 
 # For using test clients proper IP addressing needs to be set up in file 'pytcp.py'
 client_tcp_echo = False
-client_icmp_echo = False
+client_icmp_echo = True
 
 # References to stack components
 rx_ring = None

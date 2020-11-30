@@ -122,8 +122,16 @@ class ICMPv6NdCache:
     @staticmethod
     def __send_icmp6_neighbor_solicitation(icmp6_ns_target_address):
         """ Enqueue ICMPv6 Neighbor Solicitation packet with TX ring """
+
+        # Pick apropriate source address
+        ip6_src = IPv6Address("::")
+        for stack_ip6_address in stack.packet_handler.stack_ip6_address:
+            if icmp6_ns_target_address in stack_ip6_address.network:
+                ip6_src = stack_ip6_address.ip
+
+        # Send out ND Solicitation message
         stack.packet_handler.phtx_icmp6(
-            ip6_src=IPv6Address(stack.packet_handler.stack_ip6_unicast[0] if stack.packet_handler.stack_ip6_unicast else "::"),
+            ip6_src=ip6_src,
             ip6_dst=ip6_solicited_node_multicast(icmp6_ns_target_address),
             ip6_hop=255,
             icmp6_type=ps_icmp6.ICMP6_NEIGHBOR_SOLICITATION,

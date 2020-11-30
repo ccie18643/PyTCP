@@ -148,8 +148,25 @@ def main():
 
     # Initialize ICMP test client
     if stack.client_icmp_echo:
-        ClientIcmpEcho(local_ip_address="192.168.9.7", remote_ip_address="8.8.8.8", message_count=10)
-        ClientIcmpEcho(local_ip_address="fdd1:c296:f24f:9:0:ff:fe77:7777", remote_ip_address="fdd1:c296:f24f:100:5054:ff:fef9:99aa", message_count=10)
+        # Same subnet, source addess specified
+        # ClientIcmpEcho(local_ip_address="fdd1:c296:f24f:9:0:ff:fe77:7777", remote_ip_address="fdd1:c296:f24f:9:5054:ff:fedf:8537", message_count=10)
+        # ClientIcmpEcho(local_ip_address="fe80::7", remote_ip_address="fe80::b486:4dff:fe6a:6af6", message_count=10)
+
+        # Same subnet, source addess not specified
+        # ClientIcmpEcho(local_ip_address="::", remote_ip_address="fdd1:c296:f24f:9:5054:ff:fedf:8537", message_count=10)
+        # ClientIcmpEcho(local_ip_address="::", remote_ip_address="fe80::b486:4dff:fe6a:6af6", message_count=10)
+
+        # Another subnet, source address specified
+        # ClientIcmpEcho(local_ip_address="fdd1:c296:f24f:9:0:ff:fe77:7777", remote_ip_address="fdd1:c296:f24f:100:5054:ff:fef9:99aa", message_count=10)
+        # ClientIcmpEcho(local_ip_address="192.168.9.7", remote_ip_address="8.8.8.8", message_count=10)
+
+        # Another subnet, source address not specified
+        # ClientIcmpEcho(local_ip_address="::", remote_ip_address="fdd1:c296:f24f:100:5054:ff:fef9:99aa", message_count=10)
+        ClientIcmpEcho(local_ip_address="0.0.0.0", remote_ip_address="8.8.8.8", message_count=25)
+        ClientIcmpEcho(local_ip_address="::", remote_ip_address="2001:4860:4860::8888", message_count=25)
+
+        # Another subnet, source with no default gateway assigned
+        # ClientIcmpEcho(local_ip_address="2007::1111", remote_ip_address="fdd1:c296:f24f:100:5054:ff:fef9:99aa", message_count=10)
 
     while True:
         time.sleep(1)

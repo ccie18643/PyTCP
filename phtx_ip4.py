@@ -50,7 +50,7 @@ import ps_ip4
 import stack
 
 
-def validate_src_ip4_address(self, ip4_src):
+def validate_src_ip4_address(self, ip4_src, ip4_dst):
     """ Make sure source ip address is valid, supplemt with valid one as appropriate """
 
     # Check if the the source IP address belongs to this stack or its set to all zeros (for DHCP client comunication)
@@ -58,7 +58,7 @@ def validate_src_ip4_address(self, ip4_src):
         self.logger.warning(f"Unable to sent out IPv4 packet, stack doesn't own IPv4 address {ip4_src}")
         return None
 
-    # If packet is a response to multicast then replace source IP address with primary IP address of the stack
+    # If packet is a response to multicast then replace source address with primary address of the stack
     if ip4_src in self.stack_ip4_multicast:
         if self.stack_ip4_unicast:
             ip4_src = self.stack_ip4_unicast[0]
@@ -67,7 +67,7 @@ def validate_src_ip4_address(self, ip4_src):
             self.logger.warning("Unable to sent out IPv4 packet, no stack primary unicast IPv4 address available")
             return None
 
-    # If packet is a response to limited broadcast then replace source IP address with primary IP address of the stack
+    # If packet is a response to limited broadcast then replace source address with primary address of the stack
     if ip4_src == IPv4Address("255.255.255.255"):
         if self.stack_ip4_unicast:
             ip4_src = self.stack_ip4_unicast[0]
@@ -76,7 +76,7 @@ def validate_src_ip4_address(self, ip4_src):
             self.logger.warning("Unable to sent out IPv4 packet, no stack primary unicast IPv4 address available")
             return None
 
-    # If packet is a response to directed braodcast then replace source IP address with first stack IP address that belongs to appropriate subnet
+    # If packet is a response to directed braodcast then replace source address with first stack address that belongs to appropriate subnet
     if ip4_src in self.stack_ip4_broadcast:
         ip4_src = [_.ip for _ in self.stack_ip4_address if _.network.broadcast_address == ip4_src]
         if ip4_src:
@@ -86,7 +86,29 @@ def validate_src_ip4_address(self, ip4_src):
             self.logger.warning("Unable to sent out IPv4 packet, no appropriate stack unicast IPv4 address available")
             return None
 
+    # If source is unspecified check if destination belongs to any of local networks, if so pick source address from that network
+    if ip4_src.is_unspecified:
+        for stack_ip4_address in self.stack_ip4_address:
+            if ip4_dst in stack_ip4_address.network:
+                return stack_ip4_address.ip
+
+    # If source unspcified and destination is external pick source from first network that has default gateway set
+    if ip4_src.is_unspecified:
+        for stack_ip4_address in self.stack_ip4_address:
+            if stack_ip4_address.gateway:
+                return stack_ip4_address.ip
+
     return ip4_src
+
+
+def validate_dst_ip4_address(ip4_dst):
+    """ Make sure destination ip address is valid, supplement with valid one as appropriate """
+
+    # Check if destiantion address is unspecified, substitute it with limited broadcast address
+    if ip4_dst.is_unspecified:
+        ip4_dst = IPv4Address("255.255.255.255")
+
+    return ip4_dst
 
 
 def phtx_ip4(self, child_packet, ip4_dst, ip4_src):
@@ -101,8 +123,13 @@ def phtx_ip4(self, child_packet, ip4_dst, ip4_src):
     ip4_dst = IPv4Address(ip4_dst)
 
     # Validate source address
-    ip4_src = validate_src_ip4_address(self, ip4_src)
+    ip4_src = validate_src_ip4_address(self, ip4_src, ip4_dst)
     if not ip4_src:
+        return
+
+    # Validate destination address
+    ip4_dst = validate_dst_ip4_address(ip4_dst)
+    if not ip4_dst:
         return
 
     # Generate new IPv4 ID

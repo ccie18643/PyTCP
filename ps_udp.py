@@ -137,7 +137,7 @@ class UdpPacket:
 #
 
 
-def preliminary_sanity_check(raw_packet, ip_pseudo_header, tracker, logger):
+def preliminary_sanity_check(raw_packet, tracker, logger):
     """ Preliminary sanity check to be run on raw UDP packet prior to packet parsing """
 
     if not stack.preliminary_packet_sanity_check:
@@ -147,12 +147,8 @@ def preliminary_sanity_check(raw_packet, ip_pseudo_header, tracker, logger):
         logger.critical(f"{tracker} - UDP Sanity check fail - wrong packet length (I)")
         return False
 
-    if inet_cksum.compute_cksum(ip_pseudo_header + raw_packet):
-        logger.critical(f"{tracker} - UDP Sanity check fail - wrong checksum")
-        return False
-
     plen = struct.unpack("!H", raw_packet[4:6])[0]
-    if not (8 <= plen == len(raw_packet)):
+    if not 8 <= plen == len(raw_packet):
         logger.critical(f"{tracker} - UDP Sanity check fail - wrong packet length (II)")
         return False
 

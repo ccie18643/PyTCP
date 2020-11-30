@@ -242,10 +242,6 @@ def preliminary_sanity_check(raw_packet, tracker, logger):
         logger.critical(f"{tracker} - ICMPv4 Sanity check fail - wrong packet length (I)")
         return False
 
-    if inet_cksum.compute_cksum(raw_packet):
-        logger.critical(f"{tracker} - ICMPv4 Sanity check fail - wrong checksum")
-        return False
-
     if raw_packet[0] == ICMP4_ECHOREPLY:
         if raw_packet[1] not in {0}:
             logger.critical(f"{tracker} - ICMPv4 Sanity check fail - wrong packet code")

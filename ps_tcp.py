@@ -472,7 +472,7 @@ class TcpOptUnk:
 #
 
 
-def preliminary_sanity_check(raw_packet, ip_pseudo_header, tracker, logger):
+def preliminary_sanity_check(raw_packet, tracker, logger):
     """ Preliminary sanity check to be run on raw TCP packet prior to packet parsing """
 
     if not stack.preliminary_packet_sanity_check:
@@ -482,12 +482,8 @@ def preliminary_sanity_check(raw_packet, ip_pseudo_header, tracker, logger):
         logger.critical(f"{tracker} - TCP Sanity check fail - wrong packet length (I)")
         return False
 
-    if inet_cksum.compute_cksum(ip_pseudo_header + raw_packet):
-        logger.critical(f"{tracker} - TCP Sanity check fail - wrong checksum")
-        return False
-
     hlen = (raw_packet[12] & 0b11110000) >> 2
-    if not (20 <= hlen <= len(raw_packet)):
+    if not 20 <= hlen <= len(raw_packet):
         logger.critical(f"{tracker} - TCP Sanity check fail - wrong packet length (II)")
         return False
 
