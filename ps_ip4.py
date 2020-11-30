@@ -45,6 +45,7 @@ import struct
 from ipaddress import IPv4Address
 
 import inet_cksum
+import stack
 
 # IPv4 protocol header
 
@@ -380,3 +381,52 @@ class IpOptUnk:
 
     def __str__(self):
         return f"unk-{self.opt_kind}-{self.opt_len}"
+
+
+#
+#   IPv4 sanity check functions
+#
+
+
+def preliminary_sanity_check(raw_packet, logger):
+    """ Preliminary sanity check to be run on raw IPv4 packet prior to packet parsing """
+
+    if not stack.preliminary_packet_sanity_check:
+        return True
+
+    if len(raw_packet) < 20:
+        logger.critical("IPv4 Sanity check fail - wrong packet length (I)")
+        return False
+
+    hlen = (raw_packet[0] & 0b00001111) << 2
+    plen = struct.unpack("!H", raw_packet[2:4])[0]
+    if not (20 <= hlen <= plen == len(raw_packet)):
+        logger.critical("IP Sanity check fail - wrong packet length (II)")
+        return False
+
+    if inet_cksum.compute_cksum(raw_packet[0:hlen]):
+        logger.critical("IP Sanity check fail - wrong checksum")
+        return False
+
+    index = 20
+    while index < hlen:
+        if raw_packet[index] == IP_OPT_EOL:
+            break
+        if raw_packet[index] == IP_OPT_NOP:
+            index += 1
+            if index > hlen:
+                logger.critical("TCP Sanity check fail - wrong option length (I)")
+                return False
+            continue
+        if index + 1 > hlen:
+            logger.critical("TCP Sanity check fail - wrong option length (II)")
+            return False
+        if raw_packet[index + 1] == 0:
+            logger.critical("TCP Sanity check fail - wrong option length (III)")
+            return False
+        index += raw_packet[index + 1]
+        if index > hlen:
+            logger.critical("TCP Sanity check fail - wrong option length (IV)")
+            return False
+
+    return True

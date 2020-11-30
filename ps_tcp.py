@@ -44,6 +44,7 @@
 import struct
 
 import inet_cksum
+import stack
 from tracker import Tracker
 
 # TCP packet header (RFC 793)
@@ -464,3 +465,51 @@ class TcpOptUnk:
 
     def __str__(self):
         return f"unk-{self.opt_kind}-{self.opt_len}"
+
+
+#
+#   TCP sanity check functions
+#
+
+
+def preliminary_sanity_check(raw_packet, ip_pseudo_header, logger):
+    """ Preliminary sanity check to be run on raw TCP packet prior to packet parsing """
+
+    if not stack.preliminary_packet_sanity_check:
+        return True
+
+    if len(raw_packet) < 20:
+        logger.critical("TCP Sanity check fail - wrong packet length (I)")
+        return False
+
+    if inet_cksum.compute_cksum(ip_pseudo_header + raw_packet):
+        logger.critical("TCP Sanity check fail - wrong checksum")
+        return False
+
+    hlen = (raw_packet[12] & 0b11110000) >> 2
+    if not (20 <= hlen <= len(raw_packet)):
+        logger.critical("TCP Sanity check fail - wrong packet length (II)")
+        return False
+
+    index = 20
+    while index < hlen:
+        if raw_packet[index] == TCP_OPT_EOL:
+            break
+        if raw_packet[index] == TCP_OPT_NOP:
+            index += 1
+            if index > hlen:
+                logger.critical("TCP Sanity check fail - wrong option length (I)")
+                return False
+            continue
+        if index + 1 > hlen:
+            logger.critical("TCP Sanity check fail - wrong option length (II)")
+            return False
+        if raw_packet[index + 1] == 0:
+            logger.critical("TCP Sanity check fail - wrong option length (III)")
+            return False
+        index += raw_packet[index + 1]
+        if index > hlen:
+            logger.critical("TCP Sanity check fail - wrong option length (IV)")
+            return False
+
+    return True

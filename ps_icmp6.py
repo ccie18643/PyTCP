@@ -870,41 +870,47 @@ class MulticastAddressRecord:
 #
 
 
-def __nd_option_len_fail(raw_packet, index, logger):
-    """ Return True if any of ND options has length field set to 0 or if it reaches over length of packet"""
+def __nd_option_check(raw_packet, index, logger):
+    """ Check integrity of ICMPv6 ND options """
 
     while index < len(raw_packet):
-        if raw_packet[index] < 1:
-            logger.critical("ICMPv6 Sanity check fail - ND option length set to 0")
-            return True
-        index += raw_packet[index] << 3
-        if index - 1 > len(raw_packet):
-            logger.critical("ICMPv6 Sanity check fail - ND option length extends ove length of packet")
-    return False
+        if index + 1 > len(raw_packet):
+            logger.critical("ICMPv6 Sanity check fail - wrong option length (I)")
+            return False
+        if raw_packet[index + 1] == 0:
+            logger.critical("ICMPv6 Sanity check fail - wrong option length (II)")
+            return False
+        index += raw_packet[index + 1] << 3
+        if index > len(raw_packet):
+            logger.critical("ICMPv6 Sanity check fail - wrong option length (III)")
+            return False
+
+    return True
 
 
-def preliminary_sanity_check(ip_packet, logger):
+def preliminary_sanity_check(raw_packet, ip_pseudo_header, logger):
     """ Preliminary sanity check to be run on raw ICMPv6 packet prior to packet parsing """
 
     if not stack.preliminary_packet_sanity_check:
         return True
 
-    raw_packet = ip_packet.raw_data
-    ip_pseudo_header = ip_packet.ip_pseudo_header
-
     if len(raw_packet) < 4:
         logger.critical("ICMPv6 Sanity check fail - wrong packet length (I)")
         return False
 
+    if inet_cksum.compute_cksum(ip_pseudo_header + raw_packet):
+        logger.critical("ICMPv6 Sanity check fail - wrong checksum")
+        return False
+
     if raw_packet[0] == ICMP6_UNREACHABLE:
-        if raw_packet[1] not in {0,1,2,3,4,5,6}:
+        if raw_packet[1] not in {0, 1, 2, 3, 4, 5, 6}:
             logger.critical("ICMPv6 Sanity check fail - wrong packet code")
             return False
         if len(raw_packet) < 12:
             logger.critical("ICMPv6 Sanity check fail - wrong packet length (II)")
             return False
 
-    if raw_packet[0] == ICMP6_ECHOREQUEST:
+    elif raw_packet[0] == ICMP6_ECHOREQUEST:
         if raw_packet[1] not in {0}:
             logger.critical("ICMPv6 Sanity check fail - wrong packet code")
             return False
@@ -912,7 +918,7 @@ def preliminary_sanity_check(ip_packet, logger):
             logger.critical("ICMPv6 Sanity check fail - wrong packet length (II)")
             return False
 
-    if raw_packet[0] == ICMP6_ECHOREPLY:
+    elif raw_packet[0] == ICMP6_ECHOREPLY:
         if raw_packet[1] not in {0}:
             logger.critical("ICMPv6 Sanity check fail - wrong packet code")
             return False
@@ -920,7 +926,7 @@ def preliminary_sanity_check(ip_packet, logger):
             logger.critical("ICMPv6 Sanity check fail - wrong packet length (II)")
             return False
 
-    if raw_packet[0] == ICMP6_MLD2_QUERY:
+    elif raw_packet[0] == ICMP6_MLD2_QUERY:
         if raw_packet[1] not in {0}:
             logger.critical("ICMPv6 Sanity check fail - wrong packet code")
             return False
@@ -931,47 +937,47 @@ def preliminary_sanity_check(ip_packet, logger):
             logger.critical("ICMPv6 Sanity check fail - wrong packet length (III)")
             return False
 
-    if raw_packet[0] == ICMP6_ROUTER_SOLICITATION:
+    elif raw_packet[0] == ICMP6_ROUTER_SOLICITATION:
         if raw_packet[1] not in {0}:
             logger.critical("ICMPv6 Sanity check fail - wrong packet code")
             return False
         if len(raw_packet) < 8:
             logger.critical("ICMPv6 Sanity check fail - wrong packet length (II)")
             return False
-        if __nd_option_len_fail(raw_packet, 9, logger):
+        if __nd_option_check(raw_packet, 8, logger) is False:
             return False
 
-    if raw_packet[0] == ICMP6_ROUTER_ADVERTISEMENT:
+    elif raw_packet[0] == ICMP6_ROUTER_ADVERTISEMENT:
         if raw_packet[1] not in {0}:
             logger.critical("ICMPv6 Sanity check fail - wrong packet code")
             return False
         if len(raw_packet) < 16:
             logger.critical("ICMPv6 Sanity check fail - wrong packet length (II)")
             return False
-        if __nd_option_len_fail(raw_packet, 17, logger):
+        if __nd_option_check(raw_packet, 16, logger) is False:
             return False
 
-    if raw_packet[0] == ICMP6_NEIGHBOR_SOLICITATION:
+    elif raw_packet[0] == ICMP6_NEIGHBOR_SOLICITATION:
         if raw_packet[1] not in {0}:
             logger.critical("ICMPv6 Sanity check fail - wrong packet code")
             return False
         if len(raw_packet) < 24:
             logger.critical("ICMPv6 Sanity check fail - wrong packet length (II)")
             return False
-        if __nd_option_len_fail(raw_packet, 25, logger):
+        if __nd_option_check(raw_packet, 24, logger) is False:
             return False
 
-    if raw_packet[0] == ICMP6_NEIGHBOR_ADVERTISEMENT:
+    elif raw_packet[0] == ICMP6_NEIGHBOR_ADVERTISEMENT:
         if raw_packet[1] not in {0}:
             logger.critical("ICMPv6 Sanity check fail - wrong packet code")
             return False
         if len(raw_packet) < 24:
             logger.critical("ICMPv6 Sanity check fail - wrong packet length (II)")
             return False
-        if __nd_option_len_fail(raw_packet, 25, logger):
+        if __nd_option_check(raw_packet, 24, logger) is False:
             return False
 
-    if raw_packet[0] == ICMP6_MLD2_REPORT:
+    elif raw_packet[0] == ICMP6_MLD2_REPORT:
         if raw_packet[1] not in {0}:
             logger.critical("ICMPv6 Sanity check fail - wrong packet code")
             return False
@@ -983,14 +989,9 @@ def preliminary_sanity_check(ip_packet, logger):
             if index + 20 > len(raw_packet):
                 logger.critical("ICMPv6 Sanity check fail - wrong packet length (III)")
                 return False
-            index += 20 + raw_packet[index + 1] + struct.unpack("! H", raw_packet[index + 2:index + 4])[0] * 16
+            index += 20 + raw_packet[index + 1] + struct.unpack("! H", raw_packet[index + 2 : index + 4])[0] * 16
         if index != len(raw_packet):
             logger.critical("ICMPv6 Sanity check fail - wrong packet lenght (IV)")
             return False
-
-
-    if inet_cksum.compute_cksum(ip_pseudo_header + raw_packet):
-        logger.critical("ICMPv6 Sanity check fail - wrong checksum")
-        return False
 
     return True

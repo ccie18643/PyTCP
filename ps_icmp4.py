@@ -44,6 +44,7 @@
 import struct
 
 import inet_cksum
+import stack
 from tracker import Tracker
 
 # Echo reply message (0/0)
@@ -224,3 +225,49 @@ class Icmp4Packet:
         """ Validate packet checksum """
 
         return not bool(inet_cksum.compute_cksum(self.raw_packet))
+
+
+#
+#   ICMPv4 sanity check functions
+#
+
+
+def preliminary_sanity_check(raw_packet, logger):
+    """ Preliminary sanity check to be run on raw ICMPv4 packet prior to packet parsing """
+
+    if not stack.preliminary_packet_sanity_check:
+        return True
+
+    if len(raw_packet) < 4:
+        logger.critical("ICMPv4 Sanity check fail - wrong packet length (I)")
+        return False
+
+    if inet_cksum.compute_cksum(raw_packet):
+        logger.critical("ICMPv4 Sanity check fail - wrong checksum")
+        return False
+
+    if raw_packet[0] == ICMP4_ECHOREPLY:
+        if raw_packet[1] not in {0}:
+            logger.critical("ICMPv4 Sanity check fail - wrong packet code")
+            return False
+        if len(raw_packet) < 8:
+            logger.critical("ICMPv6 Sanity check fail - wrong packet length (II)")
+            return False
+
+    if raw_packet[0] == ICMP4_UNREACHABLE:
+        if raw_packet[1] not in {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15}:
+            logger.critical("ICMPv6 Sanity check fail - wrong packet code")
+            return False
+        if len(raw_packet) < 12:
+            logger.critical("ICMPv6 Sanity check fail - wrong packet length (II)")
+            return False
+
+    elif raw_packet[0] == ICMP4_ECHOREQUEST:
+        if raw_packet[1] not in {0}:
+            logger.critical("ICMPv4 Sanity check fail - wrong packet code")
+            return False
+        if len(raw_packet) < 8:
+            logger.critical("ICMPv6 Sanity check fail - wrong packet length (II)")
+            return False
+
+    return True

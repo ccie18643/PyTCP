@@ -44,6 +44,7 @@
 import struct
 from ipaddress import IPv4Address
 
+import stack
 from tracker import Tracker
 
 # ARP packet header - IPv4 stack version only
@@ -151,3 +152,41 @@ class ArpPacket:
         """ Get packet in raw format ready to be processed by lower level protocol """
 
         return self.raw_packet
+
+
+#
+#   ARP sanity check functions
+#
+
+
+def preliminary_sanity_check(raw_packet, logger):
+    """ Preliminary sanity check to be run on raw ARP packet prior to packet parsing """
+
+    if not stack.preliminary_packet_sanity_check:
+        return True
+
+    if len(raw_packet) < 28:
+        logger.critical("ARP Sanity check fail - wrong packet length (I)")
+        return False
+
+    if struct.unpack("!H", raw_packet[0:2])[0] != 1:
+        logger.critical("ARP Sanity check fail - wrong value of 'hardware address type' field")
+        return False
+
+    if struct.unpack("!H", raw_packet[2:4])[0] != 0x0800:
+        logger.critical("ARP Sanity check fail - wrong value of 'protocol address type' field")
+        return False
+
+    if raw_packet[4] != 6:
+        logger.critical("ARP Sanity check fail - wrong value of 'hardware address length' field")
+        return False
+
+    if raw_packet[5] != 4:
+        logger.critical("ARP Sanity check fail - wrong value of 'protocol address length' field")
+        return False
+
+    if struct.unpack("!H", raw_packet[6:8])[0] not in {1, 2}:
+        logger.critical("ARP Sanity check fail - wrong value of 'operation' field")
+        return False
+
+    return True

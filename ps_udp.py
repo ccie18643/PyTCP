@@ -44,6 +44,7 @@
 import struct
 
 import inet_cksum
+import stack
 from tracker import Tracker
 
 # UDP packet header (RFC 768)
@@ -51,7 +52,7 @@ from tracker import Tracker
 # +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 # |          Source port          |        Destination port       |
 # +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-# |             Length            |            Checksum           |
+# |         Packet length         |            Checksum           |
 # +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 
 
@@ -129,3 +130,30 @@ class UdpPacket:
             return True
 
         return not bool(inet_cksum.compute_cksum(ip_pseudo_header + self.raw_packet))
+
+
+#
+#   UDP sanity check functions
+#
+
+
+def preliminary_sanity_check(raw_packet, ip_pseudo_header, logger):
+    """ Preliminary sanity check to be run on raw UDP packet prior to packet parsing """
+
+    if not stack.preliminary_packet_sanity_check:
+        return True
+
+    if len(raw_packet) < 8:
+        logger.critical("UDP Sanity check fail - wrong packet length (I)")
+        return False
+
+    if inet_cksum.compute_cksum(ip_pseudo_header + raw_packet):
+        logger.critical("UDP Sanity check fail - wrong checksum")
+        return False
+
+    plen = struct.unpack("!H", raw_packet[4:6])[0]
+    if not (8 <= plen == len(raw_packet)):
+        logger.critical("UDP Sanity check fail - wrong packet length (II)")
+        return False
+
+    return True
