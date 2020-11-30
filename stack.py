@@ -37,7 +37,7 @@
 
 
 #
-# stack.py - module holds references to the stack components and global configuration paameters
+# stack.py - module holds references to the stack components and global configuration parameters
 #
 
 
@@ -73,7 +73,7 @@ ip6_address_candidate = [
     # ("FE80::7777/64", None),  # test duplicate address
     # ("FE80::9999/64", "FE80::1"),  # test link local address with default gateway
     # ("2007::1111/64", "DUPA"),  # test link local address with default gateway
-    # ("DUPA", None),  # test invalid address
+    # ("ZHOPA", None),  # test invalid address
     # ("2099::99/64", "2009::99"),  # test invalid gateway
     # ("2007::7/64", "FE80::1"),
     # ("2009::9/64", "2009::1"),
