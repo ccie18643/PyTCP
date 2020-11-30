@@ -46,7 +46,7 @@ This program is a work in progress and it changes on daily basis due to new feat
  - IPv6 protocol - *validate and possibly re-implements certain IPv6 mechanisms/processes acoording to RFC rules*
  - IPv6 protocol - *research and implement fragmentation*
  - IPv6 protocol - *research and possibly implement support for ceratin optional IPv6 headers*
- - IPv6 protocol - *investigate Hop-by-Hop optional header and its relation to MLD2 Report message, implement if needed for MLD2 to work properly*
+ - IPv6 protocol - *investigate Hop-by-Hop Options header and its relation to MLD2 Report message, implement if needed for MLD2 to work properly*
  - ICMPv6 protocol - *validate and possibly re-implements certain IPv6 mechanisms/processes acoording to RFC rules*
  - ICMPv6 protocol - *implement ND Redirect message*
  - ICMPv6 protocol - *Multicast Listner Discovery v2 (MLDv2) full implementation <-- it may be requied by stack to respond to MLD queries*
