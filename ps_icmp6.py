@@ -45,6 +45,7 @@ import struct
 from ipaddress import IPv6Address, IPv6Network
 
 import inet_cksum
+import stack
 from tracker import Tracker
 
 # Destination Unreachable message (1/[0,1,3,4])
@@ -862,3 +863,84 @@ class MulticastAddressRecord:
             + b"".join([_.packed for _ in self.source_address])
             + self.aux_data
         )
+
+
+#
+#   ICMPv6 sanity check functions
+#
+
+
+def __nd_option_len_fail(raw_packet, index, logger):
+    """ Return True if any of ND options has length field set to 0 or if it reaches over length of packet"""
+
+    while index < len(raw_packet):
+        if raw_packet[index] < 1:
+            logger.debug("ICMPv6 Sanity check fail - ND option length set to 0")
+            return True
+        index += raw_packet[index] << 3
+        if index - 1 > len(raw_packet):
+            logger.critical("ICMPv6 Sanity check fail - ND option length extends ove length of packet")
+    return False
+
+
+def preliminary_sanity_check(ip_packet, logger):
+    """ Preliminary sanity check to be run on raw ICMPv6 packet prior to packet parsing """
+
+    if not stack.preliminary_packet_sanity_check:
+        return True
+
+    raw_packet = ip_packet.raw_data
+    ip_pseudo_header = ip_packet.ip_pseudo_header
+
+    if len(raw_packet) < 4:
+        logger.debug("ICMPv6 Sanity check fail - packet length less than 4 bytes")
+        return False
+
+    if raw_packet[0] == ICMP6_UNREACHABLE:
+        if len(raw_packet) < 12:
+            logger.debug("ICMPv6 Sanity check fail - packet length less than 12 bytes")
+            return False
+
+    if raw_packet[0] == ICMP6_ECHOREQUEST:
+        if len(raw_packet) < 8:
+            logger.debug("ICMPv6 Sanity check fail - packet length less than 8 bytes")
+            return False
+
+    if raw_packet[0] == ICMP6_ECHOREPLY:
+        if len(raw_packet) < 8:
+            logger.debug("ICMPv6 Sanity check fail - packet length less than 8 bytes")
+            return False
+
+    if raw_packet[0] == ICMP6_ROUTER_SOLICITATION:
+        if len(raw_packet) < 8:
+            logger.debug("ICMPv6 Sanity check fail - packet length less than 8 bytes")
+            return False
+        if __nd_option_len_fail(raw_packet, 9, logger):
+            return False
+
+    if raw_packet[0] == ICMP6_ROUTER_ADVERTISEMENT:
+        if len(raw_packet) < 16:
+            logger.debug("ICMPv6 Sanity check fail - packet length less than 16 bytes")
+            return False
+        if __nd_option_len_fail(raw_packet, 17, logger):
+            return False
+
+    if raw_packet[0] == ICMP6_NEIGHBOR_SOLICITATION:
+        if len(raw_packet) < 24:
+            logger.debug("ICMPv6 Sanity check fail - packet length less than 24 bytes")
+            return False
+        if __nd_option_len_fail(raw_packet, 25, logger):
+            return False
+
+    if raw_packet[0] == ICMP6_NEIGHBOR_ADVERTISEMENT:
+        if len(raw_packet) < 24:
+            logger.debug("ICMPv6 Sanity check fail - packet length less than 24 bytes")
+            return False
+        if __nd_option_len_fail(raw_packet, 25, logger):
+            return False
+
+    if inet_cksum.compute_cksum(ip_pseudo_header + raw_packet):
+        logger.debug("ICMPv6 Sanity check fail - wrong checksum")
+        return False
+
+    return True
