@@ -45,6 +45,7 @@ from ipaddress import IPv6Address
 
 import ps_icmp6
 import stack
+from ip_helper import find_stack_ip6_address
 
 
 def phrx_icmp6(self, ip6_packet_rx, icmp6_packet_rx):
@@ -58,7 +59,7 @@ def phrx_icmp6(self, ip6_packet_rx, icmp6_packet_rx):
         return
 
     # ICMPv6 Neighbor Solicitation packet
-    if icmp6_packet_rx.icmp6_type == ps_icmp6.ICMP6_NEIGHBOR_SOLICITATION and icmp6_packet_rx.icmp6_code == 0:
+    if icmp6_packet_rx.icmp6_type == ps_icmp6.ICMP6_NEIGHBOR_SOLICITATION:
 
         # Check if request is for one of stack's IPv6 unicast addresses
         if icmp6_packet_rx.icmp6_ns_target_address not in self.stack_ip6_unicast:
@@ -75,6 +76,13 @@ def phrx_icmp6(self, ip6_packet_rx, icmp6_packet_rx):
             return
 
         self.logger.debug(f"Received ICMPv6 Neighbor Solicitation packet from {ip6_packet_rx.ip6_src}, sending reply")
+
+        # Sanity check on packet's source address, make sure that its either unspecified or it belongs to the same subnet as the target address
+        if not (ip6_packet_rx.ip6_src in find_stack_ip6_address(icmp6_packet_rx.icmp6_ns_target_address).network or ip6_packet_rx.ip6_src.is_unspecified):
+            self.logger.debug(
+                f"Received ICMPv6 Neighbor Solicitation packet from {ip6_packet_rx.ip6_src}, source doesn't match target's subnet, droping..."
+            )
+            return
 
         # Update ICMPv6 ND cache
         if not (ip6_packet_rx.ip6_src.is_unspecified or ip6_packet_rx.ip6_src.is_multicast) and icmp6_packet_rx.icmp6_nd_opt_slla:
@@ -95,7 +103,7 @@ def phrx_icmp6(self, ip6_packet_rx, icmp6_packet_rx):
         return
 
     # ICMPv6 Neighbor Advertisement packet
-    if icmp6_packet_rx.icmp6_type == ps_icmp6.ICMP6_NEIGHBOR_ADVERTISEMENT and icmp6_packet_rx.icmp6_code == 0:
+    if icmp6_packet_rx.icmp6_type == ps_icmp6.ICMP6_NEIGHBOR_ADVERTISEMENT:
 
         # Sanity check on packet's hop limit field, this must be set to 255
         if ip6_packet_rx.ip6_hop != 255:
@@ -120,7 +128,7 @@ def phrx_icmp6(self, ip6_packet_rx, icmp6_packet_rx):
         return
 
     # ICMPv6 Router Solicitaion packet (this is not currently used by the stack)
-    if icmp6_packet_rx.icmp6_type == ps_icmp6.ICMP6_ROUTER_SOLICITATION and icmp6_packet_rx.icmp6_code == 0:
+    if icmp6_packet_rx.icmp6_type == ps_icmp6.ICMP6_ROUTER_SOLICITATION:
 
         # Sanity check on packet's source address, this must be set to link local or unspecified address
         if not (ip6_packet_rx.ip6_src.is_link_local or ip6_packet_rx.ip6_src.is_unspecified):
@@ -147,7 +155,7 @@ def phrx_icmp6(self, ip6_packet_rx, icmp6_packet_rx):
         return
 
     # ICMPv6 Router Advertisement packet
-    if icmp6_packet_rx.icmp6_type == ps_icmp6.ICMP6_ROUTER_ADVERTISEMENT and icmp6_packet_rx.icmp6_code == 0:
+    if icmp6_packet_rx.icmp6_type == ps_icmp6.ICMP6_ROUTER_ADVERTISEMENT:
 
         # Sanity check on packet's source address, this must be set to link local address
         if not ip6_packet_rx.ip6_src.is_link_local:
