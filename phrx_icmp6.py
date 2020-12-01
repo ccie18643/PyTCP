@@ -77,13 +77,6 @@ def phrx_icmp6(self, ip6_packet_rx, icmp6_packet_rx):
 
         self.logger.debug(f"Received ICMPv6 Neighbor Solicitation packet from {ip6_packet_rx.ip6_src}, sending reply")
 
-        # Sanity check on packet's source address, make sure that its either unspecified or it belongs to the same subnet as the target address
-        if not (ip6_packet_rx.ip6_src in find_stack_ip6_address(icmp6_packet_rx.icmp6_ns_target_address).network or ip6_packet_rx.ip6_src.is_unspecified):
-            self.logger.debug(
-                f"Received ICMPv6 Neighbor Solicitation packet from {ip6_packet_rx.ip6_src}, source doesn't match target's subnet, droping..."
-            )
-            return
-
         # Update ICMPv6 ND cache
         if not (ip6_packet_rx.ip6_src.is_unspecified or ip6_packet_rx.ip6_src.is_multicast) and icmp6_packet_rx.icmp6_nd_opt_slla:
             stack.icmp6_nd_cache.add_entry(ip6_packet_rx.ip6_src, icmp6_packet_rx.icmp6_nd_opt_slla)
