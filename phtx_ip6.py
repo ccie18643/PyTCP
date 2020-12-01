@@ -80,11 +80,12 @@ def validate_src_ip6_address(self, ip6_src, ip6_dst):
 
 
 def validate_dst_ip6_address(ip6_dst):
-    """ Make sure destination ip address is valid, supplement with valid one as appropriate """
+    """ Make sure destination ip address is valid """
 
-    # Check if destiantion address is unspecified, substitute it with All IPv6 Nodes multicast address
+    # Drop packet if the destination address is unspecified
     if ip6_dst.is_unspecified:
-        ip6_dst = IPv6Address("ff02::1")
+        self.logger.warning("Destination address is unspecified, dropping...")
+        return None
 
     return ip6_dst
 

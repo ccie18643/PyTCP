@@ -102,11 +102,12 @@ def validate_src_ip4_address(self, ip4_src, ip4_dst):
 
 
 def validate_dst_ip4_address(ip4_dst):
-    """ Make sure destination ip address is valid, supplement with valid one as appropriate """
+    """ Make sure destination ip address is valid """
 
-    # Check if destiantion address is unspecified, substitute it with limited broadcast address
+    # Drop packet if the destination address is unspecified
     if ip4_dst.is_unspecified:
-        ip4_dst = IPv4Address("255.255.255.255")
+        self.logger.warning("Destination address is unspecified, dropping...")
+        return None
 
     return ip4_dst
 
