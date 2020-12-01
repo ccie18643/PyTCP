@@ -79,6 +79,10 @@ def phrx_ether(self, ether_packet_rx):
         self.phrx_ip4(ps_ip4.Ip4Packet(ether_packet_rx))
         return
 
-    if ether_packet_rx.ether_type == ps_ether.ETHER_TYPE_IP6 and stack.ip6_support:
+    if (
+        ether_packet_rx.ether_type == ps_ether.ETHER_TYPE_IP6
+        and stack.ip6_support
+        and ps_ip6.preliminary_sanity_check(ether_packet_rx.raw_data, ether_packet_rx.tracker, self.logger)
+    ):
         self.phrx_ip6(ps_ip6.Ip6Packet(ether_packet_rx))
         return

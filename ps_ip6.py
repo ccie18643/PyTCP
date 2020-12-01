@@ -44,6 +44,8 @@
 import struct
 from ipaddress import IPv6Address
 
+import stack
+
 # IPv6 protocol header
 
 # +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
@@ -249,3 +251,25 @@ class Ip6Packet:
         """ Get packet in raw format ready to be processed by lower level protocol """
 
         return self.raw_packet
+
+
+#
+#   IPv6 sanity check functions
+#
+
+
+def preliminary_sanity_check(raw_packet, tracker, logger):
+    """ Preliminary sanity check to be run on raw IPv6 packet prior to packet parsing """
+
+    if not stack.preliminary_packet_sanity_check:
+        return True
+
+    if len(raw_packet) < 40:
+        logger.critical(f"{tracker} - IPv6 Sanity check fail - wrong packet length (I)")
+        return False
+
+    if struct.unpack("!H", raw_packet[4:6])[0] != len(raw_packet) - 40:
+        logger.critical(f"{tracker} - IPv6 Sanity check fail - wrong packet length (II)")
+        return False
+
+    return True

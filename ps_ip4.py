@@ -182,15 +182,15 @@ class Ip4Packet:
             while i < len(raw_options):
 
                 if raw_options[i] == IP4_OPT_EOL:
-                    self.ip4_options.append(IpOptEol())
+                    self.ip4_options.append(Ip4OptEol())
                     break
 
                 if raw_options[i] == IP4_OPT_NOP:
-                    self.ip4_options.append(IpOptNop())
+                    self.ip4_options.append(Ip4OptNop())
                     i += IP4_OPT_NOP_LEN
                     continue
 
-                self.ip4_options.append(opt_cls.get(raw_options[i], IpOptUnk)(raw_options[i : i + raw_options[i + 1]]))
+                self.ip4_options.append(opt_cls.get(raw_options[i], Ip4OptUnk)(raw_options[i : i + raw_options[i + 1]]))
                 i += self.raw_options[i + 1]
 
         # Packet building
@@ -330,7 +330,7 @@ IP4_OPT_EOL = 0
 IP4_OPT_EOL_LEN = 1
 
 
-class IpOptEol:
+class Ip4OptEol:
     """ IP option - End of Option List """
 
     def __init__(self):
@@ -350,7 +350,7 @@ IP4_OPT_NOP = 1
 IP4_OPT_NOP_LEN = 1
 
 
-class IpOptNop:
+class Ip4OptNop:
     """ IP option - No Operation """
 
     def __init__(self):
@@ -367,7 +367,7 @@ class IpOptNop:
 # IPv4 option not supported by this stack
 
 
-class IpOptUnk:
+class Ip4OptUnk:
     """ IP option not supported by this stack """
 
     def __init__(self, raw_option):
