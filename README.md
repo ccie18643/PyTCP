@@ -63,6 +63,8 @@ This program is a work in progress and it changes on daily basis due to new feat
  - IPv4 protocol - *improvements in IP defragmentation mechanism are needed, out of order fragment handling, purging of orphaned fragments*
  - IPv6/IPv4 protocols - *proper routing mechanism, route tables, etc...*
  - IPv6/IPv4 protocols - *ability of stack to act as a router*
+ - ARP cache - *implement proper FSM*
+ - ICMPv6 ND cache - *implement proper FSM*
 
 
 ### Examples:
