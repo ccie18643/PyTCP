@@ -84,7 +84,7 @@ def phrx_icmp6(self, ip6_packet_rx, icmp6_packet_rx):
         # Send response (for ND DAD to work the S flag must not be set)
         self.phtx_icmp6(
             ip6_src=icmp6_packet_rx.icmp6_ns_target_address,
-            ip6_dst=ip6_packet_rx.ip6_src,
+            ip6_dst=IPv6Address("ff02::1") if ip6_packet_rx.ip6_src.is_unspecified else ip6_packet_rx.ip6_src,
             ip6_hop=255,
             icmp6_type=ps_icmp6.ICMP6_NEIGHBOR_ADVERTISEMENT,
             icmp6_na_flag_s=not ip6_packet_rx.ip6_src.is_unspecified,
