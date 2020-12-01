@@ -130,7 +130,7 @@ class PacketHandler:
         if stack.ip4_support:
             # Create list of IPv4 unicast/multicast/broadcast addresses stack should listen on, use DHCP if enabled
             if stack.ip4_address_dhcp_config:
-                address, gateway = self.__dhcp_client()
+                address, gateway = self.__dhcp4_client()
                 if address:
                     stack.ip4_address_candidate.append((address, gateway))
             self.stack_ip4_address_candidate = self.parse_stack_ip4_address_candidate()
@@ -472,7 +472,7 @@ class PacketHandler:
         self.stack_mac_multicast.remove(mac_multicast)
         self.logger.debug(f"Removed MAC multicast {mac_multicast}")
 
-    def __dhcp_client(self):
+    def __dhcp4_client(self):
         """ Obtain IPv4 address and default gateway using DHCP """
 
         def __send_dhcp_packet(dhcp_packet_tx):

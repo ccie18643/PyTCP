@@ -150,11 +150,11 @@ def main():
     if stack.client_icmp_echo:
         # Same subnet, source addess specified
         # ClientIcmpEcho(local_ip_address="fdd1:c296:f24f:9:0:ff:fe77:7777", remote_ip_address="fdd1:c296:f24f:9:5054:ff:fedf:8537", message_count=10)
-        # ClientIcmpEcho(local_ip_address="fe80::7", remote_ip_address="fe80::b486:4dff:fe6a:6af6", message_count=10)
+        # ClientIcmpEcho(local_ip_address="fe80::7", remote_ip_address="fe80::5054:ff:fe8b:aa9", message_count=10)
 
         # Same subnet, source addess not specified
-        # ClientIcmpEcho(local_ip_address="::", remote_ip_address="fdd1:c296:f24f:9:5054:ff:fedf:8537", message_count=10)
-        # ClientIcmpEcho(local_ip_address="::", remote_ip_address="fe80::b486:4dff:fe6a:6af6", message_count=10)
+        # ClientIcmpEcho(local_ip_address="::", remote_ip_address="fdd1:c296:f24f:9:5054:ff:fe8b:aa9", message_count=10)
+        # ClientIcmpEcho(local_ip_address="::", remote_ip_address="fe80::5054:ff:fe8b:aa9", message_count=10)
 
         # Another subnet, source address specified
         # ClientIcmpEcho(local_ip_address="fdd1:c296:f24f:9:0:ff:fe77:7777", remote_ip_address="fdd1:c296:f24f:100:5054:ff:fef9:99aa", message_count=10)

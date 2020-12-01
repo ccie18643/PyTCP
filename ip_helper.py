@@ -70,6 +70,7 @@ def ip6_multicast_mac(ip6_multicast_address):
 
     return "33:33:" + ":".join(["".join(ip6_multicast_address.exploded[-9:].split(":"))[_ : _ + 2] for _ in range(0, 8, 2)])
 
+
 def find_stack_ip6_address(ip6_unicast):
     """ Find stack address that belongs to the same subnet as given unicast address """
 
@@ -78,6 +79,7 @@ def find_stack_ip6_address(ip6_unicast):
             return stack_ip6_address
     return None
 
+
 def find_stack_ip4_address(ip4_unicast):
     """ Find stack address that belongs to the same subnet as given unicast address """
 
@@ -85,6 +87,7 @@ def find_stack_ip4_address(ip4_unicast):
         if ip4_unicast in stack_ip4_address.network:
             return stack_ip4_address
     return None
+
 
 def ip_pick_version(ip_address):
     """ Return correct IPv6Address or IPv4Address based on address string provided """
