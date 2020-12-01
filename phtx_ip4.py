@@ -101,7 +101,7 @@ def validate_src_ip4_address(self, ip4_src, ip4_dst):
     return ip4_src
 
 
-def validate_dst_ip4_address(ip4_dst):
+def validate_dst_ip4_address(self, ip4_dst):
     """ Make sure destination ip address is valid """
 
     # Drop packet if the destination address is unspecified
@@ -129,7 +129,7 @@ def phtx_ip4(self, child_packet, ip4_dst, ip4_src):
         return
 
     # Validate destination address
-    ip4_dst = validate_dst_ip4_address(ip4_dst)
+    ip4_dst = validate_dst_ip4_address(self, ip4_dst)
     if not ip4_dst:
         return
 

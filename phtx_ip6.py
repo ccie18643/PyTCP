@@ -79,7 +79,7 @@ def validate_src_ip6_address(self, ip6_src, ip6_dst):
     return ip6_src
 
 
-def validate_dst_ip6_address(ip6_dst):
+def validate_dst_ip6_address(self, ip6_dst):
     """ Make sure destination ip address is valid """
 
     # Drop packet if the destination address is unspecified
@@ -107,7 +107,7 @@ def phtx_ip6(self, child_packet, ip6_dst, ip6_src, ip6_hop=64):
         return
 
     # Validate destination address
-    ip6_dst = validate_dst_ip6_address(ip6_dst)
+    ip6_dst = validate_dst_ip6_address(self, ip6_dst)
     if not ip6_dst:
         return
 
