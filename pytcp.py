@@ -64,6 +64,7 @@ from service_tcp_echo import ServiceTcpEcho
 from service_udp_daytime import ServiceUdpDaytime
 from service_udp_discard import ServiceUdpDiscard
 from service_udp_echo import ServiceUdpEcho
+from stack_cli_server import StackCliServer
 from stack_timer import StackTimer
 from tx_ring import TxRing
 
@@ -106,6 +107,7 @@ def main():
     fcntl.ioctl(tap, TUNSETIFF, struct.pack("16sH", stack.interface, IFF_TAP | IFF_NO_PI))
 
     # Initialize stack components
+    StackCliServer()
     StackTimer()
     RxRing(tap)
     TxRing(tap)
