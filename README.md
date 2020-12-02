@@ -38,14 +38,13 @@ This program is a work in progress and it changes on daily basis due to new feat
 
 #### Work in progress:
 
- - IPv6 protocol - *implemnting optional headers*
- - IPv6 protocol - *implementing preliminary packet sanity check*
- - Ethernet protocol - *implementing preliminary packet sanity check*
+ - Stack - *implementing stack debuging console so certain information about stack components can be displayed on demand by sending commands. eg 'show icmpv6 nd cache', 'show ipv6 route', etc...*
 
 #### Next steps:
 
  - QUIC protocol - *research and plan for the implementation, this depends on ability to create lab environment for it*
  - IPv6 protocol - *redesign the RA PI option handling and ND prefix auto configuration to properly use A nad L flags, some research also needed on case when different than /64 prefix is being advertised*
+ - IPv6 protocol - *implement optional headers*
  - IPv6 protocol - *validate and possibly re-implements certain IPv6 mechanisms/processes acoording to RFC rules*
  - IPv6 protocol - *research and implement fragmentation*
  - IPv6 protocol - *research and possibly implement support for ceratin optional IPv6 headers*
