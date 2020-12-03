@@ -45,7 +45,7 @@ import struct
 
 import loguru
 
-import stack
+import config
 from ip_helper import inet_cksum
 from tracker import Tracker
 
@@ -243,7 +243,7 @@ class Icmp4Packet:
     def __pre_parse_sanity_check(self, raw_packet):
         """ Preliminary sanity check to be run on raw ICMPv4 packet prior to packet parsing """
 
-        if not stack.pre_parse_sanity_check:
+        if not config.pre_parse_sanity_check:
             return True
 
         if inet_cksum(raw_packet):
@@ -274,7 +274,7 @@ class Icmp4Packet:
     def __post_parse_sanity_check(self):
         """ Sanity check to be run on parsed ICMPv6 packet """
 
-        if not stack.post_parse_sanity_check:
+        if not config.post_parse_sanity_check:
             return True
 
         if self.icmp4_type == ICMP4_ECHOREPLY:

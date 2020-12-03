@@ -42,7 +42,7 @@
 
 
 import ps_icmp4
-import stack
+import config
 
 
 def phtx_icmp4(
@@ -60,7 +60,7 @@ def phtx_icmp4(
     """ Handle outbound ICMPv4 packets """
 
     # Check if IPv4 protocol support is enabled, if not then silently drop the packet
-    if not stack.ip4_support:
+    if not config.ip4_support:
         return
 
     icmp4_packet_tx = ps_icmp4.Icmp4Packet(

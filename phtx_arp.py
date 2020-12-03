@@ -42,14 +42,14 @@
 
 
 import ps_arp
-import stack
+import config
 
 
 def phtx_arp(self, ether_src, ether_dst, arp_oper, arp_sha, arp_spa, arp_tha, arp_tpa, echo_tracker=None):
     """ Handle outbound ARP packets """
 
     # Check if IPv4 protocol support is enabled, if not then silently drop the packet
-    if not stack.ip4_support:
+    if not config.ip4_support:
         return
 
     arp_packet_tx = ps_arp.ArpPacket(

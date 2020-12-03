@@ -47,7 +47,7 @@ from ipaddress import IPv4Address
 
 import ps_ether
 import ps_ip4
-import stack
+import config
 
 
 def validate_src_ip4_address(self, ip4_src, ip4_dst):
@@ -116,7 +116,7 @@ def phtx_ip4(self, child_packet, ip4_dst, ip4_src):
     """ Handle outbound IP packets """
 
     # Check if IPv4 protocol support is enabled, if not then silently drop the packet
-    if not stack.ip4_support:
+    if not config.ip4_support:
         return
 
     # Make sure source and destination addresses are the right object type
@@ -139,7 +139,7 @@ def phtx_ip4(self, child_packet, ip4_dst, ip4_src):
         self.ip4_packet_id = 1
 
     # Check if packet can be sent out without fragmentation, if so send it out
-    if ps_ip4.IP4_HEADER_LEN + len(child_packet.raw_packet) <= stack.mtu:
+    if ps_ip4.IP4_HEADER_LEN + len(child_packet.raw_packet) <= config.mtu:
         ip4_packet_tx = ps_ip4.Ip4Packet(ip4_src=ip4_src, ip4_dst=ip4_dst, ip4_packet_id=self.ip4_packet_id, child_packet=child_packet)
 
         self.logger.debug(f"{ip4_packet_tx.tracker} - {ip4_packet_tx}")
@@ -166,7 +166,7 @@ def phtx_ip4(self, child_packet, ip4_dst, ip4_src):
             )
         )
 
-    raw_data_mtu = (stack.mtu - ps_ether.ETHER_HEADER_LEN - ps_ip4.IP4_HEADER_LEN) & 0b1111111111111000
+    raw_data_mtu = (config.mtu - ps_ether.ETHER_HEADER_LEN - ps_ip4.IP4_HEADER_LEN) & 0b1111111111111000
     raw_data_fragments = [raw_data[_ : raw_data_mtu + _] for _ in range(0, len(raw_data), raw_data_mtu)]
 
     pointer = 0

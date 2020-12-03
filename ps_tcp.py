@@ -45,7 +45,7 @@ import struct
 
 import loguru
 
-import stack
+import config
 from ip_helper import inet_cksum
 from tracker import Tracker
 
@@ -309,7 +309,7 @@ class TcpPacket:
     def __pre_parse_sanity_check(self, raw_packet, pseudo_header):
         """ Preliminary sanity check to be run on raw TCP packet prior to packet parsing """
 
-        if not stack.pre_parse_sanity_check:
+        if not config.pre_parse_sanity_check:
             return True
 
         if inet_cksum(pseudo_header + raw_packet):
@@ -351,7 +351,7 @@ class TcpPacket:
     def __post_parse_sanity_check(self):
         """ Sanity check to be run on parsed TCP packet """
 
-        if not stack.post_parse_sanity_check:
+        if not config.post_parse_sanity_check:
             return True
 
         # tcp_sport set to zero

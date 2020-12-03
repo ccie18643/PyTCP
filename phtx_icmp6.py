@@ -42,7 +42,7 @@
 
 
 import ps_icmp6
-import stack
+import config
 
 
 def phtx_icmp6(
@@ -68,7 +68,7 @@ def phtx_icmp6(
     """ Handle outbound ICMPv6 packets """
 
     # Check if IPv6 protocol support is enabled, if not then silently drop the packet
-    if not stack.ip6_support:
+    if not config.ip6_support:
         return
 
     icmp6_packet_tx = ps_icmp6.Icmp6Packet(

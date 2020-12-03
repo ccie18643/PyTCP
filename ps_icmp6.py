@@ -46,7 +46,7 @@ from ipaddress import IPv6Address, IPv6Network
 
 import loguru
 
-import stack
+import config
 from ip_helper import inet_cksum, ip6_is_unicast, ip6_solicited_node_multicast
 from tracker import Tracker
 
@@ -660,7 +660,7 @@ class Icmp6Packet:
     def __pre_parse_sanity_check(self, raw_packet, pseudo_header):
         """ Preliminary sanity check to be run on raw ICMPv6 packet prior to packet parsing """
 
-        if not stack.pre_parse_sanity_check:
+        if not config.pre_parse_sanity_check:
             return True
 
         if inet_cksum(pseudo_header + raw_packet):
@@ -741,7 +741,7 @@ class Icmp6Packet:
     def __post_parse_sanity_check(self, ip6_src, ip6_dst, ip6_hop):
         """ Sanity check to be run on parsed ICMPv6 packet """
 
-        if not stack.post_parse_sanity_check:
+        if not config.post_parse_sanity_check:
             return True
 
         if self.icmp6_type == ICMP6_UNREACHABLE:

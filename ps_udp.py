@@ -45,7 +45,7 @@ import struct
 
 import loguru
 
-import stack
+import config
 from ip_helper import inet_cksum
 from tracker import Tracker
 
@@ -146,7 +146,7 @@ class UdpPacket:
     def __pre_parse_sanity_check(self, raw_packet, pseudo_header):
         """ Preliminary sanity check to be run on raw UDP packet prior to packet parsing """
 
-        if not stack.pre_parse_sanity_check:
+        if not config.pre_parse_sanity_check:
             return True
 
         if inet_cksum(pseudo_header + raw_packet):
@@ -167,7 +167,7 @@ class UdpPacket:
     def __post_parse_sanity_check(self):
         """ Sanity check to be run on parsed UDP packet """
 
-        if not stack.post_parse_sanity_check:
+        if not config.post_parse_sanity_check:
             return True
 
         # udp_sport set to zero

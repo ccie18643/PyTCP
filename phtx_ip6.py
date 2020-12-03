@@ -44,7 +44,7 @@
 from ipaddress import IPv6Address
 
 import ps_ip6
-import stack
+import config
 
 
 def validate_src_ip6_address(self, ip6_src, ip6_dst):
@@ -94,7 +94,7 @@ def phtx_ip6(self, child_packet, ip6_dst, ip6_src, ip6_hop=64):
     """ Handle outbound IP packets """
 
     # Check if IPv6 protocol support is enabled, if not then silently drop the packet
-    if not stack.ip6_support:
+    if not config.ip6_support:
         return
 
     # Make sure source and destination addresses are the right object type
@@ -112,7 +112,7 @@ def phtx_ip6(self, child_packet, ip6_dst, ip6_src, ip6_hop=64):
         return
 
     # Check if IP packet can be sent out without fragmentation, if so send it out
-    if ps_ip6.IP6_HEADER_LEN + len(child_packet.raw_packet) <= stack.mtu:
+    if ps_ip6.IP6_HEADER_LEN + len(child_packet.raw_packet) <= config.mtu:
         ip6_packet_tx = ps_ip6.Ip6Packet(ip6_src=ip6_src, ip6_dst=ip6_dst, ip6_hop=ip6_hop, child_packet=child_packet)
 
         self.logger.debug(f"{ip6_packet_tx.tracker} - {ip6_packet_tx}")

@@ -46,6 +46,7 @@ import threading
 
 import loguru
 
+import config
 import stack
 
 PACKET_RETRANSMIT_TIMEOUT = 1000  # Retransmit data if ACK not received
@@ -110,7 +111,7 @@ class TcpSession:
         self.rcv_ini = None  # Initial seq number
         self.rcv_nxt = None  # Next seq to be received
         self.rcv_una = None  # Seq we acked
-        self.rcv_mss = stack.mtu - 40  # Maximum segment size
+        self.rcv_mss = config.mtu - 40  # Maximum segment size
         self.rcv_wnd = 65535  # Window size
         self.rcv_wsc = 1  # Window scale
 
@@ -460,7 +461,7 @@ class TcpSession:
                 # Register the new listening session
                 stack.tcp_sessions[tcp_session.tcp_session_id] = tcp_session
                 # Initialize session parameters
-                self.snd_mss = min(packet.mss, stack.mtu - 40)
+                self.snd_mss = min(packet.mss, config.mtu - 40)
                 self.snd_wnd = packet.win * self.snd_wsc  # For SYN / SYN + ACK packets this is initialized with wscale=1
                 self.snd_wsc = packet.wscale if packet.wscale else 1  # Peer's wscale set to None means that peer desn't support window scaling
                 self.logger.debug(f"{self.tcp_session_id} - Initialized remote window scale at {self.snd_wsc}")
@@ -491,7 +492,7 @@ class TcpSession:
             # Packet sanity check
             if packet.ack == self.snd_nxt and not packet.raw_data:
                 # Initialize session parameters
-                self.snd_mss = min(packet.mss, stack.mtu - 40)
+                self.snd_mss = min(packet.mss, config.mtu - 40)
                 self.snd_wnd = packet.win * self.snd_wsc  # For SYN / SYN + ACK packets this is initialized with wscale=1
                 self.snd_wsc = packet.wscale if packet.wscale else 1  # Peer's wscale set to None means that peer desn't support window scaling
                 self.logger.debug(f"{self.tcp_session_id} - Initialized remote window scale at {self.snd_wsc}")

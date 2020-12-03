@@ -46,7 +46,7 @@ from ipaddress import IPv4Address
 
 import loguru
 
-import stack
+import config
 from tracker import Tracker
 
 # ARP packet header - IPv4 stack version only
@@ -169,7 +169,7 @@ class ArpPacket:
     def __pre_parse_sanity_check(self, raw_packet):
         """ Preliminary sanity check to be run on raw ARP packet prior to packet parsing """
 
-        if not stack.pre_parse_sanity_check:
+        if not config.pre_parse_sanity_check:
             return True
 
         if len(raw_packet) < 28:
@@ -181,7 +181,7 @@ class ArpPacket:
     def __post_parse_sanity_check(self):
         """ Sanity check to be run on parsed ARP packet """
 
-        if not stack.post_parse_sanity_check:
+        if not config.post_parse_sanity_check:
             return True
 
         if not self.arp_hrtype == 1:

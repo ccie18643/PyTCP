@@ -45,7 +45,7 @@ import struct
 
 import loguru
 
-import stack
+import config
 from tracker import Tracker
 
 # Ethernet packet header
@@ -151,7 +151,7 @@ class EtherPacket:
     def __pre_parse_sanity_check(self, raw_packet):
         """ Preliminary sanity check to be run on raw Ethernet packet prior to packet parsing """
 
-        if not stack.pre_parse_sanity_check:
+        if not config.pre_parse_sanity_check:
             return True
 
         if len(raw_packet) < 14:
@@ -163,7 +163,7 @@ class EtherPacket:
     def __post_parse_sanity_check(self):
         """ Sanity check to be run on parsed Ethernet packet """
 
-        if not stack.post_parse_sanity_check:
+        if not config.post_parse_sanity_check:
             return True
 
         if self.ether_type < ETHER_TYPE_MIN:

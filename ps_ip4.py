@@ -46,7 +46,7 @@ from ipaddress import IPv4Address
 
 import loguru
 
-import stack
+import config
 from ip_helper import inet_cksum
 
 # IPv4 protocol header
@@ -336,7 +336,7 @@ class Ip4Packet:
     def __pre_parse_sanity_check(self, raw_packet):
         """ Preliminary sanity check to be run on raw IPv4 packet prior to packet parsing """
 
-        if not stack.pre_parse_sanity_check:
+        if not config.pre_parse_sanity_check:
             return True
 
         if len(raw_packet) < 20:
@@ -380,7 +380,7 @@ class Ip4Packet:
     def __post_parse_sanity_check(self):
         """ Sanity check to be run on parsed IPv4 packet """
 
-        if not stack.post_parse_sanity_check:
+        if not config.post_parse_sanity_check:
             return True
 
         # ip4_ver not set to 4
@@ -419,7 +419,7 @@ class Ip4Packet:
             return False
 
         # Packet contains options
-        if self.ip4_options and stack.ip4_option_packet_drop:
+        if self.ip4_options and config.ip4_option_packet_drop:
             self.logger.critical(f"{self.tracker} - IP sanity check fail - packet contains options")
             return False
 

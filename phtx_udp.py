@@ -44,18 +44,18 @@
 from ipaddress import IPv4Address, IPv6Address
 
 import ps_udp
-import stack
+import config
 
 
 def phtx_udp(self, ip_src, ip_dst, udp_sport, udp_dport, raw_data=b"", echo_tracker=None):
     """ Handle outbound UDP packets """
 
     # Check if IPv4 protocol support is enabled, if not then silently drop the IPv4 packet
-    if not stack.ip4_support and ip_dst.version == 4:
+    if not config.ip4_support and ip_dst.version == 4:
         return
 
     # Check if IPv6 protocol support is enabled, if not then silently drop the IPv6 packet
-    if not stack.ip6_support and ip_dst.version == 6:
+    if not config.ip6_support and ip_dst.version == 6:
         return
 
     udp_packet_tx = ps_udp.UdpPacket(udp_sport=udp_sport, udp_dport=udp_dport, raw_data=raw_data, echo_tracker=echo_tracker)

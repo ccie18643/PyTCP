@@ -50,7 +50,7 @@ from ipaddress import IPv4Interface, IPv6Interface, IPv6Network
 
 import loguru
 
-import stack
+import config
 from arp_cache import ArpCache
 from client_icmp_echo import ClientIcmpEcho
 from client_tcp_echo import ClientTcpEcho
@@ -73,14 +73,14 @@ IFF_TAP = 0x0002
 IFF_NO_PI = 0x1000
 
 
-########################################################
-#                                                      #
-#  For any configuration options edit 'stack.py' file  #
-#                                                      #
-#  For the TAP interface configuration check the       #
-#  'setup_tap.sh script'                               #
-#                                                      #
-########################################################
+#########################################################
+#                                                       #
+#  For any configuration options edit 'config.py' file  #
+#                                                       #
+#  For the TAP interface configuration check the        #
+#  'setup_tap.sh script'                                #
+#                                                       #
+#########################################################
 
 
 def main():
@@ -104,7 +104,7 @@ def main():
     )
 
     tap = os.open("/dev/net/tun", os.O_RDWR)
-    fcntl.ioctl(tap, TUNSETIFF, struct.pack("16sH", stack.interface, IFF_TAP | IFF_NO_PI))
+    fcntl.ioctl(tap, TUNSETIFF, struct.pack("16sH", config.interface, IFF_TAP | IFF_NO_PI))
 
     # Initialize stack components
     StackCliServer()
@@ -116,31 +116,31 @@ def main():
     PacketHandler()
 
     # Set proper local IP address pattern for services depending on whch version of IP is enabled
-    if stack.ip6_support and stack.ip4_support:
+    if config.ip6_support and config.ip4_support:
         local_ip_address = "*"
-    elif stack.ip6_support:
+    elif config.ip6_support:
         local_ip_address = "::"
-    elif stack.ip4_support:
+    elif config.ip4_support:
         local_ip_address = "0.0.0.0"
 
     # Initialize UDP test services
-    if stack.service_udp_echo:
+    if config.service_udp_echo:
         ServiceUdpEcho(local_ip_address=local_ip_address)
-    if stack.service_udp_discard:
+    if config.service_udp_discard:
         ServiceUdpDiscard(local_ip_address=local_ip_address)
-    if stack.service_udp_daytime:
+    if config.service_udp_daytime:
         ServiceUdpDaytime(local_ip_address=local_ip_address)
 
     # Initialize TCP test services
-    if stack.service_tcp_echo:
+    if config.service_tcp_echo:
         ServiceTcpEcho(local_ip_address=local_ip_address)
-    if stack.service_tcp_discard:
+    if config.service_tcp_discard:
         ServiceTcpDiscard(local_ip_address=local_ip_address)
-    if stack.service_tcp_daytime:
+    if config.service_tcp_daytime:
         ServiceTcpDaytime(local_ip_address=local_ip_address, message_count=-1, message_delay=1, message_size=1000)
 
     # Initialize TCP test clients
-    if stack.client_tcp_echo:
+    if config.client_tcp_echo:
         ClientTcpEcho(local_ip_address="192.168.9.7", remote_ip_address="192.168.100.101", remote_port=7, message_count=10)
         ClientTcpEcho(
             local_ip_address="fdd1:c296:f24f:9:0:ff:fe77:7777", remote_ip_address="fdd1:c296:f24f:100:5054:ff:fef9:99aa", remote_port=7, message_count=10
@@ -149,7 +149,7 @@ def main():
         # ClientTcpEcho(local_ip_address="192.168.9.7", remote_ip_address="192.168.9.9", remote_port=7)
 
     # Initialize ICMP test client
-    if stack.client_icmp_echo:
+    if config.client_icmp_echo:
         # Same subnet, source addess specified
         # ClientIcmpEcho(local_ip_address="fdd1:c296:f24f:9:0:ff:fe77:7777", remote_ip_address="fdd1:c296:f24f:9:5054:ff:fedf:8537", message_count=10)
         # ClientIcmpEcho(local_ip_address="fe80::7", remote_ip_address="fe80::5054:ff:fe8b:aa9", message_count=10)
