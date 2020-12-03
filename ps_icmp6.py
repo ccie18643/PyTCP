@@ -790,7 +790,7 @@ class Icmp6Packet:
                 self.logger.debug(f"{self.tracker} - ICMPv6 sanity check fail - ip6_dst address is not all-routers multicast")
                 return False
             # icmp6_rs_opt_slla must not be included if ip6_src is unspecified address
-            if ip6_src.is_unspecified and self.icmp6_nd_opt_opt_slla:
+            if ip6_src.is_unspecified and self.icmp6_nd_opt_slla:
                 self.logger.debug(f"{self.tracker} - ICMPv6 sanity check fail - p6_src address is unspecified but slla option present")
                 return False
 
