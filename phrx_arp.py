@@ -57,9 +57,8 @@ def phrx_arp(self, ether_packet_rx, arp_packet_rx):
     if arp_packet_rx.sanity_check_failed:
         self.logger.warning(f"{arp_packet_rx.tracker} - ARP packet sanity check failed, droping...")
         return
-    
-    self.logger.opt(ansi=True).info(f"<green>{arp_packet_rx.tracker}</green> - {arp_packet_rx}")
 
+    self.logger.opt(ansi=True).info(f"<green>{arp_packet_rx.tracker}</green> - {arp_packet_rx}")
 
     if arp_packet_rx.arp_oper == ps_arp.ARP_OP_REQUEST:
         # Check if request contains our IP address in SPA field, this indicates IP address conflict
