@@ -41,10 +41,20 @@
 #
 
 
+import struct
 from ipaddress import AddressValueError, IPv4Address, IPv6Address, IPv6Interface, IPv6Network
 from re import sub
 
 import stack
+
+
+def inet_cksum(data):
+    """ Compute Internet Checksum used by IP/TCP/UDP/ICMPv4 protocols """
+
+    data = data + (b"\0" if len(data) & 1 else b"")
+    cksum = sum(struct.unpack(f"! {len(data) >> 1}H", data))
+    cksum = (cksum >> 16) + (cksum & 0xFFFF)
+    return ~(cksum + (cksum >> 16)) & 0xFFFF
 
 
 def ip6_eui64(mac, prefix=IPv6Network("fe80::/64")):
@@ -63,6 +73,18 @@ def ip6_solicited_node_multicast(ip6_address):
     """ Create IPv6 solicited node multicast address """
 
     return IPv6Address("ff02::1:ff" + ip6_address.exploded[-7:])
+
+
+def ip6_is_solicited_node_multicast(ip6_address):
+    """ Check if address is IPv6 solicited node multicast address """
+
+    return str(ip6_address).startswith("ff02::1:ff")
+
+
+def ip6_is_unicast(ip6_address):
+    """ Check if address is IPv6 unicast address """
+
+    return not (ip6_address.is_multicast or ip6_address.is_unspecified)
 
 
 def ip6_multicast_mac(ip6_multicast_address):

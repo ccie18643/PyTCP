@@ -45,18 +45,17 @@ from ipaddress import IPv6Address
 
 import ps_icmp6
 import stack
-from ip_helper import find_stack_ip6_address
 
 
 def phrx_icmp6(self, ip6_packet_rx, icmp6_packet_rx):
     """ Handle inbound ICMPv6 packets """
 
-    self.logger.opt(ansi=True).info(f"<green>{icmp6_packet_rx.tracker}</green> - {icmp6_packet_rx}")
-
-    # Validate ICMPv6 packet checksum
-    if not icmp6_packet_rx.validate_cksum(ip6_packet_rx.ip_pseudo_header):
-        self.logger.debug(f"{icmp6_packet_rx.tracker} - ICMPv6 packet has invalid checksum, droping...")
+    # Validate ICMPv6 packet sanity
+    if icmp6_packet_rx.sanity_check_failed:
+        self.logger.warning(f"{icmp6_packet_rx.tracker} - ICMPv6 packet sanity check failed, droping...")
         return
+
+    self.logger.opt(ansi=True).info(f"<green>{icmp6_packet_rx.tracker}</green> - {icmp6_packet_rx}")
 
     # ICMPv6 Neighbor Solicitation packet
     if icmp6_packet_rx.icmp6_type == ps_icmp6.ICMP6_NEIGHBOR_SOLICITATION:
@@ -65,13 +64,6 @@ def phrx_icmp6(self, ip6_packet_rx, icmp6_packet_rx):
         if icmp6_packet_rx.icmp6_ns_target_address not in self.stack_ip6_unicast:
             self.logger.debug(
                 f"Received ICMPv6 Neighbor Solicitation packet from {ip6_packet_rx.ip6_src}, not matching any of stack's IPv6 unicast addresses, droping..."
-            )
-            return
-
-        # Sanity check on packet's hop limit field, this must be set to 255
-        if ip6_packet_rx.ip6_hop != 255:
-            self.logger.debug(
-                f"Received ICMPv6 Neighbor Solicitation packet from {ip6_packet_rx.ip6_src}, wrong hop limit value {ip6_packet_rx.ip6_hop}, droping..."
             )
             return
 
@@ -101,13 +93,6 @@ def phrx_icmp6(self, ip6_packet_rx, icmp6_packet_rx):
     # ICMPv6 Neighbor Advertisement packet
     if icmp6_packet_rx.icmp6_type == ps_icmp6.ICMP6_NEIGHBOR_ADVERTISEMENT:
 
-        # Sanity check on packet's hop limit field, this must be set to 255
-        if ip6_packet_rx.ip6_hop != 255:
-            self.logger.debug(
-                f"Received ICMPv6 Neighbor Advertisement packet from {ip6_packet_rx.ip6_src}, wrong hop limit value {ip6_packet_rx.ip6_hop}, droping..."
-            )
-            return
-
         self.logger.debug(f"Received ICMPv6 Neighbor Advertisement packet for {icmp6_packet_rx.icmp6_na_target_address} from {ip6_packet_rx.ip6_src}")
 
         # Run ND Duplicate Address Detection check
@@ -126,51 +111,11 @@ def phrx_icmp6(self, ip6_packet_rx, icmp6_packet_rx):
     # ICMPv6 Router Solicitaion packet (this is not currently used by the stack)
     if icmp6_packet_rx.icmp6_type == ps_icmp6.ICMP6_ROUTER_SOLICITATION:
 
-        # Sanity check on packet's source address, this must be set to link local or unspecified address
-        if not (ip6_packet_rx.ip6_src.is_link_local or ip6_packet_rx.ip6_src.is_unspecified):
-            self.logger.debug(
-                f"Received ICMPv6 Router Solicitation packet from {ip6_packet_rx.ip6_src}, source is not link local or unspecified address, droping..."
-            )
-            return
-
-        # Sanity check on packet's destination address, this must be set to All IPv6 Routers multicast address
-        if ip6_packet_rx.ip6_dst != IPv6Address("ff02::2"):
-            self.logger.debug(
-                f"Received ICMPv6 Router Solicitation packet from {ip6_packet_rx.ip6_src}, destnation {ip6_packet_rx.ip6_dst} is not 'ff02::2', droping..."
-            )
-            return
-
-        # Sanity check on packet's hop limit field, this must be set to 255
-        if ip6_packet_rx.ip6_hop != 255:
-            self.logger.debug(
-                f"Received ICMPv6 Router Solicitation packet from {ip6_packet_rx.ip6_src}, hop limit {ip6_packet_rx.ip6_hop} is not 255, droping..."
-            )
-            return
-
         self.logger.debug(f"Received ICMPv6 Router Advertisement packet from {ip6_packet_rx.ip6_src}")
         return
 
     # ICMPv6 Router Advertisement packet
     if icmp6_packet_rx.icmp6_type == ps_icmp6.ICMP6_ROUTER_ADVERTISEMENT:
-
-        # Sanity check on packet's source address, this must be set to link local address
-        if not ip6_packet_rx.ip6_src.is_link_local:
-            self.logger.debug(f"Received ICMPv6 Router Advertisement packet from {ip6_packet_rx.ip6_src}, source is not link local address, droping...")
-            return
-
-        # Sanity check on packet's destination address, this must be set to All IPv6 Nodes multicast address
-        if ip6_packet_rx.ip6_dst != IPv6Address("ff02::1"):
-            self.logger.debug(
-                f"Received ICMPv6 Router Advertisement packet from {ip6_packet_rx.ip6_src}, destnation {ip6_packet_rx.ip6_dst} is not 'ff02::1', droping..."
-            )
-            return
-
-        # Sanity check on packet's hop limit field, this must be set to 255
-        if ip6_packet_rx.ip6_hop != 255:
-            self.logger.debug(
-                f"Received ICMPv6 Router Advertisement packet from {ip6_packet_rx.ip6_src}, hop limit {ip6_packet_rx.ip6_hop} is not 255, droping..."
-            )
-            return
 
         self.logger.debug(f"Received ICMPv6 Router Advertisement packet from {ip6_packet_rx.ip6_src}")
 

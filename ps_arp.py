@@ -44,6 +44,8 @@
 import struct
 from ipaddress import IPv4Address
 
+import loguru
+
 import stack
 from tracker import Tracker
 
@@ -80,11 +82,19 @@ class ArpPacket:
     def __init__(self, parent_packet=None, arp_sha=None, arp_spa=None, arp_tpa=None, arp_tha="00:00:00:00:00:00", arp_oper=ARP_OP_REQUEST, echo_tracker=None):
         """ Class constructor """
 
+        self.logger = loguru.logger.bind(object_name="ps_udp.")
+        self.sanity_check_failed = False
+
         # Packet parsing
         if parent_packet:
             self.tracker = parent_packet.tracker
 
             raw_packet = parent_packet.raw_data
+
+            if not self.__pre_parse_sanity_check(raw_packet):
+                self.sanity_check_failed = True
+                return
+
             raw_header = raw_packet[:ARP_HEADER_LEN]
 
             self.arp_hrtype = struct.unpack("!H", raw_header[0:2])[0]
@@ -96,6 +106,9 @@ class ArpPacket:
             self.arp_spa = IPv4Address(raw_header[14:18])
             self.arp_tha = ":".join([f"{_:0>2x}" for _ in raw_header[18:24]])
             self.arp_tpa = IPv4Address(raw_header[24:28])
+
+            if not self.__post_parse_sanity_check():
+                self.sanity_check_failed = True
 
         # Packet building
         else:
@@ -153,40 +166,42 @@ class ArpPacket:
 
         return self.raw_packet
 
+    def __pre_parse_sanity_check(self, raw_packet):
+        """ Preliminary sanity check to be run on raw ARP packet prior to packet parsing """
 
-#
-#   ARP sanity check functions
-#
+        if not stack.pre_parse_sanity_check:
+            return True
 
+        if len(raw_packet) < 28:
+            self.logger.critical(f"{self.tracker} - ARP sanity check fail - wrong packet length (I)")
+            return False
 
-def preliminary_sanity_check(raw_packet, tracker, logger):
-    """ Preliminary sanity check to be run on raw ARP packet prior to packet parsing """
-
-    if not stack.preliminary_packet_sanity_check:
         return True
 
-    if len(raw_packet) < 28:
-        logger.critical(f"{tracker} - ARP Sanity check fail - wrong packet length (I)")
-        return False
+    def __post_parse_sanity_check(self):
+        """ Sanity check to be run on parsed ARP packet """
 
-    if struct.unpack("!H", raw_packet[0:2])[0] != 1:
-        logger.critical(f"{tracker} - ARP Sanity check fail - wrong value of 'hardware address type' field")
-        return False
+        if not stack.post_parse_sanity_check:
+            return True
 
-    if struct.unpack("!H", raw_packet[2:4])[0] != 0x0800:
-        logger.critical(f"{tracker} - ARP Sanity check fail - wrong value of 'protocol address type' field")
-        return False
+        if not self.arp_hrtype == 1:
+            self.logger.critical(f"{self.tracker} - ARP sanity check fail - value of arp_hrtype is not 1")
+            return False
 
-    if raw_packet[4] != 6:
-        logger.critical(f"{tracker} - ARP Sanity check fail - wrong value of 'hardware address length' field")
-        return False
+        if not self.arp_prtype == 0x0800:
+            self.logger.critical(f"{self.tracker} - ARP sanity check fail - value of arp_prtype is not 0x0800")
+            return False
 
-    if raw_packet[5] != 4:
-        logger.critical(f"{tracker} - ARP Sanity check fail - wrong value of 'protocol address length' field")
-        return False
+        if not self.arp_hrlen == 6:
+            self.logger.critical(f"{self.tracker} - ARP sanity check fail - value of arp_hrlen is not 6")
+            return False
 
-    if struct.unpack("!H", raw_packet[6:8])[0] not in {1, 2}:
-        logger.critical(f"{tracker} - ARP Sanity check fail - wrong value of 'operation' field")
-        return False
+        if not self.arp_prlen == 4:
+            self.logger.critical(f"{self.tracker} - ARP sanity check fail - value of arp_prlen is not 4")
+            return False
 
-    return True
+        if not self.arp_oper in {1, 2}:
+            self.logger.critical(f"{self.tracker} - ARP sanity check fail - value of oper is not [1-2]")
+            return False
+
+        return True

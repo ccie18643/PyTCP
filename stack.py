@@ -50,10 +50,20 @@ interface = b"tap7"
 ip6_support = True
 ip4_support = True
 
-# Preliminary packet sanity check, if enabled it protects the Protocol Support classes from being exposed to malformed or malicious packets
-# that could cause them to crash during packet parsing. It check minimum length and checksum. It doesn't do any deep packet sanity check.
-# That is being done by Packet Handler RX function after the packet has been already parsed...
-preliminary_packet_sanity_check = True
+# Pre-parse packet sanity check, if enabled it protects the potocol parsers from being exposed to malformed or malicious packets
+# that could cause them to crash during packet parsing. It progessively check apropriate lenght fields and ensure they are set within sane boundries.
+# It also checks packet's actuall header/options/data lenghts against above values and default minimum/maximum lenghts for given protocol.
+# Also packet options (if any) are checked in similar fashion to ensure they will not exploit or crash parser.
+pre_parse_sanity_check = True
+
+# Post-parse packet sanity check, if enabled it validates  packets fields to detect invalid values or invalid combinations of values
+# For example in TCP/UDP it drops packets with port set to 0, in TCP it drop packet with SYN and FIN flags set simultaneously,
+# for ICMPv6 it provides very detailed check of messages integrity
+post_parse_sanity_check = True
+
+# Drop IPv4 packets containing options - this seems to be widely adopted security feature. Stack parses but doesn't support IPv4 options
+# as they are mostly useless anyway
+ip4_option_packet_drop = True
 
 # Unicast MAC addresses assigned to stack, currently there is not any kind of duplicate MAC detection performed
 mac_address_candidate = ["02:00:00:77:77:77"]

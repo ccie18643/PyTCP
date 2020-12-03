@@ -178,7 +178,7 @@ def phtx_ip4(self, child_packet, ip4_dst, ip4_src):
             ip4_dst=ip4_dst,
             ip4_proto=ip4_proto,
             ip4_packet_id=self.ip4_packet_id,
-            ip4_frag_mf=pointer < len(raw_data_fragments) - 1,
+            ip4_flag_mf=pointer < len(raw_data_fragments) - 1,
             ip4_frag_offset=offset,
             raw_data=raw_data_fragment,
             tracker=child_packet.tracker,

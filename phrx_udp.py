@@ -54,12 +54,12 @@ from udp_metadata import UdpMetadata
 def phrx_udp(self, ip_packet_rx, udp_packet_rx):
     """ Handle inbound UDP packets """
 
-    self.logger.opt(ansi=True).info(f"<green>{udp_packet_rx.tracker}</green> - {udp_packet_rx}")
-
-    # Validate UDP packet checksum
-    if not udp_packet_rx.validate_cksum(ip_packet_rx.ip_pseudo_header):
-        self.logger.debug(f"{udp_packet_rx.tracker} - UDP packet has invalid checksum, droping")
+    # Validate UDP packet sanity
+    if udp_packet_rx.sanity_check_failed:
+        self.logger.warning(f"{udp_packet_rx.tracker} - UDP packet sanity check failed, droping...")
         return
+
+    self.logger.opt(ansi=True).info(f"<green>{udp_packet_rx.tracker}</green> - {udp_packet_rx}")
 
     # Set universal names for src and dst IP addresses whether packet was delivered by IPv6 or IPv4 protocol
     ip_packet_rx.ip_dst = ip_packet_rx.ip6_dst if ip_packet_rx.protocol == "IPv6" else ip_packet_rx.ip4_dst

@@ -50,6 +50,11 @@ import ps_udp
 def phrx_ip6(self, ip6_packet_rx):
     """ Handle inbound IP packets """
 
+    # Validate IPv6 packet sanity
+    if ip6_packet_rx.sanity_check_failed:
+        self.logger.warning(f"{ip6_packet_rx.tracker} - IPv6 packet sanity check failed, droping...")
+        return
+
     self.logger.debug(f"{ip6_packet_rx.tracker} - {ip6_packet_rx}")
 
     # Check if received packet has been sent to us directly or by unicast or multicast
@@ -57,14 +62,14 @@ def phrx_ip6(self, ip6_packet_rx):
         self.logger.debug(f"{ip6_packet_rx.tracker} - IP packet not destined for this stack, droping")
         return
 
-    if ip6_packet_rx.ip6_next == ps_ip6.IP6_NEXT_HEADER_ICMP6 and ps_icmp6.preliminary_sanity_check(ip6_packet_rx.raw_data, ip6_packet_rx.tracker, self.logger):
+    if ip6_packet_rx.ip6_next == ps_ip6.IP6_NEXT_HEADER_ICMP6:
         self.phrx_icmp6(ip6_packet_rx, ps_icmp6.Icmp6Packet(ip6_packet_rx))
         return
 
-    if ip6_packet_rx.ip6_next == ps_ip6.IP6_NEXT_HEADER_UDP and ps_udp.preliminary_sanity_check(ip6_packet_rx.raw_data, ip6_packet_rx.tracker, self.logger):
+    if ip6_packet_rx.ip6_next == ps_ip6.IP6_NEXT_HEADER_UDP:
         self.phrx_udp(ip6_packet_rx, ps_udp.UdpPacket(ip6_packet_rx))
         return
 
-    if ip6_packet_rx.ip6_next == ps_ip6.IP6_NEXT_HEADER_TCP and ps_tcp.preliminary_sanity_check(ip6_packet_rx.raw_data, ip6_packet_rx.tracker, self.logger):
+    if ip6_packet_rx.ip6_next == ps_ip6.IP6_NEXT_HEADER_TCP:
         self.phrx_tcp(ip6_packet_rx, ps_tcp.TcpPacket(ip6_packet_rx))
         return

@@ -43,6 +43,9 @@
 
 import struct
 
+import loguru
+
+import stack
 from tracker import Tracker
 
 # Ethernet packet header
@@ -77,9 +80,16 @@ class EtherPacket:
     def __init__(self, raw_packet=None, ether_src="00:00:00:00:00:00", ether_dst="00:00:00:00:00:00", child_packet=None):
         """ Class constructor """
 
+        self.logger = loguru.logger.bind(object_name="ps_ether.")
+        self.sanity_check_failed = False
+
         # Packet parsing
         if raw_packet:
             self.tracker = Tracker("RX")
+
+            if not self.__pre_parse_sanity_check(raw_packet):
+                self.sanity_check_failed = True
+                return
 
             raw_header = raw_packet[:ETHER_HEADER_LEN]
 
@@ -87,6 +97,9 @@ class EtherPacket:
             self.ether_dst = ":".join([f"{_:0>2x}" for _ in raw_header[0:6]])
             self.ether_src = ":".join([f"{_:0>2x}" for _ in raw_header[6:12]])
             self.ether_type = struct.unpack("!H", raw_header[12:14])[0]
+
+            if not self.__post_parse_sanity_check():
+                self.sanity_check_failed = True
 
         # Packet building
         else:
@@ -134,3 +147,27 @@ class EtherPacket:
         """ Get packet in raw frmat ready to be sent out """
 
         return self.raw_packet
+
+    def __pre_parse_sanity_check(self, raw_packet):
+        """ Preliminary sanity check to be run on raw Ethernet packet prior to packet parsing """
+
+        if not stack.pre_parse_sanity_check:
+            return True
+
+        if len(raw_packet) < 14:
+            self.logger.critical(f"{self.tracker} - Ethernet sanity check fail - wrong packet length (I)")
+            return False
+
+        return True
+
+    def __post_parse_sanity_check(self):
+        """ Sanity check to be run on parsed Ethernet packet """
+
+        if not stack.post_parse_sanity_check:
+            return True
+
+        if self.ether_type < ETHER_TYPE_MIN:
+            self.logger.critical(f"{self.tracker} - Ethernet sanity check fail - value of ether_type < 0x0600")
+            return False
+
+        return True

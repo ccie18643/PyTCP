@@ -51,38 +51,26 @@ import stack
 def phrx_ether(self, ether_packet_rx):
     """ Handle inbound Ethernet packets """
 
-    self.logger.debug(f"{ether_packet_rx.tracker} - {ether_packet_rx}")
-
-    # Check if received packet uses valid Ethernet II format
-    if ether_packet_rx.ether_type < ps_ether.ETHER_TYPE_MIN:
-        self.logger.opt(ansi=True).debug(f"{ether_packet_rx.tracker} - Packet doesn't comply with the Ethernet II standard, droping")
+    # Validate Ethernet packet sanity
+    if ether_packet_rx.sanity_check_failed:
+        self.logger.warning(f"{ether_packet_rx.tracker} - Ethernet packet sanity check failed, droping...")
         return
+
+    self.logger.debug(f"{ether_packet_rx.tracker} - {ether_packet_rx}")
 
     # Check if received packet matches any of stack MAC addresses
     if ether_packet_rx.ether_dst not in {*self.stack_mac_unicast, *self.stack_mac_multicast, *self.stack_mac_broadcast}:
         self.logger.opt(ansi=True).debug(f"{ether_packet_rx.tracker} - Ethernet packet not destined for this stack, droping")
         return
 
-    if (
-        ether_packet_rx.ether_type == ps_ether.ETHER_TYPE_ARP
-        and stack.ip4_support
-        and ps_arp.preliminary_sanity_check(ether_packet_rx.raw_data, ether_packet_rx.tracker, self.logger)
-    ):
+    if ether_packet_rx.ether_type == ps_ether.ETHER_TYPE_ARP and stack.ip4_support:
         self.phrx_arp(ether_packet_rx, ps_arp.ArpPacket(ether_packet_rx))
         return
 
-    if (
-        ether_packet_rx.ether_type == ps_ether.ETHER_TYPE_IP4
-        and stack.ip4_support
-        and ps_ip4.preliminary_sanity_check(ether_packet_rx.raw_data, ether_packet_rx.tracker, self.logger)
-    ):
+    if ether_packet_rx.ether_type == ps_ether.ETHER_TYPE_IP4 and stack.ip4_support:
         self.phrx_ip4(ps_ip4.Ip4Packet(ether_packet_rx))
         return
 
-    if (
-        ether_packet_rx.ether_type == ps_ether.ETHER_TYPE_IP6
-        and stack.ip6_support
-        and ps_ip6.preliminary_sanity_check(ether_packet_rx.raw_data, ether_packet_rx.tracker, self.logger)
-    ):
+    if ether_packet_rx.ether_type == ps_ether.ETHER_TYPE_IP6 and stack.ip6_support:
         self.phrx_ip6(ps_ip6.Ip6Packet(ether_packet_rx))
         return

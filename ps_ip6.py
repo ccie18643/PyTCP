@@ -44,6 +44,8 @@
 import struct
 from ipaddress import IPv6Address
 
+import loguru
+
 import stack
 
 # IPv6 protocol header
@@ -149,11 +151,19 @@ class Ip6Packet:
     ):
         """ Class constructor """
 
+        self.logger = loguru.logger.bind(object_name="ps_ip6.")
+        self.sanity_check_failed = False
+
         # Packet parsing
         if parent_packet:
             self.tracker = parent_packet.tracker
 
             raw_packet = parent_packet.raw_data
+
+            if not self.__pre_parse_sanity_check(raw_packet):
+                self.sanity_check_failed = True
+                return
+
             raw_header = raw_packet[:IP6_HEADER_LEN]
 
             self.raw_data = raw_packet[IP6_HEADER_LEN : IP6_HEADER_LEN + struct.unpack("!H", raw_header[4:6])[0]]
@@ -167,6 +177,9 @@ class Ip6Packet:
             self.ip6_hop = raw_header[7]
             self.ip6_src = IPv6Address(raw_header[8:24])
             self.ip6_dst = IPv6Address(raw_header[24:40])
+
+            if not self.__post_parse_sanity_check():
+                self.sanity_check_failed = True
 
         # Packet building
         else:
@@ -252,24 +265,41 @@ class Ip6Packet:
 
         return self.raw_packet
 
+    def __pre_parse_sanity_check(self, raw_packet):
+        """ Preliminary sanity check to be run on raw IPv6 packet prior to packet parsing """
 
-#
-#   IPv6 sanity check functions
-#
+        if not stack.pre_parse_sanity_check:
+            return True
 
+        if len(raw_packet) < 40:
+            self.logger.critical(f"{self.tracker} - IPv6 sanity check fail - wrong packet length (I)")
+            return False
 
-def preliminary_sanity_check(raw_packet, tracker, logger):
-    """ Preliminary sanity check to be run on raw IPv6 packet prior to packet parsing """
+        if struct.unpack("!H", raw_packet[4:6])[0] != len(raw_packet) - 40:
+            self.logger.critical(f"{self.tracker} - IPv6 sanity check fail - wrong packet length (II)")
+            return False
 
-    if not stack.preliminary_packet_sanity_check:
         return True
 
-    if len(raw_packet) < 40:
-        logger.critical(f"{tracker} - IPv6 Sanity check fail - wrong packet length (I)")
-        return False
+    def __post_parse_sanity_check(self):
+        """ Sanity check to be run on parsed IPv6 packet """
 
-    if struct.unpack("!H", raw_packet[4:6])[0] != len(raw_packet) - 40:
-        logger.critical(f"{tracker} - IPv6 Sanity check fail - wrong packet length (II)")
-        return False
+        if not stack.post_parse_sanity_check:
+            return True
 
-    return True
+        # ip6_ver not set to 6
+        if not self.ip6_ver == 6:
+            self.logger.critical(f"{self.tracker} - IP sanity check fail - value of ip6_ver is not 6")
+            return False
+
+        # ip6_hop set to 0
+        if self.ip6_hop == 0:
+            self.logger.critical(f"{self.tracker} - IP sanity check fail - value of ip6_hop is 0")
+            return False
+
+        # ip6_src address is multicast
+        if self.ip6_src.is_multicast:
+            self.logger.critical(f"{self.tracker} - IP sanity check fail - ip6_src address is multicast")
+            return False
+
+        return True

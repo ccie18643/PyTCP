@@ -50,12 +50,12 @@ PACKET_LOSS = False
 def phrx_tcp(self, ip_packet_rx, tcp_packet_rx):
     """ Handle inbound TCP packets """
 
-    self.logger.opt(ansi=True).info(f"<green>{tcp_packet_rx.tracker}</green> - {tcp_packet_rx}")
-
-    # Validate TCP packet checksum
-    if not tcp_packet_rx.validate_cksum(ip_packet_rx.ip_pseudo_header):
-        self.logger.debug(f"{tcp_packet_rx.tracker} - TCP packet has invalid checksum, droping")
+    # Validate TCP packet sanity
+    if tcp_packet_rx.sanity_check_failed:
+        self.logger.warning(f"{tcp_packet_rx.tracker} - TCP packet sanity check failed, droping...")
         return
+
+    self.logger.opt(ansi=True).info(f"<green>{tcp_packet_rx.tracker}</green> - {tcp_packet_rx}")
 
     # Set universal names for src and dst IP addresses whether packet was delivered by IPv6 or IPv4 protocol
     ip_packet_rx.ip_dst = ip_packet_rx.ip6_dst if ip_packet_rx.protocol == "IPv6" else ip_packet_rx.ip4_dst

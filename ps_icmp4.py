@@ -43,8 +43,10 @@
 
 import struct
 
-import inet_cksum
+import loguru
+
 import stack
+from ip_helper import inet_cksum
 from tracker import Tracker
 
 # Echo reply message (0/0)
@@ -124,11 +126,18 @@ class Icmp4Packet:
     ):
         """ Class constructor """
 
+        self.logger = loguru.logger.bind(object_name="ps_icmpv4.")
+        self.sanity_check_failed = False
+
         # Packet parsing
         if parent_packet:
             self.tracker = parent_packet.tracker
 
             raw_packet = parent_packet.raw_data
+
+            if not self.__pre_parse_sanity_check(raw_packet):
+                self.sanity_check_failed = True
+                return
 
             self.icmp4_type = raw_packet[0]
             self.icmp4_code = raw_packet[1]
@@ -138,20 +147,21 @@ class Icmp4Packet:
                 self.icmp4_ec_id = struct.unpack("!H", raw_packet[4:6])[0]
                 self.icmp4_ec_seq = struct.unpack("!H", raw_packet[6:8])[0]
                 self.icmp4_ec_raw_data = raw_packet[8:]
-                return
 
-            if self.icmp4_type == ICMP4_UNREACHABLE:
+            elif self.icmp4_type == ICMP4_UNREACHABLE:
                 self.icmp4_un_reserved = struct.unpack("!L", raw_packet[4:6])[0]
                 self.icmp4_un_raw_data = raw_packet[8:]
-                return
 
-            if self.icmp4_type == ICMP4_ECHOREQUEST:
+            elif self.icmp4_type == ICMP4_ECHOREQUEST:
                 self.icmp4_ec_id = struct.unpack("!H", raw_packet[4:6])[0]
                 self.icmp4_ec_seq = struct.unpack("!H", raw_packet[6:8])[0]
                 self.icmp4_ec_raw_data = raw_packet[8:]
-                return
 
-            self.unknown_message = raw_packet[4:]
+            else:
+                self.unknown_message = raw_packet[4:]
+
+            if not self.__post_parse_sanity_check():
+                self.sanity_check_failed = True
 
         # Packet building
         else:
@@ -165,18 +175,15 @@ class Icmp4Packet:
                 self.icmp4_ec_id = icmp4_ec_id
                 self.icmp4_ec_seq = icmp4_ec_seq
                 self.icmp4_ec_raw_data = icmp4_ec_raw_data
-                return
 
-            if self.icmp4_type == ICMP4_UNREACHABLE and self.icmp4_code == ICMP4_UNREACHABLE_PORT:
+            elif self.icmp4_type == ICMP4_UNREACHABLE and self.icmp4_code == ICMP4_UNREACHABLE_PORT:
                 self.icmp4_un_reserved = 0
                 self.icmp4_un_raw_data = icmp4_un_raw_data[:520]
-                return
 
-            if self.icmp4_type == ICMP4_ECHOREQUEST and self.icmp4_code == 0:
+            elif self.icmp4_type == ICMP4_ECHOREQUEST and self.icmp4_code == 0:
                 self.icmp4_ec_id = icmp4_ec_id
                 self.icmp4_ec_seq = icmp4_ec_seq
                 self.icmp4_ec_raw_data = icmp4_ec_raw_data
-                return
 
     def __str__(self):
         """ Short packet log string """
@@ -186,10 +193,10 @@ class Icmp4Packet:
         if self.icmp4_type == ICMP4_ECHOREPLY:
             log += f", id {self.icmp4_ec_id}, seq {self.icmp4_ec_seq}"
 
-        if self.icmp4_type == ICMP4_UNREACHABLE and self.icmp4_code == ICMP4_UNREACHABLE_PORT:
+        elif self.icmp4_type == ICMP4_UNREACHABLE and self.icmp4_code == ICMP4_UNREACHABLE_PORT:
             pass
 
-        if self.icmp4_type == ICMP4_ECHOREQUEST:
+        elif self.icmp4_type == ICMP4_ECHOREQUEST:
             log += f", id {self.icmp4_ec_id}, seq {self.icmp4_ec_seq}"
 
         return log
@@ -204,66 +211,88 @@ class Icmp4Packet:
         """ Get packet in raw format """
 
         if self.icmp4_type == ICMP4_ECHOREPLY:
-            return struct.pack("! BBH HH", self.icmp4_type, self.icmp4_code, self.icmp4_cksum, self.icmp4_ec_id, self.icmp4_ec_seq) + self.icmp4_ec_raw_data
+            raw_packet = (
+                struct.pack("! BBH HH", self.icmp4_type, self.icmp4_code, self.icmp4_cksum, self.icmp4_ec_id, self.icmp4_ec_seq) + self.icmp4_ec_raw_data
+            )
 
-        if self.icmp4_type == ICMP4_UNREACHABLE and self.icmp4_code == ICMP4_UNREACHABLE_PORT:
-            return struct.pack("! BBH L", self.icmp4_type, self.icmp4_code, self.icmp4_cksum, self.icmp4_un_reserved) + self.icmp4_un_raw_data
+        elif self.icmp4_type == ICMP4_UNREACHABLE and self.icmp4_code == ICMP4_UNREACHABLE_PORT:
+            raw_packet = struct.pack("! BBH L", self.icmp4_type, self.icmp4_code, self.icmp4_cksum, self.icmp4_un_reserved) + self.icmp4_un_raw_data
 
-        if self.icmp4_type == ICMP4_ECHOREQUEST:
-            return struct.pack("! BBH HH", self.icmp4_type, self.icmp4_code, self.icmp4_cksum, self.icmp4_ec_id, self.icmp4_ec_seq) + self.icmp4_ec_raw_data
+        elif self.icmp4_type == ICMP4_ECHOREQUEST:
+            raw_packet = (
+                struct.pack("! BBH HH", self.icmp4_type, self.icmp4_code, self.icmp4_cksum, self.icmp4_ec_id, self.icmp4_ec_seq) + self.icmp4_ec_raw_data
+            )
 
-        return struct.pack("! BBH", self.icmp4_type, self.icmp4_code, self.icmp4_cksum) + self.unknown_message
+        else:
+            struct.pack("! BBH", self.icmp4_type, self.icmp4_code, self.icmp4_cksum) + self.unknown_message
+
+        return raw_packet
 
     def get_raw_packet(self):
         """ Get packet in raw format ready to be processed by lower level protocol """
 
-        self.icmp4_cksum = inet_cksum.compute_cksum(self.raw_packet)
+        self.icmp4_cksum = inet_cksum(self.raw_packet)
 
         return self.raw_packet
 
     def validate_cksum(self):
         """ Validate packet checksum """
 
-        return not bool(inet_cksum.compute_cksum(self.raw_packet))
+        return not bool(inet_cksum(self.raw_packet))
 
+    def __pre_parse_sanity_check(self, raw_packet):
+        """ Preliminary sanity check to be run on raw ICMPv4 packet prior to packet parsing """
 
-#
-#   ICMPv4 sanity check functions
-#
+        if not stack.pre_parse_sanity_check:
+            return True
 
+        if inet_cksum(raw_packet):
+            self.logger.critical(f"{self.tracker} - ICMPv4 sanity check fail - wrong packet checksum")
+            return False
 
-def preliminary_sanity_check(raw_packet, tracker, logger):
-    """ Preliminary sanity check to be run on raw ICMPv4 packet prior to packet parsing """
+        if len(raw_packet) < 4:
+            self.logger.critical(f"{self.tracker} - ICMPv4 sanity check fail - wrong packet length (I)")
+            return False
 
-    if not stack.preliminary_packet_sanity_check:
+        if raw_packet[0] == ICMP4_ECHOREPLY:
+            if len(raw_packet) < 8:
+                self.logger.critical(f"{self.tracker} - ICMPv6 sanity check fail - wrong packet length (II)")
+                return False
+
+        elif raw_packet[0] == ICMP4_UNREACHABLE:
+            if len(raw_packet) < 12:
+                self.logger.critical(f"{self.tracker} - ICMPv6 sanity check fail - wrong packet length (II)")
+                return False
+
+        elif raw_packet[0] == ICMP4_ECHOREQUEST:
+            if len(raw_packet) < 8:
+                self.logger.critical(f"{self.tracker} - ICMPv6 sanity check fail - wrong packet length (II)")
+                return False
+
         return True
 
-    if len(raw_packet) < 4:
-        logger.critical(f"{tracker} - ICMPv4 Sanity check fail - wrong packet length (I)")
-        return False
+    def __post_parse_sanity_check(self):
+        """ Sanity check to be run on parsed ICMPv6 packet """
 
-    if raw_packet[0] == ICMP4_ECHOREPLY:
-        if raw_packet[1] not in {0}:
-            logger.critical(f"{tracker} - ICMPv4 Sanity check fail - wrong packet code")
-            return False
-        if len(raw_packet) < 8:
-            logger.critical(f"{tracker} - ICMPv6 Sanity check fail - wrong packet length (II)")
-            return False
+        if not stack.post_parse_sanity_check:
+            return True
 
-    if raw_packet[0] == ICMP4_UNREACHABLE:
-        if raw_packet[1] not in {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15}:
-            logger.critical(f"{tracker} - ICMPv6 Sanity check fail - wrong packet code")
-            return False
-        if len(raw_packet) < 12:
-            logger.critical(f"{tracker} - ICMPv6 Sanity check fail - wrong packet length (II)")
-            return False
+        if self.icmp4_type == ICMP4_ECHOREPLY:
+            # imcp4_code must be set to 0 (RFC 792)
+            if not self.icmp4_code == 0:
+                self.logger.critical(f"{self.tracker} - ICMPv4 sanity check fail - value of icmp6_code is not 0")
+                return False
 
-    elif raw_packet[0] == ICMP4_ECHOREQUEST:
-        if raw_packet[1] not in {0}:
-            logger.critical(f"{tracker} - ICMPv4 Sanity check fail - wrong packet code")
-            return False
-        if len(raw_packet) < 8:
-            logger.critical(f"{tracker} - ICMPv6 Sanity check fail - wrong packet length (II)")
-            return False
+        if self.icmp4_type == ICMP4_UNREACHABLE:
+            # imcp4_code must be set to [0-15] (RFC 792)
+            if not self.icmp4_code in {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15}:
+                self.logger.critical(f"{self.tracker} - ICMPv4 sanity check fail - value of icmp6_code is not [0-15]")
+                return False
 
-    return True
+        elif self.icmp4_type == ICMP4_ECHOREQUEST:
+            # imcp4_code must be set to 0 (RFC 792)
+            if not self.icmp4_code == 0:
+                self.logger.critical(f"{self.tracker} - ICMPv4 sanity check fail - value of icmp6_code is not 0")
+                return False
+
+        return True

@@ -44,8 +44,10 @@
 import struct
 from ipaddress import IPv6Address, IPv6Network
 
-import inet_cksum
+import loguru
+
 import stack
+from ip_helper import inet_cksum, ip6_is_unicast, ip6_solicited_node_multicast
 from tracker import Tracker
 
 # Destination Unreachable message (1/[0,1,3,4])
@@ -318,14 +320,18 @@ class Icmp6Packet:
     ):
         """ Class constructor """
 
+        self.logger = loguru.logger.bind(object_name="ps_icmpv6.")
+        self.sanity_check_failed = False
+
         # Packet parsing
         if parent_packet:
             self.tracker = parent_packet.tracker
 
             raw_packet = parent_packet.raw_data
 
-            # from binascii import hexlify
-            # print(hexlify(raw_packet))
+            if not self.__pre_parse_sanity_check(raw_packet, parent_packet.ip_pseudo_header):
+                self.sanity_check_failed = True
+                return
 
             self.icmp6_type = raw_packet[0]
             self.icmp6_code = raw_packet[1]
@@ -333,29 +339,25 @@ class Icmp6Packet:
 
             self.icmp6_nd_options = []
 
-            if self.icmp6_type == ICMP6_UNREACHABLE and self.icmp6_code in range(0, 7):
+            if self.icmp6_type == ICMP6_UNREACHABLE:
                 self.icmp6_un_reserved = struct.unpack("!L", raw_packet[4:8])[0]
                 self.icmp6_un_raw_data = raw_packet[8:]
-                return
 
-            if self.icmp6_type == ICMP6_ECHOREQUEST and self.icmp6_code == 0:
+            elif self.icmp6_type == ICMP6_ECHOREQUEST:
                 self.icmp6_ec_id = struct.unpack("!H", raw_packet[4:6])[0]
                 self.icmp6_ec_seq = struct.unpack("!H", raw_packet[6:8])[0]
                 self.icmp6_ec_raw_data = raw_packet[8:]
-                return
 
-            if self.icmp6_type == ICMP6_ECHOREPLY and self.icmp6_code == 0:
+            elif self.icmp6_type == ICMP6_ECHOREPLY:
                 self.icmp6_ec_id = struct.unpack("!H", raw_packet[4:6])[0]
                 self.icmp6_ec_seq = struct.unpack("!H", raw_packet[6:8])[0]
                 self.icmp6_ec_raw_data = raw_packet[8:]
-                return
 
-            if self.icmp6_type == ICMP6_ROUTER_SOLICITATION and self.icmp6_code == 0:
+            elif self.icmp6_type == ICMP6_ROUTER_SOLICITATION:
                 self.icmp6_rs_reserved = struct.unpack("!L", raw_packet[4:8])[0]
                 self.icmp6_nd_options = self.__read_nd_options(raw_packet[12:])
-                return
 
-            if self.icmp6_type == ICMP6_ROUTER_ADVERTISEMENT and self.icmp6_code == 0:
+            elif self.icmp6_type == ICMP6_ROUTER_ADVERTISEMENT:
                 self.icmp6_ra_hop = raw_packet[4]
                 self.icmp6_ra_flag_m = bool(raw_packet[5] & 0b10000000)
                 self.icmp6_ra_flag_o = bool(raw_packet[5] & 0b01000000)
@@ -364,24 +366,21 @@ class Icmp6Packet:
                 self.icmp6_ra_reachable_time = struct.unpack("!L", raw_packet[8:12])[0]
                 self.icmp6_ra_retrans_timer = struct.unpack("!L", raw_packet[12:16])[0]
                 self.icmp6_nd_options = self.__read_nd_options(raw_packet[16:])
-                return
 
-            if self.icmp6_type == ICMP6_NEIGHBOR_SOLICITATION and self.icmp6_code == 0:
+            elif self.icmp6_type == ICMP6_NEIGHBOR_SOLICITATION:
                 self.icmp6_ns_reserved = struct.unpack("!L", raw_packet[4:8])[0]
                 self.icmp6_ns_target_address = IPv6Address(raw_packet[8:24])
                 self.icmp6_nd_options = self.__read_nd_options(raw_packet[24:])
-                return
 
-            if self.icmp6_type == ICMP6_NEIGHBOR_ADVERTISEMENT and self.icmp6_code == 0:
+            elif self.icmp6_type == ICMP6_NEIGHBOR_ADVERTISEMENT:
                 self.icmp6_na_flag_r = bool(raw_packet[4] & 0b10000000)
                 self.icmp6_na_flag_s = bool(raw_packet[4] & 0b01000000)
                 self.icmp6_na_flag_o = bool(raw_packet[4] & 0b00100000)
                 self.icmp6_na_reserved = struct.unpack("!L", raw_packet[4:8])[0] & 0b00011111111111111111111111111111
                 self.icmp6_na_target_address = IPv6Address(raw_packet[8:24])
                 self.icmp6_nd_options = self.__read_nd_options(raw_packet[24:])
-                return
 
-            if self.icmp6_type == ICMP6_MLD2_REPORT:
+            elif self.icmp6_type == ICMP6_MLD2_REPORT:
                 self.icmp6_mlr2_reserved = struct.unpack("!H", raw_packet[4:6])[0]
                 self.icmp6_mlr2_number_of_multicast_address_records = struct.unpack("!H", raw_packet[6:8])[0]
                 self.icmp6_mlr2_multicast_address_record = []
@@ -390,9 +389,12 @@ class Icmp6Packet:
                     record = MulticastAddressRecord(raw_records)
                     raw_records = raw_records[len(record) :]
                     self.icmp6_mlr2_multicast_address_record.append(record)
-                return
 
-            self.unknown_message = raw_packet[4:]
+            else:
+                self.unknown_message = raw_packet[4:]
+
+            if not self.__post_parse_sanity_check(parent_packet.ip6_src, parent_packet.ip6_dst, parent_packet.ip6_hop):
+                self.sanity_check_failed = True
 
         # Packet building
         else:
@@ -407,47 +409,40 @@ class Icmp6Packet:
             if self.icmp6_type == ICMP6_UNREACHABLE:
                 self.icmp6_un_reserved = 0
                 self.icmp6_un_raw_data = icmp6_un_raw_data[:520]
-                return
 
-            if self.icmp6_type == ICMP6_ECHOREQUEST and self.icmp6_code == 0:
+            elif self.icmp6_type == ICMP6_ECHOREQUEST and self.icmp6_code == 0:
                 self.icmp6_ec_id = icmp6_ec_id
                 self.icmp6_ec_seq = icmp6_ec_seq
                 self.icmp6_ec_raw_data = icmp6_ec_raw_data
-                return
 
-            if self.icmp6_type == ICMP6_ECHOREPLY and self.icmp6_code == 0:
+            elif self.icmp6_type == ICMP6_ECHOREPLY and self.icmp6_code == 0:
                 self.icmp6_ec_id = icmp6_ec_id
                 self.icmp6_ec_seq = icmp6_ec_seq
                 self.icmp6_ec_raw_data = icmp6_ec_raw_data
-                return
 
-            if self.icmp6_type == ICMP6_ROUTER_SOLICITATION:
+            elif self.icmp6_type == ICMP6_ROUTER_SOLICITATION:
                 self.icmp6_rs_reserved = 0
-                return
 
-            if self.icmp6_type == ICMP6_ROUTER_ADVERTISEMENT:
+            elif self.icmp6_type == ICMP6_ROUTER_ADVERTISEMENT:
                 self.icmp6_ra_hop = icmp6_ra_hop
                 self.icmp6_ra_flag_m = icmp6_ra_flag_m
                 self.icmp6_ra_flag_o = icmp6_ra_flag_o
                 self.icmp6_ra_router_lifetime = icmp6_ra_router_lifetime
                 self.icmp6_ra_reachable_time = icmp6_ra_reachable_time
                 self.icmp6_ra_retrans_timer = icmp6_ra_retrans_timer
-                return
 
-            if self.icmp6_type == ICMP6_NEIGHBOR_SOLICITATION:
+            elif self.icmp6_type == ICMP6_NEIGHBOR_SOLICITATION:
                 self.icmp6_ns_reserved = 0
                 self.icmp6_ns_target_address = icmp6_ns_target_address
-                return
 
-            if self.icmp6_type == ICMP6_NEIGHBOR_ADVERTISEMENT:
+            elif self.icmp6_type == ICMP6_NEIGHBOR_ADVERTISEMENT:
                 self.icmp6_na_flag_r = icmp6_na_flag_r
                 self.icmp6_na_flag_s = icmp6_na_flag_s
                 self.icmp6_na_flag_o = icmp6_na_flag_o
                 self.icmp6_na_reserved = 0
                 self.icmp6_na_target_address = icmp6_na_target_address
-                return
 
-            if self.icmp6_type == ICMP6_MLD2_REPORT:
+            elif self.icmp6_type == ICMP6_MLD2_REPORT:
                 self.icmp6_mlr2_reserved = 0
                 self.icmp6_mlr2_multicast_address_record = [] if icmp6_mlr2_multicast_address_record is None else icmp6_mlr2_multicast_address_record
                 self.icmp6_mlr2_number_of_multicast_address_records = len(self.icmp6_mlr2_multicast_address_record)
@@ -461,35 +456,35 @@ class Icmp6Packet:
         if self.icmp6_type == ICMP6_UNREACHABLE:
             pass
 
-        if self.icmp6_type == ICMP6_ECHOREQUEST:
+        elif self.icmp6_type == ICMP6_ECHOREQUEST:
             log += f", id {self.icmp6_ec_id}, seq {self.icmp6_ec_seq}"
 
-        if self.icmp6_type == ICMP6_ECHOREPLY:
+        elif self.icmp6_type == ICMP6_ECHOREPLY:
             log += f", id {self.icmp6_ec_id}, seq {self.icmp6_ec_seq}"
 
-        if self.icmp6_type == ICMP6_ROUTER_SOLICITATION:
+        elif self.icmp6_type == ICMP6_ROUTER_SOLICITATION:
             for nd_option in self.icmp6_nd_options:
                 log += ", " + str(nd_option)
 
-        if self.icmp6_type == ICMP6_ROUTER_ADVERTISEMENT:
+        elif self.icmp6_type == ICMP6_ROUTER_ADVERTISEMENT:
             log += f", hop {self.icmp6_ra_hop}"
             log += f"flags {'M' if self.icmp6_ra_flag_m else '-'}{'O' if self.icmp6_ra_flag_o else '-'}"
             log += f"rlft {self.icmp6_ra_router_lifetime}, reacht {self.icmp6_ra_reachable_time}, retrt {self.icmp6_ra_retrans_timer}"
             for nd_option in self.icmp6_nd_options:
                 log += ", " + str(nd_option)
 
-        if self.icmp6_type == ICMP6_NEIGHBOR_SOLICITATION:
+        elif self.icmp6_type == ICMP6_NEIGHBOR_SOLICITATION:
             log += f", target {self.icmp6_ns_target_address}"
             for nd_option in self.icmp6_nd_options:
                 log += ", " + str(nd_option)
 
-        if self.icmp6_type == ICMP6_NEIGHBOR_ADVERTISEMENT:
+        elif self.icmp6_type == ICMP6_NEIGHBOR_ADVERTISEMENT:
             log += f", target {self.icmp6_na_target_address}"
             log += f", flags {'R' if self.icmp6_na_flag_r else '-'}{'S' if self.icmp6_na_flag_s else '-'}{'O' if self.icmp6_na_flag_o else '-'}"
             for nd_option in self.icmp6_nd_options:
                 log += ", " + str(nd_option)
 
-        if self.icmp6_type == ICMP6_MLD2_REPORT:
+        elif self.icmp6_type == ICMP6_MLD2_REPORT:
             pass
 
         return log
@@ -504,19 +499,23 @@ class Icmp6Packet:
         """ Get packet in raw format """
 
         if self.icmp6_type == ICMP6_UNREACHABLE:
-            return struct.pack("! BBH L", self.icmp6_type, self.icmp6_code, self.icmp6_cksum, self.icmp6_un_reserved) + self.icmp6_un_raw_data
+            raw_packet = struct.pack("! BBH L", self.icmp6_type, self.icmp6_code, self.icmp6_cksum, self.icmp6_un_reserved) + self.icmp6_un_raw_data
 
-        if self.icmp6_type == ICMP6_ECHOREQUEST:
-            return struct.pack("! BBH HH", self.icmp6_type, self.icmp6_code, self.icmp6_cksum, self.icmp6_ec_id, self.icmp6_ec_seq) + self.icmp6_ec_raw_data
+        elif self.icmp6_type == ICMP6_ECHOREQUEST:
+            raw_packet = (
+                struct.pack("! BBH HH", self.icmp6_type, self.icmp6_code, self.icmp6_cksum, self.icmp6_ec_id, self.icmp6_ec_seq) + self.icmp6_ec_raw_data
+            )
 
-        if self.icmp6_type == ICMP6_ECHOREPLY:
-            return struct.pack("! BBH HH", self.icmp6_type, self.icmp6_code, self.icmp6_cksum, self.icmp6_ec_id, self.icmp6_ec_seq) + self.icmp6_ec_raw_data
+        elif self.icmp6_type == ICMP6_ECHOREPLY:
+            raw_packet = (
+                struct.pack("! BBH HH", self.icmp6_type, self.icmp6_code, self.icmp6_cksum, self.icmp6_ec_id, self.icmp6_ec_seq) + self.icmp6_ec_raw_data
+            )
 
-        if self.icmp6_type == ICMP6_ROUTER_SOLICITATION:
-            return struct.pack("! BBH L", self.icmp6_type, self.icmp6_code, self.icmp6_cksum, self.icmp6_rs_reserved) + self.raw_nd_options
+        elif self.icmp6_type == ICMP6_ROUTER_SOLICITATION:
+            raw_packet = struct.pack("! BBH L", self.icmp6_type, self.icmp6_code, self.icmp6_cksum, self.icmp6_rs_reserved) + self.raw_nd_options
 
-        if self.icmp6_type == ICMP6_ROUTER_ADVERTISEMENT:
-            return (
+        elif self.icmp6_type == ICMP6_ROUTER_ADVERTISEMENT:
+            raw_packet = (
                 struct.pack(
                     "! BBH BBH L L",
                     self.icmp6_type,
@@ -531,8 +530,8 @@ class Icmp6Packet:
                 + self.raw_nd_options
             )
 
-        if self.icmp6_type == ICMP6_NEIGHBOR_SOLICITATION:
-            return (
+        elif self.icmp6_type == ICMP6_NEIGHBOR_SOLICITATION:
+            raw_packet = (
                 struct.pack(
                     "! BBH L 16s",
                     self.icmp6_type,
@@ -544,8 +543,8 @@ class Icmp6Packet:
                 + self.raw_nd_options
             )
 
-        if self.icmp6_type == ICMP6_NEIGHBOR_ADVERTISEMENT:
-            return (
+        elif self.icmp6_type == ICMP6_NEIGHBOR_ADVERTISEMENT:
+            raw_packet = (
                 struct.pack(
                     "! BBH L 16s",
                     self.icmp6_type,
@@ -557,8 +556,8 @@ class Icmp6Packet:
                 + self.raw_nd_options
             )
 
-        if self.icmp6_type == ICMP6_MLD2_REPORT:
-            return (
+        elif self.icmp6_type == ICMP6_MLD2_REPORT:
+            raw_packet = (
                 struct.pack(
                     "! BBH HH",
                     self.icmp6_type,
@@ -570,12 +569,15 @@ class Icmp6Packet:
                 + b"".join([_.raw_record for _ in self.icmp6_mlr2_multicast_address_record])
             )
 
-        return struct.pack("! BBH", self.icmp6_type, self.icmp6_code, self.icmp6_cksum) + self.unknown_message
+        else:
+            raw_packet = struct.pack("! BBH", self.icmp6_type, self.icmp6_code, self.icmp6_cksum) + self.unknown_message
+
+        return raw_packet
 
     def get_raw_packet(self, ip_pseudo_header):
         """ Get packet in raw format ready to be processed by lower level protocol """
 
-        self.icmp6_cksum = inet_cksum.compute_cksum(ip_pseudo_header + self.raw_packet)
+        self.icmp6_cksum = inet_cksum(ip_pseudo_header + self.raw_packet)
 
         return self.raw_packet
 
@@ -593,10 +595,7 @@ class Icmp6Packet:
     def validate_cksum(self, ip_pseudo_header):
         """ Validate packet checksum """
 
-        # from binascii import hexlify
-        # print(hexlify(self.raw_packet))
-
-        return not bool(inet_cksum.compute_cksum(ip_pseudo_header + self.raw_packet))
+        return not bool(inet_cksum(ip_pseudo_header + self.raw_packet))
 
     @staticmethod
     def __read_nd_options(raw_nd_options):
@@ -640,6 +639,240 @@ class Icmp6Packet:
         """ ICMPv6 ND option - Prefix Info (3) - Returns list of prefixes that can be used for address autoconfiguration"""
 
         return [_.opt_prefix for _ in self.icmp6_nd_options if _.opt_code == ICMP6_ND_OPT_PI and _.opt_flag_a and _.opt_prefix.prefixlen == 64]
+
+    def __nd_option_pre_parse_sanity_check(self, raw_packet, index):
+        """ Check integrity of ICMPv6 ND options """
+
+        while index < len(raw_packet):
+            if index + 1 > len(raw_packet):
+                self.logger.critical(f"{self.tracker} - ICMPv6 sanity check fail - wrong option length (I)")
+                return False
+            if raw_packet[index + 1] == 0:
+                self.logger.critical(f"{self.tracker} - ICMPv6 sanity check fail - wrong option length (II)")
+                return False
+            index += raw_packet[index + 1] << 3
+            if index > len(raw_packet):
+                self.logger.critical(f"{self.tracker} - ICMPv6 sanity check fail - wrong option length (III)")
+                return False
+
+        return True
+
+    def __pre_parse_sanity_check(self, raw_packet, pseudo_header):
+        """ Preliminary sanity check to be run on raw ICMPv6 packet prior to packet parsing """
+
+        if not stack.pre_parse_sanity_check:
+            return True
+
+        if inet_cksum(pseudo_header + raw_packet):
+            self.logger.critical(f"{self.tracker} - ICMPv6 sanity check fail - wrong packet checksum")
+            return False
+
+        if len(raw_packet) < 4:
+            self.logger.critical(f"{self.tracker} - ICMPv6 sanity check fail - wrong packet length (I)")
+            return False
+
+        if raw_packet[0] == ICMP6_UNREACHABLE:
+            if len(raw_packet) < 12:
+                self.logger.critical(f"{self.tracker} - ICMPv6 sanity check fail - wrong packet length (II)")
+                return False
+
+        elif raw_packet[0] == ICMP6_ECHOREQUEST:
+            if len(raw_packet) < 8:
+                self.logger.critical(f"{self.tracker} - ICMPv6 sanity check fail - wrong packet length (II)")
+                return False
+
+        elif raw_packet[0] == ICMP6_ECHOREPLY:
+            if len(raw_packet) < 8:
+                self.logger.critical(f"{self.tracker} - ICMPv6 sanity check fail - wrong packet length (II)")
+                return False
+
+        elif raw_packet[0] == ICMP6_MLD2_QUERY:
+            if len(raw_packet) < 28:
+                self.logger.critical(f"{self.tracker} - ICMPv6 sanity check fail - wrong packet length (II)")
+                return False
+            if len(raw_packet) != 28 + struct.unpack("! H", raw_packet[26:28])[0] * 16:
+                self.logger.critical(f"{self.tracker} - ICMPv6 sanity check fail - wrong packet length (III)")
+                return False
+
+        elif raw_packet[0] == ICMP6_ROUTER_SOLICITATION:
+            if len(raw_packet) < 8:
+                self.logger.critical(f"{self.tracker} - ICMPv6 sanity check fail - wrong packet length (II)")
+                return False
+            if self.__nd_option_pre_parse_sanity_check(raw_packet, 8) is False:
+                return False
+
+        elif raw_packet[0] == ICMP6_ROUTER_ADVERTISEMENT:
+            if len(raw_packet) < 16:
+                self.logger.critical(f"{self.tracker} - ICMPv6 sanity check fail - wrong packet length (II)")
+                return False
+            if self.__nd_option_pre_parse_sanity_check(raw_packet, 16) is False:
+                return False
+
+        elif raw_packet[0] == ICMP6_NEIGHBOR_SOLICITATION:
+            if len(raw_packet) < 24:
+                self.logger.critical(f"{self.tracker} - ICMPv6 sanity check fail - wrong packet length (II)")
+                return False
+            if self.__nd_option_pre_parse_sanity_check(raw_packet, 24) is False:
+                return False
+
+        elif raw_packet[0] == ICMP6_NEIGHBOR_ADVERTISEMENT:
+            if len(raw_packet) < 24:
+                self.logger.critical(f"{self.tracker} - ICMPv6 sanity check fail - wrong packet length (II)")
+                return False
+            if self.__nd_option_pre_parse_sanity_check(raw_packet, 24) is False:
+                return False
+
+        elif raw_packet[0] == ICMP6_MLD2_REPORT:
+            if len(raw_packet) < 8:
+                self.logger.critical(f"{self.tracker} - ICMPv6 sanity check fail - wrong packet length (II)")
+                return False
+            index = 8
+            for _ in range(struct.unpack("! H", raw_packet[6:8])[0]):
+                if index + 20 > len(raw_packet):
+                    self.logger.critical(f"{self.tracker} - ICMPv6 sanity check fail - wrong packet length (III)")
+                    return False
+                index += 20 + raw_packet[index + 1] + struct.unpack("! H", raw_packet[index + 2 : index + 4])[0] * 16
+            if index != len(raw_packet):
+                self.logger.critical(f"{self.tracker} - ICMPv6 sanity check fail - wrong packet lenght (IV)")
+                return False
+
+        return True
+
+    def __post_parse_sanity_check(self, ip6_src, ip6_dst, ip6_hop):
+        """ Sanity check to be run on parsed ICMPv6 packet """
+
+        if not stack.post_parse_sanity_check:
+            return True
+
+        if self.icmp6_type == ICMP6_UNREACHABLE:
+            # imcp6_code must be set to [0-6] (RFC 4861)
+            if not self.icmp6_code in {0, 1, 2, 3, 4, 5, 6}:
+                self.logger.critical(f"{self.tracker} - ICMPv6 sanity check fail - value of icmp6_code is not [0-6]")
+                return False
+
+        elif self.icmp6_type == ICMP6_ECHOREQUEST:
+            # imcp6_code must be set to 0 (RFC 4861)
+            if not self.icmp6_code == 0:
+                self.logger.critical(f"{self.tracker} - ICMPv6 sanity check fail - value of icmp6_code is not 0")
+                return False
+
+        elif self.icmp6_type == ICMP6_ECHOREPLY:
+            # imcp6_code must be set to 0 (RFC 4861)
+            if not self.icmp6_code == 0:
+                self.logger.critical(f"{self.tracker} - ICMPv6 sanity check fail - value of icmp6_code is not 0")
+                return False
+
+        elif self.icmp6_type == ICMP6_MLD2_QUERY:
+            # imcp6_code must be set to 0 (RFC 3810)
+            if not self.icmp6_code == 0:
+                self.logger.critical(f"{self.tracker} - ICMPv6 sanity check fail - value of icmp6_code is not 0")
+                return False
+            # ip6_hop must be set to 255 (RFC 3810)
+            if not ip6_hop == 1:
+                self.logger.debug(f"{self.tracker} - ICMPv6 sanity check fail - value of ip6_hop is not 1")
+                return False
+
+        elif self.icmp6_type == ICMP6_ROUTER_SOLICITATION:
+            # imcp6_code must be set to 0 (RFC 4861)
+            if not self.icmp6_code == 0:
+                self.logger.critical(f"{self.tracker} - ICMPv6 sanity check fail - value of icmp6_code is not 0")
+                return False
+            # ip6_hop must be set to 255 (RFC 4861)
+            if not ip6_hop == 255:
+                self.logger.debug(f"{self.tracker} - ICMPv6 sanity check fail - value of ip6_hop is not 255")
+                return False
+            # ip6_src must be unicast o unspecified address (RFC 4861)
+            if not (ip6_is_unicast(ip6_src) or ip6_src.is_unspecified):
+                self.logger.debug(f"{self.tracker} - ICMPv6 sanity check fail - ip6_src address is not unicast and not unspecified")
+                return False
+            # ip6_dst must be all-routers multicast
+            if not ip6_dst == IPv6Address("ff02::2"):
+                self.logger.debug(f"{self.tracker} - ICMPv6 sanity check fail - ip6_dst address is not all-routers multicast")
+                return False
+            # icmp6_rs_opt_slla must not be included if ip6_src is unspecified address
+            if ip6_src.is_unspecified and self.icmp6_nd_opt_opt_slla:
+                self.logger.debug(f"{self.tracker} - ICMPv6 sanity check fail - p6_src address is unspecified but slla option present")
+                return False
+
+        elif self.icmp6_type == ICMP6_ROUTER_ADVERTISEMENT:
+            # imcp6_code must be set to 0 (RFC 4861)
+            if not self.icmp6_code == 0:
+                self.logger.critical(f"{self.tracker} - ICMPv6 sanity check fail - value of icmp6_code is not 0")
+                return False
+            # ip6_hop must be set to 255 (RFC 4861)
+            if not ip6_hop == 255:
+                self.logger.debug(f"{self.tracker} - ICMPv6 sanity check fail - value of ip6_hop is not 255")
+                return False
+            # ip6_src must be link local address (RFC 4861)
+            if not ip6_src.is_link_local:
+                self.logger.debug(f"{self.tracker} - ICMPv6 sanity check fail - ip6_src address is not link local")
+                return False
+            # ip6_dst must be unicast or all nodes multicast (RFC 4861)
+            if not (ip6_is_unicast(ip6_dst) or ip6_dst == IPv6Address("ff02::1")):
+                self.logger.debug(f"{self.tracker} - ICMPv6 sanity check fail - ip6_dst address is not unicast or all nodes multicast")
+                return False
+
+        elif self.icmp6_type == ICMP6_NEIGHBOR_SOLICITATION:
+            # imcp6_code must be set to 0 (RFC 4861)
+            if not self.icmp6_code == 0:
+                self.logger.critical(f"{self.tracker} - ICMPv6 sanity check fail - value of icmp6_code is not 0")
+                return False
+            # ip6_hop must be set to 255 (RFC 4861)
+            if not ip6_hop == 255:
+                self.logger.debug(f"{self.tracker} - ICMPv6 sanity check fail - value of ip6_hop is not 255")
+                return False
+            # ip6_src must be unicast o unspecified address (RFC 4861)
+            if not (ip6_is_unicast(ip6_src) or ip6_src.is_unspecified):
+                self.logger.debug(f"{self.tracker} - ICMPv6 sanity check fail - ip6_src address is not unicast and not unspecified")
+                return False
+            # ip6_dst must be must be solicited-node multicast associated with target address or the target address (RFC 4861)
+            if not (ip6_dst == ip6_solicited_node_multicast(self.icmp6_ns_target_address) or ip6_dst == self.icmp6_ns_target_address):
+                self.logger.debug(
+                    f"{self.tracker} - ICMPv6 sanity check fail - ip6_dst address is not solicited-node multicast for target_address and not target_address"
+                )
+                return False
+            # icmp6_ns_target_address must be unicast address (RFC 4861)
+            if not ip6_is_unicast(self.icmp6_ns_target_address):
+                self.logger.debug(f"{self.tracker} - ICMPv6 sanity check fail - icmp6_ns_target_address is not unicast")
+                return False
+            # icmp6_rs_opt_slla must not be included if ip6_src is unspecified address
+            if ip6_src.is_unspecified and not self.icmp6_nd_opt_slla is None:
+                self.logger.debug(f"{self.tracker} - ICMPv6 sanity check fail - ip6_src address is unspecified but slla option present")
+                return False
+
+        elif self.icmp6_type == ICMP6_NEIGHBOR_ADVERTISEMENT:
+            # imcp6_code must be set to 0 (RFC 4861)
+            if not self.icmp6_code == 0:
+                self.logger.critical(f"{self.tracker} - ICMPv6 sanity check fail - value of icmp6_code is not 0")
+                return False
+            # ip6_hop must be set to 255 (RFC 4861)
+            if not ip6_hop == 255:
+                self.logger.debug(f"{self.tracker} - ICMPv6 sanity check fail - value of ip6_hop is not 255")
+                return False
+            # ip6_src must be unicast address (RFC 4861)
+            if not ip6_is_unicast(ip6_src):
+                self.logger.debug(f"{self.tracker} - ICMPv6 sanity check fail - ip6_src address is not unicast")
+                return False
+            # if icmp6_na_flag_s is set then ip6_dst must be unicast or all-nodes (RFC 4861)
+            if self.icmp6_na_flag_s is True and not (ip6_is_unicast(ip6_dst) or ip6_dst == IPv6Address("ff02::1")):
+                self.logger.debug(f"{self.tracker} - ICMPv6 sanity check fail - icmp6_na_flag_s set but ip6_dst address is not unicast and not all-nodes")
+                return False
+            # if icmp6_na_flag_s is not set then ip6_dst must be all-nodes (RFC 4861)
+            if self.icmp6_na_flag_s is False and not ip6_dst == IPv6Address("ff02::1"):
+                self.logger.debug(f"{self.tracker} - ICMPv6 sanity check fail - icmp6_na_flag_s set but ip6_dst address is not all-nodes")
+                return False
+
+        elif self.icmp6_type == ICMP6_MLD2_REPORT:
+            # imcp6_code must be set to 0 (RFC 3810)
+            if not self.icmp6_code == 0:
+                self.logger.critical(f"{self.tracker} - ICMPv6 sanity check fail - value of icmp6_code is not 0")
+                return False
+            # ip6_hop must be set to 255 (RFC 3810)
+            if not ip6_hop == 1:
+                self.logger.debug(f"{self.tracker} - ICMPv6 sanity check fail - value of ip6_hop is not 1")
+                return False
+
+        return True
 
 
 #
@@ -863,131 +1096,3 @@ class MulticastAddressRecord:
             + b"".join([_.packed for _ in self.source_address])
             + self.aux_data
         )
-
-
-#
-#   ICMPv6 sanity check functions
-#
-
-
-def __nd_option_check(raw_packet, index, logger, tracker):
-    """ Check integrity of ICMPv6 ND options """
-
-    while index < len(raw_packet):
-        if index + 1 > len(raw_packet):
-            logger.critical(f"{tracker} - ICMPv6 Sanity check fail - wrong option length (I)")
-            return False
-        if raw_packet[index + 1] == 0:
-            logger.critical(f"{tracker} - ICMPv6 Sanity check fail - wrong option length (II)")
-            return False
-        index += raw_packet[index + 1] << 3
-        if index > len(raw_packet):
-            logger.critical(f"{tracker} - ICMPv6 Sanity check fail - wrong option length (III)")
-            return False
-
-    return True
-
-
-def preliminary_sanity_check(raw_packet, tracker, logger):
-    """ Preliminary sanity check to be run on raw ICMPv6 packet prior to packet parsing """
-
-    if not stack.preliminary_packet_sanity_check:
-        return True
-
-    if len(raw_packet) < 4:
-        logger.critical(f"{tracker} - ICMPv6 Sanity check fail - wrong packet length (I)")
-        return False
-
-    if raw_packet[0] == ICMP6_UNREACHABLE:
-        if raw_packet[1] not in {0, 1, 2, 3, 4, 5, 6}:
-            logger.critical(f"{tracker} - ICMPv6 Sanity check fail - wrong packet code")
-            return False
-        if len(raw_packet) < 12:
-            logger.critical(f"{tracker} - ICMPv6 Sanity check fail - wrong packet length (II)")
-            return False
-
-    elif raw_packet[0] == ICMP6_ECHOREQUEST:
-        if raw_packet[1] not in {0}:
-            logger.critical(f"{tracker} - ICMPv6 Sanity check fail - wrong packet code")
-            return False
-        if len(raw_packet) < 8:
-            logger.critical(f"{tracker} - ICMPv6 Sanity check fail - wrong packet length (II)")
-            return False
-
-    elif raw_packet[0] == ICMP6_ECHOREPLY:
-        if raw_packet[1] not in {0}:
-            logger.critical(f"{tracker} - ICMPv6 Sanity check fail - wrong packet code")
-            return False
-        if len(raw_packet) < 8:
-            logger.critical(f"{tracker} - ICMPv6 Sanity check fail - wrong packet length (II)")
-            return False
-
-    elif raw_packet[0] == ICMP6_MLD2_QUERY:
-        if raw_packet[1] not in {0}:
-            logger.critical(f"{tracker} - ICMPv6 Sanity check fail - wrong packet code")
-            return False
-        if len(raw_packet) < 28:
-            logger.critical(f"{tracker} - ICMPv6 Sanity check fail - wrong packet length (II)")
-            return False
-        if len(raw_packet) != 28 + struct.unpack("! H", raw_packet[26:28])[0] * 16:
-            logger.critical(f"{tracker} - ICMPv6 Sanity check fail - wrong packet length (III)")
-            return False
-
-    elif raw_packet[0] == ICMP6_ROUTER_SOLICITATION:
-        if raw_packet[1] not in {0}:
-            logger.critical(f"{tracker} - ICMPv6 Sanity check fail - wrong packet code")
-            return False
-        if len(raw_packet) < 8:
-            logger.critical(f"{tracker} - ICMPv6 Sanity check fail - wrong packet length (II)")
-            return False
-        if __nd_option_check(raw_packet, 8, logger, tracker) is False:
-            return False
-
-    elif raw_packet[0] == ICMP6_ROUTER_ADVERTISEMENT:
-        if raw_packet[1] not in {0}:
-            logger.critical(f"{tracker} - ICMPv6 Sanity check fail - wrong packet code")
-            return False
-        if len(raw_packet) < 16:
-            logger.critical(f"{tracker} - ICMPv6 Sanity check fail - wrong packet length (II)")
-            return False
-        if __nd_option_check(raw_packet, 16, logger, tracker) is False:
-            return False
-
-    elif raw_packet[0] == ICMP6_NEIGHBOR_SOLICITATION:
-        if raw_packet[1] not in {0}:
-            logger.critical(f"{tracker} - ICMPv6 Sanity check fail - wrong packet code")
-            return False
-        if len(raw_packet) < 24:
-            logger.critical(f"{tracker} - ICMPv6 Sanity check fail - wrong packet length (II)")
-            return False
-        if __nd_option_check(raw_packet, 24, logger, tracker) is False:
-            return False
-
-    elif raw_packet[0] == ICMP6_NEIGHBOR_ADVERTISEMENT:
-        if raw_packet[1] not in {0}:
-            logger.critical(f"{tracker} - ICMPv6 Sanity check fail - wrong packet code")
-            return False
-        if len(raw_packet) < 24:
-            logger.critical(f"{tracker} - ICMPv6 Sanity check fail - wrong packet length (II)")
-            return False
-        if __nd_option_check(raw_packet, 24, logger, tracker) is False:
-            return False
-
-    elif raw_packet[0] == ICMP6_MLD2_REPORT:
-        if raw_packet[1] not in {0}:
-            logger.critical(f"{tracker} - ICMPv6 Sanity check fail - wrong packet code")
-            return False
-        if len(raw_packet) < 8:
-            logger.critical(f"{tracker} - ICMPv6 Sanity check fail - wrong packet length (II)")
-            return False
-        index = 8
-        for _ in range(struct.unpack("! H", raw_packet[6:8])[0]):
-            if index + 20 > len(raw_packet):
-                logger.critical(f"{tracker} - ICMPv6 Sanity check fail - wrong packet length (III)")
-                return False
-            index += 20 + raw_packet[index + 1] + struct.unpack("! H", raw_packet[index + 2 : index + 4])[0] * 16
-        if index != len(raw_packet):
-            logger.critical(f"{tracker} - ICMPv6 Sanity check fail - wrong packet lenght (IV)")
-            return False
-
-    return True

@@ -43,8 +43,10 @@
 
 import struct
 
-import inet_cksum
+import loguru
+
 import stack
+from ip_helper import inet_cksum
 from tracker import Tracker
 
 # TCP packet header (RFC 793)
@@ -97,11 +99,18 @@ class TcpPacket:
     ):
         """ Class constructor """
 
+        self.logger = loguru.logger.bind(object_name="ps_tcp.")
+        self.sanity_check_failed = False
+
         # Packet parsing
         if parent_packet:
             self.tracker = parent_packet.tracker
-
             raw_packet = parent_packet.raw_data
+
+            if not self.__pre_parse_sanity_check(raw_packet, parent_packet.ip_pseudo_header):
+                self.sanity_check_failed = True
+                return
+
             raw_header = raw_packet[:TCP_HEADER_LEN]
             raw_options = raw_packet[TCP_HEADER_LEN : (raw_header[12] & 0b11110000) >> 2]
 
@@ -151,6 +160,9 @@ class TcpPacket:
 
                 self.tcp_options.append(opt_cls.get(raw_options[i], TcpOptUnk)(raw_options[i : i + raw_options[i + 1]]))
                 i += self.raw_options[i + 1]
+
+            if not self.__post_parse_sanity_check():
+                self.sanity_check_failed = True
 
         # Packet building
         else:
@@ -249,14 +261,14 @@ class TcpPacket:
     def get_raw_packet(self, ip_pseudo_header):
         """ Get packet in raw format ready to be processed by lower level protocol """
 
-        self.tcp_cksum = inet_cksum.compute_cksum(ip_pseudo_header + self.raw_packet)
+        self.tcp_cksum = inet_cksum(ip_pseudo_header + self.raw_packet)
 
         return self.raw_packet
 
     def validate_cksum(self, ip_pseudo_header):
         """ Validate packet checksum """
 
-        return not bool(inet_cksum.compute_cksum(ip_pseudo_header + self.raw_packet))
+        return not bool(inet_cksum(ip_pseudo_header + self.raw_packet))
 
     @property
     def tcp_mss(self):
@@ -293,6 +305,86 @@ class TcpPacket:
             if option.opt_kind == TCP_OPT_TIMESTAMP:
                 return option.opt_tsval, option.opt_tsecr
         return None
+
+    def __pre_parse_sanity_check(self, raw_packet, pseudo_header):
+        """ Preliminary sanity check to be run on raw TCP packet prior to packet parsing """
+
+        if not stack.pre_parse_sanity_check:
+            return True
+
+        if inet_cksum(pseudo_header + raw_packet):
+            self.logger.critical(f"{self.tracker} - TCP sanity check fail - wrong packet checksum")
+            return False
+
+        if len(raw_packet) < 20:
+            self.logger.critical(f"{self.tracker} - TCP sanity check fail - wrong packet length (I)")
+            return False
+
+        hlen = (raw_packet[12] & 0b11110000) >> 2
+        if not 20 <= hlen <= len(raw_packet):
+            self.logger.critical(f"{self.tracker} - TCP sanity check fail - wrong packet length (II)")
+            return False
+
+        index = 20
+        while index < hlen:
+            if raw_packet[index] == TCP_OPT_EOL:
+                break
+            if raw_packet[index] == TCP_OPT_NOP:
+                index += 1
+                if index > hlen:
+                    self.logger.critical(f"{self.tracker} - TCP sanity check fail - wrong option length (I)")
+                    return False
+                continue
+            if index + 1 > hlen:
+                self.logger.critical(f"{self.tracker} - TCP sanity check fail - wrong option length (II)")
+                return False
+            if raw_packet[index + 1] == 0:
+                self.logger.critical(f"{self.tracker} - TCP sanity check fail - wrong option length (III)")
+                return False
+            index += raw_packet[index + 1]
+            if index > hlen:
+                self.logger.critical(f"{self.tracker} - TCP sanity check fail - wrong option length (IV)")
+                return False
+
+        return True
+
+    def __post_parse_sanity_check(self):
+        """ Sanity check to be run on parsed TCP packet """
+
+        if not stack.post_parse_sanity_check:
+            return True
+
+        # tcp_sport set to zero
+        if self.tcp_sport == 0:
+            self.logger.critical(f"{self.tracker} - TCP sanity check fail - value of tcp_sport is 0")
+            return False
+
+        # tcp_dport set to zero
+        if self.tcp_dport == 0:
+            self.logger.critical(f"{self.tracker} - TCP sanity check fail - value of tcp_dport is 0")
+            return False
+
+        # SYN and FIN flag cannot be set simultaneously
+        if self.tcp_flag_syn and self.tcp_flag_fin:
+            self.logger.critical(f"{self.tracker} - TCP sanity check fail - SYN and FIN flags are set simultaneously")
+            return False
+
+        # FIN flag must be set together with ACK flag
+        if self.tcp_flag_fin and not self.tcp_flag_ack:
+            self.logger.critical(f"{self.tracker} - TCP sanity check fail - FIN set but ACK flag is not set")
+            return False
+
+        # ACK number set to non zero value but the ACK flag is not set
+        if self.tcp_ack and not self.tcp_flag_ack:
+            self.logger.critical(f"{self.tracker} - TCP sanity check fail - ACK number present but ACK flag is not set")
+            return False
+
+        # URG pointer set to non zero value but the URG flag is not set
+        if self.tcp_urp and not self.tcp_flag_urg:
+            self.logger.critical(f"{self.tracker} - TCP sanity check fail - URG pointer present but URG flag is not set")
+            return False
+
+        return True
 
 
 #
@@ -465,47 +557,3 @@ class TcpOptUnk:
 
     def __str__(self):
         return f"unk-{self.opt_kind}-{self.opt_len}"
-
-
-#
-#   TCP sanity check functions
-#
-
-
-def preliminary_sanity_check(raw_packet, tracker, logger):
-    """ Preliminary sanity check to be run on raw TCP packet prior to packet parsing """
-
-    if not stack.preliminary_packet_sanity_check:
-        return True
-
-    if len(raw_packet) < 20:
-        logger.critical(f"{tracker} - TCP Sanity check fail - wrong packet length (I)")
-        return False
-
-    hlen = (raw_packet[12] & 0b11110000) >> 2
-    if not 20 <= hlen <= len(raw_packet):
-        logger.critical(f"{tracker} - TCP Sanity check fail - wrong packet length (II)")
-        return False
-
-    index = 20
-    while index < hlen:
-        if raw_packet[index] == TCP_OPT_EOL:
-            break
-        if raw_packet[index] == TCP_OPT_NOP:
-            index += 1
-            if index > hlen:
-                logger.critical(f"{tracker} - TCP Sanity check fail - wrong option length (I)")
-                return False
-            continue
-        if index + 1 > hlen:
-            logger.critical(f"{tracker} - TCP Sanity check fail - wrong option length (II)")
-            return False
-        if raw_packet[index + 1] == 0:
-            logger.critical(f"{tracker} - TCP Sanity check fail - wrong option length (III)")
-            return False
-        index += raw_packet[index + 1]
-        if index > hlen:
-            logger.critical(f"{tracker} - TCP Sanity check fail - wrong option length (IV)")
-            return False
-
-    return True

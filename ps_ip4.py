@@ -44,8 +44,10 @@
 import struct
 from ipaddress import IPv4Address
 
-import inet_cksum
+import loguru
+
 import stack
+from ip_helper import inet_cksum
 
 # IPv4 protocol header
 
@@ -137,8 +139,8 @@ class Ip4Packet:
         ip4_dscp=0,
         ip4_ecn=0,
         ip4_packet_id=0,
-        ip4_frag_df=False,
-        ip4_frag_mf=False,
+        ip4_flag_df=False,
+        ip4_flag_mf=False,
         ip4_frag_offset=0,
         ip4_options=None,
         child_packet=None,
@@ -148,11 +150,19 @@ class Ip4Packet:
     ):
         """ Class constructor """
 
+        self.logger = loguru.logger.bind(object_name="ps_ip4.")
+        self.sanity_check_failed = False
+
         # Packet parsing
         if parent_packet:
             self.tracker = parent_packet.tracker
 
             raw_packet = parent_packet.raw_data
+
+            if not self.__pre_parse_sanity_check(raw_packet):
+                self.sanity_check_failed = True
+                return
+
             raw_header = raw_packet[:IP4_HEADER_LEN]
             raw_options = raw_packet[IP4_HEADER_LEN : (raw_packet[0] & 0b00001111) << 2]
 
@@ -164,8 +174,9 @@ class Ip4Packet:
             self.ip4_ecn = raw_header[1] & 0b00000011
             self.ip4_plen = struct.unpack("!H", raw_header[2:4])[0]
             self.ip4_packet_id = struct.unpack("!H", raw_header[4:6])[0]
-            self.ip4_frag_df = bool(struct.unpack("!H", raw_header[6:8])[0] & 0b0100000000000000)
-            self.ip4_frag_mf = bool(struct.unpack("!H", raw_header[6:8])[0] & 0b0010000000000000)
+            self.ip4_flag_reserved = bool(struct.unpack("!H", raw_header[6:8])[0] & 0b1000000000000000)
+            self.ip4_flag_df = bool(struct.unpack("!H", raw_header[6:8])[0] & 0b0100000000000000)
+            self.ip4_flag_mf = bool(struct.unpack("!H", raw_header[6:8])[0] & 0b0010000000000000)
             self.ip4_frag_offset = (struct.unpack("!H", raw_header[6:8])[0] & 0b0001111111111111) << 3
             self.ip4_ttl = raw_header[8]
             self.ip4_proto = raw_header[9]
@@ -193,6 +204,9 @@ class Ip4Packet:
                 self.ip4_options.append(opt_cls.get(raw_options[i], Ip4OptUnk)(raw_options[i : i + raw_options[i + 1]]))
                 i += self.raw_options[i + 1]
 
+            if not self.__post_parse_sanity_check():
+                self.sanity_check_failed = True
+
         # Packet building
         else:
             if tracker:
@@ -206,8 +220,9 @@ class Ip4Packet:
             self.ip4_ecn = ip4_ecn
             self.ip4_plen = None
             self.ip4_packet_id = ip4_packet_id
-            self.ip4_frag_df = ip4_frag_df
-            self.ip4_frag_mf = ip4_frag_mf
+            self.ip4_flag_reserved = 0
+            self.ip4_flag_df = ip4_flag_df
+            self.ip4_flag_mf = ip4_flag_mf
             self.ip4_frag_offset = ip4_frag_offset
             self.ip4_ttl = ip4_ttl
             self.ip4_cksum = 0
@@ -248,7 +263,7 @@ class Ip4Packet:
 
         return (
             f"IPv4 {self.ip4_src} > {self.ip4_dst}, proto {self.ip4_proto} ({IP4_PROTO_TABLE.get(self.ip4_proto, '???')}), id {self.ip4_packet_id}"
-            + f"{', DF' if self.ip4_frag_df else ''}{', MF' if self.ip4_frag_mf else ''}, offset {self.ip4_frag_offset}, plen {self.ip4_plen}"
+            + f"{', DF' if self.ip4_flag_df else ''}{', MF' if self.ip4_flag_mf else ''}, offset {self.ip4_frag_offset}, plen {self.ip4_plen}"
             + f", ttl {self.ip4_ttl}"
         )
 
@@ -267,7 +282,7 @@ class Ip4Packet:
             self.ip4_dscp << 2 | self.ip4_ecn,
             self.ip4_plen,
             self.ip4_packet_id,
-            self.ip4_frag_df << 14 | self.ip4_frag_mf << 13 | self.ip4_frag_offset >> 3,
+            self.ip4_flag_reserved << 15 | self.ip4_flag_df << 14 | self.ip4_flag_mf << 13 | self.ip4_frag_offset >> 3,
             self.ip4_ttl,
             self.ip4_proto,
             self.ip4_cksum,
@@ -301,7 +316,7 @@ class Ip4Packet:
     def get_raw_packet(self):
         """ Get packet in raw format ready to be processed by lower level protocol """
 
-        self.ip4_cksum = inet_cksum.compute_cksum(self.raw_header + self.raw_options)
+        self.ip4_cksum = inet_cksum(self.raw_header + self.raw_options)
 
         return self.raw_packet
 
@@ -316,7 +331,99 @@ class Ip4Packet:
     def validate_cksum(self):
         """ Validate packet checksum """
 
-        return not bool(inet_cksum.compute_cksum(self.raw_header + self.raw_options))
+        return not bool(inet_cksum(self.raw_header + self.raw_options))
+
+    def __pre_parse_sanity_check(self, raw_packet):
+        """ Preliminary sanity check to be run on raw IPv4 packet prior to packet parsing """
+
+        if not stack.pre_parse_sanity_check:
+            return True
+
+        if len(raw_packet) < 20:
+            self.logger.critical(f"{self.tracker} - IPv4 sanity check fail - wrong packet length (I)")
+            return False
+
+        hlen = (raw_packet[0] & 0b00001111) << 2
+        plen = struct.unpack("!H", raw_packet[2:4])[0]
+        if not 20 <= hlen <= plen == len(raw_packet):
+            self.logger.critical(f"{self.tracker} - IPv4 sanity check fail - wrong packet length (II)")
+            return False
+
+        # Cannot compute checksum earlier because it depends on sanity of hlen field
+        if inet_cksum(raw_packet[:hlen]):
+            self.logger.critical(f"{self.tracker} - IPv4 sanity check fail - wrong packet checksum")
+            return False
+
+        index = 20
+        while index < hlen:
+            if raw_packet[index] == IP4_OPT_EOL:
+                break
+            if raw_packet[index] == IP4_OPT_NOP:
+                index += 1
+                if index > hlen:
+                    self.logger.critical(f"{self.tracker} - IPv4 sanity check fail - wrong option length (I)")
+                    return False
+                continue
+            if index + 1 > hlen:
+                self.logger.critical(f"{self.tracker} - IPv4 sanity check fail - wrong option length (II)")
+                return False
+            if raw_packet[index + 1] == 0:
+                self.logger.critical(f"{self.tracker} - IPv4 sanity check fail - wrong option length (III)")
+                return False
+            index += raw_packet[index + 1]
+            if index > hlen:
+                self.logger.critical(f"{self.tracker} - IPv4 sanity check fail - wrong option length (IV)")
+                return False
+
+        return True
+
+    def __post_parse_sanity_check(self):
+        """ Sanity check to be run on parsed IPv4 packet """
+
+        if not stack.post_parse_sanity_check:
+            return True
+
+        # ip4_ver not set to 4
+        if not self.ip4_ver == 4:
+            self.logger.critical(f"{self.tracker} - IP sanity check fail - value of ip4_ver is not 4")
+            return False
+
+        # ip4_ttl set to 0
+        if self.ip4_ver == 0:
+            self.logger.critical(f"{self.tracker} - IP sanity check fail - value of ip4_ttl is 0")
+            return False
+
+        # ip4_src address is multicast
+        if self.ip4_src.is_multicast:
+            self.logger.critical(f"{self.tracker} - IP sanity check fail - ip4_src address is multicast")
+            return False
+
+        # ip4_src address is reserved
+        if self.ip4_src.is_reserved:
+            self.logger.critical(f"{self.tracker} - IP sanity check fail - ip4_src address is reserved")
+            return False
+
+        # ip4_src address is limited broadcast
+        if self.ip4_src == IPv4Address("255.255.255.255"):
+            self.logger.critical(f"{self.tracker} - IP sanity check fail - ip4_src address is limited broadcast")
+            return False
+
+        # DF and MF flags set simultaneously
+        if self.ip4_flag_df and self.ip4_flag_mf:
+            self.logger.critical(f"{self.tracker} - IP sanity check fail - DF and MF flags set simultaneously")
+            return False
+
+        # Fragment offset not zero but DF flag is set
+        if self.ip4_frag_offset and self.ipv4_flag_df:
+            self.logger.critical(f"{self.tracker} - IP sanity check fail - value of ip4_frag_offset s not zeor but DF flag set")
+            return False
+
+        # Packet contains options
+        if self.ip4_options and stack.ip4_option_packet_drop:
+            self.logger.critical(f"{self.tracker} - IP sanity check fail - packet contains options")
+            return False
+
+        return True
 
 
 #
@@ -381,48 +488,3 @@ class Ip4OptUnk:
 
     def __str__(self):
         return f"unk-{self.opt_kind}-{self.opt_len}"
-
-
-#
-#   IPv4 sanity check functions
-#
-
-
-def preliminary_sanity_check(raw_packet, tracker, logger):
-    """ Preliminary sanity check to be run on raw IPv4 packet prior to packet parsing """
-
-    if not stack.preliminary_packet_sanity_check:
-        return True
-
-    if len(raw_packet) < 20:
-        logger.critical(f"{tracker} - IPv4 Sanity check fail - wrong packet length (I)")
-        return False
-
-    hlen = (raw_packet[0] & 0b00001111) << 2
-    plen = struct.unpack("!H", raw_packet[2:4])[0]
-    if not 20 <= hlen <= plen == len(raw_packet):
-        logger.critical(f"{tracker} - IPv4 Sanity check fail - wrong packet length (II)")
-        return False
-
-    index = 20
-    while index < hlen:
-        if raw_packet[index] == IP4_OPT_EOL:
-            break
-        if raw_packet[index] == IP4_OPT_NOP:
-            index += 1
-            if index > hlen:
-                logger.critical(f"{tracker} - IPv4 Sanity check fail - wrong option length (I)")
-                return False
-            continue
-        if index + 1 > hlen:
-            logger.critical(f"{tracker} - IPv4 Sanity check fail - wrong option length (II)")
-            return False
-        if raw_packet[index + 1] == 0:
-            logger.critical(f"{tracker} - IPv4 Sanity check fail - wrong option length (III)")
-            return False
-        index += raw_packet[index + 1]
-        if index > hlen:
-            logger.critical(f"{tracker} - IPv4 Sanity check fail - wrong option length (IV)")
-            return False
-
-    return True
