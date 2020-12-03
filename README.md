@@ -69,15 +69,6 @@ This program is a work in progress and it changes on daily basis due to new feat
 
 ### Examples:
 
-#### Preliminary packet sanity check in action
- - first screenshot shows stack with sanity check turned off, malformed ICMPv6 packet is able to crash it
- - second screenshot shows stack with sanity check turned on, malformed ICMPv6 packet is being discarded before being passed to ICMPv6 protocol parser
- - third screenshot shows the malformed packet, number of MA records field has been set to 777 despite packet contains only one record
-
-![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/main/pictures/pre_sanity_chk_01.png)
-![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/main/pictures/pre_sanity_chk_02.png)
-![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/main/pictures/pre_sanity_chk_03.png)
-
 #### Couple ping packets and two monkeys delivered via TCP over IPv6 protocol
 
 ![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/main/pictures/malpi_00.png)
@@ -161,6 +152,16 @@ y assigned by another host so stack cannot us it
 ![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/main/pictures/tcp_fsm_clt_02.png)
 ![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/main/pictures/tcp_fsm_clt_03.png)
 ![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/main/pictures/tcp_fsm_clt_04.png)
+
+
+#### Pre-parse packet sanity check in action
+ - first screenshot shows stack with sanity check turned off, malformed ICMPv6 packet is able to crash it
+ - second screenshot shows stack with sanity check turned on, malformed ICMPv6 packet is being discarded before being passed to ICMPv6 protocol parser
+ - third screenshot shows the malformed packet, number of MA records field has been set to 777 despite packet contains only one record
+
+![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/main/pictures/pre_sanity_chk_01.png)
+![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/main/pictures/pre_sanity_chk_02.png)
+![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/main/pictures/pre_sanity_chk_03.png)
 
 
 #### ARP Probe/Announcement mechanism
