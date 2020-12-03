@@ -224,7 +224,7 @@ class Icmp4Packet:
             )
 
         else:
-            struct.pack("! BBH", self.icmp4_type, self.icmp4_code, self.icmp4_cksum) + self.unknown_message
+            raw_packet = struct.pack("! BBH", self.icmp4_type, self.icmp4_code, self.icmp4_cksum) + self.unknown_message
 
         return raw_packet
 
