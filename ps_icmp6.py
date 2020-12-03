@@ -268,10 +268,13 @@ from tracker import Tracker
 
 
 ICMP6_UNREACHABLE = 1
-ICMP6_UNREACHABLE_NOROUTE = 0
-ICMP6_UNREACHABLE_PROHIBITED = 1
-ICMP6_UNREACHABLE_ADDRESS = 2
-ICMP6_UNREACHABLE_PORT = 4
+ICMP6_UNREACHABLE__NOROUTE = 0
+ICMP6_UNREACHABLE__PROHIBITED = 1
+ICMP6_UNREACHABLE__ADDRESS = 2
+ICMP6_UNREACHABLE__PORT = 4
+ICMP6_PACKET_TOO_BIG = 2
+ICMP6_TIME_EXCEEDED = 3
+ICMP6_PARAMETER_PROBLEM = 4
 ICMP6_ECHOREQUEST = 128
 ICMP6_ECHOREPLY = 129
 ICMP6_MLD2_QUERY = 130
@@ -280,6 +283,7 @@ ICMP6_ROUTER_ADVERTISEMENT = 134
 ICMP6_NEIGHBOR_SOLICITATION = 135
 ICMP6_NEIGHBOR_ADVERTISEMENT = 136
 ICMP6_MLD2_REPORT = 143
+
 
 ICMP6_MART_MODE_IS_INCLUDE = 1
 ICMP6_MART_MODE_IS_EXCLUDE = 2
@@ -410,12 +414,12 @@ class Icmp6Packet:
                 self.icmp6_un_reserved = 0
                 self.icmp6_un_raw_data = icmp6_un_raw_data[:520]
 
-            elif self.icmp6_type == ICMP6_ECHOREQUEST and self.icmp6_code == 0:
+            elif self.icmp6_type == ICMP6_ECHOREQUEST:
                 self.icmp6_ec_id = icmp6_ec_id
                 self.icmp6_ec_seq = icmp6_ec_seq
                 self.icmp6_ec_raw_data = icmp6_ec_raw_data
 
-            elif self.icmp6_type == ICMP6_ECHOREPLY and self.icmp6_code == 0:
+            elif self.icmp6_type == ICMP6_ECHOREPLY:
                 self.icmp6_ec_id = icmp6_ec_id
                 self.icmp6_ec_seq = icmp6_ec_seq
                 self.icmp6_ec_raw_data = icmp6_ec_raw_data

@@ -41,7 +41,6 @@
 #
 
 
-import socket
 import struct
 from ipaddress import IPv4Address
 
@@ -158,8 +157,8 @@ def phtx_ip4(self, child_packet, ip4_dst, ip4_src, ip4_ttl=config.ip4_default_tt
         raw_data = child_packet.get_raw_packet(
             struct.pack(
                 "! 4s 4s BBH",
-                socket.inet_aton(ip4_src),
-                socket.inet_aton(ip4_dst),
+                ip4_src.packed,
+                ip4_dst.packed,
                 0,
                 ip4_proto,
                 len(child_packet.raw_packet),
@@ -180,7 +179,7 @@ def phtx_ip4(self, child_packet, ip4_dst, ip4_src, ip4_ttl=config.ip4_default_tt
             ip4_packet_id=self.ip4_packet_id,
             ip4_flag_mf=pointer < len(raw_data_fragments) - 1,
             ip4_frag_offset=offset,
-            ip4_ttl = ip4_ttl,
+            ip4_ttl=ip4_ttl,
             raw_data=raw_data_fragment,
             tracker=child_packet.tracker,
         )

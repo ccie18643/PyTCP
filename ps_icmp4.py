@@ -99,12 +99,12 @@ from tracker import Tracker
 
 ICMP4_ECHOREPLY = 0
 ICMP4_UNREACHABLE = 3
-ICMP4_UNREACHABLE_NET = 0
-ICMP4_UNREACHABLE_HOST = 1
-ICMP4_UNREACHABLE_PROTOCOL = 2
-ICMP4_UNREACHABLE_PORT = 3
-ICMP4_UNREACHABLE_FAGMENTATION = 4
-ICMP4_UNREACHABLE_SOURCE_ROUTE_FAILED = 5
+ICMP4_UNREACHABLE__NET = 0
+ICMP4_UNREACHABLE__HOST = 1
+ICMP4_UNREACHABLE__PROTOCOL = 2
+ICMP4_UNREACHABLE__PORT = 3
+ICMP4_UNREACHABLE__FAGMENTATION = 4
+ICMP4_UNREACHABLE__SOURCE_ROUTE_FAILED = 5
 ICMP4_ECHOREQUEST = 8
 
 
@@ -171,16 +171,16 @@ class Icmp4Packet:
             self.icmp4_code = icmp4_code
             self.icmp4_cksum = 0
 
-            if self.icmp4_type == ICMP4_ECHOREPLY and self.icmp4_code == 0:
+            if self.icmp4_type == ICMP4_ECHOREPLY:
                 self.icmp4_ec_id = icmp4_ec_id
                 self.icmp4_ec_seq = icmp4_ec_seq
                 self.icmp4_ec_raw_data = icmp4_ec_raw_data
 
-            elif self.icmp4_type == ICMP4_UNREACHABLE and self.icmp4_code == ICMP4_UNREACHABLE_PORT:
+            elif self.icmp4_type == ICMP4_UNREACHABLE and self.icmp4_code == ICMP4_UNREACHABLE__PORT:
                 self.icmp4_un_reserved = 0
                 self.icmp4_un_raw_data = icmp4_un_raw_data[:520]
 
-            elif self.icmp4_type == ICMP4_ECHOREQUEST and self.icmp4_code == 0:
+            elif self.icmp4_type == ICMP4_ECHOREQUEST:
                 self.icmp4_ec_id = icmp4_ec_id
                 self.icmp4_ec_seq = icmp4_ec_seq
                 self.icmp4_ec_raw_data = icmp4_ec_raw_data
@@ -193,7 +193,7 @@ class Icmp4Packet:
         if self.icmp4_type == ICMP4_ECHOREPLY:
             log += f", id {self.icmp4_ec_id}, seq {self.icmp4_ec_seq}"
 
-        elif self.icmp4_type == ICMP4_UNREACHABLE and self.icmp4_code == ICMP4_UNREACHABLE_PORT:
+        elif self.icmp4_type == ICMP4_UNREACHABLE and self.icmp4_code == ICMP4_UNREACHABLE__PORT:
             pass
 
         elif self.icmp4_type == ICMP4_ECHOREQUEST:
@@ -215,7 +215,7 @@ class Icmp4Packet:
                 struct.pack("! BBH HH", self.icmp4_type, self.icmp4_code, self.icmp4_cksum, self.icmp4_ec_id, self.icmp4_ec_seq) + self.icmp4_ec_raw_data
             )
 
-        elif self.icmp4_type == ICMP4_UNREACHABLE and self.icmp4_code == ICMP4_UNREACHABLE_PORT:
+        elif self.icmp4_type == ICMP4_UNREACHABLE and self.icmp4_code == ICMP4_UNREACHABLE__PORT:
             raw_packet = struct.pack("! BBH L", self.icmp4_type, self.icmp4_code, self.icmp4_cksum, self.icmp4_un_reserved) + self.icmp4_un_raw_data
 
         elif self.icmp4_type == ICMP4_ECHOREQUEST:

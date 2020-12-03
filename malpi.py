@@ -37,57 +37,53 @@
 
 
 #
-# service_udp_echo.py - 'user space' service UDP Echo (RFC 862)
+# malpi.py - module contains test monkeys used by various services
 #
 
 
-import threading
+malpka = (
+    "                                       \n"
+    + "                                       \n"
+    + "                                       \n"
+    + "                                       \n"
+    + '               .="=.                   \n'
+    + "             _/.-.-.\_    _            \n"
+    + "            ( ( o o ) )   ))           \n"
+    + '             |/  "  \|   //            \n'
+    + "              \\'---'/   //             \n"
+    + "              /`---`\\  ((              \n"
+    + "             / /_,_\ \\  \\\\             \n"
+    + "             \_\\_'__/ \  ))            \n"
+    + "             /`  /`~\  |//             \n"
+    + "            /   /    \  /              \n"
+    + "        ,--`,--'\/\    /               \n"
+    + "         '-- \"--'  '--'                \n"
+    + "                                       \n"
+    + "                                       \n"
+    + "                                       \n"
+    + "                                       \n"
+    + "                                       \n"
+)
 
-import udp_socket
-from malpi import malpa, malpka
-from tracker import Tracker
-from udp_metadata import UdpMetadata
-
-
-class ServiceUdpEcho:
-    """ UDP Echo service support class """
-
-    def __init__(self, local_ip_address="*", local_port=7):
-        """ Class constructor """
-
-        threading.Thread(target=self.__thread_service, args=(local_ip_address, local_port)).start()
-
-    @staticmethod
-    def __thread_service(local_ip_address, local_port):
-        """ Service initialization and rx/tx loop """
-
-        socket = udp_socket.UdpSocket()
-        socket.bind(local_ip_address, local_port)
-        print(f"Service UDP Echo: Socket created, bound to {local_ip_address}, port {local_port}")
-
-        while True:
-            packet_rx = socket.receive_from()
-            message = packet_rx.raw_data
-            print(f"Service UDP Echo: Received {len(message)} bytes from {packet_rx.remote_ip_address}, port {packet_rx.remote_port}")
-
-            if "malpka" in str(message, "utf-8").strip().lower():
-                message = bytes(malpka, "utf-8")
-
-            elif "malpa" in str(message, "utf-8").strip().lower():
-                message = bytes(malpa, "utf-8")
-
-            elif "malpi" in str(message, "utf-8").strip().lower():
-                message = b""
-                for malpka_line, malpa_line in zip(malpka.split("\n"), malpa.split("\n")):
-                    message += bytes(malpka_line + malpa_line + "\n", "utf-8")
-
-            packet_tx = UdpMetadata(
-                local_ip_address=packet_rx.local_ip_address,
-                local_port=packet_rx.local_port,
-                remote_ip_address=packet_rx.remote_ip_address,
-                remote_port=packet_rx.remote_port,
-                raw_data=message,
-                tracker=Tracker("TX", echo_tracker=packet_rx.tracker),
-            )
-            socket.send_to(packet_tx)
-            print(f"Service UDP Echo: Echo'ed {len(message)} bytes back to {packet_tx.remote_ip_address}, port {packet_tx.remote_port}")
+malpa = (
+    "______AAAA_______________AAAA______\n"
+    + "      VVVV               VVVV       \n"
+    + "      (__)               (__)       \n"
+    + "       \ \               / /        \n"
+    + "        \ \              / /         \n"
+    + '         > \   .="=.   / <          \n'
+    + "          > \ /     \ / <           \n"
+    + "           > \\\_o_o_// <            \n"
+    + "            > ( (_) ) <             \n"
+    + "             >|     |<              \n"
+    + "            / |\\___/| \\             \n"
+    + "            / \_____/ \\             \n"
+    + "            /         \\             \n"
+    + "             /   o   \\              \n"
+    + "              ) ___ (               \n"
+    + "             / /   \ \              \n"
+    + "            ( /     \ )             \n"
+    + "            ><       ><             \n"
+    + "           ///\     /\\\\\\            \n"
+    + "           '''       '''            \n"
+)

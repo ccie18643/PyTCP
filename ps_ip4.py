@@ -414,7 +414,7 @@ class Ip4Packet:
             return False
 
         # Fragment offset not zero but DF flag is set
-        if self.ip4_frag_offset and self.ipv4_flag_df:
+        if self.ip4_frag_offset and self.ip4_flag_df:
             self.logger.critical(f"{self.tracker} - IP sanity check fail - value of ip4_frag_offset s not zeor but DF flag set")
             return False
 

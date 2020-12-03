@@ -44,53 +44,7 @@
 import threading
 
 import tcp_socket
-
-malpka = (
-    "                                       \n"
-    + "                                       \n"
-    + "                                       \n"
-    + "                                       \n"
-    + '               .="=.                   \n'
-    + "             _/.-.-.\_    _            \n"
-    + "            ( ( o o ) )   ))           \n"
-    + '             |/  "  \|   //            \n'
-    + "              \\'---'/   //             \n"
-    + "              /`---`\\  ((              \n"
-    + "             / /_,_\ \\  \\\\             \n"
-    + "             \_\\_'__/ \  ))            \n"
-    + "             /`  /`~\  |//             \n"
-    + "            /   /    \  /              \n"
-    + "        ,--`,--'\/\    /               \n"
-    + "         '-- \"--'  '--'                \n"
-    + "                                       \n"
-    + "                                       \n"
-    + "                                       \n"
-    + "                                       \n"
-    + "                                       \n"
-)
-
-malpa = (
-    "______AAAA_______________AAAA______\n"
-    + "      VVVV               VVVV       \n"
-    + "      (__)               (__)       \n"
-    + "       \ \               / /        \n"
-    + "        \ \              / /         \n"
-    + '         > \   .="=.   / <          \n'
-    + "          > \ /     \ / <           \n"
-    + "           > \\\_o_o_// <            \n"
-    + "            > ( (_) ) <             \n"
-    + "             >|     |<              \n"
-    + "            / |\\___/| \\             \n"
-    + "            / \_____/ \\             \n"
-    + "            /         \\             \n"
-    + "             /   o   \\              \n"
-    + "              ) ___ (               \n"
-    + "             / /   \ \              \n"
-    + "            ( /     \ )             \n"
-    + "            ><       ><             \n"
-    + "           ///\     /\\\\\\            \n"
-    + "           '''       '''            \n"
-)
+from malpi import malpa, malpka
 
 
 class ServiceTcpEcho:
@@ -124,6 +78,7 @@ class ServiceTcpEcho:
 
         while True:
             message = socket.receive()
+            print(f"Service TCP Echo: Received {len(message)} bytes from {socket.remote_ip_address}, port {socket.remote_port}")
 
             if message is None:
                 print(f"Service TCP Echo: Connection to {socket.remote_ip_address}, port {socket.remote_port} has been closed by peer")
@@ -133,7 +88,7 @@ class ServiceTcpEcho:
                 socket.close()
                 break
 
-            if message in {b"CLOSE\n", b"CLOSE\r\n", b"close\n", b"close\r\n"}:
+            elif message in {b"CLOSE\n", b"CLOSE\r\n", b"close\n", b"close\r\n"}:
                 print(f"Service TCP Echo: Sending last message to {socket.remote_ip_address}, port {socket.remote_port}")
                 socket.send(b"***CLIENT OPEN, SERVICE CLOSING***\n")
                 print(f"Service TCP Echo: Closng connection to {socket.remote_ip_address}, port {socket.remote_port}")
@@ -141,21 +96,15 @@ class ServiceTcpEcho:
                 continue
 
             if "malpka" in str(message, "utf-8").strip().lower():
-                print(f"Service TCP Echo: Sending '***END***' message to {socket.remote_ip_address}, port {socket.remote_port}")
-                socket.send(bytes(malpka, "utf-8"))
-                continue
+                message = bytes(malpka, "utf-8")
 
-            if "malpa" in str(message, "utf-8").strip().lower():
-                print(f"Service TCP Echo: Sending '***END***' message to {socket.remote_ip_address}, port {socket.remote_port}")
-                socket.send(bytes(malpa, "utf-8"))
-                continue
+            elif "malpa" in str(message, "utf-8").strip().lower():
+                message = bytes(malpa, "utf-8")
 
-            if "malpi" in str(message, "utf-8").strip().lower():
-                print(f"Service TCP Echo: Sending '***END***' message to {socket.remote_ip_address}, port {socket.remote_port}")
+            elif "malpi" in str(message, "utf-8").strip().lower():
+                message = b""
                 for malpka_line, malpa_line in zip(malpka.split("\n"), malpa.split("\n")):
-                    socket.send(bytes(malpka_line + malpa_line + "\n", "utf-8"))
-                continue
+                    message += bytes(malpka_line + malpa_line + "\n", "utf-8")
 
-            print(f"Service TCP Echo: Received message from {socket.remote_ip_address}, port {socket.remote_port} -", message)
             if socket.send(message):
-                print(f"Service TCP Echo: Echo'ed message back to {socket.remote_ip_address}, port {socket.remote_port} -", message)
+                print(f"Service TCP Echo: Echo'ed {len(message)} bytes back to {socket.remote_ip_address}, port {socket.remote_port}")

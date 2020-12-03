@@ -97,7 +97,7 @@ def phrx_udp(self, ip_packet_rx, udp_packet_rx):
             ip6_src=ip_packet_rx.ip6_dst,
             ip6_dst=ip_packet_rx.ip6_src,
             icmp6_type=ps_icmp6.ICMP6_UNREACHABLE,
-            icmp6_code=ps_icmp6.ICMP6_UNREACHABLE_PORT,
+            icmp6_code=ps_icmp6.ICMP6_UNREACHABLE__PORT,
             icmp6_un_raw_data=ip_packet_rx.get_raw_packet(),
             echo_tracker=udp_packet_rx.tracker,
         )
@@ -107,7 +107,7 @@ def phrx_udp(self, ip_packet_rx, udp_packet_rx):
             ip4_src=ip_packet_rx.ip_dst,
             ip4_dst=ip_packet_rx.ip_src,
             icmp4_type=ps_icmp4.ICMP4_UNREACHABLE,
-            icmp4_code=ps_icmp4.ICMP4_UNREACHABLE_PORT,
+            icmp4_code=ps_icmp4.ICMP4_UNREACHABLE__PORT,
             icmp4_un_raw_data=ip_packet_rx.get_raw_packet(),
             echo_tracker=udp_packet_rx.tracker,
         )
