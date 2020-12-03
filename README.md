@@ -38,7 +38,7 @@ This program is a work in progress and it changes on daily basis due to new feat
 
 #### Work in progress:
 
- - Stack - *implementing stack debuging console so certain information about stack components can be displayed on demand by sending commands. eg 'show icmpv6 nd cache', 'show ipv6 route', etc...*
+ - Stack - *implementing stack debuging console so certain information about stack components can be displayed on demand by sending commands. eg 'show icmpv6 nd cache', 'show ipv6 route', etc... it should also let run interactive commands like ping or stack's udp/tcp echo clients*
 
 #### Next steps:
 
@@ -65,6 +65,9 @@ This program is a work in progress and it changes on daily basis due to new feat
  - IPv6/IPv4 protocols - *ability of stack to act as a router*
  - ARP cache - *implement proper FSM*
  - ICMPv6 ND cache - *implement proper FSM*
+ - UDP protocol - *need UDP echo client and mechanism to report receiving ICMP Port Unreachable message to UDP socket*
+ - UDP sockets - *overhaul is needed to make 'end user' interface match Berkley sockets more closely so 3rd party aps can use it without porting*
+ - TCP sockets - *overhaul is needed to make 'end user' interface match Berkley sockets more closely so 3rd party aps can use it without porting*
 
 
 ### Examples:
