@@ -90,7 +90,7 @@ def validate_dst_ip6_address(self, ip6_dst):
     return ip6_dst
 
 
-def phtx_ip6(self, child_packet, ip6_dst, ip6_src, ip6_hop=64):
+def phtx_ip6(self, child_packet, ip6_dst, ip6_src, ip6_hop=config.ip6_default_hop):
     """ Handle outbound IP packets """
 
     # Check if IPv6 protocol support is enabled, if not then silently drop the packet

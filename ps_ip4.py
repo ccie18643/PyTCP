@@ -135,7 +135,7 @@ class Ip4Packet:
         parent_packet=None,
         ip4_src=None,
         ip4_dst=None,
-        ip4_ttl=64,
+        ip4_ttl=config.ip4_default_ttl,
         ip4_dscp=0,
         ip4_ecn=0,
         ip4_packet_id=0,

@@ -140,7 +140,7 @@ class Ip6Packet:
         parent_packet=None,
         ip6_src=None,
         ip6_dst=None,
-        ip6_hop=64,
+        ip6_hop=config.ip6_default_hop,
         ip6_dscp=0,
         ip6_ecn=0,
         ip6_flow=0,

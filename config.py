@@ -72,6 +72,12 @@ mac_address_candidate = ["02:00:00:77:77:77"]
 ip6_lla_autoconfig = True
 ip6_gua_autoconfig = True
 
+# IPv6 default Hop Limit value
+ip6_default_hop = 64
+
+# IPv4 default TTL value
+ip4_default_ttl = 64
+
 # Static IPv6 adrsses may to be configured here (they will still be subject to CICMPv6 ND DAD  mechanism)
 # Each entry is a tuple interface address/prefix length and second is defaut gateway for this subnet
 # Basic routing is implmented and each subnet can have its own gateway
