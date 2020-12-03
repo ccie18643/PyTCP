@@ -52,7 +52,6 @@ def phrx_icmp6(self, ip6_packet_rx, icmp6_packet_rx):
 
     # Validate ICMPv6 packet sanity
     if icmp6_packet_rx.sanity_check_failed:
-        self.logger.warning(f"{icmp6_packet_rx.tracker} - ICMPv6 packet sanity check failed, droping...")
         return
 
     self.logger.opt(ansi=True).info(f"<green>{icmp6_packet_rx.tracker}</green> - {icmp6_packet_rx}")
@@ -125,7 +124,7 @@ def phrx_icmp6(self, ip6_packet_rx, icmp6_packet_rx):
         return
 
     # Respond to ICMPv6 Echo Request packet
-    if icmp6_packet_rx.icmp6_type == ps_icmp6.ICMP6_ECHOREQUEST and icmp6_packet_rx.icmp6_code == 0:
+    if icmp6_packet_rx.icmp6_type == ps_icmp6.ICMP6_ECHOREQUEST:
         self.logger.debug(f"Received ICMPv6 Echo Request packet from {ip6_packet_rx.ip6_src}, sending reply")
 
         self.phtx_icmp6(

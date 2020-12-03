@@ -93,7 +93,6 @@ def phrx_ip4(self, ip4_packet_rx):
 
     # Validate IPv4 packet sanity
     if ip4_packet_rx.sanity_check_failed:
-        self.logger.warning(f"{ip4_packet_rx.tracker} - IPv4 packet sanity check failed, droping...")
         return
 
     self.logger.debug(f"{ip4_packet_rx.tracker} - {ip4_packet_rx}")

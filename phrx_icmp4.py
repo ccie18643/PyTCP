@@ -49,13 +49,12 @@ def phrx_icmp4(self, ip4_packet_rx, icmp4_packet_rx):
 
     # Validate ICMPv4 packet sanity
     if icmp4_packet_rx.sanity_check_failed:
-        self.logger.warning(f"{icmp4_packet_rx.tracker} - ICMPv4 packet sanity check failed, droping...")
         return
 
     self.logger.opt(ansi=True).info(f"<green>{icmp4_packet_rx.tracker}</green> - {icmp4_packet_rx}")
 
     # Respond to ICMPv4 Echo Request packet
-    if icmp4_packet_rx.icmp4_type == ps_icmp4.ICMP4_ECHOREQUEST and icmp4_packet_rx.icmp4_code == 0:
+    if icmp4_packet_rx.icmp4_type == ps_icmp4.ICMP4_ECHOREQUEST:
         self.logger.debug(f"Received ICMPv4 Echo Request packet from {ip4_packet_rx.ip4_src}, sending reply")
 
         self.phtx_icmp4(

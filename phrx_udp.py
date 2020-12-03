@@ -56,7 +56,6 @@ def phrx_udp(self, ip_packet_rx, udp_packet_rx):
 
     # Validate UDP packet sanity
     if udp_packet_rx.sanity_check_failed:
-        self.logger.warning(f"{udp_packet_rx.tracker} - UDP packet sanity check failed, droping...")
         return
 
     self.logger.opt(ansi=True).info(f"<green>{udp_packet_rx.tracker}</green> - {udp_packet_rx}")

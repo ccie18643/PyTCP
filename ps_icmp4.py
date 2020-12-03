@@ -278,21 +278,19 @@ class Icmp4Packet:
             return True
 
         if self.icmp4_type == ICMP4_ECHOREPLY:
-            # imcp4_code must be set to 0 (RFC 792)
+            # imcp4_code SHOULD be set to 0 (RFC 792)
             if not self.icmp4_code == 0:
-                self.logger.critical(f"{self.tracker} - ICMPv4 sanity check fail - value of icmp6_code is not 0")
-                return False
+                self.logger.critical(f"{self.tracker} - ICMPv4 sanity check warning - imcp4_code SHOULD be set to 0 (RFC 792)")
 
         if self.icmp4_type == ICMP4_UNREACHABLE:
-            # imcp4_code must be set to [0-15] (RFC 792)
+            # imcp4_code MUST be set to [0-15] (RFC 792)
             if not self.icmp4_code in {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15}:
-                self.logger.critical(f"{self.tracker} - ICMPv4 sanity check fail - value of icmp6_code is not [0-15]")
+                self.logger.critical(f"{self.tracker} - ICMPv4 sanity check fail - imcp4_code MUST be set to [0-15] (RFC 792)")
                 return False
 
         elif self.icmp4_type == ICMP4_ECHOREQUEST:
-            # imcp4_code must be set to 0 (RFC 792)
+            # imcp4_code SHOULD be set to 0 (RFC 792)
             if not self.icmp4_code == 0:
-                self.logger.critical(f"{self.tracker} - ICMPv4 sanity check fail - value of icmp6_code is not 0")
-                return False
+                self.logger.critical(f"{self.tracker} - ICMPv4 sanity check warning - imcp4_code SHOULD be set to 0 (RFC 792)")
 
         return True

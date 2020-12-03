@@ -52,7 +52,6 @@ def phrx_tcp(self, ip_packet_rx, tcp_packet_rx):
 
     # Validate TCP packet sanity
     if tcp_packet_rx.sanity_check_failed:
-        self.logger.warning(f"{tcp_packet_rx.tracker} - TCP packet sanity check failed, droping...")
         return
 
     self.logger.opt(ansi=True).info(f"<green>{tcp_packet_rx.tracker}</green> - {tcp_packet_rx}")

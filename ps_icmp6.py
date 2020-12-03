@@ -50,7 +50,7 @@ import config
 from ip_helper import inet_cksum, ip6_is_unicast, ip6_solicited_node_multicast
 from tracker import Tracker
 
-# Destination Unreachable message (1/[0,1,3,4])
+# Destination Unreachable message (1/[0-6])
 
 # +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 # |     Type      |     Code      |           Checksum            |
@@ -62,6 +62,37 @@ from tracker import Tracker
 # ~                             Data                              ~
 # +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 
+
+# Packet Too Big message (2/0)
+
+# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+# |     Type      |     Code      |          Checksum             |
+# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+# |                             MTU                               |
+# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+# ~                             Data                              ~
+# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+
+
+# Time Exceeded (3/[0-1])
+
+# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+# |     Type      |     Code      |          Checksum             |
+# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+# |                            Unused                             |
+# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+# ~                             Data                              ~
+# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+
+# Parameter Problem message (4/[0-2])
+
+# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+# |     Type      |     Code      |          Checksum             |
+# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+# |                           Pointer                             |
+# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+# ~                             Data                              ~
+# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 
 # Echo Request message (128/0)
 
@@ -268,10 +299,13 @@ from tracker import Tracker
 
 
 ICMP6_UNREACHABLE = 1
-ICMP6_UNREACHABLE__NOROUTE = 0
+ICMP6_UNREACHABLE__NO_ROUTE = 0
 ICMP6_UNREACHABLE__PROHIBITED = 1
-ICMP6_UNREACHABLE__ADDRESS = 2
+ICMP6_UNREACHABLE__SCOPE = 2
+ICMP6_UNREACHABLE__ADDRESS = 3
 ICMP6_UNREACHABLE__PORT = 4
+ICMP6_UNREACHABLE__FAILED_POLICY = 5
+ICMP6_UNREACHABLE__REJECT_ROUTE = 6
 ICMP6_PACKET_TOO_BIG = 2
 ICMP6_TIME_EXCEEDED = 3
 ICMP6_PARAMETER_PROBLEM = 4
@@ -749,131 +783,146 @@ class Icmp6Packet:
             return True
 
         if self.icmp6_type == ICMP6_UNREACHABLE:
-            # imcp6_code must be set to [0-6] (RFC 4861)
+            # imcp6_code MUST be set to [0-6] (RFC 4861)
             if not self.icmp6_code in {0, 1, 2, 3, 4, 5, 6}:
-                self.logger.critical(f"{self.tracker} - ICMPv6 sanity check fail - value of icmp6_code is not [0-6]")
+                self.logger.critical(f"{self.tracker} - ICMPv6 sanity check fail - imcp6_code MUST be set to [0-6] (RFC 4861)")
+                return False
+
+        elif self.icmp6_type == ICMP6_PACKET_TOO_BIG:
+            # imcp6_code SHOULD be set to 0 (RFC 4861)
+            if not self.icmp6_code == 0:
+                self.logger.critical(f"{self.tracker} - ICMPv6 sanity check warning - imcp6_code SHOULD be set to 0 (RFC 4861)")
+
+        elif self.icmp6_type == ICMP6_TIME_EXCEEDED:
+            # imcp6_code MUST be set to [0-1] (RFC 4861)
+            if not self.icmp6_code in {0, 1}:
+                self.logger.critical(f"{self.tracker} - ICMPv6 sanity check fail - imcp6_code MUST be set to [0-1] (RFC 4861)")
+                return False
+
+        elif self.icmp6_type == ICMP6_PARAMETER_PROBLEM:
+            # imcp6_code MUST be set to [0-2] (RFC 4861)
+            if not self.icmp6_code in {0, 1, 2}:
+                self.logger.critical(f"{self.tracker} - ICMPv6 sanity check fail - imcp6_code MUST be set to [0-2] (RFC 4861)")
                 return False
 
         elif self.icmp6_type == ICMP6_ECHOREQUEST:
-            # imcp6_code must be set to 0 (RFC 4861)
+            # imcp6_code SHOULD be set to 0 (RFC 4861)
             if not self.icmp6_code == 0:
-                self.logger.critical(f"{self.tracker} - ICMPv6 sanity check fail - value of icmp6_code is not 0")
-                return False
+                self.logger.critical(f"{self.tracker} - ICMPv6 sanity check warning - imcp6_code SHOULD be set to 0 (RFC 4861)")
 
         elif self.icmp6_type == ICMP6_ECHOREPLY:
-            # imcp6_code must be set to 0 (RFC 4861)
+            # imcp6_code SHOULD be set to 0 (RFC 4861)
             if not self.icmp6_code == 0:
-                self.logger.critical(f"{self.tracker} - ICMPv6 sanity check fail - value of icmp6_code is not 0")
-                return False
+                self.logger.critical(f"{self.tracker} - ICMPv6 sanity check warning - imcp6_code SHOULD be set to 0 (RFC 4861)")
 
         elif self.icmp6_type == ICMP6_MLD2_QUERY:
-            # imcp6_code must be set to 0 (RFC 3810)
+            # imcp6_code MUST be set to 0 (RFC 3810)
             if not self.icmp6_code == 0:
-                self.logger.critical(f"{self.tracker} - ICMPv6 sanity check fail - value of icmp6_code is not 0")
+                self.logger.critical(f"{self.tracker} - ICMPv6 sanity check fail - imcp6_code MUST be set to 0 (RFC 3810)")
                 return False
-            # ip6_hop must be set to 255 (RFC 3810)
+            # ip6_hop MUST be set to 1 (RFC 3810)
             if not ip6_hop == 1:
-                self.logger.debug(f"{self.tracker} - ICMPv6 sanity check fail - value of ip6_hop is not 1")
+                self.logger.debug(f"{self.tracker} - ICMPv6 sanity check fail - ip6_hop MUST be set to 255 (RFC 3810)")
                 return False
 
         elif self.icmp6_type == ICMP6_ROUTER_SOLICITATION:
-            # imcp6_code must be set to 0 (RFC 4861)
+            # imcp6_code MUST be set to 0 (RFC 4861)
             if not self.icmp6_code == 0:
-                self.logger.critical(f"{self.tracker} - ICMPv6 sanity check fail - value of icmp6_code is not 0")
+                self.logger.critical(f"{self.tracker} - ICMPv6 sanity check fail - imcp6_code MUST be set to 0 (RFC 4861)")
                 return False
-            # ip6_hop must be set to 255 (RFC 4861)
+            # ip6_hop MUST be set to 255 (RFC 4861)
             if not ip6_hop == 255:
-                self.logger.debug(f"{self.tracker} - ICMPv6 sanity check fail - value of ip6_hop is not 255")
+                self.logger.debug(f"{self.tracker} - ICMPv6 sanity check fail - ip6_hop MUST be set to 255 (RFC 4861)")
                 return False
-            # ip6_src must be unicast o unspecified address (RFC 4861)
+            # ip6_src MUST be unicast or unspecified (RFC 4861)
             if not (ip6_is_unicast(ip6_src) or ip6_src.is_unspecified):
-                self.logger.debug(f"{self.tracker} - ICMPv6 sanity check fail - ip6_src address is not unicast and not unspecified")
+                self.logger.debug(f"{self.tracker} - ICMPv6 sanity check fail - ip6_src MUST be unicast or unspecified (RFC 4861)")
                 return False
-            # ip6_dst must be all-routers multicast
+            # ip6_dst MUST be all-routers (RFC 4861)
             if not ip6_dst == IPv6Address("ff02::2"):
-                self.logger.debug(f"{self.tracker} - ICMPv6 sanity check fail - ip6_dst address is not all-routers multicast")
+                self.logger.debug(f"{self.tracker} - ICMPv6 sanity check fail - ip6_dst MUST be all-routers (RFC 4861)")
                 return False
-            # icmp6_rs_opt_slla must not be included if ip6_src is unspecified address
+            # icmp6_rs_opt_slla MUST NOT be included if ip6_src is unspecified
             if ip6_src.is_unspecified and self.icmp6_nd_opt_slla:
-                self.logger.debug(f"{self.tracker} - ICMPv6 sanity check fail - p6_src address is unspecified but slla option present")
+                self.logger.debug(f"{self.tracker} - ICMPv6 sanity check fail - icmp6_rs_opt_slla MUST NOT be included if ip6_src is unspecified (RFC 4861)")
                 return False
 
         elif self.icmp6_type == ICMP6_ROUTER_ADVERTISEMENT:
-            # imcp6_code must be set to 0 (RFC 4861)
+            # imcp6_code MUST be set to 0 (RFC 4861)
             if not self.icmp6_code == 0:
-                self.logger.critical(f"{self.tracker} - ICMPv6 sanity check fail - value of icmp6_code is not 0")
+                self.logger.critical(f"{self.tracker} - ICMPv6 sanity check fail - imcp6_code MUST be set to 0 (RFC 4861)")
                 return False
-            # ip6_hop must be set to 255 (RFC 4861)
+            # ip6_hop MUST be set to 255 (RFC 4861)
             if not ip6_hop == 255:
-                self.logger.debug(f"{self.tracker} - ICMPv6 sanity check fail - value of ip6_hop is not 255")
+                self.logger.debug(f"{self.tracker} - ICMPv6 sanity check fail - ip6_hop MUST be set to 255 (RFC 4861)")
                 return False
-            # ip6_src must be link local address (RFC 4861)
+            # ip6_src MUST be link local (RFC 4861)
             if not ip6_src.is_link_local:
-                self.logger.debug(f"{self.tracker} - ICMPv6 sanity check fail - ip6_src address is not link local")
+                self.logger.debug(f"{self.tracker} - ICMPv6 sanity check fail - ip6_src MUST be link local (RFC 4861)")
                 return False
-            # ip6_dst must be unicast or all nodes multicast (RFC 4861)
+            # ip6_dst MUST be unicast or all-nodes (RFC 4861)
             if not (ip6_is_unicast(ip6_dst) or ip6_dst == IPv6Address("ff02::1")):
-                self.logger.debug(f"{self.tracker} - ICMPv6 sanity check fail - ip6_dst address is not unicast or all nodes multicast")
+                self.logger.debug(f"{self.tracker} - ICMPv6 sanity check fail - ip6_dst MUST be unicast or all-nodes (RFC 4861)")
                 return False
 
         elif self.icmp6_type == ICMP6_NEIGHBOR_SOLICITATION:
-            # imcp6_code must be set to 0 (RFC 4861)
+            # imcp6_code MUST be set to 0 (RFC 4861)
             if not self.icmp6_code == 0:
-                self.logger.critical(f"{self.tracker} - ICMPv6 sanity check fail - value of icmp6_code is not 0")
+                self.logger.critical(f"{self.tracker} - ICMPv6 sanity check fail - imcp6_code MUST be set to 0 (RFC 4861)")
                 return False
-            # ip6_hop must be set to 255 (RFC 4861)
+            # ip6_hop MUST be set to 255 (RFC 4861)
             if not ip6_hop == 255:
-                self.logger.debug(f"{self.tracker} - ICMPv6 sanity check fail - value of ip6_hop is not 255")
+                self.logger.debug(f"{self.tracker} - ICMPv6 sanity check fail - ip6_hop MUST be set to 255 (RFC 4861)")
                 return False
-            # ip6_src must be unicast o unspecified address (RFC 4861)
+            # ip6_src MUST be unicast or unspecified (RFC 4861)
             if not (ip6_is_unicast(ip6_src) or ip6_src.is_unspecified):
-                self.logger.debug(f"{self.tracker} - ICMPv6 sanity check fail - ip6_src address is not unicast and not unspecified")
+                self.logger.debug(f"{self.tracker} - ICMPv6 sanity check fail - ip6_src MUST be unicast or unspecified (RFC 4861)")
                 return False
-            # ip6_dst must be must be solicited-node multicast associated with target address or the target address (RFC 4861)
-            if not (ip6_dst == ip6_solicited_node_multicast(self.icmp6_ns_target_address) or ip6_dst == self.icmp6_ns_target_address):
+            # ip6_dst MUST be icmp6_ns_target_address or it's solicited-node multicast (RFC 4861)
+            if not (ip6_dst == self.icmp6_ns_target_address or ip6_dst == ip6_solicited_node_multicast(self.icmp6_ns_target_address)):
                 self.logger.debug(
-                    f"{self.tracker} - ICMPv6 sanity check fail - ip6_dst address is not solicited-node multicast for target_address and not target_address"
+                    f"{self.tracker} - ICMPv6 sanity check fail - ip6_dst MUST be icmp6_ns_target_address or it's solicited-node multicast (RFC 4861)"
                 )
                 return False
-            # icmp6_ns_target_address must be unicast address (RFC 4861)
+            # icmp6_ns_target_address MUST be unicast address (RFC 4861)
             if not ip6_is_unicast(self.icmp6_ns_target_address):
-                self.logger.debug(f"{self.tracker} - ICMPv6 sanity check fail - icmp6_ns_target_address is not unicast")
+                self.logger.debug(f"{self.tracker} - ICMPv6 sanity check fail - icmp6_ns_target_address MUST be unicast address (RFC 4861)")
                 return False
-            # icmp6_rs_opt_slla must not be included if ip6_src is unspecified address
+            # icmp6_rs_opt_slla MUST NOT be included if ip6_src is unspecified address
             if ip6_src.is_unspecified and not self.icmp6_nd_opt_slla is None:
-                self.logger.debug(f"{self.tracker} - ICMPv6 sanity check fail - ip6_src address is unspecified but slla option present")
+                self.logger.debug(f"{self.tracker} - ICMPv6 sanity check fail - icmp6_rs_opt_slla MUST NOT be included if ip6_src is unspecified address")
                 return False
 
         elif self.icmp6_type == ICMP6_NEIGHBOR_ADVERTISEMENT:
-            # imcp6_code must be set to 0 (RFC 4861)
+            # imcp6_code MUST be set to 0 (RFC 4861)
             if not self.icmp6_code == 0:
-                self.logger.critical(f"{self.tracker} - ICMPv6 sanity check fail - value of icmp6_code is not 0")
+                self.logger.critical(f"{self.tracker} - ICMPv6 sanity check fail - imcp6_code MUST be set to 0 (RFC 4861)")
                 return False
-            # ip6_hop must be set to 255 (RFC 4861)
+            # ip6_hop MUST be set to 255 (RFC 4861)
             if not ip6_hop == 255:
-                self.logger.debug(f"{self.tracker} - ICMPv6 sanity check fail - value of ip6_hop is not 255")
+                self.logger.debug(f"{self.tracker} - ICMPv6 sanity check fail - ip6_hop MUST be set to 255 (RFC 4861)")
                 return False
-            # ip6_src must be unicast address (RFC 4861)
+            # ip6_src MUST be unicast address (RFC 4861)
             if not ip6_is_unicast(ip6_src):
-                self.logger.debug(f"{self.tracker} - ICMPv6 sanity check fail - ip6_src address is not unicast")
+                self.logger.debug(f"{self.tracker} - ICMPv6 sanity check fail - ip6_src MUST be unicast address (RFC 4861)")
                 return False
-            # if icmp6_na_flag_s is set then ip6_dst must be unicast or all-nodes (RFC 4861)
+            # if icmp6_na_flag_s is set then ip6_dst MUST be unicast or all-nodes (RFC 4861)
             if self.icmp6_na_flag_s is True and not (ip6_is_unicast(ip6_dst) or ip6_dst == IPv6Address("ff02::1")):
-                self.logger.debug(f"{self.tracker} - ICMPv6 sanity check fail - icmp6_na_flag_s set but ip6_dst address is not unicast and not all-nodes")
+                self.logger.debug(f"{self.tracker} - ICMPv6 sanity check fail - if icmp6_na_flag_s is set then ip6_dst MUST be unicast or all-nodes (RFC 4861)")
                 return False
-            # if icmp6_na_flag_s is not set then ip6_dst must be all-nodes (RFC 4861)
+            # if icmp6_na_flag_s is not set then ip6_dst MUST be all-nodes (RFC 4861)
             if self.icmp6_na_flag_s is False and not ip6_dst == IPv6Address("ff02::1"):
-                self.logger.debug(f"{self.tracker} - ICMPv6 sanity check fail - icmp6_na_flag_s set but ip6_dst address is not all-nodes")
+                self.logger.debug(f"{self.tracker} - ICMPv6 sanity check fail - if icmp6_na_flag_s is not set then ip6_dst MUST be all-nodes (RFC 4861)")
                 return False
 
         elif self.icmp6_type == ICMP6_MLD2_REPORT:
-            # imcp6_code must be set to 0 (RFC 3810)
+            # imcp6_code MUST be set to 0 (RFC 3810)
             if not self.icmp6_code == 0:
-                self.logger.critical(f"{self.tracker} - ICMPv6 sanity check fail - value of icmp6_code is not 0")
+                self.logger.critical(f"{self.tracker} - ICMPv6 sanity check fail - imcp6_code MUST be set to 0 (RFC 3810)")
                 return False
-            # ip6_hop must be set to 255 (RFC 3810)
+            # ip6_hop MUST be set to 1 (RFC 3810)
             if not ip6_hop == 1:
-                self.logger.debug(f"{self.tracker} - ICMPv6 sanity check fail - value of ip6_hop is not 1")
+                self.logger.debug(f"{self.tracker} - ICMPv6 sanity check fail - ip6_hop MUST be set to 1 (RFC 3810)")
                 return False
 
         return True

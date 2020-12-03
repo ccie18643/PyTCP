@@ -52,7 +52,6 @@ def phrx_ip6(self, ip6_packet_rx):
 
     # Validate IPv6 packet sanity
     if ip6_packet_rx.sanity_check_failed:
-        self.logger.warning(f"{ip6_packet_rx.tracker} - IPv6 packet sanity check failed, droping...")
         return
 
     self.logger.debug(f"{ip6_packet_rx.tracker} - {ip6_packet_rx}")

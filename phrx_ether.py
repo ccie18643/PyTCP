@@ -53,7 +53,6 @@ def phrx_ether(self, ether_packet_rx):
 
     # Validate Ethernet packet sanity
     if ether_packet_rx.sanity_check_failed:
-        self.logger.warning(f"{ether_packet_rx.tracker} - Ethernet packet sanity check failed, droping...")
         return
 
     self.logger.debug(f"{ether_packet_rx.tracker} - {ether_packet_rx}")
