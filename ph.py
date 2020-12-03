@@ -48,10 +48,10 @@ from ipaddress import AddressValueError, IPv4Address, IPv4Interface, IPv6Address
 
 import loguru
 
+import config
 import ps_arp
 import ps_dhcp
 import ps_icmp6
-import config
 import stack
 from ip_helper import ip6_eui64, ip6_multicast_mac, ip6_solicited_node_multicast
 from udp_metadata import UdpMetadata

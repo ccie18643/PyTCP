@@ -41,8 +41,8 @@
 #
 
 
-import ps_icmp6
 import config
+import ps_icmp6
 
 
 def phtx_icmp6(

@@ -41,11 +41,11 @@
 #
 
 
+import config
 import ps_arp
 import ps_ether
 import ps_ip4
 import ps_ip6
-import config
 
 
 def phrx_ether(self, ether_packet_rx):

@@ -45,9 +45,9 @@ import socket
 import struct
 from ipaddress import IPv4Address
 
+import config
 import ps_ether
 import ps_ip4
-import config
 
 
 def validate_src_ip4_address(self, ip4_src, ip4_dst):

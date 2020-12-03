@@ -369,6 +369,16 @@ class TcpPacket:
             self.logger.critical(f"{self.tracker} - TCP sanity check fail - SYN and FIN flags are set simultaneously")
             return False
 
+        # SYN and RST flag cannot be set simultaneously
+        if self.tcp_flag_syn and self.tcp_flag_rst:
+            self.logger.critical(f"{self.tracker} - TCP sanity check fail - SYN and RST flags are set simultaneously")
+            return False
+
+        # FIN and RST flag cannot be set simultaneously
+        if self.tcp_flag_fin and self.tcp_flag_rst:
+            self.logger.critical(f"{self.tracker} - TCP sanity check fail - FIN and RST flags are set simultaneously")
+            return False
+
         # FIN flag must be set together with ACK flag
         if self.tcp_flag_fin and not self.tcp_flag_ack:
             self.logger.critical(f"{self.tracker} - TCP sanity check fail - FIN set but ACK flag is not set")

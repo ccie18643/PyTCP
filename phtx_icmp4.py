@@ -41,8 +41,8 @@
 #
 
 
-import ps_icmp4
 import config
+import ps_icmp4
 
 
 def phtx_icmp4(

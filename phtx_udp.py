@@ -43,8 +43,8 @@
 
 from ipaddress import IPv4Address, IPv6Address
 
-import ps_udp
 import config
+import ps_udp
 
 
 def phtx_udp(self, ip_src, ip_dst, udp_sport, udp_dport, raw_data=b"", echo_tracker=None):

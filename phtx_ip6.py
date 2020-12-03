@@ -43,8 +43,8 @@
 
 from ipaddress import IPv6Address
 
-import ps_ip6
 import config
+import ps_ip6
 
 
 def validate_src_ip6_address(self, ip6_src, ip6_dst):

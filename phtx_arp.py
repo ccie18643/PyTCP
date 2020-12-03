@@ -41,8 +41,8 @@
 #
 
 
-import ps_arp
 import config
+import ps_arp
 
 
 def phtx_arp(self, ether_src, ether_dst, arp_oper, arp_sha, arp_spa, arp_tha, arp_tpa, echo_tracker=None):

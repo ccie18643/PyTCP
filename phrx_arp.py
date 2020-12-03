@@ -53,9 +53,15 @@ ARP_CACHE_UPDATE_FROM_GRATUITOUS_REPLY = True
 def phrx_arp(self, ether_packet_rx, arp_packet_rx):
     """ Handle inbound ARP packets """
 
-    if arp_packet_rx.arp_oper == ps_arp.ARP_OP_REQUEST:
-        self.logger.opt(ansi=True).info(f"<green>{arp_packet_rx.tracker}</green> - {arp_packet_rx}")
+    # Validate ARP packet sanity
+    if arp_packet_rx.sanity_check_failed:
+        self.logger.warning(f"{arp_packet_rx.tracker} - ARP packet sanity check failed, droping...")
+        return
+    
+    self.logger.opt(ansi=True).info(f"<green>{arp_packet_rx.tracker}</green> - {arp_packet_rx}")
 
+
+    if arp_packet_rx.arp_oper == ps_arp.ARP_OP_REQUEST:
         # Check if request contains our IP address in SPA field, this indicates IP address conflict
         if arp_packet_rx.arp_spa in self.stack_ip4_unicast:
             self.logger.warning(f"IP ({arp_packet_rx.arp_spa}) conflict detected with host at {arp_packet_rx.arp_sha}")
@@ -83,8 +89,6 @@ def phrx_arp(self, ether_packet_rx, arp_packet_rx):
 
     # Handle ARP reply
     elif arp_packet_rx.arp_oper == ps_arp.ARP_OP_REPLY:
-        self.logger.opt(ansi=True).info(f"<green>{arp_packet_rx.tracker}</green> - {arp_packet_rx}")
-
         # Check for ARP reply that is response to our ARP probe, that indicates that IP address we trying to claim is in use
         if ether_packet_rx.ether_dst == self.stack_mac_unicast[0]:
             if (
