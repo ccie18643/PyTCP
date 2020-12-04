@@ -588,6 +588,14 @@ class TcpSession:
                 self.__change_state("CLOSED")
             return
 
+        # Got RST packet -> Change state to CLOSED
+        if packet and all({packet.flag_rst}) and not any({packet.flag_ack, packet.flag_fin, packet.flag_syn}):
+            # Packet sanity_check
+            if packet.seq == self.remote_seq_rcvd and packet.ack == 0:
+                # Change state to CLOSED
+                self.__change_state("CLOSED")
+            return
+
         # Got CLOSE sycall -> Send FIN packet (this actually will be done in SYN_SENT state) / change state to FIN_WAIT_1
         if syscall == "CLOSE":
             self.__change_state("FIN_WAIT_1")
