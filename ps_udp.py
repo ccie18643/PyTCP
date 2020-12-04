@@ -159,7 +159,7 @@ class UdpPacket:
 
         plen = struct.unpack("!H", raw_packet[4:6])[0]
         if not 8 <= plen == len(raw_packet):
-            self.ogger.critical(f"{self.tracker} - UDP sanity check fail - wrong packet length (II)")
+            self.logger.critical(f"{self.tracker} - UDP sanity check fail - wrong packet length (II)")
             return False
 
         return True
