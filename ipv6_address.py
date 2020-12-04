@@ -37,7 +37,7 @@
 
 
 #
-# ip6_address.py - module contains IPv6 address manipulation classes (extensions to ipaddress standard library)
+# ipv6_address.py - module contains IPv6 address manipulation classes (extensions to ipaddress standard library)
 #
 
 import ipaddress
