@@ -88,6 +88,13 @@ class StackCliServer:
                 elif message == b"":
                     continue
 
+                elif message.lower().strip() == b"show tcp sessions":
+                    message = b"\n"
+                    for session in stack.tcp_sessions:
+                        message += bytes(str(session), "utf-8") + b"\n"
+                    message += b"\n"
+                    conn.sendall(message)
+
                 elif message.lower().strip() == b"show ipv6 address":
                     message = b"\n"
                     for address in stack.packet_handler.stack_ip6_address:
