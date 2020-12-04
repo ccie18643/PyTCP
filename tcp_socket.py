@@ -110,7 +110,6 @@ class TcpSocket:
             remote_port=self.remote_port,
             socket=self,
         )
-        stack.tcp_sessions[tcp_session.tcp_session_id] = tcp_session
         self.logger.debug(f"{self.socket_id} -  Socket starting to listen for inbound connections")
         tcp_session.listen()
 
@@ -127,7 +126,6 @@ class TcpSocket:
             socket=self,
         )
         self.tcp_session = tcp_session
-        stack.tcp_sessions[tcp_session.tcp_session_id] = tcp_session
         self.logger.debug(f"{self.socket_id} -  Socket attempting connection to {remote_ip_address}, port {remote_port}")
         return tcp_session.connect()
 

@@ -132,7 +132,7 @@ class TcpSession:
 
         self.tx_buffer_seq_mod = self.snd_ini  # Used to help translate local_seq_send and snd_una numbers to TX buffer pointers
 
-        self.state = None  # TCP FSM (Finite State Machine) state
+        self.state = "CLOSED"  # TCP FSM (Finite State Machine) state
 
         self.event_connect = threading.Semaphore(0)  # Used to inform CONNECT syscall that connection related event happened
         self.event_rx_buffer = threading.Semaphore(0)  # USed to inform RECV syscall that there is new data in buffer ready to be picked up
@@ -144,9 +144,6 @@ class TcpSession:
         self.closing = False  # Indicates that CLOSE syscall is in progress, this lets to finish sending data before FIN packet is transmitted
 
         self.ooo_packet_queue = {}  # Out of order packet buffer
-
-        # Start session in CLOSED state
-        self.__change_state("CLOSED")
 
         # Setup timer to execute FSM time event every milisecond
         stack.stack_timer.register_method(method=self.tcp_fsm, kwargs={"timer": True})
@@ -235,6 +232,14 @@ class TcpSession:
         self.state = state
         if old_state:
             self.logger.opt(ansi=True, depth=1).info(f"{self.tcp_session_id} - State changed: <yellow> {old_state} -> {self.state}</>")
+
+        # Register session
+        if self.state in {"CONNECT", "LISTEN"}:
+            stack.tcp_sessions[self.tcp_session_id] = self
+
+        # Unregister session
+        if self.state in {"CLOSED"}:
+            stack.tcp_sessions.pop(self.tcp_session_id)
 
     def __transmit_packet(self, seq=None, flag_syn=False, flag_ack=False, flag_fin=False, flag_rst=False, raw_data=b""):
         """ Send out TCP packet """

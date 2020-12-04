@@ -236,6 +236,14 @@ class TcpSession:
         if old_state:
             self.logger.opt(ansi=True, depth=1).info(f"{self.tcp_session_id} - State changed: <yellow> {old_state} -> {self.state}</>")
 
+        # Register session
+        if self.state in {"CONNECT", "LISTEN"}:
+            stack.tcp_sessions[self.tcp_session_id] = self
+
+        # Unregister session
+        if self.state in {"CLOSED"}:
+            stack.tcp_sessions.pop(self.tcp_session_id)
+
     def __transmit_packet(self, seq=None, flag_syn=False, flag_ack=False, flag_fin=False, flag_rst=False, raw_data=b""):
         """ Send out TCP packet """
 
