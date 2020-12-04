@@ -42,12 +42,12 @@
 
 
 import struct
-from ipaddress import IPv4Address
 
 import loguru
 
 import config
 from ip_helper import inet_cksum
+from ipv4_address import IPv4Address
 
 # IPv4 protocol header
 
@@ -404,7 +404,7 @@ class Ip4Packet:
             return False
 
         # ip4_src address is limited broadcast
-        if self.ip4_src == IPv4Address("255.255.255.255"):
+        if self.ip4_src.is_limited_broadcast:
             self.logger.critical(f"{self.tracker} - IP sanity check fail - ip4_src address is limited broadcast")
             return False
 

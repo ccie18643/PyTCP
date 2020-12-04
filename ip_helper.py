@@ -42,10 +42,11 @@
 
 
 import struct
-from ipaddress import AddressValueError, IPv4Address, IPv6Address, IPv6Interface, IPv6Network
-from re import sub
+from ipaddress import AddressValueError
 
 import stack
+from ipv4_address import IPv4Address
+from ipv6_address import IPv6Address
 
 
 def inet_cksum(data):
@@ -55,42 +56,6 @@ def inet_cksum(data):
     cksum = sum(struct.unpack(f"! {len(data) >> 1}H", data))
     cksum = (cksum >> 16) + (cksum & 0xFFFF)
     return ~(cksum + (cksum >> 16)) & 0xFFFF
-
-
-def ip6_eui64(mac, prefix=IPv6Network("fe80::/64")):
-    """ Create IPv6 EUI64 address """
-
-    assert prefix.prefixlen == 64
-
-    eui64 = sub(r"[.:-]", "", mac).lower()
-    eui64 = eui64[0:6] + "fffe" + eui64[6:]
-    eui64 = hex(int(eui64[0:2], 16) ^ 2)[2:].zfill(2) + eui64[2:]
-    eui64 = ":".join(eui64[_ : _ + 4] for _ in range(0, 16, 4))
-    return IPv6Interface(prefix.network_address.exploded[0:20] + eui64 + "/" + str(prefix.prefixlen))
-
-
-def ip6_solicited_node_multicast(ip6_address):
-    """ Create IPv6 solicited node multicast address """
-
-    return IPv6Address("ff02::1:ff" + ip6_address.exploded[-7:])
-
-
-def ip6_is_solicited_node_multicast(ip6_address):
-    """ Check if address is IPv6 solicited node multicast address """
-
-    return str(ip6_address).startswith("ff02::1:ff")
-
-
-def ip6_is_unicast(ip6_address):
-    """ Check if address is IPv6 unicast address """
-
-    return not (ip6_address.is_multicast or ip6_address.is_unspecified)
-
-
-def ip6_multicast_mac(ip6_multicast_address):
-    """ Create IPv6 multicast MAC address """
-
-    return "33:33:" + ":".join(["".join(ip6_multicast_address.exploded[-9:].split(":"))[_ : _ + 2] for _ in range(0, 8, 2)])
 
 
 def find_stack_ip6_address(ip6_unicast):

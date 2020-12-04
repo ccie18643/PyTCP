@@ -43,7 +43,8 @@
 
 import binascii
 import struct
-from ipaddress import IPv4Address
+
+from ipv4_address import IPv4Address
 
 # DHCP packet header (RFC 2131)
 

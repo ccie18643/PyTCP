@@ -41,7 +41,8 @@
 #
 
 
-from ipaddress import IPv4Interface, IPv6Interface
+from ipv4_address import IPv4Interface
+from ipv6_address import IPv6Interface
 
 # TAP interface name stack should bind itself to
 interface = b"tap7"
@@ -142,5 +143,5 @@ service_tcp_discard = True
 service_tcp_daytime = True
 
 # For using test clients proper IP addressing needs to be set up in file 'pytcp.py'
-client_tcp_echo = True
+client_tcp_echo = False
 client_icmp_echo = False

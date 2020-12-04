@@ -42,12 +42,12 @@
 
 
 import time
-from ipaddress import IPv4Address
 
 import loguru
 
 import ps_arp
 import stack
+from ipv4_address import IPv4Address
 
 ARP_ENTRY_MAX_AGE = 3600
 ARP_ENTRY_REFRESH_TIME = 300

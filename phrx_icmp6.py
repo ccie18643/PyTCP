@@ -41,10 +41,9 @@
 #
 
 
-from ipaddress import IPv6Address
-
 import ps_icmp6
 import stack
+from ipv6_address import IPv6Address
 
 
 def phrx_icmp6(self, ip6_packet_rx, icmp6_packet_rx):

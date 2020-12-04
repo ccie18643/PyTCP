@@ -37,36 +37,33 @@
 
 
 #
-# phtx_udp.py - protocol support for outbound UDP packets
+# ipv4_address.py - module contains IPv4 address manipulation classes (extensions to ipaddress standard library)
 #
 
-
-import config
-import ps_udp
-from ipv4_address import IPv4Address
-from ipv6_address import IPv6Address
+import ipaddress
 
 
-def phtx_udp(self, ip_src, ip_dst, udp_sport, udp_dport, raw_data=b"", echo_tracker=None):
-    """ Handle outbound UDP packets """
+class IPv4Interface(ipaddress.IPv4Interface):
+    """ Extensions for ipaddress.IPv4Address class """
 
-    # Check if IPv4 protocol support is enabled, if not then silently drop the IPv4 packet
-    if not config.ip4_support and ip_dst.version == 4:
-        return
+    @property
+    def ip(self):
+        """ Make sure class returns overloaded IPv6Address object """
 
-    # Check if IPv6 protocol support is enabled, if not then silently drop the IPv6 packet
-    if not config.ip6_support and ip_dst.version == 6:
-        return
+        return IPv4Address(super().ip)
 
-    udp_packet_tx = ps_udp.UdpPacket(udp_sport=udp_sport, udp_dport=udp_dport, raw_data=raw_data, echo_tracker=echo_tracker)
 
-    self.logger.opt(ansi=True).info(f"<magenta>{udp_packet_tx.tracker}</magenta> - {udp_packet_tx}")
+class IPv4Network(ipaddress.IPv4Network):
+    """ Extensions for ipaddress.IPv4Network class """
 
-    assert type(ip_src) in {IPv4Address, IPv6Address}
-    assert type(ip_dst) in {IPv4Address, IPv6Address}
+    pass
 
-    if ip_src.version == 6 and ip_dst.version == 6:
-        self.phtx_ip6(ip6_src=ip_src, ip6_dst=ip_dst, child_packet=udp_packet_tx)
 
-    if ip_src.version == 4 and ip_dst.version == 4:
-        self.phtx_ip4(ip4_src=ip_src, ip4_dst=ip_dst, child_packet=udp_packet_tx)
+class IPv4Address(ipaddress.IPv4Address):
+    """ Extensions for ipaddress.IPv4Address class """
+
+    @property
+    def is_limited_broadcast(self):
+        """ Check if IPv4 address is a limited broadcast """
+
+        return str(self) == "255.255.255.255"

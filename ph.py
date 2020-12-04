@@ -44,7 +44,7 @@
 import random
 import threading
 import time
-from ipaddress import AddressValueError, IPv4Address, IPv4Interface, IPv6Address, IPv6Interface
+from ipaddress import AddressValueError
 
 import loguru
 
@@ -53,7 +53,8 @@ import ps_arp
 import ps_dhcp
 import ps_icmp6
 import stack
-from ip_helper import ip6_eui64, ip6_multicast_mac, ip6_solicited_node_multicast
+from ipv4_address import IPv4Address, IPv4Interface
+from ipv6_address import IPv6Address, IPv6Interface, IPv6Network
 from udp_metadata import UdpMetadata
 from udp_socket import UdpSocket
 
@@ -160,7 +161,7 @@ class PacketHandler:
         """ Perform IPv6 ND Duplicate Address Detection, return True if passed """
 
         self.logger.debug(f"ICMPv6 ND DAD - Starting process for {ip6_unicast_candidate}")
-        self.assign_ip6_multicast(ip6_solicited_node_multicast(ip6_unicast_candidate))
+        self.assign_ip6_multicast(ip6_unicast_candidate.solicited_node_multicast)
         self.ip6_unicast_candidate = ip6_unicast_candidate
         self.send_icmp6_nd_dad_message(ip6_unicast_candidate)
         if event := self.event_icmp6_nd_dad.acquire(timeout=1):
@@ -168,7 +169,7 @@ class PacketHandler:
         else:
             self.logger.debug(f"ICMPv6 ND DAD - No duplicate address detected for {ip6_unicast_candidate}")
         self.ip6_unicast_candidate = None
-        self.remove_ip6_multicast(ip6_solicited_node_multicast(ip6_unicast_candidate))
+        self.remove_ip6_multicast(ip6_unicast_candidate.solicited_node_multicast)
         return not event
 
     def parse_stack_ip6_address_candidate(self):
@@ -223,7 +224,7 @@ class PacketHandler:
 
         # Configure Link Local address automaticaly
         if config.ip6_lla_autoconfig:
-            ip6_address_candidate = ip6_eui64(self.stack_mac_unicast[0])
+            ip6_address_candidate = IPv6Network("fe80::/64").eui64(self.stack_mac_unicast[0])
             ip6_address_candidate.gateway = None
             __()
 
@@ -244,7 +245,7 @@ class PacketHandler:
             self.event_icmp6_ra.acquire(timeout=1)
             for prefix, gateway in list(self.icmp6_ra_prefixes):
                 self.logger.debug(f"Attempting IPv6 address auto configuration for RA prefix {prefix}")
-                ip6_address_candidate = ip6_eui64(self.stack_mac_unicast[0], prefix)
+                ip6_address_candidate = prefix.eui64(self.stack_mac_unicast[0])
                 ip6_address_candidate.gateway = gateway
                 __()
 
@@ -397,7 +398,7 @@ class PacketHandler:
 
         self.phtx_icmp6(
             ip6_src=IPv6Address("::"),
-            ip6_dst=ip6_solicited_node_multicast(ip6_unicast_candidate),
+            ip6_dst=ip6_unicast_candidate.solicited_node_multicast,
             ip6_hop=255,
             icmp6_type=ps_icmp6.ICMP6_NEIGHBOR_SOLICITATION,
             icmp6_ns_target_address=ip6_unicast_candidate,
@@ -421,21 +422,21 @@ class PacketHandler:
 
         self.stack_ip6_unicast.append(ip6_unicast)
         self.logger.debug(f"Assigned IPv6 unicast {ip6_unicast}")
-        self.assign_ip6_multicast(ip6_solicited_node_multicast(ip6_unicast))
+        self.assign_ip6_multicast(ip6_unicast.solicited_node_multicast)
 
     def remove_ip6_unicast(self, ip6_unicast):
         """ Remove IPv6 unicast address from the list stack listens on """
 
         self.stack_ip6_unicast.remove(ip6_unicast)
         self.logger.debug(f"Removed IPv6 unicast {ip6_unicast}")
-        self.remove_ip6_multicast(ip6_solicited_node_multicast(ip6_unicast))
+        self.remove_ip6_multicast(ip6_unicast.solicited_node_multicast)
 
     def assign_ip6_multicast(self, ip6_multicast):
         """ Assign IPv6 multicast address to the list stack listens on """
 
         self.stack_ip6_multicast.append(ip6_multicast)
         self.logger.debug(f"Assigned IPv6 multicast {ip6_multicast}")
-        self.assign_mac_multicast(ip6_multicast_mac(ip6_multicast))
+        self.assign_mac_multicast(ip6_multicast.multicast_mac)
 
         # Send out the ICMPv6 Multicast Listener Report
         for _ in range(1):
@@ -446,7 +447,7 @@ class PacketHandler:
 
         self.stack_ip6_multicast.remove(ip6_multicast)
         self.logger.debug(f"Removed IPv6 multicast {ip6_multicast}")
-        self.remove_mac_multicast(ip6_multicast_mac(ip6_multicast))
+        self.remove_mac_multicast(ip6_multicast.multicast_mac)
 
     def assign_mac_unicast(self, mac_unicast):
         """ Assign MAC unicast address to the list stack listens on """

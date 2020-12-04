@@ -42,12 +42,12 @@
 
 
 import struct
-from ipaddress import IPv6Address, IPv6Network
 
 import loguru
 
 import config
-from ip_helper import inet_cksum, ip6_is_unicast, ip6_solicited_node_multicast
+from ip_helper import inet_cksum
+from ipv6_address import IPv6Address, IPv6Network
 from tracker import Tracker
 
 # Destination Unreachable message (1/[0-6])
@@ -835,7 +835,7 @@ class Icmp6Packet:
                 self.logger.debug(f"{self.tracker} - ICMPv6 sanity check fail - ip6_hop MUST be set to 255 (RFC 4861)")
                 return False
             # ip6_src MUST be unicast or unspecified (RFC 4861)
-            if not (ip6_is_unicast(ip6_src) or ip6_src.is_unspecified):
+            if not (ip6_src.is_unicast or ip6_src.is_unspecified):
                 self.logger.debug(f"{self.tracker} - ICMPv6 sanity check fail - ip6_src MUST be unicast or unspecified (RFC 4861)")
                 return False
             # ip6_dst MUST be all-routers (RFC 4861)
@@ -861,7 +861,7 @@ class Icmp6Packet:
                 self.logger.debug(f"{self.tracker} - ICMPv6 sanity check fail - ip6_src MUST be link local (RFC 4861)")
                 return False
             # ip6_dst MUST be unicast or all-nodes (RFC 4861)
-            if not (ip6_is_unicast(ip6_dst) or ip6_dst == IPv6Address("ff02::1")):
+            if not (ip6_dst.is_unicast or ip6_dst == IPv6Address("ff02::1")):
                 self.logger.debug(f"{self.tracker} - ICMPv6 sanity check fail - ip6_dst MUST be unicast or all-nodes (RFC 4861)")
                 return False
 
@@ -875,17 +875,17 @@ class Icmp6Packet:
                 self.logger.debug(f"{self.tracker} - ICMPv6 sanity check fail - ip6_hop MUST be set to 255 (RFC 4861)")
                 return False
             # ip6_src MUST be unicast or unspecified (RFC 4861)
-            if not (ip6_is_unicast(ip6_src) or ip6_src.is_unspecified):
+            if not (ip6_src.is_unicast or ip6_src.is_unspecified):
                 self.logger.debug(f"{self.tracker} - ICMPv6 sanity check fail - ip6_src MUST be unicast or unspecified (RFC 4861)")
                 return False
             # ip6_dst MUST be icmp6_ns_target_address or it's solicited-node multicast (RFC 4861)
-            if not (ip6_dst == self.icmp6_ns_target_address or ip6_dst == ip6_solicited_node_multicast(self.icmp6_ns_target_address)):
+            if not (ip6_dst == self.icmp6_ns_target_address or ip6_dst == self.icmp6_ns_target_address.solicited_node_multicast):
                 self.logger.debug(
                     f"{self.tracker} - ICMPv6 sanity check fail - ip6_dst MUST be icmp6_ns_target_address or it's solicited-node multicast (RFC 4861)"
                 )
                 return False
             # icmp6_ns_target_address MUST be unicast address (RFC 4861)
-            if not ip6_is_unicast(self.icmp6_ns_target_address):
+            if not self.icmp6_ns_target_address.is_unicast:
                 self.logger.debug(f"{self.tracker} - ICMPv6 sanity check fail - icmp6_ns_target_address MUST be unicast address (RFC 4861)")
                 return False
             # icmp6_rs_opt_slla MUST NOT be included if ip6_src is unspecified address
@@ -903,11 +903,11 @@ class Icmp6Packet:
                 self.logger.debug(f"{self.tracker} - ICMPv6 sanity check fail - ip6_hop MUST be set to 255 (RFC 4861)")
                 return False
             # ip6_src MUST be unicast address (RFC 4861)
-            if not ip6_is_unicast(ip6_src):
+            if not ip6_src.is_unicast:
                 self.logger.debug(f"{self.tracker} - ICMPv6 sanity check fail - ip6_src MUST be unicast address (RFC 4861)")
                 return False
             # if icmp6_na_flag_s is set then ip6_dst MUST be unicast or all-nodes (RFC 4861)
-            if self.icmp6_na_flag_s is True and not (ip6_is_unicast(ip6_dst) or ip6_dst == IPv6Address("ff02::1")):
+            if self.icmp6_na_flag_s is True and not (ip6_dst.is_unicast or ip6_dst == IPv6Address("ff02::1")):
                 self.logger.debug(f"{self.tracker} - ICMPv6 sanity check fail - if icmp6_na_flag_s is set then ip6_dst MUST be unicast or all-nodes (RFC 4861)")
                 return False
             # if icmp6_na_flag_s is not set then ip6_dst MUST be all-nodes (RFC 4861)

@@ -41,10 +41,9 @@
 #
 
 
-from ipaddress import IPv4Address
-
 import ps_arp
 import stack
+from ipv4_address import IPv4Address
 
 ARP_CACHE_UPDATE_FROM_DIRECT_REQUEST = True
 ARP_CACHE_UPDATE_FROM_GRATUITOUS_REPLY = True

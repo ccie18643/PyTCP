@@ -41,13 +41,10 @@
 #
 
 
-from ipaddress import IPv4Address
-
 import ps_ether
 import ps_ip4
 import ps_ip6
 import stack
-from ip_helper import ip6_multicast_mac
 
 
 def phtx_ether(self, child_packet, ether_src="00:00:00:00:00:00", ether_dst="00:00:00:00:00:00"):
@@ -76,7 +73,7 @@ def phtx_ether(self, child_packet, ether_src="00:00:00:00:00:00", ether_dst="00:
 
         # Send packet out if its destined to multicast IPv6 address
         if ip6_packet_tx.ip6_dst.is_multicast:
-            ether_packet_tx.ether_dst = ip6_multicast_mac(ip6_packet_tx.ip6_dst)
+            ether_packet_tx.ether_dst = ip6_packet_tx.ip6_dst.multicast_mac
             self.logger.debug(f"{ether_packet_tx.tracker} - Resolved destiantion IPv6 {ip6_packet_tx.ip6_dst} to MAC {ether_packet_tx.ether_dst}")
             __send_out_packet()
             return
@@ -108,7 +105,7 @@ def phtx_ether(self, child_packet, ether_src="00:00:00:00:00:00", ether_dst="00:
         ip4_packet_tx = ps_ip4.Ip4Packet(ether_packet_tx)
 
         # Send out packet if its destinied to limited broadcast addresses
-        if ip4_packet_tx.ip4_dst == IPv4Address("255.255.255.255"):
+        if ip4_packet_tx.ip4_dst.is_limited_broadcast:
             ether_packet_tx.ether_dst = "ff:ff:ff:ff:ff:ff"
             self.logger.debug(f"{ether_packet_tx.tracker} - Resolved destiantion IPv4 {ip4_packet_tx.ip4_dst} to MAC {ether_packet_tx.ether_dst}")
             __send_out_packet()

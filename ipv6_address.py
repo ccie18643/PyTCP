@@ -37,36 +37,63 @@
 
 
 #
-# phtx_udp.py - protocol support for outbound UDP packets
+# ip6_address.py - module contains IPv6 address manipulation classes (extensions to ipaddress standard library)
 #
 
-
-import config
-import ps_udp
-from ipv4_address import IPv4Address
-from ipv6_address import IPv6Address
+import ipaddress
+from re import sub
 
 
-def phtx_udp(self, ip_src, ip_dst, udp_sport, udp_dport, raw_data=b"", echo_tracker=None):
-    """ Handle outbound UDP packets """
+class IPv6Interface(ipaddress.IPv6Interface):
+    """ Extensions for ipaddress.IPv6Address class """
 
-    # Check if IPv4 protocol support is enabled, if not then silently drop the IPv4 packet
-    if not config.ip4_support and ip_dst.version == 4:
-        return
+    @property
+    def ip(self):
+        """ Make sure class returns overloaded IPv6Address object """
 
-    # Check if IPv6 protocol support is enabled, if not then silently drop the IPv6 packet
-    if not config.ip6_support and ip_dst.version == 6:
-        return
+        return IPv6Address(super().ip)
 
-    udp_packet_tx = ps_udp.UdpPacket(udp_sport=udp_sport, udp_dport=udp_dport, raw_data=raw_data, echo_tracker=echo_tracker)
 
-    self.logger.opt(ansi=True).info(f"<magenta>{udp_packet_tx.tracker}</magenta> - {udp_packet_tx}")
+class IPv6Network(ipaddress.IPv6Network):
+    """ Extensions for ipaddress.IPv6Network class """
 
-    assert type(ip_src) in {IPv4Address, IPv6Address}
-    assert type(ip_dst) in {IPv4Address, IPv6Address}
+    def eui64(self, mac):
+        """ Create IPv6 EUI64 interface address """
 
-    if ip_src.version == 6 and ip_dst.version == 6:
-        self.phtx_ip6(ip6_src=ip_src, ip6_dst=ip_dst, child_packet=udp_packet_tx)
+        assert self.prefixlen == 64
 
-    if ip_src.version == 4 and ip_dst.version == 4:
-        self.phtx_ip4(ip4_src=ip_src, ip4_dst=ip_dst, child_packet=udp_packet_tx)
+        eui64 = sub(r"[.:-]", "", mac).lower()
+        eui64 = eui64[0:6] + "fffe" + eui64[6:]
+        eui64 = hex(int(eui64[0:2], 16) ^ 2)[2:].zfill(2) + eui64[2:]
+        eui64 = ":".join(eui64[_ : _ + 4] for _ in range(0, 16, 4))
+        return IPv6Interface(self.network_address.exploded[0:20] + eui64 + "/" + str(self.prefixlen))
+
+
+class IPv6Address(ipaddress.IPv6Address):
+    """ Extensions for ipaddress.IPv6Address class """
+
+    @property
+    def solicited_node_multicast(self):
+        """ Create IPv6 solicited node multicast address """
+
+        return IPv6Address("ff02::1:ff" + self.exploded[-7:])
+
+    @property
+    def is_solicited_node_multicast(self):
+        """ Check if address is IPv6 solicited node multicast address """
+
+        return str(self).startswith("ff02::1:ff")
+
+    @property
+    def is_unicast(self):
+        """ Check if address is IPv6 unicast address """
+
+        return not (self.is_multicast or self.is_unspecified)
+
+    @property
+    def multicast_mac(self):
+        """ Create IPv6 multicast MAC address """
+
+        assert self.is_multicast
+
+        return "33:33:" + ":".join(["".join(self.exploded[-9:].split(":"))[_ : _ + 2] for _ in range(0, 8, 2)])

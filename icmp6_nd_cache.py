@@ -42,13 +42,12 @@
 
 
 import time
-from ipaddress import IPv6Address
 
 import loguru
 
 import ps_icmp6
 import stack
-from ip_helper import ip6_solicited_node_multicast
+from ipv6_address import IPv6Address
 
 ND_ENTRY_MAX_AGE = 3600
 ND_ENTRY_REFRESH_TIME = 300
@@ -132,7 +131,7 @@ class ICMPv6NdCache:
         # Send out ND Solicitation message
         stack.packet_handler.phtx_icmp6(
             ip6_src=ip6_src,
-            ip6_dst=ip6_solicited_node_multicast(icmp6_ns_target_address),
+            ip6_dst=icmp6_ns_target_address.solicited_node_multicast,
             ip6_hop=255,
             icmp6_type=ps_icmp6.ICMP6_NEIGHBOR_SOLICITATION,
             icmp6_ns_target_address=icmp6_ns_target_address,

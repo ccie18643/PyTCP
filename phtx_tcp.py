@@ -41,9 +41,9 @@
 #
 
 
-from ipaddress import IPv4Address, IPv6Address
-
 import config
+from ipv4_address import IPv4Address
+from ipv6_address import IPv6Address
 from ps_tcp import TcpOptMss, TcpOptNop, TcpOptWscale, TcpPacket
 
 PACKET_LOSS = False

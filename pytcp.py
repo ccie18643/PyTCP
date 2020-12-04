@@ -46,7 +46,6 @@ import os
 import struct
 import sys
 import time
-from ipaddress import IPv4Interface, IPv6Interface, IPv6Network
 
 import loguru
 
@@ -55,7 +54,8 @@ from arp_cache import ArpCache
 from client_icmp_echo import ClientIcmpEcho
 from client_tcp_echo import ClientTcpEcho
 from icmp6_nd_cache import ICMPv6NdCache
-from ip_helper import ip6_eui64
+from ipv4_address import IPv4Address, IPv4Interface
+from ipv6_address import IPv6Address, IPv6Interface
 from ph import PacketHandler
 from rx_ring import RxRing
 from service_tcp_daytime import ServiceTcpDaytime

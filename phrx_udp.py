@@ -41,13 +41,13 @@
 #
 
 
-from ipaddress import IPv4Address, IPv6Address
-
 import loguru
 
 import ps_icmp4
 import ps_icmp6
 import stack
+from ipv4_address import IPv4Address
+from ipv6_address import IPv6Address
 from udp_metadata import UdpMetadata
 
 

@@ -42,11 +42,11 @@
 
 
 import struct
-from ipaddress import IPv4Address
 
 import loguru
 
 import config
+from ipv4_address import IPv4Address
 from tracker import Tracker
 
 # ARP packet header - IPv4 stack version only

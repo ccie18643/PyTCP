@@ -42,11 +42,11 @@
 
 
 import struct
-from ipaddress import IPv6Address
 
 import loguru
 
 import config
+from ipv6_address import IPv6Address
 
 # IPv6 protocol header
 

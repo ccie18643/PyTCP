@@ -41,10 +41,9 @@
 #
 
 
-from ipaddress import IPv6Address
-
 import config
 import ps_ip6
+from ipv6_address import IPv6Address
 
 
 def validate_src_ip6_address(self, ip6_src, ip6_dst):

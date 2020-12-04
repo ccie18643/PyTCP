@@ -42,11 +42,11 @@
 
 
 import struct
-from ipaddress import IPv4Address
 
 import config
 import ps_ether
 import ps_ip4
+from ipv4_address import IPv4Address
 
 
 def validate_src_ip4_address(self, ip4_src, ip4_dst):
@@ -67,7 +67,7 @@ def validate_src_ip4_address(self, ip4_src, ip4_dst):
             return None
 
     # If packet is a response to limited broadcast then replace source address with primary address of the stack
-    if ip4_src == IPv4Address("255.255.255.255"):
+    if ip4_src.is_limited_broadcast:
         if self.stack_ip4_unicast:
             ip4_src = self.stack_ip4_unicast[0]
             self.logger.debug(f"Packet is response to limited broadcast, replaced source with stack primary IPv4 address {ip4_src}")
