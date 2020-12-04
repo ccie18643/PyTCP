@@ -120,6 +120,12 @@ ip4_address_candidate = [
     # ("10.10.10.7/24", "10.10.10.1"),
 ]
 
+# TCP ephemeral port range to be used by outbound connections
+TCP_EPHEMERAL_PORT_RANGE = (32168, 60999)
+
+# UDP ephemeral port range to be used by outbound connections
+UDP_EPHEMERAL_PORT_RANGE = (32168, 60999)
+
 mtu = 1500  # TAP interface MTU
 
 local_tcp_mss = 1460  # Maximum segment peer can send to us
@@ -136,5 +142,5 @@ service_tcp_discard = True
 service_tcp_daytime = True
 
 # For using test clients proper IP addressing needs to be set up in file 'pytcp.py'
-client_tcp_echo = False
+client_tcp_echo = True
 client_icmp_echo = False

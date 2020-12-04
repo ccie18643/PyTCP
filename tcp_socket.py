@@ -49,8 +49,6 @@ import loguru
 import stack
 from tcp_session_alt import TcpSession
 
-EPHEMERAL_PORT_RANGE = (32168, 60999)
-
 
 class TcpSocket:
     """ Support for Socket operations """
@@ -80,19 +78,12 @@ class TcpSocket:
 
         self.logger.debug(f"Created TCP socket {self.socket_id}")
 
-    def __pick_random_local_port(self):
-        """ Pick random local port, making sure it is not already being used by any socket """
-
-        used_ports = {int(_.split("/")[2]) for _ in stack.tcp_sessions if _.split("/")[1] in {"*", self.local_ip_address}}
-        while (port := random.randint(*EPHEMERAL_PORT_RANGE)) not in used_ports:
-            return port
-
     @property
     def socket_id(self):
         return f"TCP/{self.local_ip_address}/{self.local_port}/{self.remote_ip_address}/{self.remote_port}"
 
-    def bind(self, local_ip_address, local_port):
-        """ Bind the socket to local address """
+    def bind(self, local_ip_address, local_port=None):
+        """ Bind the socket to local address and port """
 
         self.local_ip_address = local_ip_address
         self.local_port = local_port
@@ -120,7 +111,7 @@ class TcpSocket:
         self.remote_port = remote_port
         tcp_session = TcpSession(
             local_ip_address=self.local_ip_address,
-            local_port=self.local_port if self.local_port else self.__pick_random_local_port(),
+            local_port=self.local_port,
             remote_ip_address=self.remote_ip_address,
             remote_port=self.remote_port,
             socket=self,

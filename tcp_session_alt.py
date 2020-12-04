@@ -98,7 +98,7 @@ class TcpSession:
         self.logger = loguru.logger.bind(object_name="tcp_session.")
 
         self.local_ip_address = local_ip_address
-        self.local_port = local_port
+        self.local_port = local_port if local_port else self.__pick_random_local_port()
         self.remote_ip_address = remote_ip_address
         self.remote_port = remote_port
 
@@ -225,6 +225,13 @@ class TcpSession:
         self.logger.debug(f"{self.tcp_session_id} - State {self.state} - got CLOSE syscall, {len(self.tx_buffer)} bytes in TX buffer")
         self.tcp_fsm(syscall="CLOSE")
 
+    def __pick_random_local_port(self):
+        """ Pick random local port, making sure it is not already being used by any session bound to the same local IP """
+
+        used_ports = {int(_.split("/")[2]) for _ in stack.tcp_sessions if _.split("/")[1] in {"*", self.local_ip_address}}
+        while (port := random.randint(*config.TCP_EPHEMERAL_PORT_RANGE)) not in used_ports:
+            return port
+
     def __change_state(self, state):
         """ Change the state of TCP finite state machine """
 
@@ -234,12 +241,14 @@ class TcpSession:
             self.logger.opt(ansi=True, depth=1).info(f"{self.tcp_session_id} - State changed: <yellow> {old_state} -> {self.state}</>")
 
         # Register session
-        if self.state in {"CONNECT", "LISTEN"}:
+        if self.state in {"SYN_SENT", "LISTEN"}:
             stack.tcp_sessions[self.tcp_session_id] = self
+            self.logger.debug(f"{self.tcp_session_id} - Registered TCP session")
 
         # Unregister session
         if self.state in {"CLOSED"}:
             stack.tcp_sessions.pop(self.tcp_session_id)
+            self.logger.debug(f"{self.tcp_session_id} - Unregistered TCP session")
 
     def __transmit_packet(self, seq=None, flag_syn=False, flag_ack=False, flag_fin=False, flag_rst=False, raw_data=b""):
         """ Send out TCP packet """

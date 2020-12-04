@@ -141,9 +141,9 @@ def main():
 
     # Initialize TCP test clients
     if config.client_tcp_echo:
-        ClientTcpEcho(local_ip_address="192.168.9.7", remote_ip_address="192.168.100.101", remote_port=7, message_count=10)
+        ClientTcpEcho(local_ip_address="192.168.9.7", remote_ip_address="192.168.100.102", remote_port=7, message_count=10)
         ClientTcpEcho(
-            local_ip_address="fdd1:c296:f24f:9:0:ff:fe77:7777", remote_ip_address="fdd1:c296:f24f:100:5054:ff:fef9:99aa", remote_port=7, message_count=10
+            local_ip_address="fdd1:c296:f24f:9:0:ff:fe77:7777", remote_ip_address="fdd1:c296:f24f:9:5054:ff:fedf:8537", remote_port=7, message_count=10
         )
         # ClientTcpEcho(local_ip_address="192.168.9.7", remote_ip_address="1.1.1.1", remote_port=7)
         # ClientTcpEcho(local_ip_address="192.168.9.7", remote_ip_address="192.168.9.9", remote_port=7)

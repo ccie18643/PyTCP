@@ -78,7 +78,8 @@ class ServiceTcpEcho:
 
         while True:
             message = socket.receive()
-            print(f"Service TCP Echo: Received {len(message)} bytes from {socket.remote_ip_address}, port {socket.remote_port}")
+            if message is not None:
+                print(f"Service TCP Echo: Received {len(message)} bytes from {socket.remote_ip_address}, port {socket.remote_port}")
 
             if message is None:
                 print(f"Service TCP Echo: Connection to {socket.remote_ip_address}, port {socket.remote_port} has been closed by peer")
