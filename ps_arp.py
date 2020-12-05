@@ -82,7 +82,7 @@ class ArpPacket:
     def __init__(self, parent_packet=None, arp_sha=None, arp_spa=None, arp_tpa=None, arp_tha="00:00:00:00:00:00", arp_oper=ARP_OP_REQUEST, echo_tracker=None):
         """ Class constructor """
 
-        self.logger = loguru.logger.bind(object_name="ps_udp.")
+        self.logger = loguru.logger.bind(object_name="ps_arp.")
         self.sanity_check_failed = False
 
         # Packet parsing
