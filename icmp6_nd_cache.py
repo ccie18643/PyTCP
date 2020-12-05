@@ -123,7 +123,7 @@ class ICMPv6NdCache:
 
         # Pick apropriate source address
         ip6_src = IPv6Address("::")
-        for ip6_address in self.packe_handler.ip6_address:
+        for ip6_address in self.packet_handler.ip6_address:
             if icmp6_ns_target_address in ip6_address.network:
                 ip6_src = ip6_address.ip
 
