@@ -58,7 +58,7 @@ def phtx_ether(self, child_packet, ether_src="00:00:00:00:00:00", ether_dst="00:
 
     # Check if packet contains valid source address, fill it out if needed
     if ether_packet_tx.ether_src == "00:00:00:00:00:00":
-        ether_packet_tx.ether_src = self.stack_mac_unicast[0]
+        ether_packet_tx.ether_src = self.stack_mac_unicast
         self.logger.debug(f"{ether_packet_tx.tracker} - Set source to stack MAC {ether_packet_tx.ether_src}")
 
     # Send out packet if it contains valid destination MAC address

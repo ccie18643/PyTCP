@@ -83,7 +83,7 @@ def phrx_icmp6(self, ip6_packet_rx, icmp6_packet_rx):
             icmp6_na_flag_s=not ip6_nd_dad,  # no S flag when responding to DAD request
             icmp6_na_flag_o=ip6_nd_dad,  # O flag when respondidng to DAD request (this is not neccessary but Linux uses it)
             icmp6_na_target_address=icmp6_packet_rx.icmp6_ns_target_address,
-            icmp6_nd_options=[ps_icmp6.Icmp6NdOptTLLA(opt_tlla=self.stack_mac_unicast[0])],
+            icmp6_nd_options=[ps_icmp6.Icmp6NdOptTLLA(opt_tlla=self.stack_mac_unicast)],
             echo_tracker=icmp6_packet_rx.tracker,
         )
         return

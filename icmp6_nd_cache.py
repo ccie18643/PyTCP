@@ -135,5 +135,5 @@ class ICMPv6NdCache:
             ip6_hop=255,
             icmp6_type=ps_icmp6.ICMP6_NEIGHBOR_SOLICITATION,
             icmp6_ns_target_address=icmp6_ns_target_address,
-            icmp6_nd_options=[ps_icmp6.Icmp6NdOptSLLA(opt_slla=stack.packet_handler.stack_mac_unicast[0])],
+            icmp6_nd_options=[ps_icmp6.Icmp6NdOptSLLA(opt_slla=stack.packet_handler.stack_mac_unicast)],
         )

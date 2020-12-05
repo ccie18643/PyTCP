@@ -67,7 +67,7 @@ post_parse_sanity_check = True
 ip4_option_packet_drop = True
 
 # Unicast MAC addresses assigned to stack, currently there is not any kind of duplicate MAC detection performed
-mac_address_candidate = ["02:00:00:77:77:77"]
+mac_address = "02:00:00:77:77:77"
 
 # IPv6 address auto configuration is implemented using EUI64 addressing and ICMPv6 Router Advertisement messages
 ip6_lla_autoconfig = True
