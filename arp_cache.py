@@ -128,7 +128,7 @@ class ArpCache:
             ether_dst="ff:ff:ff:ff:ff:ff",
             arp_oper=ps_arp.ARP_OP_REQUEST,
             arp_sha=self.packet_handler.mac_unicast,
-            arp_spa=self.ip4_unicast[0] if self.packet_handler.ip4_unicast else IPv4Address("0.0.0.0"),
+            arp_spa=self.packet_handler.ip4_unicast[0] if self.packet_handler.ip4_unicast else IPv4Address("0.0.0.0"),
             arp_tha="00:00:00:00:00:00",
             arp_tpa=arp_tpa,
         )
