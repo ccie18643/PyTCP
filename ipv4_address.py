@@ -74,7 +74,7 @@ class IPv4Interface(ipaddress.IPv4Interface):
     def is_limited_broadcast(self):
         """ Check if IPv4 address is a limited broadcast """
 
-        return str(super().ip) == "255.255.255.255"
+        return self.ip.is_limited_broadcast
 
 
 class IPv4Network(ipaddress.IPv4Network):
