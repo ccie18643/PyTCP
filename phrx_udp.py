@@ -45,9 +45,9 @@ import loguru
 
 import ps_icmp4
 import ps_icmp6
-import stack
 from ipv4_address import IPv4Address
 from ipv6_address import IPv6Address
+from stack import stack
 from udp_metadata import UdpMetadata
 
 

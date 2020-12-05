@@ -45,6 +45,7 @@ import ps_icmp6
 import ps_ip6
 import ps_tcp
 import ps_udp
+from stack import stack
 
 
 def phrx_ip6(self, ip6_packet_rx):
@@ -57,7 +58,7 @@ def phrx_ip6(self, ip6_packet_rx):
     self.logger.debug(f"{ip6_packet_rx.tracker} - {ip6_packet_rx}")
 
     # Check if received packet has been sent to us directly or by unicast or multicast
-    if ip6_packet_rx.ip6_dst not in {*self.stack_ip6_unicast, *self.stack_ip6_multicast}:
+    if ip6_packet_rx.ip6_dst not in {*stack.ip6_unicast, *stack.ip6_multicast}:
         self.logger.debug(f"{ip6_packet_rx.tracker} - IP packet not destined for this stack, droping")
         return
 

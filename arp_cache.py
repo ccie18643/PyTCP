@@ -46,8 +46,8 @@ import time
 import loguru
 
 import ps_arp
-import stack
 from ipv4_address import IPv4Address
+from stack import stack
 
 ARP_ENTRY_MAX_AGE = 3600
 ARP_ENTRY_REFRESH_TIME = 300
@@ -75,7 +75,7 @@ class ArpCache:
         self.logger = loguru.logger.bind(object_name="arp_cache.")
 
         # Setup timer to execute ARP Cache maintainer every second
-        stack.stack_timer.register_method(method=self.maintain_cache, delay=1000)
+        stack.timer.register_method(method=self.maintain_cache, delay=1000)
 
         self.logger.debug("Started ARP cache")
 
@@ -125,11 +125,11 @@ class ArpCache:
         """ Enqueue ARP request packet with TX ring """
 
         stack.packet_handler.phtx_arp(
-            ether_src=stack.packet_handler.stack_mac_unicast,
+            ether_src=stack.mac_unicast,
             ether_dst="ff:ff:ff:ff:ff:ff",
             arp_oper=ps_arp.ARP_OP_REQUEST,
-            arp_sha=stack.packet_handler.stack_mac_unicast,
-            arp_spa=stack.packet_handler.stack_ip4_unicast[0] if stack.packet_handler.stack_ip4_unicast else IPv4Address("0.0.0.0"),
+            arp_sha=stack.mac_unicast,
+            arp_spa=stack.ip4_unicast[0] if stack.ip4_unicast else IPv4Address("0.0.0.0"),
             arp_tha="00:00:00:00:00:00",
             arp_tpa=arp_tpa,
         )

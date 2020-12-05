@@ -65,7 +65,7 @@ from service_udp_daytime import ServiceUdpDaytime
 from service_udp_discard import ServiceUdpDiscard
 from service_udp_echo import ServiceUdpEcho
 from stack_cli_server import StackCliServer
-from stack_timer import StackTimer
+from timer import Timer
 from tx_ring import TxRing
 
 TUNSETIFF = 0x400454CA
@@ -108,7 +108,7 @@ def main():
 
     # Initialize stack components
     StackCliServer()
-    StackTimer()
+    Timer()
     RxRing(tap)
     TxRing(tap)
     ArpCache()

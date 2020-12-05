@@ -45,7 +45,7 @@ import threading
 
 import loguru
 
-import stack
+from stack import stack
 
 
 class UdpSocket:

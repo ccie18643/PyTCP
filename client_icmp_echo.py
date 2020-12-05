@@ -46,8 +46,8 @@ import threading
 import time
 from datetime import datetime
 
-import stack
 from ip_helper import ip_pick_version
+from stack import stack
 
 
 class ClientIcmpEcho:

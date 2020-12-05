@@ -40,15 +40,53 @@
 # stack.py - module holds references to the stack components and global structures
 #
 
+import config
 
-# References to stack components
-rx_ring = None
-tx_ring = None
-arp_cache = None
-icmp6_nd_cache = None
-packet_handler = None
-stack_timer = None
 
-# Stack 'global variables'
-tcp_sessions = {}
-udp_sockets = {}
+class Stack:
+    """ Class containing stack's global variables """
+
+    def __init__(self):
+        """ Class constructor """
+
+        # References to stack components
+        self.rx_ring = None
+        self.tx_ring = None
+        self.arp_cache = None
+        self.icmp6_nd_cache = None
+        self.packet_handler = None
+        self.timer = None
+
+        # Stack 'global variables'
+        self.mac_unicast = config.mac_address
+        self.mac_multicast = []
+        self.mac_broadcast = "ff:ff:ff:ff:ff:ff"
+        self.ip6_address = []
+        self.ip6_multicast = []
+        self.ip4_address = []
+        self.ip4_multicast = []
+        self.tcp_sessions = {}
+        self.udp_sockets = {}
+
+    @property
+    def ip6_unicast(self):
+        """ Return list of stack's IPv6 unicast addresses """
+
+        return [_.ip for _ in stack.ip6_address]
+
+    @property
+    def ip4_unicast(self):
+        """ Return list of stack's IPv4 unicast addresses """
+
+        return [_.ip for _ in stack.ip4_address]
+
+    @property
+    def ip4_broadcast(self):
+        """ Return list of stack's IPv4 broadcast addresses """
+
+        ip4_broadcast = [_.network.broadcast_address for _ in stack.ip4_address]
+        ip4_broadcast.append("255.255.255.255")
+        return ip4_broadcast
+
+
+stack = Stack()

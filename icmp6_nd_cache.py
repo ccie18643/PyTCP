@@ -46,8 +46,8 @@ import time
 import loguru
 
 import ps_icmp6
-import stack
 from ipv6_address import IPv6Address
+from stack import stack
 
 ND_ENTRY_MAX_AGE = 3600
 ND_ENTRY_REFRESH_TIME = 300
@@ -75,7 +75,7 @@ class ICMPv6NdCache:
         self.logger = loguru.logger.bind(object_name="icmp6_nd_cache.")
 
         # Setup timer to execute ND Cache maintainer every second
-        stack.stack_timer.register_method(method=self.maintain_cache, delay=1000)
+        stack.timer.register_method(method=self.maintain_cache, delay=1000)
 
         self.logger.debug("Started ICMPv6 Neighbor Discovery cache")
 
@@ -124,9 +124,9 @@ class ICMPv6NdCache:
 
         # Pick apropriate source address
         ip6_src = IPv6Address("::")
-        for stack_ip6_address in stack.packet_handler.stack_ip6_address:
-            if icmp6_ns_target_address in stack_ip6_address.network:
-                ip6_src = stack_ip6_address.ip
+        for ip6_address in stack.ip6_address:
+            if icmp6_ns_target_address in ip6_address.network:
+                ip6_src = ip6_address.ip
 
         # Send out ND Solicitation message
         stack.packet_handler.phtx_icmp6(
@@ -135,5 +135,5 @@ class ICMPv6NdCache:
             ip6_hop=255,
             icmp6_type=ps_icmp6.ICMP6_NEIGHBOR_SOLICITATION,
             icmp6_ns_target_address=icmp6_ns_target_address,
-            icmp6_nd_options=[ps_icmp6.Icmp6NdOptSLLA(opt_slla=stack.packet_handler.stack_mac_unicast)],
+            icmp6_nd_options=[ps_icmp6.Icmp6NdOptSLLA(opt_slla=stack.mac_unicast)],
         )

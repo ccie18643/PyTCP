@@ -42,8 +42,8 @@
 
 
 import ps_icmp6
-import stack
 from ipv6_address import IPv6Address
+from stack import stack
 
 
 def phrx_icmp6(self, ip6_packet_rx, icmp6_packet_rx):
@@ -59,7 +59,7 @@ def phrx_icmp6(self, ip6_packet_rx, icmp6_packet_rx):
     if icmp6_packet_rx.icmp6_type == ps_icmp6.ICMP6_NEIGHBOR_SOLICITATION:
 
         # Check if request is for one of stack's IPv6 unicast addresses
-        if icmp6_packet_rx.icmp6_ns_target_address not in self.stack_ip6_unicast:
+        if icmp6_packet_rx.icmp6_ns_target_address not in stack.ip6_unicast:
             self.logger.debug(
                 f"Received ICMPv6 Neighbor Solicitation packet from {ip6_packet_rx.ip6_src}, not matching any of stack's IPv6 unicast addresses, droping..."
             )
@@ -83,7 +83,7 @@ def phrx_icmp6(self, ip6_packet_rx, icmp6_packet_rx):
             icmp6_na_flag_s=not ip6_nd_dad,  # no S flag when responding to DAD request
             icmp6_na_flag_o=ip6_nd_dad,  # O flag when respondidng to DAD request (this is not neccessary but Linux uses it)
             icmp6_na_target_address=icmp6_packet_rx.icmp6_ns_target_address,
-            icmp6_nd_options=[ps_icmp6.Icmp6NdOptTLLA(opt_tlla=self.stack_mac_unicast)],
+            icmp6_nd_options=[ps_icmp6.Icmp6NdOptTLLA(opt_tlla=stack.mac_unicast)],
             echo_tracker=icmp6_packet_rx.tracker,
         )
         return

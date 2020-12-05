@@ -47,7 +47,7 @@ import threading
 import loguru
 
 import config
-import stack
+from stack import stack
 
 PACKET_RETRANSMIT_TIMEOUT = 1000  # Retransmit data if ACK not received
 PACKET_RETRANSMIT_MAX_COUNT = 3  # If data is not acked, retransit it 5 times
@@ -148,7 +148,7 @@ class TcpSession:
         self.__change_state("CLOSED")
 
         # Setup timer to execute FSM time event every milisecond
-        stack.stack_timer.register_method(method=self.tcp_fsm, kwargs={"timer": True})
+        stack.timer.register_method(method=self.tcp_fsm, kwargs={"timer": True})
 
     def __str__(self):
         """ String representation """
@@ -285,12 +285,12 @@ class TcpSession:
 
         # If in ESTABLISHED state then reset ACK delay timer
         if self.state == "ESTABLISHED":
-            stack.stack_timer.register_timer(self.tcp_session_id + "-delayed_ack", DELAYED_ACK_DELAY)
+            stack.timer.register_timer(self.tcp_session_id + "-delayed_ack", DELAYED_ACK_DELAY)
 
         # If packet contains data then Initialize / adjust packet's retransmit counter and timer
         if raw_data or flag_syn or flag_fin:
             self.tx_retransmit_timeout_counter[seq] = self.tx_retransmit_timeout_counter.get(seq, -1) + 1
-            stack.stack_timer.register_timer(
+            stack.timer.register_timer(
                 self.tcp_session_id + "-retransmit_seq-" + str(seq), PACKET_RETRANSMIT_TIMEOUT * (1 << self.tx_retransmit_timeout_counter[seq])
             )
 
@@ -353,16 +353,16 @@ class TcpSession:
     def __delayed_ack(self):
         """ Run Delayed ACK mechanism """
 
-        if stack.stack_timer.timer_expired(self.tcp_session_id + "-delayed_ack"):
+        if stack.timer.timer_expired(self.tcp_session_id + "-delayed_ack"):
             if self.remote_seq_rcvd > self.remote_seq_ackd:
                 self.__transmit_packet(flag_ack=True)
                 self.logger.debug(f"{self.tcp_session_id} - Sent out delayed ACK ({self.remote_seq_rcvd})")
-            stack.stack_timer.register_timer(self.tcp_session_id + "-delayed_ack", DELAYED_ACK_DELAY)
+            stack.timer.register_timer(self.tcp_session_id + "-delayed_ack", DELAYED_ACK_DELAY)
 
     def __retransmit_packet_timeout(self):
         """ Retransmit packet after expired timeout """
 
-        if self.local_seq_ackd in self.tx_retransmit_timeout_counter and stack.stack_timer.timer_expired(
+        if self.local_seq_ackd in self.tx_retransmit_timeout_counter and stack.timer.timer_expired(
             self.tcp_session_id + "-retransmit_seq-" + str(self.local_seq_ackd)
         ):
             if self.tx_retransmit_timeout_counter[self.local_seq_ackd] == PACKET_RETRANSMIT_MAX_COUNT:
@@ -878,11 +878,11 @@ class TcpSession:
         # State initialization
         if self.state_init:
             self.state_init = False
-            stack.stack_timer.register_timer(self.tcp_session_id + "-time_wait", TIME_WAIT_DELAY)
+            stack.timer.register_timer(self.tcp_session_id + "-time_wait", TIME_WAIT_DELAY)
             self.logger.debug(f"{self.tcp_session_id} - State {self.state} initialized")
 
         # Got timer event -> Run TIME_WAIT delay
-        if timer and stack.stack_timer.timer_expired(self.tcp_session_id + "-time_wait"):
+        if timer and stack.timer.timer_expired(self.tcp_session_id + "-time_wait"):
             self.__change_state("CLOSED")
             return
 

@@ -47,7 +47,7 @@ import threading
 import loguru
 
 import ps_ether
-import stack
+from stack import stack
 
 
 class RxRing:

@@ -44,7 +44,7 @@
 import ps_ether
 import ps_ip4
 import ps_ip6
-import stack
+from stack import stack
 
 
 def phtx_ether(self, child_packet, ether_src="00:00:00:00:00:00", ether_dst="00:00:00:00:00:00"):
@@ -58,7 +58,7 @@ def phtx_ether(self, child_packet, ether_src="00:00:00:00:00:00", ether_dst="00:
 
     # Check if packet contains valid source address, fill it out if needed
     if ether_packet_tx.ether_src == "00:00:00:00:00:00":
-        ether_packet_tx.ether_src = self.stack_mac_unicast
+        ether_packet_tx.ether_src = stack.mac_unicast
         self.logger.debug(f"{ether_packet_tx.tracker} - Set source to stack MAC {ether_packet_tx.ether_src}")
 
     # Send out packet if it contains valid destination MAC address
@@ -79,7 +79,7 @@ def phtx_ether(self, child_packet, ether_src="00:00:00:00:00:00", ether_dst="00:
             return
 
         # Send out packet if is destined to external network (in relation to its source address) and we are able to obtain MAC of default gateway from ND cache
-        for stack_ip6_address in self.stack_ip6_address:
+        for stack_ip6_address in stack.ip6_address:
             if stack_ip6_address.ip == ip6_packet_tx.ip6_src and ip6_packet_tx.ip6_dst not in stack_ip6_address.network:
                 if stack_ip6_address.gateway is None:
                     self.logger.debug(f"{ether_packet_tx.tracker} - No default gateway set for {stack_ip6_address} source address, droping packet...")
@@ -112,7 +112,7 @@ def phtx_ether(self, child_packet, ether_src="00:00:00:00:00:00", ether_dst="00:
             return
 
         # Send out packet if its destinied to directed broadcast or network addresses (in relation to its source address)
-        for stack_ip4_address in self.stack_ip4_address:
+        for stack_ip4_address in stack.ip4_address:
             if stack_ip4_address.ip == ip4_packet_tx.ip4_src:
                 if ip4_packet_tx.ip4_dst in {stack_ip4_address.network[0], stack_ip4_address.network[-1]}:
                     ether_packet_tx.ether_dst = "ff:ff:ff:ff:ff:ff"
@@ -121,7 +121,7 @@ def phtx_ether(self, child_packet, ether_src="00:00:00:00:00:00", ether_dst="00:
                     return
 
         # Send out packet if is destined to external network (in relation to its source address) and we are able to obtain MAC of default gateway from ARP cache
-        for stack_ip4_address in self.stack_ip4_address:
+        for stack_ip4_address in stack.ip4_address:
             if stack_ip4_address.ip == ip4_packet_tx.ip4_src and ip4_packet_tx.ip4_dst not in stack_ip4_address.network:
                 if stack_ip4_address.gateway is None:
                     self.logger.debug(f"{ether_packet_tx.tracker} - No default gateway set for {stack_ip4_address} source address, droping packet...")
