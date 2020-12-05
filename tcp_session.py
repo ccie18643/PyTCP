@@ -47,7 +47,7 @@ import threading
 import loguru
 
 import config
-from stack import stack
+import stack
 
 PACKET_RETRANSMIT_TIMEOUT = 1000  # Retransmit data if ACK not received
 PACKET_RETRANSMIT_MAX_COUNT = 3  # If data is not acked, retransit it 5 times

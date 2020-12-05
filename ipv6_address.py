@@ -53,6 +53,48 @@ class IPv6Interface(ipaddress.IPv6Interface):
 
         return IPv6Address(super().ip)
 
+    @property
+    def host_address(self):
+        """ Return host address """
+
+        return IPv6Address(super().ip)
+
+    @property
+    def solicited_node_multicast(self):
+        """ Create IPv6 solicited node multicast address """
+
+        return IPv6Address("ff02::1:ff" + self.host_address.exploded[-7:])
+
+    @property
+    def is_solicited_node_multicast(self):
+        """ Check if address is IPv6 solicited node multicast address """
+
+        return str(super().ip).startswith("ff02::1:ff")
+
+    @property
+    def is_unicast(self):
+        """ Check if address is IPv6 unicast address """
+
+        return not (super().ip.is_multicast or super().ip.is_unspecified)
+
+    @property
+    def is_reserved(self):
+        """ Check if address is IPv6 reserved address """
+
+        return super().ip.is_reserved
+
+    @property
+    def is_unspecified(self):
+        """ Check if address is IPv6 unspecified address """
+
+        return super().ip.is_unspecified
+
+    @property
+    def is_multicast(self):
+        """ Check if address is IPv6 multicast address """
+
+        return super().ip.is_multicast
+
 
 class IPv6Network(ipaddress.IPv6Network):
     """ Extensions for ipaddress.IPv6Network class """

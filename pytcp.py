@@ -50,14 +50,9 @@ import time
 import loguru
 
 import config
-from arp_cache import ArpCache
 from client_icmp_echo import ClientIcmpEcho
 from client_tcp_echo import ClientTcpEcho
-from icmp6_nd_cache import ICMPv6NdCache
-from ipv4_address import IPv4Address, IPv4Interface
-from ipv6_address import IPv6Address, IPv6Interface
 from ph import PacketHandler
-from rx_ring import RxRing
 from service_tcp_daytime import ServiceTcpDaytime
 from service_tcp_discard import ServiceTcpDiscard
 from service_tcp_echo import ServiceTcpEcho
@@ -66,7 +61,6 @@ from service_udp_discard import ServiceUdpDiscard
 from service_udp_echo import ServiceUdpEcho
 from stack_cli_server import StackCliServer
 from timer import Timer
-from tx_ring import TxRing
 
 TUNSETIFF = 0x400454CA
 IFF_TAP = 0x0002
@@ -107,13 +101,9 @@ def main():
     fcntl.ioctl(tap, TUNSETIFF, struct.pack("16sH", config.interface, IFF_TAP | IFF_NO_PI))
 
     # Initialize stack components
-    StackCliServer()
+    # StackCliServer()
     Timer()
-    RxRing(tap)
-    TxRing(tap)
-    ArpCache()
-    ICMPv6NdCache()
-    PacketHandler()
+    PacketHandler(tap)
 
     # Set proper local IP address pattern for services depending on whch version of IP is enabled
     if config.ip6_support and config.ip4_support:

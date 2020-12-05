@@ -46,7 +46,6 @@ import ps_arp
 import ps_ether
 import ps_ip4
 import ps_ip6
-from stack import stack
 
 
 def phrx_ether(self, ether_packet_rx):
@@ -59,7 +58,7 @@ def phrx_ether(self, ether_packet_rx):
     self.logger.debug(f"{ether_packet_rx.tracker} - {ether_packet_rx}")
 
     # Check if received packet matches any of stack MAC addresses
-    if ether_packet_rx.ether_dst not in {stack.mac_unicast, *stack.mac_multicast, stack.mac_broadcast}:
+    if ether_packet_rx.ether_dst not in {self.mac_unicast, *self.mac_multicast, self.mac_broadcast}:
         self.logger.opt(ansi=True).debug(f"{ether_packet_rx.tracker} - Ethernet packet not destined for this stack, droping")
         return
 

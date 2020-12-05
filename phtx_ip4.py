@@ -46,22 +46,22 @@ import struct
 import config
 import ps_ether
 import ps_ip4
+import stack
 from ipv4_address import IPv4Address
-from stack import stack
 
 
 def validate_src_ip4_address(self, ip4_src, ip4_dst):
     """ Make sure source ip address is valid, supplemt with valid one as appropriate """
 
     # Check if the the source IP address belongs to this stack or its set to all zeros (for DHCP client comunication)
-    if ip4_src not in {*stack.ip4_unicast, *stack.ip4_multicast, *stack.ip4_broadcast, IPv4Address("0.0.0.0")}:
+    if ip4_src not in {*self.ip4_unicast, *self.ip4_multicast, *self.ip4_broadcast, IPv4Address("0.0.0.0")}:
         self.logger.warning(f"Unable to sent out IPv4 packet, stack doesn't own IPv4 address {ip4_src}")
         return None
 
     # If packet is a response to multicast then replace source address with primary address of the stack
-    if ip4_src in stack.ip4_multicast:
-        if stack.ip4_unicast:
-            ip4_src = stack.ip4_unicast[0]
+    if ip4_src in self.ip4_multicast:
+        if self.ip4_unicast:
+            ip4_src = self.ip4_unicast[0]
             self.logger.debug(f"Packet is response to multicast, replaced source with stack primary IPv4 address {ip4_src}")
         else:
             self.logger.warning("Unable to sent out IPv4 packet, no stack primary unicast IPv4 address available")
@@ -69,16 +69,16 @@ def validate_src_ip4_address(self, ip4_src, ip4_dst):
 
     # If packet is a response to limited broadcast then replace source address with primary address of the stack
     if ip4_src.is_limited_broadcast:
-        if stack.ip4_unicast:
-            ip4_src = stack.ip4_unicast[0]
+        if self.ip4_unicast:
+            ip4_src = self.ip4_unicast[0]
             self.logger.debug(f"Packet is response to limited broadcast, replaced source with stack primary IPv4 address {ip4_src}")
         else:
             self.logger.warning("Unable to sent out IPv4 packet, no stack primary unicast IPv4 address available")
             return None
 
     # If packet is a response to directed braodcast then replace source address with first stack address that belongs to appropriate subnet
-    if ip4_src in stack.ip4_broadcast:
-        ip4_src = [_.ip for _ in stack.ip4_address if _.network.broadcast_address == ip4_src]
+    if ip4_src in self.ip4_broadcast:
+        ip4_src = [_.ip for _ in self.ip4_address if _.broadcast_address == ip4_src]
         if ip4_src:
             ip4_src = ip4_src[0]
             self.logger.debug(f"Packet is response to directed broadcast, replaced source with apropriate IPv4 address {ip4_src}")
@@ -88,13 +88,13 @@ def validate_src_ip4_address(self, ip4_src, ip4_dst):
 
     # If source is unspecified check if destination belongs to any of local networks, if so pick source address from that network
     if ip4_src.is_unspecified:
-        for ip4_address in stack.ip4_address:
+        for ip4_address in self.ip4_address:
             if ip4_dst in ip4_address.network:
                 return ip4_address.ip
 
     # If source unspcified and destination is external pick source from first network that has default gateway set
     if ip4_src.is_unspecified:
-        for ip4_address in stack.ip4_address:
+        for ip4_address in self.ip4_address:
             if ip4_address.gateway:
                 return ip4_address.ip
 

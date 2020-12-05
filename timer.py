@@ -46,7 +46,7 @@ import time
 
 import loguru
 
-from stack import stack
+import stack
 
 
 class TimerTask:

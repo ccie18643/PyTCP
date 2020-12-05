@@ -41,7 +41,7 @@
 #
 
 
-from stack import stack
+import stack
 from tcp_metadata import TcpMetadata
 
 PACKET_LOSS = False

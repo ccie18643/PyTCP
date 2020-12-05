@@ -45,7 +45,7 @@ import threading
 
 import loguru
 
-from stack import stack
+import stack
 
 
 class StackCliServer:
@@ -97,49 +97,49 @@ class StackCliServer:
 
                 elif message.lower().strip() == b"show ipv6 address":
                     message = b"\n"
-                    for address in stack.ip6_address:
+                    for address in stack.packet_handler.ip6_address:
                         message += bytes(str(address), "utf-8") + b"\n"
                     message += b"\n"
                     conn.sendall(message)
 
                 elif message.lower().strip() == b"show ipv6 unicast":
                     message = b"\n"
-                    for address in stack.ip6_unicast:
+                    for address in stack.packet_handler.ip6_unicast:
                         message += bytes(str(address), "utf-8") + b"\n"
                     message += b"\n"
                     conn.sendall(message)
 
                 elif message.lower().strip() == b"show ipv6 multicast":
                     message = b"\n"
-                    for address in stack.ip6_multicast:
+                    for address in stack.packet_handler.ip6_multicast:
                         message += bytes(str(address), "utf-8") + b"\n"
                     message += b"\n"
                     conn.sendall(message)
 
                 elif message.lower().strip() == b"show ipv4 address":
                     message = b"\n"
-                    for address in stack.ip4_address:
+                    for address in stack.packet_handler.ip4_address:
                         message += bytes(str(address), "utf-8") + b"\n"
                     message += b"\n"
                     conn.sendall(message)
 
                 elif message.lower().strip() == b"show ipv4 unicast":
                     message = b"\n"
-                    for address in stack.ip4_unicast:
+                    for address in stack.packet_handler.ip4_unicast:
                         message += bytes(str(address), "utf-8") + b"\n"
                     message += b"\n"
                     conn.sendall(message)
 
                 elif message.lower().strip() == b"show ipv4 mulicast":
                     message = b"\n"
-                    for address in stack.ip4_multicast:
+                    for address in stack.packet_handler.ip4_multicast:
                         message += bytes(str(address), "utf-8") + b"\n"
                     message += b"\n"
                     conn.sendall(message)
 
                 elif message.lower().strip() == b"show ipv4 broadcast":
                     message = b"\n"
-                    for address in stack.ip4_broadcast:
+                    for address in stack.packet_handler.ip4_broadcast:
                         message += bytes(str(address), "utf-8") + b"\n"
                     message += b"\n"
                     conn.sendall(message)

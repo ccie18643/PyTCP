@@ -44,21 +44,20 @@
 import config
 import ps_ip6
 from ipv6_address import IPv6Address
-from stack import stack
 
 
 def validate_src_ip6_address(self, ip6_src, ip6_dst):
     """ Make sure source ip address is valid, supplement with valid one as appropriate """
 
     # Check if the the source IP address belongs to this stack or its unspecified
-    if ip6_src not in {*stack.ip6_unicast, *stack.ip6_multicast, IPv6Address("::")}:
+    if ip6_src not in {*self.ip6_unicast, *self.ip6_multicast, IPv6Address("::")}:
         self.logger.warning(f"Unable to sent out IPv6 packet, stack doesn't own IPv6 address {ip6_src}")
         return None
 
     # If packet is a response to multicast then replace source address with link local address of the stack
-    if ip6_src in stack.ip6_multicast:
-        if stack.ip6_unicast:
-            ip6_src = stack.ip6_unicast[0]
+    if ip6_src in self.ip6_multicast:
+        if self.ip6_unicast:
+            ip6_src = self.ip6_unicast[0]
             self.logger.debug(f"Packet is response to multicast, replaced source with stack link local IPv6 address {ip6_src}")
         else:
             self.logger.warning("Unable to sent out IPv6 packet, no stack link local unicast IPv6 address available")
@@ -66,13 +65,13 @@ def validate_src_ip6_address(self, ip6_src, ip6_dst):
 
     # If source is unspecified check if destination belongs to any of local networks, if so pick source address from that network
     if ip6_src.is_unspecified:
-        for stack_ip6_address in stack.ip6_address:
+        for stack_ip6_address in self.ip6_address:
             if ip6_dst in stack_ip6_address.network:
                 return stack_ip6_address.ip
 
     # If source unspcified and destination is external pick source from first network that has default gateway set
     if ip6_src.is_unspecified:
-        for stack_ip6_address in stack.ip6_address:
+        for stack_ip6_address in self.ip6_address:
             if stack_ip6_address.gateway:
                 return stack_ip6_address.ip
 

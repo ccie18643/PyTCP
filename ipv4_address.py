@@ -52,6 +52,30 @@ class IPv4Interface(ipaddress.IPv4Interface):
 
         return IPv4Address(super().ip)
 
+    @property
+    def host_address(self):
+        """ Return host address """
+
+        return self.ip
+
+    @property
+    def network_address(self):
+        """ Return network address """
+
+        return IPv4Address(self.network.network_address)
+
+    @property
+    def broadcast_address(self):
+        """ Return broadcast address """
+
+        return IPv4Address(self.network.broadcast_address)
+
+    @property
+    def is_limited_broadcast(self):
+        """ Check if IPv4 address is a limited broadcast """
+
+        return str(super().ip) == "255.255.255.255"
+
 
 class IPv4Network(ipaddress.IPv4Network):
     """ Extensions for ipaddress.IPv4Network class """

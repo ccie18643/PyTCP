@@ -47,7 +47,6 @@ import threading
 import loguru
 
 import ps_ether
-from stack import stack
 
 
 class RxRing:
@@ -55,8 +54,6 @@ class RxRing:
 
     def __init__(self, tap):
         """ Initialize access to tap interface and the inbound queue """
-
-        stack.rx_ring = self
 
         self.tap = tap
         self.rx_ring = []

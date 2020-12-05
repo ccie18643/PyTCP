@@ -46,7 +46,6 @@ from ipaddress import AddressValueError
 
 from ipv4_address import IPv4Address
 from ipv6_address import IPv6Address
-from stack import stack
 
 
 def inet_cksum(data):
@@ -56,24 +55,6 @@ def inet_cksum(data):
     cksum = sum(struct.unpack(f"! {len(data) >> 1}H", data))
     cksum = (cksum >> 16) + (cksum & 0xFFFF)
     return ~(cksum + (cksum >> 16)) & 0xFFFF
-
-
-def find_stack_ip6_address(ip6_unicast):
-    """ Find stack address that belongs to the same subnet as given unicast address """
-
-    for ip6_address in stack.ip6_address:
-        if ip6_unicast in ip6_address.network:
-            return ip6_address
-    return None
-
-
-def find_stack_ip4_address(ip4_unicast):
-    """ Find stack address that belongs to the same subnet as given unicast address """
-
-    for ip4_address in stack.ip4_address:
-        if ip4_unicast in ip4_address.network:
-            return ip4_address
-    return None
 
 
 def ip_pick_version(ip_address):

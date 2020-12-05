@@ -46,8 +46,8 @@ import time
 import loguru
 
 import ps_icmp6
+import stack
 from ipv6_address import IPv6Address
-from stack import stack
 
 ND_ENTRY_MAX_AGE = 3600
 ND_ENTRY_REFRESH_TIME = 300
@@ -65,10 +65,10 @@ class ICMPv6NdCache:
             self.creation_time = time.time()
             self.hit_count = 0
 
-    def __init__(self):
+    def __init__(self, packet_handler):
         """ Class constructor """
 
-        stack.icmp6_nd_cache = self
+        self.packet_handler = packet_handler
 
         self.nd_cache = {}
 
@@ -118,22 +118,21 @@ class ICMPv6NdCache:
         self.__send_icmp6_neighbor_solicitation(ip6_address)
         return None
 
-    @staticmethod
-    def __send_icmp6_neighbor_solicitation(icmp6_ns_target_address):
+    def __send_icmp6_neighbor_solicitation(self, icmp6_ns_target_address):
         """ Enqueue ICMPv6 Neighbor Solicitation packet with TX ring """
 
         # Pick apropriate source address
         ip6_src = IPv6Address("::")
-        for ip6_address in stack.ip6_address:
+        for ip6_address in self.packe_handler.ip6_address:
             if icmp6_ns_target_address in ip6_address.network:
                 ip6_src = ip6_address.ip
 
         # Send out ND Solicitation message
-        stack.packet_handler.phtx_icmp6(
+        self.packet_handler.phtx_icmp6(
             ip6_src=ip6_src,
             ip6_dst=icmp6_ns_target_address.solicited_node_multicast,
             ip6_hop=255,
             icmp6_type=ps_icmp6.ICMP6_NEIGHBOR_SOLICITATION,
             icmp6_ns_target_address=icmp6_ns_target_address,
-            icmp6_nd_options=[ps_icmp6.Icmp6NdOptSLLA(opt_slla=stack.mac_unicast)],
+            icmp6_nd_options=[ps_icmp6.Icmp6NdOptSLLA(opt_slla=self.mac_unicast)],
         )
