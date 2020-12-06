@@ -172,12 +172,12 @@ class UdpPacket:
 
         # udp_sport set to zero
         if self.udp_sport == 0:
-            self.logger.critical(f"{self.tracker} - TCP sanity check fail - value of udp_sport is 0")
+            self.logger.critical(f"{self.tracker} - UDP sanity check fail - value of udp_sport is 0")
             return False
 
         # udp_dport set to zero
         if self.udp_dport == 0:
-            self.logger.critical(f"{self.tracker} - TCP sanity check fail - value of udp_dport is 0")
+            self.logger.critical(f"{self.tracker} - UDP sanity check fail - value of udp_dport is 0")
             return False
 
         return True
