@@ -38,6 +38,7 @@ This program is a work in progress and it changes on daily basis due to new feat
 
 #### Work in progress:
 
+ _ Stack - *implementing improved packet parser (operating on the same bytes array while parsing all protocols vs creating separate slice per protocol & lazy field parsing with caching vs parsing all fields upfront even if most of them are never read)*
  - Stack - *implementing support for multiple interfaces*
  - Stack - *implementing stack debuging console so certain information about stack components can be displayed on demand by sending commands. eg 'show icmpv6 nd cache', 'show ipv6 route', etc... it should also let run interactive commands like ping or stack's udp/tcp echo clients*
 
