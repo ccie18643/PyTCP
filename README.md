@@ -4,6 +4,8 @@ PyTCP is an attempt to create fully functional TCP/IP stack in Python. It suppor
 
 This program is a work in progress and it changes on daily basis due to new features being implemented, changes being made to already implemented features, bug fixes, etc. Therefore if the current version is not working as expected try to clone it again the next day or shoot me an email describing the problem. Any input is appreciated. Also keep in mind that some features may be implemented only partially (as needed for stack operation) or they may be implemented in sub-optimal or not 100% RFC compliant way (due to lack of time) or last but not least they may contain bug(s) that i didn't notice yet.
 
+I am also working on another TCP/IP stack project that is being programmed in C and Assembly languages and it is available as [SeaTCP](https://github.com/ccie18643/SeaTCP) project. It is currently at very early stage of development, but please feel free to check it out.
+
 
 #### Already implemented:
 
