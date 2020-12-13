@@ -1,0 +1,16 @@
+name: lint_python
+on: [pull_request, push]
+jobs:
+  lint_python:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v2
+      - run: pip install black codespell flake8 isort pytest pyupgrade
+      - run: black --check .
+      - run: codespell --quiet-level=2 || true  # --ignore-words-list="" --skip=""
+      - run: flake8 . --count --show-source --statistics
+      - run: isort --profile black .
+      - run: pip install -r requirements.txt || true
+      - run: pytest . || true
+      - run: shopt -s globstar && pyupgrade --py36-plus **/*.py || true
