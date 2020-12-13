@@ -46,7 +46,6 @@ import struct
 import config
 import ps_ether
 import ps_ip4
-import stack
 from ipv4_address import IPv4Address
 
 

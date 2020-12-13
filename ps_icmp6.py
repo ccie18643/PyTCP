@@ -784,7 +784,7 @@ class Icmp6Packet:
 
         if self.icmp6_type == ICMP6_UNREACHABLE:
             # imcp6_code MUST be set to [0-6] (RFC 4861)
-            if not self.icmp6_code in {0, 1, 2, 3, 4, 5, 6}:
+            if self.icmp6_code not in {0, 1, 2, 3, 4, 5, 6}:
                 self.logger.critical(f"{self.tracker} - ICMPv6 sanity check fail - imcp6_code MUST be set to [0-6] (RFC 4861)")
                 return False
 
@@ -795,13 +795,13 @@ class Icmp6Packet:
 
         elif self.icmp6_type == ICMP6_TIME_EXCEEDED:
             # imcp6_code MUST be set to [0-1] (RFC 4861)
-            if not self.icmp6_code in {0, 1}:
+            if self.icmp6_code not in {0, 1}:
                 self.logger.critical(f"{self.tracker} - ICMPv6 sanity check fail - imcp6_code MUST be set to [0-1] (RFC 4861)")
                 return False
 
         elif self.icmp6_type == ICMP6_PARAMETER_PROBLEM:
             # imcp6_code MUST be set to [0-2] (RFC 4861)
-            if not self.icmp6_code in {0, 1, 2}:
+            if self.icmp6_code not in {0, 1, 2}:
                 self.logger.critical(f"{self.tracker} - ICMPv6 sanity check fail - imcp6_code MUST be set to [0-2] (RFC 4861)")
                 return False
 
@@ -889,7 +889,7 @@ class Icmp6Packet:
                 self.logger.debug(f"{self.tracker} - ICMPv6 sanity check fail - icmp6_ns_target_address MUST be unicast address (RFC 4861)")
                 return False
             # icmp6_rs_opt_slla MUST NOT be included if ip6_src is unspecified address
-            if ip6_src.is_unspecified and not self.icmp6_nd_opt_slla is None:
+            if ip6_src.is_unspecified and self.icmp6_nd_opt_slla is not None:
                 self.logger.debug(f"{self.tracker} - ICMPv6 sanity check fail - icmp6_rs_opt_slla MUST NOT be included if ip6_src is unspecified address")
                 return False
 

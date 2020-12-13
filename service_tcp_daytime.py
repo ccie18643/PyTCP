@@ -43,7 +43,6 @@
 
 import threading
 import time
-from datetime import datetime
 
 import tcp_socket
 

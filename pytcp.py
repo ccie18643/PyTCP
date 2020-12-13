@@ -59,7 +59,6 @@ from service_tcp_echo import ServiceTcpEcho
 from service_udp_daytime import ServiceUdpDaytime
 from service_udp_discard import ServiceUdpDiscard
 from service_udp_echo import ServiceUdpEcho
-from stack_cli_server import StackCliServer
 from timer import Timer
 
 TUNSETIFF = 0x400454CA

@@ -8,9 +8,9 @@ jobs:
       - uses: actions/setup-python@v2
       - run: pip install black codespell flake8 isort pytest pyupgrade
       - run: black --check .
-      - run: codespell --quiet-level=2 || true  # --ignore-words-list="" --skip=""
+      - run: codespell --ignore-words-list="ect,ether,nd" --quiet-level=2 || true
       - run: flake8 . --count --show-source --statistics
       - run: isort --profile black .
-      - run: pip install -r requirements.txt || true
+      - run: pip install -r requirements.txt
       - run: pytest . || true
       - run: shopt -s globstar && pyupgrade --py36-plus **/*.py || true
