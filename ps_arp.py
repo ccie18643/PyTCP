@@ -200,7 +200,7 @@ class ArpPacket:
             self.logger.critical(f"{self.tracker} - ARP sanity check fail - value of arp_prlen is not 4")
             return False
 
-        if not self.arp_oper in {1, 2}:
+        if self.arp_oper not in {1, 2}:
             self.logger.critical(f"{self.tracker} - ARP sanity check fail - value of oper is not [1-2]")
             return False
 

@@ -284,7 +284,7 @@ class Icmp4Packet:
 
         if self.icmp4_type == ICMP4_UNREACHABLE:
             # imcp4_code MUST be set to [0-15] (RFC 792)
-            if not self.icmp4_code in {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15}:
+            if self.icmp4_code not in {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15}:
                 self.logger.critical(f"{self.tracker} - ICMPv4 sanity check fail - imcp4_code MUST be set to [0-15] (RFC 792)")
                 return False
 
