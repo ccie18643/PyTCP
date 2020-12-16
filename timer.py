@@ -53,7 +53,7 @@ class TimerTask:
     """ Timer task support class """
 
     def __init__(self, method, args, kwargs, delay, delay_exp, repeat_count, stop_condition):
-        """ Class constructor, repeat_count = -1 means infinite, delay_exp means to raise delay time exponentialy after each method execution """
+        """ Class constructor, repeat_count = -1 means infinite, delay_exp means to raise delay time exponentially after each method execution """
 
         self.method = method
         self.args = args

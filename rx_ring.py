@@ -81,7 +81,7 @@ class RxRing:
 
         while True:
 
-            # Wait till there is any packet comming and pick it up
+            # Wait till there is any packet coming and pick it up
             ether_packet_rx = ps_ether.EtherPacket(os.read(self.tap, 2048))
             self.logger.opt(ansi=True).debug(f"<green>[RX]</green> {ether_packet_rx.tracker} - {len(ether_packet_rx)} bytes")
             self.__enqueue(ether_packet_rx)

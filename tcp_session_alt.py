@@ -115,7 +115,7 @@ class TcpSession:
         self.rcv_wnd = 65535  # Window size
         self.rcv_wsc = 1  # Window scale
 
-        # Sending window paramters
+        # Sending window parameters
         self.snd_ini = random.randint(0, 0xFFFFFFFF)  # Initial seq number
         self.snd_nxt = self.snd_ini  # Next seq to be sent
         self.snd_max = self.snd_ini  # Maximum seq ever sent
@@ -145,7 +145,7 @@ class TcpSession:
 
         self.ooo_packet_queue = {}  # Out of order packet buffer
 
-        # Setup timer to execute FSM time event every milisecond
+        # Setup timer to execute FSM time event every millisecond
         stack.timer.register_method(method=self.tcp_fsm, kwargs={"timer": True})
 
     def __str__(self):
@@ -301,7 +301,7 @@ class TcpSession:
 
         with self.lock_rx_buffer:
             self.rx_buffer.extend(list(raw_data))
-            # If rx_buffer event has not been realeased yet (it could be released if some data were siting in buffer already) then release it
+            # If rx_buffer event has not been released yet (it could be released if some data were siting in buffer already) then release it
             if not self.event_rx_buffer._value:
                 self.event_rx_buffer.release()
 
@@ -364,7 +364,7 @@ class TcpSession:
                 # Send RST packet if we received any packet from peer already
                 if self.rcv_nxt is not None:
                     self.__transmit_packet(flag_rst=True, flag_ack=True, seq=self.snd_una)
-                    self.logger.debug(f"{self.tcp_session_id} - Packet retransmit counter expired, reseting session")
+                    self.logger.debug(f"{self.tcp_session_id} - Packet retransmit counter expired, resetting session")
                 else:
                     self.logger.debug(f"{self.tcp_session_id} - Packet retransmit counter expired")
                 # If in any state with established connection inform socket about connection failure
@@ -381,7 +381,7 @@ class TcpSession:
             # In case we need to retransmit packt containing SYN flag adjust tx_buffer_seq_mod so it doesn't reflect SYN flag yet
             if self.snd_nxt == self.snd_ini or self.snd_nxt == self.snd_fin:
                 self.tx_buffer_seq_mod -= 1
-            self.logger.debug(f"{self.tcp_session_id} - Got retansmit timeout, sending segment {self.snd_nxt}, reseting snd_ewn to {self.snd_ewn}")
+            self.logger.debug(f"{self.tcp_session_id} - Got retansmit timeout, sending segment {self.snd_nxt}, resetting snd_ewn to {self.snd_ewn}")
             return
 
     def __retransmit_packet_request(self, packet):
@@ -477,7 +477,7 @@ class TcpSession:
                 # Initialize session parameters
                 self.snd_mss = min(packet.mss, config.mtu - 40)
                 self.snd_wnd = packet.win * self.snd_wsc  # For SYN / SYN + ACK packets this is initialized with wscale=1
-                self.snd_wsc = packet.wscale if packet.wscale else 1  # Peer's wscale set to None means that peer desn't support window scaling
+                self.snd_wsc = packet.wscale if packet.wscale else 1  # Peer's wscale set to None means that peer doesn't support window scaling
                 self.logger.debug(f"{self.tcp_session_id} - Initialized remote window scale at {self.snd_wsc}")
                 self.rcv_ini = packet.seq
                 self.snd_ewn = self.snd_mss
@@ -508,7 +508,7 @@ class TcpSession:
                 # Initialize session parameters
                 self.snd_mss = min(packet.mss, config.mtu - 40)
                 self.snd_wnd = packet.win * self.snd_wsc  # For SYN / SYN + ACK packets this is initialized with wscale=1
-                self.snd_wsc = packet.wscale if packet.wscale else 1  # Peer's wscale set to None means that peer desn't support window scaling
+                self.snd_wsc = packet.wscale if packet.wscale else 1  # Peer's wscale set to None means that peer doesn't support window scaling
                 self.logger.debug(f"{self.tcp_session_id} - Initialized remote window scale at {self.snd_wsc}")
                 self.rcv_ini = packet.seq
                 self.snd_ewn = self.snd_mss
@@ -605,7 +605,7 @@ class TcpSession:
 
         # Got packet that doesn't fit into receive window
         if packet and not self.rcv_nxt <= packet.seq <= self.rcv_nxt + self.rcv_wnd - len(packet.raw_data):
-            self.logger.debug(f"{self.tcp_session_id} - Packet seq {packet.seq} + {len(packet.raw_data)} doesn't fit into receive window, droping")
+            self.logger.debug(f"{self.tcp_session_id} - Packet seq {packet.seq} + {len(packet.raw_data)} doesn't fit into receive window, dropping")
             return
 
         # Got ACK packet
@@ -627,12 +627,12 @@ class TcpSession:
                 return
             return
 
-        # Got FIN + ACK packet -> Send ACK packet (let delayed ACK mechanism do it) / change state to CLOSE_WAIT / notifiy app that peer closed connection
+        # Got FIN + ACK packet -> Send ACK packet (let delayed ACK mechanism do it) / change state to CLOSE_WAIT / notify app that peer closed connection
         if packet and all({packet.flag_fin, packet.flag_ack}) and not any({packet.flag_syn, packet.flag_rst}):
             # Packet sanity check
             if packet.seq == self.rcv_nxt and self.snd_una <= packet.ack <= self.snd_max:
                 self.__process_ack_packet(packet)
-                # Immidiately acknowledge the received data if any
+                # Immediately acknowledge the received data if any
                 if packet.raw_data:
                     self.__transmit_packet(flag_ack=True)
                 # Let application know that remote peer closed connection
@@ -670,7 +670,7 @@ class TcpSession:
             # Packet sanity check
             if packet.seq == self.rcv_nxt and self.snd_una <= packet.ack <= self.snd_max:
                 self.__process_ack_packet(packet)
-                # Immidiately acknowledge the received data if any
+                # Immediately acknowledge the received data if any
                 if packet.raw_data:
                     self.__transmit_packet(flag_ack=True)
                 # Check if packet acks our FIN
@@ -714,7 +714,7 @@ class TcpSession:
             # Packet sanity check
             if packet.seq == self.rcv_nxt and self.snd_una <= packet.ack <= self.snd_max:
                 self.__process_ack_packet(packet)
-                # Immidiately acknowledge the received data if any
+                # Immediately acknowledge the received data if any
                 if packet.raw_data:
                     self.__transmit_packet(flag_ack=True)
                 return

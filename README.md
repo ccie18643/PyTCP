@@ -27,35 +27,35 @@ I am also working on another TCP/IP stack project that is being programmed in C 
  - ICMPv6 protocol - *echo request, echo reply, port unreachable*
  - ICMPv6 protocol - *Neighbor Discovery, Duplicate Address Detection*
  - ICMPv6 protocol - *Neighbor Discovery cache mechanism*
- - ICMPv6 protocol - *Multicast Listner Discovery v2 (MLDv2) protocol implementation (only messages needed by stack)*
+ - ICMPv6 protocol - *Multicast Listener Discovery v2 (MLDv2) protocol implementation (only messages needed by stack)*
  - UDP protocol - *full support, stack is able to exchange data with other hosts using UDP protocol*
- - UDP sockets - *full support, stack's 'end user' API similar to Berkley sockets*
+ - UDP sockets - *full support, stack's 'end user' API similar to Berkeley sockets*
  - UDP services - *UDP Echo, Discard, Daytime implemented for testing purposes*
  - TCP protocol - *full implementation of TCP Finite State Machine, at this point stack is able to exchange bulk data with other hosts over TCP protocol*
  - TCP protocol - *TCP option support for: MSS, WSCALE, SACKPERM, TIMESTAMP*
  - TCP protocol - *TCP sliding window mechanism with and data retransmission (fast retransmit and time based scenarios)*
  - TCP protocol - *TCP backoff mechanism / basic congestion control*
  - TCP protocol - *TCP SYN/FIN packet retransmission*
- - TCP sockets - *full support, stack's 'end user' API similar to Berkley sockets*
+ - TCP sockets - *full support, stack's 'end user' API similar to Berkeley sockets*
 
 #### Work in progress:
 
  - Stack - *implementing improved packet parser (operating on the same bytes array while parsing all protocols vs creating separate slice per protocol & lazy field parsing with caching vs parsing all fields upfront even if most of them are never read)*
  - Stack - *implementing support for multiple interfaces*
- - Stack - *implementing stack debuging console so certain information about stack components can be displayed on demand by sending commands. eg 'show icmpv6 nd cache', 'show ipv6 route', etc... it should also let run interactive commands like ping or stack's udp/tcp echo clients*
+ - Stack - *implementing stack debugging console so certain information about stack components can be displayed on demand by sending commands. eg 'show icmpv6 nd cache', 'show ipv6 route', etc... it should also let run interactive commands like ping or stack's udp/tcp echo clients*
 
 #### Next steps:
 
  - QUIC protocol - *research and plan for the implementation, this depends on ability to create lab environment for it*
  - IPv6 protocol - *redesign the RA PI option handling and ND prefix auto configuration to properly use A nad L flags, some research also needed on case when different than /64 prefix is being advertised*
  - IPv6 protocol - *implement optional headers*
- - IPv6 protocol - *validate and possibly re-implements certain IPv6 mechanisms/processes acoording to RFC rules*
+ - IPv6 protocol - *validate and possibly re-implements certain IPv6 mechanisms/processes according to RFC rules*
  - IPv6 protocol - *research and implement fragmentation*
- - IPv6 protocol - *research and possibly implement support for ceratin optional IPv6 headers*
+ - IPv6 protocol - *research and possibly implement support for certain optional IPv6 headers*
  - IPv6 protocol - *investigate Hop-by-Hop Options header and its relation to MLD2 Report message, implement if needed for MLD2 to work properly*
- - ICMPv6 protocol - *validate and possibly re-implements certain IPv6 mechanisms/processes acoording to RFC rules*
+ - ICMPv6 protocol - *validate and possibly re-implements certain IPv6 mechanisms/processes according to RFC rules*
  - ICMPv6 protocol - *implement ND Redirect message*
- - ICMPv6 protocol - *Multicast Listner Discovery v2 (MLDv2) full implementation <-- it may be requied by stack to respond to MLD queries*
+ - ICMPv6 protocol - *Multicast Listener Discovery v2 (MLDv2) full implementation <-- it may be required by stack to respond to MLD queries*
  - IPv6 protocol - *ability to route traffic to external destinations via default gateway*
  - TCP protocol - *ongoing effort of improving code and bug fixing while simulating more advanced traffic scenarios*
  - TCP protocol - *proper handling on RST packets in various states, need to do research on this*
@@ -70,8 +70,8 @@ I am also working on another TCP/IP stack project that is being programmed in C 
  - ARP cache - *implement proper FSM*
  - ICMPv6 ND cache - *implement proper FSM*
  - UDP protocol - *need UDP echo client and mechanism to report receiving ICMP Port Unreachable message to UDP socket*
- - UDP sockets - *overhaul is needed to make 'end user' interface match Berkley sockets more closely so 3rd party aps can use it without porting*
- - TCP sockets - *overhaul is needed to make 'end user' interface match Berkley sockets more closely so 3rd party aps can use it without porting*
+ - UDP sockets - *overhaul is needed to make 'end user' interface match Berkeley sockets more closely so 3rd party aps can use it without porting*
+ - TCP sockets - *overhaul is needed to make 'end user' interface match Berkeley sockets more closely so 3rd party aps can use it without porting*
 
 
 ### Examples:
@@ -174,7 +174,7 @@ y assigned by another host so stack cannot us it
 #### ARP Probe/Announcement mechanism
  - stack is using ARP Probes to find any possible conflicts for every IP address that has been configured
  - one of IP addresses (192.168.9.102) is already taken so stack gets notified about it and skips it
- - rest of IP addesses are free so stack claims them by sending ARP Announcement for each of them
+ - rest of IP addresses are free so stack claims them by sending ARP Announcement for each of them
 
 ![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/main/pictures/ip_arp_probe_01.png)
 ![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/main/pictures/ip_arp_probe_02.png)

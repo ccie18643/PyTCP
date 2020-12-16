@@ -57,7 +57,7 @@ class ICMPv6NdCache:
     """ Support for ICMPv6 ND cache operations """
 
     class CacheEntry:
-        """ Container class fo cache entries """
+        """ Container class for cache entries """
 
         def __init__(self, mac_address, permanent=False):
             self.mac_address = mac_address
@@ -121,7 +121,7 @@ class ICMPv6NdCache:
     def __send_icmp6_neighbor_solicitation(self, icmp6_ns_target_address):
         """ Enqueue ICMPv6 Neighbor Solicitation packet with TX ring """
 
-        # Pick apropriate source address
+        # Pick appropriate source address
         ip6_src = IPv6Address("::")
         for ip6_address in self.packet_handler.ip6_address:
             if icmp6_ns_target_address in ip6_address.network:

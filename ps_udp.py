@@ -37,7 +37,7 @@
 
 
 #
-# ps_udp.py - protocol support libary for UDP
+# ps_udp.py - protocol support library for UDP
 #
 
 

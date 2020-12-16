@@ -89,7 +89,7 @@ class PacketHandler:
 
         self.logger = loguru.logger.bind(object_name="packet_handler.")
 
-        # MAC and IPv6 Multicast lists hold duplicate entries by design. This is to accomodate IPv6 Solicited Node Multicast mechanism where multiple
+        # MAC and IPv6 Multicast lists hold duplicate entries by design. This is to accommodate IPv6 Solicited Node Multicast mechanism where multiple
         # IPv6 unicast addresses can be tied to the same SNM address (and the same multicast MAC). This is important when removing one of unicast addresses,
         # so the other ones keep it's SNM entry in multicast list. Its the simplest solution and imho perfectly valid one in this case.
         self.mac_unicast = config.mac_address
@@ -141,7 +141,7 @@ class PacketHandler:
         # Log all the addresses stack will listen on
         self.logger.info(f"Stack listening on unicast MAC address: {self.mac_unicast}")
         self.logger.info(f"Stack listening on multicast MAC addresses: {list(set(self.mac_multicast))}")
-        self.logger.info(f"Stack listening on brodcast MAC address: {self.mac_broadcast}")
+        self.logger.info(f"Stack listening on broadcast MAC address: {self.mac_broadcast}")
 
         if config.ip6_support:
             self.logger.info(f"Stack listening on unicast IPv6 addresses: {[str(_) for _ in self.ip6_unicast]}")
@@ -150,7 +150,7 @@ class PacketHandler:
         if config.ip4_support:
             self.logger.info(f"Stack listening on unicast IPv4 addresses: {[str(_) for _ in self.ip4_unicast]}")
             self.logger.info(f"Stack listening on multicast IPv4 addresses: {[str(_) for _ in self.ip4_multicast]}")
-            self.logger.info(f"Stack listening on brodcast IPv4 addresses: {[str(_) for _ in self.ip4_broadcast]}")
+            self.logger.info(f"Stack listening on broadcast IPv4 addresses: {[str(_) for _ in self.ip4_broadcast]}")
 
     def __thread_packet_handler(self):
         """ Thread picks up incoming packets from RX ring and processes them """
@@ -203,25 +203,25 @@ class PacketHandler:
             try:
                 address = IPv6Interface(address)
             except AddressValueError:
-                self.logger.warning(f"Invalid host address '{address}' format, skiping...")
+                self.logger.warning(f"Invalid host address '{address}' format, skipping...")
                 return None
             if address.is_multicast or address.is_reserved or address.is_loopback or address.is_unspecified:
-                self.logger.warning(f"Invalid host address '{address.ip}' type, skiping...")
+                self.logger.warning(f"Invalid host address '{address.ip}' type, skipping...")
                 return None
             if address.ip in [_.ip for _ in valid_address_candidate]:
-                self.logger.warning(f"Duplicate host address '{address.ip}' configured, skiping...")
+                self.logger.warning(f"Duplicate host address '{address.ip}' configured, skipping...")
                 return None
             if gateway is not None:
                 try:
                     gateway = IPv6Address(gateway)
                     if not (gateway.is_link_local or (gateway in address.network and gateway != address.ip)):
-                        self.logger.warning(f"Invalid gateway '{gateway}' configured for interface address '{address}', skiping...")
+                        self.logger.warning(f"Invalid gateway '{gateway}' configured for interface address '{address}', skipping...")
                         gateway = None
                 except AddressValueError:
-                    self.logger.warning(f"Invalid gateway '{gateway}' format configured for interface address '{address}' skiping...")
+                    self.logger.warning(f"Invalid gateway '{gateway}' format configured for interface address '{address}' skipping...")
                     gateway = None
             if address.is_link_local and gateway is not None:
-                self.logger.warning("Gateway cannot be configured for link local address skiping...")
+                self.logger.warning("Gateway cannot be configured for link local address skipping...")
                 gateway = None
             address.gateway = gateway
             valid_address_candidate.append(address)
@@ -235,7 +235,7 @@ class PacketHandler:
         def __(ip6_address):
             if self.perform_ip6_nd_dad(ip6_address.ip):
                 self.assign_ip6_address(ip6_address)
-                self.logger.debug(f"Succesfully claimed IPv6 address {ip6_address}")
+                self.logger.debug(f"Successfully claimed IPv6 address {ip6_address}")
             else:
                 self.logger.warning(f"Unable to claim IPv6 address {ip6_address}")
 
@@ -245,7 +245,7 @@ class PacketHandler:
                 self.ip6_address_candidate.remove(ip6_address)
                 __(ip6_address)
 
-        # Configure Link Local address automaticaly
+        # Configure Link Local address automatically
         if config.ip6_lla_autoconfig:
             ip6_address = IPv6Network("fe80::/64").eui64(self.mac_unicast)
             ip6_address.gateway = None
@@ -282,25 +282,25 @@ class PacketHandler:
             try:
                 address = IPv4Interface(address)
             except AddressValueError:
-                self.logger.warning(f"Invalid host address '{address}' format, skiping...")
+                self.logger.warning(f"Invalid host address '{address}' format, skipping...")
                 continue
             if address.is_multicast or address.is_reserved or address.is_loopback or address.is_unspecified:
-                self.logger.warning(f"Invalid host address '{address.ip}' type, skiping...")
+                self.logger.warning(f"Invalid host address '{address.ip}' type, skipping...")
                 continue
             if address.ip == address.network_address or address.ip == address.broadcast_address:
-                self.logger.warning(f"Invalid host address '{address.ip}' configured for network '{address.network}', skiping...")
+                self.logger.warning(f"Invalid host address '{address.ip}' configured for network '{address.network}', skipping...")
                 continue
             if address.ip in [_.ip for _ in valid_address_candidate]:
-                self.logger.warning(f"Duplicate host address '{address.ip}' configured, skiping...")
+                self.logger.warning(f"Duplicate host address '{address.ip}' configured, skipping...")
                 continue
             if gateway is not None:
                 try:
                     gateway = IPv4Address(gateway)
                     if gateway not in address.network or gateway == address.network_address or gateway == address.broadcast_address or gateway == address.ip:
-                        self.logger.warning(f"Invalid gateway '{gateway}' configured for interface address '{address}', skiping...")
+                        self.logger.warning(f"Invalid gateway '{gateway}' configured for interface address '{address}', skipping...")
                         gateway = None
                 except AddressValueError:
-                    self.logger.warning(f"Invalid gateway '{gateway}' format configured for interface address '{address}' skiping...")
+                    self.logger.warning(f"Invalid gateway '{gateway}' format configured for interface address '{address}' skipping...")
                     gateway = None
             address.gateway = gateway
             valid_address_candidate.append(address)
@@ -327,7 +327,7 @@ class PacketHandler:
             if ip4_address.ip not in self.arp_probe_unicast_conflict:
                 self.ip4_address.append(ip4_address)
                 self.send_arp_announcement(ip4_address.ip)
-                self.logger.debug(f"Succesfully claimed IPv4 address {ip4_unicast}")
+                self.logger.debug(f"Successfully claimed IPv4 address {ip4_unicast}")
 
         # If don't have any IPv4 address assigned disable IPv4 protocol operations
         if not self.ip4_address:
@@ -381,7 +381,7 @@ class PacketHandler:
         """ Send out ICMPv6 Multicast Listener Report for given list of addresses """
 
         # Need to use set here to avoid re-using duplicate multicast entries from stack_ip6_multicast list,
-        # also All Multicast Nodes address is not being advertised as this is not neccessary
+        # also All Multicast Nodes address is not being advertised as this is not necessary
         if icmp6_mlr2_multicast_address_record := {
             ps_icmp6.MulticastAddressRecord(record_type=ps_icmp6.ICMP6_MART_CHANGE_TO_EXCLUDE, multicast_address=str(_))
             for _ in self.ip6_multicast

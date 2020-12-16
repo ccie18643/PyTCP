@@ -84,7 +84,7 @@ def phrx_udp(self, ip_packet_rx, udp_packet_rx):
     # Silently drop packet if it has all zero source IP address
     if ip_packet_rx.ip_src in {IPv4Address("0.0.0.0"), IPv6Address("::")}:
         self.logger.debug(
-            f"Received UDP packet from {ip_packet_rx.ip_src}, port {udp_packet_rx.udp_sport} to {ip_packet_rx.ip_dst}, port {udp_packet_rx.udp_dport}, droping"
+            f"Received UDP packet from {ip_packet_rx.ip_src}, port {udp_packet_rx.udp_sport} to {ip_packet_rx.ip_dst}, port {udp_packet_rx.udp_dport}, dropping"
         )
         return
 
