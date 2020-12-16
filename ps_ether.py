@@ -43,11 +43,6 @@
 
 import struct
 
-import loguru
-
-import config
-from tracker import Tracker
-
 # Ethernet packet header
 
 # +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
@@ -124,4 +119,3 @@ class EtherPacket:
         """ Get packet in raw format ready to be sent out """
 
         return self.raw_packet
-

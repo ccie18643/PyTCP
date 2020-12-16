@@ -43,9 +43,6 @@
 
 import struct
 
-import loguru
-
-import config
 from ip_helper import inet_cksum
 from tracker import Tracker
 

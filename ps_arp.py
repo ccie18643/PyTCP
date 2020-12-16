@@ -43,9 +43,6 @@
 
 import struct
 
-import loguru
-
-import config
 from ipv4_address import IPv4Address
 from tracker import Tracker
 
@@ -135,4 +132,3 @@ class ArpPacket:
         """ Get packet in raw format ready to be processed by lower level protocol """
 
         return self.raw_packet
-

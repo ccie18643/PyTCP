@@ -43,9 +43,6 @@
 
 import struct
 
-import loguru
-
-import config
 from ip_helper import inet_cksum
 from tracker import Tracker
 
@@ -199,4 +196,3 @@ class Icmp4Packet:
         """ Validate packet checksum """
 
         return not bool(inet_cksum(self.raw_packet))
-

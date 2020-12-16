@@ -56,33 +56,20 @@ class RxRing:
         self.tap = tap
         self.rx_ring = []
         self.logger = loguru.logger.bind(object_name="rx_ring.")
-
         self.packet_enqueued = threading.Semaphore(0)
 
         threading.Thread(target=self.__thread_receive).start()
         self.logger.debug("Started RX ring")
 
-    def __enqueue(self, packet_rx):
-        """ Enqueue packet for further processing """
-
-        self.rx_ring.append(packet_rx)
-        ### self.logger.opt(ansi=True).debug(f"{ether_packet_rx.tracker}, priority: Normal, queue len: {len(self.rx_ring)}")
-
-        self.packet_enqueued.release()
-
     def __thread_receive(self):
         """ Thread responsible for receiving and enqueuing incoming packets """
 
         while True:
-
-            # Wait till there is any packet coming and pick it up
-            raw_data = os.read(self.tap, 2048)
-            ### self.logger.opt(ansi=True).debug(f"<green>[RX]</green> {ether_packet_rx.tracker} - {len(ether_packet_rx)} bytes")
-            self.__enqueue(raw_data)
+            self.rx_ring.append(os.read(self.tap, 2048))
+            self.packet_enqueued.release()
 
     def dequeue(self):
         """ Dequeue inboutd packet from RX ring """
 
         self.packet_enqueued.acquire()
-
         return self.rx_ring.pop(0)

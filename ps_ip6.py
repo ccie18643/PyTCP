@@ -43,8 +43,6 @@
 
 import struct
 
-import loguru
-
 import config
 from ipv6_address import IPv6Address
 
@@ -231,4 +229,3 @@ class Ip6Packet:
         """ Get packet in raw format ready to be processed by lower level protocol """
 
         return self.raw_packet
-

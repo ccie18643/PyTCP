@@ -43,9 +43,6 @@
 
 import struct
 
-import loguru
-
-import config
 from ip_helper import inet_cksum
 from tracker import Tracker
 
@@ -68,7 +65,7 @@ class UdpPacket:
 
     def __init__(self, udp_sport=None, udp_dport=None, raw_data=None, echo_tracker=None):
         """ Class constructor """
-            
+
         self.tracker = Tracker("TX", echo_tracker)
 
         self.udp_sport = udp_sport
@@ -115,4 +112,3 @@ class UdpPacket:
             return True
 
         return not bool(inet_cksum(ip_pseudo_header + self.raw_packet))
-

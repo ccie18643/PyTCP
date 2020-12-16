@@ -43,9 +43,6 @@
 
 import struct
 
-import loguru
-
-import config
 from ip_helper import inet_cksum
 from ipv6_address import IPv6Address, IPv6Network
 from tracker import Tracker

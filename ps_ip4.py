@@ -43,8 +43,6 @@
 
 import struct
 
-import loguru
-
 import config
 from ip_helper import inet_cksum
 from ipv4_address import IPv4Address

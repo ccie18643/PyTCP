@@ -42,10 +42,9 @@
 
 
 import ps_ether
-import ps_ip4
-import ps_ip6
-from ipv6_address import IPv6Address
 from ipv4_address import IPv4Address
+from ipv6_address import IPv6Address
+
 
 def phtx_ether(self, child_packet, ether_src="00:00:00:00:00:00", ether_dst="00:00:00:00:00:00"):
     """ Handle outbound Ethernet packets """
@@ -88,8 +87,7 @@ def phtx_ether(self, child_packet, ether_src="00:00:00:00:00:00", ether_dst="00:
                 if mac_address := self.icmp6_nd_cache.find_entry(stack_ip6_address.gateway):
                     ether_packet_tx.ether_dst = mac_address
                     self.logger.debug(
-                        f"{ether_packet_tx.tracker} - Resolved destination IPv6 {ip6_dst}"
-                        + f" to Default Gateway MAC {ether_packet_tx.ether_dst}"
+                        f"{ether_packet_tx.tracker} - Resolved destination IPv6 {ip6_dst}" + f" to Default Gateway MAC {ether_packet_tx.ether_dst}"
                     )
                     __send_out_packet()
                     return
@@ -131,8 +129,7 @@ def phtx_ether(self, child_packet, ether_src="00:00:00:00:00:00", ether_dst="00:
                 if mac_address := self.arp_cache.find_entry(stack_ip4_address.gateway):
                     ether_packet_tx.ether_dst = mac_address
                     self.logger.debug(
-                        f"{ether_packet_tx.tracker} - Resolved destination IPv4 {ip4_dst}"
-                        + f" to Default Gateway MAC {ether_packet_tx.ether_dst}"
+                        f"{ether_packet_tx.tracker} - Resolved destination IPv4 {ip4_dst}" + f" to Default Gateway MAC {ether_packet_tx.ether_dst}"
                     )
                     __send_out_packet()
                     return
