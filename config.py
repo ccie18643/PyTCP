@@ -48,9 +48,9 @@ interface = b"tap7"
 ip6_support = True
 ip4_support = True
 
-# Packet integrity sanity check, if enabled it protects the potocol parsers from being exposed to malformed or malicious packets
-# that could cause them to crash during packet parsing. It progessively check apropriate lenght fields and ensure they are set within sane boundries.
-# It also checks packet's actuall header/options/data lenghts against above values and default minimum/maximum lenghts for given protocol.
+# Packet integrity sanity check, if enabled it protects the protocol parsers from being exposed to malformed or malicious packets
+# that could cause them to crash during packet parsing. It progessively check appropriate length fields and ensure they are set within sane boundaries.
+# It also checks packet's actual header/options/data lengths against above values and default minimum/maximum lengths for given protocol.
 # Also packet options (if any) are checked in similar fashion to ensure they will not exploit or crash parser.
 packet_integrity_check = True
 
@@ -77,8 +77,8 @@ ip6_default_hop = 64
 ip4_default_ttl = 64
 
 # Static IPv6 adrsses may to be configured here (they will still be subject to CICMPv6 ND DAD  mechanism)
-# Each entry is a tuple interface address/prefix length and second is defaut gateway for this subnet
-# Basic routing is implmented and each subnet can have its own gateway
+# Each entry is a tuple interface address/prefix length and second is default gateway for this subnet
+# Basic routing is implemented and each subnet can have its own gateway
 # Link local addresses should have default gateway set to 'None'
 ip6_address_candidate = [
     ("FE80::7/64", None),
@@ -97,8 +97,8 @@ ip6_address_candidate = [
 ip4_address_dhcp_config = True
 
 # Static IPv4 adrsses may to be configured here (they will still be subject to ARP Probe/Announcement mechanism)
-# Each entry is a tuple interface address/prefix length and second is defaut gateway for this subnet
-# Basic routing is implmented and each subnet can have its own gateway
+# Each entry is a tuple interface address/prefix length and second is default gateway for this subnet
+# Basic routing is implemented and each subnet can have its own gateway
 ip4_address_candidate = [
     ("192.168.9.7/24", "192.168.9.1"),
     # ("192.168.9.77/24", "192.168.9.1"),
@@ -129,8 +129,8 @@ mtu = 1500  # TAP interface MTU
 local_tcp_mss = 1460  # Maximum segment peer can send to us
 local_tcp_win = 65535  # Maximum amount of data peer can send to us without confirmation
 
-# Test services, for detailed configuation of each reffer to pytcp.py and respective service/client file
-# Those are being used for testing various stack components are therefore their 'default' funcionality may be altered fro specific tst needs
+# Test services, for detailed configuration of each reffer to pytcp.py and respective service/client file
+# Those are being used for testing various stack components are therefore their 'default' funcionality may be altered for specific test needs
 # Eg. TCP daytime service generates large amount of text data used to verify TCP protocol funcionality
 service_udp_echo = True
 service_udp_discard = True

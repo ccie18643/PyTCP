@@ -52,7 +52,7 @@ def phrx_ether(self, packet_rx):
 
     # Check if received packet matches any of stack MAC addresses
     if packet_rx.ether.dst not in {self.mac_unicast, *self.mac_multicast, self.mac_broadcast}:
-        self.logger.opt(ansi=True).debug(f"{packet_rx.tracker} - Ethernet packet not destined for this stack, droping...")
+        self.logger.opt(ansi=True).debug(f"{packet_rx.tracker} - Ethernet packet not destined for this stack, dropping...")
         return
 
     if packet_rx.ether.type == ps_ether.ETHER_TYPE_ARP and config.ip4_support:

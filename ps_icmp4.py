@@ -37,7 +37,7 @@
 
 
 #
-# ps_icmp4.py - protocol support libary for ICMPv4
+# ps_icmp4.py - protocol support library for ICMPv4
 #
 
 

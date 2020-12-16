@@ -37,7 +37,7 @@
 
 
 #
-# ps_ethernet.py - protocol suppot libary for Ethernet
+# ps_ethernet.py - protocol suppot library for Ethernet
 #
 
 
@@ -121,7 +121,7 @@ class EtherPacket:
         return self.raw_header + self.raw_data
 
     def get_raw_packet(self):
-        """ Get packet in raw frmat ready to be sent out """
+        """ Get packet in raw format ready to be sent out """
 
         return self.raw_packet
 

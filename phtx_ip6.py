@@ -119,5 +119,5 @@ def phtx_ip6(self, child_packet, ip6_dst, ip6_src, ip6_hop=config.ip6_default_ho
         return
 
     # Fragment packet and send all fragments out *** Need to add this functionality ***
-    self.logger.debug("Packet exceedes available MTU, IPv6 fragmentation needed... droping...")
+    self.logger.debug("Packet exceedes available MTU, IPv6 fragmentation needed... dropping...")
     return

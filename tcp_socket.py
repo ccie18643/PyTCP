@@ -89,7 +89,7 @@ class TcpSocket:
         self.logger.debug(f"{self.socket_id} - Socket bound to local address")
 
     def listen(self):
-        """ Starts to listen for incomming connections """
+        """ Starts to listen for incoming connections """
 
         self.remote_ip_address = "*"
         self.remote_port = "*"

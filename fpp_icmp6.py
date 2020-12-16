@@ -698,7 +698,7 @@ class Icmp6Packet:
                     return "ICMPv6 integrity - wrong packet length (III)"
                 optr += 20 + self._frame[optr + 1] + struct.unpack("! H", self._frame[optr + 2 : optr + 4])[0] * 16
             if optr != len(self._frame):
-                return "ICMPv6 integrity - wrong packet lenght (IV)"
+                return "ICMPv6 integrity - wrong packet length (IV)"
 
         return False
 
@@ -909,7 +909,7 @@ class MulticastAddressRecord:
     """ Multicast Address Record used by MLDv2 Report message """
 
     def __init__(self, raw_record=None, record_type=None, multicast_address=None, source_address=None, aux_data=b""):
-        """ Class constuctor """
+        """ Class constructor """
 
         # Record parsing
         if raw_record:

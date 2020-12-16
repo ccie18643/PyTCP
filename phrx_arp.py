@@ -72,7 +72,7 @@ def phrx_arp(self, packet_rx):
                 echo_tracker=packet_rx.tracker,
             )
 
-            # Update ARP cache with the maping learned from the received ARP request that was destined to this stack
+            # Update ARP cache with the mapping learned from the received ARP request that was destined to this stack
             if ARP_CACHE_UPDATE_FROM_DIRECT_REQUEST:
                 self.logger.debug(f"Adding/refreshing ARP cache entry from direct request - {packet_rx.arp.spa} -> {packet_rx.arp.sha}")
                 self.arp_cache.add_entry(packet_rx.arp.spa, packet_rx.arp.sha)
@@ -92,13 +92,13 @@ def phrx_arp(self, packet_rx):
                 self.arp_probe_unicast_conflict.add(packet_rx.arp.spa)
                 return
 
-        # Update ARP cache with maping received as direct ARP reply
+        # Update ARP cache with mapping received as direct ARP reply
         if packet_rx.ether.dst == self.mac_unicast:
             self.logger.debug(f"Adding/refreshing ARP cache entry from direct reply - {packet_rx.arp.spa} -> {packet_rx.arp.sha}")
             self.arp_cache.add_entry(packet_rx.arp.spa, packet_rx.arp.sha)
             return
 
-        # Update ARP cache with maping received as gratuitous ARP reply
+        # Update ARP cache with mapping received as gratuitous ARP reply
         if packet_rx.ether.dst == "ff:ff:ff:ff:ff:ff" and packet_rx.arp.spa == packet_rx.arp.tpa and ARP_CACHE_UPDATE_FROM_GRATUITOUS_REPLY:
             self.logger.debug(f"Adding/refreshing ARP cache entry from gratuitous reply - {packet_rx.arp.spa} -> {packet_rx.arp.sha}")
             self.arp_cache.add_entry(packet_rx.arp.spa, packet_rx.arp.sha)

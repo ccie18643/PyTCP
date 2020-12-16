@@ -67,7 +67,7 @@ class TxRing:
         """ Dequeue packet from TX ring """
 
         while True:
-            # Wait till packets is avaiable int he queue the pick it up
+            # Wait till packets is available int he queue the pick it up
             self.packet_enqueued.acquire()
             ether_packet_tx = self.tx_ring.pop(0)
             self.logger.opt(ansi=True).debug(f"{ether_packet_tx.tracker}")
@@ -90,6 +90,6 @@ class TxRing:
 
         else:
             self.tx_ring.append(ether_packet_tx)
-            self.logger.opt(ansi=True).debug(f"{ether_packet_tx.tracker}, priorty: Normal, queue len: {len(self.tx_ring)}")
+            self.logger.opt(ansi=True).debug(f"{ether_packet_tx.tracker}, priority: Normal, queue len: {len(self.tx_ring)}")
 
         self.packet_enqueued.release()

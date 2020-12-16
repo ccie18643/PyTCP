@@ -37,7 +37,7 @@
 
 
 #
-# ps_ip6.py - protocol support libary for IPv6
+# ps_ip6.py - protocol support library for IPv6
 #
 
 

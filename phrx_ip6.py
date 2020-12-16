@@ -51,7 +51,7 @@ def phrx_ip6(self, packet_rx):
 
     # Check if received packet has been sent to us directly or by unicast or multicast
     if packet_rx.ip6.dst not in {*self.ip6_unicast, *self.ip6_multicast}:
-        self.logger.debug(f"{packet_rx.tracker} - IP packet not destined for this stack, droping...")
+        self.logger.debug(f"{packet_rx.tracker} - IP packet not destined for this stack, dropping...")
         return
 
     if packet_rx.ip6.next == ps_ip6.IP6_NEXT_HEADER_ICMP6:

@@ -37,7 +37,7 @@
 
 
 #
-# ps_tct.py - protocol support libary for TCP
+# ps_tct.py - protocol support library for TCP
 #
 
 

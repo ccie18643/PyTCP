@@ -37,7 +37,7 @@
 
 
 #
-# ps_icmp6.py - protocol support libary for ICMPv6
+# ps_icmp6.py - protocol support library for ICMPv6
 #
 
 
@@ -778,7 +778,7 @@ class MulticastAddressRecord:
     """ Multicast Address Record used by MLDv2 Report message """
 
     def __init__(self, raw_record=None, record_type=None, multicast_address=None, source_address=None, aux_data=b""):
-        """ Class constuctor """
+        """ Class constructor """
 
         # Record parsing
         if raw_record:

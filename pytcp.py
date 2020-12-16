@@ -105,7 +105,7 @@ def main():
     Timer()
     PacketHandler(tap)
 
-    # Set proper local IP address pattern for services depending on whch version of IP is enabled
+    # Set proper local IP address pattern for services depending on which version of IP is enabled
     if config.ip6_support and config.ip4_support:
         local_ip_address = "*"
     elif config.ip6_support:
@@ -140,11 +140,11 @@ def main():
 
     # Initialize ICMP test client
     if config.client_icmp_echo:
-        # Same subnet, source addess specified
+        # Same subnet, source address specified
         # ClientIcmpEcho(local_ip_address="fdd1:c296:f24f:9:0:ff:fe77:7777", remote_ip_address="fdd1:c296:f24f:9:5054:ff:fedf:8537", message_count=10)
         # ClientIcmpEcho(local_ip_address="fe80::7", remote_ip_address="fe80::5054:ff:fe8b:aa9", message_count=10)
 
-        # Same subnet, source addess not specified
+        # Same subnet, source address not specified
         # ClientIcmpEcho(local_ip_address="::", remote_ip_address="fdd1:c296:f24f:9:5054:ff:fe8b:aa9", message_count=10)
         # ClientIcmpEcho(local_ip_address="::", remote_ip_address="fe80::5054:ff:fe8b:aa9", message_count=10)
 

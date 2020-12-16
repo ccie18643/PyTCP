@@ -37,7 +37,7 @@
 
 
 #
-# ps_ip4.py - protocol support libary for IPv4
+# ps_ip4.py - protocol support library for IPv4
 #
 
 

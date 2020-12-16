@@ -52,7 +52,7 @@ from ipv4_address import IPv4Address
 def validate_src_ip4_address(self, ip4_src, ip4_dst):
     """ Make sure source ip address is valid, supplemt with valid one as appropriate """
 
-    # Check if the the source IP address belongs to this stack or its set to all zeros (for DHCP client comunication)
+    # Check if the the source IP address belongs to this stack or its set to all zeros (for DHCP client communication)
     if ip4_src not in {*self.ip4_unicast, *self.ip4_multicast, *self.ip4_broadcast, IPv4Address("0.0.0.0")}:
         self.logger.warning(f"Unable to sent out IPv4 packet, stack doesn't own IPv4 address {ip4_src}")
         return None
@@ -80,7 +80,7 @@ def validate_src_ip4_address(self, ip4_src, ip4_dst):
         ip4_src = [_.ip for _ in self.ip4_address if _.broadcast_address == ip4_src]
         if ip4_src:
             ip4_src = ip4_src[0]
-            self.logger.debug(f"Packet is response to directed broadcast, replaced source with apropriate IPv4 address {ip4_src}")
+            self.logger.debug(f"Packet is response to directed broadcast, replaced source with appropriate IPv4 address {ip4_src}")
         else:
             self.logger.warning("Unable to sent out IPv4 packet, no appropriate stack unicast IPv4 address available")
             return None
