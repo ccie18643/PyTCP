@@ -45,7 +45,7 @@ import ps_icmp6
 from ipv6_address import IPv6Address
 
 
-def phrx_icmp6(self, packet_rx):
+def _phrx_icmp6(self, packet_rx):
     """ Handle inbound ICMPv6 packets """
 
     self.logger.opt(ansi=True).info(f"<green>{packet_rx.tracker}</green> - {packet_rx.icmp6}")
@@ -70,7 +70,7 @@ def phrx_icmp6(self, packet_rx):
         ip6_nd_dad = packet_rx.ip6.src.is_unspecified
 
         # Send response
-        self.phtx_icmp6(
+        self._phtx_icmp6(
             ip6_src=packet_rx.icmp6.ns_target_address,
             ip6_dst=IPv6Address("ff02::1") if ip6_nd_dad else packet_rx.ip6.src,  # use ff02::1 destination addriess when responding to DAD equest
             ip6_hop=255,
@@ -121,7 +121,7 @@ def phrx_icmp6(self, packet_rx):
     if packet_rx.icmp6.type == ps_icmp6.ICMP6_ECHO_REQUEST:
         self.logger.debug(f"Received ICMPv6 Echo Request packet from {packet_rx.ip6.src}, sending reply")
 
-        self.phtx_icmp6(
+        self._phtx_icmp6(
             ip6_src=packet_rx.ip6.dst,
             ip6_dst=packet_rx.ip6.src,
             ip6_hop=255,

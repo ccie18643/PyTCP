@@ -45,7 +45,7 @@ import config
 import ps_icmp4
 
 
-def phtx_icmp4(
+def _phtx_icmp4(
     self,
     ip4_src,
     ip4_dst,
@@ -74,4 +74,4 @@ def phtx_icmp4(
     )
 
     self.logger.opt(ansi=True).info(f"<magenta>{icmp4_packet_tx.tracker}</magenta> - {icmp4_packet_tx}")
-    self.phtx_ip4(ip4_src=ip4_src, ip4_dst=ip4_dst, child_packet=icmp4_packet_tx)
+    self._phtx_ip4(ip4_src=ip4_src, ip4_dst=ip4_dst, child_packet=icmp4_packet_tx)

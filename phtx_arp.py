@@ -45,7 +45,7 @@ import config
 import ps_arp
 
 
-def phtx_arp(self, ether_src, ether_dst, arp_oper, arp_sha, arp_spa, arp_tha, arp_tpa, echo_tracker=None):
+def _phtx_arp(self, ether_src, ether_dst, arp_oper, arp_sha, arp_spa, arp_tha, arp_tpa, echo_tracker=None):
     """ Handle outbound ARP packets """
 
     # Check if IPv4 protocol support is enabled, if not then silently drop the packet
@@ -63,4 +63,4 @@ def phtx_arp(self, ether_src, ether_dst, arp_oper, arp_sha, arp_spa, arp_tha, ar
 
     self.logger.opt(ansi=True).info(f"<magenta>{arp_packet_tx.tracker}</magenta> - {arp_packet_tx}")
 
-    self.phtx_ether(ether_src=ether_src, ether_dst=ether_dst, child_packet=arp_packet_tx)
+    self._phtx_ether(ether_src=ether_src, ether_dst=ether_dst, child_packet=arp_packet_tx)

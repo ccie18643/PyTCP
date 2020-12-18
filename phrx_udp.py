@@ -51,7 +51,7 @@ from ipv6_address import IPv6Address
 from udp_metadata import UdpMetadata
 
 
-def phrx_udp(self, packet_rx):
+def _phrx_udp(self, packet_rx):
     """ Handle inbound UDP packets """
 
     self.logger.opt(ansi=True).info(f"<green>{packet_rx.tracker}</green> - {packet_rx.udp}")
@@ -84,7 +84,7 @@ def phrx_udp(self, packet_rx):
     self.logger.debug(f"Received UDP packet from {packet_rx.ip.src} to closed port {packet_rx.udp.dport}, sending ICMPv4 Port Unreachable")
 
     if packet_rx.ip.ver == 6:
-        self.phtx_icmp6(
+        self._phtx_icmp6(
             ip6_src=packet_rx.ip6.dst,
             ip6_dst=packet_rx.ip6.src,
             icmp6_type=ps_icmp6.ICMP6_UNREACHABLE,
@@ -94,7 +94,7 @@ def phrx_udp(self, packet_rx):
         )
 
     if packet_rx.ip.ver == 4:
-        self.phtx_icmp4(
+        self._phtx_icmp4(
             ip4_src=packet_rx.ip.dst,
             ip4_dst=packet_rx.ip.src,
             icmp4_type=ps_icmp4.ICMP4_UNREACHABLE,

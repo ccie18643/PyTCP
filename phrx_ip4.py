@@ -85,7 +85,7 @@ def handle_ip4_fragmentation(packet_rx):
 '''
 
 
-def phrx_ip4(self, packet_rx):
+def _phrx_ip4(self, packet_rx):
     """ Handle inbound IP packets """
 
     self.logger.debug(f"{packet_rx.tracker} - {packet_rx.ip4}")
@@ -101,13 +101,13 @@ def phrx_ip4(self, packet_rx):
     #    return
 
     if packet_rx.ip4.proto == ps_ip4.IP4_PROTO_ICMP4:
-        self.phrx_icmp4(packet_rx)
+        self._phrx_icmp4(packet_rx)
         return
 
     if packet_rx.ip4.proto == ps_ip4.IP4_PROTO_UDP:
-        self.phrx_udp(packet_rx)
+        self._phrx_udp(packet_rx)
         return
 
     if packet_rx.ip4.proto == ps_ip4.IP4_PROTO_TCP:
-        self.phrx_tcp(packet_rx)
+        self._phrx_tcp(packet_rx)
         return

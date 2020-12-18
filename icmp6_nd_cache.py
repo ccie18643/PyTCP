@@ -75,11 +75,11 @@ class ICMPv6NdCache:
         self.logger = loguru.logger.bind(object_name="icmp6_nd_cache.")
 
         # Setup timer to execute ND Cache maintainer every second
-        stack.timer.register_method(method=self.maintain_cache, delay=1000)
+        stack.timer.register_method(method=self._maintain_cache, delay=1000)
 
         self.logger.debug("Started ICMPv6 Neighbor Discovery cache")
 
-    def maintain_cache(self):
+    def _maintain_cache(self):
         """ Method responsible for maintaining ND cache entries """
 
         for ip6_address in list(self.nd_cache):
@@ -96,7 +96,7 @@ class ICMPv6NdCache:
             # If entry age is close to maximum age but the entry has been used since last refresh then send out request in attempt to refresh it
             elif (time.time() - self.nd_cache[ip6_address].creation_time > ND_ENTRY_MAX_AGE - ND_ENTRY_REFRESH_TIME) and self.nd_cache[ip6_address].hit_count:
                 self.nd_cache[ip6_address].hit_count = 0
-                self.__send_icmp6_neighbor_solicitation(ip6_address)
+                self._send_icmp6_neighbor_solicitation(ip6_address)
                 self.logger.debug(f"Trying to refresh expiring ICMPv6 ND cache entry for {ip6_address} -> {self.nd_cache[ip6_address].mac_address}")
 
     def add_entry(self, ip6_address, mac_address):
@@ -115,10 +115,10 @@ class ICMPv6NdCache:
             return nd_entry.mac_address
 
         self.logger.debug(f"Unable to find entry for {ip6_address}, sending ICMPv6 Neighbor Solicitation message")
-        self.__send_icmp6_neighbor_solicitation(ip6_address)
+        self._send_icmp6_neighbor_solicitation(ip6_address)
         return None
 
-    def __send_icmp6_neighbor_solicitation(self, icmp6_ns_target_address):
+    def _send_icmp6_neighbor_solicitation(self, icmp6_ns_target_address):
         """ Enqueue ICMPv6 Neighbor Solicitation packet with TX ring """
 
         # Pick appropriate source address
@@ -128,7 +128,7 @@ class ICMPv6NdCache:
                 ip6_src = ip6_address.ip
 
         # Send out ND Solicitation message
-        self.packet_handler.phtx_icmp6(
+        self.packet_handler._phtx_icmp6(
             ip6_src=ip6_src,
             ip6_dst=icmp6_ns_target_address.solicited_node_multicast,
             ip6_hop=255,

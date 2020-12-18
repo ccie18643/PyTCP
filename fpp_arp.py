@@ -89,7 +89,6 @@ class ArpPacket:
             return f"ARP request {self.spa} / {self.sha} > {self.tpa} / {self.tha}"
         if self.oper == ARP_OP_REPLY:
             return f"ARP reply {self.spa} / {self.sha} > {self.tpa} / {self.tha}"
-        return f"ARP unknown operation {self.oper}"
 
     def __len__(self):
         """ Packet length """

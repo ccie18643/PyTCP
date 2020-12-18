@@ -111,7 +111,7 @@ def validate_dst_ip4_address(self, ip4_dst):
     return ip4_dst
 
 
-def phtx_ip4(self, child_packet, ip4_dst, ip4_src, ip4_ttl=config.ip4_default_ttl):
+def _phtx_ip4(self, child_packet, ip4_dst, ip4_src, ip4_ttl=config.ip4_default_ttl):
     """ Handle outbound IP packets """
 
     # Check if IPv4 protocol support is enabled, if not then silently drop the packet
@@ -142,7 +142,7 @@ def phtx_ip4(self, child_packet, ip4_dst, ip4_src, ip4_ttl=config.ip4_default_tt
         ip4_packet_tx = ps_ip4.Ip4Packet(ip4_src=ip4_src, ip4_dst=ip4_dst, ip4_packet_id=self.ip4_packet_id, child_packet=child_packet)
 
         self.logger.debug(f"{ip4_packet_tx.tracker} - {ip4_packet_tx}")
-        self.phtx_ether(child_packet=ip4_packet_tx)
+        self._phtx_ether(child_packet=ip4_packet_tx)
         return
 
     # Fragment packet and send all fragments out
@@ -187,6 +187,6 @@ def phtx_ip4(self, child_packet, ip4_dst, ip4_src, ip4_ttl=config.ip4_default_tt
         offset += len(raw_data_fragment)
 
         self.logger.debug(f"{ip4_packet_tx.tracker} - {ip4_packet_tx}")
-        self.phtx_ether(child_packet=ip4_packet_tx)
+        self._phtx_ether(child_packet=ip4_packet_tx)
 
     return

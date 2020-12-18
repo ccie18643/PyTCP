@@ -75,11 +75,11 @@ class ArpCache:
         self.logger = loguru.logger.bind(object_name="arp_cache.")
 
         # Setup timer to execute ARP Cache maintainer every second
-        stack.timer.register_method(method=self.maintain_cache, delay=1000)
+        stack.timer.register_method(method=self._maintain_cache, delay=1000)
 
         self.logger.debug("Started ARP cache")
 
-    def maintain_cache(self):
+    def _maintain_cache(self):
         """ Method responsible for maintaining ARP cache entries """
 
         for ip4_address in list(self.arp_cache):
@@ -98,7 +98,7 @@ class ArpCache:
                 ip4_address
             ].hit_count:
                 self.arp_cache[ip4_address].hit_count = 0
-                self.__send_arp_request(ip4_address)
+                self._send_arp_request(ip4_address)
                 self.logger.debug(f"Trying to refresh expiring ARP cache entry for {ip4_address} -> {self.arp_cache[ip4_address].mac_address}")
 
     def add_entry(self, ip4_address, mac_address):
@@ -117,13 +117,13 @@ class ArpCache:
             return arp_entry.mac_address
 
         self.logger.debug(f"Unable to find entry for {ip4_address}, sending ARP request")
-        self.__send_arp_request(ip4_address)
+        self._send_arp_request(ip4_address)
         return None
 
-    def __send_arp_request(self, arp_tpa):
+    def _send_arp_request(self, arp_tpa):
         """ Enqueue ARP request packet with TX ring """
 
-        self.packet_handler.phtx_arp(
+        self.packet_handler._phtx_arp(
             ether_src=self.packet_handler.mac_unicast,
             ether_dst="ff:ff:ff:ff:ff:ff",
             arp_oper=ps_arp.ARP_OP_REQUEST,

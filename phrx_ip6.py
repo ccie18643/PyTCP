@@ -44,7 +44,7 @@
 import ps_ip6
 
 
-def phrx_ip6(self, packet_rx):
+def _phrx_ip6(self, packet_rx):
     """ Handle inbound IP packets """
 
     self.logger.debug(f"{packet_rx.tracker} - {packet_rx.ip6}")
@@ -55,13 +55,13 @@ def phrx_ip6(self, packet_rx):
         return
 
     if packet_rx.ip6.next == ps_ip6.IP6_NEXT_HEADER_ICMP6:
-        self.phrx_icmp6(packet_rx)
+        self._phrx_icmp6(packet_rx)
         return
 
     if packet_rx.ip6.next == ps_ip6.IP6_NEXT_HEADER_UDP:
-        self.phrx_udp(packet_rx)
+        self._phrx_udp(packet_rx)
         return
 
     if packet_rx.ip6.next == ps_ip6.IP6_NEXT_HEADER_TCP:
-        self.phrx_tcp(packet_rx)
+        self._phrx_tcp(packet_rx)
         return

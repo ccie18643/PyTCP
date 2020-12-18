@@ -47,7 +47,7 @@ from tcp_metadata import TcpMetadata
 PACKET_LOSS = False
 
 
-def phrx_tcp(self, packet_rx):
+def _phrx_tcp(self, packet_rx):
     """ Handle inbound TCP packets """
 
     self.logger.opt(ansi=True).info(f"<green>{packet_rx.tracker}</green> - {packet_rx.tcp}")
@@ -95,7 +95,7 @@ def phrx_tcp(self, packet_rx):
 
     # In case packet doesn't match any session send RST packet in response to it
     self.logger.debug(f"Received TCP packet from {packet_rx.ip.src} to closed port {packet_rx.tcp.dport}, responding with TCP RST packet")
-    self.phtx_tcp(
+    self._phtx_tcp(
         ip_src=packet_rx.ip.dst,
         ip_dst=packet_rx.ip.src,
         tcp_sport=packet_rx.tcp.dport,

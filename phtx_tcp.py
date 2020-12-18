@@ -49,7 +49,7 @@ from ps_tcp import TcpOptMss, TcpOptNop, TcpOptWscale, TcpPacket
 PACKET_LOSS = False
 
 
-def phtx_tcp(
+def _phtx_tcp(
     self,
     ip_src,
     ip_dst,
@@ -126,7 +126,7 @@ def phtx_tcp(
     assert type(ip_dst) in {IPv4Address, IPv6Address}
 
     if ip_src.version == 6 and ip_dst.version == 6:
-        self.phtx_ip6(ip6_src=ip_src, ip6_dst=ip_dst, child_packet=tcp_packet_tx)
+        self._phtx_ip6(ip6_src=ip_src, ip6_dst=ip_dst, child_packet=tcp_packet_tx)
 
     if ip_src.version == 4 and ip_dst.version == 4:
-        self.phtx_ip4(ip4_src=ip_src, ip4_dst=ip_dst, child_packet=tcp_packet_tx)
+        self._phtx_ip4(ip4_src=ip_src, ip4_dst=ip_dst, child_packet=tcp_packet_tx)

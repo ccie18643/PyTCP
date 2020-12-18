@@ -45,7 +45,7 @@ import config
 import ps_ether
 
 
-def phrx_ether(self, packet_rx):
+def _phrx_ether(self, packet_rx):
     """ Handle inbound Ethernet packets """
 
     self.logger.debug(f"{packet_rx.tracker} - {packet_rx.ether}")
@@ -56,13 +56,13 @@ def phrx_ether(self, packet_rx):
         return
 
     if packet_rx.ether.type == ps_ether.ETHER_TYPE_ARP and config.ip4_support:
-        self.phrx_arp(packet_rx)
+        self._phrx_arp(packet_rx)
         return
 
     if packet_rx.ether.type == ps_ether.ETHER_TYPE_IP4 and config.ip4_support:
-        self.phrx_ip4(packet_rx)
+        self._phrx_ip4(packet_rx)
         return
 
     if packet_rx.ether.type == ps_ether.ETHER_TYPE_IP6 and config.ip6_support:
-        self.phrx_ip6(packet_rx)
+        self._phrx_ip6(packet_rx)
         return

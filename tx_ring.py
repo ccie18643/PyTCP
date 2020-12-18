@@ -60,36 +60,23 @@ class TxRing:
 
         self.packet_enqueued = threading.Semaphore(0)
 
-        threading.Thread(target=self.__thread_dequeue).start()
+        threading.Thread(target=self.__thread_transmit).start()
         self.logger.debug("Started TX ring")
 
-    def __thread_dequeue(self):
+    def __thread_transmit(self):
         """ Dequeue packet from TX ring """
 
         while True:
-            # Wait till packets is available int he queue the pick it up
             self.packet_enqueued.acquire()
             ether_packet_tx = self.tx_ring.pop(0)
-            self.logger.opt(ansi=True).debug(f"{ether_packet_tx.tracker}")
-            self.__transmit(ether_packet_tx)
+            os.write(self.tap, ether_packet_tx.get_raw_packet())
+            self.logger.opt(ansi=True).debug(
+                f"<magenta>[TX]</> {ether_packet_tx.tracker}<yellow>{ether_packet_tx.tracker.latency}</> - {len(ether_packet_tx)} bytes"
+            )
 
-    def __transmit(self, ether_packet_tx):
-        """ Transmit packet """
-
-        os.write(self.tap, ether_packet_tx.get_raw_packet())
-        self.logger.opt(ansi=True).debug(
-            f"<magenta>[TX]</> {ether_packet_tx.tracker}<yellow>{ether_packet_tx.tracker.latency}</> - {len(ether_packet_tx)} bytes"
-        )
-
-    def enqueue(self, ether_packet_tx, urgent=False):
+    def enqueue(self, ether_packet_tx):
         """ Enqueue outbound Ethernet packet to TX ring """
 
-        if urgent:
-            self.tx_ring.insert(0, ether_packet_tx)
-            self.logger.opt(ansi=True).debug(f"{ether_packet_tx.tracker}, priority: Urgent, queue len: {len(self.tx_ring)}")
-
-        else:
-            self.tx_ring.append(ether_packet_tx)
-            self.logger.opt(ansi=True).debug(f"{ether_packet_tx.tracker}, priority: Normal, queue len: {len(self.tx_ring)}")
-
+        self.tx_ring.append(ether_packet_tx)
+        self.logger.opt(ansi=True).debug(f"{ether_packet_tx.tracker}, priority: Normal, queue len: {len(self.tx_ring)}")
         self.packet_enqueued.release()

@@ -45,7 +45,7 @@ import config
 import ps_icmp6
 
 
-def phtx_icmp6(
+def _phtx_icmp6(
     self,
     ip6_src,
     ip6_dst,
@@ -89,4 +89,4 @@ def phtx_icmp6(
     )
 
     self.logger.opt(ansi=True).info(f"<magenta>{icmp6_packet_tx.tracker}</magenta> - {icmp6_packet_tx}")
-    self.phtx_ip6(ip6_src=ip6_src, ip6_dst=ip6_dst, ip6_hop=ip6_hop, child_packet=icmp6_packet_tx)
+    self._phtx_ip6(ip6_src=ip6_src, ip6_dst=ip6_dst, ip6_hop=ip6_hop, child_packet=icmp6_packet_tx)

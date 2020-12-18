@@ -48,7 +48,7 @@ ARP_CACHE_UPDATE_FROM_DIRECT_REQUEST = True
 ARP_CACHE_UPDATE_FROM_GRATUITOUS_REPLY = True
 
 
-def phrx_arp(self, packet_rx):
+def _phrx_arp(self, packet_rx):
     """ Handle inbound ARP packets """
 
     self.logger.opt(ansi=True).info(f"<green>{packet_rx.tracker}</green> - {packet_rx.arp}")
@@ -61,7 +61,7 @@ def phrx_arp(self, packet_rx):
 
         # Check if the request is for one of our IP addresses, if so the craft ARP reply packet and send it out
         if packet_rx.arp.tpa in self.ip4_unicast:
-            self.phtx_arp(
+            self._phtx_arp(
                 ether_src=self.mac_unicast,
                 ether_dst=packet_rx.arp.sha,
                 arp_oper=ps_arp.ARP_OP_REPLY,

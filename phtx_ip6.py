@@ -89,7 +89,7 @@ def validate_dst_ip6_address(self, ip6_dst):
     return ip6_dst
 
 
-def phtx_ip6(self, child_packet, ip6_dst, ip6_src, ip6_hop=config.ip6_default_hop):
+def _phtx_ip6(self, child_packet, ip6_dst, ip6_src, ip6_hop=config.ip6_default_hop):
     """ Handle outbound IP packets """
 
     # Check if IPv6 protocol support is enabled, if not then silently drop the packet
@@ -115,7 +115,7 @@ def phtx_ip6(self, child_packet, ip6_dst, ip6_src, ip6_hop=config.ip6_default_ho
         ip6_packet_tx = ps_ip6.Ip6Packet(ip6_src=ip6_src, ip6_dst=ip6_dst, ip6_hop=ip6_hop, child_packet=child_packet)
 
         self.logger.debug(f"{ip6_packet_tx.tracker} - {ip6_packet_tx}")
-        self.phtx_ether(child_packet=ip6_packet_tx)
+        self._phtx_ether(child_packet=ip6_packet_tx)
         return
 
     # Fragment packet and send all fragments out *** Need to add this functionality ***
