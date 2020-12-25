@@ -103,4 +103,3 @@ class UdpPacket:
         self.udp_cksum = inet_cksum(ip_pseudo_header + self.raw_packet)
 
         return self.raw_packet
-

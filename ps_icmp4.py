@@ -191,4 +191,3 @@ class Icmp4Packet:
         self.icmp4_cksum = inet_cksum(self.raw_packet)
 
         return self.raw_packet
-
