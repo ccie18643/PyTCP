@@ -106,7 +106,7 @@ class TcpPacket:
         """ Read 'Source port' field """
 
         if not hasattr(self, "_sport"):
-            self._sport = struct.unpack("!H", self._frame[self._hptr + 0 : self._hptr + 2])[0]
+            self._sport = struct.unpack_from("!H", self._frame, self._hptr + 0)[0]
         return self._sport
 
     @property
@@ -114,7 +114,7 @@ class TcpPacket:
         """ Read 'Destianation port' field """
 
         if not hasattr(self, "_dport"):
-            self._dport = struct.unpack("!H", self._frame[self._hptr + 2 : self._hptr + 4])[0]
+            self._dport = struct.unpack_from("!H", self._frame, self._hptr + 2)[0]
         return self._dport
 
     @property
@@ -122,7 +122,7 @@ class TcpPacket:
         """ Read 'Sequence number' field """
 
         if not hasattr(self, "_seq"):
-            self._seq = struct.unpack("!L", self._frame[self._hptr + 4 : self._hptr + 8])[0]
+            self._seq = struct.unpack_from("!L", self._frame, self._hptr + 4)[0]
         return self._seq
 
     @property
@@ -130,7 +130,7 @@ class TcpPacket:
         """ Read 'Acknowledge number' field """
 
         if not hasattr(self, "_ack"):
-            self._ack = struct.unpack("!L", self._frame[self._hptr + 8 : self._hptr + 12])[0]
+            self._ack = struct.unpack_from("!L", self._frame, self._hptr + 8)[0]
         return self._ack
 
     @property
@@ -218,7 +218,7 @@ class TcpPacket:
         """ Read 'Window' field """
 
         if not hasattr(self, "_win"):
-            self._win = struct.unpack("!H", self._frame[self._hptr + 14 : self._hptr + 16])[0]
+            self._win = struct.unpack_from("!H", self._frame, self._hptr + 14)[0]
         return self._win
 
     @property
@@ -226,7 +226,7 @@ class TcpPacket:
         """ Read 'Checksum' field """
 
         if not hasattr(self, "_cksum"):
-            self._cksum = struct.unpack("!H", self._frame[self._hptr + 16 : self._hptr + 18])[0]
+            self._cksum = struct.unpack_from("!H", self._frame, self._hptr + 16)[0]
         return self._cksum
 
     @property
@@ -234,7 +234,7 @@ class TcpPacket:
         """ Read 'Urgent pointer' field """
 
         if not hasattr(self, "_urg"):
-            self._urg = struct.unpack("!H", self._frame[self._hptr + 18 : self._hptr + 20])[0]
+            self._urg = struct.unpack_from("!H", self._frame, self._hptr + 18)[0]
         return self._urg
 
     @property
@@ -454,7 +454,7 @@ class TcpOptMss:
     def __init__(self, frame, optr):
         self.kind = frame[optr + 0]
         self.len = frame[optr + 1]
-        self.mss = struct.unpack("!H", frame[optr + 2 : optr + 4])[0]
+        self.mss = struct.unpack_from("!H", frame, optr + 2)[0]
 
     def __str__(self):
         return f"mss {self.mss}"
@@ -507,8 +507,8 @@ class TcpOptTimestamp:
     def __init__(self, frame, optr):
         self.kind = frame[optr + 0]
         self.len = frame[optr + 1]
-        self.tsval = struct.unpack("!L", frame[optr + 2 : optr + 6])[0]
-        self.tsecr = struct.unpack("!L", frame[optr + 6 : optr + 10])[0]
+        self.tsval = struct.unpack_from("!L", frame, optr + 2)[0]
+        self.tsecr = struct.unpack_from("!L", frame, optr + 6)[0]
 
     def __str__(self):
         return f"ts {self.tsval}/{self.tsecr}"

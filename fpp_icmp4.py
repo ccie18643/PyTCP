@@ -157,7 +157,7 @@ class Icmp4Packet:
         """ Read 'Checksum' field """
 
         if not hasattr(self, "_cksum"):
-            self.cksum = struct.unpack("!H", self._frame[self._hptr + 2 : self._hptr + 4])[0]
+            self.cksum = struct.unpack_from("!H", self._frame, self._hptr + 2)[0]
         return self._cksum
 
     @property
@@ -166,7 +166,7 @@ class Icmp4Packet:
 
         if not hasattr(self, "_ec_id"):
             assert self.type in {ICMP4_ECHO_REQUEST, ICMP4_ECHO_REPLY}
-            self._ec_id = struct.unpack("!H", self._frame[self._hptr + 4 : self._hptr + 6])[0]
+            self._ec_id = struct.unpack_from("!H", self._frame, self._hptr + 4)[0]
         return self._ec_id
 
     @property
@@ -175,7 +175,7 @@ class Icmp4Packet:
 
         if not hasattr(self, "_ec_seq"):
             assert self.type in {ICMP4_ECHO_REQUEST, ICMP4_ECHO_REPLY}
-            self._ec_seq = struct.unpack("!H", self._frame[self._hptr + 6 : self._hptr + 8])[0]
+            self._ec_seq = struct.unpack_from("!H", self._frame, self._hptr + 6)[0]
         return self._ec_seq
 
     @property

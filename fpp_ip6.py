@@ -193,7 +193,7 @@ class Ip6Packet:
         """ Read 'Data length' field """
 
         if not hasattr(self, "_dlen"):
-            self._dlen = struct.unpack("!H", self._frame[self._hptr + 4 : self._hptr + 6])[0]
+            self._dlen = struct.unpack_from("!H", self._frame, self._hptr + 4)[0]
         return self._dlen
 
     @property
@@ -265,7 +265,7 @@ class Ip6Packet:
         if len(self) < IP6_HEADER_LEN:
             return "IPv6 integrity - wrong packet length (I)"
 
-        if struct.unpack("!H", self._frame[self._hptr + 4 : self._hptr + 6])[0] != len(self) - IP6_HEADER_LEN:
+        if struct.unpack_from("!H", self._frame, self._hptr + 4)[0] != len(self) - IP6_HEADER_LEN:
             return "IPv6 integrity - wrong packet length (II)"
 
         return False

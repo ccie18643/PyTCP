@@ -115,7 +115,7 @@ class EtherPacket:
         """ Read 'EtherType' field """
 
         if not hasattr(self, "_type"):
-            self._type = struct.unpack("!H", self._frame[self._hptr + 12 : self._hptr + 14])[0]
+            self._type = struct.unpack_from("!H", self._frame, self._hptr + 12)[0]
         return self._type
 
     @property

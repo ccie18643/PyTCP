@@ -100,7 +100,7 @@ class ArpPacket:
         """ Read 'Hardware address type' field """
 
         if not hasattr(self, "_hrtype"):
-            self._hrtype = struct.unpack("!H", self._frame[self._hptr + 0 : self._hptr + 2])[0]
+            self._hrtype = struct.unpack_from("!H", self._frame, self._hptr + 0)[0]
         return self._hrtype
 
     @property
@@ -108,7 +108,7 @@ class ArpPacket:
         """ Read 'Protocol address type' field """
 
         if not hasattr(self, "_prtype"):
-            self._prtype = struct.unpack("!H", self._frame[self._hptr + 2 : self._hptr + 4])[0]
+            self._prtype = struct.unpack_from("!H", self._frame, self._hptr + 2)[0]
         return self._prtype
 
     @property
@@ -128,7 +128,7 @@ class ArpPacket:
         """ Read 'Operation' field """
 
         if not hasattr(self, "_oper"):
-            self._oper = struct.unpack("!H", self._frame[self._hptr + 6 : self._hptr + 8])[0]
+            self._oper = struct.unpack_from("!H", self._frame, self._hptr + 6)[0]
         return self._oper
 
     @property

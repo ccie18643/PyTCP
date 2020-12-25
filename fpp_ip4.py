@@ -189,7 +189,7 @@ class Ip4Packet:
         """ Read 'Packet length' field """
 
         if not hasattr(self, "_plen"):
-            self._plen = struct.unpack("!H", self._frame[self._hptr + 2 : self._hptr + 4])[0]
+            self._plen = struct.unpack_from("!H", self._frame, self._hptr + 2)[0]
         return self._plen
 
     @property
@@ -197,7 +197,7 @@ class Ip4Packet:
         """ Read 'Identification' field """
 
         if not hasattr(self, "_id"):
-            self._id = struct.unpack("!H", self._frame[self._hptr + 4 : self._hptr + 6])[0]
+            self._id = struct.unpack_from("!H", self._frame, self._hptr + 4)[0]
         return self._id
 
     @property
@@ -205,7 +205,7 @@ class Ip4Packet:
         """ Read 'DF flag' field """
 
         if not hasattr(self, "_flag_df"):
-            self._flag_df = bool(struct.unpack("!H", self._frame[self._hptr + 6 : self._hptr + 8])[0] & 0b0100000000000000)
+            self._flag_df = bool(struct.unpack_from("!H", self._frame, self._hptr + 6)[0] & 0b0100000000000000)
         return self._flag_df
 
     @property
@@ -213,7 +213,7 @@ class Ip4Packet:
         """ Read 'MF flag' field """
 
         if not hasattr(self, "_flag_mf"):
-            self._flag_mf = bool(struct.unpack("!H", self._frame[self._hptr + 6 : self._hptr + 8])[0] & 0b0010000000000000)
+            self._flag_mf = bool(struct.unpack_from("!H", self._frame, self._hptr + 6)[0] & 0b0010000000000000)
         return self._flag_mf
 
     @property
@@ -221,7 +221,7 @@ class Ip4Packet:
         """ Read 'Fragment offset' field """
 
         if not hasattr(self, "_offset"):
-            self._offset = (struct.unpack("!H", self._frame[self._hptr + 6 : self._hptr + 8])[0] & 0b0001111111111111) << 3
+            self._offset = (struct.unpack_from("!H", self._frame, self._hptr + 6)[0] & 0b0001111111111111) << 3
         return self._offset
 
     @property
@@ -241,7 +241,7 @@ class Ip4Packet:
         """ Read 'Checksum' field """
 
         if not hasattr(self, "_cksum"):
-            self._cksum = struct.unpack("!H", self._frame[self._hptr + 10 : self._hptr + 12])[0]
+            self._cksum = struct.unpack_from("!H", self._frame, self._hptr + 10)[0]
         return self._cksum
 
     @property
@@ -331,7 +331,7 @@ class Ip4Packet:
             return "IPv4 integrity - wrong packet length (I)"
 
         hlen = (self._frame[self._hptr + 0] & 0b00001111) << 2
-        plen = struct.unpack("!H", self._frame[self._hptr + 2 : self._hptr + 4])[0]
+        plen = struct.unpack_from("!H", self._frame, self._hptr + 2)[0]
         if not IP4_HEADER_LEN <= hlen <= plen == len(self):
             return "IPv4 integrity - wrong packet length (II)"
 

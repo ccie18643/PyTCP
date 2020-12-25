@@ -402,7 +402,7 @@ class Icmp6Packet:
         """ Read 'Checksum' field """
 
         if not hasattr(self, "_cksum"):
-            self.cksum = struct.unpack("!H", self._frame[self._hptr + 2 : self._hptr + 4])[0]
+            self.cksum = struct.unpack_from("!H", self._frame, self._hptr + 2)[0]
         return self._cksum
 
     @property
@@ -420,7 +420,7 @@ class Icmp6Packet:
 
         if not hasattr(self, "_ec_id"):
             assert self.type in {ICMP6_ECHO_REQUEST, ICMP6_ECHO_REPLY}
-            self._ec_id = struct.unpack("!H", self._frame[self._hptr + 4 : self._hptr + 6])[0]
+            self._ec_id = struct.unpack_from("!H", self._frame, self._hptr + 4)[0]
         return self._ec_id
 
     @property
@@ -429,7 +429,7 @@ class Icmp6Packet:
 
         if not hasattr(self, "_ec_seq"):
             assert self.type in {ICMP6_ECHO_REQUEST, ICMP6_ECHO_REPLY}
-            self._ec_seq = struct.unpack("!H", self._frame[self._hptr + 6 : self._hptr + 8])[0]
+            self._ec_seq = struct.unpack_from("!H", self._frame, self._hptr + 6)[0]
         return self._ec_seq
 
     @property
@@ -472,7 +472,7 @@ class Icmp6Packet:
 
         if not hasattr(self, "_ra_router_lifetime"):
             assert self.type == ICMP6_ROUTER_ADVERTISEMENT
-            self._ra_router_lifetime = struct.unpack("!H", self._frame[self._hptr + 6 : self._hptr + 8])[0]
+            self._ra_router_lifetime = struct.unpack_from("!H", self._frame, self._hptr + 6)[0]
         return self._ra_router_lifetime
 
     @property
@@ -481,7 +481,7 @@ class Icmp6Packet:
 
         if not hasattr(self, "_ra_reachable_time"):
             assert self.type == ICMP6_ROUTER_ADVERTISEMENT
-            self._ra_reachable_time = struct.unpack("!L", self._frame[self._hptr + 8 : self._hptr + 12])[0]
+            self._ra_reachable_time = struct.unpack_from("!L", self._frame, self._hptr + 8)[0]
         return self._ra_reachable_time
 
     @property
@@ -490,7 +490,7 @@ class Icmp6Packet:
 
         if not hasattr(self, "_ra_retrans_timer"):
             assert self.type == ICMP6_ROUTER_ADVERTISEMENT
-            self._ra_retrans_timer = struct.unpack("!L", self._frame[self._hptr + 12 : self._hptr + 16])[0]
+            self._ra_retrans_timer = struct.unpack_from("!L", self._frame, self._hptr + 12)[0]
         return self._ra_retrans_timer
 
     @property
@@ -544,7 +544,7 @@ class Icmp6Packet:
 
         if not hasattr(self, "_mld2_rep_nor"):
             assert self.type == ICMP6_MLD2_REPORT
-            self._mld2_rep_nor = struct.unpack("!H", self._frame[self._hptr + 6 : self._hptr + 8])[0]
+            self._mld2_rep_nor = struct.unpack_from("!H", self._frame, self._hptr + 6)[0]
         return self._mld2_rep_nor
 
     @property
@@ -662,7 +662,7 @@ class Icmp6Packet:
         elif self._frame[0] == ICMP6_MLD2_QUERY:
             if len(self) < 28:
                 return "ICMPv6 integrity - wrong packet length (II)"
-            if len(self) != 28 + struct.unpack("! H", self._frame[self._hptr + 26 : self._hptr + 28])[0] * 16:
+            if len(self) != 28 + struct.unpack_from("! H", self._frame, self._hptr + 26)[0] * 16:
                 return "ICMPv6 integrity - wrong packet length (III)"
 
         elif self._frame[0] == ICMP6_ROUTER_SOLICITATION:
@@ -693,10 +693,10 @@ class Icmp6Packet:
             if len(self._frame) - self._hptr < 8:
                 return "ICMPv6 integrity - wrong packet length (II)"
             optr = self._hptr + 8
-            for _ in range(struct.unpack("! H", self._frame[self._hptr + 6 : self._hptr + 8])[0]):
+            for _ in range(struct.unpack_from("! H", self._frame, self._hptr + 6)[0]):
                 if optr + 20 > len(self._frame):
                     return "ICMPv6 integrity - wrong packet length (III)"
-                optr += 20 + self._frame[optr + 1] + struct.unpack("! H", self._frame[optr + 2 : optr + 4])[0] * 16
+                optr += 20 + self._frame[optr + 1] + struct.unpack_from("! H", self._frame, optr + 2)[0] * 16
             if optr != len(self._frame):
                 return "ICMPv6 integrity - wrong packet length (IV)"
 
@@ -877,8 +877,8 @@ class Icmp6NdOptPI:
         self.flag_l = bool(frame[optr + 3] & 0b10000000)
         self.flag_a = bool(frame[optr + 3] & 0b01000000)
         self.flag_r = bool(frame[optr + 3] & 0b00100000)
-        self.valid_lifetime = struct.unpack("!L", frame[optr + 4 : optr + 8])[0]
-        self.preferred_lifetime = struct.unpack("!L", frame[optr + 8 : optr + 12])[0]
+        self.valid_lifetime = struct.unpack_from("!L", frame, optr + 4)[0]
+        self.preferred_lifetime = struct.unpack_from("!L", frame, optr + 8)[0]
         self.prefix = IPv6Network((frame[optr + 16 : optr + 32], frame[optr + 2]))
 
     def __str__(self):

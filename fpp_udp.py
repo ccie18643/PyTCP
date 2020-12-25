@@ -88,7 +88,7 @@ class UdpPacket:
         """ Read 'Source port' field """
 
         if not hasattr(self, "_sport"):
-            self._sport = struct.unpack("!H", self._frame[self._hptr + 0 : self._hptr + 2])[0]
+            self._sport = struct.unpack_from("!H", self._frame, self._hptr + 0)[0]
         return self._sport
 
     @property
@@ -96,7 +96,7 @@ class UdpPacket:
         """ Read 'Destianation port' field """
 
         if not hasattr(self, "_dport"):
-            self._dport = struct.unpack("!H", self._frame[self._hptr + 2 : self._hptr + 4])[0]
+            self._dport = struct.unpack_from("!H", self._frame, self._hptr + 2)[0]
         return self._dport
 
     @property
@@ -104,7 +104,7 @@ class UdpPacket:
         """ Read 'Packet length' field """
 
         if not hasattr(self, "_plen"):
-            self._plen = struct.unpack("!H", self._frame[self._hptr + 4 : self._hptr + 6])[0]
+            self._plen = struct.unpack_from("!H", self._frame, self._hptr + 4)[0]
         return self._plen
 
     @property
@@ -112,7 +112,7 @@ class UdpPacket:
         """ Read 'Checksum' field """
 
         if not hasattr(self, "_cksum"):
-            self._cksum = struct.unpack("!H", self._frame[self._hptr + 6 : self._hptr + 8])[0]
+            self._cksum = struct.unpack_from("!H", self._frame, self._hptr + 6)[0]
         return self._cksum
 
     @property
@@ -143,7 +143,7 @@ class UdpPacket:
         if len(self._frame) < UDP_HEADER_LEN:
             return "UDP sanity - wrong packet length (I)"
 
-        plen = struct.unpack("!H", self._frame[self._hptr + 4 : self._hptr + 6])[0]
+        plen = struct.unpack_from("!H", self._frame, self._hptr + 4)[0]
         if not 8 <= plen == len(self._frame) - self._hptr:
             return "UDP sanity - wrong packet length (II)"
 
