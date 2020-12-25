@@ -56,12 +56,12 @@ from tracker import Tracker
 class FastPacketParser:
     """ Fast Packet Parser support class """
 
-    def __init__(self, frame):
+    def __init__(self, frame, tracker):
         """ Class constructor """
 
         self.logger = loguru.logger.bind(object_name="packet_parser.")
-        self.tracker = Tracker("RX")
         self._frame = frame
+        self.tracker = tracker
         self.packet_parse_failed = False
 
         # Ethernet packet parsing

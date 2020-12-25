@@ -157,7 +157,7 @@ class PacketHandler:
         """ Thread picks up incoming packets from RX ring and processes them """
 
         while True:
-            packet_rx = FastPacketParser(self.rx_ring.dequeue())
+            packet_rx = FastPacketParser(*self.rx_ring.dequeue())
             if not packet_rx.packet_parse_failed:
                 self._phrx_ether(packet_rx)
 
