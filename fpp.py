@@ -62,11 +62,13 @@ class FastPacketParser:
         self.logger = loguru.logger.bind(object_name="packet_parser.")
         self.tracker = Tracker("RX")
         self._frame = frame
+        self.packet_parse_failed = False
 
         # Ethernet packet parsing
         self.ether = fpp_ether.EtherPacket(self._frame)
         if self.ether.packet_parse_failed:
             self.logger.critical(f"{self.tracker} - {self.ether.packet_check_failed}")
+            self.packet_parse_failed = True
             return
         self.logger.debug(f"{self.tracker} - {self.ether}")
 
@@ -75,6 +77,7 @@ class FastPacketParser:
             self.arp = fpp_arp.ArpPacket(self._frame, self.ether.dptr)
             if self.arp.packet_parse_failed:
                 self.logger.critical(f"{self.tracker} - {self.arp.sanity_check_failed}")
+                self.packet_parse_failed = True
                 return
             self.logger.debug(f"{self.tracker} - {self.arp}")
             return
@@ -84,6 +87,7 @@ class FastPacketParser:
             self.ip = self.ip4 = fpp_ip4.Ip4Packet(self._frame, self.ether.dptr)
             if self.ip4.packet_parse_failed:
                 self.logger.critical(f"{self.tracker} - {self.ip4.packet_parse_failed}")
+                self.packet_parse_failed = True
                 return
             self.logger.debug(f"{self.tracker} - {self.ip4}")
 
@@ -92,6 +96,7 @@ class FastPacketParser:
                 self.icmp4 = fpp_icmp4.Icmp4Packet(self._frame, self.ip4.dptr)
                 if self.icmp4.packet_parse_failed:
                     self.logger.critical(f"{self.tracker} - {self.icmp4.packet_parse_failed}")
+                    self.packet_parse_failed = True
                     return
                 self.logger.debug(f"{self.tracker} - {self.icmp4}")
                 return
@@ -101,6 +106,7 @@ class FastPacketParser:
                 self.udp = fpp_udp.UdpPacket(self._frame, self.ip4.dptr, self.ip4.pseudo_header)
                 if self.udp.packet_parse_failed:
                     self.logger.critical(f"{self.tracker} - {self.udp.packet_check_failed}")
+                    self.packet_parse_failed = True
                     return
                 self.logger.debug(f"{self.tracker} - {self.udp}")
                 return
@@ -110,6 +116,7 @@ class FastPacketParser:
                 self.tcp = fpp_tcp.TcpPacket(self._frame, self.ip4.dptr, self.ip4.pseudo_header)
                 if self.tcp.packet_parse_failed:
                     self.logger.critical(f"{self.tracker} - {self.tcp.packet_parse_failed}")
+                    self.packet_parse_failed = True
                     return
                 self.logger.debug(f"{self.tracker} - {self.tcp}")
                 return
@@ -119,6 +126,7 @@ class FastPacketParser:
             self.ip = self.ip6 = fpp_ip6.Ip6Packet(self._frame, self.ether.dptr)
             if self.ip6.packet_parse_failed:
                 self.logger.critical(f"{self.tracker} - {self.ip6.packet_parse_failed}")
+                self.packet_parse_failed = True
                 return
             self.logger.debug(f"{self.tracker} - {self.ip6}")
 
@@ -127,6 +135,7 @@ class FastPacketParser:
                 self.icmp6 = fpp_icmp6.Icmp6Packet(self._frame, self.ip6.dptr, self.ip6.pseudo_header, self.ip6.src, self.ip6.dst, self.ip6.hop)
                 if self.icmp6.packet_parse_failed:
                     self.logger.critical(f"{self.tracker} - {self.icmp6.packet_parse_failed}")
+                    self.packet_parse_failed = True
                     return
                 self.logger.debug(f"{self.tracker} - {self.icmp6}")
                 return
@@ -136,6 +145,7 @@ class FastPacketParser:
                 self.udp = fpp_udp.UdpPacket(self._frame, self.ip6.dptr, self.ip6.pseudo_header)
                 if self.udp.packet_parse_failed:
                     self.logger.critical(f"{self.tracker} - {self.udp.packet_check_failed}")
+                    self.packet_parse_failed = True
                     return
                 self.logger.debug(f"{self.tracker} - {self.udp}")
                 return
@@ -145,6 +155,7 @@ class FastPacketParser:
                 self.tcp = fpp_tcp.TcpPacket(self._frame, self.ip6.dptr, self.ip6.pseudo_header)
                 if self.tcp.packet_parse_failed:
                     self.logger.critical(f"{self.tracker} - {self.tcp.packet_parse_failed}")
+                    self.packet_parse_failed = True
                     return
                 self.logger.debug(f"{self.tracker} - {self.tcp}")
                 return
