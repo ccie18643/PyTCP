@@ -194,11 +194,6 @@ class TcpPacket:
 
         return self.raw_packet
 
-    def validate_cksum(self, ip_pseudo_header):
-        """ Validate packet checksum """
-
-        return not bool(inet_cksum(ip_pseudo_header + self.raw_packet))
-
     @property
     def tcp_mss(self):
         """ TCP option - Maximum Segment Size (2) """

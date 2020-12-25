@@ -549,11 +549,6 @@ class Icmp6Packet:
 
         return raw_nd_options
 
-    def validate_cksum(self, ip_pseudo_header):
-        """ Validate packet checksum """
-
-        return not bool(inet_cksum(ip_pseudo_header + self.raw_packet))
-
     @staticmethod
     def __read_nd_options(raw_nd_options):
         """ Read options for Neighbor Discovery """

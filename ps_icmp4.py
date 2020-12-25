@@ -192,7 +192,3 @@ class Icmp4Packet:
 
         return self.raw_packet
 
-    def validate_cksum(self):
-        """ Validate packet checksum """
-
-        return not bool(inet_cksum(self.raw_packet))
