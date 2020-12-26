@@ -345,7 +345,7 @@ class Ip4Packet:
 
         hlen = (raw_packet[0] & 0b00001111) << 2
         plen = struct.unpack("!H", raw_packet[2:4])[0]
-        if not 20 <= hlen <= plen == len(raw_packet):
+        if not 20 <= hlen <= plen <= len(raw_packet):
             self.logger.critical(f"{self.tracker} - IPv4 sanity check fail - wrong packet length (II)")
             return False
 
