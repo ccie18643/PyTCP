@@ -109,12 +109,23 @@ ICMP4_ECHO_REQUEST = 8
 class Icmp4Packet:
     """ ICMPv4 packet support class """
 
+    class __not_cached:
+        pass
+
     def __init__(self, frame, hptr, plen):
         """ Class constructor """
 
         self._frame = frame
         self._hptr = hptr
         self._plen = plen
+
+        self.__cksum = self.__not_cached
+        self.__ec_id = self.__not_cached
+        self.__ec_seq = self.__not_cached
+        self.__ec_data = self.__not_cached
+        self.__un_data = self.__not_cached
+        self.__plen = self.__not_cached
+        self.__packet = self.__not_cached
 
         self.packet_parse_failed = self._packet_integrity_check() or self._packet_sanity_check()
         if self.packet_parse_failed:
@@ -157,61 +168,59 @@ class Icmp4Packet:
     def cksum(self):
         """ Read 'Checksum' field """
 
-        if not hasattr(self, "_cksum"):
-            self.cksum = struct.unpack_from("!H", self._frame, self._hptr + 2)[0]
-        return self._cksum
+        if self.__cksum is self.__not_cached:
+            self.__cksum = struct.unpack_from("!H", self._frame, self._hptr + 2)[0]
+        return self.__cksum
 
     @property
     def ec_id(self):
         """ Read Echo 'Id' field """
 
-        if not hasattr(self, "_ec_id"):
+        if self.__ec_id is self.__not_cached:
             assert self.type in {ICMP4_ECHO_REQUEST, ICMP4_ECHO_REPLY}
-            self._ec_id = struct.unpack_from("!H", self._frame, self._hptr + 4)[0]
-        return self._ec_id
+            self.__ec_id = struct.unpack_from("!H", self._frame, self._hptr + 4)[0]
+        return self.__ec_id
 
     @property
     def ec_seq(self):
         """ Read Echo 'Seq' field """
 
-        if not hasattr(self, "_ec_seq"):
+        if self.__ec_seq is self.__not_cached:
             assert self.type in {ICMP4_ECHO_REQUEST, ICMP4_ECHO_REPLY}
-            self._ec_seq = struct.unpack_from("!H", self._frame, self._hptr + 6)[0]
-        return self._ec_seq
+            self.__ec_seq = struct.unpack_from("!H", self._frame, self._hptr + 6)[0]
+        return self.__ec_seq
 
     @property
     def ec_data(self):
         """ Read data carried by Echo message """
 
-        if not hasattr(self, "_ec_data"):
+        if self.__ec_data is self.__not_cached:
             assert self.type in {ICMP4_ECHO_REQUEST, ICMP4_ECHO_REPLY}
-            self._ec_data = self._frame[self._hptr + 8 :]
-        return self._ec_data
+            self.__ec_data = self._frame[self._hptr + 8 : self._hptr + self.plen]
+        return self.__ec_data
 
     @property
     def un_data(self):
         """ Read data carried by Uneachable message """
 
-        if not hasattr(self, "_un_data"):
+        if self.__un_data is self.__not_cached:
             assert self.type == ICMP4_UNREACHABLE
-            self._un_data = self._frame[self._hptr + 8 :]
-        return self._un_data
+            self.__un_data = self._frame[self._hptr + 8 : self._hptr + self.plen]
+        return self.__un_data
 
     @property
     def plen(self):
         """ Calculate packet length """
 
-        if not hasattr(self, "_plen"):
-            self._plen = len(self)
         return self._plen
 
     @property
     def packet(self):
         """ Read the whole packet """
 
-        if not hasattr(self, "_packet"):
-            self._packet = self._frame[self._hptr :]
-        return self._packet
+        if self.__packet is self.__not_cached:
+            self.__packet = self._frame[self._hptr : self._hptr + self.plen]
+        return self.__packet
 
     def _packet_integrity_check(self):
         """ Packet integrity check to be run on raw frame prior to parsing to make sure parsing is safe """
@@ -219,7 +228,6 @@ class Icmp4Packet:
         if not config.packet_integrity_check:
             return False
 
-        print(self._plen)
         if inet_cksum(self._frame[self._hptr : self._hptr + self._plen]):
             return "ICMPv4 integrity - wrong packet checksum"
 

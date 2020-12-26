@@ -131,11 +131,26 @@ ECN_TABLE = {0b00: "Non-ECT", 0b10: "ECT(0)", 0b01: "ECT(1)", 0b11: "CE"}
 class Ip6Packet:
     """ IPv6 packet support class """
 
+    class __not_cached:
+        pass
+
     def __init__(self, frame, hptr):
         """ Class constructor """
 
         self._frame = frame
         self._hptr = hptr
+
+        self.__ver = self.__not_cached
+        self.__dscp = self.__not_cached
+        self.__ecn = self.__not_cached
+        self.__flow = self.__not_cached
+        self.__dlen = self.__not_cached
+        self.__src = self.__not_cached
+        self.__dst = self.__not_cached
+        self.__data = self.__not_cached
+        self.__plen = self.__not_cached
+        self.__packet = self.__not_cached
+        self.__pseudo_header = self.__not_cached
 
         self.packet_parse_failed = self._packet_integrity_check() or self._packet_sanity_check()
         if self.packet_parse_failed:
@@ -160,41 +175,41 @@ class Ip6Packet:
     def ver(self):
         """ Read 'Version' field """
 
-        if not hasattr(self, "_ver"):
-            self._ver = self._frame[self._hptr + 0] >> 4
-        return self._ver
+        if self.__ver is self.__not_cached:
+            self.__ver = self._frame[self._hptr + 0] >> 4
+        return self.__ver
 
     @property
     def dscp(self):
         """ Read 'DSCP' field """
 
-        if not hasattr(self, "_dscp"):
-            self._dscp = ((self._frame[self._hptr + 0] & 0b00001111) << 2) | ((self._frame[self._hptr + 1] & 0b11000000) >> 6)
-        return self._dscp
+        if self.__dscp is self.__not_cached:
+            self.__dscp = ((self._frame[self._hptr + 0] & 0b00001111) << 2) | ((self._frame[self._hptr + 1] & 0b11000000) >> 6)
+        return self.__dscp
 
     @property
     def ecn(self):
         """ Read 'ECN' field """
 
-        if not hasattr(self, "_ecn"):
-            self._ecn = (self._frame[self._hptr + 1] & 0b00110000) >> 4
-        return self._ecn
+        if self.__ecn is self.__not_cached:
+            self.__ecn = (self._frame[self._hptr + 1] & 0b00110000) >> 4
+        return self.__ecn
 
     @property
     def flow(self):
         """ Read 'Flow' field """
 
-        if not hasattr(self, "_flow"):
-            self._flow = ((self._frame[self._hptr + 1] & 0b00001111) << 16) | (self._frame[self._hptr + 2] << 8) | self._frame[self._hptr + 3]
-        return self._flow
+        if self.__flow is self.__not_cached:
+            self.__flow = ((self._frame[self._hptr + 1] & 0b00001111) << 16) | (self._frame[self._hptr + 2] << 8) | self._frame[self._hptr + 3]
+        return self.__flow
 
     @property
     def dlen(self):
         """ Read 'Data length' field """
 
-        if not hasattr(self, "_dlen"):
-            self._dlen = struct.unpack_from("!H", self._frame, self._hptr + 4)[0]
-        return self._dlen
+        if self.__dlen is self.__not_cached:
+            self.__dlen = struct.unpack_from("!H", self._frame, self._hptr + 4)[0]
+        return self.__dlen
 
     @property
     def next(self):
@@ -212,49 +227,49 @@ class Ip6Packet:
     def src(self):
         """ Read 'Source address' field """
 
-        if not hasattr(self, "_src"):
-            self._src = IPv6Address(self._frame[self._hptr + 8 : self._hptr + 24])
-        return self._src
+        if self.__src is self.__not_cached:
+            self.__src = IPv6Address(self._frame[self._hptr + 8 : self._hptr + 24])
+        return self.__src
 
     @property
     def dst(self):
         """ Read 'Destination address' field """
 
-        if not hasattr(self, "_dst"):
-            self._dst = IPv6Address(self._frame[self._hptr + 24 : self._hptr + 40])
-        return self._dst
+        if self.__dst is self.__not_cached:
+            self.__dst = IPv6Address(self._frame[self._hptr + 24 : self._hptr + 40])
+        return self.__dst
 
     @property
     def data(self):
         """ Read the data packet carries """
 
-        if not hasattr(self, "_data"):
-            self._data = self._frame[self._hptr + IP6_HEADER_LEN :]
-        return self._data
+        if self.__data is self.__not_cached:
+            self.__data = self.__frame[self._hptr + IP6_HEADER_LEN :]
+        return self.__data
 
     @property
     def plen(self):
         """ Calculate packet length """
 
-        if not hasattr(self, "_plen"):
-            self._plen = len(self)
-        return self._plen
+        if self.__plen is self.__not_cached:
+            self.__plen = len(self)
+        return self.__plen
 
     @property
     def packet(self):
         """ Read the whole packet """
 
-        if not hasattr(self, "_packet"):
-            self._packet = self._frame[self._hptr :]
-        return self._packet
+        if self.__packet is self.__not_cached:
+            self.__packet = self.__frame[self._hptr : self._hptr + IP6_HEADER_LEN + self.dlen]
+        return self.__packet
 
     @property
     def pseudo_header(self):
         """ Returns IPv6 pseudo header that is used by TCP, UDP and ICMPv6 to compute their checksums """
 
-        if not hasattr(self, "_packet"):
-            self._pseudo_header = struct.pack("! 16s 16s L BBBB", self.src.packed, self.dst.packed, self.dlen, 0, 0, 0, self.next)
-        return self._pseudo_header
+        if self.__pseudo_header is self.__not_cached:
+            self.__pseudo_header = struct.pack("! 16s 16s L BBBB", self.src.packed, self.dst.packed, self.dlen, 0, 0, 0, self.next)
+        return self.__pseudo_header
 
     def _packet_integrity_check(self):
         """ Packet integrity check to be run on raw packet prior to parsing to make sure parsing is safe """

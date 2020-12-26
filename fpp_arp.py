@@ -74,11 +74,25 @@ ARP_OP_REPLY = 2
 class ArpPacket:
     """ ARP packet support class """
 
+    class __not_cached:
+        pass
+
     def __init__(self, frame, hptr):
         """ Class constructor """
 
         self._frame = frame
         self._hptr = hptr
+
+        self.__hrtype = self.__not_cached
+        self.__prtype = self.__not_cached
+        self.__hrlen = self.__not_cached
+        self.__prlen = self.__not_cached
+        self.__oper = self.__not_cached
+        self.__sha = self.__not_cached
+        self.__spa = self.__not_cached
+        self.__tha = self.__not_cached
+        self.__tpa = self.__not_cached
+        self.__packet = self.__not_cached
 
         self.packet_parse_failed = self._packet_integrity_check() or self._packet_sanity_check()
 
@@ -99,17 +113,17 @@ class ArpPacket:
     def hrtype(self):
         """ Read 'Hardware address type' field """
 
-        if not hasattr(self, "_hrtype"):
-            self._hrtype = struct.unpack_from("!H", self._frame, self._hptr + 0)[0]
-        return self._hrtype
+        if self.__hrtype is self.__not_cached:
+            self.__hrtype = struct.unpack_from("!H", self._frame, self._hptr + 0)[0]
+        return self.__hrtype
 
     @property
     def prtype(self):
         """ Read 'Protocol address type' field """
 
-        if not hasattr(self, "_prtype"):
-            self._prtype = struct.unpack_from("!H", self._frame, self._hptr + 2)[0]
-        return self._prtype
+        if self.__prtype is self.__not_cached:
+            self.__prtype = struct.unpack_from("!H", self._frame, self._hptr + 2)[0]
+        return self.__prtype
 
     @property
     def hrlen(self):
@@ -127,57 +141,49 @@ class ArpPacket:
     def oper(self):
         """ Read 'Operation' field """
 
-        if not hasattr(self, "_oper"):
-            self._oper = struct.unpack_from("!H", self._frame, self._hptr + 6)[0]
-        return self._oper
+        if self.__oper is self.__not_cached:
+            self.__oper = struct.unpack_from("!H", self._frame, self._hptr + 6)[0]
+        return self.__oper
 
     @property
     def sha(self):
         """ Read 'Sender hardware address' field """
 
-        if not hasattr(self, "_sha"):
-            self._sha = ":".join([f"{_:0>2x}" for _ in self._frame[self._hptr + 8 : self._hptr + 14]])
-        return self._sha
+        if self.__sha is self.__not_cached:
+            self.__sha = ":".join([f"{_:0>2x}" for _ in self._frame[self._hptr + 8 : self._hptr + 14]])
+        return self.__sha
 
     @property
     def spa(self):
         """ Read 'Sender protocol address' field """
 
-        if not hasattr(self, "_spa"):
-            self._spa = IPv4Address(self._frame[self._hptr + 14 : self._hptr + 18])
-        return self._spa
+        if self.__spa is self.__not_cached:
+            self.__spa = IPv4Address(self._frame[self._hptr + 14 : self._hptr + 18])
+        return self.__spa
 
     @property
     def tha(self):
         """ Read 'Target hardware address' field """
 
-        if not hasattr(self, "_tha"):
-            self._tha = ":".join([f"{_:0>2x}" for _ in self._frame[self._hptr + 18 : self._hptr + 24]])
-        return self._tha
+        if self.__tha is self.__not_cached:
+            self.__tha = ":".join([f"{_:0>2x}" for _ in self._frame[self._hptr + 18 : self._hptr + 24]])
+        return self.__tha
 
     @property
     def tpa(self):
         """ Read 'Target protocol address' field """
 
-        if not hasattr(self, "_tpa"):
-            self._tpa = IPv4Address(self._frame[self._hptr + 24 : self._hptr + 28])
-        return self._tpa
-
-    @property
-    def plen(self):
-        """ Calculate packet length """
-
-        if not hasattr(self, "_plen"):
-            self._plen = len(self)
-        return self._plen
+        if self.__tpa is self.__not_cached:
+            self.__tpa = IPv4Address(self._frame[self._hptr + 24 : self._hptr + 28])
+        return self.__tpa
 
     @property
     def packet(self):
         """ Read the whole packet """
 
-        if not hasattr(self, "_packet"):
-            self._packet = self._frame[self._hptr :]
-        return self._packet
+        if self.__packet is self.__not_cached:
+            self.__packet = self._frame[self._hptr : self._hptr + ARP_HEADER_LEN]
+        return self.__packet
 
     def _packet_integrity_check(self):
         """ Packet integrity check to be run on raw packet prior to parsing to make sure parsing is safe """

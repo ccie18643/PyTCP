@@ -329,12 +329,36 @@ ICMP6_MART_BLOCK_OLD_SOURCES = 6
 class Icmp6Packet:
     """ ICMPv6 packet support class """
 
+    class __not_cached:
+        pass
+
     def __init__(self, frame, hptr, plen, pseudo_header, ip6_src, ip6_dst, ip6_hop):
         """ Class constructor """
 
         self._frame = frame
         self._hptr = hptr
         self._plen = plen
+
+        self.__cksum = self.__not_cached
+        self.__un_data = self.__not_cached
+        self.__ec_id = self.__not_cached
+        self.__ec_seq = self.__not_cached
+        self.__ec_data = self.__not_cached
+        self.__ra_flag_m = self.__not_cached
+        self.__ra_flag_o = self.__not_cached
+        self.__ra_router_lifetime = self.__not_cached
+        self.__ra_reachable_time = self.__not_cached
+        self.__ra_retrans_timer = self.__not_cached
+        self.__ns_target_address = self.__not_cached
+        self.__na_flag_s = self.__not_cached
+        self.__na_flag_o = self.__not_cached
+        self.__na_target_address = self.__not_cached
+        self.__mld2_rep_nor = self.__not_cached
+        self.__mld2_rep_records = self.__not_cached
+        self.__nd_options = self.__not_cached
+        self.__nd_opt_slla = self.__not_cached
+        self.__nd_opt_tlla = self.__not_cached
+        self.__nd_opt_pi = self.__not_cached
 
         self.packet_parse_failed = self._packet_integrity_check(pseudo_header) or self._packet_sanity_check(ip6_src, ip6_dst, ip6_hop)
         if self.packet_parse_failed:
@@ -402,45 +426,45 @@ class Icmp6Packet:
     def cksum(self):
         """ Read 'Checksum' field """
 
-        if not hasattr(self, "_cksum"):
-            self.cksum = struct.unpack_from("!H", self._frame, self._hptr + 2)[0]
-        return self._cksum
+        if self.__cksum is self.__not_cached:
+            self.__cksum = struct.unpack_from("!H", self._frame, self._hptr + 2)[0]
+        return self.__cksum
 
     @property
     def un_data(self):
-        """ Read data carried by Uneachable message """
+        """ Read data carried by Unreachable message """
 
-        if not hasattr(self, "_un_data"):
+        if self.__un_data is self.__not_cached:
             assert self.type == ICMP6_UNREACHABLE
-            self._un_data = self._frame[self._hptr + 8 :]
-        return self._un_data
+            self.__un_data = self._frame[self._hptr + 8 : self._hptr + self.plen]
+        return self.__un_data
 
     @property
     def ec_id(self):
         """ Read Echo 'Id' field """
 
-        if not hasattr(self, "_ec_id"):
+        if self.__ec_id is self.__not_cached:
             assert self.type in {ICMP6_ECHO_REQUEST, ICMP6_ECHO_REPLY}
-            self._ec_id = struct.unpack_from("!H", self._frame, self._hptr + 4)[0]
-        return self._ec_id
+            self.__ec_id = struct.unpack_from("!H", self._frame, self._hptr + 4)[0]
+        return self.__ec_id
 
     @property
     def ec_seq(self):
         """ Read Echo 'Seq' field """
 
-        if not hasattr(self, "_ec_seq"):
+        if self.__ec_seq is self.__not_cached:
             assert self.type in {ICMP6_ECHO_REQUEST, ICMP6_ECHO_REPLY}
-            self._ec_seq = struct.unpack_from("!H", self._frame, self._hptr + 6)[0]
-        return self._ec_seq
+            self.__ec_seq = struct.unpack_from("!H", self._frame, self._hptr + 6)[0]
+        return self.__ec_seq
 
     @property
     def ec_data(self):
         """ Read data carried by Echo message """
 
-        if not hasattr(self, "_ec_data"):
+        if self.__ec_data is self.__not_cached:
             assert self.type in {ICMP6_ECHO_REQUEST, ICMP6_ECHO_REPLY}
-            self._ec_data = self._frame[self._hptr + 8 :]
-        return self._ec_data
+            self.__ec_data = self._frame[self._hptr + 8 : self._hptr + self.plen]
+        return self.__ec_data
 
     @property
     def ra_hop(self):
@@ -453,116 +477,116 @@ class Icmp6Packet:
     def ra_flag_m(self):
         """ Read ND RA 'M flag' field """
 
-        if not hasattr(self, "_ra_flag_m"):
+        if self.__ra_flag_m is self.__not_cached:
             assert self.type == ICMP6_ROUTER_ADVERTISEMENT
-            self._ra_flag_m = bool(self._frame[self._hptr + 5] & 0b10000000)
-        return self._ra_flag_m
+            self.__ra_flag_m = bool(self._frame[self._hptr + 5] & 0b10000000)
+        return self.__ra_flag_m
 
     @property
     def ra_flag_o(self):
         """ Read ND RA 'O flag' field """
 
-        if not hasattr(self, "_ra_flag_o"):
+        if self.__ra_flag_o is self.__not_cached:
             assert self.type == ICMP6_ROUTER_ADVERTISEMENT
-            self._ra_flag_o = bool(self._frame[self._hptr + 5] & 0b01000000)
-        return self._ra_flag_o
+            self.__ra_flag_o = bool(self._frame[self._hptr + 5] & 0b01000000)
+        return self.__ra_flag_o
 
     @property
     def ra_router_lifetime(self):
         """ Read ND RA 'Router lifetime' field """
 
-        if not hasattr(self, "_ra_router_lifetime"):
+        if self.__ra_router_lifetime is self.__not_cached:
             assert self.type == ICMP6_ROUTER_ADVERTISEMENT
-            self._ra_router_lifetime = struct.unpack_from("!H", self._frame, self._hptr + 6)[0]
-        return self._ra_router_lifetime
+            self.__ra_router_lifetime = struct.unpack_from("!H", self._frame, self._hptr + 6)[0]
+        return self.__ra_router_lifetime
 
     @property
     def ra_reachable_time(self):
         """ Read ND RA 'Reachable time' field """
 
-        if not hasattr(self, "_ra_reachable_time"):
+        if self.__ra_reachable_time is self.__not_cached:
             assert self.type == ICMP6_ROUTER_ADVERTISEMENT
-            self._ra_reachable_time = struct.unpack_from("!L", self._frame, self._hptr + 8)[0]
-        return self._ra_reachable_time
+            self.__ra_reachable_time = struct.unpack_from("!L", self._frame, self._hptr + 8)[0]
+        return self.__ra_reachable_time
 
     @property
     def ra_retrans_timer(self):
         """ Read ND RA 'Retransmision timer' field """
 
-        if not hasattr(self, "_ra_retrans_timer"):
+        if self.__ra_retrans_timer is self.__not_cached:
             assert self.type == ICMP6_ROUTER_ADVERTISEMENT
-            self._ra_retrans_timer = struct.unpack_from("!L", self._frame, self._hptr + 12)[0]
-        return self._ra_retrans_timer
+            self.__ra_retrans_timer = struct.unpack_from("!L", self._frame, self._hptr + 12)[0]
+        return self.__ra_retrans_timer
 
     @property
     def ns_target_address(self):
         """ Read ND NS 'Target adress' field """
 
-        if not hasattr(self, "_ns_target_address"):
+        if self.__ns_target_address is self.__not_cached:
             assert self.type == ICMP6_NEIGHBOR_SOLICITATION
-            self._ns_target_address = IPv6Address(self._frame[self._hptr + 8 : self._hptr + 24])
-        return self._ns_target_address
+            self.__ns_target_address = IPv6Address(self._frame[self._hptr + 8 : self._hptr + 24])
+        return self.__ns_target_address
 
     @property
     def na_flag_r(self):
         """ Read ND NA 'R flag' field """
 
-        if not hasattr(self, "_na_flag_r"):
+        if self._na_flag_r is self.__not_cached:
             assert self.type == ICMP6_NEIGHBOR_ADVERTISEMENT
-            self._na_flag_r = bool(self._frame[self._hptr + 4] & 0b10000000)
-        return self._na_flag_r
+            self.__na_flag_r = bool(self._frame[self._hptr + 4] & 0b10000000)
+        return self.__na_flag_r
 
     @property
     def na_flag_s(self):
         """ Read ND NA 'S flag' field """
 
-        if not hasattr(self, "_na_flag_s"):
+        if self.__na_flag_s is self.__not_cached:
             assert self.type == ICMP6_NEIGHBOR_ADVERTISEMENT
-            self._na_flag_s = bool(self._frame[self._hptr + 4] & 0b01000000)
-        return self._na_flag_s
+            self.__na_flag_s = bool(self._frame[self._hptr + 4] & 0b01000000)
+        return self.__na_flag_s
 
     @property
     def na_flag_o(self):
         """ Read ND NA 'O flag' field """
 
-        if not hasattr(self, "_na_flag_o"):
+        if self.__na_flag_o is self.__not_cached:
             assert self.type == ICMP6_NEIGHBOR_ADVERTISEMENT
-            self._na_flag_o = bool(self._frame[self._hptr + 4] & 0b00100000)
-        return self._na_flag_o
+            self.__na_flag_o = bool(self._frame[self._hptr + 4] & 0b00100000)
+        return self.__na_flag_o
 
     @property
     def na_target_address(self):
         """ Read ND NA 'Taret address' field """
 
-        if not hasattr(self, "_na_target_address"):
+        if self.__na_target_address is self.__not_cached:
             assert self.type == ICMP6_NEIGHBOR_ADVERTISEMENT
-            self._na_target_address = IPv6Address(self._frame[self._hptr + 8 : self._hptr + 24])
-        return self._na_target_address
+            self.__na_target_address = IPv6Address(self._frame[self._hptr + 8 : self._hptr + 24])
+        return self.__na_target_address
 
     @property
     def mld2_rep_nor(self):
         """ Read MLD2 Report 'Number of multicast address records' field """
 
-        if not hasattr(self, "_mld2_rep_nor"):
+        if self.__mld2_rep_nor is self.__not_cached:
             assert self.type == ICMP6_MLD2_REPORT
-            self._mld2_rep_nor = struct.unpack_from("!H", self._frame, self._hptr + 6)[0]
-        return self._mld2_rep_nor
+            self.__mld2_rep_nor = struct.unpack_from("!H", self._frame, self._hptr + 6)[0]
+        return self.__mld2_rep_nor
 
     @property
     def mld2_rep_records(self):
         """ Read MLD2 Report record list """
 
-        if not hasattr(self, "_mld2_rep_records"):
+        if self.__mld2_rep_records is self.__not_cached:
             assert self.type == ICMP6_MLD2_REPORT
-            self._mld2_rep_records = []
+            self.__mld2_rep_records = []
             raw_records = self._frame[self._hptr + 8 :]
             for _ in range(self.mld2_rep_nor):
                 record = MulticastAddressRecord(raw_records)
                 raw_records = raw_records[len(record) :]
-                self._mld2_rep_records.append(record)
-        return self._mld2_rep_records
+                self.__mld2_rep_records.append(record)
+        return self.__mld2_rep_records
 
-    def __read_nd_options(self, optr):
+    def _read_nd_options(self, optr):
         """ Read ND options """
 
         nd_options = []
@@ -580,53 +604,67 @@ class Icmp6Packet:
     def nd_options(self):
         """ Read ND options  """
 
-        if not hasattr(self, "_nd_options"):
+        if self.__nd_options is self.__not_cached:
             assert self.type in {ICMP6_ROUTER_SOLICITATION, ICMP6_ROUTER_ADVERTISEMENT, ICMP6_NEIGHBOR_SOLICITATION, ICMP6_NEIGHBOR_ADVERTISEMENT}
             optr = (
                 self._hptr
                 + {ICMP6_ROUTER_SOLICITATION: 12, ICMP6_ROUTER_ADVERTISEMENT: 16, ICMP6_NEIGHBOR_SOLICITATION: 24, ICMP6_NEIGHBOR_ADVERTISEMENT: 24}[self.type]
             )
-            self._nd_options = self.__read_nd_options(optr)
-        return self._nd_options
+            self.__nd_options = self._read_nd_options(optr)
+        return self.__nd_options
 
     @property
     def nd_opt_slla(self):
         """ ICMPv6 ND option - Source Link Layer Address (1) """
 
-        if not hasattr(self, "_nd_opt_slla"):
+        if self.__nd_opt_slla is self.__not_cached:
             assert self.type in {ICMP6_ROUTER_SOLICITATION, ICMP6_ROUTER_ADVERTISEMENT, ICMP6_NEIGHBOR_SOLICITATION, ICMP6_NEIGHBOR_ADVERTISEMENT}
             for option in self.nd_options:
                 if option.code == ICMP6_ND_OPT_SLLA:
-                    _nd_opt_slla = option.slla
+                    __nd_opt_slla = option.slla
                     break
             else:
-                _nd_opt_slla = None
-        return _nd_opt_slla
+                __nd_opt_slla = None
+        return __nd_opt_slla
 
     @property
     def nd_opt_tlla(self):
         """ ICMPv6 ND option - Target Link Layer Address (2) """
 
-        if not hasattr(self, "_nd_opt_tlla"):
+        if self.__nd_opt_tlla is self.__not_cached:
             assert self.type in {ICMP6_ROUTER_SOLICITATION, ICMP6_ROUTER_ADVERTISEMENT, ICMP6_NEIGHBOR_SOLICITATION, ICMP6_NEIGHBOR_ADVERTISEMENT}
             for option in self.nd_options:
                 if option.code == ICMP6_ND_OPT_TLLA:
-                    _nd_opt_tlla = option.tlla
+                    __nd_opt_tlla = option.tlla
                     break
             else:
-                _nd_opt_tlla = None
-        return _nd_opt_tlla
+                __nd_opt_tlla = None
+        return __nd_opt_tlla
 
     @property
     def nd_opt_pi(self):
         """ ICMPv6 ND option - Prefix Info (3) - Returns list of prefixes that can be used for address autoconfiguration"""
 
-        if not hasattr(self, "_nd_opt_pi"):
+        if self.__nd_opt_pi is self.__not_cached:
             assert self.type in {ICMP6_ROUTER_SOLICITATION, ICMP6_ROUTER_ADVERTISEMENT, ICMP6_NEIGHBOR_SOLICITATION, ICMP6_NEIGHBOR_ADVERTISEMENT}
-            _nd_opt_pi = [_.prefix for _ in self.nd_options if _.code == ICMP6_ND_OPT_PI and _.flag_a and _.prefix.prefixlen == 64]
-        return _nd_opt_pi
+            __nd_opt_pi = [_.prefix for _ in self.nd_options if _.code == ICMP6_ND_OPT_PI and _.flag_a and _.prefix.prefixlen == 64]
+        return __nd_opt_pi
 
-    def __nd_option_pre_parse_sanity_check(self, optr):
+    @property
+    def plen(self):
+        """ Calculate packet length """
+
+        return self._plen
+
+    @property
+    def packet(self):
+        """ Read the whole packet """
+
+        if self.__packet is self.__not_cached:
+            self.__packet = self._frame[self._hptr : self._hptr + self.plen]
+        return self.__packet
+
+    def _nd_option_integrity_check(self, optr):
         """ Check integrity of ICMPv6 ND options """
 
         while optr < len(self._frame):
@@ -669,25 +707,25 @@ class Icmp6Packet:
         elif self._frame[0] == ICMP6_ROUTER_SOLICITATION:
             if not 8 <= self._plen <= len(self):
                 return "ICMPv6 integrity - wrong packet length (II)"
-            if fail := self.__nd_option_pre_parse_sanity_check(self._hptr + 8):
+            if fail := self._nd_option_integrity_check(self._hptr + 8):
                 return fail
 
         elif self._frame[0] == ICMP6_ROUTER_ADVERTISEMENT:
             if not 16 <= self._plen <= len(self):
                 return "ICMPv6 integrity - wrong packet length (II)"
-            if fail := self.__nd_option_pre_parse_sanity_check(self._hptr + 16):
+            if fail := self._nd_option_integrity_check(self._hptr + 16):
                 return fail
 
         elif self._frame[0] == ICMP6_NEIGHBOR_SOLICITATION:
             if not 24 <= self._plen <= len(self):
                 return "ICMPv6 integrity - wrong packet length (II)"
-            if fail := self.__nd_option_pre_parse_sanity_check(self._hptr + 24):
+            if fail := self._nd_option_integrity_check(self._hptr + 24):
                 return fail
 
         elif self._frame[0] == ICMP6_NEIGHBOR_ADVERTISEMENT:
             if 24 <= self._plen <= len(self):
                 return "ICMPv6 integrity - wrong packet length (II)"
-            if fail := self.__nd_option_pre_parse_sanity_check(self._hptr + 24):
+            if fail := self._nd_option_integrity_check(self._hptr + 24):
                 return fail
 
         elif self._frame[0] == ICMP6_MLD2_REPORT:

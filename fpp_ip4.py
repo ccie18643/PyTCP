@@ -126,11 +126,32 @@ ECN_TABLE = {0b00: "Non-ECT", 0b10: "ECT(0)", 0b01: "ECT(1)", 0b11: "CE"}
 class Ip4Packet:
     """ IPv4 packet support class """
 
+    class __not_cached:
+        pass
+
     def __init__(self, frame, hptr):
         """ Class constructor """
 
         self._frame = frame
         self._hptr = hptr
+
+        self.__ver = self.__not_cached
+        self.__hlen = self.__not_cached
+        self.__dscp = self.__not_cached
+        self.__ecn = self.__not_cached
+        self.__plen = self.__not_cached
+        self.__id = self.__not_cached
+        self.__flag_df = self.__not_cached
+        self.__flag_mf = self.__not_cached
+        self.__offset = self.__not_cached
+        self.__cksum = self.__not_cached
+        self.__src = self.__not_cached
+        self.__dst = self.__not_cached
+        self.__options = self.__not_cached
+        self.__data = self.__not_cached
+        self.__olen = self.__not_cached
+        self.__packet = self.__not_cached
+        self.__pseudo_header = self.__not_cached
 
         self.packet_parse_failed = self._packet_integrity_check() or self._packet_sanity_check()
         if self.packet_parse_failed:
@@ -156,73 +177,73 @@ class Ip4Packet:
     def ver(self):
         """ Read 'Version' field """
 
-        if not hasattr(self, "_ver"):
-            self._ver = self._frame[self._hptr + 0] >> 4
-        return self._ver
+        if self.__ver is self.__not_cached:
+            self.__ver = self._frame[self._hptr + 0] >> 4
+        return self.__ver
 
     @property
     def hlen(self):
         """ Read 'Header length' field """
 
-        if not hasattr(self, "_hlen"):
-            self._hlen = (self._frame[self._hptr + 0] & 0b00001111) << 2
-        return self._hlen
+        if self.__hlen is self.__not_cached:
+            self.__hlen = (self._frame[self._hptr + 0] & 0b00001111) << 2
+        return self.__hlen
 
     @property
     def dscp(self):
         """ Read 'DSCP' field """
 
-        if not hasattr(self, "_dscp"):
-            self._dscp = (self._frame[self._hptr + 1] & 0b11111100) >> 2
-        return self._dscp
+        if self.__dscp is self.__not_cached:
+            self.__dscp = (self._frame[self._hptr + 1] & 0b11111100) >> 2
+        return self.__dscp
 
     @property
     def ecn(self):
         """ Read 'ECN' field """
 
-        if not hasattr(self, "_ecn"):
-            self._ecn = self._frame[self._hptr + 1] & 0b00000011
-        return self._ecn
+        if self.__ecn is self.__not_cached:
+            self.__ecn = self._frame[self._hptr + 1] & 0b00000011
+        return self.__ecn
 
     @property
     def plen(self):
         """ Read 'Packet length' field """
 
-        if not hasattr(self, "_plen"):
-            self._plen = struct.unpack_from("!H", self._frame, self._hptr + 2)[0]
-        return self._plen
+        if self.__plen is self.__not_cached:
+            self.__plen = struct.unpack_from("!H", self._frame, self._hptr + 2)[0]
+        return self.__plen
 
     @property
     def id(self):
         """ Read 'Identification' field """
 
-        if not hasattr(self, "_id"):
-            self._id = struct.unpack_from("!H", self._frame, self._hptr + 4)[0]
-        return self._id
+        if self.__id is self.__not_cached:
+            self.__id = struct.unpack_from("!H", self._frame, self._hptr + 4)[0]
+        return self.__id
 
     @property
     def flag_df(self):
         """ Read 'DF flag' field """
 
-        if not hasattr(self, "_flag_df"):
-            self._flag_df = bool(struct.unpack_from("!H", self._frame, self._hptr + 6)[0] & 0b0100000000000000)
-        return self._flag_df
+        if self.__flag_df is self.__not_cached:
+            self.__flag_df = bool(struct.unpack_from("!H", self._frame, self._hptr + 6)[0] & 0b0100000000000000)
+        return self.__flag_df
 
     @property
     def flag_mf(self):
         """ Read 'MF flag' field """
 
-        if not hasattr(self, "_flag_mf"):
-            self._flag_mf = bool(struct.unpack_from("!H", self._frame, self._hptr + 6)[0] & 0b0010000000000000)
-        return self._flag_mf
+        if self.__flag_mf is self.__not_cached:
+            self.__flag_mf = bool(struct.unpack_from("!H", self._frame, self._hptr + 6)[0] & 0b0010000000000000)
+        return self.__flag_mf
 
     @property
     def offset(self):
         """ Read 'Fragment offset' field """
 
-        if not hasattr(self, "_offset"):
-            self._offset = (struct.unpack_from("!H", self._frame, self._hptr + 6)[0] & 0b0001111111111111) << 3
-        return self._offset
+        if self.__offset is self.__not_cached:
+            self.__offset = (struct.unpack_from("!H", self._frame, self._hptr + 6)[0] & 0b0001111111111111) << 3
+        return self.__offset
 
     @property
     def ttl(self):
@@ -240,62 +261,62 @@ class Ip4Packet:
     def cksum(self):
         """ Read 'Checksum' field """
 
-        if not hasattr(self, "_cksum"):
-            self._cksum = struct.unpack_from("!H", self._frame, self._hptr + 10)[0]
-        return self._cksum
+        if self.__cksum is self.__not_cached:
+            self.__cksum = struct.unpack_from("!H", self._frame, self._hptr + 10)[0]
+        return self.__cksum
 
     @property
     def src(self):
         """ Read 'Source address' field """
 
-        if not hasattr(self, "_src"):
-            self._src = IPv4Address(self._frame[self._hptr + 12 : self._hptr + 16])
-        return self._src
+        if self.__src is self.__not_cached:
+            self.__src = IPv4Address(self._frame[self._hptr + 12 : self._hptr + 16])
+        return self.__src
 
     @property
     def dst(self):
         """ Read 'Destination address' field """
 
-        if not hasattr(self, "_dst"):
-            self._dst = IPv4Address(self._frame[self._hptr + 16 : self._hptr + 20])
-        return self._dst
+        if self.__dst is self.__not_cached:
+            self.__dst = IPv4Address(self._frame[self._hptr + 16 : self._hptr + 20])
+        return self.__dst
 
     @property
     def options(self):
         """ Read list of options """
 
-        if not hasattr(self, "_options"):
-            self._options = []
+        if self.__options is self.__not_cached:
+            self.__options = []
             optr = self._hptr + IP4_HEADER_LEN
 
             while optr < self._hptr + self.hlen:
                 if self._frame[optr] == IP4_OPT_EOL:
-                    self._options.append(Ip4OptEol())
+                    self.__options.append(Ip4OptEol())
                     break
                 if self._frame[optr] == IP4_OPT_NOP:
-                    self._options.append(Ip4OptNop())
+                    self.__options.append(Ip4OptNop())
                     optr += IP4_OPT_NOP_LEN
                     continue
-                self._options.append({}.get(self._frame[optr], Ip4OptUnk)(self._frame, optr))
+                self.__options.append({}.get(self._frame[optr], Ip4OptUnk)(self._frame, optr))
                 optr += self._frame[optr + 1]
 
-        return self._options
+        return self.__options
 
     @property
     def data(self):
         """ Read the data packet carries """
 
-        if not hasattr(self, "_data"):
-            self._data = self._frame[self._hptr + self.hlen :]
-        return self._data
+        if self.__data is self.__not_cached:
+            self.__data = self._frame[self._hptr + self.hlen :]
+        return self.__data
 
     @property
     def olen(self):
         """ Calculate options length """
 
-        if not hasattr(self, "_plen"):
-            self._plen = self.hlen - IP4_HEADER_LEN
-        return self._plen
+        if self.__olen is self.__not_cached:
+            self.__olen = self.hlen - IP4_HEADER_LEN
+        return self.__olen
 
     @property
     def dlen(self):
@@ -307,17 +328,17 @@ class Ip4Packet:
     def packet(self):
         """ Read the whole packet """
 
-        if not hasattr(self, "_packet"):
-            self._packet = self._frame[self._hptr :]
-        return self._packet
+        if self.__packet is self.__not_cached:
+            self.__packet = self._frame[self._hptr : self._hptr + self.plen]
+        return self.__packet
 
     @property
     def pseudo_header(self):
         """ Create IPv4 pseudo header used by TCP and UDP to compute their checksums """
 
-        if not hasattr(self, "_pseudo_header"):
-            self._pseudo_header = struct.pack("! 4s 4s BBH", self.src.packed, self.dst.packed, 0, self.proto, self.plen - self.hlen)
-        return self._pseudo_header
+        if self.__pseudo_header is self.__not_cached:
+            self.__pseudo_header = struct.pack("! 4s 4s BBH", self.src.packed, self.dst.packed, 0, self.proto, self.plen - self.hlen)
+        return self.__pseudo_header
 
     def _packet_integrity_check(self):
         """ Packet integrity check to be run on raw packet prior to parsing to make sure parsing is safe """

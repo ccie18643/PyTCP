@@ -61,12 +61,22 @@ UDP_HEADER_LEN = 8
 class UdpPacket:
     """ UDP packet support class """
 
+    class __not_cached:
+        pass
+
     def __init__(self, frame, hptr, plen, pseudo_header):
         """ Class constructor """
 
         self._frame = frame
         self._hptr = hptr
         self._plen = plen
+
+        self.__sport = self.__not_cached
+        self.__dport = self.__not_cached
+        self.__plen = self.__not_cached
+        self.__cksum = self.__not_cached
+        self.__data = self.__not_cached
+        self.__packet = self.__not_cached
 
         self.packet_parse_failed = self._packet_integrity_check(pseudo_header) or self._packet_sanity_check()
         if self.packet_parse_failed:
@@ -88,41 +98,41 @@ class UdpPacket:
     def sport(self):
         """ Read 'Source port' field """
 
-        if not hasattr(self, "_sport"):
-            self._sport = struct.unpack_from("!H", self._frame, self._hptr + 0)[0]
-        return self._sport
+        if self.__sport is self.__not_cached:
+            self.__sport = struct.unpack_from("!H", self._frame, self._hptr + 0)[0]
+        return self.__sport
 
     @property
     def dport(self):
         """ Read 'Destianation port' field """
 
-        if not hasattr(self, "_dport"):
-            self._dport = struct.unpack_from("!H", self._frame, self._hptr + 2)[0]
-        return self._dport
+        if self.__dport is self.__not_cached:
+            self.__dport = struct.unpack_from("!H", self._frame, self._hptr + 2)[0]
+        return self.__dport
 
     @property
     def plen(self):
         """ Read 'Packet length' field """
 
-        if not hasattr(self, "_plen"):
-            self._plen = struct.unpack_from("!H", self._frame, self._hptr + 4)[0]
-        return self._plen
+        if self.__plen is self.__not_cached:
+            self.__plen = struct.unpack_from("!H", self._frame, self._hptr + 4)[0]
+        return self.__plen
 
     @property
     def cksum(self):
         """ Read 'Checksum' field """
 
-        if not hasattr(self, "_cksum"):
-            self._cksum = struct.unpack_from("!H", self._frame, self._hptr + 6)[0]
-        return self._cksum
+        if self.__cksum is self.__not_cached:
+            self.__cksum = struct.unpack_from("!H", self._frame, self._hptr + 6)[0]
+        return self.__cksum
 
     @property
     def data(self):
         """ Read the data packet carries """
 
-        if not hasattr(self, "_data"):
-            self._data = self._frame[self._hptr + UDP_HEADER_LEN :]
-        return self._data
+        if self.__data is self.__not_cached:
+            self.__data = self._frame[self._hptr + UDP_HEADER_LEN : self._hptr + self.plen]
+        return self.__data
 
     @property
     def dlen(self):
@@ -134,9 +144,9 @@ class UdpPacket:
     def packet(self):
         """ Read the whole packet """
 
-        if not hasattr(self, "_packet"):
-            self._packet = self._frame[self._hptr :]
-        return self._packet
+        if self.__packet is self.__not_cached:
+            self.__packet = self._frame[self._hptr :]
+        return self.__packet
 
     def _packet_integrity_check(self, pseudo_header):
         """ Packet integrity check to be run on raw frame prior to parsing to make sure parsing is safe """

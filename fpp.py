@@ -50,7 +50,6 @@ import fpp_ip4
 import fpp_ip6
 import fpp_tcp
 import fpp_udp
-from tracker import Tracker
 
 
 class FastPacketParser:

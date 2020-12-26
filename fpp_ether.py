@@ -72,11 +72,21 @@ ETHER_TYPE_TABLE = {ETHER_TYPE_ARP: "ARP", ETHER_TYPE_IP4: "IPv4", ETHER_TYPE_IP
 class EtherPacket:
     """ Ethernet packet support class """
 
+    class __not_cached:
+        pass
+
     def __init__(self, frame, hptr=0):
         """ Class constructor """
 
         self._frame = frame
         self._hptr = hptr
+
+        self.__dst = self.__not_cached
+        self.__src = self.__not_cached
+        self.__type = self.__not_cached
+        self.__data = self.__not_cached
+        self.__packet = self.__not_cached
+        self.__plen = self.__not_cached
 
         self.packet_parse_failed = self._packet_integrity_check() or self._packet_sanity_check()
         if self.packet_parse_failed:
@@ -98,7 +108,7 @@ class EtherPacket:
     def dst(self):
         """ Read 'Destination MAC address' field """
 
-        if not hasattr(self, "_dst"):
+        if self.__dst is self.__not_cached:
             self._dst = ":".join([f"{_:0>2x}" for _ in self._frame[self._hptr + 0 : self._hptr + 6]])
         return self._dst
 
@@ -106,7 +116,7 @@ class EtherPacket:
     def src(self):
         """ Read 'Source MAC address' field """
 
-        if not hasattr(self, "_src"):
+        if self.__src is self.__not_cached:
             self._src = ":".join([f"{_:0>2x}" for _ in self._frame[self._hptr + 6 : self._hptr + 12]])
         return self._src
 
@@ -114,7 +124,7 @@ class EtherPacket:
     def type(self):
         """ Read 'EtherType' field """
 
-        if not hasattr(self, "_type"):
+        if self.__type is self.__not_cached:
             self._type = struct.unpack_from("!H", self._frame, self._hptr + 12)[0]
         return self._type
 
@@ -122,7 +132,7 @@ class EtherPacket:
     def data(self):
         """ Read the data packet carries """
 
-        if not hasattr(self, "_data"):
+        if self.__data is self.__not_cached:
             self._data = self._frame[self._hptr + ETHER_HEADER_LEN :]
         return self._data
 
@@ -130,7 +140,7 @@ class EtherPacket:
     def packet(self):
         """ Read the whole packet """
 
-        if not hasattr(self, "_packet"):
+        if self.__packet is self.__not_cached:
             self._packet = self._frame[self._hptr :]
         return self._packet
 
@@ -138,7 +148,7 @@ class EtherPacket:
     def plen(self):
         """ Calculate packet length """
 
-        if not hasattr(self, "_plen"):
+        if self.__plen is self.__not_cached:
             self._plen = len(self)
         return self._plen
 

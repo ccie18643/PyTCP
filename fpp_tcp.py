@@ -106,151 +106,151 @@ class TcpPacket:
     def sport(self):
         """ Read 'Source port' field """
 
-        if not hasattr(self, "_sport"):
-            self._sport = struct.unpack_from("!H", self._frame, self._hptr + 0)[0]
-        return self._sport
+        if self.__sport is self.__not_cached:
+            self.__sport = struct.unpack_from("!H", self._frame, self._hptr + 0)[0]
+        return self.__sport
 
     @property
     def dport(self):
         """ Read 'Destianation port' field """
 
-        if not hasattr(self, "_dport"):
-            self._dport = struct.unpack_from("!H", self._frame, self._hptr + 2)[0]
-        return self._dport
+        if self.__dport is self.__not_cached:
+            self.__dport = struct.unpack_from("!H", self._frame, self._hptr + 2)[0]
+        return self.__dport
 
     @property
     def seq(self):
         """ Read 'Sequence number' field """
 
-        if not hasattr(self, "_seq"):
-            self._seq = struct.unpack_from("!L", self._frame, self._hptr + 4)[0]
-        return self._seq
+        if self.__seq is self.__not_cached:
+            self.__seq = struct.unpack_from("!L", self._frame, self._hptr + 4)[0]
+        return self.__seq
 
     @property
     def ack(self):
         """ Read 'Acknowledge number' field """
 
-        if not hasattr(self, "_ack"):
-            self._ack = struct.unpack_from("!L", self._frame, self._hptr + 8)[0]
-        return self._ack
+        if self.__ack is self.__not_cached:
+            self.__ack = struct.unpack_from("!L", self._frame, self._hptr + 8)[0]
+        return self.__ack
 
     @property
     def hlen(self):
         """ Read 'Header length' field """
 
-        if not hasattr(self, "_hlen"):
-            self._hlen = (self._frame[self._hptr + 12] & 0b11110000) >> 2
-        return self._hlen
+        if self.__hlen is self.__not_cached:
+            self.__hlen = (self._frame[self._hptr + 12] & 0b11110000) >> 2
+        return self.__hlen
 
     @property
     def flag_ns(self):
         """ Read 'NS flag' field """
 
-        if not hasattr(self, "_flag_ns"):
-            self._flag_ns = bool(self._frame[self._hptr + 12] & 0b00000001)
-        return self._flag_ns
+        if self.__flag_ns is self.__not_cached:
+            self.__flag_ns = bool(self._frame[self._hptr + 12] & 0b00000001)
+        return self.__flag_ns
 
     @property
     def flag_crw(self):
         """ Read 'CRW flag' field """
 
-        if not hasattr(self, "_flag_crw"):
-            self._flag_crw = bool(self._frame[self._hptr + 13] & 0b10000000)
-        return self._flag_crw
+        if self.__flag_crw is self.__not_cached:
+            self.__flag_crw = bool(self._frame[self._hptr + 13] & 0b10000000)
+        return self.__flag_crw
 
     @property
     def flag_ece(self):
         """ Read 'ECE flag' field """
 
-        if not hasattr(self, "_flag_ece"):
-            self._flag_ece = bool(self._frame[self._hptr + 13] & 0b01000000)
-        return self._flag_ece
+        if self.__flag_ece is self.__not_cached:
+            self.__flag_ece = bool(self._frame[self._hptr + 13] & 0b01000000)
+        return self.__flag_ece
 
     @property
     def flag_urg(self):
         """ Read 'URG flag' field """
 
-        if not hasattr(self, "_flag_urg"):
-            self._flag_urg = bool(self._frame[self._hptr + 13] & 0b00100000)
-        return self._flag_urg
+        if self.__flag_urg is self.__not_cached:
+            self.__flag_urg = bool(self._frame[self._hptr + 13] & 0b00100000)
+        return self.__flag_urg
 
     @property
     def flag_ack(self):
         """ Read 'ACK flag' field """
 
-        if not hasattr(self, "_flag_ack"):
-            self._flag_ack = bool(self._frame[self._hptr + 13] & 0b00010000)
-        return self._flag_ack
+        if self.__flag_ack is self.__not_cached:
+            self.__flag_ack = bool(self._frame[self._hptr + 13] & 0b00010000)
+        return self.__flag_ack
 
     @property
     def flag_psh(self):
         """ Read 'PSH flag' field """
 
-        if not hasattr(self, "_flag_psh"):
-            self._flag_psh = bool(self._frame[self._hptr + 13] & 0b00001000)
-        return self._flag_psh
+        if self.__flag_psh is self.__not_cached:
+            self.__flag_psh = bool(self._frame[self._hptr + 13] & 0b00001000)
+        return self.__flag_psh
 
     @property
     def flag_rst(self):
         """ Read 'RST flag' field """
 
-        if not hasattr(self, "_flag_rst"):
-            self._flag_rst = bool(self._frame[self._hptr + 13] & 0b00000100)
-        return self._flag_rst
+        if self.__flag_rst is self.__not_cached:
+            self.__flag_rst = bool(self._frame[self._hptr + 13] & 0b00000100)
+        return self.__flag_rst
 
     @property
     def flag_syn(self):
         """ Read 'SYN flag' field """
 
-        if not hasattr(self, "_flag_syn"):
-            self._flag_syn = bool(self._frame[self._hptr + 13] & 0b00000010)
-        return self._flag_syn
+        if self.__flag_syn is self.__not_cached:
+            self.__flag_syn = bool(self._frame[self._hptr + 13] & 0b00000010)
+        return self.__flag_syn
 
     @property
     def flag_fin(self):
         """ Read 'FIN flag' field """
 
-        if not hasattr(self, "_flag_fin"):
-            self._flag_fin = bool(self._frame[self._hptr + 13] & 0b00000001)
-        return self._flag_fin
+        if self.__flag_fin is self.__not_cached:
+            self.__flag_fin = bool(self._frame[self._hptr + 13] & 0b00000001)
+        return self.__flag_fin
 
     @property
     def win(self):
         """ Read 'Window' field """
 
-        if not hasattr(self, "_win"):
-            self._win = struct.unpack_from("!H", self._frame, self._hptr + 14)[0]
-        return self._win
+        if self.__win is self.__not_cached:
+            self.__win = struct.unpack_from("!H", self._frame, self._hptr + 14)[0]
+        return self.__win
 
     @property
     def cksum(self):
         """ Read 'Checksum' field """
 
-        if not hasattr(self, "_cksum"):
-            self._cksum = struct.unpack_from("!H", self._frame, self._hptr + 16)[0]
-        return self._cksum
+        if self.__cksum is self.__not_cached:
+            self.__cksum = struct.unpack_from("!H", self._frame, self._hptr + 16)[0]
+        return self.__cksum
 
     @property
     def urg(self):
         """ Read 'Urgent pointer' field """
 
-        if not hasattr(self, "_urg"):
-            self._urg = struct.unpack_from("!H", self._frame, self._hptr + 18)[0]
-        return self._urg
+        if self.__urg is self.__not_cached:
+            self.__urg = struct.unpack_from("!H", self._frame, self._hptr + 18)[0]
+        return self.__urg
 
     @property
     def data(self):
         """ Read the data packet carries """
 
-        if not hasattr(self, "_data"):
-            self._data = self._frame[self._hptr + self.hlen : self._hptr + self.plen]
-        return self._data
+        if self.__data is self.__not_cached:
+            self.__data = self._frame[self._hptr + self.hlen : self._hptr + self.plen]
+        return self.__data
 
     @property
     def olen(self):
         """ Calculate options length """
 
-        if not hasattr(self, "_plen"):
+        if self.__olen is self.__not_cached:
             self._olen = self.hlen - TCP_HEADER_LEN
         return self._olen
 
@@ -270,33 +270,33 @@ class TcpPacket:
     def packet(self):
         """ Read the whole packet """
 
-        if not hasattr(self, "_packet"):
-            self._packet = self._frame[self._hptr :]
-        return self._packet
+        if self.__packet is self.__not_cached:
+            self.__packet = self._frame[self._hptr : self._hptr + self.plen]
+        return self.__packet
 
     @property
     def options(self):
         """ Read list of options """
 
-        if not hasattr(self, "_options"):
-            self._options = []
+        if self.__options is self.__not_cached:
+            self.__options = []
             optr = self._hptr + TCP_HEADER_LEN
             while optr < self._hptr + self.hlen:
                 if self._frame[optr] == TCP_OPT_EOL:
-                    self._options.append(TcpOptEol())
+                    self.__options.append(TcpOptEol())
                     break
                 if self._frame[optr] == TCP_OPT_NOP:
-                    self._options.append(TcpOptNop())
+                    self.__options.append(TcpOptNop())
                     optr += TCP_OPT_NOP_LEN
                     continue
-                self._options.append(
+                self.__options.append(
                     {TCP_OPT_MSS: TcpOptMss, TCP_OPT_WSCALE: TcpOptWscale, TCP_OPT_SACKPERM: TcpOptSackPerm, TCP_OPT_TIMESTAMP: TcpOptTimestamp}.get(
                         self._frame[optr], TcpOptUnk
                     )(self._frame, optr)
                 )
                 optr += self._frame[optr + 1]
 
-        return self._options
+        return self.__options
 
     @property
     def mss(self):
