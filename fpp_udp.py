@@ -61,11 +61,12 @@ UDP_HEADER_LEN = 8
 class UdpPacket:
     """ UDP packet support class """
 
-    def __init__(self, frame, hptr, pseudo_header):
+    def __init__(self, frame, hptr, plen, pseudo_header):
         """ Class constructor """
 
         self._frame = frame
         self._hptr = hptr
+        self._plen = plen
 
         self.packet_parse_failed = self._packet_integrity_check(pseudo_header) or self._packet_sanity_check()
         if self.packet_parse_failed:
@@ -143,14 +144,14 @@ class UdpPacket:
         if not config.packet_integrity_check:
             return False
 
-        if inet_cksum(pseudo_header + self._frame[self._hptr :]):
+        if inet_cksum(pseudo_header + self._frame[self._hptr : self._hptr + self._plen]):
             return "UDP sanity - wrong packet checksum"
 
         if len(self._frame) < UDP_HEADER_LEN:
             return "UDP sanity - wrong packet length (I)"
 
         plen = struct.unpack_from("!H", self._frame, self._hptr + 4)[0]
-        if not 8 <= plen == len(self._frame) - self._hptr:
+        if not 8 <= plen <= len(self):
             return "UDP sanity - wrong packet length (II)"
 
         return False

@@ -74,7 +74,7 @@ class TcpPacket:
 
         self._frame = frame
         self._hptr = hptr
-        self.plen = plen
+        self._plen = plen
 
         self.packet_parse_failed = self._packet_integrity_check(pseudo_header) or self._packet_sanity_check()
         if self.packet_parse_failed:
@@ -258,7 +258,13 @@ class TcpPacket:
     def dlen(self):
         """ Calculate data length """
 
-        return self.plen - self.hlen
+        return self._plen - self.hlen
+
+    @property
+    def plen(self):
+        """ Calculate packet length """
+
+        return self._plen
 
     @property
     def packet(self):
@@ -334,7 +340,7 @@ class TcpPacket:
         if not config.packet_integrity_check:
             return False
 
-        if inet_cksum(pseudo_header + self._frame[self._hptr :]):
+        if inet_cksum(pseudo_header + self._frame[self._hptr : self._hptr + self._plen]):
             return "TCP integrity - wrong packet checksum"
 
         if len(self._frame) - self._hptr < TCP_HEADER_LEN:

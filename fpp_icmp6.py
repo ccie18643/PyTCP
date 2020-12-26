@@ -329,11 +329,12 @@ ICMP6_MART_BLOCK_OLD_SOURCES = 6
 class Icmp6Packet:
     """ ICMPv6 packet support class """
 
-    def __init__(self, frame, hptr, pseudo_header, ip6_src, ip6_dst, ip6_hop):
+    def __init__(self, frame, hptr, plen, pseudo_header, ip6_src, ip6_dst, ip6_hop):
         """ Class constructor """
 
         self._frame = frame
         self._hptr = hptr
+        self._plen = plen
 
         self.packet_parse_failed = self._packet_integrity_check(pseudo_header) or self._packet_sanity_check(ip6_src, ip6_dst, ip6_hop)
         if self.packet_parse_failed:
@@ -645,7 +646,7 @@ class Icmp6Packet:
         if not config.packet_integrity_check:
             return False
 
-        if inet_cksum(pseudo_header + self._frame[self._hptr :]):
+        if inet_cksum(pseudo_header + self._frame[self._hptr : self._hptr + self._plen]):
             return "ICMPv6 integrity - wrong packet checksum"
 
         if len(self) < ICMP6_HEADER_LEN:

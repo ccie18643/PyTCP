@@ -109,11 +109,12 @@ ICMP4_ECHO_REQUEST = 8
 class Icmp4Packet:
     """ ICMPv4 packet support class """
 
-    def __init__(self, frame, hptr):
+    def __init__(self, frame, hptr, plen):
         """ Class constructor """
 
         self._frame = frame
         self._hptr = hptr
+        self._plen = plen
 
         self.packet_parse_failed = self._packet_integrity_check() or self._packet_sanity_check()
         if self.packet_parse_failed:
@@ -218,7 +219,8 @@ class Icmp4Packet:
         if not config.packet_integrity_check:
             return False
 
-        if inet_cksum(self._frame[self._hptr :]):
+        print(self._plen)
+        if inet_cksum(self._frame[self._hptr : self._hptr + self._plen]):
             return "ICMPv4 integrity - wrong packet checksum"
 
         if len(self._frame) - self._hptr < ICMP4_HEADER_LEN:
