@@ -69,12 +69,37 @@ TCP_HEADER_LEN = 20
 class TcpPacket:
     """ TCP packet support class """
 
+    class __not_cached:
+        pass
+
     def __init__(self, frame, hptr, plen, pseudo_header):
         """ Class constructor """
 
         self._frame = frame
         self._hptr = hptr
         self._plen = plen
+
+        self.__sport = self.__not_cached
+        self.__dport = self.__not_cached
+        self.__seq = self.__not_cached
+        self.__ack = self.__not_cached
+        self.__hlen = self.__not_cached
+        self.__flag_ns = self.__not_cached
+        self.__flag_crw = self.__not_cached
+        self.__flag_ece = self.__not_cached
+        self.__flag_urg = self.__not_cached
+        self.__flag_ack = self.__not_cached
+        self.__flag_psh = self.__not_cached
+        self.__flag_rst = self.__not_cached
+        self.__flag_syn = self.__not_cached
+        self.__flag_fin = self.__not_cached
+        self.__win = self.__not_cached
+        self.__cksum = self.__not_cached
+        self.__urg = self.__not_cached
+        self.__data = self.__not_cached
+        self.__olen = self.__not_cached
+        self.__packet = self.__not_cached
+        self.__options = self.__not_cached
 
         self.packet_parse_failed = self._packet_integrity_check(pseudo_header) or self._packet_sanity_check()
         if self.packet_parse_failed:
