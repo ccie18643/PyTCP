@@ -113,7 +113,7 @@ class FastPacketParser:
 
             # TCP packet parsing
             if self.ip4.proto == fpp_ip4.IP4_PROTO_TCP:
-                self.tcp = fpp_tcp.TcpPacket(self._frame, self.ip4.dptr, self.ip4.pseudo_header)
+                self.tcp = fpp_tcp.TcpPacket(self._frame, self.ip4.dptr, self.ip4.dlen, self.ip4.pseudo_header)
                 if self.tcp.packet_parse_failed:
                     self.logger.critical(f"{self.tracker} - {self.tcp.packet_parse_failed}")
                     self.packet_parse_failed = True

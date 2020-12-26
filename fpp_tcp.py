@@ -69,11 +69,12 @@ TCP_HEADER_LEN = 20
 class TcpPacket:
     """ TCP packet support class """
 
-    def __init__(self, frame, hptr, pseudo_header):
+    def __init__(self, frame, hptr, plen, pseudo_header):
         """ Class constructor """
 
         self._frame = frame
         self._hptr = hptr
+        self.plen = plen
 
         self.packet_parse_failed = self._packet_integrity_check(pseudo_header) or self._packet_sanity_check()
         if self.packet_parse_failed:
@@ -242,7 +243,7 @@ class TcpPacket:
         """ Read the data packet carries """
 
         if not hasattr(self, "_data"):
-            self._data = self._frame[self._hptr + self.hlen :]
+            self._data = self._frame[self._hptr + self.hlen : self._hptr + self.plen]
         return self._data
 
     @property
@@ -250,24 +251,14 @@ class TcpPacket:
         """ Calculate options length """
 
         if not hasattr(self, "_plen"):
-            self._plen = self.hlen - TCP_HEADER_LEN
-        return self._plen
+            self._olen = self.hlen - TCP_HEADER_LEN
+        return self._olen
 
     @property
     def dlen(self):
         """ Calculate data length """
 
-        if not hasattr(self, "_dlen"):
-            self._dlen = len(self) - self.hlen
-        return self._dlen
-
-    @property
-    def plen(self):
-        """ Calculate packet length """
-
-        if not hasattr(self, "_plen"):
-            self._plen = len(self)
-        return self._plen
+        return self.plen - self.hlen
 
     @property
     def packet(self):

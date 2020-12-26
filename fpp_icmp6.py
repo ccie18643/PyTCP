@@ -381,7 +381,7 @@ class Icmp6Packet:
         return log
 
     def __len__(self):
-        """ Packet length """
+        """ Number of bytes remaining in the frame """
 
         return len(self._frame) - self._hptr
 

@@ -90,7 +90,7 @@ class EtherPacket:
         return f"ETHER {self.src} > {self.dst}, 0x{self.type:0>4x} ({ETHER_TYPE_TABLE.get(self.type, '???')})"
 
     def __len__(self):
-        """ Packet length """
+        """ Number of bytes remaining in the frame """
 
         return len(self._frame) - self._hptr
 

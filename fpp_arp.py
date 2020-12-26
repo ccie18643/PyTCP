@@ -91,7 +91,7 @@ class ArpPacket:
             return f"ARP reply {self.spa} / {self.sha} > {self.tpa} / {self.tha}"
 
     def __len__(self):
-        """ Packet length """
+        """ Number of bytes remaining in the frame """
 
         return len(self._frame) - self._hptr
 

@@ -148,7 +148,7 @@ class Ip4Packet:
         )
 
     def __len__(self):
-        """ Packet length """
+        """ Number of bytes remaining in the frame """
 
         return len(self._frame) - self._hptr
 
@@ -301,9 +301,7 @@ class Ip4Packet:
     def dlen(self):
         """ Calculate data length """
 
-        if not hasattr(self, "_dlen"):
-            self._dlen = len(self) - self.hlen
-        return self._dlen
+        return self.plen - self.hlen
 
     @property
     def packet(self):
@@ -332,7 +330,7 @@ class Ip4Packet:
 
         hlen = (self._frame[self._hptr + 0] & 0b00001111) << 2
         plen = struct.unpack_from("!H", self._frame, self._hptr + 2)[0]
-        if not IP4_HEADER_LEN <= hlen <= plen == len(self):
+        if not IP4_HEADER_LEN <= hlen <= plen <= len(self):
             return "IPv4 integrity - wrong packet length (II)"
 
         # Cannot compute checksum earlier because it depends on sanity of hlen field

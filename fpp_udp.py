@@ -79,7 +79,7 @@ class UdpPacket:
         return f"UDP {self.sport} > {self.dport}, len {self.plen}"
 
     def __len__(self):
-        """ Packet length """
+        """ Number of bytes remaining in the frame """
 
         return len(self._frame) - self._hptr
 
@@ -122,6 +122,12 @@ class UdpPacket:
         if not hasattr(self, "_data"):
             self._data = self._frame[self._hptr + UDP_HEADER_LEN :]
         return self._data
+
+    @property
+    def dlen(self):
+        """ Calculate data length """
+
+        return self.plen - UDP_HEADER_LEN
 
     @property
     def packet(self):
