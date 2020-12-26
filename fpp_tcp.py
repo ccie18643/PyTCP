@@ -343,11 +343,11 @@ class TcpPacket:
         if inet_cksum(pseudo_header + self._frame[self._hptr : self._hptr + self._plen]):
             return "TCP integrity - wrong packet checksum"
 
-        if len(self._frame) - self._hptr < TCP_HEADER_LEN:
+        if not TCP_HEADER_LEN <= self._plen <= len(self):
             return "TCP integrity - wrong packet length (I)"
 
         hlen = (self._frame[self._hptr + 12] & 0b11110000) >> 2
-        if not TCP_HEADER_LEN <= hlen <= len(self):
+        if not TCP_HEADER_LEN <= hlen <= self._plen <= len(self):
             return "TCP integrity - wrong packet length (II)"
 
         optr = self._hptr + TCP_HEADER_LEN

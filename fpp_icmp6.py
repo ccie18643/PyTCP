@@ -649,56 +649,56 @@ class Icmp6Packet:
         if inet_cksum(pseudo_header + self._frame[self._hptr : self._hptr + self._plen]):
             return "ICMPv6 integrity - wrong packet checksum"
 
-        if len(self) < ICMP6_HEADER_LEN:
+        if not ICMP6_HEADER_LEN <= self._plen <= len(self):
             return "ICMPv6 integrity - wrong packet length (I)"
 
         if self._frame[0] == ICMP6_UNREACHABLE:
-            if len(self) < 12:
+            if not 12 <= self._plen <= len(self):
                 return "ICMPv6 integrity - wrong packet length (II)"
 
         elif self._frame[0] in {ICMP6_ECHO_REQUEST, ICMP6_ECHO_REPLY}:
-            if len(self) < 8:
+            if not 8 <= self._plen <= len(self):
                 return "ICMPv6 integrity - wrong packet length (II)"
 
         elif self._frame[0] == ICMP6_MLD2_QUERY:
-            if len(self) < 28:
+            if not 28 <= self._plen <= len(self):
                 return "ICMPv6 integrity - wrong packet length (II)"
-            if len(self) != 28 + struct.unpack_from("! H", self._frame, self._hptr + 26)[0] * 16:
+            if self._plen != 28 + struct.unpack_from("! H", self._frame, self._hptr + 26)[0] * 16:
                 return "ICMPv6 integrity - wrong packet length (III)"
 
         elif self._frame[0] == ICMP6_ROUTER_SOLICITATION:
-            if len(self) < 8:
+            if not 8 <= self._plen <= len(self):
                 return "ICMPv6 integrity - wrong packet length (II)"
             if fail := self.__nd_option_pre_parse_sanity_check(self._hptr + 8):
                 return fail
 
         elif self._frame[0] == ICMP6_ROUTER_ADVERTISEMENT:
-            if len(self) < 16:
+            if not 16 <= self._plen <= len(self):
                 return "ICMPv6 integrity - wrong packet length (II)"
             if fail := self.__nd_option_pre_parse_sanity_check(self._hptr + 16):
                 return fail
 
         elif self._frame[0] == ICMP6_NEIGHBOR_SOLICITATION:
-            if len(self) < 24:
+            if not 24 <= self._plen <= len(self):
                 return "ICMPv6 integrity - wrong packet length (II)"
             if fail := self.__nd_option_pre_parse_sanity_check(self._hptr + 24):
                 return fail
 
         elif self._frame[0] == ICMP6_NEIGHBOR_ADVERTISEMENT:
-            if len(self) < 24:
+            if 24 <= self._plen <= len(self):
                 return "ICMPv6 integrity - wrong packet length (II)"
             if fail := self.__nd_option_pre_parse_sanity_check(self._hptr + 24):
                 return fail
 
         elif self._frame[0] == ICMP6_MLD2_REPORT:
-            if len(self._frame) - self._hptr < 8:
+            if not 8 <= self._plen <= len(self):
                 return "ICMPv6 integrity - wrong packet length (II)"
             optr = self._hptr + 8
             for _ in range(struct.unpack_from("! H", self._frame, self._hptr + 6)[0]):
-                if optr + 20 > len(self._frame):
+                if optr + 20 > self._hptr + self._plen:
                     return "ICMPv6 integrity - wrong packet length (III)"
                 optr += 20 + self._frame[optr + 1] + struct.unpack_from("! H", self._frame, optr + 2)[0] * 16
-            if optr != len(self._frame):
+            if optr != self._hptr + self._plen:
                 return "ICMPv6 integrity - wrong packet length (IV)"
 
         return False

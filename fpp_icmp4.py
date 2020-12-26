@@ -223,15 +223,15 @@ class Icmp4Packet:
         if inet_cksum(self._frame[self._hptr : self._hptr + self._plen]):
             return "ICMPv4 integrity - wrong packet checksum"
 
-        if len(self._frame) - self._hptr < ICMP4_HEADER_LEN:
+        if not ICMP4_HEADER_LEN <= self._plen <= len(self):
             return "ICMPv4 integrity - wrong packet length (I)"
 
         if self._frame[self._hptr + 0] in {ICMP4_ECHO_REQUEST, ICMP4_ECHO_REPLY}:
-            if len(self._frame) - self._hptr < 8:
+            if not 8 <= self._plen <= len(self):
                 return "ICMPv6 integrity - wrong packet length (II)"
 
         elif self._frame[self._hptr + 0] == ICMP4_UNREACHABLE:
-            if len(self._frame) - self._hptr < 12:
+            if not 12 <= self._plen <= len(self):
                 return "ICMPv6 integrity - wrong packet length (II)"
 
         return False

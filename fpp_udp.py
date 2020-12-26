@@ -145,14 +145,14 @@ class UdpPacket:
             return False
 
         if inet_cksum(pseudo_header + self._frame[self._hptr : self._hptr + self._plen]):
-            return "UDP sanity - wrong packet checksum"
+            return "UDP integrity - wrong packet checksum"
 
-        if len(self._frame) < UDP_HEADER_LEN:
-            return "UDP sanity - wrong packet length (I)"
+        if not UDP_HEADER_LEN <= self._plen <= len(self):
+            return "UDP integrity - wrong packet length (I)"
 
         plen = struct.unpack_from("!H", self._frame, self._hptr + 4)[0]
-        if not 8 <= plen <= len(self):
-            return "UDP sanity - wrong packet length (II)"
+        if not UDP_HEADER_LEN <= plen == self._plen <= len(self):
+            return "UDP integrity - wrong packet length (II)"
 
         return False
 
@@ -163,9 +163,9 @@ class UdpPacket:
             return False
 
         if self.sport == 0:
-            return "UDP sanity fail - 'udp_sport' must be greater than 0"
+            return "UDP sanity - 'udp_sport' must be greater than 0"
 
         if self.dport == 0:
-            return "UDP sanity fail - 'udp_dport' must be greater then 0"
+            return "UDP sanity - 'udp_dport' must be greater then 0"
 
         return False
