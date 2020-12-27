@@ -150,7 +150,7 @@ class Ip6Packet:
         self.__data = self.__not_cached
         self.__plen = self.__not_cached
         self.__packet = self.__not_cached
-        self.__pseudo_header = self.__not_cached
+        self.__pshdr_sum = self.__not_cached
 
         self.packet_parse_failed = self._packet_integrity_check() or self._packet_sanity_check()
         if self.packet_parse_failed:
@@ -264,12 +264,13 @@ class Ip6Packet:
         return self.__packet
 
     @property
-    def pseudo_header(self):
+    def pshdr_sum(self):
         """ Returns IPv6 pseudo header that is used by TCP, UDP and ICMPv6 to compute their checksums """
 
-        if self.__pseudo_header is self.__not_cached:
-            self.__pseudo_header = struct.pack("! 16s 16s L BBBB", self.src.packed, self.dst.packed, self.dlen, 0, 0, 0, self.next)
-        return self.__pseudo_header
+        if self.__pshdr_sum is self.__not_cached:
+            pseudo_header = struct.pack("! 16s 16s L BBBB", self.src.packed, self.dst.packed, self.dlen, 0, 0, 0, self.next)
+            self.__pshdr_sum = sum(struct.unpack(f"! 5Q", pseudo_header))
+        return self.__pshdr_sum
 
     def _packet_integrity_check(self):
         """ Packet integrity check to be run on raw packet prior to parsing to make sure parsing is safe """

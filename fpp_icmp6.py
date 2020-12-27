@@ -332,7 +332,7 @@ class Icmp6Packet:
     class __not_cached:
         pass
 
-    def __init__(self, frame, hptr, plen, pseudo_header, ip6_src, ip6_dst, ip6_hop):
+    def __init__(self, frame, hptr, plen, pshdr_sum, ip6_src, ip6_dst, ip6_hop):
         """ Class constructor """
 
         self._frame = frame
@@ -361,7 +361,7 @@ class Icmp6Packet:
         self.__nd_opt_tlla = self.__not_cached
         self.__nd_opt_pi = self.__not_cached
 
-        self.packet_parse_failed = self._packet_integrity_check(pseudo_header) or self._packet_sanity_check(ip6_src, ip6_dst, ip6_hop)
+        self.packet_parse_failed = self._packet_integrity_check(pshdr_sum) or self._packet_sanity_check(ip6_src, ip6_dst, ip6_hop)
         if self.packet_parse_failed:
             return
 
@@ -679,13 +679,13 @@ class Icmp6Packet:
 
         return False
 
-    def _packet_integrity_check(self, pseudo_header):
+    def _packet_integrity_check(self, pshdr_sum):
         """ Packet integrity check to be run on raw frame prior to parsing to make sure parsing is safe """
 
         if not config.packet_integrity_check:
             return False
 
-        if inet_cksum_fast(self._frame, self._hptr, self._plen, pseudo_header):
+        if inet_cksum_fast(self._frame, self._hptr, self._plen, pshdr_sum):
             return "ICMPv6 integrity - wrong packet checksum"
 
         if not ICMP6_HEADER_LEN <= self._plen <= len(self):

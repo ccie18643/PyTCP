@@ -111,7 +111,7 @@ class FastPacketParser:
 
             # UDP packet parsing
             if self.ip4.proto == fpp_ip4.IP4_PROTO_UDP:
-                self.udp = fpp_udp.UdpPacket(self._frame, self.ip4.dptr, self.ip4.dlen, self.ip4.pseudo_header)
+                self.udp = fpp_udp.UdpPacket(self._frame, self.ip4.dptr, self.ip4.dlen, self.ip4.pshdr_sum)
                 if self.udp.packet_parse_failed:
                     if __debug__:
                         self._logger.critical(f"{self.tracker} - {self.udp.packet_check_failed}")
@@ -123,7 +123,7 @@ class FastPacketParser:
 
             # TCP packet parsing
             if self.ip4.proto == fpp_ip4.IP4_PROTO_TCP:
-                self.tcp = fpp_tcp.TcpPacket(self._frame, self.ip4.dptr, self.ip4.dlen, self.ip4.pseudo_header)
+                self.tcp = fpp_tcp.TcpPacket(self._frame, self.ip4.dptr, self.ip4.dlen, self.ip4.pshdr_sum)
                 if self.tcp.packet_parse_failed:
                     if __debug__:
                         self._logger.critical(f"{self.tracker} - {self.tcp.packet_parse_failed}")
@@ -146,7 +146,7 @@ class FastPacketParser:
 
             # ICMPv6 packet parsing
             if self.ip6.next == fpp_ip6.IP6_NEXT_HEADER_ICMP6:
-                self.icmp6 = fpp_icmp6.Icmp6Packet(self._frame, self.ip6.dptr, self.ip6.dlen, self.ip6.pseudo_header, self.ip6.src, self.ip6.dst, self.ip6.hop)
+                self.icmp6 = fpp_icmp6.Icmp6Packet(self._frame, self.ip6.dptr, self.ip6.dlen, self.ip6.pshdr_sum, self.ip6.src, self.ip6.dst, self.ip6.hop)
                 if self.icmp6.packet_parse_failed:
                     if __debug__:
                         self._logger.critical(f"{self.tracker} - {self.icmp6.packet_parse_failed}")
@@ -158,7 +158,7 @@ class FastPacketParser:
 
             # UDP packet parsing
             if self.ip6.next == fpp_ip6.IP6_NEXT_HEADER_UDP:
-                self.udp = fpp_udp.UdpPacket(self._frame, self.ip6.dptr, self.ip6.dlen, self.ip6.pseudo_header)
+                self.udp = fpp_udp.UdpPacket(self._frame, self.ip6.dptr, self.ip6.dlen, self.ip6.pshdr_sum)
                 if self.udp.packet_parse_failed:
                     if __debug__:
                         self._logger.critical(f"{self.tracker} - {self.udp.packet_parse_failed}")
@@ -170,7 +170,7 @@ class FastPacketParser:
 
             # TCP packet parsing
             if self.ip6.next == fpp_ip6.IP6_NEXT_HEADER_TCP:
-                self.tcp = fpp_tcp.TcpPacket(self._frame, self.ip6.dptr, self.ip6.dlen, self.ip6.pseudo_header)
+                self.tcp = fpp_tcp.TcpPacket(self._frame, self.ip6.dptr, self.ip6.dlen, self.ip6.pshdr_sum)
                 if self.tcp.packet_parse_failed:
                     if __debug__:
                         self._logger.critical(f"{self.tracker} - {self.tcp.packet_parse_failed}")

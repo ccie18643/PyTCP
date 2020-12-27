@@ -60,16 +60,13 @@ def inet_cksum(data):
     return ~(cksum + (cksum >> 16)) & 0xFFFF
 
 
-def inet_cksum_fast(data, dptr, dlen, pseudo_header=None):
+def inet_cksum_fast(data, dptr, dlen, init=0):
     """ Compute Internet Checksum used by IPv4/ICMPv4/ICMPv6/UDP/TCP protocols """
 
-    cksum = sum(struct.unpack_from(f"!{dlen >> 3}Q", data, dptr))
+    cksum = init + sum(struct.unpack_from(f"!{dlen >> 3}Q", data, dptr))
 
     if remainder := dlen & 7:
         cksum += struct.unpack("!Q", data[dptr + dlen - remainder : dptr + dlen] + b"\0" * (8 - remainder))[0]
-
-    if pseudo_header:
-        cksum += sum(struct.unpack(f"!{len(pseudo_header) >> 2}L", pseudo_header))
 
     cksum = (cksum >> 64) + (cksum & 0xFFFFFFFFFFFFFFFF)
     cksum = (cksum >> 32) + (cksum & 0xFFFFFFFF)

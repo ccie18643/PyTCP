@@ -151,7 +151,7 @@ class Ip4Packet:
         self.__data = self.__not_cached
         self.__olen = self.__not_cached
         self.__packet = self.__not_cached
-        self.__pseudo_header = self.__not_cached
+        self.__pshdr_sum = self.__not_cached
 
         self.packet_parse_failed = self._packet_integrity_check() or self._packet_sanity_check()
         if self.packet_parse_failed:
@@ -333,12 +333,13 @@ class Ip4Packet:
         return self.__packet
 
     @property
-    def pseudo_header(self):
+    def pshdr_sum(self):
         """ Create IPv4 pseudo header used by TCP and UDP to compute their checksums """
 
-        if self.__pseudo_header is self.__not_cached:
-            self.__pseudo_header = struct.pack("! 4s 4s BBH", self.src.packed, self.dst.packed, 0, self.proto, self.plen - self.hlen)
-        return self.__pseudo_header
+        if self.__pshdr_sum is self.__not_cached:
+            pseudo_header = struct.pack("! 4s 4s BBH", self.src.packed, self.dst.packed, 0, self.proto, self.plen - self.hlen)
+            self.__pshdr_sum = sum(struct.unpack(f"! 3L", pseudo_header))
+        return self.__pshdr_sum
 
     def _packet_integrity_check(self):
         """ Packet integrity check to be run on raw packet prior to parsing to make sure parsing is safe """

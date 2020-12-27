@@ -64,7 +64,7 @@ class UdpPacket:
     class __not_cached:
         pass
 
-    def __init__(self, frame, hptr, plen, pseudo_header):
+    def __init__(self, frame, hptr, plen, pshdr_sum):
         """ Class constructor """
 
         self._frame = frame
@@ -78,7 +78,7 @@ class UdpPacket:
         self.__data = self.__not_cached
         self.__packet = self.__not_cached
 
-        self.packet_parse_failed = self._packet_integrity_check(pseudo_header) or self._packet_sanity_check()
+        self.packet_parse_failed = self._packet_integrity_check(pshdr_sum) or self._packet_sanity_check()
         if self.packet_parse_failed:
             return
 
@@ -148,13 +148,13 @@ class UdpPacket:
             self.__packet = self._frame[self._hptr :]
         return self.__packet
 
-    def _packet_integrity_check(self, pseudo_header):
+    def _packet_integrity_check(self, pshdr_sum):
         """ Packet integrity check to be run on raw frame prior to parsing to make sure parsing is safe """
 
         if not config.packet_integrity_check:
             return False
 
-        if inet_cksum_fast(self._frame, self._hptr, self._plen, pseudo_header):
+        if inet_cksum_fast(self._frame, self._hptr, self._plen, pshdr_sum):
             return "UDP integrity - wrong packet checksum"
 
         if not UDP_HEADER_LEN <= self._plen <= len(self):
