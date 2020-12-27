@@ -109,48 +109,48 @@ class EtherPacket:
         """ Read 'Destination MAC address' field """
 
         if self.__dst is self.__not_cached:
-            self._dst = ":".join([f"{_:0>2x}" for _ in self._frame[self._hptr + 0 : self._hptr + 6]])
-        return self._dst
+            self.__dst = ":".join([f"{_:0>2x}" for _ in self._frame[self._hptr + 0 : self._hptr + 6]])
+        return self.__dst
 
     @property
     def src(self):
         """ Read 'Source MAC address' field """
 
         if self.__src is self.__not_cached:
-            self._src = ":".join([f"{_:0>2x}" for _ in self._frame[self._hptr + 6 : self._hptr + 12]])
-        return self._src
+            self.__src = ":".join([f"{_:0>2x}" for _ in self._frame[self._hptr + 6 : self._hptr + 12]])
+        return self.__src
 
     @property
     def type(self):
         """ Read 'EtherType' field """
 
         if self.__type is self.__not_cached:
-            self._type = struct.unpack_from("!H", self._frame, self._hptr + 12)[0]
-        return self._type
+            self.__type = struct.unpack_from("!H", self._frame, self._hptr + 12)[0]
+        return self.__type
 
     @property
     def data(self):
         """ Read the data packet carries """
 
         if self.__data is self.__not_cached:
-            self._data = self._frame[self._hptr + ETHER_HEADER_LEN :]
-        return self._data
+            self.__data = self._frame[self._hptr + ETHER_HEADER_LEN :]
+        return self.__data
 
     @property
     def packet(self):
         """ Read the whole packet """
 
         if self.__packet is self.__not_cached:
-            self._packet = self._frame[self._hptr :]
-        return self._packet
+            self.__packet = self._frame[self._hptr :]
+        return self.__packet
 
     @property
     def plen(self):
         """ Calculate packet length """
 
         if self.__plen is self.__not_cached:
-            self._plen = len(self)
-        return self._plen
+            self.__plen = len(self)
+        return self.__plen
 
     def _packet_integrity_check(self):
         """ Packet integrity check to be run on raw packet prior to parsing to make sure parsing is safe """

@@ -531,7 +531,7 @@ class Icmp6Packet:
     def na_flag_r(self):
         """ Read ND NA 'R flag' field """
 
-        if self._na_flag_r is self.__not_cached:
+        if self.__na_flag_r is self.__not_cached:
             assert self.type == ICMP6_NEIGHBOR_ADVERTISEMENT
             self.__na_flag_r = bool(self._frame[self._hptr + 4] & 0b10000000)
         return self.__na_flag_r

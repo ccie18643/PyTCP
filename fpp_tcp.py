@@ -100,6 +100,10 @@ class TcpPacket:
         self.__olen = self.__not_cached
         self.__packet = self.__not_cached
         self.__options = self.__not_cached
+        self.__mss = self.__not_cached
+        self.__wscale = self.__not_cached
+        self.__sackperm = self.__not_cached
+        self.__timestamp = self.__not_cached
 
         self.packet_parse_failed = self._packet_integrity_check(pseudo_header) or self._packet_sanity_check()
         if self.packet_parse_failed:
@@ -276,8 +280,8 @@ class TcpPacket:
         """ Calculate options length """
 
         if self.__olen is self.__not_cached:
-            self._olen = self.hlen - TCP_HEADER_LEN
-        return self._olen
+            self.__olen = self.hlen - TCP_HEADER_LEN
+        return self.__olen
 
     @property
     def dlen(self):
@@ -327,37 +331,48 @@ class TcpPacket:
     def mss(self):
         """ TCP option - Maximum Segment Size (2) """
 
-        for option in self.options:
-            if option.kind == TCP_OPT_MSS:
-                return option.mss
-        return 536
+        if self.__mss is self.__not_cached:
+            for option in self.options:
+                if option.kind == TCP_OPT_MSS:
+                    self.__mss == option.mss
+            else:
+                self.__mss = 536
+        return self.__mss
 
     @property
     def wscale(self):
         """ TCP option - Window Scale (3) """
 
-        for option in self.options:
-            if option.kind == TCP_OPT_WSCALE:
-                return 1 << option.wscale
-        return None
+        if self.__wscale is self.__not_cached:
+            for option in self.options:
+                if option.kind == TCP_OPT_WSCALE:
+                    self.__wscale = 1 << option.wscale
+            else:
+                self.__wscale = None
+        return self.__wscale
 
     @property
     def sackperm(self):
         """ TCP option - Sack Permit (4) """
 
-        for option in self.options:
-            if option.kind == TCP_OPT_SACKPERM:
-                return True
-        return None
+        if self.__sackperm is self.__not_cached:
+            for option in self.options:
+                if option.kind == TCP_OPT_SACKPERM:
+                    self.__sackperm = True
+            else:
+                self.__sackperm = None
+        return self.__sackperm
 
     @property
     def timestamp(self):
         """ TCP option - Timestamp (8) """
 
-        for option in self.options:
-            if option.kind == TCP_OPT_TIMESTAMP:
-                return option.tsval, option.tsecr
-        return None
+        if self.__timestamp is self.__not_cached:
+            for option in self.options:
+                if option.kind == TCP_OPT_TIMESTAMP:
+                    self.__timestamp = (option.tsval, option.tsecr)
+            self.__timestamp = None
+        return self.__timestamp
 
     def _packet_integrity_check(self, pseudo_header):
         """ Packet integrity check to be run on raw frame prior to parsing to make sure parsing is safe """
