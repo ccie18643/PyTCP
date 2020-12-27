@@ -53,8 +53,8 @@ def _phtx_icmp4(
     icmp4_code=0,
     icmp4_ec_id=None,
     icmp4_ec_seq=None,
-    icmp4_ec_raw_data=None,
-    icmp4_un_raw_data=None,
+    icmp4_ec_data=None,
+    icmp4_un_data=None,
     echo_tracker=None,
 ):
     """ Handle outbound ICMPv4 packets """
@@ -68,8 +68,8 @@ def _phtx_icmp4(
         icmp4_code=icmp4_code,
         icmp4_ec_id=icmp4_ec_id,
         icmp4_ec_seq=icmp4_ec_seq,
-        icmp4_ec_raw_data=icmp4_ec_raw_data,
-        icmp4_un_raw_data=icmp4_un_raw_data,
+        icmp4_ec_data=icmp4_ec_data,
+        icmp4_un_data=icmp4_un_data,
         echo_tracker=echo_tracker,
     )
 

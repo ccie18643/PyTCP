@@ -116,8 +116,8 @@ class Icmp4Packet:
         icmp4_code=0,
         icmp4_ec_id=None,
         icmp4_ec_seq=None,
-        icmp4_ec_raw_data=b"",
-        icmp4_un_raw_data=b"",
+        icmp4_ec_data=b"",
+        icmp4_un_data=b"",
         echo_tracker=None,
     ):
         """ Class constructor """
@@ -131,16 +131,16 @@ class Icmp4Packet:
         if self.icmp4_type == ICMP4_ECHO_REPLY:
             self.icmp4_ec_id = icmp4_ec_id
             self.icmp4_ec_seq = icmp4_ec_seq
-            self.icmp4_ec_raw_data = icmp4_ec_raw_data
+            self.icmp4_ec_data = icmp4_ec_data
 
         elif self.icmp4_type == ICMP4_UNREACHABLE and self.icmp4_code == ICMP4_UNREACHABLE__PORT:
             self.icmp4_un_reserved = 0
-            self.icmp4_un_raw_data = icmp4_un_raw_data[:520]
+            self.icmp4_un_data = icmp4_un_data[:520]
 
         elif self.icmp4_type == ICMP4_ECHO_REQUEST:
             self.icmp4_ec_id = icmp4_ec_id
             self.icmp4_ec_seq = icmp4_ec_seq
-            self.icmp4_ec_raw_data = icmp4_ec_raw_data
+            self.icmp4_ec_data = icmp4_ec_data
 
     def __str__(self):
         """ Packet log string """
@@ -169,15 +169,15 @@ class Icmp4Packet:
 
         if self.icmp4_type == ICMP4_ECHO_REPLY:
             raw_packet = (
-                struct.pack("! BBH HH", self.icmp4_type, self.icmp4_code, self.icmp4_cksum, self.icmp4_ec_id, self.icmp4_ec_seq) + self.icmp4_ec_raw_data
+                struct.pack("! BBH HH", self.icmp4_type, self.icmp4_code, self.icmp4_cksum, self.icmp4_ec_id, self.icmp4_ec_seq) + self.icmp4_ec_data
             )
 
         elif self.icmp4_type == ICMP4_UNREACHABLE and self.icmp4_code == ICMP4_UNREACHABLE__PORT:
-            raw_packet = struct.pack("! BBH L", self.icmp4_type, self.icmp4_code, self.icmp4_cksum, self.icmp4_un_reserved) + self.icmp4_un_raw_data
+            raw_packet = struct.pack("! BBH L", self.icmp4_type, self.icmp4_code, self.icmp4_cksum, self.icmp4_un_reserved) + self.icmp4_un_data
 
         elif self.icmp4_type == ICMP4_ECHO_REQUEST:
             raw_packet = (
-                struct.pack("! BBH HH", self.icmp4_type, self.icmp4_code, self.icmp4_cksum, self.icmp4_ec_id, self.icmp4_ec_seq) + self.icmp4_ec_raw_data
+                struct.pack("! BBH HH", self.icmp4_type, self.icmp4_code, self.icmp4_cksum, self.icmp4_ec_id, self.icmp4_ec_seq) + self.icmp4_ec_data
             )
 
         else:

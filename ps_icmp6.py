@@ -334,10 +334,10 @@ class Icmp6Packet:
         parent_packet=None,
         icmp6_type=None,
         icmp6_code=0,
-        icmp6_un_raw_data=b"",
+        icmp6_un_data=b"",
         icmp6_ec_id=None,
         icmp6_ec_seq=None,
-        icmp6_ec_raw_data=b"",
+        icmp6_ec_data=b"",
         icmp6_ra_hop=None,
         icmp6_ra_flag_m=False,
         icmp6_ra_flag_o=False,
@@ -365,17 +365,17 @@ class Icmp6Packet:
 
         if self.icmp6_type == ICMP6_UNREACHABLE:
             self.icmp6_un_reserved = 0
-            self.icmp6_un_raw_data = icmp6_un_raw_data[:520]
+            self.icmp6_un_data = icmp6_un_data[:520]
 
         elif self.icmp6_type == ICMP6_ECHO_REQUEST:
             self.icmp6_ec_id = icmp6_ec_id
             self.icmp6_ec_seq = icmp6_ec_seq
-            self.icmp6_ec_raw_data = icmp6_ec_raw_data
+            self.icmp6_ec_data = icmp6_ec_data
 
         elif self.icmp6_type == ICMP6_ECHO_REPLY:
             self.icmp6_ec_id = icmp6_ec_id
             self.icmp6_ec_seq = icmp6_ec_seq
-            self.icmp6_ec_raw_data = icmp6_ec_raw_data
+            self.icmp6_ec_data = icmp6_ec_data
 
         elif self.icmp6_type == ICMP6_ROUTER_SOLICITATION:
             self.icmp6_rs_reserved = 0
@@ -456,16 +456,16 @@ class Icmp6Packet:
         """ Get packet in raw format """
 
         if self.icmp6_type == ICMP6_UNREACHABLE:
-            raw_packet = struct.pack("! BBH L", self.icmp6_type, self.icmp6_code, self.icmp6_cksum, self.icmp6_un_reserved) + self.icmp6_un_raw_data
+            raw_packet = struct.pack("! BBH L", self.icmp6_type, self.icmp6_code, self.icmp6_cksum, self.icmp6_un_reserved) + self.icmp6_un_data
 
         elif self.icmp6_type == ICMP6_ECHO_REQUEST:
             raw_packet = (
-                struct.pack("! BBH HH", self.icmp6_type, self.icmp6_code, self.icmp6_cksum, self.icmp6_ec_id, self.icmp6_ec_seq) + self.icmp6_ec_raw_data
+                struct.pack("! BBH HH", self.icmp6_type, self.icmp6_code, self.icmp6_cksum, self.icmp6_ec_id, self.icmp6_ec_seq) + self.icmp6_ec_data
             )
 
         elif self.icmp6_type == ICMP6_ECHO_REPLY:
             raw_packet = (
-                struct.pack("! BBH HH", self.icmp6_type, self.icmp6_code, self.icmp6_cksum, self.icmp6_ec_id, self.icmp6_ec_seq) + self.icmp6_ec_raw_data
+                struct.pack("! BBH HH", self.icmp6_type, self.icmp6_code, self.icmp6_cksum, self.icmp6_ec_id, self.icmp6_ec_seq) + self.icmp6_ec_data
             )
 
         elif self.icmp6_type == ICMP6_ROUTER_SOLICITATION:

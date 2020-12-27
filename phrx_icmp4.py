@@ -61,7 +61,7 @@ def _phrx_icmp4(self, packet_rx):
             icmp4_type=ps_icmp4.ICMP4_ECHO_REPLY,
             icmp4_ec_id=packet_rx.icmp4.ec_id,
             icmp4_ec_seq=packet_rx.icmp4.ec_seq,
-            icmp4_ec_raw_data=packet_rx.icmp4.ec_data,
+            icmp4_ec_data=packet_rx.icmp4.ec_data,
             echo_tracker=packet_rx.tracker,
         )
         return

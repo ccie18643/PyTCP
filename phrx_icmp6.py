@@ -135,7 +135,7 @@ def _phrx_icmp6(self, packet_rx):
             icmp6_type=ps_icmp6.ICMP6_ECHO_REPLY,
             icmp6_ec_id=packet_rx.icmp6.ec_id,
             icmp6_ec_seq=packet_rx.icmp6.ec_seq,
-            icmp6_ec_raw_data=packet_rx.icmp6.ec_data,
+            icmp6_ec_data=packet_rx.icmp6.ec_data,
             echo_tracker=packet_rx.tracker,
         )
         return
