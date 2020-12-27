@@ -449,7 +449,29 @@ class Icmp6Packet:
     def __len__(self):
         """ Length of the packet """
 
-        return len(self.raw_packet)
+        if self.icmp6_type == ICMP6_UNREACHABLE:
+            return 12 + len(self.icmp6_un_data)
+
+        elif self.icmp6_type == ICMP6_ECHO_REQUEST:
+            return 8 + len(self.icmp6_ec_data)
+
+        elif self.icmp6_type == ICMP6_ECHO_REPLY:
+            return 8 + len(self.icmp6_ec_data)
+
+        elif self.icmp6_type == ICMP6_ROUTER_SOLICITATION:
+            return 8 + sum([len(_) for _ in self.icmp6_nd_options])
+
+        elif self.icmp6_type == ICMP6_ROUTER_ADVERTISEMENT:
+            return 16 + sum([len(_) for _ in self.icmp6_nd_options])
+
+        elif self.icmp6_type == ICMP6_NEIGHBOR_SOLICITATION:
+            return 24 + sum([len(_) for _ in self.icmp6_nd_options])
+
+        elif self.icmp6_type == ICMP6_NEIGHBOR_ADVERTISEMENT:
+            return 24 + sum([len(_) for _ in self.icmp6_nd_options])
+
+        elif self.icmp6_type == ICMP6_MLD2_REPORT:
+            return len(self.raw_packet)  # *** NEED TO REDO THIS ***
 
     @property
     def raw_packet(self):
@@ -609,15 +631,10 @@ ICMP6_ND_OPT_SLLA_LEN = 8
 class Icmp6NdOptSLLA:
     """ ICMPv6 ND option - Source Link Layer Address (1) """
 
-    def __init__(self, raw_option=None, opt_slla=None):
-        if raw_option:
-            self.opt_code = raw_option[0]
-            self.opt_len = raw_option[1] << 3
-            self.opt_slla = ":".join([f"{_:0>2x}" for _ in raw_option[2:8]])
-        else:
-            self.opt_code = ICMP6_ND_OPT_SLLA
-            self.opt_len = ICMP6_ND_OPT_SLLA_LEN
-            self.opt_slla = opt_slla
+    def __init__(self, opt_slla=None):
+        self.opt_code = ICMP6_ND_OPT_SLLA
+        self.opt_len = ICMP6_ND_OPT_SLLA_LEN
+        self.opt_slla = opt_slla
 
     @property
     def raw_option(self):
@@ -625,6 +642,9 @@ class Icmp6NdOptSLLA:
 
     def __str__(self):
         return f"slla {self.opt_slla}"
+
+    def __len__(self):
+        return ICMP6_ND_OPT_SLLA_LEN
 
 
 # ICMPv6 ND option - Target Link Layer Address (2)
@@ -642,15 +662,10 @@ ICMP6_ND_OPT_TLLA_LEN = 8
 class Icmp6NdOptTLLA:
     """ ICMPv6 ND option - Target Link Layer Address (2) """
 
-    def __init__(self, raw_option=None, opt_tlla=None):
-        if raw_option:
-            self.opt_code = raw_option[0]
-            self.opt_len = raw_option[1] << 3
-            self.opt_tlla = ":".join([f"{_:0>2x}" for _ in raw_option[2:8]])
-        else:
-            self.opt_code = ICMP6_ND_OPT_TLLA
-            self.opt_len = ICMP6_ND_OPT_TLLA_LEN
-            self.opt_tlla = opt_tlla
+    def __init__(self, opt_tlla=None):
+        self.opt_code = ICMP6_ND_OPT_TLLA
+        self.opt_len = ICMP6_ND_OPT_TLLA_LEN
+        self.opt_tlla = opt_tlla
 
     @property
     def raw_option(self):
@@ -659,11 +674,14 @@ class Icmp6NdOptTLLA:
     def __str__(self):
         return f"tlla {self.opt_tlla}"
 
+    def __len__(self):
+        return ICMP6_ND_OPT_TLLA_LEN
+
 
 # ICMPv6 ND option - Prefix Information (3)
 
 # +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-# |     Type      |    Length     | Prefix Length |L|A|R|  Res1  |
+# |     Type      |    Length     | Prefix Length |L|A|R|   Res1  |
 # +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 # |                         Valid Lifetime                        |
 # +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
@@ -689,7 +707,6 @@ class Icmp6NdOptPI:
 
     def __init__(
         self,
-        raw_option=None,
         opt_flag_l=False,
         opt_flag_a=False,
         opt_flag_r=False,
@@ -697,28 +714,16 @@ class Icmp6NdOptPI:
         opt_preferred_lifetime=None,
         opt_prefix=None,
     ):
-        if raw_option:
-            self.opt_code = raw_option[0]
-            self.opt_len = raw_option[1] << 3
-            self.opt_flag_l = bool(raw_option[3] & 0b10000000)
-            self.opt_flag_a = bool(raw_option[3] & 0b01000000)
-            self.opt_flag_r = bool(raw_option[3] & 0b00100000)
-            self.opt_reserved_1 = raw_option[3] & 0b00011111
-            self.opt_valid_lifetime = struct.unpack("!L", raw_option[4:8])[0]
-            self.opt_preferred_lifetime = struct.unpack("!L", raw_option[8:12])[0]
-            self.opt_reserved_2 = struct.unpack("!L", raw_option[12:16])[0]
-            self.opt_prefix = IPv6Network((raw_option[16:32], raw_option[2]))
-        else:
-            self.opt_code = ICMP6_ND_OPT_PI
-            self.opt_len = ICMP6_ND_OPT_PI_LEN
-            self.opt_flag_l = opt_flag_l
-            self.opt_flag_a = opt_flag_a
-            self.opt_flag_r = opt_flag_r
-            self.opt_reserved_1 = 0
-            self.opt_valid_lifetime = opt_valid_lifetime
-            self.opt_valid_preferred = opt_preferred_lifetime
-            self.opt_reserved_2 = 0
-            self.opt_prefix = IPv6Network(opt_prefix)
+        self.opt_code = ICMP6_ND_OPT_PI
+        self.opt_len = ICMP6_ND_OPT_PI_LEN
+        self.opt_flag_l = opt_flag_l
+        self.opt_flag_a = opt_flag_a
+        self.opt_flag_r = opt_flag_r
+        self.opt_reserved_1 = 0
+        self.opt_valid_lifetime = opt_valid_lifetime
+        self.opt_valid_preferred = opt_preferred_lifetime
+        self.opt_reserved_2 = 0
+        self.opt_prefix = IPv6Network(opt_prefix)
 
     @property
     def raw_option(self):
@@ -737,24 +742,8 @@ class Icmp6NdOptPI:
     def __str__(self):
         return f"prefix_info {self.opt_prefix}"
 
-
-# ICMPv6 ND option not supported by this stack
-
-
-class Icmp6NdOptUnk:
-    """ ICMPv6 ND  option not supported by this stack """
-
-    def __init__(self, raw_option):
-        self.opt_code = raw_option[0]
-        self.opt_len = raw_option[1] << 3
-        self.opt_data = raw_option[2 : self.opt_len]
-
-    @property
-    def raw_option(self):
-        return struct.pack("! BB", self.opt_code, self.opt_len >> 3) + self.opt_data
-
-    def __str__(self):
-        return f"unk-{self.opt_code}-{self.opt_len}"
+    def __len__(self):
+        return ICMP6_ND_OPT_PI_LEN
 
 
 #

@@ -161,7 +161,14 @@ class Icmp4Packet:
     def __len__(self):
         """ Length of the packet """
 
-        return len(self.raw_packet)
+        if self.icmp4_type == ICMP4_ECHO_REPLY:
+            return 8 + len(self.icmp4_ec_data)
+
+        elif self.icmp4_type == ICMP4_UNREACHABLE and self.icmp4_code == ICMP4_UNREACHABLE__PORT:
+            return 12 + len(self.icmp4_un_data)
+
+        elif self.icmp4_type == ICMP4_ECHO_REQUEST:
+            return 8 + len(self.icmp4_ec_data)
 
     @property
     def raw_packet(self):

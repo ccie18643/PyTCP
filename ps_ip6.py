@@ -141,12 +141,12 @@ class Ip6Packet:
         ip6_dscp=0,
         ip6_ecn=0,
         ip6_flow=0,
-        ip6_next=None,
         child_packet=None,
-        ip6_data=b"",
         tracker=None,
     ):
         """ Class constructor """
+
+        self.child_packet = child_packet
 
         if tracker:
             self.tracker = tracker
@@ -157,30 +157,23 @@ class Ip6Packet:
         self.ip6_dscp = ip6_dscp
         self.ip6_ecn = ip6_ecn
         self.ip6_flow = ip6_flow
-        self.ip6_next = ip6_next
         self.ip6_hop = ip6_hop
         self.ip6_src = IPv6Address(ip6_src)
         self.ip6_dst = IPv6Address(ip6_dst)
 
-        if child_packet:
-            assert child_packet.protocol in {"ICMPv6", "UDP", "TCP"}, f"Not supported protocol: {child_packet.protocol}"
+        assert child_packet.protocol in {"ICMPv6", "UDP", "TCP"}, f"Not supported protocol: {child_packet.protocol}"
 
-            if child_packet.protocol == "ICMPv6":
-                self.ip6_next = IP6_NEXT_HEADER_ICMP6
+        if child_packet.protocol == "ICMPv6":
+            self.ip6_next = IP6_NEXT_HEADER_ICMP6
 
-            if child_packet.protocol == "UDP":
-                self.ip6_next = IP6_NEXT_HEADER_UDP
+        if child_packet.protocol == "UDP":
+            self.ip6_next = IP6_NEXT_HEADER_UDP
 
-            if child_packet.protocol == "TCP":
-                self.ip6_next = IP6_NEXT_HEADER_TCP
+        if child_packet.protocol == "TCP":
+            self.ip6_next = IP6_NEXT_HEADER_TCP
 
-            self.ip6_dlen = len(child_packet.raw_packet)
-            self.ip6_data = child_packet.get_raw_packet(self.ip_pseudo_header)
-
-        else:
-            self.ip6_next = ip6_next
-            self.ip6_dlen = len(ip6_data)
-            self.ip6_data = ip6_data
+        self.ip6_dlen = len(child_packet.raw_packet)
+        self.ip6_data = child_packet.get_raw_packet(self.ip_pseudo_header)
 
     def __str__(self):
         """ Packet log string """
@@ -193,7 +186,7 @@ class Ip6Packet:
     def __len__(self):
         """ Length of the packet """
 
-        return len(self.raw_packet)
+        return IP6_HEADER_LEN + len(self.child_packet)
 
     @property
     def raw_header(self):

@@ -168,7 +168,7 @@ class TcpPacket:
     def __len__(self):
         """ Length of the packet """
 
-        return len(self.raw_packet)
+        return TCP_HEADER_LEN + sum([len(_) for _ in self.tcp_options]) + len(self.tcp_data)
 
     @property
     def raw_options(self):
@@ -255,6 +255,8 @@ class TcpOptEol:
     def __str__(self):
         return "eol"
 
+    def __len__(self):
+        return TCP_OPT_EOL_LEN
 
 # TCP option - No Operation (1)
 
@@ -275,6 +277,8 @@ class TcpOptNop:
     def __str__(self):
         return "nop"
 
+    def __len__(self):
+        return TCP_OPT_NOP_LEN
 
 # TCP option - Maximum Segment Size (2)
 
@@ -285,15 +289,10 @@ TCP_OPT_MSS_LEN = 4
 class TcpOptMss:
     """ TCP option - Maximum Segment Size (2) """
 
-    def __init__(self, raw_option=None, opt_mss=None):
-        if raw_option:
-            self.opt_kind = raw_option[0]
-            self.opt_len = raw_option[1]
-            self.opt_mss = struct.unpack("!H", raw_option[2:4])[0]
-        else:
-            self.opt_kind = TCP_OPT_MSS
-            self.opt_len = TCP_OPT_MSS_LEN
-            self.opt_mss = opt_mss
+    def __init__(self, opt_mss=None):
+        self.opt_kind = TCP_OPT_MSS
+        self.opt_len = TCP_OPT_MSS_LEN
+        self.opt_mss = opt_mss
 
     @property
     def raw_option(self):
@@ -301,6 +300,9 @@ class TcpOptMss:
 
     def __str__(self):
         return f"mss {self.opt_mss}"
+
+    def __len__(self):
+        return TCP_OPT_MSS_LEN
 
 
 # TCP option - Window Scale (3)
@@ -312,15 +314,10 @@ TCP_OPT_WSCALE_LEN = 3
 class TcpOptWscale:
     """ TCP option - Window Scale (3) """
 
-    def __init__(self, raw_option=None, opt_wscale=None):
-        if raw_option:
-            self.opt_kind = raw_option[0]
-            self.opt_len = raw_option[1]
-            self.opt_wscale = raw_option[2]
-        else:
-            self.opt_kind = TCP_OPT_WSCALE
-            self.opt_len = TCP_OPT_WSCALE_LEN
-            self.opt_wscale = opt_wscale
+    def __init__(self, opt_wscale=None):
+        self.opt_kind = TCP_OPT_WSCALE
+        self.opt_len = TCP_OPT_WSCALE_LEN
+        self.opt_wscale = opt_wscale
 
     @property
     def raw_option(self):
@@ -329,6 +326,8 @@ class TcpOptWscale:
     def __str__(self):
         return f"wscale {self.opt_wscale}"
 
+    def __len__(self):
+        return TCP_OPT_WSCALE_LEN
 
 # TCP option - Sack Permit (4)
 
@@ -339,13 +338,9 @@ TCP_OPT_SACKPERM_LEN = 2
 class TcpOptSackPerm:
     """ TCP option - Sack Permit (4) """
 
-    def __init__(self, raw_option=None):
-        if raw_option:
-            self.opt_kind = raw_option[0]
-            self.opt_len = raw_option[1]
-        else:
-            self.opt_kind = TCP_OPT_SACKPERM
-            self.opt_len = TCP_OPT_SACKPERM_LEN
+    def __init__(self):
+        self.opt_kind = TCP_OPT_SACKPERM
+        self.opt_len = TCP_OPT_SACKPERM_LEN
 
     @property
     def raw_option(self):
@@ -354,6 +349,8 @@ class TcpOptSackPerm:
     def __str__(self):
         return "sack_perm"
 
+    def __len__(self):
+        return TCP_OPT_SACKPERM_LEN
 
 # TCP option - Timestamp
 
@@ -364,17 +361,11 @@ TCP_OPT_TIMESTAMP_LEN = 10
 class TcpOptTimestamp:
     """ TCP option - Timestamp (8) """
 
-    def __init__(self, raw_option=None, opt_tsval=None, opt_tsecr=None):
-        if raw_option:
-            self.opt_kind = raw_option[0]
-            self.opt_len = raw_option[1]
-            self.opt_tsval = struct.unpack("!L", raw_option[2:6])[0]
-            self.opt_tsecr = struct.unpack("!L", raw_option[6:10])[0]
-        else:
-            self.opt_kind = TCP_OPT_TIMESTAMP
-            self.opt_len = TCP_OPT_TIMESTAMP_LEN
-            self.opt_tsval = opt_tsval
-            self.opt_tsecr = opt_tsecr
+    def __init__(self, opt_tsval=None, opt_tsecr=None):
+        self.opt_kind = TCP_OPT_TIMESTAMP
+        self.opt_len = TCP_OPT_TIMESTAMP_LEN
+        self.opt_tsval = opt_tsval
+        self.opt_tsecr = opt_tsecr
 
     @property
     def raw_option(self):
@@ -383,21 +374,6 @@ class TcpOptTimestamp:
     def __str__(self):
         return f"ts {self.opt_tsval}/{self.opt_tsecr}"
 
+    def __len__(self):
+        return TCP_OPT_TIMESTAMP_LEN
 
-# TCP option not supported by this stack
-
-
-class TcpOptUnk:
-    """ TCP option not supported by this stack """
-
-    def __init__(self, raw_option):
-        self.opt_kind = raw_option[0]
-        self.opt_len = raw_option[1]
-        self.opt_data = raw_option[2 : self.opt_len]
-
-    @property
-    def raw_option(self):
-        return struct.pack("! BB", self.opt_kind, self.opt_len) + self.opt_data
-
-    def __str__(self):
-        return f"unk-{self.opt_kind}-{self.opt_len}"

@@ -75,6 +75,8 @@ class EtherPacket:
     def __init__(self, ether_src="00:00:00:00:00:00", ether_dst="00:00:00:00:00:00", child_packet=None):
         """ Class constructor """
 
+        self.child_packet = child_packet
+
         self.tracker = child_packet.tracker
 
         self.ether_dst = ether_dst
@@ -101,7 +103,7 @@ class EtherPacket:
     def __len__(self):
         """ Length of the packet """
 
-        return len(self.raw_packet)
+        return ETHER_HEADER_LEN + len(self.child_packet)
 
     @property
     def raw_header(self):

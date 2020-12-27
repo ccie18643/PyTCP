@@ -141,11 +141,11 @@ class Ip4Packet:
         ip4_frag_offset=0,
         ip4_options=None,
         child_packet=None,
-        ip4_proto=None,
-        ip4_data=b"",
         tracker=None,
     ):
         """ Class constructor """
+
+        self.child_packet = child_packet
 
         if tracker:
             self.tracker = tracker
@@ -173,28 +173,22 @@ class Ip4Packet:
 
         assert self.ip4_hlen % 4 == 0, "IP header len is not multiplcation of 4 bytes, check options"
 
-        if child_packet:
-            assert child_packet.protocol in {"ICMPv4", "UDP", "TCP"}, f"Not supported protocol: {child_packet.protocol}"
+        assert child_packet.protocol in {"ICMPv4", "UDP", "TCP"}, f"Not supported protocol: {child_packet.protocol}"
 
-            if child_packet.protocol == "ICMPv4":
-                self.ip4_proto = IP4_PROTO_ICMP4
-                self.ip4_data = child_packet.get_raw_packet()
-                self.ip4_plen = self.ip4_hlen + len(self.ip4_data)
-
-            if child_packet.protocol == "UDP":
-                self.ip4_proto = IP4_PROTO_UDP
-                self.ip4_plen = self.ip4_hlen + child_packet.udp_plen
-                self.ip4_data = child_packet.get_raw_packet(self.ip_pseudo_header)
-
-            if child_packet.protocol == "TCP":
-                self.ip4_proto = IP4_PROTO_TCP
-                self.ip4_plen = self.ip4_hlen + child_packet.tcp_hlen + len(child_packet.tcp_data)
-                self.ip4_data = child_packet.get_raw_packet(self.ip_pseudo_header)
-
-        else:
-            self.ip4_proto = ip4_proto
-            self.ip4_data = ip4_data
+        if child_packet.protocol == "ICMPv4":
+            self.ip4_proto = IP4_PROTO_ICMP4
+            self.ip4_data = child_packet.get_raw_packet()
             self.ip4_plen = self.ip4_hlen + len(self.ip4_data)
+
+        if child_packet.protocol == "UDP":
+            self.ip4_proto = IP4_PROTO_UDP
+            self.ip4_plen = self.ip4_hlen + child_packet.udp_plen
+            self.ip4_data = child_packet.get_raw_packet(self.ip_pseudo_header)
+
+        if child_packet.protocol == "TCP":
+            self.ip4_proto = IP4_PROTO_TCP
+            self.ip4_plen = self.ip4_hlen + child_packet.tcp_hlen + len(child_packet.tcp_data)
+            self.ip4_data = child_packet.get_raw_packet(self.ip_pseudo_header)
 
     def __str__(self):
         """ Packet log string """
@@ -208,7 +202,7 @@ class Ip4Packet:
     def __len__(self):
         """ Length of the packet """
 
-        return len(self.raw_packet)
+        return IP4_HEADER_LEN + sum([len(_) for _ in self.ip4_options]) + len(self.child_packet)
 
     @property
     def raw_header(self):
@@ -291,6 +285,8 @@ class Ip4OptEol:
     def __str__(self):
         return "eol"
 
+    def __len__(self):
+        return IP4_OPT_EOL_LEN
 
 # IPv4 option - No Operation (1)
 
@@ -311,6 +307,8 @@ class Ip4OptNop:
     def __str__(self):
         return "nop"
 
+    def __len__(self):
+        return IP4_OPT_NOP_LEN
 
 # IPv4 option not supported by this stack
 
@@ -329,3 +327,6 @@ class Ip4OptUnk:
 
     def __str__(self):
         return f"unk-{self.opt_kind}-{self.opt_len}"
+    
+    def __len__(self):
+        return opt_len
