@@ -48,19 +48,22 @@ from ipv6_address import IPv6Address
 def _phrx_icmp6(self, packet_rx):
     """ Handle inbound ICMPv6 packets """
 
-    self.logger.opt(ansi=True).info(f"<green>{packet_rx.tracker}</green> - {packet_rx.icmp6}")
+    if __debug__:
+        self._logger.opt(ansi=True).info(f"<green>{packet_rx.tracker}</green> - {packet_rx.icmp6}")
 
     # ICMPv6 Neighbor Solicitation packet
     if packet_rx.icmp6.type == ps_icmp6.ICMP6_NEIGHBOR_SOLICITATION:
 
         # Check if request is for one of stack's IPv6 unicast addresses
         if packet_rx.icmp6.ns_target_address not in self.ip6_unicast:
-            self.logger.debug(
-                f"Received ICMPv6 Neighbor Solicitation packet from {packet_rx.ip6.src}, not matching any of stack's IPv6 unicast addresses, dropping..."
-            )
+            if __debug__:
+                self._logger.debug(
+                    f"Received ICMPv6 Neighbor Solicitation packet from {packet_rx.ip6.src}, not matching any of stack's IPv6 unicast addresses, dropping..."
+                )
             return
 
-        self.logger.debug(f"Received ICMPv6 Neighbor Solicitation packet from {packet_rx.ip6.src}, sending reply")
+        if __debug__:
+            self._logger.debug(f"Received ICMPv6 Neighbor Solicitation packet from {packet_rx.ip6.src}, sending reply")
 
         # Update ICMPv6 ND cache
         if not (packet_rx.ip6.src.is_unspecified or packet_rx.ip6.src.is_multicast) and packet_rx.icmp6.nd_opt_slla:
@@ -86,7 +89,8 @@ def _phrx_icmp6(self, packet_rx):
     # ICMPv6 Neighbor Advertisement packet
     if packet_rx.icmp6.type == ps_icmp6.ICMP6_NEIGHBOR_ADVERTISEMENT:
 
-        self.logger.debug(f"Received ICMPv6 Neighbor Advertisement packet for {packet_rx.icmp6.na_target_address} from {packet_rx.ip6.src}")
+        if __debug__:
+            self._logger.debug(f"Received ICMPv6 Neighbor Advertisement packet for {packet_rx.icmp6.na_target_address} from {packet_rx.ip6.src}")
 
         # Run ND Duplicate Address Detection check
         if packet_rx.icmp6.na_target_address == self.ip6_unicast_candidate:
@@ -104,13 +108,15 @@ def _phrx_icmp6(self, packet_rx):
     # ICMPv6 Router Solicitaion packet (this is not currently used by the stack)
     if packet_rx.icmp6.type == ps_icmp6.ICMP6_ROUTER_SOLICITATION:
 
-        self.logger.debug(f"Received ICMPv6 Router Advertisement packet from {packet_rx.ip6.src}")
+        if __debug__:
+            self._logger.debug(f"Received ICMPv6 Router Advertisement packet from {packet_rx.ip6.src}")
         return
 
     # ICMPv6 Router Advertisement packet
     if packet_rx.icmp6.type == ps_icmp6.ICMP6_ROUTER_ADVERTISEMENT:
 
-        self.logger.debug(f"Received ICMPv6 Router Advertisement packet from {packet_rx.ip6.src}")
+        if __debug__:
+            self._logger.debug(f"Received ICMPv6 Router Advertisement packet from {packet_rx.ip6.src}")
 
         # Make note of prefixes that can be used for address autoconfiguration
         self.icmp6_ra_prefixes = [(_, packet_rx.ip6.src) for _ in packet_rx.icmp6.nd_opt_pi]
@@ -119,7 +125,8 @@ def _phrx_icmp6(self, packet_rx):
 
     # Respond to ICMPv6 Echo Request packet
     if packet_rx.icmp6.type == ps_icmp6.ICMP6_ECHO_REQUEST:
-        self.logger.debug(f"Received ICMPv6 Echo Request packet from {packet_rx.ip6.src}, sending reply")
+        if __debug__:
+            self._logger.debug(f"Received ICMPv6 Echo Request packet from {packet_rx.ip6.src}, sending reply")
 
         self._phtx_icmp6(
             ip6_src=packet_rx.ip6.dst,

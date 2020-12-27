@@ -51,16 +51,19 @@ def validate_src_ip6_address(self, ip6_src, ip6_dst):
 
     # Check if the the source IP address belongs to this stack or its unspecified
     if ip6_src not in {*self.ip6_unicast, *self.ip6_multicast, IPv6Address("::")}:
-        self.logger.warning(f"Unable to sent out IPv6 packet, stack doesn't own IPv6 address {ip6_src}")
+        if __debug__:
+            self._logger.warning(f"Unable to sent out IPv6 packet, stack doesn't own IPv6 address {ip6_src}")
         return None
 
     # If packet is a response to multicast then replace source address with link local address of the stack
     if ip6_src in self.ip6_multicast:
         if self.ip6_unicast:
             ip6_src = self.ip6_unicast[0]
-            self.logger.debug(f"Packet is response to multicast, replaced source with stack link local IPv6 address {ip6_src}")
+            if __debug__:
+                self._logger.debug(f"Packet is response to multicast, replaced source with stack link local IPv6 address {ip6_src}")
         else:
-            self.logger.warning("Unable to sent out IPv6 packet, no stack link local unicast IPv6 address available")
+            if __debug__:
+                self._logger.warning("Unable to sent out IPv6 packet, no stack link local unicast IPv6 address available")
             return None
 
     # If source is unspecified check if destination belongs to any of local networks, if so pick source address from that network
@@ -83,7 +86,8 @@ def validate_dst_ip6_address(self, ip6_dst):
 
     # Drop packet if the destination address is unspecified
     if ip6_dst.is_unspecified:
-        self.logger.warning("Destination address is unspecified, dropping...")
+        if __debug__:
+            self._logger.warning("Destination address is unspecified, dropping...")
         return None
 
     return ip6_dst
@@ -114,10 +118,12 @@ def _phtx_ip6(self, child_packet, ip6_dst, ip6_src, ip6_hop=config.ip6_default_h
     if ps_ip6.IP6_HEADER_LEN + len(child_packet.raw_packet) <= config.mtu:
         ip6_packet_tx = ps_ip6.Ip6Packet(ip6_src=ip6_src, ip6_dst=ip6_dst, ip6_hop=ip6_hop, child_packet=child_packet)
 
-        self.logger.debug(f"{ip6_packet_tx.tracker} - {ip6_packet_tx}")
+        if __debug__:
+            self._logger.debug(f"{ip6_packet_tx.tracker} - {ip6_packet_tx}")
         self._phtx_ether(child_packet=ip6_packet_tx)
         return
 
     # Fragment packet and send all fragments out *** Need to add this functionality ***
-    self.logger.debug("Packet exceedes available MTU, IPv6 fragmentation needed... dropping...")
+    if __debug__:
+        self._logger.debug("Packet exceedes available MTU, IPv6 fragmentation needed... dropping...")
     return

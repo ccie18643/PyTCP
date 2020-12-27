@@ -58,7 +58,8 @@ class FastPacketParser:
     def __init__(self, frame, tracker):
         """ Class constructor """
 
-        self.logger = loguru.logger.bind(object_name="packet_parser.")
+        if __debug__:
+            self._logger = loguru.logger.bind(object_name="packet_parser.")
         self._frame = frame
         self.tracker = tracker
         self.packet_parse_failed = False
@@ -66,95 +67,115 @@ class FastPacketParser:
         # Ethernet packet parsing
         self.ether = fpp_ether.EtherPacket(self._frame)
         if self.ether.packet_parse_failed:
-            self.logger.critical(f"{self.tracker} - {self.ether.packet_check_failed}")
+            if __debug__:
+                self._logger.critical(f"{self.tracker} - {self.ether.packet_check_failed}")
             self.packet_parse_failed = True
             return
-        self.logger.debug(f"{self.tracker} - {self.ether}")
+        if __debug__:
+            self._logger.debug(f"{self.tracker} - {self.ether}")
 
         # ARP packet parsing
         if self.ether.type == fpp_ether.ETHER_TYPE_ARP:
             self.arp = fpp_arp.ArpPacket(self._frame, self.ether.dptr)
             if self.arp.packet_parse_failed:
-                self.logger.critical(f"{self.tracker} - {self.arp.sanity_check_failed}")
+                if __debug__:
+                    self._logger.critical(f"{self.tracker} - {self.arp.sanity_check_failed}")
                 self.packet_parse_failed = True
                 return
-            self.logger.debug(f"{self.tracker} - {self.arp}")
+            if __debug__:
+                self._logger.debug(f"{self.tracker} - {self.arp}")
             return
 
         # IPv4 packet parsing
         if self.ether.type == fpp_ether.ETHER_TYPE_IP4:
             self.ip = self.ip4 = fpp_ip4.Ip4Packet(self._frame, self.ether.dptr)
             if self.ip4.packet_parse_failed:
-                self.logger.critical(f"{self.tracker} - {self.ip4.packet_parse_failed}")
+                if __debug__:
+                    self._logger.critical(f"{self.tracker} - {self.ip4.packet_parse_failed}")
                 self.packet_parse_failed = True
                 return
-            self.logger.debug(f"{self.tracker} - {self.ip4}")
+            if __debug__:
+                self._logger.debug(f"{self.tracker} - {self.ip4}")
 
             # ICMPv4 packet parsing
             if self.ip4.proto == fpp_ip4.IP4_PROTO_ICMP4:
                 self.icmp4 = fpp_icmp4.Icmp4Packet(self._frame, self.ip4.dptr, self.ip4.dlen)
                 if self.icmp4.packet_parse_failed:
-                    self.logger.critical(f"{self.tracker} - {self.icmp4.packet_parse_failed}")
+                    if __debug__:
+                        self._logger.critical(f"{self.tracker} - {self.icmp4.packet_parse_failed}")
                     self.packet_parse_failed = True
                     return
-                self.logger.debug(f"{self.tracker} - {self.icmp4}")
+                if __debug__:
+                    self._logger.debug(f"{self.tracker} - {self.icmp4}")
                 return
 
             # UDP packet parsing
             if self.ip4.proto == fpp_ip4.IP4_PROTO_UDP:
                 self.udp = fpp_udp.UdpPacket(self._frame, self.ip4.dptr, self.ip4.dlen, self.ip4.pseudo_header)
                 if self.udp.packet_parse_failed:
-                    self.logger.critical(f"{self.tracker} - {self.udp.packet_check_failed}")
+                    if __debug__:
+                        self._logger.critical(f"{self.tracker} - {self.udp.packet_check_failed}")
                     self.packet_parse_failed = True
                     return
-                self.logger.debug(f"{self.tracker} - {self.udp}")
+                if __debug__:
+                    self._logger.debug(f"{self.tracker} - {self.udp}")
                 return
 
             # TCP packet parsing
             if self.ip4.proto == fpp_ip4.IP4_PROTO_TCP:
                 self.tcp = fpp_tcp.TcpPacket(self._frame, self.ip4.dptr, self.ip4.dlen, self.ip4.pseudo_header)
                 if self.tcp.packet_parse_failed:
-                    self.logger.critical(f"{self.tracker} - {self.tcp.packet_parse_failed}")
+                    if __debug__:
+                        self._logger.critical(f"{self.tracker} - {self.tcp.packet_parse_failed}")
                     self.packet_parse_failed = True
                     return
-                self.logger.debug(f"{self.tracker} - {self.tcp}")
+                if __debug__:
+                    self._logger.debug(f"{self.tracker} - {self.tcp}")
                 return
 
         # IPv6 packet parsing
         if self.ether.type == fpp_ether.ETHER_TYPE_IP6:
             self.ip = self.ip6 = fpp_ip6.Ip6Packet(self._frame, self.ether.dptr)
             if self.ip6.packet_parse_failed:
-                self.logger.critical(f"{self.tracker} - {self.ip6.packet_parse_failed}")
+                if __debug__:
+                    self._logger.critical(f"{self.tracker} - {self.ip6.packet_parse_failed}")
                 self.packet_parse_failed = True
                 return
-            self.logger.debug(f"{self.tracker} - {self.ip6}")
+            if __debug__:
+                self._logger.debug(f"{self.tracker} - {self.ip6}")
 
             # ICMPv6 packet parsing
             if self.ip6.next == fpp_ip6.IP6_NEXT_HEADER_ICMP6:
                 self.icmp6 = fpp_icmp6.Icmp6Packet(self._frame, self.ip6.dptr, self.ip6.dlen, self.ip6.pseudo_header, self.ip6.src, self.ip6.dst, self.ip6.hop)
                 if self.icmp6.packet_parse_failed:
-                    self.logger.critical(f"{self.tracker} - {self.icmp6.packet_parse_failed}")
+                    if __debug__:
+                        self._logger.critical(f"{self.tracker} - {self.icmp6.packet_parse_failed}")
                     self.packet_parse_failed = True
                     return
-                self.logger.debug(f"{self.tracker} - {self.icmp6}")
+                if __debug__:
+                    self._logger.debug(f"{self.tracker} - {self.icmp6}")
                 return
 
             # UDP packet parsing
             if self.ip6.next == fpp_ip6.IP6_NEXT_HEADER_UDP:
                 self.udp = fpp_udp.UdpPacket(self._frame, self.ip6.dptr, self.ip6.dlen, self.ip6.pseudo_header)
                 if self.udp.packet_parse_failed:
-                    self.logger.critical(f"{self.tracker} - {self.udp.packet_check_failed}")
+                    if __debug__:
+                        self._logger.critical(f"{self.tracker} - {self.udp.packet_check_failed}")
                     self.packet_parse_failed = True
                     return
-                self.logger.debug(f"{self.tracker} - {self.udp}")
+                if __debug__:
+                    self._logger.debug(f"{self.tracker} - {self.udp}")
                 return
 
             # TCP packet parsing
             if self.ip6.next == fpp_ip6.IP6_NEXT_HEADER_TCP:
                 self.tcp = fpp_tcp.TcpPacket(self._frame, self.ip6.dptr, self.ip6.dlen, self.ip6.pseudo_header)
                 if self.tcp.packet_parse_failed:
-                    self.logger.critical(f"{self.tracker} - {self.tcp.packet_parse_failed}")
+                    if __debug__:
+                        self._logger.critical(f"{self.tracker} - {self.tcp.packet_parse_failed}")
                     self.packet_parse_failed = True
                     return
-                self.logger.debug(f"{self.tracker} - {self.tcp}")
+                if __debug__:
+                    self._logger.debug(f"{self.tracker} - {self.tcp}")
                 return

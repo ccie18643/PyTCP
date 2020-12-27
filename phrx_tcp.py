@@ -50,7 +50,8 @@ PACKET_LOSS = False
 def _phrx_tcp(self, packet_rx):
     """ Handle inbound TCP packets """
 
-    self.logger.opt(ansi=True).info(f"<green>{packet_rx.tracker}</green> - {packet_rx.tcp}")
+    if __debug__:
+        self._logger.opt(ansi=True).info(f"<green>{packet_rx.tracker}</green> - {packet_rx.tcp}")
 
     # Create TcpPacket object for further processing by TCP FSM
     packet = TcpMetadata(
@@ -76,12 +77,14 @@ def _phrx_tcp(self, packet_rx):
         from random import randint
 
         if randint(0, 99) == 7:
-            self.logger.critical("SIMULATED LOST RX DATA PACKET")
+            if __debug__:
+                self._logger.critical("SIMULATED LOST RX DATA PACKET")
             return
 
     # Check if incoming packet matches active TCP session
     if tcp_session := stack.tcp_sessions.get(packet.tcp_session_id, None):
-        self.logger.debug(f"{packet.tracker} - TCP packet is part of active session {tcp_session.tcp_session_id}")
+        if __debug__:
+            self._logger.debug(f"{packet.tracker} - TCP packet is part of active session {tcp_session.tcp_session_id}")
         tcp_session.tcp_fsm(packet=packet)
         return
 
@@ -89,12 +92,14 @@ def _phrx_tcp(self, packet_rx):
     if all({packet.flag_syn}) and not any({packet.flag_ack, packet.flag_fin, packet.flag_rst}):
         for tcp_session_id_pattern in packet.tcp_session_listening_patterns:
             if tcp_session := stack.tcp_sessions.get(tcp_session_id_pattern, None):
-                self.logger.debug(f"{packet.tracker} - TCP packet matches listening session {tcp_session.tcp_session_id}")
+                if __debug__:
+                    self._logger.debug(f"{packet.tracker} - TCP packet matches listening session {tcp_session.tcp_session_id}")
                 tcp_session.tcp_fsm(packet=packet)
                 return
 
     # In case packet doesn't match any session send RST packet in response to it
-    self.logger.debug(f"Received TCP packet from {packet_rx.ip.src} to closed port {packet_rx.tcp.dport}, responding with TCP RST packet")
+    if __debug__:
+        self._logger.debug(f"Received TCP packet from {packet_rx.ip.src} to closed port {packet_rx.tcp.dport}, responding with TCP RST packet")
     self._phtx_tcp(
         ip_src=packet_rx.ip.dst,
         ip_dst=packet_rx.ip.src,

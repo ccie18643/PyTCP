@@ -112,14 +112,16 @@ def _phtx_tcp(
         echo_tracker=echo_tracker,
     )
 
-    self.logger.opt(ansi=True).info(f"<magenta>{tcp_packet_tx.tracker}</magenta> - {tcp_packet_tx}")
+    if __debug__:
+        self._logger.opt(ansi=True).info(f"<magenta>{tcp_packet_tx.tracker}</magenta> - {tcp_packet_tx}")
 
     # Check if packet should be dropped due to random packet loss enabled (for TCP retansmission testing)
     if PACKET_LOSS:
         from random import randint
 
         if randint(0, 99) == 7:
-            self.logger.critical("SIMULATED LOST TX DATA PACKET")
+            if __debug__:
+                self._logger.critical("SIMULATED LOST TX DATA PACKET")
             return
 
     assert type(ip_src) in {IPv4Address, IPv6Address}

@@ -60,7 +60,8 @@ def _phtx_udp(self, ip_src, ip_dst, udp_sport, udp_dport, raw_data=b"", echo_tra
 
     udp_packet_tx = ps_udp.UdpPacket(udp_sport=udp_sport, udp_dport=udp_dport, raw_data=raw_data, echo_tracker=echo_tracker)
 
-    self.logger.opt(ansi=True).info(f"<magenta>{udp_packet_tx.tracker}</magenta> - {udp_packet_tx}")
+    if __debug__:
+        self._logger.opt(ansi=True).info(f"<magenta>{udp_packet_tx.tracker}</magenta> - {udp_packet_tx}")
 
     assert type(ip_src) in {IPv4Address, IPv6Address}
     assert type(ip_dst) in {IPv4Address, IPv6Address}

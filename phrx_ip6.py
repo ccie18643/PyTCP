@@ -47,11 +47,13 @@ import ps_ip6
 def _phrx_ip6(self, packet_rx):
     """ Handle inbound IP packets """
 
-    self.logger.debug(f"{packet_rx.tracker} - {packet_rx.ip6}")
+    if __debug__:
+        self._logger.debug(f"{packet_rx.tracker} - {packet_rx.ip6}")
 
     # Check if received packet has been sent to us directly or by unicast or multicast
     if packet_rx.ip6.dst not in {*self.ip6_unicast, *self.ip6_multicast}:
-        self.logger.debug(f"{packet_rx.tracker} - IP packet not destined for this stack, dropping...")
+        if __debug__:
+            self._logger.debug(f"{packet_rx.tracker} - IP packet not destined for this stack, dropping...")
         return
 
     if packet_rx.ip6.next == ps_ip6.IP6_NEXT_HEADER_ICMP6:

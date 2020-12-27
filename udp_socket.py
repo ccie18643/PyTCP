@@ -56,7 +56,8 @@ class UdpSocket:
     def __init__(self):
         """ Class constructor """
 
-        self.logger = loguru.logger.bind(object_name="socket.")
+        if __debug__:
+            self._logger = loguru.logger.bind(object_name="socket.")
 
         self.local_ip_address = None
         self.local_port = None
@@ -65,7 +66,8 @@ class UdpSocket:
 
         self.packet_rx = []
         self.packet_rx_ready = threading.Semaphore(0)
-        self.logger.debug(f"Opened UDP socket {self.socket_id}")
+        if __debug__:
+            self._logger.debug(f"Opened UDP socket {self.socket_id}")
 
     @property
     def socket_id(self):
@@ -77,7 +79,8 @@ class UdpSocket:
         self.local_ip_address = local_ip_address
         self.local_port = local_port
         stack.udp_sockets[self.socket_id] = self
-        self.logger.debug(f"{self.socket_id} - Socket bound to local address")
+        if __debug__:
+            self._logger.debug(f"{self.socket_id} - Socket bound to local address")
 
     @staticmethod
     def send_to(packet):
@@ -102,7 +105,8 @@ class UdpSocket:
         """ Close socket """
 
         stack.udp_sockets.pop(self.socket_id)
-        self.logger.debug(f"Closed UDP socket {self.socket_id}")
+        if __debug__:
+            self._logger.debug(f"Closed UDP socket {self.socket_id}")
 
     def process_packet(self, packet):
         """ Process incoming UDP packet's metadata """

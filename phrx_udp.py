@@ -54,7 +54,8 @@ from udp_metadata import UdpMetadata
 def _phrx_udp(self, packet_rx):
     """ Handle inbound UDP packets """
 
-    self.logger.opt(ansi=True).info(f"<green>{packet_rx.tracker}</green> - {packet_rx.udp}")
+    if __debug__:
+        self._logger.opt(ansi=True).info(f"<green>{packet_rx.tracker}</green> - {packet_rx.udp}")
 
     # Create UdpMetadata object and try to find matching UDP socket
     packet = UdpMetadata(
@@ -69,19 +70,22 @@ def _phrx_udp(self, packet_rx):
     for socket_id in packet.socket_id_patterns:
         socket = stack.udp_sockets.get(socket_id, None)
         if socket:
-            loguru.logger.bind(object_name="socket.").debug(f"{packet.tracker} - Found matching listening socket {socket_id}")
+            if __debug__:
+                loguru.logger.bind(object_name="socket.").debug(f"{packet.tracker} - Found matching listening socket {socket_id}")
             socket.process_packet(packet)
             return
 
     # Silently drop packet if it has all zero source IP address
     if packet_rx.ip.src in {IPv4Address("0.0.0.0"), IPv6Address("::")}:
-        self.logger.debug(
-            f"Received UDP packet from {packet_rx.ip.src}, port {packet_rx.udp.sport} to {packet_rx.ip.dst}, port {packet_rx.udp.dport}, dropping..."
-        )
+        if __debug__:
+            self._logger.debug(
+                f"Received UDP packet from {packet_rx.ip.src}, port {packet_rx.udp.sport} to {packet_rx.ip.dst}, port {packet_rx.udp.dport}, dropping..."
+            )
         return
 
     # Respond with ICMPv4 Port Unreachable message if no matching socket has been found
-    self.logger.debug(f"Received UDP packet from {packet_rx.ip.src} to closed port {packet_rx.udp.dport}, sending ICMPv4 Port Unreachable")
+    if __debug__:
+        self._logger.debug(f"Received UDP packet from {packet_rx.ip.src} to closed port {packet_rx.udp.dport}, sending ICMPv4 Port Unreachable")
 
     if packet_rx.ip.ver == 6:
         self._phtx_icmp6(

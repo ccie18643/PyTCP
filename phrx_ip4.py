@@ -88,11 +88,13 @@ def handle_ip4_fragmentation(packet_rx):
 def _phrx_ip4(self, packet_rx):
     """ Handle inbound IP packets """
 
-    self.logger.debug(f"{packet_rx.tracker} - {packet_rx.ip4}")
+    if __debug__:
+        self._logger.debug(f"{packet_rx.tracker} - {packet_rx.ip4}")
 
     # Check if received packet has been sent to us directly or by unicast/broadcast, allow any destination if no unicast address is configured (for DHCP client)
     if self.ip4_unicast and packet_rx.ip4.dst not in {*self.ip4_unicast, *self.ip4_multicast, *self.ip4_broadcast}:
-        self.logger.debug(f"{packet_rx.tracker} - IP packet not destined for this stack, dropping")
+        if __debug__:
+            self._logger.debug(f"{packet_rx.tracker} - IP packet not destined for this stack, dropping")
         return
 
     # Check if packet is a fragment, and if so process it accordingly

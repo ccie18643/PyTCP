@@ -54,25 +54,30 @@ def validate_src_ip4_address(self, ip4_src, ip4_dst):
 
     # Check if the the source IP address belongs to this stack or its set to all zeros (for DHCP client communication)
     if ip4_src not in {*self.ip4_unicast, *self.ip4_multicast, *self.ip4_broadcast, IPv4Address("0.0.0.0")}:
-        self.logger.warning(f"Unable to sent out IPv4 packet, stack doesn't own IPv4 address {ip4_src}")
+        if __debug__:
+            self._logger.warning(f"Unable to sent out IPv4 packet, stack doesn't own IPv4 address {ip4_src}")
         return None
 
     # If packet is a response to multicast then replace source address with primary address of the stack
     if ip4_src in self.ip4_multicast:
         if self.ip4_unicast:
             ip4_src = self.ip4_unicast[0]
-            self.logger.debug(f"Packet is response to multicast, replaced source with stack primary IPv4 address {ip4_src}")
+            if __debug__:
+                self._logger.debug(f"Packet is response to multicast, replaced source with stack primary IPv4 address {ip4_src}")
         else:
-            self.logger.warning("Unable to sent out IPv4 packet, no stack primary unicast IPv4 address available")
+            if __debug__:
+                self._logger.warning("Unable to sent out IPv4 packet, no stack primary unicast IPv4 address available")
             return None
 
     # If packet is a response to limited broadcast then replace source address with primary address of the stack
     if ip4_src.is_limited_broadcast:
         if self.ip4_unicast:
             ip4_src = self.ip4_unicast[0]
-            self.logger.debug(f"Packet is response to limited broadcast, replaced source with stack primary IPv4 address {ip4_src}")
+            if __debug__:
+                self._logger.debug(f"Packet is response to limited broadcast, replaced source with stack primary IPv4 address {ip4_src}")
         else:
-            self.logger.warning("Unable to sent out IPv4 packet, no stack primary unicast IPv4 address available")
+            if __debug__:
+                self._logger.warning("Unable to sent out IPv4 packet, no stack primary unicast IPv4 address available")
             return None
 
     # If packet is a response to directed braodcast then replace source address with first stack address that belongs to appropriate subnet
@@ -80,9 +85,11 @@ def validate_src_ip4_address(self, ip4_src, ip4_dst):
         ip4_src = [_.ip for _ in self.ip4_address if _.broadcast_address == ip4_src]
         if ip4_src:
             ip4_src = ip4_src[0]
-            self.logger.debug(f"Packet is response to directed broadcast, replaced source with appropriate IPv4 address {ip4_src}")
+            if __debug__:
+                self._logger.debug(f"Packet is response to directed broadcast, replaced source with appropriate IPv4 address {ip4_src}")
         else:
-            self.logger.warning("Unable to sent out IPv4 packet, no appropriate stack unicast IPv4 address available")
+            if __debug__:
+                self._logger.warning("Unable to sent out IPv4 packet, no appropriate stack unicast IPv4 address available")
             return None
 
     # If source is unspecified check if destination belongs to any of local networks, if so pick source address from that network
@@ -105,7 +112,8 @@ def validate_dst_ip4_address(self, ip4_dst):
 
     # Drop packet if the destination address is unspecified
     if ip4_dst.is_unspecified:
-        self.logger.warning("Destination address is unspecified, dropping...")
+        if __debug__:
+            self._logger.warning("Destination address is unspecified, dropping...")
         return None
 
     return ip4_dst
@@ -141,12 +149,14 @@ def _phtx_ip4(self, child_packet, ip4_dst, ip4_src, ip4_ttl=config.ip4_default_t
     if ps_ip4.IP4_HEADER_LEN + len(child_packet.raw_packet) <= config.mtu:
         ip4_packet_tx = ps_ip4.Ip4Packet(ip4_src=ip4_src, ip4_dst=ip4_dst, ip4_packet_id=self.ip4_packet_id, child_packet=child_packet)
 
-        self.logger.debug(f"{ip4_packet_tx.tracker} - {ip4_packet_tx}")
+        if __debug__:
+            self._logger.debug(f"{ip4_packet_tx.tracker} - {ip4_packet_tx}")
         self._phtx_ether(child_packet=ip4_packet_tx)
         return
 
     # Fragment packet and send all fragments out
-    self.logger.debug("Packet exceedes available MTU, IP fragmentation needed...")
+    if __debug__:
+        self._logger.debug("Packet exceedes available MTU, IP fragmentation needed...")
 
     if child_packet.protocol == "ICMPv4":
         ip4_proto = ps_ip4.IP4_PROTO_ICMP4
@@ -186,7 +196,8 @@ def _phtx_ip4(self, child_packet, ip4_dst, ip4_src, ip4_ttl=config.ip4_default_t
         pointer += 1
         offset += len(raw_data_fragment)
 
-        self.logger.debug(f"{ip4_packet_tx.tracker} - {ip4_packet_tx}")
+        if __debug__:
+            self._logger.debug(f"{ip4_packet_tx.tracker} - {ip4_packet_tx}")
         self._phtx_ether(child_packet=ip4_packet_tx)
 
     return

@@ -350,6 +350,7 @@ class Icmp6Packet:
         self.__ra_reachable_time = self.__not_cached
         self.__ra_retrans_timer = self.__not_cached
         self.__ns_target_address = self.__not_cached
+        self.__na_flag_r = self.__not_cached
         self.__na_flag_s = self.__not_cached
         self.__na_flag_o = self.__not_cached
         self.__na_target_address = self.__not_cached
@@ -803,7 +804,8 @@ class Icmp6Packet:
             if not (ip6_src.is_unicast or ip6_src.is_unspecified):
                 return "ICMPv6 sanity - 'src' must be unicast or unspecified (RFC 4861)"
             if not (ip6_dst == self.ns_target_address or ip6_dst == self.ns_target_address.solicited_node_multicast):
-                self.logger.debug(f"{self.tracker} - ICMPv6 sanity - 'dst' must be 'ns_target_address' or it's solicited-node multicast (RFC 4861)")
+                if __debug__:
+                    self._logger.debug(f"{self.tracker} - ICMPv6 sanity - 'dst' must be 'ns_target_address' or it's solicited-node multicast (RFC 4861)")
             if not self.ns_target_address.is_unicast:
                 return "ICMPv6 sanity - 'ns_target_address' must be unicast (RFC 4861)"
             if ip6_src.is_unspecified and self.nd_opt_slla is not None:
