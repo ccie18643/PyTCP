@@ -103,7 +103,7 @@ class ArpPacket:
     def __len__(self):
         """ Length of the packet """
 
-        return len(self.raw_packet)
+        return ARP_HEADER_LEN
 
     @property
     def raw_header(self):
