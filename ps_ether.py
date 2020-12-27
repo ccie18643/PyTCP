@@ -91,7 +91,7 @@ class EtherPacket:
         if child_packet.protocol == "ARP":
             self.ether_type = ETHER_TYPE_ARP
 
-        self.raw_data = child_packet.get_raw_packet()
+        self.ether_data = child_packet.get_raw_packet()
 
     def __str__(self):
         """ Packet log string """
@@ -113,7 +113,7 @@ class EtherPacket:
     def raw_packet(self):
         """ Packet in raw format """
 
-        return self.raw_header + self.raw_data
+        return self.raw_header + self.ether_data
 
     def get_raw_packet(self):
         """ Get packet in raw format ready to be sent out """

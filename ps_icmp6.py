@@ -459,14 +459,10 @@ class Icmp6Packet:
             raw_packet = struct.pack("! BBH L", self.icmp6_type, self.icmp6_code, self.icmp6_cksum, self.icmp6_un_reserved) + self.icmp6_un_data
 
         elif self.icmp6_type == ICMP6_ECHO_REQUEST:
-            raw_packet = (
-                struct.pack("! BBH HH", self.icmp6_type, self.icmp6_code, self.icmp6_cksum, self.icmp6_ec_id, self.icmp6_ec_seq) + self.icmp6_ec_data
-            )
+            raw_packet = struct.pack("! BBH HH", self.icmp6_type, self.icmp6_code, self.icmp6_cksum, self.icmp6_ec_id, self.icmp6_ec_seq) + self.icmp6_ec_data
 
         elif self.icmp6_type == ICMP6_ECHO_REPLY:
-            raw_packet = (
-                struct.pack("! BBH HH", self.icmp6_type, self.icmp6_code, self.icmp6_cksum, self.icmp6_ec_id, self.icmp6_ec_seq) + self.icmp6_ec_data
-            )
+            raw_packet = struct.pack("! BBH HH", self.icmp6_type, self.icmp6_code, self.icmp6_cksum, self.icmp6_ec_id, self.icmp6_ec_seq) + self.icmp6_ec_data
 
         elif self.icmp6_type == ICMP6_ROUTER_SOLICITATION:
             raw_packet = struct.pack("! BBH L", self.icmp6_type, self.icmp6_code, self.icmp6_cksum, self.icmp6_rs_reserved) + self.raw_nd_options

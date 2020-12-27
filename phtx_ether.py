@@ -71,8 +71,8 @@ def _phtx_ether(self, child_packet, ether_src="00:00:00:00:00:00", ether_dst="00
 
     # Check if we can obtain destination MAC based on IPv6 header data
     if ether_packet_tx.ether_type == ps_ether.ETHER_TYPE_IP6:
-        ip6_src = IPv6Address(ether_packet_tx.raw_data[8:24])
-        ip6_dst = IPv6Address(ether_packet_tx.raw_data[24:40])
+        ip6_src = IPv6Address(ether_packet_tx.ether_data[8:24])
+        ip6_dst = IPv6Address(ether_packet_tx.ether_data[24:40])
 
         # Send packet out if its destined to multicast IPv6 address
         if ip6_dst.is_multicast:
@@ -108,8 +108,8 @@ def _phtx_ether(self, child_packet, ether_src="00:00:00:00:00:00", ether_dst="00
 
     # Check if we can obtain destination MAC based on IPv4 header data
     if ether_packet_tx.ether_type == ps_ether.ETHER_TYPE_IP4:
-        ip4_src = IPv4Address(ether_packet_tx.raw_data[12:16])
-        ip4_dst = IPv4Address(ether_packet_tx.raw_data[16:20])
+        ip4_src = IPv4Address(ether_packet_tx.ether_data[12:16])
+        ip4_dst = IPv4Address(ether_packet_tx.ether_data[16:20])
 
         # Send out packet if its destinied to limited broadcast addresses
         if ip4_dst.is_limited_broadcast:

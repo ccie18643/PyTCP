@@ -142,7 +142,7 @@ class Ip4Packet:
         ip4_options=None,
         child_packet=None,
         ip4_proto=None,
-        raw_data=b"",
+        ip4_data=b"",
         tracker=None,
     ):
         """ Class constructor """
@@ -178,23 +178,23 @@ class Ip4Packet:
 
             if child_packet.protocol == "ICMPv4":
                 self.ip4_proto = IP4_PROTO_ICMP4
-                self.raw_data = child_packet.get_raw_packet()
-                self.ip4_plen = self.ip4_hlen + len(self.raw_data)
+                self.ip4_data = child_packet.get_raw_packet()
+                self.ip4_plen = self.ip4_hlen + len(self.ip4_data)
 
             if child_packet.protocol == "UDP":
                 self.ip4_proto = IP4_PROTO_UDP
                 self.ip4_plen = self.ip4_hlen + child_packet.udp_plen
-                self.raw_data = child_packet.get_raw_packet(self.ip_pseudo_header)
+                self.ip4_data = child_packet.get_raw_packet(self.ip_pseudo_header)
 
             if child_packet.protocol == "TCP":
                 self.ip4_proto = IP4_PROTO_TCP
-                self.ip4_plen = self.ip4_hlen + child_packet.tcp_hlen + len(child_packet.raw_data)
-                self.raw_data = child_packet.get_raw_packet(self.ip_pseudo_header)
+                self.ip4_plen = self.ip4_hlen + child_packet.tcp_hlen + len(child_packet.tcp_data)
+                self.ip4_data = child_packet.get_raw_packet(self.ip_pseudo_header)
 
         else:
             self.ip4_proto = ip4_proto
-            self.raw_data = raw_data
-            self.ip4_plen = self.ip4_hlen + len(self.raw_data)
+            self.ip4_data = ip4_data
+            self.ip4_plen = self.ip4_hlen + len(self.ip4_data)
 
     def __str__(self):
         """ Packet log string """
@@ -243,7 +243,7 @@ class Ip4Packet:
     def raw_packet(self):
         """ Packet in raw form """
 
-        return self.raw_header + self.raw_options + self.raw_data
+        return self.raw_header + self.raw_options + self.ip4_data
 
     @property
     def ip_pseudo_header(self):

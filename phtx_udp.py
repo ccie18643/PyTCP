@@ -47,7 +47,7 @@ from ipv4_address import IPv4Address
 from ipv6_address import IPv6Address
 
 
-def _phtx_udp(self, ip_src, ip_dst, udp_sport, udp_dport, raw_data=b"", echo_tracker=None):
+def _phtx_udp(self, ip_src, ip_dst, udp_sport, udp_dport, udp_data=b"", echo_tracker=None):
     """ Handle outbound UDP packets """
 
     # Check if IPv4 protocol support is enabled, if not then silently drop the IPv4 packet
@@ -58,7 +58,7 @@ def _phtx_udp(self, ip_src, ip_dst, udp_sport, udp_dport, raw_data=b"", echo_tra
     if not config.ip6_support and ip_dst.version == 6:
         return
 
-    udp_packet_tx = ps_udp.UdpPacket(udp_sport=udp_sport, udp_dport=udp_dport, raw_data=raw_data, echo_tracker=echo_tracker)
+    udp_packet_tx = ps_udp.UdpPacket(udp_sport=udp_sport, udp_dport=udp_dport, udp_data=udp_data, echo_tracker=echo_tracker)
 
     if __debug__:
         self._logger.opt(ansi=True).info(f"<magenta>{udp_packet_tx.tracker}</magenta> - {udp_packet_tx}")

@@ -91,7 +91,7 @@ class UdpSocket:
             udp_sport=packet.local_port,
             ip_dst=packet.remote_ip_address,
             udp_dport=packet.remote_port,
-            raw_data=packet.raw_data,
+            udp_data=packet.data,
         )
 
     def receive_from(self, timeout=None):

@@ -59,7 +59,7 @@ def handle_ip4_fragmentation(packet_rx):
     if ip4_packet_rx.ip4_frag_offset != 0 and ip4_packet_rx.ip4_flag_mf:
         # Check if packet is part of existing fagment flow
         if ip4_fragments.get(ip4_packet_rx.ip4_packet_id, None):
-            ip4_fragments[ip4_packet_rx.ip4_packet_id][ip4_packet_rx.ip4_frag_offset] = ip4_packet_rx.raw_data
+            ip4_fragments[ip4_packet_rx.ip4_packet_id][ip4_packet_rx.ip4_frag_offset] = ip4_packet_rx.ip4_data
         return None
 
     # Check if IP packet is last fragment
@@ -67,19 +67,19 @@ def handle_ip4_fragmentation(packet_rx):
 
         # Check if packet is part of existing fagment flow
         if ip4_fragments.get(ip4_packet_rx.ip4_packet_id, None):
-            ip4_fragments[ip4_packet_rx.ip4_packet_id][ip4_packet_rx.ip4_frag_offset] = ip4_packet_rx.raw_data
+            ip4_fragments[ip4_packet_rx.ip4_packet_id][ip4_packet_rx.ip4_frag_offset] = ip4_packet_rx.ip4_data
 
-            raw_data = b""
+            ip4_data = b""
             for offset in sorted(ip4_fragments[ip4_packet_rx.ip4_packet_id]):
-                raw_data += ip4_fragments[ip4_packet_rx.ip4_packet_id][offset]
+                ip4_data += ip4_fragments[ip4_packet_rx.ip4_packet_id][offset]
 
             # Craft complete IP packet based on last fragment for further processing
             ip4_packet_rx.ip4_flag_mf = False
             ip4_packet_rx.ip4_frag_offset = 0
-            ip4_packet_rx.ip4_plen = ip4_packet_rx.ip4_hlen + len(raw_data)
+            ip4_packet_rx.ip4_plen = ip4_packet_rx.ip4_hlen + len(ip4_data)
             ip4_packet_rx.ip4_cksum = 0
             ip4_packet_rx.ip4_cksum = inet_cksum(ip4_packet_rx.raw_header)
-            ip4_packet_rx.raw_data = raw_data
+            ip4_packet_rx.ip4_data = ip4_data
 
     return ip4_packet_rx
 '''

@@ -528,7 +528,7 @@ class PacketHandler:
                     local_port=68,
                     remote_ip_address=IPv4Address("255.255.255.255"),
                     remote_port=67,
-                    raw_data=dhcp_packet_tx.get_raw_packet(),
+                    data=dhcp_packet_tx.get_raw_packet(),
                 )
             )
 
@@ -556,7 +556,7 @@ class PacketHandler:
             socket.close()
             return None, None
 
-        dhcp_packet_rx = ps_dhcp.DhcpPacket(packet.raw_data)
+        dhcp_packet_rx = ps_dhcp.DhcpPacket(packet.data)
         if dhcp_packet_rx.dhcp_msg_type != ps_dhcp.DHCP_OFFER:
             if __debug__:
                 self._logger.warning("Didn't receive DHCP Offer message")
@@ -594,7 +594,7 @@ class PacketHandler:
                 self._logger.warning("Timeout waiting for DHCP Ack message")
             return None, None
 
-        dhcp_packet_rx = ps_dhcp.DhcpPacket(packet.raw_data)
+        dhcp_packet_rx = ps_dhcp.DhcpPacket(packet.data)
         if dhcp_packet_rx.dhcp_msg_type != ps_dhcp.DHCP_ACK:
             if __debug__:
                 self._logger.warning("Didn't receive DHCP Offer message")

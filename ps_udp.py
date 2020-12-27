@@ -63,17 +63,17 @@ class UdpPacket:
 
     protocol = "UDP"
 
-    def __init__(self, udp_sport=None, udp_dport=None, raw_data=None, echo_tracker=None):
+    def __init__(self, udp_sport=None, udp_dport=None, udp_data=None, echo_tracker=None):
         """ Class constructor """
 
         self.tracker = Tracker("TX", echo_tracker)
 
         self.udp_sport = udp_sport
         self.udp_dport = udp_dport
-        self.udp_plen = UDP_HEADER_LEN + len(raw_data)
+        self.udp_plen = UDP_HEADER_LEN + len(udp_data)
         self.udp_cksum = 0
 
-        self.raw_data = raw_data
+        self.udp_data = udp_data
 
     def __str__(self):
         """ Packet log string """
@@ -95,7 +95,7 @@ class UdpPacket:
     def raw_packet(self):
         """ Packet in raw format """
 
-        return self.raw_header + self.raw_data
+        return self.raw_header + self.udp_data
 
     def get_raw_packet(self, ip_pseudo_header):
         """ Get packet in raw format ready to be processed by lower level protocol """

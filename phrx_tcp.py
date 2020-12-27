@@ -68,7 +68,7 @@ def _phrx_tcp(self, packet_rx):
         win=packet_rx.tcp.win,
         wscale=packet_rx.tcp.wscale,
         mss=packet_rx.tcp.mss,
-        raw_data=packet_rx.tcp.data,
+        data=packet_rx.tcp.data,
         tracker=packet_rx.tracker,
     )
 

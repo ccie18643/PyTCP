@@ -160,11 +160,11 @@ def _phtx_ip4(self, child_packet, ip4_dst, ip4_src, ip4_ttl=config.ip4_default_t
 
     if child_packet.protocol == "ICMPv4":
         ip4_proto = ps_ip4.IP4_PROTO_ICMP4
-        raw_data = child_packet.get_raw_packet()
+        ip4_data = child_packet.get_raw_packet()
 
     if child_packet.protocol in {"UDP", "TCP"}:
         ip4_proto = ps_ip4.IP4_PROTO_UDP if child_packet.protocol == "UDP" else ps_ip4.IP4_PROTO_TCP
-        raw_data = child_packet.get_raw_packet(
+        ip4_data = child_packet.get_raw_packet(
             struct.pack(
                 "! 4s 4s BBH",
                 ip4_src.packed,
@@ -175,26 +175,26 @@ def _phtx_ip4(self, child_packet, ip4_dst, ip4_src, ip4_ttl=config.ip4_default_t
             )
         )
 
-    raw_data_mtu = (config.mtu - ps_ether.ETHER_HEADER_LEN - ps_ip4.IP4_HEADER_LEN) & 0b1111111111111000
-    raw_data_fragments = [raw_data[_ : raw_data_mtu + _] for _ in range(0, len(raw_data), raw_data_mtu)]
+    ip4_data_mtu = (config.mtu - ps_ether.ETHER_HEADER_LEN - ps_ip4.IP4_HEADER_LEN) & 0b1111111111111000
+    ip4_data_fragments = [ip4_data[_ : ip4_data_mtu + _] for _ in range(0, len(ip4_data), ip4_data_mtu)]
 
     pointer = 0
     offset = 0
 
-    for raw_data_fragment in raw_data_fragments:
+    for ip4_data_fragment in ip4_data_fragments:
         ip4_packet_tx = ps_ip4.Ip4Packet(
             ip4_src=ip4_src,
             ip4_dst=ip4_dst,
             ip4_proto=ip4_proto,
             ip4_packet_id=self.ip4_packet_id,
-            ip4_flag_mf=pointer < len(raw_data_fragments) - 1,
+            ip4_flag_mf=pointer < len(ip4_data_fragments) - 1,
             ip4_frag_offset=offset,
             ip4_ttl=ip4_ttl,
-            raw_data=raw_data_fragment,
+            ip4_data=ip4_data_fragment,
             tracker=child_packet.tracker,
         )
         pointer += 1
-        offset += len(raw_data_fragment)
+        offset += len(ip4_data_fragment)
 
         if __debug__:
             self._logger.debug(f"{ip4_packet_tx.tracker} - {ip4_packet_tx}")

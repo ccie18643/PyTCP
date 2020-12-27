@@ -89,7 +89,7 @@ class TcpPacket:
         tcp_win=0,
         tcp_urp=0,
         tcp_options=None,
-        raw_data=b"",
+        tcp_data=b"",
         tracker=None,
         echo_tracker=None,
     ):
@@ -120,7 +120,7 @@ class TcpPacket:
 
         self.tcp_options = [] if tcp_options is None else tcp_options
 
-        self.raw_data = raw_data
+        self.tcp_data = tcp_data
 
         self.tcp_hlen = TCP_HEADER_LEN + len(self.raw_options)
 
@@ -157,7 +157,7 @@ class TcpPacket:
             f"TCP {self.tcp_sport} > {self.tcp_dport}, {'N' if self.tcp_flag_ns else ''}{'C' if self.tcp_flag_crw else ''}"
             + f"{'E' if self.tcp_flag_ece else ''}{'U' if self.tcp_flag_urg else ''}{'A' if self.tcp_flag_ack else ''}"
             + f"{'P' if self.tcp_flag_psh else ''}{'R' if self.tcp_flag_rst else ''}{'S' if self.tcp_flag_syn else ''}"
-            + f"{'F' if self.tcp_flag_fin else ''}, seq {self.tcp_seq}, ack {self.tcp_ack}, win {self.tcp_win}, dlen {len(self.raw_data)}"
+            + f"{'F' if self.tcp_flag_fin else ''}, seq {self.tcp_seq}, ack {self.tcp_ack}, win {self.tcp_win}, dlen {len(self.tcp_data)}"
         )
 
         for option in self.tcp_options:
@@ -185,7 +185,7 @@ class TcpPacket:
     def raw_packet(self):
         """ Packet in raw format """
 
-        return self.raw_header + self.raw_options + self.raw_data
+        return self.raw_header + self.raw_options + self.tcp_data
 
     def get_raw_packet(self, ip_pseudo_header):
         """ Get packet in raw format ready to be processed by lower level protocol """

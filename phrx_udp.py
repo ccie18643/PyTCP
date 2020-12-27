@@ -63,7 +63,7 @@ def _phrx_udp(self, packet_rx):
         local_port=packet_rx.udp.dport,
         remote_ip_address=packet_rx.ip.src,
         remote_port=packet_rx.udp.sport,
-        raw_data=packet_rx.udp.data,
+        data=packet_rx.udp.data,
         tracker=packet_rx.tracker,
     )
 

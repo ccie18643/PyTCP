@@ -67,7 +67,7 @@ class ServiceUdpEcho:
 
         while True:
             packet_rx = socket.receive_from()
-            message = packet_rx.raw_data
+            message = packet_rx.data
             print(f"Service UDP Echo: Received {len(message)} bytes from {packet_rx.remote_ip_address}, port {packet_rx.remote_port}")
 
             if "malpka" in str(message, "utf-8").strip().lower():
@@ -86,7 +86,7 @@ class ServiceUdpEcho:
                 local_port=packet_rx.local_port,
                 remote_ip_address=packet_rx.remote_ip_address,
                 remote_port=packet_rx.remote_port,
-                raw_data=message,
+                data=message,
                 tracker=Tracker("TX", echo_tracker=packet_rx.tracker),
             )
             socket.send_to(packet_tx)

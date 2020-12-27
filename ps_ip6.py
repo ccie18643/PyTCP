@@ -143,7 +143,7 @@ class Ip6Packet:
         ip6_flow=0,
         ip6_next=None,
         child_packet=None,
-        raw_data=b"",
+        ip6_data=b"",
         tracker=None,
     ):
         """ Class constructor """
@@ -175,12 +175,12 @@ class Ip6Packet:
                 self.ip6_next = IP6_NEXT_HEADER_TCP
 
             self.ip6_dlen = len(child_packet.raw_packet)
-            self.raw_data = child_packet.get_raw_packet(self.ip_pseudo_header)
+            self.ip6_data = child_packet.get_raw_packet(self.ip_pseudo_header)
 
         else:
             self.ip6_next = ip6_next
-            self.ip6_dlen = len(raw_data)
-            self.raw_data = raw_data
+            self.ip6_dlen = len(ip6_data)
+            self.ip6_data = ip6_data
 
     def __str__(self):
         """ Packet log string """
@@ -216,7 +216,7 @@ class Ip6Packet:
     def raw_packet(self):
         """ Packet in raw form """
 
-        return self.raw_header + self.raw_data
+        return self.raw_header + self.ip6_data
 
     @property
     def ip_pseudo_header(self):

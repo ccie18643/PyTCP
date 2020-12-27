@@ -69,7 +69,7 @@ def _phtx_tcp(
     tcp_mss=None,
     tcp_win=0,
     tcp_urp=0,
-    raw_data=b"",
+    tcp_data=b"",
     tracker=None,
     echo_tracker=None,
 ):
@@ -107,7 +107,7 @@ def _phtx_tcp(
         tcp_win=tcp_win,
         tcp_urp=tcp_urp,
         tcp_options=tcp_options,
-        raw_data=raw_data,
+        tcp_data=tcp_data,
         tracker=tracker,
         echo_tracker=echo_tracker,
     )
