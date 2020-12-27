@@ -74,6 +74,19 @@ def inet_cksum_fast(data, dptr, dlen, init=0):
     return ~(cksum + (cksum >> 16)) & 0xFFFF
 
 
+def inet_cksum_fast_2(data, dptr, dlen, init=0):
+    """ Compute Internet Checksum used by IPv4/ICMPv4/ICMPv6/UDP/TCP protocols """
+
+    cksum = init + sum(struct.unpack_from(f"!{dlen >> 2}L", data, dptr))
+
+    if remainder := dlen & 3:
+        cksum += struct.unpack("!L", data[dptr + dlen - remainder : dptr + dlen] + b"\0" * (4 - remainder))[0]
+
+    cksum = (cksum >> 32) + (cksum & 0xFFFFFFFF)
+    cksum = (cksum >> 16) + (cksum & 0xFFFF)
+    return ~(cksum + (cksum >> 16)) & 0xFFFF
+
+
 def ip_pick_version(ip_address):
     """ Return correct IPv6Address or IPv4Address based on address string provided """
 
