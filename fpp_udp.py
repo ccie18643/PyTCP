@@ -44,7 +44,7 @@
 import struct
 
 import config
-from ip_helper import inet_cksum
+from ip_helper import inet_cksum_fast
 
 # UDP packet header (RFC 768)
 
@@ -154,7 +154,7 @@ class UdpPacket:
         if not config.packet_integrity_check:
             return False
 
-        if inet_cksum(pseudo_header + self._frame[self._hptr : self._hptr + self._plen]):
+        if inet_cksum_fast(self._frame, self._hptr, self._plen, pseudo_header):
             return "UDP integrity - wrong packet checksum"
 
         if not UDP_HEADER_LEN <= self._plen <= len(self):

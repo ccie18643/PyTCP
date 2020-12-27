@@ -44,7 +44,7 @@
 import struct
 
 import config
-from ip_helper import inet_cksum
+from ip_helper import inet_cksum_fast
 from ipv6_address import IPv6Address, IPv6Network
 
 # Destination Unreachable message (1/[0-6])
@@ -685,7 +685,7 @@ class Icmp6Packet:
         if not config.packet_integrity_check:
             return False
 
-        if inet_cksum(pseudo_header + self._frame[self._hptr : self._hptr + self._plen]):
+        if inet_cksum_fast(self._frame, self._hptr, self._plen, pseudo_header):
             return "ICMPv6 integrity - wrong packet checksum"
 
         if not ICMP6_HEADER_LEN <= self._plen <= len(self):

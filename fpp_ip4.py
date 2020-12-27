@@ -44,7 +44,7 @@
 import struct
 
 import config
-from ip_helper import inet_cksum
+from ip_helper import inet_cksum_fast
 from ipv4_address import IPv4Address
 
 # IPv4 protocol header
@@ -355,7 +355,7 @@ class Ip4Packet:
             return "IPv4 integrity - wrong packet length (II)"
 
         # Cannot compute checksum earlier because it depends on sanity of hlen field
-        if inet_cksum(self._frame[self._hptr : self._hptr + hlen]):
+        if inet_cksum_fast(self._frame, self._hptr, hlen):
             return "IPv4 integriy - wrong packet checksum"
 
         optr = self._hptr + IP4_HEADER_LEN

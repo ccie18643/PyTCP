@@ -47,12 +47,30 @@ from ipaddress import AddressValueError
 from ipv4_address import IPv4Address
 from ipv6_address import IPv6Address
 
+from socket import ntohl
 
 def inet_cksum(data):
     """ Compute Internet Checksum used by IP/TCP/UDP/ICMPv4 protocols """
 
     data = data + (b"\0" * (8 - (len(data) % 8)))
     cksum = sum(struct.unpack(f"! {len(data) >> 3}Q", data))
+    cksum = (cksum >> 64) + (cksum & 0xFFFFFFFFFFFFFFFF)
+    cksum = (cksum >> 32) + (cksum & 0xFFFFFFFF)
+    cksum = (cksum >> 16) + (cksum & 0xFFFF)
+    return ~(cksum + (cksum >> 16)) & 0xFFFF
+
+
+def inet_cksum_fast(data, dptr, dlen, pseudo_header=None):
+    """ Compute Internet Checksum used by IPv4/ICMPv4/ICMPv6/UDP/TCP protocols """
+
+    cksum = sum(struct.unpack_from(f"!{dlen >> 3}Q", data, dptr))
+
+    if remainder := dlen & 7:
+        cksum += struct.unpack("!Q", data[dptr + dlen - remainder : dptr + dlen] + b"\0" * (8 - remainder))[0]
+
+    if pseudo_header:
+        cksum += sum(struct.unpack(f"!{len(pseudo_header) >> 2}L", pseudo_header))
+
     cksum = (cksum >> 64) + (cksum & 0xFFFFFFFFFFFFFFFF)
     cksum = (cksum >> 32) + (cksum & 0xFFFFFFFF)
     cksum = (cksum >> 16) + (cksum & 0xFFFF)
