@@ -161,7 +161,7 @@ class FastPacketParser:
                 self.udp = fpp_udp.UdpPacket(self._frame, self.ip6.dptr, self.ip6.dlen, self.ip6.pseudo_header)
                 if self.udp.packet_parse_failed:
                     if __debug__:
-                        self._logger.critical(f"{self.tracker} - {self.udp.packet_check_failed}")
+                        self._logger.critical(f"{self.tracker} - {self.udp.packet_parse_failed}")
                     self.packet_parse_failed = True
                     return
                 if __debug__:
