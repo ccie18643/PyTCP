@@ -65,13 +65,17 @@ class TxRing:
         if __debug__:
             self._logger.debug("Started TX ring")
 
+        self.frame = [bytearray(_) for _ in range(14, 1514)]
+
     def __thread_transmit(self):
         """ Dequeue packet from TX ring """
 
         while True:
             self.packet_enqueued.acquire()
             ether_packet_tx = self.tx_ring.pop(0)
-            os.write(self.tap, ether_packet_tx.assemble_packet())
+            frame = self.frame[len(ether_packet_tx)]
+            ether_packet_tx.assemble_packet(frame, 0)
+            os.write(self.tap, frame)
 
             if __debug__:
                 self._logger.opt(ansi=True).debug(
