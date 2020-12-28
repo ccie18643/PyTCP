@@ -65,15 +65,13 @@ def inet_cksum_fast(data, dptr, dlen, init=0):
 
     if dlen == 20:
         cksum = init + sum(struct.unpack_from("!5L", data, dptr))
-        cksum = (cksum >> 16) + (cksum & 0xFFFF)
-        return ~(cksum + (cksum >> 16)) & 0xFFFF
 
-    cksum = init + sum(struct.unpack_from(f"!{dlen >> 3}Q", data, dptr))
+    else:
+        cksum = init + sum(struct.unpack_from(f"!{dlen >> 3}Q", data, dptr))
+        if remainder := dlen & 7:
+            cksum += struct.unpack("!Q", data[dptr + dlen - remainder : dptr + dlen] + b"\0" * (8 - remainder))[0]
+        cksum = (cksum >> 64) + (cksum & 0xFFFFFFFFFFFFFFFF)
 
-    if remainder := dlen & 7:
-        cksum += struct.unpack("!Q", data[dptr + dlen - remainder : dptr + dlen] + b"\0" * (8 - remainder))[0]
-
-    cksum = (cksum >> 64) + (cksum & 0xFFFFFFFFFFFFFFFF)
     cksum = (cksum >> 32) + (cksum & 0xFFFFFFFF)
     cksum = (cksum >> 16) + (cksum & 0xFFFF)
     return ~(cksum + (cksum >> 16)) & 0xFFFF

@@ -73,9 +73,6 @@ class TxRing:
             ether_packet_tx = self.tx_ring.pop(0)
             os.write(self.tap, ether_packet_tx.get_raw_packet())
 
-            print(len(ether_packet_tx.get_raw_packet()))
-            print(len(ether_packet_tx))
-
             if __debug__:
                 self._logger.opt(ansi=True).debug(
                     f"<magenta>[TX]</> {ether_packet_tx.tracker}<yellow>{ether_packet_tx.tracker.latency}</> - sent packet, {len(ether_packet_tx)} bytes"
