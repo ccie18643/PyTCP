@@ -43,7 +43,7 @@
 
 import struct
 
-from ip_helper import inet_cksum
+from ip_helper import inet_cksum, inet_cksum_fast
 from tracker import Tracker
 
 # Echo reply message (0/0)
@@ -192,3 +192,23 @@ class Icmp4Packet:
         self.icmp4_cksum = inet_cksum(self.raw_packet)
 
         return self.raw_packet
+
+    def assemble_packet(self, frame, hptr, _):
+        """ Assemble packet into the raw form """
+
+        if self.icmp4_type == ICMP4_ECHO_REPLY:
+            struct.pack_into("! BBH HH", frame, hptr, self.icmp4_type, self.icmp4_code, self.icmp4_cksum, self.icmp4_ec_id, self.icmp4_ec_seq)
+            struct.pack_into(f"{len(self.icmp4_ec_data)}s", frame, hptr + 8, self.icmp4_ec_data)
+            plen = 8 + len(self.icmp4_ec_data)
+
+        elif self.icmp4_type == ICMP4_UNREACHABLE and self.icmp4_code == ICMP4_UNREACHABLE__PORT:
+            struct.pack_into("! BBH L", frame, hptr, self.icmp4_type, self.icmp4_code, self.icmp4_cksum, self.icmp4_un_reserved)
+            struct.pack_into(f"{len(self.icmp4_un_data)}s", frame, hptr + 8, self.icmp4_un_data)
+            plen = 8 + len(self.icmp4_un_data)
+
+        elif self.icmp4_type == ICMP4_ECHO_REQUEST:
+            struct.pack_into("! BBH HH", frame, hptr, self.icmp4_type, self.icmp4_code, self.icmp4_cksum, self.icmp4_ec_id, self.icmp4_ec_seq)
+            struct.pack_into(f"{len(self.icmp4_ec_data)}s", frame, hptr + 8, self.icmp4_ec_data)
+            plen = 8 + len(self.icmp4_ec_data)
+
+        struct.pack_into("! H", frame, hptr + 2, inet_cksum_fast(frame, hptr, plen))

@@ -43,11 +43,11 @@
 
 import struct
 from ipaddress import AddressValueError
+from socket import ntohl
 
 from ipv4_address import IPv4Address
 from ipv6_address import IPv6Address
 
-from socket import ntohl
 
 def inet_cksum(data):
     """ Compute Internet Checksum used by IP/TCP/UDP/ICMPv4 protocols """

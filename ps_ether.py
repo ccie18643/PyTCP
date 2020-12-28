@@ -121,3 +121,15 @@ class EtherPacket:
         """ Get packet in raw format ready to be sent out """
 
         return self.raw_packet
+
+    def assemble_packet(self):
+        """ Assemble packet into the raw form """
+
+        frame = bytearray(len(self))
+        hptr = 0
+
+        struct.pack_into("! 6s 6s H", frame, hptr, bytes.fromhex(self.ether_dst.replace(":", "")), bytes.fromhex(self.ether_src.replace(":", "")), self.ether_type)
+
+        self.child_packet.assemble_packet(frame, hptr + ETHER_HEADER_LEN)
+
+        return frame

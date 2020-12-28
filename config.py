@@ -45,7 +45,7 @@
 interface = b"tap7"
 
 # Support for IPv6 and IPv4, at least one should be anabled
-ip6_support = True
+ip6_support = False
 ip4_support = True
 
 # Packet integrity sanity check, if enabled it protects the protocol parsers from being exposed to malformed or malicious packets

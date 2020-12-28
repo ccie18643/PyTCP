@@ -146,14 +146,15 @@ def _phtx_ip4(self, child_packet, ip4_dst, ip4_src, ip4_ttl=config.ip4_default_t
         self.ip4_packet_id = 1
 
     # Check if packet can be sent out without fragmentation, if so send it out
-    if ps_ip4.IP4_HEADER_LEN + len(child_packet.raw_packet) <= config.mtu:
-        ip4_packet_tx = ps_ip4.Ip4Packet(ip4_src=ip4_src, ip4_dst=ip4_dst, ip4_packet_id=self.ip4_packet_id, child_packet=child_packet)
+    #if ps_ip4.IP4_HEADER_LEN + len(child_packet.raw_packet) <= config.mtu:
+    ip4_packet_tx = ps_ip4.Ip4Packet(ip4_src=ip4_src, ip4_dst=ip4_dst, ip4_packet_id=self.ip4_packet_id, child_packet=child_packet)
 
-        if __debug__:
-            self._logger.debug(f"{ip4_packet_tx.tracker} - {ip4_packet_tx}")
-        self._phtx_ether(child_packet=ip4_packet_tx)
-        return
+    if __debug__:
+        self._logger.debug(f"{ip4_packet_tx.tracker} - {ip4_packet_tx}")
+    self._phtx_ether(child_packet=ip4_packet_tx)
+    return
 
+    '''
     # Fragment packet and send all fragments out
     if __debug__:
         self._logger.debug("Packet exceedes available MTU, IP fragmentation needed...")
@@ -201,3 +202,4 @@ def _phtx_ip4(self, child_packet, ip4_dst, ip4_src, ip4_ttl=config.ip4_default_t
         self._phtx_ether(child_packet=ip4_packet_tx)
 
     return
+    '''

@@ -44,7 +44,7 @@
 import struct
 
 import config
-from ip_helper import inet_cksum
+from ip_helper import inet_cksum, inet_cksum_fast
 from ipv4_address import IPv4Address
 
 # IPv4 protocol header
@@ -245,6 +245,13 @@ class Ip4Packet:
 
         return struct.pack("! 4s 4s BBH", self.ip4_src.packed, self.ip4_dst.packed, 0, self.ip4_proto, self.ip4_plen - self.ip4_hlen)
 
+    @property
+    def pshdr_sum(self):
+        """ Create IPv4 pseudo header used by TCP and UDP to compute their checksums """
+
+        pseudo_header = struct.pack("! 4s 4s BBH", self.ip4_src.packed, self.ip4_dst.packed, 0, self.ip4_proto, self.ip4_plen - self.ip4_hlen)
+        return sum(struct.unpack(f"! 3L", pseudo_header))
+
     def get_raw_packet(self):
         """ Get packet in raw format ready to be processed by lower level protocol """
 
@@ -259,6 +266,32 @@ class Ip4Packet:
             if option.name == name:
                 return option
         return None
+
+    def assemble_packet(self, frame, hptr):
+        """ Assemble packet into the raw form """
+
+        struct.pack_into(
+            "! BBH HH BBH 4s 4s",
+            frame,
+            hptr,
+            self.ip4_ver << 4 | self.ip4_hlen >> 2,
+            self.ip4_dscp << 2 | self.ip4_ecn,
+            self.ip4_plen,
+            self.ip4_packet_id,
+            self.ip4_flag_reserved << 15 | self.ip4_flag_df << 14 | self.ip4_flag_mf << 13 | self.ip4_frag_offset >> 3,
+            self.ip4_ttl,
+            self.ip4_proto,
+            0,
+            self.ip4_src.packed,
+            self.ip4_dst.packed,
+        )
+
+        if self.ip4_options:
+            struct.pack_into(f"{len(self.raw_options)}s", frame, hptr + IP4_HEADER_LEN, self.raw_options)
+
+        struct.pack_into("! H", frame, hptr + 10, inet_cksum_fast(frame, hptr, self.ip4_hlen))
+
+        self.child_packet.assemble_packet(frame, hptr + self.ip4_hlen, self.pshdr_sum)
 
 
 #
@@ -288,6 +321,7 @@ class Ip4OptEol:
     def __len__(self):
         return IP4_OPT_EOL_LEN
 
+
 # IPv4 option - No Operation (1)
 
 IP4_OPT_NOP = 1
@@ -310,6 +344,7 @@ class Ip4OptNop:
     def __len__(self):
         return IP4_OPT_NOP_LEN
 
+
 # IPv4 option not supported by this stack
 
 
@@ -327,6 +362,6 @@ class Ip4OptUnk:
 
     def __str__(self):
         return f"unk-{self.opt_kind}-{self.opt_len}"
-    
+
     def __len__(self):
         return opt_len

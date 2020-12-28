@@ -132,3 +132,21 @@ class ArpPacket:
         """ Get packet in raw format ready to be processed by lower level protocol """
 
         return self.raw_packet
+
+    def assemble_packet(self, frame, hptr):
+        """ Assemble packet into the raw form """
+
+        return struct.pack_into(
+            "!HH BBH 6s 4s 6s 4s",
+            frame,
+            hptr,
+            self.arp_hrtype,
+            self.arp_prtype,
+            self.arp_hrlen,
+            self.arp_prlen,
+            self.arp_oper,
+            bytes.fromhex(self.arp_sha.replace(":", "")),
+            IPv4Address(self.arp_spa).packed,
+            bytes.fromhex(self.arp_tha.replace(":", "")),
+            IPv4Address(self.arp_tpa).packed,
+        )

@@ -71,7 +71,7 @@ class TxRing:
         while True:
             self.packet_enqueued.acquire()
             ether_packet_tx = self.tx_ring.pop(0)
-            os.write(self.tap, ether_packet_tx.get_raw_packet())
+            os.write(self.tap, ether_packet_tx.assemble_packet())
 
             if __debug__:
                 self._logger.opt(ansi=True).debug(

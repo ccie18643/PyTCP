@@ -218,7 +218,34 @@ class Ip6Packet:
         # *** in the UDP/TCP length field need to account for IPv6 optional headers, current implementation assumes TCP/UDP is put right after IPv6 header ***
         return struct.pack("! 16s 16s L BBBB", self.ip6_src.packed, self.ip6_dst.packed, self.ip6_dlen, 0, 0, 0, self.ip6_next)
 
+    @property
+    def pshdr_sum(self):
+        """ Returns IPv6 pseudo header that is used by TCP, UDP and ICMPv6 to compute their checksums """
+
+        pseudo_header = struct.pack("! 16s 16s L BBBB", self.src.packed, self.dst.packed, self.dlen, 0, 0, 0, self.next)
+        return sum(struct.unpack(f"! 5Q", pseudo_header))
+
     def get_raw_packet(self):
         """ Get packet in raw format ready to be processed by lower level protocol """
 
         return self.raw_packet
+
+    def assemble_packet(self, frame, hptr):
+        """ Assemble packet into the raw form """
+
+        struct.pack_into(
+            "! BBBB HBB 16s 16s",
+            frame,
+            hptr,
+            self.ip6_ver << 4 | self.ip6_dscp >> 4,
+            self.ip6_dscp << 6 | self.ip6_ecn << 4 | ((self.ip6_flow & 0b000011110000000000000000) >> 16),
+            (self.ip6_flow & 0b000000001111111100000000) >> 8,
+            self.ip6_flow & 0b000000000000000011111111,
+            self.ip6_dlen,
+            self.ip6_next,
+            self.ip6_hop,
+            self.ip6_src.packed,
+            self.ip6_dst.packed,
+        )
+
+        self.child_packet.assemble_packet(frame, hptr + IP6_HEADER_LEN, self.pshdr_sum)

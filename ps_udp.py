@@ -43,7 +43,7 @@
 
 import struct
 
-from ip_helper import inet_cksum
+from ip_helper import inet_cksum, inet_cksum_fast
 from tracker import Tracker
 
 # UDP packet header (RFC 768)
@@ -103,3 +103,11 @@ class UdpPacket:
         self.udp_cksum = inet_cksum(ip_pseudo_header + self.raw_packet)
 
         return self.raw_packet
+
+    def assemble_packet(self, frame, hptr, pshdr_sum):
+        """ Assemble packet into the raw form """
+
+        struct.pack_into("! HH HH", frame, hptr, self.udp_sport, self.udp_dport, self.udp_plen, self.udp_cksum)
+
+        struct.pack_into(f"{len(self.udp_data)}s", frame, hptr + UDP_HEADER_LEN, self.udp_data)
+        struct.pack_into("! H", frame, hptr + 6, inet_cksum_fast(frame, hptr, self.udp_plen, pshdr_sum))

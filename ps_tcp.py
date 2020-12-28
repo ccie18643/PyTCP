@@ -43,7 +43,7 @@
 
 import struct
 
-from ip_helper import inet_cksum
+from ip_helper import inet_cksum_fast
 from tracker import Tracker
 
 # TCP packet header (RFC 793)
@@ -194,6 +194,36 @@ class TcpPacket:
 
         return self.raw_packet
 
+    def assemble_packet(self, frame, hptr, pshdr_sum):
+        """ Assemble packet into the raw form """
+
+        struct.pack_into(
+            "! HH L L BBH HH",
+            frame,
+            hptr,
+            self.tcp_sport,
+            self.tcp_dport,
+            self.tcp_seq,
+            self.tcp_ack,
+            self.tcp_hlen << 2 | self.tcp_reserved | self.tcp_flag_ns,
+            self.tcp_flag_crw << 7
+            | self.tcp_flag_ece << 6
+            | self.tcp_flag_urg << 5
+            | self.tcp_flag_ack << 4
+            | self.tcp_flag_psh << 3
+            | self.tcp_flag_rst << 2
+            | self.tcp_flag_syn << 1
+            | self.tcp_flag_fin,
+            self.tcp_win,
+            0,
+            self.tcp_urp,
+        )
+
+        if self.options:
+            struct.pack_into(f"{len(self.raw_options)}s", frame, hptr + TCP_HEADER_LEN, self.raw_options)
+        struct.pack_into(f"{len(self.data)}s", frame, hptr + self.hlen, self.tcp_data)
+        struct.pack_into("! H", frame, hptr + 16, inet_cksum_fast(frame, hptr, self.tcp_plen, pshdr_sum))
+
     @property
     def tcp_mss(self):
         """ TCP option - Maximum Segment Size (2) """
@@ -258,6 +288,7 @@ class TcpOptEol:
     def __len__(self):
         return TCP_OPT_EOL_LEN
 
+
 # TCP option - No Operation (1)
 
 TCP_OPT_NOP = 1
@@ -279,6 +310,7 @@ class TcpOptNop:
 
     def __len__(self):
         return TCP_OPT_NOP_LEN
+
 
 # TCP option - Maximum Segment Size (2)
 
@@ -329,6 +361,7 @@ class TcpOptWscale:
     def __len__(self):
         return TCP_OPT_WSCALE_LEN
 
+
 # TCP option - Sack Permit (4)
 
 TCP_OPT_SACKPERM = 4
@@ -351,6 +384,7 @@ class TcpOptSackPerm:
 
     def __len__(self):
         return TCP_OPT_SACKPERM_LEN
+
 
 # TCP option - Timestamp
 
@@ -376,4 +410,3 @@ class TcpOptTimestamp:
 
     def __len__(self):
         return TCP_OPT_TIMESTAMP_LEN
-
