@@ -68,7 +68,7 @@ class TxRing:
         self.frame = [bytearray(_) for _ in range(14, 1514)]
 
     def __thread_transmit(self):
-        """ Dequeue packet from TX ring """
+        """ Dequeue packet from TX ring and send it out """
 
         while True:
             self.packet_enqueued.acquire()
