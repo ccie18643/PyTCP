@@ -197,17 +197,17 @@ class Icmp4Packet:
         """ Assemble packet into the raw form """
 
         if self.icmp4_type == ICMP4_ECHO_REPLY:
-            struct.pack_into("! BBH HH", frame, hptr, self.icmp4_type, self.icmp4_code, self.icmp4_cksum, self.icmp4_ec_id, self.icmp4_ec_seq)
+            struct.pack_into("! BBH HH", frame, hptr, self.icmp4_type, self.icmp4_code, 0, self.icmp4_ec_id, self.icmp4_ec_seq)
             struct.pack_into(f"{len(self.icmp4_ec_data)}s", frame, hptr + 8, self.icmp4_ec_data)
             plen = 8 + len(self.icmp4_ec_data)
 
         elif self.icmp4_type == ICMP4_UNREACHABLE and self.icmp4_code == ICMP4_UNREACHABLE__PORT:
-            struct.pack_into("! BBH L", frame, hptr, self.icmp4_type, self.icmp4_code, self.icmp4_cksum, self.icmp4_un_reserved)
+            struct.pack_into("! BBH L", frame, hptr, self.icmp4_type, self.icmp4_code, 0, self.icmp4_un_reserved)
             struct.pack_into(f"{len(self.icmp4_un_data)}s", frame, hptr + 8, self.icmp4_un_data)
             plen = 8 + len(self.icmp4_un_data)
 
         elif self.icmp4_type == ICMP4_ECHO_REQUEST:
-            struct.pack_into("! BBH HH", frame, hptr, self.icmp4_type, self.icmp4_code, self.icmp4_cksum, self.icmp4_ec_id, self.icmp4_ec_seq)
+            struct.pack_into("! BBH HH", frame, hptr, self.icmp4_type, self.icmp4_code, 0, self.icmp4_ec_id, self.icmp4_ec_seq)
             struct.pack_into(f"{len(self.icmp4_ec_data)}s", frame, hptr + 8, self.icmp4_ec_data)
             plen = 8 + len(self.icmp4_ec_data)
 
