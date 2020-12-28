@@ -44,8 +44,8 @@
 import struct
 
 import config
-import ps_ether
-import ps_ip4
+import fpa_ether
+import fpa_ip4
 from ipv4_address import IPv4Address
 
 
@@ -146,8 +146,8 @@ def _phtx_ip4(self, child_packet, ip4_dst, ip4_src, ip4_ttl=config.ip4_default_t
         self.ip4_packet_id = 1
 
     # Check if packet can be sent out without fragmentation, if so send it out
-    #if ps_ip4.IP4_HEADER_LEN + len(child_packet.raw_packet) <= config.mtu:
-    ip4_packet_tx = ps_ip4.Ip4Packet(ip4_src=ip4_src, ip4_dst=ip4_dst, ip4_packet_id=self.ip4_packet_id, child_packet=child_packet)
+    #if fpa_ip4.IP4_HEADER_LEN + len(child_packet.raw_packet) <= config.mtu:
+    ip4_packet_tx = fpa_ip4.Ip4Packet(ip4_src=ip4_src, ip4_dst=ip4_dst, ip4_packet_id=self.ip4_packet_id, child_packet=child_packet)
 
     if __debug__:
         self._logger.debug(f"{ip4_packet_tx.tracker} - {ip4_packet_tx}")
@@ -160,11 +160,11 @@ def _phtx_ip4(self, child_packet, ip4_dst, ip4_src, ip4_ttl=config.ip4_default_t
         self._logger.debug("Packet exceedes available MTU, IP fragmentation needed...")
 
     if child_packet.protocol == "ICMPv4":
-        ip4_proto = ps_ip4.IP4_PROTO_ICMP4
+        ip4_proto = fpa_ip4.IP4_PROTO_ICMP4
         ip4_data = child_packet.get_raw_packet()
 
     if child_packet.protocol in {"UDP", "TCP"}:
-        ip4_proto = ps_ip4.IP4_PROTO_UDP if child_packet.protocol == "UDP" else ps_ip4.IP4_PROTO_TCP
+        ip4_proto = fpa_ip4.IP4_PROTO_UDP if child_packet.protocol == "UDP" else fpa_ip4.IP4_PROTO_TCP
         ip4_data = child_packet.get_raw_packet(
             struct.pack(
                 "! 4s 4s BBH",
@@ -176,14 +176,14 @@ def _phtx_ip4(self, child_packet, ip4_dst, ip4_src, ip4_ttl=config.ip4_default_t
             )
         )
 
-    ip4_data_mtu = (config.mtu - ps_ether.ETHER_HEADER_LEN - ps_ip4.IP4_HEADER_LEN) & 0b1111111111111000
+    ip4_data_mtu = (config.mtu - fpa_ether.ETHER_HEADER_LEN - fpa_ip4.IP4_HEADER_LEN) & 0b1111111111111000
     ip4_data_fragments = [ip4_data[_ : ip4_data_mtu + _] for _ in range(0, len(ip4_data), ip4_data_mtu)]
 
     pointer = 0
     offset = 0
 
     for ip4_data_fragment in ip4_data_fragments:
-        ip4_packet_tx = ps_ip4.Ip4Packet(
+        ip4_packet_tx = fpa_ip4.Ip4Packet(
             ip4_src=ip4_src,
             ip4_dst=ip4_dst,
             ip4_proto=ip4_proto,

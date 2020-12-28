@@ -37,7 +37,7 @@
 
 
 #
-# ps_ip4.py - protocol support library for IPv4
+# fpa_ip4.py - Fast Packet Assembler support class for IPv4 protocol
 #
 
 

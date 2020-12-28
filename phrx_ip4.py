@@ -41,7 +41,7 @@
 #
 
 
-import ps_ip4
+import fpa_ip4
 
 ip4_fragments = {}
 
@@ -102,14 +102,14 @@ def _phrx_ip4(self, packet_rx):
     # if not ip4_packet_rx:
     #    return
 
-    if packet_rx.ip4.proto == ps_ip4.IP4_PROTO_ICMP4:
+    if packet_rx.ip4.proto == fpa_ip4.IP4_PROTO_ICMP4:
         self._phrx_icmp4(packet_rx)
         return
 
-    if packet_rx.ip4.proto == ps_ip4.IP4_PROTO_UDP:
+    if packet_rx.ip4.proto == fpa_ip4.IP4_PROTO_UDP:
         self._phrx_udp(packet_rx)
         return
 
-    if packet_rx.ip4.proto == ps_ip4.IP4_PROTO_TCP:
+    if packet_rx.ip4.proto == fpa_ip4.IP4_PROTO_TCP:
         self._phrx_tcp(packet_rx)
         return

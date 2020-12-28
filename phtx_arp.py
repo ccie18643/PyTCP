@@ -42,7 +42,7 @@
 
 
 import config
-import ps_arp
+import fpa_arp
 
 
 def _phtx_arp(self, ether_src, ether_dst, arp_oper, arp_sha, arp_spa, arp_tha, arp_tpa, echo_tracker=None):
@@ -52,7 +52,7 @@ def _phtx_arp(self, ether_src, ether_dst, arp_oper, arp_sha, arp_spa, arp_tha, a
     if not config.ip4_support:
         return
 
-    arp_packet_tx = ps_arp.ArpPacket(
+    arp_packet_tx = fpa_arp.ArpPacket(
         arp_oper=arp_oper,
         arp_sha=arp_sha,
         arp_spa=arp_spa,

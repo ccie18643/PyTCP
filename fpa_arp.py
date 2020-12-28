@@ -37,94 +37,116 @@
 
 
 #
-# ps_ethernet.py - protocol suppot library for Ethernet
+# fpa_arp.py - Fast Packet Assembler support class for ARP protocol
 #
 
 
 import struct
 
-# Ethernet packet header
+from ipv4_address import IPv4Address
+from tracker import Tracker
 
+# ARP packet header - IPv4 stack version only
+
+# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+# |         Hardware Type         |         Protocol Type         |
+# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+# |  Hard Length  |  Proto Length |           Operation           |
 # +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 # |                                                               >
-# +    Destination MAC Address    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+# +        Sender Mac Address     +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+# >                               |       Sender IP Address       >
+# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 # >                               |                               >
-# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+      Source MAC Address       +
+# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+       Target MAC Address      |
 # >                                                               |
 # +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-# |           EtherType           |
-# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+# |                       Target IP Address                       |
+# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 
 
-ETHER_HEADER_LEN = 14
+ARP_HEADER_LEN = 28
 
-ETHER_TYPE_MIN = 0x0600
-ETHER_TYPE_ARP = 0x0806
-ETHER_TYPE_IP4 = 0x0800
-ETHER_TYPE_IP6 = 0x86DD
+ARP_OP_REQUEST = 1
+ARP_OP_REPLY = 2
 
 
-ETHER_TYPE_TABLE = {ETHER_TYPE_ARP: "ARP", ETHER_TYPE_IP4: "IPv4", ETHER_TYPE_IP6: "IPv6"}
+class ArpPacket:
+    """ ARP packet support class """
 
+    protocol = "ARP"
 
-class EtherPacket:
-    """ Ethernet packet support class """
-
-    protocol = "ETHER"
-
-    def __init__(self, ether_src="00:00:00:00:00:00", ether_dst="00:00:00:00:00:00", child_packet=None):
+    def __init__(self, arp_sha=None, arp_spa=None, arp_tpa=None, arp_tha="00:00:00:00:00:00", arp_oper=ARP_OP_REQUEST, echo_tracker=None):
         """ Class constructor """
 
-        self.child_packet = child_packet
+        self.tracker = Tracker("TX", echo_tracker)
 
-        self.tracker = child_packet.tracker
-
-        self.ether_dst = ether_dst
-        self.ether_src = ether_src
-
-        assert child_packet.protocol in {"IPv6", "IPv4", "ARP"}, f"Not supported protocol: {child_packet.protocol}"
-
-        if child_packet.protocol == "IPv6":
-            self.ether_type = ETHER_TYPE_IP6
-
-        if child_packet.protocol == "IPv4":
-            self.ether_type = ETHER_TYPE_IP4
-
-        if child_packet.protocol == "ARP":
-            self.ether_type = ETHER_TYPE_ARP
-
-        self.ether_data = child_packet.get_raw_packet()
+        self.arp_hrtype = 1
+        self.arp_prtype = 0x0800
+        self.arp_hrlen = 6
+        self.arp_prlen = 4
+        self.arp_oper = arp_oper
+        self.arp_sha = arp_sha
+        self.arp_spa = IPv4Address(arp_spa)
+        self.arp_tha = arp_tha
+        self.arp_tpa = IPv4Address(arp_tpa)
 
     def __str__(self):
         """ Packet log string """
 
-        return f"ETHER {self.ether_src} > {self.ether_dst}, 0x{self.ether_type:0>4x} ({ETHER_TYPE_TABLE.get(self.ether_type, '???')})"
+        if self.arp_oper == ARP_OP_REQUEST:
+            return f"ARP request {self.arp_spa} / {self.arp_sha} > {self.arp_tpa} / {self.arp_tha}"
+        if self.arp_oper == ARP_OP_REPLY:
+            return f"ARP reply {self.arp_spa} / {self.arp_sha} > {self.arp_tpa} / {self.arp_tha}"
+        return f"ARP unknown operation {self.arp_oper}"
 
     def __len__(self):
         """ Length of the packet """
 
-        return ETHER_HEADER_LEN + len(self.child_packet)
+        return ARP_HEADER_LEN
 
     @property
     def raw_header(self):
         """ Packet header in raw format """
 
-        return struct.pack("! 6s 6s H", bytes.fromhex(self.ether_dst.replace(":", "")), bytes.fromhex(self.ether_src.replace(":", "")), self.ether_type)
+        return struct.pack(
+            "!HH BBH 6s 4s 6s 4s",
+            self.arp_hrtype,
+            self.arp_prtype,
+            self.arp_hrlen,
+            self.arp_prlen,
+            self.arp_oper,
+            bytes.fromhex(self.arp_sha.replace(":", "")),
+            IPv4Address(self.arp_spa).packed,
+            bytes.fromhex(self.arp_tha.replace(":", "")),
+            IPv4Address(self.arp_tpa).packed,
+        )
 
     @property
     def raw_packet(self):
-        """ Packet in raw format """
+        """ Get packet in raw format """
 
-        return self.raw_header + self.ether_data
+        return self.raw_header
 
     def get_raw_packet(self):
-        """ Get packet in raw format ready to be sent out """
+        """ Get packet in raw format ready to be processed by lower level protocol """
 
         return self.raw_packet
 
     def assemble_packet(self, frame, hptr):
         """ Assemble packet into the raw form """
 
-        struct.pack_into("! 6s 6s H", frame, hptr, bytes.fromhex(self.ether_dst.replace(":", "")), bytes.fromhex(self.ether_src.replace(":", "")), self.ether_type)
-
-        self.child_packet.assemble_packet(frame, hptr + ETHER_HEADER_LEN)
+        return struct.pack_into(
+            "!HH BBH 6s 4s 6s 4s",
+            frame,
+            hptr,
+            self.arp_hrtype,
+            self.arp_prtype,
+            self.arp_hrlen,
+            self.arp_prlen,
+            self.arp_oper,
+            bytes.fromhex(self.arp_sha.replace(":", "")),
+            IPv4Address(self.arp_spa).packed,
+            bytes.fromhex(self.arp_tha.replace(":", "")),
+            IPv4Address(self.arp_tpa).packed,
+        )

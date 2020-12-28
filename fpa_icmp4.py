@@ -37,7 +37,7 @@
 
 
 #
-# ps_icmp4.py - protocol support library for ICMPv4
+# fpa_icmp4.py - Fast Packet Assembler support class for ICMPv4 protocol
 #
 
 

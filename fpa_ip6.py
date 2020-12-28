@@ -37,7 +37,7 @@
 
 
 #
-# ps_ip6.py - protocol support library for IPv6
+# fpa_ip6.py - Fast Packet Assembler support class for IPv6 protocol
 #
 
 
@@ -222,7 +222,7 @@ class Ip6Packet:
     def pshdr_sum(self):
         """ Returns IPv6 pseudo header that is used by TCP, UDP and ICMPv6 to compute their checksums """
 
-        pseudo_header = struct.pack("! 16s 16s L BBBB", self.src.packed, self.dst.packed, self.dlen, 0, 0, 0, self.next)
+        pseudo_header = struct.pack("! 16s 16s L BBBB", self.ip6_src.packed, self.ip6_dst.packed, self.ip6_dlen, 0, 0, 0, self.ip6_next)
         return sum(struct.unpack(f"! 5Q", pseudo_header))
 
     def get_raw_packet(self):

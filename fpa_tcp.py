@@ -37,7 +37,7 @@
 
 
 #
-# ps_tct.py - protocol support library for TCP
+# fpa_tcp.py - Fast Packet Assembler support class for TCP protocol
 #
 
 

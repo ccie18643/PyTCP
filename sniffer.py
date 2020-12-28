@@ -44,14 +44,14 @@
 import socket
 import sys
 
-import ps_arp
-import ps_ether
-import ps_icmp4
-import ps_icmp6
-import ps_ip4
-import ps_ip6
-import ps_tcp
-import ps_udp
+import fpa_arp
+import fpa_ether
+import fpa_icmp4
+import fpa_icmp6
+import fpa_ip4
+import fpa_ip6
+import fpa_tcp
+import fpa_udp
 
 # raw_socket = socket.socket(socket.PF_PACKET, socket.SOCK_RAW, socket.htons(0x0800))
 raw_socket = socket.socket(socket.PF_PACKET, socket.SOCK_RAW, socket.htons(0x86DD))
@@ -61,21 +61,21 @@ raw_socket = socket.socket(socket.PF_PACKET, socket.SOCK_RAW, socket.htons(0x86D
 def main():
     while True:
         raw_packet_rx = raw_socket.recv(2048)
-        ether_packet_rx = ps_ether.EtherPacket(raw_packet_rx)
+        ether_packet_rx = fpa_ether.EtherPacket(raw_packet_rx)
 
-        if ether_packet_rx.ether_type == ps_ether.ETHER_TYPE_ARP:
-            arp_packet_rx = ps_arp.ArpPacket(ether_packet_rx)
+        if ether_packet_rx.ether_type == fpa_ether.ETHER_TYPE_ARP:
+            arp_packet_rx = fpa_arp.ArpPacket(ether_packet_rx)
             print("-" * 160)
             print(ether_packet_rx)
             print(arp_packet_rx)
             print("-" * 160)
             continue
 
-        if ether_packet_rx.ether_type == ps_ether.ETHER_TYPE_IP6:
-            ip6_packet_rx = ps_ip6.Ip6Packet(ether_packet_rx)
+        if ether_packet_rx.ether_type == fpa_ether.ETHER_TYPE_IP6:
+            ip6_packet_rx = fpa_ip6.Ip6Packet(ether_packet_rx)
 
-            if ip6_packet_rx.ip6_next == ps_ip6.IP6_NEXT_HEADER_ICMP6:
-                icmp6_packet_rx = ps_icmp6.Icmp6Packet(ip6_packet_rx)
+            if ip6_packet_rx.ip6_next == fpa_ip6.IP6_NEXT_HEADER_ICMP6:
+                icmp6_packet_rx = fpa_icmp6.Icmp6Packet(ip6_packet_rx)
                 print("-" * 160)
                 print(ether_packet_rx)
                 print(ip6_packet_rx)
@@ -88,11 +88,11 @@ def main():
             print(ip6_packet_rx)
             continue
 
-        if ether_packet_rx.ether_type == ps_ether.ETHER_TYPE_IP6:
-            ip4_packet_rx = ps_ip4.Ip4Packet(ether_packet_rx)
+        if ether_packet_rx.ether_type == fpa_ether.ETHER_TYPE_IP6:
+            ip4_packet_rx = fpa_ip4.Ip4Packet(ether_packet_rx)
 
-            if ip4_packet_rx.ip4_proto == ps_ip4.IP4_PROTO_ICMP4:
-                icmp4_packet_rx = ps_icmp4.Icmp4Packet(ip4_packet_rx)
+            if ip4_packet_rx.ip4_proto == fpa_ip4.IP4_PROTO_ICMP4:
+                icmp4_packet_rx = fpa_icmp4.Icmp4Packet(ip4_packet_rx)
                 print("-" * 160)
                 print(ether_packet_rx)
                 print(ip4_packet_rx)
@@ -100,8 +100,8 @@ def main():
                 print("-" * 160)
                 continue
 
-            if ip4_packet_rx.ip4_proto == ps_ip4.IP4_PROTO_UDP:
-                udp_packet_rx = ps_udp.UdpPacket(ip4_packet_rx)
+            if ip4_packet_rx.ip4_proto == fpa_ip4.IP4_PROTO_UDP:
+                udp_packet_rx = fpa_udp.UdpPacket(ip4_packet_rx)
                 print("-" * 160)
                 print(ether_packet_rx)
                 print(ip4_packet_rx)
@@ -109,8 +109,8 @@ def main():
                 print("-" * 160)
                 continue
 
-            if ip4_packet_rx.ip4_proto == ps_ip4.IP4_PROTO_TCP:
-                tcp_packet_rx = ps_tcp.TcpPacket(ip4_packet_rx)
+            if ip4_packet_rx.ip4_proto == fpa_ip4.IP4_PROTO_TCP:
+                tcp_packet_rx = fpa_tcp.TcpPacket(ip4_packet_rx)
                 if 22 in {tcp_packet_rx.tcp_dport, tcp_packet_rx.tcp_sport}:
                     continue
                 print("-" * 160)

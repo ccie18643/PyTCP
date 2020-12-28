@@ -43,8 +43,8 @@
 
 import loguru
 
-import ps_icmp4
-import ps_icmp6
+import fpa_icmp4
+import fpa_icmp6
 import stack
 from ipv4_address import IPv4Address
 from ipv6_address import IPv6Address
@@ -91,8 +91,8 @@ def _phrx_udp(self, packet_rx):
         self._phtx_icmp6(
             ip6_src=packet_rx.ip6.dst,
             ip6_dst=packet_rx.ip6.src,
-            icmp6_type=ps_icmp6.ICMP6_UNREACHABLE,
-            icmp6_code=ps_icmp6.ICMP6_UNREACHABLE__PORT,
+            icmp6_type=fpa_icmp6.ICMP6_UNREACHABLE,
+            icmp6_code=fpa_icmp6.ICMP6_UNREACHABLE__PORT,
             icmp6_un_data=packet_rx.ip.packet,
             echo_tracker=packet_rx.tracker,
         )
@@ -101,8 +101,8 @@ def _phrx_udp(self, packet_rx):
         self._phtx_icmp4(
             ip4_src=packet_rx.ip.dst,
             ip4_dst=packet_rx.ip.src,
-            icmp4_type=ps_icmp4.ICMP4_UNREACHABLE,
-            icmp4_code=ps_icmp4.ICMP4_UNREACHABLE__PORT,
+            icmp4_type=fpa_icmp4.ICMP4_UNREACHABLE,
+            icmp4_code=fpa_icmp4.ICMP4_UNREACHABLE__PORT,
             icmp4_un_data=packet_rx.ip.packet,
             echo_tracker=packet_rx.tracker,
         )

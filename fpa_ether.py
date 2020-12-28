@@ -37,77 +37,94 @@
 
 
 #
-# ps_udp.py - protocol support library for UDP
+# fpa_ether.py - Fast Packet Assembler support class for Ethernet protocol
 #
 
 
 import struct
 
-from ip_helper import inet_cksum, inet_cksum_fast
-from tracker import Tracker
-
-# UDP packet header (RFC 768)
+# Ethernet packet header
 
 # +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-# |          Source port          |        Destination port       |
+# |                                                               >
+# +    Destination MAC Address    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+# >                               |                               >
+# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+      Source MAC Address       +
+# >                                                               |
 # +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-# |         Packet length         |            Checksum           |
-# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+# |           EtherType           |
+# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 
 
-UDP_HEADER_LEN = 8
+ETHER_HEADER_LEN = 14
+
+ETHER_TYPE_MIN = 0x0600
+ETHER_TYPE_ARP = 0x0806
+ETHER_TYPE_IP4 = 0x0800
+ETHER_TYPE_IP6 = 0x86DD
 
 
-class UdpPacket:
-    """ UDP packet support class """
+ETHER_TYPE_TABLE = {ETHER_TYPE_ARP: "ARP", ETHER_TYPE_IP4: "IPv4", ETHER_TYPE_IP6: "IPv6"}
 
-    protocol = "UDP"
 
-    def __init__(self, udp_sport=None, udp_dport=None, udp_data=None, echo_tracker=None):
+class EtherPacket:
+    """ Ethernet packet support class """
+
+    protocol = "ETHER"
+
+    def __init__(self, ether_src="00:00:00:00:00:00", ether_dst="00:00:00:00:00:00", child_packet=None):
         """ Class constructor """
 
-        self.tracker = Tracker("TX", echo_tracker)
+        self.child_packet = child_packet
 
-        self.udp_sport = udp_sport
-        self.udp_dport = udp_dport
-        self.udp_plen = UDP_HEADER_LEN + len(udp_data)
-        self.udp_cksum = 0
+        self.tracker = child_packet.tracker
 
-        self.udp_data = udp_data
+        self.ether_dst = ether_dst
+        self.ether_src = ether_src
+
+        assert child_packet.protocol in {"IPv6", "IPv4", "ARP"}, f"Not supported protocol: {child_packet.protocol}"
+
+        if child_packet.protocol == "IPv6":
+            self.ether_type = ETHER_TYPE_IP6
+
+        if child_packet.protocol == "IPv4":
+            self.ether_type = ETHER_TYPE_IP4
+
+        if child_packet.protocol == "ARP":
+            self.ether_type = ETHER_TYPE_ARP
+
+        self.ether_data = child_packet.get_raw_packet()
 
     def __str__(self):
         """ Packet log string """
 
-        return f"UDP {self.udp_sport} > {self.udp_dport}, len {self.udp_plen}"
+        return f"ETHER {self.ether_src} > {self.ether_dst}, 0x{self.ether_type:0>4x} ({ETHER_TYPE_TABLE.get(self.ether_type, '???')})"
 
     def __len__(self):
         """ Length of the packet """
 
-        return UDP_HEADER_LEN + len(self.udp_data)
+        return ETHER_HEADER_LEN + len(self.child_packet)
 
     @property
     def raw_header(self):
         """ Packet header in raw format """
 
-        return struct.pack("! HH HH", self.udp_sport, self.udp_dport, self.udp_plen, self.udp_cksum)
+        return struct.pack("! 6s 6s H", bytes.fromhex(self.ether_dst.replace(":", "")), bytes.fromhex(self.ether_src.replace(":", "")), self.ether_type)
 
     @property
     def raw_packet(self):
         """ Packet in raw format """
 
-        return self.raw_header + self.udp_data
+        return self.raw_header + self.ether_data
 
-    def get_raw_packet(self, ip_pseudo_header):
-        """ Get packet in raw format ready to be processed by lower level protocol """
-
-        self.udp_cksum = inet_cksum(ip_pseudo_header + self.raw_packet)
+    def get_raw_packet(self):
+        """ Get packet in raw format ready to be sent out """
 
         return self.raw_packet
 
-    def assemble_packet(self, frame, hptr, pshdr_sum):
+    def assemble_packet(self, frame, hptr):
         """ Assemble packet into the raw form """
 
-        struct.pack_into("! HH HH", frame, hptr, self.udp_sport, self.udp_dport, self.udp_plen, self.udp_cksum)
+        struct.pack_into("! 6s 6s H", frame, hptr, bytes.fromhex(self.ether_dst.replace(":", "")), bytes.fromhex(self.ether_src.replace(":", "")), self.ether_type)
 
-        struct.pack_into(f"{len(self.udp_data)}s", frame, hptr + UDP_HEADER_LEN, self.udp_data)
-        struct.pack_into("! H", frame, hptr + 6, inet_cksum_fast(frame, hptr, self.udp_plen, pshdr_sum))
+        self.child_packet.assemble_packet(frame, hptr + ETHER_HEADER_LEN)

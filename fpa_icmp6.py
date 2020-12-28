@@ -37,13 +37,13 @@
 
 
 #
-# ps_icmp6.py - protocol support library for ICMPv6
+# fpa_icmp6.py - Fast Packet Assembler support class for ICMPv6 protocol
 #
 
 
 import struct
 
-from ip_helper import inet_cksum
+from ip_helper import inet_cksum, inet_cksum_fast
 from ipv6_address import IPv6Address, IPv6Network
 from tracker import Tracker
 
@@ -555,6 +555,91 @@ class Icmp6Packet:
         self.icmp6_cksum = inet_cksum(ip_pseudo_header + self.raw_packet)
 
         return self.raw_packet
+
+    def assemble_packet(self, frame, hptr, _):
+        """ Assemble packet into the raw form """
+
+        if self.icmp6_type == ICMP6_UNREACHABLE:
+            struct.pack_into("! BBH L", frame, hptr, self.icmp6_type, self.icmp6_code, 0, self.icmp6_un_reserved)
+            struct.pack_into(f"{len(self.icmp6_un_data)}s", frame, hptr + 8, self.icmp6_un_data)
+            plen = 8 + len(self.icmp6_un_data)
+
+        elif self.icmp6_type == ICMP6_ECHO_REQUEST:
+            struct.pack_into("! BBH HH", frame, hptr, self.icmp6_type, self.icmp6_code, 0, self.icmp6_ec_id, self.icmp6_ec_seq)
+            struct.pack_into(f"{len(self.icmp6_ec_data)}s", frame, hptr + 8, self.icmp6_ec_data)
+            plen = 8 + len(self.icmp6_ec_data)
+
+        elif self.icmp6_type == ICMP6_ECHO_REPLY:
+            struct.pack_into("! BBH HH", frame, hptr, self.icmp6_type, self.icmp6_code, 0, self.icmp6_ec_id, self.icmp6_ec_seq)
+            struct.pack_into(f"{len(self.icmp6_ec_data)}s", frame, hptr + 8, self.icmp6_ec_data)
+            plen = 8 + len(self.icmp6_ec_data)
+
+        elif self.icmp6_type == ICMP6_ROUTER_SOLICITATION:
+            struct.pack_into("! BBH L", frame, hptr, self.icmp6_type, self.icmp6_code, 0, self.icmp6_rs_reserved)
+            struct.pack_into(f"{len(self.raw_nd_options)}s", frame, hptr + 8, self.raw_nd_options)
+            plen = 8 + len(self.raw_nd_options)
+
+        elif self.icmp6_type == ICMP6_ROUTER_ADVERTISEMENT:
+            struct.pack_into(
+                "! BBH BBH L L",
+                frame,
+                hptr,
+                self.icmp6_type,
+                self.icmp6_code,
+                0,
+                self.icmp6_ra_hop,
+                (self.icmp6_ra_flag_m << 7) | (self.icmp6_ra_flag_o << 6) | self.icmp6_ra_reserved,
+                self.icmp6_ra_router_lifetime,
+                self.icmp6_ra_reachable_time,
+                self.icmp6_ra_retrans_timer,
+            )
+            struct.pack_into(f"{len(self.raw_nd_options)}s", frame, hptr + 16, self.raw_nd_options)
+            plen = 16 + len(self.raw_nd_options)
+
+        elif self.icmp6_type == ICMP6_NEIGHBOR_SOLICITATION:
+            struct.pack_into(
+                "! BBH L 16s",
+                frame,
+                hptr,
+                self.icmp6_type,
+                self.icmp6_code,
+                0,
+                self.icmp6_ns_reserved,
+                self.icmp6_ns_target_address.packed,
+            )
+            struct.pack_into(f"{len(self.raw_nd_options)}s", frame, hptr + 24, self.raw_nd_options)
+            plen = 24 + len(self.raw_nd_options)
+
+        elif self.icmp6_type == ICMP6_NEIGHBOR_ADVERTISEMENT:
+            struct.pack_into(
+                "! BBH L 16s",
+                frame,
+                hptr,
+                self.icmp6_type,
+                self.icmp6_code,
+                0,
+                (self.icmp6_na_flag_r << 31) | (self.icmp6_na_flag_s << 30) | (self.icmp6_na_flag_o << 29) | self.icmp6_na_reserved,
+                self.icmp6_na_target_address.packed,
+            )
+            struct.pack_into(f"{len(self.raw_nd_options)}s", frame, hptr + 24, self.raw_nd_options)
+            plen = 24 + len(self.raw_nd_options)
+
+        elif self.icmp6_type == ICMP6_MLD2_REPORT:
+            struct.pack_into(
+                "! BBH HH",
+                frame,
+                hptr,
+                self.icmp6_type,
+                self.icmp6_code,
+                0,
+                self.icmp6_mlr2_reserved,
+                self.icmp6_mlr2_number_of_multicast_address_records,
+            )
+            raw_mlr2_multicast_address_records = b"".join([_.raw_record for _ in self.icmp6_mlr2_multicast_address_record])
+            struct.pack_into(f"{len(raw_mlr2_multicast_address_records)}s", frame, hptr + 8, raw_mlr2_multicast_address_records)
+            plen = 8 + len(raw_mlr2_multicast_address_records)
+
+        struct.pack_into("! H", frame, hptr + 2, inet_cksum_fast(frame, hptr, plen))
 
     @property
     def raw_nd_options(self):

@@ -37,7 +37,7 @@
 
 
 #
-# ps_dhcp.py - protocol support library for DHCP
+# fpa_dhcp.py - protocol support library for DHCP
 #
 
 

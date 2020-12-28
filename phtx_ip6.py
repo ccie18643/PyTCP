@@ -42,7 +42,7 @@
 
 
 import config
-import ps_ip6
+import fpa_ip6
 from ipv6_address import IPv6Address
 
 
@@ -115,8 +115,8 @@ def _phtx_ip6(self, child_packet, ip6_dst, ip6_src, ip6_hop=config.ip6_default_h
         return
 
     # Check if IP packet can be sent out without fragmentation, if so send it out
-    if ps_ip6.IP6_HEADER_LEN + len(child_packet.raw_packet) <= config.mtu:
-        ip6_packet_tx = ps_ip6.Ip6Packet(ip6_src=ip6_src, ip6_dst=ip6_dst, ip6_hop=ip6_hop, child_packet=child_packet)
+    if fpa_ip6.IP6_HEADER_LEN + len(child_packet.raw_packet) <= config.mtu:
+        ip6_packet_tx = fpa_ip6.Ip6Packet(ip6_src=ip6_src, ip6_dst=ip6_dst, ip6_hop=ip6_hop, child_packet=child_packet)
 
         if __debug__:
             self._logger.debug(f"{ip6_packet_tx.tracker} - {ip6_packet_tx}")

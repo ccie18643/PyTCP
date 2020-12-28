@@ -37,116 +37,77 @@
 
 
 #
-# ps_arp.py - protocol support library for ARP
+# fpa_udp.py - Fast Packet Assembler support class for UDP protocol
 #
 
 
 import struct
 
-from ipv4_address import IPv4Address
+from ip_helper import inet_cksum, inet_cksum_fast
 from tracker import Tracker
 
-# ARP packet header - IPv4 stack version only
+# UDP packet header (RFC 768)
 
 # +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-# |         Hardware Type         |         Protocol Type         |
+# |          Source port          |        Destination port       |
 # +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-# |  Hard Length  |  Proto Length |           Operation           |
-# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-# |                                                               >
-# +        Sender Mac Address     +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-# >                               |       Sender IP Address       >
-# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-# >                               |                               >
-# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+       Target MAC Address      |
-# >                                                               |
-# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-# |                       Target IP Address                       |
+# |         Packet length         |            Checksum           |
 # +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 
 
-ARP_HEADER_LEN = 28
-
-ARP_OP_REQUEST = 1
-ARP_OP_REPLY = 2
+UDP_HEADER_LEN = 8
 
 
-class ArpPacket:
-    """ ARP packet support class """
+class UdpPacket:
+    """ UDP packet support class """
 
-    protocol = "ARP"
+    protocol = "UDP"
 
-    def __init__(self, arp_sha=None, arp_spa=None, arp_tpa=None, arp_tha="00:00:00:00:00:00", arp_oper=ARP_OP_REQUEST, echo_tracker=None):
+    def __init__(self, udp_sport=None, udp_dport=None, udp_data=None, echo_tracker=None):
         """ Class constructor """
 
         self.tracker = Tracker("TX", echo_tracker)
 
-        self.arp_hrtype = 1
-        self.arp_prtype = 0x0800
-        self.arp_hrlen = 6
-        self.arp_prlen = 4
-        self.arp_oper = arp_oper
-        self.arp_sha = arp_sha
-        self.arp_spa = IPv4Address(arp_spa)
-        self.arp_tha = arp_tha
-        self.arp_tpa = IPv4Address(arp_tpa)
+        self.udp_sport = udp_sport
+        self.udp_dport = udp_dport
+        self.udp_plen = UDP_HEADER_LEN + len(udp_data)
+        self.udp_cksum = 0
+
+        self.udp_data = udp_data
 
     def __str__(self):
         """ Packet log string """
 
-        if self.arp_oper == ARP_OP_REQUEST:
-            return f"ARP request {self.arp_spa} / {self.arp_sha} > {self.arp_tpa} / {self.arp_tha}"
-        if self.arp_oper == ARP_OP_REPLY:
-            return f"ARP reply {self.arp_spa} / {self.arp_sha} > {self.arp_tpa} / {self.arp_tha}"
-        return f"ARP unknown operation {self.arp_oper}"
+        return f"UDP {self.udp_sport} > {self.udp_dport}, len {self.udp_plen}"
 
     def __len__(self):
         """ Length of the packet """
 
-        return ARP_HEADER_LEN
+        return UDP_HEADER_LEN + len(self.udp_data)
 
     @property
     def raw_header(self):
         """ Packet header in raw format """
 
-        return struct.pack(
-            "!HH BBH 6s 4s 6s 4s",
-            self.arp_hrtype,
-            self.arp_prtype,
-            self.arp_hrlen,
-            self.arp_prlen,
-            self.arp_oper,
-            bytes.fromhex(self.arp_sha.replace(":", "")),
-            IPv4Address(self.arp_spa).packed,
-            bytes.fromhex(self.arp_tha.replace(":", "")),
-            IPv4Address(self.arp_tpa).packed,
-        )
+        return struct.pack("! HH HH", self.udp_sport, self.udp_dport, self.udp_plen, self.udp_cksum)
 
     @property
     def raw_packet(self):
-        """ Get packet in raw format """
+        """ Packet in raw format """
 
-        return self.raw_header
+        return self.raw_header + self.udp_data
 
-    def get_raw_packet(self):
+    def get_raw_packet(self, ip_pseudo_header):
         """ Get packet in raw format ready to be processed by lower level protocol """
+
+        self.udp_cksum = inet_cksum(ip_pseudo_header + self.raw_packet)
 
         return self.raw_packet
 
-    def assemble_packet(self, frame, hptr):
+    def assemble_packet(self, frame, hptr, pshdr_sum):
         """ Assemble packet into the raw form """
 
-        return struct.pack_into(
-            "!HH BBH 6s 4s 6s 4s",
-            frame,
-            hptr,
-            self.arp_hrtype,
-            self.arp_prtype,
-            self.arp_hrlen,
-            self.arp_prlen,
-            self.arp_oper,
-            bytes.fromhex(self.arp_sha.replace(":", "")),
-            IPv4Address(self.arp_spa).packed,
-            bytes.fromhex(self.arp_tha.replace(":", "")),
-            IPv4Address(self.arp_tpa).packed,
-        )
+        struct.pack_into("! HH HH", frame, hptr, self.udp_sport, self.udp_dport, self.udp_plen, self.udp_cksum)
+
+        struct.pack_into(f"{len(self.udp_data)}s", frame, hptr + UDP_HEADER_LEN, self.udp_data)
+        struct.pack_into("! H", frame, hptr + 6, inet_cksum_fast(frame, hptr, self.udp_plen, pshdr_sum))
