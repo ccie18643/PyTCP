@@ -43,7 +43,6 @@
 
 import struct
 from ipaddress import AddressValueError
-from socket import ntohl
 
 from ipv4_address import IPv4Address
 from ipv6_address import IPv6Address

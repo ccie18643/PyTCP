@@ -652,49 +652,6 @@ class Icmp6Packet:
 
         return raw_nd_options
 
-    @staticmethod
-    def __read_nd_options(raw_nd_options):
-        """ Read options for Neighbor Discovery """
-
-        opt_cls = {
-            ICMP6_ND_OPT_SLLA: Icmp6NdOptSLLA,
-            ICMP6_ND_OPT_TLLA: Icmp6NdOptTLLA,
-            ICMP6_ND_OPT_PI: Icmp6NdOptPI,
-        }
-
-        i = 0
-        nd_options = []
-
-        while i < len(raw_nd_options):
-            nd_options.append(opt_cls.get(raw_nd_options[i], Icmp6NdOptUnk)(raw_nd_options[i : i + (raw_nd_options[i + 1] << 3)]))
-            i += raw_nd_options[i + 1] << 3
-
-        return nd_options
-
-    @property
-    def icmp6_nd_opt_slla(self):
-        """ ICMPv6 ND option - Source Link Layer Address (1) """
-
-        for option in self.icmp6_nd_options:
-            if option.opt_code == ICMP6_ND_OPT_SLLA:
-                return option.opt_slla
-        return None
-
-    @property
-    def icmp6_nd_opt_tlla(self):
-        """ ICMPv6 ND option - Target Link Layer Address (2) """
-
-        for option in self.icmp6_nd_options:
-            if option.opt_code == ICMP6_ND_OPT_TLLA:
-                return option.opt_tlla
-        return None
-
-    @property
-    def icmp6_nd_opt_pi(self):
-        """ ICMPv6 ND option - Prefix Info (3) - Returns list of prefixes that can be used for address autoconfiguration"""
-
-        return [_.opt_prefix for _ in self.icmp6_nd_options if _.opt_code == ICMP6_ND_OPT_PI and _.opt_flag_a and _.opt_prefix.prefixlen == 64]
-
 
 #
 #   ICMPv6 Neighbor Discovery options

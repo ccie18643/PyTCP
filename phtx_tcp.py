@@ -42,9 +42,9 @@
 
 
 import config
+from fpa_tcp import TcpOptMss, TcpOptNop, TcpOptWscale, TcpPacket
 from ipv4_address import IPv4Address
 from ipv6_address import IPv6Address
-from fpa_tcp import TcpOptMss, TcpOptNop, TcpOptWscale, TcpPacket
 
 PACKET_LOSS = False
 
@@ -75,6 +75,9 @@ def _phtx_tcp(
 ):
     """ Handle outbound TCP packets """
 
+    assert type(ip_src) in {IPv4Address, IPv6Address}
+    assert type(ip_dst) in {IPv4Address, IPv6Address}
+
     # Check if IPv4 protocol support is enabled, if not then silently drop the IPv4 packet
     if not config.ip4_support and ip_dst.version == 4:
         return
@@ -91,23 +94,23 @@ def _phtx_tcp(
         tcp_options.append(TcpOptWscale(opt_wscale=0))
 
     tcp_packet_tx = TcpPacket(
-        tcp_sport=tcp_sport,
-        tcp_dport=tcp_dport,
-        tcp_seq=tcp_seq,
-        tcp_ack=tcp_ack,
-        tcp_flag_ns=tcp_flag_ns,
-        tcp_flag_crw=tcp_flag_crw,
-        tcp_flag_ece=tcp_flag_ece,
-        tcp_flag_urg=tcp_flag_urg,
-        tcp_flag_ack=tcp_flag_ack,
-        tcp_flag_psh=tcp_flag_psh,
-        tcp_flag_rst=tcp_flag_rst,
-        tcp_flag_syn=tcp_flag_syn,
-        tcp_flag_fin=tcp_flag_fin,
-        tcp_win=tcp_win,
-        tcp_urp=tcp_urp,
-        tcp_options=tcp_options,
-        tcp_data=tcp_data,
+        sport=tcp_sport,
+        dport=tcp_dport,
+        seq=tcp_seq,
+        ack=tcp_ack,
+        flag_ns=tcp_flag_ns,
+        flag_crw=tcp_flag_crw,
+        flag_ece=tcp_flag_ece,
+        flag_urg=tcp_flag_urg,
+        flag_ack=tcp_flag_ack,
+        flag_psh=tcp_flag_psh,
+        flag_rst=tcp_flag_rst,
+        flag_syn=tcp_flag_syn,
+        flag_fin=tcp_flag_fin,
+        win=tcp_win,
+        urp=tcp_urp,
+        options=tcp_options,
+        data=tcp_data,
         tracker=tracker,
         echo_tracker=echo_tracker,
     )
@@ -123,9 +126,6 @@ def _phtx_tcp(
             if __debug__:
                 self._logger.critical("SIMULATED LOST TX DATA PACKET")
             return
-
-    assert type(ip_src) in {IPv4Address, IPv6Address}
-    assert type(ip_dst) in {IPv4Address, IPv6Address}
 
     if ip_src.version == 6 and ip_dst.version == 6:
         self._phtx_ip6(ip6_src=ip_src, ip6_dst=ip_dst, child_packet=tcp_packet_tx)

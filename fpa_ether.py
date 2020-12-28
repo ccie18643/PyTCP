@@ -72,59 +72,39 @@ class EtherPacket:
 
     protocol = "ETHER"
 
-    def __init__(self, ether_src="00:00:00:00:00:00", ether_dst="00:00:00:00:00:00", child_packet=None):
+    def __init__(self, src="00:00:00:00:00:00", dst="00:00:00:00:00:00", child_packet=None):
         """ Class constructor """
 
-        self.child_packet = child_packet
-
-        self.tracker = child_packet.tracker
-
-        self.ether_dst = ether_dst
-        self.ether_src = ether_src
-
         assert child_packet.protocol in {"IPv6", "IPv4", "ARP"}, f"Not supported protocol: {child_packet.protocol}"
+        self._child_packet = child_packet
 
-        if child_packet.protocol == "IPv6":
-            self.ether_type = ETHER_TYPE_IP6
+        self.tracker = self._child_packet.tracker
 
-        if child_packet.protocol == "IPv4":
-            self.ether_type = ETHER_TYPE_IP4
+        self.dst = dst
+        self.src = src
 
-        if child_packet.protocol == "ARP":
-            self.ether_type = ETHER_TYPE_ARP
+        if self._child_packet.protocol == "IPv6":
+            self.type = ETHER_TYPE_IP6
 
-        self.ether_data = child_packet.get_raw_packet()
+        if self._child_packet.protocol == "IPv4":
+            self.type = ETHER_TYPE_IP4
+
+        if self._child_packet.protocol == "ARP":
+            self.type = ETHER_TYPE_ARP
 
     def __str__(self):
         """ Packet log string """
 
-        return f"ETHER {self.ether_src} > {self.ether_dst}, 0x{self.ether_type:0>4x} ({ETHER_TYPE_TABLE.get(self.ether_type, '???')})"
+        return f"ETHER {self.src} > {self.dst}, 0x{self.type:0>4x} ({ETHER_TYPE_TABLE.get(self.type, '???')})"
 
     def __len__(self):
         """ Length of the packet """
 
-        return ETHER_HEADER_LEN + len(self.child_packet)
-
-    @property
-    def raw_header(self):
-        """ Packet header in raw format """
-
-        return struct.pack("! 6s 6s H", bytes.fromhex(self.ether_dst.replace(":", "")), bytes.fromhex(self.ether_src.replace(":", "")), self.ether_type)
-
-    @property
-    def raw_packet(self):
-        """ Packet in raw format """
-
-        return self.raw_header + self.ether_data
-
-    def get_raw_packet(self):
-        """ Get packet in raw format ready to be sent out """
-
-        return self.raw_packet
+        return ETHER_HEADER_LEN + len(self._child_packet)
 
     def assemble_packet(self, frame, hptr):
         """ Assemble packet into the raw form """
 
-        struct.pack_into("! 6s 6s H", frame, hptr, bytes.fromhex(self.ether_dst.replace(":", "")), bytes.fromhex(self.ether_src.replace(":", "")), self.ether_type)
+        struct.pack_into("! 6s 6s H", frame, hptr, bytes.fromhex(self.dst.replace(":", "")), bytes.fromhex(self.src.replace(":", "")), self.type)
 
-        self.child_packet.assemble_packet(frame, hptr + ETHER_HEADER_LEN)
+        self._child_packet.assemble_packet(frame, hptr + ETHER_HEADER_LEN)

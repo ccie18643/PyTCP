@@ -43,7 +43,7 @@
 
 import struct
 
-from ip_helper import inet_cksum, inet_cksum_fast
+from ip_helper import inet_cksum_fast
 from tracker import Tracker
 
 # UDP packet header (RFC 768)
@@ -63,51 +63,29 @@ class UdpPacket:
 
     protocol = "UDP"
 
-    def __init__(self, udp_sport=None, udp_dport=None, udp_data=None, echo_tracker=None):
+    def __init__(self, sport=None, dport=None, data=None, echo_tracker=None):
         """ Class constructor """
 
         self.tracker = Tracker("TX", echo_tracker)
 
-        self.udp_sport = udp_sport
-        self.udp_dport = udp_dport
-        self.udp_plen = UDP_HEADER_LEN + len(udp_data)
-        self.udp_cksum = 0
-
-        self.udp_data = udp_data
+        self.sport = sport
+        self.dport = dport
+        self.data = data
+        self.plen = len(self)
 
     def __str__(self):
         """ Packet log string """
 
-        return f"UDP {self.udp_sport} > {self.udp_dport}, len {self.udp_plen}"
+        return f"UDP {self.sport} > {self.dport}, len {self.plen}"
 
     def __len__(self):
         """ Length of the packet """
 
-        return UDP_HEADER_LEN + len(self.udp_data)
-
-    @property
-    def raw_header(self):
-        """ Packet header in raw format """
-
-        return struct.pack("! HH HH", self.udp_sport, self.udp_dport, self.udp_plen, self.udp_cksum)
-
-    @property
-    def raw_packet(self):
-        """ Packet in raw format """
-
-        return self.raw_header + self.udp_data
-
-    def get_raw_packet(self, ip_pseudo_header):
-        """ Get packet in raw format ready to be processed by lower level protocol """
-
-        self.udp_cksum = inet_cksum(ip_pseudo_header + self.raw_packet)
-
-        return self.raw_packet
+        return UDP_HEADER_LEN + len(self.data)
 
     def assemble_packet(self, frame, hptr, pshdr_sum):
         """ Assemble packet into the raw form """
 
-        struct.pack_into("! HH HH", frame, hptr, self.udp_sport, self.udp_dport, self.udp_plen, self.udp_cksum)
-
-        struct.pack_into(f"{len(self.udp_data)}s", frame, hptr + UDP_HEADER_LEN, self.udp_data)
-        struct.pack_into("! H", frame, hptr + 6, inet_cksum_fast(frame, hptr, self.udp_plen, pshdr_sum))
+        struct.pack_into("! HH HH", frame, hptr, self.sport, self.dport, self.plen, 0)
+        struct.pack_into(f"{len(self.data)}s", frame, hptr + UDP_HEADER_LEN, self.data)
+        struct.pack_into("! H", frame, hptr + 6, inet_cksum_fast(frame, hptr, self.plen, pshdr_sum))

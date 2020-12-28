@@ -338,7 +338,7 @@ class Ip4Packet:
 
         if self.__pshdr_sum is self.__not_cached:
             pseudo_header = struct.pack("! 4s 4s BBH", self.src.packed, self.dst.packed, 0, self.proto, self.plen - self.hlen)
-            self.__pshdr_sum = sum(struct.unpack(f"! 3L", pseudo_header))
+            self.__pshdr_sum = sum(struct.unpack("! 3L", pseudo_header))
         return self.__pshdr_sum
 
     def _packet_integrity_check(self):

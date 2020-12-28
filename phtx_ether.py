@@ -42,8 +42,6 @@
 
 
 import fpa_ether
-from ipv4_address import IPv4Address
-from ipv6_address import IPv6Address
 
 
 def _phtx_ether(self, child_packet, ether_src="00:00:00:00:00:00", ether_dst="00:00:00:00:00:00"):
@@ -54,31 +52,31 @@ def _phtx_ether(self, child_packet, ether_src="00:00:00:00:00:00", ether_dst="00
             self._logger.opt(depth=1).debug(f"{ether_packet_tx.tracker} - {ether_packet_tx}")
         self.tx_ring.enqueue(ether_packet_tx)
 
-    ether_packet_tx = fpa_ether.EtherPacket(ether_src=ether_src, ether_dst=ether_dst, child_packet=child_packet)
+    ether_packet_tx = fpa_ether.EtherPacket(src=ether_src, dst=ether_dst, child_packet=child_packet)
 
     # Check if packet contains valid source address, fill it out if needed
-    if ether_packet_tx.ether_src == "00:00:00:00:00:00":
-        ether_packet_tx.ether_src = self.mac_unicast
+    if ether_packet_tx.src == "00:00:00:00:00:00":
+        ether_packet_tx.src = self.mac_unicast
         if __debug__:
-            self._logger.debug(f"{ether_packet_tx.tracker} - Set source to stack MAC {ether_packet_tx.ether_src}")
+            self._logger.debug(f"{ether_packet_tx.tracker} - Set source to stack MAC {ether_packet_tx.src}")
 
     # Send out packet if it contains valid destination MAC address
-    if ether_packet_tx.ether_dst != "00:00:00:00:00:00":
+    if ether_packet_tx.dst != "00:00:00:00:00:00":
         if __debug__:
             self._logger.debug(f"{ether_packet_tx.tracker} - Contains valid destination MAC address")
         _send_out_packet()
         return
 
     # Check if we can obtain destination MAC based on IPv6 header data
-    if ether_packet_tx.ether_type == fpa_ether.ETHER_TYPE_IP6:
-        ip6_src = IPv6Address(ether_packet_tx.ether_data[8:24])
-        ip6_dst = IPv6Address(ether_packet_tx.ether_data[24:40])
+    if ether_packet_tx.type == fpa_ether.ETHER_TYPE_IP6:
+        ip6_src = ether_packet_tx._child_packet.src
+        ip6_dst = ether_packet_tx._child_packet.dst
 
         # Send packet out if its destined to multicast IPv6 address
         if ip6_dst.is_multicast:
-            ether_packet_tx.ether_dst = ip6_dst.multicast_mac
+            ether_packet_tx.dst = ip6_dst.multicast_mac
             if __debug__:
-                self._logger.debug(f"{ether_packet_tx.tracker} - Resolved destination IPv6 {ip6_dst} to MAC {ether_packet_tx.ether_dst}")
+                self._logger.debug(f"{ether_packet_tx.tracker} - Resolved destination IPv6 {ip6_dst} to MAC {ether_packet_tx.dst}")
             _send_out_packet()
             return
 
@@ -90,32 +88,32 @@ def _phtx_ether(self, child_packet, ether_src="00:00:00:00:00:00", ether_dst="00
                         self._logger.debug(f"{ether_packet_tx.tracker} - No default gateway set for {stack_ip6_address} source address, dropping packet...")
                     return
                 if mac_address := self.icmp6_nd_cache.find_entry(stack_ip6_address.gateway):
-                    ether_packet_tx.ether_dst = mac_address
+                    ether_packet_tx.dst = mac_address
                     if __debug__:
                         self._logger.debug(
-                            f"{ether_packet_tx.tracker} - Resolved destination IPv6 {ip6_dst}" + f" to Default Gateway MAC {ether_packet_tx.ether_dst}"
+                            f"{ether_packet_tx.tracker} - Resolved destination IPv6 {ip6_dst}" + f" to Default Gateway MAC {ether_packet_tx.dst}"
                         )
                     _send_out_packet()
                     return
 
         # Send out packet if we are able to obtain destinaton MAC from ICMPv6 ND cache
         if mac_address := self.icmp6_nd_cache.find_entry(ip6_dst):
-            ether_packet_tx.ether_dst = mac_address
+            ether_packet_tx.dst = mac_address
             if __debug__:
-                self._logger.debug(f"{ether_packet_tx.tracker} - Resolved destination IPv6 {ip6_dst} to MAC {ether_packet_tx.ether_dst}")
+                self._logger.debug(f"{ether_packet_tx.tracker} - Resolved destination IPv6 {ip6_dst} to MAC {ether_packet_tx.dst}")
             _send_out_packet()
             return
 
     # Check if we can obtain destination MAC based on IPv4 header data
-    if ether_packet_tx.ether_type == fpa_ether.ETHER_TYPE_IP4:
-        ip4_src = IPv4Address(ether_packet_tx.ether_data[12:16])
-        ip4_dst = IPv4Address(ether_packet_tx.ether_data[16:20])
+    if ether_packet_tx.type == fpa_ether.ETHER_TYPE_IP4:
+        ip4_src = ether_packet_tx._child_packet.src
+        ip4_dst = ether_packet_tx._child_packet.dst
 
         # Send out packet if its destinied to limited broadcast addresses
         if ip4_dst.is_limited_broadcast:
-            ether_packet_tx.ether_dst = "ff:ff:ff:ff:ff:ff"
+            ether_packet_tx.dst = "ff:ff:ff:ff:ff:ff"
             if __debug__:
-                self._logger.debug(f"{ether_packet_tx.tracker} - Resolved destination IPv4 {ip4_dst} to MAC {ether_packet_tx.ether_dst}")
+                self._logger.debug(f"{ether_packet_tx.tracker} - Resolved destination IPv4 {ip4_dst} to MAC {ether_packet_tx.dst}")
             _send_out_packet()
             return
 
@@ -123,9 +121,9 @@ def _phtx_ether(self, child_packet, ether_src="00:00:00:00:00:00", ether_dst="00
         for ip4_address in self.ip4_address:
             if ip4_address.ip == ip4_src:
                 if ip4_dst in {ip4_address.network_address, ip4_address.broadcast_address}:
-                    ether_packet_tx.ether_dst = "ff:ff:ff:ff:ff:ff"
+                    ether_packet_tx.dst = "ff:ff:ff:ff:ff:ff"
                     if __debug__:
-                        self._logger.debug(f"{ether_packet_tx.tracker} - Resolved destination IPv4 {ip4_dst} to MAC {ether_packet_tx.ether_dst}")
+                        self._logger.debug(f"{ether_packet_tx.tracker} - Resolved destination IPv4 {ip4_dst} to MAC {ether_packet_tx.dst}")
                     _send_out_packet()
                     return
 
@@ -137,19 +135,19 @@ def _phtx_ether(self, child_packet, ether_src="00:00:00:00:00:00", ether_dst="00
                         self._logger.debug(f"{ether_packet_tx.tracker} - No default gateway set for {stack_ip4_address} source address, dropping packet...")
                     return
                 if mac_address := self.arp_cache.find_entry(stack_ip4_address.gateway):
-                    ether_packet_tx.ether_dst = mac_address
+                    ether_packet_tx.dst = mac_address
                     if __debug__:
                         self._logger.debug(
-                            f"{ether_packet_tx.tracker} - Resolved destination IPv4 {ip4_dst}" + f" to Default Gateway MAC {ether_packet_tx.ether_dst}"
+                            f"{ether_packet_tx.tracker} - Resolved destination IPv4 {ip4_dst}" + f" to Default Gateway MAC {ether_packet_tx.dst}"
                         )
                     _send_out_packet()
                     return
 
         # Send out packet if we are able to obtain destinaton MAC from ARP cache
         if mac_address := self.arp_cache.find_entry(ip4_dst):
-            ether_packet_tx.ether_dst = mac_address
+            ether_packet_tx.dst = mac_address
             if __debug__:
-                self._logger.debug(f"{ether_packet_tx.tracker} - Resolved destination IPv4 {ip4_dst} to MAC {ether_packet_tx.ether_dst}")
+                self._logger.debug(f"{ether_packet_tx.tracker} - Resolved destination IPv4 {ip4_dst} to MAC {ether_packet_tx.dst}")
             _send_out_packet()
             return
 

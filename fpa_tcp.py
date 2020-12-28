@@ -43,7 +43,7 @@
 
 import struct
 
-from ip_helper import inet_cksum, inet_cksum_fast
+from ip_helper import inet_cksum_fast
 from tracker import Tracker
 
 # TCP packet header (RFC 793)
@@ -73,94 +73,65 @@ class TcpPacket:
 
     def __init__(
         self,
-        tcp_sport=None,
-        tcp_dport=None,
-        tcp_seq=0,
-        tcp_ack=0,
-        tcp_flag_ns=False,
-        tcp_flag_crw=False,
-        tcp_flag_ece=False,
-        tcp_flag_urg=False,
-        tcp_flag_ack=False,
-        tcp_flag_psh=False,
-        tcp_flag_rst=False,
-        tcp_flag_syn=False,
-        tcp_flag_fin=False,
-        tcp_win=0,
-        tcp_urp=0,
-        tcp_options=None,
-        tcp_data=b"",
+        sport=None,
+        dport=None,
+        seq=0,
+        ack=0,
+        flag_ns=False,
+        flag_crw=False,
+        flag_ece=False,
+        flag_urg=False,
+        flag_ack=False,
+        flag_psh=False,
+        flag_rst=False,
+        flag_syn=False,
+        flag_fin=False,
+        win=0,
+        urp=0,
+        options=None,
+        data=b"",
         tracker=None,
         echo_tracker=None,
     ):
         """ Class constructor """
 
-        if tracker:
-            self.tracker = tracker
-        else:
-            self.tracker = Tracker("TX", echo_tracker)
+        self.tracker = Tracker("TX", echo_tracker)
 
-        self.tcp_sport = tcp_sport
-        self.tcp_dport = tcp_dport
-        self.tcp_seq = tcp_seq
-        self.tcp_ack = tcp_ack
-        self.tcp_reserved = 0
-        self.tcp_flag_ns = tcp_flag_ns
-        self.tcp_flag_crw = tcp_flag_crw
-        self.tcp_flag_ece = tcp_flag_ece
-        self.tcp_flag_urg = tcp_flag_urg
-        self.tcp_flag_ack = tcp_flag_ack
-        self.tcp_flag_psh = tcp_flag_psh
-        self.tcp_flag_rst = tcp_flag_rst
-        self.tcp_flag_syn = tcp_flag_syn
-        self.tcp_flag_fin = tcp_flag_fin
-        self.tcp_win = tcp_win
-        self.tcp_cksum = 0
-        self.tcp_urp = tcp_urp
+        self.sport = sport
+        self.dport = dport
+        self.seq = seq
+        self.ack = ack
+        self.flag_ns = flag_ns
+        self.flag_crw = flag_crw
+        self.flag_ece = flag_ece
+        self.flag_urg = flag_urg
+        self.flag_ack = flag_ack
+        self.flag_psh = flag_psh
+        self.flag_rst = flag_rst
+        self.flag_syn = flag_syn
+        self.flag_fin = flag_fin
+        self.win = win
+        self.urp = urp
 
-        self.tcp_options = [] if tcp_options is None else tcp_options
+        self.options = [] if options is None else options
 
-        self.tcp_data = tcp_data
+        self.data = data
 
-        self.tcp_hlen = TCP_HEADER_LEN + len(self.raw_options)
+        self.hlen = TCP_HEADER_LEN + len(self.raw_options)
 
-        assert self.tcp_hlen % 4 == 0, "TCP header len is not multiplcation of 4 bytes, check options"
-
-    @property
-    def raw_header(self):
-        """ Packet header in raw format """
-
-        return struct.pack(
-            "! HH L L BBH HH",
-            self.tcp_sport,
-            self.tcp_dport,
-            self.tcp_seq,
-            self.tcp_ack,
-            self.tcp_hlen << 2 | self.tcp_reserved | self.tcp_flag_ns,
-            self.tcp_flag_crw << 7
-            | self.tcp_flag_ece << 6
-            | self.tcp_flag_urg << 5
-            | self.tcp_flag_ack << 4
-            | self.tcp_flag_psh << 3
-            | self.tcp_flag_rst << 2
-            | self.tcp_flag_syn << 1
-            | self.tcp_flag_fin,
-            self.tcp_win,
-            self.tcp_cksum,
-            self.tcp_urp,
-        )
+        assert self.hlen % 4 == 0, "TCP header len is not multiplcation of 4 bytes, check options"
 
     def __str__(self):
         """ Packet log string """
 
         log = (
-            f"TCP {self.tcp_sport} > {self.tcp_dport}, {'N' if self.tcp_flag_ns else ''}{'C' if self.tcp_flag_crw else ''}"
-            + f"{'E' if self.tcp_flag_ece else ''}{'U' if self.tcp_flag_urg else ''}{'A' if self.tcp_flag_ack else ''}"
-            + f"{'P' if self.tcp_flag_psh else ''}{'R' if self.tcp_flag_rst else ''}{'S' if self.tcp_flag_syn else ''}"
-            + f"{'F' if self.tcp_flag_fin else ''}, seq {self.tcp_seq}, ack {self.tcp_ack}, win {self.tcp_win}, dlen {len(self.tcp_data)}"
+            f"TCP {self.sport} > {self.dport}, {'N' if self.flag_ns else ''}{'C' if self.flag_crw else ''}"
+            + f"{'E' if self.flag_ece else ''}{'U' if self.flag_urg else ''}{'A' if self.flag_ack else ''}"
+            + f"{'P' if self.flag_psh else ''}{'R' if self.flag_rst else ''}{'S' if self.flag_syn else ''}"
+            + f"{'F' if self.flag_fin else ''}, seq {self.seq}, ack {self.ack}, win {self.win}, dlen {len(self.data)}"
         )
 
-        for option in self.tcp_options:
+        for option in self.options:
             log += ", " + str(option)
 
         return log
@@ -168,7 +139,7 @@ class TcpPacket:
     def __len__(self):
         """ Length of the packet """
 
-        return TCP_HEADER_LEN + sum([len(_) for _ in self.tcp_options]) + len(self.tcp_data)
+        return TCP_HEADER_LEN + sum([len(_) for _ in self.options]) + len(self.data)
 
     @property
     def raw_options(self):
@@ -176,23 +147,10 @@ class TcpPacket:
 
         raw_options = b""
 
-        for option in self.tcp_options:
+        for option in self.options:
             raw_options += option.raw_option
 
         return raw_options
-
-    @property
-    def raw_packet(self):
-        """ Packet in raw format """
-
-        return self.raw_header + self.raw_options + self.tcp_data
-
-    def get_raw_packet(self, ip_pseudo_header):
-        """ Get packet in raw format ready to be processed by lower level protocol """
-
-        self.tcp_cksum = inet_cksum(ip_pseudo_header + self.raw_packet)
-
-        return self.raw_packet
 
     def assemble_packet(self, frame, hptr, pshdr_sum):
         """ Assemble packet into the raw form """
@@ -201,64 +159,28 @@ class TcpPacket:
             "! HH L L BBH HH",
             frame,
             hptr,
-            self.tcp_sport,
-            self.tcp_dport,
-            self.tcp_seq,
-            self.tcp_ack,
-            self.tcp_hlen << 2 | self.tcp_reserved | self.tcp_flag_ns,
-            self.tcp_flag_crw << 7
-            | self.tcp_flag_ece << 6
-            | self.tcp_flag_urg << 5
-            | self.tcp_flag_ack << 4
-            | self.tcp_flag_psh << 3
-            | self.tcp_flag_rst << 2
-            | self.tcp_flag_syn << 1
-            | self.tcp_flag_fin,
-            self.tcp_win,
+            self.sport,
+            self.dport,
+            self.seq,
+            self.ack,
+            self.hlen << 2 | self.flag_ns,
+            self.flag_crw << 7
+            | self.flag_ece << 6
+            | self.flag_urg << 5
+            | self.flag_ack << 4
+            | self.flag_psh << 3
+            | self.flag_rst << 2
+            | self.flag_syn << 1
+            | self.flag_fin,
+            self.win,
             0,
-            self.tcp_urp,
+            self.urp,
         )
 
-        if self.tcp_options:
+        if self.options:
             struct.pack_into(f"{len(self.raw_options)}s", frame, hptr + TCP_HEADER_LEN, self.raw_options)
-        struct.pack_into(f"{len(self.tcp_data)}s", frame, hptr + self.tcp_hlen, self.tcp_data)
-        struct.pack_into("! H", frame, hptr + 16, inet_cksum_fast(frame, hptr, self.tcp_hlen + len(self.tcp_data), pshdr_sum))
-
-    @property
-    def tcp_mss(self):
-        """ TCP option - Maximum Segment Size (2) """
-
-        for option in self.tcp_options:
-            if option.opt_kind == TCP_OPT_MSS:
-                return option.opt_mss
-        return 536
-
-    @property
-    def tcp_wscale(self):
-        """ TCP option - Window Scale (3) """
-
-        for option in self.tcp_options:
-            if option.opt_kind == TCP_OPT_WSCALE:
-                return 1 << option.opt_wscale
-        return None
-
-    @property
-    def tcp_sackperm(self):
-        """ TCP option - Sack Permit (4) """
-
-        for option in self.tcp_options:
-            if option.opt_kind == TCP_OPT_SACKPERM:
-                return True
-        return None
-
-    @property
-    def tcp_timestamp(self):
-        """ TCP option - Timestamp (8) """
-
-        for option in self.tcp_options:
-            if option.opt_kind == TCP_OPT_TIMESTAMP:
-                return option.opt_tsval, option.opt_tsecr
-        return None
+        struct.pack_into(f"{len(self.data)}s", frame, hptr + self.hlen, self.data)
+        struct.pack_into("! H", frame, hptr + 16, inet_cksum_fast(frame, hptr, self.hlen + len(self.data), pshdr_sum))
 
 
 #

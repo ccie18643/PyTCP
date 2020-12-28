@@ -79,54 +79,6 @@ IP6_NEXT_HEADER_ICMP6 = 58
 
 IP6_NEXT_HEADER_TABLE = {IP6_NEXT_HEADER_TCP: "TCP", IP6_NEXT_HEADER_UDP: "UDP", IP6_NEXT_HEADER_ICMP6: "ICMPv6"}
 
-DSCP_CS0 = 0b000000
-DSCP_CS1 = 0b001000
-DSCP_AF11 = 0b001010
-DSCP_AF12 = 0b001100
-DSCP_AF13 = 0b001110
-DSCP_CS2 = 0b010000
-DSCP_AF21 = 0b010010
-DSCP_AF22 = 0b010100
-DSCP_AF23 = 0b010110
-DSCP_CS3 = 0b011000
-DSCP_AF31 = 0b011010
-DSCP_AF32 = 0b011100
-DSCP_AF33 = 0b011110
-DSCP_CS4 = 0b100000
-DSCP_AF41 = 0b100010
-DSCP_AF42 = 0b100100
-DSCP_AF43 = 0b100110
-DSCP_CS5 = 0b101000
-DSCP_EF = 0b101110
-DSCP_CS6 = 0b110000
-DSCP_CS7 = 0b111000
-
-DSCP_TABLE = {
-    DSCP_CS0: "CS0",
-    DSCP_CS1: "CS1",
-    DSCP_AF11: "AF11",
-    DSCP_AF12: "AF12",
-    DSCP_AF13: "AF13",
-    DSCP_CS2: "CS2",
-    DSCP_AF21: "AF21",
-    DSCP_AF22: "AF22",
-    DSCP_AF23: "AF23",
-    DSCP_CS3: "CS3",
-    DSCP_AF31: "AF31",
-    DSCP_AF32: "AF32",
-    DSCP_AF33: "AF33",
-    DSCP_CS4: "CS4",
-    DSCP_AF41: "AF41",
-    DSCP_AF42: "AF42",
-    DSCP_AF43: "AF43",
-    DSCP_CS5: "CS5",
-    DSCP_EF: "EF",
-    DSCP_CS6: "CS6",
-    DSCP_CS7: "CS7",
-}
-
-ECN_TABLE = {0b00: "Non-ECT", 0b10: "ECT(0)", 0b01: "ECT(1)", 0b11: "CE"}
-
 
 class Ip6Packet:
     """ IPv6 packet support class """
@@ -269,7 +221,7 @@ class Ip6Packet:
 
         if self.__pshdr_sum is self.__not_cached:
             pseudo_header = struct.pack("! 16s 16s L BBBB", self.src.packed, self.dst.packed, self.dlen, 0, 0, 0, self.next)
-            self.__pshdr_sum = sum(struct.unpack(f"! 5Q", pseudo_header))
+            self.__pshdr_sum = sum(struct.unpack("! 5Q", pseudo_header))
         return self.__pshdr_sum
 
     def _packet_integrity_check(self):
