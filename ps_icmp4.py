@@ -62,8 +62,6 @@ from tracker import Tracker
 # +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 # |     Type      |     Code      |           Checksum            |
 # +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-# |              Id               |              Seq              |
-# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 # |                           Reserved                            |
 # +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 # ~                             Data                              ~
@@ -165,7 +163,7 @@ class Icmp4Packet:
             return 8 + len(self.icmp4_ec_data)
 
         elif self.icmp4_type == ICMP4_UNREACHABLE and self.icmp4_code == ICMP4_UNREACHABLE__PORT:
-            return 12 + len(self.icmp4_un_data)
+            return 8 + len(self.icmp4_un_data)
 
         elif self.icmp4_type == ICMP4_ECHO_REQUEST:
             return 8 + len(self.icmp4_ec_data)
