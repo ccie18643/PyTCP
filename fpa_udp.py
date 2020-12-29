@@ -43,7 +43,7 @@
 
 import struct
 
-from ip_helper import inet_cksum_fast
+from ip_helper import inet_cksum
 from tracker import Tracker
 
 # UDP packet header (RFC 768)
@@ -88,4 +88,4 @@ class UdpPacket:
 
         struct.pack_into("! HH HH", frame, hptr, self.sport, self.dport, self.plen, 0)
         struct.pack_into(f"{len(self.data)}s", frame, hptr + UDP_HEADER_LEN, self.data)
-        struct.pack_into("! H", frame, hptr + 6, inet_cksum_fast(frame, hptr, self.plen, pshdr_sum))
+        struct.pack_into("! H", frame, hptr + 6, inet_cksum(frame, hptr, self.plen, pshdr_sum))

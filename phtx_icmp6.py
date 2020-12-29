@@ -72,19 +72,19 @@ def _phtx_icmp6(
         return
 
     icmp6_packet_tx = fpa_icmp6.Icmp6Packet(
-        icmp6_type=icmp6_type,
-        icmp6_code=icmp6_code,
-        icmp6_un_data=icmp6_un_data,
-        icmp6_ec_id=icmp6_ec_id,
-        icmp6_ec_seq=icmp6_ec_seq,
-        icmp6_ec_data=icmp6_ec_data,
-        icmp6_ns_target_address=icmp6_ns_target_address,
-        icmp6_na_flag_r=icmp6_na_flag_r,
-        icmp6_na_flag_s=icmp6_na_flag_s,
-        icmp6_na_flag_o=icmp6_na_flag_o,
-        icmp6_na_target_address=icmp6_na_target_address,
-        icmp6_nd_options=[] if icmp6_nd_options is None else icmp6_nd_options,
-        icmp6_mlr2_multicast_address_record=[] if icmp6_mlr2_multicast_address_record is None else icmp6_mlr2_multicast_address_record,
+        type=icmp6_type,
+        code=icmp6_code,
+        un_data=icmp6_un_data,
+        ec_id=icmp6_ec_id,
+        ec_seq=icmp6_ec_seq,
+        ec_data=icmp6_ec_data,
+        ns_target_address=icmp6_ns_target_address,
+        na_flag_r=icmp6_na_flag_r,
+        na_flag_s=icmp6_na_flag_s,
+        na_flag_o=icmp6_na_flag_o,
+        na_target_address=icmp6_na_target_address,
+        nd_options=[] if icmp6_nd_options is None else icmp6_nd_options,
+        mlr2_multicast_address_record=[] if icmp6_mlr2_multicast_address_record is None else icmp6_mlr2_multicast_address_record,
         echo_tracker=echo_tracker,
     )
 

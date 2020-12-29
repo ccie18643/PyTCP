@@ -44,7 +44,7 @@
 import struct
 
 import config
-from ip_helper import inet_cksum_fast
+from ip_helper import inet_cksum
 from ipv4_address import IPv4Address
 
 # IPv4 protocol header
@@ -184,7 +184,7 @@ class Ip4Packet:
         if self.options:
             struct.pack_into(f"{len(self.raw_options)}s", frame, hptr + IP4_HEADER_LEN, self.raw_options)
 
-        struct.pack_into("! H", frame, hptr + 10, inet_cksum_fast(frame, hptr, self.hlen))
+        struct.pack_into("! H", frame, hptr + 10, inet_cksum(frame, hptr, self.hlen))
 
         self._child_packet.assemble_packet(frame, hptr + self.hlen, self.pshdr_sum)
 

@@ -64,12 +64,12 @@ def _phtx_icmp4(
         return
 
     icmp4_packet_tx = fpa_icmp4.Icmp4Packet(
-        icmp4_type=icmp4_type,
-        icmp4_code=icmp4_code,
-        icmp4_ec_id=icmp4_ec_id,
-        icmp4_ec_seq=icmp4_ec_seq,
-        icmp4_ec_data=icmp4_ec_data,
-        icmp4_un_data=icmp4_un_data,
+        type=icmp4_type,
+        code=icmp4_code,
+        ec_id=icmp4_ec_id,
+        ec_seq=icmp4_ec_seq,
+        ec_data=icmp4_ec_data,
+        un_data=icmp4_un_data,
         echo_tracker=echo_tracker,
     )
 

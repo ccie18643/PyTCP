@@ -115,7 +115,7 @@ def _phtx_ip6(self, child_packet, ip6_dst, ip6_src, ip6_hop=config.ip6_default_h
         return
 
     # Check if IP packet can be sent out without fragmentation, if so send it out
-    if fpa_ip6.IP6_HEADER_LEN + len(child_packet.raw_packet) <= config.mtu:
+    if fpa_ip6.IP6_HEADER_LEN + len(child_packet) <= config.mtu:
         ip6_packet_tx = fpa_ip6.Ip6Packet(src=ip6_src, dst=ip6_dst, hop=ip6_hop, child_packet=child_packet)
 
         if __debug__:

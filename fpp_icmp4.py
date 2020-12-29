@@ -44,7 +44,7 @@
 import struct
 
 import config
-from ip_helper import inet_cksum_fast
+from ip_helper import inet_cksum
 
 # Echo reply message (0/0)
 
@@ -228,7 +228,7 @@ class Icmp4Packet:
         if not config.packet_integrity_check:
             return False
 
-        if inet_cksum_fast(self._frame, self._hptr, self._plen):
+        if inet_cksum(self._frame, self._hptr, self._plen):
             return "ICMPv4 integrity - wrong packet checksum"
 
         if not ICMP4_HEADER_LEN <= self._plen <= len(self):

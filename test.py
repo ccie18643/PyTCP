@@ -2,7 +2,7 @@
 
 from time import time
 
-from ip_helper import inet_cksum, inet_cksum_fast
+from ip_helper import inet_cksum, inet_cksum
 
 with open("sample.1500", mode="rb") as _:
     packet = _.read()
@@ -10,7 +10,7 @@ with open("sample.1500", mode="rb") as _:
 plen = 20
 
 print(f"0x{inet_cksum(packet[:plen]):04X}")
-print(f"0x{inet_cksum_fast(packet, 0, plen):04X}")
+print(f"0x{inet_cksum(packet, 0, plen):04X}")
 
 
 s = time()
@@ -20,5 +20,5 @@ print(time() - s)
 
 s = time()
 for _ in range(10000):
-    inet_cksum_fast(packet, 0, plen)
+    inet_cksum(packet, 0, plen)
 print(time() - s)

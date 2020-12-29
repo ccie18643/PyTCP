@@ -43,7 +43,7 @@
 
 import struct
 
-from ip_helper import inet_cksum_fast
+from ip_helper import inet_cksum
 from tracker import Tracker
 
 # TCP packet header (RFC 793)
@@ -180,7 +180,7 @@ class TcpPacket:
         if self.options:
             struct.pack_into(f"{len(self.raw_options)}s", frame, hptr + TCP_HEADER_LEN, self.raw_options)
         struct.pack_into(f"{len(self.data)}s", frame, hptr + self.hlen, self.data)
-        struct.pack_into("! H", frame, hptr + 16, inet_cksum_fast(frame, hptr, self.hlen + len(self.data), pshdr_sum))
+        struct.pack_into("! H", frame, hptr + 16, inet_cksum(frame, hptr, self.hlen + len(self.data), pshdr_sum))
 
 
 #

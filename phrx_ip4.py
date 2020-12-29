@@ -45,45 +45,6 @@ import fpa_ip4
 
 ip4_fragments = {}
 
-'''
-def handle_ip4_fragmentation(packet_rx):
-    """ Check if packet is fragmented """
-
-    # Check if IP packet is a first fragment
-    if packet_rx.ip4_frag_offset == 0 and packet_rx.ip4.flag_mf:
-        ip4_fragments[packet_rx.ip4.packet_id] = {}
-        ip4_fragments[packet_rx.ip4.packet_id][packet_rx.ip4.frag_offset] = packet_rx.ip_data
-        return None
-
-    # Check if IP packet is one of middle fragments
-    if ip4_packet_rx.ip4_frag_offset != 0 and ip4_packet_rx.ip4_flag_mf:
-        # Check if packet is part of existing fagment flow
-        if ip4_fragments.get(ip4_packet_rx.ip4_packet_id, None):
-            ip4_fragments[ip4_packet_rx.ip4_packet_id][ip4_packet_rx.ip4_frag_offset] = ip4_packet_rx.ip4_data
-        return None
-
-    # Check if IP packet is last fragment
-    if ip4_packet_rx.ip4_frag_offset != 0 and not ip4_packet_rx.ip4_flag_mf:
-
-        # Check if packet is part of existing fagment flow
-        if ip4_fragments.get(ip4_packet_rx.ip4_packet_id, None):
-            ip4_fragments[ip4_packet_rx.ip4_packet_id][ip4_packet_rx.ip4_frag_offset] = ip4_packet_rx.ip4_data
-
-            ip4_data = b""
-            for offset in sorted(ip4_fragments[ip4_packet_rx.ip4_packet_id]):
-                ip4_data += ip4_fragments[ip4_packet_rx.ip4_packet_id][offset]
-
-            # Craft complete IP packet based on last fragment for further processing
-            ip4_packet_rx.ip4_flag_mf = False
-            ip4_packet_rx.ip4_frag_offset = 0
-            ip4_packet_rx.ip4_plen = ip4_packet_rx.ip4_hlen + len(ip4_data)
-            ip4_packet_rx.ip4_cksum = 0
-            ip4_packet_rx.ip4_cksum = inet_cksum(ip4_packet_rx.raw_header)
-            ip4_packet_rx.ip4_data = ip4_data
-
-    return ip4_packet_rx
-'''
-
 
 def _phrx_ip4(self, packet_rx):
     """ Handle inbound IP packets """
@@ -96,11 +57,6 @@ def _phrx_ip4(self, packet_rx):
         if __debug__:
             self._logger.debug(f"{packet_rx.tracker} - IP packet not destined for this stack, dropping")
         return
-
-    # Check if packet is a fragment, and if so process it accordingly
-    # ip4_packet_rx = handle_ip4_fragmentation(ip4_packet_rx)
-    # if not ip4_packet_rx:
-    #    return
 
     if packet_rx.ip4.proto == fpa_ip4.IP4_PROTO_ICMP4:
         self._phrx_icmp4(packet_rx)

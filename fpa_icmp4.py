@@ -43,7 +43,7 @@
 
 import struct
 
-from ip_helper import inet_cksum, inet_cksum_fast
+from ip_helper import inet_cksum
 from tracker import Tracker
 
 # Echo reply message (0/0)
@@ -110,105 +110,78 @@ class Icmp4Packet:
 
     def __init__(
         self,
-        icmp4_type=None,
-        icmp4_code=0,
-        icmp4_ec_id=None,
-        icmp4_ec_seq=None,
-        icmp4_ec_data=b"",
-        icmp4_un_data=b"",
+        type=None,
+        code=0,
+        ec_id=None,
+        ec_seq=None,
+        ec_data=b"",
+        un_data=b"",
         echo_tracker=None,
     ):
         """ Class constructor """
 
         self.tracker = Tracker("TX", echo_tracker)
 
-        self.icmp4_type = icmp4_type
-        self.icmp4_code = icmp4_code
-        self.icmp4_cksum = 0
+        self.type = type
+        self.code = code
 
-        if self.icmp4_type == ICMP4_ECHO_REPLY:
-            self.icmp4_ec_id = icmp4_ec_id
-            self.icmp4_ec_seq = icmp4_ec_seq
-            self.icmp4_ec_data = icmp4_ec_data
+        if self.type == ICMP4_ECHO_REPLY:
+            self.ec_id = ec_id
+            self.ec_seq = ec_seq
+            self.ec_data = ec_data
 
-        elif self.icmp4_type == ICMP4_UNREACHABLE and self.icmp4_code == ICMP4_UNREACHABLE__PORT:
-            self.icmp4_un_reserved = 0
-            self.icmp4_un_data = icmp4_un_data[:520]
+        elif self.type == ICMP4_UNREACHABLE and self.code == ICMP4_UNREACHABLE__PORT:
+            self.un_data = un_data[:520]
 
-        elif self.icmp4_type == ICMP4_ECHO_REQUEST:
-            self.icmp4_ec_id = icmp4_ec_id
-            self.icmp4_ec_seq = icmp4_ec_seq
-            self.icmp4_ec_data = icmp4_ec_data
+        elif self.type == ICMP4_ECHO_REQUEST:
+            self.ec_id = ec_id
+            self.ec_seq = ec_seq
+            self.ec_data = ec_data
 
     def __str__(self):
         """ Packet log string """
 
-        log = f"ICMPv4 type {self.icmp4_type}, code {self.icmp4_code}"
+        log = f"ICMPv4 type {self.type}, code {self.code}"
 
-        if self.icmp4_type == ICMP4_ECHO_REPLY:
-            log += f", id {self.icmp4_ec_id}, seq {self.icmp4_ec_seq}"
+        if self.type == ICMP4_ECHO_REPLY:
+            log += f", id {self.ec_id}, seq {self.ec_seq}"
 
-        elif self.icmp4_type == ICMP4_UNREACHABLE and self.icmp4_code == ICMP4_UNREACHABLE__PORT:
+        elif self.type == ICMP4_UNREACHABLE and self.code == ICMP4_UNREACHABLE__PORT:
             pass
 
-        elif self.icmp4_type == ICMP4_ECHO_REQUEST:
-            log += f", id {self.icmp4_ec_id}, seq {self.icmp4_ec_seq}"
+        elif self.type == ICMP4_ECHO_REQUEST:
+            log += f", id {self.ec_id}, seq {self.ec_seq}"
 
         return log
 
     def __len__(self):
         """ Length of the packet """
 
-        if self.icmp4_type == ICMP4_ECHO_REPLY:
-            return 8 + len(self.icmp4_ec_data)
+        if self.type == ICMP4_ECHO_REPLY:
+            return 8 + len(self.ec_data)
 
-        elif self.icmp4_type == ICMP4_UNREACHABLE and self.icmp4_code == ICMP4_UNREACHABLE__PORT:
-            return 8 + len(self.icmp4_un_data)
+        elif self.type == ICMP4_UNREACHABLE and self.code == ICMP4_UNREACHABLE__PORT:
+            return 8 + len(self.un_data)
 
-        elif self.icmp4_type == ICMP4_ECHO_REQUEST:
-            return 8 + len(self.icmp4_ec_data)
-
-    @property
-    def raw_packet(self):
-        """ Get packet in raw format """
-
-        if self.icmp4_type == ICMP4_ECHO_REPLY:
-            raw_packet = struct.pack("! BBH HH", self.icmp4_type, self.icmp4_code, self.icmp4_cksum, self.icmp4_ec_id, self.icmp4_ec_seq) + self.icmp4_ec_data
-
-        elif self.icmp4_type == ICMP4_UNREACHABLE and self.icmp4_code == ICMP4_UNREACHABLE__PORT:
-            raw_packet = struct.pack("! BBH L", self.icmp4_type, self.icmp4_code, self.icmp4_cksum, self.icmp4_un_reserved) + self.icmp4_un_data
-
-        elif self.icmp4_type == ICMP4_ECHO_REQUEST:
-            raw_packet = struct.pack("! BBH HH", self.icmp4_type, self.icmp4_code, self.icmp4_cksum, self.icmp4_ec_id, self.icmp4_ec_seq) + self.icmp4_ec_data
-
-        else:
-            raw_packet = struct.pack("! BBH", self.icmp4_type, self.icmp4_code, self.icmp4_cksum) + self.unknown_message
-
-        return raw_packet
-
-    def get_raw_packet(self):
-        """ Get packet in raw format ready to be processed by lower level protocol """
-
-        self.icmp4_cksum = inet_cksum(self.raw_packet)
-
-        return self.raw_packet
+        elif self.type == ICMP4_ECHO_REQUEST:
+            return 8 + len(self.ec_data)
 
     def assemble_packet(self, frame, hptr, _):
         """ Assemble packet into the raw form """
 
-        if self.icmp4_type == ICMP4_ECHO_REPLY:
-            struct.pack_into("! BBH HH", frame, hptr, self.icmp4_type, self.icmp4_code, 0, self.icmp4_ec_id, self.icmp4_ec_seq)
-            struct.pack_into(f"{len(self.icmp4_ec_data)}s", frame, hptr + 8, self.icmp4_ec_data)
-            plen = 8 + len(self.icmp4_ec_data)
+        if self.type == ICMP4_ECHO_REPLY:
+            struct.pack_into("! BBH HH", frame, hptr, self.type, self.code, 0, self.ec_id, self.ec_seq)
+            struct.pack_into(f"{len(self.ec_data)}s", frame, hptr + 8, self.ec_data)
+            plen = 8 + len(self.ec_data)
 
-        elif self.icmp4_type == ICMP4_UNREACHABLE and self.icmp4_code == ICMP4_UNREACHABLE__PORT:
-            struct.pack_into("! BBH L", frame, hptr, self.icmp4_type, self.icmp4_code, 0, self.icmp4_un_reserved)
-            struct.pack_into(f"{len(self.icmp4_un_data)}s", frame, hptr + 8, self.icmp4_un_data)
-            plen = 8 + len(self.icmp4_un_data)
+        elif self.type == ICMP4_UNREACHABLE and self.code == ICMP4_UNREACHABLE__PORT:
+            struct.pack_into("! BBH L", frame, hptr, self.type, self.code, 0, 0)
+            struct.pack_into(f"{len(self.un_data)}s", frame, hptr + 8, self.un_data)
+            plen = 8 + len(self.un_data)
 
-        elif self.icmp4_type == ICMP4_ECHO_REQUEST:
-            struct.pack_into("! BBH HH", frame, hptr, self.icmp4_type, self.icmp4_code, 0, self.icmp4_ec_id, self.icmp4_ec_seq)
-            struct.pack_into(f"{len(self.icmp4_ec_data)}s", frame, hptr + 8, self.icmp4_ec_data)
-            plen = 8 + len(self.icmp4_ec_data)
+        elif self.type == ICMP4_ECHO_REQUEST:
+            struct.pack_into("! BBH HH", frame, hptr, self.type, self.code, 0, self.ec_id, self.ec_seq)
+            struct.pack_into(f"{len(self.ec_data)}s", frame, hptr + 8, self.ec_data)
+            plen = 8 + len(self.ec_data)
 
-        struct.pack_into("! H", frame, hptr + 2, inet_cksum_fast(frame, hptr, plen))
+        struct.pack_into("! H", frame, hptr + 2, inet_cksum(frame, hptr, plen))
