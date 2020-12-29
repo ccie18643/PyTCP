@@ -471,7 +471,7 @@ class Icmp6Packet:
         elif self.type == ICMP6_MLD2_REPORT:
             return 8 + len(b"".join([_.raw_record for _ in self.mlr2_multicast_address_record]))  # *** NEED TO REDO THIS ***
 
-    def assemble_packet(self, frame, hptr, _):
+    def assemble_packet(self, frame, hptr, phdr_sum):
         """ Assemble packet into the raw form """
 
         if self.type == ICMP6_UNREACHABLE:
@@ -554,7 +554,7 @@ class Icmp6Packet:
             struct.pack_into(f"{len(raw_mlr2_multicast_address_records)}s", frame, hptr + 8, raw_mlr2_multicast_address_records)
             plen = 8 + len(raw_mlr2_multicast_address_records)
 
-        struct.pack_into("! H", frame, hptr + 2, inet_cksum(frame, hptr, plen))
+        struct.pack_into("! H", frame, hptr + 2, inet_cksum(frame, hptr, plen, phdr_sum))
 
     @property
     def raw_nd_options(self):
