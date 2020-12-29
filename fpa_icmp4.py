@@ -73,8 +73,6 @@ from tracker import Tracker
 # +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 # |     Type      |     Code      |           Checksum            |
 # +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-# |              Id               |              Seq              |
-# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 # |           Reserved            |          Link MTU / 0         |
 # +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 # ~                             Data                              ~
@@ -93,7 +91,9 @@ from tracker import Tracker
 
 
 ICMP4_ECHO_REPLY = 0
+ICMP4_ECHO_REPLY_LEN = 8
 ICMP4_UNREACHABLE = 3
+ICMP4_UNREACHABLE_LEN = 8
 ICMP4_UNREACHABLE__NET = 0
 ICMP4_UNREACHABLE__HOST = 1
 ICMP4_UNREACHABLE__PROTOCOL = 2
@@ -101,6 +101,7 @@ ICMP4_UNREACHABLE__PORT = 3
 ICMP4_UNREACHABLE__FAGMENTATION = 4
 ICMP4_UNREACHABLE__SOURCE_ROUTE_FAILED = 5
 ICMP4_ECHO_REQUEST = 8
+ICMP4_ECHO_REQUEST_LEN = 8
 
 
 class Icmp4Packet:
@@ -110,7 +111,7 @@ class Icmp4Packet:
 
     def __init__(
         self,
-        type=None,
+        type,
         code=0,
         ec_id=None,
         ec_seq=None,
@@ -158,30 +159,24 @@ class Icmp4Packet:
         """ Length of the packet """
 
         if self.type == ICMP4_ECHO_REPLY:
-            return 8 + len(self.ec_data)
+            return ICMP4_ECHO_REPLY_LEN + len(self.ec_data)
 
         elif self.type == ICMP4_UNREACHABLE and self.code == ICMP4_UNREACHABLE__PORT:
-            return 8 + len(self.un_data)
+            return ICMP4_UNREACHABLE_LEN + len(self.un_data)
 
         elif self.type == ICMP4_ECHO_REQUEST:
-            return 8 + len(self.ec_data)
+            return ICMP4_ECHO_REQUEST_LEN + len(self.ec_data)
 
     def assemble_packet(self, frame, hptr, _):
         """ Assemble packet into the raw form """
 
         if self.type == ICMP4_ECHO_REPLY:
-            struct.pack_into("! BBH HH", frame, hptr, self.type, self.code, 0, self.ec_id, self.ec_seq)
-            struct.pack_into(f"{len(self.ec_data)}s", frame, hptr + 8, self.ec_data)
-            plen = 8 + len(self.ec_data)
+            struct.pack_into(f"! BBH HH {len(self.ec_data)}s", frame, hptr, self.type, self.code, 0, self.ec_id, self.ec_seq, self.ec_data)
 
         elif self.type == ICMP4_UNREACHABLE and self.code == ICMP4_UNREACHABLE__PORT:
-            struct.pack_into("! BBH L", frame, hptr, self.type, self.code, 0, 0)
-            struct.pack_into(f"{len(self.un_data)}s", frame, hptr + 8, self.un_data)
-            plen = 8 + len(self.un_data)
+            struct.pack_into(f"! BBH L {len(self.un_data)}s", frame, hptr, self.type, self.code, 0, 0, self.un_data)
 
         elif self.type == ICMP4_ECHO_REQUEST:
-            struct.pack_into("! BBH HH", frame, hptr, self.type, self.code, 0, self.ec_id, self.ec_seq)
-            struct.pack_into(f"{len(self.ec_data)}s", frame, hptr + 8, self.ec_data)
-            plen = 8 + len(self.ec_data)
+            struct.pack_into(f"! BBH HH {len(self.ec_data)}s", frame, hptr, self.type, self.code, 0, self.ec_id, self.ec_seq, self.ec_data)
 
-        struct.pack_into("! H", frame, hptr + 2, inet_cksum(frame, hptr, plen))
+        struct.pack_into("! H", frame, hptr + 2, inet_cksum(frame, hptr, len(self)))

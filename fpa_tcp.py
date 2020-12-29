@@ -73,8 +73,8 @@ class TcpPacket:
 
     def __init__(
         self,
-        sport=None,
-        dport=None,
+        sport,
+        dport,
         seq=0,
         ack=0,
         flag_ns=False,
@@ -117,9 +117,9 @@ class TcpPacket:
 
         self.data = data
 
-        self.hlen = TCP_HEADER_LEN + len(self.raw_options)
+        self.hlen = TCP_HEADER_LEN + sum([len(_) for _ in self.options])
 
-        assert self.hlen % 4 == 0, "TCP header len is not multiplcation of 4 bytes, check options"
+        assert self.hlen % 4 == 0, f"TCP header len {self.hlen} is not multiplcation of 4 bytes, check options... {self.options}"
 
     def __str__(self):
         """ Packet log string """
@@ -139,7 +139,7 @@ class TcpPacket:
     def __len__(self):
         """ Length of the packet """
 
-        return TCP_HEADER_LEN + sum([len(_) for _ in self.options]) + len(self.data)
+        return self.hlen + len(self.data)
 
     @property
     def raw_options(self):
@@ -197,12 +197,9 @@ TCP_OPT_EOL_LEN = 1
 class TcpOptEol:
     """ TCP option - End of Option List (0) """
 
-    def __init__(self):
-        self.opt_kind = TCP_OPT_EOL
-
     @property
     def raw_option(self):
-        return struct.pack("!B", self.opt_kind)
+        return struct.pack("!B", TCP_OPT_EOL)
 
     def __str__(self):
         return "eol"
@@ -220,12 +217,9 @@ TCP_OPT_NOP_LEN = 1
 class TcpOptNop:
     """ TCP option - No Operation (1) """
 
-    def __init__(self):
-        self.opt_kind = TCP_OPT_NOP
-
     @property
     def raw_option(self):
-        return struct.pack("!B", self.opt_kind)
+        return struct.pack("!B", TCP_OPT_NOP)
 
     def __str__(self):
         return "nop"
@@ -243,17 +237,15 @@ TCP_OPT_MSS_LEN = 4
 class TcpOptMss:
     """ TCP option - Maximum Segment Size (2) """
 
-    def __init__(self, opt_mss=None):
-        self.opt_kind = TCP_OPT_MSS
-        self.opt_len = TCP_OPT_MSS_LEN
-        self.opt_mss = opt_mss
+    def __init__(self, mss):
+        self.mss = mss
 
     @property
     def raw_option(self):
-        return struct.pack("! BB H", self.opt_kind, self.opt_len, self.opt_mss)
+        return struct.pack("! BB H", TCP_OPT_MSS, TCP_OPT_MSS_LEN, self.mss)
 
     def __str__(self):
-        return f"mss {self.opt_mss}"
+        return f"mss {self.mss}"
 
     def __len__(self):
         return TCP_OPT_MSS_LEN
@@ -268,17 +260,15 @@ TCP_OPT_WSCALE_LEN = 3
 class TcpOptWscale:
     """ TCP option - Window Scale (3) """
 
-    def __init__(self, opt_wscale=None):
-        self.opt_kind = TCP_OPT_WSCALE
-        self.opt_len = TCP_OPT_WSCALE_LEN
-        self.opt_wscale = opt_wscale
+    def __init__(self, wscale):
+        self.wscale = wscale
 
     @property
     def raw_option(self):
-        return struct.pack("! BB B", self.opt_kind, self.opt_len, self.opt_wscale)
+        return struct.pack("! BB B", TCP_OPT_WSCALE, TCP_OPT_WSCALE_LEN, self.wscale)
 
     def __str__(self):
-        return f"wscale {self.opt_wscale}"
+        return f"wscale {self.wscale}"
 
     def __len__(self):
         return TCP_OPT_WSCALE_LEN
@@ -293,13 +283,9 @@ TCP_OPT_SACKPERM_LEN = 2
 class TcpOptSackPerm:
     """ TCP option - Sack Permit (4) """
 
-    def __init__(self):
-        self.opt_kind = TCP_OPT_SACKPERM
-        self.opt_len = TCP_OPT_SACKPERM_LEN
-
     @property
     def raw_option(self):
-        return struct.pack("! BB", self.opt_kind, self.opt_len)
+        return struct.pack("! BB", TCP_OPT_SACKPERM, TCP_OPT_SACKPERM_LEN)
 
     def __str__(self):
         return "sack_perm"
@@ -317,18 +303,16 @@ TCP_OPT_TIMESTAMP_LEN = 10
 class TcpOptTimestamp:
     """ TCP option - Timestamp (8) """
 
-    def __init__(self, opt_tsval=None, opt_tsecr=None):
-        self.opt_kind = TCP_OPT_TIMESTAMP
-        self.opt_len = TCP_OPT_TIMESTAMP_LEN
-        self.opt_tsval = opt_tsval
-        self.opt_tsecr = opt_tsecr
+    def __init__(self, tsval, tsecr):
+        self.tsval = tsval
+        self.tsecr = tsecr
 
     @property
     def raw_option(self):
-        return struct.pack("! BB LL", self.opt_kind, self.opt_len, self.opt_tsval, self.opt_tsecr)
+        return struct.pack("! BB LL", TCP_OPT_TIMESTAMP, TCP_OPT_TIMESTAMP_LEN, self.tsval, self.tsecr)
 
     def __str__(self):
-        return f"ts {self.opt_tsval}/{self.opt_tsecr}"
+        return f"ts {self.tsval}/{self.tsecr}"
 
     def __len__(self):
         return TCP_OPT_TIMESTAMP_LEN

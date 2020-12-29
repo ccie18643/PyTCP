@@ -52,8 +52,6 @@ from tracker import Tracker
 # +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 # |     Type      |     Code      |           Checksum            |
 # +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-# |              Id               |              Seq              |
-# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 # |                           Reserved                            |
 # +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 # ~                             Data                              ~
@@ -296,6 +294,7 @@ from tracker import Tracker
 
 
 ICMP6_UNREACHABLE = 1
+ICMP6_UNREACHABLE_LEN = 8
 ICMP6_UNREACHABLE__NO_ROUTE = 0
 ICMP6_UNREACHABLE__PROHIBITED = 1
 ICMP6_UNREACHABLE__SCOPE = 2
@@ -304,16 +303,27 @@ ICMP6_UNREACHABLE__PORT = 4
 ICMP6_UNREACHABLE__FAILED_POLICY = 5
 ICMP6_UNREACHABLE__REJECT_ROUTE = 6
 ICMP6_PACKET_TOO_BIG = 2
+ICMP6_PACKET_TOO_BIG_LEN = 8
 ICMP6_TIME_EXCEEDED = 3
+ICMP6_TIME_EXCEEDED_LEN = 8
 ICMP6_PARAMETER_PROBLEM = 4
+ICMP6_PARAMETER_PROBLEM_LEN = 8
 ICMP6_ECHO_REQUEST = 128
+ICMP6_ECHO_REQUEST_LEN = 8
 ICMP6_ECHO_REPLY = 129
+ICMP6_ECHO_REPLY_LEN = 8
 ICMP6_MLD2_QUERY = 130
+ICMP6_MLD2_QUERY_LEN = 28
 ICMP6_ROUTER_SOLICITATION = 133
+ICMP6_ROUTER_SOLICITATION_LEN = 8
 ICMP6_ROUTER_ADVERTISEMENT = 134
+ICMP6_ROUTER_ADVERTISEMENT_LEN = 16
 ICMP6_NEIGHBOR_SOLICITATION = 135
+ICMP6_NEIGHBOR_SOLICITATION_LEN = 24
 ICMP6_NEIGHBOR_ADVERTISEMENT = 136
+ICMP6_NEIGHBOR_ADVERTISEMENT_LEN = 24
 ICMP6_MLD2_REPORT = 143
+ICMP6_MLD2_REPORT_LEN = 8
 
 
 ICMP6_MART_MODE_IS_INCLUDE = 1
@@ -448,55 +458,47 @@ class Icmp6Packet:
         """ Length of the packet """
 
         if self.type == ICMP6_UNREACHABLE:
-            return 12 + len(self.un_data)
+            return ICMP6_UNREACHABLE_LEN + len(self.un_data)
 
         elif self.type == ICMP6_ECHO_REQUEST:
-            return 8 + len(self.ec_data)
+            return ICMP6_ECHO_REQUEST_LEN + len(self.ec_data)
 
         elif self.type == ICMP6_ECHO_REPLY:
-            return 8 + len(self.ec_data)
+            return ICMP6_ECHO_REPLY_LEN + len(self.ec_data)
 
         elif self.type == ICMP6_ROUTER_SOLICITATION:
-            return 8 + sum([len(_) for _ in self.nd_options])
+            return ICMP6_ROUTER_SOLICITATION_LEN + sum([len(_) for _ in self.nd_options])
 
         elif self.type == ICMP6_ROUTER_ADVERTISEMENT:
-            return 16 + sum([len(_) for _ in self.nd_options])
+            return ICMP6_ROUTER_ADVERTISEMENT_LEN + sum([len(_) for _ in self.nd_options])
 
         elif self.type == ICMP6_NEIGHBOR_SOLICITATION:
-            return 24 + sum([len(_) for _ in self.nd_options])
+            return ICMP6_NEIGHBOR_SOLICITATION_LEN + sum([len(_) for _ in self.nd_options])
 
         elif self.type == ICMP6_NEIGHBOR_ADVERTISEMENT:
-            return 24 + sum([len(_) for _ in self.nd_options])
+            return ICMP6_NEIGHBOR_ADVERTISEMENT_LEN + sum([len(_) for _ in self.nd_options])
 
         elif self.type == ICMP6_MLD2_REPORT:
-            return 8 + len(b"".join([_.raw_record for _ in self.mlr2_multicast_address_record]))  # *** NEED TO REDO THIS ***
+            return ICMP6_MLD2_REPORT_LEN + sum([len(_) for _ in self.mlr2_multicast_address_record])
 
     def assemble_packet(self, frame, hptr, phdr_sum):
         """ Assemble packet into the raw form """
 
         if self.type == ICMP6_UNREACHABLE:
-            struct.pack_into("! BBH L", frame, hptr, self.type, self.code, 0, self.un_reserved)
-            struct.pack_into(f"{len(self.un_data)}s", frame, hptr + 8, self.un_data)
-            plen = 8 + len(self.un_data)
+            struct.pack_into(f"! BBH L {len(self.un_data)}s", frame, hptr, self.type, self.code, 0, self.un_reserved, self.un_data)
 
         elif self.type == ICMP6_ECHO_REQUEST:
-            struct.pack_into("! BBH HH", frame, hptr, self.type, self.code, 0, self.ec_id, self.ec_seq)
-            struct.pack_into(f"{len(self.ec_data)}s", frame, hptr + 8, self.ec_data)
-            plen = 8 + len(self.ec_data)
+            struct.pack_into(f"! BBH HH {len(self.ec_data)}s", frame, hptr, self.type, self.code, 0, self.ec_id, self.ec_seq, self.ec_data)
 
         elif self.type == ICMP6_ECHO_REPLY:
-            struct.pack_into("! BBH HH", frame, hptr, self.type, self.code, 0, self.ec_id, self.ec_seq)
-            struct.pack_into(f"{len(self.ec_data)}s", frame, hptr + 8, self.ec_data)
-            plen = 8 + len(self.ec_data)
+            struct.pack_into(f"! BBH HH {len(self.ec_data)}s", frame, hptr, self.type, self.code, 0, self.ec_id, self.ec_seq, self.ec_data)
 
         elif self.type == ICMP6_ROUTER_SOLICITATION:
-            struct.pack_into("! BBH L", frame, hptr, self.type, self.code, 0, self.rs_reserved)
-            struct.pack_into(f"{len(self.raw_nd_options)}s", frame, hptr + 8, self.raw_nd_options)
-            plen = 8 + len(self.raw_nd_options)
+            struct.pack_into(f"! BBH L {len(self.raw_nd_options)}s", frame, hptr, self.type, self.code, 0, self.rs_reserved, self.raw_nd_options)
 
         elif self.type == ICMP6_ROUTER_ADVERTISEMENT:
             struct.pack_into(
-                "! BBH BBH L L",
+                f"! BBH BBH L L {len(self.raw_nd_options)}s",
                 frame,
                 hptr,
                 self.type,
@@ -507,13 +509,12 @@ class Icmp6Packet:
                 self.ra_router_lifetime,
                 self.ra_reachable_time,
                 self.ra_retrans_timer,
+                self.raw_nd_options,
             )
-            struct.pack_into(f"{len(self.raw_nd_options)}s", frame, hptr + 16, self.raw_nd_options)
-            plen = 16 + len(self.raw_nd_options)
 
         elif self.type == ICMP6_NEIGHBOR_SOLICITATION:
             struct.pack_into(
-                "! BBH L 16s",
+                f"! BBH L 16s {len(self.raw_nd_options)}s",
                 frame,
                 hptr,
                 self.type,
@@ -521,13 +522,12 @@ class Icmp6Packet:
                 0,
                 self.ns_reserved,
                 self.ns_target_address.packed,
+                self.raw_nd_options,
             )
-            struct.pack_into(f"{len(self.raw_nd_options)}s", frame, hptr + 24, self.raw_nd_options)
-            plen = 24 + len(self.raw_nd_options)
 
         elif self.type == ICMP6_NEIGHBOR_ADVERTISEMENT:
             struct.pack_into(
-                "! BBH L 16s",
+                f"! BBH L 16s {len(self.raw_nd_options)}s",
                 frame,
                 hptr,
                 self.type,
@@ -535,13 +535,12 @@ class Icmp6Packet:
                 0,
                 (self.na_flag_r << 31) | (self.na_flag_s << 30) | (self.na_flag_o << 29) | self.na_reserved,
                 self.na_target_address.packed,
+                self.raw_nd_options,
             )
-            struct.pack_into(f"{len(self.raw_nd_options)}s", frame, hptr + 24, self.raw_nd_options)
-            plen = 24 + len(self.raw_nd_options)
 
         elif self.type == ICMP6_MLD2_REPORT:
             struct.pack_into(
-                "! BBH HH",
+                f"! BBH HH {sum([len(_) for _ in self.mlr2_multicast_address_record])}s",
                 frame,
                 hptr,
                 self.type,
@@ -549,12 +548,10 @@ class Icmp6Packet:
                 0,
                 self.mlr2_reserved,
                 self.mlr2_number_of_multicast_address_records,
+                b"".join([_.raw_record for _ in self.mlr2_multicast_address_record]),
             )
-            raw_mlr2_multicast_address_records = b"".join([_.raw_record for _ in self.mlr2_multicast_address_record])
-            struct.pack_into(f"{len(raw_mlr2_multicast_address_records)}s", frame, hptr + 8, raw_mlr2_multicast_address_records)
-            plen = 8 + len(raw_mlr2_multicast_address_records)
 
-        struct.pack_into("! H", frame, hptr + 2, inet_cksum(frame, hptr, plen, phdr_sum))
+        struct.pack_into("! H", frame, hptr + 2, inet_cksum(frame, hptr, len(self), phdr_sum))
 
     @property
     def raw_nd_options(self):
@@ -588,17 +585,15 @@ ICMP6_ND_OPT_SLLA_LEN = 8
 class Icmp6NdOptSLLA:
     """ ICMPv6 ND option - Source Link Layer Address (1) """
 
-    def __init__(self, opt_slla=None):
-        self.opt_code = ICMP6_ND_OPT_SLLA
-        self.opt_len = ICMP6_ND_OPT_SLLA_LEN
-        self.opt_slla = opt_slla
+    def __init__(self, slla):
+        self.slla = slla
 
     @property
     def raw_option(self):
-        return struct.pack("! BB 6s", self.opt_code, self.opt_len >> 3, bytes.fromhex(self.opt_slla.replace(":", "")))
+        return struct.pack("! BB 6s", ICMP6_ND_OPT_SLLA, ICMP6_ND_OPT_SLLA_LEN >> 3, bytes.fromhex(self.slla.replace(":", "")))
 
     def __str__(self):
-        return f"slla {self.opt_slla}"
+        return f"slla {self.slla}"
 
     def __len__(self):
         return ICMP6_ND_OPT_SLLA_LEN
@@ -619,17 +614,15 @@ ICMP6_ND_OPT_TLLA_LEN = 8
 class Icmp6NdOptTLLA:
     """ ICMPv6 ND option - Target Link Layer Address (2) """
 
-    def __init__(self, opt_tlla=None):
-        self.opt_code = ICMP6_ND_OPT_TLLA
-        self.opt_len = ICMP6_ND_OPT_TLLA_LEN
-        self.opt_tlla = opt_tlla
+    def __init__(self, tlla):
+        self.tlla = tlla
 
     @property
     def raw_option(self):
-        return struct.pack("! BB 6s", self.opt_code, self.opt_len >> 3, bytes.fromhex(self.opt_tlla.replace(":", "")))
+        return struct.pack("! BB 6s", ICMP6_ND_OPT_TLLA, ICMP6_ND_OPT_TLLA_LEN >> 3, bytes.fromhex(self.tlla.replace(":", "")))
 
     def __str__(self):
-        return f"tlla {self.opt_tlla}"
+        return f"tlla {self.tlla}"
 
     def __len__(self):
         return ICMP6_ND_OPT_TLLA_LEN
@@ -664,40 +657,37 @@ class Icmp6NdOptPI:
 
     def __init__(
         self,
-        opt_flag_l=False,
-        opt_flag_a=False,
-        opt_flag_r=False,
-        opt_valid_lifetime=None,
-        opt_preferred_lifetime=None,
-        opt_prefix=None,
+        flag_l=False,
+        flag_a=False,
+        flag_r=False,
+        valid_lifetime=None,
+        preferred_lifetime=None,
+        prefix=None,
     ):
-        self.opt_code = ICMP6_ND_OPT_PI
-        self.opt_len = ICMP6_ND_OPT_PI_LEN
-        self.opt_flag_l = opt_flag_l
-        self.opt_flag_a = opt_flag_a
-        self.opt_flag_r = opt_flag_r
-        self.opt_reserved_1 = 0
-        self.opt_valid_lifetime = opt_valid_lifetime
-        self.opt_valid_preferred = opt_preferred_lifetime
-        self.opt_reserved_2 = 0
-        self.opt_prefix = IPv6Network(opt_prefix)
+        self.code = ICMP6_ND_OPT_PI
+        self.len = ICMP6_ND_OPT_PI_LEN
+        self.flag_l = flag_l
+        self.flag_a = flag_a
+        self.flag_r = flag_r
+        self.valid_lifetime = valid_lifetime
+        self.valid_preferred = preferred_lifetime
+        self.prefix = IPv6Network(prefix)
 
     @property
     def raw_option(self):
         return struct.pack(
             "! BB BB L L L 16s",
-            self.opt_code,
-            self.opt_len >> 3,
-            self.opt_prefix.prefixlen,
-            (self.opt_flag_l << 7) | (self.opt_flag_a << 6) | (self.opt_flag_r << 6) | self.opt_reserved_1,
-            self.opt_valid_lifetime,
-            self.opt_preferred_lifetime,
-            self.opt_reserved_2,
-            self.opt_prefix.network_address.packed,
+            self.code,
+            self.len >> 3,
+            self.prefix.prefixlen,
+            (self.flag_l << 7) | (self.flag_a << 6) | (self.flag_r << 6),
+            self.valid_lifetime,
+            self.preferred_lifetime,
+            self.prefix.network_address.packed,
         )
 
     def __str__(self):
-        return f"prefix_info {self.opt_prefix}"
+        return f"prefix_info {self.prefix}"
 
     def __len__(self):
         return ICMP6_ND_OPT_PI_LEN
@@ -711,26 +701,15 @@ class Icmp6NdOptPI:
 class MulticastAddressRecord:
     """ Multicast Address Record used by MLDv2 Report message """
 
-    def __init__(self, raw_record=None, record_type=None, multicast_address=None, source_address=None, aux_data=b""):
+    def __init__(self, record_type, multicast_address, source_address=None, aux_data=b""):
         """ Class constructor """
 
-        # Record parsing
-        if raw_record:
-            self.record_type = raw_record[0]
-            self.aux_data_len = raw_record[1]
-            self.number_of_sources = struct.unpack("!H", raw_record[2:4])[0]
-            self.multicast_address = IPv6Address(raw_record[4:20])
-            self.source_address = [IPv6Address(raw_record[20 + 16 * _ : 20 + 16 * (_ + 1)]) for _ in range(self.number_of_sources)]
-            self.aux_data = raw_record[20 + 16 * self.number_of_sources :]
-
-        # Record building
-        else:
-            self.record_type = record_type
-            self.aux_data_len = len(aux_data)
-            self.multicast_address = IPv6Address(multicast_address)
-            self.source_address = [] if source_address is None else source_address
-            self.number_of_sources = len(self.source_address)
-            self.aux_data = aux_data
+        self.record_type = record_type
+        self.aux_data_len = len(aux_data)
+        self.multicast_address = IPv6Address(multicast_address)
+        self.source_address = [] if source_address is None else source_address
+        self.number_of_sources = len(self.source_address)
+        self.aux_data = aux_data
 
     def __len__(self):
         """ Length of raw record """

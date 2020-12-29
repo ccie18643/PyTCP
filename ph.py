@@ -463,7 +463,7 @@ class PacketHandler:
             ip6_dst=IPv6Address("ff02::2"),
             ip6_hop=255,
             icmp6_type=fpa_icmp6.ICMP6_ROUTER_SOLICITATION,
-            icmp6_nd_options=[fpa_icmp6.Icmp6NdOptSLLA(opt_slla=self.mac_unicast)],
+            icmp6_nd_options=[fpa_icmp6.Icmp6NdOptSLLA(self.mac_unicast)],
         )
         if __debug__:
             self._logger.debug("Sent out ICMPv6 ND Router Solicitation")

@@ -76,62 +76,34 @@ class ArpPacket:
 
     protocol = "ARP"
 
-    def __init__(self, arp_sha=None, arp_spa=None, arp_tpa=None, arp_tha="00:00:00:00:00:00", arp_oper=ARP_OP_REQUEST, echo_tracker=None):
+    def __init__(self, sha, spa, tpa, tha="00:00:00:00:00:00", oper=ARP_OP_REQUEST, echo_tracker=None):
         """ Class constructor """
 
         self.tracker = Tracker("TX", echo_tracker)
 
-        self.arp_hrtype = 1
-        self.arp_prtype = 0x0800
-        self.arp_hrlen = 6
-        self.arp_prlen = 4
-        self.arp_oper = arp_oper
-        self.arp_sha = arp_sha
-        self.arp_spa = IPv4Address(arp_spa)
-        self.arp_tha = arp_tha
-        self.arp_tpa = IPv4Address(arp_tpa)
+        self.hrtype = 1
+        self.prtype = 0x0800
+        self.hrlen = 6
+        self.prlen = 4
+        self.oper = oper
+        self.sha = sha
+        self.spa = IPv4Address(spa)
+        self.tha = tha
+        self.tpa = IPv4Address(tpa)
 
     def __str__(self):
         """ Packet log string """
 
-        if self.arp_oper == ARP_OP_REQUEST:
-            return f"ARP request {self.arp_spa} / {self.arp_sha} > {self.arp_tpa} / {self.arp_tha}"
-        if self.arp_oper == ARP_OP_REPLY:
-            return f"ARP reply {self.arp_spa} / {self.arp_sha} > {self.arp_tpa} / {self.arp_tha}"
-        return f"ARP unknown operation {self.arp_oper}"
+        if self.oper == ARP_OP_REQUEST:
+            return f"ARP request {self.spa} / {self.sha} > {self.tpa} / {self.tha}"
+        if self.oper == ARP_OP_REPLY:
+            return f"ARP reply {self.spa} / {self.sha} > {self.tpa} / {self.tha}"
+        return f"ARP unknown operation {self.oper}"
 
     def __len__(self):
         """ Length of the packet """
 
         return ARP_HEADER_LEN
-
-    @property
-    def raw_header(self):
-        """ Packet header in raw format """
-
-        return struct.pack(
-            "!HH BBH 6s 4s 6s 4s",
-            self.arp_hrtype,
-            self.arp_prtype,
-            self.arp_hrlen,
-            self.arp_prlen,
-            self.arp_oper,
-            bytes.fromhex(self.arp_sha.replace(":", "")),
-            IPv4Address(self.arp_spa).packed,
-            bytes.fromhex(self.arp_tha.replace(":", "")),
-            IPv4Address(self.arp_tpa).packed,
-        )
-
-    @property
-    def raw_packet(self):
-        """ Get packet in raw format """
-
-        return self.raw_header
-
-    def get_raw_packet(self):
-        """ Get packet in raw format ready to be processed by lower level protocol """
-
-        return self.raw_packet
 
     def assemble_packet(self, frame, hptr):
         """ Assemble packet into the raw form """
@@ -140,13 +112,13 @@ class ArpPacket:
             "!HH BBH 6s 4s 6s 4s",
             frame,
             hptr,
-            self.arp_hrtype,
-            self.arp_prtype,
-            self.arp_hrlen,
-            self.arp_prlen,
-            self.arp_oper,
-            bytes.fromhex(self.arp_sha.replace(":", "")),
-            IPv4Address(self.arp_spa).packed,
-            bytes.fromhex(self.arp_tha.replace(":", "")),
-            IPv4Address(self.arp_tpa).packed,
+            self.hrtype,
+            self.prtype,
+            self.hrlen,
+            self.prlen,
+            self.oper,
+            bytes.fromhex(self.sha.replace(":", "")),
+            IPv4Address(self.spa).packed,
+            bytes.fromhex(self.tha.replace(":", "")),
+            IPv4Address(self.tpa).packed,
         )

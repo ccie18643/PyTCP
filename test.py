@@ -2,7 +2,7 @@
 
 from time import time
 
-from ip_helper import inet_cksum, inet_cksum
+from ip_helper import inet_cksum
 
 with open("sample.1500", mode="rb") as _:
     packet = _.read()

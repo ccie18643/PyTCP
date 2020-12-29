@@ -89,9 +89,9 @@ def _phtx_tcp(
     tcp_options = []
 
     if tcp_mss:
-        tcp_options.append(TcpOptMss(opt_mss=tcp_mss))
+        tcp_options.append(TcpOptMss(tcp_mss))
         tcp_options.append(TcpOptNop())
-        tcp_options.append(TcpOptWscale(opt_wscale=0))
+        tcp_options.append(TcpOptWscale(0))
 
     tcp_packet_tx = TcpPacket(
         sport=tcp_sport,

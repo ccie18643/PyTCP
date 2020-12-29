@@ -53,11 +53,11 @@ def _phtx_arp(self, ether_src, ether_dst, arp_oper, arp_sha, arp_spa, arp_tha, a
         return
 
     arp_packet_tx = fpa_arp.ArpPacket(
-        arp_oper=arp_oper,
-        arp_sha=arp_sha,
-        arp_spa=arp_spa,
-        arp_tha=arp_tha,
-        arp_tpa=arp_tpa,
+        oper=arp_oper,
+        sha=arp_sha,
+        spa=arp_spa,
+        tha=arp_tha,
+        tpa=arp_tpa,
         echo_tracker=echo_tracker,
     )
 

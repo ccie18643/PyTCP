@@ -87,13 +87,13 @@ class Ip6Packet:
 
     def __init__(
         self,
-        src=None,
-        dst=None,
+        child_packet,
+        src,
+        dst,
         hop=config.ip6_default_hop,
         dscp=0,
         ecn=0,
         flow=0,
-        child_packet=None,
         tracker=None,
     ):
         """ Class constructor """

@@ -81,8 +81,9 @@ class Ip4Packet:
 
     def __init__(
         self,
-        src=None,
-        dst=None,
+        child_packet,
+        src,
+        dst,
         ttl=config.ip4_default_ttl,
         dscp=0,
         ecn=0,
@@ -91,7 +92,6 @@ class Ip4Packet:
         flag_mf=False,
         frag_offset=0,
         options=None,
-        child_packet=None,
         tracker=None,
     ):
         """ Class constructor """
@@ -102,17 +102,13 @@ class Ip4Packet:
         self.tracker = self._child_packet.tracker
 
         self.ver = 4
-        self.hlen = None
         self.dscp = dscp
         self.ecn = ecn
-        self.plen = None
         self.frag_id = frag_id
-        self.flag_reserved = 0
         self.flag_df = flag_df
         self.flag_mf = flag_mf
         self.frag_offset = frag_offset
         self.ttl = ttl
-        self.cksum = 0
         self.src = IPv4Address(src)
         self.dst = IPv4Address(dst)
 
@@ -173,7 +169,7 @@ class Ip4Packet:
             self.dscp << 2 | self.ecn,
             self.plen,
             self.frag_id,
-            self.flag_reserved << 15 | self.flag_df << 14 | self.flag_mf << 13 | self.frag_offset >> 3,
+            self.flag_df << 14 | self.flag_mf << 13 | self.frag_offset >> 3,
             self.ttl,
             self.proto,
             0,
@@ -203,12 +199,9 @@ IP4_OPT_EOL_LEN = 1
 class Ip4OptEol:
     """ IP option - End of Option List """
 
-    def __init__(self):
-        self.opt_kind = IP4_OPT_EOL
-
     @property
     def raw_option(self):
-        return struct.pack("!B", self.opt_kind)
+        return struct.pack("!B", IP4_OPT_EOL)
 
     def __str__(self):
         return "eol"
@@ -226,37 +219,12 @@ IP4_OPT_NOP_LEN = 1
 class Ip4OptNop:
     """ IP option - No Operation """
 
-    def __init__(self):
-        self.opt_kind = IP4_OPT_NOP
-
     @property
     def raw_option(self):
-        return struct.pack("!B", self.opt_kind)
+        return struct.pack("!B", IP4_OPT_NOP)
 
     def __str__(self):
         return "nop"
 
     def __len__(self):
         return IP4_OPT_NOP_LEN
-
-
-# IPv4 option not supported by this stack
-
-
-class Ip4OptUnk:
-    """ IP option not supported by this stack """
-
-    def __init__(self, raw_option):
-        self.opt_kind = raw_option[0]
-        self.opt_len = raw_option[1]
-        self.opt_data = raw_option[2 : self.opt_len]
-
-    @property
-    def raw_option(self):
-        return struct.pack("! BB", self.opt_kind, self.opt_len) + self.opt_data
-
-    def __str__(self):
-        return f"unk-{self.opt_kind}-{self.opt_len}"
-
-    def __len__(self):
-        return self.opt_len

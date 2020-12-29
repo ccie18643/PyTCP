@@ -63,7 +63,7 @@ class UdpPacket:
 
     protocol = "UDP"
 
-    def __init__(self, sport=None, dport=None, data=None, echo_tracker=None):
+    def __init__(self, sport, dport, data=b"", echo_tracker=None):
         """ Class constructor """
 
         self.tracker = Tracker("TX", echo_tracker)

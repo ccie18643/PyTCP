@@ -72,7 +72,7 @@ class EtherPacket:
 
     protocol = "ETHER"
 
-    def __init__(self, src="00:00:00:00:00:00", dst="00:00:00:00:00:00", child_packet=None):
+    def __init__(self, child_packet, src="00:00:00:00:00:00", dst="00:00:00:00:00:00"):
         """ Class constructor """
 
         assert child_packet.protocol in {"IPv6", "IPv4", "ARP"}, f"Not supported protocol: {child_packet.protocol}"
