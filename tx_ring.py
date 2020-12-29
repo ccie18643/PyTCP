@@ -74,7 +74,12 @@ class TxRing:
             ether_packet_tx = self.tx_ring.pop(0)
             frame = self.frame[len(ether_packet_tx)]
             ether_packet_tx.assemble_packet(frame, 0)
-            os.write(self.tap, frame)
+            
+            try:
+                os.write(self.tap, frame)
+            except OSError:
+                self._logger.error(f"<magenta>[TX]</> {ether_packet_tx.tracker}<yellow>{ether_packet_tx.tracker.latency}</> - Unable to send packet")
+                continue
 
             if __debug__:
                 self._logger.opt(ansi=True).debug(
