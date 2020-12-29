@@ -71,7 +71,7 @@ class UdpPacket:
         self.sport = sport
         self.dport = dport
         self.data = data
-        self.plen = len(self)
+        self.plen = UDP_HEADER_LEN + len(self.data)
 
     def __str__(self):
         """ Packet log string """
@@ -81,11 +81,10 @@ class UdpPacket:
     def __len__(self):
         """ Length of the packet """
 
-        return UDP_HEADER_LEN + len(self.data)
+        return self.plen
 
     def assemble_packet(self, frame, hptr, pshdr_sum):
         """ Assemble packet into the raw form """
 
-        struct.pack_into("! HH HH", frame, hptr, self.sport, self.dport, self.plen, 0)
-        struct.pack_into(f"{len(self.data)}s", frame, hptr + UDP_HEADER_LEN, self.data)
+        struct.pack_into(f"! HH HH {len(self.data)}s", frame, hptr, self.sport, self.dport, self.plen, 0, self.data)
         struct.pack_into("! H", frame, hptr + 6, inet_cksum(frame, hptr, self.plen, pshdr_sum))

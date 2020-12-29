@@ -162,7 +162,7 @@ class Ip4Packet:
         """ Assemble packet into the raw form """
 
         struct.pack_into(
-            "! BBH HH BBH 4s 4s",
+            f"! BBH HH BBH 4s 4s {len(self.raw_options)}s",
             frame,
             hptr,
             self.ver << 4 | self.hlen >> 2,
@@ -175,10 +175,8 @@ class Ip4Packet:
             0,
             self.src.packed,
             self.dst.packed,
+            self.raw_options,
         )
-
-        if self.options:
-            struct.pack_into(f"{len(self.raw_options)}s", frame, hptr + IP4_HEADER_LEN, self.raw_options)
 
         struct.pack_into("! H", frame, hptr + 10, inet_cksum(frame, hptr, self.hlen))
 

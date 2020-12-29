@@ -46,7 +46,6 @@ import threading
 
 import loguru
 
-
 class TxRing:
     """ Support for sending packets to the network """
 
@@ -65,7 +64,7 @@ class TxRing:
         if __debug__:
             self._logger.debug("Started TX ring")
 
-        self.frame = [bytearray(_) for _ in range(14, 1514)]
+        self.frame = [bytearray(_) for _ in range(1515)]
 
     def __thread_transmit(self):
         """ Dequeue packet from TX ring and send it out """

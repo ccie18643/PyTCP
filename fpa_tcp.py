@@ -156,7 +156,7 @@ class TcpPacket:
         """ Assemble packet into the raw form """
 
         struct.pack_into(
-            "! HH L L BBH HH",
+            f"! HH L L BBH HH {len(self.raw_options)}s {len(self.data)}s",
             frame,
             hptr,
             self.sport,
@@ -175,12 +175,11 @@ class TcpPacket:
             self.win,
             0,
             self.urp,
+            self.raw_options,
+            self.data,
         )
 
-        if self.options:
-            struct.pack_into(f"{len(self.raw_options)}s", frame, hptr + TCP_HEADER_LEN, self.raw_options)
-        struct.pack_into(f"{len(self.data)}s", frame, hptr + self.hlen, self.data)
-        struct.pack_into("! H", frame, hptr + 16, inet_cksum(frame, hptr, self.hlen + len(self.data), pshdr_sum))
+        struct.pack_into("! H", frame, hptr + 16, inet_cksum(frame, hptr, len(self), pshdr_sum))
 
 
 #

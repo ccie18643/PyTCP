@@ -43,7 +43,6 @@
 
 import fpa_icmp4
 
-
 def _phrx_icmp4(self, packet_rx):
     """ Handle inbound ICMPv4 packets """
 
