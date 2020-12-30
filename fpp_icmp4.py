@@ -127,7 +127,7 @@ class Icmp4Packet:
         self.__ec_data = self.__not_cached
         self.__un_data = self.__not_cached
         self.__plen = self.__not_cached
-        self.__packet = self.__not_cached
+        self.__packet_copy = self.__not_cached
 
         packet_rx.parse_failed = self._packet_integrity_check() or self._packet_sanity_check()
 
@@ -215,12 +215,12 @@ class Icmp4Packet:
         return self._plen
 
     @property
-    def packet(self):
+    def packet_copy(self):
         """ Read the whole packet """
 
-        if self.__packet is self.__not_cached:
-            self.__packet = self._frame[self._hptr : self._hptr + self.plen]
-        return self.__packet
+        if self.__packet_copy is self.__not_cached:
+            self.__packet_copy = self._frame[self._hptr : self._hptr + self.plen]
+        return self.__packet_copy
 
     def _packet_integrity_check(self):
         """ Packet integrity check to be run on raw frame prior to parsing to make sure parsing is safe """
@@ -251,12 +251,10 @@ class Icmp4Packet:
             return False
 
         if self.type in {ICMP4_ECHO_REQUEST, ICMP4_ECHO_REPLY}:
-            # imcp4_code SHOULD be set to 0 (RFC 792)
             if not self.code == 0:
                 return "ICMPv4 sanity - 'code' should be set to 0 (RFC 792)"
 
         if self.type == ICMP4_UNREACHABLE:
-            # imcp4_code MUST be set to [0-15] (RFC 792)
             if self.code not in {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15}:
                 return "ICMPv4 sanity - 'code' must be set to [0-15] (RFC 792)"
 

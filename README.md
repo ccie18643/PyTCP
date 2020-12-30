@@ -7,13 +7,15 @@ This program is a work in progress and it changes on daily basis due to new feat
 
 #### Already implemented:
 
+ - Stack - *fast packet parser using 'zero copy' approach*
+ - Stack - *fast packet assembler using 'zero copy' approach*
  - Ethernet protocol - *support of Ethernet II standard frame*
  - Ethernet protocol - *unicast, IPv4 multicast, IPv6 multicast and broadcast addressing supported*
  - ARP protocol - *replies, queries, ARP cache mechanism*
  - ARP protocol - *ARP Probe/Announcement IP conflict detection (ACD) mechanism*
  - IPv4 protocol - *default routing, stack can talk to hosts over Internet using IPv4 protocol*
  - IPv4 protocol - *automatic address configuration using DHCP protocol*
- - IPv4 protocol - *inbound and outbound IP fragmentation*
+ - IPv4 protocol - *inbound packet defragmentation, robust mechanism able t handle out of order and overlaping fragments*
  - IPv4 protocol - *IPv4 options accepted but not supported*
  - IPv4 protocol -  *multiple stack's IPv4 addresses supported, each of them acts as it was assigned to separate VRF* 
  - ICMPv4 protocol - *echo request, echo reply, port unreachable*

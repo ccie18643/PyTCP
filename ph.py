@@ -121,6 +121,9 @@ class PacketHandler:
         # Used to keep IPv4 packet ID last value
         self.ip4_packet_id = 0
 
+        # Used to defragment IPv4 packets
+        self.ip4_fragments = {}
+
         # Start packed handler so we can receive packets from network
         threading.Thread(target=self.__thread_packet_handler).start()
         if __debug__:

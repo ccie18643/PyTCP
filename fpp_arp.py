@@ -94,7 +94,7 @@ class ArpPacket:
         self.__spa = self.__not_cached
         self.__tha = self.__not_cached
         self.__tpa = self.__not_cached
-        self.__packet = self.__not_cached
+        self.__packet_copy = self.__not_cached
 
         packet_rx.parse_failed = self._packet_integrity_check() or self._packet_sanity_check()
 
@@ -180,12 +180,12 @@ class ArpPacket:
         return self.__tpa
 
     @property
-    def packet(self):
+    def packet_copy(self):
         """ Read the whole packet """
 
-        if self.__packet is self.__not_cached:
-            self.__packet = self._frame[self._hptr : self._hptr + ARP_HEADER_LEN]
-        return self.__packet
+        if self.__packet_copy is self.__not_cached:
+            self.__packet_copy = self._frame[self._hptr : self._hptr + ARP_HEADER_LEN]
+        return self.__packet_copy
 
     def _packet_integrity_check(self):
         """ Packet integrity check to be run on raw packet prior to parsing to make sure parsing is safe """

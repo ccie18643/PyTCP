@@ -41,7 +41,61 @@
 #
 
 
+from ip_helper import inet_cksum
+import struct
+from time import time
+
 import fpp_ip4
+from packet import PacketRx
+
+
+def _defragment_ip4_packet(self, packet_rx):
+    """ Check if packet is fragmented """
+
+    # Skip if packet is not fragmented
+    if packet_rx.ip4.offset == 0 and not packet_rx.ip4.flag_mf:
+        return packet_rx
+
+    if __debug__:
+        self._logger.info(
+            f"{packet_rx.tracker} - IPv4 packet fragment, offset {packet_rx.ip4.offset}, dlen {packet_rx.ip4.dlen}"
+            + f"{'' if packet_rx.ip4.flag_mf else ', last'}"
+        )
+
+    flow_id = (packet_rx.ip4.src, packet_rx.ip4.dst, packet_rx.ip4.id)
+
+    # Update flow db
+    if self.ip4_fragments.get(flow_id, None):
+        self.ip4_fragments[flow_id]["data"][packet_rx.ip4.offset] = packet_rx.ip4.data_copy
+    else:
+        self.ip4_fragments[flow_id] = {"header": packet_rx.ip4.header_copy, "timestamp": time(), "last": False, "data": {packet_rx.ip4.offset: packet_rx.ip4.data_copy}}
+    if not packet_rx.ip4.flag_mf:
+        self.ip4_fragments[flow_id]["last"] = True
+
+    # Test if we received all fragments
+    if not self.ip4_fragments[flow_id]["last"]:
+        return None
+    data_len = 0
+    for offset in sorted(self.ip4_fragments[flow_id]["data"]):
+        if offset > data_len:
+            return None
+        data_len = offset + len(self.ip4_fragments[flow_id]["data"][offset])
+
+    # Defragment packet
+    header = bytearray(self.ip4_fragments[flow_id]["header"])
+    data = bytearray(data_len)
+    for offset in sorted(self.ip4_fragments[flow_id]["data"]):
+        struct.pack_into(f"{len(self.ip4_fragments[flow_id]['data'][offset])}s", data, offset, self.ip4_fragments[flow_id]["data"][offset])
+    del self.ip4_fragments[flow_id]
+    header[0] = 0x45
+    struct.pack_into("!H", header, 2, fpp_ip4.IP4_HEADER_LEN + len(data))
+    header[6] = header[7] = header[10] = header[11] = 0
+    struct.pack_into("!H", header, 10, inet_cksum(header, 0, fpp_ip4.IP4_HEADER_LEN))
+    packet_rx = PacketRx(bytes(header) + data)
+    fpp_ip4.Ip4Packet(packet_rx)
+    if __debug__:
+        self._logger.info(f"{packet_rx.tracker} - Reasembled fragmented IP packet, dlen {len(data)} bytes")
+    return packet_rx
 
 
 def _phrx_ip4(self, packet_rx):
@@ -62,6 +116,11 @@ def _phrx_ip4(self, packet_rx):
         if __debug__:
             self._logger.debug(f"{packet_rx.tracker} - IP packet not destined for this stack, dropping")
         return
+
+    # Check if packet is a fragment and if so process it accordingly
+    if packet_rx.ip4.offset != 0 or packet_rx.ip4.flag_mf:
+        if not (packet_rx := _defragment_ip4_packet(self, packet_rx)):
+            return
 
     if packet_rx.ip4.proto == fpp_ip4.IP4_PROTO_ICMP4:
         self._phrx_icmp4(packet_rx)

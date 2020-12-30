@@ -104,7 +104,9 @@ class Ip6Packet:
         self.__dst = self.__not_cached
         self.__data = self.__not_cached
         self.__plen = self.__not_cached
-        self.__packet = self.__not_cached
+        self.__header_copy = self.__not_cached
+        self.__data_copy = self.__not_cached
+        self.__packet_copy = self.__not_cached
         self.__pshdr_sum = self.__not_cached
 
         packet_rx.parse_failed = self._packet_integrity_check() or self._packet_sanity_check()
@@ -194,14 +196,6 @@ class Ip6Packet:
         return self.__dst
 
     @property
-    def data(self):
-        """ Read the data packet carries """
-
-        if self.__data is self.__not_cached:
-            self.__data = self.__frame[self._hptr + IP6_HEADER_LEN :]
-        return self.__data
-
-    @property
     def plen(self):
         """ Calculate packet length """
 
@@ -210,12 +204,28 @@ class Ip6Packet:
         return self.__plen
 
     @property
-    def packet(self):
-        """ Read the whole packet """
+    def header_copy(self):
+        """ Return copy of packet header """
 
-        if self.__packet is self.__not_cached:
-            self.__packet = self.__frame[self._hptr : self._hptr + IP6_HEADER_LEN + self.dlen]
-        return self.__packet
+        if self.__header_copy is self.__not_cached:
+            self.__header_copy = self._frame[self._hptr : self._hptr + IP6_HEADER_LEN]
+        return self.__header_copy
+
+    @property
+    def data_copy(self):
+        """ Return copy of packet data """
+
+        if self.__data_copy is self.__not_cached:
+            self.__data_copy = self._frame[self._hptr + self.hlen : self._hptr + self.plen]
+        return self.__data_copy
+
+    @property
+    def packet_copy(self):
+        """ Return copy of whole packet """
+
+        if self.__packet_copy is self.__not_cached:
+            self.__packet_copy = self._frame[self._hptr : self._hptr + self.plen]
+        return self.__packet_copy
 
     @property
     def pshdr_sum(self):

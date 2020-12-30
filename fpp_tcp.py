@@ -100,8 +100,11 @@ class TcpPacket:
         self.__urg = self.__not_cached
         self.__data = self.__not_cached
         self.__olen = self.__not_cached
-        self.__packet = self.__not_cached
         self.__options = self.__not_cached
+        self.__header_copy = self.__not_cached
+        self.__options_copy = self.__not_cached
+        self.__data_copy = self.__not_cached
+        self.__packet_copy = self.__not_cached
         self.__mss = self.__not_cached
         self.__wscale = self.__not_cached
         self.__sackperm = self.__not_cached
@@ -297,12 +300,36 @@ class TcpPacket:
         return self._plen
 
     @property
-    def packet(self):
-        """ Read the whole packet """
+    def header_copy(self):
+        """ Return copy of packet header """
 
-        if self.__packet is self.__not_cached:
-            self.__packet = self._frame[self._hptr : self._hptr + self.plen]
-        return self.__packet
+        if self.__header_copy is self.__not_cached:
+            self.__header_copy = self._frame[self._hptr : self._hptr + TCP_HEADER_LEN]
+        return self.__header_copy
+
+    @property
+    def options_copy(self):
+        """ Return copy of packet header """
+
+        if self.__options_copy is self.__not_cached:
+            self.__options_copy = self._frame[self._hptr + TCP_HEADER_LEN : self._hptr + self.hlen]
+        return self.__options_copy
+
+    @property
+    def data_copy(self):
+        """ Return copy of packet data """
+
+        if self.__data_copy is self.__not_cached:
+            self.__data_copy = self._frame[self._hptr + self.hlen : self._hptr + self.plen]
+        return self.__data_copy
+
+    @property
+    def packet_copy(self):
+        """ Return copy of whole packet """
+
+        if self.__packet_copy is self.__not_cached:
+            self.__packet_copy = self._frame[self._hptr : self._hptr + self.plen]
+        return self.__packet_copy
 
     @property
     def options(self):

@@ -46,6 +46,8 @@ import threading
 
 import loguru
 
+import config
+
 
 class TxRing:
     """ Support for sending packets to the network """
@@ -72,25 +74,29 @@ class TxRing:
 
         while True:
             self.packet_enqueued.acquire()
-            ether_packet_tx = self.tx_ring.pop(0)
-            frame = self.frame[len(ether_packet_tx)]
-            ether_packet_tx.assemble_packet(frame, 0)
+            packet_tx = self.tx_ring.pop(0)
+            if (packet_tx_len := len(packet_tx)) > config.mtu + 14:
+                if __debug__:
+                    self._logger.error(f"{packet_tx.tracker} - Unable to send packet, packet len ({packet_tx_len}) > mtu ({config.mtu + 14})")
+                continue
+            frame = self.frame[len(packet_tx)]
+            packet_tx.assemble_packet(frame, 0)
 
             try:
                 os.write(self.tap, frame)
             except OSError:
-                self._logger.error(f"<magenta>[TX]</> {ether_packet_tx.tracker}<yellow>{ether_packet_tx.tracker.latency}</> - Unable to send packet")
+                self._logger.error(f"<magenta>[TX]</> {packet_tx.tracker}<yellow>{packet_tx.tracker.latency}</> - Unable to send packet")
                 continue
 
             if __debug__:
                 self._logger.opt(ansi=True).debug(
-                    f"<magenta>[TX]</> {ether_packet_tx.tracker}<yellow>{ether_packet_tx.tracker.latency}</> - sent packet, {len(ether_packet_tx)} bytes"
+                    f"<magenta>[TX]</> {packet_tx.tracker}<yellow>{packet_tx.tracker.latency}</> - sent packet, {len(packet_tx)} bytes"
                 )
 
-    def enqueue(self, ether_packet_tx):
+    def enqueue(self, packet_tx):
         """ Enqueue outbound Ethernet packet to TX ring """
 
-        self.tx_ring.append(ether_packet_tx)
+        self.tx_ring.append(packet_tx)
         if __debug__:
-            self._logger.opt(ansi=True).debug(f"{ether_packet_tx.tracker}, priority: Normal, queue len: {len(self.tx_ring)}")
+            self._logger.opt(ansi=True).debug(f"{packet_tx.tracker}, priority: Normal, queue len: {len(self.tx_ring)}")
         self.packet_enqueued.release()
