@@ -76,6 +76,10 @@ ip6_default_hop = 64
 # IPv4 default TTL value
 ip4_default_ttl = 64
 
+# IPv4 fragmnt flow expiration time, determines for how many seconds fragment flow is considered valid
+# Fragemnt flows are being cleaned up prior of handling every fragmented packet
+ip4_frag_flow_timeout = 5
+
 # Static IPv6 adrsses may to be configured here (they will still be subject to CICMPv6 ND DAD  mechanism)
 # Each entry is a tuple interface address/prefix length and second is default gateway for this subnet
 # Basic routing is implemented and each subnet can have its own gateway

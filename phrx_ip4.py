@@ -41,11 +41,12 @@
 #
 
 
-from ip_helper import inet_cksum
 import struct
 from time import time
 
+import config
 import fpp_ip4
+from ip_helper import inet_cksum
 from packet import PacketRx
 
 
@@ -55,6 +56,9 @@ def _defragment_ip4_packet(self, packet_rx):
     # Skip if packet is not fragmented
     if packet_rx.ip4.offset == 0 and not packet_rx.ip4.flag_mf:
         return packet_rx
+
+    # Cleanup expired flows
+    self.ip4_fragments = {_: self.ip4_fragments[_] for _ in self.ip4_fragments if self.ip4_fragments[_]["timestamp"] - time() < config.ip4_frag_flow_timeout}
 
     if __debug__:
         self._logger.info(
@@ -68,7 +72,12 @@ def _defragment_ip4_packet(self, packet_rx):
     if self.ip4_fragments.get(flow_id, None):
         self.ip4_fragments[flow_id]["data"][packet_rx.ip4.offset] = packet_rx.ip4.data_copy
     else:
-        self.ip4_fragments[flow_id] = {"header": packet_rx.ip4.header_copy, "timestamp": time(), "last": False, "data": {packet_rx.ip4.offset: packet_rx.ip4.data_copy}}
+        self.ip4_fragments[flow_id] = {
+            "header": packet_rx.ip4.header_copy,
+            "timestamp": time(),
+            "last": False,
+            "data": {packet_rx.ip4.offset: packet_rx.ip4.data_copy},
+        }
     if not packet_rx.ip4.flag_mf:
         self.ip4_fragments[flow_id]["last"] = True
 
