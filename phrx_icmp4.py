@@ -41,23 +41,31 @@
 #
 
 
-import fpa_icmp4
+import fpp_icmp4
+
 
 def _phrx_icmp4(self, packet_rx):
     """ Handle inbound ICMPv4 packets """
+
+    fpp_icmp4.Icmp4Packet(packet_rx)
+
+    if packet_rx.parse_failed:
+        if __debug__:
+            self._logger.critical(f"{packet_rx.tracker} - {packet_rx.parse_failed}")
+        return
 
     if __debug__:
         self._logger.opt(ansi=True).info(f"<green>{packet_rx.tracker}</green> - {packet_rx.icmp4}")
 
     # Respond to ICMPv4 Echo Request packet
-    if packet_rx.icmp4.type == fpa_icmp4.ICMP4_ECHO_REQUEST:
+    if packet_rx.icmp4.type == fpp_icmp4.ICMP4_ECHO_REQUEST:
         if __debug__:
             self._logger.debug(f"Received ICMPv4 Echo Request packet from {packet_rx.ip4.src}, sending reply...")
 
         self._phtx_icmp4(
             ip4_src=packet_rx.ip4.dst,
             ip4_dst=packet_rx.ip4.src,
-            icmp4_type=fpa_icmp4.ICMP4_ECHO_REPLY,
+            icmp4_type=fpp_icmp4.ICMP4_ECHO_REPLY,
             icmp4_ec_id=packet_rx.icmp4.ec_id,
             icmp4_ec_seq=packet_rx.icmp4.ec_seq,
             icmp4_ec_data=packet_rx.icmp4.ec_data,

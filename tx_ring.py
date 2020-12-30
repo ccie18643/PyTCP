@@ -46,6 +46,7 @@ import threading
 
 import loguru
 
+
 class TxRing:
     """ Support for sending packets to the network """
 
@@ -74,7 +75,7 @@ class TxRing:
             ether_packet_tx = self.tx_ring.pop(0)
             frame = self.frame[len(ether_packet_tx)]
             ether_packet_tx.assemble_packet(frame, 0)
-            
+
             try:
                 os.write(self.tap, frame)
             except OSError:

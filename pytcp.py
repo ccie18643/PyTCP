@@ -102,11 +102,10 @@ def main():
     try:
         tap = os.open("/dev/net/tun", os.O_RDWR)
     except FileNotFoundError:
-        _logger.error(f"Unable to access '/dev/net/tun' device")
+        _logger.error("Unable to access '/dev/net/tun' device")
         sys.exit(-1)
 
-    print(fcntl.ioctl(tap, TUNSETIFF, struct.pack("16sH", config.interface, IFF_TAP | IFF_NO_PI)))
-
+    fcntl.ioctl(tap, TUNSETIFF, struct.pack("16sH", config.interface, IFF_TAP | IFF_NO_PI))
 
     # Initialize stack components
     StackCliServer()

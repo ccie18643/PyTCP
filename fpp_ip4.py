@@ -74,66 +74,20 @@ IP4_PROTO_UDP = 17
 IP4_PROTO_TABLE = {IP4_PROTO_ICMP4: "ICMPv4", IP4_PROTO_TCP: "TCP", IP4_PROTO_UDP: "UDP"}
 
 
-DSCP_CS0 = 0b000000
-DSCP_CS1 = 0b001000
-DSCP_AF11 = 0b001010
-DSCP_AF12 = 0b001100
-DSCP_AF13 = 0b001110
-DSCP_CS2 = 0b010000
-DSCP_AF21 = 0b010010
-DSCP_AF22 = 0b010100
-DSCP_AF23 = 0b010110
-DSCP_CS3 = 0b011000
-DSCP_AF31 = 0b011010
-DSCP_AF32 = 0b011100
-DSCP_AF33 = 0b011110
-DSCP_CS4 = 0b100000
-DSCP_AF41 = 0b100010
-DSCP_AF42 = 0b100100
-DSCP_AF43 = 0b100110
-DSCP_CS5 = 0b101000
-DSCP_EF = 0b101110
-DSCP_CS6 = 0b110000
-DSCP_CS7 = 0b111000
-
-DSCP_TABLE = {
-    DSCP_CS0: "CS0",
-    DSCP_CS1: "CS1",
-    DSCP_AF11: "AF11",
-    DSCP_AF12: "AF12",
-    DSCP_AF13: "AF13",
-    DSCP_CS2: "CS2",
-    DSCP_AF21: "AF21",
-    DSCP_AF22: "AF22",
-    DSCP_AF23: "AF23",
-    DSCP_CS3: "CS3",
-    DSCP_AF31: "AF31",
-    DSCP_AF32: "AF32",
-    DSCP_AF33: "AF33",
-    DSCP_CS4: "CS4",
-    DSCP_AF41: "AF41",
-    DSCP_AF42: "AF42",
-    DSCP_AF43: "AF43",
-    DSCP_CS5: "CS5",
-    DSCP_EF: "EF",
-    DSCP_CS6: "CS6",
-    DSCP_CS7: "CS7",
-}
-
-ECN_TABLE = {0b00: "Non-ECT", 0b10: "ECT(0)", 0b01: "ECT(1)", 0b11: "CE"}
-
-
 class Ip4Packet:
     """ IPv4 packet support class """
 
     class __not_cached:
         pass
 
-    def __init__(self, frame, hptr):
+    def __init__(self, packet_rx):
         """ Class constructor """
 
-        self._frame = frame
-        self._hptr = hptr
+        packet_rx.ip4 = self
+        packet_rx.ip = self
+
+        self._frame = packet_rx.frame
+        self._hptr = packet_rx.hptr
 
         self.__ver = self.__not_cached
         self.__hlen = self.__not_cached
@@ -153,11 +107,10 @@ class Ip4Packet:
         self.__packet = self.__not_cached
         self.__pshdr_sum = self.__not_cached
 
-        self.packet_parse_failed = self._packet_integrity_check() or self._packet_sanity_check()
-        if self.packet_parse_failed:
-            return
+        packet_rx.parse_failed = self._packet_integrity_check() or self._packet_sanity_check()
 
-        self.dptr = self._hptr + self.hlen
+        if not packet_rx.parse_failed:
+            packet_rx.hptr = self._hptr + self.hlen
 
     def __str__(self):
         """ Packet log string """

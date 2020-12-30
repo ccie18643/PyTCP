@@ -43,8 +43,9 @@
 
 import loguru
 
-import fpa_icmp4
-import fpa_icmp6
+import fpp_icmp4
+import fpp_icmp6
+import fpp_udp
 import stack
 from ipv4_address import IPv4Address
 from ipv6_address import IPv6Address
@@ -53,6 +54,13 @@ from udp_metadata import UdpMetadata
 
 def _phrx_udp(self, packet_rx):
     """ Handle inbound UDP packets """
+
+    fpp_udp.UdpPacket(packet_rx)
+
+    if packet_rx.parse_failed:
+        if __debug__:
+            self._logger.critical(f"{self.tracker} - {packet_rx.parse_failed}")
+        return
 
     if __debug__:
         self._logger.opt(ansi=True).info(f"<green>{packet_rx.tracker}</green> - {packet_rx.udp}")
@@ -91,8 +99,8 @@ def _phrx_udp(self, packet_rx):
         self._phtx_icmp6(
             ip6_src=packet_rx.ip6.dst,
             ip6_dst=packet_rx.ip6.src,
-            icmp6_type=fpa_icmp6.ICMP6_UNREACHABLE,
-            icmp6_code=fpa_icmp6.ICMP6_UNREACHABLE__PORT,
+            icmp6_type=fpp_icmp6.ICMP6_UNREACHABLE,
+            icmp6_code=fpp_icmp6.ICMP6_UNREACHABLE__PORT,
             icmp6_un_data=packet_rx.ip.packet,
             echo_tracker=packet_rx.tracker,
         )
@@ -101,8 +109,8 @@ def _phrx_udp(self, packet_rx):
         self._phtx_icmp4(
             ip4_src=packet_rx.ip.dst,
             ip4_dst=packet_rx.ip.src,
-            icmp4_type=fpa_icmp4.ICMP4_UNREACHABLE,
-            icmp4_code=fpa_icmp4.ICMP4_UNREACHABLE__PORT,
+            icmp4_type=fpp_icmp4.ICMP4_UNREACHABLE,
+            icmp4_code=fpp_icmp4.ICMP4_UNREACHABLE__PORT,
             icmp4_un_data=packet_rx.ip.packet,
             echo_tracker=packet_rx.tracker,
         )

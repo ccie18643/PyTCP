@@ -40,7 +40,7 @@
 # phrx_tcp.py - packet handler for inbound TCP packets
 #
 
-
+import fpp_tcp
 import stack
 from tcp_metadata import TcpMetadata
 
@@ -49,6 +49,13 @@ PACKET_LOSS = False
 
 def _phrx_tcp(self, packet_rx):
     """ Handle inbound TCP packets """
+
+    fpp_tcp.TcpPacket(packet_rx)
+
+    if packet_rx.parse_failed:
+        if __debug__:
+            self._logger.critical(f"{self.tracker} - {packet_rx.parse_failed}")
+        return
 
     if __debug__:
         self._logger.opt(ansi=True).info(f"<green>{packet_rx.tracker}</green> - {packet_rx.tcp}")

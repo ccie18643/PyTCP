@@ -53,7 +53,6 @@ import fpa_icmp6
 import ps_dhcp
 import stack
 from arp_cache import ArpCache
-from fpp import FastPacketParser
 from icmp6_nd_cache import ICMPv6NdCache
 from ipv4_address import IPv4Address, IPv4Interface
 from ipv6_address import IPv6Address, IPv6Interface, IPv6Network
@@ -167,9 +166,7 @@ class PacketHandler:
         """ Thread picks up incoming packets from RX ring and processes them """
 
         while True:
-            packet_rx = FastPacketParser(*self.rx_ring.dequeue())
-            if not packet_rx.packet_parse_failed:
-                self._phrx_ether(packet_rx)
+            self._phrx_ether(self.rx_ring.dequeue())
 
     @property
     def ip6_unicast(self):

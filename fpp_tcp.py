@@ -72,12 +72,14 @@ class TcpPacket:
     class __not_cached:
         pass
 
-    def __init__(self, frame, hptr, plen, pshdr_sum):
+    def __init__(self, packet_rx):
         """ Class constructor """
 
-        self._frame = frame
-        self._hptr = hptr
-        self._plen = plen
+        packet_rx.tcp = self
+
+        self._frame = packet_rx.frame
+        self._hptr = packet_rx.hptr
+        self._plen = packet_rx.ip.dlen
 
         self.__sport = self.__not_cached
         self.__dport = self.__not_cached
@@ -105,11 +107,10 @@ class TcpPacket:
         self.__sackperm = self.__not_cached
         self.__timestamp = self.__not_cached
 
-        self.packet_parse_failed = self._packet_integrity_check(pshdr_sum) or self._packet_sanity_check()
-        if self.packet_parse_failed:
-            return
+        packet_rx.parse_failed = self._packet_integrity_check(packet_rx.ip.pshdr_sum) or self._packet_sanity_check()
 
-        self.dptr = self._hptr + self.hlen
+        if packet_rx.parse_failed:
+            packet_rx.hptr = self._hptr + self.hlen
 
     def __str__(self):
         """ Packet log string """

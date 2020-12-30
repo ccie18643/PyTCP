@@ -77,11 +77,13 @@ class ArpPacket:
     class __not_cached:
         pass
 
-    def __init__(self, frame, hptr):
+    def __init__(self, packet_rx):
         """ Class constructor """
 
-        self._frame = frame
-        self._hptr = hptr
+        packet_rx.arp = self
+
+        self._frame = packet_rx.frame
+        self._hptr = packet_rx.hptr
 
         self.__hrtype = self.__not_cached
         self.__prtype = self.__not_cached
@@ -94,7 +96,7 @@ class ArpPacket:
         self.__tpa = self.__not_cached
         self.__packet = self.__not_cached
 
-        self.packet_parse_failed = self._packet_integrity_check() or self._packet_sanity_check()
+        packet_rx.parse_failed = self._packet_integrity_check() or self._packet_sanity_check()
 
     def __str__(self):
         """ Packet log string """

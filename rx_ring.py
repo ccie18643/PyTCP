@@ -46,7 +46,7 @@ import threading
 
 import loguru
 
-from tracker import Tracker
+from packet import PacketRx
 
 
 class RxRing:
@@ -69,11 +69,10 @@ class RxRing:
         """ Thread responsible for receiving and enqueuing incoming packets """
 
         while True:
-            packet_rx = os.read(self.tap, 2048)
-            tracker = Tracker("RX")
+            packet_rx = PacketRx(os.read(self.tap, 2048))
             if __debug__:
-                self._logger.opt(ansi=True).debug(f"<green>{tracker}</> - received packet, {len(packet_rx)} bytes")
-            self.rx_ring.append((packet_rx, tracker))
+                self._logger.opt(ansi=True).debug(f"<green>{packet_rx.tracker}</> - received frame, {len(packet_rx.frame)} bytes")
+            self.rx_ring.append(packet_rx)
             self.packet_enqueued.release()
 
     def dequeue(self):

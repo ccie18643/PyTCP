@@ -332,12 +332,14 @@ class Icmp6Packet:
     class __not_cached:
         pass
 
-    def __init__(self, frame, hptr, plen, pshdr_sum, ip6_src, ip6_dst, ip6_hop):
+    def __init__(self, packet_rx):
         """ Class constructor """
 
-        self._frame = frame
-        self._hptr = hptr
-        self._plen = plen
+        packet_rx.icmp6 = self
+
+        self._frame = packet_rx.frame
+        self._hptr = packet_rx.hptr
+        self._plen = packet_rx.ip.dlen
 
         self.__cksum = self.__not_cached
         self.__un_data = self.__not_cached
@@ -361,9 +363,9 @@ class Icmp6Packet:
         self.__nd_opt_tlla = self.__not_cached
         self.__nd_opt_pi = self.__not_cached
 
-        self.packet_parse_failed = self._packet_integrity_check(pshdr_sum) or self._packet_sanity_check(ip6_src, ip6_dst, ip6_hop)
-        if self.packet_parse_failed:
-            return
+        packet_rx.parse_failed = self._packet_integrity_check(packet_rx.ip6.pshdr_sum) or self._packet_sanity_check(
+            packet_rx.ip6.src, packet_rx.ip6.dst, packet_rx.ip6.hop
+        )
 
     def __str__(self):
         """ Packet log string """

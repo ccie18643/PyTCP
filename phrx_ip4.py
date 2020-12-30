@@ -41,13 +41,18 @@
 #
 
 
-import fpa_ip4
-
-ip4_fragments = {}
+import fpp_ip4
 
 
 def _phrx_ip4(self, packet_rx):
     """ Handle inbound IP packets """
+
+    fpp_ip4.Ip4Packet(packet_rx)
+
+    if packet_rx.parse_failed:
+        if __debug__:
+            self._logger.critical(f"{packet_rx.tracker} - {packet_rx.parse_failed}")
+        return
 
     if __debug__:
         self._logger.debug(f"{packet_rx.tracker} - {packet_rx.ip4}")
@@ -58,14 +63,14 @@ def _phrx_ip4(self, packet_rx):
             self._logger.debug(f"{packet_rx.tracker} - IP packet not destined for this stack, dropping")
         return
 
-    if packet_rx.ip4.proto == fpa_ip4.IP4_PROTO_ICMP4:
+    if packet_rx.ip4.proto == fpp_ip4.IP4_PROTO_ICMP4:
         self._phrx_icmp4(packet_rx)
         return
 
-    if packet_rx.ip4.proto == fpa_ip4.IP4_PROTO_UDP:
+    if packet_rx.ip4.proto == fpp_ip4.IP4_PROTO_UDP:
         self._phrx_udp(packet_rx)
         return
 
-    if packet_rx.ip4.proto == fpa_ip4.IP4_PROTO_TCP:
+    if packet_rx.ip4.proto == fpp_ip4.IP4_PROTO_TCP:
         self._phrx_tcp(packet_rx)
         return
