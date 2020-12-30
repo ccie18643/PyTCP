@@ -58,7 +58,9 @@ def _defragment_ip4_packet(self, packet_rx):
         return packet_rx
 
     # Cleanup expired flows
-    self.ip4_fragments = {_: self.ip4_fragments[_] for _ in self.ip4_fragments if self.ip4_fragments[_]["timestamp"] - time() < config.ip4_frag_flow_timeout}
+    self.ip4_frag_flows = {
+        _: self.ip4_frag_flows[_] for _ in self.ip4_frag_flows if self.ip4_frag_flows[_]["timestamp"] - time() < config.ip4_frag_flow_timeout
+    }
 
     if __debug__:
         self._logger.info(
@@ -69,33 +71,33 @@ def _defragment_ip4_packet(self, packet_rx):
     flow_id = (packet_rx.ip4.src, packet_rx.ip4.dst, packet_rx.ip4.id)
 
     # Update flow db
-    if self.ip4_fragments.get(flow_id, None):
-        self.ip4_fragments[flow_id]["data"][packet_rx.ip4.offset] = packet_rx.ip4.data_copy
+    if self.ip4_frag_flows.get(flow_id, None):
+        self.ip4_frag_flows[flow_id]["data"][packet_rx.ip4.offset] = packet_rx.ip4.data_copy
     else:
-        self.ip4_fragments[flow_id] = {
+        self.ip4_frag_flows[flow_id] = {
             "header": packet_rx.ip4.header_copy,
             "timestamp": time(),
             "last": False,
             "data": {packet_rx.ip4.offset: packet_rx.ip4.data_copy},
         }
     if not packet_rx.ip4.flag_mf:
-        self.ip4_fragments[flow_id]["last"] = True
+        self.ip4_frag_flows[flow_id]["last"] = True
 
     # Test if we received all fragments
-    if not self.ip4_fragments[flow_id]["last"]:
+    if not self.ip4_frag_flows[flow_id]["last"]:
         return None
     data_len = 0
-    for offset in sorted(self.ip4_fragments[flow_id]["data"]):
+    for offset in sorted(self.ip4_frag_flows[flow_id]["data"]):
         if offset > data_len:
             return None
-        data_len = offset + len(self.ip4_fragments[flow_id]["data"][offset])
+        data_len = offset + len(self.ip4_frag_flows[flow_id]["data"][offset])
 
     # Defragment packet
-    header = bytearray(self.ip4_fragments[flow_id]["header"])
+    header = bytearray(self.ip4_frag_flows[flow_id]["header"])
     data = bytearray(data_len)
-    for offset in sorted(self.ip4_fragments[flow_id]["data"]):
-        struct.pack_into(f"{len(self.ip4_fragments[flow_id]['data'][offset])}s", data, offset, self.ip4_fragments[flow_id]["data"][offset])
-    del self.ip4_fragments[flow_id]
+    for offset in sorted(self.ip4_frag_flows[flow_id]["data"]):
+        struct.pack_into(f"{len(self.ip4_frag_flows[flow_id]['data'][offset])}s", data, offset, self.ip4_frag_flows[flow_id]["data"][offset])
+    del self.ip4_frag_flows[flow_id]
     header[0] = 0x45
     struct.pack_into("!H", header, 2, fpp_ip4.IP4_HEADER_LEN + len(data))
     header[6] = header[7] = header[10] = header[11] = 0

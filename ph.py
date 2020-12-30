@@ -122,7 +122,7 @@ class PacketHandler:
         self.ip4_packet_id = 0
 
         # Used to defragment IPv4 packets
-        self.ip4_fragments = {}
+        self.ip4_frag_flows = {}
 
         # Start packed handler so we can receive packets from network
         threading.Thread(target=self.__thread_packet_handler).start()
