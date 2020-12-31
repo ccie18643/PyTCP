@@ -89,10 +89,7 @@ class Ip4Packet:
         ecn=0,
         id=0,
         flag_df=False,
-        flag_mf=False,
-        offset=0,
         options=None,
-        tracker=None,
     ):
         """ Class constructor """
 
@@ -106,8 +103,8 @@ class Ip4Packet:
         self.ecn = ecn
         self.id = id
         self.flag_df = flag_df
-        self.flag_mf = flag_mf
-        self.offset = offset
+        self.flag_mf = False
+        self.offset = 0
         self.ttl = ttl
         self.src = IPv4Address(src)
         self.dst = IPv4Address(dst)
@@ -204,11 +201,9 @@ class Ip4Frag:
         dscp=0,
         ecn=0,
         id=0,
-        flag_df=False,
         flag_mf=False,
         offset=0,
         options=None,
-        tracker=None,
     ):
         """ Class constructor """
 
@@ -218,7 +213,7 @@ class Ip4Frag:
         self.dscp = dscp
         self.ecn = ecn
         self.id = id
-        self.flag_df = flag_df
+        self.flag_df = False
         self.flag_mf = flag_mf
         self.offset = offset
         self.ttl = ttl

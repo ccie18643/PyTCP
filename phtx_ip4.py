@@ -138,7 +138,7 @@ def _phtx_ip4(self, child_packet, ip4_dst, ip4_src, ip4_ttl=config.ip4_default_t
         return
 
     # Assemble IPv4 packet
-    ip4_packet_tx = fpa_ip4.Ip4Packet(src=ip4_src, dst=ip4_dst, child_packet=child_packet)
+    ip4_packet_tx = fpa_ip4.Ip4Packet(src=ip4_src, dst=ip4_dst, ttl=ip4_ttl, child_packet=child_packet)
 
     # Send packet out if it's size doesn't exceed mtu
     if len(ip4_packet_tx) <= config.mtu:
@@ -160,9 +160,10 @@ def _phtx_ip4(self, child_packet, ip4_dst, ip4_src, ip4_ttl=config.ip4_default_t
             ip4_frag_tx = fpa_ip4.Ip4Frag(
                 src=ip4_src,
                 dst=ip4_dst,
+                ttl=ip4_ttl,
                 data=data_frag,
                 offset=offset,
-                flag_mf=False if data_frag is data_frags[-1] else True,
+                flag_mf=data_frag is not data_frags[-1],
                 id=self.ip4_id,
                 proto=ip4_packet_tx.proto,
             )
@@ -171,4 +172,3 @@ def _phtx_ip4(self, child_packet, ip4_dst, ip4_src, ip4_ttl=config.ip4_default_t
             offset += len(data_frag)
             self._phtx_ether(child_packet=ip4_frag_tx)
         return
-

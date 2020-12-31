@@ -341,8 +341,7 @@ class Icmp6Packet:
 
     def __init__(
         self,
-        parent_packet=None,
-        type=None,
+        type,
         code=0,
         un_data=b"",
         ec_id=None,
@@ -460,25 +459,25 @@ class Icmp6Packet:
         if self.type == ICMP6_UNREACHABLE:
             return ICMP6_UNREACHABLE_LEN + len(self.un_data)
 
-        elif self.type == ICMP6_ECHO_REQUEST:
+        if self.type == ICMP6_ECHO_REQUEST:
             return ICMP6_ECHO_REQUEST_LEN + len(self.ec_data)
 
-        elif self.type == ICMP6_ECHO_REPLY:
+        if self.type == ICMP6_ECHO_REPLY:
             return ICMP6_ECHO_REPLY_LEN + len(self.ec_data)
 
-        elif self.type == ICMP6_ROUTER_SOLICITATION:
+        if self.type == ICMP6_ROUTER_SOLICITATION:
             return ICMP6_ROUTER_SOLICITATION_LEN + sum([len(_) for _ in self.nd_options])
 
-        elif self.type == ICMP6_ROUTER_ADVERTISEMENT:
+        if self.type == ICMP6_ROUTER_ADVERTISEMENT:
             return ICMP6_ROUTER_ADVERTISEMENT_LEN + sum([len(_) for _ in self.nd_options])
 
-        elif self.type == ICMP6_NEIGHBOR_SOLICITATION:
+        if self.type == ICMP6_NEIGHBOR_SOLICITATION:
             return ICMP6_NEIGHBOR_SOLICITATION_LEN + sum([len(_) for _ in self.nd_options])
 
-        elif self.type == ICMP6_NEIGHBOR_ADVERTISEMENT:
+        if self.type == ICMP6_NEIGHBOR_ADVERTISEMENT:
             return ICMP6_NEIGHBOR_ADVERTISEMENT_LEN + sum([len(_) for _ in self.nd_options])
 
-        elif self.type == ICMP6_MLD2_REPORT:
+        if self.type == ICMP6_MLD2_REPORT:
             return ICMP6_MLD2_REPORT_LEN + sum([len(_) for _ in self.mlr2_multicast_address_record])
 
     def assemble_packet(self, frame, hptr, pshdr_sum):
@@ -505,7 +504,7 @@ class Icmp6Packet:
                 self.code,
                 0,
                 self.ra_hop,
-                (self.ra_flag_m << 7) | (self.ra_flag_o << 6) | self.ra_reserved,
+                (self.ra_flag_m << 7) | (self.ra_flag_o << 6),
                 self.ra_router_lifetime,
                 self.ra_reachable_time,
                 self.ra_retrans_timer,
@@ -670,7 +669,7 @@ class Icmp6NdOptPI:
         self.flag_a = flag_a
         self.flag_r = flag_r
         self.valid_lifetime = valid_lifetime
-        self.valid_preferred = preferred_lifetime
+        self.preferred_lifetime = preferred_lifetime
         self.prefix = IPv6Network(prefix)
 
     @property

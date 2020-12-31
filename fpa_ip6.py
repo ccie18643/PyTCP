@@ -94,7 +94,6 @@ class Ip6Packet:
         dscp=0,
         ecn=0,
         flow=0,
-        tracker=None,
     ):
         """ Class constructor """
 

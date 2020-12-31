@@ -362,7 +362,8 @@ class TcpPacket:
         if self.__mss is self.__not_cached:
             for option in self.options:
                 if option.kind == TCP_OPT_MSS:
-                    self.__mss == option.mss
+                    self.__mss = option.mss
+                    break
             else:
                 self.__mss = 536
         return self.__mss
@@ -375,6 +376,7 @@ class TcpPacket:
             for option in self.options:
                 if option.kind == TCP_OPT_WSCALE:
                     self.__wscale = 1 << option.wscale
+                    break
             else:
                 self.__wscale = None
         return self.__wscale
@@ -387,6 +389,7 @@ class TcpPacket:
             for option in self.options:
                 if option.kind == TCP_OPT_SACKPERM:
                     self.__sackperm = True
+                    break
             else:
                 self.__sackperm = None
         return self.__sackperm
@@ -399,7 +402,9 @@ class TcpPacket:
             for option in self.options:
                 if option.kind == TCP_OPT_TIMESTAMP:
                     self.__timestamp = (option.tsval, option.tsecr)
-            self.__timestamp = None
+                    break
+            else:
+                self.__timestamp = None
         return self.__timestamp
 
     def _packet_integrity_check(self, pshdr_sum):

@@ -90,7 +90,6 @@ class TcpPacket:
         urp=0,
         options=None,
         data=b"",
-        tracker=None,
         echo_tracker=None,
     ):
         """ Class constructor """

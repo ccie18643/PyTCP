@@ -42,6 +42,8 @@
 
 
 import fpp_icmp6
+import fpa_icmp6
+
 from ipv6_address import IPv6Address
 
 
@@ -88,7 +90,7 @@ def _phrx_icmp6(self, packet_rx):
             icmp6_na_flag_s=not ip6_nd_dad,  # no S flag when responding to DAD request
             icmp6_na_flag_o=ip6_nd_dad,  # O flag when respondidng to DAD request (this is not necessary but Linux uses it)
             icmp6_na_target_address=packet_rx.icmp6.ns_target_address,
-            icmp6_nd_options=[fpp_icmp6.Icmp6NdOptTLLA(self.mac_unicast)],
+            icmp6_nd_options=[fpa_icmp6.Icmp6NdOptTLLA(self.mac_unicast)],
             echo_tracker=packet_rx.tracker,
         )
         return

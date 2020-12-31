@@ -204,16 +204,16 @@ class ArpPacket:
         if not config.packet_sanity_check:
             return False
 
-        if not self.hrtype == 1:
+        if self.hrtype != 1:
             return "ARP sanity - 'arp_hrtype' must be 1"
 
-        if not self.prtype == 0x0800:
+        if self.prtype != 0x0800:
             return "ARP sanity - 'arp_prtype' must be 0x0800"
 
-        if not self.hrlen == 6:
+        if self.hrlen != 6:
             return "ARP sanity - 'arp_hrlen' must be 6"
 
-        if not self.prlen == 4:
+        if self.prlen != 4:
             return "ARP sanity - 'arp_prlen' must be 4"
 
         if self.oper not in {1, 2}:

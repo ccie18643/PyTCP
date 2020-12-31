@@ -216,7 +216,7 @@ class Ip6Packet:
         """ Return copy of packet data """
 
         if self.__data_copy is self.__not_cached:
-            self.__data_copy = self._frame[self._hptr + self.hlen : self._hptr + self.plen]
+            self.__data_copy = self._frame[self._hptr + IP6_HEADER_LEN : self._hptr + self.plen]
         return self.__data_copy
 
     @property
@@ -256,7 +256,7 @@ class Ip6Packet:
         if not config.packet_sanity_check:
             return False
 
-        if not self.ver == 6:
+        if self.ver != 6:
             return "IPv6 sanity - 'ver' must be 6"
 
         if self.hop == 0:

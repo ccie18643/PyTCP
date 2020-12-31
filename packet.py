@@ -48,7 +48,7 @@ class PacketRx:
 
     def __init__(self, frame):
         """ Class constructor """
-
+        
         self.frame = frame
         self.hptr = 0
         self.tracker = Tracker("RX")

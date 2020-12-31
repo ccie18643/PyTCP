@@ -359,7 +359,7 @@ class Ip4Packet:
         if not config.packet_sanity_check:
             return False
 
-        if not self.ver == 4:
+        if self.ver != 4:
             return "IP sanityi - 'ver' must be 4"
 
         if self.ver == 0:

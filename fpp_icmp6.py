@@ -806,9 +806,8 @@ class Icmp6Packet:
                 return "ICMPv6 sanity - 'hop' must be 255 (RFC 4861)"
             if not (ip6_src.is_unicast or ip6_src.is_unspecified):
                 return "ICMPv6 sanity - 'src' must be unicast or unspecified (RFC 4861)"
-            if not (ip6_dst == self.ns_target_address or ip6_dst == self.ns_target_address.solicited_node_multicast):
-                if __debug__:
-                    self._logger.debug(f"{self.tracker} - ICMPv6 sanity - 'dst' must be 'ns_target_address' or it's solicited-node multicast (RFC 4861)")
+            if ip6_dst not in {self.ns_target_address, self.ns_target_address.solicited_node_multicast}:
+                return "ICMPv6 sanity - 'dst' must be 'ns_target_address' or it's solicited-node multicast (RFC 4861)"
             if not self.ns_target_address.is_unicast:
                 return "ICMPv6 sanity - 'ns_target_address' must be unicast (RFC 4861)"
             if ip6_src.is_unspecified and self.nd_opt_slla is not None:

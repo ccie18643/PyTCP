@@ -149,9 +149,14 @@ disable=print-statement,
         too-few-public-methods,
         too-many-return-statements,
         too-many-branches,
+        too-many-public-methods,
         too-many-locals,
         too-many-statements,
-        duplicate-code
+        duplicate-code,
+        redefined-builtin,
+        invalid-name,
+        inconsistent-return-statements,
+        protected-access
 
 # Enable the message, report, category or checker with the given id(s). You can
 # either give multiple identifier separated by comma (,) or put this option

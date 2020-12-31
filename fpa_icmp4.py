@@ -161,10 +161,10 @@ class Icmp4Packet:
         if self.type == ICMP4_ECHO_REPLY:
             return ICMP4_ECHO_REPLY_LEN + len(self.ec_data)
 
-        elif self.type == ICMP4_UNREACHABLE and self.code == ICMP4_UNREACHABLE__PORT:
+        if self.type == ICMP4_UNREACHABLE and self.code == ICMP4_UNREACHABLE__PORT:
             return ICMP4_UNREACHABLE_LEN + len(self.un_data)
 
-        elif self.type == ICMP4_ECHO_REQUEST:
+        if self.type == ICMP4_ECHO_REQUEST:
             return ICMP4_ECHO_REQUEST_LEN + len(self.ec_data)
 
     def assemble_packet(self, frame, hptr, _):
