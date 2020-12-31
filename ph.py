@@ -119,7 +119,7 @@ class PacketHandler:
         self.event_icmp6_ra = threading.Semaphore(0)
 
         # Used to keep IPv4 packet ID last value
-        self.ip4_packet_id = 0
+        self.ip4_id = 0
 
         # Used to defragment IPv4 packets
         self.ip4_frag_flows = {}

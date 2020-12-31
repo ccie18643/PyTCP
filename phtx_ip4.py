@@ -139,6 +139,34 @@ def _phtx_ip4(self, child_packet, ip4_dst, ip4_src, ip4_ttl=config.ip4_default_t
 
     # Send packet out
     ip4_packet_tx = fpa_ip4.Ip4Packet(src=ip4_src, dst=ip4_dst, child_packet=child_packet)
+
+    if len(ip4_packet_tx) > config.mtu:
+        if __debug__:
+            self._logger.info(f"{ip4_packet_tx.tracker} - Fragmentation needed")
+            data = bytearray(ip4_packet_tx.dlen)
+            ip4_packet_tx._child_packet.assemble_packet(data, 0, ip4_packet_tx.pshdr_sum)
+
+            data_mtu = config.mtu - ip4_packet_tx.hlen
+            data_frags = [data[_ : data_mtu + _] for _ in range(0, len(data), data_mtu)]
+
+            offset = 0
+            self.ip4_id += 1
+            for data_frag in data_frags:
+                ip4_frag_tx = fpa_ip4.Ip4Frag(
+                    src=ip4_src,
+                    dst=ip4_dst,
+                    data=data_frag,
+                    offset=offset,
+                    flag_mf=False if data_frag is data_frags[-1] else True,
+                    id=self.ip4_id,
+                    proto=ip4_packet_tx.proto,
+                )
+                if __debug__:
+                    self._logger.debug(f"{ip4_frag_tx.tracker} - {ip4_frag_tx}")
+                offset += len(data_frag)
+                self._phtx_ether(child_packet=ip4_frag_tx)
+        return
+
     if __debug__:
         self._logger.debug(f"{ip4_packet_tx.tracker} - {ip4_packet_tx}")
     self._phtx_ether(child_packet=ip4_packet_tx)

@@ -40,12 +40,12 @@
 # fpa_ip4.py - Fast Packet Assembler support class for IPv4 protocol
 #
 
-
 import struct
 
 import config
 from ip_helper import inet_cksum
 from ipv4_address import IPv4Address
+from tracker import Tracker
 
 # IPv4 protocol header
 
@@ -87,10 +87,10 @@ class Ip4Packet:
         ttl=config.ip4_default_ttl,
         dscp=0,
         ecn=0,
-        frag_id=0,
+        id=0,
         flag_df=False,
         flag_mf=False,
-        frag_offset=0,
+        offset=0,
         options=None,
         tracker=None,
     ):
@@ -104,10 +104,10 @@ class Ip4Packet:
         self.ver = 4
         self.dscp = dscp
         self.ecn = ecn
-        self.frag_id = frag_id
+        self.id = id
         self.flag_df = flag_df
         self.flag_mf = flag_mf
-        self.frag_offset = frag_offset
+        self.offset = offset
         self.ttl = ttl
         self.src = IPv4Address(src)
         self.dst = IPv4Address(dst)
@@ -130,8 +130,8 @@ class Ip4Packet:
         """ Packet log string """
 
         return (
-            f"IPv4 {self.src} > {self.dst}, proto {self.proto} ({IP4_PROTO_TABLE.get(self.proto, '???')}), id {self.frag_id}"
-            + f"{', DF' if self.flag_df else ''}{', MF' if self.flag_mf else ''}, offset {self.frag_offset}, plen {self.plen}"
+            f"IPv4 {self.src} > {self.dst}, proto {self.proto} ({IP4_PROTO_TABLE.get(self.proto, '???')}), id {self.id}"
+            + f"{', DF' if self.flag_df else ''}{', MF' if self.flag_mf else ''}, offset {self.offset}, plen {self.plen}"
             + f", ttl {self.ttl}"
         )
 
@@ -139,6 +139,112 @@ class Ip4Packet:
         """ Length of the packet """
 
         return IP4_HEADER_LEN + sum([len(_) for _ in self.options]) + len(self._child_packet)
+
+    @property
+    def raw_options(self):
+        """ Packet options in raw format """
+
+        raw_options = b""
+
+        for option in self.options:
+            raw_options += option.raw_option
+
+        return raw_options
+
+    @property
+    def dlen(self):
+        """ Calculate data length """
+
+        return self.plen - self.hlen
+
+    @property
+    def pshdr_sum(self):
+        """ Create IPv4 pseudo header used by TCP and UDP to compute their checksums """
+
+        pseudo_header = struct.pack("! 4s 4s BBH", self.src.packed, self.dst.packed, 0, self.proto, self.plen - self.hlen)
+        return sum(struct.unpack("! 3L", pseudo_header))
+
+    def assemble_packet(self, frame, hptr):
+        """ Assemble packet into the raw form """
+
+        struct.pack_into(
+            f"! BBH HH BBH 4s 4s {len(self.raw_options)}s",
+            frame,
+            hptr,
+            self.ver << 4 | self.hlen >> 2,
+            self.dscp << 2 | self.ecn,
+            self.plen,
+            self.id,
+            self.flag_df << 14 | self.flag_mf << 13 | self.offset >> 3,
+            self.ttl,
+            self.proto,
+            0,
+            self.src.packed,
+            self.dst.packed,
+            self.raw_options,
+        )
+
+        struct.pack_into("! H", frame, hptr + 10, inet_cksum(frame, hptr, self.hlen))
+
+        self._child_packet.assemble_packet(frame, hptr + self.hlen, self.pshdr_sum)
+
+
+class Ip4Frag:
+    """ IPv4 packet fragment support class """
+
+    protocol = "IPv4"
+
+    def __init__(
+        self,
+        data,
+        proto,
+        src,
+        dst,
+        ttl=config.ip4_default_ttl,
+        dscp=0,
+        ecn=0,
+        id=0,
+        flag_df=False,
+        flag_mf=False,
+        offset=0,
+        options=None,
+        tracker=None,
+    ):
+        """ Class constructor """
+
+        self.tracker = Tracker("TX")
+
+        self.ver = 4
+        self.dscp = dscp
+        self.ecn = ecn
+        self.id = id
+        self.flag_df = flag_df
+        self.flag_mf = flag_mf
+        self.offset = offset
+        self.ttl = ttl
+        self.src = IPv4Address(src)
+        self.dst = IPv4Address(dst)
+
+        self.options = [] if options is None else options
+        self.data = data
+        self.proto = proto
+
+        self.hlen = IP4_HEADER_LEN + len(self.raw_options)
+        self.plen = len(self)
+
+    def __str__(self):
+        """ Packet log string """
+
+        return (
+            f"IPv4 frag {self.src} > {self.dst}, proto {self.proto} ({IP4_PROTO_TABLE.get(self.proto, '???')}), id {self.id}"
+            + f"{', DF' if self.flag_df else ''}{', MF' if self.flag_mf else ''}, offset {self.offset}, plen {self.plen}"
+            + f", ttl {self.ttl}"
+        )
+
+    def __len__(self):
+        """ Length of the packet """
+
+        return IP4_HEADER_LEN + sum([len(_) for _ in self.options]) + len(self.data)
 
     @property
     def raw_options(self):
@@ -162,25 +268,24 @@ class Ip4Packet:
         """ Assemble packet into the raw form """
 
         struct.pack_into(
-            f"! BBH HH BBH 4s 4s {len(self.raw_options)}s",
+            f"! BBH HH BBH 4s 4s {len(self.raw_options)}s {len(self.data)}s",
             frame,
             hptr,
             self.ver << 4 | self.hlen >> 2,
             self.dscp << 2 | self.ecn,
             self.plen,
-            self.frag_id,
-            self.flag_df << 14 | self.flag_mf << 13 | self.frag_offset >> 3,
+            self.id,
+            self.flag_df << 14 | self.flag_mf << 13 | self.offset >> 3,
             self.ttl,
             self.proto,
             0,
             self.src.packed,
             self.dst.packed,
             self.raw_options,
+            self.data,
         )
 
         struct.pack_into("! H", frame, hptr + 10, inet_cksum(frame, hptr, self.hlen))
-
-        self._child_packet.assemble_packet(frame, hptr + self.hlen, self.pshdr_sum)
 
 
 #

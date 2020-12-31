@@ -67,7 +67,7 @@ class TxRing:
         if __debug__:
             self._logger.debug("Started TX ring")
 
-        self.frame = [bytearray(_) for _ in range(1515)]
+        self.frame = bytearray(config.mtu + 14)
 
     def __thread_transmit(self):
         """ Dequeue packet from TX ring and send it out """
@@ -79,11 +79,10 @@ class TxRing:
                 if __debug__:
                     self._logger.error(f"{packet_tx.tracker} - Unable to send packet, packet len ({packet_tx_len}) > mtu ({config.mtu + 14})")
                 continue
-            frame = self.frame[len(packet_tx)]
-            packet_tx.assemble_packet(frame, 0)
+            packet_tx.assemble_packet(self.frame, 0)
 
             try:
-                os.write(self.tap, frame)
+                os.write(self.tap, memoryview(self.frame)[:packet_tx_len])
             except OSError:
                 self._logger.error(f"<magenta>[TX]</> {packet_tx.tracker}<yellow>{packet_tx.tracker.latency}</> - Unable to send packet")
                 continue
