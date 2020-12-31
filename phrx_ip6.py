@@ -45,7 +45,7 @@ import fpp_ip6
 
 
 def _phrx_ip6(self, packet_rx):
-    """ Handle inbound IP packets """
+    """ Handle inbound IPv6 packets """
 
     fpp_ip6.Ip6Packet(packet_rx)
 
@@ -61,6 +61,10 @@ def _phrx_ip6(self, packet_rx):
     if packet_rx.ip6.dst not in {*self.ip6_unicast, *self.ip6_multicast}:
         if __debug__:
             self._logger.debug(f"{packet_rx.tracker} - IP packet not destined for this stack, dropping...")
+        return
+
+    if packet_rx.ip6.next == fpp_ip6.IP6_NEXT_HEADER_EXT_FRAG:
+        self._phrx_ip6_ext_frag(packet_rx)
         return
 
     if packet_rx.ip6.next == fpp_ip6.IP6_NEXT_HEADER_ICMP6:

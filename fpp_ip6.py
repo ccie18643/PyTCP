@@ -75,9 +75,10 @@ IP6_HEADER_LEN = 40
 
 IP6_NEXT_HEADER_TCP = 6
 IP6_NEXT_HEADER_UDP = 17
+IP6_NEXT_HEADER_EXT_FRAG = 44
 IP6_NEXT_HEADER_ICMP6 = 58
 
-IP6_NEXT_HEADER_TABLE = {IP6_NEXT_HEADER_TCP: "TCP", IP6_NEXT_HEADER_UDP: "UDP", IP6_NEXT_HEADER_ICMP6: "ICMPv6"}
+IP6_NEXT_HEADER_TABLE = {IP6_NEXT_HEADER_TCP: "TCP", IP6_NEXT_HEADER_UDP: "UDP", IP6_NEXT_HEADER_EXT_FRAG: "IP6_FRAG", IP6_NEXT_HEADER_ICMP6: "ICMPv6"}
 
 
 class Ip6Packet:
@@ -103,7 +104,6 @@ class Ip6Packet:
         self.__src = self.__not_cached
         self.__dst = self.__not_cached
         self.__data = self.__not_cached
-        self.__plen = self.__not_cached
         self.__header_copy = self.__not_cached
         self.__data_copy = self.__not_cached
         self.__packet_copy = self.__not_cached
@@ -196,12 +196,16 @@ class Ip6Packet:
         return self.__dst
 
     @property
+    def hlen(self):
+        """ Calculate header lenght """
+
+        return IP6_HEADER_LEN
+
+    @property
     def plen(self):
         """ Calculate packet length """
 
-        if self.__plen is self.__not_cached:
-            self.__plen = len(self)
-        return self.__plen
+        return IP6_HEADER_LEN + self.dlen
 
     @property
     def header_copy(self):

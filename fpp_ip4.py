@@ -95,8 +95,6 @@ class Ip4Packet:
         self.__ecn = self.__not_cached
         self.__plen = self.__not_cached
         self.__id = self.__not_cached
-        self.__flag_df = self.__not_cached
-        self.__flag_mf = self.__not_cached
         self.__offset = self.__not_cached
         self.__cksum = self.__not_cached
         self.__src = self.__not_cached
@@ -182,17 +180,13 @@ class Ip4Packet:
     def flag_df(self):
         """ Read 'DF flag' field """
 
-        if self.__flag_df is self.__not_cached:
-            self.__flag_df = bool(struct.unpack_from("!H", self._frame, self._hptr + 6)[0] & 0b0100000000000000)
-        return self.__flag_df
+        return self._frame[self._hptr + 6] & 0b01000000
 
     @property
     def flag_mf(self):
         """ Read 'MF flag' field """
 
-        if self.__flag_mf is self.__not_cached:
-            self.__flag_mf = bool(struct.unpack_from("!H", self._frame, self._hptr + 6)[0] & 0b0010000000000000)
-        return self.__flag_mf
+        return self._frame[self._hptr + 6] & 0b00100000
 
     @property
     def offset(self):

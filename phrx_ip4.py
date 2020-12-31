@@ -105,12 +105,12 @@ def _defragment_ip4_packet(self, packet_rx):
     packet_rx = PacketRx(bytes(header) + data)
     fpp_ip4.Ip4Packet(packet_rx)
     if __debug__:
-        self._logger.info(f"{packet_rx.tracker} - Reasembled fragmented IP packet, dlen {len(data)} bytes")
+        self._logger.info(f"{packet_rx.tracker} - Reasembled fragmented IPv4 packet, dlen {len(data)} bytes")
     return packet_rx
 
 
 def _phrx_ip4(self, packet_rx):
-    """ Handle inbound IP packets """
+    """ Handle inbound IPv4 packets """
 
     fpp_ip4.Ip4Packet(packet_rx)
 

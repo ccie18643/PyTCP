@@ -71,6 +71,7 @@ class PacketHandler:
     from phrx_icmp6 import _phrx_icmp6
     from phrx_ip4 import _phrx_ip4
     from phrx_ip6 import _phrx_ip6
+    from phrx_ip6_ext_frag import _phrx_ip6_ext_frag
     from phrx_tcp import _phrx_tcp
     from phrx_udp import _phrx_udp
     from phtx_arp import _phtx_arp
@@ -121,8 +122,9 @@ class PacketHandler:
         # Used to keep IPv4 packet ID last value
         self.ip4_id = 0
 
-        # Used to defragment IPv4 packets
+        # Used to defragment IPv4 and IPv6 packets
         self.ip4_frag_flows = {}
+        self.ip6_frag_flows = {}
 
         # Start packed handler so we can receive packets from network
         threading.Thread(target=self.__thread_packet_handler).start()
