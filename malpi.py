@@ -42,7 +42,7 @@
 
 
 malpka = (
-    b"                                       \n"
+    b"\n                                       \n"
     + b"                                       \n"
     + b"                                       \n"
     + b"                                       \n"
@@ -66,7 +66,7 @@ malpka = (
 )
 
 malpa = (
-    b"______AAAA_______________AAAA______\n"
+    b"\n______AAAA_______________AAAA______\n"
     + b"      VVVV               VVVV       \n"
     + b"      (__)               (__)       \n"
     + b"       \\ \\               / /        \n"
