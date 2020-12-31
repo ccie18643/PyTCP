@@ -128,7 +128,8 @@ TCP_EPHEMERAL_PORT_RANGE = (32168, 60999)
 # UDP ephemeral port range to be used by outbound connections
 UDP_EPHEMERAL_PORT_RANGE = (32168, 60999)
 
-mtu = 1500  # TAP interface MTU
+# TAP interface MTU, describes how much payload Ethernet packet can carry
+mtu = 1500
 
 local_tcp_mss = 1460  # Maximum segment peer can send to us
 local_tcp_win = 65535  # Maximum amount of data peer can send to us without confirmation
