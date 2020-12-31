@@ -76,4 +76,4 @@ class ServiceUdpDaytime:
                 tracker=Tracker("TX", echo_tracker=packet_rx.tracker),
             )
             socket.send_to(packet_tx)
-            print(f"Service UDP Daytime: Sent daytime message to {packet_tx.remote_ip_address}, port {packet_tx.remote_port} -", packet_tx.data)
+            print(f"Service UDP Daytime: Sent daytime message to {packet_tx.remote_ip_address}, port {packet_tx.remote_port}, {len(packet_tx.data)} bytes")

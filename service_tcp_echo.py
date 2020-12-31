@@ -44,7 +44,7 @@
 import threading
 
 import tcp_socket
-from malpi import malpa, malpka
+from malpi import malpa, malpi, malpka
 
 
 class ServiceTcpEcho:
@@ -96,16 +96,14 @@ class ServiceTcpEcho:
                 socket.close()
                 continue
 
-            if "malpka" in str(message, "utf-8").strip().lower():
-                message = bytes(malpka, "utf-8")
+            if b"malpka" in message.strip().lower():
+                message = malpka
 
-            elif "malpa" in str(message, "utf-8").strip().lower():
-                message = bytes(malpa, "utf-8")
+            elif b"malpa" in message.strip().lower():
+                message = malpa
 
-            elif "malpi" in str(message, "utf-8").strip().lower():
-                message = b""
-                for malpka_line, malpa_line in zip(malpka.split("\n"), malpa.split("\n")):
-                    message += bytes(malpka_line + malpa_line + "\n", "utf-8")
+            elif b"malpi" in message.strip().lower():
+                message = malpi
 
             if socket.send(message):
                 print(f"Service TCP Echo: Echo'ed {len(message)} bytes back to {socket.remote_ip_address}, port {socket.remote_port}")

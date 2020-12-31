@@ -89,4 +89,4 @@ malpa = (
 )
 
 
-malpi = b"".join([_ + __ + b"\n" for _, __ in zip(malpka.split(b"\n"), malpa.split(b"\n"))]) 
+malpi = b"".join([_ + __ + b"\n" for _, __ in zip(malpka.split(b"\n"), malpa.split(b"\n"))])

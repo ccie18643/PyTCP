@@ -80,6 +80,7 @@ class IPv4Interface(ipaddress.IPv4Interface):
 class IPv4Network(ipaddress.IPv4Network):
     """ Extensions for ipaddress.IPv4Network class """
 
+
 class IPv4Address(ipaddress.IPv4Address):
     """ Extensions for ipaddress.IPv4Address class """
 

@@ -41,9 +41,8 @@
 #
 
 
-import fpp_icmp6
 import fpa_icmp6
-
+import fpp_icmp6
 from ipv6_address import IPv6Address
 
 
