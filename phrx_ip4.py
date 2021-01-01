@@ -63,7 +63,7 @@ def _defragment_ip4_packet(self, packet_rx):
     }
 
     if __debug__:
-        self._logger.info(
+        self._logger.debug(
             f"{packet_rx.tracker} - IPv4 packet fragment, offset {packet_rx.ip4.offset}, dlen {packet_rx.ip4.dlen}"
             + f"{'' if packet_rx.ip4.flag_mf else ', last'}"
         )
@@ -105,7 +105,7 @@ def _defragment_ip4_packet(self, packet_rx):
     packet_rx = PacketRx(bytes(header) + data)
     fpp_ip4.Ip4Packet(packet_rx)
     if __debug__:
-        self._logger.info(f"{packet_rx.tracker} - Reasembled fragmented IPv4 packet, dlen {len(data)} bytes")
+        self._logger.debug(f"{packet_rx.tracker} - Reasembled fragmented IPv4 packet, dlen {len(data)} bytes")
     return packet_rx
 
 

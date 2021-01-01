@@ -57,7 +57,7 @@ def _defragment_ip6_packet(self, packet_rx):
     }
 
     if __debug__:
-        self._logger.info(
+        self._logger.debug(
             f"{packet_rx.tracker} - IPv6 packet fragment, offset {packet_rx.ip6_ext_frag.offset}, dlen {packet_rx.ip6_ext_frag.dlen}"
             + f"{'' if packet_rx.ip6_ext_frag.flag_mf else ', last'}"
         )
@@ -96,7 +96,7 @@ def _defragment_ip6_packet(self, packet_rx):
     header[6] = packet_rx.ip6_ext_frag.next
     packet_rx = PacketRx(bytes(header) + data)
     if __debug__:
-        self._logger.info(f"{packet_rx.tracker} - Reasembled fragmented IPv6 packet, dlen {len(data)} bytes")
+        self._logger.debug(f"{packet_rx.tracker} - Defragmented IPv6 packet, dlen {len(data)} bytes")
     return packet_rx
 
 

@@ -77,19 +77,19 @@ class TxRing:
             packet_tx = self.tx_ring.pop(0)
             if (packet_tx_len := len(packet_tx)) > config.mtu + 14:
                 if __debug__:
-                    self._logger.error(f"{packet_tx.tracker} - Unable to send packet, packet len ({packet_tx_len}) > mtu ({config.mtu + 14})")
+                    self._logger.error(f"{packet_tx.tracker} - Unable to send frame, frame len ({packet_tx_len}) > mtu ({config.mtu + 14})")
                 continue
             packet_tx.assemble_packet(self.frame, 0)
 
             try:
                 os.write(self.tap, memoryview(self.frame)[:packet_tx_len])
             except OSError as error:
-                self._logger.error(f"{packet_tx.tracker} - Unable to send packet, OSError: {error}")
+                self._logger.error(f"{packet_tx.tracker} - Unable to send frame, OSError: {error}")
                 continue
 
             if __debug__:
                 self._logger.opt(ansi=True).debug(
-                    f"<magenta>[TX]</> {packet_tx.tracker}<yellow>{packet_tx.tracker.latency}</> - sent packet, {len(packet_tx)} bytes"
+                    f"<magenta>[TX]</> {packet_tx.tracker}<yellow>{packet_tx.tracker.latency}</> - sent frame, {len(packet_tx)} bytes"
                 )
 
     def enqueue(self, packet_tx):
@@ -97,5 +97,5 @@ class TxRing:
 
         self.tx_ring.append(packet_tx)
         if __debug__:
-            self._logger.opt(ansi=True).debug(f"{packet_tx.tracker}, priority: Normal, queue len: {len(self.tx_ring)}")
+            self._logger.opt(ansi=True).debug(f"{packet_tx.tracker}, queue len: {len(self.tx_ring)}")
         self.packet_enqueued.release()

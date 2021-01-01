@@ -126,5 +126,5 @@ def _phtx_ip6(self, child_packet, ip6_dst, ip6_src, ip6_hop=config.ip6_default_h
 
     # Fragment packet and send out
     if __debug__:
-        self._logger.info(f"{ip6_packet_tx.tracker} - IPv6 packet len {len(ip6_packet_tx)} bytes, fragmentation needed")
+        self._logger.debug(f"{ip6_packet_tx.tracker} - IPv6 packet len {len(ip6_packet_tx)} bytes, fragmentation needed")
     self._phtx_ip6_ext_frag(ip6_packet_tx)

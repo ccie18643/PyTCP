@@ -94,8 +94,8 @@ class Ip6ExtFrag:
         """ Packet log string """
 
         return (
-            f"IPv6_Frag id {self.id}{', MF' if self.flag_mf else ''}, offset {self.offset}"
-            + f"next {self.next} ({IP6_NEXT_HEADER_TABLE.get(self.next, '???')})"
+            f"IPv6_FRAG id {self.id}{', MF' if self.flag_mf else ''}, offset {self.offset}"
+            + f", next {self.next} ({IP6_NEXT_HEADER_TABLE.get(self.next, '???')})"
         )
 
     def __len__(self):
