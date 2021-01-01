@@ -80,6 +80,7 @@ class PacketHandler:
     from phtx_icmp6 import _phtx_icmp6
     from phtx_ip4 import _phtx_ip4
     from phtx_ip6 import _phtx_ip6
+    from phtx_ip6_ext_frag import _phtx_ip6_ext_frag
     from phtx_tcp import _phtx_tcp
     from phtx_udp import _phtx_udp
 
@@ -119,8 +120,9 @@ class PacketHandler:
         self.icmp6_ra_prefixes = []
         self.event_icmp6_ra = threading.Semaphore(0)
 
-        # Used to keep IPv4 packet ID last value
+        # Used to keep IPv4 and IPv6 packet ID last value
         self.ip4_id = 0
+        self.ip6_id = 0
 
         # Used to defragment IPv4 and IPv6 packets
         self.ip4_frag_flows = {}

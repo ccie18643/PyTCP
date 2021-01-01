@@ -197,7 +197,7 @@ class Ip6Packet:
 
     @property
     def hlen(self):
-        """ Calculate header lenght """
+        """ Calculate header length """
 
         return IP6_HEADER_LEN
 

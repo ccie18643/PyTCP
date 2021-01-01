@@ -37,65 +37,78 @@
 
 
 #
-# tx_ring.py - module contains class supporting TX operations
+# fpa_ip6_ext_frag.py - Fast Packet Assembler support class for IPv6 fragment extension header
 #
 
 
-import os
-import threading
+import struct
 
-import loguru
+from tracker import Tracker
 
-import config
+# IPv6 protocol fragmentation extension header
+
+# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+# | Next header   |   Reserved    |         Offset          |R|R|M|
+# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+# |                               Id                              |
+# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+
+IP6_EXT_FRAG_LEN = 8
+
+IP6_NEXT_HEADER_TCP = 6
+IP6_NEXT_HEADER_UDP = 17
+IP6_NEXT_HEADER_ICMP6 = 58
+
+IP6_NEXT_HEADER_TABLE = {IP6_NEXT_HEADER_TCP: "TCP", IP6_NEXT_HEADER_UDP: "UDP", IP6_NEXT_HEADER_ICMP6: "ICMPv6"}
 
 
-class TxRing:
-    """ Support for sending packets to the network """
+class Ip6Packet:
+    """ IPv6 fragment extension header support class """
 
-    def __init__(self, tap):
-        """ Initialize access to tap interface and the outbound queue """
+    protocol = "IPv6"
 
-        self.tap = tap
+    def __init__(
+        self,
+        next,
+        offset,
+        flag_mf,
+        id,
+        data,
+    ):
+        """ Class constructor """
 
-        self.tx_ring = []
-        if __debug__:
-            self._logger = loguru.logger.bind(object_name="tx_ring.")
+        self.tracker = Tracker("TX")
 
-        self.packet_enqueued = threading.Semaphore(0)
+        self.next = next
+        self.offset = offset
+        self.flag_mf = flag_mf
+        self.id = id
+        self.data = data
 
-        threading.Thread(target=self.__thread_transmit).start()
-        if __debug__:
-            self._logger.debug("Started TX ring")
+        self.dlen = len(data)
+        self.plen = len(self)
 
-        self.frame = bytearray(config.mtu + 14)
+    def __str__(self):
+        """ Packet log string """
 
-    def __thread_transmit(self):
-        """ Dequeue packet from TX ring and send it out """
+        return (
+            f"IPv6_Frag id {self.id}{', MF' if self.flag_mf else ''}, offset {self.offset}"
+            + f"next {self.next} ({IP6_NEXT_HEADER_TABLE.get(self.next, '???')})"
+        )
 
-        while True:
-            self.packet_enqueued.acquire()
-            packet_tx = self.tx_ring.pop(0)
-            if (packet_tx_len := len(packet_tx)) > config.mtu + 14:
-                if __debug__:
-                    self._logger.error(f"{packet_tx.tracker} - Unable to send packet, packet len ({packet_tx_len}) > mtu ({config.mtu + 14})")
-                continue
-            packet_tx.assemble_packet(self.frame, 0)
+    def __len__(self):
+        """ Length of the packet """
 
-            try:
-                os.write(self.tap, memoryview(self.frame)[:packet_tx_len])
-            except OSError as error:
-                self._logger.error(f"{packet_tx.tracker} - Unable to send packet, OSError: {error}")
-                continue
+        return IP6_EXT_FRAG_LEN + len(self.data)
 
-            if __debug__:
-                self._logger.opt(ansi=True).debug(
-                    f"<magenta>[TX]</> {packet_tx.tracker}<yellow>{packet_tx.tracker.latency}</> - sent packet, {len(packet_tx)} bytes"
-                )
+    def assemble_packet(self, frame, hptr):
+        """ Assemble packet into the raw form """
 
-    def enqueue(self, packet_tx):
-        """ Enqueue outbound Ethernet packet to TX ring """
-
-        self.tx_ring.append(packet_tx)
-        if __debug__:
-            self._logger.opt(ansi=True).debug(f"{packet_tx.tracker}, priority: Normal, queue len: {len(self.tx_ring)}")
-        self.packet_enqueued.release()
+        struct.pack_into(
+            f"! BBH L {self.dlen}s",
+            self.next,
+            0,
+            self.offset | self.flag_mf,
+            self.id,
+            self.data,
+        )

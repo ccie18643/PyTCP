@@ -37,65 +37,32 @@
 
 
 #
-# tx_ring.py - module contains class supporting TX operations
+# phtx_ip6_ext_frag.py - packet handler for outbound IPv6 fragment extension header
 #
 
 
-import os
-import threading
-
-import loguru
-
 import config
+import fpa_ip6_ext_frag
 
 
-class TxRing:
-    """ Support for sending packets to the network """
+def _phtx_ip6_ext_frag(self, ip6_packet_tx):
+    """ Handle outbound IPv6 fagment extension header """
 
-    def __init__(self, tap):
-        """ Initialize access to tap interface and the outbound queue """
+    # Check if IPv6 protocol support is enabled, if not then silently drop the packet
+    if not config.ip6_support:
+        return
 
-        self.tap = tap
-
-        self.tx_ring = []
+    data = bytearray(ip6_packet_tx.dlen)
+    ip6_packet_tx._child_packet.assemble_packet(data, 0, ip6_packet_tx.pshdr_sum)
+    data_mtu = (config.mtu - ip6_packet_tx.hlen) & 0b1111111111111000
+    data_frags = [data[_ : data_mtu + _] for _ in range(0, len(data), data_mtu)]
+    offset = 0
+    self.ip6_id += 1
+    for data_frag in data_frags:
+        ip6_ext_frag_tx = fpa_ip6_ext_frag.Ip6ExtFrag(
+            next=ip6_packet_tx.next, offset=offset, flag_mf=data_frag is not data_frags[-1], id=self.ip6_id, data=data_frag, ip6_packet_tx=ip6_packet_tx
+        )
         if __debug__:
-            self._logger = loguru.logger.bind(object_name="tx_ring.")
-
-        self.packet_enqueued = threading.Semaphore(0)
-
-        threading.Thread(target=self.__thread_transmit).start()
-        if __debug__:
-            self._logger.debug("Started TX ring")
-
-        self.frame = bytearray(config.mtu + 14)
-
-    def __thread_transmit(self):
-        """ Dequeue packet from TX ring and send it out """
-
-        while True:
-            self.packet_enqueued.acquire()
-            packet_tx = self.tx_ring.pop(0)
-            if (packet_tx_len := len(packet_tx)) > config.mtu + 14:
-                if __debug__:
-                    self._logger.error(f"{packet_tx.tracker} - Unable to send packet, packet len ({packet_tx_len}) > mtu ({config.mtu + 14})")
-                continue
-            packet_tx.assemble_packet(self.frame, 0)
-
-            try:
-                os.write(self.tap, memoryview(self.frame)[:packet_tx_len])
-            except OSError as error:
-                self._logger.error(f"{packet_tx.tracker} - Unable to send packet, OSError: {error}")
-                continue
-
-            if __debug__:
-                self._logger.opt(ansi=True).debug(
-                    f"<magenta>[TX]</> {packet_tx.tracker}<yellow>{packet_tx.tracker.latency}</> - sent packet, {len(packet_tx)} bytes"
-                )
-
-    def enqueue(self, packet_tx):
-        """ Enqueue outbound Ethernet packet to TX ring """
-
-        self.tx_ring.append(packet_tx)
-        if __debug__:
-            self._logger.opt(ansi=True).debug(f"{packet_tx.tracker}, priority: Normal, queue len: {len(self.tx_ring)}")
-        self.packet_enqueued.release()
+            self._logger.debug(f"{ip6_ext_frag_tx.tracker} - {ip6_ext_frag_tx}")
+        self._phtx_ip6(ip6_src=ip6_packet_tx.src, ip6_dst=ip6_packet_tx.dst, child_packet=ip6_ext_frag_tx)
+        offset += len(data_frag)

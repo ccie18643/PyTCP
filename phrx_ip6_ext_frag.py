@@ -44,7 +44,6 @@ import struct
 from time import time
 
 import config
-import fpp_ip6
 import fpp_ip6_ext_frag
 from packet import PacketRx
 
