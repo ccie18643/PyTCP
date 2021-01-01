@@ -75,7 +75,7 @@ class EtherPacket:
     def __init__(self, child_packet, src="00:00:00:00:00:00", dst="00:00:00:00:00:00"):
         """ Class constructor """
 
-        assert child_packet.protocol in {"IPv6", "IPv4", "ARP"}, f"Not supported protocol: {child_packet.protocol}"
+        assert child_packet.protocol in {"IP6", "IP4", "ARP"}, f"Not supported protocol: {child_packet.protocol}"
         self._child_packet = child_packet
 
         self.tracker = self._child_packet.tracker
@@ -83,10 +83,10 @@ class EtherPacket:
         self.dst = dst
         self.src = src
 
-        if self._child_packet.protocol == "IPv6":
+        if self._child_packet.protocol == "IP6":
             self.type = ETHER_TYPE_IP6
 
-        if self._child_packet.protocol == "IPv4":
+        if self._child_packet.protocol == "IP4":
             self.type = ETHER_TYPE_IP4
 
         if self._child_packet.protocol == "ARP":

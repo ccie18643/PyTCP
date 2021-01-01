@@ -337,7 +337,7 @@ ICMP6_MART_BLOCK_OLD_SOURCES = 6
 class Icmp6Packet:
     """ ICMPv6 packet support class """
 
-    protocol = "ICMPv6"
+    protocol = "ICMP6"
 
     def __init__(
         self,

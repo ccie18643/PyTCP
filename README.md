@@ -26,6 +26,7 @@ This program is a work in progress and it changes on daily basis due to new feat
  - IPv6 protocol - *automatic assignment of Solicited Node Multicast addresses*
  - IPv6 protocol - *automatic assignment of IPv6 multicast MAC addresses*
  - IPv6 protocol - *inbound packet defragmentation, robust mechanism able to handle out of order and overlaping data fragments*
+ - IPv6 protocol - *outbound packet fragmentation*
  - ICMPv6 protocol - *echo request, echo reply, port unreachable*
  - ICMPv6 protocol - *Neighbor Discovery, Duplicate Address Detection*
  - ICMPv6 protocol - *Neighbor Discovery cache mechanism*

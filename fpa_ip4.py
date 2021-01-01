@@ -77,7 +77,7 @@ IP4_PROTO_TABLE = {IP4_PROTO_ICMP4: "ICMPv4", IP4_PROTO_TCP: "TCP", IP4_PROTO_UD
 class Ip4Packet:
     """ IPv4 packet support class """
 
-    protocol = "IPv4"
+    protocol = "IP4"
 
     def __init__(
         self,
@@ -93,7 +93,7 @@ class Ip4Packet:
     ):
         """ Class constructor """
 
-        assert child_packet.protocol in {"ICMPv4", "UDP", "TCP"}, f"Not supported protocol: {child_packet.protocol}"
+        assert child_packet.protocol in {"ICMP4", "UDP", "TCP"}, f"Not supported protocol: {child_packet.protocol}"
         self._child_packet = child_packet
 
         self.tracker = self._child_packet.tracker
@@ -114,7 +114,7 @@ class Ip4Packet:
         self.hlen = IP4_HEADER_LEN + len(self.raw_options)
         self.plen = len(self)
 
-        if self._child_packet.protocol == "ICMPv4":
+        if self._child_packet.protocol == "ICMP4":
             self.proto = IP4_PROTO_ICMP4
 
         if self._child_packet.protocol == "UDP":
@@ -189,7 +189,7 @@ class Ip4Packet:
 class Ip4Frag:
     """ IPv4 packet fragment support class """
 
-    protocol = "IPv4"
+    protocol = "IP4"
 
     def __init__(
         self,

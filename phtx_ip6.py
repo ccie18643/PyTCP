@@ -114,10 +114,11 @@ def _phtx_ip6(self, child_packet, ip6_dst, ip6_src, ip6_hop=config.ip6_default_h
     if not ip6_dst:
         return
 
-    # Check if IP packet can be sent out without fragmentation, if so send it out
-    if fpa_ip6.IP6_HEADER_LEN + len(child_packet) <= config.mtu:
-        ip6_packet_tx = fpa_ip6.Ip6Packet(src=ip6_src, dst=ip6_dst, hop=ip6_hop, child_packet=child_packet)
+    # assemble IPv6 apcket
+    ip6_packet_tx = fpa_ip6.Ip6Packet(src=ip6_src, dst=ip6_dst, hop=ip6_hop, child_packet=child_packet)
 
+    # Check if IP packet can be sent out without fragmentation, if so send it out
+    if len(ip6_packet_tx) <= config.mtu:
         if __debug__:
             self._logger.debug(f"{ip6_packet_tx.tracker} - {ip6_packet_tx}")
         self._phtx_ether(child_packet=ip6_packet_tx)
@@ -125,5 +126,5 @@ def _phtx_ip6(self, child_packet, ip6_dst, ip6_src, ip6_hop=config.ip6_default_h
 
     # Fragment packet and send out
     if __debug__:
-        self._logger.info(f"{ip6_packet_tx.tracker} - Fragmentation needed")
+        self._logger.info(f"{ip6_packet_tx.tracker} - IPv6 packet len {len(ip6_packet_tx)} bytes, fragmentation needed")
     self._phtx_ip6_ext_frag(ip6_packet_tx)

@@ -62,10 +62,10 @@ IP6_NEXT_HEADER_ICMP6 = 58
 IP6_NEXT_HEADER_TABLE = {IP6_NEXT_HEADER_TCP: "TCP", IP6_NEXT_HEADER_UDP: "UDP", IP6_NEXT_HEADER_ICMP6: "ICMPv6"}
 
 
-class Ip6Packet:
+class Ip6ExtFrag:
     """ IPv6 fragment extension header support class """
 
-    protocol = "IPv6"
+    protocol = "IP6_EXT_FRAG"
 
     def __init__(
         self,
@@ -92,8 +92,8 @@ class Ip6Packet:
         """ Packet log string """
 
         return (
-            f"IPv6_Frag id {self.id}{', MF' if self.flag_mf else ''}, offset {self.offset}"
-            + f"next {self.next} ({IP6_NEXT_HEADER_TABLE.get(self.next, '???')})"
+            f"IPv6_FRAG id {self.id}{', MF' if self.flag_mf else ''}, offset {self.offset}"
+            + f", next {self.next} ({IP6_NEXT_HEADER_TABLE.get(self.next, '???')})"
         )
 
     def __len__(self):
@@ -101,11 +101,13 @@ class Ip6Packet:
 
         return IP6_EXT_FRAG_LEN + len(self.data)
 
-    def assemble_packet(self, frame, hptr):
+    def assemble_packet(self, frame, hptr, _):
         """ Assemble packet into the raw form """
 
         struct.pack_into(
             f"! BBH L {self.dlen}s",
+            frame,
+            hptr,
             self.next,
             0,
             self.offset | self.flag_mf,

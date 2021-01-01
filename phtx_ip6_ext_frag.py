@@ -42,6 +42,7 @@
 
 
 import config
+import fpa_ip6
 import fpa_ip6_ext_frag
 
 
@@ -54,13 +55,13 @@ def _phtx_ip6_ext_frag(self, ip6_packet_tx):
 
     data = bytearray(ip6_packet_tx.dlen)
     ip6_packet_tx._child_packet.assemble_packet(data, 0, ip6_packet_tx.pshdr_sum)
-    data_mtu = (config.mtu - ip6_packet_tx.hlen) & 0b1111111111111000
+    data_mtu = (config.mtu - fpa_ip6.IP6_HEADER_LEN - fpa_ip6_ext_frag.IP6_EXT_FRAG_LEN) & 0b1111111111111000
     data_frags = [data[_ : data_mtu + _] for _ in range(0, len(data), data_mtu)]
     offset = 0
     self.ip6_id += 1
     for data_frag in data_frags:
         ip6_ext_frag_tx = fpa_ip6_ext_frag.Ip6ExtFrag(
-            next=ip6_packet_tx.next, offset=offset, flag_mf=data_frag is not data_frags[-1], id=self.ip6_id, data=data_frag, ip6_packet_tx=ip6_packet_tx
+            next=ip6_packet_tx.next, offset=offset, flag_mf=data_frag is not data_frags[-1], id=self.ip6_id, data=data_frag
         )
         if __debug__:
             self._logger.debug(f"{ip6_ext_frag_tx.tracker} - {ip6_ext_frag_tx}")

@@ -75,15 +75,16 @@ IP6_HEADER_LEN = 40
 
 IP6_NEXT_HEADER_TCP = 6
 IP6_NEXT_HEADER_UDP = 17
+IP6_NEXT_HEADER_EXT_FRAG = 44
 IP6_NEXT_HEADER_ICMP6 = 58
 
-IP6_NEXT_HEADER_TABLE = {IP6_NEXT_HEADER_TCP: "TCP", IP6_NEXT_HEADER_UDP: "UDP", IP6_NEXT_HEADER_ICMP6: "ICMPv6"}
+IP6_NEXT_HEADER_TABLE = {IP6_NEXT_HEADER_TCP: "TCP", IP6_NEXT_HEADER_UDP: "UDP", IP6_NEXT_HEADER_ICMP6: "ICMPv6", IP6_NEXT_HEADER_EXT_FRAG: "IPv6_FRAG"}
 
 
 class Ip6Packet:
     """ IPv6 packet support class """
 
-    protocol = "IPv6"
+    protocol = "IP6"
 
     def __init__(
         self,
@@ -97,7 +98,7 @@ class Ip6Packet:
     ):
         """ Class constructor """
 
-        assert child_packet.protocol in {"ICMPv6", "UDP", "TCP"}, f"Not supported protocol: {child_packet.protocol}"
+        assert child_packet.protocol in {"ICMP6", "UDP", "TCP", "IP6_EXT_FRAG"}, f"Not supported protocol: {child_packet.protocol}"
         self._child_packet = child_packet
 
         self.tracker = self._child_packet.tracker
@@ -110,15 +111,18 @@ class Ip6Packet:
         self.src = IPv6Address(src)
         self.dst = IPv6Address(dst)
 
-        if self._child_packet.protocol == "ICMPv6":
+        if self._child_packet.protocol == "ICMP6":
             self.next = IP6_NEXT_HEADER_ICMP6
 
-        if self._child_packet.protocol == "UDP":
+        elif self._child_packet.protocol == "UDP":
             self.next = IP6_NEXT_HEADER_UDP
 
-        if self._child_packet.protocol == "TCP":
+        elif self._child_packet.protocol == "TCP":
             self.next = IP6_NEXT_HEADER_TCP
 
+        elif self._child_packet.protocol == "IP6_EXT_FRAG":
+            self.next = IP6_NEXT_HEADER_EXT_FRAG
+        
         self.dlen = len(child_packet)
 
     def __str__(self):

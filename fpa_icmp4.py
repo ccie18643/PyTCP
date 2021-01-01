@@ -107,7 +107,7 @@ ICMP4_ECHO_REQUEST_LEN = 8
 class Icmp4Packet:
     """ ICMPv4 packet support class """
 
-    protocol = "ICMPv4"
+    protocol = "ICMP4"
 
     def __init__(
         self,

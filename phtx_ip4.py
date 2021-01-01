@@ -149,7 +149,7 @@ def _phtx_ip4(self, child_packet, ip4_dst, ip4_src, ip4_ttl=config.ip4_default_t
 
     # Fragment packet and send out
     if __debug__:
-        self._logger.info(f"{ip4_packet_tx.tracker} - Fragmentation needed")
+        self._logger.info(f"{ip6_packet_tx.tracker} - IPv4 packet len {len(ip4_packet_tx)} bytes, fragmentation needed")
         data = bytearray(ip4_packet_tx.dlen)
         ip4_packet_tx._child_packet.assemble_packet(data, 0, ip4_packet_tx.pshdr_sum)
         data_mtu = (config.mtu - ip4_packet_tx.hlen) & 0b1111111111111000
