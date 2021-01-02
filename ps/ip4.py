@@ -37,42 +37,91 @@
 
 
 #
-# phrx/ether.py - packet handler for inbound Ethernet packets
+# ps/ip4.py - protocol support class for IPv4
 #
 
 
-import config
-import fpp.ether
-import ps.ether
+# IPv4 protocol header
+
+# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+# |Version|  IHL  |   DSCP    |ECN|          Packet length        |
+# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+# |         Identification        |Flags|      Fragment offset    |
+# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+# |  Time to live |    Protocol   |         Header checksum       |
+# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+# |                       Source address                          |
+# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+# |                    Destination address                        |
+# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+# ~                    Options                    ~    Padding    ~
+# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 
 
-def _phrx_ether(self, packet_rx):
-    """ Handle inbound Ethernet packets """
+HEADER_LEN = 20
 
-    fpp.ether.Parser(packet_rx)
+PROTO_ICMP4 = 1
+PROTO_TCP = 6
+PROTO_UDP = 17
 
-    if packet_rx.parse_failed:
-        if __debug__:
-            self._logger.critical(f"{packet_rx.tracker} - {packet_rx.parse_failed}")
-        return
 
-    if __debug__:
-        self._logger.debug(f"{packet_rx.tracker} - {packet_rx.ether}")
+PROTO_TABLE = {PROTO_ICMP4: "ICMPv4", PROTO_TCP: "TCP", PROTO_UDP: "UDP"}
 
-    # Check if received packet matches any of stack MAC addresses
-    if packet_rx.ether.dst not in {self.mac_unicast, *self.mac_multicast, self.mac_broadcast}:
-        if __debug__:
-            self._logger.opt(ansi=True).debug(f"{packet_rx.tracker} - Ethernet packet not destined for this stack, dropping...")
-        return
 
-    if packet_rx.ether.type == ps.ether.TYPE_ARP and config.ip4_support:
-        self._phrx_arp(packet_rx)
-        return
+class Base:
+    """ IPv4 packet base class """
 
-    if packet_rx.ether.type == ps.ether.TYPE_IP4 and config.ip4_support:
-        self._phrx_ip4(packet_rx)
-        return
+    def __str__(self):
+        """ Packet log string """
 
-    if packet_rx.ether.type == ps.ether.TYPE_IP6 and config.ip6_support:
-        self._phrx_ip6(packet_rx)
-        return
+        return (
+            f"IPv4 {self.src} > {self.dst}, proto {self.proto} ({PROTO_TABLE.get(self.proto, '???')}), id {self.id}"
+            + f"{', DF' if self.flag_df else ''}{', MF' if self.flag_mf else ''}, offset {self.offset}, plen {self.plen}"
+            + f", ttl {self.ttl}"
+        )
+
+
+#
+#   IPv4 options
+#
+
+
+# IPv4 option - End of Option Linst
+
+OPT_EOL = 0
+OPT_EOL_LEN = 1
+
+
+class OptEolBase:
+    """ IPv4 option - End of Option List """
+
+    def __str__(self):
+        return "eol"
+
+    def __len__(self):
+        return OPT_EOL_LEN
+
+
+# IPv4 option - No Operation (1)
+
+OPT_NOP = 1
+OPT_NOP_LEN = 1
+
+
+class OptNopBase:
+    """ IPv4 option - No Operation """
+
+    def __str__(self):
+        return "nop"
+
+    def __len__(self):
+        return OPT_NOP_LEN
+
+# IPv4 option not supported by this stack
+
+
+class OptUnkBase:
+    """ IPv4 option not supported by this stack """
+
+    def __str__(self):
+        return f"unk-{self.kind}-{self.len}"

@@ -44,34 +44,11 @@
 import struct
 
 import config
+import ps.arp
 from misc.ipv4_address import IPv4Address
 
-# ARP packet header - IPv4 stack version only
 
-# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-# |         Hardware type         |         Protocol type         |
-# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-# |  Hard length  |  Proto length |           Operation           |
-# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-# |                                                               >
-# +        Sender MAC address     +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-# >                               |       Sender IP address       >
-# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-# >                               |                               >
-# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+       Target MAC address      |
-# >                                                               |
-# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-# |                       Target IP address                       |
-# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-
-
-HEADER_LEN = 28
-
-OP_REQUEST = 1
-OP_REPLY = 2
-
-
-class Parser:
+class Parser(ps.arp.Base):
     """ ARP packet parser class """
 
     class __not_cached:
@@ -97,14 +74,6 @@ class Parser:
         self.__packet_copy = self.__not_cached
 
         packet_rx.parse_failed = self._packet_integrity_check() or self._packet_sanity_check()
-
-    def __str__(self):
-        """ Packet log string """
-
-        if self.oper == OP_REQUEST:
-            return f"ARP request {self.spa} / {self.sha} > {self.tpa} / {self.tha}"
-        if self.oper == OP_REPLY:
-            return f"ARP reply {self.spa} / {self.sha} > {self.tpa} / {self.tha}"
 
     def __len__(self):
         """ Number of bytes remaining in the frame """
@@ -184,7 +153,7 @@ class Parser:
         """ Read the whole packet """
 
         if self.__packet_copy is self.__not_cached:
-            self.__packet_copy = self._frame[self._hptr : self._hptr + HEADER_LEN]
+            self.__packet_copy = self._frame[self._hptr : self._hptr + ps.arp.HEADER_LEN]
         return self.__packet_copy
 
     def _packet_integrity_check(self):
@@ -193,7 +162,7 @@ class Parser:
         if not config.packet_integrity_check:
             return False
 
-        if len(self) < HEADER_LEN:
+        if len(self) < ps.arp.HEADER_LEN:
             return "ARP integrity - wrong packet length (I)"
 
         return False

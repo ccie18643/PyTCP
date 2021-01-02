@@ -44,44 +44,11 @@
 import struct
 
 import config
+import ps.ip6
 from misc.ipv6_address import IPv6Address
 
-# IPv6 protocol header
 
-# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-# |Version| Traffic Class |           Flow Label                  |
-# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-# |         Payload Length        |  Next Header  |   Hop Limit   |
-# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-# |                                                               >
-# +                                                               +
-# >                                                               >
-# +                         Source Address                        +
-# >                                                               >
-# +                                                               +
-# >                                                               |
-# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-# |                                                               >
-# +                                                               +
-# >                                                               >
-# +                      Destination Address                      +
-# >                                                               >
-# +                                                               +
-# >                                                               |
-# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-
-
-HEADER_LEN = 40
-
-NEXT_HEADER_TCP = 6
-NEXT_HEADER_UDP = 17
-NEXT_HEADER_EXT_FRAG = 44
-NEXT_HEADER_ICMP6 = 58
-
-NEXT_HEADER_TABLE = {NEXT_HEADER_TCP: "TCP", NEXT_HEADER_UDP: "UDP", NEXT_HEADER_ICMP6: "ICMPv6", NEXT_HEADER_EXT_FRAG: "IPv6_FRAG"}
-
-
-class Assembler:
+class Assembler(ps.ip6.Base):
     """ IPv6 packet assembler support class """
 
     protocol = "IP6"
@@ -112,31 +79,23 @@ class Assembler:
         self.dst = IPv6Address(dst)
 
         if self._child_packet.protocol == "ICMP6":
-            self.next = NEXT_HEADER_ICMP6
+            self.next = ps.ip6.NEXT_HEADER_ICMP6
 
         elif self._child_packet.protocol == "UDP":
-            self.next = NEXT_HEADER_UDP
+            self.next = ps.ip6.NEXT_HEADER_UDP
 
         elif self._child_packet.protocol == "TCP":
-            self.next = NEXT_HEADER_TCP
+            self.next = ps.ip6.NEXT_HEADER_TCP
 
         elif self._child_packet.protocol == "IP6_EXT_FRAG":
-            self.next = NEXT_HEADER_EXT_FRAG
+            self.next = ps.ip6.NEXT_HEADER_EXT_FRAG
 
         self.dlen = len(child_packet)
-
-    def __str__(self):
-        """ Packet log string """
-
-        return (
-            f"IPv6 {self.src} > {self.dst}, next {self.next} ({NEXT_HEADER_TABLE.get(self.next, '???')}), flow {self.flow}"
-            + f", dlen {self.dlen}, hop {self.hop}"
-        )
 
     def __len__(self):
         """ Length of the packet """
 
-        return HEADER_LEN + len(self._child_packet)
+        return ps.ip6.HEADER_LEN + len(self._child_packet)
 
     @property
     def pshdr_sum(self):
@@ -163,4 +122,4 @@ class Assembler:
             self.dst.packed,
         )
 
-        self._child_packet.assemble(frame, hptr + HEADER_LEN, self.pshdr_sum)
+        self._child_packet.assemble(frame, hptr + ps.ip6.HEADER_LEN, self.pshdr_sum)

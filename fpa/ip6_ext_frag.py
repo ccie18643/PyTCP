@@ -43,26 +43,11 @@
 
 import struct
 
+import ps.ip6_ext_frag
 from misc.tracker import Tracker
 
-# IPv6 protocol fragmentation extension header
 
-# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-# | Next header   |   Reserved    |         Offset          |R|R|M|
-# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-# |                               Id                              |
-# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-
-HEADER_LEN = 8
-
-NEXT_HEADER_TCP = 6
-NEXT_HEADER_UDP = 17
-NEXT_HEADER_ICMP6 = 58
-
-NEXT_HEADER_TABLE = {NEXT_HEADER_TCP: "TCP", NEXT_HEADER_UDP: "UDP", NEXT_HEADER_ICMP6: "ICMPv6"}
-
-
-class Assembler:
+class Assembler(ps.ip6_ext_frag.Base):
     """ IPv6 fragment extension header assembler support class """
 
     protocol = "IP6_EXT_FRAG"
@@ -88,17 +73,10 @@ class Assembler:
         self.dlen = len(data)
         self.plen = len(self)
 
-    def __str__(self):
-        """ Packet log string """
-
-        return (
-            f"IPv6_FRAG id {self.id}{', MF' if self.flag_mf else ''}, offset {self.offset}" + f", next {self.next} ({NEXT_HEADER_TABLE.get(self.next, '???')})"
-        )
-
     def __len__(self):
         """ Length of the packet """
 
-        return HEADER_LEN + len(self.data)
+        return ps.ip6_ext_frag.HEADER_LEN + len(self.data)
 
     def assemble(self, frame, hptr, _):
         """ Assemble packet into the raw form """

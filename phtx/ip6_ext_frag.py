@@ -42,8 +42,9 @@
 
 
 import config
-import fpa.ip6
 import fpa.ip6_ext_frag
+import ps.ip6
+import ps.ip6_ext_frag
 
 
 def _phtx_ip6_ext_frag(self, ip6_packet_tx):
@@ -55,7 +56,7 @@ def _phtx_ip6_ext_frag(self, ip6_packet_tx):
 
     data = bytearray(ip6_packet_tx.dlen)
     ip6_packet_tx._child_packet.assemble(data, 0, ip6_packet_tx.pshdr_sum)
-    data_mtu = (config.mtu - fpa.ip6.HEADER_LEN - fpa.ip6_ext_frag.HEADER_LEN) & 0b1111111111111000
+    data_mtu = (config.mtu - ps.ip6.HEADER_LEN - ps.ip6_ext_frag.HEADER_LEN) & 0b1111111111111000
     data_frags = [data[_ : data_mtu + _] for _ in range(0, len(data), data_mtu)]
     offset = 0
     self.ip6_id += 1

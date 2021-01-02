@@ -37,42 +37,38 @@
 
 
 #
-# phrx/ether.py - packet handler for inbound Ethernet packets
+# ps/ether.py - protocol support class for Ethernet
 #
 
 
-import config
-import fpp.ether
-import ps.ether
+# Ethernet packet header
+
+# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+# |                                                               >
+# +    Destination MAC Address    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+# >                               |                               >
+# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+      Source MAC Address       +
+# >                                                               |
+# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+# |           EtherType           |
+# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 
 
-def _phrx_ether(self, packet_rx):
-    """ Handle inbound Ethernet packets """
+HEADER_LEN = 14
 
-    fpp.ether.Parser(packet_rx)
+TYPE_MIN = 0x0600
+TYPE_ARP = 0x0806
+TYPE_IP4 = 0x0800
+TYPE_IP6 = 0x86DD
 
-    if packet_rx.parse_failed:
-        if __debug__:
-            self._logger.critical(f"{packet_rx.tracker} - {packet_rx.parse_failed}")
-        return
 
-    if __debug__:
-        self._logger.debug(f"{packet_rx.tracker} - {packet_rx.ether}")
+TYPE_TABLE = {TYPE_ARP: "ARP", TYPE_IP4: "IPv4", TYPE_IP6: "IPv6"}
 
-    # Check if received packet matches any of stack MAC addresses
-    if packet_rx.ether.dst not in {self.mac_unicast, *self.mac_multicast, self.mac_broadcast}:
-        if __debug__:
-            self._logger.opt(ansi=True).debug(f"{packet_rx.tracker} - Ethernet packet not destined for this stack, dropping...")
-        return
 
-    if packet_rx.ether.type == ps.ether.TYPE_ARP and config.ip4_support:
-        self._phrx_arp(packet_rx)
-        return
+class Base:
+    """ Ethernet packet base class """
 
-    if packet_rx.ether.type == ps.ether.TYPE_IP4 and config.ip4_support:
-        self._phrx_ip4(packet_rx)
-        return
+    def __str__(self):
+        """ Packet log string """
 
-    if packet_rx.ether.type == ps.ether.TYPE_IP6 and config.ip6_support:
-        self._phrx_ip6(packet_rx)
-        return
+        return f"ETHER {self.src} > {self.dst}, 0x{self.type:0>4x} ({TYPE_TABLE.get(self.type, '???')})"

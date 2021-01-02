@@ -43,31 +43,10 @@
 
 import struct
 
-# Ethernet packet header
-
-# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-# |                                                               >
-# +    Destination MAC Address    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-# >                               |                               >
-# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+      Source MAC Address       +
-# >                                                               |
-# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-# |           EtherType           |
-# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+import ps.ether
 
 
-HEADER_LEN = 14
-
-TYPE_MIN = 0x0600
-TYPE_ARP = 0x0806
-TYPE_IP4 = 0x0800
-TYPE_IP6 = 0x86DD
-
-
-TYPE_TABLE = {TYPE_ARP: "ARP", TYPE_IP4: "IPv4", TYPE_IP6: "IPv6"}
-
-
-class Assembler:
+class Assembler(ps.ether.Base):
     """ Ethernet packet assembler support class """
 
     protocol = "ETHER"
@@ -84,27 +63,22 @@ class Assembler:
         self.src = src
 
         if self._child_packet.protocol == "IP6":
-            self.type = TYPE_IP6
+            self.type = ps.ether.TYPE_IP6
 
         if self._child_packet.protocol == "IP4":
-            self.type = TYPE_IP4
+            self.type = ps.ether.TYPE_IP4
 
         if self._child_packet.protocol == "ARP":
-            self.type = TYPE_ARP
-
-    def __str__(self):
-        """ Packet log string """
-
-        return f"ETHER {self.src} > {self.dst}, 0x{self.type:0>4x} ({TYPE_TABLE.get(self.type, '???')})"
+            self.type = ps.ether.TYPE_ARP
 
     def __len__(self):
         """ Length of the packet """
 
-        return HEADER_LEN + len(self._child_packet)
+        return ps.ether.HEADER_LEN + len(self._child_packet)
 
     def assemble(self, frame, hptr):
         """ Assemble packet into the raw form """
 
         struct.pack_into("! 6s 6s H", frame, hptr, bytes.fromhex(self.dst.replace(":", "")), bytes.fromhex(self.src.replace(":", "")), self.type)
 
-        self._child_packet.assemble(frame, hptr + HEADER_LEN)
+        self._child_packet.assemble(frame, hptr + ps.ether.HEADER_LEN)

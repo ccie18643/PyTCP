@@ -48,10 +48,10 @@ from ipaddress import AddressValueError
 import loguru
 
 import config
-import fpa.arp
 import fpa.icmp6
-import ps.dhcp
 import misc.stack as stack
+import ps.arp
+import ps.dhcp
 from misc.arp_cache import ArpCache
 from misc.ipv4_address import IPv4Address, IPv4Interface
 from misc.ipv6_address import IPv6Address, IPv6Interface, IPv6Network
@@ -379,7 +379,7 @@ class PacketHandler:
         self._phtx_arp(
             ether_src=self.mac_unicast,
             ether_dst="ff:ff:ff:ff:ff:ff",
-            arp_oper=fpa.arp.OP_REQUEST,
+            arp_oper=ps.arp.OP_REQUEST,
             arp_sha=self.mac_unicast,
             arp_spa=IPv4Address("0.0.0.0"),
             arp_tha="00:00:00:00:00:00",
@@ -394,7 +394,7 @@ class PacketHandler:
         self._phtx_arp(
             ether_src=self.mac_unicast,
             ether_dst="ff:ff:ff:ff:ff:ff",
-            arp_oper=fpa.arp.OP_REQUEST,
+            arp_oper=ps.arp.OP_REQUEST,
             arp_sha=self.mac_unicast,
             arp_spa=ip4_unicast,
             arp_tha="00:00:00:00:00:00",
@@ -409,7 +409,7 @@ class PacketHandler:
         self._phtx_arp(
             ether_src=self.mac_unicast,
             ether_dst="ff:ff:ff:ff:ff:ff",
-            arp_oper=fpa.arp.OP_REPLY,
+            arp_oper=ps.arp.OP_REPLY,
             arp_sha=self.mac_unicast,
             arp_spa=ip4_unicast,
             arp_tha="00:00:00:00:00:00",

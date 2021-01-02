@@ -43,40 +43,17 @@
 
 import struct
 
+import ps.arp
 from misc.ipv4_address import IPv4Address
 from misc.tracker import Tracker
 
-# ARP packet header - IPv4 stack version only
 
-# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-# |         Hardware Type         |         Protocol Type         |
-# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-# |  Hard Length  |  Proto Length |           Operation           |
-# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-# |                                                               >
-# +        Sender Mac Address     +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-# >                               |       Sender IP Address       >
-# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-# >                               |                               >
-# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+       Target MAC Address      |
-# >                                                               |
-# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-# |                       Target IP Address                       |
-# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-
-
-HEADER_LEN = 28
-
-OP_REQUEST = 1
-OP_REPLY = 2
-
-
-class Assembler:
+class Assembler(ps.arp.Base):
     """ ARP packet assembler support class """
 
     protocol = "ARP"
 
-    def __init__(self, sha, spa, tpa, tha="00:00:00:00:00:00", oper=OP_REQUEST, echo_tracker=None):
+    def __init__(self, sha, spa, tpa, tha="00:00:00:00:00:00", oper=ps.arp.OP_REQUEST, echo_tracker=None):
         """ Class constructor """
 
         self.tracker = Tracker("TX", echo_tracker)
@@ -91,19 +68,10 @@ class Assembler:
         self.tha = tha
         self.tpa = IPv4Address(tpa)
 
-    def __str__(self):
-        """ Packet log string """
-
-        if self.oper == OP_REQUEST:
-            return f"ARP request {self.spa} / {self.sha} > {self.tpa} / {self.tha}"
-        if self.oper == OP_REPLY:
-            return f"ARP reply {self.spa} / {self.sha} > {self.tpa} / {self.tha}"
-        return f"ARP unknown operation {self.oper}"
-
     def __len__(self):
         """ Length of the packet """
 
-        return HEADER_LEN
+        return ps.arp.HEADER_LEN
 
     def assemble(self, frame, hptr):
         """ Assemble packet into the raw form """

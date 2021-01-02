@@ -44,37 +44,12 @@
 import struct
 
 import config
+import ps.ip4
 from misc.ip_helper import inet_cksum
 from misc.ipv4_address import IPv4Address
 
-# IPv4 protocol header
 
-# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-# |Version|  IHL  |   DSCP    |ECN|          Packet length        |
-# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-# |         Identification        |Flags|      Fragment offset    |
-# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-# |  Time to live |    Protocol   |         Header checksum       |
-# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-# |                       Source address                          |
-# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-# |                    Destination address                        |
-# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-# ~                    Options                    ~    Padding    ~
-# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-
-
-HEADER_LEN = 20
-
-PROTO_ICMP4 = 1
-PROTO_TCP = 6
-PROTO_UDP = 17
-
-
-PROTO_TABLE = {PROTO_ICMP4: "ICMPv4", PROTO_TCP: "TCP", PROTO_UDP: "UDP"}
-
-
-class Parser:
+class Parser(ps.ip4.Base):
     """ IPv4 packet parser class """
 
     class __not_cached:
@@ -113,15 +88,6 @@ class Parser:
 
         if not packet_rx.parse_failed:
             packet_rx.hptr = self._hptr + self.hlen
-
-    def __str__(self):
-        """ Packet log string """
-
-        return (
-            f"IPv4 {self.src} > {self.dst}, proto {self.proto} ({PROTO_TABLE.get(self.proto, '???')}), id {self.id}"
-            + f"{', DF' if self.flag_df else ''}{', MF' if self.flag_mf else ''}, offset {self.offset}, plen {self.plen}"
-            + f", ttl {self.ttl}"
-        )
 
     def __len__(self):
         """ Number of bytes remaining in the frame """
@@ -238,15 +204,15 @@ class Parser:
 
         if self.__options is self.__not_cached:
             self.__options = []
-            optr = self._hptr + HEADER_LEN
+            optr = self._hptr + ps.ip4.HEADER_LEN
 
             while optr < self._hptr + self.hlen:
-                if self._frame[optr] == OPT_EOL:
+                if self._frame[optr] == ps.ip4.OPT_EOL:
                     self.__options.append(OptEol())
                     break
-                if self._frame[optr] == OPT_NOP:
+                if self._frame[optr] == ps.ip4.OPT_NOP:
                     self.__options.append(OptNop())
-                    optr += OPT_NOP_LEN
+                    optr += ps.ip4.OPT_NOP_LEN
                     continue
                 self.__options.append({}.get(self._frame[optr], OptUnk)(self._frame, optr))
                 optr += self._frame[optr + 1]
@@ -258,7 +224,7 @@ class Parser:
         """ Calculate options length """
 
         if self.__olen is self.__not_cached:
-            self.__olen = self.hlen - HEADER_LEN
+            self.__olen = self.hlen - ps.ip4.HEADER_LEN
         return self.__olen
 
     @property
@@ -274,7 +240,7 @@ class Parser:
         """ Return copy of packet header """
 
         if self.__header_copy is self.__not_cached:
-            self.__header_copy = self._frame[self._hptr : self._hptr + HEADER_LEN]
+            self.__header_copy = self._frame[self._hptr : self._hptr + ps.ip4.HEADER_LEN]
         return self.__header_copy
 
     @property
@@ -282,7 +248,7 @@ class Parser:
         """ Return copy of packet header """
 
         if self.__options_copy is self.__not_cached:
-            self.__options_copy = self._frame[self._hptr + HEADER_LEN : self._hptr + self.hlen]
+            self.__options_copy = self._frame[self._hptr + ps.ip4.HEADER_LEN : self._hptr + self.hlen]
         return self.__options_copy
 
     @property
@@ -316,23 +282,23 @@ class Parser:
         if not config.packet_integrity_check:
             return False
 
-        if len(self) < HEADER_LEN:
+        if len(self) < ps.ip4.HEADER_LEN:
             return "IPv4 integrity - wrong packet length (I)"
 
         hlen = (self._frame[self._hptr + 0] & 0b00001111) << 2
         plen = struct.unpack_from("!H", self._frame, self._hptr + 2)[0]
-        if not HEADER_LEN <= hlen <= plen <= len(self):
+        if not ps.ip4.HEADER_LEN <= hlen <= plen <= len(self):
             return "IPv4 integrity - wrong packet length (II)"
 
         # Cannot compute checksum earlier because it depends on sanity of hlen field
         if inet_cksum(self._frame, self._hptr, hlen):
             return "IPv4 integriy - wrong packet checksum"
 
-        optr = self._hptr + HEADER_LEN
+        optr = self._hptr + ps.ip4.HEADER_LEN
         while optr < self._hptr + hlen:
-            if self._frame[optr] == OPT_EOL:
+            if self._frame[optr] == ps.ip4.OPT_EOL:
                 break
-            if self._frame[optr] == OPT_NOP:
+            if self._frame[optr] == ps.ip4.OPT_NOP:
                 optr += 1
                 if optr > self._hptr + hlen:
                     return "IPv4 integrity - wrong option length (I)"
@@ -387,46 +353,31 @@ class Parser:
 
 # IPv4 option - End of Option Linst
 
-OPT_EOL = 0
-OPT_EOL_LEN = 1
 
-
-class OptEol:
+class OptEol(ps.ip4.OptEolBase):
     """ IPv4 option - End of Option List """
 
     def __init__(self):
-        self.kind = OPT_EOL
-
-    def __str__(self):
-        return "eol"
+        self.kind = ps.ip4.OPT_EOL
 
 
 # IPv4 option - No Operation (1)
 
-OPT_NOP = 1
-OPT_NOP_LEN = 1
 
-
-class OptNop:
+class OptNop(ps.ip4.OptNopBase):
     """ IPv4 option - No Operation """
 
     def __init__(self):
-        self.kind = OPT_NOP
-
-    def __str__(self):
-        return "nop"
+        self.kind = ps.ip4.OPT_NOP
 
 
 # IPv4 option not supported by this stack
 
 
-class OptUnk:
+class OptUnk(ps.ip4.OptUnkBase):
     """ IPv4 option not supported by this stack """
 
     def __init__(self, frame, optr):
         self.kind = frame[optr + 0]
         self.len = frame[optr + 1]
         self.data = frame[optr + 2 : optr + self.len]
-
-    def __str__(self):
-        return f"unk-{self.kind}-{self.len}"

@@ -40,8 +40,8 @@
 # phtx/ether.py - packet handler for outbound Ethernet packets
 #
 
-
 import fpa.ether
+import ps.ether
 
 
 def _phtx_ether(self, child_packet, ether_src="00:00:00:00:00:00", ether_dst="00:00:00:00:00:00"):
@@ -68,7 +68,7 @@ def _phtx_ether(self, child_packet, ether_src="00:00:00:00:00:00", ether_dst="00
         return
 
     # Check if we can obtain destination MAC based on IPv6 header data
-    if ether_packet_tx.type == fpa.ether.TYPE_IP6:
+    if ether_packet_tx.type == ps.ether.TYPE_IP6:
         ip6_src = ether_packet_tx._child_packet.src
         ip6_dst = ether_packet_tx._child_packet.dst
 
@@ -105,7 +105,7 @@ def _phtx_ether(self, child_packet, ether_src="00:00:00:00:00:00", ether_dst="00
             return
 
     # Check if we can obtain destination MAC based on IPv4 header data
-    if ether_packet_tx.type == fpa.ether.TYPE_IP4:
+    if ether_packet_tx.type == ps.ether.TYPE_IP4:
         ip4_src = ether_packet_tx._child_packet.src
         ip4_dst = ether_packet_tx._child_packet.dst
 

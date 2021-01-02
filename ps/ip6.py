@@ -37,42 +37,53 @@
 
 
 #
-# phrx/ether.py - packet handler for inbound Ethernet packets
+# ps/ip6.py - protocol support for IPv6 protocol
 #
 
 
-import config
-import fpp.ether
-import ps.ether
+# IPv6 protocol header
+
+# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+# |Version| Traffic Class |           Flow Label                  |
+# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+# |         Payload Length        |  Next Header  |   Hop Limit   |
+# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+# |                                                               >
+# +                                                               +
+# >                                                               >
+# +                         Source Address                        +
+# >                                                               >
+# +                                                               +
+# >                                                               |
+# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+# |                                                               >
+# +                                                               +
+# >                                                               >
+# +                      Destination Address                      +
+# >                                                               >
+# +                                                               +
+# >                                                               |
+# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 
 
-def _phrx_ether(self, packet_rx):
-    """ Handle inbound Ethernet packets """
+HEADER_LEN = 40
 
-    fpp.ether.Parser(packet_rx)
+NEXT_HEADER_TCP = 6
+NEXT_HEADER_UDP = 17
+NEXT_HEADER_EXT_FRAG = 44
+NEXT_HEADER_ICMP6 = 58
 
-    if packet_rx.parse_failed:
-        if __debug__:
-            self._logger.critical(f"{packet_rx.tracker} - {packet_rx.parse_failed}")
-        return
+NEXT_HEADER_TABLE = {NEXT_HEADER_TCP: "TCP", NEXT_HEADER_UDP: "UDP", NEXT_HEADER_EXT_FRAG: "FRAG", NEXT_HEADER_ICMP6: "ICMPv6"}
 
-    if __debug__:
-        self._logger.debug(f"{packet_rx.tracker} - {packet_rx.ether}")
 
-    # Check if received packet matches any of stack MAC addresses
-    if packet_rx.ether.dst not in {self.mac_unicast, *self.mac_multicast, self.mac_broadcast}:
-        if __debug__:
-            self._logger.opt(ansi=True).debug(f"{packet_rx.tracker} - Ethernet packet not destined for this stack, dropping...")
-        return
+class Base:
+    """ IPv6 packet parser class """
 
-    if packet_rx.ether.type == ps.ether.TYPE_ARP and config.ip4_support:
-        self._phrx_arp(packet_rx)
-        return
+    def __str__(self):
+        """ Packet log string """
 
-    if packet_rx.ether.type == ps.ether.TYPE_IP4 and config.ip4_support:
-        self._phrx_ip4(packet_rx)
-        return
+        return (
+            f"IPv6 {self.src} > {self.dst}, next {self.next} ({NEXT_HEADER_TABLE.get(self.next, '???')}), flow {self.flow}"
+            + f", dlen {self.dlen}, hop {self.hop}"
+        )
 
-    if packet_rx.ether.type == ps.ether.TYPE_IP6 and config.ip6_support:
-        self._phrx_ip6(packet_rx)
-        return

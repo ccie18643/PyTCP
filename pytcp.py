@@ -52,9 +52,9 @@ import loguru
 import config
 from client.icmp_echo import ClientIcmpEcho
 from client.tcp_echo import ClientTcpEcho
+from misc.ph import PacketHandler
 from misc.stack_cli_server import StackCliServer
 from misc.timer import Timer
-from misc.ph import PacketHandler
 from service.tcp_daytime import ServiceTcpDaytime
 from service.tcp_discard import ServiceTcpDiscard
 from service.tcp_echo import ServiceTcpEcho

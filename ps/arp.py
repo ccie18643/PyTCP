@@ -37,42 +37,43 @@
 
 
 #
-# phrx/ether.py - packet handler for inbound Ethernet packets
+# ps/arp.py - protocol support class for ARP protocol
 #
 
 
-import config
-import fpp.ether
-import ps.ether
+# ARP packet header - IPv4 stack version only
+
+# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+# |         Hardware type         |         Protocol type         |
+# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+# |  Hard length  |  Proto length |           Operation           |
+# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+# |                                                               >
+# +        Sender MAC address     +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+# >                               |       Sender IP address       >
+# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+# >                               |                               >
+# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+       Target MAC address      |
+# >                                                               |
+# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+# |                       Target IP address                       |
+# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 
 
-def _phrx_ether(self, packet_rx):
-    """ Handle inbound Ethernet packets """
+HEADER_LEN = 28
 
-    fpp.ether.Parser(packet_rx)
+OP_REQUEST = 1
+OP_REPLY = 2
 
-    if packet_rx.parse_failed:
-        if __debug__:
-            self._logger.critical(f"{packet_rx.tracker} - {packet_rx.parse_failed}")
-        return
 
-    if __debug__:
-        self._logger.debug(f"{packet_rx.tracker} - {packet_rx.ether}")
+class Base:
+    """ ARP packet base class """
 
-    # Check if received packet matches any of stack MAC addresses
-    if packet_rx.ether.dst not in {self.mac_unicast, *self.mac_multicast, self.mac_broadcast}:
-        if __debug__:
-            self._logger.opt(ansi=True).debug(f"{packet_rx.tracker} - Ethernet packet not destined for this stack, dropping...")
-        return
+    def __str__(self):
+        """ Packet log string """
 
-    if packet_rx.ether.type == ps.ether.TYPE_ARP and config.ip4_support:
-        self._phrx_arp(packet_rx)
-        return
+        if self.oper == OP_REQUEST:
+            return f"ARP request {self.spa} / {self.sha} > {self.tpa} / {self.tha}"
+        if self.oper == OP_REPLY:
+            return f"ARP reply {self.spa} / {self.sha} > {self.tpa} / {self.tha}"
 
-    if packet_rx.ether.type == ps.ether.TYPE_IP4 and config.ip4_support:
-        self._phrx_ip4(packet_rx)
-        return
-
-    if packet_rx.ether.type == ps.ether.TYPE_IP6 and config.ip6_support:
-        self._phrx_ip6(packet_rx)
-        return

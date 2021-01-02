@@ -44,32 +44,10 @@
 import struct
 
 import config
-
-# Ethernet packet header
-
-# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-# |                                                               >
-# +    Destination MAC Address    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-# >                               |                               >
-# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+      Source MAC Address       +
-# >                                                               |
-# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-# |           EtherType           |
-# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+import ps.ether
 
 
-HEADER_LEN = 14
-
-TYPE_MIN = 0x0600
-TYPE_ARP = 0x0806
-TYPE_IP4 = 0x0800
-TYPE_IP6 = 0x86DD
-
-
-TYPE_TABLE = {TYPE_ARP: "ARP", TYPE_IP4: "IPv4", TYPE_IP6: "IPv6"}
-
-
-class Parser:
+class Parser(ps.ether.Base):
     """ Ethernet packet parser class """
 
     class __not_cached:
@@ -94,12 +72,7 @@ class Parser:
         packet_rx.parse_failed = self._packet_integrity_check() or self._packet_sanity_check()
 
         if not packet_rx.parse_failed:
-            packet_rx.hptr = self._hptr + HEADER_LEN
-
-    def __str__(self):
-        """ Packet log string """
-
-        return f"ETHER {self.src} > {self.dst}, 0x{self.type:0>4x} ({TYPE_TABLE.get(self.type, '???')})"
+            packet_rx.hptr = self._hptr + ps.ether.HEADER_LEN
 
     def __len__(self):
         """ Number of bytes remaining in the frame """
@@ -135,7 +108,7 @@ class Parser:
         """ Return copy of packet header """
 
         if self.__header_copy is self.__not_cached:
-            self.__header_copy = self._frame[self._hptr : self._hptr + HEADER_LEN]
+            self.__header_copy = self._frame[self._hptr : self._hptr + ps.ether.HEADER_LEN]
         return self.__header_copy
 
     @property
@@ -143,7 +116,7 @@ class Parser:
         """ Return copy of packet data """
 
         if self.__data_copy is self.__not_cached:
-            self.__data_copy = self._frame[self._hptr + HEADER_LEN :]
+            self.__data_copy = self._frame[self._hptr + ps.ether.HEADER_LEN :]
         return self.__data_copy
 
     @property
@@ -168,7 +141,7 @@ class Parser:
         if not config.packet_integrity_check:
             return False
 
-        if len(self) < HEADER_LEN:
+        if len(self) < ps.ether.HEADER_LEN:
             return "ETHER integrity - wrong packet length (I)"
 
         return False
@@ -179,7 +152,7 @@ class Parser:
         if not config.packet_sanity_check:
             return False
 
-        if self.type < TYPE_MIN:
+        if self.type < ps.ether.TYPE_MIN:
             return "ETHER sanity - 'ether_type' must be greater than 0x0600"
 
         return False
