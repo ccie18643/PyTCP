@@ -165,7 +165,7 @@ def phtx_ip4(self, child_packet, ip4_dst, ip4_src, ip4_ttl=config.ip4_default_tt
             )
         )
 
-    raw_data_mtu = (config.mtu - ps_ether.ETHER_HEADER_LEN - ps_ip4.IP4_HEADER_LEN) & 0b1111111111111000
+    raw_data_mtu = (config.mtu - ps_ip4.IP4_HEADER_LEN) & 0b1111111111111000
     raw_data_fragments = [raw_data[_ : raw_data_mtu + _] for _ in range(0, len(raw_data), raw_data_mtu)]
 
     pointer = 0
