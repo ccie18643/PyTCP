@@ -37,7 +37,7 @@
 
 
 #
-# phtx.ip6.py - packet handler for outbound IPv6 packets
+# phtx/ip6.py - packet handler for outbound IPv6 packets
 #
 
 

@@ -37,7 +37,7 @@
 
 
 #
-# phtx.icmp6.py - packet handler for outbound ICMPv6 packets
+# phtx/icmp6.py - packet handler for outbound ICMPv6 packets
 #
 
 

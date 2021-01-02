@@ -37,7 +37,7 @@
 
 
 #
-# phrx.ip4.py - packet handler for inbound IPv4 packets
+# phrx/ip4.py - packet handler for inbound IPv4 packets
 #
 
 

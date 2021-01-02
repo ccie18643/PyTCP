@@ -37,7 +37,7 @@
 
 
 #
-# phtx.udp.py - protocol support for outbound UDP packets
+# phtx/udp.py - protocol support for outbound UDP packets
 #
 
 

@@ -37,7 +37,7 @@
 
 
 #
-# phrx.udp.py - packet handler for inbound UDP packets
+# phrx/udp.py - packet handler for inbound UDP packets
 #
 
 

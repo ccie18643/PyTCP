@@ -37,7 +37,7 @@
 
 
 #
-# phrx.icmp4.py - packet handler for inbound ICMPv4 packets
+# phrx/icmp4.py - packet handler for inbound ICMPv4 packets
 #
 
 

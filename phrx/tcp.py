@@ -37,7 +37,7 @@
 
 
 #
-# phrx.tcp.py - packet handler for inbound TCP packets
+# phrx/tcp.py - packet handler for inbound TCP packets
 #
 
 import fpp.tcp

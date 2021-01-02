@@ -37,7 +37,7 @@
 
 
 #
-# phtx.arp.py - packet handler for outbound ARP packets
+# phtx/arp.py - packet handler for outbound ARP packets
 #
 
 

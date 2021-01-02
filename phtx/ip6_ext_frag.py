@@ -37,7 +37,7 @@
 
 
 #
-# phtx.ip6_ext_frag.py - packet handler for outbound IPv6 fragment extension header
+# phtx/ip6_ext_frag.py - packet handler for outbound IPv6 fragment extension header
 #
 
 

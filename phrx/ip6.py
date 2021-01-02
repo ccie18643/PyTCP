@@ -37,7 +37,7 @@
 
 
 #
-# phrx.ip6.py - packet handler for inbound IPv6 packets
+# phrx/ip6.py - packet handler for inbound IPv6 packets
 #
 
 

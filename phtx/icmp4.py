@@ -37,7 +37,7 @@
 
 
 #
-# phtx.icmp4.py - packet handler for outbound ICMPv4 packets
+# phtx/icmp4.py - packet handler for outbound ICMPv4 packets
 #
 
 

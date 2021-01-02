@@ -37,7 +37,7 @@
 
 
 #
-# phtx.tcp.py - packet handler for outbound TCP packets
+# phtx/tcp.py - packet handler for outbound TCP packets
 #
 
 

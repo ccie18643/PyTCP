@@ -37,7 +37,7 @@
 
 
 #
-# phrx.ip6_ext_frag.py - packet handler for inbound IPv6 fragment extension header
+# phrx/ip6_ext_frag.py - packet handler for inbound IPv6 fragment extension header
 #
 
 import struct

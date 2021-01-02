@@ -37,7 +37,7 @@
 
 
 #
-# phtx.ether.py - packet handler for outbound Ethernet packets
+# phtx/ether.py - packet handler for outbound Ethernet packets
 #
 
 

@@ -37,7 +37,7 @@
 
 
 #
-# phrx.ether.py - packet handler for inbound Ethernet packets
+# phrx/ether.py - packet handler for inbound Ethernet packets
 #
 
 

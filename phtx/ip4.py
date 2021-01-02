@@ -37,7 +37,7 @@
 
 
 #
-# phtx.ip4.py - packet handler for outbound IPv4 packets
+# phtx/ip4.py - packet handler for outbound IPv4 packets
 #
 
 

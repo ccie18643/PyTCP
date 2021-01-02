@@ -37,7 +37,7 @@
 
 
 #
-# phrx.icmp6.py - packet handler for inbound ICMPv6 packets
+# phrx/icmp6.py - packet handler for inbound ICMPv6 packets
 #
 
 

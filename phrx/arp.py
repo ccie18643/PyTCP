@@ -37,7 +37,7 @@
 
 
 #
-# phrx.arp.py - packet handler for inbound ARP packets
+# phrx/arp.py - packet handler for inbound ARP packets
 #
 
 
