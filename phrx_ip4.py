@@ -51,11 +51,7 @@ from packet import PacketRx
 
 
 def _defragment_ip4_packet(self, packet_rx):
-    """ Check if packet is fragmented """
-
-    # Skip if packet is not fragmented
-    if packet_rx.ip4.offset == 0 and not packet_rx.ip4.flag_mf:
-        return packet_rx
+    """ Defragment IPv4 packet """
 
     # Cleanup expired flows
     self.ip4_frag_flows = {
