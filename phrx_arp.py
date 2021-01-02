@@ -41,11 +41,9 @@
 #
 
 
+import config
 import fpp_arp
 from ipv4_address import IPv4Address
-
-ARP_CACHE_UPDATE_FROM_DIRECT_REQUEST = True
-ARP_CACHE_UPDATE_FROM_GRATUITOUS_REPLY = True
 
 
 def _phrx_arp(self, packet_rx):
@@ -82,7 +80,7 @@ def _phrx_arp(self, packet_rx):
             )
 
             # Update ARP cache with the mapping learned from the received ARP request that was destined to this stack
-            if ARP_CACHE_UPDATE_FROM_DIRECT_REQUEST:
+            if config.arp_cache_update_from_direct_request:
                 if __debug__:
                     self._logger.debug(f"Adding/refreshing ARP cache entry from direct request - {packet_rx.arp.spa} -> {packet_rx.arp.sha}")
                 self.arp_cache.add_entry(packet_rx.arp.spa, packet_rx.arp.sha)
@@ -111,7 +109,7 @@ def _phrx_arp(self, packet_rx):
             return
 
         # Update ARP cache with mapping received as gratuitous ARP reply
-        if packet_rx.ether.dst == "ff:ff:ff:ff:ff:ff" and packet_rx.arp.spa == packet_rx.arp.tpa and ARP_CACHE_UPDATE_FROM_GRATUITOUS_REPLY:
+        if packet_rx.ether.dst == "ff:ff:ff:ff:ff:ff" and packet_rx.arp.spa == packet_rx.arp.tpa and config.arp_cache_update_from_gratuitious_reply:
             if __debug__:
                 self._logger.debug(f"Adding/refreshing ARP cache entry from gratuitous reply - {packet_rx.arp.spa} -> {packet_rx.arp.sha}")
             self.arp_cache.add_entry(packet_rx.arp.spa, packet_rx.arp.sha)

@@ -150,23 +150,18 @@ class PacketHandler:
         # Log all the addresses stack will listen on
         if __debug__:
             self._logger.info(f"Stack listening on unicast MAC address: {self.mac_unicast}")
-        if __debug__:
             self._logger.info(f"Stack listening on multicast MAC addresses: {list(set(self.mac_multicast))}")
-        if __debug__:
             self._logger.info(f"Stack listening on broadcast MAC address: {self.mac_broadcast}")
 
         if config.ip6_support:
             if __debug__:
                 self._logger.info(f"Stack listening on unicast IPv6 addresses: {[str(_) for _ in self.ip6_unicast]}")
-            if __debug__:
                 self._logger.info(f"Stack listening on multicast IPv6 addresses: {list(set(str(_) for _ in self.ip6_multicast))}")
 
         if config.ip4_support:
             if __debug__:
                 self._logger.info(f"Stack listening on unicast IPv4 addresses: {[str(_) for _ in self.ip4_unicast]}")
-            if __debug__:
                 self._logger.info(f"Stack listening on multicast IPv4 addresses: {[str(_) for _ in self.ip4_multicast]}")
-            if __debug__:
                 self._logger.info(f"Stack listening on broadcast IPv4 addresses: {[str(_) for _ in self.ip4_broadcast]}")
 
     def __thread_packet_handler(self):
@@ -207,8 +202,7 @@ class PacketHandler:
             if __debug__:
                 self._logger.warning(f"ICMPv6 ND DAD - Duplicate IPv6 address detected, {ip6_unicast_candidate} advertised by {self.icmp6_nd_dad_tlla}")
         else:
-            if __debug__:
-                self._logger.debug(f"ICMPv6 ND DAD - No duplicate address detected for {ip6_unicast_candidate}")
+            self._logger.debug(f"ICMPv6 ND DAD - No duplicate address detected for {ip6_unicast_candidate}")
         self.ip6_unicast_candidate = None
         self._remove_ip6_multicast(ip6_unicast_candidate.solicited_node_multicast)
         return not event
@@ -495,8 +489,6 @@ class PacketHandler:
         if __debug__:
             self._logger.debug(f"Assigned IPv6 multicast {ip6_multicast}")
         self._assign_mac_multicast(ip6_multicast.multicast_mac)
-
-        # Send out the ICMPv6 Multicast Listener Report
         for _ in range(1):
             self._send_icmp6_multicast_listener_report()
 

@@ -76,7 +76,7 @@ class RxRing:
             self.packet_enqueued.release()
 
     def dequeue(self):
-        """ Dequeue inboutd packet from RX ring """
+        """ Dequeue inboutd frame from RX ring """
 
         self.packet_enqueued.acquire()
         return self.rx_ring.pop(0)

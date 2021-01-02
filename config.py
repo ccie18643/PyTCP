@@ -123,6 +123,10 @@ ip4_address_candidate = [
     # ("10.10.10.7/24", "10.10.10.1"),
 ]
 
+# ARP cache configuration
+arp_cache_update_from_direct_request = True
+arp_cache_update_from_gratuitious_reply = True
+
 # TCP ephemeral port range to be used by outbound connections
 TCP_EPHEMERAL_PORT_RANGE = (32168, 60999)
 

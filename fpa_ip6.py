@@ -122,7 +122,7 @@ class Ip6Packet:
 
         elif self._child_packet.protocol == "IP6_EXT_FRAG":
             self.next = IP6_NEXT_HEADER_EXT_FRAG
-        
+
         self.dlen = len(child_packet)
 
     def __str__(self):

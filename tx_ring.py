@@ -55,11 +55,11 @@ class TxRing:
     def __init__(self, tap):
         """ Initialize access to tap interface and the outbound queue """
 
-        self.tap = tap
-
-        self.tx_ring = []
         if __debug__:
             self._logger = loguru.logger.bind(object_name="tx_ring.")
+
+        self.tap = tap
+        self.tx_ring = []
 
         self.packet_enqueued = threading.Semaphore(0)
 
@@ -93,7 +93,7 @@ class TxRing:
                 )
 
     def enqueue(self, packet_tx):
-        """ Enqueue outbound Ethernet packet to TX ring """
+        """ Enqueue outbound packet into TX ring """
 
         self.tx_ring.append(packet_tx)
         if __debug__:
