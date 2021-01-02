@@ -2,7 +2,7 @@
 
 PyTCP is an attempt to create fully functional TCP/IP stack in Python. It supports TCP stream based transport with reliable packet delivery based on sliding window mechanism and basic congestion control. It also supports IPv6/ICMPv6 protocols with SLAAC address configuration. It operates as user space program attached to Linux TAP interface. As of today stack is able to send and receive traffic over Internet using IPv4 and IPv6 default gateways for routing. Since goal of this project is purely educational (at least at this point) the clarity of code is preferred over its efficiency. For the same reason security features are not being implemented just yet unless they are integral part of TCP/IP suite protocols specification.
 
-This program is a work in progress and it changes on daily basis due to new features being implemented, changes being made to already implemented features, bug fixes, etc. Therefore if the current version is not working as expected try to clone it again the next day or shoot me an email describing the problem. Any input is appreciated. Also keep in mind that some features may be implemented only partially (as needed for stack operation) or they may be implemented in sub-optimal or not 100% RFC compliant way (due to lack of time) or last but not least they may contain bug(s) that i didn't notice yet.
+There is no active development of PyTCP version 1.0. There is new version 2.0 which has been implemented with use of new packet parser and assembler mechanisms to improve stack effeciency.
 
 I am also working on another TCP/IP stack project that is being programmed in C and Assembly languages and it is available as [SeaTCP](https://github.com/ccie18643/SeaTCP) project. It is currently at very early stage of development, but please feel free to check it out.
 
@@ -38,12 +38,6 @@ I am also working on another TCP/IP stack project that is being programmed in C 
  - TCP protocol - *TCP SYN/FIN packet retransmission*
  - TCP sockets - *full support, stack's 'end user' API similar to Berkeley sockets*
 
-#### Work in progress:
-
-
-#### Next steps:
-
-There is no active development of PyTCP version 1.0. There is new version 2.0 which has been implemented with use of new packet parser and assembler mechanism to improve stack effeciency.
 
 ### Examples:
 
