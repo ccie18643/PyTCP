@@ -53,7 +53,6 @@ I am also working on another TCP/IP stack project that is being programmed in C 
  - IPv6 protocol - *redesign the RA PI option handling and ND prefix auto configuration to properly use A nad L flags, some research also needed on case when different than /64 prefix is being advertised*
  - IPv6 protocol - *implement optional headers*
  - IPv6 protocol - *validate and possibly re-implements certain IPv6 mechanisms/processes according to RFC rules*
- - IPv6 protocol - *research and implement fragmentation*
  - IPv6 protocol - *research and possibly implement support for certain optional IPv6 headers*
  - IPv6 protocol - *investigate Hop-by-Hop Options header and its relation to MLD2 Report message, implement if needed for MLD2 to work properly*
  - ICMPv6 protocol - *validate and possibly re-implements certain IPv6 mechanisms/processes according to RFC rules*
