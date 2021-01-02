@@ -1,0 +1,121 @@
+#!/usr/bin/env python3
+
+############################################################################
+#                                                                          #
+#  PyTCP - Python TCP/IP stack                                             #
+#  Copyright (C) 2020  Sebastian Majewski                                  #
+#                                                                          #
+#  This program is free software: you can redistribute it and/or modify    #
+#  it under the terms of the GNU General Public License as published by    #
+#  the Free Software Foundation, either version 3 of the License, or       #
+#  (at your option) any later version.                                     #
+#                                                                          #
+#  This program is distributed in the hope that it will be useful,         #
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of          #
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the           #
+#  GNU General Public License for more details.                            #
+#                                                                          #
+#  You should have received a copy of the GNU General Public License       #
+#  along with this program.  If not, see <https://www.gnu.org/licenses/>.  #
+#                                                                          #
+#  Author's email: ccie18643@gmail.com                                     #
+#  Github repository: https://github.com/ccie18643/PyTCP                   #
+#                                                                          #
+############################################################################
+
+##############################################################################################
+#                                                                                            #
+#  This program is a work in progress and it changes on daily basis due to new features      #
+#  being implemented, changes being made to already implemented features, bug fixes, etc.    #
+#  Therefore if the current version is not working as expected try to clone it again the     #
+#  next day or shoot me an email describing the problem. Any input is appreciated. Also      #
+#  keep in mind that some features may be implemented only partially (as needed for stack    #
+#  operation) or they may be implemented in sub-optimal or not 100% RFC compliant way (due   #
+#  to lack of time) or last but not least they may contain bug(s) that i didn't notice yet.  #
+#                                                                                            #
+##############################################################################################
+
+
+#
+# ps/icmp4.py - protocol support class for ICMPv4 protocol
+#
+
+
+# Echo reply message (0/0)
+
+# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+# |     Type      |     Code      |           Checksum            |
+# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+# |              Id               |              Seq              |
+# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+# ~                             Data                              ~
+# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+
+
+# Destination Unreachable message (3/[0-3, 5-15])
+
+# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+# |     Type      |     Code      |           Checksum            |
+# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+# |                           Reserved                            |
+# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+# ~                             Data                              ~
+# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+
+
+# Destination Unreachable message (3/4)
+
+# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+# |     Type      |     Code      |           Checksum            |
+# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+# |           Reserved            |          Link MTU / 0         |
+# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+# ~                             Data                              ~
+# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+
+
+# Echo Request message (8/0)
+
+# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+# |     Type      |     Code      |           Checksum            |
+# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+# |              Id               |              Seq              |
+# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+# ~                             Data                              ~
+# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+
+HEADER_LEN = 4
+
+ECHO_REPLY = 0
+ECHO_REPLY_LEN = 8
+UNREACHABLE = 3
+UNREACHABLE_LEN = 8
+UNREACHABLE__NET = 0
+UNREACHABLE__HOST = 1
+UNREACHABLE__PROTOCOL = 2
+UNREACHABLE__PORT = 3
+UNREACHABLE__FAGMENTATION = 4
+UNREACHABLE__SOURCE_ROUTE_FAILED = 5
+ECHO_REQUEST = 8
+ECHO_REQUEST_LEN = 8
+
+
+class Base:
+    """ ICMPv4 packet base class """
+
+    def __str__(self):
+        """ Packet log string """
+
+        log = f"ICMPv4 type {self.type}, code {self.code}"
+
+        if self.type == ECHO_REPLY:
+            log += f", id {self.ec_id}, seq {self.ec_seq}"
+
+        elif self.type == UNREACHABLE and self.code == UNREACHABLE__PORT:
+            pass
+
+        elif self.type == ECHO_REQUEST:
+            log += f", id {self.ec_id}, seq {self.ec_seq}"
+
+        return log
+
