@@ -44,69 +44,11 @@
 import struct
 
 import config
+import ps.icmp4
 from misc.ip_helper import inet_cksum
 
-# Echo reply message (0/0)
 
-# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-# |     Type      |     Code      |           Checksum            |
-# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-# |              Id               |              Seq              |
-# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-# ~                             Data                              ~
-# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-
-
-# Destination Unreachable message (3/[0-3, 5-15])
-
-# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-# |     Type      |     Code      |           Checksum            |
-# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-# |              Id               |              Seq              |
-# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-# |                           Reserved                            |
-# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-# ~                             Data                              ~
-# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-
-
-# Destination Unreachable message (3/4)
-
-# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-# |     Type      |     Code      |           Checksum            |
-# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-# |              Id               |              Seq              |
-# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-# |           Reserved            |          Link MTU / 0         |
-# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-# ~                             Data                              ~
-# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-
-
-# Echo Request message (8/0)
-
-# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-# |     Type      |     Code      |           Checksum            |
-# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-# |              Id               |              Seq              |
-# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-# ~                             Data                              ~
-# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-
-HEADER_LEN = 4
-
-ECHO_REPLY = 0
-UNREACHABLE = 3
-UNREACHABLE__NET = 0
-UNREACHABLE__HOST = 1
-UNREACHABLE__PROTOCOL = 2
-UNREACHABLE__PORT = 3
-UNREACHABLE__FAGMENTATION = 4
-UNREACHABLE__SOURCE_ROUTE_FAILED = 5
-ECHO_REQUEST = 8
-
-
-class Parser:
+class Parser(ps.icmp4.Base):
     """ ICMPv4 packet parser class """
 
     class __not_cached:
@@ -130,22 +72,6 @@ class Parser:
         self.__packet_copy = self.__not_cached
 
         packet_rx.parse_failed = self._packet_integrity_check() or self._packet_sanity_check()
-
-    def __str__(self):
-        """ Packet log string """
-
-        log = f"ICMPv4 type {self.type}, code {self.code}"
-
-        if self.type == ECHO_REPLY:
-            log += f", id {self.ec_id}, seq {self.ec_seq}"
-
-        elif self.type == UNREACHABLE and self.code == UNREACHABLE__PORT:
-            pass
-
-        elif self.type == ECHO_REQUEST:
-            log += f", id {self.ec_id}, seq {self.ec_seq}"
-
-        return log
 
     def __len__(self):
         """ Number of bytes remaining in the frame """
@@ -177,7 +103,7 @@ class Parser:
         """ Read Echo 'Id' field """
 
         if self.__ec_id is self.__not_cached:
-            assert self.type in {ECHO_REQUEST, ECHO_REPLY}
+            assert self.type in {ps.icmp4.ECHO_REQUEST, ps.icmp4.ECHO_REPLY}
             self.__ec_id = struct.unpack_from("!H", self._frame, self._hptr + 4)[0]
         return self.__ec_id
 
@@ -186,7 +112,7 @@ class Parser:
         """ Read Echo 'Seq' field """
 
         if self.__ec_seq is self.__not_cached:
-            assert self.type in {ECHO_REQUEST, ECHO_REPLY}
+            assert self.type in {ps.icmp4.ECHO_REQUEST, ps.icmp4.ECHO_REPLY}
             self.__ec_seq = struct.unpack_from("!H", self._frame, self._hptr + 6)[0]
         return self.__ec_seq
 
@@ -195,7 +121,7 @@ class Parser:
         """ Read data carried by Echo message """
 
         if self.__ec_data is self.__not_cached:
-            assert self.type in {ECHO_REQUEST, ECHO_REPLY}
+            assert self.type in {ps.icmp4.ECHO_REQUEST, ps.icmp4.ECHO_REPLY}
             self.__ec_data = self._frame[self._hptr + 8 : self._hptr + self.plen]
         return self.__ec_data
 
@@ -204,7 +130,7 @@ class Parser:
         """ Read data carried by Uneachable message """
 
         if self.__un_data is self.__not_cached:
-            assert self.type == UNREACHABLE
+            assert self.type == ps.icmp4.UNREACHABLE
             self.__un_data = self._frame[self._hptr + 8 : self._hptr + self.plen]
         return self.__un_data
 
@@ -231,14 +157,14 @@ class Parser:
         if inet_cksum(self._frame, self._hptr, self._plen):
             return "ICMPv4 integrity - wrong packet checksum"
 
-        if not HEADER_LEN <= self._plen <= len(self):
+        if not ps.icmp4.HEADER_LEN <= self._plen <= len(self):
             return "ICMPv4 integrity - wrong packet length (I)"
 
-        if self._frame[self._hptr + 0] in {ECHO_REQUEST, ECHO_REPLY}:
+        if self._frame[self._hptr + 0] in {ps.icmp4.ECHO_REQUEST, ps.icmp4.ECHO_REPLY}:
             if not 8 <= self._plen <= len(self):
                 return "ICMPv6 integrity - wrong packet length (II)"
 
-        elif self._frame[self._hptr + 0] == UNREACHABLE:
+        elif self._frame[self._hptr + 0] == ps.icmp4.UNREACHABLE:
             if not 12 <= self._plen <= len(self):
                 return "ICMPv6 integrity - wrong packet length (II)"
 
@@ -250,11 +176,11 @@ class Parser:
         if not config.packet_sanity_check:
             return False
 
-        if self.type in {ECHO_REQUEST, ECHO_REPLY}:
+        if self.type in {ps.icmp4.ECHO_REQUEST, ps.icmp4.ECHO_REPLY}:
             if not self.code == 0:
                 return "ICMPv4 sanity - 'code' should be set to 0 (RFC 792)"
 
-        if self.type == UNREACHABLE:
+        if self.type == ps.icmp4.UNREACHABLE:
             if self.code not in {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15}:
                 return "ICMPv4 sanity - 'code' must be set to [0-15] (RFC 792)"
 

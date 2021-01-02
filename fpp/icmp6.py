@@ -44,288 +44,12 @@
 import struct
 
 import config
+import ps.icmp6
 from misc.ip_helper import inet_cksum
 from misc.ipv6_address import IPv6Address, IPv6Network
 
-# Destination Unreachable message (1/[0-6])
 
-# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-# |     Type      |     Code      |           Checksum            |
-# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-# |              Id               |              Seq              |
-# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-# |                           Reserved                            |
-# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-# ~                             Data                              ~
-# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-
-
-# Packet Too Big message (2/0)
-
-# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-# |     Type      |     Code      |          Checksum             |
-# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-# |                             MTU                               |
-# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-# ~                             Data                              ~
-# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-
-
-# Time Exceeded (3/[0-1])
-
-# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-# |     Type      |     Code      |          Checksum             |
-# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-# |                            Unused                             |
-# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-# ~                             Data                              ~
-# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-
-# Parameter Problem message (4/[0-2])
-
-# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-# |     Type      |     Code      |          Checksum             |
-# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-# |                           Pointer                             |
-# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-# ~                             Data                              ~
-# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-
-# Echo Request message (128/0)
-
-# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-# |     Type      |     Code      |           Checksum            |
-# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-# |              Id               |              Seq              |
-# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-# ~                             Data                              ~
-# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-
-
-# Echo Reply message (129/0)
-
-# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-# |     Type      |     Code      |           Checksum            |
-# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-# |              Id               |              Seq              |
-# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-# ~                             Data                              ~
-# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-
-
-# MLDv2 - Multicast Listener Query message (130/0)
-
-# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-# |      Type     |      Code     |           Checksum            |
-# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-# |    Maximum Response Code      |           Reserved            |
-# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-# |                                                               |
-# +                                                               *
-# |                                                               |
-# +                       Multicast Address                       *
-# |                                                               |
-# +                                                               *
-# |                                                               |
-# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-# | Resv  |S| QRV |     QQIC      |     Number of Sources (N)     |
-# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-# |                                                               |
-# +                                                               +
-# |                                                               |
-# +                       Source Address [1]                      +
-# |                                                               |
-# +                                                               +
-# |                                                               |
-# +---------------------------------------------------------------+
-# |                                                               |
-# +                                                               +
-# |                                                               |
-# +                       Source Address [2]                      +
-# |                                                               |
-# +                                                               +
-# |                                                               |
-# +---------------------------------------------------------------+
-# .                               .                               .
-# .                               .                               .
-# .                               .                               .
-# +---------------------------------------------------------------+
-# |                                                               |
-# +                                                               +
-# |                                                               |
-# +                       Source Address [N]                      +
-# |                                                               |
-# +                                                               +
-# |                                                               |
-# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-
-
-# Router Solicitation message (133/0)
-
-# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-# |     Type      |     Code      |          Checksum             |
-# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-# |                            Reserved                           |
-# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-# |   Options ...
-# +-+-+-+-+-+-+-+-+-+-+-+-
-
-
-# Router Advertisement message (134/0)
-
-# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-# |     Type      |     Code      |          Checksum             |
-# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-# |   Hop Limit   |M|O|H|PRF|P|0|0|        Router Lifetime        |
-# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-# |                          Reachable Time                       |
-# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-# |                           Retrans Timer                       |
-# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-# |   Options ...
-# +-+-+-+-+-+-+-+-+-+-+-+-
-
-
-# Neighbor Solicitation message (135/0)
-
-# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-# |     Type      |     Code      |          Checksum             |
-# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-# |                           Reserved                            |
-# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-# |                                                               >
-# +                                                               +
-# >                                                               >
-# +                       Target Address                          +
-# >                                                               >
-# +                                                               +
-# >                                                               |
-# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-# |   Options ...
-# +-+-+-+-+-+-+-+-+-+-+-+-
-
-
-# Neighbor Advertisement message (136/0)
-
-# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-# |     Type      |     Code      |          Checksum             |
-# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-# |R|S|O|                     Reserved                            |
-# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-# |                                                               >
-# +                                                               +
-# >                                                               >
-# +                       Target Address                          +
-# >                                                               >
-# +                                                               +
-# >                                                               |
-# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-# |   Options ...
-# +-+-+-+-+-+-+-+-+-+-+-+-
-
-
-# MLDv2 - Multicast Listener Report message (143/0)
-
-# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-# |      Type     |      Code     |           Checksum            |
-# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-# |           Reserved            |Nr of Mcast Address Records (M)|
-# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-# ~                                                               ~
-# ~                  Multicast Address Record [1]                 ~
-# ~                                                               ~
-# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-# ~                                                               ~
-# ~                  Multicast Address Record [2]                 ~
-# ~                                                               ~
-# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-# .                               .                               .
-# .                               .                               .
-# .                               .                               .
-# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-# ~                                                               ~
-# ~                  Multicast Address Record [M]                 ~
-# ~                                                               ~
-# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-
-# Each Multicast Address Record has the following internal format:
-
-# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-# |  Record Type  |  Aux Data Len |     Number of Sources (N)     |
-# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-# |                                                               |
-# +                                                               +
-# |                                                               |
-# +                       Multicast Address                       +
-# |                                                               |
-# +                                                               +
-# |                                                               |
-# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-# |                                                               |
-# +                                                               +
-# |                                                               |
-# +                       Source Address [1]                      +
-# |                                                               |
-# +                                                               +
-# |                                                               |
-# +---------------------------------------------------------------+
-# |                                                               |
-# +                                                               +
-# |                                                               |
-# +                       Source Address [2]                      +
-# |                                                               |
-# +                                                               +
-# |                                                               |
-# +---------------------------------------------------------------+
-# .                               .                               .
-# .                               .                               .
-# .                               .                               .
-# +---------------------------------------------------------------+
-# |                                                               |
-# +                                                               +
-# |                                                               |
-# +                       Source Address [N]                      +
-# |                                                               |
-# +                                                               +
-# |                                                               |
-# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-# ~                                                               ~
-# ~                         Auxiliary Data                        ~
-# ~                                                               ~
-# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-
-
-HEADER_LEN = 4
-
-UNREACHABLE = 1
-UNREACHABLE__NO_ROUTE = 0
-UNREACHABLE__PROHIBITED = 1
-UNREACHABLE__SCOPE = 2
-UNREACHABLE__ADDRESS = 3
-UNREACHABLE__PORT = 4
-UNREACHABLE__FAILED_POLICY = 5
-UNREACHABLE__REJECT_ROUTE = 6
-PACKET_TOO_BIG = 2
-TIME_EXCEEDED = 3
-PARAMETER_PROBLEM = 4
-ECHO_REQUEST = 128
-ECHO_REPLY = 129
-MLD2_QUERY = 130
-ROUTER_SOLICITATION = 133
-ROUTER_ADVERTISEMENT = 134
-NEIGHBOR_SOLICITATION = 135
-NEIGHBOR_ADVERTISEMENT = 136
-MLD2_REPORT = 143
-
-MART_MODE_IS_INCLUDE = 1
-MART_MODE_IS_EXCLUDE = 2
-MART_CHANGE_TO_INCLUDE = 3
-MART_CHANGE_TO_EXCLUDE = 4
-MART_ALLOW_NEW_SOURCES = 5
-MART_BLOCK_OLD_SOURCES = 6
-
-
-class Parser:
+class Parser(ps.icmp6.Base):
     """ ICMPv6 packet parser class """
 
     class __not_cached:
@@ -367,47 +91,6 @@ class Parser:
             packet_rx.ip6.src, packet_rx.ip6.dst, packet_rx.ip6.hop
         )
 
-    def __str__(self):
-        """ Packet log string """
-
-        log = f"ICMPv6 type {self.type}, code {self.code}"
-
-        if self.type == UNREACHABLE:
-            pass
-
-        elif self.type == ECHO_REQUEST:
-            log += f", id {self.ec_id}, seq {self.ec_seq}"
-
-        elif self.type == ECHO_REPLY:
-            log += f", id {self.ec_id}, seq {self.ec_seq}"
-
-        elif self.type == ROUTER_SOLICITATION:
-            for option in self.nd_options:
-                log += ", " + str(option)
-
-        elif self.type == ROUTER_ADVERTISEMENT:
-            log += f", hop {self.ra_hop}"
-            log += f"flags {'M' if self.ra_flag_m else '-'}{'O' if self.ra_flag_o else '-'}"
-            log += f"rlft {self.ra_router_lifetime}, reacht {self.ra_reachable_time}, retrt {self.ra_retrans_timer}"
-            for option in self.nd_options:
-                log += ", " + str(option)
-
-        elif self.type == NEIGHBOR_SOLICITATION:
-            log += f", target {self.ns_target_address}"
-            for option in self.nd_options:
-                log += ", " + str(option)
-
-        elif self.type == NEIGHBOR_ADVERTISEMENT:
-            log += f", target {self.na_target_address}"
-            log += f", flags {'R' if self.na_flag_r else '-'}{'S' if self.na_flag_s else '-'}{'O' if self.na_flag_o else '-'}"
-            for option in self.nd_options:
-                log += ", " + str(option)
-
-        elif self.type == MLD2_REPORT:
-            pass
-
-        return log
-
     def __len__(self):
         """ Number of bytes remaining in the frame """
 
@@ -438,7 +121,7 @@ class Parser:
         """ Read data carried by Unreachable message """
 
         if self.__un_data is self.__not_cached:
-            assert self.type == UNREACHABLE
+            assert self.type == ps.icmp6.UNREACHABLE
             self.__un_data = self._frame[self._hptr + 8 : self._hptr + self.plen]
         return self.__un_data
 
@@ -447,7 +130,7 @@ class Parser:
         """ Read Echo 'Id' field """
 
         if self.__ec_id is self.__not_cached:
-            assert self.type in {ECHO_REQUEST, ECHO_REPLY}
+            assert self.type in {ps.icmp6.ECHO_REQUEST, ps.icmp6.ECHO_REPLY}
             self.__ec_id = struct.unpack_from("!H", self._frame, self._hptr + 4)[0]
         return self.__ec_id
 
@@ -456,7 +139,7 @@ class Parser:
         """ Read Echo 'Seq' field """
 
         if self.__ec_seq is self.__not_cached:
-            assert self.type in {ECHO_REQUEST, ECHO_REPLY}
+            assert self.type in {ps.icmp6.ECHO_REQUEST, ps.icmp6.ECHO_REPLY}
             self.__ec_seq = struct.unpack_from("!H", self._frame, self._hptr + 6)[0]
         return self.__ec_seq
 
@@ -465,7 +148,7 @@ class Parser:
         """ Read data carried by Echo message """
 
         if self.__ec_data is self.__not_cached:
-            assert self.type in {ECHO_REQUEST, ECHO_REPLY}
+            assert self.type in {ps.icmp6.ECHO_REQUEST, ps.icmp6.ECHO_REPLY}
             self.__ec_data = self._frame[self._hptr + 8 : self._hptr + self.plen]
         return self.__ec_data
 
@@ -473,7 +156,7 @@ class Parser:
     def ra_hop(self):
         """ Read ND RA 'Hop limit' field """
 
-        assert self.type == ROUTER_ADVERTISEMENT
+        assert self.type == ps.icmp6.ROUTER_ADVERTISEMENT
         return self._frame[self._hptr + 4]
 
     @property
@@ -481,7 +164,7 @@ class Parser:
         """ Read ND RA 'M flag' field """
 
         if self.__ra_flag_m is self.__not_cached:
-            assert self.type == ROUTER_ADVERTISEMENT
+            assert self.type == ps.icmp6.ROUTER_ADVERTISEMENT
             self.__ra_flag_m = bool(self._frame[self._hptr + 5] & 0b10000000)
         return self.__ra_flag_m
 
@@ -490,7 +173,7 @@ class Parser:
         """ Read ND RA 'O flag' field """
 
         if self.__ra_flag_o is self.__not_cached:
-            assert self.type == ROUTER_ADVERTISEMENT
+            assert self.type == ps.icmp6.ROUTER_ADVERTISEMENT
             self.__ra_flag_o = bool(self._frame[self._hptr + 5] & 0b01000000)
         return self.__ra_flag_o
 
@@ -499,7 +182,7 @@ class Parser:
         """ Read ND RA 'Router lifetime' field """
 
         if self.__ra_router_lifetime is self.__not_cached:
-            assert self.type == ROUTER_ADVERTISEMENT
+            assert self.type == ps.icmp6.ROUTER_ADVERTISEMENT
             self.__ra_router_lifetime = struct.unpack_from("!H", self._frame, self._hptr + 6)[0]
         return self.__ra_router_lifetime
 
@@ -508,7 +191,7 @@ class Parser:
         """ Read ND RA 'Reachable time' field """
 
         if self.__ra_reachable_time is self.__not_cached:
-            assert self.type == ROUTER_ADVERTISEMENT
+            assert self.type == ps.icmp6.ROUTER_ADVERTISEMENT
             self.__ra_reachable_time = struct.unpack_from("!L", self._frame, self._hptr + 8)[0]
         return self.__ra_reachable_time
 
@@ -517,7 +200,7 @@ class Parser:
         """ Read ND RA 'Retransmision timer' field """
 
         if self.__ra_retrans_timer is self.__not_cached:
-            assert self.type == ROUTER_ADVERTISEMENT
+            assert self.type == ps.icmp6.ROUTER_ADVERTISEMENT
             self.__ra_retrans_timer = struct.unpack_from("!L", self._frame, self._hptr + 12)[0]
         return self.__ra_retrans_timer
 
@@ -526,7 +209,7 @@ class Parser:
         """ Read ND NS 'Target adress' field """
 
         if self.__ns_target_address is self.__not_cached:
-            assert self.type == NEIGHBOR_SOLICITATION
+            assert self.type == ps.icmp6.NEIGHBOR_SOLICITATION
             self.__ns_target_address = IPv6Address(self._frame[self._hptr + 8 : self._hptr + 24])
         return self.__ns_target_address
 
@@ -535,7 +218,7 @@ class Parser:
         """ Read ND NA 'R flag' field """
 
         if self.__na_flag_r is self.__not_cached:
-            assert self.type == NEIGHBOR_ADVERTISEMENT
+            assert self.type == ps.icmp6.NEIGHBOR_ADVERTISEMENT
             self.__na_flag_r = bool(self._frame[self._hptr + 4] & 0b10000000)
         return self.__na_flag_r
 
@@ -544,7 +227,7 @@ class Parser:
         """ Read ND NA 'S flag' field """
 
         if self.__na_flag_s is self.__not_cached:
-            assert self.type == NEIGHBOR_ADVERTISEMENT
+            assert self.type == ps.icmp6.NEIGHBOR_ADVERTISEMENT
             self.__na_flag_s = bool(self._frame[self._hptr + 4] & 0b01000000)
         return self.__na_flag_s
 
@@ -553,7 +236,7 @@ class Parser:
         """ Read ND NA 'O flag' field """
 
         if self.__na_flag_o is self.__not_cached:
-            assert self.type == NEIGHBOR_ADVERTISEMENT
+            assert self.type == ps.icmp6.NEIGHBOR_ADVERTISEMENT
             self.__na_flag_o = bool(self._frame[self._hptr + 4] & 0b00100000)
         return self.__na_flag_o
 
@@ -562,7 +245,7 @@ class Parser:
         """ Read ND NA 'Taret address' field """
 
         if self.__na_target_address is self.__not_cached:
-            assert self.type == NEIGHBOR_ADVERTISEMENT
+            assert self.type == ps.icmp6.NEIGHBOR_ADVERTISEMENT
             self.__na_target_address = IPv6Address(self._frame[self._hptr + 8 : self._hptr + 24])
         return self.__na_target_address
 
@@ -571,7 +254,7 @@ class Parser:
         """ Read MLD2 Report 'Number of multicast address records' field """
 
         if self.__mld2_rep_nor is self.__not_cached:
-            assert self.type == MLD2_REPORT
+            assert self.type == ps.icmp6.MLD2_REPORT
             self.__mld2_rep_nor = struct.unpack_from("!H", self._frame, self._hptr + 6)[0]
         return self.__mld2_rep_nor
 
@@ -580,7 +263,7 @@ class Parser:
         """ Read MLD2 Report record list """
 
         if self.__mld2_rep_records is self.__not_cached:
-            assert self.type == MLD2_REPORT
+            assert self.type == ps.icmp6.MLD2_REPORT
             self.__mld2_rep_records = []
             raw_records = self._frame[self._hptr + 8 :]
             for _ in range(self.mld2_rep_nor):
@@ -594,7 +277,11 @@ class Parser:
 
         nd_options = []
         while optr < len(self._frame):
-            nd_options.append({ND_OPT_SLLA: NdOptSLLA, ND_OPT_TLLA: NdOptTLLA, ND_OPT_PI: NdOptPI}.get(self._frame[optr], NdOptUnk)(self._frame, optr))
+            nd_options.append(
+                {ps.icmp6.ND_OPT_SLLA: NdOptSLLA, ps.icmp6.ND_OPT_TLLA: NdOptTLLA, ps.icmp6.ND_OPT_PI: NdOptPI}.get(self._frame[optr], NdOptUnk)(
+                    self._frame, optr
+                )
+            )
             optr += self._frame[optr + 1] << 3
 
         return nd_options
@@ -604,8 +291,18 @@ class Parser:
         """ Read ND options  """
 
         if self.__nd_options is self.__not_cached:
-            assert self.type in {ROUTER_SOLICITATION, ROUTER_ADVERTISEMENT, NEIGHBOR_SOLICITATION, NEIGHBOR_ADVERTISEMENT}
-            optr = self._hptr + {ROUTER_SOLICITATION: 12, ROUTER_ADVERTISEMENT: 16, NEIGHBOR_SOLICITATION: 24, NEIGHBOR_ADVERTISEMENT: 24}[self.type]
+            assert self.type in {
+                ps.icmp6.ROUTER_SOLICITATION,
+                ps.icmp6.ROUTER_ADVERTISEMENT,
+                ps.icmp6.NEIGHBOR_SOLICITATION,
+                ps.icmp6.NEIGHBOR_ADVERTISEMENT,
+            }
+            optr = self._hptr + {
+                ps.icmp6.ROUTER_SOLICITATION: 12,
+                ps.icmp6.ROUTER_ADVERTISEMENT: 16,
+                ps.icmp6.NEIGHBOR_SOLICITATION: 24,
+                ps.icmp6.NEIGHBOR_ADVERTISEMENT: 24,
+            }[self.type]
             self.__nd_options = self._read_nd_options(optr)
         return self.__nd_options
 
@@ -614,9 +311,9 @@ class Parser:
         """ ICMPv6 ND option - Source Link Layer Address (1) """
 
         if self.__nd_opt_slla is self.__not_cached:
-            assert self.type in {ROUTER_SOLICITATION, ROUTER_ADVERTISEMENT, NEIGHBOR_SOLICITATION, NEIGHBOR_ADVERTISEMENT}
+            assert self.type in {ps.icmp6.ROUTER_SOLICITATION, ps.icmp6.ROUTER_ADVERTISEMENT, ps.icmp6.NEIGHBOR_SOLICITATION, ps.icmp6.NEIGHBOR_ADVERTISEMENT}
             for option in self.nd_options:
-                if option.code == ND_OPT_SLLA:
+                if option.code == ps.icmp6.ND_OPT_SLLA:
                     __nd_opt_slla = option.slla
                     break
             else:
@@ -628,9 +325,9 @@ class Parser:
         """ ICMPv6 ND option - Target Link Layer Address (2) """
 
         if self.__nd_opt_tlla is self.__not_cached:
-            assert self.type in {ROUTER_SOLICITATION, ROUTER_ADVERTISEMENT, NEIGHBOR_SOLICITATION, NEIGHBOR_ADVERTISEMENT}
+            assert self.type in {ps.icmp6.ROUTER_SOLICITATION, ps.icmp6.ROUTER_ADVERTISEMENT, ps.icmp6.NEIGHBOR_SOLICITATION, ps.icmp6.NEIGHBOR_ADVERTISEMENT}
             for option in self.nd_options:
-                if option.code == ND_OPT_TLLA:
+                if option.code == ps.icmp6.ND_OPT_TLLA:
                     __nd_opt_tlla = option.tlla
                     break
             else:
@@ -642,8 +339,8 @@ class Parser:
         """ ICMPv6 ND option - Prefix Info (3) - Returns list of prefixes that can be used for address autoconfiguration"""
 
         if self.__nd_opt_pi is self.__not_cached:
-            assert self.type in {ROUTER_SOLICITATION, ROUTER_ADVERTISEMENT, NEIGHBOR_SOLICITATION, NEIGHBOR_ADVERTISEMENT}
-            __nd_opt_pi = [_.prefix for _ in self.nd_options if _.code == ND_OPT_PI and _.flag_a and _.prefix.prefixlen == 64]
+            assert self.type in {ps.icmp6.ROUTER_SOLICITATION, ps.icmp6.ROUTER_ADVERTISEMENT, ps.icmp6.NEIGHBOR_SOLICITATION, ps.icmp6.NEIGHBOR_ADVERTISEMENT}
+            __nd_opt_pi = [_.prefix for _ in self.nd_options if _.code == ps.icmp6.ND_OPT_PI and _.flag_a and _.prefix.prefixlen == 64]
         return __nd_opt_pi
 
     @property
@@ -683,48 +380,48 @@ class Parser:
         if inet_cksum(self._frame, self._hptr, self._plen, pshdr_sum):
             return "ICMPv6 integrity - wrong packet checksum"
 
-        if not HEADER_LEN <= self._plen <= len(self):
+        if not ps.icmp6.HEADER_LEN <= self._plen <= len(self):
             return "ICMPv6 integrity - wrong packet length (I)"
 
-        if self._frame[0] == UNREACHABLE:
+        if self._frame[0] == ps.icmp6.UNREACHABLE:
             if not 12 <= self._plen <= len(self):
                 return "ICMPv6 integrity - wrong packet length (II)"
 
-        elif self._frame[0] in {ECHO_REQUEST, ECHO_REPLY}:
+        elif self._frame[0] in {ps.icmp6.ECHO_REQUEST, ps.icmp6.ECHO_REPLY}:
             if not 8 <= self._plen <= len(self):
                 return "ICMPv6 integrity - wrong packet length (II)"
 
-        elif self._frame[0] == MLD2_QUERY:
+        elif self._frame[0] == ps.icmp6.MLD2_QUERY:
             if not 28 <= self._plen <= len(self):
                 return "ICMPv6 integrity - wrong packet length (II)"
             if self._plen != 28 + struct.unpack_from("! H", self._frame, self._hptr + 26)[0] * 16:
                 return "ICMPv6 integrity - wrong packet length (III)"
 
-        elif self._frame[0] == ROUTER_SOLICITATION:
+        elif self._frame[0] == ps.icmp6.ROUTER_SOLICITATION:
             if not 8 <= self._plen <= len(self):
                 return "ICMPv6 integrity - wrong packet length (II)"
             if fail := self._nd_option_integrity_check(self._hptr + 8):
                 return fail
 
-        elif self._frame[0] == ROUTER_ADVERTISEMENT:
+        elif self._frame[0] == ps.icmp6.ROUTER_ADVERTISEMENT:
             if not 16 <= self._plen <= len(self):
                 return "ICMPv6 integrity - wrong packet length (II)"
             if fail := self._nd_option_integrity_check(self._hptr + 16):
                 return fail
 
-        elif self._frame[0] == NEIGHBOR_SOLICITATION:
+        elif self._frame[0] == ps.icmp6.NEIGHBOR_SOLICITATION:
             if not 24 <= self._plen <= len(self):
                 return "ICMPv6 integrity - wrong packet length (II)"
             if fail := self._nd_option_integrity_check(self._hptr + 24):
                 return fail
 
-        elif self._frame[0] == NEIGHBOR_ADVERTISEMENT:
+        elif self._frame[0] == ps.icmp6.NEIGHBOR_ADVERTISEMENT:
             if 24 <= self._plen <= len(self):
                 return "ICMPv6 integrity - wrong packet length (II)"
             if fail := self._nd_option_integrity_check(self._hptr + 24):
                 return fail
 
-        elif self._frame[0] == MLD2_REPORT:
+        elif self._frame[0] == ps.icmp6.MLD2_REPORT:
             if not 8 <= self._plen <= len(self):
                 return "ICMPv6 integrity - wrong packet length (II)"
             optr = self._hptr + 8
@@ -743,33 +440,33 @@ class Parser:
         if not config.packet_sanity_check:
             return False
 
-        if self.type == UNREACHABLE:
+        if self.type == ps.icmp6.UNREACHABLE:
             if self.code not in {0, 1, 2, 3, 4, 5, 6}:
                 return "ICMPv6 sanity - 'code' must be [0-6] (RFC 4861)"
 
-        elif self.type == PACKET_TOO_BIG:
+        elif self.type == ps.icmp6.PACKET_TOO_BIG:
             if not self.code == 0:
                 return "ICMPv6 sanity - 'code' should be 0 (RFC 4861)"
 
-        elif self.type == TIME_EXCEEDED:
+        elif self.type == ps.icmp6.TIME_EXCEEDED:
             if self.code not in {0, 1}:
                 return "ICMPv6 sanity - 'code' must be [0-1] (RFC 4861)"
 
-        elif self.type == PARAMETER_PROBLEM:
+        elif self.type == ps.icmp6.PARAMETER_PROBLEM:
             if self.code not in {0, 1, 2}:
                 return "ICMPv6 sanity - 'code' must be [0-2] (RFC 4861)"
 
-        elif self.type in {ECHO_REQUEST, ECHO_REPLY}:
+        elif self.type in {ps.icmp6.ECHO_REQUEST, ps.icmp6.ECHO_REPLY}:
             if not self.code == 0:
                 return "ICMPv6 sanity - 'code' should be 0 (RFC 4861)"
 
-        elif self.type == MLD2_QUERY:
+        elif self.type == ps.icmp6.MLD2_QUERY:
             if not self.code == 0:
                 return "ICMPv6 sanity - 'code' must be 0 (RFC 3810)"
             if not ip6_hop == 1:
                 return "ICMPv6 sanity - 'hop' must be 255 (RFC 3810)"
 
-        elif self.type == ROUTER_SOLICITATION:
+        elif self.type == ps.icmp6.ROUTER_SOLICITATION:
             if not self.code == 0:
                 return "ICMPv6 sanity - 'code' must be 0 (RFC 4861)"
             if not ip6_hop == 255:
@@ -781,7 +478,7 @@ class Parser:
             if ip6_src.is_unspecified and self.nd_opt_slla:
                 return "ICMPv6 sanity - 'nd_opt_slla' must not be included if 'src' is unspecified (RFC 4861)"
 
-        elif self.type == ROUTER_ADVERTISEMENT:
+        elif self.type == ps.icmp6.ROUTER_ADVERTISEMENT:
             if not self.code == 0:
                 return "ICMPv6 sanity - 'code' must be 0 (RFC 4861)"
             if not ip6_hop == 255:
@@ -791,7 +488,7 @@ class Parser:
             if not (ip6_dst.is_unicast or ip6_dst == IPv6Address("ff02::1")):
                 return "ICMPv6 sanity - 'dst' must be unicast or all-nodes (RFC 4861)"
 
-        elif self.type == NEIGHBOR_SOLICITATION:
+        elif self.type == ps.icmp6.NEIGHBOR_SOLICITATION:
             if not self.code == 0:
                 return "ICMPv6 sanity - 'code' must be 0 (RFC 4861)"
             if not ip6_hop == 255:
@@ -805,7 +502,7 @@ class Parser:
             if ip6_src.is_unspecified and self.nd_opt_slla is not None:
                 return "ICMPv6 sanity - 'nd_opt_slla' must not be included if 'src' is unspecified"
 
-        elif self.type == NEIGHBOR_ADVERTISEMENT:
+        elif self.type == ps.icmp6.NEIGHBOR_ADVERTISEMENT:
             if not self.code == 0:
                 return "ICMPv6 sanity - 'code' must be 0 (RFC 4861)"
             if not ip6_hop == 255:
@@ -817,7 +514,7 @@ class Parser:
             if self.na_flag_s is False and not ip6_dst == IPv6Address("ff02::1"):
                 return "ICMPv6 sanity - if 'na_flag_s' is not set then 'dst' must be all-nodes (RFC 4861)"
 
-        elif self.type == MLD2_REPORT:
+        elif self.type == ps.icmp6.MLD2_REPORT:
             if not self.code == 0:
                 return "ICMPv6 sanity - 'code' must be 0 (RFC 3810)"
             if not ip6_hop == 1:
@@ -831,19 +528,7 @@ class Parser:
 #
 
 
-# ICMPv6 ND option - Source Link Layer Address (1)
-
-# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-# |     Type      |     Length    |                               >
-# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+                               +
-# >                           MAC Address                         |
-# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-
-ND_OPT_SLLA = 1
-ND_OPT_SLLA_LEN = 8
-
-
-class NdOptSLLA:
+class NdOptSLLA(ps.icmp6.NdOptSLLA):
     """ ICMPv6 ND option - Source Link Layer Address (1) """
 
     def __init__(self, frame, optr):
@@ -851,23 +536,8 @@ class NdOptSLLA:
         self.len = frame[optr + 1] << 3
         self.slla = ":".join([f"{_:0>2x}" for _ in frame[optr + 2 : optr + 8]])
 
-    def __str__(self):
-        return f"slla {self.slla}"
 
-
-# ICMPv6 ND option - Target Link Layer Address (2)
-
-# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-# |     Type      |     Length    |                               >
-# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+                               +
-# >                           MAC Address                         |
-# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-
-ND_OPT_TLLA = 2
-ND_OPT_TLLA_LEN = 8
-
-
-class NdOptTLLA:
+class NdOptTLLA(ps.icmp6.NdOptTLLA):
     """ ICMPv6 ND option - Target Link Layer Address (2) """
 
     def __init__(self, frame, optr):
@@ -875,35 +545,8 @@ class NdOptTLLA:
         self.len = frame[optr + 1] << 3
         self.tlla = ":".join([f"{_:0>2x}" for _ in frame[optr + 2 : optr + 8]])
 
-    def __str__(self):
-        return f"tlla {self.tlla}"
 
-
-# ICMPv6 ND option - Prefix Information (3)
-
-# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-# |     Type      |    Length     | Prefix Length |L|A|R|  Res1  |
-# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-# |                         Valid Lifetime                        |
-# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-# |                       Preferred Lifetime                      |
-# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-# |                           Reserved2                           |
-# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-# |                                                               |
-# +                                                               +
-# |                                                               |
-# +                            Prefix                             +
-# |                                                               |
-# +                                                               +
-# |                                                               |
-# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-
-ND_OPT_PI = 3
-ND_OPT_PI_LEN = 32
-
-
-class NdOptPI:
+class NdOptPI(ps.icmp6.NdOptPI):
     """ ICMPv6 ND option - Prefix Information (3) """
 
     def __init__(self, frame, optr):
@@ -916,14 +559,8 @@ class NdOptPI:
         self.preferred_lifetime = struct.unpack_from("!L", frame, optr + 8)[0]
         self.prefix = IPv6Network((frame[optr + 16 : optr + 32], frame[optr + 2]))
 
-    def __str__(self):
-        return f"prefix_info {self.prefix}"
 
-
-# ICMPv6 ND option not supported by this stack
-
-
-class NdOptUnk:
+class NdOptUnk(ps.icmp6.NdOptUnk):
     """ ICMPv6 ND  option not supported by this stack """
 
     def __init__(self, frame, optr):
@@ -943,26 +580,15 @@ class NdOptUnk:
 class MulticastAddressRecord:
     """ Multicast Address Record used by MLDv2 Report message """
 
-    def __init__(self, raw_record=None, record_type=None, multicast_address=None, source_address=None, aux_data=b""):
+    def __init__(self, raw_record):
         """ Class constructor """
 
-        # Record parsing
-        if raw_record:
-            self.record_type = raw_record[0]
-            self.aux_data_len = raw_record[1]
-            self.number_of_sources = struct.unpack("!H", raw_record[2:4])[0]
-            self.multicast_address = IPv6Address(raw_record[4:20])
-            self.source_address = [IPv6Address(raw_record[20 + 16 * _ : 20 + 16 * (_ + 1)]) for _ in range(self.number_of_sources)]
-            self.aux_data = raw_record[20 + 16 * self.number_of_sources :]
-
-        # Record building
-        else:
-            self.record_type = record_type
-            self.aux_data_len = len(aux_data)
-            self.multicast_address = IPv6Address(multicast_address)
-            self.source_address = [] if source_address is None else source_address
-            self.number_of_sources = len(self.source_address)
-            self.aux_data = aux_data
+        self.record_type = raw_record[0]
+        self.aux_data_len = raw_record[1]
+        self.number_of_sources = struct.unpack("!H", raw_record[2:4])[0]
+        self.multicast_address = IPv6Address(raw_record[4:20])
+        self.source_address = [IPv6Address(raw_record[20 + 16 * _ : 20 + 16 * (_ + 1)]) for _ in range(self.number_of_sources)]
+        self.aux_data = raw_record[20 + 16 * self.number_of_sources :]
 
     def __len__(self):
         """ Length of raw record """
@@ -978,13 +604,3 @@ class MulticastAddressRecord:
         """ Compare two records """
 
         return self.raw_record == other.raw_record
-
-    @property
-    def raw_record(self):
-        """ Get record in raw format """
-
-        return (
-            struct.pack("! BBH 16s", self.record_type, self.aux_data_len, self.number_of_sources, self.multicast_address.packed)
-            + b"".join([_.packed for _ in self.source_address])
-            + self.aux_data
-        )

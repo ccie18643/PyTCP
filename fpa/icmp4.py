@@ -43,68 +43,12 @@
 
 import struct
 
+import ps.icmp4
 from misc.ip_helper import inet_cksum
 from misc.tracker import Tracker
 
-# Echo reply message (0/0)
 
-# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-# |     Type      |     Code      |           Checksum            |
-# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-# |              Id               |              Seq              |
-# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-# ~                             Data                              ~
-# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-
-
-# Destination Unreachable message (3/[0-3, 5-15])
-
-# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-# |     Type      |     Code      |           Checksum            |
-# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-# |                           Reserved                            |
-# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-# ~                             Data                              ~
-# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-
-
-# Destination Unreachable message (3/4)
-
-# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-# |     Type      |     Code      |           Checksum            |
-# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-# |           Reserved            |          Link MTU / 0         |
-# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-# ~                             Data                              ~
-# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-
-
-# Echo Request message (8/0)
-
-# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-# |     Type      |     Code      |           Checksum            |
-# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-# |              Id               |              Seq              |
-# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-# ~                             Data                              ~
-# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-
-
-ECHO_REPLY = 0
-ECHO_REPLY_LEN = 8
-UNREACHABLE = 3
-UNREACHABLE_LEN = 8
-UNREACHABLE__NET = 0
-UNREACHABLE__HOST = 1
-UNREACHABLE__PROTOCOL = 2
-UNREACHABLE__PORT = 3
-UNREACHABLE__FAGMENTATION = 4
-UNREACHABLE__SOURCE_ROUTE_FAILED = 5
-ECHO_REQUEST = 8
-ECHO_REQUEST_LEN = 8
-
-
-class Assembler:
+class Assembler(ps.icmp4.Base):
     """ ICMPv4 packet assembler support class """
 
     protocol = "ICMP4"
@@ -126,57 +70,41 @@ class Assembler:
         self.type = type
         self.code = code
 
-        if self.type == ECHO_REPLY:
+        if self.type == ps.icmp4.ECHO_REPLY:
             self.ec_id = ec_id
             self.ec_seq = ec_seq
             self.ec_data = ec_data
 
-        elif self.type == UNREACHABLE and self.code == UNREACHABLE__PORT:
+        elif self.type == ps.icmp4.UNREACHABLE and self.code == ps.icmp4.UNREACHABLE__PORT:
             self.un_data = un_data[:520]
 
-        elif self.type == ECHO_REQUEST:
+        elif self.type == ps.icmp4.ECHO_REQUEST:
             self.ec_id = ec_id
             self.ec_seq = ec_seq
             self.ec_data = ec_data
-
-    def __str__(self):
-        """ Packet log string """
-
-        log = f"ICMPv4 type {self.type}, code {self.code}"
-
-        if self.type == ECHO_REPLY:
-            log += f", id {self.ec_id}, seq {self.ec_seq}"
-
-        elif self.type == UNREACHABLE and self.code == UNREACHABLE__PORT:
-            pass
-
-        elif self.type == ECHO_REQUEST:
-            log += f", id {self.ec_id}, seq {self.ec_seq}"
-
-        return log
 
     def __len__(self):
         """ Length of the packet """
 
-        if self.type == ECHO_REPLY:
-            return ECHO_REPLY_LEN + len(self.ec_data)
+        if self.type == ps.icmp4.ECHO_REPLY:
+            return ps.icmp4.ECHO_REPLY_LEN + len(self.ec_data)
 
-        if self.type == UNREACHABLE and self.code == UNREACHABLE__PORT:
-            return UNREACHABLE_LEN + len(self.un_data)
+        if self.type == ps.icmp4.UNREACHABLE and self.code == ps.icmp4.UNREACHABLE__PORT:
+            return ps.icmp4.UNREACHABLE_LEN + len(self.un_data)
 
-        if self.type == ECHO_REQUEST:
-            return ECHO_REQUEST_LEN + len(self.ec_data)
+        if self.type == ps.icmp4.ECHO_REQUEST:
+            return ps.icmp4.ECHO_REQUEST_LEN + len(self.ec_data)
 
     def assemble(self, frame, hptr, _):
         """ Assemble packet into the raw form """
 
-        if self.type == ECHO_REPLY:
+        if self.type == ps.icmp4.ECHO_REPLY:
             struct.pack_into(f"! BBH HH {len(self.ec_data)}s", frame, hptr, self.type, self.code, 0, self.ec_id, self.ec_seq, self.ec_data)
 
-        elif self.type == UNREACHABLE and self.code == UNREACHABLE__PORT:
+        elif self.type == ps.icmp4.UNREACHABLE and self.code == ps.icmp4.UNREACHABLE__PORT:
             struct.pack_into(f"! BBH L {len(self.un_data)}s", frame, hptr, self.type, self.code, 0, 0, self.un_data)
 
-        elif self.type == ECHO_REQUEST:
+        elif self.type == ps.icmp4.ECHO_REQUEST:
             struct.pack_into(f"! BBH HH {len(self.ec_data)}s", frame, hptr, self.type, self.code, 0, self.ec_id, self.ec_seq, self.ec_data)
 
         struct.pack_into("! H", frame, hptr + 2, inet_cksum(frame, hptr, len(self)))

@@ -100,7 +100,7 @@ def _defragment_ip4_packet(self, packet_rx):
     header[6] = header[7] = header[10] = header[11] = 0
     struct.pack_into("!H", header, 10, inet_cksum(header, 0, ps.ip4.HEADER_LEN))
     packet_rx = PacketRx(bytes(header) + data)
-    ps.ip4.Parser(packet_rx)
+    fpp.ip4.Parser(packet_rx)
     if __debug__:
         self._logger.debug(f"{packet_rx.tracker} - Reasembled fragmented IPv4 packet, dlen {len(data)} bytes")
     return packet_rx

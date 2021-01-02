@@ -52,6 +52,7 @@ import fpa.icmp6
 import misc.stack as stack
 import ps.arp
 import ps.dhcp
+import ps.icmp6
 from misc.arp_cache import ArpCache
 from misc.ipv4_address import IPv4Address, IPv4Interface
 from misc.ipv6_address import IPv6Address, IPv6Interface, IPv6Network
@@ -424,7 +425,7 @@ class PacketHandler:
         # Need to use set here to avoid re-using duplicate multicast entries from stack_ip6_multicast list,
         # also All Multicast Nodes address is not being advertised as this is not necessary
         if icmp6_mlr2_multicast_address_record := {
-            fpa.icmp6.MulticastAddressRecord(record_type=fpa.icmp6.MART_CHANGE_TO_EXCLUDE, multicast_address=str(_))
+            fpa.icmp6.MulticastAddressRecord(record_type=ps.icmp6.MART_CHANGE_TO_EXCLUDE, multicast_address=str(_))
             for _ in self.ip6_multicast
             if _ not in {IPv6Address("ff02::1")}
         }:
@@ -432,7 +433,7 @@ class PacketHandler:
                 ip6_src=self.ip6_unicast[0] if self.ip6_unicast else IPv6Address("::"),
                 ip6_dst=IPv6Address("ff02::16"),
                 ip6_hop=1,
-                icmp6_type=fpa.icmp6.MLD2_REPORT,
+                icmp6_type=ps.icmp6.MLD2_REPORT,
                 icmp6_mlr2_multicast_address_record=icmp6_mlr2_multicast_address_record,
             )
             if __debug__:
@@ -447,7 +448,7 @@ class PacketHandler:
             ip6_src=IPv6Address("::"),
             ip6_dst=ip6_unicast_candidate.solicited_node_multicast,
             ip6_hop=255,
-            icmp6_type=fpa.icmp6.NEIGHBOR_SOLICITATION,
+            icmp6_type=ps.icmp6.NEIGHBOR_SOLICITATION,
             icmp6_ns_target_address=ip6_unicast_candidate,
         )
         if __debug__:
@@ -460,8 +461,8 @@ class PacketHandler:
             ip6_src=self.ip6_unicast[0],
             ip6_dst=IPv6Address("ff02::2"),
             ip6_hop=255,
-            icmp6_type=fpa.icmp6.ROUTER_SOLICITATION,
-            icmp6_nd_options=[fpa.icmp6.Icmp6NdOptSLLA(self.mac_unicast)],
+            icmp6_type=ps.icmp6.ROUTER_SOLICITATION,
+            icmp6_nd_options=[fpa.icmp6.NdOptSLLA(self.mac_unicast)],
         )
         if __debug__:
             self._logger.debug("Sent out ICMPv6 ND Router Solicitation")

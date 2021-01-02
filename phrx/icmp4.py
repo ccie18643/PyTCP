@@ -42,6 +42,7 @@
 
 
 import fpp.icmp4
+import ps.icmp4
 
 
 def _phrx_icmp4(self, packet_rx):
@@ -58,14 +59,14 @@ def _phrx_icmp4(self, packet_rx):
         self._logger.opt(ansi=True).info(f"<green>{packet_rx.tracker}</green> - {packet_rx.icmp4}")
 
     # Respond to ICMPv4 Echo Request packet
-    if packet_rx.icmp4.type == fpp.icmp4.ECHO_REQUEST:
+    if packet_rx.icmp4.type == ps.icmp4.ECHO_REQUEST:
         if __debug__:
             self._logger.debug(f"Received ICMPv4 Echo Request packet from {packet_rx.ip4.src}, sending reply...")
 
         self._phtx_icmp4(
             ip4_src=packet_rx.ip4.dst,
             ip4_dst=packet_rx.ip4.src,
-            icmp4_type=fpp.icmp4.ECHO_REPLY,
+            icmp4_type=ps.icmp4.ECHO_REPLY,
             icmp4_ec_id=packet_rx.icmp4.ec_id,
             icmp4_ec_seq=packet_rx.icmp4.ec_seq,
             icmp4_ec_data=packet_rx.icmp4.ec_data,
