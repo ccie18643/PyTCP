@@ -37,31 +37,48 @@
 
 
 #
-# service_udp_discard.py - 'user space' service UDP Discard (RFC 863)
+# service/tcp_discard.py - 'user space' service TCP Discard (RFC 863)
 #
 
 
 import threading
 
-import udp_socket
+import tcp_socket
 
 
-class ServiceUdpDiscard:
-    """ UDP Discard service support class """
+class ServiceTcpDiscard:
+    """ TCP Discard service support class """
 
     def __init__(self, local_ip_address="*", local_port=9):
         """ Class constructor """
 
         threading.Thread(target=self.__thread_service, args=(local_ip_address, local_port)).start()
 
-    @staticmethod
-    def __thread_service(local_ip_address, local_port):
-        """ Service initialization and rx/tx loop """
+    def __thread_service(self, local_ip_address, local_port):
+        """ Service initialization """
 
-        socket = udp_socket.UdpSocket()
+        socket = tcp_socket.TcpSocket()
         socket.bind(local_ip_address, local_port)
-        print(f"Service UDP Discard: Socket created, bound to {local_ip_address}, port {local_port}")
+        socket.listen()
+        print(f"Service TCP Discard: Socket created, bound to {local_ip_address}, port {local_port} and set to listening mode")
 
         while True:
-            packet_rx = socket.receive_from()
-            print(f"Service UDP Discard: Discarded message from {packet_rx.remote_ip_address}, port {packet_rx.remote_port}, {len(packet_rx.data)} bytes")
+            new_socket = socket.accept()
+            print(f"Service TCP Discard: Inbound connection received from {new_socket.remote_ip_address}, port {new_socket.remote_port}")
+
+            threading.Thread(target=self.__thread_connection, args=(new_socket,)).start()
+
+    @staticmethod
+    def __thread_connection(socket):
+        """ Inbound connection handler """
+
+        while True:
+            message = socket.receive()
+
+            if message is None:
+                break
+
+            print(f"Service TCP Discard: Discarded message from {socket.remote_ip_address}, port {socket.remote_port} -", message)
+
+        socket.close()
+        print(f"Service TCP Discard: Connection from {socket.remote_ip_address}, port {socket.remote_port} has been closed by peer")

@@ -50,15 +50,15 @@ import time
 import loguru
 
 import config
-from client_icmp_echo import ClientIcmpEcho
-from client_tcp_echo import ClientTcpEcho
+from client.icmp_echo import ClientIcmpEcho
+from client.tcp_echo import ClientTcpEcho
 from ph import PacketHandler
-from service_tcp_daytime import ServiceTcpDaytime
-from service_tcp_discard import ServiceTcpDiscard
-from service_tcp_echo import ServiceTcpEcho
-from service_udp_daytime import ServiceUdpDaytime
-from service_udp_discard import ServiceUdpDiscard
-from service_udp_echo import ServiceUdpEcho
+from service.tcp_daytime import ServiceTcpDaytime
+from service.tcp_discard import ServiceTcpDiscard
+from service.tcp_echo import ServiceTcpEcho
+from service.udp_daytime import ServiceUdpDaytime
+from service.udp_discard import ServiceUdpDiscard
+from service.udp_echo import ServiceUdpEcho
 from stack_cli_server import StackCliServer
 from timer import Timer
 

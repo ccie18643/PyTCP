@@ -37,55 +37,52 @@
 
 
 #
-# service_udp_echo.py - 'user space' service UDP Echo (RFC 862)
+# client/tcp_echo.py - 'user space' client for TCP echo, it activelly connects to service and sends messages
 #
 
 
 import threading
+import time
+from datetime import datetime
 
-import udp_socket
-from malpi import malpa, malpi, malpka
-from tracker import Tracker
-from udp_metadata import UdpMetadata
+from ip_helper import ip_pick_version
+from tcp_socket import TcpSocket
 
 
-class ServiceUdpEcho:
-    """ UDP Echo service support class """
+class ClientTcpEcho:
+    """ TCP Echo client support class """
 
-    def __init__(self, local_ip_address="*", local_port=7):
+    def __init__(self, local_ip_address, remote_ip_address, local_port=0, remote_port=7, message_count=10):
         """ Class constructor """
 
-        threading.Thread(target=self.__thread_service, args=(local_ip_address, local_port)).start()
+        local_ip_address = ip_pick_version(local_ip_address)
+        remote_ip_address = ip_pick_version(remote_ip_address)
+
+        threading.Thread(target=self.__thread_client, args=(local_ip_address, local_port, remote_ip_address, remote_port, message_count)).start()
 
     @staticmethod
-    def __thread_service(local_ip_address, local_port):
-        """ Service initialization and rx/tx loop """
-
-        socket = udp_socket.UdpSocket()
+    def __thread_client(local_ip_address, local_port, remote_ip_address, remote_port, message_count):
+        socket = TcpSocket()
         socket.bind(local_ip_address, local_port)
-        print(f"Service UDP Echo: Socket created, bound to {local_ip_address}, port {local_port}")
 
-        while True:
-            packet_rx = socket.receive_from()
-            message = packet_rx.data
-            print(f"Service UDP Echo: Received {len(message)} bytes from {packet_rx.remote_ip_address}, port {packet_rx.remote_port}")
+        print(f"Client TCP Echo: opening connection to {remote_ip_address}, port {remote_port}")
+        if socket.connect(remote_ip_address=remote_ip_address, remote_port=remote_port):
+            print(f"Client TCP Echo: Connection to {remote_ip_address}, port {remote_port} has been established")
+        else:
+            print(f"Client TCP Echo: Connection to {remote_ip_address}, port {remote_port} failed")
+            return
 
-            if b"malpka" in message.strip().lower():
-                message = malpka
+        i = 1
+        while i <= message_count:
+            message = bytes(str(datetime.now()) + "\n", "utf-8")
+            # message = bytes("***START***" + "1234567890" * 1000 + "***STOP***", "utf-8")
+            if socket.send(message):
+                print(f"Client TCP Echo: Sent data to {remote_ip_address}, port {remote_port} - {message}")
+                time.sleep(1)
+                i += 1
+            else:
+                print(f"Client TCP Echo: Peer {remote_ip_address}, port {remote_port} closed connection")
+                break
 
-            elif b"malpa" in message.strip().lower():
-                message = malpa
-
-            elif b"malpi" in message.strip().lower():
-                message = malpi
-
-            packet_tx = UdpMetadata(
-                local_ip_address=packet_rx.local_ip_address,
-                local_port=packet_rx.local_port,
-                remote_ip_address=packet_rx.remote_ip_address,
-                remote_port=packet_rx.remote_port,
-                data=message,
-                tracker=Tracker("TX", echo_tracker=packet_rx.tracker),
-            )
-            socket.send_to(packet_tx)
-            print(f"Service UDP Echo: Echo'ed {len(message)} bytes back to {packet_tx.remote_ip_address}, port {packet_tx.remote_port}")
+        socket.close()
+        print(f"Client TCP Echo: Closed connection to {remote_ip_address}, port {remote_port}")

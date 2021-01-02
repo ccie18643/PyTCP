@@ -69,9 +69,9 @@ class PacketHandler:
     from phrx.ether import _phrx_ether
     from phrx.icmp4 import _phrx_icmp4
     from phrx.icmp6 import _phrx_icmp6
-    from phrx.ip4 import _phrx_ip4, _defragment_ip4_packet
+    from phrx.ip4 import _defragment_ip4_packet, _phrx_ip4
     from phrx.ip6 import _phrx_ip6
-    from phrx.ip6_ext_frag import _phrx_ip6_ext_frag, _defragment_ip6_packet
+    from phrx.ip6_ext_frag import _defragment_ip6_packet, _phrx_ip6_ext_frag
     from phrx.tcp import _phrx_tcp
     from phrx.udp import _phrx_udp
     from phtx.arp import _phtx_arp

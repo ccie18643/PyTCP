@@ -37,43 +37,61 @@
 
 
 #
-# service_udp_daytime.py - 'user space' service UDP Daytime (RFC 867)
+# client/icmp_echo.py - 'user space' client for ICMPv4/v6 echo
 #
 
 
+import random
 import threading
+import time
 from datetime import datetime
 
-import udp_socket
-from tracker import Tracker
-from udp_metadata import UdpMetadata
+import stack
+from ip_helper import ip_pick_version
 
 
-class ServiceUdpDaytime:
-    """ UDP Daytime service support class """
+class ClientIcmpEcho:
+    """ ICMPv4/v6 Echo client support class """
 
-    def __init__(self, local_ip_address="*", local_port=13):
+    def __init__(self, local_ip_address, remote_ip_address, message_count=None):
         """ Class constructor """
 
-        threading.Thread(target=self.__thread_service, args=(local_ip_address, local_port)).start()
+        local_ip_address = ip_pick_version(local_ip_address)
+        remote_ip_address = ip_pick_version(remote_ip_address)
+
+        threading.Thread(target=self.__thread_client, args=(local_ip_address, remote_ip_address, message_count)).start()
 
     @staticmethod
-    def __thread_service(local_ip_address, local_port):
-        """ Service initialization and rx/tx loop """
+    def __thread_client(local_ip_address, remote_ip_address, message_count):
 
-        socket = udp_socket.UdpSocket()
-        socket.bind(local_ip_address, local_port)
-        print(f"Service UDP Daytime: Socket created, bound to {local_ip_address}, port {local_port}")
+        flow_id = random.randint(0, 65535)
 
-        while True:
-            packet_rx = socket.receive_from()
-            packet_tx = UdpMetadata(
-                local_ip_address=packet_rx.local_ip_address,
-                local_port=packet_rx.local_port,
-                remote_ip_address=packet_rx.remote_ip_address,
-                remote_port=packet_rx.remote_port,
-                _data=bytes(str(datetime.now()), "utf-8"),
-                tracker=Tracker("TX", echo_tracker=packet_rx.tracker),
-            )
-            socket.send_to(packet_tx)
-            print(f"Service UDP Daytime: Sent daytime message to {packet_tx.remote_ip_address}, port {packet_tx.remote_port}, {len(packet_tx.data)} bytes")
+        message_seq = 0
+        while message_count is None or message_seq < message_count:
+            message = bytes(str(datetime.now()) + "\n", "utf-8")
+
+            if local_ip_address.version == 4:
+                stack.packet_handler.phtx.icmp4(
+                    ip4_src=local_ip_address,
+                    ip4_dst=remote_ip_address,
+                    icmp4_type=8,
+                    icmp4_code=0,
+                    icmp4_ec_id=flow_id,
+                    icmp4_ec_seq=message_seq,
+                    icmp4_ec_data=message,
+                )
+
+            if local_ip_address.version == 6:
+                stack.packet_handler.phtx.icmp6(
+                    ip6_src=local_ip_address,
+                    ip6_dst=remote_ip_address,
+                    icmp6_type=128,
+                    icmp6_code=0,
+                    icmp6_ec_id=flow_id,
+                    icmp6_ec_seq=message_seq,
+                    icmp6_ec_data=message,
+                )
+
+            print(f"Client ICMP Echo: Sent ICMP Echo ({flow_id}/{message_seq}) to {remote_ip_address} - {message}")
+            time.sleep(1)
+            message_seq += 1

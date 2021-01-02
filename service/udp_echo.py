@@ -37,63 +37,55 @@
 
 
 #
-# service_tcp_daytime.py - 'user space' service TCP Daytime (RFC 867)
+# service/udp_echo.py - 'user space' service UDP Echo (RFC 862)
 #
 
 
 import threading
-import time
 
-import tcp_socket
+import udp_socket
+from malpi import malpa, malpi, malpka
+from tracker import Tracker
+from udp_metadata import UdpMetadata
 
-# from datetime import datetime
 
+class ServiceUdpEcho:
+    """ UDP Echo service support class """
 
-class ServiceTcpDaytime:
-    """ TCP Daytime service support class """
-
-    def __init__(self, local_ip_address="*", local_port=13, message_count=1, message_delay=0, message_size=1):
+    def __init__(self, local_ip_address="*", local_port=7):
         """ Class constructor """
 
-        threading.Thread(target=self.__thread_service, args=(local_ip_address, local_port, message_count, message_delay, message_size)).start()
-
-    def __thread_service(self, local_ip_address, local_port, message_count, message_delay, message_size):
-        """ Service initialization """
-
-        socket = tcp_socket.TcpSocket()
-        socket.bind(local_ip_address, local_port)
-        socket.listen()
-        print(f"Service TCP Daytime: Socket created, bound to {local_ip_address}, port {local_port} and set to listening mode")
-
-        while True:
-            new_socket = socket.accept()
-            print(f"Service TCP Daytime: Inbound connection received from {new_socket.remote_ip_address}, port {new_socket.remote_port}")
-
-            threading.Thread(target=self.__thread_connection, args=(new_socket, message_count, message_delay, message_size)).start()
+        threading.Thread(target=self.__thread_service, args=(local_ip_address, local_port)).start()
 
     @staticmethod
-    def __thread_connection(socket, message_count, message_delay, message_size):
-        """ Inbound connection handler """
+    def __thread_service(local_ip_address, local_port):
+        """ Service initialization and rx/tx loop """
 
-        while message_count:
-            # daytime = "bytes(str(datetime.now()) + "\n", "utf-8") * message_size
+        socket = udp_socket.UdpSocket()
+        socket.bind(local_ip_address, local_port)
+        print(f"Service UDP Echo: Socket created, bound to {local_ip_address}, port {local_port}")
 
-            message = "[------START------] "
-            for i in range(message_size - 2):
-                message += f"[------{i + 1:05}------] "
-            message += "[-------END-------]\n"
-            daytime = bytes(message, "utf-8")
+        while True:
+            packet_rx = socket.receive_from()
+            message = packet_rx.data
+            print(f"Service UDP Echo: Received {len(message)} bytes from {packet_rx.remote_ip_address}, port {packet_rx.remote_port}")
 
-            if result := socket.send(daytime):
-                print(f"Service TCP Daytime: Sent daytime message to {socket.remote_ip_address}, port {socket.remote_port}")
-                time.sleep(message_delay)
-                message_count = min(message_count, message_count - 1)
-                if result == -1:
-                    print(f"Service TCP Daytime: Connection to {socket.remote_ip_address}, port {socket.remote_port} has been closed by remote peer")
-                    break
-            else:
-                print(f"Service TCP Daytime: Connection to {socket.remote_ip_address}, port {socket.remote_port} has failed")
-                break
+            if b"malpka" in message.strip().lower():
+                message = malpka
 
-        socket.close()
-        print(f"Service TCP Daytime: Closed connection to {socket.remote_ip_address}, port {socket.remote_port}")
+            elif b"malpa" in message.strip().lower():
+                message = malpa
+
+            elif b"malpi" in message.strip().lower():
+                message = malpi
+
+            packet_tx = UdpMetadata(
+                local_ip_address=packet_rx.local_ip_address,
+                local_port=packet_rx.local_port,
+                remote_ip_address=packet_rx.remote_ip_address,
+                remote_port=packet_rx.remote_port,
+                data=message,
+                tracker=Tracker("TX", echo_tracker=packet_rx.tracker),
+            )
+            socket.send_to(packet_tx)
+            print(f"Service UDP Echo: Echo'ed {len(message)} bytes back to {packet_tx.remote_ip_address}, port {packet_tx.remote_port}")

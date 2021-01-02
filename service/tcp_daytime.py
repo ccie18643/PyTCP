@@ -37,73 +37,63 @@
 
 
 #
-# service_tcp_echo.py - 'user space' service TCP Echo (RFC 862)
+# service/tcp_daytime.py - 'user space' service TCP Daytime (RFC 867)
 #
 
 
 import threading
+import time
 
 import tcp_socket
-from malpi import malpa, malpi, malpka
+
+# from datetime import datetime
 
 
-class ServiceTcpEcho:
-    """ TCP Echo service support class """
+class ServiceTcpDaytime:
+    """ TCP Daytime service support class """
 
-    def __init__(self, local_ip_address="*", local_port=7):
+    def __init__(self, local_ip_address="*", local_port=13, message_count=1, message_delay=0, message_size=1):
         """ Class constructor """
 
-        threading.Thread(target=self.__thread_service, args=(local_ip_address, local_port)).start()
+        threading.Thread(target=self.__thread_service, args=(local_ip_address, local_port, message_count, message_delay, message_size)).start()
 
-    def __thread_service(self, local_ip_address, local_port):
+    def __thread_service(self, local_ip_address, local_port, message_count, message_delay, message_size):
         """ Service initialization """
 
         socket = tcp_socket.TcpSocket()
         socket.bind(local_ip_address, local_port)
         socket.listen()
-        print(f"Service TCP Echo: Socket created, bound to {local_ip_address}, port {local_port} and set to listening mode")
+        print(f"Service TCP Daytime: Socket created, bound to {local_ip_address}, port {local_port} and set to listening mode")
 
         while True:
             new_socket = socket.accept()
-            print(f"Service TCP Echo: Inbound connection received from {new_socket.remote_ip_address}, port {new_socket.remote_port}")
+            print(f"Service TCP Daytime: Inbound connection received from {new_socket.remote_ip_address}, port {new_socket.remote_port}")
 
-            threading.Thread(target=self.__thread_connection, args=(new_socket,)).start()
+            threading.Thread(target=self.__thread_connection, args=(new_socket, message_count, message_delay, message_size)).start()
 
     @staticmethod
-    def __thread_connection(socket):
+    def __thread_connection(socket, message_count, message_delay, message_size):
         """ Inbound connection handler """
 
-        print(f"Service TCP Echo: Sending first message to {socket.remote_ip_address}, port {socket.remote_port}")
-        socket.send(b"***CLIENT OPEN / SERVICE OPEN***\n")
+        while message_count:
+            # daytime = "bytes(str(datetime.now()) + "\n", "utf-8") * message_size
 
-        while True:
-            message = socket.receive()
-            if message is not None:
-                print(f"Service TCP Echo: Received {len(message)} bytes from {socket.remote_ip_address}, port {socket.remote_port}")
+            message = "[------START------] "
+            for i in range(message_size - 2):
+                message += f"[------{i + 1:05}------] "
+            message += "[-------END-------]\n"
+            daytime = bytes(message, "utf-8")
 
-            if message is None:
-                print(f"Service TCP Echo: Connection to {socket.remote_ip_address}, port {socket.remote_port} has been closed by peer")
-                print(f"Service TCP Echo: Sending last message to {socket.remote_ip_address}, port {socket.remote_port}")
-                socket.send(b"***CLIENT CLOSED, SERVICE CLOSING***\n")
-                print(f"Service TCP Echo: Closng connection to {socket.remote_ip_address}, port {socket.remote_port}")
-                socket.close()
+            if result := socket.send(daytime):
+                print(f"Service TCP Daytime: Sent daytime message to {socket.remote_ip_address}, port {socket.remote_port}")
+                time.sleep(message_delay)
+                message_count = min(message_count, message_count - 1)
+                if result == -1:
+                    print(f"Service TCP Daytime: Connection to {socket.remote_ip_address}, port {socket.remote_port} has been closed by remote peer")
+                    break
+            else:
+                print(f"Service TCP Daytime: Connection to {socket.remote_ip_address}, port {socket.remote_port} has failed")
                 break
 
-            elif message in {b"CLOSE\n", b"CLOSE\r\n", b"close\n", b"close\r\n"}:
-                print(f"Service TCP Echo: Sending last message to {socket.remote_ip_address}, port {socket.remote_port}")
-                socket.send(b"***CLIENT OPEN, SERVICE CLOSING***\n")
-                print(f"Service TCP Echo: Closng connection to {socket.remote_ip_address}, port {socket.remote_port}")
-                socket.close()
-                continue
-
-            if b"malpka" in message.strip().lower():
-                message = malpka
-
-            elif b"malpa" in message.strip().lower():
-                message = malpa
-
-            elif b"malpi" in message.strip().lower():
-                message = malpi
-
-            if socket.send(message):
-                print(f"Service TCP Echo: Echo'ed {len(message)} bytes back to {socket.remote_ip_address}, port {socket.remote_port}")
+        socket.close()
+        print(f"Service TCP Daytime: Closed connection to {socket.remote_ip_address}, port {socket.remote_port}")
