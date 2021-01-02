@@ -52,6 +52,8 @@ def _phtx_udp(self, ip_src, ip_dst, udp_sport, udp_dport, udp_data=b"", echo_tra
 
     assert type(ip_src) in {IPv4Address, IPv6Address}
     assert type(ip_dst) in {IPv4Address, IPv6Address}
+    assert 0 < tcp_sport < 65536
+    assert 0 < tcp_dport < 65536
 
     # Check if IPv4 protocol support is enabled, if not then silently drop the IPv4 packet
     if not config.ip4_support and ip_dst.version == 4:

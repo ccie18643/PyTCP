@@ -119,13 +119,13 @@ def _validate_dst_ip4_address(self, ip4_dst):
 def _phtx_ip4(self, child_packet, ip4_dst, ip4_src, ip4_ttl=config.ip4_default_ttl):
     """ Handle outbound IP packets """
 
+    assert type(ip6_src) is IPv4Address
+    assert type(ip6_dst) is IPv4Address
+    assert 0 < ip4_ttl < 256
+
     # Check if IPv4 protocol support is enabled, if not then silently drop the packet
     if not config.ip4_support:
         return
-
-    # Make sure source and destination addresses are the right object type
-    ip4_src = IPv4Address(ip4_src)
-    ip4_dst = IPv4Address(ip4_dst)
 
     # Validate source address
     ip4_src = self._validate_src_ip4_address(ip4_src, ip4_dst)

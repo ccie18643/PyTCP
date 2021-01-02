@@ -96,13 +96,13 @@ def _validate_dst_ip6_address(self, ip6_dst):
 def _phtx_ip6(self, child_packet, ip6_dst, ip6_src, ip6_hop=config.ip6_default_hop):
     """ Handle outbound IP packets """
 
+    assert type(ip6_src) is IPv6Address
+    assert type(ip6_dst) is IPv6Address
+    assert 0 < ip6_hop < 256
+
     # Check if IPv6 protocol support is enabled, if not then silently drop the packet
     if not config.ip6_support:
         return
-
-    # Make sure source and destination addresses are the right object type
-    ip6_src = IPv6Address(ip6_src)
-    ip6_dst = IPv6Address(ip6_dst)
 
     # Validate source address
     ip6_src = self._validate_src_ip6_address(ip6_src, ip6_dst)
