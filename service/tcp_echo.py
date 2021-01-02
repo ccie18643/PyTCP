@@ -43,8 +43,8 @@
 
 import threading
 
-import tcp_socket
-from malpi import malpa, malpi, malpka
+import tcp.socket
+from misc.malpi import malpa, malpi, malpka
 
 
 class ServiceTcpEcho:
@@ -58,7 +58,7 @@ class ServiceTcpEcho:
     def __thread_service(self, local_ip_address, local_port):
         """ Service initialization """
 
-        socket = tcp_socket.TcpSocket()
+        socket = tcp.socket.TcpSocket()
         socket.bind(local_ip_address, local_port)
         socket.listen()
         print(f"Service TCP Echo: Socket created, bound to {local_ip_address}, port {local_port} and set to listening mode")

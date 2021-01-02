@@ -124,8 +124,14 @@ ip4_address_candidate = [
 ]
 
 # ARP cache configuration
+arp_cache_entry_max_age = 3600
+arp_cache_entry_refresh_time = 300
 arp_cache_update_from_direct_request = True
 arp_cache_update_from_gratuitious_reply = True
+
+# ICMPv6 ND cache configuration
+nd_cache_entry_max_age = 3600
+nd_cache_entry_refresh_time = 300
 
 # TCP ephemeral port range to be used by outbound connections
 TCP_EPHEMERAL_PORT_RANGE = (32168, 60999)

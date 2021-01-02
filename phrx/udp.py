@@ -46,16 +46,16 @@ import loguru
 import fpp.icmp4
 import fpp.icmp6
 import fpp.udp
-import stack
-from ipv4_address import IPv4Address
-from ipv6_address import IPv6Address
-from udp_metadata import UdpMetadata
+import misc.stack as stack
+from misc.ipv4_address import IPv4Address
+from misc.ipv6_address import IPv6Address
+from udp.metadata import UdpMetadata
 
 
 def _phrx_udp(self, packet_rx):
     """ Handle inbound UDP packets """
 
-    fpp.udp.UdpPacket(packet_rx)
+    fpp.udp.Parser(packet_rx)
 
     if packet_rx.parse_failed:
         if __debug__:
@@ -91,7 +91,7 @@ def _phrx_udp(self, packet_rx):
             )
         return
 
-    # Respond with ICMPv4 Port Unreachable message if no matching socket has been found
+    # Respond with ICMP Port Unreachable message if no matching socket has been found
     if __debug__:
         self._logger.debug(f"Received UDP packet from {packet_rx.ip.src} to closed port {packet_rx.udp.dport}, sending ICMPv4 Port Unreachable")
 
@@ -99,8 +99,8 @@ def _phrx_udp(self, packet_rx):
         self._phtx_icmp6(
             ip6_src=packet_rx.ip6.dst,
             ip6_dst=packet_rx.ip6.src,
-            icmp6_type=fpp.icmp6.ICMP6_UNREACHABLE,
-            icmp6_code=fpp.icmp6.ICMP6_UNREACHABLE__PORT,
+            icmp6_type=fpp.icmp6.UNREACHABLE,
+            icmp6_code=fpp.icmp6.UNREACHABLE__PORT,
             icmp6_un_data=packet_rx.ip.packet_copy,
             echo_tracker=packet_rx.tracker,
         )
@@ -109,8 +109,8 @@ def _phrx_udp(self, packet_rx):
         self._phtx_icmp4(
             ip4_src=packet_rx.ip.dst,
             ip4_dst=packet_rx.ip.src,
-            icmp4_type=fpp.icmp4.ICMP4_UNREACHABLE,
-            icmp4_code=fpp.icmp4.ICMP4_UNREACHABLE__PORT,
+            icmp4_type=fpp.icmp4.UNREACHABLE,
+            icmp4_code=fpp.icmp4.UNREACHABLE__PORT,
             icmp4_un_data=packet_rx.ip.packet_copy,
             echo_tracker=packet_rx.tracker,
         )

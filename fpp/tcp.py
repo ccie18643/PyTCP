@@ -44,7 +44,7 @@
 import struct
 
 import config
-from ip_helper import inet_cksum
+from misc.ip_helper import inet_cksum
 
 # TCP packet header (RFC 793)
 
@@ -63,11 +63,11 @@ from ip_helper import inet_cksum
 # +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 
 
-TCP_HEADER_LEN = 20
+HEADER_LEN = 20
 
 
-class TcpPacket:
-    """ TCP packet support class """
+class Parser:
+    """ TCP packet parser class """
 
     class __not_cached:
         pass
@@ -284,7 +284,7 @@ class TcpPacket:
         """ Calculate options length """
 
         if self.__olen is self.__not_cached:
-            self.__olen = self.hlen - TCP_HEADER_LEN
+            self.__olen = self.hlen - HEADER_LEN
         return self.__olen
 
     @property
@@ -304,7 +304,7 @@ class TcpPacket:
         """ Return copy of packet header """
 
         if self.__header_copy is self.__not_cached:
-            self.__header_copy = self._frame[self._hptr : self._hptr + TCP_HEADER_LEN]
+            self.__header_copy = self._frame[self._hptr : self._hptr + HEADER_LEN]
         return self.__header_copy
 
     @property
@@ -312,7 +312,7 @@ class TcpPacket:
         """ Return copy of packet header """
 
         if self.__options_copy is self.__not_cached:
-            self.__options_copy = self._frame[self._hptr + TCP_HEADER_LEN : self._hptr + self.hlen]
+            self.__options_copy = self._frame[self._hptr + HEADER_LEN : self._hptr + self.hlen]
         return self.__options_copy
 
     @property
@@ -337,19 +337,19 @@ class TcpPacket:
 
         if self.__options is self.__not_cached:
             self.__options = []
-            optr = self._hptr + TCP_HEADER_LEN
+            optr = self._hptr + HEADER_LEN
             while optr < self._hptr + self.hlen:
-                if self._frame[optr] == TCP_OPT_EOL:
-                    self.__options.append(TcpOptEol())
+                if self._frame[optr] == OPT_EOL:
+                    self.__options.append(OptEol())
                     break
-                if self._frame[optr] == TCP_OPT_NOP:
-                    self.__options.append(TcpOptNop())
-                    optr += TCP_OPT_NOP_LEN
+                if self._frame[optr] == OPT_NOP:
+                    self.__options.append(OptNop())
+                    optr += OPT_NOP_LEN
                     continue
                 self.__options.append(
-                    {TCP_OPT_MSS: TcpOptMss, TCP_OPT_WSCALE: TcpOptWscale, TCP_OPT_SACKPERM: TcpOptSackPerm, TCP_OPT_TIMESTAMP: TcpOptTimestamp}.get(
-                        self._frame[optr], TcpOptUnk
-                    )(self._frame, optr)
+                    {OPT_MSS: OptMss, OPT_WSCALE: OptWscale, OPT_SACKPERM: OptSackPerm, OPT_TIMESTAMP: OptTimestamp}.get(self._frame[optr], OptUnk)(
+                        self._frame, optr
+                    )
                 )
                 optr += self._frame[optr + 1]
 
@@ -361,7 +361,7 @@ class TcpPacket:
 
         if self.__mss is self.__not_cached:
             for option in self.options:
-                if option.kind == TCP_OPT_MSS:
+                if option.kind == OPT_MSS:
                     self.__mss = option.mss
                     break
             else:
@@ -374,7 +374,7 @@ class TcpPacket:
 
         if self.__wscale is self.__not_cached:
             for option in self.options:
-                if option.kind == TCP_OPT_WSCALE:
+                if option.kind == OPT_WSCALE:
                     self.__wscale = 1 << option.wscale
                     break
             else:
@@ -387,7 +387,7 @@ class TcpPacket:
 
         if self.__sackperm is self.__not_cached:
             for option in self.options:
-                if option.kind == TCP_OPT_SACKPERM:
+                if option.kind == OPT_SACKPERM:
                     self.__sackperm = True
                     break
             else:
@@ -400,7 +400,7 @@ class TcpPacket:
 
         if self.__timestamp is self.__not_cached:
             for option in self.options:
-                if option.kind == TCP_OPT_TIMESTAMP:
+                if option.kind == OPT_TIMESTAMP:
                     self.__timestamp = (option.tsval, option.tsecr)
                     break
             else:
@@ -416,18 +416,18 @@ class TcpPacket:
         if inet_cksum(self._frame, self._hptr, self._plen, pshdr_sum):
             return "TCP integrity - wrong packet checksum"
 
-        if not TCP_HEADER_LEN <= self._plen <= len(self):
+        if not HEADER_LEN <= self._plen <= len(self):
             return "TCP integrity - wrong packet length (I)"
 
         hlen = (self._frame[self._hptr + 12] & 0b11110000) >> 2
-        if not TCP_HEADER_LEN <= hlen <= self._plen <= len(self):
+        if not HEADER_LEN <= hlen <= self._plen <= len(self):
             return "TCP integrity - wrong packet length (II)"
 
-        optr = self._hptr + TCP_HEADER_LEN
+        optr = self._hptr + HEADER_LEN
         while optr < self._hptr + hlen:
-            if self._frame[optr] == TCP_OPT_EOL:
+            if self._frame[optr] == OPT_EOL:
                 break
-            if self._frame[optr] == TCP_OPT_NOP:
+            if self._frame[optr] == OPT_NOP:
                 optr += 1
                 if optr > self._hptr + hlen:
                     return "TCP integrity - wrong option length (I)"
@@ -482,15 +482,15 @@ class TcpPacket:
 
 # TCP option - End of Option List (0)
 
-TCP_OPT_EOL = 0
-TCP_OPT_EOL_LEN = 1
+OPT_EOL = 0
+OPT_EOL_LEN = 1
 
 
-class TcpOptEol:
+class OptEol:
     """ TCP option - End of Option List (0) """
 
     def __init__(self):
-        self.kind = TCP_OPT_EOL
+        self.kind = OPT_EOL
 
     def __str__(self):
         return "eol"
@@ -498,15 +498,15 @@ class TcpOptEol:
 
 # TCP option - No Operation (1)
 
-TCP_OPT_NOP = 1
-TCP_OPT_NOP_LEN = 1
+OPT_NOP = 1
+OPT_NOP_LEN = 1
 
 
-class TcpOptNop:
+class OptNop:
     """ TCP option - No Operation (1) """
 
     def __init__(self):
-        self.kind = TCP_OPT_NOP
+        self.kind = OPT_NOP
 
     def __str__(self):
         return "nop"
@@ -514,11 +514,11 @@ class TcpOptNop:
 
 # TCP option - Maximum Segment Size (2)
 
-TCP_OPT_MSS = 2
-TCP_OPT_MSS_LEN = 4
+OPT_MSS = 2
+OPT_MSS_LEN = 4
 
 
-class TcpOptMss:
+class OptMss:
     """ TCP option - Maximum Segment Size (2) """
 
     def __init__(self, frame, optr):
@@ -532,11 +532,11 @@ class TcpOptMss:
 
 # TCP option - Window Scale (3)
 
-TCP_OPT_WSCALE = 3
-TCP_OPT_WSCALE_LEN = 3
+OPT_WSCALE = 3
+OPT_WSCALE_LEN = 3
 
 
-class TcpOptWscale:
+class OptWscale:
     """ TCP option - Window Scale (3) """
 
     def __init__(self, frame, optr):
@@ -550,11 +550,11 @@ class TcpOptWscale:
 
 # TCP option - Sack Permit (4)
 
-TCP_OPT_SACKPERM = 4
-TCP_OPT_SACKPERM_LEN = 2
+OPT_SACKPERM = 4
+OPT_SACKPERM_LEN = 2
 
 
-class TcpOptSackPerm:
+class OptSackPerm:
     """ TCP option - Sack Permit (4) """
 
     def __init__(self, frame, optr):
@@ -567,11 +567,11 @@ class TcpOptSackPerm:
 
 # TCP option - Timestamp
 
-TCP_OPT_TIMESTAMP = 8
-TCP_OPT_TIMESTAMP_LEN = 10
+OPT_TIMESTAMP = 8
+OPT_TIMESTAMP_LEN = 10
 
 
-class TcpOptTimestamp:
+class OptTimestamp:
     """ TCP option - Timestamp (8) """
 
     def __init__(self, frame, optr):
@@ -587,7 +587,7 @@ class TcpOptTimestamp:
 # TCP option not supported by this stack
 
 
-class TcpOptUnk:
+class OptUnk:
     """ TCP option not supported by this stack """
 
     def __init__(self, frame, optr):

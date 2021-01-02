@@ -58,19 +58,19 @@ import config
 # +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 
 
-ETHER_HEADER_LEN = 14
+HEADER_LEN = 14
 
-ETHER_TYPE_MIN = 0x0600
-ETHER_TYPE_ARP = 0x0806
-ETHER_TYPE_IP4 = 0x0800
-ETHER_TYPE_IP6 = 0x86DD
-
-
-ETHER_TYPE_TABLE = {ETHER_TYPE_ARP: "ARP", ETHER_TYPE_IP4: "IPv4", ETHER_TYPE_IP6: "IPv6"}
+TYPE_MIN = 0x0600
+TYPE_ARP = 0x0806
+TYPE_IP4 = 0x0800
+TYPE_IP6 = 0x86DD
 
 
-class EtherPacket:
-    """ Ethernet packet support class """
+TYPE_TABLE = {TYPE_ARP: "ARP", TYPE_IP4: "IPv4", TYPE_IP6: "IPv6"}
+
+
+class Parser:
+    """ Ethernet packet parser class """
 
     class __not_cached:
         pass
@@ -94,12 +94,12 @@ class EtherPacket:
         packet_rx.parse_failed = self._packet_integrity_check() or self._packet_sanity_check()
 
         if not packet_rx.parse_failed:
-            packet_rx.hptr = self._hptr + ETHER_HEADER_LEN
+            packet_rx.hptr = self._hptr + HEADER_LEN
 
     def __str__(self):
         """ Packet log string """
 
-        return f"ETHER {self.src} > {self.dst}, 0x{self.type:0>4x} ({ETHER_TYPE_TABLE.get(self.type, '???')})"
+        return f"ETHER {self.src} > {self.dst}, 0x{self.type:0>4x} ({TYPE_TABLE.get(self.type, '???')})"
 
     def __len__(self):
         """ Number of bytes remaining in the frame """
@@ -135,7 +135,7 @@ class EtherPacket:
         """ Return copy of packet header """
 
         if self.__header_copy is self.__not_cached:
-            self.__header_copy = self._frame[self._hptr : self._hptr + ETHER_HEADER_LEN]
+            self.__header_copy = self._frame[self._hptr : self._hptr + HEADER_LEN]
         return self.__header_copy
 
     @property
@@ -143,7 +143,7 @@ class EtherPacket:
         """ Return copy of packet data """
 
         if self.__data_copy is self.__not_cached:
-            self.__data_copy = self._frame[self._hptr + ETHER_HEADER_LEN :]
+            self.__data_copy = self._frame[self._hptr + HEADER_LEN :]
         return self.__data_copy
 
     @property
@@ -168,7 +168,7 @@ class EtherPacket:
         if not config.packet_integrity_check:
             return False
 
-        if len(self) < ETHER_HEADER_LEN:
+        if len(self) < HEADER_LEN:
             return "ETHER integrity - wrong packet length (I)"
 
         return False
@@ -179,7 +179,7 @@ class EtherPacket:
         if not config.packet_sanity_check:
             return False
 
-        if self.type < ETHER_TYPE_MIN:
+        if self.type < TYPE_MIN:
             return "ETHER sanity - 'ether_type' must be greater than 0x0600"
 
         return False

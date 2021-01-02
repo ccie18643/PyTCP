@@ -45,8 +45,8 @@ import threading
 import time
 from datetime import datetime
 
-from ip_helper import ip_pick_version
-from tcp_socket import TcpSocket
+from misc.ip_helper import ip_pick_version
+from tcp.socket import TcpSocket
 
 
 class ClientTcpEcho:

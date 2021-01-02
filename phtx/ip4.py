@@ -43,7 +43,7 @@
 
 import config
 import fpa.ip4
-from ipv4_address import IPv4Address
+from misc.ipv4_address import IPv4Address
 
 
 def _validate_src_ip4_address(self, ip4_src, ip4_dst):
@@ -119,8 +119,8 @@ def _validate_dst_ip4_address(self, ip4_dst):
 def _phtx_ip4(self, child_packet, ip4_dst, ip4_src, ip4_ttl=config.ip4_default_ttl):
     """ Handle outbound IP packets """
 
-    assert type(ip6_src) is IPv4Address
-    assert type(ip6_dst) is IPv4Address
+    assert type(ip4_src) is IPv4Address
+    assert type(ip4_dst) is IPv4Address
     assert 0 < ip4_ttl < 256
 
     # Check if IPv4 protocol support is enabled, if not then silently drop the packet
@@ -138,7 +138,7 @@ def _phtx_ip4(self, child_packet, ip4_dst, ip4_src, ip4_ttl=config.ip4_default_t
         return
 
     # Assemble IPv4 packet
-    ip4_packet_tx = fpa.ip4.Ip4Packet(src=ip4_src, dst=ip4_dst, ttl=ip4_ttl, child_packet=child_packet)
+    ip4_packet_tx = fpa.ip4.Assembler(src=ip4_src, dst=ip4_dst, ttl=ip4_ttl, child_packet=child_packet)
 
     # Send packet out if it's size doesn't exceed mtu
     if len(ip4_packet_tx) <= config.mtu:
@@ -151,13 +151,13 @@ def _phtx_ip4(self, child_packet, ip4_dst, ip4_src, ip4_ttl=config.ip4_default_t
     if __debug__:
         self._logger.debug(f"{ip4_packet_tx.tracker} - IPv4 packet len {len(ip4_packet_tx)} bytes, fragmentation needed")
         data = bytearray(ip4_packet_tx.dlen)
-        ip4_packet_tx._child_packet.assemble_packet(data, 0, ip4_packet_tx.pshdr_sum)
+        ip4_packet_tx._child_packet.assemble(data, 0, ip4_packet_tx.pshdr_sum)
         data_mtu = (config.mtu - ip4_packet_tx.hlen) & 0b1111111111111000
         data_frags = [data[_ : data_mtu + _] for _ in range(0, len(data), data_mtu)]
         offset = 0
         self.ip4_id += 1
         for data_frag in data_frags:
-            ip4_frag_tx = fpa.ip4.Ip4Frag(
+            ip4_frag_tx = fpa.ip4.FragAssembler(
                 src=ip4_src,
                 dst=ip4_dst,
                 ttl=ip4_ttl,

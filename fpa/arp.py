@@ -43,8 +43,8 @@
 
 import struct
 
-from ipv4_address import IPv4Address
-from tracker import Tracker
+from misc.ipv4_address import IPv4Address
+from misc.tracker import Tracker
 
 # ARP packet header - IPv4 stack version only
 
@@ -65,18 +65,18 @@ from tracker import Tracker
 # +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 
 
-ARP_HEADER_LEN = 28
+HEADER_LEN = 28
 
-ARP_OP_REQUEST = 1
-ARP_OP_REPLY = 2
+OP_REQUEST = 1
+OP_REPLY = 2
 
 
-class ArpPacket:
-    """ ARP packet support class """
+class Assembler:
+    """ ARP packet assembler support class """
 
     protocol = "ARP"
 
-    def __init__(self, sha, spa, tpa, tha="00:00:00:00:00:00", oper=ARP_OP_REQUEST, echo_tracker=None):
+    def __init__(self, sha, spa, tpa, tha="00:00:00:00:00:00", oper=OP_REQUEST, echo_tracker=None):
         """ Class constructor """
 
         self.tracker = Tracker("TX", echo_tracker)
@@ -94,18 +94,18 @@ class ArpPacket:
     def __str__(self):
         """ Packet log string """
 
-        if self.oper == ARP_OP_REQUEST:
+        if self.oper == OP_REQUEST:
             return f"ARP request {self.spa} / {self.sha} > {self.tpa} / {self.tha}"
-        if self.oper == ARP_OP_REPLY:
+        if self.oper == OP_REPLY:
             return f"ARP reply {self.spa} / {self.sha} > {self.tpa} / {self.tha}"
         return f"ARP unknown operation {self.oper}"
 
     def __len__(self):
         """ Length of the packet """
 
-        return ARP_HEADER_LEN
+        return HEADER_LEN
 
-    def assemble_packet(self, frame, hptr):
+    def assemble(self, frame, hptr):
         """ Assemble packet into the raw form """
 
         return struct.pack_into(

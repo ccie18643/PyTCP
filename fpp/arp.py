@@ -44,7 +44,7 @@
 import struct
 
 import config
-from ipv4_address import IPv4Address
+from misc.ipv4_address import IPv4Address
 
 # ARP packet header - IPv4 stack version only
 
@@ -65,14 +65,14 @@ from ipv4_address import IPv4Address
 # +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 
 
-ARP_HEADER_LEN = 28
+HEADER_LEN = 28
 
-ARP_OP_REQUEST = 1
-ARP_OP_REPLY = 2
+OP_REQUEST = 1
+OP_REPLY = 2
 
 
-class ArpPacket:
-    """ ARP packet support class """
+class Parser:
+    """ ARP packet parser class """
 
     class __not_cached:
         pass
@@ -101,9 +101,9 @@ class ArpPacket:
     def __str__(self):
         """ Packet log string """
 
-        if self.oper == ARP_OP_REQUEST:
+        if self.oper == OP_REQUEST:
             return f"ARP request {self.spa} / {self.sha} > {self.tpa} / {self.tha}"
-        if self.oper == ARP_OP_REPLY:
+        if self.oper == OP_REPLY:
             return f"ARP reply {self.spa} / {self.sha} > {self.tpa} / {self.tha}"
 
     def __len__(self):
@@ -184,7 +184,7 @@ class ArpPacket:
         """ Read the whole packet """
 
         if self.__packet_copy is self.__not_cached:
-            self.__packet_copy = self._frame[self._hptr : self._hptr + ARP_HEADER_LEN]
+            self.__packet_copy = self._frame[self._hptr : self._hptr + HEADER_LEN]
         return self.__packet_copy
 
     def _packet_integrity_check(self):
@@ -193,7 +193,7 @@ class ArpPacket:
         if not config.packet_integrity_check:
             return False
 
-        if len(self) < ARP_HEADER_LEN:
+        if len(self) < HEADER_LEN:
             return "ARP integrity - wrong packet length (I)"
 
         return False

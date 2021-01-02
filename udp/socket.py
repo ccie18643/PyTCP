@@ -37,105 +37,79 @@
 
 
 #
-# ipv6_address.py - module contains IPv6 address manipulation classes (extensions to ipaddress standard library)
+# udp/socket.py - module contains class supporting UDP sockets
 #
 
-import ipaddress
-from re import sub
+
+import threading
+
+import loguru
+
+import misc.stack as stack
 
 
-class IPv6Interface(ipaddress.IPv6Interface):
-    """ Extensions for ipaddress.IPv6Address class """
+class UdpSocket:
+    """ Support for Socket operations """
 
-    @property
-    def ip(self):
-        """ Make sure class returns overloaded IPv6Address object """
+    open_sockets = {}
 
-        return IPv6Address(super().ip)
+    def __init__(self):
+        """ Class constructor """
 
-    @property
-    def host_address(self):
-        """ Return host address """
+        if __debug__:
+            self._logger = loguru.logger.bind(object_name="socket.")
 
-        return self.ip
+        self.local_ip_address = None
+        self.local_port = None
+        self.remote_ip_address = "*"
+        self.remote_port = "*"
 
-    @property
-    def solicited_node_multicast(self):
-        """ Create IPv6 solicited node multicast address """
-
-        return self.ip.solicited_node_multicast
-
-    @property
-    def is_solicited_node_multicast(self):
-        """ Check if address is IPv6 solicited node multicast address """
-
-        return self.ip.is_solicited_node_multicast
+        self.packet_rx = []
+        self.packet_rx_ready = threading.Semaphore(0)
+        if __debug__:
+            self._logger.debug(f"Opened UDP socket {self.socket_id}")
 
     @property
-    def is_unicast(self):
-        """ Check if address is IPv6 unicast address """
+    def socket_id(self):
+        return f"UDP/{self.local_ip_address}/{self.local_port}/{self.remote_ip_address}/{self.remote_port}"
 
-        return self.ip.is_unicast
+    def bind(self, local_ip_address, local_port):
+        """ Bind the socket to local address """
 
-    @property
-    def is_reserved(self):
-        """ Check if address is IPv6 reserved address """
+        self.local_ip_address = local_ip_address
+        self.local_port = local_port
+        stack.udp_sockets[self.socket_id] = self
+        if __debug__:
+            self._logger.debug(f"{self.socket_id} - Socket bound to local address")
 
-        return self.ip.is_reserved
+    @staticmethod
+    def send_to(packet):
+        """ Put data from UdpMetadata structure into TX ring """
 
-    @property
-    def is_unspecified(self):
-        """ Check if address is IPv6 unspecified address """
+        stack.packet_handler._phtx_udp(
+            ip_src=packet.local_ip_address,
+            udp_sport=packet.local_port,
+            ip_dst=packet.remote_ip_address,
+            udp_dport=packet.remote_port,
+            udp_data=packet.data,
+        )
 
-        return self.ip.is_unspecified
+    def receive_from(self, timeout=None):
+        """ Read data from listening socket and return UdpMessage structure """
 
-    @property
-    def is_multicast(self):
-        """ Check if address is IPv6 multicast address """
+        if self.packet_rx_ready.acquire(timeout=timeout):
+            return self.packet_rx.pop(0)
+        return None
 
-        return self.ip.is_multicast
+    def close(self):
+        """ Close socket """
 
+        stack.udp_sockets.pop(self.socket_id)
+        if __debug__:
+            self._logger.debug(f"Closed UDP socket {self.socket_id}")
 
-class IPv6Network(ipaddress.IPv6Network):
-    """ Extensions for ipaddress.IPv6Network class """
+    def process_packet(self, packet):
+        """ Process incoming UDP packet's metadata """
 
-    def eui64(self, mac):
-        """ Create IPv6 EUI64 interface address """
-
-        assert self.prefixlen == 64
-
-        eui64 = sub(r"[.:-]", "", mac).lower()
-        eui64 = eui64[0:6] + "fffe" + eui64[6:]
-        eui64 = hex(int(eui64[0:2], 16) ^ 2)[2:].zfill(2) + eui64[2:]
-        eui64 = ":".join(eui64[_ : _ + 4] for _ in range(0, 16, 4))
-        return IPv6Interface(self.network_address.exploded[0:20] + eui64 + "/" + str(self.prefixlen))
-
-
-class IPv6Address(ipaddress.IPv6Address):
-    """ Extensions for ipaddress.IPv6Address class """
-
-    @property
-    def solicited_node_multicast(self):
-        """ Create IPv6 solicited node multicast address """
-
-        return IPv6Address("ff02::1:ff" + self.exploded[-7:])
-
-    @property
-    def is_solicited_node_multicast(self):
-        """ Check if address is IPv6 solicited node multicast address """
-
-        return str(self).startswith("ff02::1:ff")
-
-    @property
-    def is_unicast(self):
-        """ Check if address is IPv6 unicast address """
-
-        return not (self.is_multicast or self.is_unspecified)
-
-    @property
-    def multicast_mac(self):
-        """ Create IPv6 multicast MAC address """
-
-        assert self.is_multicast
-
-        return "33:33:" + ":".join(["".join(self.exploded[-9:].split(":"))[_ : _ + 2] for _ in range(0, 8, 2)])
+        self.packet_rx.append(packet)
+        self.packet_rx_ready.release()

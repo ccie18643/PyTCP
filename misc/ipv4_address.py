@@ -37,46 +37,55 @@
 
 
 #
-# rx_ring.py - module contains class supporting RX operations
+# misc/ipv4_address.py - module contains IPv4 address manipulation classes (extensions to ipaddress standard library)
 #
 
-
-import os
-import threading
-
-import loguru
-
-from packet import PacketRx
+import ipaddress
 
 
-class RxRing:
-    """ Support for receiving packets from the network """
+class IPv4Interface(ipaddress.IPv4Interface):
+    """ Extensions for ipaddress.IPv4Address class """
 
-    def __init__(self, tap):
-        """ Initialize access to tap interface and the inbound queue """
+    @property
+    def ip(self):
+        """ Make sure class returns overloaded IPv6Address object """
 
-        self.tap = tap
-        self.rx_ring = []
-        if __debug__:
-            self._logger = loguru.logger.bind(object_name="rx_ring.")
-        self.packet_enqueued = threading.Semaphore(0)
+        return IPv4Address(super().ip)
 
-        threading.Thread(target=self.__thread_receive).start()
-        if __debug__:
-            self._logger.debug("Started RX ring")
+    @property
+    def host_address(self):
+        """ Return host address """
 
-    def __thread_receive(self):
-        """ Thread responsible for receiving and enqueuing incoming packets """
+        return self.ip
 
-        while True:
-            packet_rx = PacketRx(os.read(self.tap, 2048))
-            if __debug__:
-                self._logger.opt(ansi=True).debug(f"<green>[RX]</> {packet_rx.tracker}> - received frame, {len(packet_rx.frame)} bytes")
-            self.rx_ring.append(packet_rx)
-            self.packet_enqueued.release()
+    @property
+    def network_address(self):
+        """ Return network address """
 
-    def dequeue(self):
-        """ Dequeue inboutd frame from RX ring """
+        return IPv4Address(self.network.network_address)
 
-        self.packet_enqueued.acquire()
-        return self.rx_ring.pop(0)
+    @property
+    def broadcast_address(self):
+        """ Return broadcast address """
+
+        return IPv4Address(self.network.broadcast_address)
+
+    @property
+    def is_limited_broadcast(self):
+        """ Check if IPv4 address is a limited broadcast """
+
+        return self.ip.is_limited_broadcast
+
+
+class IPv4Network(ipaddress.IPv4Network):
+    """ Extensions for ipaddress.IPv4Network class """
+
+
+class IPv4Address(ipaddress.IPv4Address):
+    """ Extensions for ipaddress.IPv4Address class """
+
+    @property
+    def is_limited_broadcast(self):
+        """ Check if IPv4 address is a limited broadcast """
+
+        return str(self) == "255.255.255.255"

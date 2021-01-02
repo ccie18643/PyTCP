@@ -54,17 +54,17 @@ import config
 # +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 
 
-IP6_EXT_FRAG_LEN = 8
+HEADER_LEN = 8
 
-IP6_NEXT_HEADER_TCP = 6
-IP6_NEXT_HEADER_UDP = 17
-IP6_NEXT_HEADER_ICMP6 = 58
+NEXT_HEADER_TCP = 6
+NEXT_HEADER_UDP = 17
+NEXT_HEADER_ICMP6 = 58
 
-IP6_NEXT_HEADER_TABLE = {IP6_NEXT_HEADER_TCP: "TCP", IP6_NEXT_HEADER_UDP: "UDP", IP6_NEXT_HEADER_ICMP6: "ICMPv6"}
+NEXT_HEADER_TABLE = {NEXT_HEADER_TCP: "TCP", NEXT_HEADER_UDP: "UDP", NEXT_HEADER_ICMP6: "ICMPv6"}
 
 
-class Ip6ExtFrag:
-    """ IPv6 fragmentation extension headr support class """
+class Parser:
+    """ IPv6 fragmentation extension headr parser class """
 
     class __not_cached:
         pass
@@ -88,14 +88,13 @@ class Ip6ExtFrag:
         packet_rx.parse_failed = self._packet_integrity_check() or self._packet_sanity_check()
 
         if not packet_rx.parse_failed:
-            packet_rx.hptr = self._hptr + IP6_EXT_FRAG_LEN
+            packet_rx.hptr = self._hptr + HEADER_LEN
 
     def __str__(self):
         """ Packet log string """
 
         return (
-            f"IPv6_FRAG id {self.id}{', MF' if self.flag_mf else ''}, offset {self.offset}"
-            + f", next {self.next} ({IP6_NEXT_HEADER_TABLE.get(self.next, '???')})"
+            f"IPv6_FRAG id {self.id}{', MF' if self.flag_mf else ''}, offset {self.offset}" + f", next {self.next} ({NEXT_HEADER_TABLE.get(self.next, '???')})"
         )
 
     def __len__(self):
@@ -135,13 +134,13 @@ class Ip6ExtFrag:
     def hlen(self):
         """ Calculate header length """
 
-        return IP6_EXT_FRAG_LEN
+        return HEADER_LEN
 
     @property
     def dlen(self):
         """ Calculate data length """
 
-        return self._plen - IP6_EXT_FRAG_LEN
+        return self._plen - HEADER_LEN
 
     @property
     def plen(self):
@@ -154,7 +153,7 @@ class Ip6ExtFrag:
         """ Return copy of packet header """
 
         if self.__header_copy is self.__not_cached:
-            self.__header_copy = self._frame[self._hptr : self._hptr + IP6_EXT_FRAG_LEN]
+            self.__header_copy = self._frame[self._hptr : self._hptr + HEADER_LEN]
         return self.__header_copy
 
     @property
@@ -162,7 +161,7 @@ class Ip6ExtFrag:
         """ Return copy of packet data """
 
         if self.__data_copy is self.__not_cached:
-            self.__data_copy = self._frame[self._hptr + IP6_EXT_FRAG_LEN : self._hptr + self.plen]
+            self.__data_copy = self._frame[self._hptr + HEADER_LEN : self._hptr + self.plen]
         return self.__data_copy
 
     @property

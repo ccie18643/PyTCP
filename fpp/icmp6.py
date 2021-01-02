@@ -44,8 +44,8 @@
 import struct
 
 import config
-from ip_helper import inet_cksum
-from ipv6_address import IPv6Address, IPv6Network
+from misc.ip_helper import inet_cksum
+from misc.ipv6_address import IPv6Address, IPv6Network
 
 # Destination Unreachable message (1/[0-6])
 
@@ -295,39 +295,38 @@ from ipv6_address import IPv6Address, IPv6Network
 # +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 
 
-ICMP6_HEADER_LEN = 4
+HEADER_LEN = 4
 
-ICMP6_UNREACHABLE = 1
-ICMP6_UNREACHABLE__NO_ROUTE = 0
-ICMP6_UNREACHABLE__PROHIBITED = 1
-ICMP6_UNREACHABLE__SCOPE = 2
-ICMP6_UNREACHABLE__ADDRESS = 3
-ICMP6_UNREACHABLE__PORT = 4
-ICMP6_UNREACHABLE__FAILED_POLICY = 5
-ICMP6_UNREACHABLE__REJECT_ROUTE = 6
-ICMP6_PACKET_TOO_BIG = 2
-ICMP6_TIME_EXCEEDED = 3
-ICMP6_PARAMETER_PROBLEM = 4
-ICMP6_ECHO_REQUEST = 128
-ICMP6_ECHO_REPLY = 129
-ICMP6_MLD2_QUERY = 130
-ICMP6_ROUTER_SOLICITATION = 133
-ICMP6_ROUTER_ADVERTISEMENT = 134
-ICMP6_NEIGHBOR_SOLICITATION = 135
-ICMP6_NEIGHBOR_ADVERTISEMENT = 136
-ICMP6_MLD2_REPORT = 143
+UNREACHABLE = 1
+UNREACHABLE__NO_ROUTE = 0
+UNREACHABLE__PROHIBITED = 1
+UNREACHABLE__SCOPE = 2
+UNREACHABLE__ADDRESS = 3
+UNREACHABLE__PORT = 4
+UNREACHABLE__FAILED_POLICY = 5
+UNREACHABLE__REJECT_ROUTE = 6
+PACKET_TOO_BIG = 2
+TIME_EXCEEDED = 3
+PARAMETER_PROBLEM = 4
+ECHO_REQUEST = 128
+ECHO_REPLY = 129
+MLD2_QUERY = 130
+ROUTER_SOLICITATION = 133
+ROUTER_ADVERTISEMENT = 134
+NEIGHBOR_SOLICITATION = 135
+NEIGHBOR_ADVERTISEMENT = 136
+MLD2_REPORT = 143
+
+MART_MODE_IS_INCLUDE = 1
+MART_MODE_IS_EXCLUDE = 2
+MART_CHANGE_TO_INCLUDE = 3
+MART_CHANGE_TO_EXCLUDE = 4
+MART_ALLOW_NEW_SOURCES = 5
+MART_BLOCK_OLD_SOURCES = 6
 
 
-ICMP6_MART_MODE_IS_INCLUDE = 1
-ICMP6_MART_MODE_IS_EXCLUDE = 2
-ICMP6_MART_CHANGE_TO_INCLUDE = 3
-ICMP6_MART_CHANGE_TO_EXCLUDE = 4
-ICMP6_MART_ALLOW_NEW_SOURCES = 5
-ICMP6_MART_BLOCK_OLD_SOURCES = 6
-
-
-class Icmp6Packet:
-    """ ICMPv6 packet support class """
+class Parser:
+    """ ICMPv6 packet parser class """
 
     class __not_cached:
         pass
@@ -373,38 +372,38 @@ class Icmp6Packet:
 
         log = f"ICMPv6 type {self.type}, code {self.code}"
 
-        if self.type == ICMP6_UNREACHABLE:
+        if self.type == UNREACHABLE:
             pass
 
-        elif self.type == ICMP6_ECHO_REQUEST:
+        elif self.type == ECHO_REQUEST:
             log += f", id {self.ec_id}, seq {self.ec_seq}"
 
-        elif self.type == ICMP6_ECHO_REPLY:
+        elif self.type == ECHO_REPLY:
             log += f", id {self.ec_id}, seq {self.ec_seq}"
 
-        elif self.type == ICMP6_ROUTER_SOLICITATION:
+        elif self.type == ROUTER_SOLICITATION:
             for option in self.nd_options:
                 log += ", " + str(option)
 
-        elif self.type == ICMP6_ROUTER_ADVERTISEMENT:
+        elif self.type == ROUTER_ADVERTISEMENT:
             log += f", hop {self.ra_hop}"
             log += f"flags {'M' if self.ra_flag_m else '-'}{'O' if self.ra_flag_o else '-'}"
             log += f"rlft {self.ra_router_lifetime}, reacht {self.ra_reachable_time}, retrt {self.ra_retrans_timer}"
             for option in self.nd_options:
                 log += ", " + str(option)
 
-        elif self.type == ICMP6_NEIGHBOR_SOLICITATION:
+        elif self.type == NEIGHBOR_SOLICITATION:
             log += f", target {self.ns_target_address}"
             for option in self.nd_options:
                 log += ", " + str(option)
 
-        elif self.type == ICMP6_NEIGHBOR_ADVERTISEMENT:
+        elif self.type == NEIGHBOR_ADVERTISEMENT:
             log += f", target {self.na_target_address}"
             log += f", flags {'R' if self.na_flag_r else '-'}{'S' if self.na_flag_s else '-'}{'O' if self.na_flag_o else '-'}"
             for option in self.nd_options:
                 log += ", " + str(option)
 
-        elif self.type == ICMP6_MLD2_REPORT:
+        elif self.type == MLD2_REPORT:
             pass
 
         return log
@@ -439,7 +438,7 @@ class Icmp6Packet:
         """ Read data carried by Unreachable message """
 
         if self.__un_data is self.__not_cached:
-            assert self.type == ICMP6_UNREACHABLE
+            assert self.type == UNREACHABLE
             self.__un_data = self._frame[self._hptr + 8 : self._hptr + self.plen]
         return self.__un_data
 
@@ -448,7 +447,7 @@ class Icmp6Packet:
         """ Read Echo 'Id' field """
 
         if self.__ec_id is self.__not_cached:
-            assert self.type in {ICMP6_ECHO_REQUEST, ICMP6_ECHO_REPLY}
+            assert self.type in {ECHO_REQUEST, ECHO_REPLY}
             self.__ec_id = struct.unpack_from("!H", self._frame, self._hptr + 4)[0]
         return self.__ec_id
 
@@ -457,7 +456,7 @@ class Icmp6Packet:
         """ Read Echo 'Seq' field """
 
         if self.__ec_seq is self.__not_cached:
-            assert self.type in {ICMP6_ECHO_REQUEST, ICMP6_ECHO_REPLY}
+            assert self.type in {ECHO_REQUEST, ECHO_REPLY}
             self.__ec_seq = struct.unpack_from("!H", self._frame, self._hptr + 6)[0]
         return self.__ec_seq
 
@@ -466,7 +465,7 @@ class Icmp6Packet:
         """ Read data carried by Echo message """
 
         if self.__ec_data is self.__not_cached:
-            assert self.type in {ICMP6_ECHO_REQUEST, ICMP6_ECHO_REPLY}
+            assert self.type in {ECHO_REQUEST, ECHO_REPLY}
             self.__ec_data = self._frame[self._hptr + 8 : self._hptr + self.plen]
         return self.__ec_data
 
@@ -474,7 +473,7 @@ class Icmp6Packet:
     def ra_hop(self):
         """ Read ND RA 'Hop limit' field """
 
-        assert self.type == ICMP6_ROUTER_ADVERTISEMENT
+        assert self.type == ROUTER_ADVERTISEMENT
         return self._frame[self._hptr + 4]
 
     @property
@@ -482,7 +481,7 @@ class Icmp6Packet:
         """ Read ND RA 'M flag' field """
 
         if self.__ra_flag_m is self.__not_cached:
-            assert self.type == ICMP6_ROUTER_ADVERTISEMENT
+            assert self.type == ROUTER_ADVERTISEMENT
             self.__ra_flag_m = bool(self._frame[self._hptr + 5] & 0b10000000)
         return self.__ra_flag_m
 
@@ -491,7 +490,7 @@ class Icmp6Packet:
         """ Read ND RA 'O flag' field """
 
         if self.__ra_flag_o is self.__not_cached:
-            assert self.type == ICMP6_ROUTER_ADVERTISEMENT
+            assert self.type == ROUTER_ADVERTISEMENT
             self.__ra_flag_o = bool(self._frame[self._hptr + 5] & 0b01000000)
         return self.__ra_flag_o
 
@@ -500,7 +499,7 @@ class Icmp6Packet:
         """ Read ND RA 'Router lifetime' field """
 
         if self.__ra_router_lifetime is self.__not_cached:
-            assert self.type == ICMP6_ROUTER_ADVERTISEMENT
+            assert self.type == ROUTER_ADVERTISEMENT
             self.__ra_router_lifetime = struct.unpack_from("!H", self._frame, self._hptr + 6)[0]
         return self.__ra_router_lifetime
 
@@ -509,7 +508,7 @@ class Icmp6Packet:
         """ Read ND RA 'Reachable time' field """
 
         if self.__ra_reachable_time is self.__not_cached:
-            assert self.type == ICMP6_ROUTER_ADVERTISEMENT
+            assert self.type == ROUTER_ADVERTISEMENT
             self.__ra_reachable_time = struct.unpack_from("!L", self._frame, self._hptr + 8)[0]
         return self.__ra_reachable_time
 
@@ -518,7 +517,7 @@ class Icmp6Packet:
         """ Read ND RA 'Retransmision timer' field """
 
         if self.__ra_retrans_timer is self.__not_cached:
-            assert self.type == ICMP6_ROUTER_ADVERTISEMENT
+            assert self.type == ROUTER_ADVERTISEMENT
             self.__ra_retrans_timer = struct.unpack_from("!L", self._frame, self._hptr + 12)[0]
         return self.__ra_retrans_timer
 
@@ -527,7 +526,7 @@ class Icmp6Packet:
         """ Read ND NS 'Target adress' field """
 
         if self.__ns_target_address is self.__not_cached:
-            assert self.type == ICMP6_NEIGHBOR_SOLICITATION
+            assert self.type == NEIGHBOR_SOLICITATION
             self.__ns_target_address = IPv6Address(self._frame[self._hptr + 8 : self._hptr + 24])
         return self.__ns_target_address
 
@@ -536,7 +535,7 @@ class Icmp6Packet:
         """ Read ND NA 'R flag' field """
 
         if self.__na_flag_r is self.__not_cached:
-            assert self.type == ICMP6_NEIGHBOR_ADVERTISEMENT
+            assert self.type == NEIGHBOR_ADVERTISEMENT
             self.__na_flag_r = bool(self._frame[self._hptr + 4] & 0b10000000)
         return self.__na_flag_r
 
@@ -545,7 +544,7 @@ class Icmp6Packet:
         """ Read ND NA 'S flag' field """
 
         if self.__na_flag_s is self.__not_cached:
-            assert self.type == ICMP6_NEIGHBOR_ADVERTISEMENT
+            assert self.type == NEIGHBOR_ADVERTISEMENT
             self.__na_flag_s = bool(self._frame[self._hptr + 4] & 0b01000000)
         return self.__na_flag_s
 
@@ -554,7 +553,7 @@ class Icmp6Packet:
         """ Read ND NA 'O flag' field """
 
         if self.__na_flag_o is self.__not_cached:
-            assert self.type == ICMP6_NEIGHBOR_ADVERTISEMENT
+            assert self.type == NEIGHBOR_ADVERTISEMENT
             self.__na_flag_o = bool(self._frame[self._hptr + 4] & 0b00100000)
         return self.__na_flag_o
 
@@ -563,7 +562,7 @@ class Icmp6Packet:
         """ Read ND NA 'Taret address' field """
 
         if self.__na_target_address is self.__not_cached:
-            assert self.type == ICMP6_NEIGHBOR_ADVERTISEMENT
+            assert self.type == NEIGHBOR_ADVERTISEMENT
             self.__na_target_address = IPv6Address(self._frame[self._hptr + 8 : self._hptr + 24])
         return self.__na_target_address
 
@@ -572,7 +571,7 @@ class Icmp6Packet:
         """ Read MLD2 Report 'Number of multicast address records' field """
 
         if self.__mld2_rep_nor is self.__not_cached:
-            assert self.type == ICMP6_MLD2_REPORT
+            assert self.type == MLD2_REPORT
             self.__mld2_rep_nor = struct.unpack_from("!H", self._frame, self._hptr + 6)[0]
         return self.__mld2_rep_nor
 
@@ -581,7 +580,7 @@ class Icmp6Packet:
         """ Read MLD2 Report record list """
 
         if self.__mld2_rep_records is self.__not_cached:
-            assert self.type == ICMP6_MLD2_REPORT
+            assert self.type == MLD2_REPORT
             self.__mld2_rep_records = []
             raw_records = self._frame[self._hptr + 8 :]
             for _ in range(self.mld2_rep_nor):
@@ -595,11 +594,7 @@ class Icmp6Packet:
 
         nd_options = []
         while optr < len(self._frame):
-            nd_options.append(
-                {ICMP6_ND_OPT_SLLA: Icmp6NdOptSLLA, ICMP6_ND_OPT_TLLA: Icmp6NdOptTLLA, ICMP6_ND_OPT_PI: Icmp6NdOptPI}.get(self._frame[optr], Icmp6NdOptUnk)(
-                    self._frame, optr
-                )
-            )
+            nd_options.append({ND_OPT_SLLA: NdOptSLLA, ND_OPT_TLLA: NdOptTLLA, ND_OPT_PI: NdOptPI}.get(self._frame[optr], NdOptUnk)(self._frame, optr))
             optr += self._frame[optr + 1] << 3
 
         return nd_options
@@ -609,11 +604,8 @@ class Icmp6Packet:
         """ Read ND options  """
 
         if self.__nd_options is self.__not_cached:
-            assert self.type in {ICMP6_ROUTER_SOLICITATION, ICMP6_ROUTER_ADVERTISEMENT, ICMP6_NEIGHBOR_SOLICITATION, ICMP6_NEIGHBOR_ADVERTISEMENT}
-            optr = (
-                self._hptr
-                + {ICMP6_ROUTER_SOLICITATION: 12, ICMP6_ROUTER_ADVERTISEMENT: 16, ICMP6_NEIGHBOR_SOLICITATION: 24, ICMP6_NEIGHBOR_ADVERTISEMENT: 24}[self.type]
-            )
+            assert self.type in {ROUTER_SOLICITATION, ROUTER_ADVERTISEMENT, NEIGHBOR_SOLICITATION, NEIGHBOR_ADVERTISEMENT}
+            optr = self._hptr + {ROUTER_SOLICITATION: 12, ROUTER_ADVERTISEMENT: 16, NEIGHBOR_SOLICITATION: 24, NEIGHBOR_ADVERTISEMENT: 24}[self.type]
             self.__nd_options = self._read_nd_options(optr)
         return self.__nd_options
 
@@ -622,9 +614,9 @@ class Icmp6Packet:
         """ ICMPv6 ND option - Source Link Layer Address (1) """
 
         if self.__nd_opt_slla is self.__not_cached:
-            assert self.type in {ICMP6_ROUTER_SOLICITATION, ICMP6_ROUTER_ADVERTISEMENT, ICMP6_NEIGHBOR_SOLICITATION, ICMP6_NEIGHBOR_ADVERTISEMENT}
+            assert self.type in {ROUTER_SOLICITATION, ROUTER_ADVERTISEMENT, NEIGHBOR_SOLICITATION, NEIGHBOR_ADVERTISEMENT}
             for option in self.nd_options:
-                if option.code == ICMP6_ND_OPT_SLLA:
+                if option.code == ND_OPT_SLLA:
                     __nd_opt_slla = option.slla
                     break
             else:
@@ -636,9 +628,9 @@ class Icmp6Packet:
         """ ICMPv6 ND option - Target Link Layer Address (2) """
 
         if self.__nd_opt_tlla is self.__not_cached:
-            assert self.type in {ICMP6_ROUTER_SOLICITATION, ICMP6_ROUTER_ADVERTISEMENT, ICMP6_NEIGHBOR_SOLICITATION, ICMP6_NEIGHBOR_ADVERTISEMENT}
+            assert self.type in {ROUTER_SOLICITATION, ROUTER_ADVERTISEMENT, NEIGHBOR_SOLICITATION, NEIGHBOR_ADVERTISEMENT}
             for option in self.nd_options:
-                if option.code == ICMP6_ND_OPT_TLLA:
+                if option.code == ND_OPT_TLLA:
                     __nd_opt_tlla = option.tlla
                     break
             else:
@@ -650,8 +642,8 @@ class Icmp6Packet:
         """ ICMPv6 ND option - Prefix Info (3) - Returns list of prefixes that can be used for address autoconfiguration"""
 
         if self.__nd_opt_pi is self.__not_cached:
-            assert self.type in {ICMP6_ROUTER_SOLICITATION, ICMP6_ROUTER_ADVERTISEMENT, ICMP6_NEIGHBOR_SOLICITATION, ICMP6_NEIGHBOR_ADVERTISEMENT}
-            __nd_opt_pi = [_.prefix for _ in self.nd_options if _.code == ICMP6_ND_OPT_PI and _.flag_a and _.prefix.prefixlen == 64]
+            assert self.type in {ROUTER_SOLICITATION, ROUTER_ADVERTISEMENT, NEIGHBOR_SOLICITATION, NEIGHBOR_ADVERTISEMENT}
+            __nd_opt_pi = [_.prefix for _ in self.nd_options if _.code == ND_OPT_PI and _.flag_a and _.prefix.prefixlen == 64]
         return __nd_opt_pi
 
     @property
@@ -691,48 +683,48 @@ class Icmp6Packet:
         if inet_cksum(self._frame, self._hptr, self._plen, pshdr_sum):
             return "ICMPv6 integrity - wrong packet checksum"
 
-        if not ICMP6_HEADER_LEN <= self._plen <= len(self):
+        if not HEADER_LEN <= self._plen <= len(self):
             return "ICMPv6 integrity - wrong packet length (I)"
 
-        if self._frame[0] == ICMP6_UNREACHABLE:
+        if self._frame[0] == UNREACHABLE:
             if not 12 <= self._plen <= len(self):
                 return "ICMPv6 integrity - wrong packet length (II)"
 
-        elif self._frame[0] in {ICMP6_ECHO_REQUEST, ICMP6_ECHO_REPLY}:
+        elif self._frame[0] in {ECHO_REQUEST, ECHO_REPLY}:
             if not 8 <= self._plen <= len(self):
                 return "ICMPv6 integrity - wrong packet length (II)"
 
-        elif self._frame[0] == ICMP6_MLD2_QUERY:
+        elif self._frame[0] == MLD2_QUERY:
             if not 28 <= self._plen <= len(self):
                 return "ICMPv6 integrity - wrong packet length (II)"
             if self._plen != 28 + struct.unpack_from("! H", self._frame, self._hptr + 26)[0] * 16:
                 return "ICMPv6 integrity - wrong packet length (III)"
 
-        elif self._frame[0] == ICMP6_ROUTER_SOLICITATION:
+        elif self._frame[0] == ROUTER_SOLICITATION:
             if not 8 <= self._plen <= len(self):
                 return "ICMPv6 integrity - wrong packet length (II)"
             if fail := self._nd_option_integrity_check(self._hptr + 8):
                 return fail
 
-        elif self._frame[0] == ICMP6_ROUTER_ADVERTISEMENT:
+        elif self._frame[0] == ROUTER_ADVERTISEMENT:
             if not 16 <= self._plen <= len(self):
                 return "ICMPv6 integrity - wrong packet length (II)"
             if fail := self._nd_option_integrity_check(self._hptr + 16):
                 return fail
 
-        elif self._frame[0] == ICMP6_NEIGHBOR_SOLICITATION:
+        elif self._frame[0] == NEIGHBOR_SOLICITATION:
             if not 24 <= self._plen <= len(self):
                 return "ICMPv6 integrity - wrong packet length (II)"
             if fail := self._nd_option_integrity_check(self._hptr + 24):
                 return fail
 
-        elif self._frame[0] == ICMP6_NEIGHBOR_ADVERTISEMENT:
+        elif self._frame[0] == NEIGHBOR_ADVERTISEMENT:
             if 24 <= self._plen <= len(self):
                 return "ICMPv6 integrity - wrong packet length (II)"
             if fail := self._nd_option_integrity_check(self._hptr + 24):
                 return fail
 
-        elif self._frame[0] == ICMP6_MLD2_REPORT:
+        elif self._frame[0] == MLD2_REPORT:
             if not 8 <= self._plen <= len(self):
                 return "ICMPv6 integrity - wrong packet length (II)"
             optr = self._hptr + 8
@@ -751,33 +743,33 @@ class Icmp6Packet:
         if not config.packet_sanity_check:
             return False
 
-        if self.type == ICMP6_UNREACHABLE:
+        if self.type == UNREACHABLE:
             if self.code not in {0, 1, 2, 3, 4, 5, 6}:
                 return "ICMPv6 sanity - 'code' must be [0-6] (RFC 4861)"
 
-        elif self.type == ICMP6_PACKET_TOO_BIG:
+        elif self.type == PACKET_TOO_BIG:
             if not self.code == 0:
                 return "ICMPv6 sanity - 'code' should be 0 (RFC 4861)"
 
-        elif self.type == ICMP6_TIME_EXCEEDED:
+        elif self.type == TIME_EXCEEDED:
             if self.code not in {0, 1}:
                 return "ICMPv6 sanity - 'code' must be [0-1] (RFC 4861)"
 
-        elif self.type == ICMP6_PARAMETER_PROBLEM:
+        elif self.type == PARAMETER_PROBLEM:
             if self.code not in {0, 1, 2}:
                 return "ICMPv6 sanity - 'code' must be [0-2] (RFC 4861)"
 
-        elif self.type in {ICMP6_ECHO_REQUEST, ICMP6_ECHO_REPLY}:
+        elif self.type in {ECHO_REQUEST, ECHO_REPLY}:
             if not self.code == 0:
                 return "ICMPv6 sanity - 'code' should be 0 (RFC 4861)"
 
-        elif self.type == ICMP6_MLD2_QUERY:
+        elif self.type == MLD2_QUERY:
             if not self.code == 0:
                 return "ICMPv6 sanity - 'code' must be 0 (RFC 3810)"
             if not ip6_hop == 1:
                 return "ICMPv6 sanity - 'hop' must be 255 (RFC 3810)"
 
-        elif self.type == ICMP6_ROUTER_SOLICITATION:
+        elif self.type == ROUTER_SOLICITATION:
             if not self.code == 0:
                 return "ICMPv6 sanity - 'code' must be 0 (RFC 4861)"
             if not ip6_hop == 255:
@@ -789,7 +781,7 @@ class Icmp6Packet:
             if ip6_src.is_unspecified and self.nd_opt_slla:
                 return "ICMPv6 sanity - 'nd_opt_slla' must not be included if 'src' is unspecified (RFC 4861)"
 
-        elif self.type == ICMP6_ROUTER_ADVERTISEMENT:
+        elif self.type == ROUTER_ADVERTISEMENT:
             if not self.code == 0:
                 return "ICMPv6 sanity - 'code' must be 0 (RFC 4861)"
             if not ip6_hop == 255:
@@ -799,7 +791,7 @@ class Icmp6Packet:
             if not (ip6_dst.is_unicast or ip6_dst == IPv6Address("ff02::1")):
                 return "ICMPv6 sanity - 'dst' must be unicast or all-nodes (RFC 4861)"
 
-        elif self.type == ICMP6_NEIGHBOR_SOLICITATION:
+        elif self.type == NEIGHBOR_SOLICITATION:
             if not self.code == 0:
                 return "ICMPv6 sanity - 'code' must be 0 (RFC 4861)"
             if not ip6_hop == 255:
@@ -813,7 +805,7 @@ class Icmp6Packet:
             if ip6_src.is_unspecified and self.nd_opt_slla is not None:
                 return "ICMPv6 sanity - 'nd_opt_slla' must not be included if 'src' is unspecified"
 
-        elif self.type == ICMP6_NEIGHBOR_ADVERTISEMENT:
+        elif self.type == NEIGHBOR_ADVERTISEMENT:
             if not self.code == 0:
                 return "ICMPv6 sanity - 'code' must be 0 (RFC 4861)"
             if not ip6_hop == 255:
@@ -825,7 +817,7 @@ class Icmp6Packet:
             if self.na_flag_s is False and not ip6_dst == IPv6Address("ff02::1"):
                 return "ICMPv6 sanity - if 'na_flag_s' is not set then 'dst' must be all-nodes (RFC 4861)"
 
-        elif self.type == ICMP6_MLD2_REPORT:
+        elif self.type == MLD2_REPORT:
             if not self.code == 0:
                 return "ICMPv6 sanity - 'code' must be 0 (RFC 3810)"
             if not ip6_hop == 1:
@@ -847,11 +839,11 @@ class Icmp6Packet:
 # >                           MAC Address                         |
 # +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 
-ICMP6_ND_OPT_SLLA = 1
-ICMP6_ND_OPT_SLLA_LEN = 8
+ND_OPT_SLLA = 1
+ND_OPT_SLLA_LEN = 8
 
 
-class Icmp6NdOptSLLA:
+class NdOptSLLA:
     """ ICMPv6 ND option - Source Link Layer Address (1) """
 
     def __init__(self, frame, optr):
@@ -871,11 +863,11 @@ class Icmp6NdOptSLLA:
 # >                           MAC Address                         |
 # +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 
-ICMP6_ND_OPT_TLLA = 2
-ICMP6_ND_OPT_TLLA_LEN = 8
+ND_OPT_TLLA = 2
+ND_OPT_TLLA_LEN = 8
 
 
-class Icmp6NdOptTLLA:
+class NdOptTLLA:
     """ ICMPv6 ND option - Target Link Layer Address (2) """
 
     def __init__(self, frame, optr):
@@ -907,11 +899,11 @@ class Icmp6NdOptTLLA:
 # |                                                               |
 # +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 
-ICMP6_ND_OPT_PI = 3
-ICMP6_ND_OPT_PI_LEN = 32
+ND_OPT_PI = 3
+ND_OPT_PI_LEN = 32
 
 
-class Icmp6NdOptPI:
+class NdOptPI:
     """ ICMPv6 ND option - Prefix Information (3) """
 
     def __init__(self, frame, optr):
@@ -931,7 +923,7 @@ class Icmp6NdOptPI:
 # ICMPv6 ND option not supported by this stack
 
 
-class Icmp6NdOptUnk:
+class NdOptUnk:
     """ ICMPv6 ND  option not supported by this stack """
 
     def __init__(self, frame, optr):

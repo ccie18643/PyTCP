@@ -43,9 +43,9 @@
 
 import struct
 
-from ip_helper import inet_cksum
-from ipv6_address import IPv6Address, IPv6Network
-from tracker import Tracker
+from misc.ip_helper import inet_cksum
+from misc.ipv6_address import IPv6Address, IPv6Network
+from misc.tracker import Tracker
 
 # Destination Unreachable message (1/[0-6])
 
@@ -293,49 +293,49 @@ from tracker import Tracker
 # +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 
 
-ICMP6_UNREACHABLE = 1
-ICMP6_UNREACHABLE_LEN = 8
-ICMP6_UNREACHABLE__NO_ROUTE = 0
-ICMP6_UNREACHABLE__PROHIBITED = 1
-ICMP6_UNREACHABLE__SCOPE = 2
-ICMP6_UNREACHABLE__ADDRESS = 3
-ICMP6_UNREACHABLE__PORT = 4
-ICMP6_UNREACHABLE__FAILED_POLICY = 5
-ICMP6_UNREACHABLE__REJECT_ROUTE = 6
-ICMP6_PACKET_TOO_BIG = 2
-ICMP6_PACKET_TOO_BIG_LEN = 8
-ICMP6_TIME_EXCEEDED = 3
-ICMP6_TIME_EXCEEDED_LEN = 8
-ICMP6_PARAMETER_PROBLEM = 4
-ICMP6_PARAMETER_PROBLEM_LEN = 8
-ICMP6_ECHO_REQUEST = 128
-ICMP6_ECHO_REQUEST_LEN = 8
-ICMP6_ECHO_REPLY = 129
-ICMP6_ECHO_REPLY_LEN = 8
-ICMP6_MLD2_QUERY = 130
-ICMP6_MLD2_QUERY_LEN = 28
-ICMP6_ROUTER_SOLICITATION = 133
-ICMP6_ROUTER_SOLICITATION_LEN = 8
-ICMP6_ROUTER_ADVERTISEMENT = 134
-ICMP6_ROUTER_ADVERTISEMENT_LEN = 16
-ICMP6_NEIGHBOR_SOLICITATION = 135
-ICMP6_NEIGHBOR_SOLICITATION_LEN = 24
-ICMP6_NEIGHBOR_ADVERTISEMENT = 136
-ICMP6_NEIGHBOR_ADVERTISEMENT_LEN = 24
-ICMP6_MLD2_REPORT = 143
-ICMP6_MLD2_REPORT_LEN = 8
+UNREACHABLE = 1
+UNREACHABLE_LEN = 8
+UNREACHABLE__NO_ROUTE = 0
+UNREACHABLE__PROHIBITED = 1
+UNREACHABLE__SCOPE = 2
+UNREACHABLE__ADDRESS = 3
+UNREACHABLE__PORT = 4
+UNREACHABLE__FAILED_POLICY = 5
+UNREACHABLE__REJECT_ROUTE = 6
+PACKET_TOO_BIG = 2
+PACKET_TOO_BIG_LEN = 8
+TIME_EXCEEDED = 3
+TIME_EXCEEDED_LEN = 8
+PARAMETER_PROBLEM = 4
+PARAMETER_PROBLEM_LEN = 8
+ECHO_REQUEST = 128
+ECHO_REQUEST_LEN = 8
+ECHO_REPLY = 129
+ECHO_REPLY_LEN = 8
+MLD2_QUERY = 130
+MLD2_QUERY_LEN = 28
+ROUTER_SOLICITATION = 133
+ROUTER_SOLICITATION_LEN = 8
+ROUTER_ADVERTISEMENT = 134
+ROUTER_ADVERTISEMENT_LEN = 16
+NEIGHBOR_SOLICITATION = 135
+NEIGHBOR_SOLICITATION_LEN = 24
+NEIGHBOR_ADVERTISEMENT = 136
+NEIGHBOR_ADVERTISEMENT_LEN = 24
+MLD2_REPORT = 143
+MLD2_REPORT_LEN = 8
 
 
-ICMP6_MART_MODE_IS_INCLUDE = 1
-ICMP6_MART_MODE_IS_EXCLUDE = 2
-ICMP6_MART_CHANGE_TO_INCLUDE = 3
-ICMP6_MART_CHANGE_TO_EXCLUDE = 4
-ICMP6_MART_ALLOW_NEW_SOURCES = 5
-ICMP6_MART_BLOCK_OLD_SOURCES = 6
+MART_MODE_IS_INCLUDE = 1
+MART_MODE_IS_EXCLUDE = 2
+MART_CHANGE_TO_INCLUDE = 3
+MART_CHANGE_TO_EXCLUDE = 4
+MART_ALLOW_NEW_SOURCES = 5
+MART_BLOCK_OLD_SOURCES = 6
 
 
-class Icmp6Packet:
-    """ ICMPv6 packet support class """
+class Assembler:
+    """ ICMPv6 packet assembler support class """
 
     protocol = "ICMP6"
 
@@ -371,24 +371,24 @@ class Icmp6Packet:
 
         self.nd_options = [] if nd_options is None else nd_options
 
-        if self.type == ICMP6_UNREACHABLE:
+        if self.type == UNREACHABLE:
             self.un_reserved = 0
             self.un_data = un_data[:520]
 
-        elif self.type == ICMP6_ECHO_REQUEST:
+        elif self.type == ECHO_REQUEST:
             self.ec_id = ec_id
             self.ec_seq = ec_seq
             self.ec_data = ec_data
 
-        elif self.type == ICMP6_ECHO_REPLY:
+        elif self.type == ECHO_REPLY:
             self.ec_id = ec_id
             self.ec_seq = ec_seq
             self.ec_data = ec_data
 
-        elif self.type == ICMP6_ROUTER_SOLICITATION:
+        elif self.type == ROUTER_SOLICITATION:
             self.rs_reserved = 0
 
-        elif self.type == ICMP6_ROUTER_ADVERTISEMENT:
+        elif self.type == ROUTER_ADVERTISEMENT:
             self.ra_hop = ra_hop
             self.ra_flag_m = ra_flag_m
             self.ra_flag_o = ra_flag_o
@@ -396,18 +396,18 @@ class Icmp6Packet:
             self.ra_reachable_time = ra_reachable_time
             self.ra_retrans_timer = ra_retrans_timer
 
-        elif self.type == ICMP6_NEIGHBOR_SOLICITATION:
+        elif self.type == NEIGHBOR_SOLICITATION:
             self.ns_reserved = 0
             self.ns_target_address = ns_target_address
 
-        elif self.type == ICMP6_NEIGHBOR_ADVERTISEMENT:
+        elif self.type == NEIGHBOR_ADVERTISEMENT:
             self.na_flag_r = na_flag_r
             self.na_flag_s = na_flag_s
             self.na_flag_o = na_flag_o
             self.na_reserved = 0
             self.na_target_address = na_target_address
 
-        elif self.type == ICMP6_MLD2_REPORT:
+        elif self.type == MLD2_REPORT:
             self.mlr2_reserved = 0
             self.mlr2_multicast_address_record = [] if mlr2_multicast_address_record is None else mlr2_multicast_address_record
             self.mlr2_number_of_multicast_address_records = len(self.mlr2_multicast_address_record)
@@ -417,38 +417,38 @@ class Icmp6Packet:
 
         log = f"ICMPv6 type {self.type}, code {self.code}"
 
-        if self.type == ICMP6_UNREACHABLE:
+        if self.type == UNREACHABLE:
             pass
 
-        elif self.type == ICMP6_ECHO_REQUEST:
+        elif self.type == ECHO_REQUEST:
             log += f", id {self.ec_id}, seq {self.ec_seq}"
 
-        elif self.type == ICMP6_ECHO_REPLY:
+        elif self.type == ECHO_REPLY:
             log += f", id {self.ec_id}, seq {self.ec_seq}"
 
-        elif self.type == ICMP6_ROUTER_SOLICITATION:
+        elif self.type == ROUTER_SOLICITATION:
             for nd_option in self.nd_options:
                 log += ", " + str(nd_option)
 
-        elif self.type == ICMP6_ROUTER_ADVERTISEMENT:
+        elif self.type == ROUTER_ADVERTISEMENT:
             log += f", hop {self.ra_hop}"
             log += f"flags {'M' if self.ra_flag_m else '-'}{'O' if self.ra_flag_o else '-'}"
             log += f"rlft {self.ra_router_lifetime}, reacht {self.ra_reachable_time}, retrt {self.ra_retrans_timer}"
             for nd_option in self.nd_options:
                 log += ", " + str(nd_option)
 
-        elif self.type == ICMP6_NEIGHBOR_SOLICITATION:
+        elif self.type == NEIGHBOR_SOLICITATION:
             log += f", target {self.ns_target_address}"
             for nd_option in self.nd_options:
                 log += ", " + str(nd_option)
 
-        elif self.type == ICMP6_NEIGHBOR_ADVERTISEMENT:
+        elif self.type == NEIGHBOR_ADVERTISEMENT:
             log += f", target {self.na_target_address}"
             log += f", flags {'R' if self.na_flag_r else '-'}{'S' if self.na_flag_s else '-'}{'O' if self.na_flag_o else '-'}"
             for nd_option in self.nd_options:
                 log += ", " + str(nd_option)
 
-        elif self.type == ICMP6_MLD2_REPORT:
+        elif self.type == MLD2_REPORT:
             pass
 
         return log
@@ -456,46 +456,46 @@ class Icmp6Packet:
     def __len__(self):
         """ Length of the packet """
 
-        if self.type == ICMP6_UNREACHABLE:
-            return ICMP6_UNREACHABLE_LEN + len(self.un_data)
+        if self.type == UNREACHABLE:
+            return UNREACHABLE_LEN + len(self.un_data)
 
-        if self.type == ICMP6_ECHO_REQUEST:
-            return ICMP6_ECHO_REQUEST_LEN + len(self.ec_data)
+        if self.type == ECHO_REQUEST:
+            return ECHO_REQUEST_LEN + len(self.ec_data)
 
-        if self.type == ICMP6_ECHO_REPLY:
-            return ICMP6_ECHO_REPLY_LEN + len(self.ec_data)
+        if self.type == ECHO_REPLY:
+            return ECHO_REPLY_LEN + len(self.ec_data)
 
-        if self.type == ICMP6_ROUTER_SOLICITATION:
-            return ICMP6_ROUTER_SOLICITATION_LEN + sum([len(_) for _ in self.nd_options])
+        if self.type == ROUTER_SOLICITATION:
+            return ROUTER_SOLICITATION_LEN + sum([len(_) for _ in self.nd_options])
 
-        if self.type == ICMP6_ROUTER_ADVERTISEMENT:
-            return ICMP6_ROUTER_ADVERTISEMENT_LEN + sum([len(_) for _ in self.nd_options])
+        if self.type == ROUTER_ADVERTISEMENT:
+            return ROUTER_ADVERTISEMENT_LEN + sum([len(_) for _ in self.nd_options])
 
-        if self.type == ICMP6_NEIGHBOR_SOLICITATION:
-            return ICMP6_NEIGHBOR_SOLICITATION_LEN + sum([len(_) for _ in self.nd_options])
+        if self.type == NEIGHBOR_SOLICITATION:
+            return NEIGHBOR_SOLICITATION_LEN + sum([len(_) for _ in self.nd_options])
 
-        if self.type == ICMP6_NEIGHBOR_ADVERTISEMENT:
-            return ICMP6_NEIGHBOR_ADVERTISEMENT_LEN + sum([len(_) for _ in self.nd_options])
+        if self.type == NEIGHBOR_ADVERTISEMENT:
+            return NEIGHBOR_ADVERTISEMENT_LEN + sum([len(_) for _ in self.nd_options])
 
-        if self.type == ICMP6_MLD2_REPORT:
-            return ICMP6_MLD2_REPORT_LEN + sum([len(_) for _ in self.mlr2_multicast_address_record])
+        if self.type == MLD2_REPORT:
+            return MLD2_REPORT_LEN + sum([len(_) for _ in self.mlr2_multicast_address_record])
 
-    def assemble_packet(self, frame, hptr, pshdr_sum):
+    def assemble(self, frame, hptr, pshdr_sum):
         """ Assemble packet into the raw form """
 
-        if self.type == ICMP6_UNREACHABLE:
+        if self.type == UNREACHABLE:
             struct.pack_into(f"! BBH L {len(self.un_data)}s", frame, hptr, self.type, self.code, 0, self.un_reserved, self.un_data)
 
-        elif self.type == ICMP6_ECHO_REQUEST:
+        elif self.type == ECHO_REQUEST:
             struct.pack_into(f"! BBH HH {len(self.ec_data)}s", frame, hptr, self.type, self.code, 0, self.ec_id, self.ec_seq, self.ec_data)
 
-        elif self.type == ICMP6_ECHO_REPLY:
+        elif self.type == ECHO_REPLY:
             struct.pack_into(f"! BBH HH {len(self.ec_data)}s", frame, hptr, self.type, self.code, 0, self.ec_id, self.ec_seq, self.ec_data)
 
-        elif self.type == ICMP6_ROUTER_SOLICITATION:
+        elif self.type == ROUTER_SOLICITATION:
             struct.pack_into(f"! BBH L {len(self.raw_nd_options)}s", frame, hptr, self.type, self.code, 0, self.rs_reserved, self.raw_nd_options)
 
-        elif self.type == ICMP6_ROUTER_ADVERTISEMENT:
+        elif self.type == ROUTER_ADVERTISEMENT:
             struct.pack_into(
                 f"! BBH BBH L L {len(self.raw_nd_options)}s",
                 frame,
@@ -511,7 +511,7 @@ class Icmp6Packet:
                 self.raw_nd_options,
             )
 
-        elif self.type == ICMP6_NEIGHBOR_SOLICITATION:
+        elif self.type == NEIGHBOR_SOLICITATION:
             struct.pack_into(
                 f"! BBH L 16s {len(self.raw_nd_options)}s",
                 frame,
@@ -524,7 +524,7 @@ class Icmp6Packet:
                 self.raw_nd_options,
             )
 
-        elif self.type == ICMP6_NEIGHBOR_ADVERTISEMENT:
+        elif self.type == NEIGHBOR_ADVERTISEMENT:
             struct.pack_into(
                 f"! BBH L 16s {len(self.raw_nd_options)}s",
                 frame,
@@ -537,7 +537,7 @@ class Icmp6Packet:
                 self.raw_nd_options,
             )
 
-        elif self.type == ICMP6_MLD2_REPORT:
+        elif self.type == MLD2_REPORT:
             struct.pack_into(
                 f"! BBH HH {sum([len(_) for _ in self.mlr2_multicast_address_record])}s",
                 frame,
@@ -577,8 +577,8 @@ class Icmp6Packet:
 # >                           MAC Address                         |
 # +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 
-ICMP6_ND_OPT_SLLA = 1
-ICMP6_ND_OPT_SLLA_LEN = 8
+ND_OPT_SLLA = 1
+ND_OPT_SLLA_LEN = 8
 
 
 class Icmp6NdOptSLLA:
@@ -589,13 +589,13 @@ class Icmp6NdOptSLLA:
 
     @property
     def raw_option(self):
-        return struct.pack("! BB 6s", ICMP6_ND_OPT_SLLA, ICMP6_ND_OPT_SLLA_LEN >> 3, bytes.fromhex(self.slla.replace(":", "")))
+        return struct.pack("! BB 6s", ND_OPT_SLLA, ND_OPT_SLLA_LEN >> 3, bytes.fromhex(self.slla.replace(":", "")))
 
     def __str__(self):
         return f"slla {self.slla}"
 
     def __len__(self):
-        return ICMP6_ND_OPT_SLLA_LEN
+        return ND_OPT_SLLA_LEN
 
 
 # ICMPv6 ND option - Target Link Layer Address (2)
@@ -606,8 +606,8 @@ class Icmp6NdOptSLLA:
 # >                           MAC Address                         |
 # +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 
-ICMP6_ND_OPT_TLLA = 2
-ICMP6_ND_OPT_TLLA_LEN = 8
+ND_OPT_TLLA = 2
+ND_OPT_TLLA_LEN = 8
 
 
 class Icmp6NdOptTLLA:
@@ -618,13 +618,13 @@ class Icmp6NdOptTLLA:
 
     @property
     def raw_option(self):
-        return struct.pack("! BB 6s", ICMP6_ND_OPT_TLLA, ICMP6_ND_OPT_TLLA_LEN >> 3, bytes.fromhex(self.tlla.replace(":", "")))
+        return struct.pack("! BB 6s", ND_OPT_TLLA, ND_OPT_TLLA_LEN >> 3, bytes.fromhex(self.tlla.replace(":", "")))
 
     def __str__(self):
         return f"tlla {self.tlla}"
 
     def __len__(self):
-        return ICMP6_ND_OPT_TLLA_LEN
+        return ND_OPT_TLLA_LEN
 
 
 # ICMPv6 ND option - Prefix Information (3)
@@ -647,8 +647,8 @@ class Icmp6NdOptTLLA:
 # |                                                               |
 # +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 
-ICMP6_ND_OPT_PI = 3
-ICMP6_ND_OPT_PI_LEN = 32
+ND_OPT_PI = 3
+ND_OPT_PI_LEN = 32
 
 
 class Icmp6NdOptPI:
@@ -663,8 +663,8 @@ class Icmp6NdOptPI:
         preferred_lifetime=None,
         prefix=None,
     ):
-        self.code = ICMP6_ND_OPT_PI
-        self.len = ICMP6_ND_OPT_PI_LEN
+        self.code = ND_OPT_PI
+        self.len = ND_OPT_PI_LEN
         self.flag_l = flag_l
         self.flag_a = flag_a
         self.flag_r = flag_r
@@ -689,7 +689,7 @@ class Icmp6NdOptPI:
         return f"prefix_info {self.prefix}"
 
     def __len__(self):
-        return ICMP6_ND_OPT_PI_LEN
+        return ND_OPT_PI_LEN
 
 
 #

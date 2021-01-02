@@ -56,19 +56,19 @@ import struct
 # +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 
 
-ETHER_HEADER_LEN = 14
+HEADER_LEN = 14
 
-ETHER_TYPE_MIN = 0x0600
-ETHER_TYPE_ARP = 0x0806
-ETHER_TYPE_IP4 = 0x0800
-ETHER_TYPE_IP6 = 0x86DD
-
-
-ETHER_TYPE_TABLE = {ETHER_TYPE_ARP: "ARP", ETHER_TYPE_IP4: "IPv4", ETHER_TYPE_IP6: "IPv6"}
+TYPE_MIN = 0x0600
+TYPE_ARP = 0x0806
+TYPE_IP4 = 0x0800
+TYPE_IP6 = 0x86DD
 
 
-class EtherPacket:
-    """ Ethernet packet support class """
+TYPE_TABLE = {TYPE_ARP: "ARP", TYPE_IP4: "IPv4", TYPE_IP6: "IPv6"}
+
+
+class Assembler:
+    """ Ethernet packet assembler support class """
 
     protocol = "ETHER"
 
@@ -84,27 +84,27 @@ class EtherPacket:
         self.src = src
 
         if self._child_packet.protocol == "IP6":
-            self.type = ETHER_TYPE_IP6
+            self.type = TYPE_IP6
 
         if self._child_packet.protocol == "IP4":
-            self.type = ETHER_TYPE_IP4
+            self.type = TYPE_IP4
 
         if self._child_packet.protocol == "ARP":
-            self.type = ETHER_TYPE_ARP
+            self.type = TYPE_ARP
 
     def __str__(self):
         """ Packet log string """
 
-        return f"ETHER {self.src} > {self.dst}, 0x{self.type:0>4x} ({ETHER_TYPE_TABLE.get(self.type, '???')})"
+        return f"ETHER {self.src} > {self.dst}, 0x{self.type:0>4x} ({TYPE_TABLE.get(self.type, '???')})"
 
     def __len__(self):
         """ Length of the packet """
 
-        return ETHER_HEADER_LEN + len(self._child_packet)
+        return HEADER_LEN + len(self._child_packet)
 
-    def assemble_packet(self, frame, hptr):
+    def assemble(self, frame, hptr):
         """ Assemble packet into the raw form """
 
         struct.pack_into("! 6s 6s H", frame, hptr, bytes.fromhex(self.dst.replace(":", "")), bytes.fromhex(self.src.replace(":", "")), self.type)
 
-        self._child_packet.assemble_packet(frame, hptr + ETHER_HEADER_LEN)
+        self._child_packet.assemble(frame, hptr + HEADER_LEN)

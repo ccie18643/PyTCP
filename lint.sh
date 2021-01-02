@@ -1,5 +1,5 @@
 #!/bin/bash
-PY_PATH="*.py fpp/*.py fpa/*.py phtx/*.py phrx/*.py service/*.py client/*.py"
+PY_PATH="*.py fpp/*.py fpa/*.py phtx/*.py phrx/*.py service/*.py client/*.py misc/*.py tcp/*.py udp/*.py"
 codespell -w --ignore-words-list="ect,ether,nd,tha" --quiet-level=2 ${PY_PATH}
 pyupgrade --py36-plus ${PY_PATH}
 isort --profile black ${PY_PATH}

@@ -43,8 +43,8 @@
 
 import config
 import fpa.udp
-from ipv4_address import IPv4Address
-from ipv6_address import IPv6Address
+from misc.ipv4_address import IPv4Address
+from misc.ipv6_address import IPv6Address
 
 
 def _phtx_udp(self, ip_src, ip_dst, udp_sport, udp_dport, udp_data=b"", echo_tracker=None):
@@ -52,8 +52,8 @@ def _phtx_udp(self, ip_src, ip_dst, udp_sport, udp_dport, udp_data=b"", echo_tra
 
     assert type(ip_src) in {IPv4Address, IPv6Address}
     assert type(ip_dst) in {IPv4Address, IPv6Address}
-    assert 0 < tcp_sport < 65536
-    assert 0 < tcp_dport < 65536
+    assert 0 < udp_sport < 65536
+    assert 0 < udp_dport < 65536
 
     # Check if IPv4 protocol support is enabled, if not then silently drop the IPv4 packet
     if not config.ip4_support and ip_dst.version == 4:
@@ -63,7 +63,7 @@ def _phtx_udp(self, ip_src, ip_dst, udp_sport, udp_dport, udp_data=b"", echo_tra
     if not config.ip6_support and ip_dst.version == 6:
         return
 
-    udp_packet_tx = fpa.udp.UdpPacket(sport=udp_sport, dport=udp_dport, data=udp_data, echo_tracker=echo_tracker)
+    udp_packet_tx = fpa.udp.Assembler(sport=udp_sport, dport=udp_dport, data=udp_data, echo_tracker=echo_tracker)
 
     if __debug__:
         self._logger.opt(ansi=True).info(f"<magenta>{udp_packet_tx.tracker}</magenta> - {udp_packet_tx}")

@@ -42,9 +42,9 @@
 
 
 import config
-from fpa.tcp import TcpOptMss, TcpOptNop, TcpOptWscale, TcpPacket
-from ipv4_address import IPv4Address
-from ipv6_address import IPv6Address
+import fpa.tcp
+from misc.ipv4_address import IPv4Address
+from misc.ipv6_address import IPv6Address
 
 PACKET_LOSS = False
 
@@ -90,11 +90,11 @@ def _phtx_tcp(
     tcp_options = []
 
     if tcp_mss:
-        tcp_options.append(TcpOptMss(tcp_mss))
-        tcp_options.append(TcpOptNop())
-        tcp_options.append(TcpOptWscale(0))
+        tcp_options.append(fpa.tcp.OptMss(tcp_mss))
+        tcp_options.append(fpa.tcp.OptNop())
+        tcp_options.append(fpa.tcp.OptWscale(0))
 
-    tcp_packet_tx = TcpPacket(
+    tcp_packet_tx = fpa.tcp.Assembler(
         sport=tcp_sport,
         dport=tcp_dport,
         seq=tcp_seq,

@@ -43,8 +43,8 @@
 
 import struct
 
-from ip_helper import inet_cksum
-from tracker import Tracker
+from misc.ip_helper import inet_cksum
+from misc.tracker import Tracker
 
 # UDP packet header (RFC 768)
 
@@ -55,11 +55,11 @@ from tracker import Tracker
 # +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 
 
-UDP_HEADER_LEN = 8
+HEADER_LEN = 8
 
 
-class UdpPacket:
-    """ UDP packet support class """
+class Assembler:
+    """ UDP packet assembler support class """
 
     protocol = "UDP"
 
@@ -71,7 +71,7 @@ class UdpPacket:
         self.sport = sport
         self.dport = dport
         self.data = data
-        self.plen = UDP_HEADER_LEN + len(self.data)
+        self.plen = HEADER_LEN + len(self.data)
 
     def __str__(self):
         """ Packet log string """
@@ -83,7 +83,7 @@ class UdpPacket:
 
         return self.plen
 
-    def assemble_packet(self, frame, hptr, pshdr_sum):
+    def assemble(self, frame, hptr, pshdr_sum):
         """ Assemble packet into the raw form """
 
         struct.pack_into(f"! HH HH {len(self.data)}s", frame, hptr, self.sport, self.dport, self.plen, 0, self.data)

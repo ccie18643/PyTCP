@@ -37,14 +37,14 @@
 
 
 #
-# fpa.dhcp.py - protocol support library for DHCP
+# ps/dhcp.py - protocol support library for DHCP
 #
 
 
 import binascii
 import struct
 
-from ipv4_address import IPv4Address
+from misc.ipv4_address import IPv4Address
 
 # DHCP packet header (RFC 2131)
 
@@ -122,22 +122,22 @@ from ipv4_address import IPv4Address
 # +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 
 
-DHCP_HEADER_LEN = 236 + 4
+HEADER_LEN = 236 + 4
 
-BOOT_REQUEST = 1
-BOOT_REPLY = 2
+OP_REQUEST = 1
+OP_REPLY = 2
 
-DHCP_DISCOVER = 1
-DHCP_OFFER = 2
-DHCP_REQUEST = 3
-DHCP_DECLINE = 4
-DHCP_ACK = 5
-DHCP_NAK = 6
-DHCP_RELEASE = 7
-DHCP_INFORM = 8
+MSG_DISCOVER = 1
+MSG_OFFER = 2
+MSG_REQUEST = 3
+MSG_DECLINE = 4
+MSG_ACK = 5
+MSG_NAK = 6
+MSG_RELEASE = 7
+MSG_INFORM = 8
 
 
-class DhcpPacket:
+class Packet:
     """ Dhcp packet support class """
 
     protocol = "DHCP"
@@ -145,7 +145,7 @@ class DhcpPacket:
     def __init__(
         self,
         raw_packet=None,
-        dhcp_op=BOOT_REQUEST,
+        dhcp_op=OP_REQUEST,
         dhcp_xid=None,
         dhcp_flag_b=False,
         dhcp_ciaddr=IPv4Address("0.0.0.0"),
@@ -168,9 +168,9 @@ class DhcpPacket:
 
         # Packet parsing
         if raw_packet:
-            raw_header = raw_packet[:DHCP_HEADER_LEN]
+            raw_header = raw_packet[:HEADER_LEN]
 
-            raw_options = raw_packet[DHCP_HEADER_LEN:]
+            raw_options = raw_packet[HEADER_LEN:]
 
             self.dhcp_op = raw_header[0]
             self.dhcp_htype = raw_header[1]
@@ -190,32 +190,32 @@ class DhcpPacket:
             self.dhcp_options = []
 
             opt_cls = {
-                DHCP_OPT_SUBNET_MASK: DhcpOptSubnetMask,
-                DHCP_OPT_ROUTER: DhcpOptRouter,
-                DHCP_OPT_DNS: DhcpOptDns,
-                DHCP_OPT_HOST_NAME: DhcpOptHostName,
-                DHCP_OPT_DOMAIN_NAME: DhcpOptDomainName,
-                DHCP_OPT_REQ_IP4_ADDR: DhcpOptReqIpAddr,
-                DHCP_OPT_ADDR_LEASE_TIME: DhcpOptAddrLeaseTime,
-                DHCP_OPT_PARAM_REQ_LIST: DhcpOptParamReqList,
-                DHCP_OPT_SRV_ID: DhcpOptSrvId,
-                DHCP_OPT_MSG_TYPE: DhcpOptMsgType,
+                OPT_SUBNET_MASK: OptSubnetMask,
+                OPT_ROUTER: OptRouter,
+                OPT_DNS: OptDns,
+                OPT_HOST_NAME: OptHostName,
+                OPT_DOMAIN_NAME: OptDomainName,
+                OPT_REQ_IP4_ADDR: OptReqIpAddr,
+                OPT_ADDR_LEASE_TIME: OptAddrLeaseTime,
+                OPT_PARAM_REQ_LIST: OptParamReqList,
+                OPT_SRV_ID: OptSrvId,
+                OPT_MSG_TYPE: OptMsgType,
             }
 
             i = 0
 
             while i < len(raw_options):
 
-                if raw_options[i] == DHCP_OPT_END:
-                    self.dhcp_options.append(DhcpOptEnd())
+                if raw_options[i] == OPT_END:
+                    self.dhcp_options.append(OptEnd())
                     break
 
-                if raw_options[i] == DHCP_OPT_PAD:
-                    self.dhcp_options.append(DhcpOptPad())
-                    i += DHCP_OPT_PAD_LEN
+                if raw_options[i] == OPT_PAD:
+                    self.dhcp_options.append(OptPad())
+                    i += OPT_PAD_LEN
                     continue
 
-                self.dhcp_options.append(opt_cls.get(raw_options[i], DhcpOptUnk)(raw_options[i : i + raw_options[i + 1] + 2]))
+                self.dhcp_options.append(opt_cls.get(raw_options[i], OptUnk)(raw_options[i : i + raw_options[i + 1] + 2]))
                 i += self.raw_options[i + 1] + 2
 
         # Packet building
@@ -238,36 +238,36 @@ class DhcpPacket:
             self.dhcp_options = []
 
             if dhcp_subnet_mask:
-                self.dhcp_options.append(DhcpOptSubnetMask(opt_subnet_mask=dhcp_subnet_mask))
+                self.dhcp_options.append(OptSubnetMask(opt_subnet_mask=dhcp_subnet_mask))
 
             if dhcp_router:
-                self.dhcp_options.append(DhcpOptRouter(opt_router=dhcp_router))
+                self.dhcp_options.append(OptRouter(opt_router=dhcp_router))
 
             if dhcp_dns:
-                self.dhcp_options.append(DhcpOptDns(opt_dns=dhcp_dns))
+                self.dhcp_options.append(OptDns(opt_dns=dhcp_dns))
 
             if dhcp_host_name:
-                self.dhcp_options.append(DhcpOptHostName(opt_host_name=dhcp_host_name))
+                self.dhcp_options.append(OptHostName(opt_host_name=dhcp_host_name))
 
             if dhcp_domain_name:
-                self.dhcp_options.append(DhcpOptDomainName(opt_domain_name=dhcp_domain_name))
+                self.dhcp_options.append(OptDomainName(opt_domain_name=dhcp_domain_name))
 
             if dhcp_req_ip4_addr:
-                self.dhcp_options.append(DhcpOptReqIpAddr(opt_req_ip4_addr=dhcp_req_ip4_addr))
+                self.dhcp_options.append(OptReqIpAddr(opt_req_ip4_addr=dhcp_req_ip4_addr))
 
             if dhcp_addr_lease_time:
-                self.dhcp_options.append(DhcpOptAddrLeaseTime(opt_addr_lease_time=dhcp_addr_lease_time))
+                self.dhcp_options.append(OptAddrLeaseTime(opt_addr_lease_time=dhcp_addr_lease_time))
 
             if dhcp_srv_id:
-                self.dhcp_options.append(DhcpOptSrvId(opt_srv_id=dhcp_srv_id))
+                self.dhcp_options.append(OptSrvId(opt_srv_id=dhcp_srv_id))
 
             if dhcp_param_req_list:
-                self.dhcp_options.append(DhcpOptParamReqList(opt_param_req_list=dhcp_param_req_list))
+                self.dhcp_options.append(OptParamReqList(opt_param_req_list=dhcp_param_req_list))
 
             if dhcp_msg_type:
-                self.dhcp_options.append(DhcpOptMsgType(opt_msg_type=dhcp_msg_type))
+                self.dhcp_options.append(OptMsgType(opt_msg_type=dhcp_msg_type))
 
-            self.dhcp_options.append(DhcpOptEnd())
+            self.dhcp_options.append(OptEnd())
 
     def __str__(self):
         """ Packet log string """
@@ -318,7 +318,7 @@ class DhcpPacket:
         """ DHCP option - Subnet Mask (1) """
 
         for option in self.dhcp_options:
-            if option.opt_code == DHCP_OPT_SUBNET_MASK:
+            if option.opt_code == OPT_SUBNET_MASK:
                 return option.opt_subnet_mask
         return None
 
@@ -327,7 +327,7 @@ class DhcpPacket:
         """ DHCP option - Router (3) """
 
         for option in self.dhcp_options:
-            if option.opt_code == DHCP_OPT_ROUTER:
+            if option.opt_code == OPT_ROUTER:
                 return option.opt_router
         return None
 
@@ -336,7 +336,7 @@ class DhcpPacket:
         """ DHCP option - Domain Name Server (6) """
 
         for option in self.dhcp_options:
-            if option.opt_code == DHCP_OPT_DNS:
+            if option.opt_code == OPT_DNS:
                 return option.opt_dns
         return None
 
@@ -345,7 +345,7 @@ class DhcpPacket:
         """ DHCP option - Host Name (12) """
 
         for option in self.dhcp_options:
-            if option.opt_code == DHCP_OPT_HOST_NAME:
+            if option.opt_code == OPT_HOST_NAME:
                 return option.opt_host_name
         return None
 
@@ -354,7 +354,7 @@ class DhcpPacket:
         """ DHCP option - Domain Name (12) """
 
         for option in self.dhcp_options:
-            if option.opt_code == DHCP_OPT_DOMAIN_NAME:
+            if option.opt_code == OPT_DOMAIN_NAME:
                 return option.opt_domain_name
         return None
 
@@ -363,7 +363,7 @@ class DhcpPacket:
         """ DHCP option - Requested IP Address (50) """
 
         for option in self.dhcp_options:
-            if option.opt_code == DHCP_OPT_REQ_IP4_ADDR:
+            if option.opt_code == OPT_REQ_IP4_ADDR:
                 return option.opt_req_ip4_addr
         return None
 
@@ -372,7 +372,7 @@ class DhcpPacket:
         """ DHCP option - Address Lease Time (51) """
 
         for option in self.dhcp_options:
-            if option.opt_code == DHCP_OPT_ADDR_LEASE_TIME:
+            if option.opt_code == OPT_ADDR_LEASE_TIME:
                 return option.opt_addr_lease_time
         return None
 
@@ -381,7 +381,7 @@ class DhcpPacket:
         """ DHCP option - Message Type (53) """
 
         for option in self.dhcp_options:
-            if option.opt_code == DHCP_OPT_MSG_TYPE:
+            if option.opt_code == OPT_MSG_TYPE:
                 return option.opt_msg_type
         return None
 
@@ -390,7 +390,7 @@ class DhcpPacket:
         """ DHCP option - Server Identivier (54) """
 
         for option in self.dhcp_options:
-            if option.opt_code == DHCP_OPT_SRV_ID:
+            if option.opt_code == OPT_SRV_ID:
                 return option.opt_srv_id
         return None
 
@@ -399,7 +399,7 @@ class DhcpPacket:
         """ DHCP option - Parameter Request List (55) """
 
         for option in self.dhcp_options:
-            if option.opt_code == DHCP_OPT_PARAM_REQ_LIST:
+            if option.opt_code == OPT_PARAM_REQ_LIST:
                 return option.opt_param_req_list
         return None
 
@@ -422,15 +422,15 @@ class DhcpPacket:
 
 # DHCP option - End (255)
 
-DHCP_OPT_END = 255
-DHCP_OPT_END_LEN = 0
+OPT_END = 255
+OPT_END_LEN = 0
 
 
-class DhcpOptEnd:
+class OptEnd:
     """ DHCP option - End (255) """
 
     def __init__(self):
-        self.opt_code = DHCP_OPT_END
+        self.opt_code = OPT_END
 
     @property
     def raw_option(self):
@@ -442,15 +442,15 @@ class DhcpOptEnd:
 
 # DHCP option - Pad (0)
 
-DHCP_OPT_PAD = 0
-DHCP_OPT_PAD_LEN = 0
+OPT_PAD = 0
+OPT_PAD_LEN = 0
 
 
-class DhcpOptPad:
+class OptPad:
     """ DHCP option - Pad (0) """
 
     def __init__(self):
-        self.opt_code = DHCP_OPT_PAD
+        self.opt_code = OPT_PAD
 
     @property
     def raw_option(self):
@@ -462,11 +462,11 @@ class DhcpOptPad:
 
 # DHCP option - Subnet Mask (1)
 
-DHCP_OPT_SUBNET_MASK = 1
-DHCP_OPT_SUBNET_MASK_LEN = 4
+OPT_SUBNET_MASK = 1
+OPT_SUBNET_MASK_LEN = 4
 
 
-class DhcpOptSubnetMask:
+class OptSubnetMask:
     """ DHCP option - Subnet Mask (1) """
 
     def __init__(self, raw_option=None, opt_subnet_mask=None):
@@ -475,8 +475,8 @@ class DhcpOptSubnetMask:
             self.opt_len = raw_option[1]
             self.opt_subnet_mask = IPv4Address(raw_option[2:6])
         else:
-            self.opt_code = DHCP_OPT_SUBNET_MASK
-            self.opt_len = DHCP_OPT_SUBNET_MASK_LEN
+            self.opt_code = OPT_SUBNET_MASK
+            self.opt_len = OPT_SUBNET_MASK_LEN
             self.opt_subnet_mask = IPv4Address(opt_subnet_mask)
 
     @property
@@ -489,11 +489,11 @@ class DhcpOptSubnetMask:
 
 # DHCP option - Router (3)
 
-DHCP_OPT_ROUTER = 3
-DHCP_OPT_ROUTER_LEN = None
+OPT_ROUTER = 3
+OPT_ROUTER_LEN = None
 
 
-class DhcpOptRouter:
+class OptRouter:
     """ DHCP option - Router (3) """
 
     def __init__(self, raw_option=None, opt_router=None):
@@ -502,7 +502,7 @@ class DhcpOptRouter:
             self.opt_len = raw_option[1]
             self.opt_router = [IPv4Address(raw_option[_ : _ + 4]) for _ in range(2, 2 + self.opt_len, 4)]
         else:
-            self.opt_code = DHCP_OPT_ROUTER
+            self.opt_code = OPT_ROUTER
             self.opt_len = len(opt_router) * 4
             self.opt_router = [IPv4Address(_) for _ in opt_router]
 
@@ -516,11 +516,11 @@ class DhcpOptRouter:
 
 # DHCP option - Domain Name Server (6)
 
-DHCP_OPT_DNS = 6
-DHCP_OPT_DNS_LEN = None
+OPT_DNS = 6
+OPT_DNS_LEN = None
 
 
-class DhcpOptDns:
+class OptDns:
     """ DHCP option - Domain Name Server (6) """
 
     def __init__(self, raw_option=None, opt_dns=None):
@@ -529,7 +529,7 @@ class DhcpOptDns:
             self.opt_len = raw_option[1]
             self.opt_dns = [IPv4Address(raw_option[_ : _ + 4]) for _ in range(2, 2 + self.opt_len, 4)]
         else:
-            self.opt_code = DHCP_OPT_DNS
+            self.opt_code = OPT_DNS
             self.opt_len = len(opt_dns) * 4
             self.opt_dns = [IPv4Address(_) for _ in opt_dns]
 
@@ -543,11 +543,11 @@ class DhcpOptDns:
 
 # DHCP option - Host Name (12)
 
-DHCP_OPT_HOST_NAME = 12
-DHCP_OPT_HOST_NAME_LEN = None
+OPT_HOST_NAME = 12
+OPT_HOST_NAME_LEN = None
 
 
-class DhcpOptHostName:
+class OptHostName:
     """ DHCP option - Host Name (12) """
 
     def __init__(self, raw_option=None, opt_host_name=None):
@@ -556,7 +556,7 @@ class DhcpOptHostName:
             self.opt_len = raw_option[1]
             self.opt_host_name = str(raw_option[2 : 2 + self.opt_len], "utf-8")
         else:
-            self.opt_code = DHCP_OPT_HOST_NAME
+            self.opt_code = OPT_HOST_NAME
             self.opt_len = len(opt_host_name)
             self.opt_host_name = opt_host_name
 
@@ -570,11 +570,11 @@ class DhcpOptHostName:
 
 # DHCP option - Domain Name (15)
 
-DHCP_OPT_DOMAIN_NAME = 15
-DHCP_OPT_DOMAIN_NAME_LEN = None
+OPT_DOMAIN_NAME = 15
+OPT_DOMAIN_NAME_LEN = None
 
 
-class DhcpOptDomainName:
+class OptDomainName:
     """ DHCP option - Domain Name (15) """
 
     def __init__(self, raw_option=None, opt_domain_name=None):
@@ -583,7 +583,7 @@ class DhcpOptDomainName:
             self.opt_len = raw_option[1]
             self.opt_domain_name = str(raw_option[2 : 2 + self.opt_len], "utf-8")
         else:
-            self.opt_code = DHCP_OPT_DOMAIN_NAME
+            self.opt_code = OPT_DOMAIN_NAME
             self.opt_len = len(opt_domain_name)
             self.opt_domain_name = opt_domain_name
 
@@ -597,11 +597,11 @@ class DhcpOptDomainName:
 
 # DHCP option - Requested IP Address (50)
 
-DHCP_OPT_REQ_IP4_ADDR = 50
-DHCP_OPT_REQ_IP4_ADDR_LEN = 4
+OPT_REQ_IP4_ADDR = 50
+OPT_REQ_IP4_ADDR_LEN = 4
 
 
-class DhcpOptReqIpAddr:
+class OptReqIpAddr:
     """ DHCP option - Requested IP Address (50) """
 
     def __init__(self, raw_option=None, opt_req_ip4_addr=None):
@@ -610,8 +610,8 @@ class DhcpOptReqIpAddr:
             self.opt_len = raw_option[1]
             self.opt_req_ip4_addr = IPv4Address(raw_option[2:6])
         else:
-            self.opt_code = DHCP_OPT_REQ_IP4_ADDR
-            self.opt_len = DHCP_OPT_REQ_IP4_ADDR_LEN
+            self.opt_code = OPT_REQ_IP4_ADDR
+            self.opt_len = OPT_REQ_IP4_ADDR_LEN
             self.opt_req_ip4_addr = IPv4Address(opt_req_ip4_addr)
 
     @property
@@ -624,11 +624,11 @@ class DhcpOptReqIpAddr:
 
 # DHCP option - Address Lease Time (51)
 
-DHCP_OPT_ADDR_LEASE_TIME = 51
-DHCP_OPT_ADDR_LEASE_TIME_LEN = 4
+OPT_ADDR_LEASE_TIME = 51
+OPT_ADDR_LEASE_TIME_LEN = 4
 
 
-class DhcpOptAddrLeaseTime:
+class OptAddrLeaseTime:
     """ DHCP option - Address Lease Time (51) """
 
     def __init__(self, raw_option=None, opt_addr_lease_time=None):
@@ -637,8 +637,8 @@ class DhcpOptAddrLeaseTime:
             self.opt_len = raw_option[1]
             self.opt_addr_lease_time = struct.unpack("!L", raw_option[2:6])[0]
         else:
-            self.opt_code = DHCP_OPT_ADDR_LEASE_TIME
-            self.opt_len = DHCP_OPT_ADDR_LEASE_TIME_LEN
+            self.opt_code = OPT_ADDR_LEASE_TIME
+            self.opt_len = OPT_ADDR_LEASE_TIME_LEN
             self.opt_addr_lease_time = opt_addr_lease_time
 
     @property
@@ -651,11 +651,11 @@ class DhcpOptAddrLeaseTime:
 
 # DHCP option - Message Type (53)
 
-DHCP_OPT_MSG_TYPE = 53
-DHCP_OPT_MSG_TYPE_LEN = 1
+OPT_MSG_TYPE = 53
+OPT_MSG_TYPE_LEN = 1
 
 
-class DhcpOptMsgType:
+class OptMsgType:
     """ DHCP option - Message Type (53) """
 
     def __init__(self, raw_option=None, opt_msg_type=None):
@@ -664,8 +664,8 @@ class DhcpOptMsgType:
             self.opt_len = raw_option[1]
             self.opt_msg_type = raw_option[2]
         else:
-            self.opt_code = DHCP_OPT_MSG_TYPE
-            self.opt_len = DHCP_OPT_MSG_TYPE_LEN
+            self.opt_code = OPT_MSG_TYPE
+            self.opt_len = OPT_MSG_TYPE_LEN
             self.opt_msg_type = opt_msg_type
 
     @property
@@ -678,11 +678,11 @@ class DhcpOptMsgType:
 
 # DHCP option - Server Identifier (54)
 
-DHCP_OPT_SRV_ID = 54
-DHCP_OPT_SRV_ID_LEN = 4
+OPT_SRV_ID = 54
+OPT_SRV_ID_LEN = 4
 
 
-class DhcpOptSrvId:
+class OptSrvId:
     """ DHCP option - Server Identifier (54) """
 
     def __init__(self, raw_option=None, opt_srv_id=None):
@@ -691,8 +691,8 @@ class DhcpOptSrvId:
             self.opt_len = raw_option[1]
             self.opt_srv_id = IPv4Address(raw_option[2:6])
         else:
-            self.opt_code = DHCP_OPT_SRV_ID
-            self.opt_len = DHCP_OPT_SRV_ID_LEN
+            self.opt_code = OPT_SRV_ID
+            self.opt_len = OPT_SRV_ID_LEN
             self.opt_srv_id = IPv4Address(opt_srv_id)
 
     @property
@@ -705,11 +705,11 @@ class DhcpOptSrvId:
 
 # DHCP option - Parameter Request List (55)
 
-DHCP_OPT_PARAM_REQ_LIST = 55
-DHCP_OPT_PARAM_REQ_LIST_LEN = None
+OPT_PARAM_REQ_LIST = 55
+OPT_PARAM_REQ_LIST_LEN = None
 
 
-class DhcpOptParamReqList:
+class OptParamReqList:
     """ DHCP option - Parameter Request List (55) """
 
     def __init__(self, raw_option=None, opt_param_req_list=None):
@@ -718,7 +718,7 @@ class DhcpOptParamReqList:
             self.opt_len = raw_option[1]
             self.opt_param_req_list = raw_option[2 : 2 + self.opt_len]
         else:
-            self.opt_code = DHCP_OPT_PARAM_REQ_LIST
+            self.opt_code = OPT_PARAM_REQ_LIST
             self.opt_len = len(opt_param_req_list)
             self.opt_param_req_list = opt_param_req_list
 
@@ -733,7 +733,7 @@ class DhcpOptParamReqList:
 # DHCP option not supported by this stack
 
 
-class DhcpOptUnk:
+class OptUnk:
     """ DHCP option not supported by this stack """
 
     def __init__(self, raw_option=None):

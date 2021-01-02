@@ -44,7 +44,7 @@
 import threading
 import time
 
-import tcp_socket
+import tcp.socket
 
 # from datetime import datetime
 
@@ -60,7 +60,7 @@ class ServiceTcpDaytime:
     def __thread_service(self, local_ip_address, local_port, message_count, message_delay, message_size):
         """ Service initialization """
 
-        socket = tcp_socket.TcpSocket()
+        socket = tcp.socket.TcpSocket()
         socket.bind(local_ip_address, local_port)
         socket.listen()
         print(f"Service TCP Daytime: Socket created, bound to {local_ip_address}, port {local_port} and set to listening mode")

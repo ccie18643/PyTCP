@@ -37,38 +37,49 @@
 
 
 #
-# ip_helper.py - module contains IPv6 helper functions
+# udp/metadata.py - module contains storage class for incoming UDP packet's metadata
 #
 
 
-import struct
-from ipaddress import AddressValueError
+class UdpMetadata:
+    """ Store UDP metadata """
 
-from ipv4_address import IPv4Address
-from ipv6_address import IPv6Address
+    def __init__(self, local_ip_address, local_port, remote_ip_address, remote_port, data, tracker=None):
+        self.local_ip_address = local_ip_address
+        self.local_port = local_port
+        self.remote_ip_address = remote_ip_address
+        self.remote_port = remote_port
+        self.data = data
+        self.tracker = tracker
 
+    @property
+    def udp_session_id(self):
+        """ Session ID """
 
-def inet_cksum(data, dptr, dlen, init=0):
-    """ Compute Internet Checksum used by IPv4/ICMPv4/ICMPv6/UDP/TCP protocols """
+        return f"UDP/{self.local_ip_address}/{self.local_port}/{self.remote_ip_address}/{self.remote_port}"
 
-    if dlen == 20:
-        cksum = init + sum(struct.unpack_from("!5L", data, dptr))
+    @property
+    def socket_id_patterns(self):
+        """ Socket ID patterns that match this packet """
 
-    else:
-        cksum = init + sum(struct.unpack_from(f"!{dlen >> 3}Q", data, dptr))
-        if remainder := dlen & 7:
-            cksum += struct.unpack("!Q", data[dptr + dlen - remainder : dptr + dlen] + b"\0" * (8 - remainder))[0]
-        cksum = (cksum >> 64) + (cksum & 0xFFFFFFFFFFFFFFFF)
+        if self.remote_ip_address.version == 6:
+            return [
+                f"UDP/{self.local_ip_address}/{self.local_port}/{self.remote_ip_address}/{self.remote_port}",
+                f"UDP/{self.local_ip_address}/{self.local_port}/*/*",
+                f"UDP/::/{self.local_port}/*/{self.remote_port}",
+                f"UDP/*/{self.local_port}/*/{self.remote_port}",
+                f"UDP/::/{self.local_port}/*/*",
+                f"UDP/*/{self.local_port}/*/*",
+            ]
 
-    cksum = (cksum >> 32) + (cksum & 0xFFFFFFFF)
-    cksum = (cksum >> 16) + (cksum & 0xFFFF)
-    return ~(cksum + (cksum >> 16)) & 0xFFFF
+        if self.remote_ip_address.version == 4:
+            return [
+                f"UDP/{self.local_ip_address}/{self.local_port}/{self.remote_ip_address}/{self.remote_port}",
+                f"UDP/{self.local_ip_address}/{self.local_port}/*/*",
+                f"UDP/0.0.0.0/{self.local_port}/*/{self.remote_port}",
+                f"UDP/*/{self.local_port}/*/{self.remote_port}",
+                f"UDP/0.0.0.0/{self.local_port}/*/*",
+                f"UDP/*/{self.local_port}/*/*",
+            ]
 
-
-def ip_pick_version(ip_address):
-    """ Return correct IPv6Address or IPv4Address based on address string provided """
-
-    try:
-        return IPv6Address(ip_address)
-    except AddressValueError:
-        return IPv4Address(ip_address)
+        return None

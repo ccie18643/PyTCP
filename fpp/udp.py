@@ -44,7 +44,7 @@
 import struct
 
 import config
-from ip_helper import inet_cksum
+from misc.ip_helper import inet_cksum
 
 # UDP packet header (RFC 768)
 
@@ -55,11 +55,11 @@ from ip_helper import inet_cksum
 # +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 
 
-UDP_HEADER_LEN = 8
+HEADER_LEN = 8
 
 
-class UdpPacket:
-    """ UDP packet support class """
+class Parser:
+    """ UDP packet parser class """
 
     class __not_cached:
         pass
@@ -83,7 +83,7 @@ class UdpPacket:
         packet_rx.parse_failed = self._packet_integrity_check(packet_rx.ip.pshdr_sum) or self._packet_sanity_check()
 
         if not packet_rx.parse_failed:
-            packet_rx.hptr = self._hptr + UDP_HEADER_LEN
+            packet_rx.hptr = self._hptr + HEADER_LEN
 
     def __str__(self):
         """ Packet log string """
@@ -132,14 +132,14 @@ class UdpPacket:
         """ Read the data packet carries """
 
         if self.__data is self.__not_cached:
-            self.__data = self._frame[self._hptr + UDP_HEADER_LEN : self._hptr + self.plen]
+            self.__data = self._frame[self._hptr + HEADER_LEN : self._hptr + self.plen]
         return self.__data
 
     @property
     def dlen(self):
         """ Calculate data length """
 
-        return self.plen - UDP_HEADER_LEN
+        return self.plen - HEADER_LEN
 
     @property
     def packet(self):
@@ -158,11 +158,11 @@ class UdpPacket:
         if inet_cksum(self._frame, self._hptr, self._plen, pshdr_sum):
             return "UDP integrity - wrong packet checksum"
 
-        if not UDP_HEADER_LEN <= self._plen <= len(self):
+        if not HEADER_LEN <= self._plen <= len(self):
             return "UDP integrity - wrong packet length (I)"
 
         plen = struct.unpack_from("!H", self._frame, self._hptr + 4)[0]
-        if not UDP_HEADER_LEN <= plen == self._plen <= len(self):
+        if not HEADER_LEN <= plen == self._plen <= len(self):
             return "UDP integrity - wrong packet length (II)"
 
         return False

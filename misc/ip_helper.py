@@ -37,55 +37,38 @@
 
 
 #
-# ipv4_address.py - module contains IPv4 address manipulation classes (extensions to ipaddress standard library)
+# misc/ip_helper.py - module contains helper functions
 #
 
-import ipaddress
+
+import struct
+from ipaddress import AddressValueError
+
+from misc.ipv4_address import IPv4Address
+from misc.ipv6_address import IPv6Address
 
 
-class IPv4Interface(ipaddress.IPv4Interface):
-    """ Extensions for ipaddress.IPv4Address class """
+def inet_cksum(data, dptr, dlen, init=0):
+    """ Compute Internet Checksum used by IPv4/ICMPv4/ICMPv6/UDP/TCP protocols """
 
-    @property
-    def ip(self):
-        """ Make sure class returns overloaded IPv6Address object """
+    if dlen == 20:
+        cksum = init + sum(struct.unpack_from("!5L", data, dptr))
 
-        return IPv4Address(super().ip)
+    else:
+        cksum = init + sum(struct.unpack_from(f"!{dlen >> 3}Q", data, dptr))
+        if remainder := dlen & 7:
+            cksum += struct.unpack("!Q", data[dptr + dlen - remainder : dptr + dlen] + b"\0" * (8 - remainder))[0]
+        cksum = (cksum >> 64) + (cksum & 0xFFFFFFFFFFFFFFFF)
 
-    @property
-    def host_address(self):
-        """ Return host address """
-
-        return self.ip
-
-    @property
-    def network_address(self):
-        """ Return network address """
-
-        return IPv4Address(self.network.network_address)
-
-    @property
-    def broadcast_address(self):
-        """ Return broadcast address """
-
-        return IPv4Address(self.network.broadcast_address)
-
-    @property
-    def is_limited_broadcast(self):
-        """ Check if IPv4 address is a limited broadcast """
-
-        return self.ip.is_limited_broadcast
+    cksum = (cksum >> 32) + (cksum & 0xFFFFFFFF)
+    cksum = (cksum >> 16) + (cksum & 0xFFFF)
+    return ~(cksum + (cksum >> 16)) & 0xFFFF
 
 
-class IPv4Network(ipaddress.IPv4Network):
-    """ Extensions for ipaddress.IPv4Network class """
+def ip_pick_version(ip_address):
+    """ Return correct IPv6Address or IPv4Address based on address string provided """
 
-
-class IPv4Address(ipaddress.IPv4Address):
-    """ Extensions for ipaddress.IPv4Address class """
-
-    @property
-    def is_limited_broadcast(self):
-        """ Check if IPv4 address is a limited broadcast """
-
-        return str(self) == "255.255.255.255"
+    try:
+        return IPv6Address(ip_address)
+    except AddressValueError:
+        return IPv4Address(ip_address)

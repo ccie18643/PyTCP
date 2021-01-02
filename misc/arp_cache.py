@@ -37,7 +37,7 @@
 
 
 #
-# arp_cache.py - module contains class supporting ARP cache
+# misc/arp_cache.py - module contains class supporting ARP cache
 #
 
 
@@ -45,12 +45,10 @@ import time
 
 import loguru
 
+import config
 import fpa.arp
-import stack
-from ipv4_address import IPv4Address
-
-ARP_ENTRY_MAX_AGE = 3600
-ARP_ENTRY_REFRESH_TIME = 300
+import misc.stack as stack
+from misc.ipv4_address import IPv4Address
 
 
 class ArpCache:
@@ -91,15 +89,15 @@ class ArpCache:
                 continue
 
             # If entry age is over maximum age then discard the entry
-            if time.time() - self.arp_cache[ip4_address].creation_time > ARP_ENTRY_MAX_AGE:
+            if time.time() - self.arp_cache[ip4_address].creation_time > config.arp_cache_entry_max_age:
                 mac_address = self.arp_cache.pop(ip4_address).mac_address
                 if __debug__:
                     self._logger.debug(f"Discarded expired ARP cache entry - {ip4_address} -> {mac_address}")
 
             # If entry age is close to maximum age but the entry has been used since last refresh then send out request in attempt to refresh it
-            elif (time.time() - self.arp_cache[ip4_address].creation_time > ARP_ENTRY_MAX_AGE - ARP_ENTRY_REFRESH_TIME) and self.arp_cache[
-                ip4_address
-            ].hit_count:
+            elif (
+                time.time() - self.arp_cache[ip4_address].creation_time > config.arp_cache_entry_max_age - config.arp_cache_entry_refresh_time
+            ) and self.arp_cache[ip4_address].hit_count:
                 self.arp_cache[ip4_address].hit_count = 0
                 self._send_arp_request(ip4_address)
                 if __debug__:
@@ -132,7 +130,7 @@ class ArpCache:
         self.packet_handler._phtx_arp(
             ether_src=self.packet_handler.mac_unicast,
             ether_dst="ff:ff:ff:ff:ff:ff",
-            arp_oper=fpa.arp.ARP_OP_REQUEST,
+            arp_oper=fpa.arp.OP_REQUEST,
             arp_sha=self.packet_handler.mac_unicast,
             arp_spa=self.packet_handler.ip4_unicast[0] if self.packet_handler.ip4_unicast else IPv4Address("0.0.0.0"),
             arp_tha="00:00:00:00:00:00",

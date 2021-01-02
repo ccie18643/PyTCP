@@ -37,7 +37,7 @@
 
 
 #
-# icmp6_nd_cache.py - module contains class supporting ICMPv6 Neighbor Discovery cache
+# misc/nd_cache.py - module contains class supporting ICMPv6 Neighbor Discovery cache
 #
 
 
@@ -45,15 +45,13 @@ import time
 
 import loguru
 
+import config
 import fpa.icmp6
-import stack
-from ipv6_address import IPv6Address
-
-ND_ENTRY_MAX_AGE = 3600
-ND_ENTRY_REFRESH_TIME = 300
+import misc.stack as stack
+from misc.ipv6_address import IPv6Address
 
 
-class ICMPv6NdCache:
+class NdCache:
     """ Support for ICMPv6 ND cache operations """
 
     class CacheEntry:
@@ -91,13 +89,15 @@ class ICMPv6NdCache:
                 continue
 
             # If entry age is over maximum age then discard the entry
-            if time.time() - self.nd_cache[ip6_address].creation_time > ND_ENTRY_MAX_AGE:
+            if time.time() - self.nd_cache[ip6_address].creation_time > config.nd_cache_entry_max_age:
                 mac_address = self.nd_cache.pop(ip6_address).mac_address
                 if __debug__:
                     self._logger.debug(f"Discarded expired ICMPv6 ND cache entry - {ip6_address} -> {mac_address}")
 
             # If entry age is close to maximum age but the entry has been used since last refresh then send out request in attempt to refresh it
-            elif (time.time() - self.nd_cache[ip6_address].creation_time > ND_ENTRY_MAX_AGE - ND_ENTRY_REFRESH_TIME) and self.nd_cache[ip6_address].hit_count:
+            elif (
+                time.time() - self.nd_cache[ip6_address].creation_time > config.nd_cache_entry_max_age - config.nd_cache_entry_refresh_time
+            ) and self.nd_cache[ip6_address].hit_count:
                 self.nd_cache[ip6_address].hit_count = 0
                 self._send_icmp6_neighbor_solicitation(ip6_address)
                 if __debug__:
@@ -138,7 +138,7 @@ class ICMPv6NdCache:
             ip6_src=ip6_src,
             ip6_dst=icmp6_ns_target_address.solicited_node_multicast,
             ip6_hop=255,
-            icmp6_type=fpa.icmp6.ICMP6_NEIGHBOR_SOLICITATION,
+            icmp6_type=fpa.icmp6.NEIGHBOR_SOLICITATION,
             icmp6_ns_target_address=icmp6_ns_target_address,
             icmp6_nd_options=[fpa.icmp6.Icmp6NdOptSLLA(self.packet_handler.mac_unicast)],
         )

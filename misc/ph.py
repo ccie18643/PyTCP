@@ -37,7 +37,7 @@
 
 
 #
-# ph.py - protocol support for incoming and outgoing packets
+# ph.py - packet handler for inbound and outbound packets
 #
 
 import random
@@ -50,16 +50,16 @@ import loguru
 import config
 import fpa.arp
 import fpa.icmp6
-import ps_dhcp
-import stack
-from arp_cache import ArpCache
-from icmp6_nd_cache import ICMPv6NdCache
-from ipv4_address import IPv4Address, IPv4Interface
-from ipv6_address import IPv6Address, IPv6Interface, IPv6Network
-from rx_ring import RxRing
-from tx_ring import TxRing
-from udp_metadata import UdpMetadata
-from udp_socket import UdpSocket
+import ps.dhcp
+import misc.stack as stack
+from misc.arp_cache import ArpCache
+from misc.ipv4_address import IPv4Address, IPv4Interface
+from misc.ipv6_address import IPv6Address, IPv6Interface, IPv6Network
+from misc.nd_cache import NdCache
+from misc.rx_ring import RxRing
+from misc.tx_ring import TxRing
+from udp.metadata import UdpMetadata
+from udp.socket import UdpSocket
 
 
 class PacketHandler:
@@ -106,7 +106,7 @@ class PacketHandler:
         self.rx_ring = RxRing(tap)
         self.tx_ring = TxRing(tap)
         self.arp_cache = ArpCache(self)
-        self.icmp6_nd_cache = ICMPv6NdCache(self)
+        self.icmp6_nd_cache = NdCache(self)
 
         # Used for the ARP DAD process
         self.arp_probe_unicast_conflict = set()
@@ -379,7 +379,7 @@ class PacketHandler:
         self._phtx_arp(
             ether_src=self.mac_unicast,
             ether_dst="ff:ff:ff:ff:ff:ff",
-            arp_oper=fpa.arp.ARP_OP_REQUEST,
+            arp_oper=fpa.arp.OP_REQUEST,
             arp_sha=self.mac_unicast,
             arp_spa=IPv4Address("0.0.0.0"),
             arp_tha="00:00:00:00:00:00",
@@ -394,7 +394,7 @@ class PacketHandler:
         self._phtx_arp(
             ether_src=self.mac_unicast,
             ether_dst="ff:ff:ff:ff:ff:ff",
-            arp_oper=fpa.arp.ARP_OP_REQUEST,
+            arp_oper=fpa.arp.OP_REQUEST,
             arp_sha=self.mac_unicast,
             arp_spa=ip4_unicast,
             arp_tha="00:00:00:00:00:00",
@@ -409,7 +409,7 @@ class PacketHandler:
         self._phtx_arp(
             ether_src=self.mac_unicast,
             ether_dst="ff:ff:ff:ff:ff:ff",
-            arp_oper=fpa.arp.ARP_OP_REPLY,
+            arp_oper=fpa.arp.OP_REPLY,
             arp_sha=self.mac_unicast,
             arp_spa=ip4_unicast,
             arp_tha="00:00:00:00:00:00",
@@ -424,7 +424,7 @@ class PacketHandler:
         # Need to use set here to avoid re-using duplicate multicast entries from stack_ip6_multicast list,
         # also All Multicast Nodes address is not being advertised as this is not necessary
         if icmp6_mlr2_multicast_address_record := {
-            fpa.icmp6.MulticastAddressRecord(record_type=fpa.icmp6.ICMP6_MART_CHANGE_TO_EXCLUDE, multicast_address=str(_))
+            fpa.icmp6.MulticastAddressRecord(record_type=fpa.icmp6.MART_CHANGE_TO_EXCLUDE, multicast_address=str(_))
             for _ in self.ip6_multicast
             if _ not in {IPv6Address("ff02::1")}
         }:
@@ -432,7 +432,7 @@ class PacketHandler:
                 ip6_src=self.ip6_unicast[0] if self.ip6_unicast else IPv6Address("::"),
                 ip6_dst=IPv6Address("ff02::16"),
                 ip6_hop=1,
-                icmp6_type=fpa.icmp6.ICMP6_MLD2_REPORT,
+                icmp6_type=fpa.icmp6.MLD2_REPORT,
                 icmp6_mlr2_multicast_address_record=icmp6_mlr2_multicast_address_record,
             )
             if __debug__:
@@ -447,7 +447,7 @@ class PacketHandler:
             ip6_src=IPv6Address("::"),
             ip6_dst=ip6_unicast_candidate.solicited_node_multicast,
             ip6_hop=255,
-            icmp6_type=fpa.icmp6.ICMP6_NEIGHBOR_SOLICITATION,
+            icmp6_type=fpa.icmp6.NEIGHBOR_SOLICITATION,
             icmp6_ns_target_address=ip6_unicast_candidate,
         )
         if __debug__:
@@ -460,7 +460,7 @@ class PacketHandler:
             ip6_src=self.ip6_unicast[0],
             ip6_dst=IPv6Address("ff02::2"),
             ip6_hop=255,
-            icmp6_type=fpa.icmp6.ICMP6_ROUTER_SOLICITATION,
+            icmp6_type=fpa.icmp6.ROUTER_SOLICITATION,
             icmp6_nd_options=[fpa.icmp6.Icmp6NdOptSLLA(self.mac_unicast)],
         )
         if __debug__:
@@ -534,10 +534,10 @@ class PacketHandler:
 
         # Send DHCP Discover
         _send_dhcp_packet(
-            dhcp_packet_tx=ps_dhcp.DhcpPacket(
+            dhcp_packet_tx=ps.dhcp.Packet(
                 dhcp_xid=dhcp_xid,
                 dhcp_chaddr=self.mac_unicast,
-                dhcp_msg_type=ps_dhcp.DHCP_DISCOVER,
+                dhcp_msg_type=ps.dhcp.MSG_DISCOVER,
                 dhcp_param_req_list=b"\x01\x1c\x02\x03\x0f\x06\x77\x0c\x2c\x2f\x1a\x79\x2a",
                 dhcp_host_name="PyTCP",
             )
@@ -552,8 +552,8 @@ class PacketHandler:
             socket.close()
             return None, None
 
-        dhcp_packet_rx = ps_dhcp.DhcpPacket(packet.data)
-        if dhcp_packet_rx.dhcp_msg_type != ps_dhcp.DHCP_OFFER:
+        dhcp_packet_rx = ps.dhcp.Packet(packet.data)
+        if dhcp_packet_rx.dhcp_msg_type != ps.dhcp.MSG_OFFER:
             if __debug__:
                 self._logger.warning("Didn't receive DHCP Offer message")
             socket.close()
@@ -570,10 +570,10 @@ class PacketHandler:
 
         # Send DHCP Request
         _send_dhcp_packet(
-            dhcp_packet_tx=ps_dhcp.DhcpPacket(
+            dhcp_packet_tx=ps.dhcp.Packet(
                 dhcp_xid=dhcp_xid,
                 dhcp_chaddr=self.mac_unicast,
-                dhcp_msg_type=ps_dhcp.DHCP_REQUEST,
+                dhcp_msg_type=ps.dhcp.MSG_REQUEST,
                 dhcp_srv_id=dhcp_srv_id,
                 dhcp_req_ip4_addr=dhcp_yiaddr,
                 dhcp_param_req_list=b"\x01\x1c\x02\x03\x0f\x06\x77\x0c\x2c\x2f\x1a\x79\x2a",
@@ -590,8 +590,8 @@ class PacketHandler:
                 self._logger.warning("Timeout waiting for DHCP Ack message")
             return None, None
 
-        dhcp_packet_rx = ps_dhcp.DhcpPacket(packet.data)
-        if dhcp_packet_rx.dhcp_msg_type != ps_dhcp.DHCP_ACK:
+        dhcp_packet_rx = ps.dhcp.Packet(packet.data)
+        if dhcp_packet_rx.dhcp_msg_type != ps.dhcp.MSG_ACK:
             if __debug__:
                 self._logger.warning("Didn't receive DHCP Offer message")
             socket.close()

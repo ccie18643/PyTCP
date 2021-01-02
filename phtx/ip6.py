@@ -43,7 +43,7 @@
 
 import config
 import fpa.ip6
-from ipv6_address import IPv6Address
+from misc.ipv6_address import IPv6Address
 
 
 def _validate_src_ip6_address(self, ip6_src, ip6_dst):
@@ -115,7 +115,7 @@ def _phtx_ip6(self, child_packet, ip6_dst, ip6_src, ip6_hop=config.ip6_default_h
         return
 
     # assemble IPv6 apcket
-    ip6_packet_tx = fpa.ip6.Ip6Packet(src=ip6_src, dst=ip6_dst, hop=ip6_hop, child_packet=child_packet)
+    ip6_packet_tx = fpa.ip6.Assembler(src=ip6_src, dst=ip6_dst, hop=ip6_hop, child_packet=child_packet)
 
     # Check if IP packet can be sent out without fragmentation, if so send it out
     if len(ip6_packet_tx) <= config.mtu:

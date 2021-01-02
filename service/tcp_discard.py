@@ -43,7 +43,7 @@
 
 import threading
 
-import tcp_socket
+import tcp.socket
 
 
 class ServiceTcpDiscard:
@@ -57,7 +57,7 @@ class ServiceTcpDiscard:
     def __thread_service(self, local_ip_address, local_port):
         """ Service initialization """
 
-        socket = tcp_socket.TcpSocket()
+        socket = tcp.socket.TcpSocket()
         socket.bind(local_ip_address, local_port)
         socket.listen()
         print(f"Service TCP Discard: Socket created, bound to {local_ip_address}, port {local_port} and set to listening mode")

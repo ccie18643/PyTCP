@@ -44,9 +44,9 @@
 import struct
 
 import config
-from ip_helper import inet_cksum
-from ipv4_address import IPv4Address
-from tracker import Tracker
+from misc.ip_helper import inet_cksum
+from misc.ipv4_address import IPv4Address
+from misc.tracker import Tracker
 
 # IPv4 protocol header
 
@@ -65,18 +65,18 @@ from tracker import Tracker
 # +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 
 
-IP4_HEADER_LEN = 20
+HEADER_LEN = 20
 
-IP4_PROTO_ICMP4 = 1
-IP4_PROTO_TCP = 6
-IP4_PROTO_UDP = 17
-
-
-IP4_PROTO_TABLE = {IP4_PROTO_ICMP4: "ICMPv4", IP4_PROTO_TCP: "TCP", IP4_PROTO_UDP: "UDP"}
+PROTO_ICMP4 = 1
+PROTO_TCP = 6
+PROTO_UDP = 17
 
 
-class Ip4Packet:
-    """ IPv4 packet support class """
+PROTO_TABLE = {PROTO_ICMP4: "ICMPv4", PROTO_TCP: "TCP", PROTO_UDP: "UDP"}
+
+
+class Assembler:
+    """ IPv4 packet assembler support class """
 
     protocol = "IP4"
 
@@ -112,23 +112,23 @@ class Ip4Packet:
 
         self.options = [] if options is None else options
 
-        self.hlen = IP4_HEADER_LEN + len(self.raw_options)
+        self.hlen = HEADER_LEN + len(self.raw_options)
         self.plen = len(self)
 
         if self._child_packet.protocol == "ICMP4":
-            self.proto = IP4_PROTO_ICMP4
+            self.proto = PROTO_ICMP4
 
         if self._child_packet.protocol == "UDP":
-            self.proto = IP4_PROTO_UDP
+            self.proto = PROTO_UDP
 
         if self._child_packet.protocol == "TCP":
-            self.proto = IP4_PROTO_TCP
+            self.proto = PROTO_TCP
 
     def __str__(self):
         """ Packet log string """
 
         return (
-            f"IPv4 {self.src} > {self.dst}, proto {self.proto} ({IP4_PROTO_TABLE.get(self.proto, '???')}), id {self.id}"
+            f"IPv4 {self.src} > {self.dst}, proto {self.proto} ({PROTO_TABLE.get(self.proto, '???')}), id {self.id}"
             + f"{', DF' if self.flag_df else ''}{', MF' if self.flag_mf else ''}, offset {self.offset}, plen {self.plen}"
             + f", ttl {self.ttl}"
         )
@@ -136,7 +136,7 @@ class Ip4Packet:
     def __len__(self):
         """ Length of the packet """
 
-        return IP4_HEADER_LEN + sum([len(_) for _ in self.options]) + len(self._child_packet)
+        return HEADER_LEN + sum([len(_) for _ in self.options]) + len(self._child_packet)
 
     @property
     def raw_options(self):
@@ -162,7 +162,7 @@ class Ip4Packet:
         pseudo_header = struct.pack("! 4s 4s BBH", self.src.packed, self.dst.packed, 0, self.proto, self.plen - self.hlen)
         return sum(struct.unpack("! 3L", pseudo_header))
 
-    def assemble_packet(self, frame, hptr):
+    def assemble(self, frame, hptr):
         """ Assemble packet into the raw form """
 
         struct.pack_into(
@@ -184,11 +184,11 @@ class Ip4Packet:
 
         struct.pack_into("! H", frame, hptr + 10, inet_cksum(frame, hptr, self.hlen))
 
-        self._child_packet.assemble_packet(frame, hptr + self.hlen, self.pshdr_sum)
+        self._child_packet.assemble(frame, hptr + self.hlen, self.pshdr_sum)
 
 
-class Ip4Frag:
-    """ IPv4 packet fragment support class """
+class FragAssembler:
+    """ IPv4 packet fragment assembler support class """
 
     protocol = "IP4"
 
@@ -225,14 +225,14 @@ class Ip4Frag:
         self.data = data
         self.proto = proto
 
-        self.hlen = IP4_HEADER_LEN + len(self.raw_options)
+        self.hlen = HEADER_LEN + len(self.raw_options)
         self.plen = len(self)
 
     def __str__(self):
         """ Packet log string """
 
         return (
-            f"IPv4 frag {self.src} > {self.dst}, proto {self.proto} ({IP4_PROTO_TABLE.get(self.proto, '???')}), id {self.id}"
+            f"IPv4 frag {self.src} > {self.dst}, proto {self.proto} ({PROTO_TABLE.get(self.proto, '???')}), id {self.id}"
             + f"{', DF' if self.flag_df else ''}{', MF' if self.flag_mf else ''}, offset {self.offset}, plen {self.plen}"
             + f", ttl {self.ttl}"
         )
@@ -240,7 +240,7 @@ class Ip4Frag:
     def __len__(self):
         """ Length of the packet """
 
-        return IP4_HEADER_LEN + sum([len(_) for _ in self.options]) + len(self.data)
+        return HEADER_LEN + sum([len(_) for _ in self.options]) + len(self.data)
 
     @property
     def raw_options(self):
@@ -260,7 +260,7 @@ class Ip4Frag:
         pseudo_header = struct.pack("! 4s 4s BBH", self.src.packed, self.dst.packed, 0, self.proto, self.plen - self.hlen)
         return sum(struct.unpack("! 3L", pseudo_header))
 
-    def assemble_packet(self, frame, hptr):
+    def assemble(self, frame, hptr):
         """ Assemble packet into the raw form """
 
         struct.pack_into(
@@ -291,39 +291,39 @@ class Ip4Frag:
 
 # IPv4 option - End of Option Linst
 
-IP4_OPT_EOL = 0
-IP4_OPT_EOL_LEN = 1
+OPT_EOL = 0
+OPT_EOL_LEN = 1
 
 
-class Ip4OptEol:
+class OptEol:
     """ IP option - End of Option List """
 
     @property
     def raw_option(self):
-        return struct.pack("!B", IP4_OPT_EOL)
+        return struct.pack("!B", OPT_EOL)
 
     def __str__(self):
         return "eol"
 
     def __len__(self):
-        return IP4_OPT_EOL_LEN
+        return OPT_EOL_LEN
 
 
 # IPv4 option - No Operation (1)
 
-IP4_OPT_NOP = 1
-IP4_OPT_NOP_LEN = 1
+OPT_NOP = 1
+OPT_NOP_LEN = 1
 
 
-class Ip4OptNop:
+class OptNop:
     """ IP option - No Operation """
 
     @property
     def raw_option(self):
-        return struct.pack("!B", IP4_OPT_NOP)
+        return struct.pack("!B", OPT_NOP)
 
     def __str__(self):
         return "nop"
 
     def __len__(self):
-        return IP4_OPT_NOP_LEN
+        return OPT_NOP_LEN

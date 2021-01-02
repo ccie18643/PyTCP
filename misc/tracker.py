@@ -37,7 +37,7 @@
 
 
 #
-# tracker.py - generate serial number information for new packets
+# misc/tracker.py - generate serial number information for new packets
 #
 
 

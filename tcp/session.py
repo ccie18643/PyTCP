@@ -37,7 +37,7 @@
 
 
 #
-# tcp_session_alt.py - module contains alternate version of class supporting TCP finite state machine, aimed to streamline and simplify original one
+# tcp/session_alt.py - module contains alternate version of class supporting TCP finite state machine, aimed to streamline and simplify original one
 #
 
 
@@ -47,7 +47,7 @@ import threading
 import loguru
 
 import config
-import stack
+import misc.stack as stack
 
 PACKET_RETRANSMIT_TIMEOUT = 1000  # Retransmit data if ACK not received
 PACKET_RETRANSMIT_MAX_COUNT = 3  # If data is not acked, retransit it 5 times

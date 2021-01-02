@@ -37,7 +37,7 @@
 
 
 #
-# cli_server.py - module contains class suppoting stack's CLI funcionality
+# misc/cli_server.py - module contains class suppoting stack's CLI funcionality
 #
 
 import socket
@@ -45,7 +45,7 @@ import threading
 
 import loguru
 
-import stack
+import misc.stack as stack
 
 
 class StackCliServer:

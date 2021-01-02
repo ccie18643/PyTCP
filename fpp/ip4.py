@@ -44,8 +44,8 @@
 import struct
 
 import config
-from ip_helper import inet_cksum
-from ipv4_address import IPv4Address
+from misc.ip_helper import inet_cksum
+from misc.ipv4_address import IPv4Address
 
 # IPv4 protocol header
 
@@ -64,18 +64,18 @@ from ipv4_address import IPv4Address
 # +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 
 
-IP4_HEADER_LEN = 20
+HEADER_LEN = 20
 
-IP4_PROTO_ICMP4 = 1
-IP4_PROTO_TCP = 6
-IP4_PROTO_UDP = 17
-
-
-IP4_PROTO_TABLE = {IP4_PROTO_ICMP4: "ICMPv4", IP4_PROTO_TCP: "TCP", IP4_PROTO_UDP: "UDP"}
+PROTO_ICMP4 = 1
+PROTO_TCP = 6
+PROTO_UDP = 17
 
 
-class Ip4Packet:
-    """ IPv4 packet support class """
+PROTO_TABLE = {PROTO_ICMP4: "ICMPv4", PROTO_TCP: "TCP", PROTO_UDP: "UDP"}
+
+
+class Parser:
+    """ IPv4 packet parser class """
 
     class __not_cached:
         pass
@@ -118,7 +118,7 @@ class Ip4Packet:
         """ Packet log string """
 
         return (
-            f"IPv4 {self.src} > {self.dst}, proto {self.proto} ({IP4_PROTO_TABLE.get(self.proto, '???')}), id {self.id}"
+            f"IPv4 {self.src} > {self.dst}, proto {self.proto} ({PROTO_TABLE.get(self.proto, '???')}), id {self.id}"
             + f"{', DF' if self.flag_df else ''}{', MF' if self.flag_mf else ''}, offset {self.offset}, plen {self.plen}"
             + f", ttl {self.ttl}"
         )
@@ -238,17 +238,17 @@ class Ip4Packet:
 
         if self.__options is self.__not_cached:
             self.__options = []
-            optr = self._hptr + IP4_HEADER_LEN
+            optr = self._hptr + HEADER_LEN
 
             while optr < self._hptr + self.hlen:
-                if self._frame[optr] == IP4_OPT_EOL:
-                    self.__options.append(Ip4OptEol())
+                if self._frame[optr] == OPT_EOL:
+                    self.__options.append(OptEol())
                     break
-                if self._frame[optr] == IP4_OPT_NOP:
-                    self.__options.append(Ip4OptNop())
-                    optr += IP4_OPT_NOP_LEN
+                if self._frame[optr] == OPT_NOP:
+                    self.__options.append(OptNop())
+                    optr += OPT_NOP_LEN
                     continue
-                self.__options.append({}.get(self._frame[optr], Ip4OptUnk)(self._frame, optr))
+                self.__options.append({}.get(self._frame[optr], OptUnk)(self._frame, optr))
                 optr += self._frame[optr + 1]
 
         return self.__options
@@ -258,7 +258,7 @@ class Ip4Packet:
         """ Calculate options length """
 
         if self.__olen is self.__not_cached:
-            self.__olen = self.hlen - IP4_HEADER_LEN
+            self.__olen = self.hlen - HEADER_LEN
         return self.__olen
 
     @property
@@ -274,7 +274,7 @@ class Ip4Packet:
         """ Return copy of packet header """
 
         if self.__header_copy is self.__not_cached:
-            self.__header_copy = self._frame[self._hptr : self._hptr + IP4_HEADER_LEN]
+            self.__header_copy = self._frame[self._hptr : self._hptr + HEADER_LEN]
         return self.__header_copy
 
     @property
@@ -282,7 +282,7 @@ class Ip4Packet:
         """ Return copy of packet header """
 
         if self.__options_copy is self.__not_cached:
-            self.__options_copy = self._frame[self._hptr + IP4_HEADER_LEN : self._hptr + self.hlen]
+            self.__options_copy = self._frame[self._hptr + HEADER_LEN : self._hptr + self.hlen]
         return self.__options_copy
 
     @property
@@ -316,23 +316,23 @@ class Ip4Packet:
         if not config.packet_integrity_check:
             return False
 
-        if len(self) < IP4_HEADER_LEN:
+        if len(self) < HEADER_LEN:
             return "IPv4 integrity - wrong packet length (I)"
 
         hlen = (self._frame[self._hptr + 0] & 0b00001111) << 2
         plen = struct.unpack_from("!H", self._frame, self._hptr + 2)[0]
-        if not IP4_HEADER_LEN <= hlen <= plen <= len(self):
+        if not HEADER_LEN <= hlen <= plen <= len(self):
             return "IPv4 integrity - wrong packet length (II)"
 
         # Cannot compute checksum earlier because it depends on sanity of hlen field
         if inet_cksum(self._frame, self._hptr, hlen):
             return "IPv4 integriy - wrong packet checksum"
 
-        optr = self._hptr + IP4_HEADER_LEN
+        optr = self._hptr + HEADER_LEN
         while optr < self._hptr + hlen:
-            if self._frame[optr] == IP4_OPT_EOL:
+            if self._frame[optr] == OPT_EOL:
                 break
-            if self._frame[optr] == IP4_OPT_NOP:
+            if self._frame[optr] == OPT_NOP:
                 optr += 1
                 if optr > self._hptr + hlen:
                     return "IPv4 integrity - wrong option length (I)"
@@ -387,15 +387,15 @@ class Ip4Packet:
 
 # IPv4 option - End of Option Linst
 
-IP4_OPT_EOL = 0
-IP4_OPT_EOL_LEN = 1
+OPT_EOL = 0
+OPT_EOL_LEN = 1
 
 
-class Ip4OptEol:
-    """ IP option - End of Option List """
+class OptEol:
+    """ IPv4 option - End of Option List """
 
     def __init__(self):
-        self.kind = IP4_OPT_EOL
+        self.kind = OPT_EOL
 
     def __str__(self):
         return "eol"
@@ -403,15 +403,15 @@ class Ip4OptEol:
 
 # IPv4 option - No Operation (1)
 
-IP4_OPT_NOP = 1
-IP4_OPT_NOP_LEN = 1
+OPT_NOP = 1
+OPT_NOP_LEN = 1
 
 
-class Ip4OptNop:
-    """ IP option - No Operation """
+class OptNop:
+    """ IPv4 option - No Operation """
 
     def __init__(self):
-        self.kind = IP4_OPT_NOP
+        self.kind = OPT_NOP
 
     def __str__(self):
         return "nop"
@@ -420,8 +420,8 @@ class Ip4OptNop:
 # IPv4 option not supported by this stack
 
 
-class Ip4OptUnk:
-    """ IP option not supported by this stack """
+class OptUnk:
+    """ IPv4 option not supported by this stack """
 
     def __init__(self, frame, optr):
         self.kind = frame[optr + 0]

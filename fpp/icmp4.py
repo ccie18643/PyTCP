@@ -44,7 +44,7 @@
 import struct
 
 import config
-from ip_helper import inet_cksum
+from misc.ip_helper import inet_cksum
 
 # Echo reply message (0/0)
 
@@ -93,21 +93,21 @@ from ip_helper import inet_cksum
 # ~                             Data                              ~
 # +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 
-ICMP4_HEADER_LEN = 4
+HEADER_LEN = 4
 
-ICMP4_ECHO_REPLY = 0
-ICMP4_UNREACHABLE = 3
-ICMP4_UNREACHABLE__NET = 0
-ICMP4_UNREACHABLE__HOST = 1
-ICMP4_UNREACHABLE__PROTOCOL = 2
-ICMP4_UNREACHABLE__PORT = 3
-ICMP4_UNREACHABLE__FAGMENTATION = 4
-ICMP4_UNREACHABLE__SOURCE_ROUTE_FAILED = 5
-ICMP4_ECHO_REQUEST = 8
+ECHO_REPLY = 0
+UNREACHABLE = 3
+UNREACHABLE__NET = 0
+UNREACHABLE__HOST = 1
+UNREACHABLE__PROTOCOL = 2
+UNREACHABLE__PORT = 3
+UNREACHABLE__FAGMENTATION = 4
+UNREACHABLE__SOURCE_ROUTE_FAILED = 5
+ECHO_REQUEST = 8
 
 
-class Icmp4Packet:
-    """ ICMPv4 packet support class """
+class Parser:
+    """ ICMPv4 packet parser class """
 
     class __not_cached:
         pass
@@ -136,13 +136,13 @@ class Icmp4Packet:
 
         log = f"ICMPv4 type {self.type}, code {self.code}"
 
-        if self.type == ICMP4_ECHO_REPLY:
+        if self.type == ECHO_REPLY:
             log += f", id {self.ec_id}, seq {self.ec_seq}"
 
-        elif self.type == ICMP4_UNREACHABLE and self.code == ICMP4_UNREACHABLE__PORT:
+        elif self.type == UNREACHABLE and self.code == UNREACHABLE__PORT:
             pass
 
-        elif self.type == ICMP4_ECHO_REQUEST:
+        elif self.type == ECHO_REQUEST:
             log += f", id {self.ec_id}, seq {self.ec_seq}"
 
         return log
@@ -177,7 +177,7 @@ class Icmp4Packet:
         """ Read Echo 'Id' field """
 
         if self.__ec_id is self.__not_cached:
-            assert self.type in {ICMP4_ECHO_REQUEST, ICMP4_ECHO_REPLY}
+            assert self.type in {ECHO_REQUEST, ECHO_REPLY}
             self.__ec_id = struct.unpack_from("!H", self._frame, self._hptr + 4)[0]
         return self.__ec_id
 
@@ -186,7 +186,7 @@ class Icmp4Packet:
         """ Read Echo 'Seq' field """
 
         if self.__ec_seq is self.__not_cached:
-            assert self.type in {ICMP4_ECHO_REQUEST, ICMP4_ECHO_REPLY}
+            assert self.type in {ECHO_REQUEST, ECHO_REPLY}
             self.__ec_seq = struct.unpack_from("!H", self._frame, self._hptr + 6)[0]
         return self.__ec_seq
 
@@ -195,7 +195,7 @@ class Icmp4Packet:
         """ Read data carried by Echo message """
 
         if self.__ec_data is self.__not_cached:
-            assert self.type in {ICMP4_ECHO_REQUEST, ICMP4_ECHO_REPLY}
+            assert self.type in {ECHO_REQUEST, ECHO_REPLY}
             self.__ec_data = self._frame[self._hptr + 8 : self._hptr + self.plen]
         return self.__ec_data
 
@@ -204,7 +204,7 @@ class Icmp4Packet:
         """ Read data carried by Uneachable message """
 
         if self.__un_data is self.__not_cached:
-            assert self.type == ICMP4_UNREACHABLE
+            assert self.type == UNREACHABLE
             self.__un_data = self._frame[self._hptr + 8 : self._hptr + self.plen]
         return self.__un_data
 
@@ -231,14 +231,14 @@ class Icmp4Packet:
         if inet_cksum(self._frame, self._hptr, self._plen):
             return "ICMPv4 integrity - wrong packet checksum"
 
-        if not ICMP4_HEADER_LEN <= self._plen <= len(self):
+        if not HEADER_LEN <= self._plen <= len(self):
             return "ICMPv4 integrity - wrong packet length (I)"
 
-        if self._frame[self._hptr + 0] in {ICMP4_ECHO_REQUEST, ICMP4_ECHO_REPLY}:
+        if self._frame[self._hptr + 0] in {ECHO_REQUEST, ECHO_REPLY}:
             if not 8 <= self._plen <= len(self):
                 return "ICMPv6 integrity - wrong packet length (II)"
 
-        elif self._frame[self._hptr + 0] == ICMP4_UNREACHABLE:
+        elif self._frame[self._hptr + 0] == UNREACHABLE:
             if not 12 <= self._plen <= len(self):
                 return "ICMPv6 integrity - wrong packet length (II)"
 
@@ -250,11 +250,11 @@ class Icmp4Packet:
         if not config.packet_sanity_check:
             return False
 
-        if self.type in {ICMP4_ECHO_REQUEST, ICMP4_ECHO_REPLY}:
+        if self.type in {ECHO_REQUEST, ECHO_REPLY}:
             if not self.code == 0:
                 return "ICMPv4 sanity - 'code' should be set to 0 (RFC 792)"
 
-        if self.type == ICMP4_UNREACHABLE:
+        if self.type == UNREACHABLE:
             if self.code not in {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15}:
                 return "ICMPv4 sanity - 'code' must be set to [0-15] (RFC 792)"
 

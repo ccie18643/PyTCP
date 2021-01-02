@@ -37,7 +37,7 @@
 
 
 #
-# timer.py - module contains class supporting timer that can be used by other stack components
+# misc/timer.py - module contains class supporting timer that can be used by other stack components
 #
 
 
@@ -46,7 +46,7 @@ import time
 
 import loguru
 
-import stack
+import misc.stack as stack
 
 
 class TimerTask:

@@ -43,13 +43,13 @@
 
 import fpa.icmp6
 import fpp.icmp6
-from ipv6_address import IPv6Address
+from misc.ipv6_address import IPv6Address
 
 
 def _phrx_icmp6(self, packet_rx):
     """ Handle inbound ICMPv6 packets """
 
-    fpp.icmp6.Icmp6Packet(packet_rx)
+    fpp.icmp6.Parser(packet_rx)
 
     if packet_rx.parse_failed:
         if __debug__:
@@ -60,7 +60,7 @@ def _phrx_icmp6(self, packet_rx):
         self._logger.opt(ansi=True).info(f"<green>{packet_rx.tracker}</green> - {packet_rx.icmp6}")
 
     # ICMPv6 Neighbor Solicitation packet
-    if packet_rx.icmp6.type == fpp.icmp6.ICMP6_NEIGHBOR_SOLICITATION:
+    if packet_rx.icmp6.type == fpp.icmp6.NEIGHBOR_SOLICITATION:
 
         # Check if request is for one of stack's IPv6 unicast addresses
         if packet_rx.icmp6.ns_target_address not in self.ip6_unicast:
@@ -85,7 +85,7 @@ def _phrx_icmp6(self, packet_rx):
             ip6_src=packet_rx.icmp6.ns_target_address,
             ip6_dst=IPv6Address("ff02::1") if ip6_nd_dad else packet_rx.ip6.src,  # use ff02::1 destination addriess when responding to DAD equest
             ip6_hop=255,
-            icmp6_type=fpp.icmp6.ICMP6_NEIGHBOR_ADVERTISEMENT,
+            icmp6_type=fpp.icmp6.NEIGHBOR_ADVERTISEMENT,
             icmp6_na_flag_s=not ip6_nd_dad,  # no S flag when responding to DAD request
             icmp6_na_flag_o=ip6_nd_dad,  # O flag when respondidng to DAD request (this is not necessary but Linux uses it)
             icmp6_na_target_address=packet_rx.icmp6.ns_target_address,
@@ -95,7 +95,7 @@ def _phrx_icmp6(self, packet_rx):
         return
 
     # ICMPv6 Neighbor Advertisement packet
-    if packet_rx.icmp6.type == fpp.icmp6.ICMP6_NEIGHBOR_ADVERTISEMENT:
+    if packet_rx.icmp6.type == fpp.icmp6.NEIGHBOR_ADVERTISEMENT:
 
         if __debug__:
             self._logger.debug(f"Received ICMPv6 Neighbor Advertisement packet for {packet_rx.icmp6.na_target_address} from {packet_rx.ip6.src}")
@@ -114,14 +114,14 @@ def _phrx_icmp6(self, packet_rx):
         return
 
     # ICMPv6 Router Solicitaion packet (this is not currently used by the stack)
-    if packet_rx.icmp6.type == fpp.icmp6.ICMP6_ROUTER_SOLICITATION:
+    if packet_rx.icmp6.type == fpp.icmp6.ROUTER_SOLICITATION:
 
         if __debug__:
             self._logger.debug(f"Received ICMPv6 Router Advertisement packet from {packet_rx.ip6.src}")
         return
 
     # ICMPv6 Router Advertisement packet
-    if packet_rx.icmp6.type == fpp.icmp6.ICMP6_ROUTER_ADVERTISEMENT:
+    if packet_rx.icmp6.type == fpp.icmp6.ROUTER_ADVERTISEMENT:
 
         if __debug__:
             self._logger.debug(f"Received ICMPv6 Router Advertisement packet from {packet_rx.ip6.src}")
@@ -132,7 +132,7 @@ def _phrx_icmp6(self, packet_rx):
         return
 
     # Respond to ICMPv6 Echo Request packet
-    if packet_rx.icmp6.type == fpp.icmp6.ICMP6_ECHO_REQUEST:
+    if packet_rx.icmp6.type == fpp.icmp6.ECHO_REQUEST:
         if __debug__:
             self._logger.debug(f"Received ICMPv6 Echo Request packet from {packet_rx.ip6.src}, sending reply")
 
@@ -140,7 +140,7 @@ def _phrx_icmp6(self, packet_rx):
             ip6_src=packet_rx.ip6.dst,
             ip6_dst=packet_rx.ip6.src,
             ip6_hop=255,
-            icmp6_type=fpp.icmp6.ICMP6_ECHO_REPLY,
+            icmp6_type=fpp.icmp6.ECHO_REPLY,
             icmp6_ec_id=packet_rx.icmp6.ec_id,
             icmp6_ec_seq=packet_rx.icmp6.ec_seq,
             icmp6_ec_data=packet_rx.icmp6.ec_data,

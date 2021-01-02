@@ -37,7 +37,7 @@
 
 
 #
-# tcp_socket.py - module contains class supporting TCP sockets
+# tcp/socket.py - module contains class supporting TCP sockets
 #
 
 
@@ -45,8 +45,8 @@ import threading
 
 import loguru
 
-import stack
-from tcp_session import TcpSession
+import misc.stack as stack
+from tcp.session import TcpSession
 
 
 class TcpSocket:

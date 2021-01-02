@@ -44,7 +44,7 @@
 import struct
 
 import config
-from ipv6_address import IPv6Address
+from misc.ipv6_address import IPv6Address
 
 # IPv6 protocol header
 
@@ -71,18 +71,18 @@ from ipv6_address import IPv6Address
 # +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 
 
-IP6_HEADER_LEN = 40
+HEADER_LEN = 40
 
-IP6_NEXT_HEADER_TCP = 6
-IP6_NEXT_HEADER_UDP = 17
-IP6_NEXT_HEADER_EXT_FRAG = 44
-IP6_NEXT_HEADER_ICMP6 = 58
+NEXT_HEADER_TCP = 6
+NEXT_HEADER_UDP = 17
+NEXT_HEADER_EXT_FRAG = 44
+NEXT_HEADER_ICMP6 = 58
 
-IP6_NEXT_HEADER_TABLE = {IP6_NEXT_HEADER_TCP: "TCP", IP6_NEXT_HEADER_UDP: "UDP", IP6_NEXT_HEADER_EXT_FRAG: "IP6_FRAG", IP6_NEXT_HEADER_ICMP6: "ICMPv6"}
+NEXT_HEADER_TABLE = {NEXT_HEADER_TCP: "TCP", NEXT_HEADER_UDP: "UDP", NEXT_HEADER_EXT_FRAG: "FRAG", NEXT_HEADER_ICMP6: "ICMPv6"}
 
 
-class Ip6Packet:
-    """ IPv6 packet support class """
+class Parser:
+    """ IPv6 packet parser class """
 
     class __not_cached:
         pass
@@ -112,13 +112,13 @@ class Ip6Packet:
         packet_rx.parse_failed = self._packet_integrity_check() or self._packet_sanity_check()
 
         if not packet_rx.parse_failed:
-            packet_rx.hptr = self._hptr + IP6_HEADER_LEN
+            packet_rx.hptr = self._hptr + HEADER_LEN
 
     def __str__(self):
         """ Packet log string """
 
         return (
-            f"IPv6 {self.src} > {self.dst}, next {self.next} ({IP6_NEXT_HEADER_TABLE.get(self.next, '???')}), flow {self.flow}"
+            f"IPv6 {self.src} > {self.dst}, next {self.next} ({NEXT_HEADER_TABLE.get(self.next, '???')}), flow {self.flow}"
             + f", dlen {self.dlen}, hop {self.hop}"
         )
 
@@ -199,20 +199,20 @@ class Ip6Packet:
     def hlen(self):
         """ Calculate header length """
 
-        return IP6_HEADER_LEN
+        return HEADER_LEN
 
     @property
     def plen(self):
         """ Calculate packet length """
 
-        return IP6_HEADER_LEN + self.dlen
+        return HEADER_LEN + self.dlen
 
     @property
     def header_copy(self):
         """ Return copy of packet header """
 
         if self.__header_copy is self.__not_cached:
-            self.__header_copy = self._frame[self._hptr : self._hptr + IP6_HEADER_LEN]
+            self.__header_copy = self._frame[self._hptr : self._hptr + HEADER_LEN]
         return self.__header_copy
 
     @property
@@ -220,7 +220,7 @@ class Ip6Packet:
         """ Return copy of packet data """
 
         if self.__data_copy is self.__not_cached:
-            self.__data_copy = self._frame[self._hptr + IP6_HEADER_LEN : self._hptr + self.plen]
+            self.__data_copy = self._frame[self._hptr + HEADER_LEN : self._hptr + self.plen]
         return self.__data_copy
 
     @property
@@ -246,10 +246,10 @@ class Ip6Packet:
         if not config.packet_integrity_check:
             return False
 
-        if len(self) < IP6_HEADER_LEN:
+        if len(self) < HEADER_LEN:
             return "IPv6 integrity - wrong packet length (I)"
 
-        if struct.unpack_from("!H", self._frame, self._hptr + 4)[0] != len(self) - IP6_HEADER_LEN:
+        if struct.unpack_from("!H", self._frame, self._hptr + 4)[0] != len(self) - HEADER_LEN:
             return "IPv6 integrity - wrong packet length (II)"
 
         return False

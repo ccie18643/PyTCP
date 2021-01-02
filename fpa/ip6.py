@@ -44,7 +44,7 @@
 import struct
 
 import config
-from ipv6_address import IPv6Address
+from misc.ipv6_address import IPv6Address
 
 # IPv6 protocol header
 
@@ -71,18 +71,18 @@ from ipv6_address import IPv6Address
 # +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 
 
-IP6_HEADER_LEN = 40
+HEADER_LEN = 40
 
-IP6_NEXT_HEADER_TCP = 6
-IP6_NEXT_HEADER_UDP = 17
-IP6_NEXT_HEADER_EXT_FRAG = 44
-IP6_NEXT_HEADER_ICMP6 = 58
+NEXT_HEADER_TCP = 6
+NEXT_HEADER_UDP = 17
+NEXT_HEADER_EXT_FRAG = 44
+NEXT_HEADER_ICMP6 = 58
 
-IP6_NEXT_HEADER_TABLE = {IP6_NEXT_HEADER_TCP: "TCP", IP6_NEXT_HEADER_UDP: "UDP", IP6_NEXT_HEADER_ICMP6: "ICMPv6", IP6_NEXT_HEADER_EXT_FRAG: "IPv6_FRAG"}
+NEXT_HEADER_TABLE = {NEXT_HEADER_TCP: "TCP", NEXT_HEADER_UDP: "UDP", NEXT_HEADER_ICMP6: "ICMPv6", NEXT_HEADER_EXT_FRAG: "IPv6_FRAG"}
 
 
-class Ip6Packet:
-    """ IPv6 packet support class """
+class Assembler:
+    """ IPv6 packet assembler support class """
 
     protocol = "IP6"
 
@@ -112,16 +112,16 @@ class Ip6Packet:
         self.dst = IPv6Address(dst)
 
         if self._child_packet.protocol == "ICMP6":
-            self.next = IP6_NEXT_HEADER_ICMP6
+            self.next = NEXT_HEADER_ICMP6
 
         elif self._child_packet.protocol == "UDP":
-            self.next = IP6_NEXT_HEADER_UDP
+            self.next = NEXT_HEADER_UDP
 
         elif self._child_packet.protocol == "TCP":
-            self.next = IP6_NEXT_HEADER_TCP
+            self.next = NEXT_HEADER_TCP
 
         elif self._child_packet.protocol == "IP6_EXT_FRAG":
-            self.next = IP6_NEXT_HEADER_EXT_FRAG
+            self.next = NEXT_HEADER_EXT_FRAG
 
         self.dlen = len(child_packet)
 
@@ -129,14 +129,14 @@ class Ip6Packet:
         """ Packet log string """
 
         return (
-            f"IPv6 {self.src} > {self.dst}, next {self.next} ({IP6_NEXT_HEADER_TABLE.get(self.next, '???')}), flow {self.flow}"
+            f"IPv6 {self.src} > {self.dst}, next {self.next} ({NEXT_HEADER_TABLE.get(self.next, '???')}), flow {self.flow}"
             + f", dlen {self.dlen}, hop {self.hop}"
         )
 
     def __len__(self):
         """ Length of the packet """
 
-        return IP6_HEADER_LEN + len(self._child_packet)
+        return HEADER_LEN + len(self._child_packet)
 
     @property
     def pshdr_sum(self):
@@ -145,7 +145,7 @@ class Ip6Packet:
         pseudo_header = struct.pack("! 16s 16s L BBBB", self.src.packed, self.dst.packed, self.dlen, 0, 0, 0, self.next)
         return sum(struct.unpack("! 5Q", pseudo_header))
 
-    def assemble_packet(self, frame, hptr):
+    def assemble(self, frame, hptr):
         """ Assemble packet into the raw form """
 
         struct.pack_into(
@@ -163,4 +163,4 @@ class Ip6Packet:
             self.dst.packed,
         )
 
-        self._child_packet.assemble_packet(frame, hptr + IP6_HEADER_LEN, self.pshdr_sum)
+        self._child_packet.assemble(frame, hptr + HEADER_LEN, self.pshdr_sum)

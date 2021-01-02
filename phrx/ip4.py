@@ -46,8 +46,8 @@ from time import time
 
 import config
 import fpp.ip4
-from ip_helper import inet_cksum
-from packet import PacketRx
+from misc.ip_helper import inet_cksum
+from misc.packet import PacketRx
 
 
 def _defragment_ip4_packet(self, packet_rx):
@@ -95,11 +95,11 @@ def _defragment_ip4_packet(self, packet_rx):
         struct.pack_into(f"{len(self.ip4_frag_flows[flow_id]['data'][offset])}s", data, offset, self.ip4_frag_flows[flow_id]["data"][offset])
     del self.ip4_frag_flows[flow_id]
     header[0] = 0x45
-    struct.pack_into("!H", header, 2, fpp.ip4.IP4_HEADER_LEN + len(data))
+    struct.pack_into("!H", header, 2, fpp.ip4.HEADER_LEN + len(data))
     header[6] = header[7] = header[10] = header[11] = 0
-    struct.pack_into("!H", header, 10, inet_cksum(header, 0, fpp.ip4.IP4_HEADER_LEN))
+    struct.pack_into("!H", header, 10, inet_cksum(header, 0, fpp.ip4.HEADER_LEN))
     packet_rx = PacketRx(bytes(header) + data)
-    fpp.ip4.Ip4Packet(packet_rx)
+    fpp.ip4.Parser(packet_rx)
     if __debug__:
         self._logger.debug(f"{packet_rx.tracker} - Reasembled fragmented IPv4 packet, dlen {len(data)} bytes")
     return packet_rx
@@ -108,7 +108,7 @@ def _defragment_ip4_packet(self, packet_rx):
 def _phrx_ip4(self, packet_rx):
     """ Handle inbound IPv4 packets """
 
-    fpp.ip4.Ip4Packet(packet_rx)
+    fpp.ip4.Parser(packet_rx)
 
     if packet_rx.parse_failed:
         if __debug__:
@@ -129,14 +129,14 @@ def _phrx_ip4(self, packet_rx):
         if not (packet_rx := self._defragment_ip4_packet(packet_rx)):
             return
 
-    if packet_rx.ip4.proto == fpp.ip4.IP4_PROTO_ICMP4:
+    if packet_rx.ip4.proto == fpp.ip4.PROTO_ICMP4:
         self._phrx_icmp4(packet_rx)
         return
 
-    if packet_rx.ip4.proto == fpp.ip4.IP4_PROTO_UDP:
+    if packet_rx.ip4.proto == fpp.ip4.PROTO_UDP:
         self._phrx_udp(packet_rx)
         return
 
-    if packet_rx.ip4.proto == fpp.ip4.IP4_PROTO_TCP:
+    if packet_rx.ip4.proto == fpp.ip4.PROTO_TCP:
         self._phrx_tcp(packet_rx)
         return

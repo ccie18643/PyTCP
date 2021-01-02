@@ -37,49 +37,105 @@
 
 
 #
-# udp_metadata.py - module contains storage class for incoming UDP packet's metadata
+# misc/ipv6_address.py - module contains IPv6 address manipulation classes (extensions to ipaddress standard library)
 #
 
+import ipaddress
+from re import sub
 
-class UdpMetadata:
-    """ Store UDP metadata """
 
-    def __init__(self, local_ip_address, local_port, remote_ip_address, remote_port, data, tracker=None):
-        self.local_ip_address = local_ip_address
-        self.local_port = local_port
-        self.remote_ip_address = remote_ip_address
-        self.remote_port = remote_port
-        self.data = data
-        self.tracker = tracker
+class IPv6Interface(ipaddress.IPv6Interface):
+    """ Extensions for ipaddress.IPv6Address class """
 
     @property
-    def udp_session_id(self):
-        """ Session ID """
+    def ip(self):
+        """ Make sure class returns overloaded IPv6Address object """
 
-        return f"UDP/{self.local_ip_address}/{self.local_port}/{self.remote_ip_address}/{self.remote_port}"
+        return IPv6Address(super().ip)
 
     @property
-    def socket_id_patterns(self):
-        """ Socket ID patterns that match this packet """
+    def host_address(self):
+        """ Return host address """
 
-        if self.remote_ip_address.version == 6:
-            return [
-                f"UDP/{self.local_ip_address}/{self.local_port}/{self.remote_ip_address}/{self.remote_port}",
-                f"UDP/{self.local_ip_address}/{self.local_port}/*/*",
-                f"UDP/::/{self.local_port}/*/{self.remote_port}",
-                f"UDP/*/{self.local_port}/*/{self.remote_port}",
-                f"UDP/::/{self.local_port}/*/*",
-                f"UDP/*/{self.local_port}/*/*",
-            ]
+        return self.ip
 
-        if self.remote_ip_address.version == 4:
-            return [
-                f"UDP/{self.local_ip_address}/{self.local_port}/{self.remote_ip_address}/{self.remote_port}",
-                f"UDP/{self.local_ip_address}/{self.local_port}/*/*",
-                f"UDP/0.0.0.0/{self.local_port}/*/{self.remote_port}",
-                f"UDP/*/{self.local_port}/*/{self.remote_port}",
-                f"UDP/0.0.0.0/{self.local_port}/*/*",
-                f"UDP/*/{self.local_port}/*/*",
-            ]
+    @property
+    def solicited_node_multicast(self):
+        """ Create IPv6 solicited node multicast address """
 
-        return None
+        return self.ip.solicited_node_multicast
+
+    @property
+    def is_solicited_node_multicast(self):
+        """ Check if address is IPv6 solicited node multicast address """
+
+        return self.ip.is_solicited_node_multicast
+
+    @property
+    def is_unicast(self):
+        """ Check if address is IPv6 unicast address """
+
+        return self.ip.is_unicast
+
+    @property
+    def is_reserved(self):
+        """ Check if address is IPv6 reserved address """
+
+        return self.ip.is_reserved
+
+    @property
+    def is_unspecified(self):
+        """ Check if address is IPv6 unspecified address """
+
+        return self.ip.is_unspecified
+
+    @property
+    def is_multicast(self):
+        """ Check if address is IPv6 multicast address """
+
+        return self.ip.is_multicast
+
+
+class IPv6Network(ipaddress.IPv6Network):
+    """ Extensions for ipaddress.IPv6Network class """
+
+    def eui64(self, mac):
+        """ Create IPv6 EUI64 interface address """
+
+        assert self.prefixlen == 64
+
+        eui64 = sub(r"[.:-]", "", mac).lower()
+        eui64 = eui64[0:6] + "fffe" + eui64[6:]
+        eui64 = hex(int(eui64[0:2], 16) ^ 2)[2:].zfill(2) + eui64[2:]
+        eui64 = ":".join(eui64[_ : _ + 4] for _ in range(0, 16, 4))
+        return IPv6Interface(self.network_address.exploded[0:20] + eui64 + "/" + str(self.prefixlen))
+
+
+class IPv6Address(ipaddress.IPv6Address):
+    """ Extensions for ipaddress.IPv6Address class """
+
+    @property
+    def solicited_node_multicast(self):
+        """ Create IPv6 solicited node multicast address """
+
+        return IPv6Address("ff02::1:ff" + self.exploded[-7:])
+
+    @property
+    def is_solicited_node_multicast(self):
+        """ Check if address is IPv6 solicited node multicast address """
+
+        return str(self).startswith("ff02::1:ff")
+
+    @property
+    def is_unicast(self):
+        """ Check if address is IPv6 unicast address """
+
+        return not (self.is_multicast or self.is_unspecified)
+
+    @property
+    def multicast_mac(self):
+        """ Create IPv6 multicast MAC address """
+
+        assert self.is_multicast
+
+        return "33:33:" + ":".join(["".join(self.exploded[-9:].split(":"))[_ : _ + 2] for _ in range(0, 8, 2)])

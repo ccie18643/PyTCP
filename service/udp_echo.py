@@ -43,10 +43,10 @@
 
 import threading
 
-import udp_socket
-from malpi import malpa, malpi, malpka
-from tracker import Tracker
-from udp_metadata import UdpMetadata
+import udp.socket
+from misc.malpi import malpa, malpi, malpka
+from misc.tracker import Tracker
+from udp.metadata import UdpMetadata
 
 
 class ServiceUdpEcho:
@@ -61,7 +61,7 @@ class ServiceUdpEcho:
     def __thread_service(local_ip_address, local_port):
         """ Service initialization and rx/tx loop """
 
-        socket = udp_socket.UdpSocket()
+        socket = udp.socket.UdpSocket()
         socket.bind(local_ip_address, local_port)
         print(f"Service UDP Echo: Socket created, bound to {local_ip_address}, port {local_port}")
 

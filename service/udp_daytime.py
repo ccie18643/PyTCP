@@ -44,9 +44,9 @@
 import threading
 from datetime import datetime
 
-import udp_socket
-from tracker import Tracker
-from udp_metadata import UdpMetadata
+import udp.socket
+from misc.tracker import Tracker
+from udp.metadata import UdpMetadata
 
 
 class ServiceUdpDaytime:
@@ -61,7 +61,7 @@ class ServiceUdpDaytime:
     def __thread_service(local_ip_address, local_port):
         """ Service initialization and rx/tx loop """
 
-        socket = udp_socket.UdpSocket()
+        socket = udp.socket.UdpSocket()
         socket.bind(local_ip_address, local_port)
         print(f"Service UDP Daytime: Socket created, bound to {local_ip_address}, port {local_port}")
 

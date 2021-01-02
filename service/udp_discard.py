@@ -43,7 +43,7 @@
 
 import threading
 
-import udp_socket
+import udp.socket
 
 
 class ServiceUdpDiscard:
@@ -58,7 +58,7 @@ class ServiceUdpDiscard:
     def __thread_service(local_ip_address, local_port):
         """ Service initialization and rx/tx loop """
 
-        socket = udp_socket.UdpSocket()
+        socket = udp.socket.UdpSocket()
         socket.bind(local_ip_address, local_port)
         print(f"Service UDP Discard: Socket created, bound to {local_ip_address}, port {local_port}")
 

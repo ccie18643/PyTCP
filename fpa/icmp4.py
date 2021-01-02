@@ -43,8 +43,8 @@
 
 import struct
 
-from ip_helper import inet_cksum
-from tracker import Tracker
+from misc.ip_helper import inet_cksum
+from misc.tracker import Tracker
 
 # Echo reply message (0/0)
 
@@ -90,22 +90,22 @@ from tracker import Tracker
 # +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 
 
-ICMP4_ECHO_REPLY = 0
-ICMP4_ECHO_REPLY_LEN = 8
-ICMP4_UNREACHABLE = 3
-ICMP4_UNREACHABLE_LEN = 8
-ICMP4_UNREACHABLE__NET = 0
-ICMP4_UNREACHABLE__HOST = 1
-ICMP4_UNREACHABLE__PROTOCOL = 2
-ICMP4_UNREACHABLE__PORT = 3
-ICMP4_UNREACHABLE__FAGMENTATION = 4
-ICMP4_UNREACHABLE__SOURCE_ROUTE_FAILED = 5
-ICMP4_ECHO_REQUEST = 8
-ICMP4_ECHO_REQUEST_LEN = 8
+ECHO_REPLY = 0
+ECHO_REPLY_LEN = 8
+UNREACHABLE = 3
+UNREACHABLE_LEN = 8
+UNREACHABLE__NET = 0
+UNREACHABLE__HOST = 1
+UNREACHABLE__PROTOCOL = 2
+UNREACHABLE__PORT = 3
+UNREACHABLE__FAGMENTATION = 4
+UNREACHABLE__SOURCE_ROUTE_FAILED = 5
+ECHO_REQUEST = 8
+ECHO_REQUEST_LEN = 8
 
 
-class Icmp4Packet:
-    """ ICMPv4 packet support class """
+class Assembler:
+    """ ICMPv4 packet assembler support class """
 
     protocol = "ICMP4"
 
@@ -126,15 +126,15 @@ class Icmp4Packet:
         self.type = type
         self.code = code
 
-        if self.type == ICMP4_ECHO_REPLY:
+        if self.type == ECHO_REPLY:
             self.ec_id = ec_id
             self.ec_seq = ec_seq
             self.ec_data = ec_data
 
-        elif self.type == ICMP4_UNREACHABLE and self.code == ICMP4_UNREACHABLE__PORT:
+        elif self.type == UNREACHABLE and self.code == UNREACHABLE__PORT:
             self.un_data = un_data[:520]
 
-        elif self.type == ICMP4_ECHO_REQUEST:
+        elif self.type == ECHO_REQUEST:
             self.ec_id = ec_id
             self.ec_seq = ec_seq
             self.ec_data = ec_data
@@ -144,13 +144,13 @@ class Icmp4Packet:
 
         log = f"ICMPv4 type {self.type}, code {self.code}"
 
-        if self.type == ICMP4_ECHO_REPLY:
+        if self.type == ECHO_REPLY:
             log += f", id {self.ec_id}, seq {self.ec_seq}"
 
-        elif self.type == ICMP4_UNREACHABLE and self.code == ICMP4_UNREACHABLE__PORT:
+        elif self.type == UNREACHABLE and self.code == UNREACHABLE__PORT:
             pass
 
-        elif self.type == ICMP4_ECHO_REQUEST:
+        elif self.type == ECHO_REQUEST:
             log += f", id {self.ec_id}, seq {self.ec_seq}"
 
         return log
@@ -158,25 +158,25 @@ class Icmp4Packet:
     def __len__(self):
         """ Length of the packet """
 
-        if self.type == ICMP4_ECHO_REPLY:
-            return ICMP4_ECHO_REPLY_LEN + len(self.ec_data)
+        if self.type == ECHO_REPLY:
+            return ECHO_REPLY_LEN + len(self.ec_data)
 
-        if self.type == ICMP4_UNREACHABLE and self.code == ICMP4_UNREACHABLE__PORT:
-            return ICMP4_UNREACHABLE_LEN + len(self.un_data)
+        if self.type == UNREACHABLE and self.code == UNREACHABLE__PORT:
+            return UNREACHABLE_LEN + len(self.un_data)
 
-        if self.type == ICMP4_ECHO_REQUEST:
-            return ICMP4_ECHO_REQUEST_LEN + len(self.ec_data)
+        if self.type == ECHO_REQUEST:
+            return ECHO_REQUEST_LEN + len(self.ec_data)
 
-    def assemble_packet(self, frame, hptr, _):
+    def assemble(self, frame, hptr, _):
         """ Assemble packet into the raw form """
 
-        if self.type == ICMP4_ECHO_REPLY:
+        if self.type == ECHO_REPLY:
             struct.pack_into(f"! BBH HH {len(self.ec_data)}s", frame, hptr, self.type, self.code, 0, self.ec_id, self.ec_seq, self.ec_data)
 
-        elif self.type == ICMP4_UNREACHABLE and self.code == ICMP4_UNREACHABLE__PORT:
+        elif self.type == UNREACHABLE and self.code == UNREACHABLE__PORT:
             struct.pack_into(f"! BBH L {len(self.un_data)}s", frame, hptr, self.type, self.code, 0, 0, self.un_data)
 
-        elif self.type == ICMP4_ECHO_REQUEST:
+        elif self.type == ECHO_REQUEST:
             struct.pack_into(f"! BBH HH {len(self.ec_data)}s", frame, hptr, self.type, self.code, 0, self.ec_id, self.ec_seq, self.ec_data)
 
         struct.pack_into("! H", frame, hptr + 2, inet_cksum(frame, hptr, len(self)))

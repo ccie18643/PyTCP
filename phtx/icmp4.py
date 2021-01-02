@@ -63,7 +63,7 @@ def _phtx_icmp4(
     if not config.ip4_support:
         return
 
-    icmp4_packet_tx = fpa.icmp4.Icmp4Packet(
+    icmp4_packet_tx = fpa.icmp4.Assembler(
         type=icmp4_type,
         code=icmp4_code,
         ec_id=icmp4_ec_id,
