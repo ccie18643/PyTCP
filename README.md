@@ -51,10 +51,8 @@ I am also working on another TCP/IP stack project that is being programmed in C 
 
  - QUIC protocol - *research and plan for the implementation, this depends on ability to create lab environment for it*
  - IPv6 protocol - *redesign the RA PI option handling and ND prefix auto configuration to properly use A nad L flags, some research also needed on case when different than /64 prefix is being advertised*
- - IPv6 protocol - *implement optional headers*
+ - IPv6 protocol - *implement remaining extended headers*
  - IPv6 protocol - *validate and possibly re-implements certain IPv6 mechanisms/processes according to RFC rules*
- - IPv6 protocol - *research and implement fragmentation*
- - IPv6 protocol - *research and possibly implement support for certain optional IPv6 headers*
  - IPv6 protocol - *investigate Hop-by-Hop Options header and its relation to MLD2 Report message, implement if needed for MLD2 to work properly*
  - ICMPv6 protocol - *validate and possibly re-implements certain IPv6 mechanisms/processes according to RFC rules*
  - ICMPv6 protocol - *implement ND Redirect message*
@@ -64,17 +62,16 @@ I am also working on another TCP/IP stack project that is being programmed in C 
  - TCP protocol - *proper handling on RST packets in various states, need to do research on this*
  - TCP protocol - *need to rework the CLOSE syscall mechanism so FIN flag can be set on last data packet instead of being carried in separate one*
  - TCP protocol - *ACK packet retransmission in case we got FIN retransmission in TIME_WAIT state <-- need to investigate this*
- - TCP protocol - *implement proper response to packets containing old SEQ and/or ACK numbersi <-- need to investigate this*
+ - TCP protocol - *implement proper response to packets containing old SEQ and/or ACK numbers <-- need to investigate this*
  - TCP protocol - *ensure that event communication from TCP session to socket works properly (eg. connection reset by peer)*
  - ICMP protocols - *need to come up with some sort of "icmp socket" mechanism so ping client can bind to particular ICMP echo-reply stream*
- - IPv4 protocol - *improvements in IP defragmentation mechanism are needed, out of order fragment handling, purging of orphaned fragments*
  - IPv6/IPv4 protocols - *proper routing mechanism, route tables, etc...*
  - IPv6/IPv4 protocols - *ability of stack to act as a router*
  - ARP cache - *implement proper FSM*
  - ICMPv6 ND cache - *implement proper FSM*
  - UDP protocol - *need UDP echo client and mechanism to report receiving ICMP Port Unreachable message to UDP socket*
- - UDP sockets - *overhaul is needed to make 'end user' interface match Berkeley sockets more closely so 3rd party aps can use it without porting*
- - TCP sockets - *overhaul is needed to make 'end user' interface match Berkeley sockets more closely so 3rd party aps can use it without porting*
+ - UDP sockets - *overhaul is needed to make 'end user' interface match Berkeley sockets interface 100% so 3rd party aps can use it without porting*
+ - TCP sockets - *overhaul is needed to make 'end user' interface match Berkeley sockets interface 100% so 3rd party aps can use it without porting*
 
 
 ### Examples:
