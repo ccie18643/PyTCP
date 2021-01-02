@@ -40,39 +40,10 @@ I am also working on another TCP/IP stack project that is being programmed in C 
 
 #### Work in progress:
 
- - Stack - *implementing improved packet parser (operating on the same bytes array while parsing all protocols vs creating separate slice per protocol & lazy field parsing with caching vs parsing all fields upfront even if most of them are never read)*
- - Stack - *implementing support for multiple interfaces*
- - Stack - *implementing stack debugging console so certain information about stack components can be displayed on demand by sending commands. eg 'show icmpv6 nd cache', 'show ipv6 route', etc... it should also let run interactive commands like ping or stack's udp/tcp echo clients*
 
 #### Next steps:
 
- - QUIC protocol - *research and plan for the implementation, this depends on ability to create lab environment for it*
- - IPv6 protocol - *redesign the RA PI option handling and ND prefix auto configuration to properly use A nad L flags, some research also needed on case when different than /64 prefix is being advertised*
- - IPv6 protocol - *implement optional headers*
- - IPv6 protocol - *validate and possibly re-implements certain IPv6 mechanisms/processes according to RFC rules*
- - IPv6 protocol - *research and implement fragmentation*
- - IPv6 protocol - *research and possibly implement support for certain optional IPv6 headers*
- - IPv6 protocol - *investigate Hop-by-Hop Options header and its relation to MLD2 Report message, implement if needed for MLD2 to work properly*
- - ICMPv6 protocol - *validate and possibly re-implements certain IPv6 mechanisms/processes according to RFC rules*
- - ICMPv6 protocol - *implement ND Redirect message*
- - ICMPv6 protocol - *Multicast Listener Discovery v2 (MLDv2) full implementation <-- it may be required by stack to respond to MLD queries*
- - IPv6 protocol - *ability to route traffic to external destinations via default gateway*
- - TCP protocol - *ongoing effort of improving code and bug fixing while simulating more advanced traffic scenarios*
- - TCP protocol - *proper handling on RST packets in various states, need to do research on this*
- - TCP protocol - *need to rework the CLOSE syscall mechanism so FIN flag can be set on last data packet instead of being carried in separate one*
- - TCP protocol - *ACK packet retransmission in case we got FIN retransmission in TIME_WAIT state <-- need to investigate this*
- - TCP protocol - *implement proper response to packets containing old SEQ and/or ACK numbersi <-- need to investigate this*
- - TCP protocol - *ensure that event communication from TCP session to socket works properly (eg. connection reset by peer)*
- - ICMP protocols - *need to come up with some sort of "icmp socket" mechanism so ping client can bind to particular ICMP echo-reply stream*
- - IPv4 protocol - *improvements in IP defragmentation mechanism are needed, out of order fragment handling, purging of orphaned fragments*
- - IPv6/IPv4 protocols - *proper routing mechanism, route tables, etc...*
- - IPv6/IPv4 protocols - *ability of stack to act as a router*
- - ARP cache - *implement proper FSM*
- - ICMPv6 ND cache - *implement proper FSM*
- - UDP protocol - *need UDP echo client and mechanism to report receiving ICMP Port Unreachable message to UDP socket*
- - UDP sockets - *overhaul is needed to make 'end user' interface match Berkeley sockets more closely so 3rd party aps can use it without porting*
- - TCP sockets - *overhaul is needed to make 'end user' interface match Berkeley sockets more closely so 3rd party aps can use it without porting*
-
+There is no active development of PyTCP version 1.0. There is new version 2.0 which has been implemented with use of new packet parser and assembler mechanism to improve stack effeciency.
 
 ### Examples:
 
