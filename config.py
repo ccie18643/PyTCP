@@ -134,10 +134,10 @@ nd_cache_entry_max_age = 3600
 nd_cache_entry_refresh_time = 300
 
 # TCP ephemeral port range to be used by outbound connections
-TCP_EPHEMERAL_PORT_RANGE = (32168, 60999)
+tcp_ephemeral_port_range = (32168, 60999)
 
 # UDP ephemeral port range to be used by outbound connections
-UDP_EPHEMERAL_PORT_RANGE = (32168, 60999)
+udp_ephemeral_port_range = (32168, 60999)
 
 # TAP interface MTU, describes how much payload Ethernet packet can carry
 mtu = 1500

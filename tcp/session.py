@@ -233,7 +233,7 @@ class TcpSession:
         """ Pick random local port, making sure it is not already being used by any session bound to the same local IP """
 
         used_ports = {int(_.split("/")[2]) for _ in stack.tcp_sessions if _.split("/")[1] in {"*", self.local_ip_address}}
-        while (port := random.randint(*config.TCP_EPHEMERAL_PORT_RANGE)) not in used_ports:
+        while (port := random.randint(*config.tcp_ephemeral_port_range)) not in used_ports:
             return port
 
     def _change_state(self, state):
