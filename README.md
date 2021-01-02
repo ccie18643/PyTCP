@@ -5,7 +5,7 @@ PyTCP is an attempt to create fully functional TCP/IP stack in Python. It suppor
 PyTCP version 1.0 is not being developed anymore. Only bug fixes are being occasionaly implemented. There is new version 2.0 being currently developed which has been implemented with use of new packet parser and assembler mechanisms to improve stack effeciency.
 
 
-#### Already implemented:
+#### Vesion 1.0 features:
 
  - Ethernet protocol - *support of Ethernet II standard frame*
  - Ethernet protocol - *unicast, IPv4 multicast, IPv6 multicast and broadcast addressing supported*
