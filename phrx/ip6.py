@@ -37,61 +37,44 @@
 
 
 #
-# client_icmp_echo.py - 'user space' client for ICMPv4/v6 echo
+# phrx.ip6.py - packet handler for inbound IPv6 packets
 #
 
 
-import random
-import threading
-import time
-from datetime import datetime
-
-import stack
-from ip_helper import ip_pick_version
+import fpp.ip6
 
 
-class ClientIcmpEcho:
-    """ ICMPv4/v6 Echo client support class """
+def _phrx_ip6(self, packet_rx):
+    """ Handle inbound IPv6 packets """
 
-    def __init__(self, local_ip_address, remote_ip_address, message_count=None):
-        """ Class constructor """
+    fpp.ip6.Ip6Packet(packet_rx)
 
-        local_ip_address = ip_pick_version(local_ip_address)
-        remote_ip_address = ip_pick_version(remote_ip_address)
+    if packet_rx.parse_failed:
+        if __debug__:
+            self._logger.critical(f"{packet_rx.tracker} - {packet_rx.parse_failed}")
+        return
 
-        threading.Thread(target=self.__thread_client, args=(local_ip_address, remote_ip_address, message_count)).start()
+    if __debug__:
+        self._logger.debug(f"{packet_rx.tracker} - {packet_rx.ip6}")
 
-    @staticmethod
-    def __thread_client(local_ip_address, remote_ip_address, message_count):
+    # Check if received packet has been sent to us directly or by unicast or multicast
+    if packet_rx.ip6.dst not in {*self.ip6_unicast, *self.ip6_multicast}:
+        if __debug__:
+            self._logger.debug(f"{packet_rx.tracker} - IP packet not destined for this stack, dropping...")
+        return
 
-        flow_id = random.randint(0, 65535)
+    if packet_rx.ip6.next == fpp.ip6.IP6_NEXT_HEADER_EXT_FRAG:
+        self._phrx_ip6_ext_frag(packet_rx)
+        return
 
-        message_seq = 0
-        while message_count is None or message_seq < message_count:
-            message = bytes(str(datetime.now()) + "\n", "utf-8")
+    if packet_rx.ip6.next == fpp.ip6.IP6_NEXT_HEADER_ICMP6:
+        self._phrx_icmp6(packet_rx)
+        return
 
-            if local_ip_address.version == 4:
-                stack.packet_handler.phtx.icmp4(
-                    ip4_src=local_ip_address,
-                    ip4_dst=remote_ip_address,
-                    icmp4_type=8,
-                    icmp4_code=0,
-                    icmp4_ec_id=flow_id,
-                    icmp4_ec_seq=message_seq,
-                    icmp4_ec_data=message,
-                )
+    if packet_rx.ip6.next == fpp.ip6.IP6_NEXT_HEADER_UDP:
+        self._phrx_udp(packet_rx)
+        return
 
-            if local_ip_address.version == 6:
-                stack.packet_handler.phtx.icmp6(
-                    ip6_src=local_ip_address,
-                    ip6_dst=remote_ip_address,
-                    icmp6_type=128,
-                    icmp6_code=0,
-                    icmp6_ec_id=flow_id,
-                    icmp6_ec_seq=message_seq,
-                    icmp6_ec_data=message,
-                )
-
-            print(f"Client ICMP Echo: Sent ICMP Echo ({flow_id}/{message_seq}) to {remote_ip_address} - {message}")
-            time.sleep(1)
-            message_seq += 1
+    if packet_rx.ip6.next == fpp.ip6.IP6_NEXT_HEADER_TCP:
+        self._phrx_tcp(packet_rx)
+        return

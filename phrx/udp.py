@@ -37,61 +37,82 @@
 
 
 #
-# client_icmp_echo.py - 'user space' client for ICMPv4/v6 echo
+# phrx.udp.py - packet handler for inbound UDP packets
 #
 
 
-import random
-import threading
-import time
-from datetime import datetime
+import loguru
 
+import fpp.icmp4
+import fpp.icmp6
+import fpp.udp
 import stack
-from ip_helper import ip_pick_version
+from ipv4_address import IPv4Address
+from ipv6_address import IPv6Address
+from udp_metadata import UdpMetadata
 
 
-class ClientIcmpEcho:
-    """ ICMPv4/v6 Echo client support class """
+def _phrx_udp(self, packet_rx):
+    """ Handle inbound UDP packets """
 
-    def __init__(self, local_ip_address, remote_ip_address, message_count=None):
-        """ Class constructor """
+    fpp.udp.UdpPacket(packet_rx)
 
-        local_ip_address = ip_pick_version(local_ip_address)
-        remote_ip_address = ip_pick_version(remote_ip_address)
+    if packet_rx.parse_failed:
+        if __debug__:
+            self._logger.critical(f"{self.tracker} - {packet_rx.parse_failed}")
+        return
 
-        threading.Thread(target=self.__thread_client, args=(local_ip_address, remote_ip_address, message_count)).start()
+    if __debug__:
+        self._logger.opt(ansi=True).info(f"<green>{packet_rx.tracker}</green> - {packet_rx.udp}")
 
-    @staticmethod
-    def __thread_client(local_ip_address, remote_ip_address, message_count):
+    # Create UdpMetadata object and try to find matching UDP socket
+    packet = UdpMetadata(
+        local_ip_address=packet_rx.ip.dst,
+        local_port=packet_rx.udp.dport,
+        remote_ip_address=packet_rx.ip.src,
+        remote_port=packet_rx.udp.sport,
+        data=packet_rx.udp.data,
+        tracker=packet_rx.tracker,
+    )
 
-        flow_id = random.randint(0, 65535)
+    for socket_id in packet.socket_id_patterns:
+        socket = stack.udp_sockets.get(socket_id, None)
+        if socket:
+            if __debug__:
+                loguru.logger.bind(object_name="socket.").debug(f"{packet.tracker} - Found matching listening socket {socket_id}")
+            socket.process_packet(packet)
+            return
 
-        message_seq = 0
-        while message_count is None or message_seq < message_count:
-            message = bytes(str(datetime.now()) + "\n", "utf-8")
+    # Silently drop packet if it has all zero source IP address
+    if packet_rx.ip.src in {IPv4Address("0.0.0.0"), IPv6Address("::")}:
+        if __debug__:
+            self._logger.debug(
+                f"Received UDP packet from {packet_rx.ip.src}, port {packet_rx.udp.sport} to {packet_rx.ip.dst}, port {packet_rx.udp.dport}, dropping..."
+            )
+        return
 
-            if local_ip_address.version == 4:
-                stack.packet_handler.phtx.icmp4(
-                    ip4_src=local_ip_address,
-                    ip4_dst=remote_ip_address,
-                    icmp4_type=8,
-                    icmp4_code=0,
-                    icmp4_ec_id=flow_id,
-                    icmp4_ec_seq=message_seq,
-                    icmp4_ec_data=message,
-                )
+    # Respond with ICMPv4 Port Unreachable message if no matching socket has been found
+    if __debug__:
+        self._logger.debug(f"Received UDP packet from {packet_rx.ip.src} to closed port {packet_rx.udp.dport}, sending ICMPv4 Port Unreachable")
 
-            if local_ip_address.version == 6:
-                stack.packet_handler.phtx.icmp6(
-                    ip6_src=local_ip_address,
-                    ip6_dst=remote_ip_address,
-                    icmp6_type=128,
-                    icmp6_code=0,
-                    icmp6_ec_id=flow_id,
-                    icmp6_ec_seq=message_seq,
-                    icmp6_ec_data=message,
-                )
+    if packet_rx.ip.ver == 6:
+        self._phtx_icmp6(
+            ip6_src=packet_rx.ip6.dst,
+            ip6_dst=packet_rx.ip6.src,
+            icmp6_type=fpp.icmp6.ICMP6_UNREACHABLE,
+            icmp6_code=fpp.icmp6.ICMP6_UNREACHABLE__PORT,
+            icmp6_un_data=packet_rx.ip.packet_copy,
+            echo_tracker=packet_rx.tracker,
+        )
 
-            print(f"Client ICMP Echo: Sent ICMP Echo ({flow_id}/{message_seq}) to {remote_ip_address} - {message}")
-            time.sleep(1)
-            message_seq += 1
+    if packet_rx.ip.ver == 4:
+        self._phtx_icmp4(
+            ip4_src=packet_rx.ip.dst,
+            ip4_dst=packet_rx.ip.src,
+            icmp4_type=fpp.icmp4.ICMP4_UNREACHABLE,
+            icmp4_code=fpp.icmp4.ICMP4_UNREACHABLE__PORT,
+            icmp4_un_data=packet_rx.ip.packet_copy,
+            echo_tracker=packet_rx.tracker,
+        )
+
+    return

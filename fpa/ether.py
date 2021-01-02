@@ -37,61 +37,74 @@
 
 
 #
-# client_icmp_echo.py - 'user space' client for ICMPv4/v6 echo
+# fpa/ether.py - Fast Packet Assembler support class for Ethernet protocol
 #
 
 
-import random
-import threading
-import time
-from datetime import datetime
+import struct
 
-import stack
-from ip_helper import ip_pick_version
+# Ethernet packet header
+
+# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+# |                                                               >
+# +    Destination MAC Address    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+# >                               |                               >
+# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+      Source MAC Address       +
+# >                                                               |
+# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+# |           EtherType           |
+# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 
 
-class ClientIcmpEcho:
-    """ ICMPv4/v6 Echo client support class """
+ETHER_HEADER_LEN = 14
 
-    def __init__(self, local_ip_address, remote_ip_address, message_count=None):
+ETHER_TYPE_MIN = 0x0600
+ETHER_TYPE_ARP = 0x0806
+ETHER_TYPE_IP4 = 0x0800
+ETHER_TYPE_IP6 = 0x86DD
+
+
+ETHER_TYPE_TABLE = {ETHER_TYPE_ARP: "ARP", ETHER_TYPE_IP4: "IPv4", ETHER_TYPE_IP6: "IPv6"}
+
+
+class EtherPacket:
+    """ Ethernet packet support class """
+
+    protocol = "ETHER"
+
+    def __init__(self, child_packet, src="00:00:00:00:00:00", dst="00:00:00:00:00:00"):
         """ Class constructor """
 
-        local_ip_address = ip_pick_version(local_ip_address)
-        remote_ip_address = ip_pick_version(remote_ip_address)
+        assert child_packet.protocol in {"IP6", "IP4", "ARP"}, f"Not supported protocol: {child_packet.protocol}"
+        self._child_packet = child_packet
 
-        threading.Thread(target=self.__thread_client, args=(local_ip_address, remote_ip_address, message_count)).start()
+        self.tracker = self._child_packet.tracker
 
-    @staticmethod
-    def __thread_client(local_ip_address, remote_ip_address, message_count):
+        self.dst = dst
+        self.src = src
 
-        flow_id = random.randint(0, 65535)
+        if self._child_packet.protocol == "IP6":
+            self.type = ETHER_TYPE_IP6
 
-        message_seq = 0
-        while message_count is None or message_seq < message_count:
-            message = bytes(str(datetime.now()) + "\n", "utf-8")
+        if self._child_packet.protocol == "IP4":
+            self.type = ETHER_TYPE_IP4
 
-            if local_ip_address.version == 4:
-                stack.packet_handler.phtx.icmp4(
-                    ip4_src=local_ip_address,
-                    ip4_dst=remote_ip_address,
-                    icmp4_type=8,
-                    icmp4_code=0,
-                    icmp4_ec_id=flow_id,
-                    icmp4_ec_seq=message_seq,
-                    icmp4_ec_data=message,
-                )
+        if self._child_packet.protocol == "ARP":
+            self.type = ETHER_TYPE_ARP
 
-            if local_ip_address.version == 6:
-                stack.packet_handler.phtx.icmp6(
-                    ip6_src=local_ip_address,
-                    ip6_dst=remote_ip_address,
-                    icmp6_type=128,
-                    icmp6_code=0,
-                    icmp6_ec_id=flow_id,
-                    icmp6_ec_seq=message_seq,
-                    icmp6_ec_data=message,
-                )
+    def __str__(self):
+        """ Packet log string """
 
-            print(f"Client ICMP Echo: Sent ICMP Echo ({flow_id}/{message_seq}) to {remote_ip_address} - {message}")
-            time.sleep(1)
-            message_seq += 1
+        return f"ETHER {self.src} > {self.dst}, 0x{self.type:0>4x} ({ETHER_TYPE_TABLE.get(self.type, '???')})"
+
+    def __len__(self):
+        """ Length of the packet """
+
+        return ETHER_HEADER_LEN + len(self._child_packet)
+
+    def assemble_packet(self, frame, hptr):
+        """ Assemble packet into the raw form """
+
+        struct.pack_into("! 6s 6s H", frame, hptr, bytes.fromhex(self.dst.replace(":", "")), bytes.fromhex(self.src.replace(":", "")), self.type)
+
+        self._child_packet.assemble_packet(frame, hptr + ETHER_HEADER_LEN)

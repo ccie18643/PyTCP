@@ -1,6 +1,7 @@
 #!/bin/bash
-codespell -w --ignore-words-list="ect,ether,nd,tha" --quiet-level=2 *py
-pyupgrade --py36-plus *py
-isort --profile black *.py
-black -l 160 *.py
-flake8 *.py
+PY_PATH="./*.py ./fpp/*.py ./fpa/*.py"
+codespell -w --ignore-words-list="ect,ether,nd,tha" --quiet-level=2 ${PY_PATH}
+pyupgrade --py36-plus ${PY_PATH}
+isort --profile black ${PY_PATH}
+black -l 160 ${PY_PATH}
+flake8 ${PY_PATH}

@@ -37,61 +37,57 @@
 
 
 #
-# client_icmp_echo.py - 'user space' client for ICMPv4/v6 echo
+# phtx.icmp6.py - packet handler for outbound ICMPv6 packets
 #
 
 
-import random
-import threading
-import time
-from datetime import datetime
-
-import stack
-from ip_helper import ip_pick_version
+import config
+import fpa.icmp6
 
 
-class ClientIcmpEcho:
-    """ ICMPv4/v6 Echo client support class """
+def _phtx_icmp6(
+    self,
+    ip6_src,
+    ip6_dst,
+    icmp6_type,
+    icmp6_code=0,
+    ip6_hop=64,
+    icmp6_un_data=None,
+    icmp6_ec_id=None,
+    icmp6_ec_seq=None,
+    icmp6_ec_data=None,
+    icmp6_ns_target_address=None,
+    icmp6_na_flag_r=False,
+    icmp6_na_flag_s=False,
+    icmp6_na_flag_o=False,
+    icmp6_na_target_address=None,
+    icmp6_nd_options=None,
+    icmp6_mlr2_multicast_address_record=None,
+    echo_tracker=None,
+):
+    """ Handle outbound ICMPv6 packets """
 
-    def __init__(self, local_ip_address, remote_ip_address, message_count=None):
-        """ Class constructor """
+    # Check if IPv6 protocol support is enabled, if not then silently drop the packet
+    if not config.ip6_support:
+        return
 
-        local_ip_address = ip_pick_version(local_ip_address)
-        remote_ip_address = ip_pick_version(remote_ip_address)
+    icmp6_packet_tx = fpa.icmp6.Icmp6Packet(
+        type=icmp6_type,
+        code=icmp6_code,
+        un_data=icmp6_un_data,
+        ec_id=icmp6_ec_id,
+        ec_seq=icmp6_ec_seq,
+        ec_data=icmp6_ec_data,
+        ns_target_address=icmp6_ns_target_address,
+        na_flag_r=icmp6_na_flag_r,
+        na_flag_s=icmp6_na_flag_s,
+        na_flag_o=icmp6_na_flag_o,
+        na_target_address=icmp6_na_target_address,
+        nd_options=[] if icmp6_nd_options is None else icmp6_nd_options,
+        mlr2_multicast_address_record=[] if icmp6_mlr2_multicast_address_record is None else icmp6_mlr2_multicast_address_record,
+        echo_tracker=echo_tracker,
+    )
 
-        threading.Thread(target=self.__thread_client, args=(local_ip_address, remote_ip_address, message_count)).start()
-
-    @staticmethod
-    def __thread_client(local_ip_address, remote_ip_address, message_count):
-
-        flow_id = random.randint(0, 65535)
-
-        message_seq = 0
-        while message_count is None or message_seq < message_count:
-            message = bytes(str(datetime.now()) + "\n", "utf-8")
-
-            if local_ip_address.version == 4:
-                stack.packet_handler.phtx.icmp4(
-                    ip4_src=local_ip_address,
-                    ip4_dst=remote_ip_address,
-                    icmp4_type=8,
-                    icmp4_code=0,
-                    icmp4_ec_id=flow_id,
-                    icmp4_ec_seq=message_seq,
-                    icmp4_ec_data=message,
-                )
-
-            if local_ip_address.version == 6:
-                stack.packet_handler.phtx.icmp6(
-                    ip6_src=local_ip_address,
-                    ip6_dst=remote_ip_address,
-                    icmp6_type=128,
-                    icmp6_code=0,
-                    icmp6_ec_id=flow_id,
-                    icmp6_ec_seq=message_seq,
-                    icmp6_ec_data=message,
-                )
-
-            print(f"Client ICMP Echo: Sent ICMP Echo ({flow_id}/{message_seq}) to {remote_ip_address} - {message}")
-            time.sleep(1)
-            message_seq += 1
+    if __debug__:
+        self._logger.opt(ansi=True).info(f"<magenta>{icmp6_packet_tx.tracker}</magenta> - {icmp6_packet_tx}")
+    self._phtx_ip6(ip6_src=ip6_src, ip6_dst=ip6_dst, ip6_hop=ip6_hop, child_packet=icmp6_packet_tx)

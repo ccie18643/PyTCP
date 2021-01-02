@@ -37,61 +37,80 @@
 
 
 #
-# client_icmp_echo.py - 'user space' client for ICMPv4/v6 echo
+# fpa/ip6_ext_frag.py - Fast Packet Assembler support class for IPv6 fragment extension header
 #
 
 
-import random
-import threading
-import time
-from datetime import datetime
+import struct
 
-import stack
-from ip_helper import ip_pick_version
+from tracker import Tracker
+
+# IPv6 protocol fragmentation extension header
+
+# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+# | Next header   |   Reserved    |         Offset          |R|R|M|
+# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+# |                               Id                              |
+# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+
+IP6_EXT_FRAG_LEN = 8
+
+IP6_NEXT_HEADER_TCP = 6
+IP6_NEXT_HEADER_UDP = 17
+IP6_NEXT_HEADER_ICMP6 = 58
+
+IP6_NEXT_HEADER_TABLE = {IP6_NEXT_HEADER_TCP: "TCP", IP6_NEXT_HEADER_UDP: "UDP", IP6_NEXT_HEADER_ICMP6: "ICMPv6"}
 
 
-class ClientIcmpEcho:
-    """ ICMPv4/v6 Echo client support class """
+class Ip6ExtFrag:
+    """ IPv6 fragment extension header support class """
 
-    def __init__(self, local_ip_address, remote_ip_address, message_count=None):
+    protocol = "IP6_EXT_FRAG"
+
+    def __init__(
+        self,
+        next,
+        offset,
+        flag_mf,
+        id,
+        data,
+    ):
         """ Class constructor """
 
-        local_ip_address = ip_pick_version(local_ip_address)
-        remote_ip_address = ip_pick_version(remote_ip_address)
+        self.tracker = Tracker("TX")
 
-        threading.Thread(target=self.__thread_client, args=(local_ip_address, remote_ip_address, message_count)).start()
+        self.next = next
+        self.offset = offset
+        self.flag_mf = flag_mf
+        self.id = id
+        self.data = data
 
-    @staticmethod
-    def __thread_client(local_ip_address, remote_ip_address, message_count):
+        self.dlen = len(data)
+        self.plen = len(self)
 
-        flow_id = random.randint(0, 65535)
+    def __str__(self):
+        """ Packet log string """
 
-        message_seq = 0
-        while message_count is None or message_seq < message_count:
-            message = bytes(str(datetime.now()) + "\n", "utf-8")
+        return (
+            f"IPv6_FRAG id {self.id}{', MF' if self.flag_mf else ''}, offset {self.offset}"
+            + f", next {self.next} ({IP6_NEXT_HEADER_TABLE.get(self.next, '???')})"
+        )
 
-            if local_ip_address.version == 4:
-                stack.packet_handler.phtx.icmp4(
-                    ip4_src=local_ip_address,
-                    ip4_dst=remote_ip_address,
-                    icmp4_type=8,
-                    icmp4_code=0,
-                    icmp4_ec_id=flow_id,
-                    icmp4_ec_seq=message_seq,
-                    icmp4_ec_data=message,
-                )
+    def __len__(self):
+        """ Length of the packet """
 
-            if local_ip_address.version == 6:
-                stack.packet_handler.phtx.icmp6(
-                    ip6_src=local_ip_address,
-                    ip6_dst=remote_ip_address,
-                    icmp6_type=128,
-                    icmp6_code=0,
-                    icmp6_ec_id=flow_id,
-                    icmp6_ec_seq=message_seq,
-                    icmp6_ec_data=message,
-                )
+        return IP6_EXT_FRAG_LEN + len(self.data)
 
-            print(f"Client ICMP Echo: Sent ICMP Echo ({flow_id}/{message_seq}) to {remote_ip_address} - {message}")
-            time.sleep(1)
-            message_seq += 1
+    def assemble_packet(self, frame, hptr, _):
+        """ Assemble packet into the raw form """
+
+        struct.pack_into(
+            f"! BBH L {self.dlen}s",
+            frame,
+            hptr,
+            self.next,
+            0,
+            self.offset | self.flag_mf,
+            self.id,
+            self.data,
+        )

@@ -48,8 +48,8 @@ from ipaddress import AddressValueError
 import loguru
 
 import config
-import fpa_arp
-import fpa_icmp6
+import fpa.arp
+import fpa.icmp6
 import ps_dhcp
 import stack
 from arp_cache import ArpCache
@@ -65,24 +65,24 @@ from udp_socket import UdpSocket
 class PacketHandler:
     """ Pick up and respond to incoming packets """
 
-    from phrx_arp import _phrx_arp
-    from phrx_ether import _phrx_ether
-    from phrx_icmp4 import _phrx_icmp4
-    from phrx_icmp6 import _phrx_icmp6
-    from phrx_ip4 import _phrx_ip4
-    from phrx_ip6 import _phrx_ip6
-    from phrx_ip6_ext_frag import _phrx_ip6_ext_frag
-    from phrx_tcp import _phrx_tcp
-    from phrx_udp import _phrx_udp
-    from phtx_arp import _phtx_arp
-    from phtx_ether import _phtx_ether
-    from phtx_icmp4 import _phtx_icmp4
-    from phtx_icmp6 import _phtx_icmp6
-    from phtx_ip4 import _phtx_ip4
-    from phtx_ip6 import _phtx_ip6
-    from phtx_ip6_ext_frag import _phtx_ip6_ext_frag
-    from phtx_tcp import _phtx_tcp
-    from phtx_udp import _phtx_udp
+    from phrx.arp import _phrx_arp
+    from phrx.ether import _phrx_ether
+    from phrx.icmp4 import _phrx_icmp4
+    from phrx.icmp6 import _phrx_icmp6
+    from phrx.ip4 import _phrx_ip4, _defragment_ip4_packet
+    from phrx.ip6 import _phrx_ip6
+    from phrx.ip6_ext_frag import _phrx_ip6_ext_frag, _defragment_ip6_packet
+    from phrx.tcp import _phrx_tcp
+    from phrx.udp import _phrx_udp
+    from phtx.arp import _phtx_arp
+    from phtx.ether import _phtx_ether
+    from phtx.icmp4 import _phtx_icmp4
+    from phtx.icmp6 import _phtx_icmp6
+    from phtx.ip4 import _phtx_ip4, _validate_dst_ip4_address, _validate_src_ip4_address
+    from phtx.ip6 import _phtx_ip6, _validate_dst_ip6_address, _validate_src_ip6_address
+    from phtx.ip6_ext_frag import _phtx_ip6_ext_frag
+    from phtx.tcp import _phtx_tcp
+    from phtx.udp import _phtx_udp
 
     def __init__(self, tap):
         """ Class constructor """
@@ -379,7 +379,7 @@ class PacketHandler:
         self._phtx_arp(
             ether_src=self.mac_unicast,
             ether_dst="ff:ff:ff:ff:ff:ff",
-            arp_oper=fpa_arp.ARP_OP_REQUEST,
+            arp_oper=fpa.arp.ARP_OP_REQUEST,
             arp_sha=self.mac_unicast,
             arp_spa=IPv4Address("0.0.0.0"),
             arp_tha="00:00:00:00:00:00",
@@ -394,7 +394,7 @@ class PacketHandler:
         self._phtx_arp(
             ether_src=self.mac_unicast,
             ether_dst="ff:ff:ff:ff:ff:ff",
-            arp_oper=fpa_arp.ARP_OP_REQUEST,
+            arp_oper=fpa.arp.ARP_OP_REQUEST,
             arp_sha=self.mac_unicast,
             arp_spa=ip4_unicast,
             arp_tha="00:00:00:00:00:00",
@@ -409,7 +409,7 @@ class PacketHandler:
         self._phtx_arp(
             ether_src=self.mac_unicast,
             ether_dst="ff:ff:ff:ff:ff:ff",
-            arp_oper=fpa_arp.ARP_OP_REPLY,
+            arp_oper=fpa.arp.ARP_OP_REPLY,
             arp_sha=self.mac_unicast,
             arp_spa=ip4_unicast,
             arp_tha="00:00:00:00:00:00",
@@ -424,7 +424,7 @@ class PacketHandler:
         # Need to use set here to avoid re-using duplicate multicast entries from stack_ip6_multicast list,
         # also All Multicast Nodes address is not being advertised as this is not necessary
         if icmp6_mlr2_multicast_address_record := {
-            fpa_icmp6.MulticastAddressRecord(record_type=fpa_icmp6.ICMP6_MART_CHANGE_TO_EXCLUDE, multicast_address=str(_))
+            fpa.icmp6.MulticastAddressRecord(record_type=fpa.icmp6.ICMP6_MART_CHANGE_TO_EXCLUDE, multicast_address=str(_))
             for _ in self.ip6_multicast
             if _ not in {IPv6Address("ff02::1")}
         }:
@@ -432,7 +432,7 @@ class PacketHandler:
                 ip6_src=self.ip6_unicast[0] if self.ip6_unicast else IPv6Address("::"),
                 ip6_dst=IPv6Address("ff02::16"),
                 ip6_hop=1,
-                icmp6_type=fpa_icmp6.ICMP6_MLD2_REPORT,
+                icmp6_type=fpa.icmp6.ICMP6_MLD2_REPORT,
                 icmp6_mlr2_multicast_address_record=icmp6_mlr2_multicast_address_record,
             )
             if __debug__:
@@ -447,7 +447,7 @@ class PacketHandler:
             ip6_src=IPv6Address("::"),
             ip6_dst=ip6_unicast_candidate.solicited_node_multicast,
             ip6_hop=255,
-            icmp6_type=fpa_icmp6.ICMP6_NEIGHBOR_SOLICITATION,
+            icmp6_type=fpa.icmp6.ICMP6_NEIGHBOR_SOLICITATION,
             icmp6_ns_target_address=ip6_unicast_candidate,
         )
         if __debug__:
@@ -460,8 +460,8 @@ class PacketHandler:
             ip6_src=self.ip6_unicast[0],
             ip6_dst=IPv6Address("ff02::2"),
             ip6_hop=255,
-            icmp6_type=fpa_icmp6.ICMP6_ROUTER_SOLICITATION,
-            icmp6_nd_options=[fpa_icmp6.Icmp6NdOptSLLA(self.mac_unicast)],
+            icmp6_type=fpa.icmp6.ICMP6_ROUTER_SOLICITATION,
+            icmp6_nd_options=[fpa.icmp6.Icmp6NdOptSLLA(self.mac_unicast)],
         )
         if __debug__:
             self._logger.debug("Sent out ICMPv6 ND Router Solicitation")

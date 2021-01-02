@@ -37,61 +37,96 @@
 
 
 #
-# client_icmp_echo.py - 'user space' client for ICMPv4/v6 echo
+# phtx.tcp.py - packet handler for outbound TCP packets
 #
 
 
-import random
-import threading
-import time
-from datetime import datetime
+import config
+from fpa.tcp import TcpOptMss, TcpOptNop, TcpOptWscale, TcpPacket
+from ipv4_address import IPv4Address
+from ipv6_address import IPv6Address
 
-import stack
-from ip_helper import ip_pick_version
+PACKET_LOSS = False
 
 
-class ClientIcmpEcho:
-    """ ICMPv4/v6 Echo client support class """
+def _phtx_tcp(
+    self,
+    ip_src,
+    ip_dst,
+    tcp_sport,
+    tcp_dport,
+    tcp_seq=0,
+    tcp_ack=0,
+    tcp_flag_ns=False,
+    tcp_flag_crw=False,
+    tcp_flag_ece=False,
+    tcp_flag_urg=False,
+    tcp_flag_ack=False,
+    tcp_flag_psh=False,
+    tcp_flag_rst=False,
+    tcp_flag_syn=False,
+    tcp_flag_fin=False,
+    tcp_mss=None,
+    tcp_win=0,
+    tcp_urp=0,
+    tcp_data=b"",
+    echo_tracker=None,
+):
+    """ Handle outbound TCP packets """
 
-    def __init__(self, local_ip_address, remote_ip_address, message_count=None):
-        """ Class constructor """
+    assert type(ip_src) in {IPv4Address, IPv6Address}
+    assert type(ip_dst) in {IPv4Address, IPv6Address}
 
-        local_ip_address = ip_pick_version(local_ip_address)
-        remote_ip_address = ip_pick_version(remote_ip_address)
+    # Check if IPv4 protocol support is enabled, if not then silently drop the IPv4 packet
+    if not config.ip4_support and ip_dst.version == 4:
+        return
 
-        threading.Thread(target=self.__thread_client, args=(local_ip_address, remote_ip_address, message_count)).start()
+    # Check if IPv6 protocol support is enabled, if not then silently drop the IPv6 packet
+    if not config.ip6_support and ip_dst.version == 6:
+        return
 
-    @staticmethod
-    def __thread_client(local_ip_address, remote_ip_address, message_count):
+    tcp_options = []
 
-        flow_id = random.randint(0, 65535)
+    if tcp_mss:
+        tcp_options.append(TcpOptMss(tcp_mss))
+        tcp_options.append(TcpOptNop())
+        tcp_options.append(TcpOptWscale(0))
 
-        message_seq = 0
-        while message_count is None or message_seq < message_count:
-            message = bytes(str(datetime.now()) + "\n", "utf-8")
+    tcp_packet_tx = TcpPacket(
+        sport=tcp_sport,
+        dport=tcp_dport,
+        seq=tcp_seq,
+        ack=tcp_ack,
+        flag_ns=tcp_flag_ns,
+        flag_crw=tcp_flag_crw,
+        flag_ece=tcp_flag_ece,
+        flag_urg=tcp_flag_urg,
+        flag_ack=tcp_flag_ack,
+        flag_psh=tcp_flag_psh,
+        flag_rst=tcp_flag_rst,
+        flag_syn=tcp_flag_syn,
+        flag_fin=tcp_flag_fin,
+        win=tcp_win,
+        urp=tcp_urp,
+        options=tcp_options,
+        data=tcp_data,
+        echo_tracker=echo_tracker,
+    )
 
-            if local_ip_address.version == 4:
-                stack.packet_handler.phtx.icmp4(
-                    ip4_src=local_ip_address,
-                    ip4_dst=remote_ip_address,
-                    icmp4_type=8,
-                    icmp4_code=0,
-                    icmp4_ec_id=flow_id,
-                    icmp4_ec_seq=message_seq,
-                    icmp4_ec_data=message,
-                )
+    if __debug__:
+        self._logger.opt(ansi=True).info(f"<magenta>{tcp_packet_tx.tracker}</magenta> - {tcp_packet_tx}")
 
-            if local_ip_address.version == 6:
-                stack.packet_handler.phtx.icmp6(
-                    ip6_src=local_ip_address,
-                    ip6_dst=remote_ip_address,
-                    icmp6_type=128,
-                    icmp6_code=0,
-                    icmp6_ec_id=flow_id,
-                    icmp6_ec_seq=message_seq,
-                    icmp6_ec_data=message,
-                )
+    # Check if packet should be dropped due to random packet loss enabled (for TCP retansmission testing)
+    if PACKET_LOSS:
+        from random import randint
 
-            print(f"Client ICMP Echo: Sent ICMP Echo ({flow_id}/{message_seq}) to {remote_ip_address} - {message}")
-            time.sleep(1)
-            message_seq += 1
+        if randint(0, 99) == 7:
+            if __debug__:
+                self._logger.critical("SIMULATED LOST TX DATA PACKET")
+            return
+
+    if ip_src.version == 6 and ip_dst.version == 6:
+        self._phtx_ip6(ip6_src=ip_src, ip6_dst=ip_dst, child_packet=tcp_packet_tx)
+
+    if ip_src.version == 4 and ip_dst.version == 4:
+        self._phtx_ip4(ip4_src=ip_src, ip4_dst=ip_dst, child_packet=tcp_packet_tx)

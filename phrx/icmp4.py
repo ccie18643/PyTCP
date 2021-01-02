@@ -37,61 +37,38 @@
 
 
 #
-# client_icmp_echo.py - 'user space' client for ICMPv4/v6 echo
+# phrx.icmp4.py - packet handler for inbound ICMPv4 packets
 #
 
 
-import random
-import threading
-import time
-from datetime import datetime
-
-import stack
-from ip_helper import ip_pick_version
+import fpp.icmp4
 
 
-class ClientIcmpEcho:
-    """ ICMPv4/v6 Echo client support class """
+def _phrx_icmp4(self, packet_rx):
+    """ Handle inbound ICMPv4 packets """
 
-    def __init__(self, local_ip_address, remote_ip_address, message_count=None):
-        """ Class constructor """
+    fpp.icmp4.Icmp4Packet(packet_rx)
 
-        local_ip_address = ip_pick_version(local_ip_address)
-        remote_ip_address = ip_pick_version(remote_ip_address)
+    if packet_rx.parse_failed:
+        if __debug__:
+            self._logger.critical(f"{packet_rx.tracker} - {packet_rx.parse_failed}")
+        return
 
-        threading.Thread(target=self.__thread_client, args=(local_ip_address, remote_ip_address, message_count)).start()
+    if __debug__:
+        self._logger.opt(ansi=True).info(f"<green>{packet_rx.tracker}</green> - {packet_rx.icmp4}")
 
-    @staticmethod
-    def __thread_client(local_ip_address, remote_ip_address, message_count):
+    # Respond to ICMPv4 Echo Request packet
+    if packet_rx.icmp4.type == fpp.icmp4.ICMP4_ECHO_REQUEST:
+        if __debug__:
+            self._logger.debug(f"Received ICMPv4 Echo Request packet from {packet_rx.ip4.src}, sending reply...")
 
-        flow_id = random.randint(0, 65535)
-
-        message_seq = 0
-        while message_count is None or message_seq < message_count:
-            message = bytes(str(datetime.now()) + "\n", "utf-8")
-
-            if local_ip_address.version == 4:
-                stack.packet_handler.phtx.icmp4(
-                    ip4_src=local_ip_address,
-                    ip4_dst=remote_ip_address,
-                    icmp4_type=8,
-                    icmp4_code=0,
-                    icmp4_ec_id=flow_id,
-                    icmp4_ec_seq=message_seq,
-                    icmp4_ec_data=message,
-                )
-
-            if local_ip_address.version == 6:
-                stack.packet_handler.phtx.icmp6(
-                    ip6_src=local_ip_address,
-                    ip6_dst=remote_ip_address,
-                    icmp6_type=128,
-                    icmp6_code=0,
-                    icmp6_ec_id=flow_id,
-                    icmp6_ec_seq=message_seq,
-                    icmp6_ec_data=message,
-                )
-
-            print(f"Client ICMP Echo: Sent ICMP Echo ({flow_id}/{message_seq}) to {remote_ip_address} - {message}")
-            time.sleep(1)
-            message_seq += 1
+        self._phtx_icmp4(
+            ip4_src=packet_rx.ip4.dst,
+            ip4_dst=packet_rx.ip4.src,
+            icmp4_type=fpp.icmp4.ICMP4_ECHO_REPLY,
+            icmp4_ec_id=packet_rx.icmp4.ec_id,
+            icmp4_ec_seq=packet_rx.icmp4.ec_seq,
+            icmp4_ec_data=packet_rx.icmp4.ec_data,
+            echo_tracker=packet_rx.tracker,
+        )
+        return

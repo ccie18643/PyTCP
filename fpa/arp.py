@@ -37,61 +37,88 @@
 
 
 #
-# client_icmp_echo.py - 'user space' client for ICMPv4/v6 echo
+# fpa/arp.py - Fast Packet Assembler support class for ARP protocol
 #
 
 
-import random
-import threading
-import time
-from datetime import datetime
+import struct
 
-import stack
-from ip_helper import ip_pick_version
+from ipv4_address import IPv4Address
+from tracker import Tracker
+
+# ARP packet header - IPv4 stack version only
+
+# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+# |         Hardware Type         |         Protocol Type         |
+# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+# |  Hard Length  |  Proto Length |           Operation           |
+# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+# |                                                               >
+# +        Sender Mac Address     +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+# >                               |       Sender IP Address       >
+# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+# >                               |                               >
+# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+       Target MAC Address      |
+# >                                                               |
+# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+# |                       Target IP Address                       |
+# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 
 
-class ClientIcmpEcho:
-    """ ICMPv4/v6 Echo client support class """
+ARP_HEADER_LEN = 28
 
-    def __init__(self, local_ip_address, remote_ip_address, message_count=None):
+ARP_OP_REQUEST = 1
+ARP_OP_REPLY = 2
+
+
+class ArpPacket:
+    """ ARP packet support class """
+
+    protocol = "ARP"
+
+    def __init__(self, sha, spa, tpa, tha="00:00:00:00:00:00", oper=ARP_OP_REQUEST, echo_tracker=None):
         """ Class constructor """
 
-        local_ip_address = ip_pick_version(local_ip_address)
-        remote_ip_address = ip_pick_version(remote_ip_address)
+        self.tracker = Tracker("TX", echo_tracker)
 
-        threading.Thread(target=self.__thread_client, args=(local_ip_address, remote_ip_address, message_count)).start()
+        self.hrtype = 1
+        self.prtype = 0x0800
+        self.hrlen = 6
+        self.prlen = 4
+        self.oper = oper
+        self.sha = sha
+        self.spa = IPv4Address(spa)
+        self.tha = tha
+        self.tpa = IPv4Address(tpa)
 
-    @staticmethod
-    def __thread_client(local_ip_address, remote_ip_address, message_count):
+    def __str__(self):
+        """ Packet log string """
 
-        flow_id = random.randint(0, 65535)
+        if self.oper == ARP_OP_REQUEST:
+            return f"ARP request {self.spa} / {self.sha} > {self.tpa} / {self.tha}"
+        if self.oper == ARP_OP_REPLY:
+            return f"ARP reply {self.spa} / {self.sha} > {self.tpa} / {self.tha}"
+        return f"ARP unknown operation {self.oper}"
 
-        message_seq = 0
-        while message_count is None or message_seq < message_count:
-            message = bytes(str(datetime.now()) + "\n", "utf-8")
+    def __len__(self):
+        """ Length of the packet """
 
-            if local_ip_address.version == 4:
-                stack.packet_handler.phtx.icmp4(
-                    ip4_src=local_ip_address,
-                    ip4_dst=remote_ip_address,
-                    icmp4_type=8,
-                    icmp4_code=0,
-                    icmp4_ec_id=flow_id,
-                    icmp4_ec_seq=message_seq,
-                    icmp4_ec_data=message,
-                )
+        return ARP_HEADER_LEN
 
-            if local_ip_address.version == 6:
-                stack.packet_handler.phtx.icmp6(
-                    ip6_src=local_ip_address,
-                    ip6_dst=remote_ip_address,
-                    icmp6_type=128,
-                    icmp6_code=0,
-                    icmp6_ec_id=flow_id,
-                    icmp6_ec_seq=message_seq,
-                    icmp6_ec_data=message,
-                )
+    def assemble_packet(self, frame, hptr):
+        """ Assemble packet into the raw form """
 
-            print(f"Client ICMP Echo: Sent ICMP Echo ({flow_id}/{message_seq}) to {remote_ip_address} - {message}")
-            time.sleep(1)
-            message_seq += 1
+        return struct.pack_into(
+            "!HH BBH 6s 4s 6s 4s",
+            frame,
+            hptr,
+            self.hrtype,
+            self.prtype,
+            self.hrlen,
+            self.prlen,
+            self.oper,
+            bytes.fromhex(self.sha.replace(":", "")),
+            IPv4Address(self.spa).packed,
+            bytes.fromhex(self.tha.replace(":", "")),
+            IPv4Address(self.tpa).packed,
+        )
