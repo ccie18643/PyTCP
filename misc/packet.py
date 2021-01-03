@@ -42,6 +42,16 @@ class PacketRx:
         self.tracker = Tracker("RX")
         self.parse_failed = None
 
+        self.ether = None
+        self.arp = None
+        self.ip4 = None
+        self.ip6 = None
+        self.ip6_ext_frag = None
+        self.icmp4 = None
+        self.icmp6 = None
+        self.tcp = None
+        self.udp = None
+
     def __len__(self):
         """ Returns length of raw frame """
 
