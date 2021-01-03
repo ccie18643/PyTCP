@@ -23,21 +23,9 @@
 #                                                                          #
 ############################################################################
 
-##############################################################################################
-#                                                                                            #
-#  This program is a work in progress and it changes on daily basis due to new features      #
-#  being implemented, changes being made to already implemented features, bug fixes, etc.    #
-#  Therefore if the current version is not working as expected try to clone it again the     #
-#  next day or shoot me an email describing the problem. Any input is appreciated. Also      #
-#  keep in mind that some features may be implemented only partially (as needed for stack    #
-#  operation) or they may be implemented in sub-optimal or not 100% RFC compliant way (due   #
-#  to lack of time) or last but not least they may contain bug(s) that i didn't notice yet.  #
-#                                                                                            #
-##############################################################################################
-
 
 #
-# phtx/ip4.py - packet handler for outbound IPv4 packets
+# ip4/phtx.py - packet handler for outbound IPv4 packets
 #
 
 
@@ -116,7 +104,7 @@ def _validate_dst_ip4_address(self, ip4_dst):
     return ip4_dst
 
 
-def _phtx_ip4(self, child_packet, ip4_dst, ip4_src, ip4_ttl=config.ip4_default_ttl):
+def _phtx_ip4(self, carried_packet, ip4_dst, ip4_src, ip4_ttl=config.ip4_default_ttl):
     """ Handle outbound IP packets """
 
     assert type(ip4_src) is IPv4Address
@@ -138,20 +126,20 @@ def _phtx_ip4(self, child_packet, ip4_dst, ip4_src, ip4_ttl=config.ip4_default_t
         return
 
     # Assemble IPv4 packet
-    ip4_packet_tx = ip4.fpa.Assembler(src=ip4_src, dst=ip4_dst, ttl=ip4_ttl, child_packet=child_packet)
+    ip4_packet_tx = ip4.fpa.Assembler(src=ip4_src, dst=ip4_dst, ttl=ip4_ttl, carried_packet=carried_packet)
 
     # Send packet out if it's size doesn't exceed mtu
     if len(ip4_packet_tx) <= config.mtu:
         if __debug__:
             self._logger.debug(f"{ip4_packet_tx.tracker} - {ip4_packet_tx}")
-        self._phtx_ether(child_packet=ip4_packet_tx)
+        self._phtx_ether(carried_packet=ip4_packet_tx)
         return
 
     # Fragment packet and send out
     if __debug__:
         self._logger.debug(f"{ip4_packet_tx.tracker} - IPv4 packet len {len(ip4_packet_tx)} bytes, fragmentation needed")
         data = bytearray(ip4_packet_tx.dlen)
-        ip4_packet_tx._child_packet.assemble(data, 0, ip4_packet_tx.pshdr_sum)
+        ip4_packet_tx._carried_packet.assemble(data, 0, ip4_packet_tx.pshdr_sum)
         data_mtu = (config.mtu - ip4_packet_tx.hlen) & 0b1111111111111000
         data_frags = [data[_ : data_mtu + _] for _ in range(0, len(data), data_mtu)]
         offset = 0
@@ -170,5 +158,5 @@ def _phtx_ip4(self, child_packet, ip4_dst, ip4_src, ip4_ttl=config.ip4_default_t
             if __debug__:
                 self._logger.debug(f"{ip4_frag_tx.tracker} - {ip4_frag_tx}")
             offset += len(data_frag)
-            self._phtx_ether(child_packet=ip4_frag_tx)
+            self._phtx_ether(carried_packet=ip4_frag_tx)
         return

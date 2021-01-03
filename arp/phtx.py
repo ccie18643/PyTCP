@@ -23,21 +23,9 @@
 #                                                                          #
 ############################################################################
 
-##############################################################################################
-#                                                                                            #
-#  This program is a work in progress and it changes on daily basis due to new features      #
-#  being implemented, changes being made to already implemented features, bug fixes, etc.    #
-#  Therefore if the current version is not working as expected try to clone it again the     #
-#  next day or shoot me an email describing the problem. Any input is appreciated. Also      #
-#  keep in mind that some features may be implemented only partially (as needed for stack    #
-#  operation) or they may be implemented in sub-optimal or not 100% RFC compliant way (due   #
-#  to lack of time) or last but not least they may contain bug(s) that i didn't notice yet.  #
-#                                                                                            #
-##############################################################################################
-
 
 #
-# phtx/arp.py - packet handler for outbound ARP packets
+# arp/phtx.py - packet handler for outbound ARP packets
 #
 
 
@@ -64,4 +52,4 @@ def _phtx_arp(self, ether_src, ether_dst, arp_oper, arp_sha, arp_spa, arp_tha, a
     if __debug__:
         self._logger.opt(ansi=True).info(f"<magenta>{arp_packet_tx.tracker}</magenta> - {arp_packet_tx}")
 
-    self._phtx_ether(ether_src=ether_src, ether_dst=ether_dst, child_packet=arp_packet_tx)
+    self._phtx_ether(ether_src=ether_src, ether_dst=ether_dst, carried_packet=arp_packet_tx)

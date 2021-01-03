@@ -23,28 +23,16 @@
 #                                                                          #
 ############################################################################
 
-##############################################################################################
-#                                                                                            #
-#  This program is a work in progress and it changes on daily basis due to new features      #
-#  being implemented, changes being made to already implemented features, bug fixes, etc.    #
-#  Therefore if the current version is not working as expected try to clone it again the     #
-#  next day or shoot me an email describing the problem. Any input is appreciated. Also      #
-#  keep in mind that some features may be implemented only partially (as needed for stack    #
-#  operation) or they may be implemented in sub-optimal or not 100% RFC compliant way (due   #
-#  to lack of time) or last but not least they may contain bug(s) that i didn't notice yet.  #
-#                                                                                            #
-##############################################################################################
-
 
 #
-# phtx/ether.py - packet handler for outbound Ethernet packets
+# ether/phtx.py - packet handler for outbound Ethernet packets
 #
 
 import ether.fpa
 import ether.ps
 
 
-def _phtx_ether(self, child_packet, ether_src="00:00:00:00:00:00", ether_dst="00:00:00:00:00:00"):
+def _phtx_ether(self, carried_packet, ether_src="00:00:00:00:00:00", ether_dst="00:00:00:00:00:00"):
     """ Handle outbound Ethernet packets """
 
     def _send_out_packet():
@@ -52,7 +40,7 @@ def _phtx_ether(self, child_packet, ether_src="00:00:00:00:00:00", ether_dst="00
             self._logger.opt(depth=1).debug(f"{ether_packet_tx.tracker} - {ether_packet_tx}")
         self.tx_ring.enqueue(ether_packet_tx)
 
-    ether_packet_tx = ether.fpa.Assembler(src=ether_src, dst=ether_dst, child_packet=child_packet)
+    ether_packet_tx = ether.fpa.Assembler(src=ether_src, dst=ether_dst, carried_packet=carried_packet)
 
     # Check if packet contains valid source address, fill it out if needed
     if ether_packet_tx.src == "00:00:00:00:00:00":
@@ -69,8 +57,8 @@ def _phtx_ether(self, child_packet, ether_src="00:00:00:00:00:00", ether_dst="00
 
     # Check if we can obtain destination MAC based on IPv6 header data
     if ether_packet_tx.type == ether.ps.TYPE_IP6:
-        ip6_src = ether_packet_tx._child_packet.src
-        ip6_dst = ether_packet_tx._child_packet.dst
+        ip6_src = ether_packet_tx._carried_packet.src
+        ip6_dst = ether_packet_tx._carried_packet.dst
 
         # Send packet out if its destined to multicast IPv6 address
         if ip6_dst.is_multicast:
@@ -106,8 +94,8 @@ def _phtx_ether(self, child_packet, ether_src="00:00:00:00:00:00", ether_dst="00
 
     # Check if we can obtain destination MAC based on IPv4 header data
     if ether_packet_tx.type == ether.ps.TYPE_IP4:
-        ip4_src = ether_packet_tx._child_packet.src
-        ip4_dst = ether_packet_tx._child_packet.dst
+        ip4_src = ether_packet_tx._carried_packet.src
+        ip4_dst = ether_packet_tx._carried_packet.dst
 
         # Send out packet if its destinied to limited broadcast addresses
         if ip4_dst.is_limited_broadcast:

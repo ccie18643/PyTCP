@@ -23,21 +23,9 @@
 #                                                                          #
 ############################################################################
 
-##############################################################################################
-#                                                                                            #
-#  This program is a work in progress and it changes on daily basis due to new features      #
-#  being implemented, changes being made to already implemented features, bug fixes, etc.    #
-#  Therefore if the current version is not working as expected try to clone it again the     #
-#  next day or shoot me an email describing the problem. Any input is appreciated. Also      #
-#  keep in mind that some features may be implemented only partially (as needed for stack    #
-#  operation) or they may be implemented in sub-optimal or not 100% RFC compliant way (due   #
-#  to lack of time) or last but not least they may contain bug(s) that i didn't notice yet.  #
-#                                                                                            #
-##############################################################################################
-
 
 #
-# phtx/ip6.py - packet handler for outbound IPv6 packets
+# ip6/phtx.py - packet handler for outbound IPv6 packets
 #
 
 
@@ -93,7 +81,7 @@ def _validate_dst_ip6_address(self, ip6_dst):
     return ip6_dst
 
 
-def _phtx_ip6(self, child_packet, ip6_dst, ip6_src, ip6_hop=config.ip6_default_hop):
+def _phtx_ip6(self, carried_packet, ip6_dst, ip6_src, ip6_hop=config.ip6_default_hop):
     """ Handle outbound IP packets """
 
     assert type(ip6_src) is IPv6Address
@@ -115,13 +103,13 @@ def _phtx_ip6(self, child_packet, ip6_dst, ip6_src, ip6_hop=config.ip6_default_h
         return
 
     # assemble IPv6 apcket
-    ip6_packet_tx = ip6.fpa.Assembler(src=ip6_src, dst=ip6_dst, hop=ip6_hop, child_packet=child_packet)
+    ip6_packet_tx = ip6.fpa.Assembler(src=ip6_src, dst=ip6_dst, hop=ip6_hop, carried_packet=carried_packet)
 
     # Check if IP packet can be sent out without fragmentation, if so send it out
     if len(ip6_packet_tx) <= config.mtu:
         if __debug__:
             self._logger.debug(f"{ip6_packet_tx.tracker} - {ip6_packet_tx}")
-        self._phtx_ether(child_packet=ip6_packet_tx)
+        self._phtx_ether(carried_packet=ip6_packet_tx)
         return
 
     # Fragment packet and send out

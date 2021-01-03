@@ -23,27 +23,16 @@
 #                                                                          #
 ############################################################################
 
-##############################################################################################
-#                                                                                            #
-#  This program is a work in progress and it changes on daily basis due to new features      #
-#  being implemented, changes being made to already implemented features, bug fixes, etc.    #
-#  Therefore if the current version is not working as expected try to clone it again the     #
-#  next day or shoot me an email describing the problem. Any input is appreciated. Also      #
-#  keep in mind that some features may be implemented only partially (as needed for stack    #
-#  operation) or they may be implemented in sub-optimal or not 100% RFC compliant way (due   #
-#  to lack of time) or last but not least they may contain bug(s) that i didn't notice yet.  #
-#                                                                                            #
-##############################################################################################
-
 
 #
-# fpa/ip6.py - Fast Packet Assembler support class for IPv6 protocol
+# ip6/fpa.py - Fast Packet Assembler support class for IPv6 protocol
 #
 
 
 import struct
 
 import config
+import ether.ps
 import ip6.ps
 from misc.ipv6_address import IPv6Address
 
@@ -51,11 +40,11 @@ from misc.ipv6_address import IPv6Address
 class Assembler(ip6.ps.Base):
     """ IPv6 packet assembler support class """
 
-    protocol = "IP6"
+    ether_type = ether.ps.TYPE_IP6
 
     def __init__(
         self,
-        child_packet,
+        carried_packet,
         src,
         dst,
         hop=config.ip6_default_hop,
@@ -65,11 +54,10 @@ class Assembler(ip6.ps.Base):
     ):
         """ Class constructor """
 
-        assert child_packet.protocol in {"ICMP6", "UDP", "TCP", "IP6_EXT_FRAG"}, f"Not supported protocol: {child_packet.protocol}"
-        self._child_packet = child_packet
+        assert carried_packet.ip6_next in {ip6.ps.NEXT_HEADER_ICMP6, ip6.ps.NEXT_HEADER_UDP, ip6.ps.NEXT_HEADER_TCP, ip6.ps.NEXT_HEADER_EXT_FRAG}
 
-        self.tracker = self._child_packet.tracker
-
+        self._carried_packet = carried_packet
+        self.tracker = self._carried_packet.tracker
         self.ver = 6
         self.dscp = dscp
         self.ecn = ecn
@@ -77,25 +65,13 @@ class Assembler(ip6.ps.Base):
         self.hop = hop
         self.src = IPv6Address(src)
         self.dst = IPv6Address(dst)
-
-        if self._child_packet.protocol == "ICMP6":
-            self.next = ip6.ps.NEXT_HEADER_ICMP6
-
-        elif self._child_packet.protocol == "UDP":
-            self.next = ip6.ps.NEXT_HEADER_UDP
-
-        elif self._child_packet.protocol == "TCP":
-            self.next = ip6.ps.NEXT_HEADER_TCP
-
-        elif self._child_packet.protocol == "IP6_EXT_FRAG":
-            self.next = ip6.ps.NEXT_HEADER_EXT_FRAG
-
-        self.dlen = len(child_packet)
+        self.next = self._carried_packet.ip6_next
+        self.dlen = len(carried_packet)
 
     def __len__(self):
         """ Length of the packet """
 
-        return ip6.ps.HEADER_LEN + len(self._child_packet)
+        return ip6.ps.HEADER_LEN + len(self._carried_packet)
 
     @property
     def pshdr_sum(self):
@@ -122,4 +98,4 @@ class Assembler(ip6.ps.Base):
             self.dst.packed,
         )
 
-        self._child_packet.assemble(frame, hptr + ip6.ps.HEADER_LEN, self.pshdr_sum)
+        self._carried_packet.assemble(frame, hptr + ip6.ps.HEADER_LEN, self.pshdr_sum)

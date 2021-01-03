@@ -23,21 +23,9 @@
 #                                                                          #
 ############################################################################
 
-##############################################################################################
-#                                                                                            #
-#  This program is a work in progress and it changes on daily basis due to new features      #
-#  being implemented, changes being made to already implemented features, bug fixes, etc.    #
-#  Therefore if the current version is not working as expected try to clone it again the     #
-#  next day or shoot me an email describing the problem. Any input is appreciated. Also      #
-#  keep in mind that some features may be implemented only partially (as needed for stack    #
-#  operation) or they may be implemented in sub-optimal or not 100% RFC compliant way (due   #
-#  to lack of time) or last but not least they may contain bug(s) that i didn't notice yet.  #
-#                                                                                            #
-##############################################################################################
-
 
 #
-# fpa/ether.py - Fast Packet Assembler support class for Ethernet protocol
+# ether/fpa.py - Fast Packet Assembler support class for Ethernet protocol
 #
 
 
@@ -49,36 +37,25 @@ import ether.ps
 class Assembler(ether.ps.Base):
     """ Ethernet packet assembler support class """
 
-    protocol = "ETHER"
-
-    def __init__(self, child_packet, src="00:00:00:00:00:00", dst="00:00:00:00:00:00"):
+    def __init__(self, carried_packet, src="00:00:00:00:00:00", dst="00:00:00:00:00:00"):
         """ Class constructor """
 
-        assert child_packet.protocol in {"IP6", "IP4", "ARP"}, f"Not supported protocol: {child_packet.protocol}"
-        self._child_packet = child_packet
+        assert carried_packet.ether_type in {ether.ps.TYPE_ARP, ether.ps.TYPE_IP4, ether.ps.TYPE_IP6}
 
-        self.tracker = self._child_packet.tracker
-
+        self._carried_packet = carried_packet
+        self.tracker = self._carried_packet.tracker
         self.dst = dst
         self.src = src
-
-        if self._child_packet.protocol == "IP6":
-            self.type = ether.ps.TYPE_IP6
-
-        if self._child_packet.protocol == "IP4":
-            self.type = ether.ps.TYPE_IP4
-
-        if self._child_packet.protocol == "ARP":
-            self.type = ether.ps.TYPE_ARP
+        self.type = self._carried_packet.ether_type
 
     def __len__(self):
         """ Length of the packet """
 
-        return ether.ps.HEADER_LEN + len(self._child_packet)
+        return ether.ps.HEADER_LEN + len(self._carried_packet)
 
     def assemble(self, frame, hptr):
         """ Assemble packet into the raw form """
 
         struct.pack_into("! 6s 6s H", frame, hptr, bytes.fromhex(self.dst.replace(":", "")), bytes.fromhex(self.src.replace(":", "")), self.type)
 
-        self._child_packet.assemble(frame, hptr + ether.ps.HEADER_LEN)
+        self._carried_packet.assemble(frame, hptr + ether.ps.HEADER_LEN)

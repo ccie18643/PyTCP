@@ -23,21 +23,9 @@
 #                                                                          #
 ############################################################################
 
-##############################################################################################
-#                                                                                            #
-#  This program is a work in progress and it changes on daily basis due to new features      #
-#  being implemented, changes being made to already implemented features, bug fixes, etc.    #
-#  Therefore if the current version is not working as expected try to clone it again the     #
-#  next day or shoot me an email describing the problem. Any input is appreciated. Also      #
-#  keep in mind that some features may be implemented only partially (as needed for stack    #
-#  operation) or they may be implemented in sub-optimal or not 100% RFC compliant way (due   #
-#  to lack of time) or last but not least they may contain bug(s) that i didn't notice yet.  #
-#                                                                                            #
-##############################################################################################
-
 
 #
-# fpp/ip6_ext_frag.py - Fast Packet Parser for  IPv6 fragmentation extension header
+# ip6_ext_frag/fpp.py - Fast Packet Parser for  IPv6 fragmentation extension header
 #
 
 
@@ -154,6 +142,9 @@ class Parser(ip6_ext_frag.ps.Base):
 
         if not config.packet_integrity_check:
             return False
+
+        if len(self) < ip6_ext_frag.ps.HEADER_LEN:
+            return "IPv4 integrity - wrong packet length (I)"
 
         return False
 

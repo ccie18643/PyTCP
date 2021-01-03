@@ -23,26 +23,16 @@
 #                                                                          #
 ############################################################################
 
-##############################################################################################
-#                                                                                            #
-#  This program is a work in progress and it changes on daily basis due to new features      #
-#  being implemented, changes being made to already implemented features, bug fixes, etc.    #
-#  Therefore if the current version is not working as expected try to clone it again the     #
-#  next day or shoot me an email describing the problem. Any input is appreciated. Also      #
-#  keep in mind that some features may be implemented only partially (as needed for stack    #
-#  operation) or they may be implemented in sub-optimal or not 100% RFC compliant way (due   #
-#  to lack of time) or last but not least they may contain bug(s) that i didn't notice yet.  #
-#                                                                                            #
-##############################################################################################
-
 
 #
-# fpa/tcp.py - Fast Packet Assembler support class for TCP protocol
+# tcp/fpa.py - Fast Packet Assembler support class for TCP protocol
 #
 
 
 import struct
 
+import ip4.ps
+import ip6.ps
 import tcp.ps
 from misc.ip_helper import inet_cksum
 from misc.tracker import Tracker
@@ -51,7 +41,8 @@ from misc.tracker import Tracker
 class Assembler(tcp.ps.Base):
     """ TCP packet assembler support class """
 
-    protocol = "TCP"
+    ip4_proto = ip4.ps.PROTO_TCP
+    ip6_next = ip6.ps.NEXT_HEADER_TCP
 
     def __init__(
         self,
@@ -77,7 +68,6 @@ class Assembler(tcp.ps.Base):
         """ Class constructor """
 
         self.tracker = Tracker("TX", echo_tracker)
-
         self.sport = sport
         self.dport = dport
         self.seq = seq
@@ -93,11 +83,8 @@ class Assembler(tcp.ps.Base):
         self.flag_fin = flag_fin
         self.win = win
         self.urp = urp
-
         self.options = [] if options is None else options
-
         self.data = data
-
         self.hlen = tcp.ps.HEADER_LEN + sum([len(_) for _ in self.options])
 
         assert self.hlen % 4 == 0, f"TCP header len {self.hlen} is not multiplcation of 4 bytes, check options... {self.options}"

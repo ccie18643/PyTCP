@@ -23,27 +23,16 @@
 #                                                                          #
 ############################################################################
 
-##############################################################################################
-#                                                                                            #
-#  This program is a work in progress and it changes on daily basis due to new features      #
-#  being implemented, changes being made to already implemented features, bug fixes, etc.    #
-#  Therefore if the current version is not working as expected try to clone it again the     #
-#  next day or shoot me an email describing the problem. Any input is appreciated. Also      #
-#  keep in mind that some features may be implemented only partially (as needed for stack    #
-#  operation) or they may be implemented in sub-optimal or not 100% RFC compliant way (due   #
-#  to lack of time) or last but not least they may contain bug(s) that i didn't notice yet.  #
-#                                                                                            #
-##############################################################################################
-
 
 #
-# fpa/ip4.py - Fast Packet Assembler support class for IPv4 protocol
+# ip4/fpa.py - Fast Packet Assembler support class for IPv4 protocol
 #
 
 
 import struct
 
 import config
+import ether.ps
 import ip4.ps
 from misc.ip_helper import inet_cksum
 from misc.ipv4_address import IPv4Address
@@ -53,11 +42,11 @@ from misc.tracker import Tracker
 class Assembler(ip4.ps.Base):
     """ IPv4 packet assembler support class """
 
-    protocol = "IP4"
+    ether_type = ether.ps.TYPE_IP4
 
     def __init__(
         self,
-        child_packet,
+        carried_packet,
         src,
         dst,
         ttl=config.ip4_default_ttl,
@@ -69,11 +58,10 @@ class Assembler(ip4.ps.Base):
     ):
         """ Class constructor """
 
-        assert child_packet.protocol in {"ICMP4", "UDP", "TCP"}, f"Not supported protocol: {child_packet.protocol}"
-        self._child_packet = child_packet
+        assert carried_packet.ip4_proto in {ip4.ps.PROTO_ICMP4, ip4.ps.PROTO_UDP, ip4.ps.PROTO_TCP}
 
-        self.tracker = self._child_packet.tracker
-
+        self._carried_packet = carried_packet
+        self.tracker = self._carried_packet.tracker
         self.ver = 4
         self.dscp = dscp
         self.ecn = ecn
@@ -84,25 +72,15 @@ class Assembler(ip4.ps.Base):
         self.ttl = ttl
         self.src = IPv4Address(src)
         self.dst = IPv4Address(dst)
-
         self.options = [] if options is None else options
-
         self.hlen = ip4.ps.HEADER_LEN + len(self.raw_options)
         self.plen = len(self)
-
-        if self._child_packet.protocol == "ICMP4":
-            self.proto = ip4.ps.PROTO_ICMP4
-
-        if self._child_packet.protocol == "UDP":
-            self.proto = ip4.ps.PROTO_UDP
-
-        if self._child_packet.protocol == "TCP":
-            self.proto = ip4.ps.PROTO_TCP
+        self.proto = self._carried_packet.ip4_proto
 
     def __len__(self):
         """ Length of the packet """
 
-        return ip4.ps.HEADER_LEN + sum([len(_) for _ in self.options]) + len(self._child_packet)
+        return ip4.ps.HEADER_LEN + sum([len(_) for _ in self.options]) + len(self._carried_packet)
 
     @property
     def raw_options(self):
@@ -150,13 +128,13 @@ class Assembler(ip4.ps.Base):
 
         struct.pack_into("! H", frame, hptr + 10, inet_cksum(frame, hptr, self.hlen))
 
-        self._child_packet.assemble(frame, hptr + self.hlen, self.pshdr_sum)
+        self._carried_packet.assemble(frame, hptr + self.hlen, self.pshdr_sum)
 
 
 class FragAssembler(ip4.ps.Base):
     """ IPv4 packet fragment assembler support class """
 
-    protocol = "IP4"
+    ether_type = ether.ps.TYPE_IP4
 
     def __init__(
         self,
@@ -174,8 +152,9 @@ class FragAssembler(ip4.ps.Base):
     ):
         """ Class constructor """
 
-        self.tracker = Tracker("TX")
+        assert proto in {ip4.ps.PROTO_ICMP4, ip4.ps.PROTO_UDP, ip4.ps.PROTO_TCP}
 
+        self.tracker = Tracker("TX")
         self.ver = 4
         self.dscp = dscp
         self.ecn = ecn
@@ -186,11 +165,9 @@ class FragAssembler(ip4.ps.Base):
         self.ttl = ttl
         self.src = IPv4Address(src)
         self.dst = IPv4Address(dst)
-
         self.options = [] if options is None else options
         self.data = data
         self.proto = proto
-
         self.hlen = ip4.ps.HEADER_LEN + len(self.raw_options)
         self.plen = len(self)
 
