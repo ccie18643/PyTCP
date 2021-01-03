@@ -25,16 +25,5 @@
 
 
 #
-# stack.py - module holds references to the stack components and global structures
+# misc/__init__.py
 #
-
-from typing import Dict
-
-import tcp.session
-import udp.socket
-
-timer = None
-packet_handler = None
-
-tcp_sessions: Dict[str, tcp.session.TcpSession] = {}
-udp_sockets: Dict[str, udp.socket.UdpSocket] = {}

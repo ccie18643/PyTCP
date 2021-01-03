@@ -39,8 +39,6 @@ import misc.stack as stack
 class UdpSocket:
     """ Support for Socket operations """
 
-    open_sockets = {}
-
     def __init__(self):
         """ Class constructor """
 
