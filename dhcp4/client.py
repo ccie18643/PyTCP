@@ -29,10 +29,11 @@
 #
 
 
-import dhcp4.ps
-import udp.socket
 import random
+
+import dhcp4.ps
 import udp.metadata
+import udp.socket
 from misc.ipv4_address import IPv4Address, IPv4Interface
 
 

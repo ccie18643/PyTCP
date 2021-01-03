@@ -37,8 +37,8 @@ import loguru
 
 import arp.ps
 import config
-import dhcp4.ps
 import dhcp4.client
+import dhcp4.ps
 import icmp6.fpa
 import icmp6.ps
 import misc.stack as stack
@@ -57,6 +57,7 @@ class PacketHandler:
 
     from arp.phrx import _phrx_arp
     from arp.phtx import _phtx_arp
+    from dhcp4.client import _dhcp4_client
     from ether.phrx import _phrx_ether
     from ether.phtx import _phtx_ether
     from icmp4.phrx import _phrx_icmp4
@@ -73,7 +74,6 @@ class PacketHandler:
     from tcp.phtx import _phtx_tcp
     from udp.phrx import _phrx_udp
     from udp.phtx import _phtx_udp
-    from dhcp4.client import _dhcp4_client
 
     def __init__(self, tap):
         """ Class constructor """
@@ -504,4 +504,3 @@ class PacketHandler:
         self.mac_multicast.remove(mac_multicast)
         if __debug__:
             self._logger.debug(f"Removed MAC multicast {mac_multicast}")
-
