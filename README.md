@@ -16,7 +16,7 @@ I am also working on another TCP/IP stack project that is being programmed in C 
  - ARP protocol - *ARP Probe/Announcement IP conflict detection (ACD) mechanism*
  - IPv4 protocol - *default routing, stack can talk to hosts over Internet using IPv4 protocol*
  - IPv4 protocol - *automatic address configuration using DHCP protocol*
- - IPv4 protocol - *inbound packet defragmentation, robust mechanism able to handle out of order and overlaping data fragments*
+ - IPv4 protocol - *inbound packet defragmentation, robust mechanism able to handle out of order and overlapping data fragments*
  - IPv4 protocol - *outbound packet fragmentation*
  - IPv4 protocol - *IPv4 options accepted but not supported*
  - IPv4 protocol -  *multiple stack's IPv4 addresses supported, each of them acts as it was assigned to separate VRF* 
@@ -26,7 +26,7 @@ I am also working on another TCP/IP stack project that is being programmed in C 
  - IPv6 protocol - *automatic GUA address configuration using Router Advertisement / EUI64*
  - IPv6 protocol - *automatic assignment of Solicited Node Multicast addresses*
  - IPv6 protocol - *automatic assignment of IPv6 multicast MAC addresses*
- - IPv6 protocol - *inbound packet defragmentation, robust mechanism able to handle out of order and overlaping data fragments*
+ - IPv6 protocol - *inbound packet defragmentation, robust mechanism able to handle out of order and overlapping data fragments*
  - IPv6 protocol - *outbound packet fragmentation*
  - ICMPv6 protocol - *echo request, echo reply, port unreachable*
  - ICMPv6 protocol - *Neighbor Discovery, Duplicate Address Detection*
