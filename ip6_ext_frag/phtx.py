@@ -30,8 +30,8 @@
 
 
 import config
-import ip6_ext_frag.fpa
 import ip6.ps
+import ip6_ext_frag.fpa
 import ip6_ext_frag.ps
 
 
