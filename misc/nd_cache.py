@@ -138,7 +138,7 @@ class NdCache:
             ip6_src=ip6_src,
             ip6_dst=icmp6_ns_target_address.solicited_node_multicast,
             ip6_hop=255,
-            icmp6_type=icmp6.fpa.NEIGHBOR_SOLICITATION,
+            icmp6_type=icmp6.ps.NEIGHBOR_SOLICITATION,
             icmp6_ns_target_address=icmp6_ns_target_address,
             icmp6_nd_options=[icmp6.fpa.Icmp6NdOptSLLA(self.packet_handler.mac_unicast)],
         )
