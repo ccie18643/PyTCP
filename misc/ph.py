@@ -37,8 +37,6 @@ import loguru
 
 import arp.ps
 import config
-import dhcp4.client
-import dhcp4.ps
 import icmp6.fpa
 import icmp6.ps
 import misc.stack as stack
@@ -48,8 +46,6 @@ from misc.ipv6_address import IPv6Address, IPv6Interface, IPv6Network
 from misc.nd_cache import NdCache
 from misc.rx_ring import RxRing
 from misc.tx_ring import TxRing
-from udp.metadata import UdpMetadata
-from udp.socket import UdpSocket
 
 
 class PacketHandler:
