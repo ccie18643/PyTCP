@@ -10,5 +10,5 @@ jobs:
       - run: pip install -r requirements.txt
       - run: codespell --ignore-words-list="ect,ether,nd,tha" --quiet-level=2 README.md $(find . -name '*.py')
       - run: isort -c --profile black $(find . -name '*.py')
-      - run: black --check -l160 find . -name '*.py'
+      - run: black --check -l160 $(find . -name '*.py')
       - run: flake8 $(find . -name '*.py')
