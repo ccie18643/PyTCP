@@ -42,7 +42,7 @@
 
 
 import config
-import fpa.icmp6
+import icmp6.fpa
 
 
 def _phtx_icmp6(
@@ -71,7 +71,7 @@ def _phtx_icmp6(
     if not config.ip6_support:
         return
 
-    icmp6_packet_tx = fpa.icmp6.Assembler(
+    icmp6_packet_tx = icmp6.fpa.Assembler(
         type=icmp6_type,
         code=icmp6_code,
         un_data=icmp6_un_data,

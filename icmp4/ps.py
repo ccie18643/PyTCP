@@ -118,4 +118,3 @@ class Base:
             log += f", id {self.ec_id}, seq {self.ec_seq}"
 
         return log
-

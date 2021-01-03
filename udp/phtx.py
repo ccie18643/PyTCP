@@ -42,7 +42,7 @@
 
 
 import config
-import fpa.udp
+import udp.fpa
 from misc.ipv4_address import IPv4Address
 from misc.ipv6_address import IPv6Address
 
@@ -63,7 +63,7 @@ def _phtx_udp(self, ip_src, ip_dst, udp_sport, udp_dport, udp_data=b"", echo_tra
     if not config.ip6_support and ip_dst.version == 6:
         return
 
-    udp_packet_tx = fpa.udp.Assembler(sport=udp_sport, dport=udp_dport, data=udp_data, echo_tracker=echo_tracker)
+    udp_packet_tx = udp.fpa.Assembler(sport=udp_sport, dport=udp_dport, data=udp_data, echo_tracker=echo_tracker)
 
     if __debug__:
         self._logger.opt(ansi=True).info(f"<magenta>{udp_packet_tx.tracker}</magenta> - {udp_packet_tx}")

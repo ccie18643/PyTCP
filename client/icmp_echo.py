@@ -71,7 +71,7 @@ class ClientIcmpEcho:
             message = bytes(str(datetime.now()) + "\n", "utf-8")
 
             if local_ip_address.version == 4:
-                stack.packet_handler.phtx.icmp4(
+                stack.packet_handler.icmp4.phtx(
                     ip4_src=local_ip_address,
                     ip4_dst=remote_ip_address,
                     icmp4_type=8,
@@ -82,7 +82,7 @@ class ClientIcmpEcho:
                 )
 
             if local_ip_address.version == 6:
-                stack.packet_handler.phtx.icmp6(
+                stack.packet_handler.icmp6.phtx(
                     ip6_src=local_ip_address,
                     ip6_dst=remote_ip_address,
                     icmp6_type=128,

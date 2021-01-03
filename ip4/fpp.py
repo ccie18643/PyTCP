@@ -44,12 +44,12 @@
 import struct
 
 import config
-import ps.ip4
+import ip4.ps
 from misc.ip_helper import inet_cksum
 from misc.ipv4_address import IPv4Address
 
 
-class Parser(ps.ip4.Base):
+class Parser(ip4.ps.Base):
     """ IPv4 packet parser class """
 
     class __not_cached:
@@ -204,15 +204,15 @@ class Parser(ps.ip4.Base):
 
         if self.__options is self.__not_cached:
             self.__options = []
-            optr = self._hptr + ps.ip4.HEADER_LEN
+            optr = self._hptr + ip4.ps.HEADER_LEN
 
             while optr < self._hptr + self.hlen:
-                if self._frame[optr] == ps.ip4.OPT_EOL:
+                if self._frame[optr] == ip4.ps.OPT_EOL:
                     self.__options.append(OptEol())
                     break
-                if self._frame[optr] == ps.ip4.OPT_NOP:
+                if self._frame[optr] == ip4.ps.OPT_NOP:
                     self.__options.append(OptNop())
-                    optr += ps.ip4.OPT_NOP_LEN
+                    optr += ip4.ps.OPT_NOP_LEN
                     continue
                 self.__options.append({}.get(self._frame[optr], OptUnk)(self._frame, optr))
                 optr += self._frame[optr + 1]
@@ -224,7 +224,7 @@ class Parser(ps.ip4.Base):
         """ Calculate options length """
 
         if self.__olen is self.__not_cached:
-            self.__olen = self.hlen - ps.ip4.HEADER_LEN
+            self.__olen = self.hlen - ip4.ps.HEADER_LEN
         return self.__olen
 
     @property
@@ -240,7 +240,7 @@ class Parser(ps.ip4.Base):
         """ Return copy of packet header """
 
         if self.__header_copy is self.__not_cached:
-            self.__header_copy = self._frame[self._hptr : self._hptr + ps.ip4.HEADER_LEN]
+            self.__header_copy = self._frame[self._hptr : self._hptr + ip4.ps.HEADER_LEN]
         return self.__header_copy
 
     @property
@@ -248,7 +248,7 @@ class Parser(ps.ip4.Base):
         """ Return copy of packet header """
 
         if self.__options_copy is self.__not_cached:
-            self.__options_copy = self._frame[self._hptr + ps.ip4.HEADER_LEN : self._hptr + self.hlen]
+            self.__options_copy = self._frame[self._hptr + ip4.ps.HEADER_LEN : self._hptr + self.hlen]
         return self.__options_copy
 
     @property
@@ -282,23 +282,23 @@ class Parser(ps.ip4.Base):
         if not config.packet_integrity_check:
             return False
 
-        if len(self) < ps.ip4.HEADER_LEN:
+        if len(self) < ip4.ps.HEADER_LEN:
             return "IPv4 integrity - wrong packet length (I)"
 
         hlen = (self._frame[self._hptr + 0] & 0b00001111) << 2
         plen = struct.unpack_from("!H", self._frame, self._hptr + 2)[0]
-        if not ps.ip4.HEADER_LEN <= hlen <= plen <= len(self):
+        if not ip4.ps.HEADER_LEN <= hlen <= plen <= len(self):
             return "IPv4 integrity - wrong packet length (II)"
 
         # Cannot compute checksum earlier because it depends on sanity of hlen field
         if inet_cksum(self._frame, self._hptr, hlen):
             return "IPv4 integriy - wrong packet checksum"
 
-        optr = self._hptr + ps.ip4.HEADER_LEN
+        optr = self._hptr + ip4.ps.HEADER_LEN
         while optr < self._hptr + hlen:
-            if self._frame[optr] == ps.ip4.OPT_EOL:
+            if self._frame[optr] == ip4.ps.OPT_EOL:
                 break
-            if self._frame[optr] == ps.ip4.OPT_NOP:
+            if self._frame[optr] == ip4.ps.OPT_NOP:
                 optr += 1
                 if optr > self._hptr + hlen:
                     return "IPv4 integrity - wrong option length (I)"
@@ -354,27 +354,27 @@ class Parser(ps.ip4.Base):
 # IPv4 option - End of Option Linst
 
 
-class OptEol(ps.ip4.OptEol):
+class OptEol(ip4.ps.OptEol):
     """ IPv4 option - End of Option List """
 
     def __init__(self):
-        self.kind = ps.ip4.OPT_EOL
+        self.kind = ip4.ps.OPT_EOL
 
 
 # IPv4 option - No Operation (1)
 
 
-class OptNop(ps.ip4.OptNop):
+class OptNop(ip4.ps.OptNop):
     """ IPv4 option - No Operation """
 
     def __init__(self):
-        self.kind = ps.ip4.OPT_NOP
+        self.kind = ip4.ps.OPT_NOP
 
 
 # IPv4 option not supported by this stack
 
 
-class OptUnk(ps.ip4.OptUnk):
+class OptUnk(ip4.ps.OptUnk):
     """ IPv4 option not supported by this stack """
 
     def __init__(self, frame, optr):

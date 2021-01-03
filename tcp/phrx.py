@@ -40,8 +40,8 @@
 # phrx/tcp.py - packet handler for inbound TCP packets
 #
 
-import fpp.tcp
 import misc.stack as stack
+import tcp.fpp
 from tcp.metadata import TcpMetadata
 
 PACKET_LOSS = False
@@ -50,7 +50,7 @@ PACKET_LOSS = False
 def _phrx_tcp(self, packet_rx):
     """ Handle inbound TCP packets """
 
-    fpp.tcp.Parser(packet_rx)
+    tcp.fpp.Parser(packet_rx)
 
     if packet_rx.parse_failed:
         if __debug__:

@@ -43,17 +43,17 @@
 
 import struct
 
-import ps.arp
+import arp.ps
 from misc.ipv4_address import IPv4Address
 from misc.tracker import Tracker
 
 
-class Assembler(ps.arp.Base):
+class Assembler(arp.ps.Base):
     """ ARP packet assembler support class """
 
     protocol = "ARP"
 
-    def __init__(self, sha, spa, tpa, tha="00:00:00:00:00:00", oper=ps.arp.OP_REQUEST, echo_tracker=None):
+    def __init__(self, sha, spa, tpa, tha="00:00:00:00:00:00", oper=arp.ps.OP_REQUEST, echo_tracker=None):
         """ Class constructor """
 
         self.tracker = Tracker("TX", echo_tracker)
@@ -71,7 +71,7 @@ class Assembler(ps.arp.Base):
     def __len__(self):
         """ Length of the packet """
 
-        return ps.arp.HEADER_LEN
+        return arp.ps.HEADER_LEN
 
     def assemble(self, frame, hptr):
         """ Assemble packet into the raw form """

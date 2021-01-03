@@ -44,11 +44,11 @@
 import struct
 
 import config
-import ps.ip6
+import ip6.ps
 from misc.ipv6_address import IPv6Address
 
 
-class Parser(ps.ip6.Base):
+class Parser(ip6.ps.Base):
     """ IPv6 packet parser class """
 
     class __not_cached:
@@ -79,7 +79,7 @@ class Parser(ps.ip6.Base):
         packet_rx.parse_failed = self._packet_integrity_check() or self._packet_sanity_check()
 
         if not packet_rx.parse_failed:
-            packet_rx.hptr = self._hptr + ps.ip6.HEADER_LEN
+            packet_rx.hptr = self._hptr + ip6.ps.HEADER_LEN
 
     def __len__(self):
         """ Number of bytes remaining in the frame """
@@ -158,20 +158,20 @@ class Parser(ps.ip6.Base):
     def hlen(self):
         """ Calculate header length """
 
-        return ps.ip6.HEADER_LEN
+        return ip6.ps.HEADER_LEN
 
     @property
     def plen(self):
         """ Calculate packet length """
 
-        return ps.ip6.HEADER_LEN + self.dlen
+        return ip6.ps.HEADER_LEN + self.dlen
 
     @property
     def header_copy(self):
         """ Return copy of packet header """
 
         if self.__header_copy is self.__not_cached:
-            self.__header_copy = self._frame[self._hptr : self._hptr + ps.ip6.HEADER_LEN]
+            self.__header_copy = self._frame[self._hptr : self._hptr + ip6.ps.HEADER_LEN]
         return self.__header_copy
 
     @property
@@ -179,7 +179,7 @@ class Parser(ps.ip6.Base):
         """ Return copy of packet data """
 
         if self.__data_copy is self.__not_cached:
-            self.__data_copy = self._frame[self._hptr + ps.ip6.HEADER_LEN : self._hptr + self.plen]
+            self.__data_copy = self._frame[self._hptr + ip6.ps.HEADER_LEN : self._hptr + self.plen]
         return self.__data_copy
 
     @property
@@ -205,10 +205,10 @@ class Parser(ps.ip6.Base):
         if not config.packet_integrity_check:
             return False
 
-        if len(self) < ps.ip6.HEADER_LEN:
+        if len(self) < ip6.ps.HEADER_LEN:
             return "IPv6 integrity - wrong packet length (I)"
 
-        if struct.unpack_from("!H", self._frame, self._hptr + 4)[0] != len(self) - ps.ip6.HEADER_LEN:
+        if struct.unpack_from("!H", self._frame, self._hptr + 4)[0] != len(self) - ip6.ps.HEADER_LEN:
             return "IPv6 integrity - wrong packet length (II)"
 
         return False

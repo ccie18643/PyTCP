@@ -44,11 +44,11 @@
 import struct
 
 import config
-import ps.icmp4
+import icmp4.ps
 from misc.ip_helper import inet_cksum
 
 
-class Parser(ps.icmp4.Base):
+class Parser(icmp4.ps.Base):
     """ ICMPv4 packet parser class """
 
     class __not_cached:
@@ -103,7 +103,7 @@ class Parser(ps.icmp4.Base):
         """ Read Echo 'Id' field """
 
         if self.__ec_id is self.__not_cached:
-            assert self.type in {ps.icmp4.ECHO_REQUEST, ps.icmp4.ECHO_REPLY}
+            assert self.type in {icmp4.ps.ECHO_REQUEST, icmp4.ps.ECHO_REPLY}
             self.__ec_id = struct.unpack_from("!H", self._frame, self._hptr + 4)[0]
         return self.__ec_id
 
@@ -112,7 +112,7 @@ class Parser(ps.icmp4.Base):
         """ Read Echo 'Seq' field """
 
         if self.__ec_seq is self.__not_cached:
-            assert self.type in {ps.icmp4.ECHO_REQUEST, ps.icmp4.ECHO_REPLY}
+            assert self.type in {icmp4.ps.ECHO_REQUEST, icmp4.ps.ECHO_REPLY}
             self.__ec_seq = struct.unpack_from("!H", self._frame, self._hptr + 6)[0]
         return self.__ec_seq
 
@@ -121,7 +121,7 @@ class Parser(ps.icmp4.Base):
         """ Read data carried by Echo message """
 
         if self.__ec_data is self.__not_cached:
-            assert self.type in {ps.icmp4.ECHO_REQUEST, ps.icmp4.ECHO_REPLY}
+            assert self.type in {icmp4.ps.ECHO_REQUEST, icmp4.ps.ECHO_REPLY}
             self.__ec_data = self._frame[self._hptr + 8 : self._hptr + self.plen]
         return self.__ec_data
 
@@ -130,7 +130,7 @@ class Parser(ps.icmp4.Base):
         """ Read data carried by Uneachable message """
 
         if self.__un_data is self.__not_cached:
-            assert self.type == ps.icmp4.UNREACHABLE
+            assert self.type == icmp4.ps.UNREACHABLE
             self.__un_data = self._frame[self._hptr + 8 : self._hptr + self.plen]
         return self.__un_data
 
@@ -157,14 +157,14 @@ class Parser(ps.icmp4.Base):
         if inet_cksum(self._frame, self._hptr, self._plen):
             return "ICMPv4 integrity - wrong packet checksum"
 
-        if not ps.icmp4.HEADER_LEN <= self._plen <= len(self):
+        if not icmp4.ps.HEADER_LEN <= self._plen <= len(self):
             return "ICMPv4 integrity - wrong packet length (I)"
 
-        if self._frame[self._hptr + 0] in {ps.icmp4.ECHO_REQUEST, ps.icmp4.ECHO_REPLY}:
+        if self._frame[self._hptr + 0] in {icmp4.ps.ECHO_REQUEST, icmp4.ps.ECHO_REPLY}:
             if not 8 <= self._plen <= len(self):
                 return "ICMPv6 integrity - wrong packet length (II)"
 
-        elif self._frame[self._hptr + 0] == ps.icmp4.UNREACHABLE:
+        elif self._frame[self._hptr + 0] == icmp4.ps.UNREACHABLE:
             if not 12 <= self._plen <= len(self):
                 return "ICMPv6 integrity - wrong packet length (II)"
 
@@ -176,11 +176,11 @@ class Parser(ps.icmp4.Base):
         if not config.packet_sanity_check:
             return False
 
-        if self.type in {ps.icmp4.ECHO_REQUEST, ps.icmp4.ECHO_REPLY}:
+        if self.type in {icmp4.ps.ECHO_REQUEST, icmp4.ps.ECHO_REPLY}:
             if not self.code == 0:
                 return "ICMPv4 sanity - 'code' should be set to 0 (RFC 792)"
 
-        if self.type == ps.icmp4.UNREACHABLE:
+        if self.type == icmp4.ps.UNREACHABLE:
             if self.code not in {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15}:
                 return "ICMPv4 sanity - 'code' must be set to [0-15] (RFC 792)"
 

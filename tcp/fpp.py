@@ -44,11 +44,11 @@
 import struct
 
 import config
-import ps.tcp
+import tcp.ps
 from misc.ip_helper import inet_cksum
 
 
-class Parser(ps.tcp.Base):
+class Parser(tcp.ps.Base):
     """ TCP packet parser class """
 
     class __not_cached:
@@ -251,7 +251,7 @@ class Parser(ps.tcp.Base):
         """ Calculate options length """
 
         if self.__olen is self.__not_cached:
-            self.__olen = self.hlen - ps.tcp.HEADER_LEN
+            self.__olen = self.hlen - tcp.ps.HEADER_LEN
         return self.__olen
 
     @property
@@ -271,7 +271,7 @@ class Parser(ps.tcp.Base):
         """ Return copy of packet header """
 
         if self.__header_copy is self.__not_cached:
-            self.__header_copy = self._frame[self._hptr : self._hptr + ps.tcp.HEADER_LEN]
+            self.__header_copy = self._frame[self._hptr : self._hptr + tcp.ps.HEADER_LEN]
         return self.__header_copy
 
     @property
@@ -279,7 +279,7 @@ class Parser(ps.tcp.Base):
         """ Return copy of packet header """
 
         if self.__options_copy is self.__not_cached:
-            self.__options_copy = self._frame[self._hptr + ps.tcp.HEADER_LEN : self._hptr + self.hlen]
+            self.__options_copy = self._frame[self._hptr + tcp.ps.HEADER_LEN : self._hptr + self.hlen]
         return self.__options_copy
 
     @property
@@ -304,17 +304,17 @@ class Parser(ps.tcp.Base):
 
         if self.__options is self.__not_cached:
             self.__options = []
-            optr = self._hptr + ps.tcp.HEADER_LEN
+            optr = self._hptr + tcp.ps.HEADER_LEN
             while optr < self._hptr + self.hlen:
-                if self._frame[optr] == ps.tcp.OPT_EOL:
+                if self._frame[optr] == tcp.ps.OPT_EOL:
                     self.__options.append(OptEol())
                     break
-                if self._frame[optr] == ps.tcp.OPT_NOP:
+                if self._frame[optr] == tcp.ps.OPT_NOP:
                     self.__options.append(OptNop())
-                    optr += ps.tcp.OPT_NOP_LEN
+                    optr += tcp.ps.OPT_NOP_LEN
                     continue
                 self.__options.append(
-                    {ps.tcp.OPT_MSS: OptMss, ps.tcp.OPT_WSCALE: OptWscale, ps.tcp.OPT_SACKPERM: OptSackPerm, ps.tcp.OPT_TIMESTAMP: OptTimestamp}.get(
+                    {tcp.ps.OPT_MSS: OptMss, tcp.ps.OPT_WSCALE: OptWscale, tcp.ps.OPT_SACKPERM: OptSackPerm, tcp.ps.OPT_TIMESTAMP: OptTimestamp}.get(
                         self._frame[optr], OptUnk
                     )(self._frame, optr)
                 )
@@ -328,7 +328,7 @@ class Parser(ps.tcp.Base):
 
         if self.__mss is self.__not_cached:
             for option in self.options:
-                if option.kind == ps.tcp.OPT_MSS:
+                if option.kind == tcp.ps.OPT_MSS:
                     self.__mss = option.mss
                     break
             else:
@@ -341,7 +341,7 @@ class Parser(ps.tcp.Base):
 
         if self.__wscale is self.__not_cached:
             for option in self.options:
-                if option.kind == ps.tcp.OPT_WSCALE:
+                if option.kind == tcp.ps.OPT_WSCALE:
                     self.__wscale = 1 << option.wscale
                     break
             else:
@@ -354,7 +354,7 @@ class Parser(ps.tcp.Base):
 
         if self.__sackperm is self.__not_cached:
             for option in self.options:
-                if option.kind == ps.tcp.OPT_SACKPERM:
+                if option.kind == tcp.ps.OPT_SACKPERM:
                     self.__sackperm = True
                     break
             else:
@@ -367,7 +367,7 @@ class Parser(ps.tcp.Base):
 
         if self.__timestamp is self.__not_cached:
             for option in self.options:
-                if option.kind == ps.tcp.OPT_TIMESTAMP:
+                if option.kind == tcp.ps.OPT_TIMESTAMP:
                     self.__timestamp = (option.tsval, option.tsecr)
                     break
             else:
@@ -383,18 +383,18 @@ class Parser(ps.tcp.Base):
         if inet_cksum(self._frame, self._hptr, self._plen, pshdr_sum):
             return "TCP integrity - wrong packet checksum"
 
-        if not ps.tcp.HEADER_LEN <= self._plen <= len(self):
+        if not tcp.ps.HEADER_LEN <= self._plen <= len(self):
             return "TCP integrity - wrong packet length (I)"
 
         hlen = (self._frame[self._hptr + 12] & 0b11110000) >> 2
-        if not ps.tcp.HEADER_LEN <= hlen <= self._plen <= len(self):
+        if not tcp.ps.HEADER_LEN <= hlen <= self._plen <= len(self):
             return "TCP integrity - wrong packet length (II)"
 
-        optr = self._hptr + ps.tcp.HEADER_LEN
+        optr = self._hptr + tcp.ps.HEADER_LEN
         while optr < self._hptr + hlen:
-            if self._frame[optr] == ps.tcp.OPT_EOL:
+            if self._frame[optr] == tcp.ps.OPT_EOL:
                 break
-            if self._frame[optr] == ps.tcp.OPT_NOP:
+            if self._frame[optr] == tcp.ps.OPT_NOP:
                 optr += 1
                 if optr > self._hptr + hlen:
                     return "TCP integrity - wrong option length (I)"
@@ -447,21 +447,21 @@ class Parser(ps.tcp.Base):
 #
 
 
-class OptEol(ps.tcp.OptEol):
+class OptEol(tcp.ps.OptEol):
     """ TCP option - End of Option List (0) """
 
     def __init__(self):
-        self.kind = ps.tcp.OPT_EOL
+        self.kind = tcp.ps.OPT_EOL
 
 
-class OptNop(ps.tcp.OptNop):
+class OptNop(tcp.ps.OptNop):
     """ TCP option - No Operation (1) """
 
     def __init__(self):
-        self.kind = ps.tcp.OPT_NOP
+        self.kind = tcp.ps.OPT_NOP
 
 
-class OptMss(ps.tcp.OptMss):
+class OptMss(tcp.ps.OptMss):
     """ TCP option - Maximum Segment Size (2) """
 
     def __init__(self, frame, optr):
@@ -470,7 +470,7 @@ class OptMss(ps.tcp.OptMss):
         self.mss = struct.unpack_from("!H", frame, optr + 2)[0]
 
 
-class OptWscale(ps.tcp.OptWscale):
+class OptWscale(tcp.ps.OptWscale):
     """ TCP option - Window Scale (3) """
 
     def __init__(self, frame, optr):
@@ -479,7 +479,7 @@ class OptWscale(ps.tcp.OptWscale):
         self.wscale = frame[optr + 2]
 
 
-class OptSackPerm(ps.tcp.OptSackPerm):
+class OptSackPerm(tcp.ps.OptSackPerm):
     """ TCP option - Sack Permit (4) """
 
     def __init__(self, frame, optr):
@@ -487,7 +487,7 @@ class OptSackPerm(ps.tcp.OptSackPerm):
         self.len = frame[optr + 1]
 
 
-class OptTimestamp(ps.tcp.OptTimestamp):
+class OptTimestamp(tcp.ps.OptTimestamp):
     """ TCP option - Timestamp (8) """
 
     def __init__(self, frame, optr):
@@ -497,7 +497,7 @@ class OptTimestamp(ps.tcp.OptTimestamp):
         self.tsecr = struct.unpack_from("!L", frame, optr + 6)[0]
 
 
-class OptUnk(ps.tcp.OptUnk):
+class OptUnk(tcp.ps.OptUnk):
     """ TCP option not supported by this stack """
 
     def __init__(self, frame, optr):

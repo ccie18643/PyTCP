@@ -42,7 +42,7 @@
 
 
 import config
-import fpa.tcp
+import tcp.fpa
 from misc.ipv4_address import IPv4Address
 from misc.ipv6_address import IPv6Address
 
@@ -90,11 +90,11 @@ def _phtx_tcp(
     tcp_options = []
 
     if tcp_mss:
-        tcp_options.append(fpa.tcp.OptMss(tcp_mss))
-        tcp_options.append(fpa.tcp.OptNop())
-        tcp_options.append(fpa.tcp.OptWscale(0))
+        tcp_options.append(tcp.fpa.OptMss(tcp_mss))
+        tcp_options.append(tcp.fpa.OptNop())
+        tcp_options.append(tcp.fpa.OptWscale(0))
 
-    tcp_packet_tx = fpa.tcp.Assembler(
+    tcp_packet_tx = tcp.fpa.Assembler(
         sport=tcp_sport,
         dport=tcp_dport,
         seq=tcp_seq,

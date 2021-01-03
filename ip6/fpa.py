@@ -44,11 +44,11 @@
 import struct
 
 import config
-import ps.ip6
+import ip6.ps
 from misc.ipv6_address import IPv6Address
 
 
-class Assembler(ps.ip6.Base):
+class Assembler(ip6.ps.Base):
     """ IPv6 packet assembler support class """
 
     protocol = "IP6"
@@ -79,23 +79,23 @@ class Assembler(ps.ip6.Base):
         self.dst = IPv6Address(dst)
 
         if self._child_packet.protocol == "ICMP6":
-            self.next = ps.ip6.NEXT_HEADER_ICMP6
+            self.next = ip6.ps.NEXT_HEADER_ICMP6
 
         elif self._child_packet.protocol == "UDP":
-            self.next = ps.ip6.NEXT_HEADER_UDP
+            self.next = ip6.ps.NEXT_HEADER_UDP
 
         elif self._child_packet.protocol == "TCP":
-            self.next = ps.ip6.NEXT_HEADER_TCP
+            self.next = ip6.ps.NEXT_HEADER_TCP
 
         elif self._child_packet.protocol == "IP6_EXT_FRAG":
-            self.next = ps.ip6.NEXT_HEADER_EXT_FRAG
+            self.next = ip6.ps.NEXT_HEADER_EXT_FRAG
 
         self.dlen = len(child_packet)
 
     def __len__(self):
         """ Length of the packet """
 
-        return ps.ip6.HEADER_LEN + len(self._child_packet)
+        return ip6.ps.HEADER_LEN + len(self._child_packet)
 
     @property
     def pshdr_sum(self):
@@ -122,4 +122,4 @@ class Assembler(ps.ip6.Base):
             self.dst.packed,
         )
 
-        self._child_packet.assemble(frame, hptr + ps.ip6.HEADER_LEN, self.pshdr_sum)
+        self._child_packet.assemble(frame, hptr + ip6.ps.HEADER_LEN, self.pshdr_sum)

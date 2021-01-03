@@ -43,12 +43,12 @@
 
 import struct
 
-import ps.udp
+import udp.ps
 from misc.ip_helper import inet_cksum
 from misc.tracker import Tracker
 
 
-class Assembler(ps.udp.Base):
+class Assembler(udp.ps.Base):
     """ UDP packet assembler support class """
 
     protocol = "UDP"
@@ -61,7 +61,7 @@ class Assembler(ps.udp.Base):
         self.sport = sport
         self.dport = dport
         self.data = data
-        self.plen = ps.udp.HEADER_LEN + len(self.data)
+        self.plen = udp.ps.HEADER_LEN + len(self.data)
 
     def __len__(self):
         """ Length of the packet """

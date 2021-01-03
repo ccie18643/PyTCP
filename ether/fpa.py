@@ -43,10 +43,10 @@
 
 import struct
 
-import ps.ether
+import ether.ps
 
 
-class Assembler(ps.ether.Base):
+class Assembler(ether.ps.Base):
     """ Ethernet packet assembler support class """
 
     protocol = "ETHER"
@@ -63,22 +63,22 @@ class Assembler(ps.ether.Base):
         self.src = src
 
         if self._child_packet.protocol == "IP6":
-            self.type = ps.ether.TYPE_IP6
+            self.type = ether.ps.TYPE_IP6
 
         if self._child_packet.protocol == "IP4":
-            self.type = ps.ether.TYPE_IP4
+            self.type = ether.ps.TYPE_IP4
 
         if self._child_packet.protocol == "ARP":
-            self.type = ps.ether.TYPE_ARP
+            self.type = ether.ps.TYPE_ARP
 
     def __len__(self):
         """ Length of the packet """
 
-        return ps.ether.HEADER_LEN + len(self._child_packet)
+        return ether.ps.HEADER_LEN + len(self._child_packet)
 
     def assemble(self, frame, hptr):
         """ Assemble packet into the raw form """
 
         struct.pack_into("! 6s 6s H", frame, hptr, bytes.fromhex(self.dst.replace(":", "")), bytes.fromhex(self.src.replace(":", "")), self.type)
 
-        self._child_packet.assemble(frame, hptr + ps.ether.HEADER_LEN)
+        self._child_packet.assemble(frame, hptr + ether.ps.HEADER_LEN)

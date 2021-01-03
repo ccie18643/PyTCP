@@ -43,12 +43,12 @@
 
 import struct
 
+import arp.ps
 import config
-import ps.arp
 from misc.ipv4_address import IPv4Address
 
 
-class Parser(ps.arp.Base):
+class Parser(arp.ps.Base):
     """ ARP packet parser class """
 
     class __not_cached:
@@ -153,7 +153,7 @@ class Parser(ps.arp.Base):
         """ Read the whole packet """
 
         if self.__packet_copy is self.__not_cached:
-            self.__packet_copy = self._frame[self._hptr : self._hptr + ps.arp.HEADER_LEN]
+            self.__packet_copy = self._frame[self._hptr : self._hptr + arp.ps.HEADER_LEN]
         return self.__packet_copy
 
     def _packet_integrity_check(self):
@@ -162,7 +162,7 @@ class Parser(ps.arp.Base):
         if not config.packet_integrity_check:
             return False
 
-        if len(self) < ps.arp.HEADER_LEN:
+        if len(self) < arp.ps.HEADER_LEN:
             return "ARP integrity - wrong packet length (I)"
 
         return False

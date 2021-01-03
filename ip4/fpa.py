@@ -44,13 +44,13 @@
 import struct
 
 import config
-import ps.ip4
+import ip4.ps
 from misc.ip_helper import inet_cksum
 from misc.ipv4_address import IPv4Address
 from misc.tracker import Tracker
 
 
-class Assembler(ps.ip4.Base):
+class Assembler(ip4.ps.Base):
     """ IPv4 packet assembler support class """
 
     protocol = "IP4"
@@ -87,22 +87,22 @@ class Assembler(ps.ip4.Base):
 
         self.options = [] if options is None else options
 
-        self.hlen = ps.ip4.HEADER_LEN + len(self.raw_options)
+        self.hlen = ip4.ps.HEADER_LEN + len(self.raw_options)
         self.plen = len(self)
 
         if self._child_packet.protocol == "ICMP4":
-            self.proto = ps.ip4.PROTO_ICMP4
+            self.proto = ip4.ps.PROTO_ICMP4
 
         if self._child_packet.protocol == "UDP":
-            self.proto = ps.ip4.PROTO_UDP
+            self.proto = ip4.ps.PROTO_UDP
 
         if self._child_packet.protocol == "TCP":
-            self.proto = ps.ip4.PROTO_TCP
+            self.proto = ip4.ps.PROTO_TCP
 
     def __len__(self):
         """ Length of the packet """
 
-        return ps.ip4.HEADER_LEN + sum([len(_) for _ in self.options]) + len(self._child_packet)
+        return ip4.ps.HEADER_LEN + sum([len(_) for _ in self.options]) + len(self._child_packet)
 
     @property
     def raw_options(self):
@@ -153,7 +153,7 @@ class Assembler(ps.ip4.Base):
         self._child_packet.assemble(frame, hptr + self.hlen, self.pshdr_sum)
 
 
-class FragAssembler(ps.ip4.Base):
+class FragAssembler(ip4.ps.Base):
     """ IPv4 packet fragment assembler support class """
 
     protocol = "IP4"
@@ -191,13 +191,13 @@ class FragAssembler(ps.ip4.Base):
         self.data = data
         self.proto = proto
 
-        self.hlen = ps.ip4.HEADER_LEN + len(self.raw_options)
+        self.hlen = ip4.ps.HEADER_LEN + len(self.raw_options)
         self.plen = len(self)
 
     def __len__(self):
         """ Length of the packet """
 
-        return ps.ip4.HEADER_LEN + sum([len(_) for _ in self.options]) + len(self.data)
+        return ip4.ps.HEADER_LEN + sum([len(_) for _ in self.options]) + len(self.data)
 
     @property
     def raw_options(self):
@@ -249,20 +249,20 @@ class FragAssembler(ps.ip4.Base):
 # IPv4 option - End of Option Linst
 
 
-class OptEol(ps.ip4.OptEol):
+class OptEol(ip4.ps.OptEol):
     """ IP option - End of Option List """
 
     @property
     def raw_option(self):
-        return struct.pack("!B", ps.ip4.OPT_EOL)
+        return struct.pack("!B", ip4.ps.OPT_EOL)
 
 
 # IPv4 option - No Operation (1)
 
 
-class OptNop(ps.ip4.OptNop):
+class OptNop(ip4.ps.OptNop):
     """ IP option - No Operation """
 
     @property
     def raw_option(self):
-        return struct.pack("!B", ps.ip4.OPT_NOP)
+        return struct.pack("!B", ip4.ps.OPT_NOP)

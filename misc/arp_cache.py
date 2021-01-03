@@ -45,9 +45,9 @@ import time
 
 import loguru
 
+import arp.ps
 import config
 import misc.stack as stack
-import ps.arp
 from misc.ipv4_address import IPv4Address
 
 
@@ -130,7 +130,7 @@ class ArpCache:
         self.packet_handler._phtx_arp(
             ether_src=self.packet_handler.mac_unicast,
             ether_dst="ff:ff:ff:ff:ff:ff",
-            arp_oper=ps.arp.OP_REQUEST,
+            arp_oper=arp.ps.OP_REQUEST,
             arp_sha=self.packet_handler.mac_unicast,
             arp_spa=self.packet_handler.ip4_unicast[0] if self.packet_handler.ip4_unicast else IPv4Address("0.0.0.0"),
             arp_tha="00:00:00:00:00:00",

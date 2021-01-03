@@ -181,7 +181,8 @@ class OptTimestamp:
         return OPT_TIMESTAMP_LEN
 
 
-# TCP unknow option
+# TCP unknown option
+
 
 class OptUnk:
     """ TCP option not supported by this stack """

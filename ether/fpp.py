@@ -44,10 +44,10 @@
 import struct
 
 import config
-import ps.ether
+import ether.ps
 
 
-class Parser(ps.ether.Base):
+class Parser(ether.ps.Base):
     """ Ethernet packet parser class """
 
     class __not_cached:
@@ -72,7 +72,7 @@ class Parser(ps.ether.Base):
         packet_rx.parse_failed = self._packet_integrity_check() or self._packet_sanity_check()
 
         if not packet_rx.parse_failed:
-            packet_rx.hptr = self._hptr + ps.ether.HEADER_LEN
+            packet_rx.hptr = self._hptr + ether.ps.HEADER_LEN
 
     def __len__(self):
         """ Number of bytes remaining in the frame """
@@ -108,7 +108,7 @@ class Parser(ps.ether.Base):
         """ Return copy of packet header """
 
         if self.__header_copy is self.__not_cached:
-            self.__header_copy = self._frame[self._hptr : self._hptr + ps.ether.HEADER_LEN]
+            self.__header_copy = self._frame[self._hptr : self._hptr + ether.ps.HEADER_LEN]
         return self.__header_copy
 
     @property
@@ -116,7 +116,7 @@ class Parser(ps.ether.Base):
         """ Return copy of packet data """
 
         if self.__data_copy is self.__not_cached:
-            self.__data_copy = self._frame[self._hptr + ps.ether.HEADER_LEN :]
+            self.__data_copy = self._frame[self._hptr + ether.ps.HEADER_LEN :]
         return self.__data_copy
 
     @property
@@ -141,7 +141,7 @@ class Parser(ps.ether.Base):
         if not config.packet_integrity_check:
             return False
 
-        if len(self) < ps.ether.HEADER_LEN:
+        if len(self) < ether.ps.HEADER_LEN:
             return "ETHER integrity - wrong packet length (I)"
 
         return False
@@ -152,7 +152,7 @@ class Parser(ps.ether.Base):
         if not config.packet_sanity_check:
             return False
 
-        if self.type < ps.ether.TYPE_MIN:
+        if self.type < ether.ps.TYPE_MIN:
             return "ETHER sanity - 'ether_type' must be greater than 0x0600"
 
         return False

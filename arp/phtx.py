@@ -41,8 +41,8 @@
 #
 
 
+import arp.fpa
 import config
-import fpa.arp
 
 
 def _phtx_arp(self, ether_src, ether_dst, arp_oper, arp_sha, arp_spa, arp_tha, arp_tpa, echo_tracker=None):
@@ -52,7 +52,7 @@ def _phtx_arp(self, ether_src, ether_dst, arp_oper, arp_sha, arp_spa, arp_tha, a
     if not config.ip4_support:
         return
 
-    arp_packet_tx = fpa.arp.Assembler(
+    arp_packet_tx = arp.fpa.Assembler(
         oper=arp_oper,
         sha=arp_sha,
         spa=arp_spa,

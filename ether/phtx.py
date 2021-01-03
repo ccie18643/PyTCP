@@ -40,8 +40,8 @@
 # phtx/ether.py - packet handler for outbound Ethernet packets
 #
 
-import fpa.ether
-import ps.ether
+import ether.fpa
+import ether.ps
 
 
 def _phtx_ether(self, child_packet, ether_src="00:00:00:00:00:00", ether_dst="00:00:00:00:00:00"):
@@ -52,7 +52,7 @@ def _phtx_ether(self, child_packet, ether_src="00:00:00:00:00:00", ether_dst="00
             self._logger.opt(depth=1).debug(f"{ether_packet_tx.tracker} - {ether_packet_tx}")
         self.tx_ring.enqueue(ether_packet_tx)
 
-    ether_packet_tx = fpa.ether.Assembler(src=ether_src, dst=ether_dst, child_packet=child_packet)
+    ether_packet_tx = ether.fpa.Assembler(src=ether_src, dst=ether_dst, child_packet=child_packet)
 
     # Check if packet contains valid source address, fill it out if needed
     if ether_packet_tx.src == "00:00:00:00:00:00":
@@ -68,7 +68,7 @@ def _phtx_ether(self, child_packet, ether_src="00:00:00:00:00:00", ether_dst="00
         return
 
     # Check if we can obtain destination MAC based on IPv6 header data
-    if ether_packet_tx.type == ps.ether.TYPE_IP6:
+    if ether_packet_tx.type == ether.ps.TYPE_IP6:
         ip6_src = ether_packet_tx._child_packet.src
         ip6_dst = ether_packet_tx._child_packet.dst
 
@@ -105,7 +105,7 @@ def _phtx_ether(self, child_packet, ether_src="00:00:00:00:00:00", ether_dst="00
             return
 
     # Check if we can obtain destination MAC based on IPv4 header data
-    if ether_packet_tx.type == ps.ether.TYPE_IP4:
+    if ether_packet_tx.type == ether.ps.TYPE_IP4:
         ip4_src = ether_packet_tx._child_packet.src
         ip4_dst = ether_packet_tx._child_packet.dst
 

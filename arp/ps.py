@@ -76,4 +76,3 @@ class Base:
             return f"ARP request {self.spa} / {self.sha} > {self.tpa} / {self.tha}"
         if self.oper == OP_REPLY:
             return f"ARP reply {self.spa} / {self.sha} > {self.tpa} / {self.tha}"
-

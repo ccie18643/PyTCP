@@ -41,16 +41,16 @@
 #
 
 
+import arp.fpp
+import arp.ps
 import config
-import fpp.arp
-import ps.arp
 from misc.ipv4_address import IPv4Address
 
 
 def _phrx_arp(self, packet_rx):
     """ Handle inbound ARP packets """
 
-    fpp.arp.Parser(packet_rx)
+    arp.fpp.Parser(packet_rx)
 
     if packet_rx.parse_failed:
         if __debug__:
@@ -60,7 +60,7 @@ def _phrx_arp(self, packet_rx):
     if __debug__:
         self._logger.opt(ansi=True).info(f"<green>{packet_rx.tracker}</green> - {packet_rx.arp}")
 
-    if packet_rx.arp.oper == ps.arp.OP_REQUEST:
+    if packet_rx.arp.oper == arp.ps.OP_REQUEST:
         # Check if request contains our IP address in SPA field, this indicates IP address conflict
         if packet_rx.arp.spa in self.ip4_unicast:
             if __debug__:
@@ -72,7 +72,7 @@ def _phrx_arp(self, packet_rx):
             self._phtx_arp(
                 ether_src=self.mac_unicast,
                 ether_dst=packet_rx.arp.sha,
-                arp_oper=ps.arp.OP_REPLY,
+                arp_oper=arp.ps.OP_REPLY,
                 arp_sha=self.mac_unicast,
                 arp_spa=packet_rx.arp.tpa,
                 arp_tha=packet_rx.arp.sha,
@@ -89,7 +89,7 @@ def _phrx_arp(self, packet_rx):
             return
 
     # Handle ARP reply
-    elif packet_rx.arp.oper == ps.arp.OP_REPLY:
+    elif packet_rx.arp.oper == arp.ps.OP_REPLY:
         # Check for ARP reply that is response to our ARP probe, that indicates that IP address we trying to claim is in use
         if packet_rx.ether.dst == self.mac_unicast:
             if (

@@ -86,4 +86,3 @@ class Base:
             f"IPv6 {self.src} > {self.dst}, next {self.next} ({NEXT_HEADER_TABLE.get(self.next, '???')}), flow {self.flow}"
             + f", dlen {self.dlen}, hop {self.hop}"
         )
-

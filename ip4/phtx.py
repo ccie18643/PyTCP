@@ -42,7 +42,7 @@
 
 
 import config
-import fpa.ip4
+import ip4.fpa
 from misc.ipv4_address import IPv4Address
 
 
@@ -138,7 +138,7 @@ def _phtx_ip4(self, child_packet, ip4_dst, ip4_src, ip4_ttl=config.ip4_default_t
         return
 
     # Assemble IPv4 packet
-    ip4_packet_tx = fpa.ip4.Assembler(src=ip4_src, dst=ip4_dst, ttl=ip4_ttl, child_packet=child_packet)
+    ip4_packet_tx = ip4.fpa.Assembler(src=ip4_src, dst=ip4_dst, ttl=ip4_ttl, child_packet=child_packet)
 
     # Send packet out if it's size doesn't exceed mtu
     if len(ip4_packet_tx) <= config.mtu:
@@ -157,7 +157,7 @@ def _phtx_ip4(self, child_packet, ip4_dst, ip4_src, ip4_ttl=config.ip4_default_t
         offset = 0
         self.ip4_id += 1
         for data_frag in data_frags:
-            ip4_frag_tx = fpa.ip4.FragAssembler(
+            ip4_frag_tx = ip4.fpa.FragAssembler(
                 src=ip4_src,
                 dst=ip4_dst,
                 ttl=ip4_ttl,

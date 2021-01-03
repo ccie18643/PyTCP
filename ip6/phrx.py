@@ -41,14 +41,14 @@
 #
 
 
-import fpp.ip6
-import ps.ip6
+import ip6.fpp
+import ip6.ps
 
 
 def _phrx_ip6(self, packet_rx):
     """ Handle inbound IPv6 packets """
 
-    fpp.ip6.Parser(packet_rx)
+    ip6.fpp.Parser(packet_rx)
 
     if packet_rx.parse_failed:
         if __debug__:
@@ -64,18 +64,18 @@ def _phrx_ip6(self, packet_rx):
             self._logger.debug(f"{packet_rx.tracker} - IP packet not destined for this stack, dropping...")
         return
 
-    if packet_rx.ip6.next == ps.ip6.NEXT_HEADER_EXT_FRAG:
+    if packet_rx.ip6.next == ip6.ps.NEXT_HEADER_EXT_FRAG:
         self._phrx_ip6_ext_frag(packet_rx)
         return
 
-    if packet_rx.ip6.next == ps.ip6.NEXT_HEADER_ICMP6:
+    if packet_rx.ip6.next == ip6.ps.NEXT_HEADER_ICMP6:
         self._phrx_icmp6(packet_rx)
         return
 
-    if packet_rx.ip6.next == ps.ip6.NEXT_HEADER_UDP:
+    if packet_rx.ip6.next == ip6.ps.NEXT_HEADER_UDP:
         self._phrx_udp(packet_rx)
         return
 
-    if packet_rx.ip6.next == ps.ip6.NEXT_HEADER_TCP:
+    if packet_rx.ip6.next == ip6.ps.NEXT_HEADER_TCP:
         self._phrx_tcp(packet_rx)
         return

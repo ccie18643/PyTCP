@@ -43,12 +43,12 @@
 
 import struct
 
-import ps.tcp
+import tcp.ps
 from misc.ip_helper import inet_cksum
 from misc.tracker import Tracker
 
 
-class Assembler(ps.tcp.Base):
+class Assembler(tcp.ps.Base):
     """ TCP packet assembler support class """
 
     protocol = "TCP"
@@ -98,7 +98,7 @@ class Assembler(ps.tcp.Base):
 
         self.data = data
 
-        self.hlen = ps.tcp.HEADER_LEN + sum([len(_) for _ in self.options])
+        self.hlen = tcp.ps.HEADER_LEN + sum([len(_) for _ in self.options])
 
         assert self.hlen % 4 == 0, f"TCP header len {self.hlen} is not multiplcation of 4 bytes, check options... {self.options}"
 
@@ -153,23 +153,23 @@ class Assembler(ps.tcp.Base):
 #
 
 
-class OptEol(ps.tcp.OptEol):
+class OptEol(tcp.ps.OptEol):
     """ TCP option - End of Option List (0) """
 
     @property
     def raw_option(self):
-        return struct.pack("!B", ps.tcp.OPT_EOL)
+        return struct.pack("!B", tcp.ps.OPT_EOL)
 
 
-class OptNop(ps.tcp.OptNop):
+class OptNop(tcp.ps.OptNop):
     """ TCP option - No Operation (1) """
 
     @property
     def raw_option(self):
-        return struct.pack("!B", ps.tcp.OPT_NOP)
+        return struct.pack("!B", tcp.ps.OPT_NOP)
 
 
-class OptMss(ps.tcp.OptMss):
+class OptMss(tcp.ps.OptMss):
     """ TCP option - Maximum Segment Size (2) """
 
     def __init__(self, mss):
@@ -177,10 +177,10 @@ class OptMss(ps.tcp.OptMss):
 
     @property
     def raw_option(self):
-        return struct.pack("! BB H", ps.tcp.OPT_MSS, ps.tcp.OPT_MSS_LEN, self.mss)
+        return struct.pack("! BB H", tcp.ps.OPT_MSS, tcp.ps.OPT_MSS_LEN, self.mss)
 
 
-class OptWscale(ps.tcp.OptWscale):
+class OptWscale(tcp.ps.OptWscale):
     """ TCP option - Window Scale (3) """
 
     def __init__(self, wscale):
@@ -188,18 +188,18 @@ class OptWscale(ps.tcp.OptWscale):
 
     @property
     def raw_option(self):
-        return struct.pack("! BB B", ps.tcp.OPT_WSCALE, ps.tcp.OPT_WSCALE_LEN, self.wscale)
+        return struct.pack("! BB B", tcp.ps.OPT_WSCALE, tcp.ps.OPT_WSCALE_LEN, self.wscale)
 
 
-class OptSackPerm(ps.tcp.OptSackPerm):
+class OptSackPerm(tcp.ps.OptSackPerm):
     """ TCP option - Sack Permit (4) """
 
     @property
     def raw_option(self):
-        return struct.pack("! BB", ps.tcp.OPT_SACKPERM, ps.tcp.OPT_SACKPERM_LEN)
+        return struct.pack("! BB", tcp.ps.OPT_SACKPERM, tcp.ps.OPT_SACKPERM_LEN)
 
 
-class OptTimestamp(ps.tcp.OptTimestamp):
+class OptTimestamp(tcp.ps.OptTimestamp):
     """ TCP option - Timestamp (8) """
 
     def __init__(self, tsval, tsecr):
@@ -208,4 +208,4 @@ class OptTimestamp(ps.tcp.OptTimestamp):
 
     @property
     def raw_option(self):
-        return struct.pack("! BB LL", ps.tcp.OPT_TIMESTAMP, ps.tcp.OPT_TIMESTAMP_LEN, self.tsval, self.tsecr)
+        return struct.pack("! BB LL", tcp.ps.OPT_TIMESTAMP, tcp.ps.OPT_TIMESTAMP_LEN, self.tsval, self.tsecr)

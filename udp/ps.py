@@ -60,4 +60,3 @@ class Base:
         """ Packet log string """
 
         return f"UDP {self.sport} > {self.dport}, len {self.plen}"
-

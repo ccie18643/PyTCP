@@ -44,7 +44,7 @@ import struct
 from time import time
 
 import config
-import fpp.ip6_ext_frag
+import ip6_ext_frag.fpp
 from misc.packet import PacketRx
 
 
@@ -103,7 +103,7 @@ def _defragment_ip6_packet(self, packet_rx):
 def _phrx_ip6_ext_frag(self, packet_rx):
     """ Handle inbound IPv6 fragment extension header """
 
-    fpp.ip6_ext_frag.Parser(packet_rx)
+    ip6_ext_frag.fpp.Parser(packet_rx)
 
     if packet_rx.parse_failed:
         if __debug__:

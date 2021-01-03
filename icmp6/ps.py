@@ -459,6 +459,7 @@ class NdOptPI:
 
 # ICMPv6 ND unknown option
 
+
 class NdOptUnk:
     """ ICMPv6 ND  option not supported by this stack """
 

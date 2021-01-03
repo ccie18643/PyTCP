@@ -42,14 +42,14 @@
 
 
 import config
-import fpp.ether
-import ps.ether
+import ether.fpp
+import ether.ps
 
 
 def _phrx_ether(self, packet_rx):
     """ Handle inbound Ethernet packets """
 
-    fpp.ether.Parser(packet_rx)
+    ether.fpp.Parser(packet_rx)
 
     if packet_rx.parse_failed:
         if __debug__:
@@ -65,14 +65,14 @@ def _phrx_ether(self, packet_rx):
             self._logger.opt(ansi=True).debug(f"{packet_rx.tracker} - Ethernet packet not destined for this stack, dropping...")
         return
 
-    if packet_rx.ether.type == ps.ether.TYPE_ARP and config.ip4_support:
+    if packet_rx.ether.type == ether.ps.TYPE_ARP and config.ip4_support:
         self._phrx_arp(packet_rx)
         return
 
-    if packet_rx.ether.type == ps.ether.TYPE_IP4 and config.ip4_support:
+    if packet_rx.ether.type == ether.ps.TYPE_IP4 and config.ip4_support:
         self._phrx_ip4(packet_rx)
         return
 
-    if packet_rx.ether.type == ps.ether.TYPE_IP6 and config.ip6_support:
+    if packet_rx.ether.type == ether.ps.TYPE_IP6 and config.ip6_support:
         self._phrx_ip6(packet_rx)
         return

@@ -44,10 +44,10 @@
 import struct
 
 import config
-import ps.ip6_ext_frag
+import ip6_ext_frag.ps
 
 
-class Parser(ps.ip6_ext_frag.Base):
+class Parser(ip6_ext_frag.ps.Base):
     """ IPv6 fragmentation extension header parser class """
 
     class __not_cached:
@@ -72,7 +72,7 @@ class Parser(ps.ip6_ext_frag.Base):
         packet_rx.parse_failed = self._packet_integrity_check() or self._packet_sanity_check()
 
         if not packet_rx.parse_failed:
-            packet_rx.hptr = self._hptr + ps.ip6_ext_frag.HEADER_LEN
+            packet_rx.hptr = self._hptr + ip6_ext_frag.ps.HEADER_LEN
 
     def __len__(self):
         """ Number of bytes remaining in the frame """
@@ -111,13 +111,13 @@ class Parser(ps.ip6_ext_frag.Base):
     def hlen(self):
         """ Calculate header length """
 
-        return ps.ip6_ext_frag.HEADER_LEN
+        return ip6_ext_frag.ps.HEADER_LEN
 
     @property
     def dlen(self):
         """ Calculate data length """
 
-        return self._plen - ps.ip6_ext_frag.HEADER_LEN
+        return self._plen - ip6_ext_frag.ps.HEADER_LEN
 
     @property
     def plen(self):
@@ -130,7 +130,7 @@ class Parser(ps.ip6_ext_frag.Base):
         """ Return copy of packet header """
 
         if self.__header_copy is self.__not_cached:
-            self.__header_copy = self._frame[self._hptr : self._hptr + ps.ip6_ext_frag.HEADER_LEN]
+            self.__header_copy = self._frame[self._hptr : self._hptr + ip6_ext_frag.ps.HEADER_LEN]
         return self.__header_copy
 
     @property
@@ -138,7 +138,7 @@ class Parser(ps.ip6_ext_frag.Base):
         """ Return copy of packet data """
 
         if self.__data_copy is self.__not_cached:
-            self.__data_copy = self._frame[self._hptr + ps.ip6_ext_frag.HEADER_LEN : self._hptr + self.plen]
+            self.__data_copy = self._frame[self._hptr + ip6_ext_frag.ps.HEADER_LEN : self._hptr + self.plen]
         return self.__data_copy
 
     @property
