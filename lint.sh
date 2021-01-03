@@ -1,4 +1,6 @@
 #!/bin/bash
-isort --profile black *.py
-black -l 160 *.py
-flake8 *.py
+PY_PATH=$(find . -name '*.py')
+codespell -w --ignore-words-list="ect,ether,nd,tha" --quiet-level=2 ${PY_PATH} README.md
+isort --profile black ${PY_PATH}
+black -l 160 ${PY_PATH}
+flake8 ${PY_PATH}
