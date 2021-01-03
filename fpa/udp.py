@@ -43,22 +43,12 @@
 
 import struct
 
+import ps.udp
 from misc.ip_helper import inet_cksum
 from misc.tracker import Tracker
 
-# UDP packet header (RFC 768)
 
-# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-# |          Source port          |        Destination port       |
-# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-# |         Packet length         |            Checksum           |
-# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-
-
-HEADER_LEN = 8
-
-
-class Assembler:
+class Assembler(ps.udp.Base):
     """ UDP packet assembler support class """
 
     protocol = "UDP"
@@ -71,12 +61,7 @@ class Assembler:
         self.sport = sport
         self.dport = dport
         self.data = data
-        self.plen = HEADER_LEN + len(self.data)
-
-    def __str__(self):
-        """ Packet log string """
-
-        return f"UDP {self.sport} > {self.dport}, len {self.plen}"
+        self.plen = ps.udp.HEADER_LEN + len(self.data)
 
     def __len__(self):
         """ Length of the packet """

@@ -37,22 +37,22 @@
 
 
 #
-# ps/ip4.py - protocol support class for IPv4
+# ps/tcp.py - protocol support class for TCP protocol
 #
 
 
-# IPv4 protocol header
+# TCP packet header (RFC 793)
 
 # +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-# |Version|  IHL  |   DSCP    |ECN|          Packet length        |
+# |          Source Port          |       Destination Port        |
 # +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-# |         Identification        |Flags|      Fragment offset    |
+# |                        Sequence Number                        |
 # +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-# |  Time to live |    Protocol   |         Header checksum       |
+# |                    Acknowledgment Number                      |
 # +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-# |                       Source address                          |
+# |  Hlen | Res |N|C|E|U|A|P|R|S|F|            Window             |
 # +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-# |                    Destination address                        |
+# |           Checksum            |         Urgent Pointer        |
 # +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 # ~                    Options                    ~    Padding    ~
 # +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
@@ -60,40 +60,39 @@
 
 HEADER_LEN = 20
 
-PROTO_ICMP4 = 1
-PROTO_TCP = 6
-PROTO_UDP = 17
-
-
-PROTO_TABLE = {PROTO_ICMP4: "ICMPv4", PROTO_TCP: "TCP", PROTO_UDP: "UDP"}
-
 
 class Base:
-    """ IPv4 packet base class """
+    """ TCP packet base class """
 
     def __str__(self):
         """ Packet log string """
 
-        return (
-            f"IPv4 {self.src} > {self.dst}, proto {self.proto} ({PROTO_TABLE.get(self.proto, '???')}), id {self.id}"
-            + f"{', DF' if self.flag_df else ''}{', MF' if self.flag_mf else ''}, offset {self.offset}, plen {self.plen}"
-            + f", ttl {self.ttl}"
+        log = (
+            f"TCP {self.sport} > {self.dport}, {'N' if self.flag_ns else ''}{'C' if self.flag_crw else ''}"
+            + f"{'E' if self.flag_ece else ''}{'U' if self.flag_urg else ''}{'A' if self.flag_ack else ''}"
+            + f"{'P' if self.flag_psh else ''}{'R' if self.flag_rst else ''}{'S' if self.flag_syn else ''}"
+            + f"{'F' if self.flag_fin else ''}, seq {self.seq}, ack {self.ack}, win {self.win}, dlen {len(self.data)}"
         )
 
+        for option in self.options:
+            log += ", " + str(option)
+
+        return log
+
 
 #
-#   IPv4 options
+# TCP options
 #
 
 
-# IPv4 option - End of Option Linst
+# TCP option - End of Option List (0)
 
 OPT_EOL = 0
 OPT_EOL_LEN = 1
 
 
 class OptEol:
-    """ IPv4 option - End of Option List """
+    """ TCP option - End of Option List (0) """
 
     def __str__(self):
         return "eol"
@@ -102,14 +101,14 @@ class OptEol:
         return OPT_EOL_LEN
 
 
-# IPv4 option - No Operation (1)
+# TCP option - No Operation (1)
 
 OPT_NOP = 1
 OPT_NOP_LEN = 1
 
 
 class OptNop:
-    """ IPv4 option - No Operation """
+    """ TCP option - No Operation (1) """
 
     def __str__(self):
         return "nop"
@@ -118,11 +117,74 @@ class OptNop:
         return OPT_NOP_LEN
 
 
-# IPv4 option not supported by this stack
+# TCP option - Maximum Segment Size (2)
 
+OPT_MSS = 2
+OPT_MSS_LEN = 4
+
+
+class OptMss:
+    """ TCP option - Maximum Segment Size (2) """
+
+    def __str__(self):
+        return f"mss {self.mss}"
+
+    def __len__(self):
+        return OPT_MSS_LEN
+
+
+# TCP option - Window Scale (3)
+
+OPT_WSCALE = 3
+OPT_WSCALE_LEN = 3
+
+
+class OptWscale:
+    """ TCP option - Window Scale (3) """
+
+    def __str__(self):
+        return f"wscale {self.wscale}"
+
+    def __len__(self):
+        return OPT_WSCALE_LEN
+
+
+# TCP option - Sack Permit (4)
+
+OPT_SACKPERM = 4
+OPT_SACKPERM_LEN = 2
+
+
+class OptSackPerm:
+    """ TCP option - Sack Permit (4) """
+
+    def __str__(self):
+        return "sack_perm"
+
+    def __len__(self):
+        return OPT_SACKPERM_LEN
+
+
+# TCP option - Timestamp
+
+OPT_TIMESTAMP = 8
+OPT_TIMESTAMP_LEN = 10
+
+
+class OptTimestamp:
+    """ TCP option - Timestamp (8) """
+
+    def __str__(self):
+        return f"ts {self.tsval}/{self.tsecr}"
+
+    def __len__(self):
+        return OPT_TIMESTAMP_LEN
+
+
+# TCP unknow option
 
 class OptUnk:
-    """ IPv4 option not supported by this stack """
+    """ TCP option not supported by this stack """
 
     def __str__(self):
         return f"unk-{self.kind}-{self.len}"

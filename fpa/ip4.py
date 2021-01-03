@@ -249,7 +249,7 @@ class FragAssembler(ps.ip4.Base):
 # IPv4 option - End of Option Linst
 
 
-class OptEol(ps.ip4.OptEolBase):
+class OptEol(ps.ip4.OptEol):
     """ IP option - End of Option List """
 
     @property
@@ -260,7 +260,7 @@ class OptEol(ps.ip4.OptEolBase):
 # IPv4 option - No Operation (1)
 
 
-class OptNop(ps.ip4.OptNopBase):
+class OptNop(ps.ip4.OptNop):
     """ IP option - No Operation """
 
     @property

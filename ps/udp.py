@@ -37,92 +37,27 @@
 
 
 #
-# ps/ip4.py - protocol support class for IPv4
+# ps/udp.py - protocol support class for UDP protocol
 #
 
 
-# IPv4 protocol header
+# UDP packet header (RFC 768)
 
 # +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-# |Version|  IHL  |   DSCP    |ECN|          Packet length        |
+# |          Source port          |        Destination port       |
 # +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-# |         Identification        |Flags|      Fragment offset    |
-# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-# |  Time to live |    Protocol   |         Header checksum       |
-# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-# |                       Source address                          |
-# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-# |                    Destination address                        |
-# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-# ~                    Options                    ~    Padding    ~
+# |         Packet length         |            Checksum           |
 # +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 
 
-HEADER_LEN = 20
-
-PROTO_ICMP4 = 1
-PROTO_TCP = 6
-PROTO_UDP = 17
-
-
-PROTO_TABLE = {PROTO_ICMP4: "ICMPv4", PROTO_TCP: "TCP", PROTO_UDP: "UDP"}
+HEADER_LEN = 8
 
 
 class Base:
-    """ IPv4 packet base class """
+    """ UDP packet base class """
 
     def __str__(self):
         """ Packet log string """
 
-        return (
-            f"IPv4 {self.src} > {self.dst}, proto {self.proto} ({PROTO_TABLE.get(self.proto, '???')}), id {self.id}"
-            + f"{', DF' if self.flag_df else ''}{', MF' if self.flag_mf else ''}, offset {self.offset}, plen {self.plen}"
-            + f", ttl {self.ttl}"
-        )
+        return f"UDP {self.sport} > {self.dport}, len {self.plen}"
 
-
-#
-#   IPv4 options
-#
-
-
-# IPv4 option - End of Option Linst
-
-OPT_EOL = 0
-OPT_EOL_LEN = 1
-
-
-class OptEol:
-    """ IPv4 option - End of Option List """
-
-    def __str__(self):
-        return "eol"
-
-    def __len__(self):
-        return OPT_EOL_LEN
-
-
-# IPv4 option - No Operation (1)
-
-OPT_NOP = 1
-OPT_NOP_LEN = 1
-
-
-class OptNop:
-    """ IPv4 option - No Operation """
-
-    def __str__(self):
-        return "nop"
-
-    def __len__(self):
-        return OPT_NOP_LEN
-
-
-# IPv4 option not supported by this stack
-
-
-class OptUnk:
-    """ IPv4 option not supported by this stack """
-
-    def __str__(self):
-        return f"unk-{self.kind}-{self.len}"

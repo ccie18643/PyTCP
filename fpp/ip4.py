@@ -354,7 +354,7 @@ class Parser(ps.ip4.Base):
 # IPv4 option - End of Option Linst
 
 
-class OptEol(ps.ip4.OptEolBase):
+class OptEol(ps.ip4.OptEol):
     """ IPv4 option - End of Option List """
 
     def __init__(self):
@@ -364,7 +364,7 @@ class OptEol(ps.ip4.OptEolBase):
 # IPv4 option - No Operation (1)
 
 
-class OptNop(ps.ip4.OptNopBase):
+class OptNop(ps.ip4.OptNop):
     """ IPv4 option - No Operation """
 
     def __init__(self):
@@ -374,7 +374,7 @@ class OptNop(ps.ip4.OptNopBase):
 # IPv4 option not supported by this stack
 
 
-class OptUnk(ps.ip4.OptUnkBase):
+class OptUnk(ps.ip4.OptUnk):
     """ IPv4 option not supported by this stack """
 
     def __init__(self, frame, optr):
