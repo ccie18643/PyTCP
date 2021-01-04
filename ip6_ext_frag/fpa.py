@@ -43,11 +43,11 @@ class Assembler(ip6_ext_frag.ps.Base):
 
     def __init__(
         self,
-        next,
-        offset,
-        flag_mf,
-        id,
-        data,
+        next: int,
+        offset: int,
+        flag_mf: bool,
+        id: int,
+        data: bytes,
     ):
         """ Class constructor """
 
@@ -62,12 +62,12 @@ class Assembler(ip6_ext_frag.ps.Base):
         self.dlen = len(data)
         self.plen = len(self)
 
-    def __len__(self):
+    def __len__(self) -> int:
         """ Length of the packet """
 
         return ip6_ext_frag.ps.HEADER_LEN + len(self.data)
 
-    def assemble(self, frame, hptr, _):
+    def assemble(self, frame: bytearray, hptr: int, _: int):
         """ Assemble packet into the raw form """
 
         struct.pack_into(

@@ -30,10 +30,14 @@
 
 
 import struct
+from typing import Optional, Union
 
 import config
 import ether.ps
+import icmp4.fpa
 import ip4.ps
+import tcp.fpa
+import udp.fpa
 from misc.ip_helper import inet_cksum
 from misc.ipv4_address import IPv4Address
 from misc.tracker import Tracker
@@ -46,16 +50,16 @@ class Assembler(ip4.ps.Base):
 
     def __init__(
         self,
-        carried_packet,
-        src,
-        dst,
-        ttl=config.ip4_default_ttl,
-        dscp=0,
-        ecn=0,
-        id=0,
-        flag_df=False,
-        options=None,
-    ):
+        carried_packet: Union[icmp4.fpa.Assembler, tcp.fpa.Assembler, udp.fpa.Assembler],
+        src: IPv4Address,
+        dst: IPv4Address,
+        ttl: int = config.ip4_default_ttl,
+        dscp: int = 0,
+        ecn: int = 0,
+        id: int = 0,
+        flag_df: bool = False,
+        options: Optional[list] = None,
+    ) -> None:
         """ Class constructor """
 
         assert carried_packet.ip4_proto in {ip4.ps.PROTO_ICMP4, ip4.ps.PROTO_UDP, ip4.ps.PROTO_TCP}
@@ -83,7 +87,7 @@ class Assembler(ip4.ps.Base):
         return ip4.ps.HEADER_LEN + sum([len(_) for _ in self.options]) + len(self._carried_packet)
 
     @property
-    def raw_options(self):
+    def raw_options(self) -> bytes:
         """ Packet options in raw format """
 
         raw_options = b""
@@ -94,19 +98,19 @@ class Assembler(ip4.ps.Base):
         return raw_options
 
     @property
-    def dlen(self):
+    def dlen(self) -> int:
         """ Calculate data length """
 
         return self.plen - self.hlen
 
     @property
-    def pshdr_sum(self):
+    def pshdr_sum(self) -> int:
         """ Create IPv4 pseudo header used by TCP and UDP to compute their checksums """
 
         pseudo_header = struct.pack("! 4s 4s BBH", self.src.packed, self.dst.packed, 0, self.proto, self.plen - self.hlen)
         return sum(struct.unpack("! 3L", pseudo_header))
 
-    def assemble(self, frame, hptr):
+    def assemble(self, frame, hptr) -> None:
         """ Assemble packet into the raw form """
 
         struct.pack_into(
@@ -138,17 +142,17 @@ class FragAssembler(ip4.ps.Base):
 
     def __init__(
         self,
-        data,
-        proto,
-        src,
-        dst,
-        ttl=config.ip4_default_ttl,
-        dscp=0,
-        ecn=0,
-        id=0,
-        flag_mf=False,
-        offset=0,
-        options=None,
+        data: bytes,
+        proto: int,
+        src: IPv4Address,
+        dst: IPv4Address,
+        ttl: int = config.ip4_default_ttl,
+        dscp: int = 0,
+        ecn: int = 0,
+        id: int = 0,
+        flag_mf: int = False,
+        offset: int = 0,
+        options: Optional[list] = None,
     ):
         """ Class constructor """
 
@@ -177,7 +181,7 @@ class FragAssembler(ip4.ps.Base):
         return ip4.ps.HEADER_LEN + sum([len(_) for _ in self.options]) + len(self.data)
 
     @property
-    def raw_options(self):
+    def raw_options(self) -> bytes:
         """ Packet options in raw format """
 
         raw_options = b""
@@ -187,14 +191,7 @@ class FragAssembler(ip4.ps.Base):
 
         return raw_options
 
-    @property
-    def pshdr_sum(self):
-        """ Create IPv4 pseudo header used by TCP and UDP to compute their checksums """
-
-        pseudo_header = struct.pack("! 4s 4s BBH", self.src.packed, self.dst.packed, 0, self.proto, self.plen - self.hlen)
-        return sum(struct.unpack("! 3L", pseudo_header))
-
-    def assemble(self, frame, hptr):
+    def assemble(self, frame: bytearray, hptr: int) -> None:
         """ Assemble packet into the raw form """
 
         struct.pack_into(
@@ -230,7 +227,7 @@ class OptEol(ip4.ps.OptEol):
     """ IP option - End of Option List """
 
     @property
-    def raw_option(self):
+    def raw_option(self) -> bytes:
         return struct.pack("!B", ip4.ps.OPT_EOL)
 
 
@@ -241,5 +238,5 @@ class OptNop(ip4.ps.OptNop):
     """ IP option - No Operation """
 
     @property
-    def raw_option(self):
+    def raw_option(self) -> bytes:
         return struct.pack("!B", ip4.ps.OPT_NOP)

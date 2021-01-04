@@ -30,10 +30,15 @@
 
 
 import struct
+from typing import Union
 
 import config
 import ether.ps
+import icmp6.fpa
 import ip6.ps
+import ip6_ext_frag.fpa
+import tcp.fpa
+import udp.fpa
 from misc.ipv6_address import IPv6Address
 
 
@@ -44,14 +49,14 @@ class Assembler(ip6.ps.Base):
 
     def __init__(
         self,
-        carried_packet,
-        src,
-        dst,
-        hop=config.ip6_default_hop,
-        dscp=0,
-        ecn=0,
-        flow=0,
-    ):
+        carried_packet: Union[ip6_ext_frag.fpa.Assembler, icmp6.fpa.Assembler, tcp.fpa.Assembler, udp.fpa.Assembler],
+        src: IPv6Address,
+        dst: IPv6Address,
+        hop: int = config.ip6_default_hop,
+        dscp: int = 0,
+        ecn: int = 0,
+        flow: int = 0,
+    ) -> None:
         """ Class constructor """
 
         assert carried_packet.ip6_next in {ip6.ps.NEXT_HEADER_ICMP6, ip6.ps.NEXT_HEADER_UDP, ip6.ps.NEXT_HEADER_TCP, ip6.ps.NEXT_HEADER_EXT_FRAG}
@@ -68,19 +73,19 @@ class Assembler(ip6.ps.Base):
         self.next = self._carried_packet.ip6_next
         self.dlen = len(carried_packet)
 
-    def __len__(self):
+    def __len__(self) -> int:
         """ Length of the packet """
 
         return ip6.ps.HEADER_LEN + len(self._carried_packet)
 
     @property
-    def pshdr_sum(self):
+    def pshdr_sum(self) -> int:
         """ Returns IPv6 pseudo header that is used by TCP, UDP and ICMPv6 to compute their checksums """
 
         pseudo_header = struct.pack("! 16s 16s L BBBB", self.src.packed, self.dst.packed, self.dlen, 0, 0, 0, self.next)
         return sum(struct.unpack("! 5Q", pseudo_header))
 
-    def assemble(self, frame, hptr):
+    def assemble(self, frame: bytearray, hptr: int) -> None:
         """ Assemble packet into the raw form """
 
         struct.pack_into(

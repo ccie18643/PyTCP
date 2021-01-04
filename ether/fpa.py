@@ -30,14 +30,20 @@
 
 
 import struct
+from typing import Union
 
+import arp.fpa
 import ether.ps
+import ip4.fpa
+import ip6.fpa
 
 
 class Assembler(ether.ps.Base):
     """ Ethernet packet assembler support class """
 
-    def __init__(self, carried_packet, src="00:00:00:00:00:00", dst="00:00:00:00:00:00"):
+    def __init__(
+        self, carried_packet: Union[arp.fpa.Assembler, ip4.fpa.Assembler, ip6.fpa.Assembler], src: str = "00:00:00:00:00:00", dst: str = "00:00:00:00:00:00"
+    ) -> None:
         """ Class constructor """
 
         assert carried_packet.ether_type in {ether.ps.TYPE_ARP, ether.ps.TYPE_IP4, ether.ps.TYPE_IP6}
@@ -48,12 +54,12 @@ class Assembler(ether.ps.Base):
         self.src = src
         self.type = self._carried_packet.ether_type
 
-    def __len__(self):
+    def __len__(self) -> int:
         """ Length of the packet """
 
         return ether.ps.HEADER_LEN + len(self._carried_packet)
 
-    def assemble(self, frame, hptr):
+    def assemble(self, frame: bytearray, hptr: int) -> None:
         """ Assemble packet into the raw form """
 
         struct.pack_into("! 6s 6s H", frame, hptr, bytes.fromhex(self.dst.replace(":", "")), bytes.fromhex(self.src.replace(":", "")), self.type)

@@ -30,6 +30,7 @@
 
 
 import struct
+from typing import Optional
 
 import arp.ps
 import ether.ps
@@ -42,7 +43,15 @@ class Assembler(arp.ps.Base):
 
     ether_type = ether.ps.TYPE_ARP
 
-    def __init__(self, sha, spa, tpa, tha="00:00:00:00:00:00", oper=arp.ps.OP_REQUEST, echo_tracker=None):
+    def __init__(
+        self,
+        sha: str,
+        spa: IPv4Address,
+        tpa: IPv4Address,
+        tha: str = "00:00:00:00:00:00",
+        oper: int = arp.ps.OP_REQUEST,
+        echo_tracker: Optional[Tracker] = None,
+    ) -> None:
         """ Class constructor """
 
         self.tracker = Tracker("TX", echo_tracker)
@@ -57,12 +66,12 @@ class Assembler(arp.ps.Base):
         self.tha = tha
         self.tpa = IPv4Address(tpa)
 
-    def __len__(self):
+    def __len__(self) -> int:
         """ Length of the packet """
 
         return arp.ps.HEADER_LEN
 
-    def assemble(self, frame, hptr):
+    def assemble(self, frame: bytearray, hptr: int):
         """ Assemble packet into the raw form """
 
         return struct.pack_into(
