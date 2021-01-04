@@ -30,6 +30,7 @@
 
 
 import struct
+from typing import Optional
 
 import ip4.ps
 import ip6.ps
@@ -44,21 +45,21 @@ class Assembler(udp.ps.Base):
     ip4_proto = ip4.ps.PROTO_UDP
     ip6_next = ip6.ps.NEXT_HEADER_UDP
 
-    def __init__(self, sport, dport, data=b"", echo_tracker=None):
+    def __init__(self, sport: int, dport: int, data: Optional[bytes] = None, echo_tracker: Optional[Tracker] = None) -> None:
         """ Class constructor """
 
         self.tracker = Tracker("TX", echo_tracker)
         self.sport = sport
         self.dport = dport
-        self.data = data
+        self.data = b"" if data is None else data
         self.plen = udp.ps.HEADER_LEN + len(self.data)
 
-    def __len__(self):
+    def __len__(self) -> int:
         """ Length of the packet """
 
         return self.plen
 
-    def assemble(self, frame, hptr, pshdr_sum):
+    def assemble(self, frame: bytearray, hptr: int, pshdr_sum: int):
         """ Assemble packet into the raw form """
 
         struct.pack_into(f"! HH HH {len(self.data)}s", frame, hptr, self.sport, self.dport, self.plen, 0, self.data)

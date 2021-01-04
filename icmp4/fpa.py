@@ -30,6 +30,7 @@
 
 
 import struct
+from typing import Optional
 
 import icmp4.ps
 import ip4.ps
@@ -44,35 +45,36 @@ class Assembler(icmp4.ps.Base):
 
     def __init__(
         self,
-        type,
-        code=0,
-        ec_id=None,
-        ec_seq=None,
-        ec_data=b"",
-        un_data=b"",
-        echo_tracker=None,
-    ):
+        type: int,
+        code: int = 0,
+        ec_id: Optional[int] = None,
+        ec_seq: Optional[int] = None,
+        ec_data: Optional[bytes] = None,
+        un_data: Optional[bytes] = None,
+        echo_tracker: Optional[Tracker] = None,
+    ) -> None:
         """ Class constructor """
 
-        self.tracker = Tracker("TX", echo_tracker)
+        assert type in {icmp4.ps.ECHO_REQUEST, icmp4.ps.UNREACHABLE, icmp4.ps.ECHO_REPLY}
 
+        self.tracker = Tracker("TX", echo_tracker)
         self.type = type
         self.code = code
 
         if self.type == icmp4.ps.ECHO_REPLY:
             self.ec_id = ec_id
             self.ec_seq = ec_seq
-            self.ec_data = ec_data
+            self.ec_data = b"" if ec_data is None else ec_data
 
         elif self.type == icmp4.ps.UNREACHABLE and self.code == icmp4.ps.UNREACHABLE__PORT:
-            self.un_data = un_data[:520]
+            self.un_data = b"" if un_data is None else un_data[:520]
 
         elif self.type == icmp4.ps.ECHO_REQUEST:
             self.ec_id = ec_id
             self.ec_seq = ec_seq
-            self.ec_data = ec_data
+            self.ec_data = b"" if ec_data is None else ec_data
 
-    def __len__(self):
+    def __len__(self) -> int:
         """ Length of the packet """
 
         if self.type == icmp4.ps.ECHO_REPLY:
@@ -84,7 +86,9 @@ class Assembler(icmp4.ps.Base):
         if self.type == icmp4.ps.ECHO_REQUEST:
             return icmp4.ps.ECHO_REQUEST_LEN + len(self.ec_data)
 
-    def assemble(self, frame, hptr, _):
+        return 0
+
+    def assemble(self, frame: bytearray, hptr: int, _: int) -> None:
         """ Assemble packet into the raw form """
 
         if self.type == icmp4.ps.ECHO_REPLY:

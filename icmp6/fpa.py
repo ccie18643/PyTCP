@@ -30,6 +30,7 @@
 
 
 import struct
+from typing import Optional
 
 import icmp6.ps
 import ip6.ps
@@ -45,27 +46,27 @@ class Assembler(icmp6.ps.Base):
 
     def __init__(
         self,
-        type,
-        code=0,
-        un_data=b"",
-        ec_id=None,
-        ec_seq=None,
-        ec_data=b"",
-        ra_hop=None,
-        ra_flag_m=False,
-        ra_flag_o=False,
-        ra_router_lifetime=None,
-        ra_reachable_time=None,
-        ra_retrans_timer=None,
-        ns_target_address=None,
-        na_flag_r=False,
-        na_flag_s=False,
-        na_flag_o=False,
-        na_target_address=None,
-        nd_options=None,
-        mlr2_multicast_address_record=None,
-        echo_tracker=None,
-    ):
+        type: int,
+        code: int = 0,
+        un_data: Optional[bytes] = None,
+        ec_id: Optional[int] = None,
+        ec_seq: Optional[int] = None,
+        ec_data: Optional[bytes] = None,
+        ra_hop: Optional[int] = None,
+        ra_flag_m: Optional[bool] = None,
+        ra_flag_o: Optional[bool] = None,
+        ra_router_lifetime: Optional[int] = None,
+        ra_reachable_time: Optional[int] = None,
+        ra_retrans_timer: Optional[int] = None,
+        ns_target_address: Optional[IPv6Address] = None,
+        na_flag_r: Optional[bool] = None,
+        na_flag_s: Optional[bool] = None,
+        na_flag_o: Optional[bool] = None,
+        na_target_address: Optional[IPv6Address] = None,
+        nd_options: Optional[list] = None,
+        mlr2_multicast_address_record: Optional[list] = None,
+        echo_tracker: Optional[Tracker] = None,
+    ) -> None:
         """ Class constructor """
 
         self.tracker = Tracker("TX", echo_tracker)
@@ -77,25 +78,25 @@ class Assembler(icmp6.ps.Base):
 
         if self.type == icmp6.ps.UNREACHABLE:
             self.un_reserved = 0
-            self.un_data = un_data[:520]
+            self.un_data = b"" if un_data is None else un_data[:520]
 
         elif self.type == icmp6.ps.ECHO_REQUEST:
             self.ec_id = ec_id
             self.ec_seq = ec_seq
-            self.ec_data = ec_data
+            self.ec_data = b"" if ec_data is None else ec_data
 
         elif self.type == icmp6.ps.ECHO_REPLY:
             self.ec_id = ec_id
             self.ec_seq = ec_seq
-            self.ec_data = ec_data
+            self.ec_data = b"" if ec_data is None else ec_data
 
         elif self.type == icmp6.ps.ROUTER_SOLICITATION:
             self.rs_reserved = 0
 
         elif self.type == icmp6.ps.ROUTER_ADVERTISEMENT:
             self.ra_hop = ra_hop
-            self.ra_flag_m = ra_flag_m
-            self.ra_flag_o = ra_flag_o
+            self.ra_flag_m = False if ra_flag_m is None else ra_flag_m
+            self.ra_flag_o = False if ra_flag_o is None else ra_flag_o
             self.ra_router_lifetime = ra_router_lifetime
             self.ra_reachable_time = ra_reachable_time
             self.ra_retrans_timer = ra_retrans_timer
@@ -105,9 +106,9 @@ class Assembler(icmp6.ps.Base):
             self.ns_target_address = ns_target_address
 
         elif self.type == icmp6.ps.NEIGHBOR_ADVERTISEMENT:
-            self.na_flag_r = na_flag_r
-            self.na_flag_s = na_flag_s
-            self.na_flag_o = na_flag_o
+            self.na_flag_r = False if na_flag_r is None else na_flag_r
+            self.na_flag_s = False if na_flag_s is None else na_flag_s
+            self.na_flag_o = False if na_flag_o is None else na_flag_o
             self.na_reserved = 0
             self.na_target_address = na_target_address
 
@@ -116,7 +117,7 @@ class Assembler(icmp6.ps.Base):
             self.mlr2_multicast_address_record = [] if mlr2_multicast_address_record is None else mlr2_multicast_address_record
             self.mlr2_number_of_multicast_address_records = len(self.mlr2_multicast_address_record)
 
-    def __len__(self):
+    def __len__(self) -> int:
         """ Length of the packet """
 
         if self.type == icmp6.ps.UNREACHABLE:
@@ -143,7 +144,9 @@ class Assembler(icmp6.ps.Base):
         if self.type == icmp6.ps.MLD2_REPORT:
             return icmp6.ps.MLD2_REPORT_LEN + sum([len(_) for _ in self.mlr2_multicast_address_record])
 
-    def assemble(self, frame, hptr, pshdr_sum):
+        return 0
+
+    def assemble(self, frame: bytearray, hptr: int, pshdr_sum: int) -> None:
         """ Assemble packet into the raw form """
 
         if self.type == icmp6.ps.UNREACHABLE:
@@ -175,6 +178,7 @@ class Assembler(icmp6.ps.Base):
             )
 
         elif self.type == icmp6.ps.NEIGHBOR_SOLICITATION:
+            assert self.ns_target_address is not None
             struct.pack_into(
                 f"! BBH L 16s {len(self.raw_nd_options)}s",
                 frame,
@@ -188,6 +192,7 @@ class Assembler(icmp6.ps.Base):
             )
 
         elif self.type == icmp6.ps.NEIGHBOR_ADVERTISEMENT:
+            assert self.na_target_address is not None
             struct.pack_into(
                 f"! BBH L 16s {len(self.raw_nd_options)}s",
                 frame,
@@ -216,7 +221,7 @@ class Assembler(icmp6.ps.Base):
         struct.pack_into("! H", frame, hptr + 2, inet_cksum(frame, hptr, len(self), pshdr_sum))
 
     @property
-    def raw_nd_options(self):
+    def raw_nd_options(self) -> bytes:
         """ ICMPv6 ND packet options in raw format """
 
         raw_nd_options = b""
@@ -235,22 +240,22 @@ class Assembler(icmp6.ps.Base):
 class NdOptSLLA(icmp6.ps.NdOptSLLA):
     """ ICMPv6 ND option - Source Link Layer Address (1) """
 
-    def __init__(self, slla):
+    def __init__(self, slla: str) -> None:
         self.slla = slla
 
     @property
-    def raw_option(self):
+    def raw_option(self) -> bytes:
         return struct.pack("! BB 6s", icmp6.ps.ND_OPT_SLLA, icmp6.ps.ND_OPT_SLLA_LEN >> 3, bytes.fromhex(self.slla.replace(":", "")))
 
 
 class NdOptTLLA(icmp6.ps.NdOptTLLA):
     """ ICMPv6 ND option - Target Link Layer Address (2) """
 
-    def __init__(self, tlla):
+    def __init__(self, tlla: str) -> None:
         self.tlla = tlla
 
     @property
-    def raw_option(self):
+    def raw_option(self) -> bytes:
         return struct.pack("! BB 6s", icmp6.ps.ND_OPT_TLLA, icmp6.ps.ND_OPT_TLLA_LEN >> 3, bytes.fromhex(self.tlla.replace(":", "")))
 
 
@@ -259,13 +264,13 @@ class NdOptPI(icmp6.ps.NdOptPI):
 
     def __init__(
         self,
-        flag_l=False,
-        flag_a=False,
-        flag_r=False,
-        valid_lifetime=None,
-        preferred_lifetime=None,
-        prefix=None,
-    ):
+        valid_lifetime: int,
+        preferred_lifetime: int,
+        prefix: IPv6Network,
+        flag_l: bool = False,
+        flag_a: bool = False,
+        flag_r: bool = False,
+    ) -> None:
         self.code = icmp6.ps.ND_OPT_PI
         self.len = icmp6.ps.ND_OPT_PI_LEN
         self.flag_l = flag_l
@@ -276,7 +281,7 @@ class NdOptPI(icmp6.ps.NdOptPI):
         self.prefix = IPv6Network(prefix)
 
     @property
-    def raw_option(self):
+    def raw_option(self) -> bytes:
         return struct.pack(
             "! BB BB L L L 16s",
             self.code,
@@ -297,33 +302,36 @@ class NdOptPI(icmp6.ps.NdOptPI):
 class MulticastAddressRecord:
     """ Multicast Address Record used by MLDv2 Report message """
 
-    def __init__(self, record_type, multicast_address, source_address=None, aux_data=b""):
+    def __init__(self, record_type: int, multicast_address: IPv6Address, source_address: Optional[list] = None, aux_data: Optional[bytes] = None):
         """ Class constructor """
 
         self.record_type = record_type
-        self.aux_data_len = len(aux_data)
         self.multicast_address = IPv6Address(multicast_address)
         self.source_address = [] if source_address is None else source_address
         self.number_of_sources = len(self.source_address)
-        self.aux_data = aux_data
+        self.aux_data = b"" if aux_data is None else aux_data
+        self.aux_data_len = len(self.aux_data)
 
-    def __len__(self):
+    def __len__(self) -> int:
         """ Length of raw record """
 
         return len(self.raw_record)
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         """ Hash of raw record """
 
         return hash(self.raw_record)
 
-    def __eq__(self, other):
+    def __eq__(self, other: object) -> bool:
         """ Compare two records """
+
+        if not isinstance(other, MulticastAddressRecord):
+            return NotImplemented
 
         return self.raw_record == other.raw_record
 
     @property
-    def raw_record(self):
+    def raw_record(self) -> bytes:
         """ Get record in raw format """
 
         return (

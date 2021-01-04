@@ -30,6 +30,7 @@
 
 
 import struct
+from typing import Optional
 
 import ip4.ps
 import ip6.ps
@@ -46,25 +47,25 @@ class Assembler(tcp.ps.Base):
 
     def __init__(
         self,
-        sport,
-        dport,
-        seq=0,
-        ack=0,
-        flag_ns=False,
-        flag_crw=False,
-        flag_ece=False,
-        flag_urg=False,
-        flag_ack=False,
-        flag_psh=False,
-        flag_rst=False,
-        flag_syn=False,
-        flag_fin=False,
-        win=0,
-        urp=0,
-        options=None,
-        data=b"",
-        echo_tracker=None,
-    ):
+        sport: int,
+        dport: int,
+        seq: int = 0,
+        ack: int = 0,
+        flag_ns: bool = False,
+        flag_crw: bool = False,
+        flag_ece: bool = False,
+        flag_urg: bool = False,
+        flag_ack: bool = False,
+        flag_psh: bool = False,
+        flag_rst: bool = False,
+        flag_syn: bool = False,
+        flag_fin: bool = False,
+        win: int = 0,
+        urp: int = 0,
+        options: Optional[list] = None,
+        data: Optional[bytes] = None,
+        echo_tracker: Optional[Tracker] = None,
+    ) -> None:
         """ Class constructor """
 
         self.tracker = Tracker("TX", echo_tracker)
@@ -84,18 +85,18 @@ class Assembler(tcp.ps.Base):
         self.win = win
         self.urp = urp
         self.options = [] if options is None else options
-        self.data = data
+        self.data = b"" if data is None else data
         self.hlen = tcp.ps.HEADER_LEN + sum([len(_) for _ in self.options])
 
         assert self.hlen % 4 == 0, f"TCP header len {self.hlen} is not multiplcation of 4 bytes, check options... {self.options}"
 
-    def __len__(self):
+    def __len__(self) -> int:
         """ Length of the packet """
 
         return self.hlen + len(self.data)
 
     @property
-    def raw_options(self):
+    def raw_options(self) -> bytes:
         """ Packet options in raw format """
 
         raw_options = b""
@@ -105,7 +106,7 @@ class Assembler(tcp.ps.Base):
 
         return raw_options
 
-    def assemble(self, frame, hptr, pshdr_sum):
+    def assemble(self, frame: bytearray, hptr: int, pshdr_sum: int):
         """ Assemble packet into the raw form """
 
         struct.pack_into(
@@ -144,7 +145,7 @@ class OptEol(tcp.ps.OptEol):
     """ TCP option - End of Option List (0) """
 
     @property
-    def raw_option(self):
+    def raw_option(self) -> bytes:
         return struct.pack("!B", tcp.ps.OPT_EOL)
 
 
@@ -152,29 +153,29 @@ class OptNop(tcp.ps.OptNop):
     """ TCP option - No Operation (1) """
 
     @property
-    def raw_option(self):
+    def raw_option(self) -> bytes:
         return struct.pack("!B", tcp.ps.OPT_NOP)
 
 
 class OptMss(tcp.ps.OptMss):
     """ TCP option - Maximum Segment Size (2) """
 
-    def __init__(self, mss):
+    def __init__(self, mss: int) -> None:
         self.mss = mss
 
     @property
-    def raw_option(self):
+    def raw_option(self) -> bytes:
         return struct.pack("! BB H", tcp.ps.OPT_MSS, tcp.ps.OPT_MSS_LEN, self.mss)
 
 
 class OptWscale(tcp.ps.OptWscale):
     """ TCP option - Window Scale (3) """
 
-    def __init__(self, wscale):
+    def __init__(self, wscale: int) -> None:
         self.wscale = wscale
 
     @property
-    def raw_option(self):
+    def raw_option(self) -> bytes:
         return struct.pack("! BB B", tcp.ps.OPT_WSCALE, tcp.ps.OPT_WSCALE_LEN, self.wscale)
 
 
@@ -182,17 +183,17 @@ class OptSackPerm(tcp.ps.OptSackPerm):
     """ TCP option - Sack Permit (4) """
 
     @property
-    def raw_option(self):
+    def raw_option(self) -> bytes:
         return struct.pack("! BB", tcp.ps.OPT_SACKPERM, tcp.ps.OPT_SACKPERM_LEN)
 
 
 class OptTimestamp(tcp.ps.OptTimestamp):
     """ TCP option - Timestamp (8) """
 
-    def __init__(self, tsval, tsecr):
+    def __init__(self, tsval: int, tsecr: int) -> None:
         self.tsval = tsval
         self.tsecr = tsecr
 
     @property
-    def raw_option(self):
+    def raw_option(self) -> bytes:
         return struct.pack("! BB LL", tcp.ps.OPT_TIMESTAMP, tcp.ps.OPT_TIMESTAMP_LEN, self.tsval, self.tsecr)
