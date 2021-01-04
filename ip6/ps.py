@@ -29,6 +29,9 @@
 #
 
 
+from misc.ipv6_address import IPv6Address
+
+
 # IPv6 protocol header
 
 # +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
@@ -67,7 +70,17 @@ NEXT_HEADER_TABLE = {NEXT_HEADER_TCP: "TCP", NEXT_HEADER_UDP: "UDP", NEXT_HEADER
 class Base:
     """ IPv6 packet parser class """
 
-    def __str__(self):
+    def __init__(self) -> None:
+        """ Class constructor """
+
+        self.src = IPv6Address(0)
+        self.dst = IPv6Address(0)
+        self.next = -1
+        self.flow = -1
+        self.dlen = -1
+        self.hop = -1
+
+    def __str__(self) -> str:
         """ Packet log string """
 
         return (

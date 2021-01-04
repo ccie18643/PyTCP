@@ -44,7 +44,14 @@ HEADER_LEN = 8
 class Base:
     """ UDP packet base class """
 
-    def __str__(self):
+    def __init__(self) -> None:
+        """ Class constructor """
+
+        self.sport = -1
+        self.dport = -1
+        self.plen = -1
+
+    def __str__(self) -> str:
         """ Packet log string """
 
         return f"UDP {self.sport} > {self.dport}, len {self.plen}"

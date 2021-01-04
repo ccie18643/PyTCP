@@ -29,6 +29,10 @@
 #
 
 
+from misc.ipv6_address import IPv6Address, IPv6Network
+from typing import Optional
+
+
 # Destination Unreachable message (1/[0-6])
 
 # +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
@@ -320,7 +324,28 @@ MART_BLOCK_OLD_SOURCES = 6
 class Base:
     """ ICMPv6 packet base class """
 
-    def __str__(self):
+    def __init__(self) -> None:
+        """ Class constructor """
+
+        self.type = -1
+        self.code = -1
+        self.ec_id: Optional[int] = None
+        self.ec_seq: Optional[int] = None
+        self.nd_options: Optional[list] = None
+        self.ra_hop: Optional[int] = None
+        self.ra_flag_m: Optional[bool] = None
+        self.ra_flag_o: Optional[bool] = None
+        self.ra_router_lifetime: Optional[int] = None
+        self.ra_reachable_time: Optional[int] = None
+        self.ra_retrans_timer: Optional[int] = None
+        self.ns_target_address: Optional[IPv6Address] = None
+        self.na_target_address: Optional[IPv6Address] = None
+        self.na_flag_r: Optional[bool] = None
+        self.na_flag_s: Optional[bool] = None
+        self.na_flag_o: Optional[bool] = None
+
+
+    def __str__(self) -> str:
         """ Packet log string """
 
         log = f"ICMPv6 type {self.type}, code {self.code}"
@@ -335,10 +360,12 @@ class Base:
             log += f", id {self.ec_id}, seq {self.ec_seq}"
 
         elif self.type == ROUTER_SOLICITATION:
+            assert self.nd_options is not None
             for nd_option in self.nd_options:
                 log += ", " + str(nd_option)
 
         elif self.type == ROUTER_ADVERTISEMENT:
+            assert self.nd_options is not None
             log += f", hop {self.ra_hop}"
             log += f"flags {'M' if self.ra_flag_m else '-'}{'O' if self.ra_flag_o else '-'}"
             log += f"rlft {self.ra_router_lifetime}, reacht {self.ra_reachable_time}, retrt {self.ra_retrans_timer}"
@@ -346,11 +373,13 @@ class Base:
                 log += ", " + str(nd_option)
 
         elif self.type == NEIGHBOR_SOLICITATION:
+            assert self.nd_options is not None
             log += f", target {self.ns_target_address}"
             for nd_option in self.nd_options:
                 log += ", " + str(nd_option)
 
         elif self.type == NEIGHBOR_ADVERTISEMENT:
+            assert self.nd_options is not None
             log += f", target {self.na_target_address}"
             log += f", flags {'R' if self.na_flag_r else '-'}{'S' if self.na_flag_s else '-'}{'O' if self.na_flag_o else '-'}"
             for nd_option in self.nd_options:
@@ -382,10 +411,19 @@ ND_OPT_SLLA_LEN = 8
 class NdOptSLLA:
     """ ICMPv6 ND option - Source Link Layer Address (1) """
 
-    def __str__(self):
+    def __init__(self) -> None:
+        """ Class constructor """
+
+        self.slla = "not initialised"
+
+    def __str__(self) -> str:
+        """ Option log string """
+
         return f"slla {self.slla}"
 
-    def __len__(self):
+    def __len__(self) -> int:
+        """ Option length """
+
         return ND_OPT_SLLA_LEN
 
 
@@ -404,10 +442,19 @@ ND_OPT_TLLA_LEN = 8
 class NdOptTLLA:
     """ ICMPv6 ND option - Target Link Layer Address (2) """
 
-    def __str__(self):
+    def __init__(self) -> None:
+        """ Class constructor """
+
+        self.tlla = "not initialised"
+
+    def __str__(self) -> str:
+        """ Option log string """
+
         return f"tlla {self.tlla}"
 
-    def __len__(self):
+    def __len__(self) -> int:
+        """ Option length """
+
         return ND_OPT_TLLA_LEN
 
 
@@ -438,10 +485,19 @@ ND_OPT_PI_LEN = 32
 class NdOptPI:
     """ ICMPv6 ND option - Prefix Information (3) """
 
-    def __str__(self):
+    def __init__(self) -> None:
+        """ Class constructor """
+
+        self.prefix = IPv6Network(0)
+
+    def __str__(self) -> str:
+        """ Option log string """
+
         return f"prefix_info {self.prefix}"
 
-    def __len__(self):
+    def __len__(self) -> int:
+        """ Option length """
+
         return ND_OPT_PI_LEN
 
 
@@ -451,5 +507,13 @@ class NdOptPI:
 class NdOptUnk:
     """ ICMPv6 ND  option not supported by this stack """
 
-    def __str__(self):
+    def __init__(self) -> None:
+        """ Class constructor """
+
+        self.code = -1
+        self.len = -1
+
+    def __str__(self) -> str:
+        """ Option log string """
+
         return f"unk-{self.code}-{self.len}"

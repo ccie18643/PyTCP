@@ -29,6 +29,9 @@
 #
 
 
+from misc.ipv4_address import IPv4Address
+
+
 # IPv4 protocol header
 
 # +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
@@ -58,7 +61,20 @@ PROTO_TABLE = {PROTO_ICMP4: "ICMPv4", PROTO_TCP: "TCP", PROTO_UDP: "UDP"}
 class Base:
     """ IPv4 packet base class """
 
-    def __str__(self):
+    def __init__(self) -> None:
+        """ Class constructor """
+
+        self.src = IPv4Address(0)
+        self.dst = IPv4Address(0)
+        self.proto = -1
+        self.id = -1
+        self.flag_df = False
+        self.flag_mf = False
+        self.offset = -1
+        self.plen = -1
+        self.ttl = -1
+
+    def __str__(self) -> str:
         """ Packet log string """
 
         return (
@@ -82,10 +98,14 @@ OPT_EOL_LEN = 1
 class OptEol:
     """ IPv4 option - End of Option List """
 
-    def __str__(self):
+    def __str__(self) -> str:
+        """ Option log string """
+
         return "eol"
 
-    def __len__(self):
+    def __len__(self) -> int:
+        """ Option length """
+
         return OPT_EOL_LEN
 
 
@@ -98,10 +118,14 @@ OPT_NOP_LEN = 1
 class OptNop:
     """ IPv4 option - No Operation """
 
-    def __str__(self):
+    def __str__(self) -> str:
+        """ Option log string """
+
         return "nop"
 
-    def __len__(self):
+    def __len__(self) -> int:
+        """ Option length """
+
         return OPT_NOP_LEN
 
 
@@ -111,5 +135,13 @@ class OptNop:
 class OptUnk:
     """ IPv4 option not supported by this stack """
 
-    def __str__(self):
+    def __init__(self) -> None:
+        """ Class constructor """
+
+        self.kind = -1
+        self.len = -1
+
+    def __str__(self) -> str:
+        """ Option log string """
+
         return f"unk-{self.kind}-{self.len}"

@@ -29,6 +29,9 @@
 #
 
 
+from typing import Optional
+
+
 # Echo reply message (0/0)
 
 # +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
@@ -91,7 +94,15 @@ ECHO_REQUEST_LEN = 8
 class Base:
     """ ICMPv4 packet base class """
 
-    def __str__(self):
+    def __init__(self) -> None:
+        """ Class constructor """
+
+        self.type = -1
+        self.code = -1
+        self.ec_id: Optional[int] = None
+        self.ec_seq: Optional[int] = None
+
+    def __str__(self) -> str:
         """ Packet log string """
 
         log = f"ICMPv4 type {self.type}, code {self.code}"

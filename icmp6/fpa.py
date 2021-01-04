@@ -130,15 +130,19 @@ class Assembler(icmp6.ps.Base):
             return icmp6.ps.ECHO_REPLY_LEN + len(self.ec_data)
 
         if self.type == icmp6.ps.ROUTER_SOLICITATION:
+            assert self.nd_options is not None
             return icmp6.ps.ROUTER_SOLICITATION_LEN + sum([len(_) for _ in self.nd_options])
 
         if self.type == icmp6.ps.ROUTER_ADVERTISEMENT:
+            assert self.nd_options is not None
             return icmp6.ps.ROUTER_ADVERTISEMENT_LEN + sum([len(_) for _ in self.nd_options])
 
         if self.type == icmp6.ps.NEIGHBOR_SOLICITATION:
+            assert self.nd_options is not None
             return icmp6.ps.NEIGHBOR_SOLICITATION_LEN + sum([len(_) for _ in self.nd_options])
 
         if self.type == icmp6.ps.NEIGHBOR_ADVERTISEMENT:
+            assert self.nd_options is not None
             return icmp6.ps.NEIGHBOR_ADVERTISEMENT_LEN + sum([len(_) for _ in self.nd_options])
 
         if self.type == icmp6.ps.MLD2_REPORT:
@@ -162,6 +166,8 @@ class Assembler(icmp6.ps.Base):
             struct.pack_into(f"! BBH L {len(self.raw_nd_options)}s", frame, hptr, self.type, self.code, 0, self.rs_reserved, self.raw_nd_options)
 
         elif self.type == icmp6.ps.ROUTER_ADVERTISEMENT:
+            assert self.ra_flag_m is not None
+            assert self.ra_flag_o is not None
             struct.pack_into(
                 f"! BBH BBH L L {len(self.raw_nd_options)}s",
                 frame,
@@ -192,6 +198,9 @@ class Assembler(icmp6.ps.Base):
             )
 
         elif self.type == icmp6.ps.NEIGHBOR_ADVERTISEMENT:
+            assert self.na_flag_r is not None
+            assert self.na_flag_s is not None
+            assert self.na_flag_o is not None
             assert self.na_target_address is not None
             struct.pack_into(
                 f"! BBH L 16s {len(self.raw_nd_options)}s",
@@ -223,6 +232,8 @@ class Assembler(icmp6.ps.Base):
     @property
     def raw_nd_options(self) -> bytes:
         """ ICMPv6 ND packet options in raw format """
+
+        assert self.nd_options is not None
 
         raw_nd_options = b""
 

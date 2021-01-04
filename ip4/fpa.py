@@ -150,7 +150,7 @@ class FragAssembler(ip4.ps.Base):
         dscp: int = 0,
         ecn: int = 0,
         id: int = 0,
-        flag_mf: int = False,
+        flag_mf: bool = False,
         offset: int = 0,
         options: Optional[list] = None,
     ):
@@ -228,6 +228,8 @@ class OptEol(ip4.ps.OptEol):
 
     @property
     def raw_option(self) -> bytes:
+        """ Get option in raw form """
+
         return struct.pack("!B", ip4.ps.OPT_EOL)
 
 
@@ -239,4 +241,6 @@ class OptNop(ip4.ps.OptNop):
 
     @property
     def raw_option(self) -> bytes:
+        """ Get option in raw form """
+
         return struct.pack("!B", ip4.ps.OPT_NOP)
