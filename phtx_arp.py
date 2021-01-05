@@ -61,6 +61,7 @@ def phtx_arp(self, ether_src, ether_dst, arp_oper, arp_sha, arp_spa, arp_tha, ar
         echo_tracker=echo_tracker,
     )
 
-    self.logger.opt(ansi=True).info(f"<magenta>{arp_packet_tx.tracker}</magenta> - {arp_packet_tx}")
+    if __debug__:
+        self._logger.opt(ansi=True).info(f"<magenta>{arp_packet_tx.tracker}</magenta> - {arp_packet_tx}")
 
     self.phtx_ether(ether_src=ether_src, ether_dst=ether_dst, child_packet=arp_packet_tx)

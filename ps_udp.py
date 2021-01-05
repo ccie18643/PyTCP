@@ -69,7 +69,8 @@ class UdpPacket:
     def __init__(self, parent_packet=None, udp_sport=None, udp_dport=None, raw_data=None, echo_tracker=None):
         """ Class constructor """
 
-        self.logger = loguru.logger.bind(object_name="ps_udp.")
+        if __debug__:
+            self._logger = loguru.logger.bind(object_name="ps_udp.")
         self.sanity_check_failed = False
 
         # Packet parsing
@@ -150,16 +151,19 @@ class UdpPacket:
             return True
 
         if inet_cksum(pseudo_header + raw_packet):
-            self.logger.critical(f"{self.tracker} - UDP sanity check fail - wrong packet checksum")
+            if __debug__:
+                self._logger.critical(f"{self.tracker} - UDP sanity check fail - wrong packet checksum")
             return False
 
         if len(raw_packet) < 8:
-            self.logger.critical(f"{self.tracker} - UDP sanity check fail - wrong packet length (I)")
+            if __debug__:
+                self._logger.critical(f"{self.tracker} - UDP sanity check fail - wrong packet length (I)")
             return False
 
         plen = struct.unpack("!H", raw_packet[4:6])[0]
         if not 8 <= plen == len(raw_packet):
-            self.logger.critical(f"{self.tracker} - UDP sanity check fail - wrong packet length (II)")
+            if __debug__:
+                self._logger.critical(f"{self.tracker} - UDP sanity check fail - wrong packet length (II)")
             return False
 
         return True
@@ -172,12 +176,14 @@ class UdpPacket:
 
         # udp_sport set to zero
         if self.udp_sport == 0:
-            self.logger.critical(f"{self.tracker} - UDP sanity check fail - value of udp_sport is 0")
+            if __debug__:
+                self._logger.critical(f"{self.tracker} - UDP sanity check fail - value of udp_sport is 0")
             return False
 
         # udp_dport set to zero
         if self.udp_dport == 0:
-            self.logger.critical(f"{self.tracker} - UDP sanity check fail - value of udp_dport is 0")
+            if __debug__:
+                self._logger.critical(f"{self.tracker} - UDP sanity check fail - value of udp_dport is 0")
             return False
 
         return True

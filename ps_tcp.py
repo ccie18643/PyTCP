@@ -99,7 +99,8 @@ class TcpPacket:
     ):
         """ Class constructor """
 
-        self.logger = loguru.logger.bind(object_name="ps_tcp.")
+        if __debug__:
+            self._logger = loguru.logger.bind(object_name="ps_tcp.")
         self.sanity_check_failed = False
 
         # Packet parsing
@@ -313,16 +314,19 @@ class TcpPacket:
             return True
 
         if inet_cksum(pseudo_header + raw_packet):
-            self.logger.critical(f"{self.tracker} - TCP sanity check fail - wrong packet checksum")
+            if __debug__:
+                self._logger.critical(f"{self.tracker} - TCP sanity check fail - wrong packet checksum")
             return False
 
         if len(raw_packet) < 20:
-            self.logger.critical(f"{self.tracker} - TCP sanity check fail - wrong packet length (I)")
+            if __debug__:
+                self._logger.critical(f"{self.tracker} - TCP sanity check fail - wrong packet length (I)")
             return False
 
         hlen = (raw_packet[12] & 0b11110000) >> 2
         if not 20 <= hlen <= len(raw_packet):
-            self.logger.critical(f"{self.tracker} - TCP sanity check fail - wrong packet length (II)")
+            if __debug__:
+                self._logger.critical(f"{self.tracker} - TCP sanity check fail - wrong packet length (II)")
             return False
 
         index = 20
@@ -332,18 +336,22 @@ class TcpPacket:
             if raw_packet[index] == TCP_OPT_NOP:
                 index += 1
                 if index > hlen:
-                    self.logger.critical(f"{self.tracker} - TCP sanity check fail - wrong option length (I)")
+                    if __debug__:
+                        self._logger.critical(f"{self.tracker} - TCP sanity check fail - wrong option length (I)")
                     return False
                 continue
             if index + 1 > hlen:
-                self.logger.critical(f"{self.tracker} - TCP sanity check fail - wrong option length (II)")
+                if __debug__:
+                    self._logger.critical(f"{self.tracker} - TCP sanity check fail - wrong option length (II)")
                 return False
             if raw_packet[index + 1] == 0:
-                self.logger.critical(f"{self.tracker} - TCP sanity check fail - wrong option length (III)")
+                if __debug__:
+                    self._logger.critical(f"{self.tracker} - TCP sanity check fail - wrong option length (III)")
                 return False
             index += raw_packet[index + 1]
             if index > hlen:
-                self.logger.critical(f"{self.tracker} - TCP sanity check fail - wrong option length (IV)")
+                if __debug__:
+                    self._logger.critical(f"{self.tracker} - TCP sanity check fail - wrong option length (IV)")
                 return False
 
         return True
@@ -356,42 +364,50 @@ class TcpPacket:
 
         # tcp_sport set to zero
         if self.tcp_sport == 0:
-            self.logger.critical(f"{self.tracker} - TCP sanity check fail - value of tcp_sport is 0")
+            if __debug__:
+                self._logger.critical(f"{self.tracker} - TCP sanity check fail - value of tcp_sport is 0")
             return False
 
         # tcp_dport set to zero
         if self.tcp_dport == 0:
-            self.logger.critical(f"{self.tracker} - TCP sanity check fail - value of tcp_dport is 0")
+            if __debug__:
+                self._logger.critical(f"{self.tracker} - TCP sanity check fail - value of tcp_dport is 0")
             return False
 
         # SYN and FIN flag cannot be set simultaneously
         if self.tcp_flag_syn and self.tcp_flag_fin:
-            self.logger.critical(f"{self.tracker} - TCP sanity check fail - SYN and FIN flags are set simultaneously")
+            if __debug__:
+                self._logger.critical(f"{self.tracker} - TCP sanity check fail - SYN and FIN flags are set simultaneously")
             return False
 
         # SYN and RST flag cannot be set simultaneously
         if self.tcp_flag_syn and self.tcp_flag_rst:
-            self.logger.critical(f"{self.tracker} - TCP sanity check fail - SYN and RST flags are set simultaneously")
+            if __debug__:
+                self._logger.critical(f"{self.tracker} - TCP sanity check fail - SYN and RST flags are set simultaneously")
             return False
 
         # FIN and RST flag cannot be set simultaneously
         if self.tcp_flag_fin and self.tcp_flag_rst:
-            self.logger.critical(f"{self.tracker} - TCP sanity check fail - FIN and RST flags are set simultaneously")
+            if __debug__:
+                self._logger.critical(f"{self.tracker} - TCP sanity check fail - FIN and RST flags are set simultaneously")
             return False
 
         # FIN flag must be set together with ACK flag
         if self.tcp_flag_fin and not self.tcp_flag_ack:
-            self.logger.critical(f"{self.tracker} - TCP sanity check fail - FIN set but ACK flag is not set")
+            if __debug__:
+                self._logger.critical(f"{self.tracker} - TCP sanity check fail - FIN set but ACK flag is not set")
             return False
 
         # ACK number set to non zero value but the ACK flag is not set
         if self.tcp_ack and not self.tcp_flag_ack:
-            self.logger.critical(f"{self.tracker} - TCP sanity check fail - ACK number present but ACK flag is not set")
+            if __debug__:
+                self._logger.critical(f"{self.tracker} - TCP sanity check fail - ACK number present but ACK flag is not set")
             return False
 
         # URG pointer set to non zero value but the URG flag is not set
         if self.tcp_urp and not self.tcp_flag_urg:
-            self.logger.critical(f"{self.tracker} - TCP sanity check fail - URG pointer present but URG flag is not set")
+            if __debug__:
+                self._logger.critical(f"{self.tracker} - TCP sanity check fail - URG pointer present but URG flag is not set")
             return False
 
         return True

@@ -57,22 +57,26 @@ class RxRing:
 
         self.tap = tap
         self.rx_ring = []
-        self.logger = loguru.logger.bind(object_name="rx_ring.")
+        if __debug__:
+            self._logger = loguru.logger.bind(object_name="rx_ring.")
 
         self.packet_enqueued = threading.Semaphore(0)
 
         threading.Thread(target=self.__thread_receive).start()
-        self.logger.debug("Started RX ring")
+        if __debug__:
+            self._logger.debug("Started RX ring")
 
     def __enqueue(self, ether_packet_rx):
         """ Enqueue packet for further processing """
 
         if ether_packet_rx.ether_type == ps_ether.ETHER_TYPE_ARP:
             self.rx_ring.insert(0, ether_packet_rx)
-            self.logger.opt(ansi=True).debug(f"{ether_packet_rx.tracker}, priority: Urgent, queue len: {len(self.rx_ring)}")
+            if __debug__:
+                self._logger.opt(ansi=True).debug(f"{ether_packet_rx.tracker}, priority: Urgent, queue len: {len(self.rx_ring)}")
         else:
             self.rx_ring.append(ether_packet_rx)
-            self.logger.opt(ansi=True).debug(f"{ether_packet_rx.tracker}, priority: Normal, queue len: {len(self.rx_ring)}")
+            if __debug__:
+                self._logger.opt(ansi=True).debug(f"{ether_packet_rx.tracker}, priority: Normal, queue len: {len(self.rx_ring)}")
 
         self.packet_enqueued.release()
 
@@ -83,7 +87,8 @@ class RxRing:
 
             # Wait till there is any packet coming and pick it up
             ether_packet_rx = ps_ether.EtherPacket(os.read(self.tap, 2048))
-            self.logger.opt(ansi=True).debug(f"<green>[RX]</green> {ether_packet_rx.tracker} - {len(ether_packet_rx)} bytes")
+            if __debug__:
+                self._logger.opt(ansi=True).debug(f"<green>[RX]</green> {ether_packet_rx.tracker} - {len(ether_packet_rx)} bytes")
             self.__enqueue(ether_packet_rx)
 
     def dequeue(self):

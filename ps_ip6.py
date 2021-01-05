@@ -151,7 +151,8 @@ class Ip6Packet:
     ):
         """ Class constructor """
 
-        self.logger = loguru.logger.bind(object_name="ps_ip6.")
+        if __debug__:
+            self._logger = loguru.logger.bind(object_name="ps_ip6.")
         self.sanity_check_failed = False
 
         # Packet parsing
@@ -272,11 +273,13 @@ class Ip6Packet:
             return True
 
         if len(raw_packet) < 40:
-            self.logger.critical(f"{self.tracker} - IPv6 sanity check fail - wrong packet length (I)")
+            if __debug__:
+                self._logger.critical(f"{self.tracker} - IPv6 sanity check fail - wrong packet length (I)")
             return False
 
         if struct.unpack("!H", raw_packet[4:6])[0] != len(raw_packet) - 40:
-            self.logger.critical(f"{self.tracker} - IPv6 sanity check fail - wrong packet length (II)")
+            if __debug__:
+                self._logger.critical(f"{self.tracker} - IPv6 sanity check fail - wrong packet length (II)")
             return False
 
         return True
@@ -289,17 +292,20 @@ class Ip6Packet:
 
         # ip6_ver not set to 6
         if not self.ip6_ver == 6:
-            self.logger.critical(f"{self.tracker} - IP sanity check fail - value of ip6_ver is not 6")
+            if __debug__:
+                self._logger.critical(f"{self.tracker} - IP sanity check fail - value of ip6_ver is not 6")
             return False
 
         # ip6_hop set to 0
         if self.ip6_hop == 0:
-            self.logger.critical(f"{self.tracker} - IP sanity check fail - value of ip6_hop is 0")
+            if __debug__:
+                self._logger.critical(f"{self.tracker} - IP sanity check fail - value of ip6_hop is 0")
             return False
 
         # ip6_src address is multicast
         if self.ip6_src.is_multicast:
-            self.logger.critical(f"{self.tracker} - IP sanity check fail - ip6_src address is multicast")
+            if __debug__:
+                self._logger.critical(f"{self.tracker} - IP sanity check fail - ip6_src address is multicast")
             return False
 
         return True

@@ -150,7 +150,8 @@ class Ip4Packet:
     ):
         """ Class constructor """
 
-        self.logger = loguru.logger.bind(object_name="ps_ip4.")
+        if __debug__:
+            self._logger = loguru.logger.bind(object_name="ps_ip4.")
         self.sanity_check_failed = False
 
         # Packet parsing
@@ -340,18 +341,21 @@ class Ip4Packet:
             return True
 
         if len(raw_packet) < 20:
-            self.logger.critical(f"{self.tracker} - IPv4 sanity check fail - wrong packet length (I)")
+            if __debug__:
+                self._logger.critical(f"{self.tracker} - IPv4 sanity check fail - wrong packet length (I)")
             return False
 
         hlen = (raw_packet[0] & 0b00001111) << 2
         plen = struct.unpack("!H", raw_packet[2:4])[0]
         if not 20 <= hlen <= plen <= len(raw_packet):
-            self.logger.critical(f"{self.tracker} - IPv4 sanity check fail - wrong packet length (II)")
+            if __debug__:
+                self._logger.critical(f"{self.tracker} - IPv4 sanity check fail - wrong packet length (II)")
             return False
 
         # Cannot compute checksum earlier because it depends on sanity of hlen field
         if inet_cksum(raw_packet[:hlen]):
-            self.logger.critical(f"{self.tracker} - IPv4 sanity check fail - wrong packet checksum")
+            if __debug__:
+                self._logger.critical(f"{self.tracker} - IPv4 sanity check fail - wrong packet checksum")
             return False
 
         index = 20
@@ -361,18 +365,22 @@ class Ip4Packet:
             if raw_packet[index] == IP4_OPT_NOP:
                 index += 1
                 if index > hlen:
-                    self.logger.critical(f"{self.tracker} - IPv4 sanity check fail - wrong option length (I)")
+                    if __debug__:
+                        self._logger.critical(f"{self.tracker} - IPv4 sanity check fail - wrong option length (I)")
                     return False
                 continue
             if index + 1 > hlen:
-                self.logger.critical(f"{self.tracker} - IPv4 sanity check fail - wrong option length (II)")
+                if __debug__:
+                    self._logger.critical(f"{self.tracker} - IPv4 sanity check fail - wrong option length (II)")
                 return False
             if raw_packet[index + 1] == 0:
-                self.logger.critical(f"{self.tracker} - IPv4 sanity check fail - wrong option length (III)")
+                if __debug__:
+                    self._logger.critical(f"{self.tracker} - IPv4 sanity check fail - wrong option length (III)")
                 return False
             index += raw_packet[index + 1]
             if index > hlen:
-                self.logger.critical(f"{self.tracker} - IPv4 sanity check fail - wrong option length (IV)")
+                if __debug__:
+                    self._logger.critical(f"{self.tracker} - IPv4 sanity check fail - wrong option length (IV)")
                 return False
 
         return True
@@ -385,42 +393,50 @@ class Ip4Packet:
 
         # ip4_ver not set to 4
         if not self.ip4_ver == 4:
-            self.logger.critical(f"{self.tracker} - IP sanity check fail - value of ip4_ver is not 4")
+            if __debug__:
+                self._logger.critical(f"{self.tracker} - IP sanity check fail - value of ip4_ver is not 4")
             return False
 
         # ip4_ttl set to 0
         if self.ip4_ver == 0:
-            self.logger.critical(f"{self.tracker} - IP sanity check fail - value of ip4_ttl is 0")
+            if __debug__:
+                self._logger.critical(f"{self.tracker} - IP sanity check fail - value of ip4_ttl is 0")
             return False
 
         # ip4_src address is multicast
         if self.ip4_src.is_multicast:
-            self.logger.critical(f"{self.tracker} - IP sanity check fail - ip4_src address is multicast")
+            if __debug__:
+                self._logger.critical(f"{self.tracker} - IP sanity check fail - ip4_src address is multicast")
             return False
 
         # ip4_src address is reserved
         if self.ip4_src.is_reserved:
-            self.logger.critical(f"{self.tracker} - IP sanity check fail - ip4_src address is reserved")
+            if __debug__:
+                self._logger.critical(f"{self.tracker} - IP sanity check fail - ip4_src address is reserved")
             return False
 
         # ip4_src address is limited broadcast
         if self.ip4_src.is_limited_broadcast:
-            self.logger.critical(f"{self.tracker} - IP sanity check fail - ip4_src address is limited broadcast")
+            if __debug__:
+                self._logger.critical(f"{self.tracker} - IP sanity check fail - ip4_src address is limited broadcast")
             return False
 
         # DF and MF flags set simultaneously
         if self.ip4_flag_df and self.ip4_flag_mf:
-            self.logger.critical(f"{self.tracker} - IP sanity check fail - DF and MF flags set simultaneously")
+            if __debug__:
+                self._logger.critical(f"{self.tracker} - IP sanity check fail - DF and MF flags set simultaneously")
             return False
 
         # Fragment offset not zero but DF flag is set
         if self.ip4_frag_offset and self.ip4_flag_df:
-            self.logger.critical(f"{self.tracker} - IP sanity check fail - value of ip4_frag_offset s not zeor but DF flag set")
+            if __debug__:
+                self._logger.critical(f"{self.tracker} - IP sanity check fail - value of ip4_frag_offset s not zeor but DF flag set")
             return False
 
         # Packet contains options
         if self.ip4_options and config.ip4_option_packet_drop:
-            self.logger.critical(f"{self.tracker} - IP sanity check fail - packet contains options")
+            if __debug__:
+                self._logger.critical(f"{self.tracker} - IP sanity check fail - packet contains options")
             return False
 
         return True

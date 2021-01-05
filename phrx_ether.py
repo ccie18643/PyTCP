@@ -55,11 +55,13 @@ def phrx_ether(self, ether_packet_rx):
     if ether_packet_rx.sanity_check_failed:
         return
 
-    self.logger.debug(f"{ether_packet_rx.tracker} - {ether_packet_rx}")
+    if __debug__:
+        self._logger.debug(f"{ether_packet_rx.tracker} - {ether_packet_rx}")
 
     # Check if received packet matches any of stack MAC addresses
     if ether_packet_rx.ether_dst not in {self.mac_unicast, *self.mac_multicast, self.mac_broadcast}:
-        self.logger.opt(ansi=True).debug(f"{ether_packet_rx.tracker} - Ethernet packet not destined for this stack, dropping")
+        if __debug__:
+            self._logger.opt(ansi=True).debug(f"{ether_packet_rx.tracker} - Ethernet packet not destined for this stack, dropping")
         return
 
     if ether_packet_rx.ether_type == ps_ether.ETHER_TYPE_ARP and config.ip4_support:

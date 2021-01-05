@@ -95,7 +95,8 @@ class Timer:
 
         stack.timer = self
 
-        self.logger = loguru.logger.bind(object_name="timer.")
+        if __debug__:
+            self._logger = loguru.logger.bind(object_name="timer.")
 
         self.run_timer = True
 
@@ -103,7 +104,8 @@ class Timer:
         self.timers = {}
 
         threading.Thread(target=self.__thread_timer).start()
-        self.logger.debug("Started timer")
+        if __debug__:
+            self._logger.debug("Started timer")
 
     def __thread_timer(self):
         """ Thread responsible for executing registered methods on every timer tick """
@@ -138,6 +140,7 @@ class Timer:
     def timer_expired(self, name):
         """ Check if timer expired """
 
-        self.logger.opt(ansi=True).trace(f"<red>Active timers: {self.timers}</>")
+        if __debug__:
+            self._logger.opt(ansi=True).trace(f"<red>Active timers: {self.timers}</>")
 
         return not self.timers.get(name, None)

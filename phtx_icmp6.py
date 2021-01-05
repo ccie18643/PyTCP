@@ -88,5 +88,6 @@ def phtx_icmp6(
         echo_tracker=echo_tracker,
     )
 
-    self.logger.opt(ansi=True).info(f"<magenta>{icmp6_packet_tx.tracker}</magenta> - {icmp6_packet_tx}")
+    if __debug__:
+        self._logger.opt(ansi=True).info(f"<magenta>{icmp6_packet_tx.tracker}</magenta> - {icmp6_packet_tx}")
     self.phtx_ip6(ip6_src=ip6_src, ip6_dst=ip6_dst, ip6_hop=ip6_hop, child_packet=icmp6_packet_tx)

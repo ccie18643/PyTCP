@@ -80,7 +80,8 @@ class EtherPacket:
     def __init__(self, raw_packet=None, ether_src="00:00:00:00:00:00", ether_dst="00:00:00:00:00:00", child_packet=None):
         """ Class constructor """
 
-        self.logger = loguru.logger.bind(object_name="ps_ether.")
+        if __debug__:
+            self._logger = loguru.logger.bind(object_name="ps_ether.")
         self.sanity_check_failed = False
 
         # Packet parsing
@@ -155,7 +156,8 @@ class EtherPacket:
             return True
 
         if len(raw_packet) < 14:
-            self.logger.critical(f"{self.tracker} - Ethernet sanity check fail - wrong packet length (I)")
+            if __debug__:
+                self._logger.critical(f"{self.tracker} - Ethernet sanity check fail - wrong packet length (I)")
             return False
 
         return True
@@ -167,7 +169,8 @@ class EtherPacket:
             return True
 
         if self.ether_type < ETHER_TYPE_MIN:
-            self.logger.critical(f"{self.tracker} - Ethernet sanity check fail - value of ether_type < 0x0600")
+            if __debug__:
+                self._logger.critical(f"{self.tracker} - Ethernet sanity check fail - value of ether_type < 0x0600")
             return False
 
         return True

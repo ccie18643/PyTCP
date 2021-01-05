@@ -55,7 +55,8 @@ class TcpSocket:
     def __init__(self, tcp_session=None):
         """ Class constructor """
 
-        self.logger = loguru.logger.bind(object_name="socket.")
+        if __debug__:
+            self._logger = loguru.logger.bind(object_name="socket.")
 
         # Create established socket based on established TCP session, used by listening sockets only
         if tcp_session:
@@ -75,7 +76,8 @@ class TcpSocket:
 
         self.event_tcp_session_established = threading.Semaphore(0)
 
-        self.logger.debug(f"Created TCP socket {self.socket_id}")
+        if __debug__:
+            self._logger.debug(f"Created TCP socket {self.socket_id}")
 
     @property
     def socket_id(self):
@@ -86,7 +88,8 @@ class TcpSocket:
 
         self.local_ip_address = local_ip_address
         self.local_port = local_port
-        self.logger.debug(f"{self.socket_id} - Socket bound to local address")
+        if __debug__:
+            self._logger.debug(f"{self.socket_id} - Socket bound to local address")
 
     def listen(self):
         """ Starts to listen for incoming connections """
@@ -100,7 +103,8 @@ class TcpSocket:
             remote_port=self.remote_port,
             socket=self,
         )
-        self.logger.debug(f"{self.socket_id} -  Socket starting to listen for inbound connections")
+        if __debug__:
+            self._logger.debug(f"{self.socket_id} -  Socket starting to listen for inbound connections")
         tcp_session.listen()
 
     def connect(self, remote_ip_address, remote_port):
@@ -116,13 +120,15 @@ class TcpSocket:
             socket=self,
         )
         self.tcp_session = tcp_session
-        self.logger.debug(f"{self.socket_id} -  Socket attempting connection to {remote_ip_address}, port {remote_port}")
+        if __debug__:
+            self._logger.debug(f"{self.socket_id} -  Socket attempting connection to {remote_ip_address}, port {remote_port}")
         return tcp_session.connect()
 
     def accept(self):
         """ Wait for the established inbound connection, then create new socket for it and return it """
 
-        self.logger.debug(f"{self.socket_id} - Waiting for established inbound connection")
+        if __debug__:
+            self._logger.debug(f"{self.socket_id} - Waiting for established inbound connection")
         self.event_tcp_session_established.acquire()
         for tcp_session in stack.tcp_sessions.values():
             if tcp_session.socket is self and tcp_session.state == "ESTABLISHED":
@@ -133,17 +139,20 @@ class TcpSocket:
         """ Receive data from socket """
 
         if (data_rx := self.tcp_session.receive(byte_count)) is None:
-            self.logger.debug(f"{self.socket_id} - Received close event from TCP session")
+            if __debug__:
+                self._logger.debug(f"{self.socket_id} - Received close event from TCP session")
             return None
 
-        self.logger.debug(f"{self.socket_id} - Received {len(data_rx)} bytes of data")
+        if __debug__:
+            self._logger.debug(f"{self.socket_id} - Received {len(data_rx)} bytes of data")
         return data_rx
 
     def send(self, data_segment):
         """ Pass data_segment to TCP session """
 
         if bytes_sent := self.tcp_session.send(data_segment):
-            self.logger.debug(f"{self.socket_id} - Sent data segment, len {bytes_sent}")
+            if __debug__:
+                self._logger.debug(f"{self.socket_id} - Sent data segment, len {bytes_sent}")
             return bytes_sent
         return None
 
@@ -151,4 +160,5 @@ class TcpSocket:
         """ Close socket and the TCP session(s) it owns """
 
         self.tcp_session.close()
-        self.logger.debug(f"{self.socket_id} - Closed socket")
+        if __debug__:
+            self._logger.debug(f"{self.socket_id} - Closed socket")

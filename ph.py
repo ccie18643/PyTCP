@@ -87,7 +87,8 @@ class PacketHandler:
 
         stack.packet_handler = self
 
-        self.logger = loguru.logger.bind(object_name="packet_handler.")
+        if __debug__:
+            self._logger = loguru.logger.bind(object_name="packet_handler.")
 
         # MAC and IPv6 Multicast lists hold duplicate entries by design. This is to accommodate IPv6 Solicited Node Multicast mechanism where multiple
         # IPv6 unicast addresses can be tied to the same SNM address (and the same multicast MAC). This is important when removing one of unicast addresses,
@@ -122,7 +123,8 @@ class PacketHandler:
 
         # Start packed handler so we can receive packets from network
         threading.Thread(target=self.__thread_packet_handler).start()
-        self.logger.debug("Started packet handler")
+        if __debug__:
+            self._logger.debug("Started packet handler")
 
         if config.ip6_support:
             # Assign All IPv6 Nodes multicast address
@@ -139,18 +141,21 @@ class PacketHandler:
             self.create_stack_ip4_addressing()
 
         # Log all the addresses stack will listen on
-        self.logger.info(f"Stack listening on unicast MAC address: {self.mac_unicast}")
-        self.logger.info(f"Stack listening on multicast MAC addresses: {list(set(self.mac_multicast))}")
-        self.logger.info(f"Stack listening on broadcast MAC address: {self.mac_broadcast}")
+        if __debug__:
+            self._logger.info(f"Stack listening on unicast MAC address: {self.mac_unicast}")
+            self._logger.info(f"Stack listening on multicast MAC addresses: {list(set(self.mac_multicast))}")
+            self._logger.info(f"Stack listening on broadcast MAC address: {self.mac_broadcast}")
 
         if config.ip6_support:
-            self.logger.info(f"Stack listening on unicast IPv6 addresses: {[str(_) for _ in self.ip6_unicast]}")
-            self.logger.info(f"Stack listening on multicast IPv6 addresses: {list(set(str(_) for _ in self.ip6_multicast))}")
+            if __debug__:
+                self._logger.info(f"Stack listening on unicast IPv6 addresses: {[str(_) for _ in self.ip6_unicast]}")
+                self._logger.info(f"Stack listening on multicast IPv6 addresses: {list(set(str(_) for _ in self.ip6_multicast))}")
 
         if config.ip4_support:
-            self.logger.info(f"Stack listening on unicast IPv4 addresses: {[str(_) for _ in self.ip4_unicast]}")
-            self.logger.info(f"Stack listening on multicast IPv4 addresses: {[str(_) for _ in self.ip4_multicast]}")
-            self.logger.info(f"Stack listening on broadcast IPv4 addresses: {[str(_) for _ in self.ip4_broadcast]}")
+            if __debug__:
+                self._logger.info(f"Stack listening on unicast IPv4 addresses: {[str(_) for _ in self.ip4_unicast]}")
+                self._logger.info(f"Stack listening on multicast IPv4 addresses: {[str(_) for _ in self.ip4_multicast]}")
+                self._logger.info(f"Stack listening on broadcast IPv4 addresses: {[str(_) for _ in self.ip4_broadcast]}")
 
     def __thread_packet_handler(self):
         """ Thread picks up incoming packets from RX ring and processes them """
@@ -181,14 +186,17 @@ class PacketHandler:
     def perform_ip6_nd_dad(self, ip6_unicast_candidate):
         """ Perform IPv6 ND Duplicate Address Detection, return True if passed """
 
-        self.logger.debug(f"ICMPv6 ND DAD - Starting process for {ip6_unicast_candidate}")
+        if __debug__:
+            self._logger.debug(f"ICMPv6 ND DAD - Starting process for {ip6_unicast_candidate}")
         self.assign_ip6_multicast(ip6_unicast_candidate.solicited_node_multicast)
         self.ip6_unicast_candidate = ip6_unicast_candidate
         self.send_icmp6_nd_dad_message(ip6_unicast_candidate)
         if event := self.event_icmp6_nd_dad.acquire(timeout=1):
-            self.logger.warning(f"ICMPv6 ND DAD - Duplicate IPv6 address detected, {ip6_unicast_candidate} advertised by {self.icmp6_nd_dad_tlla}")
+            if __debug__:
+                self._logger.warning(f"ICMPv6 ND DAD - Duplicate IPv6 address detected, {ip6_unicast_candidate} advertised by {self.icmp6_nd_dad_tlla}")
         else:
-            self.logger.debug(f"ICMPv6 ND DAD - No duplicate address detected for {ip6_unicast_candidate}")
+            if __debug__:
+                self._logger.debug(f"ICMPv6 ND DAD - No duplicate address detected for {ip6_unicast_candidate}")
         self.ip6_unicast_candidate = None
         self.remove_ip6_multicast(ip6_unicast_candidate.solicited_node_multicast)
         return not event
@@ -199,33 +207,41 @@ class PacketHandler:
         valid_address_candidate = []
 
         for address, gateway in configured_address_candidate:
-            self.logger.debug(f"Parsing ('{address}', '{gateway}') entry")
+            if __debug__:
+                self._logger.debug(f"Parsing ('{address}', '{gateway}') entry")
             try:
                 address = IPv6Interface(address)
             except AddressValueError:
-                self.logger.warning(f"Invalid host address '{address}' format, skipping...")
+                if __debug__:
+                    self._logger.warning(f"Invalid host address '{address}' format, skipping...")
                 return None
             if address.is_multicast or address.is_reserved or address.is_loopback or address.is_unspecified:
-                self.logger.warning(f"Invalid host address '{address.ip}' type, skipping...")
+                if __debug__:
+                    self._logger.warning(f"Invalid host address '{address.ip}' type, skipping...")
                 return None
             if address.ip in [_.ip for _ in valid_address_candidate]:
-                self.logger.warning(f"Duplicate host address '{address.ip}' configured, skipping...")
+                if __debug__:
+                    self._logger.warning(f"Duplicate host address '{address.ip}' configured, skipping...")
                 return None
             if gateway is not None:
                 try:
                     gateway = IPv6Address(gateway)
                     if not (gateway.is_link_local or (gateway in address.network and gateway != address.ip)):
-                        self.logger.warning(f"Invalid gateway '{gateway}' configured for interface address '{address}', skipping...")
+                        if __debug__:
+                            self._logger.warning(f"Invalid gateway '{gateway}' configured for interface address '{address}', skipping...")
                         gateway = None
                 except AddressValueError:
-                    self.logger.warning(f"Invalid gateway '{gateway}' format configured for interface address '{address}' skipping...")
+                    if __debug__:
+                        self._logger.warning(f"Invalid gateway '{gateway}' format configured for interface address '{address}' skipping...")
                     gateway = None
             if address.is_link_local and gateway is not None:
-                self.logger.warning("Gateway cannot be configured for link local address skipping...")
+                if __debug__:
+                    self._logger.warning("Gateway cannot be configured for link local address skipping...")
                 gateway = None
             address.gateway = gateway
             valid_address_candidate.append(address)
-            self.logger.debug(f"Parsed ('{address}', '{address.gateway}') entry")
+            if __debug__:
+                self._logger.debug(f"Parsed ('{address}', '{address.gateway}') entry")
 
         return valid_address_candidate
 
@@ -235,9 +251,11 @@ class PacketHandler:
         def __(ip6_address):
             if self.perform_ip6_nd_dad(ip6_address.ip):
                 self.assign_ip6_address(ip6_address)
-                self.logger.debug(f"Successfully claimed IPv6 address {ip6_address}")
+                if __debug__:
+                    self._logger.debug(f"Successfully claimed IPv6 address {ip6_address}")
             else:
-                self.logger.warning(f"Unable to claim IPv6 address {ip6_address}")
+                if __debug__:
+                    self._logger.warning(f"Unable to claim IPv6 address {ip6_address}")
 
         # Configure Link Local address(es) staticaly
         for ip6_address in list(self.ip6_address_candidate):
@@ -253,7 +271,8 @@ class PacketHandler:
 
         # If we don't have any link local address set disable IPv6 protocol operations
         if not self.ip6_address:
-            self.logger.warning("Unable to assign any IPv6 link local address, disabling IPv6 protocol")
+            if __debug__:
+                self._logger.warning("Unable to assign any IPv6 link local address, disabling IPv6 protocol")
             config.ip6_support = False
             return
 
@@ -267,7 +286,8 @@ class PacketHandler:
             self.send_icmp6_nd_router_solicitation()
             self.event_icmp6_ra.acquire(timeout=1)
             for prefix, gateway in list(self.icmp6_ra_prefixes):
-                self.logger.debug(f"Attempting IPv6 address auto configuration for RA prefix {prefix}")
+                if __debug__:
+                    self._logger.debug(f"Attempting IPv6 address auto configuration for RA prefix {prefix}")
                 ip6_address = prefix.eui64(self.mac_unicast)
                 ip6_address.gateway = gateway
                 __(ip6_address)
@@ -278,33 +298,41 @@ class PacketHandler:
         valid_address_candidate = []
 
         for address, gateway in configured_ip4_address_candidate:
-            self.logger.debug(f"Parsing ('{address}', '{gateway}') entry")
+            if __debug__:
+                self._logger.debug(f"Parsing ('{address}', '{gateway}') entry")
             try:
                 address = IPv4Interface(address)
             except AddressValueError:
-                self.logger.warning(f"Invalid host address '{address}' format, skipping...")
+                if __debug__:
+                    self._logger.warning(f"Invalid host address '{address}' format, skipping...")
                 continue
             if address.is_multicast or address.is_reserved or address.is_loopback or address.is_unspecified:
-                self.logger.warning(f"Invalid host address '{address.ip}' type, skipping...")
+                if __debug__:
+                    self._logger.warning(f"Invalid host address '{address.ip}' type, skipping...")
                 continue
             if address.ip == address.network_address or address.ip == address.broadcast_address:
-                self.logger.warning(f"Invalid host address '{address.ip}' configured for network '{address.network}', skipping...")
+                if __debug__:
+                    self._logger.warning(f"Invalid host address '{address.ip}' configured for network '{address.network}', skipping...")
                 continue
             if address.ip in [_.ip for _ in valid_address_candidate]:
-                self.logger.warning(f"Duplicate host address '{address.ip}' configured, skipping...")
+                if __debug__:
+                    self._logger.warning(f"Duplicate host address '{address.ip}' configured, skipping...")
                 continue
             if gateway is not None:
                 try:
                     gateway = IPv4Address(gateway)
                     if gateway not in address.network or gateway == address.network_address or gateway == address.broadcast_address or gateway == address.ip:
-                        self.logger.warning(f"Invalid gateway '{gateway}' configured for interface address '{address}', skipping...")
+                        if __debug__:
+                            self._logger.warning(f"Invalid gateway '{gateway}' configured for interface address '{address}', skipping...")
                         gateway = None
                 except AddressValueError:
-                    self.logger.warning(f"Invalid gateway '{gateway}' format configured for interface address '{address}' skipping...")
+                    if __debug__:
+                        self._logger.warning(f"Invalid gateway '{gateway}' format configured for interface address '{address}' skipping...")
                     gateway = None
             address.gateway = gateway
             valid_address_candidate.append(address)
-            self.logger.debug(f"Parsed ('{address}', '{address.gateway}') entry")
+            if __debug__:
+                self._logger.debug(f"Parsed ('{address}', '{address.gateway}') entry")
 
         return valid_address_candidate
 
@@ -316,10 +344,12 @@ class PacketHandler:
             for ip4_unicast in [_.ip for _ in self.ip4_address_candidate]:
                 if ip4_unicast not in self.arp_probe_unicast_conflict:
                     self.send_arp_probe(ip4_unicast)
-                    self.logger.debug(f"Sent out ARP Probe for {ip4_unicast}")
+                    if __debug__:
+                        self._logger.debug(f"Sent out ARP Probe for {ip4_unicast}")
             time.sleep(random.uniform(1, 2))
         for ip4_unicast in self.arp_probe_unicast_conflict:
-            self.logger.warning(f"Unable to claim IPv4 address {ip4_unicast}")
+            if __debug__:
+                self._logger.warning(f"Unable to claim IPv4 address {ip4_unicast}")
 
         # Create list containing only IPv4 addresses that were confiremed free to claim
         for ip4_address in list(self.ip4_address_candidate):
@@ -327,11 +357,13 @@ class PacketHandler:
             if ip4_address.ip not in self.arp_probe_unicast_conflict:
                 self.ip4_address.append(ip4_address)
                 self.send_arp_announcement(ip4_address.ip)
-                self.logger.debug(f"Successfully claimed IPv4 address {ip4_unicast}")
+                if __debug__:
+                    self._logger.debug(f"Successfully claimed IPv4 address {ip4_unicast}")
 
         # If don't have any IPv4 address assigned disable IPv4 protocol operations
         if not self.ip4_address:
-            self.logger.warning("Unable to assign any IPv4 address, disabling IPv4 protocol")
+            if __debug__:
+                self._logger.warning("Unable to assign any IPv4 address, disabling IPv4 protocol")
             config.ip4_support = False
             return
 
@@ -347,7 +379,8 @@ class PacketHandler:
             arp_tha="00:00:00:00:00:00",
             arp_tpa=ip4_unicast,
         )
-        self.logger.debug(f"Sent out ARP probe for {ip4_unicast}")
+        if __debug__:
+            self._logger.debug(f"Sent out ARP probe for {ip4_unicast}")
 
     def send_arp_announcement(self, ip4_unicast):
         """ Send out ARP announcement to claim IP address """
@@ -361,7 +394,8 @@ class PacketHandler:
             arp_tha="00:00:00:00:00:00",
             arp_tpa=ip4_unicast,
         )
-        self.logger.debug(f"Sent out ARP Announcement for {ip4_unicast}")
+        if __debug__:
+            self._logger.debug(f"Sent out ARP Announcement for {ip4_unicast}")
 
     def send_gratitous_arp(self, ip4_unicast):
         """ Send out gratitous arp """
@@ -375,7 +409,8 @@ class PacketHandler:
             arp_tha="00:00:00:00:00:00",
             arp_tpa=ip4_unicast,
         )
-        self.logger.debug(f"Sent out Gratitous ARP for {ip4_unicast}")
+        if __debug__:
+            self._logger.debug(f"Sent out Gratitous ARP for {ip4_unicast}")
 
     def send_icmp6_multicast_listener_report(self):
         """ Send out ICMPv6 Multicast Listener Report for given list of addresses """
@@ -394,7 +429,10 @@ class PacketHandler:
                 icmp6_type=ps_icmp6.ICMP6_MLD2_REPORT,
                 icmp6_mlr2_multicast_address_record=icmp6_mlr2_multicast_address_record,
             )
-            self.logger.debug(f"Sent out ICMPv6 Multicast Listener Report message for {[_.multicast_address for _ in icmp6_mlr2_multicast_address_record]}")
+            if __debug__:
+                self._logger.debug(
+                    f"Sent out ICMPv6 Multicast Listener Report message for {[_.multicast_address for _ in icmp6_mlr2_multicast_address_record]}"
+                )
 
     def send_icmp6_nd_dad_message(self, ip6_unicast_candidate):
         """ Send out ICMPv6 ND Duplicate Address Detection message """
@@ -406,7 +444,8 @@ class PacketHandler:
             icmp6_type=ps_icmp6.ICMP6_NEIGHBOR_SOLICITATION,
             icmp6_ns_target_address=ip6_unicast_candidate,
         )
-        self.logger.debug(f"Sent out ICMPv6 ND DAD message for {ip6_unicast_candidate}")
+        if __debug__:
+            self._logger.debug(f"Sent out ICMPv6 ND DAD message for {ip6_unicast_candidate}")
 
     def send_icmp6_nd_router_solicitation(self):
         """ Send out ICMPv6 ND Router Solicitation """
@@ -418,27 +457,31 @@ class PacketHandler:
             icmp6_type=ps_icmp6.ICMP6_ROUTER_SOLICITATION,
             icmp6_nd_options=[ps_icmp6.Icmp6NdOptSLLA(opt_slla=self.mac_unicast)],
         )
-        self.logger.debug("Sent out ICMPv6 ND Router Solicitation")
+        if __debug__:
+            self._logger.debug("Sent out ICMPv6 ND Router Solicitation")
 
     def assign_ip6_address(self, ip6_address):
         """ Assign IPv6 unicast address to the list stack listens on """
 
         self.ip6_address.append(ip6_address)
-        self.logger.debug(f"Assigned IPv6 unicast address {ip6_address}")
+        if __debug__:
+            self._logger.debug(f"Assigned IPv6 unicast address {ip6_address}")
         self.assign_ip6_multicast(ip6_address.solicited_node_multicast)
 
     def remove_ip6_address(self, ip6_address):
         """ Remove IPv6 unicast address from the list stack listens on """
 
         self.ip6_address.remove(ip6_address)
-        self.logger.debug(f"Removed IPv6 unicast address {ip6_address}")
+        if __debug__:
+            self._logger.debug(f"Removed IPv6 unicast address {ip6_address}")
         self.remove_ip6_multicast(ip6_address.solicited_node_multicast)
 
     def assign_ip6_multicast(self, ip6_multicast):
         """ Assign IPv6 multicast address to the list stack listens on """
 
         self.ip6_multicast.append(ip6_multicast)
-        self.logger.debug(f"Assigned IPv6 multicast {ip6_multicast}")
+        if __debug__:
+            self._logger.debug(f"Assigned IPv6 multicast {ip6_multicast}")
         self.assign_mac_multicast(ip6_multicast.multicast_mac)
 
         # Send out the ICMPv6 Multicast Listener Report
@@ -449,20 +492,23 @@ class PacketHandler:
         """ Remove IPv6 multicast address from the list stack listens on """
 
         self.ip6_multicast.remove(ip6_multicast)
-        self.logger.debug(f"Removed IPv6 multicast {ip6_multicast}")
+        if __debug__:
+            self._logger.debug(f"Removed IPv6 multicast {ip6_multicast}")
         self.remove_mac_multicast(ip6_multicast.multicast_mac)
 
     def assign_mac_multicast(self, mac_multicast):
         """ Assign MAC multicast address to the list stack listens on """
 
         self.mac_multicast.append(mac_multicast)
-        self.logger.debug(f"Assigned MAC multicast {mac_multicast}")
+        if __debug__:
+            self._logger.debug(f"Assigned MAC multicast {mac_multicast}")
 
     def remove_mac_multicast(self, mac_multicast):
         """ Remove MAC multicast address from the list stack listens on """
 
         self.mac_multicast.remove(mac_multicast)
-        self.logger.debug(f"Removed MAC multicast {mac_multicast}")
+        if __debug__:
+            self._logger.debug(f"Removed MAC multicast {mac_multicast}")
 
     def __dhcp4_client(self):
         """ Obtain IPv4 address and default gateway using DHCP """
@@ -492,27 +538,31 @@ class PacketHandler:
                 dhcp_host_name="PyTCP",
             )
         )
-        self.logger.debug("Sent out DHCP Discover message")
+        if __debug__:
+            self._logger.debug("Sent out DHCP Discover message")
 
         # Wait for DHCP Offer
         if not (packet := socket.receive_from(timeout=5)):
-            self.logger.warning("Timeout waiting for DHCP Offer message")
+            if __debug__:
+                self._logger.warning("Timeout waiting for DHCP Offer message")
             socket.close()
             return None, None
 
         dhcp_packet_rx = ps_dhcp.DhcpPacket(packet.raw_data)
         if dhcp_packet_rx.dhcp_msg_type != ps_dhcp.DHCP_OFFER:
-            self.logger.warning("Didn't receive DHCP Offer message")
+            if __debug__:
+                self._logger.warning("Didn't receive DHCP Offer message")
             socket.close()
             return None, None
 
         dhcp_srv_id = dhcp_packet_rx.dhcp_srv_id
         dhcp_yiaddr = dhcp_packet_rx.dhcp_yiaddr
-        self.logger.debug(
-            f"ClientUdpDhcp: Received DHCP Offer from {dhcp_packet_rx.dhcp_srv_id}"
-            + f"IP: {dhcp_packet_rx.dhcp_yiaddr}, Mask: {dhcp_packet_rx.dhcp_subnet_mask}, Router: {dhcp_packet_rx.dhcp_router}"
-            + f"DNS: {dhcp_packet_rx.dhcp_dns}, Domain: {dhcp_packet_rx.dhcp_domain_name}"
-        )
+        if __debug__:
+            self._logger.debug(
+                f"ClientUdpDhcp: Received DHCP Offer from {dhcp_packet_rx.dhcp_srv_id}"
+                + f"IP: {dhcp_packet_rx.dhcp_yiaddr}, Mask: {dhcp_packet_rx.dhcp_subnet_mask}, Router: {dhcp_packet_rx.dhcp_router}"
+                + f"DNS: {dhcp_packet_rx.dhcp_dns}, Domain: {dhcp_packet_rx.dhcp_domain_name}"
+            )
 
         # Send DHCP Request
         __send_dhcp_packet(
@@ -527,24 +577,28 @@ class PacketHandler:
             )
         )
 
-        self.logger.debug(f"Sent out DHCP Request message to {dhcp_packet_rx.dhcp_srv_id}")
+        if __debug__:
+            self._logger.debug(f"Sent out DHCP Request message to {dhcp_packet_rx.dhcp_srv_id}")
 
         # Wait for DHCP Ack
         if not (packet := socket.receive_from(timeout=5)):
-            self.logger.warning("Timeout waiting for DHCP Ack message")
+            if __debug__:
+                self._logger.warning("Timeout waiting for DHCP Ack message")
             return None, None
 
         dhcp_packet_rx = ps_dhcp.DhcpPacket(packet.raw_data)
         if dhcp_packet_rx.dhcp_msg_type != ps_dhcp.DHCP_ACK:
-            self.logger.warning("Didn't receive DHCP Offer message")
+            if __debug__:
+                self._logger.warning("Didn't receive DHCP Offer message")
             socket.close()
             return None, None
 
-        self.logger.debug(
-            f"Received DHCP Offer from {dhcp_packet_rx.dhcp_srv_id}"
-            + f"IP: {dhcp_packet_rx.dhcp_yiaddr}, Mask: {dhcp_packet_rx.dhcp_subnet_mask}, Router: {dhcp_packet_rx.dhcp_router}"
-            + f"DNS: {dhcp_packet_rx.dhcp_dns}, Domain: {dhcp_packet_rx.dhcp_domain_name}"
-        )
+        if __debug__:
+            self._logger.debug(
+                f"Received DHCP Offer from {dhcp_packet_rx.dhcp_srv_id}"
+                + f"IP: {dhcp_packet_rx.dhcp_yiaddr}, Mask: {dhcp_packet_rx.dhcp_subnet_mask}, Router: {dhcp_packet_rx.dhcp_router}"
+                + f"DNS: {dhcp_packet_rx.dhcp_dns}, Domain: {dhcp_packet_rx.dhcp_domain_name}"
+            )
         socket.close()
         return (
             IPv4Interface(str(dhcp_packet_rx.dhcp_yiaddr) + "/" + str(IPv4Address._make_netmask(str(dhcp_packet_rx.dhcp_subnet_mask))[1])),

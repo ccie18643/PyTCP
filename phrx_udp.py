@@ -58,7 +58,8 @@ def phrx_udp(self, ip_packet_rx, udp_packet_rx):
     if udp_packet_rx.sanity_check_failed:
         return
 
-    self.logger.opt(ansi=True).info(f"<green>{udp_packet_rx.tracker}</green> - {udp_packet_rx}")
+    if __debug__:
+        self._logger.opt(ansi=True).info(f"<green>{udp_packet_rx.tracker}</green> - {udp_packet_rx}")
 
     # Set universal names for src and dst IP addresses whether packet was delivered by IPv6 or IPv4 protocol
     ip_packet_rx.ip_dst = ip_packet_rx.ip6_dst if ip_packet_rx.protocol == "IPv6" else ip_packet_rx.ip4_dst
@@ -83,13 +84,16 @@ def phrx_udp(self, ip_packet_rx, udp_packet_rx):
 
     # Silently drop packet if it has all zero source IP address
     if ip_packet_rx.ip_src in {IPv4Address("0.0.0.0"), IPv6Address("::")}:
-        self.logger.debug(
-            f"Received UDP packet from {ip_packet_rx.ip_src}, port {udp_packet_rx.udp_sport} to {ip_packet_rx.ip_dst}, port {udp_packet_rx.udp_dport}, dropping"
-        )
+        if __debug__:
+            self._logger.debug(
+                f"Received UDP packet from {ip_packet_rx.ip_src}, port {udp_packet_rx.udp_sport} "
+                + f"to {ip_packet_rx.ip_dst}, port {udp_packet_rx.udp_dport}, dropping"
+            )
         return
 
     # Respond with ICMPv4 Port Unreachable message if no matching socket has been found
-    self.logger.debug(f"Received UDP packet from {ip_packet_rx.ip_src} to closed port {udp_packet_rx.udp_dport}, sending ICMPv4 Port Unreachable")
+    if __debug__:
+        self._logger.debug(f"Received UDP packet from {ip_packet_rx.ip_src} to closed port {udp_packet_rx.udp_dport}, sending ICMPv4 Port Unreachable")
 
     if ip_packet_rx.protocol == "IPv6":
         self.phtx_icmp6(

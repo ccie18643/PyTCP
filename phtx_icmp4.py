@@ -73,5 +73,6 @@ def phtx_icmp4(
         echo_tracker=echo_tracker,
     )
 
-    self.logger.opt(ansi=True).info(f"<magenta>{icmp4_packet_tx.tracker}</magenta> - {icmp4_packet_tx}")
+    if __debug__:
+        self._logger.opt(ansi=True).info(f"<magenta>{icmp4_packet_tx.tracker}</magenta> - {icmp4_packet_tx}")
     self.phtx_ip4(ip4_src=ip4_src, ip4_dst=ip4_dst, child_packet=icmp4_packet_tx)

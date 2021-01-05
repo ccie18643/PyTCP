@@ -54,7 +54,8 @@ class StackCliServer:
     def __init__(self, local_ip_address="", local_port=777):
         """ Class constructor """
 
-        self.logger = loguru.logger.bind(object_name="cli_server.")
+        if __debug__:
+            self._logger = loguru.logger.bind(object_name="cli_server.")
         threading.Thread(target=self.__thread_service, args=(local_ip_address, local_port)).start()
 
     def __thread_service(self, local_ip_address, local_port):
@@ -64,11 +65,13 @@ class StackCliServer:
             s.bind((local_ip_address, local_port))
             s.listen(5)
 
-            self.logger.debug(f"Stack CLI server started, bound to {local_ip_address}, port {local_port}")
+            if __debug__:
+                self._logger.debug(f"Stack CLI server started, bound to {local_ip_address}, port {local_port}")
 
             while True:
                 conn, addr = s.accept()
-                self.logger.debug(f"Stack CLI server received connection from {addr[0]}, port {addr[1]}")
+                if __debug__:
+                    self._logger.debug(f"Stack CLI server received connection from {addr[0]}, port {addr[1]}")
 
                 threading.Thread(target=self.__thread_connection, args=(conn,)).start()
 

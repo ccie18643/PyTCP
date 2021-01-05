@@ -95,11 +95,13 @@ def phrx_ip4(self, ip4_packet_rx):
     if ip4_packet_rx.sanity_check_failed:
         return
 
-    self.logger.debug(f"{ip4_packet_rx.tracker} - {ip4_packet_rx}")
+    if __debug__:
+        self._logger.debug(f"{ip4_packet_rx.tracker} - {ip4_packet_rx}")
 
     # Check if received packet has been sent to us directly or by unicast/broadcast, allow any destination if no unicast address is configured (for DHCP client)
     if self.ip4_unicast and ip4_packet_rx.ip4_dst not in {*self.ip4_unicast, *self.ip4_multicast, *self.ip4_broadcast}:
-        self.logger.debug(f"{ip4_packet_rx.tracker} - IP packet not destined for this stack, dropping")
+        if __debug__:
+            self._logger.debug(f"{ip4_packet_rx.tracker} - IP packet not destined for this stack, dropping")
         return
 
     # Check if packet is a fragment, and if so process it accordingly

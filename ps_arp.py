@@ -82,7 +82,8 @@ class ArpPacket:
     def __init__(self, parent_packet=None, arp_sha=None, arp_spa=None, arp_tpa=None, arp_tha="00:00:00:00:00:00", arp_oper=ARP_OP_REQUEST, echo_tracker=None):
         """ Class constructor """
 
-        self.logger = loguru.logger.bind(object_name="ps_arp.")
+        if __debug__:
+            self._logger = loguru.logger.bind(object_name="ps_arp.")
         self.sanity_check_failed = False
 
         # Packet parsing
@@ -173,7 +174,8 @@ class ArpPacket:
             return True
 
         if len(raw_packet) < 28:
-            self.logger.critical(f"{self.tracker} - ARP sanity check fail - wrong packet length (I)")
+            if __debug__:
+                self._logger.critical(f"{self.tracker} - ARP sanity check fail - wrong packet length (I)")
             return False
 
         return True
@@ -185,23 +187,28 @@ class ArpPacket:
             return True
 
         if not self.arp_hrtype == 1:
-            self.logger.critical(f"{self.tracker} - ARP sanity check fail - value of arp_hrtype is not 1")
+            if __debug__:
+                self._logger.critical(f"{self.tracker} - ARP sanity check fail - value of arp_hrtype is not 1")
             return False
 
         if not self.arp_prtype == 0x0800:
-            self.logger.critical(f"{self.tracker} - ARP sanity check fail - value of arp_prtype is not 0x0800")
+            if __debug__:
+                self._logger.critical(f"{self.tracker} - ARP sanity check fail - value of arp_prtype is not 0x0800")
             return False
 
         if not self.arp_hrlen == 6:
-            self.logger.critical(f"{self.tracker} - ARP sanity check fail - value of arp_hrlen is not 6")
+            if __debug__:
+                self._logger.critical(f"{self.tracker} - ARP sanity check fail - value of arp_hrlen is not 6")
             return False
 
         if not self.arp_prlen == 4:
-            self.logger.critical(f"{self.tracker} - ARP sanity check fail - value of arp_prlen is not 4")
+            if __debug__:
+                self._logger.critical(f"{self.tracker} - ARP sanity check fail - value of arp_prlen is not 4")
             return False
 
         if self.arp_oper not in {1, 2}:
-            self.logger.critical(f"{self.tracker} - ARP sanity check fail - value of oper is not [1-2]")
+            if __debug__:
+                self._logger.critical(f"{self.tracker} - ARP sanity check fail - value of oper is not [1-2]")
             return False
 
         return True

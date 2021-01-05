@@ -126,7 +126,8 @@ class Icmp4Packet:
     ):
         """ Class constructor """
 
-        self.logger = loguru.logger.bind(object_name="ps_icmpv4.")
+        if __debug__:
+            self._logger = loguru.logger.bind(object_name="ps_icmpv4.")
         self.sanity_check_failed = False
 
         # Packet parsing
@@ -247,26 +248,31 @@ class Icmp4Packet:
             return True
 
         if inet_cksum(raw_packet):
-            self.logger.critical(f"{self.tracker} - ICMPv4 sanity check fail - wrong packet checksum")
+            if __debug__:
+                self._logger.critical(f"{self.tracker} - ICMPv4 sanity check fail - wrong packet checksum")
             return False
 
         if len(raw_packet) < 4:
-            self.logger.critical(f"{self.tracker} - ICMPv4 sanity check fail - wrong packet length (I)")
+            if __debug__:
+                self._logger.critical(f"{self.tracker} - ICMPv4 sanity check fail - wrong packet length (I)")
             return False
 
         if raw_packet[0] == ICMP4_ECHOREPLY:
             if len(raw_packet) < 8:
-                self.logger.critical(f"{self.tracker} - ICMPv6 sanity check fail - wrong packet length (II)")
+                if __debug__:
+                    self._logger.critical(f"{self.tracker} - ICMPv6 sanity check fail - wrong packet length (II)")
                 return False
 
         elif raw_packet[0] == ICMP4_UNREACHABLE:
             if len(raw_packet) < 12:
-                self.logger.critical(f"{self.tracker} - ICMPv6 sanity check fail - wrong packet length (II)")
+                if __debug__:
+                    self._logger.critical(f"{self.tracker} - ICMPv6 sanity check fail - wrong packet length (II)")
                 return False
 
         elif raw_packet[0] == ICMP4_ECHOREQUEST:
             if len(raw_packet) < 8:
-                self.logger.critical(f"{self.tracker} - ICMPv6 sanity check fail - wrong packet length (II)")
+                if __debug__:
+                    self._logger.critical(f"{self.tracker} - ICMPv6 sanity check fail - wrong packet length (II)")
                 return False
 
         return True
@@ -280,17 +286,20 @@ class Icmp4Packet:
         if self.icmp4_type == ICMP4_ECHOREPLY:
             # imcp4_code SHOULD be set to 0 (RFC 792)
             if not self.icmp4_code == 0:
-                self.logger.critical(f"{self.tracker} - ICMPv4 sanity check warning - imcp4_code SHOULD be set to 0 (RFC 792)")
+                if __debug__:
+                    self._logger.critical(f"{self.tracker} - ICMPv4 sanity check warning - imcp4_code SHOULD be set to 0 (RFC 792)")
 
         if self.icmp4_type == ICMP4_UNREACHABLE:
             # imcp4_code MUST be set to [0-15] (RFC 792)
             if self.icmp4_code not in {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15}:
-                self.logger.critical(f"{self.tracker} - ICMPv4 sanity check fail - imcp4_code MUST be set to [0-15] (RFC 792)")
+                if __debug__:
+                    self._logger.critical(f"{self.tracker} - ICMPv4 sanity check fail - imcp4_code MUST be set to [0-15] (RFC 792)")
                 return False
 
         elif self.icmp4_type == ICMP4_ECHOREQUEST:
             # imcp4_code SHOULD be set to 0 (RFC 792)
             if not self.icmp4_code == 0:
-                self.logger.critical(f"{self.tracker} - ICMPv4 sanity check warning - imcp4_code SHOULD be set to 0 (RFC 792)")
+                if __debug__:
+                    self._logger.critical(f"{self.tracker} - ICMPv4 sanity check warning - imcp4_code SHOULD be set to 0 (RFC 792)")
 
         return True
