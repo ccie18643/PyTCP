@@ -189,7 +189,8 @@ class PacketHandler:
             if __debug__:
                 self._logger.warning(f"ICMPv6 ND DAD - Duplicate IPv6 address detected, {ip6_unicast_candidate} advertised by {self.icmp6_nd_dad_tlla}")
         else:
-            self._logger.debug(f"ICMPv6 ND DAD - No duplicate address detected for {ip6_unicast_candidate}")
+            if __debug__:
+                self._logger.debug(f"ICMPv6 ND DAD - No duplicate address detected for {ip6_unicast_candidate}")
         self.ip6_unicast_candidate = None
         self._remove_ip6_multicast(ip6_unicast_candidate.solicited_node_multicast)
         return not event
