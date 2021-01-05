@@ -275,30 +275,28 @@ class Parser:
         if len(self) < ip4.ps.HEADER_LEN:
             return "IPv4 integrity - wrong packet length (I)"
 
-        hlen = (self._frame[self._hptr + 0] & 0b00001111) << 2
-        plen = struct.unpack_from("!H", self._frame, self._hptr + 2)[0]
-        if not ip4.ps.HEADER_LEN <= hlen <= plen <= len(self):
+        if not ip4.ps.HEADER_LEN <= self.hlen <= self.plen <= len(self):
             return "IPv4 integrity - wrong packet length (II)"
 
         # Cannot compute checksum earlier because it depends on sanity of hlen field
-        if inet_cksum(self._frame, self._hptr, hlen):
+        if inet_cksum(self._frame, self._hptr, self.hlen):
             return "IPv4 integriy - wrong packet checksum"
 
         optr = self._hptr + ip4.ps.HEADER_LEN
-        while optr < self._hptr + hlen:
+        while optr < self._hptr + self.hlen:
             if self._frame[optr] == ip4.ps.OPT_EOL:
                 break
             if self._frame[optr] == ip4.ps.OPT_NOP:
                 optr += 1
-                if optr > self._hptr + hlen:
+                if optr > self._hptr + self.hlen:
                     return "IPv4 integrity - wrong option length (I)"
                 continue
-            if optr + 1 > self._hptr + hlen:
+            if optr + 1 > self._hptr + self.hlen:
                 return "IPv4 integrity - wrong option length (II)"
             if self._frame[optr + 1] == 0:
                 return "IPv4 integrity - wrong option length (III)"
             optr += self._frame[optr + 1]
-            if optr > self._hptr + hlen:
+            if optr > self._hptr + self.hlen:
                 return "IPv4 integrity - wrong option length (IV)"
 
         return False
