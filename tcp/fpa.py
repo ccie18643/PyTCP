@@ -95,22 +95,7 @@ class Assembler:
 
         return self.hlen + len(self.data)
 
-
-    def __str__(self) -> str:
-        """ Packet log string """
-
-        log = (
-            f"TCP {self.sport} > {self.dport}, {'N' if self.flag_ns else ''}{'C' if self.flag_crw else ''}"
-            + f"{'E' if self.flag_ece else ''}{'U' if self.flag_urg else ''}{'A' if self.flag_ack else ''}"
-            + f"{'P' if self.flag_psh else ''}{'R' if self.flag_rst else ''}{'S' if self.flag_syn else ''}"
-            + f"{'F' if self.flag_fin else ''}, seq {self.seq}, ack {self.ack}, win {self.win}, dlen {len(self.data)}"
-        )
-
-        for option in self.options:
-            log += ", " + str(option)
-
-        return log
-
+    from tcp.ps import __str__
 
     @property
     def raw_options(self) -> bytes:

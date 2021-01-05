@@ -43,7 +43,7 @@ from misc.ipv4_address import IPv4Address
 from misc.tracker import Tracker
 
 
-class Assembler():
+class Assembler:
     """ IPv4 packet assembler support class """
 
     ether_type = ether.ps.TYPE_IP4
@@ -144,7 +144,7 @@ class Assembler():
         self._carried_packet.assemble(frame, hptr + self.hlen, self.pshdr_sum)
 
 
-class FragAssembler():
+class FragAssembler:
     """ IPv4 packet fragment assembler support class """
 
     ether_type = ether.ps.TYPE_IP4
@@ -189,14 +189,7 @@ class FragAssembler():
 
         return ip4.ps.HEADER_LEN + sum([len(_) for _ in self.options]) + len(self.data)
 
-    def __str__(self) -> str:
-        """ Packet log string """
-
-        return (
-            f"IPv4 {self.src} > {self.dst}, proto {self.proto} ({ip4.ps.PROTO_TABLE.get(self.proto, '???')}), id {self.id}"
-            + f"{', DF' if self.flag_df else ''}{', MF' if self.flag_mf else ''}, offset {self.offset}, plen {self.plen}"
-            + f", ttl {self.ttl}"
-        )
+    from ip4.ps import __str__
 
     @property
     def raw_options(self) -> bytes:

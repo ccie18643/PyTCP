@@ -47,12 +47,7 @@ NEXT_HEADER_ICMP6 = 58
 NEXT_HEADER_TABLE = {NEXT_HEADER_TCP: "TCP", NEXT_HEADER_UDP: "UDP", NEXT_HEADER_ICMP6: "ICMPv6"}
 
 
-class Base:
-    """ IPv6 fragmentation extension header base class """
+def __str__(self):
+    """ Packet log string """
 
-    def __str__(self):
-        """ Packet log string """
-
-        return (
-            f"IPv6_FRAG id {self.id}{', MF' if self.flag_mf else ''}, offset {self.offset}" + f", next {self.next} ({NEXT_HEADER_TABLE.get(self.next, '???')})"
-        )
+    return f"IPv6_FRAG id {self.id}{', MF' if self.flag_mf else ''}, offset {self.offset}" + f", next {self.next} ({NEXT_HEADER_TABLE.get(self.next, '???')})"

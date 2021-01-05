@@ -49,5 +49,10 @@ TYPE_ARP = 0x0806
 TYPE_IP4 = 0x0800
 TYPE_IP6 = 0x86DD
 
-
 TYPE_TABLE = {TYPE_ARP: "ARP", TYPE_IP4: "IPv4", TYPE_IP6: "IPv6"}
+
+
+def __str__(self) -> str:
+    """ Packet log string """
+
+    return f"ETHER {self.src} > {self.dst}, 0x{self.type:0>4x} ({TYPE_TABLE.get(self.type, '???')})"

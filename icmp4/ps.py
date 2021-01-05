@@ -29,9 +29,6 @@
 #
 
 
-from typing import Optional
-
-
 # Echo reply message (0/0)
 
 # +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
@@ -89,3 +86,20 @@ UNREACHABLE__FAGMENTATION = 4
 UNREACHABLE__SOURCE_ROUTE_FAILED = 5
 ECHO_REQUEST = 8
 ECHO_REQUEST_LEN = 8
+
+
+def __str__(self) -> str:
+    """ Packet log string """
+
+    log = f"ICMPv4 type {self.type}, code {self.code}"
+
+    if self.type == ECHO_REPLY:
+        log += f", id {self.ec_id}, seq {self.ec_seq}"
+
+    elif self.type == UNREACHABLE and self.code == UNREACHABLE__PORT:
+        pass
+
+    elif self.type == ECHO_REQUEST:
+        log += f", id {self.ec_id}, seq {self.ec_seq}"
+
+    return log

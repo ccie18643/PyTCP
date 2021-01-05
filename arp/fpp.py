@@ -68,15 +68,7 @@ class Parser:
 
         return len(self._frame) - self._hptr
 
-    def __str__(self) -> str:
-        """ Packet log string """
-
-        if self.oper == arp.ps.OP_REQUEST:
-            return f"ARP request {self.spa} / {self.sha} > {self.tpa} / {self.tha}"
-        if self.oper == arp.ps.OP_REPLY:
-            return f"ARP reply {self.spa} / {self.sha} > {self.tpa} / {self.tha}"
-
-        return f"ARP request unknown opeation {self.oper}"
+    from arp.ps import __str__
 
     @property
     def hrtype(self):

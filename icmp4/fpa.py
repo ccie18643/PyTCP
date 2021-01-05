@@ -88,21 +88,7 @@ class Assembler:
 
         return 0
 
-    def __str__(self) -> str:
-        """ Packet log string """
-
-        log = f"ICMPv4 type {self.type}, code {self.code}"
-
-        if self.type == icmp4.ps.ECHO_REPLY:
-            log += f", id {self.ec_id}, seq {self.ec_seq}"
-
-        elif self.type == icmp4.ps.UNREACHABLE and self.code == icmp4.ps.UNREACHABLE__PORT:
-            pass
-
-        elif self.type == icmp4.ps.ECHO_REQUEST:
-            log += f", id {self.ec_id}, seq {self.ec_seq}"
-
-        return log
+    from icmp4.ps import __str__
 
     def assemble(self, frame: bytearray, hptr: int, _: int) -> None:
         """ Assemble packet into the raw form """

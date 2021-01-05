@@ -55,6 +55,16 @@ PROTO_UDP = 17
 PROTO_TABLE = {PROTO_ICMP4: "ICMPv4", PROTO_TCP: "TCP", PROTO_UDP: "UDP"}
 
 
+def __str__(self) -> str:
+    """ Packet log string """
+
+    return (
+        f"IPv4 {self.src} > {self.dst}, proto {self.proto} ({PROTO_TABLE.get(self.proto, '???')}), id {self.id}"
+        + f"{', DF' if self.flag_df else ''}{', MF' if self.flag_mf else ''}, offset {self.offset}, plen {self.plen}"
+        + f", ttl {self.ttl}"
+    )
+
+
 #
 #   IPv4 options
 #

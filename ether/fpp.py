@@ -34,7 +34,6 @@ import struct
 import config
 import ether.ps
 from misc.packet import PacketRx
-from typing import Union, Type
 
 
 class Parser:
@@ -69,10 +68,7 @@ class Parser:
 
         return len(self._frame) - self._hptr
 
-    def __str__(self) -> str:
-        """ Packet log string """
-
-        return f"ETHER {self.src} > {self.dst}, 0x{self.type:0>4x} ({ether.ps.TYPE_TABLE.get(self.type, '???')})"
+    from ether.ps import __str__
 
     @property
     def dst(self):

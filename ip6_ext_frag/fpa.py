@@ -36,7 +36,7 @@ import ip6_ext_frag.ps
 from misc.tracker import Tracker
 
 
-class Assembler(ip6_ext_frag.ps.Base):
+class Assembler:
     """ IPv6 fragment extension header assembler support class """
 
     ip6_next = ip6.ps.NEXT_HEADER_EXT_FRAG
@@ -66,6 +66,8 @@ class Assembler(ip6_ext_frag.ps.Base):
         """ Length of the packet """
 
         return ip6_ext_frag.ps.HEADER_LEN + len(self.data)
+
+    from ip6_ext_frag.ps import __str__
 
     def assemble(self, frame: bytearray, hptr: int, _: int):
         """ Assemble packet into the raw form """

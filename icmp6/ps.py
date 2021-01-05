@@ -28,9 +28,7 @@
 # icmp6/ps.py - protocol support for ICMPv6
 #
 
-
 from misc.ipv6_address import IPv6Network
-
 
 # Destination Unreachable message (1/[0-6])
 
@@ -318,6 +316,52 @@ MART_CHANGE_TO_INCLUDE = 3
 MART_CHANGE_TO_EXCLUDE = 4
 MART_ALLOW_NEW_SOURCES = 5
 MART_BLOCK_OLD_SOURCES = 6
+
+
+def __str__(self) -> str:
+    """ Packet log string """
+
+    log = f"ICMPv6 type {self.type}, code {self.code}"
+
+    if self.type == UNREACHABLE:
+        pass
+
+    elif self.type == ECHO_REQUEST:
+        log += f", id {self.ec_id}, seq {self.ec_seq}"
+
+    elif self.type == ECHO_REPLY:
+        log += f", id {self.ec_id}, seq {self.ec_seq}"
+
+    elif self.type == ROUTER_SOLICITATION:
+        assert self.nd_options is not None
+        for nd_option in self.nd_options:
+            log += ", " + str(nd_option)
+
+    elif self.type == ROUTER_ADVERTISEMENT:
+        assert self.nd_options is not None
+        log += f", hop {self.ra_hop}"
+        log += f"flags {'M' if self.ra_flag_m else '-'}{'O' if self.ra_flag_o else '-'}"
+        log += f"rlft {self.ra_router_lifetime}, reacht {self.ra_reachable_time}, retrt {self.ra_retrans_timer}"
+        for nd_option in self.nd_options:
+            log += ", " + str(nd_option)
+
+    elif self.type == NEIGHBOR_SOLICITATION:
+        assert self.nd_options is not None
+        log += f", target {self.ns_target_address}"
+        for nd_option in self.nd_options:
+            log += ", " + str(nd_option)
+
+    elif self.type == NEIGHBOR_ADVERTISEMENT:
+        assert self.nd_options is not None
+        log += f", target {self.na_target_address}"
+        log += f", flags {'R' if self.na_flag_r else '-'}{'S' if self.na_flag_s else '-'}{'O' if self.na_flag_o else '-'}"
+        for nd_option in self.nd_options:
+            log += ", " + str(nd_option)
+
+    elif self.type == MLD2_REPORT:
+        pass
+
+    return log
 
 
 #

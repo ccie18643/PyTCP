@@ -63,15 +63,12 @@ class Parser:
         if not packet_rx.parse_failed:
             packet_rx.hptr = self._hptr + udp.ps.HEADER_LEN
 
-    def __len__(self):
+    def __len__(self) -> int:
         """ Number of bytes remaining in the frame """
 
         return len(self._frame) - self._hptr
 
-    def __str__(self) -> str:
-        """ Packet log string """
-
-        return f"UDP {self.sport} > {self.dport}, len {self.plen}"
+    from udp.ps import __str__
 
     @property
     def sport(self):

@@ -59,10 +59,7 @@ class Assembler:
 
         return self.plen
 
-    def __str__(self) -> str:
-        """ Packet log string """
-
-        return f"UDP {self.sport} > {self.dport}, len {self.plen}"
+    from udp.ps import __str__
 
     def assemble(self, frame: bytearray, hptr: int, pshdr_sum: int):
         """ Assemble packet into the raw form """

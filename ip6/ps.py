@@ -62,3 +62,11 @@ NEXT_HEADER_EXT_FRAG = 44
 NEXT_HEADER_ICMP6 = 58
 
 NEXT_HEADER_TABLE = {NEXT_HEADER_TCP: "TCP", NEXT_HEADER_UDP: "UDP", NEXT_HEADER_EXT_FRAG: "FRAG", NEXT_HEADER_ICMP6: "ICMPv6"}
+
+
+def __str__(self) -> str:
+    """ Packet log string """
+
+    return (
+        f"IPv6 {self.src} > {self.dst}, next {self.next} ({NEXT_HEADER_TABLE.get(self.next, '???')}), flow {self.flow}" + f", dlen {self.dlen}, hop {self.hop}"
+    )

@@ -37,7 +37,7 @@ from misc.ip_helper import inet_cksum
 from misc.ipv4_address import IPv4Address
 
 
-class Parser():
+class Parser:
     """ IPv4 packet parser class """
 
     class __not_cached:
@@ -82,14 +82,7 @@ class Parser():
 
         return len(self._frame) - self._hptr
 
-    def __str__(self) -> str:
-        """ Packet log string """
-
-        return (
-            f"IPv4 {self.src} > {self.dst}, proto {self.proto} ({ip4.ps.PROTO_TABLE.get(self.proto, '???')}), id {self.id}"
-            + f"{', DF' if self.flag_df else ''}{', MF' if self.flag_mf else ''}, offset {self.offset}, plen {self.plen}"
-            + f", ttl {self.ttl}"
-        )
+    from ip4.ps import __str__
 
     @property
     def ver(self):

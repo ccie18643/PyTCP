@@ -74,13 +74,7 @@ class Parser:
 
         return len(self._frame) - self._hptr
 
-    def __str__(self) -> str:
-        """ Packet log string """
-
-        return (
-            f"IPv6 {self.src} > {self.dst}, next {self.next} ({ip6.ps.NEXT_HEADER_TABLE.get(self.next, '???')}), flow {self.flow}"
-            + f", dlen {self.dlen}, hop {self.hop}"
-        )
+    from ip6.ps import __str__
 
     @property
     def ver(self):

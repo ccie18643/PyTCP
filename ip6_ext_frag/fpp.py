@@ -35,7 +35,7 @@ import config
 import ip6_ext_frag.ps
 
 
-class Parser(ip6_ext_frag.ps.Base):
+class Parser:
     """ IPv6 fragmentation extension header parser class """
 
     class __not_cached:
@@ -66,6 +66,8 @@ class Parser(ip6_ext_frag.ps.Base):
         """ Number of bytes remaining in the frame """
 
         return len(self._frame) - self._hptr
+
+    from ip6_ext_frag.ps import __str__
 
     @property
     def next(self):

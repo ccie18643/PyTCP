@@ -52,3 +52,14 @@ HEADER_LEN = 28
 
 OP_REQUEST = 1
 OP_REPLY = 2
+
+
+def __str__(self) -> str:
+    """ Packet log string """
+
+    if self.oper == OP_REQUEST:
+        return f"ARP request {self.spa} / {self.sha} > {self.tpa} / {self.tha}"
+    if self.oper == OP_REPLY:
+        return f"ARP reply {self.spa} / {self.sha} > {self.tpa} / {self.tha}"
+
+    return f"ARP request unknown operation {self.oper}"

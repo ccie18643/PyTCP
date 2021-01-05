@@ -59,10 +59,7 @@ class Assembler:
 
         return ether.ps.HEADER_LEN + len(self._carried_packet)
 
-    def __str__(self) -> str:
-        """ Packet log string """
-
-        return f"ETHER {self.src} > {self.dst}, 0x{self.type:0>4x} ({ether.ps.TYPE_TABLE.get(self.type, '???')})"
+    from ether.ps import __str__
 
     def assemble(self, frame: bytearray, hptr: int) -> None:
         """ Assemble packet into the raw form """
