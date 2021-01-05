@@ -25,7 +25,7 @@
 
 
 #
-# icmp4/ps.py - protocol support class for ICMPv4 protocol
+# icmp4/ps.py - protocol support for ICMPv4
 #
 
 
@@ -89,31 +89,3 @@ UNREACHABLE__FAGMENTATION = 4
 UNREACHABLE__SOURCE_ROUTE_FAILED = 5
 ECHO_REQUEST = 8
 ECHO_REQUEST_LEN = 8
-
-
-class Base:
-    """ ICMPv4 packet base class """
-
-    def __init__(self) -> None:
-        """ Class constructor """
-
-        self.type = -1
-        self.code = -1
-        self.ec_id: Optional[int] = None
-        self.ec_seq: Optional[int] = None
-
-    def __str__(self) -> str:
-        """ Packet log string """
-
-        log = f"ICMPv4 type {self.type}, code {self.code}"
-
-        if self.type == ECHO_REPLY:
-            log += f", id {self.ec_id}, seq {self.ec_seq}"
-
-        elif self.type == UNREACHABLE and self.code == UNREACHABLE__PORT:
-            pass
-
-        elif self.type == ECHO_REQUEST:
-            log += f", id {self.ec_id}, seq {self.ec_seq}"
-
-        return log

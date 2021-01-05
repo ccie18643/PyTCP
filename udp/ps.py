@@ -25,7 +25,7 @@
 
 
 #
-# udp/ps.py - protocol support class for UDP protocol
+# udp/ps.py - protocol support for UDP
 #
 
 
@@ -39,19 +39,3 @@
 
 
 HEADER_LEN = 8
-
-
-class Base:
-    """ UDP packet base class """
-
-    def __init__(self) -> None:
-        """ Class constructor """
-
-        self.sport = -1
-        self.dport = -1
-        self.plen = -1
-
-    def __str__(self) -> str:
-        """ Packet log string """
-
-        return f"UDP {self.sport} > {self.dport}, len {self.plen}"

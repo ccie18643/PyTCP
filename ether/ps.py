@@ -25,7 +25,7 @@
 
 
 #
-# ether/ps.py - protocol support class for Ethernet
+# ether/ps.py - protocol support for Ethernet
 #
 
 
@@ -51,19 +51,3 @@ TYPE_IP6 = 0x86DD
 
 
 TYPE_TABLE = {TYPE_ARP: "ARP", TYPE_IP4: "IPv4", TYPE_IP6: "IPv6"}
-
-
-class Base:
-    """ Ethernet packet base class """
-
-    def __init__(self) -> None:
-        """ Class constuctor """
-
-        self.src = "not initialised"
-        self.dst = "not initialised"
-        self.type = -1
-
-    def __str__(self) -> str:
-        """ Packet log string """
-
-        return f"ETHER {self.src} > {self.dst}, 0x{self.type:0>4x} ({TYPE_TABLE.get(self.type, '???')})"

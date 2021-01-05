@@ -25,11 +25,8 @@
 
 
 #
-# arp/ps.py - protocol support class for ARP protocol
+# arp/ps.py - protocol support for ARP
 #
-
-
-from misc.ipv4_address import IPv4Address
 
 
 # ARP packet header - IPv4 stack version only
@@ -55,26 +52,3 @@ HEADER_LEN = 28
 
 OP_REQUEST = 1
 OP_REPLY = 2
-
-
-class Base:
-    """ ARP packet base class """
-
-    def __init__(self) -> None:
-        """ Class constructor """
-
-        self.spa = IPv4Address(0)
-        self.sha = "not initialised"
-        self.tpa = IPv4Address(0)
-        self.tha = "not initialised"
-        self.oper = -1
-
-    def __str__(self) -> str:
-        """ Packet log string """
-
-        if self.oper == OP_REQUEST:
-            return f"ARP request {self.spa} / {self.sha} > {self.tpa} / {self.tha}"
-        if self.oper == OP_REPLY:
-            return f"ARP reply {self.spa} / {self.sha} > {self.tpa} / {self.tha}"
-
-        return f"ARP request unknown opeation {self.oper}"

@@ -36,7 +36,7 @@ import config
 from misc.ipv4_address import IPv4Address
 
 
-class Parser(arp.ps.Base):
+class Parser:
     """ ARP packet parser class """
 
     class __not_cached:
@@ -67,6 +67,16 @@ class Parser(arp.ps.Base):
         """ Number of bytes remaining in the frame """
 
         return len(self._frame) - self._hptr
+
+    def __str__(self) -> str:
+        """ Packet log string """
+
+        if self.oper == arp.ps.OP_REQUEST:
+            return f"ARP request {self.spa} / {self.sha} > {self.tpa} / {self.tha}"
+        if self.oper == arp.ps.OP_REPLY:
+            return f"ARP reply {self.spa} / {self.sha} > {self.tpa} / {self.tha}"
+
+        return f"ARP request unknown opeation {self.oper}"
 
     @property
     def hrtype(self):

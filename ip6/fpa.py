@@ -42,7 +42,7 @@ import udp.fpa
 from misc.ipv6_address import IPv6Address
 
 
-class Assembler(ip6.ps.Base):
+class Assembler:
     """ IPv6 packet assembler support class """
 
     ether_type = ether.ps.TYPE_IP6
@@ -77,6 +77,14 @@ class Assembler(ip6.ps.Base):
         """ Length of the packet """
 
         return ip6.ps.HEADER_LEN + len(self._carried_packet)
+
+    def __str__(self) -> str:
+        """ Packet log string """
+
+        return (
+            f"IPv6 {self.src} > {self.dst}, next {self.next} ({ip6.ps.NEXT_HEADER_TABLE.get(self.next, '???')}), flow {self.flow}"
+            + f", dlen {self.dlen}, hop {self.hop}"
+        )
 
     @property
     def pshdr_sum(self) -> int:

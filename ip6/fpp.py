@@ -36,7 +36,7 @@ import ip6.ps
 from misc.ipv6_address import IPv6Address
 
 
-class Parser(ip6.ps.Base):
+class Parser:
     """ IPv6 packet parser class """
 
     class __not_cached:
@@ -73,6 +73,14 @@ class Parser(ip6.ps.Base):
         """ Number of bytes remaining in the frame """
 
         return len(self._frame) - self._hptr
+
+    def __str__(self) -> str:
+        """ Packet log string """
+
+        return (
+            f"IPv6 {self.src} > {self.dst}, next {self.next} ({ip6.ps.NEXT_HEADER_TABLE.get(self.next, '???')}), flow {self.flow}"
+            + f", dlen {self.dlen}, hop {self.hop}"
+        )
 
     @property
     def ver(self):

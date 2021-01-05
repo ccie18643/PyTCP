@@ -25,7 +25,7 @@
 
 
 #
-# tcp/ps.py - protocol support class for TCP protocol
+# tcp/ps.py - protocol support for TCP
 #
 
 
@@ -47,45 +47,6 @@
 
 
 HEADER_LEN = 20
-
-
-class Base:
-    """ TCP packet base class """
-
-    def __init__(self) -> None:
-        """ Class constructor """
-
-        self.sport = -1
-        self.dport = -1
-        self.flag_ns = False
-        self.flag_crw = False
-        self.flag_ece = False
-        self.flag_urg = False
-        self.flag_ack = False
-        self.flag_psh = False
-        self.flag_rst = False
-        self.flag_syn = False
-        self.flag_fin = False
-        self.seq = -1
-        self.ack = -1
-        self.win = -1
-        self.data = b""
-        self.options: list = []
-
-    def __str__(self) -> str:
-        """ Packet log string """
-
-        log = (
-            f"TCP {self.sport} > {self.dport}, {'N' if self.flag_ns else ''}{'C' if self.flag_crw else ''}"
-            + f"{'E' if self.flag_ece else ''}{'U' if self.flag_urg else ''}{'A' if self.flag_ack else ''}"
-            + f"{'P' if self.flag_psh else ''}{'R' if self.flag_rst else ''}{'S' if self.flag_syn else ''}"
-            + f"{'F' if self.flag_fin else ''}, seq {self.seq}, ack {self.ack}, win {self.win}, dlen {len(self.data)}"
-        )
-
-        for option in self.options:
-            log += ", " + str(option)
-
-        return log
 
 
 #

@@ -39,7 +39,7 @@ from misc.ipv6_address import IPv6Address, IPv6Network
 from misc.tracker import Tracker
 
 
-class Assembler(icmp6.ps.Base):
+class Assembler:
     """ ICMPv6 packet assembler support class """
 
     ip6_next = ip6.ps.NEXT_HEADER_ICMP6
@@ -149,6 +149,51 @@ class Assembler(icmp6.ps.Base):
             return icmp6.ps.MLD2_REPORT_LEN + sum([len(_) for _ in self.mlr2_multicast_address_record])
 
         return 0
+
+    def __str__(self) -> str:
+        """ Packet log string """
+
+        log = f"ICMPv6 type {self.type}, code {self.code}"
+
+        if self.type == icmp6.ps.UNREACHABLE:
+            pass
+
+        elif self.type == icmp6.ps.ECHO_REQUEST:
+            log += f", id {self.ec_id}, seq {self.ec_seq}"
+
+        elif self.type == icmp6.ps.ECHO_REPLY:
+            log += f", id {self.ec_id}, seq {self.ec_seq}"
+
+        elif self.type == icmp6.ps.ROUTER_SOLICITATION:
+            assert self.nd_options is not None
+            for nd_option in self.nd_options:
+                log += ", " + str(nd_option)
+
+        elif self.type == icmp6.ps.ROUTER_ADVERTISEMENT:
+            assert self.nd_options is not None
+            log += f", hop {self.ra_hop}"
+            log += f"flags {'M' if self.ra_flag_m else '-'}{'O' if self.ra_flag_o else '-'}"
+            log += f"rlft {self.ra_router_lifetime}, reacht {self.ra_reachable_time}, retrt {self.ra_retrans_timer}"
+            for nd_option in self.nd_options:
+                log += ", " + str(nd_option)
+
+        elif self.type == icmp6.ps.NEIGHBOR_SOLICITATION:
+            assert self.nd_options is not None
+            log += f", target {self.ns_target_address}"
+            for nd_option in self.nd_options:
+                log += ", " + str(nd_option)
+
+        elif self.type == icmp6.ps.NEIGHBOR_ADVERTISEMENT:
+            assert self.nd_options is not None
+            log += f", target {self.na_target_address}"
+            log += f", flags {'R' if self.na_flag_r else '-'}{'S' if self.na_flag_s else '-'}{'O' if self.na_flag_o else '-'}"
+            for nd_option in self.nd_options:
+                log += ", " + str(nd_option)
+
+        elif self.type == icmp6.ps.MLD2_REPORT:
+            pass
+
+        return log
 
     def assemble(self, frame: bytearray, hptr: int, pshdr_sum: int) -> None:
         """ Assemble packet into the raw form """

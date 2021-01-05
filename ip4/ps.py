@@ -25,11 +25,8 @@
 
 
 #
-# ip4/ps.py - protocol support class for IPv4
+# ip4/ps.py - protocol support for IPv4
 #
-
-
-from misc.ipv4_address import IPv4Address
 
 
 # IPv4 protocol header
@@ -56,32 +53,6 @@ PROTO_TCP = 6
 PROTO_UDP = 17
 
 PROTO_TABLE = {PROTO_ICMP4: "ICMPv4", PROTO_TCP: "TCP", PROTO_UDP: "UDP"}
-
-
-class Base:
-    """ IPv4 packet base class """
-
-    def __init__(self) -> None:
-        """ Class constructor """
-
-        self.src = IPv4Address(0)
-        self.dst = IPv4Address(0)
-        self.proto = -1
-        self.id = -1
-        self.flag_df = False
-        self.flag_mf = False
-        self.offset = -1
-        self.plen = -1
-        self.ttl = -1
-
-    def __str__(self) -> str:
-        """ Packet log string """
-
-        return (
-            f"IPv4 {self.src} > {self.dst}, proto {self.proto} ({PROTO_TABLE.get(self.proto, '???')}), id {self.id}"
-            + f"{', DF' if self.flag_df else ''}{', MF' if self.flag_mf else ''}, offset {self.offset}, plen {self.plen}"
-            + f", ttl {self.ttl}"
-        )
 
 
 #

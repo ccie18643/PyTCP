@@ -38,7 +38,7 @@ import ip4.fpa
 import ip6.fpa
 
 
-class Assembler(ether.ps.Base):
+class Assembler:
     """ Ethernet packet assembler support class """
 
     def __init__(
@@ -58,6 +58,11 @@ class Assembler(ether.ps.Base):
         """ Length of the packet """
 
         return ether.ps.HEADER_LEN + len(self._carried_packet)
+
+    def __str__(self) -> str:
+        """ Packet log string """
+
+        return f"ETHER {self.src} > {self.dst}, 0x{self.type:0>4x} ({ether.ps.TYPE_TABLE.get(self.type, '???')})"
 
     def assemble(self, frame: bytearray, hptr: int) -> None:
         """ Assemble packet into the raw form """

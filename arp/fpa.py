@@ -38,7 +38,7 @@ from misc.ipv4_address import IPv4Address
 from misc.tracker import Tracker
 
 
-class Assembler(arp.ps.Base):
+class Assembler():
     """ ARP packet assembler support class """
 
     ether_type = ether.ps.TYPE_ARP
@@ -70,6 +70,16 @@ class Assembler(arp.ps.Base):
         """ Length of the packet """
 
         return arp.ps.HEADER_LEN
+
+    def __str__(self) -> str:
+        """ Packet log string """
+
+        if self.oper == arp.ps.OP_REQUEST:
+            return f"ARP request {self.spa} / {self.sha} > {self.tpa} / {self.tha}"
+        if self.oper == arp.ps.OP_REPLY:
+            return f"ARP reply {self.spa} / {self.sha} > {self.tpa} / {self.tha}"
+
+        return f"ARP request unknown opeation {self.oper}"
 
     def assemble(self, frame: bytearray, hptr: int):
         """ Assemble packet into the raw form """

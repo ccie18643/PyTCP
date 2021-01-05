@@ -36,7 +36,7 @@ import udp.ps
 from misc.ip_helper import inet_cksum
 
 
-class Parser(udp.ps.Base):
+class Parser:
     """ UDP packet parser class """
 
     class __not_cached:
@@ -67,6 +67,11 @@ class Parser(udp.ps.Base):
         """ Number of bytes remaining in the frame """
 
         return len(self._frame) - self._hptr
+
+    def __str__(self) -> str:
+        """ Packet log string """
+
+        return f"UDP {self.sport} > {self.dport}, len {self.plen}"
 
     @property
     def sport(self):

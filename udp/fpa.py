@@ -39,7 +39,7 @@ from misc.ip_helper import inet_cksum
 from misc.tracker import Tracker
 
 
-class Assembler(udp.ps.Base):
+class Assembler:
     """ UDP packet assembler support class """
 
     ip4_proto = ip4.ps.PROTO_UDP
@@ -58,6 +58,11 @@ class Assembler(udp.ps.Base):
         """ Length of the packet """
 
         return self.plen
+
+    def __str__(self) -> str:
+        """ Packet log string """
+
+        return f"UDP {self.sport} > {self.dport}, len {self.plen}"
 
     def assemble(self, frame: bytearray, hptr: int, pshdr_sum: int):
         """ Assemble packet into the raw form """

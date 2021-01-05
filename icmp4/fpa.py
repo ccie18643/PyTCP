@@ -38,7 +38,7 @@ from misc.ip_helper import inet_cksum
 from misc.tracker import Tracker
 
 
-class Assembler(icmp4.ps.Base):
+class Assembler:
     """ ICMPv4 packet assembler support class """
 
     ip4_proto = ip4.ps.PROTO_ICMP4
@@ -87,6 +87,22 @@ class Assembler(icmp4.ps.Base):
             return icmp4.ps.ECHO_REQUEST_LEN + len(self.ec_data)
 
         return 0
+
+    def __str__(self) -> str:
+        """ Packet log string """
+
+        log = f"ICMPv4 type {self.type}, code {self.code}"
+
+        if self.type == icmp4.ps.ECHO_REPLY:
+            log += f", id {self.ec_id}, seq {self.ec_seq}"
+
+        elif self.type == icmp4.ps.UNREACHABLE and self.code == icmp4.ps.UNREACHABLE__PORT:
+            pass
+
+        elif self.type == icmp4.ps.ECHO_REQUEST:
+            log += f", id {self.ec_id}, seq {self.ec_seq}"
+
+        return log
 
     def assemble(self, frame: bytearray, hptr: int, _: int) -> None:
         """ Assemble packet into the raw form """
