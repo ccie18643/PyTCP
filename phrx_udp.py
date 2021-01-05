@@ -78,7 +78,8 @@ def phrx_udp(self, ip_packet_rx, udp_packet_rx):
     for socket_id in packet.socket_id_patterns:
         socket = stack.udp_sockets.get(socket_id, None)
         if socket:
-            loguru.logger.bind(object_name="socket.").debug(f"{packet.tracker} - Found matching listening socket {socket_id}")
+            if __debug__:
+                loguru.logger.bind(object_name="socket.").debug(f"{packet.tracker} - Found matching listening socket {socket_id}")
             socket.process_packet(packet)
             return
 
