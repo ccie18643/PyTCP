@@ -66,7 +66,7 @@ class ServiceTcpDiscard:
             if message is None:
                 break
 
-            print(f"Service TCP Discard: Discarded message from {socket.remote_ip_address}, port {socket.remote_port} -", message)
+            print(f"Service TCP Discard: Discarded message from {socket.remote_ip_address}, port {socket.remote_port}, {len(message)}")
 
         socket.close()
         print(f"Service TCP Discard: Connection from {socket.remote_ip_address}, port {socket.remote_port} has been closed by peer")
