@@ -39,9 +39,6 @@ from misc.ipv6_address import IPv6Address
 class Parser:
     """ IPv6 packet parser class """
 
-    class __not_cached:
-        pass
-
     def __init__(self, packet_rx):
         """ Class constructor """
 
@@ -51,18 +48,18 @@ class Parser:
         self._frame = packet_rx.frame
         self._hptr = packet_rx.hptr
 
-        self.__ver = self.__not_cached
-        self.__dscp = self.__not_cached
-        self.__ecn = self.__not_cached
-        self.__flow = self.__not_cached
-        self.__dlen = self.__not_cached
-        self.__src = self.__not_cached
-        self.__dst = self.__not_cached
-        self.__data = self.__not_cached
-        self.__header_copy = self.__not_cached
-        self.__data_copy = self.__not_cached
-        self.__packet_copy = self.__not_cached
-        self.__pshdr_sum = self.__not_cached
+        self.__ver = NotImplemented
+        self.__dscp = NotImplemented
+        self.__ecn = NotImplemented
+        self.__flow = NotImplemented
+        self.__dlen = NotImplemented
+        self.__src = NotImplemented
+        self.__dst = NotImplemented
+        self.__data = NotImplemented
+        self.__header_copy = NotImplemented
+        self.__data_copy = NotImplemented
+        self.__packet_copy = NotImplemented
+        self.__pshdr_sum = NotImplemented
 
         packet_rx.parse_failed = self._packet_integrity_check() or self._packet_sanity_check()
 
@@ -80,7 +77,7 @@ class Parser:
     def ver(self):
         """ Read 'Version' field """
 
-        if self.__ver is self.__not_cached:
+        if self.__ver is NotImplemented:
             self.__ver = self._frame[self._hptr + 0] >> 4
         return self.__ver
 
@@ -88,7 +85,7 @@ class Parser:
     def dscp(self):
         """ Read 'DSCP' field """
 
-        if self.__dscp is self.__not_cached:
+        if self.__dscp is NotImplemented:
             self.__dscp = ((self._frame[self._hptr + 0] & 0b00001111) << 2) | ((self._frame[self._hptr + 1] & 0b11000000) >> 6)
         return self.__dscp
 
@@ -96,7 +93,7 @@ class Parser:
     def ecn(self):
         """ Read 'ECN' field """
 
-        if self.__ecn is self.__not_cached:
+        if self.__ecn is NotImplemented:
             self.__ecn = (self._frame[self._hptr + 1] & 0b00110000) >> 4
         return self.__ecn
 
@@ -104,7 +101,7 @@ class Parser:
     def flow(self):
         """ Read 'Flow' field """
 
-        if self.__flow is self.__not_cached:
+        if self.__flow is NotImplemented:
             self.__flow = ((self._frame[self._hptr + 1] & 0b00001111) << 16) | (self._frame[self._hptr + 2] << 8) | self._frame[self._hptr + 3]
         return self.__flow
 
@@ -112,7 +109,7 @@ class Parser:
     def dlen(self):
         """ Read 'Data length' field """
 
-        if self.__dlen is self.__not_cached:
+        if self.__dlen is NotImplemented:
             self.__dlen = struct.unpack_from("!H", self._frame, self._hptr + 4)[0]
         return self.__dlen
 
@@ -132,7 +129,7 @@ class Parser:
     def src(self):
         """ Read 'Source address' field """
 
-        if self.__src is self.__not_cached:
+        if self.__src is NotImplemented:
             self.__src = IPv6Address(self._frame[self._hptr + 8 : self._hptr + 24])
         return self.__src
 
@@ -140,7 +137,7 @@ class Parser:
     def dst(self):
         """ Read 'Destination address' field """
 
-        if self.__dst is self.__not_cached:
+        if self.__dst is NotImplemented:
             self.__dst = IPv6Address(self._frame[self._hptr + 24 : self._hptr + 40])
         return self.__dst
 
@@ -160,7 +157,7 @@ class Parser:
     def header_copy(self):
         """ Return copy of packet header """
 
-        if self.__header_copy is self.__not_cached:
+        if self.__header_copy is NotImplemented:
             self.__header_copy = self._frame[self._hptr : self._hptr + ip6.ps.HEADER_LEN]
         return self.__header_copy
 
@@ -168,7 +165,7 @@ class Parser:
     def data_copy(self):
         """ Return copy of packet data """
 
-        if self.__data_copy is self.__not_cached:
+        if self.__data_copy is NotImplemented:
             self.__data_copy = self._frame[self._hptr + ip6.ps.HEADER_LEN : self._hptr + self.plen]
         return self.__data_copy
 
@@ -176,7 +173,7 @@ class Parser:
     def packet_copy(self):
         """ Return copy of whole packet """
 
-        if self.__packet_copy is self.__not_cached:
+        if self.__packet_copy is NotImplemented:
             self.__packet_copy = self._frame[self._hptr : self._hptr + self.plen]
         return self.__packet_copy
 
@@ -184,7 +181,7 @@ class Parser:
     def pshdr_sum(self):
         """ Returns IPv6 pseudo header that is used by TCP, UDP and ICMPv6 to compute their checksums """
 
-        if self.__pshdr_sum is self.__not_cached:
+        if self.__pshdr_sum is NotImplemented:
             pseudo_header = struct.pack("! 16s 16s L BBBB", self.src.packed, self.dst.packed, self.dlen, 0, 0, 0, self.next)
             self.__pshdr_sum = sum(struct.unpack("! 5Q", pseudo_header))
         return self.__pshdr_sum

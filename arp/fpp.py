@@ -39,9 +39,6 @@ from misc.ipv4_address import IPv4Address
 class Parser:
     """ ARP packet parser class """
 
-    class __not_cached:
-        pass
-
     def __init__(self, packet_rx):
         """ Class constructor """
 
@@ -50,16 +47,16 @@ class Parser:
         self._frame = packet_rx.frame
         self._hptr = packet_rx.hptr
 
-        self.__hrtype = self.__not_cached
-        self.__prtype = self.__not_cached
-        self.__hrlen = self.__not_cached
-        self.__prlen = self.__not_cached
-        self.__oper = self.__not_cached
-        self.__sha = self.__not_cached
-        self.__spa = self.__not_cached
-        self.__tha = self.__not_cached
-        self.__tpa = self.__not_cached
-        self.__packet_copy = self.__not_cached
+        self.__hrtype = NotImplemented
+        self.__prtype = NotImplemented
+        self.__hrlen = NotImplemented
+        self.__prlen = NotImplemented
+        self.__oper = NotImplemented
+        self.__sha = NotImplemented
+        self.__spa = NotImplemented
+        self.__tha = NotImplemented
+        self.__tpa = NotImplemented
+        self.__packet_copy = NotImplemented
 
         packet_rx.parse_failed = self._packet_integrity_check() or self._packet_sanity_check()
 
@@ -74,7 +71,7 @@ class Parser:
     def hrtype(self):
         """ Read 'Hardware address type' field """
 
-        if self.__hrtype is self.__not_cached:
+        if self.__hrtype is NotImplemented:
             self.__hrtype = struct.unpack_from("!H", self._frame, self._hptr + 0)[0]
         return self.__hrtype
 
@@ -82,7 +79,7 @@ class Parser:
     def prtype(self):
         """ Read 'Protocol address type' field """
 
-        if self.__prtype is self.__not_cached:
+        if self.__prtype is NotImplemented:
             self.__prtype = struct.unpack_from("!H", self._frame, self._hptr + 2)[0]
         return self.__prtype
 
@@ -102,7 +99,7 @@ class Parser:
     def oper(self):
         """ Read 'Operation' field """
 
-        if self.__oper is self.__not_cached:
+        if self.__oper is NotImplemented:
             self.__oper = struct.unpack_from("!H", self._frame, self._hptr + 6)[0]
         return self.__oper
 
@@ -110,7 +107,7 @@ class Parser:
     def sha(self):
         """ Read 'Sender hardware address' field """
 
-        if self.__sha is self.__not_cached:
+        if self.__sha is NotImplemented:
             self.__sha = ":".join([f"{_:0>2x}" for _ in self._frame[self._hptr + 8 : self._hptr + 14]])
         return self.__sha
 
@@ -118,7 +115,7 @@ class Parser:
     def spa(self):
         """ Read 'Sender protocol address' field """
 
-        if self.__spa is self.__not_cached:
+        if self.__spa is NotImplemented:
             self.__spa = IPv4Address(self._frame[self._hptr + 14 : self._hptr + 18])
         return self.__spa
 
@@ -126,7 +123,7 @@ class Parser:
     def tha(self):
         """ Read 'Target hardware address' field """
 
-        if self.__tha is self.__not_cached:
+        if self.__tha is NotImplemented:
             self.__tha = ":".join([f"{_:0>2x}" for _ in self._frame[self._hptr + 18 : self._hptr + 24]])
         return self.__tha
 
@@ -134,7 +131,7 @@ class Parser:
     def tpa(self):
         """ Read 'Target protocol address' field """
 
-        if self.__tpa is self.__not_cached:
+        if self.__tpa is NotImplemented:
             self.__tpa = IPv4Address(self._frame[self._hptr + 24 : self._hptr + 28])
         return self.__tpa
 
@@ -142,7 +139,7 @@ class Parser:
     def packet_copy(self):
         """ Read the whole packet """
 
-        if self.__packet_copy is self.__not_cached:
+        if self.__packet_copy is NotImplemented:
             self.__packet_copy = self._frame[self._hptr : self._hptr + arp.ps.HEADER_LEN]
         return self.__packet_copy
 

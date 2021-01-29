@@ -39,9 +39,6 @@ from misc.ip_helper import inet_cksum
 class Parser:
     """ ICMPv4 packet parser class """
 
-    class __not_cached:
-        pass
-
     def __init__(self, packet_rx):
         """ Class constructor """
 
@@ -51,13 +48,13 @@ class Parser:
         self._hptr = packet_rx.hptr
         self._plen = packet_rx.ip.dlen
 
-        self.__cksum = self.__not_cached
-        self.__ec_id = self.__not_cached
-        self.__ec_seq = self.__not_cached
-        self.__ec_data = self.__not_cached
-        self.__un_data = self.__not_cached
-        self.__plen = self.__not_cached
-        self.__packet_copy = self.__not_cached
+        self.__cksum = NotImplemented
+        self.__ec_id = NotImplemented
+        self.__ec_seq = NotImplemented
+        self.__ec_data = NotImplemented
+        self.__un_data = NotImplemented
+        self.__plen = NotImplemented
+        self.__packet_copy = NotImplemented
 
         packet_rx.parse_failed = self._packet_integrity_check() or self._packet_sanity_check()
 
@@ -84,7 +81,7 @@ class Parser:
     def cksum(self):
         """ Read 'Checksum' field """
 
-        if self.__cksum is self.__not_cached:
+        if self.__cksum is NotImplemented:
             self.__cksum = struct.unpack_from("!H", self._frame, self._hptr + 2)[0]
         return self.__cksum
 
@@ -92,7 +89,7 @@ class Parser:
     def ec_id(self):
         """ Read Echo 'Id' field """
 
-        if self.__ec_id is self.__not_cached:
+        if self.__ec_id is NotImplemented:
             assert self.type in {icmp4.ps.ECHO_REQUEST, icmp4.ps.ECHO_REPLY}
             self.__ec_id = struct.unpack_from("!H", self._frame, self._hptr + 4)[0]
         return self.__ec_id
@@ -101,7 +98,7 @@ class Parser:
     def ec_seq(self):
         """ Read Echo 'Seq' field """
 
-        if self.__ec_seq is self.__not_cached:
+        if self.__ec_seq is NotImplemented:
             assert self.type in {icmp4.ps.ECHO_REQUEST, icmp4.ps.ECHO_REPLY}
             self.__ec_seq = struct.unpack_from("!H", self._frame, self._hptr + 6)[0]
         return self.__ec_seq
@@ -110,7 +107,7 @@ class Parser:
     def ec_data(self):
         """ Read data carried by Echo message """
 
-        if self.__ec_data is self.__not_cached:
+        if self.__ec_data is NotImplemented:
             assert self.type in {icmp4.ps.ECHO_REQUEST, icmp4.ps.ECHO_REPLY}
             self.__ec_data = self._frame[self._hptr + 8 : self._hptr + self.plen]
         return self.__ec_data
@@ -119,7 +116,7 @@ class Parser:
     def un_data(self):
         """ Read data carried by Uneachable message """
 
-        if self.__un_data is self.__not_cached:
+        if self.__un_data is NotImplemented:
             assert self.type == icmp4.ps.UNREACHABLE
             self.__un_data = self._frame[self._hptr + 8 : self._hptr + self.plen]
         return self.__un_data
@@ -134,7 +131,7 @@ class Parser:
     def packet_copy(self):
         """ Read the whole packet """
 
-        if self.__packet_copy is self.__not_cached:
+        if self.__packet_copy is NotImplemented:
             self.__packet_copy = self._frame[self._hptr : self._hptr + self.plen]
         return self.__packet_copy
 

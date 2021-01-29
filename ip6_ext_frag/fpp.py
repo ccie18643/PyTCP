@@ -38,9 +38,6 @@ import ip6_ext_frag.ps
 class Parser:
     """ IPv6 fragmentation extension header parser class """
 
-    class __not_cached:
-        pass
-
     def __init__(self, packet_rx):
         """ Class constructor """
 
@@ -50,12 +47,12 @@ class Parser:
         self._hptr = packet_rx.hptr
         self._plen = packet_rx.ip6.dlen
 
-        self.__next = self.__not_cached
-        self.__offset = self.__not_cached
-        self.__id = self.__not_cached
-        self.__header_copy = self.__not_cached
-        self.__data_copy = self.__not_cached
-        self.__packet_copy = self.__not_cached
+        self.__next = NotImplemented
+        self.__offset = NotImplemented
+        self.__id = NotImplemented
+        self.__header_copy = NotImplemented
+        self.__data_copy = NotImplemented
+        self.__packet_copy = NotImplemented
 
         packet_rx.parse_failed = self._packet_integrity_check() or self._packet_sanity_check()
 
@@ -79,7 +76,7 @@ class Parser:
     def offset(self):
         """ Read 'Fragment offset' field """
 
-        if self.__offset is self.__not_cached:
+        if self.__offset is NotImplemented:
             self.__offset = struct.unpack_from("!H", self._frame, self._hptr + 2)[0] & 0b1111111111111000
         return self.__offset
 
@@ -93,7 +90,7 @@ class Parser:
     def id(self):
         """ Read 'Identification' field """
 
-        if self.__id is self.__not_cached:
+        if self.__id is NotImplemented:
             self.__id = struct.unpack_from("!L", self._frame, self._hptr + 4)[0]
         return self.__id
 
@@ -119,7 +116,7 @@ class Parser:
     def header_copy(self):
         """ Return copy of packet header """
 
-        if self.__header_copy is self.__not_cached:
+        if self.__header_copy is NotImplemented:
             self.__header_copy = self._frame[self._hptr : self._hptr + ip6_ext_frag.ps.HEADER_LEN]
         return self.__header_copy
 
@@ -127,7 +124,7 @@ class Parser:
     def data_copy(self):
         """ Return copy of packet data """
 
-        if self.__data_copy is self.__not_cached:
+        if self.__data_copy is NotImplemented:
             self.__data_copy = self._frame[self._hptr + ip6_ext_frag.ps.HEADER_LEN : self._hptr + self.plen]
         return self.__data_copy
 
@@ -135,7 +132,7 @@ class Parser:
     def packet_copy(self):
         """ Return copy of whole packet """
 
-        if self.__packet_copy is self.__not_cached:
+        if self.__packet_copy is NotImplemented:
             self.__packet_copy = self._frame[self._hptr : self._hptr + self.plen]
         return self.__packet_copy
 

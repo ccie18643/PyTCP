@@ -39,9 +39,6 @@ from misc.ip_helper import inet_cksum
 class Parser:
     """ TCP packet parser class """
 
-    class __not_cached:
-        pass
-
     def __init__(self, packet_rx):
         """ Class constructor """
 
@@ -51,34 +48,34 @@ class Parser:
         self._hptr = packet_rx.hptr
         self._plen = packet_rx.ip.dlen
 
-        self.__sport = self.__not_cached
-        self.__dport = self.__not_cached
-        self.__seq = self.__not_cached
-        self.__ack = self.__not_cached
-        self.__hlen = self.__not_cached
-        self.__flag_ns = self.__not_cached
-        self.__flag_crw = self.__not_cached
-        self.__flag_ece = self.__not_cached
-        self.__flag_urg = self.__not_cached
-        self.__flag_ack = self.__not_cached
-        self.__flag_psh = self.__not_cached
-        self.__flag_rst = self.__not_cached
-        self.__flag_syn = self.__not_cached
-        self.__flag_fin = self.__not_cached
-        self.__win = self.__not_cached
-        self.__cksum = self.__not_cached
-        self.__urg = self.__not_cached
-        self.__data = self.__not_cached
-        self.__olen = self.__not_cached
-        self.__options = self.__not_cached
-        self.__header_copy = self.__not_cached
-        self.__options_copy = self.__not_cached
-        self.__data_copy = self.__not_cached
-        self.__packet_copy = self.__not_cached
-        self.__mss = self.__not_cached
-        self.__wscale = self.__not_cached
-        self.__sackperm = self.__not_cached
-        self.__timestamp = self.__not_cached
+        self.__sport = NotImplemented
+        self.__dport = NotImplemented
+        self.__seq = NotImplemented
+        self.__ack = NotImplemented
+        self.__hlen = NotImplemented
+        self.__flag_ns = NotImplemented
+        self.__flag_crw = NotImplemented
+        self.__flag_ece = NotImplemented
+        self.__flag_urg = NotImplemented
+        self.__flag_ack = NotImplemented
+        self.__flag_psh = NotImplemented
+        self.__flag_rst = NotImplemented
+        self.__flag_syn = NotImplemented
+        self.__flag_fin = NotImplemented
+        self.__win = NotImplemented
+        self.__cksum = NotImplemented
+        self.__urg = NotImplemented
+        self.__data = NotImplemented
+        self.__olen = NotImplemented
+        self.__options = NotImplemented
+        self.__header_copy = NotImplemented
+        self.__options_copy = NotImplemented
+        self.__data_copy = NotImplemented
+        self.__packet_copy = NotImplemented
+        self.__mss = NotImplemented
+        self.__wscale = NotImplemented
+        self.__sackperm = NotImplemented
+        self.__timestamp = NotImplemented
 
         packet_rx.parse_failed = self._packet_integrity_check(packet_rx.ip.pshdr_sum) or self._packet_sanity_check()
 
@@ -96,7 +93,7 @@ class Parser:
     def sport(self):
         """ Read 'Source port' field """
 
-        if self.__sport is self.__not_cached:
+        if self.__sport is NotImplemented:
             self.__sport = struct.unpack_from("!H", self._frame, self._hptr + 0)[0]
         return self.__sport
 
@@ -104,7 +101,7 @@ class Parser:
     def dport(self):
         """ Read 'Destianation port' field """
 
-        if self.__dport is self.__not_cached:
+        if self.__dport is NotImplemented:
             self.__dport = struct.unpack_from("!H", self._frame, self._hptr + 2)[0]
         return self.__dport
 
@@ -112,7 +109,7 @@ class Parser:
     def seq(self):
         """ Read 'Sequence number' field """
 
-        if self.__seq is self.__not_cached:
+        if self.__seq is NotImplemented:
             self.__seq = struct.unpack_from("!L", self._frame, self._hptr + 4)[0]
         return self.__seq
 
@@ -120,7 +117,7 @@ class Parser:
     def ack(self):
         """ Read 'Acknowledge number' field """
 
-        if self.__ack is self.__not_cached:
+        if self.__ack is NotImplemented:
             self.__ack = struct.unpack_from("!L", self._frame, self._hptr + 8)[0]
         return self.__ack
 
@@ -128,7 +125,7 @@ class Parser:
     def hlen(self):
         """ Read 'Header length' field """
 
-        if self.__hlen is self.__not_cached:
+        if self.__hlen is NotImplemented:
             self.__hlen = (self._frame[self._hptr + 12] & 0b11110000) >> 2
         return self.__hlen
 
@@ -136,7 +133,7 @@ class Parser:
     def flag_ns(self):
         """ Read 'NS flag' field """
 
-        if self.__flag_ns is self.__not_cached:
+        if self.__flag_ns is NotImplemented:
             self.__flag_ns = bool(self._frame[self._hptr + 12] & 0b00000001)
         return self.__flag_ns
 
@@ -144,7 +141,7 @@ class Parser:
     def flag_crw(self):
         """ Read 'CRW flag' field """
 
-        if self.__flag_crw is self.__not_cached:
+        if self.__flag_crw is NotImplemented:
             self.__flag_crw = bool(self._frame[self._hptr + 13] & 0b10000000)
         return self.__flag_crw
 
@@ -152,7 +149,7 @@ class Parser:
     def flag_ece(self):
         """ Read 'ECE flag' field """
 
-        if self.__flag_ece is self.__not_cached:
+        if self.__flag_ece is NotImplemented:
             self.__flag_ece = bool(self._frame[self._hptr + 13] & 0b01000000)
         return self.__flag_ece
 
@@ -160,7 +157,7 @@ class Parser:
     def flag_urg(self):
         """ Read 'URG flag' field """
 
-        if self.__flag_urg is self.__not_cached:
+        if self.__flag_urg is NotImplemented:
             self.__flag_urg = bool(self._frame[self._hptr + 13] & 0b00100000)
         return self.__flag_urg
 
@@ -168,7 +165,7 @@ class Parser:
     def flag_ack(self):
         """ Read 'ACK flag' field """
 
-        if self.__flag_ack is self.__not_cached:
+        if self.__flag_ack is NotImplemented:
             self.__flag_ack = bool(self._frame[self._hptr + 13] & 0b00010000)
         return self.__flag_ack
 
@@ -176,7 +173,7 @@ class Parser:
     def flag_psh(self):
         """ Read 'PSH flag' field """
 
-        if self.__flag_psh is self.__not_cached:
+        if self.__flag_psh is NotImplemented:
             self.__flag_psh = bool(self._frame[self._hptr + 13] & 0b00001000)
         return self.__flag_psh
 
@@ -184,7 +181,7 @@ class Parser:
     def flag_rst(self):
         """ Read 'RST flag' field """
 
-        if self.__flag_rst is self.__not_cached:
+        if self.__flag_rst is NotImplemented:
             self.__flag_rst = bool(self._frame[self._hptr + 13] & 0b00000100)
         return self.__flag_rst
 
@@ -192,7 +189,7 @@ class Parser:
     def flag_syn(self):
         """ Read 'SYN flag' field """
 
-        if self.__flag_syn is self.__not_cached:
+        if self.__flag_syn is NotImplemented:
             self.__flag_syn = bool(self._frame[self._hptr + 13] & 0b00000010)
         return self.__flag_syn
 
@@ -200,7 +197,7 @@ class Parser:
     def flag_fin(self):
         """ Read 'FIN flag' field """
 
-        if self.__flag_fin is self.__not_cached:
+        if self.__flag_fin is NotImplemented:
             self.__flag_fin = bool(self._frame[self._hptr + 13] & 0b00000001)
         return self.__flag_fin
 
@@ -208,7 +205,7 @@ class Parser:
     def win(self):
         """ Read 'Window' field """
 
-        if self.__win is self.__not_cached:
+        if self.__win is NotImplemented:
             self.__win = struct.unpack_from("!H", self._frame, self._hptr + 14)[0]
         return self.__win
 
@@ -216,7 +213,7 @@ class Parser:
     def cksum(self):
         """ Read 'Checksum' field """
 
-        if self.__cksum is self.__not_cached:
+        if self.__cksum is NotImplemented:
             self.__cksum = struct.unpack_from("!H", self._frame, self._hptr + 16)[0]
         return self.__cksum
 
@@ -224,7 +221,7 @@ class Parser:
     def urg(self):
         """ Read 'Urgent pointer' field """
 
-        if self.__urg is self.__not_cached:
+        if self.__urg is NotImplemented:
             self.__urg = struct.unpack_from("!H", self._frame, self._hptr + 18)[0]
         return self.__urg
 
@@ -232,7 +229,7 @@ class Parser:
     def data(self):
         """ Read the data packet carries """
 
-        if self.__data is self.__not_cached:
+        if self.__data is NotImplemented:
             self.__data = self._frame[self._hptr + self.hlen : self._hptr + self.plen]
         return self.__data
 
@@ -240,7 +237,7 @@ class Parser:
     def olen(self):
         """ Calculate options length """
 
-        if self.__olen is self.__not_cached:
+        if self.__olen is NotImplemented:
             self.__olen = self.hlen - tcp.ps.HEADER_LEN
         return self.__olen
 
@@ -260,7 +257,7 @@ class Parser:
     def header_copy(self):
         """ Return copy of packet header """
 
-        if self.__header_copy is self.__not_cached:
+        if self.__header_copy is NotImplemented:
             self.__header_copy = self._frame[self._hptr : self._hptr + tcp.ps.HEADER_LEN]
         return self.__header_copy
 
@@ -268,7 +265,7 @@ class Parser:
     def options_copy(self):
         """ Return copy of packet header """
 
-        if self.__options_copy is self.__not_cached:
+        if self.__options_copy is NotImplemented:
             self.__options_copy = self._frame[self._hptr + tcp.ps.HEADER_LEN : self._hptr + self.hlen]
         return self.__options_copy
 
@@ -276,7 +273,7 @@ class Parser:
     def data_copy(self):
         """ Return copy of packet data """
 
-        if self.__data_copy is self.__not_cached:
+        if self.__data_copy is NotImplemented:
             self.__data_copy = self._frame[self._hptr + self.hlen : self._hptr + self.plen]
         return self.__data_copy
 
@@ -284,7 +281,7 @@ class Parser:
     def packet_copy(self):
         """ Return copy of whole packet """
 
-        if self.__packet_copy is self.__not_cached:
+        if self.__packet_copy is NotImplemented:
             self.__packet_copy = self._frame[self._hptr : self._hptr + self.plen]
         return self.__packet_copy
 
@@ -292,7 +289,7 @@ class Parser:
     def options(self):
         """ Read list of options """
 
-        if self.__options is self.__not_cached:
+        if self.__options is NotImplemented:
             self.__options = []
             optr = self._hptr + tcp.ps.HEADER_LEN
             while optr < self._hptr + self.hlen:
@@ -316,7 +313,7 @@ class Parser:
     def mss(self):
         """ TCP option - Maximum Segment Size (2) """
 
-        if self.__mss is self.__not_cached:
+        if self.__mss is NotImplemented:
             for option in self.options:
                 if option.kind == tcp.ps.OPT_MSS:
                     self.__mss = option.mss
@@ -329,7 +326,7 @@ class Parser:
     def wscale(self):
         """ TCP option - Window Scale (3) """
 
-        if self.__wscale is self.__not_cached:
+        if self.__wscale is NotImplemented:
             for option in self.options:
                 if option.kind == tcp.ps.OPT_WSCALE:
                     self.__wscale = 1 << option.wscale
@@ -342,7 +339,7 @@ class Parser:
     def sackperm(self):
         """ TCP option - Sack Permit (4) """
 
-        if self.__sackperm is self.__not_cached:
+        if self.__sackperm is NotImplemented:
             for option in self.options:
                 if option.kind == tcp.ps.OPT_SACKPERM:
                     self.__sackperm = True
@@ -355,7 +352,7 @@ class Parser:
     def timestamp(self):
         """ TCP option - Timestamp (8) """
 
-        if self.__timestamp is self.__not_cached:
+        if self.__timestamp is NotImplemented:
             for option in self.options:
                 if option.kind == tcp.ps.OPT_TIMESTAMP:
                     self.__timestamp = (option.tsval, option.tsecr)

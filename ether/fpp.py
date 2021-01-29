@@ -39,9 +39,6 @@ from misc.packet import PacketRx
 class Parser:
     """ Ethernet packet parser class """
 
-    class __not_cached:
-        pass
-
     def __init__(self, packet_rx: PacketRx):
         """ Class constructor """
 
@@ -50,13 +47,13 @@ class Parser:
         self._frame = packet_rx.frame
         self._hptr = packet_rx.hptr
 
-        self.__dst = self.__not_cached
-        self.__src = self.__not_cached
-        self.__type = self.__not_cached
-        self.__header_copy = self.__not_cached
-        self.__data_copy = self.__not_cached
-        self.__packet_copy = self.__not_cached
-        self.__plen = self.__not_cached
+        self.__dst = NotImplemented
+        self.__src = NotImplemented
+        self.__type = NotImplemented
+        self.__header_copy = NotImplemented
+        self.__data_copy = NotImplemented
+        self.__packet_copy = NotImplemented
+        self.__plen = NotImplemented
 
         packet_rx.parse_failed = self._packet_integrity_check() or self._packet_sanity_check()
 
@@ -74,7 +71,7 @@ class Parser:
     def dst(self):
         """ Read 'Destination MAC address' field """
 
-        if self.__dst is self.__not_cached:
+        if self.__dst is NotImplemented:
             self.__dst = ":".join([f"{_:0>2x}" for _ in self._frame[self._hptr + 0 : self._hptr + 6]])
         return self.__dst
 
@@ -82,7 +79,7 @@ class Parser:
     def src(self):
         """ Read 'Source MAC address' field """
 
-        if self.__src is self.__not_cached:
+        if self.__src is NotImplemented:
             self.__src = ":".join([f"{_:0>2x}" for _ in self._frame[self._hptr + 6 : self._hptr + 12]])
         return self.__src
 
@@ -90,7 +87,7 @@ class Parser:
     def type(self):
         """ Read 'EtherType' field """
 
-        if self.__type is self.__not_cached:
+        if self.__type is NotImplemented:
             self.__type = struct.unpack_from("!H", self._frame, self._hptr + 12)[0]
         return self.__type
 
@@ -98,7 +95,7 @@ class Parser:
     def header_copy(self):
         """ Return copy of packet header """
 
-        if self.__header_copy is self.__not_cached:
+        if self.__header_copy is NotImplemented:
             self.__header_copy = self._frame[self._hptr : self._hptr + ether.ps.HEADER_LEN]
         return self.__header_copy
 
@@ -106,7 +103,7 @@ class Parser:
     def data_copy(self):
         """ Return copy of packet data """
 
-        if self.__data_copy is self.__not_cached:
+        if self.__data_copy is NotImplemented:
             self.__data_copy = self._frame[self._hptr + ether.ps.HEADER_LEN :]
         return self.__data_copy
 
@@ -114,7 +111,7 @@ class Parser:
     def packet_copy(self):
         """ Return copy of whole packet """
 
-        if self.__packet_copy is self.__not_cached:
+        if self.__packet_copy is NotImplemented:
             self.__packet_copy = self._frame[self._hptr :]
         return self.__packet_copy
 
@@ -122,7 +119,7 @@ class Parser:
     def plen(self):
         """ Calculate packet length """
 
-        if self.__plen is self.__not_cached:
+        if self.__plen is NotImplemented:
             self.__plen = len(self)
         return self.__plen
 

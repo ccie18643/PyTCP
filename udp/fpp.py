@@ -39,9 +39,6 @@ from misc.ip_helper import inet_cksum
 class Parser:
     """ UDP packet parser class """
 
-    class __not_cached:
-        pass
-
     def __init__(self, packet_rx):
         """ Class constructor """
 
@@ -51,12 +48,12 @@ class Parser:
         self._hptr = packet_rx.hptr
         self._plen = packet_rx.ip.dlen
 
-        self.__sport = self.__not_cached
-        self.__dport = self.__not_cached
-        self.__plen = self.__not_cached
-        self.__cksum = self.__not_cached
-        self.__data = self.__not_cached
-        self.__packet = self.__not_cached
+        self.__sport = NotImplemented
+        self.__dport = NotImplemented
+        self.__plen = NotImplemented
+        self.__cksum = NotImplemented
+        self.__data = NotImplemented
+        self.__packet = NotImplemented
 
         packet_rx.parse_failed = self._packet_integrity_check(packet_rx.ip.pshdr_sum) or self._packet_sanity_check()
 
@@ -74,7 +71,7 @@ class Parser:
     def sport(self):
         """ Read 'Source port' field """
 
-        if self.__sport is self.__not_cached:
+        if self.__sport is NotImplemented:
             self.__sport = struct.unpack_from("!H", self._frame, self._hptr + 0)[0]
         return self.__sport
 
@@ -82,7 +79,7 @@ class Parser:
     def dport(self):
         """ Read 'Destianation port' field """
 
-        if self.__dport is self.__not_cached:
+        if self.__dport is NotImplemented:
             self.__dport = struct.unpack_from("!H", self._frame, self._hptr + 2)[0]
         return self.__dport
 
@@ -90,7 +87,7 @@ class Parser:
     def plen(self):
         """ Read 'Packet length' field """
 
-        if self.__plen is self.__not_cached:
+        if self.__plen is NotImplemented:
             self.__plen = struct.unpack_from("!H", self._frame, self._hptr + 4)[0]
         return self.__plen
 
@@ -98,7 +95,7 @@ class Parser:
     def cksum(self):
         """ Read 'Checksum' field """
 
-        if self.__cksum is self.__not_cached:
+        if self.__cksum is NotImplemented:
             self.__cksum = struct.unpack_from("!H", self._frame, self._hptr + 6)[0]
         return self.__cksum
 
@@ -106,7 +103,7 @@ class Parser:
     def data(self):
         """ Read the data packet carries """
 
-        if self.__data is self.__not_cached:
+        if self.__data is NotImplemented:
             self.__data = self._frame[self._hptr + udp.ps.HEADER_LEN : self._hptr + self.plen]
         return self.__data
 
@@ -120,7 +117,7 @@ class Parser:
     def packet(self):
         """ Read the whole packet """
 
-        if self.__packet is self.__not_cached:
+        if self.__packet is NotImplemented:
             self.__packet = self._frame[self._hptr :]
         return self.__packet
 
