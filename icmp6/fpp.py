@@ -30,13 +30,13 @@
 
 
 import struct
+from typing import Optional
 
 import config
 import icmp6.ps
 from misc.ip_helper import inet_cksum
 from misc.ipv6_address import IPv6Address, IPv6Network
 from misc.packet import PacketRx
-from typing import Optional
 
 
 class Parser:

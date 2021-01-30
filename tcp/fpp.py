@@ -30,12 +30,12 @@
 
 
 import struct
+from typing import Optional, Tuple
 
 import config
 import tcp.ps
 from misc.ip_helper import inet_cksum
 from misc.packet import PacketRx
-from typing import Tuple, Optional
 
 
 class Parser:
@@ -328,7 +328,7 @@ class Parser:
         if "_cache__timestamp" not in self.__dict__:
             for option in self.options:
                 if option.kind == tcp.ps.OPT_TIMESTAMP:
-                    self._cache__timestamp: Optional[Tuple[int, int]] = option.tsval, option.tsecr
+                    self._cache__timestamp: Optional[Tuple[int, int]] = (option.tsval, option.tsecr)
                     break
             else:
                 self._cache__timestamp = None
