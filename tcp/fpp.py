@@ -48,35 +48,6 @@ class Parser:
         self._hptr = packet_rx.hptr
         self._plen = packet_rx.ip.dlen
 
-        self.__sport = NotImplemented
-        self.__dport = NotImplemented
-        self.__seq = NotImplemented
-        self.__ack = NotImplemented
-        self.__hlen = NotImplemented
-        self.__flag_ns = NotImplemented
-        self.__flag_crw = NotImplemented
-        self.__flag_ece = NotImplemented
-        self.__flag_urg = NotImplemented
-        self.__flag_ack = NotImplemented
-        self.__flag_psh = NotImplemented
-        self.__flag_rst = NotImplemented
-        self.__flag_syn = NotImplemented
-        self.__flag_fin = NotImplemented
-        self.__win = NotImplemented
-        self.__cksum = NotImplemented
-        self.__urg = NotImplemented
-        self.__data = NotImplemented
-        self.__olen = NotImplemented
-        self.__options = NotImplemented
-        self.__header_copy = NotImplemented
-        self.__options_copy = NotImplemented
-        self.__data_copy = NotImplemented
-        self.__packet_copy = NotImplemented
-        self.__mss = NotImplemented
-        self.__wscale = NotImplemented
-        self.__sackperm = NotImplemented
-        self.__timestamp = NotImplemented
-
         packet_rx.parse_failed = self._packet_integrity_check(packet_rx.ip.pshdr_sum) or self._packet_sanity_check()
 
         if packet_rx.parse_failed:
@@ -93,153 +64,153 @@ class Parser:
     def sport(self):
         """ Read 'Source port' field """
 
-        if self.__sport is NotImplemented:
-            self.__sport = struct.unpack_from("!H", self._frame, self._hptr + 0)[0]
-        return self.__sport
+        if "_cache__sport" not in self.__dict__:
+            self._cache__sport = struct.unpack_from("!H", self._frame, self._hptr + 0)[0]
+        return self._cache__sport
 
     @property
     def dport(self):
         """ Read 'Destianation port' field """
 
-        if self.__dport is NotImplemented:
-            self.__dport = struct.unpack_from("!H", self._frame, self._hptr + 2)[0]
-        return self.__dport
+        if "_cache__dport" not in self.__dict__:
+            self._cache__dport = struct.unpack_from("!H", self._frame, self._hptr + 2)[0]
+        return self._cache__dport
 
     @property
     def seq(self):
         """ Read 'Sequence number' field """
 
-        if self.__seq is NotImplemented:
-            self.__seq = struct.unpack_from("!L", self._frame, self._hptr + 4)[0]
-        return self.__seq
+        if "_cache__seq" not in self.__dict__:
+            self._cache__seq = struct.unpack_from("!L", self._frame, self._hptr + 4)[0]
+        return self._cache__seq
 
     @property
     def ack(self):
         """ Read 'Acknowledge number' field """
 
-        if self.__ack is NotImplemented:
-            self.__ack = struct.unpack_from("!L", self._frame, self._hptr + 8)[0]
-        return self.__ack
+        if "_cache__ack" not in self.__dict__:
+            self._cache__ack = struct.unpack_from("!L", self._frame, self._hptr + 8)[0]
+        return self._cache__ack
 
     @property
     def hlen(self):
         """ Read 'Header length' field """
 
-        if self.__hlen is NotImplemented:
-            self.__hlen = (self._frame[self._hptr + 12] & 0b11110000) >> 2
-        return self.__hlen
+        if "_cache__hlen" not in self.__dict__:
+            self._cache__hlen = (self._frame[self._hptr + 12] & 0b11110000) >> 2
+        return self._cache__hlen
 
     @property
     def flag_ns(self):
         """ Read 'NS flag' field """
 
-        if self.__flag_ns is NotImplemented:
-            self.__flag_ns = bool(self._frame[self._hptr + 12] & 0b00000001)
-        return self.__flag_ns
+        if "_cache__flag_ns" not in self.__dict__:
+            self._cache__flag_ns = bool(self._frame[self._hptr + 12] & 0b00000001)
+        return self._cache__flag_ns
 
     @property
     def flag_crw(self):
         """ Read 'CRW flag' field """
 
-        if self.__flag_crw is NotImplemented:
-            self.__flag_crw = bool(self._frame[self._hptr + 13] & 0b10000000)
-        return self.__flag_crw
+        if "_cache__flag_crw" not in self.__dict__:
+            self._cache__flag_crw = bool(self._frame[self._hptr + 13] & 0b10000000)
+        return self._cache__flag_crw
 
     @property
     def flag_ece(self):
         """ Read 'ECE flag' field """
 
-        if self.__flag_ece is NotImplemented:
-            self.__flag_ece = bool(self._frame[self._hptr + 13] & 0b01000000)
-        return self.__flag_ece
+        if "_cache__flag_ece" not in self.__dict__:
+            self._cache__flag_ece = bool(self._frame[self._hptr + 13] & 0b01000000)
+        return self._cache__flag_ece
 
     @property
     def flag_urg(self):
         """ Read 'URG flag' field """
 
-        if self.__flag_urg is NotImplemented:
-            self.__flag_urg = bool(self._frame[self._hptr + 13] & 0b00100000)
-        return self.__flag_urg
+        if "_cache__flag_urg" not in self.__dict__:
+            self._cache__flag_urg = bool(self._frame[self._hptr + 13] & 0b00100000)
+        return self._cache__flag_urg
 
     @property
     def flag_ack(self):
         """ Read 'ACK flag' field """
 
-        if self.__flag_ack is NotImplemented:
-            self.__flag_ack = bool(self._frame[self._hptr + 13] & 0b00010000)
-        return self.__flag_ack
+        if "_cache__flag_ack" not in self.__dict__:
+            self._cache__flag_ack = bool(self._frame[self._hptr + 13] & 0b00010000)
+        return self._cache__flag_ack
 
     @property
     def flag_psh(self):
         """ Read 'PSH flag' field """
 
-        if self.__flag_psh is NotImplemented:
-            self.__flag_psh = bool(self._frame[self._hptr + 13] & 0b00001000)
-        return self.__flag_psh
+        if "_cache__flag_psh" not in self.__dict__:
+            self._cache__flag_psh = bool(self._frame[self._hptr + 13] & 0b00001000)
+        return self._cache__flag_psh
 
     @property
     def flag_rst(self):
         """ Read 'RST flag' field """
 
-        if self.__flag_rst is NotImplemented:
-            self.__flag_rst = bool(self._frame[self._hptr + 13] & 0b00000100)
-        return self.__flag_rst
+        if "_cache__flag_rst" not in self.__dict__:
+            self._cache__flag_rst = bool(self._frame[self._hptr + 13] & 0b00000100)
+        return self._cache__flag_rst
 
     @property
     def flag_syn(self):
         """ Read 'SYN flag' field """
 
-        if self.__flag_syn is NotImplemented:
-            self.__flag_syn = bool(self._frame[self._hptr + 13] & 0b00000010)
-        return self.__flag_syn
+        if "_cache__flag_syn" not in self.__dict__:
+            self._cache__flag_syn = bool(self._frame[self._hptr + 13] & 0b00000010)
+        return self._cache__flag_syn
 
     @property
     def flag_fin(self):
         """ Read 'FIN flag' field """
 
-        if self.__flag_fin is NotImplemented:
-            self.__flag_fin = bool(self._frame[self._hptr + 13] & 0b00000001)
-        return self.__flag_fin
+        if "_cache__flag_fin" not in self.__dict__:
+            self._cache__flag_fin = bool(self._frame[self._hptr + 13] & 0b00000001)
+        return self._cache__flag_fin
 
     @property
     def win(self):
         """ Read 'Window' field """
 
-        if self.__win is NotImplemented:
-            self.__win = struct.unpack_from("!H", self._frame, self._hptr + 14)[0]
-        return self.__win
+        if "_cache__win" not in self.__dict__:
+            self._cache__win = struct.unpack_from("!H", self._frame, self._hptr + 14)[0]
+        return self._cache__win
 
     @property
     def cksum(self):
         """ Read 'Checksum' field """
 
-        if self.__cksum is NotImplemented:
-            self.__cksum = struct.unpack_from("!H", self._frame, self._hptr + 16)[0]
-        return self.__cksum
+        if "_cache__cksum" not in self.__dict__:
+            self._cache__cksum = struct.unpack_from("!H", self._frame, self._hptr + 16)[0]
+        return self._cache__cksum
 
     @property
     def urg(self):
         """ Read 'Urgent pointer' field """
 
-        if self.__urg is NotImplemented:
-            self.__urg = struct.unpack_from("!H", self._frame, self._hptr + 18)[0]
-        return self.__urg
+        if "_cache__urg" not in self.__dict__:
+            self._cache__urg = struct.unpack_from("!H", self._frame, self._hptr + 18)[0]
+        return self._cache__urg
 
     @property
     def data(self):
         """ Read the data packet carries """
 
-        if self.__data is NotImplemented:
-            self.__data = self._frame[self._hptr + self.hlen : self._hptr + self.plen]
-        return self.__data
+        if "_cache__data" not in self.__dict__:
+            self._cache__data = self._frame[self._hptr + self.hlen : self._hptr + self.plen]
+        return self._cache__data
 
     @property
     def olen(self):
         """ Calculate options length """
 
-        if self.__olen is NotImplemented:
-            self.__olen = self.hlen - tcp.ps.HEADER_LEN
-        return self.__olen
+        if "_cache__olen" not in self.__dict__:
+            self._cache__olen = self.hlen - tcp.ps.HEADER_LEN
+        return self._cache__olen
 
     @property
     def dlen(self):
@@ -257,109 +228,109 @@ class Parser:
     def header_copy(self):
         """ Return copy of packet header """
 
-        if self.__header_copy is NotImplemented:
-            self.__header_copy = self._frame[self._hptr : self._hptr + tcp.ps.HEADER_LEN]
-        return self.__header_copy
+        if "_cache__header_copy" not in self.__dict__:
+            self._cache__header_copy = self._frame[self._hptr : self._hptr + tcp.ps.HEADER_LEN]
+        return self._cache__header_copy
 
     @property
     def options_copy(self):
         """ Return copy of packet header """
 
-        if self.__options_copy is NotImplemented:
-            self.__options_copy = self._frame[self._hptr + tcp.ps.HEADER_LEN : self._hptr + self.hlen]
-        return self.__options_copy
+        if "_cache__options_copy" not in self.__dict__:
+            self._cache__options_copy = self._frame[self._hptr + tcp.ps.HEADER_LEN : self._hptr + self.hlen]
+        return self._cache__options_copy
 
     @property
     def data_copy(self):
         """ Return copy of packet data """
 
-        if self.__data_copy is NotImplemented:
-            self.__data_copy = self._frame[self._hptr + self.hlen : self._hptr + self.plen]
-        return self.__data_copy
+        if "_cache__data_copy" not in self.__dict__:
+            self._cache__data_copy = self._frame[self._hptr + self.hlen : self._hptr + self.plen]
+        return self._cache__data_copy
 
     @property
     def packet_copy(self):
         """ Return copy of whole packet """
 
-        if self.__packet_copy is NotImplemented:
-            self.__packet_copy = self._frame[self._hptr : self._hptr + self.plen]
-        return self.__packet_copy
+        if "_cache__packet_copy" not in self.__dict__:
+            self._cache__packet_copy = self._frame[self._hptr : self._hptr + self.plen]
+        return self._cache__packet_copy
 
     @property
     def options(self):
         """ Read list of options """
 
-        if self.__options is NotImplemented:
-            self.__options = []
+        if "_cache__options" not in self.__dict__:
+            self._cache__options = []
             optr = self._hptr + tcp.ps.HEADER_LEN
             while optr < self._hptr + self.hlen:
                 if self._frame[optr] == tcp.ps.OPT_EOL:
-                    self.__options.append(OptEol())
+                    self._cache__options.append(OptEol())
                     break
                 if self._frame[optr] == tcp.ps.OPT_NOP:
-                    self.__options.append(OptNop())
+                    self._cache__options.append(OptNop())
                     optr += tcp.ps.OPT_NOP_LEN
                     continue
-                self.__options.append(
+                self._cache__options.append(
                     {tcp.ps.OPT_MSS: OptMss, tcp.ps.OPT_WSCALE: OptWscale, tcp.ps.OPT_SACKPERM: OptSackPerm, tcp.ps.OPT_TIMESTAMP: OptTimestamp}.get(
                         self._frame[optr], OptUnk
                     )(self._frame, optr)
                 )
                 optr += self._frame[optr + 1]
 
-        return self.__options
+        return self._cache__options
 
     @property
     def mss(self):
         """ TCP option - Maximum Segment Size (2) """
 
-        if self.__mss is NotImplemented:
+        if "_cache__mss" not in self.__dict__:
             for option in self.options:
                 if option.kind == tcp.ps.OPT_MSS:
                     self.__mss = option.mss
                     break
             else:
-                self.__mss = 536
-        return self.__mss
+                self._cache__mss = 536
+        return self._cache__mss
 
     @property
     def wscale(self):
         """ TCP option - Window Scale (3) """
 
-        if self.__wscale is NotImplemented:
+        if "_cache__wscale" not in self.__dict__:
             for option in self.options:
                 if option.kind == tcp.ps.OPT_WSCALE:
-                    self.__wscale = 1 << option.wscale
+                    self._cache__wscale = 1 << option.wscale
                     break
             else:
-                self.__wscale = None
-        return self.__wscale
+                self._cache__wscale = None
+        return self._cache__wscale
 
     @property
     def sackperm(self):
         """ TCP option - Sack Permit (4) """
 
-        if self.__sackperm is NotImplemented:
+        if "_cache__sackperm" not in self.__dict__:
             for option in self.options:
                 if option.kind == tcp.ps.OPT_SACKPERM:
-                    self.__sackperm = True
+                    self._cache__sackperm = True
                     break
             else:
-                self.__sackperm = None
-        return self.__sackperm
+                self._cache__sackperm = None
+        return self._cache__sackperm
 
     @property
     def timestamp(self):
         """ TCP option - Timestamp (8) """
 
-        if self.__timestamp is NotImplemented:
+        if "_cache__timestamp" not in self.__dict__:
             for option in self.options:
                 if option.kind == tcp.ps.OPT_TIMESTAMP:
-                    self.__timestamp = (option.tsval, option.tsecr)
+                    self._cache__timestamp = option.tsval, option.tsecr
                     break
             else:
-                self.__timestamp = None
-        return self.__timestamp
+                self._cache__timestamp = None
+        return self._cache__timestamp
 
     def _packet_integrity_check(self, pshdr_sum):
         """ Packet integrity check to be run on raw frame prior to parsing to make sure parsing is safe """

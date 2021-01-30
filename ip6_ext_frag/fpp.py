@@ -47,13 +47,6 @@ class Parser:
         self._hptr = packet_rx.hptr
         self._plen = packet_rx.ip6.dlen
 
-        self.__next = NotImplemented
-        self.__offset = NotImplemented
-        self.__id = NotImplemented
-        self.__header_copy = NotImplemented
-        self.__data_copy = NotImplemented
-        self.__packet_copy = NotImplemented
-
         packet_rx.parse_failed = self._packet_integrity_check() or self._packet_sanity_check()
 
         if not packet_rx.parse_failed:
@@ -76,9 +69,9 @@ class Parser:
     def offset(self):
         """ Read 'Fragment offset' field """
 
-        if self.__offset is NotImplemented:
-            self.__offset = struct.unpack_from("!H", self._frame, self._hptr + 2)[0] & 0b1111111111111000
-        return self.__offset
+        if "_cache__offset" not in self.__dict__:
+            self._cache__offset = struct.unpack_from("!H", self._frame, self._hptr + 2)[0] & 0b1111111111111000
+        return self._cache__offset
 
     @property
     def flag_mf(self):
@@ -90,9 +83,9 @@ class Parser:
     def id(self):
         """ Read 'Identification' field """
 
-        if self.__id is NotImplemented:
-            self.__id = struct.unpack_from("!L", self._frame, self._hptr + 4)[0]
-        return self.__id
+        if "_cache__id" not in self.__dict__:
+            self._cache__id = struct.unpack_from("!L", self._frame, self._hptr + 4)[0]
+        return self._cache__id
 
     @property
     def hlen(self):
@@ -116,25 +109,25 @@ class Parser:
     def header_copy(self):
         """ Return copy of packet header """
 
-        if self.__header_copy is NotImplemented:
-            self.__header_copy = self._frame[self._hptr : self._hptr + ip6_ext_frag.ps.HEADER_LEN]
-        return self.__header_copy
+        if "_cache__header_copy" not in self.__dict__:
+            self._cache__header_copy = self._frame[self._hptr : self._hptr + ip6_ext_frag.ps.HEADER_LEN]
+        return self._cache__header_copy
 
     @property
     def data_copy(self):
         """ Return copy of packet data """
 
-        if self.__data_copy is NotImplemented:
-            self.__data_copy = self._frame[self._hptr + ip6_ext_frag.ps.HEADER_LEN : self._hptr + self.plen]
-        return self.__data_copy
+        if "_cache__data_copy" not in self.__dict__:
+            self._cache__data_copy = self._frame[self._hptr + ip6_ext_frag.ps.HEADER_LEN : self._hptr + self.plen]
+        return self._cache__data_copy
 
     @property
     def packet_copy(self):
         """ Return copy of whole packet """
 
-        if self.__packet_copy is NotImplemented:
-            self.__packet_copy = self._frame[self._hptr : self._hptr + self.plen]
-        return self.__packet_copy
+        if "_cache__packet_copy" not in self.__dict__:
+            self._cache__packet_copy = self._frame[self._hptr : self._hptr + self.plen]
+        return self._cache__packet_copy
 
     def _packet_integrity_check(self):
         """ Packet integrity check to be run on raw packet prior to parsing to make sure parsing is safe """

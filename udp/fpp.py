@@ -48,13 +48,6 @@ class Parser:
         self._hptr = packet_rx.hptr
         self._plen = packet_rx.ip.dlen
 
-        self.__sport = NotImplemented
-        self.__dport = NotImplemented
-        self.__plen = NotImplemented
-        self.__cksum = NotImplemented
-        self.__data = NotImplemented
-        self.__packet = NotImplemented
-
         packet_rx.parse_failed = self._packet_integrity_check(packet_rx.ip.pshdr_sum) or self._packet_sanity_check()
 
         if not packet_rx.parse_failed:
@@ -71,41 +64,41 @@ class Parser:
     def sport(self):
         """ Read 'Source port' field """
 
-        if self.__sport is NotImplemented:
-            self.__sport = struct.unpack_from("!H", self._frame, self._hptr + 0)[0]
-        return self.__sport
+        if "_cache__sport" not in self.__dict__:
+            self._cache__sport = struct.unpack_from("!H", self._frame, self._hptr + 0)[0]
+        return self._cache__sport
 
     @property
     def dport(self):
         """ Read 'Destianation port' field """
 
-        if self.__dport is NotImplemented:
-            self.__dport = struct.unpack_from("!H", self._frame, self._hptr + 2)[0]
-        return self.__dport
+        if "_cache__dport" not in self.__dict__:
+            self._cache__dport = struct.unpack_from("!H", self._frame, self._hptr + 2)[0]
+        return self._cache__dport
 
     @property
     def plen(self):
         """ Read 'Packet length' field """
 
-        if self.__plen is NotImplemented:
-            self.__plen = struct.unpack_from("!H", self._frame, self._hptr + 4)[0]
-        return self.__plen
+        if "_cache__plen" not in self.__dict__:
+            self._cache__plen = struct.unpack_from("!H", self._frame, self._hptr + 4)[0]
+        return self._cache__plen
 
     @property
     def cksum(self):
         """ Read 'Checksum' field """
 
-        if self.__cksum is NotImplemented:
-            self.__cksum = struct.unpack_from("!H", self._frame, self._hptr + 6)[0]
-        return self.__cksum
+        if "_cache__cksum" not in self.__dict__:
+            self._cache__cksum = struct.unpack_from("!H", self._frame, self._hptr + 6)[0]
+        return self._cache__cksum
 
     @property
     def data(self):
         """ Read the data packet carries """
 
-        if self.__data is NotImplemented:
-            self.__data = self._frame[self._hptr + udp.ps.HEADER_LEN : self._hptr + self.plen]
-        return self.__data
+        if "_cache__data" not in self.__dict__:
+            self._cache__data = self._frame[self._hptr + udp.ps.HEADER_LEN : self._hptr + self.plen]
+        return self._cache__data
 
     @property
     def dlen(self):
@@ -117,9 +110,9 @@ class Parser:
     def packet(self):
         """ Read the whole packet """
 
-        if self.__packet is NotImplemented:
-            self.__packet = self._frame[self._hptr :]
-        return self.__packet
+        if "_cache__packet" not in self.__dict__:
+            self._cache__packet = self._frame[self._hptr :]
+        return self._cache__packet
 
     def _packet_integrity_check(self, pshdr_sum):
         """ Packet integrity check to be run on raw frame prior to parsing to make sure parsing is safe """

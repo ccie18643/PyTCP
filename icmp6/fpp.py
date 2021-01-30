@@ -49,29 +49,6 @@ class Parser:
         self._hptr = packet_rx.hptr
         self._plen = packet_rx.ip.dlen
 
-        self.__cksum = NotImplemented
-        self.__un_data = NotImplemented
-        self.__ec_id = NotImplemented
-        self.__ec_seq = NotImplemented
-        self.__ec_data = NotImplemented
-        self.__ra_flag_m = NotImplemented
-        self.__ra_flag_o = NotImplemented
-        self.__ra_router_lifetime = NotImplemented
-        self.__ra_reachable_time = NotImplemented
-        self.__ra_retrans_timer = NotImplemented
-        self.__ns_target_address = NotImplemented
-        self.__na_flag_r = NotImplemented
-        self.__na_flag_s = NotImplemented
-        self.__na_flag_o = NotImplemented
-        self.__na_target_address = NotImplemented
-        self.__mld2_rep_nor = NotImplemented
-        self.__mld2_rep_records = NotImplemented
-        self.__nd_options = NotImplemented
-        self.__nd_opt_slla = NotImplemented
-        self.__nd_opt_tlla = NotImplemented
-        self.__nd_opt_pi = NotImplemented
-        self.__packet_copy = NotImplemented
-
         packet_rx.parse_failed = self._packet_integrity_check(packet_rx.ip6.pshdr_sum) or self._packet_sanity_check(
             packet_rx.ip6.src, packet_rx.ip6.dst, packet_rx.ip6.hop
         )
@@ -99,45 +76,45 @@ class Parser:
     def cksum(self):
         """ Read 'Checksum' field """
 
-        if self.__cksum is NotImplemented:
-            self.__cksum = struct.unpack_from("!H", self._frame, self._hptr + 2)[0]
-        return self.__cksum
+        if "_cache__cksum" not in self.__dict__:
+            self._cache__cksum = struct.unpack_from("!H", self._frame, self._hptr + 2)[0]
+        return self._cache__cksum
 
     @property
     def un_data(self):
         """ Read data carried by Unreachable message """
 
-        if self.__un_data is NotImplemented:
+        if "_cache__un_data" not in self.__dict__:
             assert self.type == icmp6.ps.UNREACHABLE
-            self.__un_data = self._frame[self._hptr + 8 : self._hptr + self.plen]
-        return self.__un_data
+            self._cache__un_data = self._frame[self._hptr + 8 : self._hptr + self.plen]
+        return self._cache__un_data
 
     @property
     def ec_id(self):
         """ Read Echo 'Id' field """
 
-        if self.__ec_id is NotImplemented:
+        if "_cache__ec_id" not in self.__dict__:
             assert self.type in {icmp6.ps.ECHO_REQUEST, icmp6.ps.ECHO_REPLY}
-            self.__ec_id = struct.unpack_from("!H", self._frame, self._hptr + 4)[0]
-        return self.__ec_id
+            self._cache__ec_id = struct.unpack_from("!H", self._frame, self._hptr + 4)[0]
+        return self._cache__ec_id
 
     @property
     def ec_seq(self):
         """ Read Echo 'Seq' field """
 
-        if self.__ec_seq is NotImplemented:
+        if "_cache__ec_seq" not in self.__dict__:
             assert self.type in {icmp6.ps.ECHO_REQUEST, icmp6.ps.ECHO_REPLY}
-            self.__ec_seq = struct.unpack_from("!H", self._frame, self._hptr + 6)[0]
-        return self.__ec_seq
+            self._cache__ec_seq = struct.unpack_from("!H", self._frame, self._hptr + 6)[0]
+        return self._cache__ec_seq
 
     @property
     def ec_data(self):
         """ Read data carried by Echo message """
 
-        if self.__ec_data is NotImplemented:
+        if "_cache__ec_data" not in self.__dict__:
             assert self.type in {icmp6.ps.ECHO_REQUEST, icmp6.ps.ECHO_REPLY}
-            self.__ec_data = self._frame[self._hptr + 8 : self._hptr + self.plen]
-        return self.__ec_data
+            self._cache__ec_data = self._frame[self._hptr + 8 : self._hptr + self.plen]
+        return self._cache__ec_data
 
     @property
     def ra_hop(self):
@@ -150,114 +127,114 @@ class Parser:
     def ra_flag_m(self):
         """ Read ND RA 'M flag' field """
 
-        if self.__ra_flag_m is NotImplemented:
+        if "_cache__ra_flag_m" not in self.__dict__:
             assert self.type == icmp6.ps.ROUTER_ADVERTISEMENT
-            self.__ra_flag_m = bool(self._frame[self._hptr + 5] & 0b10000000)
-        return self.__ra_flag_m
+            self._cache__ra_flag_m = bool(self._frame[self._hptr + 5] & 0b10000000)
+        return self._cache__ra_flag_m
 
     @property
     def ra_flag_o(self):
         """ Read ND RA 'O flag' field """
 
-        if self.__ra_flag_o is NotImplemented:
+        if "_cache__ra_flag_o" not in self.__dict__:
             assert self.type == icmp6.ps.ROUTER_ADVERTISEMENT
-            self.__ra_flag_o = bool(self._frame[self._hptr + 5] & 0b01000000)
-        return self.__ra_flag_o
+            self._cache__ra_flag_o = bool(self._frame[self._hptr + 5] & 0b01000000)
+        return self._cache__ra_flag_o
 
     @property
     def ra_router_lifetime(self):
         """ Read ND RA 'Router lifetime' field """
 
-        if self.__ra_router_lifetime is NotImplemented:
+        if "_cache__ra_router_lifetime" not in self.__dict__:
             assert self.type == icmp6.ps.ROUTER_ADVERTISEMENT
-            self.__ra_router_lifetime = struct.unpack_from("!H", self._frame, self._hptr + 6)[0]
-        return self.__ra_router_lifetime
+            self._cache__ra_router_lifetime = struct.unpack_from("!H", self._frame, self._hptr + 6)[0]
+        return self._cache__ra_router_lifetime
 
     @property
     def ra_reachable_time(self):
         """ Read ND RA 'Reachable time' field """
 
-        if self.__ra_reachable_time is NotImplemented:
+        if "_cache__ra_reachable_time" not in self.__dict__:
             assert self.type == icmp6.ps.ROUTER_ADVERTISEMENT
-            self.__ra_reachable_time = struct.unpack_from("!L", self._frame, self._hptr + 8)[0]
-        return self.__ra_reachable_time
+            self._cache__ra_reachable_time = struct.unpack_from("!L", self._frame, self._hptr + 8)[0]
+        return self._cache__ra_reachable_time
 
     @property
     def ra_retrans_timer(self):
         """ Read ND RA 'Retransmision timer' field """
 
-        if self.__ra_retrans_timer is NotImplemented:
+        if "_cache__ra_retrans_timer" not in self.__dict__:
             assert self.type == icmp6.ps.ROUTER_ADVERTISEMENT
-            self.__ra_retrans_timer = struct.unpack_from("!L", self._frame, self._hptr + 12)[0]
-        return self.__ra_retrans_timer
+            self._cache__ra_retrans_timer = struct.unpack_from("!L", self._frame, self._hptr + 12)[0]
+        return self._cache__ra_retrans_timer
 
     @property
     def ns_target_address(self):
         """ Read ND NS 'Target adress' field """
 
-        if self.__ns_target_address is NotImplemented:
+        if "_cache__ns_target_address" not in self.__dict__:
             assert self.type == icmp6.ps.NEIGHBOR_SOLICITATION
-            self.__ns_target_address = IPv6Address(self._frame[self._hptr + 8 : self._hptr + 24])
-        return self.__ns_target_address
+            self._cache__ns_target_address = IPv6Address(self._frame[self._hptr + 8 : self._hptr + 24])
+        return self._cache__ns_target_address
 
     @property
     def na_flag_r(self):
         """ Read ND NA 'R flag' field """
 
-        if self.__na_flag_r is NotImplemented:
+        if "_cache__na_flag_r" not in self.__dict__:
             assert self.type == icmp6.ps.NEIGHBOR_ADVERTISEMENT
-            self.__na_flag_r = bool(self._frame[self._hptr + 4] & 0b10000000)
-        return self.__na_flag_r
+            self._cache__na_flag_r = bool(self._frame[self._hptr + 4] & 0b10000000)
+        return self._cache__na_flag_r
 
     @property
     def na_flag_s(self):
         """ Read ND NA 'S flag' field """
 
-        if self.__na_flag_s is NotImplemented:
+        if "_cache__na_flag_s" not in self.__dict__:
             assert self.type == icmp6.ps.NEIGHBOR_ADVERTISEMENT
-            self.__na_flag_s = bool(self._frame[self._hptr + 4] & 0b01000000)
-        return self.__na_flag_s
+            self._cache__na_flag_s = bool(self._frame[self._hptr + 4] & 0b01000000)
+        return self._cache__na_flag_s
 
     @property
     def na_flag_o(self):
         """ Read ND NA 'O flag' field """
 
-        if self.__na_flag_o is NotImplemented:
+        if "_cache__na_flag_o" not in self.__dict__:
             assert self.type == icmp6.ps.NEIGHBOR_ADVERTISEMENT
-            self.__na_flag_o = bool(self._frame[self._hptr + 4] & 0b00100000)
-        return self.__na_flag_o
+            self._cache__na_flag_o = bool(self._frame[self._hptr + 4] & 0b00100000)
+        return self._cache__na_flag_o
 
     @property
     def na_target_address(self):
         """ Read ND NA 'Taret address' field """
 
-        if self.__na_target_address is NotImplemented:
+        if "_cache__na_target_address" not in self.__dict__:
             assert self.type == icmp6.ps.NEIGHBOR_ADVERTISEMENT
-            self.__na_target_address = IPv6Address(self._frame[self._hptr + 8 : self._hptr + 24])
-        return self.__na_target_address
+            self._cache__na_target_address = IPv6Address(self._frame[self._hptr + 8 : self._hptr + 24])
+        return self._cache__na_target_address
 
     @property
     def mld2_rep_nor(self):
         """ Read MLD2 Report 'Number of multicast address records' field """
 
-        if self.__mld2_rep_nor is NotImplemented:
+        if "_cache__mld2_rep_nor" not in self.__dict__:
             assert self.type == icmp6.ps.MLD2_REPORT
-            self.__mld2_rep_nor = struct.unpack_from("!H", self._frame, self._hptr + 6)[0]
-        return self.__mld2_rep_nor
+            self._cache__mld2_rep_nor = struct.unpack_from("!H", self._frame, self._hptr + 6)[0]
+        return self._cache__mld2_rep_nor
 
     @property
     def mld2_rep_records(self):
         """ Read MLD2 Report record list """
 
-        if self.__mld2_rep_records is NotImplemented:
+        if "_cache__mld2_rep_records" not in self.__dict__:
             assert self.type == icmp6.ps.MLD2_REPORT
-            self.__mld2_rep_records = []
+            self._cache__mld2_rep_records = []
             raw_records = self._frame[self._hptr + 8 :]
             for _ in range(self.mld2_rep_nor):
                 record = MulticastAddressRecord(raw_records)
                 raw_records = raw_records[len(record) :]
-                self.__mld2_rep_records.append(record)
-        return self.__mld2_rep_records
+                self._cache__mld2_rep_records.append(record)
+        return self._cache__mld2_rep_records
 
     def _read_nd_options(self, optr):
         """ Read ND options """
@@ -277,7 +254,7 @@ class Parser:
     def nd_options(self):
         """ Read ND options  """
 
-        if self.__nd_options is NotImplemented:
+        if "_cache__nd_options" not in self.__dict__:
             assert self.type in {
                 icmp6.ps.ROUTER_SOLICITATION,
                 icmp6.ps.ROUTER_ADVERTISEMENT,
@@ -290,45 +267,45 @@ class Parser:
                 icmp6.ps.NEIGHBOR_SOLICITATION: 24,
                 icmp6.ps.NEIGHBOR_ADVERTISEMENT: 24,
             }[self.type]
-            self.__nd_options = self._read_nd_options(optr)
-        return self.__nd_options
+            self._cache__nd_options = self._read_nd_options(optr)
+        return self._cache__nd_options
 
     @property
     def nd_opt_slla(self):
         """ ICMPv6 ND option - Source Link Layer Address (1) """
 
-        if self.__nd_opt_slla is NotImplemented:
+        if "_cache__nd_opt_slla" not in self.__dict__:
             assert self.type in {icmp6.ps.ROUTER_SOLICITATION, icmp6.ps.ROUTER_ADVERTISEMENT, icmp6.ps.NEIGHBOR_SOLICITATION, icmp6.ps.NEIGHBOR_ADVERTISEMENT}
             for option in self.nd_options:
                 if option.code == icmp6.ps.ND_OPT_SLLA:
-                    __nd_opt_slla = option.slla
+                    self._cache__nd_opt_slla = option.slla
                     break
             else:
-                __nd_opt_slla = None
-        return __nd_opt_slla
+                self._cache__nd_opt_slla = None
+        return self._cache__nd_opt_slla
 
     @property
     def nd_opt_tlla(self):
         """ ICMPv6 ND option - Target Link Layer Address (2) """
 
-        if self.__nd_opt_tlla is NotImplemented:
+        if "_cache__nd_opt_tlla" not in self.__dict__:
             assert self.type in {icmp6.ps.ROUTER_SOLICITATION, icmp6.ps.ROUTER_ADVERTISEMENT, icmp6.ps.NEIGHBOR_SOLICITATION, icmp6.ps.NEIGHBOR_ADVERTISEMENT}
             for option in self.nd_options:
                 if option.code == icmp6.ps.ND_OPT_TLLA:
-                    __nd_opt_tlla = option.tlla
+                    self._cache__nd_opt_tlla = option.tlla
                     break
             else:
-                __nd_opt_tlla = None
-        return __nd_opt_tlla
+                self._cache__nd_opt_tlla = None
+        return self._cache__nd_opt_tlla
 
     @property
     def nd_opt_pi(self):
         """ ICMPv6 ND option - Prefix Info (3) - Returns list of prefixes that can be used for address autoconfiguration"""
 
-        if self.__nd_opt_pi is NotImplemented:
+        if "_cache__nd_opt_pi" not in self.__dict__:
             assert self.type in {icmp6.ps.ROUTER_SOLICITATION, icmp6.ps.ROUTER_ADVERTISEMENT, icmp6.ps.NEIGHBOR_SOLICITATION, icmp6.ps.NEIGHBOR_ADVERTISEMENT}
-            __nd_opt_pi = [_.prefix for _ in self.nd_options if _.code == icmp6.ps.ND_OPT_PI and _.flag_a and _.prefix.prefixlen == 64]
-        return __nd_opt_pi
+            self._cache__nd_opt_pi = [_.prefix for _ in self.nd_options if _.code == icmp6.ps.ND_OPT_PI and _.flag_a and _.prefix.prefixlen == 64]
+        return self._cache__nd_opt_pi
 
     @property
     def plen(self):
@@ -340,9 +317,9 @@ class Parser:
     def packet_copy(self):
         """ Read the whole packet """
 
-        if self.__packet_copy is NotImplemented:
-            self.__packet_copy = self._frame[self._hptr : self._hptr + self.plen]
-        return self.__packet_copy
+        if "_cache__packet_copy" not in self.__dict__:
+            self._cache__packet_copy = self._frame[self._hptr : self._hptr + self.plen]
+        return self._cache__packet_copy
 
     def _nd_option_integrity_check(self, optr):
         """ Check integrity of ICMPv6 ND options """

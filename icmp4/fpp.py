@@ -48,14 +48,6 @@ class Parser:
         self._hptr = packet_rx.hptr
         self._plen = packet_rx.ip.dlen
 
-        self.__cksum = NotImplemented
-        self.__ec_id = NotImplemented
-        self.__ec_seq = NotImplemented
-        self.__ec_data = NotImplemented
-        self.__un_data = NotImplemented
-        self.__plen = NotImplemented
-        self.__packet_copy = NotImplemented
-
         packet_rx.parse_failed = self._packet_integrity_check() or self._packet_sanity_check()
 
     def __len__(self):
@@ -81,45 +73,45 @@ class Parser:
     def cksum(self):
         """ Read 'Checksum' field """
 
-        if self.__cksum is NotImplemented:
-            self.__cksum = struct.unpack_from("!H", self._frame, self._hptr + 2)[0]
-        return self.__cksum
+        if "_cache__cksum" not in self.__dict__:
+            self._cache__cksum = struct.unpack_from("!H", self._frame, self._hptr + 2)[0]
+        return self._cache__cksum
 
     @property
     def ec_id(self):
         """ Read Echo 'Id' field """
 
-        if self.__ec_id is NotImplemented:
+        if "_cache__ec_id" not in self.__dict__:
             assert self.type in {icmp4.ps.ECHO_REQUEST, icmp4.ps.ECHO_REPLY}
-            self.__ec_id = struct.unpack_from("!H", self._frame, self._hptr + 4)[0]
-        return self.__ec_id
+            self._cache__ec_id = struct.unpack_from("!H", self._frame, self._hptr + 4)[0]
+        return self._cache__ec_id
 
     @property
     def ec_seq(self):
         """ Read Echo 'Seq' field """
 
-        if self.__ec_seq is NotImplemented:
+        if "_cache__ec_seq" not in self.__dict__:
             assert self.type in {icmp4.ps.ECHO_REQUEST, icmp4.ps.ECHO_REPLY}
-            self.__ec_seq = struct.unpack_from("!H", self._frame, self._hptr + 6)[0]
-        return self.__ec_seq
+            self._cache__ec_seq = struct.unpack_from("!H", self._frame, self._hptr + 6)[0]
+        return self._cache__ec_seq
 
     @property
     def ec_data(self):
         """ Read data carried by Echo message """
 
-        if self.__ec_data is NotImplemented:
+        if "_cache__ec_data" not in self.__dict__:
             assert self.type in {icmp4.ps.ECHO_REQUEST, icmp4.ps.ECHO_REPLY}
-            self.__ec_data = self._frame[self._hptr + 8 : self._hptr + self.plen]
-        return self.__ec_data
+            self._cache__ec_data = self._frame[self._hptr + 8 : self._hptr + self.plen]
+        return self._cache__ec_data
 
     @property
     def un_data(self):
         """ Read data carried by Uneachable message """
 
-        if self.__un_data is NotImplemented:
+        if "_cache__un_data" not in self.__dict__:
             assert self.type == icmp4.ps.UNREACHABLE
-            self.__un_data = self._frame[self._hptr + 8 : self._hptr + self.plen]
-        return self.__un_data
+            self._cache__un_data = self._frame[self._hptr + 8 : self._hptr + self.plen]
+        return self._cache__un_data
 
     @property
     def plen(self):
@@ -131,9 +123,9 @@ class Parser:
     def packet_copy(self):
         """ Read the whole packet """
 
-        if self.__packet_copy is NotImplemented:
-            self.__packet_copy = self._frame[self._hptr : self._hptr + self.plen]
-        return self.__packet_copy
+        if "_cache__packet_copy" not in self.__dict__:
+            self._cache__packet_copy = self._frame[self._hptr : self._hptr + self.plen]
+        return self._cache__packet_copy
 
     def _packet_integrity_check(self):
         """ Packet integrity check to be run on raw frame prior to parsing to make sure parsing is safe """

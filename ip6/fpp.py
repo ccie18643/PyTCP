@@ -48,19 +48,6 @@ class Parser:
         self._frame = packet_rx.frame
         self._hptr = packet_rx.hptr
 
-        self.__ver = NotImplemented
-        self.__dscp = NotImplemented
-        self.__ecn = NotImplemented
-        self.__flow = NotImplemented
-        self.__dlen = NotImplemented
-        self.__src = NotImplemented
-        self.__dst = NotImplemented
-        self.__data = NotImplemented
-        self.__header_copy = NotImplemented
-        self.__data_copy = NotImplemented
-        self.__packet_copy = NotImplemented
-        self.__pshdr_sum = NotImplemented
-
         packet_rx.parse_failed = self._packet_integrity_check() or self._packet_sanity_check()
 
         if not packet_rx.parse_failed:
@@ -77,41 +64,41 @@ class Parser:
     def ver(self):
         """ Read 'Version' field """
 
-        if self.__ver is NotImplemented:
-            self.__ver = self._frame[self._hptr + 0] >> 4
-        return self.__ver
+        if "_cache__ver" not in self.__dict__:
+            self._cache__ver = self._frame[self._hptr + 0] >> 4
+        return self._cache__ver
 
     @property
     def dscp(self):
         """ Read 'DSCP' field """
 
-        if self.__dscp is NotImplemented:
-            self.__dscp = ((self._frame[self._hptr + 0] & 0b00001111) << 2) | ((self._frame[self._hptr + 1] & 0b11000000) >> 6)
-        return self.__dscp
+        if "_cache__dscp" not in self.__dict__:
+            self._cache__dscp = ((self._frame[self._hptr + 0] & 0b00001111) << 2) | ((self._frame[self._hptr + 1] & 0b11000000) >> 6)
+        return self._cache__dscp
 
     @property
     def ecn(self):
         """ Read 'ECN' field """
 
-        if self.__ecn is NotImplemented:
-            self.__ecn = (self._frame[self._hptr + 1] & 0b00110000) >> 4
-        return self.__ecn
+        if "_cache__ecn" not in self.__dict__:
+            self._cache__ecn = (self._frame[self._hptr + 1] & 0b00110000) >> 4
+        return self._cache__ecn
 
     @property
     def flow(self):
         """ Read 'Flow' field """
 
-        if self.__flow is NotImplemented:
-            self.__flow = ((self._frame[self._hptr + 1] & 0b00001111) << 16) | (self._frame[self._hptr + 2] << 8) | self._frame[self._hptr + 3]
-        return self.__flow
+        if "_cache__flow" not in self.__dict__:
+            self._cache__flow = ((self._frame[self._hptr + 1] & 0b00001111) << 16) | (self._frame[self._hptr + 2] << 8) | self._frame[self._hptr + 3]
+        return self._cache__flow
 
     @property
     def dlen(self):
         """ Read 'Data length' field """
 
-        if self.__dlen is NotImplemented:
-            self.__dlen = struct.unpack_from("!H", self._frame, self._hptr + 4)[0]
-        return self.__dlen
+        if "_cache__dlen" not in self.__dict__:
+            self._cache__dlen = struct.unpack_from("!H", self._frame, self._hptr + 4)[0]
+        return self._cache__dlen
 
     @property
     def next(self):
@@ -129,17 +116,17 @@ class Parser:
     def src(self):
         """ Read 'Source address' field """
 
-        if self.__src is NotImplemented:
-            self.__src = IPv6Address(self._frame[self._hptr + 8 : self._hptr + 24])
-        return self.__src
+        if "_cache__src" not in self.__dict__:
+            self._cache__src = IPv6Address(self._frame[self._hptr + 8 : self._hptr + 24])
+        return self._cache__src
 
     @property
     def dst(self):
         """ Read 'Destination address' field """
 
-        if self.__dst is NotImplemented:
-            self.__dst = IPv6Address(self._frame[self._hptr + 24 : self._hptr + 40])
-        return self.__dst
+        if "_cache__dst" not in self.__dict__:
+            self._cache__dst = IPv6Address(self._frame[self._hptr + 24 : self._hptr + 40])
+        return self._cache__dst
 
     @property
     def hlen(self):
@@ -157,34 +144,34 @@ class Parser:
     def header_copy(self):
         """ Return copy of packet header """
 
-        if self.__header_copy is NotImplemented:
-            self.__header_copy = self._frame[self._hptr : self._hptr + ip6.ps.HEADER_LEN]
-        return self.__header_copy
+        if "_cache__header_copy" not in self.__dict__:
+            self._cache__header_copy = self._frame[self._hptr : self._hptr + ip6.ps.HEADER_LEN]
+        return self._cache__header_copy
 
     @property
     def data_copy(self):
         """ Return copy of packet data """
 
-        if self.__data_copy is NotImplemented:
-            self.__data_copy = self._frame[self._hptr + ip6.ps.HEADER_LEN : self._hptr + self.plen]
-        return self.__data_copy
+        if "_cache__data_copy" not in self.__dict__:
+            self._cache__data_copy = self._frame[self._hptr + ip6.ps.HEADER_LEN : self._hptr + self.plen]
+        return self._cache__data_copy
 
     @property
     def packet_copy(self):
         """ Return copy of whole packet """
 
-        if self.__packet_copy is NotImplemented:
-            self.__packet_copy = self._frame[self._hptr : self._hptr + self.plen]
-        return self.__packet_copy
+        if "_cache__packet_copy" not in self.__dict__:
+            self._cache__packet_copy = self._frame[self._hptr : self._hptr + self.plen]
+        return self._cache__packet_copy
 
     @property
     def pshdr_sum(self):
         """ Returns IPv6 pseudo header that is used by TCP, UDP and ICMPv6 to compute their checksums """
 
-        if self.__pshdr_sum is NotImplemented:
+        if "_cache__pshdr_sum" not in self.__dict__:
             pseudo_header = struct.pack("! 16s 16s L BBBB", self.src.packed, self.dst.packed, self.dlen, 0, 0, 0, self.next)
-            self.__pshdr_sum = sum(struct.unpack("! 5Q", pseudo_header))
-        return self.__pshdr_sum
+            self._cache__pshdr_sum = sum(struct.unpack("! 5Q", pseudo_header))
+        return self._cache__pshdr_sum
 
     def _packet_integrity_check(self):
         """ Packet integrity check to be run on raw packet prior to parsing to make sure parsing is safe """

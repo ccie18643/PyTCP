@@ -47,14 +47,6 @@ class Parser:
         self._frame = packet_rx.frame
         self._hptr = packet_rx.hptr
 
-        self.__dst = NotImplemented
-        self.__src = NotImplemented
-        self.__type = NotImplemented
-        self.__header_copy = NotImplemented
-        self.__data_copy = NotImplemented
-        self.__packet_copy = NotImplemented
-        self.__plen = NotImplemented
-
         packet_rx.parse_failed = self._packet_integrity_check() or self._packet_sanity_check()
 
         if not packet_rx.parse_failed:
@@ -71,57 +63,57 @@ class Parser:
     def dst(self):
         """ Read 'Destination MAC address' field """
 
-        if self.__dst is NotImplemented:
-            self.__dst = ":".join([f"{_:0>2x}" for _ in self._frame[self._hptr + 0 : self._hptr + 6]])
-        return self.__dst
+        if "_cache__dst" not in self.__dict__:
+            self._cache__dst = ":".join([f"{_:0>2x}" for _ in self._frame[self._hptr + 0 : self._hptr + 6]])
+        return self._cache__dst
 
     @property
     def src(self):
         """ Read 'Source MAC address' field """
 
-        if self.__src is NotImplemented:
-            self.__src = ":".join([f"{_:0>2x}" for _ in self._frame[self._hptr + 6 : self._hptr + 12]])
-        return self.__src
+        if "_cache__src" not in self.__dict__:
+            self._cache__src = ":".join([f"{_:0>2x}" for _ in self._frame[self._hptr + 6 : self._hptr + 12]])
+        return self._cache__src
 
     @property
     def type(self):
         """ Read 'EtherType' field """
 
-        if self.__type is NotImplemented:
-            self.__type = struct.unpack_from("!H", self._frame, self._hptr + 12)[0]
-        return self.__type
+        if "_cache__type" not in self.__dict__:
+            self._cache__type = struct.unpack_from("!H", self._frame, self._hptr + 12)[0]
+        return self._cache__type
 
     @property
     def header_copy(self):
         """ Return copy of packet header """
 
-        if self.__header_copy is NotImplemented:
-            self.__header_copy = self._frame[self._hptr : self._hptr + ether.ps.HEADER_LEN]
-        return self.__header_copy
+        if "_cache__header_copy" not in self.__dict__:
+            self._cache__header_copy = self._frame[self._hptr : self._hptr + ether.ps.HEADER_LEN]
+        return self._cache__header_copy
 
     @property
     def data_copy(self):
         """ Return copy of packet data """
 
-        if self.__data_copy is NotImplemented:
-            self.__data_copy = self._frame[self._hptr + ether.ps.HEADER_LEN :]
-        return self.__data_copy
+        if "_cache__data_copy" not in self.__dict__:
+            self._cache__data_copy = self._frame[self._hptr + ether.ps.HEADER_LEN :]
+        return self._cache__data_copy
 
     @property
     def packet_copy(self):
         """ Return copy of whole packet """
 
-        if self.__packet_copy is NotImplemented:
-            self.__packet_copy = self._frame[self._hptr :]
-        return self.__packet_copy
+        if "_cache__packet_copy" not in self.__dict__:
+            self._cache__packet_copy = self._frame[self._hptr :]
+        return self._cache__packet_copy
 
     @property
     def plen(self):
         """ Calculate packet length """
 
-        if self.__plen is NotImplemented:
-            self.__plen = len(self)
-        return self.__plen
+        if "_cache__plen" not in self.__dict__:
+            self._cache__plen = len(self)
+        return self._cache__plen
 
     def _packet_integrity_check(self):
         """ Packet integrity check to be run on raw packet prior to parsing to make sure parsing is safe """

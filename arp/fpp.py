@@ -47,17 +47,6 @@ class Parser:
         self._frame = packet_rx.frame
         self._hptr = packet_rx.hptr
 
-        self.__hrtype = NotImplemented
-        self.__prtype = NotImplemented
-        self.__hrlen = NotImplemented
-        self.__prlen = NotImplemented
-        self.__oper = NotImplemented
-        self.__sha = NotImplemented
-        self.__spa = NotImplemented
-        self.__tha = NotImplemented
-        self.__tpa = NotImplemented
-        self.__packet_copy = NotImplemented
-
         packet_rx.parse_failed = self._packet_integrity_check() or self._packet_sanity_check()
 
     def __len__(self):
@@ -71,17 +60,17 @@ class Parser:
     def hrtype(self):
         """ Read 'Hardware address type' field """
 
-        if self.__hrtype is NotImplemented:
-            self.__hrtype = struct.unpack_from("!H", self._frame, self._hptr + 0)[0]
-        return self.__hrtype
+        if "_cache__hrtype" not in self.__dict__:
+            self._cache__hrtype = struct.unpack_from("!H", self._frame, self._hptr + 0)[0]
+        return self._cache__hrtype
 
     @property
     def prtype(self):
         """ Read 'Protocol address type' field """
 
-        if self.__prtype is NotImplemented:
-            self.__prtype = struct.unpack_from("!H", self._frame, self._hptr + 2)[0]
-        return self.__prtype
+        if "_cache__prtype" not in self.__dict__:
+            self._cache__prtype = struct.unpack_from("!H", self._frame, self._hptr + 2)[0]
+        return self._cache__prtype
 
     @property
     def hrlen(self):
@@ -99,49 +88,49 @@ class Parser:
     def oper(self):
         """ Read 'Operation' field """
 
-        if self.__oper is NotImplemented:
-            self.__oper = struct.unpack_from("!H", self._frame, self._hptr + 6)[0]
-        return self.__oper
+        if "_cache__oper" not in self.__dict__:
+            self._cache__oper = struct.unpack_from("!H", self._frame, self._hptr + 6)[0]
+        return self._cache__oper
 
     @property
     def sha(self):
         """ Read 'Sender hardware address' field """
 
-        if self.__sha is NotImplemented:
-            self.__sha = ":".join([f"{_:0>2x}" for _ in self._frame[self._hptr + 8 : self._hptr + 14]])
-        return self.__sha
+        if "_cache__sha" not in self.__dict__:
+            self._cache__sha = ":".join([f"{_:0>2x}" for _ in self._frame[self._hptr + 8 : self._hptr + 14]])
+        return self._cache__sha
 
     @property
     def spa(self):
         """ Read 'Sender protocol address' field """
 
-        if self.__spa is NotImplemented:
-            self.__spa = IPv4Address(self._frame[self._hptr + 14 : self._hptr + 18])
-        return self.__spa
+        if "_cache__spa" not in self.__dict__:
+            self._cache__spa = IPv4Address(self._frame[self._hptr + 14 : self._hptr + 18])
+        return self._cache__spa
 
     @property
     def tha(self):
         """ Read 'Target hardware address' field """
 
-        if self.__tha is NotImplemented:
-            self.__tha = ":".join([f"{_:0>2x}" for _ in self._frame[self._hptr + 18 : self._hptr + 24]])
-        return self.__tha
+        if "_cache__tha" not in self.__dict__:
+            self._cache__tha = ":".join([f"{_:0>2x}" for _ in self._frame[self._hptr + 18 : self._hptr + 24]])
+        return self._cache__tha
 
     @property
     def tpa(self):
         """ Read 'Target protocol address' field """
 
-        if self.__tpa is NotImplemented:
-            self.__tpa = IPv4Address(self._frame[self._hptr + 24 : self._hptr + 28])
-        return self.__tpa
+        if "_cache__tpa" not in self.__dict__:
+            self._cache__tpa = IPv4Address(self._frame[self._hptr + 24 : self._hptr + 28])
+        return self._cache__tpa
 
     @property
     def packet_copy(self):
         """ Read the whole packet """
 
-        if self.__packet_copy is NotImplemented:
-            self.__packet_copy = self._frame[self._hptr : self._hptr + arp.ps.HEADER_LEN]
-        return self.__packet_copy
+        if "_cache__packet_copy" not in self.__dict__:
+            self._cache__packet_copy = self._frame[self._hptr : self._hptr + arp.ps.HEADER_LEN]
+        return self._cache__packet_copy
 
     def _packet_integrity_check(self):
         """ Packet integrity check to be run on raw packet prior to parsing to make sure parsing is safe """
