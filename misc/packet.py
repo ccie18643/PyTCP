@@ -44,6 +44,7 @@ class PacketRx:
 
         self.ether = None
         self.arp = None
+        self.ip = None
         self.ip4 = None
         self.ip6 = None
         self.ip6_ext_frag = None

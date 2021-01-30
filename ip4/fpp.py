@@ -35,12 +35,13 @@ import config
 import ip4.ps
 from misc.ip_helper import inet_cksum
 from misc.ipv4_address import IPv4Address
+from misc.packet import PacketRx
 
 
 class Parser:
     """ IPv4 packet parser class """
 
-    def __init__(self, packet_rx):
+    def __init__(self, packet_rx: PacketRx) -> None:
         """ Class constructor """
 
         packet_rx.ip4 = self
@@ -54,7 +55,7 @@ class Parser:
         if not packet_rx.parse_failed:
             packet_rx.hptr = self._hptr + self.hlen
 
-    def __len__(self):
+    def __len__(self) -> int:
         """ Number of bytes remaining in the frame """
 
         return len(self._frame) - self._hptr
@@ -62,7 +63,7 @@ class Parser:
     from ip4.ps import __str__
 
     @property
-    def ver(self):
+    def ver(self) -> int:
         """ Read 'Version' field """
 
         if "_cache__ver" not in self.__dict__:
@@ -70,7 +71,7 @@ class Parser:
         return self._cache__ver
 
     @property
-    def hlen(self):
+    def hlen(self) -> int:
         """ Read 'Header length' field """
 
         if "_cache__hlen" not in self.__dict__:
@@ -78,7 +79,7 @@ class Parser:
         return self._cache__hlen
 
     @property
-    def dscp(self):
+    def dscp(self) -> int:
         """ Read 'DSCP' field """
 
         if "_cache__dscp" not in self.__dict__:
@@ -86,7 +87,7 @@ class Parser:
         return self._cache__dscp
 
     @property
-    def ecn(self):
+    def ecn(self) -> int:
         """ Read 'ECN' field """
 
         if "_cache__ecn" not in self.__dict__:
@@ -94,7 +95,7 @@ class Parser:
         return self._cache__ecn
 
     @property
-    def plen(self):
+    def plen(self) -> int:
         """ Read 'Packet length' field """
 
         if "_cache__plen" not in self.__dict__:
@@ -102,7 +103,7 @@ class Parser:
         return self._cache__plen
 
     @property
-    def id(self):
+    def id(self) -> int:
         """ Read 'Identification' field """
 
         if "_cache__id" not in self.__dict__:
@@ -110,19 +111,19 @@ class Parser:
         return self._cache__id
 
     @property
-    def flag_df(self):
+    def flag_df(self) -> bool:
         """ Read 'DF flag' field """
 
         return self._frame[self._hptr + 6] & 0b01000000
 
     @property
-    def flag_mf(self):
+    def flag_mf(self) -> bool:
         """ Read 'MF flag' field """
 
         return self._frame[self._hptr + 6] & 0b00100000
 
     @property
-    def offset(self):
+    def offset(self) -> int:
         """ Read 'Fragment offset' field """
 
         if "_cache__offset" not in self.__dict__:
@@ -130,19 +131,19 @@ class Parser:
         return self._cache__offset
 
     @property
-    def ttl(self):
+    def ttl(self) -> int:
         """ Read 'TTL' field """
 
         return self._frame[self._hptr + 8]
 
     @property
-    def proto(self):
+    def proto(self) -> int:
         """ Read 'Protocol' field """
 
         return self._frame[self._hptr + 9]
 
     @property
-    def cksum(self):
+    def cksum(self) -> int:
         """ Read 'Checksum' field """
 
         if "_cache__cksum" not in self.__dict__:
@@ -150,7 +151,7 @@ class Parser:
         return self._cache__cksum
 
     @property
-    def src(self):
+    def src(self) -> IPv4Address:
         """ Read 'Source address' field """
 
         if "_cache__src" not in self.__dict__:
@@ -158,7 +159,7 @@ class Parser:
         return self._cache__src
 
     @property
-    def dst(self):
+    def dst(self) -> IPv4Address:
         """ Read 'Destination address' field """
 
         if "_cache__dst" not in self.__dict__:
@@ -166,11 +167,11 @@ class Parser:
         return self._cache__dst
 
     @property
-    def options(self):
+    def options(self) -> list:
         """ Read list of options """
 
         if "_cache__options" not in self.__dict__:
-            self._cache__options = []
+            self._cache__options: list = []
             optr = self._hptr + ip4.ps.HEADER_LEN
 
             while optr < self._hptr + self.hlen:
@@ -187,7 +188,7 @@ class Parser:
         return self._cache__options
 
     @property
-    def olen(self):
+    def olen(self) -> int:
         """ Calculate options length """
 
         if "_cache__olen" not in self.__dict__:
@@ -195,7 +196,7 @@ class Parser:
         return self._cache__olen
 
     @property
-    def dlen(self):
+    def dlen(self) -> int:
         """ Calculate data length """
 
         if "_cache__dlen" not in self.__dict__:
@@ -203,7 +204,7 @@ class Parser:
         return self._cache__dlen
 
     @property
-    def header_copy(self):
+    def header_copy(self) -> bytes:
         """ Return copy of packet header """
 
         if "_cache__header_copy" not in self.__dict__:
@@ -211,7 +212,7 @@ class Parser:
         return self._cache__header_copy
 
     @property
-    def options_copy(self):
+    def options_copy(self) -> bytes:
         """ Return copy of packet header """
 
         if "_cache__options_copy" not in self.__dict__:
@@ -219,7 +220,7 @@ class Parser:
         return self._cache__options_copy
 
     @property
-    def data_copy(self):
+    def data_copy(self) -> bytes:
         """ Return copy of packet data """
 
         if "_cache__data_copy" not in self.__dict__:
@@ -227,7 +228,7 @@ class Parser:
         return self._cache__data_copy
 
     @property
-    def packet_copy(self):
+    def packet_copy(self) -> bytes:
         """ Return copy of whole packet """
 
         if "_cache__packet_copy" not in self.__dict__:
@@ -235,7 +236,7 @@ class Parser:
         return self._cache__packet_copy
 
     @property
-    def pshdr_sum(self):
+    def pshdr_sum(self) -> int:
         """ Create IPv4 pseudo header used by TCP and UDP to compute their checksums """
 
         if "_cache.__pshdr_sum" not in self.__dict__:
@@ -243,11 +244,11 @@ class Parser:
             self._cache__pshdr_sum = sum(struct.unpack("! 3L", pseudo_header))
         return self._cache__pshdr_sum
 
-    def _packet_integrity_check(self):
+    def _packet_integrity_check(self) -> str:
         """ Packet integrity check to be run on raw packet prior to parsing to make sure parsing is safe """
 
         if not config.packet_integrity_check:
-            return False
+            return ""
 
         if len(self) < ip4.ps.HEADER_LEN:
             return "IPv4 integrity - wrong packet length (I)"
@@ -276,13 +277,13 @@ class Parser:
             if optr > self._hptr + self.hlen:
                 return "IPv4 integrity - wrong option length (IV)"
 
-        return False
+        return ""
 
-    def _packet_sanity_check(self):
+    def _packet_sanity_check(self) -> str:
         """ Packet sanity check to be run on parsed packet to make sure packet's fields contain sane values """
 
         if not config.packet_sanity_check:
-            return False
+            return ""
 
         if self.ver != 4:
             return "IP sanityi - 'ver' must be 4"
@@ -308,7 +309,7 @@ class Parser:
         if self.options and config.ip4_option_packet_drop:
             return "IP sanity - packet must not contain options"
 
-        return False
+        return ""
 
 
 #
@@ -322,7 +323,7 @@ class Parser:
 class OptEol(ip4.ps.OptEol):
     """ IPv4 option - End of Option List """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.kind = ip4.ps.OPT_EOL
 
 
@@ -332,7 +333,7 @@ class OptEol(ip4.ps.OptEol):
 class OptNop(ip4.ps.OptNop):
     """ IPv4 option - No Operation """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.kind = ip4.ps.OPT_NOP
 
 
@@ -342,7 +343,7 @@ class OptNop(ip4.ps.OptNop):
 class OptUnk(ip4.ps.OptUnk):
     """ IPv4 option not supported by this stack """
 
-    def __init__(self, frame, optr):
+    def __init__(self, frame: bytes, optr: int) -> None:
         self.kind = frame[optr + 0]
         self.len = frame[optr + 1]
         self.data = frame[optr + 2 : optr + self.len]

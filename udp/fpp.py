@@ -34,12 +34,13 @@ import struct
 import config
 import udp.ps
 from misc.ip_helper import inet_cksum
+from misc.packet import PacketRx
 
 
 class Parser:
     """ UDP packet parser class """
 
-    def __init__(self, packet_rx):
+    def __init__(self, packet_rx: PacketRx) -> None:
         """ Class constructor """
 
         packet_rx.udp = self
@@ -61,7 +62,7 @@ class Parser:
     from udp.ps import __str__
 
     @property
-    def sport(self):
+    def sport(self) -> int:
         """ Read 'Source port' field """
 
         if "_cache__sport" not in self.__dict__:
@@ -69,7 +70,7 @@ class Parser:
         return self._cache__sport
 
     @property
-    def dport(self):
+    def dport(self) -> int:
         """ Read 'Destianation port' field """
 
         if "_cache__dport" not in self.__dict__:
@@ -77,7 +78,7 @@ class Parser:
         return self._cache__dport
 
     @property
-    def plen(self):
+    def plen(self) -> int:
         """ Read 'Packet length' field """
 
         if "_cache__plen" not in self.__dict__:
@@ -85,7 +86,7 @@ class Parser:
         return self._cache__plen
 
     @property
-    def cksum(self):
+    def cksum(self) -> int:
         """ Read 'Checksum' field """
 
         if "_cache__cksum" not in self.__dict__:
@@ -93,7 +94,7 @@ class Parser:
         return self._cache__cksum
 
     @property
-    def data(self):
+    def data(self) -> bytes:
         """ Read the data packet carries """
 
         if "_cache__data" not in self.__dict__:
@@ -101,24 +102,24 @@ class Parser:
         return self._cache__data
 
     @property
-    def dlen(self):
+    def dlen(self) -> int:
         """ Calculate data length """
 
         return self.plen - udp.ps.HEADER_LEN
 
     @property
-    def packet(self):
+    def packet(self) -> bytes:
         """ Read the whole packet """
 
         if "_cache__packet" not in self.__dict__:
             self._cache__packet = self._frame[self._hptr :]
         return self._cache__packet
 
-    def _packet_integrity_check(self, pshdr_sum):
+    def _packet_integrity_check(self, pshdr_sum: int) -> str:
         """ Packet integrity check to be run on raw frame prior to parsing to make sure parsing is safe """
 
         if not config.packet_integrity_check:
-            return False
+            return ""
 
         if inet_cksum(self._frame, self._hptr, self._plen, pshdr_sum):
             return "UDP integrity - wrong packet checksum"
@@ -130,13 +131,13 @@ class Parser:
         if not udp.ps.HEADER_LEN <= plen == self._plen <= len(self):
             return "UDP integrity - wrong packet length (II)"
 
-        return False
+        return ""
 
     def _packet_sanity_check(self):
         """ Packet sanity check to be run on parsed packet to make sure frame's fields contain sane values """
 
         if not config.packet_sanity_check:
-            return False
+            return ""
 
         if self.sport == 0:
             return "UDP sanity - 'udp_sport' must be greater than 0"
@@ -144,4 +145,4 @@ class Parser:
         if self.dport == 0:
             return "UDP sanity - 'udp_dport' must be greater then 0"
 
-        return False
+        return ""

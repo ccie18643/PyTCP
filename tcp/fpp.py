@@ -34,12 +34,14 @@ import struct
 import config
 import tcp.ps
 from misc.ip_helper import inet_cksum
+from misc.packet import PacketRx
+from typing import Tuple, Optional
 
 
 class Parser:
     """ TCP packet parser class """
 
-    def __init__(self, packet_rx):
+    def __init__(self, packet_rx: PacketRx) -> None:
         """ Class constructor """
 
         packet_rx.tcp = self
@@ -53,7 +55,7 @@ class Parser:
         if packet_rx.parse_failed:
             packet_rx.hptr = self._hptr + self.hlen
 
-    def __len__(self):
+    def __len__(self) -> int:
         """ Packet length """
 
         return len(self._frame) - self._hptr
@@ -61,7 +63,7 @@ class Parser:
     from tcp.ps import __str__
 
     @property
-    def sport(self):
+    def sport(self) -> int:
         """ Read 'Source port' field """
 
         if "_cache__sport" not in self.__dict__:
@@ -69,7 +71,7 @@ class Parser:
         return self._cache__sport
 
     @property
-    def dport(self):
+    def dport(self) -> int:
         """ Read 'Destianation port' field """
 
         if "_cache__dport" not in self.__dict__:
@@ -77,7 +79,7 @@ class Parser:
         return self._cache__dport
 
     @property
-    def seq(self):
+    def seq(self) -> int:
         """ Read 'Sequence number' field """
 
         if "_cache__seq" not in self.__dict__:
@@ -85,7 +87,7 @@ class Parser:
         return self._cache__seq
 
     @property
-    def ack(self):
+    def ack(self) -> int:
         """ Read 'Acknowledge number' field """
 
         if "_cache__ack" not in self.__dict__:
@@ -93,7 +95,7 @@ class Parser:
         return self._cache__ack
 
     @property
-    def hlen(self):
+    def hlen(self) -> int:
         """ Read 'Header length' field """
 
         if "_cache__hlen" not in self.__dict__:
@@ -101,7 +103,7 @@ class Parser:
         return self._cache__hlen
 
     @property
-    def flag_ns(self):
+    def flag_ns(self) -> bool:
         """ Read 'NS flag' field """
 
         if "_cache__flag_ns" not in self.__dict__:
@@ -109,7 +111,7 @@ class Parser:
         return self._cache__flag_ns
 
     @property
-    def flag_crw(self):
+    def flag_crw(self) -> bool:
         """ Read 'CRW flag' field """
 
         if "_cache__flag_crw" not in self.__dict__:
@@ -117,7 +119,7 @@ class Parser:
         return self._cache__flag_crw
 
     @property
-    def flag_ece(self):
+    def flag_ece(self) -> bool:
         """ Read 'ECE flag' field """
 
         if "_cache__flag_ece" not in self.__dict__:
@@ -125,7 +127,7 @@ class Parser:
         return self._cache__flag_ece
 
     @property
-    def flag_urg(self):
+    def flag_urg(self) -> bool:
         """ Read 'URG flag' field """
 
         if "_cache__flag_urg" not in self.__dict__:
@@ -133,7 +135,7 @@ class Parser:
         return self._cache__flag_urg
 
     @property
-    def flag_ack(self):
+    def flag_ack(self) -> bool:
         """ Read 'ACK flag' field """
 
         if "_cache__flag_ack" not in self.__dict__:
@@ -141,7 +143,7 @@ class Parser:
         return self._cache__flag_ack
 
     @property
-    def flag_psh(self):
+    def flag_psh(self) -> bool:
         """ Read 'PSH flag' field """
 
         if "_cache__flag_psh" not in self.__dict__:
@@ -149,7 +151,7 @@ class Parser:
         return self._cache__flag_psh
 
     @property
-    def flag_rst(self):
+    def flag_rst(self) -> bool:
         """ Read 'RST flag' field """
 
         if "_cache__flag_rst" not in self.__dict__:
@@ -157,7 +159,7 @@ class Parser:
         return self._cache__flag_rst
 
     @property
-    def flag_syn(self):
+    def flag_syn(self) -> bool:
         """ Read 'SYN flag' field """
 
         if "_cache__flag_syn" not in self.__dict__:
@@ -165,7 +167,7 @@ class Parser:
         return self._cache__flag_syn
 
     @property
-    def flag_fin(self):
+    def flag_fin(self) -> bool:
         """ Read 'FIN flag' field """
 
         if "_cache__flag_fin" not in self.__dict__:
@@ -181,7 +183,7 @@ class Parser:
         return self._cache__win
 
     @property
-    def cksum(self):
+    def cksum(self) -> int:
         """ Read 'Checksum' field """
 
         if "_cache__cksum" not in self.__dict__:
@@ -189,7 +191,7 @@ class Parser:
         return self._cache__cksum
 
     @property
-    def urg(self):
+    def urg(self) -> int:
         """ Read 'Urgent pointer' field """
 
         if "_cache__urg" not in self.__dict__:
@@ -197,7 +199,7 @@ class Parser:
         return self._cache__urg
 
     @property
-    def data(self):
+    def data(self) -> bytes:
         """ Read the data packet carries """
 
         if "_cache__data" not in self.__dict__:
@@ -205,7 +207,7 @@ class Parser:
         return self._cache__data
 
     @property
-    def olen(self):
+    def olen(self) -> int:
         """ Calculate options length """
 
         if "_cache__olen" not in self.__dict__:
@@ -213,19 +215,19 @@ class Parser:
         return self._cache__olen
 
     @property
-    def dlen(self):
+    def dlen(self) -> int:
         """ Calculate data length """
 
         return self._plen - self.hlen
 
     @property
-    def plen(self):
+    def plen(self) -> int:
         """ Calculate packet length """
 
         return self._plen
 
     @property
-    def header_copy(self):
+    def header_copy(self) -> bytes:
         """ Return copy of packet header """
 
         if "_cache__header_copy" not in self.__dict__:
@@ -233,7 +235,7 @@ class Parser:
         return self._cache__header_copy
 
     @property
-    def options_copy(self):
+    def options_copy(self) -> bytes:
         """ Return copy of packet header """
 
         if "_cache__options_copy" not in self.__dict__:
@@ -241,7 +243,7 @@ class Parser:
         return self._cache__options_copy
 
     @property
-    def data_copy(self):
+    def data_copy(self) -> bytes:
         """ Return copy of packet data """
 
         if "_cache__data_copy" not in self.__dict__:
@@ -249,7 +251,7 @@ class Parser:
         return self._cache__data_copy
 
     @property
-    def packet_copy(self):
+    def packet_copy(self) -> bytes:
         """ Return copy of whole packet """
 
         if "_cache__packet_copy" not in self.__dict__:
@@ -257,11 +259,11 @@ class Parser:
         return self._cache__packet_copy
 
     @property
-    def options(self):
+    def options(self) -> list:
         """ Read list of options """
 
         if "_cache__options" not in self.__dict__:
-            self._cache__options = []
+            self._cache__options: list = []
             optr = self._hptr + tcp.ps.HEADER_LEN
             while optr < self._hptr + self.hlen:
                 if self._frame[optr] == tcp.ps.OPT_EOL:
@@ -281,7 +283,7 @@ class Parser:
         return self._cache__options
 
     @property
-    def mss(self):
+    def mss(self) -> int:
         """ TCP option - Maximum Segment Size (2) """
 
         if "_cache__mss" not in self.__dict__:
@@ -294,7 +296,7 @@ class Parser:
         return self._cache__mss
 
     @property
-    def wscale(self):
+    def wscale(self) -> Optional[int]:
         """ TCP option - Window Scale (3) """
 
         if "_cache__wscale" not in self.__dict__:
@@ -307,36 +309,36 @@ class Parser:
         return self._cache__wscale
 
     @property
-    def sackperm(self):
+    def sackperm(self) -> Optional[bool]:
         """ TCP option - Sack Permit (4) """
 
         if "_cache__sackperm" not in self.__dict__:
             for option in self.options:
                 if option.kind == tcp.ps.OPT_SACKPERM:
-                    self._cache__sackperm = True
+                    self._cache__sackperm: Optional[bool] = True
                     break
             else:
                 self._cache__sackperm = None
         return self._cache__sackperm
 
     @property
-    def timestamp(self):
+    def timestamp(self) -> Optional[Tuple[int, int]]:
         """ TCP option - Timestamp (8) """
 
         if "_cache__timestamp" not in self.__dict__:
             for option in self.options:
                 if option.kind == tcp.ps.OPT_TIMESTAMP:
-                    self._cache__timestamp = option.tsval, option.tsecr
+                    self._cache__timestamp: Optional[Tuple[int, int]] = option.tsval, option.tsecr
                     break
             else:
                 self._cache__timestamp = None
         return self._cache__timestamp
 
-    def _packet_integrity_check(self, pshdr_sum):
+    def _packet_integrity_check(self, pshdr_sum: int) -> str:
         """ Packet integrity check to be run on raw frame prior to parsing to make sure parsing is safe """
 
         if not config.packet_integrity_check:
-            return False
+            return ""
 
         if inet_cksum(self._frame, self._hptr, self._plen, pshdr_sum):
             return "TCP integrity - wrong packet checksum"
@@ -365,13 +367,13 @@ class Parser:
             if optr > self._hptr + hlen:
                 return "TCP integrity - wrong option length (IV)"
 
-        return False
+        return ""
 
-    def _packet_sanity_check(self):
+    def _packet_sanity_check(self) -> str:
         """ Packet sanity check to be run on parsed packet to make sure frame's fields contain sane values """
 
         if not config.packet_sanity_check:
-            return False
+            return ""
 
         if self.sport == 0:
             return "TCP sanity - 'sport' must be greater than 0"
@@ -397,7 +399,7 @@ class Parser:
         if self.urg and not self.flag_urg:
             return "TCP sanity - 'flag_urg' must be set when 'urg' is not 0"
 
-        return False
+        return ""
 
 
 #
@@ -422,7 +424,7 @@ class OptNop(tcp.ps.OptNop):
 class OptMss(tcp.ps.OptMss):
     """ TCP option - Maximum Segment Size (2) """
 
-    def __init__(self, frame, optr):
+    def __init__(self, frame: bytes, optr: int) -> None:
         self.kind = frame[optr + 0]
         self.len = frame[optr + 1]
         self.mss = struct.unpack_from("!H", frame, optr + 2)[0]
@@ -431,7 +433,7 @@ class OptMss(tcp.ps.OptMss):
 class OptWscale(tcp.ps.OptWscale):
     """ TCP option - Window Scale (3) """
 
-    def __init__(self, frame, optr):
+    def __init__(self, frame: bytes, optr: int) -> None:
         self.kind = frame[optr + 0]
         self.len = frame[optr + 1]
         self.wscale = frame[optr + 2]
@@ -440,7 +442,7 @@ class OptWscale(tcp.ps.OptWscale):
 class OptSackPerm(tcp.ps.OptSackPerm):
     """ TCP option - Sack Permit (4) """
 
-    def __init__(self, frame, optr):
+    def __init__(self, frame: bytes, optr: int) -> None:
         self.kind = frame[optr + 0]
         self.len = frame[optr + 1]
 
@@ -448,7 +450,7 @@ class OptSackPerm(tcp.ps.OptSackPerm):
 class OptTimestamp(tcp.ps.OptTimestamp):
     """ TCP option - Timestamp (8) """
 
-    def __init__(self, frame, optr):
+    def __init__(self, frame: bytes, optr: int) -> None:
         self.kind = frame[optr + 0]
         self.len = frame[optr + 1]
         self.tsval = struct.unpack_from("!L", frame, optr + 2)[0]
@@ -458,7 +460,7 @@ class OptTimestamp(tcp.ps.OptTimestamp):
 class OptUnk(tcp.ps.OptUnk):
     """ TCP option not supported by this stack """
 
-    def __init__(self, frame, optr):
+    def __init__(self, frame: bytes, optr: int) -> None:
         self.kind = frame[optr + 0]
         self.len = frame[optr + 1]
         self.data = frame[optr + 2 : optr + self.len]

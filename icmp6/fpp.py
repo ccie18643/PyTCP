@@ -35,12 +35,14 @@ import config
 import icmp6.ps
 from misc.ip_helper import inet_cksum
 from misc.ipv6_address import IPv6Address, IPv6Network
+from misc.packet import PacketRx
+from typing import Optional
 
 
 class Parser:
     """ ICMPv6 packet parser class """
 
-    def __init__(self, packet_rx):
+    def __init__(self, packet_rx: PacketRx) -> None:
         """ Class constructor """
 
         packet_rx.icmp6 = self
@@ -53,7 +55,7 @@ class Parser:
             packet_rx.ip6.src, packet_rx.ip6.dst, packet_rx.ip6.hop
         )
 
-    def __len__(self):
+    def __len__(self) -> int:
         """ Number of bytes remaining in the frame """
 
         return len(self._frame) - self._hptr
@@ -61,19 +63,19 @@ class Parser:
     from icmp6.ps import __str__
 
     @property
-    def type(self):
+    def type(self) -> int:
         """ Read 'Type' field """
 
         return self._frame[self._hptr + 0]
 
     @property
-    def code(self):
+    def code(self) -> int:
         """ Read 'Code' field """
 
         return self._frame[self._hptr + 1]
 
     @property
-    def cksum(self):
+    def cksum(self) -> int:
         """ Read 'Checksum' field """
 
         if "_cache__cksum" not in self.__dict__:
@@ -81,7 +83,7 @@ class Parser:
         return self._cache__cksum
 
     @property
-    def un_data(self):
+    def un_data(self) -> bytes:
         """ Read data carried by Unreachable message """
 
         if "_cache__un_data" not in self.__dict__:
@@ -90,7 +92,7 @@ class Parser:
         return self._cache__un_data
 
     @property
-    def ec_id(self):
+    def ec_id(self) -> int:
         """ Read Echo 'Id' field """
 
         if "_cache__ec_id" not in self.__dict__:
@@ -99,7 +101,7 @@ class Parser:
         return self._cache__ec_id
 
     @property
-    def ec_seq(self):
+    def ec_seq(self) -> int:
         """ Read Echo 'Seq' field """
 
         if "_cache__ec_seq" not in self.__dict__:
@@ -108,7 +110,7 @@ class Parser:
         return self._cache__ec_seq
 
     @property
-    def ec_data(self):
+    def ec_data(self) -> bytes:
         """ Read data carried by Echo message """
 
         if "_cache__ec_data" not in self.__dict__:
@@ -117,14 +119,14 @@ class Parser:
         return self._cache__ec_data
 
     @property
-    def ra_hop(self):
+    def ra_hop(self) -> int:
         """ Read ND RA 'Hop limit' field """
 
         assert self.type == icmp6.ps.ROUTER_ADVERTISEMENT
         return self._frame[self._hptr + 4]
 
     @property
-    def ra_flag_m(self):
+    def ra_flag_m(self) -> bool:
         """ Read ND RA 'M flag' field """
 
         if "_cache__ra_flag_m" not in self.__dict__:
@@ -133,7 +135,7 @@ class Parser:
         return self._cache__ra_flag_m
 
     @property
-    def ra_flag_o(self):
+    def ra_flag_o(self) -> bool:
         """ Read ND RA 'O flag' field """
 
         if "_cache__ra_flag_o" not in self.__dict__:
@@ -142,7 +144,7 @@ class Parser:
         return self._cache__ra_flag_o
 
     @property
-    def ra_router_lifetime(self):
+    def ra_router_lifetime(self) -> int:
         """ Read ND RA 'Router lifetime' field """
 
         if "_cache__ra_router_lifetime" not in self.__dict__:
@@ -151,7 +153,7 @@ class Parser:
         return self._cache__ra_router_lifetime
 
     @property
-    def ra_reachable_time(self):
+    def ra_reachable_time(self) -> int:
         """ Read ND RA 'Reachable time' field """
 
         if "_cache__ra_reachable_time" not in self.__dict__:
@@ -160,7 +162,7 @@ class Parser:
         return self._cache__ra_reachable_time
 
     @property
-    def ra_retrans_timer(self):
+    def ra_retrans_timer(self) -> int:
         """ Read ND RA 'Retransmision timer' field """
 
         if "_cache__ra_retrans_timer" not in self.__dict__:
@@ -169,7 +171,7 @@ class Parser:
         return self._cache__ra_retrans_timer
 
     @property
-    def ns_target_address(self):
+    def ns_target_address(self) -> IPv6Address:
         """ Read ND NS 'Target adress' field """
 
         if "_cache__ns_target_address" not in self.__dict__:
@@ -178,7 +180,7 @@ class Parser:
         return self._cache__ns_target_address
 
     @property
-    def na_flag_r(self):
+    def na_flag_r(self) -> bool:
         """ Read ND NA 'R flag' field """
 
         if "_cache__na_flag_r" not in self.__dict__:
@@ -187,7 +189,7 @@ class Parser:
         return self._cache__na_flag_r
 
     @property
-    def na_flag_s(self):
+    def na_flag_s(self) -> bool:
         """ Read ND NA 'S flag' field """
 
         if "_cache__na_flag_s" not in self.__dict__:
@@ -196,7 +198,7 @@ class Parser:
         return self._cache__na_flag_s
 
     @property
-    def na_flag_o(self):
+    def na_flag_o(self) -> bool:
         """ Read ND NA 'O flag' field """
 
         if "_cache__na_flag_o" not in self.__dict__:
@@ -205,7 +207,7 @@ class Parser:
         return self._cache__na_flag_o
 
     @property
-    def na_target_address(self):
+    def na_target_address(self) -> IPv6Address:
         """ Read ND NA 'Taret address' field """
 
         if "_cache__na_target_address" not in self.__dict__:
@@ -214,7 +216,7 @@ class Parser:
         return self._cache__na_target_address
 
     @property
-    def mld2_rep_nor(self):
+    def mld2_rep_nor(self) -> int:
         """ Read MLD2 Report 'Number of multicast address records' field """
 
         if "_cache__mld2_rep_nor" not in self.__dict__:
@@ -223,7 +225,7 @@ class Parser:
         return self._cache__mld2_rep_nor
 
     @property
-    def mld2_rep_records(self):
+    def mld2_rep_records(self) -> list:
         """ Read MLD2 Report record list """
 
         if "_cache__mld2_rep_records" not in self.__dict__:
@@ -236,7 +238,7 @@ class Parser:
                 self._cache__mld2_rep_records.append(record)
         return self._cache__mld2_rep_records
 
-    def _read_nd_options(self, optr):
+    def _read_nd_options(self, optr: int) -> list:
         """ Read ND options """
 
         nd_options = []
@@ -251,7 +253,7 @@ class Parser:
         return nd_options
 
     @property
-    def nd_options(self):
+    def nd_options(self) -> list:
         """ Read ND options  """
 
         if "_cache__nd_options" not in self.__dict__:
@@ -271,7 +273,7 @@ class Parser:
         return self._cache__nd_options
 
     @property
-    def nd_opt_slla(self):
+    def nd_opt_slla(self) -> Optional[str]:
         """ ICMPv6 ND option - Source Link Layer Address (1) """
 
         if "_cache__nd_opt_slla" not in self.__dict__:
@@ -285,7 +287,7 @@ class Parser:
         return self._cache__nd_opt_slla
 
     @property
-    def nd_opt_tlla(self):
+    def nd_opt_tlla(self) -> Optional[str]:
         """ ICMPv6 ND option - Target Link Layer Address (2) """
 
         if "_cache__nd_opt_tlla" not in self.__dict__:
@@ -299,7 +301,7 @@ class Parser:
         return self._cache__nd_opt_tlla
 
     @property
-    def nd_opt_pi(self):
+    def nd_opt_pi(self) -> list:
         """ ICMPv6 ND option - Prefix Info (3) - Returns list of prefixes that can be used for address autoconfiguration"""
 
         if "_cache__nd_opt_pi" not in self.__dict__:
@@ -308,20 +310,20 @@ class Parser:
         return self._cache__nd_opt_pi
 
     @property
-    def plen(self):
+    def plen(self) -> int:
         """ Calculate packet length """
 
         return self._plen
 
     @property
-    def packet_copy(self):
+    def packet_copy(self) -> bytes:
         """ Read the whole packet """
 
         if "_cache__packet_copy" not in self.__dict__:
             self._cache__packet_copy = self._frame[self._hptr : self._hptr + self.plen]
         return self._cache__packet_copy
 
-    def _nd_option_integrity_check(self, optr):
+    def _nd_option_integrity_check(self, optr: int) -> str:
         """ Check integrity of ICMPv6 ND options """
 
         while optr < len(self._frame):
@@ -333,13 +335,13 @@ class Parser:
             if optr > len(self._frame):
                 return "ICMPv6 sanity check fail - wrong option length (III)"
 
-        return False
+        return ""
 
-    def _packet_integrity_check(self, pshdr_sum):
+    def _packet_integrity_check(self, pshdr_sum: int) -> str:
         """ Packet integrity check to be run on raw frame prior to parsing to make sure parsing is safe """
 
         if not config.packet_integrity_check:
-            return False
+            return ""
 
         if inet_cksum(self._frame, self._hptr, self._plen, pshdr_sum):
             return "ICMPv6 integrity - wrong packet checksum"
@@ -396,13 +398,13 @@ class Parser:
             if optr != self._hptr + self._plen:
                 return "ICMPv6 integrity - wrong packet length (IV)"
 
-        return False
+        return ""
 
-    def _packet_sanity_check(self, ip6_src, ip6_dst, ip6_hop):
+    def _packet_sanity_check(self, ip6_src: IPv6Address, ip6_dst: IPv6Address, ip6_hop: int) -> str:
         """ Packet sanity check to be run on parsed packet to make sure frame's fields contain sane values """
 
         if not config.packet_sanity_check:
-            return False
+            return ""
 
         if self.type == icmp6.ps.UNREACHABLE:
             if self.code not in {0, 1, 2, 3, 4, 5, 6}:
@@ -484,7 +486,7 @@ class Parser:
             if not ip6_hop == 1:
                 return "ICMPv6 sanity - 'hop' must be 1 (RFC 3810)"
 
-        return False
+        return ""
 
 
 #
@@ -495,7 +497,7 @@ class Parser:
 class NdOptSLLA(icmp6.ps.NdOptSLLA):
     """ ICMPv6 ND option - Source Link Layer Address (1) """
 
-    def __init__(self, frame, optr):
+    def __init__(self, frame: bytes, optr: int) -> None:
         self.code = frame[optr + 0]
         self.len = frame[optr + 1] << 3
         self.slla = ":".join([f"{_:0>2x}" for _ in frame[optr + 2 : optr + 8]])
@@ -504,7 +506,7 @@ class NdOptSLLA(icmp6.ps.NdOptSLLA):
 class NdOptTLLA(icmp6.ps.NdOptTLLA):
     """ ICMPv6 ND option - Target Link Layer Address (2) """
 
-    def __init__(self, frame, optr):
+    def __init__(self, frame: bytes, optr: int) -> None:
         self.code = frame[optr + 0]
         self.len = frame[optr + 1] << 3
         self.tlla = ":".join([f"{_:0>2x}" for _ in frame[optr + 2 : optr + 8]])
@@ -513,7 +515,7 @@ class NdOptTLLA(icmp6.ps.NdOptTLLA):
 class NdOptPI(icmp6.ps.NdOptPI):
     """ ICMPv6 ND option - Prefix Information (3) """
 
-    def __init__(self, frame, optr):
+    def __init__(self, frame: bytes, optr: int) -> None:
         self.code = frame[optr + 0]
         self.len = frame[optr + 1] << 3
         self.flag_l = bool(frame[optr + 3] & 0b10000000)
@@ -527,7 +529,7 @@ class NdOptPI(icmp6.ps.NdOptPI):
 class NdOptUnk(icmp6.ps.NdOptUnk):
     """ ICMPv6 ND  option not supported by this stack """
 
-    def __init__(self, frame, optr):
+    def __init__(self, frame: bytes, optr: int) -> None:
         self.code = frame[optr + 0]
         self.len = frame[optr + 1] << 3
         self.data = frame[optr + 2 : optr + self.len]
@@ -544,27 +546,28 @@ class NdOptUnk(icmp6.ps.NdOptUnk):
 class MulticastAddressRecord:
     """ Multicast Address Record used by MLDv2 Report message """
 
-    def __init__(self, raw_record):
+    def __init__(self, raw_record: bytes) -> None:
         """ Class constructor """
 
-        self.record_type = raw_record[0]
-        self.aux_data_len = raw_record[1]
-        self.number_of_sources = struct.unpack("!H", raw_record[2:4])[0]
-        self.multicast_address = IPv6Address(raw_record[4:20])
-        self.source_address = [IPv6Address(raw_record[20 + 16 * _ : 20 + 16 * (_ + 1)]) for _ in range(self.number_of_sources)]
-        self.aux_data = raw_record[20 + 16 * self.number_of_sources :]
+        self.raw_record = raw_record
+        self.record_type = self.raw_record[0]
+        self.aux_data_len = self.raw_record[1]
+        self.number_of_sources = struct.unpack("!H", self.raw_record[2:4])[0]
+        self.multicast_address = IPv6Address(self.raw_record[4:20])
+        self.source_address = [IPv6Address(self.raw_record[20 + 16 * _ : 20 + 16 * (_ + 1)]) for _ in range(self.number_of_sources)]
+        self.aux_data = self.raw_record[20 + 16 * self.number_of_sources :]
 
-    def __len__(self):
+    def __len__(self) -> int:
         """ Length of raw record """
 
         return len(self.raw_record)
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         """ Hash of raw record """
 
         return hash(self.raw_record)
 
-    def __eq__(self, other):
+    def __eq__(self, other) -> bool:
         """ Compare two records """
 
         return self.raw_record == other.raw_record

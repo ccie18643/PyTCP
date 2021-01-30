@@ -34,12 +34,13 @@ import struct
 import config
 import ip6.ps
 from misc.ipv6_address import IPv6Address
+from misc.packet import PacketRx
 
 
 class Parser:
     """ IPv6 packet parser class """
 
-    def __init__(self, packet_rx):
+    def __init__(self, packet_rx: PacketRx) -> None:
         """ Class constructor """
 
         packet_rx.ip6 = self
@@ -53,7 +54,7 @@ class Parser:
         if not packet_rx.parse_failed:
             packet_rx.hptr = self._hptr + ip6.ps.HEADER_LEN
 
-    def __len__(self):
+    def __len__(self) -> int:
         """ Number of bytes remaining in the frame """
 
         return len(self._frame) - self._hptr
@@ -61,7 +62,7 @@ class Parser:
     from ip6.ps import __str__
 
     @property
-    def ver(self):
+    def ver(self) -> int:
         """ Read 'Version' field """
 
         if "_cache__ver" not in self.__dict__:
@@ -69,7 +70,7 @@ class Parser:
         return self._cache__ver
 
     @property
-    def dscp(self):
+    def dscp(self) -> int:
         """ Read 'DSCP' field """
 
         if "_cache__dscp" not in self.__dict__:
@@ -77,7 +78,7 @@ class Parser:
         return self._cache__dscp
 
     @property
-    def ecn(self):
+    def ecn(self) -> int:
         """ Read 'ECN' field """
 
         if "_cache__ecn" not in self.__dict__:
@@ -85,7 +86,7 @@ class Parser:
         return self._cache__ecn
 
     @property
-    def flow(self):
+    def flow(self) -> int:
         """ Read 'Flow' field """
 
         if "_cache__flow" not in self.__dict__:
@@ -93,7 +94,7 @@ class Parser:
         return self._cache__flow
 
     @property
-    def dlen(self):
+    def dlen(self) -> int:
         """ Read 'Data length' field """
 
         if "_cache__dlen" not in self.__dict__:
@@ -101,19 +102,19 @@ class Parser:
         return self._cache__dlen
 
     @property
-    def next(self):
+    def next(self) -> int:
         """ Read 'Next' field """
 
         return self._frame[self._hptr + 6]
 
     @property
-    def hop(self):
+    def hop(self) -> int:
         """ Read 'Hop' field """
 
         return self._frame[self._hptr + 7]
 
     @property
-    def src(self):
+    def src(self) -> IPv6Address:
         """ Read 'Source address' field """
 
         if "_cache__src" not in self.__dict__:
@@ -121,7 +122,7 @@ class Parser:
         return self._cache__src
 
     @property
-    def dst(self):
+    def dst(self) -> IPv6Address:
         """ Read 'Destination address' field """
 
         if "_cache__dst" not in self.__dict__:
@@ -129,19 +130,19 @@ class Parser:
         return self._cache__dst
 
     @property
-    def hlen(self):
+    def hlen(self) -> int:
         """ Calculate header length """
 
         return ip6.ps.HEADER_LEN
 
     @property
-    def plen(self):
+    def plen(self) -> int:
         """ Calculate packet length """
 
         return ip6.ps.HEADER_LEN + self.dlen
 
     @property
-    def header_copy(self):
+    def header_copy(self) -> bytes:
         """ Return copy of packet header """
 
         if "_cache__header_copy" not in self.__dict__:
@@ -149,7 +150,7 @@ class Parser:
         return self._cache__header_copy
 
     @property
-    def data_copy(self):
+    def data_copy(self) -> bytes:
         """ Return copy of packet data """
 
         if "_cache__data_copy" not in self.__dict__:
@@ -157,7 +158,7 @@ class Parser:
         return self._cache__data_copy
 
     @property
-    def packet_copy(self):
+    def packet_copy(self) -> bytes:
         """ Return copy of whole packet """
 
         if "_cache__packet_copy" not in self.__dict__:
@@ -165,7 +166,7 @@ class Parser:
         return self._cache__packet_copy
 
     @property
-    def pshdr_sum(self):
+    def pshdr_sum(self) -> int:
         """ Returns IPv6 pseudo header that is used by TCP, UDP and ICMPv6 to compute their checksums """
 
         if "_cache__pshdr_sum" not in self.__dict__:
@@ -173,11 +174,11 @@ class Parser:
             self._cache__pshdr_sum = sum(struct.unpack("! 5Q", pseudo_header))
         return self._cache__pshdr_sum
 
-    def _packet_integrity_check(self):
+    def _packet_integrity_check(self) -> str:
         """ Packet integrity check to be run on raw packet prior to parsing to make sure parsing is safe """
 
         if not config.packet_integrity_check:
-            return False
+            return ""
 
         if len(self) < ip6.ps.HEADER_LEN:
             return "IPv6 integrity - wrong packet length (I)"
@@ -185,13 +186,13 @@ class Parser:
         if struct.unpack_from("!H", self._frame, self._hptr + 4)[0] != len(self) - ip6.ps.HEADER_LEN:
             return "IPv6 integrity - wrong packet length (II)"
 
-        return False
+        return ""
 
-    def _packet_sanity_check(self):
+    def _packet_sanity_check(self) -> str:
         """ Packet sanity check to be run on parsed packet to make sure packet's fields contain sane values """
 
         if not config.packet_sanity_check:
-            return False
+            return ""
 
         if self.ver != 6:
             return "IPv6 sanity - 'ver' must be 6"
@@ -202,4 +203,4 @@ class Parser:
         if self.src.is_multicast:
             return "IPv6 sanity - 'src' must not be multicast"
 
-        return False
+        return ""

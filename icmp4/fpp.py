@@ -34,12 +34,13 @@ import struct
 import config
 import icmp4.ps
 from misc.ip_helper import inet_cksum
+from misc.packet import PacketRx
 
 
 class Parser:
     """ ICMPv4 packet parser class """
 
-    def __init__(self, packet_rx):
+    def __init__(self, packet_rx: PacketRx) -> None:
         """ Class constructor """
 
         packet_rx.icmp4 = self
@@ -50,7 +51,7 @@ class Parser:
 
         packet_rx.parse_failed = self._packet_integrity_check() or self._packet_sanity_check()
 
-    def __len__(self):
+    def __len__(self) -> int:
         """ Number of bytes remaining in the frame """
 
         return len(self._frame) - self._hptr
@@ -58,19 +59,19 @@ class Parser:
     from icmp4.ps import __str__
 
     @property
-    def type(self):
+    def type(self) -> int:
         """ Read 'Type' field """
 
         return self._frame[self._hptr + 0]
 
     @property
-    def code(self):
+    def code(self) -> int:
         """ Read 'Code' field """
 
         return self._frame[self._hptr + 1]
 
     @property
-    def cksum(self):
+    def cksum(self) -> int:
         """ Read 'Checksum' field """
 
         if "_cache__cksum" not in self.__dict__:
@@ -78,7 +79,7 @@ class Parser:
         return self._cache__cksum
 
     @property
-    def ec_id(self):
+    def ec_id(self) -> int:
         """ Read Echo 'Id' field """
 
         if "_cache__ec_id" not in self.__dict__:
@@ -87,7 +88,7 @@ class Parser:
         return self._cache__ec_id
 
     @property
-    def ec_seq(self):
+    def ec_seq(self) -> int:
         """ Read Echo 'Seq' field """
 
         if "_cache__ec_seq" not in self.__dict__:
@@ -96,7 +97,7 @@ class Parser:
         return self._cache__ec_seq
 
     @property
-    def ec_data(self):
+    def ec_data(self) -> bytes:
         """ Read data carried by Echo message """
 
         if "_cache__ec_data" not in self.__dict__:
@@ -105,7 +106,7 @@ class Parser:
         return self._cache__ec_data
 
     @property
-    def un_data(self):
+    def un_data(self) -> bytes:
         """ Read data carried by Uneachable message """
 
         if "_cache__un_data" not in self.__dict__:
@@ -114,24 +115,24 @@ class Parser:
         return self._cache__un_data
 
     @property
-    def plen(self):
+    def plen(self) -> int:
         """ Calculate packet length """
 
         return self._plen
 
     @property
-    def packet_copy(self):
+    def packet_copy(self) -> bytes:
         """ Read the whole packet """
 
         if "_cache__packet_copy" not in self.__dict__:
             self._cache__packet_copy = self._frame[self._hptr : self._hptr + self.plen]
         return self._cache__packet_copy
 
-    def _packet_integrity_check(self):
+    def _packet_integrity_check(self) -> str:
         """ Packet integrity check to be run on raw frame prior to parsing to make sure parsing is safe """
 
         if not config.packet_integrity_check:
-            return False
+            return ""
 
         if inet_cksum(self._frame, self._hptr, self._plen):
             return "ICMPv4 integrity - wrong packet checksum"
@@ -147,13 +148,13 @@ class Parser:
             if not 12 <= self._plen <= len(self):
                 return "ICMPv6 integrity - wrong packet length (II)"
 
-        return False
+        return ""
 
-    def _packet_sanity_check(self):
+    def _packet_sanity_check(self) -> str:
         """ Packet sanity check to be run on parsed packet to make sure frame's fields contain sane values """
 
         if not config.packet_sanity_check:
-            return False
+            return ""
 
         if self.type in {icmp4.ps.ECHO_REQUEST, icmp4.ps.ECHO_REPLY}:
             if not self.code == 0:
@@ -163,4 +164,4 @@ class Parser:
             if self.code not in {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15}:
                 return "ICMPv4 sanity - 'code' must be set to [0-15] (RFC 792)"
 
-        return False
+        return ""
