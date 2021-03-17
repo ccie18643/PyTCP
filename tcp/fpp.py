@@ -289,7 +289,7 @@ class Parser:
         if "_cache__mss" not in self.__dict__:
             for option in self.options:
                 if option.kind == tcp.ps.OPT_MSS:
-                    self.__mss = option.mss
+                    self._cache__mss = option.mss
                     break
             else:
                 self._cache__mss = 536
