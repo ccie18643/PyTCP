@@ -23,18 +23,6 @@
 #                                                                          #
 ############################################################################
 
-##############################################################################################
-#                                                                                            #
-#  This program is a work in progress and it changes on daily basis due to new features      #
-#  being implemented, changes being made to already implemented features, bug fixes, etc.    #
-#  Therefore if the current version is not working as expected try to clone it again the     #
-#  next day or shoot me an email describing the problem. Any input is appreciated. Also      #
-#  keep in mind that some features may be implemented only partially (as needed for stack    #
-#  operation) or they may be implemented in sub-optimal or not 100% RFC compliant way (due   #
-#  to lack of time) or last but not least they may contain bug(s) that i didn't notice yet.  #
-#                                                                                            #
-##############################################################################################
-
 
 #
 # pytcp.py - main TCP/IP stack program
@@ -50,17 +38,17 @@ import time
 import loguru
 
 import config
-from client_icmp_echo import ClientIcmpEcho
-from client_tcp_echo import ClientTcpEcho
-from ph import PacketHandler
-from service_tcp_daytime import ServiceTcpDaytime
-from service_tcp_discard import ServiceTcpDiscard
-from service_tcp_echo import ServiceTcpEcho
-from service_udp_daytime import ServiceUdpDaytime
-from service_udp_discard import ServiceUdpDiscard
-from service_udp_echo import ServiceUdpEcho
-from stack_cli_server import StackCliServer
-from timer import Timer
+from client.icmp_echo import ClientIcmpEcho
+from client.tcp_echo import ClientTcpEcho
+from misc.ph import PacketHandler
+from misc.stack_cli_server import StackCliServer
+from misc.timer import Timer
+from service.tcp_daytime import ServiceTcpDaytime
+from service.tcp_discard import ServiceTcpDiscard
+from service.tcp_echo import ServiceTcpEcho
+from service.udp_daytime import ServiceUdpDaytime
+from service.udp_discard import ServiceUdpDiscard
+from service.udp_echo import ServiceUdpEcho
 
 TUNSETIFF = 0x400454CA
 IFF_TAP = 0x0002
@@ -77,7 +65,7 @@ IFF_NO_PI = 0x1000
 #########################################################
 
 
-def main():
+def main() -> int:
     """Main function"""
 
     loguru.logger.remove(0)
@@ -101,6 +89,7 @@ def main():
 
     try:
         tap = os.open("/dev/net/tun", os.O_RDWR)
+
     except FileNotFoundError:
         _logger.error("Unable to access '/dev/net/tun' device")
         sys.exit(-1)
@@ -134,16 +123,16 @@ def main():
     if config.service_tcp_discard:
         ServiceTcpDiscard(local_ip_address=local_ip_address)
     if config.service_tcp_daytime:
-        ServiceTcpDaytime(local_ip_address=local_ip_address, message_count=-1, message_delay=1, message_size=1000)
+        ServiceTcpDaytime(local_ip_address=local_ip_address, message_count=-1, message_delay=1, message_size=5)
 
     # Initialize TCP test clients
     if config.client_tcp_echo:
-        ClientTcpEcho(local_ip_address="192.168.9.7", remote_ip_address="192.168.100.102", remote_port=7, message_count=10)
+        ClientTcpEcho(local_ip_address="192.168.9.7", remote_ip_address="192.168.9.102", remote_port=7, message_count=10)
         ClientTcpEcho(
             local_ip_address="fdd1:c296:f24f:9:0:ff:fe77:7777", remote_ip_address="fdd1:c296:f24f:9:5054:ff:fedf:8537", remote_port=7, message_count=10
         )
-        # ClientTcpEcho(local_ip_address="192.168.9.7", remote_ip_address="1.1.1.1", remote_port=7)
-        # ClientTcpEcho(local_ip_address="192.168.9.7", remote_ip_address="192.168.9.9", remote_port=7)
+        ClientTcpEcho(local_ip_address="192.168.9.7", remote_ip_address="1.1.1.1", remote_port=7)
+        ClientTcpEcho(local_ip_address="192.168.9.7", remote_ip_address="192.168.9.9", remote_port=7)
 
     # Initialize ICMP test client
     if config.client_icmp_echo:
@@ -161,7 +150,7 @@ def main():
 
         # Another subnet, source address not specified
         # ClientIcmpEcho(local_ip_address="::", remote_ip_address="fdd1:c296:f24f:100:5054:ff:fef9:99aa", message_count=10)
-        ClientIcmpEcho(local_ip_address="0.0.0.0", remote_ip_address="8.8.8.8", message_count=25)
+        ClientIcmpEcho(local_ip_address="0.0.0.0", remote_ip_address="8.8.8.8", message_count=5)
         ClientIcmpEcho(local_ip_address="::", remote_ip_address="2001:4860:4860::8888", message_count=25)
 
         # Another subnet, source with no default gateway assigned
@@ -169,6 +158,8 @@ def main():
 
     while True:
         time.sleep(1)
+
+    return 0
 
 
 if __name__ == "__main__":

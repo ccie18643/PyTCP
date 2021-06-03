@@ -23,26 +23,11 @@
 #                                                                          #
 ############################################################################
 
-##############################################################################################
-#                                                                                            #
-#  This program is a work in progress and it changes on daily basis due to new features      #
-#  being implemented, changes being made to already implemented features, bug fixes, etc.    #
-#  Therefore if the current version is not working as expected try to clone it again the     #
-#  next day or shoot me an email describing the problem. Any input is appreciated. Also      #
-#  keep in mind that some features may be implemented only partially (as needed for stack    #
-#  operation) or they may be implemented in sub-optimal or not 100% RFC compliant way (due   #
-#  to lack of time) or last but not least they may contain bug(s) that i didn't notice yet.  #
-#                                                                                            #
-##############################################################################################
-
 
 #
 # config.py - module contains global configuration parameters
 #
 
-from sys import version_info
-
-assert version_info >= (3, 9), "PyTCP requires Python version 3.9 or higher"
 
 # TAP interface name stack should bind itself to
 interface = b"tap7"
@@ -89,16 +74,8 @@ ip6_frag_flow_timeout = 5
 # Basic routing is implemented and each subnet can have its own gateway
 # Link local addresses should have default gateway set to 'None'
 ip6_address_candidate = [
-    ("FE80::7/64", None),
-    # ("FE80::77/64", None),
-    # ("FE80::7777/64", None),
-    # ("FE80::7777/64", None),  # test duplicate address
-    # ("FE80::9999/64", "FE80::1"),  # test link local address with default gateway
-    # ("2007::1111/64", "DUPA"),  # test link local address with default gateway
-    # ("ZHOPA", None),  # test invalid address
-    # ("2099::99/64", "2009::99"),  # test invalid gateway
+    ("FE80::7/64", ""),
     # ("2007::7/64", "FE80::1"),
-    # ("2009::9/64", "2009::1"),
 ]
 
 # IPv4 DHCP based address configuration
@@ -110,31 +87,25 @@ ip4_address_dhcp_config = True
 ip4_address_candidate = [
     ("192.168.9.7/24", "192.168.9.1"),
     # ("192.168.9.77/24", "192.168.9.1"),
-    # ("224.0.0.1/24", "192.168.9.1"), # test invalid address type
-    # ("DUPA", "192.168.9.1"),  # test invalid address format
-    # ("192.168.9.99/24", "DUPA"),  # test invalid gateway format
-    # ("192.168.9.77/24", "192.168.9.1"),  # test duplicate address
-    # ("192.168.9.170/24", "10.0.0.1"),  # test invalid gateway
-    # ("192.168.9.171/24", "192.168.9.0"),  # test invalid gateway
-    # ("192.168.9.172/24", "192.168.9.172"),  # test invalid gateway
-    # ("192.168.9.173/24", "192.168.9.255"),  # test invalid gateway
-    # ("192.168.9.0/24", "192.168.9.1"),  # test invalid address
-    # ("192.168.9.255/24", "192.168.9.1"),  # test invalid address
-    # ("0.0.0.0/0", None),  # test invalid address
-    # ("192.168.9.102/24", None),  # test no gateway
     # ("172.16.17.7/24", "172.16.17.1"),
     # ("10.10.10.7/24", "10.10.10.1"),
 ]
 
 # ARP cache configuration
+arp_cache_entry_max_age = 3600
+arp_cache_entry_refresh_time = 300
 arp_cache_update_from_direct_request = True
 arp_cache_update_from_gratuitious_reply = True
 
+# ICMPv6 ND cache configuration
+nd_cache_entry_max_age = 3600
+nd_cache_entry_refresh_time = 300
+
 # TCP ephemeral port range to be used by outbound connections
-TCP_EPHEMERAL_PORT_RANGE = (32168, 60999)
+tcp_ephemeral_port_range = (32168, 60999)
 
 # UDP ephemeral port range to be used by outbound connections
-UDP_EPHEMERAL_PORT_RANGE = (32168, 60999)
+udp_ephemeral_port_range = (32168, 60999)
 
 # TAP interface MTU, describes how much payload Ethernet packet can carry
 mtu = 1500
@@ -146,11 +117,11 @@ local_tcp_win = 65535  # Maximum amount of data peer can send to us without conf
 # Those are being used for testing various stack components are therefore their 'default' funcionality may be altered for specific test needs
 # Eg. TCP daytime service generates large amount of text data used to verify TCP protocol funcionality
 service_udp_echo = True
-service_udp_discard = True
-service_udp_daytime = True
+service_udp_discard = False
+service_udp_daytime = False
 service_tcp_echo = True
-service_tcp_discard = True
-service_tcp_daytime = True
+service_tcp_discard = False
+service_tcp_daytime = False
 
 # For using test clients proper IP addressing needs to be set up in file 'pytcp.py'
 client_tcp_echo = False

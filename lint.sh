@@ -5,8 +5,10 @@ codespell -w --ignore-words-list="ect,ether,nd,tha" --quiet-level=2 ${PY_PATH} R
 echo '<<< ISORT' && \
 isort --profile black ${PY_PATH} && \
 echo '<<< BLACK' && \
-black ${PY_PATH} && \
+black -l 160 ${PY_PATH} && \
 echo '<<< FLAKE8' && \
 flake8 ${PY_PATH} && \
 echo '<<< MYPY' && \
-mypy ${PY_PATH}
+mypy ${PY_PATH} && \
+echo '<<< TESTSLIDE' && \
+testslide tests/test_*.py
