@@ -37,16 +37,13 @@
 
 
 #
-# ps_ethernet.py - protocol suppot library for Ethernet
+# fpp_ether.py - Fast Packet Parser support class for Ethernet protocol
 #
 
 
 import struct
 
-import loguru
-
 import config
-from tracker import Tracker
 
 # Ethernet packet header
 
@@ -75,102 +72,114 @@ ETHER_TYPE_TABLE = {ETHER_TYPE_ARP: "ARP", ETHER_TYPE_IP4: "IPv4", ETHER_TYPE_IP
 class EtherPacket:
     """Ethernet packet support class"""
 
-    protocol = "ETHER"
+    class __not_cached:
+        pass
 
-    def __init__(self, raw_packet=None, ether_src="00:00:00:00:00:00", ether_dst="00:00:00:00:00:00", child_packet=None):
+    def __init__(self, packet_rx):
         """Class constructor"""
 
-        if __debug__:
-            self._logger = loguru.logger.bind(object_name="ps_ether.")
-        self.sanity_check_failed = False
+        packet_rx.ether = self
 
-        # Packet parsing
-        if raw_packet:
-            self.tracker = Tracker("RX")
+        self._frame = packet_rx.frame
+        self._hptr = packet_rx.hptr
 
-            if not self.__pre_parse_sanity_check(raw_packet):
-                self.sanity_check_failed = True
-                return
+        self.__dst = self.__not_cached
+        self.__src = self.__not_cached
+        self.__type = self.__not_cached
+        self.__header_copy = self.__not_cached
+        self.__data_copy = self.__not_cached
+        self.__packet_copy = self.__not_cached
+        self.__plen = self.__not_cached
 
-            raw_header = raw_packet[:ETHER_HEADER_LEN]
+        packet_rx.parse_failed = self._packet_integrity_check() or self._packet_sanity_check()
 
-            self.raw_data = raw_packet[ETHER_HEADER_LEN:]
-            self.ether_dst = ":".join([f"{_:0>2x}" for _ in raw_header[0:6]])
-            self.ether_src = ":".join([f"{_:0>2x}" for _ in raw_header[6:12]])
-            self.ether_type = struct.unpack("!H", raw_header[12:14])[0]
-
-            if not self.__post_parse_sanity_check():
-                self.sanity_check_failed = True
-
-        # Packet building
-        else:
-            self.tracker = child_packet.tracker
-
-            self.ether_dst = ether_dst
-            self.ether_src = ether_src
-
-            assert child_packet.protocol in {"IPv6", "IPv4", "ARP"}, f"Not supported protocol: {child_packet.protocol}"
-
-            if child_packet.protocol == "IPv6":
-                self.ether_type = ETHER_TYPE_IP6
-
-            if child_packet.protocol == "IPv4":
-                self.ether_type = ETHER_TYPE_IP4
-
-            if child_packet.protocol == "ARP":
-                self.ether_type = ETHER_TYPE_ARP
-
-            self.raw_data = child_packet.get_raw_packet()
+        if not packet_rx.parse_failed:
+            packet_rx.hptr = self._hptr + ETHER_HEADER_LEN
 
     def __str__(self):
-        """Short packet log string"""
+        """Packet log string"""
 
-        return f"ETHER {self.ether_src} > {self.ether_dst}, 0x{self.ether_type:0>4x} ({ETHER_TYPE_TABLE.get(self.ether_type, '???')})"
+        return f"ETHER {self.src} > {self.dst}, 0x{self.type:0>4x} ({ETHER_TYPE_TABLE.get(self.type, '???')})"
 
     def __len__(self):
-        """Length of the packet"""
+        """Number of bytes remaining in the frame"""
 
-        return len(self.raw_packet)
-
-    @property
-    def raw_header(self):
-        """Packet header in raw format"""
-
-        return struct.pack("! 6s 6s H", bytes.fromhex(self.ether_dst.replace(":", "")), bytes.fromhex(self.ether_src.replace(":", "")), self.ether_type)
+        return len(self._frame) - self._hptr
 
     @property
-    def raw_packet(self):
-        """Packet in raw format"""
+    def dst(self):
+        """Read 'Destination MAC address' field"""
 
-        return self.raw_header + self.raw_data
+        if self.__dst is self.__not_cached:
+            self.__dst = ":".join([f"{_:0>2x}" for _ in self._frame[self._hptr + 0 : self._hptr + 6]])
+        return self.__dst
 
-    def get_raw_packet(self):
-        """Get packet in raw format ready to be sent out"""
+    @property
+    def src(self):
+        """Read 'Source MAC address' field"""
 
-        return self.raw_packet
+        if self.__src is self.__not_cached:
+            self.__src = ":".join([f"{_:0>2x}" for _ in self._frame[self._hptr + 6 : self._hptr + 12]])
+        return self.__src
 
-    def __pre_parse_sanity_check(self, raw_packet):
-        """Preliminary sanity check to be run on raw Ethernet packet prior to packet parsing"""
+    @property
+    def type(self):
+        """Read 'EtherType' field"""
 
-        if not config.pre_parse_sanity_check:
-            return True
+        if self.__type is self.__not_cached:
+            self.__type = struct.unpack_from("!H", self._frame, self._hptr + 12)[0]
+        return self.__type
 
-        if len(raw_packet) < 14:
-            if __debug__:
-                self._logger.critical(f"{self.tracker} - Ethernet sanity check fail - wrong packet length (I)")
+    @property
+    def header_copy(self):
+        """Return copy of packet header"""
+
+        if self.__header_copy is self.__not_cached:
+            self.__header_copy = self._frame[self._hptr : self._hptr + ETHER_HEADER_LEN]
+        return self.__header_copy
+
+    @property
+    def data_copy(self):
+        """Return copy of packet data"""
+
+        if self.__data_copy is self.__not_cached:
+            self.__data_copy = self._frame[self._hptr + ETHER_HEADER_LEN :]
+        return self.__data_copy
+
+    @property
+    def packet_copy(self):
+        """Return copy of whole packet"""
+
+        if self.__packet_copy is self.__not_cached:
+            self.__packet_copy = self._frame[self._hptr :]
+        return self.__packet_copy
+
+    @property
+    def plen(self):
+        """Calculate packet length"""
+
+        if self.__plen is self.__not_cached:
+            self.__plen = len(self)
+        return self.__plen
+
+    def _packet_integrity_check(self):
+        """Packet integrity check to be run on raw packet prior to parsing to make sure parsing is safe"""
+
+        if not config.packet_integrity_check:
             return False
 
-        return True
+        if len(self) < ETHER_HEADER_LEN:
+            return "ETHER integrity - wrong packet length (I)"
 
-    def __post_parse_sanity_check(self):
-        """Sanity check to be run on parsed Ethernet packet"""
+        return False
 
-        if not config.post_parse_sanity_check:
-            return True
+    def _packet_sanity_check(self):
+        """Packet sanity check to be run on parsed packet to make sure packet's fields contain sane values"""
 
-        if self.ether_type < ETHER_TYPE_MIN:
-            if __debug__:
-                self._logger.critical(f"{self.tracker} - Ethernet sanity check fail - value of ether_type < 0x0600")
+        if not config.packet_sanity_check:
             return False
 
-        return True
+        if self.type < ETHER_TYPE_MIN:
+            return "ETHER sanity - 'ether_type' must be greater than 0x0600"
+
+        return False

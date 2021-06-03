@@ -46,7 +46,7 @@ import threading
 
 import loguru
 
-import ps_ether
+from packet import PacketRx
 
 
 class RxRing:
@@ -59,41 +59,24 @@ class RxRing:
         self.rx_ring = []
         if __debug__:
             self._logger = loguru.logger.bind(object_name="rx_ring.")
-
         self.packet_enqueued = threading.Semaphore(0)
 
         threading.Thread(target=self.__thread_receive).start()
         if __debug__:
             self._logger.debug("Started RX ring")
 
-    def __enqueue(self, ether_packet_rx):
-        """Enqueue packet for further processing"""
-
-        if ether_packet_rx.ether_type == ps_ether.ETHER_TYPE_ARP:
-            self.rx_ring.insert(0, ether_packet_rx)
-            if __debug__:
-                self._logger.opt(ansi=True).debug(f"{ether_packet_rx.tracker}, priority: Urgent, queue len: {len(self.rx_ring)}")
-        else:
-            self.rx_ring.append(ether_packet_rx)
-            if __debug__:
-                self._logger.opt(ansi=True).debug(f"{ether_packet_rx.tracker}, priority: Normal, queue len: {len(self.rx_ring)}")
-
-        self.packet_enqueued.release()
-
     def __thread_receive(self):
         """Thread responsible for receiving and enqueuing incoming packets"""
 
         while True:
-
-            # Wait till there is any packet coming and pick it up
-            ether_packet_rx = ps_ether.EtherPacket(os.read(self.tap, 2048))
+            packet_rx = PacketRx(os.read(self.tap, 2048))
             if __debug__:
-                self._logger.opt(ansi=True).debug(f"<green>[RX]</green> {ether_packet_rx.tracker} - {len(ether_packet_rx)} bytes")
-            self.__enqueue(ether_packet_rx)
+                self._logger.opt(ansi=True).debug(f"<green>[RX]</> {packet_rx.tracker}> - received frame, {len(packet_rx.frame)} bytes")
+            self.rx_ring.append(packet_rx)
+            self.packet_enqueued.release()
 
     def dequeue(self):
-        """Dequeue inboutd packet from RX ring"""
+        """Dequeue inboutd frame from RX ring"""
 
         self.packet_enqueued.acquire()
-
         return self.rx_ring.pop(0)

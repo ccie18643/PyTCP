@@ -48,11 +48,19 @@ from ipv4_address import IPv4Address
 from ipv6_address import IPv6Address
 
 
-def inet_cksum(data):
-    """Compute Internet Checksum used by IP/TCP/UDP/ICMPv4 protocols"""
+def inet_cksum(data, dptr, dlen, init=0):
+    """Compute Internet Checksum used by IPv4/ICMPv4/ICMPv6/UDP/TCP protocols"""
 
-    data = data + (b"\0" if len(data) & 1 else b"")
-    cksum = sum(struct.unpack(f"! {len(data) >> 1}H", data))
+    if dlen == 20:
+        cksum = init + sum(struct.unpack_from("!5L", data, dptr))
+
+    else:
+        cksum = init + sum(struct.unpack_from(f"!{dlen >> 3}Q", data, dptr))
+        if remainder := dlen & 7:
+            cksum += struct.unpack("!Q", data[dptr + dlen - remainder : dptr + dlen] + b"\0" * (8 - remainder))[0]
+        cksum = (cksum >> 64) + (cksum & 0xFFFFFFFFFFFFFFFF)
+
+    cksum = (cksum >> 32) + (cksum & 0xFFFFFFFF)
     cksum = (cksum >> 16) + (cksum & 0xFFFF)
     return ~(cksum + (cksum >> 16)) & 0xFFFF
 

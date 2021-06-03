@@ -42,13 +42,16 @@
 
 
 import config
-import ps_udp
+import fpa_udp
 from ipv4_address import IPv4Address
 from ipv6_address import IPv6Address
 
 
-def phtx_udp(self, ip_src, ip_dst, udp_sport, udp_dport, raw_data=b"", echo_tracker=None):
+def _phtx_udp(self, ip_src, ip_dst, udp_sport, udp_dport, udp_data=b"", echo_tracker=None):
     """Handle outbound UDP packets"""
+
+    assert type(ip_src) in {IPv4Address, IPv6Address}
+    assert type(ip_dst) in {IPv4Address, IPv6Address}
 
     # Check if IPv4 protocol support is enabled, if not then silently drop the IPv4 packet
     if not config.ip4_support and ip_dst.version == 4:
@@ -58,16 +61,13 @@ def phtx_udp(self, ip_src, ip_dst, udp_sport, udp_dport, raw_data=b"", echo_trac
     if not config.ip6_support and ip_dst.version == 6:
         return
 
-    udp_packet_tx = ps_udp.UdpPacket(udp_sport=udp_sport, udp_dport=udp_dport, raw_data=raw_data, echo_tracker=echo_tracker)
+    udp_packet_tx = fpa_udp.UdpPacket(sport=udp_sport, dport=udp_dport, data=udp_data, echo_tracker=echo_tracker)
 
     if __debug__:
         self._logger.opt(ansi=True).info(f"<magenta>{udp_packet_tx.tracker}</magenta> - {udp_packet_tx}")
 
-    assert type(ip_src) in {IPv4Address, IPv6Address}
-    assert type(ip_dst) in {IPv4Address, IPv6Address}
-
     if ip_src.version == 6 and ip_dst.version == 6:
-        self.phtx_ip6(ip6_src=ip_src, ip6_dst=ip_dst, child_packet=udp_packet_tx)
+        self._phtx_ip6(ip6_src=ip_src, ip6_dst=ip_dst, child_packet=udp_packet_tx)
 
     if ip_src.version == 4 and ip_dst.version == 4:
-        self.phtx_ip4(ip4_src=ip_src, ip4_dst=ip_dst, child_packet=udp_packet_tx)
+        self._phtx_ip4(ip4_src=ip_src, ip4_dst=ip_dst, child_packet=udp_packet_tx)

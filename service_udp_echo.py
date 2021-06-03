@@ -44,7 +44,7 @@
 import threading
 
 import udp_socket
-from malpi import malpa, malpka
+from malpi import malpa, malpi, malpka
 from tracker import Tracker
 from udp_metadata import UdpMetadata
 
@@ -67,26 +67,24 @@ class ServiceUdpEcho:
 
         while True:
             packet_rx = socket.receive_from()
-            message = packet_rx.raw_data
+            message = packet_rx.data
             print(f"Service UDP Echo: Received {len(message)} bytes from {packet_rx.remote_ip_address}, port {packet_rx.remote_port}")
 
-            if "malpka" in str(message, "utf-8").strip().lower():
-                message = bytes(malpka, "utf-8")
+            if b"malpka" in message.strip().lower():
+                message = malpka
 
-            elif "malpa" in str(message, "utf-8").strip().lower():
-                message = bytes(malpa, "utf-8")
+            elif b"malpa" in message.strip().lower():
+                message = malpa
 
-            elif "malpi" in str(message, "utf-8").strip().lower():
-                message = b""
-                for malpka_line, malpa_line in zip(malpka.split("\n"), malpa.split("\n")):
-                    message += bytes(malpka_line + malpa_line + "\n", "utf-8")
+            elif b"malpi" in message.strip().lower():
+                message = malpi
 
             packet_tx = UdpMetadata(
                 local_ip_address=packet_rx.local_ip_address,
                 local_port=packet_rx.local_port,
                 remote_ip_address=packet_rx.remote_ip_address,
                 remote_port=packet_rx.remote_port,
-                raw_data=message,
+                data=message,
                 tracker=Tracker("TX", echo_tracker=packet_rx.tracker),
             )
             socket.send_to(packet_tx)

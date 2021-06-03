@@ -59,6 +59,7 @@ from service_tcp_echo import ServiceTcpEcho
 from service_udp_daytime import ServiceUdpDaytime
 from service_udp_discard import ServiceUdpDiscard
 from service_udp_echo import ServiceUdpEcho
+from stack_cli_server import StackCliServer
 from timer import Timer
 
 TUNSETIFF = 0x400454CA
@@ -96,11 +97,18 @@ def main():
         + "|</level> <level> <normal><cyan>{extra[object_name]}{function}:</cyan></normal> {message}</level>",
     )
 
-    tap = os.open("/dev/net/tun", os.O_RDWR)
+    _logger = loguru.logger.bind(object_name="pytcp.")
+
+    try:
+        tap = os.open("/dev/net/tun", os.O_RDWR)
+    except FileNotFoundError:
+        _logger.error("Unable to access '/dev/net/tun' device")
+        sys.exit(-1)
+
     fcntl.ioctl(tap, TUNSETIFF, struct.pack("16sH", config.interface, IFF_TAP | IFF_NO_PI))
 
     # Initialize stack components
-    # StackCliServer()
+    StackCliServer()
     Timer()
     PacketHandler(tap)
 

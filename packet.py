@@ -37,42 +37,24 @@
 
 
 #
-# phtx_icmp4.py - packet handler for outbound ICMPv4 packets
+# packet.py - module contains class representing packet
 #
 
-
-import config
-import fpa_icmp4
+from tracker import Tracker
 
 
-def _phtx_icmp4(
-    self,
-    ip4_src,
-    ip4_dst,
-    icmp4_type,
-    icmp4_code=0,
-    icmp4_ec_id=None,
-    icmp4_ec_seq=None,
-    icmp4_ec_data=None,
-    icmp4_un_data=None,
-    echo_tracker=None,
-):
-    """Handle outbound ICMPv4 packets"""
+class PacketRx:
+    """Base packet class"""
 
-    # Check if IPv4 protocol support is enabled, if not then silently drop the packet
-    if not config.ip4_support:
-        return
+    def __init__(self, frame):
+        """Class constructor"""
 
-    icmp4_packet_tx = fpa_icmp4.Icmp4Packet(
-        type=icmp4_type,
-        code=icmp4_code,
-        ec_id=icmp4_ec_id,
-        ec_seq=icmp4_ec_seq,
-        ec_data=icmp4_ec_data,
-        un_data=icmp4_un_data,
-        echo_tracker=echo_tracker,
-    )
+        self.frame = frame
+        self.hptr = 0
+        self.tracker = Tracker("RX")
+        self.parse_failed = None
 
-    if __debug__:
-        self._logger.opt(ansi=True).info(f"<magenta>{icmp4_packet_tx.tracker}</magenta> - {icmp4_packet_tx}")
-    self._phtx_ip4(ip4_src=ip4_src, ip4_dst=ip4_dst, child_packet=icmp4_packet_tx)
+    def __len__(self):
+        """Returns length of raw frame"""
+
+        return len(self.frame)

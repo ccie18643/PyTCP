@@ -43,36 +43,36 @@
 
 import loguru
 
-import ps_icmp4
-import ps_icmp6
+import fpp_icmp4
+import fpp_icmp6
+import fpp_udp
 import stack
 from ipv4_address import IPv4Address
 from ipv6_address import IPv6Address
 from udp_metadata import UdpMetadata
 
 
-def phrx_udp(self, ip_packet_rx, udp_packet_rx):
+def _phrx_udp(self, packet_rx):
     """Handle inbound UDP packets"""
 
-    # Validate UDP packet sanity
-    if udp_packet_rx.sanity_check_failed:
+    fpp_udp.UdpPacket(packet_rx)
+
+    if packet_rx.parse_failed:
+        if __debug__:
+            self._logger.critical(f"{self.tracker} - {packet_rx.parse_failed}")
         return
 
     if __debug__:
-        self._logger.opt(ansi=True).info(f"<green>{udp_packet_rx.tracker}</green> - {udp_packet_rx}")
-
-    # Set universal names for src and dst IP addresses whether packet was delivered by IPv6 or IPv4 protocol
-    ip_packet_rx.ip_dst = ip_packet_rx.ip6_dst if ip_packet_rx.protocol == "IPv6" else ip_packet_rx.ip4_dst
-    ip_packet_rx.ip_src = ip_packet_rx.ip6_src if ip_packet_rx.protocol == "IPv6" else ip_packet_rx.ip4_src
+        self._logger.opt(ansi=True).info(f"<green>{packet_rx.tracker}</green> - {packet_rx.udp}")
 
     # Create UdpMetadata object and try to find matching UDP socket
     packet = UdpMetadata(
-        local_ip_address=ip_packet_rx.ip_dst,
-        local_port=udp_packet_rx.udp_dport,
-        remote_ip_address=ip_packet_rx.ip_src,
-        remote_port=udp_packet_rx.udp_sport,
-        raw_data=udp_packet_rx.raw_data,
-        tracker=udp_packet_rx.tracker,
+        local_ip_address=packet_rx.ip.dst,
+        local_port=packet_rx.udp.dport,
+        remote_ip_address=packet_rx.ip.src,
+        remote_port=packet_rx.udp.sport,
+        data=packet_rx.udp.data,
+        tracker=packet_rx.tracker,
     )
 
     for socket_id in packet.socket_id_patterns:
@@ -84,36 +84,35 @@ def phrx_udp(self, ip_packet_rx, udp_packet_rx):
             return
 
     # Silently drop packet if it has all zero source IP address
-    if ip_packet_rx.ip_src in {IPv4Address("0.0.0.0"), IPv6Address("::")}:
+    if packet_rx.ip.src in {IPv4Address("0.0.0.0"), IPv6Address("::")}:
         if __debug__:
             self._logger.debug(
-                f"Received UDP packet from {ip_packet_rx.ip_src}, port {udp_packet_rx.udp_sport} "
-                + f"to {ip_packet_rx.ip_dst}, port {udp_packet_rx.udp_dport}, dropping"
+                f"Received UDP packet from {packet_rx.ip.src}, port {packet_rx.udp.sport} to {packet_rx.ip.dst}, port {packet_rx.udp.dport}, dropping..."
             )
         return
 
     # Respond with ICMPv4 Port Unreachable message if no matching socket has been found
     if __debug__:
-        self._logger.debug(f"Received UDP packet from {ip_packet_rx.ip_src} to closed port {udp_packet_rx.udp_dport}, sending ICMPv4 Port Unreachable")
+        self._logger.debug(f"Received UDP packet from {packet_rx.ip.src} to closed port {packet_rx.udp.dport}, sending ICMPv4 Port Unreachable")
 
-    if ip_packet_rx.protocol == "IPv6":
-        self.phtx_icmp6(
-            ip6_src=ip_packet_rx.ip6_dst,
-            ip6_dst=ip_packet_rx.ip6_src,
-            icmp6_type=ps_icmp6.ICMP6_UNREACHABLE,
-            icmp6_code=ps_icmp6.ICMP6_UNREACHABLE__PORT,
-            icmp6_un_raw_data=ip_packet_rx.get_raw_packet(),
-            echo_tracker=udp_packet_rx.tracker,
+    if packet_rx.ip.ver == 6:
+        self._phtx_icmp6(
+            ip6_src=packet_rx.ip6.dst,
+            ip6_dst=packet_rx.ip6.src,
+            icmp6_type=fpp_icmp6.ICMP6_UNREACHABLE,
+            icmp6_code=fpp_icmp6.ICMP6_UNREACHABLE__PORT,
+            icmp6_un_data=packet_rx.ip.packet_copy,
+            echo_tracker=packet_rx.tracker,
         )
 
-    if ip_packet_rx.protocol == "IPv4":
-        self.phtx_icmp4(
-            ip4_src=ip_packet_rx.ip_dst,
-            ip4_dst=ip_packet_rx.ip_src,
-            icmp4_type=ps_icmp4.ICMP4_UNREACHABLE,
-            icmp4_code=ps_icmp4.ICMP4_UNREACHABLE__PORT,
-            icmp4_un_raw_data=ip_packet_rx.get_raw_packet(),
-            echo_tracker=udp_packet_rx.tracker,
+    if packet_rx.ip.ver == 4:
+        self._phtx_icmp4(
+            ip4_src=packet_rx.ip.dst,
+            ip4_dst=packet_rx.ip.src,
+            icmp4_type=fpp_icmp4.ICMP4_UNREACHABLE,
+            icmp4_code=fpp_icmp4.ICMP4_UNREACHABLE__PORT,
+            icmp4_un_data=packet_rx.ip.packet_copy,
+            echo_tracker=packet_rx.tracker,
         )
 
     return

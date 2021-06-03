@@ -46,7 +46,7 @@ import threading
 import loguru
 
 import stack
-from tcp_session_alt import TcpSession
+from tcp_session import TcpSession
 
 
 class TcpSocket:

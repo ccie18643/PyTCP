@@ -86,12 +86,12 @@ class UdpSocket:
     def send_to(packet):
         """Put data from UdpMetadata structure into TX ring"""
 
-        stack.packet_handler.phtx_udp(
+        stack.packet_handler._phtx_udp(
             ip_src=packet.local_ip_address,
             udp_sport=packet.local_port,
             ip_dst=packet.remote_ip_address,
             udp_dport=packet.remote_port,
-            raw_data=packet.raw_data,
+            udp_data=packet.data,
         )
 
     def receive_from(self, timeout=None):

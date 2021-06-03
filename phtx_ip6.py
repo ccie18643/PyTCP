@@ -42,7 +42,7 @@
 
 
 import config
-import ps_ip6
+import fpa_ip6
 from ipv6_address import IPv6Address
 
 
@@ -93,7 +93,7 @@ def validate_dst_ip6_address(self, ip6_dst):
     return ip6_dst
 
 
-def phtx_ip6(self, child_packet, ip6_dst, ip6_src, ip6_hop=config.ip6_default_hop):
+def _phtx_ip6(self, child_packet, ip6_dst, ip6_src, ip6_hop=config.ip6_default_hop):
     """Handle outbound IP packets"""
 
     # Check if IPv6 protocol support is enabled, if not then silently drop the packet
@@ -114,16 +114,17 @@ def phtx_ip6(self, child_packet, ip6_dst, ip6_src, ip6_hop=config.ip6_default_ho
     if not ip6_dst:
         return
 
-    # Check if IP packet can be sent out without fragmentation, if so send it out
-    if ps_ip6.IP6_HEADER_LEN + len(child_packet.raw_packet) <= config.mtu:
-        ip6_packet_tx = ps_ip6.Ip6Packet(ip6_src=ip6_src, ip6_dst=ip6_dst, ip6_hop=ip6_hop, child_packet=child_packet)
+    # assemble IPv6 apcket
+    ip6_packet_tx = fpa_ip6.Ip6Packet(src=ip6_src, dst=ip6_dst, hop=ip6_hop, child_packet=child_packet)
 
+    # Check if IP packet can be sent out without fragmentation, if so send it out
+    if len(ip6_packet_tx) <= config.mtu:
         if __debug__:
             self._logger.debug(f"{ip6_packet_tx.tracker} - {ip6_packet_tx}")
-        self.phtx_ether(child_packet=ip6_packet_tx)
+        self._phtx_ether(child_packet=ip6_packet_tx)
         return
 
-    # Fragment packet and send all fragments out *** Need to add this functionality ***
+    # Fragment packet and send out
     if __debug__:
-        self._logger.debug("Packet exceedes available MTU, IPv6 fragmentation needed... dropping...")
-    return
+        self._logger.debug(f"{ip6_packet_tx.tracker} - IPv6 packet len {len(ip6_packet_tx)} bytes, fragmentation needed")
+    self._phtx_ip6_ext_frag(ip6_packet_tx)

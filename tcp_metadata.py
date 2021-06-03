@@ -59,7 +59,7 @@ class TcpMetadata:
         win,
         wscale,
         mss,
-        raw_data,
+        data,
         tracker,
     ):
         self.local_ip_address = local_ip_address
@@ -75,7 +75,7 @@ class TcpMetadata:
         self.win = win
         self.wscale = wscale
         self.mss = mss
-        self.raw_data = raw_data
+        self.data = data
         self.tracker = tracker
 
     @property

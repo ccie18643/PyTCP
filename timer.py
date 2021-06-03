@@ -137,7 +137,7 @@ class Timer:
 
         self.timers[name] = timeout
 
-    def timer_expired(self, name):
+    def is_expired(self, name):
         """Check if timer expired"""
 
         if __debug__:

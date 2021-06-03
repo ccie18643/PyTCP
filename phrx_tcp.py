@@ -40,44 +40,43 @@
 # phrx_tcp.py - packet handler for inbound TCP packets
 #
 
-
+import fpp_tcp
 import stack
 from tcp_metadata import TcpMetadata
 
 PACKET_LOSS = False
 
 
-def phrx_tcp(self, ip_packet_rx, tcp_packet_rx):
+def _phrx_tcp(self, packet_rx):
     """Handle inbound TCP packets"""
 
-    # Validate TCP packet sanity
-    if tcp_packet_rx.sanity_check_failed:
+    fpp_tcp.TcpPacket(packet_rx)
+
+    if packet_rx.parse_failed:
+        if __debug__:
+            self._logger.critical(f"{self.tracker} - {packet_rx.parse_failed}")
         return
 
     if __debug__:
-        self._logger.opt(ansi=True).info(f"<green>{tcp_packet_rx.tracker}</green> - {tcp_packet_rx}")
-
-    # Set universal names for src and dst IP addresses whether packet was delivered by IPv6 or IPv4 protocol
-    ip_packet_rx.ip_dst = ip_packet_rx.ip6_dst if ip_packet_rx.protocol == "IPv6" else ip_packet_rx.ip4_dst
-    ip_packet_rx.ip_src = ip_packet_rx.ip6_src if ip_packet_rx.protocol == "IPv6" else ip_packet_rx.ip4_src
+        self._logger.opt(ansi=True).info(f"<green>{packet_rx.tracker}</green> - {packet_rx.tcp}")
 
     # Create TcpPacket object for further processing by TCP FSM
     packet = TcpMetadata(
-        local_ip_address=ip_packet_rx.ip_dst,
-        local_port=tcp_packet_rx.tcp_dport,
-        remote_ip_address=ip_packet_rx.ip_src,
-        remote_port=tcp_packet_rx.tcp_sport,
-        flag_syn=tcp_packet_rx.tcp_flag_syn,
-        flag_ack=tcp_packet_rx.tcp_flag_ack,
-        flag_fin=tcp_packet_rx.tcp_flag_fin,
-        flag_rst=tcp_packet_rx.tcp_flag_rst,
-        seq=tcp_packet_rx.tcp_seq,
-        ack=tcp_packet_rx.tcp_ack,
-        win=tcp_packet_rx.tcp_win,
-        wscale=tcp_packet_rx.tcp_wscale,
-        mss=tcp_packet_rx.tcp_mss,
-        raw_data=tcp_packet_rx.raw_data,
-        tracker=tcp_packet_rx.tracker,
+        local_ip_address=packet_rx.ip.dst,
+        local_port=packet_rx.tcp.dport,
+        remote_ip_address=packet_rx.ip.src,
+        remote_port=packet_rx.tcp.sport,
+        flag_syn=packet_rx.tcp.flag_syn,
+        flag_ack=packet_rx.tcp.flag_ack,
+        flag_fin=packet_rx.tcp.flag_fin,
+        flag_rst=packet_rx.tcp.flag_rst,
+        seq=packet_rx.tcp.seq,
+        ack=packet_rx.tcp.ack,
+        win=packet_rx.tcp.win,
+        wscale=packet_rx.tcp.wscale,
+        mss=packet_rx.tcp.mss,
+        data=packet_rx.tcp.data,
+        tracker=packet_rx.tracker,
     )
 
     # Check if packet should be dropped due to random packet loss enabled (for TCP retansmission testing)
@@ -107,17 +106,17 @@ def phrx_tcp(self, ip_packet_rx, tcp_packet_rx):
 
     # In case packet doesn't match any session send RST packet in response to it
     if __debug__:
-        self._logger.debug(f"Received TCP packet from {ip_packet_rx.ip_src} to closed port {tcp_packet_rx.tcp_dport}, responding with TCP RST packet")
-    self.phtx_tcp(
-        ip_src=ip_packet_rx.ip_dst,
-        ip_dst=ip_packet_rx.ip_src,
-        tcp_sport=tcp_packet_rx.tcp_dport,
-        tcp_dport=tcp_packet_rx.tcp_sport,
+        self._logger.debug(f"Received TCP packet from {packet_rx.ip.src} to closed port {packet_rx.tcp.dport}, responding with TCP RST packet")
+    self._phtx_tcp(
+        ip_src=packet_rx.ip.dst,
+        ip_dst=packet_rx.ip.src,
+        tcp_sport=packet_rx.tcp.dport,
+        tcp_dport=packet_rx.tcp.sport,
         tcp_seq=0,
-        tcp_ack=tcp_packet_rx.tcp_seq + tcp_packet_rx.tcp_flag_syn + tcp_packet_rx.tcp_flag_fin + len(tcp_packet_rx.raw_data),
+        tcp_ack=packet_rx.tcp.seq + packet_rx.tcp.flag_syn + packet_rx.tcp.flag_fin + len(packet_rx.tcp.data),
         tcp_flag_rst=True,
         tcp_flag_ack=True,
-        echo_tracker=tcp_packet_rx.tracker,
+        echo_tracker=packet_rx.tracker,
     )
 
     return

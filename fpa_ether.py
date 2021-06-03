@@ -37,42 +37,74 @@
 
 
 #
-# phtx_icmp4.py - packet handler for outbound ICMPv4 packets
+# fpa_ether.py - Fast Packet Assembler support class for Ethernet protocol
 #
 
 
-import config
-import fpa_icmp4
+import struct
+
+# Ethernet packet header
+
+# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+# |                                                               >
+# +    Destination MAC Address    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+# >                               |                               >
+# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+      Source MAC Address       +
+# >                                                               |
+# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+# |           EtherType           |
+# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 
 
-def _phtx_icmp4(
-    self,
-    ip4_src,
-    ip4_dst,
-    icmp4_type,
-    icmp4_code=0,
-    icmp4_ec_id=None,
-    icmp4_ec_seq=None,
-    icmp4_ec_data=None,
-    icmp4_un_data=None,
-    echo_tracker=None,
-):
-    """Handle outbound ICMPv4 packets"""
+ETHER_HEADER_LEN = 14
 
-    # Check if IPv4 protocol support is enabled, if not then silently drop the packet
-    if not config.ip4_support:
-        return
+ETHER_TYPE_MIN = 0x0600
+ETHER_TYPE_ARP = 0x0806
+ETHER_TYPE_IP4 = 0x0800
+ETHER_TYPE_IP6 = 0x86DD
 
-    icmp4_packet_tx = fpa_icmp4.Icmp4Packet(
-        type=icmp4_type,
-        code=icmp4_code,
-        ec_id=icmp4_ec_id,
-        ec_seq=icmp4_ec_seq,
-        ec_data=icmp4_ec_data,
-        un_data=icmp4_un_data,
-        echo_tracker=echo_tracker,
-    )
 
-    if __debug__:
-        self._logger.opt(ansi=True).info(f"<magenta>{icmp4_packet_tx.tracker}</magenta> - {icmp4_packet_tx}")
-    self._phtx_ip4(ip4_src=ip4_src, ip4_dst=ip4_dst, child_packet=icmp4_packet_tx)
+ETHER_TYPE_TABLE = {ETHER_TYPE_ARP: "ARP", ETHER_TYPE_IP4: "IPv4", ETHER_TYPE_IP6: "IPv6"}
+
+
+class EtherPacket:
+    """Ethernet packet support class"""
+
+    protocol = "ETHER"
+
+    def __init__(self, child_packet, src="00:00:00:00:00:00", dst="00:00:00:00:00:00"):
+        """Class constructor"""
+
+        assert child_packet.protocol in {"IP6", "IP4", "ARP"}, f"Not supported protocol: {child_packet.protocol}"
+        self._child_packet = child_packet
+
+        self.tracker = self._child_packet.tracker
+
+        self.dst = dst
+        self.src = src
+
+        if self._child_packet.protocol == "IP6":
+            self.type = ETHER_TYPE_IP6
+
+        if self._child_packet.protocol == "IP4":
+            self.type = ETHER_TYPE_IP4
+
+        if self._child_packet.protocol == "ARP":
+            self.type = ETHER_TYPE_ARP
+
+    def __str__(self):
+        """Packet log string"""
+
+        return f"ETHER {self.src} > {self.dst}, 0x{self.type:0>4x} ({ETHER_TYPE_TABLE.get(self.type, '???')})"
+
+    def __len__(self):
+        """Length of the packet"""
+
+        return ETHER_HEADER_LEN + len(self._child_packet)
+
+    def assemble_packet(self, frame, hptr):
+        """Assemble packet into the raw form"""
+
+        struct.pack_into("! 6s 6s H", frame, hptr, bytes.fromhex(self.dst.replace(":", "")), bytes.fromhex(self.src.replace(":", "")), self.type)
+
+        self._child_packet.assemble_packet(frame, hptr + ETHER_HEADER_LEN)

@@ -37,42 +37,54 @@
 
 
 #
-# phtx_icmp4.py - packet handler for outbound ICMPv4 packets
+# fpa_udp.py - Fast Packet Assembler support class for UDP protocol
 #
 
 
-import config
-import fpa_icmp4
+import struct
+
+from ip_helper import inet_cksum
+from tracker import Tracker
+
+# UDP packet header (RFC 768)
+
+# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+# |          Source port          |        Destination port       |
+# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+# |         Packet length         |            Checksum           |
+# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 
 
-def _phtx_icmp4(
-    self,
-    ip4_src,
-    ip4_dst,
-    icmp4_type,
-    icmp4_code=0,
-    icmp4_ec_id=None,
-    icmp4_ec_seq=None,
-    icmp4_ec_data=None,
-    icmp4_un_data=None,
-    echo_tracker=None,
-):
-    """Handle outbound ICMPv4 packets"""
+UDP_HEADER_LEN = 8
 
-    # Check if IPv4 protocol support is enabled, if not then silently drop the packet
-    if not config.ip4_support:
-        return
 
-    icmp4_packet_tx = fpa_icmp4.Icmp4Packet(
-        type=icmp4_type,
-        code=icmp4_code,
-        ec_id=icmp4_ec_id,
-        ec_seq=icmp4_ec_seq,
-        ec_data=icmp4_ec_data,
-        un_data=icmp4_un_data,
-        echo_tracker=echo_tracker,
-    )
+class UdpPacket:
+    """UDP packet support class"""
 
-    if __debug__:
-        self._logger.opt(ansi=True).info(f"<magenta>{icmp4_packet_tx.tracker}</magenta> - {icmp4_packet_tx}")
-    self._phtx_ip4(ip4_src=ip4_src, ip4_dst=ip4_dst, child_packet=icmp4_packet_tx)
+    protocol = "UDP"
+
+    def __init__(self, sport, dport, data=b"", echo_tracker=None):
+        """Class constructor"""
+
+        self.tracker = Tracker("TX", echo_tracker)
+
+        self.sport = sport
+        self.dport = dport
+        self.data = data
+        self.plen = UDP_HEADER_LEN + len(self.data)
+
+    def __str__(self):
+        """Packet log string"""
+
+        return f"UDP {self.sport} > {self.dport}, len {self.plen}"
+
+    def __len__(self):
+        """Length of the packet"""
+
+        return self.plen
+
+    def assemble_packet(self, frame, hptr, pshdr_sum):
+        """Assemble packet into the raw form"""
+
+        struct.pack_into(f"! HH HH {len(self.data)}s", frame, hptr, self.sport, self.dport, self.plen, 0, self.data)
+        struct.pack_into("! H", frame, hptr + 6, inet_cksum(frame, hptr, self.plen, pshdr_sum))

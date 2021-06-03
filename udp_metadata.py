@@ -44,12 +44,12 @@
 class UdpMetadata:
     """Store UDP metadata"""
 
-    def __init__(self, local_ip_address, local_port, remote_ip_address, remote_port, raw_data, tracker=None):
+    def __init__(self, local_ip_address, local_port, remote_ip_address, remote_port, data, tracker=None):
         self.local_ip_address = local_ip_address
         self.local_port = local_port
         self.remote_ip_address = remote_ip_address
         self.remote_port = remote_port
-        self.raw_data = raw_data
+        self.data = data
         self.tracker = tracker
 
     @property

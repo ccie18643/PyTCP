@@ -63,5 +63,5 @@ class ServiceUdpDiscard:
         print(f"Service UDP Discard: Socket created, bound to {local_ip_address}, port {local_port}")
 
         while True:
-            packet = socket.receive_from()
-            print(f"Service UDP Discard: Discarded message from {packet.remote_ip_address}, port {packet.remote_port} -", packet.raw_data)
+            packet_rx = socket.receive_from()
+            print(f"Service UDP Discard: Discarded message from {packet_rx.remote_ip_address}, port {packet_rx.remote_port}, {len(packet_rx.data)} bytes")

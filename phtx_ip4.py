@@ -41,10 +41,8 @@
 #
 
 
-import struct
-
 import config
-import ps_ip4
+import fpa_ip4
 from ipv4_address import IPv4Address
 
 
@@ -118,7 +116,7 @@ def validate_dst_ip4_address(self, ip4_dst):
     return ip4_dst
 
 
-def phtx_ip4(self, child_packet, ip4_dst, ip4_src, ip4_ttl=config.ip4_default_ttl):
+def _phtx_ip4(self, child_packet, ip4_dst, ip4_src, ip4_ttl=config.ip4_default_ttl):
     """Handle outbound IP packets"""
 
     # Check if IPv4 protocol support is enabled, if not then silently drop the packet
@@ -139,64 +137,38 @@ def phtx_ip4(self, child_packet, ip4_dst, ip4_src, ip4_ttl=config.ip4_default_tt
     if not ip4_dst:
         return
 
-    # Generate new IPv4 ID
-    self.ip4_packet_id += 1
-    if self.ip4_packet_id > 65535:
-        self.ip4_packet_id = 1
+    # Assemble IPv4 packet
+    ip4_packet_tx = fpa_ip4.Ip4Packet(src=ip4_src, dst=ip4_dst, ttl=ip4_ttl, child_packet=child_packet)
 
-    # Check if packet can be sent out without fragmentation, if so send it out
-    if ps_ip4.IP4_HEADER_LEN + len(child_packet.raw_packet) <= config.mtu:
-        ip4_packet_tx = ps_ip4.Ip4Packet(ip4_src=ip4_src, ip4_dst=ip4_dst, ip4_packet_id=self.ip4_packet_id, child_packet=child_packet)
-
+    # Send packet out if it's size doesn't exceed mtu
+    if len(ip4_packet_tx) <= config.mtu:
         if __debug__:
             self._logger.debug(f"{ip4_packet_tx.tracker} - {ip4_packet_tx}")
-        self.phtx_ether(child_packet=ip4_packet_tx)
+        self._phtx_ether(child_packet=ip4_packet_tx)
         return
 
-    # Fragment packet and send all fragments out
+    # Fragment packet and send out
     if __debug__:
-        self._logger.debug("Packet exceedes available MTU, IP fragmentation needed...")
-
-    if child_packet.protocol == "ICMPv4":
-        ip4_proto = ps_ip4.IP4_PROTO_ICMP4
-        raw_data = child_packet.get_raw_packet()
-
-    if child_packet.protocol in {"UDP", "TCP"}:
-        ip4_proto = ps_ip4.IP4_PROTO_UDP if child_packet.protocol == "UDP" else ps_ip4.IP4_PROTO_TCP
-        raw_data = child_packet.get_raw_packet(
-            struct.pack(
-                "! 4s 4s BBH",
-                ip4_src.packed,
-                ip4_dst.packed,
-                0,
-                ip4_proto,
-                len(child_packet.raw_packet),
+        self._logger.debug(f"{ip4_packet_tx.tracker} - IPv4 packet len {len(ip4_packet_tx)} bytes, fragmentation needed")
+        data = bytearray(ip4_packet_tx.dlen)
+        ip4_packet_tx._child_packet.assemble_packet(data, 0, ip4_packet_tx.pshdr_sum)
+        data_mtu = (config.mtu - ip4_packet_tx.hlen) & 0b1111111111111000
+        data_frags = [data[_ : data_mtu + _] for _ in range(0, len(data), data_mtu)]
+        offset = 0
+        self.ip4_id += 1
+        for data_frag in data_frags:
+            ip4_frag_tx = fpa_ip4.Ip4Frag(
+                src=ip4_src,
+                dst=ip4_dst,
+                ttl=ip4_ttl,
+                data=data_frag,
+                offset=offset,
+                flag_mf=data_frag is not data_frags[-1],
+                id=self.ip4_id,
+                proto=ip4_packet_tx.proto,
             )
-        )
-
-    raw_data_mtu = (config.mtu - ps_ip4.IP4_HEADER_LEN) & 0b1111111111111000
-    raw_data_fragments = [raw_data[_ : raw_data_mtu + _] for _ in range(0, len(raw_data), raw_data_mtu)]
-
-    pointer = 0
-    offset = 0
-
-    for raw_data_fragment in raw_data_fragments:
-        ip4_packet_tx = ps_ip4.Ip4Packet(
-            ip4_src=ip4_src,
-            ip4_dst=ip4_dst,
-            ip4_proto=ip4_proto,
-            ip4_packet_id=self.ip4_packet_id,
-            ip4_flag_mf=pointer < len(raw_data_fragments) - 1,
-            ip4_frag_offset=offset,
-            ip4_ttl=ip4_ttl,
-            raw_data=raw_data_fragment,
-            tracker=child_packet.tracker,
-        )
-        pointer += 1
-        offset += len(raw_data_fragment)
-
-        if __debug__:
-            self._logger.debug(f"{ip4_packet_tx.tracker} - {ip4_packet_tx}")
-        self.phtx_ether(child_packet=ip4_packet_tx)
-
-    return
+            if __debug__:
+                self._logger.debug(f"{ip4_frag_tx.tracker} - {ip4_frag_tx}")
+            offset += len(data_frag)
+            self._phtx_ether(child_packet=ip4_frag_tx)
+        return

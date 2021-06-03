@@ -41,31 +41,34 @@
 #
 
 
-import ps_icmp4
+import fpp_icmp4
 
 
-def phrx_icmp4(self, ip4_packet_rx, icmp4_packet_rx):
+def _phrx_icmp4(self, packet_rx):
     """Handle inbound ICMPv4 packets"""
 
-    # Validate ICMPv4 packet sanity
-    if icmp4_packet_rx.sanity_check_failed:
+    fpp_icmp4.Icmp4Packet(packet_rx)
+
+    if packet_rx.parse_failed:
+        if __debug__:
+            self._logger.critical(f"{packet_rx.tracker} - {packet_rx.parse_failed}")
         return
 
     if __debug__:
-        self._logger.opt(ansi=True).info(f"<green>{icmp4_packet_rx.tracker}</green> - {icmp4_packet_rx}")
+        self._logger.opt(ansi=True).info(f"<green>{packet_rx.tracker}</green> - {packet_rx.icmp4}")
 
     # Respond to ICMPv4 Echo Request packet
-    if icmp4_packet_rx.icmp4_type == ps_icmp4.ICMP4_ECHOREQUEST:
+    if packet_rx.icmp4.type == fpp_icmp4.ICMP4_ECHO_REQUEST:
         if __debug__:
-            self._logger.debug(f"Received ICMPv4 Echo Request packet from {ip4_packet_rx.ip4_src}, sending reply")
+            self._logger.debug(f"Received ICMPv4 Echo Request packet from {packet_rx.ip4.src}, sending reply...")
 
-        self.phtx_icmp4(
-            ip4_src=ip4_packet_rx.ip4_dst,
-            ip4_dst=ip4_packet_rx.ip4_src,
-            icmp4_type=ps_icmp4.ICMP4_ECHOREPLY,
-            icmp4_ec_id=icmp4_packet_rx.icmp4_ec_id,
-            icmp4_ec_seq=icmp4_packet_rx.icmp4_ec_seq,
-            icmp4_ec_raw_data=icmp4_packet_rx.icmp4_ec_raw_data,
-            echo_tracker=icmp4_packet_rx.tracker,
+        self._phtx_icmp4(
+            ip4_src=packet_rx.ip4.dst,
+            ip4_dst=packet_rx.ip4.src,
+            icmp4_type=fpp_icmp4.ICMP4_ECHO_REPLY,
+            icmp4_ec_id=packet_rx.icmp4.ec_id,
+            icmp4_ec_seq=packet_rx.icmp4.ec_seq,
+            icmp4_ec_data=packet_rx.icmp4.ec_data,
+            echo_tracker=packet_rx.tracker,
         )
         return

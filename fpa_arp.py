@@ -37,42 +37,88 @@
 
 
 #
-# phtx_icmp4.py - packet handler for outbound ICMPv4 packets
+# fpa_arp.py - Fast Packet Assembler support class for ARP protocol
 #
 
 
-import config
-import fpa_icmp4
+import struct
+
+from ipv4_address import IPv4Address
+from tracker import Tracker
+
+# ARP packet header - IPv4 stack version only
+
+# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+# |         Hardware Type         |         Protocol Type         |
+# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+# |  Hard Length  |  Proto Length |           Operation           |
+# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+# |                                                               >
+# +        Sender Mac Address     +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+# >                               |       Sender IP Address       >
+# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+# >                               |                               >
+# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+       Target MAC Address      |
+# >                                                               |
+# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+# |                       Target IP Address                       |
+# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 
 
-def _phtx_icmp4(
-    self,
-    ip4_src,
-    ip4_dst,
-    icmp4_type,
-    icmp4_code=0,
-    icmp4_ec_id=None,
-    icmp4_ec_seq=None,
-    icmp4_ec_data=None,
-    icmp4_un_data=None,
-    echo_tracker=None,
-):
-    """Handle outbound ICMPv4 packets"""
+ARP_HEADER_LEN = 28
 
-    # Check if IPv4 protocol support is enabled, if not then silently drop the packet
-    if not config.ip4_support:
-        return
+ARP_OP_REQUEST = 1
+ARP_OP_REPLY = 2
 
-    icmp4_packet_tx = fpa_icmp4.Icmp4Packet(
-        type=icmp4_type,
-        code=icmp4_code,
-        ec_id=icmp4_ec_id,
-        ec_seq=icmp4_ec_seq,
-        ec_data=icmp4_ec_data,
-        un_data=icmp4_un_data,
-        echo_tracker=echo_tracker,
-    )
 
-    if __debug__:
-        self._logger.opt(ansi=True).info(f"<magenta>{icmp4_packet_tx.tracker}</magenta> - {icmp4_packet_tx}")
-    self._phtx_ip4(ip4_src=ip4_src, ip4_dst=ip4_dst, child_packet=icmp4_packet_tx)
+class ArpPacket:
+    """ARP packet support class"""
+
+    protocol = "ARP"
+
+    def __init__(self, sha, spa, tpa, tha="00:00:00:00:00:00", oper=ARP_OP_REQUEST, echo_tracker=None):
+        """Class constructor"""
+
+        self.tracker = Tracker("TX", echo_tracker)
+
+        self.hrtype = 1
+        self.prtype = 0x0800
+        self.hrlen = 6
+        self.prlen = 4
+        self.oper = oper
+        self.sha = sha
+        self.spa = IPv4Address(spa)
+        self.tha = tha
+        self.tpa = IPv4Address(tpa)
+
+    def __str__(self):
+        """Packet log string"""
+
+        if self.oper == ARP_OP_REQUEST:
+            return f"ARP request {self.spa} / {self.sha} > {self.tpa} / {self.tha}"
+        if self.oper == ARP_OP_REPLY:
+            return f"ARP reply {self.spa} / {self.sha} > {self.tpa} / {self.tha}"
+        return f"ARP unknown operation {self.oper}"
+
+    def __len__(self):
+        """Length of the packet"""
+
+        return ARP_HEADER_LEN
+
+    def assemble_packet(self, frame, hptr):
+        """Assemble packet into the raw form"""
+
+        return struct.pack_into(
+            "!HH BBH 6s 4s 6s 4s",
+            frame,
+            hptr,
+            self.hrtype,
+            self.prtype,
+            self.hrlen,
+            self.prlen,
+            self.oper,
+            bytes.fromhex(self.sha.replace(":", "")),
+            IPv4Address(self.spa).packed,
+            bytes.fromhex(self.tha.replace(":", "")),
+            IPv4Address(self.tpa).packed,
+        )

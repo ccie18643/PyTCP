@@ -78,7 +78,7 @@ class ClientIcmpEcho:
                     icmp4_code=0,
                     icmp4_ec_id=flow_id,
                     icmp4_ec_seq=message_seq,
-                    icmp4_ec_raw_data=message,
+                    icmp4_ec_data=message,
                 )
 
             if local_ip_address.version == 6:
@@ -89,7 +89,7 @@ class ClientIcmpEcho:
                     icmp6_code=0,
                     icmp6_ec_id=flow_id,
                     icmp6_ec_seq=message_seq,
-                    icmp6_ec_raw_data=message,
+                    icmp6_ec_data=message,
                 )
 
             print(f"Client ICMP Echo: Sent ICMP Echo ({flow_id}/{message_seq}) to {remote_ip_address} - {message}")

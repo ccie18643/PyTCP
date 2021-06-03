@@ -37,42 +37,33 @@
 
 
 #
-# phtx_icmp4.py - packet handler for outbound ICMPv4 packets
+# phtx_ip6_ext_frag.py - packet handler for outbound IPv6 fragment extension header
 #
 
 
 import config
-import fpa_icmp4
+import fpa_ip6
+import fpa_ip6_ext_frag
 
 
-def _phtx_icmp4(
-    self,
-    ip4_src,
-    ip4_dst,
-    icmp4_type,
-    icmp4_code=0,
-    icmp4_ec_id=None,
-    icmp4_ec_seq=None,
-    icmp4_ec_data=None,
-    icmp4_un_data=None,
-    echo_tracker=None,
-):
-    """Handle outbound ICMPv4 packets"""
+def _phtx_ip6_ext_frag(self, ip6_packet_tx):
+    """Handle outbound IPv6 fagment extension header"""
 
-    # Check if IPv4 protocol support is enabled, if not then silently drop the packet
-    if not config.ip4_support:
+    # Check if IPv6 protocol support is enabled, if not then silently drop the packet
+    if not config.ip6_support:
         return
 
-    icmp4_packet_tx = fpa_icmp4.Icmp4Packet(
-        type=icmp4_type,
-        code=icmp4_code,
-        ec_id=icmp4_ec_id,
-        ec_seq=icmp4_ec_seq,
-        ec_data=icmp4_ec_data,
-        un_data=icmp4_un_data,
-        echo_tracker=echo_tracker,
-    )
-
-    if __debug__:
-        self._logger.opt(ansi=True).info(f"<magenta>{icmp4_packet_tx.tracker}</magenta> - {icmp4_packet_tx}")
-    self._phtx_ip4(ip4_src=ip4_src, ip4_dst=ip4_dst, child_packet=icmp4_packet_tx)
+    data = bytearray(ip6_packet_tx.dlen)
+    ip6_packet_tx._child_packet.assemble_packet(data, 0, ip6_packet_tx.pshdr_sum)
+    data_mtu = (config.mtu - fpa_ip6.IP6_HEADER_LEN - fpa_ip6_ext_frag.IP6_EXT_FRAG_LEN) & 0b1111111111111000
+    data_frags = [data[_ : data_mtu + _] for _ in range(0, len(data), data_mtu)]
+    offset = 0
+    self.ip6_id += 1
+    for data_frag in data_frags:
+        ip6_ext_frag_tx = fpa_ip6_ext_frag.Ip6ExtFrag(
+            next=ip6_packet_tx.next, offset=offset, flag_mf=data_frag is not data_frags[-1], id=self.ip6_id, data=data_frag
+        )
+        if __debug__:
+            self._logger.debug(f"{ip6_ext_frag_tx.tracker} - {ip6_ext_frag_tx}")
+        self._phtx_ip6(ip6_src=ip6_packet_tx.src, ip6_dst=ip6_packet_tx.dst, child_packet=ip6_ext_frag_tx)
+        offset += len(data_frag)

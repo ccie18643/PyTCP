@@ -37,42 +37,80 @@
 
 
 #
-# phtx_icmp4.py - packet handler for outbound ICMPv4 packets
+# fpa_ip6_ext_frag.py - Fast Packet Assembler support class for IPv6 fragment extension header
 #
 
 
-import config
-import fpa_icmp4
+import struct
+
+from tracker import Tracker
+
+# IPv6 protocol fragmentation extension header
+
+# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+# | Next header   |   Reserved    |         Offset          |R|R|M|
+# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+# |                               Id                              |
+# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+
+IP6_EXT_FRAG_LEN = 8
+
+IP6_NEXT_HEADER_TCP = 6
+IP6_NEXT_HEADER_UDP = 17
+IP6_NEXT_HEADER_ICMP6 = 58
+
+IP6_NEXT_HEADER_TABLE = {IP6_NEXT_HEADER_TCP: "TCP", IP6_NEXT_HEADER_UDP: "UDP", IP6_NEXT_HEADER_ICMP6: "ICMPv6"}
 
 
-def _phtx_icmp4(
-    self,
-    ip4_src,
-    ip4_dst,
-    icmp4_type,
-    icmp4_code=0,
-    icmp4_ec_id=None,
-    icmp4_ec_seq=None,
-    icmp4_ec_data=None,
-    icmp4_un_data=None,
-    echo_tracker=None,
-):
-    """Handle outbound ICMPv4 packets"""
+class Ip6ExtFrag:
+    """IPv6 fragment extension header support class"""
 
-    # Check if IPv4 protocol support is enabled, if not then silently drop the packet
-    if not config.ip4_support:
-        return
+    protocol = "IP6_EXT_FRAG"
 
-    icmp4_packet_tx = fpa_icmp4.Icmp4Packet(
-        type=icmp4_type,
-        code=icmp4_code,
-        ec_id=icmp4_ec_id,
-        ec_seq=icmp4_ec_seq,
-        ec_data=icmp4_ec_data,
-        un_data=icmp4_un_data,
-        echo_tracker=echo_tracker,
-    )
+    def __init__(
+        self,
+        next,
+        offset,
+        flag_mf,
+        id,
+        data,
+    ):
+        """Class constructor"""
 
-    if __debug__:
-        self._logger.opt(ansi=True).info(f"<magenta>{icmp4_packet_tx.tracker}</magenta> - {icmp4_packet_tx}")
-    self._phtx_ip4(ip4_src=ip4_src, ip4_dst=ip4_dst, child_packet=icmp4_packet_tx)
+        self.tracker = Tracker("TX")
+
+        self.next = next
+        self.offset = offset
+        self.flag_mf = flag_mf
+        self.id = id
+        self.data = data
+
+        self.dlen = len(data)
+        self.plen = len(self)
+
+    def __str__(self):
+        """Packet log string"""
+
+        return (
+            f"IPv6_FRAG id {self.id}{', MF' if self.flag_mf else ''}, offset {self.offset}"
+            + f", next {self.next} ({IP6_NEXT_HEADER_TABLE.get(self.next, '???')})"
+        )
+
+    def __len__(self):
+        """Length of the packet"""
+
+        return IP6_EXT_FRAG_LEN + len(self.data)
+
+    def assemble_packet(self, frame, hptr, _):
+        """Assemble packet into the raw form"""
+
+        struct.pack_into(
+            f"! BBH L {self.dlen}s",
+            frame,
+            hptr,
+            self.next,
+            0,
+            self.offset | self.flag_mf,
+            self.id,
+            self.data,
+        )

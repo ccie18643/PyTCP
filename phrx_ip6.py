@@ -41,36 +41,40 @@
 #
 
 
-import ps_icmp6
-import ps_ip6
-import ps_tcp
-import ps_udp
+import fpp_ip6
 
 
-def phrx_ip6(self, ip6_packet_rx):
-    """Handle inbound IP packets"""
+def _phrx_ip6(self, packet_rx):
+    """Handle inbound IPv6 packets"""
 
-    # Validate IPv6 packet sanity
-    if ip6_packet_rx.sanity_check_failed:
+    fpp_ip6.Ip6Packet(packet_rx)
+
+    if packet_rx.parse_failed:
+        if __debug__:
+            self._logger.critical(f"{packet_rx.tracker} - {packet_rx.parse_failed}")
         return
 
     if __debug__:
-        self._logger.debug(f"{ip6_packet_rx.tracker} - {ip6_packet_rx}")
+        self._logger.debug(f"{packet_rx.tracker} - {packet_rx.ip6}")
 
     # Check if received packet has been sent to us directly or by unicast or multicast
-    if ip6_packet_rx.ip6_dst not in {*self.ip6_unicast, *self.ip6_multicast}:
+    if packet_rx.ip6.dst not in {*self.ip6_unicast, *self.ip6_multicast}:
         if __debug__:
-            self._logger.debug(f"{ip6_packet_rx.tracker} - IP packet not destined for this stack, dropping")
+            self._logger.debug(f"{packet_rx.tracker} - IP packet not destined for this stack, dropping...")
         return
 
-    if ip6_packet_rx.ip6_next == ps_ip6.IP6_NEXT_HEADER_ICMP6:
-        self.phrx_icmp6(ip6_packet_rx, ps_icmp6.Icmp6Packet(ip6_packet_rx))
+    if packet_rx.ip6.next == fpp_ip6.IP6_NEXT_HEADER_EXT_FRAG:
+        self._phrx_ip6_ext_frag(packet_rx)
         return
 
-    if ip6_packet_rx.ip6_next == ps_ip6.IP6_NEXT_HEADER_UDP:
-        self.phrx_udp(ip6_packet_rx, ps_udp.UdpPacket(ip6_packet_rx))
+    if packet_rx.ip6.next == fpp_ip6.IP6_NEXT_HEADER_ICMP6:
+        self._phrx_icmp6(packet_rx)
         return
 
-    if ip6_packet_rx.ip6_next == ps_ip6.IP6_NEXT_HEADER_TCP:
-        self.phrx_tcp(ip6_packet_rx, ps_tcp.TcpPacket(ip6_packet_rx))
+    if packet_rx.ip6.next == fpp_ip6.IP6_NEXT_HEADER_UDP:
+        self._phrx_udp(packet_rx)
+        return
+
+    if packet_rx.ip6.next == fpp_ip6.IP6_NEXT_HEADER_TCP:
+        self._phrx_tcp(packet_rx)
         return

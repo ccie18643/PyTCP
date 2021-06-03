@@ -42,26 +42,26 @@
 
 
 import config
-import ps_arp
+import fpa_arp
 
 
-def phtx_arp(self, ether_src, ether_dst, arp_oper, arp_sha, arp_spa, arp_tha, arp_tpa, echo_tracker=None):
+def _phtx_arp(self, ether_src, ether_dst, arp_oper, arp_sha, arp_spa, arp_tha, arp_tpa, echo_tracker=None):
     """Handle outbound ARP packets"""
 
     # Check if IPv4 protocol support is enabled, if not then silently drop the packet
     if not config.ip4_support:
         return
 
-    arp_packet_tx = ps_arp.ArpPacket(
-        arp_oper=arp_oper,
-        arp_sha=arp_sha,
-        arp_spa=arp_spa,
-        arp_tha=arp_tha,
-        arp_tpa=arp_tpa,
+    arp_packet_tx = fpa_arp.ArpPacket(
+        oper=arp_oper,
+        sha=arp_sha,
+        spa=arp_spa,
+        tha=arp_tha,
+        tpa=arp_tpa,
         echo_tracker=echo_tracker,
     )
 
     if __debug__:
         self._logger.opt(ansi=True).info(f"<magenta>{arp_packet_tx.tracker}</magenta> - {arp_packet_tx}")
 
-    self.phtx_ether(ether_src=ether_src, ether_dst=ether_dst, child_packet=arp_packet_tx)
+    self._phtx_ether(ether_src=ether_src, ether_dst=ether_dst, child_packet=arp_packet_tx)

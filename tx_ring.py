@@ -46,6 +46,8 @@ import threading
 
 import loguru
 
+import config
+
 
 class TxRing:
     """Support for sending packets to the network"""
@@ -53,49 +55,47 @@ class TxRing:
     def __init__(self, tap):
         """Initialize access to tap interface and the outbound queue"""
 
-        self.tap = tap
-
-        self.tx_ring = []
         if __debug__:
             self._logger = loguru.logger.bind(object_name="tx_ring.")
 
+        self.tap = tap
+        self.tx_ring = []
+
         self.packet_enqueued = threading.Semaphore(0)
 
-        threading.Thread(target=self.__thread_dequeue).start()
+        threading.Thread(target=self.__thread_transmit).start()
         if __debug__:
             self._logger.debug("Started TX ring")
 
-    def __thread_dequeue(self):
-        """Dequeue packet from TX ring"""
+        self.frame = bytearray(config.mtu + 14)
+
+    def __thread_transmit(self):
+        """Dequeue packet from TX ring and send it out"""
 
         while True:
-            # Wait till packets is available int he queue the pick it up
             self.packet_enqueued.acquire()
-            ether_packet_tx = self.tx_ring.pop(0)
+            packet_tx = self.tx_ring.pop(0)
+            if (packet_tx_len := len(packet_tx)) > config.mtu + 14:
+                if __debug__:
+                    self._logger.error(f"{packet_tx.tracker} - Unable to send frame, frame len ({packet_tx_len}) > mtu ({config.mtu + 14})")
+                continue
+            packet_tx.assemble_packet(self.frame, 0)
+
+            try:
+                os.write(self.tap, memoryview(self.frame)[:packet_tx_len])
+            except OSError as error:
+                self._logger.error(f"{packet_tx.tracker} - Unable to send frame, OSError: {error}")
+                continue
+
             if __debug__:
-                self._logger.opt(ansi=True).debug(f"{ether_packet_tx.tracker}")
-            self.__transmit(ether_packet_tx)
+                self._logger.opt(ansi=True).debug(
+                    f"<magenta>[TX]</> {packet_tx.tracker}<yellow>{packet_tx.tracker.latency}</> - sent frame, {len(packet_tx)} bytes"
+                )
 
-    def __transmit(self, ether_packet_tx):
-        """Transmit packet"""
+    def enqueue(self, packet_tx):
+        """Enqueue outbound packet into TX ring"""
 
-        os.write(self.tap, ether_packet_tx.get_raw_packet())
+        self.tx_ring.append(packet_tx)
         if __debug__:
-            self._logger.opt(ansi=True).debug(
-                f"<magenta>[TX]</> {ether_packet_tx.tracker}<yellow>{ether_packet_tx.tracker.latency}</> - {len(ether_packet_tx)} bytes"
-            )
-
-    def enqueue(self, ether_packet_tx, urgent=False):
-        """Enqueue outbound Ethernet packet to TX ring"""
-
-        if urgent:
-            self.tx_ring.insert(0, ether_packet_tx)
-            if __debug__:
-                self._logger.opt(ansi=True).debug(f"{ether_packet_tx.tracker}, priority: Urgent, queue len: {len(self.tx_ring)}")
-
-        else:
-            self.tx_ring.append(ether_packet_tx)
-            if __debug__:
-                self._logger.opt(ansi=True).debug(f"{ether_packet_tx.tracker}, priority: Normal, queue len: {len(self.tx_ring)}")
-
+            self._logger.opt(ansi=True).debug(f"{packet_tx.tracker}, queue len: {len(self.tx_ring)}")
         self.packet_enqueued.release()
