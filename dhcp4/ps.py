@@ -32,7 +32,7 @@
 import binascii
 import struct
 
-from misc.ipv4_address import IPv4Address
+from lib.ip4_address import Ip4Address, Ip4Mask
 
 # DHCP packet header (RFC 2131)
 
@@ -136,10 +136,10 @@ class Packet:
         dhcp_op=OP_REQUEST,
         dhcp_xid=None,
         dhcp_flag_b=False,
-        dhcp_ciaddr=IPv4Address("0.0.0.0"),
-        dhcp_yiaddr=IPv4Address("0.0.0.0"),
-        dhcp_siaddr=IPv4Address("0.0.0.0"),
-        dhcp_giaddr=IPv4Address("0.0.0.0"),
+        dhcp_ciaddr=Ip4Address("0.0.0.0"),
+        dhcp_yiaddr=Ip4Address("0.0.0.0"),
+        dhcp_siaddr=Ip4Address("0.0.0.0"),
+        dhcp_giaddr=Ip4Address("0.0.0.0"),
         dhcp_chaddr=None,
         dhcp_subnet_mask=None,
         dhcp_router=None,
@@ -167,10 +167,10 @@ class Packet:
             self.dhcp_xid = struct.unpack("!L", raw_header[4:8])[0]
             self.dhcp_secs = struct.unpack("!H", raw_header[8:10])[0]
             self.dhcp_flag_b = bool(struct.unpack("!H", raw_header[10:12])[0] & 0b1000000000000000)
-            self.dhcp_ciaddr = IPv4Address(raw_header[12:16])
-            self.dhcp_yiaddr = IPv4Address(raw_header[16:20])
-            self.dhcp_siaddr = IPv4Address(raw_header[20:24])
-            self.dhcp_giaddr = IPv4Address(raw_header[24:28])
+            self.dhcp_ciaddr = Ip4Address(raw_header[12:16])
+            self.dhcp_yiaddr = Ip4Address(raw_header[16:20])
+            self.dhcp_siaddr = Ip4Address(raw_header[20:24])
+            self.dhcp_giaddr = Ip4Address(raw_header[24:28])
             self.dhcp_chaddr = raw_header[28 : 28 + self.dhcp_hlen]
             self.dhcp_sname = raw_header[44:108]
             self.dhcp_file = raw_header[108:236]
@@ -280,11 +280,11 @@ class Packet:
             self.dhcp_xid,
             self.dhcp_secs,
             self.dhcp_flag_b << 15,
-            self.dhcp_ciaddr.packed,
-            self.dhcp_yiaddr.packed,
-            self.dhcp_siaddr.packed,
-            self.dhcp_giaddr.packed,
-            (bytes.fromhex(self.dhcp_chaddr.replace(":", "")) + b"\0" * 16)[:16],
+            bytes(self.dhcp_ciaddr),
+            bytes(self.dhcp_yiaddr),
+            bytes(self.dhcp_siaddr),
+            bytes(self.dhcp_giaddr),
+            bytes(self.dhcp_chaddr) + b"\0" * 10,
             self.dhcp_sname,
             self.dhcp_file,
             b"\x63\x82\x53\x63",
@@ -461,15 +461,15 @@ class OptSubnetMask:
         if raw_option:
             self.opt_code = raw_option[0]
             self.opt_len = raw_option[1]
-            self.opt_subnet_mask = IPv4Address(raw_option[2:6])
+            self.opt_subnet_mask = Ip4Mask(raw_option[2:6])
         else:
             self.opt_code = OPT_SUBNET_MASK
             self.opt_len = OPT_SUBNET_MASK_LEN
-            self.opt_subnet_mask = IPv4Address(opt_subnet_mask)
+            self.opt_subnet_mask = Ip4Mask(opt_subnet_mask)
 
     @property
     def raw_option(self):
-        return struct.pack("! BB 4s", self.opt_code, self.opt_len, self.opt_subnet_mask.packed)
+        return struct.pack("! BB 4s", self.opt_code, self.opt_len, bytes(self.opt_subnet_mask))
 
     def __str__(self):
         return f"subnet_mask {self.opt_subnet_mask}"
@@ -488,15 +488,15 @@ class OptRouter:
         if raw_option:
             self.opt_code = raw_option[0]
             self.opt_len = raw_option[1]
-            self.opt_router = [IPv4Address(raw_option[_ : _ + 4]) for _ in range(2, 2 + self.opt_len, 4)]
+            self.opt_router = [Ip4Address(raw_option[_ : _ + 4]) for _ in range(2, 2 + self.opt_len, 4)]
         else:
             self.opt_code = OPT_ROUTER
             self.opt_len = len(opt_router) * 4
-            self.opt_router = [IPv4Address(_) for _ in opt_router]
+            self.opt_router = [Ip4Address(_) for _ in opt_router]
 
     @property
     def raw_option(self):
-        return struct.pack(f"! BB {len(self.opt_router) * 4}s", self.opt_code, self.opt_len, b"".join(_.packed for _ in self.opt_router))
+        return struct.pack(f"! BB {len(self.opt_router) * 4}s", self.opt_code, self.opt_len, b"".join(bytes(_) for _ in self.opt_router))
 
     def __str__(self):
         return f"router {self.opt_router}"
@@ -515,15 +515,15 @@ class OptDns:
         if raw_option:
             self.opt_code = raw_option[0]
             self.opt_len = raw_option[1]
-            self.opt_dns = [IPv4Address(raw_option[_ : _ + 4]) for _ in range(2, 2 + self.opt_len, 4)]
+            self.opt_dns = [Ip4Address(raw_option[_ : _ + 4]) for _ in range(2, 2 + self.opt_len, 4)]
         else:
             self.opt_code = OPT_DNS
             self.opt_len = len(opt_dns) * 4
-            self.opt_dns = [IPv4Address(_) for _ in opt_dns]
+            self.opt_dns = [Ip4Address(_) for _ in opt_dns]
 
     @property
     def raw_option(self):
-        return struct.pack(f"! BB {len(self.opt_dns) * 4}s", self.opt_code, self.opt_len, b"".join(_.packed for _ in self.opt_dns))
+        return struct.pack(f"! BB {len(self.opt_dns) * 4}s", self.opt_code, self.opt_len, b"".join(bytes(_) for _ in self.opt_dns))
 
     def __str__(self):
         return f"router {self.opt_dns}"
@@ -596,15 +596,15 @@ class OptReqIpAddr:
         if raw_option:
             self.opt_code = raw_option[0]
             self.opt_len = raw_option[1]
-            self.opt_req_ip4_addr = IPv4Address(raw_option[2:6])
+            self.opt_req_ip4_addr = Ip4Address(raw_option[2:6])
         else:
             self.opt_code = OPT_REQ_IP4_ADDR
             self.opt_len = OPT_REQ_IP4_ADDR_LEN
-            self.opt_req_ip4_addr = IPv4Address(opt_req_ip4_addr)
+            self.opt_req_ip4_addr = Ip4Address(opt_req_ip4_addr)
 
     @property
     def raw_option(self):
-        return struct.pack("! BB 4s", self.opt_code, self.opt_len, self.opt_req_ip4_addr.packed)
+        return struct.pack("! BB 4s", self.opt_code, self.opt_len, bytes(self.opt_req_ip4_addr))
 
     def __str__(self):
         return f"req_ip4_addr {self.opt_req_ip4_addr}"
@@ -677,15 +677,15 @@ class OptSrvId:
         if raw_option:
             self.opt_code = raw_option[0]
             self.opt_len = raw_option[1]
-            self.opt_srv_id = IPv4Address(raw_option[2:6])
+            self.opt_srv_id = Ip4Address(raw_option[2:6])
         else:
             self.opt_code = OPT_SRV_ID
             self.opt_len = OPT_SRV_ID_LEN
-            self.opt_srv_id = IPv4Address(opt_srv_id)
+            self.opt_srv_id = Ip4Address(opt_srv_id)
 
     @property
     def raw_option(self):
-        return struct.pack("! BB 4s", self.opt_code, self.opt_len, self.opt_srv_id.packed)
+        return struct.pack("! BB 4s", self.opt_code, self.opt_len, bytes(self.opt_srv_id))
 
     def __str__(self):
         return f"srv_id {self.opt_srv_id}"

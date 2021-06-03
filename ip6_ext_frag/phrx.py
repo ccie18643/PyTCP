@@ -30,19 +30,18 @@
 
 import struct
 from time import time
-from typing import Optional, cast
+from typing import Optional
 
 import config
-import ip6_ext_frag.fpp
-from ip6.fpp import Parser as Ip6Parser
-from ip6_ext_frag.fpp import Parser as Ip6ExtFragParser
+from ip6_ext_frag.fpp import Ip6ExtFragParser
 from misc.packet import PacketRx
 
 
 def _defragment_ip6_packet(self, packet_rx: PacketRx) -> Optional[PacketRx]:
     """Defragment IPv6 packet"""
 
-    packet_rx.ip6_ext_frag = cast(Ip6ExtFragParser, packet_rx.ip6_ext_frag)
+    assert packet_rx.ip6 is not None
+    assert packet_rx.ip6_ext_frag is not None
 
     # Cleanup expired flows
     self.ip6_frag_flows = {
@@ -55,7 +54,6 @@ def _defragment_ip6_packet(self, packet_rx: PacketRx) -> Optional[PacketRx]:
             + f"{'' if packet_rx.ip6_ext_frag.flag_mf else ', last'}"
         )
 
-    packet_rx.ip6 = cast(Ip6Parser, packet_rx.ip6)
     flow_id = (packet_rx.ip6.src, packet_rx.ip6.dst, packet_rx.ip6_ext_frag.id)
 
     # Update flow db
@@ -97,7 +95,7 @@ def _defragment_ip6_packet(self, packet_rx: PacketRx) -> Optional[PacketRx]:
 def _phrx_ip6_ext_frag(self, packet_rx: PacketRx) -> None:
     """Handle inbound IPv6 fragment extension header"""
 
-    ip6_ext_frag.fpp.Parser(packet_rx)
+    Ip6ExtFragParser(packet_rx)
 
     if packet_rx.parse_failed:
         if __debug__:

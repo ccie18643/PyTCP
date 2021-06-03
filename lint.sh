@@ -5,7 +5,7 @@ codespell -w --ignore-words-list="ect,ether,nd,tha" --quiet-level=2 ${PY_PATH} R
 echo '<<< ISORT' && \
 isort --profile black ${PY_PATH} && \
 echo '<<< BLACK' && \
-black -l 160 ${PY_PATH} && \
+black ${PY_PATH} && \
 echo '<<< FLAKE8' && \
 flake8 ${PY_PATH} && \
 echo '<<< MYPY' && \

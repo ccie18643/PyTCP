@@ -29,19 +29,22 @@
 #
 
 
-from typing import Optional
+from __future__ import annotations  # Required by Python ver < 3.10
+
+from typing import TYPE_CHECKING, Optional
 
 import config
-import icmp4.fpa
-from misc.ipv4_address import IPv4Address
-from misc.ipv6_address import IPv6Address
+from icmp4.fpa import Icmp4Assembler
 from misc.tracker import Tracker
+
+if TYPE_CHECKING:
+    from lib.ip4_address import Ip4Address
 
 
 def _phtx_icmp4(
     self,
-    ip4_src: IPv4Address,
-    ip4_dst: IPv6Address,
+    ip4_src: Ip4Address,
+    ip4_dst: Ip4Address,
     icmp4_type: int,
     icmp4_code: int = 0,
     icmp4_ec_id: Optional[int] = None,
@@ -56,7 +59,7 @@ def _phtx_icmp4(
     if not config.ip4_support:
         return
 
-    icmp4_packet_tx = icmp4.fpa.Assembler(
+    icmp4_packet_tx = Icmp4Assembler(
         type=icmp4_type,
         code=icmp4_code,
         ec_id=icmp4_ec_id,

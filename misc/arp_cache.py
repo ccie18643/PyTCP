@@ -29,16 +29,18 @@
 #
 
 
+from __future__ import annotations  # Required by Python ver < 3.10
+
 import time
-from typing import Optional, cast
+from typing import Optional
 
 import loguru
 
 import arp.ps
 import config
 import misc.stack as stack
-from misc.ipv4_address import IPv4Address
-from misc.timer import Timer
+from lib.ip4_address import Ip4Address
+from lib.mac_address import MacAddress
 
 
 class ArpCache:
@@ -47,7 +49,7 @@ class ArpCache:
     class CacheEntry:
         """Container class for cache entries"""
 
-        def __init__(self, mac_address: str, permanent: bool = False) -> None:
+        def __init__(self, mac_address: MacAddress, permanent: bool = False) -> None:
             self.mac_address = mac_address
             self.permanent = permanent
             self.creation_time = time.time()
@@ -56,13 +58,13 @@ class ArpCache:
     def __init__(self) -> None:
         """Class constructor"""
 
-        self.arp_cache: dict[str, ArpCache.CacheEntry] = {}
+        self.arp_cache: dict[Ip4Address, ArpCache.CacheEntry] = {}
 
         if __debug__:
             self._logger = loguru.logger.bind(object_name="arp_cache.")
 
         # Setup timer to execute ARP Cache maintainer every second
-        stack.timer = cast(Timer, stack.timer)
+        assert stack.timer is not None
         stack.timer.register_method(method=self._maintain_cache, delay=1000)
 
         if __debug__:
@@ -92,14 +94,12 @@ class ArpCache:
                 if __debug__:
                     self._logger.debug(f"Trying to refresh expiring ARP cache entry for {ip4_address} -> {self.arp_cache[ip4_address].mac_address}")
 
-    # typing: Need to refactor type of ip4_address (str -> IPv4Address)
-    def add_entry(self, ip4_address: str, mac_address: str) -> None:
+    def add_entry(self, ip4_address: Ip4Address, mac_address: MacAddress) -> None:
         """Add / refresh entry in cache"""
 
         self.arp_cache[ip4_address] = self.CacheEntry(mac_address)
 
-    # typing: Need to refactor type of ip4_address (str -> IPv4Address)
-    def find_entry(self, ip4_address: str) -> Optional[str]:
+    def find_entry(self, ip4_address: Ip4Address) -> Optional[MacAddress]:
         """Find entry in cache and return MAC address"""
 
         if arp_entry := self.arp_cache.get(ip4_address, None):
@@ -115,17 +115,16 @@ class ArpCache:
         self._send_arp_request(ip4_address)
         return None
 
-    # typing: Need to refactor type of arp_tpa (str -> IPv4Address)
-    # typing: Need to fix ssue with stac.packet_handler being initially None
-    def _send_arp_request(self, arp_tpa):
+    def _send_arp_request(self, arp_tpa: Ip4Address) -> None:
         """Enqueue ARP request packet with TX ring"""
 
+        assert stack.packet_handler is not None
         stack.packet_handler._phtx_arp(
             ether_src=stack.packet_handler.mac_unicast,
-            ether_dst="ff:ff:ff:ff:ff:ff",
-            arp_oper=arp.ps.OP_REQUEST,
+            ether_dst=MacAddress("ff:ff:ff:ff:ff:ff"),
+            arp_oper=arp.ps.ARP_OP_REQUEST,
             arp_sha=stack.packet_handler.mac_unicast,
-            arp_spa=stack.packet_handler.ip4_unicast[0] if stack.packet_handler.ip4_unicast else IPv4Address("0.0.0.0"),
-            arp_tha="00:00:00:00:00:00",
+            arp_spa=stack.packet_handler.ip4_unicast[0] if stack.packet_handler.ip4_unicast else Ip4Address("0.0.0.0"),
+            arp_tha=MacAddress("00:00:00:00:00:00"),
             arp_tpa=arp_tpa,
         )

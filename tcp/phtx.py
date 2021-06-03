@@ -29,21 +29,26 @@
 #
 
 
-from typing import Optional, Union
+from __future__ import annotations  # Required by Python ver < 3.10
+
+from typing import TYPE_CHECKING, Optional, Union
 
 import config
-import tcp.fpa
-from misc.ipv4_address import IPv4Address
-from misc.ipv6_address import IPv6Address
 from misc.tracker import Tracker
+from tcp.fpa import TcpAssembler, TcpOptMss, TcpOptNop, TcpOptWscale
+
+if TYPE_CHECKING:
+    from lib.ip4_address import Ip4Address
+    from lib.ip6_address import Ip6Address
+
 
 PACKET_LOSS = False
 
 
 def _phtx_tcp(
     self,
-    ip_src: Union[IPv6Address, IPv4Address],
-    ip_dst: Union[IPv6Address, IPv4Address],
+    ip_src: Union[Ip6Address, Ip4Address],
+    ip_dst: Union[Ip6Address, Ip4Address],
     tcp_sport: int,
     tcp_dport: int,
     tcp_seq: int = 0,
@@ -76,14 +81,14 @@ def _phtx_tcp(
     if not config.ip6_support and ip_dst.version == 6:
         return
 
-    tcp_options: list[Union[tcp.fpa.OptMss, tcp.fpa.OptNop, tcp.fpa.OptWscale]] = []
+    tcp_options: list[Union[TcpOptMss, TcpOptNop, TcpOptWscale]] = []
 
     if tcp_mss:
-        tcp_options.append(tcp.fpa.OptMss(tcp_mss))
-        tcp_options.append(tcp.fpa.OptNop())
-        tcp_options.append(tcp.fpa.OptWscale(0))
+        tcp_options.append(TcpOptMss(tcp_mss))
+        tcp_options.append(TcpOptNop())
+        tcp_options.append(TcpOptWscale(0))
 
-    tcp_packet_tx = tcp.fpa.Assembler(
+    tcp_packet_tx = TcpAssembler(
         sport=tcp_sport,
         dport=tcp_dport,
         seq=tcp_seq,

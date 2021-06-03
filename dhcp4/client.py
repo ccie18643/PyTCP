@@ -34,7 +34,7 @@ import random
 import dhcp4.ps
 import udp.metadata
 import udp.socket
-from misc.ipv4_address import IPv4Address, IPv4Interface
+from lib.ip4_address import Ip4Address, Ip4Host
 
 
 def _dhcp4_client(self):
@@ -43,9 +43,9 @@ def _dhcp4_client(self):
     def _send_dhcp_packet(dhcp_packet_tx):
         socket.send_to(
             udp.metadata.UdpMetadata(
-                local_ip_address=IPv4Address("0.0.0.0"),
+                local_ip_address=Ip4Address("0.0.0.0"),
                 local_port=68,
-                remote_ip_address=IPv4Address("255.255.255.255"),
+                remote_ip_address=Ip4Address("255.255.255.255"),
                 remote_port=67,
                 data=dhcp_packet_tx.get_raw_packet(),
             )
@@ -128,6 +128,6 @@ def _dhcp4_client(self):
         )
     socket.close()
     return (
-        IPv4Interface(str(dhcp_packet_rx.dhcp_yiaddr) + "/" + str(IPv4Address._make_netmask(str(dhcp_packet_rx.dhcp_subnet_mask))[1])),
+        Ip4Host(str(dhcp_packet_rx.dhcp_yiaddr) + str(dhcp_packet_rx.dhcp_subnet_mask)),
         dhcp_packet_rx.dhcp_router[0],
     )

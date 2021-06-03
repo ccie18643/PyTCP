@@ -29,13 +29,18 @@
 #
 
 
+from __future__ import annotations  # Required by Python ver < 3.10
+
 import os
 import threading
+from typing import TYPE_CHECKING
 
 import loguru
 
 import config
-from ether.fpa import Assembler as EtherAssembler
+
+if TYPE_CHECKING:
+    from ether.fpa import EtherAssembler
 
 
 class TxRing:

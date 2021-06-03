@@ -29,27 +29,26 @@
 #
 
 
-from typing import cast
+from __future__ import annotations  # Required by Python ver < 3.10
 
 import loguru
 
 import icmp4.ps
 import icmp6.ps
 import misc.stack as stack
-import udp.fpp
-from ip4.fpp import Parser as Ip4Parser
-from ip6.fpp import Parser as Ip6Parser
-from misc.ipv4_address import IPv4Address
-from misc.ipv6_address import IPv6Address
+from lib.ip4_address import Ip4Address
+from lib.ip6_address import Ip6Address
 from misc.packet import PacketRx
-from udp.fpp import Parser as UdpParser
+from udp.fpp import UdpParser
 from udp.metadata import UdpMetadata
 
 
 def _phrx_udp(self, packet_rx: PacketRx) -> None:
     """Handle inbound UDP packets"""
 
-    udp.fpp.Parser(packet_rx)
+    UdpParser(packet_rx)
+    assert packet_rx.udp is not None
+    assert packet_rx.ip is not None
 
     if packet_rx.parse_failed:
         if __debug__:
@@ -58,10 +57,6 @@ def _phrx_udp(self, packet_rx: PacketRx) -> None:
 
     if __debug__:
         self._logger.opt(ansi=True).info(f"<green>{packet_rx.tracker}</green> - {packet_rx.udp}")
-
-    # Casting here does not matter if uses 6 or 4
-    packet_rx.ip = cast(Ip6Parser, packet_rx.ip)
-    packet_rx.udp = cast(UdpParser, packet_rx.udp)
 
     # Create UdpMetadata object and try to find matching UDP socket
     packet = UdpMetadata(
@@ -82,7 +77,7 @@ def _phrx_udp(self, packet_rx: PacketRx) -> None:
             return
 
     # Silently drop packet if it has all zero source IP address
-    if packet_rx.ip.src in {IPv4Address("0.0.0.0"), IPv6Address("::")}:
+    if packet_rx.ip.src in {Ip4Address("0.0.0.0"), Ip6Address("::")}:
         if __debug__:
             self._logger.debug(
                 f"Received UDP packet from {packet_rx.ip.src}, port {packet_rx.udp.sport} to {packet_rx.ip.dst}, port {packet_rx.udp.dport}, dropping..."
@@ -94,23 +89,21 @@ def _phrx_udp(self, packet_rx: PacketRx) -> None:
         self._logger.debug(f"Received UDP packet from {packet_rx.ip.src} to closed port {packet_rx.udp.dport}, sending ICMPv4 Port Unreachable")
 
     if packet_rx.ip.ver == 6:
-        packet_rx.ip = cast(Ip6Parser, packet_rx.ip)
         self._phtx_icmp6(
             ip6_src=packet_rx.ip.dst,
             ip6_dst=packet_rx.ip.src,
-            icmp6_type=icmp6.ps.UNREACHABLE,
-            icmp6_code=icmp6.ps.UNREACHABLE__PORT,
+            icmp6_type=icmp6.ps.ICMP6_UNREACHABLE,
+            icmp6_code=icmp6.ps.ICMP6_UNREACHABLE__PORT,
             icmp6_un_data=packet_rx.ip.packet_copy,
             echo_tracker=packet_rx.tracker,
         )
 
     if packet_rx.ip.ver == 4:
-        packet_rx.ip = cast(Ip4Parser, packet_rx.ip)
         self._phtx_icmp4(
             ip4_src=packet_rx.ip.dst,
             ip4_dst=packet_rx.ip.src,
-            icmp4_type=icmp4.ps.UNREACHABLE,
-            icmp4_code=icmp4.ps.UNREACHABLE__PORT,
+            icmp4_type=icmp4.ps.ICMP4_UNREACHABLE,
+            icmp4_code=icmp4.ps.ICMP4_UNREACHABLE__PORT,
             icmp4_un_data=packet_rx.ip.packet_copy,
             echo_tracker=packet_rx.tracker,
         )

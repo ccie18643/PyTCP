@@ -46,20 +46,20 @@
 # +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 
 
-HEADER_LEN = 20
+IP4_HEADER_LEN = 20
 
-PROTO_ICMP4 = 1
-PROTO_TCP = 6
-PROTO_UDP = 17
+IP4_PROTO_ICMP4 = 1
+IP4_PROTO_TCP = 6
+IP4_PROTO_UDP = 17
 
-PROTO_TABLE = {PROTO_ICMP4: "ICMPv4", PROTO_TCP: "TCP", PROTO_UDP: "UDP"}
+IP4_PROTO_TABLE = {IP4_PROTO_ICMP4: "ICMPv4", IP4_PROTO_TCP: "TCP", IP4_PROTO_UDP: "UDP"}
 
 
 def __str__(self) -> str:
     """Packet log string"""
 
     return (
-        f"IPv4 {self.src} > {self.dst}, proto {self.proto} ({PROTO_TABLE.get(self.proto, '???')}), id {self.id}"
+        f"IPv4 {self.src} > {self.dst}, proto {self.proto} ({IP4_PROTO_TABLE.get(self.proto, '???')}), id {self.id}"
         + f"{', DF' if self.flag_df else ''}{', MF' if self.flag_mf else ''}, offset {self.offset}, plen {self.plen}"
         + f", ttl {self.ttl}"
     )
@@ -72,11 +72,11 @@ def __str__(self) -> str:
 
 # IPv4 option - End of Option Linst
 
-OPT_EOL = 0
-OPT_EOL_LEN = 1
+IP4_OPT_EOL = 0
+IP4_OPT_EOL_LEN = 1
 
 
-class OptEol:
+class Ip4OptEol:
     """IPv4 option - End of Option List"""
 
     def __str__(self) -> str:
@@ -87,16 +87,16 @@ class OptEol:
     def __len__(self) -> int:
         """Option length"""
 
-        return OPT_EOL_LEN
+        return IP4_OPT_EOL_LEN
 
 
 # IPv4 option - No Operation (1)
 
-OPT_NOP = 1
-OPT_NOP_LEN = 1
+IP4_OPT_NOP = 1
+IP4_OPT_NOP_LEN = 1
 
 
-class OptNop:
+class Ip4OptNop:
     """IPv4 option - No Operation"""
 
     def __str__(self) -> str:
@@ -107,13 +107,13 @@ class OptNop:
     def __len__(self) -> int:
         """Option length"""
 
-        return OPT_NOP_LEN
+        return IP4_OPT_NOP_LEN
 
 
 # IPv4 option not supported by this stack
 
 
-class OptUnk:
+class Ip4OptUnk:
     """IPv4 option not supported by this stack"""
 
     def __init__(self) -> None:

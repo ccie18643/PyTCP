@@ -29,17 +29,25 @@
 #
 
 
+from __future__ import annotations  # Required by Python ver < 3.10
+
 import struct
+from typing import TYPE_CHECKING
 
 import config
 import ip6_ext_frag.ps
 
+if TYPE_CHECKING:
+    from misc.packet import PacketRx
 
-class Parser:
+
+class Ip6ExtFragParser:
     """IPv6 fragmentation extension header parser class"""
 
-    def __init__(self, packet_rx):
+    def __init__(self, packet_rx: PacketRx) -> None:
         """Class constructor"""
+
+        assert packet_rx.ip6 is not None
 
         packet_rx.ip6_ext_frag = self
 
@@ -50,7 +58,7 @@ class Parser:
         packet_rx.parse_failed = self._packet_integrity_check() or self._packet_sanity_check()
 
         if not packet_rx.parse_failed:
-            packet_rx.hptr = self._hptr + ip6_ext_frag.ps.HEADER_LEN
+            packet_rx.hptr = self._hptr + ip6_ext_frag.ps.IP6_EXT_FRAG_HEADER_LEN
 
     def __len__(self):
         """Number of bytes remaining in the frame"""
@@ -60,13 +68,13 @@ class Parser:
     from ip6_ext_frag.ps import __str__
 
     @property
-    def next(self):
+    def next(self) -> int:
         """Read 'Next' field"""
 
         return self._frame[self._hptr + 0]
 
     @property
-    def offset(self):
+    def offset(self) -> int:
         """Read 'Fragment offset' field"""
 
         if "_cache__offset" not in self.__dict__:
@@ -74,13 +82,13 @@ class Parser:
         return self._cache__offset
 
     @property
-    def flag_mf(self):
+    def flag_mf(self) -> bool:
         """Read 'MF flag' field"""
 
-        return self._frame[self._hptr + 3] & 0b00000001
+        return bool(self._frame[self._hptr + 3] & 0b00000001)
 
     @property
-    def id(self):
+    def id(self) -> int:
         """Read 'Identification' field"""
 
         if "_cache__id" not in self.__dict__:
@@ -88,62 +96,62 @@ class Parser:
         return self._cache__id
 
     @property
-    def hlen(self):
+    def hlen(self) -> int:
         """Calculate header length"""
 
-        return ip6_ext_frag.ps.HEADER_LEN
+        return ip6_ext_frag.ps.IP6_EXT_FRAG_HEADER_LEN
 
     @property
-    def dlen(self):
+    def dlen(self) -> int:
         """Calculate data length"""
 
-        return self._plen - ip6_ext_frag.ps.HEADER_LEN
+        return self._plen - ip6_ext_frag.ps.IP6_EXT_FRAG_HEADER_LEN
 
     @property
-    def plen(self):
+    def plen(self) -> int:
         """Calculate packet length"""
 
         return self._plen
 
     @property
-    def header_copy(self):
+    def header_copy(self) -> bytes:
         """Return copy of packet header"""
 
         if "_cache__header_copy" not in self.__dict__:
-            self._cache__header_copy = self._frame[self._hptr : self._hptr + ip6_ext_frag.ps.HEADER_LEN]
+            self._cache__header_copy = self._frame[self._hptr : self._hptr + ip6_ext_frag.ps.IP6_EXT_FRAG_HEADER_LEN]
         return self._cache__header_copy
 
     @property
-    def data_copy(self):
+    def data_copy(self) -> bytes:
         """Return copy of packet data"""
 
         if "_cache__data_copy" not in self.__dict__:
-            self._cache__data_copy = self._frame[self._hptr + ip6_ext_frag.ps.HEADER_LEN : self._hptr + self.plen]
+            self._cache__data_copy = self._frame[self._hptr + ip6_ext_frag.ps.IP6_EXT_FRAG_HEADER_LEN : self._hptr + self.plen]
         return self._cache__data_copy
 
     @property
-    def packet_copy(self):
+    def packet_copy(self) -> bytes:
         """Return copy of whole packet"""
 
         if "_cache__packet_copy" not in self.__dict__:
             self._cache__packet_copy = self._frame[self._hptr : self._hptr + self.plen]
         return self._cache__packet_copy
 
-    def _packet_integrity_check(self):
+    def _packet_integrity_check(self) -> str:
         """Packet integrity check to be run on raw packet prior to parsing to make sure parsing is safe"""
 
         if not config.packet_integrity_check:
-            return False
+            return ""
 
-        if len(self) < ip6_ext_frag.ps.HEADER_LEN:
+        if len(self) < ip6_ext_frag.ps.IP6_EXT_FRAG_HEADER_LEN:
             return "IPv4 integrity - wrong packet length (I)"
 
-        return False
+        return ""
 
-    def _packet_sanity_check(self):
+    def _packet_sanity_check(self) -> str:
         """Packet sanity check to be run on parsed packet to make sure packet's fields contain sane values"""
 
         if not config.packet_sanity_check:
-            return False
+            return ""
 
-        return False
+        return ""

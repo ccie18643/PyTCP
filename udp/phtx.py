@@ -29,19 +29,23 @@
 #
 
 
-from typing import Union
+from __future__ import annotations  # Required by Python ver < 3.10
+
+from typing import TYPE_CHECKING, Union
 
 import config
-import udp.fpa
-from misc.ipv4_address import IPv4Address
-from misc.ipv6_address import IPv6Address
 from misc.tracker import Tracker
+from udp.fpa import UdpAssembler
+
+if TYPE_CHECKING:
+    from lib.ip4_address import Ip4Address
+    from lib.ip6_address import Ip6Address
 
 
 def _phtx_udp(
     self,
-    ip_src: Union[IPv6Address, IPv4Address],
-    ip_dst: Union[IPv6Address, IPv4Address],
+    ip_src: Union[Ip6Address, Ip4Address],
+    ip_dst: Union[Ip6Address, Ip4Address],
     udp_sport: int,
     udp_dport: int,
     udp_data: bytes = b"",
@@ -60,7 +64,7 @@ def _phtx_udp(
     if not config.ip6_support and ip_dst.version == 6:
         return
 
-    udp_packet_tx = udp.fpa.Assembler(sport=udp_sport, dport=udp_dport, data=udp_data, echo_tracker=echo_tracker)
+    udp_packet_tx = UdpAssembler(sport=udp_sport, dport=udp_dport, data=udp_data, echo_tracker=echo_tracker)
 
     if __debug__:
         self._logger.opt(ansi=True).info(f"<magenta>{udp_packet_tx.tracker}</magenta> - {udp_packet_tx}")

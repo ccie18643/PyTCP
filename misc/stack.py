@@ -28,14 +28,18 @@
 # stack.py - module holds references to the stack components and global structures
 #
 
-from typing import Optional
+from __future__ import annotations  # Required by Python ver < 3.10
 
-import tcp.session
-import udp.socket
-from misc.timer import Timer
+from typing import TYPE_CHECKING, Optional
+
+if TYPE_CHECKING:
+    from misc.ph import PacketHandler
+    from misc.timer import Timer
+    from tcp.session import TcpSession
+    from udp.socket import UdpSocket
 
 timer: Optional[Timer] = None
-packet_handler = None
+packet_handler: Optional[PacketHandler] = None
 
-tcp_sessions: dict[str, tcp.session.TcpSession] = {}
-udp_sockets: dict[str, udp.socket.UdpSocket] = {}
+tcp_sessions: dict[str, TcpSession] = {}
+udp_sockets: dict[str, UdpSocket] = {}

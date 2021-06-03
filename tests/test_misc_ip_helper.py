@@ -33,13 +33,9 @@ class TestMiscIpHelper(TestCase):
             self.assertEqual(result, sample.result)
 
     def test_ip_pick_version(self):
+        from lib.ip6_address import Ip6Address
 
-        result = ip_pick_version("1:2:3:4:5:6:7:8")
-        from misc.ipv6_address import IPv6Address
+        self.assertEqual(ip_pick_version("1:2:3:4:5:6:7:8"), Ip6Address("1:2:3:4:5:6:7:8"))
+        from lib.ip4_address import Ip4Address
 
-        self.assertEqual(result, IPv6Address("1:2:3:4:5:6:7:8"))
-
-        result = ip_pick_version("1.2.3.4")
-        from misc.ipv4_address import IPv4Address
-
-        self.assertEqual(result, IPv4Address("1.2.3.4"))
+        self.assertEqual(ip_pick_version("1.2.3.4"), Ip4Address("1.2.3.4"))

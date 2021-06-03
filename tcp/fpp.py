@@ -29,29 +29,31 @@
 #
 
 
+from __future__ import annotations  # Required by Python ver < 3.10
+
 import struct
-from typing import Optional, cast
+from typing import TYPE_CHECKING, Optional
 
 import config
 import tcp.ps
-from ip6.fpp import Parser as Ip6Parser
 from misc.ip_helper import inet_cksum
-from misc.packet import PacketRx
+
+if TYPE_CHECKING:
+    from misc.packet import PacketRx
 
 
-class Parser:
+class TcpParser:
     """TCP packet parser class"""
 
     def __init__(self, packet_rx: PacketRx) -> None:
         """Class constructor"""
 
+        assert packet_rx.ip is not None
+
         packet_rx.tcp = self
 
         self._frame = packet_rx.frame
         self._hptr = packet_rx.hptr
-
-        # Casting here does not matter if uses 6 or 4
-        packet_rx.ip = cast(Ip6Parser, packet_rx.ip)
         self._plen = packet_rx.ip.dlen
 
         packet_rx.parse_failed = self._packet_integrity_check(packet_rx.ip.pshdr_sum) or self._packet_sanity_check()
@@ -215,7 +217,7 @@ class Parser:
         """Calculate options length"""
 
         if "_cache__olen" not in self.__dict__:
-            self._cache__olen = self.hlen - tcp.ps.HEADER_LEN
+            self._cache__olen = self.hlen - tcp.ps.TCP_HEADER_LEN
         return self._cache__olen
 
     @property
@@ -235,7 +237,7 @@ class Parser:
         """Return copy of packet header"""
 
         if "_cache__header_copy" not in self.__dict__:
-            self._cache__header_copy = self._frame[self._hptr : self._hptr + tcp.ps.HEADER_LEN]
+            self._cache__header_copy = self._frame[self._hptr : self._hptr + tcp.ps.TCP_HEADER_LEN]
         return self._cache__header_copy
 
     @property
@@ -243,7 +245,7 @@ class Parser:
         """Return copy of packet header"""
 
         if "_cache__options_copy" not in self.__dict__:
-            self._cache__options_copy = self._frame[self._hptr + tcp.ps.HEADER_LEN : self._hptr + self.hlen]
+            self._cache__options_copy = self._frame[self._hptr + tcp.ps.TCP_HEADER_LEN : self._hptr + self.hlen]
         return self._cache__options_copy
 
     @property
@@ -268,19 +270,22 @@ class Parser:
 
         if "_cache__options" not in self.__dict__:
             self._cache__options: list = []
-            optr = self._hptr + tcp.ps.HEADER_LEN
+            optr = self._hptr + tcp.ps.TCP_HEADER_LEN
             while optr < self._hptr + self.hlen:
-                if self._frame[optr] == tcp.ps.OPT_EOL:
-                    self._cache__options.append(OptEol())
+                if self._frame[optr] == tcp.ps.TCP_OPT_EOL:
+                    self._cache__options.append(TcpOptEol())
                     break
-                if self._frame[optr] == tcp.ps.OPT_NOP:
-                    self._cache__options.append(OptNop())
-                    optr += tcp.ps.OPT_NOP_LEN
+                if self._frame[optr] == tcp.ps.TCP_OPT_NOP:
+                    self._cache__options.append(TcpOptNop())
+                    optr += tcp.ps.TCP_OPT_NOP_LEN
                     continue
                 self._cache__options.append(
-                    {tcp.ps.OPT_MSS: OptMss, tcp.ps.OPT_WSCALE: OptWscale, tcp.ps.OPT_SACKPERM: OptSackPerm, tcp.ps.OPT_TIMESTAMP: OptTimestamp}.get(
-                        self._frame[optr], OptUnk
-                    )(self._frame, optr)
+                    {
+                        tcp.ps.TCP_OPT_MSS: TcpOptMss,
+                        tcp.ps.TCP_OPT_WSCALE: TcpOptWscale,
+                        tcp.ps.TCP_OPT_SACKPERM: TcpOptSackPerm,
+                        tcp.ps.TCP_OPT_TIMESTAMP: TcpOptTimestamp,
+                    }.get(self._frame[optr], TcpOptUnk)(self._frame, optr)
                 )
                 optr += self._frame[optr + 1]
 
@@ -292,7 +297,7 @@ class Parser:
 
         if "_cache__mss" not in self.__dict__:
             for option in self.options:
-                if option.kind == tcp.ps.OPT_MSS:
+                if option.kind == tcp.ps.TCP_OPT_MSS:
                     self._cache__mss = option.mss
                     break
             else:
@@ -305,7 +310,7 @@ class Parser:
 
         if "_cache__wscale" not in self.__dict__:
             for option in self.options:
-                if option.kind == tcp.ps.OPT_WSCALE:
+                if option.kind == tcp.ps.TCP_OPT_WSCALE:
                     self._cache__wscale = 1 << option.wscale
                     break
             else:
@@ -318,7 +323,7 @@ class Parser:
 
         if "_cache__sackperm" not in self.__dict__:
             for option in self.options:
-                if option.kind == tcp.ps.OPT_SACKPERM:
+                if option.kind == tcp.ps.TCP_OPT_SACKPERM:
                     self._cache__sackperm: Optional[bool] = True
                     break
             else:
@@ -331,7 +336,7 @@ class Parser:
 
         if "_cache__timestamp" not in self.__dict__:
             for option in self.options:
-                if option.kind == tcp.ps.OPT_TIMESTAMP:
+                if option.kind == tcp.ps.TCP_OPT_TIMESTAMP:
                     self._cache__timestamp: Optional[tuple[int, int]] = (option.tsval, option.tsecr)
                     break
             else:
@@ -347,18 +352,18 @@ class Parser:
         if inet_cksum(self._frame, self._hptr, self._plen, pshdr_sum):
             return "TCP integrity - wrong packet checksum"
 
-        if not tcp.ps.HEADER_LEN <= self._plen <= len(self):
+        if not tcp.ps.TCP_HEADER_LEN <= self._plen <= len(self):
             return "TCP integrity - wrong packet length (I)"
 
         hlen = (self._frame[self._hptr + 12] & 0b11110000) >> 2
-        if not tcp.ps.HEADER_LEN <= hlen <= self._plen <= len(self):
+        if not tcp.ps.TCP_HEADER_LEN <= hlen <= self._plen <= len(self):
             return "TCP integrity - wrong packet length (II)"
 
-        optr = self._hptr + tcp.ps.HEADER_LEN
+        optr = self._hptr + tcp.ps.TCP_HEADER_LEN
         while optr < self._hptr + hlen:
-            if self._frame[optr] == tcp.ps.OPT_EOL:
+            if self._frame[optr] == tcp.ps.TCP_OPT_EOL:
                 break
-            if self._frame[optr] == tcp.ps.OPT_NOP:
+            if self._frame[optr] == tcp.ps.TCP_OPT_NOP:
                 optr += 1
                 if optr > self._hptr + hlen:
                     return "TCP integrity - wrong option length (I)"
@@ -411,21 +416,21 @@ class Parser:
 #
 
 
-class OptEol(tcp.ps.OptEol):
-    """TCP option - End of Option List (0)"""
+class TcpOptEol(tcp.ps.TcpOptEol):
+    """TCP option - End of TcpOption List (0)"""
 
     def __init__(self):
-        self.kind = tcp.ps.OPT_EOL
+        self.kind = tcp.ps.TCP_OPT_EOL
 
 
-class OptNop(tcp.ps.OptNop):
+class TcpOptNop(tcp.ps.TcpOptNop):
     """TCP option - No Operation (1)"""
 
     def __init__(self):
-        self.kind = tcp.ps.OPT_NOP
+        self.kind = tcp.ps.TCP_OPT_NOP
 
 
-class OptMss(tcp.ps.OptMss):
+class TcpOptMss(tcp.ps.TcpOptMss):
     """TCP option - Maximum Segment Size (2)"""
 
     def __init__(self, frame: bytes, optr: int) -> None:
@@ -434,7 +439,7 @@ class OptMss(tcp.ps.OptMss):
         self.mss = struct.unpack_from("!H", frame, optr + 2)[0]
 
 
-class OptWscale(tcp.ps.OptWscale):
+class TcpOptWscale(tcp.ps.TcpOptWscale):
     """TCP option - Window Scale (3)"""
 
     def __init__(self, frame: bytes, optr: int) -> None:
@@ -443,7 +448,7 @@ class OptWscale(tcp.ps.OptWscale):
         self.wscale = frame[optr + 2]
 
 
-class OptSackPerm(tcp.ps.OptSackPerm):
+class TcpOptSackPerm(tcp.ps.TcpOptSackPerm):
     """TCP option - Sack Permit (4)"""
 
     def __init__(self, frame: bytes, optr: int) -> None:
@@ -451,7 +456,7 @@ class OptSackPerm(tcp.ps.OptSackPerm):
         self.len = frame[optr + 1]
 
 
-class OptTimestamp(tcp.ps.OptTimestamp):
+class TcpOptTimestamp(tcp.ps.TcpOptTimestamp):
     """TCP option - Timestamp (8)"""
 
     def __init__(self, frame: bytes, optr: int) -> None:
@@ -461,7 +466,7 @@ class OptTimestamp(tcp.ps.OptTimestamp):
         self.tsecr = struct.unpack_from("!L", frame, optr + 6)[0]
 
 
-class OptUnk(tcp.ps.OptUnk):
+class TcpOptUnk(tcp.ps.TcpOptUnk):
     """TCP option not supported by this stack"""
 
     def __init__(self, frame: bytes, optr: int) -> None:

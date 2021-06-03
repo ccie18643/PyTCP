@@ -28,9 +28,22 @@
 # packet.py - module contains class representing packet
 #
 
-from typing import Optional
+from __future__ import annotations  # Required by Python ver < 3.10
+
+from typing import TYPE_CHECKING, Optional, Union
 
 from misc.tracker import Tracker
+
+if TYPE_CHECKING:
+    from arp.fpp import ArpParser
+    from ether.fpp import EtherParser
+    from icmp4.fpp import Icmp4Parser
+    from icmp6.fpp import Icmp6Parser
+    from ip4.fpp import Ip4Parser
+    from ip6.fpp import Ip6Parser
+    from ip6_ext_frag.fpp import Ip6ExtFragParser
+    from tcp.fpp import TcpParser
+    from udp.fpp import UdpParser
 
 
 class PacketRx:
@@ -44,16 +57,16 @@ class PacketRx:
         self.tracker = Tracker("RX")
         self.parse_failed = Optional[str]
 
-        self.ether: object = None
-        self.arp: object = None
-        self.ip: object = None
-        self.ip4: object = None
-        self.ip6: object = None
-        self.ip6_ext_frag: object = None
-        self.icmp4: object = None
-        self.icmp6: object = None
-        self.tcp: object = None
-        self.udp: object = None
+        self.ether: Optional[EtherParser] = None
+        self.arp: Optional[ArpParser] = None
+        self.ip: Optional[Union[Ip6Parser, Ip4Parser]] = None
+        self.ip4: Optional[Ip4Parser] = None
+        self.ip6: Optional[Ip6Parser] = None
+        self.ip6_ext_frag: Optional[Ip6ExtFragParser] = None
+        self.icmp4: Optional[Icmp4Parser] = None
+        self.icmp6: Optional[Icmp6Parser] = None
+        self.tcp: Optional[TcpParser] = None
+        self.udp: Optional[UdpParser] = None
 
     def __len__(self) -> int:
         """Returns length of raw frame"""

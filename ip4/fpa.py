@@ -29,30 +29,34 @@
 #
 
 
+from __future__ import annotations  # Required by Python ver < 3.10
+
 import struct
-from typing import Optional, Union
+from typing import TYPE_CHECKING, Optional, Union
 
 import config
 import ether.ps
-import icmp4.fpa
 import ip4.ps
-import tcp.fpa
-import udp.fpa
+from lib.ip4_address import Ip4Address
 from misc.ip_helper import inet_cksum
-from misc.ipv4_address import IPv4Address
 from misc.tracker import Tracker
 
+if TYPE_CHECKING:
+    from icmp4.fpa import Icmp4Assembler
+    from tcp.fpa import TcpAssembler
+    from udp.fpa import UdpAssembler
 
-class Assembler:
+
+class Ip4Assembler:
     """IPv4 packet assembler support class"""
 
-    ether_type = ether.ps.TYPE_IP4
+    ether_type = ether.ps.ETHER_TYPE_IP4
 
     def __init__(
         self,
-        carried_packet: Union[icmp4.fpa.Assembler, tcp.fpa.Assembler, udp.fpa.Assembler],
-        src: IPv4Address,
-        dst: IPv4Address,
+        carried_packet: Union[Icmp4Assembler, TcpAssembler, UdpAssembler],
+        src: Ip4Address,
+        dst: Ip4Address,
         ttl: int = config.ip4_default_ttl,
         dscp: int = 0,
         ecn: int = 0,
@@ -62,7 +66,7 @@ class Assembler:
     ) -> None:
         """Class constructor"""
 
-        assert carried_packet.ip4_proto in {ip4.ps.PROTO_ICMP4, ip4.ps.PROTO_UDP, ip4.ps.PROTO_TCP}
+        assert carried_packet.ip4_proto in {ip4.ps.IP4_PROTO_ICMP4, ip4.ps.IP4_PROTO_UDP, ip4.ps.IP4_PROTO_TCP}
 
         self._carried_packet = carried_packet
         self.tracker = self._carried_packet.tracker
@@ -74,23 +78,23 @@ class Assembler:
         self.flag_mf = False
         self.offset = 0
         self.ttl = ttl
-        self.src = IPv4Address(src)
-        self.dst = IPv4Address(dst)
+        self.src = Ip4Address(src)
+        self.dst = Ip4Address(dst)
         self.options = [] if options is None else options
-        self.hlen = ip4.ps.HEADER_LEN + len(self.raw_options)
+        self.hlen = ip4.ps.IP4_HEADER_LEN + len(self.raw_options)
         self.plen = len(self)
         self.proto = self._carried_packet.ip4_proto
 
-    def __len__(self):
+    def __len__(self) -> int:
         """Length of the packet"""
 
-        return ip4.ps.HEADER_LEN + sum([len(_) for _ in self.options]) + len(self._carried_packet)
+        return ip4.ps.IP4_HEADER_LEN + sum([len(_) for _ in self.options]) + len(self._carried_packet)
 
     def __str__(self) -> str:
         """Packet log string"""
 
         return (
-            f"IPv4 {self.src} > {self.dst}, proto {self.proto} ({ip4.ps.PROTO_TABLE.get(self.proto, '???')}), id {self.id}"
+            f"IPv4 {self.src} > {self.dst}, proto {self.proto} ({ip4.ps.IP4_PROTO_TABLE.get(self.proto, '???')}), id {self.id}"
             + f"{', DF' if self.flag_df else ''}{', MF' if self.flag_mf else ''}, offset {self.offset}, plen {self.plen}"
             + f", ttl {self.ttl}"
         )
@@ -116,10 +120,10 @@ class Assembler:
     def pshdr_sum(self) -> int:
         """Create IPv4 pseudo header used by TCP and UDP to compute their checksums"""
 
-        pseudo_header = struct.pack("! 4s 4s BBH", self.src.packed, self.dst.packed, 0, self.proto, self.plen - self.hlen)
+        pseudo_header = struct.pack("! 4s 4s BBH", bytes(self.src), bytes(self.dst), 0, self.proto, self.plen - self.hlen)
         return sum(struct.unpack("! 3L", pseudo_header))
 
-    def assemble(self, frame, hptr) -> None:
+    def assemble(self, frame: bytearray, hptr: int) -> None:
         """Assemble packet into the raw form"""
 
         struct.pack_into(
@@ -134,8 +138,8 @@ class Assembler:
             self.ttl,
             self.proto,
             0,
-            self.src.packed,
-            self.dst.packed,
+            bytes(self.src),
+            bytes(self.dst),
             self.raw_options,
         )
 
@@ -147,14 +151,14 @@ class Assembler:
 class FragAssembler:
     """IPv4 packet fragment assembler support class"""
 
-    ether_type = ether.ps.TYPE_IP4
+    ether_type = ether.ps.ETHER_TYPE_IP4
 
     def __init__(
         self,
         data: bytes,
         proto: int,
-        src: IPv4Address,
-        dst: IPv4Address,
+        src: Ip4Address,
+        dst: Ip4Address,
         ttl: int = config.ip4_default_ttl,
         dscp: int = 0,
         ecn: int = 0,
@@ -165,7 +169,7 @@ class FragAssembler:
     ):
         """Class constructor"""
 
-        assert proto in {ip4.ps.PROTO_ICMP4, ip4.ps.PROTO_UDP, ip4.ps.PROTO_TCP}
+        assert proto in {ip4.ps.IP4_PROTO_ICMP4, ip4.ps.IP4_PROTO_UDP, ip4.ps.IP4_PROTO_TCP}
 
         self.tracker = Tracker("TX")
         self.ver = 4
@@ -176,18 +180,18 @@ class FragAssembler:
         self.flag_mf = flag_mf
         self.offset = offset
         self.ttl = ttl
-        self.src = IPv4Address(src)
-        self.dst = IPv4Address(dst)
+        self.src = Ip4Address(src)
+        self.dst = Ip4Address(dst)
         self.options = [] if options is None else options
         self.data = data
         self.proto = proto
-        self.hlen = ip4.ps.HEADER_LEN + len(self.raw_options)
+        self.hlen = ip4.ps.IP4_HEADER_LEN + len(self.raw_options)
         self.plen = len(self)
 
     def __len__(self):
         """Length of the packet"""
 
-        return ip4.ps.HEADER_LEN + sum([len(_) for _ in self.options]) + len(self.data)
+        return ip4.ps.IP4_HEADER_LEN + sum([len(_) for _ in self.options]) + len(self.data)
 
     from ip4.ps import __str__
 
@@ -217,8 +221,8 @@ class FragAssembler:
             self.ttl,
             self.proto,
             0,
-            self.src.packed,
-            self.dst.packed,
+            bytes(self.src),
+            bytes(self.dst),
             self.raw_options,
             self.data,
         )
@@ -231,27 +235,27 @@ class FragAssembler:
 #
 
 
-# IPv4 option - End of Option Linst
+# IPv4 option - End of Ip4Option Linst
 
 
-class OptEol(ip4.ps.OptEol):
-    """IP option - End of Option List"""
+class Ip4OptEol(ip4.ps.Ip4OptEol):
+    """IP option - End of Ip4Option List"""
 
     @property
     def raw_option(self) -> bytes:
         """Get option in raw form"""
 
-        return struct.pack("!B", ip4.ps.OPT_EOL)
+        return struct.pack("!B", ip4.ps.IP4_OPT_EOL)
 
 
 # IPv4 option - No Operation (1)
 
 
-class OptNop(ip4.ps.OptNop):
+class Ip4OptNop(ip4.ps.Ip4OptNop):
     """IP option - No Operation"""
 
     @property
     def raw_option(self) -> bytes:
         """Get option in raw form"""
 
-        return struct.pack("!B", ip4.ps.OPT_NOP)
+        return struct.pack("!B", ip4.ps.IP4_OPT_NOP)

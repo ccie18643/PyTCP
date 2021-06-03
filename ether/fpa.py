@@ -29,24 +29,32 @@
 #
 
 
+from __future__ import annotations  # Required by Python ver < 3.10
+
 import struct
-from typing import Union
+from typing import TYPE_CHECKING, Union
 
-import arp.fpa
 import ether.ps
-import ip4.fpa
-import ip6.fpa
+from lib.mac_address import MacAddress
+
+if TYPE_CHECKING:
+    from arp.fpa import ArpAssembler
+    from ip4.fpa import Ip4Assembler
+    from ip6.fpa import Ip6Assembler
 
 
-class Assembler:
+class EtherAssembler:
     """Ethernet packet assembler support class"""
 
     def __init__(
-        self, carried_packet: Union[arp.fpa.Assembler, ip4.fpa.Assembler, ip6.fpa.Assembler], src: str = "00:00:00:00:00:00", dst: str = "00:00:00:00:00:00"
+        self,
+        carried_packet: Union[ArpAssembler, Ip4Assembler, Ip6Assembler],
+        src: MacAddress = MacAddress("00:00:00:00:00:00"),
+        dst: MacAddress = MacAddress("00:00:00:00:00:00"),
     ) -> None:
         """Class constructor"""
 
-        assert carried_packet.ether_type in {ether.ps.TYPE_ARP, ether.ps.TYPE_IP4, ether.ps.TYPE_IP6}
+        assert carried_packet.ether_type in {ether.ps.ETHER_TYPE_ARP, ether.ps.ETHER_TYPE_IP4, ether.ps.ETHER_TYPE_IP6}
 
         self._carried_packet = carried_packet
         self.tracker = self._carried_packet.tracker
@@ -57,13 +65,13 @@ class Assembler:
     def __len__(self) -> int:
         """Length of the packet"""
 
-        return ether.ps.HEADER_LEN + len(self._carried_packet)
+        return ether.ps.ETHER_HEADER_LEN + len(self._carried_packet)
 
     from ether.ps import __str__
 
     def assemble(self, frame: bytearray, hptr: int) -> None:
         """Assemble packet into the raw form"""
 
-        struct.pack_into("! 6s 6s H", frame, hptr, bytes.fromhex(self.dst.replace(":", "")), bytes.fromhex(self.src.replace(":", "")), self.type)
+        struct.pack_into("! 6s 6s H", frame, hptr, bytes(self.dst), bytes(self.src), self.type)
 
-        self._carried_packet.assemble(frame, hptr + ether.ps.HEADER_LEN)
+        self._carried_packet.assemble(frame, hptr + ether.ps.ETHER_HEADER_LEN)

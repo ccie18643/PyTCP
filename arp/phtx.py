@@ -29,14 +29,29 @@
 #
 
 
-import arp.fpa
+from __future__ import annotations  # Required by Python ver < 3.10
+
+from typing import TYPE_CHECKING
+
 import config
-from misc.ipv4_address import IPv4Address
+from arp.fpa import ArpAssembler
+from lib.mac_address import MacAddress
 from misc.tracker import Tracker
+
+if TYPE_CHECKING:
+    from lib.ip4_address import Ip4Address
 
 
 def _phtx_arp(
-    self, ether_src: str, ether_dst: str, arp_oper: int, arp_sha: str, arp_spa: IPv4Address, arp_tha: str, arp_tpa: IPv4Address, echo_tracker: Tracker = None
+    self,
+    ether_src: MacAddress,
+    ether_dst: MacAddress,
+    arp_oper: int,
+    arp_sha: MacAddress,
+    arp_spa: Ip4Address,
+    arp_tha: MacAddress,
+    arp_tpa: Ip4Address,
+    echo_tracker: Tracker = None,
 ) -> None:
     """Handle outbound ARP packets"""
 
@@ -44,7 +59,7 @@ def _phtx_arp(
     if not config.ip4_support:
         return
 
-    arp_packet_tx = arp.fpa.Assembler(
+    arp_packet_tx = ArpAssembler(
         oper=arp_oper,
         sha=arp_sha,
         spa=arp_spa,

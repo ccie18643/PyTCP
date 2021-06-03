@@ -28,7 +28,8 @@
 # icmp6/ps.py - protocol support for ICMPv6
 #
 
-from misc.ipv6_address import IPv6Network
+from lib.ip6_address import Ip6Network
+from lib.mac_address import MacAddress
 
 # Destination Unreachable message (1/[0-6])
 
@@ -275,47 +276,48 @@ from misc.ipv6_address import IPv6Network
 # ~                                                               ~
 # +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 
-HEADER_LEN = 4
 
-UNREACHABLE = 1
-UNREACHABLE_LEN = 8
-UNREACHABLE__NO_ROUTE = 0
-UNREACHABLE__PROHIBITED = 1
-UNREACHABLE__SCOPE = 2
-UNREACHABLE__ADDRESS = 3
-UNREACHABLE__PORT = 4
-UNREACHABLE__FAILED_POLICY = 5
-UNREACHABLE__REJECT_ROUTE = 6
-PACKET_TOO_BIG = 2
-PACKET_TOO_BIG_LEN = 8
-TIME_EXCEEDED = 3
-TIME_EXCEEDED_LEN = 8
-PARAMETER_PROBLEM = 4
-PARAMETER_PROBLEM_LEN = 8
-ECHO_REQUEST = 128
-ECHO_REQUEST_LEN = 8
-ECHO_REPLY = 129
-ECHO_REPLY_LEN = 8
-MLD2_QUERY = 130
-MLD2_QUERY_LEN = 28
-ROUTER_SOLICITATION = 133
-ROUTER_SOLICITATION_LEN = 8
-ROUTER_ADVERTISEMENT = 134
-ROUTER_ADVERTISEMENT_LEN = 16
-NEIGHBOR_SOLICITATION = 135
-NEIGHBOR_SOLICITATION_LEN = 24
-NEIGHBOR_ADVERTISEMENT = 136
-NEIGHBOR_ADVERTISEMENT_LEN = 24
-MLD2_REPORT = 143
-MLD2_REPORT_LEN = 8
+ICMP6_HEADER_LEN = 4
+
+ICMP6_UNREACHABLE = 1
+ICMP6_UNREACHABLE_LEN = 8
+ICMP6_UNREACHABLE__NO_ROUTE = 0
+ICMP6_UNREACHABLE__PROHIBITED = 1
+ICMP6_UNREACHABLE__SCOPE = 2
+ICMP6_UNREACHABLE__ADDRESS = 3
+ICMP6_UNREACHABLE__PORT = 4
+ICMP6_UNREACHABLE__FAILED_POLICY = 5
+ICMP6_UNREACHABLE__REJECT_ROUTE = 6
+ICMP6_PACKET_TOO_BIG = 2
+ICMP6_PACKET_TOO_BIG_LEN = 8
+ICMP6_TIME_EXCEEDED = 3
+ICMP6_TIME_EXCEEDED_LEN = 8
+ICMP6_PARAMETER_PROBLEM = 4
+ICMP6_PARAMETER_PROBLEM_LEN = 8
+ICMP6_ECHOR_REQUEST = 128
+ICMP6_ECHOR_REQUEST_LEN = 8
+ICMP6_ECHOR_REPLY = 129
+ICMP6_ECHOR_REPLY_LEN = 8
+ICMP6_MLD2_QUERY = 130
+ICMP6_MLD2_QUERY_LEN = 28
+ICMP6_ROUTER_SOLICITATION = 133
+ICMP6_ROUTER_SOLICITATION_LEN = 8
+ICMP6_ROUTER_ADVERTISEMENT = 134
+ICMP6_ROUTER_ADVERTISEMENT_LEN = 16
+ICMP6_NEIGHBOR_SOLICITATION = 135
+ICMP6_NEIGHBOR_SOLICITATION_LEN = 24
+ICMP6_NEIGHBOR_ADVERTISEMENT = 136
+ICMP6_NEIGHBOR_ADVERTISEMENT_LEN = 24
+ICMP6_MLD2_REPORT = 143
+ICMP6_MLD2_REPORT_LEN = 8
 
 
-MART_MODE_IS_INCLUDE = 1
-MART_MODE_IS_EXCLUDE = 2
-MART_CHANGE_TO_INCLUDE = 3
-MART_CHANGE_TO_EXCLUDE = 4
-MART_ALLOW_NEW_SOURCES = 5
-MART_BLOCK_OLD_SOURCES = 6
+ICMP6_MART_MODE_IS_INCLUDE = 1
+ICMP6_MART_MODE_IS_EXCLUDE = 2
+ICMP6_MART_CHANGE_TO_INCLUDE = 3
+ICMP6_MART_CHANGE_TO_EXCLUDE = 4
+ICMP6_MART_ALLOW_NEW_SOURCES = 5
+ICMP6_MART_BLOCK_OLD_SOURCES = 6
 
 
 def __str__(self) -> str:
@@ -323,42 +325,42 @@ def __str__(self) -> str:
 
     log = f"ICMPv6 type {self.type}, code {self.code}"
 
-    if self.type == UNREACHABLE:
+    if self.type == ICMP6_UNREACHABLE:
         pass
 
-    elif self.type == ECHO_REQUEST:
+    elif self.type == ICMP6_ECHOR_REQUEST:
         log += f", id {self.ec_id}, seq {self.ec_seq}"
 
-    elif self.type == ECHO_REPLY:
+    elif self.type == ICMP6_ECHOR_REPLY:
         log += f", id {self.ec_id}, seq {self.ec_seq}"
 
-    elif self.type == ROUTER_SOLICITATION:
+    elif self.type == ICMP6_ROUTER_SOLICITATION:
         assert self.nd_options is not None
         for nd_option in self.nd_options:
             log += ", " + str(nd_option)
 
-    elif self.type == ROUTER_ADVERTISEMENT:
+    elif self.type == ICMP6_ROUTER_ADVERTISEMENT:
         assert self.nd_options is not None
         log += f", hop {self.ra_hop}"
-        log += f"flags {'M' if self.ra_flag_m else '-'}{'O' if self.ra_flag_o else '-'}"
-        log += f"rlft {self.ra_router_lifetime}, reacht {self.ra_reachable_time}, retrt {self.ra_retrans_timer}"
+        log += f", flags {'M' if self.ra_flag_m else '-'}{'O' if self.ra_flag_o else '-'}"
+        log += f", rlft {self.ra_router_lifetime}, reacht {self.ra_reachable_time}, retrt {self.ra_retrans_timer}"
         for nd_option in self.nd_options:
             log += ", " + str(nd_option)
 
-    elif self.type == NEIGHBOR_SOLICITATION:
+    elif self.type == ICMP6_NEIGHBOR_SOLICITATION:
         assert self.nd_options is not None
         log += f", target {self.ns_target_address}"
         for nd_option in self.nd_options:
             log += ", " + str(nd_option)
 
-    elif self.type == NEIGHBOR_ADVERTISEMENT:
+    elif self.type == ICMP6_NEIGHBOR_ADVERTISEMENT:
         assert self.nd_options is not None
         log += f", target {self.na_target_address}"
         log += f", flags {'R' if self.na_flag_r else '-'}{'S' if self.na_flag_s else '-'}{'O' if self.na_flag_o else '-'}"
         for nd_option in self.nd_options:
             log += ", " + str(nd_option)
 
-    elif self.type == MLD2_REPORT:
+    elif self.type == ICMP6_MLD2_REPORT:
         pass
 
     return log
@@ -377,17 +379,17 @@ def __str__(self) -> str:
 # >                           MAC Address                         |
 # +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 
-ND_OPT_SLLA = 1
-ND_OPT_SLLA_LEN = 8
+ICMP6_ND_OPT_SLLA = 1
+ICMP6_ND_OPT_SLLA_LEN = 8
 
 
-class NdOptSLLA:
+class Icmp6NdOptSLLA:
     """ICMPv6 ND option - Source Link Layer Address (1)"""
 
     def __init__(self) -> None:
         """Class constructor"""
 
-        self.slla = "not initialised"
+        self.slla = MacAddress("00:00:00:00:00:00")
 
     def __str__(self) -> str:
         """Option log string"""
@@ -397,7 +399,7 @@ class NdOptSLLA:
     def __len__(self) -> int:
         """Option length"""
 
-        return ND_OPT_SLLA_LEN
+        return ICMP6_ND_OPT_SLLA_LEN
 
 
 # ICMPv6 ND option - Target Link Layer Address (2)
@@ -408,17 +410,17 @@ class NdOptSLLA:
 # >                           MAC Address                         |
 # +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 
-ND_OPT_TLLA = 2
-ND_OPT_TLLA_LEN = 8
+ICMP6_ND_OPT_TLLA = 2
+ICMP6_ND_OPT_TLLA_LEN = 8
 
 
-class NdOptTLLA:
+class Icmp6NdOptTLLA:
     """ICMPv6 ND option - Target Link Layer Address (2)"""
 
     def __init__(self) -> None:
         """Class constructor"""
 
-        self.tlla = "not initialised"
+        self.tlla = MacAddress("00:00:00:00:00:00")
 
     def __str__(self) -> str:
         """Option log string"""
@@ -428,7 +430,7 @@ class NdOptTLLA:
     def __len__(self) -> int:
         """Option length"""
 
-        return ND_OPT_TLLA_LEN
+        return ICMP6_ND_OPT_TLLA_LEN
 
 
 # ICMPv6 ND option - Prefix Information (3)
@@ -451,17 +453,17 @@ class NdOptTLLA:
 # |                                                               |
 # +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 
-ND_OPT_PI = 3
-ND_OPT_PI_LEN = 32
+ICMP6_ND_OPT_PI = 3
+ICMP6_ND_OPT_PI_LEN = 32
 
 
-class NdOptPI:
+class Icmp6NdOptPI:
     """ICMPv6 ND option - Prefix Information (3)"""
 
     def __init__(self) -> None:
         """Class constructor"""
 
-        self.prefix = IPv6Network(0)
+        self.prefix = Ip6Network("::/128")
 
     def __str__(self) -> str:
         """Option log string"""
@@ -471,13 +473,13 @@ class NdOptPI:
     def __len__(self) -> int:
         """Option length"""
 
-        return ND_OPT_PI_LEN
+        return ICMP6_ND_OPT_PI_LEN
 
 
 # ICMPv6 ND unknown option
 
 
-class NdOptUnk:
+class Icmp6NdOptUnk:
     """ICMPv6 ND  option not supported by this stack"""
 
     def __init__(self) -> None:

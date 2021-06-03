@@ -29,15 +29,21 @@
 #
 
 
+from __future__ import annotations  # Required by Python ver < 3.10
+
 import struct
+from typing import TYPE_CHECKING
 
 import arp.ps
 import config
-from misc.ipv4_address import IPv4Address
-from misc.packet import PacketRx
+from lib.ip4_address import Ip4Address
+from lib.mac_address import MacAddress
+
+if TYPE_CHECKING:
+    from misc.packet import PacketRx
 
 
-class Parser:
+class ArpParser:
     """ARP packet parser class"""
 
     def __init__(self, packet_rx: PacketRx) -> None:
@@ -94,35 +100,35 @@ class Parser:
         return self._cache__oper
 
     @property
-    def sha(self) -> str:
+    def sha(self) -> MacAddress:
         """Read 'Sender hardware address' field"""
 
         if "_cache__sha" not in self.__dict__:
-            self._cache__sha = ":".join([f"{_:0>2x}" for _ in self._frame[self._hptr + 8 : self._hptr + 14]])
+            self._cache__sha = MacAddress(self._frame[self._hptr + 8 : self._hptr + 14])
         return self._cache__sha
 
     @property
-    def spa(self) -> IPv4Address:
+    def spa(self) -> Ip4Address:
         """Read 'Sender protocol address' field"""
 
         if "_cache__spa" not in self.__dict__:
-            self._cache__spa = IPv4Address(self._frame[self._hptr + 14 : self._hptr + 18])
+            self._cache__spa = Ip4Address(self._frame[self._hptr + 14 : self._hptr + 18])
         return self._cache__spa
 
     @property
-    def tha(self) -> str:
+    def tha(self) -> MacAddress:
         """Read 'Target hardware address' field"""
 
         if "_cache__tha" not in self.__dict__:
-            self._cache__tha = ":".join([f"{_:0>2x}" for _ in self._frame[self._hptr + 18 : self._hptr + 24]])
+            self._cache__tha = MacAddress(self._frame[self._hptr + 18 : self._hptr + 24])
         return self._cache__tha
 
     @property
-    def tpa(self) -> IPv4Address:
+    def tpa(self) -> Ip4Address:
         """Read 'Target protocol address' field"""
 
         if "_cache__tpa" not in self.__dict__:
-            self._cache__tpa = IPv4Address(self._frame[self._hptr + 24 : self._hptr + 28])
+            self._cache__tpa = Ip4Address(self._frame[self._hptr + 24 : self._hptr + 28])
         return self._cache__tpa
 
     @property
@@ -130,7 +136,7 @@ class Parser:
         """Read the whole packet"""
 
         if "_cache__packet_copy" not in self.__dict__:
-            self._cache__packet_copy = self._frame[self._hptr : self._hptr + arp.ps.HEADER_LEN]
+            self._cache__packet_copy = self._frame[self._hptr : self._hptr + arp.ps.ARP_HEADER_LEN]
         return self._cache__packet_copy
 
     def _packet_integrity_check(self) -> str:
@@ -139,7 +145,7 @@ class Parser:
         if not config.packet_integrity_check:
             return ""
 
-        if len(self) < arp.ps.HEADER_LEN:
+        if len(self) < arp.ps.ARP_HEADER_LEN:
             return "ARP integrity - wrong packet length (I)"
 
         return ""

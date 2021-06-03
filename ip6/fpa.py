@@ -29,29 +29,33 @@
 #
 
 
+from __future__ import annotations  # Required by Python ver < 3.10
+
 import struct
-from typing import Union
+from typing import TYPE_CHECKING, Union
 
 import config
 import ether.ps
-import icmp6.fpa
 import ip6.ps
-import ip6_ext_frag.fpa
-import tcp.fpa
-import udp.fpa
-from misc.ipv6_address import IPv6Address
+from lib.ip6_address import Ip6Address
+
+if TYPE_CHECKING:
+    from icmp6.fpa import Icmp6Assembler
+    from ip6_ext_frag.fpa import Ip6ExtFragAssembler
+    from tcp.fpa import TcpAssembler
+    from udp.fpa import UdpAssembler
 
 
-class Assembler:
+class Ip6Assembler:
     """IPv6 packet assembler support class"""
 
-    ether_type = ether.ps.TYPE_IP6
+    ether_type = ether.ps.ETHER_TYPE_IP6
 
     def __init__(
         self,
-        carried_packet: Union[ip6_ext_frag.fpa.Assembler, icmp6.fpa.Assembler, tcp.fpa.Assembler, udp.fpa.Assembler],
-        src: IPv6Address,
-        dst: IPv6Address,
+        carried_packet: Union[Ip6ExtFragAssembler, Icmp6Assembler, TcpAssembler, UdpAssembler],
+        src: Ip6Address,
+        dst: Ip6Address,
         hop: int = config.ip6_default_hop,
         dscp: int = 0,
         ecn: int = 0,
@@ -59,7 +63,12 @@ class Assembler:
     ) -> None:
         """Class constructor"""
 
-        assert carried_packet.ip6_next in {ip6.ps.NEXT_HEADER_ICMP6, ip6.ps.NEXT_HEADER_UDP, ip6.ps.NEXT_HEADER_TCP, ip6.ps.NEXT_HEADER_EXT_FRAG}
+        assert carried_packet.ip6_next in {
+            ip6.ps.IP6_NEXT_HEADER_ICMP6,
+            ip6.ps.IP6_NEXT_HEADER_UDP,
+            ip6.ps.IP6_NEXT_HEADER_TCP,
+            ip6.ps.IP6_NEXT_HEADER_EXT_FRAG,
+        }
 
         self._carried_packet = carried_packet
         self.tracker = self._carried_packet.tracker
@@ -68,15 +77,15 @@ class Assembler:
         self.ecn = ecn
         self.flow = flow
         self.hop = hop
-        self.src = IPv6Address(src)
-        self.dst = IPv6Address(dst)
+        self.src = Ip6Address(src)
+        self.dst = Ip6Address(dst)
         self.next = self._carried_packet.ip6_next
         self.dlen = len(carried_packet)
 
     def __len__(self) -> int:
         """Length of the packet"""
 
-        return ip6.ps.HEADER_LEN + len(self._carried_packet)
+        return ip6.ps.IP6_HEADER_LEN + len(self._carried_packet)
 
     from ip6.ps import __str__
 
@@ -84,7 +93,7 @@ class Assembler:
     def pshdr_sum(self) -> int:
         """Returns IPv6 pseudo header that is used by TCP, UDP and ICMPv6 to compute their checksums"""
 
-        pseudo_header = struct.pack("! 16s 16s L BBBB", self.src.packed, self.dst.packed, self.dlen, 0, 0, 0, self.next)
+        pseudo_header = struct.pack("! 16s 16s L BBBB", bytes(self.src), bytes(self.dst), self.dlen, 0, 0, 0, self.next)
         return sum(struct.unpack("! 5Q", pseudo_header))
 
     def assemble(self, frame: bytearray, hptr: int) -> None:
@@ -101,8 +110,8 @@ class Assembler:
             self.dlen,
             self.next,
             self.hop,
-            self.src.packed,
-            self.dst.packed,
+            bytes(self.src),
+            bytes(self.dst),
         )
 
-        self._carried_packet.assemble(frame, hptr + ip6.ps.HEADER_LEN, self.pshdr_sum)
+        self._carried_packet.assemble(frame, hptr + ip6.ps.IP6_HEADER_LEN, self.pshdr_sum)

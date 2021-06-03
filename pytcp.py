@@ -28,7 +28,6 @@
 # pytcp.py - main TCP/IP stack program
 #
 
-
 import fcntl
 import os
 import struct

@@ -29,18 +29,23 @@
 #
 
 
-from typing import Optional, Union
+from __future__ import annotations  # Required by Python ver < 3.10
+
+from typing import TYPE_CHECKING, Optional, Union
 
 import config
 import icmp6.fpa
-from misc.ipv6_address import IPv6Address
+from icmp6.fpa import Icmp6Assembler
 from misc.tracker import Tracker
+
+if TYPE_CHECKING:
+    from lib.ip6_address import Ip6Address
 
 
 def _phtx_icmp6(
     self,
-    ip6_src: IPv6Address,
-    ip6_dst: IPv6Address,
+    ip6_src: Ip6Address,
+    ip6_dst: Ip6Address,
     icmp6_type: int,
     icmp6_code: int = 0,
     ip6_hop: int = 64,
@@ -48,12 +53,12 @@ def _phtx_icmp6(
     icmp6_ec_id: Optional[int] = None,
     icmp6_ec_seq: Optional[int] = None,
     icmp6_ec_data: Optional[bytes] = None,
-    icmp6_ns_target_address: Optional[IPv6Address] = None,
+    icmp6_ns_target_address: Optional[Ip6Address] = None,
     icmp6_na_flag_r: bool = False,
     icmp6_na_flag_s: bool = False,
     icmp6_na_flag_o: bool = False,
-    icmp6_na_target_address: Optional[IPv6Address] = None,
-    icmp6_nd_options: Optional[list[Union[icmp6.fpa.NdOptSLLA, icmp6.fpa.NdOptTLLA, icmp6.fpa.NdOptPI]]] = None,
+    icmp6_na_target_address: Optional[Ip6Address] = None,
+    icmp6_nd_options: Optional[list[Union[icmp6.fpa.Icmp6NdOptSLLA, icmp6.fpa.Icmp6NdOptTLLA, icmp6.fpa.Icmp6NdOptPI]]] = None,
     icmp6_mlr2_multicast_address_record=None,
     echo_tracker: Optional[Tracker] = None,
 ) -> None:
@@ -63,7 +68,7 @@ def _phtx_icmp6(
     if not config.ip6_support:
         return
 
-    icmp6_packet_tx = icmp6.fpa.Assembler(
+    icmp6_packet_tx = Icmp6Assembler(
         type=icmp6_type,
         code=icmp6_code,
         un_data=icmp6_un_data,

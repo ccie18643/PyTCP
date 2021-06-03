@@ -1,5 +1,36 @@
 #!/usr/bin/env python3
 
+
+############################################################################
+#                                                                          #
+#  PyTCP - Python TCP/IP stack                                             #
+#  Copyright (C) 2020-2021  Sebastian Majewski                             #
+#                                                                          #
+#  This program is free software: you can redistribute it and/or modify    #
+#  it under the terms of the GNU General Public License as published by    #
+#  the Free Software Foundation, either version 3 of the License, or       #
+#  (at your option) any later version.                                     #
+#                                                                          #
+#  This program is distributed in the hope that it will be useful,         #
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of          #
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the           #
+#  GNU General Public License for more details.                            #
+#                                                                          #
+#  You should have received a copy of the GNU General Public License       #
+#  along with this program.  If not, see <https://www.gnu.org/licenses/>.  #
+#                                                                          #
+#  Author's email: ccie18643@gmail.com                                     #
+#  Github repository: https://github.com/ccie18643/PyTCP                   #
+#                                                                          #
+############################################################################
+
+
+#
+# tests/test_misc_ph.py - unit tests for PacketHandler class
+#
+
+
+import loguru
 from testslide import StrictMock, TestCase
 
 from misc.ph import PacketHandler
@@ -9,12 +40,12 @@ class TestPacketHandler(TestCase):
     def setUp(self):
         super().setUp()
         self.packet_handler = PacketHandler(None)
-        self.packet_handler._logger = StrictMock()
+        self.packet_handler._logger = StrictMock(loguru._logger.Logger)
         self.packet_handler._logger.debug = lambda _: None
         self.packet_handler._logger.warning = lambda _: None
 
     def test__parse_stack_ip6_address_candidate(self):
-        from misc.ipv6_address import IPv6Address, IPv6Interface
+        from lib.ip6_address import Ip6Address, Ip6Host
 
         sample = [
             ("FE80::7/64", ""),  # valid link loal address [pass]
@@ -30,21 +61,21 @@ class TestPacketHandler(TestCase):
             ("2015::15/64", ""),  # valid global address with no gateway [pass]
         ]
         expected = [
-            IPv6Interface("fe80::7/64"),
-            IPv6Interface("fe80::77/64"),
-            IPv6Interface("fe80::7777/64"),
-            IPv6Interface("2007::7/64"),
-            IPv6Interface("2009::9/64"),
-            IPv6Interface("2015::15/64"),
+            Ip6Host("fe80::7/64"),
+            Ip6Host("fe80::77/64"),
+            Ip6Host("fe80::7777/64"),
+            Ip6Host("2007::7/64"),
+            Ip6Host("2009::9/64"),
+            Ip6Host("2015::15/64"),
         ]
-        result = self.packet_handler._parse_stack_ip6_address_candidate(sample)
+        result = self.packet_handler._parse_stack_ip6_host_candidate(sample)
         self.assertEqual(result, expected)
-        expected = [None, None, None, IPv6Address("fe80::1"), IPv6Address("2009::1"), None]
+        expected = [None, None, None, Ip6Address("fe80::1"), Ip6Address("2009::1"), None]
         result = [ip6_address.gateway for ip6_address in result]
         self.assertEqual(result, expected)
 
-    def test__parse_stack_ip4_address_candidate(self):
-        from misc.ipv4_address import IPv4Address, IPv4Interface
+    def test__parse_stack_ip4_host_candidate(self):
+        from lib.ip4_address import Ip4Address, Ip4Host
 
         sample = [
             ("192.168.9.7/24", "192.168.9.1"),  # valid address and valid gateway [pass]
@@ -65,14 +96,14 @@ class TestPacketHandler(TestCase):
             ("10.10.10.7/24", "10.10.10.1"),  # valid address and valid gateway [pass]
         ]
         expected = [
-            IPv4Interface("192.168.9.7/24"),
-            IPv4Interface("192.168.9.77/24"),
-            IPv4Interface("192.168.9.102/24"),
-            IPv4Interface("172.16.17.7/24"),
-            IPv4Interface("10.10.10.7/24"),
+            Ip4Host("192.168.9.7/24"),
+            Ip4Host("192.168.9.77/24"),
+            Ip4Host("192.168.9.102/24"),
+            Ip4Host("172.16.17.7/24"),
+            Ip4Host("10.10.10.7/24"),
         ]
-        result = self.packet_handler._parse_stack_ip4_address_candidate(sample)
+        result = self.packet_handler._parse_stack_ip4_host_candidate(sample)
         self.assertEqual(result, expected)
-        expected = [IPv4Address("192.168.9.1"), IPv4Address("192.168.9.1"), None, IPv4Address("172.16.17.1"), IPv4Address("10.10.10.1")]
-        result = [ip4_address.gateway for ip4_address in result]
+        expected = [Ip4Address("192.168.9.1"), Ip4Address("192.168.9.1"), None, Ip4Address("172.16.17.1"), Ip4Address("10.10.10.1")]
+        result = [ip4_host.gateway for ip4_host in result]
         self.assertEqual(result, expected)

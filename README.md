@@ -1,4 +1,4 @@
-# PyTCP (version 2.2)
+# PyTCP (version 2.3)
 
 PyTCP is an attempt to create fully functional TCP/IP stack in Python. It supports TCP stream based transport with reliable packet delivery based on sliding window mechanism and basic congestion control. It also supports IPv6/ICMPv6 protocols with SLAAC address configuration. It operates as user space program attached to Linux TAP interface. As of today stack is able to send and receive traffic over Internet using IPv4 and IPv6 default gateways for routing. 
 
@@ -10,6 +10,10 @@ I am also working on another TCP/IP stack project that is being programmed in C 
 
  - Stack - *fast packet parser using 'zero copy' approach*
  - Stack - *fast packet assembler using 'zero copy' approach*
+ - Stack - *MAC address manipulation library - compatible with buffer protocol (Memoryview)*
+ - Stack - *IPv4 address manipulation library - compatible with buffer protocol (Memoryview) (not dependent on Python standard library)*
+ - Stack - *IPv6 address manipulation library - compatible with buffer protocol (Memoryview) (not dependent on Python standard library)*
+ - Code - *Unit testing for some of libraries and modules (based on Facebook's Testslide library)*
  - Ethernet protocol - *support of Ethernet II standard frame*
  - Ethernet protocol - *unicast, IPv4 multicast, IPv6 multicast and broadcast addressing supported*
  - ARP protocol - *replies, queries, ARP cache mechanism*
@@ -44,11 +48,12 @@ I am also working on another TCP/IP stack project that is being programmed in C 
 
 #### Work in progress:
 
- - Stack - *implementing support for multiple interfaces*
- - Stack - *implementing stack debugging console so certain information about stack components can be displayed on demand by sending commands. eg 'show icmpv6 nd cache', 'show ipv6 route', etc... it should also let run interactive commands like ping or stack's udp/tcp echo clients*
+ - Code - *Unit testing for libraries and modules (based on Facebook's Testslide library)*
+
 
 #### Next steps:
 
+ - Stack - *get back to implementing stack debugging console so certain information about stack components can be displayed on demand by sending commands. eg 'show icmpv6 nd cache', 'show ipv6 route', etc... it should also let run interactive commands like ping or stack's udp/tcp echo clients*
  - QUIC protocol - *research and plan for the implementation, this depends on ability to create lab environment for it*
  - IPv6 protocol - *redesign the RA PI option handling and ND prefix auto configuration to properly use A nad L flags, some research also needed on case when different than /64 prefix is being advertised*
  - IPv6 protocol - *implement optional headers*

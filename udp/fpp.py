@@ -29,35 +29,37 @@
 #
 
 
+from __future__ import annotations  # Required by Python ver < 3.10
+
 import struct
-from typing import cast
+from typing import TYPE_CHECKING
 
 import config
 import udp.ps
-from ip6.fpp import Parser as Ip6Parser
 from misc.ip_helper import inet_cksum
-from misc.packet import PacketRx
+
+if TYPE_CHECKING:
+    from misc.packet import PacketRx
 
 
-class Parser:
+class UdpParser:
     """UDP packet parser class"""
 
     def __init__(self, packet_rx: PacketRx) -> None:
         """Class constructor"""
 
+        assert packet_rx.ip is not None
+
         packet_rx.udp = self
 
         self._frame = packet_rx.frame
         self._hptr = packet_rx.hptr
-
-        # Casting here does not matter if uses 6 or 4
-        packet_rx.ip = cast(Ip6Parser, packet_rx.ip)
         self._plen = packet_rx.ip.dlen
 
         packet_rx.parse_failed = self._packet_integrity_check(packet_rx.ip.pshdr_sum) or self._packet_sanity_check()
 
         if not packet_rx.parse_failed:
-            packet_rx.hptr = self._hptr + udp.ps.HEADER_LEN
+            packet_rx.hptr = self._hptr + udp.ps.UDP_HEADER_LEN
 
     def __len__(self) -> int:
         """Number of bytes remaining in the frame"""
@@ -103,14 +105,14 @@ class Parser:
         """Read the data packet carries"""
 
         if "_cache__data" not in self.__dict__:
-            self._cache__data = self._frame[self._hptr + udp.ps.HEADER_LEN : self._hptr + self.plen]
+            self._cache__data = self._frame[self._hptr + udp.ps.UDP_HEADER_LEN : self._hptr + self.plen]
         return self._cache__data
 
     @property
     def dlen(self) -> int:
         """Calculate data length"""
 
-        return self.plen - udp.ps.HEADER_LEN
+        return self.plen - udp.ps.UDP_HEADER_LEN
 
     @property
     def packet(self) -> bytes:
@@ -129,11 +131,11 @@ class Parser:
         if inet_cksum(self._frame, self._hptr, self._plen, pshdr_sum):
             return "UDP integrity - wrong packet checksum"
 
-        if not udp.ps.HEADER_LEN <= self._plen <= len(self):
+        if not udp.ps.UDP_HEADER_LEN <= self._plen <= len(self):
             return "UDP integrity - wrong packet length (I)"
 
         plen = struct.unpack_from("!H", self._frame, self._hptr + 4)[0]
-        if not udp.ps.HEADER_LEN <= plen == self._plen <= len(self):
+        if not udp.ps.UDP_HEADER_LEN <= plen == self._plen <= len(self):
             return "UDP integrity - wrong packet length (II)"
 
         return ""

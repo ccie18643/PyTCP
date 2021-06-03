@@ -29,6 +29,8 @@
 #
 
 
+from __future__ import annotations  # Required by Python ver < 3.10
+
 import struct
 from typing import Optional
 
@@ -39,11 +41,11 @@ from misc.ip_helper import inet_cksum
 from misc.tracker import Tracker
 
 
-class Assembler:
+class UdpAssembler:
     """UDP packet assembler support class"""
 
-    ip4_proto = ip4.ps.PROTO_UDP
-    ip6_next = ip6.ps.NEXT_HEADER_UDP
+    ip4_proto = ip4.ps.IP4_PROTO_UDP
+    ip6_next = ip6.ps.IP6_NEXT_HEADER_UDP
 
     def __init__(self, sport: int, dport: int, data: Optional[bytes] = None, echo_tracker: Optional[Tracker] = None) -> None:
         """Class constructor"""
@@ -52,7 +54,7 @@ class Assembler:
         self.sport = sport
         self.dport = dport
         self.data = b"" if data is None else data
-        self.plen = udp.ps.HEADER_LEN + len(self.data)
+        self.plen = udp.ps.UDP_HEADER_LEN + len(self.data)
 
     def __len__(self) -> int:
         """Length of the packet"""

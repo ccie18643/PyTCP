@@ -29,21 +29,25 @@
 #
 
 
-from typing import cast
+from __future__ import annotations  # Required by Python ver < 3.10
 
-import arp.fpp
+from typing import TYPE_CHECKING
+
 import arp.ps
 import config
-from arp.fpp import Parser as ArpParser
-from ether.fpp import Parser as EtherParser
-from misc.ipv4_address import IPv4Address
-from misc.packet import PacketRx
+from arp.fpp import ArpParser
+from lib.ip4_address import Ip4Address
+
+if TYPE_CHECKING:
+    from misc.packet import PacketRx
 
 
 def _phrx_arp(self, packet_rx: PacketRx) -> None:
     """Handle inbound ARP packets"""
 
-    arp.fpp.Parser(packet_rx)
+    ArpParser(packet_rx)
+    assert packet_rx.arp is not None
+    assert packet_rx.ether is not None
 
     if packet_rx.parse_failed:
         if __debug__:
@@ -53,9 +57,7 @@ def _phrx_arp(self, packet_rx: PacketRx) -> None:
     if __debug__:
         self._logger.opt(ansi=True).info(f"<green>{packet_rx.tracker}</green> - {packet_rx.arp}")
 
-    packet_rx.arp = cast(ArpParser, packet_rx.arp)
-
-    if packet_rx.arp.oper == arp.ps.OP_REQUEST:
+    if packet_rx.arp.oper == arp.ps.ARP_OP_REQUEST:
         # Check if request contains our IP address in SPA field, this indicates IP address conflict
         if packet_rx.arp.spa in self.ip4_unicast:
             if __debug__:
@@ -67,7 +69,7 @@ def _phrx_arp(self, packet_rx: PacketRx) -> None:
             self._phtx_arp(
                 ether_src=self.mac_unicast,
                 ether_dst=packet_rx.arp.sha,
-                arp_oper=arp.ps.OP_REPLY,
+                arp_oper=arp.ps.ARP_OP_REPLY,
                 arp_sha=self.mac_unicast,
                 arp_spa=packet_rx.arp.tpa,
                 arp_tha=packet_rx.arp.sha,
@@ -84,14 +86,13 @@ def _phrx_arp(self, packet_rx: PacketRx) -> None:
             return
 
     # Handle ARP reply
-    elif packet_rx.arp.oper == arp.ps.OP_REPLY:
-        packet_rx.ether = cast(EtherParser, packet_rx.ether)
+    elif packet_rx.arp.oper == arp.ps.ARP_OP_REPLY:
         # Check for ARP reply that is response to our ARP probe, that indicates that IP address we trying to claim is in use
         if packet_rx.ether.dst == self.mac_unicast:
             if (
-                packet_rx.arp.spa in [_.ip for _ in self.ip4_address_candidate]
+                packet_rx.arp.spa in [_.address for _ in self.ip4_host_candidate]
                 and packet_rx.arp.tha == self.mac_unicast
-                and packet_rx.arp.tpa == IPv4Address("0.0.0.0")
+                and packet_rx.arp.tpa == Ip4Address("0.0.0.0")
             ):
                 if __debug__:
                     self._logger.warning(f"ARP Probe detected conflict for IP {packet_rx.arp.spa} with host at {packet_rx.arp.sha}")
@@ -106,7 +107,7 @@ def _phrx_arp(self, packet_rx: PacketRx) -> None:
             return
 
         # Update ARP cache with mapping received as gratuitous ARP reply
-        if packet_rx.ether.dst == "ff:ff:ff:ff:ff:ff" and packet_rx.arp.spa == packet_rx.arp.tpa and config.arp_cache_update_from_gratuitious_reply:
+        if packet_rx.ether.dst.is_broadcast and packet_rx.arp.spa == packet_rx.arp.tpa and config.arp_cache_update_from_gratuitious_reply:
             if __debug__:
                 self._logger.debug(f"Adding/refreshing ARP cache entry from gratuitous reply - {packet_rx.arp.spa} -> {packet_rx.arp.sha}")
             self.arp_cache.add_entry(packet_rx.arp.spa, packet_rx.arp.sha)

@@ -29,6 +29,8 @@
 #
 
 
+from __future__ import annotations  # Required by Python ver < 3.10
+
 import struct
 from typing import Optional
 
@@ -38,10 +40,10 @@ from misc.ip_helper import inet_cksum
 from misc.tracker import Tracker
 
 
-class Assembler:
+class Icmp4Assembler:
     """ICMPv4 packet assembler support class"""
 
-    ip4_proto = ip4.ps.PROTO_ICMP4
+    ip4_proto = ip4.ps.IP4_PROTO_ICMP4
 
     def __init__(
         self,
@@ -55,21 +57,21 @@ class Assembler:
     ) -> None:
         """Class constructor"""
 
-        assert type in {icmp4.ps.ECHO_REQUEST, icmp4.ps.UNREACHABLE, icmp4.ps.ECHO_REPLY}
+        assert type in {icmp4.ps.ICMP4_ECHO_REQUEST, icmp4.ps.ICMP4_UNREACHABLE, icmp4.ps.ICMP4_ECHO_REPLY}
 
         self.tracker = Tracker("TX", echo_tracker)
         self.type = type
         self.code = code
 
-        if self.type == icmp4.ps.ECHO_REPLY:
+        if self.type == icmp4.ps.ICMP4_ECHO_REPLY:
             self.ec_id = ec_id
             self.ec_seq = ec_seq
             self.ec_data = b"" if ec_data is None else ec_data
 
-        elif self.type == icmp4.ps.UNREACHABLE and self.code == icmp4.ps.UNREACHABLE__PORT:
+        elif self.type == icmp4.ps.ICMP4_UNREACHABLE and self.code == icmp4.ps.ICMP4_UNREACHABLE__PORT:
             self.un_data = b"" if un_data is None else un_data[:520]
 
-        elif self.type == icmp4.ps.ECHO_REQUEST:
+        elif self.type == icmp4.ps.ICMP4_ECHO_REQUEST:
             self.ec_id = ec_id
             self.ec_seq = ec_seq
             self.ec_data = b"" if ec_data is None else ec_data
@@ -77,14 +79,14 @@ class Assembler:
     def __len__(self) -> int:
         """Length of the packet"""
 
-        if self.type == icmp4.ps.ECHO_REPLY:
-            return icmp4.ps.ECHO_REPLY_LEN + len(self.ec_data)
+        if self.type == icmp4.ps.ICMP4_ECHO_REPLY:
+            return icmp4.ps.ICMP4_ECHO_REPLY_LEN + len(self.ec_data)
 
-        if self.type == icmp4.ps.UNREACHABLE and self.code == icmp4.ps.UNREACHABLE__PORT:
-            return icmp4.ps.UNREACHABLE_LEN + len(self.un_data)
+        if self.type == icmp4.ps.ICMP4_UNREACHABLE and self.code == icmp4.ps.ICMP4_UNREACHABLE__PORT:
+            return icmp4.ps.ICMP4_UNREACHABLE_LEN + len(self.un_data)
 
-        if self.type == icmp4.ps.ECHO_REQUEST:
-            return icmp4.ps.ECHO_REQUEST_LEN + len(self.ec_data)
+        if self.type == icmp4.ps.ICMP4_ECHO_REQUEST:
+            return icmp4.ps.ICMP4_ECHO_REQUEST_LEN + len(self.ec_data)
 
         return 0
 
@@ -93,13 +95,13 @@ class Assembler:
     def assemble(self, frame: bytearray, hptr: int, _: int) -> None:
         """Assemble packet into the raw form"""
 
-        if self.type == icmp4.ps.ECHO_REPLY:
+        if self.type == icmp4.ps.ICMP4_ECHO_REPLY:
             struct.pack_into(f"! BBH HH {len(self.ec_data)}s", frame, hptr, self.type, self.code, 0, self.ec_id, self.ec_seq, self.ec_data)
 
-        elif self.type == icmp4.ps.UNREACHABLE and self.code == icmp4.ps.UNREACHABLE__PORT:
+        elif self.type == icmp4.ps.ICMP4_UNREACHABLE and self.code == icmp4.ps.ICMP4_UNREACHABLE__PORT:
             struct.pack_into(f"! BBH L {len(self.un_data)}s", frame, hptr, self.type, self.code, 0, 0, self.un_data)
 
-        elif self.type == icmp4.ps.ECHO_REQUEST:
+        elif self.type == icmp4.ps.ICMP4_ECHO_REQUEST:
             struct.pack_into(f"! BBH HH {len(self.ec_data)}s", frame, hptr, self.type, self.code, 0, self.ec_id, self.ec_seq, self.ec_data)
 
         struct.pack_into("! H", frame, hptr + 2, inet_cksum(frame, hptr, len(self)))

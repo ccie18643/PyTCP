@@ -28,6 +28,9 @@
 # config.py - module contains global configuration parameters
 #
 
+from sys import version_info
+
+assert version_info >= (3, 9), "PyTCP requires Python version 3.9 or higher"
 
 # TAP interface name stack should bind itself to
 interface = b"tap7"
@@ -73,7 +76,7 @@ ip6_frag_flow_timeout = 5
 # Each entry is a tuple interface address/prefix length and second is default gateway for this subnet
 # Basic routing is implemented and each subnet can have its own gateway
 # Link local addresses should have default gateway set to 'None'
-ip6_address_candidate = [
+ip6_host_candidate = [
     ("FE80::7/64", ""),
     # ("2007::7/64", "FE80::1"),
 ]
@@ -84,7 +87,7 @@ ip4_address_dhcp_config = True
 # Static IPv4 adrsses may to be configured here (they will still be subject to ARP Probe/Announcement mechanism)
 # Each entry is a tuple interface address/prefix length and second is default gateway for this subnet
 # Basic routing is implemented and each subnet can have its own gateway
-ip4_address_candidate = [
+ip4_host_candidate = [
     ("192.168.9.7/24", "192.168.9.1"),
     # ("192.168.9.77/24", "192.168.9.1"),
     # ("172.16.17.7/24", "172.16.17.1"),

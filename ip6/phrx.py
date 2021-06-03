@@ -29,18 +29,19 @@
 #
 
 
-from typing import cast
+from __future__ import annotations  # Required by Python ver < 3.10
 
 import ip6.fpp
 import ip6.ps
-from ip6.fpp import Parser as Ip6Parser
+from ip6.fpp import Ip6Parser
 from misc.packet import PacketRx
 
 
 def _phrx_ip6(self, packet_rx: PacketRx) -> None:
     """Handle inbound IPv6 packets"""
 
-    ip6.fpp.Parser(packet_rx)
+    Ip6Parser(packet_rx)
+    assert packet_rx.ip6 is not None
 
     if packet_rx.parse_failed:
         if __debug__:
@@ -50,26 +51,24 @@ def _phrx_ip6(self, packet_rx: PacketRx) -> None:
     if __debug__:
         self._logger.debug(f"{packet_rx.tracker} - {packet_rx.ip6}")
 
-    packet_rx.ip6 = cast(Ip6Parser, packet_rx.ip6)
-
     # Check if received packet has been sent to us directly or by unicast or multicast
     if packet_rx.ip6.dst not in {*self.ip6_unicast, *self.ip6_multicast}:
         if __debug__:
             self._logger.debug(f"{packet_rx.tracker} - IP packet not destined for this stack, dropping...")
         return
 
-    if packet_rx.ip6.next == ip6.ps.NEXT_HEADER_EXT_FRAG:
+    if packet_rx.ip6.next == ip6.ps.IP6_NEXT_HEADER_EXT_FRAG:
         self._phrx_ip6_ext_frag(packet_rx)
         return
 
-    if packet_rx.ip6.next == ip6.ps.NEXT_HEADER_ICMP6:
+    if packet_rx.ip6.next == ip6.ps.IP6_NEXT_HEADER_ICMP6:
         self._phrx_icmp6(packet_rx)
         return
 
-    if packet_rx.ip6.next == ip6.ps.NEXT_HEADER_UDP:
+    if packet_rx.ip6.next == ip6.ps.IP6_NEXT_HEADER_UDP:
         self._phrx_udp(packet_rx)
         return
 
-    if packet_rx.ip6.next == ip6.ps.NEXT_HEADER_TCP:
+    if packet_rx.ip6.next == ip6.ps.IP6_NEXT_HEADER_TCP:
         self._phrx_tcp(packet_rx)
         return

@@ -29,22 +29,26 @@
 #
 
 
-from typing import Optional, Union
+from __future__ import annotations  # Required by Python ver < 3.10
+
+from typing import TYPE_CHECKING, Optional, Union
 
 import config
-import icmp6.fpa
-import ip6.fpa
-import ip6_ext_frag.fpa
-import tcp.fpa
-import udp.fpa
-from misc.ipv6_address import IPv6Address
+from ip6.fpa import Ip6Assembler
+from lib.ip6_address import Ip6Address
+
+if TYPE_CHECKING:
+    from icmp6.fpa import Icmp6Assembler
+    from ip6_ext_frag.fpa import Ip6ExtFragAssembler
+    from tcp.fpa import TcpAssembler
+    from udp.fpa import UdpAssembler
 
 
-def _validate_src_ip6_address(self, ip6_src: IPv6Address, ip6_dst: IPv6Address) -> Optional[IPv6Address]:
+def _validate_src_ip6_address(self, ip6_src: Ip6Address, ip6_dst: Ip6Address) -> Optional[Ip6Address]:
     """Make sure source ip address is valid, supplement with valid one as appropriate"""
 
     # Check if the the source IP address belongs to this stack or its unspecified
-    if ip6_src not in {*self.ip6_unicast, *self.ip6_multicast, IPv6Address("::")}:
+    if ip6_src not in {*self.ip6_unicast, *self.ip6_multicast, Ip6Address("::")}:
         if __debug__:
             self._logger.warning(f"Unable to sent out IPv6 packet, stack doesn't own IPv6 address {ip6_src}")
         return None
@@ -62,20 +66,20 @@ def _validate_src_ip6_address(self, ip6_src: IPv6Address, ip6_dst: IPv6Address) 
 
     # If source is unspecified check if destination belongs to any of local networks, if so pick source address from that network
     if ip6_src.is_unspecified:
-        for stack_ip6_address in self.ip6_address:
-            if ip6_dst in stack_ip6_address.network:
-                return stack_ip6_address.ip
+        for ip6_host in self.ip6_host:
+            if ip6_dst in ip6_host.network:
+                return ip6_host.address
 
     # If source unspcified and destination is external pick source from first network that has default gateway set
     if ip6_src.is_unspecified:
-        for stack_ip6_address in self.ip6_address:
-            if stack_ip6_address.gateway:
-                return stack_ip6_address.ip
+        for ip6_host in self.ip6_host:
+            if ip6_host.gateway:
+                return ip6_host.address
 
     return ip6_src
 
 
-def _validate_dst_ip6_address(self, ip6_dst: IPv6Address) -> Optional[IPv6Address]:
+def _validate_dst_ip6_address(self, ip6_dst: Ip6Address) -> Optional[Ip6Address]:
     """Make sure destination ip address is valid"""
 
     # Drop packet if the destination address is unspecified
@@ -89,9 +93,9 @@ def _validate_dst_ip6_address(self, ip6_dst: IPv6Address) -> Optional[IPv6Addres
 
 def _phtx_ip6(
     self,
-    carried_packet: Union[ip6_ext_frag.fpa.Assembler, icmp6.fpa.Assembler, tcp.fpa.Assembler, udp.fpa.Assembler],
-    ip6_dst: IPv6Address,
-    ip6_src: IPv6Address,
+    carried_packet: Union[Ip6ExtFragAssembler, Icmp6Assembler, TcpAssembler, UdpAssembler],
+    ip6_dst: Ip6Address,
+    ip6_src: Ip6Address,
     ip6_hop: int = config.ip6_default_hop,
 ) -> None:
     """Handle outbound IP packets"""
@@ -113,7 +117,7 @@ def _phtx_ip6(
         return
 
     # assemble IPv6 apcket
-    ip6_packet_tx = ip6.fpa.Assembler(src=ip6_src, dst=ip6_dst, hop=ip6_hop, carried_packet=carried_packet)
+    ip6_packet_tx = Ip6Assembler(src=ip6_src, dst=ip6_dst, hop=ip6_hop, carried_packet=carried_packet)
 
     # Check if IP packet can be sent out without fragmentation, if so send it out
     if len(ip6_packet_tx) <= config.mtu:

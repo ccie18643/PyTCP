@@ -46,7 +46,7 @@
 # +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 
 
-HEADER_LEN = 20
+TCP_HEADER_LEN = 20
 
 
 def __str__(self) -> str:
@@ -72,11 +72,11 @@ def __str__(self) -> str:
 
 # TCP option - End of Option List (0)
 
-OPT_EOL = 0
-OPT_EOL_LEN = 1
+TCP_OPT_EOL = 0
+TCP_OPT_EOL_LEN = 1
 
 
-class OptEol:
+class TcpOptEol:
     """TCP option - End of Option List (0)"""
 
     def __str__(self) -> str:
@@ -87,16 +87,16 @@ class OptEol:
     def __len__(self) -> int:
         """Option length"""
 
-        return OPT_EOL_LEN
+        return TCP_OPT_EOL_LEN
 
 
 # TCP option - No Operation (1)
 
-OPT_NOP = 1
-OPT_NOP_LEN = 1
+TCP_OPT_NOP = 1
+TCP_OPT_NOP_LEN = 1
 
 
-class OptNop:
+class TcpOptNop:
     """TCP option - No Operation (1)"""
 
     def __str__(self) -> str:
@@ -107,16 +107,16 @@ class OptNop:
     def __len__(self) -> int:
         """Option length"""
 
-        return OPT_NOP_LEN
+        return TCP_OPT_NOP_LEN
 
 
 # TCP option - Maximum Segment Size (2)
 
-OPT_MSS = 2
-OPT_MSS_LEN = 4
+TCP_OPT_MSS = 2
+TCP_OPT_MSS_LEN = 4
 
 
-class OptMss:
+class TcpOptMss:
     """TCP option - Maximum Segment Size (2)"""
 
     def __init__(self) -> None:
@@ -132,16 +132,16 @@ class OptMss:
     def __len__(self) -> int:
         """Option length"""
 
-        return OPT_MSS_LEN
+        return TCP_OPT_MSS_LEN
 
 
 # TCP option - Window Scale (3)
 
-OPT_WSCALE = 3
-OPT_WSCALE_LEN = 3
+TCP_OPT_WSCALE = 3
+TCP_OPT_WSCALE_LEN = 3
 
 
-class OptWscale:
+class TcpOptWscale:
     """TCP option - Window Scale (3)"""
 
     def __init__(self) -> None:
@@ -157,16 +157,16 @@ class OptWscale:
     def __len__(self) -> int:
         """Option length"""
 
-        return OPT_WSCALE_LEN
+        return TCP_OPT_WSCALE_LEN
 
 
 # TCP option - Sack Permit (4)
 
-OPT_SACKPERM = 4
-OPT_SACKPERM_LEN = 2
+TCP_OPT_SACKPERM = 4
+TCP_OPT_SACKPERM_LEN = 2
 
 
-class OptSackPerm:
+class TcpOptSackPerm:
     """TCP option - Sack Permit (4)"""
 
     def __str__(self) -> str:
@@ -177,16 +177,16 @@ class OptSackPerm:
     def __len__(self) -> int:
         """Option length"""
 
-        return OPT_SACKPERM_LEN
+        return TCP_OPT_SACKPERM_LEN
 
 
 # TCP option - Timestamp
 
-OPT_TIMESTAMP = 8
-OPT_TIMESTAMP_LEN = 10
+TCP_OPT_TIMESTAMP = 8
+TCP_OPT_TIMESTAMP_LEN = 10
 
 
-class OptTimestamp:
+class TcpOptTimestamp:
     """TCP option - Timestamp (8)"""
 
     def __init__(self) -> None:
@@ -203,13 +203,13 @@ class OptTimestamp:
     def __len__(self) -> int:
         """Option length"""
 
-        return OPT_TIMESTAMP_LEN
+        return TCP_OPT_TIMESTAMP_LEN
 
 
 # TCP unknown option
 
 
-class OptUnk:
+class TcpOptUnk:
     """TCP option not supported by this stack"""
 
     def __init__(self) -> None:

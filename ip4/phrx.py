@@ -28,15 +28,15 @@
 # ip4/phrx.py - packet handler for inbound IPv4 packets
 #
 
+from __future__ import annotations  # Required by Python ver < 3.10
 
 import struct
 from time import time
-from typing import Optional, cast
+from typing import Optional
 
 import config
-import ip4.fpp
 import ip4.ps
-from ip4.fpp import Parser as Ip4Parser
+from ip4.fpp import Ip4Parser
 from misc.ip_helper import inet_cksum
 from misc.packet import PacketRx
 
@@ -44,7 +44,7 @@ from misc.packet import PacketRx
 def _defragment_ip4_packet(self, packet_rx: PacketRx) -> Optional[PacketRx]:
     """Defragment IPv4 packet"""
 
-    packet_rx.ip4 = cast(Ip4Parser, packet_rx.ip4)
+    assert packet_rx.ip4 is not None
 
     # Cleanup expired flows
     self.ip4_frag_flows = {
@@ -88,11 +88,11 @@ def _defragment_ip4_packet(self, packet_rx: PacketRx) -> Optional[PacketRx]:
         struct.pack_into(f"{len(self.ip4_frag_flows[flow_id]['data'][offset])}s", data, offset, self.ip4_frag_flows[flow_id]["data"][offset])
     del self.ip4_frag_flows[flow_id]
     header[0] = 0x45
-    struct.pack_into("!H", header, 2, ip4.ps.HEADER_LEN + len(data))
+    struct.pack_into("!H", header, 2, ip4.ps.IP4_HEADER_LEN + len(data))
     header[6] = header[7] = header[10] = header[11] = 0
-    struct.pack_into("!H", header, 10, inet_cksum(header, 0, ip4.ps.HEADER_LEN))
+    struct.pack_into("!H", header, 10, inet_cksum(header, 0, ip4.ps.IP4_HEADER_LEN))
     packet_rx = PacketRx(bytes(header) + data)
-    ip4.fpp.Parser(packet_rx)
+    Ip4Parser(packet_rx)
     if __debug__:
         self._logger.debug(f"{packet_rx.tracker} - Reasembled fragmented IPv4 packet, dlen {len(data)} bytes")
     return packet_rx
@@ -101,7 +101,8 @@ def _defragment_ip4_packet(self, packet_rx: PacketRx) -> Optional[PacketRx]:
 def _phrx_ip4(self, packet_rx: PacketRx) -> None:
     """Handle inbound IPv4 packets"""
 
-    ip4.fpp.Parser(packet_rx)
+    Ip4Parser(packet_rx)
+    assert packet_rx.ip4 is not None
 
     if packet_rx.parse_failed:
         if __debug__:
@@ -110,8 +111,6 @@ def _phrx_ip4(self, packet_rx: PacketRx) -> None:
 
     if __debug__:
         self._logger.debug(f"{packet_rx.tracker} - {packet_rx.ip4}")
-
-    packet_rx.ip4 = cast(Ip4Parser, packet_rx.ip4)
 
     # Check if received packet has been sent to us directly or by unicast/broadcast, allow any destination if no unicast address is configured (for DHCP client)
     if self.ip4_unicast and packet_rx.ip4.dst not in {*self.ip4_unicast, *self.ip4_multicast, *self.ip4_broadcast}:
@@ -124,16 +123,16 @@ def _phrx_ip4(self, packet_rx: PacketRx) -> None:
         if not (packet_rx := self._defragment_ip4_packet(packet_rx)):
             return
 
-    packet_rx.ip4 = cast(Ip4Parser, packet_rx.ip4)
+    assert packet_rx.ip4 is not None
 
-    if packet_rx.ip4.proto == ip4.ps.PROTO_ICMP4:
+    if packet_rx.ip4.proto == ip4.ps.IP4_PROTO_ICMP4:
         self._phrx_icmp4(packet_rx)
         return
 
-    if packet_rx.ip4.proto == ip4.ps.PROTO_UDP:
+    if packet_rx.ip4.proto == ip4.ps.IP4_PROTO_UDP:
         self._phrx_udp(packet_rx)
         return
 
-    if packet_rx.ip4.proto == ip4.ps.PROTO_TCP:
+    if packet_rx.ip4.proto == ip4.ps.IP4_PROTO_TCP:
         self._phrx_tcp(packet_rx)
         return

@@ -29,16 +29,17 @@
 #
 
 
+from __future__ import annotations  # Required by Python ver < 3.10
+
 import time
-from typing import Optional, cast
+from typing import Optional
 
 import loguru
 
 import config
 import icmp6.fpa
 import misc.stack as stack
-from misc.ipv6_address import IPv6Address
-from misc.timer import Timer
+from lib.ip6_address import Ip6Address
 
 
 class NdCache:
@@ -56,13 +57,13 @@ class NdCache:
     def __init__(self) -> None:
         """Class constructor"""
 
-        self.nd_cache: dict[str, NdCache.CacheEntry] = {}
+        self.nd_cache: dict[Ip6Address, NdCache.CacheEntry] = {}
 
         if __debug__:
             self._logger = loguru.logger.bind(object_name="icmp6_nd_cache.")
 
         # Setup timer to execute ND Cache maintainer every second
-        stack.timer = cast(Timer, stack.timer)
+        assert stack.timer is not None
         stack.timer.register_method(method=self._maintain_cache, delay=1000)
 
         if __debug__:
@@ -92,14 +93,12 @@ class NdCache:
                 if __debug__:
                     self._logger.debug(f"Trying to refresh expiring ICMPv6 ND cache entry for {ip6_address} -> {self.nd_cache[ip6_address].mac_address}")
 
-    # typing: Need to refactor type of ip6_address (str -> IPv6Address)
-    def add_entry(self, ip6_address: str, mac_address: str) -> None:
+    def add_entry(self, ip6_address: Ip6Address, mac_address: str) -> None:
         """Add / refresh entry in cache"""
 
         self.nd_cache[ip6_address] = self.CacheEntry(mac_address)
 
-    # typing: Need to refactor type of ip6_address (str -> IPv6Address)
-    def find_entry(self, ip6_address: str) -> Optional[str]:
+    def find_entry(self, ip6_address: Ip6Address) -> Optional[str]:
         """Find entry in cache and return MAC address"""
 
         if nd_entry := self.nd_cache.get(ip6_address, None):
@@ -115,23 +114,23 @@ class NdCache:
         self._send_icmp6_neighbor_solicitation(ip6_address)
         return None
 
-    # typing: Need to refactor type of arp_tpa (str -> IPv6Address)
-    # typing: Need to fix ssue with stac.packet_handler being initially None
-    def _send_icmp6_neighbor_solicitation(self, icmp6_ns_target_address):
+    def _send_icmp6_neighbor_solicitation(self, icmp6_ns_target_address: Ip6Address) -> None:
         """Enqueue ICMPv6 Neighbor Solicitation packet with TX ring"""
 
+        assert stack.packet_handler is not None
+
         # Pick appropriate source address
-        ip6_src = IPv6Address("::")
-        for ip6_address in stack.packet_handler.ip6_address:
-            if icmp6_ns_target_address in ip6_address.network:
-                ip6_src = ip6_address.ip
+        ip6_src = Ip6Address("::")
+        for ip6_host in stack.packet_handler.ip6_host:
+            if icmp6_ns_target_address in ip6_host.network:
+                ip6_src = ip6_host.address
 
         # Send out ND Solicitation message
         stack.packet_handler._phtx_icmp6(
             ip6_src=ip6_src,
             ip6_dst=icmp6_ns_target_address.solicited_node_multicast,
             ip6_hop=255,
-            icmp6_type=icmp6.ps.NEIGHBOR_SOLICITATION,
+            icmp6_type=icmp6.ps.ICMP6_NEIGHBOR_SOLICITATION,
             icmp6_ns_target_address=icmp6_ns_target_address,
-            icmp6_nd_options=[icmp6.fpa.NdOptSLLA(stack.packet_handler.mac_unicast)],
+            icmp6_nd_options=[icmp6.fpa.Icmp6NdOptSLLA(stack.packet_handler.mac_unicast)],
         )

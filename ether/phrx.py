@@ -29,19 +29,23 @@
 #
 
 
-from typing import cast
+from __future__ import annotations  # Required by Python ver < 3.10
+
+from typing import TYPE_CHECKING
 
 import config
-import ether.fpp
 import ether.ps
-from ether.fpp import Parser as EtherParser
-from misc.packet import PacketRx
+from ether.fpp import EtherParser
+
+if TYPE_CHECKING:
+    from misc.packet import PacketRx
 
 
 def _phrx_ether(self, packet_rx: PacketRx) -> None:
     """Handle inbound Ethernet packets"""
 
-    ether.fpp.Parser(packet_rx)
+    EtherParser(packet_rx)
+    assert packet_rx.ether is not None
 
     if packet_rx.parse_failed:
         if __debug__:
@@ -51,22 +55,20 @@ def _phrx_ether(self, packet_rx: PacketRx) -> None:
     if __debug__:
         self._logger.debug(f"{packet_rx.tracker} - {packet_rx.ether}")
 
-    packet_rx.ether = cast(EtherParser, packet_rx.ether)
-
     # Check if received packet matches any of stack MAC addresses
     if packet_rx.ether.dst not in {self.mac_unicast, *self.mac_multicast, self.mac_broadcast}:
         if __debug__:
             self._logger.opt(ansi=True).debug(f"{packet_rx.tracker} - Ethernet packet not destined for this stack, dropping...")
         return
 
-    if packet_rx.ether.type == ether.ps.TYPE_ARP and config.ip4_support:
+    if packet_rx.ether.type == ether.ps.ETHER_TYPE_ARP and config.ip4_support:
         self._phrx_arp(packet_rx)
         return
 
-    if packet_rx.ether.type == ether.ps.TYPE_IP4 and config.ip4_support:
+    if packet_rx.ether.type == ether.ps.ETHER_TYPE_IP4 and config.ip4_support:
         self._phrx_ip4(packet_rx)
         return
 
-    if packet_rx.ether.type == ether.ps.TYPE_IP6 and config.ip6_support:
+    if packet_rx.ether.type == ether.ps.ETHER_TYPE_IP6 and config.ip6_support:
         self._phrx_ip6(packet_rx)
         return

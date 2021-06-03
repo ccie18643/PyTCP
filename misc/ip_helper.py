@@ -29,12 +29,13 @@
 #
 
 
+from __future__ import annotations  # Required by Python ver < 3.10
+
 import struct
-from ipaddress import AddressValueError
 from typing import Union
 
-from misc.ipv4_address import IPv4Address
-from misc.ipv6_address import IPv6Address
+from lib.ip4_address import Ip4Address
+from lib.ip6_address import Ip6Address, Ip6AddressFormatError
 
 
 def inet_cksum(data: bytes, dptr: int, dlen: int, init: int = 0) -> int:
@@ -54,10 +55,10 @@ def inet_cksum(data: bytes, dptr: int, dlen: int, init: int = 0) -> int:
     return ~(cksum + (cksum >> 16)) & 0xFFFF
 
 
-def ip_pick_version(ip_address: str) -> Union[IPv6Address, IPv4Address]:
-    """Return correct IPv6Address or IPv4Address object based on address string provided"""
+def ip_pick_version(ip_address: str) -> Union[Ip6Address, Ip4Address]:
+    """Return correct Ip6Address or Ip4Address object based on address string provided"""
 
     try:
-        return IPv6Address(ip_address)
-    except AddressValueError:
-        return IPv4Address(ip_address)
+        return Ip6Address(ip_address)
+    except Ip6AddressFormatError:
+        return Ip4Address(ip_address)

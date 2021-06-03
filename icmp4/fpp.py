@@ -29,27 +29,31 @@
 #
 
 
+from __future__ import annotations  # Required by Python ver < 3.10
+
 import struct
-from typing import cast
+from typing import TYPE_CHECKING
 
 import config
 import icmp4.ps
-from ip4.fpp import Parser as Ip4Parser
 from misc.ip_helper import inet_cksum
-from misc.packet import PacketRx
+
+if TYPE_CHECKING:
+    from misc.packet import PacketRx
 
 
-class Parser:
+class Icmp4Parser:
     """ICMPv4 packet parser class"""
 
     def __init__(self, packet_rx: PacketRx) -> None:
         """Class constructor"""
 
+        assert packet_rx.ip4 is not None
+
         packet_rx.icmp4 = self
 
         self._frame = packet_rx.frame
         self._hptr = packet_rx.hptr
-        packet_rx.ip4 = cast(Ip4Parser, packet_rx.ip4)
         self._plen = packet_rx.ip4.dlen
 
         packet_rx.parse_failed = self._packet_integrity_check() or self._packet_sanity_check()
@@ -86,7 +90,7 @@ class Parser:
         """Read Echo 'Id' field"""
 
         if "_cache__ec_id" not in self.__dict__:
-            assert self.type in {icmp4.ps.ECHO_REQUEST, icmp4.ps.ECHO_REPLY}
+            assert self.type in {icmp4.ps.ICMP4_ECHO_REQUEST, icmp4.ps.ICMP4_ECHO_REPLY}
             self._cache__ec_id = struct.unpack_from("!H", self._frame, self._hptr + 4)[0]
         return self._cache__ec_id
 
@@ -95,7 +99,7 @@ class Parser:
         """Read Echo 'Seq' field"""
 
         if "_cache__ec_seq" not in self.__dict__:
-            assert self.type in {icmp4.ps.ECHO_REQUEST, icmp4.ps.ECHO_REPLY}
+            assert self.type in {icmp4.ps.ICMP4_ECHO_REQUEST, icmp4.ps.ICMP4_ECHO_REPLY}
             self._cache__ec_seq = struct.unpack_from("!H", self._frame, self._hptr + 6)[0]
         return self._cache__ec_seq
 
@@ -104,7 +108,7 @@ class Parser:
         """Read data carried by Echo message"""
 
         if "_cache__ec_data" not in self.__dict__:
-            assert self.type in {icmp4.ps.ECHO_REQUEST, icmp4.ps.ECHO_REPLY}
+            assert self.type in {icmp4.ps.ICMP4_ECHO_REQUEST, icmp4.ps.ICMP4_ECHO_REPLY}
             self._cache__ec_data = self._frame[self._hptr + 8 : self._hptr + self.plen]
         return self._cache__ec_data
 
@@ -113,7 +117,7 @@ class Parser:
         """Read data carried by Uneachable message"""
 
         if "_cache__un_data" not in self.__dict__:
-            assert self.type == icmp4.ps.UNREACHABLE
+            assert self.type == icmp4.ps.ICMP4_UNREACHABLE
             self._cache__un_data = self._frame[self._hptr + 8 : self._hptr + self.plen]
         return self._cache__un_data
 
@@ -140,14 +144,14 @@ class Parser:
         if inet_cksum(self._frame, self._hptr, self._plen):
             return "ICMPv4 integrity - wrong packet checksum"
 
-        if not icmp4.ps.HEADER_LEN <= self._plen <= len(self):
+        if not icmp4.ps.ICMP4_HEADER_LEN <= self._plen <= len(self):
             return "ICMPv4 integrity - wrong packet length (I)"
 
-        if self._frame[self._hptr + 0] in {icmp4.ps.ECHO_REQUEST, icmp4.ps.ECHO_REPLY}:
+        if self._frame[self._hptr + 0] in {icmp4.ps.ICMP4_ECHO_REQUEST, icmp4.ps.ICMP4_ECHO_REPLY}:
             if not 8 <= self._plen <= len(self):
                 return "ICMPv6 integrity - wrong packet length (II)"
 
-        elif self._frame[self._hptr + 0] == icmp4.ps.UNREACHABLE:
+        elif self._frame[self._hptr + 0] == icmp4.ps.ICMP4_UNREACHABLE:
             if not 12 <= self._plen <= len(self):
                 return "ICMPv6 integrity - wrong packet length (II)"
 
@@ -159,11 +163,11 @@ class Parser:
         if not config.packet_sanity_check:
             return ""
 
-        if self.type in {icmp4.ps.ECHO_REQUEST, icmp4.ps.ECHO_REPLY}:
+        if self.type in {icmp4.ps.ICMP4_ECHO_REQUEST, icmp4.ps.ICMP4_ECHO_REPLY}:
             if not self.code == 0:
                 return "ICMPv4 sanity - 'code' should be set to 0 (RFC 792)"
 
-        if self.type == icmp4.ps.UNREACHABLE:
+        if self.type == icmp4.ps.ICMP4_UNREACHABLE:
             if self.code not in {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15}:
                 return "ICMPv4 sanity - 'code' must be set to [0-15] (RFC 792)"
 

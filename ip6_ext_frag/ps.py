@@ -38,16 +38,19 @@
 # +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 
 
-HEADER_LEN = 8
+IP6_EXT_FRAG_HEADER_LEN = 8
 
-NEXT_HEADER_TCP = 6
-NEXT_HEADER_UDP = 17
-NEXT_HEADER_ICMP6 = 58
+IP6_EXT_FRAG_NEXT_HEADER_TCP = 6
+IP6_EXT_FRAG_NEXT_HEADER_UDP = 17
+IP6_EXT_FRAG_NEXT_HEADER_ICMP6 = 58
 
-NEXT_HEADER_TABLE = {NEXT_HEADER_TCP: "TCP", NEXT_HEADER_UDP: "UDP", NEXT_HEADER_ICMP6: "ICMPv6"}
+IP6_EXT_FRAG_NEXT_HEADER_TABLE = {IP6_EXT_FRAG_NEXT_HEADER_TCP: "TCP", IP6_EXT_FRAG_NEXT_HEADER_UDP: "UDP", IP6_EXT_FRAG_NEXT_HEADER_ICMP6: "ICMPv6"}
 
 
 def __str__(self):
     """Packet log string"""
 
-    return f"IPv6_FRAG id {self.id}{', MF' if self.flag_mf else ''}, offset {self.offset}" + f", next {self.next} ({NEXT_HEADER_TABLE.get(self.next, '???')})"
+    return (
+        f"IPv6_FRAG id {self.id}{', MF' if self.flag_mf else ''}, offset {self.offset}"
+        + f", next {self.next} ({IP6_EXT_FRAG_NEXT_HEADER_TABLE.get(self.next, '???')})"
+    )

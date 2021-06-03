@@ -28,17 +28,26 @@
 # ether/phtx.py - packet handler for outbound Ethernet packets
 #
 
-from typing import Union, cast
 
-import arp.fpa
-import ether.fpa
+from __future__ import annotations  # Required by Python ver < 3.10
+
+from typing import TYPE_CHECKING, Union, cast
+
 import ether.ps
-import ip4.fpa
-import ip6.fpa
+from ether.fpa import EtherAssembler
+from lib.mac_address import MacAddress
+
+if TYPE_CHECKING:
+    from arp.fpa import ArpAssembler
+    from ip4.fpa import Ip4Assembler
+    from ip6.fpa import Ip6Assembler
 
 
 def _phtx_ether(
-    self, carried_packet: Union[arp.fpa.Assembler, ip4.fpa.Assembler, ip6.fpa.Assembler], ether_src="00:00:00:00:00:00", ether_dst="00:00:00:00:00:00"
+    self,
+    carried_packet: Union[ArpAssembler, Ip4Assembler, Ip6Assembler],
+    ether_src: MacAddress = MacAddress("00:00:00:00:00:00"),
+    ether_dst: MacAddress = MacAddress("00:00:00:00:00:00"),
 ) -> None:
     """Handle outbound Ethernet packets"""
 
@@ -47,24 +56,25 @@ def _phtx_ether(
             self._logger.opt(depth=1).debug(f"{ether_packet_tx.tracker} - {ether_packet_tx}")
         self.tx_ring.enqueue(ether_packet_tx)
 
-    ether_packet_tx = ether.fpa.Assembler(src=ether_src, dst=ether_dst, carried_packet=carried_packet)
+    ether_packet_tx = EtherAssembler(src=ether_src, dst=ether_dst, carried_packet=carried_packet)
 
     # Check if packet contains valid source address, fill it out if needed
-    if ether_packet_tx.src == "00:00:00:00:00:00":
+    if ether_packet_tx.src.is_unspecified:
         ether_packet_tx.src = self.mac_unicast
         if __debug__:
             self._logger.debug(f"{ether_packet_tx.tracker} - Set source to stack MAC {ether_packet_tx.src}")
 
     # Send out packet if it contains valid destination MAC address
-    if ether_packet_tx.dst != "00:00:00:00:00:00":
+    if not ether_packet_tx.dst.is_unspecified:
         if __debug__:
             self._logger.debug(f"{ether_packet_tx.tracker} - Contains valid destination MAC address")
         _send_out_packet()
         return
 
     # Check if we can obtain destination MAC based on IPv6 header data
-    if ether_packet_tx.type == ether.ps.TYPE_IP6:
-        ether_packet_tx._carried_packet = cast(ip6.fpa.Assembler, ether_packet_tx._carried_packet)
+    if ether_packet_tx.type == ether.ps.ETHER_TYPE_IP6:
+        if TYPE_CHECKING:
+            ether_packet_tx._carried_packet = cast(Ip6Assembler, ether_packet_tx._carried_packet)
         ip6_src = ether_packet_tx._carried_packet.src
         ip6_dst = ether_packet_tx._carried_packet.dst
 
@@ -77,13 +87,13 @@ def _phtx_ether(
             return
 
         # Send out packet if is destined to external network (in relation to its source address) and we are able to obtain MAC of default gateway from ND cache
-        for stack_ip6_address in self.ip6_address:
-            if stack_ip6_address.ip == ip6_src and ip6_dst not in stack_ip6_address.network:
-                if stack_ip6_address.gateway is None:
+        for ip6_host in self.ip6_host:
+            if ip6_host.address == ip6_src and ip6_dst not in ip6_host.network:
+                if ip6_host.gateway is None:
                     if __debug__:
-                        self._logger.debug(f"{ether_packet_tx.tracker} - No default gateway set for {stack_ip6_address} source address, dropping packet...")
+                        self._logger.debug(f"{ether_packet_tx.tracker} - No default gateway set for {ip6_host} source address, dropping packet...")
                     return
-                if mac_address := self.icmp6_nd_cache.find_entry(stack_ip6_address.gateway):
+                if mac_address := self.icmp6_nd_cache.find_entry(ip6_host.gateway):
                     ether_packet_tx.dst = mac_address
                     if __debug__:
                         self._logger.debug(
@@ -101,37 +111,38 @@ def _phtx_ether(
             return
 
     # Check if we can obtain destination MAC based on IPv4 header data
-    if ether_packet_tx.type == ether.ps.TYPE_IP4:
-        ether_packet_tx._carried_packet = cast(ip4.fpa.Assembler, ether_packet_tx._carried_packet)
+    if ether_packet_tx.type == ether.ps.ETHER_TYPE_IP4:
+        if TYPE_CHECKING:
+            ether_packet_tx._carried_packet = cast(Ip4Assembler, ether_packet_tx._carried_packet)
         ip4_src = ether_packet_tx._carried_packet.src
         ip4_dst = ether_packet_tx._carried_packet.dst
 
         # Send out packet if its destinied to limited broadcast addresses
         if ip4_dst.is_limited_broadcast:
-            ether_packet_tx.dst = "ff:ff:ff:ff:ff:ff"
+            ether_packet_tx.dst = MacAddress("ff:ff:ff:ff:ff:ff")
             if __debug__:
                 self._logger.debug(f"{ether_packet_tx.tracker} - Resolved destination IPv4 {ip4_dst} to MAC {ether_packet_tx.dst}")
             _send_out_packet()
             return
 
         # Send out packet if its destinied to directed broadcast or network addresses (in relation to its source address)
-        for ip4_address in self.ip4_address:
-            if ip4_address.ip == ip4_src:
-                if ip4_dst in {ip4_address.network_address, ip4_address.broadcast_address}:
-                    ether_packet_tx.dst = "ff:ff:ff:ff:ff:ff"
+        for ip4_host in self.ip4_host:
+            if ip4_host.address == ip4_src:
+                if ip4_dst in {ip4_host.network.address, ip4_host.network.broadcast}:
+                    ether_packet_tx.dst = MacAddress("ff:ff:ff:ff:ff:ff")
                     if __debug__:
                         self._logger.debug(f"{ether_packet_tx.tracker} - Resolved destination IPv4 {ip4_dst} to MAC {ether_packet_tx.dst}")
                     _send_out_packet()
                     return
 
         # Send out packet if is destined to external network (in relation to its source address) and we are able to obtain MAC of default gateway from ARP cache
-        for stack_ip4_address in self.ip4_address:
-            if stack_ip4_address.ip == ip4_src and ip4_dst not in stack_ip4_address.network:
-                if stack_ip4_address.gateway is None:
+        for host_ip4_host in self.ip4_host:
+            if ip4_host.address == ip4_src and ip4_dst not in ip4_host.network:
+                if ip4_host.gateway is None:
                     if __debug__:
-                        self._logger.debug(f"{ether_packet_tx.tracker} - No default gateway set for {stack_ip4_address} source address, dropping packet...")
+                        self._logger.debug(f"{ether_packet_tx.tracker} - No default gateway set for {ip4_host} source address, dropping packet...")
                     return
-                if mac_address := self.arp_cache.find_entry(stack_ip4_address.gateway):
+                if mac_address := self.arp_cache.find_entry(ip4_host.gateway):
                     ether_packet_tx.dst = mac_address
                     if __debug__:
                         self._logger.debug(

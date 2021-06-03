@@ -29,15 +29,20 @@
 #
 
 
+from __future__ import annotations  # Required by Python ver < 3.10
+
 import struct
+from typing import TYPE_CHECKING
 
 import config
 import ip6.ps
-from misc.ipv6_address import IPv6Address
-from misc.packet import PacketRx
+from lib.ip6_address import Ip6Address
+
+if TYPE_CHECKING:
+    from misc.packet import PacketRx
 
 
-class Parser:
+class Ip6Parser:
     """IPv6 packet parser class"""
 
     def __init__(self, packet_rx: PacketRx) -> None:
@@ -52,7 +57,7 @@ class Parser:
         packet_rx.parse_failed = self._packet_integrity_check() or self._packet_sanity_check()
 
         if not packet_rx.parse_failed:
-            packet_rx.hptr = self._hptr + ip6.ps.HEADER_LEN
+            packet_rx.hptr = self._hptr + ip6.ps.IP6_HEADER_LEN
 
     def __len__(self) -> int:
         """Number of bytes remaining in the frame"""
@@ -114,39 +119,39 @@ class Parser:
         return self._frame[self._hptr + 7]
 
     @property
-    def src(self) -> IPv6Address:
+    def src(self) -> Ip6Address:
         """Read 'Source address' field"""
 
         if "_cache__src" not in self.__dict__:
-            self._cache__src = IPv6Address(self._frame[self._hptr + 8 : self._hptr + 24])
+            self._cache__src = Ip6Address(self._frame[self._hptr + 8 : self._hptr + 24])
         return self._cache__src
 
     @property
-    def dst(self) -> IPv6Address:
+    def dst(self) -> Ip6Address:
         """Read 'Destination address' field"""
 
         if "_cache__dst" not in self.__dict__:
-            self._cache__dst = IPv6Address(self._frame[self._hptr + 24 : self._hptr + 40])
+            self._cache__dst = Ip6Address(self._frame[self._hptr + 24 : self._hptr + 40])
         return self._cache__dst
 
     @property
     def hlen(self) -> int:
         """Calculate header length"""
 
-        return ip6.ps.HEADER_LEN
+        return ip6.ps.IP6_HEADER_LEN
 
     @property
     def plen(self) -> int:
         """Calculate packet length"""
 
-        return ip6.ps.HEADER_LEN + self.dlen
+        return ip6.ps.IP6_HEADER_LEN + self.dlen
 
     @property
     def header_copy(self) -> bytes:
         """Return copy of packet header"""
 
         if "_cache__header_copy" not in self.__dict__:
-            self._cache__header_copy = self._frame[self._hptr : self._hptr + ip6.ps.HEADER_LEN]
+            self._cache__header_copy = self._frame[self._hptr : self._hptr + ip6.ps.IP6_HEADER_LEN]
         return self._cache__header_copy
 
     @property
@@ -154,7 +159,7 @@ class Parser:
         """Return copy of packet data"""
 
         if "_cache__data_copy" not in self.__dict__:
-            self._cache__data_copy = self._frame[self._hptr + ip6.ps.HEADER_LEN : self._hptr + self.plen]
+            self._cache__data_copy = self._frame[self._hptr + ip6.ps.IP6_HEADER_LEN : self._hptr + self.plen]
         return self._cache__data_copy
 
     @property
@@ -170,7 +175,7 @@ class Parser:
         """Returns IPv6 pseudo header that is used by TCP, UDP and ICMPv6 to compute their checksums"""
 
         if "_cache__pshdr_sum" not in self.__dict__:
-            pseudo_header = struct.pack("! 16s 16s L BBBB", self.src.packed, self.dst.packed, self.dlen, 0, 0, 0, self.next)
+            pseudo_header = struct.pack("! 16s 16s L BBBB", bytes(self.src), bytes(self.dst), self.dlen, 0, 0, 0, self.next)
             self._cache__pshdr_sum = sum(struct.unpack("! 5Q", pseudo_header))
         return self._cache__pshdr_sum
 
@@ -180,10 +185,10 @@ class Parser:
         if not config.packet_integrity_check:
             return ""
 
-        if len(self) < ip6.ps.HEADER_LEN:
+        if len(self) < ip6.ps.IP6_HEADER_LEN:
             return "IPv6 integrity - wrong packet length (I)"
 
-        if struct.unpack_from("!H", self._frame, self._hptr + 4)[0] != len(self) - ip6.ps.HEADER_LEN:
+        if struct.unpack_from("!H", self._frame, self._hptr + 4)[0] != len(self) - ip6.ps.IP6_HEADER_LEN:
             return "IPv6 integrity - wrong packet length (II)"
 
         return ""

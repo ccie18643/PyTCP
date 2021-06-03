@@ -72,20 +72,20 @@
 # ~                             Data                              ~
 # +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 
-HEADER_LEN = 4
+ICMP4_HEADER_LEN = 4
 
-ECHO_REPLY = 0
-ECHO_REPLY_LEN = 8
-UNREACHABLE = 3
-UNREACHABLE_LEN = 8
-UNREACHABLE__NET = 0
-UNREACHABLE__HOST = 1
-UNREACHABLE__PROTOCOL = 2
-UNREACHABLE__PORT = 3
-UNREACHABLE__FAGMENTATION = 4
-UNREACHABLE__SOURCE_ROUTE_FAILED = 5
-ECHO_REQUEST = 8
-ECHO_REQUEST_LEN = 8
+ICMP4_ECHO_REPLY = 0
+ICMP4_ECHO_REPLY_LEN = 8
+ICMP4_UNREACHABLE = 3
+ICMP4_UNREACHABLE_LEN = 8
+ICMP4_UNREACHABLE__NET = 0
+ICMP4_UNREACHABLE__HOST = 1
+ICMP4_UNREACHABLE__PROTOCOL = 2
+ICMP4_UNREACHABLE__PORT = 3
+ICMP4_UNREACHABLE__FAGMENTATION = 4
+ICMP4_UNREACHABLE__SOURCE_ROUTE_FAILED = 5
+ICMP4_ECHO_REQUEST = 8
+ICMP4_ECHO_REQUEST_LEN = 8
 
 
 def __str__(self) -> str:
@@ -93,13 +93,13 @@ def __str__(self) -> str:
 
     log = f"ICMPv4 type {self.type}, code {self.code}"
 
-    if self.type == ECHO_REPLY:
+    if self.type == ICMP4_ECHO_REPLY:
         log += f", id {self.ec_id}, seq {self.ec_seq}"
 
-    elif self.type == UNREACHABLE and self.code == UNREACHABLE__PORT:
+    elif self.type == ICMP4_UNREACHABLE and self.code == ICMP4_UNREACHABLE__PORT:
         pass
 
-    elif self.type == ECHO_REQUEST:
+    elif self.type == ICMP4_ECHO_REQUEST:
         log += f", id {self.ec_id}, seq {self.ec_seq}"
 
     return log

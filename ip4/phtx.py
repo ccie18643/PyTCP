@@ -29,21 +29,26 @@
 #
 
 
-from typing import Optional, Union
+from __future__ import annotations  # Required by Python ver < 3.10
+
+from typing import TYPE_CHECKING, Optional, Union
 
 import config
-import icmp4.fpa
 import ip4.fpa
-import tcp.fpa
-import udp.fpa
-from misc.ipv4_address import IPv4Address
+from ip4.fpa import Ip4Assembler
+from lib.ip4_address import Ip4Address
+
+if TYPE_CHECKING:
+    from icmp4.fpa import Icmp4Assembler
+    from tcp.fpa import TcpAssembler
+    from udp.fpa import UdpAssembler
 
 
-def _validate_src_ip4_address(self, ip4_src: IPv4Address, ip4_dst: IPv4Address) -> Optional[IPv4Address]:
+def _validate_src_ip4_address(self, ip4_src: Ip4Address, ip4_dst: Ip4Address) -> Optional[Ip4Address]:
     """Make sure source ip address is valid, supplemt with valid one as appropriate"""
 
     # Check if the the source IP address belongs to this stack or its set to all zeros (for DHCP client communication)
-    if ip4_src not in {*self.ip4_unicast, *self.ip4_multicast, *self.ip4_broadcast, IPv4Address("0.0.0.0")}:
+    if ip4_src not in {*self.ip4_unicast, *self.ip4_multicast, *self.ip4_broadcast, Ip4Address("0.0.0.0")}:
         if __debug__:
             self._logger.warning(f"Unable to sent out IPv4 packet, stack doesn't own IPv4 address {ip4_src}")
         return None
@@ -72,7 +77,7 @@ def _validate_src_ip4_address(self, ip4_src: IPv4Address, ip4_dst: IPv4Address) 
 
     # If packet is a response to directed braodcast then replace source address with first stack address that belongs to appropriate subnet
     if ip4_src in self.ip4_broadcast:
-        ip4_src_list = [_.ip for _ in self.ip4_address if _.broadcast_address == ip4_src]
+        ip4_src_list = [_.address for _ in self.ip4_host if _.network.broadcast == ip4_src]
         if ip4_src_list:
             ip4_src = ip4_src_list[0]
             if __debug__:
@@ -84,20 +89,20 @@ def _validate_src_ip4_address(self, ip4_src: IPv4Address, ip4_dst: IPv4Address) 
 
     # If source is unspecified check if destination belongs to any of local networks, if so pick source address from that network
     if ip4_src.is_unspecified:
-        for ip4_address in self.ip4_address:
-            if ip4_dst in ip4_address.network:
-                return ip4_address.ip
+        for ip4_host in self.ip4_host:
+            if ip4_dst in ip4_host.network:
+                return ip4_host.address
 
     # If source unspcified and destination is external pick source from first network that has default gateway set
     if ip4_src.is_unspecified:
-        for ip4_address in self.ip4_address:
-            if ip4_address.gateway:
-                return ip4_address.ip
+        for ip4_host in self.ip4_host:
+            if ip4_host.gateway:
+                return ip4_host.address
 
     return ip4_src
 
 
-def _validate_dst_ip4_address(self, ip4_dst: IPv4Address) -> Optional[IPv4Address]:
+def _validate_dst_ip4_address(self, ip4_dst: Ip4Address) -> Optional[Ip4Address]:
     """Make sure destination ip address is valid"""
 
     # Drop packet if the destination address is unspecified
@@ -111,9 +116,9 @@ def _validate_dst_ip4_address(self, ip4_dst: IPv4Address) -> Optional[IPv4Addres
 
 def _phtx_ip4(
     self,
-    carried_packet: Union[icmp4.fpa.Assembler, tcp.fpa.Assembler, udp.fpa.Assembler],
-    ip4_dst: IPv4Address,
-    ip4_src: IPv4Address,
+    carried_packet: Union[Icmp4Assembler, TcpAssembler, UdpAssembler],
+    ip4_dst: Ip4Address,
+    ip4_src: Ip4Address,
     ip4_ttl: int = config.ip4_default_ttl,
 ) -> None:
     """Handle outbound IP packets"""
@@ -135,7 +140,7 @@ def _phtx_ip4(
         return
 
     # Assemble IPv4 packet
-    ip4_packet_tx = ip4.fpa.Assembler(src=ip4_src, dst=ip4_dst, ttl=ip4_ttl, carried_packet=carried_packet)
+    ip4_packet_tx = Ip4Assembler(src=ip4_src, dst=ip4_dst, ttl=ip4_ttl, carried_packet=carried_packet)
 
     # Send packet out if it's size doesn't exceed mtu
     if len(ip4_packet_tx) <= config.mtu:
@@ -147,25 +152,25 @@ def _phtx_ip4(
     # Fragment packet and send out
     if __debug__:
         self._logger.debug(f"{ip4_packet_tx.tracker} - IPv4 packet len {len(ip4_packet_tx)} bytes, fragmentation needed")
-        data = bytearray(ip4_packet_tx.dlen)
-        ip4_packet_tx._carried_packet.assemble(data, 0, ip4_packet_tx.pshdr_sum)
-        data_mtu = (config.mtu - ip4_packet_tx.hlen) & 0b1111111111111000
-        data_frags = [data[_ : data_mtu + _] for _ in range(0, len(data), data_mtu)]
-        offset = 0
-        self.ip4_id += 1
-        for data_frag in data_frags:
-            ip4_frag_tx = ip4.fpa.FragAssembler(
-                src=ip4_src,
-                dst=ip4_dst,
-                ttl=ip4_ttl,
-                data=data_frag,
-                offset=offset,
-                flag_mf=data_frag is not data_frags[-1],
-                id=self.ip4_id,
-                proto=ip4_packet_tx.proto,
-            )
-            if __debug__:
-                self._logger.debug(f"{ip4_frag_tx.tracker} - {ip4_frag_tx}")
-            offset += len(data_frag)
-            self._phtx_ether(carried_packet=ip4_frag_tx)
-        return
+    data = bytearray(ip4_packet_tx.dlen)
+    ip4_packet_tx._carried_packet.assemble(data, 0, ip4_packet_tx.pshdr_sum)
+    data_mtu = (config.mtu - ip4_packet_tx.hlen) & 0b1111111111111000
+    data_frags = [data[_ : data_mtu + _] for _ in range(0, len(data), data_mtu)]
+    offset = 0
+    self.ip4_id += 1
+    for data_frag in data_frags:
+        ip4_frag_tx = ip4.fpa.FragAssembler(
+            src=ip4_src,
+            dst=ip4_dst,
+            ttl=ip4_ttl,
+            data=data_frag,
+            offset=offset,
+            flag_mf=data_frag is not data_frags[-1],
+            id=self.ip4_id,
+            proto=ip4_packet_tx.proto,
+        )
+        if __debug__:
+            self._logger.debug(f"{ip4_frag_tx.tracker} - {ip4_frag_tx}")
+        offset += len(data_frag)
+        self._phtx_ether(carried_packet=ip4_frag_tx)
+    return

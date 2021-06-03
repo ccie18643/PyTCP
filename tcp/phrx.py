@@ -28,13 +28,12 @@
 # tcp/phrx.py - packet handler for inbound TCP packets
 #
 
-from typing import cast
+
+from __future__ import annotations  # Required by Python ver < 3.10
 
 import misc.stack as stack
-import tcp.fpp
-from ip6.fpp import Parser as Ip6Parser
 from misc.packet import PacketRx
-from tcp.fpp import Parser as TcpParser
+from tcp.fpp import TcpParser
 from tcp.metadata import TcpMetadata
 
 PACKET_LOSS = False
@@ -43,7 +42,9 @@ PACKET_LOSS = False
 def _phrx_tcp(self, packet_rx: PacketRx) -> None:
     """Handle inbound TCP packets"""
 
-    tcp.fpp.Parser(packet_rx)
+    TcpParser(packet_rx)
+    assert packet_rx.tcp is not None
+    assert packet_rx.ip is not None
 
     if packet_rx.parse_failed:
         if __debug__:
@@ -52,10 +53,6 @@ def _phrx_tcp(self, packet_rx: PacketRx) -> None:
 
     if __debug__:
         self._logger.opt(ansi=True).info(f"<green>{packet_rx.tracker}</green> - {packet_rx.tcp}")
-
-    # Casting here does not matter if uses 6 or 4
-    packet_rx.ip = cast(Ip6Parser, packet_rx.ip)
-    packet_rx.tcp = cast(TcpParser, packet_rx.tcp)
 
     # Create TcpPacket object for further processing by TCP FSM
     packet = TcpMetadata(

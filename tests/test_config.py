@@ -25,71 +25,18 @@
 
 
 #
-# arp/fpa.py - Fast Packet Assembler support class for ARP protocol
+# tests/test_config.py - unit tests for config
 #
 
 
-from __future__ import annotations  # Required by Python ver < 3.10
+from testslide import TestCase
 
-import struct
-from typing import Optional
-
-import arp.ps
-import ether.ps
-from lib.ip4_address import Ip4Address
-from lib.mac_address import MacAddress
-from misc.tracker import Tracker
+import config
 
 
-class ArpAssembler:
-    """ARP packet assembler support class"""
+class TestConfig(TestCase):
+    def test_ipv6_support(self):
+        self.assertEqual(config.ip6_support, True)
 
-    ether_type = ether.ps.ETHER_TYPE_ARP
-
-    def __init__(
-        self,
-        sha: MacAddress,
-        spa: Ip4Address,
-        tpa: Ip4Address,
-        tha: MacAddress = MacAddress("00:00:00:00:00:00"),
-        oper: int = arp.ps.ARP_OP_REQUEST,
-        echo_tracker: Optional[Tracker] = None,
-    ) -> None:
-        """Class constructor"""
-
-        self.tracker = Tracker("TX", echo_tracker)
-
-        self.hrtype = 1
-        self.prtype = 0x0800
-        self.hrlen = 6
-        self.prlen = 4
-        self.oper = oper
-        self.sha = sha
-        self.spa = Ip4Address(spa)
-        self.tha = tha
-        self.tpa = Ip4Address(tpa)
-
-    def __len__(self) -> int:
-        """Length of the packet"""
-
-        return arp.ps.ARP_HEADER_LEN
-
-    from arp.ps import __str__
-
-    def assemble(self, frame: bytearray, hptr: int):
-        """Assemble packet into the raw form"""
-
-        struct.pack_into(
-            "!HH BBH 6s 4s 6s 4s",
-            frame,
-            hptr,
-            self.hrtype,
-            self.prtype,
-            self.hrlen,
-            self.prlen,
-            self.oper,
-            bytes(self.sha),
-            bytes(self.spa),
-            bytes(self.tha),
-            bytes(self.tpa),
-        )
+    def test_ipv4_support(self):
+        self.assertEqual(config.ip4_support, True)

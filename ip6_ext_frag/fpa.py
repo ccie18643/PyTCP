@@ -29,6 +29,8 @@
 #
 
 
+from __future__ import annotations  # Required by Python ver < 3.10
+
 import struct
 
 import ip6.ps
@@ -36,10 +38,10 @@ import ip6_ext_frag.ps
 from misc.tracker import Tracker
 
 
-class Assembler:
+class Ip6ExtFragAssembler:
     """IPv6 fragment extension header assembler support class"""
 
-    ip6_next = ip6.ps.NEXT_HEADER_EXT_FRAG
+    ip6_next = ip6.ps.IP6_NEXT_HEADER_EXT_FRAG
 
     def __init__(
         self,
@@ -51,7 +53,7 @@ class Assembler:
     ):
         """Class constructor"""
 
-        assert next in {ip6.ps.NEXT_HEADER_ICMP6, ip6.ps.NEXT_HEADER_UDP, ip6.ps.NEXT_HEADER_TCP}
+        assert next in {ip6.ps.IP6_NEXT_HEADER_ICMP6, ip6.ps.IP6_NEXT_HEADER_UDP, ip6.ps.IP6_NEXT_HEADER_TCP}
 
         self.tracker = Tracker("TX")
         self.next = next
@@ -65,7 +67,7 @@ class Assembler:
     def __len__(self) -> int:
         """Length of the packet"""
 
-        return ip6_ext_frag.ps.HEADER_LEN + len(self.data)
+        return ip6_ext_frag.ps.IP6_EXT_FRAG_HEADER_LEN + len(self.data)
 
     from ip6_ext_frag.ps import __str__
 

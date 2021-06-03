@@ -29,19 +29,24 @@
 #
 
 
-from typing import cast
+from __future__ import annotations  # Required by Python ver < 3.10
+
+from typing import TYPE_CHECKING
 
 import icmp4.fpp
 import icmp4.ps
-from icmp4.fpp import Parser as Icmp4Parser
-from ip4.fpp import Parser as Ip4Parser
-from misc.packet import PacketRx
+from icmp4.fpp import Icmp4Parser
+
+if TYPE_CHECKING:
+    from misc.packet import PacketRx
 
 
 def _phrx_icmp4(self, packet_rx: PacketRx) -> None:
     """Handle inbound ICMPv4 packets"""
 
-    icmp4.fpp.Parser(packet_rx)
+    Icmp4Parser(packet_rx)
+    assert packet_rx.ip4 is not None
+    assert packet_rx.icmp4 is not None
 
     if packet_rx.parse_failed:
         if __debug__:
@@ -51,18 +56,15 @@ def _phrx_icmp4(self, packet_rx: PacketRx) -> None:
     if __debug__:
         self._logger.opt(ansi=True).info(f"<green>{packet_rx.tracker}</green> - {packet_rx.icmp4}")
 
-    packet_rx.icmp4 = cast(Icmp4Parser, packet_rx.icmp4)
-
     # Respond to ICMPv4 Echo Request packet
-    packet_rx.ip4 = cast(Ip4Parser, packet_rx.ip4)
-    if packet_rx.icmp4.type == icmp4.ps.ECHO_REQUEST:
+    if packet_rx.icmp4.type == icmp4.ps.ICMP4_ECHO_REQUEST:
         if __debug__:
             self._logger.debug(f"Received ICMPv4 Echo Request packet from {packet_rx.ip4.src}, sending reply...")
 
         self._phtx_icmp4(
             ip4_src=packet_rx.ip4.dst,
             ip4_dst=packet_rx.ip4.src,
-            icmp4_type=icmp4.ps.ECHO_REPLY,
+            icmp4_type=icmp4.ps.ICMP4_ECHO_REPLY,
             icmp4_ec_id=packet_rx.icmp4.ec_id,
             icmp4_ec_seq=packet_rx.icmp4.ec_seq,
             icmp4_ec_data=packet_rx.icmp4.ec_data,

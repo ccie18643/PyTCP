@@ -33,9 +33,14 @@ import random
 import threading
 import time
 from datetime import datetime
+from typing import TYPE_CHECKING, cast
 
 import misc.stack as stack
 from misc.ip_helper import ip_pick_version
+
+if TYPE_CHECKING:
+    from lib.ip4_address import Ip4Address
+    from lib.ip6_address import Ip6Address
 
 
 class ClientIcmpEcho:
@@ -60,6 +65,8 @@ class ClientIcmpEcho:
             message = bytes(str(datetime.now()) + "\n", "utf-8")
 
             if self.local_ip_address.version == 4:
+                self.local_ip_address = cast(Ip4Address, self.local_ip_address)
+                self.remote_ip_address = cast(Ip4Address, self.remote_ip_address)
                 stack.packet_handler._phtx_icmp4(  # type: ignore
                     ip4_src=self.local_ip_address,
                     ip4_dst=self.remote_ip_address,
@@ -71,6 +78,8 @@ class ClientIcmpEcho:
                 )
 
             if self.local_ip_address.version == 6:
+                self.local_ip_address = cast(Ip6Address, self.local_ip_address)
+                self.remote_ip_address = cast(Ip6Address, self.remote_ip_address)
                 stack.packet_handler._phtx_icmp6(  # type: ignore
                     ip6_src=self.local_ip_address,
                     ip6_dst=self.remote_ip_address,
