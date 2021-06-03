@@ -38,7 +38,7 @@ import arp.ps
 import ether.ps
 from lib.ip4_address import Ip4Address
 from lib.mac_address import MacAddress
-from misc.tracker import Tracker
+from lib.tracker import Tracker
 
 
 class ArpAssembler:
@@ -57,39 +57,53 @@ class ArpAssembler:
     ) -> None:
         """Class constructor"""
 
-        self.tracker = Tracker("TX", echo_tracker)
+        self._tracker = Tracker("TX", echo_tracker)
 
-        self.hrtype = 1
-        self.prtype = 0x0800
-        self.hrlen = 6
-        self.prlen = 4
-        self.oper = oper
-        self.sha = sha
-        self.spa = Ip4Address(spa)
-        self.tha = tha
-        self.tpa = Ip4Address(tpa)
+        self._hrtype: int = 1
+        self._prtype: int = 0x0800
+        self._hrlen: int = 6
+        self._prlen: int = 4
+        self._oper: int = oper
+        self._sha: MacAddress = sha
+        self._spa: Ip4Address = spa
+        self._tha: MacAddress = tha
+        self._tpa: Ip4Address = tpa
 
     def __len__(self) -> int:
         """Length of the packet"""
 
         return arp.ps.ARP_HEADER_LEN
 
-    from arp.ps import __str__
+    def __str__(self) -> str:
+        """Packet log string"""
 
-    def assemble(self, frame: bytearray, hptr: int):
+        if self._oper == arp.ps.ARP_OP_REQUEST:
+            return f"ARP request {self._spa} / {self._sha} > {self._tpa} / {self._tha}"
+        if self._oper == arp.ps.ARP_OP_REPLY:
+            return f"ARP reply {self._spa} / {self._sha} > {self._tpa} / {self._tha}"
+
+        return f"ARP request unknown operation {self._oper}"
+
+    @property
+    def tracker(self) -> Tracker:
+        """Getter for _tracker"""
+
+        return self._tracker
+
+    def assemble(self, frame: memoryview) -> None:
         """Assemble packet into the raw form"""
 
         struct.pack_into(
             "!HH BBH 6s 4s 6s 4s",
             frame,
-            hptr,
-            self.hrtype,
-            self.prtype,
-            self.hrlen,
-            self.prlen,
-            self.oper,
-            bytes(self.sha),
-            bytes(self.spa),
-            bytes(self.tha),
-            bytes(self.tpa),
+            0,
+            self._hrtype,
+            self._prtype,
+            self._hrlen,
+            self._prlen,
+            self._oper,
+            bytes(self._sha),
+            bytes(self._spa),
+            bytes(self._tha),
+            bytes(self._tpa),
         )

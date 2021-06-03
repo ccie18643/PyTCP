@@ -29,41 +29,30 @@
 #
 
 
-import threading
+from __future__ import annotations  # Required by Python ver < 3.10
+
 from datetime import datetime
+from typing import TYPE_CHECKING
 
-from misc.tracker import Tracker
-from udp.metadata import UdpMetadata
-from udp.socket import UdpSocket
+from service.udp_generic import ServiceUdp
+
+if TYPE_CHECKING:
+    from lib.socket import Socket
 
 
-class ServiceUdpDaytime:
-    """UDP Daytime service support class"""
+class ServiceUdpDaytime(ServiceUdp):
+    """UDP Echo service support class"""
 
-    def __init__(self, local_ip_address: str = "*", local_port: int = 13) -> None:
+    def __init__(self, local_ip_address: str, local_port: int = 13):
         """Class constructor"""
 
-        self.local_ip_address = local_ip_address
-        self.local_port = local_port
+        super().__init__("Echo", local_ip_address, local_port)
 
-        threading.Thread(target=self.__thread_service).start()
-
-    def __thread_service(self) -> None:
-        """Service initialization and rx/tx loop"""
-
-        socket = UdpSocket()
-        socket.bind(self.local_ip_address, self.local_port)
-        print(f"Service UDP Daytime: Socket created, bound to {self.local_ip_address}, port {self.local_port}")
+    def service(self, s: Socket) -> None:
+        """Inbound connection handler"""
 
         while True:
-            packet_rx = socket.receive_from()
-            packet_tx = UdpMetadata(
-                local_ip_address=packet_rx.local_ip_address,
-                local_port=packet_rx.local_port,
-                remote_ip_address=packet_rx.remote_ip_address,
-                remote_port=packet_rx.remote_port,
-                data=bytes(str(datetime.now()), "utf-8"),
-                tracker=Tracker("TX", echo_tracker=packet_rx.tracker),
-            )
-            socket.send_to(packet_tx)
-            print(f"Service UDP Daytime: Sent daytime message to {packet_tx.remote_ip_address}, port {packet_tx.remote_port}, {len(packet_tx.data)} bytes")
+            _, remote_address = s.recvfrom()
+            message = bytes(str(datetime.now()), "utf-8")
+            s.sendto(message, remote_address)
+            print(f"Service UDP Daytime: Sent {len(message)} bytes to {remote_address[0]}, port {remote_address[1]}")

@@ -32,22 +32,26 @@
 from __future__ import annotations  # Required by Python ver < 3.10
 
 import struct
-from typing import Union
+from typing import TYPE_CHECKING, Optional, Union
 
-from lib.ip4_address import Ip4Address
+import misc.stack as stack
+from lib.ip4_address import Ip4Address, Ip4AddressFormatError
 from lib.ip6_address import Ip6Address, Ip6AddressFormatError
 
+if TYPE_CHECKING:
+    from lib.ip_address import IpAddress
 
-def inet_cksum(data: bytes, dptr: int, dlen: int, init: int = 0) -> int:
+
+def inet_cksum(data: memoryview, init: int = 0) -> int:
     """Compute Internet Checksum used by IPv4/ICMPv4/ICMPv6/UDP/TCP protocols"""
 
-    if dlen == 20:
-        cksum = init + sum(struct.unpack_from("!5L", data, dptr))
+    if (dlen := len(data)) == 20:
+        cksum = init + sum(struct.unpack_from("!5L", data))
 
     else:
-        cksum = init + sum(struct.unpack_from(f"!{dlen >> 3}Q", data, dptr))
+        cksum = init + sum(struct.unpack_from(f"!{dlen >> 3}Q", data))
         if remainder := dlen & 7:
-            cksum += struct.unpack("!Q", data[dptr + dlen - remainder : dptr + dlen] + b"\0" * (8 - remainder))[0]
+            cksum += int().from_bytes(data[-remainder:], byteorder="big") << 8 * (8 - remainder)
         cksum = (cksum >> 64) + (cksum & 0xFFFFFFFFFFFFFFFF)
 
     cksum = (cksum >> 32) + (cksum & 0xFFFFFFFF)
@@ -55,10 +59,66 @@ def inet_cksum(data: bytes, dptr: int, dlen: int, init: int = 0) -> int:
     return ~(cksum + (cksum >> 16)) & 0xFFFF
 
 
-def ip_pick_version(ip_address: str) -> Union[Ip6Address, Ip4Address]:
-    """Return correct Ip6Address or Ip4Address object based on address string provided"""
+def ip_version(ip_address: str) -> Optional[int]:
+    """Return version of IP address string"""
+
+    try:
+        return Ip6Address(ip_address).version
+    except Ip6AddressFormatError:
+        try:
+            return Ip4Address(ip_address).version
+        except Ip4AddressFormatError:
+            return None
+
+
+def str_to_ip(ip_address: str) -> Optional[Union[Ip6Address, Ip4Address]]:
+    """Convert string to appropriate IP address"""
 
     try:
         return Ip6Address(ip_address)
     except Ip6AddressFormatError:
-        return Ip4Address(ip_address)
+        try:
+            return Ip4Address(ip_address)
+        except Ip4AddressFormatError:
+            return None
+
+
+def pick_local_ip_address(remote_ip_address: IpAddress) -> Union[Ip6Address, Ip4Address]:
+    """Pick appropriate source IP address based on provided destination IP address"""
+
+    assert isinstance(remote_ip_address, Ip6Address) or isinstance(remote_ip_address, Ip4Address)
+
+    if isinstance(remote_ip_address, Ip6Address):
+        return pick_local_ip6_address(remote_ip_address)
+
+    return pick_local_ip4_address(remote_ip_address)
+
+
+def pick_local_ip6_address(remote_ip6_address: Ip6Address) -> Ip6Address:
+    """Pick appropriate source IPv6 address based on provided destination IPv6 address"""
+
+    # If destination belongs to any of local networks, if so pick source address from that network
+    for ip6_host in stack.packet_handler.ip6_host:
+        if remote_ip6_address in ip6_host.network:
+            return ip6_host.address
+    # If destination is external pick source from first network that has default gateway set
+    for ip6_host in stack.packet_handler.ip6_host:
+        if ip6_host.gateway:
+            return ip6_host.address
+    # In case everything else fails return unspecified
+    return Ip6Address("::")
+
+
+def pick_local_ip4_address(remote_ip4_address: Ip4Address) -> Ip4Address:
+    """Pick appropriate source IPv4 address based on provided destination IPv4 address"""
+
+    # If destination belongs to any of local networks, if so pick source address from that network
+    for ip4_host in stack.packet_handler.ip4_host:
+        if remote_ip4_address in ip4_host.network:
+            return ip4_host.address
+    # If destination is external pick source from first network that has default gateway set
+    for ip4_host in stack.packet_handler.ip4_host:
+        if ip4_host.gateway:
+            return ip4_host.address
+    # In case everything else fails return unspecified
+    return Ip4Address("0.0.0.0")

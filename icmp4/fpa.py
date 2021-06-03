@@ -36,8 +36,8 @@ from typing import Optional
 
 import icmp4.ps
 import ip4.ps
+from lib.tracker import Tracker
 from misc.ip_helper import inet_cksum
-from misc.tracker import Tracker
 
 
 class Icmp4Assembler:
@@ -59,49 +59,77 @@ class Icmp4Assembler:
 
         assert type in {icmp4.ps.ICMP4_ECHO_REQUEST, icmp4.ps.ICMP4_UNREACHABLE, icmp4.ps.ICMP4_ECHO_REPLY}
 
-        self.tracker = Tracker("TX", echo_tracker)
-        self.type = type
-        self.code = code
+        self._tracker: Tracker = Tracker("TX", echo_tracker)
+        self._type: int = type
+        self._code: int = code
 
-        if self.type == icmp4.ps.ICMP4_ECHO_REPLY:
-            self.ec_id = ec_id
-            self.ec_seq = ec_seq
-            self.ec_data = b"" if ec_data is None else ec_data
+        self._ec_id: int
+        self._ec_seq: int
+        self._ec_data: bytes
+        self._un_data: bytes
 
-        elif self.type == icmp4.ps.ICMP4_UNREACHABLE and self.code == icmp4.ps.ICMP4_UNREACHABLE__PORT:
-            self.un_data = b"" if un_data is None else un_data[:520]
+        if self._type == icmp4.ps.ICMP4_ECHO_REPLY:
+            self._ec_id = 0 if ec_id is None else ec_id
+            self._ec_seq = 0 if ec_seq is None else ec_seq
+            self._ec_data = b"" if ec_data is None else ec_data
 
-        elif self.type == icmp4.ps.ICMP4_ECHO_REQUEST:
-            self.ec_id = ec_id
-            self.ec_seq = ec_seq
-            self.ec_data = b"" if ec_data is None else ec_data
+        elif self._type == icmp4.ps.ICMP4_UNREACHABLE and self._code == icmp4.ps.ICMP4_UNREACHABLE__PORT:
+            self._un_data = b"" if un_data is None else un_data[:520]
+
+        elif self._type == icmp4.ps.ICMP4_ECHO_REQUEST:
+            self._ec_id = 0 if ec_id is None else ec_id
+            self._ec_seq = 0 if ec_id is None else ec_id
+            self._ec_data = b"" if ec_data is None else ec_data
 
     def __len__(self) -> int:
         """Length of the packet"""
 
-        if self.type == icmp4.ps.ICMP4_ECHO_REPLY:
-            return icmp4.ps.ICMP4_ECHO_REPLY_LEN + len(self.ec_data)
+        if self._type == icmp4.ps.ICMP4_ECHO_REPLY:
+            return icmp4.ps.ICMP4_ECHO_REPLY_LEN + len(self._ec_data)
 
-        if self.type == icmp4.ps.ICMP4_UNREACHABLE and self.code == icmp4.ps.ICMP4_UNREACHABLE__PORT:
-            return icmp4.ps.ICMP4_UNREACHABLE_LEN + len(self.un_data)
+        if self._type == icmp4.ps.ICMP4_UNREACHABLE and self._code == icmp4.ps.ICMP4_UNREACHABLE__PORT:
+            return icmp4.ps.ICMP4_UNREACHABLE_LEN + len(self._un_data)
 
-        if self.type == icmp4.ps.ICMP4_ECHO_REQUEST:
-            return icmp4.ps.ICMP4_ECHO_REQUEST_LEN + len(self.ec_data)
+        if self._type == icmp4.ps.ICMP4_ECHO_REQUEST:
+            return icmp4.ps.ICMP4_ECHO_REQUEST_LEN + len(self._ec_data)
 
         return 0
 
-    from icmp4.ps import __str__
+    def __str__(self) -> str:
+        """Packet log string"""
 
-    def assemble(self, frame: bytearray, hptr: int, _: int) -> None:
+        log = f"ICMPv4 type {self._type}, code {self._code}"
+
+        if self._type == icmp4.ps.ICMP4_ECHO_REPLY:
+            log += f", id {self._ec_id}, seq {self._ec_seq}"
+
+        elif self._type == icmp4.ps.ICMP4_UNREACHABLE and self._code == icmp4.ps.ICMP4_UNREACHABLE__PORT:
+            pass
+
+        elif self._type == icmp4.ps.ICMP4_ECHO_REQUEST:
+            log += f", id {self._ec_id}, seq {self._ec_seq}"
+
+        return log
+
+    @property
+    def tracker(self) -> Tracker:
+        """Getter for _tracker"""
+
+        return self._tracker
+
+    def assemble(self, frame: memoryview, _: int = 0) -> None:
         """Assemble packet into the raw form"""
 
-        if self.type == icmp4.ps.ICMP4_ECHO_REPLY:
-            struct.pack_into(f"! BBH HH {len(self.ec_data)}s", frame, hptr, self.type, self.code, 0, self.ec_id, self.ec_seq, self.ec_data)
+        if self._type == icmp4.ps.ICMP4_ECHO_REPLY:
+            # memoryview: bytes conversion requir
+            struct.pack_into(f"! BBH HH {len(self._ec_data)}s", frame, 0, self._type, self._code, 0, self._ec_id, self._ec_seq, bytes(self._ec_data))
 
-        elif self.type == icmp4.ps.ICMP4_UNREACHABLE and self.code == icmp4.ps.ICMP4_UNREACHABLE__PORT:
-            struct.pack_into(f"! BBH L {len(self.un_data)}s", frame, hptr, self.type, self.code, 0, 0, self.un_data)
+        elif self._type == icmp4.ps.ICMP4_UNREACHABLE and self._code == icmp4.ps.ICMP4_UNREACHABLE__PORT:
+            # memoryview: bytes conversion requir
+            struct.pack_into(f"! BBH L {len(self._un_data)}s", frame, 0, self._type, self._code, 0, 0, bytes(self._un_data))
 
-        elif self.type == icmp4.ps.ICMP4_ECHO_REQUEST:
-            struct.pack_into(f"! BBH HH {len(self.ec_data)}s", frame, hptr, self.type, self.code, 0, self.ec_id, self.ec_seq, self.ec_data)
+        elif self._type == icmp4.ps.ICMP4_ECHO_REQUEST:
+            # memoryview: bytes conversion requir
+            struct.pack_into(f"! BBH HH {len(self._ec_data)}s", frame, 0, self._type, self._code, 0, self._ec_id, self._ec_seq, bytes(self._ec_data))
 
-        struct.pack_into("! H", frame, hptr + 2, inet_cksum(frame, hptr, len(self)))
+        struct.pack_into("! H", frame, 2, inet_cksum(frame))

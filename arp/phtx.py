@@ -31,12 +31,12 @@
 
 from __future__ import annotations  # Required by Python ver < 3.10
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
 import config
 from arp.fpa import ArpAssembler
 from lib.mac_address import MacAddress
-from misc.tracker import Tracker
+from lib.tracker import Tracker
 
 if TYPE_CHECKING:
     from lib.ip4_address import Ip4Address
@@ -51,7 +51,7 @@ def _phtx_arp(
     arp_spa: Ip4Address,
     arp_tha: MacAddress,
     arp_tpa: Ip4Address,
-    echo_tracker: Tracker = None,
+    echo_tracker: Optional[Tracker] = None,
 ) -> None:
     """Handle outbound ARP packets"""
 
@@ -69,6 +69,6 @@ def _phtx_arp(
     )
 
     if __debug__:
-        self._logger.opt(ansi=True).info(f"<magenta>{arp_packet_tx.tracker}</magenta> - {arp_packet_tx}")
+        self._logger.opt(ansi=True).info(f"<lr>{arp_packet_tx.tracker}</> - {arp_packet_tx}")
 
     self._phtx_ether(ether_src=ether_src, ether_dst=ether_dst, carried_packet=arp_packet_tx)

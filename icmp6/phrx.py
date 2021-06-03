@@ -31,13 +31,18 @@
 
 from __future__ import annotations  # Required by Python ver < 3.10
 
+import struct
 from typing import TYPE_CHECKING
 
 import icmp6.fpa
 import icmp6.fpp
 import icmp6.ps
+import ip6.ps
+import misc.stack as stack
+import udp.ps
 from icmp6.fpp import Icmp6Parser
 from lib.ip6_address import Ip6Address
+from udp.metadata import UdpMetadata
 
 if TYPE_CHECKING:
     from misc.packet import PacketRx
@@ -47,8 +52,6 @@ def _phrx_icmp6(self, packet_rx: PacketRx) -> None:
     """Handle inbound ICMPv6 packets"""
 
     Icmp6Parser(packet_rx)
-    assert packet_rx.ip6 is not None
-    assert packet_rx.icmp6 is not None
 
     if packet_rx.parse_failed:
         if __debug__:
@@ -56,7 +59,7 @@ def _phrx_icmp6(self, packet_rx: PacketRx) -> None:
         return
 
     if __debug__:
-        self._logger.opt(ansi=True).info(f"<green>{packet_rx.tracker}</green> - {packet_rx.icmp6}")
+        self._logger.opt(ansi=True).info(f"<lg>{packet_rx.tracker}</> - {packet_rx.icmp6}")
 
     # ICMPv6 Neighbor Solicitation packet
     if packet_rx.icmp6.type == icmp6.ps.ICMP6_NEIGHBOR_SOLICITATION:
@@ -128,7 +131,7 @@ def _phrx_icmp6(self, packet_rx: PacketRx) -> None:
         self.event_icmp6_ra.release()
         return
 
-    # Respond to ICMPv6 Echo Request packet
+    # ICMPv6 Echo Request packet
     if packet_rx.icmp6.type == icmp6.ps.ICMP6_ECHOR_REQUEST:
         if __debug__:
             self._logger.debug(f"Received ICMPv6 Echo Request packet from {packet_rx.ip6.src}, sending reply")
@@ -143,4 +146,38 @@ def _phrx_icmp6(self, packet_rx: PacketRx) -> None:
             icmp6_ec_data=packet_rx.icmp6.ec_data,
             echo_tracker=packet_rx.tracker,
         )
+        return
+
+    # ICMPv6 Unreachable packet
+    if packet_rx.icmp6.type == icmp6.ps.ICMP6_UNREACHABLE:
+        if __debug__:
+            self._logger.debug(f"{packet_rx.tracker} - Received ICMPv6 Unreachable packet from {packet_rx.ip6.src}, will try to match UDP socket")
+
+        # Quick and dirty way to validate received data and pull useful information from it
+        # TODO - This will not work in case of IPv6 extension headers present
+        frame = packet_rx.icmp6.un_data
+        if len(frame) >= ip6.ps.IP6_HEADER_LEN + udp.ps.UDP_HEADER_LEN and frame[0] >> 4 == 6 and frame[6] == ip6.ps.IP6_NEXT_HEADER_UDP:
+            # Create UdpMetadata object and try to find matching UDP socket
+            udp_offset = ip6.ps.IP6_HEADER_LEN
+            packet = UdpMetadata(
+                local_ip_address=Ip6Address(frame[8:24]),
+                remote_ip_address=Ip6Address(frame[24:40]),
+                local_port=struct.unpack("!H", frame[udp_offset + 0 : udp_offset + 2])[0],
+                remote_port=struct.unpack("!H", frame[udp_offset + 2 : udp_offset + 4])[0],
+            )
+
+            for socket_pattern in packet.socket_patterns:
+                socket = stack.sockets.get(socket_pattern, None)
+                if socket:
+                    if __debug__:
+                        self._logger.debug(f"{packet_rx.tracker} - Found matching listening socket {socket}")
+                    socket.notify_unreachable()
+                    return
+
+            if __debug__:
+                self._logger.debug(f"{packet_rx.tracker} - Unreachable data doesn't match any UDP socket")
+            return
+
+        if __debug__:
+            self._logger.debug(f"{packet_rx.tracker} - Unreachable data doesn't pass basic IPv4/UDP integrity check")
         return

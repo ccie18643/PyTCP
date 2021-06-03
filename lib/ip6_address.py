@@ -28,13 +28,23 @@
 # lib/ip6_address.py - module contains IPv6 address manipulation classes
 #
 
-from __future__ import annotations  # Required for Python version lower than 3.10
+from __future__ import annotations  # Requir for Python version lower than 3.10
 
 import re
 import socket
 import struct
 from typing import Optional, Union
 
+from lib.ip_address import (
+    IpAddress,
+    IpAddressFormatError,
+    IpHost,
+    IpHostFormatError,
+    IpMask,
+    IpMaskFormatError,
+    IpNetwork,
+    IpNetworkFormatError,
+)
 from lib.mac_address import MacAddress
 
 IP6_REGEX = (
@@ -52,27 +62,30 @@ IP6_REGEX = (
 )
 
 
-class Ip6AddressFormatError(Exception):
+class Ip6AddressFormatError(IpAddressFormatError):
     pass
 
 
-class Ip6MaskFormatError(Exception):
+class Ip6MaskFormatError(IpMaskFormatError):
     pass
 
 
-class Ip6NetworkFormatError(Exception):
+class Ip6NetworkFormatError(IpNetworkFormatError):
     pass
 
 
-class Ip6HostFormatError(Exception):
+class Ip6HostFormatError(IpHostFormatError):
     pass
 
 
-class Ip6Address:
+class Ip6Address(IpAddress):
     """IPv6 address support class"""
 
     def __init__(self, address: Union[Ip6Address, str, bytes, bytearray, memoryview, int]) -> None:
         """Class constructor"""
+
+        self._address: int
+        self._version: int = 6
 
         if isinstance(address, Ip6Address):
             self._address = int(address)
@@ -105,44 +118,12 @@ class Ip6Address:
 
         return socket.inet_ntop(socket.AF_INET6, bytes(self))
 
-    def __repr__(self) -> str:
-        """Object representation"""
-
-        return f"Ip6Address('{str(self)}')"
-
     def __bytes__(self) -> bytes:
         """Bytes representation"""
 
         return struct.pack(
             "!LLLL", (self._address >> 96) & 0xFFFFFFFF, (self._address >> 64) & 0xFFFFFFFF, (self._address >> 32) & 0xFFFFFFFF, self._address & 0xFFFFFFFF
         )
-
-    def __int__(self) -> int:
-        """Integer representation"""
-
-        return self._address
-
-    def __eq__(self, other: object) -> bool:
-        """Equal operator"""
-
-        return isinstance(other, Ip6Address) and self._address == int(other)
-
-    def __hash__(self) -> int:
-        """Hash"""
-
-        return hash(bytes(self))
-
-    @property
-    def version(self) -> int:
-        """IP address version"""
-
-        return 6
-
-    @property
-    def is_unspecified(self) -> bool:
-        """Check if IPv6 address is a unspecified"""
-
-        return self._address == 0  # ::/128
 
     @property
     def is_loopback(self) -> bool:
@@ -181,12 +162,6 @@ class Ip6Address:
         return self._address in range(338963523518870617245727861372719464448, 338963523518870617245727861372736241664)  # ff02::1:ff00:0/104
 
     @property
-    def is_unicast(self) -> bool:
-        """Check if address is IPv6 unicast address"""
-
-        return self.is_global or self.is_private or self.is_link_local or self.is_loopback
-
-    @property
     def solicited_node_multicast(self) -> Ip6Address:
         """Create IPv6 solicited node multicast address"""
 
@@ -200,12 +175,21 @@ class Ip6Address:
 
         return MacAddress(int(MacAddress("33:33:00:00:00:00")) | self._address & 0xFFFFFFFF)
 
+    @property
+    def unspecified(self) -> Ip6Address:
+        """Return unspecified IPv6 Address"""
 
-class Ip6Mask:
+        return Ip6Address("::")
+
+
+class Ip6Mask(IpMask):
     """IPv6 network mask support class"""
 
     def __init__(self, mask: Union[Ip6Mask, str, bytes, bytearray, memoryview, int]) -> None:
         """Class constructor"""
+
+        self._mask: int
+        self._version: int = 6
 
         def _validate_bits() -> bool:
             """Validate that mask is made of consecutive bits"""
@@ -213,7 +197,7 @@ class Ip6Mask:
             return not bit_mask[bit_mask.index("0") :].count("1")
 
         if isinstance(mask, Ip6Mask):
-            self._mask: int = mask._mask
+            self._mask = mask._mask
             return
 
         if isinstance(mask, str) and re.search(r"^\/\d{1,3}$", mask):
@@ -237,53 +221,21 @@ class Ip6Mask:
 
         raise Ip6MaskFormatError(mask)
 
-    def __str__(self) -> str:
-        """String representation"""
-
-        return f"/{len(self)}"
-
-    def __repr__(self) -> str:
-        """Object representation"""
-
-        return f"Ip6Mask('{str(self)}')"
-
     def __bytes__(self) -> bytes:
         """Bytes representation"""
 
         return struct.pack("!LLLL", (self._mask >> 96) & 0xFFFFFFFF, (self._mask >> 64) & 0xFFFFFFFF, (self._mask >> 32) & 0xFFFFFFFF, self._mask & 0xFFFFFFFF)
 
-    def __int__(self) -> int:
-        """Integer representation"""
 
-        return self._mask
-
-    def __eq__(self, other: object) -> bool:
-        """Equal operator"""
-
-        return isinstance(other, Ip6Mask) and self._mask == other._mask
-
-    def __hash__(self) -> int:
-        """Hash"""
-
-        return hash(bytes(self))
-
-    def __len__(self) -> int:
-        """Bit length representation"""
-
-        return f"{self._mask:b}".count("1")
-
-    @property
-    def version(self) -> int:
-        """IP mask version"""
-
-        return 6
-
-
-class Ip6Network:
+class Ip6Network(IpNetwork):
     """IPv6 network support class"""
 
     def __init__(self, network: Union[Ip6Network, tuple[Ip6Address, Ip6Mask], str]) -> None:
         """Class constructor"""
+
+        self._address: Ip6Address
+        self._mask: Ip6Mask
+        self._version: int = 6
 
         if isinstance(network, Ip6Network):
             self._mask = network.mask
@@ -308,57 +260,20 @@ class Ip6Network:
 
         raise Ip6NetworkFormatError(network)
 
-    def __str__(self) -> str:
-        """String representation"""
-
-        return str(self._address) + "/" + str(len(self._mask))
-
-    def __repr__(self) -> str:
-        """Object representation"""
-
-        return f"Ip6Network('{str(self)}')"
-
-    def __eq__(self, other: object) -> bool:
-        """Equal operator"""
-
-        return isinstance(other, Ip6Network) and self._address == other.address and self._mask == other.mask
-
-    def __hash__(self) -> int:
-        """Hash"""
-
-        return hash(self._address) ^ hash(self._mask)
-
-    def __iter__(self):
-        """Iterator"""
-
-        for address in range(int(self.address), int(self.last) + 1):
-            yield Ip6Address(address)
-
-    def __contains__(self, other: object) -> bool:
-        """Contains for 'in' operator"""
-
-        if isinstance(other, Ip6Address):
-            return int(self.address) <= int(other) <= int(self.last)
-
-        if isinstance(other, Ip6Host):
-            return int(self.address) <= int(other.address) <= int(self.last)
-
-        return False
-
     @property
-    def address(self):
+    def address(self) -> Ip6Address:
         """Network address"""
 
         return self._address
 
     @property
-    def mask(self):
+    def mask(self) -> Ip6Mask:
         """Network mask"""
 
         return self._mask
 
     @property
-    def last(self):
+    def last(self) -> Ip6Address:
         """Last address"""
 
         return Ip6Address(int(self._address) + (~int(self._mask) & 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF))
@@ -371,18 +286,16 @@ class Ip6Network:
         interface_id = (((int(mac_address) & 0xFFFFFF000000) << 16) | int(mac_address) & 0xFFFFFF | 0xFFFE000000) ^ 0x0200000000000000
         return Ip6Host((Ip6Address(int(self._address) | interface_id), Ip6Mask("/64")))
 
-    @property
-    def version(self) -> int:
-        """IP network version"""
 
-        return 6
-
-
-class Ip6Host:
+class Ip6Host(IpHost):
     """IPv6 host support class"""
 
     def __init__(self, host: Union[Ip6Host, tuple[Ip6Address, Ip6Network], tuple[Ip6Address, Ip6Mask], str]) -> None:
         """Class constructor"""
+
+        self._address: Ip6Address
+        self._network: Ip6Network
+        self._version: int = 6
 
         self.gateway: Optional[Ip6Address] = None
 
@@ -413,40 +326,14 @@ class Ip6Host:
 
         raise Ip6HostFormatError(host)
 
-    def __str__(self) -> str:
-        """String representation"""
-
-        return str(self._address) + "/" + str(len(self._network.mask))
-
-    def __repr__(self) -> str:
-        """Object representation"""
-
-        return f"Ip6Host('{str(self)}')"
-
-    def __eq__(self, other: object) -> bool:
-        """Equal operator"""
-
-        return isinstance(other, Ip6Host) and self._address == other._address and self._network == other._network
-
-    def __hash__(self) -> int:
-        """Hash"""
-
-        return hash(self._address) ^ hash(self._network)
-
     @property
-    def address(self):
+    def address(self) -> Ip6Address:
         """Host address"""
 
         return self._address
 
     @property
-    def network(self):
+    def network(self) -> Ip6Network:
         """Host network"""
 
         return self._network
-
-    @property
-    def version(self) -> int:
-        """IP network version"""
-
-        return 6

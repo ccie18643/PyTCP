@@ -86,20 +86,3 @@ ICMP4_UNREACHABLE__FAGMENTATION = 4
 ICMP4_UNREACHABLE__SOURCE_ROUTE_FAILED = 5
 ICMP4_ECHO_REQUEST = 8
 ICMP4_ECHO_REQUEST_LEN = 8
-
-
-def __str__(self) -> str:
-    """Packet log string"""
-
-    log = f"ICMPv4 type {self.type}, code {self.code}"
-
-    if self.type == ICMP4_ECHO_REPLY:
-        log += f", id {self.ec_id}, seq {self.ec_seq}"
-
-    elif self.type == ICMP4_UNREACHABLE and self.code == ICMP4_UNREACHABLE__PORT:
-        pass
-
-    elif self.type == ICMP4_ECHO_REQUEST:
-        log += f", id {self.ec_id}, seq {self.ec_seq}"
-
-    return log

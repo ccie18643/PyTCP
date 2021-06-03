@@ -52,18 +52,17 @@ class Ip6ExtFragParser:
         packet_rx.ip6_ext_frag = self
 
         self._frame = packet_rx.frame
-        self._hptr = packet_rx.hptr
         self._plen = packet_rx.ip6.dlen
 
         packet_rx.parse_failed = self._packet_integrity_check() or self._packet_sanity_check()
 
         if not packet_rx.parse_failed:
-            packet_rx.hptr = self._hptr + ip6_ext_frag.ps.IP6_EXT_FRAG_HEADER_LEN
+            packet_rx.frame = packet_rx.frame[ip6_ext_frag.ps.IP6_EXT_FRAG_HEADER_LEN :]
 
-    def __len__(self):
+    def __len__(self) -> int:
         """Number of bytes remaining in the frame"""
 
-        return len(self._frame) - self._hptr
+        return len(self._frame)
 
     from ip6_ext_frag.ps import __str__
 
@@ -71,28 +70,28 @@ class Ip6ExtFragParser:
     def next(self) -> int:
         """Read 'Next' field"""
 
-        return self._frame[self._hptr + 0]
+        return self._frame[0]
 
     @property
     def offset(self) -> int:
         """Read 'Fragment offset' field"""
 
         if "_cache__offset" not in self.__dict__:
-            self._cache__offset = struct.unpack_from("!H", self._frame, self._hptr + 2)[0] & 0b1111111111111000
+            self._cache__offset: int = struct.unpack("!H", self._frame[2:4])[0] & 0b1111111111111000
         return self._cache__offset
 
     @property
     def flag_mf(self) -> bool:
         """Read 'MF flag' field"""
 
-        return bool(self._frame[self._hptr + 3] & 0b00000001)
+        return bool(self._frame[3] & 0b00000001)
 
     @property
     def id(self) -> int:
         """Read 'Identification' field"""
 
         if "_cache__id" not in self.__dict__:
-            self._cache__id = struct.unpack_from("!L", self._frame, self._hptr + 4)[0]
+            self._cache__id: int = struct.unpack("!L", self._frame[4:8])[0]
         return self._cache__id
 
     @property
@@ -118,7 +117,7 @@ class Ip6ExtFragParser:
         """Return copy of packet header"""
 
         if "_cache__header_copy" not in self.__dict__:
-            self._cache__header_copy = self._frame[self._hptr : self._hptr + ip6_ext_frag.ps.IP6_EXT_FRAG_HEADER_LEN]
+            self._cache__header_copy = bytes(self._frame[: ip6_ext_frag.ps.IP6_EXT_FRAG_HEADER_LEN])
         return self._cache__header_copy
 
     @property
@@ -126,7 +125,7 @@ class Ip6ExtFragParser:
         """Return copy of packet data"""
 
         if "_cache__data_copy" not in self.__dict__:
-            self._cache__data_copy = self._frame[self._hptr + ip6_ext_frag.ps.IP6_EXT_FRAG_HEADER_LEN : self._hptr + self.plen]
+            self._cache__data_copy = bytes(self._frame[ip6_ext_frag.ps.IP6_EXT_FRAG_HEADER_LEN : self.plen])
         return self._cache__data_copy
 
     @property
@@ -134,7 +133,7 @@ class Ip6ExtFragParser:
         """Return copy of whole packet"""
 
         if "_cache__packet_copy" not in self.__dict__:
-            self._cache__packet_copy = self._frame[self._hptr : self._hptr + self.plen]
+            self._cache__packet_copy = bytes(self._frame[: self.plen])
         return self._cache__packet_copy
 
     def _packet_integrity_check(self) -> str:

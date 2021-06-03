@@ -53,27 +53,39 @@ class TcpParser:
         packet_rx.tcp = self
 
         self._frame = packet_rx.frame
-        self._hptr = packet_rx.hptr
         self._plen = packet_rx.ip.dlen
 
         packet_rx.parse_failed = self._packet_integrity_check(packet_rx.ip.pshdr_sum) or self._packet_sanity_check()
 
         if packet_rx.parse_failed:
-            packet_rx.hptr = self._hptr + self.hlen
+            packet_rx.frame = packet_rx.frame[self.hlen :]
 
     def __len__(self) -> int:
         """Packet length"""
 
-        return len(self._frame) - self._hptr
+        return len(self._frame)
 
-    from tcp.ps import __str__
+    def __str__(self) -> str:
+        """Packet log string"""
+
+        log = (
+            f"TCP {self.sport} > {self.dport}, {'N' if self.flag_ns else ''}{'C' if self.flag_crw else ''}"
+            + f"{'E' if self.flag_ece else ''}{'U' if self.flag_urg else ''}{'A' if self.flag_ack else ''}"
+            + f"{'P' if self.flag_psh else ''}{'R' if self.flag_rst else ''}{'S' if self.flag_syn else ''}"
+            + f"{'F' if self.flag_fin else ''}, seq {self.seq}, ack {self.ack}, win {self.win}, dlen {len(self.data)}"
+        )
+
+        for option in self.options:
+            log += ", " + str(option)
+
+        return log
 
     @property
     def sport(self) -> int:
         """Read 'Source port' field"""
 
         if "_cache__sport" not in self.__dict__:
-            self._cache__sport = struct.unpack_from("!H", self._frame, self._hptr + 0)[0]
+            self._cache__sport: int = struct.unpack("!H", self._frame[0:2])[0]
         return self._cache__sport
 
     @property
@@ -81,7 +93,7 @@ class TcpParser:
         """Read 'Destianation port' field"""
 
         if "_cache__dport" not in self.__dict__:
-            self._cache__dport = struct.unpack_from("!H", self._frame, self._hptr + 2)[0]
+            self._cache__dport: int = struct.unpack("!H", self._frame[2:4])[0]
         return self._cache__dport
 
     @property
@@ -89,7 +101,7 @@ class TcpParser:
         """Read 'Sequence number' field"""
 
         if "_cache__seq" not in self.__dict__:
-            self._cache__seq = struct.unpack_from("!L", self._frame, self._hptr + 4)[0]
+            self._cache__seq: int = struct.unpack("!L", self._frame[4:8])[0]
         return self._cache__seq
 
     @property
@@ -97,7 +109,7 @@ class TcpParser:
         """Read 'Acknowledge number' field"""
 
         if "_cache__ack" not in self.__dict__:
-            self._cache__ack = struct.unpack_from("!L", self._frame, self._hptr + 8)[0]
+            self._cache__ack: int = struct.unpack("!L", self._frame[8:12])[0]
         return self._cache__ack
 
     @property
@@ -105,7 +117,7 @@ class TcpParser:
         """Read 'Header length' field"""
 
         if "_cache__hlen" not in self.__dict__:
-            self._cache__hlen = (self._frame[self._hptr + 12] & 0b11110000) >> 2
+            self._cache__hlen = (self._frame[12] & 0b11110000) >> 2
         return self._cache__hlen
 
     @property
@@ -113,7 +125,7 @@ class TcpParser:
         """Read 'NS flag' field"""
 
         if "_cache__flag_ns" not in self.__dict__:
-            self._cache__flag_ns = bool(self._frame[self._hptr + 12] & 0b00000001)
+            self._cache__flag_ns = bool(self._frame[12] & 0b00000001)
         return self._cache__flag_ns
 
     @property
@@ -121,7 +133,7 @@ class TcpParser:
         """Read 'CRW flag' field"""
 
         if "_cache__flag_crw" not in self.__dict__:
-            self._cache__flag_crw = bool(self._frame[self._hptr + 13] & 0b10000000)
+            self._cache__flag_crw = bool(self._frame[13] & 0b10000000)
         return self._cache__flag_crw
 
     @property
@@ -129,7 +141,7 @@ class TcpParser:
         """Read 'ECE flag' field"""
 
         if "_cache__flag_ece" not in self.__dict__:
-            self._cache__flag_ece = bool(self._frame[self._hptr + 13] & 0b01000000)
+            self._cache__flag_ece = bool(self._frame[13] & 0b01000000)
         return self._cache__flag_ece
 
     @property
@@ -137,7 +149,7 @@ class TcpParser:
         """Read 'URG flag' field"""
 
         if "_cache__flag_urg" not in self.__dict__:
-            self._cache__flag_urg = bool(self._frame[self._hptr + 13] & 0b00100000)
+            self._cache__flag_urg = bool(self._frame[13] & 0b00100000)
         return self._cache__flag_urg
 
     @property
@@ -145,7 +157,7 @@ class TcpParser:
         """Read 'ACK flag' field"""
 
         if "_cache__flag_ack" not in self.__dict__:
-            self._cache__flag_ack = bool(self._frame[self._hptr + 13] & 0b00010000)
+            self._cache__flag_ack = bool(self._frame[13] & 0b00010000)
         return self._cache__flag_ack
 
     @property
@@ -153,7 +165,7 @@ class TcpParser:
         """Read 'PSH flag' field"""
 
         if "_cache__flag_psh" not in self.__dict__:
-            self._cache__flag_psh = bool(self._frame[self._hptr + 13] & 0b00001000)
+            self._cache__flag_psh = bool(self._frame[13] & 0b00001000)
         return self._cache__flag_psh
 
     @property
@@ -161,7 +173,7 @@ class TcpParser:
         """Read 'RST flag' field"""
 
         if "_cache__flag_rst" not in self.__dict__:
-            self._cache__flag_rst = bool(self._frame[self._hptr + 13] & 0b00000100)
+            self._cache__flag_rst = bool(self._frame[13] & 0b00000100)
         return self._cache__flag_rst
 
     @property
@@ -169,7 +181,7 @@ class TcpParser:
         """Read 'SYN flag' field"""
 
         if "_cache__flag_syn" not in self.__dict__:
-            self._cache__flag_syn = bool(self._frame[self._hptr + 13] & 0b00000010)
+            self._cache__flag_syn = bool(self._frame[13] & 0b00000010)
         return self._cache__flag_syn
 
     @property
@@ -177,15 +189,15 @@ class TcpParser:
         """Read 'FIN flag' field"""
 
         if "_cache__flag_fin" not in self.__dict__:
-            self._cache__flag_fin = bool(self._frame[self._hptr + 13] & 0b00000001)
+            self._cache__flag_fin = bool(self._frame[13] & 0b00000001)
         return self._cache__flag_fin
 
     @property
-    def win(self):
+    def win(self) -> int:
         """Read 'Window' field"""
 
         if "_cache__win" not in self.__dict__:
-            self._cache__win = struct.unpack_from("!H", self._frame, self._hptr + 14)[0]
+            self._cache__win: int = struct.unpack("!H", self._frame[14:16])[0]
         return self._cache__win
 
     @property
@@ -193,7 +205,7 @@ class TcpParser:
         """Read 'Checksum' field"""
 
         if "_cache__cksum" not in self.__dict__:
-            self._cache__cksum = struct.unpack_from("!H", self._frame, self._hptr + 16)[0]
+            self._cache__cksum: int = struct.unpack("!H", self._frame[16:18])[0]
         return self._cache__cksum
 
     @property
@@ -201,15 +213,15 @@ class TcpParser:
         """Read 'Urgent pointer' field"""
 
         if "_cache__urg" not in self.__dict__:
-            self._cache__urg = struct.unpack_from("!H", self._frame, self._hptr + 18)[0]
+            self._cache__urg: int = struct.unpack("!H", self._frame[18:20])[0]
         return self._cache__urg
 
     @property
-    def data(self) -> bytes:
+    def data(self) -> memoryview:
         """Read the data packet carries"""
 
         if "_cache__data" not in self.__dict__:
-            self._cache__data = self._frame[self._hptr + self.hlen : self._hptr + self.plen]
+            self._cache__data = self._frame[self.hlen : self.plen]
         return self._cache__data
 
     @property
@@ -237,7 +249,7 @@ class TcpParser:
         """Return copy of packet header"""
 
         if "_cache__header_copy" not in self.__dict__:
-            self._cache__header_copy = self._frame[self._hptr : self._hptr + tcp.ps.TCP_HEADER_LEN]
+            self._cache__header_copy = bytes(self._frame[: tcp.ps.TCP_HEADER_LEN])
         return self._cache__header_copy
 
     @property
@@ -245,7 +257,7 @@ class TcpParser:
         """Return copy of packet header"""
 
         if "_cache__options_copy" not in self.__dict__:
-            self._cache__options_copy = self._frame[self._hptr + tcp.ps.TCP_HEADER_LEN : self._hptr + self.hlen]
+            self._cache__options_copy = bytes(self._frame[tcp.ps.TCP_HEADER_LEN : self.hlen])
         return self._cache__options_copy
 
     @property
@@ -253,7 +265,7 @@ class TcpParser:
         """Return copy of packet data"""
 
         if "_cache__data_copy" not in self.__dict__:
-            self._cache__data_copy = self._frame[self._hptr + self.hlen : self._hptr + self.plen]
+            self._cache__data_copy = bytes(self._frame[self.hlen : self.plen])
         return self._cache__data_copy
 
     @property
@@ -261,17 +273,17 @@ class TcpParser:
         """Return copy of whole packet"""
 
         if "_cache__packet_copy" not in self.__dict__:
-            self._cache__packet_copy = self._frame[self._hptr : self._hptr + self.plen]
+            self._cache__packet_copy = bytes(self._frame[: self.plen])
         return self._cache__packet_copy
 
     @property
-    def options(self) -> list:
+    def options(self) -> list[TcpOptMss | TcpOptWscale | TcpOptSackPerm | TcpOptTimestamp | TcpOptUnk | TcpOptEol | TcpOptNop]:
         """Read list of options"""
 
         if "_cache__options" not in self.__dict__:
             self._cache__options: list = []
-            optr = self._hptr + tcp.ps.TCP_HEADER_LEN
-            while optr < self._hptr + self.hlen:
+            optr = tcp.ps.TCP_HEADER_LEN
+            while optr < self.hlen:
                 if self._frame[optr] == tcp.ps.TCP_OPT_EOL:
                     self._cache__options.append(TcpOptEol())
                     break
@@ -285,7 +297,7 @@ class TcpParser:
                         tcp.ps.TCP_OPT_WSCALE: TcpOptWscale,
                         tcp.ps.TCP_OPT_SACKPERM: TcpOptSackPerm,
                         tcp.ps.TCP_OPT_TIMESTAMP: TcpOptTimestamp,
-                    }.get(self._frame[optr], TcpOptUnk)(self._frame, optr)
+                    }.get(self._frame[optr], TcpOptUnk)(self._frame[optr:])
                 )
                 optr += self._frame[optr + 1]
 
@@ -297,7 +309,7 @@ class TcpParser:
 
         if "_cache__mss" not in self.__dict__:
             for option in self.options:
-                if option.kind == tcp.ps.TCP_OPT_MSS:
+                if isinstance(option, TcpOptMss):
                     self._cache__mss = option.mss
                     break
             else:
@@ -310,8 +322,8 @@ class TcpParser:
 
         if "_cache__wscale" not in self.__dict__:
             for option in self.options:
-                if option.kind == tcp.ps.TCP_OPT_WSCALE:
-                    self._cache__wscale = 1 << option.wscale
+                if isinstance(option, TcpOptWscale):
+                    self._cache__wscale: Optional[int] = 1 << option.wscale
                     break
             else:
                 self._cache__wscale = None
@@ -323,7 +335,7 @@ class TcpParser:
 
         if "_cache__sackperm" not in self.__dict__:
             for option in self.options:
-                if option.kind == tcp.ps.TCP_OPT_SACKPERM:
+                if isinstance(option, TcpOptSackPerm):
                     self._cache__sackperm: Optional[bool] = True
                     break
             else:
@@ -336,7 +348,7 @@ class TcpParser:
 
         if "_cache__timestamp" not in self.__dict__:
             for option in self.options:
-                if option.kind == tcp.ps.TCP_OPT_TIMESTAMP:
+                if isinstance(option, TcpOptTimestamp):
                     self._cache__timestamp: Optional[tuple[int, int]] = (option.tsval, option.tsecr)
                     break
             else:
@@ -349,31 +361,31 @@ class TcpParser:
         if not config.packet_integrity_check:
             return ""
 
-        if inet_cksum(self._frame, self._hptr, self._plen, pshdr_sum):
+        if inet_cksum(self._frame[: self._plen], pshdr_sum):
             return "TCP integrity - wrong packet checksum"
 
         if not tcp.ps.TCP_HEADER_LEN <= self._plen <= len(self):
             return "TCP integrity - wrong packet length (I)"
 
-        hlen = (self._frame[self._hptr + 12] & 0b11110000) >> 2
+        hlen = (self._frame[12] & 0b11110000) >> 2
         if not tcp.ps.TCP_HEADER_LEN <= hlen <= self._plen <= len(self):
             return "TCP integrity - wrong packet length (II)"
 
-        optr = self._hptr + tcp.ps.TCP_HEADER_LEN
-        while optr < self._hptr + hlen:
+        optr = tcp.ps.TCP_HEADER_LEN
+        while optr < hlen:
             if self._frame[optr] == tcp.ps.TCP_OPT_EOL:
                 break
             if self._frame[optr] == tcp.ps.TCP_OPT_NOP:
                 optr += 1
-                if optr > self._hptr + hlen:
+                if optr > hlen:
                     return "TCP integrity - wrong option length (I)"
                 continue
-            if optr + 1 > self._hptr + hlen:
+            if optr + 1 > hlen:
                 return "TCP integrity - wrong option length (II)"
             if self._frame[optr + 1] == 0:
                 return "TCP integrity - wrong option length (III)"
             optr += self._frame[optr + 1]
-            if optr > self._hptr + hlen:
+            if optr > hlen:
                 return "TCP integrity - wrong option length (IV)"
 
         return ""
@@ -416,60 +428,130 @@ class TcpParser:
 #
 
 
-class TcpOptEol(tcp.ps.TcpOptEol):
+class TcpOptEol:
     """TCP option - End of TcpOption List (0)"""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.kind = tcp.ps.TCP_OPT_EOL
 
+    def __str__(self) -> str:
+        """Option log string"""
 
-class TcpOptNop(tcp.ps.TcpOptNop):
+        return "eol"
+
+    def __len__(self) -> int:
+        """Option length"""
+
+        return tcp.ps.TCP_OPT_EOL_LEN
+
+
+class TcpOptNop:
     """TCP option - No Operation (1)"""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.kind = tcp.ps.TCP_OPT_NOP
 
+    def __str__(self) -> str:
+        """Option log string"""
 
-class TcpOptMss(tcp.ps.TcpOptMss):
+        return "nop"
+
+    def __len__(self) -> int:
+        """Option length"""
+
+        return tcp.ps.TCP_OPT_NOP_LEN
+
+
+class TcpOptMss:
     """TCP option - Maximum Segment Size (2)"""
 
-    def __init__(self, frame: bytes, optr: int) -> None:
-        self.kind = frame[optr + 0]
-        self.len = frame[optr + 1]
-        self.mss = struct.unpack_from("!H", frame, optr + 2)[0]
+    def __init__(self, frame: bytes) -> None:
+        self.kind = frame[0]
+        self.len = frame[1]
+        self.mss: int = struct.unpack_from("!H", frame, 2)[0]
+
+    def __str__(self) -> str:
+        """Option log string"""
+
+        return f"mss {self.mss}"
+
+    def __len__(self) -> int:
+        """Option length"""
+
+        return self.len
 
 
-class TcpOptWscale(tcp.ps.TcpOptWscale):
+class TcpOptWscale:
     """TCP option - Window Scale (3)"""
 
-    def __init__(self, frame: bytes, optr: int) -> None:
-        self.kind = frame[optr + 0]
-        self.len = frame[optr + 1]
-        self.wscale = frame[optr + 2]
+    def __init__(self, frame: bytes) -> None:
+        self.kind = frame[0]
+        self.len = frame[1]
+        self.wscale = frame[2]
+
+    def __str__(self) -> str:
+        """Option log string"""
+
+        return f"wscale {self.wscale}"
+
+    def __len__(self) -> int:
+        """Option length"""
+
+        return self.len
 
 
-class TcpOptSackPerm(tcp.ps.TcpOptSackPerm):
+class TcpOptSackPerm:
     """TCP option - Sack Permit (4)"""
 
-    def __init__(self, frame: bytes, optr: int) -> None:
-        self.kind = frame[optr + 0]
-        self.len = frame[optr + 1]
+    def __init__(self, frame: bytes) -> None:
+        self.kind = frame[0]
+        self.len = frame[1]
+
+    def __str__(self) -> str:
+        """Option log string"""
+
+        return "sack_perm"
+
+    def __len__(self) -> int:
+        """Option length"""
+
+        return self.len
 
 
-class TcpOptTimestamp(tcp.ps.TcpOptTimestamp):
+class TcpOptTimestamp:
     """TCP option - Timestamp (8)"""
 
-    def __init__(self, frame: bytes, optr: int) -> None:
-        self.kind = frame[optr + 0]
-        self.len = frame[optr + 1]
-        self.tsval = struct.unpack_from("!L", frame, optr + 2)[0]
-        self.tsecr = struct.unpack_from("!L", frame, optr + 6)[0]
+    def __init__(self, frame: bytes) -> None:
+        self.kind = frame[0]
+        self.len = frame[1]
+        self.tsval: int = struct.unpack_from("!L", frame, 2)[0]
+        self.tsecr: int = struct.unpack_from("!L", frame, 6)[0]
+
+    def __str__(self) -> str:
+        """Option log string"""
+
+        return f"ts {self.tsval}/{self.tsecr}"
+
+    def __len__(self) -> int:
+        """Option length"""
+
+        return self.len
 
 
-class TcpOptUnk(tcp.ps.TcpOptUnk):
+class TcpOptUnk:
     """TCP option not supported by this stack"""
 
-    def __init__(self, frame: bytes, optr: int) -> None:
-        self.kind = frame[optr + 0]
-        self.len = frame[optr + 1]
-        self.data = frame[optr + 2 : optr + self.len]
+    def __init__(self, frame: bytes) -> None:
+        self.kind = frame[0]
+        self.len = frame[1]
+        self.data = frame[2 : self.len]
+
+    def __str__(self) -> str:
+        """Option log string"""
+
+        return f"unk-{self.kind}-{self.len}"
+
+    def __len__(self) -> int:
+        """Option length"""
+
+        return self.len

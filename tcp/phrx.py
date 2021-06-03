@@ -36,15 +36,11 @@ from misc.packet import PacketRx
 from tcp.fpp import TcpParser
 from tcp.metadata import TcpMetadata
 
-PACKET_LOSS = False
-
 
 def _phrx_tcp(self, packet_rx: PacketRx) -> None:
     """Handle inbound TCP packets"""
 
     TcpParser(packet_rx)
-    assert packet_rx.tcp is not None
-    assert packet_rx.ip is not None
 
     if packet_rx.parse_failed:
         if __debug__:
@@ -52,10 +48,12 @@ def _phrx_tcp(self, packet_rx: PacketRx) -> None:
         return
 
     if __debug__:
-        self._logger.opt(ansi=True).info(f"<green>{packet_rx.tracker}</green> - {packet_rx.tcp}")
+        self._logger.opt(ansi=True).info(f"<lg>{packet_rx.tracker}</> - {packet_rx.tcp}")
 
-    # Create TcpPacket object for further processing by TCP FSM
-    packet = TcpMetadata(
+    assert isinstance(packet_rx.tcp.data, memoryview)  # memoryview: data type check point
+
+    # Create TcpMetadata object for further processing by TCP FSM
+    packet_rx_md = TcpMetadata(
         local_ip_address=packet_rx.ip.dst,
         local_port=packet_rx.tcp.dport,
         remote_ip_address=packet_rx.ip.src,
@@ -69,38 +67,29 @@ def _phrx_tcp(self, packet_rx: PacketRx) -> None:
         win=packet_rx.tcp.win,
         wscale=packet_rx.tcp.wscale,
         mss=packet_rx.tcp.mss,
-        data=packet_rx.tcp.data,
+        data=packet_rx.tcp.data,  # memoryview: passing as memoryview for tcp session to consume, no need to convert to bytes here
         tracker=packet_rx.tracker,
     )
 
-    # Check if packet should be dropped due to random packet loss enabled (for TCP retansmission testing)
-    if PACKET_LOSS:
-        from random import randint
-
-        if randint(0, 99) == 7:
-            if __debug__:
-                self._logger.critical("SIMULATED LOST RX DATA PACKET")
-            return
-
-    # Check if incoming packet matches active TCP session
-    if tcp_session := stack.tcp_sessions.get(packet.tcp_session_id, None):
+    # Check if incoming packet matches active TCP socket
+    if tcp_socket := stack.sockets.get(str(packet_rx_md), None):
         if __debug__:
-            self._logger.debug(f"{packet.tracker} - TCP packet is part of active session {tcp_session.tcp_session_id}")
-        tcp_session.tcp_fsm(packet=packet)
+            self._logger.debug(f"{packet_rx_md.tracker} - TCP packet is part of active socket {tcp_socket}")
+        tcp_socket.process_tcp_packet(packet_rx_md)
         return
 
-    # Check if incoming packet is an initial SYN packet and if it matches any listening TCP session
-    if all({packet.flag_syn}) and not any({packet.flag_ack, packet.flag_fin, packet.flag_rst}):
-        for tcp_session_id_pattern in packet.tcp_session_listening_patterns:
-            if tcp_session := stack.tcp_sessions.get(tcp_session_id_pattern, None):
+    # Check if incoming packet is an initial SYN packet and if it matches any listening TCP socket
+    if all({packet_rx_md.flag_syn}) and not any({packet_rx_md.flag_ack, packet_rx_md.flag_fin, packet_rx_md.flag_rst}):
+        for tcp_listening_socket_pattern in packet_rx_md.tcp_listening_socket_patterns:
+            if tcp_socket := stack.sockets.get(tcp_listening_socket_pattern, None):
                 if __debug__:
-                    self._logger.debug(f"{packet.tracker} - TCP packet matches listening session {tcp_session.tcp_session_id}")
-                tcp_session.tcp_fsm(packet=packet)
+                    self._logger.debug(f"{packet_rx_md.tracker} - TCP packet matches listening socket {tcp_socket}")
+                    tcp_socket.process_tcp_packet(packet_rx_md)
                 return
 
     # In case packet doesn't match any session send RST packet in response to it
     if __debug__:
-        self._logger.debug(f"Received TCP packet from {packet_rx.ip.src} to closed port {packet_rx.tcp.dport}, responding with TCP RST packet")
+        self._logger.debug(f"{packet_rx.tracker} - TCP packet from {packet_rx.ip.src} to closed port {packet_rx.tcp.dport}, responding with TCP RST packet")
     self._phtx_tcp(
         ip_src=packet_rx.ip.dst,
         ip_dst=packet_rx.ip.src,

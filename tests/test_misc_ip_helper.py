@@ -4,7 +4,7 @@ from dataclasses import dataclass
 
 from testslide import TestCase
 
-from misc.ip_helper import inet_cksum, ip_pick_version
+from misc.ip_helper import inet_cksum, ip_version
 
 
 class TestMiscIpHelper(TestCase):
@@ -29,13 +29,10 @@ class TestMiscIpHelper(TestCase):
         ]
 
         for sample in samples:
-            result = inet_cksum(data=sample.data, dptr=0, dlen=len(sample.data), init=sample.init)
+            result = inet_cksum(data=memoryview(sample.data), init=sample.init)
             self.assertEqual(result, sample.result)
 
-    def test_ip_pick_version(self):
-        from lib.ip6_address import Ip6Address
-
-        self.assertEqual(ip_pick_version("1:2:3:4:5:6:7:8"), Ip6Address("1:2:3:4:5:6:7:8"))
-        from lib.ip4_address import Ip4Address
-
-        self.assertEqual(ip_pick_version("1.2.3.4"), Ip4Address("1.2.3.4"))
+    def test_ip_ersion(self):
+        self.assertEqual(ip_version("1:2:3:4:5:6:7:8"), 6)
+        self.assertEqual(ip_version("1.2.3.4"), 4)
+        self.assertEqual(ip_version("ZHOPA"), None)

@@ -37,6 +37,8 @@ import config
 import ip4.fpa
 from ip4.fpa import Ip4Assembler
 from lib.ip4_address import Ip4Address
+from misc.ip_helper import pick_local_ip4_address
+from misc.tx_status import TxStatus
 
 if TYPE_CHECKING:
     from icmp4.fpa import Icmp4Assembler
@@ -87,17 +89,9 @@ def _validate_src_ip4_address(self, ip4_src: Ip4Address, ip4_dst: Ip4Address) ->
                 self._logger.warning("Unable to sent out IPv4 packet, no appropriate stack unicast IPv4 address available")
             return None
 
-    # If source is unspecified check if destination belongs to any of local networks, if so pick source address from that network
+    # If source is unspecified try to find best match for given destination
     if ip4_src.is_unspecified:
-        for ip4_host in self.ip4_host:
-            if ip4_dst in ip4_host.network:
-                return ip4_host.address
-
-    # If source unspcified and destination is external pick source from first network that has default gateway set
-    if ip4_src.is_unspecified:
-        for ip4_host in self.ip4_host:
-            if ip4_host.gateway:
-                return ip4_host.address
+        return pick_local_ip4_address(ip4_dst)
 
     return ip4_src
 
@@ -120,24 +114,24 @@ def _phtx_ip4(
     ip4_dst: Ip4Address,
     ip4_src: Ip4Address,
     ip4_ttl: int = config.ip4_default_ttl,
-) -> None:
+) -> TxStatus:
     """Handle outbound IP packets"""
 
     assert 0 < ip4_ttl < 256
 
     # Check if IPv4 protocol support is enabled, if not then silently drop the packet
     if not config.ip4_support:
-        return
+        return TxStatus.DROPED_IP4_NO_PROTOCOL_SUPPORT
 
     # Validate source address
     ip4_src = self._validate_src_ip4_address(ip4_src, ip4_dst)
     if not ip4_src:
-        return
+        return TxStatus.DROPED_IP4_INVALID_SOURCE
 
     # Validate destination address
     ip4_dst = self._validate_dst_ip4_address(ip4_dst)
     if not ip4_dst:
-        return
+        return TxStatus.DROPED_IP4_INVALID_DESTINATION
 
     # Assemble IPv4 packet
     ip4_packet_tx = Ip4Assembler(src=ip4_src, dst=ip4_dst, ttl=ip4_ttl, carried_packet=carried_packet)
@@ -146,18 +140,18 @@ def _phtx_ip4(
     if len(ip4_packet_tx) <= config.mtu:
         if __debug__:
             self._logger.debug(f"{ip4_packet_tx.tracker} - {ip4_packet_tx}")
-        self._phtx_ether(carried_packet=ip4_packet_tx)
-        return
+        return self._phtx_ether(carried_packet=ip4_packet_tx)
 
     # Fragment packet and send out
     if __debug__:
         self._logger.debug(f"{ip4_packet_tx.tracker} - IPv4 packet len {len(ip4_packet_tx)} bytes, fragmentation needed")
-    data = bytearray(ip4_packet_tx.dlen)
-    ip4_packet_tx._carried_packet.assemble(data, 0, ip4_packet_tx.pshdr_sum)
+    data = memoryview(bytearray(ip4_packet_tx.dlen))
+    ip4_packet_tx._carried_packet.assemble(data, ip4_packet_tx.pshdr_sum)
     data_mtu = (config.mtu - ip4_packet_tx.hlen) & 0b1111111111111000
     data_frags = [data[_ : data_mtu + _] for _ in range(0, len(data), data_mtu)]
     offset = 0
     self.ip4_id += 1
+    ether_tx_status: set[TxStatus] = set()
     for data_frag in data_frags:
         ip4_frag_tx = ip4.fpa.FragAssembler(
             src=ip4_src,
@@ -172,5 +166,17 @@ def _phtx_ip4(
         if __debug__:
             self._logger.debug(f"{ip4_frag_tx.tracker} - {ip4_frag_tx}")
         offset += len(data_frag)
-        self._phtx_ether(carried_packet=ip4_frag_tx)
-    return
+        ether_tx_status.add(self._phtx_ether(carried_packet=ip4_frag_tx))
+
+    # Return the most severe code
+    for tx_status in [
+        TxStatus.DROPED_ETHER_RESOLUTION_FAIL,
+        TxStatus.DROPED_ETHER_NO_GATEWAY,
+        TxStatus.DROPED_ETHER_CACHE_FAIL,
+        TxStatus.DROPED_ETHER_GATEWAY_CACHE_FAIL,
+        TxStatus.PASSED_TO_TX_RING,
+    ]:
+        if tx_status in ether_tx_status:
+            return tx_status
+
+    return TxStatus.DROPED_IP4_UNKNOWN

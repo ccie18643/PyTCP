@@ -36,6 +36,8 @@ from typing import TYPE_CHECKING, Optional, Union
 import config
 from ip6.fpa import Ip6Assembler
 from lib.ip6_address import Ip6Address
+from misc.ip_helper import pick_local_ip6_address
+from misc.tx_status import TxStatus
 
 if TYPE_CHECKING:
     from icmp6.fpa import Icmp6Assembler
@@ -64,17 +66,9 @@ def _validate_src_ip6_address(self, ip6_src: Ip6Address, ip6_dst: Ip6Address) ->
                 self._logger.warning("Unable to sent out IPv6 packet, no stack link local unicast IPv6 address available")
             return None
 
-    # If source is unspecified check if destination belongs to any of local networks, if so pick source address from that network
+    # If source is unspecified try to find best match for given destination
     if ip6_src.is_unspecified:
-        for ip6_host in self.ip6_host:
-            if ip6_dst in ip6_host.network:
-                return ip6_host.address
-
-    # If source unspcified and destination is external pick source from first network that has default gateway set
-    if ip6_src.is_unspecified:
-        for ip6_host in self.ip6_host:
-            if ip6_host.gateway:
-                return ip6_host.address
+        return pick_local_ip6_address(ip6_dst)
 
     return ip6_src
 
@@ -97,24 +91,24 @@ def _phtx_ip6(
     ip6_dst: Ip6Address,
     ip6_src: Ip6Address,
     ip6_hop: int = config.ip6_default_hop,
-) -> None:
+) -> TxStatus:
     """Handle outbound IP packets"""
 
     assert 0 < ip6_hop < 256
 
     # Check if IPv6 protocol support is enabled, if not then silently drop the packet
     if not config.ip6_support:
-        return
+        return TxStatus.DROPED_IP6_NO_PROTOCOL_SUPPORT
 
     # Validate source address
     ip6_src = self._validate_src_ip6_address(ip6_src, ip6_dst)
     if not ip6_src:
-        return
+        return TxStatus.DROPED_IP6_INVALID_SOURCE
 
     # Validate destination address
     ip6_dst = self._validate_dst_ip6_address(ip6_dst)
     if not ip6_dst:
-        return
+        return TxStatus.DROPED_IP6_INVALID_DESTINATION
 
     # assemble IPv6 apcket
     ip6_packet_tx = Ip6Assembler(src=ip6_src, dst=ip6_dst, hop=ip6_hop, carried_packet=carried_packet)
@@ -123,10 +117,9 @@ def _phtx_ip6(
     if len(ip6_packet_tx) <= config.mtu:
         if __debug__:
             self._logger.debug(f"{ip6_packet_tx.tracker} - {ip6_packet_tx}")
-        self._phtx_ether(carried_packet=ip6_packet_tx)
-        return
+        return self._phtx_ether(carried_packet=ip6_packet_tx)
 
     # Fragment packet and send out
     if __debug__:
         self._logger.debug(f"{ip6_packet_tx.tracker} - IPv6 packet len {len(ip6_packet_tx)} bytes, fragmentation needed")
-    self._phtx_ip6_ext_frag(ip6_packet_tx)
+    return self._phtx_ip6_ext_frag(ip6_packet_tx)

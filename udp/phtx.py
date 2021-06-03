@@ -31,46 +31,41 @@
 
 from __future__ import annotations  # Required by Python ver < 3.10
 
-from typing import TYPE_CHECKING, Union
+from typing import TYPE_CHECKING, Optional
 
-import config
-from misc.tracker import Tracker
+from lib.ip4_address import Ip4Address
+from lib.ip6_address import Ip6Address
+from lib.tracker import Tracker
+from misc.tx_status import TxStatus
 from udp.fpa import UdpAssembler
 
 if TYPE_CHECKING:
-    from lib.ip4_address import Ip4Address
-    from lib.ip6_address import Ip6Address
+    from lib.ip_address import IpAddress
 
 
 def _phtx_udp(
     self,
-    ip_src: Union[Ip6Address, Ip4Address],
-    ip_dst: Union[Ip6Address, Ip4Address],
+    ip_src: IpAddress,
+    ip_dst: IpAddress,
     udp_sport: int,
     udp_dport: int,
-    udp_data: bytes = b"",
-    echo_tracker: Tracker = None,
-) -> None:
+    udp_data: Optional[bytes] = None,
+    echo_tracker: Optional[Tracker] = None,
+) -> TxStatus:
     """Handle outbound UDP packets"""
 
-    assert 0 < udp_sport < 65536
-    assert 0 < udp_dport < 65536
-
-    # Check if IPv4 protocol support is enabled, if not then silently drop the IPv4 packet
-    if not config.ip4_support and ip_dst.version == 4:
-        return
-
-    # Check if IPv6 protocol support is enabled, if not then silently drop the IPv6 packet
-    if not config.ip6_support and ip_dst.version == 6:
-        return
+    assert 0 < udp_sport < 65536, f"{udp_sport=}"
+    assert 0 < udp_dport < 65536, f"{udp_dport=}"
 
     udp_packet_tx = UdpAssembler(sport=udp_sport, dport=udp_dport, data=udp_data, echo_tracker=echo_tracker)
 
     if __debug__:
-        self._logger.opt(ansi=True).info(f"<magenta>{udp_packet_tx.tracker}</magenta> - {udp_packet_tx}")
+        self._logger.opt(ansi=True).info(f"<lr>{udp_packet_tx.tracker}</> - {udp_packet_tx}")
 
-    if ip_src.version == 6 and ip_dst.version == 6:
-        self._phtx_ip6(ip6_src=ip_src, ip6_dst=ip_dst, carried_packet=udp_packet_tx)
+    if isinstance(ip_src, Ip6Address) and isinstance(ip_dst, Ip6Address):
+        return self._phtx_ip6(ip6_src=ip_src, ip6_dst=ip_dst, carried_packet=udp_packet_tx)
 
-    if ip_src.version == 4 and ip_dst.version == 4:
-        self._phtx_ip4(ip4_src=ip_src, ip4_dst=ip_dst, carried_packet=udp_packet_tx)
+    if isinstance(ip_src, Ip4Address) and isinstance(ip_dst, Ip4Address):
+        return self._phtx_ip4(ip4_src=ip_src, ip4_dst=ip_dst, carried_packet=udp_packet_tx)
+
+    return TxStatus.DROPED_UDP_UNKNOWN

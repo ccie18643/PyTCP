@@ -50,9 +50,3 @@ ETHER_TYPE_IP4 = 0x0800
 ETHER_TYPE_IP6 = 0x86DD
 
 ETHER_TYPE_TABLE = {ETHER_TYPE_ARP: "ARP", ETHER_TYPE_IP4: "IPv4", ETHER_TYPE_IP6: "IPv6"}
-
-
-def __str__(self) -> str:
-    """Packet log string"""
-
-    return f"ETHER {self.src} > {self.dst}, 0x{self.type:0>4x} ({ETHER_TYPE_TABLE.get(self.type, '???')})"

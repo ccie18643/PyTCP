@@ -25,13 +25,13 @@
 
 
 #
-# misc/timer.py - module contains class supporting timer that can be used by other stack components
+# lib/timer.py - module contains class supporting timer that can be used by other stack components
 #
 
 
 import threading
 import time
-from typing import Callable, Optional
+from typing import Any, Callable, Optional
 
 import loguru
 
@@ -41,39 +41,53 @@ import misc.stack as stack
 class TimerTask:
     """Timer task support class"""
 
-    def __init__(self, method: Callable, args: list, kwargs: dict, delay: int, delay_exp: bool, repeat_count: int, stop_condition: Optional[Callable]) -> None:
+    def __init__(
+        self,
+        method: Callable,
+        args: list[Any],
+        kwargs: dict[str, Any],
+        delay: int,
+        delay_exp: bool,
+        repeat_count: int,
+        stop_condition: Optional[Callable],
+    ) -> None:
         """Class constructor, repeat_count = -1 means infinite, delay_exp means to raise delay time exponentially after each method execution"""
 
-        self.method = method
-        self.args = args
-        self.kwargs = kwargs
-        self.delay = delay
-        self.delay_exp = delay_exp
-        self.repeat_count = repeat_count
-        self.stop_condition = stop_condition
+        self._method: Callable = method
+        self._args: list[Any] = args
+        self._kwargs: dict[str, Any] = kwargs
+        self._delay: int = delay
+        self._delay_exp: bool = delay_exp
+        self._repeat_count: int = repeat_count
+        self._stop_condition: Optional[Callable] = stop_condition
+        self._remaining_delay: int = delay
+        self._delay_exp_factor: int = 0
 
-        self.remaining_delay = delay
-        self.delay_exp_factor = 0
+    @property
+    def remaining_delay(self) -> int:
+        """Geter for _remaining_delay"""
 
-    def tick(self):
+        return self._remaining_delay
+
+    def tick(self) -> None:
         """Tick input from timer"""
 
-        self.remaining_delay -= 1
+        self._remaining_delay -= 1
 
-        if self.stop_condition and self.stop_condition():
-            self.remaining_delay = 0
+        if self._stop_condition and self._stop_condition():
+            self._remaining_delay = 0
             return
 
-        if self.remaining_delay:
+        if self._remaining_delay:
             return
 
-        self.method(*self.args, **self.kwargs)
+        self._method(*self._args, **self._kwargs)
 
-        if self.repeat_count:
-            self.remaining_delay = self.delay * (1 << self.delay_exp_factor) if self.delay_exp else self.delay
-            self.delay_exp_factor += 1
-            if self.repeat_count > 0:
-                self.repeat_count -= 1
+        if self._repeat_count:
+            self._remaining_delay = self._delay * (1 << self._delay_exp_factor) if self._delay_exp else self._delay
+            self._delay_exp_factor += 1
+            if self._repeat_count > 0:
+                self._repeat_count -= 1
 
 
 class Timer:
@@ -87,40 +101,40 @@ class Timer:
         if __debug__:
             self._logger = loguru.logger.bind(object_name="timer.")
 
-        self.run_timer = True
+        self._run_timer: bool = True
 
-        self.tasks: list[TimerTask] = []
-        self.timers: dict[str, int] = {}
+        self._tasks: list[TimerTask] = []
+        self._timers: dict[str, int] = {}
 
         threading.Thread(target=self.__thread_timer).start()
         if __debug__:
             self._logger.debug("Started timer")
 
     def __thread_timer(self) -> None:
-        """Thread responsible for executing registered methods on every timer tick"""
+        """Thread responsible for executing register methods on every timer tick"""
 
-        while self.run_timer:
+        while self._run_timer:
             time.sleep(0.001)
 
-            # Tck registered timers
-            for name in self.timers:
-                self.timers[name] -= 1
+            # Tck register timers
+            for name in self._timers:
+                self._timers[name] -= 1
 
             # Cleanup expired timers
-            self.timers = {_: __ for _, __ in self.timers.items() if __}
+            self._timers = {_: __ for _, __ in self._timers.items() if __}
 
-            # Tick registered methods
-            for task in self.tasks:
+            # Tick register methods
+            for task in self._tasks:
                 task.tick()
 
             # Cleanup expired methods
-            self.tasks = [_ for _ in self.tasks if _.remaining_delay]
+            self._tasks = [_ for _ in self._tasks if _.remaining_delay]
 
     def register_method(
         self,
         method: Callable,
-        args: list = None,
-        kwargs: dict = None,
+        args: Optional[list[Any]] = None,
+        kwargs: Optional[dict[str, Any]] = None,
         delay: int = 1,
         delay_exp: bool = False,
         repeat_count: int = -1,
@@ -128,17 +142,17 @@ class Timer:
     ) -> None:
         """Register method to be executed by timer"""
 
-        self.tasks.append(TimerTask(method, [] if args is None else args, {} if kwargs is None else kwargs, delay, delay_exp, repeat_count, stop_condition))
+        self._tasks.append(TimerTask(method, [] if args is None else args, {} if kwargs is None else kwargs, delay, delay_exp, repeat_count, stop_condition))
 
     def register_timer(self, name: str, timeout: int) -> None:
         """Register delay timer"""
 
-        self.timers[name] = timeout
+        self._timers[name] = timeout
 
-    def is_expired(self, name: str) -> bool:
-        """Check if timer expired"""
+    def is_expir(self, name: str) -> bool:
+        """Check if timer expir"""
 
         if __debug__:
-            self._logger.opt(ansi=True).trace(f"<red>Active timers: {self.timers}</>")
+            self._logger.opt(ansi=True).trace(f"<r>Active timers: {self._timers}</>")
 
-        return not self.timers.get(name, None)
+        return not self._timers.get(name, None)

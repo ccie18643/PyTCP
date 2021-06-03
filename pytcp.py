@@ -37,17 +37,9 @@ import time
 import loguru
 
 import config
-from client.icmp_echo import ClientIcmpEcho
-from client.tcp_echo import ClientTcpEcho
+from lib.timer import Timer
 from misc.ph import PacketHandler
 from misc.stack_cli_server import StackCliServer
-from misc.timer import Timer
-from service.tcp_daytime import ServiceTcpDaytime
-from service.tcp_discard import ServiceTcpDiscard
-from service.tcp_echo import ServiceTcpEcho
-from service.udp_daytime import ServiceUdpDaytime
-from service.udp_discard import ServiceUdpDiscard
-from service.udp_echo import ServiceUdpEcho
 
 TUNSETIFF = 0x400454CA
 IFF_TAP = 0x0002
@@ -100,60 +92,69 @@ def main() -> int:
     Timer()
     PacketHandler(tap)
 
-    # Set proper local IP address pattern for services depending on which version of IP is enabled
-    if config.ip6_support and config.ip4_support:
-        local_ip_address = "*"
-    elif config.ip6_support:
-        local_ip_address = "::"
-    elif config.ip4_support:
-        local_ip_address = "0.0.0.0"
+    #
+    # Initialize test services and clients - uncomment what's needed
+    #
 
-    # Initialize UDP test services
-    if config.service_udp_echo:
-        ServiceUdpEcho(local_ip_address=local_ip_address)
-    if config.service_udp_discard:
-        ServiceUdpDiscard(local_ip_address=local_ip_address)
-    if config.service_udp_daytime:
-        ServiceUdpDaytime(local_ip_address=local_ip_address)
+    # from service.udp_echo import ServiceUdpEcho
+    # ServiceUdpEcho(local_ip_address="::")
+    # ServiceUdpEcho(local_ip_address="0.0.0.0")
 
-    # Initialize TCP test services
-    if config.service_tcp_echo:
-        ServiceTcpEcho(local_ip_address=local_ip_address)
-    if config.service_tcp_discard:
-        ServiceTcpDiscard(local_ip_address=local_ip_address)
-    if config.service_tcp_daytime:
-        ServiceTcpDaytime(local_ip_address=local_ip_address, message_count=-1, message_delay=1, message_size=5)
+    # from service.udp_discard import ServiceUdpDiscard
+    # ServiceUdpDiscard(local_ip_address="::")
+    # ServiceUdpDiscard(local_ip_address="0.0.0.0")
 
-    # Initialize TCP test clients
-    if config.client_tcp_echo:
-        ClientTcpEcho(local_ip_address="192.168.9.7", remote_ip_address="192.168.9.102", remote_port=7, message_count=10)
-        ClientTcpEcho(
-            local_ip_address="fdd1:c296:f24f:9:0:ff:fe77:7777", remote_ip_address="fdd1:c296:f24f:9:5054:ff:fedf:8537", remote_port=7, message_count=10
-        )
-        ClientTcpEcho(local_ip_address="192.168.9.7", remote_ip_address="1.1.1.1", remote_port=7)
-        ClientTcpEcho(local_ip_address="192.168.9.7", remote_ip_address="192.168.9.9", remote_port=7)
+    # from service.udp_daytime import ServiceUdpDaytime
+    # ServiceUdpDaytime(local_ip_address="::")
+    # ServiceUdpDaytime(local_ip_address="0.0.0.0")
 
-    # Initialize ICMP test client
-    if config.client_icmp_echo:
-        # Same subnet, source address specified
-        # ClientIcmpEcho(local_ip_address="fdd1:c296:f24f:9:0:ff:fe77:7777", remote_ip_address="fdd1:c296:f24f:9:5054:ff:fedf:8537", message_count=10)
-        # ClientIcmpEcho(local_ip_address="fe80::7", remote_ip_address="fe80::5054:ff:fe8b:aa9", message_count=10)
+    from service.tcp_echo import ServiceTcpEcho
 
-        # Same subnet, source address not specified
-        # ClientIcmpEcho(local_ip_address="::", remote_ip_address="fdd1:c296:f24f:9:5054:ff:fe8b:aa9", message_count=10)
-        # ClientIcmpEcho(local_ip_address="::", remote_ip_address="fe80::5054:ff:fe8b:aa9", message_count=10)
+    ServiceTcpEcho(local_ip_address="::")
+    ServiceTcpEcho(local_ip_address="0.0.0.0")
 
-        # Another subnet, source address specified
-        # ClientIcmpEcho(local_ip_address="fdd1:c296:f24f:9:0:ff:fe77:7777", remote_ip_address="fdd1:c296:f24f:100:5054:ff:fef9:99aa", message_count=10)
-        # ClientIcmpEcho(local_ip_address="192.168.9.7", remote_ip_address="8.8.8.8", message_count=10)
+    # from service.tcp_discard import ServiceTcpDiscard
+    # ServiceTcpDiscard(local_ip_address="::")
+    # ServiceTcpDiscard(local_ip_address="0.0.0.0")
 
-        # Another subnet, source address not specified
-        # ClientIcmpEcho(local_ip_address="::", remote_ip_address="fdd1:c296:f24f:100:5054:ff:fef9:99aa", message_count=10)
-        ClientIcmpEcho(local_ip_address="0.0.0.0", remote_ip_address="8.8.8.8", message_count=5)
-        ClientIcmpEcho(local_ip_address="::", remote_ip_address="2001:4860:4860::8888", message_count=25)
+    # from service.tcp_daytime import ServiceTcpDaytime
+    # ServiceTcpDaytime(local_ip_address="::")
+    # ServiceTcpDaytime(local_ip_address="0.0.0.0")
 
-        # Another subnet, source with no default gateway assigned
-        # ClientIcmpEcho(local_ip_address="2007::1111", remote_ip_address="fdd1:c296:f24f:100:5054:ff:fef9:99aa", message_count=10)
+    # from client.udp_echo import ClientUdpEcho
+    # ClientUdpEcho(local_ip_address="192.168.9.7", remote_ip_address="192.168.9.102", remote_port=7)
+    # ClientUdpEcho(local_ip_address="0.0.0.0", remote_ip_address="192.168.9.102", message_count=10)
+    # ClientUdpEcho(local_ip_address="::", remote_ip_address="2603:9000:e307:9f09:5054:ff:fedf:8537", remote_port=7, message_count=10)
+    # ClientUdpEcho(local_ip_address="192.168.9.7", remote_ip_address="1.1.1.1", remote_port=7)
+    # ClientUdpEcho(local_ip_address="192.168.9.7", remote_ip_address="192.168.9.9", remote_port=7)
+
+    # from client.tcp_echo import ClientTcpEcho
+    # ClientTcpEcho(local_ip_address="192.168.9.7", remote_ip_address="192.168.9.102", remote_port=7)
+    # ClientTcpEcho(local_ip_address="192.168.9.7", remote_ip_address="1.1.1.1", remote_port=7, message_count=10)
+    # ClientTcpEcho(local_ip_address="fdd1:c296:f24f:9:0:ff:fe77:7777", remote_ip_address="fdd1:c296:f24f:9:5054:ff:fedf:8537", remote_port=7, message_count=10)
+    # ClientTcpEcho(local_ip_address="192.168.9.7", remote_ip_address="1.1.1.1", remote_port=7)
+    # ClientTcpEcho(local_ip_address="192.168.9.7", remote_ip_address="192.168.9.9", remote_port=7)
+
+    # from client.icmp_echo import ClientIcmpEcho
+    # Same subnet, source address specified
+    # ClientIcmpEcho(local_ip_address="fdd1:c296:f24f:9:0:ff:fe77:7777", remote_ip_address="fdd1:c296:f24f:9:5054:ff:fedf:8537", message_count=10)
+    # ClientIcmpEcho(local_ip_address="fe80::7", remote_ip_address="fe80::5054:ff:fe8b:aa9", message_count=10)
+
+    # Same subnet, source address not specified
+    # ClientIcmpEcho(local_ip_address="::", remote_ip_address="fdd1:c296:f24f:9:5054:ff:fe8b:aa9", message_count=10)
+    # ClientIcmpEcho(local_ip_address="::", remote_ip_address="fe80::5054:ff:fe8b:aa9", message_count=10)
+
+    # Another subnet, source address specified
+    # ClientIcmpEcho(local_ip_address="fdd1:c296:f24f:9:0:ff:fe77:7777", remote_ip_address="fdd1:c296:f24f:100:5054:ff:fef9:99aa", message_count=10)
+    # ClientIcmpEcho(local_ip_address="192.168.9.7", remote_ip_address="8.8.8.8", message_count=10)
+
+    # Another subnet, source address not specified
+    # ClientIcmpEcho(local_ip_address="::", remote_ip_address="fdd1:c296:f24f:100:5054:ff:fef9:99aa", message_count=10)
+    # ClientIcmpEcho(local_ip_address="0.0.0.0", remote_ip_address="8.8.8.8", message_count=5)
+    # ClientIcmpEcho(local_ip_address="::", remote_ip_address="2600::", message_count=25)
+
+    # Another subnet, source with no default gateway assigned
+    # ClientIcmpEcho(local_ip_address="2007::1111", remote_ip_address="fdd1:c296:f24f:100:5054:ff:fef9:99aa", message_count=10)
 
     while True:
         time.sleep(1)

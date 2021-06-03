@@ -41,7 +41,6 @@ def _phrx_ip6(self, packet_rx: PacketRx) -> None:
     """Handle inbound IPv6 packets"""
 
     Ip6Parser(packet_rx)
-    assert packet_rx.ip6 is not None
 
     if packet_rx.parse_failed:
         if __debug__:

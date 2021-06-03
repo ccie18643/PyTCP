@@ -31,13 +31,9 @@
 
 from __future__ import annotations  # Required by Python ver < 3.10
 
-import loguru
-
 import icmp4.ps
 import icmp6.ps
 import misc.stack as stack
-from lib.ip4_address import Ip4Address
-from lib.ip6_address import Ip6Address
 from misc.packet import PacketRx
 from udp.fpp import UdpParser
 from udp.metadata import UdpMetadata
@@ -47,8 +43,6 @@ def _phrx_udp(self, packet_rx: PacketRx) -> None:
     """Handle inbound UDP packets"""
 
     UdpParser(packet_rx)
-    assert packet_rx.udp is not None
-    assert packet_rx.ip is not None
 
     if packet_rx.parse_failed:
         if __debug__:
@@ -56,28 +50,30 @@ def _phrx_udp(self, packet_rx: PacketRx) -> None:
         return
 
     if __debug__:
-        self._logger.opt(ansi=True).info(f"<green>{packet_rx.tracker}</green> - {packet_rx.udp}")
+        self._logger.opt(ansi=True).info(f"<lg>{packet_rx.tracker}</> - {packet_rx.udp}")
+
+    assert isinstance(packet_rx.udp.data, memoryview)  # memoryview: data type check point
 
     # Create UdpMetadata object and try to find matching UDP socket
-    packet = UdpMetadata(
+    packet_rx_md = UdpMetadata(
         local_ip_address=packet_rx.ip.dst,
         local_port=packet_rx.udp.dport,
         remote_ip_address=packet_rx.ip.src,
         remote_port=packet_rx.udp.sport,
-        data=packet_rx.udp.data,
+        data=bytes(packet_rx.udp.data),  # memoryview: conversion for end-user interface
         tracker=packet_rx.tracker,
     )
 
-    for socket_id in packet.socket_id_patterns:
-        socket = stack.udp_sockets.get(socket_id, None)
+    for socket_pattern in packet_rx_md.socket_patterns:
+        socket = stack.sockets.get(socket_pattern, None)
         if socket:
             if __debug__:
-                loguru.logger.bind(object_name="socket.").debug(f"{packet.tracker} - Found matching listening socket {socket_id}")
-            socket.process_packet(packet)
+                self._logger.debug(f"{packet_rx_md.tracker} - Found matching listening socket [{socket}]")
+            socket.process_udp_packet(packet_rx_md)
             return
 
-    # Silently drop packet if it has all zero source IP address
-    if packet_rx.ip.src in {Ip4Address("0.0.0.0"), Ip6Address("::")}:
+    # Silently drop packet if it's source address is unspecified
+    if packet_rx.ip.src.is_unspecified:
         if __debug__:
             self._logger.debug(
                 f"Received UDP packet from {packet_rx.ip.src}, port {packet_rx.udp.sport} to {packet_rx.ip.dst}, port {packet_rx.udp.dport}, dropping..."

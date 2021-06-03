@@ -29,7 +29,7 @@
 #
 
 
-from __future__ import annotations  # Required for Python version lower than 3.10
+from __future__ import annotations  # Requir for Python version lower than 3.10
 
 import re
 import struct
@@ -43,7 +43,7 @@ class MacIp4AddressFormatError(Exception):
 class MacAddress:
     """Ethernet MAC address manipulation class"""
 
-    def __init__(self, address: Union[MacAddress, str, bytes, int]) -> None:
+    def __init__(self, address: Union[MacAddress, str, bytes, bytearray, memoryview, int]) -> None:
         """Class constructor"""
 
         if isinstance(address, MacAddress):

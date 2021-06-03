@@ -40,6 +40,8 @@ import loguru
 import config
 
 if TYPE_CHECKING:
+    from threading import Semaphore
+
     from ether.fpa import EtherAssembler
 
 
@@ -52,19 +54,20 @@ class TxRing:
         if __debug__:
             self._logger = loguru.logger.bind(object_name="tx_ring.")
 
-        self.tap = tap
+        self.tap: int = tap
         self.tx_ring: list[EtherAssembler] = []
-
-        self.packet_enqueued = threading.Semaphore(0)
+        self.packet_enqueued: Semaphore = threading.Semaphore(0)
 
         threading.Thread(target=self.__thread_transmit).start()
+
         if __debug__:
             self._logger.debug("Started TX ring")
 
-        self.frame = bytearray(config.mtu + 14)
-
     def __thread_transmit(self) -> None:
         """Dequeue packet from TX ring and send it out"""
+
+        # Using static frame buffer to avoid dynamic memory allocation for each frame
+        frame_buffer = bytearray(config.mtu + 14)
 
         while True:
             self.packet_enqueued.acquire()
@@ -73,18 +76,16 @@ class TxRing:
                 if __debug__:
                     self._logger.error(f"{packet_tx.tracker} - Unable to send frame, frame len ({packet_tx_len}) > mtu ({config.mtu + 14})")
                 continue
-            packet_tx.assemble(self.frame, 0)
-
+            frame = memoryview(frame_buffer)[:packet_tx_len]
+            packet_tx.assemble(frame)
             try:
-                os.write(self.tap, memoryview(self.frame)[:packet_tx_len])
+                os.write(self.tap, frame)
             except OSError as error:
                 self._logger.error(f"{packet_tx.tracker} - Unable to send frame, OSError: {error}")
                 continue
 
             if __debug__:
-                self._logger.opt(ansi=True).debug(
-                    f"<magenta>[TX]</> {packet_tx.tracker}<yellow>{packet_tx.tracker.latency}</> - sent frame, {len(packet_tx)} bytes"
-                )
+                self._logger.opt(ansi=True).debug(f"<lr>[TX]</> {packet_tx.tracker}<y>{packet_tx.tracker.latency}</> - sent frame, {len(packet_tx)} bytes")
 
     def enqueue(self, packet_tx: EtherAssembler) -> None:
         """Enqueue outbound packet into TX ring"""

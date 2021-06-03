@@ -53,7 +53,6 @@ class Icmp4Parser:
         packet_rx.icmp4 = self
 
         self._frame = packet_rx.frame
-        self._hptr = packet_rx.hptr
         self._plen = packet_rx.ip4.dlen
 
         packet_rx.parse_failed = self._packet_integrity_check() or self._packet_sanity_check()
@@ -61,28 +60,42 @@ class Icmp4Parser:
     def __len__(self) -> int:
         """Number of bytes remaining in the frame"""
 
-        return len(self._frame) - self._hptr
+        return len(self._frame)
 
-    from icmp4.ps import __str__
+    def __str__(self) -> str:
+        """Packet log string"""
+
+        log = f"ICMPv4 type {self.type}, code {self.code}"
+
+        if self.type == icmp4.ps.ICMP4_ECHO_REPLY:
+            log += f", id {self.ec_id}, seq {self.ec_seq}"
+
+        elif self.type == icmp4.ps.ICMP4_UNREACHABLE and self.code == icmp4.ps.ICMP4_UNREACHABLE__PORT:
+            pass
+
+        elif self.type == icmp4.ps.ICMP4_ECHO_REQUEST:
+            log += f", id {self.ec_id}, seq {self.ec_seq}"
+
+        return log
 
     @property
     def type(self) -> int:
         """Read 'Type' field"""
 
-        return self._frame[self._hptr + 0]
+        return self._frame[0]
 
     @property
     def code(self) -> int:
         """Read 'Code' field"""
 
-        return self._frame[self._hptr + 1]
+        return self._frame[1]
 
     @property
     def cksum(self) -> int:
         """Read 'Checksum' field"""
 
         if "_cache__cksum" not in self.__dict__:
-            self._cache__cksum = struct.unpack_from("!H", self._frame, self._hptr + 2)[0]
+            self._cache__cksum: int = struct.unpack("!H", self._frame[2:4])[0]
         return self._cache__cksum
 
     @property
@@ -91,7 +104,7 @@ class Icmp4Parser:
 
         if "_cache__ec_id" not in self.__dict__:
             assert self.type in {icmp4.ps.ICMP4_ECHO_REQUEST, icmp4.ps.ICMP4_ECHO_REPLY}
-            self._cache__ec_id = struct.unpack_from("!H", self._frame, self._hptr + 4)[0]
+            self._cache__ec_id: int = struct.unpack("!H", self._frame[4:6])[0]
         return self._cache__ec_id
 
     @property
@@ -100,7 +113,7 @@ class Icmp4Parser:
 
         if "_cache__ec_seq" not in self.__dict__:
             assert self.type in {icmp4.ps.ICMP4_ECHO_REQUEST, icmp4.ps.ICMP4_ECHO_REPLY}
-            self._cache__ec_seq = struct.unpack_from("!H", self._frame, self._hptr + 6)[0]
+            self._cache__ec_seq: int = struct.unpack("!H", self._frame[6:8])[0]
         return self._cache__ec_seq
 
     @property
@@ -109,7 +122,7 @@ class Icmp4Parser:
 
         if "_cache__ec_data" not in self.__dict__:
             assert self.type in {icmp4.ps.ICMP4_ECHO_REQUEST, icmp4.ps.ICMP4_ECHO_REPLY}
-            self._cache__ec_data = self._frame[self._hptr + 8 : self._hptr + self.plen]
+            self._cache__ec_data = self._frame[8 : self.plen]
         return self._cache__ec_data
 
     @property
@@ -118,7 +131,7 @@ class Icmp4Parser:
 
         if "_cache__un_data" not in self.__dict__:
             assert self.type == icmp4.ps.ICMP4_UNREACHABLE
-            self._cache__un_data = self._frame[self._hptr + 8 : self._hptr + self.plen]
+            self._cache__un_data = self._frame[8 : self.plen]
         return self._cache__un_data
 
     @property
@@ -132,7 +145,7 @@ class Icmp4Parser:
         """Read the whole packet"""
 
         if "_cache__packet_copy" not in self.__dict__:
-            self._cache__packet_copy = self._frame[self._hptr : self._hptr + self.plen]
+            self._cache__packet_copy = bytes(self._frame[: self.plen])
         return self._cache__packet_copy
 
     def _packet_integrity_check(self) -> str:
@@ -141,17 +154,17 @@ class Icmp4Parser:
         if not config.packet_integrity_check:
             return ""
 
-        if inet_cksum(self._frame, self._hptr, self._plen):
+        if inet_cksum(self._frame[: self._plen]):
             return "ICMPv4 integrity - wrong packet checksum"
 
         if not icmp4.ps.ICMP4_HEADER_LEN <= self._plen <= len(self):
             return "ICMPv4 integrity - wrong packet length (I)"
 
-        if self._frame[self._hptr + 0] in {icmp4.ps.ICMP4_ECHO_REQUEST, icmp4.ps.ICMP4_ECHO_REPLY}:
+        if self._frame[0] in {icmp4.ps.ICMP4_ECHO_REQUEST, icmp4.ps.ICMP4_ECHO_REPLY}:
             if not 8 <= self._plen <= len(self):
                 return "ICMPv6 integrity - wrong packet length (II)"
 
-        elif self._frame[self._hptr + 0] == icmp4.ps.ICMP4_UNREACHABLE:
+        elif self._frame[0] == icmp4.ps.ICMP4_UNREACHABLE:
             if not 12 <= self._plen <= len(self):
                 return "ICMPv6 integrity - wrong packet length (II)"
 

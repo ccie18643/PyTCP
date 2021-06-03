@@ -51,26 +51,28 @@ class EtherParser:
         packet_rx.ether = self
 
         self._frame = packet_rx.frame
-        self._hptr = packet_rx.hptr
 
         packet_rx.parse_failed = self._packet_integrity_check() or self._packet_sanity_check()
 
         if not packet_rx.parse_failed:
-            packet_rx.hptr = self._hptr + ether.ps.ETHER_HEADER_LEN
+            packet_rx.frame = packet_rx.frame[ether.ps.ETHER_HEADER_LEN :]
 
     def __len__(self) -> int:
         """Number of bytes remaining in the frame"""
 
-        return len(self._frame) - self._hptr
+        return len(self._frame)
 
-    from ether.ps import __str__
+    def __str__(self) -> str:
+        """Packet log string"""
+
+        return f"ETHER {self.src} > {self.dst}, 0x{self.type:0>4x} ({ether.ps.ETHER_TYPE_TABLE.get(self.type, '???')})"
 
     @property
     def dst(self) -> MacAddress:
         """Read 'Destination MAC address' field"""
 
         if "_cache__dst" not in self.__dict__:
-            self._cache__dst = MacAddress(self._frame[self._hptr + 0 : self._hptr + 6])
+            self._cache__dst = MacAddress(self._frame[0:6])
         return self._cache__dst
 
     @property
@@ -78,7 +80,7 @@ class EtherParser:
         """Read 'Source MAC address' field"""
 
         if "_cache__src" not in self.__dict__:
-            self._cache__src = MacAddress(self._frame[self._hptr + 6 : self._hptr + 12])
+            self._cache__src = MacAddress(self._frame[6:12])
         return self._cache__src
 
     @property
@@ -86,7 +88,7 @@ class EtherParser:
         """Read 'EtherType' field"""
 
         if "_cache__type" not in self.__dict__:
-            self._cache__type = struct.unpack_from("!H", self._frame, self._hptr + 12)[0]
+            self._cache__type: int = struct.unpack("!H", self._frame[12:14])[0]
         return self._cache__type
 
     @property
@@ -94,7 +96,7 @@ class EtherParser:
         """Return copy of packet header"""
 
         if "_cache__header_copy" not in self.__dict__:
-            self._cache__header_copy = self._frame[self._hptr : self._hptr + ether.ps.ETHER_HEADER_LEN]
+            self._cache__header_copy = bytes(self._frame[: ether.ps.ETHER_HEADER_LEN])
         return self._cache__header_copy
 
     @property
@@ -102,7 +104,7 @@ class EtherParser:
         """Return copy of packet data"""
 
         if "_cache__data_copy" not in self.__dict__:
-            self._cache__data_copy = self._frame[self._hptr + ether.ps.ETHER_HEADER_LEN :]
+            self._cache__data_copy = bytes(self._frame[ether.ps.ETHER_HEADER_LEN :])
         return self._cache__data_copy
 
     @property
@@ -110,7 +112,7 @@ class EtherParser:
         """Return copy of whole packet"""
 
         if "_cache__packet_copy" not in self.__dict__:
-            self._cache__packet_copy = self._frame[self._hptr :]
+            self._cache__packet_copy = bytes(self._frame[:])
         return self._cache__packet_copy
 
     @property

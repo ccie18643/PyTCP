@@ -40,10 +40,7 @@ from misc.packet import PacketRx
 def _defragment_ip6_packet(self, packet_rx: PacketRx) -> Optional[PacketRx]:
     """Defragment IPv6 packet"""
 
-    assert packet_rx.ip6 is not None
-    assert packet_rx.ip6_ext_frag is not None
-
-    # Cleanup expired flows
+    # Cleanup expir flows
     self.ip6_frag_flows = {
         _: self.ip6_frag_flows[_] for _ in self.ip6_frag_flows if self.ip6_frag_flows[_]["timestamp"] - time() < config.ip6_frag_flow_timeout
     }

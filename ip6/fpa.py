@@ -42,6 +42,7 @@ from lib.ip6_address import Ip6Address
 if TYPE_CHECKING:
     from icmp6.fpa import Icmp6Assembler
     from ip6_ext_frag.fpa import Ip6ExtFragAssembler
+    from lib.tracker import Tracker
     from tcp.fpa import TcpAssembler
     from udp.fpa import UdpAssembler
 
@@ -70,48 +71,84 @@ class Ip6Assembler:
             ip6.ps.IP6_NEXT_HEADER_EXT_FRAG,
         }
 
-        self._carried_packet = carried_packet
-        self.tracker = self._carried_packet.tracker
-        self.ver = 6
-        self.dscp = dscp
-        self.ecn = ecn
-        self.flow = flow
-        self.hop = hop
-        self.src = Ip6Address(src)
-        self.dst = Ip6Address(dst)
-        self.next = self._carried_packet.ip6_next
-        self.dlen = len(carried_packet)
+        self._carried_packet: Union[Ip6ExtFragAssembler, Icmp6Assembler, TcpAssembler, UdpAssembler] = carried_packet
+        self._tracker: Tracker = self._carried_packet.tracker
+        self._ver: int = 6
+        self._dscp: int = dscp
+        self._ecn: int = ecn
+        self._flow: int = flow
+        self._hop: int = hop
+        self._src: Ip6Address = src
+        self._dst: Ip6Address = dst
+        self._next: int = self._carried_packet.ip6_next
+        self._dlen: int = len(carried_packet)
 
     def __len__(self) -> int:
         """Length of the packet"""
 
         return ip6.ps.IP6_HEADER_LEN + len(self._carried_packet)
 
-    from ip6.ps import __str__
+    def __str__(self) -> str:
+        """Packet log string"""
+
+        return (
+            f"IPv6 {self._src} > {self._dst}, next {self._next} ({ip6.ps.IP6_NEXT_HEADER_TABLE.get(self._next, '???')}), flow {self._flow}"
+            + f", dlen {self._dlen}, hop {self._hop}"
+        )
+
+    @property
+    def tracker(self) -> Tracker:
+        """Getter for _tracker"""
+
+        return self._tracker
+
+    @property
+    def dst(self) -> Ip6Address:
+        """Getter for _dst"""
+
+        return self._dst
+
+    @property
+    def src(self) -> Ip6Address:
+        """Getter for _src"""
+
+        return self._src
+
+    @property
+    def dlen(self) -> int:
+        """Getter for _dlen"""
+
+        return self._dlen
+
+    @property
+    def next(self) -> int:
+        """Getter for _next"""
+
+        return self._next
 
     @property
     def pshdr_sum(self) -> int:
         """Returns IPv6 pseudo header that is used by TCP, UDP and ICMPv6 to compute their checksums"""
 
-        pseudo_header = struct.pack("! 16s 16s L BBBB", bytes(self.src), bytes(self.dst), self.dlen, 0, 0, 0, self.next)
+        pseudo_header = struct.pack("! 16s 16s L BBBB", bytes(self._src), bytes(self._dst), self._dlen, 0, 0, 0, self._next)
         return sum(struct.unpack("! 5Q", pseudo_header))
 
-    def assemble(self, frame: bytearray, hptr: int) -> None:
+    def assemble(self, frame: memoryview) -> None:
         """Assemble packet into the raw form"""
 
         struct.pack_into(
             "! BBBB HBB 16s 16s",
             frame,
-            hptr,
-            self.ver << 4 | self.dscp >> 4,
-            self.dscp << 6 | self.ecn << 4 | ((self.flow & 0b000011110000000000000000) >> 16),
-            (self.flow & 0b000000001111111100000000) >> 8,
-            self.flow & 0b000000000000000011111111,
-            self.dlen,
-            self.next,
-            self.hop,
-            bytes(self.src),
-            bytes(self.dst),
+            0,
+            self._ver << 4 | self._dscp >> 4,
+            self._dscp << 6 | self._ecn << 4 | ((self._flow & 0b000011110000000000000000) >> 16),
+            (self._flow & 0b000000001111111100000000) >> 8,
+            self._flow & 0b000000000000000011111111,
+            self._dlen,
+            self._next,
+            self._hop,
+            bytes(self._src),
+            bytes(self._dst),
         )
 
-        self._carried_packet.assemble(frame, hptr + ip6.ps.IP6_HEADER_LEN, self.pshdr_sum)
+        self._carried_packet.assemble(frame[ip6.ps.IP6_HEADER_LEN :], self.pshdr_sum)

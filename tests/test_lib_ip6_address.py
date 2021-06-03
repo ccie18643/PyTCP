@@ -158,6 +158,9 @@ class TestLibIp6Address(TestCase):
     def test_multicast_mac(self):
         self.assertEqual(Ip6Address("ff02::1:ffab:cdef").multicast_mac, MacAddress("33:33:ff:ab:cd:ef"))
 
+    def test_unspecified(self):
+        self.assertEqual(Ip6Address("2001::1234:5678:90ab:cdef").unspecified, Ip6Address("::"))
+
 
 class TestLibIp6Mask(TestCase):
     def test___init__(self):
@@ -236,6 +239,11 @@ class TestLibIp6Network(TestCase):
 
     def test___hash__(self):
         self.assertEqual(hash(Ip6Network("1234:5678:90ab:cdef::/64")), hash(Ip6Address("1234:5678:90ab:cdef::")) ^ hash(Ip6Mask("/64")))
+
+    def test___contains__(self):
+        self.assertIn(Ip6Address("2001::1234:5678:90ab:cdef"), Ip6Network("2001::/64"))
+        self.assertNotIn(Ip6Address("2000::1234:5678:90ab:cdef"), Ip6Network("2001::/64"))
+        self.assertNotIn(Ip6Address("2002::1234:5678:90ab:cdef"), Ip6Network("2001::/64"))
 
     def test_address(self):
         self.assertEqual(Ip6Network("1234:5678:90ab:cdef::/64").address, Ip6Address("1234:5678:90ab:cdef::"))

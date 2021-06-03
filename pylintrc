@@ -155,8 +155,8 @@ disable=print-statement,
         duplicate-code,
         redefined-builtin,
         invalid-name,
-        inconsistent-return-statements,
-        protected-access
+        #inconsistent-return-statements,
+        # protected-access
 
 # Enable the message, report, category or checker with the given id(s). You can
 # either give multiple identifier separated by comma (,) or put this option

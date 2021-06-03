@@ -25,56 +25,35 @@
 
 
 #
-# udp/fpa.py - Fast Packet Assembler support class for UDP protocol
+# misc/tx_status.py - module contains definition of TX Status codes
 #
 
 
 from __future__ import annotations  # Required by Python ver < 3.10
 
-import struct
-from typing import Optional
-
-import ip4.ps
-import ip6.ps
-import udp.ps
-from lib.tracker import Tracker
-from misc.ip_helper import inet_cksum
+from enum import Enum, auto
 
 
-class UdpAssembler:
-    """UDP packet assembler support class"""
+class TxStatus(Enum):
+    """TX Error codes"""
 
-    ip4_proto = ip4.ps.IP4_PROTO_UDP
-    ip6_next = ip6.ps.IP6_NEXT_HEADER_UDP
-
-    def __init__(self, sport: int, dport: int, data: Optional[bytes] = None, echo_tracker: Optional[Tracker] = None) -> None:
-        """Class constructor"""
-
-        self._tracker: Tracker = Tracker("TX", echo_tracker)
-        self._sport: int = sport
-        self._dport: int = dport
-        self._data: bytes = b"" if data is None else data
-        self._plen: int = udp.ps.UDP_HEADER_LEN + len(self._data)
-
-    def __len__(self) -> int:
-        """Length of the packet"""
-
-        return self._plen
+    PASSED_TO_TX_RING = auto()
+    DROPED_ETHER_NO_GATEWAY = auto()
+    DROPED_ETHER_CACHE_FAIL = auto()
+    DROPED_ETHER_GATEWAY_CACHE_FAIL = auto()
+    DROPED_ETHER_RESOLUTION_FAIL = auto()
+    DROPED_IP4_NO_PROTOCOL_SUPPORT = auto()
+    DROPED_IP4_INVALID_SOURCE = auto()
+    DROPED_IP4_INVALID_DESTINATION = auto()
+    DROPED_IP4_UNKNOWN = auto()
+    DROPED_IP6_NO_PROTOCOL_SUPPORT = auto()
+    DROPED_IP6_INVALID_SOURCE = auto()
+    DROPED_IP6_INVALID_DESTINATION = auto()
+    DROPED_IP6_EXT_FRAG_UNKNOWN = auto()
+    DROPED_UDP_UNKNOWN = auto()
+    DROPED_TCP_UNKNOWN = auto()
+    DROPED_ICMP4_UNKNOWN = auto()
+    DROPED_ICMP6_UNKNOWN = auto()
 
     def __str__(self) -> str:
-        """Packet log string"""
-
-        return f"UDP {self._sport} > {self._dport}, len {self._plen}"
-
-    @property
-    def tracker(self) -> Tracker:
-        """Getter for _tracker"""
-
-        return self._tracker
-
-    def assemble(self, frame: memoryview, pshdr_sum: int) -> None:
-        """Assemble packet into the raw form"""
-
-        # memoryview: bytes conversion requir
-        struct.pack_into(f"! HH HH {len(self._data)}s", frame, 0, self._sport, self._dport, self._plen, 0, bytes(self._data))
-        struct.pack_into("! H", frame, 6, inet_cksum(frame, pshdr_sum))
+        return str(self.name)

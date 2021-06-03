@@ -44,9 +44,7 @@ from misc.packet import PacketRx
 def _defragment_ip4_packet(self, packet_rx: PacketRx) -> Optional[PacketRx]:
     """Defragment IPv4 packet"""
 
-    assert packet_rx.ip4 is not None
-
-    # Cleanup expired flows
+    # Cleanup expir flows
     self.ip4_frag_flows = {
         _: self.ip4_frag_flows[_] for _ in self.ip4_frag_flows if self.ip4_frag_flows[_]["timestamp"] - time() < config.ip4_frag_flow_timeout
     }
@@ -90,7 +88,7 @@ def _defragment_ip4_packet(self, packet_rx: PacketRx) -> Optional[PacketRx]:
     header[0] = 0x45
     struct.pack_into("!H", header, 2, ip4.ps.IP4_HEADER_LEN + len(data))
     header[6] = header[7] = header[10] = header[11] = 0
-    struct.pack_into("!H", header, 10, inet_cksum(header, 0, ip4.ps.IP4_HEADER_LEN))
+    struct.pack_into("!H", header, 10, inet_cksum(memoryview(header)))
     packet_rx = PacketRx(bytes(header) + data)
     Ip4Parser(packet_rx)
     if __debug__:
@@ -102,7 +100,6 @@ def _phrx_ip4(self, packet_rx: PacketRx) -> None:
     """Handle inbound IPv4 packets"""
 
     Ip4Parser(packet_rx)
-    assert packet_rx.ip4 is not None
 
     if packet_rx.parse_failed:
         if __debug__:
@@ -112,7 +109,7 @@ def _phrx_ip4(self, packet_rx: PacketRx) -> None:
     if __debug__:
         self._logger.debug(f"{packet_rx.tracker} - {packet_rx.ip4}")
 
-    # Check if received packet has been sent to us directly or by unicast/broadcast, allow any destination if no unicast address is configured (for DHCP client)
+    # Check if received packet has been sent to us directly or by unicast/broadcast, allow any destination if no unicast address is configur (for DHCP client)
     if self.ip4_unicast and packet_rx.ip4.dst not in {*self.ip4_unicast, *self.ip4_multicast, *self.ip4_broadcast}:
         if __debug__:
             self._logger.debug(f"{packet_rx.tracker} - IP packet not destined for this stack, dropping")
@@ -122,8 +119,6 @@ def _phrx_ip4(self, packet_rx: PacketRx) -> None:
     if packet_rx.ip4.offset != 0 or packet_rx.ip4.flag_mf:
         if not (packet_rx := self._defragment_ip4_packet(packet_rx)):
             return
-
-    assert packet_rx.ip4 is not None
 
     if packet_rx.ip4.proto == ip4.ps.IP4_PROTO_ICMP4:
         self._phrx_icmp4(packet_rx)

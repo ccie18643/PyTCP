@@ -52,26 +52,31 @@ class Ip6Parser:
         packet_rx.ip = self
 
         self._frame = packet_rx.frame
-        self._hptr = packet_rx.hptr
 
         packet_rx.parse_failed = self._packet_integrity_check() or self._packet_sanity_check()
 
         if not packet_rx.parse_failed:
-            packet_rx.hptr = self._hptr + ip6.ps.IP6_HEADER_LEN
+            packet_rx.frame = packet_rx.frame[ip6.ps.IP6_HEADER_LEN :]
 
     def __len__(self) -> int:
         """Number of bytes remaining in the frame"""
 
-        return len(self._frame) - self._hptr
+        return len(self._frame)
 
-    from ip6.ps import __str__
+    def __str__(self) -> str:
+        """Packet log string"""
+
+        return (
+            f"IPv6 {self.src} > {self.dst}, next {self.next} ({ip6.ps.IP6_NEXT_HEADER_TABLE.get(self.next, '???')}), flow {self.flow}"
+            + f", dlen {self.dlen}, hop {self.hop}"
+        )
 
     @property
     def ver(self) -> int:
         """Read 'Version' field"""
 
         if "_cache__ver" not in self.__dict__:
-            self._cache__ver = self._frame[self._hptr + 0] >> 4
+            self._cache__ver = self._frame[0] >> 4
         return self._cache__ver
 
     @property
@@ -79,7 +84,7 @@ class Ip6Parser:
         """Read 'DSCP' field"""
 
         if "_cache__dscp" not in self.__dict__:
-            self._cache__dscp = ((self._frame[self._hptr + 0] & 0b00001111) << 2) | ((self._frame[self._hptr + 1] & 0b11000000) >> 6)
+            self._cache__dscp = ((self._frame[0] & 0b00001111) << 2) | ((self._frame[1] & 0b11000000) >> 6)
         return self._cache__dscp
 
     @property
@@ -87,7 +92,7 @@ class Ip6Parser:
         """Read 'ECN' field"""
 
         if "_cache__ecn" not in self.__dict__:
-            self._cache__ecn = (self._frame[self._hptr + 1] & 0b00110000) >> 4
+            self._cache__ecn = (self._frame[1] & 0b00110000) >> 4
         return self._cache__ecn
 
     @property
@@ -95,7 +100,7 @@ class Ip6Parser:
         """Read 'Flow' field"""
 
         if "_cache__flow" not in self.__dict__:
-            self._cache__flow = ((self._frame[self._hptr + 1] & 0b00001111) << 16) | (self._frame[self._hptr + 2] << 8) | self._frame[self._hptr + 3]
+            self._cache__flow = ((self._frame[1] & 0b00001111) << 16) | (self._frame[2] << 8) | self._frame[3]
         return self._cache__flow
 
     @property
@@ -103,27 +108,27 @@ class Ip6Parser:
         """Read 'Data length' field"""
 
         if "_cache__dlen" not in self.__dict__:
-            self._cache__dlen = struct.unpack_from("!H", self._frame, self._hptr + 4)[0]
+            self._cache__dlen: int = struct.unpack("!H", self._frame[4:6])[0]
         return self._cache__dlen
 
     @property
     def next(self) -> int:
         """Read 'Next' field"""
 
-        return self._frame[self._hptr + 6]
+        return self._frame[6]
 
     @property
     def hop(self) -> int:
         """Read 'Hop' field"""
 
-        return self._frame[self._hptr + 7]
+        return self._frame[7]
 
     @property
     def src(self) -> Ip6Address:
         """Read 'Source address' field"""
 
         if "_cache__src" not in self.__dict__:
-            self._cache__src = Ip6Address(self._frame[self._hptr + 8 : self._hptr + 24])
+            self._cache__src = Ip6Address(self._frame[8:24])
         return self._cache__src
 
     @property
@@ -131,7 +136,7 @@ class Ip6Parser:
         """Read 'Destination address' field"""
 
         if "_cache__dst" not in self.__dict__:
-            self._cache__dst = Ip6Address(self._frame[self._hptr + 24 : self._hptr + 40])
+            self._cache__dst = Ip6Address(self._frame[24:40])
         return self._cache__dst
 
     @property
@@ -151,7 +156,7 @@ class Ip6Parser:
         """Return copy of packet header"""
 
         if "_cache__header_copy" not in self.__dict__:
-            self._cache__header_copy = self._frame[self._hptr : self._hptr + ip6.ps.IP6_HEADER_LEN]
+            self._cache__header_copy = bytes(self._frame[: ip6.ps.IP6_HEADER_LEN])
         return self._cache__header_copy
 
     @property
@@ -159,7 +164,7 @@ class Ip6Parser:
         """Return copy of packet data"""
 
         if "_cache__data_copy" not in self.__dict__:
-            self._cache__data_copy = self._frame[self._hptr + ip6.ps.IP6_HEADER_LEN : self._hptr + self.plen]
+            self._cache__data_copy = bytes(self._frame[ip6.ps.IP6_HEADER_LEN : self.plen])
         return self._cache__data_copy
 
     @property
@@ -167,7 +172,7 @@ class Ip6Parser:
         """Return copy of whole packet"""
 
         if "_cache__packet_copy" not in self.__dict__:
-            self._cache__packet_copy = self._frame[self._hptr : self._hptr + self.plen]
+            self._cache__packet_copy = bytes(self._frame[: self.plen])
         return self._cache__packet_copy
 
     @property
@@ -188,7 +193,7 @@ class Ip6Parser:
         if len(self) < ip6.ps.IP6_HEADER_LEN:
             return "IPv6 integrity - wrong packet length (I)"
 
-        if struct.unpack_from("!H", self._frame, self._hptr + 4)[0] != len(self) - ip6.ps.IP6_HEADER_LEN:
+        if struct.unpack("!H", self._frame[4:6])[0] != len(self) - ip6.ps.IP6_HEADER_LEN:
             return "IPv6 integrity - wrong packet length (II)"
 
         return ""

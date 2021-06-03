@@ -25,13 +25,16 @@
 
 
 #
-# ph.py - packet handler for inbound and outbound packets
+# ph.py - packet handler class for inbound and outbound packets
 #
+
+
+from __future__ import annotations  # Required by Python ver < 3.10
 
 import random
 import threading
 import time
-from typing import Optional
+from typing import TYPE_CHECKING, Optional, Union
 
 import loguru
 
@@ -39,7 +42,6 @@ import arp.phrx
 import arp.phtx
 import arp.ps
 import config
-import dhcp4.client
 import ether.phrx
 import ether.phtx
 import icmp4.phrx
@@ -59,6 +61,9 @@ import tcp.phrx
 import tcp.phtx
 import udp.phrx
 import udp.phtx
+from arp.cache import ArpCache
+from dhcp4.client import Dhcp4Client
+from icmp6.nd_cache import NdCache
 from lib.ip4_address import (
     Ip4Address,
     Ip4AddressFormatError,
@@ -73,10 +78,14 @@ from lib.ip6_address import (
     Ip6Network,
 )
 from lib.mac_address import MacAddress
-from misc.arp_cache import ArpCache
-from misc.nd_cache import NdCache
 from misc.rx_ring import RxRing
 from misc.tx_ring import TxRing
+
+if TYPE_CHECKING:
+    from threading import Semaphore
+
+    from lib.ip_address import IpAddress
+    from misc.tx_status import TxStatus
 
 
 class PacketHandler:
@@ -107,7 +116,6 @@ class PacketHandler:
     _phtx_tcp = tcp.phtx._phtx_tcp
     _phrx_udp = udp.phrx._phrx_udp
     _phtx_udp = udp.phtx._phtx_udp
-    _dhcp4_client = dhcp4.client._dhcp4_client
 
     def __init__(self, tap: int) -> None:
         """Class constructor"""
@@ -124,34 +132,34 @@ class PacketHandler:
         # MAC and IPv6 Multicast lists hold duplicate entries by design. This is to accommodate IPv6 Solicited Node Multicast mechanism where multiple
         # IPv6 unicast addresses can be tied to the same SNM address (and the same multicast MAC). This is important when removing one of unicast addresses,
         # so the other ones keep it's SNM entry in multicast list. Its the simplest solution and imho perfectly valid one in this case.
-        self.mac_unicast = MacAddress(config.mac_address)
+        self.mac_unicast: MacAddress = MacAddress(config.mac_address)
         self.mac_multicast: list[MacAddress] = []
-        self.mac_broadcast = MacAddress("ff:ff:ff:ff:ff:ff")
+        self.mac_broadcast: MacAddress = MacAddress("ff:ff:ff:ff:ff:ff")
         self.ip6_host: list[Ip6Host] = []
         self.ip6_multicast: list[Ip6Address] = []
         self.ip4_host: list[Ip4Host] = []
         self.ip4_multicast: list[Ip4Address] = []
 
-        self.rx_ring = RxRing(tap)
-        self.tx_ring = TxRing(tap)
-        self.arp_cache = ArpCache()
-        self.icmp6_nd_cache = NdCache()
+        self.rx_ring: RxRing = RxRing(tap)
+        self.tx_ring: TxRing = TxRing(tap)
+        self.arp_cache: ArpCache = ArpCache()
+        self.icmp6_nd_cache: NdCache = NdCache()
 
         # Used for the ARP DAD process
         self.arp_probe_unicast_conflict: set[Ip4Address] = set()
 
         # Used for the ICMPv6 ND DAD process
         self.ip6_unicast_candidate: Optional[Ip6Address] = None
-        self.event_icmp6_nd_dad = threading.Semaphore(0)
+        self.event_icmp6_nd_dad: Semaphore = threading.Semaphore(0)
         self.icmp6_nd_dad_tlla: Optional[Ip6Address] = None
 
         # Used for the IcMPv6 ND RA address auto configuration
         self.icmp6_ra_prefixes: list[tuple[Ip6Network, Ip6Address]] = []
-        self.event_icmp6_ra = threading.Semaphore(0)
+        self.event_icmp6_ra: Semaphore = threading.Semaphore(0)
 
         # Used to keep IPv4 and IPv6 packet ID last value
-        self.ip4_id = 0
-        self.ip6_id = 0
+        self.ip4_id: int = 0
+        self.ip6_id: int = 0
 
         # Used to defragment IPv4 and IPv6 packets
         self.ip4_frag_flows: dict[int, bytes] = {}
@@ -171,9 +179,14 @@ class PacketHandler:
 
         if config.ip4_support:
             # Create list of IPv4 unicast/multicast/broadcast addresses stack should listen on, use DHCP if enabled
-            ip4_host_dhcp = self._dhcp4_client()
-            ip4_host_dhcp = [ip4_host_dhcp] if ip4_host_dhcp[0] else []
-            self.ip4_host_candidate = self._parse_stack_ip4_host_candidate(config.ip4_host_candidate + ip4_host_dhcp)
+            if config.ip4_address_dhcp:
+                dhcp4_client = Dhcp4Client(self.mac_unicast)
+                ip4_host_dhcp = dhcp4_client.fetch()
+            else:
+                ip4_host_dhcp = (None, None)
+            self.ip4_host_candidate = self._parse_stack_ip4_host_candidate(
+                config.ip4_host_candidate + ([ip4_host_dhcp] if ip4_host_dhcp[0] is not None else [])
+            )
             self._create_stack_ip4_addressing()
 
         # Log all the addresses stack will listen on
@@ -237,12 +250,12 @@ class PacketHandler:
         self._remove_ip6_multicast(ip6_unicast_candidate.solicited_node_multicast)
         return not event
 
-    def _parse_stack_ip6_host_candidate(self, configured_host_candidate: list[tuple[str, str]]) -> list[Ip6Host]:
+    def _parse_stack_ip6_host_candidate(self, configur_host_candidate: list[tuple[str, Optional[str]]]) -> list[Ip6Host]:
         """Parse IPv6 candidate address list"""
 
         valid_host_candidate: list[Ip6Host] = []
 
-        for str_host, str_gateway in configured_host_candidate:
+        for str_host, str_gateway in configur_host_candidate:
             if __debug__:
                 self._logger.debug(f"Parsing ('{str_host}', '{str_gateway}') entry")
             try:
@@ -257,23 +270,23 @@ class PacketHandler:
                 continue
             if host.address in [_.address for _ in valid_host_candidate]:
                 if __debug__:
-                    self._logger.warning(f"Duplicate host address '{host.address}' configured, skipping...")
+                    self._logger.warning(f"Duplicate host address '{host.address}' configur, skipping...")
                 continue
             if host.address.is_link_local and str_gateway:
                 if __debug__:
-                    self._logger.warning("Gateway cannot be configured for link local address skipping...")
+                    self._logger.warning("Gateway cannot be configur for link local address skipping...")
                 continue
-            if str_gateway:
+            if str_gateway is not None:
                 try:
                     gateway: Optional[Ip6Address] = Ip6Address(str_gateway)
                     assert gateway is not None
                     if not (gateway.is_link_local or (gateway in host.network and gateway != host.address)):
                         if __debug__:
-                            self._logger.warning(f"Invalid gateway '{gateway}' configured for host address '{host}', skipping...")
+                            self._logger.warning(f"Invalid gateway '{gateway}' configur for host address '{host}', skipping...")
                         continue
                 except Ip6AddressFormatError:
                     if __debug__:
-                        self._logger.warning(f"Invalid gateway '{str_gateway}' format configured for host address '{host}' skipping...")
+                        self._logger.warning(f"Invalid gateway '{str_gateway}' format configur for host address '{host}' skipping...")
                     continue
             else:
                 gateway = None
@@ -287,7 +300,7 @@ class PacketHandler:
     def _create_stack_ip6_addressing(self) -> None:
         """Create lists of IPv6 unicast and multicast addresses stack should listen on"""
 
-        def __(ip6_host):
+        def __(ip6_host: Ip6Host) -> None:
             if self._perform_ip6_nd_dad(ip6_host.address):
                 self._assign_ip6_host(ip6_host)
                 if __debug__:
@@ -331,12 +344,12 @@ class PacketHandler:
                 ip6_address.gateway = gateway
                 __(ip6_address)
 
-    def _parse_stack_ip4_host_candidate(self, configured_ip4_address_candidate: list[tuple[str, str]]) -> list[Ip4Host]:
-        """Parse IPv4 candidate host addresses configured in config.py module"""
+    def _parse_stack_ip4_host_candidate(self, configur_ip4_address_candidate: list[tuple[str, Optional[str]]]) -> list[Ip4Host]:
+        """Parse IPv4 candidate host addresses configur in config.py module"""
 
         valid_address_candidate: list[Ip4Host] = []
 
-        for str_host, str_gateway in configured_ip4_address_candidate:
+        for str_host, str_gateway in configur_ip4_address_candidate:
             if __debug__:
                 self._logger.debug(f"Parsing ('{str_host}', '{str_gateway}') entry")
             try:
@@ -351,22 +364,22 @@ class PacketHandler:
                 continue
             if host.address == host.network.address or host.address == host.network.broadcast:
                 if __debug__:
-                    self._logger.warning(f"Invalid host address '{host.address}' configured for network '{host.network}', skipping...")
+                    self._logger.warning(f"Invalid host address '{host.address}' configur for network '{host.network}', skipping...")
                 continue
             if host.address in [_.address for _ in valid_address_candidate]:
                 if __debug__:
-                    self._logger.warning(f"Duplicate host address '{host.address}' configured, skipping...")
+                    self._logger.warning(f"Duplicate host address '{host.address}' configur, skipping...")
                 continue
-            if str_gateway:
+            if str_gateway is not None:
                 try:
                     gateway: Optional[Ip4Address] = Ip4Address(str_gateway)
                     if gateway not in host.network or gateway in {host.network.address, host.network.broadcast, host.address}:
                         if __debug__:
-                            self._logger.warning(f"Invalid gateway '{gateway}' configured for host address '{host}', skipping...")
+                            self._logger.warning(f"Invalid gateway '{gateway}' configur for host address '{host}', skipping...")
                         continue
                 except Ip4AddressFormatError:
                     if __debug__:
-                        self._logger.warning(f"Invalid gateway '{str_gateway}' format configured for host address '{host}' skipping...")
+                        self._logger.warning(f"Invalid gateway '{str_gateway}' format configur for host address '{host}' skipping...")
                     continue
             else:
                 gateway = None
@@ -549,3 +562,120 @@ class PacketHandler:
         self.mac_multicast.remove(mac_multicast)
         if __debug__:
             self._logger.debug(f"Removed MAC multicast {mac_multicast}")
+
+    def send_udp_packet(
+        self,
+        local_ip_address: IpAddress,
+        remote_ip_address: IpAddress,
+        local_port: int,
+        remote_port: int,
+        data: Optional[bytes] = None,
+    ) -> TxStatus:
+        """Interface method for UDP Socket -> FPA communication"""
+
+        return self._phtx_udp(
+            ip_src=local_ip_address,
+            ip_dst=remote_ip_address,
+            udp_sport=local_port,
+            udp_dport=remote_port,
+            udp_data=data,
+        )
+
+    def send_tcp_packet(
+        self,
+        local_ip_address: IpAddress,
+        remote_ip_address: IpAddress,
+        local_port: int,
+        remote_port: int,
+        flag_syn: bool = False,
+        flag_ack: bool = False,
+        flag_fin: bool = False,
+        flag_rst: bool = False,
+        seq: int = 0,
+        ack: int = 0,
+        win: int = 0,
+        wscale: Optional[int] = None,
+        mss: Optional[int] = None,
+        data: Optional[bytes] = None,
+    ) -> TxStatus:
+        """Interface method for TCP Socket -> FPA communication"""
+
+        return self._phtx_tcp(
+            ip_src=local_ip_address,
+            ip_dst=remote_ip_address,
+            tcp_sport=local_port,
+            tcp_dport=remote_port,
+            tcp_flag_syn=flag_syn,
+            tcp_flag_ack=flag_ack,
+            tcp_flag_fin=flag_fin,
+            tcp_flag_rst=flag_rst,
+            tcp_seq=seq,
+            tcp_ack=ack,
+            tcp_win=win,
+            tcp_wscale=wscale,
+            tcp_mss=mss,
+            tcp_data=data,
+        )
+
+    def send_icmp4_packet(
+        self,
+        local_ip_address: Ip4Address,
+        remote_ip_address: Ip4Address,
+        type: int,
+        code: int = 0,
+        ec_id: Optional[int] = None,
+        ec_seq: Optional[int] = None,
+        ec_data: Optional[bytes] = None,
+        un_data: Optional[bytes] = None,
+    ) -> TxStatus:
+        """Interface method for ICMPv4 Socket -> FPA communication"""
+
+        return self._phtx_icmp4(
+            ip4_src=local_ip_address,
+            ip4_dst=remote_ip_address,
+            icmp4_type=type,
+            icmp4_code=code,
+            icmp4_ec_id=ec_id,
+            icmp4_ec_seq=ec_seq,
+            icmp4_ec_data=ec_data,
+            icmp4_un_data=un_data,
+        )
+
+    def send_icmp6_packet(
+        self,
+        local_ip_address: Ip6Address,
+        remote_ip_address: Ip6Address,
+        type: int,
+        code: int = 0,
+        hop: int = 64,
+        un_data: Optional[bytes] = None,
+        ec_id: Optional[int] = None,
+        ec_seq: Optional[int] = None,
+        ec_data: Optional[bytes] = None,
+        ns_target_address: Optional[Ip6Address] = None,
+        na_flag_r: bool = False,
+        na_flag_s: bool = False,
+        na_flag_o: bool = False,
+        na_target_address: Optional[Ip6Address] = None,
+        nd_options: Optional[list[Union[icmp6.fpa.Icmp6NdOptSLLA, icmp6.fpa.Icmp6NdOptTLLA, icmp6.fpa.Icmp6NdOptPI]]] = None,
+        mlr2_multicast_address_record=None,
+    ) -> TxStatus:
+        """Interface method for ICMPv4 Socket -> FPA communication"""
+
+        return self._phtx_icmp6(
+            ip6_src=local_ip_address,
+            ip6_dst=remote_ip_address,
+            icmp6_type=type,
+            icmp6_code=code,
+            icmp6_un_data=un_data,
+            icmp6_ec_id=ec_id,
+            icmp6_ec_seq=ec_seq,
+            icmp6_ec_data=ec_data,
+            icmp6_ns_target_address=ns_target_address,
+            icmp6_na_flag_r=na_flag_r,
+            icmp6_na_flag_s=na_flag_s,
+            icmp6_na_flag_o=na_flag_o,
+            icmp6_na_target_address=na_target_address,
+            icmp6_nd_options=[] if nd_options is None else nd_options,
+            icmp6_mlr2_multicast_address_record=[] if mlr2_multicast_address_record is None else mlr2_multicast_address_record,
+        )

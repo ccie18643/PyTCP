@@ -31,24 +31,30 @@
 
 from __future__ import annotations  # Required by Python ver < 3.10
 
-from typing import TYPE_CHECKING, Optional, Union
+from typing import TYPE_CHECKING, Optional
 
-import config
-from misc.tracker import Tracker
-from tcp.fpa import TcpAssembler, TcpOptMss, TcpOptNop, TcpOptWscale
+from lib.ip4_address import Ip4Address
+from lib.ip6_address import Ip6Address
+from lib.tracker import Tracker
+from misc.tx_status import TxStatus
+from tcp.fpa import (
+    TcpAssembler,
+    TcpOptEol,
+    TcpOptMss,
+    TcpOptNop,
+    TcpOptSackPerm,
+    TcpOptTimestamp,
+    TcpOptWscale,
+)
 
 if TYPE_CHECKING:
-    from lib.ip4_address import Ip4Address
-    from lib.ip6_address import Ip6Address
-
-
-PACKET_LOSS = False
+    from lib.ip_address import IpAddress
 
 
 def _phtx_tcp(
     self,
-    ip_src: Union[Ip6Address, Ip4Address],
-    ip_dst: Union[Ip6Address, Ip4Address],
+    ip_src: IpAddress,
+    ip_dst: IpAddress,
     tcp_sport: int,
     tcp_dport: int,
     tcp_seq: int = 0,
@@ -63,30 +69,25 @@ def _phtx_tcp(
     tcp_flag_syn: bool = False,
     tcp_flag_fin: bool = False,
     tcp_mss: Optional[int] = None,
+    tcp_wscale: Optional[int] = None,
     tcp_win: int = 0,
     tcp_urp: int = 0,
-    tcp_data: bytes = b"",
+    tcp_data: Optional[bytes] = None,
     echo_tracker: Optional[Tracker] = None,
-) -> None:
+) -> TxStatus:
     """Handle outbound TCP packets"""
 
     assert 0 < tcp_sport < 65536
     assert 0 < tcp_dport < 65536
 
-    # Check if IPv4 protocol support is enabled, if not then silently drop the IPv4 packet
-    if not config.ip4_support and ip_dst.version == 4:
-        return
-
-    # Check if IPv6 protocol support is enabled, if not then silently drop the IPv6 packet
-    if not config.ip6_support and ip_dst.version == 6:
-        return
-
-    tcp_options: list[Union[TcpOptMss, TcpOptNop, TcpOptWscale]] = []
+    tcp_options: list[TcpOptMss | TcpOptWscale | TcpOptSackPerm | TcpOptTimestamp | TcpOptEol | TcpOptNop] = []
 
     if tcp_mss:
         tcp_options.append(TcpOptMss(tcp_mss))
+
+    if tcp_wscale:
         tcp_options.append(TcpOptNop())
-        tcp_options.append(TcpOptWscale(0))
+        tcp_options.append(TcpOptWscale(tcp_wscale))
 
     tcp_packet_tx = TcpAssembler(
         sport=tcp_sport,
@@ -110,19 +111,12 @@ def _phtx_tcp(
     )
 
     if __debug__:
-        self._logger.opt(ansi=True).info(f"<magenta>{tcp_packet_tx.tracker}</magenta> - {tcp_packet_tx}")
+        self._logger.opt(ansi=True).info(f"<lr>{tcp_packet_tx.tracker}</> - {tcp_packet_tx}")
 
-    # Check if packet should be dropped due to random packet loss enabled (for TCP retansmission testing)
-    if PACKET_LOSS:
-        from random import randint
+    if isinstance(ip_src, Ip6Address) and isinstance(ip_dst, Ip6Address):
+        return self._phtx_ip6(ip6_src=ip_src, ip6_dst=ip_dst, carried_packet=tcp_packet_tx)
 
-        if randint(0, 99) == 7:
-            if __debug__:
-                self._logger.critical("SIMULATED LOST TX DATA PACKET")
-            return
+    if isinstance(ip_src, Ip4Address) and isinstance(ip_dst, Ip4Address):
+        return self._phtx_ip4(ip4_src=ip_src, ip4_dst=ip_dst, carried_packet=tcp_packet_tx)
 
-    if ip_src.version == 6 and ip_dst.version == 6:
-        self._phtx_ip6(ip6_src=ip_src, ip6_dst=ip_dst, carried_packet=tcp_packet_tx)
-
-    if ip_src.version == 4 and ip_dst.version == 4:
-        self._phtx_ip4(ip4_src=ip_src, ip4_dst=ip_dst, carried_packet=tcp_packet_tx)
+    return TxStatus.DROPED_TCP_UNKNOWN

@@ -53,26 +53,32 @@ class Ip4Parser:
         packet_rx.ip = self
 
         self._frame = packet_rx.frame
-        self._hptr = packet_rx.hptr
 
         packet_rx.parse_failed = self._packet_integrity_check() or self._packet_sanity_check()
 
         if not packet_rx.parse_failed:
-            packet_rx.hptr = self._hptr + self.hlen
+            packet_rx.frame = packet_rx.frame[self.hlen :]
 
     def __len__(self) -> int:
         """Number of bytes remaining in the frame"""
 
-        return len(self._frame) - self._hptr
+        return len(self._frame)
 
-    from ip4.ps import __str__
+    def __str__(self) -> str:
+        """Packet log string"""
+
+        return (
+            f"IPv4 {self.src} > {self.dst}, proto {self.proto} ({ip4.ps.IP4_PROTO_TABLE.get(self.proto, '???')}), id {self.id}"
+            + f"{', DF' if self.flag_df else ''}{', MF' if self.flag_mf else ''}, offset {self.offset}, plen {self.plen}"
+            + f", ttl {self.ttl}"
+        )
 
     @property
     def ver(self) -> int:
         """Read 'Version' field"""
 
         if "_cache__ver" not in self.__dict__:
-            self._cache__ver = self._frame[self._hptr + 0] >> 4
+            self._cache__ver = self._frame[0] >> 4
         return self._cache__ver
 
     @property
@@ -80,7 +86,7 @@ class Ip4Parser:
         """Read 'Header length' field"""
 
         if "_cache__hlen" not in self.__dict__:
-            self._cache__hlen = (self._frame[self._hptr + 0] & 0b00001111) << 2
+            self._cache__hlen = (self._frame[0] & 0b00001111) << 2
         return self._cache__hlen
 
     @property
@@ -88,7 +94,7 @@ class Ip4Parser:
         """Read 'DSCP' field"""
 
         if "_cache__dscp" not in self.__dict__:
-            self._cache__dscp = (self._frame[self._hptr + 1] & 0b11111100) >> 2
+            self._cache__dscp = (self._frame[1] & 0b11111100) >> 2
         return self._cache__dscp
 
     @property
@@ -96,7 +102,7 @@ class Ip4Parser:
         """Read 'ECN' field"""
 
         if "_cache__ecn" not in self.__dict__:
-            self._cache__ecn = self._frame[self._hptr + 1] & 0b00000011
+            self._cache__ecn = self._frame[1] & 0b00000011
         return self._cache__ecn
 
     @property
@@ -104,7 +110,7 @@ class Ip4Parser:
         """Read 'Packet length' field"""
 
         if "_cache__plen" not in self.__dict__:
-            self._cache__plen = struct.unpack_from("!H", self._frame, self._hptr + 2)[0]
+            self._cache__plen: int = struct.unpack("!H", self._frame[2:4])[0]
         return self._cache__plen
 
     @property
@@ -112,47 +118,47 @@ class Ip4Parser:
         """Read 'Identification' field"""
 
         if "_cache__id" not in self.__dict__:
-            self._cache__id = struct.unpack_from("!H", self._frame, self._hptr + 4)[0]
+            self._cache__id: int = struct.unpack("!H", self._frame[4:6])[0]
         return self._cache__id
 
     @property
     def flag_df(self) -> bool:
         """Read 'DF flag' field"""
 
-        return bool(self._frame[self._hptr + 6] & 0b01000000)
+        return bool(self._frame[6] & 0b01000000)
 
     @property
     def flag_mf(self) -> bool:
         """Read 'MF flag' field"""
 
-        return bool(self._frame[self._hptr + 6] & 0b00100000)
+        return bool(self._frame[6] & 0b00100000)
 
     @property
     def offset(self) -> int:
         """Read 'Fragment offset' field"""
 
         if "_cache__offset" not in self.__dict__:
-            self._cache__offset = (struct.unpack_from("!H", self._frame, self._hptr + 6)[0] & 0b0001111111111111) << 3
+            self._cache__offset: int = (struct.unpack("!H", self._frame[6:8])[0] & 0b0001111111111111) << 3
         return self._cache__offset
 
     @property
     def ttl(self) -> int:
         """Read 'TTL' field"""
 
-        return self._frame[self._hptr + 8]
+        return self._frame[8]
 
     @property
     def proto(self) -> int:
         """Read 'Protocol' field"""
 
-        return self._frame[self._hptr + 9]
+        return self._frame[9]
 
     @property
     def cksum(self) -> int:
         """Read 'Checksum' field"""
 
         if "_cache__cksum" not in self.__dict__:
-            self._cache__cksum = struct.unpack_from("!H", self._frame, self._hptr + 10)[0]
+            self._cache__cksum: int = struct.unpack("!H", self._frame[10:12])[0]
         return self._cache__cksum
 
     @property
@@ -160,7 +166,7 @@ class Ip4Parser:
         """Read 'Source address' field"""
 
         if "_cache__src" not in self.__dict__:
-            self._cache__src = Ip4Address(self._frame[self._hptr + 12 : self._hptr + 16])
+            self._cache__src = Ip4Address(self._frame[12:16])
         return self._cache__src
 
     @property
@@ -168,18 +174,18 @@ class Ip4Parser:
         """Read 'Destination address' field"""
 
         if "_cache__dst" not in self.__dict__:
-            self._cache__dst = Ip4Address(self._frame[self._hptr + 16 : self._hptr + 20])
+            self._cache__dst = Ip4Address(self._frame[16:20])
         return self._cache__dst
 
     @property
-    def options(self) -> list:
+    def options(self) -> list[Ip4OptEol | Ip4OptNop | Ip4OptUnk]:
         """Read list of options"""
 
         if "_cache__options" not in self.__dict__:
             self._cache__options: list = []
-            optr = self._hptr + ip4.ps.IP4_HEADER_LEN
+            optr = ip4.ps.IP4_HEADER_LEN
 
-            while optr < self._hptr + self.hlen:
+            while optr < self.hlen:
                 if self._frame[optr] == ip4.ps.IP4_OPT_EOL:
                     self._cache__options.append(Ip4OptEol())
                     break
@@ -187,8 +193,8 @@ class Ip4Parser:
                     self._cache__options.append(Ip4OptNop())
                     optr += ip4.ps.IP4_OPT_NOP_LEN
                     continue
-                # typing: Had to put single mapping (0: lambda _, __: None) into dict to suppress typng error
-                self._cache__options.append({0: lambda _, __: None}.get(self._frame[optr], Ip4OptUnk)(self._frame, optr))
+                # typing: Had to put single mapping (0: lambda _: None) into dict to suppress typng error
+                self._cache__options.append({0: lambda _: None}.get(self._frame[optr], Ip4OptUnk)(self._frame[optr:]))
                 optr += self._frame[optr + 1]
 
         return self._cache__options
@@ -214,7 +220,7 @@ class Ip4Parser:
         """Return copy of packet header"""
 
         if "_cache__header_copy" not in self.__dict__:
-            self._cache__header_copy = self._frame[self._hptr : self._hptr + ip4.ps.IP4_HEADER_LEN]
+            self._cache__header_copy = bytes(self._frame[: ip4.ps.IP4_HEADER_LEN])
         return self._cache__header_copy
 
     @property
@@ -222,7 +228,7 @@ class Ip4Parser:
         """Return copy of packet header"""
 
         if "_cache__options_copy" not in self.__dict__:
-            self._cache__options_copy = self._frame[self._hptr + ip4.ps.IP4_HEADER_LEN : self._hptr + self.hlen]
+            self._cache__options_copy = bytes(self._frame[ip4.ps.IP4_HEADER_LEN : self.hlen])
         return self._cache__options_copy
 
     @property
@@ -230,7 +236,7 @@ class Ip4Parser:
         """Return copy of packet data"""
 
         if "_cache__data_copy" not in self.__dict__:
-            self._cache__data_copy = self._frame[self._hptr + self.hlen : self._hptr + self.plen]
+            self._cache__data_copy = bytes(self._frame[self.hlen : self.plen])
         return self._cache__data_copy
 
     @property
@@ -238,7 +244,7 @@ class Ip4Parser:
         """Return copy of whole packet"""
 
         if "_cache__packet_copy" not in self.__dict__:
-            self._cache__packet_copy = self._frame[self._hptr : self._hptr + self.plen]
+            self._cache__packet_copy = bytes(self._frame[: self.plen])
         return self._cache__packet_copy
 
     @property
@@ -263,24 +269,24 @@ class Ip4Parser:
             return "IPv4 integrity - wrong packet length (II)"
 
         # Cannot compute checksum earlier because it depends on sanity of hlen field
-        if inet_cksum(self._frame, self._hptr, self.hlen):
+        if inet_cksum(self._frame[: self.hlen]):
             return "IPv4 integriy - wrong packet checksum"
 
-        optr = self._hptr + ip4.ps.IP4_HEADER_LEN
-        while optr < self._hptr + self.hlen:
+        optr = ip4.ps.IP4_HEADER_LEN
+        while optr < self.hlen:
             if self._frame[optr] == ip4.ps.IP4_OPT_EOL:
                 break
             if self._frame[optr] == ip4.ps.IP4_OPT_NOP:
                 optr += 1
-                if optr > self._hptr + self.hlen:
+                if optr > self.hlen:
                     return "IPv4 integrity - wrong option length (I)"
                 continue
-            if optr + 1 > self._hptr + self.hlen:
+            if optr + 1 > self.hlen:
                 return "IPv4 integrity - wrong option length (II)"
             if self._frame[optr + 1] == 0:
                 return "IPv4 integrity - wrong option length (III)"
             optr += self._frame[optr + 1]
-            if optr > self._hptr + self.hlen:
+            if optr > self.hlen:
                 return "IPv4 integrity - wrong option length (IV)"
 
         return ""
@@ -323,33 +329,54 @@ class Ip4Parser:
 #
 
 
-# IPv4 option - End of Ip4Option Linst
-
-
-class Ip4OptEol(ip4.ps.Ip4OptEol):
+class Ip4OptEol:
     """IPv4 option - End of Ip4Option List"""
 
     def __init__(self) -> None:
         self.kind = ip4.ps.IP4_OPT_EOL
 
+    def __str__(self) -> str:
+        """Option log string"""
 
-# IPv4 option - No Operation (1)
+        return "eol"
+
+    def __len__(self) -> int:
+        """Option length"""
+
+        return ip4.ps.IP4_OPT_EOL_LEN
 
 
-class Ip4OptNop(ip4.ps.Ip4OptNop):
+class Ip4OptNop:
     """IPv4 option - No Operation"""
 
     def __init__(self) -> None:
         self.kind = ip4.ps.IP4_OPT_NOP
 
+    def __str__(self) -> str:
+        """Option log string"""
 
-# IPv4 option not supported by this stack
+        return "nop"
+
+    def __len__(self) -> int:
+        """Option length"""
+
+        return ip4.ps.IP4_OPT_NOP_LEN
 
 
-class Ip4OptUnk(ip4.ps.Ip4OptUnk):
+class Ip4OptUnk:
     """IPv4 option not supported by this stack"""
 
-    def __init__(self, frame: bytes, optr: int) -> None:
-        self.kind = frame[optr + 0]
-        self.len = frame[optr + 1]
-        self.data = frame[optr + 2 : optr + self.len]
+    def __init__(self, frame: bytes) -> None:
+        self.kind = frame[0]
+        self.len = frame[1]
+        self.data = frame[2 : self.len]
+
+    def __str__(self) -> str:
+        """Option log string"""
+
+        return f"unk-{self.kind}-{self.len}"
+
+    def __len__(self) -> int:
+        """Option length"""
+
+        return self.len

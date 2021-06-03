@@ -41,6 +41,7 @@ if TYPE_CHECKING:
     from arp.fpa import ArpAssembler
     from ip4.fpa import Ip4Assembler
     from ip6.fpa import Ip6Assembler
+    from lib.tracker import Tracker
 
 
 class EtherAssembler:
@@ -56,22 +57,55 @@ class EtherAssembler:
 
         assert carried_packet.ether_type in {ether.ps.ETHER_TYPE_ARP, ether.ps.ETHER_TYPE_IP4, ether.ps.ETHER_TYPE_IP6}
 
-        self._carried_packet = carried_packet
-        self.tracker = self._carried_packet.tracker
-        self.dst = dst
-        self.src = src
-        self.type = self._carried_packet.ether_type
+        self._carried_packet: Union[ArpAssembler, Ip4Assembler, Ip6Assembler] = carried_packet
+        self._tracker: Tracker = self._carried_packet.tracker
+        self._dst: MacAddress = dst
+        self._src: MacAddress = src
+        self._type: int = self._carried_packet.ether_type
 
     def __len__(self) -> int:
         """Length of the packet"""
 
         return ether.ps.ETHER_HEADER_LEN + len(self._carried_packet)
 
-    from ether.ps import __str__
+    def __str__(self) -> str:
+        """Packet log string"""
 
-    def assemble(self, frame: bytearray, hptr: int) -> None:
+        return f"ETHER {self._src} > {self._dst}, 0x{self._type:0>4x} ({ether.ps.ETHER_TYPE_TABLE.get(self._type, '???')})"
+
+    @property
+    def tracker(self) -> Tracker:
+        """Getter for _tracker"""
+
+        return self._tracker
+
+    @property
+    def dst(self) -> MacAddress:
+        """Getter for _dst"""
+
+        return self._dst
+
+    @dst.setter
+    def dst(self, mac_address: MacAddress):
+        """Setter for _dst"""
+
+        self._dst = mac_address
+
+    @property
+    def src(self) -> MacAddress:
+        """Getter for _src"""
+
+        return self._src
+
+    @src.setter
+    def src(self, mac_address: MacAddress):
+        """Setter for _src"""
+
+        self._src = mac_address
+
+    def assemble(self, frame: memoryview) -> None:
         """Assemble packet into the raw form"""
 
-        struct.pack_into("! 6s 6s H", frame, hptr, bytes(self.dst), bytes(self.src), self.type)
+        struct.pack_into("! 6s 6s H", frame, 0, bytes(self._dst), bytes(self._src), self._type)
 
-        self._carried_packet.assemble(frame, hptr + ether.ps.ETHER_HEADER_LEN)
+        self._carried_packet.assemble(frame[ether.ps.ETHER_HEADER_LEN :])

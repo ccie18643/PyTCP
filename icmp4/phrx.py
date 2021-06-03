@@ -31,11 +31,17 @@
 
 from __future__ import annotations  # Required by Python ver < 3.10
 
+import struct
 from typing import TYPE_CHECKING
 
 import icmp4.fpp
 import icmp4.ps
+import ip4.ps
+import misc.stack as stack
+import udp.ps
 from icmp4.fpp import Icmp4Parser
+from lib.ip4_address import Ip4Address
+from udp.metadata import UdpMetadata
 
 if TYPE_CHECKING:
     from misc.packet import PacketRx
@@ -45,8 +51,6 @@ def _phrx_icmp4(self, packet_rx: PacketRx) -> None:
     """Handle inbound ICMPv4 packets"""
 
     Icmp4Parser(packet_rx)
-    assert packet_rx.ip4 is not None
-    assert packet_rx.icmp4 is not None
 
     if packet_rx.parse_failed:
         if __debug__:
@@ -54,12 +58,12 @@ def _phrx_icmp4(self, packet_rx: PacketRx) -> None:
         return
 
     if __debug__:
-        self._logger.opt(ansi=True).info(f"<green>{packet_rx.tracker}</green> - {packet_rx.icmp4}")
+        self._logger.opt(ansi=True).info(f"<lg>{packet_rx.tracker}</> - {packet_rx.icmp4}")
 
-    # Respond to ICMPv4 Echo Request packet
+    # ICMPv4 Echo Request packet
     if packet_rx.icmp4.type == icmp4.ps.ICMP4_ECHO_REQUEST:
         if __debug__:
-            self._logger.debug(f"Received ICMPv4 Echo Request packet from {packet_rx.ip4.src}, sending reply...")
+            self._logger.debug(f"{packet_rx.tracker} - Received ICMPv4 Echo Request packet from {packet_rx.ip4.src}, sending reply...")
 
         self._phtx_icmp4(
             ip4_src=packet_rx.ip4.dst,
@@ -70,4 +74,43 @@ def _phrx_icmp4(self, packet_rx: PacketRx) -> None:
             icmp4_ec_data=packet_rx.icmp4.ec_data,
             echo_tracker=packet_rx.tracker,
         )
+        return
+
+    # ICMPv4 Unreachable packet
+    if packet_rx.icmp4.type == icmp4.ps.ICMP4_UNREACHABLE:
+        if __debug__:
+            self._logger.debug(f"{packet_rx.tracker} - Received ICMPv4 Unreachable packet from {packet_rx.ip4.src}, will try to match UDP socket")
+
+        # Quick and dirty way to validate received data and pull useful information from it
+        frame = packet_rx.icmp4.un_data
+        if (
+            len(frame) >= ip4.ps.IP4_HEADER_LEN
+            and frame[0] >> 4 == 4
+            and len(frame) >= ((frame[0] & 0b00001111) << 2)
+            and frame[9] == ip4.ps.IP4_PROTO_UDP
+            and len(frame) >= ((frame[0] & 0b00001111) << 2) + udp.ps.UDP_HEADER_LEN
+        ):
+            # Create UdpMetadata object and try to find matching UDP socket
+            udp_offset = (frame[0] & 0b00001111) << 2
+            packet = UdpMetadata(
+                local_ip_address=Ip4Address(frame[12:16]),
+                remote_ip_address=Ip4Address(frame[16:20]),
+                local_port=struct.unpack("!H", frame[udp_offset + 0 : udp_offset + 2])[0],
+                remote_port=struct.unpack("!H", frame[udp_offset + 2 : udp_offset + 4])[0],
+            )
+
+            for socket_pattern in packet.socket_patterns:
+                socket = stack.sockets.get(socket_pattern, None)
+                if socket:
+                    if __debug__:
+                        self._logger.debug(f"{packet_rx.tracker} - Found matching listening socket {socket}")
+                    socket.notify_unreachable()
+                    return
+
+            if __debug__:
+                self._logger.debug(f"{packet_rx.tracker} - Unreachable data doesn't match any UDP socket")
+            return
+
+        if __debug__:
+            self._logger.debug(f"{packet_rx.tracker} - Unreachable data doesn't pass basic IPv4/UDP integrity check")
         return

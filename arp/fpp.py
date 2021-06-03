@@ -52,23 +52,30 @@ class ArpParser:
         packet_rx.arp = self
 
         self._frame = packet_rx.frame
-        self._hptr = packet_rx.hptr
 
         packet_rx.parse_failed = self._packet_integrity_check() or self._packet_sanity_check()
 
     def __len__(self) -> int:
         """Number of bytes remaining in the frame"""
 
-        return len(self._frame) - self._hptr
+        return len(self._frame)
 
-    from arp.ps import __str__
+    def __str__(self) -> str:
+        """Packet log string"""
+
+        if self.oper == arp.ps.ARP_OP_REQUEST:
+            return f"ARP request {self.spa} / {self.sha} > {self.tpa} / {self.tha}"
+        if self.oper == arp.ps.ARP_OP_REPLY:
+            return f"ARP reply {self.spa} / {self.sha} > {self.tpa} / {self.tha}"
+
+        return f"ARP request unknown operation {self.oper}"
 
     @property
     def hrtype(self) -> int:
         """Read 'Hardware address type' field"""
 
         if "_cache__hrtype" not in self.__dict__:
-            self._cache__hrtype = struct.unpack_from("!H", self._frame, self._hptr + 0)[0]
+            self._cache__hrtype: int = struct.unpack("!H", self._frame[0:2])[0]
         return self._cache__hrtype
 
     @property
@@ -76,27 +83,27 @@ class ArpParser:
         """Read 'Protocol address type' field"""
 
         if "_cache__prtype" not in self.__dict__:
-            self._cache__prtype = struct.unpack_from("!H", self._frame, self._hptr + 2)[0]
+            self._cache__prtype: int = struct.unpack("!H", self._frame[2:4])[0]
         return self._cache__prtype
 
     @property
     def hrlen(self) -> int:
         """Read 'Hardware address length' field"""
 
-        return self._frame[self._hptr + 4]
+        return self._frame[4]
 
     @property
     def prlen(self) -> int:
         """Read 'Protocol address length' field"""
 
-        return self._frame[self._hptr + 5]
+        return self._frame[5]
 
     @property
     def oper(self) -> int:
         """Read 'Operation' field"""
 
         if "_cache__oper" not in self.__dict__:
-            self._cache__oper = struct.unpack_from("!H", self._frame, self._hptr + 6)[0]
+            self._cache__oper: int = struct.unpack("!H", self._frame[6:8])[0]
         return self._cache__oper
 
     @property
@@ -104,7 +111,7 @@ class ArpParser:
         """Read 'Sender hardware address' field"""
 
         if "_cache__sha" not in self.__dict__:
-            self._cache__sha = MacAddress(self._frame[self._hptr + 8 : self._hptr + 14])
+            self._cache__sha = MacAddress(self._frame[8:14])
         return self._cache__sha
 
     @property
@@ -112,7 +119,7 @@ class ArpParser:
         """Read 'Sender protocol address' field"""
 
         if "_cache__spa" not in self.__dict__:
-            self._cache__spa = Ip4Address(self._frame[self._hptr + 14 : self._hptr + 18])
+            self._cache__spa = Ip4Address(self._frame[14:18])
         return self._cache__spa
 
     @property
@@ -120,7 +127,7 @@ class ArpParser:
         """Read 'Target hardware address' field"""
 
         if "_cache__tha" not in self.__dict__:
-            self._cache__tha = MacAddress(self._frame[self._hptr + 18 : self._hptr + 24])
+            self._cache__tha = MacAddress(self._frame[18:24])
         return self._cache__tha
 
     @property
@@ -128,7 +135,7 @@ class ArpParser:
         """Read 'Target protocol address' field"""
 
         if "_cache__tpa" not in self.__dict__:
-            self._cache__tpa = Ip4Address(self._frame[self._hptr + 24 : self._hptr + 28])
+            self._cache__tpa = Ip4Address(self._frame[24:28])
         return self._cache__tpa
 
     @property
@@ -136,7 +143,7 @@ class ArpParser:
         """Read the whole packet"""
 
         if "_cache__packet_copy" not in self.__dict__:
-            self._cache__packet_copy = self._frame[self._hptr : self._hptr + arp.ps.ARP_HEADER_LEN]
+            self._cache__packet_copy = bytes(self._frame[: arp.ps.ARP_HEADER_LEN])
         return self._cache__packet_copy
 
     def _packet_integrity_check(self) -> str:

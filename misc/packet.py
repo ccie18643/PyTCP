@@ -30,9 +30,9 @@
 
 from __future__ import annotations  # Required by Python ver < 3.10
 
-from typing import TYPE_CHECKING, Optional, Union
+from typing import TYPE_CHECKING, Union
 
-from misc.tracker import Tracker
+from lib.tracker import Tracker
 
 if TYPE_CHECKING:
     from arp.fpp import ArpParser
@@ -49,24 +49,23 @@ if TYPE_CHECKING:
 class PacketRx:
     """Base packet class"""
 
-    def __init__(self, frame: bytes) -> None:
+    def __init__(self, _frame: bytes) -> None:
         """Class constructor"""
 
-        self.frame = frame
-        self.hptr = 0
-        self.tracker = Tracker("RX")
-        self.parse_failed = Optional[str]
+        self.frame: memoryview = memoryview(_frame)
+        self.tracker: Tracker = Tracker("RX")
+        self.parse_failed: str = ""
 
-        self.ether: Optional[EtherParser] = None
-        self.arp: Optional[ArpParser] = None
-        self.ip: Optional[Union[Ip6Parser, Ip4Parser]] = None
-        self.ip4: Optional[Ip4Parser] = None
-        self.ip6: Optional[Ip6Parser] = None
-        self.ip6_ext_frag: Optional[Ip6ExtFragParser] = None
-        self.icmp4: Optional[Icmp4Parser] = None
-        self.icmp6: Optional[Icmp6Parser] = None
-        self.tcp: Optional[TcpParser] = None
-        self.udp: Optional[UdpParser] = None
+        self.ether: EtherParser
+        self.arp: ArpParser
+        self.ip: Union[Ip6Parser, Ip4Parser]
+        self.ip4: Ip4Parser
+        self.ip6: Ip6Parser
+        self.ip6_ext_frag: Ip6ExtFragParser
+        self.icmp4: Icmp4Parser
+        self.icmp6: Icmp6Parser
+        self.tcp: TcpParser
+        self.udp: UdpParser
 
     def __len__(self) -> int:
         """Returns length of raw frame"""

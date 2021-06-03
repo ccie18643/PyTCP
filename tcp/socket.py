@@ -25,128 +25,262 @@
 
 
 #
-# tcp/socket.py - module contains class supporting TCP sockets
+# tcp/socket.py - module contains BSD like socket interface for the stack
 #
 
 
-import threading
+from __future__ import annotations  # Requir for Python version lower than 3.10
 
-import loguru
+import threading
+from typing import TYPE_CHECKING, Optional
 
 import misc.stack as stack
-from tcp.session import TcpSession
+from lib.ip4_address import Ip4Address, Ip4AddressFormatError
+from lib.ip6_address import Ip6Address, Ip6AddressFormatError
+from lib.socket import AF_INET4, AF_INET6, SOCK_STREAM, Socket, gaierror
+from tcp.session import FsmState, TcpSession, TcpSessionError
+
+if TYPE_CHECKING:
+    from threading import Semaphore
+
+    from lib.socket import AddressFamily, IpAddress, SocketType
+    from tcp.metadata import TcpMetadata
 
 
-class TcpSocket:
-    """Support for Socket operations"""
+class TcpSocket(Socket):
+    """Support for IPv6/IPv4 TCP socket operations"""
 
-    def __init__(self, tcp_session=None):
+    def __init__(self, family: AddressFamily, tcp_session: Optional[TcpSession] = None) -> None:
         """Class constructor"""
 
-        if __debug__:
-            self._logger = loguru.logger.bind(object_name="socket.")
+        super().__init__()
 
-        # Create established socket based on established TCP session, used by listening sockets only
+        self._family: AddressFamily = family
+        self._type: SocketType = SOCK_STREAM
+        self._event_tcp_session_established: Semaphore = threading.Semaphore(0)
+        self._tcp_accept: list[Socket] = []
+        self._tcp_session: Optional[TcpSession]
+        self._local_ip_address: IpAddress
+        self._remote_ip_address: IpAddress
+        self._local_port: int
+        self._remote_port: int
+        self._parent_socket: Socket
+
+        # Create established socket based on established TCP session, called by listening sockets only
         if tcp_session:
-            tcp_session.socket = self
-            self.tcp_session = tcp_session
-            self.local_ip_address = tcp_session.local_ip_address
-            self.local_port = tcp_session.local_port
-            self.remote_ip_address = tcp_session.remote_ip_address
-            self.remote_port = tcp_session.remote_port
+            self._tcp_session = tcp_session
+            self._local_ip_address = tcp_session.local_ip_address
+            self._remote_ip_address = tcp_session.remote_ip_address
+            self._local_port = tcp_session.local_port
+            self._remote_port = tcp_session.remote_port
+            self._parent_socket = tcp_session.socket
+            stack.sockets[str(self)] = self
 
         # Fresh socket initialization
         else:
-            self.local_ip_address = None
-            self.local_port = None
-            self.remote_ip_address = None
-            self.remote_port = None
-
-        self.event_tcp_session_established = threading.Semaphore(0)
+            if self._family is AF_INET6:
+                self._local_ip_address = Ip6Address("::")
+                self._remote_ip_address = Ip6Address("::")
+            if self._family is AF_INET4:
+                self._local_ip_address = Ip4Address("0.0.0.0")
+                self._remote_ip_address = Ip4Address("0.0.0.0")
+            self._local_port = 0
+            self._remote_port = 0
+            self._tcp_session = None
 
         if __debug__:
-            self._logger.debug(f"Created TCP socket {self.socket_id}")
+            self._logger.opt(ansi=True).debug(f"<g>[{self}]</> - Create socket")
 
     @property
-    def socket_id(self):
-        return f"TCP/{self.local_ip_address}/{self.local_port}/{self.remote_ip_address}/{self.remote_port}"
+    def state(self) -> FsmState:
+        """Return FSM state of associated TCP session"""
 
-    def bind(self, local_ip_address, local_port=None):
-        """Bind the socket to local address and port"""
+        if self.tcp_session is not None:
+            return self.tcp_session.state
+        return FsmState.CLOSED
 
-        self.local_ip_address = local_ip_address
-        self.local_port = local_port
+    @property
+    def tcp_session(self) -> Optional[TcpSession]:
+        """Getter for _tcp_session"""
+
+        return self._tcp_session
+
+    @property
+    def parent_socket(self) -> Optional[Socket]:
+        """Getter for _parent_socket"""
+
+        return self._parent_socket
+
+    def bind(self, address: tuple[str, int]) -> None:
+        """Bind the socket to local address"""
+
+        # 'bind' call will bind socket to specific / unspecified local ip address and specific local port
+        # in case provided port equals zero port value will be picked automatically
+
+        # Check if "bound" already
+        if self._local_port in range(1, 65536):
+            raise OSError("[Errno 22] Invalid argument - [Socket bound to specific port already]")
+
+        local_ip_address: IpAddress
+
+        if self._family is AF_INET6:
+            try:
+                if (local_ip_address := Ip6Address(address[0])) not in set(stack.packet_handler.ip6_unicast) | {Ip6Address("::")}:
+                    raise OSError("[Errno 99] Cannot assign requested address - [Local IP address not owned by stack]")
+            except Ip6AddressFormatError:
+                raise gaierror("[Errno -2] Name or service not known - [Malformed local IP address]")
+
+        if self._family is AF_INET4:
+            try:
+                if (local_ip_address := Ip4Address(address[0])) not in set(stack.packet_handler.ip4_unicast) | {Ip4Address("0.0.0.0")}:
+                    raise OSError("[Errno 99] Cannot assign requested address - [Local IP address not owned by stack]")
+            except Ip4AddressFormatError:
+                raise gaierror("[Errno -2] Name or service not known - [Malformed local IP address]")
+
+        # Sanity check on local port number
+        if address[1] not in range(0, 65536):
+            raise OverflowError("bind(): port must be 0-65535. - [Port out of range]")
+
+        # Confirm or pick local port number
+        if (local_port := address[1]) > 0:
+            if self._is_address_in_use(local_ip_address, local_port):
+                raise OSError("[Errno 98] Address already in use - [Local address already in use]")
+        else:
+            local_port = self._pick_local_port()
+
+        # Assigning local port makes socket "bound"
+        stack.sockets.pop(str(self), None)
+        self._local_ip_address = local_ip_address
+        self._local_port = local_port
+        stack.sockets[str(self)] = self
+
         if __debug__:
-            self._logger.debug(f"{self.socket_id} - Socket bound to local address")
+            self._logger.opt(ansi=True).debug(f"<g>[{self}]</> - Bound socket")
 
-    def listen(self):
+    def connect(self, address: tuple[str, int]) -> None:
+        """Connect the socket to remote host"""
+
+        # 'connect' call will bind socket to specific local ip address (will rebind if necessary), specific local port,
+        # specific remote ip address and specific remote port
+
+        # Sanity check on remote port number (0 is a valid remote port in BSD socket implementation)
+        if (remote_port := address[1]) not in range(0, 65536):
+            raise OverflowError("connect(): port must be 0-65535. - [Port out of range]")
+
+        # Assigning local port makes socket "bound" if not "bound" already
+        if (local_port := self._local_port) not in range(1, 65536):
+            local_port = self._pick_local_port()
+
+        # Set local and remote ip addresses aproprietely
+        local_ip_address, remote_ip_address = self._set_ip_addresses(address, self._local_ip_address, local_port, remote_port)
+
+        # Re-register socket with new socket id
+        stack.sockets.pop(str(self), None)
+        self._local_ip_address = local_ip_address
+        self._local_port = local_port
+        self._remote_ip_address = remote_ip_address
+        self._remote_port = remote_port
+        stack.sockets[str(self)] = self
+
+        self._tcp_session = TcpSession(
+            local_ip_address=self._local_ip_address,
+            local_port=self._local_port,
+            remote_ip_address=self._remote_ip_address,
+            remote_port=self._remote_port,
+            socket=self,
+        )
+
+        if __debug__:
+            self._logger.opt(ansi=True).debug(f"<g>[{self}]</> - Socket attempting connection")
+
+        try:
+            self._tcp_session.connect()
+        except TcpSessionError as error:
+            if str(error) == "Connection refused":
+                raise ConnectionRefusedError("[Errno 111] Connection refused - [Received RST packet from remote host]")
+            if str(error) == "Connection timeout":
+                raise TimeoutError("[Errno 110] Connection timed out - [No valid response received from remote host]")
+
+        if __debug__:
+            self._logger.opt(ansi=True).debug(f"<g>[{self}]</> - Bound")
+
+    def listen(self) -> None:
         """Starts to listen for incoming connections"""
 
-        self.remote_ip_address = "*"
-        self.remote_port = "*"
-        tcp_session = TcpSession(
-            local_ip_address=self.local_ip_address,
-            local_port=self.local_port,
-            remote_ip_address=self.remote_ip_address,
-            remote_port=self.remote_port,
+        self._tcp_session = TcpSession(
+            local_ip_address=self._local_ip_address,
+            local_port=self._local_port,
+            remote_ip_address=self._remote_ip_address,
+            remote_port=self._remote_port,
             socket=self,
         )
-        if __debug__:
-            self._logger.debug(f"{self.socket_id} -  Socket starting to listen for inbound connections")
-        tcp_session.listen()
-
-    def connect(self, remote_ip_address, remote_port):
-        """Attempt to establish TCP connection"""
-
-        self.remote_ip_address = remote_ip_address
-        self.remote_port = remote_port
-        tcp_session = TcpSession(
-            local_ip_address=self.local_ip_address,
-            local_port=self.local_port,
-            remote_ip_address=self.remote_ip_address,
-            remote_port=self.remote_port,
-            socket=self,
-        )
-        self.tcp_session = tcp_session
-        if __debug__:
-            self._logger.debug(f"{self.socket_id} -  Socket attempting connection to {remote_ip_address}, port {remote_port}")
-        return tcp_session.connect()
-
-    def accept(self):
-        """Wait for the established inbound connection, then create new socket for it and return it"""
 
         if __debug__:
-            self._logger.debug(f"{self.socket_id} - Waiting for established inbound connection")
-        self.event_tcp_session_established.acquire()
-        for tcp_session in stack.tcp_sessions.values():
-            if tcp_session.socket is self and tcp_session.state == "ESTABLISHED":
-                return TcpSocket(tcp_session=tcp_session)
-        return None
+            self._logger.opt(ansi=True).debug(f"<g>[{self}]</> - Socket starting to listen for inbound connections")
 
-    def receive(self, byte_count=None):
+        stack.sockets[str(self)] = self
+        self._tcp_session.listen()
+
+    def accept(self) -> tuple[Socket, tuple[str, int]]:
+        """Wait for the established inbound connection, once available return it's socket"""
+
+        if __debug__:
+            self._logger.opt(ansi=True).debug(f"<g>[{self}]</> - Waiting for inbound connection")
+
+        self._event_tcp_session_established.acquire()
+        socket = self._tcp_accept.pop(0)
+
+        if __debug__:
+            self._logger.opt(ansi=True).debug(f"<g>[{self}]</> - Socket accepted connection from {(str(socket.remote_ip_address), socket.remote_port)}")
+
+        return socket, (str(socket.remote_ip_address), socket.remote_port)
+
+    def send(self, data: bytes) -> int:
+        """Send the data to connected remote host"""
+
+        # 'send' call requires 'connect' call to be run prior to it
+
+        if self._remote_ip_address.is_unspecified or self._remote_port == 0:
+            raise OSError("send(): Destination address requir")
+
+        assert self._tcp_session is not None
+
+        try:
+            bytes_sent = self._tcp_session.send(data)
+        except TcpSessionError as error:
+            raise BrokenPipeError(f"[Errno 32] Broken pipe - [{error}]")
+
+        if __debug__:
+            self._logger.opt(ansi=True).debug(f"<g>[{self}]</> - Sent data segment, len {bytes_sent}")
+        return bytes_sent
+
+    def recv(self, bufsize: Optional[int] = None, timeout: Optional[float] = None) -> bytes:
         """Receive data from socket"""
 
-        if (data_rx := self.tcp_session.receive(byte_count)) is None:
-            if __debug__:
-                self._logger.debug(f"{self.socket_id} - Received close event from TCP session")
-            return None
+        # TODO - Consider implementing timeout
 
-        if __debug__:
-            self._logger.debug(f"{self.socket_id} - Received {len(data_rx)} bytes of data")
+        assert self._tcp_session is not None
+
+        if data_rx := self._tcp_session.receive(bufsize):
+            if __debug__:
+                self._logger.opt(ansi=True).debug(f"<g>[{self}]</> - Received {len(data_rx)} bytes of data")
+        else:
+            if __debug__:
+                self._logger.opt(ansi=True).debug(f"<g>[{self}]</> - Received empty data byte string, remote end closed connection")
+
         return data_rx
 
-    def send(self, data_segment):
-        """Pass data_segment to TCP session"""
-
-        if bytes_sent := self.tcp_session.send(data_segment):
-            if __debug__:
-                self._logger.debug(f"{self.socket_id} - Sent data segment, len {bytes_sent}")
-            return bytes_sent
-        return None
-
-    def close(self):
+    def close(self) -> None:
         """Close socket and the TCP session(s) it owns"""
 
-        self.tcp_session.close()
+        assert self._tcp_session is not None
+        self._tcp_session.close()
+
         if __debug__:
-            self._logger.debug(f"{self.socket_id} - Closed socket")
+            self._logger.opt(ansi=True).debug(f"<g>[{self}]</> - Closed socket")
+
+    def process_tcp_packet(self, packet_rx_md: TcpMetadata) -> None:
+        """Process incoming packet's metadata"""
+
+        if self._tcp_session:
+            self._tcp_session.tcp_fsm(packet_rx_md)

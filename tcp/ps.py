@@ -49,22 +49,6 @@
 TCP_HEADER_LEN = 20
 
 
-def __str__(self) -> str:
-    """Packet log string"""
-
-    log = (
-        f"TCP {self.sport} > {self.dport}, {'N' if self.flag_ns else ''}{'C' if self.flag_crw else ''}"
-        + f"{'E' if self.flag_ece else ''}{'U' if self.flag_urg else ''}{'A' if self.flag_ack else ''}"
-        + f"{'P' if self.flag_psh else ''}{'R' if self.flag_rst else ''}{'S' if self.flag_syn else ''}"
-        + f"{'F' if self.flag_fin else ''}, seq {self.seq}, ack {self.ack}, win {self.win}, dlen {len(self.data)}"
-    )
-
-    for option in self.options:
-        log += ", " + str(option)
-
-    return log
-
-
 #
 # TCP options
 #
@@ -76,38 +60,10 @@ TCP_OPT_EOL = 0
 TCP_OPT_EOL_LEN = 1
 
 
-class TcpOptEol:
-    """TCP option - End of Option List (0)"""
-
-    def __str__(self) -> str:
-        """Option log string"""
-
-        return "eol"
-
-    def __len__(self) -> int:
-        """Option length"""
-
-        return TCP_OPT_EOL_LEN
-
-
 # TCP option - No Operation (1)
 
 TCP_OPT_NOP = 1
 TCP_OPT_NOP_LEN = 1
-
-
-class TcpOptNop:
-    """TCP option - No Operation (1)"""
-
-    def __str__(self) -> str:
-        """Option log string"""
-
-        return "nop"
-
-    def __len__(self) -> int:
-        """Option length"""
-
-        return TCP_OPT_NOP_LEN
 
 
 # TCP option - Maximum Segment Size (2)
@@ -116,48 +72,10 @@ TCP_OPT_MSS = 2
 TCP_OPT_MSS_LEN = 4
 
 
-class TcpOptMss:
-    """TCP option - Maximum Segment Size (2)"""
-
-    def __init__(self) -> None:
-        """Class constructor"""
-
-        self.mss = -1
-
-    def __str__(self) -> str:
-        """Option log string"""
-
-        return f"mss {self.mss}"
-
-    def __len__(self) -> int:
-        """Option length"""
-
-        return TCP_OPT_MSS_LEN
-
-
 # TCP option - Window Scale (3)
 
 TCP_OPT_WSCALE = 3
 TCP_OPT_WSCALE_LEN = 3
-
-
-class TcpOptWscale:
-    """TCP option - Window Scale (3)"""
-
-    def __init__(self) -> None:
-        """Class constructor"""
-
-        self.wscale = -1
-
-    def __str__(self) -> str:
-        """Option log string"""
-
-        return f"wscale {self.wscale}"
-
-    def __len__(self) -> int:
-        """Option length"""
-
-        return TCP_OPT_WSCALE_LEN
 
 
 # TCP option - Sack Permit (4)
@@ -166,59 +84,7 @@ TCP_OPT_SACKPERM = 4
 TCP_OPT_SACKPERM_LEN = 2
 
 
-class TcpOptSackPerm:
-    """TCP option - Sack Permit (4)"""
-
-    def __str__(self) -> str:
-        """Option log string"""
-
-        return "sack_perm"
-
-    def __len__(self) -> int:
-        """Option length"""
-
-        return TCP_OPT_SACKPERM_LEN
-
-
 # TCP option - Timestamp
 
 TCP_OPT_TIMESTAMP = 8
 TCP_OPT_TIMESTAMP_LEN = 10
-
-
-class TcpOptTimestamp:
-    """TCP option - Timestamp (8)"""
-
-    def __init__(self) -> None:
-        """Class constructor"""
-
-        self.tsval = -1
-        self.tsecr = -1
-
-    def __str__(self) -> str:
-        """Option log string"""
-
-        return f"ts {self.tsval}/{self.tsecr}"
-
-    def __len__(self) -> int:
-        """Option length"""
-
-        return TCP_OPT_TIMESTAMP_LEN
-
-
-# TCP unknown option
-
-
-class TcpOptUnk:
-    """TCP option not supported by this stack"""
-
-    def __init__(self) -> None:
-        """Class constructor"""
-
-        self.kind = -1
-        self.len = -1
-
-    def __str__(self) -> str:
-        """Option log string"""
-
-        return f"unk-{self.kind}-{self.len}"

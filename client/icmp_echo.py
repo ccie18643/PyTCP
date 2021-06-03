@@ -33,14 +33,11 @@ import random
 import threading
 import time
 from datetime import datetime
-from typing import TYPE_CHECKING, cast
 
 import misc.stack as stack
-from misc.ip_helper import ip_pick_version
-
-if TYPE_CHECKING:
-    from lib.ip4_address import Ip4Address
-    from lib.ip6_address import Ip6Address
+from lib.ip4_address import Ip4Address
+from lib.ip6_address import Ip6Address
+from misc.ip_helper import str_to_ip
 
 
 class ClientIcmpEcho:
@@ -49,13 +46,16 @@ class ClientIcmpEcho:
     def __init__(self, local_ip_address: str, remote_ip_address: str, message_count: int = -1) -> None:
         """Class constructor"""
 
-        self.local_ip_address = ip_pick_version(local_ip_address)
-        self.remote_ip_address = ip_pick_version(remote_ip_address)
+        self.local_ip_address = str_to_ip(local_ip_address)
+        self.remote_ip_address = str_to_ip(remote_ip_address)
         self.message_count = message_count
 
         threading.Thread(target=self.__thread_client).start()
 
     def __thread_client(self) -> None:
+
+        assert self.local_ip_address is not None
+        assert self.remote_ip_address is not None
 
         flow_id = random.randint(0, 65535)
 
@@ -65,29 +65,29 @@ class ClientIcmpEcho:
             message = bytes(str(datetime.now()) + "\n", "utf-8")
 
             if self.local_ip_address.version == 4:
-                self.local_ip_address = cast(Ip4Address, self.local_ip_address)
-                self.remote_ip_address = cast(Ip4Address, self.remote_ip_address)
-                stack.packet_handler._phtx_icmp4(  # type: ignore
-                    ip4_src=self.local_ip_address,
-                    ip4_dst=self.remote_ip_address,
-                    icmp4_type=8,
-                    icmp4_code=0,
-                    icmp4_ec_id=flow_id,
-                    icmp4_ec_seq=message_seq,
-                    icmp4_ec_data=message,
+                assert isinstance(self.local_ip_address, Ip4Address)
+                assert isinstance(self.remote_ip_address, Ip4Address)
+                stack.packet_handler.send_icmp4_packet(
+                    local_ip_address=self.local_ip_address,
+                    remote_ip_address=self.remote_ip_address,
+                    type=8,
+                    code=0,
+                    ec_id=flow_id,
+                    ec_seq=message_seq,
+                    ec_data=message,
                 )
 
             if self.local_ip_address.version == 6:
-                self.local_ip_address = cast(Ip6Address, self.local_ip_address)
-                self.remote_ip_address = cast(Ip6Address, self.remote_ip_address)
-                stack.packet_handler._phtx_icmp6(  # type: ignore
-                    ip6_src=self.local_ip_address,
-                    ip6_dst=self.remote_ip_address,
-                    icmp6_type=128,
-                    icmp6_code=0,
-                    icmp6_ec_id=flow_id,
-                    icmp6_ec_seq=message_seq,
-                    icmp6_ec_data=message,
+                assert isinstance(self.local_ip_address, Ip6Address)
+                assert isinstance(self.remote_ip_address, Ip6Address)
+                stack.packet_handler.send_icmp6_packet(
+                    local_ip_address=self.local_ip_address,
+                    remote_ip_address=self.remote_ip_address,
+                    type=128,
+                    code=0,
+                    ec_id=flow_id,
+                    ec_seq=message_seq,
+                    ec_data=message,
                 )
 
             print(f"Client ICMP Echo: Sent ICMP Echo ({flow_id}/{message_seq}) to {self.remote_ip_address} - {str(message)}")

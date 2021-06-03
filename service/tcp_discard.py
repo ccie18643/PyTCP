@@ -29,46 +29,47 @@
 #
 
 
-import threading
+from __future__ import annotations  # Required by Python ver < 3.10
 
-from tcp.socket import TcpSocket
+from typing import TYPE_CHECKING
+
+from service.tcp_generic import ServiceTcp
+
+if TYPE_CHECKING:
+    from lib.socket import Socket
 
 
-class ServiceTcpDiscard:
-    """TCP Discard service support class"""
+class ServiceTcpDiscard(ServiceTcp):
+    """TCP Echo service support class"""
 
-    def __init__(self, local_ip_address: str = "*", local_port: int = 9) -> None:
+    def __init__(self, local_ip_address: str, local_port: int = 9):
         """Class constructor"""
 
-        self.local_ip_address = local_ip_address
-        self.local_port = local_port
+        super().__init__("Discard", local_ip_address, local_port)
 
-        threading.Thread(target=self.__thread_service).start()
-
-    def __thread_service(self) -> None:
-        """Service initialization"""
-
-        socket = TcpSocket()
-        socket.bind(self.local_ip_address, self.local_port)
-        socket.listen()
-        print(f"Service TCP Discard: Socket created, bound to {self.local_ip_address}, port {self.local_port} and set to listening mode")
-
-        while True:
-            new_socket = socket.accept()
-            print(f"Service TCP Discard: Inbound connection received from {new_socket.remote_ip_address}, port {new_socket.remote_port}")
-
-            threading.Thread(target=self.__thread_connection, args=(new_socket,)).start()
-
-    def __thread_connection(self, socket: TcpSocket) -> None:
+    def service(self, cs: Socket) -> None:
         """Inbound connection handler"""
 
-        while True:
-            message = socket.receive()
+        print(f"Service TCP Echo: Sending first message to {cs.remote_ip_address}, port {cs.remote_port}")
+        cs.send(b"***CLIENT OPEN / SERVICE OPEN***\n")
 
-            if message is None:
+        while True:
+            if not (message := cs.recv()):
+                print(f"Service TCP Discard: Connection to {cs.remote_ip_address}, port {cs.remote_port} has been closed by peer")
+                print(f"Service TCP Discard: Sending last message to {cs.remote_ip_address}, port {cs.remote_port}")
+                cs.send(b"***CLIENT CLOSED, SERVICE CLOSING***\n")
+                print(f"Service TCP Discard: Closng connection to {cs.remote_ip_address}, port {cs.remote_port}")
+                cs.close()
                 break
 
-            print(f"Service TCP Discard: Discarded message from {socket.remote_ip_address}, port {socket.remote_port}, {len(message)}")
+            if message in {b"CLOSE\n", b"CLOSE\r\n", b"close\n", b"close\r\n"}:
+                print(f"Service TCP Discard: Sending last message to {cs.remote_ip_address}, port {cs.remote_port}")
+                cs.send(b"***CLIENT OPEN, SERVICE CLOSING***\n")
+                print(f"Service TCP Discard: Closng connection to {cs.remote_ip_address}, port {cs.remote_port}")
+                cs.close()
+                continue
 
-        socket.close()
-        print(f"Service TCP Discard: Connection from {socket.remote_ip_address}, port {socket.remote_port} has been closed by peer")
+            print(f"Service TCP Discard: Received {len(message)} bytes from {cs.remote_ip_address}, port {cs.remote_port}")
+
+        cs.close()
+        print(f"Service TCP Discard: Connection from {cs.remote_ip_address}, port {cs.remote_port} has been closed by peer")

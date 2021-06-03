@@ -25,30 +25,39 @@
 
 
 #
-# tcp/metadata.py - module contains storage class for incoming TCP packet's metadata
+# tcp/metadata.py - module contains interface class for FPP -> TCP Socket communication
 #
 
 
+from __future__ import annotations  # Required by Python ver < 3.10
+
+from typing import TYPE_CHECKING, Optional
+
+if TYPE_CHECKING:
+    from lib.ip_address import IpAddress
+    from lib.tracker import Tracker
+
+
 class TcpMetadata:
-    """Store TCP metadata"""
+    """Store TCP metadata for the RX packet"""
 
     def __init__(
         self,
-        local_ip_address,
-        local_port,
-        remote_ip_address,
-        remote_port,
-        flag_syn,
-        flag_ack,
-        flag_fin,
-        flag_rst,
-        seq,
-        ack,
-        win,
-        wscale,
-        mss,
-        data,
-        tracker,
+        local_ip_address: IpAddress,
+        local_port: int,
+        remote_ip_address: IpAddress,
+        remote_port: int,
+        flag_syn: bool,
+        flag_ack: bool,
+        flag_fin: bool,
+        flag_rst: bool,
+        seq: int,
+        ack: int,
+        win: int,
+        wscale: Optional[int],
+        mss: int,
+        data: memoryview,
+        tracker: Optional[Tracker],
     ):
         self.local_ip_address = local_ip_address
         self.local_port = local_port
@@ -66,28 +75,16 @@ class TcpMetadata:
         self.data = data
         self.tracker = tracker
 
-    @property
-    def tcp_session_id(self):
-        """Session ID"""
+    def __str__(self) -> str:
+        """String representation"""
 
-        return f"TCP/{self.local_ip_address}/{self.local_port}/{self.remote_ip_address}/{self.remote_port}"
+        return f"AF_INET{self.local_ip_address.version}/SOCK_STREAM/{self.local_ip_address}/{self.local_port}/{self.remote_ip_address}/{self.remote_port}"
 
     @property
-    def tcp_session_listening_patterns(self):
+    def tcp_listening_socket_patterns(self) -> list[str]:
         """Session ID patterns that match listening socket"""
 
-        if self.remote_ip_address.version == 6:
-            return [
-                f"TCP/{self.local_ip_address}/{self.local_port}/*/*",
-                f"TCP/::/{self.local_port}/*/*",
-                f"TCP/*/{self.local_port}/*/*",
-            ]
-
-        if self.remote_ip_address.version == 4:
-            return [
-                f"TCP/{self.local_ip_address}/{self.local_port}/*/*",
-                f"TCP/0.0.0.0/{self.local_port}/*/*",
-                f"TCP/*/{self.local_port}/*/*",
-            ]
-
-        return None
+        return [
+            f"AF_INET{self.local_ip_address.version}/SOCK_STREAM/{self.local_ip_address}/{self.local_port}/{self.local_ip_address.unspecified}/0",
+            f"AF_INET{self.local_ip_address.version}/SOCK_STREAM/{self.local_ip_address.unspecified}/{self.local_port}/{self.local_ip_address.unspecified}/0",
+        ]

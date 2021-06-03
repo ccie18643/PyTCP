@@ -48,17 +48,17 @@ class TestPacketHandler(TestCase):
         from lib.ip6_address import Ip6Address, Ip6Host
 
         sample = [
-            ("FE80::7/64", ""),  # valid link loal address [pass]
-            ("FE80::77/64", ""),  # valid link local address [pass]
-            ("FE80::7777/64", ""),  # valid link local address [pass]
-            ("FE80::7777/64", ""),  # valid duplicated address [fail]
+            ("FE80::7/64", None),  # valid link loal address [pass]
+            ("FE80::77/64", None),  # valid link local address [pass]
+            ("FE80::7777/64", None),  # valid link local address [pass]
+            ("FE80::7777/64", None),  # valid duplicated address [fail]
             ("FE80::9999/64", "FE80::1"),  # valid link local address with default gateway [fail]
             ("2007::1111/64", "DUPA"),  # valid global address with malformed gateway [fail]
-            ("ZHOPA", ""),  # malformed address [fail]
+            ("ZHOPA", None),  # malformed address [fail]
             ("2099::99/64", "2222::99"),  # valid global address with out of subnet gateway [fail]
             ("2007::7/64", "FE80::1"),  # valid global address with valid link local gateway [pass]
             ("2009::9/64", "2009::1"),  # valid global address with valid global gateway [pass]
-            ("2015::15/64", ""),  # valid global address with no gateway [pass]
+            ("2015::15/64", None),  # valid global address with no gateway [pass]
         ]
         expected = [
             Ip6Host("fe80::7/64"),
@@ -90,8 +90,8 @@ class TestPacketHandler(TestCase):
             ("192.168.9.173/24", "192.168.9.255"),  # valid address but invalid gateway [fail]
             ("192.168.9.0/24", "192.168.9.1"),  # invalid address [fail]
             ("192.168.9.255/24", "192.168.9.1"),  # invalid address [fail]
-            ("0.0.0.0/0", ""),  # invalid address [fail]
-            ("192.168.9.102/24", ""),  # valid address and no gateway [pass]
+            ("0.0.0.0/0", None),  # invalid address [fail]
+            ("192.168.9.102/24", None),  # valid address and no gateway [pass]
             ("172.16.17.7/24", "172.16.17.1"),  # valid address and valid gateway [pass]
             ("10.10.10.7/24", "10.10.10.1"),  # valid address and valid gateway [pass]
         ]

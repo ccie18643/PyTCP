@@ -25,44 +25,68 @@
 
 
 #
-# service/udp_echo.py - 'user space' service UDP Echo (RFC 862)
+# service/tcp_generic.py - 'user space' TCP generic service class
 #
 
 
 from __future__ import annotations  # Required by Python ver < 3.10
 
+import threading
 from typing import TYPE_CHECKING
 
-from misc.malpi import malpa, malpi, malpka
-from service.udp_generic import ServiceUdp
+import lib.socket as socket
+from misc.ip_helper import ip_version
 
 if TYPE_CHECKING:
     from lib.socket import Socket
 
 
-class ServiceUdpEcho(ServiceUdp):
-    """UDP Echo service support class"""
+class ServiceTcp:
+    """TCP service support class"""
 
-    def __init__(self, local_ip_address: str, local_port: int = 7):
+    def __init__(self, name: str, local_ip_address: str, local_port: int) -> None:
         """Class constructor"""
 
-        super().__init__("Echo", local_ip_address, local_port)
+        self.local_ip_address = local_ip_address
+        self.local_port = local_port
+        self.name = name
 
-    def service(self, s: Socket) -> None:
-        """Inbound connection handler"""
+        threading.Thread(target=self.__thread_service).start()
+
+    def __thread_service(self) -> None:
+        """Service initialization"""
+
+        version = ip_version(self.local_ip_address)
+        if version == 6:
+            s = socket.socket(family=socket.AF_INET6, type=socket.SOCK_STREAM)
+        elif version == 4:
+            s = socket.socket(family=socket.AF_INET4, type=socket.SOCK_STREAM)
+        else:
+            print(f"Service TCP {self.name}: Invalid local IP address - {self.local_ip_address}")
+            return
+
+        try:
+            s.bind((self.local_ip_address, self.local_port))
+            print(f"Service TCP {self.name}: Socket created, bound to {self.local_ip_address}, port {self.local_port}")
+        except OSError as error:
+            print(f"Service TCP {self.name}: bind() call failed - {error}")
+            return
+
+        s.listen()
+        print(f"Service TCP {self.name}: Socket set to listening mode")
 
         while True:
-            message, remote_address = s.recvfrom()
+            cs, _ = s.accept()
+            print(f"Service TCP {self.name}: Inbound connection received from {cs.remote_ip_address}, port {cs.remote_port}")
+            threading.Thread(target=self.__thread_connection, args=(cs,)).start()
 
-            print(f"Service UDP Echo: Received {len(message)} bytes from {remote_address[0]}, port {remote_address[1]}")
+    def __thread_connection(self, cs: Socket) -> None:
+        """Inbound connection handler"""
 
-            if b"malpka" in message.strip().lower():
-                message = malpka
-            elif b"malpa" in message.strip().lower():
-                message = malpa
-            elif b"malpi" in message.strip().lower():
-                message = malpi
+        self.service(cs)
 
-            s.sendto(message, remote_address)
+    def service(self, cs: Socket) -> None:
+        """Service method"""
 
-            print(f"Service UDP Echo: Echo'ed {len(message)} bytes back to {remote_address[0]}, port {remote_address[1]}")
+        print(f"Service TCP {self.name}: No service method defined, closing connection")
+        cs.close()

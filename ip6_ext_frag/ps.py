@@ -47,7 +47,7 @@ IP6_EXT_FRAG_NEXT_HEADER_ICMP6 = 58
 IP6_EXT_FRAG_NEXT_HEADER_TABLE = {IP6_EXT_FRAG_NEXT_HEADER_TCP: "TCP", IP6_EXT_FRAG_NEXT_HEADER_UDP: "UDP", IP6_EXT_FRAG_NEXT_HEADER_ICMP6: "ICMPv6"}
 
 
-def __str__(self):
+def __str__(self) -> str:
     """Packet log string"""
 
     return (

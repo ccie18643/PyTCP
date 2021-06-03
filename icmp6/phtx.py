@@ -33,13 +33,13 @@ from __future__ import annotations  # Required by Python ver < 3.10
 
 from typing import TYPE_CHECKING, Optional, Union
 
-import config
 import icmp6.fpa
 from icmp6.fpa import Icmp6Assembler
-from misc.tracker import Tracker
+from lib.tracker import Tracker
 
 if TYPE_CHECKING:
     from lib.ip6_address import Ip6Address
+    from misc.tx_status import TxStatus
 
 
 def _phtx_icmp6(
@@ -61,12 +61,8 @@ def _phtx_icmp6(
     icmp6_nd_options: Optional[list[Union[icmp6.fpa.Icmp6NdOptSLLA, icmp6.fpa.Icmp6NdOptTLLA, icmp6.fpa.Icmp6NdOptPI]]] = None,
     icmp6_mlr2_multicast_address_record=None,
     echo_tracker: Optional[Tracker] = None,
-) -> None:
+) -> TxStatus:
     """Handle outbound ICMPv6 packets"""
-
-    # Check if IPv6 protocol support is enabled, if not then silently drop the packet
-    if not config.ip6_support:
-        return
 
     icmp6_packet_tx = Icmp6Assembler(
         type=icmp6_type,
@@ -86,5 +82,6 @@ def _phtx_icmp6(
     )
 
     if __debug__:
-        self._logger.opt(ansi=True).info(f"<magenta>{icmp6_packet_tx.tracker}</magenta> - {icmp6_packet_tx}")
-    self._phtx_ip6(ip6_src=ip6_src, ip6_dst=ip6_dst, ip6_hop=ip6_hop, carried_packet=icmp6_packet_tx)
+        self._logger.opt(ansi=True).info(f"<lr>{icmp6_packet_tx.tracker}</> - {icmp6_packet_tx}")
+
+    return self._phtx_ip6(ip6_src=ip6_src, ip6_dst=ip6_dst, ip6_hop=ip6_hop, carried_packet=icmp6_packet_tx)

@@ -45,7 +45,6 @@ def _phrx_ether(self, packet_rx: PacketRx) -> None:
     """Handle inbound Ethernet packets"""
 
     EtherParser(packet_rx)
-    assert packet_rx.ether is not None
 
     if packet_rx.parse_failed:
         if __debug__:

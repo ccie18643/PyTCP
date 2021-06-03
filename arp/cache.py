@@ -25,7 +25,7 @@
 
 
 #
-# misc/arp_cache.py - module contains class supporting ARP cache
+# arp/cache.py - module contains class supporting ARP cache
 #
 
 
@@ -50,10 +50,10 @@ class ArpCache:
         """Container class for cache entries"""
 
         def __init__(self, mac_address: MacAddress, permanent: bool = False) -> None:
-            self.mac_address = mac_address
-            self.permanent = permanent
-            self.creation_time = time.time()
-            self.hit_count = 0
+            self.mac_address: MacAddress = mac_address
+            self.permanent: bool = permanent
+            self.creation_time: float = time.time()
+            self.hit_count: int = 0
 
     def __init__(self) -> None:
         """Class constructor"""
@@ -64,7 +64,6 @@ class ArpCache:
             self._logger = loguru.logger.bind(object_name="arp_cache.")
 
         # Setup timer to execute ARP Cache maintainer every second
-        assert stack.timer is not None
         stack.timer.register_method(method=self._maintain_cache, delay=1000)
 
         if __debug__:
@@ -83,7 +82,7 @@ class ArpCache:
             if time.time() - self.arp_cache[ip4_address].creation_time > config.arp_cache_entry_max_age:
                 mac_address = self.arp_cache.pop(ip4_address).mac_address
                 if __debug__:
-                    self._logger.debug(f"Discarded expired ARP cache entry - {ip4_address} -> {mac_address}")
+                    self._logger.debug(f"Discarded expir ARP cache entry - {ip4_address} -> {mac_address}")
 
             # If entry age is close to maximum age but the entry has been used since last refresh then send out request in attempt to refresh it
             elif (
@@ -118,7 +117,6 @@ class ArpCache:
     def _send_arp_request(self, arp_tpa: Ip4Address) -> None:
         """Enqueue ARP request packet with TX ring"""
 
-        assert stack.packet_handler is not None
         stack.packet_handler._phtx_arp(
             ether_src=stack.packet_handler.mac_unicast,
             ether_dst=MacAddress("ff:ff:ff:ff:ff:ff"),

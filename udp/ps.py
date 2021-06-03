@@ -39,9 +39,3 @@
 
 
 UDP_HEADER_LEN = 8
-
-
-def __str__(self) -> str:
-    """Packet log string"""
-
-    return f"UDP {self.sport} > {self.dport}, len {self.plen}"

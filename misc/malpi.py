@@ -29,7 +29,7 @@
 #
 
 
-malpka = (
+malpka: bytes = (
     b"\n                                       \n"
     + b"                                       \n"
     + b"                                       \n"
@@ -53,7 +53,7 @@ malpka = (
     + b"                                       \n"
 )
 
-malpa = (
+malpa: bytes = (
     b"\n______AAAA_______________AAAA______\n"
     + b"      VVVV               VVVV       \n"
     + b"      (__)               (__)       \n"
@@ -77,4 +77,4 @@ malpa = (
 )
 
 
-malpi = b"".join([_ + __ + b"\n" for _, __ in zip(malpka.split(b"\n"), malpa.split(b"\n"))])
+malpi: bytes = b"".join([_ + __ + b"\n" for _, __ in zip(malpka.split(b"\n"), malpa.split(b"\n"))])

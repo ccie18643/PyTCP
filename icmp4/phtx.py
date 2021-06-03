@@ -33,12 +33,12 @@ from __future__ import annotations  # Required by Python ver < 3.10
 
 from typing import TYPE_CHECKING, Optional
 
-import config
 from icmp4.fpa import Icmp4Assembler
-from misc.tracker import Tracker
+from lib.tracker import Tracker
 
 if TYPE_CHECKING:
     from lib.ip4_address import Ip4Address
+    from misc.tx_status import TxStatus
 
 
 def _phtx_icmp4(
@@ -52,12 +52,8 @@ def _phtx_icmp4(
     icmp4_ec_data: Optional[bytes] = None,
     icmp4_un_data: Optional[bytes] = None,
     echo_tracker: Optional[Tracker] = None,
-) -> None:
+) -> TxStatus:
     """Handle outbound ICMPv4 packets"""
-
-    # Check if IPv4 protocol support is enabled, if not then silently drop the packet
-    if not config.ip4_support:
-        return
 
     icmp4_packet_tx = Icmp4Assembler(
         type=icmp4_type,
@@ -70,5 +66,6 @@ def _phtx_icmp4(
     )
 
     if __debug__:
-        self._logger.opt(ansi=True).info(f"<magenta>{icmp4_packet_tx.tracker}</magenta> - {icmp4_packet_tx}")
-    self._phtx_ip4(ip4_src=ip4_src, ip4_dst=ip4_dst, carried_packet=icmp4_packet_tx)
+        self._logger.opt(ansi=True).info(f"<lr>{icmp4_packet_tx.tracker}</> - {icmp4_packet_tx}")
+
+    return self._phtx_ip4(ip4_src=ip4_src, ip4_dst=ip4_dst, carried_packet=icmp4_packet_tx)

@@ -46,8 +46,6 @@ def _phrx_arp(self, packet_rx: PacketRx) -> None:
     """Handle inbound ARP packets"""
 
     ArpParser(packet_rx)
-    assert packet_rx.arp is not None
-    assert packet_rx.ether is not None
 
     if packet_rx.parse_failed:
         if __debug__:
@@ -55,7 +53,7 @@ def _phrx_arp(self, packet_rx: PacketRx) -> None:
         return
 
     if __debug__:
-        self._logger.opt(ansi=True).info(f"<green>{packet_rx.tracker}</green> - {packet_rx.arp}")
+        self._logger.opt(ansi=True).info(f"<lg>{packet_rx.tracker}</> - {packet_rx.arp}")
 
     if packet_rx.arp.oper == arp.ps.ARP_OP_REQUEST:
         # Check if request contains our IP address in SPA field, this indicates IP address conflict

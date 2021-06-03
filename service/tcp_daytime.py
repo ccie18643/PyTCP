@@ -29,67 +29,51 @@
 #
 
 
-import threading
+from __future__ import annotations  # Required by Python ver < 3.10
+
 import time
+from datetime import datetime
+from typing import TYPE_CHECKING
 
-from tcp.socket import TcpSocket
+from service.tcp_generic import ServiceTcp
 
-# from datetime import datetime
+if TYPE_CHECKING:
+    from lib.socket import Socket
 
 
-class ServiceTcpDaytime:
+class ServiceTcpDaytime(ServiceTcp):
     """TCP Daytime service support class"""
 
-    def __init__(self, local_ip_address: str = "*", local_port: int = 13, message_count: int = 10, message_delay: int = 0, message_size: int = 1):
+    def __init__(self, local_ip_address: str, local_port: int = 13, message_count: int = -1, message_delay: int = 1):
         """Class constructor"""
 
-        self.local_ip_address = local_ip_address
-        self.local_port = local_port
+        super().__init__("Daytime", local_ip_address, local_port)
+
         self.message_count = message_count
         self.message_delay = message_delay
-        self.message_size = message_size
 
-        threading.Thread(target=self.__thread_service).start()
-
-    def __thread_service(self) -> None:
-        """Service initialization"""
-
-        socket = TcpSocket()
-        socket.bind(self.local_ip_address, self.local_port)
-        socket.listen()
-        print(f"Service TCP Daytime: Socket created, bound to {self.local_ip_address}, port {self.local_port} and set to listening mode")
-
-        while True:
-            new_socket = socket.accept()
-            print(f"Service TCP Daytime: Inbound connection received from {new_socket.remote_ip_address}, port {new_socket.remote_port}")
-
-            threading.Thread(target=self.__thread_connection, args=(new_socket,)).start()
-
-    def __thread_connection(self, socket: TcpSocket) -> None:
+    def service(self, cs: Socket) -> None:
         """Inbound connection handler"""
 
-        # Don't want to be working on object variable as it may be shared by multiple connections
+        # Don't want to be working on object variable as it may be shar by multiple connections
         message_count = self.message_count
 
+        print(f"Service TCP Daytime: Sending first message to {cs.remote_ip_address}, port {cs.remote_port}")
+        cs.send(b"***CLIENT OPEN / SERVICE OPEN***\n")
+
+        message_count = self.message_count
         while message_count:
-            # daytime = "bytes(str(datetime.now()) + "\n", "utf-8") * self.message_size
+            message = bytes(str(datetime.now()) + "\n", "utf-8")
 
-            message = "[------START------] "
-            for i in range(self.message_size - 2):
-                message += f"[------{i + 1:05}------] "
-            message += "[-------END-------]\n"
-            daytime = bytes(message, "utf-8")
-
-            if result := socket.send(daytime):
-                print(f"Service TCP Daytime: Sent daytime message to {socket.remote_ip_address}, port {socket.remote_port}")
-                time.sleep(self.message_delay)
-                message_count = min(message_count, message_count - 1)
-                if result == -1:
-                    print(f"Service TCP Daytime: Connection to {socket.remote_ip_address}, port {socket.remote_port} has been closed by remote peer")
-                    break
-            else:
-                print(f"Service TCP Daytime: Connection to {socket.remote_ip_address}, port {socket.remote_port} has failed")
+            try:
+                cs.send(message)
+            except OSError as error:
+                print(f"Service TCP Daytime: send() error - [{error}]")
                 break
 
-        socket.close()
-        print(f"Service TCP Daytime: Closed connection to {socket.remote_ip_address}, port {socket.remote_port}")
+            print(f"Service TCP Daytime: Sent {len(message)} bytes of data to {cs.remote_ip_address}, port {cs.remote_port}")
+            time.sleep(self.message_delay)
+            message_count = min(message_count, message_count - 1)
+
+        cs.close()
+        print(f"Service TCP Daytime: Closed connection to {cs.remote_ip_address}, port {cs.remote_port}")

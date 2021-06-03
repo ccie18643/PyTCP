@@ -29,6 +29,7 @@
 #
 
 from sys import version_info
+from typing import Optional
 
 assert version_info >= (3, 9), "PyTCP requires Python version 3.9 or higher"
 
@@ -76,18 +77,18 @@ ip6_frag_flow_timeout = 5
 # Each entry is a tuple interface address/prefix length and second is default gateway for this subnet
 # Basic routing is implemented and each subnet can have its own gateway
 # Link local addresses should have default gateway set to 'None'
-ip6_host_candidate = [
-    ("FE80::7/64", ""),
+ip6_host_candidate: list[tuple[str, Optional[str]]] = [
+    ("FE80::7/64", None),
     # ("2007::7/64", "FE80::1"),
 ]
 
 # IPv4 DHCP based address configuration
-ip4_address_dhcp_config = True
+ip4_address_dhcp = True
 
 # Static IPv4 adrsses may to be configured here (they will still be subject to ARP Probe/Announcement mechanism)
 # Each entry is a tuple interface address/prefix length and second is default gateway for this subnet
 # Basic routing is implemented and each subnet can have its own gateway
-ip4_host_candidate = [
+ip4_host_candidate: list[tuple[str, Optional[str]]] = [
     ("192.168.9.7/24", "192.168.9.1"),
     # ("192.168.9.77/24", "192.168.9.1"),
     # ("172.16.17.7/24", "172.16.17.1"),
@@ -104,28 +105,14 @@ arp_cache_update_from_gratuitious_reply = True
 nd_cache_entry_max_age = 3600
 nd_cache_entry_refresh_time = 300
 
-# TCP ephemeral port range to be used by outbound connections
+# TCP ephemeral port range to be used by outbound connections - legacy
 tcp_ephemeral_port_range = (32168, 60999)
 
-# UDP ephemeral port range to be used by outbound connections
-udp_ephemeral_port_range = (32168, 60999)
+# TCP/UDP ephemeral port range to be used by outbound connections
+ephemeral_port_range = range(32168, 60700, 2)
 
 # TAP interface MTU, describes how much payload Ethernet packet can carry
 mtu = 1500
 
 local_tcp_mss = 1460  # Maximum segment peer can send to us
 local_tcp_win = 65535  # Maximum amount of data peer can send to us without confirmation
-
-# Test services, for detailed configuration of each reffer to pytcp.py and respective service/client file
-# Those are being used for testing various stack components are therefore their 'default' funcionality may be altered for specific test needs
-# Eg. TCP daytime service generates large amount of text data used to verify TCP protocol funcionality
-service_udp_echo = True
-service_udp_discard = False
-service_udp_daytime = False
-service_tcp_echo = True
-service_tcp_discard = False
-service_tcp_daytime = False
-
-# For using test clients proper IP addressing needs to be set up in file 'pytcp.py'
-client_tcp_echo = False
-client_icmp_echo = False

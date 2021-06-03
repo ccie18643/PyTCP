@@ -35,7 +35,7 @@ import struct
 
 import ip6.ps
 import ip6_ext_frag.ps
-from misc.tracker import Tracker
+from lib.tracker import Tracker
 
 
 class Ip6ExtFragAssembler:
@@ -55,14 +55,14 @@ class Ip6ExtFragAssembler:
 
         assert next in {ip6.ps.IP6_NEXT_HEADER_ICMP6, ip6.ps.IP6_NEXT_HEADER_UDP, ip6.ps.IP6_NEXT_HEADER_TCP}
 
-        self.tracker = Tracker("TX")
-        self.next = next
-        self.offset = offset
-        self.flag_mf = flag_mf
-        self.id = id
-        self.data = data
-        self.dlen = len(data)
-        self.plen = len(self)
+        self.tracker: Tracker = Tracker("TX")
+        self.next: int = next
+        self.offset: int = offset
+        self.flag_mf: bool = flag_mf
+        self.id: int = id
+        self.data: bytes = data
+        self.dlen: int = len(data)
+        self.plen: int = len(self)
 
     def __len__(self) -> int:
         """Length of the packet"""
@@ -71,16 +71,16 @@ class Ip6ExtFragAssembler:
 
     from ip6_ext_frag.ps import __str__
 
-    def assemble(self, frame: bytearray, hptr: int, _: int):
+    def assemble(self, frame: memoryview, _: int) -> None:
         """Assemble packet into the raw form"""
 
         struct.pack_into(
             f"! BBH L {self.dlen}s",
             frame,
-            hptr,
+            0,
             self.next,
             0,
             self.offset | self.flag_mf,
             self.id,
-            self.data,
+            bytes(self.data),  # memoryview: translation to bytes necessary
         )

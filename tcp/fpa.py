@@ -37,8 +37,8 @@ from typing import Optional
 import ip4.ps
 import ip6.ps
 import tcp.ps
+from lib.tracker import Tracker
 from misc.ip_helper import inet_cksum
-from misc.tracker import Tracker
 
 
 class TcpAssembler:
@@ -64,80 +64,99 @@ class TcpAssembler:
         flag_fin: bool = False,
         win: int = 0,
         urp: int = 0,
-        options: Optional[list] = None,
+        options: Optional[list[TcpOptMss | TcpOptWscale | TcpOptSackPerm | TcpOptTimestamp | TcpOptEol | TcpOptNop]] = None,
         data: Optional[bytes] = None,
         echo_tracker: Optional[Tracker] = None,
     ) -> None:
         """Class constructor"""
 
-        self.tracker = Tracker("TX", echo_tracker)
-        self.sport = sport
-        self.dport = dport
-        self.seq = seq
-        self.ack = ack
-        self.flag_ns = flag_ns
-        self.flag_crw = flag_crw
-        self.flag_ece = flag_ece
-        self.flag_urg = flag_urg
-        self.flag_ack = flag_ack
-        self.flag_psh = flag_psh
-        self.flag_rst = flag_rst
-        self.flag_syn = flag_syn
-        self.flag_fin = flag_fin
-        self.win = win
-        self.urp = urp
-        self.options = [] if options is None else options
-        self.data = b"" if data is None else data
-        self.hlen = tcp.ps.TCP_HEADER_LEN + sum([len(_) for _ in self.options])
+        self._tracker: Tracker = Tracker("TX", echo_tracker)
+        self._sport: int = sport
+        self._dport: int = dport
+        self._seq: int = seq
+        self._ack: int = ack
+        self._flag_ns: bool = flag_ns
+        self._flag_crw: bool = flag_crw
+        self._flag_ece: bool = flag_ece
+        self._flag_urg: bool = flag_urg
+        self._flag_ack: bool = flag_ack
+        self._flag_psh: bool = flag_psh
+        self._flag_rst: bool = flag_rst
+        self._flag_syn: bool = flag_syn
+        self._flag_fin: bool = flag_fin
+        self._win: int = win
+        self._urp: int = urp
+        self._options: list[TcpOptMss | TcpOptWscale | TcpOptSackPerm | TcpOptTimestamp | TcpOptEol | TcpOptNop] = [] if options is None else options
+        self._data: bytes = b"" if data is None else data
+        self._hlen: int = tcp.ps.TCP_HEADER_LEN + sum([len(_) for _ in self._options])
 
-        assert self.hlen % 4 == 0, f"TCP header len {self.hlen} is not multiplcation of 4 bytes, check options... {self.options}"
+        assert self._hlen % 4 == 0, f"TCP header len {self._hlen} is not multiplcation of 4 bytes, check options... {self._options}"
 
     def __len__(self) -> int:
         """Length of the packet"""
 
-        return self.hlen + len(self.data)
+        return self._hlen + len(self._data)
 
-    from tcp.ps import __str__
+    def __str__(self) -> str:
+        """Packet log string"""
+
+        log = (
+            f"TCP {self._sport} > {self._dport}, {'N' if self._flag_ns else ''}{'C' if self._flag_crw else ''}"
+            + f"{'E' if self._flag_ece else ''}{'U' if self._flag_urg else ''}{'A' if self._flag_ack else ''}"
+            + f"{'P' if self._flag_psh else ''}{'R' if self._flag_rst else ''}{'S' if self._flag_syn else ''}"
+            + f"{'F' if self._flag_fin else ''}, seq {self._seq}, ack {self._ack}, win {self._win}, dlen {len(self._data)}"
+        )
+
+        for option in self._options:
+            log += ", " + str(option)
+
+        return log
 
     @property
-    def raw_options(self) -> bytes:
+    def tracker(self) -> Tracker:
+        """Getter for _tracker"""
+
+        return self._tracker
+
+    @property
+    def _raw_options(self) -> bytes:
         """Packet options in raw format"""
 
         raw_options = b""
 
-        for option in self.options:
+        for option in self._options:
             raw_options += option.raw_option
 
         return raw_options
 
-    def assemble(self, frame: bytearray, hptr: int, pshdr_sum: int):
+    def assemble(self, frame: memoryview, pshdr_sum: int) -> None:
         """Assemble packet into the raw form"""
 
         struct.pack_into(
-            f"! HH L L BBH HH {len(self.raw_options)}s {len(self.data)}s",
+            f"! HH L L BBH HH {len(self._raw_options)}s {len(self._data)}s",
             frame,
-            hptr,
-            self.sport,
-            self.dport,
-            self.seq,
-            self.ack,
-            self.hlen << 2 | self.flag_ns,
-            self.flag_crw << 7
-            | self.flag_ece << 6
-            | self.flag_urg << 5
-            | self.flag_ack << 4
-            | self.flag_psh << 3
-            | self.flag_rst << 2
-            | self.flag_syn << 1
-            | self.flag_fin,
-            self.win,
             0,
-            self.urp,
-            self.raw_options,
-            self.data,
+            self._sport,
+            self._dport,
+            self._seq,
+            self._ack,
+            self._hlen << 2 | self._flag_ns,
+            self._flag_crw << 7
+            | self._flag_ece << 6
+            | self._flag_urg << 5
+            | self._flag_ack << 4
+            | self._flag_psh << 3
+            | self._flag_rst << 2
+            | self._flag_syn << 1
+            | self._flag_fin,
+            self._win,
+            0,
+            self._urp,
+            self._raw_options,
+            self._data,
         )
 
-        struct.pack_into("! H", frame, hptr + 16, inet_cksum(frame, hptr, len(self), pshdr_sum))
+        struct.pack_into("! H", frame, 16, inet_cksum(frame, pshdr_sum))
 
 
 #
@@ -145,59 +164,119 @@ class TcpAssembler:
 #
 
 
-class TcpOptEol(tcp.ps.TcpOptEol):
+class TcpOptEol:
     """TCP option - End of Option List (0)"""
+
+    def __str__(self) -> str:
+        """Option log string"""
+
+        return "eol"
+
+    def __len__(self) -> int:
+        """Option length"""
+
+        return tcp.ps.TCP_OPT_EOL_LEN
 
     @property
     def raw_option(self) -> bytes:
         return struct.pack("!B", tcp.ps.TCP_OPT_EOL)
 
 
-class TcpOptNop(tcp.ps.TcpOptNop):
+class TcpOptNop:
     """TCP option - No Operation (1)"""
+
+    def __str__(self) -> str:
+        """Option log string"""
+
+        return "nop"
+
+    def __len__(self) -> int:
+        """Option length"""
+
+        return tcp.ps.TCP_OPT_NOP_LEN
 
     @property
     def raw_option(self) -> bytes:
         return struct.pack("!B", tcp.ps.TCP_OPT_NOP)
 
 
-class TcpOptMss(tcp.ps.TcpOptMss):
+class TcpOptMss:
     """TCP option - Maximum Segment Size (2)"""
 
     def __init__(self, mss: int) -> None:
-        self.mss = mss
+        self._mss = mss
+
+    def __str__(self) -> str:
+        """Option log string"""
+
+        return f"mss {self._mss}"
+
+    def __len__(self) -> int:
+        """Option length"""
+
+        return tcp.ps.TCP_OPT_MSS_LEN
 
     @property
     def raw_option(self) -> bytes:
-        return struct.pack("! BB H", tcp.ps.TCP_OPT_MSS, tcp.ps.TCP_OPT_MSS_LEN, self.mss)
+        return struct.pack("! BB H", tcp.ps.TCP_OPT_MSS, tcp.ps.TCP_OPT_MSS_LEN, self._mss)
 
 
-class TcpOptWscale(tcp.ps.TcpOptWscale):
+class TcpOptWscale:
     """TCP option - Window Scale (3)"""
 
     def __init__(self, wscale: int) -> None:
-        self.wscale = wscale
+        self._wscale = wscale
+
+    def __str__(self) -> str:
+        """Option log string"""
+
+        return f"wscale {self._wscale}"
+
+    def __len__(self) -> int:
+        """Option length"""
+
+        return tcp.ps.TCP_OPT_WSCALE_LEN
 
     @property
     def raw_option(self) -> bytes:
-        return struct.pack("! BB B", tcp.ps.TCP_OPT_WSCALE, tcp.ps.TCP_OPT_WSCALE_LEN, self.wscale)
+        return struct.pack("! BB B", tcp.ps.TCP_OPT_WSCALE, tcp.ps.TCP_OPT_WSCALE_LEN, self._wscale)
 
 
-class TcpOptSackPerm(tcp.ps.TcpOptSackPerm):
+class TcpOptSackPerm:
     """TCP option - Sack Permit (4)"""
+
+    def __str__(self) -> str:
+        """Option log string"""
+
+        return "sack_perm"
+
+    def __len__(self) -> int:
+        """Option length"""
+
+        return tcp.ps.TCP_OPT_SACKPERM_LEN
 
     @property
     def raw_option(self) -> bytes:
         return struct.pack("! BB", tcp.ps.TCP_OPT_SACKPERM, tcp.ps.TCP_OPT_SACKPERM_LEN)
 
 
-class TcpOptTimestamp(tcp.ps.TcpOptTimestamp):
+class TcpOptTimestamp:
     """TCP option - Timestamp (8)"""
 
     def __init__(self, tsval: int, tsecr: int) -> None:
-        self.tsval = tsval
-        self.tsecr = tsecr
+        self._tsval = tsval
+        self._tsecr = tsecr
+
+    def __str__(self) -> str:
+        """Option log string"""
+
+        return f"ts {self._tsval}/{self._tsecr}"
+
+    def __len__(self) -> int:
+        """Option length"""
+
+        return tcp.ps.TCP_OPT_TIMESTAMP_LEN
 
     @property
     def raw_option(self) -> bytes:
-        return struct.pack("! BB LL", tcp.ps.TCP_OPT_TIMESTAMP, tcp.ps.TCP_OPT_TIMESTAMP_LEN, self.tsval, self.tsecr)
+        return struct.pack("! BB LL", tcp.ps.TCP_OPT_TIMESTAMP, tcp.ps.TCP_OPT_TIMESTAMP_LEN, self._tsval, self._tsecr)

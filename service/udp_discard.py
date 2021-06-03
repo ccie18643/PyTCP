@@ -29,29 +29,28 @@
 #
 
 
-import threading
+from __future__ import annotations  # Required by Python ver < 3.10
 
-from udp.socket import UdpSocket
+from typing import TYPE_CHECKING
+
+from service.udp_generic import ServiceUdp
+
+if TYPE_CHECKING:
+    from lib.socket import Socket
 
 
-class ServiceUdpDiscard:
-    """UDP Discard service support class"""
+class ServiceUdpDiscard(ServiceUdp):
+    """UDP Echo service support class"""
 
-    def __init__(self, local_ip_address: str = "*", local_port: int = 9) -> None:
+    def __init__(self, local_ip_address: str, local_port: int = 9):
         """Class constructor"""
 
-        self.local_ip_address = local_ip_address
-        self.local_port = local_port
+        super().__init__("Discard", local_ip_address, local_port)
 
-        threading.Thread(target=self.__thread_service).start()
-
-    def __thread_service(self) -> None:
-        """Service initialization and rx/tx loop"""
-
-        socket = UdpSocket()
-        socket.bind(self.local_ip_address, self.local_port)
-        print(f"Service UDP Discard: Socket created, bound to {self.local_ip_address}, port {self.local_port}")
+    def service(self, s: Socket) -> None:
+        """Inbound connection handler"""
 
         while True:
-            packet_rx = socket.receive_from()
-            print(f"Service UDP Discard: Discarded message from {packet_rx.remote_ip_address}, port {packet_rx.remote_port}, {len(packet_rx.data)} bytes")
+            message, remote_address = s.recvfrom()
+
+            print(f"Service UDP Discard: Received {len(message)} bytes from {remote_address[0]}, port {remote_address[1]}")

@@ -37,27 +37,38 @@ import config
 import ip6.ps
 import ip6_ext_frag.ps
 from ip6_ext_frag.fpa import Ip6ExtFragAssembler
+from misc.tx_status import TxStatus
 
 if TYPE_CHECKING:
     from ip6.fpa import Ip6Assembler
 
 
-def _phtx_ip6_ext_frag(self, ip6_packet_tx: Ip6Assembler) -> None:
+def _phtx_ip6_ext_frag(self, ip6_packet_tx: Ip6Assembler) -> TxStatus:
     """Handle outbound IPv6 fagment extension header"""
 
-    # Check if IPv6 protocol support is enabled, if not then silently drop the packet
-    if not config.ip6_support:
-        return
-
-    data = bytearray(ip6_packet_tx.dlen)
-    ip6_packet_tx._carried_packet.assemble(data, 0, ip6_packet_tx.pshdr_sum)
+    data = memoryview(bytearray(ip6_packet_tx.dlen))
+    ip6_packet_tx._carried_packet.assemble(data, ip6_packet_tx.pshdr_sum)
     data_mtu = (config.mtu - ip6.ps.IP6_HEADER_LEN - ip6_ext_frag.ps.IP6_EXT_FRAG_HEADER_LEN) & 0b1111111111111000
     data_frags = [data[_ : data_mtu + _] for _ in range(0, len(data), data_mtu)]
     offset = 0
     self.ip6_id += 1
+    ip6_tx_status: set[TxStatus] = set()
     for data_frag in data_frags:
         ip6_ext_frag_tx = Ip6ExtFragAssembler(next=ip6_packet_tx.next, offset=offset, flag_mf=data_frag is not data_frags[-1], id=self.ip6_id, data=data_frag)
         if __debug__:
             self._logger.debug(f"{ip6_ext_frag_tx.tracker} - {ip6_ext_frag_tx}")
-        self._phtx_ip6(ip6_src=ip6_packet_tx.src, ip6_dst=ip6_packet_tx.dst, carried_packet=ip6_ext_frag_tx)
+        ip6_tx_status.add(self._phtx_ip6(ip6_src=ip6_packet_tx.src, ip6_dst=ip6_packet_tx.dst, carried_packet=ip6_ext_frag_tx))
         offset += len(data_frag)
+
+    # Return the most severe code
+    for tx_status in [
+        TxStatus.DROPED_ETHER_RESOLUTION_FAIL,
+        TxStatus.DROPED_ETHER_NO_GATEWAY,
+        TxStatus.DROPED_ETHER_CACHE_FAIL,
+        TxStatus.DROPED_ETHER_GATEWAY_CACHE_FAIL,
+        TxStatus.PASSED_TO_TX_RING,
+    ]:
+        if tx_status in ip6_tx_status:
+            return tx_status
+
+    return TxStatus.DROPED_IP6_EXT_FRAG_UNKNOWN

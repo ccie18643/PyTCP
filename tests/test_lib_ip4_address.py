@@ -58,42 +58,44 @@ class TestLibIp4Address(TestCase):
             is_unspecified: bool = False
             is_reserved: bool = False
             is_limited_broadcast: bool = False
+            is_unicast: bool = False
+            is_invalid: bool = False
 
         self.ip4_samples = [
             Ip4Sample(Ip4Address("0.0.0.0"), is_unspecified=True),
-            Ip4Sample(Ip4Address("0.0.0.1")),
-            Ip4Sample(Ip4Address("0.255.255.255")),
-            Ip4Sample(Ip4Address("1.0.0.0"), is_global=True),
-            Ip4Sample(Ip4Address("8.8.8.8"), is_global=True),
-            Ip4Sample(Ip4Address("169.253.255.255"), is_global=True),
-            Ip4Sample(Ip4Address("169.255.0.0"), is_global=True),
-            Ip4Sample(Ip4Address("126.255.255.255"), is_global=True),
-            Ip4Sample(Ip4Address("128.0.0.0"), is_global=True),
-            Ip4Sample(Ip4Address("9.255.255.255"), is_global=True),
-            Ip4Sample(Ip4Address("11.0.0.0"), is_global=True),
-            Ip4Sample(Ip4Address("172.15.255.255"), is_global=True),
-            Ip4Sample(Ip4Address("172.32.0.0"), is_global=True),
-            Ip4Sample(Ip4Address("192.167.255.255"), is_global=True),
-            Ip4Sample(Ip4Address("192.169.0.0"), is_global=True),
-            Ip4Sample(Ip4Address("223.255.255.255"), is_global=True),
-            Ip4Sample(Ip4Address("169.254.0.0"), is_link_local=True),
-            Ip4Sample(Ip4Address("169.254.100.10"), is_link_local=True),
-            Ip4Sample(Ip4Address("169.254.255.255"), is_link_local=True),
-            Ip4Sample(Ip4Address("127.0.0.0"), is_loopback=True),
-            Ip4Sample(Ip4Address("127.100.50.25"), is_loopback=True),
-            Ip4Sample(Ip4Address("127.255.255.255"), is_loopback=True),
+            Ip4Sample(Ip4Address("0.0.0.1"), is_invalid=True),
+            Ip4Sample(Ip4Address("0.255.255.255"), is_invalid=True),
+            Ip4Sample(Ip4Address("1.0.0.0"), is_global=True, is_unicast=True),
+            Ip4Sample(Ip4Address("8.8.8.8"), is_global=True, is_unicast=True),
+            Ip4Sample(Ip4Address("169.253.255.255"), is_global=True, is_unicast=True),
+            Ip4Sample(Ip4Address("169.255.0.0"), is_global=True, is_unicast=True),
+            Ip4Sample(Ip4Address("126.255.255.255"), is_global=True, is_unicast=True),
+            Ip4Sample(Ip4Address("128.0.0.0"), is_global=True, is_unicast=True),
+            Ip4Sample(Ip4Address("9.255.255.255"), is_global=True, is_unicast=True),
+            Ip4Sample(Ip4Address("11.0.0.0"), is_global=True, is_unicast=True),
+            Ip4Sample(Ip4Address("172.15.255.255"), is_global=True, is_unicast=True),
+            Ip4Sample(Ip4Address("172.32.0.0"), is_global=True, is_unicast=True),
+            Ip4Sample(Ip4Address("192.167.255.255"), is_global=True, is_unicast=True),
+            Ip4Sample(Ip4Address("192.169.0.0"), is_global=True, is_unicast=True),
+            Ip4Sample(Ip4Address("223.255.255.255"), is_global=True, is_unicast=True),
+            Ip4Sample(Ip4Address("169.254.0.0"), is_link_local=True, is_unicast=True),
+            Ip4Sample(Ip4Address("169.254.100.10"), is_link_local=True, is_unicast=True),
+            Ip4Sample(Ip4Address("169.254.255.255"), is_link_local=True, is_unicast=True),
+            Ip4Sample(Ip4Address("127.0.0.0"), is_loopback=True, is_unicast=True),
+            Ip4Sample(Ip4Address("127.100.50.25"), is_loopback=True, is_unicast=True),
+            Ip4Sample(Ip4Address("127.255.255.255"), is_loopback=True, is_unicast=True),
             Ip4Sample(Ip4Address("224.0.0.0"), is_multicast=True),
             Ip4Sample(Ip4Address("230.0.0.5"), is_multicast=True),
             Ip4Sample(Ip4Address("239.255.255.255"), is_multicast=True),
-            Ip4Sample(Ip4Address("192.168.0.0"), is_private=True),
-            Ip4Sample(Ip4Address("192.168.100.100"), is_private=True),
-            Ip4Sample(Ip4Address("192.168.255.255"), is_private=True),
-            Ip4Sample(Ip4Address("172.16.0.0"), is_private=True),
-            Ip4Sample(Ip4Address("172.16.100.100"), is_private=True),
-            Ip4Sample(Ip4Address("172.31.255.255"), is_private=True),
-            Ip4Sample(Ip4Address("10.0.0.0"), is_private=True),
-            Ip4Sample(Ip4Address("10.100.100.100"), is_private=True),
-            Ip4Sample(Ip4Address("10.255.255.255"), is_private=True),
+            Ip4Sample(Ip4Address("192.168.0.0"), is_private=True, is_unicast=True),
+            Ip4Sample(Ip4Address("192.168.100.100"), is_private=True, is_unicast=True),
+            Ip4Sample(Ip4Address("192.168.255.255"), is_private=True, is_unicast=True),
+            Ip4Sample(Ip4Address("172.16.0.0"), is_private=True, is_unicast=True),
+            Ip4Sample(Ip4Address("172.16.100.100"), is_private=True, is_unicast=True),
+            Ip4Sample(Ip4Address("172.31.255.255"), is_private=True, is_unicast=True),
+            Ip4Sample(Ip4Address("10.0.0.0"), is_private=True, is_unicast=True),
+            Ip4Sample(Ip4Address("10.100.100.100"), is_private=True, is_unicast=True),
+            Ip4Sample(Ip4Address("10.255.255.255"), is_private=True, is_unicast=True),
             Ip4Sample(Ip4Address("240.0.0.0"), is_reserved=True),
             Ip4Sample(Ip4Address("255.255.255.254"), is_reserved=True),
             Ip4Sample(Ip4Address("255.255.255.255"), is_limited_broadcast=True),
@@ -128,8 +130,17 @@ class TestLibIp4Address(TestCase):
     def test___hash__(self):
         self.assertEqual(hash(Ip4Address("192.168.9.1")), hash(b"\xc0\xa8\t\x01"))
 
+    def test___contains__(self):
+        self.assertIn(Ip4Address("192.168.9.7"), Ip4Network("192.168.9.0/24"))
+        self.assertNotIn(Ip4Address("192.168.9.7"), Ip4Network("172.16.0.0/12"))
+        self.assertNotIn(Ip4Address("192.168.9.7"), Ip4Network("10.0.0.0/8"))
+
     def test_version(self):
         self.assertEqual(Ip4Address("192.168.9.1").version, 4)
+
+    def test_is_invalid(self):
+        for sample in self.ip4_samples:
+            self.assertEqual(sample.ip4_address.is_invalid, sample.is_invalid)
 
     def test_is_global(self):
         for sample in self.ip4_samples:
@@ -158,6 +169,13 @@ class TestLibIp4Address(TestCase):
     def test_is_limited_broadcast(self):
         for sample in self.ip4_samples:
             self.assertEqual(sample.ip4_address.is_limited_broadcast, sample.is_limited_broadcast)
+
+    def test_is_unicast(self):
+        for sample in self.ip4_samples:
+            self.assertEqual(sample.ip4_address.is_unicast, sample.is_unicast)
+
+    def test_unspecified(self):
+        self.assertEqual(Ip4Address("192.168.9.1").unspecified, Ip4Address("0.0.0.0"))
 
 
 class TestLibIp4Mask(TestCase):

@@ -29,13 +29,25 @@
 #
 
 
+from __future__ import annotations  # Required by Python ver < 3.10
+
 import random
 import threading
+from enum import Enum, auto
+from typing import TYPE_CHECKING, Any, Callable, Optional
 
 import loguru
 
 import config
 import misc.stack as stack
+
+if TYPE_CHECKING:
+    from threading import Lock, RLock, Semaphore
+
+    from lib.ip_address import IpAddress
+    from lib.socket import Socket
+    from tcp.metadata import TcpMetadata
+
 
 PACKET_RETRANSMIT_TIMEOUT = 1000  # Retransmit data if ACK not received
 PACKET_RETRANSMIT_MAX_COUNT = 3  # If data is not acked, retransit it 5 times
@@ -43,573 +55,665 @@ DELAYED_ACK_DELAY = 100  # Delay between consecutive delayed ACK outbound packet
 TIME_WAIT_DELAY = 30000  # 30s delay for the TIME_WAIT state, default is 30-120s
 
 
-def trace_fsm(function):
+class TcpSessionError(Exception):
+    """Critical errors"""
+
+
+class SysCall(Enum):
+    """System call identifier"""
+
+    LISTEN = auto()
+    CONNECT = auto()
+    CLOSE = auto()
+
+    def __str__(self) -> str:
+        return str(self.name)
+
+
+class FsmState(Enum):
+    """TCP Finite State Machine state identifier"""
+
+    CLOSED = auto()
+    LISTEN = auto()
+    SYN_SENT = auto()
+    SYN_RCVD = auto()
+    ESTABLISHED = auto()
+    FIN_WAIT_1 = auto()
+    FIN_WAIT_2 = auto()
+    CLOSING = auto()
+    CLOSE_WAIT = auto()
+    LAST_ACK = auto()
+    TIME_WAIT = auto()
+
+    def __str__(self) -> str:
+        return str(self.name)
+
+
+class ConnError(Enum):
+    """Connection fail reasons"""
+
+    NONE = auto()
+    REFUSED = auto()
+    TIMEOUT = auto()
+
+    def __str__(self) -> str:
+        return str(self.name)
+
+
+def trace_fsm(function: Callable) -> Callable:
     """Decorator for tracing FSM state"""
 
-    def _(self, *args, **kwargs):
+    def _(self, *args: list[Any], **kwargs: dict[str, Any]) -> Any:
         print(
-            f"[ >>> ] snd_nxt {self.snd_nxt}, snd_una {self.snd_una},",
-            f"rcv_nxt {self.rcv_nxt}, rcv_una {self.rcv_una}",
+            f"[ >>> ] snd_nxt {self._snd_nxt}, snd_una {self._snd_una},",
+            f"rcv_nxt {self._rcv_nxt}, rcv_una {self._rcv_una}",
         )
         retval = function(self, *args, **kwargs)
         print(
-            f"[ <<< ] snd_nxt {self.snd_nxt}, snd_una {self.snd_una},",
-            f"rcv_nxt {self.rcv_nxt}, rcv_una {self.rcv_una}",
+            f"[ <<< ] snd_nxt {self._snd_nxt}, snd_una {self._snd_una},",
+            f"rcv_nxt {self._rcv_nxt}, rcv_una {self._rcv_una}",
         )
         return retval
 
     return _
 
 
-def trace_win(self):
+def trace_win(self) -> None:
     """Method used to trace sliding window operation, invoke as 'trace_win(self)' from within the TcpSession object"""
 
-    remaining_data_len = len(self.tx_buffer) - self.tx_buffer_nxt
-    usable_window = self.tx_buffer_una + self.snd_ewn - self.tx_buffer_nxt
-    transmit_data_len = min(self.snd_mss, usable_window, remaining_data_len)
+    remaining_data_len = len(self._tx_buffer) - self._tx_buffer_nxt
+    usable_window = self._tx_buffer_una + self._snd_ewn - self._tx_buffer_nxt
+    transmit_data_len = min(self._snd_mss, usable_window, remaining_data_len)
     print("unsent_data:", remaining_data_len)
     print("usable_window:", usable_window)
     print("transmit_data_len:", transmit_data_len)
-    print("self.snd_nxt:", self.snd_nxt)
-    print("self.snd_una:", self.snd_una)
-    print("self.tx_buffer_seq_mod:", self.tx_buffer_seq_mod)
-    print("self.tx_buffer_nxt:", self.tx_buffer_nxt)
-    print("self.tx_buffer_una:", self.tx_buffer_una)
+    print("self._snd_nxt:", self._snd_nxt)
+    print("self._snd_una:", self._snd_una)
+    print("self._tx_buffer_seq_mod:", self._tx_buffer_seq_mod)
+    print("self._tx_buffer_nxt:", self._tx_buffer_nxt)
+    print("self._tx_buffer_una:", self._tx_buffer_una)
 
 
 class TcpSession:
     """Class defining all the TCP session parameters"""
 
-    def __init__(self, local_ip_address=None, local_port=None, remote_ip_address=None, remote_port=None, socket=None):
+    def __init__(
+        self,
+        local_ip_address: IpAddress,
+        local_port: int,
+        remote_ip_address: IpAddress,
+        remote_port: int,
+        socket: Socket,
+    ) -> None:
         """Class constructor"""
 
         if __debug__:
             self._logger = loguru.logger.bind(object_name="tcp_session.")
 
-        self.local_ip_address = local_ip_address
-        self.local_port = local_port if local_port else self._pick_random_local_port()
-        self.remote_ip_address = remote_ip_address
-        self.remote_port = remote_port
+        self._local_ip_address: IpAddress = local_ip_address
+        self._local_port: int = local_port
+        self._remote_ip_address: IpAddress = remote_ip_address
+        self._remote_port: int = remote_port
+        self._socket: Socket = socket  # Keeps track of the socket that owns this session for the session -> socket communication purposes
 
-        self.socket = socket  # Keeps track of the socket that owns this session for the session -> socket communication purposes
-
-        self.rx_buffer = []  # Keeps data received from peer and not received by application yet
-        self.tx_buffer = []  # Keeps data sent by application but not acknowledged by peer yet
+        self._rx_buffer: bytearray = bytearray()  # Keeps data received from peer and not received by application yet
+        self._tx_buffer: bytearray = bytearray()  # Keeps data sent by application but not acknowledged by peer yet
 
         # Receiving window parameters
-        self.rcv_ini = None  # Initial seq number
-        self.rcv_nxt = None  # Next seq to be received
-        self.rcv_una = None  # Seq we acked
-        self.rcv_mss = config.mtu - 40  # Maximum segment size
-        self.rcv_wnd = 65535  # Window size
-        self.rcv_wsc = 1  # Window scale
+        self._rcv_ini: int = 0  # Initial seq number
+        self._rcv_nxt: int = 0  # Next seq to be received
+        self._rcv_una: int = 0  # Seq we acked
+        self._rcv_mss: int = config.mtu - 40  # Maximum segment size
+        self._rcv_wnd: int = 65535  # Window size
+        self._rcv_wsc: int = 1  # Window scale
 
         # Sending window parameters
-        self.snd_ini = random.randint(0, 0xFFFFFFFF)  # Initial seq number
-        self.snd_nxt = self.snd_ini  # Next seq to be sent
-        self.snd_max = self.snd_ini  # Maximum seq ever sent
-        self.snd_una = self.snd_ini  # Seq not yet acknowledged by peer
-        self.snd_fin = None  # Seq of FIN packet
-        self.snd_mss = 536  # Maximum segment size
-        self.snd_wnd = self.snd_mss  # Window size
-        self.snd_ewn = self.snd_mss  # Effective window size, used as simple congestion management mechanism
-        self.snd_wsc = 1  # Window scale, this is always initialized as 1 because initial SYN / SYN + ACK packets don't use wscale for backward compatibility
+        self._snd_ini: int = random.randint(0, 0xFFFFFFFF)  # Initial seq number
+        self._snd_nxt: int = self._snd_ini  # Next seq to be sent
+        self._snd_max: int = self._snd_ini  # Maximum seq ever sent
+        self._snd_una: int = self._snd_ini  # Seq not yet acknowledged by peer
+        self._snd_fin: int = 0  # Seq of FIN packet
+        self._snd_mss: int = 536  # Maximum segment size
+        self._snd_wnd: int = self._snd_mss  # Window size
+        self._snd_ewn: int = self._snd_mss  # Effective window size, used as simple congestion management mechanism
+        self._snd_wsc: int = 1  # Window scale, initialized to 1 because initial SYN / SYN + ACK packets don't use wscale for backward compatibility
 
-        self.tx_retransmit_request_counter = {}  # Keeps track of DUP packets sent from peer to determine if any of them is a retransmit request
-        self.tx_retransmit_timeout_counter = {}  # Keeps track of the timestamps for the sent out packets, used to determine when to retransmit packet
-        self.rx_retransmit_request_counter = {}  # Keeps track of us sending 'fast retransmit request' packets so we can limit their count to 2
+        # Keeps track of number of DUP packets sent by peer to determine if any is a retransmit request
+        self._tx_retransmit_request_counter: dict[int, int] = {}
 
-        self.tx_buffer_seq_mod = self.snd_ini  # Used to help translate local_seq_send and snd_una numbers to TX buffer pointers
+        # Keeps track of the timestamps for the sent out packets, used to determine when to retransmit packet
+        self._tx_retransmit_timeout_counter: dict[int, int] = {}
 
-        self.state = "CLOSED"  # TCP FSM (Finite State Machine) state
+        # Keeps track of us sending 'fast retransmit request' packets so we can limit their count to 2
+        self._rx_retransmit_request_counter: dict[int, int] = {}
 
-        self.event_connect = threading.Semaphore(0)  # Used to inform CONNECT syscall that connection related event happened
-        self.event_rx_buffer = threading.Semaphore(0)  # USed to inform RECV syscall that there is new data in buffer ready to be picked up
+        self._tx_buffer_seq_mod: int = self._snd_ini  # Used to help translate local_seq_send and snd_una numbers to TX buffer pointers
 
-        self.lock_fsm = threading.RLock()  # Used to ensure that only single event can run FSM at given time
-        self.lock_rx_buffer = threading.Lock()  # Used to ensure only single event has access to RX buffer at given time
-        self.lock_tx_buffer = threading.Lock()  # Used to ensure only single event has access to TX buffer at given time
+        self._state: FsmState = FsmState.CLOSED  # TCP FSM (Finite FsmState Machine) state
 
-        self.closing = False  # Indicates that CLOSE syscall is in progress, this lets to finish sending data before FIN packet is transmitted
+        self._event_connect: Semaphore = threading.Semaphore(0)  # Used to inform CONNECT syscall that connection related event happened
+        self._event_rx_buffer: Semaphore = threading.Semaphore(0)  # Used to inform RECV syscall that there is new data in buffer ready to be picked up
 
-        self.ooo_packet_queue = {}  # Out of order packet buffer
+        self._lock_fsm: RLock = threading.RLock()  # Used to ensure that only single event can run FSM at given time
+        self._lock_rx_buffer: Lock = threading.Lock()  # Used to ensure only single event has access to RX buffer at given time
+        self._lock_tx_buffer: Lock = threading.Lock()  # Used to ensure only single event has access to TX buffer at given time
+
+        self._closing: bool = False  # Indicates that CLOSE syscall is in progress, this lets to finish sending data before FIN packet is transmitted
+
+        self._ooo_packet_queue: dict[int, TcpMetadata] = {}  # Out of order packet buffer
+
+        self._connection_error: ConnError = ConnError.NONE  # Used to report cause of connection failure
 
         # Setup timer to execute FSM time event every millisecond
         stack.timer.register_method(method=self.tcp_fsm, kwargs={"timer": True})
 
-    def __str__(self):
+    def __str__(self) -> str:
         """String representation"""
 
-        return self.tcp_session_id
+        return f"{self._local_ip_address}/{self._local_port}/{self._remote_ip_address}/{self._remote_port}"
 
     @property
-    def tcp_session_id(self):
-        """Session ID"""
+    def local_ip_address(self) -> IpAddress:
+        """Getter for _local_ip_address"""
 
-        return f"TCP/{self.local_ip_address}/{self.local_port}/{self.remote_ip_address}/{self.remote_port}"
+        return self._local_ip_address
 
     @property
-    def tx_buffer_nxt(self):
+    def remote_ip_address(self) -> IpAddress:
+        """Getter for _remote_ip_address"""
+
+        return self._remote_ip_address
+
+    @property
+    def local_port(self) -> int:
+        """Getter for _local_port"""
+
+        return self._local_port
+
+    @property
+    def remote_port(self) -> int:
+        """Getter for _remote_port"""
+
+        return self._remote_port
+
+    @property
+    def socket(self) -> Socket:
+        """Getter for _socket"""
+
+        return self._socket
+
+    @property
+    def state(self) -> FsmState:
+        """Getter for _state"""
+
+        return self._state
+
+    @property
+    def _tx_buffer_nxt(self) -> int:
         """'snd_nxt' number relative to TX buffer"""
 
-        return max(self.snd_nxt - self.tx_buffer_seq_mod, 0)
+        return max(self._snd_nxt - self._tx_buffer_seq_mod, 0)
 
     @property
-    def tx_buffer_una(self):
+    def _tx_buffer_una(self) -> int:
         """'snd_una' number relative to TX buffer"""
 
-        return max(self.snd_una - self.tx_buffer_seq_mod, 0)
+        return max(self._snd_una - self._tx_buffer_seq_mod, 0)
 
-    def listen(self):
+    def listen(self) -> None:
         """LISTEN syscall"""
 
         if __debug__:
-            self._logger.debug(f"{self.tcp_session_id} - State {self.state} - got LISTEN syscall")
-        return self.tcp_fsm(syscall="LISTEN")
+            self._logger.opt(ansi=True).debug(f"[{self}] - <y>[{self._state}]</> - got <r>LISTEN</> syscall")
+        self.tcp_fsm(syscall=SysCall.LISTEN)
 
-    def connect(self):
+    def connect(self) -> None:
         """CONNECT syscall"""
 
         if __debug__:
-            self._logger.debug(f"{self.tcp_session_id} - State {self.state} - got CONNECT syscall")
-        self.tcp_fsm(syscall="CONNECT")
-        self.event_connect.acquire()
-        return self.state == "ESTABLISHED"
+            self._logger.opt(ansi=True).debug(f"[{self}] - <y>[{self._state}]</> - got <r>CONNECT</> syscall")
+        self.tcp_fsm(syscall=SysCall.CONNECT)
+        self._event_connect.acquire()
+        if self._state is not FsmState.ESTABLISHED and self._connection_error is ConnError.REFUSED:
+            raise TcpSessionError("Connection refused")
+        if self._state is not FsmState.ESTABLISHED and self._connection_error is ConnError.TIMEOUT:
+            raise TcpSessionError("Connection timeout")
 
-    def send(self, data):
+    def send(self, data: bytes) -> int:
         """SEND syscall"""
 
-        if self.state in {"ESTABLISHED", "CLOSE_WAIT"}:
-            with self.lock_tx_buffer:
-                self.tx_buffer.extend(list(data))
-                return len(data) if self.state == "ESTABLISHED" else -1
-        return None
+        if self._state in {FsmState.ESTABLISHED, FsmState.CLOSE_WAIT}:
+            with self._lock_tx_buffer:
+                self._tx_buffer.extend(data)
+                return len(data)
 
-    def receive(self, byte_count=None):
+        # This error should be risen when session is localy or fully closed
+        raise TcpSessionError("TCP session not in ESTABLISED or CLOSE_WAIT state")
+
+    def receive(self, byte_count=None) -> bytes:
         """RECEIVE syscall"""
 
-        # Wait till there is any data in the buffer
-        self.event_rx_buffer.acquire()
+        # Wait till there is any data in the buffer (this will get bypassed when FSM goes into CLOSE_WAIT or CLOSED)
+        self._event_rx_buffer.acquire()
 
-        # If there is no data in RX buffer and remote end closed connection then notify application
-        if not self.rx_buffer and self.state == "CLOSE_WAIT":
-            return None
+        # If there is no data in RX buffer and remote end closed connection then notify application by returning empty byte string
+        if not self._rx_buffer and self._state in {FsmState.CLOSE_WAIT, FsmState.CLOSED}:
+            return b""
 
-        with self.lock_rx_buffer:
+        with self._lock_rx_buffer:
             if byte_count is None:
-                byte_count = len(self.rx_buffer)
+                byte_count = len(self._rx_buffer)
             else:
-                byte_count = min(byte_count, len(self.rx_buffer))
+                byte_count = min(byte_count, len(self._rx_buffer))
 
-            rx_buffer = self.rx_buffer[:byte_count]
-            del self.rx_buffer[:byte_count]
+            rx_buffer = self._rx_buffer[:byte_count]
+            del self._rx_buffer[:byte_count]
 
             # If there is any data left in buffer or the remote end closed connection then release the rx_buffer event
-            if self.rx_buffer or self.state == "CLOSE_WAIT":
-                self.event_rx_buffer.release()
+            if self._rx_buffer or self._state in {FsmState.CLOSE_WAIT, FsmState.CLOSED}:
+                self._event_rx_buffer.release()
 
         return bytes(rx_buffer)
 
-    def close(self):
+    def close(self) -> None:
         """CLOSE syscall"""
 
         if __debug__:
-            self._logger.debug(f"{self.tcp_session_id} - State {self.state} - got CLOSE syscall, {len(self.tx_buffer)} bytes in TX buffer")
-        self.tcp_fsm(syscall="CLOSE")
+            self._logger.opt(ansi=True).debug(f"[{self}] - <y>[{self._state}]</> - got <r>CLOSE</> syscall, {len(self._tx_buffer)} bytes in TX buffer")
+        self.tcp_fsm(syscall=SysCall.CLOSE)
 
-    def _pick_random_local_port(self):
-        """Pick random local port, making sure it is not already being used by any session bound to the same local IP"""
-
-        used_ports = {int(_.split("/")[2]) for _ in stack.tcp_sessions if _.split("/")[1] in {"*", self.local_ip_address}}
-        while (port := random.randint(*config.tcp_ephemeral_port_range)) not in used_ports:
-            return port
-
-    def _change_state(self, state):
+    def _change_state(self, state: FsmState) -> None:
         """Change the state of TCP finite state machine"""
 
-        old_state = self.state
-        self.state = state
+        old_state = self._state
+        self._state = state
         if old_state:
             if __debug__:
-                self._logger.opt(ansi=True, depth=1).info(f"{self.tcp_session_id} - State changed: <yellow> {old_state} -> {self.state}</>")
-
-        # Register session
-        if self.state in {"SYN_SENT", "LISTEN"}:
-            stack.tcp_sessions[self.tcp_session_id] = self
-            if __debug__:
-                self._logger.debug(f"{self.tcp_session_id} - Registered TCP session")
+                self._logger.opt(ansi=True, depth=1).info(f"[{self}] - <y>[{old_state} -> {self._state}]</>")
 
         # Unregister session
-        if self.state in {"CLOSED"}:
-            stack.tcp_sessions.pop(self.tcp_session_id)
+        if self._state in {FsmState.CLOSED}:
+            stack.sockets.pop(str(self._socket))
             if __debug__:
-                self._logger.debug(f"{self.tcp_session_id} - Unregistered TCP session")
+                self._logger.debug(f"[{self}] - Unregister associated socket")
 
-    def _transmit_packet(self, seq=None, flag_syn=False, flag_ack=False, flag_fin=False, flag_rst=False, data=b""):
+    def _transmit_packet(
+        self,
+        seq: Optional[int] = None,
+        flag_syn: bool = False,
+        flag_ack: bool = False,
+        flag_fin: bool = False,
+        flag_rst: bool = False,
+        data: Optional[bytes] = None,
+    ) -> None:
         """Send out TCP packet"""
 
-        seq = seq if seq else self.snd_nxt
-        ack = self.rcv_nxt if flag_ack else 0
+        seq = seq if seq is not None else self._snd_nxt
+        ack = self._rcv_nxt if flag_ack else 0
 
-        stack.packet_handler._phtx_tcp(
-            ip_src=self.local_ip_address,
-            ip_dst=self.remote_ip_address,
-            tcp_sport=self.local_port,
-            tcp_dport=self.remote_port,
-            tcp_seq=seq,
-            tcp_ack=ack,
-            tcp_flag_syn=flag_syn,
-            tcp_flag_ack=flag_ack,
-            tcp_flag_fin=flag_fin,
-            tcp_flag_rst=flag_rst,
-            tcp_win=self.rcv_wnd,
-            tcp_mss=self.rcv_mss if flag_syn else None,
-            tcp_data=data,
+        stack.packet_handler.send_tcp_packet(
+            local_ip_address=self._local_ip_address,
+            remote_ip_address=self._remote_ip_address,
+            local_port=self._local_port,
+            remote_port=self._remote_port,
+            flag_syn=flag_syn,
+            flag_ack=flag_ack,
+            flag_fin=flag_fin,
+            flag_rst=flag_rst,
+            seq=seq,
+            ack=ack,
+            win=self._rcv_wnd,
+            mss=self._rcv_mss if flag_syn else None,
+            wscale=0 if flag_syn else None,
+            data=data,
         )
-        self.rcv_una = self.rcv_nxt
-        self.snd_nxt = seq + len(data) + flag_syn + flag_fin
-        self.snd_max = max(self.snd_max, self.snd_nxt)
-        self.tx_buffer_seq_mod += flag_syn + flag_fin
+        self._rcv_una = self._rcv_nxt
+        self._snd_nxt = seq + (0 if data is None else len(data)) + flag_syn + flag_fin
+        self._snd_max = max(self._snd_max, self._snd_nxt)
+        self._tx_buffer_seq_mod += flag_syn + flag_fin
 
         # In case packet caries FIN flag make note of its SEQ number
         if flag_fin:
-            self.snd_fin = self.snd_nxt
+            self._snd_fin = self._snd_nxt
 
         # If in ESTABLISHED state then reset ACK delay timer
-        if self.state == "ESTABLISHED":
-            stack.timer.register_timer(self.tcp_session_id + "-delayed_ack", DELAYED_ACK_DELAY)
+        if self._state is FsmState.ESTABLISHED:
+            stack.timer.register_timer(f"{self}-delayed_ack", DELAYED_ACK_DELAY)
 
         # If packet contains data then Initialize / adjust packet's retransmit counter and timer
         if data or flag_syn or flag_fin:
-            self.tx_retransmit_timeout_counter[seq] = self.tx_retransmit_timeout_counter.get(seq, -1) + 1
-            stack.timer.register_timer(
-                self.tcp_session_id + "-retransmit_seq-" + str(seq), PACKET_RETRANSMIT_TIMEOUT * (1 << self.tx_retransmit_timeout_counter[seq])
-            )
+            self._tx_retransmit_timeout_counter[seq] = self._tx_retransmit_timeout_counter.get(seq, -1) + 1
+            stack.timer.register_timer(f"{self}-retransmit_seq-{seq}", PACKET_RETRANSMIT_TIMEOUT * (1 << self._tx_retransmit_timeout_counter[seq]))
 
         if __debug__:
             self._logger.debug(
-                f"{self.tcp_session_id} - Sent packet: {'S' if flag_syn else ''}{'F' if flag_fin else ''}{'R' if flag_rst else ''}"
-                + f"{'A' if flag_ack else ''}, seq {seq}, ack {ack}, dlen {len(data)}"
+                f"[{self}] - Sent packet_rx_md: {'S' if flag_syn else ''}{'F' if flag_fin else ''}{'R' if flag_rst else ''}"
+                + f"{'A' if flag_ack else ''}, seq {seq}, ack {ack}, dlen {(0 if data is None else len(data))}"
             )
 
-    def _enqueue_rx_buffer(self, data):
+    def _enqueue_rx_buffer(self, data: memoryview) -> None:
         """Process the incoming segment and enqueue the data to be used by socket"""
 
-        with self.lock_rx_buffer:
-            self.rx_buffer.extend(list(data))
-            # If rx_buffer event has not been released yet (it could be released if some data were siting in buffer already) then release it
-            if not self.event_rx_buffer._value:
-                self.event_rx_buffer.release()
+        assert isinstance(data, memoryview)  # memoryview: check to ensure data gets here as memoryview not bytes
 
-    def _transmit_data(self):
+        with self._lock_rx_buffer:
+            self._rx_buffer.extend(data)
+            # If rx_buffer event has not been released yet (it could be released if some data were siting in buffer already) then release it
+            if not self._event_rx_buffer._value:  # type: ignore
+                self._event_rx_buffer.release()
+
+    def _transmit_data(self) -> None:
         """Send out data segment from TX buffer using TCP sliding window mechanism"""
 
-        assert self.snd_una <= self.snd_nxt <= self.snd_una + self.snd_ewn, "*** SEQ outside of TCP sliding window"
+        assert self._snd_una <= self._snd_nxt <= self._snd_una + self._snd_ewn, "*** SEQ outside of TCP sliding window"
 
         # Check if we need to (re)transmit initial SYN packet
-        if self.state == "SYN_SENT" and self.snd_nxt == self.snd_ini:
+        if self._state is FsmState.SYN_SENT and self._snd_nxt == self._snd_ini:
             if __debug__:
-                self._logger.debug(f"{self.tcp_session_id} - Transmitting initial SYN packet: seq {self.snd_nxt}")
+                self._logger.debug(f"[{self}] - Transmitting initial SYN packet_rx_md: seq {self._snd_nxt}")
             self._transmit_packet(flag_syn=True)
             return
 
         # Check if we need to (re)transmit initial SYN + ACK packet
-        if self.state == "SYN_RCVD" and self.snd_nxt == self.snd_ini:
+        if self._state is FsmState.SYN_RCVD and self._snd_nxt == self._snd_ini:
             if __debug__:
-                self._logger.debug(f"{self.tcp_session_id} - Transmitting initial SYN + ACK packet: seq {self.snd_nxt}")
+                self._logger.debug(f"[{self}] - Transmitting initial SYN + ACK packet_rx_md: seq {self._snd_nxt}")
             self._transmit_packet(flag_syn=True, flag_ack=True)
             return
 
         # Make sure we in the state that allows sending data out
-        if self.state in {"ESTABLISHED", "CLOSE_WAIT"}:
-            remaining_data_len = len(self.tx_buffer) - self.tx_buffer_nxt
-            usable_window = self.snd_ewn - self.tx_buffer_nxt
-            transmit_data_len = min(self.snd_mss, usable_window, remaining_data_len)
+        if self._state in {FsmState.ESTABLISHED, FsmState.CLOSE_WAIT}:
+            remaining_data_len = len(self._tx_buffer) - self._tx_buffer_nxt
+            usable_window = self._snd_ewn - self._tx_buffer_nxt
+            transmit_data_len = min(self._snd_mss, usable_window, remaining_data_len)
             if remaining_data_len:
                 if __debug__:
-                    self._logger.opt(ansi=True).debug(
-                        f"{self.tcp_session_id} - Sliding window <yellow>[{self.snd_una}|{self.snd_nxt}|{self.snd_una + self.snd_ewn}]</>"
-                    )
+                    self._logger.opt(ansi=True).debug(f"[{self}] - Sliding window <y>[{self._snd_una}|{self._snd_nxt}|{self._snd_una + self._snd_ewn}]</>")
                 if __debug__:
                     self._logger.opt(ansi=True).debug(
-                        f"{self.tcp_session_id} - {usable_window} left in window, {remaining_data_len} left in buffer, {transmit_data_len} to be sent"
+                        f"[{self}] - {usable_window} left in window, {remaining_data_len} left in buffer, {transmit_data_len} to be sent"
                     )
                 if transmit_data_len:
-                    with self.lock_tx_buffer:
-                        transmit_data = self.tx_buffer[self.tx_buffer_nxt : self.tx_buffer_nxt + transmit_data_len]
+                    with self._lock_tx_buffer:
+                        transmit_data = self._tx_buffer[self._tx_buffer_nxt : self._tx_buffer_nxt + transmit_data_len]
                     if __debug__:
-                        self._logger.debug(f"{self.tcp_session_id} - Transmitting data segment: seq {self.snd_nxt} len {len(transmit_data)}")
+                        self._logger.debug(f"[{self}] - Transmitting data segment: seq {self._snd_nxt} len {len(transmit_data)}")
                     self._transmit_packet(flag_ack=True, data=bytes(transmit_data))
                 return
 
         # Check if we need to (re)transmit final FIN packet
-        if self.state in {"FIN_WAIT_1", "LAST_ACK"} and self.snd_nxt != self.snd_fin:
+        if self._state in {FsmState.FIN_WAIT_1, FsmState.LAST_ACK} and self._snd_nxt != self._snd_fin:
             if __debug__:
-                self._logger.debug(f"{self.tcp_session_id} - Transmitting final FIN packet: seq {self.snd_nxt}")
+                self._logger.debug(f"[{self}] - Transmitting final FIN packet_rx_md: seq {self._snd_nxt}")
             self._transmit_packet(flag_fin=True, flag_ack=True)
             return
 
-    def _delayed_ack(self):
+    def _delayed_ack(self) -> None:
         """Run Delayed ACK mechanism"""
 
-        if stack.timer.is_expired(self.tcp_session_id + "-delayed_ack"):
-            if self.rcv_nxt > self.rcv_una:
+        if stack.timer.is_expir(f"{self}-delayed_ack"):
+            if self._rcv_nxt > self._rcv_una:
                 self._transmit_packet(flag_ack=True)
                 if __debug__:
-                    self._logger.debug(f"{self.tcp_session_id} - Sent out delayed ACK ({self.rcv_nxt})")
-            stack.timer.register_timer(self.tcp_session_id + "-delayed_ack", DELAYED_ACK_DELAY)
+                    self._logger.debug(f"[{self}] - Sent out delayed ACK ({self._rcv_nxt})")
+            stack.timer.register_timer(f"{self}-delayed_ack", DELAYED_ACK_DELAY)
 
-    def _retransmit_packet_timeout(self):
-        """Retransmit packet after expired timeout"""
+    def _retransmit_packet_timeout(self) -> None:
+        """Retransmit packet after expir timeout"""
 
-        if self.snd_una in self.tx_retransmit_timeout_counter and stack.timer.is_expired(self.tcp_session_id + "-retransmit_seq-" + str(self.snd_una)):
-            if self.tx_retransmit_timeout_counter[self.snd_una] == PACKET_RETRANSMIT_MAX_COUNT:
+        if self._snd_una in self._tx_retransmit_timeout_counter and stack.timer.is_expir(f"{self}-retransmit_seq-{self._snd_una}"):
+            if self._tx_retransmit_timeout_counter[self._snd_una] == PACKET_RETRANSMIT_MAX_COUNT:
                 # Send RST packet if we received any packet from peer already
-                if self.rcv_nxt is not None:
-                    self._transmit_packet(flag_rst=True, flag_ack=True, seq=self.snd_una)
+                if self._rcv_nxt is not None:
+                    self._transmit_packet(flag_rst=True, flag_ack=True, seq=self._snd_una)
                     if __debug__:
-                        self._logger.debug(f"{self.tcp_session_id} - Packet retransmit counter expired, resetting session")
+                        self._logger.debug(f"[{self}] - Packet retransmit counter expir, resetting session")
                 else:
                     if __debug__:
-                        self._logger.debug(f"{self.tcp_session_id} - Packet retransmit counter expired")
+                        self._logger.debug(f"[{self}] - Packet retransmit counter expir")
                 # If in any state with established connection inform socket about connection failure
-                if self.state in {"ESTABLISHED", "FIN_WAIT_1", "FIN_WAIT_2", "CLOSE_WAIT"}:
-                    self.event_rx_buffer.release()
+                if self._state in {FsmState.ESTABLISHED, FsmState.FIN_WAIT_1, FsmState.FIN_WAIT_2, FsmState.CLOSE_WAIT}:
+                    self._connection_error = ConnError.TIMEOUT
+                    self._event_rx_buffer.release()
                 # If in SYN_SENT state inform CONNECT syscall that the connection related event happened
-                if self.state == "SYN_SENT":
-                    self.event_connect.release()
+                if self._state is FsmState.SYN_SENT:
+                    self._connection_error = ConnError.TIMEOUT
+                    self._event_connect.release()
                 # Change state to CLOSED
-                self._change_state("CLOSED")
+                self._change_state(FsmState.CLOSED)
                 return
-            self.snd_ewn = self.snd_mss
-            self.snd_nxt = self.snd_una
+            self._snd_ewn = self._snd_mss
+            self._snd_nxt = self._snd_una
             # In case we need to retransmit packt containing SYN flag adjust tx_buffer_seq_mod so it doesn't reflect SYN flag yet
-            if self.snd_nxt == self.snd_ini or self.snd_nxt == self.snd_fin:
-                self.tx_buffer_seq_mod -= 1
+            if self._snd_nxt == self._snd_ini or self._snd_nxt == self._snd_fin:
+                self._tx_buffer_seq_mod -= 1
             if __debug__:
-                self._logger.debug(f"{self.tcp_session_id} - Got retansmit timeout, sending segment {self.snd_nxt}, resetting snd_ewn to {self.snd_ewn}")
+                self._logger.debug(f"[{self}] - Got retansmit timeout, sending segment {self._snd_nxt}, resetting snd_ewn to {self._snd_ewn}")
             return
 
-    def _retransmit_packet_request(self, packet):
+    def _retransmit_packet_request(self, packet_rx_md: TcpMetadata) -> None:
         """Retransmit packet after rceiving request from peer"""
 
-        self.tx_retransmit_request_counter[packet.ack] = self.tx_retransmit_request_counter.get(packet.ack, 0) + 1
-        if self.tx_retransmit_request_counter[packet.ack] > 1:
-            self.snd_nxt = self.snd_una
+        self._tx_retransmit_request_counter[packet_rx_md.ack] = self._tx_retransmit_request_counter.get(packet_rx_md.ack, 0) + 1
+        if self._tx_retransmit_request_counter[packet_rx_md.ack] > 1:
+            self._snd_nxt = self._snd_una
             if __debug__:
-                self._logger.debug(f"{self.tcp_session_id} - Got retransmit request, sending segment {self.snd_nxt}, keeping snd_ewn at {self.snd_ewn}")
+                self._logger.debug(f"[{self}] - Got retransmit request, sending segment {self._snd_nxt}, keeping snd_ewn at {self._snd_ewn}")
 
-    def _process_ack_packet(self, packet):
+    def _process_ack_packet(self, packet_rx_md: TcpMetadata) -> None:
         """Process regular data/ACK packet"""
 
         # Make note of the local SEQ that has been acked by peer
-        self.snd_una = max(self.snd_una, packet.ack)
+        self._snd_una = max(self._snd_una, packet_rx_md.ack)
         # Adjust local SEQ accordingly to what peer acked (needed after the retransmit happens and peer is jumping to previously received SEQ)
-        if self.snd_nxt < self.snd_una <= self.snd_max:
-            self.snd_nxt = self.snd_una
+        if self._snd_nxt < self._snd_una <= self._snd_max:
+            self._snd_nxt = self._snd_una
         # Make note of the remote SEQ number
-        self.rcv_nxt = packet.seq + len(packet.data) + packet.flag_syn + packet.flag_fin
+        self._rcv_nxt = packet_rx_md.seq + len(packet_rx_md.data) + packet_rx_md.flag_syn + packet_rx_md.flag_fin
         # In case packet contains data enqueue it
-        if packet.data:
-            self._enqueue_rx_buffer(packet.data)
+        if packet_rx_md.data:
+            self._enqueue_rx_buffer(packet_rx_md.data)
             if __debug__:
-                self._logger.debug(f"{self.tcp_session_id} - Enqueued {len(packet.data)} bytes starting at {packet.seq}")
+                self._logger.debug(f"[{self}] - Enqueued {len(packet_rx_md.data)} bytes starting at {packet_rx_md.seq}")
         # Purge acked data from TX buffer
-        with self.lock_tx_buffer:
-            del self.tx_buffer[: self.tx_buffer_una]
-        self.tx_buffer_seq_mod += self.tx_buffer_una
+        with self._lock_tx_buffer:
+            del self._tx_buffer[: self._tx_buffer_una]
+        self._tx_buffer_seq_mod += self._tx_buffer_una
         if __debug__:
-            self._logger.debug(f"{self.tcp_session_id} - Purged TX buffer up to SEQ {self.snd_una}")
+            self._logger.debug(f"[{self}] - Purged TX buffer up to SEQ {self._snd_una}")
         # Update remote window size
-        if self.snd_wnd != packet.win * self.snd_wsc:
+        if self._snd_wnd != packet_rx_md.win * self._snd_wsc:
             if __debug__:
-                self._logger.debug(f"{self.tcp_session_id} - Updated sending window size {self.snd_wnd} -> {packet.win * self.snd_wsc}")
-            self.snd_wnd = packet.win * self.snd_wsc
+                self._logger.debug(f"[{self}] - Updated sending window size {self._snd_wnd} -> {packet_rx_md.win * self._snd_wsc}")
+            self._snd_wnd = packet_rx_md.win * self._snd_wsc
         # Enlarge effective sending window
-        self.snd_ewn = min(self.snd_ewn << 1, self.snd_wnd)
+        self._snd_ewn = min(self._snd_ewn << 1, self._snd_wnd)
         if __debug__:
-            self._logger.debug(f"{self.tcp_session_id} - Updated effective sending window to {self.snd_ewn}")
-        # Purge expired tx packet retransmit requests
-        for seq in list(self.tx_retransmit_request_counter):
-            if seq < packet.ack:
-                self.tx_retransmit_request_counter.pop(seq)
+            self._logger.debug(f"[{self}] - Updated effective sending window to {self._snd_ewn}")
+        # Purge expir tx packet retransmit requests
+        for seq in list(self._tx_retransmit_request_counter):
+            if seq < packet_rx_md.ack:
+                self._tx_retransmit_request_counter.pop(seq)
                 if __debug__:
-                    self._logger.debug(f"{self.tcp_session_id} - Purged expired TX packet retransmit request counter for {seq}")
-        # Purge expired tx packet retransmit timeouts
-        for seq in list(self.tx_retransmit_timeout_counter):
-            if seq < packet.ack:
-                self.tx_retransmit_timeout_counter.pop(seq)
+                    self._logger.debug(f"[{self}] - Purged expir TX packet retransmit request counter for {seq}")
+        # Purge expir tx packet retransmit timeouts
+        for seq in list(self._tx_retransmit_timeout_counter):
+            if seq < packet_rx_md.ack:
+                self._tx_retransmit_timeout_counter.pop(seq)
                 if __debug__:
-                    self._logger.debug(f"{self.tcp_session_id} - Purged expired TX packet retransmit timeout for {seq}")
-        # Purge expired rx retransmit requests
-        for seq in list(self.rx_retransmit_request_counter):
-            if seq < self.rcv_nxt:
-                self.rx_retransmit_request_counter.pop(seq)
+                    self._logger.debug(f"[{self}] - Purged expir TX packet retransmit timeout for {seq}")
+        # Purge expir rx retransmit requests
+        for seq in list(self._rx_retransmit_request_counter):
+            if seq < self._rcv_nxt:
+                self._rx_retransmit_request_counter.pop(seq)
                 if __debug__:
-                    self._logger.debug(f"{self.tcp_session_id} - Purged expired RX packet retransmit request counter for {seq}")
+                    self._logger.debug(f"[{self}] - Purged expir RX packet retransmit request counter for {seq}")
         # Bring next packet from ooo_packet_queue if available
-        if packet := self.ooo_packet_queue.pop(self.rcv_nxt, None):
+        if ooo_packet := self._ooo_packet_queue.pop(self._rcv_nxt, None):
             if __debug__:
-                self._logger.opt(ansi=True).debug(f"{self.tcp_session_id} - <green>Retrieving packet {self.rcv_nxt} from Out of Order queue</>")
-            self.tcp_fsm(packet)
+                self._logger.opt(ansi=True).debug(f"[{self}] - <lg>Retrieving packet {self._rcv_nxt} from Out of Order queue</>")
+            self.tcp_fsm(ooo_packet)
 
-    def _tcp_fsm_closed(self, packet, syscall, timer):
+    def _tcp_fsm_closed(self, packet_rx_md: Optional[TcpMetadata], syscall: Optional[SysCall], timer: Optional[bool]) -> None:
         """TCP FSM CLOSED state handler"""
 
         # Got CONNECT syscall -> Send SYN packet (this actually will be done in SYN_SENT state) / change state to SYN_SENT
-        if syscall == "CONNECT":
-            self._change_state("SYN_SENT")
+        if syscall is SysCall.CONNECT:
+            self._change_state(FsmState.SYN_SENT)
 
         # Got LISTEN syscall -> Change state to LISTEN
-        if syscall == "LISTEN":
-            self._change_state("LISTEN")
+        if syscall is SysCall.LISTEN:
+            self._change_state(FsmState.LISTEN)
 
-    def _tcp_fsm_listen(self, packet, syscall, timer):
+    def _tcp_fsm_listen(self, packet_rx_md: Optional[TcpMetadata], syscall: Optional[SysCall], timer: Optional[bool]) -> None:
         """TCP FSM LISTEN state handler"""
 
+        from lib.socket import AF_INET4, AF_INET6
+        from tcp.socket import TcpSocket
+
         # Got SYN packet -> Send SYN + ACK packet / change state to SYN_RCVD
-        if packet and all({packet.flag_syn}) and not any({packet.flag_ack, packet.flag_fin, packet.flag_rst}):
+        if packet_rx_md and all({packet_rx_md.flag_syn}) and not any({packet_rx_md.flag_ack, packet_rx_md.flag_fin, packet_rx_md.flag_rst}):
             # Packet sanity check
-            if packet.ack == 0 and not packet.data:
-                # Create new session in LISTEN state
+            if packet_rx_md.ack == 0 and not packet_rx_md.data:
+                # Create new session in LISTEN state and assign it to listening socket
                 tcp_session = TcpSession(
-                    local_ip_address=self.local_ip_address,
-                    local_port=self.local_port,
-                    remote_ip_address=self.remote_ip_address,
-                    remote_port=self.remote_port,
-                    socket=self.socket,
+                    local_ip_address=self._local_ip_address,
+                    local_port=self._local_port,
+                    remote_ip_address=self._remote_ip_address,
+                    remote_port=self._remote_port,
+                    socket=self._socket,
                 )
                 tcp_session.listen()
-                # Adjust this session to match incoming connection
-                stack.tcp_sessions.pop(self.tcp_session_id)
-                self.local_ip_address = packet.local_ip_address
-                self.local_port = packet.local_port
-                self.remote_ip_address = packet.remote_ip_address
-                self.remote_port = packet.remote_port
-                stack.tcp_sessions[self.tcp_session_id] = self
-                # Register the new listening session
-                stack.tcp_sessions[tcp_session.tcp_session_id] = tcp_session
+                self._socket._tcp_session = tcp_session
+                # Adjust this session to match incoming connection and assign it to new socket
+                self._local_ip_address = packet_rx_md.local_ip_address
+                self._local_port = packet_rx_md.local_port
+                self._remote_ip_address = packet_rx_md.remote_ip_address
+                self._remote_port = packet_rx_md.remote_port
+                self._socket = TcpSocket(AF_INET6 if self._local_ip_address.version == 6 else AF_INET4, tcp_session=self)
                 # Initialize session parameters
-                self.snd_mss = min(packet.mss, config.mtu - 40)
-                self.snd_wnd = packet.win * self.snd_wsc  # For SYN / SYN + ACK packets this is initialized with wscale=1
-                self.snd_wsc = packet.wscale if packet.wscale else 1  # Peer's wscale set to None means that peer doesn't support window scaling
+                self._snd_mss = min(packet_rx_md.mss, config.mtu - 40)
+                self._snd_wnd = packet_rx_md.win * self._snd_wsc  # For SYN / SYN + ACK packets this is initialized with wscale=1
+                self._snd_wsc = packet_rx_md.wscale if packet_rx_md.wscale else 1  # Peer's wscale set to None means that peer doesn't support window scaling
                 if __debug__:
-                    self._logger.debug(f"{self.tcp_session_id} - Initialized remote window scale at {self.snd_wsc}")
-                self.rcv_ini = packet.seq
-                self.snd_ewn = self.snd_mss
+                    self._logger.debug(f"[{self}] - Initialized remote window scale at {self._snd_wsc}")
+                self._rcv_ini = packet_rx_md.seq
+                self._snd_ewn = self._snd_mss
                 # Make note of the remote SEQ number
-                self.rcv_nxt = packet.seq + packet.flag_syn
+                self._rcv_nxt = packet_rx_md.seq + packet_rx_md.flag_syn
                 # Send SYN + ACK packet (this actually will be done in SYN_SENT state) / change state to SYN_RCVD
-                self._change_state("SYN_RCVD")
+                self._change_state(FsmState.SYN_RCVD)
                 return
 
         # Got CLOSE syscall -> Change state to CLOSED
-        if syscall == "CLOSE":
-            self._change_state("CLOSED")
+        if syscall is SysCall.CLOSE:
+            self._change_state(FsmState.CLOSED)
             return
 
-    def _tcp_fsm_syn_sent(self, packet, syscall, timer):
+    def _tcp_fsm_syn_sent(self, packet_rx_md: Optional[TcpMetadata], syscall: Optional[SysCall], timer: Optional[bool]) -> None:
         """TCP FSM SYN_SENT state handler"""
 
-        # Got timer event -> Resend SYN packet if its timer expired
+        # Got timer event -> Resend SYN packet if its timer expir
         if timer:
             self._retransmit_packet_timeout()
             self._transmit_data()
             return
 
         # Got SYN + ACK packet -> Send ACK / change state to ESTABLISHED
-        if packet and all({packet.flag_syn, packet.flag_ack}) and not any({packet.flag_fin, packet.flag_rst}):
+        if packet_rx_md and all({packet_rx_md.flag_syn, packet_rx_md.flag_ack}) and not any({packet_rx_md.flag_fin, packet_rx_md.flag_rst}):
             # Packet sanity check
-            if packet.ack == self.snd_nxt and not packet.data:
+            if packet_rx_md.ack == self._snd_nxt and not packet_rx_md.data:
                 # Initialize session parameters
-                self.snd_mss = min(packet.mss, config.mtu - 40)
-                self.snd_wnd = packet.win * self.snd_wsc  # For SYN / SYN + ACK packets this is initialized with wscale=1
-                self.snd_wsc = packet.wscale if packet.wscale else 1  # Peer's wscale set to None means that peer doesn't support window scaling
+                self._snd_mss = min(packet_rx_md.mss, config.mtu - 40)
+                self._snd_wnd = packet_rx_md.win * self._snd_wsc  # For SYN / SYN + ACK packets this is initialized with wscale=1
+                self._snd_wsc = packet_rx_md.wscale if packet_rx_md.wscale else 1  # Peer's wscale set to None means that peer doesn't support window scaling
                 if __debug__:
-                    self._logger.debug(f"{self.tcp_session_id} - Initialized remote window scale at {self.snd_wsc}")
-                self.rcv_ini = packet.seq
-                self.snd_ewn = self.snd_mss
+                    self._logger.debug(f"[{self}] - Initialized remote window scale at {self._snd_wsc}")
+                self._rcv_ini = packet_rx_md.seq
+                self._snd_ewn = self._snd_mss
                 # Process ACK packet
-                self._process_ack_packet(packet)
+                self._process_ack_packet(packet_rx_md)
                 # Send initial ACK packet
                 self._transmit_packet(flag_ack=True)
                 if __debug__:
-                    self._logger.debug(f"{self.tcp_session_id} - Sent initial ACK ({self.rcv_una}) packet")
+                    self._logger.debug(f"[{self}] - Sent initial ACK ({self._rcv_una}) packet")
                 # Change state to ESTABLISHED
-                self._change_state("ESTABLISHED")
+                self._change_state(FsmState.ESTABLISHED)
                 # Inform connect syscall that connection related event happened
-                self.event_connect.release()
+                self._event_connect.release()
                 return
 
         # Got SYN packet -> Send SYN + ACK packet / change state to SYN_RCVD
-        if packet and all({packet.flag_syn}) and not any({packet.flag_ack, packet.flag_fin, packet.flag_syn}):
+        if packet_rx_md and all({packet_rx_md.flag_syn}) and not any({packet_rx_md.flag_ack, packet_rx_md.flag_fin, packet_rx_md.flag_syn}):
             # Packet sanity check
-            if packet.ack == 0 and not packet.data:
+            if packet_rx_md.ack == 0 and not packet_rx_md.data:
                 # Send SYN + ACK packet
                 self._transmit_packet(flag_syn=True, flag_ack=True)
                 # Change state to SYN_RCVD
-                self._change_state("SYN_RCVD")
+                self._change_state(FsmState.SYN_RCVD)
                 return
 
         # Got RST + ACK packet -> Change state to CLOSED
-        if packet and all({packet.flag_rst, packet.flag_ack}) and not any({packet.flag_fin, packet.flag_syn}):
+        if packet_rx_md and all({packet_rx_md.flag_rst, packet_rx_md.flag_ack}) and not any({packet_rx_md.flag_fin, packet_rx_md.flag_syn}):
             # Packet sanity_check
-            if packet.seq == 0 and packet.ack == self.snd_nxt:
+            if packet_rx_md.seq == 0 and packet_rx_md.ack == self._snd_nxt:
                 # Change state to CLOSED
-                self._change_state("CLOSED")
+                self._change_state(FsmState.CLOSED)
                 # Inform connect syscall that connection related event happened
-                self.event_connect.release()
+                self._connection_error = ConnError.REFUSED
+                self._event_connect.release()
             return
 
         # Got CLOSE syscall -> Change state to CLOSE
-        if syscall == "CLOSE":
-            self._change_state("CLOSED")
+        if syscall is SysCall.CLOSE:
+            self._change_state(FsmState.CLOSED)
             return
 
-    def _tcp_fsm_syn_rcvd(self, packet, syscall, timer):
+    def _tcp_fsm_syn_rcvd(self, packet_rx_md: Optional[TcpMetadata], syscall: Optional[SysCall], timer: Optional[bool]) -> None:
         """TCP FSM ESTABLISHED state handler"""
 
-        # Got timer event -> Resend SYN packet if its timer expired
+        # Got timer event -> Resend SYN packet if its timer expir
         if timer:
             self._retransmit_packet_timeout()
             self._transmit_data()
             return
 
         # Got ACK packet -> Change state to ESTABLISHED
-        if packet and all({packet.flag_ack}) and not any({packet.flag_syn, packet.flag_fin, packet.flag_rst}):
+        if packet_rx_md and all({packet_rx_md.flag_ack}) and not any({packet_rx_md.flag_syn, packet_rx_md.flag_fin, packet_rx_md.flag_rst}):
             # Packet sanity check
-            if packet.seq == self.rcv_nxt and packet.ack == self.snd_nxt and not packet.data:
-                self._process_ack_packet(packet)
+            if packet_rx_md.seq == self._rcv_nxt and packet_rx_md.ack == self._snd_nxt and not packet_rx_md.data:
+                self._process_ack_packet(packet_rx_md)
                 # Change state to ESTABLISHED
-                self._change_state("ESTABLISHED")
-                # Inform socket that session has been established so accept method can pick it up
-                self.socket.event_tcp_session_established.release()
+                self._change_state(FsmState.ESTABLISHED)
+                # Inform the listening socket that session has been established so accept call can pick it up
+                self._socket._parent_socket._tcp_accept.append(self._socket)
+                self._socket._parent_socket._event_tcp_session_established.release()
                 # Inform connect syscall that connection related event happened, this is needed only in case of tcp simultaneous open
-                self.event_connect.release()
+                self._event_connect.release()
                 return
 
         # Got RST + ACK packet -> Change state to CLOSED
-        if packet and all({packet.flag_rst, packet.flag_ack}) and not any({packet.flag_fin, packet.flag_syn}):
+        if packet_rx_md and all({packet_rx_md.flag_rst, packet_rx_md.flag_ack}) and not any({packet_rx_md.flag_fin, packet_rx_md.flag_syn}):
             # Packet sanity_check
-            if packet.seq == self.rcv_nxt and self.snd_una <= packet.ack <= self.snd_max:
+            if packet_rx_md.seq == self._rcv_nxt and self._snd_una <= packet_rx_md.ack <= self._snd_max:
                 # Change state to CLOSED
-                self._change_state("CLOSED")
+                self._change_state(FsmState.CLOSED)
             return
 
         # Got RST packet -> Change state to CLOSED
-        if packet and all({packet.flag_rst}) and not any({packet.flag_ack, packet.flag_fin, packet.flag_syn}):
+        if packet_rx_md and all({packet_rx_md.flag_rst}) and not any({packet_rx_md.flag_ack, packet_rx_md.flag_fin, packet_rx_md.flag_syn}):
             # Packet sanity_check
-            if packet.seq == self.rcv_nxt and packet.ack == 0:
+            if packet_rx_md.seq == self._rcv_nxt and packet_rx_md.ack == 0:
                 # Change state to CLOSED
-                self._change_state("CLOSED")
+                self._change_state(FsmState.CLOSED)
             return
 
         # Got CLOSE sycall -> Send FIN packet (this actually will be done in SYN_SENT state) / change state to FIN_WAIT_1
-        if syscall == "CLOSE":
-            self._change_state("FIN_WAIT_1")
+        if syscall is SysCall.CLOSE:
+            self._change_state(FsmState.FIN_WAIT_1)
             return
 
-    def _tcp_fsm_established(self, packet, syscall, timer):
+    def _tcp_fsm_established(self, packet_rx_md: Optional[TcpMetadata], syscall: Optional[SysCall], timer: Optional[bool]) -> None:
         """TCP FSM ESTABLISHED state handler"""
 
         # Got timer event -> Send out data and run Delayed ACK mechanism
@@ -617,65 +721,65 @@ class TcpSession:
             self._retransmit_packet_timeout()
             self._transmit_data()
             self._delayed_ack()
-            if self.closing and not self.tx_buffer:
-                self._change_state("FIN_WAIT_1")
+            if self._closing and not self._tx_buffer:
+                self._change_state(FsmState.FIN_WAIT_1)
             return
 
         # Got packet that doesn't fit into receive window
-        if packet and not self.rcv_nxt <= packet.seq <= self.rcv_nxt + self.rcv_wnd - len(packet.data):
+        if packet_rx_md and not self._rcv_nxt <= packet_rx_md.seq <= self._rcv_nxt + self._rcv_wnd - len(packet_rx_md.data):
             if __debug__:
-                self._logger.debug(f"{self.tcp_session_id} - Packet seq {packet.seq} + {len(packet.data)} doesn't fit into receive window, dropping")
+                self._logger.debug(f"[{self}] - Packet seq {packet_rx_md.seq} + {len(packet_rx_md.data)} doesn't fit into receive window, dropping")
             return
 
         # Got ACK packet
-        if packet and all({packet.flag_ack}) and not any({packet.flag_syn, packet.flag_rst, packet.flag_fin}):
+        if packet_rx_md and all({packet_rx_md.flag_ack}) and not any({packet_rx_md.flag_syn, packet_rx_md.flag_rst, packet_rx_md.flag_fin}):
             # Suspected retransmit request -> Reset TX window and local SEQ number
-            if packet.seq == self.rcv_nxt and packet.ack == self.snd_una and not packet.data:
-                self._retransmit_packet_request(packet)
+            if packet_rx_md.seq == self._rcv_nxt and packet_rx_md.ack == self._snd_una and not packet_rx_md.data:
+                self._retransmit_packet_request(packet_rx_md)
                 return
             # Packet with higher SEQ than what we are expecting -> Store it and send 'fast retransmit' request (don't send more than two)
-            if packet.seq > self.rcv_nxt and self.snd_una <= packet.ack <= self.snd_max:
-                self.ooo_packet_queue[packet.seq] = packet
-                self.rx_retransmit_request_counter[self.rcv_nxt] = self.rx_retransmit_request_counter.get(self.rcv_nxt, 0) + 1
-                if self.rx_retransmit_request_counter[self.rcv_nxt] <= 2:
+            if packet_rx_md.seq > self._rcv_nxt and self._snd_una <= packet_rx_md.ack <= self._snd_max:
+                self._ooo_packet_queue[packet_rx_md.seq] = packet_rx_md
+                self._rx_retransmit_request_counter[self._rcv_nxt] = self._rx_retransmit_request_counter.get(self._rcv_nxt, 0) + 1
+                if self._rx_retransmit_request_counter[self._rcv_nxt] <= 2:
                     self._transmit_packet(flag_ack=True)
                 return
             # Regular data/ACK packet -> Process data
-            if packet.seq == self.rcv_nxt and self.snd_una <= packet.ack <= self.snd_max:
-                self._process_ack_packet(packet)
+            if packet_rx_md.seq == self._rcv_nxt and self._snd_una <= packet_rx_md.ack <= self._snd_max:
+                self._process_ack_packet(packet_rx_md)
                 return
             return
 
         # Got FIN + ACK packet -> Send ACK packet (let delayed ACK mechanism do it) / change state to CLOSE_WAIT / notify app that peer closed connection
-        if packet and all({packet.flag_fin, packet.flag_ack}) and not any({packet.flag_syn, packet.flag_rst}):
+        if packet_rx_md and all({packet_rx_md.flag_fin, packet_rx_md.flag_ack}) and not any({packet_rx_md.flag_syn, packet_rx_md.flag_rst}):
             # Packet sanity check
-            if packet.seq == self.rcv_nxt and self.snd_una <= packet.ack <= self.snd_max:
-                self._process_ack_packet(packet)
+            if packet_rx_md.seq == self._rcv_nxt and self._snd_una <= packet_rx_md.ack <= self._snd_max:
+                self._process_ack_packet(packet_rx_md)
                 # Immediately acknowledge the received data if any
-                if packet.data:
+                if packet_rx_md.data:
                     self._transmit_packet(flag_ack=True)
-                # Let application know that remote peer closed connection
-                self.event_rx_buffer.release()
+                # Let application know that remote peer closed connection (let receive syscall bypass semaphore)
+                self._event_rx_buffer.release()
                 # Change state to CLOSE_WAIT
-                self._change_state("CLOSE_WAIT")
+                self._change_state(FsmState.CLOSE_WAIT)
             return
 
         # Got RST + ACK packet -> Change state to CLOSED
-        if packet and all({packet.flag_rst, packet.flag_ack}) and not any({packet.flag_fin, packet.flag_syn}):
+        if packet_rx_md and all({packet_rx_md.flag_rst, packet_rx_md.flag_ack}) and not any({packet_rx_md.flag_fin, packet_rx_md.flag_syn}):
             # Packet sanity_check
-            if packet.seq == self.rcv_nxt and self.snd_una <= packet.ack <= self.snd_max:
-                # Let application know that remote peer closed connection
-                self.event_rx_buffer.release()
+            if packet_rx_md.seq == self._rcv_nxt and self._snd_una <= packet_rx_md.ack <= self._snd_max:
+                # Let application know that remote peer closed connection (let receive syscall bypass semaphore)
+                self._event_rx_buffer.release()
                 # Change state to CLOSED
-                self._change_state("CLOSED")
+                self._change_state(FsmState.CLOSED)
             return
 
         # Got CLOSE syscall -> Send FIN packet (this actually will be done in SYN_SENT state) / change state to FIN_WAIT_1
-        if syscall == "CLOSE":
-            self.closing = True
+        if syscall is SysCall.CLOSE:
+            self._closing = True
             return
 
-    def _tcp_fsm_fin_wait_1(self, packet, syscall, timer):
+    def _tcp_fsm_fin_wait_1(self, packet_rx_md: Optional[TcpMetadata], syscall: Optional[SysCall], timer: Optional[bool]) -> None:
         """TCP FSM FIN_WAIT_1 state handler"""
 
         # Got timer event -> Transmit final FIN packet
@@ -685,105 +789,105 @@ class TcpSession:
             return
 
         # Got ACK (acking our FIN) packet -> Change state to FIN_WAIT_2
-        if packet and all({packet.flag_ack}) and not any({packet.flag_syn, packet.flag_rst, packet.flag_fin}):
+        if packet_rx_md and all({packet_rx_md.flag_ack}) and not any({packet_rx_md.flag_syn, packet_rx_md.flag_rst, packet_rx_md.flag_fin}):
             # Packet sanity check
-            if packet.seq == self.rcv_nxt and self.snd_una <= packet.ack <= self.snd_max:
-                self._process_ack_packet(packet)
+            if packet_rx_md.seq == self._rcv_nxt and self._snd_una <= packet_rx_md.ack <= self._snd_max:
+                self._process_ack_packet(packet_rx_md)
                 # Immediately acknowledge the received data if any
-                if packet.data:
+                if packet_rx_md.data:
                     self._transmit_packet(flag_ack=True)
                 # Check if packet acks our FIN
-                if packet.ack >= self.snd_fin:
+                if packet_rx_md.ack >= self._snd_fin:
                     # Change state to FIN_WAIT_2
-                    self._change_state("FIN_WAIT_2")
+                    self._change_state(FsmState.FIN_WAIT_2)
             return
 
         # Got FIN + ACK packet -> Send ACK packet / change state to TIME_WAIT or CLOSING
-        if packet and all({packet.flag_fin, packet.flag_ack}) and not any({packet.flag_syn, packet.flag_rst}):
+        if packet_rx_md and all({packet_rx_md.flag_fin, packet_rx_md.flag_ack}) and not any({packet_rx_md.flag_syn, packet_rx_md.flag_rst}):
             # Packet sanity check
-            if packet.seq == self.rcv_nxt and self.snd_una <= packet.ack <= self.snd_max:
-                self._process_ack_packet(packet)
+            if packet_rx_md.seq == self._rcv_nxt and self._snd_una <= packet_rx_md.ack <= self._snd_max:
+                self._process_ack_packet(packet_rx_md)
                 # Send out final ACK packet
                 self._transmit_packet(flag_ack=True)
                 if __debug__:
-                    self._logger.debug(f"{self.tcp_session_id} - Sent final ACK ({self.rcv_nxt}) packet")
+                    self._logger.debug(f"[{self}] - Sent final ACK ({self._rcv_nxt}) packet")
                 # Check if packet acks our FIN
-                if packet.ack >= self.snd_fin:
+                if packet_rx_md.ack >= self._snd_fin:
                     # Change state to TIME_WAIT
-                    self._change_state("TIME_WAIT")
+                    self._change_state(FsmState.TIME_WAIT)
                     # Initialize TIME_WAIT delay
-                    stack.timer.register_timer(self.tcp_session_id + "-time_wait", TIME_WAIT_DELAY)
+                    stack.timer.register_timer(f"{self}-time_wait", TIME_WAIT_DELAY)
                 else:
                     # Change state to CLOSING
-                    self._change_state("CLOSING")
+                    self._change_state(FsmState.CLOSING)
             return
 
         # Got RST + ACK packet -> Change state to CLOSED
-        if packet and all({packet.flag_rst, packet.flag_ack}) and not any({packet.flag_fin, packet.flag_syn}):
+        if packet_rx_md and all({packet_rx_md.flag_rst, packet_rx_md.flag_ack}) and not any({packet_rx_md.flag_fin, packet_rx_md.flag_syn}):
             # Packet sanity_check
-            if packet.seq == self.rcv_nxt and self.snd_una <= packet.ack <= self.snd_max:
+            if packet_rx_md.seq == self._rcv_nxt and self._snd_una <= packet_rx_md.ack <= self._snd_max:
                 # Change state to CLOSED
-                self._change_state("CLOSED")
+                self._change_state(FsmState.CLOSED)
             return
 
-    def _tcp_fsm_fin_wait_2(self, packet, syscall, timer):
+    def _tcp_fsm_fin_wait_2(self, packet_rx_md: Optional[TcpMetadata], syscall: Optional[SysCall], timer: Optional[bool]) -> None:
         """TCP FSM FIN_WAIT_2 state handler"""
 
         # Got ACK packet -> Process data
-        if packet and all({packet.flag_ack}) and not any({packet.flag_syn, packet.flag_rst, packet.flag_fin}):
+        if packet_rx_md and all({packet_rx_md.flag_ack}) and not any({packet_rx_md.flag_syn, packet_rx_md.flag_rst, packet_rx_md.flag_fin}):
             # Packet sanity check
-            if packet.seq == self.rcv_nxt and self.snd_una <= packet.ack <= self.snd_max:
-                self._process_ack_packet(packet)
+            if packet_rx_md.seq == self._rcv_nxt and self._snd_una <= packet_rx_md.ack <= self._snd_max:
+                self._process_ack_packet(packet_rx_md)
                 # Immediately acknowledge the received data if any
-                if packet.data:
+                if packet_rx_md.data:
                     self._transmit_packet(flag_ack=True)
                 return
 
         # Got FIN + ACK packet -> Send ACK packet / change state to TIME_WAIT
-        if packet and all({packet.flag_fin, packet.flag_ack}) and not any({packet.flag_syn, packet.flag_rst}):
+        if packet_rx_md and all({packet_rx_md.flag_fin, packet_rx_md.flag_ack}) and not any({packet_rx_md.flag_syn, packet_rx_md.flag_rst}):
             # Packet sanity check
-            if packet.seq == self.rcv_nxt and self.snd_una <= packet.ack <= self.snd_max:
-                self._process_ack_packet(packet)
+            if packet_rx_md.seq == self._rcv_nxt and self._snd_una <= packet_rx_md.ack <= self._snd_max:
+                self._process_ack_packet(packet_rx_md)
                 # Send out final ACK packet
                 self._transmit_packet(flag_ack=True)
                 if __debug__:
-                    self._logger.debug(f"{self.tcp_session_id} - Sent final ACK ({self.rcv_nxt}) packet")
+                    self._logger.debug(f"[{self}] - Sent final ACK ({self._rcv_nxt}) packet")
                 # Change state to TIME_WAIT
-                self._change_state("TIME_WAIT")
+                self._change_state(FsmState.TIME_WAIT)
                 # Initialize TIME_WAIT delay
-                stack.timer.register_timer(self.tcp_session_id + "-time_wait", TIME_WAIT_DELAY)
+                stack.timer.register_timer(f"{self}-time_wait", TIME_WAIT_DELAY)
                 return
 
         # Got RST + ACK packet -> Change state to CLOSED
-        if packet and all({packet.flag_rst, packet.flag_ack}) and not any({packet.flag_fin, packet.flag_syn}):
+        if packet_rx_md and all({packet_rx_md.flag_rst, packet_rx_md.flag_ack}) and not any({packet_rx_md.flag_fin, packet_rx_md.flag_syn}):
             # Packet sanity_check
-            if packet.seq == self.rcv_nxt and self.snd_una <= packet.ack <= self.snd_max:
+            if packet_rx_md.seq == self._rcv_nxt and self._snd_una <= packet_rx_md.ack <= self._snd_max:
                 # Change state to CLOSED
-                self._change_state("CLOSED")
+                self._change_state(FsmState.CLOSED)
             return
 
-    def _tcp_fsm_closing(self, packet, syscall, timer):
+    def _tcp_fsm_closing(self, packet_rx_md: Optional[TcpMetadata], syscall: Optional[SysCall], timer: Optional[bool]) -> None:
         """TCP FSM CLOSING state handler"""
 
         # Got ACK packet -> Change state to TIME_WAIT
-        if packet and all({packet.flag_ack}) and not any({packet.flag_fin, packet.flag_syn, packet.flag_rst}):
+        if packet_rx_md and all({packet_rx_md.flag_ack}) and not any({packet_rx_md.flag_fin, packet_rx_md.flag_syn, packet_rx_md.flag_rst}):
             # Packet sanity check
-            if packet.ack == self.snd_nxt and self.snd_una <= packet.ack <= self.snd_max:
-                self.snd_una = packet.ack
-                self._change_state("TIME_WAIT")
+            if packet_rx_md.ack == self._snd_nxt and self._snd_una <= packet_rx_md.ack <= self._snd_max:
+                self._snd_una = packet_rx_md.ack
+                self._change_state(FsmState.TIME_WAIT)
                 # Initialize TIME_WAIT delay
-                stack.timer.register_timer(self.tcp_session_id + "-time_wait", TIME_WAIT_DELAY)
+                stack.timer.register_timer(f"{self}-time_wait", TIME_WAIT_DELAY)
                 return
 
         # Got RST + ACK packet -> Change state to CLOSED
-        if packet and all({packet.flag_rst, packet.flag_ack}) and not any({packet.flag_fin, packet.flag_syn}):
+        if packet_rx_md and all({packet_rx_md.flag_rst, packet_rx_md.flag_ack}) and not any({packet_rx_md.flag_fin, packet_rx_md.flag_syn}):
             # Packet sanity_check
-            if packet.seq == self.rcv_nxt and self.snd_una <= packet.ack <= self.snd_max:
+            if packet_rx_md.seq == self._rcv_nxt and self._snd_una <= packet_rx_md.ack <= self._snd_max:
                 # Change state to CLOSED
-                self._change_state("CLOSED")
+                self._change_state(FsmState.CLOSED)
             return
 
-    def _tcp_fsm_close_wait(self, packet, syscall, timer):
+    def _tcp_fsm_close_wait(self, packet_rx_md: Optional[TcpMetadata], syscall: Optional[SysCall], timer: Optional[bool]) -> None:
         """TCP FSM CLOSE_WAIT state handler"""
 
         # Got timer event -> Send out data and run Delayed ACK mechanism
@@ -791,43 +895,43 @@ class TcpSession:
             self._retransmit_packet_timeout()
             self._transmit_data()
             self._delayed_ack()
-            if self.closing and not self.tx_buffer:
-                self._change_state("LAST_ACK")
+            if self._closing and not self._tx_buffer:
+                self._change_state(FsmState.LAST_ACK)
             return
 
         # Got ACK packet
-        if packet and all({packet.flag_ack}) and not any({packet.flag_syn, packet.flag_rst, packet.flag_fin}):
+        if packet_rx_md and all({packet_rx_md.flag_ack}) and not any({packet_rx_md.flag_syn, packet_rx_md.flag_rst, packet_rx_md.flag_fin}):
             # Suspected retransmit request -> Reset TX window and local SEQ number
-            if packet.seq == self.rcv_nxt and packet.ack == self.snd_una and not packet.data:
-                self._retransmit_packet_request(packet)
+            if packet_rx_md.seq == self._rcv_nxt and packet_rx_md.ack == self._snd_una and not packet_rx_md.data:
+                self._retransmit_packet_request(packet_rx_md)
                 return
             # Packet with higher SEQ than what we are expecting -> Store it and send 'fast retransmit' request
-            if packet.seq > self.rcv_nxt and self.snd_una <= packet.ack <= self.snd_max:
-                self.ooo_packet_queue[packet.seq] = packet
-                self.rx_retransmit_request_counter[self.rcv_nxt] = self.rx_retransmit_request_counter.get(self.rcv_nxt, 0) + 1
-                if self.rx_retransmit_request_counter[self.rcv_nxt] <= 2:
+            if packet_rx_md.seq > self._rcv_nxt and self._snd_una <= packet_rx_md.ack <= self._snd_max:
+                self._ooo_packet_queue[packet_rx_md.seq] = packet_rx_md
+                self._rx_retransmit_request_counter[self._rcv_nxt] = self._rx_retransmit_request_counter.get(self._rcv_nxt, 0) + 1
+                if self._rx_retransmit_request_counter[self._rcv_nxt] <= 2:
                     self._transmit_packet(flag_ack=True)
                 return
             # Regular data/ACK packet -> Process data
-            if packet.seq == self.rcv_nxt and self.snd_una <= packet.ack <= self.snd_max and not packet.data:
-                self._process_ack_packet(packet)
+            if packet_rx_md.seq == self._rcv_nxt and self._snd_una <= packet_rx_md.ack <= self._snd_max and not packet_rx_md.data:
+                self._process_ack_packet(packet_rx_md)
                 return
             return
 
         # Got RST packet -> Change state to CLOSED
-        if packet and all({packet.flag_rst}) and not any({packet.flag_ack, packet.flag_fin, packet.flag_syn}):
+        if packet_rx_md and all({packet_rx_md.flag_rst}) and not any({packet_rx_md.flag_ack, packet_rx_md.flag_fin, packet_rx_md.flag_syn}):
             # Packet sanity_check
-            if packet.seq == self.rcv_nxt:
+            if packet_rx_md.seq == self._rcv_nxt:
                 # Change state to CLOSED
-                self._change_state("CLOSED")
+                self._change_state(FsmState.CLOSED)
             return
 
         # Got CLOSE syscall -> Send FIN packet (this actually will be done in SYN_SENT state) / change state to LAST_ACK
-        if syscall == "CLOSE":
-            self.closing = True
+        if syscall is SysCall.CLOSE:
+            self._closing = True
             return
 
-    def _tcp_fsm_last_ack(self, packet, syscall, timer):
+    def _tcp_fsm_last_ack(self, packet_rx_md: Optional[TcpMetadata], syscall: Optional[SysCall], timer: Optional[bool]) -> None:
         """TCP FSM LAST_ACK state handler"""
 
         # Got timer event -> Transmit final FIN packet
@@ -837,43 +941,43 @@ class TcpSession:
             return
 
         # Got ACK packet -> Change state to CLOSED
-        if packet and all({packet.flag_ack}) and not any({packet.flag_syn, packet.flag_fin, packet.flag_rst}):
+        if packet_rx_md and all({packet_rx_md.flag_ack}) and not any({packet_rx_md.flag_syn, packet_rx_md.flag_fin, packet_rx_md.flag_rst}):
             # Packet sanity check
-            if packet.ack == self.snd_nxt and self.snd_una <= packet.ack <= self.snd_max:
-                self._change_state("CLOSED")
+            if packet_rx_md.ack == self._snd_nxt and self._snd_una <= packet_rx_md.ack <= self._snd_max:
+                self._change_state(FsmState.CLOSED)
             return
 
         # Got RST + ACK packet -> Change state to CLOSED
-        if packet and all({packet.flag_rst, packet.flag_ack}) and not any({packet.flag_fin, packet.flag_syn}):
+        if packet_rx_md and all({packet_rx_md.flag_rst, packet_rx_md.flag_ack}) and not any({packet_rx_md.flag_fin, packet_rx_md.flag_syn}):
             # Packet sanity_check
-            if packet.seq == self.rcv_nxt and self.snd_una <= packet.ack <= self.snd_max:
+            if packet_rx_md.seq == self._rcv_nxt and self._snd_una <= packet_rx_md.ack <= self._snd_max:
                 # Change state to CLOSED
-                self._change_state("CLOSED")
+                self._change_state(FsmState.CLOSED)
             return
 
-    def _tcp_fsm_time_wait(self, packet, syscall, timer):
+    def _tcp_fsm_time_wait(self, packet_rx_md: Optional[TcpMetadata], syscall: Optional[SysCall], timer: Optional[bool]) -> None:
         """TCP FSM TIME_WAIT state handler"""
 
         # Got timer event -> Run TIME_WAIT delay
-        if timer and stack.timer.is_expired(self.tcp_session_id + "-time_wait"):
-            self._change_state("CLOSED")
+        if timer and stack.timer.is_expir(f"{self}-time_wait"):
+            self._change_state(FsmState.CLOSED)
             return
 
-    def tcp_fsm(self, packet=None, syscall=None, timer=False):
+    def tcp_fsm(self, packet_rx_md: Optional[TcpMetadata] = None, syscall: Optional[SysCall] = None, timer: Optional[bool] = None) -> None:
         """Run TCP finite state machine"""
 
         # Process event
-        with self.lock_fsm:
+        with self._lock_fsm:
             return {
-                "CLOSED": self._tcp_fsm_closed,
-                "LISTEN": self._tcp_fsm_listen,
-                "SYN_SENT": self._tcp_fsm_syn_sent,
-                "SYN_RCVD": self._tcp_fsm_syn_rcvd,
-                "ESTABLISHED": self._tcp_fsm_established,
-                "FIN_WAIT_1": self._tcp_fsm_fin_wait_1,
-                "FIN_WAIT_2": self._tcp_fsm_fin_wait_2,
-                "CLOSING": self._tcp_fsm_closing,
-                "CLOSE_WAIT": self._tcp_fsm_close_wait,
-                "LAST_ACK": self._tcp_fsm_last_ack,
-                "TIME_WAIT": self._tcp_fsm_time_wait,
-            }[self.state](packet, syscall, timer)
+                FsmState.CLOSED: self._tcp_fsm_closed,
+                FsmState.LISTEN: self._tcp_fsm_listen,
+                FsmState.SYN_SENT: self._tcp_fsm_syn_sent,
+                FsmState.SYN_RCVD: self._tcp_fsm_syn_rcvd,
+                FsmState.ESTABLISHED: self._tcp_fsm_established,
+                FsmState.FIN_WAIT_1: self._tcp_fsm_fin_wait_1,
+                FsmState.FIN_WAIT_2: self._tcp_fsm_fin_wait_2,
+                FsmState.CLOSING: self._tcp_fsm_closing,
+                FsmState.CLOSE_WAIT: self._tcp_fsm_close_wait,
+                FsmState.LAST_ACK: self._tcp_fsm_last_ack,
+                FsmState.TIME_WAIT: self._tcp_fsm_time_wait,
+            }[self._state](packet_rx_md, syscall, timer)
