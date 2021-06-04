@@ -25,48 +25,56 @@
 
 
 #
-# ether/phrx.py - packet handler for inbound Ethernet packets
+# libclogger.py - module contains methods supporting logging
 #
 
+import inspect
+import time
+from config import LOG_CHANEL, LOG_DEBUG
 
-from __future__ import annotations  # Required by Python ver < 3.10
+STYLES = {
+    "</>": "\33[0m",
+    "<WARN>": "\33[1m\33[93m",
+    "<CRIT>": "\33[41m",
+    "<INFO>": "\33[1m",
+    "<B>": "\33[1m",
+    "<I>": "\33[3m",
+    "<U>": "\33[4m",
+    "<r>": "\33[31m",
+    "<lr>": "\33[91m",
+    "<g>": "\33[32m",
+    "<lg>": "\33[92m",
+    "<y>": "\33[33m",
+    "<ly>": "\33[93m",
+    "<b>": "\33[34m",
+    "<lb>": "\33[94m",
+    "<c>": "\33[36m",
+    "<lc>": "\33[96m",
+    "<v>": "\33[35m",
+    "<lv>": "\33[95m",
+}
 
-from typing import TYPE_CHECKING
 
-import config
-import ether.ps
-from ether.fpp import EtherParser
-
-if TYPE_CHECKING:
-    from misc.packet import PacketRx
-
-from lib.logger import log
+START_TIME = time.time()
 
 
-def _phrx_ether(self, packet_rx: PacketRx) -> None:
-    """Handle inbound Ethernet packets"""
+def log(channel: str, message: str, inspect_depth: int = 1) -> None:
+    """Log message if channel and severity match configured values"""
 
-    EtherParser(packet_rx)
-
-    if packet_rx.parse_failed:
-        log("ether", f"{packet_rx.tracker} - <CRIT>{packet_rx.parse_failed}</>")
+    if __debug__ is False:
         return
 
-    log("ether", f"{packet_rx.tracker} - {packet_rx.ether}")
+    if channel in LOG_CHANEL:
+        if LOG_DEBUG:
+            frame_info = inspect.stack()[inspect_depth]
+            caller_class = frame_info.frame.f_locals["self"].__class__.__name__
+            caller_method = frame_info.function
+            caller_info = f"{caller_class}.{caller_method}"
+            output = f" <g>{(time.time() - START_TIME):07.02f}</> | <b>{channel.upper():7}</> | <c>{caller_info:40}</> | {message}"
+        else:
+            output = f" <g>{(time.time() - START_TIME):07.02f}</> | <b>{channel.upper():7}</> | {message}"
 
-    # Check if received packet matches any of stack MAC addresses
-    if packet_rx.ether.dst not in {self.mac_unicast, *self.mac_multicast, self.mac_broadcast}:
-        log("ehter", f"{packet_rx.tracker} - Ethernet packet not destined for this stack, dropping")
-        return
+        for key in STYLES.keys():
+            output = output.replace(key, STYLES[key])
 
-    if packet_rx.ether.type == ether.ps.ETHER_TYPE_ARP and config.ip4_support:
-        self._phrx_arp(packet_rx)
-        return
-
-    if packet_rx.ether.type == ether.ps.ETHER_TYPE_IP4 and config.ip4_support:
-        self._phrx_ip4(packet_rx)
-        return
-
-    if packet_rx.ether.type == ether.ps.ETHER_TYPE_IP6 and config.ip6_support:
-        self._phrx_ip6(packet_rx)
-        return
+        print(output)

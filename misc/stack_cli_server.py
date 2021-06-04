@@ -34,9 +34,8 @@ from __future__ import annotations  # Required by Python ver < 3.10
 import socket
 import threading
 
-import loguru
-
 import misc.stack as stack
+from lib.logger import log
 
 
 class StackCliServer:
@@ -48,8 +47,6 @@ class StackCliServer:
         self.local_ip_address = local_ip_address
         self.local_port = local_port
 
-        if __debug__:
-            self._logger = loguru.logger.bind(object_name="cli_server.")
         threading.Thread(target=self.__thread_service).start()
 
     def __thread_service(self) -> None:
@@ -59,13 +56,11 @@ class StackCliServer:
             s.bind((self.local_ip_address, self.local_port))
             s.listen(5)
 
-            if __debug__:
-                self._logger.debug(f"Stack CLI server started, bound to {self.local_ip_address}, port {self.local_port}")
+            log("cli", f"Stack CLI server started, bound to {self.local_ip_address}, port {self.local_port}")
 
             while True:
                 conn, addr = s.accept()
-                if __debug__:
-                    self._logger.debug(f"Stack CLI server received connection from {addr[0]}, port {addr[1]}")
+                log("cli", f"Stack CLI server received connection from {addr[0]}, port {addr[1]}")
 
                 threading.Thread(target=self.__thread_connection, args=(conn,)).start()
 

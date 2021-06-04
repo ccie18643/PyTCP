@@ -30,8 +30,9 @@
 #
 
 
-import loguru
-from testslide import StrictMock, TestCase
+from unittest import TestCase
+
+from mock import patch
 
 from misc.ph import PacketHandler
 
@@ -39,12 +40,11 @@ from misc.ph import PacketHandler
 class TestPacketHandler(TestCase):
     def setUp(self):
         super().setUp()
-        self.packet_handler = PacketHandler(None)
-        self.packet_handler._logger = StrictMock(loguru._logger.Logger)
-        self.packet_handler._logger.debug = lambda _: None
-        self.packet_handler._logger.warning = lambda _: None
 
-    def test__parse_stack_ip6_address_candidate(self):
+        self.packet_handler = PacketHandler(None)
+
+    @patch("lib.logger.log", return_value=None)
+    def test__parse_stack_ip6_address_candidate(self, _):
         from lib.ip6_address import Ip6Address, Ip6Host
 
         sample = [
@@ -74,7 +74,8 @@ class TestPacketHandler(TestCase):
         result = [ip6_address.gateway for ip6_address in result]
         self.assertEqual(result, expected)
 
-    def test__parse_stack_ip4_host_candidate(self):
+    @patch("lib.logger.log", return_value=None)
+    def test__parse_stack_ip4_host_candidate(self, _):
         from lib.ip4_address import Ip4Address, Ip4Host
 
         sample = [

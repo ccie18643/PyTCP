@@ -32,7 +32,7 @@ class TestMiscIpHelper(TestCase):
             result = inet_cksum(data=memoryview(sample.data), init=sample.init)
             self.assertEqual(result, sample.result)
 
-    def test_ip_ersion(self):
+    def test_ip_version(self):
         self.assertEqual(ip_version("1:2:3:4:5:6:7:8"), 6)
         self.assertEqual(ip_version("1.2.3.4"), 4)
         self.assertEqual(ip_version("ZHOPA"), None)

@@ -33,9 +33,8 @@ import threading
 import time
 from typing import Any, Callable, Optional
 
-import loguru
-
 import misc.stack as stack
+from lib.logger import log
 
 
 class TimerTask:
@@ -98,17 +97,13 @@ class Timer:
 
         stack.timer = self
 
-        if __debug__:
-            self._logger = loguru.logger.bind(object_name="timer.")
-
         self._run_timer: bool = True
 
         self._tasks: list[TimerTask] = []
         self._timers: dict[str, int] = {}
 
         threading.Thread(target=self.__thread_timer).start()
-        if __debug__:
-            self._logger.debug("Started timer")
+        log("timer", "Started timer")
 
     def __thread_timer(self) -> None:
         """Thread responsible for executing register methods on every timer tick"""
@@ -152,7 +147,6 @@ class Timer:
     def is_expir(self, name: str) -> bool:
         """Check if timer expir"""
 
-        if __debug__:
-            self._logger.opt(ansi=True).trace(f"<r>Active timers: {self._timers}</>")
+        log("timer", f"<r>Active timers: {self._timers}</>")
 
         return not self._timers.get(name, None)

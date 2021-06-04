@@ -37,6 +37,7 @@ import config
 import ip6.ps
 import ip6_ext_frag.ps
 from ip6_ext_frag.fpa import Ip6ExtFragAssembler
+from lib.logger import log
 from misc.tx_status import TxStatus
 
 if TYPE_CHECKING:
@@ -55,8 +56,7 @@ def _phtx_ip6_ext_frag(self, ip6_packet_tx: Ip6Assembler) -> TxStatus:
     ip6_tx_status: set[TxStatus] = set()
     for data_frag in data_frags:
         ip6_ext_frag_tx = Ip6ExtFragAssembler(next=ip6_packet_tx.next, offset=offset, flag_mf=data_frag is not data_frags[-1], id=self.ip6_id, data=data_frag)
-        if __debug__:
-            self._logger.debug(f"{ip6_ext_frag_tx.tracker} - {ip6_ext_frag_tx}")
+        log("ip6", f"{ip6_ext_frag_tx.tracker} - {ip6_ext_frag_tx}")
         ip6_tx_status.add(self._phtx_ip6(ip6_src=ip6_packet_tx.src, ip6_dst=ip6_packet_tx.dst, carried_packet=ip6_ext_frag_tx))
         offset += len(data_frag)
 

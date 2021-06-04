@@ -36,34 +36,33 @@ from typing import TYPE_CHECKING, Optional, Union
 import config
 from ip6.fpa import Ip6Assembler
 from lib.ip6_address import Ip6Address
+from lib.logger import log
 from misc.ip_helper import pick_local_ip6_address
 from misc.tx_status import TxStatus
 
 if TYPE_CHECKING:
     from icmp6.fpa import Icmp6Assembler
     from ip6_ext_frag.fpa import Ip6ExtFragAssembler
+    from lib.tracker import Tracker
     from tcp.fpa import TcpAssembler
     from udp.fpa import UdpAssembler
 
 
-def _validate_src_ip6_address(self, ip6_src: Ip6Address, ip6_dst: Ip6Address) -> Optional[Ip6Address]:
+def _validate_src_ip6_address(self, ip6_src: Ip6Address, ip6_dst: Ip6Address, tracker: Tracker) -> Optional[Ip6Address]:
     """Make sure source ip address is valid, supplement with valid one as appropriate"""
 
     # Check if the the source IP address belongs to this stack or its unspecified
     if ip6_src not in {*self.ip6_unicast, *self.ip6_multicast, Ip6Address("::")}:
-        if __debug__:
-            self._logger.warning(f"Unable to sent out IPv6 packet, stack doesn't own IPv6 address {ip6_src}")
+        log("ip6", f"{tracker} - <WARN>Unable to sent out IPv6 packet, stack doesn't own IPv6 address {ip6_src}, dropping</>")
         return None
 
     # If packet is a response to multicast then replace source address with link local address of the stack
     if ip6_src in self.ip6_multicast:
         if self.ip6_unicast:
             ip6_src = self.ip6_unicast[0]
-            if __debug__:
-                self._logger.debug(f"Packet is response to multicast, replaced source with stack link local IPv6 address {ip6_src}")
+            log("ip6", f"{tracker} - Packet is response to multicast, replaced source with stack link local IPv6 address {ip6_src}")
         else:
-            if __debug__:
-                self._logger.warning("Unable to sent out IPv6 packet, no stack link local unicast IPv6 address available")
+            log("ip6", f"{tracker} - <WARN>Unable to sent out IPv6 packet, no stack link local unicast IPv6 address available</>")
             return None
 
     # If source is unspecified try to find best match for given destination
@@ -73,13 +72,12 @@ def _validate_src_ip6_address(self, ip6_src: Ip6Address, ip6_dst: Ip6Address) ->
     return ip6_src
 
 
-def _validate_dst_ip6_address(self, ip6_dst: Ip6Address) -> Optional[Ip6Address]:
+def _validate_dst_ip6_address(self, ip6_dst: Ip6Address, tracker: Tracker) -> Optional[Ip6Address]:
     """Make sure destination ip address is valid"""
 
     # Drop packet if the destination address is unspecified
     if ip6_dst.is_unspecified:
-        if __debug__:
-            self._logger.warning("Destination address is unspecified, dropping...")
+        log("ip6", f"{tracker} - <WARN>Destination address is unspecified, dropping</>")
         return None
 
     return ip6_dst
@@ -101,12 +99,12 @@ def _phtx_ip6(
         return TxStatus.DROPED_IP6_NO_PROTOCOL_SUPPORT
 
     # Validate source address
-    ip6_src = self._validate_src_ip6_address(ip6_src, ip6_dst)
+    ip6_src = self._validate_src_ip6_address(ip6_src, ip6_dst, carried_packet.tracker)
     if not ip6_src:
         return TxStatus.DROPED_IP6_INVALID_SOURCE
 
     # Validate destination address
-    ip6_dst = self._validate_dst_ip6_address(ip6_dst)
+    ip6_dst = self._validate_dst_ip6_address(ip6_dst, carried_packet.tracker)
     if not ip6_dst:
         return TxStatus.DROPED_IP6_INVALID_DESTINATION
 
@@ -115,11 +113,9 @@ def _phtx_ip6(
 
     # Check if IP packet can be sent out without fragmentation, if so send it out
     if len(ip6_packet_tx) <= config.mtu:
-        if __debug__:
-            self._logger.debug(f"{ip6_packet_tx.tracker} - {ip6_packet_tx}")
+        log("ip6", f"{ip6_packet_tx.tracker} - {ip6_packet_tx}")
         return self._phtx_ether(carried_packet=ip6_packet_tx)
 
     # Fragment packet and send out
-    if __debug__:
-        self._logger.debug(f"{ip6_packet_tx.tracker} - IPv6 packet len {len(ip6_packet_tx)} bytes, fragmentation needed")
+    log("ip6", f"{ip6_packet_tx.tracker} - IPv6 packet len {len(ip6_packet_tx)} bytes, fragmentation needed")
     return self._phtx_ip6_ext_frag(ip6_packet_tx)
