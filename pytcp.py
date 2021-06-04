@@ -34,9 +34,8 @@ import struct
 import sys
 import time
 
-import loguru
-
 import config
+from lib.logger import log
 from lib.timer import Timer
 from misc.ph import PacketHandler
 from misc.stack_cli_server import StackCliServer
@@ -59,30 +58,11 @@ IFF_NO_PI = 0x1000
 def main() -> int:
     """Main function"""
 
-    loguru.logger.remove(0)
-    loguru.logger.add(
-        sys.stdout,
-        colorize=True,
-        level="CRITICAL",
-        format="<green>{time:YY-MM-DD HH:mm:ss}</green> <level>| {level:7} "
-        + "|</level> <level> <normal><cyan>{extra[object_name]}{function}:</cyan></normal> {message}</level>",
-    )
-
-    loguru.logger.add(
-        "log",
-        mode="w",
-        level="DEBUG",
-        format="<green>{time:YY-MM-DD HH:mm:ss}</green> <level>| {level:7} "
-        + "|</level> <level> <normal><cyan>{extra[object_name]}{function}:</cyan></normal> {message}</level>",
-    )
-
-    _logger = loguru.logger.bind(object_name="pytcp.")
-
     try:
         tap = os.open("/dev/net/tun", os.O_RDWR)
 
     except FileNotFoundError:
-        _logger.error("Unable to access '/dev/net/tun' device")
+        log("stack", "<CRIT>Unable to access '/dev/net/tun' device</>")
         sys.exit(-1)
 
     fcntl.ioctl(tap, TUNSETIFF, struct.pack("16sH", config.interface, IFF_TAP | IFF_NO_PI))
