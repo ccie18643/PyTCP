@@ -30,6 +30,7 @@
 
 import inspect
 import time
+
 from config import LOG_CHANEL, LOG_DEBUG
 
 STYLES = {
