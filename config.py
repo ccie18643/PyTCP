@@ -41,8 +41,28 @@ ip6_support = True
 ip4_support = True
 
 # Logger configuration - LOG_CHANEL sets which subsystems of stack log to console, LOG_DEBUG adds info about class/method caller
-# Following subsystems are supported: stack, timer, rx-ring, tx-ring, arp-c, nd-c, ether, arp, ip4, ip6, icmp4, icmp6, udp, tcp, socket, tcp-ss
-LOG_CHANEL = {"stack", "timer", "rx-ring", "tx-ring", "arp-c", "nd-c", "ether", "arp", "ip4", "ip6", "icmp4", "icmp6", "udp", "tcp", "socket", "tcp-ss"}
+# Following subsystems are supported:
+# stack, timer, rx-ring, tx-ring, arp-c, nd-c, ether, arp, ip4, ip6, icmp4, icmp6, udp, tcp, socket, tcp-ss, service
+LOG_CHANEL = {
+    "stack",
+    #    "timer",
+    "rx-ring",
+    "tx-ring",
+    "arp-c",
+    "nd-c",
+    "ether",
+    "arp",
+    "ip4",
+    "ip6",
+    "icmp4",
+    "icmp6",
+    "udp",
+    "tcp",
+    "socket",
+    "tcp-ss",
+    "service",
+    "client",
+}
 LOG_DEBUG = False
 
 # Packet integrity sanity check, if enabled it protects the protocol parsers from being exposed to malformed or malicious packets

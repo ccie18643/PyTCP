@@ -37,6 +37,7 @@ from datetime import datetime
 import misc.stack as stack
 from lib.ip4_address import Ip4Address
 from lib.ip6_address import Ip6Address
+from lib.logger import log
 from misc.ip_helper import str_to_ip
 
 
@@ -90,7 +91,7 @@ class ClientIcmpEcho:
                     ec_data=message,
                 )
 
-            print(f"Client ICMP Echo: Sent ICMP Echo ({flow_id}/{message_seq}) to {self.remote_ip_address} - {str(message)}")
+            log("client", f"Client ICMP Echo: Sent ICMP Echo ({flow_id}/{message_seq}) to {self.remote_ip_address} - {str(message)}")
             time.sleep(1)
             message_seq += 1
             message_count = min(message_count, message_count - 1)

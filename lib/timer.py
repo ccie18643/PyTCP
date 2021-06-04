@@ -144,8 +144,8 @@ class Timer:
 
         self._timers[name] = timeout
 
-    def is_expir(self, name: str) -> bool:
-        """Check if timer expir"""
+    def is_expired(self, name: str) -> bool:
+        """Check if timer expired"""
 
         log("timer", f"<r>Active timers: {self._timers}</>")
 

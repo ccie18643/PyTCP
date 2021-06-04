@@ -57,7 +57,7 @@ def _phrx_icmp4(self, packet_rx: PacketRx) -> None:
         log("icmp4", f"{packet_rx.tracker} - <CRIT>{packet_rx.parse_failed}</>")
         return
 
-    log("icmp4", f"{packet_rx.tracker} - <INFO>{packet_rx.icmp4}</>")
+    log("icmp4", f"{packet_rx.tracker} - {packet_rx.icmp4}")
 
     # ICMPv4 Echo Request packet
     if packet_rx.icmp4.type == icmp4.ps.ICMP4_ECHO_REQUEST:
@@ -99,7 +99,10 @@ def _phrx_icmp4(self, packet_rx: PacketRx) -> None:
             for socket_pattern in packet.socket_patterns:
                 socket = stack.sockets.get(socket_pattern, None)
                 if socket:
-                    log("icmp4", f"{packet_rx.tracker} - <INFO>Found matching listening socket {socket}</>")
+                    log(
+                        "icmp4",
+                        f"{packet_rx.tracker} - <INFO>Found matching listening socket {socket}, for Unreachable packet from {packet_rx.ip4.src}</>",
+                    )
                     socket.notify_unreachable()
                     return
 

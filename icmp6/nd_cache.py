@@ -89,6 +89,7 @@ class NdCache:
     def add_entry(self, ip6_address: Ip6Address, mac_address: MacAddress) -> None:
         """Add / refresh entry in cache"""
 
+        log("nd-c", f"<INFO>Adding/refreshing ARP cache entry from direct reply - {ip6_address} -> {mac_address}</>")
         self.nd_cache[ip6_address] = self.CacheEntry(mac_address)
 
     def find_entry(self, ip6_address: Ip6Address) -> Optional[MacAddress]:

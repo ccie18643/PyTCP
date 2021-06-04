@@ -33,6 +33,7 @@ import threading
 import time
 
 import lib.socket as socket
+from lib.logger import log
 from misc.ip_helper import ip_version
 
 
@@ -69,23 +70,23 @@ class ClientUdpEcho:
         elif version == 4:
             s = socket.socket(family=socket.AF_INET4, type=socket.SOCK_DGRAM)
         else:
-            print(f"Client UDP Echo: Invalid local IP address - {self.local_ip_address}")
+            log("service", f"Client UDP Echo: Invalid local IP address - {self.local_ip_address}")
             return
 
-        print(f"Client UDP Echo: Created socket [{s}]")
+        log("service", f"Client UDP Echo: Created socket [{s}]")
 
         try:
             s.bind((self.local_ip_address, self.local_port))
-            print(f"Client UDP Echo: Bound socket to {self.local_ip_address}, port {self.local_port}")
+            log("service", f"Client UDP Echo: Bound socket to {self.local_ip_address}, port {self.local_port}")
         except OSError as error:
-            print(f"Client UDP Echo: Unable to bind socket to {self.local_ip_address}, port {self.local_port} - [{error}]")
+            log("service", f"Client UDP Echo: Unable to bind socket to {self.local_ip_address}, port {self.local_port} - [{error}]")
             return
 
         try:
             s.connect((self.remote_ip_address, self.remote_port))
-            print(f"Client UDP Echo: Connection opened to {self.remote_ip_address}, port {self.remote_port}")
+            log("service", f"Client UDP Echo: Connection opened to {self.remote_ip_address}, port {self.remote_port}")
         except OSError as error:
-            print(f"Client UDP Echo: Connection to {self.remote_ip_address}, port {self.remote_port} failed - [{error}]")
+            log("service", f"Client UDP Echo: Connection to {self.remote_ip_address}, port {self.remote_port} failed - [{error}]")
             return
 
         message_count = self.message_count
@@ -98,12 +99,12 @@ class ClientUdpEcho:
             try:
                 s.send(bytes(message, "utf-8"))
             except OSError as error:
-                print(f"Client UDP Echo: send() error - [{error}]")
+                log("service", f"Client UDP Echo: send() error - [{error}]")
                 break
 
-            print(f"Client UDP Echo: Sent {len(message)} bytes of data to {self.remote_ip_address}, port {self.remote_port}")
+            log("service", f"Client UDP Echo: Sent {len(message)} bytes of data to {self.remote_ip_address}, port {self.remote_port}")
             time.sleep(self.message_delay)
             message_count = min(message_count, message_count - 1)
 
         s.close()
-        print(f"Client UDP Echo: Closed connection to {self.remote_ip_address}, port {self.remote_port}")
+        log("service", f"Client UDP Echo: Closed connection to {self.remote_ip_address}, port {self.remote_port}")

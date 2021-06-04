@@ -33,6 +33,7 @@ from __future__ import annotations  # Required by Python ver < 3.10
 
 from typing import TYPE_CHECKING
 
+from lib.logger import log
 from service.udp_generic import ServiceUdp
 
 if TYPE_CHECKING:
@@ -53,4 +54,4 @@ class ServiceUdpDiscard(ServiceUdp):
         while True:
             message, remote_address = s.recvfrom()
 
-            print(f"Service UDP Discard: Received {len(message)} bytes from {remote_address[0]}, port {remote_address[1]}")
+            log("service", f"Service UDP Discard: Received {len(message)} bytes from {remote_address[0]}, port {remote_address[1]}")

@@ -69,6 +69,6 @@ def _phtx_arp(
         echo_tracker=echo_tracker,
     )
 
-    log("arp", f"{arp_packet_tx.tracker} - <B>{arp_packet_tx}</>")
+    log("arp", f"{arp_packet_tx.tracker} - {arp_packet_tx}")
 
     self._phtx_ether(ether_src=ether_src, ether_dst=ether_dst, carried_packet=arp_packet_tx)

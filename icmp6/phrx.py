@@ -58,7 +58,7 @@ def _phrx_icmp6(self, packet_rx: PacketRx) -> None:
         log("icmp6", f"{packet_rx.tracker} - <CRIT>{packet_rx.parse_failed}</>")
         return
 
-    log("icmp6", f"{packet_rx.tracker} - <INFO>{packet_rx.icmp6}</>")
+    log("icmp6", f"{packet_rx.tracker} - {packet_rx.icmp6}")
 
     # ICMPv6 Neighbor Solicitation packet
     if packet_rx.icmp6.type == icmp6.ps.ICMP6_NEIGHBOR_SOLICITATION:
@@ -163,7 +163,10 @@ def _phrx_icmp6(self, packet_rx: PacketRx) -> None:
                 socket = stack.sockets.get(socket_pattern, None)
                 if socket:
                     if __debug__:
-                        log("icmp6", f"{packet_rx.tracker} - <INFO>Found matching listening socket {socket}</>")
+                        log(
+                            "icmp6",
+                            f"{packet_rx.tracker} - <INFO>Found matching listening socket {socket} for Unreachable packet from {packet_rx.ip6.src}</>",
+                        )
                     socket.notify_unreachable()
                     return
 

@@ -33,6 +33,7 @@ from __future__ import annotations  # Required by Python ver < 3.10
 
 from typing import TYPE_CHECKING
 
+from lib.logger import log
 from misc.malpi import malpa, malpi, malpka
 from service.udp_generic import ServiceUdp
 
@@ -54,7 +55,7 @@ class ServiceUdpEcho(ServiceUdp):
         while True:
             message, remote_address = s.recvfrom()
 
-            print(f"Service UDP Echo: Received {len(message)} bytes from {remote_address[0]}, port {remote_address[1]}")
+            log("service", f"Service UDP Echo: Received {len(message)} bytes from {remote_address[0]}, port {remote_address[1]}")
 
             if b"malpka" in message.strip().lower():
                 message = malpka
@@ -65,4 +66,4 @@ class ServiceUdpEcho(ServiceUdp):
 
             s.sendto(message, remote_address)
 
-            print(f"Service UDP Echo: Echo'ed {len(message)} bytes back to {remote_address[0]}, port {remote_address[1]}")
+            log("service", f"Service UDP Echo: Echo'ed {len(message)} bytes back to {remote_address[0]}, port {remote_address[1]}")

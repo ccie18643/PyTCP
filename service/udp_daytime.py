@@ -34,6 +34,7 @@ from __future__ import annotations  # Required by Python ver < 3.10
 from datetime import datetime
 from typing import TYPE_CHECKING
 
+from lib.logger import log
 from service.udp_generic import ServiceUdp
 
 if TYPE_CHECKING:
@@ -55,4 +56,4 @@ class ServiceUdpDaytime(ServiceUdp):
             _, remote_address = s.recvfrom()
             message = bytes(str(datetime.now()), "utf-8")
             s.sendto(message, remote_address)
-            print(f"Service UDP Daytime: Sent {len(message)} bytes to {remote_address[0]}, port {remote_address[1]}")
+            log("service", f"Service UDP Daytime: Sent {len(message)} bytes to {remote_address[0]}, port {remote_address[1]}")

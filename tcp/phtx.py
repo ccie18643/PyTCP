@@ -111,7 +111,7 @@ def _phtx_tcp(
         echo_tracker=echo_tracker,
     )
 
-    log("tcp", f"{tcp_packet_tx.tracker} - <INFO>{tcp_packet_tx}</>")
+    log("tcp", f"{tcp_packet_tx.tracker} - {tcp_packet_tx}")
 
     if isinstance(ip_src, Ip6Address) and isinstance(ip_dst, Ip6Address):
         return self._phtx_ip6(ip6_src=ip_src, ip6_dst=ip_dst, carried_packet=tcp_packet_tx)

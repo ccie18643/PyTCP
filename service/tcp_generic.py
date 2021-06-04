@@ -35,6 +35,7 @@ import threading
 from typing import TYPE_CHECKING
 
 import lib.socket as socket
+from lib.logger import log
 from misc.ip_helper import ip_version
 
 if TYPE_CHECKING:
@@ -62,22 +63,22 @@ class ServiceTcp:
         elif version == 4:
             s = socket.socket(family=socket.AF_INET4, type=socket.SOCK_STREAM)
         else:
-            print(f"Service TCP {self.name}: Invalid local IP address - {self.local_ip_address}")
+            log("service", f"Service TCP {self.name}: Invalid local IP address - {self.local_ip_address}")
             return
 
         try:
             s.bind((self.local_ip_address, self.local_port))
-            print(f"Service TCP {self.name}: Socket created, bound to {self.local_ip_address}, port {self.local_port}")
+            log("service", f"Service TCP {self.name}: Socket created, bound to {self.local_ip_address}, port {self.local_port}")
         except OSError as error:
-            print(f"Service TCP {self.name}: bind() call failed - {error}")
+            log("service", f"Service TCP {self.name}: bind() call failed - {error}")
             return
 
         s.listen()
-        print(f"Service TCP {self.name}: Socket set to listening mode")
+        log("service", f"Service TCP {self.name}: Socket set to listening mode")
 
         while True:
             cs, _ = s.accept()
-            print(f"Service TCP {self.name}: Inbound connection received from {cs.remote_ip_address}, port {cs.remote_port}")
+            log("service", f"Service TCP {self.name}: Inbound connection received from {cs.remote_ip_address}, port {cs.remote_port}")
             threading.Thread(target=self.__thread_connection, args=(cs,)).start()
 
     def __thread_connection(self, cs: Socket) -> None:
@@ -88,5 +89,5 @@ class ServiceTcp:
     def service(self, cs: Socket) -> None:
         """Service method"""
 
-        print(f"Service TCP {self.name}: No service method defined, closing connection")
+        log("service", f"Service TCP {self.name}: No service method defined, closing connection")
         cs.close()

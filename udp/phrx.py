@@ -49,7 +49,7 @@ def _phrx_udp(self, packet_rx: PacketRx) -> None:
         log("udp", f"{self.tracker} - <CRIT>{packet_rx.parse_failed}</>")
         return
 
-    log("udp", f"{packet_rx.tracker} - <INFO>{packet_rx.udp}</>")
+    log("udp", f"{packet_rx.tracker} - {packet_rx.udp}")
 
     assert isinstance(packet_rx.udp.data, memoryview)  # memoryview: data type check point
 
@@ -82,8 +82,8 @@ def _phrx_udp(self, packet_rx: PacketRx) -> None:
     # Respond with ICMP Port Unreachable message if no matching socket has been found
     log(
         "udp",
-        f"{packet_rx_md.tracker} - <INFO>Received UDP packet from {packet_rx.ip.src} to closed port "
-        + f"{packet_rx.udp.dport}, sending ICMPv4 Port Unreachable</>",
+        f"{packet_rx_md.tracker} - Received UDP packet from {packet_rx.ip.src} to closed port "
+        + f"{packet_rx.udp.dport}, sending ICMPv4 Port Unreachable",
     )
 
     if packet_rx.ip.ver == 6:

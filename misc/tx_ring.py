@@ -78,7 +78,7 @@ class TxRing:
                 log("tx-ring", f"{packet_tx.tracker} - <CRIT>Unable to send frame, OSError: {error}</>")
                 continue
 
-            log("tx-ring", f"<lr>[TX]</> {packet_tx.tracker}<y>{packet_tx.tracker.latency}</> - sent frame, {len(packet_tx)} bytes")
+            log("tx-ring", f"<B><lr>[TX]</> {packet_tx.tracker}<y>{packet_tx.tracker.latency}</> - sent frame, {len(packet_tx)} bytes")
 
     def enqueue(self, packet_tx: EtherAssembler) -> None:
         """Enqueue outbound packet into TX ring"""

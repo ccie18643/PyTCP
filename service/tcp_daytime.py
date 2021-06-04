@@ -35,6 +35,7 @@ import time
 from datetime import datetime
 from typing import TYPE_CHECKING
 
+from lib.logger import log
 from service.tcp_generic import ServiceTcp
 
 if TYPE_CHECKING:
@@ -58,7 +59,7 @@ class ServiceTcpDaytime(ServiceTcp):
         # Don't want to be working on object variable as it may be shar by multiple connections
         message_count = self.message_count
 
-        print(f"Service TCP Daytime: Sending first message to {cs.remote_ip_address}, port {cs.remote_port}")
+        log("service", f"Service TCP Daytime: Sending first message to {cs.remote_ip_address}, port {cs.remote_port}")
         cs.send(b"***CLIENT OPEN / SERVICE OPEN***\n")
 
         message_count = self.message_count
@@ -68,12 +69,12 @@ class ServiceTcpDaytime(ServiceTcp):
             try:
                 cs.send(message)
             except OSError as error:
-                print(f"Service TCP Daytime: send() error - [{error}]")
+                log("service", f"Service TCP Daytime: send() error - [{error}]")
                 break
 
-            print(f"Service TCP Daytime: Sent {len(message)} bytes of data to {cs.remote_ip_address}, port {cs.remote_port}")
+            log("service", f"Service TCP Daytime: Sent {len(message)} bytes of data to {cs.remote_ip_address}, port {cs.remote_port}")
             time.sleep(self.message_delay)
             message_count = min(message_count, message_count - 1)
 
         cs.close()
-        print(f"Service TCP Daytime: Closed connection to {cs.remote_ip_address}, port {cs.remote_port}")
+        log("service", f"Service TCP Daytime: Closed connection to {cs.remote_ip_address}, port {cs.remote_port}")

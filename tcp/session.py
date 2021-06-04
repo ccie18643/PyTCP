@@ -259,13 +259,13 @@ class TcpSession:
     def listen(self) -> None:
         """LISTEN syscall"""
 
-        log("tcp-ss", f"[{self}] - <y>[{self._state}]</> - got <r>LISTEN</> syscall")
+        log("tcp-ss", f"[{self}] - <ly>[{self._state}]</> - got <r>LISTEN</> syscall")
         self.tcp_fsm(syscall=SysCall.LISTEN)
 
     def connect(self) -> None:
         """CONNECT syscall"""
 
-        log("tcp-ss", f"[{self}] - <y>[{self._state}]</> - got <r>CONNECT</> syscall")
+        log("tcp-ss", f"[{self}] - <ly>[{self._state}]</> - got <r>CONNECT</> syscall")
         self.tcp_fsm(syscall=SysCall.CONNECT)
         self._event_connect.acquire()
         if self._state is not FsmState.ESTABLISHED and self._connection_error is ConnError.REFUSED:
@@ -312,7 +312,7 @@ class TcpSession:
     def close(self) -> None:
         """CLOSE syscall"""
 
-        log("tcp-ss", f"[{self}] - <y>[{self._state}]</> - got <r>CLOSE</> syscall, {len(self._tx_buffer)} bytes in TX buffer")
+        log("tcp-ss", f"[{self}] - <ly>[{self._state}]</> - got <r>CLOSE</> syscall, {len(self._tx_buffer)} bytes in TX buffer")
         self.tcp_fsm(syscall=SysCall.CLOSE)
 
     def _change_state(self, state: FsmState) -> None:
@@ -321,7 +321,7 @@ class TcpSession:
         old_state = self._state
         self._state = state
         if old_state:
-            log("tcp-ss", f"[{self}] - <y>[{old_state} -> {self._state}]</>")
+            log("tcp-ss", f"[{self}] - <ly>[{old_state} -> {self._state}]</>")
 
         # Unregister session
         if self._state in {FsmState.CLOSED}:
@@ -434,7 +434,7 @@ class TcpSession:
     def _delayed_ack(self) -> None:
         """Run Delayed ACK mechanism"""
 
-        if stack.timer.is_expir(f"{self}-delayed_ack"):
+        if stack.timer.is_expired(f"{self}-delayed_ack"):
             if self._rcv_nxt > self._rcv_una:
                 self._transmit_packet(flag_ack=True)
                 log("tcp-ss", f"[{self}] - Sent out delayed ACK ({self._rcv_nxt})")
@@ -443,7 +443,7 @@ class TcpSession:
     def _retransmit_packet_timeout(self) -> None:
         """Retransmit packet after expir timeout"""
 
-        if self._snd_una in self._tx_retransmit_timeout_counter and stack.timer.is_expir(f"{self}-retransmit_seq-{self._snd_una}"):
+        if self._snd_una in self._tx_retransmit_timeout_counter and stack.timer.is_expired(f"{self}-retransmit_seq-{self._snd_una}"):
             if self._tx_retransmit_timeout_counter[self._snd_una] == PACKET_RETRANSMIT_MAX_COUNT:
                 # Send RST packet if we received any packet from peer already
                 if self._rcv_nxt is not None:
@@ -923,7 +923,7 @@ class TcpSession:
         """TCP FSM TIME_WAIT state handler"""
 
         # Got timer event -> Run TIME_WAIT delay
-        if timer and stack.timer.is_expir(f"{self}-time_wait"):
+        if timer and stack.timer.is_expired(f"{self}-time_wait"):
             self._change_state(FsmState.CLOSED)
             return
 

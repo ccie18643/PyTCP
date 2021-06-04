@@ -91,6 +91,7 @@ class ArpCache:
     def add_entry(self, ip4_address: Ip4Address, mac_address: MacAddress) -> None:
         """Add / refresh entry in cache"""
 
+        log("arp-c", f"<INFO>Adding/refreshing ARP cache entry - {ip4_address} -> {mac_address}</>")
         self.arp_cache[ip4_address] = self.CacheEntry(mac_address)
 
     def find_entry(self, ip4_address: Ip4Address) -> Optional[MacAddress]:

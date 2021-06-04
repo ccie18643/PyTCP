@@ -186,17 +186,17 @@ class PacketHandler:
 
         # Log all the addresses stack will listen on
         log("stack", f"<INFO>Stack listening on unicast MAC address: {self.mac_unicast}</>")
-        log("stack", f"<INFO>Stack listening on multicast MAC addresses: {[str(_) for _ in set(self.mac_multicast)]}</>")
+        log("stack", f"<INFO>Stack listening on multicast MAC addresses: {', '.join([str(_) for _ in set(self.mac_multicast)])}</>")
         log("stack", f"<INFO>Stack listening on broadcast MAC address: {self.mac_broadcast}</>")
 
         if config.ip6_support:
-            log("stack", f"<INFO>Stack listening on unicast IPv6 addresses: {[str(_) for _ in self.ip6_unicast]}</>")
-            log("stack", f"<INFO>Stack listening on multicast IPv6 addresses: {[str(_) for _ in set(self.ip6_multicast)]})</>")
+            log("stack", f"<INFO>Stack listening on unicast IPv6 addresses: {', '.join([str(_) for _ in self.ip6_unicast])}</>")
+            log("stack", f"<INFO>Stack listening on multicast IPv6 addresses: {', '.join([str(_) for _ in set(self.ip6_multicast)])})</>")
 
         if config.ip4_support:
-            log("stack", f"<INFO>Stack listening on unicast IPv4 addresses: {[str(_) for _ in self.ip4_unicast]}</>")
-            log("stack", f"<INFO>Stack listening on multicast IPv4 addresses: {[str(_) for _ in self.ip4_multicast]}</>")
-            log("stack", f"<INFO>Stack listening on broadcast IPv4 addresses: {[str(_) for _ in self.ip4_broadcast]}</>")
+            log("stack", f"<INFO>Stack listening on unicast IPv4 addresses: {', '.join([str(_) for _ in self.ip4_unicast])}</>")
+            log("stack", f"<INFO>Stack listening on multicast IPv4 addresses: {', '.join([str(_) for _ in self.ip4_multicast])}</>")
+            log("stack", f"<INFO>Stack listening on broadcast IPv4 addresses: {', '.join([str(_) for _ in self.ip4_broadcast])}</>")
 
     def __thread_packet_handler(self) -> None:
         """Thread picks up incoming packets from RX ring and processes them"""

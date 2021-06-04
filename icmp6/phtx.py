@@ -82,6 +82,6 @@ def _phtx_icmp6(
         echo_tracker=echo_tracker,
     )
 
-    log("icmp6", f"{icmp6_packet_tx.tracker} - <INFO>{icmp6_packet_tx}</>")
+    log("icmp6", f"{icmp6_packet_tx.tracker} - {icmp6_packet_tx}")
 
     return self._phtx_ip6(ip6_src=ip6_src, ip6_dst=ip6_dst, ip6_hop=ip6_hop, carried_packet=icmp6_packet_tx)

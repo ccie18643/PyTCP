@@ -52,7 +52,7 @@ def _phrx_arp(self, packet_rx: PacketRx) -> None:
         log("arp", f"{packet_rx.tracker} - <CRIT>{packet_rx.parse_failed}</>")
         return
 
-    log("arp", f"{packet_rx.tracker} - <INFO>{packet_rx.arp}</>")
+    log("arp", f"{packet_rx.tracker} - {packet_rx.arp}")
 
     if packet_rx.arp.oper == arp.ps.ARP_OP_REQUEST:
         # Check if request contains our IP address in SPA field, this indicates IP address conflict
