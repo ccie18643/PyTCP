@@ -5,3 +5,4 @@ mypy
 flake8
 codespell
 isort
+argparse
