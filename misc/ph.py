@@ -116,12 +116,8 @@ class PacketHandler:
     _phrx_udp = udp.phrx._phrx_udp
     _phtx_udp = udp.phtx._phtx_udp
 
-    def __init__(self, tap: int) -> None:
+    def __init__(self, tap: Optional[int]) -> None:
         """Class constructor"""
-
-        # Skip most of the initialisations for the unit test / mock run
-        if tap is None:
-            return
 
         stack.packet_handler = self
 
@@ -135,11 +131,6 @@ class PacketHandler:
         self.ip6_multicast: list[Ip6Address] = []
         self.ip4_host: list[Ip4Host] = []
         self.ip4_multicast: list[Ip4Address] = []
-
-        self.rx_ring: RxRing = RxRing(tap)
-        self.tx_ring: TxRing = TxRing(tap)
-        self.arp_cache: ArpCache = ArpCache()
-        self.icmp6_nd_cache: NdCache = NdCache()
 
         # Used for the ARP DAD process
         self.arp_probe_unicast_conflict: set[Ip4Address] = set()
@@ -160,6 +151,16 @@ class PacketHandler:
         # Used to defragment IPv4 and IPv6 packets
         self.ip4_frag_flows: dict[int, bytes] = {}
         self.ip6_frag_flows: dict[int, bytes] = {}
+
+        # Skip rest of the initialisations for the unit test / mock run
+        if tap is None:
+            return
+
+        # Start subsystems
+        self.rx_ring: RxRing = RxRing(tap)
+        self.tx_ring: TxRing = TxRing(tap)
+        self.arp_cache: ArpCache = ArpCache()
+        self.icmp6_nd_cache: NdCache = NdCache()
 
         # Start packet handler so we can receive packets from network
         threading.Thread(target=self.__thread_packet_handler).start()
