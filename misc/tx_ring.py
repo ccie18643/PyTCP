@@ -35,9 +35,8 @@ import os
 import threading
 from typing import TYPE_CHECKING
 
-import loguru
-
 import config
+from lib.logger import log
 
 if TYPE_CHECKING:
     from threading import Semaphore
@@ -51,17 +50,13 @@ class TxRing:
     def __init__(self, tap: int) -> None:
         """Initialize access to tap interface and the outbound queue"""
 
-        if __debug__:
-            self._logger = loguru.logger.bind(object_name="tx_ring.")
-
         self.tap: int = tap
         self.tx_ring: list[EtherAssembler] = []
         self.packet_enqueued: Semaphore = threading.Semaphore(0)
 
         threading.Thread(target=self.__thread_transmit).start()
 
-        if __debug__:
-            self._logger.debug("Started TX ring")
+        log("tx-ring", "Started TX ring")
 
     def __thread_transmit(self) -> None:
         """Dequeue packet from TX ring and send it out"""
@@ -73,24 +68,21 @@ class TxRing:
             self.packet_enqueued.acquire()
             packet_tx = self.tx_ring.pop(0)
             if (packet_tx_len := len(packet_tx)) > config.mtu + 14:
-                if __debug__:
-                    self._logger.error(f"{packet_tx.tracker} - Unable to send frame, frame len ({packet_tx_len}) > mtu ({config.mtu + 14})")
+                log("tx-ring", f"{packet_tx.tracker} - Unable to send frame, frame len ({packet_tx_len}) > mtu ({config.mtu + 14})")
                 continue
             frame = memoryview(frame_buffer)[:packet_tx_len]
             packet_tx.assemble(frame)
             try:
                 os.write(self.tap, frame)
             except OSError as error:
-                self._logger.error(f"{packet_tx.tracker} - Unable to send frame, OSError: {error}")
+                log("tx-ring", f"{packet_tx.tracker} - <CRIT>Unable to send frame, OSError: {error}</>")
                 continue
 
-            if __debug__:
-                self._logger.opt(ansi=True).debug(f"<lr>[TX]</> {packet_tx.tracker}<y>{packet_tx.tracker.latency}</> - sent frame, {len(packet_tx)} bytes")
+            log("tx-ring", f"<lr>[TX]</> {packet_tx.tracker}<y>{packet_tx.tracker.latency}</> - sent frame, {len(packet_tx)} bytes")
 
     def enqueue(self, packet_tx: EtherAssembler) -> None:
         """Enqueue outbound packet into TX ring"""
 
         self.tx_ring.append(packet_tx)
-        if __debug__:
-            self._logger.opt(ansi=True).debug(f"{packet_tx.tracker}, queue len: {len(self.tx_ring)}")
+        log("rx-ring", f"{packet_tx.tracker}, queue len: {len(self.tx_ring)}")
         self.packet_enqueued.release()

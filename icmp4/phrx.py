@@ -41,6 +41,7 @@ import misc.stack as stack
 import udp.ps
 from icmp4.fpp import Icmp4Parser
 from lib.ip4_address import Ip4Address
+from lib.logger import log
 from udp.metadata import UdpMetadata
 
 if TYPE_CHECKING:
@@ -53,17 +54,14 @@ def _phrx_icmp4(self, packet_rx: PacketRx) -> None:
     Icmp4Parser(packet_rx)
 
     if packet_rx.parse_failed:
-        if __debug__:
-            self._logger.critical(f"{packet_rx.tracker} - {packet_rx.parse_failed}")
+        log("icmp4", f"{packet_rx.tracker} - <CRIT>{packet_rx.parse_failed}</>")
         return
 
-    if __debug__:
-        self._logger.opt(ansi=True).info(f"<lg>{packet_rx.tracker}</> - {packet_rx.icmp4}")
+    log("icmp4", f"{packet_rx.tracker} - <INFO>{packet_rx.icmp4}</>")
 
     # ICMPv4 Echo Request packet
     if packet_rx.icmp4.type == icmp4.ps.ICMP4_ECHO_REQUEST:
-        if __debug__:
-            self._logger.debug(f"{packet_rx.tracker} - Received ICMPv4 Echo Request packet from {packet_rx.ip4.src}, sending reply...")
+        log("icmp4", f"{packet_rx.tracker} - <INFO>Received ICMPv4 Echo Request packet from {packet_rx.ip4.src}, sending reply</>")
 
         self._phtx_icmp4(
             ip4_src=packet_rx.ip4.dst,
@@ -78,8 +76,7 @@ def _phrx_icmp4(self, packet_rx: PacketRx) -> None:
 
     # ICMPv4 Unreachable packet
     if packet_rx.icmp4.type == icmp4.ps.ICMP4_UNREACHABLE:
-        if __debug__:
-            self._logger.debug(f"{packet_rx.tracker} - Received ICMPv4 Unreachable packet from {packet_rx.ip4.src}, will try to match UDP socket")
+        log("icmp4", f"{packet_rx.tracker} - Received ICMPv4 Unreachable packet from {packet_rx.ip4.src}, will try to match UDP socket")
 
         # Quick and dirty way to validate received data and pull useful information from it
         frame = packet_rx.icmp4.un_data
@@ -102,15 +99,12 @@ def _phrx_icmp4(self, packet_rx: PacketRx) -> None:
             for socket_pattern in packet.socket_patterns:
                 socket = stack.sockets.get(socket_pattern, None)
                 if socket:
-                    if __debug__:
-                        self._logger.debug(f"{packet_rx.tracker} - Found matching listening socket {socket}")
+                    log("icmp4", f"{packet_rx.tracker} - <INFO>Found matching listening socket {socket}</>")
                     socket.notify_unreachable()
                     return
 
-            if __debug__:
-                self._logger.debug(f"{packet_rx.tracker} - Unreachable data doesn't match any UDP socket")
+            log("icmp4", f"{packet_rx.tracker} - Unreachable data doesn't match any UDP socket")
             return
 
-        if __debug__:
-            self._logger.debug(f"{packet_rx.tracker} - Unreachable data doesn't pass basic IPv4/UDP integrity check")
+        log("icmp4", f"{packet_rx.tracker} - Unreachable data doesn't pass basic IPv4/UDP integrity check")
         return

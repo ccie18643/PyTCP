@@ -51,14 +51,14 @@ class Tracker:
 
         if prefix == "RX":
             self._timestamp = time.time()
-            self._serial = f"RX{Tracker.serial_rx:0>4x}".upper()
+            self._serial = "<lg>" + f"RX{Tracker.serial_rx:0>4x}</>".upper()
             Tracker.serial_rx += 1
             if Tracker.serial_rx > 0xFFFF:
                 Tracker.serial_rx = 0
 
         if prefix == "TX":
             self._timestamp = time.time()
-            self._serial = f"TX{Tracker.serial_tx:0>4x}".upper()
+            self._serial = "<lr>" + f"TX{Tracker.serial_tx:0>4x}</>".upper()
             Tracker.serial_tx += 1
             if Tracker.serial_tx > 0xFFFF:
                 Tracker.serial_tx = 0

@@ -34,6 +34,7 @@ from __future__ import annotations  # Required by Python ver < 3.10
 import ip6.fpp
 import ip6.ps
 from ip6.fpp import Ip6Parser
+from lib.logger import log
 from misc.packet import PacketRx
 
 
@@ -43,17 +44,14 @@ def _phrx_ip6(self, packet_rx: PacketRx) -> None:
     Ip6Parser(packet_rx)
 
     if packet_rx.parse_failed:
-        if __debug__:
-            self._logger.critical(f"{packet_rx.tracker} - {packet_rx.parse_failed}")
+        log("ip6", f"{packet_rx.tracker} - <rb>{packet_rx.parse_failed}</>")
         return
 
-    if __debug__:
-        self._logger.debug(f"{packet_rx.tracker} - {packet_rx.ip6}")
+    log("ip6", f"{packet_rx.tracker} - {packet_rx.ip6}")
 
     # Check if received packet has been sent to us directly or by unicast or multicast
     if packet_rx.ip6.dst not in {*self.ip6_unicast, *self.ip6_multicast}:
-        if __debug__:
-            self._logger.debug(f"{packet_rx.tracker} - IP packet not destined for this stack, dropping...")
+        log("ip6", f"{packet_rx.tracker} - IP packet not destined for this stack, dropping")
         return
 
     if packet_rx.ip6.next == ip6.ps.IP6_NEXT_HEADER_EXT_FRAG:

@@ -32,6 +32,7 @@
 from __future__ import annotations  # Required by Python ver < 3.10
 
 import misc.stack as stack
+from lib.logger import log
 from misc.packet import PacketRx
 from tcp.fpp import TcpParser
 from tcp.metadata import TcpMetadata
@@ -43,12 +44,10 @@ def _phrx_tcp(self, packet_rx: PacketRx) -> None:
     TcpParser(packet_rx)
 
     if packet_rx.parse_failed:
-        if __debug__:
-            self._logger.critical(f"{self.tracker} - {packet_rx.parse_failed}")
+        log("tcp", f"{self.tracker} - <CRIT>{packet_rx.parse_failed}</>")
         return
 
-    if __debug__:
-        self._logger.opt(ansi=True).info(f"<lg>{packet_rx.tracker}</> - {packet_rx.tcp}")
+    log("tcp", f"{packet_rx.tracker} - <INFO>{packet_rx.tcp}</>")
 
     assert isinstance(packet_rx.tcp.data, memoryview)  # memoryview: data type check point
 
@@ -73,8 +72,7 @@ def _phrx_tcp(self, packet_rx: PacketRx) -> None:
 
     # Check if incoming packet matches active TCP socket
     if tcp_socket := stack.sockets.get(str(packet_rx_md), None):
-        if __debug__:
-            self._logger.debug(f"{packet_rx_md.tracker} - TCP packet is part of active socket {tcp_socket}")
+        log("tcp", f"{packet_rx_md.tracker} - <INFO>TCP packet is part of active socket {tcp_socket}</>")
         tcp_socket.process_tcp_packet(packet_rx_md)
         return
 
@@ -82,14 +80,12 @@ def _phrx_tcp(self, packet_rx: PacketRx) -> None:
     if all({packet_rx_md.flag_syn}) and not any({packet_rx_md.flag_ack, packet_rx_md.flag_fin, packet_rx_md.flag_rst}):
         for tcp_listening_socket_pattern in packet_rx_md.tcp_listening_socket_patterns:
             if tcp_socket := stack.sockets.get(tcp_listening_socket_pattern, None):
-                if __debug__:
-                    self._logger.debug(f"{packet_rx_md.tracker} - TCP packet matches listening socket {tcp_socket}")
-                    tcp_socket.process_tcp_packet(packet_rx_md)
+                log("tcp", f"{packet_rx_md.tracker} - <INFO>TCP packet matches listening socket {tcp_socket}</>")
+                tcp_socket.process_tcp_packet(packet_rx_md)
                 return
 
     # In case packet doesn't match any session send RST packet in response to it
-    if __debug__:
-        self._logger.debug(f"{packet_rx.tracker} - TCP packet from {packet_rx.ip.src} to closed port {packet_rx.tcp.dport}, responding with TCP RST packet")
+    log("tcp", f"{packet_rx.tracker} - <INFO>TCP packet from {packet_rx.ip.src} to closed port {packet_rx.tcp.dport}, responding with TCP RST packet</>")
     self._phtx_tcp(
         ip_src=packet_rx.ip.dst,
         ip_dst=packet_rx.ip.src,

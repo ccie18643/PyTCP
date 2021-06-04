@@ -37,6 +37,7 @@ from typing import TYPE_CHECKING, Optional
 import misc.stack as stack
 from lib.ip4_address import Ip4Address, Ip4AddressFormatError
 from lib.ip6_address import Ip6Address, Ip6AddressFormatError
+from lib.logger import log
 from lib.socket import AF_INET4, AF_INET6, SOCK_DGRAM, ReceiveTimeout, Socket, gaierror
 from misc.tx_status import TxStatus
 
@@ -73,8 +74,7 @@ class UdpSocket(Socket):
             self._local_ip_address = Ip4Address("0.0.0.0")
             self._remote_ip_address = Ip4Address("0.0.0.0")
 
-        if __debug__:
-            self._logger.opt(ansi=True).debug(f"<g>[{self}]</> - Created socket")
+        log("socket", f"<g>[{self}]</> - Created socket")
 
     def bind(self, address: tuple[str, int]) -> None:
         """Bind the socket to local address"""
@@ -119,8 +119,7 @@ class UdpSocket(Socket):
         self._local_port = local_port
         stack.sockets[str(self)] = self
 
-        if __debug__:
-            self._logger.opt(ansi=True).debug(f"<g>[{self}]</> - Bound")
+        log("socket", f"<g>[{self}]</> - Bound")
 
     def connect(self, address: tuple[str, int]) -> None:
         """Connect the socket to remote host"""
@@ -147,8 +146,7 @@ class UdpSocket(Socket):
         self._remote_port = remote_port
         stack.sockets[str(self)] = self
 
-        if __debug__:
-            self._logger.opt(ansi=True).debug(f"<g>[{self}]</> - Connected socket")
+        log("socket", f"<g>[{self}]</> - Connected socket")
 
     def send(self, data: bytes) -> int:
         """Send the data to connected remote host"""
@@ -172,8 +170,7 @@ class UdpSocket(Socket):
 
         sent_data_len = len(data) if tx_status is TxStatus.PASSED_TO_TX_RING else 0
 
-        if __debug__:
-            self._logger.opt(ansi=True).debug(f"<g>[{self}]</> - <lr>Sent</> {sent_data_len} bytes of data")
+        log("socket", f"<g>[{self}]</> - <lr>Sent</> {sent_data_len} bytes of data")
 
         return sent_data_len
 
@@ -205,8 +202,7 @@ class UdpSocket(Socket):
 
         sent_data_len = len(data) if tx_status is TxStatus.PASSED_TO_TX_RING else 0
 
-        if __debug__:
-            self._logger.opt(ansi=True).debug(f"<g>[{self}]</> - <lr>Sent</> {sent_data_len} bytes of data")
+        log("socket", f"<g>[{self}]</> - <lr>Sent</> {sent_data_len} bytes of data")
 
         return sent_data_len
 
@@ -221,8 +217,7 @@ class UdpSocket(Socket):
 
         if self._packet_rx_md_ready.acquire(timeout=timeout):  # type: ignore
             data_rx = self._packet_rx_md.pop(0).data
-            if __debug__:
-                self._logger.opt(ansi=True).debug(f"<g>[{self}]</> - <lg>Received</> {len(data_rx)} bytes of data")
+            log("socket", f"<g>[{self}]</> - <lg>Received</> {len(data_rx)} bytes of data")
             return data_rx
         raise ReceiveTimeout
 
@@ -233,8 +228,7 @@ class UdpSocket(Socket):
 
         if self._packet_rx_md_ready.acquire(timeout=timeout):  # type: ignore
             packet_rx_md = self._packet_rx_md.pop(0)
-            if __debug__:
-                self._logger.opt(ansi=True).debug(f"<g>[{self}]</> - <lg>Received</> {len(packet_rx_md.data)} bytes of data")
+            log("socket", f"<g>[{self}]</> - <lg>Received</> {len(packet_rx_md.data)} bytes of data")
             return (packet_rx_md.data, (str(packet_rx_md.remote_ip_address), packet_rx_md.remote_port))
         raise ReceiveTimeout
 
@@ -243,8 +237,7 @@ class UdpSocket(Socket):
 
         stack.sockets.pop(str(self), None)
 
-        if __debug__:
-            self._logger.opt(ansi=True).debug(f"<g>[{self}]</> - Closed socket")
+        log("socket", f"<g>[{self}]</> - Closed socket")
 
     def process_udp_packet(self, packet_rx_md: UdpMetadata) -> None:
         """Process incoming packet's metadata"""

@@ -34,6 +34,7 @@ from __future__ import annotations  # Required by Python ver < 3.10
 from typing import TYPE_CHECKING, Optional
 
 from icmp4.fpa import Icmp4Assembler
+from lib.logger import log
 from lib.tracker import Tracker
 
 if TYPE_CHECKING:
@@ -65,7 +66,6 @@ def _phtx_icmp4(
         echo_tracker=echo_tracker,
     )
 
-    if __debug__:
-        self._logger.opt(ansi=True).info(f"<lr>{icmp4_packet_tx.tracker}</> - {icmp4_packet_tx}")
+    log("icmp4", f"{icmp4_packet_tx.tracker} - <B>{icmp4_packet_tx}</>")
 
     return self._phtx_ip4(ip4_src=ip4_src, ip4_dst=ip4_dst, carried_packet=icmp4_packet_tx)

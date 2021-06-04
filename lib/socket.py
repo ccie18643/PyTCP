@@ -35,8 +35,6 @@ from abc import ABC, abstractmethod
 from enum import IntEnum
 from typing import TYPE_CHECKING, Optional, Union
 
-import loguru
-
 import config
 import misc.stack as stack
 from lib.ip4_address import Ip4Address, Ip4AddressFormatError
@@ -110,9 +108,6 @@ class Socket(ABC):
 
     def __init__(self) -> None:
         """Class constructor"""
-
-        if __debug__:
-            self._logger = loguru.logger.bind(object_name="socket.")
 
         if TYPE_CHECKING:
             self._family: AddressFamily

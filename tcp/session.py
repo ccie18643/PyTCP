@@ -36,10 +36,9 @@ import threading
 from enum import Enum, auto
 from typing import TYPE_CHECKING, Any, Callable, Optional
 
-import loguru
-
 import config
 import misc.stack as stack
+from lib.logger import log
 
 if TYPE_CHECKING:
     from threading import Lock, RLock, Semaphore
@@ -146,9 +145,6 @@ class TcpSession:
         socket: Socket,
     ) -> None:
         """Class constructor"""
-
-        if __debug__:
-            self._logger = loguru.logger.bind(object_name="tcp_session.")
 
         self._local_ip_address: IpAddress = local_ip_address
         self._local_port: int = local_port
@@ -263,15 +259,13 @@ class TcpSession:
     def listen(self) -> None:
         """LISTEN syscall"""
 
-        if __debug__:
-            self._logger.opt(ansi=True).debug(f"[{self}] - <y>[{self._state}]</> - got <r>LISTEN</> syscall")
+        log("tcp-ss", f"[{self}] - <y>[{self._state}]</> - got <r>LISTEN</> syscall")
         self.tcp_fsm(syscall=SysCall.LISTEN)
 
     def connect(self) -> None:
         """CONNECT syscall"""
 
-        if __debug__:
-            self._logger.opt(ansi=True).debug(f"[{self}] - <y>[{self._state}]</> - got <r>CONNECT</> syscall")
+        log("tcp-ss", f"[{self}] - <y>[{self._state}]</> - got <r>CONNECT</> syscall")
         self.tcp_fsm(syscall=SysCall.CONNECT)
         self._event_connect.acquire()
         if self._state is not FsmState.ESTABLISHED and self._connection_error is ConnError.REFUSED:
@@ -318,8 +312,7 @@ class TcpSession:
     def close(self) -> None:
         """CLOSE syscall"""
 
-        if __debug__:
-            self._logger.opt(ansi=True).debug(f"[{self}] - <y>[{self._state}]</> - got <r>CLOSE</> syscall, {len(self._tx_buffer)} bytes in TX buffer")
+        log("tcp-ss", f"[{self}] - <y>[{self._state}]</> - got <r>CLOSE</> syscall, {len(self._tx_buffer)} bytes in TX buffer")
         self.tcp_fsm(syscall=SysCall.CLOSE)
 
     def _change_state(self, state: FsmState) -> None:
@@ -328,14 +321,12 @@ class TcpSession:
         old_state = self._state
         self._state = state
         if old_state:
-            if __debug__:
-                self._logger.opt(ansi=True, depth=1).info(f"[{self}] - <y>[{old_state} -> {self._state}]</>")
+            log("tcp-ss", f"[{self}] - <y>[{old_state} -> {self._state}]</>")
 
         # Unregister session
         if self._state in {FsmState.CLOSED}:
             stack.sockets.pop(str(self._socket))
-            if __debug__:
-                self._logger.debug(f"[{self}] - Unregister associated socket")
+            log("tcp-ss", f"[{self}] - Unregister associated socket")
 
     def _transmit_packet(
         self,
@@ -385,11 +376,11 @@ class TcpSession:
             self._tx_retransmit_timeout_counter[seq] = self._tx_retransmit_timeout_counter.get(seq, -1) + 1
             stack.timer.register_timer(f"{self}-retransmit_seq-{seq}", PACKET_RETRANSMIT_TIMEOUT * (1 << self._tx_retransmit_timeout_counter[seq]))
 
-        if __debug__:
-            self._logger.debug(
-                f"[{self}] - Sent packet_rx_md: {'S' if flag_syn else ''}{'F' if flag_fin else ''}{'R' if flag_rst else ''}"
-                + f"{'A' if flag_ack else ''}, seq {seq}, ack {ack}, dlen {(0 if data is None else len(data))}"
-            )
+        log(
+            "tcp-ss",
+            f"[{self}] - Sent packet_rx_md: {'S' if flag_syn else ''}{'F' if flag_fin else ''}{'R' if flag_rst else ''}"
+            + f"{'A' if flag_ack else ''}, seq {seq}, ack {ack}, dlen {(0 if data is None else len(data))}",
+        )
 
     def _enqueue_rx_buffer(self, data: memoryview) -> None:
         """Process the incoming segment and enqueue the data to be used by socket"""
@@ -409,15 +400,13 @@ class TcpSession:
 
         # Check if we need to (re)transmit initial SYN packet
         if self._state is FsmState.SYN_SENT and self._snd_nxt == self._snd_ini:
-            if __debug__:
-                self._logger.debug(f"[{self}] - Transmitting initial SYN packet_rx_md: seq {self._snd_nxt}")
+            log("tcp-ss", f"[{self}] - Transmitting initial SYN packet_rx_md: seq {self._snd_nxt}")
             self._transmit_packet(flag_syn=True)
             return
 
         # Check if we need to (re)transmit initial SYN + ACK packet
         if self._state is FsmState.SYN_RCVD and self._snd_nxt == self._snd_ini:
-            if __debug__:
-                self._logger.debug(f"[{self}] - Transmitting initial SYN + ACK packet_rx_md: seq {self._snd_nxt}")
+            log("tcp-ss", f"[{self}] - Transmitting initial SYN + ACK packet_rx_md: seq {self._snd_nxt}")
             self._transmit_packet(flag_syn=True, flag_ack=True)
             return
 
@@ -427,24 +416,18 @@ class TcpSession:
             usable_window = self._snd_ewn - self._tx_buffer_nxt
             transmit_data_len = min(self._snd_mss, usable_window, remaining_data_len)
             if remaining_data_len:
-                if __debug__:
-                    self._logger.opt(ansi=True).debug(f"[{self}] - Sliding window <y>[{self._snd_una}|{self._snd_nxt}|{self._snd_una + self._snd_ewn}]</>")
-                if __debug__:
-                    self._logger.opt(ansi=True).debug(
-                        f"[{self}] - {usable_window} left in window, {remaining_data_len} left in buffer, {transmit_data_len} to be sent"
-                    )
+                log("tcp-ss", f"[{self}] - Sliding window <y>[{self._snd_una}|{self._snd_nxt}|{self._snd_una + self._snd_ewn}]</>")
+                log("tcp-ss", f"[{self}] - {usable_window} left in window, {remaining_data_len} left in buffer, {transmit_data_len} to be sent")
                 if transmit_data_len:
                     with self._lock_tx_buffer:
                         transmit_data = self._tx_buffer[self._tx_buffer_nxt : self._tx_buffer_nxt + transmit_data_len]
-                    if __debug__:
-                        self._logger.debug(f"[{self}] - Transmitting data segment: seq {self._snd_nxt} len {len(transmit_data)}")
+                    log("tcp-ss", f"[{self}] - Transmitting data segment: seq {self._snd_nxt} len {len(transmit_data)}")
                     self._transmit_packet(flag_ack=True, data=bytes(transmit_data))
                 return
 
         # Check if we need to (re)transmit final FIN packet
         if self._state in {FsmState.FIN_WAIT_1, FsmState.LAST_ACK} and self._snd_nxt != self._snd_fin:
-            if __debug__:
-                self._logger.debug(f"[{self}] - Transmitting final FIN packet_rx_md: seq {self._snd_nxt}")
+            log("tcp-ss", f"[{self}] - Transmitting final FIN packet_rx_md: seq {self._snd_nxt}")
             self._transmit_packet(flag_fin=True, flag_ack=True)
             return
 
@@ -454,8 +437,7 @@ class TcpSession:
         if stack.timer.is_expir(f"{self}-delayed_ack"):
             if self._rcv_nxt > self._rcv_una:
                 self._transmit_packet(flag_ack=True)
-                if __debug__:
-                    self._logger.debug(f"[{self}] - Sent out delayed ACK ({self._rcv_nxt})")
+                log("tcp-ss", f"[{self}] - Sent out delayed ACK ({self._rcv_nxt})")
             stack.timer.register_timer(f"{self}-delayed_ack", DELAYED_ACK_DELAY)
 
     def _retransmit_packet_timeout(self) -> None:
@@ -466,11 +448,9 @@ class TcpSession:
                 # Send RST packet if we received any packet from peer already
                 if self._rcv_nxt is not None:
                     self._transmit_packet(flag_rst=True, flag_ack=True, seq=self._snd_una)
-                    if __debug__:
-                        self._logger.debug(f"[{self}] - Packet retransmit counter expir, resetting session")
+                    log("tcp-ss", f"[{self}] - Packet retransmit counter expired, resetting session")
                 else:
-                    if __debug__:
-                        self._logger.debug(f"[{self}] - Packet retransmit counter expir")
+                    log("tcp-ss", f"[{self}] - Packet retransmit counter expired")
                 # If in any state with established connection inform socket about connection failure
                 if self._state in {FsmState.ESTABLISHED, FsmState.FIN_WAIT_1, FsmState.FIN_WAIT_2, FsmState.CLOSE_WAIT}:
                     self._connection_error = ConnError.TIMEOUT
@@ -487,8 +467,7 @@ class TcpSession:
             # In case we need to retransmit packt containing SYN flag adjust tx_buffer_seq_mod so it doesn't reflect SYN flag yet
             if self._snd_nxt == self._snd_ini or self._snd_nxt == self._snd_fin:
                 self._tx_buffer_seq_mod -= 1
-            if __debug__:
-                self._logger.debug(f"[{self}] - Got retansmit timeout, sending segment {self._snd_nxt}, resetting snd_ewn to {self._snd_ewn}")
+            log("tcp-ss", f"[{self}] - Got retansmit timeout, sending segment {self._snd_nxt}, resetting snd_ewn to {self._snd_ewn}")
             return
 
     def _retransmit_packet_request(self, packet_rx_md: TcpMetadata) -> None:
@@ -497,8 +476,7 @@ class TcpSession:
         self._tx_retransmit_request_counter[packet_rx_md.ack] = self._tx_retransmit_request_counter.get(packet_rx_md.ack, 0) + 1
         if self._tx_retransmit_request_counter[packet_rx_md.ack] > 1:
             self._snd_nxt = self._snd_una
-            if __debug__:
-                self._logger.debug(f"[{self}] - Got retransmit request, sending segment {self._snd_nxt}, keeping snd_ewn at {self._snd_ewn}")
+            log("tcp-ss", f"[{self}] - Got retransmit request, sending segment {self._snd_nxt}, keeping snd_ewn at {self._snd_ewn}")
 
     def _process_ack_packet(self, packet_rx_md: TcpMetadata) -> None:
         """Process regular data/ACK packet"""
@@ -513,45 +491,37 @@ class TcpSession:
         # In case packet contains data enqueue it
         if packet_rx_md.data:
             self._enqueue_rx_buffer(packet_rx_md.data)
-            if __debug__:
-                self._logger.debug(f"[{self}] - Enqueued {len(packet_rx_md.data)} bytes starting at {packet_rx_md.seq}")
+            log("tcp-ss", f"[{self}] - Enqueued {len(packet_rx_md.data)} bytes starting at {packet_rx_md.seq}")
         # Purge acked data from TX buffer
         with self._lock_tx_buffer:
             del self._tx_buffer[: self._tx_buffer_una]
         self._tx_buffer_seq_mod += self._tx_buffer_una
-        if __debug__:
-            self._logger.debug(f"[{self}] - Purged TX buffer up to SEQ {self._snd_una}")
+        log("tcp-ss", f"[{self}] - Purged TX buffer up to SEQ {self._snd_una}")
         # Update remote window size
         if self._snd_wnd != packet_rx_md.win * self._snd_wsc:
-            if __debug__:
-                self._logger.debug(f"[{self}] - Updated sending window size {self._snd_wnd} -> {packet_rx_md.win * self._snd_wsc}")
+            log("tcp-ss", f"[{self}] - Updated sending window size {self._snd_wnd} -> {packet_rx_md.win * self._snd_wsc}")
             self._snd_wnd = packet_rx_md.win * self._snd_wsc
         # Enlarge effective sending window
         self._snd_ewn = min(self._snd_ewn << 1, self._snd_wnd)
-        if __debug__:
-            self._logger.debug(f"[{self}] - Updated effective sending window to {self._snd_ewn}")
+        log("tcp-ss", f"[{self}] - Updated effective sending window to {self._snd_ewn}")
         # Purge expir tx packet retransmit requests
         for seq in list(self._tx_retransmit_request_counter):
             if seq < packet_rx_md.ack:
                 self._tx_retransmit_request_counter.pop(seq)
-                if __debug__:
-                    self._logger.debug(f"[{self}] - Purged expir TX packet retransmit request counter for {seq}")
+                log("tcp-ss", f"[{self}] - Purged expir TX packet retransmit request counter for {seq}")
         # Purge expir tx packet retransmit timeouts
         for seq in list(self._tx_retransmit_timeout_counter):
             if seq < packet_rx_md.ack:
                 self._tx_retransmit_timeout_counter.pop(seq)
-                if __debug__:
-                    self._logger.debug(f"[{self}] - Purged expir TX packet retransmit timeout for {seq}")
+                log("tcp-ss", f"[{self}] - Purged expir TX packet retransmit timeout for {seq}")
         # Purge expir rx retransmit requests
         for seq in list(self._rx_retransmit_request_counter):
             if seq < self._rcv_nxt:
                 self._rx_retransmit_request_counter.pop(seq)
-                if __debug__:
-                    self._logger.debug(f"[{self}] - Purged expir RX packet retransmit request counter for {seq}")
+                log("tcp-ss", f"[{self}] - Purged expir RX packet retransmit request counter for {seq}")
         # Bring next packet from ooo_packet_queue if available
         if ooo_packet := self._ooo_packet_queue.pop(self._rcv_nxt, None):
-            if __debug__:
-                self._logger.opt(ansi=True).debug(f"[{self}] - <lg>Retrieving packet {self._rcv_nxt} from Out of Order queue</>")
+            log("tcp-ss", f"[{self}] - <lg>Retrieving packet {self._rcv_nxt} from Out of Order queue</>")
             self.tcp_fsm(ooo_packet)
 
     def _tcp_fsm_closed(self, packet_rx_md: Optional[TcpMetadata], syscall: Optional[SysCall], timer: Optional[bool]) -> None:
@@ -595,8 +565,7 @@ class TcpSession:
                 self._snd_mss = min(packet_rx_md.mss, config.mtu - 40)
                 self._snd_wnd = packet_rx_md.win * self._snd_wsc  # For SYN / SYN + ACK packets this is initialized with wscale=1
                 self._snd_wsc = packet_rx_md.wscale if packet_rx_md.wscale else 1  # Peer's wscale set to None means that peer doesn't support window scaling
-                if __debug__:
-                    self._logger.debug(f"[{self}] - Initialized remote window scale at {self._snd_wsc}")
+                log("tcp-ss", f"[{self}] - Initialized remote window scale at {self._snd_wsc}")
                 self._rcv_ini = packet_rx_md.seq
                 self._snd_ewn = self._snd_mss
                 # Make note of the remote SEQ number
@@ -627,16 +596,14 @@ class TcpSession:
                 self._snd_mss = min(packet_rx_md.mss, config.mtu - 40)
                 self._snd_wnd = packet_rx_md.win * self._snd_wsc  # For SYN / SYN + ACK packets this is initialized with wscale=1
                 self._snd_wsc = packet_rx_md.wscale if packet_rx_md.wscale else 1  # Peer's wscale set to None means that peer doesn't support window scaling
-                if __debug__:
-                    self._logger.debug(f"[{self}] - Initialized remote window scale at {self._snd_wsc}")
+                log("tcp-ss", f"[{self}] - Initialized remote window scale at {self._snd_wsc}")
                 self._rcv_ini = packet_rx_md.seq
                 self._snd_ewn = self._snd_mss
                 # Process ACK packet
                 self._process_ack_packet(packet_rx_md)
                 # Send initial ACK packet
                 self._transmit_packet(flag_ack=True)
-                if __debug__:
-                    self._logger.debug(f"[{self}] - Sent initial ACK ({self._rcv_una}) packet")
+                log("tcp-ss", f"[{self}] - Sent initial ACK ({self._rcv_una}) packet")
                 # Change state to ESTABLISHED
                 self._change_state(FsmState.ESTABLISHED)
                 # Inform connect syscall that connection related event happened
@@ -727,8 +694,7 @@ class TcpSession:
 
         # Got packet that doesn't fit into receive window
         if packet_rx_md and not self._rcv_nxt <= packet_rx_md.seq <= self._rcv_nxt + self._rcv_wnd - len(packet_rx_md.data):
-            if __debug__:
-                self._logger.debug(f"[{self}] - Packet seq {packet_rx_md.seq} + {len(packet_rx_md.data)} doesn't fit into receive window, dropping")
+            log("tcp-ss", f"[{self}] - Packet seq {packet_rx_md.seq} + {len(packet_rx_md.data)} doesn't fit into receive window, dropping")
             return
 
         # Got ACK packet
@@ -809,8 +775,7 @@ class TcpSession:
                 self._process_ack_packet(packet_rx_md)
                 # Send out final ACK packet
                 self._transmit_packet(flag_ack=True)
-                if __debug__:
-                    self._logger.debug(f"[{self}] - Sent final ACK ({self._rcv_nxt}) packet")
+                log("tcp-ss", f"[{self}] - Sent final ACK ({self._rcv_nxt}) packet")
                 # Check if packet acks our FIN
                 if packet_rx_md.ack >= self._snd_fin:
                     # Change state to TIME_WAIT
@@ -850,8 +815,7 @@ class TcpSession:
                 self._process_ack_packet(packet_rx_md)
                 # Send out final ACK packet
                 self._transmit_packet(flag_ack=True)
-                if __debug__:
-                    self._logger.debug(f"[{self}] - Sent final ACK ({self._rcv_nxt}) packet")
+                log("tcp-ss", f"[{self}] - Sent final ACK ({self._rcv_nxt}) packet")
                 # Change state to TIME_WAIT
                 self._change_state(FsmState.TIME_WAIT)
                 # Initialize TIME_WAIT delay

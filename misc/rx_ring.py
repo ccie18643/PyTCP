@@ -35,8 +35,7 @@ import os
 import threading
 from typing import TYPE_CHECKING
 
-import loguru
-
+from lib.logger import log
 from misc.packet import PacketRx
 
 if TYPE_CHECKING:
@@ -49,25 +48,20 @@ class RxRing:
     def __init__(self, tap: int) -> None:
         """Initialize access to tap interface and the inbound queue"""
 
-        if __debug__:
-            self._logger = loguru.logger.bind(object_name="rx_ring.")
-
         self.tap: int = tap
         self.rx_ring: list[PacketRx] = []
         self.packet_enqueued: Semaphore = threading.Semaphore(0)
 
         threading.Thread(target=self.__thread_receive).start()
 
-        if __debug__:
-            self._logger.debug("Started RX ring")
+        log("rx-ring", "Started RX ring")
 
     def __thread_receive(self) -> None:
         """Thread responsible for receiving and enqueuing incoming packets"""
 
         while True:
             packet_rx = PacketRx(os.read(self.tap, 2048))
-            if __debug__:
-                self._logger.opt(ansi=True).debug(f"<lg>[RX]</> {packet_rx.tracker} - received frame, {len(packet_rx.frame)} bytes")
+            log("rx-ring", f"<lg>[RX]</> {packet_rx.tracker} - received frame, {len(packet_rx.frame)} bytes")
             self.rx_ring.append(packet_rx)
             self.packet_enqueued.release()
 

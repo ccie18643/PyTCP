@@ -37,6 +37,7 @@ from typing import TYPE_CHECKING, Optional
 import misc.stack as stack
 from lib.ip4_address import Ip4Address, Ip4AddressFormatError
 from lib.ip6_address import Ip6Address, Ip6AddressFormatError
+from lib.logger import log
 from lib.socket import AF_INET4, AF_INET6, SOCK_STREAM, Socket, gaierror
 from tcp.session import FsmState, TcpSession, TcpSessionError
 
@@ -88,8 +89,7 @@ class TcpSocket(Socket):
             self._remote_port = 0
             self._tcp_session = None
 
-        if __debug__:
-            self._logger.opt(ansi=True).debug(f"<g>[{self}]</> - Create socket")
+        log("socket", f"<g>[{self}]</> - Create socket")
 
     @property
     def state(self) -> FsmState:
@@ -154,8 +154,7 @@ class TcpSocket(Socket):
         self._local_port = local_port
         stack.sockets[str(self)] = self
 
-        if __debug__:
-            self._logger.opt(ansi=True).debug(f"<g>[{self}]</> - Bound socket")
+        log("socket", f"<g>[{self}]</> - Bound socket")
 
     def connect(self, address: tuple[str, int]) -> None:
         """Connect the socket to remote host"""
@@ -190,8 +189,7 @@ class TcpSocket(Socket):
             socket=self,
         )
 
-        if __debug__:
-            self._logger.opt(ansi=True).debug(f"<g>[{self}]</> - Socket attempting connection")
+        log("socket", f"<g>[{self}]</> - Socket attempting connection")
 
         try:
             self._tcp_session.connect()
@@ -201,8 +199,7 @@ class TcpSocket(Socket):
             if str(error) == "Connection timeout":
                 raise TimeoutError("[Errno 110] Connection timed out - [No valid response received from remote host]")
 
-        if __debug__:
-            self._logger.opt(ansi=True).debug(f"<g>[{self}]</> - Bound")
+        log("socket", f"<g>[{self}]</> - Bound")
 
     def listen(self) -> None:
         """Starts to listen for incoming connections"""
@@ -215,8 +212,7 @@ class TcpSocket(Socket):
             socket=self,
         )
 
-        if __debug__:
-            self._logger.opt(ansi=True).debug(f"<g>[{self}]</> - Socket starting to listen for inbound connections")
+        log("socket", f"<g>[{self}]</> - Socket starting to listen for inbound connections")
 
         stack.sockets[str(self)] = self
         self._tcp_session.listen()
@@ -224,14 +220,12 @@ class TcpSocket(Socket):
     def accept(self) -> tuple[Socket, tuple[str, int]]:
         """Wait for the established inbound connection, once available return it's socket"""
 
-        if __debug__:
-            self._logger.opt(ansi=True).debug(f"<g>[{self}]</> - Waiting for inbound connection")
+        log("socket", f"<g>[{self}]</> - Waiting for inbound connection")
 
         self._event_tcp_session_established.acquire()
         socket = self._tcp_accept.pop(0)
 
-        if __debug__:
-            self._logger.opt(ansi=True).debug(f"<g>[{self}]</> - Socket accepted connection from {(str(socket.remote_ip_address), socket.remote_port)}")
+        log("socket", f"<g>[{self}]</> - Socket accepted connection from {(str(socket.remote_ip_address), socket.remote_port)}")
 
         return socket, (str(socket.remote_ip_address), socket.remote_port)
 
@@ -250,8 +244,7 @@ class TcpSocket(Socket):
         except TcpSessionError as error:
             raise BrokenPipeError(f"[Errno 32] Broken pipe - [{error}]")
 
-        if __debug__:
-            self._logger.opt(ansi=True).debug(f"<g>[{self}]</> - Sent data segment, len {bytes_sent}")
+        log("socket", f"<g>[{self}]</> - Sent data segment, len {bytes_sent}")
         return bytes_sent
 
     def recv(self, bufsize: Optional[int] = None, timeout: Optional[float] = None) -> bytes:
@@ -262,11 +255,9 @@ class TcpSocket(Socket):
         assert self._tcp_session is not None
 
         if data_rx := self._tcp_session.receive(bufsize):
-            if __debug__:
-                self._logger.opt(ansi=True).debug(f"<g>[{self}]</> - Received {len(data_rx)} bytes of data")
+            log("socket", f"<g>[{self}]</> - Received {len(data_rx)} bytes of data")
         else:
-            if __debug__:
-                self._logger.opt(ansi=True).debug(f"<g>[{self}]</> - Received empty data byte string, remote end closed connection")
+            log("socket", f"<g>[{self}]</> - Received empty data byte string, remote end closed connection")
 
         return data_rx
 
@@ -276,8 +267,7 @@ class TcpSocket(Socket):
         assert self._tcp_session is not None
         self._tcp_session.close()
 
-        if __debug__:
-            self._logger.opt(ansi=True).debug(f"<g>[{self}]</> - Closed socket")
+        log("socket", f"<g>[{self}]</> - Closed socket")
 
     def process_tcp_packet(self, packet_rx_md: TcpMetadata) -> None:
         """Process incoming packet's metadata"""
