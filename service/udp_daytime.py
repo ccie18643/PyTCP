@@ -56,4 +56,5 @@ class ServiceUdpDaytime(ServiceUdp):
             _, remote_address = s.recvfrom()
             message = bytes(str(datetime.now()), "utf-8")
             s.sendto(message, remote_address)
-            log("service", f"Service UDP Daytime: Sent {len(message)} bytes to {remote_address[0]}, port {remote_address[1]}")
+            if __debug__:
+                log("service", f"Service UDP Daytime: Sent {len(message)} bytes to {remote_address[0]}, port {remote_address[1]}")

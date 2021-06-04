@@ -63,14 +63,17 @@ class ServiceUdp:
         elif version == 4:
             s = socket.socket(family=socket.AF_INET4, type=socket.SOCK_DGRAM)
         else:
-            log("service", f"Service UDP {self.name}: Invalid local IP address - {self.local_ip_address}")
+            if __debug__:
+                log("service", f"Service UDP {self.name}: Invalid local IP address - {self.local_ip_address}")
             return
 
         try:
             s.bind((self.local_ip_address, self.local_port))
-            log("service", f"Service UDP {self.name}: Socket created, bound to {self.local_ip_address}, port {self.local_port}")
+            if __debug__:
+                log("service", f"Service UDP {self.name}: Socket created, bound to {self.local_ip_address}, port {self.local_port}")
         except OSError as error:
-            log("service", f"Service UDP {self.name}: bind() call failed - {error}")
+            if __debug__:
+                log("service", f"Service UDP {self.name}: bind() call failed - {error}")
             return
 
         self.service(s)
@@ -78,5 +81,6 @@ class ServiceUdp:
     def service(self, s: Socket) -> None:
         """Service method"""
 
-        log("service", f"Service UDP {self.name}: No service method defined, closing connection")
+        if __debug__:
+            log("service", f"Service UDP {self.name}: No service method defined, closing connection")
         s.close()

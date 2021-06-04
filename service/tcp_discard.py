@@ -51,26 +51,34 @@ class ServiceTcpDiscard(ServiceTcp):
     def service(self, cs: Socket) -> None:
         """Inbound connection handler"""
 
-        log("service", f"Service TCP Echo: Sending first message to {cs.remote_ip_address}, port {cs.remote_port}")
+        if __debug__:
+            log("service", f"Service TCP Echo: Sending first message to {cs.remote_ip_address}, port {cs.remote_port}")
         cs.send(b"***CLIENT OPEN / SERVICE OPEN***\n")
 
         while True:
             if not (message := cs.recv()):
-                log("service", f"Service TCP Discard: Connection to {cs.remote_ip_address}, port {cs.remote_port} has been closed by peer")
-                log("service", f"Service TCP Discard: Sending last message to {cs.remote_ip_address}, port {cs.remote_port}")
+                if __debug__:
+                    log("service", f"Service TCP Discard: Connection to {cs.remote_ip_address}, port {cs.remote_port} has been closed by peer")
+                if __debug__:
+                    log("service", f"Service TCP Discard: Sending last message to {cs.remote_ip_address}, port {cs.remote_port}")
                 cs.send(b"***CLIENT CLOSED, SERVICE CLOSING***\n")
-                log("service", f"Service TCP Discard: Closng connection to {cs.remote_ip_address}, port {cs.remote_port}")
+                if __debug__:
+                    log("service", f"Service TCP Discard: Closng connection to {cs.remote_ip_address}, port {cs.remote_port}")
                 cs.close()
                 break
 
             if message in {b"CLOSE\n", b"CLOSE\r\n", b"close\n", b"close\r\n"}:
-                log("service", f"Service TCP Discard: Sending last message to {cs.remote_ip_address}, port {cs.remote_port}")
+                if __debug__:
+                    log("service", f"Service TCP Discard: Sending last message to {cs.remote_ip_address}, port {cs.remote_port}")
                 cs.send(b"***CLIENT OPEN, SERVICE CLOSING***\n")
-                log("service", f"Service TCP Discard: Closng connection to {cs.remote_ip_address}, port {cs.remote_port}")
+                if __debug__:
+                    log("service", f"Service TCP Discard: Closng connection to {cs.remote_ip_address}, port {cs.remote_port}")
                 cs.close()
                 continue
 
-            log("service", f"Service TCP Discard: Received {len(message)} bytes from {cs.remote_ip_address}, port {cs.remote_port}")
+            if __debug__:
+                log("service", f"Service TCP Discard: Received {len(message)} bytes from {cs.remote_ip_address}, port {cs.remote_port}")
 
         cs.close()
-        log("service", f"Service TCP Discard: Connection from {cs.remote_ip_address}, port {cs.remote_port} has been closed by peer")
+        if __debug__:
+            log("service", f"Service TCP Discard: Connection from {cs.remote_ip_address}, port {cs.remote_port} has been closed by peer")

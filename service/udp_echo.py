@@ -55,7 +55,8 @@ class ServiceUdpEcho(ServiceUdp):
         while True:
             message, remote_address = s.recvfrom()
 
-            log("service", f"Service UDP Echo: Received {len(message)} bytes from {remote_address[0]}, port {remote_address[1]}")
+            if __debug__:
+                log("service", f"Service UDP Echo: Received {len(message)} bytes from {remote_address[0]}, port {remote_address[1]}")
 
             if b"malpka" in message.strip().lower():
                 message = malpka
@@ -66,4 +67,5 @@ class ServiceUdpEcho(ServiceUdp):
 
             s.sendto(message, remote_address)
 
-            log("service", f"Service UDP Echo: Echo'ed {len(message)} bytes back to {remote_address[0]}, port {remote_address[1]}")
+            if __debug__:
+                log("service", f"Service UDP Echo: Echo'ed {len(message)} bytes back to {remote_address[0]}, port {remote_address[1]}")

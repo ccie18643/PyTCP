@@ -59,7 +59,8 @@ class ServiceTcpDaytime(ServiceTcp):
         # Don't want to be working on object variable as it may be shar by multiple connections
         message_count = self.message_count
 
-        log("service", f"Service TCP Daytime: Sending first message to {cs.remote_ip_address}, port {cs.remote_port}")
+        if __debug__:
+            log("service", f"Service TCP Daytime: Sending first message to {cs.remote_ip_address}, port {cs.remote_port}")
         cs.send(b"***CLIENT OPEN / SERVICE OPEN***\n")
 
         message_count = self.message_count
@@ -69,12 +70,15 @@ class ServiceTcpDaytime(ServiceTcp):
             try:
                 cs.send(message)
             except OSError as error:
-                log("service", f"Service TCP Daytime: send() error - [{error}]")
+                if __debug__:
+                    log("service", f"Service TCP Daytime: send() error - [{error}]")
                 break
 
-            log("service", f"Service TCP Daytime: Sent {len(message)} bytes of data to {cs.remote_ip_address}, port {cs.remote_port}")
+            if __debug__:
+                log("service", f"Service TCP Daytime: Sent {len(message)} bytes of data to {cs.remote_ip_address}, port {cs.remote_port}")
             time.sleep(self.message_delay)
             message_count = min(message_count, message_count - 1)
 
         cs.close()
-        log("service", f"Service TCP Daytime: Closed connection to {cs.remote_ip_address}, port {cs.remote_port}")
+        if __debug__:
+            log("service", f"Service TCP Daytime: Closed connection to {cs.remote_ip_address}, port {cs.remote_port}")

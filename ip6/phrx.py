@@ -44,14 +44,17 @@ def _phrx_ip6(self, packet_rx: PacketRx) -> None:
     Ip6Parser(packet_rx)
 
     if packet_rx.parse_failed:
-        log("ip6", f"{packet_rx.tracker} - <rb>{packet_rx.parse_failed}</>")
+        if __debug__:
+            log("ip6", f"{packet_rx.tracker} - <rb>{packet_rx.parse_failed}</>")
         return
 
-    log("ip6", f"{packet_rx.tracker} - {packet_rx.ip6}")
+    if __debug__:
+        log("ip6", f"{packet_rx.tracker} - {packet_rx.ip6}")
 
     # Check if received packet has been sent to us directly or by unicast or multicast
     if packet_rx.ip6.dst not in {*self.ip6_unicast, *self.ip6_multicast}:
-        log("ip6", f"{packet_rx.tracker} - IP packet not destined for this stack, dropping")
+        if __debug__:
+            log("ip6", f"{packet_rx.tracker} - IP packet not destined for this stack, dropping")
         return
 
     if packet_rx.ip6.next == ip6.ps.IP6_NEXT_HEADER_EXT_FRAG:

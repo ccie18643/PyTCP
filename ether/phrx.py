@@ -49,14 +49,17 @@ def _phrx_ether(self, packet_rx: PacketRx) -> None:
     EtherParser(packet_rx)
 
     if packet_rx.parse_failed:
-        log("ether", f"{packet_rx.tracker} - <CRIT>{packet_rx.parse_failed}</>")
+        if __debug__:
+            log("ether", f"{packet_rx.tracker} - <CRIT>{packet_rx.parse_failed}</>")
         return
 
-    log("ether", f"{packet_rx.tracker} - {packet_rx.ether}")
+    if __debug__:
+        log("ether", f"{packet_rx.tracker} - {packet_rx.ether}")
 
     # Check if received packet matches any of stack MAC addresses
     if packet_rx.ether.dst not in {self.mac_unicast, *self.mac_multicast, self.mac_broadcast}:
-        log("ehter", f"{packet_rx.tracker} - Ethernet packet not destined for this stack, dropping")
+        if __debug__:
+            log("ehter", f"{packet_rx.tracker} - Ethernet packet not destined for this stack, dropping")
         return
 
     if packet_rx.ether.type == ether.ps.ETHER_TYPE_ARP and config.ip4_support:

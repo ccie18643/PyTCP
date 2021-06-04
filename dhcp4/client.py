@@ -74,29 +74,33 @@ class Dhcp4Client:
                 dhcp_host_name="PyTCP",
             ).raw_packet
         )
-        log("dhcp4", "Sent out DHCP Discover message")
+        if __debug__:
+            log("dhcp4", "Sent out DHCP Discover message")
 
         # Wait for DHCP Offer
         try:
             dhcp_packet_rx = dhcp4.ps.Dhcp4Packet(s.recv(timeout=5))
         except socket.ReceiveTimeout:
-            log("dhcp4", "Didn't receive DHCP Offer message - timeout")
+            if __debug__:
+                log("dhcp4", "Didn't receive DHCP Offer message - timeout")
             s.close()
             return None, None
 
         if dhcp_packet_rx.dhcp_msg_type != dhcp4.ps.DHCP4_MSG_OFFER:
-            log("dhcp4", "Didn't receive DHCP Offer message - message type error")
+            if __debug__:
+                log("dhcp4", "Didn't receive DHCP Offer message - message type error")
             s.close()
             return None, None
 
         dhcp_srv_id = dhcp_packet_rx.dhcp_srv_id
         dhcp_yiaddr = dhcp_packet_rx.dhcp_yiaddr
-        log(
-            "dhcp4",
-            f"ClientUdpDhcp: Received DHCP Offer from {dhcp_packet_rx.dhcp_srv_id}"
-            + f"IP: {dhcp_packet_rx.dhcp_yiaddr}, Mask: {dhcp_packet_rx.dhcp_subnet_mask}, Router: {dhcp_packet_rx.dhcp_router}"
-            + f"DNS: {dhcp_packet_rx.dhcp_dns}, Domain: {dhcp_packet_rx.dhcp_domain_name}",
-        )
+        if __debug__:
+            log(
+                "dhcp4",
+                f"ClientUdpDhcp: Received DHCP Offer from {dhcp_packet_rx.dhcp_srv_id}"
+                + f"IP: {dhcp_packet_rx.dhcp_yiaddr}, Mask: {dhcp_packet_rx.dhcp_subnet_mask}, Router: {dhcp_packet_rx.dhcp_router}"
+                + f"DNS: {dhcp_packet_rx.dhcp_dns}, Domain: {dhcp_packet_rx.dhcp_domain_name}",
+            )
 
         # Send DHCP Request
         s.send(
@@ -116,27 +120,31 @@ class Dhcp4Client:
             ).raw_packet
         )
 
-        log("dhcp4", f"Sent out DHCP Request message to {dhcp_packet_rx.dhcp_srv_id}")
+        if __debug__:
+            log("dhcp4", f"Sent out DHCP Request message to {dhcp_packet_rx.dhcp_srv_id}")
 
         # Wait for DHCP Ack
         try:
             dhcp_packet_rx = dhcp4.ps.Dhcp4Packet(s.recv(timeout=5))
         except socket.ReceiveTimeout:
-            log("dhcp4", "Didn't receive DHCP ACK message - timeout")
+            if __debug__:
+                log("dhcp4", "Didn't receive DHCP ACK message - timeout")
             s.close()
             return None, None
 
         if dhcp_packet_rx.dhcp_msg_type != dhcp4.ps.DHCP4_MSG_ACK:
-            log("dhcp4", "Didn't receive DHCP ACK message - message type error")
+            if __debug__:
+                log("dhcp4", "Didn't receive DHCP ACK message - message type error")
             s.close()
             return None, None
 
-        log(
-            "dhcp4",
-            f"Received DHCP Offer from {dhcp_packet_rx.dhcp_srv_id}"
-            + f"IP: {dhcp_packet_rx.dhcp_yiaddr}, Mask: {dhcp_packet_rx.dhcp_subnet_mask}, Router: {dhcp_packet_rx.dhcp_router}"
-            + f"DNS: {dhcp_packet_rx.dhcp_dns}, Domain: {dhcp_packet_rx.dhcp_domain_name}",
-        )
+        if __debug__:
+            log(
+                "dhcp4",
+                f"Received DHCP Offer from {dhcp_packet_rx.dhcp_srv_id}"
+                + f"IP: {dhcp_packet_rx.dhcp_yiaddr}, Mask: {dhcp_packet_rx.dhcp_subnet_mask}, Router: {dhcp_packet_rx.dhcp_router}"
+                + f"DNS: {dhcp_packet_rx.dhcp_dns}, Domain: {dhcp_packet_rx.dhcp_domain_name}",
+            )
         s.close()
 
         assert dhcp_packet_rx.dhcp_subnet_mask is not None

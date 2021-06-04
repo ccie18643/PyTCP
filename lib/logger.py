@@ -62,9 +62,6 @@ START_TIME = time.time()
 def log(channel: str, message: str, inspect_depth: int = 1) -> None:
     """Log message if channel and severity match configured values"""
 
-    if __debug__ is False:
-        return
-
     if channel in config.LOG_CHANEL:
         if config.LOG_DEBUG:
             frame_info = inspect.stack()[inspect_depth]

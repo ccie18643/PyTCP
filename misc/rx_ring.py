@@ -54,14 +54,16 @@ class RxRing:
 
         threading.Thread(target=self.__thread_receive).start()
 
-        log("rx-ring", "Started RX ring")
+        if __debug__:
+            log("rx-ring", "Started RX ring")
 
     def __thread_receive(self) -> None:
         """Thread responsible for receiving and enqueuing incoming packets"""
 
         while True:
             packet_rx = PacketRx(os.read(self.tap, 2048))
-            log("rx-ring", f"<B><lg>[RX]</> {packet_rx.tracker} - received frame, {len(packet_rx.frame)} bytes")
+            if __debug__:
+                log("rx-ring", f"<B><lg>[RX]</> {packet_rx.tracker} - received frame, {len(packet_rx.frame)} bytes")
             self.rx_ring.append(packet_rx)
             self.packet_enqueued.release()
 

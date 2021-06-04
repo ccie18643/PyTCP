@@ -46,10 +46,12 @@ def _phrx_udp(self, packet_rx: PacketRx) -> None:
     UdpParser(packet_rx)
 
     if packet_rx.parse_failed:
-        log("udp", f"{self.tracker} - <CRIT>{packet_rx.parse_failed}</>")
+        if __debug__:
+            log("udp", f"{self.tracker} - <CRIT>{packet_rx.parse_failed}</>")
         return
 
-    log("udp", f"{packet_rx.tracker} - {packet_rx.udp}")
+    if __debug__:
+        log("udp", f"{packet_rx.tracker} - {packet_rx.udp}")
 
     assert isinstance(packet_rx.udp.data, memoryview)  # memoryview: data type check point
 
@@ -66,24 +68,27 @@ def _phrx_udp(self, packet_rx: PacketRx) -> None:
     for socket_pattern in packet_rx_md.socket_patterns:
         socket = stack.sockets.get(socket_pattern, None)
         if socket:
-            log("udp", f"{packet_rx_md.tracker} - <INFO>Found matching listening socket [{socket}]</>")
+            if __debug__:
+                log("udp", f"{packet_rx_md.tracker} - <INFO>Found matching listening socket [{socket}]</>")
             socket.process_udp_packet(packet_rx_md)
             return
 
     # Silently drop packet if it's source address is unspecified
     if packet_rx.ip.src.is_unspecified:
-        log(
-            "udp",
-            f"{packet_rx_md.tracker} - Received UDP packet from {packet_rx.ip.src}, port {packet_rx.udp.sport} to "
-            + f"{packet_rx.ip.dst}, port {packet_rx.udp.dport}, dropping",
-        )
+        if __debug__:
+            log(
+                "udp",
+                f"{packet_rx_md.tracker} - Received UDP packet from {packet_rx.ip.src}, port {packet_rx.udp.sport} to "
+                + f"{packet_rx.ip.dst}, port {packet_rx.udp.dport}, dropping",
+            )
         return
 
     # Respond with ICMP Port Unreachable message if no matching socket has been found
-    log(
-        "udp",
-        f"{packet_rx_md.tracker} - Received UDP packet from {packet_rx.ip.src} to closed port " + f"{packet_rx.udp.dport}, sending ICMPv4 Port Unreachable",
-    )
+    if __debug__:
+        log(
+            "udp",
+            f"{packet_rx_md.tracker} - Received UDP packet from {packet_rx.ip.src} to closed port " + f"{packet_rx.udp.dport}, sending ICMPv4 Port Unreachable",
+        )
 
     if packet_rx.ip.ver == 6:
         self._phtx_icmp6(

@@ -56,7 +56,8 @@ class TxRing:
 
         threading.Thread(target=self.__thread_transmit).start()
 
-        log("tx-ring", "Started TX ring")
+        if __debug__:
+            log("tx-ring", "Started TX ring")
 
     def __thread_transmit(self) -> None:
         """Dequeue packet from TX ring and send it out"""
@@ -68,21 +69,25 @@ class TxRing:
             self.packet_enqueued.acquire()
             packet_tx = self.tx_ring.pop(0)
             if (packet_tx_len := len(packet_tx)) > config.mtu + 14:
-                log("tx-ring", f"{packet_tx.tracker} - Unable to send frame, frame len ({packet_tx_len}) > mtu ({config.mtu + 14})")
+                if __debug__:
+                    log("tx-ring", f"{packet_tx.tracker} - Unable to send frame, frame len ({packet_tx_len}) > mtu ({config.mtu + 14})")
                 continue
             frame = memoryview(frame_buffer)[:packet_tx_len]
             packet_tx.assemble(frame)
             try:
                 os.write(self.tap, frame)
             except OSError as error:
-                log("tx-ring", f"{packet_tx.tracker} - <CRIT>Unable to send frame, OSError: {error}</>")
+                if __debug__:
+                    log("tx-ring", f"{packet_tx.tracker} - <CRIT>Unable to send frame, OSError: {error}</>")
                 continue
 
-            log("tx-ring", f"<B><lr>[TX]</> {packet_tx.tracker}<y>{packet_tx.tracker.latency}</> - sent frame, {len(packet_tx)} bytes")
+            if __debug__:
+                log("tx-ring", f"<B><lr>[TX]</> {packet_tx.tracker}<y>{packet_tx.tracker.latency}</> - sent frame, {len(packet_tx)} bytes")
 
     def enqueue(self, packet_tx: EtherAssembler) -> None:
         """Enqueue outbound packet into TX ring"""
 
         self.tx_ring.append(packet_tx)
-        log("rx-ring", f"{packet_tx.tracker}, queue len: {len(self.tx_ring)}")
+        if __debug__:
+            log("rx-ring", f"{packet_tx.tracker}, queue len: {len(self.tx_ring)}")
         self.packet_enqueued.release()

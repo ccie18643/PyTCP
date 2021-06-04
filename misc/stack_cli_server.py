@@ -56,11 +56,13 @@ class StackCliServer:
             s.bind((self.local_ip_address, self.local_port))
             s.listen(5)
 
-            log("cli", f"Stack CLI server started, bound to {self.local_ip_address}, port {self.local_port}")
+            if __debug__:
+                log("cli", f"Stack CLI server started, bound to {self.local_ip_address}, port {self.local_port}")
 
             while True:
                 conn, addr = s.accept()
-                log("cli", f"Stack CLI server received connection from {addr[0]}, port {addr[1]}")
+                if __debug__:
+                    log("cli", f"Stack CLI server received connection from {addr[0]}, port {addr[1]}")
 
                 threading.Thread(target=self.__thread_connection, args=(conn,)).start()
 

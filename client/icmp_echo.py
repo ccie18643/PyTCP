@@ -91,7 +91,8 @@ class ClientIcmpEcho:
                     ec_data=message,
                 )
 
-            log("client", f"Client ICMP Echo: Sent ICMP Echo ({flow_id}/{message_seq}) to {self.remote_ip_address} - {str(message)}")
+            if __debug__:
+                log("client", f"Client ICMP Echo: Sent ICMP Echo ({flow_id}/{message_seq}) to {self.remote_ip_address} - {str(message)}")
             time.sleep(1)
             message_seq += 1
             message_count = min(message_count, message_count - 1)

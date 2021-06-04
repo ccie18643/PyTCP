@@ -71,23 +71,29 @@ class ClientTcpEcho:
         elif version == 4:
             s = socket.socket(family=socket.AF_INET4, type=socket.SOCK_STREAM)
         else:
-            log("client", f"Client TCP Echo: Invalid local IP address - {self.local_ip_address}")
+            if __debug__:
+                log("client", f"Client TCP Echo: Invalid local IP address - {self.local_ip_address}")
             return
 
-        log("client", f"Client TCP Echo: Created socket [{s}]")
+        if __debug__:
+            log("client", f"Client TCP Echo: Created socket [{s}]")
 
         try:
             s.bind((self.local_ip_address, self.local_port))
-            log("client", f"Client TCP Echo: Bound socket to {self.local_ip_address}, port {self.local_port}")
+            if __debug__:
+                log("client", f"Client TCP Echo: Bound socket to {self.local_ip_address}, port {self.local_port}")
         except OSError as error:
-            log("client", f"Client TCP Echo: Unable to bind socket to {self.local_ip_address}, port {self.local_port} - [{error}]")
+            if __debug__:
+                log("client", f"Client TCP Echo: Unable to bind socket to {self.local_ip_address}, port {self.local_port} - [{error}]")
             return
 
         try:
             s.connect((self.remote_ip_address, self.remote_port))
-            log("client", f"Client TCP Echo: Connection opened to {self.remote_ip_address}, port {self.remote_port}")
+            if __debug__:
+                log("client", f"Client TCP Echo: Connection opened to {self.remote_ip_address}, port {self.remote_port}")
         except OSError as error:
-            log("client", f"Client TCP Echo: Connection to {self.remote_ip_address}, port {self.remote_port} failed - [{error}]")
+            if __debug__:
+                log("client", f"Client TCP Echo: Connection to {self.remote_ip_address}, port {self.remote_port} failed - [{error}]")
             return
 
         message_count = self.message_count
@@ -100,12 +106,15 @@ class ClientTcpEcho:
             try:
                 s.send(bytes(message, "utf-8"))
             except OSError as error:
-                log("client", f"Client TCP Echo: send() error - [{error}]")
+                if __debug__:
+                    log("client", f"Client TCP Echo: send() error - [{error}]")
                 break
 
-            log("client", f"Client TCP Echo: Sent {len(message)} bytes of data to {self.remote_ip_address}, port {self.remote_port}")
+            if __debug__:
+                log("client", f"Client TCP Echo: Sent {len(message)} bytes of data to {self.remote_ip_address}, port {self.remote_port}")
             time.sleep(self.message_delay)
             message_count = min(message_count, message_count - 1)
 
         s.close()
-        log("client", f"Client TCP Echo: Closed connection to {self.remote_ip_address}, port {self.remote_port}")
+        if __debug__:
+            log("client", f"Client TCP Echo: Closed connection to {self.remote_ip_address}, port {self.remote_port}")

@@ -53,16 +53,19 @@ def _validate_src_ip6_address(self, ip6_src: Ip6Address, ip6_dst: Ip6Address, tr
 
     # Check if the the source IP address belongs to this stack or its unspecified
     if ip6_src not in {*self.ip6_unicast, *self.ip6_multicast, Ip6Address("::")}:
-        log("ip6", f"{tracker} - <WARN>Unable to sent out IPv6 packet, stack doesn't own IPv6 address {ip6_src}, dropping</>")
+        if __debug__:
+            log("ip6", f"{tracker} - <WARN>Unable to sent out IPv6 packet, stack doesn't own IPv6 address {ip6_src}, dropping</>")
         return None
 
     # If packet is a response to multicast then replace source address with link local address of the stack
     if ip6_src in self.ip6_multicast:
         if self.ip6_unicast:
             ip6_src = self.ip6_unicast[0]
-            log("ip6", f"{tracker} - Packet is response to multicast, replaced source with stack link local IPv6 address {ip6_src}")
+            if __debug__:
+                log("ip6", f"{tracker} - Packet is response to multicast, replaced source with stack link local IPv6 address {ip6_src}")
         else:
-            log("ip6", f"{tracker} - <WARN>Unable to sent out IPv6 packet, no stack link local unicast IPv6 address available</>")
+            if __debug__:
+                log("ip6", f"{tracker} - <WARN>Unable to sent out IPv6 packet, no stack link local unicast IPv6 address available</>")
             return None
 
     # If source is unspecified try to find best match for given destination
@@ -77,7 +80,8 @@ def _validate_dst_ip6_address(self, ip6_dst: Ip6Address, tracker: Tracker) -> Op
 
     # Drop packet if the destination address is unspecified
     if ip6_dst.is_unspecified:
-        log("ip6", f"{tracker} - <WARN>Destination address is unspecified, dropping</>")
+        if __debug__:
+            log("ip6", f"{tracker} - <WARN>Destination address is unspecified, dropping</>")
         return None
 
     return ip6_dst
@@ -113,9 +117,11 @@ def _phtx_ip6(
 
     # Check if IP packet can be sent out without fragmentation, if so send it out
     if len(ip6_packet_tx) <= config.mtu:
-        log("ip6", f"{ip6_packet_tx.tracker} - {ip6_packet_tx}")
+        if __debug__:
+            log("ip6", f"{ip6_packet_tx.tracker} - {ip6_packet_tx}")
         return self._phtx_ether(carried_packet=ip6_packet_tx)
 
     # Fragment packet and send out
-    log("ip6", f"{ip6_packet_tx.tracker} - IPv6 packet len {len(ip6_packet_tx)} bytes, fragmentation needed")
+    if __debug__:
+        log("ip6", f"{ip6_packet_tx.tracker} - IPv6 packet len {len(ip6_packet_tx)} bytes, fragmentation needed")
     return self._phtx_ip6_ext_frag(ip6_packet_tx)

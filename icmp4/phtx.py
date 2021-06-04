@@ -66,6 +66,7 @@ def _phtx_icmp4(
         echo_tracker=echo_tracker,
     )
 
-    log("icmp4", f"{icmp4_packet_tx.tracker} - {icmp4_packet_tx}")
+    if __debug__:
+        log("icmp4", f"{icmp4_packet_tx.tracker} - {icmp4_packet_tx}")
 
     return self._phtx_ip4(ip4_src=ip4_src, ip4_dst=ip4_dst, carried_packet=icmp4_packet_tx)

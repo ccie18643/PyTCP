@@ -54,4 +54,5 @@ class ServiceUdpDiscard(ServiceUdp):
         while True:
             message, remote_address = s.recvfrom()
 
-            log("service", f"Service UDP Discard: Received {len(message)} bytes from {remote_address[0]}, port {remote_address[1]}")
+            if __debug__:
+                log("service", f"Service UDP Discard: Received {len(message)} bytes from {remote_address[0]}, port {remote_address[1]}")

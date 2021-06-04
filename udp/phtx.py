@@ -60,7 +60,8 @@ def _phtx_udp(
 
     udp_packet_tx = UdpAssembler(sport=udp_sport, dport=udp_dport, data=udp_data, echo_tracker=echo_tracker)
 
-    log("udp", f"{udp_packet_tx.tracker} - {udp_packet_tx}")
+    if __debug__:
+        log("udp", f"{udp_packet_tx.tracker} - {udp_packet_tx}")
 
     if isinstance(ip_src, Ip6Address) and isinstance(ip_dst, Ip6Address):
         return self._phtx_ip6(ip6_src=ip_src, ip6_dst=ip_dst, carried_packet=udp_packet_tx)

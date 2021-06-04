@@ -103,7 +103,8 @@ class Timer:
         self._timers: dict[str, int] = {}
 
         threading.Thread(target=self.__thread_timer).start()
-        log("timer", "Started timer")
+        if __debug__:
+            log("timer", "Started timer")
 
     def __thread_timer(self) -> None:
         """Thread responsible for executing register methods on every timer tick"""
@@ -147,6 +148,7 @@ class Timer:
     def is_expired(self, name: str) -> bool:
         """Check if timer expired"""
 
-        log("timer", f"<r>Active timers: {self._timers}</>")
+        if __debug__:
+            log("timer", f"<r>Active timers: {self._timers}</>")
 
         return not self._timers.get(name, None)

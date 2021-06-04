@@ -89,7 +89,8 @@ class TcpSocket(Socket):
             self._remote_port = 0
             self._tcp_session = None
 
-        log("socket", f"<g>[{self}]</> - Create socket")
+        if __debug__:
+            log("socket", f"<g>[{self}]</> - Create socket")
 
     @property
     def state(self) -> FsmState:
@@ -154,7 +155,8 @@ class TcpSocket(Socket):
         self._local_port = local_port
         stack.sockets[str(self)] = self
 
-        log("socket", f"<g>[{self}]</> - Bound socket")
+        if __debug__:
+            log("socket", f"<g>[{self}]</> - Bound socket")
 
     def connect(self, address: tuple[str, int]) -> None:
         """Connect the socket to remote host"""
@@ -189,7 +191,8 @@ class TcpSocket(Socket):
             socket=self,
         )
 
-        log("socket", f"<g>[{self}]</> - Socket attempting connection")
+        if __debug__:
+            log("socket", f"<g>[{self}]</> - Socket attempting connection")
 
         try:
             self._tcp_session.connect()
@@ -199,7 +202,8 @@ class TcpSocket(Socket):
             if str(error) == "Connection timeout":
                 raise TimeoutError("[Errno 110] Connection timed out - [No valid response received from remote host]")
 
-        log("socket", f"<g>[{self}]</> - Bound")
+        if __debug__:
+            log("socket", f"<g>[{self}]</> - Bound")
 
     def listen(self) -> None:
         """Starts to listen for incoming connections"""
@@ -212,7 +216,8 @@ class TcpSocket(Socket):
             socket=self,
         )
 
-        log("socket", f"<g>[{self}]</> - Socket starting to listen for inbound connections")
+        if __debug__:
+            log("socket", f"<g>[{self}]</> - Socket starting to listen for inbound connections")
 
         stack.sockets[str(self)] = self
         self._tcp_session.listen()
@@ -220,12 +225,14 @@ class TcpSocket(Socket):
     def accept(self) -> tuple[Socket, tuple[str, int]]:
         """Wait for the established inbound connection, once available return it's socket"""
 
-        log("socket", f"<g>[{self}]</> - Waiting for inbound connection")
+        if __debug__:
+            log("socket", f"<g>[{self}]</> - Waiting for inbound connection")
 
         self._event_tcp_session_established.acquire()
         socket = self._tcp_accept.pop(0)
 
-        log("socket", f"<g>[{self}]</> - Socket accepted connection from {(str(socket.remote_ip_address), socket.remote_port)}")
+        if __debug__:
+            log("socket", f"<g>[{self}]</> - Socket accepted connection from {(str(socket.remote_ip_address), socket.remote_port)}")
 
         return socket, (str(socket.remote_ip_address), socket.remote_port)
 
@@ -244,7 +251,8 @@ class TcpSocket(Socket):
         except TcpSessionError as error:
             raise BrokenPipeError(f"[Errno 32] Broken pipe - [{error}]")
 
-        log("socket", f"<g>[{self}]</> - Sent data segment, len {bytes_sent}")
+        if __debug__:
+            log("socket", f"<g>[{self}]</> - Sent data segment, len {bytes_sent}")
         return bytes_sent
 
     def recv(self, bufsize: Optional[int] = None, timeout: Optional[float] = None) -> bytes:
@@ -255,9 +263,11 @@ class TcpSocket(Socket):
         assert self._tcp_session is not None
 
         if data_rx := self._tcp_session.receive(bufsize):
-            log("socket", f"<g>[{self}]</> - Received {len(data_rx)} bytes of data")
+            if __debug__:
+                log("socket", f"<g>[{self}]</> - Received {len(data_rx)} bytes of data")
         else:
-            log("socket", f"<g>[{self}]</> - Received empty data byte string, remote end closed connection")
+            if __debug__:
+                log("socket", f"<g>[{self}]</> - Received empty data byte string, remote end closed connection")
 
         return data_rx
 
@@ -267,7 +277,8 @@ class TcpSocket(Socket):
         assert self._tcp_session is not None
         self._tcp_session.close()
 
-        log("socket", f"<g>[{self}]</> - Closed socket")
+        if __debug__:
+            log("socket", f"<g>[{self}]</> - Closed socket")
 
     def process_tcp_packet(self, packet_rx_md: TcpMetadata) -> None:
         """Process incoming packet's metadata"""
