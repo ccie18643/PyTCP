@@ -188,23 +188,16 @@ class PacketHandler:
         # Log all the addresses stack will listen on
         if __debug__:
             log("stack", f"<INFO>Stack listening on unicast MAC address: {self.mac_unicast}</>")
-        if __debug__:
             log("stack", f"<INFO>Stack listening on multicast MAC addresses: {', '.join([str(_) for _ in set(self.mac_multicast)])}</>")
-        if __debug__:
             log("stack", f"<INFO>Stack listening on broadcast MAC address: {self.mac_broadcast}</>")
 
-        if config.ip6_support:
-            if __debug__:
+            if config.ip6_support:
                 log("stack", f"<INFO>Stack listening on unicast IPv6 addresses: {', '.join([str(_) for _ in self.ip6_unicast])}</>")
-            if __debug__:
                 log("stack", f"<INFO>Stack listening on multicast IPv6 addresses: {', '.join([str(_) for _ in set(self.ip6_multicast)])})</>")
 
-        if config.ip4_support:
-            if __debug__:
+            if config.ip4_support:
                 log("stack", f"<INFO>Stack listening on unicast IPv4 addresses: {', '.join([str(_) for _ in self.ip4_unicast])}</>")
-            if __debug__:
                 log("stack", f"<INFO>Stack listening on multicast IPv4 addresses: {', '.join([str(_) for _ in self.ip4_multicast])}</>")
-            if __debug__:
                 log("stack", f"<INFO>Stack listening on broadcast IPv4 addresses: {', '.join([str(_) for _ in self.ip4_broadcast])}</>")
 
     def __thread_packet_handler(self) -> None:
@@ -251,12 +244,12 @@ class PacketHandler:
         self._remove_ip6_multicast(ip6_unicast_candidate.solicited_node_multicast)
         return not event
 
-    def _parse_stack_ip6_host_candidate(self, configur_host_candidate: list[tuple[str, Optional[str]]]) -> list[Ip6Host]:
+    def _parse_stack_ip6_host_candidate(self, configured_host_candidate: list[tuple[str, Optional[str]]]) -> list[Ip6Host]:
         """Parse IPv6 candidate address list"""
 
         valid_host_candidate: list[Ip6Host] = []
 
-        for str_host, str_gateway in configur_host_candidate:
+        for str_host, str_gateway in configured_host_candidate:
             if __debug__:
                 log("stack", f"Parsing ('{str_host}', '{str_gateway}') entry")
             try:
@@ -345,12 +338,12 @@ class PacketHandler:
                 ip6_address.gateway = gateway
                 __(ip6_address)
 
-    def _parse_stack_ip4_host_candidate(self, configur_ip4_address_candidate: list[tuple[str, Optional[str]]]) -> list[Ip4Host]:
+    def _parse_stack_ip4_host_candidate(self, configured_ip4_address_candidate: list[tuple[str, Optional[str]]]) -> list[Ip4Host]:
         """Parse IPv4 candidate host addresses configured in config.py module"""
 
         valid_address_candidate: list[Ip4Host] = []
 
-        for str_host, str_gateway in configur_ip4_address_candidate:
+        for str_host, str_gateway in configured_ip4_address_candidate:
             if __debug__:
                 log("stack", f"Parsing ('{str_host}', '{str_gateway}') entry")
             try:
