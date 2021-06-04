@@ -31,7 +31,7 @@
 import inspect
 import time
 
-from config import LOG_CHANEL, LOG_DEBUG
+import config
 
 STYLES = {
     "</>": "\33[0m",
@@ -65,13 +65,13 @@ def log(channel: str, message: str, inspect_depth: int = 1) -> None:
     if __debug__ is False:
         return
 
-    if channel in LOG_CHANEL:
-        if LOG_DEBUG:
+    if channel in config.LOG_CHANEL:
+        if config.LOG_DEBUG:
             frame_info = inspect.stack()[inspect_depth]
             caller_class = frame_info.frame.f_locals["self"].__class__.__name__
             caller_method = frame_info.function
             caller_info = f"{caller_class}.{caller_method}"
-            output = f" <g>{(time.time() - START_TIME):07.02f}</> | <b>{channel.upper():7}</> | <c>{caller_info:40}</> | {message}"
+            output = f" <g>{(time.time() - START_TIME):07.02f}</> | <b>{channel.upper():7}</> | <c>{caller_info}</> | {message}"
         else:
             output = f" <g>{(time.time() - START_TIME):07.02f}</> | <b>{channel.upper():7}</> | {message}"
 

@@ -441,7 +441,7 @@ class TcpSession:
             stack.timer.register_timer(f"{self}-delayed_ack", DELAYED_ACK_DELAY)
 
     def _retransmit_packet_timeout(self) -> None:
-        """Retransmit packet after expir timeout"""
+        """Retransmit packet after expired timeout"""
 
         if self._snd_una in self._tx_retransmit_timeout_counter and stack.timer.is_expired(f"{self}-retransmit_seq-{self._snd_una}"):
             if self._tx_retransmit_timeout_counter[self._snd_una] == PACKET_RETRANSMIT_MAX_COUNT:
@@ -504,21 +504,21 @@ class TcpSession:
         # Enlarge effective sending window
         self._snd_ewn = min(self._snd_ewn << 1, self._snd_wnd)
         log("tcp-ss", f"[{self}] - Updated effective sending window to {self._snd_ewn}")
-        # Purge expir tx packet retransmit requests
+        # Purge expired tx packet retransmit requests
         for seq in list(self._tx_retransmit_request_counter):
             if seq < packet_rx_md.ack:
                 self._tx_retransmit_request_counter.pop(seq)
-                log("tcp-ss", f"[{self}] - Purged expir TX packet retransmit request counter for {seq}")
-        # Purge expir tx packet retransmit timeouts
+                log("tcp-ss", f"[{self}] - Purged expired TX packet retransmit request counter for {seq}")
+        # Purge expired tx packet retransmit timeouts
         for seq in list(self._tx_retransmit_timeout_counter):
             if seq < packet_rx_md.ack:
                 self._tx_retransmit_timeout_counter.pop(seq)
-                log("tcp-ss", f"[{self}] - Purged expir TX packet retransmit timeout for {seq}")
-        # Purge expir rx retransmit requests
+                log("tcp-ss", f"[{self}] - Purged expired TX packet retransmit timeout for {seq}")
+        # Purge expired rx retransmit requests
         for seq in list(self._rx_retransmit_request_counter):
             if seq < self._rcv_nxt:
                 self._rx_retransmit_request_counter.pop(seq)
-                log("tcp-ss", f"[{self}] - Purged expir RX packet retransmit request counter for {seq}")
+                log("tcp-ss", f"[{self}] - Purged expired RX packet retransmit request counter for {seq}")
         # Bring next packet from ooo_packet_queue if available
         if ooo_packet := self._ooo_packet_queue.pop(self._rcv_nxt, None):
             log("tcp-ss", f"[{self}] - <lg>Retrieving packet {self._rcv_nxt} from Out of Order queue</>")

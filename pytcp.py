@@ -28,11 +28,13 @@
 # pytcp.py - main TCP/IP stack program
 #
 
+import argparse
 import fcntl
 import os
 import struct
 import sys
 import time
+from typing import Optional
 
 import config
 from lib.logger import log
@@ -55,8 +57,25 @@ IFF_NO_PI = 0x1000
 #########################################################
 
 
+def parse_arguments(args: Optional[list[str]] = None) -> None:
+    """Parse command line arguments and override config settings"""
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-l", "--log-chanel", action="store", nargs="+", help="specify active log channels (config.LOG_CHANEL)")
+    parser.add_argument("-d", "--log-debug", action="store_true", help="show class/method name when logging (config.LOG_DEBUG)")
+    arguments = parser.parse_args(args)
+
+    if arguments.log_chanel:
+        config.LOG_CHANEL = arguments.log_chanel
+
+    if arguments.log_debug:
+        config.LOG_DEBUG = arguments.log_debug
+
+
 def main() -> int:
     """Main function"""
+
+    parse_arguments()
 
     try:
         tap = os.open("/dev/net/tun", os.O_RDWR)
