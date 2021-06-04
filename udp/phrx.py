@@ -34,6 +34,7 @@ from __future__ import annotations  # Required by Python ver < 3.10
 import icmp4.ps
 import icmp6.ps
 import misc.stack as stack
+from lib.logger import log
 from misc.packet import PacketRx
 from udp.fpp import UdpParser
 from udp.metadata import UdpMetadata
@@ -45,12 +46,10 @@ def _phrx_udp(self, packet_rx: PacketRx) -> None:
     UdpParser(packet_rx)
 
     if packet_rx.parse_failed:
-        if __debug__:
-            self._logger.critical(f"{self.tracker} - {packet_rx.parse_failed}")
+        log("udp", f"{self.tracker} - <CRIT>{packet_rx.parse_failed}</>")
         return
 
-    if __debug__:
-        self._logger.opt(ansi=True).info(f"<lg>{packet_rx.tracker}</> - {packet_rx.udp}")
+    log("udp", f"{packet_rx.tracker} - <INFO>{packet_rx.udp}</>")
 
     assert isinstance(packet_rx.udp.data, memoryview)  # memoryview: data type check point
 
@@ -67,22 +66,25 @@ def _phrx_udp(self, packet_rx: PacketRx) -> None:
     for socket_pattern in packet_rx_md.socket_patterns:
         socket = stack.sockets.get(socket_pattern, None)
         if socket:
-            if __debug__:
-                self._logger.debug(f"{packet_rx_md.tracker} - Found matching listening socket [{socket}]")
+            log("udp", f"{packet_rx_md.tracker} - <INFO>Found matching listening socket [{socket}]</>")
             socket.process_udp_packet(packet_rx_md)
             return
 
     # Silently drop packet if it's source address is unspecified
     if packet_rx.ip.src.is_unspecified:
-        if __debug__:
-            self._logger.debug(
-                f"Received UDP packet from {packet_rx.ip.src}, port {packet_rx.udp.sport} to {packet_rx.ip.dst}, port {packet_rx.udp.dport}, dropping..."
-            )
+        log(
+            "udp",
+            f"{packet_rx_md.tracker} - Received UDP packet from {packet_rx.ip.src}, port {packet_rx.udp.sport} to "
+            + f"{packet_rx.ip.dst}, port {packet_rx.udp.dport}, dropping",
+        )
         return
 
     # Respond with ICMP Port Unreachable message if no matching socket has been found
-    if __debug__:
-        self._logger.debug(f"Received UDP packet from {packet_rx.ip.src} to closed port {packet_rx.udp.dport}, sending ICMPv4 Port Unreachable")
+    log(
+        "udp",
+        f"{packet_rx_md.tracker} - <INFO>Received UDP packet from {packet_rx.ip.src} to closed port "
+        + f"{packet_rx.udp.dport}, sending ICMPv4 Port Unreachable</>",
+    )
 
     if packet_rx.ip.ver == 6:
         self._phtx_icmp6(

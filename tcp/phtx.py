@@ -35,6 +35,7 @@ from typing import TYPE_CHECKING, Optional
 
 from lib.ip4_address import Ip4Address
 from lib.ip6_address import Ip6Address
+from lib.logger import log
 from lib.tracker import Tracker
 from misc.tx_status import TxStatus
 from tcp.fpa import (
@@ -110,8 +111,7 @@ def _phtx_tcp(
         echo_tracker=echo_tracker,
     )
 
-    if __debug__:
-        self._logger.opt(ansi=True).info(f"<lr>{tcp_packet_tx.tracker}</> - {tcp_packet_tx}")
+    log("tcp", f"{tcp_packet_tx.tracker} - <INFO>{tcp_packet_tx}</>")
 
     if isinstance(ip_src, Ip6Address) and isinstance(ip_dst, Ip6Address):
         return self._phtx_ip6(ip6_src=ip_src, ip6_dst=ip_dst, carried_packet=tcp_packet_tx)

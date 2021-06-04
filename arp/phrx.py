@@ -37,6 +37,7 @@ import arp.ps
 import config
 from arp.fpp import ArpParser
 from lib.ip4_address import Ip4Address
+from lib.logger import log
 
 if TYPE_CHECKING:
     from misc.packet import PacketRx
@@ -48,18 +49,15 @@ def _phrx_arp(self, packet_rx: PacketRx) -> None:
     ArpParser(packet_rx)
 
     if packet_rx.parse_failed:
-        if __debug__:
-            self._logger.critical(f"{packet_rx.tracker} - {packet_rx.parse_failed}")
+        log("arp", f"{packet_rx.tracker} - <CRIT>{packet_rx.parse_failed}</>")
         return
 
-    if __debug__:
-        self._logger.opt(ansi=True).info(f"<lg>{packet_rx.tracker}</> - {packet_rx.arp}")
+    log("arp", f"{packet_rx.tracker} - <INFO>{packet_rx.arp}</>")
 
     if packet_rx.arp.oper == arp.ps.ARP_OP_REQUEST:
         # Check if request contains our IP address in SPA field, this indicates IP address conflict
         if packet_rx.arp.spa in self.ip4_unicast:
-            if __debug__:
-                self._logger.warning(f"IP ({packet_rx.arp.spa}) conflict detected with host at {packet_rx.arp.sha}")
+            log("arp", f"{packet_rx.tracker} - <WARN>IP ({packet_rx.arp.spa}) conflict detected with host at {packet_rx.arp.sha}</>")
             return
 
         # Check if the request is for one of our IP addresses, if so the craft ARP reply packet and send it out
@@ -77,8 +75,10 @@ def _phrx_arp(self, packet_rx: PacketRx) -> None:
 
             # Update ARP cache with the mapping learned from the received ARP request that was destined to this stack
             if config.arp_cache_update_from_direct_request:
-                if __debug__:
-                    self._logger.debug(f"Adding/refreshing ARP cache entry from direct request - {packet_rx.arp.spa} -> {packet_rx.arp.sha}")
+                log(
+                    "arp",
+                    f"{packet_rx.tracker} - <INFO>Adding/refreshing ARP cache entry from direct request " + f"- {packet_rx.arp.spa} -> {packet_rx.arp.sha}</>",
+                )
                 self.arp_cache.add_entry(packet_rx.arp.spa, packet_rx.arp.sha)
 
             return
@@ -92,21 +92,18 @@ def _phrx_arp(self, packet_rx: PacketRx) -> None:
                 and packet_rx.arp.tha == self.mac_unicast
                 and packet_rx.arp.tpa == Ip4Address("0.0.0.0")
             ):
-                if __debug__:
-                    self._logger.warning(f"ARP Probe detected conflict for IP {packet_rx.arp.spa} with host at {packet_rx.arp.sha}")
+                log("arp", f"{packet_rx.tracker} - <WARN>ARP Probe detected conflict for IP {packet_rx.arp.spa} with host at {packet_rx.arp.sha}</>")
                 self.arp_probe_unicast_conflict.add(packet_rx.arp.spa)
                 return
 
         # Update ARP cache with mapping received as direct ARP reply
         if packet_rx.ether.dst == self.mac_unicast:
-            if __debug__:
-                self._logger.debug(f"Adding/refreshing ARP cache entry from direct reply - {packet_rx.arp.spa} -> {packet_rx.arp.sha}")
+            log("arp", f"{packet_rx.tracker} - Adding/refreshing ARP cache entry from direct reply - {packet_rx.arp.spa} -> {packet_rx.arp.sha}")
             self.arp_cache.add_entry(packet_rx.arp.spa, packet_rx.arp.sha)
             return
 
         # Update ARP cache with mapping received as gratuitous ARP reply
         if packet_rx.ether.dst.is_broadcast and packet_rx.arp.spa == packet_rx.arp.tpa and config.arp_cache_update_from_gratuitious_reply:
-            if __debug__:
-                self._logger.debug(f"Adding/refreshing ARP cache entry from gratuitous reply - {packet_rx.arp.spa} -> {packet_rx.arp.sha}")
+            log("arp", f"{packet_rx.tracker} - Adding/refreshing ARP cache entry from gratuitous reply - {packet_rx.arp.spa} -> {packet_rx.arp.sha}")
             self.arp_cache.add_entry(packet_rx.arp.spa, packet_rx.arp.sha)
             return

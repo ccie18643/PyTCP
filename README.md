@@ -52,7 +52,7 @@ I am also working on another TCP/IP stack project that is being programmed in C 
 
 #### Next steps:
 
- - [ ] Logging - *Need absolute colors instead of terminal defined*
+ - [x] Logging - *Replace loguru with homegrown logger to improve performance and flexibility*
  - [x] Stack - *Implement feedback mechanism for TX path so packet sending failures can be communicated to sockets*
  - [ ] Stack - *Implement RAW socket support - to be used by 'user space' ping client*
  - [ ] Code - *Unit testing for libraries and modules (based on Facebook's Testslide library)*

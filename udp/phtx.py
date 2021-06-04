@@ -35,6 +35,7 @@ from typing import TYPE_CHECKING, Optional
 
 from lib.ip4_address import Ip4Address
 from lib.ip6_address import Ip6Address
+from lib.logger import log
 from lib.tracker import Tracker
 from misc.tx_status import TxStatus
 from udp.fpa import UdpAssembler
@@ -59,8 +60,7 @@ def _phtx_udp(
 
     udp_packet_tx = UdpAssembler(sport=udp_sport, dport=udp_dport, data=udp_data, echo_tracker=echo_tracker)
 
-    if __debug__:
-        self._logger.opt(ansi=True).info(f"<lr>{udp_packet_tx.tracker}</> - {udp_packet_tx}")
+    log("udp", f"{udp_packet_tx.tracker} - <INFO>{udp_packet_tx}</>")
 
     if isinstance(ip_src, Ip6Address) and isinstance(ip_dst, Ip6Address):
         return self._phtx_ip6(ip6_src=ip_src, ip6_dst=ip_dst, carried_packet=udp_packet_tx)

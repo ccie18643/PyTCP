@@ -35,6 +35,7 @@ from typing import TYPE_CHECKING, Optional
 
 import config
 from arp.fpa import ArpAssembler
+from lib.logger import log
 from lib.mac_address import MacAddress
 from lib.tracker import Tracker
 
@@ -68,7 +69,6 @@ def _phtx_arp(
         echo_tracker=echo_tracker,
     )
 
-    if __debug__:
-        self._logger.opt(ansi=True).info(f"<lr>{arp_packet_tx.tracker}</> - {arp_packet_tx}")
+    log("arp", f"{arp_packet_tx.tracker} - <B>{arp_packet_tx}</>")
 
     self._phtx_ether(ether_src=ether_src, ether_dst=ether_dst, carried_packet=arp_packet_tx)

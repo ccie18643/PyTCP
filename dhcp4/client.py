@@ -33,11 +33,10 @@ from __future__ import annotations  # Required by Python ver < 3.10
 import random
 from typing import TYPE_CHECKING, Optional, Union
 
-import loguru
-
 import dhcp4.ps
 import lib.socket as socket
 from lib.ip4_address import Ip4Address
+from lib.logger import log
 
 if TYPE_CHECKING:
     from lib.mac_address import MacAddress
@@ -50,9 +49,6 @@ class Dhcp4Client:
         """Class constructor"""
 
         self._mac_address = mac_address
-
-        if __debug__:
-            self._logger = loguru.logger.bind(object_name="dhcp4_client.")
 
     def fetch(self) -> Union[tuple[str, Optional[str]], tuple[None, None]]:
         """IPv4 DHCP client"""
@@ -78,32 +74,29 @@ class Dhcp4Client:
                 dhcp_host_name="PyTCP",
             ).raw_packet
         )
-        if __debug__:
-            self._logger.debug("Sent out DHCP Discover message")
+        log("dhcp4", "Sent out DHCP Discover message")
 
         # Wait for DHCP Offer
         try:
             dhcp_packet_rx = dhcp4.ps.Dhcp4Packet(s.recv(timeout=5))
         except socket.ReceiveTimeout:
-            if __debug__:
-                self._logger.warning("Didn't receive DHCP Offer message - timeout")
+            log("dhcp4", "Didn't receive DHCP Offer message - timeout")
             s.close()
             return None, None
 
         if dhcp_packet_rx.dhcp_msg_type != dhcp4.ps.DHCP4_MSG_OFFER:
-            if __debug__:
-                self._logger.warning("Didn't receive DHCP Offer message - message type error")
+            log("dhcp4", "Didn't receive DHCP Offer message - message type error")
             s.close()
             return None, None
 
         dhcp_srv_id = dhcp_packet_rx.dhcp_srv_id
         dhcp_yiaddr = dhcp_packet_rx.dhcp_yiaddr
-        if __debug__:
-            self._logger.debug(
-                f"ClientUdpDhcp: Received DHCP Offer from {dhcp_packet_rx.dhcp_srv_id}"
-                + f"IP: {dhcp_packet_rx.dhcp_yiaddr}, Mask: {dhcp_packet_rx.dhcp_subnet_mask}, Router: {dhcp_packet_rx.dhcp_router}"
-                + f"DNS: {dhcp_packet_rx.dhcp_dns}, Domain: {dhcp_packet_rx.dhcp_domain_name}"
-            )
+        log(
+            "dhcp4",
+            f"ClientUdpDhcp: Received DHCP Offer from {dhcp_packet_rx.dhcp_srv_id}"
+            + f"IP: {dhcp_packet_rx.dhcp_yiaddr}, Mask: {dhcp_packet_rx.dhcp_subnet_mask}, Router: {dhcp_packet_rx.dhcp_router}"
+            + f"DNS: {dhcp_packet_rx.dhcp_dns}, Domain: {dhcp_packet_rx.dhcp_domain_name}",
+        )
 
         # Send DHCP Request
         s.send(
@@ -123,30 +116,27 @@ class Dhcp4Client:
             ).raw_packet
         )
 
-        if __debug__:
-            self._logger.debug(f"Sent out DHCP Request message to {dhcp_packet_rx.dhcp_srv_id}")
+        log("dhcp4", f"Sent out DHCP Request message to {dhcp_packet_rx.dhcp_srv_id}")
 
         # Wait for DHCP Ack
         try:
             dhcp_packet_rx = dhcp4.ps.Dhcp4Packet(s.recv(timeout=5))
         except socket.ReceiveTimeout:
-            if __debug__:
-                self._logger.warning("Didn't receive DHCP ACK message - timeout")
+            log("dhcp4", "Didn't receive DHCP ACK message - timeout")
             s.close()
             return None, None
 
         if dhcp_packet_rx.dhcp_msg_type != dhcp4.ps.DHCP4_MSG_ACK:
-            if __debug__:
-                self._logger.warning("Didn't receive DHCP ACK message - message type error")
+            log("dhcp4", "Didn't receive DHCP ACK message - message type error")
             s.close()
             return None, None
 
-        if __debug__:
-            self._logger.debug(
-                f"Received DHCP Offer from {dhcp_packet_rx.dhcp_srv_id}"
-                + f"IP: {dhcp_packet_rx.dhcp_yiaddr}, Mask: {dhcp_packet_rx.dhcp_subnet_mask}, Router: {dhcp_packet_rx.dhcp_router}"
-                + f"DNS: {dhcp_packet_rx.dhcp_dns}, Domain: {dhcp_packet_rx.dhcp_domain_name}"
-            )
+        log(
+            "dhcp4",
+            f"Received DHCP Offer from {dhcp_packet_rx.dhcp_srv_id}"
+            + f"IP: {dhcp_packet_rx.dhcp_yiaddr}, Mask: {dhcp_packet_rx.dhcp_subnet_mask}, Router: {dhcp_packet_rx.dhcp_router}"
+            + f"DNS: {dhcp_packet_rx.dhcp_dns}, Domain: {dhcp_packet_rx.dhcp_domain_name}",
+        )
         s.close()
 
         assert dhcp_packet_rx.dhcp_subnet_mask is not None

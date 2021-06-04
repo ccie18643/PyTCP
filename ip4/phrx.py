@@ -37,6 +37,7 @@ from typing import Optional
 import config
 import ip4.ps
 from ip4.fpp import Ip4Parser
+from lib.logger import log
 from misc.ip_helper import inet_cksum
 from misc.packet import PacketRx
 
@@ -49,11 +50,11 @@ def _defragment_ip4_packet(self, packet_rx: PacketRx) -> Optional[PacketRx]:
         _: self.ip4_frag_flows[_] for _ in self.ip4_frag_flows if self.ip4_frag_flows[_]["timestamp"] - time() < config.ip4_frag_flow_timeout
     }
 
-    if __debug__:
-        self._logger.debug(
-            f"{packet_rx.tracker} - IPv4 packet fragment, offset {packet_rx.ip4.offset}, dlen {packet_rx.ip4.dlen}"
-            + f"{'' if packet_rx.ip4.flag_mf else ', last'}"
-        )
+    log(
+        "ip4",
+        f"{packet_rx.tracker} - IPv4 packet fragment, offset {packet_rx.ip4.offset}, dlen {packet_rx.ip4.dlen}"
+        + f"{'' if packet_rx.ip4.flag_mf else ', last'}",
+    )
 
     flow_id = (packet_rx.ip4.src, packet_rx.ip4.dst, packet_rx.ip4.id)
 
@@ -91,8 +92,7 @@ def _defragment_ip4_packet(self, packet_rx: PacketRx) -> Optional[PacketRx]:
     struct.pack_into("!H", header, 10, inet_cksum(memoryview(header)))
     packet_rx = PacketRx(bytes(header) + data)
     Ip4Parser(packet_rx)
-    if __debug__:
-        self._logger.debug(f"{packet_rx.tracker} - Reasembled fragmented IPv4 packet, dlen {len(data)} bytes")
+    log("ip4", f"{packet_rx.tracker} - Reasembled fragmented IPv4 packet, dlen {len(data)} bytes")
     return packet_rx
 
 
@@ -102,17 +102,14 @@ def _phrx_ip4(self, packet_rx: PacketRx) -> None:
     Ip4Parser(packet_rx)
 
     if packet_rx.parse_failed:
-        if __debug__:
-            self._logger.critical(f"{packet_rx.tracker} - {packet_rx.parse_failed}")
+        log("ip4", f"{packet_rx.tracker} - <CRIT>{packet_rx.parse_failed}</>")
         return
 
-    if __debug__:
-        self._logger.debug(f"{packet_rx.tracker} - {packet_rx.ip4}")
+    log("ip4", f"{packet_rx.tracker} - {packet_rx.ip4}")
 
     # Check if received packet has been sent to us directly or by unicast/broadcast, allow any destination if no unicast address is configur (for DHCP client)
     if self.ip4_unicast and packet_rx.ip4.dst not in {*self.ip4_unicast, *self.ip4_multicast, *self.ip4_broadcast}:
-        if __debug__:
-            self._logger.debug(f"{packet_rx.tracker} - IP packet not destined for this stack, dropping")
+        log("ip4", f"{packet_rx.tracker} - IP packet not destined for this stack, dropping")
         return
 
     # Check if packet is a fragment and if so process it accordingly
