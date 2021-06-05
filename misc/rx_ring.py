@@ -62,7 +62,6 @@ class RxRing:
 
         while True:
             packet_rx = PacketRx(os.read(self.tap, 2048))
-            print("RX", bytes(packet_rx.frame))
             if __debug__:
                 log("rx-ring", f"<B><lg>[RX]</> {packet_rx.tracker} - received frame, {len(packet_rx.frame)} bytes")
             self.rx_ring.append(packet_rx)

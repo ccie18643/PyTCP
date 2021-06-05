@@ -74,7 +74,6 @@ class TxRing:
                 continue
             frame = memoryview(frame_buffer)[:packet_tx_len]
             packet_tx.assemble(frame)
-            print("TX", bytes(frame))
             try:
                 os.write(self.tap, frame)
             except OSError as error:
