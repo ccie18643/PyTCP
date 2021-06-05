@@ -60,15 +60,17 @@ class NdCache:
 class TxRing:
     """Mock class"""
 
+    def __init__(self):
+        self.packet_count = 0
+
     def enqueue(self, _):
+        self.packet_count += 1
         return None
 
 
 def main():
     with open("tests/ping4.frame_rx", "rb") as f:
         frame_rx = f.read()
-
-    packet_rx = PacketRx(frame_rx)
 
     packet_handler = PacketHandler(None)
     packet_handler.arp_cache = ArpCache()
@@ -89,11 +91,10 @@ def main():
         print()
         return
 
-    for _ in range(10):
-        start_time = time.time()
-        for _ in range(1000000):
-            packet_handler._phrx_ether(packet_rx)
-        print(f"{time.time() - start_time:.03f}s")
+    start_time = time.time()
+    for _ in range(10000):
+        packet_handler._phrx_ether(PacketRx(frame_rx))
+    print(f"{packet_handler.tx_ring.packet_count} packets, {time.time() - start_time:.03f}s")
 
 
 if __name__ == "__main__":
