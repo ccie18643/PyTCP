@@ -30,9 +30,8 @@
 #
 
 
-from unittest import TestCase
-
 from mock import patch
+from testslide import TestCase
 
 from misc.ph import PacketHandler
 
@@ -43,7 +42,7 @@ class TestPacketHandler(TestCase):
 
         self.packet_handler = PacketHandler(None)
 
-    @patch("lib.logger.log", return_value=None)
+    @patch("misc.ph.log", return_value=None)
     def test__parse_stack_ip6_address_candidate(self, _):
         from lib.ip6_address import Ip6Address, Ip6Host
 
@@ -74,7 +73,7 @@ class TestPacketHandler(TestCase):
         result = [ip6_address.gateway for ip6_address in result]
         self.assertEqual(result, expected)
 
-    @patch("lib.logger.log", return_value=None)
+    @patch("misc.ph.log", return_value=None)
     def test__parse_stack_ip4_host_candidate(self, _):
         from lib.ip4_address import Ip4Address, Ip4Host
 
