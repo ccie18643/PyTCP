@@ -36,7 +36,6 @@ from typing import TYPE_CHECKING
 import arp.ps
 import config
 from arp.fpp import ArpParser
-from lib.ip4_address import Ip4Address
 from lib.logger import log
 
 if TYPE_CHECKING:
@@ -92,11 +91,7 @@ def _phrx_arp(self, packet_rx: PacketRx) -> None:
     elif packet_rx.arp.oper == arp.ps.ARP_OP_REPLY:
         # Check for ARP reply that is response to our ARP probe, that indicates that IP address we trying to claim is in use
         if packet_rx.ether.dst == self.mac_unicast:
-            if (
-                packet_rx.arp.spa in [_.address for _ in self.ip4_host_candidate]
-                and packet_rx.arp.tha == self.mac_unicast
-                and packet_rx.arp.tpa == Ip4Address("0.0.0.0")
-            ):
+            if packet_rx.arp.spa in [_.address for _ in self.ip4_host_candidate] and packet_rx.arp.tha == self.mac_unicast and packet_rx.arp.tpa.is_unspecified:
                 if __debug__:
                     log("arp", f"{packet_rx.tracker} - <WARN>ARP Probe detected conflict for IP {packet_rx.arp.spa} with host at {packet_rx.arp.sha}</>")
                 self.arp_probe_unicast_conflict.add(packet_rx.arp.spa)

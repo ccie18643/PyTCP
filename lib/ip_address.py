@@ -76,7 +76,7 @@ class IpAddress(ABC):
     def __hash__(self) -> int:
         """Hash"""
 
-        return hash(bytes(self))
+        return self._address
 
     @property
     def version(self) -> int:
@@ -180,7 +180,7 @@ class IpMask(ABC):
     def __hash__(self) -> int:
         """Hash"""
 
-        return hash(bytes(self))
+        return self._mask
 
     def __len__(self) -> int:
         """Bit length representation"""

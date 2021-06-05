@@ -87,9 +87,16 @@ class Ip6Address(IpAddress):
         self._address: int
         self._version: int = 6
 
-        if isinstance(address, Ip6Address):
-            self._address = int(address)
-            return
+        if isinstance(address, int):
+            if address in range(340282366920938463463374607431768211455):
+                self._address = address
+                return
+
+        if isinstance(address, memoryview) or isinstance(address, bytes) or isinstance(address, bytearray):
+            if len(address) == 16:
+                v1, v2, v3, v4 = struct.unpack("!LLLL", address)
+                self._address = (v1 << 96) + (v2 << 64) + (v3 << 32) + v4
+                return
 
         if isinstance(address, str):
             if re.search(IP6_REGEX, address):
@@ -100,16 +107,9 @@ class Ip6Address(IpAddress):
                 except OSError:
                     pass
 
-        if isinstance(address, bytes) or isinstance(address, bytearray) or isinstance(address, memoryview):
-            if len(address) == 16:
-                v1, v2, v3, v4 = struct.unpack("!LLLL", address)
-                self._address = (v1 << 96) + (v2 << 64) + (v3 << 32) + v4
-                return
-
-        if isinstance(address, int):
-            if address in range(340282366920938463463374607431768211455):
-                self._address = address
-                return
+        if isinstance(address, Ip6Address):
+            self._address = int(address)
+            return
 
         raise Ip6AddressFormatError(address)
 
@@ -173,13 +173,13 @@ class Ip6Address(IpAddress):
 
         assert self.is_multicast
 
-        return MacAddress(int(MacAddress("33:33:00:00:00:00")) | self._address & 0xFFFFFFFF)
+        return MacAddress(int(MacAddress(0x333300000000)) | self._address & 0xFFFFFFFF)
 
     @property
     def unspecified(self) -> Ip6Address:
         """Return unspecified IPv6 Address"""
 
-        return Ip6Address("::")
+        return Ip6Address(0)
 
 
 class Ip6Mask(IpMask):

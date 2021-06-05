@@ -115,7 +115,7 @@ class TestLibIp6Address(TestCase):
         self.assertEqual(Ip6Address("2001::1234:5678:90ab:cdef"), Ip6Address("2001::1234:5678:90ab:cdef"))
 
     def test___hash__(self):
-        self.assertEqual(hash(Ip6Address("2001::1234:5678:90ab:cdef")), hash(b" \x01\x00\x00\x00\x00\x00\x00\x124Vx\x90\xab\xcd\xef"))
+        self.assertEqual(hash(Ip6Address("2001::1234:5678:90ab:cdef")), hash(42540488161975842761862124892595146223))
 
     def test_version(self):
         self.assertEqual(Ip6Address("2001::1234:5678:90ab:cdef").version, 6)
@@ -201,7 +201,7 @@ class TestLibIp6Mask(TestCase):
         self.assertNotEqual(Ip6Mask("/64"), Ip6Mask("/128"))
 
     def test___hash__(self):
-        self.assertEqual(hash(Ip6Mask("/64")), hash(b"\xff\xff\xff\xff\xff\xff\xff\xff\x00\x00\x00\x00\x00\x00\x00\x00"))
+        self.assertEqual(hash(Ip6Mask("/64")), hash(340282366920938463444927863358058659840))
 
     def test___len__(self):
         for n in range(129):

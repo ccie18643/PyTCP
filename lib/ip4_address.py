@@ -75,9 +75,15 @@ class Ip4Address(IpAddress):
         self._address: int
         self._version: int = 4
 
-        if isinstance(address, Ip4Address):
-            self._address = int(address)
-            return
+        if isinstance(address, int):
+            if address in range(4294967296):
+                self._address = address
+                return
+
+        if isinstance(address, memoryview) or isinstance(address, bytes) or isinstance(address, bytearray):
+            if len(address) == 4:
+                self._address = struct.unpack("!L", address)[0]
+                return
 
         if isinstance(address, str):
             if re.search(IP4_REGEX, address):
@@ -87,15 +93,9 @@ class Ip4Address(IpAddress):
                 except OSError:
                     pass
 
-        if isinstance(address, bytes) or isinstance(address, bytearray) or isinstance(address, memoryview):
-            if len(address) == 4:
-                self._address = struct.unpack("!L", address)[0]
-                return
-
-        if isinstance(address, int):
-            if address in range(4294967296):
-                self._address = address
-                return
+        if isinstance(address, Ip4Address):
+            self._address = int(address)
+            return
 
         raise Ip4AddressFormatError(address)
 
@@ -176,7 +176,7 @@ class Ip4Address(IpAddress):
     def unspecified(self) -> Ip4Address:
         """Return unspecified IPv4 Address"""
 
-        return Ip4Address("0.0.0.0")
+        return Ip4Address(0)
 
 
 class Ip4Mask(IpMask):

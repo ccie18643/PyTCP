@@ -52,7 +52,7 @@ def _validate_src_ip6_address(self, ip6_src: Ip6Address, ip6_dst: Ip6Address, tr
     """Make sure source ip address is valid, supplement with valid one as appropriate"""
 
     # Check if the the source IP address belongs to this stack or its unspecified
-    if ip6_src not in {*self.ip6_unicast, *self.ip6_multicast, Ip6Address("::")}:
+    if ip6_src not in {*self.ip6_unicast, *self.ip6_multicast, Ip6Address(0)}:
         if __debug__:
             log("ip6", f"{tracker} - <WARN>Unable to sent out IPv6 packet, stack doesn't own IPv6 address {ip6_src}, dropping</>")
         return None

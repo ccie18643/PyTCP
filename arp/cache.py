@@ -121,10 +121,10 @@ class ArpCache:
 
         stack.packet_handler._phtx_arp(
             ether_src=stack.packet_handler.mac_unicast,
-            ether_dst=MacAddress("ff:ff:ff:ff:ff:ff"),
+            ether_dst=MacAddress(0xFFFFFFFFFFFF),
             arp_oper=arp.ps.ARP_OP_REQUEST,
             arp_sha=stack.packet_handler.mac_unicast,
-            arp_spa=stack.packet_handler.ip4_unicast[0] if stack.packet_handler.ip4_unicast else Ip4Address("0.0.0.0"),
-            arp_tha=MacAddress("00:00:00:00:00:00"),
+            arp_spa=stack.packet_handler.ip4_unicast[0] if stack.packet_handler.ip4_unicast else Ip4Address(0),
+            arp_tha=MacAddress(0),
             arp_tpa=arp_tpa,
         )

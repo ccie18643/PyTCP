@@ -88,7 +88,7 @@ class TestLibMacAddress(TestCase):
         self.assertNotEqual(MacAddress("00:00:00:00:00:00"), MacAddress("11:11:11:11:11:11"))
 
     def test___hash__(self):
-        self.assertEqual(hash(MacAddress("01:23:45:ab:cd:ef")), hash(b"\x01#E\xab\xcd\xef"))
+        self.assertEqual(hash(MacAddress("01:23:45:ab:cd:ef")), 1251004370415)
 
     def test_is_iunicast(self):
         for sample in self.mac_samples:

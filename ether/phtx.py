@@ -47,8 +47,8 @@ if TYPE_CHECKING:
 def _phtx_ether(
     self,
     carried_packet: Union[ArpAssembler, Ip4Assembler, Ip6Assembler],
-    ether_src: MacAddress = MacAddress("00:00:00:00:00:00"),
-    ether_dst: MacAddress = MacAddress("00:00:00:00:00:00"),
+    ether_src: MacAddress = MacAddress(0),
+    ether_dst: MacAddress = MacAddress(0),
 ) -> TxStatus:
     """Handle outbound Ethernet packets"""
 
@@ -115,7 +115,7 @@ def _phtx_ether(
 
         # Send out packet if its destinied to limited broadcast addresses
         if ip4_dst.is_limited_broadcast:
-            ether_packet_tx.dst = MacAddress("ff:ff:ff:ff:ff:ff")
+            ether_packet_tx.dst = MacAddress(0xFFFFFFFFFFFF)
             if __debug__:
                 log("ether", f"{ether_packet_tx.tracker} - Resolved destination IPv4 {ip4_dst} to MAC {ether_packet_tx.dst}")
             _send_out_packet()
@@ -125,7 +125,7 @@ def _phtx_ether(
         for ip4_host in self.ip4_host:
             if ip4_host.address == ip4_src:
                 if ip4_dst in {ip4_host.network.address, ip4_host.network.broadcast}:
-                    ether_packet_tx.dst = MacAddress("ff:ff:ff:ff:ff:ff")
+                    ether_packet_tx.dst = MacAddress(0xFFFFFFFFFFFF)
                     if __debug__:
                         log("ether", f"{ether_packet_tx.tracker} - Resolved destination IPv4 {ip4_dst} to MAC {ether_packet_tx.dst}")
                     _send_out_packet()

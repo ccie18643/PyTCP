@@ -106,7 +106,7 @@ def pick_local_ip6_address(remote_ip6_address: Ip6Address) -> Ip6Address:
         if ip6_host.gateway:
             return ip6_host.address
     # In case everything else fails return unspecified
-    return Ip6Address("::")
+    return Ip6Address(0)
 
 
 def pick_local_ip4_address(remote_ip4_address: Ip4Address) -> Ip4Address:
@@ -121,4 +121,4 @@ def pick_local_ip4_address(remote_ip4_address: Ip4Address) -> Ip4Address:
         if ip4_host.gateway:
             return ip4_host.address
     # In case everything else fails return unspecified
-    return Ip4Address("0.0.0.0")
+    return Ip4Address(0)

@@ -46,9 +46,16 @@ class MacAddress:
     def __init__(self, address: Union[MacAddress, str, bytes, bytearray, memoryview, int]) -> None:
         """Class constructor"""
 
-        if isinstance(address, MacAddress):
-            self._address = int(address)
-            return
+        if isinstance(address, int):
+            if address in range(281474976710656):
+                self._address = address
+                return
+
+        if isinstance(address, memoryview) or isinstance(address, bytes) or isinstance(address, bytearray):
+            if len(address) == 6:
+                v1, v2, v3 = struct.unpack("!HHH", address)
+                self._address = (v1 << 32) + (v2 << 16) + v3
+                return
 
         if isinstance(address, str):
             if re.search(r"^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$", address.strip()):
@@ -56,16 +63,9 @@ class MacAddress:
                 self._address = (v1 << 32) + (v2 << 16) + v3
                 return
 
-        if isinstance(address, bytes) or isinstance(address, bytearray) or isinstance(address, memoryview):
-            if len(address) == 6:
-                v1, v2, v3 = struct.unpack("!HHH", address)
-                self._address = (v1 << 32) + (v2 << 16) + v3
-                return
-
-        if isinstance(address, int):
-            if address in range(281474976710656):
-                self._address = address
-                return
+        if isinstance(address, MacAddress):
+            self._address = int(address)
+            return
 
         raise MacIp4AddressFormatError(address)
 
@@ -97,7 +97,7 @@ class MacAddress:
     def __hash__(self) -> int:
         """Hash"""
 
-        return hash(bytes(self))
+        return self._address
 
     @property
     def is_unspecified(self) -> bool:

@@ -51,7 +51,7 @@ class ArpAssembler:
         sha: MacAddress,
         spa: Ip4Address,
         tpa: Ip4Address,
-        tha: MacAddress = MacAddress("00:00:00:00:00:00"),
+        tha: MacAddress = MacAddress(0),
         oper: int = arp.ps.ARP_OP_REQUEST,
         echo_tracker: Optional[Tracker] = None,
     ) -> None:

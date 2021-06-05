@@ -118,7 +118,7 @@ class NdCache:
         """Enqueue ICMPv6 Neighbor Solicitation packet with TX ring"""
 
         # Pick appropriate source address
-        ip6_src = Ip6Address("::")
+        ip6_src = Ip6Address(0)
         for ip6_host in stack.packet_handler.ip6_host:
             if icmp6_ns_target_address in ip6_host.network:
                 ip6_src = ip6_host.address

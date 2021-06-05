@@ -128,7 +128,7 @@ class TestLibIp4Address(TestCase):
         self.assertEqual(Ip4Address("192.168.9.1"), Ip4Address("192.168.9.1"))
 
     def test___hash__(self):
-        self.assertEqual(hash(Ip4Address("192.168.9.1")), hash(b"\xc0\xa8\t\x01"))
+        self.assertEqual(hash(Ip4Address("192.168.9.1")), hash(3232237825))
 
     def test___contains__(self):
         self.assertIn(Ip4Address("192.168.9.7"), Ip4Network("192.168.9.0/24"))
@@ -216,7 +216,7 @@ class TestLibIp4Mask(TestCase):
         self.assertNotEqual(Ip4Mask("255.255.255.240"), Ip4Mask("/29"))
 
     def test___hash__(self):
-        self.assertEqual(hash(Ip4Mask("/32")), hash(b"\xff\xff\xff\xff"))
+        self.assertEqual(hash(Ip4Mask("/32")), hash(4294967295))
 
     def test___len__(self):
         for n in range(33):

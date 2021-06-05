@@ -131,14 +131,14 @@ class Icmp6Assembler:
 
         elif self._type == icmp6.ps.ICMP6_NEIGHBOR_SOLICITATION:
             self._ns_reserved = 0
-            self._ns_target_address = Ip6Address("::") if ns_target_address is None else ns_target_address
+            self._ns_target_address = Ip6Address(0) if ns_target_address is None else ns_target_address
 
         elif self._type == icmp6.ps.ICMP6_NEIGHBOR_ADVERTISEMENT:
             self._na_flag_r = False if na_flag_r is None else na_flag_r
             self._na_flag_s = False if na_flag_s is None else na_flag_s
             self._na_flag_o = False if na_flag_o is None else na_flag_o
             self._na_reserved = 0
-            self._na_target_address = Ip6Address("::") if na_target_address is None else na_target_address
+            self._na_target_address = Ip6Address(0) if na_target_address is None else na_target_address
 
         elif self._type == icmp6.ps.ICMP6_MLD2_REPORT:
             self._mlr2_reserved = 0

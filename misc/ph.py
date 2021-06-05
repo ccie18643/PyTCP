@@ -126,7 +126,7 @@ class PacketHandler:
         # so the other ones keep it's SNM entry in multicast list. Its the simplest solution and imho perfectly valid one in this case.
         self.mac_unicast: MacAddress = MacAddress(config.mac_address)
         self.mac_multicast: list[MacAddress] = []
-        self.mac_broadcast: MacAddress = MacAddress("ff:ff:ff:ff:ff:ff")
+        self.mac_broadcast: MacAddress = MacAddress(0xFFFFFFFFFFFF)
         self.ip6_host: list[Ip6Host] = []
         self.ip6_multicast: list[Ip6Address] = []
         self.ip4_host: list[Ip4Host] = []
@@ -224,7 +224,7 @@ class PacketHandler:
         """Return list of stack's IPv4 broadcast addresses"""
 
         ip4_broadcast = [_.network.broadcast for _ in self.ip4_host]
-        ip4_broadcast.append(Ip4Address("255.255.255.255"))
+        ip4_broadcast.append(Ip4Address(0xFFFFFFFF))
         return ip4_broadcast
 
     def _perform_ip6_nd_dad(self, ip6_unicast_candidate: Ip6Address) -> bool:
@@ -421,11 +421,11 @@ class PacketHandler:
 
         self._phtx_arp(
             ether_src=self.mac_unicast,
-            ether_dst=MacAddress("ff:ff:ff:ff:ff:ff"),
+            ether_dst=MacAddress(0xFFFFFFFFFFFF),
             arp_oper=arp.ps.ARP_OP_REQUEST,
             arp_sha=self.mac_unicast,
-            arp_spa=Ip4Address("0.0.0.0"),
-            arp_tha=MacAddress("00:00:00:00:00:00"),
+            arp_spa=Ip4Address(0),
+            arp_tha=MacAddress(0),
             arp_tpa=ip4_unicast,
         )
         if __debug__:
@@ -436,11 +436,11 @@ class PacketHandler:
 
         self._phtx_arp(
             ether_src=self.mac_unicast,
-            ether_dst=MacAddress("ff:ff:ff:ff:ff:ff"),
+            ether_dst=MacAddress(0xFFFFFFFFFFFF),
             arp_oper=arp.ps.ARP_OP_REQUEST,
             arp_sha=self.mac_unicast,
             arp_spa=ip4_unicast,
-            arp_tha=MacAddress("00:00:00:00:00:00"),
+            arp_tha=MacAddress(0),
             arp_tpa=ip4_unicast,
         )
         if __debug__:
@@ -451,11 +451,11 @@ class PacketHandler:
 
         self._phtx_arp(
             ether_src=self.mac_unicast,
-            ether_dst=MacAddress("ff:ff:ff:ff:ff:ff"),
+            ether_dst=MacAddress(0xFFFFFFFFFFFF),
             arp_oper=arp.ps.ARP_OP_REPLY,
             arp_sha=self.mac_unicast,
             arp_spa=ip4_unicast,
-            arp_tha=MacAddress("00:00:00:00:00:00"),
+            arp_tha=MacAddress(0),
             arp_tpa=ip4_unicast,
         )
         if __debug__:
@@ -472,7 +472,7 @@ class PacketHandler:
             if _ not in {Ip6Address("ff02::1")}
         }:
             self._phtx_icmp6(
-                ip6_src=self.ip6_unicast[0] if self.ip6_unicast else Ip6Address("::"),
+                ip6_src=self.ip6_unicast[0] if self.ip6_unicast else Ip6Address(0),
                 ip6_dst=Ip6Address("ff02::16"),
                 ip6_hop=1,
                 icmp6_type=icmp6.ps.ICMP6_MLD2_REPORT,
@@ -485,7 +485,7 @@ class PacketHandler:
         """Send out ICMPv6 ND Duplicate Address Detection message"""
 
         self._phtx_icmp6(
-            ip6_src=Ip6Address("::"),
+            ip6_src=Ip6Address(0),
             ip6_dst=ip6_unicast_candidate.solicited_node_multicast,
             ip6_hop=255,
             icmp6_type=icmp6.ps.ICMP6_NEIGHBOR_SOLICITATION,

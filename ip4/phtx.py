@@ -52,7 +52,7 @@ def _validate_src_ip4_address(self, ip4_src: Ip4Address, ip4_dst: Ip4Address, tr
     """Make sure source ip address is valid, supplemt with valid one as appropriate"""
 
     # Check if the the source IP address belongs to this stack or its set to all zeros (for DHCP client communication)
-    if ip4_src not in {*self.ip4_unicast, *self.ip4_multicast, *self.ip4_broadcast, Ip4Address("0.0.0.0")}:
+    if ip4_src not in {*self.ip4_unicast, *self.ip4_multicast, *self.ip4_broadcast, Ip4Address(0)}:
         if __debug__:
             log("ip4", f"{tracker} - <WARN>Unable to sent out IPv4 packet, stack doesn't own IPv4 address {ip4_src}, dropping</>")
         return None
