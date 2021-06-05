@@ -124,7 +124,7 @@ class TestPacketHandler(TestCase):
     @patch("ip4.phrx.log", return_value=None)
     @patch("icmp4.phrx.log", return_value=None)
     @patch("icmp4.phtx.log", return_value=None)
-    def test_packet_handler_integration_ping4(self, *_):
+    def test_integration_ping4(self, *_):
         with open("tests/ping4.frame_rx", "rb") as _:
             frame_rx = _.read()
         with open("tests/ping4.frame_tx", "rb") as _:
