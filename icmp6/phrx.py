@@ -79,7 +79,7 @@ def _phrx_icmp6(self, packet_rx: PacketRx) -> None:
 
         # Update ICMPv6 ND cache
         if not (packet_rx.ip6.src.is_unspecified or packet_rx.ip6.src.is_multicast) and packet_rx.icmp6.nd_opt_slla:
-            self.icmp6_nd_cache.add_entry(packet_rx.ip6.src, packet_rx.icmp6.nd_opt_slla)
+            self.nd_cache.add_entry(packet_rx.ip6.src, packet_rx.icmp6.nd_opt_slla)
 
         # Determine if request is part of DAD request by examining its source address
         ip6_nd_dad = packet_rx.ip6.src.is_unspecified
@@ -113,7 +113,7 @@ def _phrx_icmp6(self, packet_rx: PacketRx) -> None:
 
         # Update ICMPv6 ND cache
         if packet_rx.icmp6.nd_opt_tlla:
-            self.icmp6_nd_cache.add_entry(packet_rx.icmp6.na_target_address, packet_rx.icmp6.nd_opt_tlla)
+            self.nd_cache.add_entry(packet_rx.icmp6.na_target_address, packet_rx.icmp6.nd_opt_tlla)
             return
 
         return

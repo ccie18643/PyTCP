@@ -35,6 +35,7 @@ from unittest import TestCase
 from mock import Mock, patch
 
 from arp.cache import ArpCache
+from icmp6.nd_cache import NdCache
 from lib.ip4_address import Ip4Address, Ip4Host
 from lib.ip6_address import Ip6Address, Ip6Host
 from lib.mac_address import MacAddress
@@ -50,8 +51,10 @@ class TestPacketHandler(TestCase):
         self.packet_handler.ip4_host = [Ip4Host("192.168.9.7/24")]
         self.packet_handler.ip6_host = [Ip6Host("2603:9000:e307:9f09:0:ff:fe77:7777/64")]
         self.packet_handler.arp_cache = Mock(ArpCache)
+        self.packet_handler.nd_cache = Mock(NdCache)
         self.packet_handler.tx_ring = Mock(TxRing)
         self.packet_handler.arp_cache.find_entry.return_value = MacAddress("52:54:00:df:85:37")
+        self.packet_handler.nd_cache.find_entry.return_value = MacAddress("52:54:00:df:85:37")
         self.packet_handler.tx_ring.enqueue = lambda _: _.assemble(self.frame_tx)
         self.frame_tx = memoryview(bytearray(2048))
 
@@ -128,6 +131,21 @@ class TestPacketHandler(TestCase):
         with open("tests/ping4.frame_rx", "rb") as _:
             frame_rx = _.read()
         with open("tests/ping4.frame_tx", "rb") as _:
+            frame_tx = _.read()
+        self.packet_handler._phrx_ether(PacketRx(frame_rx))
+        self.assertEqual(self.frame_tx[: len(frame_tx)], frame_tx)
+
+    @patch("misc.ph.log", return_value=None)
+    @patch("ether.phtx.log", return_value=None)
+    @patch("ether.phrx.log", return_value=None)
+    @patch("ip6.phtx.log", return_value=None)
+    @patch("ip6.phrx.log", return_value=None)
+    @patch("icmp6.phrx.log", return_value=None)
+    @patch("icmp6.phtx.log", return_value=None)
+    def test_integration_ping6(self, *_):
+        with open("tests/ping6.frame_rx", "rb") as _:
+            frame_rx = _.read()
+        with open("tests/ping6.frame_tx", "rb") as _:
             frame_tx = _.read()
         self.packet_handler._phrx_ether(PacketRx(frame_rx))
         self.assertEqual(self.frame_tx[: len(frame_tx)], frame_tx)
