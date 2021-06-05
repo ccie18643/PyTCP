@@ -31,12 +31,23 @@
 import time
 
 from lib.ip4_address import Ip4Host
+from lib.ip6_address import Ip6Host
 from lib.mac_address import MacAddress
 from misc.packet import PacketRx
 from misc.ph import PacketHandler
 
 
 class ArpCache:
+    """Mock class"""
+
+    def __init__(self):
+        self._response = MacAddress("52:54:00:df:85:37")
+
+    def find_entry(self, _):
+        return self._response
+
+
+class NdCache:
     """Mock class"""
 
     def __init__(self):
@@ -61,8 +72,22 @@ def main():
 
     packet_handler = PacketHandler(None)
     packet_handler.arp_cache = ArpCache()
+    packet_handler.nd_cache = NdCache()
     packet_handler.tx_ring = TxRing()
     packet_handler.ip4_host = [Ip4Host("192.168.9.7/24")]
+    packet_handler.ip6_host = [Ip6Host("2603:9000:e307:9f09:0:ff:fe77:7777/64")]
+
+    if __debug__:
+        print()
+        packet_handler._phrx_ether(packet_rx)
+        print()
+        print("****************************************")
+        print("*                                      *")
+        print("* Run as 'python -OO ph_speed_test.py' *")
+        print("*                                      *")
+        print("****************************************")
+        print()
+        return
 
     for _ in range(10):
         start_time = time.time()
