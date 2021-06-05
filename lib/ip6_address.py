@@ -194,11 +194,23 @@ class Ip6Mask(IpMask):
         def _validate_bits() -> bool:
             """Validate that mask is made of consecutive bits"""
             bit_mask = f"{self._mask:0128b}"
-            return not bit_mask[bit_mask.index("0") :].count("1")
+            try:
+                return not bit_mask[bit_mask.index("0") :].count("1")
+            except ValueError:
+                return True
 
-        if isinstance(mask, Ip6Mask):
-            self._mask = mask._mask
-            return
+        if isinstance(mask, int):
+            if mask in range(340282366920938463463374607431768211456):
+                self._mask = mask
+                if _validate_bits():
+                    return
+
+        if isinstance(mask, memoryview) or isinstance(mask, bytes) or isinstance(mask, bytearray):
+            if len(mask) == 16:
+                v1, v2, v3, v4 = struct.unpack("!LLLL", mask)
+                self._mask = (v1 << 96) + (v2 << 64) + (v3 << 32) + v4
+                if _validate_bits():
+                    return
 
         if isinstance(mask, str) and re.search(r"^\/\d{1,3}$", mask):
             bit_count = int(mask[1:])
@@ -206,18 +218,9 @@ class Ip6Mask(IpMask):
                 self._mask = int("1" * bit_count + "0" * (128 - bit_count), 2)
                 return
 
-        if isinstance(mask, bytes) or isinstance(mask, bytearray) or isinstance(mask, memoryview):
-            if len(mask) == 16:
-                v1, v2, v3, v4 = struct.unpack("!LLLL", mask)
-                self._mask = (v1 << 96) + (v2 << 64) + (v3 << 32) + v4
-                if _validate_bits():
-                    return
-
-        if isinstance(mask, int):
-            if mask in range(340282366920938463463374607431768211456):
-                self._mask = mask
-                if _validate_bits():
-                    return
+        if isinstance(mask, Ip6Mask):
+            self._mask = mask._mask
+            return
 
         raise Ip6MaskFormatError(mask)
 
@@ -237,11 +240,6 @@ class Ip6Network(IpNetwork):
         self._mask: Ip6Mask
         self._version: int = 6
 
-        if isinstance(network, Ip6Network):
-            self._mask = network.mask
-            self._address = Ip6Address(int(network.address) & int(network.mask))
-            return
-
         if isinstance(network, tuple):
             if len(network) == 2:
                 if isinstance(network[0], Ip6Address) and isinstance(network[1], Ip6Mask):
@@ -257,6 +255,11 @@ class Ip6Network(IpNetwork):
                 return
             except (ValueError, Ip6AddressFormatError, Ip6MaskFormatError):
                 pass
+
+        if isinstance(network, Ip6Network):
+            self._mask = network.mask
+            self._address = Ip6Address(int(network.address) & int(network.mask))
+            return
 
         raise Ip6NetworkFormatError(network)
 
@@ -299,11 +302,6 @@ class Ip6Host(IpHost):
 
         self.gateway: Optional[Ip6Address] = None
 
-        if isinstance(host, Ip6Host):
-            self._address = host.address
-            self._network = host.network
-            return
-
         if isinstance(host, tuple):
             if len(host) == 2:
                 if isinstance(host[0], Ip6Address) and isinstance(host[1], Ip6Network):
@@ -323,6 +321,11 @@ class Ip6Host(IpHost):
                 return
             except (ValueError, Ip6AddressFormatError, Ip6MaskFormatError):
                 pass
+
+        if isinstance(host, Ip6Host):
+            self._address = host.address
+            self._network = host.network
+            return
 
         raise Ip6HostFormatError(host)
 

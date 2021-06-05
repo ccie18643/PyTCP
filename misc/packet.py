@@ -49,10 +49,10 @@ if TYPE_CHECKING:
 class PacketRx:
     """Base packet class"""
 
-    def __init__(self, _frame: bytes) -> None:
+    def __init__(self, frame: bytes) -> None:
         """Class constructor"""
 
-        self.frame: memoryview = memoryview(_frame)
+        self.frame: memoryview = memoryview(frame)
         self.tracker: Tracker = Tracker("RX")
         self.parse_failed: str = ""
 

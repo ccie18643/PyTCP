@@ -121,15 +121,15 @@ class Icmp4Assembler:
         """Assemble packet into the raw form"""
 
         if self._type == icmp4.ps.ICMP4_ECHO_REPLY:
-            # memoryview: bytes conversion requir
+            # memoryview: bytes conversion required
             struct.pack_into(f"! BBH HH {len(self._ec_data)}s", frame, 0, self._type, self._code, 0, self._ec_id, self._ec_seq, bytes(self._ec_data))
 
         elif self._type == icmp4.ps.ICMP4_UNREACHABLE and self._code == icmp4.ps.ICMP4_UNREACHABLE__PORT:
-            # memoryview: bytes conversion requir
+            # memoryview: bytes conversion required
             struct.pack_into(f"! BBH L {len(self._un_data)}s", frame, 0, self._type, self._code, 0, 0, bytes(self._un_data))
 
         elif self._type == icmp4.ps.ICMP4_ECHO_REQUEST:
-            # memoryview: bytes conversion requir
+            # memoryview: bytes conversion required
             struct.pack_into(f"! BBH HH {len(self._ec_data)}s", frame, 0, self._type, self._code, 0, self._ec_id, self._ec_seq, bytes(self._ec_data))
 
         struct.pack_into("! H", frame, 2, inet_cksum(frame))
