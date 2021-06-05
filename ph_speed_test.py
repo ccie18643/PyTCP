@@ -81,7 +81,7 @@ def main():
 
     if __debug__:
         print()
-        packet_handler._phrx_ether(packet_rx)
+        packet_handler._phrx_ether(PacketRx(frame_rx))
         print()
         print("****************************************")
         print("*                                      *")
