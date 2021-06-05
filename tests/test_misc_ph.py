@@ -32,21 +32,31 @@
 
 from unittest import TestCase
 
-from mock import patch
+from mock import Mock, patch
 
+from arp.cache import ArpCache
+from lib.ip4_address import Ip4Address, Ip4Host
+from lib.ip6_address import Ip6Address, Ip6Host
+from lib.mac_address import MacAddress
+from misc.packet import PacketRx
 from misc.ph import PacketHandler
+from misc.tx_ring import TxRing
 
 
 class TestPacketHandler(TestCase):
     def setUp(self):
         super().setUp()
-
         self.packet_handler = PacketHandler(None)
+        self.packet_handler.ip4_host = [Ip4Host("192.168.9.7/24")]
+        self.packet_handler.ip6_host = [Ip6Host("2603:9000:e307:9f09:0:ff:fe77:7777/64")]
+        self.packet_handler.arp_cache = Mock(ArpCache)
+        self.packet_handler.tx_ring = Mock(TxRing)
+        self.packet_handler.arp_cache.find_entry.return_value = MacAddress("52:54:00:df:85:37")
+        self.packet_handler.tx_ring.enqueue = lambda _: _.assemble(self.frame_tx)
+        self.frame_tx = memoryview(bytearray(2048))
 
-    @patch("lib.logger.log", return_value=None)
+    @patch("misc.ph.log", return_value=None)
     def test__parse_stack_ip6_address_candidate(self, _):
-        from lib.ip6_address import Ip6Address, Ip6Host
-
         sample = [
             ("FE80::7/64", None),  # valid link loal address [pass]
             ("FE80::77/64", None),  # valid link local address [pass]
@@ -74,10 +84,8 @@ class TestPacketHandler(TestCase):
         result = [ip6_address.gateway for ip6_address in result]
         self.assertEqual(result, expected)
 
-    @patch("lib.logger.log", return_value=None)
+    @patch("misc.ph.log", return_value=None)
     def test__parse_stack_ip4_host_candidate(self, _):
-        from lib.ip4_address import Ip4Address, Ip4Host
-
         sample = [
             ("192.168.9.7/24", "192.168.9.1"),  # valid address and valid gateway [pass]
             ("192.168.9.77/24", "192.168.9.1"),  # valid address and valid gateway [pass]
@@ -108,3 +116,18 @@ class TestPacketHandler(TestCase):
         expected = [Ip4Address("192.168.9.1"), Ip4Address("192.168.9.1"), None, Ip4Address("172.16.17.1"), Ip4Address("10.10.10.1")]
         result = [ip4_host.gateway for ip4_host in result]
         self.assertEqual(result, expected)
+
+    @patch("misc.ph.log", return_value=None)
+    @patch("ether.phtx.log", return_value=None)
+    @patch("ether.phrx.log", return_value=None)
+    @patch("ip4.phtx.log", return_value=None)
+    @patch("ip4.phrx.log", return_value=None)
+    @patch("icmp4.phrx.log", return_value=None)
+    @patch("icmp4.phtx.log", return_value=None)
+    def test_packet_handler_integration_ping4(self, *_):
+        with open("tests/ping4.frame_rx", "rb") as _:
+            frame_rx = _.read()
+        with open("tests/ping4.frame_tx", "rb") as _:
+            frame_tx = _.read()
+        self.packet_handler._phrx_ether(PacketRx(frame_rx))
+        self.assertEqual(self.frame_tx[: len(frame_tx)], frame_tx)
