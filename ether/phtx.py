@@ -92,7 +92,7 @@ def _phtx_ether(
                     if __debug__:
                         log("ether", f"<{ether_packet_tx.tracker} - <WARN>No default gateway set for {ip6_host} source address, dropping</>")
                     return TxStatus.DROPED_ETHER_NO_GATEWAY
-                if mac_address := self.icmp6_nd_cache.find_entry(ip6_host.gateway):
+                if mac_address := self.nd_cache.find_entry(ip6_host.gateway):
                     ether_packet_tx.dst = mac_address
                     if __debug__:
                         log("ether", f"{ether_packet_tx.tracker} - Resolved destination IPv6 {ip6_dst}" + f" to Default Gateway MAC {ether_packet_tx.dst}")
@@ -101,7 +101,7 @@ def _phtx_ether(
                 return TxStatus.DROPED_ETHER_GATEWAY_CACHE_FAIL
 
         # Send out packet if we are able to obtain destinaton MAC from ICMPv6 ND cache
-        if mac_address := self.icmp6_nd_cache.find_entry(ip6_dst):
+        if mac_address := self.nd_cache.find_entry(ip6_dst):
             ether_packet_tx.dst = mac_address
             if __debug__:
                 log("ether", f"{ether_packet_tx.tracker} - Resolved destination IPv6 {ip6_dst} to MAC {ether_packet_tx.dst}")

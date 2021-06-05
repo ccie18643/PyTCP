@@ -160,7 +160,7 @@ class PacketHandler:
         self.rx_ring: RxRing = RxRing(tap)
         self.tx_ring: TxRing = TxRing(tap)
         self.arp_cache: ArpCache = ArpCache()
-        self.icmp6_nd_cache: NdCache = NdCache()
+        self.nd_cache: NdCache = NdCache()
 
         # Start packet handler so we can receive packets from network
         threading.Thread(target=self.__thread_packet_handler).start()
