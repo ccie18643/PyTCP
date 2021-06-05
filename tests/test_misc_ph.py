@@ -34,6 +34,7 @@ from unittest import TestCase
 
 from mock import Mock, patch
 
+import config
 from arp.cache import ArpCache
 from icmp6.nd_cache import NdCache
 from lib.ip4_address import Ip4Address, Ip4Host
@@ -47,7 +48,15 @@ from misc.tx_ring import TxRing
 class TestPacketHandler(TestCase):
     def setUp(self):
         super().setUp()
+
+        config.ip6_support = True
+        config.ip4_support = True
+        config.packet_integrity_check = True
+        config.packet_sanity_check = True
+        config.mtu = 1500
+
         self.packet_handler = PacketHandler(None)
+        self.packet_handler.mac_address = MacAddress("02:00:00:77:77:77")
         self.packet_handler.ip4_host = [Ip4Host("192.168.9.7/24")]
         self.packet_handler.ip6_host = [Ip6Host("2603:9000:e307:9f09:0:ff:fe77:7777/64")]
         self.packet_handler.arp_cache = Mock(ArpCache)

@@ -31,12 +31,12 @@
 
 from testslide import TestCase
 
-import config
+from config import ip4_support, ip6_support
 
 
 class TestConfig(TestCase):
     def test_ipv6_support(self):
-        self.assertEqual(config.ip6_support, True)
+        self.assertEqual(ip6_support, True)
 
     def test_ipv4_support(self):
-        self.assertEqual(config.ip4_support, True)
+        self.assertEqual(ip4_support, True)
