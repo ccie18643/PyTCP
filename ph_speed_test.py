@@ -62,8 +62,10 @@ class TxRing:
 
     def __init__(self):
         self.packet_count = 0
+        self.frame = memoryview(bytearray(2048))
 
-    def enqueue(self, _):
+    def enqueue(self, packet_rx):
+        packet_rx.assemble(self.frame)
         self.packet_count += 1
         return None
 
