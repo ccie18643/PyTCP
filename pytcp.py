@@ -77,6 +77,8 @@ def main() -> int:
 
     parse_arguments()
 
+    log("stack", "<B>PyTCP</> - TCP/IP Stack written in <B><lb>P<ly>y<lb>t<ly>h<lb>o<ly>n</>, 2020-2021 <B><y>Sebastian Majewski</>")
+
     try:
         tap = os.open("/dev/net/tun", os.O_RDWR)
 
