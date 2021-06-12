@@ -1,5 +1,5 @@
 #!/bin/bash
-PY_PATH=$(find . -name '*.py')
+PY_PATH=$(find pytcp -name '*.py')
 echo '<<< CODESPELL' && \
 codespell -w --ignore-words-list="ect,ether,nd,tha" --quiet-level=2 ${PY_PATH} README.md && \
 echo '<<< ISORT' && \
