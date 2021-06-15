@@ -25,7 +25,7 @@
 
 
 #
-# tests/test_lib_ip4_address.py - unit tests for Ip4Address library
+# tests/test_ip4_address.py - unit tests for Ip4Address library
 #
 
 
@@ -33,7 +33,7 @@ from dataclasses import dataclass
 
 from testslide import TestCase
 
-from lib.ip4_address import (
+from pytcp.lib.ip4_address import (
     Ip4Address,
     Ip4AddressFormatError,
     Ip4Host,
@@ -45,7 +45,7 @@ from lib.ip4_address import (
 )
 
 
-class TestLibIp4Address(TestCase):
+class TestIp4Address(TestCase):
     def setUp(self):
         @dataclass
         class Ip4Sample:
@@ -178,7 +178,7 @@ class TestLibIp4Address(TestCase):
         self.assertEqual(Ip4Address("192.168.9.1").unspecified, Ip4Address("0.0.0.0"))
 
 
-class TestLibIp4Mask(TestCase):
+class TestIp4Mask(TestCase):
     def test___init__(self):
         self.assertEqual(Ip4Mask("255.255.255.0")._mask, 4294967040)
         self.assertEqual(Ip4Mask("/24")._mask, 4294967040)
@@ -226,7 +226,7 @@ class TestLibIp4Mask(TestCase):
         self.assertEqual(Ip4Mask("/0").version, 4)
 
 
-class TestLibIp4Network(TestCase):
+class TestIp4Network(TestCase):
     def test___init__(self):
         self.assertEqual(Ip4Network("192.168.9.100/24")._address, Ip4Address("192.168.9.0"))
         self.assertEqual(Ip4Network("192.168.9.100/24")._mask, Ip4Mask("255.255.255.0"))
@@ -268,7 +268,7 @@ class TestLibIp4Network(TestCase):
         self.assertEqual(Ip4Network("0.0.0.0/0").version, 4)
 
 
-class TestLibIp4Host(TestCase):
+class TestIp4Host(TestCase):
     def test___init__(self):
         self.assertEqual(Ip4Host("192.168.9.100/24")._address, Ip4Address("192.168.9.100"))
         self.assertEqual(Ip4Host("192.168.9.100/24")._network, Ip4Network("192.168.9.0/24"))

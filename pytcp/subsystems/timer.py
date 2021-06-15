@@ -25,7 +25,7 @@
 
 
 #
-# lib/timer.py - module contains class supporting timer that can be used by other stack components
+# subsystems/timer.py - module contains class supporting timer that can be used by other stack components
 #
 
 

@@ -25,7 +25,7 @@
 
 
 #
-# tests/test_lib_ip6_address.py - unit tests for Ip6Address library
+# tests/test_ip6_address.py - unit tests for Ip6Address library
 #
 
 
@@ -33,7 +33,7 @@ from dataclasses import dataclass
 
 from testslide import TestCase
 
-from lib.ip6_address import (
+from pytcp.lib.ip6_address import (
     Ip6Address,
     Ip6AddressFormatError,
     Ip6Host,
@@ -46,7 +46,7 @@ from lib.ip6_address import (
 from lib.mac_address import MacAddress
 
 
-class TestLibIp6Address(TestCase):
+class TestIp6Address(TestCase):
     def setUp(self):
         @dataclass
         class Ip6Sample:
@@ -162,7 +162,7 @@ class TestLibIp6Address(TestCase):
         self.assertEqual(Ip6Address("2001::1234:5678:90ab:cdef").unspecified, Ip6Address("::"))
 
 
-class TestLibIp6Mask(TestCase):
+class TestIp6Mask(TestCase):
     def test___init__(self):
         self.assertEqual(Ip6Mask("/64")._mask, 340282366920938463444927863358058659840)
         self.assertEqual(Ip6Mask(Ip6Mask("/64"))._mask, 340282366920938463444927863358058659840)
@@ -211,7 +211,7 @@ class TestLibIp6Mask(TestCase):
         self.assertEqual(Ip6Mask("/0").version, 6)
 
 
-class TestLibIp6Network(TestCase):
+class TestIp6Network(TestCase):
     def test___init__(self):
         self.assertEqual(Ip6Network("1234:5678:90ab:cdef::/64")._address, Ip6Address("1234:5678:90ab:cdef::"))
         self.assertEqual(Ip6Network("1234:5678:90ab:cdef::/64")._mask, Ip6Mask("/64"))
@@ -261,7 +261,7 @@ class TestLibIp6Network(TestCase):
         self.assertEqual(Ip6Network("1234:5678:90ab:cdef::/64").version, 6)
 
 
-class TestLibIp6Host(TestCase):
+class TestIp6Host(TestCase):
     def test___init__(self):
         self.assertEqual(Ip6Host("1234:5678:90ab:cdef::1/64")._address, Ip6Address("1234:5678:90ab:cdef::1"))
         self.assertEqual(Ip6Host("1234:5678:90ab:cdef::1/64")._network, Ip6Network("1234:5678:90ab:cdef::/64"))

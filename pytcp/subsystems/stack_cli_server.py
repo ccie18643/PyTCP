@@ -25,7 +25,7 @@
 
 
 #
-# misc/cli_server.py - module contains class suppoting stack's CLI funcionality
+# subsystems/cli_server.py - module contains class suppoting stack's CLI funcionality
 #
 
 

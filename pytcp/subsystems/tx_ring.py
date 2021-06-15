@@ -25,7 +25,7 @@
 
 
 #
-# misc/tx_ring.py - module contains class supporting TX operations
+# subsystems/tx_ring.py - module contains class supporting TX operations
 #
 
 

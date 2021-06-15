@@ -31,7 +31,7 @@
 
 from testslide import TestCase
 
-from config import ip4_support, ip6_support
+from pytcp.config import ip4_support, ip6_support
 
 
 class TestConfig(TestCase):

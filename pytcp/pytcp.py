@@ -38,9 +38,9 @@ from typing import Optional
 
 import config
 from lib.logger import log
-from lib.timer import Timer
-from misc.ph import PacketHandler
-from misc.stack_cli_server import StackCliServer
+from subsystems.packet_handler import PacketHandler
+from subsystems.stack_cli_server import StackCliServer
+from subsystems.timer import Timer
 
 TUNSETIFF = 0x400454CA
 IFF_TAP = 0x0002

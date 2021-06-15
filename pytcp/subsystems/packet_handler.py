@@ -25,7 +25,7 @@
 
 
 #
-# ph.py - packet handler class for inbound and outbound packets
+# subsystems/packet_handler.py - packet handler class for inbound and outbound packets
 #
 
 
@@ -77,8 +77,8 @@ from lib.ip6_address import (
 )
 from lib.logger import log
 from lib.mac_address import MacAddress
-from misc.rx_ring import RxRing
-from misc.tx_ring import TxRing
+from subsystems.rx_ring import RxRing
+from subsystems.tx_ring import TxRing
 
 if TYPE_CHECKING:
     from threading import Semaphore

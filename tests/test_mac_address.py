@@ -33,10 +33,10 @@ from dataclasses import dataclass
 
 from testslide import TestCase
 
-from lib.mac_address import MacAddress, MacIp4AddressFormatError
+from pytcp.lib.mac_address import MacAddress, MacIp4AddressFormatError
 
 
-class TestLibMacAddress(TestCase):
+class TestMacAddress(TestCase):
     def setUp(self):
         @dataclass
         class MacSample:

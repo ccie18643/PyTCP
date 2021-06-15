@@ -25,20 +25,13 @@
 
 
 #
-# stack.py - module holds references to the stack components and global structures
+# __init__.py
 #
 
-
-from __future__ import annotations  # Required by Python ver < 3.10
-
-from typing import TYPE_CHECKING
-
-if TYPE_CHECKING:
-    from lib.socket import Socket
-    from subsystems.packet_handler import PacketHandler
-    from subsystems.timer import Timer
-
-timer: Timer
-packet_handler: PacketHandler
-
-sockets: dict[str, Socket] = {}
+import os
+import sys
+PROJECT_PATH = os.getcwd()
+SOURCE_PATH = os.path.join(
+    PROJECT_PATH, "pytcp"
+)
+sys.path.append(SOURCE_PATH)

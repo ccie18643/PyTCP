@@ -26,7 +26,7 @@
 
 
 #
-# tests/test_misc_ph.py - unit tests for PacketHandler class
+# tests/test_packet_handler.py - unit tests for PacketHandler class
 #
 
 
@@ -34,15 +34,15 @@ from unittest import TestCase
 
 from mock import Mock, patch
 
-import config
-from arp.cache import ArpCache
-from icmp6.nd_cache import NdCache
-from lib.ip4_address import Ip4Address, Ip4Host
-from lib.ip6_address import Ip6Address, Ip6Host
-from lib.mac_address import MacAddress
-from misc.packet import PacketRx
-from misc.ph import PacketHandler
-from misc.tx_ring import TxRing
+import pytcp.config as config
+from pytcp.arp.cache import ArpCache
+from pytcp.icmp6.nd_cache import NdCache
+from pytcp.lib.ip4_address import Ip4Address, Ip4Host
+from pytcp.lib.ip6_address import Ip6Address, Ip6Host
+from pytcp.lib.mac_address import MacAddress
+from pytcp.misc.packet import PacketRx
+from pytcp.subsystems.packet_handler import PacketHandler
+from pytcp.subsystems.tx_ring import TxRing
 
 
 class TestPacketHandler(TestCase):
@@ -65,9 +65,10 @@ class TestPacketHandler(TestCase):
         self.packet_handler.arp_cache.find_entry.return_value = MacAddress("52:54:00:df:85:37")
         self.packet_handler.nd_cache.find_entry.return_value = MacAddress("52:54:00:df:85:37")
         self.packet_handler.tx_ring.enqueue = lambda _: _.assemble(self.frame_tx)
+        
         self.frame_tx = memoryview(bytearray(2048))
 
-    @patch("misc.ph.log", return_value=None)
+    @patch("pytcp.subsystems.packet_handler.log", return_value=None)
     def test__parse_stack_ip6_address_candidate(self, _):
         sample = [
             ("FE80::7/64", None),  # valid link loal address [pass]
@@ -96,7 +97,7 @@ class TestPacketHandler(TestCase):
         result = [ip6_address.gateway for ip6_address in result]
         self.assertEqual(result, expected)
 
-    @patch("misc.ph.log", return_value=None)
+    @patch("pytcp.subsystems.packet_handler.log", return_value=None)
     def test__parse_stack_ip4_host_candidate(self, _):
         sample = [
             ("192.168.9.7/24", "192.168.9.1"),  # valid address and valid gateway [pass]
@@ -129,7 +130,6 @@ class TestPacketHandler(TestCase):
         result = [ip4_host.gateway for ip4_host in result]
         self.assertEqual(result, expected)
 
-    @patch("misc.ph.log", return_value=None)
     @patch("ether.phtx.log", return_value=None)
     @patch("ether.phrx.log", return_value=None)
     @patch("ip4.phtx.log", return_value=None)
@@ -137,14 +137,13 @@ class TestPacketHandler(TestCase):
     @patch("icmp4.phrx.log", return_value=None)
     @patch("icmp4.phtx.log", return_value=None)
     def test_integration_ping4(self, *_):
-        with open("tests/ping4.frame_rx", "rb") as _:
+        with open("tests/frames/ping4_rx", "rb") as _:
             frame_rx = _.read()
-        with open("tests/ping4.frame_tx", "rb") as _:
+        with open("tests/frames/ping4_tx", "rb") as _:
             frame_tx = _.read()
         self.packet_handler._phrx_ether(PacketRx(frame_rx))
         self.assertEqual(self.frame_tx[: len(frame_tx)], frame_tx)
 
-    @patch("misc.ph.log", return_value=None)
     @patch("ether.phtx.log", return_value=None)
     @patch("ether.phrx.log", return_value=None)
     @patch("ip6.phtx.log", return_value=None)
@@ -152,9 +151,9 @@ class TestPacketHandler(TestCase):
     @patch("icmp6.phrx.log", return_value=None)
     @patch("icmp6.phtx.log", return_value=None)
     def test_integration_ping6(self, *_):
-        with open("tests/ping6.frame_rx", "rb") as _:
+        with open("tests/frames/ping6_rx", "rb") as _:
             frame_rx = _.read()
-        with open("tests/ping6.frame_tx", "rb") as _:
+        with open("tests/frames/ping6_tx", "rb") as _:
             frame_tx = _.read()
         self.packet_handler._phrx_ether(PacketRx(frame_rx))
         self.assertEqual(self.frame_tx[: len(frame_tx)], frame_tx)
