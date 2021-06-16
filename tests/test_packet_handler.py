@@ -35,8 +35,8 @@ from unittest import TestCase
 from mock import Mock, patch
 
 import pytcp.config as config
-from pytcp.arp.cache import ArpCache
-from pytcp.icmp6.nd_cache import NdCache
+from pytcp.subsystems.arp_cache import ArpCache
+from pytcp.subsystems.nd_cache import NdCache
 from pytcp.lib.ip4_address import Ip4Address, Ip4Host
 from pytcp.lib.ip6_address import Ip6Address, Ip6Host
 from pytcp.lib.mac_address import MacAddress
@@ -130,12 +130,12 @@ class TestPacketHandler(TestCase):
         result = [ip4_host.gateway for ip4_host in result]
         self.assertEqual(result, expected)
 
-    @patch("ether.phtx.log", return_value=None)
-    @patch("ether.phrx.log", return_value=None)
-    @patch("ip4.phtx.log", return_value=None)
-    @patch("ip4.phrx.log", return_value=None)
-    @patch("icmp4.phrx.log", return_value=None)
-    @patch("icmp4.phtx.log", return_value=None)
+    @patch("protocols.ether.phtx.log", return_value=None)
+    @patch("protocols.ether.phrx.log", return_value=None)
+    @patch("protocols.ip4.phtx.log", return_value=None)
+    @patch("protocols.ip4.phrx.log", return_value=None)
+    @patch("protocols.icmp4.phrx.log", return_value=None)
+    @patch("protocols.icmp4.phtx.log", return_value=None)
     def test_integration_ping4(self, *_):
         with open("tests/frames/ping4_rx", "rb") as _:
             frame_rx = _.read()
@@ -144,12 +144,12 @@ class TestPacketHandler(TestCase):
         self.packet_handler._phrx_ether(PacketRx(frame_rx))
         self.assertEqual(self.frame_tx[: len(frame_tx)], frame_tx)
 
-    @patch("ether.phtx.log", return_value=None)
-    @patch("ether.phrx.log", return_value=None)
-    @patch("ip6.phtx.log", return_value=None)
-    @patch("ip6.phrx.log", return_value=None)
-    @patch("icmp6.phrx.log", return_value=None)
-    @patch("icmp6.phtx.log", return_value=None)
+    @patch("protocols.ether.phtx.log", return_value=None)
+    @patch("protocols.ether.phrx.log", return_value=None)
+    @patch("protocols.ip6.phtx.log", return_value=None)
+    @patch("protocols.ip6.phrx.log", return_value=None)
+    @patch("protocols.icmp6.phrx.log", return_value=None)
+    @patch("protocols.icmp6.phtx.log", return_value=None)
     def test_integration_ping6(self, *_):
         with open("tests/frames/ping6_rx", "rb") as _:
             frame_rx = _.read()
