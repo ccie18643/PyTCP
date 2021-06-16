@@ -86,7 +86,7 @@ def main() -> int:
         log("stack", "<CRIT>Unable to access '/dev/net/tun' device</>")
         sys.exit(-1)
 
-    fcntl.ioctl(tap, TUNSETIFF, struct.pack("16sH", config.interface, IFF_TAP | IFF_NO_PI))
+    fcntl.ioctl(tap, TUNSETIFF, struct.pack("16sH", config.TAP_INTERFACE, IFF_TAP | IFF_NO_PI))
 
     # Initialize stack components
     StackCliServer()

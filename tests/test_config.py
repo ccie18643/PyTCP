@@ -31,12 +31,12 @@
 
 from testslide import TestCase
 
-from pytcp.config import ip4_support, ip6_support
+from pytcp.config import IP4_SUPPORT, IP6_SUPPORT
 
 
 class TestConfig(TestCase):
     def test_ipv6_support(self):
-        self.assertEqual(ip6_support, True)
+        self.assertEqual(IP6_SUPPORT, True)
 
     def test_ipv4_support(self):
-        self.assertEqual(ip4_support, True)
+        self.assertEqual(IP4_SUPPORT, True)

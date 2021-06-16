@@ -142,7 +142,7 @@ class PacketHandler:
         # MAC and IPv6 Multicast lists hold duplicate entries by design. This is to accommodate IPv6 Solicited Node Multicast mechanism where multiple
         # IPv6 unicast addresses can be tied to the same SNM address (and the same multicast MAC). This is important when removing one of unicast addresses,
         # so the other ones keep it's SNM entry in multicast list. Its the simplest solution and imho perfectly valid one in this case.
-        self.mac_unicast: MacAddress = MacAddress(config.mac_address)
+        self.mac_unicast: MacAddress = MacAddress(config.MAC_ADDRESS)
         self.mac_multicast: list[MacAddress] = []
         self.mac_broadcast: MacAddress = MacAddress(0xFFFFFFFFFFFF)
         self.ip6_host: list[Ip6Host] = []
@@ -185,22 +185,22 @@ class PacketHandler:
         if __debug__:
             log("stack", "Started packet handler")
 
-        if config.ip6_support:
+        if config.IP6_SUPPORT:
             # Assign All IPv6 Nodes multicast address
             self._assign_ip6_multicast(Ip6Address("ff02::1"))
             # Create list of IPv6 unicast/multicast addresses stack should listen on
-            self.ip6_host_candidate = self._parse_stack_ip6_host_candidate(config.ip6_host_candidate)
+            self.ip6_host_candidate = self._parse_stack_ip6_host_candidate(config.IP6_HOST_CANDIDATE)
             self._create_stack_ip6_addressing()
 
-        if config.ip4_support:
+        if config.IP4_SUPPORT:
             # Create list of IPv4 unicast/multicast/broadcast addresses stack should listen on, use DHCP if enabled
-            if config.ip4_address_dhcp:
+            if config.IP4_HOST_DHCP:
                 dhcp4_client = Dhcp4Client(self.mac_unicast)
                 ip4_host_dhcp = dhcp4_client.fetch()
             else:
                 ip4_host_dhcp = (None, None)
             self.ip4_host_candidate = self._parse_stack_ip4_host_candidate(
-                config.ip4_host_candidate + ([ip4_host_dhcp] if ip4_host_dhcp[0] is not None else [])
+                config.IP4_HOST_CANDIDATE + ([ip4_host_dhcp] if ip4_host_dhcp[0] is not None else [])
             )
             self._create_stack_ip4_addressing()
 
@@ -210,11 +210,11 @@ class PacketHandler:
             log("stack", f"<INFO>Stack listening on multicast MAC addresses: {', '.join([str(_) for _ in set(self.mac_multicast)])}</>")
             log("stack", f"<INFO>Stack listening on broadcast MAC address: {self.mac_broadcast}</>")
 
-            if config.ip6_support:
+            if config.IP6_SUPPORT:
                 log("stack", f"<INFO>Stack listening on unicast IPv6 addresses: {', '.join([str(_) for _ in self.ip6_unicast])}</>")
                 log("stack", f"<INFO>Stack listening on multicast IPv6 addresses: {', '.join([str(_) for _ in set(self.ip6_multicast)])})</>")
 
-            if config.ip4_support:
+            if config.IP4_SUPPORT:
                 log("stack", f"<INFO>Stack listening on unicast IPv4 addresses: {', '.join([str(_) for _ in self.ip4_unicast])}</>")
                 log("stack", f"<INFO>Stack listening on multicast IPv4 addresses: {', '.join([str(_) for _ in self.ip4_multicast])}</>")
                 log("stack", f"<INFO>Stack listening on broadcast IPv4 addresses: {', '.join([str(_) for _ in self.ip4_broadcast])}</>")
@@ -329,7 +329,7 @@ class PacketHandler:
                 __(ip6_host)
 
         # Configure Link Local address automatically
-        if config.ip6_lla_autoconfig:
+        if config.IP6_LLA_AUTOCONFIG:
             ip6_host = Ip6Network("fe80::/64").eui64(self.mac_unicast)
             ip6_host.gateway = None
             __(ip6_host)
@@ -338,7 +338,7 @@ class PacketHandler:
         if not self.ip6_host:
             if __debug__:
                 log("stack", "<WARN>Unable to assign any IPv6 link local address, disabling IPv6 protocol</>")
-            config.ip6_support = False
+            config.IP6_SUPPORT = False
             return
 
         # Check if there are any statically configures GUA addresses
@@ -347,7 +347,7 @@ class PacketHandler:
             __(ip6_host)
 
         # Send out IPv6 Router Solicitation message and wait for response in attempt to auto configure addresses based on ICMPv6 Router Advertisement
-        if config.ip6_gua_autoconfig:
+        if config.IP6_GUA_AUTOCONFIG:
             self._send_icmp6_nd_router_solicitation()
             self.event_icmp6_ra.acquire(timeout=1)
             for prefix, gateway in list(self.icmp6_ra_prefixes):
@@ -431,7 +431,7 @@ class PacketHandler:
         if not self.ip4_host:
             if __debug__:
                 log("stack", "<WARN>Unable to assign any IPv4 address, disabling IPv4 protocol</>")
-            config.ip4_support = False
+            config.IP4_SUPPORT = False
             return
 
     def _send_arp_probe(self, ip4_unicast: Ip4Address) -> None:

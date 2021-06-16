@@ -49,11 +49,11 @@ class TestPacketHandler(TestCase):
     def setUp(self):
         super().setUp()
 
-        config.ip6_support = True
-        config.ip4_support = True
-        config.packet_integrity_check = True
-        config.packet_sanity_check = True
-        config.mtu = 1500
+        config.IP6_SUPPORT = True
+        config.IP4_SUPPORT = True
+        config.PACKET_INTEGRITY_CHECK = True
+        config.PACKET_SANITY_CHECK = True
+        config.TAP_MTU = 1500
 
         self.packet_handler = PacketHandler(None)
         self.packet_handler.mac_address = MacAddress("02:00:00:77:77:77")

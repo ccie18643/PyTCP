@@ -33,4 +33,13 @@ test: venv
 	@echo '<<< TESTSLIDE'
 	@./$(VENV)/bin/testslide tests/test_*.py
 
-.PHONY: all venv run clean lint
+bridge:
+	@brctl addbr br0
+
+tap:
+	@ip tuntap add name tap7 mode tap
+	@ip link set dev tap7 up
+	@brctl addif br0 tap7
+	@echo 'Interface tap7 created and added to bridge br0'
+
+.PHONY: all venv run clean lint bridge tap

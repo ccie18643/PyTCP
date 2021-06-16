@@ -63,14 +63,14 @@ class TxRing:
         """Dequeue packet from TX ring and send it out"""
 
         # Using static frame buffer to avoid dynamic memory allocation for each frame
-        frame_buffer = bytearray(config.mtu + 14)
+        frame_buffer = bytearray(config.TAP_MTU + 14)
 
         while True:
             self.packet_enqueued.acquire()
             packet_tx = self.tx_ring.pop(0)
-            if (packet_tx_len := len(packet_tx)) > config.mtu + 14:
+            if (packet_tx_len := len(packet_tx)) > config.TAP_MTU + 14:
                 if __debug__:
-                    log("tx-ring", f"{packet_tx.tracker} - Unable to send frame, frame len ({packet_tx_len}) > mtu ({config.mtu + 14})")
+                    log("tx-ring", f"{packet_tx.tracker} - Unable to send frame, frame len ({packet_tx_len}) > mtu ({config.TAP_MTU + 14})")
                 continue
             frame = memoryview(frame_buffer)[:packet_tx_len]
             packet_tx.assemble(frame)

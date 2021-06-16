@@ -165,7 +165,7 @@ class Socket(ABC):
     def _pick_local_port(self) -> int:
         """Pick ephemeral local port, making sure it is not already being used by any socket"""
 
-        available_ephemeral_ports = set(config.ephemeral_port_range) - set(int(_.split("/")[3]) for _ in stack.sockets)
+        available_ephemeral_ports = set(config.EPHEMERAL_PORT_RANGE) - set(int(_.split("/")[3]) for _ in stack.sockets)
 
         if len(available_ephemeral_ports):
             return available_ephemeral_ports.pop()
