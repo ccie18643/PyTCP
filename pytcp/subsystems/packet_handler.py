@@ -36,32 +36,9 @@ import threading
 import time
 from typing import TYPE_CHECKING, Optional, Union
 
-import arp.phrx
-import arp.phtx
-import arp.ps
 import config
-import ether.phrx
-import ether.phtx
-import icmp4.phrx
-import icmp4.phtx
-import icmp6.fpa
-import icmp6.phrx
-import icmp6.phtx
-import icmp6.ps
-import ip4.phrx
-import ip4.phtx
-import ip6.phrx
-import ip6.phtx
-import ip6_ext_frag.phrx
-import ip6_ext_frag.phtx
 import misc.stack as stack
-import tcp.phrx
-import tcp.phtx
-import udp.phrx
-import udp.phtx
-from arp.cache import ArpCache
 from dhcp4.client import Dhcp4Client
-from icmp6.nd_cache import NdCache
 from lib.ip4_address import (
     Ip4Address,
     Ip4AddressFormatError,
@@ -77,6 +54,47 @@ from lib.ip6_address import (
 )
 from lib.logger import log
 from lib.mac_address import MacAddress
+from protocols.arp.phrx import _phrx_arp
+from protocols.arp.phtx import _phtx_arp
+from protocols.arp.ps import ARP_OP_REPLY, ARP_OP_REQUEST
+from protocols.ether.phrx import _phrx_ether
+from protocols.ether.phtx import _phtx_ether
+from protocols.icmp4.phrx import _phrx_icmp4
+from protocols.icmp4.phtx import _phtx_icmp4
+from protocols.icmp6.fpa import (
+    Icmp6MulticastAddressRecord,
+    Icmp6NdOptPI,
+    Icmp6NdOptSLLA,
+    Icmp6NdOptTLLA,
+)
+from protocols.icmp6.phrx import _phrx_icmp6
+from protocols.icmp6.phtx import _phtx_icmp6
+from protocols.icmp6.ps import (
+    ICMP6_MART_CHANGE_TO_EXCLUDE,
+    ICMP6_MLD2_REPORT,
+    ICMP6_NEIGHBOR_SOLICITATION,
+    ICMP6_ROUTER_SOLICITATION,
+)
+from protocols.ip4.phrx import _defragment_ip4_packet, _phrx_ip4
+from protocols.ip4.phtx import (
+    _phtx_ip4,
+    _validate_dst_ip4_address,
+    _validate_src_ip4_address,
+)
+from protocols.ip6.phrx import _phrx_ip6
+from protocols.ip6.phtx import (
+    _phtx_ip6,
+    _validate_dst_ip6_address,
+    _validate_src_ip6_address,
+)
+from protocols.ip6_ext_frag.phrx import _defragment_ip6_packet, _phrx_ip6_ext_frag
+from protocols.ip6_ext_frag.phtx import _phtx_ip6_ext_frag
+from protocols.tcp.phrx import _phrx_tcp
+from protocols.tcp.phtx import _phtx_tcp
+from protocols.udp.phrx import _phrx_udp
+from protocols.udp.phtx import _phtx_udp
+from subsystems.arp_cache import ArpCache
+from subsystems.nd_cache import NdCache
 from subsystems.rx_ring import RxRing
 from subsystems.tx_ring import TxRing
 
@@ -91,30 +109,30 @@ class PacketHandler:
     """Pick up and respond to incoming packets"""
 
     # Using external imports due to MyPy bug #10488
-    _phrx_arp = arp.phrx._phrx_arp
-    _phtx_arp = arp.phtx._phtx_arp
-    _phrx_ether = ether.phrx._phrx_ether
-    _phtx_ether = ether.phtx._phtx_ether
-    _phrx_icmp6 = icmp6.phrx._phrx_icmp6
-    _phtx_icmp6 = icmp6.phtx._phtx_icmp6
-    _phrx_ip6_ext_frag = ip6_ext_frag.phrx._phrx_ip6_ext_frag
-    _defragment_ip6_packet = ip6_ext_frag.phrx._defragment_ip6_packet
-    _phtx_ip6_ext_frag = ip6_ext_frag.phtx._phtx_ip6_ext_frag
-    _phrx_icmp4 = icmp4.phrx._phrx_icmp4
-    _phtx_icmp4 = icmp4.phtx._phtx_icmp4
-    _phrx_ip4 = ip4.phrx._phrx_ip4
-    _defragment_ip4_packet = ip4.phrx._defragment_ip4_packet
-    _phtx_ip4 = ip4.phtx._phtx_ip4
-    _validate_dst_ip4_address = ip4.phtx._validate_dst_ip4_address
-    _validate_src_ip4_address = ip4.phtx._validate_src_ip4_address
-    _phrx_ip6 = ip6.phrx._phrx_ip6
-    _phtx_ip6 = ip6.phtx._phtx_ip6
-    _validate_dst_ip6_address = ip6.phtx._validate_dst_ip6_address
-    _validate_src_ip6_address = ip6.phtx._validate_src_ip6_address
-    _phrx_tcp = tcp.phrx._phrx_tcp
-    _phtx_tcp = tcp.phtx._phtx_tcp
-    _phrx_udp = udp.phrx._phrx_udp
-    _phtx_udp = udp.phtx._phtx_udp
+    _phrx_arp = _phrx_arp
+    _phtx_arp = _phtx_arp
+    _phrx_ether = _phrx_ether
+    _phtx_ether = _phtx_ether
+    _phrx_icmp6 = _phrx_icmp6
+    _phtx_icmp6 = _phtx_icmp6
+    _phrx_ip6_ext_frag = _phrx_ip6_ext_frag
+    _defragment_ip6_packet = _defragment_ip6_packet
+    _phtx_ip6_ext_frag = _phtx_ip6_ext_frag
+    _phrx_icmp4 = _phrx_icmp4
+    _phtx_icmp4 = _phtx_icmp4
+    _phrx_ip4 = _phrx_ip4
+    _defragment_ip4_packet = _defragment_ip4_packet
+    _phtx_ip4 = _phtx_ip4
+    _validate_dst_ip4_address = _validate_dst_ip4_address
+    _validate_src_ip4_address = _validate_src_ip4_address
+    _phrx_ip6 = _phrx_ip6
+    _phtx_ip6 = _phtx_ip6
+    _validate_dst_ip6_address = _validate_dst_ip6_address
+    _validate_src_ip6_address = _validate_src_ip6_address
+    _phrx_tcp = _phrx_tcp
+    _phtx_tcp = _phtx_tcp
+    _phrx_udp = _phrx_udp
+    _phtx_udp = _phtx_udp
 
     def __init__(self, tap: Optional[int]) -> None:
         """Class constructor"""
@@ -422,7 +440,7 @@ class PacketHandler:
         self._phtx_arp(
             ether_src=self.mac_unicast,
             ether_dst=MacAddress(0xFFFFFFFFFFFF),
-            arp_oper=arp.ps.ARP_OP_REQUEST,
+            arp_oper=ARP_OP_REQUEST,
             arp_sha=self.mac_unicast,
             arp_spa=Ip4Address(0),
             arp_tha=MacAddress(0),
@@ -437,7 +455,7 @@ class PacketHandler:
         self._phtx_arp(
             ether_src=self.mac_unicast,
             ether_dst=MacAddress(0xFFFFFFFFFFFF),
-            arp_oper=arp.ps.ARP_OP_REQUEST,
+            arp_oper=ARP_OP_REQUEST,
             arp_sha=self.mac_unicast,
             arp_spa=ip4_unicast,
             arp_tha=MacAddress(0),
@@ -452,7 +470,7 @@ class PacketHandler:
         self._phtx_arp(
             ether_src=self.mac_unicast,
             ether_dst=MacAddress(0xFFFFFFFFFFFF),
-            arp_oper=arp.ps.ARP_OP_REPLY,
+            arp_oper=ARP_OP_REPLY,
             arp_sha=self.mac_unicast,
             arp_spa=ip4_unicast,
             arp_tha=MacAddress(0),
@@ -467,7 +485,7 @@ class PacketHandler:
         # Need to use set here to avoid re-using duplicate multicast entries from stack_ip6_multicast list,
         # also All Multicast Nodes address is not being advertised as this is not necessary
         if icmp6_mlr2_multicast_address_record := {
-            icmp6.fpa.MulticastAddressRecord(record_type=icmp6.ps.ICMP6_MART_CHANGE_TO_EXCLUDE, multicast_address=_)
+            Icmp6MulticastAddressRecord(record_type=ICMP6_MART_CHANGE_TO_EXCLUDE, multicast_address=_)
             for _ in self.ip6_multicast
             if _ not in {Ip6Address("ff02::1")}
         }:
@@ -475,7 +493,7 @@ class PacketHandler:
                 ip6_src=self.ip6_unicast[0] if self.ip6_unicast else Ip6Address(0),
                 ip6_dst=Ip6Address("ff02::16"),
                 ip6_hop=1,
-                icmp6_type=icmp6.ps.ICMP6_MLD2_REPORT,
+                icmp6_type=ICMP6_MLD2_REPORT,
                 icmp6_mlr2_multicast_address_record=icmp6_mlr2_multicast_address_record,
             )
             if __debug__:
@@ -488,7 +506,7 @@ class PacketHandler:
             ip6_src=Ip6Address(0),
             ip6_dst=ip6_unicast_candidate.solicited_node_multicast,
             ip6_hop=255,
-            icmp6_type=icmp6.ps.ICMP6_NEIGHBOR_SOLICITATION,
+            icmp6_type=ICMP6_NEIGHBOR_SOLICITATION,
             icmp6_ns_target_address=ip6_unicast_candidate,
         )
         if __debug__:
@@ -501,8 +519,8 @@ class PacketHandler:
             ip6_src=self.ip6_unicast[0],
             ip6_dst=Ip6Address("ff02::2"),
             ip6_hop=255,
-            icmp6_type=icmp6.ps.ICMP6_ROUTER_SOLICITATION,
-            icmp6_nd_options=[icmp6.fpa.Icmp6NdOptSLLA(self.mac_unicast)],
+            icmp6_type=ICMP6_ROUTER_SOLICITATION,
+            icmp6_nd_options=[Icmp6NdOptSLLA(self.mac_unicast)],
         )
 
         if __debug__:
@@ -650,7 +668,7 @@ class PacketHandler:
         na_flag_s: bool = False,
         na_flag_o: bool = False,
         na_target_address: Optional[Ip6Address] = None,
-        nd_options: Optional[list[Union[icmp6.fpa.Icmp6NdOptSLLA, icmp6.fpa.Icmp6NdOptTLLA, icmp6.fpa.Icmp6NdOptPI]]] = None,
+        nd_options: Optional[list[Union[Icmp6NdOptSLLA, Icmp6NdOptTLLA, Icmp6NdOptPI]]] = None,
         mlr2_multicast_address_record=None,
     ) -> TxStatus:
         """Interface method for ICMPv4 Socket -> FPA communication"""

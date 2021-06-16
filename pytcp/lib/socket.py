@@ -40,9 +40,9 @@ import misc.stack as stack
 from lib.ip4_address import Ip4Address, Ip4AddressFormatError
 from lib.ip6_address import Ip6Address, Ip6AddressFormatError
 from misc.ip_helper import pick_local_ip_address
-from tcp.metadata import TcpMetadata
-from tcp.session import FsmState, TcpSession
-from udp.metadata import UdpMetadata
+from protocols.tcp.metadata import TcpMetadata
+from protocols.tcp.session import FsmState, TcpSession
+from protocols.udp.metadata import UdpMetadata
 
 if TYPE_CHECKING:
     from threading import Semaphore
@@ -92,10 +92,10 @@ SOCK_DGRAM = SocketType.SOCK_DGRAM
 def socket(family: AddressFamily = AF_INET4, type: SocketType = SOCK_STREAM) -> Socket:
     """Return Socket class object"""
 
-    from tcp.socket import TcpSocket
-    from udp.socket import UdpSocket
-
     assert type is SOCK_STREAM or type is SOCK_DGRAM
+
+    from protocols.tcp.socket import TcpSocket
+    from protocols.udp.socket import UdpSocket
 
     if type is SOCK_DGRAM:
         return UdpSocket(family)

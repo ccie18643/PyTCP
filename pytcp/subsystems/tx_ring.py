@@ -41,7 +41,7 @@ from lib.logger import log
 if TYPE_CHECKING:
     from threading import Semaphore
 
-    from ether.fpa import EtherAssembler
+    from protocols.ether.fpa import EtherAssembler
 
 
 class TxRing:
