@@ -25,18 +25,20 @@
 
 
 #
-# tests/test_config.py - unit tests for config
+# stack.py - module holds references to the stack components and global structures
 #
 
 
-from testslide import TestCase
+from __future__ import annotations  # Required by Python ver < 3.10
 
-from pytcp.config import IP4_SUPPORT, IP6_SUPPORT
+from typing import TYPE_CHECKING
 
+if TYPE_CHECKING:
+    from lib.socket import Socket
+    from subsystems.packet_handler import PacketHandler
+    from subsystems.timer import Timer
 
-class TestConfig(TestCase):
-    def test_ipv6_support(self):
-        self.assertEqual(IP6_SUPPORT, True)
+timer: Timer
+packet_handler: PacketHandler
 
-    def test_ipv4_support(self):
-        self.assertEqual(IP4_SUPPORT, True)
+sockets: dict[str, Socket] = {}

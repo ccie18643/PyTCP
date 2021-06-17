@@ -25,18 +25,51 @@
 
 
 #
-# tests/test_config.py - unit tests for config
+# protocols/arp/phtx.py - packet handler for outbound ARP packets
 #
 
 
-from testslide import TestCase
+from __future__ import annotations  # Required by Python ver < 3.10
 
-from pytcp.config import IP4_SUPPORT, IP6_SUPPORT
+from typing import TYPE_CHECKING, Optional
+
+import config
+from lib.logger import log
+from lib.mac_address import MacAddress
+from lib.tracker import Tracker
+from protocols.arp.fpa import ArpAssembler
+
+if TYPE_CHECKING:
+    from lib.ip4_address import Ip4Address
 
 
-class TestConfig(TestCase):
-    def test_ipv6_support(self):
-        self.assertEqual(IP6_SUPPORT, True)
+def _phtx_arp(
+    self,
+    ether_src: MacAddress,
+    ether_dst: MacAddress,
+    arp_oper: int,
+    arp_sha: MacAddress,
+    arp_spa: Ip4Address,
+    arp_tha: MacAddress,
+    arp_tpa: Ip4Address,
+    echo_tracker: Optional[Tracker] = None,
+) -> None:
+    """Handle outbound ARP packets"""
 
-    def test_ipv4_support(self):
-        self.assertEqual(IP4_SUPPORT, True)
+    # Check if IPv4 protocol support is enabled, if not then silently drop the packet
+    if not config.IP4_SUPPORT:
+        return
+
+    arp_packet_tx = ArpAssembler(
+        oper=arp_oper,
+        sha=arp_sha,
+        spa=arp_spa,
+        tha=arp_tha,
+        tpa=arp_tpa,
+        echo_tracker=echo_tracker,
+    )
+
+    if __debug__:
+        log("arp", f"{arp_packet_tx.tracker} - {arp_packet_tx}")
+
+    self._phtx_ether(ether_src=ether_src, ether_dst=ether_dst, carried_packet=arp_packet_tx)

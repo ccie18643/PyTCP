@@ -25,18 +25,48 @@
 
 
 #
-# tests/test_config.py - unit tests for config
+# protocols/icmp4/phtx.py - packet handler for outbound ICMPv4 packets
 #
 
 
-from testslide import TestCase
+from __future__ import annotations  # Required by Python ver < 3.10
 
-from pytcp.config import IP4_SUPPORT, IP6_SUPPORT
+from typing import TYPE_CHECKING, Optional
+
+from lib.logger import log
+from lib.tracker import Tracker
+from protocols.icmp4.fpa import Icmp4Assembler
+
+if TYPE_CHECKING:
+    from lib.ip4_address import Ip4Address
+    from misc.tx_status import TxStatus
 
 
-class TestConfig(TestCase):
-    def test_ipv6_support(self):
-        self.assertEqual(IP6_SUPPORT, True)
+def _phtx_icmp4(
+    self,
+    ip4_src: Ip4Address,
+    ip4_dst: Ip4Address,
+    icmp4_type: int,
+    icmp4_code: int = 0,
+    icmp4_ec_id: Optional[int] = None,
+    icmp4_ec_seq: Optional[int] = None,
+    icmp4_ec_data: Optional[bytes] = None,
+    icmp4_un_data: Optional[bytes] = None,
+    echo_tracker: Optional[Tracker] = None,
+) -> TxStatus:
+    """Handle outbound ICMPv4 packets"""
 
-    def test_ipv4_support(self):
-        self.assertEqual(IP4_SUPPORT, True)
+    icmp4_packet_tx = Icmp4Assembler(
+        type=icmp4_type,
+        code=icmp4_code,
+        ec_id=icmp4_ec_id,
+        ec_seq=icmp4_ec_seq,
+        ec_data=icmp4_ec_data,
+        un_data=icmp4_un_data,
+        echo_tracker=echo_tracker,
+    )
+
+    if __debug__:
+        log("icmp4", f"{icmp4_packet_tx.tracker} - {icmp4_packet_tx}")
+
+    return self._phtx_ip4(ip4_src=ip4_src, ip4_dst=ip4_dst, carried_packet=icmp4_packet_tx)

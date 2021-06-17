@@ -25,18 +25,43 @@
 
 
 #
-# tests/test_config.py - unit tests for config
+# tests/test_ip_helper.py - unit tests for ip helper functions
 #
 
 
+from dataclasses import dataclass
+
 from testslide import TestCase
 
-from pytcp.config import IP4_SUPPORT, IP6_SUPPORT
+from pytcp.misc.ip_helper import inet_cksum, ip_version
 
 
-class TestConfig(TestCase):
-    def test_ipv6_support(self):
-        self.assertEqual(IP6_SUPPORT, True)
+class TestIpHelper(TestCase):
+    def test_inet_cksum(self):
+        @dataclass
+        class Sample:
+            data: bytes
+            init: int
+            result: int
 
-    def test_ipv4_support(self):
-        self.assertEqual(IP4_SUPPORT, True)
+        samples = [
+            Sample(b"\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0A\x0B\x0C\x0D\x0E\x0F" * 80, 0, 0x2D2D),
+            Sample(b"\xFF" * 1500, 0, 0x0000),
+            Sample(b"\x00" * 1500, 0, 0xFFFF),
+            Sample(b"\xF7\x24\x09" * 100 + b"\x35\x67\x0F\x00" * 250, 0, 0xF1E5),
+            Sample(b"\x07" * 9999, 0, 0xBEC5),
+            Sample(b"\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0A\x0B\x0C\x0D\x0E\x0F" * 80, 0x03DF, 0x294E),
+            Sample(b"\xFF" * 1500, 0x0015, 0xFFEA),
+            Sample(b"\x00" * 1500, 0xF3FF, 0x0C00),
+            Sample(b"\xF7\x24\x09" * 100 + b"\x35\x67\x0F\x00" * 250, 0x7314, 0x7ED1),
+            Sample(b"\x07" * 9999, 0xA3DC, 0x1AE9),
+        ]
+
+        for sample in samples:
+            result = inet_cksum(data=memoryview(sample.data), init=sample.init)
+            self.assertEqual(result, sample.result)
+
+    def test_ip_version(self):
+        self.assertEqual(ip_version("1:2:3:4:5:6:7:8"), 6)
+        self.assertEqual(ip_version("1.2.3.4"), 4)
+        self.assertEqual(ip_version("ZHOPA"), None)

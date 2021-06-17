@@ -25,18 +25,66 @@
 
 
 #
-# tests/test_config.py - unit tests for config
+# protocols/tcp/ps.py - protocol support for TCP
 #
 
 
-from testslide import TestCase
+# TCP packet header (RFC 793)
 
-from pytcp.config import IP4_SUPPORT, IP6_SUPPORT
+# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+# |          Source Port          |       Destination Port        |
+# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+# |                        Sequence Number                        |
+# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+# |                    Acknowledgment Number                      |
+# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+# |  Hlen | Res |N|C|E|U|A|P|R|S|F|            Window             |
+# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+# |           Checksum            |         Urgent Pointer        |
+# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+# ~                    Options                    ~    Padding    ~
+# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 
 
-class TestConfig(TestCase):
-    def test_ipv6_support(self):
-        self.assertEqual(IP6_SUPPORT, True)
+TCP_HEADER_LEN = 20
 
-    def test_ipv4_support(self):
-        self.assertEqual(IP4_SUPPORT, True)
+
+#
+# TCP options
+#
+
+
+# TCP option - End of Option List (0)
+
+TCP_OPT_EOL = 0
+TCP_OPT_EOL_LEN = 1
+
+
+# TCP option - No Operation (1)
+
+TCP_OPT_NOP = 1
+TCP_OPT_NOP_LEN = 1
+
+
+# TCP option - Maximum Segment Size (2)
+
+TCP_OPT_MSS = 2
+TCP_OPT_MSS_LEN = 4
+
+
+# TCP option - Window Scale (3)
+
+TCP_OPT_WSCALE = 3
+TCP_OPT_WSCALE_LEN = 3
+
+
+# TCP option - Sack Permit (4)
+
+TCP_OPT_SACKPERM = 4
+TCP_OPT_SACKPERM_LEN = 2
+
+
+# TCP option - Timestamp
+
+TCP_OPT_TIMESTAMP = 8
+TCP_OPT_TIMESTAMP_LEN = 10

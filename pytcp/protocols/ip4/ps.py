@@ -25,18 +25,48 @@
 
 
 #
-# tests/test_config.py - unit tests for config
+# protocols/ip4/ps.py - protocol support for IPv4
 #
 
 
-from testslide import TestCase
+# IPv4 protocol header
 
-from pytcp.config import IP4_SUPPORT, IP6_SUPPORT
+# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+# |Version|  IHL  |   DSCP    |ECN|          Packet length        |
+# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+# |         Identification        |Flags|      Fragment offset    |
+# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+# |  Time to live |    Protocol   |         Header checksum       |
+# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+# |                       Source address                          |
+# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+# |                    Destination address                        |
+# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+# ~                    Options                    ~    Padding    ~
+# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 
 
-class TestConfig(TestCase):
-    def test_ipv6_support(self):
-        self.assertEqual(IP6_SUPPORT, True)
+IP4_HEADER_LEN = 20
 
-    def test_ipv4_support(self):
-        self.assertEqual(IP4_SUPPORT, True)
+IP4_PROTO_ICMP4 = 1
+IP4_PROTO_TCP = 6
+IP4_PROTO_UDP = 17
+
+IP4_PROTO_TABLE = {IP4_PROTO_ICMP4: "ICMPv4", IP4_PROTO_TCP: "TCP", IP4_PROTO_UDP: "UDP"}
+
+
+#
+#   IPv4 options
+#
+
+
+# IPv4 option - End of Option Linst
+
+IP4_OPT_EOL = 0
+IP4_OPT_EOL_LEN = 1
+
+
+# IPv4 option - No Operation (1)
+
+IP4_OPT_NOP = 1
+IP4_OPT_NOP_LEN = 1

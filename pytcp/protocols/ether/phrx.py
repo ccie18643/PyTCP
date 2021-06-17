@@ -25,18 +25,51 @@
 
 
 #
-# tests/test_config.py - unit tests for config
+# protocols/ether/phrx.py - packet handler for inbound Ethernet packets
 #
 
 
-from testslide import TestCase
+from __future__ import annotations  # Required by Python ver < 3.10
 
-from pytcp.config import IP4_SUPPORT, IP6_SUPPORT
+from typing import TYPE_CHECKING
+
+import config
+from protocols.ether.fpp import EtherParser
+from protocols.ether.ps import ETHER_TYPE_ARP, ETHER_TYPE_IP4, ETHER_TYPE_IP6
+
+if TYPE_CHECKING:
+    from misc.packet import PacketRx
+
+from lib.logger import log
 
 
-class TestConfig(TestCase):
-    def test_ipv6_support(self):
-        self.assertEqual(IP6_SUPPORT, True)
+def _phrx_ether(self, packet_rx: PacketRx) -> None:
+    """Handle inbound Ethernet packets"""
 
-    def test_ipv4_support(self):
-        self.assertEqual(IP4_SUPPORT, True)
+    EtherParser(packet_rx)
+
+    if packet_rx.parse_failed:
+        if __debug__:
+            log("ether", f"{packet_rx.tracker} - <CRIT>{packet_rx.parse_failed}</>")
+        return
+
+    if __debug__:
+        log("ether", f"{packet_rx.tracker} - {packet_rx.ether}")
+
+    # Check if received packet matches any of stack MAC addresses
+    if packet_rx.ether.dst not in {self.mac_unicast, *self.mac_multicast, self.mac_broadcast}:
+        if __debug__:
+            log("ehter", f"{packet_rx.tracker} - Ethernet packet not destined for this stack, dropping")
+        return
+
+    if packet_rx.ether.type == ETHER_TYPE_ARP and config.IP4_SUPPORT:
+        self._phrx_arp(packet_rx)
+        return
+
+    if packet_rx.ether.type == ETHER_TYPE_IP4 and config.IP4_SUPPORT:
+        self._phrx_ip4(packet_rx)
+        return
+
+    if packet_rx.ether.type == ETHER_TYPE_IP6 and config.IP6_SUPPORT:
+        self._phrx_ip6(packet_rx)
+        return
