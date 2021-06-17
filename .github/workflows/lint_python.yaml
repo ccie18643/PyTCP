@@ -11,4 +11,6 @@ jobs:
       - run: isort -c --profile black $(find . -name '*.py')
       - run: black --check $(find . -name '*.py')
       - run: flake8 $(find . -name '*.py')
-      - run: export MYPYPATH=pytcp && mypy -p pytcp
+      - name: "Run mypy"
+        run: mypy -p pytcp
+        env: MYPYPATH: pytcp
