@@ -33,7 +33,7 @@ from __future__ import annotations  # Required by Python ver < 3.10
 
 from typing import TYPE_CHECKING, Optional
 
-from config import IP4_SUPPORT
+import config
 from lib.logger import log
 from lib.mac_address import MacAddress
 from lib.tracker import Tracker
@@ -57,7 +57,7 @@ def _phtx_arp(
     """Handle outbound ARP packets"""
 
     # Check if IPv4 protocol support is enabled, if not then silently drop the packet
-    if not IP4_SUPPORT:
+    if not config.IP4_SUPPORT:
         return
 
     arp_packet_tx = ArpAssembler(

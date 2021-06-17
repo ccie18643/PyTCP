@@ -34,7 +34,7 @@ from __future__ import annotations  # Required by Python ver < 3.10
 import struct
 from typing import TYPE_CHECKING
 
-from config import PACKET_INTEGRITY_CHECK, PACKET_SANITY_CHECK
+import config
 from lib.ip4_address import Ip4Address
 from lib.mac_address import MacAddress
 from protocols.arp.ps import ARP_HEADER_LEN, ARP_OP_REPLY, ARP_OP_REQUEST
@@ -149,7 +149,7 @@ class ArpParser:
     def _packet_integrity_check(self) -> str:
         """Packet integrity check to be run on raw packet prior to parsing to make sure parsing is safe"""
 
-        if not PACKET_INTEGRITY_CHECK:
+        if not config.PACKET_INTEGRITY_CHECK:
             return ""
 
         if len(self) < ARP_HEADER_LEN:
@@ -160,7 +160,7 @@ class ArpParser:
     def _packet_sanity_check(self) -> str:
         """Packet sanity check to be run on parsed packet to make sure packet's fields contain sane values"""
 
-        if not PACKET_SANITY_CHECK:
+        if not config.PACKET_SANITY_CHECK:
             return ""
 
         if self.hrtype != 1:

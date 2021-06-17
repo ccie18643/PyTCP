@@ -33,10 +33,7 @@ from __future__ import annotations  # Required by Python ver < 3.10
 
 from typing import TYPE_CHECKING
 
-from config import (
-    ARP_CACHE_UPDATE_FROM_DIRECT_REQUEST,
-    ARP_CACHE_UPDATE_FROM_GRATUITIOUS_REPLY,
-)
+import config
 from lib.logger import log
 from protocols.arp.fpp import ArpParser
 from protocols.arp.ps import ARP_OP_REPLY, ARP_OP_REQUEST
@@ -79,7 +76,7 @@ def _phrx_arp(self, packet_rx: PacketRx) -> None:
             )
 
             # Update ARP cache with the mapping learned from the received ARP request that was destined to this stack
-            if ARP_CACHE_UPDATE_FROM_DIRECT_REQUEST:
+            if config.ARP_CACHE_UPDATE_FROM_DIRECT_REQUEST:
                 if __debug__:
                     log(
                         "arp",
@@ -108,7 +105,7 @@ def _phrx_arp(self, packet_rx: PacketRx) -> None:
             return
 
         # Update ARP cache with mapping received as gratuitous ARP reply
-        if packet_rx.ether.dst.is_broadcast and packet_rx.arp.spa == packet_rx.arp.tpa and ARP_CACHE_UPDATE_FROM_GRATUITIOUS_REPLY:
+        if packet_rx.ether.dst.is_broadcast and packet_rx.arp.spa == packet_rx.arp.tpa and config.ARP_CACHE_UPDATE_FROM_GRATUITIOUS_REPLY:
             if __debug__:
                 log("arp", f"{packet_rx.tracker} - Adding/refreshing ARP cache entry from gratuitous reply - {packet_rx.arp.spa} -> {packet_rx.arp.sha}")
             self.arp_cache.add_entry(packet_rx.arp.spa, packet_rx.arp.sha)
