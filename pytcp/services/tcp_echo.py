@@ -25,7 +25,7 @@
 
 
 #
-# service/tcp_echo.py - 'user space' service TCP Echo (RFC 862)
+# services/tcp_echo.py - 'user space' service TCP Echo (RFC 862)
 #
 
 
@@ -35,7 +35,7 @@ from typing import TYPE_CHECKING
 
 from lib.logger import log
 from misc.malpi import malpa, malpi, malpka
-from service.tcp_generic import ServiceTcp
+from services.tcp_generic import ServiceTcp
 
 if TYPE_CHECKING:
     from lib.socket import Socket

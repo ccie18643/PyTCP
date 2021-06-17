@@ -25,60 +25,36 @@
 
 
 #
-# service/tcp_daytime.py - 'user space' service TCP Daytime (RFC 867)
+# services/udp_daytime.py - 'user space' service UDP Daytime (RFC 867)
 #
 
 
 from __future__ import annotations  # Required by Python ver < 3.10
 
-import time
 from datetime import datetime
 from typing import TYPE_CHECKING
 
 from lib.logger import log
-from service.tcp_generic import ServiceTcp
+from services.udp_generic import ServiceUdp
 
 if TYPE_CHECKING:
     from lib.socket import Socket
 
 
-class ServiceTcpDaytime(ServiceTcp):
-    """TCP Daytime service support class"""
+class ServiceUdpDaytime(ServiceUdp):
+    """UDP Echo service support class"""
 
-    def __init__(self, local_ip_address: str, local_port: int = 13, message_count: int = -1, message_delay: int = 1):
+    def __init__(self, local_ip_address: str, local_port: int = 13):
         """Class constructor"""
 
-        super().__init__("Daytime", local_ip_address, local_port)
+        super().__init__("Echo", local_ip_address, local_port)
 
-        self.message_count = message_count
-        self.message_delay = message_delay
-
-    def service(self, cs: Socket) -> None:
+    def service(self, s: Socket) -> None:
         """Inbound connection handler"""
 
-        # Don't want to be working on object variable as it may be shar by multiple connections
-        message_count = self.message_count
-
-        if __debug__:
-            log("service", f"Service TCP Daytime: Sending first message to {cs.remote_ip_address}, port {cs.remote_port}")
-        cs.send(b"***CLIENT OPEN / SERVICE OPEN***\n")
-
-        message_count = self.message_count
-        while message_count:
-            message = bytes(str(datetime.now()) + "\n", "utf-8")
-
-            try:
-                cs.send(message)
-            except OSError as error:
-                if __debug__:
-                    log("service", f"Service TCP Daytime: send() error - [{error}]")
-                break
-
+        while True:
+            _, remote_address = s.recvfrom()
+            message = bytes(str(datetime.now()), "utf-8")
+            s.sendto(message, remote_address)
             if __debug__:
-                log("service", f"Service TCP Daytime: Sent {len(message)} bytes of data to {cs.remote_ip_address}, port {cs.remote_port}")
-            time.sleep(self.message_delay)
-            message_count = min(message_count, message_count - 1)
-
-        cs.close()
-        if __debug__:
-            log("service", f"Service TCP Daytime: Closed connection to {cs.remote_ip_address}, port {cs.remote_port}")
+                log("service", f"Service UDP Daytime: Sent {len(message)} bytes to {remote_address[0]}, port {remote_address[1]}")

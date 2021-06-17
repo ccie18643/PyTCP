@@ -25,7 +25,7 @@
 
 
 #
-# client/udp_echo.py - 'user space' client for UDP echo, it activelly sends messages to Echo service
+# clients/udp_echo.py - 'user space' client for UDP echo, it activelly sends messages to Echo service
 #
 
 

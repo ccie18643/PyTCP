@@ -25,7 +25,7 @@
 
 
 #
-# service/tcp_discard.py - 'user space' service TCP Discard (RFC 863)
+# services/tcp_discard.py - 'user space' service TCP Discard (RFC 863)
 #
 
 
@@ -34,7 +34,7 @@ from __future__ import annotations  # Required by Python ver < 3.10
 from typing import TYPE_CHECKING
 
 from lib.logger import log
-from service.tcp_generic import ServiceTcp
+from services.tcp_generic import ServiceTcp
 
 if TYPE_CHECKING:
     from lib.socket import Socket

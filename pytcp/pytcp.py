@@ -97,46 +97,46 @@ def main() -> int:
     # Initialize test services and clients - uncomment what's needed
     #
 
-    # from service.udp_echo import ServiceUdpEcho
+    # from services.udp_echo import ServiceUdpEcho
     # ServiceUdpEcho(local_ip_address="::")
     # ServiceUdpEcho(local_ip_address="0.0.0.0")
 
-    # from service.udp_discard import ServiceUdpDiscard
+    # from services.udp_discard import ServiceUdpDiscard
     # ServiceUdpDiscard(local_ip_address="::")
     # ServiceUdpDiscard(local_ip_address="0.0.0.0")
 
-    # from service.udp_daytime import ServiceUdpDaytime
+    # from services.udp_daytime import ServiceUdpDaytime
     # ServiceUdpDaytime(local_ip_address="::")
     # ServiceUdpDaytime(local_ip_address="0.0.0.0")
 
-    from service.tcp_echo import ServiceTcpEcho
+    from services.tcp_echo import ServiceTcpEcho
 
     ServiceTcpEcho(local_ip_address="::")
     ServiceTcpEcho(local_ip_address="0.0.0.0")
 
-    # from service.tcp_discard import ServiceTcpDiscard
+    # from services.tcp_discard import ServiceTcpDiscard
     # ServiceTcpDiscard(local_ip_address="::")
     # ServiceTcpDiscard(local_ip_address="0.0.0.0")
 
-    # from service.tcp_daytime import ServiceTcpDaytime
+    # from services.tcp_daytime import ServiceTcpDaytime
     # ServiceTcpDaytime(local_ip_address="::")
     # ServiceTcpDaytime(local_ip_address="0.0.0.0")
 
-    # from client.udp_echo import ClientUdpEcho
+    # from clients.udp_echo import ClientUdpEcho
     # ClientUdpEcho(local_ip_address="192.168.9.7", remote_ip_address="192.168.9.102", remote_port=7)
     # ClientUdpEcho(local_ip_address="0.0.0.0", remote_ip_address="192.168.9.102", message_count=10)
     # ClientUdpEcho(local_ip_address="::", remote_ip_address="2603:9000:e307:9f09:5054:ff:fedf:8537", remote_port=7, message_count=10)
     # ClientUdpEcho(local_ip_address="192.168.9.7", remote_ip_address="1.1.1.1", remote_port=7)
     # ClientUdpEcho(local_ip_address="192.168.9.7", remote_ip_address="192.168.9.9", remote_port=7)
 
-    # from client.tcp_echo import ClientTcpEcho
+    # from clients.tcp_echo import ClientTcpEcho
     # ClientTcpEcho(local_ip_address="192.168.9.7", remote_ip_address="192.168.9.102", remote_port=7)
     # ClientTcpEcho(local_ip_address="192.168.9.7", remote_ip_address="1.1.1.1", remote_port=7, message_count=10)
     # ClientTcpEcho(local_ip_address="fdd1:c296:f24f:9:0:ff:fe77:7777", remote_ip_address="fdd1:c296:f24f:9:5054:ff:fedf:8537", remote_port=7, message_count=10)
     # ClientTcpEcho(local_ip_address="192.168.9.7", remote_ip_address="1.1.1.1", remote_port=7)
     # ClientTcpEcho(local_ip_address="192.168.9.7", remote_ip_address="192.168.9.9", remote_port=7)
 
-    # from client.icmp_echo import ClientIcmpEcho
+    # from clients.icmp_echo import ClientIcmpEcho
     # Same subnet, source address specified
     # ClientIcmpEcho(local_ip_address="fdd1:c296:f24f:9:0:ff:fe77:7777", remote_ip_address="fdd1:c296:f24f:9:5054:ff:fedf:8537", message_count=10)
     # ClientIcmpEcho(local_ip_address="fe80::7", remote_ip_address="fe80::5054:ff:fe8b:aa9", message_count=10)

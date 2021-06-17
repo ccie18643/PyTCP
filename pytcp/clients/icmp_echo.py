@@ -25,7 +25,7 @@
 
 
 #
-# client/icmp_echo.py - 'user space' client for ICMPv4/v6 echo
+# clients/icmp_echo.py - 'user space' client for ICMPv4/v6 echo
 #
 
 

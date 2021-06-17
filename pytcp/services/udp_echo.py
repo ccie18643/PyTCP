@@ -25,7 +25,7 @@
 
 
 #
-# service/udp_discard.py - 'user space' service UDP Discard (RFC 863)
+# services/udp_echo.py - 'user space' service UDP Echo (RFC 862)
 #
 
 
@@ -34,19 +34,20 @@ from __future__ import annotations  # Required by Python ver < 3.10
 from typing import TYPE_CHECKING
 
 from lib.logger import log
-from service.udp_generic import ServiceUdp
+from misc.malpi import malpa, malpi, malpka
+from services.udp_generic import ServiceUdp
 
 if TYPE_CHECKING:
     from lib.socket import Socket
 
 
-class ServiceUdpDiscard(ServiceUdp):
+class ServiceUdpEcho(ServiceUdp):
     """UDP Echo service support class"""
 
-    def __init__(self, local_ip_address: str, local_port: int = 9):
+    def __init__(self, local_ip_address: str, local_port: int = 7):
         """Class constructor"""
 
-        super().__init__("Discard", local_ip_address, local_port)
+        super().__init__("Echo", local_ip_address, local_port)
 
     def service(self, s: Socket) -> None:
         """Inbound connection handler"""
@@ -55,4 +56,16 @@ class ServiceUdpDiscard(ServiceUdp):
             message, remote_address = s.recvfrom()
 
             if __debug__:
-                log("service", f"Service UDP Discard: Received {len(message)} bytes from {remote_address[0]}, port {remote_address[1]}")
+                log("service", f"Service UDP Echo: Received {len(message)} bytes from {remote_address[0]}, port {remote_address[1]}")
+
+            if b"malpka" in message.strip().lower():
+                message = malpka
+            elif b"malpa" in message.strip().lower():
+                message = malpa
+            elif b"malpi" in message.strip().lower():
+                message = malpi
+
+            s.sendto(message, remote_address)
+
+            if __debug__:
+                log("service", f"Service UDP Echo: Echo'ed {len(message)} bytes back to {remote_address[0]}, port {remote_address[1]}")
