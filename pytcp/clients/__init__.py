@@ -25,36 +25,5 @@
 
 
 #
-# service/udp_daytime.py - 'user space' service UDP Daytime (RFC 867)
+# clients/__init__.py
 #
-
-
-from __future__ import annotations  # Required by Python ver < 3.10
-
-from datetime import datetime
-from typing import TYPE_CHECKING
-
-from lib.logger import log
-from service.udp_generic import ServiceUdp
-
-if TYPE_CHECKING:
-    from lib.socket import Socket
-
-
-class ServiceUdpDaytime(ServiceUdp):
-    """UDP Echo service support class"""
-
-    def __init__(self, local_ip_address: str, local_port: int = 13):
-        """Class constructor"""
-
-        super().__init__("Echo", local_ip_address, local_port)
-
-    def service(self, s: Socket) -> None:
-        """Inbound connection handler"""
-
-        while True:
-            _, remote_address = s.recvfrom()
-            message = bytes(str(datetime.now()), "utf-8")
-            s.sendto(message, remote_address)
-            if __debug__:
-                log("service", f"Service UDP Daytime: Sent {len(message)} bytes to {remote_address[0]}, port {remote_address[1]}")

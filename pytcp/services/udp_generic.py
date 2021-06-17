@@ -25,7 +25,7 @@
 
 
 #
-# service/udp_generic.py - 'user space' UDP generic service class
+# services/udp_generic.py - 'user space' UDP generic service class
 #
 
 

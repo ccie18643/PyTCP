@@ -25,7 +25,7 @@
 
 
 #
-# client/tcp_echo.py - 'user space' client for TCP echo, it activelly connects to service and sends messages
+# clients/tcp_echo.py - 'user space' client for TCP echo, it activelly connects to service and sends messages
 #
 
 

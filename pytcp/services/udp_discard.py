@@ -25,5 +25,34 @@
 
 
 #
-# client/__init__.py
+# services/udp_discard.py - 'user space' service UDP Discard (RFC 863)
 #
+
+
+from __future__ import annotations  # Required by Python ver < 3.10
+
+from typing import TYPE_CHECKING
+
+from lib.logger import log
+from services.udp_generic import ServiceUdp
+
+if TYPE_CHECKING:
+    from lib.socket import Socket
+
+
+class ServiceUdpDiscard(ServiceUdp):
+    """UDP Echo service support class"""
+
+    def __init__(self, local_ip_address: str, local_port: int = 9):
+        """Class constructor"""
+
+        super().__init__("Discard", local_ip_address, local_port)
+
+    def service(self, s: Socket) -> None:
+        """Inbound connection handler"""
+
+        while True:
+            message, remote_address = s.recvfrom()
+
+            if __debug__:
+                log("service", f"Service UDP Discard: Received {len(message)} bytes from {remote_address[0]}, port {remote_address[1]}")

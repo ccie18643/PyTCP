@@ -25,47 +25,60 @@
 
 
 #
-# service/udp_echo.py - 'user space' service UDP Echo (RFC 862)
+# services/tcp_daytime.py - 'user space' service TCP Daytime (RFC 867)
 #
 
 
 from __future__ import annotations  # Required by Python ver < 3.10
 
+import time
+from datetime import datetime
 from typing import TYPE_CHECKING
 
 from lib.logger import log
-from misc.malpi import malpa, malpi, malpka
-from service.udp_generic import ServiceUdp
+from services.tcp_generic import ServiceTcp
 
 if TYPE_CHECKING:
     from lib.socket import Socket
 
 
-class ServiceUdpEcho(ServiceUdp):
-    """UDP Echo service support class"""
+class ServiceTcpDaytime(ServiceTcp):
+    """TCP Daytime service support class"""
 
-    def __init__(self, local_ip_address: str, local_port: int = 7):
+    def __init__(self, local_ip_address: str, local_port: int = 13, message_count: int = -1, message_delay: int = 1):
         """Class constructor"""
 
-        super().__init__("Echo", local_ip_address, local_port)
+        super().__init__("Daytime", local_ip_address, local_port)
 
-    def service(self, s: Socket) -> None:
+        self.message_count = message_count
+        self.message_delay = message_delay
+
+    def service(self, cs: Socket) -> None:
         """Inbound connection handler"""
 
-        while True:
-            message, remote_address = s.recvfrom()
+        # Don't want to be working on object variable as it may be shar by multiple connections
+        message_count = self.message_count
+
+        if __debug__:
+            log("service", f"Service TCP Daytime: Sending first message to {cs.remote_ip_address}, port {cs.remote_port}")
+        cs.send(b"***CLIENT OPEN / SERVICE OPEN***\n")
+
+        message_count = self.message_count
+        while message_count:
+            message = bytes(str(datetime.now()) + "\n", "utf-8")
+
+            try:
+                cs.send(message)
+            except OSError as error:
+                if __debug__:
+                    log("service", f"Service TCP Daytime: send() error - [{error}]")
+                break
 
             if __debug__:
-                log("service", f"Service UDP Echo: Received {len(message)} bytes from {remote_address[0]}, port {remote_address[1]}")
+                log("service", f"Service TCP Daytime: Sent {len(message)} bytes of data to {cs.remote_ip_address}, port {cs.remote_port}")
+            time.sleep(self.message_delay)
+            message_count = min(message_count, message_count - 1)
 
-            if b"malpka" in message.strip().lower():
-                message = malpka
-            elif b"malpa" in message.strip().lower():
-                message = malpa
-            elif b"malpi" in message.strip().lower():
-                message = malpi
-
-            s.sendto(message, remote_address)
-
-            if __debug__:
-                log("service", f"Service UDP Echo: Echo'ed {len(message)} bytes back to {remote_address[0]}, port {remote_address[1]}")
+        cs.close()
+        if __debug__:
+            log("service", f"Service TCP Daytime: Closed connection to {cs.remote_ip_address}, port {cs.remote_port}")

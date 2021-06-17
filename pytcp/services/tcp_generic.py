@@ -25,7 +25,7 @@
 
 
 #
-# service/tcp_generic.py - 'user space' TCP generic service class
+# services/tcp_generic.py - 'user space' TCP generic service class
 #
 
 
