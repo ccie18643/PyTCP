@@ -7,3 +7,4 @@ codespell
 isort
 argparse
 mock
+types-mock
