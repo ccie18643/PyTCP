@@ -25,18 +25,12 @@
 
 
 #
-# tests/test_config.py - unit tests for config
+# __init__.py
 #
 
+import os
+import sys
 
-from testslide import TestCase
-
-from pytcp.config import IP4_SUPPORT, IP6_SUPPORT
-
-
-class TestConfig(TestCase):
-    def test_ipv6_support(self):
-        self.assertEqual(IP6_SUPPORT, True)
-
-    def test_ipv4_support(self):
-        self.assertEqual(IP4_SUPPORT, True)
+PROJECT_PATH = os.getcwd()
+SOURCE_PATH = os.path.join(PROJECT_PATH, "pytcp")
+sys.path.append(SOURCE_PATH)

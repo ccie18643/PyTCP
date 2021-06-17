@@ -25,18 +25,23 @@
 
 
 #
-# tests/test_config.py - unit tests for config
+# ip6_ext_frag/ps.py - protocol support for IPv6 fragmentation extension header
 #
 
 
-from testslide import TestCase
+# IPv6 protocol fragmentation extension header
 
-from pytcp.config import IP4_SUPPORT, IP6_SUPPORT
+# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+# | Next header   |   Reserved    |         Offset          |R|R|M|
+# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+# |                               Id                              |
+# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 
 
-class TestConfig(TestCase):
-    def test_ipv6_support(self):
-        self.assertEqual(IP6_SUPPORT, True)
+IP6_EXT_FRAG_HEADER_LEN = 8
 
-    def test_ipv4_support(self):
-        self.assertEqual(IP4_SUPPORT, True)
+IP6_EXT_FRAG_NEXT_HEADER_TCP = 6
+IP6_EXT_FRAG_NEXT_HEADER_UDP = 17
+IP6_EXT_FRAG_NEXT_HEADER_ICMP6 = 58
+
+IP6_EXT_FRAG_NEXT_HEADER_TABLE = {IP6_EXT_FRAG_NEXT_HEADER_TCP: "TCP", IP6_EXT_FRAG_NEXT_HEADER_UDP: "UDP", IP6_EXT_FRAG_NEXT_HEADER_ICMP6: "ICMPv6"}

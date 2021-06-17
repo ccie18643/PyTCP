@@ -25,18 +25,49 @@
 
 
 #
-# tests/test_config.py - unit tests for config
+# packet.py - module contains class representing packet
 #
 
+from __future__ import annotations  # Required by Python ver < 3.10
 
-from testslide import TestCase
+from typing import TYPE_CHECKING, Union
 
-from pytcp.config import IP4_SUPPORT, IP6_SUPPORT
+from lib.tracker import Tracker
+
+if TYPE_CHECKING:
+    from protocols.arp.fpp import ArpParser
+    from protocols.ether.fpp import EtherParser
+    from protocols.icmp4.fpp import Icmp4Parser
+    from protocols.icmp6.fpp import Icmp6Parser
+    from protocols.ip4.fpp import Ip4Parser
+    from protocols.ip6.fpp import Ip6Parser
+    from protocols.ip6_ext_frag.fpp import Ip6ExtFragParser
+    from protocols.tcp.fpp import TcpParser
+    from protocols.udp.fpp import UdpParser
 
 
-class TestConfig(TestCase):
-    def test_ipv6_support(self):
-        self.assertEqual(IP6_SUPPORT, True)
+class PacketRx:
+    """Base packet class"""
 
-    def test_ipv4_support(self):
-        self.assertEqual(IP4_SUPPORT, True)
+    def __init__(self, frame: bytes) -> None:
+        """Class constructor"""
+
+        self.frame: memoryview = memoryview(frame)
+        self.tracker: Tracker = Tracker("RX")
+        self.parse_failed: str = ""
+
+        self.ether: EtherParser
+        self.arp: ArpParser
+        self.ip: Union[Ip6Parser, Ip4Parser]
+        self.ip4: Ip4Parser
+        self.ip6: Ip6Parser
+        self.ip6_ext_frag: Ip6ExtFragParser
+        self.icmp4: Icmp4Parser
+        self.icmp6: Icmp6Parser
+        self.tcp: TcpParser
+        self.udp: UdpParser
+
+    def __len__(self) -> int:
+        """Returns length of raw frame"""
+
+        return len(self.frame)

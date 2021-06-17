@@ -25,18 +25,17 @@
 
 
 #
-# tests/test_config.py - unit tests for config
+# protocols/udp/ps.py - protocol support for UDP
 #
 
 
-from testslide import TestCase
+# UDP packet header (RFC 768)
 
-from pytcp.config import IP4_SUPPORT, IP6_SUPPORT
+# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+# |          Source port          |        Destination port       |
+# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+# |         Packet length         |            Checksum           |
+# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 
 
-class TestConfig(TestCase):
-    def test_ipv6_support(self):
-        self.assertEqual(IP6_SUPPORT, True)
-
-    def test_ipv4_support(self):
-        self.assertEqual(IP4_SUPPORT, True)
+UDP_HEADER_LEN = 8

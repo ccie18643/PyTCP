@@ -11,4 +11,4 @@ jobs:
       - run: isort -c --profile black $(find . -name '*.py')
       - run: black --check $(find . -name '*.py')
       - run: flake8 $(find . -name '*.py')
-      - run: mypy $(find . -name '*.py')
+      - run: mypy -p pytcp

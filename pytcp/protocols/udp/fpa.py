@@ -25,18 +25,56 @@
 
 
 #
-# tests/test_config.py - unit tests for config
+# protocols/udp/fpa.py - Fast Packet Assembler support class for UDP protocol
 #
 
 
-from testslide import TestCase
+from __future__ import annotations  # Required by Python ver < 3.10
 
-from pytcp.config import IP4_SUPPORT, IP6_SUPPORT
+import struct
+from typing import Optional
+
+from lib.tracker import Tracker
+from misc.ip_helper import inet_cksum
+from protocols.ip4.ps import IP4_PROTO_UDP
+from protocols.ip6.ps import IP6_NEXT_HEADER_UDP
+from protocols.udp.ps import UDP_HEADER_LEN
 
 
-class TestConfig(TestCase):
-    def test_ipv6_support(self):
-        self.assertEqual(IP6_SUPPORT, True)
+class UdpAssembler:
+    """UDP packet assembler support class"""
 
-    def test_ipv4_support(self):
-        self.assertEqual(IP4_SUPPORT, True)
+    ip4_proto = IP4_PROTO_UDP
+    ip6_next = IP6_NEXT_HEADER_UDP
+
+    def __init__(self, sport: int, dport: int, data: Optional[bytes] = None, echo_tracker: Optional[Tracker] = None) -> None:
+        """Class constructor"""
+
+        self._tracker: Tracker = Tracker("TX", echo_tracker)
+        self._sport: int = sport
+        self._dport: int = dport
+        self._data: bytes = b"" if data is None else data
+        self._plen: int = UDP_HEADER_LEN + len(self._data)
+
+    def __len__(self) -> int:
+        """Length of the packet"""
+
+        return self._plen
+
+    def __str__(self) -> str:
+        """Packet log string"""
+
+        return f"UDP {self._sport} > {self._dport}, len {self._plen}"
+
+    @property
+    def tracker(self) -> Tracker:
+        """Getter for _tracker"""
+
+        return self._tracker
+
+    def assemble(self, frame: memoryview, pshdr_sum: int) -> None:
+        """Assemble packet into the raw form"""
+
+        # memoryview: bytes conversion requir
+        struct.pack_into(f"! HH HH {len(self._data)}s", frame, 0, self._sport, self._dport, self._plen, 0, bytes(self._data))
+        struct.pack_into("! H", frame, 6, inet_cksum(frame, pshdr_sum))
