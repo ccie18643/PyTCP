@@ -28,7 +28,7 @@ lint: venv
 	@echo '<<< FLAKE8'
 	@./$(VENV)/bin/flake8 ${PY_PATH} ${TEST_PATH}
 	@echo '<<< MYPY'
-	@cd pytcp; ../$(VENV)/bin/mypy -p pytcp; cd -
+	@./$(VENV)/bin/mypy -p pytcp
 
 test: venv
 	@echo '<<< TESTSLIDE'
