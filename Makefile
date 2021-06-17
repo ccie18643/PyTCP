@@ -1,5 +1,6 @@
 VENV := venv
 PY_PATH := $(shell find pytcp -name '*.py')
+TEST_PATH := $(shell find tests -name '*.py')
 
 all: venv
 
@@ -19,13 +20,13 @@ clean:
 
 lint: venv
 	@echo '<<< CODESPELL'
-	@./$(VENV)/bin/codespell -w --ignore-words-list="ect,ether,nd,tha" --quiet-level=2 ${PY_PATH} README.md
+	@./$(VENV)/bin/codespell -w --ignore-words-list="ect,ether,nd,tha" --quiet-level=2 ${PY_PATH} ${TEST_PATH} README.md
 	@echo '<<< ISORT'
-	@./$(VENV)/bin/isort --profile black ${PY_PATH}
+	@./$(VENV)/bin/isort --profile black ${PY_PATH} ${TEST_PATH}
 	@echo '<<< BLACK'
-	@./$(VENV)/bin/black ${PY_PATH}
+	@./$(VENV)/bin/black ${PY_PATH} ${TEST_PATH}
 	@echo '<<< FLAKE8'
-	@./$(VENV)/bin/flake8 ${PY_PATH}
+	@./$(VENV)/bin/flake8 ${PY_PATH} ${TEST_PATH}
 	@echo '<<< MYPY'
 	@cd pytcp; ../$(VENV)/bin/mypy -p pytcp; cd -
 

@@ -35,12 +35,12 @@ from unittest import TestCase
 from mock import Mock, patch
 
 import pytcp.config as config
-from pytcp.subsystems.arp_cache import ArpCache
-from pytcp.subsystems.nd_cache import NdCache
 from pytcp.lib.ip4_address import Ip4Address, Ip4Host
 from pytcp.lib.ip6_address import Ip6Address, Ip6Host
 from pytcp.lib.mac_address import MacAddress
 from pytcp.misc.packet import PacketRx
+from pytcp.subsystems.arp_cache import ArpCache
+from pytcp.subsystems.nd_cache import NdCache
 from pytcp.subsystems.packet_handler import PacketHandler
 from pytcp.subsystems.tx_ring import TxRing
 
@@ -65,7 +65,7 @@ class TestPacketHandler(TestCase):
         self.packet_handler.arp_cache.find_entry.return_value = MacAddress("52:54:00:df:85:37")
         self.packet_handler.nd_cache.find_entry.return_value = MacAddress("52:54:00:df:85:37")
         self.packet_handler.tx_ring.enqueue = lambda _: _.assemble(self.frame_tx)
-        
+
         self.frame_tx = memoryview(bytearray(2048))
 
     @patch("pytcp.subsystems.packet_handler.log", return_value=None)
