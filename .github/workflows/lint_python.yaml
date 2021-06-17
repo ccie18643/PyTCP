@@ -13,4 +13,5 @@ jobs:
       - run: flake8 $(find . -name '*.py')
       - name: "Run mypy"
         run: mypy -p pytcp
-        env: MYPYPATH: pytcp
+        env:
+          MYPYPATH: pytcp
