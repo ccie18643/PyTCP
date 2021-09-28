@@ -30,9 +30,7 @@
 #
 
 
-from unittest import TestCase
-
-from mock import Mock, patch
+from testslide import TestCase, StrictMock
 
 import pytcp.config as config
 from pytcp.lib.ip4_address import Ip4Address, Ip4Host
@@ -55,21 +53,37 @@ class TestPacketHandler(TestCase):
         config.PACKET_SANITY_CHECK = True
         config.TAP_MTU = 1500
 
+        self.arp_cache_mock = StrictMock(ArpCache)
+        self.nd_cache_mock = StrictMock(NdCache)
+        self.tx_ring_mock = StrictMock(TxRing)
+        
+        self.mock_callable(self.arp_cache_mock, "find_entry").to_return_value(MacAddress("52:54:00:df:85:37"))
+        self.mock_callable(self.nd_cache_mock, "find_entry").to_return_value(MacAddress("52:54:00:df:85:37"))
+        self.mock_callable(self.tx_ring_mock, "enqueue").with_implementation(lambda _: _.assemble(self.frame_tx))
+        
         self.packet_handler = PacketHandler(None)
         self.packet_handler.mac_address = MacAddress("02:00:00:77:77:77")
         self.packet_handler.ip4_host = [Ip4Host("192.168.9.7/24")]
         self.packet_handler.ip6_host = [Ip6Host("2603:9000:e307:9f09:0:ff:fe77:7777/64")]
-        self.packet_handler.arp_cache = Mock(ArpCache)
-        self.packet_handler.nd_cache = Mock(NdCache)
-        self.packet_handler.tx_ring = Mock(TxRing)
-        self.packet_handler.arp_cache.find_entry.return_value = MacAddress("52:54:00:df:85:37")
-        self.packet_handler.nd_cache.find_entry.return_value = MacAddress("52:54:00:df:85:37")
-        self.packet_handler.tx_ring.enqueue = lambda _: _.assemble(self.frame_tx)
+        self.packet_handler.arp_cache = self.arp_cache_mock
+        self.packet_handler.nd_cache = self.nd_cache_mock
+        self.packet_handler.tx_ring = self.tx_ring_mock
+
+        self.mock_callable("pytcp.subsystems.packet_handler", "log").to_return_value(None)
+        self.mock_callable("protocols.ether.phrx", "log").to_return_value(None)
+        self.mock_callable("protocols.ether.phtx", "log").to_return_value(None)
+        self.mock_callable("protocols.ip4.phrx", "log").to_return_value(None)
+        self.mock_callable("protocols.ip4.phtx", "log").to_return_value(None)
+        self.mock_callable("protocols.ip6.phrx", "log").to_return_value(None)
+        self.mock_callable("protocols.ip6.phtx", "log").to_return_value(None)
+        self.mock_callable("protocols.icmp4.phrx", "log").to_return_value(None)
+        self.mock_callable("protocols.icmp4.phtx", "log").to_return_value(None)
+        self.mock_callable("protocols.icmp6.phrx", "log").to_return_value(None)
+        self.mock_callable("protocols.icmp6.phtx", "log").to_return_value(None)
 
         self.frame_tx = memoryview(bytearray(2048))
 
-    @patch("pytcp.subsystems.packet_handler.log", return_value=None)
-    def test__parse_stack_ip6_address_candidate(self, _):
+    def test__parse_stack_ip6_address_candidate(self):
         sample = [
             ("FE80::7/64", None),  # valid link loal address [pass]
             ("FE80::77/64", None),  # valid link local address [pass]
@@ -97,8 +111,7 @@ class TestPacketHandler(TestCase):
         result = [ip6_address.gateway for ip6_address in result]
         self.assertEqual(result, expected)
 
-    @patch("pytcp.subsystems.packet_handler.log", return_value=None)
-    def test__parse_stack_ip4_host_candidate(self, _):
+    def test__parse_stack_ip4_host_candidate(self):
         sample = [
             ("192.168.9.7/24", "192.168.9.1"),  # valid address and valid gateway [pass]
             ("192.168.9.77/24", "192.168.9.1"),  # valid address and valid gateway [pass]
@@ -130,13 +143,7 @@ class TestPacketHandler(TestCase):
         result = [ip4_host.gateway for ip4_host in result]
         self.assertEqual(result, expected)
 
-    @patch("protocols.ether.phtx.log", return_value=None)
-    @patch("protocols.ether.phrx.log", return_value=None)
-    @patch("protocols.ip4.phtx.log", return_value=None)
-    @patch("protocols.ip4.phrx.log", return_value=None)
-    @patch("protocols.icmp4.phrx.log", return_value=None)
-    @patch("protocols.icmp4.phtx.log", return_value=None)
-    def test_integration_ping4(self, *_):
+    def test_integration_ping4(self):
         with open("tests/frames/ping4_rx", "rb") as _:
             frame_rx = _.read()
         with open("tests/frames/ping4_tx", "rb") as _:
@@ -144,12 +151,6 @@ class TestPacketHandler(TestCase):
         self.packet_handler._phrx_ether(PacketRx(frame_rx))
         self.assertEqual(self.frame_tx[: len(frame_tx)], frame_tx)
 
-    @patch("protocols.ether.phtx.log", return_value=None)
-    @patch("protocols.ether.phrx.log", return_value=None)
-    @patch("protocols.ip6.phtx.log", return_value=None)
-    @patch("protocols.ip6.phrx.log", return_value=None)
-    @patch("protocols.icmp6.phrx.log", return_value=None)
-    @patch("protocols.icmp6.phtx.log", return_value=None)
     def test_integration_ping6(self, *_):
         with open("tests/frames/ping6_rx", "rb") as _:
             frame_rx = _.read()
