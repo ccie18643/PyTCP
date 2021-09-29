@@ -38,6 +38,7 @@ from protocols.icmp4.ps import ICMP4_UNREACHABLE, ICMP4_UNREACHABLE__PORT
 from protocols.icmp6.ps import ICMP6_UNREACHABLE, ICMP6_UNREACHABLE__PORT
 from protocols.udp.fpp import UdpParser
 from protocols.udp.metadata import UdpMetadata
+import config
 
 
 def _phrx_udp(self, packet_rx: PacketRx) -> None:
@@ -81,6 +82,20 @@ def _phrx_udp(self, packet_rx: PacketRx) -> None:
                 f"{packet_rx_md.tracker} - Received UDP packet from {packet_rx.ip.src}, port {packet_rx.udp.sport} to "
                 + f"{packet_rx.ip.dst}, port {packet_rx.udp.dport}, dropping",
             )
+        return
+
+    # Handle the UDP Echo operation in case its enabled (used for packet flow unit testing only)
+    if config.UDP_ECHO_NATIVE and packet_rx.udp.dport == 7:
+        if __debug__:
+            log("udp", f"{packet_rx_md.tracker} - <INFO>Performing native UDP Echo operation</>")
+
+        self._phtx_udp(
+            ip_src=packet_rx.ip.dst,
+            ip_dst=packet_rx.ip.src,
+            udp_sport=packet_rx.udp.sport,
+            udp_dport=packet_rx.udp.dport,
+            udp_data=packet_rx.udp.data,
+        )
         return
 
     # Respond with ICMP Port Unreachable message if no matching socket has been found
