@@ -56,11 +56,11 @@ class TestPacketHandler(TestCase):
         self.arp_cache_mock = StrictMock(ArpCache)
         self.nd_cache_mock = StrictMock(NdCache)
         self.tx_ring_mock = StrictMock(TxRing)
-        
-        self.mock_callable(self.arp_cache_mock, "find_entry").to_return_value(MacAddress("52:54:00:df:85:37"))
-        self.mock_callable(self.nd_cache_mock, "find_entry").to_return_value(MacAddress("52:54:00:df:85:37"))
+
+        self.mock_callable(self.arp_cache_mock, "find_entry").for_call(Ip4Address("192.168.9.102")).to_return_value(MacAddress("52:54:00:df:85:37"))
+        self.mock_callable(self.nd_cache_mock, "find_entry").for_call(Ip6Address("2603:9000:e307:9f09::1fa1")).to_return_value(MacAddress("52:54:00:df:85:37"))
         self.mock_callable(self.tx_ring_mock, "enqueue").with_implementation(lambda _: _.assemble(self.frame_tx))
-        
+
         self.packet_handler = PacketHandler(None)
         self.packet_handler.mac_address = MacAddress("02:00:00:77:77:77")
         self.packet_handler.ip4_host = [Ip4Host("192.168.9.7/24")]
@@ -80,6 +80,10 @@ class TestPacketHandler(TestCase):
         self.mock_callable("protocols.icmp4.phtx", "log").to_return_value(None)
         self.mock_callable("protocols.icmp6.phrx", "log").to_return_value(None)
         self.mock_callable("protocols.icmp6.phtx", "log").to_return_value(None)
+        self.mock_callable("protocols.udp.phrx", "log").to_return_value(None)
+        self.mock_callable("protocols.udp.phtx", "log").to_return_value(None)
+        self.mock_callable("protocols.tcp.phrx", "log").to_return_value(None)
+        self.mock_callable("protocols.tcp.phtx", "log").to_return_value(None)
 
         self.frame_tx = memoryview(bytearray(2048))
 
@@ -143,7 +147,7 @@ class TestPacketHandler(TestCase):
         result = [ip4_host.gateway for ip4_host in result]
         self.assertEqual(result, expected)
 
-    def test_integration_ping4(self):
+    def test__ping4(self):
         with open("tests/frames/ping4_rx", "rb") as _:
             frame_rx = _.read()
         with open("tests/frames/ping4_tx", "rb") as _:
@@ -151,10 +155,26 @@ class TestPacketHandler(TestCase):
         self.packet_handler._phrx_ether(PacketRx(frame_rx))
         self.assertEqual(self.frame_tx[: len(frame_tx)], frame_tx)
 
-    def test_integration_ping6(self, *_):
+    def test__ping6(self, *_):
         with open("tests/frames/ping6_rx", "rb") as _:
             frame_rx = _.read()
         with open("tests/frames/ping6_tx", "rb") as _:
+            frame_tx = _.read()
+        self.packet_handler._phrx_ether(PacketRx(frame_rx))
+        self.assertEqual(self.frame_tx[: len(frame_tx)], frame_tx)
+
+    def test__udp_to_closed_port(self):
+        with open("tests/frames/udp_to_closed_port_rx", "rb") as _:
+            frame_rx = _.read()
+        with open("tests/frames/udp_to_closed_port_tx", "rb") as _:
+            frame_tx = _.read()
+        self.packet_handler._phrx_ether(PacketRx(frame_rx))
+        self.assertEqual(self.frame_tx[: len(frame_tx)], frame_tx)
+
+    def test__tcp_to_closed_port(self):
+        with open("tests/frames/tcp_to_closed_port_rx", "rb") as _:
+            frame_rx = _.read()
+        with open("tests/frames/tcp_to_closed_port_tx", "rb") as _:
             frame_tx = _.read()
         self.packet_handler._phrx_ether(PacketRx(frame_rx))
         self.assertEqual(self.frame_tx[: len(frame_tx)], frame_tx)
