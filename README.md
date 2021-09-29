@@ -1,4 +1,4 @@
-# PyTCP (version 2.5)
+# PyTCP (version 2.6)
 
 PyTCP is an attempt to create fully functional TCP/IP stack in Python. It supports TCP stream based transport with reliable packet delivery based on sliding window mechanism and basic congestion control. It also supports IPv6/ICMPv6 protocols with SLAAC address configuration. It operates as user space program attached to Linux TAP interface. As of today stack is able to send and receive traffic over Internet using IPv4 and IPv6 default gateways for routing. 
 
