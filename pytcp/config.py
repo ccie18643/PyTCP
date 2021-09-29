@@ -140,6 +140,6 @@ TAP_MTU = 1500
 LOCAL_TCP_MSS = 1460  # Maximum segment peer can send to us
 LOCAL_TCP_WIN = 65535  # Maximum amount of data peer can send to us without confirmation
 
-# Native support for UDP Echo (used for packet flow unit testing only and should always be set to 'False')
-UDP_ECHO_NATIVE = False
+# Native support for UDP Echo (used for packet flow unit testing only and should always be disabled)
+UDP_ECHO_NATIVE_DISABLE = True
 

@@ -85,7 +85,7 @@ def _phrx_udp(self, packet_rx: PacketRx) -> None:
         return
 
     # Handle the UDP Echo operation in case its enabled (used for packet flow unit testing only)
-    if config.UDP_ECHO_NATIVE and packet_rx.udp.dport == 7:
+    if config.UDP_ECHO_NATIVE_DISABLE is False and packet_rx.udp.dport == 7:
         if __debug__:
             log("udp", f"{packet_rx_md.tracker} - <INFO>Performing native UDP Echo operation</>")
 

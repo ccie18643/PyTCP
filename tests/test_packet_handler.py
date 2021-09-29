@@ -67,7 +67,7 @@ CONFIG_PATCHES = {
     "PACKET_INTEGRITY_CHECK": True,
     "PACKET_SANITY_CHECK": True,
     "TAP_MTU": 1500,
-    "UDP_ECHO_NATIVE": True,
+    "UDP_ECHO_NATIVE_DISABLE": False,
 }
 
 
