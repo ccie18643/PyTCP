@@ -29,8 +29,9 @@
 #
 
 
-from pytcp.config import IP4_SUPPORT, IP6_SUPPORT
 from testslide import TestCase
+
+from pytcp.config import IP4_SUPPORT, IP6_SUPPORT
 
 
 class TestConfig(TestCase):

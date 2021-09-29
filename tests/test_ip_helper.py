@@ -31,8 +31,9 @@
 
 from dataclasses import dataclass
 
-from pytcp.misc.ip_helper import inet_cksum, ip_version
 from testslide import TestCase
+
+from pytcp.misc.ip_helper import inet_cksum, ip_version
 
 
 class TestIpHelper(TestCase):

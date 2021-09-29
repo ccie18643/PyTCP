@@ -30,6 +30,8 @@
 #
 
 
+from testslide import StrictMock, TestCase
+
 import pytcp.config as config
 from pytcp.lib.ip4_address import Ip4Address, Ip4Host
 from pytcp.lib.ip6_address import Ip6Address, Ip6Host
@@ -39,7 +41,6 @@ from pytcp.subsystems.arp_cache import ArpCache
 from pytcp.subsystems.nd_cache import NdCache
 from pytcp.subsystems.packet_handler import PacketHandler
 from pytcp.subsystems.tx_ring import TxRing
-from testslide import StrictMock, TestCase
 
 
 class TestPacketHandler(TestCase):
