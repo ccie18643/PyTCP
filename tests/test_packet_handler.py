@@ -219,6 +219,14 @@ class TestPacketHandler(TestCase):
         self.packet_handler._phrx_ether(PacketRx(frame_rx))
         self.assertEqual(self.frame_tx[: len(frame_tx)], frame_tx)
     
+    def test_packet_flow__ip6_udp_echo(self):
+        with open("tests/frames/ip6_udp_echo.rx", "rb") as _:
+            frame_rx = _.read()
+        with open("tests/frames/ip6_udp_echo.tx", "rb") as _:
+            frame_tx = _.read()
+        self.packet_handler._phrx_ether(PacketRx(frame_rx))
+        self.assertEqual(self.frame_tx[: len(frame_tx)], frame_tx)
+
     def test_packet_flow__ip6_tcp_syn_to_closed_port(self):
         with open("tests/frames/ip6_tcp_syn_to_closed_port.rx", "rb") as _:
             frame_rx = _.read()
