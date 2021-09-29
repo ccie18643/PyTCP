@@ -87,7 +87,7 @@ class TestPacketHandler(TestCase):
 
         self.frame_tx = memoryview(bytearray(2048))
 
-    def test__parse_stack_ip6_address_candidate(self):
+    def test_parse_stack_ip6_address_candidate(self):
         sample = [
             ("FE80::7/64", None),  # valid link loal address [pass]
             ("FE80::77/64", None),  # valid link local address [pass]
@@ -115,7 +115,7 @@ class TestPacketHandler(TestCase):
         result = [ip6_address.gateway for ip6_address in result]
         self.assertEqual(result, expected)
 
-    def test__parse_stack_ip4_host_candidate(self):
+    def test_parse_stack_ip4_host_candidate(self):
         sample = [
             ("192.168.9.7/24", "192.168.9.1"),  # valid address and valid gateway [pass]
             ("192.168.9.77/24", "192.168.9.1"),  # valid address and valid gateway [pass]
@@ -147,34 +147,50 @@ class TestPacketHandler(TestCase):
         result = [ip4_host.gateway for ip4_host in result]
         self.assertEqual(result, expected)
 
-    def test__ping4(self):
-        with open("tests/frames/ping4_rx", "rb") as _:
+    def test_packet_flow__ip4_ping(self):
+        with open("tests/frames/ip4_ping.rx", "rb") as _:
             frame_rx = _.read()
-        with open("tests/frames/ping4_tx", "rb") as _:
+        with open("tests/frames/ip4_ping.tx", "rb") as _:
             frame_tx = _.read()
         self.packet_handler._phrx_ether(PacketRx(frame_rx))
         self.assertEqual(self.frame_tx[: len(frame_tx)], frame_tx)
 
-    def test__ping6(self, *_):
-        with open("tests/frames/ping6_rx", "rb") as _:
+    def test_packet_flow__ip4_udp_to_closed_port(self):
+        with open("tests/frames/ip4_udp_to_closed_port.rx", "rb") as _:
             frame_rx = _.read()
-        with open("tests/frames/ping6_tx", "rb") as _:
+        with open("tests/frames/ip4_udp_to_closed_port.tx", "rb") as _:
             frame_tx = _.read()
         self.packet_handler._phrx_ether(PacketRx(frame_rx))
         self.assertEqual(self.frame_tx[: len(frame_tx)], frame_tx)
 
-    def test__udp_to_closed_port(self):
-        with open("tests/frames/udp_to_closed_port_rx", "rb") as _:
+    def test_packet_flow__ip4_tcp_syn_to_closed_port(self):
+        with open("tests/frames/ip4_tcp_syn_to_closed_port.rx", "rb") as _:
             frame_rx = _.read()
-        with open("tests/frames/udp_to_closed_port_tx", "rb") as _:
+        with open("tests/frames/ip4_tcp_syn_to_closed_port.tx", "rb") as _:
+            frame_tx = _.read()
+        self.packet_handler._phrx_ether(PacketRx(frame_rx))
+        self.assertEqual(self.frame_tx[: len(frame_tx)], frame_tx)
+    
+    def test_packet_flow__ip6_ping(self, *_):
+        with open("tests/frames/ip6_ping.rx", "rb") as _:
+            frame_rx = _.read()
+        with open("tests/frames/ip6_ping.tx", "rb") as _:
             frame_tx = _.read()
         self.packet_handler._phrx_ether(PacketRx(frame_rx))
         self.assertEqual(self.frame_tx[: len(frame_tx)], frame_tx)
 
-    def test__tcp_to_closed_port(self):
-        with open("tests/frames/tcp_to_closed_port_rx", "rb") as _:
+    def test_packet_flow__ip6_udp_to_closed_port(self):
+        with open("tests/frames/ip6_udp_to_closed_port.rx", "rb") as _:
             frame_rx = _.read()
-        with open("tests/frames/tcp_to_closed_port_tx", "rb") as _:
+        with open("tests/frames/ip6_udp_to_closed_port.tx", "rb") as _:
+            frame_tx = _.read()
+        self.packet_handler._phrx_ether(PacketRx(frame_rx))
+        self.assertEqual(self.frame_tx[: len(frame_tx)], frame_tx)
+
+    def test_packet_flow__ip6_tcp_syn_to_closed_port(self):
+        with open("tests/frames/ip6_tcp_syn_to_closed_port.rx", "rb") as _:
+            frame_rx = _.read()
+        with open("tests/frames/ip6_tcp_syn_to_closed_port.tx", "rb") as _:
             frame_tx = _.read()
         self.packet_handler._phrx_ether(PacketRx(frame_rx))
         self.assertEqual(self.frame_tx[: len(frame_tx)], frame_tx)
