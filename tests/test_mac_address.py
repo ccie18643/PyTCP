@@ -31,9 +31,8 @@
 
 from dataclasses import dataclass
 
-from testslide import TestCase
-
 from pytcp.lib.mac_address import MacAddress, MacIp4AddressFormatError
+from testslide import TestCase
 
 
 class TestMacAddress(TestCase):

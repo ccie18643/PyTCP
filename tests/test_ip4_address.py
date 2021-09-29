@@ -31,8 +31,6 @@
 
 from dataclasses import dataclass
 
-from testslide import TestCase
-
 from pytcp.lib.ip4_address import (
     Ip4Address,
     Ip4AddressFormatError,
@@ -43,6 +41,7 @@ from pytcp.lib.ip4_address import (
     Ip4Network,
     Ip4NetworkFormatError,
 )
+from testslide import TestCase
 
 
 class TestIp4Address(TestCase):
