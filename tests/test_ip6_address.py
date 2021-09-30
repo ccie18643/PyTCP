@@ -164,6 +164,7 @@ class TestIp6Address(TestCase):
 
 class TestIp6Mask(TestCase):
     def test___init__(self):
+        self.assertEqual(Ip6Mask(b"\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff")._mask, 340282366920938463463374607431768211455)
         self.assertEqual(Ip6Mask("/64")._mask, 340282366920938463444927863358058659840)
         self.assertEqual(Ip6Mask(Ip6Mask("/64"))._mask, 340282366920938463444927863358058659840)
         self.assertEqual(Ip6Mask(b"\xff\xff\xff\xff\xff\xff\xff\xff\x00\x00\x00\x00\x00\x00\x00\x00")._mask, 340282366920938463444927863358058659840)

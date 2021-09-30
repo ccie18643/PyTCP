@@ -180,6 +180,7 @@ class TestIp4Address(TestCase):
 
 class TestIp4Mask(TestCase):
     def test___init__(self):
+        self.assertEqual(Ip4Mask("255.255.255.255")._mask, 4294967295)
         self.assertEqual(Ip4Mask("255.255.255.0")._mask, 4294967040)
         self.assertEqual(Ip4Mask("/24")._mask, 4294967040)
         self.assertEqual(Ip4Mask(Ip4Mask("255.255.255.0"))._mask, 4294967040)
