@@ -54,6 +54,7 @@ from lib.ip6_address import (
 )
 from lib.logger import log
 from lib.mac_address import MacAddress
+from misc.packet_stats import PacketStatsRx
 from protocols.arp.phrx import _phrx_arp
 from protocols.arp.phtx import _phtx_arp
 from protocols.arp.ps import ARP_OP_REPLY, ARP_OP_REQUEST
@@ -138,6 +139,9 @@ class PacketHandler:
         """Class constructor"""
 
         stack.packet_handler = self
+
+        # Initialize data stores for packet statistics (used mainly in usnit testing, but also available via cli)
+        self.packet_stats_rx = PacketStatsRx()
 
         # MAC and IPv6 Multicast lists hold duplicate entries by design. This is to accommodate IPv6 Solicited Node Multicast mechanism where multiple
         # IPv6 unicast addresses can be tied to the same SNM address (and the same multicast MAC). This is important when removing one of unicast addresses,

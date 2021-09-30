@@ -59,11 +59,14 @@ if TYPE_CHECKING:
 def _phrx_icmp6(self, packet_rx: PacketRx) -> None:
     """Handle inbound ICMPv6 packets"""
 
+    self.packet_stats_rx.icmp6_pre_parse += 1
+
     Icmp6Parser(packet_rx)
 
     if packet_rx.parse_failed:
         if __debug__:
             log("icmp6", f"{packet_rx.tracker} - <CRIT>{packet_rx.parse_failed}</>")
+        self.packet_stats_rx.icmp6_failed_parse += 1
         return
 
     if __debug__:
@@ -71,6 +74,7 @@ def _phrx_icmp6(self, packet_rx: PacketRx) -> None:
 
     # ICMPv6 Neighbor Solicitation packet
     if packet_rx.icmp6.type == ICMP6_NEIGHBOR_SOLICITATION:
+        self.packet_stats_rx.icmp6_neighbor_solicitation += 1
         # Check if request is for one of stack's IPv6 unicast addresses
         if packet_rx.icmp6.ns_target_address not in self.ip6_unicast:
             if __debug__:
@@ -79,6 +83,7 @@ def _phrx_icmp6(self, packet_rx: PacketRx) -> None:
                     f"{packet_rx.tracker} - Received ICMPv6 Neighbor Solicitation packet from {packet_rx.ip6.src}, "
                     + "not matching any of stack's IPv6 unicast addresses, dropping",
                 )
+            self.packet_stats_rx.icmp6_neighbor_solicitation_unknown += 1
             return
 
         if __debug__:
@@ -86,6 +91,7 @@ def _phrx_icmp6(self, packet_rx: PacketRx) -> None:
 
         # Update ICMPv6 ND cache
         if not (packet_rx.ip6.src.is_unspecified or packet_rx.ip6.src.is_multicast) and packet_rx.icmp6.nd_opt_slla:
+            self.packet_stats_rx.icmp6_neighbor_solicitation_update_cache += 1
             self.nd_cache.add_entry(packet_rx.ip6.src, packet_rx.icmp6.nd_opt_slla)
 
         # Determine if request is part of DAD request by examining its source address
@@ -107,6 +113,7 @@ def _phrx_icmp6(self, packet_rx: PacketRx) -> None:
 
     # ICMPv6 Neighbor Advertisement packet
     if packet_rx.icmp6.type == ICMP6_NEIGHBOR_ADVERTISEMENT:
+        self.packet_stats_rx.icmp6_neighbor_advertisement += 1
         if __debug__:
             log(
                 "icmp6", f"{packet_rx.tracker} - Received ICMPv6 Neighbor Advertisement packet for {packet_rx.icmp6.na_target_address} from {packet_rx.ip6.src}"
@@ -114,12 +121,14 @@ def _phrx_icmp6(self, packet_rx: PacketRx) -> None:
 
         # Run ND Duplicate Address Detection check
         if packet_rx.icmp6.na_target_address == self.ip6_unicast_candidate:
+            self.packet_stats_rx.icmp6_neighbor_advertisement_run_dad += 1
             self.icmp6_nd_dad_tlla = packet_rx.icmp6.nd_opt_tlla
             self.event_icmp6_nd_dad.release()
             return
 
         # Update ICMPv6 ND cache
         if packet_rx.icmp6.nd_opt_tlla:
+            self.packet_stats_rx.icmp6_neighbor_advertisement_update_cache += 1
             self.nd_cache.add_entry(packet_rx.icmp6.na_target_address, packet_rx.icmp6.nd_opt_tlla)
             return
 
@@ -127,12 +136,14 @@ def _phrx_icmp6(self, packet_rx: PacketRx) -> None:
 
     # ICMPv6 Router Solicitaion packet (this is not currently used by the stack)
     if packet_rx.icmp6.type == ICMP6_ROUTER_SOLICITATION:
+        self.packet_stats_rx.icmp6_router_colicitation += 1
         if __debug__:
             log("icmp6", f"{packet_rx.tracker} - Received ICMPv6 Router Solicitation packet from {packet_rx.ip6.src}")
         return
 
     # ICMPv6 Router Advertisement packet
     if packet_rx.icmp6.type == ICMP6_ROUTER_ADVERTISEMENT:
+        self.packet_stats_rx.icmp6_router_advertisement += 1
         if __debug__:
             log("icmp6", f"{packet_rx.tracker} - Received ICMPv6 Router Advertisement packet from {packet_rx.ip6.src}")
         # Make note of prefixes that can be used for address autoconfiguration
@@ -142,9 +153,9 @@ def _phrx_icmp6(self, packet_rx: PacketRx) -> None:
 
     # ICMPv6 Echo Request packet
     if packet_rx.icmp6.type == ICMP6_ECHO_REQUEST:
+        self.packet_stats_rx.icmp6_echo_request += 1
         if __debug__:
-            if __debug__:
-                log("icmp6", f"{packet_rx.tracker} - <INFO>Received ICMPv6 Echo Request packet from {packet_rx.ip6.src}, sending reply</>")
+            log("icmp6", f"{packet_rx.tracker} - <INFO>Received ICMPv6 Echo Request packet from {packet_rx.ip6.src}, sending reply</>")
 
         self._phtx_icmp6(
             ip6_src=packet_rx.ip6.dst,
@@ -160,9 +171,9 @@ def _phrx_icmp6(self, packet_rx: PacketRx) -> None:
 
     # ICMPv6 Unreachable packet
     if packet_rx.icmp6.type == ICMP6_UNREACHABLE:
+        self.packet_stats_rx.icmp6_unreachable += 1
         if __debug__:
-            if __debug__:
-                log("icmp6", f"{packet_rx.tracker} - Received ICMPv6 Unreachable packet from {packet_rx.ip6.src}, will try to match UDP socket")
+            log("icmp6", f"{packet_rx.tracker} - Received ICMPv6 Unreachable packet from {packet_rx.ip6.src}, will try to match UDP socket")
 
         # Quick and dirty way to validate received data and pull useful information from it
         # TODO - This will not work in case of IPv6 extension headers present
@@ -181,20 +192,18 @@ def _phrx_icmp6(self, packet_rx: PacketRx) -> None:
                 socket = stack.sockets.get(socket_pattern, None)
                 if socket:
                     if __debug__:
-                        if __debug__:
-                            log(
-                                "icmp6",
-                                f"{packet_rx.tracker} - <INFO>Found matching listening socket {socket} for Unreachable packet from {packet_rx.ip6.src}</>",
-                            )
+                        log(
+                            "icmp6",
+                            f"{packet_rx.tracker} - <INFO>Found matching listening socket {socket} for Unreachable packet from {packet_rx.ip6.src}</>",
+                        )
                     socket.notify_unreachable()
                     return
 
             if __debug__:
-                if __debug__:
-                    log("icmp6", f"{packet_rx.tracker} - Unreachable data doesn't match any UDP socket")
+                log("icmp6", f"{packet_rx.tracker} - Unreachable data doesn't match any UDP socket")
             return
 
         if __debug__:
-            if __debug__:
-                log("icmp6", f"{packet_rx.tracker} - Unreachable data doesn't pass basic IPv4/UDP integrity check")
+            log("icmp6", f"{packet_rx.tracker} - Unreachable data doesn't pass basic IPv4/UDP integrity check")
+
         return

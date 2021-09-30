@@ -31,6 +31,7 @@
 
 from __future__ import annotations  # Required by Python ver < 3.10
 
+import config
 import misc.stack as stack
 from lib.logger import log
 from misc.packet import PacketRx
@@ -38,7 +39,6 @@ from protocols.icmp4.ps import ICMP4_UNREACHABLE, ICMP4_UNREACHABLE__PORT
 from protocols.icmp6.ps import ICMP6_UNREACHABLE, ICMP6_UNREACHABLE__PORT
 from protocols.udp.fpp import UdpParser
 from protocols.udp.metadata import UdpMetadata
-import config
 
 
 def _phrx_udp(self, packet_rx: PacketRx) -> None:

@@ -32,21 +32,22 @@
 
 from testslide import StrictMock, TestCase
 
-import pytcp.config as config
 from pytcp.lib.ip4_address import Ip4Address, Ip4Host
 from pytcp.lib.ip6_address import Ip6Address, Ip6Host
 from pytcp.lib.mac_address import MacAddress
 from pytcp.misc.packet import PacketRx
+from pytcp.misc.packet_stats import PacketStatsRx
 from pytcp.subsystems.arp_cache import ArpCache
 from pytcp.subsystems.nd_cache import NdCache
 from pytcp.subsystems.packet_handler import PacketHandler
 from pytcp.subsystems.tx_ring import TxRing
 
-
 PACKET_HANDLER_MODULES = [
     "pytcp.subsystems.packet_handler",
     "protocols.ether.phrx",
     "protocols.ether.phtx",
+    "protocols.arp.phrx",
+    "protocols.arp.phtx",
     "protocols.ip4.phrx",
     "protocols.ip4.phtx",
     "protocols.ip6.phrx",
@@ -74,10 +75,10 @@ CONFIG_PATCHES = {
 class TestPacketHandler(TestCase):
     def setUp(self):
         super().setUp()
-        
+
         self._patch_logger()
         self._patch_config()
-        
+
         self.arp_cache_mock = StrictMock(ArpCache)
         self.nd_cache_mock = StrictMock(NdCache)
         self.tx_ring_mock = StrictMock(TxRing)
@@ -97,7 +98,7 @@ class TestPacketHandler(TestCase):
         self.frame_tx = memoryview(bytearray(2048))
 
     def _patch_config(self):
-        for module in PACKET_HANDLER_MODULES: 
+        for module in PACKET_HANDLER_MODULES:
             for variable, value in CONFIG_PATCHES.items():
                 try:
                     self.patch_attribute(f"{module}.config", variable, value)
@@ -105,12 +106,12 @@ class TestPacketHandler(TestCase):
                     continue
 
     def _patch_logger(self):
-        for module in PACKET_HANDLER_MODULES: 
+        for module in PACKET_HANDLER_MODULES:
             try:
                 self.mock_callable(module, "log").to_return_value(None)
             except ModuleNotFoundError:
                 continue
-    
+
     def test_parse_stack_ip6_address_candidate(self):
         sample = [
             ("FE80::7/64", None),  # valid link loal address [pass]
@@ -177,6 +178,17 @@ class TestPacketHandler(TestCase):
         with open("tests/frames/ip4_ping.tx", "rb") as _:
             frame_tx = _.read()
         self.packet_handler._phrx_ether(PacketRx(frame_rx))
+        self.assertEqual(
+            self.packet_handler.packet_stats_rx,
+            PacketStatsRx(
+                ether_pre_parse=1,
+                ether_unicast=1,
+                ip4_pre_parse=1,
+                ip4_unicast=1,
+                icmp4_pre_parse=1,
+                icmp4_echo_request=1,
+            ),
+        )
         self.assertEqual(self.frame_tx[: len(frame_tx)], frame_tx)
 
     def test_packet_flow__ip4_udp_to_closed_port(self):
@@ -185,6 +197,15 @@ class TestPacketHandler(TestCase):
         with open("tests/frames/ip4_udp_to_closed_port.tx", "rb") as _:
             frame_tx = _.read()
         self.packet_handler._phrx_ether(PacketRx(frame_rx))
+        self.assertEqual(
+            self.packet_handler.packet_stats_rx,
+            PacketStatsRx(
+                ether_pre_parse=1,
+                ether_unicast=1,
+                ip4_pre_parse=1,
+                ip4_unicast=1,
+            ),
+        )
         self.assertEqual(self.frame_tx[: len(frame_tx)], frame_tx)
 
     def test_packet_flow__ip4_udp_echo(self):
@@ -193,6 +214,15 @@ class TestPacketHandler(TestCase):
         with open("tests/frames/ip4_udp_echo.tx", "rb") as _:
             frame_tx = _.read()
         self.packet_handler._phrx_ether(PacketRx(frame_rx))
+        self.assertEqual(
+            self.packet_handler.packet_stats_rx,
+            PacketStatsRx(
+                ether_pre_parse=1,
+                ether_unicast=1,
+                ip4_pre_parse=1,
+                ip4_unicast=1,
+            ),
+        )
         self.assertEqual(self.frame_tx[: len(frame_tx)], frame_tx)
 
     def test_packet_flow__ip4_tcp_syn_to_closed_port(self):
@@ -201,6 +231,15 @@ class TestPacketHandler(TestCase):
         with open("tests/frames/ip4_tcp_syn_to_closed_port.tx", "rb") as _:
             frame_tx = _.read()
         self.packet_handler._phrx_ether(PacketRx(frame_rx))
+        self.assertEqual(
+            self.packet_handler.packet_stats_rx,
+            PacketStatsRx(
+                ether_pre_parse=1,
+                ether_unicast=1,
+                ip4_pre_parse=1,
+                ip4_unicast=1,
+            ),
+        )
         self.assertEqual(self.frame_tx[: len(frame_tx)], frame_tx)
 
     def test_packet_flow__ip6_ping(self):
@@ -209,6 +248,17 @@ class TestPacketHandler(TestCase):
         with open("tests/frames/ip6_ping.tx", "rb") as _:
             frame_tx = _.read()
         self.packet_handler._phrx_ether(PacketRx(frame_rx))
+        self.assertEqual(
+            self.packet_handler.packet_stats_rx,
+            PacketStatsRx(
+                ether_pre_parse=1,
+                ether_unicast=1,
+                ip6_pre_parse=1,
+                ip6_unicast=1,
+                icmp6_pre_parse=1,
+                icmp6_echo_request=1,
+            ),
+        )
         self.assertEqual(self.frame_tx[: len(frame_tx)], frame_tx)
 
     def test_packet_flow__ip6_udp_to_closed_port(self):
@@ -217,14 +267,32 @@ class TestPacketHandler(TestCase):
         with open("tests/frames/ip6_udp_to_closed_port.tx", "rb") as _:
             frame_tx = _.read()
         self.packet_handler._phrx_ether(PacketRx(frame_rx))
+        self.assertEqual(
+            self.packet_handler.packet_stats_rx,
+            PacketStatsRx(
+                ether_pre_parse=1,
+                ether_unicast=1,
+                ip6_pre_parse=1,
+                ip6_unicast=1,
+            ),
+        )
         self.assertEqual(self.frame_tx[: len(frame_tx)], frame_tx)
-    
+
     def test_packet_flow__ip6_udp_echo(self):
         with open("tests/frames/ip6_udp_echo.rx", "rb") as _:
             frame_rx = _.read()
         with open("tests/frames/ip6_udp_echo.tx", "rb") as _:
             frame_tx = _.read()
         self.packet_handler._phrx_ether(PacketRx(frame_rx))
+        self.assertEqual(
+            self.packet_handler.packet_stats_rx,
+            PacketStatsRx(
+                ether_pre_parse=1,
+                ether_unicast=1,
+                ip6_pre_parse=1,
+                ip6_unicast=1,
+            ),
+        )
         self.assertEqual(self.frame_tx[: len(frame_tx)], frame_tx)
 
     def test_packet_flow__ip6_tcp_syn_to_closed_port(self):
@@ -233,4 +301,32 @@ class TestPacketHandler(TestCase):
         with open("tests/frames/ip6_tcp_syn_to_closed_port.tx", "rb") as _:
             frame_tx = _.read()
         self.packet_handler._phrx_ether(PacketRx(frame_rx))
+        self.assertEqual(
+            self.packet_handler.packet_stats_rx,
+            PacketStatsRx(
+                ether_pre_parse=1,
+                ether_unicast=1,
+                ip6_pre_parse=1,
+                ip6_unicast=1,
+            ),
+        )
+        self.assertEqual(self.frame_tx[: len(frame_tx)], frame_tx)
+
+    def test_packet_flow__arp_request(self):
+        with open("tests/frames/arp_request.rx", "rb") as _:
+            frame_rx = _.read()
+        with open("tests/frames/arp_request.tx", "rb") as _:
+            frame_tx = _.read()
+        self.mock_callable(self.arp_cache_mock, "add_entry").to_return_value(None).and_assert_called_once()
+        self.packet_handler._phrx_ether(PacketRx(frame_rx))
+        self.assertEqual(
+            self.packet_handler.packet_stats_rx,
+            PacketStatsRx(
+                ether_pre_parse=1,
+                ether_broadcast=1,
+                arp_pre_parse=1,
+                arp_op_request=1,
+                arp_op_request_update_cache=1,
+            ),
+        )
         self.assertEqual(self.frame_tx[: len(frame_tx)], frame_tx)

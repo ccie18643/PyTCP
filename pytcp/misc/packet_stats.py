@@ -25,64 +25,66 @@
 
 
 #
-# protocols/ip6/phrx.py - packet handler for inbound IPv6 packets
+# packet_stats.py - module contains class used to store packet handler statistics
 #
-
 
 from __future__ import annotations  # Required by Python ver < 3.10
 
-from lib.logger import log
-from misc.packet import PacketRx
-from protocols.ip6.fpp import Ip6Parser
-from protocols.ip6.ps import (
-    IP6_NEXT_HEADER_EXT_FRAG,
-    IP6_NEXT_HEADER_ICMP6,
-    IP6_NEXT_HEADER_TCP,
-    IP6_NEXT_HEADER_UDP,
-)
+from dataclasses import dataclass
 
 
-def _phrx_ip6(self, packet_rx: PacketRx) -> None:
-    """Handle inbound IPv6 packets"""
+@dataclass
+class PacketStatsRx:
+    """Data store for packet handler statistics"""
 
-    self.packet_stats_rx.ip6_pre_parse += 1
+    ether_pre_parse: int = 0
+    ether_failed_parse: int = 0
+    ether_unknown_dst: int = 0
+    ether_unicast: int = 0
+    ether_multicast: int = 0
+    ether_broadcast: int = 0
 
-    Ip6Parser(packet_rx)
+    arp_pre_parse: int = 0
+    arp_failed_parse: int = 0
+    arp_op_request: int = 0
+    arp_op_request_ip_conflict: int = 0
+    arp_op_request_update_cache: int = 0
+    arp_op_reply: int = 0
+    arp_op_reply_ip_conflict: int = 0
+    arp_op_reply_update_cache: int = 0
+    arp_op_reply_update_cache_gratuitous: int = 0
 
-    if packet_rx.parse_failed:
-        self.packet_stats_rx.ip6_failed_parse += 1
-        if __debug__:
-            log("ip6", f"{packet_rx.tracker} - <rb>{packet_rx.parse_failed}</>")
-        return
+    ip4_pre_parse: int = 0
+    ip4_failed_parse: int = 0
+    ip4_unknown_dst: int = 0
+    ip4_unicast: int = 0
+    ip4_multicast: int = 0
+    ip4_broadcast: int = 0
+    ip4_frag: int = 0
 
-    if __debug__:
-        log("ip6", f"{packet_rx.tracker} - {packet_rx.ip6}")
+    ip6_pre_parse: int = 0
+    ip6_failed_parse: int = 0
+    ip6_unknown_dst: int = 0
+    ip6_unicast: int = 0
+    ip6_multicast: int = 0
 
-    # Check if received packet has been sent to us directly or by unicast or multicast
-    if packet_rx.ip6.dst not in {*self.ip6_unicast, *self.ip6_multicast}:
-        self.packet_stats_rx.ip6_unknown_dst += 1
-        if __debug__:
-            log("ip6", f"{packet_rx.tracker} - IP packet not destined for this stack, dropping")
-        return
+    icmp4_pre_parse: int = 0
+    icmp4_failed_parse: int = 0
+    icmp4_echo_request: int = 0
+    icmp4_unreachable: int = 0
 
-    if packet_rx.ip6.dst in self.ip6_unicast:
-        self.packet_stats_rx.ip6_unicast += 1
+    icmp6_pre_parse: int = 0
+    icmp6_failed_parse: int = 0
+    icmp6_neighbor_solicitation: int = 0
+    icmp6_neighbor_solicitation_unknown: int = 0
+    icmp6_neighbor_solicitation_update_cache: int = 0
+    icmp6_neighbor_advertisement: int = 0
+    icmp6_neighbor_advertisement_run_dad: int = 0
+    icmp6_neighbor_advertisement_update_cache: int = 0
+    icmp6_router_colicitation: int = 0
+    icmp6_router_advertisement: int = 0
+    icmp6_echo_request: int = 0
+    icmp6_unreachable: int = 0
 
-    if packet_rx.ip6.dst in self.ip6_multicast:
-        self.packet_stats_rx.ip6_multicast += 1
-
-    if packet_rx.ip6.next == IP6_NEXT_HEADER_EXT_FRAG:
-        self._phrx_ip6_ext_frag(packet_rx)
-        return
-
-    if packet_rx.ip6.next == IP6_NEXT_HEADER_ICMP6:
-        self._phrx_icmp6(packet_rx)
-        return
-
-    if packet_rx.ip6.next == IP6_NEXT_HEADER_UDP:
-        self._phrx_udp(packet_rx)
-        return
-
-    if packet_rx.ip6.next == IP6_NEXT_HEADER_TCP:
-        self._phrx_tcp(packet_rx)
-        return
+    def __eq__(self, other):
+        return repr(self) == repr(other)

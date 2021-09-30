@@ -50,11 +50,14 @@ if TYPE_CHECKING:
 def _phrx_icmp4(self, packet_rx: PacketRx) -> None:
     """Handle inbound ICMPv4 packets"""
 
+    self.packet_stats_rx.icmp4_pre_parse += 1
+
     Icmp4Parser(packet_rx)
 
     if packet_rx.parse_failed:
         if __debug__:
             log("icmp4", f"{packet_rx.tracker} - <CRIT>{packet_rx.parse_failed}</>")
+        self.packet_stats_rx.icmp4_failed_parse += 1
         return
 
     if __debug__:
@@ -64,6 +67,7 @@ def _phrx_icmp4(self, packet_rx: PacketRx) -> None:
     if packet_rx.icmp4.type == ICMP4_ECHO_REQUEST:
         if __debug__:
             log("icmp4", f"{packet_rx.tracker} - <INFO>Received ICMPv4 Echo Request packet from {packet_rx.ip4.src}, sending reply</>")
+        self.packet_stats_rx.icmp4_echo_request += 1
 
         self._phtx_icmp4(
             ip4_src=packet_rx.ip4.dst,
@@ -80,6 +84,7 @@ def _phrx_icmp4(self, packet_rx: PacketRx) -> None:
     if packet_rx.icmp4.type == ICMP4_UNREACHABLE:
         if __debug__:
             log("icmp4", f"{packet_rx.tracker} - Received ICMPv4 Unreachable packet from {packet_rx.ip4.src}, will try to match UDP socket")
+        self.packet_stats_rx.icmp4_unreachable += 1
 
         # Quick and dirty way to validate received data and pull useful information from it
         frame = packet_rx.icmp4.un_data
