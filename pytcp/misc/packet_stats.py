@@ -86,5 +86,19 @@ class PacketStatsRx:
     icmp6_echo_request: int = 0
     icmp6_unreachable: int = 0
 
+    udp_pre_parse: int = 0
+    udp_failed_parse: int = 0
+    udp_socket_match: int = 0
+    udp_ip_source_unspecified: int = 0
+    udp_echo_native: int = 0
+    udp_respond_icmp4_unreachable: int = 0
+    udp_respond_icmp6_unreachable: int = 0
+
+    tcp_pre_parse: int = 0
+    tcp_failed_parse: int = 0
+    tcp_socket_match_active: int = 0
+    tcp_socket_match_listening: int = 0
+    tcp_respond_no_socket_match_rst: int = 0
+
     def __eq__(self, other):
         return repr(self) == repr(other)

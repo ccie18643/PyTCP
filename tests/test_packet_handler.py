@@ -204,6 +204,8 @@ class TestPacketHandler(TestCase):
                 ether_unicast=1,
                 ip4_pre_parse=1,
                 ip4_unicast=1,
+                udp_pre_parse=1,
+                udp_respond_icmp4_unreachable=1,
             ),
         )
         self.assertEqual(self.frame_tx[: len(frame_tx)], frame_tx)
@@ -221,6 +223,8 @@ class TestPacketHandler(TestCase):
                 ether_unicast=1,
                 ip4_pre_parse=1,
                 ip4_unicast=1,
+                udp_pre_parse=1,
+                udp_echo_native=1,
             ),
         )
         self.assertEqual(self.frame_tx[: len(frame_tx)], frame_tx)
@@ -238,6 +242,8 @@ class TestPacketHandler(TestCase):
                 ether_unicast=1,
                 ip4_pre_parse=1,
                 ip4_unicast=1,
+                tcp_pre_parse=1,
+                tcp_respond_no_socket_match_rst=1,
             ),
         )
         self.assertEqual(self.frame_tx[: len(frame_tx)], frame_tx)
@@ -274,6 +280,8 @@ class TestPacketHandler(TestCase):
                 ether_unicast=1,
                 ip6_pre_parse=1,
                 ip6_unicast=1,
+                udp_pre_parse=1,
+                udp_respond_icmp6_unreachable=1,
             ),
         )
         self.assertEqual(self.frame_tx[: len(frame_tx)], frame_tx)
@@ -291,6 +299,8 @@ class TestPacketHandler(TestCase):
                 ether_unicast=1,
                 ip6_pre_parse=1,
                 ip6_unicast=1,
+                udp_pre_parse=1,
+                udp_echo_native=1,
             ),
         )
         self.assertEqual(self.frame_tx[: len(frame_tx)], frame_tx)
@@ -308,6 +318,8 @@ class TestPacketHandler(TestCase):
                 ether_unicast=1,
                 ip6_pre_parse=1,
                 ip6_unicast=1,
+                tcp_pre_parse=1,
+                tcp_respond_no_socket_match_rst=1,
             ),
         )
         self.assertEqual(self.frame_tx[: len(frame_tx)], frame_tx)
