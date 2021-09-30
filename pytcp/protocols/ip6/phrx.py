@@ -45,12 +45,12 @@ from protocols.ip6.ps import (
 def _phrx_ip6(self, packet_rx: PacketRx) -> None:
     """Handle inbound IPv6 packets"""
 
-    self.packet_stats_rx.ip6_pre_parse += 1
+    self.packet_stats_rx.ip6__pre_parse += 1
 
     Ip6Parser(packet_rx)
 
     if packet_rx.parse_failed:
-        self.packet_stats_rx.ip6_failed_parse += 1
+        self.packet_stats_rx.ip6__failed_parse += 1
         if __debug__:
             log("ip6", f"{packet_rx.tracker} - <rb>{packet_rx.parse_failed}</>")
         return
@@ -60,16 +60,16 @@ def _phrx_ip6(self, packet_rx: PacketRx) -> None:
 
     # Check if received packet has been sent to us directly or by unicast or multicast
     if packet_rx.ip6.dst not in {*self.ip6_unicast, *self.ip6_multicast}:
-        self.packet_stats_rx.ip6_unknown_dst += 1
+        self.packet_stats_rx.ip6__dst_unknown += 1
         if __debug__:
             log("ip6", f"{packet_rx.tracker} - IP packet not destined for this stack, dropping")
         return
 
     if packet_rx.ip6.dst in self.ip6_unicast:
-        self.packet_stats_rx.ip6_unicast += 1
+        self.packet_stats_rx.ip6__dst_unicast += 1
 
     if packet_rx.ip6.dst in self.ip6_multicast:
-        self.packet_stats_rx.ip6_multicast += 1
+        self.packet_stats_rx.ip6__dst_multicast += 1
 
     if packet_rx.ip6.next == IP6_NEXT_HEADER_EXT_FRAG:
         self._phrx_ip6_ext_frag(packet_rx)

@@ -44,12 +44,12 @@ from protocols.udp.metadata import UdpMetadata
 def _phrx_udp(self, packet_rx: PacketRx) -> None:
     """Handle inbound UDP packets"""
 
-    self.packet_stats_rx.udp_pre_parse += 1
+    self.packet_stats_rx.udp__pre_parse += 1
 
     UdpParser(packet_rx)
 
     if packet_rx.parse_failed:
-        self.packet_stats_rx.udp_failed_parse += 1
+        self.packet_stats_rx.udp__failed_parse += 1
         if __debug__:
             log("udp", f"{self.tracker} - <CRIT>{packet_rx.parse_failed}</>")
         return
@@ -72,7 +72,7 @@ def _phrx_udp(self, packet_rx: PacketRx) -> None:
     for socket_pattern in packet_rx_md.socket_patterns:
         socket = stack.sockets.get(socket_pattern, None)
         if socket:
-            self.packet_stats_rx.udp_socket_match += 1
+            self.packet_stats_rx.udp_socket__match += 1
             if __debug__:
                 log("udp", f"{packet_rx_md.tracker} - <INFO>Found matching listening socket [{socket}]</>")
             socket.process_udp_packet(packet_rx_md)
@@ -80,7 +80,7 @@ def _phrx_udp(self, packet_rx: PacketRx) -> None:
 
     # Silently drop packet if it's source address is unspecified
     if packet_rx.ip.src.is_unspecified:
-        self.packet_stats_rx.udp_ip_source_unspecified += 1
+        self.packet_stats_rx.udp__ip_source_unspecified += 1
         if __debug__:
             log(
                 "udp",
@@ -91,7 +91,7 @@ def _phrx_udp(self, packet_rx: PacketRx) -> None:
 
     # Handle the UDP Echo operation in case its enabled (used for packet flow unit testing only)
     if config.UDP_ECHO_NATIVE_DISABLE is False and packet_rx.udp.dport == 7:
-        self.packet_stats_rx.udp_echo_native += 1
+        self.packet_stats_rx.udp__echo_native += 1
         if __debug__:
             log("udp", f"{packet_rx_md.tracker} - <INFO>Performing native UDP Echo operation</>")
 
@@ -112,7 +112,7 @@ def _phrx_udp(self, packet_rx: PacketRx) -> None:
         )
 
     if packet_rx.ip.ver == 6:
-        self.packet_stats_rx.udp_respond_icmp6_unreachable += 1
+        self.packet_stats_rx.udp__no_socket_match__respond_icmp6_unreachable += 1
         self._phtx_icmp6(
             ip6_src=packet_rx.ip.dst,
             ip6_dst=packet_rx.ip.src,
@@ -123,7 +123,7 @@ def _phrx_udp(self, packet_rx: PacketRx) -> None:
         )
 
     if packet_rx.ip.ver == 4:
-        self.packet_stats_rx.udp_respond_icmp4_unreachable += 1
+        self.packet_stats_rx.udp__no_socket_match__respond_icmp4_unreachable += 1
         self._phtx_icmp4(
             ip4_src=packet_rx.ip.dst,
             ip4_dst=packet_rx.ip.src,

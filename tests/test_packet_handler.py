@@ -181,12 +181,12 @@ class TestPacketHandler(TestCase):
         self.assertEqual(
             self.packet_handler.packet_stats_rx,
             PacketStatsRx(
-                ether_pre_parse=1,
-                ether_unicast=1,
-                ip4_pre_parse=1,
-                ip4_unicast=1,
-                icmp4_pre_parse=1,
-                icmp4_echo_request=1,
+                ether__pre_parse=1,
+                ether__dst_unicast=1,
+                ip4__pre_parse=1,
+                ip4__dst_unicast=1,
+                icmp4__pre_parse=1,
+                icmp4__echo_request=1,
             ),
         )
         self.assertEqual(self.frame_tx[: len(frame_tx)], frame_tx)
@@ -200,12 +200,12 @@ class TestPacketHandler(TestCase):
         self.assertEqual(
             self.packet_handler.packet_stats_rx,
             PacketStatsRx(
-                ether_pre_parse=1,
-                ether_unicast=1,
-                ip4_pre_parse=1,
-                ip4_unicast=1,
-                udp_pre_parse=1,
-                udp_respond_icmp4_unreachable=1,
+                ether__pre_parse=1,
+                ether__dst_unicast=1,
+                ip4__pre_parse=1,
+                ip4__dst_unicast=1,
+                udp__pre_parse=1,
+                udp__no_socket_match__respond_icmp4_unreachable=1,
             ),
         )
         self.assertEqual(self.frame_tx[: len(frame_tx)], frame_tx)
@@ -219,12 +219,12 @@ class TestPacketHandler(TestCase):
         self.assertEqual(
             self.packet_handler.packet_stats_rx,
             PacketStatsRx(
-                ether_pre_parse=1,
-                ether_unicast=1,
-                ip4_pre_parse=1,
-                ip4_unicast=1,
-                udp_pre_parse=1,
-                udp_echo_native=1,
+                ether__pre_parse=1,
+                ether__dst_unicast=1,
+                ip4__pre_parse=1,
+                ip4__dst_unicast=1,
+                udp__pre_parse=1,
+                udp__echo_native=1,
             ),
         )
         self.assertEqual(self.frame_tx[: len(frame_tx)], frame_tx)
@@ -238,12 +238,12 @@ class TestPacketHandler(TestCase):
         self.assertEqual(
             self.packet_handler.packet_stats_rx,
             PacketStatsRx(
-                ether_pre_parse=1,
-                ether_unicast=1,
-                ip4_pre_parse=1,
-                ip4_unicast=1,
-                tcp_pre_parse=1,
-                tcp_respond_no_socket_match_rst=1,
+                ether__pre_parse=1,
+                ether__dst_unicast=1,
+                ip4__pre_parse=1,
+                ip4__dst_unicast=1,
+                tcp__pre_parse=1,
+                tcp__no_socket_match__respond_rst=1,
             ),
         )
         self.assertEqual(self.frame_tx[: len(frame_tx)], frame_tx)
@@ -257,12 +257,12 @@ class TestPacketHandler(TestCase):
         self.assertEqual(
             self.packet_handler.packet_stats_rx,
             PacketStatsRx(
-                ether_pre_parse=1,
-                ether_unicast=1,
-                ip6_pre_parse=1,
-                ip6_unicast=1,
-                icmp6_pre_parse=1,
-                icmp6_echo_request=1,
+                ether__pre_parse=1,
+                ether__dst_unicast=1,
+                ip6__pre_parse=1,
+                ip6__dst_unicast=1,
+                icmp6__pre_parse=1,
+                icmp6__echo_request=1,
             ),
         )
         self.assertEqual(self.frame_tx[: len(frame_tx)], frame_tx)
@@ -276,12 +276,12 @@ class TestPacketHandler(TestCase):
         self.assertEqual(
             self.packet_handler.packet_stats_rx,
             PacketStatsRx(
-                ether_pre_parse=1,
-                ether_unicast=1,
-                ip6_pre_parse=1,
-                ip6_unicast=1,
-                udp_pre_parse=1,
-                udp_respond_icmp6_unreachable=1,
+                ether__pre_parse=1,
+                ether__dst_unicast=1,
+                ip6__pre_parse=1,
+                ip6__dst_unicast=1,
+                udp__pre_parse=1,
+                udp__no_socket_match__respond_icmp6_unreachable=1,
             ),
         )
         self.assertEqual(self.frame_tx[: len(frame_tx)], frame_tx)
@@ -295,12 +295,12 @@ class TestPacketHandler(TestCase):
         self.assertEqual(
             self.packet_handler.packet_stats_rx,
             PacketStatsRx(
-                ether_pre_parse=1,
-                ether_unicast=1,
-                ip6_pre_parse=1,
-                ip6_unicast=1,
-                udp_pre_parse=1,
-                udp_echo_native=1,
+                ether__pre_parse=1,
+                ether__dst_unicast=1,
+                ip6__pre_parse=1,
+                ip6__dst_unicast=1,
+                udp__pre_parse=1,
+                udp__echo_native=1,
             ),
         )
         self.assertEqual(self.frame_tx[: len(frame_tx)], frame_tx)
@@ -314,12 +314,12 @@ class TestPacketHandler(TestCase):
         self.assertEqual(
             self.packet_handler.packet_stats_rx,
             PacketStatsRx(
-                ether_pre_parse=1,
-                ether_unicast=1,
-                ip6_pre_parse=1,
-                ip6_unicast=1,
-                tcp_pre_parse=1,
-                tcp_respond_no_socket_match_rst=1,
+                ether__pre_parse=1,
+                ether__dst_unicast=1,
+                ip6__pre_parse=1,
+                ip6__dst_unicast=1,
+                tcp__pre_parse=1,
+                tcp__no_socket_match__respond_rst=1,
             ),
         )
         self.assertEqual(self.frame_tx[: len(frame_tx)], frame_tx)
@@ -334,11 +334,11 @@ class TestPacketHandler(TestCase):
         self.assertEqual(
             self.packet_handler.packet_stats_rx,
             PacketStatsRx(
-                ether_pre_parse=1,
-                ether_broadcast=1,
-                arp_pre_parse=1,
-                arp_op_request=1,
-                arp_op_request_update_cache=1,
+                ether__pre_parse=1,
+                ether__dst_broadcast=1,
+                arp__pre_parse=1,
+                arp__op_request=1,
+                arp__op_request__update_cache=1,
             ),
         )
         self.assertEqual(self.frame_tx[: len(frame_tx)], frame_tx)

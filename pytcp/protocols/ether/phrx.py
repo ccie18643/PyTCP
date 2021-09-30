@@ -46,12 +46,12 @@ from lib.logger import log
 def _phrx_ether(self, packet_rx: PacketRx) -> None:
     """Handle inbound Ethernet packets"""
 
-    self.packet_stats_rx.ether_pre_parse += 1
+    self.packet_stats_rx.ether__pre_parse += 1
 
     EtherParser(packet_rx)
 
     if packet_rx.parse_failed:
-        self.packet_stats_rx.ether_failed_parse += 1
+        self.packet_stats_rx.ether__failed_parse += 1
         if __debug__:
             log("ether", f"{packet_rx.tracker} - <CRIT>{packet_rx.parse_failed}</>")
         return
@@ -61,19 +61,19 @@ def _phrx_ether(self, packet_rx: PacketRx) -> None:
 
     # Check if received packet matches any of stack MAC addresses
     if packet_rx.ether.dst not in {self.mac_unicast, *self.mac_multicast, self.mac_broadcast}:
-        self.packet_stats_rx.ether_unknown_dst += 1
+        self.packet_stats_rx.ether__dst_unknown__drop += 1
         if __debug__:
             log("ehter", f"{packet_rx.tracker} - Ethernet packet not destined for this stack, dropping")
         return
 
     if packet_rx.ether.dst == self.mac_unicast:
-        self.packet_stats_rx.ether_unicast += 1
+        self.packet_stats_rx.ether__dst_unicast += 1
 
     if packet_rx.ether.dst in self.mac_multicast:
-        self.packet_stats_rx.ether_multicast += 1
+        self.packet_stats_rx.ether__dst_multicast += 1
 
     if packet_rx.ether.dst == self.mac_broadcast:
-        self.packet_stats_rx.ether_broadcast += 1
+        self.packet_stats_rx.ether__dst_broadcast += 1
 
     if packet_rx.ether.type == ETHER_TYPE_ARP and config.IP4_SUPPORT:
         self._phrx_arp(packet_rx)

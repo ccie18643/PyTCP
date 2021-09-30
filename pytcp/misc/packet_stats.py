@@ -35,70 +35,96 @@ from dataclasses import dataclass
 
 @dataclass
 class PacketStatsRx:
-    """Data store for packet handler statistics"""
+    """Data store for rx packet handler statistics"""
 
-    ether_pre_parse: int = 0
-    ether_failed_parse: int = 0
-    ether_unknown_dst: int = 0
-    ether_unicast: int = 0
-    ether_multicast: int = 0
-    ether_broadcast: int = 0
+    ether__pre_parse: int = 0
+    ether__failed_parse: int = 0
+    ether__dst_unknown: int = 0
+    ether__dst_unicast: int = 0
+    ether__dst_multicast: int = 0
+    ether__dst_broadcast: int = 0
 
-    arp_pre_parse: int = 0
-    arp_failed_parse: int = 0
-    arp_op_request: int = 0
-    arp_op_request_ip_conflict: int = 0
-    arp_op_request_update_cache: int = 0
-    arp_op_reply: int = 0
-    arp_op_reply_ip_conflict: int = 0
-    arp_op_reply_update_cache: int = 0
-    arp_op_reply_update_cache_gratuitous: int = 0
+    arp__pre_parse: int = 0
+    arp__failed_parse: int = 0
+    arp__op_request: int = 0
+    arp__op_request__ip_conflict: int = 0
+    arp__op_request__update_cache: int = 0
+    arp__op_reply: int = 0
+    arp__op_reply__ip_conflict: int = 0
+    arp__op_reply__update_cache: int = 0
+    arp__op_reply__update_cache_gratuitous: int = 0
 
-    ip4_pre_parse: int = 0
-    ip4_failed_parse: int = 0
-    ip4_unknown_dst: int = 0
-    ip4_unicast: int = 0
-    ip4_multicast: int = 0
-    ip4_broadcast: int = 0
-    ip4_frag: int = 0
+    ip4__pre_parse: int = 0
+    ip4__failed_parse: int = 0
+    ip4__dst_unknown: int = 0
+    ip4__dst_unicast: int = 0
+    ip4__dst_multicast: int = 0
+    ip4__dst_broadcast: int = 0
+    ip4__frag: int = 0
 
-    ip6_pre_parse: int = 0
-    ip6_failed_parse: int = 0
-    ip6_unknown_dst: int = 0
-    ip6_unicast: int = 0
-    ip6_multicast: int = 0
+    ip6__pre_parse: int = 0
+    ip6__failed_parse: int = 0
+    ip6__dst_unknown: int = 0
+    ip6__dst_unicast: int = 0
+    ip6__dst_multicast: int = 0
 
-    icmp4_pre_parse: int = 0
-    icmp4_failed_parse: int = 0
-    icmp4_echo_request: int = 0
-    icmp4_unreachable: int = 0
+    icmp4__pre_parse: int = 0
+    icmp4__failed_parse: int = 0
+    icmp4__echo_request: int = 0
+    icmp4__unreachable: int = 0
 
-    icmp6_pre_parse: int = 0
-    icmp6_failed_parse: int = 0
-    icmp6_neighbor_solicitation: int = 0
-    icmp6_neighbor_solicitation_unknown: int = 0
-    icmp6_neighbor_solicitation_update_cache: int = 0
-    icmp6_neighbor_advertisement: int = 0
-    icmp6_neighbor_advertisement_run_dad: int = 0
-    icmp6_neighbor_advertisement_update_cache: int = 0
-    icmp6_router_colicitation: int = 0
-    icmp6_router_advertisement: int = 0
-    icmp6_echo_request: int = 0
-    icmp6_unreachable: int = 0
+    icmp6__pre_parse: int = 0
+    icmp6__failed_parse: int = 0
+    icmp6__neighbor_solicitation: int = 0
+    icmp6__neighbor_solicitation__unknown: int = 0
+    icmp6__neighbor_solicitation__update_cache: int = 0
+    icmp6__neighbor_advertisement: int = 0
+    icmp6__neighbor_advertisement__run_dad: int = 0
+    icmp6__neighbor_advertisement__update_cache: int = 0
+    icmp6__router_colicitation: int = 0
+    icmp6__router_advertisement: int = 0
+    icmp6__echo_request: int = 0
+    icmp6__unreachable: int = 0
 
-    udp_pre_parse: int = 0
-    udp_failed_parse: int = 0
-    udp_socket_match: int = 0
-    udp_ip_source_unspecified: int = 0
-    udp_echo_native: int = 0
-    udp_respond_icmp4_unreachable: int = 0
-    udp_respond_icmp6_unreachable: int = 0
+    udp__pre_parse: int = 0
+    udp__failed_parse: int = 0
+    udp__socket_match: int = 0
+    udp__ip_source_unspecified: int = 0
+    udp__echo_native: int = 0
+    udp__no_socket_match__respond_icmp4_unreachable: int = 0
+    udp__no_socket_match__respond_icmp6_unreachable: int = 0
 
-    tcp_pre_parse: int = 0
-    tcp_failed_parse: int = 0
-    tcp_socket_match_active: int = 0
-    tcp_socket_match_listening: int = 0
-    tcp_respond_no_socket_match_rst: int = 0
+    tcp__pre_parse: int = 0
+    tcp__failed_parse: int = 0
+    tcp__socket_match__active: int = 0
+    tcp__socket_match__listening: int = 0
+    tcp__no_socket_match__respond_rst: int = 0
+
+    def __eq__(self, other):
+        return repr(self) == repr(other)
+
+
+@dataclass
+class PacketStatsTx:
+    """Data store for tx packet handler statistics"""
+
+    ether__pre_assemble: int = 0
+    ether__src_unspec__fill: int = 0
+    ether__dst_valid__send: int = 0
+    ether__dst_unspec: int = 0
+    ether__dst_unspec__ip6_lookup: int = 0
+    ether__dst_unspec__ip6_lookup__multicast__send: int = 0
+    ether__dst_unspec__ip6_lookup__ext_net__no_gw__drop: int = 0
+    ether__dst_unspec__ip6_lookup__ext_net__gw_nd_cache_hit__send: int = 0
+    ether__dst_unspec__ip6_lookup__ext_net__gw_nd_cache_miss__drop: int = 0
+    ether__dst_unspec__ip6_lookup__loc_net__nd_cache_hit__send: int = 0
+    ether__dst_unspec__ip4_lookup: int = 0
+    ether__dst_unspec__ip4_lookup__limited_broadcast__send: int = 0
+    ether__dst_unspec__ip4_lookup__network_broadcast__send: int = 0
+    ether__dst_unspec__ip4_lookup__ext_net__no_gw__drop: int = 0
+    ether__dst_unspec__ip4_lookup__ext_net__gw_nd_cache_hit__send: int = 0
+    ether__dst_unspec__ip4_lookup__loc_net__nd_cache_hit__send: int = 0
+    ether__dst_unspec__drop: int = 0
 
     def __eq__(self, other):
         return repr(self) == repr(other)

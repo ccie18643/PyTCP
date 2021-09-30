@@ -106,12 +106,12 @@ def _defragment_ip4_packet(self, packet_rx: PacketRx) -> Optional[PacketRx]:
 def _phrx_ip4(self, packet_rx: PacketRx) -> None:
     """Handle inbound IPv4 packets"""
 
-    self.packet_stats_rx.ip4_pre_parse += 1
+    self.packet_stats_rx.ip4__pre_parse += 1
 
     Ip4Parser(packet_rx)
 
     if packet_rx.parse_failed:
-        self.packet_stats_rx.ip4_failed_parse += 1
+        self.packet_stats_rx.ip4__failed_parse += 1
         if __debug__:
             log("ip4", f"{packet_rx.tracker} - <CRIT>{packet_rx.parse_failed}</>")
         return
@@ -121,23 +121,23 @@ def _phrx_ip4(self, packet_rx: PacketRx) -> None:
 
     # Check if received packet has been sent to us directly or by unicast/broadcast, allow any destination if no unicast address is configur (for DHCP client)
     if self.ip4_unicast and packet_rx.ip4.dst not in {*self.ip4_unicast, *self.ip4_multicast, *self.ip4_broadcast}:
-        self.packet_stats_rx.ip4_unknown_dst += 1
+        self.packet_stats_rx.ip4__dst_unknown__drop += 1
         if __debug__:
             log("ip4", f"{packet_rx.tracker} - IP packet not destined for this stack, dropping")
         return
 
     if packet_rx.ip4.dst in self.ip4_unicast:
-        self.packet_stats_rx.ip4_unicast += 1
+        self.packet_stats_rx.ip4__dst_unicast += 1
 
     if packet_rx.ip4.dst in self.ip4_multicast:
-        self.packet_stats_rx.ip4_multicast += 1
+        self.packet_stats_rx.ip4__dst_multicast += 1
 
     if packet_rx.ip4.dst in self.ip4_broadcast:
-        self.packet_stats_rx.ip4_broadcast += 1
+        self.packet_stats_rx.ip4_dst_broadcast += 1
 
     # Check if packet is a fragment and if so process it accordingly
     if packet_rx.ip4.offset != 0 or packet_rx.ip4.flag_mf:
-        self.packet_stats_rx.ip4_frag += 1
+        self.packet_stats_rx.ip4__frag += 1
         if not (packet_rx := self._defragment_ip4_packet(packet_rx)):
             return
 
