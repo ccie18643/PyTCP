@@ -38,7 +38,6 @@ from pytcp.subsystems.packet_handler import PacketHandler
 
 
 class TestPacketHandler(TestCase):
-    
     def setUp(self):
         super().setUp()
         self.mock_callable("pytcp.subsystems.packet_handler", "log").to_return_value(None)
@@ -103,4 +102,3 @@ class TestPacketHandler(TestCase):
         expected = [Ip4Address("192.168.9.1"), Ip4Address("192.168.9.1"), None, Ip4Address("172.16.17.1"), Ip4Address("10.10.10.1")]
         result = [ip4_host.gateway for ip4_host in result]
         self.assertEqual(result, expected)
-

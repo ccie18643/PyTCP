@@ -63,7 +63,7 @@ PACKET_HANDLER_MODULES = [
 ]
 
 
-# Ensure critical configuration settings are set properly for the testing regardless of actuall configuration
+# Ensure critical configuration settings are set properly for the testing regardless of actual configuration
 CONFIG_PATCHES = {
     "LOG_CHANEL": set(),
     "IP6_SUPPORT": True,
@@ -75,7 +75,7 @@ CONFIG_PATCHES = {
 }
 
 
-# Addresses bellow match the test packets and should not be changed
+# Addresses below match the test packets and should not be changed
 STACK_MAC_ADDRESS = MacAddress("02:00:00:77:77:77")
 STACK_IP4_HOST = Ip4Host("192.168.9.7/24")
 STACK_IP6_HOST = Ip6Host("2603:9000:e307:9f09:0:ff:fe77:7777/64")
@@ -317,7 +317,7 @@ class TestPacketHandler(TestCase):
             self.packet_handler.packet_stats_tx,
             PacketStatsTx(),
         )
-    
+
     def test_packet_flow__ip6_ping(self):
         """Receive ICMPv6 echo-request packet, respond with echo-reply"""
 
@@ -479,7 +479,7 @@ class TestPacketHandler(TestCase):
             self.packet_handler.packet_stats_tx,
             PacketStatsTx(),
         )
-    
+
     def test_packet_flow__arp_request(self):
         """Receive ARP Request packet for stack IPv4 address, respond with ARP Reply"""
 

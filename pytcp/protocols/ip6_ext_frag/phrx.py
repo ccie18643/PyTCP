@@ -94,9 +94,12 @@ def _defragment_ip6_packet(self, packet_rx: PacketRx) -> Optional[PacketRx]:
 def _phrx_ip6_ext_frag(self, packet_rx: PacketRx) -> None:
     """Handle inbound IPv6 fragment extension header"""
 
+    self.packet_stats_rx.ip6_ext_frag__pre_parse += 1
+
     Ip6ExtFragParser(packet_rx)
 
     if packet_rx.parse_failed:
+        self.packet_stats_rx.ip6_ext_frag__failed_parse += 1
         if __debug__:
             log("ip6", f"{packet_rx.tracker} - <CRIT>{packet_rx.parse_failed}</>")
         return
@@ -105,4 +108,5 @@ def _phrx_ip6_ext_frag(self, packet_rx: PacketRx) -> None:
         log("ip6", f"{packet_rx.tracker} - {packet_rx.ip6_ext_frag}")
 
     if packet_rx := self._defragment_ip6_packet(packet_rx):
+        self.packet_stats_rx.ip6_ext_frag__defrag += 1
         self._phrx_ip6(packet_rx)
