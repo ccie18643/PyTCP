@@ -60,7 +60,7 @@ def _phrx_ip6(self, packet_rx: PacketRx) -> None:
 
     # Check if received packet has been sent to us directly or by unicast or multicast
     if packet_rx.ip6.dst not in {*self.ip6_unicast, *self.ip6_multicast}:
-        self.packet_stats_rx.ip6__dst_unknown += 1
+        self.packet_stats_rx.ip6__dst_unknown__drop += 1
         if __debug__:
             log("ip6", f"{packet_rx.tracker} - IP packet not destined for this stack, dropping")
         return

@@ -470,3 +470,75 @@ class TestPacketHandler(TestCase):
             ),
         )
         self.assertEqual(self.frame_tx[: len(frame_tx)], frame_tx)
+
+
+    def test_packet_flow__ether_unknown_dst(self):
+        with open("tests/frames/ether_unknown_dst.rx", "rb") as _:
+            frame_rx = _.read()
+        self.packet_handler._phrx_ether(PacketRx(frame_rx))
+        self.assertEqual(
+            self.packet_handler.packet_stats_rx,
+            PacketStatsRx(
+                ether__pre_parse=1,
+                ether__dst_unknown__drop=1,
+            ),
+        )
+        self.assertEqual(
+            self.packet_handler.packet_stats_tx,
+            PacketStatsTx(),
+        )
+
+    def test_packet_flow__ip4_unknown_dst(self):
+        with open("tests/frames/ip4_unknown_dst.rx", "rb") as _:
+            frame_rx = _.read()
+        self.packet_handler._phrx_ether(PacketRx(frame_rx))
+        self.assertEqual(
+            self.packet_handler.packet_stats_rx,
+            PacketStatsRx(
+                ether__pre_parse=1,
+                ether__dst_unicast=1,
+                ip4__pre_parse=1,
+                ip4__dst_unknown__drop=1,
+            ),
+        )
+        self.assertEqual(
+            self.packet_handler.packet_stats_tx,
+            PacketStatsTx(),
+        )
+    
+    def test_packet_flow__ip6_unknown_dst(self):
+        with open("tests/frames/ip6_unknown_dst.rx", "rb") as _:
+            frame_rx = _.read()
+        self.packet_handler._phrx_ether(PacketRx(frame_rx))
+        self.assertEqual(
+            self.packet_handler.packet_stats_rx,
+            PacketStatsRx(
+                ether__pre_parse=1,
+                ether__dst_unicast=1,
+                ip6__pre_parse=1,
+                ip6__dst_unknown__drop=1,
+            ),
+        )
+        self.assertEqual(
+            self.packet_handler.packet_stats_tx,
+            PacketStatsTx(),
+        )
+    
+    def test_packet_flow__arp_unknown_tpa(self):
+        with open("tests/frames/arp_unknown_tpa.rx", "rb") as _:
+            frame_rx = _.read()
+        self.packet_handler._phrx_ether(PacketRx(frame_rx))
+        self.assertEqual(
+            self.packet_handler.packet_stats_rx,
+            PacketStatsRx(
+                ether__pre_parse=1,
+                ether__dst_broadcast=1,
+                arp__pre_parse=1,
+                arp__op_request=1,
+                arp__op_request__tpa_unknown__drop=1,
+            ),
+        )
+        self.assertEqual(
+            self.packet_handler.packet_stats_tx,
+            PacketStatsTx(),
+        )

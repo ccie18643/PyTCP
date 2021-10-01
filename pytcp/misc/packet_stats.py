@@ -48,6 +48,7 @@ class PacketStatsRx:
     arp__failed_parse__drop: int = 0
     arp__op_request: int = 0
     arp__op_request__ip_conflict: int = 0
+    arp__op_request__tpa_unknown__drop: int = 0
     arp__op_request__update_cache: int = 0
     arp__op_reply: int = 0
     arp__op_reply__ip_conflict: int = 0
@@ -56,7 +57,7 @@ class PacketStatsRx:
 
     ip4__pre_parse: int = 0
     ip4__failed_parse__drop: int = 0
-    ip4__dst_unknown: int = 0
+    ip4__dst_unknown__drop: int = 0
     ip4__dst_unicast: int = 0
     ip4__dst_multicast: int = 0
     ip4__dst_broadcast: int = 0
@@ -64,7 +65,7 @@ class PacketStatsRx:
 
     ip6__pre_parse: int = 0
     ip6__failed_parse__drop: int = 0
-    ip6__dst_unknown: int = 0
+    ip6__dst_unknown__drop: int = 0
     ip6__dst_unicast: int = 0
     ip6__dst_multicast: int = 0
 

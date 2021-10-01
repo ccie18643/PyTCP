@@ -93,6 +93,11 @@ def _phrx_arp(self, packet_rx: PacketRx) -> None:
 
             return
 
+        else:
+            # Drop packet if TPA does not match one of our IP addresses
+            self.packet_stats_rx.arp__op_request__tpa_unknown__drop += 1
+            return
+
     # Handle ARP reply
     elif packet_rx.arp.oper == ARP_OP_REPLY:
         self.packet_stats_rx.arp__op_reply += 1
