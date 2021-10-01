@@ -78,6 +78,8 @@ def _phtx_tcp(
 ) -> TxStatus:
     """Handle outbound TCP packets"""
 
+    self.packet_stats_tx.tcp__pre_assemble += 1
+
     assert 0 < tcp_sport < 65536
     assert 0 < tcp_dport < 65536
 
@@ -111,13 +113,43 @@ def _phtx_tcp(
         echo_tracker=echo_tracker,
     )
 
+    if tcp_flag_ns:
+        self.packet_stats_tx.tcp__flag_ns += 1
+
+    if tcp_flag_crw:
+        self.packet_stats_tx.tcp__flag_crw += 1
+
+    if tcp_flag_ece:
+        self.packet_stats_tx.tcp__flag_ece += 1
+
+    if tcp_flag_urg:
+        self.packet_stats_tx.tcp__flag_urg += 1
+
+    if tcp_flag_ack:
+        self.packet_stats_tx.tcp__flag_ack += 1
+
+    if tcp_flag_psh:
+        self.packet_stats_tx.tcp__flag_psh += 1
+
+    if tcp_flag_rst:
+        self.packet_stats_tx.tcp__flag_rst += 1
+
+    if tcp_flag_syn:
+        self.packet_stats_tx.tcp__flag_syn += 1
+
+    if tcp_flag_fin:
+        self.packet_stats_tx.tcp__flag_fin += 1
+
     if __debug__:
         log("tcp", f"{tcp_packet_tx.tracker} - {tcp_packet_tx}")
 
     if isinstance(ip_src, Ip6Address) and isinstance(ip_dst, Ip6Address):
+        self.packet_stats_tx.tcp__send += 1
         return self._phtx_ip6(ip6_src=ip_src, ip6_dst=ip_dst, carried_packet=tcp_packet_tx)
 
     if isinstance(ip_src, Ip4Address) and isinstance(ip_dst, Ip4Address):
+        self.packet_stats_tx.tcp__send += 1
         return self._phtx_ip4(ip4_src=ip_src, ip4_dst=ip_dst, carried_packet=tcp_packet_tx)
 
+    self.packet_stats_tx.tcp__unknown__drop += 1
     return TxStatus.DROPED_TCP_UNKNOWN

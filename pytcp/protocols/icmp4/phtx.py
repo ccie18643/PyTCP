@@ -36,6 +36,7 @@ from typing import TYPE_CHECKING, Optional
 from lib.logger import log
 from lib.tracker import Tracker
 from protocols.icmp4.fpa import Icmp4Assembler
+from protocols.icmp4.ps import ICMP4_ECHO_REPLY, ICMP4_ECHO_REQUEST, ICMP4_UNREACHABLE
 
 if TYPE_CHECKING:
     from lib.ip4_address import Ip4Address
@@ -56,6 +57,8 @@ def _phtx_icmp4(
 ) -> TxStatus:
     """Handle outbound ICMPv4 packets"""
 
+    self.packet_stats_tx.icmp4__pre_assemble += 1
+
     icmp4_packet_tx = Icmp4Assembler(
         type=icmp4_type,
         code=icmp4_code,
@@ -68,5 +71,14 @@ def _phtx_icmp4(
 
     if __debug__:
         log("icmp4", f"{icmp4_packet_tx.tracker} - {icmp4_packet_tx}")
+
+    if icmp4_type == ICMP4_ECHO_REPLY:
+        self.packet_stats_tx.icmp4__echo_reply__send += 1
+
+    if icmp4_type == ICMP4_ECHO_REQUEST:
+        self.packet_stats_tx.icmp4__echo_request__send += 1
+
+    if icmp4_type == ICMP4_UNREACHABLE:
+        self.packet_stats_tx.icmp4__unreachable__send += 1
 
     return self._phtx_ip4(ip4_src=ip4_src, ip4_dst=ip4_dst, carried_packet=icmp4_packet_tx)

@@ -67,10 +67,14 @@ def _phtx_ether(
         ether_packet_tx.src = self.mac_unicast
         if __debug__:
             log("ether", f"{ether_packet_tx.tracker} - Set source to stack MAC {ether_packet_tx.src}")
+    else:
+        self.packet_stats_tx.ether__src_spec += 1
+        if __debug__:
+            log("ether", f"{ether_packet_tx.tracker} - Source MAC specified to {ether_packet_tx.src}")
 
     # Send out packet if it contains valid destination MAC address
     if not ether_packet_tx.dst.is_unspecified:
-        self.packet_stats_tx.ether__dst_valid__send += 1
+        self.packet_stats_tx.ether__dst_spec__send += 1
         if __debug__:
             log("ether", f"{ether_packet_tx.tracker} - Contains valid destination MAC address")
         _send_out_packet()

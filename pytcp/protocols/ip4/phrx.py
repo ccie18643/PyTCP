@@ -111,7 +111,7 @@ def _phrx_ip4(self, packet_rx: PacketRx) -> None:
     Ip4Parser(packet_rx)
 
     if packet_rx.parse_failed:
-        self.packet_stats_rx.ip4__failed_parse += 1
+        self.packet_stats_rx.ip4__failed_parse__drop += 1
         if __debug__:
             log("ip4", f"{packet_rx.tracker} - <CRIT>{packet_rx.parse_failed}</>")
         return

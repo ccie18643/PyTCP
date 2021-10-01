@@ -38,6 +38,8 @@ from lib.logger import log
 from lib.mac_address import MacAddress
 from lib.tracker import Tracker
 from protocols.arp.fpa import ArpAssembler
+from protocols.arp.ps import ARP_OP_REQUEST, ARP_OP_REPLY
+
 
 if TYPE_CHECKING:
     from lib.ip4_address import Ip4Address
@@ -56,8 +58,11 @@ def _phtx_arp(
 ) -> None:
     """Handle outbound ARP packets"""
 
+    self.packet_stats_tx.arp__pre_assemble += 1
+
     # Check if IPv4 protocol support is enabled, if not then silently drop the packet
     if not config.IP4_SUPPORT:
+        self.packet_stats_tx.arp__no_proto_support__drop += 1
         return
 
     arp_packet_tx = ArpAssembler(
@@ -68,6 +73,12 @@ def _phtx_arp(
         tpa=arp_tpa,
         echo_tracker=echo_tracker,
     )
+
+    if arp_oper == ARP_OP_REQUEST:
+        self.packet_stats_tx.arp__op_request__send += 1
+
+    if arp_oper == ARP_OP_REPLY:
+        self.packet_stats_tx.arp__op_reply__send += 1
 
     if __debug__:
         log("arp", f"{arp_packet_tx.tracker} - {arp_packet_tx}")

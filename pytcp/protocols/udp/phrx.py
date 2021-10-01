@@ -49,7 +49,7 @@ def _phrx_udp(self, packet_rx: PacketRx) -> None:
     UdpParser(packet_rx)
 
     if packet_rx.parse_failed:
-        self.packet_stats_rx.udp__failed_parse += 1
+        self.packet_stats_rx.udp__failed_parse__drop += 1
         if __debug__:
             log("udp", f"{self.tracker} - <CRIT>{packet_rx.parse_failed}</>")
         return

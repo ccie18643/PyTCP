@@ -55,6 +55,8 @@ def _phtx_udp(
 ) -> TxStatus:
     """Handle outbound UDP packets"""
 
+    self.packet_stats_tx.udp__pre_assemble += 1
+
     assert 0 < udp_sport < 65536, f"{udp_sport=}"
     assert 0 < udp_dport < 65536, f"{udp_dport=}"
 
@@ -64,9 +66,12 @@ def _phtx_udp(
         log("udp", f"{udp_packet_tx.tracker} - {udp_packet_tx}")
 
     if isinstance(ip_src, Ip6Address) and isinstance(ip_dst, Ip6Address):
+        self.packet_stats_tx.udp__send += 1
         return self._phtx_ip6(ip6_src=ip_src, ip6_dst=ip_dst, carried_packet=udp_packet_tx)
 
     if isinstance(ip_src, Ip4Address) and isinstance(ip_dst, Ip4Address):
+        self.packet_stats_tx.udp__send += 1
         return self._phtx_ip4(ip4_src=ip_src, ip4_dst=ip_dst, carried_packet=udp_packet_tx)
 
+    self.packet_stats_tx.udp__unknown__drop += 1
     return TxStatus.DROPED_UDP_UNKNOWN

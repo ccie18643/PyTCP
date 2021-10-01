@@ -92,7 +92,7 @@ class MacAddress:
     def __eq__(self, other: object) -> bool:
         """Equal operator"""
 
-        return isinstance(other, MacAddress) and self._address == other._address
+        return repr(self) == repr(other)
 
     def __hash__(self) -> int:
         """Hash"""

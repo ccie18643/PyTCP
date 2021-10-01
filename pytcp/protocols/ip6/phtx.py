@@ -96,20 +96,25 @@ def _phtx_ip6(
 ) -> TxStatus:
     """Handle outbound IP packets"""
 
+    self.packet_stats_tx.ip6__pre_assemble += 1
+
     assert 0 < ip6_hop < 256
 
     # Check if IPv6 protocol support is enabled, if not then silently drop the packet
     if not config.IP6_SUPPORT:
+        self.packet_stats_tx.ip6__no_proto_support__drop += 1
         return TxStatus.DROPED_IP6_NO_PROTOCOL_SUPPORT
 
     # Validate source address
     ip6_src = self._validate_src_ip6_address(ip6_src, ip6_dst, carried_packet.tracker)
     if not ip6_src:
+        self.packet_stats_tx.ip6__src_invalid__drop += 1
         return TxStatus.DROPED_IP6_INVALID_SOURCE
 
     # Validate destination address
     ip6_dst = self._validate_dst_ip6_address(ip6_dst, carried_packet.tracker)
     if not ip6_dst:
+        self.packet_stats_tx.ip6__dst_invalid__drop += 1
         return TxStatus.DROPED_IP6_INVALID_DESTINATION
 
     # assemble IPv6 apcket
@@ -117,11 +122,13 @@ def _phtx_ip6(
 
     # Check if IP packet can be sent out without fragmentation, if so send it out
     if len(ip6_packet_tx) <= config.TAP_MTU:
+        self.packet_stats_tx.ip6__mtu_ok__send += 1
         if __debug__:
             log("ip6", f"{ip6_packet_tx.tracker} - {ip6_packet_tx}")
         return self._phtx_ether(carried_packet=ip6_packet_tx)
 
     # Fragment packet and send out
+    self.packet_stats_tx.ip6__mtu_exceed__frag += 1
     if __debug__:
         log("ip6", f"{ip6_packet_tx.tracker} - IPv6 packet len {len(ip6_packet_tx)} bytes, fragmentation needed")
     return self._phtx_ip6_ext_frag(ip6_packet_tx)

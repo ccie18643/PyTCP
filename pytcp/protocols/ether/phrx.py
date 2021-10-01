@@ -51,7 +51,7 @@ def _phrx_ether(self, packet_rx: PacketRx) -> None:
     EtherParser(packet_rx)
 
     if packet_rx.parse_failed:
-        self.packet_stats_rx.ether__failed_parse += 1
+        self.packet_stats_rx.ether__failed_parse__drop += 1
         if __debug__:
             log("ether", f"{packet_rx.tracker} - <CRIT>{packet_rx.parse_failed}</>")
         return

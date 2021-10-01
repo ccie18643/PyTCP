@@ -42,6 +42,8 @@ from protocols.icmp6.fpa import (
     Icmp6NdOptTLLA,
 )
 
+from protocols.icmp6.ps import ICMP6_ECHO_REPLY, ICMP6_ECHO_REQUEST, ICMP6_UNREACHABLE
+
 if TYPE_CHECKING:
     from lib.ip6_address import Ip6Address
     from misc.tx_status import TxStatus
@@ -69,6 +71,8 @@ def _phtx_icmp6(
 ) -> TxStatus:
     """Handle outbound ICMPv6 packets"""
 
+    self.packet_stats_tx.icmp6__pre_assemble += 1
+
     icmp6_packet_tx = Icmp6Assembler(
         type=icmp6_type,
         code=icmp6_code,
@@ -85,6 +89,15 @@ def _phtx_icmp6(
         mlr2_multicast_address_record=[] if icmp6_mlr2_multicast_address_record is None else icmp6_mlr2_multicast_address_record,
         echo_tracker=echo_tracker,
     )
+
+    if icmp6_type == ICMP6_ECHO_REPLY:
+        self.packet_stats_tx.icmp6__echo_reply__send += 1
+
+    if icmp6_type == ICMP6_ECHO_REQUEST:
+        self.packet_stats_tx.icmp6__echo_request__send += 1
+
+    if icmp6_type == ICMP6_UNREACHABLE:
+        self.packet_stats_tx.icmp6__unreachable__send += 1
 
     if __debug__:
         log("icmp6", f"{icmp6_packet_tx.tracker} - {icmp6_packet_tx}")

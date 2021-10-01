@@ -50,7 +50,7 @@ def _phrx_arp(self, packet_rx: PacketRx) -> None:
     ArpParser(packet_rx)
 
     if packet_rx.parse_failed:
-        self.packet_stats_rx.arp__failed_parse += 1
+        self.packet_stats_rx.arp__failed_parse__drop += 1
         if __debug__:
             log("arp", f"{packet_rx.tracker} - <CRIT>{packet_rx.parse_failed}</>")
         return

@@ -50,7 +50,7 @@ def _phrx_ip6(self, packet_rx: PacketRx) -> None:
     Ip6Parser(packet_rx)
 
     if packet_rx.parse_failed:
-        self.packet_stats_rx.ip6__failed_parse += 1
+        self.packet_stats_rx.ip6__failed_parse__drop += 1
         if __debug__:
             log("ip6", f"{packet_rx.tracker} - <rb>{packet_rx.parse_failed}</>")
         return

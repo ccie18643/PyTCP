@@ -38,14 +38,14 @@ class PacketStatsRx:
     """Data store for rx packet handler statistics"""
 
     ether__pre_parse: int = 0
-    ether__failed_parse: int = 0
-    ether__dst_unknown: int = 0
+    ether__failed_parse__drop: int = 0
+    ether__dst_unknown__drop: int = 0
     ether__dst_unicast: int = 0
     ether__dst_multicast: int = 0
     ether__dst_broadcast: int = 0
 
     arp__pre_parse: int = 0
-    arp__failed_parse: int = 0
+    arp__failed_parse__drop: int = 0
     arp__op_request: int = 0
     arp__op_request__ip_conflict: int = 0
     arp__op_request__update_cache: int = 0
@@ -55,7 +55,7 @@ class PacketStatsRx:
     arp__op_reply__update_cache_gratuitous: int = 0
 
     ip4__pre_parse: int = 0
-    ip4__failed_parse: int = 0
+    ip4__failed_parse__drop: int = 0
     ip4__dst_unknown: int = 0
     ip4__dst_unicast: int = 0
     ip4__dst_multicast: int = 0
@@ -63,18 +63,18 @@ class PacketStatsRx:
     ip4__frag: int = 0
 
     ip6__pre_parse: int = 0
-    ip6__failed_parse: int = 0
+    ip6__failed_parse__drop: int = 0
     ip6__dst_unknown: int = 0
     ip6__dst_unicast: int = 0
     ip6__dst_multicast: int = 0
 
     icmp4__pre_parse: int = 0
-    icmp4__failed_parse: int = 0
+    icmp4__failed_parse__drop: int = 0
     icmp4__echo_request: int = 0
     icmp4__unreachable: int = 0
 
     icmp6__pre_parse: int = 0
-    icmp6__failed_parse: int = 0
+    icmp6__failed_parse__drop: int = 0
     icmp6__neighbor_solicitation: int = 0
     icmp6__neighbor_solicitation__unknown: int = 0
     icmp6__neighbor_solicitation__update_cache: int = 0
@@ -87,7 +87,7 @@ class PacketStatsRx:
     icmp6__unreachable: int = 0
 
     udp__pre_parse: int = 0
-    udp__failed_parse: int = 0
+    udp__failed_parse__drop: int = 0
     udp__socket_match: int = 0
     udp__ip_source_unspecified: int = 0
     udp__echo_native: int = 0
@@ -95,7 +95,7 @@ class PacketStatsRx:
     udp__no_socket_match__respond_icmp6_unreachable: int = 0
 
     tcp__pre_parse: int = 0
-    tcp__failed_parse: int = 0
+    tcp__failed_parse__drop: int = 0
     tcp__socket_match__active: int = 0
     tcp__socket_match__listening: int = 0
     tcp__no_socket_match__respond_rst: int = 0
@@ -110,7 +110,8 @@ class PacketStatsTx:
 
     ether__pre_assemble: int = 0
     ether__src_unspec__fill: int = 0
-    ether__dst_valid__send: int = 0
+    ether__src_spec: int = 0
+    ether__dst_spec__send: int = 0
     ether__dst_unspec: int = 0
     ether__dst_unspec__ip6_lookup: int = 0
     ether__dst_unspec__ip6_lookup__multicast__send: int = 0
@@ -125,6 +126,54 @@ class PacketStatsTx:
     ether__dst_unspec__ip4_lookup__ext_net__gw_nd_cache_hit__send: int = 0
     ether__dst_unspec__ip4_lookup__loc_net__nd_cache_hit__send: int = 0
     ether__dst_unspec__drop: int = 0
+
+    arp__pre_assemble: int = 0
+    arp__no_proto_support__drop: int = 0
+    arp__op_request__send: int = 0
+    arp__op_reply__send: int = 0
+
+    ip4__pre_assemble: int = 0
+    ip4__no_proto_support__drop: int = 0
+    ip4__src_invalid__drop: int = 0
+    ip4__dst_invalid__drop: int = 0
+    ip4__mtu_ok__send: int = 0
+    ip4__mtu_exceed__frag: int = 0
+    ip4__mtu_exceed__frag__send: int = 0
+
+    ip6__pre_assemble: int = 0
+    ip6__no_proto_support__drop: int = 0
+    ip6__src_invalid__drop: int = 0
+    ip6__dst_invalid__drop: int = 0
+    ip6__mtu_ok__send: int = 0
+    ip6__mtu_exceed__frag: int = 0
+
+    icmp4__pre_assemble: int = 0
+    icmp4__echo_reply__send: int = 0
+    icmp4__echo_request__send: int = 0
+    icmp4__unreachable__send: int = 0
+
+    icmp6__pre_assemble: int = 0
+    icmp6__echo_reply__send: int = 0
+    icmp6__echo_request__send: int = 0
+    icmp6__unreachable__send: int = 0
+
+    tcp__pre_assemble: int = 0
+    tcp__flag_ns: int = 0
+    tcp__flag_crw: int = 0
+    tcp__flag_ece: int = 0
+    tcp__flag_urg: int = 0
+    tcp__flag_ack: int = 0
+    tcp__flag_psh: int = 0
+    tcp__flag_rst: int = 0
+    tcp__flag_syn: int = 0
+    tcp__flag_fin: int = 0
+    tcp__send: int = 0
+    tcp__send: int = 0
+    tcp__unknown__drop: int = 0
+
+    udp__pre_assemble: int = 0
+    udp__send: int = 0
+    udp__unknown__drop: int = 0
 
     def __eq__(self, other):
         return repr(self) == repr(other)

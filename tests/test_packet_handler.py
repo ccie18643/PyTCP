@@ -36,7 +36,7 @@ from pytcp.lib.ip4_address import Ip4Address, Ip4Host
 from pytcp.lib.ip6_address import Ip6Address, Ip6Host
 from pytcp.lib.mac_address import MacAddress
 from pytcp.misc.packet import PacketRx
-from pytcp.misc.packet_stats import PacketStatsRx
+from pytcp.misc.packet_stats import PacketStatsRx, PacketStatsTx
 from pytcp.subsystems.arp_cache import ArpCache
 from pytcp.subsystems.nd_cache import NdCache
 from pytcp.subsystems.packet_handler import PacketHandler
@@ -189,6 +189,20 @@ class TestPacketHandler(TestCase):
                 icmp4__echo_request=1,
             ),
         )
+        self.assertEqual(
+            self.packet_handler.packet_stats_tx,
+            PacketStatsTx(
+                icmp4__pre_assemble=1,
+                icmp4__echo_reply__send=1,
+                ip4__pre_assemble=1,
+                ip4__mtu_ok__send=1,
+                ether__pre_assemble=1,
+                ether__src_unspec__fill=1,
+                ether__dst_unspec=1,
+                ether__dst_unspec__ip4_lookup=1,
+                ether__dst_unspec__ip4_lookup__loc_net__nd_cache_hit__send=1,
+            ),
+        )
         self.assertEqual(self.frame_tx[: len(frame_tx)], frame_tx)
 
     def test_packet_flow__ip4_udp_to_closed_port(self):
@@ -206,6 +220,20 @@ class TestPacketHandler(TestCase):
                 ip4__dst_unicast=1,
                 udp__pre_parse=1,
                 udp__no_socket_match__respond_icmp4_unreachable=1,
+            ),
+        )
+        self.assertEqual(
+            self.packet_handler.packet_stats_tx,
+            PacketStatsTx(
+                icmp4__pre_assemble=1,
+                icmp4__unreachable__send=1,
+                ip4__pre_assemble=1,
+                ip4__mtu_ok__send=1,
+                ether__pre_assemble=1,
+                ether__src_unspec__fill=1,
+                ether__dst_unspec=1,
+                ether__dst_unspec__ip4_lookup=1,
+                ether__dst_unspec__ip4_lookup__loc_net__nd_cache_hit__send=1,
             ),
         )
         self.assertEqual(self.frame_tx[: len(frame_tx)], frame_tx)
@@ -227,6 +255,20 @@ class TestPacketHandler(TestCase):
                 udp__echo_native=1,
             ),
         )
+        self.assertEqual(
+            self.packet_handler.packet_stats_tx,
+            PacketStatsTx(
+                udp__pre_assemble=1,
+                udp__send=1,
+                ip4__pre_assemble=1,
+                ip4__mtu_ok__send=1,
+                ether__pre_assemble=1,
+                ether__src_unspec__fill=1,
+                ether__dst_unspec=1,
+                ether__dst_unspec__ip4_lookup=1,
+                ether__dst_unspec__ip4_lookup__loc_net__nd_cache_hit__send=1,
+            ),
+        )
         self.assertEqual(self.frame_tx[: len(frame_tx)], frame_tx)
 
     def test_packet_flow__ip4_tcp_syn_to_closed_port(self):
@@ -244,6 +286,22 @@ class TestPacketHandler(TestCase):
                 ip4__dst_unicast=1,
                 tcp__pre_parse=1,
                 tcp__no_socket_match__respond_rst=1,
+            ),
+        )
+        self.assertEqual(
+            self.packet_handler.packet_stats_tx,
+            PacketStatsTx(
+                tcp__pre_assemble=1,
+                tcp__flag_rst=1,
+                tcp__flag_ack=1,
+                tcp__send=1,
+                ip4__pre_assemble=1,
+                ip4__mtu_ok__send=1,
+                ether__pre_assemble=1,
+                ether__src_unspec__fill=1,
+                ether__dst_unspec=1,
+                ether__dst_unspec__ip4_lookup=1,
+                ether__dst_unspec__ip4_lookup__loc_net__nd_cache_hit__send=1,
             ),
         )
         self.assertEqual(self.frame_tx[: len(frame_tx)], frame_tx)
@@ -265,6 +323,20 @@ class TestPacketHandler(TestCase):
                 icmp6__echo_request=1,
             ),
         )
+        self.assertEqual(
+            self.packet_handler.packet_stats_tx,
+            PacketStatsTx(
+                icmp6__pre_assemble=1,
+                icmp6__echo_reply__send=1,
+                ip6__pre_assemble=1,
+                ip6__mtu_ok__send=1,
+                ether__pre_assemble=1,
+                ether__src_unspec__fill=1,
+                ether__dst_unspec=1,
+                ether__dst_unspec__ip6_lookup=1,
+                ether__dst_unspec__ip6_lookup__loc_net__nd_cache_hit__send=1,
+            ),
+        )
         self.assertEqual(self.frame_tx[: len(frame_tx)], frame_tx)
 
     def test_packet_flow__ip6_udp_to_closed_port(self):
@@ -282,6 +354,20 @@ class TestPacketHandler(TestCase):
                 ip6__dst_unicast=1,
                 udp__pre_parse=1,
                 udp__no_socket_match__respond_icmp6_unreachable=1,
+            ),
+        )
+        self.assertEqual(
+            self.packet_handler.packet_stats_tx,
+            PacketStatsTx(
+                icmp6__pre_assemble=1,
+                icmp6__unreachable__send=1,
+                ip6__pre_assemble=1,
+                ip6__mtu_ok__send=1,
+                ether__pre_assemble=1,
+                ether__src_unspec__fill=1,
+                ether__dst_unspec=1,
+                ether__dst_unspec__ip6_lookup=1,
+                ether__dst_unspec__ip6_lookup__loc_net__nd_cache_hit__send=1,
             ),
         )
         self.assertEqual(self.frame_tx[: len(frame_tx)], frame_tx)
@@ -303,6 +389,20 @@ class TestPacketHandler(TestCase):
                 udp__echo_native=1,
             ),
         )
+        self.assertEqual(
+            self.packet_handler.packet_stats_tx,
+            PacketStatsTx(
+                udp__pre_assemble=1,
+                udp__send=1,
+                ip6__pre_assemble=1,
+                ip6__mtu_ok__send=1,
+                ether__pre_assemble=1,
+                ether__src_unspec__fill=1,
+                ether__dst_unspec=1,
+                ether__dst_unspec__ip6_lookup=1,
+                ether__dst_unspec__ip6_lookup__loc_net__nd_cache_hit__send=1,
+            ),
+        )
         self.assertEqual(self.frame_tx[: len(frame_tx)], frame_tx)
 
     def test_packet_flow__ip6_tcp_syn_to_closed_port(self):
@@ -322,6 +422,22 @@ class TestPacketHandler(TestCase):
                 tcp__no_socket_match__respond_rst=1,
             ),
         )
+        self.assertEqual(
+            self.packet_handler.packet_stats_tx,
+            PacketStatsTx(
+                tcp__pre_assemble=1,
+                tcp__flag_rst=1,
+                tcp__flag_ack=1,
+                tcp__send=1,
+                ip6__pre_assemble=1,
+                ip6__mtu_ok__send=1,
+                ether__pre_assemble=1,
+                ether__src_unspec__fill=1,
+                ether__dst_unspec=1,
+                ether__dst_unspec__ip6_lookup=1,
+                ether__dst_unspec__ip6_lookup__loc_net__nd_cache_hit__send=1,
+            ),
+        )
         self.assertEqual(self.frame_tx[: len(frame_tx)], frame_tx)
 
     def test_packet_flow__arp_request(self):
@@ -329,7 +445,8 @@ class TestPacketHandler(TestCase):
             frame_rx = _.read()
         with open("tests/frames/arp_request.tx", "rb") as _:
             frame_tx = _.read()
-        self.mock_callable(self.arp_cache_mock, "add_entry").to_return_value(None).and_assert_called_once()
+        self.mock_callable(self.arp_cache_mock, "add_entry").for_call(
+            Ip4Address("192.168.9.102"), MacAddress("52:54:00:df:85:37")).to_return_value(None).and_assert_called_once()
         self.packet_handler._phrx_ether(PacketRx(frame_rx))
         self.assertEqual(
             self.packet_handler.packet_stats_rx,
@@ -339,6 +456,16 @@ class TestPacketHandler(TestCase):
                 arp__pre_parse=1,
                 arp__op_request=1,
                 arp__op_request__update_cache=1,
+            ),
+        )
+        self.assertEqual(
+            self.packet_handler.packet_stats_tx,
+            PacketStatsTx(
+                arp__pre_assemble=1,
+                arp__op_reply__send=1,
+                ether__pre_assemble=1,
+                ether__src_spec=1,
+                ether__dst_spec__send=1,
             ),
         )
         self.assertEqual(self.frame_tx[: len(frame_tx)], frame_tx)

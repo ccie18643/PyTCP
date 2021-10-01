@@ -118,20 +118,25 @@ def _phtx_ip4(
 ) -> TxStatus:
     """Handle outbound IP packets"""
 
+    self.packet_stats_tx.ip4__pre_assemble += 1
+
     assert 0 < ip4_ttl < 256
 
     # Check if IPv4 protocol support is enabled, if not then silently drop the packet
     if not config.IP4_SUPPORT:
+        self.packet_stats_tx.ip4__no_proto_support__drop += 1
         return TxStatus.DROPED_IP4_NO_PROTOCOL_SUPPORT
 
     # Validate source address
     ip4_src = self._validate_src_ip4_address(ip4_src, ip4_dst, carried_packet.tracker)
     if not ip4_src:
+        self.packet_stats_tx.ip4__src_invalid__drop += 1
         return TxStatus.DROPED_IP4_INVALID_SOURCE
 
     # Validate destination address
     ip4_dst = self._validate_dst_ip4_address(ip4_dst, carried_packet.tracker)
     if not ip4_dst:
+        self.packet_stats_tx.ip4__dst_invalid__drop += 1
         return TxStatus.DROPED_IP4_INVALID_DESTINATION
 
     # Assemble IPv4 packet
@@ -139,11 +144,13 @@ def _phtx_ip4(
 
     # Send packet out if it's size doesn't exceed mtu
     if len(ip4_packet_tx) <= config.TAP_MTU:
+        self.packet_stats_tx.ip4__mtu_ok__send += 1
         if __debug__:
             log("ip4", f"{ip4_packet_tx.tracker} - {ip4_packet_tx}")
         return self._phtx_ether(carried_packet=ip4_packet_tx)
 
     # Fragment packet and send out
+    self.packet_stats_tx.ip4__mtu_exceed__frag += 1
     if __debug__:
         log("ip4", f"{ip4_packet_tx.tracker} - IPv4 packet len {len(ip4_packet_tx)} bytes, fragmentation needed")
     data = memoryview(bytearray(ip4_packet_tx.dlen))
@@ -167,6 +174,7 @@ def _phtx_ip4(
         if __debug__:
             log("ip4", f"{ip4_frag_tx.tracker} - {ip4_frag_tx}")
         offset += len(data_frag)
+        self.packet_stats_tx.ip4__mtu_exceed__frag__send += 1
         ether_tx_status.add(self._phtx_ether(carried_packet=ip4_frag_tx))
 
     # Return the most severe code
