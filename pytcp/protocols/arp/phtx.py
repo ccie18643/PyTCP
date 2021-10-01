@@ -38,8 +38,7 @@ from lib.logger import log
 from lib.mac_address import MacAddress
 from lib.tracker import Tracker
 from protocols.arp.fpa import ArpAssembler
-from protocols.arp.ps import ARP_OP_REQUEST, ARP_OP_REPLY
-
+from protocols.arp.ps import ARP_OP_REPLY, ARP_OP_REQUEST
 
 if TYPE_CHECKING:
     from lib.ip4_address import Ip4Address

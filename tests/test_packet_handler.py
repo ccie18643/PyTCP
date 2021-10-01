@@ -445,8 +445,9 @@ class TestPacketHandler(TestCase):
             frame_rx = _.read()
         with open("tests/frames/arp_request.tx", "rb") as _:
             frame_tx = _.read()
-        self.mock_callable(self.arp_cache_mock, "add_entry").for_call(
-            Ip4Address("192.168.9.102"), MacAddress("52:54:00:df:85:37")).to_return_value(None).and_assert_called_once()
+        self.mock_callable(self.arp_cache_mock, "add_entry").for_call(Ip4Address("192.168.9.102"), MacAddress("52:54:00:df:85:37")).to_return_value(
+            None
+        ).and_assert_called_once()
         self.packet_handler._phrx_ether(PacketRx(frame_rx))
         self.assertEqual(
             self.packet_handler.packet_stats_rx,

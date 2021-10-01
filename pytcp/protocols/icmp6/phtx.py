@@ -41,7 +41,6 @@ from protocols.icmp6.fpa import (
     Icmp6NdOptSLLA,
     Icmp6NdOptTLLA,
 )
-
 from protocols.icmp6.ps import ICMP6_ECHO_REPLY, ICMP6_ECHO_REQUEST, ICMP6_UNREACHABLE
 
 if TYPE_CHECKING:

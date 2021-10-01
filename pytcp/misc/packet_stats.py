@@ -168,7 +168,6 @@ class PacketStatsTx:
     tcp__flag_syn: int = 0
     tcp__flag_fin: int = 0
     tcp__send: int = 0
-    tcp__send: int = 0
     tcp__unknown__drop: int = 0
 
     udp__pre_assemble: int = 0

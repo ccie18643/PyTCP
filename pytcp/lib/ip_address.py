@@ -28,7 +28,7 @@
 # lib/ip_address.py - module contains base class for address manipulation
 #
 
-from __future__ import annotations  # Requir for Python version lower than 3.10
+from __future__ import annotations  # Required for Python version lower than 3.10
 
 from abc import ABC, abstractmethod, abstractproperty
 from typing import TYPE_CHECKING, Optional
@@ -66,7 +66,7 @@ class IpAddress(ABC):
     def __eq__(self, other: object) -> bool:
         """Equal operator"""
 
-        return isinstance(other, IpAddress) and self._version == other.version and self._address == int(other)
+        return repr(self) == repr(other)
 
     def __repr__(self) -> str:
         """Object representation"""
@@ -175,7 +175,7 @@ class IpMask(ABC):
     def __eq__(self, other: object) -> bool:
         """Equal operator"""
 
-        return isinstance(other, IpMask) and self._version == other.version and self._mask == other._mask
+        return repr(self) == repr(other)
 
     def __hash__(self) -> int:
         """Hash"""
@@ -221,7 +221,7 @@ class IpNetwork(ABC):
     def __eq__(self, other: object) -> bool:
         """Equal operator"""
 
-        return isinstance(other, IpNetwork) and self._version == other.version and self._address == other.address and self._mask == other.mask
+        return repr(self) == repr(other)
 
     def __hash__(self) -> int:
         """Hash"""
@@ -291,7 +291,7 @@ class IpHost(ABC):
     def __eq__(self, other: object) -> bool:
         """Equal operator"""
 
-        return isinstance(other, IpHost) and self._version == other.version and self._address == other._address and self._network == other._network
+        return repr(self) == repr(other)
 
     def __hash__(self) -> int:
         """Hash"""
