@@ -1,0 +1,213 @@
+#!/usr/bin/env python3
+
+
+############################################################################
+#                                                                          #
+#  PyTCP - Python TCP/IP stack                                             #
+#  Copyright (C) 2020-2021  Sebastian Majewski                             #
+#                                                                          #
+#  This program is free software: you can redistribute it and/or modify    #
+#  it under the terms of the GNU General Public License as published by    #
+#  the Free Software Foundation, either version 3 of the License, or       #
+#  (at your option) any later version.                                     #
+#                                                                          #
+#  This program is distributed in the hope that it will be useful,         #
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of          #
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the           #
+#  GNU General Public License for more details.                            #
+#                                                                          #
+#  You should have received a copy of the GNU General Public License       #
+#  along with this program.  If not, see <https://www.gnu.org/licenses/>.  #
+#                                                                          #
+#  Author's email: ccie18643@gmail.com                                     #
+#  Github repository: https://github.com/ccie18643/PyTCP                   #
+#                                                                          #
+############################################################################
+
+
+#
+# tests/test_packet_flows_rx.py - unit tests for packets received by stack with no response sent back
+#
+
+from __future__ import annotations  # Required by Python ver < 3.10
+
+from typing import TYPE_CHECKING
+
+from testslide import StrictMock, TestCase
+
+from pytcp.lib.ip4_address import Ip4Address, Ip4Host
+from pytcp.lib.ip6_address import Ip6Address, Ip6Host
+from pytcp.lib.mac_address import MacAddress
+from pytcp.misc.packet import PacketRx
+from pytcp.misc.packet_stats import PacketStatsRx, PacketStatsTx
+from pytcp.subsystems.arp_cache import ArpCache
+from pytcp.subsystems.nd_cache import NdCache
+from pytcp.subsystems.packet_handler import PacketHandler
+from pytcp.subsystems.tx_ring import TxRing
+
+if TYPE_CHECKING:
+    from typing import List
+
+PACKET_HANDLER_MODULES = [
+    "pytcp.subsystems.packet_handler",
+    "protocols.ether.phrx",
+    "protocols.ether.phtx",
+    "protocols.arp.phrx",
+    "protocols.arp.phtx",
+    "protocols.ip4.phrx",
+    "protocols.ip4.phtx",
+    "protocols.ip6.phrx",
+    "protocols.ip6.phtx",
+    "protocols.icmp4.phrx",
+    "protocols.icmp4.phtx",
+    "protocols.icmp6.phrx",
+    "protocols.icmp6.phtx",
+    "protocols.udp.phrx",
+    "protocols.udp.phtx",
+    "protocols.tcp.phrx",
+    "protocols.tcp.phtx",
+]
+
+
+# Ensure critical configuration settings are set properly for the testing regardless of actual configuration
+CONFIG_PATCHES = {
+    "LOG_CHANEL": set(),
+    "IP6_SUPPORT": True,
+    "IP4_SUPPORT": True,
+    "PACKET_INTEGRITY_CHECK": True,
+    "PACKET_SANITY_CHECK": True,
+    "TAP_MTU": 1500,
+    "UDP_ECHO_NATIVE_DISABLE": False,
+}
+
+
+# Addresses below match the test packets and should not be changed
+STACK_MAC_ADDRESS = MacAddress("02:00:00:77:77:77")
+STACK_IP4_HOST = Ip4Host("192.168.9.7/24")
+STACK_IP6_HOST = Ip6Host("2603:9000:e307:9f09:0:ff:fe77:7777/64")
+REMOTE_MAC_ADDRESS = MacAddress("52:54:00:df:85:37")
+REMOTE_IP4_ADDRESS = Ip4Address("192.168.9.102")
+REMOTE_IP6_ADDRESS = Ip6Address("2603:9000:e307:9f09::1fa1")
+
+
+class TestPacketHandler(TestCase):
+    def setUp(self):
+        super().setUp()
+
+        self._patch_config()
+
+        # Initialize packet handler and manually set all the variables that normally would require network connectivity
+        self.packet_handler = PacketHandler(None)
+        self.packet_handler.mac_address = STACK_MAC_ADDRESS
+        self.packet_handler.ip4_host = [STACK_IP4_HOST]
+        self.packet_handler.ip6_host = [STACK_IP6_HOST]
+        self.packet_handler.ip6_multicast = [Ip6Address("ff02::1"), STACK_IP6_HOST.address.solicited_node_multicast]
+
+        self.packet_tx = memoryview(bytearray(2048))
+
+    def _patch_config(self):
+        """Patch critical config setting for all packet handler modules"""
+
+        for module in PACKET_HANDLER_MODULES:
+            for variable, value in CONFIG_PATCHES.items():
+                try:
+                    self.patch_attribute(f"{module}.config", variable, value)
+                except ModuleNotFoundError:
+                    continue
+
+    def test_packet_flow__rx__ether_unknown_dst(self):
+        """Receive Ethernet packet with unknown destination MAC address, drop"""
+
+        with open("tests/packets/rx/ether_unknown_dst.rx", "rb") as _:
+            packet_rx = _.read()
+        self.packet_handler._phrx_ether(PacketRx(packet_rx))
+        self.assertEqual(
+            self.packet_handler.packet_stats_rx,
+            PacketStatsRx(
+                ether__pre_parse=1,
+                ether__dst_unknown__drop=1,
+            ),
+        )
+        self.assertEqual(
+            self.packet_handler.packet_stats_tx,
+            PacketStatsTx(),
+        )
+
+    def test_packet_flow__rx__ether_malformed_header(self):
+        """Receive Ethernet packet with malformed header, drop"""
+
+        with open("tests/packets/rx/ether_malformed_header.rx", "rb") as _:
+            packet_rx = _.read()
+        self.packet_handler._phrx_ether(PacketRx(packet_rx))
+        self.assertEqual(
+            self.packet_handler.packet_stats_rx,
+            PacketStatsRx(
+                ether__pre_parse=1,
+                ether__failed_parse__drop=1,
+            ),
+        )
+        self.assertEqual(
+            self.packet_handler.packet_stats_tx,
+            PacketStatsTx(),
+        )
+
+    def test_packet_flow__rx__ip4_unknown_dst(self):
+        """Receive IPv4 packet for unknown destination, drop"""
+
+        with open("tests/packets/rx/ip4_unknown_dst.rx", "rb") as _:
+            packet_rx = _.read()
+        self.packet_handler._phrx_ether(PacketRx(packet_rx))
+        self.assertEqual(
+            self.packet_handler.packet_stats_rx,
+            PacketStatsRx(
+                ether__pre_parse=1,
+                ether__dst_unicast=1,
+                ip4__pre_parse=1,
+                ip4__dst_unknown__drop=1,
+            ),
+        )
+        self.assertEqual(
+            self.packet_handler.packet_stats_tx,
+            PacketStatsTx(),
+        )
+
+    def test_packet_flow__rx__ip6_unknown_dst(self):
+        """Receive IPv6 packet for unknown destination, drop"""
+
+        with open("tests/packets/rx/ip6_unknown_dst.rx", "rb") as _:
+            packet_rx = _.read()
+        self.packet_handler._phrx_ether(PacketRx(packet_rx))
+        self.assertEqual(
+            self.packet_handler.packet_stats_rx,
+            PacketStatsRx(
+                ether__pre_parse=1,
+                ether__dst_unicast=1,
+                ip6__pre_parse=1,
+                ip6__dst_unknown__drop=1,
+            ),
+        )
+        self.assertEqual(
+            self.packet_handler.packet_stats_tx,
+            PacketStatsTx(),
+        )
+
+    def test_packet_flow__rx__arp_unknown_tpa(self):
+        """Receive ARP Request packet for unknown IPv4 address, drop"""
+
+        with open("tests/packets/rx/arp_unknown_tpa.rx", "rb") as _:
+            packet_rx = _.read()
+        self.packet_handler._phrx_ether(PacketRx(packet_rx))
+        self.assertEqual(
+            self.packet_handler.packet_stats_rx,
+            PacketStatsRx(
+                ether__pre_parse=1,
+                ether__dst_broadcast=1,
+                arp__pre_parse=1,
+                arp__op_request=1,
+                arp__op_request__tpa_unknown__drop=1,
+            ),
+        )
+        self.assertEqual(
+            self.packet_handler.packet_stats_tx,
+            PacketStatsTx(),
+        )
