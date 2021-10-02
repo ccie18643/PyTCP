@@ -56,7 +56,7 @@ def _defragment_ip6_packet(self, packet_rx: PacketRx) -> Optional[PacketRx]:
     flow_id = (packet_rx.ip6.src, packet_rx.ip6.dst, packet_rx.ip6_ext_frag.id)
 
     # Update flow db
-    if self.ip6_frag_flows.get(flow_id, None):
+    if flow_id in self.ip6_frag_flows:
         self.ip6_frag_flows[flow_id]["data"][packet_rx.ip6_ext_frag.offset] = packet_rx.ip6_ext_frag.data_copy
     else:
         self.ip6_frag_flows[flow_id] = {

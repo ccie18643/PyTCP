@@ -47,7 +47,7 @@ if TYPE_CHECKING:
 def _phtx_ip6_ext_frag(self, ip6_packet_tx: Ip6Assembler) -> TxStatus:
     """Handle outbound IPv6 fagment extension header"""
 
-    self.packet_stats_rx.ip6_ext_frag__pre_assemble += 1
+    self.packet_stats_tx.ip6_ext_frag__pre_assemble += 1
 
     data = memoryview(bytearray(ip6_packet_tx.dlen))
     ip6_packet_tx._carried_packet.assemble(data, ip6_packet_tx.pshdr_sum)
@@ -61,7 +61,7 @@ def _phtx_ip6_ext_frag(self, ip6_packet_tx: Ip6Assembler) -> TxStatus:
         if __debug__:
             log("ip6", f"{ip6_ext_frag_tx.tracker} - {ip6_ext_frag_tx}")
         offset += len(data_frag)
-        self.packet_stats_rx.ip6_ext_frag__frag__send += 1
+        self.packet_stats_tx.ip6_ext_frag__send += 1
         ip6_tx_status.add(self._phtx_ip6(ip6_src=ip6_packet_tx.src, ip6_dst=ip6_packet_tx.dst, carried_packet=ip6_ext_frag_tx))
 
     # Return the most severe code

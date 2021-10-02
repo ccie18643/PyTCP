@@ -154,7 +154,7 @@ class PacketStatsTx:
     ip6__mtu_exceed__frag: int = 0
 
     ip6_ext_frag__pre_assemble: int = 0
-    ip6_ext_frag__frag__send: int = 0
+    ip6_ext_frag__send: int = 0
 
     icmp4__pre_assemble: int = 0
     icmp4__echo_reply__send: int = 0
