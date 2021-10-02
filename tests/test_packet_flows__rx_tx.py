@@ -531,7 +531,7 @@ class TestPacketHandler(TestCase):
 
         self._test_packet_flow__rx_tx__ip6_udp_echo_rx_frag([1, 2, 0, 4, 3])
 
-    def test_packet_flow__ip6_udp_echo_rx_frag_1_2_0_2_1_0_3_3_4_1(self):
+    def test_packet_flow__rx_tx__ip6_udp_echo_rx_frag_1_2_0_2_1_0_3_3_4_1(self):
         """Receive fragmented IPv6/UDP packets and echo them back to the sender"""
 
         self._test_packet_flow__rx_tx__ip6_udp_echo_rx_frag([1, 2, 0, 2, 1, 0, 3, 3, 4, 1])
