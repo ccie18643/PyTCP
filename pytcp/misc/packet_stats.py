@@ -62,6 +62,7 @@ class PacketStatsRx:
     ip4__dst_multicast: int = 0
     ip4__dst_broadcast: int = 0
     ip4__frag: int = 0
+    ip4__defrag: int = 0
 
     ip6__pre_parse: int = 0
     ip6__failed_parse__drop: int = 0

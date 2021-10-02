@@ -50,7 +50,7 @@ from protocols.ip4.ps import (
 def _defragment_ip4_packet(self, packet_rx: PacketRx) -> Optional[PacketRx]:
     """Defragment IPv4 packet"""
 
-    # Cleanup expir flows
+    # Cleanup expired flows
     self.ip4_frag_flows = {
         _: self.ip4_frag_flows[_] for _ in self.ip4_frag_flows if self.ip4_frag_flows[_]["timestamp"] - time() < config.IP4_FRAG_FLOW_TIMEOUT
     }
@@ -65,7 +65,7 @@ def _defragment_ip4_packet(self, packet_rx: PacketRx) -> Optional[PacketRx]:
     flow_id = (packet_rx.ip4.src, packet_rx.ip4.dst, packet_rx.ip4.id)
 
     # Update flow db
-    if self.ip4_frag_flows.get(flow_id, None):
+    if flow_id in self.ip4_frag_flows:
         self.ip4_frag_flows[flow_id]["data"][packet_rx.ip4.offset] = packet_rx.ip4.data_copy
     else:
         self.ip4_frag_flows[flow_id] = {
@@ -140,6 +140,8 @@ def _phrx_ip4(self, packet_rx: PacketRx) -> None:
         self.packet_stats_rx.ip4__frag += 1
         if not (packet_rx := self._defragment_ip4_packet(packet_rx)):
             return
+        else:
+            self.packet_stats_rx.ip4__defrag += 1
 
     if packet_rx.ip4.proto == IP4_PROTO_ICMP4:
         self._phrx_icmp4(packet_rx)

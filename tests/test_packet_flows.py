@@ -29,6 +29,9 @@
 # tests/test_packet_handler.py - unit tests for PacketHandler class
 #
 
+from __future__ import annotations  # Required by Python ver < 3.10
+
+from typing import TYPE_CHECKING
 
 from testslide import StrictMock, TestCase
 
@@ -41,6 +44,9 @@ from pytcp.subsystems.arp_cache import ArpCache
 from pytcp.subsystems.nd_cache import NdCache
 from pytcp.subsystems.packet_handler import PacketHandler
 from pytcp.subsystems.tx_ring import TxRing
+
+if TYPE_CHECKING:
+    from typing import List
 
 PACKET_HANDLER_MODULES = [
     "pytcp.subsystems.packet_handler",
@@ -260,6 +266,67 @@ class TestPacketHandler(TestCase):
             ),
         )
         self.assertEqual(self.frame_tx[: len(frame_tx)], frame_tx)
+
+    def _test_packet_flow__ip4_udp_echo_rx_frag(self, order: List(int)):
+        """Receive fragmented IPv4/UDP packets and echo them back to the sender in specified order"""
+
+        frags = []
+        for index in range(5):
+            with open(f"tests/packets/rx_tx/ip4_udp_echo_rx_frag_{index}.rx", "rb") as _:
+                frags.append(_.read())
+        with open("tests/packets/rx_tx/ip4_udp_echo_rx_frag.tx", "rb") as _:
+            frame_tx = _.read()
+        for index in order:
+            self.packet_handler._phrx_ether(PacketRx(frags[index]))
+
+        self.assertEqual(
+            self.packet_handler.packet_stats_rx,
+            PacketStatsRx(
+                ether__pre_parse=len(order),
+                ether__dst_unicast=len(order),
+                ip4__pre_parse=len(order),
+                ip4__dst_unicast=len(order),
+                ip4__frag=len(order),
+                ip4__defrag=1,
+                udp__pre_parse=1,
+                udp__echo_native=1,
+            ),
+        )
+        self.assertEqual(
+            self.packet_handler.packet_stats_tx,
+            PacketStatsTx(
+                udp__pre_assemble=1,
+                udp__send=1,
+                ip4__pre_assemble=1,
+                ip4__mtu_ok__send=1,
+                ether__pre_assemble=1,
+                ether__src_unspec__fill=1,
+                ether__dst_unspec=1,
+                ether__dst_unspec__ip4_lookup=1,
+                ether__dst_unspec__ip4_lookup__loc_net__nd_cache_hit__send=1,
+            ),
+        )
+        self.assertEqual(self.frame_tx[: len(frame_tx)], frame_tx)
+
+    def test_packet_flow__ip4_udp_echo_rx_frag_0_1_2_3_4(self):
+        """Receive fragmented IPv4/UDP packets and echo them back to the sender"""
+
+        self._test_packet_flow__ip4_udp_echo_rx_frag([0, 1, 2, 3, 4])
+
+    def test_packet_flow__ip4_udp_echo_rx_frag_4_3_2_1_0(self):
+        """Receive fragmented IPv4/UDP packets and echo them back to the sender"""
+
+        self._test_packet_flow__ip4_udp_echo_rx_frag([4, 3, 2, 1, 0])
+
+    def test_packet_flow__ip4_udp_echo_rx_frag_1_2_0_4_3(self):
+        """Receive fragmented IPv4/UDP packets and echo them back to the sender"""
+
+        self._test_packet_flow__ip4_udp_echo_rx_frag([1, 2, 0, 4, 3])
+
+    def test_packet_flow__ip4_udp_echo_rx_frag_1_2_0_2_1_0_3_3_4_1(self):
+        """Receive fragmented IPv4/UDP packets and echo them back to the sender"""
+
+        self._test_packet_flow__ip4_udp_echo_rx_frag([1, 2, 0, 2, 1, 0, 3, 3, 4, 1])
 
     def test_packet_flow__ip4_tcp_syn_to_closed_port(self):
         """Receive IPv4/TCP SYN packet to closed port, respond with IPv4/TCP RST/ACK packet"""
