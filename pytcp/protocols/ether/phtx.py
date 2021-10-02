@@ -37,7 +37,7 @@ from lib.logger import log
 from lib.mac_address import MacAddress
 from misc.tx_status import TxStatus
 from protocols.ether.fpa import EtherAssembler
-from protocols.ip4.fpa import Ip4Assembler
+from protocols.ip4.fpa import Ip4Assembler, Ip4FragAssembler
 from protocols.ip6.fpa import Ip6Assembler
 
 if TYPE_CHECKING:
@@ -126,7 +126,7 @@ def _phtx_ether(
             return TxStatus.PASSED_TO_TX_RING
 
     # Check if we can obtain destination MAC based on IPv4 header data
-    if isinstance(ether_packet_tx._carried_packet, Ip4Assembler):
+    if isinstance(ether_packet_tx._carried_packet, (Ip4Assembler, Ip4FragAssembler)):
         self.packet_stats_tx.ether__dst_unspec__ip4_lookup += 1
 
         ip4_src = ether_packet_tx._carried_packet.src

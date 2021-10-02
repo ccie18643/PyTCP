@@ -233,6 +233,27 @@ class Ip4FragAssembler:
 
         return IP4_HEADER_LEN + sum([len(_) for _ in self._options]) + len(self._data)
 
+    def __str__(self) -> str:
+        """Packet log string"""
+
+        return (
+            f"IPv4 {self._src} > {self._dst}, proto {self._proto} ({IP4_PROTO_TABLE.get(self._proto, '???')}), id {self._id}"
+            + f"{', DF' if self._flag_df else ''}{', MF' if self._flag_mf else ''}, offset {self._offset}, plen {self._plen}"
+            + f", ttl {self._ttl}"
+        )
+
+    @property
+    def dst(self) -> Ip4Address:
+        """Getter for _dst"""
+
+        return self._dst
+
+    @property
+    def src(self) -> Ip4Address:
+        """Getter for _src"""
+
+        return self._src
+
     @property
     def tracker(self) -> Tracker:
         """Getter for _tracker"""
