@@ -55,6 +55,7 @@ class EtherAssembler:
 
     def __init__(
         self,
+        *,
         carried_packet: Union[ArpAssembler, Ip4Assembler, Ip6Assembler],
         src: MacAddress = MacAddress(0),
         dst: MacAddress = MacAddress(0),

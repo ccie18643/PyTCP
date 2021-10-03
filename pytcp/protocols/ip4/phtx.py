@@ -179,10 +179,10 @@ def _phtx_ip4(
 
     # Return the most severe code
     for tx_status in [
-        TxStatus.DROPED_ETHER_RESOLUTION_FAIL,
-        TxStatus.DROPED_ETHER_NO_GATEWAY,
-        TxStatus.DROPED_ETHER_CACHE_FAIL,
-        TxStatus.DROPED_ETHER_GATEWAY_CACHE_FAIL,
+        TxStatus.DROPED_ETHER_DST_RESOLUTION_FAIL,
+        TxStatus.DROPED_ETHER_DST_NO_GATEWAY,
+        TxStatus.DROPED_ETHER_DST_ARP_CACHE_FAIL,
+        TxStatus.DROPED_ETHER_DST_GATEWAY_ARP_CACHE_FAIL,
         TxStatus.PASSED_TO_TX_RING,
     ]:
         if tx_status in ether_tx_status:

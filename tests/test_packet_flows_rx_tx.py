@@ -85,9 +85,9 @@ CONFIG_PATCHES = {
 STACK_MAC_ADDRESS = MacAddress("02:00:00:77:77:77")
 STACK_IP4_HOST = Ip4Host("192.168.9.7/24")
 STACK_IP6_HOST = Ip6Host("2603:9000:e307:9f09:0:ff:fe77:7777/64")
-REMOTE_MAC_ADDRESS = MacAddress("52:54:00:df:85:37")
-REMOTE_IP4_ADDRESS = Ip4Address("192.168.9.102")
-REMOTE_IP6_ADDRESS = Ip6Address("2603:9000:e307:9f09::1fa1")
+LOCNET_MAC_ADDRESS = MacAddress("52:54:00:df:85:37")
+LOCNET_IP4_ADDRESS = Ip4Address("192.168.9.102")
+LOCNET_IP6_ADDRESS = Ip6Address("2603:9000:e307:9f09::1fa1")
 
 
 class TestPacketHandler(TestCase):
@@ -104,8 +104,8 @@ class TestPacketHandler(TestCase):
         self.nd_cache_mock = StrictMock(NdCache)
         self.tx_ring_mock = StrictMock(TxRing)
 
-        self.mock_callable(self.arp_cache_mock, "find_entry").for_call(REMOTE_IP4_ADDRESS).to_return_value(REMOTE_MAC_ADDRESS)
-        self.mock_callable(self.nd_cache_mock, "find_entry").for_call(REMOTE_IP6_ADDRESS).to_return_value(REMOTE_MAC_ADDRESS)
+        self.mock_callable(self.arp_cache_mock, "find_entry").for_call(LOCNET_IP4_ADDRESS).to_return_value(LOCNET_MAC_ADDRESS)
+        self.mock_callable(self.nd_cache_mock, "find_entry").for_call(LOCNET_IP6_ADDRESS).to_return_value(LOCNET_MAC_ADDRESS)
         self.mock_callable(self.tx_ring_mock, "enqueue").with_implementation(lambda _: _.assemble(self.packet_tx) or self.packets_tx.append(self.packet_tx))
 
         # Initialize packet handler and manually set all the variables that normally would require network connectivity
@@ -130,8 +130,10 @@ class TestPacketHandler(TestCase):
                 except ModuleNotFoundError:
                     continue
 
-    def test_packet_flow__rx_tx__ip4_ping(self):
-        """Receive ICMPv4 echo-request packet, respond with echo-reply"""
+    # Test name format: 'test_name__protocol_tested__test_description__optional_condition'
+
+    def test_packet_flow_rx_tx__icmp4__ip4_ping(self):
+        """[ICMPv4] Receive ICMPv4 echo-request packet, respond with echo-reply"""
 
         with open("tests/packets/rx_tx/ip4_ping.rx", "rb") as _:
             packet_rx = _.read()
@@ -158,15 +160,14 @@ class TestPacketHandler(TestCase):
                 ip4__mtu_ok__send=1,
                 ether__pre_assemble=1,
                 ether__src_unspec__fill=1,
-                ether__dst_unspec=1,
                 ether__dst_unspec__ip4_lookup=1,
-                ether__dst_unspec__ip4_lookup__loc_net__nd_cache_hit__send=1,
+                ether__dst_unspec__ip4_lookup__locnet__arp_cache_hit__send=1,
             ),
         )
         self.assertEqual(self.packet_tx[: len(packet_tx)], packet_tx)
 
-    def test_packet_flow__rx_tx__ip4_udp_to_closed_port(self):
-        """Receive IPv4/UDP packet for closed port, respond with ICMPv4 unreachable packet"""
+    def test_packet_flow_rx_tx__udp__ip4_udp_to_closed_port(self):
+        """[UDP] Receive IPv4/UDP packet for closed port, respond with ICMPv4 unreachable packet"""
 
         with open("tests/packets/rx_tx/ip4_udp_to_closed_port.rx", "rb") as _:
             packet_rx = _.read()
@@ -193,15 +194,14 @@ class TestPacketHandler(TestCase):
                 ip4__mtu_ok__send=1,
                 ether__pre_assemble=1,
                 ether__src_unspec__fill=1,
-                ether__dst_unspec=1,
                 ether__dst_unspec__ip4_lookup=1,
-                ether__dst_unspec__ip4_lookup__loc_net__nd_cache_hit__send=1,
+                ether__dst_unspec__ip4_lookup__locnet__arp_cache_hit__send=1,
             ),
         )
         self.assertEqual(self.packet_tx[: len(packet_tx)], packet_tx)
 
-    def test_packet_flow__rx_tx__ip4_udp_echo(self):
-        """Receive IPv4/UDP packet and echo it back to the sender"""
+    def test_packet_flow_rx_tx__udp__ip4_udp_echo(self):
+        """[UDP] Receive IPv4/UDP packet and echo it back to the sender"""
 
         with open("tests/packets/rx_tx/ip4_udp_echo.rx", "rb") as _:
             packet_rx = _.read()
@@ -228,15 +228,14 @@ class TestPacketHandler(TestCase):
                 ip4__mtu_ok__send=1,
                 ether__pre_assemble=1,
                 ether__src_unspec__fill=1,
-                ether__dst_unspec=1,
                 ether__dst_unspec__ip4_lookup=1,
-                ether__dst_unspec__ip4_lookup__loc_net__nd_cache_hit__send=1,
+                ether__dst_unspec__ip4_lookup__locnet__arp_cache_hit__send=1,
             ),
         )
         self.assertEqual(self.packet_tx[: len(packet_tx)], packet_tx)
 
-    def _test_packet_flow__rx_tx__ip4_udp_echo_rx_frag(self, order: List(int)):
-        """Receive fragmented IPv4/UDP packets and echo them back to the sender in specified order"""
+    def _test_packet_flow_rx_tx__ip4_frag__ip4_udp_echo_rx_frag(self, order: List(int)):
+        """[IPv4 frag] Receive fragmented IPv4/UDP packets and echo them back to the sender in specified order"""
 
         frags = []
         for index in range(5):
@@ -268,35 +267,34 @@ class TestPacketHandler(TestCase):
                 ip4__mtu_ok__send=1,
                 ether__pre_assemble=1,
                 ether__src_unspec__fill=1,
-                ether__dst_unspec=1,
                 ether__dst_unspec__ip4_lookup=1,
-                ether__dst_unspec__ip4_lookup__loc_net__nd_cache_hit__send=1,
+                ether__dst_unspec__ip4_lookup__locnet__arp_cache_hit__send=1,
             ),
         )
         self.assertEqual(self.packet_tx[: len(packet_tx)], packet_tx)
 
-    def test_packet_flow__rx_tx__ip4_udp_echo_rx_frag_0_1_2_3_4(self):
-        """Receive fragmented IPv4/UDP packets and echo them back to the sender"""
+    def test_packet_flow_rx_tx__ip4_frag__ip4_udp_echo_rx_frag_0_1_2_3_4(self):
+        """[IPv4 frag] Receive fragmented IPv4/UDP packets and echo them back to the sender"""
 
-        self._test_packet_flow__rx_tx__ip4_udp_echo_rx_frag([0, 1, 2, 3, 4])
+        self._test_packet_flow_rx_tx__ip4_frag__ip4_udp_echo_rx_frag([0, 1, 2, 3, 4])
 
-    def test_packet_flow__rx_tx__ip4_udp_echo_rx_frag_4_3_2_1_0(self):
-        """Receive fragmented IPv4/UDP packets and echo them back to the sender"""
+    def test_packet_flow_rx_tx__ip4_frag__ip4_udp_echo_rx_frag_4_3_2_1_0(self):
+        """[IPv4 frag] Receive fragmented IPv4/UDP packets and echo them back to the sender"""
 
-        self._test_packet_flow__rx_tx__ip4_udp_echo_rx_frag([4, 3, 2, 1, 0])
+        self._test_packet_flow_rx_tx__ip4_frag__ip4_udp_echo_rx_frag([4, 3, 2, 1, 0])
 
-    def test_packet_flow__rx_tx__ip4_udp_echo_rx_frag_1_2_0_4_3(self):
-        """Receive fragmented IPv4/UDP packets and echo them back to the sender"""
+    def test_packet_flow_rx_tx__ip4_frag__ip4_udp_echo_rx_frag_1_2_0_4_3(self):
+        """[IPv4 frag] Receive fragmented IPv4/UDP packets and echo them back to the sender"""
 
-        self._test_packet_flow__rx_tx__ip4_udp_echo_rx_frag([1, 2, 0, 4, 3])
+        self._test_packet_flow_rx_tx__ip4_frag__ip4_udp_echo_rx_frag([1, 2, 0, 4, 3])
 
-    def test_packet_flow__rx_tx__ip4_udp_echo_rx_frag_1_2_0_2_1_0_3_3_4_1(self):
-        """Receive fragmented IPv4/UDP packets and echo them back to the sender"""
+    def test_packet_flow_rx_tx__ip4_frag__ip4_udp_echo_rx_frag_1_2_0_2_1_0_3_3_4_1(self):
+        """[IPv4 frag] Receive fragmented IPv4/UDP packets and echo them back to the sender"""
 
-        self._test_packet_flow__rx_tx__ip4_udp_echo_rx_frag([1, 2, 0, 2, 1, 0, 3, 3, 4, 1])
+        self._test_packet_flow_rx_tx__ip4_frag__ip4_udp_echo_rx_frag([1, 2, 0, 2, 1, 0, 3, 3, 4, 1])
 
-    def test_packet_flow__rx_tx__ip4_udp_echo_tx_frag(self):
-        """Receive IPv4/UDP packet and echo it back to the sender in fragments"""
+    def test_packet_flow_rx_tx__ip4_frag__ip4_udp_echo_tx_frag(self):
+        """[IPv4 frag] Receive IPv4/UDP packet and echo it back to the sender in fragments"""
 
         with open("tests/packets/rx_tx/ip4_udp_echo_tx_frag.rx", "rb") as _:
             packet_rx = _.read()
@@ -326,16 +324,15 @@ class TestPacketHandler(TestCase):
                 ip4__mtu_exceed__frag__send=5,
                 ether__pre_assemble=5,
                 ether__src_unspec__fill=5,
-                ether__dst_unspec=5,
                 ether__dst_unspec__ip4_lookup=5,
-                ether__dst_unspec__ip4_lookup__loc_net__nd_cache_hit__send=5,
+                ether__dst_unspec__ip4_lookup__locnet__arp_cache_hit__send=5,
             ),
         )
         for index in range(5):
             self.assertEqual(self.packets_tx[index][: len(frags[index])], frags[index])
 
-    def test_packet_flow__rx_tx__ip4_tcp_syn_to_closed_port(self):
-        """Receive IPv4/TCP SYN packet to closed port, respond with IPv4/TCP RST/ACK packet"""
+    def test_packet_flow_rx_tx__tcp__ip4_tcp_syn_to_closed_port(self):
+        """[TCP] Receive IPv4/TCP SYN packet to closed port, respond with IPv4/TCP RST/ACK packet"""
 
         with open("tests/packets/rx_tx/ip4_tcp_syn_to_closed_port.rx", "rb") as _:
             packet_rx = _.read()
@@ -364,15 +361,14 @@ class TestPacketHandler(TestCase):
                 ip4__mtu_ok__send=1,
                 ether__pre_assemble=1,
                 ether__src_unspec__fill=1,
-                ether__dst_unspec=1,
                 ether__dst_unspec__ip4_lookup=1,
-                ether__dst_unspec__ip4_lookup__loc_net__nd_cache_hit__send=1,
+                ether__dst_unspec__ip4_lookup__locnet__arp_cache_hit__send=1,
             ),
         )
         self.assertEqual(self.packet_tx[: len(packet_tx)], packet_tx)
 
-    def test_packet_flow__rx_tx__ip6_ping(self):
-        """Receive ICMPv6 echo-request packet, respond with echo-reply"""
+    def test_packet_flow_rx_tx__icmp6__ip6_ping(self):
+        """[ICMPv6] Receive ICMPv6 echo-request packet, respond with echo-reply"""
 
         with open("tests/packets/rx_tx/ip6_ping.rx", "rb") as _:
             packet_rx = _.read()
@@ -399,15 +395,14 @@ class TestPacketHandler(TestCase):
                 ip6__mtu_ok__send=1,
                 ether__pre_assemble=1,
                 ether__src_unspec__fill=1,
-                ether__dst_unspec=1,
                 ether__dst_unspec__ip6_lookup=1,
-                ether__dst_unspec__ip6_lookup__loc_net__nd_cache_hit__send=1,
+                ether__dst_unspec__ip6_lookup__locnet__nd_cache_hit__send=1,
             ),
         )
         self.assertEqual(self.packet_tx[: len(packet_tx)], packet_tx)
 
-    def test_packet_flow__rx_tx__ip6_udp_to_closed_port(self):
-        """Receive IPv6/UDP packet for closed port, respond with ICMPv6 unreachable packet"""
+    def test_packet_flow_rx_tx__udp__ip6_udp_to_closed_port(self):
+        """[UDP] Receive IPv6/UDP packet for closed port, respond with ICMPv6 unreachable packet"""
 
         with open("tests/packets/rx_tx/ip6_udp_to_closed_port.rx", "rb") as _:
             packet_rx = _.read()
@@ -434,15 +429,14 @@ class TestPacketHandler(TestCase):
                 ip6__mtu_ok__send=1,
                 ether__pre_assemble=1,
                 ether__src_unspec__fill=1,
-                ether__dst_unspec=1,
                 ether__dst_unspec__ip6_lookup=1,
-                ether__dst_unspec__ip6_lookup__loc_net__nd_cache_hit__send=1,
+                ether__dst_unspec__ip6_lookup__locnet__nd_cache_hit__send=1,
             ),
         )
         self.assertEqual(self.packet_tx[: len(packet_tx)], packet_tx)
 
-    def test_packet_flow__rx_tx__ip6_udp_echo(self):
-        """Receive IPv4/UDP packet and echo it back to the sender"""
+    def test_packet_flow_rx_tx__udp__ip6_udp_echo(self):
+        """[UDP] Receive IPv4/UDP packet and echo it back to the sender"""
 
         with open("tests/packets/rx_tx/ip6_udp_echo.rx", "rb") as _:
             packet_rx = _.read()
@@ -469,15 +463,14 @@ class TestPacketHandler(TestCase):
                 ip6__mtu_ok__send=1,
                 ether__pre_assemble=1,
                 ether__src_unspec__fill=1,
-                ether__dst_unspec=1,
                 ether__dst_unspec__ip6_lookup=1,
-                ether__dst_unspec__ip6_lookup__loc_net__nd_cache_hit__send=1,
+                ether__dst_unspec__ip6_lookup__locnet__nd_cache_hit__send=1,
             ),
         )
         self.assertEqual(self.packet_tx[: len(packet_tx)], packet_tx)
 
-    def _test_packet_flow__rx_tx__ip6_udp_echo_rx_frag(self, order: List(int)):
-        """Receive fragmented IPv6/UDP packets and echo them back to the sender in specified order"""
+    def _test_packet_flow_rx_tx__ip6_frag__ip6_udp_echo_rx_frag(self, order: List(int)):
+        """[IPv6 frag] Receive fragmented IPv6/UDP packets and echo them back to the sender in specified order"""
 
         frags = []
         for index in range(5):
@@ -509,35 +502,34 @@ class TestPacketHandler(TestCase):
                 ip6__mtu_ok__send=1,
                 ether__pre_assemble=1,
                 ether__src_unspec__fill=1,
-                ether__dst_unspec=1,
                 ether__dst_unspec__ip6_lookup=1,
-                ether__dst_unspec__ip6_lookup__loc_net__nd_cache_hit__send=1,
+                ether__dst_unspec__ip6_lookup__locnet__nd_cache_hit__send=1,
             ),
         )
         self.assertEqual(self.packet_tx[: len(packet_tx)], packet_tx)
 
-    def test_packet_flow__rx_tx__ip6_udp_echo_rx_frag_0_1_2_3_4(self):
-        """Receive fragmented IPv6/UDP packets and echo them back to the sender"""
+    def test_packet_flow_rx_tx__ip6_frag__ip6_udp_echo_rx_frag_0_1_2_3_4(self):
+        """[IPv6 frag] Receive fragmented IPv6/UDP packets and echo them back to the sender"""
 
-        self._test_packet_flow__rx_tx__ip6_udp_echo_rx_frag([0, 1, 2, 3, 4])
+        self._test_packet_flow_rx_tx__ip6_frag__ip6_udp_echo_rx_frag([0, 1, 2, 3, 4])
 
-    def test_packet_flow__rx_tx__ip6_udp_echo_rx_frag_4_3_2_1_0(self):
-        """Receive fragmented IPv6/UDP packets and echo them back to the sender"""
+    def test_packet_flow_rx_tx__ip6_frag__ip6_udp_echo_rx_frag_4_3_2_1_0(self):
+        """[IPv6 frag] Receive fragmented IPv6/UDP packets and echo them back to the sender"""
 
-        self._test_packet_flow__rx_tx__ip6_udp_echo_rx_frag([4, 3, 2, 1, 0])
+        self._test_packet_flow_rx_tx__ip6_frag__ip6_udp_echo_rx_frag([4, 3, 2, 1, 0])
 
-    def test_packet_flow__rx_tx__ip6_udp_echo_rx_frag_1_2_0_4_3(self):
-        """Receive fragmented IPv6/UDP packets and echo them back to the sender"""
+    def test_packet_flow_rx_tx__ip6_frag__ip6_udp_echo_rx_frag_1_2_0_4_3(self):
+        """[IPv6 frag] Receive fragmented IPv6/UDP packets and echo them back to the sender"""
 
-        self._test_packet_flow__rx_tx__ip6_udp_echo_rx_frag([1, 2, 0, 4, 3])
+        self._test_packet_flow_rx_tx__ip6_frag__ip6_udp_echo_rx_frag([1, 2, 0, 4, 3])
 
-    def test_packet_flow__rx_tx__ip6_udp_echo_rx_frag_1_2_0_2_1_0_3_3_4_1(self):
-        """Receive fragmented IPv6/UDP packets and echo them back to the sender"""
+    def test_packet_flow_rx_tx__ip6_frag__ip6_udp_echo_rx_frag_1_2_0_2_1_0_3_3_4_1(self):
+        """[IPv6 frag] Receive fragmented IPv6/UDP packets and echo them back to the sender"""
 
-        self._test_packet_flow__rx_tx__ip6_udp_echo_rx_frag([1, 2, 0, 2, 1, 0, 3, 3, 4, 1])
+        self._test_packet_flow_rx_tx__ip6_frag__ip6_udp_echo_rx_frag([1, 2, 0, 2, 1, 0, 3, 3, 4, 1])
 
-    def test_packet_flow__rx_tx__ip6_udp_echo_tx_frag(self):
-        """Receive IPv4/UDP packet and echo it back to the sender in fragments"""
+    def test_packet_flow_rx_tx__ip6_frag__ip6_udp_echo_tx_frag(self):
+        """[IPv6 frag] Receive IPv4/UDP packet and echo it back to the sender in fragments"""
 
         with open("tests/packets/rx_tx/ip6_udp_echo_tx_frag.rx", "rb") as _:
             packet_rx = _.read()
@@ -570,16 +562,15 @@ class TestPacketHandler(TestCase):
                 ip6_ext_frag__send=5,
                 ether__pre_assemble=5,
                 ether__src_unspec__fill=5,
-                ether__dst_unspec=5,
                 ether__dst_unspec__ip6_lookup=5,
-                ether__dst_unspec__ip6_lookup__loc_net__nd_cache_hit__send=5,
+                ether__dst_unspec__ip6_lookup__locnet__nd_cache_hit__send=5,
             ),
         )
         for index in range(5):
             self.assertEqual(self.packets_tx[index][: len(frags[index])], frags[index])
 
-    def test_packet_flow__rx_tx__ip6_tcp_syn_to_closed_port(self):
-        """Receive IPv6/TCP SYN packet to closed port, respond with IPv6/TCP RST/ACK packet"""
+    def test_packet_flow_rx_tx__tcp__ip6_tcp_syn_to_closed_port(self):
+        """[TCP] Receive IPv6/TCP SYN packet to closed port, respond with IPv6/TCP RST/ACK packet"""
 
         with open("tests/packets/rx_tx/ip6_tcp_syn_to_closed_port.rx", "rb") as _:
             packet_rx = _.read()
@@ -608,15 +599,14 @@ class TestPacketHandler(TestCase):
                 ip6__mtu_ok__send=1,
                 ether__pre_assemble=1,
                 ether__src_unspec__fill=1,
-                ether__dst_unspec=1,
                 ether__dst_unspec__ip6_lookup=1,
-                ether__dst_unspec__ip6_lookup__loc_net__nd_cache_hit__send=1,
+                ether__dst_unspec__ip6_lookup__locnet__nd_cache_hit__send=1,
             ),
         )
         self.assertEqual(self.packet_tx[: len(packet_tx)], packet_tx)
 
-    def test_packet_flow__rx_tx__arp_request(self):
-        """Receive ARP Request packet for stack IPv4 address, respond with ARP Reply"""
+    def test_packet_flow_rx_tx__arp__arp_request(self):
+        """[ARP] Receive ARP Request packet for stack IPv4 address, respond with ARP Reply"""
 
         with open("tests/packets/rx_tx/arp_request.rx", "rb") as _:
             packet_rx = _.read()
