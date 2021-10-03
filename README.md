@@ -48,7 +48,7 @@ I am also working on another TCP/IP stack project that is being programmed in C 
 
 #### Next steps:
 
- - [x] [Stack - *Packet flow counters to help gathering packet statistics and to let packet flow tracing for unit testing*
+ - [x] Stack - *Packet flow counters to help gathering packet statistics and to let packet flow tracing for unit testing*
  - [ ] Ip4 - *Reimplement packet defragmentation to store whole packets in flow db instead of making copies of IP header and data*
  - [x] Logging - *Replace loguru with homegrown logger to improve performance and flexibility*
  - [x] Stack - *Implement feedback mechanism for TX path so packet sending failures can be communicated to sockets*

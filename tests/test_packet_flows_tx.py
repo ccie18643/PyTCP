@@ -37,6 +37,7 @@ from pytcp.lib.ip4_address import Ip4Address, Ip4Host
 from pytcp.lib.ip6_address import Ip6Address, Ip6Host
 from pytcp.lib.mac_address import MacAddress
 from pytcp.misc.packet_stats import PacketStatsTx
+from pytcp.misc.tx_status import TxStatus
 from pytcp.protocols.arp.ps import ARP_OP_REQUEST
 from pytcp.protocols.icmp4.ps import ICMP4_ECHO_REQUEST
 from pytcp.protocols.icmp6.ps import ICMP6_ECHO_REQUEST
@@ -153,12 +154,13 @@ class TestPacketHandler(TestCase):
 
         with open("tests/packets/tx/ip4_icmp4_echo_request_to_locnet_address.tx", "rb") as _:
             packet_tx = _.read()
-        self.packet_handler._phtx_icmp4(
+        tx_status = self.packet_handler._phtx_icmp4(
             ip4_src=STACK_IP4_HOST.address,
             ip4_dst=LOCNET_IP4_ADDRESS,
             icmp4_type=ICMP4_ECHO_REQUEST,
             icmp4_ec_data=b"Test TX ICMPv4 Echo Request to local network",
         )
+        self.assertEqual(str(tx_status), "PASSED_TO_TX_RING")
         self.assertEqual(
             self.packet_handler.packet_stats_tx,
             PacketStatsTx(
@@ -174,15 +176,97 @@ class TestPacketHandler(TestCase):
         )
         self.assertEqual(self.packet_tx[: len(packet_tx)], packet_tx)
 
+    def test_packet_flow_tx__ether__ip4_icmp4_echo_to_limited_broadcast_address(self):
+        """[Ethernet] Send IPv4/ICMPv4 Echo packet to limited broadcast address"""
+
+        with open("tests/packets/tx/ip4_icmp4_echo_request_to_limited_broadcast_address.tx", "rb") as _:
+            packet_tx = _.read()
+        tx_status = self.packet_handler._phtx_icmp4(
+            ip4_src=STACK_IP4_HOST.address,
+            ip4_dst=Ip4Address("255.255.255.255"),
+            icmp4_type=ICMP4_ECHO_REQUEST,
+            icmp4_ec_data=b"Test TX ICMPv4 Echo Request to limited broadcast",
+        )
+        self.assertEqual(str(tx_status), "PASSED_TO_TX_RING")
+        self.assertEqual(
+            self.packet_handler.packet_stats_tx,
+            PacketStatsTx(
+                icmp4__pre_assemble=1,
+                icmp4__echo_request__send=1,
+                ip4__pre_assemble=1,
+                ip4__mtu_ok__send=1,
+                ether__pre_assemble=1,
+                ether__src_unspec__fill=1,
+                ether__dst_unspec__ip4_lookup=1,
+                ether__dst_unspec__ip4_lookup__limited_broadcast__send=1,
+            ),
+        )
+        self.assertEqual(self.packet_tx[: len(packet_tx)], packet_tx)
+
+    def test_packet_flow_tx__ether__ip4_icmp4_echo_to_network_broadcast_address(self):
+        """[Ethernet] Send IPv4/ICMPv4 Echo packet to network broadcast address"""
+
+        with open("tests/packets/tx/ip4_icmp4_echo_request_to_network_broadcast_address.tx", "rb") as _:
+            packet_tx = _.read()
+        tx_status = self.packet_handler._phtx_icmp4(
+            ip4_src=STACK_IP4_HOST.address,
+            ip4_dst=STACK_IP4_HOST.network.broadcast,
+            icmp4_type=ICMP4_ECHO_REQUEST,
+            icmp4_ec_data=b"Test TX ICMPv4 Echo Request to network broadcast",
+        )
+        self.assertEqual(str(tx_status), "PASSED_TO_TX_RING")
+        self.assertEqual(
+            self.packet_handler.packet_stats_tx,
+            PacketStatsTx(
+                icmp4__pre_assemble=1,
+                icmp4__echo_request__send=1,
+                ip4__pre_assemble=1,
+                ip4__mtu_ok__send=1,
+                ether__pre_assemble=1,
+                ether__src_unspec__fill=1,
+                ether__dst_unspec__ip4_lookup=1,
+                ether__dst_unspec__ip4_lookup__network_broadcast__send=1,
+            ),
+        )
+        self.assertEqual(self.packet_tx[: len(packet_tx)], packet_tx)
+
+    def test_packet_flow_tx__ether__ip4_icmp4_echo_to_network_address(self):
+        """[Ethernet] Send IPv4/ICMPv4 Echo packet to the network address"""
+
+        with open("tests/packets/tx/ip4_icmp4_echo_request_to_network_address.tx", "rb") as _:
+            packet_tx = _.read()
+        tx_status = self.packet_handler._phtx_icmp4(
+            ip4_src=STACK_IP4_HOST.address,
+            ip4_dst=STACK_IP4_HOST.network.address,
+            icmp4_type=ICMP4_ECHO_REQUEST,
+            icmp4_ec_data=b"Test TX ICMPv4 Echo Request to network address",
+        )
+        self.assertEqual(str(tx_status), "PASSED_TO_TX_RING")
+        self.assertEqual(
+            self.packet_handler.packet_stats_tx,
+            PacketStatsTx(
+                icmp4__pre_assemble=1,
+                icmp4__echo_request__send=1,
+                ip4__pre_assemble=1,
+                ip4__mtu_ok__send=1,
+                ether__pre_assemble=1,
+                ether__src_unspec__fill=1,
+                ether__dst_unspec__ip4_lookup=1,
+                ether__dst_unspec__ip4_lookup__network_broadcast__send=1,
+            ),
+        )
+        self.assertEqual(self.packet_tx[: len(packet_tx)], packet_tx)
+
     def test_packet_flow_tx__ether__ip4_icmp4_echo_to_locnet_address__arp_cache_miss(self):
         """[Ethernet] Send IPv4/ICMPv4 Echo packet to host on local subnet, ARP cache miss - drop"""
 
-        self.packet_handler._phtx_icmp4(
+        tx_status = self.packet_handler._phtx_icmp4(
             ip4_src=STACK_IP4_HOST.address,
             ip4_dst=LOCNET_IP4_ADDRESS_NO_ARP,
             icmp4_type=ICMP4_ECHO_REQUEST,
             icmp4_ec_data=b"Test TX ICMPv4 Echo Request to local network",
         )
+        self.assertEqual(str(tx_status), "DROPED_ETHER_DST_ND_CACHE_FAIL")
         self.assertEqual(
             self.packet_handler.packet_stats_tx,
             PacketStatsTx(
@@ -202,12 +286,13 @@ class TestPacketHandler(TestCase):
 
         with open("tests/packets/tx/ip4_icmp4_echo_request_to_extnet_address.tx", "rb") as _:
             packet_tx = _.read()
-        self.packet_handler._phtx_icmp4(
+        tx_status = self.packet_handler._phtx_icmp4(
             ip4_src=STACK_IP4_HOST.address,
             ip4_dst=EXTNET_IP4_ADDRESS,
             icmp4_type=ICMP4_ECHO_REQUEST,
             icmp4_ec_data=b"Test TX ICMPv4 Echo Request to external network",
         )
+        self.assertEqual(str(tx_status), "PASSED_TO_TX_RING")
         self.assertEqual(
             self.packet_handler.packet_stats_tx,
             PacketStatsTx(
@@ -228,12 +313,13 @@ class TestPacketHandler(TestCase):
 
         STACK_IP4_HOST.gateway = None
 
-        self.packet_handler._phtx_icmp4(
+        tx_status = self.packet_handler._phtx_icmp4(
             ip4_src=STACK_IP4_HOST.address,
             ip4_dst=EXTNET_IP4_ADDRESS,
             icmp4_type=ICMP4_ECHO_REQUEST,
             icmp4_ec_data=b"Test TX ICMPv4 Echo Request to external network",
         )
+        self.assertEqual(str(tx_status), "DROPED_ETHER_DST_NO_GATEWAY_IP4")
         self.assertEqual(
             self.packet_handler.packet_stats_tx,
             PacketStatsTx(
@@ -253,12 +339,13 @@ class TestPacketHandler(TestCase):
 
         STACK_IP4_HOST.gateway = LOCNET_IP4_ADDRESS_NO_ARP
 
-        self.packet_handler._phtx_icmp4(
+        tx_status = self.packet_handler._phtx_icmp4(
             ip4_src=STACK_IP4_HOST.address,
             ip4_dst=EXTNET_IP4_ADDRESS,
             icmp4_type=ICMP4_ECHO_REQUEST,
             icmp4_ec_data=b"Test TX ICMPv4 Echo Request to external network",
         )
+        self.assertEqual(str(tx_status), "DROPED_ETHER_DST_GATEWAY_ND_CACHE_FAIL")
         self.assertEqual(
             self.packet_handler.packet_stats_tx,
             PacketStatsTx(
@@ -278,12 +365,13 @@ class TestPacketHandler(TestCase):
 
         with open("tests/packets/tx/ip6_icmp6_echo_request_to_locnet_address.tx", "rb") as _:
             packet_tx = _.read()
-        self.packet_handler._phtx_icmp6(
+        tx_status = self.packet_handler._phtx_icmp6(
             ip6_src=STACK_IP6_HOST.address,
             ip6_dst=LOCNET_IP6_ADDRESS,
             icmp6_type=ICMP6_ECHO_REQUEST,
             icmp6_ec_data=b"Test TX ICMPv6 Echo Request to local network",
         )
+        self.assertEqual(str(tx_status), "PASSED_TO_TX_RING")
         self.assertEqual(
             self.packet_handler.packet_stats_tx,
             PacketStatsTx(
@@ -299,15 +387,43 @@ class TestPacketHandler(TestCase):
         )
         self.assertEqual(self.packet_tx[: len(packet_tx)], packet_tx)
 
+    def test_packet_flow_tx__ether__ip6_icmp6_echo_to_multicast_address(self):
+        """[Ethernet] Send IPv6/ICMPv6 Echo packet to multicast address"""
+
+        with open("tests/packets/tx/ip6_icmp6_echo_request_to_multicast_address.tx", "rb") as _:
+            packet_tx = _.read()
+        tx_status = self.packet_handler._phtx_icmp6(
+            ip6_src=STACK_IP6_HOST.address,
+            ip6_dst=Ip6Address("ff01::1"),
+            icmp6_type=ICMP6_ECHO_REQUEST,
+            icmp6_ec_data=b"Test TX ICMPv6 Echo Request to IPv6 multicast address",
+        )
+        self.assertEqual(str(tx_status), "PASSED_TO_TX_RING")
+        self.assertEqual(
+            self.packet_handler.packet_stats_tx,
+            PacketStatsTx(
+                icmp6__pre_assemble=1,
+                icmp6__echo_request__send=1,
+                ip6__pre_assemble=1,
+                ip6__mtu_ok__send=1,
+                ether__pre_assemble=1,
+                ether__src_unspec__fill=1,
+                ether__dst_unspec__ip6_lookup=1,
+                ether__dst_unspec__ip6_lookup__multicast__send=1,
+            ),
+        )
+        self.assertEqual(self.packet_tx[: len(packet_tx)], packet_tx)
+
     def test_packet_flow_tx__ether__ip6_icmp4_echo_to_locnet_address__nd_cache_miss(self):
         """[Ethernet] Send IPv6/ICMPv6 Echo packet to host on local subnet, ND cache miss - drop"""
 
-        self.packet_handler._phtx_icmp6(
+        tx_status = self.packet_handler._phtx_icmp6(
             ip6_src=STACK_IP6_HOST.address,
             ip6_dst=LOCNET_IP6_ADDRESS_NO_ND,
             icmp6_type=ICMP6_ECHO_REQUEST,
             icmp6_ec_data=b"Test TX ICMPv6 Echo Request to local network",
         )
+        self.assertEqual(str(tx_status), "DROPED_ETHER_DST_ARP_CACHE_FAIL")
         self.assertEqual(
             self.packet_handler.packet_stats_tx,
             PacketStatsTx(
@@ -327,12 +443,13 @@ class TestPacketHandler(TestCase):
 
         with open("tests/packets/tx/ip6_icmp6_echo_request_to_extnet_address.tx", "rb") as _:
             packet_tx = _.read()
-        self.packet_handler._phtx_icmp6(
+        tx_status = self.packet_handler._phtx_icmp6(
             ip6_src=STACK_IP6_HOST.address,
             ip6_dst=EXTNET_IP6_ADDRESS,
             icmp6_type=ICMP6_ECHO_REQUEST,
             icmp6_ec_data=b"Test TX ICMPv6 Echo Request to external network",
         )
+        self.assertEqual(str(tx_status), "PASSED_TO_TX_RING")
         self.assertEqual(
             self.packet_handler.packet_stats_tx,
             PacketStatsTx(
@@ -353,12 +470,13 @@ class TestPacketHandler(TestCase):
 
         STACK_IP6_HOST.gateway = None
 
-        self.packet_handler._phtx_icmp6(
+        tx_status = self.packet_handler._phtx_icmp6(
             ip6_src=STACK_IP6_HOST.address,
             ip6_dst=EXTNET_IP6_ADDRESS,
             icmp6_type=ICMP6_ECHO_REQUEST,
             icmp6_ec_data=b"Test TX ICMPv6 Echo Request to external network",
         )
+        self.assertEqual(str(tx_status), "DROPED_ETHER_DST_NO_GATEWAY_IP6")
         self.assertEqual(
             self.packet_handler.packet_stats_tx,
             PacketStatsTx(
@@ -378,12 +496,13 @@ class TestPacketHandler(TestCase):
 
         STACK_IP6_HOST.gateway = LOCNET_IP6_ADDRESS_NO_ND
 
-        self.packet_handler._phtx_icmp6(
+        tx_status = self.packet_handler._phtx_icmp6(
             ip6_src=STACK_IP6_HOST.address,
             ip6_dst=EXTNET_IP6_ADDRESS,
             icmp6_type=ICMP6_ECHO_REQUEST,
             icmp6_ec_data=b"Test TX ICMPv6 Echo Request to external network",
         )
+        self.assertEqual(str(tx_status), "DROPED_ETHER_DST_GATEWAY_ARP_CACHE_FAIL")
         self.assertEqual(
             self.packet_handler.packet_stats_tx,
             PacketStatsTx(
@@ -403,7 +522,7 @@ class TestPacketHandler(TestCase):
 
         with open("tests/packets/tx/arp_request.tx", "rb") as _:
             packet_tx = _.read()
-        self.packet_handler._phtx_arp(
+        tx_status = self.packet_handler._phtx_arp(
             ether_src=STACK_MAC_ADDRESS,
             ether_dst=MacAddress("FF:FF:FF:FF:FF:FF"),
             arp_oper=ARP_OP_REQUEST,
@@ -412,6 +531,7 @@ class TestPacketHandler(TestCase):
             arp_tha=MacAddress("00:00:00:00:00:00"),
             arp_tpa=LOCNET_IP4_ADDRESS,
         )
+        self.assertEqual(str(tx_status), "PASSED_TO_TX_RING")
         self.assertEqual(
             self.packet_handler.packet_stats_tx,
             PacketStatsTx(
@@ -429,7 +549,7 @@ class TestPacketHandler(TestCase):
 
         with open("tests/packets/tx/arp_request.tx", "rb") as _:
             packet_tx = _.read()
-        self.packet_handler._phtx_arp(
+        tx_status = self.packet_handler._phtx_arp(
             ether_src=MacAddress("00:00:00:00:00:00"),
             ether_dst=MacAddress("FF:FF:FF:FF:FF:FF"),
             arp_oper=ARP_OP_REQUEST,
@@ -438,6 +558,7 @@ class TestPacketHandler(TestCase):
             arp_tha=MacAddress("00:00:00:00:00:00"),
             arp_tpa=LOCNET_IP4_ADDRESS,
         )
+        self.assertEqual(str(tx_status), "PASSED_TO_TX_RING")
         self.assertEqual(
             self.packet_handler.packet_stats_tx,
             PacketStatsTx(
@@ -453,7 +574,7 @@ class TestPacketHandler(TestCase):
     def test_packet_flow_tx__ether__arp_request__unspec_dst(self):
         """[Ethernet] Send out the ARP Request packet with unspecified destination, drop"""
 
-        self.packet_handler._phtx_arp(
+        tx_status = self.packet_handler._phtx_arp(
             ether_src=MacAddress("00:00:00:00:00:00"),
             ether_dst=MacAddress("00:00:00:00:00:00"),
             arp_oper=ARP_OP_REQUEST,
@@ -462,6 +583,7 @@ class TestPacketHandler(TestCase):
             arp_tha=MacAddress("00:00:00:00:00:00"),
             arp_tpa=LOCNET_IP4_ADDRESS,
         )
+        self.assertEqual(str(tx_status), "DROPED_ETHER_DST_RESOLUTION_FAIL")
         self.assertEqual(
             self.packet_handler.packet_stats_tx,
             PacketStatsTx(

@@ -103,7 +103,7 @@ def _phtx_ether(
                     self.packet_stats_tx.ether__dst_unspec__ip6_lookup__extnet__no_gw__drop += 1
                     if __debug__:
                         log("ether", f"<{ether_packet_tx.tracker} - <WARN>No default gateway set for {ip6_host} source address, dropping</>")
-                    return TxStatus.DROPED_ETHER_DST_NO_GATEWAY
+                    return TxStatus.DROPED_ETHER_DST_NO_GATEWAY_IP6
                 if mac_address := self.nd_cache.find_entry(ip6_host.gateway):
                     ether_packet_tx.dst = mac_address
                     self.packet_stats_tx.ether__dst_unspec__ip6_lookup__extnet__gw_nd_cache_hit__send += 1
@@ -144,7 +144,7 @@ def _phtx_ether(
             _send_out_packet()
             return TxStatus.PASSED_TO_TX_RING
 
-        # Send out packet if its destinied to directed broadcast or network addresses (in relation to its source address)
+        # Send out packet if its destinied to network broadcast or network addresses (in relation to its source address)
         for ip4_host in self.ip4_host:
             if ip4_host.address == ip4_src:
                 if ip4_dst in {ip4_host.network.address, ip4_host.network.broadcast}:
@@ -162,7 +162,7 @@ def _phtx_ether(
                     self.packet_stats_tx.ether__dst_unspec__ip4_lookup__extnet__no_gw__drop += 1
                     if __debug__:
                         log("ether", f"{ether_packet_tx.tracker} - <WARN>No default gateway set for {ip4_host} source address, dropping</>")
-                    return TxStatus.DROPED_ETHER_DST_NO_GATEWAY
+                    return TxStatus.DROPED_ETHER_DST_NO_GATEWAY_IP4
                 if mac_address := self.arp_cache.find_entry(ip4_host.gateway):
                     self.packet_stats_tx.ether__dst_unspec__ip4_lookup__extnet__gw_arp_cache_hit__send += 1
                     ether_packet_tx.dst = mac_address
