@@ -586,7 +586,7 @@ class Icmp6NdOptSLLA:
     def __str__(self) -> str:
         """Option log string"""
 
-        return f"tlla {self.slla}"
+        return f"slla {self.slla}"
 
     def __len__(self) -> int:
         """Option length"""

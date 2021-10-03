@@ -67,7 +67,7 @@ def _phrx_icmp4(self, packet_rx: PacketRx) -> None:
     if packet_rx.icmp4.type == ICMP4_ECHO_REQUEST:
         if __debug__:
             log("icmp4", f"{packet_rx.tracker} - <INFO>Received ICMPv4 Echo Request packet from {packet_rx.ip4.src}, sending reply</>")
-        self.packet_stats_rx.icmp4__echo_request += 1
+        self.packet_stats_rx.icmp4__echo_request__respond_echo_reply += 1
 
         self._phtx_icmp4(
             ip4_src=packet_rx.ip4.dst,

@@ -89,14 +89,14 @@ def _phrx_icmp6(self, packet_rx: PacketRx) -> None:
         if __debug__:
             log("icmp6", f"{packet_rx.tracker} - <INFO>Received ICMPv6 Neighbor Solicitation packet from {packet_rx.ip6.src}, sending reply</>")
 
-        # Update ICMPv6 ND cache
+        # Update ICMPv6 ND cache if valid IPv6 source is set and the ND option SLLA is present
         if not (packet_rx.ip6.src.is_unspecified or packet_rx.ip6.src.is_multicast) and packet_rx.icmp6.nd_opt_slla:
-            self.packet_stats_rx.icmp6_nd_neighbor_solicitation__update_cache += 1
+            self.packet_stats_rx.icmp6__nd_neighbor_solicitation__update_nd_cache += 1
             self.nd_cache.add_entry(packet_rx.ip6.src, packet_rx.icmp6.nd_opt_slla)
 
-        # Determine if request is part of DAD request by examining its source address
+        # Determine if request is part of DAD request by examining its source address (absence of slla is already tested by sanity check)
         if ip6_nd_dad := packet_rx.ip6.src.is_unspecified:
-            self.packet_stats_rx.icmp6__nd_neighbor_solicitation__nd_dad += 1
+            self.packet_stats_rx.icmp6__nd_neighbor_solicitation__dad += 1
 
         # Send response
         self.packet_stats_rx.icmp6__nd_neighbor_solicitation__target_stack__respond += 1
@@ -130,7 +130,7 @@ def _phrx_icmp6(self, packet_rx: PacketRx) -> None:
 
         # Update ICMPv6 ND cache
         if packet_rx.icmp6.nd_opt_tlla:
-            self.packet_stats_rx.icmp6__nd_neighbor_advertisement__update_cache += 1
+            self.packet_stats_rx.icmp6__nd_neighbor_advertisement__update_nd_cache += 1
             self.nd_cache.add_entry(packet_rx.icmp6.na_target_address, packet_rx.icmp6.nd_opt_tlla)
             return
 
@@ -155,7 +155,7 @@ def _phrx_icmp6(self, packet_rx: PacketRx) -> None:
 
     # ICMPv6 Echo Request packet
     if packet_rx.icmp6.type == ICMP6_ECHO_REQUEST:
-        self.packet_stats_rx.icmp6__echo_request += 1
+        self.packet_stats_rx.icmp6__echo_request__respond_echo_reply += 1
         if __debug__:
             log("icmp6", f"{packet_rx.tracker} - <INFO>Received ICMPv6 Echo Request packet from {packet_rx.ip6.src}, sending reply</>")
 

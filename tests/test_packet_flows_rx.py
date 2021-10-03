@@ -206,3 +206,21 @@ class TestPacketHandler(TestCase):
             self.packet_handler.packet_stats_tx,
             PacketStatsTx(),
         )
+
+    def test_packet_flow_rx_tx__icmp6_nd__nd_ns__dad(self):
+        """[ICMPv6 ND] Receive ICMPv6 Neighbor Solicitation DAD packet, respond with Neighbor Advertisement"""
+
+        with open("tests/packets/rx/ip6_icmp6_nd_ns__dad_slla.rx", "rb") as _:
+            packet_rx = _.read()
+        self.packet_handler._phrx_ether(PacketRx(packet_rx))
+        self.assertEqual(
+            self.packet_handler.packet_stats_rx,
+            PacketStatsRx(
+                ether__pre_parse=1,
+                ether__dst_multicast=1,
+                ip6__pre_parse=1,
+                ip6__dst_multicast=1,
+                icmp6__pre_parse=1,
+                icmp6__failed_parse__drop=1,
+            ),
+        )

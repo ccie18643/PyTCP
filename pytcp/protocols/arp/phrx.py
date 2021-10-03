@@ -83,7 +83,7 @@ def _phrx_arp(self, packet_rx: PacketRx) -> None:
 
             # Update ARP cache with the mapping learned from the received ARP request that was destined to this stack
             if config.ARP_CACHE_UPDATE_FROM_DIRECT_REQUEST:
-                self.packet_stats_rx.arp__op_request__update_cache += 1
+                self.packet_stats_rx.arp__op_request__update_arp_cache += 1
                 if __debug__:
                     log(
                         "arp",
@@ -113,7 +113,7 @@ def _phrx_arp(self, packet_rx: PacketRx) -> None:
 
         # Update ARP cache with mapping received as direct ARP reply
         if packet_rx.ether.dst == self.mac_unicast:
-            self.packet_stats_rx.arp__op_reply__update_cache += 1
+            self.packet_stats_rx.arp__op_reply__update_arp_cache += 1
             if __debug__:
                 log("arp", f"{packet_rx.tracker} - Adding/refreshing ARP cache entry from direct reply - {packet_rx.arp.spa} -> {packet_rx.arp.sha}")
             self.arp_cache.add_entry(packet_rx.arp.spa, packet_rx.arp.sha)
@@ -121,7 +121,7 @@ def _phrx_arp(self, packet_rx: PacketRx) -> None:
 
         # Update ARP cache with mapping received as gratuitous ARP reply
         if packet_rx.ether.dst.is_broadcast and packet_rx.arp.spa == packet_rx.arp.tpa and config.ARP_CACHE_UPDATE_FROM_GRATUITIOUS_REPLY:
-            self.packet_stats_rx.arp__op_reply__update_cache_gratuitous += 1
+            self.packet_stats_rx.arp__op_reply__update_arp_cache_gratuitous += 1
             if __debug__:
                 log("arp", f"{packet_rx.tracker} - Adding/refreshing ARP cache entry from gratuitous reply - {packet_rx.arp.spa} -> {packet_rx.arp.sha}")
             self.arp_cache.add_entry(packet_rx.arp.spa, packet_rx.arp.sha)

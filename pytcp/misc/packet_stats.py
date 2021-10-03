@@ -50,11 +50,11 @@ class PacketStatsRx:
     arp__op_request__ip_conflict: int = 0
     arp__op_request__tpa_stack__respond: int = 0
     arp__op_request__tpa_unknown__drop: int = 0
-    arp__op_request__update_cache: int = 0
+    arp__op_request__update_arp_cache: int = 0
     arp__op_reply: int = 0
     arp__op_reply__ip_conflict: int = 0
-    arp__op_reply__update_cache: int = 0
-    arp__op_reply__update_cache_gratuitous: int = 0
+    arp__op_reply__update_arp_cache: int = 0
+    arp__op_reply__update_arp_cache_gratuitous: int = 0
 
     ip4__pre_parse: int = 0
     ip4__failed_parse__drop: int = 0
@@ -77,7 +77,7 @@ class PacketStatsRx:
 
     icmp4__pre_parse: int = 0
     icmp4__failed_parse__drop: int = 0
-    icmp4__echo_request: int = 0
+    icmp4__echo_request__respond_echo_reply: int = 0
     icmp4__unreachable: int = 0
 
     icmp6__pre_parse: int = 0
@@ -85,20 +85,21 @@ class PacketStatsRx:
     icmp6__nd_neighbor_solicitation: int = 0
     icmp6__nd_neighbor_solicitation__target_unknown__drop: int = 0
     icmp6__nd_neighbor_solicitation__target_stack__respond: int = 0
-    icmp6__nd_neighbor_solicitation__update_cache: int = 0
+    icmp6__nd_neighbor_solicitation__update_nd_cache: int = 0
+    icmp6__nd_neighbor_solicitation__dad: int = 0
     icmp6__nd_neighbor_advertisement: int = 0
     icmp6__nd_neighbor_advertisement__run_dad: int = 0
-    icmp6__nd_neighbor_advertisement__update_cache: int = 0
+    icmp6__nd_neighbor_advertisement__update_nd_cache: int = 0
     icmp6__nd_router_solicitation: int = 0
     icmp6__nd_router_advertisement: int = 0
-    icmp6__echo_request: int = 0
+    icmp6__echo_request__respond_echo_reply: int = 0
     icmp6__unreachable: int = 0
 
     udp__pre_parse: int = 0
     udp__failed_parse__drop: int = 0
     udp__socket_match: int = 0
     udp__ip_source_unspecified: int = 0
-    udp__echo_native: int = 0
+    udp__echo_native__respond_udp: int = 0
     udp__no_socket_match__respond_icmp4_unreachable: int = 0
     udp__no_socket_match__respond_icmp6_unreachable: int = 0
 
