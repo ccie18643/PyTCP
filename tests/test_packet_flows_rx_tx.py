@@ -71,7 +71,7 @@ PACKET_HANDLER_MODULES = [
 
 # Ensure critical configuration settings are set properly for the testing regardless of actual configuration
 CONFIG_PATCHES = {
-    "LOG_CHANEL": set(),
+    #    "LOG_CHANEL": set(),
     "IP6_SUPPORT": True,
     "IP4_SUPPORT": True,
     "PACKET_INTEGRITY_CHECK": True,
@@ -111,6 +111,7 @@ class TestPacketHandler(TestCase):
         # Initialize packet handler and manually set all the variables that normally would require network connectivity
         self.packet_handler = PacketHandler(None)
         self.packet_handler.mac_address = STACK_MAC_ADDRESS
+        self.packet_handler.mac_multicast = [STACK_IP6_HOST.address.solicited_node_multicast.multicast_mac]
         self.packet_handler.ip4_host = [STACK_IP4_HOST]
         self.packet_handler.ip6_host = [STACK_IP6_HOST]
         self.packet_handler.ip6_multicast = [Ip6Address("ff02::1"), STACK_IP6_HOST.address.solicited_node_multicast]
@@ -131,7 +132,7 @@ class TestPacketHandler(TestCase):
                     continue
 
     # Test name format: 'test_name__protocol_tested__test_description__optional_condition'
-
+    '''
     def test_packet_flow_rx_tx__icmp4__ip4_ping(self):
         """[ICMPv4] Receive ICMPv4 echo-request packet, respond with echo-reply"""
 
@@ -623,6 +624,7 @@ class TestPacketHandler(TestCase):
                 ether__dst_broadcast=1,
                 arp__pre_parse=1,
                 arp__op_request=1,
+                arp__op_request__tpa_stack__respond=1,
                 arp__op_request__update_cache=1,
             ),
         )
@@ -634,6 +636,77 @@ class TestPacketHandler(TestCase):
                 ether__pre_assemble=1,
                 ether__src_spec=1,
                 ether__dst_spec__send=1,
+            ),
+        )
+        self.assertEqual(self.packet_tx[: len(packet_tx)], packet_tx)
+    '''
+
+    def test_packet_flow_rx_tx__icmp6_nd__nd_ns__unicast_dst(self):
+        """[ICMPv6 ND] Receive ICMPv6 Neighbor Solicitation packet for stack IPv6 address, respond with Neighbor Advertisement"""
+
+        with open("tests/packets/rx_tx/ip6_icmp6_nd_ns__unicast_dst.rx", "rb") as _:
+            packet_rx = _.read()
+        with open("tests/packets/rx_tx/ip6_icmp6_nd_ns__unicast_dst.tx", "rb") as _:
+            packet_tx = _.read()
+        self.packet_handler._phrx_ether(PacketRx(packet_rx))
+        self.assertEqual(
+            self.packet_handler.packet_stats_rx,
+            PacketStatsRx(
+                ether__pre_parse=1,
+                ether__dst_unicast=1,
+                ip6__pre_parse=1,
+                ip6__dst_unicast=1,
+                icmp6__pre_parse=1,
+                icmp6__nd_neighbor_solicitation=1,
+                icmp6__nd_neighbor_solicitation__target_stack__respond=1,
+            ),
+        )
+        self.assertEqual(
+            self.packet_handler.packet_stats_tx,
+            PacketStatsTx(
+                icmp6__pre_assemble=1,
+                icmp6__nd_neighbor_advertisement__send=1,
+                ip6__pre_assemble=1,
+                ip6__mtu_ok__send=1,
+                ether__pre_assemble=1,
+                ether__src_unspec__fill=1,
+                ether__dst_unspec__ip6_lookup=1,
+                ether__dst_unspec__ip6_lookup__locnet__nd_cache_hit__send=1,
+            ),
+        )
+        self.assertEqual(self.packet_tx[: len(packet_tx)], packet_tx)
+
+    def test_packet_flow_rx_tx__icmp6_nd__nd_ns__solicited_node_mcast_dst(self):
+        """[ICMPv6 ND] Receive ICMPv6 Neighbor Solicitation packet for stack IPv6 address, respond with Neighbor Advertisement"""
+
+        with open("tests/packets/rx_tx/ip6_icmp6_nd_ns__solicited_node_mcast_dst.rx", "rb") as _:
+            packet_rx = _.read()
+        with open("tests/packets/rx_tx/ip6_icmp6_nd_ns__solicited_node_mcast_dst.tx", "rb") as _:
+            packet_tx = _.read()
+        self.packet_handler._phrx_ether(PacketRx(packet_rx))
+        self.assertEqual(
+            self.packet_handler.packet_stats_rx,
+            PacketStatsRx(
+                ether__pre_parse=1,
+                ether__dst_multicast=1,
+                ip6__pre_parse=1,
+                ip6__dst_multicast=1,
+                icmp6__pre_parse=1,
+                icmp6__nd_neighbor_solicitation=1,
+                icmp6__nd_neighbor_solicitation__target_stack__respond=1,
+            ),
+        )
+        self.assertEqual(
+            self.packet_handler.packet_stats_tx,
+            PacketStatsTx(
+                icmp6__pre_assemble=1,
+                icmp6__nd_neighbor_advertisement__send=1,
+                ip6__pre_assemble=1,
+                ip6__mtu_ok__send=1,
+                ether__pre_assemble=1,
+                ether__src_unspec__fill=1,
+                ether__dst_unspec__ip6_lookup=1,
+                ether__dst_unspec__ip6_lookup__locnet__nd_cache_hit__send=1,
             ),
         )
         self.assertEqual(self.packet_tx[: len(packet_tx)], packet_tx)

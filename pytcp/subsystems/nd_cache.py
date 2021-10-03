@@ -39,7 +39,7 @@ import misc.stack as stack
 from lib.ip6_address import Ip6Address
 from lib.logger import log
 from lib.mac_address import MacAddress
-from protocols.icmp6.fpa import ICMP6_NEIGHBOR_SOLICITATION, Icmp6NdOptSLLA
+from protocols.icmp6.fpa import ICMP6_ND_NEIGHBOR_SOLICITATION, Icmp6NdOptSLLA
 
 
 class NdCache:
@@ -128,7 +128,7 @@ class NdCache:
             ip6_src=ip6_src,
             ip6_dst=icmp6_ns_target_address.solicited_node_multicast,
             ip6_hop=255,
-            icmp6_type=ICMP6_NEIGHBOR_SOLICITATION,
+            icmp6_type=ICMP6_ND_NEIGHBOR_SOLICITATION,
             icmp6_ns_target_address=icmp6_ns_target_address,
             icmp6_nd_options=[Icmp6NdOptSLLA(stack.packet_handler.mac_unicast)],
         )

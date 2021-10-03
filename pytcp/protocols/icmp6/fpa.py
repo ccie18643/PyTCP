@@ -43,20 +43,20 @@ from protocols.icmp6.ps import (
     ICMP6_ECHO_REQUEST_LEN,
     ICMP6_MLD2_REPORT,
     ICMP6_MLD2_REPORT_LEN,
+    ICMP6_ND_NEIGHBOR_ADVERTISEMENT,
+    ICMP6_ND_NEIGHBOR_ADVERTISEMENT_LEN,
+    ICMP6_ND_NEIGHBOR_SOLICITATION,
+    ICMP6_ND_NEIGHBOR_SOLICITATION_LEN,
     ICMP6_ND_OPT_PI,
     ICMP6_ND_OPT_PI_LEN,
     ICMP6_ND_OPT_SLLA,
     ICMP6_ND_OPT_SLLA_LEN,
     ICMP6_ND_OPT_TLLA,
     ICMP6_ND_OPT_TLLA_LEN,
-    ICMP6_NEIGHBOR_ADVERTISEMENT,
-    ICMP6_NEIGHBOR_ADVERTISEMENT_LEN,
-    ICMP6_NEIGHBOR_SOLICITATION,
-    ICMP6_NEIGHBOR_SOLICITATION_LEN,
-    ICMP6_ROUTER_ADVERTISEMENT,
-    ICMP6_ROUTER_ADVERTISEMENT_LEN,
-    ICMP6_ROUTER_SOLICITATION,
-    ICMP6_ROUTER_SOLICITATION_LEN,
+    ICMP6_ND_ROUTER_ADVERTISEMENT,
+    ICMP6_ND_ROUTER_ADVERTISEMENT_LEN,
+    ICMP6_ND_ROUTER_SOLICITATION,
+    ICMP6_ND_ROUTER_SOLICITATION_LEN,
     ICMP6_UNREACHABLE,
     ICMP6_UNREACHABLE_LEN,
 )
@@ -141,10 +141,10 @@ class Icmp6Assembler:
             self._ec_seq = 0 if ec_seq is None else ec_seq
             self._ec_data = b"" if ec_data is None else ec_data
 
-        elif self._type == ICMP6_ROUTER_SOLICITATION:
+        elif self._type == ICMP6_ND_ROUTER_SOLICITATION:
             self._rs_reserved = 0
 
-        elif self._type == ICMP6_ROUTER_ADVERTISEMENT:
+        elif self._type == ICMP6_ND_ROUTER_ADVERTISEMENT:
             self._ra_hop = 0 if ra_hop is None else ra_hop
             self._ra_flag_m = False if ra_flag_m is None else ra_flag_m
             self._ra_flag_o = False if ra_flag_o is None else ra_flag_o
@@ -152,11 +152,11 @@ class Icmp6Assembler:
             self._ra_reachable_time = 0 if ra_reachable_time is None else ra_reachable_time
             self._ra_retrans_timer = 0 if ra_retrans_timer is None else ra_retrans_timer
 
-        elif self._type == ICMP6_NEIGHBOR_SOLICITATION:
+        elif self._type == ICMP6_ND_NEIGHBOR_SOLICITATION:
             self._ns_reserved = 0
             self._ns_target_address = Ip6Address(0) if ns_target_address is None else ns_target_address
 
-        elif self._type == ICMP6_NEIGHBOR_ADVERTISEMENT:
+        elif self._type == ICMP6_ND_NEIGHBOR_ADVERTISEMENT:
             self._na_flag_r = False if na_flag_r is None else na_flag_r
             self._na_flag_s = False if na_flag_s is None else na_flag_s
             self._na_flag_o = False if na_flag_o is None else na_flag_o
@@ -180,21 +180,21 @@ class Icmp6Assembler:
         if self._type == ICMP6_ECHO_REPLY:
             return ICMP6_ECHO_REPLY_LEN + len(self._ec_data)
 
-        if self._type == ICMP6_ROUTER_SOLICITATION:
+        if self._type == ICMP6_ND_ROUTER_SOLICITATION:
             assert self._nd_options is not None
-            return ICMP6_ROUTER_SOLICITATION_LEN + sum([len(_) for _ in self._nd_options])
+            return ICMP6_ND_ROUTER_SOLICITATION_LEN + sum([len(_) for _ in self._nd_options])
 
-        if self._type == ICMP6_ROUTER_ADVERTISEMENT:
+        if self._type == ICMP6_ND_ROUTER_ADVERTISEMENT:
             assert self._nd_options is not None
-            return ICMP6_ROUTER_ADVERTISEMENT_LEN + sum([len(_) for _ in self._nd_options])
+            return ICMP6_ND_ROUTER_ADVERTISEMENT_LEN + sum([len(_) for _ in self._nd_options])
 
-        if self._type == ICMP6_NEIGHBOR_SOLICITATION:
+        if self._type == ICMP6_ND_NEIGHBOR_SOLICITATION:
             assert self._nd_options is not None
-            return ICMP6_NEIGHBOR_SOLICITATION_LEN + sum([len(_) for _ in self._nd_options])
+            return ICMP6_ND_NEIGHBOR_SOLICITATION_LEN + sum([len(_) for _ in self._nd_options])
 
-        if self._type == ICMP6_NEIGHBOR_ADVERTISEMENT:
+        if self._type == ICMP6_ND_NEIGHBOR_ADVERTISEMENT:
             assert self._nd_options is not None
-            return ICMP6_NEIGHBOR_ADVERTISEMENT_LEN + sum([len(_) for _ in self._nd_options])
+            return ICMP6_ND_NEIGHBOR_ADVERTISEMENT_LEN + sum([len(_) for _ in self._nd_options])
 
         if self._type == ICMP6_MLD2_REPORT:
             return ICMP6_MLD2_REPORT_LEN + sum([len(_) for _ in self._mlr2_multicast_address_record])
@@ -215,12 +215,12 @@ class Icmp6Assembler:
         elif self._type == ICMP6_ECHO_REPLY:
             log += f", id {self._ec_id}, seq {self._ec_seq}"
 
-        elif self._type == ICMP6_ROUTER_SOLICITATION:
+        elif self._type == ICMP6_ND_ROUTER_SOLICITATION:
             assert self._nd_options is not None
             for nd_option in self._nd_options:
                 log += ", " + str(nd_option)
 
-        elif self._type == ICMP6_ROUTER_ADVERTISEMENT:
+        elif self._type == ICMP6_ND_ROUTER_ADVERTISEMENT:
             assert self._nd_options is not None
             log += f", hop {self._ra_hop}"
             log += f", flags {'M' if self._ra_flag_m else '-'}{'O' if self._ra_flag_o else '-'}"
@@ -228,13 +228,13 @@ class Icmp6Assembler:
             for nd_option in self._nd_options:
                 log += ", " + str(nd_option)
 
-        elif self._type == ICMP6_NEIGHBOR_SOLICITATION:
+        elif self._type == ICMP6_ND_NEIGHBOR_SOLICITATION:
             assert self._nd_options is not None
             log += f", target {self._ns_target_address}"
             for nd_option in self._nd_options:
                 log += ", " + str(nd_option)
 
-        elif self._type == ICMP6_NEIGHBOR_ADVERTISEMENT:
+        elif self._type == ICMP6_ND_NEIGHBOR_ADVERTISEMENT:
             assert self._nd_options is not None
             log += f", target {self._na_target_address}"
             log += f", flags {'R' if self._na_flag_r else '-'}{'S' if self._na_flag_s else '-'}{'O' if self._na_flag_o else '-'}"
@@ -265,10 +265,10 @@ class Icmp6Assembler:
             # memoryview: bytes conversion required
             struct.pack_into(f"! BBH HH {len(self._ec_data)}s", frame, 0, self._type, self._code, 0, self._ec_id, self._ec_seq, bytes(self._ec_data))
 
-        elif self._type == ICMP6_ROUTER_SOLICITATION:
+        elif self._type == ICMP6_ND_ROUTER_SOLICITATION:
             struct.pack_into(f"! BBH L {len(self._raw_nd_options)}s", frame, 0, self._type, self._code, 0, self._rs_reserved, self._raw_nd_options)
 
-        elif self._type == ICMP6_ROUTER_ADVERTISEMENT:
+        elif self._type == ICMP6_ND_ROUTER_ADVERTISEMENT:
             assert self._ra_flag_m is not None
             assert self._ra_flag_o is not None
             struct.pack_into(
@@ -286,7 +286,7 @@ class Icmp6Assembler:
                 self._raw_nd_options,
             )
 
-        elif self._type == ICMP6_NEIGHBOR_SOLICITATION:
+        elif self._type == ICMP6_ND_NEIGHBOR_SOLICITATION:
             assert self._ns_target_address is not None
             struct.pack_into(
                 f"! BBH L 16s {len(self._raw_nd_options)}s",
@@ -300,7 +300,7 @@ class Icmp6Assembler:
                 self._raw_nd_options,
             )
 
-        elif self._type == ICMP6_NEIGHBOR_ADVERTISEMENT:
+        elif self._type == ICMP6_ND_NEIGHBOR_ADVERTISEMENT:
             assert self._na_flag_r is not None
             assert self._na_flag_s is not None
             assert self._na_flag_o is not None

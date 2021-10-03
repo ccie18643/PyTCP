@@ -127,6 +127,7 @@ class TestPacketHandler(TestCase):
         # Initialize packet handler and manually set all the variables that normally would require network connectivity
         self.packet_handler = PacketHandler(None)
         self.packet_handler.mac_address = STACK_MAC_ADDRESS
+        self.packet_handler.mac_multicast = [STACK_IP6_HOST.address.solicited_node_multicast.multicast_mac]
         self.packet_handler.ip4_host = [STACK_IP4_HOST]
         self.packet_handler.ip6_host = [STACK_IP6_HOST]
         self.packet_handler.ip6_multicast = [Ip6Address("ff02::1"), STACK_IP6_HOST.address.solicited_node_multicast]

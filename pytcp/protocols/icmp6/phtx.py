@@ -41,7 +41,15 @@ from protocols.icmp6.fpa import (
     Icmp6NdOptSLLA,
     Icmp6NdOptTLLA,
 )
-from protocols.icmp6.ps import ICMP6_ECHO_REPLY, ICMP6_ECHO_REQUEST, ICMP6_UNREACHABLE
+from protocols.icmp6.ps import (
+    ICMP6_ECHO_REPLY,
+    ICMP6_ECHO_REQUEST,
+    ICMP6_ND_NEIGHBOR_ADVERTISEMENT,
+    ICMP6_ND_NEIGHBOR_SOLICITATION,
+    ICMP6_ND_ROUTER_ADVERTISEMENT,
+    ICMP6_ND_ROUTER_SOLICITATION,
+    ICMP6_UNREACHABLE,
+)
 
 if TYPE_CHECKING:
     from lib.ip6_address import Ip6Address
@@ -97,6 +105,18 @@ def _phtx_icmp6(
 
     if icmp6_type == ICMP6_UNREACHABLE:
         self.packet_stats_tx.icmp6__unreachable__send += 1
+
+    if icmp6_type == ICMP6_ND_ROUTER_SOLICITATION:
+        self.packet_stats_tx.icmp6__nd_router_solicitation__send += 1
+
+    if icmp6_type == ICMP6_ND_ROUTER_ADVERTISEMENT:
+        self.packet_stats_tx.icmp6__nd_router_advertisement__send += 1
+
+    if icmp6_type == ICMP6_ND_NEIGHBOR_SOLICITATION:
+        self.packet_stats_tx.icmp6__nd_neighbor_solicitation__send += 1
+
+    if icmp6_type == ICMP6_ND_NEIGHBOR_ADVERTISEMENT:
+        self.packet_stats_tx.icmp6__nd_neighbor_advertisement__send += 1
 
     if __debug__:
         log("icmp6", f"{icmp6_packet_tx.tracker} - {icmp6_packet_tx}")

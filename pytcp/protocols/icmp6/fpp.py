@@ -44,15 +44,15 @@ from protocols.icmp6.ps import (
     ICMP6_HEADER_LEN,
     ICMP6_MLD2_QUERY,
     ICMP6_MLD2_REPORT,
+    ICMP6_ND_NEIGHBOR_ADVERTISEMENT,
+    ICMP6_ND_NEIGHBOR_SOLICITATION,
     ICMP6_ND_OPT_PI,
     ICMP6_ND_OPT_SLLA,
     ICMP6_ND_OPT_TLLA,
-    ICMP6_NEIGHBOR_ADVERTISEMENT,
-    ICMP6_NEIGHBOR_SOLICITATION,
+    ICMP6_ND_ROUTER_ADVERTISEMENT,
+    ICMP6_ND_ROUTER_SOLICITATION,
     ICMP6_PACKET_TOO_BIG,
     ICMP6_PARAMETER_PROBLEM,
-    ICMP6_ROUTER_ADVERTISEMENT,
-    ICMP6_ROUTER_SOLICITATION,
     ICMP6_TIME_EXCEEDED,
     ICMP6_UNREACHABLE,
 )
@@ -97,12 +97,12 @@ class Icmp6Parser:
         elif self.type == ICMP6_ECHO_REPLY:
             log += f", id {self.ec_id}, seq {self.ec_seq}"
 
-        elif self.type == ICMP6_ROUTER_SOLICITATION:
+        elif self.type == ICMP6_ND_ROUTER_SOLICITATION:
             assert self.nd_options is not None
             for nd_option in self.nd_options:
                 log += ", " + str(nd_option)
 
-        elif self.type == ICMP6_ROUTER_ADVERTISEMENT:
+        elif self.type == ICMP6_ND_ROUTER_ADVERTISEMENT:
             assert self.nd_options is not None
             log += f", hop {self.ra_hop}"
             log += f", flags {'M' if self.ra_flag_m else '-'}{'O' if self.ra_flag_o else '-'}"
@@ -110,13 +110,13 @@ class Icmp6Parser:
             for nd_option in self.nd_options:
                 log += ", " + str(nd_option)
 
-        elif self.type == ICMP6_NEIGHBOR_SOLICITATION:
+        elif self.type == ICMP6_ND_NEIGHBOR_SOLICITATION:
             assert self.nd_options is not None
             log += f", target {self.ns_target_address}"
             for nd_option in self.nd_options:
                 log += ", " + str(nd_option)
 
-        elif self.type == ICMP6_NEIGHBOR_ADVERTISEMENT:
+        elif self.type == ICMP6_ND_NEIGHBOR_ADVERTISEMENT:
             assert self.nd_options is not None
             log += f", target {self.na_target_address}"
             log += f", flags {'R' if self.na_flag_r else '-'}{'S' if self.na_flag_s else '-'}{'O' if self.na_flag_o else '-'}"
@@ -188,7 +188,7 @@ class Icmp6Parser:
     def ra_hop(self) -> int:
         """Read ND RA 'Hop limit' field"""
 
-        assert self.type == ICMP6_ROUTER_ADVERTISEMENT
+        assert self.type == ICMP6_ND_ROUTER_ADVERTISEMENT
         return self._frame[4]
 
     @property
@@ -196,7 +196,7 @@ class Icmp6Parser:
         """Read ND RA 'M flag' field"""
 
         if "_cache__ra_flag_m" not in self.__dict__:
-            assert self.type == ICMP6_ROUTER_ADVERTISEMENT
+            assert self.type == ICMP6_ND_ROUTER_ADVERTISEMENT
             self._cache__ra_flag_m = bool(self._frame[5] & 0b10000000)
         return self._cache__ra_flag_m
 
@@ -205,7 +205,7 @@ class Icmp6Parser:
         """Read ND RA 'O flag' field"""
 
         if "_cache__ra_flag_o" not in self.__dict__:
-            assert self.type == ICMP6_ROUTER_ADVERTISEMENT
+            assert self.type == ICMP6_ND_ROUTER_ADVERTISEMENT
             self._cache__ra_flag_o = bool(self._frame[5] & 0b01000000)
         return self._cache__ra_flag_o
 
@@ -214,7 +214,7 @@ class Icmp6Parser:
         """Read ND RA 'Router lifetime' field"""
 
         if "_cache__ra_router_lifetime" not in self.__dict__:
-            assert self.type == ICMP6_ROUTER_ADVERTISEMENT
+            assert self.type == ICMP6_ND_ROUTER_ADVERTISEMENT
             self._cache__ra_router_lifetime: int = struct.unpack("!H", self._frame[6:8])[0]
         return self._cache__ra_router_lifetime
 
@@ -223,7 +223,7 @@ class Icmp6Parser:
         """Read ND RA 'Reachable time' field"""
 
         if "_cache__ra_reachable_time" not in self.__dict__:
-            assert self.type == ICMP6_ROUTER_ADVERTISEMENT
+            assert self.type == ICMP6_ND_ROUTER_ADVERTISEMENT
             self._cache__ra_reachable_time: int = struct.unpack("!L", self._frame[8:12])[0]
         return self._cache__ra_reachable_time
 
@@ -232,7 +232,7 @@ class Icmp6Parser:
         """Read ND RA 'Retransmision timer' field"""
 
         if "_cache__ra_retrans_timer" not in self.__dict__:
-            assert self.type == ICMP6_ROUTER_ADVERTISEMENT
+            assert self.type == ICMP6_ND_ROUTER_ADVERTISEMENT
             self._cache__ra_retrans_timer: int = struct.unpack("!L", self._frame[12:16])[0]
         return self._cache__ra_retrans_timer
 
@@ -241,7 +241,7 @@ class Icmp6Parser:
         """Read ND NS 'Target adress' field"""
 
         if "_cache__ns_target_address" not in self.__dict__:
-            assert self.type == ICMP6_NEIGHBOR_SOLICITATION
+            assert self.type == ICMP6_ND_NEIGHBOR_SOLICITATION
             self._cache__ns_target_address = Ip6Address(self._frame[8:24])
         return self._cache__ns_target_address
 
@@ -250,7 +250,7 @@ class Icmp6Parser:
         """Read ND NA 'R flag' field"""
 
         if "_cache__na_flag_r" not in self.__dict__:
-            assert self.type == ICMP6_NEIGHBOR_ADVERTISEMENT
+            assert self.type == ICMP6_ND_NEIGHBOR_ADVERTISEMENT
             self._cache__na_flag_r = bool(self._frame[4] & 0b10000000)
         return self._cache__na_flag_r
 
@@ -259,7 +259,7 @@ class Icmp6Parser:
         """Read ND NA 'S flag' field"""
 
         if "_cache__na_flag_s" not in self.__dict__:
-            assert self.type == ICMP6_NEIGHBOR_ADVERTISEMENT
+            assert self.type == ICMP6_ND_NEIGHBOR_ADVERTISEMENT
             self._cache__na_flag_s = bool(self._frame[4] & 0b01000000)
         return self._cache__na_flag_s
 
@@ -268,7 +268,7 @@ class Icmp6Parser:
         """Read ND NA 'O flag' field"""
 
         if "_cache__na_flag_o" not in self.__dict__:
-            assert self.type == ICMP6_NEIGHBOR_ADVERTISEMENT
+            assert self.type == ICMP6_ND_NEIGHBOR_ADVERTISEMENT
             self._cache__na_flag_o = bool(self._frame[4] & 0b00100000)
         return self._cache__na_flag_o
 
@@ -277,7 +277,7 @@ class Icmp6Parser:
         """Read ND NA 'Taret address' field"""
 
         if "_cache__na_target_address" not in self.__dict__:
-            assert self.type == ICMP6_NEIGHBOR_ADVERTISEMENT
+            assert self.type == ICMP6_ND_NEIGHBOR_ADVERTISEMENT
             self._cache__na_target_address = Ip6Address(self._frame[8:24])
         return self._cache__na_target_address
 
@@ -324,16 +324,16 @@ class Icmp6Parser:
 
         if "_cache__nd_options" not in self.__dict__:
             assert self.type in {
-                ICMP6_ROUTER_SOLICITATION,
-                ICMP6_ROUTER_ADVERTISEMENT,
-                ICMP6_NEIGHBOR_SOLICITATION,
-                ICMP6_NEIGHBOR_ADVERTISEMENT,
+                ICMP6_ND_ROUTER_SOLICITATION,
+                ICMP6_ND_ROUTER_ADVERTISEMENT,
+                ICMP6_ND_NEIGHBOR_SOLICITATION,
+                ICMP6_ND_NEIGHBOR_ADVERTISEMENT,
             }
             optr = {
-                ICMP6_ROUTER_SOLICITATION: 12,
-                ICMP6_ROUTER_ADVERTISEMENT: 16,
-                ICMP6_NEIGHBOR_SOLICITATION: 24,
-                ICMP6_NEIGHBOR_ADVERTISEMENT: 24,
+                ICMP6_ND_ROUTER_SOLICITATION: 12,
+                ICMP6_ND_ROUTER_ADVERTISEMENT: 16,
+                ICMP6_ND_NEIGHBOR_SOLICITATION: 24,
+                ICMP6_ND_NEIGHBOR_ADVERTISEMENT: 24,
             }[self.type]
             self._cache__nd_options = self._read_nd_options(optr)
         return self._cache__nd_options
@@ -344,10 +344,10 @@ class Icmp6Parser:
 
         if "_cache__nd_opt_slla" not in self.__dict__:
             assert self.type in {
-                ICMP6_ROUTER_SOLICITATION,
-                ICMP6_ROUTER_ADVERTISEMENT,
-                ICMP6_NEIGHBOR_SOLICITATION,
-                ICMP6_NEIGHBOR_ADVERTISEMENT,
+                ICMP6_ND_ROUTER_SOLICITATION,
+                ICMP6_ND_ROUTER_ADVERTISEMENT,
+                ICMP6_ND_NEIGHBOR_SOLICITATION,
+                ICMP6_ND_NEIGHBOR_ADVERTISEMENT,
             }
             for option in self.nd_options:
                 if isinstance(option, Icmp6NdOptSLLA):
@@ -363,10 +363,10 @@ class Icmp6Parser:
 
         if "_cache__nd_opt_tlla" not in self.__dict__:
             assert self.type in {
-                ICMP6_ROUTER_SOLICITATION,
-                ICMP6_ROUTER_ADVERTISEMENT,
-                ICMP6_NEIGHBOR_SOLICITATION,
-                ICMP6_NEIGHBOR_ADVERTISEMENT,
+                ICMP6_ND_ROUTER_SOLICITATION,
+                ICMP6_ND_ROUTER_ADVERTISEMENT,
+                ICMP6_ND_NEIGHBOR_SOLICITATION,
+                ICMP6_ND_NEIGHBOR_ADVERTISEMENT,
             }
             for option in self.nd_options:
                 if isinstance(option, Icmp6NdOptTLLA):
@@ -382,10 +382,10 @@ class Icmp6Parser:
 
         if "_cache__nd_opt_pi" not in self.__dict__:
             assert self.type in {
-                ICMP6_ROUTER_SOLICITATION,
-                ICMP6_ROUTER_ADVERTISEMENT,
-                ICMP6_NEIGHBOR_SOLICITATION,
-                ICMP6_NEIGHBOR_ADVERTISEMENT,
+                ICMP6_ND_ROUTER_SOLICITATION,
+                ICMP6_ND_ROUTER_ADVERTISEMENT,
+                ICMP6_ND_NEIGHBOR_SOLICITATION,
+                ICMP6_ND_NEIGHBOR_ADVERTISEMENT,
             }
             self._cache__nd_opt_pi = [_.prefix for _ in self.nd_options if isinstance(_, Icmp6NdOptPI) and _.flag_a and len(_.prefix.mask) == 64]
         return self._cache__nd_opt_pi
@@ -444,25 +444,25 @@ class Icmp6Parser:
             if self._plen != 28 + struct.unpack("!H", self._frame[26:28])[0] * 16:
                 return "ICMPv6 integrity - wrong packet length (III)"
 
-        elif self._frame[0] == ICMP6_ROUTER_SOLICITATION:
+        elif self._frame[0] == ICMP6_ND_ROUTER_SOLICITATION:
             if not 8 <= self._plen <= len(self):
                 return "ICMPv6 integrity - wrong packet length (II)"
             if fail := self._nd_option_integrity_check(8):
                 return fail
 
-        elif self._frame[0] == ICMP6_ROUTER_ADVERTISEMENT:
+        elif self._frame[0] == ICMP6_ND_ROUTER_ADVERTISEMENT:
             if not 16 <= self._plen <= len(self):
                 return "ICMPv6 integrity - wrong packet length (II)"
             if fail := self._nd_option_integrity_check(16):
                 return fail
 
-        elif self._frame[0] == ICMP6_NEIGHBOR_SOLICITATION:
+        elif self._frame[0] == ICMP6_ND_NEIGHBOR_SOLICITATION:
             if not 24 <= self._plen <= len(self):
                 return "ICMPv6 integrity - wrong packet length (II)"
             if fail := self._nd_option_integrity_check(24):
                 return fail
 
-        elif self._frame[0] == ICMP6_NEIGHBOR_ADVERTISEMENT:
+        elif self._frame[0] == ICMP6_ND_NEIGHBOR_ADVERTISEMENT:
             if not 24 <= self._plen <= len(self):
                 return "ICMPv6 integrity - wrong packet length (II)"
             if fail := self._nd_option_integrity_check(24):
@@ -513,7 +513,7 @@ class Icmp6Parser:
             if not ip6_hop == 1:
                 return "ICMPv6 sanity - 'hop' must be 255 (RFC 3810)"
 
-        elif self.type == ICMP6_ROUTER_SOLICITATION:
+        elif self.type == ICMP6_ND_ROUTER_SOLICITATION:
             if not self.code == 0:
                 return "ICMPv6 sanity - 'code' must be 0 (RFC 4861)"
             if not ip6_hop == 255:
@@ -525,7 +525,7 @@ class Icmp6Parser:
             if ip6_src.is_unspecified and self.nd_opt_slla:
                 return "ICMPv6 sanity - 'nd_opt_slla' must not be included if 'src' is unspecified (RFC 4861)"
 
-        elif self.type == ICMP6_ROUTER_ADVERTISEMENT:
+        elif self.type == ICMP6_ND_ROUTER_ADVERTISEMENT:
             if not self.code == 0:
                 return "ICMPv6 sanity - 'code' must be 0 (RFC 4861)"
             if not ip6_hop == 255:
@@ -535,7 +535,7 @@ class Icmp6Parser:
             if not (ip6_dst.is_unicast or ip6_dst == Ip6Address("ff02::1")):
                 return "ICMPv6 sanity - 'dst' must be unicast or all-nodes (RFC 4861)"
 
-        elif self.type == ICMP6_NEIGHBOR_SOLICITATION:
+        elif self.type == ICMP6_ND_NEIGHBOR_SOLICITATION:
             if not self.code == 0:
                 return "ICMPv6 sanity - 'code' must be 0 (RFC 4861)"
             if not ip6_hop == 255:
@@ -549,7 +549,7 @@ class Icmp6Parser:
             if ip6_src.is_unspecified and self.nd_opt_slla is not None:
                 return "ICMPv6 sanity - 'nd_opt_slla' must not be included if 'src' is unspecified"
 
-        elif self.type == ICMP6_NEIGHBOR_ADVERTISEMENT:
+        elif self.type == ICMP6_ND_NEIGHBOR_ADVERTISEMENT:
             if not self.code == 0:
                 return "ICMPv6 sanity - 'code' must be 0 (RFC 4861)"
             if not ip6_hop == 255:

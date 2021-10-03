@@ -73,8 +73,8 @@ from protocols.icmp6.phtx import _phtx_icmp6
 from protocols.icmp6.ps import (
     ICMP6_MART_CHANGE_TO_EXCLUDE,
     ICMP6_MLD2_REPORT,
-    ICMP6_NEIGHBOR_SOLICITATION,
-    ICMP6_ROUTER_SOLICITATION,
+    ICMP6_ND_NEIGHBOR_SOLICITATION,
+    ICMP6_ND_ROUTER_SOLICITATION,
 )
 from protocols.ip4.phrx import _defragment_ip4_packet, _phrx_ip4
 from protocols.ip4.phtx import (
@@ -511,7 +511,7 @@ class PacketHandler:
             ip6_src=Ip6Address(0),
             ip6_dst=ip6_unicast_candidate.solicited_node_multicast,
             ip6_hop=255,
-            icmp6_type=ICMP6_NEIGHBOR_SOLICITATION,
+            icmp6_type=ICMP6_ND_NEIGHBOR_SOLICITATION,
             icmp6_ns_target_address=ip6_unicast_candidate,
         )
         if __debug__:
@@ -524,7 +524,7 @@ class PacketHandler:
             ip6_src=self.ip6_unicast[0],
             ip6_dst=Ip6Address("ff02::2"),
             ip6_hop=255,
-            icmp6_type=ICMP6_ROUTER_SOLICITATION,
+            icmp6_type=ICMP6_ND_ROUTER_SOLICITATION,
             icmp6_nd_options=[Icmp6NdOptSLLA(self.mac_unicast)],
         )
 

@@ -48,6 +48,7 @@ class PacketStatsRx:
     arp__failed_parse__drop: int = 0
     arp__op_request: int = 0
     arp__op_request__ip_conflict: int = 0
+    arp__op_request__tpa_stack__respond: int = 0
     arp__op_request__tpa_unknown__drop: int = 0
     arp__op_request__update_cache: int = 0
     arp__op_reply: int = 0
@@ -81,14 +82,15 @@ class PacketStatsRx:
 
     icmp6__pre_parse: int = 0
     icmp6__failed_parse__drop: int = 0
-    icmp6__neighbor_solicitation: int = 0
-    icmp6__neighbor_solicitation__unknown: int = 0
-    icmp6__neighbor_solicitation__update_cache: int = 0
-    icmp6__neighbor_advertisement: int = 0
-    icmp6__neighbor_advertisement__run_dad: int = 0
-    icmp6__neighbor_advertisement__update_cache: int = 0
-    icmp6__router_colicitation: int = 0
-    icmp6__router_advertisement: int = 0
+    icmp6__nd_neighbor_solicitation: int = 0
+    icmp6__nd_neighbor_solicitation__target_unknown__drop: int = 0
+    icmp6__nd_neighbor_solicitation__target_stack__respond: int = 0
+    icmp6__nd_neighbor_solicitation__update_cache: int = 0
+    icmp6__nd_neighbor_advertisement: int = 0
+    icmp6__nd_neighbor_advertisement__run_dad: int = 0
+    icmp6__nd_neighbor_advertisement__update_cache: int = 0
+    icmp6__nd_router_solicitation: int = 0
+    icmp6__nd_router_advertisement: int = 0
     icmp6__echo_request: int = 0
     icmp6__unreachable: int = 0
 
@@ -167,6 +169,10 @@ class PacketStatsTx:
     icmp6__echo_reply__send: int = 0
     icmp6__echo_request__send: int = 0
     icmp6__unreachable__send: int = 0
+    icmp6__nd_router_solicitation__send: int = 0
+    icmp6__nd_router_advertisement__send: int = 0
+    icmp6__nd_neighbor_solicitation__send: int = 0
+    icmp6__nd_neighbor_advertisement__send: int = 0
 
     tcp__pre_assemble: int = 0
     tcp__flag_ns: int = 0

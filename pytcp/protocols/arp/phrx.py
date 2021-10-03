@@ -69,6 +69,7 @@ def _phrx_arp(self, packet_rx: PacketRx) -> None:
 
         # Check if the request is for one of our IP addresses, if so the craft ARP reply packet and send it out
         if packet_rx.arp.tpa in self.ip4_unicast:
+            self.packet_stats_rx.arp__op_request__tpa_stack__respond += 1
             self._phtx_arp(
                 ether_src=self.mac_unicast,
                 ether_dst=packet_rx.arp.sha,
