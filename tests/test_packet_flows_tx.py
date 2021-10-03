@@ -37,7 +37,6 @@ from pytcp.lib.ip4_address import Ip4Address, Ip4Host
 from pytcp.lib.ip6_address import Ip6Address, Ip6Host
 from pytcp.lib.mac_address import MacAddress
 from pytcp.misc.packet_stats import PacketStatsTx
-from pytcp.misc.tx_status import TxStatus
 from pytcp.protocols.arp.ps import ARP_OP_REQUEST
 from pytcp.protocols.icmp4.ps import ICMP4_ECHO_REQUEST
 from pytcp.protocols.icmp6.ps import ICMP6_ECHO_REQUEST
