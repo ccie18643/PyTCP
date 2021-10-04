@@ -129,6 +129,7 @@ class PacketStatsTx:
     ether__dst_unspec__ip6_lookup__locnet__nd_cache_hit__send: int = 0
     ether__dst_unspec__ip6_lookup__locnet__nd_cache_miss__drop: int = 0
     ether__dst_unspec__ip4_lookup: int = 0
+    ether__dst_unspec__ip4_lookup__multicast__send: int = 0
     ether__dst_unspec__ip4_lookup__limited_broadcast__send: int = 0
     ether__dst_unspec__ip4_lookup__network_broadcast__send: int = 0
     ether__dst_unspec__ip4_lookup__extnet__no_gw__drop: int = 0

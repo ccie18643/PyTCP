@@ -39,6 +39,7 @@ from misc.tx_status import TxStatus
 from protocols.ether.fpa import EtherAssembler
 from protocols.ip4.fpa import Ip4Assembler, Ip4FragAssembler
 from protocols.ip6.fpa import Ip6Assembler
+from protocols.raw.fpa import RawAssembler
 
 if TYPE_CHECKING:
     from protocols.arp.fpa import ArpAssembler
@@ -46,9 +47,9 @@ if TYPE_CHECKING:
 
 def _phtx_ether(
     self,
-    carried_packet: Union[ArpAssembler, Ip4Assembler, Ip6Assembler],
     ether_src: MacAddress = MacAddress(0),
     ether_dst: MacAddress = MacAddress(0),
+    carried_packet: Union[ArpAssembler, Ip4Assembler, Ip6Assembler, RawAssembler] = RawAssembler(),
 ) -> TxStatus:
     """Handle outbound Ethernet packets"""
 
@@ -112,7 +113,7 @@ def _phtx_ether(
                     _send_out_packet()
                     return TxStatus.PASSED_TO_TX_RING
                 self.packet_stats_tx.ether__dst_unspec__ip6_lookup__extnet__gw_nd_cache_miss__drop += 1
-                return TxStatus.DROPED_ETHER_DST_GATEWAY_ARP_CACHE_FAIL
+                return TxStatus.DROPED_ETHER_DST_GATEWAY_ND_CACHE_FAIL
 
         # Send out packet if we are able to obtain destinaton MAC from ICMPv6 ND cache
         if mac_address := self.nd_cache.find_entry(ip6_dst):
@@ -126,7 +127,7 @@ def _phtx_ether(
             self.packet_stats_tx.ether__dst_unspec__ip6_lookup__locnet__nd_cache_miss__drop += 1
             if __debug__:
                 log("ether", f"{ether_packet_tx.tracker} - <WARN>No valid destination MAC could be obtained from ND cache, dropping</>")
-            return TxStatus.DROPED_ETHER_DST_ARP_CACHE_FAIL
+            return TxStatus.DROPED_ETHER_DST_ND_CACHE_FAIL
 
     # Check if we can obtain destination MAC based on IPv4 header data
     if isinstance(ether_packet_tx._carried_packet, (Ip4Assembler, Ip4FragAssembler)):
@@ -134,6 +135,15 @@ def _phtx_ether(
 
         ip4_src = ether_packet_tx._carried_packet.src
         ip4_dst = ether_packet_tx._carried_packet.dst
+
+        # Send packet out if its destined to multicast IPv4 address
+        if ip4_dst.is_multicast:
+            self.packet_stats_tx.ether__dst_unspec__ip4_lookup__multicast__send += 1
+            ether_packet_tx.dst = ip4_dst.multicast_mac
+            if __debug__:
+                log("ether", f"{ether_packet_tx.tracker} - Resolved destination IPv4 {ip4_dst} to MAC {ether_packet_tx.dst}")
+            _send_out_packet()
+            return TxStatus.PASSED_TO_TX_RING
 
         # Send out packet if its destinied to limited broadcast addresses
         if ip4_dst.is_limited_broadcast:
@@ -171,7 +181,7 @@ def _phtx_ether(
                     _send_out_packet()
                     return TxStatus.PASSED_TO_TX_RING
                 self.packet_stats_tx.ether__dst_unspec__ip4_lookup__extnet__gw_arp_cache_miss__drop += 1
-                return TxStatus.DROPED_ETHER_DST_GATEWAY_ND_CACHE_FAIL
+                return TxStatus.DROPED_ETHER_DST_GATEWAY_ARP_CACHE_FAIL
 
         # Send out packet if we are able to obtain destinaton MAC from ARP cache, drop otherwise
         if mac_address := self.arp_cache.find_entry(ip4_dst):
@@ -185,7 +195,7 @@ def _phtx_ether(
             self.packet_stats_tx.ether__dst_unspec__ip4_lookup__locnet__arp_cache_miss__drop += 1
             if __debug__:
                 log("ether", f"{ether_packet_tx.tracker} - <WARN>No valid destination MAC could be obtained from ARP cache, dropping</>")
-            return TxStatus.DROPED_ETHER_DST_ND_CACHE_FAIL
+            return TxStatus.DROPED_ETHER_DST_ARP_CACHE_FAIL
 
     # Drop packet in case we are not able to obtain valid destination MAC address
     self.packet_stats_tx.ether__dst_unspec__drop += 1

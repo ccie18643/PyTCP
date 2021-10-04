@@ -46,6 +46,7 @@ from lib.ip_address import (
     IpNetwork,
     IpNetworkFormatError,
 )
+from lib.mac_address import MacAddress
 
 IP4_REGEX = r"((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])"
 
@@ -177,6 +178,14 @@ class Ip4Address(IpAddress):
         """Return unspecified IPv4 Address"""
 
         return Ip4Address(0)
+
+    @property
+    def multicast_mac(self) -> MacAddress:
+        """Create IPv6 multicast MAC address"""
+
+        assert self.is_multicast
+
+        return MacAddress(int(MacAddress(0x01005E000000)) | self._address & 0x7FFFFF)
 
 
 class Ip4Mask(IpMask):

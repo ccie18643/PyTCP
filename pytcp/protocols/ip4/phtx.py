@@ -39,6 +39,7 @@ from lib.logger import log
 from misc.ip_helper import pick_local_ip4_address
 from misc.tx_status import TxStatus
 from protocols.ip4.fpa import Ip4Assembler, Ip4FragAssembler
+from protocols.raw.fpa import RawAssembler
 
 if TYPE_CHECKING:
     from lib.tracker import Tracker
@@ -111,10 +112,10 @@ def _validate_dst_ip4_address(self, ip4_dst: Ip4Address, tracker) -> Optional[Ip
 
 def _phtx_ip4(
     self,
-    carried_packet: Union[Icmp4Assembler, TcpAssembler, UdpAssembler],
     ip4_dst: Ip4Address,
     ip4_src: Ip4Address,
     ip4_ttl: int = config.IP4_DEFAULT_TTL,
+    carried_packet: Union[Icmp4Assembler, TcpAssembler, UdpAssembler, RawAssembler] = RawAssembler(),
 ) -> TxStatus:
     """Handle outbound IP packets"""
 

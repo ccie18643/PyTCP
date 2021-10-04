@@ -39,6 +39,7 @@ from lib.logger import log
 from misc.ip_helper import pick_local_ip6_address
 from misc.tx_status import TxStatus
 from protocols.ip6.fpa import Ip6Assembler
+from protocols.raw.fpa import RawAssembler
 
 if TYPE_CHECKING:
     from lib.tracker import Tracker
@@ -89,10 +90,10 @@ def _validate_dst_ip6_address(self, ip6_dst: Ip6Address, tracker: Tracker) -> Op
 
 def _phtx_ip6(
     self,
-    carried_packet: Union[Ip6ExtFragAssembler, Icmp6Assembler, TcpAssembler, UdpAssembler],
     ip6_dst: Ip6Address,
     ip6_src: Ip6Address,
     ip6_hop: int = config.IP6_DEFAULT_HOP,
+    carried_packet: Union[Ip6ExtFragAssembler, Icmp6Assembler, TcpAssembler, UdpAssembler, RawAssembler] = RawAssembler(),
 ) -> TxStatus:
     """Handle outbound IP packets"""
 

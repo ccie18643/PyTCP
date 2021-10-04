@@ -46,6 +46,7 @@ from protocols.ip4.ps import (
     IP4_OPT_NOP,
     IP4_OPT_NOP_LEN,
     IP4_PROTO_ICMP4,
+    IP4_PROTO_RAW,
     IP4_PROTO_TABLE,
     IP4_PROTO_TCP,
     IP4_PROTO_UDP,
@@ -53,6 +54,7 @@ from protocols.ip4.ps import (
 
 if TYPE_CHECKING:
     from protocols.icmp4.fpa import Icmp4Assembler
+    from protocols.raw.fpa import RawAssembler
     from protocols.tcp.fpa import TcpAssembler
     from protocols.udp.fpa import UdpAssembler
 
@@ -64,7 +66,7 @@ class Ip4Assembler:
 
     def __init__(
         self,
-        carried_packet: Union[Icmp4Assembler, TcpAssembler, UdpAssembler],
+        carried_packet: Union[Icmp4Assembler, TcpAssembler, UdpAssembler, RawAssembler],
         src: Ip4Address,
         dst: Ip4Address,
         ttl: int = config.IP4_DEFAULT_TTL,
@@ -76,9 +78,9 @@ class Ip4Assembler:
     ) -> None:
         """Class constructor"""
 
-        assert carried_packet.ip4_proto in {IP4_PROTO_ICMP4, IP4_PROTO_UDP, IP4_PROTO_TCP}
+        assert carried_packet.ip4_proto in {IP4_PROTO_ICMP4, IP4_PROTO_UDP, IP4_PROTO_TCP, IP4_PROTO_RAW}
 
-        self._carried_packet: Union[Icmp4Assembler, TcpAssembler, UdpAssembler] = carried_packet
+        self._carried_packet: Union[Icmp4Assembler, TcpAssembler, UdpAssembler, RawAssembler] = carried_packet
         self._tracker: Tracker = self._carried_packet.tracker
         self._ver: int = 4
         self._dscp: int = dscp

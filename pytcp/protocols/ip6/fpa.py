@@ -41,6 +41,7 @@ from protocols.ip6.ps import (
     IP6_HEADER_LEN,
     IP6_NEXT_HEADER_EXT_FRAG,
     IP6_NEXT_HEADER_ICMP6,
+    IP6_NEXT_HEADER_RAW,
     IP6_NEXT_HEADER_TABLE,
     IP6_NEXT_HEADER_TCP,
     IP6_NEXT_HEADER_UDP,
@@ -50,6 +51,7 @@ if TYPE_CHECKING:
     from lib.tracker import Tracker
     from protocols.icmp6.fpa import Icmp6Assembler
     from protocols.ip6_ext_frag.fpa import Ip6ExtFragAssembler
+    from protocols.raw.fpa import RawAssembler
     from protocols.tcp.fpa import TcpAssembler
     from protocols.udp.fpa import UdpAssembler
 
@@ -61,7 +63,7 @@ class Ip6Assembler:
 
     def __init__(
         self,
-        carried_packet: Union[Ip6ExtFragAssembler, Icmp6Assembler, TcpAssembler, UdpAssembler],
+        carried_packet: Union[Ip6ExtFragAssembler, Icmp6Assembler, TcpAssembler, UdpAssembler, RawAssembler],
         src: Ip6Address,
         dst: Ip6Address,
         hop: int = config.IP6_DEFAULT_HOP,
@@ -76,9 +78,10 @@ class Ip6Assembler:
             IP6_NEXT_HEADER_UDP,
             IP6_NEXT_HEADER_TCP,
             IP6_NEXT_HEADER_EXT_FRAG,
+            IP6_NEXT_HEADER_RAW,
         }
 
-        self._carried_packet: Union[Ip6ExtFragAssembler, Icmp6Assembler, TcpAssembler, UdpAssembler] = carried_packet
+        self._carried_packet: Union[Ip6ExtFragAssembler, Icmp6Assembler, TcpAssembler, UdpAssembler, RawAssembler] = carried_packet
         self._tracker: Tracker = self._carried_packet.tracker
         self._ver: int = 6
         self._dscp: int = dscp

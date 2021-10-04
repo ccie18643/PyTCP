@@ -40,6 +40,7 @@ from protocols.ether.ps import (
     ETHER_TYPE_ARP,
     ETHER_TYPE_IP4,
     ETHER_TYPE_IP6,
+    ETHER_TYPE_RAW,
     ETHER_TYPE_TABLE,
 )
 
@@ -48,6 +49,7 @@ if TYPE_CHECKING:
     from protocols.arp.fpa import ArpAssembler
     from protocols.ip4.fpa import Ip4Assembler
     from protocols.ip6.fpa import Ip6Assembler
+    from protocols.raw.fpa import RawAssembler
 
 
 class EtherAssembler:
@@ -55,16 +57,15 @@ class EtherAssembler:
 
     def __init__(
         self,
-        *,
-        carried_packet: Union[ArpAssembler, Ip4Assembler, Ip6Assembler],
+        carried_packet: Union[ArpAssembler, Ip4Assembler, Ip6Assembler, RawAssembler],
         src: MacAddress = MacAddress(0),
         dst: MacAddress = MacAddress(0),
     ) -> None:
         """Class constructor"""
 
-        assert carried_packet.ether_type in {ETHER_TYPE_ARP, ETHER_TYPE_IP4, ETHER_TYPE_IP6}
+        assert carried_packet.ether_type in {ETHER_TYPE_ARP, ETHER_TYPE_IP4, ETHER_TYPE_IP6, ETHER_TYPE_RAW}
 
-        self._carried_packet: Union[ArpAssembler, Ip4Assembler, Ip6Assembler] = carried_packet
+        self._carried_packet: Union[ArpAssembler, Ip4Assembler, Ip6Assembler, RawAssembler] = carried_packet
         self._tracker: Tracker = self._carried_packet.tracker
         self._dst: MacAddress = dst
         self._src: MacAddress = src

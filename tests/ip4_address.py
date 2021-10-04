@@ -31,6 +31,7 @@
 
 from dataclasses import dataclass
 
+from lib.mac_address import MacAddress
 from testslide import TestCase
 
 from pytcp.lib.ip4_address import (
@@ -176,6 +177,9 @@ class TestIp4Address(TestCase):
 
     def test_unspecified(self):
         self.assertEqual(Ip4Address("192.168.9.1").unspecified, Ip4Address("0.0.0.0"))
+
+    def test_multicast_mac(self):
+        self.assertEqual(Ip4Address("239.192.0.1").multicast_mac, MacAddress("01:00:5e:40:00:01"))
 
 
 class TestIp4Mask(TestCase):
