@@ -44,7 +44,7 @@ if TYPE_CHECKING:
     from protocols.ip6.fpa import Ip6Assembler
 
 
-def _phtx_ip6_ext_frag(self, ip6_packet_tx: Ip6Assembler) -> TxStatus:
+def _phtx_ip6_ext_frag(self, *, ip6_packet_tx: Ip6Assembler) -> TxStatus:
     """Handle outbound IPv6 fagment extension header"""
 
     self.packet_stats_tx.ip6_ext_frag__pre_assemble += 1

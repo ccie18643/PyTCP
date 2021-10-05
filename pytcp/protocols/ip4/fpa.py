@@ -66,7 +66,7 @@ class Ip4Assembler:
 
     def __init__(
         self,
-        carried_packet: Union[Icmp4Assembler, TcpAssembler, UdpAssembler, RawAssembler],
+        *,
         src: Ip4Address,
         dst: Ip4Address,
         ttl: int = config.IP4_DEFAULT_TTL,
@@ -75,6 +75,7 @@ class Ip4Assembler:
         id: int = 0,
         flag_df: bool = False,
         options: Optional[list[Ip4OptNop | Ip4OptEol]] = None,
+        carried_packet: Union[Icmp4Assembler, TcpAssembler, UdpAssembler, RawAssembler],
     ) -> None:
         """Class constructor"""
 

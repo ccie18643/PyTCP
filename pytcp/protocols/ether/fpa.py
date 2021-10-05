@@ -57,9 +57,10 @@ class EtherAssembler:
 
     def __init__(
         self,
-        carried_packet: Union[ArpAssembler, Ip4Assembler, Ip6Assembler, RawAssembler],
+        *,
         src: MacAddress = MacAddress(0),
         dst: MacAddress = MacAddress(0),
+        carried_packet: Union[ArpAssembler, Ip4Assembler, Ip6Assembler, RawAssembler],
     ) -> None:
         """Class constructor"""
 

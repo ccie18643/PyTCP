@@ -90,12 +90,16 @@ def _validate_dst_ip6_address(self, ip6_dst: Ip6Address, tracker: Tracker) -> Op
 
 def _phtx_ip6(
     self,
+    *,
     ip6_dst: Ip6Address,
     ip6_src: Ip6Address,
     ip6_hop: int = config.IP6_DEFAULT_HOP,
-    carried_packet: Union[Ip6ExtFragAssembler, Icmp6Assembler, TcpAssembler, UdpAssembler, RawAssembler] = RawAssembler(),
+    carried_packet: Optional[Union[Ip6ExtFragAssembler, Icmp6Assembler, TcpAssembler, UdpAssembler, RawAssembler]] = None,
 ) -> TxStatus:
     """Handle outbound IP packets"""
+
+    if carried_packet is None:
+        carried_packet = RawAssembler()
 
     self.packet_stats_tx.ip6__pre_assemble += 1
 
@@ -132,4 +136,4 @@ def _phtx_ip6(
     self.packet_stats_tx.ip6__mtu_exceed__frag += 1
     if __debug__:
         log("ip6", f"{ip6_packet_tx.tracker} - IPv6 packet len {len(ip6_packet_tx)} bytes, fragmentation needed")
-    return self._phtx_ip6_ext_frag(ip6_packet_tx)
+    return self._phtx_ip6_ext_frag(ip6_packet_tx=ip6_packet_tx)

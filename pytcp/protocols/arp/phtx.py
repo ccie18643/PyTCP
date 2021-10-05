@@ -47,6 +47,7 @@ if TYPE_CHECKING:
 
 def _phtx_arp(
     self,
+    *,
     ether_src: MacAddress,
     ether_dst: MacAddress,
     arp_oper: int,
@@ -65,6 +66,12 @@ def _phtx_arp(
         self.packet_stats_tx.arp__no_proto_support__drop += 1
         return TxStatus.DROPED_ARP_NO_PROTOCOL_SUPPORT
 
+    if arp_oper == ARP_OP_REQUEST:
+        self.packet_stats_tx.arp__op_request__send += 1
+
+    if arp_oper == ARP_OP_REPLY:
+        self.packet_stats_tx.arp__op_reply__send += 1
+
     arp_packet_tx = ArpAssembler(
         oper=arp_oper,
         sha=arp_sha,
@@ -73,12 +80,6 @@ def _phtx_arp(
         tpa=arp_tpa,
         echo_tracker=echo_tracker,
     )
-
-    if arp_oper == ARP_OP_REQUEST:
-        self.packet_stats_tx.arp__op_request__send += 1
-
-    if arp_oper == ARP_OP_REPLY:
-        self.packet_stats_tx.arp__op_reply__send += 1
 
     if __debug__:
         log("arp", f"{arp_packet_tx.tracker} - {arp_packet_tx}")

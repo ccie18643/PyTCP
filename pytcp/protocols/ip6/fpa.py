@@ -63,13 +63,14 @@ class Ip6Assembler:
 
     def __init__(
         self,
-        carried_packet: Union[Ip6ExtFragAssembler, Icmp6Assembler, TcpAssembler, UdpAssembler, RawAssembler],
+        *,
         src: Ip6Address,
         dst: Ip6Address,
         hop: int = config.IP6_DEFAULT_HOP,
         dscp: int = 0,
         ecn: int = 0,
         flow: int = 0,
+        carried_packet: Union[Ip6ExtFragAssembler, Icmp6Assembler, TcpAssembler, UdpAssembler, RawAssembler],
     ) -> None:
         """Class constructor"""
 

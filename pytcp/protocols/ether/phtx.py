@@ -31,7 +31,7 @@
 
 from __future__ import annotations  # Required by Python ver < 3.10
 
-from typing import TYPE_CHECKING, Union
+from typing import TYPE_CHECKING, Optional, Union
 
 from lib.logger import log
 from lib.mac_address import MacAddress
@@ -47,9 +47,10 @@ if TYPE_CHECKING:
 
 def _phtx_ether(
     self,
+    *,
     ether_src: MacAddress = MacAddress(0),
     ether_dst: MacAddress = MacAddress(0),
-    carried_packet: Union[ArpAssembler, Ip4Assembler, Ip6Assembler, RawAssembler] = RawAssembler(),
+    carried_packet: Optional[Union[ArpAssembler, Ip4Assembler, Ip6Assembler, RawAssembler]] = None,
 ) -> TxStatus:
     """Handle outbound Ethernet packets"""
 
@@ -57,6 +58,9 @@ def _phtx_ether(
         if __debug__:
             log("ether", f"{ether_packet_tx.tracker} - {ether_packet_tx}")
         self.tx_ring.enqueue(ether_packet_tx)
+
+    if carried_packet is None:
+        carried_packet = RawAssembler()
 
     self.packet_stats_tx.ether__pre_assemble += 1
 

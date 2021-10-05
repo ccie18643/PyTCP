@@ -58,6 +58,7 @@ if TYPE_CHECKING:
 
 def _phtx_icmp6(
     self,
+    *,
     ip6_src: Ip6Address,
     ip6_dst: Ip6Address,
     icmp6_type: int,

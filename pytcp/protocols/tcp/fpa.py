@@ -63,6 +63,7 @@ class TcpAssembler:
 
     def __init__(
         self,
+        *,
         sport: int,
         dport: int,
         seq: int = 0,

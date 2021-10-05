@@ -112,12 +112,16 @@ def _validate_dst_ip4_address(self, ip4_dst: Ip4Address, tracker) -> Optional[Ip
 
 def _phtx_ip4(
     self,
+    *,
     ip4_dst: Ip4Address,
     ip4_src: Ip4Address,
     ip4_ttl: int = config.IP4_DEFAULT_TTL,
-    carried_packet: Union[Icmp4Assembler, TcpAssembler, UdpAssembler, RawAssembler] = RawAssembler(),
+    carried_packet: Optional[Union[Icmp4Assembler, TcpAssembler, UdpAssembler, RawAssembler]] = None,
 ) -> TxStatus:
     """Handle outbound IP packets"""
+
+    if carried_packet is None:
+        carried_packet = RawAssembler()
 
     self.packet_stats_tx.ip4__pre_assemble += 1
 

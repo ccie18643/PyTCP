@@ -74,6 +74,7 @@ class Icmp6Assembler:
 
     def __init__(
         self,
+        *,
         type: int,
         code: int = 0,
         un_data: Optional[bytes] = None,

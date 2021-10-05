@@ -48,6 +48,7 @@ class ArpAssembler:
 
     def __init__(
         self,
+        *,
         sha: MacAddress,
         spa: Ip4Address,
         tpa: Ip4Address,

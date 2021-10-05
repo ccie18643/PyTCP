@@ -55,6 +55,7 @@ class Icmp4Assembler:
 
     def __init__(
         self,
+        *,
         type: int,
         code: int = 0,
         ec_id: Optional[int] = None,
