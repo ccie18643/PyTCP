@@ -79,8 +79,10 @@ class MockNetworkSettings:
 
         self.mac_unspecified = MacAddress("00:00:00:00:00:00")
         self.mac_broadcast = MacAddress("ff:ff:ff:ff:ff:ff")
+        self.ip4_unspecified = Ip4Address("0.0.0.0")
         self.ip4_limited_broadcast = Ip4Address("255.255.255.255")
         self.ip4_multicast_all_nodes = Ip4Address("224.0.0.1")
+        self.ip6_unspecified = Ip6Address("::")
         self.ip6_multicast_all_nodes = Ip6Address("ff01::1")
 
 
@@ -113,15 +115,17 @@ CONFIG_PATCHES = {
     "PACKET_SANITY_CHECK": True,
     "TAP_MTU": 1500,
     "UDP_ECHO_NATIVE_DISABLE": False,
+    "IP4_DEFAULT_TTL": 64,
+    "IP6_DEFAULT_HOP": 64,
 }
 
 
-def patch_config(self, *, enable_logs=False):
+def patch_config(self, *, enable_log=False):
     """Patch critical config setting for all packet handler modules"""
 
     for module in PACKET_HANDLER_MODULES:
         for variable, value in CONFIG_PATCHES.items():
-            if enable_logs and variable == "LOG_CHANEL":
+            if enable_log and variable == "LOG_CHANEL":
                 value = {
                     "stack",
                     "arp-c",
@@ -161,6 +165,7 @@ def setup_mock_packet_handler(self):
     self.packet_handler.mac_unicast = self.mns.stack_mac_address
     self.packet_handler.mac_multicast = [self.mns.stack_ip6_host.address.solicited_node_multicast.multicast_mac]
     self.packet_handler.ip4_host = [self.mns.stack_ip4_host]
+    self.packet_handler.ip4_multicast = [self.mns.ip4_multicast_all_nodes]
     self.packet_handler.ip6_host = [self.mns.stack_ip6_host]
     self.packet_handler.ip6_multicast = [self.mns.ip6_multicast_all_nodes, self.mns.stack_ip6_host.address.solicited_node_multicast]
     self.packet_handler.arp_cache = self.arp_cache_mock

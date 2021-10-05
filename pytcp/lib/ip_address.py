@@ -78,6 +78,11 @@ class IpAddress(ABC):
 
         return self._address
 
+    def __bool__(self) -> bool:
+        """Bool representation"""
+
+        return bool(self._address)
+
     @property
     def version(self) -> int:
         """Getter for _version"""

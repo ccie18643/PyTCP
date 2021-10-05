@@ -52,4 +52,3 @@ class TestIcmp4Phtx(TestCase):
         setup_mock_packet_handler(self)
 
     # Test name format: 'test_name__test_description__optional_condition'
-

@@ -146,7 +146,14 @@ class PacketStatsTx:
 
     ip4__pre_assemble: int = 0
     ip4__no_proto_support__drop: int = 0
-    ip4__src_invalid__drop: int = 0
+    ip4__src_not_owned__drop: int = 0
+    ip4__src_multicast__replace: int = 0
+    ip4__src_multicast__drop: int = 0
+    ip4__src_limited_broadcast__replace: int = 0
+    ip4__src_limited_broadcast__drop: int = 0
+    ip4__src_network_broadcast__replace: int = 0
+    ip4__src_unspecified__replace: int = 0
+    ip4__src_unspecified__drop: int = 0
     ip4__dst_invalid__drop: int = 0
     ip4__mtu_ok__send: int = 0
     ip4__mtu_exceed__frag: int = 0
