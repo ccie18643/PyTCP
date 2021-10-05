@@ -266,3 +266,21 @@ class TestIp4Phtx(TestCase):
                 ip4__src_unspecified__drop=1,
             ),
         )
+    
+    def test_ip4_phtx__ip4_to_unspecified_address__dst_unspecified_drop(self):
+        """Test sending IPv4 packet to unspecified address"""
+
+        self.mns.stack_ip4_host.gateway = None
+
+        tx_status = self.packet_handler._phtx_ip4(
+            ip4_src=self.mns.stack_ip4_host.address,
+            ip4_dst=self.mns.ip4_unspecified,
+        )
+        self.assertEqual(tx_status, TxStatus.DROPED__IP4__DST_UNSPECIFIED)
+        self.assertEqual(
+            self.packet_handler.packet_stats_tx,
+            PacketStatsTx(
+                ip4__pre_assemble=1,
+                ip4__dst_unspecified__drop=1,
+            ),
+        )

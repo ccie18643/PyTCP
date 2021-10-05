@@ -128,6 +128,7 @@ def _validate_dst_ip4_address(self, ip4_dst: Ip4Address, tracker) -> Union[Ip4Ad
 
     # Drop packet if the destination address is unspecified
     if ip4_dst.is_unspecified:
+        self.packet_stats_tx.ip4__dst_unspecified__drop += 1
         if __debug__:
             log("ip4", f"{tracker} - <WARN>Destination address is unspecified, dropping</>")
         return TxStatus.DROPED__IP4__DST_UNSPECIFIED
