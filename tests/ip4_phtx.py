@@ -34,6 +34,7 @@ from __future__ import annotations  # Required by Python ver < 3.10
 from testslide import TestCase
 
 from pytcp.misc.packet_stats import PacketStatsTx
+from pytcp.misc.tx_status import TxStatus
 from tests.mock_network import (
     MockNetworkSettings,
     patch_config,
@@ -60,7 +61,7 @@ class TestIp4Phtx(TestCase):
             ip4_src=self.mns.stack_ip4_host.address,
             ip4_dst=self.mns.host_a_ip4_address,
         )
-        self.assertEqual(str(tx_status), "PASSED_TO_TX_RING")
+        self.assertEqual(tx_status, TxStatus.PASSED__ETHER__TO_TX_RING)
         self.assertEqual(
             self.packet_handler.packet_stats_tx,
             PacketStatsTx(
@@ -83,7 +84,7 @@ class TestIp4Phtx(TestCase):
             ip4_src=self.mns.host_b_ip4_address,
             ip4_dst=self.mns.host_a_ip4_address,
         )
-        self.assertEqual(str(tx_status), "DROPED_IP4_INVALID_SOURCE")
+        self.assertEqual(tx_status, TxStatus.DROPED__IP4__SRC_NOT_OWNED)
         self.assertEqual(
             self.packet_handler.packet_stats_tx,
             PacketStatsTx(
@@ -99,7 +100,7 @@ class TestIp4Phtx(TestCase):
             ip4_src=self.mns.ip4_multicast_all_nodes,
             ip4_dst=self.mns.host_a_ip4_address,
         )
-        self.assertEqual(str(tx_status), "PASSED_TO_TX_RING")
+        self.assertEqual(tx_status, TxStatus.PASSED__ETHER__TO_TX_RING)
         self.assertEqual(
             self.packet_handler.packet_stats_tx,
             PacketStatsTx(
@@ -125,7 +126,7 @@ class TestIp4Phtx(TestCase):
             ip4_src=self.mns.ip4_multicast_all_nodes,
             ip4_dst=self.mns.host_a_ip4_address,
         )
-        self.assertEqual(str(tx_status), "DROPED_IP4_INVALID_SOURCE")
+        self.assertEqual(tx_status, TxStatus.DROPED__IP4__SRC_MULTICAST)
         self.assertEqual(
             self.packet_handler.packet_stats_tx,
             PacketStatsTx(
@@ -141,7 +142,7 @@ class TestIp4Phtx(TestCase):
             ip4_src=self.mns.ip4_limited_broadcast,
             ip4_dst=self.mns.host_a_ip4_address,
         )
-        self.assertEqual(str(tx_status), "PASSED_TO_TX_RING")
+        self.assertEqual(tx_status, TxStatus.PASSED__ETHER__TO_TX_RING)
         self.assertEqual(
             self.packet_handler.packet_stats_tx,
             PacketStatsTx(
@@ -167,7 +168,7 @@ class TestIp4Phtx(TestCase):
             ip4_src=self.mns.ip4_limited_broadcast,
             ip4_dst=self.mns.host_a_ip4_address,
         )
-        self.assertEqual(str(tx_status), "DROPED_IP4_INVALID_SOURCE")
+        self.assertEqual(tx_status, TxStatus.DROPED__IP4__SRC_LIMITED_BROADCAST)
         self.assertEqual(
             self.packet_handler.packet_stats_tx,
             PacketStatsTx(
@@ -183,7 +184,7 @@ class TestIp4Phtx(TestCase):
             ip4_src=self.mns.stack_ip4_host.network.broadcast,
             ip4_dst=self.mns.host_a_ip4_address,
         )
-        self.assertEqual(str(tx_status), "PASSED_TO_TX_RING")
+        self.assertEqual(tx_status, TxStatus.PASSED__ETHER__TO_TX_RING)
         self.assertEqual(
             self.packet_handler.packet_stats_tx,
             PacketStatsTx(
@@ -207,7 +208,7 @@ class TestIp4Phtx(TestCase):
             ip4_src=self.mns.ip4_unspecified,
             ip4_dst=self.mns.host_a_ip4_address,
         )
-        self.assertEqual(str(tx_status), "PASSED_TO_TX_RING")
+        self.assertEqual(tx_status, TxStatus.PASSED__ETHER__TO_TX_RING)
         self.assertEqual(
             self.packet_handler.packet_stats_tx,
             PacketStatsTx(
@@ -223,7 +224,7 @@ class TestIp4Phtx(TestCase):
         with open(TEST_FRAME_DIR + "ip4_to_unicast_address_on_local_network__src_unspecified_replace_local.tx", "rb") as _:
             frame_tx = _.read()
         self.assertEqual(self.frame_tx[: len(frame_tx)], frame_tx)
-    
+
     def test_ip4_phtx__ip4_to_unicast_address_on_local_network__src_unspecified_replace_external(self):
         """Test sending IPv4 packet to unicast address on local network / uspecified source, able to replace with ip from subnet with gateway"""
 
@@ -231,7 +232,7 @@ class TestIp4Phtx(TestCase):
             ip4_src=self.mns.ip4_unspecified,
             ip4_dst=self.mns.host_c_ip4_address,
         )
-        self.assertEqual(str(tx_status), "PASSED_TO_TX_RING")
+        self.assertEqual(tx_status, TxStatus.PASSED__ETHER__TO_TX_RING)
         self.assertEqual(
             self.packet_handler.packet_stats_tx,
             PacketStatsTx(
@@ -257,7 +258,7 @@ class TestIp4Phtx(TestCase):
             ip4_src=self.mns.ip4_unspecified,
             ip4_dst=self.mns.host_c_ip4_address,
         )
-        self.assertEqual(str(tx_status), "DROPED_IP4_INVALID_SOURCE")
+        self.assertEqual(tx_status, TxStatus.DROPED__IP4__SRC_UNSPECIFIED)
         self.assertEqual(
             self.packet_handler.packet_stats_tx,
             PacketStatsTx(

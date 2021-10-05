@@ -66,13 +66,13 @@ def _phtx_ip6_ext_frag(self, *, ip6_packet_tx: Ip6Assembler) -> TxStatus:
 
     # Return the most severe code
     for tx_status in [
-        TxStatus.DROPED_ETHER_DST_RESOLUTION_FAIL,
-        TxStatus.DROPED_ETHER_DST_NO_GATEWAY_IP6,
-        TxStatus.DROPED_ETHER_DST_ND_CACHE_FAIL,
-        TxStatus.DROPED_ETHER_DST_GATEWAY_ND_CACHE_FAIL,
-        TxStatus.PASSED_TO_TX_RING,
+        TxStatus.DROPED__ETHER__DST_RESOLUTION_FAIL,
+        TxStatus.DROPED__ETHER__DST_NO_GATEWAY_IP6,
+        TxStatus.DROPED__ETHER__DST_ND_CACHE_FAIL,
+        TxStatus.DROPED__ETHER__DST_GATEWAY_ND_CACHE_FAIL,
+        TxStatus.PASSED__ETHER__TO_TX_RING,
     ]:
         if tx_status in ip6_tx_status:
             return tx_status
 
-    return TxStatus.DROPED_IP6_EXT_FRAG_UNKNOWN
+    return TxStatus.DROPED__IP6__EXT_FRAG_UNKNOWN

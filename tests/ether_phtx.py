@@ -40,6 +40,7 @@ from __future__ import annotations  # Required by Python ver < 3.10
 from testslide import TestCase
 
 from pytcp.misc.packet_stats import PacketStatsTx
+from pytcp.misc.tx_status import TxStatus
 from tests.mock_network import (
     MockNetworkSettings,
     patch_config,
@@ -66,7 +67,7 @@ class TestEtherPhtx(TestCase):
             ip4_src=self.mns.stack_ip4_host.address,
             ip4_dst=self.mns.host_a_ip4_address,
         )
-        self.assertEqual(str(tx_status), "PASSED_TO_TX_RING")
+        self.assertEqual(tx_status, TxStatus.PASSED__ETHER__TO_TX_RING)
         self.assertEqual(
             self.packet_handler.packet_stats_tx,
             PacketStatsTx(
@@ -91,7 +92,7 @@ class TestEtherPhtx(TestCase):
         )
         with open(TEST_FRAME_DIR + "ip4_packet_to_multicast_address.tx", "wb") as _:
             _.write(self.frame_tx[:34])
-        self.assertEqual(str(tx_status), "PASSED_TO_TX_RING")
+        self.assertEqual(tx_status, TxStatus.PASSED__ETHER__TO_TX_RING)
         self.assertEqual(
             self.packet_handler.packet_stats_tx,
             PacketStatsTx(
@@ -114,7 +115,7 @@ class TestEtherPhtx(TestCase):
             ip4_src=self.mns.stack_ip4_host.address,
             ip4_dst=self.mns.ip4_limited_broadcast,
         )
-        self.assertEqual(str(tx_status), "PASSED_TO_TX_RING")
+        self.assertEqual(tx_status, TxStatus.PASSED__ETHER__TO_TX_RING)
         self.assertEqual(
             self.packet_handler.packet_stats_tx,
             PacketStatsTx(
@@ -137,7 +138,7 @@ class TestEtherPhtx(TestCase):
             ip4_src=self.mns.stack_ip4_host.address,
             ip4_dst=self.mns.stack_ip4_host.network.broadcast,
         )
-        self.assertEqual(str(tx_status), "PASSED_TO_TX_RING")
+        self.assertEqual(tx_status, TxStatus.PASSED__ETHER__TO_TX_RING)
         self.assertEqual(
             self.packet_handler.packet_stats_tx,
             PacketStatsTx(
@@ -160,7 +161,7 @@ class TestEtherPhtx(TestCase):
             ip4_src=self.mns.stack_ip4_host.address,
             ip4_dst=self.mns.stack_ip4_host.network.address,
         )
-        self.assertEqual(str(tx_status), "PASSED_TO_TX_RING")
+        self.assertEqual(tx_status, TxStatus.PASSED__ETHER__TO_TX_RING)
         self.assertEqual(
             self.packet_handler.packet_stats_tx,
             PacketStatsTx(
@@ -183,7 +184,7 @@ class TestEtherPhtx(TestCase):
             ip4_src=self.mns.stack_ip4_host.address,
             ip4_dst=self.mns.host_b_ip4_address,
         )
-        self.assertEqual(str(tx_status), "DROPED_ETHER_DST_ARP_CACHE_FAIL")
+        self.assertEqual(tx_status, TxStatus.DROPED__ETHER__DST_ARP_CACHE_FAIL)
         self.assertEqual(
             self.packet_handler.packet_stats_tx,
             PacketStatsTx(
@@ -203,7 +204,7 @@ class TestEtherPhtx(TestCase):
             ip4_src=self.mns.stack_ip4_host.address,
             ip4_dst=self.mns.host_c_ip4_address,
         )
-        self.assertEqual(str(tx_status), "PASSED_TO_TX_RING")
+        self.assertEqual(tx_status, TxStatus.PASSED__ETHER__TO_TX_RING)
         self.assertEqual(
             self.packet_handler.packet_stats_tx,
             PacketStatsTx(
@@ -228,7 +229,7 @@ class TestEtherPhtx(TestCase):
             ip4_src=self.mns.stack_ip4_host.address,
             ip4_dst=self.mns.host_c_ip4_address,
         )
-        self.assertEqual(str(tx_status), "DROPED_ETHER_DST_NO_GATEWAY_IP4")
+        self.assertEqual(str(tx_status), "DROPED__ETHER__DST_NO_GATEWAY_IP4")
         self.assertEqual(
             self.packet_handler.packet_stats_tx,
             PacketStatsTx(
@@ -250,7 +251,7 @@ class TestEtherPhtx(TestCase):
             ip4_src=self.mns.stack_ip4_host.address,
             ip4_dst=self.mns.host_c_ip4_address,
         )
-        self.assertEqual(str(tx_status), "DROPED_ETHER_DST_GATEWAY_ARP_CACHE_FAIL")
+        self.assertEqual(tx_status, TxStatus.DROPED__ETHER__DST_GATEWAY_ARP_CACHE_FAIL)
         self.assertEqual(
             self.packet_handler.packet_stats_tx,
             PacketStatsTx(
@@ -270,7 +271,7 @@ class TestEtherPhtx(TestCase):
             ip6_src=self.mns.stack_ip6_host.address,
             ip6_dst=self.mns.host_a_ip6_address,
         )
-        self.assertEqual(str(tx_status), "PASSED_TO_TX_RING")
+        self.assertEqual(tx_status, TxStatus.PASSED__ETHER__TO_TX_RING)
         self.assertEqual(
             self.packet_handler.packet_stats_tx,
             PacketStatsTx(
@@ -293,7 +294,7 @@ class TestEtherPhtx(TestCase):
             ip6_src=self.mns.stack_ip6_host.address,
             ip6_dst=self.mns.ip6_multicast_all_nodes,
         )
-        self.assertEqual(str(tx_status), "PASSED_TO_TX_RING")
+        self.assertEqual(tx_status, TxStatus.PASSED__ETHER__TO_TX_RING)
         with open(TEST_FRAME_DIR + "ip6_packet_to_multicast_address.tx", "wb") as _:
             _.write(self.frame_tx[:54])
         self.assertEqual(
@@ -318,7 +319,7 @@ class TestEtherPhtx(TestCase):
             ip6_src=self.mns.stack_ip6_host.address,
             ip6_dst=self.mns.host_b_ip6_address,
         )
-        self.assertEqual(str(tx_status), "DROPED_ETHER_DST_ND_CACHE_FAIL")
+        self.assertEqual(tx_status, TxStatus.DROPED__ETHER__DST_ND_CACHE_FAIL)
         self.assertEqual(
             self.packet_handler.packet_stats_tx,
             PacketStatsTx(
@@ -338,7 +339,7 @@ class TestEtherPhtx(TestCase):
             ip6_src=self.mns.stack_ip6_host.address,
             ip6_dst=self.mns.host_c_ip6_address,
         )
-        self.assertEqual(str(tx_status), "PASSED_TO_TX_RING")
+        self.assertEqual(tx_status, TxStatus.PASSED__ETHER__TO_TX_RING)
         self.assertEqual(
             self.packet_handler.packet_stats_tx,
             PacketStatsTx(
@@ -363,7 +364,7 @@ class TestEtherPhtx(TestCase):
             ip6_src=self.mns.stack_ip6_host.address,
             ip6_dst=self.mns.host_c_ip6_address,
         )
-        self.assertEqual(str(tx_status), "DROPED_ETHER_DST_NO_GATEWAY_IP6")
+        self.assertEqual(tx_status, TxStatus.DROPED__ETHER__DST_NO_GATEWAY_IP6)
         self.assertEqual(
             self.packet_handler.packet_stats_tx,
             PacketStatsTx(
@@ -385,7 +386,7 @@ class TestEtherPhtx(TestCase):
             ip6_src=self.mns.stack_ip6_host.address,
             ip6_dst=self.mns.host_c_ip6_address,
         )
-        self.assertEqual(str(tx_status), "DROPED_ETHER_DST_GATEWAY_ND_CACHE_FAIL")
+        self.assertEqual(tx_status, TxStatus.DROPED__ETHER__DST_GATEWAY_ND_CACHE_FAIL)
         self.assertEqual(
             self.packet_handler.packet_stats_tx,
             PacketStatsTx(
@@ -405,7 +406,7 @@ class TestEtherPhtx(TestCase):
             ether_src=self.mns.stack_mac_address,
             ether_dst=self.mns.host_a_mac_address,
         )
-        self.assertEqual(str(tx_status), "PASSED_TO_TX_RING")
+        self.assertEqual(tx_status, TxStatus.PASSED__ETHER__TO_TX_RING)
         self.assertEqual(
             self.packet_handler.packet_stats_tx,
             PacketStatsTx(
@@ -425,7 +426,7 @@ class TestEtherPhtx(TestCase):
             ether_src=self.mns.mac_unspecified,
             ether_dst=self.mns.host_a_mac_address,
         )
-        self.assertEqual(str(tx_status), "PASSED_TO_TX_RING")
+        self.assertEqual(tx_status, TxStatus.PASSED__ETHER__TO_TX_RING)
         self.assertEqual(
             self.packet_handler.packet_stats_tx,
             PacketStatsTx(
@@ -445,7 +446,7 @@ class TestEtherPhtx(TestCase):
             ether_src=self.mns.stack_mac_address,
             ether_dst=self.mns.mac_unspecified,
         )
-        self.assertEqual(str(tx_status), "DROPED_ETHER_DST_RESOLUTION_FAIL")
+        self.assertEqual(tx_status, TxStatus.DROPED__ETHER__DST_RESOLUTION_FAIL)
         self.assertEqual(
             self.packet_handler.packet_stats_tx,
             PacketStatsTx(

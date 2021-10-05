@@ -34,6 +34,7 @@ from __future__ import annotations  # Required by Python ver < 3.10
 from testslide import TestCase
 
 from pytcp.misc.packet_stats import PacketStatsTx
+from pytcp.misc.tx_status import TxStatus
 from pytcp.protocols.arp.ps import ARP_OP_REPLY, ARP_OP_REQUEST
 from tests.mock_network import (
     MockNetworkSettings,
@@ -66,7 +67,7 @@ class TestArpPhtx(TestCase):
             arp_tha=self.mns.mac_unspecified,
             arp_tpa=self.mns.host_a_ip4_address,
         )
-        self.assertEqual(str(tx_status), "PASSED_TO_TX_RING")
+        self.assertEqual(tx_status, TxStatus.PASSED__ETHER__TO_TX_RING)
         self.assertEqual(
             self.packet_handler.packet_stats_tx,
             PacketStatsTx(
@@ -93,7 +94,7 @@ class TestArpPhtx(TestCase):
             arp_tha=self.mns.host_a_mac_address,
             arp_tpa=self.mns.host_a_ip4_address,
         )
-        self.assertEqual(str(tx_status), "PASSED_TO_TX_RING")
+        self.assertEqual(tx_status, TxStatus.PASSED__ETHER__TO_TX_RING)
         self.assertEqual(
             self.packet_handler.packet_stats_tx,
             PacketStatsTx(

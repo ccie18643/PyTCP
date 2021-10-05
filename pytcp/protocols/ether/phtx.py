@@ -83,7 +83,7 @@ def _phtx_ether(
         if __debug__:
             log("ether", f"{ether_packet_tx.tracker} - Contains valid destination MAC address")
         _send_out_packet()
-        return TxStatus.PASSED_TO_TX_RING
+        return TxStatus.PASSED__ETHER__TO_TX_RING
 
     # Check if we can obtain destination MAC based on IPv6 header data
     if isinstance(ether_packet_tx._carried_packet, Ip6Assembler):
@@ -99,7 +99,7 @@ def _phtx_ether(
             if __debug__:
                 log("ether", f"{ether_packet_tx.tracker} - Resolved destination IPv6 {ip6_dst} to MAC {ether_packet_tx.dst}")
             _send_out_packet()
-            return TxStatus.PASSED_TO_TX_RING
+            return TxStatus.PASSED__ETHER__TO_TX_RING
 
         # Send out packet if is destined to external network (in relation to its source address) and we are able to obtain MAC of default gateway from ND cache
         for ip6_host in self.ip6_host:
@@ -108,16 +108,16 @@ def _phtx_ether(
                     self.packet_stats_tx.ether__dst_unspec__ip6_lookup__extnet__no_gw__drop += 1
                     if __debug__:
                         log("ether", f"<{ether_packet_tx.tracker} - <WARN>No default gateway set for {ip6_host} source address, dropping</>")
-                    return TxStatus.DROPED_ETHER_DST_NO_GATEWAY_IP6
+                    return TxStatus.DROPED__ETHER__DST_NO_GATEWAY_IP6
                 if mac_address := self.nd_cache.find_entry(ip6_host.gateway):
                     ether_packet_tx.dst = mac_address
                     self.packet_stats_tx.ether__dst_unspec__ip6_lookup__extnet__gw_nd_cache_hit__send += 1
                     if __debug__:
                         log("ether", f"{ether_packet_tx.tracker} - Resolved destination IPv6 {ip6_dst}" + f" to Default Gateway MAC {ether_packet_tx.dst}")
                     _send_out_packet()
-                    return TxStatus.PASSED_TO_TX_RING
+                    return TxStatus.PASSED__ETHER__TO_TX_RING
                 self.packet_stats_tx.ether__dst_unspec__ip6_lookup__extnet__gw_nd_cache_miss__drop += 1
-                return TxStatus.DROPED_ETHER_DST_GATEWAY_ND_CACHE_FAIL
+                return TxStatus.DROPED__ETHER__DST_GATEWAY_ND_CACHE_FAIL
 
         # Send out packet if we are able to obtain destinaton MAC from ICMPv6 ND cache
         if mac_address := self.nd_cache.find_entry(ip6_dst):
@@ -126,12 +126,12 @@ def _phtx_ether(
             if __debug__:
                 log("ether", f"{ether_packet_tx.tracker} - Resolved destination IPv6 {ip6_dst} to MAC {ether_packet_tx.dst}")
             _send_out_packet()
-            return TxStatus.PASSED_TO_TX_RING
+            return TxStatus.PASSED__ETHER__TO_TX_RING
         else:
             self.packet_stats_tx.ether__dst_unspec__ip6_lookup__locnet__nd_cache_miss__drop += 1
             if __debug__:
                 log("ether", f"{ether_packet_tx.tracker} - <WARN>No valid destination MAC could be obtained from ND cache, dropping</>")
-            return TxStatus.DROPED_ETHER_DST_ND_CACHE_FAIL
+            return TxStatus.DROPED__ETHER__DST_ND_CACHE_FAIL
 
     # Check if we can obtain destination MAC based on IPv4 header data
     if isinstance(ether_packet_tx._carried_packet, (Ip4Assembler, Ip4FragAssembler)):
@@ -147,7 +147,7 @@ def _phtx_ether(
             if __debug__:
                 log("ether", f"{ether_packet_tx.tracker} - Resolved destination IPv4 {ip4_dst} to MAC {ether_packet_tx.dst}")
             _send_out_packet()
-            return TxStatus.PASSED_TO_TX_RING
+            return TxStatus.PASSED__ETHER__TO_TX_RING
 
         # Send out packet if its destinied to limited broadcast addresses
         if ip4_dst.is_limited_broadcast:
@@ -156,7 +156,7 @@ def _phtx_ether(
             if __debug__:
                 log("ether", f"{ether_packet_tx.tracker} - Resolved destination IPv4 {ip4_dst} to MAC {ether_packet_tx.dst}")
             _send_out_packet()
-            return TxStatus.PASSED_TO_TX_RING
+            return TxStatus.PASSED__ETHER__TO_TX_RING
 
         # Send out packet if its destinied to network broadcast or network addresses (in relation to its source address)
         for ip4_host in self.ip4_host:
@@ -167,7 +167,7 @@ def _phtx_ether(
                     if __debug__:
                         log("ether", f"{ether_packet_tx.tracker} - Resolved destination IPv4 {ip4_dst} to MAC {ether_packet_tx.dst}")
                     _send_out_packet()
-                    return TxStatus.PASSED_TO_TX_RING
+                    return TxStatus.PASSED__ETHER__TO_TX_RING
 
         # Send out packet if is destined to external network (in relation to its source address) and we are able to obtain MAC of default gateway from ARP cache
         for ip4_host in self.ip4_host:
@@ -176,16 +176,16 @@ def _phtx_ether(
                     self.packet_stats_tx.ether__dst_unspec__ip4_lookup__extnet__no_gw__drop += 1
                     if __debug__:
                         log("ether", f"{ether_packet_tx.tracker} - <WARN>No default gateway set for {ip4_host} source address, dropping</>")
-                    return TxStatus.DROPED_ETHER_DST_NO_GATEWAY_IP4
+                    return TxStatus.DROPED__ETHER__DST_NO_GATEWAY_IP4
                 if mac_address := self.arp_cache.find_entry(ip4_host.gateway):
                     self.packet_stats_tx.ether__dst_unspec__ip4_lookup__extnet__gw_arp_cache_hit__send += 1
                     ether_packet_tx.dst = mac_address
                     if __debug__:
                         log("ether", f"{ether_packet_tx.tracker} - Resolved destination IPv4 {ip4_dst}" + f" to Default Gateway MAC {ether_packet_tx.dst}")
                     _send_out_packet()
-                    return TxStatus.PASSED_TO_TX_RING
+                    return TxStatus.PASSED__ETHER__TO_TX_RING
                 self.packet_stats_tx.ether__dst_unspec__ip4_lookup__extnet__gw_arp_cache_miss__drop += 1
-                return TxStatus.DROPED_ETHER_DST_GATEWAY_ARP_CACHE_FAIL
+                return TxStatus.DROPED__ETHER__DST_GATEWAY_ARP_CACHE_FAIL
 
         # Send out packet if we are able to obtain destinaton MAC from ARP cache, drop otherwise
         if mac_address := self.arp_cache.find_entry(ip4_dst):
@@ -194,15 +194,15 @@ def _phtx_ether(
             if __debug__:
                 log("ether", f"{ether_packet_tx.tracker} - Resolved destination IPv4 {ip4_dst} to MAC {ether_packet_tx.dst}")
             _send_out_packet()
-            return TxStatus.PASSED_TO_TX_RING
+            return TxStatus.PASSED__ETHER__TO_TX_RING
         else:
             self.packet_stats_tx.ether__dst_unspec__ip4_lookup__locnet__arp_cache_miss__drop += 1
             if __debug__:
                 log("ether", f"{ether_packet_tx.tracker} - <WARN>No valid destination MAC could be obtained from ARP cache, dropping</>")
-            return TxStatus.DROPED_ETHER_DST_ARP_CACHE_FAIL
+            return TxStatus.DROPED__ETHER__DST_ARP_CACHE_FAIL
 
     # Drop packet in case we are not able to obtain valid destination MAC address
     self.packet_stats_tx.ether__dst_unspec__drop += 1
     if __debug__:
         log("ether", f"{ether_packet_tx.tracker} - <WARN>No valid destination MAC could be obtained, dropping</>")
-    return TxStatus.DROPED_ETHER_DST_RESOLUTION_FAIL
+    return TxStatus.DROPED__ETHER__DST_RESOLUTION_FAIL

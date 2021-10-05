@@ -64,7 +64,7 @@ def _phtx_arp(
     # Check if IPv4 protocol support is enabled, if not then silently drop the packet
     if not config.IP4_SUPPORT:
         self.packet_stats_tx.arp__no_proto_support__drop += 1
-        return TxStatus.DROPED_ARP_NO_PROTOCOL_SUPPORT
+        return TxStatus.DROPED__ARP__NO_PROTOCOL_SUPPORT
 
     if arp_oper == ARP_OP_REQUEST:
         self.packet_stats_tx.arp__op_request__send += 1

@@ -48,7 +48,7 @@ if TYPE_CHECKING:
     from protocols.udp.fpa import UdpAssembler
 
 
-def _validate_src_ip4_address(self, ip4_src: Ip4Address, ip4_dst: Ip4Address, tracker: Tracker) -> Optional[Ip4Address]:
+def _validate_src_ip4_address(self, ip4_src: Ip4Address, ip4_dst: Ip4Address, tracker: Tracker) -> Union[Ip4Address, TxStatus]:
     """Make sure source ip address is valid, supplemt with valid one as appropriate"""
 
     # Check if the the source IP address belongs to this stack or is set to all zeros (for DHCP client communication)
@@ -56,7 +56,7 @@ def _validate_src_ip4_address(self, ip4_src: Ip4Address, ip4_dst: Ip4Address, tr
         self.packet_stats_tx.ip4__src_not_owned__drop += 1
         if __debug__:
             log("ip4", f"{tracker} - <WARN>Unable to sent out IPv4 packet, stack doesn't own IPv4 address {ip4_src}, dropping</>")
-        return None
+        return TxStatus.DROPED__IP4__SRC_NOT_OWNED
 
     # If packet is a response to multicast then replace source address with primary address of the stack
     if ip4_src in self.ip4_multicast:
@@ -69,7 +69,7 @@ def _validate_src_ip4_address(self, ip4_src: Ip4Address, ip4_dst: Ip4Address, tr
         self.packet_stats_tx.ip4__src_multicast__drop += 1
         if __debug__:
             log("ip4", f"{tracker} - <WARN>Unable to sent out IPv4 packet, no stack primary unicast IPv4 address available, dropping</>")
-        return None
+        return TxStatus.DROPED__IP4__SRC_MULTICAST
 
     # If packet is a response to limited broadcast then replace source address with primary address of the stack
     if ip4_src.is_limited_broadcast:
@@ -82,7 +82,7 @@ def _validate_src_ip4_address(self, ip4_src: Ip4Address, ip4_dst: Ip4Address, tr
         self.packet_stats_tx.ip4__src_limited_broadcast__drop += 1
         if __debug__:
             log("ip4", f"{tracker} - <WARN>Unable to sent out IPv4 packet, no stack primary unicast IPv4 address available, dropping</>")
-        return None
+        return TxStatus.DROPED__IP4__SRC_LIMITED_BROADCAST
 
     # If packet is a response to network broadcast then replace source address with first stack address that belongs to appropriate subnet
     if ip4_src in self.ip4_broadcast:
@@ -91,7 +91,7 @@ def _validate_src_ip4_address(self, ip4_src: Ip4Address, ip4_dst: Ip4Address, tr
             self.packet_stats_tx.ip4__src_network_broadcast__replace += 1
             ip4_src = ip4_src_list[0]
             if __debug__:
-                log("ip4", f"{tracker} - Packet is response to directed broadcast, replaced source with appropriate IPv4 address {ip4_src}")
+                log("ip4", f"{tracker} - Packet is response to network broadcast, replaced source with appropriate IPv4 address {ip4_src}")
             return ip4_src
 
     # If source is unspecified and destination belongs to any of local networks then pick source address from that network
@@ -117,20 +117,20 @@ def _validate_src_ip4_address(self, ip4_src: Ip4Address, ip4_dst: Ip4Address, tr
     # If src is unspecified and stack can't replace it
     if ip4_src.is_unspecified:
         self.packet_stats_tx.ip4__src_unspecified__drop += 1
-        return None
+        return TxStatus.DROPED__IP4__SRC_UNSPECIFIED
 
     # If nothing above applies return the src address intact
     return ip4_src
 
 
-def _validate_dst_ip4_address(self, ip4_dst: Ip4Address, tracker) -> Optional[Ip4Address]:
+def _validate_dst_ip4_address(self, ip4_dst: Ip4Address, tracker) -> Union[Ip4Address, TxStatus]:
     """Make sure destination ip address is valid"""
 
     # Drop packet if the destination address is unspecified
     if ip4_dst.is_unspecified:
         if __debug__:
             log("ip4", f"{tracker} - <WARN>Destination address is unspecified, dropping</>")
-        return None
+        return TxStatus.DROPED__IP4__DST_UNSPECIFIED
 
     return ip4_dst
 
@@ -155,19 +155,19 @@ def _phtx_ip4(
     # Check if IPv4 protocol support is enabled, if not then silently drop the packet
     if not config.IP4_SUPPORT:
         self.packet_stats_tx.ip4__no_proto_support__drop += 1
-        return TxStatus.DROPED_IP4_NO_PROTOCOL_SUPPORT
+        return TxStatus.DROPED__IP4__NO_PROTOCOL_SUPPORT
 
     # Validate source address
-    ip4_src = self._validate_src_ip4_address(ip4_src, ip4_dst, carried_packet.tracker)
-    if ip4_src is None:
-        # Appropriate packet status counter set already by '_validate_src_ip4_address' function
-        return TxStatus.DROPED_IP4_INVALID_SOURCE
+    result = self._validate_src_ip4_address(ip4_src, ip4_dst, carried_packet.tracker)
+    if isinstance(result, TxStatus):
+        return result
+    ip4_src = result
 
     # Validate destination address
-    ip4_dst = self._validate_dst_ip4_address(ip4_dst, carried_packet.tracker)
-    if not ip4_dst:
-        self.packet_stats_tx.ip4__dst_invalid__drop += 1
-        return TxStatus.DROPED_IP4_INVALID_DESTINATION
+    result = self._validate_dst_ip4_address(ip4_dst, carried_packet.tracker)
+    if isinstance(result, TxStatus):
+        return result
+    ip4_dst = result
 
     # Assemble IPv4 packet
     ip4_packet_tx = Ip4Assembler(src=ip4_src, dst=ip4_dst, ttl=ip4_ttl, carried_packet=carried_packet)
@@ -209,13 +209,13 @@ def _phtx_ip4(
 
     # Return the most severe code
     for tx_status in [
-        TxStatus.DROPED_ETHER_DST_RESOLUTION_FAIL,
-        TxStatus.DROPED_ETHER_DST_NO_GATEWAY_IP4,
-        TxStatus.DROPED_ETHER_DST_ARP_CACHE_FAIL,
-        TxStatus.DROPED_ETHER_DST_GATEWAY_ARP_CACHE_FAIL,
-        TxStatus.PASSED_TO_TX_RING,
+        TxStatus.DROPED__ETHER__DST_RESOLUTION_FAIL,
+        TxStatus.DROPED__ETHER__DST_NO_GATEWAY_IP4,
+        TxStatus.DROPED__ETHER__DST_ARP_CACHE_FAIL,
+        TxStatus.DROPED__ETHER__DST_GATEWAY_ARP_CACHE_FAIL,
+        TxStatus.PASSED__ETHER__TO_TX_RING,
     ]:
         if tx_status in ether_tx_status:
             return tx_status
 
-    return TxStatus.DROPED_IP4_UNKNOWN
+    return TxStatus.DROPED__IP4__UNKNOWN

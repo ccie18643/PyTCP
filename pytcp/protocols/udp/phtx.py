@@ -75,4 +75,4 @@ def _phtx_udp(
         return self._phtx_ip4(ip4_src=ip_src, ip4_dst=ip_dst, carried_packet=udp_packet_tx)
 
     self.packet_stats_tx.udp__unknown__drop += 1
-    return TxStatus.DROPED_UDP_UNKNOWN
+    return TxStatus.DROPED__UDP__UNKNOWN

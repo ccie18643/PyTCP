@@ -108,19 +108,19 @@ def _phtx_ip6(
     # Check if IPv6 protocol support is enabled, if not then silently drop the packet
     if not config.IP6_SUPPORT:
         self.packet_stats_tx.ip6__no_proto_support__drop += 1
-        return TxStatus.DROPED_IP6_NO_PROTOCOL_SUPPORT
+        return TxStatus.DROPED__IP6__NO_PROTOCOL_SUPPORT
 
     # Validate source address
     ip6_src = self._validate_src_ip6_address(ip6_src, ip6_dst, carried_packet.tracker)
     if not ip6_src:
         self.packet_stats_tx.ip6__src_invalid__drop += 1
-        return TxStatus.DROPED_IP6_INVALID_SOURCE
+        return TxStatus.DROPED__IP6__INVALID_SOURCE
 
     # Validate destination address
     ip6_dst = self._validate_dst_ip6_address(ip6_dst, carried_packet.tracker)
     if not ip6_dst:
         self.packet_stats_tx.ip6__dst_invalid__drop += 1
-        return TxStatus.DROPED_IP6_INVALID_DESTINATION
+        return TxStatus.DROPED__IP6__INVALID_DESTINATION
 
     # assemble IPv6 apcket
     ip6_packet_tx = Ip6Assembler(src=ip6_src, dst=ip6_dst, hop=ip6_hop, carried_packet=carried_packet)

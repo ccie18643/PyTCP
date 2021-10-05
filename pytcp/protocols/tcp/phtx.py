@@ -153,4 +153,4 @@ def _phtx_tcp(
         return self._phtx_ip4(ip4_src=ip_src, ip4_dst=ip_dst, carried_packet=tcp_packet_tx)
 
     self.packet_stats_tx.tcp__unknown__drop += 1
-    return TxStatus.DROPED_TCP_UNKNOWN
+    return TxStatus.DROPED__TCP__UNKNOWN

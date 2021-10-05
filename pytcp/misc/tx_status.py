@@ -37,27 +37,45 @@ from enum import Enum, auto
 class TxStatus(Enum):
     """TX Error codes"""
 
-    PASSED_TO_TX_RING = auto()
-    DROPED_ETHER_DST_ARP_CACHE_FAIL = auto()
-    DROPED_ETHER_DST_ND_CACHE_FAIL = auto()
-    DROPED_ETHER_DST_NO_GATEWAY_IP4 = auto()
-    DROPED_ETHER_DST_NO_GATEWAY_IP6 = auto()
-    DROPED_ETHER_DST_GATEWAY_ARP_CACHE_FAIL = auto()
-    DROPED_ETHER_DST_GATEWAY_ND_CACHE_FAIL = auto()
-    DROPED_ETHER_DST_RESOLUTION_FAIL = auto()
-    DROPED_ARP_NO_PROTOCOL_SUPPORT = auto()
-    DROPED_IP4_NO_PROTOCOL_SUPPORT = auto()
-    DROPED_IP4_INVALID_SOURCE = auto()
-    DROPED_IP4_INVALID_DESTINATION = auto()
-    DROPED_IP4_UNKNOWN = auto()
-    DROPED_IP6_NO_PROTOCOL_SUPPORT = auto()
-    DROPED_IP6_INVALID_SOURCE = auto()
-    DROPED_IP6_INVALID_DESTINATION = auto()
-    DROPED_IP6_EXT_FRAG_UNKNOWN = auto()
-    DROPED_UDP_UNKNOWN = auto()
-    DROPED_TCP_UNKNOWN = auto()
-    DROPED_ICMP4_UNKNOWN = auto()
-    DROPED_ICMP6_UNKNOWN = auto()
+    PASSED__ETHER__TO_TX_RING = auto()
+
+    DROPED__ETHER__DST_ARP_CACHE_FAIL = auto()
+    DROPED__ETHER__DST_ND_CACHE_FAIL = auto()
+    DROPED__ETHER__DST_NO_GATEWAY_IP4 = auto()
+    DROPED__ETHER__DST_NO_GATEWAY_IP6 = auto()
+    DROPED__ETHER__DST_GATEWAY_ARP_CACHE_FAIL = auto()
+    DROPED__ETHER__DST_GATEWAY_ND_CACHE_FAIL = auto()
+    DROPED__ETHER__DST_RESOLUTION_FAIL = auto()
+
+    DROPED__ARP__NO_PROTOCOL_SUPPORT = auto()
+
+    DROPED__IP4__NO_PROTOCOL_SUPPORT = auto()
+    DROPED__IP4__SRC_NOT_OWNED = auto()
+    DROPED__IP4__SRC_MULTICAST = auto()
+    DROPED__IP4__SRC_LIMITED_BROADCAST = auto()
+    DROPED__IP4__SRC_NETWORK_BROADCAST = auto()
+    DROPED__IP4__SRC_UNSPECIFIED = auto()
+    DROPED__IP4__DST_UNSPECIFIED = auto()
+    DROPED__IP4__UNKNOWN = auto()
+
+    DROPED__IP6__NO_PROTOCOL_SUPPORT = auto()
+    DROPED__IP6__INVALID_SOURCE = auto()
+    DROPED__IP6__INVALID_DESTINATION = auto()
+    DROPED__IP6__EXT_FRAG_UNKNOWN = auto()
+
+    DROPED__UDP__UNKNOWN = auto()
+
+    DROPED__TCP__UNKNOWN = auto()
+
+    DROPED__ICMP4__UNKNOWN = auto()
+
+    DROPED__ICMP6__UNKNOWN = auto()
 
     def __str__(self) -> str:
         return str(self.name)
+
+    def __eq__(self, other):
+        return repr(self) == repr(other)
+
+    def __hash__(self):
+        return hash(repr)

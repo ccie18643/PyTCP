@@ -171,7 +171,7 @@ class UdpSocket(Socket):
             data=data,
         )
 
-        sent_data_len = len(data) if tx_status is TxStatus.PASSED_TO_TX_RING else 0
+        sent_data_len = len(data) if tx_status is TxStatus.PASSED__ETHER__TO_TX_RING else 0
 
         if __debug__:
             log("socket", f"<g>[{self}]</> - <lr>Sent</> {sent_data_len} bytes of data")
@@ -204,7 +204,7 @@ class UdpSocket(Socket):
             data=data,
         )
 
-        sent_data_len = len(data) if tx_status is TxStatus.PASSED_TO_TX_RING else 0
+        sent_data_len = len(data) if tx_status is TxStatus.PASSED__ETHER__TO_TX_RING else 0
 
         if __debug__:
             log("socket", f"<g>[{self}]</> - <lr>Sent</> {sent_data_len} bytes of data")
