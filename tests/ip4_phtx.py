@@ -52,7 +52,7 @@ class TestIp4Phtx(TestCase):
         setup_mock_packet_handler(self)
 
     # Test name format: 'test_name__test_description__optional_condition'
-    
+
     def test_ip4_phtx__ip4_to_unicast_address_on_local_network__src_valid(self):
         """Test sending IPv4 packet to unicast address on local network / valid source"""
 
@@ -196,11 +196,11 @@ class TestIp4Phtx(TestCase):
                 ether__dst_unspec__ip4_lookup__locnet__arp_cache_hit__send=1,
             ),
         )
-        with open(TEST_FRAME_DIR + "ip4_to_unicast_address_on_local_network__src_multicast_replace.tx", "rb") as _:
+        with open(TEST_FRAME_DIR + "ip4_to_unicast_address_on_local_network__src_network_broadcast_replace.tx", "rb") as _:
             frame_tx = _.read()
         self.assertEqual(self.frame_tx[: len(frame_tx)], frame_tx)
 
-    def test_ip4_phtx__ip4_to_unicast_address_on_local_network__src_unspecified_replace(self):
+    def test_ip4_phtx__ip4_to_unicast_address_on_local_network__src_unspecified_replace_local(self):
         """Test sending IPv4 packet to unicast address on local network / uspecified source, able to replace"""
 
         tx_status = self.packet_handler._phtx_ip4(
@@ -212,7 +212,7 @@ class TestIp4Phtx(TestCase):
             self.packet_handler.packet_stats_tx,
             PacketStatsTx(
                 ip4__pre_assemble=1,
-                ip4__src_unspecified__replace=1,
+                ip4__src_network_unspecified__replace_local=1,
                 ip4__mtu_ok__send=1,
                 ether__pre_assemble=1,
                 ether__src_unspec__fill=1,
@@ -220,31 +220,31 @@ class TestIp4Phtx(TestCase):
                 ether__dst_unspec__ip4_lookup__locnet__arp_cache_hit__send=1,
             ),
         )
-        with open(TEST_FRAME_DIR + "ip4_to_unicast_address_on_local_network__src_unspecified_replace.tx", "rb") as _:
+        with open(TEST_FRAME_DIR + "ip4_to_unicast_address_on_local_network__src_unspecified_replace_local.tx", "rb") as _:
             frame_tx = _.read()
         self.assertEqual(self.frame_tx[: len(frame_tx)], frame_tx)
-
-    def test_ip4_phtx__ip4_to_unicast_address_on_local_network__src_unspecified_replace_by_stack_address_with_gateway(self):
+    
+    def test_ip4_phtx__ip4_to_unicast_address_on_local_network__src_unspecified_replace_external(self):
         """Test sending IPv4 packet to unicast address on local network / uspecified source, able to replace with ip from subnet with gateway"""
 
         tx_status = self.packet_handler._phtx_ip4(
             ip4_src=self.mns.ip4_unspecified,
-            ip4_dst=self.mns.host_a_ip4_address,
+            ip4_dst=self.mns.host_c_ip4_address,
         )
         self.assertEqual(str(tx_status), "PASSED_TO_TX_RING")
         self.assertEqual(
             self.packet_handler.packet_stats_tx,
             PacketStatsTx(
                 ip4__pre_assemble=1,
-                ip4__src_unspecified__replace=1,
+                ip4__src_network_unspecified__replace_external=1,
                 ip4__mtu_ok__send=1,
                 ether__pre_assemble=1,
                 ether__src_unspec__fill=1,
                 ether__dst_unspec__ip4_lookup=1,
-                ether__dst_unspec__ip4_lookup__locnet__arp_cache_hit__send=1,
+                ether__dst_unspec__ip4_lookup__extnet__gw_arp_cache_hit__send=1,
             ),
         )
-        with open(TEST_FRAME_DIR + "ip4_to_unicast_address_on_local_network__src_unspecified_replace_by_stack_address_with_gateway.tx", "rb") as _:
+        with open(TEST_FRAME_DIR + "ip4_to_unicast_address_on_local_network__src_unspecified_replace_external.tx", "rb") as _:
             frame_tx = _.read()
         self.assertEqual(self.frame_tx[: len(frame_tx)], frame_tx)
 

@@ -65,11 +65,11 @@ def _validate_src_ip4_address(self, ip4_src: Ip4Address, ip4_dst: Ip4Address, tr
             ip4_src = self.ip4_unicast[0]
             if __debug__:
                 log("ip4", f"{tracker} - Packet is response to multicast, replaced source with stack primary IPv4 address {ip4_src}")
-        else:
-            self.packet_stats_tx.ip4__src_multicast__drop += 1
-            if __debug__:
-                log("ip4", f"{tracker} - <WARN>Unable to sent out IPv4 packet, no stack primary unicast IPv4 address available, dropping</>")
-            return None
+            return ip4_src
+        self.packet_stats_tx.ip4__src_multicast__drop += 1
+        if __debug__:
+            log("ip4", f"{tracker} - <WARN>Unable to sent out IPv4 packet, no stack primary unicast IPv4 address available, dropping</>")
+        return None
 
     # If packet is a response to limited broadcast then replace source address with primary address of the stack
     if ip4_src.is_limited_broadcast:
@@ -78,11 +78,11 @@ def _validate_src_ip4_address(self, ip4_src: Ip4Address, ip4_dst: Ip4Address, tr
             ip4_src = self.ip4_unicast[0]
             if __debug__:
                 log("ip4", f"{tracker} - Packet is response to limited broadcast, replaced source with stack primary IPv4 address {ip4_src}")
-        else:
-            self.packet_stats_tx.ip4__src_limited_broadcast__drop += 1
-            if __debug__:
-                log("ip4", f"{tracker} - <WARN>Unable to sent out IPv4 packet, no stack primary unicast IPv4 address available, dropping</>")
-            return None
+            return ip4_src
+        self.packet_stats_tx.ip4__src_limited_broadcast__drop += 1
+        if __debug__:
+            log("ip4", f"{tracker} - <WARN>Unable to sent out IPv4 packet, no stack primary unicast IPv4 address available, dropping</>")
+        return None
 
     # If packet is a response to network broadcast then replace source address with first stack address that belongs to appropriate subnet
     if ip4_src in self.ip4_broadcast:
@@ -92,15 +92,34 @@ def _validate_src_ip4_address(self, ip4_src: Ip4Address, ip4_dst: Ip4Address, tr
             ip4_src = ip4_src_list[0]
             if __debug__:
                 log("ip4", f"{tracker} - Packet is response to directed broadcast, replaced source with appropriate IPv4 address {ip4_src}")
+            return ip4_src
 
-    # If source is unspecified try to find best match for given destination
+    # If source is unspecified and destination belongs to any of local networks then pick source address from that network
     if ip4_src.is_unspecified:
-        if ip4_src := pick_local_ip4_address(ip4_dst):
-            self.packet_stats_tx.ip4__src_unspecified__replace += 1
-        else:
-            self.packet_stats_tx.ip4__src_unspecified__drop += 1
-            return None
+        for ip4_host in self.ip4_host:
+            if ip4_dst in ip4_host.network:
+                self.packet_stats_tx.ip4__src_network_unspecified__replace_local += 1
+                ip4_src = ip4_host.address
+                if __debug__:
+                    log("ip4", f"{tracker} - Packet source is unspecified, replaced source with IPv4 address {ip4_src} from the local destination subnet")
+                return ip4_src
 
+    # If source is unspecified and destination is external pick source from first network that has default gateway set
+    if ip4_src.is_unspecified:
+        for ip4_host in self.ip4_host:
+            if ip4_host.gateway:
+                self.packet_stats_tx.ip4__src_network_unspecified__replace_external += 1
+                ip4_src = ip4_host.address
+                if __debug__:
+                    log("ip4", f"{tracker} - Packet source is unspecified, replaced source with IPv4 address {ip4_src} that has gateway available")
+                return ip4_src
+
+    # If src is unspecified and stack can't replace it
+    if ip4_src.is_unspecified:
+        self.packet_stats_tx.ip4__src_unspecified__drop += 1
+        return None
+
+    # If nothing above applies return the src address intact
     return ip4_src
 
 
