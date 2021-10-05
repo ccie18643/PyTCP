@@ -159,7 +159,9 @@ def setup_mock_packet_handler(self):
     self.mock_callable(self.nd_cache_mock, "find_entry").for_call(self.mns.host_a_ip6_address).to_return_value(self.mns.host_a_mac_address)
     self.mock_callable(self.nd_cache_mock, "find_entry").for_call(self.mns.host_b_ip6_address).to_return_value(None)
     self.mock_callable(self.nd_cache_mock, "find_entry").for_call(self.mns.stack_ip6_gateway).to_return_value(self.mns.stack_ip6_gateway_mac_address)
-    self.mock_callable(self.tx_ring_mock, "enqueue").with_implementation(lambda packet_tx: packet_tx.assemble(self.frame_tx))
+    self.mock_callable(self.tx_ring_mock, "enqueue").with_implementation(
+        lambda packet_tx: packet_tx.assemble(self.frame_tx) or self.frames_tx.append(self.frame_tx)
+    )
 
     self.packet_handler = PacketHandler(None)
     self.packet_handler.mac_unicast = self.mns.stack_mac_address
@@ -173,3 +175,4 @@ def setup_mock_packet_handler(self):
     self.packet_handler.tx_ring = self.tx_ring_mock
 
     self.frame_tx = memoryview(bytearray(2048))
+    self.frames_tx = []

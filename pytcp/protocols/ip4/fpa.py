@@ -198,6 +198,7 @@ class Ip4FragAssembler:
 
     def __init__(
         self,
+        *,
         data: bytes,
         proto: int,
         src: Ip4Address,
@@ -212,7 +213,7 @@ class Ip4FragAssembler:
     ):
         """Class constructor"""
 
-        assert proto in {IP4_PROTO_ICMP4, IP4_PROTO_UDP, IP4_PROTO_TCP}
+        assert proto in {IP4_PROTO_ICMP4, IP4_PROTO_UDP, IP4_PROTO_TCP, IP4_PROTO_RAW}
 
         self._tracker: Tracker = Tracker("TX")
         self._ver: int = 4

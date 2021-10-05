@@ -33,6 +33,7 @@ from __future__ import annotations  # Required by Python ver < 3.10
 
 from testslide import TestCase
 
+from protocols.raw.fpa import RawAssembler
 from pytcp.misc.packet_stats import PacketStatsTx
 from pytcp.misc.tx_status import TxStatus
 from tests.mock_network import (
@@ -284,3 +285,33 @@ class TestIp4Phtx(TestCase):
                 ip4__dst_unspecified__drop=1,
             ),
         )
+    
+    def test_ip4_phtx__ip4_fragmentation(self):
+        """Test sending IPv4 packet large enought to require fragmentation"""
+
+        self.mns.stack_ip4_host.gateway = None
+
+        tx_status = self.packet_handler._phtx_ip4(
+            ip4_src=self.mns.stack_ip4_host.address,
+            ip4_dst=self.mns.host_a_ip4_address,
+            carried_packet=RawAssembler(data=b"01234567890ABCDEF" * 400)
+        )
+        self.assertEqual(
+            self.packet_handler.packet_stats_tx,
+            PacketStatsTx(
+                ip4__pre_assemble=1,
+                ip4__mtu_exceed__frag=1,
+                ip4__mtu_exceed__frag__send=5,
+                ether__pre_assemble=5,
+                ether__src_unspec__fill=5,
+                ether__dst_unspec__ip4_lookup=5,
+                ether__dst_unspec__ip4_lookup__locnet__arp_cache_hit__send=5,
+            ),
+        )
+        for index in range(5):
+            with open(f"tests/test_frames/ip4_phtx/ip4_fragmentation__frag_{index}.tx", "rb") as _:
+                frame_tx = _.read()
+            self.assertEqual(self.frames_tx[index][: len(frame_tx)], frame_tx)
+
+
+

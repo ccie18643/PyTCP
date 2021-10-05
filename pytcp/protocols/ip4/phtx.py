@@ -117,6 +117,8 @@ def _validate_src_ip4_address(self, ip4_src: Ip4Address, ip4_dst: Ip4Address, tr
     # If src is unspecified and stack can't replace it
     if ip4_src.is_unspecified:
         self.packet_stats_tx.ip4__src_unspecified__drop += 1
+        if __debug__:
+            log("ip4", f"{tracker} - <WARN>Packet source is unspecified, unable to replace with valid source, dropping</>")
         return TxStatus.DROPED__IP4__SRC_UNSPECIFIED
 
     # If nothing above applies return the src address intact

@@ -47,7 +47,7 @@ class RawAssembler:
     ip6_next = IP6_NEXT_HEADER_RAW
     ether_type = ETHER_TYPE_RAW
 
-    def __init__(self, data: Optional[bytes] = None, echo_tracker: Optional[Tracker] = None) -> None:
+    def __init__(self, *, data: Optional[bytes] = None, echo_tracker: Optional[Tracker] = None) -> None:
         """Class constructor"""
 
         self._tracker: Tracker = Tracker("TX", echo_tracker)
