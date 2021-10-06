@@ -36,7 +36,6 @@ from typing import TYPE_CHECKING, Optional, Union
 import config
 from lib.ip4_address import Ip4Address
 from lib.logger import log
-from misc.ip_helper import pick_local_ip4_address
 from misc.tx_status import TxStatus
 from protocols.ip4.fpa import Ip4Assembler, Ip4FragAssembler
 from protocols.raw.fpa import RawAssembler

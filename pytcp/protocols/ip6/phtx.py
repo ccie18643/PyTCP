@@ -36,7 +36,6 @@ from typing import TYPE_CHECKING, Optional, Union
 import config
 from lib.ip6_address import Ip6Address
 from lib.logger import log
-from misc.ip_helper import pick_local_ip6_address
 from misc.tx_status import TxStatus
 from protocols.ip6.fpa import Ip6Assembler
 from protocols.raw.fpa import RawAssembler
@@ -49,41 +48,69 @@ if TYPE_CHECKING:
     from protocols.udp.fpa import UdpAssembler
 
 
-def _validate_src_ip6_address(self, ip6_src: Ip6Address, ip6_dst: Ip6Address, tracker: Tracker) -> Optional[Ip6Address]:
+def _validate_src_ip6_address(self, ip6_src: Ip6Address, ip6_dst: Ip6Address, tracker: Tracker) -> Union[Ip6Address, TxStatus]:
     """Make sure source ip address is valid, supplement with valid one as appropriate"""
 
     # Check if the the source IP address belongs to this stack or its unspecified
     if ip6_src not in {*self.ip6_unicast, *self.ip6_multicast, Ip6Address(0)}:
+        self.packet_stats_tx.ip6__src_not_owned__drop += 1
         if __debug__:
             log("ip6", f"{tracker} - <WARN>Unable to sent out IPv6 packet, stack doesn't own IPv6 address {ip6_src}, dropping</>")
-        return None
+        return TxStatus.DROPED__IP6__SRC_NOT_OWNED
 
     # If packet is a response to multicast then replace source address with link local address of the stack
     if ip6_src in self.ip6_multicast:
         if self.ip6_unicast:
+            self.packet_stats_tx.ip6__src_multicast__replace += 1
             ip6_src = self.ip6_unicast[0]
             if __debug__:
                 log("ip6", f"{tracker} - Packet is response to multicast, replaced source with stack link local IPv6 address {ip6_src}")
-        else:
-            if __debug__:
-                log("ip6", f"{tracker} - <WARN>Unable to sent out IPv6 packet, no stack link local unicast IPv6 address available</>")
-            return None
+            return ip6_src
+        self.packet_stats_tx.ip6__src_multicast__drop += 1
+        if __debug__:
+            log("ip6", f"{tracker} - <WARN>Unable to sent out IPv6 packet, no stack link local unicast IPv6 address available</>")
+        return TxStatus.DROPED__IP6__SRC_MULTICAST
 
-    # If source is unspecified try to find best match for given destination
+    # If source is unspecified and destination belongs to any of local networks then pick source address from that network
     if ip6_src.is_unspecified:
-        return pick_local_ip6_address(ip6_dst)
+        for ip6_host in self.ip6_host:
+            if ip6_dst in ip6_host.network:
+                self.packet_stats_tx.ip6__src_network_unspecified__replace_local += 1
+                ip6_src = ip6_host.address
+                if __debug__:
+                    log("ip6", f"{tracker} - Packet source is unspecified, replaced source with IPv6 address {ip6_src} from the local destination subnet")
+                return ip6_src
 
+    # If source is unspecified and destination is external pick source from first network that has default gateway set
+    if ip6_src.is_unspecified:
+        for ip6_host in self.ip6_host:
+            if ip6_host.gateway:
+                self.packet_stats_tx.ip6__src_network_unspecified__replace_external += 1
+                ip6_src = ip6_host.address
+                if __debug__:
+                    log("ip6", f"{tracker} - Packet source is unspecified, replaced source with IPv6 address {ip6_src} that has gateway available")
+                return ip6_src
+
+    # If src is unspecified and stack can't replace it
+    if ip6_src.is_unspecified:
+        self.packet_stats_tx.ip6__src_unspecified__drop += 1
+        if __debug__:
+            log("ip6", f"{tracker} - <WARN>Packet source is unspecified, unable to replace with valid source, dropping</>")
+        return TxStatus.DROPED__IP6__SRC_UNSPECIFIED
+
+    # If nothing above applies return the src address intact
     return ip6_src
 
 
-def _validate_dst_ip6_address(self, ip6_dst: Ip6Address, tracker: Tracker) -> Optional[Ip6Address]:
+def _validate_dst_ip6_address(self, ip6_dst: Ip6Address, tracker) -> Union[Ip6Address, TxStatus]:
     """Make sure destination ip address is valid"""
 
     # Drop packet if the destination address is unspecified
     if ip6_dst.is_unspecified:
+        self.packet_stats_tx.ip6__dst_unspecified__drop += 1
         if __debug__:
             log("ip6", f"{tracker} - <WARN>Destination address is unspecified, dropping</>")
-        return None
+        return TxStatus.DROPED__IP6__DST_UNSPECIFIED
 
     return ip6_dst
 
@@ -111,16 +138,16 @@ def _phtx_ip6(
         return TxStatus.DROPED__IP6__NO_PROTOCOL_SUPPORT
 
     # Validate source address
-    ip6_src = self._validate_src_ip6_address(ip6_src, ip6_dst, carried_packet.tracker)
-    if not ip6_src:
-        self.packet_stats_tx.ip6__src_invalid__drop += 1
-        return TxStatus.DROPED__IP6__INVALID_SOURCE
+    result = self._validate_src_ip6_address(ip6_src, ip6_dst, carried_packet.tracker)
+    if isinstance(result, TxStatus):
+        return result
+    ip6_src = result
 
     # Validate destination address
-    ip6_dst = self._validate_dst_ip6_address(ip6_dst, carried_packet.tracker)
-    if not ip6_dst:
-        self.packet_stats_tx.ip6__dst_invalid__drop += 1
-        return TxStatus.DROPED__IP6__INVALID_DESTINATION
+    result = self._validate_dst_ip6_address(ip6_dst, carried_packet.tracker)
+    if isinstance(result, TxStatus):
+        return result
+    ip6_dst = result
 
     # assemble IPv6 apcket
     ip6_packet_tx = Ip6Assembler(src=ip6_src, dst=ip6_dst, hop=ip6_hop, carried_packet=carried_packet)

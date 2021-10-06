@@ -37,6 +37,7 @@ from lib.tracker import Tracker
 from protocols.ip6.ps import (
     IP6_NEXT_HEADER_EXT_FRAG,
     IP6_NEXT_HEADER_ICMP6,
+    IP6_NEXT_HEADER_RAW,
     IP6_NEXT_HEADER_TCP,
     IP6_NEXT_HEADER_UDP,
 )
@@ -53,6 +54,7 @@ class Ip6ExtFragAssembler:
 
     def __init__(
         self,
+        *,
         next: int,
         offset: int,
         flag_mf: bool,
@@ -61,7 +63,7 @@ class Ip6ExtFragAssembler:
     ):
         """Class constructor"""
 
-        assert next in {IP6_NEXT_HEADER_ICMP6, IP6_NEXT_HEADER_UDP, IP6_NEXT_HEADER_TCP}
+        assert next in {IP6_NEXT_HEADER_ICMP6, IP6_NEXT_HEADER_UDP, IP6_NEXT_HEADER_TCP, IP6_NEXT_HEADER_RAW}
 
         self._tracker: Tracker = Tracker("TX")
         self._next: int = next

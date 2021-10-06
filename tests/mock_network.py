@@ -31,7 +31,7 @@
 
 from __future__ import annotations  # Required by Python ver < 3.10
 
-from testslide import StrictMock, TestCase
+from testslide import StrictMock
 
 from pytcp.lib.ip4_address import Ip4Address, Ip4Host
 from pytcp.lib.ip6_address import Ip6Address, Ip6Host

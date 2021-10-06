@@ -31,9 +31,9 @@
 
 from __future__ import annotations  # Required by Python ver < 3.10
 
+from protocols.raw.fpa import RawAssembler
 from testslide import TestCase
 
-from protocols.raw.fpa import RawAssembler
 from pytcp.misc.packet_stats import PacketStatsTx
 from pytcp.misc.tx_status import TxStatus
 from tests.mock_network import (
@@ -267,7 +267,7 @@ class TestIp4Phtx(TestCase):
                 ip4__src_unspecified__drop=1,
             ),
         )
-    
+
     def test_ip4_phtx__ip4_to_unspecified_address__dst_unspecified_drop(self):
         """Test sending IPv4 packet to unspecified address"""
 
@@ -285,17 +285,16 @@ class TestIp4Phtx(TestCase):
                 ip4__dst_unspecified__drop=1,
             ),
         )
-    
+
     def test_ip4_phtx__ip4_fragmentation(self):
-        """Test sending IPv4 packet large enought to require fragmentation"""
+        """Test sending IPv4 packet large enough to require fragmentation"""
 
         self.mns.stack_ip4_host.gateway = None
 
         tx_status = self.packet_handler._phtx_ip4(
-            ip4_src=self.mns.stack_ip4_host.address,
-            ip4_dst=self.mns.host_a_ip4_address,
-            carried_packet=RawAssembler(data=b"01234567890ABCDEF" * 400)
+            ip4_src=self.mns.stack_ip4_host.address, ip4_dst=self.mns.host_a_ip4_address, carried_packet=RawAssembler(data=b"01234567890ABCDEF" * 400)
         )
+        self.assertEqual(tx_status, TxStatus.PASSED__ETHER__TO_TX_RING)
         self.assertEqual(
             self.packet_handler.packet_stats_tx,
             PacketStatsTx(
@@ -312,6 +311,3 @@ class TestIp4Phtx(TestCase):
             with open(f"tests/test_frames/ip4_phtx/ip4_fragmentation__frag_{index}.tx", "rb") as _:
                 frame_tx = _.read()
             self.assertEqual(self.frames_tx[index][: len(frame_tx)], frame_tx)
-
-
-

@@ -59,8 +59,14 @@ class TxStatus(Enum):
     DROPED__IP4__UNKNOWN = auto()
 
     DROPED__IP6__NO_PROTOCOL_SUPPORT = auto()
-    DROPED__IP6__INVALID_SOURCE = auto()
-    DROPED__IP6__INVALID_DESTINATION = auto()
+    DROPED__IP6__SRC_NOT_OWNED = auto()
+    DROPED__IP6__SRC_MULTICAST = auto()
+    DROPED__IP6__SRC_LIMITED_BROADCAST = auto()
+    DROPED__IP6__SRC_NETWORK_BROADCAST = auto()
+    DROPED__IP6__SRC_UNSPECIFIED = auto()
+    DROPED__IP6__DST_UNSPECIFIED = auto()
+    DROPED__IP6__UNKNOWN = auto()
+
     DROPED__IP6__EXT_FRAG_UNKNOWN = auto()
 
     DROPED__UDP__UNKNOWN = auto()
