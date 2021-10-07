@@ -77,7 +77,7 @@ def _phrx_tcp(self, packet_rx: PacketRx) -> None:
 
     # Check if incoming packet matches active TCP socket
     if tcp_socket := stack.sockets.get(str(packet_rx_md), None):
-        self.packet_stats_rx.tcp__socket_match_active += 1
+        self.packet_stats_rx.tcp__socket_match_active__forward_to_socket += 1
         if __debug__:
             log("tcp", f"{packet_rx_md.tracker} - <INFO>TCP packet is part of active socket [{tcp_socket}]</>")
         tcp_socket.process_tcp_packet(packet_rx_md)
@@ -87,7 +87,7 @@ def _phrx_tcp(self, packet_rx: PacketRx) -> None:
     if all({packet_rx_md.flag_syn}) and not any({packet_rx_md.flag_ack, packet_rx_md.flag_fin, packet_rx_md.flag_rst}):
         for tcp_listening_socket_pattern in packet_rx_md.tcp_listening_socket_patterns:
             if tcp_socket := stack.sockets.get(tcp_listening_socket_pattern, None):
-                self.packet_stats_rx.tcp__socket_match_listening += 1
+                self.packet_stats_rx.tcp__socket_match_listening__forward_to_socket += 1
                 if __debug__:
                     log("tcp", f"{packet_rx_md.tracker} - <INFO>TCP packet matches listening socket [{tcp_socket}]</>")
                 tcp_socket.process_tcp_packet(packet_rx_md)

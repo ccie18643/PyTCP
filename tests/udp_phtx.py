@@ -33,8 +33,8 @@ from __future__ import annotations  # Required by Python ver < 3.10
 
 from testslide import TestCase
 
-from pytcp.misc.tx_status import TxStatus
 from pytcp.misc.packet_stats import PacketStatsTx
+from pytcp.misc.tx_status import TxStatus
 from tests.mock_network import (
     MockNetworkSettings,
     patch_config,
@@ -85,11 +85,7 @@ class TestUdpPhtx(TestCase):
         """Test sending IPv4/UDP packet with data"""
 
         tx_status = self.packet_handler._phtx_udp(
-            ip_src=self.mns.stack_ip4_host.address,
-            ip_dst=self.mns.host_a_ip4_address,
-            udp_sport=1000,
-            udp_dport=2000,
-            udp_data=b"01234567890ABCDEF" * 50
+            ip_src=self.mns.stack_ip4_host.address, ip_dst=self.mns.host_a_ip4_address, udp_sport=1000, udp_dport=2000, udp_data=b"01234567890ABCDEF" * 50
         )
         self.assertEqual(tx_status, TxStatus.PASSED__ETHER__TO_TX_RING)
         self.assertEqual(
@@ -108,4 +104,3 @@ class TestUdpPhtx(TestCase):
         with open(TEST_FRAME_DIR + "ip4_udp_packet__data.tx", "rb") as _:
             frame_tx = _.read()
         self.assertEqual(self.frame_tx[: len(frame_tx)], frame_tx)
-

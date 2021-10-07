@@ -114,7 +114,8 @@ IP4_HOST_DHCP = True
 # Each entry is a tuple interface address/prefix length and second is default gateway for this subnet
 # Basic routing is implemented and each subnet can have its own gateway
 IP4_HOST_CANDIDATE: list[tuple[str, Optional[str]]] = [
-    ("192.168.9.7/24", "192.168.9.1"),
+    ("10.0.0.7/24", "10.0.0.1"),
+    # ("192.168.9.7/24", "192.168.9.1"),
     # ("192.168.9.77/24", "192.168.9.1"),
     # ("172.16.17.7/24", "172.16.17.1"),
     # ("10.10.10.7/24", "10.10.10.1"),

@@ -33,8 +33,8 @@ from __future__ import annotations  # Required by Python ver < 3.10
 
 from testslide import TestCase
 
-from pytcp.misc.tx_status import TxStatus
 from pytcp.misc.packet_stats import PacketStatsTx
+from pytcp.misc.tx_status import TxStatus
 from tests.mock_network import (
     MockNetworkSettings,
     patch_config,
@@ -108,7 +108,7 @@ class TestUdpPhtx(TestCase):
         with open(TEST_FRAME_DIR + "ip4_tcp_packet__seq.tx", "rb") as _:
             frame_tx = _.read()
         self.assertEqual(self.frame_tx[: len(frame_tx)], frame_tx)
-    
+
     def test_tcp_phtx__ip4_tcp_packet__ack(self):
         """Test sending IPv4/TCP packet with set ack field"""
 
@@ -136,7 +136,7 @@ class TestUdpPhtx(TestCase):
         with open(TEST_FRAME_DIR + "ip4_tcp_packet__ack.tx", "rb") as _:
             frame_tx = _.read()
         self.assertEqual(self.frame_tx[: len(frame_tx)], frame_tx)
-    
+
     def test_tcp_phtx__ip4_tcp_packet__ns(self):
         """Test sending IPv4/TCP packet with set flag_ns field"""
 
@@ -252,7 +252,7 @@ class TestUdpPhtx(TestCase):
         with open(TEST_FRAME_DIR + "ip4_tcp_packet__flag_urg.tx", "rb") as _:
             frame_tx = _.read()
         self.assertEqual(self.frame_tx[: len(frame_tx)], frame_tx)
-    
+
     def test_tcp_phtx__ip4_tcp_packet__flag_ack(self):
         """Test sending IPv4/TCP packet with set flag_ack field"""
 
@@ -310,7 +310,7 @@ class TestUdpPhtx(TestCase):
         with open(TEST_FRAME_DIR + "ip4_tcp_packet__flag_psh.tx", "rb") as _:
             frame_tx = _.read()
         self.assertEqual(self.frame_tx[: len(frame_tx)], frame_tx)
-    
+
     def test_tcp_phtx__ip4_tcp_packet__flag_rst(self):
         """Test sending IPv4/TCP packet with set flag_rst field"""
 
@@ -398,7 +398,7 @@ class TestUdpPhtx(TestCase):
         with open(TEST_FRAME_DIR + "ip4_tcp_packet__win.tx", "rb") as _:
             frame_tx = _.read()
         self.assertEqual(self.frame_tx[: len(frame_tx)], frame_tx)
-    
+
     def test_tcp_phtx__ip4_tcp_packet__urp(self):
         """Test sending IPv4/TCP packet with set urp field"""
 
@@ -426,16 +426,12 @@ class TestUdpPhtx(TestCase):
         with open(TEST_FRAME_DIR + "ip4_tcp_packet__urp.tx", "rb") as _:
             frame_tx = _.read()
         self.assertEqual(self.frame_tx[: len(frame_tx)], frame_tx)
-    
+
     def test_udp_phtx__ip4_tcp_packet__data(self):
         """Test sending IPv4/TCPP packet with data"""
 
         tx_status = self.packet_handler._phtx_tcp(
-            ip_src=self.mns.stack_ip4_host.address,
-            ip_dst=self.mns.host_a_ip4_address,
-            tcp_sport=1000,
-            tcp_dport=2000,
-            tcp_data=b"01234567890ABCDEF" * 50
+            ip_src=self.mns.stack_ip4_host.address, ip_dst=self.mns.host_a_ip4_address, tcp_sport=1000, tcp_dport=2000, tcp_data=b"01234567890ABCDEF" * 50
         )
         self.assertEqual(tx_status, TxStatus.PASSED__ETHER__TO_TX_RING)
         self.assertEqual(
@@ -454,4 +450,3 @@ class TestUdpPhtx(TestCase):
         with open(TEST_FRAME_DIR + "ip4_tcp_packet__data.tx", "rb") as _:
             frame_tx = _.read()
         self.assertEqual(self.frame_tx[: len(frame_tx)], frame_tx)
-
