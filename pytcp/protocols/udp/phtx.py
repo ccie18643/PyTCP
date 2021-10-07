@@ -33,8 +33,6 @@ from __future__ import annotations  # Required by Python ver < 3.10
 
 from typing import TYPE_CHECKING, Optional
 
-from lib.ip4_address import Ip4Address
-from lib.ip6_address import Ip6Address
 from lib.logger import log
 from lib.tracker import Tracker
 from misc.tx_status import TxStatus

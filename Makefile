@@ -32,7 +32,7 @@ lint: venv
 
 test: venv
 	@echo '<<< TESTSLIDE'
-	@./$(VENV)/bin/testslide tests/test_*.py
+	@./$(VENV)/bin/testslide tests/*.py
 
 bridge:
 	@brctl addbr br0
