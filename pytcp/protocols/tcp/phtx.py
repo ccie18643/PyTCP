@@ -144,11 +144,11 @@ def _phtx_tcp(
     if __debug__:
         log("tcp", f"{tcp_packet_tx.tracker} - {tcp_packet_tx}")
 
-    if isinstance(ip_src, Ip6Address) and isinstance(ip_dst, Ip6Address):
+    if ip_src.version == ip_dst.version == 6:
         self.packet_stats_tx.tcp__send += 1
         return self._phtx_ip6(ip6_src=ip_src, ip6_dst=ip_dst, carried_packet=tcp_packet_tx)
 
-    if isinstance(ip_src, Ip4Address) and isinstance(ip_dst, Ip4Address):
+    if ip_src.version == ip_dst.version == 4:
         self.packet_stats_tx.tcp__send += 1
         return self._phtx_ip4(ip4_src=ip_src, ip4_dst=ip_dst, carried_packet=tcp_packet_tx)
 
