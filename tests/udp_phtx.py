@@ -54,7 +54,7 @@ class TestUdpPhtx(TestCase):
 
     # Test name format: 'test_name__test_description__optional_condition'
 
-    def test_udp_phtx__ip4_udp_packet__no_data(self):
+    def test_udp_phtx__ip4_udp_packet(self):
         """Test sending IPv4/UDP packet with no data"""
 
         tx_status = self.packet_handler._phtx_udp(
@@ -77,11 +77,11 @@ class TestUdpPhtx(TestCase):
                 ether__dst_unspec__ip4_lookup__locnet__arp_cache_hit__send=1,
             ),
         )
-        with open(TEST_FRAME_DIR + "ip4_udp_packet__no_data.tx", "rb") as _:
+        with open(TEST_FRAME_DIR + "ip4_udp_packet.tx", "rb") as _:
             frame_tx = _.read()
         self.assertEqual(self.frame_tx[: len(frame_tx)], frame_tx)
 
-    def test_udp_phtx__ip4_udp_packet__with_data(self):
+    def test_udp_phtx__ip4_udp_packet__data(self):
         """Test sending IPv4/UDP packet with data"""
 
         tx_status = self.packet_handler._phtx_udp(
@@ -105,7 +105,7 @@ class TestUdpPhtx(TestCase):
                 ether__dst_unspec__ip4_lookup__locnet__arp_cache_hit__send=1,
             ),
         )
-        with open(TEST_FRAME_DIR + "ip4_udp_packet__with_data.tx", "rb") as _:
+        with open(TEST_FRAME_DIR + "ip4_udp_packet__data.tx", "rb") as _:
             frame_tx = _.read()
         self.assertEqual(self.frame_tx[: len(frame_tx)], frame_tx)
 
