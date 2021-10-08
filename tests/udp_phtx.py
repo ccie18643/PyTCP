@@ -104,3 +104,54 @@ class TestUdpPhtx(TestCase):
         with open(TEST_FRAME_DIR + "ip4_udp_packet__data.tx", "rb") as _:
             frame_tx = _.read()
         self.assertEqual(self.frame_tx[: len(frame_tx)], frame_tx)
+
+    def test_udp_phtx__ip6_udp_packet(self):
+        """Test sending IPv6/UDP packet with no data"""
+
+        tx_status = self.packet_handler._phtx_udp(
+            ip_src=self.mns.stack_ip6_host.address,
+            ip_dst=self.mns.host_a_ip6_address,
+            udp_sport=1000,
+            udp_dport=2000,
+        )
+        self.assertEqual(tx_status, TxStatus.PASSED__ETHER__TO_TX_RING)
+        self.assertEqual(
+            self.packet_handler.packet_stats_tx,
+            PacketStatsTx(
+                udp__pre_assemble=1,
+                udp__send=1,
+                ip6__pre_assemble=1,
+                ip6__mtu_ok__send=1,
+                ether__pre_assemble=1,
+                ether__src_unspec__fill=1,
+                ether__dst_unspec__ip6_lookup=1,
+                ether__dst_unspec__ip6_lookup__locnet__nd_cache_hit__send=1,
+            ),
+        )
+        with open(TEST_FRAME_DIR + "ip6_udp_packet.tx", "rb") as _:
+            frame_tx = _.read()
+        self.assertEqual(self.frame_tx[: len(frame_tx)], frame_tx)
+
+    def test_udp_phtx__ip6_udp_packet__data(self):
+        """Test sending IPv6/UDP packet with data"""
+
+        tx_status = self.packet_handler._phtx_udp(
+            ip_src=self.mns.stack_ip6_host.address, ip_dst=self.mns.host_a_ip6_address, udp_sport=1000, udp_dport=2000, udp_data=b"01234567890ABCDEF" * 50
+        )
+        self.assertEqual(tx_status, TxStatus.PASSED__ETHER__TO_TX_RING)
+        self.assertEqual(
+            self.packet_handler.packet_stats_tx,
+            PacketStatsTx(
+                udp__pre_assemble=1,
+                udp__send=1,
+                ip6__pre_assemble=1,
+                ip6__mtu_ok__send=1,
+                ether__pre_assemble=1,
+                ether__src_unspec__fill=1,
+                ether__dst_unspec__ip6_lookup=1,
+                ether__dst_unspec__ip6_lookup__locnet__nd_cache_hit__send=1,
+            ),
+        )
+        with open(TEST_FRAME_DIR + "ip6_udp_packet__data.tx", "rb") as _:
+            frame_tx = _.read()
+        self.assertEqual(self.frame_tx[: len(frame_tx)], frame_tx)
