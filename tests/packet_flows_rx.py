@@ -29,7 +29,6 @@
 # tests/test_packet_flows_rx.py - unit tests for packets received by stack with no response sent back
 #
 
-from __future__ import annotations  # Required by Python ver < 3.10
 
 from testslide import TestCase
 

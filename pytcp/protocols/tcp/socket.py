@@ -29,10 +29,10 @@
 #
 
 
-from __future__ import annotations  # Requir for Python version lower than 3.10
+from __future__ import annotations
 
 import threading
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 import misc.stack as stack
 from lib.ip4_address import Ip4Address, Ip4AddressFormatError
@@ -51,7 +51,7 @@ if TYPE_CHECKING:
 class TcpSocket(Socket):
     """Support for IPv6/IPv4 TCP socket operations"""
 
-    def __init__(self, family: AddressFamily, tcp_session: Optional[TcpSession] = None) -> None:
+    def __init__(self, family: AddressFamily, tcp_session: TcpSession | None = None) -> None:
         """Class constructor"""
 
         super().__init__()
@@ -60,7 +60,7 @@ class TcpSocket(Socket):
         self._type: SocketType = SOCK_STREAM
         self._event_tcp_session_established: Semaphore = threading.Semaphore(0)
         self._tcp_accept: list[Socket] = []
-        self._tcp_session: Optional[TcpSession]
+        self._tcp_session: TcpSession | None
         self._local_ip_address: IpAddress
         self._remote_ip_address: IpAddress
         self._local_port: int
@@ -101,13 +101,13 @@ class TcpSocket(Socket):
         return FsmState.CLOSED
 
     @property
-    def tcp_session(self) -> Optional[TcpSession]:
+    def tcp_session(self) -> TcpSession | None:
         """Getter for _tcp_session"""
 
         return self._tcp_session
 
     @property
-    def parent_socket(self) -> Optional[Socket]:
+    def parent_socket(self) -> Socket | None:
         """Getter for _parent_socket"""
 
         return self._parent_socket
@@ -255,7 +255,7 @@ class TcpSocket(Socket):
             log("socket", f"<g>[{self}]</> - Sent data segment, len {bytes_sent}")
         return bytes_sent
 
-    def recv(self, bufsize: Optional[int] = None, timeout: Optional[float] = None) -> bytes:
+    def recv(self, bufsize: int | None = None, timeout: float | None = None) -> bytes:
         """Receive data from socket"""
 
         # TODO - Consider implementing timeout

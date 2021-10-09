@@ -29,9 +29,9 @@
 #
 
 
-from __future__ import annotations  # Required by Python ver < 3.10
+from __future__ import annotations
 
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from lib.logger import log
 from lib.tracker import Tracker
@@ -68,12 +68,12 @@ def _phtx_tcp(
     tcp_flag_rst: bool = False,
     tcp_flag_syn: bool = False,
     tcp_flag_fin: bool = False,
-    tcp_mss: Optional[int] = None,
-    tcp_wscale: Optional[int] = None,
+    tcp_mss: int | None = None,
+    tcp_wscale: int | None = None,
     tcp_win: int = 0,
     tcp_urp: int = 0,
-    tcp_data: Optional[bytes] = None,
-    echo_tracker: Optional[Tracker] = None,
+    tcp_data: bytes | None = None,
+    echo_tracker: Tracker | None = None,
 ) -> TxStatus:
     """Handle outbound TCP packets"""
 
@@ -142,11 +142,11 @@ def _phtx_tcp(
     if __debug__:
         log("tcp", f"{tcp_packet_tx.tracker} - {tcp_packet_tx}")
 
-    if ip_src.version == ip_dst.version == 6:
+    if ip_src.is_ip6 and ip_dst.is_ip6:
         self.packet_stats_tx.tcp__send += 1
         return self._phtx_ip6(ip6_src=ip_src, ip6_dst=ip_dst, carried_packet=tcp_packet_tx)
 
-    if ip_src.version == ip_dst.version == 4:
+    if ip_src.is_ip4 and ip_dst.is_ip4:
         self.packet_stats_tx.tcp__send += 1
         return self._phtx_ip4(ip4_src=ip_src, ip4_dst=ip_dst, carried_packet=tcp_packet_tx)
 

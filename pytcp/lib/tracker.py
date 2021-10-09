@@ -28,10 +28,10 @@
 # lib/tracker.py - class used to generate serial number information for new packets
 #
 
-from __future__ import annotations  # Requir for Python version lower than 3.10
+
+from __future__ import annotations
 
 import time
-from typing import Optional
 
 
 class Tracker:
@@ -40,10 +40,10 @@ class Tracker:
     serial_rx: int = 0
     serial_tx: int = 0
 
-    def __init__(self, prefix: str, echo_tracker: Optional[Tracker] = None) -> None:
+    def __init__(self, prefix: str, echo_tracker: Tracker | None = None) -> None:
         """Class constructor"""
 
-        self._echo_tracker: Optional[Tracker] = echo_tracker
+        self._echo_tracker: Tracker | None = echo_tracker
         self._timestamp: float
         self._serial: str
 

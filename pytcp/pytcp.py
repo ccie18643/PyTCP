@@ -28,13 +28,15 @@
 # pytcp.py - main TCP/IP stack program
 #
 
+
+from __future__ import annotations
+
 import argparse
 import fcntl
 import os
 import struct
 import sys
 import time
-from typing import Optional
 
 import config
 from lib.logger import log
@@ -57,7 +59,7 @@ IFF_NO_PI = 0x1000
 #########################################################
 
 
-def parse_arguments(args: Optional[list[str]] = None) -> None:
+def parse_arguments(args: list[str] | None = None) -> None:
     """Parse command line arguments and override config settings"""
 
     parser = argparse.ArgumentParser()

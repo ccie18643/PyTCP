@@ -29,9 +29,9 @@
 #
 
 
-from __future__ import annotations  # Required by Python ver < 3.10
+from __future__ import annotations
 
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 import config
 from lib.logger import log
@@ -55,7 +55,7 @@ def _phtx_arp(
     arp_spa: Ip4Address,
     arp_tha: MacAddress,
     arp_tpa: Ip4Address,
-    echo_tracker: Optional[Tracker] = None,
+    echo_tracker: Tracker | None = None,
 ) -> TxStatus:
     """Handle outbound ARP packets"""
 

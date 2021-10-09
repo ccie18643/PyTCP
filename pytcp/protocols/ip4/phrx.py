@@ -28,11 +28,11 @@
 # protocols/ip4/phrx.py - packet handler for inbound IPv4 packets
 #
 
-from __future__ import annotations  # Required by Python ver < 3.10
+
+from __future__ import annotations
 
 import struct
 from time import time
-from typing import Optional
 
 import config
 from lib.logger import log
@@ -47,7 +47,7 @@ from protocols.ip4.ps import (
 )
 
 
-def _defragment_ip4_packet(self, packet_rx: PacketRx) -> Optional[PacketRx]:
+def _defragment_ip4_packet(self, packet_rx: PacketRx) -> PacketRx | None:
     """Defragment IPv4 packet"""
 
     # Cleanup expired flows

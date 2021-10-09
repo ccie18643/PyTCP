@@ -29,7 +29,6 @@
 # tests/ip6_phtx.py -  tests specific for IPv6 phtx module
 #
 
-from __future__ import annotations  # Required by Python ver < 3.10
 
 from protocols.raw.fpa import RawAssembler
 from testslide import TestCase

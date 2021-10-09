@@ -29,9 +29,9 @@
 #
 
 
-from __future__ import annotations  # Required by Python ver < 3.10
+from __future__ import annotations
 
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from lib.ip4_address import Ip4Address
 
@@ -50,7 +50,7 @@ class UdpMetadata:
         remote_ip_address: IpAddress,
         remote_port: int,
         data: bytes = b"",
-        tracker: Optional[Tracker] = None,
+        tracker: Tracker | None = None,
     ) -> None:
         self.local_ip_address = local_ip_address
         self.local_port = local_port

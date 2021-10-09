@@ -29,10 +29,10 @@
 #
 
 
-from __future__ import annotations  # Required by Python ver < 3.10
+from __future__ import annotations
 
 import struct
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 import config
 from misc.ip_helper import inet_cksum
@@ -324,39 +324,39 @@ class TcpParser:
         return self._cache__mss
 
     @property
-    def wscale(self) -> Optional[int]:
+    def wscale(self) -> int | None:
         """TCP option - Window Scale (3)"""
 
         if "_cache__wscale" not in self.__dict__:
             for option in self.options:
                 if isinstance(option, TcpOptWscale):
-                    self._cache__wscale: Optional[int] = 1 << option.wscale
+                    self._cache__wscale: int | None = 1 << option.wscale
                     break
             else:
                 self._cache__wscale = None
         return self._cache__wscale
 
     @property
-    def sackperm(self) -> Optional[bool]:
+    def sackperm(self) -> bool | None:
         """TCP option - Sack Permit (4)"""
 
         if "_cache__sackperm" not in self.__dict__:
             for option in self.options:
                 if isinstance(option, TcpOptSackPerm):
-                    self._cache__sackperm: Optional[bool] = True
+                    self._cache__sackperm: bool | None = True
                     break
             else:
                 self._cache__sackperm = None
         return self._cache__sackperm
 
     @property
-    def timestamp(self) -> Optional[tuple[int, int]]:
+    def timestamp(self) -> tuple[int, int] | None:
         """TCP option - Timestamp (8)"""
 
         if "_cache__timestamp" not in self.__dict__:
             for option in self.options:
                 if isinstance(option, TcpOptTimestamp):
-                    self._cache__timestamp: Optional[tuple[int, int]] = (option.tsval, option.tsecr)
+                    self._cache__timestamp: tuple[int, int] | None = (option.tsval, option.tsecr)
                     break
             else:
                 self._cache__timestamp = None

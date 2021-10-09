@@ -29,10 +29,10 @@
 #
 
 
-from __future__ import annotations  # Requir for Python version lower than 3.10
+from __future__ import annotations
 
 import threading
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 import misc.stack as stack
 from lib.ip4_address import Ip4Address, Ip4AddressFormatError
@@ -211,7 +211,7 @@ class UdpSocket(Socket):
 
         return sent_data_len
 
-    def recv(self, bufsize: Optional[int] = None, timeout: Optional[float] = None) -> bytes:
+    def recv(self, bufsize: int | None = None, timeout: float | None = None) -> bytes:
         """Read data from socket"""
 
         # TODO - Implement support for buffsize
@@ -227,7 +227,7 @@ class UdpSocket(Socket):
             return data_rx
         raise ReceiveTimeout
 
-    def recvfrom(self, bufsize: Optional[int] = None, timeout: Optional[float] = None) -> tuple[bytes, tuple[str, int]]:
+    def recvfrom(self, bufsize: int | None = None, timeout: float | None = None) -> tuple[bytes, tuple[str, int]]:
         """Read data from socket"""
 
         # TODO - Implement support for buffsize

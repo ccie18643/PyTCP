@@ -35,7 +35,6 @@
 # proper destination MAC address
 #
 
-from __future__ import annotations  # Required by Python ver < 3.10
 
 from testslide import TestCase
 

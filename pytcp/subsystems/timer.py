@@ -29,9 +29,11 @@
 #
 
 
+from __future__ import annotations
+
 import threading
 import time
-from typing import Any, Callable, Optional
+from typing import Any, Callable
 
 import misc.stack as stack
 from lib.logger import log
@@ -48,7 +50,7 @@ class TimerTask:
         delay: int,
         delay_exp: bool,
         repeat_count: int,
-        stop_condition: Optional[Callable],
+        stop_condition: Callable | None,
     ) -> None:
         """Class constructor, repeat_count = -1 means infinite, delay_exp means to raise delay time exponentially after each method execution"""
 
@@ -58,7 +60,7 @@ class TimerTask:
         self._delay: int = delay
         self._delay_exp: bool = delay_exp
         self._repeat_count: int = repeat_count
-        self._stop_condition: Optional[Callable] = stop_condition
+        self._stop_condition: Callable | None = stop_condition
         self._remaining_delay: int = delay
         self._delay_exp_factor: int = 0
 
@@ -129,12 +131,12 @@ class Timer:
     def register_method(
         self,
         method: Callable,
-        args: Optional[list[Any]] = None,
-        kwargs: Optional[dict[str, Any]] = None,
+        args: list[Any] | None = None,
+        kwargs: dict[str, Any] | None = None,
         delay: int = 1,
         delay_exp: bool = False,
         repeat_count: int = -1,
-        stop_condition: Optional[Callable] = None,
+        stop_condition: Callable | None = None,
     ) -> None:
         """Register method to be executed by timer"""
 

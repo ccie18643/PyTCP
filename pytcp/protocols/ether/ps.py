@@ -29,6 +29,8 @@
 #
 
 
+from __future__ import annotations
+
 # Ethernet packet header
 
 # +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+

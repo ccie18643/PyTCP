@@ -29,11 +29,11 @@
 #
 
 
-from __future__ import annotations  # Requir for Python version lower than 3.10
+from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from enum import IntEnum
-from typing import TYPE_CHECKING, Optional, Union
+from typing import TYPE_CHECKING
 
 import config
 import misc.stack as stack
@@ -117,7 +117,7 @@ class Socket(ABC):
             self._local_port: int
             self._remote_port: int
             self._parent_socket: Socket
-            self._tcp_session: Optional[TcpSession]
+            self._tcp_session: TcpSession | None
             self._tcp_accept: list[Socket]
             self._event_tcp_session_established: Semaphore
 
@@ -165,7 +165,7 @@ class Socket(ABC):
     def _pick_local_port(self) -> int:
         """Pick ephemeral local port, making sure it is not already being used by any socket"""
 
-        available_ephemeral_ports = set(config.EPHEMERAL_PORT_RANGE) - set(int(_.split("/")[3]) for _ in stack.sockets)
+        available_ephemeral_ports = set(config.EPHEMERAL_PORT_RANGE) - {int(_.split("/")[3]) for _ in stack.sockets}
 
         if len(available_ephemeral_ports):
             return available_ephemeral_ports.pop()
@@ -187,11 +187,11 @@ class Socket(ABC):
 
     def _set_ip_addresses(
         self, remote_address: tuple[str, int], local_ip_address: IpAddress, local_port: int, remote_port: int
-    ) -> tuple[Union[Ip6Address, Ip4Address], Union[Ip6Address, Ip4Address]]:
+    ) -> tuple[Ip6Address | Ip4Address, Ip6Address | Ip4Address]:
         """Validate remote address and pick appropriate local ip address as needed"""
 
         try:
-            remote_ip_address: Union[Ip6Address, Ip4Address] = Ip6Address(remote_address[0]) if self._family is AF_INET6 else Ip4Address(remote_address[0])
+            remote_ip_address: Ip6Address | Ip4Address = Ip6Address(remote_address[0]) if self._family is AF_INET6 else Ip4Address(remote_address[0])
         except (Ip6AddressFormatError, Ip4AddressFormatError):
             raise gaierror("[Errno -2] Name or service not known - [Malformed remote IP address]")
 
@@ -223,7 +223,7 @@ class Socket(ABC):
         pass
 
     @abstractmethod
-    def recv(self, bufsize: Optional[int] = None, timeout: Optional[float] = None) -> bytes:
+    def recv(self, bufsize: int | None = None, timeout: float | None = None) -> bytes:
         pass
 
     @abstractmethod
@@ -241,7 +241,7 @@ class Socket(ABC):
         def sendto(self, data: bytes, address: tuple[str, int]) -> int:
             pass
 
-        def recvfrom(self, bufsize: Optional[int] = None, timeout: Optional[float] = None) -> tuple[bytes, tuple[str, int]]:
+        def recvfrom(self, bufsize: int | None = None, timeout: float | None = None) -> tuple[bytes, tuple[str, int]]:
             pass
 
         def process_udp_packet(self, packet: UdpMetadata) -> None:
@@ -254,7 +254,7 @@ class Socket(ABC):
             pass
 
         @property
-        def tcp_session(self) -> Optional[TcpSession]:
+        def tcp_session(self) -> TcpSession | None:
             pass
 
         @property
@@ -262,5 +262,5 @@ class Socket(ABC):
             pass
 
         @property
-        def parent_socket(self) -> Optional[Socket]:
+        def parent_socket(self) -> Socket | None:
             pass

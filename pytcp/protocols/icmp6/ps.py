@@ -29,7 +29,7 @@
 #
 
 
-from __future__ import annotations  # Required by Python ver < 3.10
+from __future__ import annotations
 
 # Destination Unreachable message (1/[0-6])
 

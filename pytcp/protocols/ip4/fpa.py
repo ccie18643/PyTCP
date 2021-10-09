@@ -29,10 +29,10 @@
 #
 
 
-from __future__ import annotations  # Required by Python ver < 3.10
+from __future__ import annotations
 
 import struct
-from typing import TYPE_CHECKING, Optional, Union
+from typing import TYPE_CHECKING
 
 import config
 from lib.ip4_address import Ip4Address
@@ -74,14 +74,14 @@ class Ip4Assembler:
         ecn: int = 0,
         id: int = 0,
         flag_df: bool = False,
-        options: Optional[list[Ip4OptNop | Ip4OptEol]] = None,
-        carried_packet: Union[Icmp4Assembler, TcpAssembler, UdpAssembler, RawAssembler],
+        options: list[Ip4OptNop | Ip4OptEol] | None = None,
+        carried_packet: Icmp4Assembler | TcpAssembler | UdpAssembler | RawAssembler,
     ) -> None:
         """Class constructor"""
 
         assert carried_packet.ip4_proto in {IP4_PROTO_ICMP4, IP4_PROTO_UDP, IP4_PROTO_TCP, IP4_PROTO_RAW}
 
-        self._carried_packet: Union[Icmp4Assembler, TcpAssembler, UdpAssembler, RawAssembler] = carried_packet
+        self._carried_packet: Icmp4Assembler | TcpAssembler | UdpAssembler | RawAssembler = carried_packet
         self._tracker: Tracker = self._carried_packet.tracker
         self._ver: int = 4
         self._dscp: int = dscp
@@ -101,7 +101,7 @@ class Ip4Assembler:
     def __len__(self) -> int:
         """Length of the packet"""
 
-        return IP4_HEADER_LEN + sum([len(_) for _ in self._options]) + len(self._carried_packet)
+        return IP4_HEADER_LEN + sum(len(_) for _ in self._options) + len(self._carried_packet)
 
     def __str__(self) -> str:
         """Packet log string"""
@@ -209,7 +209,7 @@ class Ip4FragAssembler:
         id: int = 0,
         flag_mf: bool = False,
         offset: int = 0,
-        options: Optional[list[Ip4OptNop | Ip4OptEol]] = None,
+        options: list[Ip4OptNop | Ip4OptEol] | None = None,
     ):
         """Class constructor"""
 
@@ -235,7 +235,7 @@ class Ip4FragAssembler:
     def __len__(self) -> int:
         """Length of the packet"""
 
-        return IP4_HEADER_LEN + sum([len(_) for _ in self._options]) + len(self._data)
+        return IP4_HEADER_LEN + sum(len(_) for _ in self._options) + len(self._data)
 
     def __str__(self) -> str:
         """Packet log string"""

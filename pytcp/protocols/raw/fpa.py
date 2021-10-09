@@ -29,10 +29,9 @@
 #
 
 
-from __future__ import annotations  # Required by Python ver < 3.10
+from __future__ import annotations
 
 import struct
-from typing import Optional
 
 from lib.tracker import Tracker
 from protocols.ether.ps import ETHER_TYPE_RAW
@@ -47,7 +46,7 @@ class RawAssembler:
     ip6_next = IP6_NEXT_HEADER_RAW
     ether_type = ETHER_TYPE_RAW
 
-    def __init__(self, *, data: Optional[bytes] = None, echo_tracker: Optional[Tracker] = None) -> None:
+    def __init__(self, *, data: bytes | None = None, echo_tracker: Tracker | None = None) -> None:
         """Class constructor"""
 
         self._tracker: Tracker = Tracker("TX", echo_tracker)

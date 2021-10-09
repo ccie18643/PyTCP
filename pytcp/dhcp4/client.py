@@ -28,10 +28,11 @@
 # client/dhcp4.py - DHCPv4 client
 #
 
-from __future__ import annotations  # Required by Python ver < 3.10
+
+from __future__ import annotations
 
 import random
-from typing import TYPE_CHECKING, Optional, Union
+from typing import TYPE_CHECKING
 
 import dhcp4.ps
 import lib.socket as socket
@@ -50,7 +51,7 @@ class Dhcp4Client:
 
         self._mac_address = mac_address
 
-    def fetch(self) -> Union[tuple[str, Optional[str]], tuple[None, None]]:
+    def fetch(self) -> tuple[str, str | None] | tuple[None, None]:
         """IPv4 DHCP client"""
 
         s = socket.socket(family=socket.AF_INET4, type=socket.SOCK_DGRAM)

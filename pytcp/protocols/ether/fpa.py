@@ -29,10 +29,10 @@
 #
 
 
-from __future__ import annotations  # Required by Python ver < 3.10
+from __future__ import annotations
 
 import struct
-from typing import TYPE_CHECKING, Union
+from typing import TYPE_CHECKING
 
 from lib.mac_address import MacAddress
 from protocols.ether.ps import (
@@ -60,13 +60,13 @@ class EtherAssembler:
         *,
         src: MacAddress = MacAddress(0),
         dst: MacAddress = MacAddress(0),
-        carried_packet: Union[ArpAssembler, Ip4Assembler, Ip6Assembler, RawAssembler],
+        carried_packet: ArpAssembler | Ip4Assembler | Ip6Assembler | RawAssembler,
     ) -> None:
         """Class constructor"""
 
         assert carried_packet.ether_type in {ETHER_TYPE_ARP, ETHER_TYPE_IP4, ETHER_TYPE_IP6, ETHER_TYPE_RAW}
 
-        self._carried_packet: Union[ArpAssembler, Ip4Assembler, Ip6Assembler, RawAssembler] = carried_packet
+        self._carried_packet: ArpAssembler | Ip4Assembler | Ip6Assembler | RawAssembler = carried_packet
         self._tracker: Tracker = self._carried_packet.tracker
         self._dst: MacAddress = dst
         self._src: MacAddress = src

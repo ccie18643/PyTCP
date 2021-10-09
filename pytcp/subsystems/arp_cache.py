@@ -29,10 +29,9 @@
 #
 
 
-from __future__ import annotations  # Required by Python ver < 3.10
+from __future__ import annotations
 
 import time
-from typing import Optional
 
 import config
 import misc.stack as stack
@@ -98,7 +97,7 @@ class ArpCache:
             log("arp-c", f"<INFO>Adding/refreshing ARP cache entry - {ip4_address} -> {mac_address}</>")
         self.arp_cache[ip4_address] = self.CacheEntry(mac_address)
 
-    def find_entry(self, ip4_address: Ip4Address) -> Optional[MacAddress]:
+    def find_entry(self, ip4_address: Ip4Address) -> MacAddress | None:
         """Find entry in cache and return MAC address"""
 
         if arp_entry := self.arp_cache.get(ip4_address, None):

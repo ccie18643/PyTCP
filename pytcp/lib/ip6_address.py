@@ -28,12 +28,12 @@
 # lib/ip6_address.py - module contains IPv6 address manipulation classes
 #
 
-from __future__ import annotations  # Requir for Python version lower than 3.10
+
+from __future__ import annotations
 
 import re
 import socket
 import struct
-from typing import Optional, Union
 
 from lib.ip_address import (
     IpAddress,
@@ -81,7 +81,7 @@ class Ip6HostFormatError(IpHostFormatError):
 class Ip6Address(IpAddress):
     """IPv6 address support class"""
 
-    def __init__(self, address: Union[Ip6Address, str, bytes, bytearray, memoryview, int]) -> None:
+    def __init__(self, address: Ip6Address | str | bytes | bytearray | memoryview | int) -> None:
         """Class constructor"""
 
         self._address: int
@@ -185,7 +185,7 @@ class Ip6Address(IpAddress):
 class Ip6Mask(IpMask):
     """IPv6 network mask support class"""
 
-    def __init__(self, mask: Union[Ip6Mask, str, bytes, bytearray, memoryview, int]) -> None:
+    def __init__(self, mask: Ip6Mask | str | bytes | bytearray | memoryview | int) -> None:
         """Class constructor"""
 
         self._mask: int
@@ -233,7 +233,7 @@ class Ip6Mask(IpMask):
 class Ip6Network(IpNetwork):
     """IPv6 network support class"""
 
-    def __init__(self, network: Union[Ip6Network, tuple[Ip6Address, Ip6Mask], str]) -> None:
+    def __init__(self, network: Ip6Network | tuple[Ip6Address, Ip6Mask] | str) -> None:
         """Class constructor"""
 
         self._address: Ip6Address
@@ -293,14 +293,14 @@ class Ip6Network(IpNetwork):
 class Ip6Host(IpHost):
     """IPv6 host support class"""
 
-    def __init__(self, host: Union[Ip6Host, tuple[Ip6Address, Ip6Network], tuple[Ip6Address, Ip6Mask], str]) -> None:
+    def __init__(self, host: Ip6Host | tuple[Ip6Address, Ip6Network] | tuple[Ip6Address, Ip6Mask] | str) -> None:
         """Class constructor"""
 
         self._address: Ip6Address
         self._network: Ip6Network
         self._version: int = 6
 
-        self.gateway: Optional[Ip6Address] = None
+        self.gateway: Ip6Address | None = None
 
         if isinstance(host, tuple):
             if len(host) == 2:

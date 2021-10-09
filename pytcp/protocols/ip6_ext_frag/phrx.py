@@ -28,9 +28,11 @@
 # ip6_ext_frag/phrx.py - packet handler for inbound IPv6 fragment extension header
 #
 
+
+from __future__ import annotations
+
 import struct
 from time import time
-from typing import Optional
 
 import config
 from lib.logger import log
@@ -38,7 +40,7 @@ from misc.packet import PacketRx
 from protocols.ip6_ext_frag.fpp import Ip6ExtFragParser
 
 
-def _defragment_ip6_packet(self, packet_rx: PacketRx) -> Optional[PacketRx]:
+def _defragment_ip6_packet(self, packet_rx: PacketRx) -> PacketRx | None:
     """Defragment IPv6 packet"""
 
     # Cleanup expir flows

@@ -28,10 +28,11 @@
 # lib/ip_address.py - module contains base class for address manipulation
 #
 
-from __future__ import annotations  # Required for Python version lower than 3.10
+
+from __future__ import annotations
 
 from abc import ABC, abstractmethod, abstractproperty
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from lib.ip4_address import Ip4Address
@@ -83,6 +84,18 @@ class IpAddress(ABC):
         """Getter for _version"""
 
         return self._version
+
+    @property
+    def is_ip6(self) -> bool:
+        """Check if the IP version is 6"""
+
+        return self._version == 6
+
+    @property
+    def is_ip4(self) -> bool:
+        """Check if the IP version is 4"""
+
+        return self._version == 4
 
     @property
     def is_unspecified(self) -> bool:
@@ -193,6 +206,18 @@ class IpMask(ABC):
 
         return self._version
 
+    @property
+    def is_ip6(self) -> bool:
+        """Check if the IP version is 6"""
+
+        return self._version == 6
+
+    @property
+    def is_ip4(self) -> bool:
+        """Check if the IP version is 4"""
+
+        return self._version == 4
+
     @abstractmethod
     def __init__(self, address: int) -> None:
 
@@ -244,6 +269,18 @@ class IpNetwork(ABC):
         """IP network version"""
 
         return self._version
+
+    @property
+    def is_ip6(self) -> bool:
+        """Check if the IP version is 6"""
+
+        return self._version == 6
+
+    @property
+    def is_ip4(self) -> bool:
+        """Check if the IP version is 4"""
+
+        return self._version == 4
 
     @abstractmethod
     def __init__(self) -> None:
@@ -304,6 +341,18 @@ class IpHost(ABC):
 
         return self._version
 
+    @property
+    def is_ip6(self) -> bool:
+        """Check if the IP version is 6"""
+
+        return self._version == 6
+
+    @property
+    def is_ip4(self) -> bool:
+        """Check if the IP version is 4"""
+
+        return self._version == 4
+
     @abstractproperty
     def address(self) -> IpAddress:
         pass
@@ -320,4 +369,4 @@ class IpHost(ABC):
         self._network: IpNetwork
         self._version: int
 
-        self.gateway: Optional[IpAddress]
+        self.gateway: IpAddress | None

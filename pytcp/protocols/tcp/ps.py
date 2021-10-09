@@ -29,6 +29,8 @@
 #
 
 
+from __future__ import annotations
+
 # TCP packet header (RFC 793)
 
 # +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+

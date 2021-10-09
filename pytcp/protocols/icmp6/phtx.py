@@ -29,9 +29,9 @@
 #
 
 
-from __future__ import annotations  # Required by Python ver < 3.10
+from __future__ import annotations
 
-from typing import TYPE_CHECKING, Optional, Union
+from typing import TYPE_CHECKING
 
 from lib.logger import log
 from lib.tracker import Tracker
@@ -64,18 +64,18 @@ def _phtx_icmp6(
     icmp6_type: int,
     icmp6_code: int = 0,
     ip6_hop: int = 64,
-    icmp6_un_data: Optional[bytes] = None,
-    icmp6_ec_id: Optional[int] = None,
-    icmp6_ec_seq: Optional[int] = None,
-    icmp6_ec_data: Optional[bytes] = None,
-    icmp6_ns_target_address: Optional[Ip6Address] = None,
+    icmp6_un_data: bytes | None = None,
+    icmp6_ec_id: int | None = None,
+    icmp6_ec_seq: int | None = None,
+    icmp6_ec_data: bytes | None = None,
+    icmp6_ns_target_address: Ip6Address | None = None,
     icmp6_na_flag_r: bool = False,
     icmp6_na_flag_s: bool = False,
     icmp6_na_flag_o: bool = False,
-    icmp6_na_target_address: Optional[Ip6Address] = None,
-    icmp6_nd_options: Optional[list[Union[Icmp6NdOptSLLA, Icmp6NdOptTLLA, Icmp6NdOptPI]]] = None,
+    icmp6_na_target_address: Ip6Address | None = None,
+    icmp6_nd_options: list[Icmp6NdOptSLLA | Icmp6NdOptTLLA | Icmp6NdOptPI] | None = None,
     icmp6_mlr2_multicast_address_record=None,
-    echo_tracker: Optional[Tracker] = None,
+    echo_tracker: Tracker | None = None,
 ) -> TxStatus:
     """Handle outbound ICMPv6 packets"""
 

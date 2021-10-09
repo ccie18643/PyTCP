@@ -29,9 +29,9 @@
 #
 
 
-from __future__ import annotations  # Required by Python ver < 3.10
+from __future__ import annotations
 
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from lib.logger import log
 from lib.tracker import Tracker
@@ -50,11 +50,11 @@ def _phtx_icmp4(
     ip4_dst: Ip4Address,
     icmp4_type: int,
     icmp4_code: int = 0,
-    icmp4_ec_id: Optional[int] = None,
-    icmp4_ec_seq: Optional[int] = None,
-    icmp4_ec_data: Optional[bytes] = None,
-    icmp4_un_data: Optional[bytes] = None,
-    echo_tracker: Optional[Tracker] = None,
+    icmp4_ec_id: int | None = None,
+    icmp4_ec_seq: int | None = None,
+    icmp4_ec_data: bytes | None = None,
+    icmp4_un_data: bytes | None = None,
+    echo_tracker: Tracker | None = None,
 ) -> TxStatus:
     """Handle outbound ICMPv4 packets"""
 

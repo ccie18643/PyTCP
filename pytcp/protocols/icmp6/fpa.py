@@ -29,10 +29,10 @@
 #
 
 
-from __future__ import annotations  # Required by Python ver < 3.10
+from __future__ import annotations
 
 import struct
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from lib.tracker import Tracker
 from misc.ip_helper import inet_cksum
@@ -77,24 +77,24 @@ class Icmp6Assembler:
         *,
         type: int,
         code: int = 0,
-        un_data: Optional[bytes] = None,
-        ec_id: Optional[int] = None,
-        ec_seq: Optional[int] = None,
-        ec_data: Optional[bytes] = None,
-        ra_hop: Optional[int] = None,
-        ra_flag_m: Optional[bool] = None,
-        ra_flag_o: Optional[bool] = None,
-        ra_router_lifetime: Optional[int] = None,
-        ra_reachable_time: Optional[int] = None,
-        ra_retrans_timer: Optional[int] = None,
-        ns_target_address: Optional[Ip6Address] = None,
-        na_flag_r: Optional[bool] = None,
-        na_flag_s: Optional[bool] = None,
-        na_flag_o: Optional[bool] = None,
-        na_target_address: Optional[Ip6Address] = None,
-        nd_options: Optional[list[Icmp6NdOptSLLA | Icmp6NdOptTLLA | Icmp6NdOptPI]] = None,
-        mlr2_multicast_address_record: Optional[list[Icmp6MulticastAddressRecord]] = None,
-        echo_tracker: Optional[Tracker] = None,
+        un_data: bytes | None = None,
+        ec_id: int | None = None,
+        ec_seq: int | None = None,
+        ec_data: bytes | None = None,
+        ra_hop: int | None = None,
+        ra_flag_m: bool | None = None,
+        ra_flag_o: bool | None = None,
+        ra_router_lifetime: int | None = None,
+        ra_reachable_time: int | None = None,
+        ra_retrans_timer: int | None = None,
+        ns_target_address: Ip6Address | None = None,
+        na_flag_r: bool | None = None,
+        na_flag_s: bool | None = None,
+        na_flag_o: bool | None = None,
+        na_target_address: Ip6Address | None = None,
+        nd_options: list[Icmp6NdOptSLLA | Icmp6NdOptTLLA | Icmp6NdOptPI] | None = None,
+        mlr2_multicast_address_record: list[Icmp6MulticastAddressRecord] | None = None,
+        echo_tracker: Tracker | None = None,
     ) -> None:
         """Class constructor"""
 
@@ -183,22 +183,22 @@ class Icmp6Assembler:
 
         if self._type == ICMP6_ND_ROUTER_SOLICITATION:
             assert self._nd_options is not None
-            return ICMP6_ND_ROUTER_SOLICITATION_LEN + sum([len(_) for _ in self._nd_options])
+            return ICMP6_ND_ROUTER_SOLICITATION_LEN + sum(len(_) for _ in self._nd_options)
 
         if self._type == ICMP6_ND_ROUTER_ADVERTISEMENT:
             assert self._nd_options is not None
-            return ICMP6_ND_ROUTER_ADVERTISEMENT_LEN + sum([len(_) for _ in self._nd_options])
+            return ICMP6_ND_ROUTER_ADVERTISEMENT_LEN + sum(len(_) for _ in self._nd_options)
 
         if self._type == ICMP6_ND_NEIGHBOR_SOLICITATION:
             assert self._nd_options is not None
-            return ICMP6_ND_NEIGHBOR_SOLICITATION_LEN + sum([len(_) for _ in self._nd_options])
+            return ICMP6_ND_NEIGHBOR_SOLICITATION_LEN + sum(len(_) for _ in self._nd_options)
 
         if self._type == ICMP6_ND_NEIGHBOR_ADVERTISEMENT:
             assert self._nd_options is not None
-            return ICMP6_ND_NEIGHBOR_ADVERTISEMENT_LEN + sum([len(_) for _ in self._nd_options])
+            return ICMP6_ND_NEIGHBOR_ADVERTISEMENT_LEN + sum(len(_) for _ in self._nd_options)
 
         if self._type == ICMP6_MLD2_REPORT:
-            return ICMP6_MLD2_REPORT_LEN + sum([len(_) for _ in self._mlr2_multicast_address_record])
+            return ICMP6_MLD2_REPORT_LEN + sum(len(_) for _ in self._mlr2_multicast_address_record)
 
         return 0
 
@@ -447,9 +447,7 @@ class Icmp6NdOptPI:
 class Icmp6MulticastAddressRecord:
     """Multicast Address Record used by MLDv2 Report message"""
 
-    def __init__(
-        self, record_type: int, multicast_address: Ip6Address, source_address: Optional[list[Ip6Address]] = None, aux_data: Optional[bytes] = None
-    ) -> None:
+    def __init__(self, record_type: int, multicast_address: Ip6Address, source_address: list[Ip6Address] | None = None, aux_data: bytes | None = None) -> None:
         """Class constructor"""
 
         self._record_type = record_type

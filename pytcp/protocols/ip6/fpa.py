@@ -29,10 +29,10 @@
 #
 
 
-from __future__ import annotations  # Required by Python ver < 3.10
+from __future__ import annotations
 
 import struct
-from typing import TYPE_CHECKING, Union
+from typing import TYPE_CHECKING
 
 import config
 from lib.ip6_address import Ip6Address
@@ -70,7 +70,7 @@ class Ip6Assembler:
         dscp: int = 0,
         ecn: int = 0,
         flow: int = 0,
-        carried_packet: Union[Ip6ExtFragAssembler, Icmp6Assembler, TcpAssembler, UdpAssembler, RawAssembler],
+        carried_packet: Ip6ExtFragAssembler | Icmp6Assembler | TcpAssembler | UdpAssembler | RawAssembler,
     ) -> None:
         """Class constructor"""
 
@@ -82,7 +82,7 @@ class Ip6Assembler:
             IP6_NEXT_HEADER_RAW,
         }
 
-        self._carried_packet: Union[Ip6ExtFragAssembler, Icmp6Assembler, TcpAssembler, UdpAssembler, RawAssembler] = carried_packet
+        self._carried_packet: Ip6ExtFragAssembler | Icmp6Assembler | TcpAssembler | UdpAssembler | RawAssembler = carried_packet
         self._tracker: Tracker = self._carried_packet.tracker
         self._ver: int = 6
         self._dscp: int = dscp

@@ -29,10 +29,9 @@
 #
 
 
-from __future__ import annotations  # Required by Python ver < 3.10
+from __future__ import annotations
 
 import struct
-from typing import Optional
 
 from lib.ip4_address import Ip4Address
 from lib.mac_address import MacAddress
@@ -54,7 +53,7 @@ class ArpAssembler:
         tpa: Ip4Address,
         tha: MacAddress = MacAddress(0),
         oper: int = ARP_OP_REQUEST,
-        echo_tracker: Optional[Tracker] = None,
+        echo_tracker: Tracker | None = None,
     ) -> None:
         """Class constructor"""
 

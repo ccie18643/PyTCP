@@ -28,6 +28,7 @@
 # arp/ps.py - protocol support for ARP
 #
 
+from __future__ import annotations
 
 # ARP packet header - IPv4 stack version only
 

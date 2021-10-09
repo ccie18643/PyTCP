@@ -28,6 +28,9 @@
 # ph_speed_test.py - test measuring the speed of FPP and FPA
 #
 
+
+from __future__ import annotations
+
 import time
 
 from lib.ip4_address import Ip4Host

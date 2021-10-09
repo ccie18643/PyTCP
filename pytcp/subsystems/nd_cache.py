@@ -29,10 +29,9 @@
 #
 
 
-from __future__ import annotations  # Required by Python ver < 3.10
+from __future__ import annotations
 
 import time
-from typing import Optional
 
 import config
 import misc.stack as stack
@@ -96,7 +95,7 @@ class NdCache:
             log("nd-c", f"<INFO>Adding/refreshing ARP cache entry from direct reply - {ip6_address} -> {mac_address}</>")
         self.nd_cache[ip6_address] = self.CacheEntry(mac_address)
 
-    def find_entry(self, ip6_address: Ip6Address) -> Optional[MacAddress]:
+    def find_entry(self, ip6_address: Ip6Address) -> MacAddress | None:
         """Find entry in cache and return MAC address"""
 
         if nd_entry := self.nd_cache.get(ip6_address, None):

@@ -29,7 +29,6 @@
 # tests/arp_phtx.py -  tests specific for ARP phtx module
 #
 
-from __future__ import annotations  # Required by Python ver < 3.10
 
 from testslide import TestCase
 

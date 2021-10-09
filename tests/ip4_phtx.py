@@ -29,7 +29,6 @@
 # tests/ip4_phtx.py -  tests specific for IPv4 phtx module
 #
 
-from __future__ import annotations  # Required by Python ver < 3.10
 
 from protocols.raw.fpa import RawAssembler
 from testslide import TestCase

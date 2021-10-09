@@ -29,7 +29,7 @@
 #
 
 
-from __future__ import annotations  # Required by Python ver < 3.10
+from __future__ import annotations
 
 import time
 from datetime import datetime

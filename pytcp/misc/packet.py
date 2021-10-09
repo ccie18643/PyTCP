@@ -28,9 +28,10 @@
 # packet.py - module contains class representing packet
 #
 
-from __future__ import annotations  # Required by Python ver < 3.10
 
-from typing import TYPE_CHECKING, Union
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
 
 from lib.tracker import Tracker
 
@@ -58,7 +59,7 @@ class PacketRx:
 
         self.ether: EtherParser
         self.arp: ArpParser
-        self.ip: Union[Ip6Parser, Ip4Parser]
+        self.ip: Ip6Parser | Ip4Parser
         self.ip4: Ip4Parser
         self.ip6: Ip6Parser
         self.ip6_ext_frag: Ip6ExtFragParser

@@ -29,6 +29,8 @@
 #
 
 
+from __future__ import annotations
+
 # UDP packet header (RFC 768)
 
 # +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+

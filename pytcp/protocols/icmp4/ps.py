@@ -29,6 +29,8 @@
 #
 
 
+from __future__ import annotations
+
 # Echo reply message (0/0)
 
 # +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+

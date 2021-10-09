@@ -29,6 +29,8 @@
 #
 
 
+from __future__ import annotations
+
 # IPv6 protocol header
 
 # +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+

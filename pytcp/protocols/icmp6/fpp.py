@@ -29,10 +29,10 @@
 #
 
 
-from __future__ import annotations  # Required by Python ver < 3.10
+from __future__ import annotations
 
 import struct
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 import config
 from lib.ip6_address import Ip6Address, Ip6Mask, Ip6Network
@@ -339,7 +339,7 @@ class Icmp6Parser:
         return self._cache__nd_options
 
     @property
-    def nd_opt_slla(self) -> Optional[MacAddress]:
+    def nd_opt_slla(self) -> MacAddress | None:
         """ICMPv6 ND option - Source Link Layer Address (1)"""
 
         if "_cache__nd_opt_slla" not in self.__dict__:
@@ -351,14 +351,14 @@ class Icmp6Parser:
             }
             for option in self.nd_options:
                 if isinstance(option, Icmp6NdOptSLLA):
-                    self._cache__nd_opt_slla: Optional[MacAddress] = option.slla
+                    self._cache__nd_opt_slla: MacAddress | None = option.slla
                     break
             else:
                 self._cache__nd_opt_slla = None
         return self._cache__nd_opt_slla
 
     @property
-    def nd_opt_tlla(self) -> Optional[MacAddress]:
+    def nd_opt_tlla(self) -> MacAddress | None:
         """ICMPv6 ND option - Target Link Layer Address (2)"""
 
         if "_cache__nd_opt_tlla" not in self.__dict__:
@@ -370,7 +370,7 @@ class Icmp6Parser:
             }
             for option in self.nd_options:
                 if isinstance(option, Icmp6NdOptTLLA):
-                    self._cache__nd_opt_tlla: Optional[MacAddress] = option.tlla
+                    self._cache__nd_opt_tlla: MacAddress | None = option.tlla
                     break
             else:
                 self._cache__nd_opt_tlla = None

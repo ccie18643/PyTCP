@@ -29,9 +29,9 @@
 #
 
 
-from __future__ import annotations  # Required by Python ver < 3.10
+from __future__ import annotations
 
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from lib.logger import log
 from lib.tracker import Tracker
@@ -49,8 +49,8 @@ def _phtx_udp(
     ip_dst: IpAddress,
     udp_sport: int,
     udp_dport: int,
-    udp_data: Optional[bytes] = None,
-    echo_tracker: Optional[Tracker] = None,
+    udp_data: bytes | None = None,
+    echo_tracker: Tracker | None = None,
 ) -> TxStatus:
     """Handle outbound UDP packets"""
 
@@ -64,11 +64,11 @@ def _phtx_udp(
     if __debug__:
         log("udp", f"{udp_packet_tx.tracker} - {udp_packet_tx}")
 
-    if ip_src.version == ip_dst.version == 6:
+    if ip_src.is_ip6 and ip_dst.is_ip6:
         self.packet_stats_tx.udp__send += 1
         return self._phtx_ip6(ip6_src=ip_src, ip6_dst=ip_dst, carried_packet=udp_packet_tx)
 
-    if ip_src.version == ip_dst.version == 4:
+    if ip_src.is_ip4 and ip_dst.is_ip4:
         self.packet_stats_tx.udp__send += 1
         return self._phtx_ip4(ip4_src=ip_src, ip4_dst=ip_dst, carried_packet=udp_packet_tx)
 

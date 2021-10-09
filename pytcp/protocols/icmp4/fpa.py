@@ -29,10 +29,9 @@
 #
 
 
-from __future__ import annotations  # Required by Python ver < 3.10
+from __future__ import annotations
 
 import struct
-from typing import Optional
 
 from lib.tracker import Tracker
 from misc.ip_helper import inet_cksum
@@ -58,11 +57,11 @@ class Icmp4Assembler:
         *,
         type: int,
         code: int = 0,
-        ec_id: Optional[int] = None,
-        ec_seq: Optional[int] = None,
-        ec_data: Optional[bytes] = None,
-        un_data: Optional[bytes] = None,
-        echo_tracker: Optional[Tracker] = None,
+        ec_id: int | None = None,
+        ec_seq: int | None = None,
+        ec_data: bytes | None = None,
+        un_data: bytes | None = None,
+        echo_tracker: Tracker | None = None,
     ) -> None:
         """Class constructor"""
 

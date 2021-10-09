@@ -29,12 +29,11 @@
 #
 
 
-from __future__ import annotations  # Requir for Python version lower than 3.10
+from __future__ import annotations
 
 import re
 import socket
 import struct
-from typing import Optional, Union
 
 from lib.ip_address import (
     IpAddress,
@@ -70,7 +69,7 @@ class Ip4HostFormatError(IpHostFormatError):
 class Ip4Address(IpAddress):
     """IPv4 address support class"""
 
-    def __init__(self, address: Union[Ip4Address, str, bytes, bytearray, memoryview, int]) -> None:
+    def __init__(self, address: Ip4Address | str | bytes | bytearray | memoryview | int) -> None:
         """Class constructor"""
 
         self._address: int
@@ -191,7 +190,7 @@ class Ip4Address(IpAddress):
 class Ip4Mask(IpMask):
     """IPv4 network mask support class"""
 
-    def __init__(self, mask: Union[Ip4Mask, str, bytes, bytearray, memoryview, int]) -> None:
+    def __init__(self, mask: Ip4Mask | str | bytes | bytearray | memoryview | int) -> None:
         """Class constructor"""
 
         self._mask: int
@@ -246,7 +245,7 @@ class Ip4Mask(IpMask):
 class Ip4Network(IpNetwork):
     """IPv4 network support class"""
 
-    def __init__(self, network: Union[Ip4Network, tuple[Ip4Address, Ip4Mask], str]) -> None:
+    def __init__(self, network: Ip4Network | tuple[Ip4Address, Ip4Mask] | str) -> None:
         """Class constructor"""
 
         self._address: Ip4Address
@@ -305,14 +304,14 @@ class Ip4Network(IpNetwork):
 class Ip4Host(IpHost):
     """IPv4 host support class"""
 
-    def __init__(self, host: Union[Ip4Host, tuple[Ip4Address, Ip4Network], tuple[Ip4Address, Ip4Mask], str]) -> None:
+    def __init__(self, host: Ip4Host | tuple[Ip4Address, Ip4Network] | tuple[Ip4Address, Ip4Mask] | str) -> None:
         """Class constructor"""
 
         self._address: Ip4Address
         self._network: Ip4Network
         self._version: int = 4
 
-        self.gateway: Optional[Ip4Address] = None
+        self.gateway: Ip4Address | None = None
 
         if isinstance(host, tuple):
             if len(host) == 2:

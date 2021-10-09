@@ -29,9 +29,9 @@
 #
 
 
-from __future__ import annotations  # Required by Python ver < 3.10
+from __future__ import annotations
 
-from typing import TYPE_CHECKING, Optional, Union
+from typing import TYPE_CHECKING
 
 from lib.logger import log
 from lib.mac_address import MacAddress
@@ -50,7 +50,7 @@ def _phtx_ether(
     *,
     ether_src: MacAddress = MacAddress(0),
     ether_dst: MacAddress = MacAddress(0),
-    carried_packet: Optional[Union[ArpAssembler, Ip4Assembler, Ip6Assembler, RawAssembler]] = None,
+    carried_packet: ArpAssembler | Ip4Assembler | Ip6Assembler | RawAssembler | None = None,
 ) -> TxStatus:
     """Handle outbound Ethernet packets"""
 

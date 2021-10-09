@@ -25,8 +25,11 @@
 
 
 #
-# libclogger.py - module contains methods supporting logging
+# lib/logger.py - module contains methods supporting logging
 #
+
+
+from __future__ import annotations
 
 import inspect
 import time

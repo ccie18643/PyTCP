@@ -29,7 +29,7 @@
 #
 
 
-from __future__ import annotations  # Required by Python ver < 3.10
+from __future__ import annotations
 
 import misc.stack as stack
 from lib.logger import log

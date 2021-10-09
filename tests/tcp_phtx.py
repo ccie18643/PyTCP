@@ -29,7 +29,6 @@
 # tests/udp_phtx.py -  tests specific for UDP phtx module
 #
 
-from __future__ import annotations  # Required by Python ver < 3.10
 
 from testslide import TestCase
 
@@ -449,6 +448,42 @@ class TestUdpPhtx(TestCase):
             frame_tx = _.read()
         self.assertEqual(self.frame_tx[: len(frame_tx)], frame_tx)
 
+    def test_tcp_phtx__ip4_tcp_packet__ip6_src(self):
+        """Test sending IPv4/TCP packet with src set to ip6 address"""
+
+        tx_status = self.packet_handler._phtx_tcp(
+            ip_src=self.mns.stack_ip6_host.address,
+            ip_dst=self.mns.host_a_ip4_address,
+            tcp_sport=1000,
+            tcp_dport=2000,
+        )
+        self.assertEqual(tx_status, TxStatus.DROPED__TCP__UNKNOWN)
+        self.assertEqual(
+            self.packet_handler.packet_stats_tx,
+            PacketStatsTx(
+                tcp__pre_assemble=1,
+                tcp__unknown__drop=1,
+            ),
+        )
+
+    def test_tcp_phtx__ip4_tcp_packet__ip6_dst(self):
+        """Test sending IPv6/TCP packet with dst set to ip6 address"""
+
+        tx_status = self.packet_handler._phtx_tcp(
+            ip_src=self.mns.stack_ip4_host.address,
+            ip_dst=self.mns.host_a_ip6_address,
+            tcp_sport=1000,
+            tcp_dport=2000,
+        )
+        self.assertEqual(tx_status, TxStatus.DROPED__TCP__UNKNOWN)
+        self.assertEqual(
+            self.packet_handler.packet_stats_tx,
+            PacketStatsTx(
+                tcp__pre_assemble=1,
+                tcp__unknown__drop=1,
+            ),
+        )
+
     def test_tcp_phtx__ip6_tcp_packet(self):
         """Test sending IPv6/TCP packet"""
 
@@ -843,3 +878,39 @@ class TestUdpPhtx(TestCase):
         with open(TEST_FRAME_DIR + "ip6_tcp_packet__data.tx", "rb") as _:
             frame_tx = _.read()
         self.assertEqual(self.frame_tx[: len(frame_tx)], frame_tx)
+
+    def test_tcp_phtx__ip6_tcp_packet__ip4_src(self):
+        """Test sending IPv6/TCP packet with src set to ip4 address"""
+
+        tx_status = self.packet_handler._phtx_tcp(
+            ip_src=self.mns.stack_ip4_host.address,
+            ip_dst=self.mns.host_a_ip6_address,
+            tcp_sport=1000,
+            tcp_dport=2000,
+        )
+        self.assertEqual(tx_status, TxStatus.DROPED__TCP__UNKNOWN)
+        self.assertEqual(
+            self.packet_handler.packet_stats_tx,
+            PacketStatsTx(
+                tcp__pre_assemble=1,
+                tcp__unknown__drop=1,
+            ),
+        )
+
+    def test_tcp_phtx__ip6_tcp_packet__ip4_dst(self):
+        """Test sending IPv6/TCP packet with dst set to ip6 address"""
+
+        tx_status = self.packet_handler._phtx_tcp(
+            ip_src=self.mns.stack_ip6_host.address,
+            ip_dst=self.mns.host_a_ip4_address,
+            tcp_sport=1000,
+            tcp_dport=2000,
+        )
+        self.assertEqual(tx_status, TxStatus.DROPED__TCP__UNKNOWN)
+        self.assertEqual(
+            self.packet_handler.packet_stats_tx,
+            PacketStatsTx(
+                tcp__pre_assemble=1,
+                tcp__unknown__drop=1,
+            ),
+        )

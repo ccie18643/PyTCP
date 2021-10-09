@@ -29,9 +29,9 @@
 #
 
 
-from __future__ import annotations  # Required by Python ver < 3.10
+from __future__ import annotations
 
-from typing import TYPE_CHECKING, Optional, Union
+from typing import TYPE_CHECKING
 
 import config
 from lib.ip6_address import Ip6Address
@@ -48,7 +48,7 @@ if TYPE_CHECKING:
     from protocols.udp.fpa import UdpAssembler
 
 
-def _validate_src_ip6_address(self, ip6_src: Ip6Address, ip6_dst: Ip6Address, tracker: Tracker) -> Union[Ip6Address, TxStatus]:
+def _validate_src_ip6_address(self, ip6_src: Ip6Address, ip6_dst: Ip6Address, tracker: Tracker) -> Ip6Address | TxStatus:
     """Make sure source ip address is valid, supplement with valid one as appropriate"""
 
     # Check if the the source IP address belongs to this stack or its unspecified
@@ -102,7 +102,7 @@ def _validate_src_ip6_address(self, ip6_src: Ip6Address, ip6_dst: Ip6Address, tr
     return ip6_src
 
 
-def _validate_dst_ip6_address(self, ip6_dst: Ip6Address, tracker) -> Union[Ip6Address, TxStatus]:
+def _validate_dst_ip6_address(self, ip6_dst: Ip6Address, tracker) -> Ip6Address | TxStatus:
     """Make sure destination ip address is valid"""
 
     # Drop packet if the destination address is unspecified
@@ -121,7 +121,7 @@ def _phtx_ip6(
     ip6_dst: Ip6Address,
     ip6_src: Ip6Address,
     ip6_hop: int = config.IP6_DEFAULT_HOP,
-    carried_packet: Optional[Union[Ip6ExtFragAssembler, Icmp6Assembler, TcpAssembler, UdpAssembler, RawAssembler]] = None,
+    carried_packet: Ip6ExtFragAssembler | Icmp6Assembler | TcpAssembler | UdpAssembler | RawAssembler | None = None,
 ) -> TxStatus:
     """Handle outbound IP packets"""
 

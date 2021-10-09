@@ -29,10 +29,10 @@
 #
 
 
-from __future__ import annotations  # Required by Python ver < 3.10
+from __future__ import annotations
 
 import struct
-from typing import TYPE_CHECKING, Optional, Union
+from typing import TYPE_CHECKING
 
 import misc.stack as stack
 from lib.ip4_address import Ip4Address, Ip4AddressFormatError
@@ -59,7 +59,7 @@ def inet_cksum(data: memoryview, init: int = 0) -> int:
     return ~(cksum + (cksum >> 16)) & 0xFFFF
 
 
-def ip_version(ip_address: str) -> Optional[int]:
+def ip_version(ip_address: str) -> int | None:
     """Return version of IP address string"""
 
     try:
@@ -71,7 +71,7 @@ def ip_version(ip_address: str) -> Optional[int]:
             return None
 
 
-def str_to_ip(ip_address: str) -> Optional[Union[Ip6Address, Ip4Address]]:
+def str_to_ip(ip_address: str) -> Ip6Address | Ip4Address | None:
     """Convert string to appropriate IP address"""
 
     try:
@@ -83,7 +83,7 @@ def str_to_ip(ip_address: str) -> Optional[Union[Ip6Address, Ip4Address]]:
             return None
 
 
-def pick_local_ip_address(remote_ip_address: IpAddress) -> Union[Ip6Address, Ip4Address]:
+def pick_local_ip_address(remote_ip_address: IpAddress) -> Ip6Address | Ip4Address:
     """Pick appropriate source IP address based on provided destination IP address"""
 
     assert isinstance(remote_ip_address, Ip6Address) or isinstance(remote_ip_address, Ip4Address)

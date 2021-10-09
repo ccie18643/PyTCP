@@ -29,12 +29,12 @@
 #
 
 
-from __future__ import annotations  # Required by Python ver < 3.10
+from __future__ import annotations
 
 import random
 import threading
 import time
-from typing import TYPE_CHECKING, Optional, Union
+from typing import TYPE_CHECKING
 
 import config
 import misc.stack as stack
@@ -135,7 +135,7 @@ class PacketHandler:
     _phrx_udp = _phrx_udp
     _phtx_udp = _phtx_udp
 
-    def __init__(self, tap: Optional[int]) -> None:
+    def __init__(self, tap: int | None) -> None:
         """Class constructor"""
 
         stack.packet_handler = self
@@ -159,9 +159,9 @@ class PacketHandler:
         self.arp_probe_unicast_conflict: set[Ip4Address] = set()
 
         # Used for the ICMPv6 ND DAD process
-        self.ip6_unicast_candidate: Optional[Ip6Address] = None
+        self.ip6_unicast_candidate: Ip6Address | None = None
         self.event_icmp6_nd_dad: Semaphore = threading.Semaphore(0)
-        self.icmp6_nd_dad_tlla: Optional[Ip6Address] = None
+        self.icmp6_nd_dad_tlla: Ip6Address | None = None
 
         # Used for the IcMPv6 ND RA address auto configuration
         self.icmp6_ra_prefixes: list[tuple[Ip6Network, Ip6Address]] = []
@@ -268,7 +268,7 @@ class PacketHandler:
         self._remove_ip6_multicast(ip6_unicast_candidate.solicited_node_multicast)
         return not event
 
-    def _parse_stack_ip6_host_candidate(self, configured_host_candidate: list[tuple[str, Optional[str]]]) -> list[Ip6Host]:
+    def _parse_stack_ip6_host_candidate(self, configured_host_candidate: list[tuple[str, str | None]]) -> list[Ip6Host]:
         """Parse IPv6 candidate address list"""
 
         valid_host_candidate: list[Ip6Host] = []
@@ -296,7 +296,7 @@ class PacketHandler:
                 continue
             if str_gateway is not None:
                 try:
-                    gateway: Optional[Ip6Address] = Ip6Address(str_gateway)
+                    gateway: Ip6Address | None = Ip6Address(str_gateway)
                     assert gateway is not None
                     if not (gateway.is_link_local or (gateway in host.network and gateway != host.address)):
                         if __debug__:
@@ -362,7 +362,7 @@ class PacketHandler:
                 ip6_address.gateway = gateway
                 __(ip6_address)
 
-    def _parse_stack_ip4_host_candidate(self, configured_ip4_address_candidate: list[tuple[str, Optional[str]]]) -> list[Ip4Host]:
+    def _parse_stack_ip4_host_candidate(self, configured_ip4_address_candidate: list[tuple[str, str | None]]) -> list[Ip4Host]:
         """Parse IPv4 candidate host addresses configured in config.py module"""
 
         valid_address_candidate: list[Ip4Host] = []
@@ -390,7 +390,7 @@ class PacketHandler:
                 continue
             if str_gateway is not None:
                 try:
-                    gateway: Optional[Ip4Address] = Ip4Address(str_gateway)
+                    gateway: Ip4Address | None = Ip4Address(str_gateway)
                     if gateway not in host.network or gateway in {host.network.address, host.network.broadcast, host.address}:
                         if __debug__:
                             log("stack", f"<WARN>Invalid gateway '{gateway}' configuren for host address '{host}', skipping</>")
@@ -585,7 +585,7 @@ class PacketHandler:
         remote_ip_address: IpAddress,
         local_port: int,
         remote_port: int,
-        data: Optional[bytes] = None,
+        data: bytes | None = None,
     ) -> TxStatus:
         """Interface method for UDP Socket -> FPA communication"""
 
@@ -610,9 +610,9 @@ class PacketHandler:
         seq: int = 0,
         ack: int = 0,
         win: int = 0,
-        wscale: Optional[int] = None,
-        mss: Optional[int] = None,
-        data: Optional[bytes] = None,
+        wscale: int | None = None,
+        mss: int | None = None,
+        data: bytes | None = None,
     ) -> TxStatus:
         """Interface method for TCP Socket -> FPA communication"""
 
@@ -639,10 +639,10 @@ class PacketHandler:
         remote_ip_address: Ip4Address,
         type: int,
         code: int = 0,
-        ec_id: Optional[int] = None,
-        ec_seq: Optional[int] = None,
-        ec_data: Optional[bytes] = None,
-        un_data: Optional[bytes] = None,
+        ec_id: int | None = None,
+        ec_seq: int | None = None,
+        ec_data: bytes | None = None,
+        un_data: bytes | None = None,
     ) -> TxStatus:
         """Interface method for ICMPv4 Socket -> FPA communication"""
 
@@ -664,16 +664,16 @@ class PacketHandler:
         type: int,
         code: int = 0,
         hop: int = 64,
-        un_data: Optional[bytes] = None,
-        ec_id: Optional[int] = None,
-        ec_seq: Optional[int] = None,
-        ec_data: Optional[bytes] = None,
-        ns_target_address: Optional[Ip6Address] = None,
+        un_data: bytes | None = None,
+        ec_id: int | None = None,
+        ec_seq: int | None = None,
+        ec_data: bytes | None = None,
+        ns_target_address: Ip6Address | None = None,
         na_flag_r: bool = False,
         na_flag_s: bool = False,
         na_flag_o: bool = False,
-        na_target_address: Optional[Ip6Address] = None,
-        nd_options: Optional[list[Union[Icmp6NdOptSLLA, Icmp6NdOptTLLA, Icmp6NdOptPI]]] = None,
+        na_target_address: Ip6Address | None = None,
+        nd_options: list[Icmp6NdOptSLLA | Icmp6NdOptTLLA | Icmp6NdOptPI] | None = None,
         mlr2_multicast_address_record=None,
     ) -> TxStatus:
         """Interface method for ICMPv4 Socket -> FPA communication"""

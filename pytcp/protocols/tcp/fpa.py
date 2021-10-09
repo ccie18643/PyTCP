@@ -29,10 +29,9 @@
 #
 
 
-from __future__ import annotations  # Required by Python ver < 3.10
+from __future__ import annotations
 
 import struct
-from typing import Optional
 
 from lib.tracker import Tracker
 from misc.ip_helper import inet_cksum
@@ -79,9 +78,9 @@ class TcpAssembler:
         flag_fin: bool = False,
         win: int = 0,
         urp: int = 0,
-        options: Optional[list[TcpOptMss | TcpOptWscale | TcpOptSackPerm | TcpOptTimestamp | TcpOptEol | TcpOptNop]] = None,
-        data: Optional[bytes] = None,
-        echo_tracker: Optional[Tracker] = None,
+        options: list[TcpOptMss | TcpOptWscale | TcpOptSackPerm | TcpOptTimestamp | TcpOptEol | TcpOptNop] | None = None,
+        data: bytes | None = None,
+        echo_tracker: Tracker | None = None,
     ) -> None:
         """Class constructor"""
 
@@ -103,7 +102,7 @@ class TcpAssembler:
         self._urp: int = urp
         self._options: list[TcpOptMss | TcpOptWscale | TcpOptSackPerm | TcpOptTimestamp | TcpOptEol | TcpOptNop] = [] if options is None else options
         self._data: bytes = b"" if data is None else data
-        self._hlen: int = TCP_HEADER_LEN + sum([len(_) for _ in self._options])
+        self._hlen: int = TCP_HEADER_LEN + sum(len(_) for _ in self._options)
 
         assert self._hlen % 4 == 0, f"TCP header len {self._hlen} is not multiplcation of 4 bytes, check options... {self._options}"
 

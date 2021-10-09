@@ -1,3 +1,4 @@
+PYTHON_VERSION := 3.10
 VENV := venv
 PY_PATH := $(shell find pytcp -name '*.py')
 TEST_PATH := $(shell find tests -name '*.py')
@@ -6,7 +7,7 @@ all: venv
 
 $(VENV)/bin/activate: requirements.txt
 	@apt-get install -y python3-venv
-	@python3.9 -m venv $(VENV)
+	@python$(PYTHON_VERSION) -m venv $(VENV)
 	@./$(VENV)/bin/pip install -r requirements.txt
 
 venv: $(VENV)/bin/activate

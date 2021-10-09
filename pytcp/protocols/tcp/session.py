@@ -29,12 +29,12 @@
 #
 
 
-from __future__ import annotations  # Required by Python ver < 3.10
+from __future__ import annotations
 
 import random
 import threading
 from enum import Enum, auto
-from typing import TYPE_CHECKING, Any, Callable, Optional
+from typing import TYPE_CHECKING, Any, Callable
 
 import config
 import misc.stack as stack
@@ -335,12 +335,12 @@ class TcpSession:
 
     def _transmit_packet(
         self,
-        seq: Optional[int] = None,
+        seq: int | None = None,
         flag_syn: bool = False,
         flag_ack: bool = False,
         flag_fin: bool = False,
         flag_rst: bool = False,
-        data: Optional[bytes] = None,
+        data: bytes | None = None,
     ) -> None:
         """Send out TCP packet"""
 
@@ -548,7 +548,7 @@ class TcpSession:
                 log("tcp-ss", f"[{self}] - <lg>Retrieving packet {self._rcv_nxt} from Out of Order queue</>")
             self.tcp_fsm(ooo_packet)
 
-    def _tcp_fsm_closed(self, packet_rx_md: Optional[TcpMetadata], syscall: Optional[SysCall], timer: Optional[bool]) -> None:
+    def _tcp_fsm_closed(self, packet_rx_md: TcpMetadata | None, syscall: SysCall | None, timer: bool | None) -> None:
         """TCP FSM CLOSED state handler"""
 
         # Got CONNECT syscall -> Send SYN packet (this actually will be done in SYN_SENT state) / change state to SYN_SENT
@@ -559,7 +559,7 @@ class TcpSession:
         if syscall is SysCall.LISTEN:
             self._change_state(FsmState.LISTEN)
 
-    def _tcp_fsm_listen(self, packet_rx_md: Optional[TcpMetadata], syscall: Optional[SysCall], timer: Optional[bool]) -> None:
+    def _tcp_fsm_listen(self, packet_rx_md: TcpMetadata | None, syscall: SysCall | None, timer: bool | None) -> None:
         """TCP FSM LISTEN state handler"""
 
         from lib.socket import AF_INET4, AF_INET6
@@ -604,7 +604,7 @@ class TcpSession:
             self._change_state(FsmState.CLOSED)
             return
 
-    def _tcp_fsm_syn_sent(self, packet_rx_md: Optional[TcpMetadata], syscall: Optional[SysCall], timer: Optional[bool]) -> None:
+    def _tcp_fsm_syn_sent(self, packet_rx_md: TcpMetadata | None, syscall: SysCall | None, timer: bool | None) -> None:
         """TCP FSM SYN_SENT state handler"""
 
         # Got timer event -> Resend SYN packet if its timer expir
@@ -663,7 +663,7 @@ class TcpSession:
             self._change_state(FsmState.CLOSED)
             return
 
-    def _tcp_fsm_syn_rcvd(self, packet_rx_md: Optional[TcpMetadata], syscall: Optional[SysCall], timer: Optional[bool]) -> None:
+    def _tcp_fsm_syn_rcvd(self, packet_rx_md: TcpMetadata | None, syscall: SysCall | None, timer: bool | None) -> None:
         """TCP FSM ESTABLISHED state handler"""
 
         # Got timer event -> Resend SYN packet if its timer expir
@@ -707,7 +707,7 @@ class TcpSession:
             self._change_state(FsmState.FIN_WAIT_1)
             return
 
-    def _tcp_fsm_established(self, packet_rx_md: Optional[TcpMetadata], syscall: Optional[SysCall], timer: Optional[bool]) -> None:
+    def _tcp_fsm_established(self, packet_rx_md: TcpMetadata | None, syscall: SysCall | None, timer: bool | None) -> None:
         """TCP FSM ESTABLISHED state handler"""
 
         # Got timer event -> Send out data and run Delayed ACK mechanism
@@ -773,7 +773,7 @@ class TcpSession:
             self._closing = True
             return
 
-    def _tcp_fsm_fin_wait_1(self, packet_rx_md: Optional[TcpMetadata], syscall: Optional[SysCall], timer: Optional[bool]) -> None:
+    def _tcp_fsm_fin_wait_1(self, packet_rx_md: TcpMetadata | None, syscall: SysCall | None, timer: bool | None) -> None:
         """TCP FSM FIN_WAIT_1 state handler"""
 
         # Got timer event -> Transmit final FIN packet
@@ -824,7 +824,7 @@ class TcpSession:
                 self._change_state(FsmState.CLOSED)
             return
 
-    def _tcp_fsm_fin_wait_2(self, packet_rx_md: Optional[TcpMetadata], syscall: Optional[SysCall], timer: Optional[bool]) -> None:
+    def _tcp_fsm_fin_wait_2(self, packet_rx_md: TcpMetadata | None, syscall: SysCall | None, timer: bool | None) -> None:
         """TCP FSM FIN_WAIT_2 state handler"""
 
         # Got ACK packet -> Process data
@@ -860,7 +860,7 @@ class TcpSession:
                 self._change_state(FsmState.CLOSED)
             return
 
-    def _tcp_fsm_closing(self, packet_rx_md: Optional[TcpMetadata], syscall: Optional[SysCall], timer: Optional[bool]) -> None:
+    def _tcp_fsm_closing(self, packet_rx_md: TcpMetadata | None, syscall: SysCall | None, timer: bool | None) -> None:
         """TCP FSM CLOSING state handler"""
 
         # Got ACK packet -> Change state to TIME_WAIT
@@ -881,7 +881,7 @@ class TcpSession:
                 self._change_state(FsmState.CLOSED)
             return
 
-    def _tcp_fsm_close_wait(self, packet_rx_md: Optional[TcpMetadata], syscall: Optional[SysCall], timer: Optional[bool]) -> None:
+    def _tcp_fsm_close_wait(self, packet_rx_md: TcpMetadata | None, syscall: SysCall | None, timer: bool | None) -> None:
         """TCP FSM CLOSE_WAIT state handler"""
 
         # Got timer event -> Send out data and run Delayed ACK mechanism
@@ -925,7 +925,7 @@ class TcpSession:
             self._closing = True
             return
 
-    def _tcp_fsm_last_ack(self, packet_rx_md: Optional[TcpMetadata], syscall: Optional[SysCall], timer: Optional[bool]) -> None:
+    def _tcp_fsm_last_ack(self, packet_rx_md: TcpMetadata | None, syscall: SysCall | None, timer: bool | None) -> None:
         """TCP FSM LAST_ACK state handler"""
 
         # Got timer event -> Transmit final FIN packet
@@ -949,7 +949,7 @@ class TcpSession:
                 self._change_state(FsmState.CLOSED)
             return
 
-    def _tcp_fsm_time_wait(self, packet_rx_md: Optional[TcpMetadata], syscall: Optional[SysCall], timer: Optional[bool]) -> None:
+    def _tcp_fsm_time_wait(self, packet_rx_md: TcpMetadata | None, syscall: SysCall | None, timer: bool | None) -> None:
         """TCP FSM TIME_WAIT state handler"""
 
         # Got timer event -> Run TIME_WAIT delay
@@ -957,7 +957,7 @@ class TcpSession:
             self._change_state(FsmState.CLOSED)
             return
 
-    def tcp_fsm(self, packet_rx_md: Optional[TcpMetadata] = None, syscall: Optional[SysCall] = None, timer: Optional[bool] = None) -> None:
+    def tcp_fsm(self, packet_rx_md: TcpMetadata | None = None, syscall: SysCall | None = None, timer: bool | None = None) -> None:
         """Run TCP finite state machine"""
 
         # Process event

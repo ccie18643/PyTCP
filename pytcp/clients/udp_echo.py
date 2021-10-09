@@ -28,6 +28,7 @@
 # clients/udp_echo.py - 'user space' client for UDP echo, it activelly sends messages to Echo service
 #
 
+from __future__ import annotations
 
 import threading
 import time

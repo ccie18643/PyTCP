@@ -29,6 +29,8 @@
 #
 
 
+from __future__ import annotations
+
 malpka: bytes = (
     b"\n                                       \n"
     + b"                                       \n"

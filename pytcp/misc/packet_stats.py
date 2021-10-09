@@ -28,7 +28,8 @@
 # packet_stats.py - module contains class used to store packet handler statistics
 #
 
-from __future__ import annotations  # Required by Python ver < 3.10
+
+from __future__ import annotations
 
 from dataclasses import dataclass
 

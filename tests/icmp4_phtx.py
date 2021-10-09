@@ -29,11 +29,10 @@
 # tests/icmp4_phtx.py -  tests specific for ICMPv4 phtx module
 #
 
-from __future__ import annotations  # Required by Python ver < 3.10
 
 from testslide import TestCase
 
-from pytcp.misc.packet_stats import PacketStatsTx
+# from pytcp.misc.packet_stats import PacketStatsTx
 from tests.mock_network import (
     MockNetworkSettings,
     patch_config,

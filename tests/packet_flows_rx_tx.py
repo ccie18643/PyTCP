@@ -29,9 +29,8 @@
 # tests/test_packet_flows__rx_tx.py - unit tests for received packets that generate stack's response
 #
 
-from __future__ import annotations  # Required by Python ver < 3.10
 
-from typing import TYPE_CHECKING
+from __future__ import annotations
 
 from testslide import StrictMock, TestCase
 
@@ -44,9 +43,6 @@ from pytcp.subsystems.arp_cache import ArpCache
 from pytcp.subsystems.nd_cache import NdCache
 from pytcp.subsystems.packet_handler import PacketHandler
 from pytcp.subsystems.tx_ring import TxRing
-
-if TYPE_CHECKING:
-    from typing import List
 
 PACKET_HANDLER_MODULES = [
     "pytcp.subsystems.packet_handler",
@@ -236,7 +232,7 @@ class TestPacketHandler(TestCase):
         )
         self.assertEqual(self.packet_tx[: len(packet_tx)], packet_tx)
 
-    def _test_packet_flow_rx_tx__ip4_frag__ip4_udp_echo_rx_frag(self, order: List(int)):
+    def _test_packet_flow_rx_tx__ip4_frag__ip4_udp_echo_rx_frag(self, order: list(int)):
         """[IPv4 frag] Receive fragmented IPv4/UDP packets and echo them back to the sender in specified order"""
 
         frags = []
@@ -471,7 +467,7 @@ class TestPacketHandler(TestCase):
         )
         self.assertEqual(self.packet_tx[: len(packet_tx)], packet_tx)
 
-    def _test_packet_flow_rx_tx__ip6_frag__ip6_udp_echo_rx_frag(self, order: List(int)):
+    def _test_packet_flow_rx_tx__ip6_frag__ip6_udp_echo_rx_frag(self, order: list(int)):
         """[IPv6 frag] Receive fragmented IPv6/UDP packets and echo them back to the sender in specified order"""
 
         frags = []

@@ -29,9 +29,9 @@
 #
 
 
-from __future__ import annotations  # Required by Python ver < 3.10
+from __future__ import annotations
 
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from lib.ip_address import IpAddress
@@ -54,10 +54,10 @@ class TcpMetadata:
         seq: int,
         ack: int,
         win: int,
-        wscale: Optional[int],
+        wscale: int | None,
         mss: int,
         data: memoryview,
-        tracker: Optional[Tracker],
+        tracker: Tracker | None,
     ):
         self.local_ip_address = local_ip_address
         self.local_port = local_port

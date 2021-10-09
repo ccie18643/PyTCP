@@ -29,10 +29,9 @@
 #
 
 
-from __future__ import annotations  # Required by Python ver < 3.10
+from __future__ import annotations
 
 import struct
-from typing import Optional
 
 from lib.tracker import Tracker
 from misc.ip_helper import inet_cksum
@@ -47,7 +46,7 @@ class UdpAssembler:
     ip4_proto = IP4_PROTO_UDP
     ip6_next = IP6_NEXT_HEADER_UDP
 
-    def __init__(self, *, sport: int, dport: int, data: Optional[bytes] = None, echo_tracker: Optional[Tracker] = None) -> None:
+    def __init__(self, *, sport: int, dport: int, data: bytes | None = None, echo_tracker: Tracker | None = None) -> None:
         """Class constructor"""
 
         self._tracker: Tracker = Tracker("TX", echo_tracker)

@@ -28,8 +28,10 @@
 # config.py - module contains global configuration parameters
 #
 
+
+from __future__ import annotations
+
 from sys import version_info
-from typing import Optional
 
 assert version_info >= (3, 9), "PyTCP requires Python version 3.9 or higher"
 
@@ -102,7 +104,7 @@ IP6_FRAG_FLOW_TIMEOUT = 5
 # Each entry is a tuple interface address/prefix length and second is default gateway for this subnet
 # Basic routing is implemented and each subnet can have its own gateway
 # Link local addresses should have default gateway set to 'None'
-IP6_HOST_CANDIDATE: list[tuple[str, Optional[str]]] = [
+IP6_HOST_CANDIDATE: list[tuple[str, str | None]] = [
     ("FE80::7/64", None),
     # ("2007::7/64", "FE80::1"),
 ]
@@ -113,7 +115,7 @@ IP4_HOST_DHCP = True
 # Static IPv4 adrsses may to be configured here (they will still be subject to ARP Probe/Announcement mechanism)
 # Each entry is a tuple interface address/prefix length and second is default gateway for this subnet
 # Basic routing is implemented and each subnet can have its own gateway
-IP4_HOST_CANDIDATE: list[tuple[str, Optional[str]]] = [
+IP4_HOST_CANDIDATE: list[tuple[str, str | None]] = [
     ("10.0.0.7/24", "10.0.0.1"),
     # ("192.168.9.7/24", "192.168.9.1"),
     # ("192.168.9.77/24", "192.168.9.1"),

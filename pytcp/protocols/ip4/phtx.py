@@ -29,9 +29,9 @@
 #
 
 
-from __future__ import annotations  # Required by Python ver < 3.10
+from __future__ import annotations
 
-from typing import TYPE_CHECKING, Optional, Union
+from typing import TYPE_CHECKING
 
 import config
 from lib.ip4_address import Ip4Address
@@ -47,7 +47,7 @@ if TYPE_CHECKING:
     from protocols.udp.fpa import UdpAssembler
 
 
-def _validate_src_ip4_address(self, ip4_src: Ip4Address, ip4_dst: Ip4Address, tracker: Tracker) -> Union[Ip4Address, TxStatus]:
+def _validate_src_ip4_address(self, ip4_src: Ip4Address, ip4_dst: Ip4Address, tracker: Tracker) -> Ip4Address | TxStatus:
     """Make sure source ip address is valid, supplemt with valid one as appropriate"""
 
     # Check if the the source IP address belongs to this stack or is set to all zeros (for DHCP client communication)
@@ -124,7 +124,7 @@ def _validate_src_ip4_address(self, ip4_src: Ip4Address, ip4_dst: Ip4Address, tr
     return ip4_src
 
 
-def _validate_dst_ip4_address(self, ip4_dst: Ip4Address, tracker) -> Union[Ip4Address, TxStatus]:
+def _validate_dst_ip4_address(self, ip4_dst: Ip4Address, tracker) -> Ip4Address | TxStatus:
     """Make sure destination ip address is valid"""
 
     # Drop packet if the destination address is unspecified
@@ -143,7 +143,7 @@ def _phtx_ip4(
     ip4_dst: Ip4Address,
     ip4_src: Ip4Address,
     ip4_ttl: int = config.IP4_DEFAULT_TTL,
-    carried_packet: Optional[Union[Icmp4Assembler, TcpAssembler, UdpAssembler, RawAssembler]] = None,
+    carried_packet: Icmp4Assembler | TcpAssembler | UdpAssembler | RawAssembler | None = None,
 ) -> TxStatus:
     """Handle outbound IP packets"""
 

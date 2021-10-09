@@ -29,7 +29,6 @@
 # tests/mock_network.py - module used to mock network for packet flow tests
 #
 
-from __future__ import annotations  # Required by Python ver < 3.10
 
 from testslide import StrictMock
 
