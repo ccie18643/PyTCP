@@ -66,6 +66,7 @@ class Icmp4Assembler:
         """Class constructor"""
 
         assert type in {ICMP4_ECHO_REQUEST, ICMP4_UNREACHABLE, ICMP4_ECHO_REPLY}
+        assert 0 <= code <= 0xFF
 
         self._tracker: Tracker = Tracker("TX", echo_tracker)
         self._type: int = type
@@ -81,6 +82,9 @@ class Icmp4Assembler:
             self._ec_seq = 0 if ec_seq is None else ec_seq
             self._ec_data = b"" if ec_data is None else ec_data
 
+            assert 0 <= self._ec_id <= 0xFFFF
+            assert 0 <= self._ec_seq <= 0xFFFF
+
         elif self._type == ICMP4_UNREACHABLE and self._code == ICMP4_UNREACHABLE__PORT:
             self._un_data = b"" if un_data is None else un_data[:520]
 
@@ -88,6 +92,9 @@ class Icmp4Assembler:
             self._ec_id = 0 if ec_id is None else ec_id
             self._ec_seq = 0 if ec_id is None else ec_id
             self._ec_data = b"" if ec_data is None else ec_data
+
+            assert 0 <= self._ec_id <= 0xFFFF
+            assert 0 <= self._ec_seq <= 0xFFFF
 
     def __len__(self) -> int:
         """Length of the packet"""

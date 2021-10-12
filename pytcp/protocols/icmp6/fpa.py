@@ -98,6 +98,21 @@ class Icmp6Assembler:
     ) -> None:
         """Class constructor"""
 
+        assert type in {
+            ICMP6_ECHO_REPLY,
+            ICMP6_ECHO_REQUEST,
+            ICMP6_MLD2_REPORT,
+            ICMP6_ND_NEIGHBOR_ADVERTISEMENT,
+            ICMP6_ND_NEIGHBOR_SOLICITATION,
+            ICMP6_ND_OPT_PI,
+            ICMP6_ND_OPT_SLLA,
+            ICMP6_ND_OPT_TLLA,
+            ICMP6_ND_ROUTER_ADVERTISEMENT,
+            ICMP6_ND_ROUTER_SOLICITATION,
+            ICMP6_UNREACHABLE,
+        }
+        assert 0 <= code <= 0xFF
+
         self._tracker = Tracker("TX", echo_tracker)
 
         self._type = type
@@ -137,10 +152,16 @@ class Icmp6Assembler:
             self._ec_seq = 0 if ec_seq is None else ec_seq
             self._ec_data = b"" if ec_data is None else ec_data
 
+            assert 0 <= self._ec_id <= 0xFFFF
+            assert 0 <= self._ec_seq <= 0xFFFF
+
         elif self._type == ICMP6_ECHO_REPLY:
             self._ec_id = 0 if ec_id is None else ec_id
             self._ec_seq = 0 if ec_seq is None else ec_seq
             self._ec_data = b"" if ec_data is None else ec_data
+
+            assert 0 <= self._ec_id <= 0xFFFF
+            assert 0 <= self._ec_seq <= 0xFFFF
 
         elif self._type == ICMP6_ND_ROUTER_SOLICITATION:
             self._rs_reserved = 0
@@ -152,6 +173,11 @@ class Icmp6Assembler:
             self._ra_router_lifetime = 0 if ra_router_lifetime is None else ra_router_lifetime
             self._ra_reachable_time = 0 if ra_reachable_time is None else ra_reachable_time
             self._ra_retrans_timer = 0 if ra_retrans_timer is None else ra_retrans_timer
+
+            assert 0 <= self._ra_hop <= 0xFF
+            assert 0 <= self._ra_router_lifetime <= 0xFFFF
+            assert 0 <= self._ra_reachable_time <= 0xFFFFFFFF
+            assert 0 <= self._ra_retrans_timer <= 0xFFFFFFFF
 
         elif self._type == ICMP6_ND_NEIGHBOR_SOLICITATION:
             self._ns_reserved = 0

@@ -74,10 +74,10 @@ class Ip6Assembler:
     ) -> None:
         """Class constructor"""
 
-        assert 0x00 <= hop <= 0xFF
-        assert 0x00 <= dscp <= 0x3F
-        assert 0x00 <= ecn <= 0x03
-        assert 0x000000 <= flow <= 0xFFFFFF
+        assert 0 <= hop <= 0xFF
+        assert 0 <= dscp <= 0x3F
+        assert 0 <= ecn <= 0x03
+        assert 0 <= flow <= 0xFFFFFF
         assert carried_packet.ip6_next in {
             IP6_NEXT_HEADER_ICMP6,
             IP6_NEXT_HEADER_UDP,
