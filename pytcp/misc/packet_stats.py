@@ -202,6 +202,9 @@ class PacketStatsTx:
     tcp__flag_fin: int = 0
     tcp__send: int = 0
     tcp__unknown__drop: int = 0
+    tcp__opt_nop: int = 0
+    tcp__opt_mss: int = 0
+    tcp__opt_wscale: int = 0
 
     udp__pre_assemble: int = 0
     udp__send: int = 0

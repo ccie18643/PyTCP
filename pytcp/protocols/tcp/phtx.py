@@ -85,9 +85,12 @@ def _phtx_tcp(
     tcp_options: list[TcpOptMss | TcpOptWscale | TcpOptSackPerm | TcpOptTimestamp | TcpOptEol | TcpOptNop] = []
 
     if tcp_mss:
+        self.packet_stats_tx.tcp__opt_mss += 1
         tcp_options.append(TcpOptMss(tcp_mss))
 
     if tcp_wscale:
+        self.packet_stats_tx.tcp__opt_nop += 1
+        self.packet_stats_tx.tcp__opt_wscale += 1
         tcp_options.append(TcpOptNop())
         tcp_options.append(TcpOptWscale(tcp_wscale))
 

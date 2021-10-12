@@ -26,7 +26,7 @@
 
 
 #
-# tests/udp_phtx.py -  tests specific for UDP phtx module
+# tests/tcp_phtx.py -  tests specific for TCP phtx module
 #
 
 
@@ -483,6 +483,65 @@ class TestUdpPhtx(TestCase):
                 tcp__unknown__drop=1,
             ),
         )
+
+    def test_tcp_phtx__ip4_tcp_packet__mss(self):
+        """Test sending IPv4/TCP packet with MSS option"""
+
+        tx_status = self.packet_handler._phtx_tcp(
+            ip_src=self.mns.stack_ip4_host.address,
+            ip_dst=self.mns.host_a_ip4_address,
+            tcp_sport=1000,
+            tcp_dport=2000,
+            tcp_mss=12345,
+        )
+        self.assertEqual(tx_status, TxStatus.PASSED__ETHER__TO_TX_RING)
+        self.assertEqual(
+            self.packet_handler.packet_stats_tx,
+            PacketStatsTx(
+                tcp__pre_assemble=1,
+                tcp__opt_mss=1,
+                tcp__send=1,
+                ip4__pre_assemble=1,
+                ip4__mtu_ok__send=1,
+                ether__pre_assemble=1,
+                ether__src_unspec__fill=1,
+                ether__dst_unspec__ip4_lookup=1,
+                ether__dst_unspec__ip4_lookup__locnet__arp_cache_hit__send=1,
+            ),
+        )
+        with open(TEST_FRAME_DIR + "ip4_tcp_packet__mss.tx", "rb") as _:
+            frame_tx = _.read()
+        self.assertEqual(self.frame_tx[: len(frame_tx)], frame_tx)
+
+    def test_tcp_phtx__ip4_tcp_packet__wscale(self):
+        """Test sending IPv4/TCP packet with WSCALE option"""
+
+        tx_status = self.packet_handler._phtx_tcp(
+            ip_src=self.mns.stack_ip4_host.address,
+            ip_dst=self.mns.host_a_ip4_address,
+            tcp_sport=1000,
+            tcp_dport=2000,
+            tcp_wscale=123,
+        )
+        self.assertEqual(tx_status, TxStatus.PASSED__ETHER__TO_TX_RING)
+        self.assertEqual(
+            self.packet_handler.packet_stats_tx,
+            PacketStatsTx(
+                tcp__pre_assemble=1,
+                tcp__opt_nop=1,
+                tcp__opt_wscale=1,
+                tcp__send=1,
+                ip4__pre_assemble=1,
+                ip4__mtu_ok__send=1,
+                ether__pre_assemble=1,
+                ether__src_unspec__fill=1,
+                ether__dst_unspec__ip4_lookup=1,
+                ether__dst_unspec__ip4_lookup__locnet__arp_cache_hit__send=1,
+            ),
+        )
+        with open(TEST_FRAME_DIR + "ip4_tcp_packet__wscale.tx", "rb") as _:
+            frame_tx = _.read()
+        self.assertEqual(self.frame_tx[: len(frame_tx)], frame_tx)
 
     def test_tcp_phtx__ip6_tcp_packet(self):
         """Test sending IPv6/TCP packet"""

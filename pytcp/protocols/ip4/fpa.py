@@ -79,6 +79,10 @@ class Ip4Assembler:
     ) -> None:
         """Class constructor"""
 
+        assert 0x00 <= ttl <= 0xFF
+        assert 0x00 <= dscp <= 0x3F
+        assert 0x00 <= ecn <= 0x03
+        assert 0x0000 <= id <= 0xFFFF
         assert carried_packet.ip4_proto in {IP4_PROTO_ICMP4, IP4_PROTO_UDP, IP4_PROTO_TCP, IP4_PROTO_RAW}
 
         self._carried_packet: Icmp4Assembler | TcpAssembler | UdpAssembler | RawAssembler = carried_packet
