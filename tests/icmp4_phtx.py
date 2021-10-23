@@ -32,7 +32,14 @@
 
 from testslide import TestCase
 
-# from pytcp.misc.packet_stats import PacketStatsTx
+from pytcp.misc.packet_stats import PacketStatsTx
+from pytcp.misc.tx_status import TxStatus
+from pytcp.protocols.icmp4.ps import (
+    ICMP4_ECHO_REPLY,
+    ICMP4_ECHO_REQUEST,
+    ICMP4_UNREACHABLE,
+    ICMP4_UNREACHABLE__PORT,
+)
 from tests.mock_network import (
     MockNetworkSettings,
     patch_config,
@@ -51,3 +58,132 @@ class TestIcmp4Phtx(TestCase):
         setup_mock_packet_handler(self)
 
     # Test name format: 'test_name__test_description__optional_condition'
+
+    def test_icmp4_phtx__ip4_icmp4_echo_request(self):
+        """Test sending IPv4/ICMPv4 Echo request packet"""
+
+        tx_status = self.packet_handler._phtx_icmp4(
+            ip4_src=self.mns.stack_ip4_host.address,
+            ip4_dst=self.mns.host_a_ip4_address,
+            icmp4_type=ICMP4_ECHO_REQUEST,
+            icmp4_ec_id=12345,
+            icmp4_ec_seq=54320,
+            icmp4_ec_data=b"0123456789ABCDEF" * 20,
+        )
+        self.assertEqual(tx_status, TxStatus.PASSED__ETHER__TO_TX_RING)
+        self.assertEqual(
+            self.packet_handler.packet_stats_tx,
+            PacketStatsTx(
+                icmp4__pre_assemble=1,
+                icmp4__echo_request__send=1,
+                ip4__pre_assemble=1,
+                ip4__mtu_ok__send=1,
+                ether__pre_assemble=1,
+                ether__src_unspec__fill=1,
+                ether__dst_unspec__ip4_lookup=1,
+                ether__dst_unspec__ip4_lookup__locnet__arp_cache_hit__send=1,
+            ),
+        )
+        with open(TEST_FRAME_DIR + "ip4_icmp4_echo_request.tx", "rb") as _:
+            frame_tx = _.read()
+        self.assertEqual(self.frame_tx[: len(frame_tx)], frame_tx)
+
+    def test_icmp4_phtx__ip4_icmp4_echo_reply(self):
+        """Test sending IPv4/ICMPv4 Echo reply packet"""
+
+        tx_status = self.packet_handler._phtx_icmp4(
+            ip4_src=self.mns.stack_ip4_host.address,
+            ip4_dst=self.mns.host_a_ip4_address,
+            icmp4_type=ICMP4_ECHO_REPLY,
+            icmp4_ec_id=12345,
+            icmp4_ec_seq=54320,
+            icmp4_ec_data=b"0123456789ABCDEF" * 20,
+        )
+        self.assertEqual(tx_status, TxStatus.PASSED__ETHER__TO_TX_RING)
+        self.assertEqual(
+            self.packet_handler.packet_stats_tx,
+            PacketStatsTx(
+                icmp4__pre_assemble=1,
+                icmp4__echo_reply__send=1,
+                ip4__pre_assemble=1,
+                ip4__mtu_ok__send=1,
+                ether__pre_assemble=1,
+                ether__src_unspec__fill=1,
+                ether__dst_unspec__ip4_lookup=1,
+                ether__dst_unspec__ip4_lookup__locnet__arp_cache_hit__send=1,
+            ),
+        )
+        with open(TEST_FRAME_DIR + "ip4_icmp4_echo_reply.tx", "rb") as _:
+            frame_tx = _.read()
+        self.assertEqual(self.frame_tx[: len(frame_tx)], frame_tx)
+
+    def test_icmp4_phtx__ip4_icmp4_unreachable_port(self):
+        """Test sending IPv4/ICMPv4 unreachable port packet"""
+
+        tx_status = self.packet_handler._phtx_icmp4(
+            ip4_src=self.mns.stack_ip4_host.address,
+            ip4_dst=self.mns.host_a_ip4_address,
+            icmp4_type=ICMP4_UNREACHABLE,
+            icmp4_code=ICMP4_UNREACHABLE__PORT,
+            icmp4_un_data=b"0123456789ABCDEF" * 100,
+        )
+        self.assertEqual(tx_status, TxStatus.PASSED__ETHER__TO_TX_RING)
+        self.assertEqual(
+            self.packet_handler.packet_stats_tx,
+            PacketStatsTx(
+                icmp4__pre_assemble=1,
+                icmp4__unreachable_port__send=1,
+                ip4__pre_assemble=1,
+                ip4__mtu_ok__send=1,
+                ether__pre_assemble=1,
+                ether__src_unspec__fill=1,
+                ether__dst_unspec__ip4_lookup=1,
+                ether__dst_unspec__ip4_lookup__locnet__arp_cache_hit__send=1,
+            ),
+        )
+        with open(TEST_FRAME_DIR + "ip4_icmp4_unreachable_port.tx", "rb") as _:
+            frame_tx = _.read()
+        self.assertEqual(self.frame_tx[: len(frame_tx)], frame_tx)
+
+    def test_icmp4_phtx__ip4_icmp4__invalid_type(self):
+        """Test sending IPv4/ICMPv4 packet with invalid type"""
+
+        with self.assertRaises(AssertionError):
+            self.packet_handler._phtx_icmp4(
+                ip4_src=self.mns.stack_ip4_host.address,
+                ip4_dst=self.mns.host_a_ip4_address,
+                icmp4_type=255,
+            )
+
+    def test_icmp4_phtx__ip4_icmp4_echo_request__invalid_code(self):
+        """Test sending IPv4/ICMPv4 Echo Request with invalid code"""
+
+        with self.assertRaises(AssertionError):
+            self.packet_handler._phtx_icmp4(
+                ip4_src=self.mns.stack_ip4_host.address,
+                ip4_dst=self.mns.host_a_ip4_address,
+                icmp4_type=ICMP4_ECHO_REQUEST,
+                icmp4_code=255,
+            )
+
+    def test_icmp4_phtx__ip4_icmp4_echo_reply__invalid_code(self):
+        """Test sending IPv4/ICMPv4 Echo Reply with invalid code"""
+
+        with self.assertRaises(AssertionError):
+            self.packet_handler._phtx_icmp4(
+                ip4_src=self.mns.stack_ip4_host.address,
+                ip4_dst=self.mns.host_a_ip4_address,
+                icmp4_type=ICMP4_ECHO_REPLY,
+                icmp4_code=255,
+            )
+
+    def test_icmp4_phtx__ip4_icmp4_unreachable__invalid_code(self):
+        """Test sending IPv4/ICMPv4 Unreachable with invalid code"""
+
+        with self.assertRaises(AssertionError):
+            self.packet_handler._phtx_icmp4(
+                ip4_src=self.mns.stack_ip4_host.address,
+                ip4_dst=self.mns.host_a_ip4_address,
+                icmp4_type=ICMP4_UNREACHABLE,
+                icmp4_code=255,
+            )

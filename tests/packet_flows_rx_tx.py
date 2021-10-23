@@ -187,7 +187,7 @@ class TestPacketHandler(TestCase):
             self.packet_handler.packet_stats_tx,
             PacketStatsTx(
                 icmp4__pre_assemble=1,
-                icmp4__unreachable__send=1,
+                icmp4__unreachable_port__send=1,
                 ip4__pre_assemble=1,
                 ip4__mtu_ok__send=1,
                 ether__pre_assemble=1,

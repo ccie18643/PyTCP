@@ -179,7 +179,8 @@ class PacketStatsTx:
     icmp4__pre_assemble: int = 0
     icmp4__echo_reply__send: int = 0
     icmp4__echo_request__send: int = 0
-    icmp4__unreachable__send: int = 0
+    icmp4__unreachable_port__send: int = 0
+    icmp4__unknown__drop: int = 0
 
     icmp6__pre_assemble: int = 0
     icmp6__echo_reply__send: int = 0
