@@ -185,11 +185,13 @@ class PacketStatsTx:
     icmp6__pre_assemble: int = 0
     icmp6__echo_reply__send: int = 0
     icmp6__echo_request__send: int = 0
-    icmp6__unreachable__send: int = 0
+    icmp6__unreachable_port__send: int = 0
     icmp6__nd_router_solicitation__send: int = 0
     icmp6__nd_router_advertisement__send: int = 0
     icmp6__nd_neighbor_solicitation__send: int = 0
     icmp6__nd_neighbor_advertisement__send: int = 0
+    icmp6__mld2_report__send: int = 0
+    icmp6__unknown__drop: int = 0
 
     tcp__pre_assemble: int = 0
     tcp__flag_ns: int = 0

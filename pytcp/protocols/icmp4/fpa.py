@@ -65,8 +65,6 @@ class Icmp4Assembler:
     ) -> None:
         """Class constructor"""
 
-        assert type in {ICMP4_ECHO_REQUEST, ICMP4_UNREACHABLE, ICMP4_ECHO_REPLY}
-
         self._tracker: Tracker = Tracker("TX", echo_tracker)
         self._type: int = type
         self._code: int = code

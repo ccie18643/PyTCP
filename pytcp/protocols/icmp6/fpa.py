@@ -58,6 +58,7 @@ from protocols.icmp6.ps import (
     ICMP6_ND_ROUTER_SOLICITATION,
     ICMP6_ND_ROUTER_SOLICITATION_LEN,
     ICMP6_UNREACHABLE,
+    ICMP6_UNREACHABLE__PORT,
     ICMP6_UNREACHABLE_LEN,
 )
 from protocols.ip6.ps import IP6_NEXT_HEADER_ICMP6
@@ -98,21 +99,6 @@ class Icmp6Assembler:
     ) -> None:
         """Class constructor"""
 
-        assert type in {
-            ICMP6_ECHO_REPLY,
-            ICMP6_ECHO_REQUEST,
-            ICMP6_MLD2_REPORT,
-            ICMP6_ND_NEIGHBOR_ADVERTISEMENT,
-            ICMP6_ND_NEIGHBOR_SOLICITATION,
-            ICMP6_ND_OPT_PI,
-            ICMP6_ND_OPT_SLLA,
-            ICMP6_ND_OPT_TLLA,
-            ICMP6_ND_ROUTER_ADVERTISEMENT,
-            ICMP6_ND_ROUTER_SOLICITATION,
-            ICMP6_UNREACHABLE,
-        }
-        assert 0 <= code <= 0xFF
-
         self._tracker = Tracker("TX", echo_tracker)
 
         self._type = type
@@ -143,11 +129,13 @@ class Icmp6Assembler:
         self._mlr2_multicast_address_record: list[Icmp6MulticastAddressRecord]
         self._mlr2_number_of_multicast_address_records: int
 
-        if self._type == ICMP6_UNREACHABLE:
+        if self._type == ICMP6_UNREACHABLE and self._code == ICMP6_UNREACHABLE__PORT:
             self._un_reserved = 0
             self._un_data = b"" if un_data is None else un_data[:520]
 
-        elif self._type == ICMP6_ECHO_REQUEST:
+            return
+
+        if self._type == ICMP6_ECHO_REQUEST and self._code == 0:
             self._ec_id = 0 if ec_id is None else ec_id
             self._ec_seq = 0 if ec_seq is None else ec_seq
             self._ec_data = b"" if ec_data is None else ec_data
@@ -155,7 +143,9 @@ class Icmp6Assembler:
             assert 0 <= self._ec_id <= 0xFFFF
             assert 0 <= self._ec_seq <= 0xFFFF
 
-        elif self._type == ICMP6_ECHO_REPLY:
+            return
+
+        if self._type == ICMP6_ECHO_REPLY and self._code == 0:
             self._ec_id = 0 if ec_id is None else ec_id
             self._ec_seq = 0 if ec_seq is None else ec_seq
             self._ec_data = b"" if ec_data is None else ec_data
@@ -163,10 +153,14 @@ class Icmp6Assembler:
             assert 0 <= self._ec_id <= 0xFFFF
             assert 0 <= self._ec_seq <= 0xFFFF
 
-        elif self._type == ICMP6_ND_ROUTER_SOLICITATION:
+            return
+
+        if self._type == ICMP6_ND_ROUTER_SOLICITATION and self._code == 0:
             self._rs_reserved = 0
 
-        elif self._type == ICMP6_ND_ROUTER_ADVERTISEMENT:
+            return
+
+        if self._type == ICMP6_ND_ROUTER_ADVERTISEMENT and self._code == 0:
             self._ra_hop = 0 if ra_hop is None else ra_hop
             self._ra_flag_m = False if ra_flag_m is None else ra_flag_m
             self._ra_flag_o = False if ra_flag_o is None else ra_flag_o
@@ -179,21 +173,31 @@ class Icmp6Assembler:
             assert 0 <= self._ra_reachable_time <= 0xFFFFFFFF
             assert 0 <= self._ra_retrans_timer <= 0xFFFFFFFF
 
-        elif self._type == ICMP6_ND_NEIGHBOR_SOLICITATION:
+            return
+
+        if self._type == ICMP6_ND_NEIGHBOR_SOLICITATION and self._code == 0:
             self._ns_reserved = 0
             self._ns_target_address = Ip6Address(0) if ns_target_address is None else ns_target_address
 
-        elif self._type == ICMP6_ND_NEIGHBOR_ADVERTISEMENT:
+            return
+
+        if self._type == ICMP6_ND_NEIGHBOR_ADVERTISEMENT and self._code == 0:
             self._na_flag_r = False if na_flag_r is None else na_flag_r
             self._na_flag_s = False if na_flag_s is None else na_flag_s
             self._na_flag_o = False if na_flag_o is None else na_flag_o
             self._na_reserved = 0
             self._na_target_address = Ip6Address(0) if na_target_address is None else na_target_address
 
-        elif self._type == ICMP6_MLD2_REPORT:
+            return
+
+        if self._type == ICMP6_MLD2_REPORT and self._code == 0:
             self._mlr2_reserved = 0
             self._mlr2_multicast_address_record = [] if mlr2_multicast_address_record is None else mlr2_multicast_address_record
             self._mlr2_number_of_multicast_address_records = len(self._mlr2_multicast_address_record)
+
+            return
+
+        assert False, "Unknown ICMPv6 Type/Code"
 
     def __len__(self) -> int:
         """Length of the packet"""

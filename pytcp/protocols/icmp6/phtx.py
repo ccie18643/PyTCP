@@ -44,11 +44,13 @@ from protocols.icmp6.fpa import (
 from protocols.icmp6.ps import (
     ICMP6_ECHO_REPLY,
     ICMP6_ECHO_REQUEST,
+    ICMP6_MLD2_REPORT,
     ICMP6_ND_NEIGHBOR_ADVERTISEMENT,
     ICMP6_ND_NEIGHBOR_SOLICITATION,
     ICMP6_ND_ROUTER_ADVERTISEMENT,
     ICMP6_ND_ROUTER_SOLICITATION,
     ICMP6_UNREACHABLE,
+    ICMP6_UNREACHABLE__PORT,
 )
 
 if TYPE_CHECKING:
@@ -98,28 +100,41 @@ def _phtx_icmp6(
         echo_tracker=echo_tracker,
     )
 
-    if icmp6_type == ICMP6_ECHO_REPLY:
-        self.packet_stats_tx.icmp6__echo_reply__send += 1
-
-    if icmp6_type == ICMP6_ECHO_REQUEST:
-        self.packet_stats_tx.icmp6__echo_request__send += 1
-
-    if icmp6_type == ICMP6_UNREACHABLE:
-        self.packet_stats_tx.icmp6__unreachable__send += 1
-
-    if icmp6_type == ICMP6_ND_ROUTER_SOLICITATION:
-        self.packet_stats_tx.icmp6__nd_router_solicitation__send += 1
-
-    if icmp6_type == ICMP6_ND_ROUTER_ADVERTISEMENT:
-        self.packet_stats_tx.icmp6__nd_router_advertisement__send += 1
-
-    if icmp6_type == ICMP6_ND_NEIGHBOR_SOLICITATION:
-        self.packet_stats_tx.icmp6__nd_neighbor_solicitation__send += 1
-
-    if icmp6_type == ICMP6_ND_NEIGHBOR_ADVERTISEMENT:
-        self.packet_stats_tx.icmp6__nd_neighbor_advertisement__send += 1
-
     if __debug__:
         log("icmp6", f"{icmp6_packet_tx.tracker} - {icmp6_packet_tx}")
 
-    return self._phtx_ip6(ip6_src=ip6_src, ip6_dst=ip6_dst, ip6_hop=ip6_hop, carried_packet=icmp6_packet_tx)
+    if icmp6_type == ICMP6_ECHO_REPLY and icmp6_code == 0:
+        self.packet_stats_tx.icmp6__echo_reply__send += 1
+        return self._phtx_ip6(ip6_src=ip6_src, ip6_dst=ip6_dst, ip6_hop=ip6_hop, carried_packet=icmp6_packet_tx)
+
+    if icmp6_type == ICMP6_ECHO_REQUEST and icmp6_code == 0:
+        self.packet_stats_tx.icmp6__echo_request__send += 1
+        return self._phtx_ip6(ip6_src=ip6_src, ip6_dst=ip6_dst, ip6_hop=ip6_hop, carried_packet=icmp6_packet_tx)
+
+    if icmp6_type == ICMP6_UNREACHABLE and icmp6_code == ICMP6_UNREACHABLE__PORT:
+        self.packet_stats_tx.icmp6__unreachable_port__send += 1
+        return self._phtx_ip6(ip6_src=ip6_src, ip6_dst=ip6_dst, ip6_hop=ip6_hop, carried_packet=icmp6_packet_tx)
+
+    if icmp6_type == ICMP6_ND_ROUTER_SOLICITATION and icmp6_code == 0:
+        self.packet_stats_tx.icmp6__nd_router_solicitation__send += 1
+        return self._phtx_ip6(ip6_src=ip6_src, ip6_dst=ip6_dst, ip6_hop=ip6_hop, carried_packet=icmp6_packet_tx)
+
+    if icmp6_type == ICMP6_ND_ROUTER_ADVERTISEMENT and icmp6_code == 0:
+        self.packet_stats_tx.icmp6__nd_router_advertisement__send += 1
+        return self._phtx_ip6(ip6_src=ip6_src, ip6_dst=ip6_dst, ip6_hop=ip6_hop, carried_packet=icmp6_packet_tx)
+
+    if icmp6_type == ICMP6_ND_NEIGHBOR_SOLICITATION and icmp6_code == 0:
+        self.packet_stats_tx.icmp6__nd_neighbor_solicitation__send += 1
+        return self._phtx_ip6(ip6_src=ip6_src, ip6_dst=ip6_dst, ip6_hop=ip6_hop, carried_packet=icmp6_packet_tx)
+
+    if icmp6_type == ICMP6_ND_NEIGHBOR_ADVERTISEMENT and icmp6_code == 0:
+        self.packet_stats_tx.icmp6__nd_neighbor_advertisement__send += 1
+        return self._phtx_ip6(ip6_src=ip6_src, ip6_dst=ip6_dst, ip6_hop=ip6_hop, carried_packet=icmp6_packet_tx)
+
+    if icmp6_type == ICMP6_MLD2_REPORT and icmp6_code == 0:
+        self.packet_stats_tx.icmp6__mld2_report__send += 1
+        return self._phtx_ip6(ip6_src=ip6_src, ip6_dst=ip6_dst, ip6_hop=ip6_hop, carried_packet=icmp6_packet_tx)
+
+    # This code will never be executed in debug mode due to assertions present in Packet Assembler
+    self.packet_stats_tx.icmp4__unknown__drop += 1
+    return TxStatus.DROPED__ICMP4__UNKNOWN

@@ -422,7 +422,7 @@ class TestPacketHandler(TestCase):
             self.packet_handler.packet_stats_tx,
             PacketStatsTx(
                 icmp6__pre_assemble=1,
-                icmp6__unreachable__send=1,
+                icmp6__unreachable_port__send=1,
                 ip6__pre_assemble=1,
                 ip6__mtu_ok__send=1,
                 ether__pre_assemble=1,

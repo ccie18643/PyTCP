@@ -106,7 +106,7 @@ IP6_FRAG_FLOW_TIMEOUT = 5
 # Link local addresses should have default gateway set to 'None'
 IP6_HOST_CANDIDATE: list[tuple[str, str | None]] = [
     ("FE80::7/64", None),
-    # ("2007::7/64", "FE80::1"),
+    ("2007::7/64", "FE80::1"),
 ]
 
 # IPv4 DHCP based address configuration

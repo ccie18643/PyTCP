@@ -32,7 +32,14 @@
 
 from testslide import TestCase
 
-# from pytcp.misc.packet_stats import PacketStatsTx
+from pytcp.misc.packet_stats import PacketStatsTx
+from pytcp.misc.tx_status import TxStatus
+from pytcp.protocols.icmp6.ps import (
+    ICMP6_ECHO_REPLY,
+    ICMP6_ECHO_REQUEST,
+    ICMP6_UNREACHABLE,
+    ICMP6_UNREACHABLE__PORT,
+)
 from tests.mock_network import (
     MockNetworkSettings,
     patch_config,
@@ -51,3 +58,132 @@ class TestIcmp6Phtx(TestCase):
         setup_mock_packet_handler(self)
 
     # Test name format: 'test_name__test_description__optional_condition'
+
+    def test_icmp6_phtx__ip6_icmp6_echo_request(self):
+        """Test sending IPv6/ICMPv6 Echo request packet"""
+
+        tx_status = self.packet_handler._phtx_icmp6(
+            ip6_src=self.mns.stack_ip6_host.address,
+            ip6_dst=self.mns.host_a_ip6_address,
+            icmp6_type=ICMP6_ECHO_REQUEST,
+            icmp6_ec_id=12345,
+            icmp6_ec_seq=54320,
+            icmp6_ec_data=b"0123456789ABCDEF" * 20,
+        )
+        self.assertEqual(tx_status, TxStatus.PASSED__ETHER__TO_TX_RING)
+        self.assertEqual(
+            self.packet_handler.packet_stats_tx,
+            PacketStatsTx(
+                icmp6__pre_assemble=1,
+                icmp6__echo_request__send=1,
+                ip6__pre_assemble=1,
+                ip6__mtu_ok__send=1,
+                ether__pre_assemble=1,
+                ether__src_unspec__fill=1,
+                ether__dst_unspec__ip6_lookup=1,
+                ether__dst_unspec__ip6_lookup__locnet__nd_cache_hit__send=1,
+            ),
+        )
+        with open(TEST_FRAME_DIR + "ip6_icmp6_echo_request.tx", "rb") as _:
+            frame_tx = _.read()
+        self.assertEqual(self.frame_tx[: len(frame_tx)], frame_tx)
+
+    def test_icmp6_phtx__ip6_icmp6_echo_reply(self):
+        """Test sending IPv6/ICMPv6 Echo reply packet"""
+
+        tx_status = self.packet_handler._phtx_icmp6(
+            ip6_src=self.mns.stack_ip6_host.address,
+            ip6_dst=self.mns.host_a_ip6_address,
+            icmp6_type=ICMP6_ECHO_REPLY,
+            icmp6_ec_id=12345,
+            icmp6_ec_seq=54320,
+            icmp6_ec_data=b"0123456789ABCDEF" * 20,
+        )
+        self.assertEqual(tx_status, TxStatus.PASSED__ETHER__TO_TX_RING)
+        self.assertEqual(
+            self.packet_handler.packet_stats_tx,
+            PacketStatsTx(
+                icmp6__pre_assemble=1,
+                icmp6__echo_reply__send=1,
+                ip6__pre_assemble=1,
+                ip6__mtu_ok__send=1,
+                ether__pre_assemble=1,
+                ether__src_unspec__fill=1,
+                ether__dst_unspec__ip6_lookup=1,
+                ether__dst_unspec__ip6_lookup__locnet__nd_cache_hit__send=1,
+            ),
+        )
+        with open(TEST_FRAME_DIR + "ip6_icmp6_echo_reply.tx", "rb") as _:
+            frame_tx = _.read()
+        self.assertEqual(self.frame_tx[: len(frame_tx)], frame_tx)
+
+    def test_icmp6_phtx__ip6_icmp6_unreachable_port(self):
+        """Test sending IPv6/ICMPv6 unreachable port packet"""
+
+        tx_status = self.packet_handler._phtx_icmp6(
+            ip6_src=self.mns.stack_ip6_host.address,
+            ip6_dst=self.mns.host_a_ip6_address,
+            icmp6_type=ICMP6_UNREACHABLE,
+            icmp6_code=ICMP6_UNREACHABLE__PORT,
+            icmp6_un_data=b"0123456789ABCDEF" * 100,
+        )
+        self.assertEqual(tx_status, TxStatus.PASSED__ETHER__TO_TX_RING)
+        self.assertEqual(
+            self.packet_handler.packet_stats_tx,
+            PacketStatsTx(
+                icmp6__pre_assemble=1,
+                icmp6__unreachable_port__send=1,
+                ip6__pre_assemble=1,
+                ip6__mtu_ok__send=1,
+                ether__pre_assemble=1,
+                ether__src_unspec__fill=1,
+                ether__dst_unspec__ip6_lookup=1,
+                ether__dst_unspec__ip6_lookup__locnet__nd_cache_hit__send=1,
+            ),
+        )
+        with open(TEST_FRAME_DIR + "ip6_icmp6_unreachable_port.tx", "rb") as _:
+            frame_tx = _.read()
+        self.assertEqual(self.frame_tx[: len(frame_tx)], frame_tx)
+
+    def test_icmp6_phtx__ip6_icmp6__invalid_type(self):
+        """Test sending IPv6/ICMPv6 packet with invalid type"""
+
+        with self.assertRaises(AssertionError):
+            self.packet_handler._phtx_icmp6(
+                ip6_src=self.mns.stack_ip6_host.address,
+                ip6_dst=self.mns.host_a_ip6_address,
+                icmp6_type=255,
+            )
+
+    def test_icmp6_phtx__ip6_icmp6_echo_request__invalid_code(self):
+        """Test sending IPv6/ICMPv6 Echo Request with invalid code"""
+
+        with self.assertRaises(AssertionError):
+            self.packet_handler._phtx_icmp6(
+                ip6_src=self.mns.stack_ip6_host.address,
+                ip6_dst=self.mns.host_a_ip6_address,
+                icmp6_type=ICMP6_ECHO_REQUEST,
+                icmp6_code=255,
+            )
+
+    def test_icmp6_phtx__ip6_icmp6_echo_reply__invalid_code(self):
+        """Test sending IPv6/ICMPv6 Echo Reply with invalid code"""
+
+        with self.assertRaises(AssertionError):
+            self.packet_handler._phtx_icmp6(
+                ip6_src=self.mns.stack_ip6_host.address,
+                ip6_dst=self.mns.host_a_ip6_address,
+                icmp6_type=ICMP6_ECHO_REPLY,
+                icmp6_code=255,
+            )
+
+    def test_icmp6_phtx__ip6_icmp6_unreachable__invalid_code(self):
+        """Test sending IPv6/ICMPv6 Unreachable with invalid code"""
+
+        with self.assertRaises(AssertionError):
+            self.packet_handler._phtx_icmp6(
+                ip6_src=self.mns.stack_ip6_host.address,
+                ip6_dst=self.mns.host_a_ip6_address,
+                icmp6_type=ICMP6_UNREACHABLE,
+                icmp6_code=255,
+            )
