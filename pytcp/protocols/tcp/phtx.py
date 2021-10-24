@@ -79,9 +79,6 @@ def _phtx_tcp(
 
     self.packet_stats_tx.tcp__pre_assemble += 1
 
-    assert 0 < tcp_sport < 65536
-    assert 0 < tcp_dport < 65536
-
     tcp_options: list[TcpOptMss | TcpOptWscale | TcpOptSackPerm | TcpOptTimestamp | TcpOptEol | TcpOptNop] = []
 
     if tcp_mss:

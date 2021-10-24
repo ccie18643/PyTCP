@@ -64,7 +64,7 @@ class EtherAssembler:
     ) -> None:
         """Class constructor"""
 
-        assert carried_packet.ether_type in {ETHER_TYPE_ARP, ETHER_TYPE_IP4, ETHER_TYPE_IP6, ETHER_TYPE_RAW}
+        assert carried_packet.ether_type in {ETHER_TYPE_ARP, ETHER_TYPE_IP4, ETHER_TYPE_IP6, ETHER_TYPE_RAW}, f"{carried_packet.ether_type=}"
 
         self._carried_packet: ArpAssembler | Ip4Assembler | Ip6Assembler | RawAssembler = carried_packet
         self._tracker: Tracker = self._carried_packet.tracker

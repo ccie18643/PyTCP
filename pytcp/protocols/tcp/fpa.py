@@ -84,12 +84,12 @@ class TcpAssembler:
     ) -> None:
         """Class constructor"""
 
-        assert 0 <= sport <= 0xFFFF
-        assert 0 <= dport <= 0xFFFF
-        assert 0 <= seq <= 0xFFFFFFFF
-        assert 0 <= ack <= 0xFFFFFFFF
-        assert 0 <= win <= 0xFFFF
-        assert 0 <= urp <= 0xFFFF
+        assert 0 < sport < 0xFFFF, f"{sport=}"
+        assert 0 < dport < 0xFFFF, f"{dport=}"
+        assert 0 <= seq <= 0xFFFFFFFF, f"{seq=}"
+        assert 0 <= ack <= 0xFFFFFFFF, f"{ack=}"
+        assert 0 <= win <= 0xFFFF, f"{win=}"
+        assert 0 <= urp <= 0xFFFF, f"{urp=}"
 
         self._tracker: Tracker = Tracker("TX", echo_tracker)
         self._sport: int = sport
@@ -225,7 +225,7 @@ class TcpOptMss:
     """TCP option - Maximum Segment Size (2)"""
 
     def __init__(self, mss: int) -> None:
-        assert 0 <= mss <= 0xFFFF
+        assert 0 <= mss <= 0xFFFF, f"{mss=}"
         self._mss = mss
 
     def __str__(self) -> str:
@@ -247,7 +247,7 @@ class TcpOptWscale:
     """TCP option - Window Scale (3)"""
 
     def __init__(self, wscale: int) -> None:
-        assert 0 <= wscale <= 0xFF
+        assert 0 <= wscale <= 0xFF, f"{wscale=}"
         self._wscale = wscale
 
     def __str__(self) -> str:
@@ -287,8 +287,8 @@ class TcpOptTimestamp:
     """TCP option - Timestamp (8)"""
 
     def __init__(self, tsval: int, tsecr: int) -> None:
-        assert 0 <= tsval <= 0xFFFFFFFF
-        assert 0 <= tsecr <= 0xFFFFFFFF
+        assert 0 <= tsval <= 0xFFFFFFFF, f"{tsval=}"
+        assert 0 <= tsecr <= 0xFFFFFFFF, f"{tsecr=}"
         self._tsval = tsval
         self._tsecr = tsecr
 

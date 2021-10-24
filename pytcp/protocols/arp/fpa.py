@@ -57,6 +57,8 @@ class ArpAssembler:
     ) -> None:
         """Class constructor"""
 
+        assert oper in (ARP_OP_REQUEST, ARP_OP_REPLY), f"{oper=}"
+
         self._tracker = Tracker("TX", echo_tracker)
 
         self._hrtype: int = 1

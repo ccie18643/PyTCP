@@ -56,9 +56,6 @@ def _phtx_udp(
 
     self.packet_stats_tx.udp__pre_assemble += 1
 
-    assert 0 < udp_sport < 65536, f"{udp_sport=}"
-    assert 0 < udp_dport < 65536, f"{udp_dport=}"
-
     udp_packet_tx = UdpAssembler(sport=udp_sport, dport=udp_dport, data=udp_data, echo_tracker=echo_tracker)
 
     if __debug__:

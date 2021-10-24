@@ -49,8 +49,8 @@ class UdpAssembler:
     def __init__(self, *, sport: int, dport: int, data: bytes | None = None, echo_tracker: Tracker | None = None) -> None:
         """Class constructor"""
 
-        assert 0 <= sport <= 0xFFFF
-        assert 0 <= dport <= 0xFFFF
+        assert 0 < sport < 0xFFFF, f"{sport=}"
+        assert 0 < dport < 0xFFFF, f"{dport=}"
 
         self._tracker: Tracker = Tracker("TX", echo_tracker)
         self._sport: int = sport
