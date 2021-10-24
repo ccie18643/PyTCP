@@ -29,15 +29,21 @@
 # tests/ether_fpa.py -  tests specific for Ethernet phtx module
 #
 
-from testslide import TestCase, StrictMock
+from testslide import StrictMock, TestCase
 
-from pytcp.protocols.ether.fpa import EtherAssembler
+from pytcp.lib.tracker import Tracker
 from pytcp.protocols.arp.fpa import ArpAssembler
+from pytcp.protocols.ether.fpa import EtherAssembler
+from pytcp.protocols.ether.ps import (
+    ETHER_TYPE_ARP,
+    ETHER_TYPE_IP4,
+    ETHER_TYPE_IP6,
+    ETHER_TYPE_RAW,
+)
 from pytcp.protocols.ip4.fpa import Ip4Assembler
 from pytcp.protocols.ip6.fpa import Ip6Assembler
 from pytcp.protocols.raw.fpa import RawAssembler
-from pytcp.protocols.ether.ps import ETHER_TYPE_ARP, ETHER_TYPE_IP4, ETHER_TYPE_IP6, ETHER_TYPE_RAW
-from pytcp.lib.tracker import Tracker
+
 
 class TestEtherAssembler(TestCase):
     def setUp(self):
@@ -62,7 +68,7 @@ class TestEtherAssembler(TestCase):
     def test_ether_fpa__ethertype_ip6(self):
         """Test assertion for carried packet IPv6 ether type"""
 
-        carried_packet_mock = StrictMock(Ip4Assembler)
+        carried_packet_mock = StrictMock(Ip6Assembler)
         carried_packet_mock.ether_type = ETHER_TYPE_IP6
         carried_packet_mock.tracker = StrictMock(Tracker)
         EtherAssembler(carried_packet=carried_packet_mock)
@@ -70,7 +76,7 @@ class TestEtherAssembler(TestCase):
     def test_ether_fpa__ethertype_raw(self):
         """Test assertion for carried packet IPv4 ether type"""
 
-        carried_packet_mock = StrictMock(Ip4Assembler)
+        carried_packet_mock = StrictMock(RawAssembler)
         carried_packet_mock.ether_type = ETHER_TYPE_RAW
         carried_packet_mock.tracker = StrictMock(Tracker)
         EtherAssembler(carried_packet=carried_packet_mock)
@@ -83,4 +89,3 @@ class TestEtherAssembler(TestCase):
             carried_packet_mock.ether_type = -1
             carried_packet_mock.tracker = StrictMock(Tracker)
             EtherAssembler(carried_packet=carried_packet_mock)
-
