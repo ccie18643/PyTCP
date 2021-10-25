@@ -49,7 +49,7 @@ class RawAssembler:
     def __init__(self, *, data: bytes | None = None, echo_tracker: Tracker | None = None) -> None:
         """Class constructor"""
 
-        self._tracker: Tracker = Tracker("TX", echo_tracker)
+        self._tracker: Tracker = Tracker(prefix="TX", echo_tracker=echo_tracker)
         self._data: bytes = b"" if data is None else data
         self._plen: int = len(self._data)
 

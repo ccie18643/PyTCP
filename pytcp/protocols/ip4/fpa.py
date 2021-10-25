@@ -219,7 +219,7 @@ class Ip4FragAssembler:
 
         assert proto in {IP4_PROTO_ICMP4, IP4_PROTO_UDP, IP4_PROTO_TCP, IP4_PROTO_RAW}
 
-        self._tracker: Tracker = Tracker("TX")
+        self._tracker: Tracker = Tracker(prefix="TX")
         self._ver: int = 4
         self._dscp: int = dscp
         self._ecn: int = ecn

@@ -91,7 +91,7 @@ class TcpAssembler:
         assert 0 <= win <= 0xFFFF, f"{win=}"
         assert 0 <= urp <= 0xFFFF, f"{urp=}"
 
-        self._tracker: Tracker = Tracker("TX", echo_tracker)
+        self._tracker: Tracker = Tracker(prefix="TX", echo_tracker=echo_tracker)
         self._sport: int = sport
         self._dport: int = dport
         self._seq: int = seq

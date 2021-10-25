@@ -99,7 +99,7 @@ class Icmp6Assembler:
     ) -> None:
         """Class constructor"""
 
-        self._tracker = Tracker("TX", echo_tracker)
+        self._tracker = Tracker(prefix="TX", echo_tracker=echo_tracker)
 
         self._type = type
         self._code = code

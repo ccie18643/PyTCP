@@ -65,7 +65,7 @@ class Ip6ExtFragAssembler:
 
         assert next in {IP6_NEXT_HEADER_ICMP6, IP6_NEXT_HEADER_UDP, IP6_NEXT_HEADER_TCP, IP6_NEXT_HEADER_RAW}
 
-        self._tracker: Tracker = Tracker("TX")
+        self._tracker: Tracker = Tracker(prefix="TX")
         self._next: int = next
         self._offset: int = offset
         self._flag_mf: bool = flag_mf

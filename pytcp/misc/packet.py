@@ -54,7 +54,7 @@ class PacketRx:
         """Class constructor"""
 
         self.frame: memoryview = memoryview(frame)
-        self.tracker: Tracker = Tracker("RX")
+        self.tracker: Tracker = Tracker(prefix="RX")
         self.parse_failed: str = ""
 
         self.ether: EtherParser

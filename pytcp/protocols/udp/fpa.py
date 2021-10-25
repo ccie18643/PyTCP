@@ -52,7 +52,7 @@ class UdpAssembler:
         assert 0 < sport < 0xFFFF, f"{sport=}"
         assert 0 < dport < 0xFFFF, f"{dport=}"
 
-        self._tracker: Tracker = Tracker("TX", echo_tracker)
+        self._tracker: Tracker = Tracker(prefix="TX", echo_tracker=echo_tracker)
         self._sport: int = sport
         self._dport: int = dport
         self._data: bytes = b"" if data is None else data

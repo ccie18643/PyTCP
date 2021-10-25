@@ -40,12 +40,16 @@ class Tracker:
     serial_rx: int = 0
     serial_tx: int = 0
 
-    def __init__(self, prefix: str, echo_tracker: Tracker | None = None) -> None:
+    def __init__(self, *, prefix: str, echo_tracker: Tracker | None = None, serial: str | None = None) -> None:
         """Class constructor"""
 
         self._echo_tracker: Tracker | None = echo_tracker
         self._timestamp: float
         self._serial: str
+
+        if serial:
+            self._serial = serial
+            return
 
         assert prefix in {"RX", "TX"}
 
@@ -70,6 +74,13 @@ class Tracker:
             return self._serial + " " + str(self._echo_tracker)
 
         return self._serial
+
+    def __repr__(self) -> str:
+        """Class representation"""
+
+        if self._echo_tracker is None:
+            return f"Tracker(serial='{self._serial}')"
+        return f"Tracker(serial='{self._serial}', echo_tracker={self._echo_tracker})"
 
     @property
     def timestamp(self) -> float:

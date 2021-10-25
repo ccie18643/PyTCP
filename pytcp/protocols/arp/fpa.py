@@ -48,10 +48,10 @@ class ArpAssembler:
     def __init__(
         self,
         *,
-        sha: MacAddress,
-        spa: Ip4Address,
-        tpa: Ip4Address,
+        sha: MacAddress = MacAddress(0),
+        spa: Ip4Address = Ip4Address(0),
         tha: MacAddress = MacAddress(0),
+        tpa: Ip4Address = Ip4Address(0),
         oper: int = ARP_OP_REQUEST,
         echo_tracker: Tracker | None = None,
     ) -> None:
@@ -59,7 +59,7 @@ class ArpAssembler:
 
         assert oper in (ARP_OP_REQUEST, ARP_OP_REPLY), f"{oper=}"
 
-        self._tracker = Tracker("TX", echo_tracker)
+        self._tracker = Tracker(prefix="TX", echo_tracker=echo_tracker)
 
         self._hrtype: int = 1
         self._prtype: int = 0x0800

@@ -26,7 +26,7 @@
 
 
 #
-# tests/ether_fpa.py -  tests specific for Ethernet phtx module
+# tests/ether_fpa.py -  tests specific for Ethernet fpa module
 #
 
 from testslide import StrictMock, TestCase
@@ -234,7 +234,7 @@ class TestEtherAssembler(TestCase):
             carried_packet=carried_packet_mock,
         )
 
-        frame = memoryview(bytearray(14))
+        frame = memoryview(bytearray(ETHER_HEADER_LEN))
         packet.assemble(frame)
 
         self.assertEqual(frame, b'fw\x88\x99\xaa\xbb\x11"3DUf\xff\xff')
