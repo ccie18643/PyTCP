@@ -80,7 +80,7 @@ class EtherAssembler:
     def __str__(self) -> str:
         """Packet log string"""
 
-        return f"ETHER {self._src} > {self._dst}, 0x{self._type:0>4x} ({ETHER_TYPE_TABLE.get(self._type, '???')})"
+        return f"ETHER {self._src} > {self._dst}, 0x{self._type:0>4x} ({ETHER_TYPE_TABLE.get(self._type, '???')}), plen {len(self)}"
 
     @property
     def tracker(self) -> Tracker:
