@@ -43,13 +43,13 @@ from protocols.ether.ps import (
     ETHER_TYPE_RAW,
     ETHER_TYPE_TABLE,
 )
+from protocols.raw.fpa import RawAssembler
 
 if TYPE_CHECKING:
     from lib.tracker import Tracker
     from protocols.arp.fpa import ArpAssembler
     from protocols.ip4.fpa import Ip4Assembler
     from protocols.ip6.fpa import Ip6Assembler
-    from protocols.raw.fpa import RawAssembler
 
 
 class EtherAssembler:
@@ -60,7 +60,7 @@ class EtherAssembler:
         *,
         src: MacAddress = MacAddress(0),
         dst: MacAddress = MacAddress(0),
-        carried_packet: ArpAssembler | Ip4Assembler | Ip6Assembler | RawAssembler,
+        carried_packet: ArpAssembler | Ip4Assembler | Ip6Assembler | RawAssembler = RawAssembler(),
     ) -> None:
         """Class constructor"""
 

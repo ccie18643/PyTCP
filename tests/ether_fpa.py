@@ -35,13 +35,7 @@ from pytcp.lib.mac_address import MacAddress
 from pytcp.lib.tracker import Tracker
 from pytcp.protocols.arp.fpa import ArpAssembler
 from pytcp.protocols.ether.fpa import EtherAssembler
-from pytcp.protocols.ether.ps import (
-    ETHER_HEADER_LEN,
-    ETHER_TYPE_ARP,
-    ETHER_TYPE_IP4,
-    ETHER_TYPE_IP6,
-    ETHER_TYPE_RAW,
-)
+from pytcp.protocols.ether.ps import ETHER_HEADER_LEN, ETHER_TYPE_RAW
 from pytcp.protocols.ip4.fpa import Ip4Assembler
 from pytcp.protocols.ip6.fpa import Ip6Assembler
 from pytcp.protocols.raw.fpa import RawAssembler
@@ -49,42 +43,30 @@ from pytcp.protocols.raw.fpa import RawAssembler
 
 class TestEtherAssembler(TestCase):
     def test_ether_fpa__ethertype_arp(self):
-        """Test assertion for carried packet Arp ether type"""
+        """Test assertion for carried packet ether_type attribute"""
 
-        carried_packet_mock = StrictMock(ArpAssembler)
-        carried_packet_mock.ether_type = ETHER_TYPE_ARP
-        carried_packet_mock.tracker = StrictMock(Tracker)
-        EtherAssembler(carried_packet=carried_packet_mock)
+        EtherAssembler(carried_packet=ArpAssembler())
 
     def test_ether_fpa__ethertype_ip4(self):
-        """Test assertion for carried packet IPv4 ether type"""
+        """Test assertion for carried packet ether_type attribute"""
 
-        carried_packet_mock = StrictMock(Ip4Assembler)
-        carried_packet_mock.ether_type = ETHER_TYPE_IP4
-        carried_packet_mock.tracker = StrictMock(Tracker)
-        EtherAssembler(carried_packet=carried_packet_mock)
+        EtherAssembler(carried_packet=Ip4Assembler())
 
     def test_ether_fpa__ethertype_ip6(self):
-        """Test assertion for carried packet IPv6 ether type"""
+        """Test assertion for carried packet ether_type attribute"""
 
-        carried_packet_mock = StrictMock(Ip6Assembler)
-        carried_packet_mock.ether_type = ETHER_TYPE_IP6
-        carried_packet_mock.tracker = StrictMock(Tracker)
-        EtherAssembler(carried_packet=carried_packet_mock)
+        EtherAssembler(carried_packet=Ip6Assembler())
 
     def test_ether_fpa__ethertype_raw(self):
-        """Test assertion for carried packet IPv4 ether type"""
+        """Test assertion for carried packet ether_type attribute"""
 
-        carried_packet_mock = StrictMock(RawAssembler)
-        carried_packet_mock.ether_type = ETHER_TYPE_RAW
-        carried_packet_mock.tracker = StrictMock(Tracker)
-        EtherAssembler(carried_packet=carried_packet_mock)
+        EtherAssembler(carried_packet=RawAssembler())
 
     def test_ether_fpa__ethertype_unknown(self):
-        """Test assertion for carried packet unknown ether type"""
+        """Test assertion for carried packet ether_type attribute"""
 
         with self.assertRaises(AssertionError):
-            carried_packet_mock = StrictMock(Ip4Assembler)
+            carried_packet_mock = StrictMock()
             carried_packet_mock.ether_type = -1
             carried_packet_mock.tracker = StrictMock(Tracker)
             EtherAssembler(carried_packet=carried_packet_mock)
@@ -92,14 +74,10 @@ class TestEtherAssembler(TestCase):
     def test_ether_fpa__constructor(self):
         """Test class constructor"""
 
-        carried_packet_mock = StrictMock(RawAssembler)
-        carried_packet_mock.ether_type = ETHER_TYPE_RAW
-        carried_packet_mock.tracker = StrictMock(Tracker)
-
         packet = EtherAssembler(
             src=MacAddress("00:11:22:33:44:55"),
             dst=MacAddress("66:77:88:99:AA:BB"),
-            carried_packet=carried_packet_mock,
+            carried_packet=RawAssembler(),
         )
 
         self.assertEqual(packet._src, MacAddress("00:11:22:33:44:55"))
@@ -109,13 +87,7 @@ class TestEtherAssembler(TestCase):
     def test_ether_fpa__constructor__defaults(self):
         """Test class constructor"""
 
-        carried_packet_mock = StrictMock(RawAssembler)
-        carried_packet_mock.ether_type = ETHER_TYPE_RAW
-        carried_packet_mock.tracker = StrictMock(Tracker)
-
-        packet = EtherAssembler(
-            carried_packet=carried_packet_mock,
-        )
+        packet = EtherAssembler()
 
         self.assertEqual(packet._src, MacAddress("00:00:00:00:00:00"))
         self.assertEqual(packet._dst, MacAddress("00:00:00:00:00:00"))
@@ -124,56 +96,39 @@ class TestEtherAssembler(TestCase):
     def test_ether_fpa__len(self):
         """Test class __len__ operator"""
 
-        carried_packet_mock = StrictMock(RawAssembler)
-        carried_packet_mock.ether_type = ETHER_TYPE_RAW
-        carried_packet_mock.tracker = StrictMock(Tracker)
-        carried_packet_mock.__len__ = lambda: 512
-
         packet = EtherAssembler(
-            carried_packet=carried_packet_mock,
+            carried_packet=RawAssembler(data=b"0123456789ABCDEF"),
         )
 
-        self.assertEqual(len(packet), ETHER_HEADER_LEN + 512)
+        self.assertEqual(len(packet), ETHER_HEADER_LEN + 16)
 
     def test_ether_fpa__str(self):
         """Test class __str__ operator"""
 
-        carried_packet_mock = StrictMock(RawAssembler)
-        carried_packet_mock.ether_type = ETHER_TYPE_RAW
-        carried_packet_mock.tracker = StrictMock(Tracker)
-        carried_packet_mock.__len__ = lambda: 512
-
         packet = EtherAssembler(
             src=MacAddress("00:11:22:33:44:55"),
             dst=MacAddress("66:77:88:99:AA:BB"),
-            carried_packet=carried_packet_mock,
+            carried_packet=RawAssembler(data=b"0123456789ABCDEF"),
         )
 
-        self.assertEqual(str(packet), "ETHER 00:11:22:33:44:55 > 66:77:88:99:aa:bb, 0xffff (raw_data), plen 526")
+        self.assertEqual(str(packet), "ETHER 00:11:22:33:44:55 > 66:77:88:99:aa:bb, 0xffff (raw_data), plen 30")
 
     def test_ether_fpa__tracker_getter(self):
         """Test tracker getter"""
 
-        carried_packet_mock = StrictMock(RawAssembler)
+        carried_packet_mock = StrictMock()
         carried_packet_mock.ether_type = ETHER_TYPE_RAW
         carried_packet_mock.tracker = StrictMock(Tracker)
 
-        packet = EtherAssembler(
-            carried_packet=carried_packet_mock,
-        )
+        packet = EtherAssembler(carried_packet=carried_packet_mock)
 
         self.assertEqual(packet.tracker, carried_packet_mock.tracker)
 
     def test_ether_fpa__dst_getter(self):
         """Test dst getter"""
 
-        carried_packet_mock = StrictMock(RawAssembler)
-        carried_packet_mock.ether_type = ETHER_TYPE_RAW
-        carried_packet_mock.tracker = StrictMock(Tracker)
-
         packet = EtherAssembler(
             dst=MacAddress("66:77:88:99:AA:BB"),
-            carried_packet=carried_packet_mock,
         )
 
         self.assertEqual(packet.dst, MacAddress("66:77:88:99:AA:BB"))
@@ -181,13 +136,8 @@ class TestEtherAssembler(TestCase):
     def test_ether_fpa__dst_setter(self):
         """Test dst setter"""
 
-        carried_packet_mock = StrictMock(RawAssembler)
-        carried_packet_mock.ether_type = ETHER_TYPE_RAW
-        carried_packet_mock.tracker = StrictMock(Tracker)
-
         packet = EtherAssembler(
             dst=MacAddress("66:77:88:99:AA:BB"),
-            carried_packet=carried_packet_mock,
         )
 
         self.assertEqual(packet.dst, MacAddress("66:77:88:99:AA:BB"))
@@ -195,13 +145,8 @@ class TestEtherAssembler(TestCase):
     def test_ether_fpa__src_getter(self):
         """Test src getter"""
 
-        carried_packet_mock = StrictMock(RawAssembler)
-        carried_packet_mock.ether_type = ETHER_TYPE_RAW
-        carried_packet_mock.tracker = StrictMock(Tracker)
-
         packet = EtherAssembler(
             src=MacAddress("11:22:33:44:55:66"),
-            carried_packet=carried_packet_mock,
         )
 
         self.assertEqual(packet.src, MacAddress("11:22:33:44:55:66"))
@@ -209,13 +154,8 @@ class TestEtherAssembler(TestCase):
     def test_ether_fpa__src_setter(self):
         """Test src setter"""
 
-        carried_packet_mock = StrictMock(RawAssembler)
-        carried_packet_mock.ether_type = ETHER_TYPE_RAW
-        carried_packet_mock.tracker = StrictMock(Tracker)
-
         packet = EtherAssembler(
             src=MacAddress("11:22:33:44:55:66"),
-            carried_packet=carried_packet_mock,
         )
 
         self.assertEqual(packet.src, MacAddress("11:22:33:44:55:66"))
@@ -223,18 +163,12 @@ class TestEtherAssembler(TestCase):
     def test_ether_fpa__assemble(self):
         """Test assemble method"""
 
-        carried_packet_mock = StrictMock(RawAssembler)
-        carried_packet_mock.ether_type = ETHER_TYPE_RAW
-        carried_packet_mock.tracker = StrictMock(Tracker)
-        carried_packet_mock.assemble = lambda _: None
-
         packet = EtherAssembler(
             src=MacAddress("11:22:33:44:55:66"),
             dst=MacAddress("66:77:88:99:AA:BB"),
-            carried_packet=carried_packet_mock,
+            carried_packet=RawAssembler(data=b"0123456789ABCDEF"),
         )
 
-        frame = memoryview(bytearray(ETHER_HEADER_LEN))
+        frame = memoryview(bytearray(ETHER_HEADER_LEN + 16))
         packet.assemble(frame)
-
-        self.assertEqual(frame, b'fw\x88\x99\xaa\xbb\x11"3DUf\xff\xff')
+        self.assertEqual(bytes(frame), b'fw\x88\x99\xaa\xbb\x11"3DUf\xff\xff0123456789ABCDEF')

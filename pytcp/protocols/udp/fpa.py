@@ -46,11 +46,11 @@ class UdpAssembler:
     ip4_proto = IP4_PROTO_UDP
     ip6_next = IP6_NEXT_HEADER_UDP
 
-    def __init__(self, *, sport: int, dport: int, data: bytes | None = None, echo_tracker: Tracker | None = None) -> None:
+    def __init__(self, *, sport: int = 0, dport: int = 0, data: bytes | None = None, echo_tracker: Tracker | None = None) -> None:
         """Class constructor"""
 
-        assert 0 < sport < 0xFFFF, f"{sport=}"
-        assert 0 < dport < 0xFFFF, f"{dport=}"
+        assert 0 <= sport <= 0xFFFF, f"{sport=}"
+        assert 0 <= dport <= 0xFFFF, f"{dport=}"
 
         self._tracker: Tracker = Tracker(prefix="TX", echo_tracker=echo_tracker)
         self._sport: int = sport

@@ -46,12 +46,12 @@ from protocols.ip6.ps import (
     IP6_NEXT_HEADER_TCP,
     IP6_NEXT_HEADER_UDP,
 )
+from protocols.raw.fpa import RawAssembler
 
 if TYPE_CHECKING:
     from lib.tracker import Tracker
     from protocols.icmp6.fpa import Icmp6Assembler
     from protocols.ip6_ext_frag.fpa import Ip6ExtFragAssembler
-    from protocols.raw.fpa import RawAssembler
     from protocols.tcp.fpa import TcpAssembler
     from protocols.udp.fpa import UdpAssembler
 
@@ -64,13 +64,13 @@ class Ip6Assembler:
     def __init__(
         self,
         *,
-        src: Ip6Address,
-        dst: Ip6Address,
+        src: Ip6Address = Ip6Address(0),
+        dst: Ip6Address = Ip6Address(0),
         hop: int = config.IP6_DEFAULT_HOP,
         dscp: int = 0,
         ecn: int = 0,
         flow: int = 0,
-        carried_packet: Ip6ExtFragAssembler | Icmp6Assembler | TcpAssembler | UdpAssembler | RawAssembler,
+        carried_packet: Ip6ExtFragAssembler | Icmp6Assembler | TcpAssembler | UdpAssembler | RawAssembler = RawAssembler(),
     ) -> None:
         """Class constructor"""
 

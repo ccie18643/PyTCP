@@ -44,17 +44,17 @@ class TestArpAssembler(TestCase):
 
         self.assertEqual(ArpAssembler.ether_type, ETHER_TYPE_ARP)
 
-    def test_arp_fpa__oper_request(self):
+    def test_arp_fpa__assert_oper_request(self):
         """Test assertion for the request operation"""
 
         ArpAssembler(oper=ARP_OP_REQUEST)
 
-    def test_arp_fpa__oper_reply(self):
+    def test_arp_fpa__assert_oper_reply(self):
         """Test assertion for the request operation"""
 
         ArpAssembler(oper=ARP_OP_REPLY)
 
-    def test_arp_fpa__oper_unknown(self):
+    def test_arp_fpa__assert_oper_unknown(self):
         """Test assertion for the unknown operation"""
 
         with self.assertRaises(AssertionError):
@@ -125,8 +125,7 @@ class TestArpAssembler(TestCase):
         """Test tracker getter"""
 
         packet = ArpAssembler()
-        print(repr(packet.tracker))
-        self.assertEqual(repr(packet.tracker), "Tracker(serial='<lr>TX0007</>')")
+        self.assertTrue(repr(packet.tracker).startswith("Tracker(serial='<lr>TX"))
 
     def test_ether_fpa__assemble(self):
         """Test assemble method"""

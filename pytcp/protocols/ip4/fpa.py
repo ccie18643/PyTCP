@@ -51,10 +51,10 @@ from protocols.ip4.ps import (
     IP4_PROTO_TCP,
     IP4_PROTO_UDP,
 )
+from protocols.raw.fpa import RawAssembler
 
 if TYPE_CHECKING:
     from protocols.icmp4.fpa import Icmp4Assembler
-    from protocols.raw.fpa import RawAssembler
     from protocols.tcp.fpa import TcpAssembler
     from protocols.udp.fpa import UdpAssembler
 
@@ -67,15 +67,15 @@ class Ip4Assembler:
     def __init__(
         self,
         *,
-        src: Ip4Address,
-        dst: Ip4Address,
+        src: Ip4Address = Ip4Address(0),
+        dst: Ip4Address = Ip4Address(0),
         ttl: int = config.IP4_DEFAULT_TTL,
         dscp: int = 0,
         ecn: int = 0,
         id: int = 0,
         flag_df: bool = False,
         options: list[Ip4OptNop | Ip4OptEol] | None = None,
-        carried_packet: Icmp4Assembler | TcpAssembler | UdpAssembler | RawAssembler,
+        carried_packet: Icmp4Assembler | TcpAssembler | UdpAssembler | RawAssembler = RawAssembler(),
     ) -> None:
         """Class constructor"""
 
@@ -110,11 +110,16 @@ class Ip4Assembler:
     def __str__(self) -> str:
         """Packet log string"""
 
-        return (
+        log = (
             f"IPv4 {self._src} > {self._dst}, proto {self._proto} ({IP4_PROTO_TABLE.get(self._proto, '???')}), id {self._id}"
             + f"{', DF' if self._flag_df else ''}{', MF' if self._flag_mf else ''}, offset {self._offset}, plen {self._plen}"
             + f", ttl {self._ttl}"
         )
+
+        for option in self._options:
+            log += ", " + str(option)
+
+        return log
 
     @property
     def tracker(self) -> Tracker:
@@ -203,10 +208,8 @@ class Ip4FragAssembler:
     def __init__(
         self,
         *,
-        data: bytes,
-        proto: int,
-        src: Ip4Address,
-        dst: Ip4Address,
+        src: Ip4Address = Ip4Address(0),
+        dst: Ip4Address = Ip4Address(0),
         ttl: int = config.IP4_DEFAULT_TTL,
         dscp: int = 0,
         ecn: int = 0,
@@ -214,9 +217,15 @@ class Ip4FragAssembler:
         flag_mf: bool = False,
         offset: int = 0,
         options: list[Ip4OptNop | Ip4OptEol] | None = None,
+        proto: int = IP4_PROTO_RAW,
+        data: bytes = b"",
     ):
         """Class constructor"""
 
+        assert 0 <= ttl <= 0xFF
+        assert 0 <= dscp <= 0x3F
+        assert 0 <= ecn <= 0x03
+        assert 0 <= id <= 0xFFFF
         assert proto in {IP4_PROTO_ICMP4, IP4_PROTO_UDP, IP4_PROTO_TCP, IP4_PROTO_RAW}
 
         self._tracker: Tracker = Tracker(prefix="TX")
@@ -244,11 +253,22 @@ class Ip4FragAssembler:
     def __str__(self) -> str:
         """Packet log string"""
 
-        return (
+        log = (
             f"IPv4 {self._src} > {self._dst}, proto {self._proto} ({IP4_PROTO_TABLE.get(self._proto, '???')}), id {self._id}"
             + f"{', DF' if self._flag_df else ''}{', MF' if self._flag_mf else ''}, offset {self._offset}, plen {self._plen}"
             + f", ttl {self._ttl}"
         )
+
+        for option in self._options:
+            log += ", " + str(option)
+
+        return log
+
+    @property
+    def tracker(self) -> Tracker:
+        """Getter for _tracker"""
+
+        return self._tracker
 
     @property
     def dst(self) -> Ip4Address:
@@ -261,12 +281,6 @@ class Ip4FragAssembler:
         """Getter for _src"""
 
         return self._src
-
-    @property
-    def tracker(self) -> Tracker:
-        """Getter for _tracker"""
-
-        return self._tracker
 
     @property
     def _raw_options(self) -> bytes:
@@ -327,6 +341,16 @@ class Ip4OptEol:
 
         return IP4_OPT_EOL_LEN
 
+    def __repr__(self) -> str:
+        """Option representation"""
+
+        return "Ip4OptEol"
+
+    def __eq__(self, other) -> bool:
+        """Equal operator"""
+
+        return repr(self) == repr(other)
+
 
 class Ip4OptNop:
     """IP option - No Operation"""
@@ -346,3 +370,13 @@ class Ip4OptNop:
         """Option length"""
 
         return IP4_OPT_NOP_LEN
+
+    def __repr__(self) -> str:
+        """Option representation"""
+
+        return "Ip4OptNop"
+
+    def __eq__(self, other) -> bool:
+        """Equal operator"""
+
+        return repr(self) == repr(other)

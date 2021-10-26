@@ -63,8 +63,8 @@ class TcpAssembler:
     def __init__(
         self,
         *,
-        sport: int,
-        dport: int,
+        sport: int = 0,
+        dport: int = 0,
         seq: int = 0,
         ack: int = 0,
         flag_ns: bool = False,
@@ -84,8 +84,8 @@ class TcpAssembler:
     ) -> None:
         """Class constructor"""
 
-        assert 0 < sport < 0xFFFF, f"{sport=}"
-        assert 0 < dport < 0xFFFF, f"{dport=}"
+        assert 0 <= sport <= 0xFFFF, f"{sport=}"
+        assert 0 <= dport <= 0xFFFF, f"{dport=}"
         assert 0 <= seq <= 0xFFFFFFFF, f"{seq=}"
         assert 0 <= ack <= 0xFFFFFFFF, f"{ack=}"
         assert 0 <= win <= 0xFFFF, f"{win=}"
