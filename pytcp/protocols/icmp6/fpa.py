@@ -61,7 +61,7 @@ from protocols.icmp6.ps import (
     ICMP6_UNREACHABLE__PORT,
     ICMP6_UNREACHABLE_LEN,
 )
-from protocols.ip6.ps import IP6_NEXT_HEADER_ICMP6
+from protocols.ip6.ps import IP6_NEXT_ICMP6
 
 if TYPE_CHECKING:
     from lib.ip6_address import Ip6Address, Ip6Network
@@ -71,12 +71,12 @@ if TYPE_CHECKING:
 class Icmp6Assembler:
     """ICMPv6 packet assembler support class"""
 
-    ip6_next = IP6_NEXT_HEADER_ICMP6
+    ip6_next = IP6_NEXT_ICMP6
 
     def __init__(
         self,
         *,
-        type: int,
+        type: int = 128,
         code: int = 0,
         un_data: bytes | None = None,
         ec_id: int | None = None,

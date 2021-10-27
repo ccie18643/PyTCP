@@ -39,12 +39,12 @@ from lib.ip6_address import Ip6Address
 from protocols.ether.ps import ETHER_TYPE_IP6
 from protocols.ip6.ps import (
     IP6_HEADER_LEN,
-    IP6_NEXT_HEADER_EXT_FRAG,
-    IP6_NEXT_HEADER_ICMP6,
-    IP6_NEXT_HEADER_RAW,
-    IP6_NEXT_HEADER_TABLE,
-    IP6_NEXT_HEADER_TCP,
-    IP6_NEXT_HEADER_UDP,
+    IP6_NEXT_EXT_FRAG,
+    IP6_NEXT_ICMP6,
+    IP6_NEXT_RAW,
+    IP6_NEXT_TABLE,
+    IP6_NEXT_TCP,
+    IP6_NEXT_UDP,
 )
 from protocols.raw.fpa import RawAssembler
 
@@ -79,11 +79,11 @@ class Ip6Assembler:
         assert 0 <= ecn <= 0x03
         assert 0 <= flow <= 0xFFFFFF
         assert carried_packet.ip6_next in {
-            IP6_NEXT_HEADER_ICMP6,
-            IP6_NEXT_HEADER_UDP,
-            IP6_NEXT_HEADER_TCP,
-            IP6_NEXT_HEADER_EXT_FRAG,
-            IP6_NEXT_HEADER_RAW,
+            IP6_NEXT_ICMP6,
+            IP6_NEXT_UDP,
+            IP6_NEXT_TCP,
+            IP6_NEXT_EXT_FRAG,
+            IP6_NEXT_RAW,
         }
 
         self._carried_packet: Ip6ExtFragAssembler | Icmp6Assembler | TcpAssembler | UdpAssembler | RawAssembler = carried_packet
@@ -107,7 +107,7 @@ class Ip6Assembler:
         """Packet log string"""
 
         return (
-            f"IPv6 {self._src} > {self._dst}, next {self._next} ({IP6_NEXT_HEADER_TABLE.get(self._next, '???')}), flow {self._flow}"
+            f"IPv6 {self._src} > {self._dst}, next {self._next} ({IP6_NEXT_TABLE.get(self._next, '???')}), flow {self._flow}"
             + f", dlen {self._dlen}, hop {self._hop}"
         )
 
@@ -156,7 +156,7 @@ class Ip6Assembler:
             frame,
             0,
             self._ver << 4 | self._dscp >> 4,
-            self._dscp << 6 | self._ecn << 4 | ((self._flow & 0b000011110000000000000000) >> 16),
+            self._dscp & 0b00000011 << 6 | self._ecn << 4 | ((self._flow & 0b000011110000000000000000) >> 16),
             (self._flow & 0b000000001111111100000000) >> 8,
             self._flow & 0b000000000000000011111111,
             self._dlen,

@@ -42,27 +42,27 @@ from pytcp.protocols.raw.fpa import RawAssembler
 
 
 class TestEtherAssembler(TestCase):
-    def test_ether_fpa__ethertype_arp(self):
+    def test_ether_fpa__assert_ethertype_arp(self):
         """Test assertion for carried packet ether_type attribute"""
 
         EtherAssembler(carried_packet=ArpAssembler())
 
-    def test_ether_fpa__ethertype_ip4(self):
+    def test_ether_fpa__assert_ethertype_ip4(self):
         """Test assertion for carried packet ether_type attribute"""
 
         EtherAssembler(carried_packet=Ip4Assembler())
 
-    def test_ether_fpa__ethertype_ip6(self):
+    def test_ether_fpa__assert_ethertype_ip6(self):
         """Test assertion for carried packet ether_type attribute"""
 
         EtherAssembler(carried_packet=Ip6Assembler())
 
-    def test_ether_fpa__ethertype_raw(self):
+    def test_ether_fpa__assert_ethertype_raw(self):
         """Test assertion for carried packet ether_type attribute"""
 
         EtherAssembler(carried_packet=RawAssembler())
 
-    def test_ether_fpa__ethertype_unknown(self):
+    def test_ether_fpa__assert_ethertype_unknown(self):
         """Test assertion for carried packet ether_type attribute"""
 
         with self.assertRaises(AssertionError):
@@ -80,6 +80,8 @@ class TestEtherAssembler(TestCase):
             carried_packet=RawAssembler(),
         )
 
+        self.assertEqual(packet._carried_packet, RawAssembler())
+        self.assertEqual(packet._tracker, packet._carried_packet._tracker)
         self.assertEqual(packet._src, MacAddress("00:11:22:33:44:55"))
         self.assertEqual(packet._dst, MacAddress("66:77:88:99:AA:BB"))
         self.assertEqual(packet._type, ETHER_TYPE_RAW)
@@ -89,6 +91,8 @@ class TestEtherAssembler(TestCase):
 
         packet = EtherAssembler()
 
+        self.assertEqual(packet._carried_packet, RawAssembler())
+        self.assertEqual(packet._tracker, packet._carried_packet._tracker)
         self.assertEqual(packet._src, MacAddress("00:00:00:00:00:00"))
         self.assertEqual(packet._dst, MacAddress("00:00:00:00:00:00"))
         self.assertEqual(packet._type, ETHER_TYPE_RAW)

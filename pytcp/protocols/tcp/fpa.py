@@ -36,7 +36,7 @@ import struct
 from lib.tracker import Tracker
 from misc.ip_helper import inet_cksum
 from protocols.ip4.ps import IP4_PROTO_TCP
-from protocols.ip6.ps import IP6_NEXT_HEADER_TCP
+from protocols.ip6.ps import IP6_NEXT_TCP
 from protocols.tcp.ps import (
     TCP_HEADER_LEN,
     TCP_OPT_EOL,
@@ -58,7 +58,7 @@ class TcpAssembler:
     """TCP packet assembler support class"""
 
     ip4_proto = IP4_PROTO_TCP
-    ip6_next = IP6_NEXT_HEADER_TCP
+    ip6_next = IP6_NEXT_TCP
 
     def __init__(
         self,

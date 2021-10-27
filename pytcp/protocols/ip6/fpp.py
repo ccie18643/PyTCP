@@ -36,7 +36,7 @@ from typing import TYPE_CHECKING
 
 import config
 from lib.ip6_address import Ip6Address
-from protocols.ip6.ps import IP6_HEADER_LEN, IP6_NEXT_HEADER_TABLE
+from protocols.ip6.ps import IP6_HEADER_LEN, IP6_NEXT_TABLE
 
 if TYPE_CHECKING:
     from misc.packet import PacketRx
@@ -67,8 +67,7 @@ class Ip6Parser:
         """Packet log string"""
 
         return (
-            f"IPv6 {self.src} > {self.dst}, next {self.next} ({IP6_NEXT_HEADER_TABLE.get(self.next, '???')}), flow {self.flow}"
-            + f", dlen {self.dlen}, hop {self.hop}"
+            f"IPv6 {self.src} > {self.dst}, next {self.next} ({IP6_NEXT_TABLE.get(self.next, '???')}), flow {self.flow}" + f", dlen {self.dlen}, hop {self.hop}"
         )
 
     @property

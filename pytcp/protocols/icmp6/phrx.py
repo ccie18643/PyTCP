@@ -48,7 +48,7 @@ from protocols.icmp6.ps import (
     ICMP6_ND_ROUTER_SOLICITATION,
     ICMP6_UNREACHABLE,
 )
-from protocols.ip6.ps import IP6_HEADER_LEN, IP6_NEXT_HEADER_UDP
+from protocols.ip6.ps import IP6_HEADER_LEN, IP6_NEXT_UDP
 from protocols.udp.metadata import UdpMetadata
 from protocols.udp.ps import UDP_HEADER_LEN
 
@@ -180,7 +180,7 @@ def _phrx_icmp6(self, packet_rx: PacketRx) -> None:
         # Quick and dirty way to validate received data and pull useful information from it
         # TODO - This will not work in case of IPv6 extension headers present
         frame = packet_rx.icmp6.un_data
-        if len(frame) >= IP6_HEADER_LEN + UDP_HEADER_LEN and frame[0] >> 4 == 6 and frame[6] == IP6_NEXT_HEADER_UDP:
+        if len(frame) >= IP6_HEADER_LEN + UDP_HEADER_LEN and frame[0] >> 4 == 6 and frame[6] == IP6_NEXT_UDP:
             # Create UdpMetadata object and try to find matching UDP socket
             udp_offset = IP6_HEADER_LEN
             packet = UdpMetadata(

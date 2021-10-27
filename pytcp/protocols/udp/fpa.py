@@ -36,7 +36,7 @@ import struct
 from lib.tracker import Tracker
 from misc.ip_helper import inet_cksum
 from protocols.ip4.ps import IP4_PROTO_UDP
-from protocols.ip6.ps import IP6_NEXT_HEADER_UDP
+from protocols.ip6.ps import IP6_NEXT_UDP
 from protocols.udp.ps import UDP_HEADER_LEN
 
 
@@ -44,7 +44,7 @@ class UdpAssembler:
     """UDP packet assembler support class"""
 
     ip4_proto = IP4_PROTO_UDP
-    ip6_next = IP6_NEXT_HEADER_UDP
+    ip6_next = IP6_NEXT_UDP
 
     def __init__(self, *, sport: int = 0, dport: int = 0, data: bytes | None = None, echo_tracker: Tracker | None = None) -> None:
         """Class constructor"""

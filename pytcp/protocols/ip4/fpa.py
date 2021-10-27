@@ -98,9 +98,9 @@ class Ip4Assembler:
         self._src: Ip4Address = src
         self._dst: Ip4Address = dst
         self._options: list[Ip4OptNop | Ip4OptEol] = [] if options is None else options
+        self._proto: int = self._carried_packet.ip4_proto
         self._hlen: int = IP4_HEADER_LEN + len(self._raw_options)
         self._plen: int = len(self)
-        self._proto: int = self._carried_packet.ip4_proto
 
     def __len__(self) -> int:
         """Length of the packet"""

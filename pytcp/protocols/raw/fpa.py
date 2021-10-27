@@ -36,14 +36,14 @@ import struct
 from lib.tracker import Tracker
 from protocols.ether.ps import ETHER_TYPE_RAW
 from protocols.ip4.ps import IP4_PROTO_RAW
-from protocols.ip6.ps import IP6_NEXT_HEADER_RAW
+from protocols.ip6.ps import IP6_NEXT_RAW
 
 
 class RawAssembler:
     """Raw packet assembler support class"""
 
     ip4_proto = IP4_PROTO_RAW
-    ip6_next = IP6_NEXT_HEADER_RAW
+    ip6_next = IP6_NEXT_RAW
     ether_type = ETHER_TYPE_RAW
 
     def __init__(self, *, data: bytes | None = None, echo_tracker: Tracker | None = None) -> None:
@@ -62,6 +62,16 @@ class RawAssembler:
         """Packet log string"""
 
         return f"Raw, len {self._plen}"
+
+    def __repr__(self) -> str:
+        """Object representation"""
+
+        return f"RawAssembler(data={self._data})"
+
+    def __eq__(self, other) -> bool:
+        """Equal operator"""
+
+        return repr(self) == repr(other)
 
     @property
     def tracker(self) -> Tracker:

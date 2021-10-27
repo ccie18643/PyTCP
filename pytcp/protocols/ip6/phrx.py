@@ -35,10 +35,10 @@ from lib.logger import log
 from misc.packet import PacketRx
 from protocols.ip6.fpp import Ip6Parser
 from protocols.ip6.ps import (
-    IP6_NEXT_HEADER_EXT_FRAG,
-    IP6_NEXT_HEADER_ICMP6,
-    IP6_NEXT_HEADER_TCP,
-    IP6_NEXT_HEADER_UDP,
+    IP6_NEXT_EXT_FRAG,
+    IP6_NEXT_ICMP6,
+    IP6_NEXT_TCP,
+    IP6_NEXT_UDP,
 )
 
 
@@ -71,18 +71,18 @@ def _phrx_ip6(self, packet_rx: PacketRx) -> None:
     if packet_rx.ip6.dst in self.ip6_multicast:
         self.packet_stats_rx.ip6__dst_multicast += 1
 
-    if packet_rx.ip6.next == IP6_NEXT_HEADER_EXT_FRAG:
+    if packet_rx.ip6.next == IP6_NEXT_EXT_FRAG:
         self._phrx_ip6_ext_frag(packet_rx)
         return
 
-    if packet_rx.ip6.next == IP6_NEXT_HEADER_ICMP6:
+    if packet_rx.ip6.next == IP6_NEXT_ICMP6:
         self._phrx_icmp6(packet_rx)
         return
 
-    if packet_rx.ip6.next == IP6_NEXT_HEADER_UDP:
+    if packet_rx.ip6.next == IP6_NEXT_UDP:
         self._phrx_udp(packet_rx)
         return
 
-    if packet_rx.ip6.next == IP6_NEXT_HEADER_TCP:
+    if packet_rx.ip6.next == IP6_NEXT_TCP:
         self._phrx_tcp(packet_rx)
         return

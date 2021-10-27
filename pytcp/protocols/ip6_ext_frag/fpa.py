@@ -35,11 +35,11 @@ import struct
 
 from lib.tracker import Tracker
 from protocols.ip6.ps import (
-    IP6_NEXT_HEADER_EXT_FRAG,
-    IP6_NEXT_HEADER_ICMP6,
-    IP6_NEXT_HEADER_RAW,
-    IP6_NEXT_HEADER_TCP,
-    IP6_NEXT_HEADER_UDP,
+    IP6_NEXT_EXT_FRAG,
+    IP6_NEXT_ICMP6,
+    IP6_NEXT_RAW,
+    IP6_NEXT_TCP,
+    IP6_NEXT_UDP,
 )
 from protocols.ip6_ext_frag.ps import (
     IP6_EXT_FRAG_HEADER_LEN,
@@ -50,7 +50,7 @@ from protocols.ip6_ext_frag.ps import (
 class Ip6ExtFragAssembler:
     """IPv6 fragment extension header assembler support class"""
 
-    ip6_next = IP6_NEXT_HEADER_EXT_FRAG
+    ip6_next = IP6_NEXT_EXT_FRAG
 
     def __init__(
         self,
@@ -63,7 +63,7 @@ class Ip6ExtFragAssembler:
     ):
         """Class constructor"""
 
-        assert next in {IP6_NEXT_HEADER_ICMP6, IP6_NEXT_HEADER_UDP, IP6_NEXT_HEADER_TCP, IP6_NEXT_HEADER_RAW}
+        assert next in {IP6_NEXT_ICMP6, IP6_NEXT_UDP, IP6_NEXT_TCP, IP6_NEXT_RAW}
 
         self._tracker: Tracker = Tracker(prefix="TX")
         self._next: int = next
