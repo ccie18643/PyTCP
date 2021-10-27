@@ -1,0 +1,153 @@
+#!/usr/bin/env python3
+
+
+############################################################################
+#                                                                          #
+#  PyTCP - Python TCP/IP stack                                             #
+#  Copyright (C) 2020-2021  Sebastian Majewski                             #
+#                                                                          #
+#  This program is free software: you can redistribute it and/or modify    #
+#  it under the terms of the GNU General Public License as published by    #
+#  the Free Software Foundation, either version 3 of the License, or       #
+#  (at your option) any later version.                                     #
+#                                                                          #
+#  This program is distributed in the hope that it will be useful,         #
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of          #
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the           #
+#  GNU General Public License for more details.                            #
+#                                                                          #
+#  You should have received a copy of the GNU General Public License       #
+#  along with this program.  If not, see <https://www.gnu.org/licenses/>.  #
+#                                                                          #
+#  Author's email: ccie18643@gmail.com                                     #
+#  Github repository: https://github.com/ccie18643/PyTCP                   #
+#                                                                          #
+############################################################################
+
+
+#
+# tests/udp_fpa.py -  tests specific for UDP fpa module
+#
+
+from testslide import TestCase
+
+from pytcp.protocols.ip4.ps import IP4_PROTO_UDP
+from pytcp.protocols.ip6.ps import IP6_NEXT_UDP
+from pytcp.protocols.udp.fpa import UdpAssembler
+from pytcp.protocols.udp.ps import UDP_HEADER_LEN
+
+
+class TestIp6Assembler(TestCase):
+    def test_udp_fpa__ip4_proto_udp(self):
+        """Test the ip4_proto property of UdpAssembler class"""
+
+        self.assertEqual(UdpAssembler.ip4_proto, IP4_PROTO_UDP)
+
+    def test_udp_fpa__ip6_next_udp(self):
+        """Test the ip6_next property of UdpAssembler class"""
+
+        self.assertEqual(UdpAssembler.ip6_next, IP6_NEXT_UDP)
+
+    def test_udp_fpa__assert_sport(self):
+        """Test assertion for the sport"""
+
+        UdpAssembler(sport=12345)
+
+    def test_udp_fpa__assert_sport__bellow(self):
+        """Test assertion for the sport"""
+
+        with self.assertRaises(AssertionError):
+            UdpAssembler(sport=-1)
+
+    def test_udp_fpa__assert_sport__above(self):
+        """Test assertion for the sport"""
+
+        with self.assertRaises(AssertionError):
+            UdpAssembler(sport=0x10000)
+
+    def test_udp_fpa__assert_dport(self):
+        """Test assertion for the dport"""
+
+        UdpAssembler(dport=12345)
+
+    def test_udp_fpa__assert_dport__bellow(self):
+        """Test assertion for the dport"""
+
+        with self.assertRaises(AssertionError):
+            UdpAssembler(dport=-1)
+
+    def test_udp_fpa__assert_dport__above(self):
+        """Test assertion for the dport"""
+
+        with self.assertRaises(AssertionError):
+            UdpAssembler(dport=0x10000)
+
+    def test_udp_fpa__constructor(self):
+        """Test class constructor"""
+
+        packet = UdpAssembler(
+            sport=12345,
+            dport=54321,
+            data=b"0123456789ABCDEF",
+        )
+
+        self.assertEqual(packet._sport, 12345)
+        self.assertEqual(packet._dport, 54321)
+        self.assertEqual(packet._data, b"0123456789ABCDEF")
+        self.assertEqual(packet._plen, UDP_HEADER_LEN + 16)
+
+    def test_udp_fpa__constructor__defaults(self):
+        """Test class constructor"""
+
+        packet = UdpAssembler()
+
+        self.assertEqual(packet._sport, 0)
+        self.assertEqual(packet._dport, 0)
+        self.assertEqual(packet._data, b"")
+        self.assertEqual(packet._plen, UDP_HEADER_LEN)
+
+    def test_udp_fpa__len(self):
+        """Test class __len__ operator"""
+
+        packet = UdpAssembler()
+
+        self.assertEqual(len(packet), UDP_HEADER_LEN)
+
+    def test_udp_fpa__len__data(self):
+        """Test class __len__ operator"""
+
+        packet = UdpAssembler(
+            data=b"0123456789ABCDEF",
+        )
+
+        self.assertEqual(len(packet), UDP_HEADER_LEN + 16)
+
+    def test_udp_fpa__str__(self):
+        """Test class __str__ operator"""
+
+        packet = UdpAssembler(
+            sport=12345,
+            dport=54321,
+            data=b"0123456789ABCDEF",
+        )
+
+        self.assertEqual(str(packet), "UDP 12345 > 54321, len 24")
+
+    def test_udp_fpa__tracker_getter(self):
+        """Test tracker getter"""
+
+        packet = UdpAssembler()
+        self.assertTrue(repr(packet.tracker).startswith("Tracker(serial='<lr>TX"))
+
+    def test_udp_fpa__assemble(self):
+        """Test assemble method"""
+
+        packet = UdpAssembler(
+            sport=12345,
+            dport=54321,
+            data=b"0123456789ABCDEF",
+        )
+
+        frame = memoryview(bytearray(UDP_HEADER_LEN + 16))
+        packet.assemble(frame, 0x12345678)
+        self.assertEqual(bytes(frame), b"09\xd41\x00\x18\xc3\xf90123456789ABCDEF")

@@ -66,7 +66,7 @@ class RawAssembler:
     def __repr__(self) -> str:
         """Object representation"""
 
-        return f"RawAssembler(data={self._data})"
+        return f"RawAssembler(data={self._data!r})"
 
     def __eq__(self, other) -> bool:
         """Equal operator"""

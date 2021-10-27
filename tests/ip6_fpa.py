@@ -37,13 +37,7 @@ from pytcp.lib.tracker import Tracker
 from pytcp.protocols.ether.ps import ETHER_TYPE_IP6
 from pytcp.protocols.icmp6.fpa import Icmp6Assembler
 from pytcp.protocols.ip6.fpa import Ip6Assembler
-from pytcp.protocols.ip6.ps import (
-    IP6_HEADER_LEN,
-    IP6_NEXT_ICMP6,
-    IP6_NEXT_RAW,
-    IP6_NEXT_TCP,
-    IP6_NEXT_UDP,
-)
+from pytcp.protocols.ip6.ps import IP6_HEADER_LEN, IP6_NEXT_RAW
 from pytcp.protocols.raw.fpa import RawAssembler
 from pytcp.protocols.tcp.fpa import TcpAssembler
 from pytcp.protocols.udp.fpa import UdpAssembler
@@ -309,7 +303,8 @@ class TestIp6Assembler(TestCase):
 
         frame = memoryview(bytearray(IP6_HEADER_LEN + 16))
         packet.assemble(frame)
-        self.assertEqual(bytes(frame),
+        self.assertEqual(
+            bytes(frame),
             b"`,aN\x00\x10\xff \x00\x00\x00\x01\x00\x02\x00\x03\x00\x04\x00\x05\x00\x06\x00"
-            b"\x07\x00\x08\x00\t\x00\n\x00\x0b\x00\x0c\x00\r\x00\x0e\x00\x0f0123456789ABCDEF"
+            b"\x07\x00\x08\x00\t\x00\n\x00\x0b\x00\x0c\x00\r\x00\x0e\x00\x0f0123456789ABCDEF",
         )
