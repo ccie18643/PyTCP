@@ -410,58 +410,267 @@ class TestTcpAssembler(TestCase):
 
 
 class TestTcpOptEol(TestCase):
-    def test_tcp_opt_eol____str__(self):
-        """Test the __str__ getter"""
+    def test_tcp_fpa_opt_eol____str__(self):
+        """Test the __str__ dunder"""
 
         option = TcpOptEol()
 
         self.assertEqual(str(option), "eol")
 
-    def test_tcp_opt_eol____repr__(self):
-        """Test the __repr__ getter"""
+    def test_tcp_fpa_opt_eol____repr__(self):
+        """Test the __repr__ dunder"""
 
         option = TcpOptEol()
 
         self.assertEqual(repr(option), "TcpOptEol()")
 
-    def test_tcp_opt_eol____eq__(self):
-        """Test the __eq__ getter"""
+    def test_tcp_fpa_opt_eol____bytes__(self):
+        """Test the __bytes__ dunder"""
+
+        option = TcpOptEol()
+
+        self.assertEqual(bytes(option), b"\x00")
+
+    def test_tcp_fpa_opt_eol____eq__(self):
+        """Test the __eq__ dunder"""
 
         option = TcpOptEol()
 
         self.assertEqual(option, option)
 
-    def test_tcp_opt_eol__raw_option(self):
-        """Test the raw_option getter"""
-
-        option = TcpOptEol()
-
-        self.assertEqual(option.raw_option, b"\x00")
-
 
 class TestTcpOptNop(TestCase):
-    def test_tcp_opt_nop____str__(self):
-        """Test the __str__ getter"""
+    def test_tcp_fpa_opt_nop____str__(self):
+        """Test the __str__ dunder"""
 
         option = TcpOptNop()
 
         self.assertEqual(str(option), "nop")
 
-    def test_tcp_opt_nop____repr__(self):
-        """Test the __repr__ getter"""
+    def test_tcp_fpa_opt_nop____repr__(self):
+        """Test the __repr__ dunder"""
 
         option = TcpOptNop()
 
         self.assertEqual(repr(option), "TcpOptNop()")
 
-    def test_tcp_opt_nop____eq__(self):
-        """Test the __eq__ getter"""
+    def test_tcp_fpa_opt_nop____bytes__(self):
+        """Test the __bytes__ dunder"""
 
         option = TcpOptNop()
 
-    def test_tcp_opt_nop__raw_option(self):
-        """Test the raw_option getter"""
+        self.assertEqual(bytes(option), b"\x01")
+
+    def test_tcp_fpa_opt_nop____eq__(self):
+        """Test the __eq__ dunder"""
 
         option = TcpOptNop()
 
-        self.assertEqual(option.raw_option, b"\x01")
+        self.assertEqual(option, option)
+
+
+class TestTcpOptMss(TestCase):
+    def test_tcp_fpa_opt_mss__assert_mss(self):
+        """Test assertion for the mss"""
+
+        TcpOptMss(12345)
+
+    def test_tcp_fpa_opt_mss__assert_mss__bellow(self):
+        """Test assertion for the mss"""
+
+        with self.assertRaises(AssertionError):
+            TcpOptMss(-1)
+
+    def test_tcp_fpa_opt_mss__assert_mss__above(self):
+        """Test assertion for the mss"""
+
+        with self.assertRaises(AssertionError):
+            TcpOptMss(0x10000)
+
+    def test_tcp_fpa_opt_mss__constructor(self):
+        """Test class constructor"""
+
+        packet = TcpOptMss(12345)
+
+        self.assertEqual(packet._mss, 12345)
+
+    def test_tcp_fpa_opt_mss____str__(self):
+        """Test the __str__ dunder"""
+
+        option = TcpOptMss(12345)
+
+        self.assertEqual(str(option), "mss 12345")
+
+    def test_tcp_fpa_opt_mss____repr__(self):
+        """Test the __repr__ dunder"""
+
+        option = TcpOptMss(12345)
+
+        self.assertEqual(repr(option), "TcpOptMss(12345)")
+
+    def test_tcp_fpa_opt_mss____bytes__(self):
+        """Test the __bytes__ dunder"""
+
+        option = TcpOptMss(12345)
+        self.assertEqual(bytes(option), b"\x02\x0409")
+
+    def test_tcp_fpa_opt_mss____eq__(self):
+        """Test the __eq__ dunder"""
+
+        option = TcpOptMss(12345)
+
+        self.assertEqual(option, option)
+
+
+class TestTcpOptWscale(TestCase):
+    def test_tcp_fpa_opt_wscale__assert_wscale(self):
+        """Test assertion for the wscale"""
+
+        TcpOptWscale(123)
+
+    def test_tcp_fpa_opt_wscale__assert_wscale__bellow(self):
+        """Test assertion for the wscale"""
+
+        with self.assertRaises(AssertionError):
+            TcpOptWscale(-1)
+
+    def test_tcp_fpa_opt_wscale__assert_wscale__above(self):
+        """Test assertion for the wscale"""
+
+        with self.assertRaises(AssertionError):
+            TcpOptWscale(0x100)
+
+    def test_tcp_fpa_opt_wscale__constructor(self):
+        """Test class constructor"""
+
+        packet = TcpOptWscale(123)
+
+        self.assertEqual(packet._wscale, 123)
+
+    def test_tcp_fpa_opt_wscale____str__(self):
+        """Test the __str__ dunder"""
+
+        option = TcpOptWscale(123)
+
+        self.assertEqual(str(option), "wscale 123")
+
+    def test_tcp_fpa_opt_wscale____repr__(self):
+        """Test the __repr__ dunder"""
+
+        option = TcpOptWscale(123)
+
+        self.assertEqual(repr(option), "TcpOptWscale(123)")
+
+    def test_tcp_fpa_opt_wscale____bytes__(self):
+        """Test the __bytes__ dunder"""
+
+        option = TcpOptWscale(123)
+        self.assertEqual(bytes(option), b"\x03\x03{")
+
+    def test_tcp_fpa_opt_wscale____eq__(self):
+        """Test the __eq__ dunder"""
+
+        option = TcpOptWscale(123)
+
+        self.assertEqual(option, option)
+
+
+class TestTcpOptSackPerm(TestCase):
+    def test_tcp_fpa_opt_sack_perm____str__(self):
+        """Test the __str__ dunder"""
+
+        option = TcpOptSackPerm()
+
+        self.assertEqual(str(option), "sack_perm")
+
+    def test_tcp_fpa_opt_sack_perm____repr__(self):
+        """Test the __repr__ dunder"""
+
+        option = TcpOptSackPerm()
+
+        self.assertEqual(repr(option), "TcpOptSackPerm()")
+
+    def test_tcp_fpa_opt_sack_perm____bytes__(self):
+        """Test the __bytes__ dunder"""
+
+        option = TcpOptSackPerm()
+
+        self.assertEqual(bytes(option), b"\x04\x02")
+
+    def test_tcp_fpa_opt_sack_perm____eq__(self):
+        """Test the __eq__ dunder"""
+
+        option = TcpOptSackPerm()
+
+        self.assertEqual(option, option)
+
+
+class TestTcpOptTimestamp(TestCase):
+    def test_tcp_fpa_opt_timestamp__assert_tsval(self):
+        """Test assertion for the tsval"""
+
+        TcpOptTimestamp(12345678, 0)
+
+    def test_tcp_fpa_opt_timestamp__assert_tsval__bellow(self):
+        """Test assertion for the tsval"""
+
+        with self.assertRaises(AssertionError):
+            TcpOptTimestamp(-1, 0)
+
+    def test_tcp_fpa_opt_timestamp__assert_tsval__above(self):
+        """Test assertion for the tsval"""
+
+        with self.assertRaises(AssertionError):
+            TcpOptTimestamp(0x100000000, 0)
+
+    def test_tcp_fpa_opt_timestamp__assert_tsecr(self):
+        """Test assertion for the tsecr"""
+
+        TcpOptTimestamp(0, 87654321)
+
+    def test_tcp_fpa_opt_timestamp__assert_tsecr__bellow(self):
+        """Test assertion for the tsecr"""
+
+        with self.assertRaises(AssertionError):
+            TcpOptTimestamp(0, -1)
+
+    def test_tcp_fpa_opt_timestamp__assert_tsecr__above(self):
+        """Test assertion for the tsecr"""
+
+        with self.assertRaises(AssertionError):
+            TcpOptTimestamp(0, 0x100000000)
+
+    def test_tcp_fpa_opt_timestamp__constructor(self):
+        """Test class constructor"""
+
+        packet = TcpOptTimestamp(12345678, 87654321)
+
+        self.assertEqual(packet._tsval, 12345678)
+        self.assertEqual(packet._tsecr, 87654321)
+
+    def test_tcp_fpa_opt_timestamp____str__(self):
+        """Test the __str__ dunder"""
+
+        option = TcpOptTimestamp(12345678, 87654321)
+
+        self.assertEqual(str(option), "ts 12345678/87654321")
+
+    def test_tcp_fpa_opt_timestamp____repr__(self):
+        """Test the __repr__ dunder"""
+
+        option = TcpOptTimestamp(12345678, 87654321)
+
+        self.assertEqual(repr(option), "TcpOptTimestamp(12345678, 87654321)")
+
+    def test_tcp_fpa_opt_timestamp____bytes__(self):
+        """Test the __bytes__ dunder"""
+
+        option = TcpOptTimestamp(12345678, 87654321)
+        self.assertEqual(bytes(option), b"\x08\n\x00\xbcaN\x059\x7f\xb1")
+
+    def test_tcp_fpa_opt_timestamp____eq__(self):
+        """Test the __eq__ dunder"""
+
+        option = TcpOptTimestamp(12345678, 87654321)
+
+        self.assertEqual(option, option)

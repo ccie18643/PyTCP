@@ -914,7 +914,7 @@ class TestUdpPhtx(TestCase):
             frame_tx = _.read()
         self.assertEqual(self.frame_tx[: len(frame_tx)], frame_tx)
 
-    def test_udp_phtx__ip6_tcp_packet__data(self):
+    def test_tcp_phtx__ip6_tcp_packet__data(self):
         """Test sending IPv6/TCP packet with data"""
 
         tx_status = self.packet_handler._phtx_tcp(

@@ -693,60 +693,60 @@ class TestIp4FragAssembler(TestCase):
 
 
 class TestIp4OptEol(TestCase):
-    def test_ip4_opt_eol____str__(self):
-        """Test the __str__ getter"""
+    def test_ip4_fpa_opt_eol____str__(self):
+        """Test the __str__ dunder"""
 
         option = Ip4OptEol()
 
         self.assertEqual(str(option), "eol")
 
-    def test_ip4_opt_eol____repr__(self):
-        """Test the __repr__ getter"""
+    def test_ip4_fpa_opt_eol____repr__(self):
+        """Test the __repr__ dunder"""
 
         option = Ip4OptEol()
 
         self.assertEqual(repr(option), "Ip4OptEol()")
 
-    def test_ip4_opt_eol____eq__(self):
-        """Test the __eq__ getter"""
+    def test_ip4_fpa_opt_eol____bytes__(self):
+        """Test the __bytes__ dunder"""
+
+        option = Ip4OptEol()
+
+        self.assertEqual(bytes(option), b"\x00")
+
+    def test_ip4_fpa_opt_eol____eq__(self):
+        """Test the __eq__ dunder"""
 
         option = Ip4OptEol()
 
         self.assertEqual(option, option)
 
-    def test_ip4_opt_eol__raw_option(self):
-        """Test the raw_option getter"""
-
-        option = Ip4OptEol()
-
-        self.assertEqual(option.raw_option, b"\x00")
-
 
 class TestIp4OptNop(TestCase):
-    def test_ip4_opt_nop____str__(self):
-        """Test the __str__ getter"""
+    def test_ip4_fpa_opt_nop____str__(self):
+        """Test the __str__ dunder"""
 
         option = Ip4OptNop()
 
         self.assertEqual(str(option), "nop")
 
-    def test_ip4_opt_nop____repr__(self):
-        """Test the __repr__ getter"""
+    def test_ip4_fpa_opt_nop____repr__(self):
+        """Test the __repr__ dunder"""
 
         option = Ip4OptNop()
 
         self.assertEqual(repr(option), "Ip4OptNop()")
 
-    def test_ip4_opt_nop____eq__(self):
-        """Test the __eq__ getter"""
+    def test_ip4_fpa_opt_nop____bytes__(self):
+        """Test the __bytes__ dunder"""
+
+        option = Ip4OptNop()
+
+        self.assertEqual(bytes(option), b"\x01")
+
+    def test_ip4_fpa_opt_nop____eq__(self):
+        """Test the __eq__ dunder"""
 
         option = Ip4OptNop()
 
         self.assertEqual(option, option)
-
-    def test_ip4_opt_nop__raw_option(self):
-        """Test the raw_option getter"""
-
-        option = Ip4OptNop()
-
-        self.assertEqual(option.raw_option, b"\x01")

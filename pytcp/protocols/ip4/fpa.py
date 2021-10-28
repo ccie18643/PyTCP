@@ -171,7 +171,7 @@ class Ip4Assembler:
         raw_options = b""
 
         for option in self._options:
-            raw_options += option.raw_option
+            raw_options += bytes(option)
 
         return raw_options
 
@@ -289,7 +289,7 @@ class Ip4FragAssembler:
         raw_options = b""
 
         for option in self._options:
-            raw_options += option.raw_option
+            raw_options += bytes(option)
 
         return raw_options
 
@@ -340,16 +340,15 @@ class Ip4OptEol:
 
         return "Ip4OptEol()"
 
+    def __bytes__(self) -> bytes:
+        """Get option in raw form"""
+
+        return struct.pack("!B", IP4_OPT_EOL)
+
     def __eq__(self, other) -> bool:
         """Equal operator"""
 
         return repr(self) == repr(other)
-
-    @property
-    def raw_option(self) -> bytes:
-        """Get option in raw form"""
-
-        return struct.pack("!B", IP4_OPT_EOL)
 
 
 class Ip4OptNop:
@@ -370,13 +369,12 @@ class Ip4OptNop:
 
         return "Ip4OptNop()"
 
+    def __bytes__(self) -> bytes:
+        """Get option in raw form"""
+
+        return struct.pack("!B", IP4_OPT_NOP)
+
     def __eq__(self, other) -> bool:
         """Equal operator"""
 
         return repr(self) == repr(other)
-
-    @property
-    def raw_option(self) -> bytes:
-        """Get option in raw form"""
-
-        return struct.pack("!B", IP4_OPT_NOP)

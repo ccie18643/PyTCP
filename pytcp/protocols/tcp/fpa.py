@@ -146,7 +146,7 @@ class TcpAssembler:
         raw_options = b""
 
         for option in self._options:
-            raw_options += option.raw_option
+            raw_options += bytes(option)
 
         return raw_options
 
@@ -203,14 +203,15 @@ class TcpOptEol:
 
         return "TcpOptEol()"
 
+    def __bytes__(self) -> bytes:
+        """Option in raw form"""
+
+        return struct.pack("!B", TCP_OPT_EOL)
+
     def __eq__(self, other) -> bool:
         """Equal operator"""
 
         return repr(self) == repr(other)
-
-    @property
-    def raw_option(self) -> bytes:
-        return struct.pack("!B", TCP_OPT_EOL)
 
 
 class TcpOptNop:
@@ -231,14 +232,15 @@ class TcpOptNop:
 
         return "TcpOptNop()"
 
+    def __bytes__(self) -> bytes:
+        """Option in raw form"""
+
+        return struct.pack("!B", TCP_OPT_NOP)
+
     def __eq__(self, other) -> bool:
         """Equal operator"""
 
         return repr(self) == repr(other)
-
-    @property
-    def raw_option(self) -> bytes:
-        return struct.pack("!B", TCP_OPT_NOP)
 
 
 class TcpOptMss:
@@ -263,14 +265,15 @@ class TcpOptMss:
 
         return f"TcpOptMss({self._mss})"
 
+    def __bytes__(self) -> bytes:
+        """Option in raw form"""
+
+        return struct.pack("! BB H", TCP_OPT_MSS, TCP_OPT_MSS_LEN, self._mss)
+
     def __eq__(self, other) -> bool:
         """Equal operator"""
 
         return repr(self) == repr(other)
-
-    @property
-    def raw_option(self) -> bytes:
-        return struct.pack("! BB H", TCP_OPT_MSS, TCP_OPT_MSS_LEN, self._mss)
 
 
 class TcpOptWscale:
@@ -295,14 +298,15 @@ class TcpOptWscale:
 
         return f"TcpOptWscale({self._wscale})"
 
+    def __bytes__(self) -> bytes:
+        """Option in raw form"""
+
+        return struct.pack("! BB B", TCP_OPT_WSCALE, TCP_OPT_WSCALE_LEN, self._wscale)
+
     def __eq__(self, other) -> bool:
         """Equal operator"""
 
         return repr(self) == repr(other)
-
-    @property
-    def raw_option(self) -> bytes:
-        return struct.pack("! BB B", TCP_OPT_WSCALE, TCP_OPT_WSCALE_LEN, self._wscale)
 
 
 class TcpOptSackPerm:
@@ -323,14 +327,15 @@ class TcpOptSackPerm:
 
         return "TcpOptSackPerm()"
 
+    def __bytes__(self) -> bytes:
+        """Option in raw form"""
+
+        return struct.pack("! BB", TCP_OPT_SACKPERM, TCP_OPT_SACKPERM_LEN)
+
     def __eq__(self, other) -> bool:
         """Equal operator"""
 
         return repr(self) == repr(other)
-
-    @property
-    def raw_option(self) -> bytes:
-        return struct.pack("! BB", TCP_OPT_SACKPERM, TCP_OPT_SACKPERM_LEN)
 
 
 class TcpOptTimestamp:
@@ -357,11 +362,12 @@ class TcpOptTimestamp:
 
         return f"TcpOptTimestamp({self._tsval}, {self._tsecr})"
 
+    def __bytes__(self) -> bytes:
+        """Option in raw form"""
+
+        return struct.pack("! BB LL", TCP_OPT_TIMESTAMP, TCP_OPT_TIMESTAMP_LEN, self._tsval, self._tsecr)
+
     def __eq__(self, other) -> bool:
         """Equal operator"""
 
         return repr(self) == repr(other)
-
-    @property
-    def raw_option(self) -> bytes:
-        return struct.pack("! BB LL", TCP_OPT_TIMESTAMP, TCP_OPT_TIMESTAMP_LEN, self._tsval, self._tsecr)
