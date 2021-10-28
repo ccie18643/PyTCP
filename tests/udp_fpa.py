@@ -31,13 +31,14 @@
 
 from testslide import TestCase
 
+from pytcp.lib.tracker import Tracker
 from pytcp.protocols.ip4.ps import IP4_PROTO_UDP
 from pytcp.protocols.ip6.ps import IP6_NEXT_UDP
 from pytcp.protocols.udp.fpa import UdpAssembler
 from pytcp.protocols.udp.ps import UDP_HEADER_LEN
 
 
-class TestIp6Assembler(TestCase):
+class TestUdpAssembler(TestCase):
     def test_udp_fpa__ip4_proto_udp(self):
         """Test the ip4_proto property of UdpAssembler class"""
 
@@ -89,12 +90,14 @@ class TestIp6Assembler(TestCase):
             sport=12345,
             dport=54321,
             data=b"0123456789ABCDEF",
+            echo_tracker=Tracker(prefix="TX"),
         )
 
         self.assertEqual(packet._sport, 12345)
         self.assertEqual(packet._dport, 54321)
         self.assertEqual(packet._data, b"0123456789ABCDEF")
         self.assertEqual(packet._plen, UDP_HEADER_LEN + 16)
+        self.assertTrue(repr(packet.tracker._echo_tracker).startswith("Tracker(serial='<lr>TX"))
 
     def test_udp_fpa__constructor__defaults(self):
         """Test class constructor"""

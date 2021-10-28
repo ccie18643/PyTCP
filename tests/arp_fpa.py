@@ -88,14 +88,14 @@ class TestArpAssembler(TestCase):
         self.assertEqual(packet._tpa, Ip4Address("0.0.0.0"))
         self.assertEqual(packet._oper, ARP_OP_REQUEST)
 
-    def test_arp_fpa__len(self):
+    def test_arp_fpa____len__(self):
         """Test class __len__ operator"""
 
         packet = ArpAssembler()
 
         self.assertEqual(len(packet), ARP_HEADER_LEN)
 
-    def test_arp_fpa__str__request(self):
+    def test_arp_fpa____str____request(self):
         """Test class __str__ operator"""
 
         packet = ArpAssembler(
@@ -108,7 +108,7 @@ class TestArpAssembler(TestCase):
 
         self.assertEqual(str(packet), "ARP request 1.2.3.4 / 00:11:22:33:44:55 > 5.6.7.8 / 66:77:88:99:aa:bb")
 
-    def test_arp_fpa__str__reply(self):
+    def test_arp_fpa____str____reply(self):
         """Test class __str__ operator"""
 
         packet = ArpAssembler(

@@ -198,6 +198,16 @@ class TcpOptEol:
 
         return TCP_OPT_EOL_LEN
 
+    def __repr__(self) -> str:
+        """Option representation"""
+
+        return "TcpOptEol()"
+
+    def __eq__(self, other) -> bool:
+        """Equal operator"""
+
+        return repr(self) == repr(other)
+
     @property
     def raw_option(self) -> bytes:
         return struct.pack("!B", TCP_OPT_EOL)
@@ -215,6 +225,16 @@ class TcpOptNop:
         """Option length"""
 
         return TCP_OPT_NOP_LEN
+
+    def __repr__(self) -> str:
+        """Option representation"""
+
+        return "TcpOptNop()"
+
+    def __eq__(self, other) -> bool:
+        """Equal operator"""
+
+        return repr(self) == repr(other)
 
     @property
     def raw_option(self) -> bytes:
@@ -238,6 +258,16 @@ class TcpOptMss:
 
         return TCP_OPT_MSS_LEN
 
+    def __repr__(self) -> str:
+        """Option representation"""
+
+        return f"TcpOptMss({self._mss})"
+
+    def __eq__(self, other) -> bool:
+        """Equal operator"""
+
+        return repr(self) == repr(other)
+
     @property
     def raw_option(self) -> bytes:
         return struct.pack("! BB H", TCP_OPT_MSS, TCP_OPT_MSS_LEN, self._mss)
@@ -260,6 +290,16 @@ class TcpOptWscale:
 
         return TCP_OPT_WSCALE_LEN
 
+    def __repr__(self) -> str:
+        """Option representation"""
+
+        return f"TcpOptWscale({self._wscale})"
+
+    def __eq__(self, other) -> bool:
+        """Equal operator"""
+
+        return repr(self) == repr(other)
+
     @property
     def raw_option(self) -> bytes:
         return struct.pack("! BB B", TCP_OPT_WSCALE, TCP_OPT_WSCALE_LEN, self._wscale)
@@ -277,6 +317,16 @@ class TcpOptSackPerm:
         """Option length"""
 
         return TCP_OPT_SACKPERM_LEN
+
+    def __repr__(self) -> str:
+        """Option representation"""
+
+        return "TcpOptSackPerm()"
+
+    def __eq__(self, other) -> bool:
+        """Equal operator"""
+
+        return repr(self) == repr(other)
 
     @property
     def raw_option(self) -> bytes:
@@ -301,6 +351,16 @@ class TcpOptTimestamp:
         """Option length"""
 
         return TCP_OPT_TIMESTAMP_LEN
+
+    def __repr__(self) -> str:
+        """Option representation"""
+
+        return f"TcpOptTimestamp({self._tsval}, {self._tsecr})"
+
+    def __eq__(self, other) -> bool:
+        """Equal operator"""
+
+        return repr(self) == repr(other)
 
     @property
     def raw_option(self) -> bytes:

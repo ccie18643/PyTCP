@@ -208,14 +208,14 @@ class TestIp6Assembler(TestCase):
         self.assertEqual(packet._next, IP6_NEXT_RAW)
         self.assertEqual(packet._dlen, 0)
 
-    def test_ip6_fpa__len(self):
+    def test_ip6_fpa____len__(self):
         """Test class __len__ operator"""
 
         packet = Ip6Assembler()
 
         self.assertEqual(len(packet), IP6_HEADER_LEN)
 
-    def test_ip6_fpa__len__data(self):
+    def test_ip6_fpa____len____data(self):
         """Test class __len__ operator"""
 
         packet = Ip6Assembler(
@@ -224,7 +224,7 @@ class TestIp6Assembler(TestCase):
 
         self.assertEqual(len(packet), IP6_HEADER_LEN + 16)
 
-    def test_ip6_fpa__str__(self):
+    def test_ip6_fpa____str__(self):
         """Test class __str__ operator"""
 
         packet = Ip6Assembler(

@@ -325,12 +325,6 @@ class Ip4FragAssembler:
 class Ip4OptEol:
     """IP option - End of Ip4Option List"""
 
-    @property
-    def raw_option(self) -> bytes:
-        """Get option in raw form"""
-
-        return struct.pack("!B", IP4_OPT_EOL)
-
     def __str__(self) -> str:
         """Option log string"""
 
@@ -344,22 +338,22 @@ class Ip4OptEol:
     def __repr__(self) -> str:
         """Option representation"""
 
-        return "Ip4OptEol"
+        return "Ip4OptEol()"
 
     def __eq__(self, other) -> bool:
         """Equal operator"""
 
         return repr(self) == repr(other)
 
-
-class Ip4OptNop:
-    """IP option - No Operation"""
-
     @property
     def raw_option(self) -> bytes:
         """Get option in raw form"""
 
-        return struct.pack("!B", IP4_OPT_NOP)
+        return struct.pack("!B", IP4_OPT_EOL)
+
+
+class Ip4OptNop:
+    """IP option - No Operation"""
 
     def __str__(self) -> str:
         """Option log string"""
@@ -374,9 +368,15 @@ class Ip4OptNop:
     def __repr__(self) -> str:
         """Option representation"""
 
-        return "Ip4OptNop"
+        return "Ip4OptNop()"
 
     def __eq__(self, other) -> bool:
         """Equal operator"""
 
         return repr(self) == repr(other)
+
+    @property
+    def raw_option(self) -> bytes:
+        """Get option in raw form"""
+
+        return struct.pack("!B", IP4_OPT_NOP)

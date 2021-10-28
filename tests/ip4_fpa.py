@@ -228,14 +228,14 @@ class TestIp4Assembler(TestCase):
         self.assertEqual(packet._hlen, IP4_HEADER_LEN)
         self.assertEqual(packet._plen, IP4_HEADER_LEN)
 
-    def test_ip4_fpa__len(self):
+    def test_ip4_fpa____len__(self):
         """Test class __len__ operator"""
 
         packet = Ip4Assembler()
 
         self.assertEqual(len(packet), IP4_HEADER_LEN)
 
-    def test_ip4_fpa__len__options(self):
+    def test_ip4_fpa____len____options(self):
         """Test class __len__ operator"""
 
         packet = Ip4Assembler(
@@ -244,7 +244,7 @@ class TestIp4Assembler(TestCase):
 
         self.assertEqual(len(packet), IP4_HEADER_LEN + IP4_OPT_NOP_LEN + IP4_OPT_EOL_LEN)
 
-    def test_ip4_fpa__len__data(self):
+    def test_ip4_fpa____len____data(self):
         """Test class __len__ operator"""
 
         packet = Ip4Assembler(
@@ -253,7 +253,7 @@ class TestIp4Assembler(TestCase):
 
         self.assertEqual(len(packet), IP4_HEADER_LEN + 16)
 
-    def test_ip4_fpa__len__options_data(self):
+    def test_ip4_fpa____len____options_data(self):
 
         """Test class __len__ operator"""
 
@@ -264,7 +264,7 @@ class TestIp4Assembler(TestCase):
 
         self.assertEqual(len(packet), IP4_HEADER_LEN + IP4_OPT_NOP_LEN + IP4_OPT_EOL_LEN + 16)
 
-    def test_ip4_fpa__str__(self):
+    def test_ip4_fpa____str__(self):
         """Test class __str__ operator"""
 
         packet = Ip4Assembler(
@@ -281,7 +281,7 @@ class TestIp4Assembler(TestCase):
 
         self.assertEqual(str(packet), "IPv4 1.2.3.4 > 5.6.7.8, proto 255 (raw_data), id 12345, DF, offset 0, plen 20, ttl 32")
 
-    def test_ip4_fpa__str__options(self):
+    def test_ip4_fpa____str____options(self):
         """Test class __str__ operator"""
 
         packet = Ip4Assembler(
@@ -563,14 +563,14 @@ class TestIp4FragAssembler(TestCase):
         self.assertEqual(packet._hlen, IP4_HEADER_LEN)
         self.assertEqual(packet._plen, IP4_HEADER_LEN)
 
-    def test_ip4_frag_fpa__len(self):
+    def test_ip4_frag_fpa____len__(self):
         """Test class __len__ operator"""
 
         packet = Ip4FragAssembler()
 
         self.assertEqual(len(packet), IP4_HEADER_LEN)
 
-    def test_ip4_frag_fpa__len__options(self):
+    def test_ip4_frag_fpa____len____options(self):
         """Test class __len__ operator"""
 
         packet = Ip4FragAssembler(
@@ -579,7 +579,7 @@ class TestIp4FragAssembler(TestCase):
 
         self.assertEqual(len(packet), IP4_HEADER_LEN + IP4_OPT_NOP_LEN + IP4_OPT_EOL_LEN)
 
-    def test_ip4_frag_fpa__len__data(self):
+    def test_ip4_frag_fpa____len____data(self):
         """Test class __len__ operator"""
 
         packet = Ip4FragAssembler(
@@ -588,7 +588,7 @@ class TestIp4FragAssembler(TestCase):
 
         self.assertEqual(len(packet), IP4_HEADER_LEN + 16)
 
-    def test_ip4_frag_fpa__len__options_data(self):
+    def test_ip4_frag_fpa____len____options_data(self):
 
         """Test class __len__ operator"""
 
@@ -599,7 +599,7 @@ class TestIp4FragAssembler(TestCase):
 
         self.assertEqual(len(packet), IP4_HEADER_LEN + IP4_OPT_NOP_LEN + IP4_OPT_EOL_LEN + 16)
 
-    def test_ip4_frag_fpa__str__(self):
+    def test_ip4_frag_fpa____str__(self):
         """Test class __str__ operator"""
 
         packet = Ip4FragAssembler(
@@ -618,7 +618,7 @@ class TestIp4FragAssembler(TestCase):
 
         self.assertEqual(str(packet), "IPv4 1.2.3.4 > 5.6.7.8, proto 255 (raw_data), id 12345, MF, offset 54321, plen 20, ttl 32")
 
-    def test_ip4_frag_fpa__str__options(self):
+    def test_ip4_frag_fpa____str____options(self):
         """Test class __str__ operator"""
 
         packet = Ip4FragAssembler(
@@ -690,3 +690,63 @@ class TestIp4FragAssembler(TestCase):
         frame = memoryview(bytearray(IP4_HEADER_LEN + IP4_OPT_NOP_LEN + IP4_OPT_EOL_LEN + 16))
         packet.assemble(frame)
         self.assertEqual(bytes(frame), b"E*\x00&09:\x86 \xff\x1d\xdd\x01\x02\x03\x04\x05\x06\x07\x08\x01\x000123456789ABCDEF")
+
+
+class TestIp4OptEol(TestCase):
+    def test_ip4_opt_eol____str__(self):
+        """Test the __str__ getter"""
+
+        option = Ip4OptEol()
+
+        self.assertEqual(str(option), "eol")
+
+    def test_ip4_opt_eol____repr__(self):
+        """Test the __repr__ getter"""
+
+        option = Ip4OptEol()
+
+        self.assertEqual(repr(option), "Ip4OptEol()")
+
+    def test_ip4_opt_eol____eq__(self):
+        """Test the __eq__ getter"""
+
+        option = Ip4OptEol()
+
+        self.assertEqual(option, option)
+
+    def test_ip4_opt_eol__raw_option(self):
+        """Test the raw_option getter"""
+
+        option = Ip4OptEol()
+
+        self.assertEqual(option.raw_option, b"\x00")
+
+
+class TestIp4OptNop(TestCase):
+    def test_ip4_opt_nop____str__(self):
+        """Test the __str__ getter"""
+
+        option = Ip4OptNop()
+
+        self.assertEqual(str(option), "nop")
+
+    def test_ip4_opt_nop____repr__(self):
+        """Test the __repr__ getter"""
+
+        option = Ip4OptNop()
+
+        self.assertEqual(repr(option), "Ip4OptNop()")
+
+    def test_ip4_opt_nop____eq__(self):
+        """Test the __eq__ getter"""
+
+        option = Ip4OptNop()
+
+        self.assertEqual(option, option)
+
+    def test_ip4_opt_nop__raw_option(self):
+        """Test the raw_option getter"""
+
+        option = Ip4OptNop()
+
+        self.assertEqual(option.raw_option, b"\x01")

@@ -97,7 +97,7 @@ class TestEtherAssembler(TestCase):
         self.assertEqual(packet._dst, MacAddress("00:00:00:00:00:00"))
         self.assertEqual(packet._type, ETHER_TYPE_RAW)
 
-    def test_ether_fpa__len(self):
+    def test_ether_fpa____len__(self):
         """Test class __len__ operator"""
 
         packet = EtherAssembler(
@@ -106,7 +106,7 @@ class TestEtherAssembler(TestCase):
 
         self.assertEqual(len(packet), ETHER_HEADER_LEN + 16)
 
-    def test_ether_fpa__str(self):
+    def test_ether_fpa____str__(self):
         """Test class __str__ operator"""
 
         packet = EtherAssembler(
