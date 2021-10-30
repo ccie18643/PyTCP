@@ -57,46 +57,36 @@ class Icmp4Assembler:
         *,
         type: int = 0,
         code: int = 0,
-        ec_id: int | None = None,
-        ec_seq: int | None = None,
-        ec_data: bytes | None = None,
-        un_data: bytes | None = None,
+        ec_id: int = 0,
+        ec_seq: int = 0,
+        ec_data: bytes = b"",
+        un_data: bytes = b"",
         echo_tracker: Tracker | None = None,
     ) -> None:
         """Class constructor"""
 
+        assert 0 <= ec_id <= 0xFFFF
+        assert 0 <= ec_seq <= 0xFFFF
+
         self._tracker: Tracker = Tracker(prefix="TX", echo_tracker=echo_tracker)
+
         self._type: int = type
         self._code: int = code
 
-        self._ec_id: int
-        self._ec_seq: int
-        self._ec_data: bytes
-        self._un_data: bytes
-
         if self._type == ICMP4_ECHO_REPLY and self._code == 0:
-
-            self._ec_id = 0 if ec_id is None else ec_id
-            self._ec_seq = 0 if ec_seq is None else ec_seq
-            self._ec_data = b"" if ec_data is None else ec_data
-
-            assert 0 <= self._ec_id <= 0xFFFF
-            assert 0 <= self._ec_seq <= 0xFFFF
-
+            self._ec_id = ec_id
+            self._ec_seq = ec_seq
+            self._ec_data = ec_data
             return
 
         if self._type == ICMP4_UNREACHABLE and self._code == ICMP4_UNREACHABLE__PORT:
-            self._un_data = b"" if un_data is None else un_data[:520]
+            self._un_data = un_data[:520]
             return
 
         if self._type == ICMP4_ECHO_REQUEST and self._code == 0:
-            self._ec_id = 0 if ec_id is None else ec_id
-            self._ec_seq = 0 if ec_seq is None else ec_seq
-            self._ec_data = b"" if ec_data is None else ec_data
-
-            assert 0 <= self._ec_id <= 0xFFFF
-            assert 0 <= self._ec_seq <= 0xFFFF
-
+            self._ec_id = ec_id
+            self._ec_seq = ec_seq
+            self._ec_data = ec_data
             return
 
         assert False, "Unknown ICMPv4 Type/Code"
@@ -113,23 +103,21 @@ class Icmp4Assembler:
         if self._type == ICMP4_ECHO_REQUEST:
             return ICMP4_ECHO_REQUEST_LEN + len(self._ec_data)
 
-        return 0
+        assert False, "Unknown ICMPv4 Type/Code"
 
     def __str__(self) -> str:
         """Packet log string"""
 
-        log = f"ICMPv4 type {self._type}, code {self._code}"
+        if self._type == ICMP4_ECHO_REPLY and self._code == 0:
+            return f"ICMPv4 {self._type}/{self._code} (echo_reply), id {self._ec_id}, seq {self._ec_seq}, dlen {len(self._ec_data)}"
 
-        if self._type == ICMP4_ECHO_REPLY:
-            log += f", id {self._ec_id}, seq {self._ec_seq}"
+        if self._type == ICMP4_UNREACHABLE and self._code == ICMP4_UNREACHABLE__PORT:
+            return f"ICMPv4 {self._type}/{self._code} (unreachable_port), dlen {len(self._un_data)}"
 
-        elif self._type == ICMP4_UNREACHABLE and self._code == ICMP4_UNREACHABLE__PORT:
-            pass
+        if self._type == ICMP4_ECHO_REQUEST and self._code == 0:
+            return f"ICMPv4 {self._type}/{self._code} (echo_request), id {self._ec_id}, seq {self._ec_seq}, dlen {len(self._ec_data)}"
 
-        elif self._type == ICMP4_ECHO_REQUEST:
-            log += f", id {self._ec_id}, seq {self._ec_seq}"
-
-        return log
+        assert False, "Unknown ICMPv4 Type/Code"
 
     @property
     def tracker(self) -> Tracker:
@@ -140,16 +128,19 @@ class Icmp4Assembler:
     def assemble(self, frame: memoryview, _: int = 0) -> None:
         """Assemble packet into the raw form"""
 
-        if self._type == ICMP4_ECHO_REPLY:
-            # memoryview: bytes conversion required
+        if self._type == ICMP4_ECHO_REPLY and self._code == 0:
             struct.pack_into(f"! BBH HH {len(self._ec_data)}s", frame, 0, self._type, self._code, 0, self._ec_id, self._ec_seq, bytes(self._ec_data))
+            struct.pack_into("! H", frame, 2, inet_cksum(frame))
+            return
 
-        elif self._type == ICMP4_UNREACHABLE and self._code == ICMP4_UNREACHABLE__PORT:
-            # memoryview: bytes conversion required
+        if self._type == ICMP4_UNREACHABLE and self._code == ICMP4_UNREACHABLE__PORT:
             struct.pack_into(f"! BBH L {len(self._un_data)}s", frame, 0, self._type, self._code, 0, 0, bytes(self._un_data))
+            struct.pack_into("! H", frame, 2, inet_cksum(frame))
+            return
 
-        elif self._type == ICMP4_ECHO_REQUEST:
-            # memoryview: bytes conversion required
+        if self._type == ICMP4_ECHO_REQUEST and self._code == 0:
             struct.pack_into(f"! BBH HH {len(self._ec_data)}s", frame, 0, self._type, self._code, 0, self._ec_id, self._ec_seq, bytes(self._ec_data))
+            struct.pack_into("! H", frame, 2, inet_cksum(frame))
+            return
 
-        struct.pack_into("! H", frame, 2, inet_cksum(frame))
+        assert False, "Unknown ICMPv4 Type/Code"

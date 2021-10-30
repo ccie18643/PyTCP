@@ -639,10 +639,10 @@ class PacketHandler:
         remote_ip_address: Ip4Address,
         type: int,
         code: int = 0,
-        ec_id: int | None = None,
-        ec_seq: int | None = None,
-        ec_data: bytes | None = None,
-        un_data: bytes | None = None,
+        ec_id: int = 0,
+        ec_seq: int = 0,
+        ec_data: bytes = b"",
+        un_data: bytes = b"",
     ) -> TxStatus:
         """Interface method for ICMPv4 Socket -> FPA communication"""
 

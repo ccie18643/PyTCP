@@ -71,18 +71,16 @@ class Icmp4Parser:
     def __str__(self) -> str:
         """Packet log string"""
 
-        log = f"ICMPv4 type {self.type}, code {self.code}"
-
         if self.type == ICMP4_ECHO_REPLY:
-            log += f", id {self.ec_id}, seq {self.ec_seq}"
+            return f"ICMPv4 {self.type}/{self.code} (echo_reply), id {self.ec_id}, seq {self.ec_seq}, dlen {len(self.ec_data)}"
 
-        elif self.type == ICMP4_UNREACHABLE and self.code == ICMP4_UNREACHABLE__PORT:
-            pass
+        if self.type == ICMP4_UNREACHABLE and self.code == ICMP4_UNREACHABLE__PORT:
+            return f"ICMPv4 {self.type}/{self.code} (unreachable_port), dlen {len(self.un_data)}"
 
-        elif self.type == ICMP4_ECHO_REQUEST:
-            log += f", id {self.ec_id}, seq {self.ec_seq}"
+        if self.type == ICMP4_ECHO_REQUEST:
+            return f"ICMPv4 {self.type}/{self.code} (echo_request), id {self.ec_id}, seq {self.ec_seq}, dlen {len(self.ec_data)}"
 
-        return log
+        return f"ICMPv4 {self.type}/{self.code} (unknown)"
 
     @property
     def type(self) -> int:

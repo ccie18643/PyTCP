@@ -109,14 +109,14 @@ class TestUdpAssembler(TestCase):
         self.assertEqual(packet._data, b"")
         self.assertEqual(packet._plen, UDP_HEADER_LEN)
 
-    def test_udp_fpa__len(self):
+    def test_udp_fpa____len__(self):
         """Test class __len__ operator"""
 
         packet = UdpAssembler()
 
         self.assertEqual(len(packet), UDP_HEADER_LEN)
 
-    def test_udp_fpa__len__data(self):
+    def test_udp_fpa____len____data(self):
         """Test class __len__ operator"""
 
         packet = UdpAssembler(
@@ -125,7 +125,7 @@ class TestUdpAssembler(TestCase):
 
         self.assertEqual(len(packet), UDP_HEADER_LEN + 16)
 
-    def test_udp_fpa__str__(self):
+    def test_udp_fpa____str__(self):
         """Test class __str__ operator"""
 
         packet = UdpAssembler(
