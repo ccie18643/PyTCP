@@ -98,33 +98,28 @@ class Icmp6Parser:
         if self.type == ICMP6_ECHO_REPLY:
             return f"{header} (echo_reply), id {self.ec_id}, seq {self.ec_seq}, dlen {len(self.ec_data)}"
 
-        if self.type == ICMP6_ND_ROUTER_SOLICITATION and self.code == 0:
-            assert self.nd_options is not None
+        if self.type == ICMP6_ND_ROUTER_SOLICITATION:
             nd_options = ", ".join(str(nd_option) for nd_option in self.nd_options)
-            return f"{header} (nd_router_solicitation), {nd_options}"
+            return f"{header} (nd_router_solicitation)" + (f", {nd_options}" if nd_options else "")
 
-        if self.type == ICMP6_ND_ROUTER_ADVERTISEMENT and self.code == 0:
-            assert self.nd_options is not None
+        if self.type == ICMP6_ND_ROUTER_ADVERTISEMENT:
             nd_options = ", ".join(str(nd_option) for nd_option in self.nd_options)
             return (
                 f"{header} (nd_router_advertisement), hop {self.ra_hop}"
                 f", flags {'M' if self.ra_flag_m else '-'}{'O' if self.ra_flag_o else '-'}"
-                f", rlft {self.ra_router_lifetime}, reacht {self.ra_reachable_time}, retrt {self.ra_retrans_timer}"
-                f"{nd_options}"
+                f", rlft {self.ra_router_lifetime}, reacht {self.ra_reachable_time}, retrt {self.ra_retrans_timer}" + (f", {nd_options}" if nd_options else "")
             )
 
-        if self.type == ICMP6_ND_NEIGHBOR_SOLICITATION and self.code == 0:
-            assert self.nd_options is not None
+        if self.type == ICMP6_ND_NEIGHBOR_SOLICITATION:
             nd_options = ", ".join(str(nd_option) for nd_option in self.nd_options)
-            return f"{header} (nd_neighbor_solicitation), target {self.ns_target_address}, {nd_options}"
+            return f"{header} (nd_neighbor_solicitation), target {self.ns_target_address}" + (f", {nd_options}" if nd_options else "")
 
         if self.type == ICMP6_ND_NEIGHBOR_ADVERTISEMENT:
-            assert self.nd_options is not None
             nd_options = ", ".join(str(nd_option) for nd_option in self.nd_options)
             return (
                 f"{header} (nd_neighbor_advertisement), target {self.na_target_address}"
                 f", flags {'R' if self.na_flag_r else '-'}{'S' if self.na_flag_s else '-'}{'O' if self.na_flag_o else '-'}"
-                f"{nd_options}"
+                + (f", {nd_options}" if nd_options else "")
             )
 
         if self.type == ICMP6_MLD2_REPORT:

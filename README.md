@@ -46,12 +46,11 @@ I am also working on another TCP/IP stack project that is being programmed in C 
  - TCP protocol - *TCP SYN/FIN packet retransmission*
  - TCP sockets - *full support, stack's 'end user' API similar to Berkeley sockets*
 
-#### Next steps:
+#### To do:
 
- - [x] Stack - *Packet flow counters to help gathering packet statistics and to let packet flow tracing for unit testing*
+ - [ ] ICMPv6 - *MLDv2 support is quite a mess now, need to finish it*
+ - [ ] Testing - *Create FPA unit tests for MLDv2 Report (len, str, assemble)*
  - [ ] Ip4 - *Reimplement packet defragmentation to store whole packets in flow db instead of making copies of IP header and data*
- - [x] Logging - *Replace loguru with homegrown logger to improve performance and flexibility*
- - [x] Stack - *Implement feedback mechanism for TX path so packet sending failures can be communicated to sockets*
  - [ ] Stack - *Implement RAW socket support - to be used by 'user space' ping client*
  - [ ] Code - *Unit testing for libraries and modules (based on Facebook's Testslide library)*
  - [ ] Code - *Rewrite DHCPv4 protocol support to use standard fpa/fpp approach instead of legacy*
@@ -65,19 +64,22 @@ I am also working on another TCP/IP stack project that is being programmed in C 
  - [ ] ICMPv6 protocol - *validate and possibly re-implements certain IPv6 mechanisms/processes according to RFC rules*
  - [ ] ICMPv6 protocol - *implement ND Redirect message*
  - [ ] ICMPv6 protocol - *Multicast Listener Discovery v2 (MLDv2) full implementation <-- it may be required by stack to respond to MLD queries*
- - [x] IPv6 protocol - *ability to route traffic to external destinations via default gateway*
  - [ ] TCP protocol - *ongoing effort of improving code and bug fixing while simulating more advanced traffic scenarios*
  - [ ] TCP protocol - *proper handling on RST packets in various states, need to do research on this*
  - [ ] TCP protocol - *need to rework the CLOSE syscall mechanism so FIN flag can be set on last data packet instead of being carried in separate one*
  - [ ] TCP protocol - *ACK packet retransmission in case we got FIN retransmission in TIME_WAIT state <-- need to investigate this*
  - [ ] TCP protocol - *implement proper response to packets containing old SEQ and/or ACK numbersi <-- need to investigate this*
- - [x] TCP protocol - *ensure that event communication from TCP session to socket works properly (eg. connection reset by peer)*
  - [ ] ICMP protocols - *need to come up with some sort of "icmp socket" mechanism so ping client can bind to particular ICMP echo-reply stream*
- - [x] IPv4 protocol - *improvements in IP defragmentation mechanism are needed, out of order fragment handling, purging of orphaned fragments*
  - [ ] IPv6/IPv4 protocols - *proper routing mechanism, route tables, etc...*
  - [ ] IPv6/IPv4 protocols - *ability of stack to act as a router*
  - [ ] ARP cache - *implement proper FSM*
  - [ ] ICMPv6 ND cache - *implement proper FSM*
+ - [x] Stack - *Packet flow counters to help gathering packet statistics and to let packet flow tracing for unit testing*
+ - [x] Logging - *Replace loguru with homegrown logger to improve performance and flexibility*
+ - [x] Stack - *Implement feedback mechanism for TX path so packet sending failures can be communicated to sockets*
+ - [x] IPv6 protocol - *ability to route traffic to external destinations via default gateway*
+ - [x] TCP protocol - *ensure that event communication from TCP session to socket works properly (eg. connection reset by peer)*
+ - [x] IPv4 protocol - *improvements in IP defragmentation mechanism are needed, out of order fragment handling, purging of orphaned fragments*
  - [x] UDP protocol - *need UDP echo client and mechanism to report receiving ICMP Port Unreachable message to UDP socket*
  - [x] UDP sockets - *overhaul is needed to make 'end user' interface match Berkeley sockets more closely so 3rd party aps can use it without porting*
  - [x] TCP sockets - *overhaul is needed to make 'end user' interface match Berkeley sockets more closely so 3rd party aps can use it without porting*
