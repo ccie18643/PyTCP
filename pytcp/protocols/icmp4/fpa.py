@@ -57,36 +57,36 @@ class Icmp4Assembler:
         *,
         type: int = 0,
         code: int = 0,
-        ec_id: int = 0,
-        ec_seq: int = 0,
-        ec_data: bytes = b"",
-        un_data: bytes = b"",
+        ec_id: int | None = None,
+        ec_seq: int | None = None,
+        ec_data: bytes | None = None,
+        un_data: bytes | None = None,
         echo_tracker: Tracker | None = None,
     ) -> None:
         """Class constructor"""
 
-        assert 0 <= ec_id <= 0xFFFF
-        assert 0 <= ec_seq <= 0xFFFF
-
         self._tracker: Tracker = Tracker(prefix="TX", echo_tracker=echo_tracker)
+
+        assert ec_id is None or 0 <= ec_id <= 0xFFFF
+        assert ec_seq is None or 0 <= ec_seq <= 0xFFFF
 
         self._type: int = type
         self._code: int = code
 
         if self._type == ICMP4_ECHO_REPLY and self._code == 0:
-            self._ec_id = ec_id
-            self._ec_seq = ec_seq
-            self._ec_data = ec_data
+            self._ec_id = 0 if ec_id is None else ec_id
+            self._ec_seq = 0 if ec_seq is None else ec_seq
+            self._ec_data = b"" if ec_data is None else ec_data
             return
 
         if self._type == ICMP4_UNREACHABLE and self._code == ICMP4_UNREACHABLE__PORT:
-            self._un_data = un_data[:520]
+            self._un_data = b"" if un_data is None else un_data[:520]
             return
 
         if self._type == ICMP4_ECHO_REQUEST and self._code == 0:
-            self._ec_id = ec_id
-            self._ec_seq = ec_seq
-            self._ec_data = ec_data
+            self._ec_id = 0 if ec_id is None else ec_id
+            self._ec_seq = 0 if ec_seq is None else ec_seq
+            self._ec_data = b"" if ec_data is None else ec_data
             return
 
         assert False, "Unknown ICMPv4 Type/Code"
@@ -108,14 +108,16 @@ class Icmp4Assembler:
     def __str__(self) -> str:
         """Packet log string"""
 
+        header = f"ICMPv4 {self._type}/{self._code}"
+
         if self._type == ICMP4_ECHO_REPLY and self._code == 0:
-            return f"ICMPv4 {self._type}/{self._code} (echo_reply), id {self._ec_id}, seq {self._ec_seq}, dlen {len(self._ec_data)}"
+            return f"{header} (echo_reply), id {self._ec_id}, seq {self._ec_seq}, dlen {len(self._ec_data)}"
 
         if self._type == ICMP4_UNREACHABLE and self._code == ICMP4_UNREACHABLE__PORT:
-            return f"ICMPv4 {self._type}/{self._code} (unreachable_port), dlen {len(self._un_data)}"
+            return f"{header} (unreachable_port), dlen {len(self._un_data)}"
 
         if self._type == ICMP4_ECHO_REQUEST and self._code == 0:
-            return f"ICMPv4 {self._type}/{self._code} (echo_request), id {self._ec_id}, seq {self._ec_seq}, dlen {len(self._ec_data)}"
+            return f"{header} (echo_request), id {self._ec_id}, seq {self._ec_seq}, dlen {len(self._ec_data)}"
 
         assert False, "Unknown ICMPv4 Type/Code"
 

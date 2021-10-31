@@ -55,10 +55,10 @@ def _phtx_icmp4(
     ip4_dst: Ip4Address,
     icmp4_type: int,
     icmp4_code: int = 0,
-    icmp4_ec_id: int = 0,
-    icmp4_ec_seq: int = 0,
-    icmp4_ec_data: bytes = b"",
-    icmp4_un_data: bytes = b"",
+    icmp4_ec_id: int | None = None,
+    icmp4_ec_seq: int | None = None,
+    icmp4_ec_data: bytes | None = None,
+    icmp4_un_data: bytes | None = None,
     echo_tracker: Tracker | None = None,
 ) -> TxStatus:
     """Handle outbound ICMPv4 packets"""

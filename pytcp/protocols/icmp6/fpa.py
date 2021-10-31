@@ -104,31 +104,6 @@ class Icmp6Assembler:
         self._type = type
         self._code = code
 
-        self._nd_options: list[Icmp6NdOptSLLA | Icmp6NdOptTLLA | Icmp6NdOptPI] = [] if nd_options is None else nd_options
-
-        self._un_reserved: int
-        self._un_data: bytes
-        self._ec_id: int
-        self._ec_seq: int
-        self._ec_data: bytes
-        self._rs_reserved: int
-        self._ra_hop: int
-        self._ra_flag_m: bool
-        self._ra_flag_o: bool
-        self._ra_router_lifetime: int
-        self._ra_reachable_time: int
-        self._ra_retrans_timer: int
-        self._ns_reserved: int
-        self._ns_target_address: Ip6Address
-        self._na_flag_r: bool
-        self._na_flag_s: bool
-        self._na_flag_o: bool
-        self._na_reserved: int
-        self._na_target_address: Ip6Address
-        self._mlr2_reserved: int
-        self._mlr2_multicast_address_record: list[Icmp6MulticastAddressRecord]
-        self._mlr2_number_of_multicast_address_records: int
-
         if self._type == ICMP6_UNREACHABLE and self._code == ICMP6_UNREACHABLE__PORT:
             self._un_reserved = 0
             self._un_data = b"" if un_data is None else un_data[:520]
@@ -157,6 +132,7 @@ class Icmp6Assembler:
 
         if self._type == ICMP6_ND_ROUTER_SOLICITATION and self._code == 0:
             self._rs_reserved = 0
+            self._nd_options = [] if nd_options is None else nd_options
 
             return
 
@@ -167,6 +143,7 @@ class Icmp6Assembler:
             self._ra_router_lifetime = 0 if ra_router_lifetime is None else ra_router_lifetime
             self._ra_reachable_time = 0 if ra_reachable_time is None else ra_reachable_time
             self._ra_retrans_timer = 0 if ra_retrans_timer is None else ra_retrans_timer
+            self._nd_options = [] if nd_options is None else nd_options
 
             assert 0 <= self._ra_hop <= 0xFF
             assert 0 <= self._ra_router_lifetime <= 0xFFFF
@@ -178,6 +155,7 @@ class Icmp6Assembler:
         if self._type == ICMP6_ND_NEIGHBOR_SOLICITATION and self._code == 0:
             self._ns_reserved = 0
             self._ns_target_address = Ip6Address(0) if ns_target_address is None else ns_target_address
+            self._nd_options = [] if nd_options is None else nd_options
 
             return
 
@@ -187,6 +165,7 @@ class Icmp6Assembler:
             self._na_flag_o = False if na_flag_o is None else na_flag_o
             self._na_reserved = 0
             self._na_target_address = Ip6Address(0) if na_target_address is None else na_target_address
+            self._nd_options = [] if nd_options is None else nd_options
 
             return
 
@@ -235,47 +214,52 @@ class Icmp6Assembler:
     def __str__(self) -> str:
         """Packet log string"""
 
-        log = f"ICMPv6 type {self._type}, code {self._code}"
+        header = f"ICMPv6 {self._type}/{self._code}"
 
-        if self._type == ICMP6_UNREACHABLE:
-            pass
+        if self._type == ICMP6_UNREACHABLE and self._code == ICMP6_UNREACHABLE__PORT:
+            return f"{header} (unreachable_port), dlen {len(self._un_data)}"
 
-        elif self._type == ICMP6_ECHO_REQUEST:
-            log += f", id {self._ec_id}, seq {self._ec_seq}"
+        if self._type == ICMP6_ECHO_REQUEST:
+            return f"{header} (echo_request), id {self._ec_id}, seq {self._ec_seq}, dlen {len(self._ec_data)}"
 
-        elif self._type == ICMP6_ECHO_REPLY:
-            log += f", id {self._ec_id}, seq {self._ec_seq}"
+        if self._type == ICMP6_ECHO_REPLY:
+            return f"{header} (echo_reply), id {self._ec_id}, seq {self._ec_seq}, dlen {len(self._ec_data)}"
 
-        elif self._type == ICMP6_ND_ROUTER_SOLICITATION:
-            assert self._nd_options is not None
-            for nd_option in self._nd_options:
-                log += ", " + str(nd_option)
+        if self._type == ICMP6_ND_ROUTER_SOLICITATION and self._code == 0:
+            nd_options = ", ".join(str(nd_option) for nd_option in self._nd_options)
+            return (
+                f"{header} (nd_router_solicitation)"
+                + (f", {nd_options}" if nd_options else "")
+            )
 
-        elif self._type == ICMP6_ND_ROUTER_ADVERTISEMENT:
-            assert self._nd_options is not None
-            log += f", hop {self._ra_hop}"
-            log += f", flags {'M' if self._ra_flag_m else '-'}{'O' if self._ra_flag_o else '-'}"
-            log += f", rlft {self._ra_router_lifetime}, reacht {self._ra_reachable_time}, retrt {self._ra_retrans_timer}"
-            for nd_option in self._nd_options:
-                log += ", " + str(nd_option)
+        if self._type == ICMP6_ND_ROUTER_ADVERTISEMENT and self._code == 0:
+            nd_options = ", ".join(str(nd_option) for nd_option in self._nd_options)
+            return (
+                f"{header} (nd_router_advertisement), hop {self._ra_hop}"
+                f", flags {'M' if self._ra_flag_m else '-'}{'O' if self._ra_flag_o else '-'}"
+                f", rlft {self._ra_router_lifetime}, reacht {self._ra_reachable_time}, retrt {self._ra_retrans_timer}"
+                + (f", {nd_options}" if nd_options else "")
+            )
 
-        elif self._type == ICMP6_ND_NEIGHBOR_SOLICITATION:
-            assert self._nd_options is not None
-            log += f", target {self._ns_target_address}"
-            for nd_option in self._nd_options:
-                log += ", " + str(nd_option)
+        if self._type == ICMP6_ND_NEIGHBOR_SOLICITATION and self._code == 0:
+            nd_options = ", ".join(str(nd_option) for nd_option in self._nd_options)
+            return (
+                f"{header} (nd_neighbor_solicitation), target {self._ns_target_address}, {nd_options}"
+                + (f", {nd_options}" if nd_options else "")
+            )
 
-        elif self._type == ICMP6_ND_NEIGHBOR_ADVERTISEMENT:
-            assert self._nd_options is not None
-            log += f", target {self._na_target_address}"
-            log += f", flags {'R' if self._na_flag_r else '-'}{'S' if self._na_flag_s else '-'}{'O' if self._na_flag_o else '-'}"
-            for nd_option in self._nd_options:
-                log += ", " + str(nd_option)
+        if self._type == ICMP6_ND_NEIGHBOR_ADVERTISEMENT:
+            nd_options = ", ".join(str(nd_option) for nd_option in self._nd_options)
+            return (
+                f"{header} (nd_neighbor_advertisement), target {self._na_target_address}"
+                f", flags {'R' if self._na_flag_r else '-'}{'S' if self._na_flag_s else '-'}{'O' if self._na_flag_o else '-'}"
+                + (f", {nd_options}" if nd_options else "")
+            )
 
-        elif self._type == ICMP6_MLD2_REPORT:
-            pass
+        if self._type == ICMP6_MLD2_REPORT:
+            return f"{header} (mld2_report)"
 
-        return log
+        assert False, "Unknown ICMPv4 Type/Code"
 
     @property
     def tracker(self) -> Tracker:
@@ -300,8 +284,6 @@ class Icmp6Assembler:
             struct.pack_into(f"! BBH L {len(self._raw_nd_options)}s", frame, 0, self._type, self._code, 0, self._rs_reserved, self._raw_nd_options)
 
         elif self._type == ICMP6_ND_ROUTER_ADVERTISEMENT:
-            assert self._ra_flag_m is not None
-            assert self._ra_flag_o is not None
             struct.pack_into(
                 f"! BBH BBH L L {len(self._raw_nd_options)}s",
                 frame,
@@ -318,7 +300,6 @@ class Icmp6Assembler:
             )
 
         elif self._type == ICMP6_ND_NEIGHBOR_SOLICITATION:
-            assert self._ns_target_address is not None
             struct.pack_into(
                 f"! BBH L 16s {len(self._raw_nd_options)}s",
                 frame,
@@ -332,10 +313,6 @@ class Icmp6Assembler:
             )
 
         elif self._type == ICMP6_ND_NEIGHBOR_ADVERTISEMENT:
-            assert self._na_flag_r is not None
-            assert self._na_flag_s is not None
-            assert self._na_flag_o is not None
-            assert self._na_target_address is not None
             struct.pack_into(
                 f"! BBH L 16s {len(self._raw_nd_options)}s",
                 frame,
@@ -367,14 +344,7 @@ class Icmp6Assembler:
     def _raw_nd_options(self) -> bytes:
         """ICMPv6 ND packet options in raw format"""
 
-        assert self._nd_options is not None
-
-        raw_nd_options = b""
-
-        for option in self._nd_options:
-            raw_nd_options += option.raw_option
-
-        return raw_nd_options
+        return b"".join(bytes(option) for option in self._nd_options)
 
 
 #
@@ -398,9 +368,20 @@ class Icmp6NdOptSLLA:
 
         return ICMP6_ND_OPT_SLLA_LEN
 
-    @property
-    def raw_option(self) -> bytes:
+    def __repr__(self) -> str:
+        """Option representation"""
+
+        return "Icmp6NdOptSLLA({self._slla})"
+
+    def __bytes__(self) -> bytes:
+        """Option in raw form"""
+
         return struct.pack("! BB 6s", ICMP6_ND_OPT_SLLA, ICMP6_ND_OPT_SLLA_LEN >> 3, bytes(self._slla))
+
+    def __eq__(self, other) -> bool:
+        """Equal operator"""
+
+        return repr(self) == repr(other)
 
 
 class Icmp6NdOptTLLA:
@@ -419,9 +400,20 @@ class Icmp6NdOptTLLA:
 
         return ICMP6_ND_OPT_TLLA_LEN
 
-    @property
-    def raw_option(self) -> bytes:
+    def __repr__(self) -> str:
+        """Option representation"""
+
+        return "Icmp6NdOptTLLA({self._tlla})"
+
+    def __bytes__(self) -> bytes:
+        """Option in raw form"""
+
         return struct.pack("! BB 6s", ICMP6_ND_OPT_TLLA, ICMP6_ND_OPT_TLLA_LEN >> 3, bytes(self._tlla))
+
+    def __eq__(self, other) -> bool:
+        """Equal operator"""
+
+        return repr(self) == repr(other)
 
 
 class Icmp6NdOptPI:
@@ -455,8 +447,14 @@ class Icmp6NdOptPI:
 
         return ICMP6_ND_OPT_PI_LEN
 
-    @property
-    def raw_option(self) -> bytes:
+    def __repr__(self) -> str:
+        """Option representation"""
+
+        return "Icmp6NdOptPI({self._valid_lifetime}, {self.preferr_lifetime}, {prefix}, {flag_l}, {flag_a}, {flag_r})"
+
+    def __bytes__(self) -> bytes:
+        """Option in raw form"""
+
         return struct.pack(
             "! BB BB L L L 16s",
             self._code,
@@ -467,6 +465,11 @@ class Icmp6NdOptPI:
             self._preferr_lifetime,
             bytes(self._prefix.address),
         )
+
+    def __eq__(self, other) -> bool:
+        """Equal operator"""
+
+        return repr(self) == repr(other)
 
 
 #

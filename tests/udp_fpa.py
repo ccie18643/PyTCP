@@ -49,41 +49,7 @@ class TestUdpAssembler(TestCase):
 
         self.assertEqual(UdpAssembler.ip6_next, IP6_NEXT_UDP)
 
-    def test_udp_fpa__assert_sport(self):
-        """Test assertion for the sport"""
-
-        UdpAssembler(sport=12345)
-
-    def test_udp_fpa__assert_sport__bellow(self):
-        """Test assertion for the sport"""
-
-        with self.assertRaises(AssertionError):
-            UdpAssembler(sport=-1)
-
-    def test_udp_fpa__assert_sport__above(self):
-        """Test assertion for the sport"""
-
-        with self.assertRaises(AssertionError):
-            UdpAssembler(sport=0x10000)
-
-    def test_udp_fpa__assert_dport(self):
-        """Test assertion for the dport"""
-
-        UdpAssembler(dport=12345)
-
-    def test_udp_fpa__assert_dport__bellow(self):
-        """Test assertion for the dport"""
-
-        with self.assertRaises(AssertionError):
-            UdpAssembler(dport=-1)
-
-    def test_udp_fpa__assert_dport__above(self):
-        """Test assertion for the dport"""
-
-        with self.assertRaises(AssertionError):
-            UdpAssembler(dport=0x10000)
-
-    def test_udp_fpa__constructor(self):
+    def test_udp_fpa____init__(self):
         """Test class constructor"""
 
         packet = UdpAssembler(
@@ -99,7 +65,7 @@ class TestUdpAssembler(TestCase):
         self.assertEqual(packet._plen, UDP_HEADER_LEN + 16)
         self.assertTrue(repr(packet.tracker._echo_tracker).startswith("Tracker(serial='<lr>TX"))
 
-    def test_udp_fpa__constructor__defaults(self):
+    def test_udp_fpa____init____defaults(self):
         """Test class constructor"""
 
         packet = UdpAssembler()
@@ -108,6 +74,30 @@ class TestUdpAssembler(TestCase):
         self.assertEqual(packet._dport, 0)
         self.assertEqual(packet._data, b"")
         self.assertEqual(packet._plen, UDP_HEADER_LEN)
+
+    def test_udp_fpa____init____assert_sport__under(self):
+        """Test assertion for the sport"""
+
+        with self.assertRaises(AssertionError):
+            UdpAssembler(sport=-1)
+
+    def test_udp_fpa____init____assert_sport__over(self):
+        """Test assertion for the sport"""
+
+        with self.assertRaises(AssertionError):
+            UdpAssembler(sport=0x10000)
+
+    def test_udp_fpa____init____assert_dport__under(self):
+        """Test assertion for the dport"""
+
+        with self.assertRaises(AssertionError):
+            UdpAssembler(dport=-1)
+
+    def test_udp_fpa____init____assert_dport__over(self):
+        """Test assertion for the dport"""
+
+        with self.assertRaises(AssertionError):
+            UdpAssembler(dport=0x10000)
 
     def test_udp_fpa____len__(self):
         """Test class __len__ operator"""
@@ -151,6 +141,6 @@ class TestUdpAssembler(TestCase):
             data=b"0123456789ABCDEF",
         )
 
-        frame = memoryview(bytearray(UDP_HEADER_LEN + 16))
+        frame = memoryview(bytearray(len(packet)))
         packet.assemble(frame, 0x12345678)
         self.assertEqual(bytes(frame), b"09\xd41\x00\x18\xc3\xf90123456789ABCDEF")

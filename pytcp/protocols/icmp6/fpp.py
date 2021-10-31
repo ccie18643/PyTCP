@@ -55,6 +55,7 @@ from protocols.icmp6.ps import (
     ICMP6_PARAMETER_PROBLEM,
     ICMP6_TIME_EXCEEDED,
     ICMP6_UNREACHABLE,
+    ICMP6_UNREACHABLE__PORT,
 )
 
 if TYPE_CHECKING:
@@ -86,47 +87,50 @@ class Icmp6Parser:
     def __str__(self) -> str:
         """Packet log string"""
 
-        log = f"ICMPv6 type {self.type}, code {self.code}"
+        header = f"ICMPv6 {self.type}/{self.code}"
 
-        if self.type == ICMP6_UNREACHABLE:
-            pass
+        if self.type == ICMP6_UNREACHABLE and self.code == ICMP6_UNREACHABLE__PORT:
+            return f"{header} (unreachable_port), dlen {len(self.un_data)}"
 
-        elif self.type == ICMP6_ECHO_REQUEST:
-            log += f", id {self.ec_id}, seq {self.ec_seq}"
+        if self.type == ICMP6_ECHO_REQUEST:
+            return f"{header} (echo_request), id {self.ec_id}, seq {self.ec_seq}, dlen {len(self.ec_data)}"
 
-        elif self.type == ICMP6_ECHO_REPLY:
-            log += f", id {self.ec_id}, seq {self.ec_seq}"
+        if self.type == ICMP6_ECHO_REPLY:
+            return f"{header} (echo_reply), id {self.ec_id}, seq {self.ec_seq}, dlen {len(self.ec_data)}"
 
-        elif self.type == ICMP6_ND_ROUTER_SOLICITATION:
+        if self.type == ICMP6_ND_ROUTER_SOLICITATION and self.code == 0:
             assert self.nd_options is not None
-            for nd_option in self.nd_options:
-                log += ", " + str(nd_option)
+            nd_options = ", ".join(str(nd_option) for nd_option in self.nd_options)
+            return f"{header} (nd_router_solicitation), {nd_options}"
 
-        elif self.type == ICMP6_ND_ROUTER_ADVERTISEMENT:
+        if self.type == ICMP6_ND_ROUTER_ADVERTISEMENT and self.code == 0:
             assert self.nd_options is not None
-            log += f", hop {self.ra_hop}"
-            log += f", flags {'M' if self.ra_flag_m else '-'}{'O' if self.ra_flag_o else '-'}"
-            log += f", rlft {self.ra_router_lifetime}, reacht {self.ra_reachable_time}, retrt {self.ra_retrans_timer}"
-            for nd_option in self.nd_options:
-                log += ", " + str(nd_option)
+            nd_options = ", ".join(str(nd_option) for nd_option in self.nd_options)
+            return (
+                f"{header} (nd_router_advertisement), hop {self.ra_hop}"
+                f", flags {'M' if self.ra_flag_m else '-'}{'O' if self.ra_flag_o else '-'}"
+                f", rlft {self.ra_router_lifetime}, reacht {self.ra_reachable_time}, retrt {self.ra_retrans_timer}"
+                f"{nd_options}"
+            )
 
-        elif self.type == ICMP6_ND_NEIGHBOR_SOLICITATION:
+        if self.type == ICMP6_ND_NEIGHBOR_SOLICITATION and self.code == 0:
             assert self.nd_options is not None
-            log += f", target {self.ns_target_address}"
-            for nd_option in self.nd_options:
-                log += ", " + str(nd_option)
+            nd_options = ", ".join(str(nd_option) for nd_option in self.nd_options)
+            return f"{header} (nd_neighbor_solicitation), target {self.ns_target_address}, {nd_options}"
 
-        elif self.type == ICMP6_ND_NEIGHBOR_ADVERTISEMENT:
+        if self.type == ICMP6_ND_NEIGHBOR_ADVERTISEMENT:
             assert self.nd_options is not None
-            log += f", target {self.na_target_address}"
-            log += f", flags {'R' if self.na_flag_r else '-'}{'S' if self.na_flag_s else '-'}{'O' if self.na_flag_o else '-'}"
-            for nd_option in self.nd_options:
-                log += ", " + str(nd_option)
+            nd_options = ", ".join(str(nd_option) for nd_option in self.nd_options)
+            return (
+                f"{header} (nd_neighbor_advertisement), target {self.na_target_address}"
+                f", flags {'R' if self.na_flag_r else '-'}{'S' if self.na_flag_s else '-'}{'O' if self.na_flag_o else '-'}"
+                f"{nd_options}"
+            )
 
-        elif self.type == ICMP6_MLD2_REPORT:
-            pass
+        if self.type == ICMP6_MLD2_REPORT:
+            return f"{header} (mld2_report)"
 
-        return log
+        return f"{header} (unknown)"
 
     @property
     def type(self) -> int:

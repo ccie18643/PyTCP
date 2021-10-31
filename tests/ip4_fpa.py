@@ -57,124 +57,7 @@ class TestIp4Assembler(TestCase):
 
         self.assertEqual(Ip4Assembler.ether_type, ETHER_TYPE_IP4)
 
-    def test_ip4_fpa__assert_ttl(self):
-        """Test assertion for the ttl"""
-
-        Ip4Assembler(ttl=0x20)
-
-    def test_ip4_fpa__assert_ttl__default(self):
-        """Test assertion for the ttl"""
-
-        Ip4Assembler()
-
-    def test_ip4_fpa__assert_ttl__bellow(self):
-        """Test assertion for the ttl"""
-
-        with self.assertRaises(AssertionError):
-            Ip4Assembler(ttl=-1)
-
-    def test_ip4_fpa__assert_ttl__above(self):
-        """Test assertion for the ttl"""
-
-        with self.assertRaises(AssertionError):
-            Ip4Assembler(ttl=0x100)
-
-    def test_ip4_fpa__assert_dscp(self):
-        """Test assertion for the dscp"""
-
-        Ip4Assembler(dscp=0x10)
-
-    def test_ip4_fpa__assert_dscp__default(self):
-        """Test assertion for the dscp"""
-
-        Ip4Assembler()
-
-    def test_ip4_fpa__assert_dscp__bellow(self):
-        """Test assertion for the dscp"""
-
-        with self.assertRaises(AssertionError):
-            Ip4Assembler(dscp=-1)
-
-    def test_ip4_fpa__assert_dscp__above(self):
-        """Test assertion for the dscp"""
-
-        with self.assertRaises(AssertionError):
-            Ip4Assembler(dscp=0x40)
-
-    def test_ip4_fpa__assert_ecn(self):
-        """Test assertion for the ecn"""
-
-        Ip4Assembler(ecn=2)
-
-    def test_ip4_fpa__assert_ecn__default(self):
-        """Test assertion for the ecn"""
-
-        Ip4Assembler()
-
-    def test_ip4_fpa__assert_ecn__bellow(self):
-        """Test assertion for the ecn"""
-
-        with self.assertRaises(AssertionError):
-            Ip4Assembler(ecn=-1)
-
-    def test_ip4_fpa__assert_ecn__above(self):
-        """Test assertion for the ecn"""
-
-        with self.assertRaises(AssertionError):
-            Ip4Assembler(ecn=4)
-
-    def test_ip4_fpa__assert_id(self):
-        """Test assertion for the id"""
-
-        Ip4Assembler(id=12345)
-
-    def test_ip4_fpa__assert_id__default(self):
-        """Test assertion for the id"""
-
-        Ip4Assembler()
-
-    def test_ip4_fpa__assert_id__bellow(self):
-        """Test assertion for the id"""
-
-        with self.assertRaises(AssertionError):
-            Ip4Assembler(id=-1)
-
-    def test_ip4_fpa__assert_id__above(self):
-        """Test assertion for the id"""
-
-        with self.assertRaises(AssertionError):
-            Ip4Assembler(id=0x10000)
-
-    def test_ip4_fpa__assert_proto_udp(self):
-        """Test assertion for carried packet ip4_proto attribute"""
-
-        Ip4Assembler(carried_packet=UdpAssembler())
-
-    def test_ip4_fpa__assert_proto_tcp(self):
-        """Test assertion for carried packet ip4_proto attribute"""
-
-        Ip4Assembler(carried_packet=TcpAssembler())
-
-    def test_ip4_fpa__assert_proto_icmp4(self):
-        """Test assertion for carried packet ip4_proto attribute"""
-
-        Ip4Assembler(carried_packet=Icmp4Assembler())
-
-    def test_ip4_fpa__assert_proto_raw(self):
-        """Test assertion for carried packet ip4_proto attribute"""
-
-        Ip4Assembler(carried_packet=RawAssembler())
-
-    def test_ip4_fpa__assert_proto_unknown(self):
-        """Test assertion for carried packet p4_proto attribute"""
-
-        with self.assertRaises(AssertionError):
-            carried_packet_mock = StrictMock()
-            carried_packet_mock.ip4_proto = -1
-            carried_packet_mock.tracker = StrictMock(Tracker)
-            Ip4Assembler(carried_packet=carried_packet_mock)
-
-    def test_ip4_fpa__constructor(self):
+    def test_ip4_fpa____init__(self):
         """Test class constructor"""
 
         packet = Ip4Assembler(
@@ -206,7 +89,7 @@ class TestIp4Assembler(TestCase):
         self.assertEqual(packet._hlen, IP4_HEADER_LEN + IP4_OPT_NOP_LEN + IP4_OPT_EOL_LEN)
         self.assertEqual(packet._plen, IP4_HEADER_LEN + IP4_OPT_NOP_LEN + IP4_OPT_EOL_LEN + 16)
 
-    def test_ip4_fpa__constructor__defaults(self):
+    def test_ip4_fpa____init____defaults(self):
         """Test class constructor"""
 
         packet = Ip4Assembler()
@@ -227,6 +110,83 @@ class TestIp4Assembler(TestCase):
         self.assertEqual(packet._proto, IP4_PROTO_RAW)
         self.assertEqual(packet._hlen, IP4_HEADER_LEN)
         self.assertEqual(packet._plen, IP4_HEADER_LEN)
+
+    def test_ip4_fpa____init____assert_ttl__under(self):
+        """Test assertion for the ttl"""
+
+        with self.assertRaises(AssertionError):
+            Ip4Assembler(ttl=-1)
+
+    def test_ip4_fpa____init____assert_ttl__over(self):
+        """Test assertion for the ttl"""
+
+        with self.assertRaises(AssertionError):
+            Ip4Assembler(ttl=0x100)
+
+    def test_ip4_fpa____init____assert_dscp__under(self):
+        """Test assertion for the dscp"""
+
+        with self.assertRaises(AssertionError):
+            Ip4Assembler(dscp=-1)
+
+    def test_ip4_fpa____init____assert_dscp__over(self):
+        """Test assertion for the dscp"""
+
+        with self.assertRaises(AssertionError):
+            Ip4Assembler(dscp=0x40)
+
+    def test_ip4_fpa____init____assert_ecn__under(self):
+        """Test assertion for the ecn"""
+
+        with self.assertRaises(AssertionError):
+            Ip4Assembler(ecn=-1)
+
+    def test_ip4_fpa____init____assert_ecn__over(self):
+        """Test assertion for the ecn"""
+
+        with self.assertRaises(AssertionError):
+            Ip4Assembler(ecn=4)
+
+    def test_ip4_fpa____init____assert_id__under(self):
+        """Test assertion for the id"""
+
+        with self.assertRaises(AssertionError):
+            Ip4Assembler(id=-1)
+
+    def test_ip4_fpa____init____assert_id__over(self):
+        """Test assertion for the id"""
+
+        with self.assertRaises(AssertionError):
+            Ip4Assembler(id=0x10000)
+
+    def test_ip4_fpa____init____assert_proto_udp(self):
+        """Test assertion for carried packet ip4_proto attribute"""
+
+        Ip4Assembler(carried_packet=UdpAssembler())
+
+    def test_ip4_fpa____init____assert_proto_tcp(self):
+        """Test assertion for carried packet ip4_proto attribute"""
+
+        Ip4Assembler(carried_packet=TcpAssembler())
+
+    def test_ip4_fpa____init____assert_proto_icmp4(self):
+        """Test assertion for carried packet ip4_proto attribute"""
+
+        Ip4Assembler(carried_packet=Icmp4Assembler())
+
+    def test_ip4_fpa____init____assert_proto_raw(self):
+        """Test assertion for carried packet ip4_proto attribute"""
+
+        Ip4Assembler(carried_packet=RawAssembler())
+
+    def test_ip4_fpa____init____assert_proto_unknown(self):
+        """Test assertion for carried packet p4_proto attribute"""
+
+        with self.assertRaises(AssertionError):
+            carried_packet_mock = StrictMock()
+            carried_packet_mock.ip4_proto = -1
+            carried_packet_mock.tracker = StrictMock(Tracker)
+            Ip4Assembler(carried_packet=carried_packet_mock)
 
     def test_ip4_fpa____len__(self):
         """Test class __len__ operator"""
@@ -387,7 +347,7 @@ class TestIp4Assembler(TestCase):
             carried_packet=RawAssembler(data=b"0123456789ABCDEF"),
         )
 
-        frame = memoryview(bytearray(IP4_HEADER_LEN + IP4_OPT_NOP_LEN + IP4_OPT_EOL_LEN + 16))
+        frame = memoryview(bytearray(len(packet)))
         packet.assemble(frame)
         self.assertEqual(bytes(frame), b"E*\x00&09@\x00 \xff\x18c\x01\x02\x03\x04\x05\x06\x07\x08\x01\x000123456789ABCDEF")
 
@@ -396,121 +356,7 @@ class TestIp4FragAssembler(TestCase):
     def test_ip4_frag_fpa__ethertype(self):
         """Test the ethertype of Ip4Assembler class"""
 
-    def test_ip4_frag_fpa__assert_ttl(self):
-        """Test assertion for the ttl"""
-
-        Ip4FragAssembler(ttl=0x20)
-
-    def test_ip4_frag_fpa__assert_ttl__default(self):
-        """Test assertion for the ttl"""
-
-        Ip4FragAssembler()
-
-    def test_ip4_frag_fpa__assert_ttl__bellow(self):
-        """Test assertion for the ttl"""
-
-        with self.assertRaises(AssertionError):
-            Ip4FragAssembler(ttl=-1)
-
-    def test_ip4_frag_fpa__assert_ttl__above(self):
-        """Test assertion for the ttl"""
-
-        with self.assertRaises(AssertionError):
-            Ip4FragAssembler(ttl=0x100)
-
-    def test_ip4_frag_fpa__assert_dscp(self):
-        """Test assertion for the dscp"""
-
-        Ip4FragAssembler(dscp=0x10)
-
-    def test_ip4_frag_fpa__assert_dscp__default(self):
-        """Test assertion for the dscp"""
-
-        Ip4FragAssembler()
-
-    def test_ip4_frag_fpa__assert_dscp__bellow(self):
-        """Test assertion for the dscp"""
-
-        with self.assertRaises(AssertionError):
-            Ip4FragAssembler(dscp=-1)
-
-    def test_ip4_frag_fpa__assert_dscp__above(self):
-        """Test assertion for the dscp"""
-
-        with self.assertRaises(AssertionError):
-            Ip4FragAssembler(dscp=0x40)
-
-    def test_ip4_frag_fpa__assert_ecn(self):
-        """Test assertion for the ecn"""
-
-        Ip4FragAssembler(ecn=2)
-
-    def test_ip4_frag_fpa__assert_ecn__default(self):
-        """Test assertion for the ecn"""
-
-        Ip4FragAssembler()
-
-    def test_ip4_frag_fpa__assert_ecn__bellow(self):
-        """Test assertion for the ecn"""
-
-        with self.assertRaises(AssertionError):
-            Ip4FragAssembler(ecn=-1)
-
-    def test_ip4_frag_fpa__assert_ecn__above(self):
-        """Test assertion for the ecn"""
-
-        with self.assertRaises(AssertionError):
-            Ip4FragAssembler(ecn=4)
-
-    def test_ip4_frag_fpa__assert_id(self):
-        """Test assertion for the id"""
-
-        Ip4FragAssembler(id=12345)
-
-    def test_ip4_frag_fpa__assert_id__default(self):
-        """Test assertion for the id"""
-
-        Ip4FragAssembler()
-
-    def test_ip4_frag_fpa__assert_id__bellow(self):
-        """Test assertion for the id"""
-
-        with self.assertRaises(AssertionError):
-            Ip4FragAssembler(id=-1)
-
-    def test_ip4_frag_fpa__assert_id__above(self):
-        """Test assertion for the id"""
-
-        with self.assertRaises(AssertionError):
-            Ip4FragAssembler(id=0x10000)
-
-    def test_ip4_frag_fpa__assert_proto_udp(self):
-        """Test assertion for carried packet ip4_proto attribute"""
-
-        Ip4FragAssembler(proto=IP4_PROTO_UDP)
-
-    def test_ip4_frag_fpa__assert_proto_tcp(self):
-        """Test assertion for carried packet ip4_proto attribute"""
-
-        Ip4FragAssembler(proto=IP4_PROTO_TCP)
-
-    def test_ip4_frag_fpa__assert_proto_icmp4(self):
-        """Test assertion for carried packet ip4_proto attribute"""
-
-        Ip4FragAssembler(proto=IP4_PROTO_ICMP4)
-
-    def test_ip4_frag_fpa__assert_proto_raw(self):
-        """Test assertion for carried packet ip4_proto attribute"""
-
-        Ip4FragAssembler(proto=IP4_PROTO_RAW)
-
-    def test_ip4_frag_fpa__assert_proto_unknown(self):
-        """Test assertion for carried packet p4_proto attribute"""
-
-        with self.assertRaises(AssertionError):
-            Ip4FragAssembler(proto=-1)
-
-    def test_ip4_frag_fpa__constructor(self):
+    def test_ip4_frag_fpa____init__(self):
         """Test class constructor"""
 
         packet = Ip4FragAssembler(
@@ -542,7 +388,7 @@ class TestIp4FragAssembler(TestCase):
         self.assertEqual(packet._hlen, IP4_HEADER_LEN + IP4_OPT_NOP_LEN + IP4_OPT_EOL_LEN)
         self.assertEqual(packet._plen, IP4_HEADER_LEN + IP4_OPT_NOP_LEN + IP4_OPT_EOL_LEN + 16)
 
-    def test_ip4_frag_fpa__constructor__defaults(self):
+    def test_ip4_frag_fpa____init____defaults(self):
         """Test class constructor"""
 
         packet = Ip4FragAssembler()
@@ -562,6 +408,80 @@ class TestIp4FragAssembler(TestCase):
         self.assertEqual(packet._proto, IP4_PROTO_RAW)
         self.assertEqual(packet._hlen, IP4_HEADER_LEN)
         self.assertEqual(packet._plen, IP4_HEADER_LEN)
+
+    def test_ip4_frag_fpa____init____assert_ttl__under(self):
+        """Test assertion for the ttl"""
+
+        with self.assertRaises(AssertionError):
+            Ip4FragAssembler(ttl=-1)
+
+    def test_ip4_frag_fpa____init____assert_ttl__over(self):
+        """Test assertion for the ttl"""
+
+        with self.assertRaises(AssertionError):
+            Ip4FragAssembler(ttl=0x100)
+
+    def test_ip4_frag_fpa____init____assert_dscp__under(self):
+        """Test assertion for the dscp"""
+
+        with self.assertRaises(AssertionError):
+            Ip4FragAssembler(dscp=-1)
+
+    def test_ip4_frag_fpa____init____assert_dscp__over(self):
+        """Test assertion for the dscp"""
+
+        with self.assertRaises(AssertionError):
+            Ip4FragAssembler(dscp=0x40)
+
+    def test_ip4_frag_fpa____init____assert_ecn__under(self):
+        """Test assertion for the ecn"""
+
+        with self.assertRaises(AssertionError):
+            Ip4FragAssembler(ecn=-1)
+
+    def test_ip4_frag_fpa____init____assert_ecn__over(self):
+        """Test assertion for the ecn"""
+
+        with self.assertRaises(AssertionError):
+            Ip4FragAssembler(ecn=4)
+
+    def test_ip4_frag_fpa____init____assert_id__under(self):
+        """Test assertion for the id"""
+
+        with self.assertRaises(AssertionError):
+            Ip4FragAssembler(id=-1)
+
+    def test_ip4_frag_fpa____init____assert_id__over(self):
+        """Test assertion for the id"""
+
+        with self.assertRaises(AssertionError):
+            Ip4FragAssembler(id=0x10000)
+
+    def test_ip4_frag_fpa____init____assert_proto_udp(self):
+        """Test assertion for carried packet ip4_proto attribute"""
+
+        Ip4FragAssembler(proto=IP4_PROTO_UDP)
+
+    def test_ip4_frag_fpa____init____assert_proto_tcp(self):
+        """Test assertion for carried packet ip4_proto attribute"""
+
+        Ip4FragAssembler(proto=IP4_PROTO_TCP)
+
+    def test_ip4_frag_fpa____init____assert_proto_icmp4(self):
+        """Test assertion for carried packet ip4_proto attribute"""
+
+        Ip4FragAssembler(proto=IP4_PROTO_ICMP4)
+
+    def test_ip4_frag_fpa____init____assert_proto_raw(self):
+        """Test assertion for carried packet ip4_proto attribute"""
+
+        Ip4FragAssembler(proto=IP4_PROTO_RAW)
+
+    def test_ip4_frag_fpa____init____assert_proto_unknown(self):
+        """Test assertion for carried packet p4_proto attribute"""
+
+        with self.assertRaises(AssertionError):
+            Ip4FragAssembler(proto=-1)
 
     def test_ip4_frag_fpa____len__(self):
         """Test class __len__ operator"""
@@ -687,7 +607,7 @@ class TestIp4FragAssembler(TestCase):
             data=b"0123456789ABCDEF",
         )
 
-        frame = memoryview(bytearray(IP4_HEADER_LEN + IP4_OPT_NOP_LEN + IP4_OPT_EOL_LEN + 16))
+        frame = memoryview(bytearray(len(packet)))
         packet.assemble(frame)
         self.assertEqual(bytes(frame), b"E*\x00&09:\x86 \xff\x1d\xdd\x01\x02\x03\x04\x05\x06\x07\x08\x01\x000123456789ABCDEF")
 

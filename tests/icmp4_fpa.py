@@ -51,47 +51,7 @@ class TestIcmp4Assembler(TestCase):
 
         self.assertEqual(Icmp4Assembler.ip4_proto, IP4_PROTO_ICMP4)
 
-    def test_icmp4_fpa__assert_ec_id(self):
-        """Test assertion for the ec_id"""
-
-        Icmp4Assembler(ec_id=12345)
-
-    def test_icmp4_fpa__assert_ec_id__bellow(self):
-        """Test assertion for the ec_id"""
-
-        with self.assertRaises(AssertionError):
-            Icmp4Assembler(ec_id=-1)
-
-    def test_icmp4_fpa__assert_ec_id__above(self):
-        """Test assertion for the ec_id"""
-
-        with self.assertRaises(AssertionError):
-            Icmp4Assembler(ec_id=0x10000)
-
-    def test_icmp4_fpa__assert_ec_seq(self):
-        """Test assertion for the ec_seq"""
-
-        Icmp4Assembler(ec_seq=54321)
-
-    def test_icmp4_fpa__assert_ec_seq__bellow(self):
-        """Test assertion for the ec_id"""
-
-        with self.assertRaises(AssertionError):
-            Icmp4Assembler(ec_seq=-1)
-
-    def test_icmp4_fpa__assert_ec_seq__above(self):
-        """Test assertion for the ec_seq"""
-
-        with self.assertRaises(AssertionError):
-            Icmp4Assembler(ec_seq=0x10000)
-
-    def test_icmp4_fpa__assert_unknown_type_code(self):
-        """Test assertion for the unknown type/code combination"""
-
-        with self.assertRaises(AssertionError):
-            Icmp4Assembler(type=255, code=255)
-
-    def test_icmp4_fpa__constructor__echo_request(self):
+    def test_icmp4_fpa____init____echo_request(self):
         """Test class constructor for Echo Request message"""
 
         packet = Icmp4Assembler(
@@ -108,7 +68,7 @@ class TestIcmp4Assembler(TestCase):
         self.assertEqual(packet._ec_data, b"0123456789ABCDEF")
         self.assertTrue(repr(packet.tracker._echo_tracker).startswith("Tracker(serial='<lr>TX"))
 
-    def test_icmp4_fpa__constructor__echo_request__assert_code_under(self):
+    def test_icmp4_fpa____init____echo_request__assert_code__under(self):
         """Test class constructor for Echo Request message"""
 
         with self.assertRaises(AssertionError):
@@ -117,7 +77,7 @@ class TestIcmp4Assembler(TestCase):
                 code=-1,
             )
 
-    def test_icmp4_fpa__constructor__echo_request__assert_code_above(self):
+    def test_icmp4_fpa____init____echo_request__assert_code__over(self):
         """Test class constructor for Echo Request message"""
 
         with self.assertRaises(AssertionError):
@@ -126,7 +86,47 @@ class TestIcmp4Assembler(TestCase):
                 code=1,
             )
 
-    def test_icmp4_fpa__constructor__unreachable_port(self):
+    def test_icmp4_fpa____init____echo_request__assert_ec_id__under(self):
+        """Test assertion for the ec_id"""
+
+        with self.assertRaises(AssertionError):
+            Icmp4Assembler(
+                type=ICMP4_ECHO_REQUEST,
+                code=0,
+                ec_id=-1,
+            )
+
+    def test_icmp4_fpa____init____echo_request__assert_ec_id__over(self):
+        """Test assertion for the ec_id"""
+
+        with self.assertRaises(AssertionError):
+            Icmp4Assembler(
+                type=ICMP4_ECHO_REQUEST,
+                code=0,
+                ec_id=0x10000,
+            )
+
+    def test_icmp4_fpa____init____echo_request__assert_ec_seq__under(self):
+        """Test assertion for the ec_id"""
+
+        with self.assertRaises(AssertionError):
+            Icmp4Assembler(
+                type=ICMP4_ECHO_REQUEST,
+                code=0,
+                ec_seq=-1,
+            )
+
+    def test_icmp4_fpa____init____echo_request__assert_ec_seq__over(self):
+        """Test assertion for the ec_seq"""
+
+        with self.assertRaises(AssertionError):
+            Icmp4Assembler(
+                type=ICMP4_ECHO_REQUEST,
+                code=0,
+                ec_seq=0x10000,
+            )
+
+    def test_icmp4_fpa____init____unreachable_port(self):
         """Test class constructor for Unreachable Port message"""
 
         packet = Icmp4Assembler(
@@ -139,7 +139,7 @@ class TestIcmp4Assembler(TestCase):
         self.assertEqual(packet._un_data, (b"0123456789ABCDEF" * 50)[:520])
         self.assertTrue(repr(packet.tracker._echo_tracker).startswith("Tracker(serial='<lr>TX"))
 
-    def test_icmp4_fpa__constructor__unreachable_port__assert_code_bellow(self):
+    def test_icmp4_fpa____init____unreachable_port__assert_code__under(self):
         """Test class constructor for Unreachable Port message"""
 
         with self.assertRaises(AssertionError):
@@ -148,7 +148,7 @@ class TestIcmp4Assembler(TestCase):
                 code=ICMP4_UNREACHABLE__PORT - 1,
             )
 
-    def test_icmp4_fpa__constructor__unreachable_port__assert_code_above(self):
+    def test_icmp4_fpa____init____unreachable_port__assert_code__over(self):
         """Test class constructor for Unreachable Port message"""
 
         with self.assertRaises(AssertionError):
@@ -157,7 +157,7 @@ class TestIcmp4Assembler(TestCase):
                 code=ICMP4_UNREACHABLE__PORT + 1,
             )
 
-    def test_icmp4_fpa__constructor__echo_reply(self):
+    def test_icmp4_fpa____init____echo_reply(self):
         """Test class constructor for Echo Reply message"""
 
         packet = Icmp4Assembler(
@@ -174,7 +174,7 @@ class TestIcmp4Assembler(TestCase):
         self.assertEqual(packet._ec_data, b"0123456789ABCDEF")
         self.assertTrue(repr(packet.tracker._echo_tracker).startswith("Tracker(serial='<lr>TX"))
 
-    def test_icmp4_fpa__constructor__echo_reply__assert_code_under(self):
+    def test_icmp4_fpa____init____echo_reply__assert_code__under(self):
         """Test class constructor for Echo Reply message"""
 
         with self.assertRaises(AssertionError):
@@ -183,7 +183,7 @@ class TestIcmp4Assembler(TestCase):
                 code=-1,
             )
 
-    def test_icmp4_fpa__constructor__echo_reply__assert_code_above(self):
+    def test_icmp4_fpa____init____echo_reply__assert_code__over(self):
         """Test class constructor for Echo Reply message"""
 
         with self.assertRaises(AssertionError):
@@ -192,7 +192,47 @@ class TestIcmp4Assembler(TestCase):
                 code=1,
             )
 
-    def test_icmp4_fpa__constructor__unknown(self):
+    def test_icmp4_fpa____init____echo_reply__assert_ec_id__under(self):
+        """Test assertion for the ec_id"""
+
+        with self.assertRaises(AssertionError):
+            Icmp4Assembler(
+                type=ICMP4_ECHO_REPLY,
+                code=0,
+                ec_id=-1,
+            )
+
+    def test_icmp4_fpa____init____echo_reply__assert_ec_id__over(self):
+        """Test assertion for the ec_id"""
+
+        with self.assertRaises(AssertionError):
+            Icmp4Assembler(
+                type=ICMP4_ECHO_REPLY,
+                code=0,
+                ec_id=0x10000,
+            )
+
+    def test_icmp4_fpa____init____echo_reply__assert_ec_seq__under(self):
+        """Test assertion for the ec_id"""
+
+        with self.assertRaises(AssertionError):
+            Icmp4Assembler(
+                type=ICMP4_ECHO_REPLY,
+                code=0,
+                ec_seq=-1,
+            )
+
+    def test_icmp4_fpa____init____echo_reply__assert_ec_seq__over(self):
+        """Test assertion for the ec_seq"""
+
+        with self.assertRaises(AssertionError):
+            Icmp4Assembler(
+                type=ICMP4_ECHO_REPLY,
+                code=0,
+                ec_seq=0x10000,
+            )
+
+    def test_icmp4_fpa____init____unknown(self):
         """Test class constructor for message with unknown type"""
 
         with self.assertRaises(AssertionError):
@@ -284,7 +324,7 @@ class TestIcmp4Assembler(TestCase):
             ec_data=b"0123456789ABCDEF",
         )
 
-        frame = memoryview(bytearray(ICMP4_ECHO_REPLY_LEN + 16))
+        frame = memoryview(bytearray(len(packet)))
         packet.assemble(frame)
         self.assertEqual(bytes(frame), b"\x00\x00,\xbe09\xd410123456789ABCDEF")
 
@@ -297,7 +337,7 @@ class TestIcmp4Assembler(TestCase):
             un_data=b"0123456789ABCDEF",
         )
 
-        frame = memoryview(bytearray(ICMP4_ECHO_REPLY_LEN + 16))
+        frame = memoryview(bytearray(len(packet)))
         packet.assemble(frame)
         self.assertEqual(bytes(frame), b"\x03\x03.&\x00\x00\x00\x000123456789ABCDEF")
 
@@ -312,6 +352,6 @@ class TestIcmp4Assembler(TestCase):
             ec_data=b"0123456789ABCDEF",
         )
 
-        frame = memoryview(bytearray(ICMP4_ECHO_REQUEST_LEN + 16))
+        frame = memoryview(bytearray(len(packet)))
         packet.assemble(frame)
         self.assertEqual(bytes(frame), b"\x08\x00$\xbe09\xd410123456789ABCDEF")

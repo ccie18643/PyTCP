@@ -44,23 +44,7 @@ class TestArpAssembler(TestCase):
 
         self.assertEqual(ArpAssembler.ether_type, ETHER_TYPE_ARP)
 
-    def test_arp_fpa__assert_oper_request(self):
-        """Test assertion for the request operation"""
-
-        ArpAssembler(oper=ARP_OP_REQUEST)
-
-    def test_arp_fpa__assert_oper_reply(self):
-        """Test assertion for the request operation"""
-
-        ArpAssembler(oper=ARP_OP_REPLY)
-
-    def test_arp_fpa__assert_oper_unknown(self):
-        """Test assertion for the unknown operation"""
-
-        with self.assertRaises(AssertionError):
-            ArpAssembler(oper=-1)
-
-    def test_arp_fpa__constructor(self):
+    def test_arp_fpa____init__(self):
         """Test class constructor"""
 
         packet = ArpAssembler(
@@ -77,7 +61,7 @@ class TestArpAssembler(TestCase):
         self.assertEqual(packet._tpa, Ip4Address("5.6.7.8"))
         self.assertEqual(packet._oper, ARP_OP_REPLY)
 
-    def test_arp_fpa__constructor_defaults(self):
+    def test_arp_fpa____init____defaults(self):
         """Test class constructor"""
 
         packet = ArpAssembler()
@@ -87,6 +71,22 @@ class TestArpAssembler(TestCase):
         self.assertEqual(packet._tha, MacAddress("00:00:00:00:00:00"))
         self.assertEqual(packet._tpa, Ip4Address("0.0.0.0"))
         self.assertEqual(packet._oper, ARP_OP_REQUEST)
+
+    def test_arp_fpa____init____assert_oper_request(self):
+        """Test assertion for the request operation"""
+
+        ArpAssembler(oper=ARP_OP_REQUEST)
+
+    def test_arp_fpa____init____assert_oper_reply(self):
+        """Test assertion for the request operation"""
+
+        ArpAssembler(oper=ARP_OP_REPLY)
+
+    def test_arp_fpa____init____assert_oper_unknown(self):
+        """Test assertion for the unknown operation"""
+
+        with self.assertRaises(AssertionError):
+            ArpAssembler(oper=-1)
 
     def test_arp_fpa____len__(self):
         """Test class __len__ operator"""
@@ -138,7 +138,7 @@ class TestArpAssembler(TestCase):
             oper=ARP_OP_REPLY,
         )
 
-        frame = memoryview(bytearray(ARP_HEADER_LEN))
+        frame = memoryview(bytearray(len(packet)))
         packet.assemble(frame)
 
         self.assertEqual(frame, b'\x00\x01\x08\x00\x06\x04\x00\x02\x00\x11"3DU\x01\x02\x03\x04fw\x88\x99\xaa\xbb\x05\x06\x07\x08')

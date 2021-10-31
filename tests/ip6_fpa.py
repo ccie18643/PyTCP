@@ -49,124 +49,7 @@ class TestIp6Assembler(TestCase):
 
         self.assertEqual(Ip6Assembler.ether_type, ETHER_TYPE_IP6)
 
-    def test_ip6_fpa__assert_hop(self):
-        """Test assertion for the hop"""
-
-        Ip6Assembler(hop=0x20)
-
-    def test_ip6_fpa__assert_hop__default(self):
-        """Test assertion for the hop"""
-
-        Ip6Assembler()
-
-    def test_ip6_fpa__assert_hop__bellow(self):
-        """Test assertion for the hop"""
-
-        with self.assertRaises(AssertionError):
-            Ip6Assembler(hop=-1)
-
-    def test_ip6_fpa__assert_hop__above(self):
-        """Test assertion for the hop"""
-
-        with self.assertRaises(AssertionError):
-            Ip6Assembler(hop=0x100)
-
-    def test_ip6_fpa__assert_dscp(self):
-        """Test assertion for the dscp"""
-
-        Ip6Assembler(dscp=0x10)
-
-    def test_ip6_fpa__assert_dscp__default(self):
-        """Test assertion for the dscp"""
-
-        Ip6Assembler()
-
-    def test_ip6_fpa__assert_dscp__bellow(self):
-        """Test assertion for the dscp"""
-
-        with self.assertRaises(AssertionError):
-            Ip6Assembler(dscp=-1)
-
-    def test_ip6_fpa__assert_dscp__above(self):
-        """Test assertion for the dscp"""
-
-        with self.assertRaises(AssertionError):
-            Ip6Assembler(dscp=0x40)
-
-    def test_ip6_fpa__assert_ecn(self):
-        """Test assertion for the ecn"""
-
-        Ip6Assembler(ecn=2)
-
-    def test_ip6_fpa__assert_ecn__default(self):
-        """Test assertion for the ecn"""
-
-        Ip6Assembler()
-
-    def test_ip6_fpa__assert_ecn__bellow(self):
-        """Test assertion for the ecn"""
-
-        with self.assertRaises(AssertionError):
-            Ip6Assembler(ecn=-1)
-
-    def test_ip6_fpa__assert_ecn__above(self):
-        """Test assertion for the ecn"""
-
-        with self.assertRaises(AssertionError):
-            Ip6Assembler(ecn=4)
-
-    def test_ip6_fpa__assert_flow(self):
-        """Test assertion for the flow"""
-
-        Ip6Assembler(flow=12345)
-
-    def test_ip6_fpa__assert_flow__default(self):
-        """Test assertion for the flow"""
-
-        Ip6Assembler()
-
-    def test_ip6_fpa__assert_flow__bellow(self):
-        """Test assertion for the flow"""
-
-        with self.assertRaises(AssertionError):
-            Ip6Assembler(flow=-1)
-
-    def test_ip6_fpa__assert_flow__above(self):
-        """Test assertion for the flow"""
-
-        with self.assertRaises(AssertionError):
-            Ip6Assembler(flow=0x1000000)
-
-    def test_ip6_fpa__assert_next_header_udp(self):
-        """Test assertion for carried packet ip6_next_header attribute"""
-
-        Ip6Assembler(carried_packet=UdpAssembler())
-
-    def test_ip6_fpa__assert_next_header_tcp(self):
-        """Test assertion for carried packet ip6_next_header attribute"""
-
-        Ip6Assembler(carried_packet=TcpAssembler())
-
-    def test_ip6_fpa__assert_next_header_icmp6(self):
-        """Test assertion for carried packet ip6_next_header attribute"""
-
-        Ip6Assembler(carried_packet=Icmp6Assembler())
-
-    def test_ip6_fpa__assert_next_header_raw(self):
-        """Test assertion for carried packet ip6_next_header attribute"""
-
-        Ip6Assembler(carried_packet=RawAssembler())
-
-    def test_ether_fpa__next_header_unknown(self):
-        """Test assertion for carried packet p4_next_header attribute"""
-
-        with self.assertRaises(AssertionError):
-            carried_packet_mock = StrictMock()
-            carried_packet_mock.ip6_next = -1
-            carried_packet_mock.tracker = StrictMock(Tracker)
-            Ip6Assembler(carried_packet=carried_packet_mock)
-
-    def test_ip6_fpa__constructor(self):
+    def test_ip6_fpa____init__(self):
         """Test class constructor"""
 
         packet = Ip6Assembler(
@@ -191,7 +74,7 @@ class TestIp6Assembler(TestCase):
         self.assertEqual(packet._next, IP6_NEXT_RAW)
         self.assertEqual(packet._dlen, 16)
 
-    def test_ip6_fpa__constructor__defaults(self):
+    def test_ip6_fpa____init____defaults(self):
         """Test class constructor"""
 
         packet = Ip6Assembler()
@@ -207,6 +90,83 @@ class TestIp6Assembler(TestCase):
         self.assertEqual(packet._dst, Ip6Address(0))
         self.assertEqual(packet._next, IP6_NEXT_RAW)
         self.assertEqual(packet._dlen, 0)
+
+    def test_ip6_fpa____init____assert_hop__under(self):
+        """Test assertion for the hop"""
+
+        with self.assertRaises(AssertionError):
+            Ip6Assembler(hop=-1)
+
+    def test_ip6_fpa____init____assert_hop__over(self):
+        """Test assertion for the hop"""
+
+        with self.assertRaises(AssertionError):
+            Ip6Assembler(hop=0x100)
+
+    def test_ip6_fpa____init____assert_dscp__under(self):
+        """Test assertion for the dscp"""
+
+        with self.assertRaises(AssertionError):
+            Ip6Assembler(dscp=-1)
+
+    def test_ip6_fpa____init____assert_dscp__over(self):
+        """Test assertion for the dscp"""
+
+        with self.assertRaises(AssertionError):
+            Ip6Assembler(dscp=0x40)
+
+    def test_ip6_fpa____init____assert_ecn__under(self):
+        """Test assertion for the ecn"""
+
+        with self.assertRaises(AssertionError):
+            Ip6Assembler(ecn=-1)
+
+    def test_ip6_fpa____init____assert_ecn__over(self):
+        """Test assertion for the ecn"""
+
+        with self.assertRaises(AssertionError):
+            Ip6Assembler(ecn=4)
+
+    def test_ip6_fpa____init____assert_flow__under(self):
+        """Test assertion for the flow"""
+
+        with self.assertRaises(AssertionError):
+            Ip6Assembler(flow=-1)
+
+    def test_ip6_fpa____init____assert_flow__over(self):
+        """Test assertion for the flow"""
+
+        with self.assertRaises(AssertionError):
+            Ip6Assembler(flow=0x1000000)
+
+    def test_ip6_fpa____init____assert_next_header_udp(self):
+        """Test assertion for carried packet ip6_next_header attribute"""
+
+        Ip6Assembler(carried_packet=UdpAssembler())
+
+    def test_ip6_fpa____init____assert_next_header_tcp(self):
+        """Test assertion for carried packet ip6_next_header attribute"""
+
+        Ip6Assembler(carried_packet=TcpAssembler())
+
+    def test_ip6_fpa____init____assert_next_header_icmp6(self):
+        """Test assertion for carried packet ip6_next_header attribute"""
+
+        Ip6Assembler(carried_packet=Icmp6Assembler())
+
+    def test_ip6_fpa____init____assert_next_header_raw(self):
+        """Test assertion for carried packet ip6_next_header attribute"""
+
+        Ip6Assembler(carried_packet=RawAssembler())
+
+    def test_ip6_fpa____init____assert_next_header_unknown(self):
+        """Test assertion for carried packet p4_next_header attribute"""
+
+        with self.assertRaises(AssertionError):
+            carried_packet_mock = StrictMock()
+            carried_packet_mock.ip6_next = -1
+            carried_packet_mock.tracker = StrictMock(Tracker)
+            Ip6Assembler(carried_packet=carried_packet_mock)
 
     def test_ip6_fpa____len__(self):
         """Test class __len__ operator"""
@@ -301,7 +261,7 @@ class TestIp6Assembler(TestCase):
             carried_packet=RawAssembler(data=b"0123456789ABCDEF"),
         )
 
-        frame = memoryview(bytearray(IP6_HEADER_LEN + 16))
+        frame = memoryview(bytearray(len(packet)))
         packet.assemble(frame)
         self.assertEqual(
             bytes(frame),

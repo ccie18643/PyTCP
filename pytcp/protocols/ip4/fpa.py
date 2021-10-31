@@ -168,12 +168,7 @@ class Ip4Assembler:
     def _raw_options(self) -> bytes:
         """Packet options in raw format"""
 
-        raw_options = b""
-
-        for option in self._options:
-            raw_options += bytes(option)
-
-        return raw_options
+        return b"".join(bytes(option) for option in self._options)
 
     def assemble(self, frame: memoryview) -> None:
         """Assemble packet into the raw form"""
