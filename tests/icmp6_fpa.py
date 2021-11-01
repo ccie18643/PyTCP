@@ -31,12 +31,13 @@
 
 from testslide import TestCase
 
-from pytcp.lib.ip6_address import Ip6Address
+from pytcp.lib.ip6_address import Ip6Address, Ip6Network
 from pytcp.lib.mac_address import MacAddress
 from pytcp.lib.tracker import Tracker
 from pytcp.protocols.icmp6.fpa import (
     Icmp6Assembler,
     Icmp6MulticastAddressRecord,
+    Icmp6NdOptPI,
     Icmp6NdOptSLLA,
     Icmp6NdOptTLLA,
 )
@@ -48,7 +49,6 @@ from pytcp.protocols.icmp6.ps import (
     ICMP6_MART_MODE_IS_EXCLUDE,
     ICMP6_MART_MODE_IS_INCLUDE,
     ICMP6_MLD2_REPORT,
-    ICMP6_MLD2_REPORT_LEN,
     ICMP6_ND_NEIGHBOR_ADVERTISEMENT,
     ICMP6_ND_NEIGHBOR_ADVERTISEMENT_LEN,
     ICMP6_ND_NEIGHBOR_SOLICITATION,
@@ -961,4 +961,208 @@ class TestIcmp6Assembler(TestCase):
         packet.assemble(frame, 12345678)
         self.assertEqual(
             bytes(frame), b"\x88\x00\xccg\xe0\x00\x00\x00\x00\x01\x00\x02\x00\x03\x00\x04" b'\x00\x05\x00\x06\x00\x07\x00\x08\x01\x01\x11"3DUf\x02\x01fUD3"\x11'
+        )
+
+
+class TestIcmp6NdOptSLLA(TestCase):
+    def test_icmp6_fpa_nd_opt_slla____init__(self):
+        """Test class constructor"""
+
+        option = Icmp6NdOptSLLA(MacAddress("11:22:33:44:55:66"))
+
+        self.assertEqual(option._slla, MacAddress("11:22:33:44:55:66"))
+
+    def test_icmp6_fpa_nd_opt_slla____str__(self):
+        """Test the __str__ dunder"""
+
+        option = Icmp6NdOptSLLA(MacAddress("11:22:33:44:55:66"))
+
+        self.assertEqual(str(option), "slla 11:22:33:44:55:66")
+
+    def test_icmp6_fpa_nd_opt_slla____repr__(self):
+        """Test the __repr__ dunder"""
+
+        option = Icmp6NdOptSLLA(MacAddress("11:22:33:44:55:66"))
+
+        self.assertEqual(repr(option), f"Icmp6NdOptSLLA({repr(option._slla)})")
+
+    def test_icmp6_fpa_nd_opt_slla____bytes__(self):
+        """Test the __bytes__ dunder"""
+
+        option = Icmp6NdOptSLLA(MacAddress("11:22:33:44:55:66"))
+
+        self.assertEqual(bytes(option), b'\x01\x01\x11"3DUf')
+
+    def test_icmp6_fpa_nd_opt_slla____eq__(self):
+        """Test the __eq__ dunder"""
+
+        option = Icmp6NdOptSLLA(MacAddress("11:22:33:44:55:66"))
+
+        self.assertEqual(option, Icmp6NdOptSLLA(MacAddress("11:22:33:44:55:66")))
+
+
+class TestIcmp6NdOptTLLA(TestCase):
+    def test_icmp6_fpa_nd_opt_tlla____init__(self):
+        """Test class constructor"""
+
+        option = Icmp6NdOptTLLA(MacAddress("66:55:44:33:22:11"))
+
+        self.assertEqual(option._tlla, MacAddress("66:55:44:33:22:11"))
+
+    def test_icmp6_fpa_nd_opt_tlla____str__(self):
+        """Test the __str__ dunder"""
+
+        option = Icmp6NdOptTLLA(MacAddress("66:55:44:33:22:11"))
+
+        self.assertEqual(str(option), "tlla 66:55:44:33:22:11")
+
+    def test_icmp6_fpa_nd_opt_tlla____repr__(self):
+        """Test the __repr__ dunder"""
+
+        option = Icmp6NdOptTLLA(MacAddress("66:55:44:33:22:11"))
+
+        self.assertEqual(repr(option), f"Icmp6NdOptTLLA({repr(option._tlla)})")
+
+    def test_icmp6_fpa_nd_opt_tlla____bytes__(self):
+        """Test the __bytes__ dunder"""
+
+        option = Icmp6NdOptTLLA(MacAddress("66:55:44:33:22:11"))
+
+        self.assertEqual(bytes(option), b'\x02\x01fUD3"\x11')
+
+    def test_icmp6_fpa_nd_opt_tlla____eq__(self):
+        """Test the __eq__ dunder"""
+
+        option = Icmp6NdOptTLLA(MacAddress("66:55:44:33:22:11"))
+
+        self.assertEqual(option, Icmp6NdOptTLLA(MacAddress("66:55:44:33:22:11")))
+
+
+class TestIcmp6NdOptPI(TestCase):
+    def test_icmp6_fpa_nd_opt_pi____init__(self):
+        """Test class constructor"""
+
+        option = Icmp6NdOptPI(
+            valid_lifetime=12345678,
+            prefer_lifetime=87654321,
+            prefix=Ip6Network("1:2:3:4::/64"),
+            flag_l=True,
+            flag_a=True,
+            flag_r=True,
+        )
+
+        self.assertEqual(option._valid_lifetime, 12345678)
+        self.assertEqual(option._prefer_lifetime, 87654321)
+        self.assertEqual(option._prefix, Ip6Network("1:2:3:4::/64"))
+        self.assertEqual(option._flag_l, True)
+        self.assertEqual(option._flag_a, True)
+        self.assertEqual(option._flag_r, True)
+
+    def test_icmp6_fpa_nd_opt_pi____init____assert_valid_lifetime__under(self):
+        """Test assertion for the valid_lifetime"""
+
+        with self.assertRaises(AssertionError):
+            Icmp6NdOptPI(
+                valid_lifetime=-1,
+                prefer_lifetime=87654321,
+                prefix=Ip6Network("1:2:3:4::/64"),
+            )
+
+    def test_icmp6_fpa_nd_opt_pi____init____assert_valid_lifetime__over(self):
+        """Test assertion for the valid_lifetime"""
+
+        with self.assertRaises(AssertionError):
+            Icmp6NdOptPI(
+                valid_lifetime=0x100000000,
+                prefer_lifetime=87654321,
+                prefix=Ip6Network("1:2:3:4::/64"),
+            )
+
+    def test_icmp6_fpa_nd_opt_pi____init____assert_prefer_lifetime__under(self):
+        """Test assertion for the prefer_lifetime"""
+
+        with self.assertRaises(AssertionError):
+            Icmp6NdOptPI(
+                valid_lifetime=12345678,
+                prefer_lifetime=-1,
+                prefix=Ip6Network("1:2:3:4::/64"),
+            )
+
+    def test_icmp6_fpa_nd_opt_pi____init____assert_prefer_lifetime__over(self):
+        """Test assertion for the prefer_lifetime"""
+
+        with self.assertRaises(AssertionError):
+            Icmp6NdOptPI(
+                valid_lifetime=12345678,
+                prefer_lifetime=0x100000000,
+                prefix=Ip6Network("1:2:3:4::/64"),
+            )
+
+    def test_icmp6_fpa_nd_opt_pi____str__(self):
+        """Test the __str__ dunder"""
+
+        option = Icmp6NdOptPI(
+            valid_lifetime=12345678,
+            prefer_lifetime=87654321,
+            prefix=Ip6Network("1:2:3:4::/64"),
+            flag_l=True,
+            flag_a=True,
+            flag_r=True,
+        )
+
+        self.assertEqual(str(option), "prefix_info 1:2:3:4::/64, valid 12345678, prefer 87654321, flags LAR")
+
+    def test_icmp6_fpa_nd_opt_pi____repr__(self):
+        """Test the __repr__ dunder"""
+
+        option = Icmp6NdOptPI(
+            valid_lifetime=12345678,
+            prefer_lifetime=87654321,
+            prefix=Ip6Network("1:2:3:4::/64"),
+            flag_l=True,
+            flag_a=True,
+            flag_r=True,
+        )
+
+        self.assertEqual(
+            repr(option),
+            "Icmp6NdOptIP(valid_lifetime=12345678, prefer_lifetime=87654321, prefix=Ip6Network('1:2:3:4::/64'), flag_l=True, flag_s=True, flag_r=True)",
+        )
+
+    def test_icmp6_fpa_nd_opt_pi____bytes__(self):
+        """Test the __bytes__ dunder"""
+
+        option = Icmp6NdOptPI(
+            valid_lifetime=12345678,
+            prefer_lifetime=87654321,
+            prefix=Ip6Network("1:2:3:4::/64"),
+            flag_l=True,
+            flag_a=True,
+            flag_r=True,
+        )
+
+        self.assertEqual(bytes(option), b"\x03\x04@\xc0\x00\xbcaN\x059\x7f\xb1\x00\x00\x00\x00\x00\x01\x00\x02\x00\x03\x00\x04\x00\x00\x00\x00\x00\x00\x00\x00")
+
+    def test_icmp6_fpa_nd_opt_pi____eq__(self):
+        """Test the __eq__ dunder"""
+
+        option = Icmp6NdOptPI(
+            valid_lifetime=12345678,
+            prefer_lifetime=87654321,
+            prefix=Ip6Network("1:2:3:4::/64"),
+            flag_l=True,
+            flag_a=True,
+            flag_r=True,
+        )
+
+        self.assertEqual(
+            option,
+            Icmp6NdOptPI(
+                valid_lifetime=12345678,
+                prefer_lifetime=87654321,
+                prefix=Ip6Network("1:2:3:4::/64"),
+                flag_l=True,
+                flag_a=True,
+                flag_r=True,
+            ),
         )

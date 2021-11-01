@@ -384,7 +384,7 @@ class TestTcpOptEol(TestCase):
 
         option = TcpOptEol()
 
-        self.assertEqual(option, option)
+        self.assertEqual(option, TcpOptEol())
 
 
 class TestTcpOptNop(TestCase):
@@ -414,16 +414,16 @@ class TestTcpOptNop(TestCase):
 
         option = TcpOptNop()
 
-        self.assertEqual(option, option)
+        self.assertEqual(option, TcpOptNop())
 
 
 class TestTcpOptMss(TestCase):
     def test_tcp_fpa_opt_mss____init__(self):
         """Test class constructor"""
 
-        packet = TcpOptMss(12345)
+        option = TcpOptMss(12345)
 
-        self.assertEqual(packet._mss, 12345)
+        self.assertEqual(option._mss, 12345)
 
     def test_tcp_fpa_opt_mss____init____assert_mss__under(self):
         """Test assertion for the mss"""
@@ -455,6 +455,7 @@ class TestTcpOptMss(TestCase):
         """Test the __bytes__ dunder"""
 
         option = TcpOptMss(12345)
+
         self.assertEqual(bytes(option), b"\x02\x0409")
 
     def test_tcp_fpa_opt_mss____eq__(self):
@@ -462,16 +463,16 @@ class TestTcpOptMss(TestCase):
 
         option = TcpOptMss(12345)
 
-        self.assertEqual(option, option)
+        self.assertEqual(option, TcpOptMss(12345))
 
 
 class TestTcpOptWscale(TestCase):
     def test_tcp_fpa_opt_wscale____init__(self):
         """Test class constructor"""
 
-        packet = TcpOptWscale(123)
+        option = TcpOptWscale(123)
 
-        self.assertEqual(packet._wscale, 123)
+        self.assertEqual(option._wscale, 123)
 
     def test_tcp_fpa_opt_wscale____init____assert_wscale__under(self):
         """Test assertion for the wscale"""
@@ -503,6 +504,7 @@ class TestTcpOptWscale(TestCase):
         """Test the __bytes__ dunder"""
 
         option = TcpOptWscale(123)
+
         self.assertEqual(bytes(option), b"\x03\x03{")
 
     def test_tcp_fpa_opt_wscale____eq__(self):
@@ -510,7 +512,7 @@ class TestTcpOptWscale(TestCase):
 
         option = TcpOptWscale(123)
 
-        self.assertEqual(option, option)
+        self.assertEqual(option, TcpOptWscale(123))
 
 
 class TestTcpOptSackPerm(TestCase):
@@ -540,17 +542,17 @@ class TestTcpOptSackPerm(TestCase):
 
         option = TcpOptSackPerm()
 
-        self.assertEqual(option, option)
+        self.assertEqual(option, TcpOptSackPerm())
 
 
 class TestTcpOptTimestamp(TestCase):
     def test_tcp_fpa_opt_timestamp____init__(self):
         """Test class constructor"""
 
-        packet = TcpOptTimestamp(12345678, 87654321)
+        option = TcpOptTimestamp(12345678, 87654321)
 
-        self.assertEqual(packet._tsval, 12345678)
-        self.assertEqual(packet._tsecr, 87654321)
+        self.assertEqual(option._tsval, 12345678)
+        self.assertEqual(option._tsecr, 87654321)
 
     def test_tcp_fpa_opt_timestamp____init____assert_tsval__under(self):
         """Test assertion for the tsval"""
@@ -594,6 +596,7 @@ class TestTcpOptTimestamp(TestCase):
         """Test the __bytes__ dunder"""
 
         option = TcpOptTimestamp(12345678, 87654321)
+
         self.assertEqual(bytes(option), b"\x08\n\x00\xbcaN\x059\x7f\xb1")
 
     def test_tcp_fpa_opt_timestamp____eq__(self):
@@ -601,4 +604,4 @@ class TestTcpOptTimestamp(TestCase):
 
         option = TcpOptTimestamp(12345678, 87654321)
 
-        self.assertEqual(option, option)
+        self.assertEqual(option, TcpOptTimestamp(12345678, 87654321))

@@ -49,6 +49,7 @@ I am also working on another TCP/IP stack project that is being programmed in C 
 #### To do:
 
  - [ ] ICMPv6 - *MLDv2 support is quite a mess now, need to finish it*
+ - [ ] Testing - *need to refactor packet flow tests (tests/packet_flow_*.py) to use the same format and dir as FPA tests based on test_frames*
  - [ ] Testing - *Create FPA unit tests for MLDv2 Report (len, str, assemble)*
  - [ ] Ip4 - *Reimplement packet defragmentation to store whole packets in flow db instead of making copies of IP header and data*
  - [ ] Stack - *Implement RAW socket support - to be used by 'user space' ping client*

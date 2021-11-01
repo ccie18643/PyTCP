@@ -83,6 +83,7 @@ class MockNetworkSettings:
         self.ip4_multicast_all_nodes = Ip4Address("224.0.0.1")
         self.ip6_unspecified = Ip6Address("::")
         self.ip6_multicast_all_nodes = Ip6Address("ff01::1")
+        self.ip6_multicast_all_routers = Ip6Address("ff01::2")
 
 
 PACKET_HANDLER_MODULES = [

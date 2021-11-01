@@ -34,7 +34,7 @@ from __future__ import annotations
 import struct
 from typing import TYPE_CHECKING
 
-from lib.ip6_address import Ip6Address
+from lib.ip6_address import Ip6Address, Ip6Network
 from lib.tracker import Tracker
 from misc.ip_helper import inet_cksum
 from protocols.icmp6.ps import (
@@ -65,7 +65,6 @@ from protocols.icmp6.ps import (
 from protocols.ip6.ps import IP6_NEXT_ICMP6
 
 if TYPE_CHECKING:
-    from lib.ip6_address import Ip6Network
     from lib.mac_address import MacAddress
 
 
@@ -383,7 +382,7 @@ class Icmp6NdOptSLLA:
     def __repr__(self) -> str:
         """Option representation"""
 
-        return "Icmp6NdOptSLLA({self._slla})"
+        return f"Icmp6NdOptSLLA({repr(self._slla)})"
 
     def __bytes__(self) -> bytes:
         """Option in raw form"""
@@ -417,7 +416,7 @@ class Icmp6NdOptTLLA:
     def __repr__(self) -> str:
         """Option representation"""
 
-        return "Icmp6NdOptTLLA({self._tlla})"
+        return f"Icmp6NdOptTLLA({repr(self._tlla)})"
 
     def __bytes__(self) -> bytes:
         """Option in raw form"""
@@ -436,7 +435,7 @@ class Icmp6NdOptPI:
     def __init__(
         self,
         valid_lifetime: int,
-        preferr_lifetime: int,
+        prefer_lifetime: int,
         prefix: Ip6Network,
         flag_l: bool = False,
         flag_a: bool = False,
@@ -444,19 +443,25 @@ class Icmp6NdOptPI:
     ) -> None:
         """Constructor"""
 
+        assert 0 <= valid_lifetime <= 0xFFFFFFFF
+        assert 0 <= prefer_lifetime <= 0xFFFFFFFF
+
         self._code = ICMP6_ND_OPT_PI
         self._len = ICMP6_ND_OPT_PI_LEN
         self._flag_l = flag_l
         self._flag_a = flag_a
         self._flag_r = flag_r
         self._valid_lifetime = valid_lifetime
-        self._preferr_lifetime = preferr_lifetime
-        self._prefix = Ip6Network(prefix)
+        self._prefer_lifetime = prefer_lifetime
+        self._prefix = prefix
 
     def __str__(self) -> str:
         """Option log string"""
 
-        return f"prefix_info {self._prefix}"
+        return (
+            f"prefix_info {self._prefix}, valid {self._valid_lifetime}, prefer {self._prefer_lifetime}"
+            f", flags {'L' if self._flag_l else '-'}{'A' if self._flag_a else '-'}{'R' if self._flag_r else '-'}"
+        )
 
     def __len__(self) -> int:
         """Option length"""
@@ -466,7 +471,10 @@ class Icmp6NdOptPI:
     def __repr__(self) -> str:
         """Option representation"""
 
-        return "Icmp6NdOptPI({self._valid_lifetime}, {self.preferr_lifetime}, {prefix}, {flag_l}, {flag_a}, {flag_r})"
+        return (
+            f"Icmp6NdOptIP(valid_lifetime={self._valid_lifetime}, prefer_lifetime={self._prefer_lifetime}, "
+            f"prefix={repr(self._prefix)}, flag_l={self._flag_l}, flag_s={self._flag_a}, flag_r={self._flag_r})"
+        )
 
     def __bytes__(self) -> bytes:
         """Option in raw form"""
@@ -478,7 +486,8 @@ class Icmp6NdOptPI:
             len(self._prefix.mask),
             (self._flag_l << 7) | (self._flag_a << 6) | (self._flag_r << 6),
             self._valid_lifetime,
-            self._preferr_lifetime,
+            self._prefer_lifetime,
+            0,
             bytes(self._prefix.address),
         )
 

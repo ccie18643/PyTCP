@@ -34,9 +34,11 @@ from testslide import TestCase
 
 from pytcp.misc.packet_stats import PacketStatsTx
 from pytcp.misc.tx_status import TxStatus
+from pytcp.protocols.icmp6.fpa import Icmp6NdOptSLLA
 from pytcp.protocols.icmp6.ps import (
     ICMP6_ECHO_REPLY,
     ICMP6_ECHO_REQUEST,
+    ICMP6_ND_ROUTER_SOLICITATION,
     ICMP6_UNREACHABLE,
     ICMP6_UNREACHABLE__PORT,
 )
@@ -145,45 +147,37 @@ class TestIcmp6Phtx(TestCase):
             frame_tx = _.read()
         self.assertEqual(self.frame_tx[: len(frame_tx)], frame_tx)
 
-    def test_icmp6_phtx__ip6_icmp6__invalid_type(self):
-        """Test sending IPv6/ICMPv6 packet with invalid type"""
+    def test_icmp6_phtx__ip6_icmp6_nd_router_solicitation(self):
+        """Test sending IPv6/ICMPv6 ND Router Solicitation packet"""
 
-        with self.assertRaises(AssertionError):
-            self.packet_handler._phtx_icmp6(
-                ip6_src=self.mns.stack_ip6_host.address,
-                ip6_dst=self.mns.host_a_ip6_address,
-                icmp6_type=255,
-            )
+        tx_status = self.packet_handler._phtx_icmp6(
+            ip6_src=self.mns.stack_ip6_host.address,
+            ip6_dst=self.mns.ip6_multicast_all_routers,
+            ip6_hop=255,
+            icmp6_type=ICMP6_ND_ROUTER_SOLICITATION,
+            icmp6_nd_options=[Icmp6NdOptSLLA(self.mns.stack_mac_address)],
+        )
+        self.assertEqual(tx_status, TxStatus.PASSED__ETHER__TO_TX_RING)
+        self.assertEqual(
+            self.packet_handler.packet_stats_tx,
+            PacketStatsTx(
+                icmp6__pre_assemble=1,
+                icmp6__nd_router_solicitation__send=1,
+                ip6__pre_assemble=1,
+                ip6__mtu_ok__send=1,
+                ether__pre_assemble=1,
+                ether__src_unspec__fill=1,
+                ether__dst_unspec__ip6_lookup=1,
+                ether__dst_unspec__ip6_lookup__multicast__send=1,
+            ),
+        )
+        with open(TEST_FRAME_DIR + "ip6_icmp6_nd_router_solicitation.tx", "rb") as _:
+            frame_tx = _.read()
+        self.assertEqual(self.frame_tx[: len(frame_tx)], frame_tx)
 
-    def test_icmp6_phtx__ip6_icmp6_echo_request__invalid_code(self):
-        """Test sending IPv6/ICMPv6 Echo Request with invalid code"""
 
-        with self.assertRaises(AssertionError):
-            self.packet_handler._phtx_icmp6(
-                ip6_src=self.mns.stack_ip6_host.address,
-                ip6_dst=self.mns.host_a_ip6_address,
-                icmp6_type=ICMP6_ECHO_REQUEST,
-                icmp6_code=255,
-            )
+# ND Router Advertisement test needed
 
-    def test_icmp6_phtx__ip6_icmp6_echo_reply__invalid_code(self):
-        """Test sending IPv6/ICMPv6 Echo Reply with invalid code"""
+# ND Neighbor Solicitation test needed
 
-        with self.assertRaises(AssertionError):
-            self.packet_handler._phtx_icmp6(
-                ip6_src=self.mns.stack_ip6_host.address,
-                ip6_dst=self.mns.host_a_ip6_address,
-                icmp6_type=ICMP6_ECHO_REPLY,
-                icmp6_code=255,
-            )
-
-    def test_icmp6_phtx__ip6_icmp6_unreachable__invalid_code(self):
-        """Test sending IPv6/ICMPv6 Unreachable with invalid code"""
-
-        with self.assertRaises(AssertionError):
-            self.packet_handler._phtx_icmp6(
-                ip6_src=self.mns.stack_ip6_host.address,
-                ip6_dst=self.mns.host_a_ip6_address,
-                icmp6_type=ICMP6_UNREACHABLE,
-                icmp6_code=255,
-            )
+# ND Neighbor Advertisement test needed

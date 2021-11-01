@@ -639,7 +639,7 @@ class TestIp4OptEol(TestCase):
 
         option = Ip4OptEol()
 
-        self.assertEqual(option, option)
+        self.assertEqual(option, Ip4OptEol())
 
 
 class TestIp4OptNop(TestCase):
@@ -669,4 +669,4 @@ class TestIp4OptNop(TestCase):
 
         option = Ip4OptNop()
 
-        self.assertEqual(option, option)
+        self.assertEqual(option, Ip4OptNop())
