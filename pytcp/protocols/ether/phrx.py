@@ -63,7 +63,7 @@ def _phrx_ether(self, packet_rx: PacketRx) -> None:
     if packet_rx.ether.dst not in {self.mac_unicast, *self.mac_multicast, self.mac_broadcast}:
         self.packet_stats_rx.ether__dst_unknown__drop += 1
         if __debug__:
-            log("ehter", f"{packet_rx.tracker} - Ethernet packet not destined for this stack, dropping")
+            log("ether", f"{packet_rx.tracker} - Ethernet packet not destined for this stack, dropping")
         return
 
     if packet_rx.ether.dst == self.mac_unicast:
