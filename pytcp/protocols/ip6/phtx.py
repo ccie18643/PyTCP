@@ -37,19 +37,26 @@ import config
 from lib.ip6_address import Ip6Address
 from lib.logger import log
 from misc.tx_status import TxStatus
+from protocols.icmp6.fpa import (
+    ICMP6_MLD2_REPORT,
+    ICMP6_ND_NEIGHBOR_SOLICITATION,
+    Icmp6Assembler,
+)
 from protocols.ip6.fpa import Ip6Assembler
 from protocols.raw.fpa import RawAssembler
 
 if TYPE_CHECKING:
-    from lib.tracker import Tracker
-    from protocols.icmp6.fpa import Icmp6Assembler
     from protocols.ip6_ext_frag.fpa import Ip6ExtFragAssembler
     from protocols.tcp.fpa import TcpAssembler
     from protocols.udp.fpa import UdpAssembler
 
 
-def _validate_src_ip6_address(self, ip6_src: Ip6Address, ip6_dst: Ip6Address, tracker: Tracker) -> Ip6Address | TxStatus:
+def _validate_src_ip6_address(
+    self, ip6_src: Ip6Address, ip6_dst: Ip6Address, carried_packet: Ip6ExtFragAssembler | Icmp6Assembler | TcpAssembler | UdpAssembler | RawAssembler
+) -> Ip6Address | TxStatus:
     """Make sure source ip address is valid, supplement with valid one as appropriate"""
+
+    tracker = carried_packet.tracker
 
     # Check if the the source IP address belongs to this stack or its unspecified
     if ip6_src not in {*self.ip6_unicast, *self.ip6_multicast, Ip6Address(0)}:
@@ -90,6 +97,25 @@ def _validate_src_ip6_address(self, ip6_src: Ip6Address, ip6_dst: Ip6Address, tr
                 if __debug__:
                     log("ip6", f"{tracker} - Packet source is unspecified, replaced source with IPv6 address {ip6_src} that has gateway available")
                 return ip6_src
+
+    # If src is unspecified and stack is sending ICMPv6 ND DAD packet
+    if (
+        ip6_src.is_unspecified
+        and type(carried_packet) == Icmp6Assembler
+        and carried_packet._type == ICMP6_ND_NEIGHBOR_SOLICITATION
+        and not carried_packet._nd_options
+    ):
+        self.packet_stats_tx.ip6__src_unspecified__send += 1
+        if __debug__:
+            log("ip6", f"{tracker} - Packet source is unspecified, ICMPv6 ND DAD packet, sending")
+        return ip6_src
+
+    # If src is unspecified and stack is sending ICMPv6 MLDv2 report
+    if ip6_src.is_unspecified and type(carried_packet) == Icmp6Assembler and carried_packet._type == ICMP6_MLD2_REPORT:
+        self.packet_stats_tx.ip6__src_unspecified__send += 1
+        if __debug__:
+            log("ip6", f"{tracker} - Packet source is unspecified, ICMPv6 MLDv2 report, sending")
+        return ip6_src
 
     # If src is unspecified and stack can't replace it
     if ip6_src.is_unspecified:
@@ -138,7 +164,7 @@ def _phtx_ip6(
         return TxStatus.DROPED__IP6__NO_PROTOCOL_SUPPORT
 
     # Validate source address
-    result = self._validate_src_ip6_address(ip6_src, ip6_dst, carried_packet.tracker)
+    result = self._validate_src_ip6_address(ip6_src, ip6_dst, carried_packet)
     if isinstance(result, TxStatus):
         return result
     ip6_src = result

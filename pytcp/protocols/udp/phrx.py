@@ -72,7 +72,7 @@ def _phrx_udp(self, packet_rx: PacketRx) -> None:
     for socket_pattern in packet_rx_md.socket_patterns:
         socket = stack.sockets.get(socket_pattern, None)
         if socket:
-            self.packet_stats_rx.udp_socket__match += 1
+            self.packet_stats_rx.udp__socket_match += 1
             if __debug__:
                 log("udp", f"{packet_rx_md.tracker} - <INFO>Found matching listening socket [{socket}]</>")
             socket.process_udp_packet(packet_rx_md)

@@ -37,18 +37,21 @@ import config
 from lib.ip4_address import Ip4Address
 from lib.logger import log
 from misc.tx_status import TxStatus
+from protocols.icmp4.fpa import Icmp4Assembler
 from protocols.ip4.fpa import Ip4Assembler, Ip4FragAssembler
 from protocols.raw.fpa import RawAssembler
+from protocols.udp.fpa import UdpAssembler
 
 if TYPE_CHECKING:
-    from lib.tracker import Tracker
-    from protocols.icmp4.fpa import Icmp4Assembler
     from protocols.tcp.fpa import TcpAssembler
-    from protocols.udp.fpa import UdpAssembler
 
 
-def _validate_src_ip4_address(self, ip4_src: Ip4Address, ip4_dst: Ip4Address, tracker: Tracker) -> Ip4Address | TxStatus:
+def _validate_src_ip4_address(
+    self, ip4_src: Ip4Address, ip4_dst: Ip4Address, carried_packet: Icmp4Assembler | TcpAssembler | UdpAssembler | RawAssembler
+) -> Ip4Address | TxStatus:
     """Make sure source ip address is valid, supplemt with valid one as appropriate"""
+
+    tracker = carried_packet.tracker
 
     # Check if the the source IP address belongs to this stack or is set to all zeros (for DHCP client communication)
     if ip4_src not in {*self.ip4_unicast, *self.ip4_multicast, *self.ip4_broadcast, Ip4Address(0)}:
@@ -113,6 +116,13 @@ def _validate_src_ip4_address(self, ip4_src: Ip4Address, ip4_dst: Ip4Address, tr
                     log("ip4", f"{tracker} - Packet source is unspecified, replaced source with IPv4 address {ip4_src} that has gateway available")
                 return ip4_src
 
+    # If src is unspecified and stack is sending DHCP packet
+    if ip4_src.is_unspecified and type(carried_packet) == UdpAssembler and carried_packet._sport == 68 and carried_packet._dport == 67:
+        self.packet_stats_tx.ip4__src_unspecified__send += 1
+        if __debug__:
+            log("ip4", f"{tracker} - Packet source is unspecified, DHCPv4 packet, sending")
+        return ip4_src
+
     # If src is unspecified and stack can't replace it
     if ip4_src.is_unspecified:
         self.packet_stats_tx.ip4__src_unspecified__drop += 1
@@ -160,7 +170,7 @@ def _phtx_ip4(
         return TxStatus.DROPED__IP4__NO_PROTOCOL_SUPPORT
 
     # Validate source address
-    result = self._validate_src_ip4_address(ip4_src, ip4_dst, carried_packet.tracker)
+    result = self._validate_src_ip4_address(ip4_src, ip4_dst, carried_packet)
     if isinstance(result, TxStatus):
         return result
     ip4_src = result

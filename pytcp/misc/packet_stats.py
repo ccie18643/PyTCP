@@ -155,6 +155,7 @@ class PacketStatsTx:
     ip4__src_network_broadcast__replace: int = 0
     ip4__src_network_unspecified__replace_local: int = 0
     ip4__src_network_unspecified__replace_external: int = 0
+    ip4__src_unspecified__send: int = 0
     ip4__src_unspecified__drop: int = 0
     ip4__dst_unspecified__drop: int = 0
     ip4__mtu_ok__send: int = 0
@@ -168,6 +169,7 @@ class PacketStatsTx:
     ip6__src_multicast__drop: int = 0
     ip6__src_network_unspecified__replace_local: int = 0
     ip6__src_network_unspecified__replace_external: int = 0
+    ip6__src_unspecified__send: int = 0
     ip6__src_unspecified__drop: int = 0
     ip6__dst_unspecified__drop: int = 0
     ip6__mtu_ok__send: int = 0
