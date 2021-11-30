@@ -176,8 +176,8 @@ class TestIcmp6Phtx(TestCase):
         self.assertEqual(self.frame_tx[: len(frame_tx)], frame_tx)
 
 
-# ND Router Advertisement test needed
+# TODO: ND Router Advertisement test needed
 
-# ND Neighbor Solicitation test needed
+# TODO: ND Neighbor Solicitation test needed (also need to test the variant used by DAD with :: src address and no options)
 
-# ND Neighbor Advertisement test needed
+# TODO: ND Neighbor Advertisement test needed

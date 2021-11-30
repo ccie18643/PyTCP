@@ -133,7 +133,7 @@ def _phrx_ip4(self, packet_rx: PacketRx) -> None:
         self.packet_stats_rx.ip4__dst_multicast += 1
 
     if packet_rx.ip4.dst in self.ip4_broadcast:
-        self.packet_stats_rx.ip4_dst_broadcast += 1
+        self.packet_stats_rx.ip4__dst_broadcast += 1
 
     # Check if packet is a fragment and if so process it accordingly
     if packet_rx.ip4.offset != 0 or packet_rx.ip4.flag_mf:
