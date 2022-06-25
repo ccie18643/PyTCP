@@ -78,8 +78,8 @@ Please feel free to check my two other related projects:
  - [ ] IPv6/IPv4 protocols - *ability of stack to act as a router*
  - [ ] ARP cache - *implement proper FSM*
  - [ ] ICMPv6 ND cache - *implement proper FSM*
- - [x] Stack - *Packet flow counters to help gathering packet statistics and to let packet flow tracing for unit testing*
  - [x] Logging - *Replace loguru with homegrown logger to improve performance and flexibility*
+ - [x] Stack - *Packet flow counters to help gathering packet statistics and to let packet flow tracing for unit testing*
  - [x] Stack - *Implement feedback mechanism for TX path so packet sending failures can be communicated to sockets*
  - [x] IPv6 protocol - *ability to route traffic to external destinations via default gateway*
  - [x] TCP protocol - *ensure that event communication from TCP session to socket works properly (eg. connection reset by peer)*
