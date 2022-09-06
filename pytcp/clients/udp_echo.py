@@ -3,7 +3,7 @@
 ############################################################################
 #                                                                          #
 #  PyTCP - Python TCP/IP stack                                             #
-#  Copyright (C) 2020-2021  Sebastian Majewski                             #
+#  Copyright (C) 2020-present Sebastian Majewski                           #
 #                                                                          #
 #  This program is free software: you can redistribute it and/or modify    #
 #  it under the terms of the GNU General Public License as published by    #
@@ -25,7 +25,10 @@
 
 
 #
-# clients/udp_echo.py - 'user space' client for UDP echo, it activelly sends messages to Echo service
+# clients/udp_echo.py - 'user space' client for UDP echo, it activelly sends
+# messages to Echo service
+#
+# ver 2.7
 #
 
 from __future__ import annotations
@@ -39,7 +42,9 @@ from misc.ip_helper import ip_version
 
 
 class ClientUdpEcho:
-    """UDP Echo client support class"""
+    """
+    UDP Echo client support class.
+    """
 
     def __init__(
         self,
@@ -51,7 +56,9 @@ class ClientUdpEcho:
         message_delay: int = 1,
         message_size: int = 5,
     ) -> None:
-        """Class constructor"""
+        """
+        Class constructor.
+        """
 
         self.local_ip_address = local_ip_address
         self.remote_ip_address = remote_ip_address
@@ -72,7 +79,11 @@ class ClientUdpEcho:
             s = socket.socket(family=socket.AF_INET4, type=socket.SOCK_DGRAM)
         else:
             if __debug__:
-                log("service", f"Client UDP Echo: Invalid local IP address - {self.local_ip_address}")
+                log(
+                    "service",
+                    "Client UDP Echo: Invalid local IP address - "
+                    f"{self.local_ip_address}",
+                )
             return
 
         if __debug__:
@@ -81,19 +92,36 @@ class ClientUdpEcho:
         try:
             s.bind((self.local_ip_address, self.local_port))
             if __debug__:
-                log("service", f"Client UDP Echo: Bound socket to {self.local_ip_address}, port {self.local_port}")
+                log(
+                    "service",
+                    "Client UDP Echo: Bound socket to "
+                    f"{self.local_ip_address}, port {self.local_port}",
+                )
         except OSError as error:
             if __debug__:
-                log("service", f"Client UDP Echo: Unable to bind socket to {self.local_ip_address}, port {self.local_port} - [{error}]")
+                log(
+                    "service",
+                    "Client UDP Echo: Unable to bind socket to "
+                    f"{self.local_ip_address}, port {self.local_port} - "
+                    f"[{error}]",
+                )
             return
 
         try:
             s.connect((self.remote_ip_address, self.remote_port))
             if __debug__:
-                log("service", f"Client UDP Echo: Connection opened to {self.remote_ip_address}, port {self.remote_port}")
+                log(
+                    "service",
+                    f"Client UDP Echo: Connection opened to "
+                    f"{self.remote_ip_address}, port {self.remote_port}",
+                )
         except OSError as error:
             if __debug__:
-                log("service", f"Client UDP Echo: Connection to {self.remote_ip_address}, port {self.remote_port} failed - [{error}]")
+                log(
+                    "service",
+                    f"Client UDP Echo: Connection to {self.remote_ip_address}, "
+                    f"port {self.remote_port} failed - [{error}]",
+                )
             return
 
         message_count = self.message_count
@@ -111,10 +139,18 @@ class ClientUdpEcho:
                 break
 
             if __debug__:
-                log("service", f"Client UDP Echo: Sent {len(message)} bytes of data to {self.remote_ip_address}, port {self.remote_port}")
+                log(
+                    "service",
+                    f"Client UDP Echo: Sent {len(message)} bytes of data to "
+                    f"{self.remote_ip_address}, port {self.remote_port}",
+                )
             time.sleep(self.message_delay)
             message_count = min(message_count, message_count - 1)
 
         s.close()
         if __debug__:
-            log("service", f"Client UDP Echo: Closed connection to {self.remote_ip_address}, port {self.remote_port}")
+            log(
+                "service",
+                "Client UDP Echo: Closed connection to "
+                f"{self.remote_ip_address}, port {self.remote_port}",
+            )

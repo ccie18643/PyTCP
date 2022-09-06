@@ -3,7 +3,7 @@
 ############################################################################
 #                                                                          #
 #  PyTCP - Python TCP/IP stack                                             #
-#  Copyright (C) 2020-2021  Sebastian Majewski                             #
+#  Copyright (C) 2020-present Sebastian Majewski                           #
 #                                                                          #
 #  This program is free software: you can redistribute it and/or modify    #
 #  it under the terms of the GNU General Public License as published by    #
@@ -25,7 +25,9 @@
 
 
 #
-# misc/tx_status.py - module contains definition of TX Status codes
+# misc/tx_status.py - module contains definition of TX status codes
+#
+# ver 2.7
 #
 
 
@@ -35,7 +37,9 @@ from enum import Enum, auto
 
 
 class TxStatus(Enum):
-    """TX Error codes"""
+    """
+    TX status codes.
+    """
 
     PASSED__ETHER__TO_TX_RING = auto()
 
@@ -78,10 +82,19 @@ class TxStatus(Enum):
     DROPED__ICMP6__UNKNOWN = auto()
 
     def __str__(self) -> str:
+        """
+        The '__str__()' dunder.
+        """
         return str(self.name)
 
     def __eq__(self, other):
+        """
+        The '__repr__()' dunder.
+        """
         return repr(self) == repr(other)
 
     def __hash__(self):
+        """
+        The '__hash__()' dunder.
+        """
         return hash(repr)

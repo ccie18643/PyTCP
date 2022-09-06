@@ -4,7 +4,7 @@
 ############################################################################
 #                                                                          #
 #  PyTCP - Python TCP/IP stack                                             #
-#  Copyright (C) 2020-2021  Sebastian Majewski                             #
+#  Copyright (C) 2020-present Sebastian Majewski                           #
 #                                                                          #
 #  This program is free software: you can redistribute it and/or modify    #
 #  it under the terms of the GNU General Public License as published by    #
@@ -28,6 +28,8 @@
 #
 # tests/ether_phtx.py -  tests specific for Ethernet phtx module
 #
+# ver 2.7
+#
 
 #
 # Had to use IP packets in most test here because a lot of ether/phtx
@@ -50,7 +52,14 @@ TEST_FRAME_DIR = "tests/test_frames/ether_phtx/"
 
 
 class TestEtherPhtx(TestCase):
+    """
+    Ethernet packet handler TX unit test class.
+    """
+
     def setUp(self):
+        """
+        Test setup.
+        """
         super().setUp()
 
         self.mns = MockNetworkSettings()
@@ -60,8 +69,9 @@ class TestEtherPhtx(TestCase):
     # Test name format: 'test_name__test_description__optional_condition'
 
     def test_ehter_phtx__ip4_packet_to_unicast_address_on_local_network(self):
-        """Test sending IPv4 packet to unicast address on local network"""
-
+        """
+        Test sending IPv4 packet to unicast address on local network.
+        """
         tx_status = self.packet_handler._phtx_ip4(
             ip4_src=self.mns.stack_ip4_host.address,
             ip4_dst=self.mns.host_a_ip4_address,
@@ -78,18 +88,25 @@ class TestEtherPhtx(TestCase):
                 ether__dst_unspec__ip4_lookup__locnet__arp_cache_hit__send=1,
             ),
         )
-        with open(TEST_FRAME_DIR + "ip4_packet_to_unicast_address_on_local_network.tx", "rb") as _:
+        with open(
+            TEST_FRAME_DIR
+            + "ip4_packet_to_unicast_address_on_local_network.tx",
+            "rb",
+        ) as _:
             frame_tx = _.read()
         self.assertEqual(self.frame_tx[: len(frame_tx)], frame_tx)
 
     def test_ether_phtx__ip4_packet_to_multicast_address(self):
-        """Test sending IPv4 packet to multicast address"""
-
+        """
+        Test sending IPv4 packet to the multicast address.
+        """
         tx_status = self.packet_handler._phtx_ip4(
             ip4_src=self.mns.stack_ip4_host.address,
             ip4_dst=self.mns.ip4_multicast_all_nodes,
         )
-        with open(TEST_FRAME_DIR + "ip4_packet_to_multicast_address.tx", "wb") as _:
+        with open(
+            TEST_FRAME_DIR + "ip4_packet_to_multicast_address.tx", "wb"
+        ) as _:
             _.write(self.frame_tx[:34])
         self.assertEqual(tx_status, TxStatus.PASSED__ETHER__TO_TX_RING)
         self.assertEqual(
@@ -103,13 +120,16 @@ class TestEtherPhtx(TestCase):
                 ether__dst_unspec__ip4_lookup__multicast__send=1,
             ),
         )
-        with open(TEST_FRAME_DIR + "ip4_packet_to_multicast_address.tx", "rb") as _:
+        with open(
+            TEST_FRAME_DIR + "ip4_packet_to_multicast_address.tx", "rb"
+        ) as _:
             frame_tx = _.read()
         self.assertEqual(self.frame_tx[: len(frame_tx)], frame_tx)
 
     def test_ether_phtx__ip4_packet_to_limited_broadcast_address(self):
-        """Test sending IPv4 packet to limited broadcast address"""
-
+        """
+        Test sending IPv4 packet to the limited broadcast address.
+        """
         tx_status = self.packet_handler._phtx_ip4(
             ip4_src=self.mns.stack_ip4_host.address,
             ip4_dst=self.mns.ip4_limited_broadcast,
@@ -126,13 +146,16 @@ class TestEtherPhtx(TestCase):
                 ether__dst_unspec__ip4_lookup__limited_broadcast__send=1,
             ),
         )
-        with open(TEST_FRAME_DIR + "ip4_packet_to_limited_broadcast_address.tx", "rb") as _:
+        with open(
+            TEST_FRAME_DIR + "ip4_packet_to_limited_broadcast_address.tx", "rb"
+        ) as _:
             frame_tx = _.read()
         self.assertEqual(self.frame_tx[: len(frame_tx)], frame_tx)
 
     def test_ether_phtx__ip4_packet_to_local_network_broadcast_address(self):
-        """Test sending IPv4 packet to the broadcast address of local network"""
-
+        """
+        Test sending IPv4 packet to the broadcast address of local network.
+        """
         tx_status = self.packet_handler._phtx_ip4(
             ip4_src=self.mns.stack_ip4_host.address,
             ip4_dst=self.mns.stack_ip4_host.network.broadcast,
@@ -149,13 +172,17 @@ class TestEtherPhtx(TestCase):
                 ether__dst_unspec__ip4_lookup__network_broadcast__send=1,
             ),
         )
-        with open(TEST_FRAME_DIR + "ip4_packet_to_local_network_broadcast_address.tx", "rb") as _:
+        with open(
+            TEST_FRAME_DIR + "ip4_packet_to_local_network_broadcast_address.tx",
+            "rb",
+        ) as _:
             frame_tx = _.read()
         self.assertEqual(self.frame_tx[: len(frame_tx)], frame_tx)
 
     def test_ether_phtx__ip4_packet_to_local_network_network_address(self):
-        """Test sending IPv4 packet to the network address of local network"""
-
+        """
+        Test sending IPv4 packet to the network address of local network.
+        """
         tx_status = self.packet_handler._phtx_ip4(
             ip4_src=self.mns.stack_ip4_host.address,
             ip4_dst=self.mns.stack_ip4_host.network.address,
@@ -172,13 +199,20 @@ class TestEtherPhtx(TestCase):
                 ether__dst_unspec__ip4_lookup__network_broadcast__send=1,
             ),
         )
-        with open(TEST_FRAME_DIR + "ip4_packet_to_local_network_network_address.tx", "rb") as _:
+        with open(
+            TEST_FRAME_DIR + "ip4_packet_to_local_network_network_address.tx",
+            "rb",
+        ) as _:
             frame_tx = _.read()
         self.assertEqual(self.frame_tx[: len(frame_tx)], frame_tx)
 
-    def test_ether_phtx__ip4_packet_to_unicast_address_on_local_network__arp_cache_miss(self):
-        """Test sending IPv4 packet to unicast address on local network / arp cache miss"""
-
+    def test_ether_phtx__ip4_packet_to_unicast_address_on_local_network__arp_cache_miss(
+        self,
+    ):
+        """
+        Test sending IPv4 packet to unicast address on local network / arp
+        cache miss.
+        """
         tx_status = self.packet_handler._phtx_ip4(
             ip4_src=self.mns.stack_ip4_host.address,
             ip4_dst=self.mns.host_b_ip4_address,
@@ -196,9 +230,12 @@ class TestEtherPhtx(TestCase):
             ),
         )
 
-    def test_ether_phtx__ip4_packet_to_unicast_address_on_external_network(self):
-        """Test sending IPv4 packet to unicast address on external network"""
-
+    def test_ether_phtx__ip4_packet_to_unicast_address_on_external_network(
+        self,
+    ):
+        """
+        Test sending IPv4 packet to unicast address on external network.
+        """
         tx_status = self.packet_handler._phtx_ip4(
             ip4_src=self.mns.stack_ip4_host.address,
             ip4_dst=self.mns.host_c_ip4_address,
@@ -215,13 +252,21 @@ class TestEtherPhtx(TestCase):
                 ether__dst_unspec__ip4_lookup__extnet__gw_arp_cache_hit__send=1,
             ),
         )
-        with open(TEST_FRAME_DIR + "ip4_packet_to_unicast_address_on_external_network.tx", "rb") as _:
+        with open(
+            TEST_FRAME_DIR
+            + "ip4_packet_to_unicast_address_on_external_network.tx",
+            "rb",
+        ) as _:
             frame_tx = _.read()
         self.assertEqual(self.frame_tx[: len(frame_tx)], frame_tx)
 
-    def test_ether_phtx__ip4_packet_to_unicast_address_on_external_network__no_gateway(self):
-        """Test sending IPv4 packet to unicast address on external network / no gateway set"""
-
+    def test_ether_phtx__ip4_packet_to_unicast_address_on_external_network__no_gateway(
+        self,
+    ):
+        """
+        Test sending IPv4 packet to unicast address on external
+        network / no gateway set.
+        """
         self.mns.stack_ip4_host.gateway = None
 
         tx_status = self.packet_handler._phtx_ip4(
@@ -241,16 +286,22 @@ class TestEtherPhtx(TestCase):
             ),
         )
 
-    def test_ether_phtx__ip4_packet_to_unicast_address_on_external_network__gateway_arp_cache_miss(self):
-        """Test sending IPv4 packet to unicast address on external network / gateway ARP cache miss"""
-
+    def test_ether_phtx__ip4_packet_to_unicast_address_on_external_network__gateway_arp_cache_miss(
+        self,
+    ):
+        """
+        Test sending IPv4 packet to unicast address on external
+        network / gateway ARP cache miss.
+        """
         self.mns.stack_ip4_host.gateway = self.mns.host_b_ip4_address
 
         tx_status = self.packet_handler._phtx_ip4(
             ip4_src=self.mns.stack_ip4_host.address,
             ip4_dst=self.mns.host_c_ip4_address,
         )
-        self.assertEqual(tx_status, TxStatus.DROPED__ETHER__DST_GATEWAY_ARP_CACHE_FAIL)
+        self.assertEqual(
+            tx_status, TxStatus.DROPED__ETHER__DST_GATEWAY_ARP_CACHE_FAIL
+        )
         self.assertEqual(
             self.packet_handler.packet_stats_tx,
             PacketStatsTx(
@@ -264,8 +315,9 @@ class TestEtherPhtx(TestCase):
         )
 
     def test_ehter_phtx__ip6_packet_to_unicast_address_on_local_network(self):
-        """Test sending IPv6 packet to unicast address on local network"""
-
+        """
+        Test sending IPv6 packet to unicast address on local network.
+        """
         tx_status = self.packet_handler._phtx_ip6(
             ip6_src=self.mns.stack_ip6_host.address,
             ip6_dst=self.mns.host_a_ip6_address,
@@ -282,19 +334,26 @@ class TestEtherPhtx(TestCase):
                 ether__dst_unspec__ip6_lookup__locnet__nd_cache_hit__send=1,
             ),
         )
-        with open(TEST_FRAME_DIR + "ip6_packet_to_unicast_address_on_local_network.tx", "rb") as _:
+        with open(
+            TEST_FRAME_DIR
+            + "ip6_packet_to_unicast_address_on_local_network.tx",
+            "rb",
+        ) as _:
             frame_tx = _.read()
         self.assertEqual(self.frame_tx[: len(frame_tx)], frame_tx)
 
     def test_ether_phtx__ip6_packet_to_multicast_address(self):
-        """Test sending IPv6 packet to multicast address"""
-
+        """
+        Test sending IPv6 packet to the multicast address.
+        """
         tx_status = self.packet_handler._phtx_ip6(
             ip6_src=self.mns.stack_ip6_host.address,
             ip6_dst=self.mns.ip6_multicast_all_nodes,
         )
         self.assertEqual(tx_status, TxStatus.PASSED__ETHER__TO_TX_RING)
-        with open(TEST_FRAME_DIR + "ip6_packet_to_multicast_address.tx", "wb") as _:
+        with open(
+            TEST_FRAME_DIR + "ip6_packet_to_multicast_address.tx", "wb"
+        ) as _:
             _.write(self.frame_tx[:54])
         self.assertEqual(
             self.packet_handler.packet_stats_tx,
@@ -307,13 +366,19 @@ class TestEtherPhtx(TestCase):
                 ether__dst_unspec__ip6_lookup__multicast__send=1,
             ),
         )
-        with open(TEST_FRAME_DIR + "ip6_packet_to_multicast_address.tx", "rb") as _:
+        with open(
+            TEST_FRAME_DIR + "ip6_packet_to_multicast_address.tx", "rb"
+        ) as _:
             frame_tx = _.read()
         self.assertEqual(self.frame_tx[: len(frame_tx)], frame_tx)
 
-    def test_ether_phtx__ip6_packet_to_unicast_address_on_local_network__nd_cache_miss(self):
-        """Test sending IPv6 packet to unicast address on local network / ND cache miss"""
-
+    def test_ether_phtx__ip6_packet_to_unicast_address_on_local_network__nd_cache_miss(
+        self,
+    ):
+        """
+        Test sending IPv6 packet to unicast address on local
+        network / ND cache miss.
+        """
         tx_status = self.packet_handler._phtx_ip6(
             ip6_src=self.mns.stack_ip6_host.address,
             ip6_dst=self.mns.host_b_ip6_address,
@@ -331,9 +396,12 @@ class TestEtherPhtx(TestCase):
             ),
         )
 
-    def test_ether_phtx__ip6_packet_to_unicast_address_on_external_network(self):
-        """Test sending IPv6 packet to unicast address on external network"""
-
+    def test_ether_phtx__ip6_packet_to_unicast_address_on_external_network(
+        self,
+    ):
+        """
+        Test sending IPv6 packet to unicast address on external network.
+        """
         tx_status = self.packet_handler._phtx_ip6(
             ip6_src=self.mns.stack_ip6_host.address,
             ip6_dst=self.mns.host_c_ip6_address,
@@ -350,15 +418,22 @@ class TestEtherPhtx(TestCase):
                 ether__dst_unspec__ip6_lookup__extnet__gw_nd_cache_hit__send=1,
             ),
         )
-        with open(TEST_FRAME_DIR + "ip6_packet_to_unicast_address_on_external_network.tx", "rb") as _:
+        with open(
+            TEST_FRAME_DIR
+            + "ip6_packet_to_unicast_address_on_external_network.tx",
+            "rb",
+        ) as _:
             frame_tx = _.read()
         self.assertEqual(self.frame_tx[: len(frame_tx)], frame_tx)
 
-    def test_ether_phtx__ip6_packet_to_unicast_address_on_external_network__no_gateway(self):
-        """Test sending IPv6 packet to unicast address on external network / no gateway set"""
-
+    def test_ether_phtx__ip6_packet_to_unicast_address_on_external_network__no_gateway(
+        self,
+    ):
+        """
+        Test sending IPv6 packet to unicast address on external
+        network / no gateway set.
+        """
         self.mns.stack_ip6_host.gateway = None
-
         tx_status = self.packet_handler._phtx_ip6(
             ip6_src=self.mns.stack_ip6_host.address,
             ip6_dst=self.mns.host_c_ip6_address,
@@ -376,16 +451,21 @@ class TestEtherPhtx(TestCase):
             ),
         )
 
-    def test_ether_phtx__ip6_packet_to_unicast_address_on_external_network__gateway_nd_cache_miss(self):
-        """Test sending IPv6 packet to unicast address on external network / gateway ND cache miss"""
-
+    def test_ether_phtx__ip6_packet_to_unicast_address_on_external_network__gateway_nd_cache_miss(
+        self,
+    ):
+        """
+        Test sending IPv6 packet to unicast address on external
+        network / gateway ND cache miss.
+        """
         self.mns.stack_ip6_host.gateway = self.mns.host_b_ip6_address
-
         tx_status = self.packet_handler._phtx_ip6(
             ip6_src=self.mns.stack_ip6_host.address,
             ip6_dst=self.mns.host_c_ip6_address,
         )
-        self.assertEqual(tx_status, TxStatus.DROPED__ETHER__DST_GATEWAY_ND_CACHE_FAIL)
+        self.assertEqual(
+            tx_status, TxStatus.DROPED__ETHER__DST_GATEWAY_ND_CACHE_FAIL
+        )
         self.assertEqual(
             self.packet_handler.packet_stats_tx,
             PacketStatsTx(
@@ -399,8 +479,9 @@ class TestEtherPhtx(TestCase):
         )
 
     def test_ether_phtx__ether_packet_with_specified_source_mac_address(self):
-        """Send Ethernet packet with specified source MAC address"""
-
+        """
+        Send Ethernet packet with specified source MAC address.
+        """
         tx_status = self.packet_handler._phtx_ether(
             ether_src=self.mns.stack_mac_address,
             ether_dst=self.mns.host_a_mac_address,
@@ -414,13 +495,18 @@ class TestEtherPhtx(TestCase):
                 ether__dst_spec__send=1,
             ),
         )
-        with open(TEST_FRAME_DIR + "ether_packet_with_specified_source_mac_address.tx", "rb") as _:
+        with open(
+            TEST_FRAME_DIR
+            + "ether_packet_with_specified_source_mac_address.tx",
+            "rb",
+        ) as _:
             frame_tx = _.read()
         self.assertEqual(self.frame_tx[: len(frame_tx)], frame_tx)
 
     def test_ether_phtx__ether_packet_with_unspecified_source_mac_address(self):
-        """Send Ethernet packet with unspecified source MAC address"""
-
+        """
+        Send Ethernet packet with unspecified source MAC address.
+        """
         tx_status = self.packet_handler._phtx_ether(
             ether_src=self.mns.mac_unspecified,
             ether_dst=self.mns.host_a_mac_address,
@@ -434,13 +520,20 @@ class TestEtherPhtx(TestCase):
                 ether__dst_spec__send=1,
             ),
         )
-        with open(TEST_FRAME_DIR + "ether_packet_with_unspecified_source_mac_address.tx", "rb") as _:
+        with open(
+            TEST_FRAME_DIR
+            + "ether_packet_with_unspecified_source_mac_address.tx",
+            "rb",
+        ) as _:
             frame_tx = _.read()
         self.assertEqual(self.frame_tx[: len(frame_tx)], frame_tx)
 
-    def test_ether_phtx__ether_packet_with_unspecified_destination_mac_address(self):
-        """Send Ethernet packet with unspecified destination MAC address"""
-
+    def test_ether_phtx__ether_packet_with_unspecified_destination_mac_address(
+        self,
+    ):
+        """
+        Send Ethernet packet with unspecified destination MAC address.
+        """
         tx_status = self.packet_handler._phtx_ether(
             ether_src=self.mns.stack_mac_address,
             ether_dst=self.mns.mac_unspecified,

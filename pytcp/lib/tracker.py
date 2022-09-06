@@ -3,7 +3,7 @@
 ############################################################################
 #                                                                          #
 #  PyTCP - Python TCP/IP stack                                             #
-#  Copyright (C) 2020-2021  Sebastian Majewski                             #
+#  Copyright (C) 2020-present Sebastian Majewski                           #
 #                                                                          #
 #  This program is free software: you can redistribute it and/or modify    #
 #  it under the terms of the GNU General Public License as published by    #
@@ -25,7 +25,10 @@
 
 
 #
-# lib/tracker.py - class used to generate serial number information for new packets
+# lib/tracker.py - class used to generate serial number information
+# for new packets
+#
+# ver 2.7
 #
 
 
@@ -35,12 +38,20 @@ import time
 
 
 class Tracker:
-    """Object used for tracking packets"""
+    """
+    Class used to track packets.
+    """
 
     serial_rx: int = 0
     serial_tx: int = 0
 
-    def __init__(self, *, prefix: str, echo_tracker: Tracker | None = None, serial: str | None = None) -> None:
+    def __init__(
+        self,
+        *,
+        prefix: str,
+        echo_tracker: Tracker | None = None,
+        serial: str | None = None,
+    ) -> None:
         """Class constructor"""
 
         self._echo_tracker: Tracker | None = echo_tracker
@@ -68,31 +79,35 @@ class Tracker:
                 Tracker.serial_tx = 0
 
     def __str__(self) -> str:
-        """Return serial number string"""
-
+        """
+        The '__str__()' dunder.
+        """
         if self._echo_tracker:
             return self._serial + " " + str(self._echo_tracker)
-
         return self._serial
 
     def __repr__(self) -> str:
-        """Class representation"""
-
+        """
+        The '__repr__()' dunder.
+        """
         if self._echo_tracker is None:
             return f"Tracker(serial='{self._serial}')"
         return f"Tracker(serial='{self._serial}', echo_tracker={self._echo_tracker})"
 
     @property
     def timestamp(self) -> float:
-        """Geter for _timestamp"""
-
+        """
+        Geter for the '_timestamp' attribute.
+        """
         return self._timestamp
 
     @property
     def latency(self) -> str:
-        """Latency between echo tracker timestamp and current time"""
-
+        """
+        Latency between echo tracker timestamp and current timestamp.
+        """
         if self._echo_tracker:
-            return f" {(time.time() - self._echo_tracker.timestamp) * 1000:.3f}ms"
-
+            return (
+                f" {(time.time() - self._echo_tracker.timestamp) * 1000:.3f}ms"
+            )
         return ""

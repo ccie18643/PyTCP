@@ -3,7 +3,7 @@
 ############################################################################
 #                                                                          #
 #  PyTCP - Python TCP/IP stack                                             #
-#  Copyright (C) 2020-2021  Sebastian Majewski                             #
+#  Copyright (C) 2020-present Sebastian Majewski                           #
 #                                                                          #
 #  This program is free software: you can redistribute it and/or modify    #
 #  it under the terms of the GNU General Public License as published by    #
@@ -27,6 +27,8 @@
 #
 # protocols/raw/fpa.py - Fast Packet Assembler support class for raw protocol
 #
+# ver 2.7
+#
 
 
 from __future__ import annotations
@@ -40,46 +42,57 @@ from protocols.ip6.ps import IP6_NEXT_RAW
 
 
 class RawAssembler:
-    """Raw packet assembler support class"""
+    """
+    Raw packet assembler support class.
+    """
 
     ip4_proto = IP4_PROTO_RAW
     ip6_next = IP6_NEXT_RAW
     ether_type = ETHER_TYPE_RAW
 
-    def __init__(self, *, data: bytes | None = None, echo_tracker: Tracker | None = None) -> None:
-        """Class constructor"""
-
+    def __init__(
+        self, *, data: bytes | None = None, echo_tracker: Tracker | None = None
+    ) -> None:
+        """
+        Class constructor.
+        """
         self._tracker: Tracker = Tracker(prefix="TX", echo_tracker=echo_tracker)
         self._data: bytes = b"" if data is None else data
         self._plen: int = len(self._data)
 
     def __len__(self) -> int:
-        """Length of the packet"""
-
+        """
+        Length of the packet.
+        """
         return self._plen
 
     def __str__(self) -> str:
-        """Packet log string"""
-
+        """
+        Packet log string.
+        """
         return f"Raw, len {self._plen}"
 
     def __repr__(self) -> str:
-        """Object representation"""
-
+        """
+        Object representation.
+        """
         return f"RawAssembler(data={self._data!r})"
 
     def __eq__(self, other) -> bool:
-        """Equal operator"""
-
+        """
+        Equal operator.
+        """
         return repr(self) == repr(other)
 
     @property
     def tracker(self) -> Tracker:
-        """Getter for _tracker"""
-
+        """
+        Getter for the '_tracker' attribute.
+        """
         return self._tracker
 
     def assemble(self, frame: memoryview, _: int = 0) -> None:
-        """Assemble packet into the raw form"""
-
+        """
+        Assemble packet into the raw form.
+        """
         struct.pack_into(f"! {len(self._data)}s", frame, 0, bytes(self._data))

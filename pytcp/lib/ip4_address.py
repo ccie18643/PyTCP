@@ -3,7 +3,7 @@
 ############################################################################
 #                                                                          #
 #  PyTCP - Python TCP/IP stack                                             #
-#  Copyright (C) 2020-2021  Sebastian Majewski                             #
+#  Copyright (C) 2020-present Sebastian Majewski                           #
 #                                                                          #
 #  This program is free software: you can redistribute it and/or modify    #
 #  it under the terms of the GNU General Public License as published by    #
@@ -27,6 +27,8 @@
 #
 # lib/ip4_address.py - module contains IPv4 address manipulation classes
 #
+# ver 2.7
+#
 
 
 from __future__ import annotations
@@ -47,30 +49,39 @@ from lib.ip_address import (
 )
 from lib.mac_address import MacAddress
 
-IP4_REGEX = r"((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])"
+IP4_REGEX = (
+    r"((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}"
+    r"(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])"
+)
 
 
 class Ip4AddressFormatError(IpAddressFormatError):
-    pass
+    ...
 
 
 class Ip4MaskFormatError(IpMaskFormatError):
-    pass
+    ...
 
 
 class Ip4NetworkFormatError(IpNetworkFormatError):
-    pass
+    ...
 
 
 class Ip4HostFormatError(IpHostFormatError):
-    pass
+    ...
 
 
 class Ip4Address(IpAddress):
-    """IPv4 address support class"""
+    """
+    IPv4 address support class.
+    """
 
-    def __init__(self, address: Ip4Address | str | bytes | bytearray | memoryview | int) -> None:
-        """Class constructor"""
+    def __init__(
+        self, address: Ip4Address | str | bytes | bytearray | memoryview | int
+    ) -> None:
+        """
+        Class constructor.
+        """
 
         self._address: int
         self._version: int = 4
@@ -80,7 +91,11 @@ class Ip4Address(IpAddress):
                 self._address = address
                 return
 
-        if isinstance(address, memoryview) or isinstance(address, bytes) or isinstance(address, bytearray):
+        if (
+            isinstance(address, memoryview)
+            or isinstance(address, bytes)
+            or isinstance(address, bytearray)
+        ):
             if len(address) == 4:
                 self._address = struct.unpack("!L", address)[0]
                 return
@@ -88,7 +103,9 @@ class Ip4Address(IpAddress):
         if isinstance(address, str):
             if re.search(IP4_REGEX, address):
                 try:
-                    self._address = struct.unpack("!L", socket.inet_aton(address))[0]
+                    self._address = struct.unpack(
+                        "!L", socket.inet_aton(address)
+                    )[0]
                     return
                 except OSError:
                     pass
@@ -100,19 +117,22 @@ class Ip4Address(IpAddress):
         raise Ip4AddressFormatError(address)
 
     def __str__(self) -> str:
-        """String representation"""
-
+        """
+        The '__str__()' dunder.
+        """
         return socket.inet_ntoa(bytes(self))
 
     def __bytes__(self) -> bytes:
-        """Bytes representation"""
-
+        """
+        The '__bytes__()' dunder.
+        """
         return struct.pack("!L", self._address)
 
     @property
     def is_global(self) -> bool:
-        """Check if IPv4 address is global"""
-
+        """
+        Check if IPv4 address is global.
+        """
         return not any(
             (
                 self.is_unspecified,
@@ -128,76 +148,105 @@ class Ip4Address(IpAddress):
 
     @property
     def is_link_local(self) -> bool:
-        """Check if IPv4 address is link local"""
-
-        return self._address in range(2851995648, 2852061184)  # 169.254.0.0 - 169.254.255.255
+        """
+        Check if IPv4 address is link local.
+        """
+        return self._address in range(
+            2851995648, 2852061184
+        )  # 169.254.0.0 - 169.254.255.255
 
     @property
     def is_loopback(self) -> bool:
-        """Check if IPv4 address is loopback"""
-
-        return self._address in range(2130706432, 2147483648)  # 127.0.0.0 - 127.255.255.255
+        """
+        Check if IPv4 address is loopback.
+        """
+        return self._address in range(
+            2130706432, 2147483648
+        )  # 127.0.0.0 - 127.255.255.255
 
     @property
     def is_multicast(self) -> bool:
-        """Check if IPv4 address is multicast"""
-
-        return self._address in range(3758096384, 4026531840)  # 224.0.0.0 - 239.255.255.255
+        """
+        Check if IPv4 address is multicast.
+        """
+        return self._address in range(
+            3758096384, 4026531840
+        )  # 224.0.0.0 - 239.255.255.255
 
     @property
     def is_private(self) -> bool:
-        """Check if IPv4 address is private"""
-
+        """
+        Check if IPv4 address is private.
+        """
         return (
-            self._address in range(167772160, 184549376)  # 10.0.0.0 - 10.255.255.255
-            or self._address in range(2886729728, 2887778304)  # 172.16.0.0 - 172.31.255.255
-            or self._address in range(3232235520, 3232301056)  # 192.168.0.0 - 192.168.255.255
+            self._address
+            in range(167772160, 184549376)  # 10.0.0.0 - 10.255.255.255
+            or self._address
+            in range(2886729728, 2887778304)  # 172.16.0.0 - 172.31.255.255
+            or self._address
+            in range(3232235520, 3232301056)  # 192.168.0.0 - 192.168.255.255
         )
 
     @property
     def is_reserved(self) -> bool:
-        """Check if IPv4 address is reserved"""
-
-        return self._address in range(4026531840, 4294967295)  # 240.0.0.0 - 255.255.255.254
+        """
+        Check if IPv4 address is reserved.
+        """
+        return self._address in range(
+            4026531840, 4294967295
+        )  # 240.0.0.0 - 255.255.255.254
 
     @property
     def is_limited_broadcast(self) -> bool:
-        """Check if IPv4 address is a limited broadcast"""
-
+        """
+        Check if IPv4 address is a limited broadcast.
+        """
         return self._address == 4294967295
 
     @property
     def is_invalid(self) -> bool:
-        """Check if IPv4 address is reserved"""
-
+        """
+        Check if IPv4 address is reserved.
+        """
         return self._address in range(1, 16777216)  # 0.0.0.1 - 0.255.255.255
 
     @property
     def unspecified(self) -> Ip4Address:
-        """Return unspecified IPv4 Address"""
-
+        """
+        Return unspecified IPv4 Address.
+        """
         return Ip4Address(0)
 
     @property
     def multicast_mac(self) -> MacAddress:
-        """Create IPv6 multicast MAC address"""
-
+        """
+        Create IPv6 multicast MAC address.
+        """
         assert self.is_multicast
-
-        return MacAddress(int(MacAddress(0x01005E000000)) | self._address & 0x7FFFFF)
+        return MacAddress(
+            int(MacAddress(0x01005E000000)) | self._address & 0x7FFFFF
+        )
 
 
 class Ip4Mask(IpMask):
-    """IPv4 network mask support class"""
+    """
+    IPv4 network mask support class.
+    """
 
-    def __init__(self, mask: Ip4Mask | str | bytes | bytearray | memoryview | int) -> None:
-        """Class constructor"""
+    def __init__(
+        self, mask: Ip4Mask | str | bytes | bytearray | memoryview | int
+    ) -> None:
+        """
+        Class constructor.
+        """
 
         self._mask: int
         self._version: int = 4
 
         def _validate_bits() -> bool:
-            """Validate that mask is made of consecutive bits"""
+            """
+            Validate that mask is made of consecutive bits.
+            """
             bit_mask = f"{self._mask:032b}"
             try:
                 return not bit_mask[bit_mask.index("0") :].count("1")
@@ -210,7 +259,11 @@ class Ip4Mask(IpMask):
                 if _validate_bits():
                     return
 
-        if isinstance(mask, memoryview) or isinstance(mask, bytes) or isinstance(mask, bytearray):
+        if (
+            isinstance(mask, memoryview)
+            or isinstance(mask, bytes)
+            or isinstance(mask, bytearray)
+        ):
             if len(mask) == 4:
                 self._mask = struct.unpack("!L", mask)[0]
                 if _validate_bits():
@@ -237,16 +290,23 @@ class Ip4Mask(IpMask):
         raise Ip4MaskFormatError(mask)
 
     def __bytes__(self) -> bytes:
-        """Bytes representation"""
-
+        """
+        The '__bytes_()' dunder.
+        """
         return struct.pack("!L", self._mask)
 
 
 class Ip4Network(IpNetwork):
-    """IPv4 network support class"""
+    """
+    IPv4 network support class.
+    """
 
-    def __init__(self, network: Ip4Network | tuple[Ip4Address, Ip4Mask] | str) -> None:
-        """Class constructor"""
+    def __init__(
+        self, network: Ip4Network | tuple[Ip4Address, Ip4Mask] | str
+    ) -> None:
+        """
+        Class constructor.
+        """
 
         self._address: Ip4Address
         self._mask: Ip4Mask
@@ -254,17 +314,25 @@ class Ip4Network(IpNetwork):
 
         if isinstance(network, tuple):
             if len(network) == 2:
-                if isinstance(network[0], Ip4Address) and isinstance(network[1], Ip4Mask):
+                if isinstance(network[0], Ip4Address) and isinstance(
+                    network[1], Ip4Mask
+                ):
                     self._mask = network[1]
-                    self._address = Ip4Address(int(network[0]) & int(network[1]))
+                    self._address = Ip4Address(
+                        int(network[0]) & int(network[1])
+                    )
                     return
 
         if isinstance(network, str):
             try:
                 address, mask = network.split("/")
                 bit_count = int(mask)
-                self._mask = Ip4Mask(int("1" * bit_count + "0" * (32 - bit_count), 2))
-                self._address = Ip4Address(int(Ip4Address(address)) & int(self._mask))
+                self._mask = Ip4Mask(
+                    int("1" * bit_count + "0" * (32 - bit_count), 2)
+                )
+                self._address = Ip4Address(
+                    int(Ip4Address(address)) & int(self._mask)
+                )
                 return
             except (ValueError, Ip4AddressFormatError, Ip4MaskFormatError):
                 pass
@@ -278,34 +346,48 @@ class Ip4Network(IpNetwork):
 
     @property
     def address(self) -> Ip4Address:
-        """Network address"""
-
+        """
+        Getter for the '_address' attribute.
+        """
         return self._address
 
     @property
     def mask(self) -> Ip4Mask:
-        """Network mask"""
-
+        """
+        Getter for the '_mask' attribute.
+        """
         return self._mask
 
     @property
     def last(self) -> Ip4Address:
-        """Last address"""
-
+        """
+        Last address in the network.
+        """
         return Ip4Address(int(self._address) + (~int(self._mask) & 0xFFFFFFFF))
 
     @property
     def broadcast(self) -> Ip4Address:
-        """Broadcast address"""
-
+        """
+        Broadcast address (same as last address in the network).
+        """
         return self.last
 
 
 class Ip4Host(IpHost):
-    """IPv4 host support class"""
+    """
+    IPv4 host support class.
+    """
 
-    def __init__(self, host: Ip4Host | tuple[Ip4Address, Ip4Network] | tuple[Ip4Address, Ip4Mask] | str) -> None:
-        """Class constructor"""
+    def __init__(
+        self,
+        host: Ip4Host
+        | tuple[Ip4Address, Ip4Network]
+        | tuple[Ip4Address, Ip4Mask]
+        | str,
+    ) -> None:
+        """
+        Class constructor.
+        """
 
         self._address: Ip4Address
         self._network: Ip4Network
@@ -315,11 +397,15 @@ class Ip4Host(IpHost):
 
         if isinstance(host, tuple):
             if len(host) == 2:
-                if isinstance(host[0], Ip4Address) and isinstance(host[1], Ip4Network):
+                if isinstance(host[0], Ip4Address) and isinstance(
+                    host[1], Ip4Network
+                ):
                     self._address = host[0]
                     self._network = host[1]
                     return
-                if isinstance(host[0], Ip4Address) and isinstance(host[1], Ip4Mask):
+                if isinstance(host[0], Ip4Address) and isinstance(
+                    host[1], Ip4Mask
+                ):
                     self._address = host[0]
                     self._network = Ip4Network(host)
                     return
@@ -342,12 +428,14 @@ class Ip4Host(IpHost):
 
     @property
     def address(self) -> Ip4Address:
-        """Host address"""
-
+        """
+        Getter for the '_address' attribute.
+        """
         return self._address
 
     @property
     def network(self) -> Ip4Network:
-        """Host network"""
-
+        """
+        Getter for the '_network' attribute.
+        """
         return self._network

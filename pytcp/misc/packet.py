@@ -3,7 +3,7 @@
 ############################################################################
 #                                                                          #
 #  PyTCP - Python TCP/IP stack                                             #
-#  Copyright (C) 2020-2021  Sebastian Majewski                             #
+#  Copyright (C) 2020-present Sebastian Majewski                           #
 #                                                                          #
 #  This program is free software: you can redistribute it and/or modify    #
 #  it under the terms of the GNU General Public License as published by    #
@@ -27,6 +27,8 @@
 #
 # packet.py - module contains class representing packet
 #
+# ver 2.7
+#
 
 
 from __future__ import annotations
@@ -48,10 +50,14 @@ if TYPE_CHECKING:
 
 
 class PacketRx:
-    """Base packet class"""
+    """
+    Base packet RX class.
+    """
 
     def __init__(self, frame: bytes) -> None:
-        """Class constructor"""
+        """
+        Class constructor.
+        """
 
         self.frame: memoryview = memoryview(frame)
         self.tracker: Tracker = Tracker(prefix="RX")
@@ -69,6 +75,7 @@ class PacketRx:
         self.udp: UdpParser
 
     def __len__(self) -> int:
-        """Returns length of raw frame"""
-
+        """
+        Return length of raw frame.
+        """
         return len(self.frame)

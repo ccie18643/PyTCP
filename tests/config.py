@@ -3,7 +3,7 @@
 ############################################################################
 #                                                                          #
 #  PyTCP - Python TCP/IP stack                                             #
-#  Copyright (C) 2020-2021  Sebastian Majewski                             #
+#  Copyright (C) 2020-present Sebastian Majewski                           #
 #                                                                          #
 #  This program is free software: you can redistribute it and/or modify    #
 #  it under the terms of the GNU General Public License as published by    #
@@ -27,6 +27,8 @@
 #
 # tests/test_config.py - unit tests for config
 #
+# ver 2.7
+#
 
 
 from testslide import TestCase
@@ -35,8 +37,18 @@ from pytcp.config import IP4_SUPPORT, IP6_SUPPORT
 
 
 class TestConfig(TestCase):
+    """
+    Config test class.
+    """
+
     def test_ipv6_support(self):
+        """
+        Test the 'ipv6_support' config parameter.
+        """
         self.assertEqual(IP6_SUPPORT, True)
 
     def test_ipv4_support(self):
+        """
+        Test the 'ipv4_support' config parameter.
+        """
         self.assertEqual(IP4_SUPPORT, True)

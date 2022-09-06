@@ -6,7 +6,6 @@ TEST_PATH := $(shell find tests -name '*.py')
 all: venv
 
 $(VENV)/bin/activate: requirements.txt
-	@apt-get install -y python3-venv
 	@python$(PYTHON_VERSION) -m venv $(VENV)
 	@./$(VENV)/bin/pip install -r requirements.txt
 

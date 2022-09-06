@@ -3,7 +3,7 @@
 ############################################################################
 #                                                                          #
 #  PyTCP - Python TCP/IP stack                                             #
-#  Copyright (C) 2020-2021  Sebastian Majewski                             #
+#  Copyright (C) 2020-present Sebastian Majewski                           #
 #                                                                          #
 #  This program is free software: you can redistribute it and/or modify    #
 #  it under the terms of the GNU General Public License as published by    #
@@ -25,7 +25,10 @@
 
 
 #
-# packet_stats.py - module contains class used to store packet handler statistics
+# packet_stats.py - module contains class used to store packet handler
+# statistics
+#
+# ver 2.7
 #
 
 
@@ -36,7 +39,9 @@ from dataclasses import dataclass
 
 @dataclass
 class PacketStatsRx:
-    """Data store for rx packet handler statistics"""
+    """
+    Data store for rx packet handler statistics.
+    """
 
     ether__pre_parse: int = 0
     ether__failed_parse__drop: int = 0
@@ -116,7 +121,9 @@ class PacketStatsRx:
 
 @dataclass
 class PacketStatsTx:
-    """Data store for tx packet handler statistics"""
+    """
+    Data store for tx packet handler statistics.
+    """
 
     ether__pre_assemble: int = 0
     ether__src_unspec__fill: int = 0

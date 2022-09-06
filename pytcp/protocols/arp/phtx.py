@@ -3,7 +3,7 @@
 ############################################################################
 #                                                                          #
 #  PyTCP - Python TCP/IP stack                                             #
-#  Copyright (C) 2020-2021  Sebastian Majewski                             #
+#  Copyright (C) 2020-present Sebastian Majewski                           #
 #                                                                          #
 #  This program is free software: you can redistribute it and/or modify    #
 #  it under the terms of the GNU General Public License as published by    #
@@ -26,6 +26,8 @@
 
 #
 # protocols/arp/phtx.py - packet handler for outbound ARP packets
+#
+# ver 2.7
 #
 
 
@@ -57,11 +59,14 @@ def _phtx_arp(
     arp_tpa: Ip4Address,
     echo_tracker: Tracker | None = None,
 ) -> TxStatus:
-    """Handle outbound ARP packets"""
+    """
+    Handle outbound ARP packets.
+    """
 
     self.packet_stats_tx.arp__pre_assemble += 1
 
-    # Check if IPv4 protocol support is enabled, if not then silently drop the packet
+    # Check if IPv4 protocol support is enabled, if not then silently
+    # drop the packet
     if not config.IP4_SUPPORT:
         self.packet_stats_tx.arp__no_proto_support__drop += 1
         return TxStatus.DROPED__ARP__NO_PROTOCOL_SUPPORT
@@ -84,4 +89,8 @@ def _phtx_arp(
     if __debug__:
         log("arp", f"{arp_packet_tx.tracker} - {arp_packet_tx}")
 
-    return self._phtx_ether(ether_src=ether_src, ether_dst=ether_dst, carried_packet=arp_packet_tx)
+    return self._phtx_ether(
+        ether_src=ether_src,
+        ether_dst=ether_dst,
+        carried_packet=arp_packet_tx,
+    )

@@ -3,7 +3,7 @@
 ############################################################################
 #                                                                          #
 #  PyTCP - Python TCP/IP stack                                             #
-#  Copyright (C) 2020-2021  Sebastian Majewski                             #
+#  Copyright (C) 2020-present Sebastian Majewski                           #
 #                                                                          #
 #  This program is free software: you can redistribute it and/or modify    #
 #  it under the terms of the GNU General Public License as published by    #
@@ -26,6 +26,8 @@
 
 #
 # pytcp.py - main TCP/IP stack program
+#
+# ver 2.7
 #
 
 
@@ -60,11 +62,24 @@ IFF_NO_PI = 0x1000
 
 
 def parse_arguments(args: list[str] | None = None) -> None:
-    """Parse command line arguments and override config settings"""
+    """
+    Parse command line arguments and override config settings.
+    """
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("-l", "--log-chanel", action="store", nargs="+", help="specify active log channels (config.LOG_CHANEL)")
-    parser.add_argument("-d", "--log-debug", action="store_true", help="show class/method name when logging (config.LOG_DEBUG)")
+    parser.add_argument(
+        "-l",
+        "--log-chanel",
+        action="store",
+        nargs="+",
+        help="specify active log channels (config.LOG_CHANEL)",
+    )
+    parser.add_argument(
+        "-d",
+        "--log-debug",
+        action="store_true",
+        help="show class/method name when logging (config.LOG_DEBUG)",
+    )
     arguments = parser.parse_args(args)
 
     if arguments.log_chanel:
@@ -79,7 +94,11 @@ def main() -> int:
 
     parse_arguments()
 
-    log("stack", "<B>PyTCP</> - TCP/IP Stack written in <B><lb>P<ly>y<lb>t<ly>h<lb>o<ly>n</>, 2020-2021 <B><y>Sebastian Majewski</>")
+    log(
+        "stack",
+        "<B>PyTCP</> - TCP/IP Stack written in <B><lb>P<ly>y<lb>t<ly>h<lb>o"
+        "<ly>n</>, 2020-present <B><y>Sebastian Majewski</>",
+    )
 
     try:
         tap = os.open("/dev/net/tun", os.O_RDWR)
@@ -88,7 +107,11 @@ def main() -> int:
         log("stack", "<CRIT>Unable to access '/dev/net/tun' device</>")
         sys.exit(-1)
 
-    fcntl.ioctl(tap, TUNSETIFF, struct.pack("16sH", config.TAP_INTERFACE, IFF_TAP | IFF_NO_PI))
+    fcntl.ioctl(
+        tap,
+        TUNSETIFF,
+        struct.pack("16sH", config.TAP_INTERFACE, IFF_TAP | IFF_NO_PI),
+    )
 
     # Initialize stack components
     StackCliServer()

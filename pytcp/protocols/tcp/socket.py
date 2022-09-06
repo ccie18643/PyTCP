@@ -3,7 +3,7 @@
 ############################################################################
 #                                                                          #
 #  PyTCP - Python TCP/IP stack                                             #
-#  Copyright (C) 2020-2021  Sebastian Majewski                             #
+#  Copyright (C) 2020-present Sebastian Majewski                           #
 #                                                                          #
 #  This program is free software: you can redistribute it and/or modify    #
 #  it under the terms of the GNU General Public License as published by    #
@@ -25,7 +25,10 @@
 
 
 #
-# protocols/tcp/socket.py - module contains BSD like socket interface for the stack
+# protocols/tcp/socket.py - module contains BSD like socket interface
+# for the stack
+#
+# ver 2.7
 #
 
 
@@ -49,10 +52,16 @@ if TYPE_CHECKING:
 
 
 class TcpSocket(Socket):
-    """Support for IPv6/IPv4 TCP socket operations"""
+    """
+    Support for IPv6/IPv4 TCP socket operations.
+    """
 
-    def __init__(self, family: AddressFamily, tcp_session: TcpSession | None = None) -> None:
-        """Class constructor"""
+    def __init__(
+        self, family: AddressFamily, tcp_session: TcpSession | None = None
+    ) -> None:
+        """
+        Class constructor.
+        """
 
         super().__init__()
 
@@ -67,7 +76,8 @@ class TcpSocket(Socket):
         self._remote_port: int
         self._parent_socket: Socket
 
-        # Create established socket based on established TCP session, called by listening sockets only
+        # Create established socket based on established TCP session, called by
+        # listening sockets only
         if tcp_session:
             self._tcp_session = tcp_session
             self._local_ip_address = tcp_session.local_ip_address
@@ -94,58 +104,88 @@ class TcpSocket(Socket):
 
     @property
     def state(self) -> FsmState:
-        """Return FSM state of associated TCP session"""
-
+        """
+        Return FSM state of associated TCP session.
+        """
         if self.tcp_session is not None:
             return self.tcp_session.state
         return FsmState.CLOSED
 
     @property
     def tcp_session(self) -> TcpSession | None:
-        """Getter for _tcp_session"""
-
+        """
+        Getter for the '_tcp_session' attribute.
+        """
         return self._tcp_session
 
     @property
     def parent_socket(self) -> Socket | None:
-        """Getter for _parent_socket"""
-
+        """
+        Getter for the '_parent_socket' attribute.
+        """
         return self._parent_socket
 
     def bind(self, address: tuple[str, int]) -> None:
-        """Bind the socket to local address"""
+        """
+        Bind the socket to local address.
+        """
 
-        # 'bind' call will bind socket to specific / unspecified local ip address and specific local port
-        # in case provided port equals zero port value will be picked automatically
+        # The 'bind' call will bind socket to specific / unspecified local IP
+        # address and specific local port in case provided port equals zero
+        # port value will be picked automatically.
 
         # Check if "bound" already
         if self._local_port in range(1, 65536):
-            raise OSError("[Errno 22] Invalid argument - [Socket bound to specific port already]")
+            raise OSError(
+                "[Errno 22] Invalid argument - "
+                "[Socket bound to specific port already]"
+            )
 
         local_ip_address: IpAddress
 
         if self._family is AF_INET6:
             try:
-                if (local_ip_address := Ip6Address(address[0])) not in set(stack.packet_handler.ip6_unicast) | {Ip6Address(0)}:
-                    raise OSError("[Errno 99] Cannot assign requested address - [Local IP address not owned by stack]")
+                if (local_ip_address := Ip6Address(address[0])) not in set(
+                    stack.packet_handler.ip6_unicast
+                ) | {Ip6Address(0)}:
+                    raise OSError(
+                        "[Errno 99] Cannot assign requested address - "
+                        "[Local IP address not owned by stack]"
+                    )
             except Ip6AddressFormatError:
-                raise gaierror("[Errno -2] Name or service not known - [Malformed local IP address]")
+                raise gaierror(
+                    "[Errno -2] Name or service not known - "
+                    "[Malformed local IP address]"
+                )
 
         if self._family is AF_INET4:
             try:
-                if (local_ip_address := Ip4Address(address[0])) not in set(stack.packet_handler.ip4_unicast) | {Ip4Address(0)}:
-                    raise OSError("[Errno 99] Cannot assign requested address - [Local IP address not owned by stack]")
+                if (local_ip_address := Ip4Address(address[0])) not in set(
+                    stack.packet_handler.ip4_unicast
+                ) | {Ip4Address(0)}:
+                    raise OSError(
+                        "[Errno 99] Cannot assign requested address - "
+                        "[Local IP address not owned by stack]"
+                    )
             except Ip4AddressFormatError:
-                raise gaierror("[Errno -2] Name or service not known - [Malformed local IP address]")
+                raise gaierror(
+                    "[Errno -2] Name or service not known - "
+                    "[Malformed local IP address]"
+                )
 
         # Sanity check on local port number
         if address[1] not in range(0, 65536):
-            raise OverflowError("bind(): port must be 0-65535. - [Port out of range]")
+            raise OverflowError(
+                "bind(): port must be 0-65535. - [Port out of range]"
+            )
 
         # Confirm or pick local port number
         if (local_port := address[1]) > 0:
             if self._is_address_in_use(local_ip_address, local_port):
-                raise OSError("[Errno 98] Address already in use - [Local address already in use]")
+                raise OSError(
+                    "[Errno 98] Address already in use - "
+                    "[Local address already in use]"
+                )
         else:
             local_port = self._pick_local_port()
 
@@ -159,21 +199,29 @@ class TcpSocket(Socket):
             log("socket", f"<g>[{self}]</> - Bound socket")
 
     def connect(self, address: tuple[str, int]) -> None:
-        """Connect the socket to remote host"""
+        """
+        Connect local socket to remote socket.
+        """
 
-        # 'connect' call will bind socket to specific local ip address (will rebind if necessary), specific local port,
-        # specific remote ip address and specific remote port
+        # The 'connect' call will bind socket to specific local ip address
+        # (will rebind if necessary), specific local port, specific remote
+        # IP address and specific remote port.
 
-        # Sanity check on remote port number (0 is a valid remote port in BSD socket implementation)
+        # Sanity check on remote port number (0 is a valid remote port in
+        # BSD socket implementation).
         if (remote_port := address[1]) not in range(0, 65536):
-            raise OverflowError("connect(): port must be 0-65535. - [Port out of range]")
+            raise OverflowError(
+                "connect(): port must be 0-65535. - [Port out of range]"
+            )
 
         # Assigning local port makes socket "bound" if not "bound" already
         if (local_port := self._local_port) not in range(1, 65536):
             local_port = self._pick_local_port()
 
         # Set local and remote ip addresses aproprietely
-        local_ip_address, remote_ip_address = self._set_ip_addresses(address, self._local_ip_address, local_port, remote_port)
+        local_ip_address, remote_ip_address = self._set_ip_addresses(
+            address, self._local_ip_address, local_port, remote_port
+        )
 
         # Re-register socket with new socket id
         stack.sockets.pop(str(self), None)
@@ -198,15 +246,23 @@ class TcpSocket(Socket):
             self._tcp_session.connect()
         except TcpSessionError as error:
             if str(error) == "Connection refused":
-                raise ConnectionRefusedError("[Errno 111] Connection refused - [Received RST packet from remote host]")
+                raise ConnectionRefusedError(
+                    "[Errno 111] Connection refused - "
+                    "[Received RST packet from remote host]"
+                )
             if str(error) == "Connection timeout":
-                raise TimeoutError("[Errno 110] Connection timed out - [No valid response received from remote host]")
+                raise TimeoutError(
+                    "[Errno 110] Connection timed out - "
+                    "[No valid response received from remote host]"
+                )
 
         if __debug__:
             log("socket", f"<g>[{self}]</> - Bound")
 
     def listen(self) -> None:
-        """Starts to listen for incoming connections"""
+        """
+        Starts to listen for incoming connections.
+        """
 
         self._tcp_session = TcpSession(
             local_ip_address=self._local_ip_address,
@@ -217,13 +273,20 @@ class TcpSocket(Socket):
         )
 
         if __debug__:
-            log("socket", f"<g>[{self}]</> - Socket starting to listen for inbound connections")
+            log(
+                "socket",
+                f"<g>[{self}]</> - Socket starting to listen for inbound "
+                "connections",
+            )
 
         stack.sockets[str(self)] = self
         self._tcp_session.listen()
 
     def accept(self) -> tuple[Socket, tuple[str, int]]:
-        """Wait for the established inbound connection, once available return it's socket"""
+        """
+        Wait for the established inbound connection, once available return
+        it's socket.
+        """
 
         if __debug__:
             log("socket", f"<g>[{self}]</> - Waiting for inbound connection")
@@ -232,14 +295,20 @@ class TcpSocket(Socket):
         socket = self._tcp_accept.pop(0)
 
         if __debug__:
-            log("socket", f"<g>[{self}]</> - Socket accepted connection from {(str(socket.remote_ip_address), socket.remote_port)}")
+            log(
+                "socket",
+                f"<g>[{self}]</> - Socket accepted connection from "
+                f"{(str(socket.remote_ip_address), socket.remote_port)}",
+            )
 
         return socket, (str(socket.remote_ip_address), socket.remote_port)
 
     def send(self, data: bytes) -> int:
-        """Send the data to connected remote host"""
+        """
+        Send the data to connected remote host.
+        """
 
-        # 'send' call requires 'connect' call to be run prior to it
+        # The 'send' call requires 'connect' call to be run prior to it.
 
         if self._remote_ip_address.is_unspecified or self._remote_port == 0:
             raise OSError("send(): Destination address requir")
@@ -252,11 +321,18 @@ class TcpSocket(Socket):
             raise BrokenPipeError(f"[Errno 32] Broken pipe - [{error}]")
 
         if __debug__:
-            log("socket", f"<g>[{self}]</> - Sent data segment, len {bytes_sent}")
+            log(
+                "socket",
+                f"<g>[{self}]</> - Sent data segment, len {bytes_sent}",
+            )
         return bytes_sent
 
-    def recv(self, bufsize: int | None = None, timeout: float | None = None) -> bytes:
-        """Receive data from socket"""
+    def recv(
+        self, bufsize: int | None = None, timeout: float | None = None
+    ) -> bytes:
+        """
+        Receive data from socket.
+        """
 
         # TODO - Consider implementing timeout
 
@@ -264,24 +340,32 @@ class TcpSocket(Socket):
 
         if data_rx := self._tcp_session.receive(bufsize):
             if __debug__:
-                log("socket", f"<g>[{self}]</> - Received {len(data_rx)} bytes of data")
+                log(
+                    "socket",
+                    f"<g>[{self}]</> - Received {len(data_rx)} bytes of data",
+                )
         else:
             if __debug__:
-                log("socket", f"<g>[{self}]</> - Received empty data byte string, remote end closed connection")
+                log(
+                    "socket",
+                    f"<g>[{self}]</> - Received empty data byte string, remote "
+                    "end closed connection",
+                )
 
         return data_rx
 
     def close(self) -> None:
-        """Close socket and the TCP session(s) it owns"""
-
+        """
+        Close socket and the TCP session(s) it owns.
+        """
         assert self._tcp_session is not None
         self._tcp_session.close()
-
         if __debug__:
             log("socket", f"<g>[{self}]</> - Closed socket")
 
     def process_tcp_packet(self, packet_rx_md: TcpMetadata) -> None:
-        """Process incoming packet's metadata"""
-
+        """
+        Process incoming packet's metadata.
+        """
         if self._tcp_session:
             self._tcp_session.tcp_fsm(packet_rx_md)

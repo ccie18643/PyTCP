@@ -3,7 +3,7 @@
 ############################################################################
 #                                                                          #
 #  PyTCP - Python TCP/IP stack                                             #
-#  Copyright (C) 2020-2021  Sebastian Majewski                             #
+#  Copyright (C) 2020-present Sebastian Majewski                           #
 #                                                                          #
 #  This program is free software: you can redistribute it and/or modify    #
 #  it under the terms of the GNU General Public License as published by    #
@@ -27,6 +27,8 @@
 #
 # protocols/udp/phrx.py - packet handler for inbound UDP packets
 #
+# ver 2.7
+#
 
 
 from __future__ import annotations
@@ -42,7 +44,9 @@ from protocols.udp.metadata import UdpMetadata
 
 
 def _phrx_udp(self, packet_rx: PacketRx) -> None:
-    """Handle inbound UDP packets"""
+    """
+    Handle inbound UDP packets.
+    """
 
     self.packet_stats_rx.udp__pre_parse += 1
 
@@ -57,7 +61,9 @@ def _phrx_udp(self, packet_rx: PacketRx) -> None:
     if __debug__:
         log("udp", f"{packet_rx.tracker} - {packet_rx.udp}")
 
-    assert isinstance(packet_rx.udp.data, memoryview)  # memoryview: data type check point
+    assert isinstance(
+        packet_rx.udp.data, memoryview
+    )  # memoryview: data type check point
 
     # Create UdpMetadata object and try to find matching UDP socket
     packet_rx_md = UdpMetadata(
@@ -65,7 +71,9 @@ def _phrx_udp(self, packet_rx: PacketRx) -> None:
         local_port=packet_rx.udp.dport,
         remote_ip_address=packet_rx.ip.src,
         remote_port=packet_rx.udp.sport,
-        data=bytes(packet_rx.udp.data),  # memoryview: conversion for end-user interface
+        data=bytes(
+            packet_rx.udp.data
+        ),  # memoryview: conversion for end-user interface
         tracker=packet_rx.tracker,
     )
 
@@ -74,7 +82,11 @@ def _phrx_udp(self, packet_rx: PacketRx) -> None:
         if socket:
             self.packet_stats_rx.udp__socket_match += 1
             if __debug__:
-                log("udp", f"{packet_rx_md.tracker} - <INFO>Found matching listening socket [{socket}]</>")
+                log(
+                    "udp",
+                    f"{packet_rx_md.tracker} - <INFO>Found matching listening "
+                    f"socket [{socket}]</>",
+                )
             socket.process_udp_packet(packet_rx_md)
             return
 
@@ -84,16 +96,22 @@ def _phrx_udp(self, packet_rx: PacketRx) -> None:
         if __debug__:
             log(
                 "udp",
-                f"{packet_rx_md.tracker} - Received UDP packet from {packet_rx.ip.src}, port {packet_rx.udp.sport} to "
-                + f"{packet_rx.ip.dst}, port {packet_rx.udp.dport}, dropping",
+                f"{packet_rx_md.tracker} - Received UDP packet from "
+                f"{packet_rx.ip.src}, port {packet_rx.udp.sport} to "
+                f"{packet_rx.ip.dst}, port {packet_rx.udp.dport}, dropping",
             )
         return
 
-    # Handle the UDP Echo operation in case its enabled (used for packet flow unit testing only)
+    # Handle the UDP Echo operation in case its enabled
+    # (used for packet flow unit testing only).
     if config.UDP_ECHO_NATIVE_DISABLE is False and packet_rx.udp.dport == 7:
         self.packet_stats_rx.udp__echo_native__respond_udp += 1
         if __debug__:
-            log("udp", f"{packet_rx_md.tracker} - <INFO>Performing native UDP Echo operation</>")
+            log(
+                "udp",
+                f"{packet_rx_md.tracker} - <INFO>Performing native "
+                "UDP Echo operation</>",
+            )
 
         self._phtx_udp(
             ip_src=packet_rx.ip.dst,
@@ -104,15 +122,20 @@ def _phrx_udp(self, packet_rx: PacketRx) -> None:
         )
         return
 
-    # Respond with ICMP Port Unreachable message if no matching socket has been found
+    # Respond with ICMP Port Unreachable message if no matching
+    # socket has been found.
     if __debug__:
         log(
             "udp",
-            f"{packet_rx_md.tracker} - Received UDP packet from {packet_rx.ip.src} to closed port " + f"{packet_rx.udp.dport}, sending ICMPv4 Port Unreachable",
+            f"{packet_rx_md.tracker} - Received UDP packet from "
+            f"{packet_rx.ip.src} to closed port "
+            f"{packet_rx.udp.dport}, sending ICMPv4 Port Unreachable",
         )
 
     if packet_rx.ip.ver == 6:
-        self.packet_stats_rx.udp__no_socket_match__respond_icmp6_unreachable += 1
+        self.packet_stats_rx.udp__no_socket_match__respond_icmp6_unreachable += (
+            1
+        )
         self._phtx_icmp6(
             ip6_src=packet_rx.ip.dst,
             ip6_dst=packet_rx.ip.src,
@@ -123,7 +146,9 @@ def _phrx_udp(self, packet_rx: PacketRx) -> None:
         )
 
     if packet_rx.ip.ver == 4:
-        self.packet_stats_rx.udp__no_socket_match__respond_icmp4_unreachable += 1
+        self.packet_stats_rx.udp__no_socket_match__respond_icmp4_unreachable += (
+            1
+        )
         self._phtx_icmp4(
             ip4_src=packet_rx.ip.dst,
             ip4_dst=packet_rx.ip.src,

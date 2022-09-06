@@ -3,7 +3,7 @@
 ############################################################################
 #                                                                          #
 #  PyTCP - Python TCP/IP stack                                             #
-#  Copyright (C) 2020-2021  Sebastian Majewski                             #
+#  Copyright (C) 2020-present Sebastian Majewski                           #
 #                                                                          #
 #  This program is free software: you can redistribute it and/or modify    #
 #  it under the terms of the GNU General Public License as published by    #
@@ -27,6 +27,8 @@
 #
 # services/tcp_echo.py - 'user space' service TCP Echo (RFC 862)
 #
+# ver 2.7
+#
 
 
 from __future__ import annotations
@@ -42,43 +44,77 @@ if TYPE_CHECKING:
 
 
 class ServiceTcpEcho(ServiceTcp):
-    """TCP Echo service support class"""
+    """
+    TCP Echo service support class.
+    """
 
     def __init__(self, local_ip_address: str, local_port: int = 7):
-        """Class constructor"""
-
+        """
+        Class constructor.
+        """
         super().__init__("Echo", local_ip_address, local_port)
 
     def service(self, cs: Socket) -> None:
-        """Inbound connection handler"""
+        """
+        Inbound connection handler.
+        """
 
         if __debug__:
-            log("service", f"Service TCP Echo: Sending first message to {cs.remote_ip_address}, port {cs.remote_port}")
+            log(
+                "service",
+                "Service TCP Echo: Sending first message to "
+                f"{cs.remote_ip_address}, port {cs.remote_port}",
+            )
         cs.send(b"***CLIENT OPEN / SERVICE OPEN***\n")
 
         while True:
             if not (message := cs.recv()):
                 if __debug__:
-                    log("service", f"Service TCP Echo: Connection to {cs.remote_ip_address}, port {cs.remote_port} has been closed by peer")
+                    log(
+                        "service",
+                        "Service TCP Echo: Connection to "
+                        f"{cs.remote_ip_address}, port {cs.remote_port} "
+                        "has been closed by peer",
+                    )
                 if __debug__:
-                    log("service", f"Service TCP Echo: Sending last message to {cs.remote_ip_address}, port {cs.remote_port}")
+                    log(
+                        "service",
+                        "Service TCP Echo: Sending last message to "
+                        f"{cs.remote_ip_address}, port {cs.remote_port}",
+                    )
                 cs.send(b"***CLIENT CLOSED, SERVICE CLOSING***\n")
                 if __debug__:
-                    log("service", f"Service TCP Echo: Closng connection to {cs.remote_ip_address}, port {cs.remote_port}")
+                    log(
+                        "service",
+                        "Service TCP Echo: Closng connection to "
+                        f"{cs.remote_ip_address}, port {cs.remote_port}",
+                    )
                 cs.close()
                 break
 
             if message in {b"CLOSE\n", b"CLOSE\r\n", b"close\n", b"close\r\n"}:
                 if __debug__:
-                    log("service", f"Service TCP Echo: Sending last message to {cs.remote_ip_address}, port {cs.remote_port}")
+                    log(
+                        "service",
+                        "Service TCP Echo: Sending last message to "
+                        f"{cs.remote_ip_address}, port {cs.remote_port}",
+                    )
                 cs.send(b"***CLIENT OPEN, SERVICE CLOSING***\n")
                 if __debug__:
-                    log("service", f"Service TCP Echo: Closng connection to {cs.remote_ip_address}, port {cs.remote_port}")
+                    log(
+                        "service",
+                        "Service TCP Echo: Closng connection to "
+                        f"{cs.remote_ip_address}, port {cs.remote_port}",
+                    )
                 cs.close()
                 continue
 
             if __debug__:
-                log("service", f"Service TCP Echo: Received {len(message)} bytes from {cs.remote_ip_address}, port {cs.remote_port}")
+                log(
+                    "service",
+                    f"Service TCP Echo: Received {len(message)} bytes from "
+                    f"{cs.remote_ip_address}, port {cs.remote_port}",
+                )
 
             if b"malpka" in message.strip().lower():
                 message = malpka
@@ -91,4 +127,8 @@ class ServiceTcpEcho(ServiceTcp):
 
             if cs.send(message):
                 if __debug__:
-                    log("service", f"Service TCP Echo: Echo'ed {len(message)} bytes back to {cs.remote_ip_address}, port {cs.remote_port}")
+                    log(
+                        "service",
+                        f"Service TCP Echo: Echo'ed {len(message)} bytes back "
+                        f"to {cs.remote_ip_address}, port {cs.remote_port}",
+                    )

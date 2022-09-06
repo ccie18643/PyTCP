@@ -3,7 +3,7 @@
 ############################################################################
 #                                                                          #
 #  PyTCP - Python TCP/IP stack                                             #
-#  Copyright (C) 2020-2021  Sebastian Majewski                             #
+#  Copyright (C) 2020-present Sebastian Majewski                           #
 #                                                                          #
 #  This program is free software: you can redistribute it and/or modify    #
 #  it under the terms of the GNU General Public License as published by    #
@@ -27,6 +27,8 @@
 #
 # config.py - module contains global configuration parameters
 #
+# ver 2.7
+#
 
 
 from __future__ import annotations
@@ -42,9 +44,11 @@ TAP_INTERFACE = b"tap7"
 IP6_SUPPORT = True
 IP4_SUPPORT = True
 
-# Logger configuration - LOG_CHANEL sets which subsystems of stack log to console, LOG_DEBUG adds info about class/method caller
+# Logger configuration - LOG_CHANEL sets which subsystems of stack log to the
+# console, LOG_DEBUG adds info about class/method caller.
 # Following subsystems are supported:
-# stack, timer, rx-ring, tx-ring, arp-c, nd-c, ether, arp, ip4, ip6, icmp4, icmp6, udp, tcp, socket, tcp-ss, service
+# stack, timer, rx-ring, tx-ring, arp-c, nd-c, ether, arp, ip4, ip6, icmp4,
+# icmp6, udp, tcp, socket, tcp-ss, service.
 LOG_CHANEL = {
     "stack",
     #    "timer",
@@ -67,25 +71,33 @@ LOG_CHANEL = {
 }
 LOG_DEBUG = False
 
-# Packet integrity sanity check, if enabled it protects the protocol parsers from being exposed to malformed or malicious packets
-# that could cause them to crash during packet parsing. It progessively check appropriate length fields and ensure they are set within sane boundaries.
-# It also checks packet's actual header/options/data lengths against above values and default minimum/maximum lengths for given protocol.
-# Also packet options (if any) are checked in similar fashion to ensure they will not exploit or crash parser.
+# Packet integrity sanity check, if enabled it protects the protocol parsers
+# from being exposed to malformed or malicious packets that could cause them
+# to crash during packet parsing. It progessively check appropriate length
+# fields and ensure they are set within sane boundaries. It also checks
+# packet's actual header/options/data lengths against above values and default
+# minimum/maximum lengths for given protocol. Also packet options (if any) are
+# checked in similar fashion to ensure they will not exploit or crash parser.
 PACKET_INTEGRITY_CHECK = True
 
-# Packet sanity check, if enabled it validates packet's fields to detect invalid values or invalid combinations of values
-# For example in TCP/UDP it drops packets with port set to 0, in TCP it drop packet with SYN and FIN flags set simultaneously,
-# for ICMPv6 it provides very detailed check of messages integrity
+# Packet sanity check, if enabled it validates packet's fields to detect invalid
+# values or invalid combinations of values. For example in TCP/UDP it drops
+# packets with port set to 0, in TCP it drop packet with SYN and FIN flags set
+# simultaneously, for ICMPv6 it provides very detailed check of messages
+# integrity.
 PACKET_SANITY_CHECK = True
 
-# Drop IPv4 packets containing options - this seems to be widely adopted security feature. Stack parses but doesn't support IPv4 options
-# as they are mostly useless anyway.
+# Drop IPv4 packets containing options - this seems to be widely adopted
+# security feature. Stack parses but doesn't support IPv4 options as they are
+# mostly useless anyway.
 IP4_OPTION_PACKET_DROP = False
 
-# Unicast MAC addresses assigned to stack, currently there is not any kind of duplicate MAC detection performed
+# Unicast MAC addresses assigned to stack, currently there is not any kind of
+# duplicate MAC detection performed.
 MAC_ADDRESS = "02:00:00:77:77:77"
 
-# IPv6 address auto configuration is implemented using EUI64 addressing and ICMPv6 Router Advertisement messages
+# IPv6 address auto configuration is implemented using EUI64 addressing and
+# ICMPv6 Router Advertisement messages.
 IP6_LLA_AUTOCONFIG = True
 IP6_GUA_AUTOCONFIG = True
 
@@ -95,15 +107,17 @@ IP6_DEFAULT_HOP = 64
 # IPv4 default TTL value
 IP4_DEFAULT_TTL = 64
 
-# IPv4 and IPv6 fragmnt flow expiration time, determines for how many seconds fragment flow is considered valid
-# Fragemnt flows are being cleaned up prior of handling every fragmented packet
+# IPv4 and IPv6 fragmnt flow expiration time, determines for how many seconds
+# fragment flow is considered valid. Fragemnt flows are being cleaned up prior
+# of handling every fragmented packet.
 IP4_FRAG_FLOW_TIMEOUT = 5
 IP6_FRAG_FLOW_TIMEOUT = 5
 
-# Static IPv6 adrsses may to be configured here (they will still be subject to CICMPv6 ND DAD  mechanism)
-# Each entry is a tuple interface address/prefix length and second is default gateway for this subnet
-# Basic routing is implemented and each subnet can have its own gateway
-# Link local addresses should have default gateway set to 'None'
+# Static IPv6 adrsses may to be configured here (they will still be subject to
+# CICMPv6 ND DAD  mechanism). Each entry is a tuple interface address/prefix
+# length and second is default gateway for this subnet. Basic routing is
+# implemented and each subnet can have its own gateway Link local addresses
+# should have default gateway set to 'None'.
 IP6_HOST_CANDIDATE: list[tuple[str, str | None]] = [
     ("FE80::7/64", None),
     ("2007::7/64", "FE80::1"),
@@ -112,9 +126,10 @@ IP6_HOST_CANDIDATE: list[tuple[str, str | None]] = [
 # IPv4 DHCP based address configuration
 IP4_HOST_DHCP = True
 
-# Static IPv4 adrsses may to be configured here (they will still be subject to ARP Probe/Announcement mechanism)
-# Each entry is a tuple interface address/prefix length and second is default gateway for this subnet
-# Basic routing is implemented and each subnet can have its own gateway
+# Static IPv4 adrsses may to be configured here (they will still be subject to
+# ARP Probe/Announcement mechanism). Each entry is a tuple interface
+# address/prefix length and second is default gateway for this subnet. Basic
+# routing is implemented and each subnet can have its own gateway.
 IP4_HOST_CANDIDATE: list[tuple[str, str | None]] = [
     ("10.0.0.7/24", "10.0.0.1"),
     # ("192.168.9.7/24", "192.168.9.1"),
@@ -141,7 +156,10 @@ TAP_MTU = 1500
 
 # TCP session related settings
 LOCAL_TCP_MSS = 1460  # Maximum segment peer can send to us
-LOCAL_TCP_WIN = 65535  # Maximum amount of data peer can send to us without confirmation
+LOCAL_TCP_WIN = (
+    65535  # Maximum amount of data peer can send to us without confirmation
+)
 
-# Native support for UDP Echo (used for packet flow unit testing only and should always be disabled)
+# Native support for UDP Echo (used for packet flow unit testing only and should
+# always be disabled).
 UDP_ECHO_NATIVE_DISABLE = True

@@ -3,7 +3,7 @@
 ############################################################################
 #                                                                          #
 #  PyTCP - Python TCP/IP stack                                             #
-#  Copyright (C) 2020-2021  Sebastian Majewski                             #
+#  Copyright (C) 2020-present Sebastian Majewski                           #
 #                                                                          #
 #  This program is free software: you can redistribute it and/or modify    #
 #  it under the terms of the GNU General Public License as published by    #
@@ -26,6 +26,8 @@
 
 #
 # protocols/icmp6/phtx.py - packet handler for outbound ICMPv6 packets
+#
+# 2.7
 #
 
 
@@ -75,11 +77,14 @@ def _phtx_icmp6(
     icmp6_na_flag_s: bool = False,
     icmp6_na_flag_o: bool = False,
     icmp6_na_target_address: Ip6Address | None = None,
-    icmp6_nd_options: list[Icmp6NdOptSLLA | Icmp6NdOptTLLA | Icmp6NdOptPI] | None = None,
+    icmp6_nd_options: list[Icmp6NdOptSLLA | Icmp6NdOptTLLA | Icmp6NdOptPI]
+    | None = None,
     icmp6_mlr2_multicast_address_record=None,
     echo_tracker: Tracker | None = None,
 ) -> TxStatus:
-    """Handle outbound ICMPv6 packets"""
+    """
+    Handle outbound ICMPv6 packets.
+    """
 
     self.packet_stats_tx.icmp6__pre_assemble += 1
 
@@ -96,7 +101,9 @@ def _phtx_icmp6(
         na_flag_o=icmp6_na_flag_o,
         na_target_address=icmp6_na_target_address,
         nd_options=[] if icmp6_nd_options is None else icmp6_nd_options,
-        mlr2_multicast_address_record=[] if icmp6_mlr2_multicast_address_record is None else icmp6_mlr2_multicast_address_record,
+        mlr2_multicast_address_record=[]
+        if icmp6_mlr2_multicast_address_record is None
+        else icmp6_mlr2_multicast_address_record,
         echo_tracker=echo_tracker,
     )
 
@@ -105,36 +112,80 @@ def _phtx_icmp6(
 
     if icmp6_type == ICMP6_ECHO_REPLY and icmp6_code == 0:
         self.packet_stats_tx.icmp6__echo_reply__send += 1
-        return self._phtx_ip6(ip6_src=ip6_src, ip6_dst=ip6_dst, ip6_hop=ip6_hop, carried_packet=icmp6_packet_tx)
+        return self._phtx_ip6(
+            ip6_src=ip6_src,
+            ip6_dst=ip6_dst,
+            ip6_hop=ip6_hop,
+            carried_packet=icmp6_packet_tx,
+        )
 
     if icmp6_type == ICMP6_ECHO_REQUEST and icmp6_code == 0:
         self.packet_stats_tx.icmp6__echo_request__send += 1
-        return self._phtx_ip6(ip6_src=ip6_src, ip6_dst=ip6_dst, ip6_hop=ip6_hop, carried_packet=icmp6_packet_tx)
+        return self._phtx_ip6(
+            ip6_src=ip6_src,
+            ip6_dst=ip6_dst,
+            ip6_hop=ip6_hop,
+            carried_packet=icmp6_packet_tx,
+        )
 
-    if icmp6_type == ICMP6_UNREACHABLE and icmp6_code == ICMP6_UNREACHABLE__PORT:
+    if (
+        icmp6_type == ICMP6_UNREACHABLE
+        and icmp6_code == ICMP6_UNREACHABLE__PORT
+    ):
         self.packet_stats_tx.icmp6__unreachable_port__send += 1
-        return self._phtx_ip6(ip6_src=ip6_src, ip6_dst=ip6_dst, ip6_hop=ip6_hop, carried_packet=icmp6_packet_tx)
+        return self._phtx_ip6(
+            ip6_src=ip6_src,
+            ip6_dst=ip6_dst,
+            ip6_hop=ip6_hop,
+            carried_packet=icmp6_packet_tx,
+        )
 
     if icmp6_type == ICMP6_ND_ROUTER_SOLICITATION and icmp6_code == 0:
         self.packet_stats_tx.icmp6__nd_router_solicitation__send += 1
-        return self._phtx_ip6(ip6_src=ip6_src, ip6_dst=ip6_dst, ip6_hop=ip6_hop, carried_packet=icmp6_packet_tx)
+        return self._phtx_ip6(
+            ip6_src=ip6_src,
+            ip6_dst=ip6_dst,
+            ip6_hop=ip6_hop,
+            carried_packet=icmp6_packet_tx,
+        )
 
     if icmp6_type == ICMP6_ND_ROUTER_ADVERTISEMENT and icmp6_code == 0:
         self.packet_stats_tx.icmp6__nd_router_advertisement__send += 1
-        return self._phtx_ip6(ip6_src=ip6_src, ip6_dst=ip6_dst, ip6_hop=ip6_hop, carried_packet=icmp6_packet_tx)
+        return self._phtx_ip6(
+            ip6_src=ip6_src,
+            ip6_dst=ip6_dst,
+            ip6_hop=ip6_hop,
+            carried_packet=icmp6_packet_tx,
+        )
 
     if icmp6_type == ICMP6_ND_NEIGHBOR_SOLICITATION and icmp6_code == 0:
         self.packet_stats_tx.icmp6__nd_neighbor_solicitation__send += 1
-        return self._phtx_ip6(ip6_src=ip6_src, ip6_dst=ip6_dst, ip6_hop=ip6_hop, carried_packet=icmp6_packet_tx)
+        return self._phtx_ip6(
+            ip6_src=ip6_src,
+            ip6_dst=ip6_dst,
+            ip6_hop=ip6_hop,
+            carried_packet=icmp6_packet_tx,
+        )
 
     if icmp6_type == ICMP6_ND_NEIGHBOR_ADVERTISEMENT and icmp6_code == 0:
         self.packet_stats_tx.icmp6__nd_neighbor_advertisement__send += 1
-        return self._phtx_ip6(ip6_src=ip6_src, ip6_dst=ip6_dst, ip6_hop=ip6_hop, carried_packet=icmp6_packet_tx)
+        return self._phtx_ip6(
+            ip6_src=ip6_src,
+            ip6_dst=ip6_dst,
+            ip6_hop=ip6_hop,
+            carried_packet=icmp6_packet_tx,
+        )
 
     if icmp6_type == ICMP6_MLD2_REPORT and icmp6_code == 0:
         self.packet_stats_tx.icmp6__mld2_report__send += 1
-        return self._phtx_ip6(ip6_src=ip6_src, ip6_dst=ip6_dst, ip6_hop=ip6_hop, carried_packet=icmp6_packet_tx)
+        return self._phtx_ip6(
+            ip6_src=ip6_src,
+            ip6_dst=ip6_dst,
+            ip6_hop=ip6_hop,
+            carried_packet=icmp6_packet_tx,
+        )
 
-    # This code will never be executed in debug mode due to assertions present in Packet Assembler
+    # This code will never be executed in debug mode due to assertions
+    # present in Packet Assembler
     self.packet_stats_tx.icmp4__unknown__drop += 1
     return TxStatus.DROPED__ICMP4__UNKNOWN

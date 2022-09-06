@@ -4,7 +4,7 @@
 ############################################################################
 #                                                                          #
 #  PyTCP - Python TCP/IP stack                                             #
-#  Copyright (C) 2020-2021  Sebastian Majewski                             #
+#  Copyright (C) 2020-present Sebastian Majewski                           #
 #                                                                          #
 #  This program is free software: you can redistribute it and/or modify    #
 #  it under the terms of the GNU General Public License as published by    #
@@ -28,6 +28,8 @@
 #
 # tests/ip4_phtx.py -  tests specific for IPv4 phtx module
 #
+# ver 2.7
+#
 
 
 from protocols.raw.fpa import RawAssembler
@@ -45,9 +47,15 @@ TEST_FRAME_DIR = "tests/test_frames/ip4_phtx/"
 
 
 class TestIp4Phtx(TestCase):
-    def setUp(self):
-        super().setUp()
+    """
+    IPv4 packet handler TX unit test class.
+    """
 
+    def setUp(self):
+        """
+        Setup tests.
+        """
+        super().setUp()
         self.mns = MockNetworkSettings()
         patch_config(self)
         setup_mock_packet_handler(self)
@@ -55,8 +63,10 @@ class TestIp4Phtx(TestCase):
     # Test name format: 'test_name__test_description__optional_condition'
 
     def test_ip4_phtx__ip4_to_unicast_address_on_local_network__src_valid(self):
-        """Test sending IPv4 packet to unicast address on local network / valid source"""
-
+        """
+        Test sending IPv4 packet to unicast address on local network,
+        valid source.
+        """
         tx_status = self.packet_handler._phtx_ip4(
             ip4_src=self.mns.stack_ip4_host.address,
             ip4_dst=self.mns.host_a_ip4_address,
@@ -73,13 +83,21 @@ class TestIp4Phtx(TestCase):
                 ether__dst_unspec__ip4_lookup__locnet__arp_cache_hit__send=1,
             ),
         )
-        with open(TEST_FRAME_DIR + "ip4_to_unicast_address_on_local_network__src_valid.tx", "rb") as _:
+        with open(
+            TEST_FRAME_DIR
+            + "ip4_to_unicast_address_on_local_network__src_valid.tx",
+            "rb",
+        ) as _:
             frame_tx = _.read()
         self.assertEqual(self.frame_tx[: len(frame_tx)], frame_tx)
 
-    def test_ip4_phtx__ip4_to_unicast_address_on_local_network__src_not_owned_drop(self):
-        """Test sending IPv4 packet to unicast address on local network / src not owned"""
-
+    def test_ip4_phtx__ip4_to_unicast_address_on_local_network__src_not_owned_drop(
+        self,
+    ):
+        """
+        Test sending IPv4 packet to unicast address on local network,
+        src not owned.
+        """
         tx_status = self.packet_handler._phtx_ip4(
             ip4_src=self.mns.host_b_ip4_address,
             ip4_dst=self.mns.host_a_ip4_address,
@@ -93,9 +111,13 @@ class TestIp4Phtx(TestCase):
             ),
         )
 
-    def test_ip4_phtx__ip4_to_unicast_address_on_local_network__src_multicast_replace(self):
-        """Test sending IPv4 packet to unicast address on local network / multicast source, able to replace"""
-
+    def test_ip4_phtx__ip4_to_unicast_address_on_local_network__src_multicast_replace(
+        self,
+    ):
+        """
+        Test sending IPv4 packet to unicast address on local network,
+        multicast source, able to replace.
+        """
         tx_status = self.packet_handler._phtx_ip4(
             ip4_src=self.mns.ip4_multicast_all_nodes,
             ip4_dst=self.mns.host_a_ip4_address,
@@ -113,13 +135,21 @@ class TestIp4Phtx(TestCase):
                 ether__dst_unspec__ip4_lookup__locnet__arp_cache_hit__send=1,
             ),
         )
-        with open(TEST_FRAME_DIR + "ip4_to_unicast_address_on_local_network__src_multicast_replace.tx", "rb") as _:
+        with open(
+            TEST_FRAME_DIR
+            + "ip4_to_unicast_address_on_local_network__src_multicast_replace.tx",
+            "rb",
+        ) as _:
             frame_tx = _.read()
         self.assertEqual(self.frame_tx[: len(frame_tx)], frame_tx)
 
-    def test_ip4_phtx__ip4_to_unicast_address_on_local_network__src_multicast_drop(self):
-        """Test sending IPv4 packet to unicast address on local network / multicast source, not able to replace"""
-
+    def test_ip4_phtx__ip4_to_unicast_address_on_local_network__src_multicast_drop(
+        self,
+    ):
+        """
+        Test sending IPv4 packet to unicast address on local network,
+        multicast source, not able to replace.
+        """
         self.packet_handler.ip4_host = []
 
         tx_status = self.packet_handler._phtx_ip4(
@@ -135,9 +165,13 @@ class TestIp4Phtx(TestCase):
             ),
         )
 
-    def test_ip4_phtx__ip4_to_unicast_address_on_local_network__src_limited_broadcast_replace(self):
-        """Test sending IPv4 packet to unicast address on local network / limited broadcst source, able to replace"""
-
+    def test_ip4_phtx__ip4_to_unicast_address_on_local_network__src_limited_broadcast_replace(
+        self,
+    ):
+        """
+        Test sending IPv4 packet to unicast address on local network,
+        limited broadcst source, able to replace.
+        """
         tx_status = self.packet_handler._phtx_ip4(
             ip4_src=self.mns.ip4_limited_broadcast,
             ip4_dst=self.mns.host_a_ip4_address,
@@ -155,15 +189,22 @@ class TestIp4Phtx(TestCase):
                 ether__dst_unspec__ip4_lookup__locnet__arp_cache_hit__send=1,
             ),
         )
-        with open(TEST_FRAME_DIR + "ip4_to_unicast_address_on_local_network__src_limited_broadcast_replace.tx", "rb") as _:
+        with open(
+            TEST_FRAME_DIR
+            + "ip4_to_unicast_address_on_local_network__src_limited_broadcast_replace.tx",
+            "rb",
+        ) as _:
             frame_tx = _.read()
         self.assertEqual(self.frame_tx[: len(frame_tx)], frame_tx)
 
-    def test_ip4_phtx__ip4_to_unicast_address_on_local_network__src_limited_broadcast_drop(self):
-        """Test sending IPv4 packet to unicast address on local network / limited broadcast source, not able to replace"""
-
+    def test_ip4_phtx__ip4_to_unicast_address_on_local_network__src_limited_broadcast_drop(
+        self,
+    ):
+        """
+        Test sending IPv4 packet to unicast address on local network,
+        limited broadcast source, not able to replace.
+        """
         self.packet_handler.ip4_host = []
-
         tx_status = self.packet_handler._phtx_ip4(
             ip4_src=self.mns.ip4_limited_broadcast,
             ip4_dst=self.mns.host_a_ip4_address,
@@ -177,9 +218,13 @@ class TestIp4Phtx(TestCase):
             ),
         )
 
-    def test_ip4_phtx__ip4_to_unicast_address_on_local_network__src_network_broadcast_replace(self):
-        """Test sending IPv4 packet to unicast address on local network / network broadcst source, able to replace"""
-
+    def test_ip4_phtx__ip4_to_unicast_address_on_local_network__src_network_broadcast_replace(
+        self,
+    ):
+        """
+        Test sending IPv4 packet to unicast address on local network,
+        network broadcst source, able to replace.
+        """
         tx_status = self.packet_handler._phtx_ip4(
             ip4_src=self.mns.stack_ip4_host.network.broadcast,
             ip4_dst=self.mns.host_a_ip4_address,
@@ -197,13 +242,21 @@ class TestIp4Phtx(TestCase):
                 ether__dst_unspec__ip4_lookup__locnet__arp_cache_hit__send=1,
             ),
         )
-        with open(TEST_FRAME_DIR + "ip4_to_unicast_address_on_local_network__src_network_broadcast_replace.tx", "rb") as _:
+        with open(
+            TEST_FRAME_DIR
+            + "ip4_to_unicast_address_on_local_network__src_network_broadcast_replace.tx",
+            "rb",
+        ) as _:
             frame_tx = _.read()
         self.assertEqual(self.frame_tx[: len(frame_tx)], frame_tx)
 
-    def test_ip4_phtx__ip4_to_unicast_address_on_local_network__src_unspecified_replace_local(self):
-        """Test sending IPv4 packet to unicast address on local network / uspecified source, able to replace"""
-
+    def test_ip4_phtx__ip4_to_unicast_address_on_local_network__src_unspecified_replace_local(
+        self,
+    ):
+        """
+        Test sending IPv4 packet to unicast address on local network,
+        uspecified source, able to replace.
+        """
         tx_status = self.packet_handler._phtx_ip4(
             ip4_src=self.mns.ip4_unspecified,
             ip4_dst=self.mns.host_a_ip4_address,
@@ -221,13 +274,21 @@ class TestIp4Phtx(TestCase):
                 ether__dst_unspec__ip4_lookup__locnet__arp_cache_hit__send=1,
             ),
         )
-        with open(TEST_FRAME_DIR + "ip4_to_unicast_address_on_local_network__src_unspecified_replace_local.tx", "rb") as _:
+        with open(
+            TEST_FRAME_DIR
+            + "ip4_to_unicast_address_on_local_network__src_unspecified_replace_local.tx",
+            "rb",
+        ) as _:
             frame_tx = _.read()
         self.assertEqual(self.frame_tx[: len(frame_tx)], frame_tx)
 
-    def test_ip4_phtx__ip4_to_unicast_address_on_local_network__src_unspecified_replace_external(self):
-        """Test sending IPv4 packet to unicast address on local network / uspecified source, able to replace with ip from subnet with gateway"""
-
+    def test_ip4_phtx__ip4_to_unicast_address_on_local_network__src_unspecified_replace_external(
+        self,
+    ):
+        """
+        Test sending IPv4 packet to unicast address on local network,
+        uspecified source, able to replace with ip from subnet with gateway.
+        """
         tx_status = self.packet_handler._phtx_ip4(
             ip4_src=self.mns.ip4_unspecified,
             ip4_dst=self.mns.host_c_ip4_address,
@@ -245,15 +306,22 @@ class TestIp4Phtx(TestCase):
                 ether__dst_unspec__ip4_lookup__extnet__gw_arp_cache_hit__send=1,
             ),
         )
-        with open(TEST_FRAME_DIR + "ip4_to_unicast_address_on_local_network__src_unspecified_replace_external.tx", "rb") as _:
+        with open(
+            TEST_FRAME_DIR
+            + "ip4_to_unicast_address_on_local_network__src_unspecified_replace_external.tx",
+            "rb",
+        ) as _:
             frame_tx = _.read()
         self.assertEqual(self.frame_tx[: len(frame_tx)], frame_tx)
 
-    def test_ip4_phtx__ip4_to_unicast_address_on_local_network__src_unspecified_drop(self):
-        """Test sending IPv4 packet to unicast address on local network / uspecified source, not able to replace"""
-
+    def test_ip4_phtx__ip4_to_unicast_address_on_local_network__src_unspecified_drop(
+        self,
+    ):
+        """
+        Test sending IPv4 packet to unicast address on local network,
+        uspecified source, not able to replace.
+        """
         self.mns.stack_ip4_host.gateway = None
-
         tx_status = self.packet_handler._phtx_ip4(
             ip4_src=self.mns.ip4_unspecified,
             ip4_dst=self.mns.host_c_ip4_address,
@@ -268,10 +336,10 @@ class TestIp4Phtx(TestCase):
         )
 
     def test_ip4_phtx__ip4_to_unspecified_address__dst_unspecified_drop(self):
-        """Test sending IPv4 packet to unspecified address"""
-
+        """
+        Test sending IPv4 packet to unspecified address.
+        """
         self.mns.stack_ip4_host.gateway = None
-
         tx_status = self.packet_handler._phtx_ip4(
             ip4_src=self.mns.stack_ip4_host.address,
             ip4_dst=self.mns.ip4_unspecified,
@@ -286,12 +354,14 @@ class TestIp4Phtx(TestCase):
         )
 
     def test_ip4_phtx__ip4_fragmentation(self):
-        """Test sending IPv4 packet large enough to require fragmentation"""
-
+        """
+        Test sending IPv4 packet large enough to require fragmentation.
+        """
         self.mns.stack_ip4_host.gateway = None
-
         tx_status = self.packet_handler._phtx_ip4(
-            ip4_src=self.mns.stack_ip4_host.address, ip4_dst=self.mns.host_a_ip4_address, carried_packet=RawAssembler(data=b"01234567890ABCDEF" * 400)
+            ip4_src=self.mns.stack_ip4_host.address,
+            ip4_dst=self.mns.host_a_ip4_address,
+            carried_packet=RawAssembler(data=b"01234567890ABCDEF" * 400),
         )
         self.assertEqual(tx_status, TxStatus.PASSED__ETHER__TO_TX_RING)
         self.assertEqual(
@@ -307,6 +377,9 @@ class TestIp4Phtx(TestCase):
             ),
         )
         for index in range(5):
-            with open(f"tests/test_frames/ip4_phtx/ip4_fragmentation__frag_{index}.tx", "rb") as _:
+            with open(
+                f"tests/test_frames/ip4_phtx/ip4_fragmentation__frag_{index}.tx",
+                "rb",
+            ) as _:
                 frame_tx = _.read()
             self.assertEqual(self.frames_tx[index][: len(frame_tx)], frame_tx)

@@ -3,7 +3,7 @@
 ############################################################################
 #                                                                          #
 #  PyTCP - Python TCP/IP stack                                             #
-#  Copyright (C) 2020-2021  Sebastian Majewski                             #
+#  Copyright (C) 2020-present Sebastian Majewski                           #
 #                                                                          #
 #  This program is free software: you can redistribute it and/or modify    #
 #  it under the terms of the GNU General Public License as published by    #
@@ -27,6 +27,8 @@
 #
 # protocols/udp/fpa.py - Fast Packet Assembler support class for UDP protocol
 #
+# ver 2.7
+#
 
 
 from __future__ import annotations
@@ -41,13 +43,24 @@ from protocols.udp.ps import UDP_HEADER_LEN
 
 
 class UdpAssembler:
-    """UDP packet assembler support class"""
+    """
+    UDP packet assembler support class.
+    """
 
     ip4_proto = IP4_PROTO_UDP
     ip6_next = IP6_NEXT_UDP
 
-    def __init__(self, *, sport: int = 0, dport: int = 0, data: bytes | None = None, echo_tracker: Tracker | None = None) -> None:
-        """Class constructor"""
+    def __init__(
+        self,
+        *,
+        sport: int = 0,
+        dport: int = 0,
+        data: bytes | None = None,
+        echo_tracker: Tracker | None = None,
+    ) -> None:
+        """
+        Class constructor.
+        """
 
         assert 0 <= sport <= 0xFFFF, f"{sport=}"
         assert 0 <= dport <= 0xFFFF, f"{dport=}"
@@ -59,24 +72,38 @@ class UdpAssembler:
         self._plen: int = UDP_HEADER_LEN + len(self._data)
 
     def __len__(self) -> int:
-        """Length of the packet"""
-
+        """
+        Length of the packet.
+        """
         return self._plen
 
     def __str__(self) -> str:
-        """Packet log string"""
-
+        """
+        Packet log string.
+        """
         return f"UDP {self._sport} > {self._dport}, len {self._plen}"
 
     @property
     def tracker(self) -> Tracker:
-        """Getter for _tracker"""
-
+        """
+        Getter for the '_tracker' attribute.
+        """
         return self._tracker
 
     def assemble(self, frame: memoryview, pshdr_sum: int) -> None:
-        """Assemble packet into the raw form"""
+        """
+        Assemble packet into the raw form.
+        """
 
-        # memoryview: bytes conversion requir
-        struct.pack_into(f"! HH HH {len(self._data)}s", frame, 0, self._sport, self._dport, self._plen, 0, bytes(self._data))
+        # memoryview: bytes conversion required
+        struct.pack_into(
+            f"! HH HH {len(self._data)}s",
+            frame,
+            0,
+            self._sport,
+            self._dport,
+            self._plen,
+            0,
+            bytes(self._data),
+        )
         struct.pack_into("! H", frame, 6, inet_cksum(frame, pshdr_sum))

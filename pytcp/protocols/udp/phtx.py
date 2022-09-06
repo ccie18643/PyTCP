@@ -3,7 +3,7 @@
 ############################################################################
 #                                                                          #
 #  PyTCP - Python TCP/IP stack                                             #
-#  Copyright (C) 2020-2021  Sebastian Majewski                             #
+#  Copyright (C) 2020-present Sebastian Majewski                           #
 #                                                                          #
 #  This program is free software: you can redistribute it and/or modify    #
 #  it under the terms of the GNU General Public License as published by    #
@@ -26,6 +26,8 @@
 
 #
 # protocols/udp/phtx.py - protocol support for outbound UDP packets
+#
+# ver 2.7
 #
 
 
@@ -52,22 +54,33 @@ def _phtx_udp(
     udp_data: bytes | None = None,
     echo_tracker: Tracker | None = None,
 ) -> TxStatus:
-    """Handle outbound UDP packets"""
+    """
+    Handle outbound UDP packets.
+    """
 
     self.packet_stats_tx.udp__pre_assemble += 1
 
-    udp_packet_tx = UdpAssembler(sport=udp_sport, dport=udp_dport, data=udp_data, echo_tracker=echo_tracker)
+    udp_packet_tx = UdpAssembler(
+        sport=udp_sport,
+        dport=udp_dport,
+        data=udp_data,
+        echo_tracker=echo_tracker,
+    )
 
     if __debug__:
         log("udp", f"{udp_packet_tx.tracker} - {udp_packet_tx}")
 
     if ip_src.is_ip6 and ip_dst.is_ip6:
         self.packet_stats_tx.udp__send += 1
-        return self._phtx_ip6(ip6_src=ip_src, ip6_dst=ip_dst, carried_packet=udp_packet_tx)
+        return self._phtx_ip6(
+            ip6_src=ip_src, ip6_dst=ip_dst, carried_packet=udp_packet_tx
+        )
 
     if ip_src.is_ip4 and ip_dst.is_ip4:
         self.packet_stats_tx.udp__send += 1
-        return self._phtx_ip4(ip4_src=ip_src, ip4_dst=ip_dst, carried_packet=udp_packet_tx)
+        return self._phtx_ip4(
+            ip4_src=ip_src, ip4_dst=ip_dst, carried_packet=udp_packet_tx
+        )
 
     self.packet_stats_tx.udp__unknown__drop += 1
     return TxStatus.DROPED__UDP__UNKNOWN

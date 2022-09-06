@@ -3,7 +3,7 @@
 ############################################################################
 #                                                                          #
 #  PyTCP - Python TCP/IP stack                                             #
-#  Copyright (C) 2020-2021  Sebastian Majewski                             #
+#  Copyright (C) 2020-present Sebastian Majewski                           #
 #                                                                          #
 #  This program is free software: you can redistribute it and/or modify    #
 #  it under the terms of the GNU General Public License as published by    #
@@ -26,6 +26,8 @@
 
 #
 # ether/ps.py - protocol support for Ethernet
+#
+# ver 2.7
 #
 
 
@@ -52,4 +54,9 @@ ETHER_TYPE_IP4 = 0x0800
 ETHER_TYPE_IP6 = 0x86DD
 ETHER_TYPE_RAW = 0xFFFF
 
-ETHER_TYPE_TABLE = {ETHER_TYPE_ARP: "ARP", ETHER_TYPE_IP4: "IPv4", ETHER_TYPE_IP6: "IPv6", ETHER_TYPE_RAW: "raw_data"}
+ETHER_TYPE_TABLE = {
+    ETHER_TYPE_ARP: "ARP",
+    ETHER_TYPE_IP4: "IPv4",
+    ETHER_TYPE_IP6: "IPv6",
+    ETHER_TYPE_RAW: "raw_data",
+}

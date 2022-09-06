@@ -3,7 +3,7 @@
 ############################################################################
 #                                                                          #
 #  PyTCP - Python TCP/IP stack                                             #
-#  Copyright (C) 2020-2021  Sebastian Majewski                             #
+#  Copyright (C) 2020-present Sebastian Majewski                           #
 #                                                                          #
 #  This program is free software: you can redistribute it and/or modify    #
 #  it under the terms of the GNU General Public License as published by    #
@@ -27,6 +27,8 @@
 #
 # protocols/udp/fpp.py - Fast Packet Parser support class for UDP protocol
 #
+# ver 2.7
+#
 
 
 from __future__ import annotations
@@ -43,10 +45,14 @@ if TYPE_CHECKING:
 
 
 class UdpParser:
-    """UDP packet parser class"""
+    """
+    UDP packet parser class.
+    """
 
     def __init__(self, packet_rx: PacketRx) -> None:
-        """Class constructor"""
+        """
+        Class constructor.
+        """
 
         assert packet_rx.ip is not None
 
@@ -55,93 +61,112 @@ class UdpParser:
         self._frame = packet_rx.frame
         self._plen = packet_rx.ip.dlen
 
-        packet_rx.parse_failed = self._packet_integrity_check(packet_rx.ip.pshdr_sum) or self._packet_sanity_check()
+        packet_rx.parse_failed = (
+            self._packet_integrity_check(packet_rx.ip.pshdr_sum)
+            or self._packet_sanity_check()
+        )
 
         if not packet_rx.parse_failed:
             packet_rx.frame = packet_rx.frame[UDP_HEADER_LEN:]
 
     def __len__(self) -> int:
-        """Number of bytes remaining in the frame"""
-
+        """
+        Number of bytes remaining in the frame.
+        """
         return len(self._frame)
 
     def __str__(self) -> str:
-        """Packet log string"""
-
+        """
+        Packet log string.
+        """
         return f"UDP {self.sport} > {self.dport}, len {self.plen}"
 
     @property
     def sport(self) -> int:
-        """Read 'Source port' field"""
-
+        """
+        Read the 'Source port' field.
+        """
         if "_cache__sport" not in self.__dict__:
             self._cache__sport: int = struct.unpack("!H", self._frame[0:2])[0]
         return self._cache__sport
 
     @property
     def dport(self) -> int:
-        """Read 'Destianation port' field"""
-
+        """
+        Read the 'Destianation port' field.
+        """
         if "_cache__dport" not in self.__dict__:
             self._cache__dport: int = struct.unpack("!H", self._frame[2:4])[0]
         return self._cache__dport
 
     @property
     def plen(self) -> int:
-        """Read 'Packet length' field"""
-
+        """
+        Read the 'Packet length' field.
+        """
         if "_cache__plen" not in self.__dict__:
             self._cache__plen: int = struct.unpack("!H", self._frame[4:6])[0]
         return self._cache__plen
 
     @property
     def cksum(self) -> int:
-        """Read 'Checksum' field"""
-
+        """
+        Read the 'Checksum' field.
+        """
         if "_cache__cksum" not in self.__dict__:
             self._cache__cksum: int = struct.unpack("!H", self._frame[6:8])[0]
         return self._cache__cksum
 
     @property
     def data(self) -> memoryview:
-        """Read the data packet carries"""
-
+        """
+        Read the data packet carries.
+        """
         if "_cache__data" not in self.__dict__:
             self._cache__data = self._frame[UDP_HEADER_LEN : self.plen]
         return self._cache__data
 
     @property
     def dlen(self) -> int:
-        """Calculate data length"""
-
+        """
+        Calculate data length.
+        """
         return self.plen - UDP_HEADER_LEN
 
     @property
     def header_copy(self) -> bytes:
-        """Return copy of packet header"""
-
+        """
+        Return copy of packet header.
+        """
         if "_cache__header_copy" not in self.__dict__:
             self._cache__header_copy = bytes(self._frame[:UDP_HEADER_LEN])
         return self._cache__header_copy
 
     @property
     def data_copy(self) -> bytes:
-        """Return copy of packet data"""
-
+        """
+        Return copy of packet data.
+        """
         if "_cache__data_copy" not in self.__dict__:
-            self._cache__data_copy = bytes(self._frame[UDP_HEADER_LEN : self.plen - UDP_HEADER_LEN])
+            self._cache__data_copy = bytes(
+                self._frame[UDP_HEADER_LEN : self.plen - UDP_HEADER_LEN]
+            )
         return self._cache__data_copy
 
     @property
     def packet_copy(self) -> bytes:
-        """Return copy of whole packet"""
-
+        """
+        Return copy of whole packet.
+        """
         if "_cache__packet_copy" not in self.__dict__:
             self._cache__packet_copy = bytes(self._frame[: self.plen])
         return self._cache__packet_copy
 
     def _packet_integrity_check(self, pshdr_sum: int) -> str:
-        """Packet integrity check to be run on raw frame prior to parsing to make sure parsing is safe"""
+        """
+        Packet integrity check to be run on raw frame prior to parsing
+        to make sure parsing is safe.
+        """
 
         if not config.PACKET_INTEGRITY_CHECK:
             return ""
@@ -159,7 +184,10 @@ class UdpParser:
         return ""
 
     def _packet_sanity_check(self) -> str:
-        """Packet sanity check to be run on parsed packet to make sure frame's fields contain sane values"""
+        """
+        Packet sanity check to be run on parsed packet to make sure packet's
+        fields contain sane values.
+        """
 
         if not config.PACKET_SANITY_CHECK:
             return ""

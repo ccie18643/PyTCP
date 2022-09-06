@@ -3,7 +3,7 @@
 ############################################################################
 #                                                                          #
 #  PyTCP - Python TCP/IP stack                                             #
-#  Copyright (C) 2020-2021  Sebastian Majewski                             #
+#  Copyright (C) 2020-present Sebastian Majewski                           #
 #                                                                          #
 #  This program is free software: you can redistribute it and/or modify    #
 #  it under the terms of the GNU General Public License as published by    #
@@ -27,6 +27,8 @@
 #
 # protocols/ip4/phtx.py - packet handler for outbound IPv4 packets
 #
+# ver 2.7
+#
 
 
 from __future__ import annotations
@@ -47,101 +49,178 @@ if TYPE_CHECKING:
 
 
 def _validate_src_ip4_address(
-    self, ip4_src: Ip4Address, ip4_dst: Ip4Address, carried_packet: Icmp4Assembler | TcpAssembler | UdpAssembler | RawAssembler
+    self,
+    ip4_src: Ip4Address,
+    ip4_dst: Ip4Address,
+    carried_packet: Icmp4Assembler | TcpAssembler | UdpAssembler | RawAssembler,
 ) -> Ip4Address | TxStatus:
-    """Make sure source ip address is valid, supplemt with valid one as appropriate"""
+    """
+    Make sure source ip address is valid, supplement with valid one
+    as appropriate.
+    """
 
     tracker = carried_packet.tracker
 
-    # Check if the the source IP address belongs to this stack or is set to all zeros (for DHCP client communication)
-    if ip4_src not in {*self.ip4_unicast, *self.ip4_multicast, *self.ip4_broadcast, Ip4Address(0)}:
+    # Check if the the source IP address belongs to this stack or is set to all
+    # zeros (for DHCP client communication).
+    if ip4_src not in {
+        *self.ip4_unicast,
+        *self.ip4_multicast,
+        *self.ip4_broadcast,
+        Ip4Address(0),
+    }:
         self.packet_stats_tx.ip4__src_not_owned__drop += 1
         if __debug__:
-            log("ip4", f"{tracker} - <WARN>Unable to sent out IPv4 packet, stack doesn't own IPv4 address {ip4_src}, dropping</>")
+            log(
+                "ip4",
+                f"{tracker} - <WARN>Unable to sent out IPv4 packet, stack "
+                f"doesn't own IPv4 address {ip4_src}, dropping</>",
+            )
         return TxStatus.DROPED__IP4__SRC_NOT_OWNED
 
-    # If packet is a response to multicast then replace source address with primary address of the stack
+    # If packet is a response to multicast then replace source address with
+    # primary address of the stack
     if ip4_src in self.ip4_multicast:
         if self.ip4_unicast:
             self.packet_stats_tx.ip4__src_multicast__replace += 1
             ip4_src = self.ip4_unicast[0]
             if __debug__:
-                log("ip4", f"{tracker} - Packet is response to multicast, replaced source with stack primary IPv4 address {ip4_src}")
+                log(
+                    "ip4",
+                    f"{tracker} - Packet is response to multicast, replaced "
+                    f"source with stack primary IPv4 address {ip4_src}",
+                )
             return ip4_src
         self.packet_stats_tx.ip4__src_multicast__drop += 1
         if __debug__:
-            log("ip4", f"{tracker} - <WARN>Unable to sent out IPv4 packet, no stack primary unicast IPv4 address available, dropping</>")
+            log(
+                "ip4",
+                f"{tracker} - <WARN>Unable to sent out IPv4 packet, no stack "
+                f"primary unicast IPv4 address available, dropping</>",
+            )
         return TxStatus.DROPED__IP4__SRC_MULTICAST
 
-    # If packet is a response to limited broadcast then replace source address with primary address of the stack
+    # If packet is a response to limited broadcast then replace source address
+    # with primary address of the stack
     if ip4_src.is_limited_broadcast:
         if self.ip4_unicast:
             self.packet_stats_tx.ip4__src_limited_broadcast__replace += 1
             ip4_src = self.ip4_unicast[0]
             if __debug__:
-                log("ip4", f"{tracker} - Packet is response to limited broadcast, replaced source with stack primary IPv4 address {ip4_src}")
+                log(
+                    "ip4",
+                    f"{tracker} - Packet is response to limited broadcast, "
+                    "replaced source with stack primary IPv4 "
+                    f"address {ip4_src}",
+                )
             return ip4_src
         self.packet_stats_tx.ip4__src_limited_broadcast__drop += 1
         if __debug__:
-            log("ip4", f"{tracker} - <WARN>Unable to sent out IPv4 packet, no stack primary unicast IPv4 address available, dropping</>")
+            log(
+                "ip4",
+                f"{tracker} - <WARN>Unable to sent out IPv4 packet, no stack "
+                f"primary unicast IPv4 address available, dropping</>",
+            )
         return TxStatus.DROPED__IP4__SRC_LIMITED_BROADCAST
 
-    # If packet is a response to network broadcast then replace source address with first stack address that belongs to appropriate subnet
+    # If packet is a response to network broadcast then replace source address
+    # with first stack address that belongs to appropriate subnet
     if ip4_src in self.ip4_broadcast:
-        ip4_src_list = [_.address for _ in self.ip4_host if _.network.broadcast == ip4_src]
+        ip4_src_list = [
+            _.address for _ in self.ip4_host if _.network.broadcast == ip4_src
+        ]
         if ip4_src_list:
             self.packet_stats_tx.ip4__src_network_broadcast__replace += 1
             ip4_src = ip4_src_list[0]
             if __debug__:
-                log("ip4", f"{tracker} - Packet is response to network broadcast, replaced source with appropriate IPv4 address {ip4_src}")
+                log(
+                    "ip4",
+                    f"{tracker} - Packet is response to network broadcast, "
+                    f"replaced source with appropriate IPv4 address {ip4_src}",
+                )
             return ip4_src
 
-    # If source is unspecified and destination belongs to any of local networks then pick source address from that network
+    # If source is unspecified and destination belongs to any of local networks
+    # then pick source address from that network.
     if ip4_src.is_unspecified:
         for ip4_host in self.ip4_host:
             if ip4_dst in ip4_host.network:
-                self.packet_stats_tx.ip4__src_network_unspecified__replace_local += 1
+                self.packet_stats_tx.ip4__src_network_unspecified__replace_local += (
+                    1
+                )
                 ip4_src = ip4_host.address
                 if __debug__:
-                    log("ip4", f"{tracker} - Packet source is unspecified, replaced source with IPv4 address {ip4_src} from the local destination subnet")
+                    log(
+                        "ip4",
+                        f"{tracker} - Packet source is unspecified, replaced "
+                        f"source with IPv4 address {ip4_src} from the local "
+                        "destination subnet",
+                    )
                 return ip4_src
 
-    # If source is unspecified and destination is external pick source from first network that has default gateway set
+    # If source is unspecified and destination is external pick source from
+    # first network that has default gateway set.
     if ip4_src.is_unspecified:
         for ip4_host in self.ip4_host:
             if ip4_host.gateway:
-                self.packet_stats_tx.ip4__src_network_unspecified__replace_external += 1
+                self.packet_stats_tx.ip4__src_network_unspecified__replace_external += (
+                    1
+                )
                 ip4_src = ip4_host.address
                 if __debug__:
-                    log("ip4", f"{tracker} - Packet source is unspecified, replaced source with IPv4 address {ip4_src} that has gateway available")
+                    log(
+                        "ip4",
+                        f"{tracker} - Packet source is unspecified, replaced "
+                        f"source with IPv4 address {ip4_src} that has gateway "
+                        "available",
+                    )
                 return ip4_src
 
     # If src is unspecified and stack is sending DHCP packet
-    if ip4_src.is_unspecified and type(carried_packet) == UdpAssembler and carried_packet._sport == 68 and carried_packet._dport == 67:
+    if (
+        ip4_src.is_unspecified
+        and type(carried_packet) == UdpAssembler
+        and carried_packet._sport == 68
+        and carried_packet._dport == 67
+    ):
         self.packet_stats_tx.ip4__src_unspecified__send += 1
         if __debug__:
-            log("ip4", f"{tracker} - Packet source is unspecified, DHCPv4 packet, sending")
+            log(
+                "ip4",
+                f"{tracker} - Packet source is unspecified, DHCPv4 packet, "
+                "sending",
+            )
         return ip4_src
 
     # If src is unspecified and stack can't replace it
     if ip4_src.is_unspecified:
         self.packet_stats_tx.ip4__src_unspecified__drop += 1
         if __debug__:
-            log("ip4", f"{tracker} - <WARN>Packet source is unspecified, unable to replace with valid source, dropping</>")
+            log(
+                "ip4",
+                f"{tracker} - <WARN>Packet source is unspecified, unable to "
+                "replace with valid source, dropping</>",
+            )
         return TxStatus.DROPED__IP4__SRC_UNSPECIFIED
 
     # If nothing above applies return the src address intact
     return ip4_src
 
 
-def _validate_dst_ip4_address(self, ip4_dst: Ip4Address, tracker) -> Ip4Address | TxStatus:
+def _validate_dst_ip4_address(
+    self, ip4_dst: Ip4Address, tracker
+) -> Ip4Address | TxStatus:
     """Make sure destination ip address is valid"""
 
     # Drop packet if the destination address is unspecified
     if ip4_dst.is_unspecified:
         self.packet_stats_tx.ip4__dst_unspecified__drop += 1
         if __debug__:
-            log("ip4", f"{tracker} - <WARN>Destination address is unspecified, dropping</>")
+            log(
+                "ip4",
+                f"{tracker} - <WARN>Destination address is unspecified, "
+                "dropping</>",
+            )
         return TxStatus.DROPED__IP4__DST_UNSPECIFIED
 
     return ip4_dst
@@ -153,7 +232,11 @@ def _phtx_ip4(
     ip4_dst: Ip4Address,
     ip4_src: Ip4Address,
     ip4_ttl: int = config.IP4_DEFAULT_TTL,
-    carried_packet: Icmp4Assembler | TcpAssembler | UdpAssembler | RawAssembler | None = None,
+    carried_packet: Icmp4Assembler
+    | TcpAssembler
+    | UdpAssembler
+    | RawAssembler
+    | None = None,
 ) -> TxStatus:
     """Handle outbound IP packets"""
 
@@ -164,7 +247,8 @@ def _phtx_ip4(
 
     assert 0 < ip4_ttl < 256
 
-    # Check if IPv4 protocol support is enabled, if not then silently drop the packet
+    # Check if IPv4 protocol support is enabled, if not then silently drop
+    # the packet
     if not config.IP4_SUPPORT:
         self.packet_stats_tx.ip4__no_proto_support__drop += 1
         return TxStatus.DROPED__IP4__NO_PROTOCOL_SUPPORT
@@ -182,7 +266,9 @@ def _phtx_ip4(
     ip4_dst = result
 
     # Assemble IPv4 packet
-    ip4_packet_tx = Ip4Assembler(src=ip4_src, dst=ip4_dst, ttl=ip4_ttl, carried_packet=carried_packet)
+    ip4_packet_tx = Ip4Assembler(
+        src=ip4_src, dst=ip4_dst, ttl=ip4_ttl, carried_packet=carried_packet
+    )
 
     # Send packet out if it's size doesn't exceed mtu
     if len(ip4_packet_tx) <= config.TAP_MTU:
@@ -194,7 +280,11 @@ def _phtx_ip4(
     # Fragment packet and send out
     self.packet_stats_tx.ip4__mtu_exceed__frag += 1
     if __debug__:
-        log("ip4", f"{ip4_packet_tx.tracker} - IPv4 packet len {len(ip4_packet_tx)} bytes, fragmentation needed")
+        log(
+            "ip4",
+            f"{ip4_packet_tx.tracker} - IPv4 packet len {len(ip4_packet_tx)} "
+            "bytes, fragmentation needed",
+        )
     data = memoryview(bytearray(ip4_packet_tx.dlen))
     ip4_packet_tx._carried_packet.assemble(data, ip4_packet_tx.pshdr_sum)
     data_mtu = (config.TAP_MTU - ip4_packet_tx.hlen) & 0b1111111111111000

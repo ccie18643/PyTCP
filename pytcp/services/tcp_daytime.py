@@ -3,7 +3,7 @@
 ############################################################################
 #                                                                          #
 #  PyTCP - Python TCP/IP stack                                             #
-#  Copyright (C) 2020-2021  Sebastian Majewski                             #
+#  Copyright (C) 2020-present Sebastian Majewski                           #
 #                                                                          #
 #  This program is free software: you can redistribute it and/or modify    #
 #  it under the terms of the GNU General Public License as published by    #
@@ -27,6 +27,8 @@
 #
 # services/tcp_daytime.py - 'user space' service TCP Daytime (RFC 867)
 #
+# ver 2.7
+#
 
 
 from __future__ import annotations
@@ -43,10 +45,20 @@ if TYPE_CHECKING:
 
 
 class ServiceTcpDaytime(ServiceTcp):
-    """TCP Daytime service support class"""
+    """
+    TCP Daytime service support class.
+    """
 
-    def __init__(self, local_ip_address: str, local_port: int = 13, message_count: int = -1, message_delay: int = 1):
-        """Class constructor"""
+    def __init__(
+        self,
+        local_ip_address: str,
+        local_port: int = 13,
+        message_count: int = -1,
+        message_delay: int = 1,
+    ):
+        """
+        Class constructor.
+        """
 
         super().__init__("Daytime", local_ip_address, local_port)
 
@@ -56,11 +68,16 @@ class ServiceTcpDaytime(ServiceTcp):
     def service(self, cs: Socket) -> None:
         """Inbound connection handler"""
 
-        # Don't want to be working on object variable as it may be shar by multiple connections
+        # Don't want to be working on object variable as it may be shar by
+        # multiple connections.
         message_count = self.message_count
 
         if __debug__:
-            log("service", f"Service TCP Daytime: Sending first message to {cs.remote_ip_address}, port {cs.remote_port}")
+            log(
+                "service",
+                "Service TCP Daytime: Sending first message to "
+                f"{cs.remote_ip_address}, port {cs.remote_port}",
+            )
         cs.send(b"***CLIENT OPEN / SERVICE OPEN***\n")
 
         message_count = self.message_count
@@ -71,14 +88,25 @@ class ServiceTcpDaytime(ServiceTcp):
                 cs.send(message)
             except OSError as error:
                 if __debug__:
-                    log("service", f"Service TCP Daytime: send() error - [{error}]")
+                    log(
+                        "service",
+                        f"Service TCP Daytime: send() error - [{error}]",
+                    )
                 break
 
             if __debug__:
-                log("service", f"Service TCP Daytime: Sent {len(message)} bytes of data to {cs.remote_ip_address}, port {cs.remote_port}")
+                log(
+                    "service",
+                    f"Service TCP Daytime: Sent {len(message)} bytes of data "
+                    f"to {cs.remote_ip_address}, port {cs.remote_port}",
+                )
             time.sleep(self.message_delay)
             message_count = min(message_count, message_count - 1)
 
         cs.close()
         if __debug__:
-            log("service", f"Service TCP Daytime: Closed connection to {cs.remote_ip_address}, port {cs.remote_port}")
+            log(
+                "service",
+                "Service TCP Daytime: Closed connection to "
+                f"{cs.remote_ip_address}, port {cs.remote_port}",
+            )

@@ -4,7 +4,7 @@
 ############################################################################
 #                                                                          #
 #  PyTCP - Python TCP/IP stack                                             #
-#  Copyright (C) 2020-2021  Sebastian Majewski                             #
+#  Copyright (C) 2020-present Sebastian Majewski                           #
 #                                                                          #
 #  This program is free software: you can redistribute it and/or modify    #
 #  it under the terms of the GNU General Public License as published by    #
@@ -28,6 +28,8 @@
 #
 # tests/icmp4_phtx.py -  tests specific for ICMPv4 phtx module
 #
+# ver 2.7
+#
 
 
 from testslide import TestCase
@@ -50,9 +52,15 @@ TEST_FRAME_DIR = "tests/test_frames/icmp4_phtx/"
 
 
 class TestIcmp4Phtx(TestCase):
-    def setUp(self):
-        super().setUp()
+    """
+    ICMPv4 packet handler TX unit test class.
+    """
 
+    def setUp(self):
+        """
+        Test setup.
+        """
+        super().setUp()
         self.mns = MockNetworkSettings()
         patch_config(self)
         setup_mock_packet_handler(self)
@@ -60,7 +68,9 @@ class TestIcmp4Phtx(TestCase):
     # Test name format: 'test_name__test_description__optional_condition'
 
     def test_icmp4_phtx__ip4_icmp4_echo_request(self):
-        """Test sending IPv4/ICMPv4 Echo request packet"""
+        """
+        Test sending the IPv4/ICMPv4 'Echo Request' packet.
+        """
 
         tx_status = self.packet_handler._phtx_icmp4(
             ip4_src=self.mns.stack_ip4_host.address,
@@ -89,8 +99,9 @@ class TestIcmp4Phtx(TestCase):
         self.assertEqual(self.frame_tx[: len(frame_tx)], frame_tx)
 
     def test_icmp4_phtx__ip4_icmp4_echo_reply(self):
-        """Test sending IPv4/ICMPv4 Echo reply packet"""
-
+        """
+        Test sending the IPv4/ICMPv4 'Echo Reply' packet.
+        """
         tx_status = self.packet_handler._phtx_icmp4(
             ip4_src=self.mns.stack_ip4_host.address,
             ip4_dst=self.mns.host_a_ip4_address,
@@ -118,8 +129,9 @@ class TestIcmp4Phtx(TestCase):
         self.assertEqual(self.frame_tx[: len(frame_tx)], frame_tx)
 
     def test_icmp4_phtx__ip4_icmp4_unreachable_port(self):
-        """Test sending IPv4/ICMPv4 unreachable port packet"""
-
+        """
+        Test sending the IPv4/ICMPv4 'Unreachable Port' packet.
+        """
         tx_status = self.packet_handler._phtx_icmp4(
             ip4_src=self.mns.stack_ip4_host.address,
             ip4_dst=self.mns.host_a_ip4_address,

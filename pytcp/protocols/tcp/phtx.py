@@ -3,7 +3,7 @@
 ############################################################################
 #                                                                          #
 #  PyTCP - Python TCP/IP stack                                             #
-#  Copyright (C) 2020-2021  Sebastian Majewski                             #
+#  Copyright (C) 2020-present Sebastian Majewski                           #
 #                                                                          #
 #  This program is free software: you can redistribute it and/or modify    #
 #  it under the terms of the GNU General Public License as published by    #
@@ -26,6 +26,8 @@
 
 #
 # protocols/tcp/phtx.py - packet handler for outbound TCP packets
+#
+# ver 2.7
 #
 
 
@@ -75,11 +77,20 @@ def _phtx_tcp(
     tcp_data: bytes | None = None,
     echo_tracker: Tracker | None = None,
 ) -> TxStatus:
-    """Handle outbound TCP packets"""
+    """
+    Handle outbound TCP packets.
+    """
 
     self.packet_stats_tx.tcp__pre_assemble += 1
 
-    tcp_options: list[TcpOptMss | TcpOptWscale | TcpOptSackPerm | TcpOptTimestamp | TcpOptEol | TcpOptNop] = []
+    tcp_options: list[
+        TcpOptMss
+        | TcpOptWscale
+        | TcpOptSackPerm
+        | TcpOptTimestamp
+        | TcpOptEol
+        | TcpOptNop
+    ] = []
 
     if tcp_mss:
         self.packet_stats_tx.tcp__opt_mss += 1
@@ -144,11 +155,15 @@ def _phtx_tcp(
 
     if ip_src.is_ip6 and ip_dst.is_ip6:
         self.packet_stats_tx.tcp__send += 1
-        return self._phtx_ip6(ip6_src=ip_src, ip6_dst=ip_dst, carried_packet=tcp_packet_tx)
+        return self._phtx_ip6(
+            ip6_src=ip_src, ip6_dst=ip_dst, carried_packet=tcp_packet_tx
+        )
 
     if ip_src.is_ip4 and ip_dst.is_ip4:
         self.packet_stats_tx.tcp__send += 1
-        return self._phtx_ip4(ip4_src=ip_src, ip4_dst=ip_dst, carried_packet=tcp_packet_tx)
+        return self._phtx_ip4(
+            ip4_src=ip_src, ip4_dst=ip_dst, carried_packet=tcp_packet_tx
+        )
 
     self.packet_stats_tx.tcp__unknown__drop += 1
     return TxStatus.DROPED__TCP__UNKNOWN

@@ -3,7 +3,7 @@
 ############################################################################
 #                                                                          #
 #  PyTCP - Python TCP/IP stack                                             #
-#  Copyright (C) 2020-2021  Sebastian Majewski                             #
+#  Copyright (C) 2020-present Sebastian Majewski                           #
 #                                                                          #
 #  This program is free software: you can redistribute it and/or modify    #
 #  it under the terms of the GNU General Public License as published by    #
@@ -25,7 +25,10 @@
 
 
 #
-# protocols/tcp/metadata.py - module contains interface class for FPP -> TCP Socket communication
+# protocols/tcp/metadata.py - module contains interface class
+# for FPP -> TCP Socket communication
+#
+# cer 2.7
 #
 
 
@@ -39,7 +42,9 @@ if TYPE_CHECKING:
 
 
 class TcpMetadata:
-    """Store TCP metadata for the RX packet"""
+    """
+    Store TCP metadata for the RX packet.
+    """
 
     def __init__(
         self,
@@ -59,6 +64,9 @@ class TcpMetadata:
         data: memoryview,
         tracker: Tracker | None,
     ):
+        """
+        Class constructor.
+        """
         self.local_ip_address = local_ip_address
         self.local_port = local_port
         self.remote_ip_address = remote_ip_address
@@ -76,15 +84,25 @@ class TcpMetadata:
         self.tracker = tracker
 
     def __str__(self) -> str:
-        """String representation"""
-
-        return f"AF_INET{self.local_ip_address.version}/SOCK_STREAM/{self.local_ip_address}/{self.local_port}/{self.remote_ip_address}/{self.remote_port}"
+        """
+        String representation.
+        """
+        return (
+            f"AF_INET{self.local_ip_address.version}/SOCK_STREAM/"
+            f"{self.local_ip_address}/{self.local_port}/"
+            f"{self.remote_ip_address}/{self.remote_port}"
+        )
 
     @property
     def tcp_listening_socket_patterns(self) -> list[str]:
-        """Session ID patterns that match listening socket"""
-
+        """
+        Session ID patterns that match listening socket.
+        """
         return [
-            f"AF_INET{self.local_ip_address.version}/SOCK_STREAM/{self.local_ip_address}/{self.local_port}/{self.local_ip_address.unspecified}/0",
-            f"AF_INET{self.local_ip_address.version}/SOCK_STREAM/{self.local_ip_address.unspecified}/{self.local_port}/{self.local_ip_address.unspecified}/0",
+            f"AF_INET{self.local_ip_address.version}/SOCK_STREAM/"
+            f"{self.local_ip_address}/{self.local_port}/"
+            f"{self.local_ip_address.unspecified}/0",
+            f"AF_INET{self.local_ip_address.version}/SOCK_STREAM/"
+            f"{self.local_ip_address.unspecified}/{self.local_port}/"
+            f"{self.local_ip_address.unspecified}/0",
         ]

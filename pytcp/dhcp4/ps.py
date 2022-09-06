@@ -3,7 +3,7 @@
 ############################################################################
 #                                                                          #
 #  PyTCP - Python TCP/IP stack                                             #
-#  Copyright (C) 2020-2021  Sebastian Majewski                             #
+#  Copyright (C) 2020-present Sebastian Majewski                           #
 #                                                                          #
 #  This program is free software: you can redistribute it and/or modify    #
 #  it under the terms of the GNU General Public License as published by    #
@@ -26,6 +26,8 @@
 
 #
 # dhcp4/ps.py - protocol support library for DHCP
+#
+# ver 2.7
 #
 
 
@@ -153,7 +155,9 @@ class Dhcp4Packet:
         dhcp_param_req_list: list[int] | None = None,
         dhcp_msg_type: int | None = None,
     ) -> None:
-        """Class constructor"""
+        """
+        Class constructor.
+        """
 
         # Packet parsing
         if raw_packet:
@@ -167,7 +171,9 @@ class Dhcp4Packet:
             self.dhcp_hops = raw_header[3]
             self.dhcp_xid = struct.unpack("!L", raw_header[4:8])[0]
             self.dhcp_secs = struct.unpack("!H", raw_header[8:10])[0]
-            self.dhcp_flag_b = bool(struct.unpack("!H", raw_header[10:12])[0] & 0b1000000000000000)
+            self.dhcp_flag_b = bool(
+                struct.unpack("!H", raw_header[10:12])[0] & 0b1000000000000000
+            )
             self.dhcp_ciaddr = Ip4Address(raw_header[12:16])
             self.dhcp_yiaddr = Ip4Address(raw_header[16:20])
             self.dhcp_siaddr = Ip4Address(raw_header[20:24])
@@ -217,7 +223,11 @@ class Dhcp4Packet:
                     i += DHCP4_OPT_PAD_LEN
                     continue
 
-                self.dhcp_options.append(opt_cls.get(raw_options[i], Dhcp4OptUnk)(raw_options[i : i + raw_options[i + 1] + 2]))
+                self.dhcp_options.append(
+                    opt_cls.get(raw_options[i], Dhcp4OptUnk)(
+                        raw_options[i : i + raw_options[i + 1] + 2]
+                    )
+                )
                 i += self.raw_options[i + 1] + 2
 
         # Packet building
@@ -249,7 +259,9 @@ class Dhcp4Packet:
             self.dhcp_options = []
 
             if dhcp_subnet_mask:
-                self.dhcp_options.append(Dhcp4OptSubnetMask(opt_subnet_mask=dhcp_subnet_mask))
+                self.dhcp_options.append(
+                    Dhcp4OptSubnetMask(opt_subnet_mask=dhcp_subnet_mask)
+                )
 
             if dhcp_router:
                 self.dhcp_options.append(Dhcp4OptRouter(opt_router=dhcp_router))
@@ -258,42 +270,59 @@ class Dhcp4Packet:
                 self.dhcp_options.append(Dhcp4OptDns(opt_dns=dhcp_dns))
 
             if dhcp_host_name:
-                self.dhcp_options.append(Dhcp4OptHostName(opt_host_name=dhcp_host_name))
+                self.dhcp_options.append(
+                    Dhcp4OptHostName(opt_host_name=dhcp_host_name)
+                )
 
             if dhcp_domain_name:
-                self.dhcp_options.append(Dhcp4OptDomainName(opt_domain_name=dhcp_domain_name))
+                self.dhcp_options.append(
+                    Dhcp4OptDomainName(opt_domain_name=dhcp_domain_name)
+                )
 
             if dhcp_req_ip_addr:
-                self.dhcp_options.append(Dhcp4OptReqIpAddr(opt_req_ip_addr=dhcp_req_ip_addr))
+                self.dhcp_options.append(
+                    Dhcp4OptReqIpAddr(opt_req_ip_addr=dhcp_req_ip_addr)
+                )
 
             if dhcp_addr_lease_time:
-                self.dhcp_options.append(Dhcp4OptAddrLeaseTime(opt_addr_lease_time=dhcp_addr_lease_time))
+                self.dhcp_options.append(
+                    Dhcp4OptAddrLeaseTime(
+                        opt_addr_lease_time=dhcp_addr_lease_time
+                    )
+                )
 
             if dhcp_srv_id:
                 self.dhcp_options.append(Dhcp4OptSrvId(opt_srv_id=dhcp_srv_id))
 
             if dhcp_param_req_list:
-                self.dhcp_options.append(Dhcp4OptParamReqList(opt_param_req_list=dhcp_param_req_list))
+                self.dhcp_options.append(
+                    Dhcp4OptParamReqList(opt_param_req_list=dhcp_param_req_list)
+                )
 
             if dhcp_msg_type:
-                self.dhcp_options.append(Dhcp4OptMsgType(opt_msg_type=dhcp_msg_type))
+                self.dhcp_options.append(
+                    Dhcp4OptMsgType(opt_msg_type=dhcp_msg_type)
+                )
 
             self.dhcp_options.append(Dhcp4OptEnd())
 
     def __str__(self) -> str:
-        """Packet log string"""
-
+        """
+        Packet log string.
+        """
         return f"DHCP op {self.dhcp_op}"
 
     def __len__(self) -> int:
-        """Length of the packet"""
-
+        """
+        Length of the packet.
+        """
         return len(self.raw_packet)
 
     @property
     def raw_header(self) -> bytes:
-        """Packet header in raw format"""
-
+        """
+        Packet header in raw format.
+        """
         return struct.pack(
             "! BBBB L HH 4s 4s 4s 4s 16s 64s 128s 4s",
             self.dhcp_op,
@@ -315,19 +344,19 @@ class Dhcp4Packet:
 
     @property
     def raw_options(self) -> bytes:
-        """Packet options in raw format"""
-
+        """
+        Packet options in raw format.
+        """
         raw_options = b""
-
         for option in self.dhcp_options:
             raw_options += option.raw_option
-
         return raw_options
 
     @property
     def dhcp_subnet_mask(self) -> Ip4Mask | None:
-        """DHCP option - Subnet Mask (1)"""
-
+        """
+        DHCP option - Subnet Mask (1).
+        """
         for option in self.dhcp_options:
             if isinstance(option, Dhcp4OptSubnetMask):
                 return option.opt_subnet_mask
@@ -335,8 +364,9 @@ class Dhcp4Packet:
 
     @property
     def dhcp_router(self) -> list[Ip4Address] | None:
-        """DHCP option - Router (3)"""
-
+        """
+        DHCP option - Router (3).
+        """
         for option in self.dhcp_options:
             if isinstance(option, Dhcp4OptRouter):
                 return option.opt_router
@@ -344,8 +374,9 @@ class Dhcp4Packet:
 
     @property
     def dhcp_dns(self) -> list[Ip4Address] | None:
-        """DHCP option - Domain Name Server (6)"""
-
+        """
+        DHCP option - Domain Name Server (6).
+        """
         for option in self.dhcp_options:
             if isinstance(option, Dhcp4OptDns):
                 return option.opt_dns
@@ -353,8 +384,9 @@ class Dhcp4Packet:
 
     @property
     def dhcp_host_name(self) -> str | None:
-        """DHCP option - Host Name (12)"""
-
+        """
+        DHCP option - Host Name (12).
+        """
         for option in self.dhcp_options:
             if isinstance(option, Dhcp4OptHostName):
                 return option.opt_host_name
@@ -362,8 +394,9 @@ class Dhcp4Packet:
 
     @property
     def dhcp_domain_name(self) -> str | None:
-        """DHCP option - Domain Name (15)"""
-
+        """
+        DHCP option - Domain Name (15).
+        """
         for option in self.dhcp_options:
             if isinstance(option, Dhcp4OptDomainName):
                 return option.opt_domain_name
@@ -371,8 +404,9 @@ class Dhcp4Packet:
 
     @property
     def dhcp_req_ip_addr(self) -> Ip4Address | None:
-        """DHCP option - Requested IP Address (50)"""
-
+        """
+        DHCP option - Requested IP Address (50).
+        """
         for option in self.dhcp_options:
             if isinstance(option, Dhcp4OptReqIpAddr):
                 return option.opt_req_ip_addr
@@ -380,8 +414,9 @@ class Dhcp4Packet:
 
     @property
     def dhcp_addr_lease_time(self) -> int | None:
-        """DHCP option - Address Lease Time (51)"""
-
+        """
+        DHCP option - Address Lease Time (51).
+        """
         for option in self.dhcp_options:
             if isinstance(option, Dhcp4OptAddrLeaseTime):
                 return option.opt_addr_lease_time
@@ -389,8 +424,9 @@ class Dhcp4Packet:
 
     @property
     def dhcp_msg_type(self) -> int | None:
-        """DHCP option - Message Type (53)"""
-
+        """
+        DHCP option - Message Type (53).
+        """
         for option in self.dhcp_options:
             if isinstance(option, Dhcp4OptMsgType):
                 return option.opt_msg_type
@@ -398,8 +434,9 @@ class Dhcp4Packet:
 
     @property
     def dhcp_srv_id(self) -> Ip4Address | None:
-        """DHCP option - Server Identifier (54)"""
-
+        """
+        DHCP option - Server Identifier (54).
+        """
         for option in self.dhcp_options:
             if isinstance(option, Dhcp4OptSrvId):
                 return option.opt_srv_id
@@ -407,8 +444,9 @@ class Dhcp4Packet:
 
     @property
     def dhcp_param_req_list(self) -> list[int] | None:
-        """DHCP option - Parameter Request List (55)"""
-
+        """
+        DHCP option - Parameter Request List (55).
+        """
         for option in self.dhcp_options:
             if isinstance(option, Dhcp4OptParamReqList):
                 return option.opt_param_req_list
@@ -416,8 +454,9 @@ class Dhcp4Packet:
 
     @property
     def raw_packet(self) -> bytes:
-        """Packet in raw format"""
-
+        """
+        Packet in raw format.
+        """
         return self.raw_header + self.raw_options
 
 
@@ -433,16 +472,27 @@ DHCP4_OPT_END_LEN = 0
 
 
 class Dhcp4OptEnd:
-    """DHCP option - End (255)"""
+    """
+    DHCP option - End (255).
+    """
 
     def __init__(self) -> None:
+        """
+        Option constructor.
+        """
         self.opt_code = DHCP4_OPT_END
 
     @property
     def raw_option(self) -> bytes:
+        """
+        Option in raw form.
+        """
         return struct.pack("!B", self.opt_code)
 
     def __str__(self) -> str:
+        """
+        Option log string.
+        """
         return "end"
 
 
@@ -453,16 +503,27 @@ DHCP4_OPT_PAD_LEN = 0
 
 
 class Dhcp4OptPad:
-    """DHCP option - Pad (0)"""
+    """
+    DHCP option - Pad (0).
+    """
 
     def __init__(self) -> None:
+        """
+        Option constructor.
+        """
         self.opt_code = DHCP4_OPT_PAD
 
     @property
     def raw_option(self) -> bytes:
+        """
+        Option in raw form.
+        """
         return struct.pack("!B", self.opt_code)
 
     def __str__(self) -> str:
+        """
+        Option log string.
+        """
         return "pad"
 
 
@@ -475,7 +536,14 @@ DHCP4_OPT_SUBNET_MASK_LEN = 4
 class Dhcp4OptSubnetMask:
     """DHCP option - Subnet Mask (1)"""
 
-    def __init__(self, raw_option: bytes | None = None, opt_subnet_mask: Ip4Mask | None = None) -> None:
+    def __init__(
+        self,
+        raw_option: bytes | None = None,
+        opt_subnet_mask: Ip4Mask | None = None,
+    ) -> None:
+        """
+        Option constructor.
+        """
         if raw_option:
             self.opt_code = raw_option[0]
             self.opt_len = raw_option[1]
@@ -488,9 +556,17 @@ class Dhcp4OptSubnetMask:
 
     @property
     def raw_option(self) -> bytes:
-        return struct.pack("! BB 4s", self.opt_code, self.opt_len, bytes(self.opt_subnet_mask))
+        """
+        Option in raw form.
+        """
+        return struct.pack(
+            "! BB 4s", self.opt_code, self.opt_len, bytes(self.opt_subnet_mask)
+        )
 
     def __str__(self) -> str:
+        """
+        Option log string.
+        """
         return f"subnet_mask {self.opt_subnet_mask}"
 
 
@@ -501,13 +577,25 @@ DHCP4_OPT_ROUTER_LEN = None
 
 
 class Dhcp4OptRouter:
-    """DHCP option - Router (3)"""
+    """
+    DHCP option - Router (3).
+    """
 
-    def __init__(self, raw_option: bytes | None = None, opt_router: list[Ip4Address] | None = None) -> None:
+    def __init__(
+        self,
+        raw_option: bytes | None = None,
+        opt_router: list[Ip4Address] | None = None,
+    ) -> None:
+        """
+        Option constructor.
+        """
         if raw_option:
             self.opt_code = raw_option[0]
             self.opt_len = raw_option[1]
-            self.opt_router = [Ip4Address(raw_option[_ : _ + 4]) for _ in range(2, 2 + self.opt_len, 4)]
+            self.opt_router = [
+                Ip4Address(raw_option[_ : _ + 4])
+                for _ in range(2, 2 + self.opt_len, 4)
+            ]
         else:
             assert opt_router is not None
             self.opt_code = DHCP4_OPT_ROUTER
@@ -516,9 +604,20 @@ class Dhcp4OptRouter:
 
     @property
     def raw_option(self) -> bytes:
-        return struct.pack(f"! BB {len(self.opt_router) * 4}s", self.opt_code, self.opt_len, b"".join(bytes(_) for _ in self.opt_router))
+        """
+        Option in raw form.
+        """
+        return struct.pack(
+            f"! BB {len(self.opt_router) * 4}s",
+            self.opt_code,
+            self.opt_len,
+            b"".join(bytes(_) for _ in self.opt_router),
+        )
 
     def __str__(self) -> str:
+        """
+        Option log string.
+        """
         return f"router {self.opt_router}"
 
 
@@ -529,13 +628,25 @@ DHCP4_OPT_DNS_LEN = None
 
 
 class Dhcp4OptDns:
-    """DHCP option - Domain Name Server (6)"""
+    """
+    DHCP option - Domain Name Server (6).
+    """
 
-    def __init__(self, raw_option: bytes | None = None, opt_dns: list[Ip4Address] | None = None) -> None:
+    def __init__(
+        self,
+        raw_option: bytes | None = None,
+        opt_dns: list[Ip4Address] | None = None,
+    ) -> None:
+        """
+        Option constructor.
+        """
         if raw_option:
             self.opt_code = raw_option[0]
             self.opt_len = raw_option[1]
-            self.opt_dns = [Ip4Address(raw_option[_ : _ + 4]) for _ in range(2, 2 + self.opt_len, 4)]
+            self.opt_dns = [
+                Ip4Address(raw_option[_ : _ + 4])
+                for _ in range(2, 2 + self.opt_len, 4)
+            ]
         else:
             assert opt_dns is not None
             self.opt_code = DHCP4_OPT_DNS
@@ -544,9 +655,20 @@ class Dhcp4OptDns:
 
     @property
     def raw_option(self) -> bytes:
-        return struct.pack(f"! BB {len(self.opt_dns) * 4}s", self.opt_code, self.opt_len, b"".join(bytes(_) for _ in self.opt_dns))
+        """
+        Option in raw form.
+        """
+        return struct.pack(
+            f"! BB {len(self.opt_dns) * 4}s",
+            self.opt_code,
+            self.opt_len,
+            b"".join(bytes(_) for _ in self.opt_dns),
+        )
 
     def __str__(self) -> str:
+        """
+        Option log string.
+        """
         return f"router {self.opt_dns}"
 
 
@@ -557,9 +679,16 @@ DHCP4_OPT_HOST_NAME_LEN = None
 
 
 class Dhcp4OptHostName:
-    """DHCP option - Host Name (12)"""
+    """
+    DHCP option - Host Name (12).
+    """
 
-    def __init__(self, raw_option: bytes | None = None, opt_host_name: str | None = None) -> None:
+    def __init__(
+        self, raw_option: bytes | None = None, opt_host_name: str | None = None
+    ) -> None:
+        """
+        Option constructor.
+        """
         if raw_option:
             self.opt_code = raw_option[0]
             self.opt_len = raw_option[1]
@@ -572,9 +701,20 @@ class Dhcp4OptHostName:
 
     @property
     def raw_option(self) -> bytes:
-        return struct.pack(f"! BB {self.opt_len}s", self.opt_code, self.opt_len, bytes(self.opt_host_name, "utf-8"))
+        """
+        Option in raw form.
+        """
+        return struct.pack(
+            f"! BB {self.opt_len}s",
+            self.opt_code,
+            self.opt_len,
+            bytes(self.opt_host_name, "utf-8"),
+        )
 
     def __str__(self) -> str:
+        """
+        Option log string.
+        """
         return f"host_name {self.opt_host_name}"
 
 
@@ -585,13 +725,24 @@ DHCP4_OPT_DOMAIN_NAME_LEN = None
 
 
 class Dhcp4OptDomainName:
-    """DHCP option - Domain Name (15)"""
+    """
+    DHCP option - Domain Name (15).
+    """
 
-    def __init__(self, raw_option: bytes | None = None, opt_domain_name: str | None = None) -> None:
+    def __init__(
+        self,
+        raw_option: bytes | None = None,
+        opt_domain_name: str | None = None,
+    ) -> None:
+        """
+        Option constructor.
+        """
         if raw_option:
             self.opt_code = raw_option[0]
             self.opt_len = raw_option[1]
-            self.opt_domain_name = str(raw_option[2 : 2 + self.opt_len], "utf-8")
+            self.opt_domain_name = str(
+                raw_option[2 : 2 + self.opt_len], "utf-8"
+            )
         else:
             assert opt_domain_name is not None
             self.opt_code = DHCP4_OPT_DOMAIN_NAME
@@ -600,9 +751,20 @@ class Dhcp4OptDomainName:
 
     @property
     def raw_option(self) -> bytes:
-        return struct.pack(f"! BB {self.opt_len}s", self.opt_code, self.opt_len, bytes(self.opt_domain_name, "utf-8"))
+        """
+        Option in raw form.
+        """
+        return struct.pack(
+            f"! BB {self.opt_len}s",
+            self.opt_code,
+            self.opt_len,
+            bytes(self.opt_domain_name, "utf-8"),
+        )
 
     def __str__(self) -> str:
+        """
+        Option log string.
+        """
         return f"domain_name {self.opt_domain_name}"
 
 
@@ -613,9 +775,18 @@ DHCP4_OPT_REQ_IP4_ADDR_LEN = 4
 
 
 class Dhcp4OptReqIpAddr:
-    """DHCP option - Requested IP Address (50)"""
+    """
+    DHCP option - Requested IP Address (50).
+    """
 
-    def __init__(self, raw_option: bytes | None = None, opt_req_ip_addr: Ip4Address | None = None) -> None:
+    def __init__(
+        self,
+        raw_option: bytes | None = None,
+        opt_req_ip_addr: Ip4Address | None = None,
+    ) -> None:
+        """
+        Option constructor.
+        """
         if raw_option:
             self.opt_code = raw_option[0]
             self.opt_len = raw_option[1]
@@ -628,9 +799,17 @@ class Dhcp4OptReqIpAddr:
 
     @property
     def raw_option(self) -> bytes:
-        return struct.pack("! BB 4s", self.opt_code, self.opt_len, bytes(self.opt_req_ip_addr))
+        """
+        Option in raw form.
+        """
+        return struct.pack(
+            "! BB 4s", self.opt_code, self.opt_len, bytes(self.opt_req_ip_addr)
+        )
 
     def __str__(self) -> str:
+        """
+        Option log string.
+        """
         return f"req_ip_addr {self.opt_req_ip_addr}"
 
 
@@ -641,13 +820,24 @@ DHCP4_OPT_ADDR_LEASE_TIME_LEN = 4
 
 
 class Dhcp4OptAddrLeaseTime:
-    """DHCP option - Address Lease Time (51)"""
+    """
+    DHCP option - Address Lease Time (51).
+    """
 
-    def __init__(self, raw_option: bytes | None = None, opt_addr_lease_time: int | None = None) -> None:
+    def __init__(
+        self,
+        raw_option: bytes | None = None,
+        opt_addr_lease_time: int | None = None,
+    ) -> None:
+        """
+        Option constructor.
+        """
         if raw_option:
             self.opt_code = raw_option[0]
             self.opt_len = raw_option[1]
-            self.opt_addr_lease_time: int = struct.unpack("!L", raw_option[2:6])[0]
+            self.opt_addr_lease_time: int = struct.unpack(
+                "!L", raw_option[2:6]
+            )[0]
         else:
             assert opt_addr_lease_time is not None
             self.opt_code = DHCP4_OPT_ADDR_LEASE_TIME
@@ -656,9 +846,17 @@ class Dhcp4OptAddrLeaseTime:
 
     @property
     def raw_option(self) -> bytes:
-        return struct.pack("! BB L", self.opt_code, self.opt_len, self.opt_addr_lease_time)
+        """
+        Option in raw form.
+        """
+        return struct.pack(
+            "! BB L", self.opt_code, self.opt_len, self.opt_addr_lease_time
+        )
 
     def __str__(self) -> str:
+        """
+        Option log string.
+        """
         return f"addr_lease_time {self.opt_addr_lease_time}s"
 
 
@@ -669,9 +867,16 @@ DHCP4_OPT_MSG_TYPE_LEN = 1
 
 
 class Dhcp4OptMsgType:
-    """DHCP option - Message Type (53)"""
+    """
+    DHCP option - Message Type (53).
+    """
 
-    def __init__(self, raw_option: bytes | None = None, opt_msg_type: int | None = None) -> None:
+    def __init__(
+        self, raw_option: bytes | None = None, opt_msg_type: int | None = None
+    ) -> None:
+        """
+        Option constructor.
+        """
         if raw_option:
             self.opt_code = raw_option[0]
             self.opt_len = raw_option[1]
@@ -684,9 +889,17 @@ class Dhcp4OptMsgType:
 
     @property
     def raw_option(self) -> bytes:
-        return struct.pack("! BB B", self.opt_code, self.opt_len, self.opt_msg_type)
+        """
+        Option in raw form.
+        """
+        return struct.pack(
+            "! BB B", self.opt_code, self.opt_len, self.opt_msg_type
+        )
 
     def __str__(self) -> str:
+        """
+        Option log string.
+        """
         return f"msg_type {self.opt_msg_type}"
 
 
@@ -697,9 +910,18 @@ DHCP4_OPT_SRV_ID_LEN = 4
 
 
 class Dhcp4OptSrvId:
-    """DHCP option - Server Identifier (54)"""
+    """
+    DHCP option - Server Identifier (54).
+    """
 
-    def __init__(self, raw_option: bytes | None = None, opt_srv_id: Ip4Address | None = None) -> None:
+    def __init__(
+        self,
+        raw_option: bytes | None = None,
+        opt_srv_id: Ip4Address | None = None,
+    ) -> None:
+        """
+        Option constructor.
+        """
         if raw_option:
             self.opt_code = raw_option[0]
             self.opt_len = raw_option[1]
@@ -712,9 +934,17 @@ class Dhcp4OptSrvId:
 
     @property
     def raw_option(self) -> bytes:
-        return struct.pack("! BB 4s", self.opt_code, self.opt_len, bytes(self.opt_srv_id))
+        """
+        Option in raw form.
+        """
+        return struct.pack(
+            "! BB 4s", self.opt_code, self.opt_len, bytes(self.opt_srv_id)
+        )
 
     def __str__(self) -> str:
+        """
+        Option log string.
+        """
         return f"srv_id {self.opt_srv_id}"
 
 
@@ -725,13 +955,24 @@ DHCP4_OPT_PARAM_REQ_LIST_LEN = None
 
 
 class Dhcp4OptParamReqList:
-    """DHCP option - Parameter Request List (55)"""
+    """
+    DHCP option - Parameter Request List (55).
+    """
 
-    def __init__(self, raw_option: bytes | None = None, opt_param_req_list: list[int] | None = None) -> None:
+    def __init__(
+        self,
+        raw_option: bytes | None = None,
+        opt_param_req_list: list[int] | None = None,
+    ) -> None:
+        """
+        Option constructor.
+        """
         if raw_option:
             self.opt_code = raw_option[0]
             self.opt_len = raw_option[1]
-            self.opt_param_req_list = [int(_) for _ in raw_option[2 : 2 + self.opt_len]]
+            self.opt_param_req_list = [
+                int(_) for _ in raw_option[2 : 2 + self.opt_len]
+            ]
         else:
             assert opt_param_req_list is not None
             self.opt_code = DHCP4_OPT_PARAM_REQ_LIST
@@ -740,9 +981,20 @@ class Dhcp4OptParamReqList:
 
     @property
     def raw_option(self) -> bytes:
-        return struct.pack(f"! BB {self.opt_len}s", self.opt_code, self.opt_len, bytes(self.opt_param_req_list))
+        """
+        Option in raw form.
+        """
+        return struct.pack(
+            f"! BB {self.opt_len}s",
+            self.opt_code,
+            self.opt_len,
+            bytes(self.opt_param_req_list),
+        )
 
     def __str__(self) -> str:
+        """
+        Option log string.
+        """
         return f"param_req_list {self.opt_param_req_list}"
 
 
@@ -750,16 +1002,29 @@ class Dhcp4OptParamReqList:
 
 
 class Dhcp4OptUnk:
-    """DHCP option not supported by this stack"""
+    """
+    DHCP option not supported by this stack.
+    """
 
     def __init__(self, raw_option: bytes) -> None:
+        """
+        Option constructor.
+        """
         self.opt_code = raw_option[0]
         self.opt_len = raw_option[1]
         self.opt_data = raw_option[2 : 2 + self.opt_len]
 
     @property
     def raw_option(self) -> bytes:
-        return struct.pack(f"! BB{self.opt_len}s", self.opt_code, self.opt_len, self.opt_data)
+        """
+        Option in raw form.
+        """
+        return struct.pack(
+            f"! BB{self.opt_len}s", self.opt_code, self.opt_len, self.opt_data
+        )
 
     def __str__(self) -> str:
+        """
+        Option log string.
+        """
         return "unk"

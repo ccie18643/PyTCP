@@ -3,7 +3,7 @@
 ############################################################################
 #                                                                          #
 #  PyTCP - Python TCP/IP stack                                             #
-#  Copyright (C) 2020-2021  Sebastian Majewski                             #
+#  Copyright (C) 2020-present Sebastian Majewski                           #
 #                                                                          #
 #  This program is free software: you can redistribute it and/or modify    #
 #  it under the terms of the GNU General Public License as published by    #
@@ -27,6 +27,8 @@
 #
 # client/dhcp4.py - DHCPv4 client
 #
+# ver 2.7
+#
 
 
 from __future__ import annotations
@@ -44,15 +46,20 @@ if TYPE_CHECKING:
 
 
 class Dhcp4Client:
-    """Class supporting Dhc4 client operation"""
+    """
+    Class supporting Dhc4 client operation.
+    """
 
     def __init__(self, mac_address: MacAddress) -> None:
-        """Class constructor"""
-
+        """
+        Class constructor.
+        """
         self._mac_address = mac_address
 
     def fetch(self) -> tuple[str, str | None] | tuple[None, None]:
-        """IPv4 DHCP client"""
+        """
+        IPv4 DHCP client.
+        """
 
         s = socket.socket(family=socket.AF_INET4, type=socket.SOCK_DGRAM)
         s.bind(("0.0.0.0", 68))
@@ -71,7 +78,10 @@ class Dhcp4Client:
                 dhcp_giaddr=Ip4Address("0.0.0.0"),
                 dhcp_chaddr=bytes(self._mac_address),
                 dhcp_msg_type=dhcp4.ps.DHCP4_MSG_DISCOVER,
-                dhcp_param_req_list=[dhcp4.ps.DHCP4_OPT_SUBNET_MASK, dhcp4.ps.DHCP4_OPT_ROUTER],
+                dhcp_param_req_list=[
+                    dhcp4.ps.DHCP4_OPT_SUBNET_MASK,
+                    dhcp4.ps.DHCP4_OPT_ROUTER,
+                ],
                 dhcp_host_name="PyTCP",
             ).raw_packet
         )
@@ -89,7 +99,10 @@ class Dhcp4Client:
 
         if dhcp_packet_rx.dhcp_msg_type != dhcp4.ps.DHCP4_MSG_OFFER:
             if __debug__:
-                log("dhcp4", "Didn't receive DHCP Offer message - message type error")
+                log(
+                    "dhcp4",
+                    "Didn't receive DHCP Offer message - message type error",
+                )
             s.close()
             return None, None
 
@@ -98,9 +111,13 @@ class Dhcp4Client:
         if __debug__:
             log(
                 "dhcp4",
-                f"ClientUdpDhcp: Received DHCP Offer from {dhcp_packet_rx.dhcp_srv_id}"
-                + f"IP: {dhcp_packet_rx.dhcp_yiaddr}, Mask: {dhcp_packet_rx.dhcp_subnet_mask}, Router: {dhcp_packet_rx.dhcp_router}"
-                + f"DNS: {dhcp_packet_rx.dhcp_dns}, Domain: {dhcp_packet_rx.dhcp_domain_name}",
+                f"ClientUdpDhcp: Received DHCP Offer from "
+                f"{dhcp_packet_rx.dhcp_srv_id}"
+                f"IP: {dhcp_packet_rx.dhcp_yiaddr}, "
+                f"Mask: {dhcp_packet_rx.dhcp_subnet_mask}, "
+                f"Router: {dhcp_packet_rx.dhcp_router}"
+                f"DNS: {dhcp_packet_rx.dhcp_dns}, "
+                f"Domain: {dhcp_packet_rx.dhcp_domain_name}",
             )
 
         # Send DHCP Request
@@ -116,13 +133,20 @@ class Dhcp4Client:
                 dhcp_msg_type=dhcp4.ps.DHCP4_MSG_REQUEST,
                 dhcp_srv_id=dhcp_srv_id,
                 dhcp_req_ip_addr=dhcp_yiaddr,
-                dhcp_param_req_list=[dhcp4.ps.DHCP4_OPT_SUBNET_MASK, dhcp4.ps.DHCP4_OPT_ROUTER],
+                dhcp_param_req_list=[
+                    dhcp4.ps.DHCP4_OPT_SUBNET_MASK,
+                    dhcp4.ps.DHCP4_OPT_ROUTER,
+                ],
                 dhcp_host_name="PyTCP",
             ).raw_packet
         )
 
         if __debug__:
-            log("dhcp4", f"Sent out DHCP Request message to {dhcp_packet_rx.dhcp_srv_id}")
+            log(
+                "dhcp4",
+                "Sent out DHCP Request message to "
+                f"{dhcp_packet_rx.dhcp_srv_id}",
+            )
 
         # Wait for DHCP Ack
         try:
@@ -135,7 +159,10 @@ class Dhcp4Client:
 
         if dhcp_packet_rx.dhcp_msg_type != dhcp4.ps.DHCP4_MSG_ACK:
             if __debug__:
-                log("dhcp4", "Didn't receive DHCP ACK message - message type error")
+                log(
+                    "dhcp4",
+                    "Didn't receive DHCP ACK message - message type error",
+                )
             s.close()
             return None, None
 
@@ -143,13 +170,19 @@ class Dhcp4Client:
             log(
                 "dhcp4",
                 f"Received DHCP Offer from {dhcp_packet_rx.dhcp_srv_id}"
-                + f"IP: {dhcp_packet_rx.dhcp_yiaddr}, Mask: {dhcp_packet_rx.dhcp_subnet_mask}, Router: {dhcp_packet_rx.dhcp_router}"
-                + f"DNS: {dhcp_packet_rx.dhcp_dns}, Domain: {dhcp_packet_rx.dhcp_domain_name}",
+                f"IP: {dhcp_packet_rx.dhcp_yiaddr}, "
+                f"Mask: {dhcp_packet_rx.dhcp_subnet_mask}, "
+                f"Router: {dhcp_packet_rx.dhcp_router}, "
+                f"DNS: {dhcp_packet_rx.dhcp_dns}, "
+                f"Domain: {dhcp_packet_rx.dhcp_domain_name}",
             )
         s.close()
 
         assert dhcp_packet_rx.dhcp_subnet_mask is not None
         return (
-            str(dhcp_packet_rx.dhcp_yiaddr) + str(dhcp_packet_rx.dhcp_subnet_mask),
-            str(dhcp_packet_rx.dhcp_router[0]) if dhcp_packet_rx.dhcp_router is not None else None,
+            str(dhcp_packet_rx.dhcp_yiaddr)
+            + str(dhcp_packet_rx.dhcp_subnet_mask),
+            str(dhcp_packet_rx.dhcp_router[0])
+            if dhcp_packet_rx.dhcp_router is not None
+            else None,
         )

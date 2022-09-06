@@ -3,7 +3,7 @@
 ############################################################################
 #                                                                          #
 #  PyTCP - Python TCP/IP stack                                             #
-#  Copyright (C) 2020-2021  Sebastian Majewski                             #
+#  Copyright (C) 2020-present Sebastian Majewski                           #
 #                                                                          #
 #  This program is free software: you can redistribute it and/or modify    #
 #  it under the terms of the GNU General Public License as published by    #
@@ -26,6 +26,8 @@
 
 #
 # protocols/tcp/fpa.py - Fast Packet Assembler support class for TCP protocol
+#
+# ver 2.7
 #
 
 
@@ -55,7 +57,9 @@ from protocols.tcp.ps import (
 
 
 class TcpAssembler:
-    """TCP packet assembler support class"""
+    """
+    TCP packet assembler support class.
+    """
 
     ip4_proto = IP4_PROTO_TCP
     ip6_next = IP6_NEXT_TCP
@@ -78,11 +82,21 @@ class TcpAssembler:
         flag_fin: bool = False,
         win: int = 0,
         urp: int = 0,
-        options: list[TcpOptMss | TcpOptWscale | TcpOptSackPerm | TcpOptTimestamp | TcpOptEol | TcpOptNop] | None = None,
+        options: list[
+            TcpOptMss
+            | TcpOptWscale
+            | TcpOptSackPerm
+            | TcpOptTimestamp
+            | TcpOptEol
+            | TcpOptNop
+        ]
+        | None = None,
         data: bytes | None = None,
         echo_tracker: Tracker | None = None,
     ) -> None:
-        """Class constructor"""
+        """
+        Class constructor.
+        """
 
         assert 0 <= sport <= 0xFFFF, f"{sport=}"
         assert 0 <= dport <= 0xFFFF, f"{dport=}"
@@ -107,25 +121,41 @@ class TcpAssembler:
         self._flag_fin: bool = flag_fin
         self._win: int = win
         self._urp: int = urp
-        self._options: list[TcpOptMss | TcpOptWscale | TcpOptSackPerm | TcpOptTimestamp | TcpOptEol | TcpOptNop] = [] if options is None else options
+        self._options: list[
+            TcpOptMss
+            | TcpOptWscale
+            | TcpOptSackPerm
+            | TcpOptTimestamp
+            | TcpOptEol
+            | TcpOptNop
+        ] = ([] if options is None else options)
         self._data: bytes = b"" if data is None else data
         self._hlen: int = TCP_HEADER_LEN + sum(len(_) for _ in self._options)
 
-        assert self._hlen % 4 == 0, f"TCP header len {self._hlen} is not multiplcation of 4 bytes, check options... {self._options}"
+        assert self._hlen % 4 == 0, (
+            f"TCP header len {self._hlen} is not multiplcation of 4 bytes, "
+            f"check options... {self._options}"
+        )
 
     def __len__(self) -> int:
-        """Length of the packet"""
-
+        """
+        Length of the packet.
+        """
         return self._hlen + len(self._data)
 
     def __str__(self) -> str:
-        """Packet log string"""
+        """
+        Packet log string.
+        """
 
         log = (
-            f"TCP {self._sport} > {self._dport}, {'N' if self._flag_ns else ''}{'C' if self._flag_crw else ''}"
-            + f"{'E' if self._flag_ece else ''}{'U' if self._flag_urg else ''}{'A' if self._flag_ack else ''}"
-            + f"{'P' if self._flag_psh else ''}{'R' if self._flag_rst else ''}{'S' if self._flag_syn else ''}"
-            + f"{'F' if self._flag_fin else ''}, seq {self._seq}, ack {self._ack}, win {self._win}, dlen {len(self._data)}"
+            f"TCP {self._sport} > {self._dport}, "
+            f"{'N' if self._flag_ns else ''}{'C' if self._flag_crw else ''}"
+            f"{'E' if self._flag_ece else ''}{'U' if self._flag_urg else ''}"
+            f"{'A' if self._flag_ack else ''}{'P' if self._flag_psh else ''}"
+            f"{'R' if self._flag_rst else ''}{'S' if self._flag_syn else ''}"
+            f"{'F' if self._flag_fin else ''}, seq {self._seq}, "
+            f"ack {self._ack}, win {self._win}, dlen {len(self._data)}"
         )
 
         for option in self._options:
@@ -135,19 +165,22 @@ class TcpAssembler:
 
     @property
     def tracker(self) -> Tracker:
-        """Getter for _tracker"""
-
+        """
+        Getter for '_tracker' attribute.
+        """
         return self._tracker
 
     @property
     def _raw_options(self) -> bytes:
-        """Packet options in raw format"""
-
+        """
+        Packet options in raw format.
+        """
         return b"".join(bytes(option) for option in self._options)
 
     def assemble(self, frame: memoryview, pshdr_sum: int) -> None:
-        """Assemble packet into the raw form"""
-
+        """
+        Assemble packet into the raw form.
+        """
         struct.pack_into(
             f"! HH L L BBH HH {len(self._raw_options)}s {len(self._data)}s",
             frame,
@@ -171,7 +204,6 @@ class TcpAssembler:
             self._raw_options,
             self._data,
         )
-
         struct.pack_into("! H", frame, 16, inet_cksum(frame, pshdr_sum))
 
 
@@ -181,188 +213,247 @@ class TcpAssembler:
 
 
 class TcpOptEol:
-    """TCP option - End of Option List (0)"""
+    """
+    TCP option - End of Option List (0).
+    """
 
     def __str__(self) -> str:
-        """Option log string"""
-
+        """
+        Option log string.
+        """
         return "eol"
 
     def __len__(self) -> int:
-        """Option length"""
-
+        """
+        Option length.
+        """
         return TCP_OPT_EOL_LEN
 
     def __repr__(self) -> str:
-        """Option representation"""
-
+        """
+        Option representation.
+        """
         return "TcpOptEol()"
 
     def __bytes__(self) -> bytes:
-        """Option in raw form"""
-
+        """
+        Option in raw form.
+        """
         return struct.pack("!B", TCP_OPT_EOL)
 
     def __eq__(self, other) -> bool:
-        """Equal operator"""
-
+        """
+        Equal operator.
+        """
         return repr(self) == repr(other)
 
 
 class TcpOptNop:
-    """TCP option - No Operation (1)"""
+    """
+    TCP option - No Operation (1).
+    """
 
     def __str__(self) -> str:
-        """Option log string"""
-
+        """
+        Option log string.
+        """
         return "nop"
 
     def __len__(self) -> int:
-        """Option length"""
-
+        """
+        Option length.
+        """
         return TCP_OPT_NOP_LEN
 
     def __repr__(self) -> str:
-        """Option representation"""
-
+        """
+        Option representation.
+        """
         return "TcpOptNop()"
 
     def __bytes__(self) -> bytes:
-        """Option in raw form"""
-
+        """
+        Option in raw form.
+        """
         return struct.pack("!B", TCP_OPT_NOP)
 
     def __eq__(self, other) -> bool:
-        """Equal operator"""
-
+        """
+        Equal operator.
+        """
         return repr(self) == repr(other)
 
 
 class TcpOptMss:
-    """TCP option - Maximum Segment Size (2)"""
+    """
+    TCP option - Maximum Segment Size (2).
+    """
 
     def __init__(self, mss: int) -> None:
+        """
+        Option constructor.
+        """
         assert 0 <= mss <= 0xFFFF, f"{mss=}"
         self._mss = mss
 
     def __str__(self) -> str:
-        """Option log string"""
-
+        """
+        Option log string.
+        """
         return f"mss {self._mss}"
 
     def __len__(self) -> int:
-        """Option length"""
-
+        """
+        Option length.
+        """
         return TCP_OPT_MSS_LEN
 
     def __repr__(self) -> str:
-        """Option representation"""
-
+        """
+        Option representation.
+        """
         return f"TcpOptMss({self._mss})"
 
     def __bytes__(self) -> bytes:
-        """Option in raw form"""
-
+        """
+        Option in raw form.
+        """
         return struct.pack("! BB H", TCP_OPT_MSS, TCP_OPT_MSS_LEN, self._mss)
 
     def __eq__(self, other) -> bool:
-        """Equal operator"""
-
+        """
+        Equal operator.
+        """
         return repr(self) == repr(other)
 
 
 class TcpOptWscale:
-    """TCP option - Window Scale (3)"""
+    """
+    TCP option - Window Scale (3).
+    """
 
     def __init__(self, wscale: int) -> None:
+        """
+        Option construstor.
+        """
         assert 0 <= wscale <= 0xFF, f"{wscale=}"
         self._wscale = wscale
 
     def __str__(self) -> str:
-        """Option log string"""
-
+        """
+        Option log string.
+        """
         return f"wscale {self._wscale}"
 
     def __len__(self) -> int:
-        """Option length"""
-
+        """
+        Option length.
+        """
         return TCP_OPT_WSCALE_LEN
 
     def __repr__(self) -> str:
-        """Option representation"""
-
+        """
+        Option representation.
+        """
         return f"TcpOptWscale({self._wscale})"
 
     def __bytes__(self) -> bytes:
-        """Option in raw form"""
-
-        return struct.pack("! BB B", TCP_OPT_WSCALE, TCP_OPT_WSCALE_LEN, self._wscale)
+        """
+        Option in raw form.
+        """
+        return struct.pack(
+            "! BB B", TCP_OPT_WSCALE, TCP_OPT_WSCALE_LEN, self._wscale
+        )
 
     def __eq__(self, other) -> bool:
-        """Equal operator"""
-
+        """
+        Equal operator.
+        """
         return repr(self) == repr(other)
 
 
 class TcpOptSackPerm:
-    """TCP option - Sack Permit (4)"""
+    """
+    TCP option - Sack Permit (4).
+    """
 
     def __str__(self) -> str:
-        """Option log string"""
-
+        """
+        Option log string.
+        """
         return "sack_perm"
 
     def __len__(self) -> int:
-        """Option length"""
-
+        """
+        Option length.
+        """
         return TCP_OPT_SACKPERM_LEN
 
     def __repr__(self) -> str:
-        """Option representation"""
-
+        """
+        Option representation.
+        """
         return "TcpOptSackPerm()"
 
     def __bytes__(self) -> bytes:
-        """Option in raw form"""
-
+        """
+        Option in raw form.
+        """
         return struct.pack("! BB", TCP_OPT_SACKPERM, TCP_OPT_SACKPERM_LEN)
 
     def __eq__(self, other) -> bool:
-        """Equal operator"""
-
+        """
+        Equal operator.
+        """
         return repr(self) == repr(other)
 
 
 class TcpOptTimestamp:
-    """TCP option - Timestamp (8)"""
+    """
+    TCP option - Timestamp (8).
+    """
 
     def __init__(self, tsval: int, tsecr: int) -> None:
+        """
+        Optiona constructor.
+        """
         assert 0 <= tsval <= 0xFFFFFFFF, f"{tsval=}"
         assert 0 <= tsecr <= 0xFFFFFFFF, f"{tsecr=}"
         self._tsval = tsval
         self._tsecr = tsecr
 
     def __str__(self) -> str:
-        """Option log string"""
-
+        """
+        Option log string.
+        """
         return f"ts {self._tsval}/{self._tsecr}"
 
     def __len__(self) -> int:
-        """Option length"""
-
+        """
+        Option length.
+        """
         return TCP_OPT_TIMESTAMP_LEN
 
     def __repr__(self) -> str:
-        """Option representation"""
-
+        """
+        Option representation.
+        """
         return f"TcpOptTimestamp({self._tsval}, {self._tsecr})"
 
     def __bytes__(self) -> bytes:
-        """Option in raw form"""
-
-        return struct.pack("! BB LL", TCP_OPT_TIMESTAMP, TCP_OPT_TIMESTAMP_LEN, self._tsval, self._tsecr)
+        """
+        Option in raw form.
+        """
+        return struct.pack(
+            "! BB LL",
+            TCP_OPT_TIMESTAMP,
+            TCP_OPT_TIMESTAMP_LEN,
+            self._tsval,
+            self._tsecr,
+        )
 
     def __eq__(self, other) -> bool:
-        """Equal operator"""
-
+        """
+        Equal operator.
+        """
         return repr(self) == repr(other)

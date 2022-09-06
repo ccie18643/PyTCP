@@ -3,7 +3,7 @@
 ############################################################################
 #                                                                          #
 #  PyTCP - Python TCP/IP stack                                             #
-#  Copyright (C) 2020-2021  Sebastian Majewski                             #
+#  Copyright (C) 2020-present Sebastian Majewski                           #
 #                                                                          #
 #  This program is free software: you can redistribute it and/or modify    #
 #  it under the terms of the GNU General Public License as published by    #
@@ -26,6 +26,8 @@
 
 #
 # lib/socket.py - module contains BSD like socket interface for the stack
+#
+# ver 2.7
 #
 
 
@@ -51,15 +53,21 @@ if TYPE_CHECKING:
 
 
 class gaierror(OSError):
-    """BSD Socket's error for compatibility"""
+    """
+    BSD Socket's error for compatibility.
+    """
 
 
 class ReceiveTimeout(Exception):
-    """Timeout of receive operation"""
+    """
+    Timeout of receive operation.
+    """
 
 
 class AddressFamily(IntEnum):
-    """Address family identifier"""
+    """
+    Address family identifier enum.
+    """
 
     AF_UNSPECIFIED = 0
     AF_INET4 = 1
@@ -75,7 +83,9 @@ AF_INET6 = AddressFamily.AF_INET6
 
 
 class SocketType(IntEnum):
-    """Socket type identifier"""
+    """
+    Socket type identifier enum.
+    """
 
     SOCK_UNSPECIFIED = 0
     SOCK_STREAM = 1
@@ -89,8 +99,12 @@ SOCK_STREAM = SocketType.SOCK_STREAM
 SOCK_DGRAM = SocketType.SOCK_DGRAM
 
 
-def socket(family: AddressFamily = AF_INET4, type: SocketType = SOCK_STREAM) -> Socket:
-    """Return Socket class object"""
+def socket(
+    family: AddressFamily = AF_INET4, type: SocketType = SOCK_STREAM
+) -> Socket:
+    """
+    Return Socket class object.
+    """
 
     assert type is SOCK_STREAM or type is SOCK_DGRAM
 
@@ -104,10 +118,14 @@ def socket(family: AddressFamily = AF_INET4, type: SocketType = SOCK_STREAM) -> 
 
 
 class Socket(ABC):
-    """Base class for other socket classes"""
+    """
+    Base class for other socket classes.
+    """
 
     def __init__(self) -> None:
-        """Class constructor"""
+        """
+        Class constructor.
+        """
 
         if TYPE_CHECKING:
             self._family: AddressFamily
@@ -122,145 +140,228 @@ class Socket(ABC):
             self._event_tcp_session_established: Semaphore
 
     def __str__(self) -> str:
-        """String representation"""
-
-        return f"{self._family}/{self._type}/{self._local_ip_address}/{self._local_port}/{self._remote_ip_address}/{self._remote_port}"
+        """
+        The '__str__()' dunder.
+        """
+        return (
+            f"{self._family}/{self._type}/{self._local_ip_address}/"
+            f"{self._local_port}/{self._remote_ip_address}/{self._remote_port}"
+        )
 
     @property
     def family(self) -> AddressFamily:
-        """Getter for _family"""
-
+        """
+        Getter for the '_family' attribute.
+        """
         return self._family
 
     @property
     def type(self) -> SocketType:
-        """Getter for _type"""
-
+        """
+        Getter for the '_type' attribute.
+        """
         return self._type
 
     @property
     def local_ip_address(self) -> IpAddress:
-        """Getter for _local_ip_address"""
-
+        """
+        Getter for the '_local_ip_address' attribute.
+        """
         return self._local_ip_address
 
     @property
     def remote_ip_address(self) -> IpAddress:
-        """Getter for _remote_ip_address"""
-
+        """
+        Getter for the '_remote_ip_address' attribute.
+        """
         return self._remote_ip_address
 
     @property
     def local_port(self) -> int:
-        """Getter for _local_port"""
-
+        """
+        Getter for the '_local_port' attribute.
+        """
         return self._local_port
 
     @property
     def remote_port(self) -> int:
-        """Getter for _remote_port"""
-
+        """
+        Getter for the '_remote_port' attribute.
+        """
         return self._remote_port
 
     def _pick_local_port(self) -> int:
-        """Pick ephemeral local port, making sure it is not already being used by any socket"""
-
-        available_ephemeral_ports = set(config.EPHEMERAL_PORT_RANGE) - {int(_.split("/")[3]) for _ in stack.sockets}
-
+        """
+        Pick ephemeral local port, making sure it is not already being used
+        by any socket.
+        """
+        available_ephemeral_ports = set(config.EPHEMERAL_PORT_RANGE) - {
+            int(_.split("/")[3]) for _ in stack.sockets
+        }
         if len(available_ephemeral_ports):
             return available_ephemeral_ports.pop()
+        raise OSError(
+            "[Errno 98] Address already in use - [Unable to find free "
+            "local ephemeral port]"
+        )
 
-        raise OSError("[Errno 98] Address already in use - [Unable to find free local ephemeral port]")
-
-    def _is_address_in_use(self, local_ip_address: IpAddress, local_port: int) -> bool:
-        """Check if ip address / port combination is already in use"""
-
+    def _is_address_in_use(
+        self, local_ip_address: IpAddress, local_port: int
+    ) -> bool:
+        """
+        Check if IP address / port combination is already in use.
+        """
         for socket in stack.sockets.values():
             if (
                 socket.family == self._family
                 and socket._type == self._type
-                and ((socket._local_ip_address.is_unspecified or socket._local_ip_address == local_ip_address) or local_ip_address.is_unspecified)
+                and (
+                    (
+                        socket._local_ip_address.is_unspecified
+                        or socket._local_ip_address == local_ip_address
+                    )
+                    or local_ip_address.is_unspecified
+                )
                 and socket._local_port == local_port
             ):
                 return True
         return False
 
     def _set_ip_addresses(
-        self, remote_address: tuple[str, int], local_ip_address: IpAddress, local_port: int, remote_port: int
+        self,
+        remote_address: tuple[str, int],
+        local_ip_address: IpAddress,
+        local_port: int,
+        remote_port: int,
     ) -> tuple[Ip6Address | Ip4Address, Ip6Address | Ip4Address]:
-        """Validate remote address and pick appropriate local ip address as needed"""
+        """
+        Validate the remote address and pick appropriate local IP
+        address as needed
+        """
 
         try:
-            remote_ip_address: Ip6Address | Ip4Address = Ip6Address(remote_address[0]) if self._family is AF_INET6 else Ip4Address(remote_address[0])
+            remote_ip_address: Ip6Address | Ip4Address = (
+                Ip6Address(remote_address[0])
+                if self._family is AF_INET6
+                else Ip4Address(remote_address[0])
+            )
         except (Ip6AddressFormatError, Ip4AddressFormatError):
-            raise gaierror("[Errno -2] Name or service not known - [Malformed remote IP address]")
+            raise gaierror(
+                "[Errno -2] Name or service not known - "
+                "[Malformed remote IP address]"
+            )
 
-        # This contraption here is to mimic behavior of BSD socket implementation
+        # This contraption here is to mimic behavior
+        # of BSD socket implementation
         if remote_ip_address.is_unspecified:
             if self._type is SOCK_STREAM:
-                raise ConnectionRefusedError("[Errno 111] Connection refused - [Unspecified remote IP address]")
+                raise ConnectionRefusedError(
+                    "[Errno 111] Connection refused - "
+                    "[Unspecified remote IP address]"
+                )
             if self._type is SOCK_DGRAM:
                 self._unreachable = True
 
         if local_ip_address.is_unspecified:
             local_ip_address = pick_local_ip_address(remote_ip_address)
-            if local_ip_address.is_unspecified and not (local_port == 68 and remote_port == 67):
-                raise gaierror("[Errno -2] Name or service not known - [Malformed remote IP address]")
+            if local_ip_address.is_unspecified and not (
+                local_port == 68 and remote_port == 67
+            ):
+                raise gaierror(
+                    "[Errno -2] Name or service not known - "
+                    "[Malformed remote IP address]"
+                )
 
-        assert isinstance(local_ip_address, Ip4Address) or isinstance(local_ip_address, Ip6Address)
+        assert isinstance(local_ip_address, Ip4Address) or isinstance(
+            local_ip_address, Ip6Address
+        )
         return local_ip_address, remote_ip_address
 
     @abstractmethod
     def bind(self, address: tuple[str, int]) -> None:
-        pass
+        """
+        The 'bind()' socket API method placeholder.
+        """
 
     @abstractmethod
     def connect(self, address: tuple[str, int]) -> None:
-        pass
+        """
+        The 'connect()' socket API method placeholder.
+        """
 
     @abstractmethod
     def send(self, data: bytes) -> int:
-        pass
+        """
+        The 'send()' socket API method placeholder.
+        """
 
     @abstractmethod
-    def recv(self, bufsize: int | None = None, timeout: float | None = None) -> bytes:
-        pass
+    def recv(
+        self, bufsize: int | None = None, timeout: float | None = None
+    ) -> bytes:
+        """
+        The 'recv()' socket API method placeholder.
+        """
 
     @abstractmethod
     def close(self) -> None:
-        pass
+        """
+        The 'close()' socket API placeholder.
+        """
 
     if TYPE_CHECKING:
 
         def listen(self) -> None:
-            pass
+            """
+            The 'listen()' socket API placeholder.
+            """
 
         def accept(self) -> tuple[Socket, tuple[str, int]]:
-            pass
+            """
+            The 'accept()' socket API placeholder.
+            """
 
         def sendto(self, data: bytes, address: tuple[str, int]) -> int:
-            pass
+            """
+            The 'sendto()' socket API placeholder.
+            """
 
-        def recvfrom(self, bufsize: int | None = None, timeout: float | None = None) -> tuple[bytes, tuple[str, int]]:
-            pass
+        def recvfrom(
+            self, bufsize: int | None = None, timeout: float | None = None
+        ) -> tuple[bytes, tuple[str, int]]:
+            """
+            The 'recvfrom()' socket API placeholder.
+            """
 
         def process_udp_packet(self, packet: UdpMetadata) -> None:
-            pass
+            """
+            The 'process_udp_packet()' method plceholder.
+            """
 
         def process_tcp_packet(self, packet: TcpMetadata) -> None:
-            pass
+            """
+            The 'process_tcp_packet()' method plceholder.
+            """
 
         def notify_unreachable(self) -> None:
-            pass
+            """
+            The 'notify_unreachable()' method plceholder.
+            """
 
         @property
         def tcp_session(self) -> TcpSession | None:
-            pass
+            """
+            The 'tcp_session' property plceholder.
+            """
 
         @property
         def state(self) -> FsmState:
-            pass
+            """
+            The 'state' property plceholder.
+            """
 
         @property
         def parent_socket(self) -> Socket | None:
-            pass
+            """
+            The 'parent_socket' property plceholder.
+            """

@@ -4,7 +4,7 @@
 ############################################################################
 #                                                                          #
 #  PyTCP - Python TCP/IP stack                                             #
-#  Copyright (C) 2020-2021  Sebastian Majewski                             #
+#  Copyright (C) 2020-present Sebastian Majewski                           #
 #                                                                          #
 #  This program is free software: you can redistribute it and/or modify    #
 #  it under the terms of the GNU General Public License as published by    #
@@ -28,6 +28,8 @@
 #
 # tests/arp_phtx.py -  tests specific for ARP phtx module
 #
+# ver 2.7
+#
 
 
 from testslide import TestCase
@@ -45,9 +47,15 @@ TEST_FRAME_DIR = "tests/test_frames/arp_phtx/"
 
 
 class TestArpPhtx(TestCase):
-    def setUp(self):
-        super().setUp()
+    """
+    ARP packet handler TX unit test class.
+    """
 
+    def setUp(self):
+        """
+        Test setup.
+        """
+        super().setUp()
         self.mns = MockNetworkSettings()
         patch_config(self)
         setup_mock_packet_handler(self)
@@ -55,8 +63,9 @@ class TestArpPhtx(TestCase):
     # Test name format: 'test_name__test_description__optional_condition'
 
     def test_arp_phtx__arp_request(self):
-        """Test sending ARP request packet"""
-
+        """
+        Test sending ARP request packet.
+        """
         tx_status = self.packet_handler._phtx_arp(
             ether_src=self.mns.stack_mac_address,
             ether_dst=self.mns.mac_broadcast,
@@ -82,8 +91,9 @@ class TestArpPhtx(TestCase):
         self.assertEqual(self.frame_tx[: len(frame_tx)], frame_tx)
 
     def test_arp_phtx__arp_reply(self):
-        """Test sending ARP request packet"""
-
+        """
+        Test sending ARP request packet.
+        """
         tx_status = self.packet_handler._phtx_arp(
             ether_src=self.mns.stack_mac_address,
             ether_dst=self.mns.host_a_mac_address,

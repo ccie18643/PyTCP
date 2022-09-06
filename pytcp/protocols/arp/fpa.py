@@ -3,7 +3,7 @@
 ############################################################################
 #                                                                          #
 #  PyTCP - Python TCP/IP stack                                             #
-#  Copyright (C) 2020-2021  Sebastian Majewski                             #
+#  Copyright (C) 2020-present Sebastian Majewski                           #
 #                                                                          #
 #  This program is free software: you can redistribute it and/or modify    #
 #  it under the terms of the GNU General Public License as published by    #
@@ -27,6 +27,8 @@
 #
 # protocols/arp/fpa.py - Fast Packet Assembler support class for ARP protocol
 #
+# ver 2.7
+#
 
 
 from __future__ import annotations
@@ -41,7 +43,9 @@ from protocols.ether.ps import ETHER_TYPE_ARP
 
 
 class ArpAssembler:
-    """ARP packet assembler support class"""
+    """
+    ARP packet assembler support class.
+    """
 
     ether_type = ETHER_TYPE_ARP
 
@@ -55,7 +59,9 @@ class ArpAssembler:
         oper: int = ARP_OP_REQUEST,
         echo_tracker: Tracker | None = None,
     ) -> None:
-        """Class constructor"""
+        """
+        Class constructor.
+        """
 
         assert oper in (ARP_OP_REQUEST, ARP_OP_REPLY), f"{oper=}"
 
@@ -72,29 +78,44 @@ class ArpAssembler:
         self._tpa: Ip4Address = tpa
 
     def __len__(self) -> int:
-        """Length of the packet"""
-
+        """
+        Length of the packet.
+        """
         return ARP_HEADER_LEN
 
     def __str__(self) -> str:
-        """Packet log string"""
-
+        """
+        Packet log string.
+        """
         if self._oper == ARP_OP_REQUEST:
-            return f"ARP request {self._spa} / {self._sha} > {self._tpa} / {self._tha}"
+            return (
+                f"ARP request {self._spa} / {self._sha}"
+                f" > {self._tpa} / {self._tha}"
+            )
         if self._oper == ARP_OP_REPLY:
-            return f"ARP reply {self._spa} / {self._sha} > {self._tpa} / {self._tha}"
-
+            return (
+                f"ARP reply {self._spa} / {self._sha}"
+                f" > {self._tpa} / {self._tha}"
+            )
         return f"ARP request unknown operation {self._oper}"
 
     @property
-    def tracker(self) -> Tracker:
-        """Getter for _tracker"""
+    def ethertype(self) -> int:
+        """
+        Return the proper 'Ethertype' for ARP protocol packet.
+        """
 
+    @property
+    def tracker(self) -> Tracker:
+        """
+        Getter for the '_tracker' property.
+        """
         return self._tracker
 
     def assemble(self, frame: memoryview) -> None:
-        """Assemble packet into the raw form"""
-
+        """
+        Assemble packet into the raw form.
+        """
         struct.pack_into(
             "!HH BBH 6s 4s 6s 4s",
             frame,

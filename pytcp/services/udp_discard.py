@@ -3,7 +3,7 @@
 ############################################################################
 #                                                                          #
 #  PyTCP - Python TCP/IP stack                                             #
-#  Copyright (C) 2020-2021  Sebastian Majewski                             #
+#  Copyright (C) 2020-present Sebastian Majewski                           #
 #                                                                          #
 #  This program is free software: you can redistribute it and/or modify    #
 #  it under the terms of the GNU General Public License as published by    #
@@ -27,6 +27,8 @@
 #
 # services/udp_discard.py - 'user space' service UDP Discard (RFC 863)
 #
+# ver 2.7
+#
 
 
 from __future__ import annotations
@@ -41,18 +43,26 @@ if TYPE_CHECKING:
 
 
 class ServiceUdpDiscard(ServiceUdp):
-    """UDP Echo service support class"""
+    """
+    UDP Echo service support class.
+    """
 
     def __init__(self, local_ip_address: str, local_port: int = 9):
-        """Class constructor"""
-
+        """
+        Class constructor.
+        """
         super().__init__("Discard", local_ip_address, local_port)
 
     def service(self, s: Socket) -> None:
-        """Inbound connection handler"""
-
+        """
+        Inbound connection handler.
+        """
         while True:
             message, remote_address = s.recvfrom()
 
             if __debug__:
-                log("service", f"Service UDP Discard: Received {len(message)} bytes from {remote_address[0]}, port {remote_address[1]}")
+                log(
+                    "service",
+                    f"Service UDP Discard: Received {len(message)} bytes from "
+                    f"{remote_address[0]}, port {remote_address[1]}",
+                )

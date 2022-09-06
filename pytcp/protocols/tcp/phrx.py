@@ -3,7 +3,7 @@
 ############################################################################
 #                                                                          #
 #  PyTCP - Python TCP/IP stack                                             #
-#  Copyright (C) 2020-2021  Sebastian Majewski                             #
+#  Copyright (C) 2020-present Sebastian Majewski                           #
 #                                                                          #
 #  This program is free software: you can redistribute it and/or modify    #
 #  it under the terms of the GNU General Public License as published by    #
@@ -27,6 +27,8 @@
 #
 # protocols/tcp/phrx.py - packet handler for inbound TCP packets
 #
+# ver 2.7
+#
 
 
 from __future__ import annotations
@@ -39,7 +41,9 @@ from protocols.tcp.metadata import TcpMetadata
 
 
 def _phrx_tcp(self, packet_rx: PacketRx) -> None:
-    """Handle inbound TCP packets"""
+    """
+    Handle inbound TCP packets.
+    """
 
     self.packet_stats_rx.tcp__pre_parse += 1
 
@@ -54,7 +58,9 @@ def _phrx_tcp(self, packet_rx: PacketRx) -> None:
     if __debug__:
         log("tcp", f"{packet_rx.tracker} - {packet_rx.tcp}")
 
-    assert isinstance(packet_rx.tcp.data, memoryview)  # memoryview: data type check point
+    assert isinstance(
+        packet_rx.tcp.data, memoryview
+    )  # memoryview: data type check point
 
     # Create TcpMetadata object for further processing by TCP FSM
     packet_rx_md = TcpMetadata(
@@ -71,39 +77,67 @@ def _phrx_tcp(self, packet_rx: PacketRx) -> None:
         win=packet_rx.tcp.win,
         wscale=packet_rx.tcp.wscale,
         mss=packet_rx.tcp.mss,
-        data=packet_rx.tcp.data,  # memoryview: passing as memoryview for tcp session to consume, no need to convert to bytes here
+        data=packet_rx.tcp.data,  # memoryview: passing as memoryview for tcp
+        # session to consume, no need to convert to
+        # bytes here
         tracker=packet_rx.tracker,
     )
 
-    # Check if incoming packet matches active TCP socket
+    # Check if incoming packet matches active TCP socket.
     if tcp_socket := stack.sockets.get(str(packet_rx_md), None):
         self.packet_stats_rx.tcp__socket_match_active__forward_to_socket += 1
         if __debug__:
-            log("tcp", f"{packet_rx_md.tracker} - <INFO>TCP packet is part of active socket [{tcp_socket}]</>")
+            log(
+                "tcp",
+                f"{packet_rx_md.tracker} - <INFO>TCP packet is part of active "
+                f"socket [{tcp_socket}]</>",
+            )
         tcp_socket.process_tcp_packet(packet_rx_md)
         return
 
-    # Check if incoming packet is an initial SYN packet and if it matches any listening TCP socket
-    if all({packet_rx_md.flag_syn}) and not any({packet_rx_md.flag_ack, packet_rx_md.flag_fin, packet_rx_md.flag_rst}):
-        for tcp_listening_socket_pattern in packet_rx_md.tcp_listening_socket_patterns:
-            if tcp_socket := stack.sockets.get(tcp_listening_socket_pattern, None):
-                self.packet_stats_rx.tcp__socket_match_listening__forward_to_socket += 1
+    # Check if incoming packet is an initial SYN packet and if it matches any
+    # listening TCP socket.
+    if all({packet_rx_md.flag_syn}) and not any(
+        {packet_rx_md.flag_ack, packet_rx_md.flag_fin, packet_rx_md.flag_rst}
+    ):
+        for (
+            tcp_listening_socket_pattern
+        ) in packet_rx_md.tcp_listening_socket_patterns:
+            if tcp_socket := stack.sockets.get(
+                tcp_listening_socket_pattern, None
+            ):
+                self.packet_stats_rx.tcp__socket_match_listening__forward_to_socket += (
+                    1
+                )
                 if __debug__:
-                    log("tcp", f"{packet_rx_md.tracker} - <INFO>TCP packet matches listening socket [{tcp_socket}]</>")
+                    log(
+                        "tcp",
+                        f"{packet_rx_md.tracker} - <INFO>TCP packet matches "
+                        f"listening socket [{tcp_socket}]</>",
+                    )
                 tcp_socket.process_tcp_packet(packet_rx_md)
                 return
 
-    # In case packet doesn't match any session send RST packet in response to it
+    # In case packet doesn't match any session send RST packet
+    # in response to it.
     self.packet_stats_rx.tcp__no_socket_match__respond_rst += 1
     if __debug__:
-        log("tcp", f"{packet_rx.tracker} - TCP packet from {packet_rx.ip.src} to closed port {packet_rx.tcp.dport}, responding with TCP RST packet")
+        log(
+            "tcp",
+            f"{packet_rx.tracker} - TCP packet from {packet_rx.ip.src} to "
+            f"closed port {packet_rx.tcp.dport}, responding with TCP RST "
+            "packet",
+        )
     self._phtx_tcp(
         ip_src=packet_rx.ip.dst,
         ip_dst=packet_rx.ip.src,
         tcp_sport=packet_rx.tcp.dport,
         tcp_dport=packet_rx.tcp.sport,
         tcp_seq=0,
-        tcp_ack=packet_rx.tcp.seq + packet_rx.tcp.flag_syn + packet_rx.tcp.flag_fin + len(packet_rx.tcp.data),
+        tcp_ack=packet_rx.tcp.seq
+        + packet_rx.tcp.flag_syn
+        + packet_rx.tcp.flag_fin
+        + len(packet_rx.tcp.data),
         tcp_flag_rst=True,
         tcp_flag_ack=True,
         echo_tracker=packet_rx.tracker,

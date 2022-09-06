@@ -3,7 +3,7 @@
 ############################################################################
 #                                                                          #
 #  PyTCP - Python TCP/IP stack                                             #
-#  Copyright (C) 2020-2021  Sebastian Majewski                             #
+#  Copyright (C) 2020-present Sebastian Majewski                           #
 #                                                                          #
 #  This program is free software: you can redistribute it and/or modify    #
 #  it under the terms of the GNU General Public License as published by    #
@@ -25,7 +25,10 @@
 
 
 #
-# ip6_ext_frag/fpa.py - Fast Packet Assembler support class for IPv6 fragment extension header
+# ip6_ext_frag/fpa.py - Fast Packet Assembler support class for IPv6 fragment
+# extension header
+#
+# ver 2.7
 #
 
 
@@ -48,7 +51,9 @@ from protocols.ip6_ext_frag.ps import (
 
 
 class Ip6ExtFragAssembler:
-    """IPv6 fragment extension header assembler support class"""
+    """
+    IPv6 fragment extension header assembler support class.
+    """
 
     ip6_next = IP6_NEXT_EXT_FRAG
 
@@ -61,9 +66,16 @@ class Ip6ExtFragAssembler:
         id: int,
         data: bytes,
     ):
-        """Class constructor"""
+        """
+        Class constructor.
+        """
 
-        assert next in {IP6_NEXT_ICMP6, IP6_NEXT_UDP, IP6_NEXT_TCP, IP6_NEXT_RAW}
+        assert next in {
+            IP6_NEXT_ICMP6,
+            IP6_NEXT_UDP,
+            IP6_NEXT_TCP,
+            IP6_NEXT_RAW,
+        }
 
         self._tracker: Tracker = Tracker(prefix="TX")
         self._next: int = next
@@ -83,19 +95,22 @@ class Ip6ExtFragAssembler:
         """Packet log string"""
 
         return (
-            f"IPv6_FRAG id {self._id}{', MF' if self._flag_mf else ''}, offset {self._offset}"
-            + f", next {self._next} ({IP6_EXT_FRAG_NEXT_HEADER_TABLE.get(self._next, '???')})"
+            f"IPv6_FRAG id {self._id}{', MF' if self._flag_mf else ''}, "
+            f"offset {self._offset}, next {self._next} "
+            f"({IP6_EXT_FRAG_NEXT_HEADER_TABLE.get(self._next, '???')})"
         )
 
     @property
     def tracker(self) -> Tracker:
-        """Gete for _tracker"""
-
+        """
+        Geter for the '_tracker' attribute.
+        """
         return self._tracker
 
     def assemble(self, frame: memoryview, _: int) -> None:
-        """Assemble packet into the raw form"""
-
+        """
+        Assemble packet into the the raw form.
+        """
         struct.pack_into(
             f"! BBH L {self._dlen}s",
             frame,

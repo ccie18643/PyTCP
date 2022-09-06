@@ -3,7 +3,7 @@
 ############################################################################
 #                                                                          #
 #  PyTCP - Python TCP/IP stack                                             #
-#  Copyright (C) 2020-2021  Sebastian Majewski                             #
+#  Copyright (C) 2020-present Sebastian Majewski                           #
 #                                                                          #
 #  This program is free software: you can redistribute it and/or modify    #
 #  it under the terms of the GNU General Public License as published by    #
@@ -27,6 +27,8 @@
 #
 # subsystems/rx_ring.py - module contains class supporting RX operations
 #
+# ver 2.7
+#
 
 
 from __future__ import annotations
@@ -43,10 +45,14 @@ if TYPE_CHECKING:
 
 
 class RxRing:
-    """Support for receiving packets from the network"""
+    """
+    Support for receiving packets from the network.
+    """
 
     def __init__(self, tap: int) -> None:
-        """Initialize access to tap interface and the inbound queue"""
+        """
+        Initialize access to tap interface and the inbound queue.
+        """
 
         self.tap: int = tap
         self.rx_ring: list[PacketRx] = []
@@ -58,17 +64,23 @@ class RxRing:
             log("rx-ring", "Started RX ring")
 
     def __thread_receive(self) -> None:
-        """Thread responsible for receiving and enqueuing incoming packets"""
-
+        """
+        Thread responsible for receiving and enqueuing incoming packets.
+        """
         while True:
             packet_rx = PacketRx(os.read(self.tap, 2048))
             if __debug__:
-                log("rx-ring", f"<B><lg>[RX]</> {packet_rx.tracker} - received frame, {len(packet_rx.frame)} bytes")
+                log(
+                    "rx-ring",
+                    f"<B><lg>[RX]</> {packet_rx.tracker} - received frame, "
+                    f"{len(packet_rx.frame)} bytes",
+                )
             self.rx_ring.append(packet_rx)
             self.packet_enqueued.release()
 
     def dequeue(self) -> PacketRx:
-        """Dequeue inboutd frame from RX ring"""
-
+        """
+        Dequeue inboutd frame from RX ring.
+        """
         self.packet_enqueued.acquire()
         return self.rx_ring.pop(0)

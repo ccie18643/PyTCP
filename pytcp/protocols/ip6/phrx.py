@@ -3,7 +3,7 @@
 ############################################################################
 #                                                                          #
 #  PyTCP - Python TCP/IP stack                                             #
-#  Copyright (C) 2020-2021  Sebastian Majewski                             #
+#  Copyright (C) 2020-present Sebastian Majewski                           #
 #                                                                          #
 #  This program is free software: you can redistribute it and/or modify    #
 #  it under the terms of the GNU General Public License as published by    #
@@ -27,6 +27,8 @@
 #
 # protocols/ip6/phrx.py - packet handler for inbound IPv6 packets
 #
+# ver 2.7
+#
 
 
 from __future__ import annotations
@@ -43,7 +45,9 @@ from protocols.ip6.ps import (
 
 
 def _phrx_ip6(self, packet_rx: PacketRx) -> None:
-    """Handle inbound IPv6 packets"""
+    """
+    Handle inbound IPv6 packets.
+    """
 
     self.packet_stats_rx.ip6__pre_parse += 1
 
@@ -58,11 +62,16 @@ def _phrx_ip6(self, packet_rx: PacketRx) -> None:
     if __debug__:
         log("ip6", f"{packet_rx.tracker} - {packet_rx.ip6}")
 
-    # Check if received packet has been sent to us directly or by unicast or multicast
+    # Check if received packet has been sent to us directly or by unicast
+    # or multicast
     if packet_rx.ip6.dst not in {*self.ip6_unicast, *self.ip6_multicast}:
         self.packet_stats_rx.ip6__dst_unknown__drop += 1
         if __debug__:
-            log("ip6", f"{packet_rx.tracker} - IP packet not destined for this stack, dropping")
+            log(
+                "ip6",
+                f"{packet_rx.tracker} - IP packet not destined for this stack, "
+                "dropping",
+            )
         return
 
     if packet_rx.ip6.dst in self.ip6_unicast:

@@ -3,7 +3,7 @@
 ############################################################################
 #                                                                          #
 #  PyTCP - Python TCP/IP stack                                             #
-#  Copyright (C) 2020-2021  Sebastian Majewski                             #
+#  Copyright (C) 2020-present Sebastian Majewski                           #
 #                                                                          #
 #  This program is free software: you can redistribute it and/or modify    #
 #  it under the terms of the GNU General Public License as published by    #
@@ -27,6 +27,8 @@
 #
 # subsystems/tx_ring.py - module contains class supporting TX operations
 #
+# ver 2.7
+#
 
 
 from __future__ import annotations
@@ -45,10 +47,14 @@ if TYPE_CHECKING:
 
 
 class TxRing:
-    """Support for sending packets to the network"""
+    """
+    Support for sending packets to the network.
+    """
 
     def __init__(self, tap: int) -> None:
-        """Initialize access to tap interface and the outbound queue"""
+        """
+        Initialize access to tap interface and the outbound queue.
+        """
 
         self.tap: int = tap
         self.tx_ring: list[EtherAssembler] = []
@@ -60,9 +66,12 @@ class TxRing:
             log("tx-ring", "Started TX ring")
 
     def __thread_transmit(self) -> None:
-        """Dequeue packet from TX ring and send it out"""
+        """
+        Dequeue packet from TX ring and send it out.
+        """
 
-        # Using static frame buffer to avoid dynamic memory allocation for each frame
+        # Using static frame buffer to avoid dynamic memory allocation
+        # for each frame.
         frame_buffer = bytearray(config.TAP_MTU + 14)
 
         while True:
@@ -70,7 +79,11 @@ class TxRing:
             packet_tx = self.tx_ring.pop(0)
             if (packet_tx_len := len(packet_tx)) > config.TAP_MTU + 14:
                 if __debug__:
-                    log("tx-ring", f"{packet_tx.tracker} - Unable to send frame, frame len ({packet_tx_len}) > mtu ({config.TAP_MTU + 14})")
+                    log(
+                        "tx-ring",
+                        f"{packet_tx.tracker} - Unable to send frame, frame"
+                        f"len ({packet_tx_len}) > mtu ({config.TAP_MTU + 14})",
+                    )
                 continue
             frame = memoryview(frame_buffer)[:packet_tx_len]
             packet_tx.assemble(frame)
@@ -78,16 +91,29 @@ class TxRing:
                 os.write(self.tap, frame)
             except OSError as error:
                 if __debug__:
-                    log("tx-ring", f"{packet_tx.tracker} - <CRIT>Unable to send frame, OSError: {error}</>")
+                    log(
+                        "tx-ring",
+                        f"{packet_tx.tracker} - <CRIT>Unable to send frame, "
+                        f"OSError: {error}</>",
+                    )
                 continue
 
             if __debug__:
-                log("tx-ring", f"<B><lr>[TX]</> {packet_tx.tracker}<y>{packet_tx.tracker.latency}</> - sent frame, {len(packet_tx)} bytes")
+                log(
+                    "tx-ring",
+                    f"<B><lr>[TX]</> {packet_tx.tracker}<y>"
+                    f"{packet_tx.tracker.latency}</> - sent frame, "
+                    f"{len(packet_tx)} bytes",
+                )
 
     def enqueue(self, packet_tx: EtherAssembler) -> None:
-        """Enqueue outbound packet into TX ring"""
-
+        """
+        Enqueue outbound packet into TX ring.
+        """
         self.tx_ring.append(packet_tx)
         if __debug__:
-            log("rx-ring", f"{packet_tx.tracker}, queue len: {len(self.tx_ring)}")
+            log(
+                "rx-ring",
+                f"{packet_tx.tracker}, queue len: {len(self.tx_ring)}",
+            )
         self.packet_enqueued.release()

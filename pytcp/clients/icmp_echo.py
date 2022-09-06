@@ -3,7 +3,7 @@
 ############################################################################
 #                                                                          #
 #  PyTCP - Python TCP/IP stack                                             #
-#  Copyright (C) 2020-2021  Sebastian Majewski                             #
+#  Copyright (C) 2020-present Sebastian Majewski                           #
 #                                                                          #
 #  This program is free software: you can redistribute it and/or modify    #
 #  it under the terms of the GNU General Public License as published by    #
@@ -27,6 +27,8 @@
 #
 # clients/icmp_echo.py - 'user space' client for ICMPv4/v6 echo
 #
+# ver 2.7
+#
 
 
 from __future__ import annotations
@@ -44,10 +46,19 @@ from misc.ip_helper import str_to_ip
 
 
 class ClientIcmpEcho:
-    """ICMPv4/v6 Echo client support class"""
+    """
+    ICMPv4/v6 Echo client support class.
+    """
 
-    def __init__(self, local_ip_address: str, remote_ip_address: str, message_count: int = -1) -> None:
-        """Class constructor"""
+    def __init__(
+        self,
+        local_ip_address: str,
+        remote_ip_address: str,
+        message_count: int = -1,
+    ) -> None:
+        """
+        Class constructor.
+        """
 
         self.local_ip_address = str_to_ip(local_ip_address)
         self.remote_ip_address = str_to_ip(remote_ip_address)
@@ -94,7 +105,12 @@ class ClientIcmpEcho:
                 )
 
             if __debug__:
-                log("client", f"Client ICMP Echo: Sent ICMP Echo ({flow_id}/{message_seq}) to {self.remote_ip_address} - {str(message)}")
+                log(
+                    "client",
+                    f"Client ICMP Echo: Sent ICMP Echo ({flow_id}/"
+                    f"{message_seq}) to {self.remote_ip_address} - "
+                    f"{str(message)}",
+                )
             time.sleep(1)
             message_seq += 1
             message_count = min(message_count, message_count - 1)

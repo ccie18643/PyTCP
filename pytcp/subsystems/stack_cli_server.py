@@ -3,7 +3,7 @@
 ############################################################################
 #                                                                          #
 #  PyTCP - Python TCP/IP stack                                             #
-#  Copyright (C) 2020-2021  Sebastian Majewski                             #
+#  Copyright (C) 2020-present Sebastian Majewski                           #
 #                                                                          #
 #  This program is free software: you can redistribute it and/or modify    #
 #  it under the terms of the GNU General Public License as published by    #
@@ -27,6 +27,8 @@
 #
 # subsystems/cli_server.py - module contains class suppoting stack's CLI funcionality
 #
+# ver 2.7
+#
 
 
 from __future__ import annotations
@@ -39,10 +41,16 @@ from lib.logger import log
 
 
 class StackCliServer:
-    """CLI server class"""
+    """
+    The stack CLI server class.
+    """
 
-    def __init__(self, local_ip_address: str = "", local_port: int = 777) -> None:
-        """Class constructor"""
+    def __init__(
+        self, local_ip_address: str = "", local_port: int = 777
+    ) -> None:
+        """
+        Class constructor.
+        """
 
         self.local_ip_address = local_ip_address
         self.local_port = local_port
@@ -50,25 +58,39 @@ class StackCliServer:
         threading.Thread(target=self.__thread_service).start()
 
     def __thread_service(self) -> None:
-        """Service initialization"""
+        """
+        Service initialization.
+        """
 
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
             s.bind((self.local_ip_address, self.local_port))
             s.listen(5)
 
             if __debug__:
-                log("cli", f"Stack CLI server started, bound to {self.local_ip_address}, port {self.local_port}")
+                log(
+                    "cli",
+                    "Stack CLI server started, bound to "
+                    f"{self.local_ip_address}, port {self.local_port}",
+                )
 
             while True:
                 conn, addr = s.accept()
                 if __debug__:
-                    log("cli", f"Stack CLI server received connection from {addr[0]}, port {addr[1]}")
+                    log(
+                        "cli",
+                        "Stack CLI server received connection from "
+                        f"{addr[0]}, port {addr[1]}",
+                    )
 
-                threading.Thread(target=self.__thread_connection, args=(conn,)).start()
+                threading.Thread(
+                    target=self.__thread_connection, args=(conn,)
+                ).start()
 
     @staticmethod
     def __thread_connection(conn: socket.socket) -> None:
-        """Inbound connection handler"""
+        """
+        Inbound connection handler.
+        """
 
         with conn:
             conn.sendall(b"\nStack CLI...\n\n")

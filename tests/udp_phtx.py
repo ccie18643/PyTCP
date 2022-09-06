@@ -4,7 +4,7 @@
 ############################################################################
 #                                                                          #
 #  PyTCP - Python TCP/IP stack                                             #
-#  Copyright (C) 2020-2021  Sebastian Majewski                             #
+#  Copyright (C) 2020-present Sebastian Majewski                           #
 #                                                                          #
 #  This program is free software: you can redistribute it and/or modify    #
 #  it under the terms of the GNU General Public License as published by    #
@@ -84,7 +84,11 @@ class TestUdpPhtx(TestCase):
         """Test sending IPv4/UDP packet with data"""
 
         tx_status = self.packet_handler._phtx_udp(
-            ip_src=self.mns.stack_ip4_host.address, ip_dst=self.mns.host_a_ip4_address, udp_sport=1000, udp_dport=2000, udp_data=b"01234567890ABCDEF" * 50
+            ip_src=self.mns.stack_ip4_host.address,
+            ip_dst=self.mns.host_a_ip4_address,
+            udp_sport=1000,
+            udp_dport=2000,
+            udp_data=b"01234567890ABCDEF" * 50,
         )
         self.assertEqual(tx_status, TxStatus.PASSED__ETHER__TO_TX_RING)
         self.assertEqual(
@@ -171,7 +175,11 @@ class TestUdpPhtx(TestCase):
         """Test sending IPv6/UDP packet with data"""
 
         tx_status = self.packet_handler._phtx_udp(
-            ip_src=self.mns.stack_ip6_host.address, ip_dst=self.mns.host_a_ip6_address, udp_sport=1000, udp_dport=2000, udp_data=b"01234567890ABCDEF" * 50
+            ip_src=self.mns.stack_ip6_host.address,
+            ip_dst=self.mns.host_a_ip6_address,
+            udp_sport=1000,
+            udp_dport=2000,
+            udp_data=b"01234567890ABCDEF" * 50,
         )
         self.assertEqual(tx_status, TxStatus.PASSED__ETHER__TO_TX_RING)
         self.assertEqual(
@@ -228,4 +236,5 @@ class TestUdpPhtx(TestCase):
         )
 
 
-# TODO: Need to test sending UDP packets with all-zeroes src ipv4 address for DHCP
+# TODO: Need to test sending UDP packets with all-zeroes
+# TODO: src ipv4 address for DHCP

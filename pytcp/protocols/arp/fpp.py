@@ -3,7 +3,7 @@
 ############################################################################
 #                                                                          #
 #  PyTCP - Python TCP/IP stack                                             #
-#  Copyright (C) 2020-2021  Sebastian Majewski                             #
+#  Copyright (C) 2020-present Sebastian Majewski                           #
 #                                                                          #
 #  This program is free software: you can redistribute it and/or modify    #
 #  it under the terms of the GNU General Public License as published by    #
@@ -27,6 +27,8 @@
 #
 # protocols/arp/fpp.py - Fast Packet Parser support class for ARP protocol
 #
+# ver 2.7
+#
 
 
 from __future__ import annotations
@@ -44,110 +46,136 @@ if TYPE_CHECKING:
 
 
 class ArpParser:
-    """ARP packet parser class"""
+    """
+    ARP packet parser class.
+    """
 
     def __init__(self, packet_rx: PacketRx) -> None:
-        """Class constructor"""
+        """
+        Class constructor.
+        """
 
         packet_rx.arp = self
 
         self._frame = packet_rx.frame
 
-        packet_rx.parse_failed = self._packet_integrity_check() or self._packet_sanity_check()
+        packet_rx.parse_failed = (
+            self._packet_integrity_check() or self._packet_sanity_check()
+        )
 
     def __len__(self) -> int:
-        """Number of bytes remaining in the frame"""
-
+        """
+        Number of bytes remaining in the frame.
+        """
         return len(self._frame)
 
     def __str__(self) -> str:
-        """Packet log string"""
-
+        """
+        Packet log string.
+        """
         if self.oper == ARP_OP_REQUEST:
-            return f"ARP request {self.spa} / {self.sha} > {self.tpa} / {self.tha}"
+            return (
+                f"ARP request {self.spa} / {self.sha}"
+                f" > {self.tpa} / {self.tha}"
+            )
         if self.oper == ARP_OP_REPLY:
-            return f"ARP reply {self.spa} / {self.sha} > {self.tpa} / {self.tha}"
-
+            return (
+                f"ARP reply {self.spa} / {self.sha}"
+                f" > {self.tpa} / {self.tha}"
+            )
         return f"ARP request unknown operation {self.oper}"
 
     @property
     def hrtype(self) -> int:
-        """Read 'Hardware address type' field"""
-
+        """
+        Read the 'Hardware address type' field.
+        """
         if "_cache__hrtype" not in self.__dict__:
             self._cache__hrtype: int = struct.unpack("!H", self._frame[0:2])[0]
         return self._cache__hrtype
 
     @property
     def prtype(self) -> int:
-        """Read 'Protocol address type' field"""
-
+        """
+        Read the 'Protocol address type' field.
+        """
         if "_cache__prtype" not in self.__dict__:
             self._cache__prtype: int = struct.unpack("!H", self._frame[2:4])[0]
         return self._cache__prtype
 
     @property
     def hrlen(self) -> int:
-        """Read 'Hardware address length' field"""
-
+        """
+        Read the 'Hardware address length' field.
+        """
         return self._frame[4]
 
     @property
     def prlen(self) -> int:
-        """Read 'Protocol address length' field"""
-
+        """
+        Read the 'Protocol address length' field.
+        """
         return self._frame[5]
 
     @property
     def oper(self) -> int:
-        """Read 'Operation' field"""
-
+        """
+        Read the 'Operation' field.
+        """
         if "_cache__oper" not in self.__dict__:
             self._cache__oper: int = struct.unpack("!H", self._frame[6:8])[0]
         return self._cache__oper
 
     @property
     def sha(self) -> MacAddress:
-        """Read 'Sender hardware address' field"""
-
+        """
+        Read the 'Sender hardware address' field.
+        """
         if "_cache__sha" not in self.__dict__:
             self._cache__sha = MacAddress(self._frame[8:14])
         return self._cache__sha
 
     @property
     def spa(self) -> Ip4Address:
-        """Read 'Sender protocol address' field"""
-
+        """
+        Read the 'Sender protocol address' field.
+        """
         if "_cache__spa" not in self.__dict__:
             self._cache__spa = Ip4Address(self._frame[14:18])
         return self._cache__spa
 
     @property
     def tha(self) -> MacAddress:
-        """Read 'Target hardware address' field"""
-
+        """
+        Read the 'Target hardware address' field.
+        """
         if "_cache__tha" not in self.__dict__:
             self._cache__tha = MacAddress(self._frame[18:24])
         return self._cache__tha
 
     @property
     def tpa(self) -> Ip4Address:
-        """Read 'Target protocol address' field"""
-
+        """
+        Read the 'Target protocol address' field.
+        """
         if "_cache__tpa" not in self.__dict__:
             self._cache__tpa = Ip4Address(self._frame[24:28])
         return self._cache__tpa
 
     @property
     def packet_copy(self) -> bytes:
-        """Read the whole packet"""
-
+        """
+        Read the whole packet.
+        """
         if "_cache__packet_copy" not in self.__dict__:
             self._cache__packet_copy = bytes(self._frame[:ARP_HEADER_LEN])
         return self._cache__packet_copy
 
     def _packet_integrity_check(self) -> str:
-        """Packet integrity check to be run on raw packet prior to parsing to make sure parsing is safe"""
+        """
+        Packet integrity check to be run on raw packet prior to parsing
+        to make sure parsing is safe
+        """
 
         if not config.PACKET_INTEGRITY_CHECK:
             return ""
@@ -158,7 +186,10 @@ class ArpParser:
         return ""
 
     def _packet_sanity_check(self) -> str:
-        """Packet sanity check to be run on parsed packet to make sure packet's fields contain sane values"""
+        """
+        Packet sanity check to be run on parsed packet to make sure packet's
+        fields contain sane values
+        """
 
         if not config.PACKET_SANITY_CHECK:
             return ""

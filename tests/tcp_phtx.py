@@ -4,7 +4,7 @@
 ############################################################################
 #                                                                          #
 #  PyTCP - Python TCP/IP stack                                             #
-#  Copyright (C) 2020-2021  Sebastian Majewski                             #
+#  Copyright (C) 2020-present Sebastian Majewski                           #
 #                                                                          #
 #  This program is free software: you can redistribute it and/or modify    #
 #  it under the terms of the GNU General Public License as published by    #
@@ -28,6 +28,8 @@
 #
 # tests/tcp_phtx.py -  tests specific for TCP phtx module
 #
+# ver 2.7
+#
 
 
 from testslide import TestCase
@@ -44,9 +46,15 @@ TEST_FRAME_DIR = "tests/test_frames/tcp_phtx/"
 
 
 class TestUdpPhtx(TestCase):
-    def setUp(self):
-        super().setUp()
+    """
+    UDP packet handler TX unit test class.
+    """
 
+    def setUp(self):
+        """
+        Set up the test environment.
+        """
+        super().setUp()
         self.mns = MockNetworkSettings()
         patch_config(self)
         setup_mock_packet_handler(self)
@@ -54,8 +62,9 @@ class TestUdpPhtx(TestCase):
     # Test name format: 'test_name__test_description__optional_condition'
 
     def test_tcp_phtx__ip4_tcp_packet(self):
-        """Test sending IPv4/TCP packet"""
-
+        """
+        Test sending the IPv4/TCP packet.
+        """
         tx_status = self.packet_handler._phtx_tcp(
             ip_src=self.mns.stack_ip4_host.address,
             ip_dst=self.mns.host_a_ip4_address,
@@ -81,8 +90,9 @@ class TestUdpPhtx(TestCase):
         self.assertEqual(self.frame_tx[: len(frame_tx)], frame_tx)
 
     def test_tcp_phtx__ip4_tcp_packet__seq(self):
-        """Test sending IPv4/TCP packet with set seq field"""
-
+        """
+        Test sending the IPv4/TCP packet with set 'seq' field.
+        """
         tx_status = self.packet_handler._phtx_tcp(
             ip_src=self.mns.stack_ip4_host.address,
             ip_dst=self.mns.host_a_ip4_address,
@@ -109,8 +119,9 @@ class TestUdpPhtx(TestCase):
         self.assertEqual(self.frame_tx[: len(frame_tx)], frame_tx)
 
     def test_tcp_phtx__ip4_tcp_packet__ack(self):
-        """Test sending IPv4/TCP packet with set ack field"""
-
+        """
+        Test sending the IPv4/TCP packet with set 'ack' field.
+        """
         tx_status = self.packet_handler._phtx_tcp(
             ip_src=self.mns.stack_ip4_host.address,
             ip_dst=self.mns.host_a_ip4_address,
@@ -137,8 +148,9 @@ class TestUdpPhtx(TestCase):
         self.assertEqual(self.frame_tx[: len(frame_tx)], frame_tx)
 
     def test_tcp_phtx__ip4_tcp_packet__ns(self):
-        """Test sending IPv4/TCP packet with set flag_ns field"""
-
+        """
+        Test sending Ithe Pv4/TCP packet with set 'flag_ns' field.
+        """
         tx_status = self.packet_handler._phtx_tcp(
             ip_src=self.mns.stack_ip4_host.address,
             ip_dst=self.mns.host_a_ip4_address,
@@ -166,8 +178,9 @@ class TestUdpPhtx(TestCase):
         self.assertEqual(self.frame_tx[: len(frame_tx)], frame_tx)
 
     def test_tcp_phtx__ip4_tcp_packet__flag_crw(self):
-        """Test sending IPv4/TCP packet with set flag_crw field"""
-
+        """
+        Test sending the IPv4/TCP packet with set 'flag_crw' field.
+        """
         tx_status = self.packet_handler._phtx_tcp(
             ip_src=self.mns.stack_ip4_host.address,
             ip_dst=self.mns.host_a_ip4_address,
@@ -195,8 +208,9 @@ class TestUdpPhtx(TestCase):
         self.assertEqual(self.frame_tx[: len(frame_tx)], frame_tx)
 
     def test_tcp_phtx__ip4_tcp_packet__flag_ece(self):
-        """Test sending IPv4/TCP packet with set flag_ece field"""
-
+        """
+        Test sending the IPv4/TCP packet with set 'flag_ece' field.
+        """
         tx_status = self.packet_handler._phtx_tcp(
             ip_src=self.mns.stack_ip4_host.address,
             ip_dst=self.mns.host_a_ip4_address,
@@ -224,8 +238,9 @@ class TestUdpPhtx(TestCase):
         self.assertEqual(self.frame_tx[: len(frame_tx)], frame_tx)
 
     def test_tcp_phtx__ip4_tcp_packet__flag_urg(self):
-        """Test sending IPv4/TCP packet with set flag_urg field"""
-
+        """
+        Test sending the IPv4/TCP packet with set 'flag_urg' field.
+        """
         tx_status = self.packet_handler._phtx_tcp(
             ip_src=self.mns.stack_ip4_host.address,
             ip_dst=self.mns.host_a_ip4_address,
@@ -253,8 +268,9 @@ class TestUdpPhtx(TestCase):
         self.assertEqual(self.frame_tx[: len(frame_tx)], frame_tx)
 
     def test_tcp_phtx__ip4_tcp_packet__flag_ack(self):
-        """Test sending IPv4/TCP packet with set flag_ack field"""
-
+        """
+        Test sending the IPv4/TCP packet with set 'flag_ack' field.
+        """
         tx_status = self.packet_handler._phtx_tcp(
             ip_src=self.mns.stack_ip4_host.address,
             ip_dst=self.mns.host_a_ip4_address,
@@ -282,8 +298,9 @@ class TestUdpPhtx(TestCase):
         self.assertEqual(self.frame_tx[: len(frame_tx)], frame_tx)
 
     def test_tcp_phtx__ip4_tcp_packet__flag_psh(self):
-        """Test sending IPv4/TCP packet with set flag_psh field"""
-
+        """
+        Test sending the IPv4/TCP packet with set 'flag_psh' field.
+        """
         tx_status = self.packet_handler._phtx_tcp(
             ip_src=self.mns.stack_ip4_host.address,
             ip_dst=self.mns.host_a_ip4_address,
@@ -311,8 +328,9 @@ class TestUdpPhtx(TestCase):
         self.assertEqual(self.frame_tx[: len(frame_tx)], frame_tx)
 
     def test_tcp_phtx__ip4_tcp_packet__flag_rst(self):
-        """Test sending IPv4/TCP packet with set flag_rst field"""
-
+        """
+        Test sending the IPv4/TCP packet with set 'flag_rst' field.
+        """
         tx_status = self.packet_handler._phtx_tcp(
             ip_src=self.mns.stack_ip4_host.address,
             ip_dst=self.mns.host_a_ip4_address,
@@ -340,8 +358,9 @@ class TestUdpPhtx(TestCase):
         self.assertEqual(self.frame_tx[: len(frame_tx)], frame_tx)
 
     def test_tcp_phtx__ip4_tcp_packet__flag_syn(self):
-        """Test sending IPv4/TCP packet with set flag_syn field"""
-
+        """
+        Test sending the IPv4/TCP packet with set 'flag_syn' field.
+        """
         tx_status = self.packet_handler._phtx_tcp(
             ip_src=self.mns.stack_ip4_host.address,
             ip_dst=self.mns.host_a_ip4_address,
@@ -369,8 +388,9 @@ class TestUdpPhtx(TestCase):
         self.assertEqual(self.frame_tx[: len(frame_tx)], frame_tx)
 
     def test_tcp_phtx__ip4_tcp_packet__win(self):
-        """Test sending IPv4/TCP packet with set win field"""
-
+        """
+        Test sending the IPv4/TCP packet with set 'win' field.
+        """
         tx_status = self.packet_handler._phtx_tcp(
             ip_src=self.mns.stack_ip4_host.address,
             ip_dst=self.mns.host_a_ip4_address,
@@ -397,8 +417,9 @@ class TestUdpPhtx(TestCase):
         self.assertEqual(self.frame_tx[: len(frame_tx)], frame_tx)
 
     def test_tcp_phtx__ip4_tcp_packet__urp(self):
-        """Test sending IPv4/TCP packet with set urp field"""
-
+        """
+        Test sending the IPv4/TCP packet with set 'urp' field.
+        """
         tx_status = self.packet_handler._phtx_tcp(
             ip_src=self.mns.stack_ip4_host.address,
             ip_dst=self.mns.host_a_ip4_address,
@@ -425,10 +446,15 @@ class TestUdpPhtx(TestCase):
         self.assertEqual(self.frame_tx[: len(frame_tx)], frame_tx)
 
     def test_udp_phtx__ip4_tcp_packet__data(self):
-        """Test sending IPv4/TCPP packet with data"""
-
+        """
+        Test sending the IPv4/TCPP packet with data.
+        """
         tx_status = self.packet_handler._phtx_tcp(
-            ip_src=self.mns.stack_ip4_host.address, ip_dst=self.mns.host_a_ip4_address, tcp_sport=1000, tcp_dport=2000, tcp_data=b"01234567890ABCDEF" * 50
+            ip_src=self.mns.stack_ip4_host.address,
+            ip_dst=self.mns.host_a_ip4_address,
+            tcp_sport=1000,
+            tcp_dport=2000,
+            tcp_data=b"01234567890ABCDEF" * 50,
         )
         self.assertEqual(tx_status, TxStatus.PASSED__ETHER__TO_TX_RING)
         self.assertEqual(
@@ -449,8 +475,9 @@ class TestUdpPhtx(TestCase):
         self.assertEqual(self.frame_tx[: len(frame_tx)], frame_tx)
 
     def test_tcp_phtx__ip4_tcp_packet__ip6_src(self):
-        """Test sending IPv4/TCP packet with src set to ip6 address"""
-
+        """
+        Test sending the IPv4/TCP packet with 'src' set to IPv6 address.
+        """
         tx_status = self.packet_handler._phtx_tcp(
             ip_src=self.mns.stack_ip6_host.address,
             ip_dst=self.mns.host_a_ip4_address,
@@ -467,8 +494,9 @@ class TestUdpPhtx(TestCase):
         )
 
     def test_tcp_phtx__ip4_tcp_packet__ip6_dst(self):
-        """Test sending IPv6/TCP packet with dst set to ip6 address"""
-
+        """
+        Test sending the IPv6/TCP packet with 'dst' set to IPv6 address.
+        """
         tx_status = self.packet_handler._phtx_tcp(
             ip_src=self.mns.stack_ip4_host.address,
             ip_dst=self.mns.host_a_ip6_address,
@@ -485,8 +513,9 @@ class TestUdpPhtx(TestCase):
         )
 
     def test_tcp_phtx__ip4_tcp_packet__mss(self):
-        """Test sending IPv4/TCP packet with MSS option"""
-
+        """
+        Test sending Ithe Pv4/TCP packet with 'MSS' option.
+        """
         tx_status = self.packet_handler._phtx_tcp(
             ip_src=self.mns.stack_ip4_host.address,
             ip_dst=self.mns.host_a_ip4_address,
@@ -514,8 +543,9 @@ class TestUdpPhtx(TestCase):
         self.assertEqual(self.frame_tx[: len(frame_tx)], frame_tx)
 
     def test_tcp_phtx__ip4_tcp_packet__wscale(self):
-        """Test sending IPv4/TCP packet with WSCALE option"""
-
+        """
+        Test sending the IPv4/TCP packet with 'WSCALE' option.
+        """
         tx_status = self.packet_handler._phtx_tcp(
             ip_src=self.mns.stack_ip4_host.address,
             ip_dst=self.mns.host_a_ip4_address,
@@ -544,8 +574,9 @@ class TestUdpPhtx(TestCase):
         self.assertEqual(self.frame_tx[: len(frame_tx)], frame_tx)
 
     def test_tcp_phtx__ip6_tcp_packet(self):
-        """Test sending IPv6/TCP packet"""
-
+        """
+        Test sending the IPv6/TCP packet.
+        """
         tx_status = self.packet_handler._phtx_tcp(
             ip_src=self.mns.stack_ip6_host.address,
             ip_dst=self.mns.host_a_ip6_address,
@@ -571,8 +602,9 @@ class TestUdpPhtx(TestCase):
         self.assertEqual(self.frame_tx[: len(frame_tx)], frame_tx)
 
     def test_tcp_phtx__ip6_tcp_packet__seq(self):
-        """Test sending IPv6/TCP packet with set seq field"""
-
+        """
+        Test sending the IPv6/TCP packet with set 'seq' field.
+        """
         tx_status = self.packet_handler._phtx_tcp(
             ip_src=self.mns.stack_ip6_host.address,
             ip_dst=self.mns.host_a_ip6_address,
@@ -599,8 +631,9 @@ class TestUdpPhtx(TestCase):
         self.assertEqual(self.frame_tx[: len(frame_tx)], frame_tx)
 
     def test_tcp_phtx__ip6_tcp_packet__ack(self):
-        """Test sending IPv6/TCP packet with set ack field"""
-
+        """
+        Test sending the IPv6/TCP packet with set 'ack' field.
+        """
         tx_status = self.packet_handler._phtx_tcp(
             ip_src=self.mns.stack_ip6_host.address,
             ip_dst=self.mns.host_a_ip6_address,
@@ -627,8 +660,9 @@ class TestUdpPhtx(TestCase):
         self.assertEqual(self.frame_tx[: len(frame_tx)], frame_tx)
 
     def test_tcp_phtx__ip6_tcp_packet__ns(self):
-        """Test sending IPv6/TCP packet with set flag_ns field"""
-
+        """
+        Test sending the IPv6/TCP packet with set 'flag_ns' field.
+        """
         tx_status = self.packet_handler._phtx_tcp(
             ip_src=self.mns.stack_ip6_host.address,
             ip_dst=self.mns.host_a_ip6_address,
@@ -656,8 +690,9 @@ class TestUdpPhtx(TestCase):
         self.assertEqual(self.frame_tx[: len(frame_tx)], frame_tx)
 
     def test_tcp_phtx__ip6_tcp_packet__flag_crw(self):
-        """Test sending IPv6/TCP packet with set flag_crw field"""
-
+        """
+        Test sending the IPv6/TCP packet with set 'flag_crw' field.
+        """
         tx_status = self.packet_handler._phtx_tcp(
             ip_src=self.mns.stack_ip6_host.address,
             ip_dst=self.mns.host_a_ip6_address,
@@ -685,8 +720,9 @@ class TestUdpPhtx(TestCase):
         self.assertEqual(self.frame_tx[: len(frame_tx)], frame_tx)
 
     def test_tcp_phtx__ip6_tcp_packet__flag_ece(self):
-        """Test sending IPv6/TCP packet with set flag_ece field"""
-
+        """
+        Test sending the IPv6/TCP packet with set 'flag_ece' field.
+        """
         tx_status = self.packet_handler._phtx_tcp(
             ip_src=self.mns.stack_ip6_host.address,
             ip_dst=self.mns.host_a_ip6_address,
@@ -714,8 +750,9 @@ class TestUdpPhtx(TestCase):
         self.assertEqual(self.frame_tx[: len(frame_tx)], frame_tx)
 
     def test_tcp_phtx__ip6_tcp_packet__flag_urg(self):
-        """Test sending IPv6/TCP packet with set flag_urg field"""
-
+        """
+        Test sending the IPv6/TCP packet with set 'flag_urg' field.
+        """
         tx_status = self.packet_handler._phtx_tcp(
             ip_src=self.mns.stack_ip6_host.address,
             ip_dst=self.mns.host_a_ip6_address,
@@ -743,8 +780,9 @@ class TestUdpPhtx(TestCase):
         self.assertEqual(self.frame_tx[: len(frame_tx)], frame_tx)
 
     def test_tcp_phtx__ip6_tcp_packet__flag_ack(self):
-        """Test sending IPv6/TCP packet with set flag_ack field"""
-
+        """
+        Test sending the IPv6/TCP packet with set 'flag_ack' field.
+        """
         tx_status = self.packet_handler._phtx_tcp(
             ip_src=self.mns.stack_ip6_host.address,
             ip_dst=self.mns.host_a_ip6_address,
@@ -772,8 +810,9 @@ class TestUdpPhtx(TestCase):
         self.assertEqual(self.frame_tx[: len(frame_tx)], frame_tx)
 
     def test_tcp_phtx__ip6_tcp_packet__flag_psh(self):
-        """Test sending IPv6/TCP packet with set flag_psh field"""
-
+        """
+        Test sending the IPv6/TCP packet with set 'flag_psh' field.
+        """
         tx_status = self.packet_handler._phtx_tcp(
             ip_src=self.mns.stack_ip6_host.address,
             ip_dst=self.mns.host_a_ip6_address,
@@ -801,8 +840,9 @@ class TestUdpPhtx(TestCase):
         self.assertEqual(self.frame_tx[: len(frame_tx)], frame_tx)
 
     def test_tcp_phtx__ip6_tcp_packet__flag_rst(self):
-        """Test sending IPv6/TCP packet with set flag_rst field"""
-
+        """
+        Test sending the IPv6/TCP packet with set 'flag_rst' field.
+        """
         tx_status = self.packet_handler._phtx_tcp(
             ip_src=self.mns.stack_ip6_host.address,
             ip_dst=self.mns.host_a_ip6_address,
@@ -830,8 +870,9 @@ class TestUdpPhtx(TestCase):
         self.assertEqual(self.frame_tx[: len(frame_tx)], frame_tx)
 
     def test_tcp_phtx__ip6_tcp_packet__flag_syn(self):
-        """Test sending IPv6/TCP packet with set flag_syn field"""
-
+        """
+        Test sending the IPv6/TCP packet with set 'flag_syn' field.
+        """
         tx_status = self.packet_handler._phtx_tcp(
             ip_src=self.mns.stack_ip6_host.address,
             ip_dst=self.mns.host_a_ip6_address,
@@ -859,8 +900,9 @@ class TestUdpPhtx(TestCase):
         self.assertEqual(self.frame_tx[: len(frame_tx)], frame_tx)
 
     def test_tcp_phtx__ip6_tcp_packet__win(self):
-        """Test sending IPv6/TCP packet with set win field"""
-
+        """
+        Test sending the IPv6/TCP packet with set 'win' field.
+        """
         tx_status = self.packet_handler._phtx_tcp(
             ip_src=self.mns.stack_ip6_host.address,
             ip_dst=self.mns.host_a_ip6_address,
@@ -887,8 +929,9 @@ class TestUdpPhtx(TestCase):
         self.assertEqual(self.frame_tx[: len(frame_tx)], frame_tx)
 
     def test_tcp_phtx__ip6_tcp_packet__urp(self):
-        """Test sending IPv6/TCP packet with set urp field"""
-
+        """
+        Test sending the IPv6/TCP packet with set 'urp' field.
+        """
         tx_status = self.packet_handler._phtx_tcp(
             ip_src=self.mns.stack_ip6_host.address,
             ip_dst=self.mns.host_a_ip6_address,
@@ -915,10 +958,15 @@ class TestUdpPhtx(TestCase):
         self.assertEqual(self.frame_tx[: len(frame_tx)], frame_tx)
 
     def test_tcp_phtx__ip6_tcp_packet__data(self):
-        """Test sending IPv6/TCP packet with data"""
-
+        """
+        Test sending the IPv6/TCP packet with data.
+        """
         tx_status = self.packet_handler._phtx_tcp(
-            ip_src=self.mns.stack_ip6_host.address, ip_dst=self.mns.host_a_ip6_address, tcp_sport=1000, tcp_dport=2000, tcp_data=b"01234567890ABCDEF" * 50
+            ip_src=self.mns.stack_ip6_host.address,
+            ip_dst=self.mns.host_a_ip6_address,
+            tcp_sport=1000,
+            tcp_dport=2000,
+            tcp_data=b"01234567890ABCDEF" * 50,
         )
         self.assertEqual(tx_status, TxStatus.PASSED__ETHER__TO_TX_RING)
         self.assertEqual(
@@ -939,8 +987,9 @@ class TestUdpPhtx(TestCase):
         self.assertEqual(self.frame_tx[: len(frame_tx)], frame_tx)
 
     def test_tcp_phtx__ip6_tcp_packet__ip4_src(self):
-        """Test sending IPv6/TCP packet with src set to ip4 address"""
-
+        """
+        Test sending the IPv6/TCP packet with 'src' set to IPv4 address.
+        """
         tx_status = self.packet_handler._phtx_tcp(
             ip_src=self.mns.stack_ip4_host.address,
             ip_dst=self.mns.host_a_ip6_address,
@@ -957,8 +1006,9 @@ class TestUdpPhtx(TestCase):
         )
 
     def test_tcp_phtx__ip6_tcp_packet__ip4_dst(self):
-        """Test sending IPv6/TCP packet with dst set to ip6 address"""
-
+        """
+        Test sending the IPv6/TCP packet with 'dst' set to IPv6 address.
+        """
         tx_status = self.packet_handler._phtx_tcp(
             ip_src=self.mns.stack_ip6_host.address,
             ip_dst=self.mns.host_a_ip4_address,

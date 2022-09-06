@@ -3,7 +3,7 @@
 ############################################################################
 #                                                                          #
 #  PyTCP - Python TCP/IP stack                                             #
-#  Copyright (C) 2020-2021  Sebastian Majewski                             #
+#  Copyright (C) 2020-present Sebastian Majewski                           #
 #                                                                          #
 #  This program is free software: you can redistribute it and/or modify    #
 #  it under the terms of the GNU General Public License as published by    #
@@ -27,6 +27,8 @@
 #
 # protocols/ether/phrx.py - packet handler for inbound Ethernet packets
 #
+# ver 2.7
+#
 
 
 from __future__ import annotations
@@ -44,7 +46,9 @@ from lib.logger import log
 
 
 def _phrx_ether(self, packet_rx: PacketRx) -> None:
-    """Handle inbound Ethernet packets"""
+    """
+    Handle inbound Ethernet packets.
+    """
 
     self.packet_stats_rx.ether__pre_parse += 1
 
@@ -53,17 +57,28 @@ def _phrx_ether(self, packet_rx: PacketRx) -> None:
     if packet_rx.parse_failed:
         self.packet_stats_rx.ether__failed_parse__drop += 1
         if __debug__:
-            log("ether", f"{packet_rx.tracker} - <CRIT>{packet_rx.parse_failed}</>")
+            log(
+                "ether",
+                f"{packet_rx.tracker} - <CRIT>{packet_rx.parse_failed}</>",
+            )
         return
 
     if __debug__:
         log("ether", f"{packet_rx.tracker} - {packet_rx.ether}")
 
     # Check if received packet matches any of stack MAC addresses
-    if packet_rx.ether.dst not in {self.mac_unicast, *self.mac_multicast, self.mac_broadcast}:
+    if packet_rx.ether.dst not in {
+        self.mac_unicast,
+        *self.mac_multicast,
+        self.mac_broadcast,
+    }:
         self.packet_stats_rx.ether__dst_unknown__drop += 1
         if __debug__:
-            log("ether", f"{packet_rx.tracker} - Ethernet packet not destined for this stack, dropping")
+            log(
+                "ether",
+                f"{packet_rx.tracker} - Ethernet packet not destined for this "
+                "stack, dropping",
+            )
         return
 
     if packet_rx.ether.dst == self.mac_unicast:

@@ -3,7 +3,7 @@
 ############################################################################
 #                                                                          #
 #  PyTCP - Python TCP/IP stack                                             #
-#  Copyright (C) 2020-2021  Sebastian Majewski                             #
+#  Copyright (C) 2020-present Sebastian Majewski                           #
 #                                                                          #
 #  This program is free software: you can redistribute it and/or modify    #
 #  it under the terms of the GNU General Public License as published by    #
@@ -26,6 +26,8 @@
 
 #
 # lib/logger.py - module contains methods supporting logging
+#
+# ver 2.7
 #
 
 
@@ -63,7 +65,9 @@ START_TIME = time.time()
 
 
 def log(channel: str, message: str, inspect_depth: int = 1) -> None:
-    """Log message if channel and severity match configured values"""
+    """
+    Log message if channel and severity match configured values.
+    """
 
     if channel in config.LOG_CHANEL:
         if config.LOG_DEBUG:
@@ -71,9 +75,16 @@ def log(channel: str, message: str, inspect_depth: int = 1) -> None:
             caller_class = frame_info.frame.f_locals["self"].__class__.__name__
             caller_method = frame_info.function
             caller_info = f"{caller_class}.{caller_method}"
-            output = f" <g>{(time.time() - START_TIME):07.02f}</> | <b>{channel.upper():7}</> | <c>{caller_info}</> | {message}"
+            output = (
+                f" <g>{(time.time() - START_TIME):07.02f}</> | "
+                f"<b>{channel.upper():7}</> | <c>{caller_info}</> | "
+                f"{message}"
+            )
         else:
-            output = f" <g>{(time.time() - START_TIME):07.02f}</> | <b>{channel.upper():7}</> | {message}"
+            output = (
+                f" <g>{(time.time() - START_TIME):07.02f}</> | "
+                f"<b>{channel.upper():7}</> | {message}"
+            )
 
         for key in STYLES.keys():
             output = output.replace(key, STYLES[key])

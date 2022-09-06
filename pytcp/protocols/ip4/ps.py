@@ -3,7 +3,7 @@
 ############################################################################
 #                                                                          #
 #  PyTCP - Python TCP/IP stack                                             #
-#  Copyright (C) 2020-2021  Sebastian Majewski                             #
+#  Copyright (C) 2020-present Sebastian Majewski                           #
 #                                                                          #
 #  This program is free software: you can redistribute it and/or modify    #
 #  it under the terms of the GNU General Public License as published by    #
@@ -26,6 +26,8 @@
 
 #
 # protocols/ip4/ps.py - protocol support for IPv4
+#
+# ver 2.7
 #
 
 
@@ -55,7 +57,12 @@ IP4_PROTO_TCP = 6
 IP4_PROTO_UDP = 17
 IP4_PROTO_RAW = 255
 
-IP4_PROTO_TABLE = {IP4_PROTO_ICMP4: "ICMPv4", IP4_PROTO_TCP: "TCP", IP4_PROTO_UDP: "UDP", IP4_PROTO_RAW: "raw_data"}
+IP4_PROTO_TABLE = {
+    IP4_PROTO_ICMP4: "ICMPv4",
+    IP4_PROTO_TCP: "TCP",
+    IP4_PROTO_UDP: "UDP",
+    IP4_PROTO_RAW: "raw_data",
+}
 
 
 #

@@ -4,7 +4,7 @@
 ############################################################################
 #                                                                          #
 #  PyTCP - Python TCP/IP stack                                             #
-#  Copyright (C) 2020-2021  Sebastian Majewski                             #
+#  Copyright (C) 2020-present Sebastian Majewski                           #
 #                                                                          #
 #  This program is free software: you can redistribute it and/or modify    #
 #  it under the terms of the GNU General Public License as published by    #
@@ -27,6 +27,8 @@
 
 #
 # tests/icmp6_phtx.py -  tests specific for ICMPv6 phtx module
+#
+# ver 2.7
 #
 
 
@@ -52,9 +54,15 @@ TEST_FRAME_DIR = "tests/test_frames/icmp6_phtx/"
 
 
 class TestIcmp6Phtx(TestCase):
-    def setUp(self):
-        super().setUp()
+    """
+    ICMPv6 packet handler TX unit test class.
+    """
 
+    def setUp(self):
+        """
+        Setup tests.
+        """
+        super().setUp()
         self.mns = MockNetworkSettings()
         patch_config(self)
         setup_mock_packet_handler(self)
@@ -62,8 +70,9 @@ class TestIcmp6Phtx(TestCase):
     # Test name format: 'test_name__test_description__optional_condition'
 
     def test_icmp6_phtx__ip6_icmp6_echo_request(self):
-        """Test sending IPv6/ICMPv6 Echo request packet"""
-
+        """
+        Test sending the IPv6/ICMPv6 'Echo Request' packet.
+        """
         tx_status = self.packet_handler._phtx_icmp6(
             ip6_src=self.mns.stack_ip6_host.address,
             ip6_dst=self.mns.host_a_ip6_address,
@@ -91,7 +100,9 @@ class TestIcmp6Phtx(TestCase):
         self.assertEqual(self.frame_tx[: len(frame_tx)], frame_tx)
 
     def test_icmp6_phtx__ip6_icmp6_echo_reply(self):
-        """Test sending IPv6/ICMPv6 Echo reply packet"""
+        """
+        Test sending the IPv6/ICMPv6 'Echo Reply' packet.
+        """
 
         tx_status = self.packet_handler._phtx_icmp6(
             ip6_src=self.mns.stack_ip6_host.address,
@@ -120,8 +131,9 @@ class TestIcmp6Phtx(TestCase):
         self.assertEqual(self.frame_tx[: len(frame_tx)], frame_tx)
 
     def test_icmp6_phtx__ip6_icmp6_unreachable_port(self):
-        """Test sending IPv6/ICMPv6 unreachable port packet"""
-
+        """
+        Test sending the IPv6/ICMPv6 'Unreachable Port' packet.
+        """
         tx_status = self.packet_handler._phtx_icmp6(
             ip6_src=self.mns.stack_ip6_host.address,
             ip6_dst=self.mns.host_a_ip6_address,
@@ -148,8 +160,9 @@ class TestIcmp6Phtx(TestCase):
         self.assertEqual(self.frame_tx[: len(frame_tx)], frame_tx)
 
     def test_icmp6_phtx__ip6_icmp6_nd_router_solicitation(self):
-        """Test sending IPv6/ICMPv6 ND Router Solicitation packet"""
-
+        """
+        Test sending the IPv6/ICMPv6 'ND Router Solicitation' packet.
+        """
         tx_status = self.packet_handler._phtx_icmp6(
             ip6_src=self.mns.stack_ip6_host.address,
             ip6_dst=self.mns.ip6_multicast_all_routers,
@@ -171,13 +184,14 @@ class TestIcmp6Phtx(TestCase):
                 ether__dst_unspec__ip6_lookup__multicast__send=1,
             ),
         )
-        with open(TEST_FRAME_DIR + "ip6_icmp6_nd_router_solicitation.tx", "rb") as _:
+        with open(
+            TEST_FRAME_DIR + "ip6_icmp6_nd_router_solicitation.tx", "rb"
+        ) as _:
             frame_tx = _.read()
         self.assertEqual(self.frame_tx[: len(frame_tx)], frame_tx)
 
 
-# TODO: ND Router Advertisement test needed
-
-# TODO: ND Neighbor Solicitation test needed (also need to test the variant used by DAD with :: src address and no options)
-
-# TODO: ND Neighbor Advertisement test needed
+# TODO: ND Router Advertisement test needed.
+# TODO: ND Neighbor Solicitation test needed (also need to test the variant
+# TODO: used by DAD with :: src address and no options).
+# TODO: ND Neighbor Advertisement test needed.

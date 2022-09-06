@@ -3,7 +3,7 @@
 ############################################################################
 #                                                                          #
 #  PyTCP - Python TCP/IP stack                                             #
-#  Copyright (C) 2020-2021  Sebastian Majewski                             #
+#  Copyright (C) 2020-present Sebastian Majewski                           #
 #                                                                          #
 #  This program is free software: you can redistribute it and/or modify    #
 #  it under the terms of the GNU General Public License as published by    #
@@ -27,6 +27,8 @@
 #
 # protocols/icmp4/fpa.py - Fast Packet Assembler support class for ICMPv4 protocol
 #
+# ver 2.7
+#
 
 
 from __future__ import annotations
@@ -48,7 +50,9 @@ from protocols.ip4.ps import IP4_PROTO_ICMP4
 
 
 class Icmp4Assembler:
-    """ICMPv4 packet assembler support class"""
+    """
+    ICMPv4 packet assembler support class.
+    """
 
     ip4_proto = IP4_PROTO_ICMP4
 
@@ -79,7 +83,10 @@ class Icmp4Assembler:
             self._ec_data = b"" if ec_data is None else ec_data
             return
 
-        if self._type == ICMP4_UNREACHABLE and self._code == ICMP4_UNREACHABLE__PORT:
+        if (
+            self._type == ICMP4_UNREACHABLE
+            and self._code == ICMP4_UNREACHABLE__PORT
+        ):
             self._un_data = b"" if un_data is None else un_data[:520]
             return
 
@@ -92,12 +99,17 @@ class Icmp4Assembler:
         assert False, "Unknown ICMPv4 Type/Code"
 
     def __len__(self) -> int:
-        """Length of the packet"""
+        """
+        Length of the packet.
+        """
 
         if self._type == ICMP4_ECHO_REPLY:
             return ICMP4_ECHO_REPLY_LEN + len(self._ec_data)
 
-        if self._type == ICMP4_UNREACHABLE and self._code == ICMP4_UNREACHABLE__PORT:
+        if (
+            self._type == ICMP4_UNREACHABLE
+            and self._code == ICMP4_UNREACHABLE__PORT
+        ):
             return ICMP4_UNREACHABLE_LEN + len(self._un_data)
 
         if self._type == ICMP4_ECHO_REQUEST:
@@ -106,42 +118,88 @@ class Icmp4Assembler:
         assert False, "Unknown ICMPv4 Type/Code"
 
     def __str__(self) -> str:
-        """Packet log string"""
+        """
+        Packet log string.
+        """
 
         header = f"ICMPv4 {self._type}/{self._code}"
 
         if self._type == ICMP4_ECHO_REPLY and self._code == 0:
-            return f"{header} (echo_reply), id {self._ec_id}, seq {self._ec_seq}, dlen {len(self._ec_data)}"
+            return (
+                f"{header} (echo_reply), id {self._ec_id}, "
+                f"seq {self._ec_seq}, dlen {len(self._ec_data)}"
+            )
 
-        if self._type == ICMP4_UNREACHABLE and self._code == ICMP4_UNREACHABLE__PORT:
+        if (
+            self._type == ICMP4_UNREACHABLE
+            and self._code == ICMP4_UNREACHABLE__PORT
+        ):
             return f"{header} (unreachable_port), dlen {len(self._un_data)}"
 
         if self._type == ICMP4_ECHO_REQUEST and self._code == 0:
-            return f"{header} (echo_request), id {self._ec_id}, seq {self._ec_seq}, dlen {len(self._ec_data)}"
+            return (
+                f"{header} (echo_request), id {self._ec_id}, "
+                f"seq {self._ec_seq}, dlen {len(self._ec_data)}"
+            )
 
         assert False, "Unknown ICMPv4 Type/Code"
 
     @property
     def tracker(self) -> Tracker:
-        """Getter for _tracker"""
-
+        """
+        Getter for the '_tracker' attribute.
+        """
         return self._tracker
 
     def assemble(self, frame: memoryview, _: int = 0) -> None:
-        """Assemble packet into the raw form"""
+        """
+        Assemble packet into the raw form.
+        """
 
         if self._type == ICMP4_ECHO_REPLY and self._code == 0:
-            struct.pack_into(f"! BBH HH {len(self._ec_data)}s", frame, 0, self._type, self._code, 0, self._ec_id, self._ec_seq, bytes(self._ec_data))
+            struct.pack_into(
+                f"! BBH HH {len(self._ec_data)}s",
+                frame,
+                0,
+                self._type,
+                self._code,
+                0,
+                self._ec_id,
+                self._ec_seq,
+                bytes(self._ec_data),
+            )
             struct.pack_into("! H", frame, 2, inet_cksum(frame))
             return
 
-        if self._type == ICMP4_UNREACHABLE and self._code == ICMP4_UNREACHABLE__PORT:
-            struct.pack_into(f"! BBH L {len(self._un_data)}s", frame, 0, self._type, self._code, 0, 0, bytes(self._un_data))
+        if (
+            self._type == ICMP4_UNREACHABLE
+            and self._code == ICMP4_UNREACHABLE__PORT
+        ):
+            struct.pack_into(
+                f"! BBH L {len(self._un_data)}s",
+                frame,
+                0,
+                self._type,
+                self._code,
+                0,
+                0,
+                bytes(self._un_data),
+            )
             struct.pack_into("! H", frame, 2, inet_cksum(frame))
             return
 
         if self._type == ICMP4_ECHO_REQUEST and self._code == 0:
-            struct.pack_into(f"! BBH HH {len(self._ec_data)}s", frame, 0, self._type, self._code, 0, self._ec_id, self._ec_seq, bytes(self._ec_data))
+            struct.pack_into(
+                f"! BBH HH {len(self._ec_data)}s",
+                frame,
+                0,
+                self._type,
+                self._code,
+                0,
+                self._ec_id,
+                self._ec_seq,
+                bytes(self._ec_data),
+            )
             struct.pack_into("! H", frame, 2, inet_cksum(frame))
             return
 

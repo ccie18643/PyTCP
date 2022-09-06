@@ -3,7 +3,7 @@
 ############################################################################
 #                                                                          #
 #  PyTCP - Python TCP/IP stack                                             #
-#  Copyright (C) 2020-2021  Sebastian Majewski                             #
+#  Copyright (C) 2020-present Sebastian Majewski                           #
 #                                                                          #
 #  This program is free software: you can redistribute it and/or modify    #
 #  it under the terms of the GNU General Public License as published by    #
@@ -26,6 +26,8 @@
 
 #
 # protocols/icmp4/phtx.py - packet handler for outbound ICMPv4 packets
+#
+# ver 2.7
 #
 
 
@@ -61,7 +63,9 @@ def _phtx_icmp4(
     icmp4_un_data: bytes | None = None,
     echo_tracker: Tracker | None = None,
 ) -> TxStatus:
-    """Handle outbound ICMPv4 packets"""
+    """
+    Handle outbound ICMPv4 packets.
+    """
 
     self.packet_stats_tx.icmp4__pre_assemble += 1
 
@@ -80,16 +84,26 @@ def _phtx_icmp4(
 
     if icmp4_type == ICMP4_ECHO_REPLY and icmp4_code == 0:
         self.packet_stats_tx.icmp4__echo_reply__send += 1
-        return self._phtx_ip4(ip4_src=ip4_src, ip4_dst=ip4_dst, carried_packet=icmp4_packet_tx)
+        return self._phtx_ip4(
+            ip4_src=ip4_src, ip4_dst=ip4_dst, carried_packet=icmp4_packet_tx
+        )
 
     if icmp4_type == ICMP4_ECHO_REQUEST and icmp4_code == 0:
         self.packet_stats_tx.icmp4__echo_request__send += 1
-        return self._phtx_ip4(ip4_src=ip4_src, ip4_dst=ip4_dst, carried_packet=icmp4_packet_tx)
+        return self._phtx_ip4(
+            ip4_src=ip4_src, ip4_dst=ip4_dst, carried_packet=icmp4_packet_tx
+        )
 
-    if icmp4_type == ICMP4_UNREACHABLE and icmp4_code == ICMP4_UNREACHABLE__PORT:
+    if (
+        icmp4_type == ICMP4_UNREACHABLE
+        and icmp4_code == ICMP4_UNREACHABLE__PORT
+    ):
         self.packet_stats_tx.icmp4__unreachable_port__send += 1
-        return self._phtx_ip4(ip4_src=ip4_src, ip4_dst=ip4_dst, carried_packet=icmp4_packet_tx)
+        return self._phtx_ip4(
+            ip4_src=ip4_src, ip4_dst=ip4_dst, carried_packet=icmp4_packet_tx
+        )
 
-    # This code will never be executed in debug mode due to assertions present in Packet Assembler
+    # This code will never be executed in debug mode due to assertions present
+    # in Packet Assembler
     self.packet_stats_tx.icmp4__unknown__drop += 1
     return TxStatus.DROPED__ICMP4__UNKNOWN

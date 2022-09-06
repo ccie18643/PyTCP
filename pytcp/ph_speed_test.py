@@ -3,7 +3,7 @@
 ############################################################################
 #                                                                          #
 #  PyTCP - Python TCP/IP stack                                             #
-#  Copyright (C) 2020-2021  Sebastian Majewski                             #
+#  Copyright (C) 2020-present Sebastian Majewski                           #
 #                                                                          #
 #  This program is free software: you can redistribute it and/or modify    #
 #  it under the terms of the GNU General Public License as published by    #
@@ -27,6 +27,8 @@
 #
 # ph_speed_test.py - test measuring the speed of FPP and FPA
 #
+# ver 2.7
+#
 
 
 from __future__ import annotations
@@ -41,22 +43,38 @@ from misc.ph import PacketHandler
 
 
 class ArpCache:
-    """Mock class"""
+    """
+    Mock class.
+    """
 
     def __init__(self):
+        """
+        Class constructor.
+        """
         self._response = MacAddress("52:54:00:df:85:37")
 
     def find_entry(self, _):
+        """
+        Return the predefined MAC Address entry.
+        """
         return self._response
 
 
 class NdCache:
-    """Mock class"""
+    """
+    Mock class.
+    """
 
     def __init__(self):
+        """
+        Class constructor.
+        """
         self._response = MacAddress("52:54:00:df:85:37")
 
     def find_entry(self, _):
+        """
+        Return the predefined MAC Address entry.
+        """
         return self._response
 
 
@@ -64,16 +82,26 @@ class TxRing:
     """Mock class"""
 
     def __init__(self):
+        """
+        Class constructor.
+        """
         self.packet_count = 0
         self.frame = memoryview(bytearray(2048))
 
     def enqueue(self, packet_rx):
+        """
+        Assemble packed and update packet counter.
+        """
         packet_rx.assemble(self.frame)
         self.packet_count += 1
         return None
 
 
 def main():
+    """
+    Main program function.
+    """
+
     with open("tests/ping4.frame_rx", "rb") as f:
         frame_rx = f.read()
 
@@ -99,7 +127,10 @@ def main():
     start_time = time.time()
     for _ in range(10000):
         packet_handler._phrx_ether(PacketRx(frame_rx))
-    print(f"{packet_handler.tx_ring.packet_count} packets, {time.time() - start_time:.03f}s")
+    print(
+        f"{packet_handler.tx_ring.packet_count} packets, "
+        f"{time.time() - start_time:.03f}s"
+    )
 
 
 if __name__ == "__main__":

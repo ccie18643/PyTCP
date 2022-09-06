@@ -4,7 +4,7 @@
 ############################################################################
 #                                                                          #
 #  PyTCP - Python TCP/IP stack                                             #
-#  Copyright (C) 2020-2021  Sebastian Majewski                             #
+#  Copyright (C) 2020-present Sebastian Majewski                           #
 #                                                                          #
 #  This program is free software: you can redistribute it and/or modify    #
 #  it under the terms of the GNU General Public License as published by    #
@@ -28,6 +28,8 @@
 #
 # tests/ip6_phtx.py -  tests specific for IPv6 phtx module
 #
+# ver 2.7
+#
 
 
 from protocols.raw.fpa import RawAssembler
@@ -45,9 +47,15 @@ TEST_FRAME_DIR = "tests/test_frames/ip6_phtx/"
 
 
 class TestIp6Phtx(TestCase):
-    def setUp(self):
-        super().setUp()
+    """
+    IPv6 packet handler TX unit test class.
+    """
 
+    def setUp(self):
+        """
+        Setup tests.
+        """
+        super().setUp()
         self.mns = MockNetworkSettings()
         patch_config(self)
         setup_mock_packet_handler(self)
@@ -55,8 +63,10 @@ class TestIp6Phtx(TestCase):
     # Test name format: 'test_name__test_description__optional_condition'
 
     def test_ip6_phtx__ip6_to_unicast_address_on_local_network__src_valid(self):
-        """Test sending IPv6 packet to unicast address on local network / valid source"""
-
+        """
+        Test sending IPv6 packet to unicast address on local network,
+        valid source.
+        """
         tx_status = self.packet_handler._phtx_ip6(
             ip6_src=self.mns.stack_ip6_host.address,
             ip6_dst=self.mns.host_a_ip6_address,
@@ -73,13 +83,21 @@ class TestIp6Phtx(TestCase):
                 ether__dst_unspec__ip6_lookup__locnet__nd_cache_hit__send=1,
             ),
         )
-        with open(TEST_FRAME_DIR + "ip6_to_unicast_address_on_local_network__src_valid.tx", "rb") as _:
+        with open(
+            TEST_FRAME_DIR
+            + "ip6_to_unicast_address_on_local_network__src_valid.tx",
+            "rb",
+        ) as _:
             frame_tx = _.read()
         self.assertEqual(self.frame_tx[: len(frame_tx)], frame_tx)
 
-    def test_ip6_phtx__ip6_to_unicast_address_on_local_network__src_not_owned_drop(self):
-        """Test sending IPv6 packet to unicast address on local network / src not owned"""
-
+    def test_ip6_phtx__ip6_to_unicast_address_on_local_network__src_not_owned_drop(
+        self,
+    ):
+        """
+        Test sending IPv6 packet to unicast address on local network,
+        src not owned.
+        """
         tx_status = self.packet_handler._phtx_ip6(
             ip6_src=self.mns.host_b_ip6_address,
             ip6_dst=self.mns.host_a_ip6_address,
@@ -93,9 +111,13 @@ class TestIp6Phtx(TestCase):
             ),
         )
 
-    def test_ip6_phtx__ip6_to_unicast_address_on_local_network__src_multicast_replace(self):
-        """Test sending IPv6 packet to unicast address on local network / multicast source, able to replace"""
-
+    def test_ip6_phtx__ip6_to_unicast_address_on_local_network__src_multicast_replace(
+        self,
+    ):
+        """
+        Test sending IPv6 packet to unicast address on local network,
+        multicast source, able to replace.
+        """
         tx_status = self.packet_handler._phtx_ip6(
             ip6_src=self.mns.ip6_multicast_all_nodes,
             ip6_dst=self.mns.host_a_ip6_address,
@@ -113,13 +135,21 @@ class TestIp6Phtx(TestCase):
                 ether__dst_unspec__ip6_lookup__locnet__nd_cache_hit__send=1,
             ),
         )
-        with open(TEST_FRAME_DIR + "ip6_to_unicast_address_on_local_network__src_multicast_replace.tx", "rb") as _:
+        with open(
+            TEST_FRAME_DIR
+            + "ip6_to_unicast_address_on_local_network__src_multicast_replace.tx",
+            "rb",
+        ) as _:
             frame_tx = _.read()
         self.assertEqual(self.frame_tx[: len(frame_tx)], frame_tx)
 
-    def test_ip6_phtx__ip6_to_unicast_address_on_local_network__src_multicast_drop(self):
-        """Test sending IPv6 packet to unicast address on local network / multicast source, not able to replace"""
-
+    def test_ip6_phtx__ip6_to_unicast_address_on_local_network__src_multicast_drop(
+        self,
+    ):
+        """
+        Test sending IPv6 packet to unicast address on local network,
+        multicast source, not able to replace.
+        """
         self.packet_handler.ip6_host = []
 
         tx_status = self.packet_handler._phtx_ip6(
@@ -135,9 +165,13 @@ class TestIp6Phtx(TestCase):
             ),
         )
 
-    def test_ip6_phtx__ip6_to_unicast_address_on_local_network__src_unspecified_replace_local(self):
-        """Test sending IPv6 packet to unicast address on local network / uspecified source, able to replace"""
-
+    def test_ip6_phtx__ip6_to_unicast_address_on_local_network__src_unspecified_replace_local(
+        self,
+    ):
+        """
+        Test sending IPv6 packet to unicast address on local network,
+        uspecified source, able to replace.
+        """
         tx_status = self.packet_handler._phtx_ip6(
             ip6_src=self.mns.ip6_unspecified,
             ip6_dst=self.mns.host_a_ip6_address,
@@ -155,13 +189,21 @@ class TestIp6Phtx(TestCase):
                 ether__dst_unspec__ip6_lookup__locnet__nd_cache_hit__send=1,
             ),
         )
-        with open(TEST_FRAME_DIR + "ip6_to_unicast_address_on_local_network__src_unspecified_replace_local.tx", "rb") as _:
+        with open(
+            TEST_FRAME_DIR
+            + "ip6_to_unicast_address_on_local_network__src_unspecified_replace_local.tx",
+            "rb",
+        ) as _:
             frame_tx = _.read()
         self.assertEqual(self.frame_tx[: len(frame_tx)], frame_tx)
 
-    def test_ip6_phtx__ip6_to_unicast_address_on_local_network__src_unspecified_replace_external(self):
-        """Test sending IPv6 packet to unicast address on local network / uspecified source, able to replace with ip from subnet with gateway"""
-
+    def test_ip6_phtx__ip6_to_unicast_address_on_local_network__src_unspecified_replace_external(
+        self,
+    ):
+        """
+        Test sending IPv6 packet to unicast address on local network,
+        uspecified source, able to replace with ip from subnet with gateway.
+        """
         tx_status = self.packet_handler._phtx_ip6(
             ip6_src=self.mns.ip6_unspecified,
             ip6_dst=self.mns.host_c_ip6_address,
@@ -179,15 +221,22 @@ class TestIp6Phtx(TestCase):
                 ether__dst_unspec__ip6_lookup__extnet__gw_nd_cache_hit__send=1,
             ),
         )
-        with open(TEST_FRAME_DIR + "ip6_to_unicast_address_on_local_network__src_unspecified_replace_external.tx", "rb") as _:
+        with open(
+            TEST_FRAME_DIR
+            + "ip6_to_unicast_address_on_local_network__src_unspecified_replace_external.tx",
+            "rb",
+        ) as _:
             frame_tx = _.read()
         self.assertEqual(self.frame_tx[: len(frame_tx)], frame_tx)
 
-    def test_ip6_phtx__ip6_to_unicast_address_on_local_network__src_unspecified_drop(self):
-        """Test sending IPv6 packet to unicast address on local network / uspecified source, not able to replace"""
-
+    def test_ip6_phtx__ip6_to_unicast_address_on_local_network__src_unspecified_drop(
+        self,
+    ):
+        """
+        Test sending IPv6 packet to unicast address on local network,
+        uspecified source, not able to replace.
+        """
         self.mns.stack_ip6_host.gateway = None
-
         tx_status = self.packet_handler._phtx_ip6(
             ip6_src=self.mns.ip6_unspecified,
             ip6_dst=self.mns.host_c_ip6_address,
@@ -202,10 +251,10 @@ class TestIp6Phtx(TestCase):
         )
 
     def test_ip6_phtx__ip6_to_unspecified_address__dst_unspecified_drop(self):
-        """Test sending IPv6 packet to unspecified address"""
-
+        """
+        Test sending IPv6 packet to unspecified address.
+        """
         self.mns.stack_ip6_host.gateway = None
-
         tx_status = self.packet_handler._phtx_ip6(
             ip6_src=self.mns.stack_ip6_host.address,
             ip6_dst=self.mns.ip6_unspecified,
@@ -220,12 +269,14 @@ class TestIp6Phtx(TestCase):
         )
 
     def test_ip6_phtx__ip6_fragmentation(self):
-        """Test sending IPv6 packet large enough to require fragmentation"""
-
+        """
+        Test sending IPv6 packet large enough to require fragmentation.
+        """
         self.mns.stack_ip4_host.gateway = None
-
         tx_status = self.packet_handler._phtx_ip6(
-            ip6_src=self.mns.stack_ip6_host.address, ip6_dst=self.mns.host_a_ip6_address, carried_packet=RawAssembler(data=b"01234567890ABCDEF" * 400)
+            ip6_src=self.mns.stack_ip6_host.address,
+            ip6_dst=self.mns.host_a_ip6_address,
+            carried_packet=RawAssembler(data=b"01234567890ABCDEF" * 400),
         )
         self.assertEqual(tx_status, TxStatus.PASSED__ETHER__TO_TX_RING)
         self.assertEqual(
@@ -243,6 +294,9 @@ class TestIp6Phtx(TestCase):
             ),
         )
         for index in range(5):
-            with open(f"tests/test_frames/ip6_phtx/ip6_fragmentation__frag_{index}.tx", "rb") as _:
+            with open(
+                f"tests/test_frames/ip6_phtx/ip6_fragmentation__frag_{index}.tx",
+                "rb",
+            ) as _:
                 frame_tx = _.read()
             self.assertEqual(self.frames_tx[index][: len(frame_tx)], frame_tx)

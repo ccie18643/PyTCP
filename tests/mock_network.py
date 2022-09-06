@@ -4,7 +4,7 @@
 ############################################################################
 #                                                                          #
 #  PyTCP - Python TCP/IP stack                                             #
-#  Copyright (C) 2020-2021  Sebastian Majewski                             #
+#  Copyright (C) 2020-present Sebastian Majewski                           #
 #                                                                          #
 #  This program is free software: you can redistribute it and/or modify    #
 #  it under the terms of the GNU General Public License as published by    #
@@ -27,6 +27,8 @@
 
 #
 # tests/mock_network.py - module used to mock network for packet flow tests
+#
+# ver 2.7
 #
 
 
@@ -53,9 +55,15 @@ from pytcp.subsystems.tx_ring import TxRing
 
 
 class MockNetworkSettings:
-    """Mock network setting to mimic the above network"""
+    """
+    Mock network setting to mimic the above network.
+    """
 
     def __init__(self):
+        """
+        Mock class constructor.
+        """
+
         self.stack_mac_address = MacAddress("02:00:00:00:00:07")
         self.stack_ip4_host = Ip4Host("10.0.1.7/24")
         self.stack_ip4_gateway = Ip4Address("10.0.1.1")
@@ -121,8 +129,9 @@ CONFIG_PATCHES = {
 
 
 def patch_config(self, *, enable_log=False):
-    """Patch critical config setting for all packet handler modules"""
-
+    """
+    Patch critical config setting for all packet handler modules.
+    """
     for module in PACKET_HANDLER_MODULES:
         for variable, value in CONFIG_PATCHES.items():
             if enable_log and variable == "LOG_CHANEL":
@@ -147,29 +156,68 @@ def patch_config(self, *, enable_log=False):
 
 
 def setup_mock_packet_handler(self):
-    """Prepare packet handler so it can pass packets without need of being physically connected to the network"""
+    """
+    Prepare packet handler so it can pass packets without need of being
+    physically connected to the network.
+    """
 
-    self.arp_cache_mock = StrictMock(ArpCache)
-    self.nd_cache_mock = StrictMock(NdCache)
-    self.tx_ring_mock = StrictMock(TxRing)
+    self.arp_cache_mock = StrictMock(template=ArpCache)
+    self.mock_callable(
+        target=self.arp_cache_mock,
+        method="find_entry",
+    ).for_call(self.mns.host_a_ip4_address).to_return_value(
+        self.mns.host_a_mac_address
+    )
+    self.mock_callable(
+        target=self.arp_cache_mock,
+        method="find_entry",
+    ).for_call(self.mns.host_b_ip4_address).to_return_value(None)
+    self.mock_callable(
+        target=self.arp_cache_mock,
+        method="find_entry",
+    ).for_call(self.mns.stack_ip4_gateway).to_return_value(
+        self.mns.stack_ip4_gateway_mac_address
+    )
 
-    self.mock_callable(self.arp_cache_mock, "find_entry").for_call(self.mns.host_a_ip4_address).to_return_value(self.mns.host_a_mac_address)
-    self.mock_callable(self.arp_cache_mock, "find_entry").for_call(self.mns.host_b_ip4_address).to_return_value(None)
-    self.mock_callable(self.arp_cache_mock, "find_entry").for_call(self.mns.stack_ip4_gateway).to_return_value(self.mns.stack_ip4_gateway_mac_address)
-    self.mock_callable(self.nd_cache_mock, "find_entry").for_call(self.mns.host_a_ip6_address).to_return_value(self.mns.host_a_mac_address)
-    self.mock_callable(self.nd_cache_mock, "find_entry").for_call(self.mns.host_b_ip6_address).to_return_value(None)
-    self.mock_callable(self.nd_cache_mock, "find_entry").for_call(self.mns.stack_ip6_gateway).to_return_value(self.mns.stack_ip6_gateway_mac_address)
-    self.mock_callable(self.tx_ring_mock, "enqueue").with_implementation(
-        lambda packet_tx: packet_tx.assemble(self.frame_tx) or self.frames_tx.append(self.frame_tx)
+    self.nd_cache_mock = StrictMock(template=NdCache)
+    self.mock_callable(
+        target=self.nd_cache_mock,
+        method="find_entry",
+    ).for_call(self.mns.host_a_ip6_address).to_return_value(
+        self.mns.host_a_mac_address
+    )
+    self.mock_callable(
+        target=self.nd_cache_mock,
+        method="find_entry",
+    ).for_call(self.mns.host_b_ip6_address).to_return_value(None)
+    self.mock_callable(
+        target=self.nd_cache_mock,
+        method="find_entry",
+    ).for_call(self.mns.stack_ip6_gateway).to_return_value(
+        self.mns.stack_ip6_gateway_mac_address
+    )
+
+    self.tx_ring_mock = StrictMock(template=TxRing)
+    self.mock_callable(
+        target=self.tx_ring_mock,
+        method="enqueue",
+    ).with_implementation(
+        func=lambda packet_tx: packet_tx.assemble(self.frame_tx)
+        or self.frames_tx.append(self.frame_tx)
     )
 
     self.packet_handler = PacketHandler(None)
     self.packet_handler.mac_unicast = self.mns.stack_mac_address
-    self.packet_handler.mac_multicast = [self.mns.stack_ip6_host.address.solicited_node_multicast.multicast_mac]
+    self.packet_handler.mac_multicast = [
+        self.mns.stack_ip6_host.address.solicited_node_multicast.multicast_mac
+    ]
     self.packet_handler.ip4_host = [self.mns.stack_ip4_host]
     self.packet_handler.ip4_multicast = [self.mns.ip4_multicast_all_nodes]
     self.packet_handler.ip6_host = [self.mns.stack_ip6_host]
-    self.packet_handler.ip6_multicast = [self.mns.ip6_multicast_all_nodes, self.mns.stack_ip6_host.address.solicited_node_multicast]
+    self.packet_handler.ip6_multicast = [
+        self.mns.ip6_multicast_all_nodes,
+        self.mns.stack_ip6_host.address.solicited_node_multicast,
+    ]
     self.packet_handler.arp_cache = self.arp_cache_mock
     self.packet_handler.nd_cache = self.nd_cache_mock
     self.packet_handler.tx_ring = self.tx_ring_mock

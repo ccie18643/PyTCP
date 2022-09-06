@@ -3,7 +3,7 @@
 ############################################################################
 #                                                                          #
 #  PyTCP - Python TCP/IP stack                                             #
-#  Copyright (C) 2020-2021  Sebastian Majewski                             #
+#  Copyright (C) 2020-present Sebastian Majewski                           #
 #                                                                          #
 #  This program is free software: you can redistribute it and/or modify    #
 #  it under the terms of the GNU General Public License as published by    #
@@ -26,6 +26,8 @@
 
 #
 # protocols/ip6/fpa.py - Fast Packet Assembler support class for IPv6 protocol
+#
+# ver 2.7
 #
 
 
@@ -57,7 +59,9 @@ if TYPE_CHECKING:
 
 
 class Ip6Assembler:
-    """IPv6 packet assembler support class"""
+    """
+    IPv6 packet assembler support class.
+    """
 
     ether_type = ETHER_TYPE_IP6
 
@@ -70,9 +74,15 @@ class Ip6Assembler:
         dscp: int = 0,
         ecn: int = 0,
         flow: int = 0,
-        carried_packet: Ip6ExtFragAssembler | Icmp6Assembler | TcpAssembler | UdpAssembler | RawAssembler = RawAssembler(),
+        carried_packet: Ip6ExtFragAssembler
+        | Icmp6Assembler
+        | TcpAssembler
+        | UdpAssembler
+        | RawAssembler = RawAssembler(),
     ) -> None:
-        """Class constructor"""
+        """
+        Class constructor.
+        """
 
         assert 0 <= hop <= 0xFF
         assert 0 <= dscp <= 0x3F
@@ -86,7 +96,9 @@ class Ip6Assembler:
             IP6_NEXT_RAW,
         }
 
-        self._carried_packet: Ip6ExtFragAssembler | Icmp6Assembler | TcpAssembler | UdpAssembler | RawAssembler = carried_packet
+        self._carried_packet: Ip6ExtFragAssembler | Icmp6Assembler | TcpAssembler | UdpAssembler | RawAssembler = (
+            carried_packet
+        )
         self._tracker: Tracker = self._carried_packet.tracker
         self._ver: int = 6
         self._dscp: int = dscp
@@ -99,64 +111,87 @@ class Ip6Assembler:
         self._dlen: int = len(carried_packet)
 
     def __len__(self) -> int:
-        """Length of the packet"""
+        """
+        Length of the packet.
+        """
 
         return IP6_HEADER_LEN + len(self._carried_packet)
 
     def __str__(self) -> str:
-        """Packet log string"""
+        """
+        Packet log string.
+        """
 
         return (
-            f"IPv6 {self._src} > {self._dst}, next {self._next} ({IP6_NEXT_TABLE.get(self._next, '???')}), flow {self._flow}"
-            + f", dlen {self._dlen}, hop {self._hop}"
+            f"IPv6 {self._src} > {self._dst}, next {self._next} "
+            f"({IP6_NEXT_TABLE.get(self._next, '???')}), flow {self._flow}, "
+            f"dlen {self._dlen}, hop {self._hop}"
         )
 
     @property
     def tracker(self) -> Tracker:
-        """Getter for _tracker"""
-
+        """
+        Getter for the '_tracker' attribute."""
         return self._tracker
 
     @property
     def dst(self) -> Ip6Address:
-        """Getter for _dst"""
-
+        """
+        Getter for the '_dst' attribute.
+        """
         return self._dst
 
     @property
     def src(self) -> Ip6Address:
-        """Getter for _src"""
-
+        """
+        Getter for the '_src' attribute.
+        """
         return self._src
 
     @property
     def dlen(self) -> int:
-        """Getter for _dlen"""
-
+        """
+        Getter for the '_dlen' attribute.
+        """
         return self._dlen
 
     @property
     def next(self) -> int:
-        """Getter for _next"""
-
+        """
+        Getter for the '_next' attribute.
+        """
         return self._next
 
     @property
     def pshdr_sum(self) -> int:
-        """Returns IPv6 pseudo header that is used by TCP, UDP and ICMPv6 to compute their checksums"""
-
-        pseudo_header = struct.pack("! 16s 16s L BBBB", bytes(self._src), bytes(self._dst), self._dlen, 0, 0, 0, self._next)
+        """
+        Returns IPv6 pseudo header that is used by TCP, UDP and ICMPv6
+        to compute their checksums.
+        """
+        pseudo_header = struct.pack(
+            "! 16s 16s L BBBB",
+            bytes(self._src),
+            bytes(self._dst),
+            self._dlen,
+            0,
+            0,
+            0,
+            self._next,
+        )
         return sum(struct.unpack("! 5Q", pseudo_header))
 
     def assemble(self, frame: memoryview) -> None:
-        """Assemble packet into the raw form"""
-
+        """
+        Assemble packet into the raw form.
+        """
         struct.pack_into(
             "! BBBB HBB 16s 16s",
             frame,
             0,
             self._ver << 4 | self._dscp >> 4,
-            self._dscp & 0b00000011 << 6 | self._ecn << 4 | ((self._flow & 0b000011110000000000000000) >> 16),
+            self._dscp & 0b00000011 << 6
+            | self._ecn << 4
+            | ((self._flow & 0b000011110000000000000000) >> 16),
             (self._flow & 0b000000001111111100000000) >> 8,
             self._flow & 0b000000000000000011111111,
             self._dlen,
@@ -165,5 +200,4 @@ class Ip6Assembler:
             bytes(self._src),
             bytes(self._dst),
         )
-
         self._carried_packet.assemble(frame[IP6_HEADER_LEN:], self.pshdr_sum)

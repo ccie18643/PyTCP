@@ -3,7 +3,7 @@
 ############################################################################
 #                                                                          #
 #  PyTCP - Python TCP/IP stack                                             #
-#  Copyright (C) 2020-2021  Sebastian Majewski                             #
+#  Copyright (C) 2020-present Sebastian Majewski                           #
 #                                                                          #
 #  This program is free software: you can redistribute it and/or modify    #
 #  it under the terms of the GNU General Public License as published by    #
@@ -25,7 +25,10 @@
 
 
 #
-# subsystems/timer.py - module contains class supporting timer that can be used by other stack components
+# subsystems/timer.py - module contains class supporting timer that can be
+# used by other stack components
+#
+# ver 2.7
 #
 
 
@@ -40,7 +43,9 @@ from lib.logger import log
 
 
 class TimerTask:
-    """Timer task support class"""
+    """
+    Timer task support class.
+    """
 
     def __init__(
         self,
@@ -52,8 +57,10 @@ class TimerTask:
         repeat_count: int,
         stop_condition: Callable | None,
     ) -> None:
-        """Class constructor, repeat_count = -1 means infinite, delay_exp means to raise delay time exponentially after each method execution"""
-
+        """
+        Class constructor, repeat_count = -1 means infinite, delay_exp means
+        to raise delay time exponentially after each method execution.
+        """
         self._method: Callable = method
         self._args: list[Any] = args
         self._kwargs: dict[str, Any] = kwargs
@@ -66,12 +73,15 @@ class TimerTask:
 
     @property
     def remaining_delay(self) -> int:
-        """Geter for _remaining_delay"""
-
+        """
+        Geter for the '_remaining_delay' attribute.
+        """
         return self._remaining_delay
 
     def tick(self) -> None:
-        """Tick input from timer"""
+        """
+        Tick input from timer.
+        """
 
         self._remaining_delay -= 1
 
@@ -85,17 +95,25 @@ class TimerTask:
         self._method(*self._args, **self._kwargs)
 
         if self._repeat_count:
-            self._remaining_delay = self._delay * (1 << self._delay_exp_factor) if self._delay_exp else self._delay
+            self._remaining_delay = (
+                self._delay * (1 << self._delay_exp_factor)
+                if self._delay_exp
+                else self._delay
+            )
             self._delay_exp_factor += 1
             if self._repeat_count > 0:
                 self._repeat_count -= 1
 
 
 class Timer:
-    """Support for stack timer"""
+    """
+    Support for stack timer.
+    """
 
     def __init__(self) -> None:
-        """Class constructor"""
+        """
+        Class constructor.
+        """
 
         stack.timer = self
 
@@ -109,7 +127,9 @@ class Timer:
             log("timer", "Started timer")
 
     def __thread_timer(self) -> None:
-        """Thread responsible for executing register methods on every timer tick"""
+        """
+        Thread responsible for executing register methods on every timer tick.
+        """
 
         while self._run_timer:
             time.sleep(0.001)
@@ -138,19 +158,31 @@ class Timer:
         repeat_count: int = -1,
         stop_condition: Callable | None = None,
     ) -> None:
-        """Register method to be executed by timer"""
-
-        self._tasks.append(TimerTask(method, [] if args is None else args, {} if kwargs is None else kwargs, delay, delay_exp, repeat_count, stop_condition))
+        """
+        Register method to be executed by timer.
+        """
+        self._tasks.append(
+            TimerTask(
+                method,
+                [] if args is None else args,
+                {} if kwargs is None else kwargs,
+                delay,
+                delay_exp,
+                repeat_count,
+                stop_condition,
+            )
+        )
 
     def register_timer(self, name: str, timeout: int) -> None:
-        """Register delay timer"""
-
+        """
+        Register delay timer.
+        """
         self._timers[name] = timeout
 
     def is_expired(self, name: str) -> bool:
-        """Check if timer expired"""
-
+        """
+        Check if timer expired.
+        """
         if __debug__:
             log("timer", f"<r>Active timers: {self._timers}</>")
-
         return not self._timers.get(name, None)
