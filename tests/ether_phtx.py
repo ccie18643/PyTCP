@@ -61,7 +61,6 @@ class TestEtherPhtx(TestCase):
         Test setup.
         """
         super().setUp()
-
         self.mns = MockNetworkSettings()
         patch_config(self)
         setup_mock_packet_handler(self)

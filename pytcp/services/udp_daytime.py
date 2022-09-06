@@ -58,7 +58,6 @@ class ServiceUdpDaytime(ServiceUdp):
         """
         Inbound connection handler.
         """
-
         while True:
             _, remote_address = s.recvfrom()
             message = bytes(str(datetime.now()), "utf-8")

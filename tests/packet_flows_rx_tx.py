@@ -90,7 +90,7 @@ LOCNET_IP4_ADDRESS = Ip4Address("192.168.9.102")
 LOCNET_IP6_ADDRESS = Ip6Address("2603:9000:e307:9f09::1fa1")
 
 
-class TestPacketHandler(TestCase):
+class TestPacketHandlerRxTx(TestCase):
     """
     The RX-TX packet flow integration test class.
     """

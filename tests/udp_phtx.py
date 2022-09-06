@@ -28,6 +28,8 @@
 #
 # tests/udp_phtx.py -  tests specific for UDP phtx module
 #
+# ver 2.7
+#
 
 
 from testslide import TestCase
@@ -44,9 +46,15 @@ TEST_FRAME_DIR = "tests/test_frames/udp_phtx/"
 
 
 class TestUdpPhtx(TestCase):
-    def setUp(self):
-        super().setUp()
+    """
+    UDP packet handler TX unit test class.
+    """
 
+    def setUp(self):
+        """
+        Set up the test environment.
+        """
+        super().setUp()
         self.mns = MockNetworkSettings()
         patch_config(self)
         setup_mock_packet_handler(self)
@@ -54,7 +62,9 @@ class TestUdpPhtx(TestCase):
     # Test name format: 'test_name__test_description__optional_condition'
 
     def test_udp_phtx__ip4_udp_packet(self):
-        """Test sending IPv4/UDP packet with no data"""
+        """
+        Test sending the IPv4/UDP packet with no data.
+        """
 
         tx_status = self.packet_handler._phtx_udp(
             ip_src=self.mns.stack_ip4_host.address,
