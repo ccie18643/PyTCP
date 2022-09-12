@@ -35,15 +35,15 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from lib.logger import log
-from lib.tracker import Tracker
-from protocols.icmp6.fpa import (
+from pytcp.lib.logger import log
+from pytcp.lib.tracker import Tracker
+from pytcp.protocols.icmp6.fpa import (
     Icmp6Assembler,
     Icmp6NdOptPI,
     Icmp6NdOptSLLA,
     Icmp6NdOptTLLA,
 )
-from protocols.icmp6.ps import (
+from pytcp.protocols.icmp6.ps import (
     ICMP6_ECHO_REPLY,
     ICMP6_ECHO_REQUEST,
     ICMP6_MLD2_REPORT,
@@ -56,8 +56,8 @@ from protocols.icmp6.ps import (
 )
 
 if TYPE_CHECKING:
-    from lib.ip6_address import Ip6Address
-    from misc.tx_status import TxStatus
+    from pytcp.lib.ip6_address import Ip6Address
+    from pytcp.misc.tx_status import TxStatus
 
 
 def _phtx_icmp6(

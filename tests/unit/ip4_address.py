@@ -33,7 +33,6 @@
 
 from dataclasses import dataclass
 
-from lib.mac_address import MacAddress
 from testslide import TestCase
 
 from pytcp.lib.ip4_address import (
@@ -46,6 +45,7 @@ from pytcp.lib.ip4_address import (
     Ip4Network,
     Ip4NetworkFormatError,
 )
+from pytcp.lib.mac_address import MacAddress
 
 
 class TestIp4Address(TestCase):

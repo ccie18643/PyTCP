@@ -36,12 +36,12 @@ from __future__ import annotations
 import struct
 from typing import TYPE_CHECKING
 
-import config
-from misc.ip_helper import inet_cksum
-from protocols.udp.ps import UDP_HEADER_LEN
+import pytcp.config as config
+from pytcp.misc.ip_helper import inet_cksum
+from pytcp.protocols.udp.ps import UDP_HEADER_LEN
 
 if TYPE_CHECKING:
-    from misc.packet import PacketRx
+    from pytcp.misc.packet import PacketRx
 
 
 class UdpParser:

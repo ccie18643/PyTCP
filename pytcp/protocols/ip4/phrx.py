@@ -36,12 +36,12 @@ from __future__ import annotations
 import struct
 from time import time
 
-import config
-from lib.logger import log
-from misc.ip_helper import inet_cksum
-from misc.packet import PacketRx
-from protocols.ip4.fpp import Ip4Parser
-from protocols.ip4.ps import (
+import pytcp.config as config
+from pytcp.lib.logger import log
+from pytcp.misc.ip_helper import inet_cksum
+from pytcp.misc.packet import PacketRx
+from pytcp.protocols.ip4.fpp import Ip4Parser
+from pytcp.protocols.ip4.ps import (
     IP4_HEADER_LEN,
     IP4_PROTO_ICMP4,
     IP4_PROTO_TCP,

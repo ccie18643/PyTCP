@@ -42,13 +42,13 @@ from pytcp.protocols.icmp4.ps import (
     ICMP4_UNREACHABLE,
     ICMP4_UNREACHABLE__PORT,
 )
-from tests.mock_network import (
+from tests.unit.mock_network import (
     MockNetworkSettings,
     patch_config,
     setup_mock_packet_handler,
 )
 
-TEST_FRAME_DIR = "tests/test_frames/icmp4_phtx/"
+TEST_FRAME_DIR = "tests/unit/test_frames/icmp4_phtx/"
 
 
 class TestIcmp4Phtx(TestCase):

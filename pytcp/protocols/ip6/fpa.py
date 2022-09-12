@@ -36,10 +36,10 @@ from __future__ import annotations
 import struct
 from typing import TYPE_CHECKING
 
-import config
-from lib.ip6_address import Ip6Address
-from protocols.ether.ps import ETHER_TYPE_IP6
-from protocols.ip6.ps import (
+import pytcp.config as config
+from pytcp.lib.ip6_address import Ip6Address
+from pytcp.protocols.ether.ps import ETHER_TYPE_IP6
+from pytcp.protocols.ip6.ps import (
     IP6_HEADER_LEN,
     IP6_NEXT_EXT_FRAG,
     IP6_NEXT_ICMP6,
@@ -48,14 +48,14 @@ from protocols.ip6.ps import (
     IP6_NEXT_TCP,
     IP6_NEXT_UDP,
 )
-from protocols.raw.fpa import RawAssembler
+from pytcp.protocols.raw.fpa import RawAssembler
 
 if TYPE_CHECKING:
-    from lib.tracker import Tracker
-    from protocols.icmp6.fpa import Icmp6Assembler
-    from protocols.ip6_ext_frag.fpa import Ip6ExtFragAssembler
-    from protocols.tcp.fpa import TcpAssembler
-    from protocols.udp.fpa import UdpAssembler
+    from pytcp.lib.tracker import Tracker
+    from pytcp.protocols.icmp6.fpa import Icmp6Assembler
+    from pytcp.protocols.ip6_ext_frag.fpa import Ip6ExtFragAssembler
+    from pytcp.protocols.tcp.fpa import TcpAssembler
+    from pytcp.protocols.udp.fpa import UdpAssembler
 
 
 class Ip6Assembler:

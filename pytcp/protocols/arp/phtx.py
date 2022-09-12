@@ -35,16 +35,16 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-import config
-from lib.logger import log
-from lib.mac_address import MacAddress
-from lib.tracker import Tracker
-from misc.tx_status import TxStatus
-from protocols.arp.fpa import ArpAssembler
-from protocols.arp.ps import ARP_OP_REPLY, ARP_OP_REQUEST
+import pytcp.config as config
+from pytcp.lib.logger import log
+from pytcp.lib.mac_address import MacAddress
+from pytcp.lib.tracker import Tracker
+from pytcp.misc.tx_status import TxStatus
+from pytcp.protocols.arp.fpa import ArpAssembler
+from pytcp.protocols.arp.ps import ARP_OP_REPLY, ARP_OP_REQUEST
 
 if TYPE_CHECKING:
-    from lib.ip4_address import Ip4Address
+    from pytcp.lib.ip4_address import Ip4Address
 
 
 def _phtx_arp(

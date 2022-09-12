@@ -35,10 +35,10 @@ from __future__ import annotations
 
 import struct
 
-from lib.tracker import Tracker
-from protocols.ether.ps import ETHER_TYPE_RAW
-from protocols.ip4.ps import IP4_PROTO_RAW
-from protocols.ip6.ps import IP6_NEXT_RAW
+from pytcp.lib.tracker import Tracker
+from pytcp.protocols.ether.ps import ETHER_TYPE_RAW
+from pytcp.protocols.ip4.ps import IP4_PROTO_RAW
+from pytcp.protocols.ip6.ps import IP6_NEXT_RAW
 
 
 class RawAssembler:

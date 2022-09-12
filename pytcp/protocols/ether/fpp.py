@@ -37,16 +37,16 @@ from __future__ import annotations
 import struct
 from typing import TYPE_CHECKING
 
-import config
-from lib.mac_address import MacAddress
-from protocols.ether.ps import (
+import pytcp.config as config
+from pytcp.lib.mac_address import MacAddress
+from pytcp.protocols.ether.ps import (
     ETHER_HEADER_LEN,
     ETHER_TYPE_MIN,
     ETHER_TYPE_TABLE,
 )
 
 if TYPE_CHECKING:
-    from misc.packet import PacketRx
+    from pytcp.misc.packet import PacketRx
 
 
 class EtherParser:

@@ -36,12 +36,12 @@ from __future__ import annotations
 import struct
 from typing import TYPE_CHECKING
 
-import misc.stack as stack
-from lib.ip4_address import Ip4Address, Ip4AddressFormatError
-from lib.ip6_address import Ip6Address, Ip6AddressFormatError
+import pytcp.misc.stack as stack
+from pytcp.lib.ip4_address import Ip4Address, Ip4AddressFormatError
+from pytcp.lib.ip6_address import Ip6Address, Ip6AddressFormatError
 
 if TYPE_CHECKING:
-    from lib.ip_address import IpAddress
+    from pytcp.lib.ip_address import IpAddress
 
 
 def inet_cksum(data: memoryview, init: int = 0) -> int:

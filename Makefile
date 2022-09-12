@@ -30,9 +30,15 @@ lint: venv
 	@echo '<<< MYPY'
 	@./$(VENV)/bin/mypy -p pytcp
 
-test: venv
-	@echo '<<< TESTSLIDE'
-	@./$(VENV)/bin/testslide tests/*.py
+test_unit: venv
+	@echo '<<< TESTSLIDE UNIT'
+	@./$(VENV)/bin/testslide tests/unit/*.py
+
+test_integration: venv
+	@echo '<<< TESTSLIDE INTEGRATION'
+	@./$(VENV)/bin/testslide tests/integration/*.py
+
+test: test_unit test_integration
 
 bridge:
 	@brctl addbr br0

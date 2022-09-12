@@ -35,12 +35,12 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from lib.logger import log
-from misc.malpi import malpa, malpi, malpka
-from services.tcp_generic import ServiceTcp
+from pytcp.lib.logger import log
+from pytcp.misc.malpi import malpa, malpi, malpka
+from pytcp.services.tcp_generic import ServiceTcp
 
 if TYPE_CHECKING:
-    from lib.socket import Socket
+    from pytcp.lib.socket import Socket
 
 
 class ServiceTcpEcho(ServiceTcp):

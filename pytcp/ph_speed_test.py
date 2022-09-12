@@ -35,11 +35,11 @@ from __future__ import annotations
 
 import time
 
-from lib.ip4_address import Ip4Host
-from lib.ip6_address import Ip6Host
-from lib.mac_address import MacAddress
-from misc.packet import PacketRx
-from misc.ph import PacketHandler
+from pytcp.lib.ip4_address import Ip4Host
+from pytcp.lib.ip6_address import Ip6Host
+from pytcp.lib.mac_address import MacAddress
+from pytcp.misc.packet import PacketRx
+from pytcp.misc.ph import PacketHandler
 
 
 class ArpCache:

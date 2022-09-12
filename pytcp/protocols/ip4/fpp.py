@@ -36,10 +36,10 @@ from __future__ import annotations
 import struct
 from typing import TYPE_CHECKING
 
-import config
-from lib.ip4_address import Ip4Address
-from misc.ip_helper import inet_cksum
-from protocols.ip4.ps import (
+import pytcp.config as config
+from pytcp.lib.ip4_address import Ip4Address
+from pytcp.misc.ip_helper import inet_cksum
+from pytcp.protocols.ip4.ps import (
     IP4_HEADER_LEN,
     IP4_OPT_EOL,
     IP4_OPT_EOL_LEN,
@@ -49,7 +49,7 @@ from protocols.ip4.ps import (
 )
 
 if TYPE_CHECKING:
-    from misc.packet import PacketRx
+    from pytcp.misc.packet import PacketRx
 
 
 class Ip4Parser:

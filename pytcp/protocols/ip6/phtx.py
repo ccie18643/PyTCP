@@ -35,22 +35,22 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-import config
-from lib.ip6_address import Ip6Address
-from lib.logger import log
-from misc.tx_status import TxStatus
-from protocols.icmp6.fpa import (
+import pytcp.config as config
+from pytcp.lib.ip6_address import Ip6Address
+from pytcp.lib.logger import log
+from pytcp.misc.tx_status import TxStatus
+from pytcp.protocols.icmp6.fpa import (
     ICMP6_MLD2_REPORT,
     ICMP6_ND_NEIGHBOR_SOLICITATION,
     Icmp6Assembler,
 )
-from protocols.ip6.fpa import Ip6Assembler
-from protocols.raw.fpa import RawAssembler
+from pytcp.protocols.ip6.fpa import Ip6Assembler
+from pytcp.protocols.raw.fpa import RawAssembler
 
 if TYPE_CHECKING:
-    from protocols.ip6_ext_frag.fpa import Ip6ExtFragAssembler
-    from protocols.tcp.fpa import TcpAssembler
-    from protocols.udp.fpa import UdpAssembler
+    from pytcp.protocols.ip6_ext_frag.fpa import Ip6ExtFragAssembler
+    from pytcp.protocols.tcp.fpa import TcpAssembler
+    from pytcp.protocols.udp.fpa import UdpAssembler
 
 
 def _validate_src_ip6_address(

@@ -36,12 +36,12 @@ from __future__ import annotations
 import struct
 from typing import TYPE_CHECKING
 
-import config
-from lib.ip6_address import Ip6Address
-from protocols.ip6.ps import IP6_HEADER_LEN, IP6_NEXT_TABLE
+import pytcp.config as config
+from pytcp.lib.ip6_address import Ip6Address
+from pytcp.protocols.ip6.ps import IP6_HEADER_LEN, IP6_NEXT_TABLE
 
 if TYPE_CHECKING:
-    from misc.packet import PacketRx
+    from pytcp.misc.packet import PacketRx
 
 
 class Ip6Parser:

@@ -37,10 +37,10 @@ from __future__ import annotations
 import struct
 from typing import TYPE_CHECKING
 
-from lib.ip6_address import Ip6Address, Ip6Network
-from lib.tracker import Tracker
-from misc.ip_helper import inet_cksum
-from protocols.icmp6.ps import (
+from pytcp.lib.ip6_address import Ip6Address, Ip6Network
+from pytcp.lib.tracker import Tracker
+from pytcp.misc.ip_helper import inet_cksum
+from pytcp.protocols.icmp6.ps import (
     ICMP6_ECHO_REPLY,
     ICMP6_ECHO_REPLY_LEN,
     ICMP6_ECHO_REQUEST,
@@ -65,10 +65,10 @@ from protocols.icmp6.ps import (
     ICMP6_UNREACHABLE__PORT,
     ICMP6_UNREACHABLE_LEN,
 )
-from protocols.ip6.ps import IP6_NEXT_ICMP6
+from pytcp.protocols.ip6.ps import IP6_NEXT_ICMP6
 
 if TYPE_CHECKING:
-    from lib.mac_address import MacAddress
+    from pytcp.lib.mac_address import MacAddress
 
 
 class Icmp6Assembler:

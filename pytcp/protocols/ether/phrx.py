@@ -35,14 +35,18 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-import config
-from protocols.ether.fpp import EtherParser
-from protocols.ether.ps import ETHER_TYPE_ARP, ETHER_TYPE_IP4, ETHER_TYPE_IP6
+import pytcp.config as config
+from pytcp.protocols.ether.fpp import EtherParser
+from pytcp.protocols.ether.ps import (
+    ETHER_TYPE_ARP,
+    ETHER_TYPE_IP4,
+    ETHER_TYPE_IP6,
+)
 
 if TYPE_CHECKING:
-    from misc.packet import PacketRx
+    from pytcp.misc.packet import PacketRx
 
-from lib.logger import log
+from pytcp.lib.logger import log
 
 
 def _phrx_ether(self, packet_rx: PacketRx) -> None:

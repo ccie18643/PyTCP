@@ -37,8 +37,8 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from lib.ip_address import IpAddress
-    from lib.tracker import Tracker
+    from pytcp.lib.ip_address import IpAddress
+    from pytcp.lib.tracker import Tracker
 
 
 class TcpMetadata:

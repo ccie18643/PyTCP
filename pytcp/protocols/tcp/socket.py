@@ -37,18 +37,18 @@ from __future__ import annotations
 import threading
 from typing import TYPE_CHECKING
 
-import misc.stack as stack
-from lib.ip4_address import Ip4Address, Ip4AddressFormatError
-from lib.ip6_address import Ip6Address, Ip6AddressFormatError
-from lib.logger import log
-from lib.socket import AF_INET4, AF_INET6, SOCK_STREAM, Socket, gaierror
-from protocols.tcp.session import FsmState, TcpSession, TcpSessionError
+import pytcp.misc.stack as stack
+from pytcp.lib.ip4_address import Ip4Address, Ip4AddressFormatError
+from pytcp.lib.ip6_address import Ip6Address, Ip6AddressFormatError
+from pytcp.lib.logger import log
+from pytcp.lib.socket import AF_INET4, AF_INET6, SOCK_STREAM, Socket, gaierror
+from pytcp.protocols.tcp.session import FsmState, TcpSession, TcpSessionError
 
 if TYPE_CHECKING:
     from threading import Semaphore
 
-    from lib.socket import AddressFamily, IpAddress, SocketType
-    from protocols.tcp.metadata import TcpMetadata
+    from pytcp.lib.socket import AddressFamily, IpAddress, SocketType
+    from pytcp.protocols.tcp.metadata import TcpMetadata
 
 
 class TcpSocket(Socket):

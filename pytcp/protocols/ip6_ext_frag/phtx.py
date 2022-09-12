@@ -35,15 +35,15 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-import config
-from lib.logger import log
-from misc.tx_status import TxStatus
-from protocols.ip6.ps import IP6_HEADER_LEN
-from protocols.ip6_ext_frag.fpa import Ip6ExtFragAssembler
-from protocols.ip6_ext_frag.ps import IP6_EXT_FRAG_HEADER_LEN
+import pytcp.config as config
+from pytcp.lib.logger import log
+from pytcp.misc.tx_status import TxStatus
+from pytcp.protocols.ip6.ps import IP6_HEADER_LEN
+from pytcp.protocols.ip6_ext_frag.fpa import Ip6ExtFragAssembler
+from pytcp.protocols.ip6_ext_frag.ps import IP6_EXT_FRAG_HEADER_LEN
 
 if TYPE_CHECKING:
-    from protocols.ip6.fpa import Ip6Assembler
+    from pytcp.protocols.ip6.fpa import Ip6Assembler
 
 
 def _phtx_ip6_ext_frag(self, *, ip6_packet_tx: Ip6Assembler) -> TxStatus:

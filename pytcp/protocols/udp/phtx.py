@@ -35,13 +35,13 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from lib.logger import log
-from lib.tracker import Tracker
-from misc.tx_status import TxStatus
-from protocols.udp.fpa import UdpAssembler
+from pytcp.lib.logger import log
+from pytcp.lib.tracker import Tracker
+from pytcp.misc.tx_status import TxStatus
+from pytcp.protocols.udp.fpa import UdpAssembler
 
 if TYPE_CHECKING:
-    from lib.ip_address import IpAddress
+    from pytcp.lib.ip_address import IpAddress
 
 
 def _phtx_udp(

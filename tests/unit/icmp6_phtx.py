@@ -44,13 +44,13 @@ from pytcp.protocols.icmp6.ps import (
     ICMP6_UNREACHABLE,
     ICMP6_UNREACHABLE__PORT,
 )
-from tests.mock_network import (
+from tests.unit.mock_network import (
     MockNetworkSettings,
     patch_config,
     setup_mock_packet_handler,
 )
 
-TEST_FRAME_DIR = "tests/test_frames/icmp6_phtx/"
+TEST_FRAME_DIR = "tests/unit/test_frames/icmp6_phtx/"
 
 
 class TestIcmp6Phtx(TestCase):

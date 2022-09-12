@@ -40,16 +40,16 @@ from enum import Enum, auto
 from re import I
 from typing import TYPE_CHECKING, Any, Callable
 
-import config
-import misc.stack as stack
-from lib.logger import log
+import pytcp.config as config
+import pytcp.misc.stack as stack
+from pytcp.lib.logger import log
 
 if TYPE_CHECKING:
     from threading import Lock, RLock, Semaphore
 
-    from lib.ip_address import IpAddress
-    from lib.socket import Socket
-    from protocols.tcp.metadata import TcpMetadata
+    from pytcp.lib.ip_address import IpAddress
+    from pytcp.lib.socket import Socket
+    from pytcp.protocols.tcp.metadata import TcpMetadata
 
 
 PACKET_RETRANSMIT_TIMEOUT = 1000  # Retransmit data if ACK not received
@@ -854,8 +854,8 @@ class TcpSession:
         TCP FSM LISTEN state handler.
         """
 
-        from lib.socket import AF_INET4, AF_INET6
-        from protocols.tcp.socket import TcpSocket
+        from pytcp.lib.socket import AF_INET4, AF_INET6
+        from pytcp.protocols.tcp.socket import TcpSocket
 
         # Got SYN packet -> Send SYN + ACK packet / change state to SYN_RCVD
         if (

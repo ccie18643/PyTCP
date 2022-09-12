@@ -35,13 +35,14 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-import config
-from lib.logger import log
-from protocols.arp.fpp import ArpParser
-from protocols.arp.ps import ARP_OP_REPLY, ARP_OP_REQUEST
+import pytcp.config as config
+import pytcp.misc.stack as stack
+from pytcp.lib.logger import log
+from pytcp.protocols.arp.fpp import ArpParser
+from pytcp.protocols.arp.ps import ARP_OP_REPLY, ARP_OP_REQUEST
 
 if TYPE_CHECKING:
-    from misc.packet import PacketRx
+    from pytcp.misc.packet import PacketRx
 
 
 def _phrx_arp(self, packet_rx: PacketRx) -> None:
@@ -105,7 +106,7 @@ def _phrx_arp(self, packet_rx: PacketRx) -> None:
                         "ARP cache entry from direct request "
                         f"- {packet_rx.arp.spa} -> {packet_rx.arp.sha}</>",
                     )
-                self.arp_cache.add_entry(packet_rx.arp.spa, packet_rx.arp.sha)
+                stack.arp_cache.add_entry(packet_rx.arp.spa, packet_rx.arp.sha)
 
             return
 
@@ -134,7 +135,7 @@ def _phrx_arp(self, packet_rx: PacketRx) -> None:
                         f"conflict for IP {packet_rx.arp.spa} with host at "
                         f"{packet_rx.arp.sha}</>",
                     )
-                self.arp_probe_unicast_conflict.add(packet_rx.arp.spa)
+                stack.arp_probe_unicast_conflict.add(packet_rx.arp.spa)
                 return
 
         # Update ARP cache with mapping received as direct ARP reply
@@ -147,7 +148,7 @@ def _phrx_arp(self, packet_rx: PacketRx) -> None:
                     f"from direct reply - {packet_rx.arp.spa} "
                     f"-> {packet_rx.arp.sha}",
                 )
-            self.arp_cache.add_entry(packet_rx.arp.spa, packet_rx.arp.sha)
+            stack.arp_cache.add_entry(packet_rx.arp.spa, packet_rx.arp.sha)
             return
 
         # Update ARP cache with mapping received as gratuitous ARP reply
@@ -164,5 +165,5 @@ def _phrx_arp(self, packet_rx: PacketRx) -> None:
                     f"from gratuitous reply - {packet_rx.arp.spa} "
                     f"-> {packet_rx.arp.sha}",
                 )
-            self.arp_cache.add_entry(packet_rx.arp.spa, packet_rx.arp.sha)
+            stack.arp_cache.add_entry(packet_rx.arp.spa, packet_rx.arp.sha)
             return

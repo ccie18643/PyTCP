@@ -36,8 +36,8 @@ from __future__ import annotations
 import socket
 import threading
 
-import misc.stack as stack
-from lib.logger import log
+import pytcp.misc.stack as stack
+from pytcp.lib.logger import log
 
 
 class StackCliServer:

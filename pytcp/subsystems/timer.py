@@ -38,8 +38,8 @@ import threading
 import time
 from typing import Any, Callable
 
-import misc.stack as stack
-from lib.logger import log
+import pytcp.misc.stack as stack
+from pytcp.lib.logger import log
 
 
 class TimerTask:
@@ -114,24 +114,37 @@ class Timer:
         """
         Class constructor.
         """
-
-        stack.timer = self
-
-        self._run_timer: bool = True
-
         self._tasks: list[TimerTask] = []
         self._timers: dict[str, int] = {}
 
-        threading.Thread(target=self.__thread_timer).start()
+    def start(self):
+        """
+        Start timer thread.
+        """
         if __debug__:
-            log("timer", "Started timer")
+            log("stack", "Starting timer thread")
+        self._run_thread: bool = True
+        threading.Thread(target=self.__thread_timer).start()
+        time.sleep(0.1)
+
+    def stop(self):
+        """
+        Stop timer thread.
+        """
+        if __debug__:
+            log("stack", "Stopping timer thread")
+        self._run_thread: bool = False
+        time.sleep(0.1)
 
     def __thread_timer(self) -> None:
         """
         Thread responsible for executing register methods on every timer tick.
         """
 
-        while self._run_timer:
+        if __debug__:
+            log("stack", "Started timer thread")
+
+        while self._run_thread:
             time.sleep(0.001)
 
             # Tck register timers
@@ -147,6 +160,9 @@ class Timer:
 
             # Cleanup expired methods
             self._tasks = [_ for _ in self._tasks if _.remaining_delay]
+
+        if __debug__:
+            log("stack", "Stopped timer thread")
 
     def register_method(
         self,

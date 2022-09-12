@@ -37,11 +37,11 @@ from __future__ import annotations
 import threading
 from typing import TYPE_CHECKING
 
-import misc.stack as stack
-from lib.ip4_address import Ip4Address, Ip4AddressFormatError
-from lib.ip6_address import Ip6Address, Ip6AddressFormatError
-from lib.logger import log
-from lib.socket import (
+import pytcp.misc.stack as stack
+from pytcp.lib.ip4_address import Ip4Address, Ip4AddressFormatError
+from pytcp.lib.ip6_address import Ip6Address, Ip6AddressFormatError
+from pytcp.lib.logger import log
+from pytcp.lib.socket import (
     AF_INET4,
     AF_INET6,
     SOCK_DGRAM,
@@ -49,14 +49,14 @@ from lib.socket import (
     Socket,
     gaierror,
 )
-from misc.tx_status import TxStatus
+from pytcp.misc.tx_status import TxStatus
 
 if TYPE_CHECKING:
     from threading import Semaphore
 
-    from lib.ip_address import IpAddress
-    from lib.socket import AddressFamily, SocketType
-    from protocols.udp.metadata import UdpMetadata
+    from pytcp.lib.ip_address import IpAddress
+    from pytcp.lib.socket import AddressFamily, SocketType
+    from pytcp.protocols.udp.metadata import UdpMetadata
 
 
 class UdpSocket(Socket):

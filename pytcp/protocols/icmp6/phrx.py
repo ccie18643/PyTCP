@@ -36,12 +36,12 @@ from __future__ import annotations
 import struct
 from typing import TYPE_CHECKING
 
-import misc.stack as stack
-from lib.ip6_address import Ip6Address
-from lib.logger import log
-from protocols.icmp6.fpa import Icmp6NdOptTLLA
-from protocols.icmp6.fpp import Icmp6Parser
-from protocols.icmp6.ps import (
+import pytcp.misc.stack as stack
+from pytcp.lib.ip6_address import Ip6Address
+from pytcp.lib.logger import log
+from pytcp.protocols.icmp6.fpa import Icmp6NdOptTLLA
+from pytcp.protocols.icmp6.fpp import Icmp6Parser
+from pytcp.protocols.icmp6.ps import (
     ICMP6_ECHO_REPLY,
     ICMP6_ECHO_REQUEST,
     ICMP6_ND_NEIGHBOR_ADVERTISEMENT,
@@ -50,12 +50,12 @@ from protocols.icmp6.ps import (
     ICMP6_ND_ROUTER_SOLICITATION,
     ICMP6_UNREACHABLE,
 )
-from protocols.ip6.ps import IP6_HEADER_LEN, IP6_NEXT_UDP
-from protocols.udp.metadata import UdpMetadata
-from protocols.udp.ps import UDP_HEADER_LEN
+from pytcp.protocols.ip6.ps import IP6_HEADER_LEN, IP6_NEXT_UDP
+from pytcp.protocols.udp.metadata import UdpMetadata
+from pytcp.protocols.udp.ps import UDP_HEADER_LEN
 
 if TYPE_CHECKING:
-    from misc.packet import PacketRx
+    from pytcp.misc.packet import PacketRx
 
 
 def _phrx_icmp6(self, packet_rx: PacketRx) -> None:
@@ -117,7 +117,7 @@ def _phrx_icmp6(self, packet_rx: PacketRx) -> None:
             self.packet_stats_rx.icmp6__nd_neighbor_solicitation__update_nd_cache += (
                 1
             )
-            self.nd_cache.add_entry(
+            stack.nd_cache.add_entry(
                 packet_rx.ip6.src, packet_rx.icmp6.nd_opt_slla
             )
 
@@ -172,7 +172,7 @@ def _phrx_icmp6(self, packet_rx: PacketRx) -> None:
             self.packet_stats_rx.icmp6__nd_neighbor_advertisement__update_nd_cache += (
                 1
             )
-            self.nd_cache.add_entry(
+            stack.nd_cache.add_entry(
                 packet_rx.icmp6.na_target_address, packet_rx.icmp6.nd_opt_tlla
             )
             return

@@ -38,11 +38,11 @@ import threading
 import time
 from datetime import datetime
 
-import misc.stack as stack
-from lib.ip4_address import Ip4Address
-from lib.ip6_address import Ip6Address
-from lib.logger import log
-from misc.ip_helper import str_to_ip
+import pytcp.misc.stack as stack
+from pytcp.lib.ip4_address import Ip4Address
+from pytcp.lib.ip6_address import Ip6Address
+from pytcp.lib.logger import log
+from pytcp.misc.ip_helper import str_to_ip
 
 
 class ClientIcmpEcho:

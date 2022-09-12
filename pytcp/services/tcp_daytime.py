@@ -37,11 +37,11 @@ import time
 from datetime import datetime
 from typing import TYPE_CHECKING
 
-from lib.logger import log
-from services.tcp_generic import ServiceTcp
+from pytcp.lib.logger import log
+from pytcp.services.tcp_generic import ServiceTcp
 
 if TYPE_CHECKING:
-    from lib.socket import Socket
+    from pytcp.lib.socket import Socket
 
 
 class ServiceTcpDaytime(ServiceTcp):

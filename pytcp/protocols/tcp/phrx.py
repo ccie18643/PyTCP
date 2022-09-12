@@ -33,11 +33,11 @@
 
 from __future__ import annotations
 
-import misc.stack as stack
-from lib.logger import log
-from misc.packet import PacketRx
-from protocols.tcp.fpp import TcpParser
-from protocols.tcp.metadata import TcpMetadata
+import pytcp.misc.stack as stack
+from pytcp.lib.logger import log
+from pytcp.misc.packet import PacketRx
+from pytcp.protocols.tcp.fpp import TcpParser
+from pytcp.protocols.tcp.metadata import TcpMetadata
 
 
 def _phrx_tcp(self, packet_rx: PacketRx) -> None:

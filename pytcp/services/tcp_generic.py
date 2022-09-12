@@ -37,11 +37,12 @@ import threading
 from typing import TYPE_CHECKING
 
 import lib.socket as socket
-from lib.logger import log
-from misc.ip_helper import ip_version
+
+from pytcp.lib.logger import log
+from pytcp.misc.ip_helper import ip_version
 
 if TYPE_CHECKING:
-    from lib.socket import Socket
+    from pytcp.lib.socket import Socket
 
 
 class ServiceTcp:

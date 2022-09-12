@@ -36,11 +36,11 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from lib.ip4_address import Ip4Address
+from pytcp.lib.ip4_address import Ip4Address
 
 if TYPE_CHECKING:
-    from lib.ip_address import IpAddress
-    from lib.tracker import Tracker
+    from pytcp.lib.ip_address import IpAddress
+    from pytcp.lib.tracker import Tracker
 
 
 class UdpMetadata:

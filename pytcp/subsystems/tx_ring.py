@@ -35,15 +35,17 @@ from __future__ import annotations
 
 import os
 import threading
+import time
 from typing import TYPE_CHECKING
 
-import config
-from lib.logger import log
+import pytcp.config as config
+import pytcp.misc.stack as stack
+from pytcp.lib.logger import log
 
 if TYPE_CHECKING:
     from threading import Semaphore
 
-    from protocols.ether.fpa import EtherAssembler
+    from pytcp.protocols.ether.fpa import EtherAssembler
 
 
 class TxRing:
@@ -51,32 +53,54 @@ class TxRing:
     Support for sending packets to the network.
     """
 
-    def __init__(self, tap: int) -> None:
+    def __init__(self) -> None:
         """
         Initialize access to tap interface and the outbound queue.
         """
-
-        self.tap: int = tap
         self.tx_ring: list[EtherAssembler] = []
         self.packet_enqueued: Semaphore = threading.Semaphore(0)
 
-        threading.Thread(target=self.__thread_transmit).start()
-
+    def start(self, tap: int) -> None:
+        """
+        Start Tx ring thread.
+        """
         if __debug__:
-            log("tx-ring", "Started TX ring")
+            log("stack", "Starting TX ring")
+        self.tap = tap
+        self._run_thread = True
+        threading.Thread(target=self.__thread_transmit).start()
+        time.sleep(0.1)
+
+    def stop(self) -> None:
+        """
+        Stop Tx ring thread.
+        """
+        self._run_thread = False
+        if __debug__:
+            log("stack", "Stopping TX ring")
+        time.sleep(0.1)
 
     def __thread_transmit(self) -> None:
         """
         Dequeue packet from TX ring and send it out.
         """
 
+        if __debug__:
+            log("stack", "Started TX ring")
+
         # Using static frame buffer to avoid dynamic memory allocation
         # for each frame.
         frame_buffer = bytearray(config.TAP_MTU + 14)
 
-        while True:
-            self.packet_enqueued.acquire()
+        while self._run_thread:
+            # Timeout here is needed so the call doesn't block forever and
+            # we are able to end the thread gracefully
+            self.packet_enqueued.acquire(timeout=0.1)
+            if not self.tx_ring:
+                continue
+
             packet_tx = self.tx_ring.pop(0)
+
             if (packet_tx_len := len(packet_tx)) > config.TAP_MTU + 14:
                 if __debug__:
                     log(
@@ -105,6 +129,9 @@ class TxRing:
                     f"{packet_tx.tracker.latency}</> - sent frame, "
                     f"{len(packet_tx)} bytes",
                 )
+
+        if __debug__:
+            log("stack", "Stopped TX ring")
 
     def enqueue(self, packet_tx: EtherAssembler) -> None:
         """

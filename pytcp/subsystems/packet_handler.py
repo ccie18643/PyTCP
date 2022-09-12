@@ -39,77 +39,75 @@ import threading
 import time
 from typing import TYPE_CHECKING
 
-import config
-import misc.stack as stack
-from dhcp4.client import Dhcp4Client
-from lib.ip4_address import (
+import pytcp.config as config
+import pytcp.misc.stack as stack
+from pytcp.dhcp4.client import Dhcp4Client
+from pytcp.lib.ip4_address import (
     Ip4Address,
     Ip4AddressFormatError,
     Ip4Host,
     Ip4HostFormatError,
 )
-from lib.ip6_address import (
+from pytcp.lib.ip6_address import (
     Ip6Address,
     Ip6AddressFormatError,
     Ip6Host,
     Ip6HostFormatError,
     Ip6Network,
 )
-from lib.logger import log
-from lib.mac_address import MacAddress
-from misc.packet_stats import PacketStatsRx, PacketStatsTx
-from protocols.arp.phrx import _phrx_arp
-from protocols.arp.phtx import _phtx_arp
-from protocols.arp.ps import ARP_OP_REPLY, ARP_OP_REQUEST
-from protocols.ether.phrx import _phrx_ether
-from protocols.ether.phtx import _phtx_ether
-from protocols.icmp4.phrx import _phrx_icmp4
-from protocols.icmp4.phtx import _phtx_icmp4
-from protocols.icmp6.fpa import (
+from pytcp.lib.logger import log
+from pytcp.lib.mac_address import MacAddress
+from pytcp.misc.packet_stats import PacketStatsRx, PacketStatsTx
+from pytcp.protocols.arp.phrx import _phrx_arp
+from pytcp.protocols.arp.phtx import _phtx_arp
+from pytcp.protocols.arp.ps import ARP_OP_REPLY, ARP_OP_REQUEST
+from pytcp.protocols.ether.phrx import _phrx_ether
+from pytcp.protocols.ether.phtx import _phtx_ether
+from pytcp.protocols.icmp4.phrx import _phrx_icmp4
+from pytcp.protocols.icmp4.phtx import _phtx_icmp4
+from pytcp.protocols.icmp6.fpa import (
     Icmp6MulticastAddressRecord,
     Icmp6NdOptPI,
     Icmp6NdOptSLLA,
     Icmp6NdOptTLLA,
 )
-from protocols.icmp6.phrx import _phrx_icmp6
-from protocols.icmp6.phtx import _phtx_icmp6
-from protocols.icmp6.ps import (
+from pytcp.protocols.icmp6.phrx import _phrx_icmp6
+from pytcp.protocols.icmp6.phtx import _phtx_icmp6
+from pytcp.protocols.icmp6.ps import (
     ICMP6_MART_CHANGE_TO_EXCLUDE,
     ICMP6_MLD2_REPORT,
     ICMP6_ND_NEIGHBOR_SOLICITATION,
     ICMP6_ND_ROUTER_SOLICITATION,
 )
-from protocols.ip4.phrx import _defragment_ip4_packet, _phrx_ip4
-from protocols.ip4.phtx import (
+from pytcp.protocols.ip4.phrx import _defragment_ip4_packet, _phrx_ip4
+from pytcp.protocols.ip4.phtx import (
     _phtx_ip4,
     _validate_dst_ip4_address,
     _validate_src_ip4_address,
 )
-from protocols.ip6.phrx import _phrx_ip6
-from protocols.ip6.phtx import (
+from pytcp.protocols.ip6.phrx import _phrx_ip6
+from pytcp.protocols.ip6.phtx import (
     _phtx_ip6,
     _validate_dst_ip6_address,
     _validate_src_ip6_address,
 )
-from protocols.ip6_ext_frag.phrx import (
+from pytcp.protocols.ip6_ext_frag.phrx import (
     _defragment_ip6_packet,
     _phrx_ip6_ext_frag,
 )
-from protocols.ip6_ext_frag.phtx import _phtx_ip6_ext_frag
-from protocols.tcp.phrx import _phrx_tcp
-from protocols.tcp.phtx import _phtx_tcp
-from protocols.udp.phrx import _phrx_udp
-from protocols.udp.phtx import _phtx_udp
-from subsystems.arp_cache import ArpCache
-from subsystems.nd_cache import NdCache
-from subsystems.rx_ring import RxRing
-from subsystems.tx_ring import TxRing
+from pytcp.protocols.ip6_ext_frag.phtx import _phtx_ip6_ext_frag
+from pytcp.protocols.tcp.phrx import _phrx_tcp
+from pytcp.protocols.tcp.phtx import _phtx_tcp
+from pytcp.protocols.udp.phrx import _phrx_udp
+from pytcp.protocols.udp.phtx import _phtx_udp
+from pytcp.subsystems.rx_ring import RxRing
+from pytcp.subsystems.tx_ring import TxRing
 
 if TYPE_CHECKING:
     from threading import Semaphore
 
-    from lib.ip_address import IpAddress
-    from misc.tx_status import TxStatus
+    from pytcp.lib.ip_address import IpAddress
+    from pytcp.misc.tx_status import TxStatus
 
 
 class PacketHandler:
@@ -143,10 +141,10 @@ class PacketHandler:
     _phrx_udp = _phrx_udp
     _phtx_udp = _phtx_udp
 
-    def __init__(self, tap: int | None) -> None:
-        """Class constructor"""
-
-        stack.packet_handler = self
+    def __init__(self) -> None:
+        """
+        Class constructor.
+        """
 
         # Initialize data stores for packet statistics (used mainly in usnit
         # testing, but also available via cli).
@@ -188,21 +186,29 @@ class PacketHandler:
         self.ip4_frag_flows: dict[int, bytes] = {}
         self.ip6_frag_flows: dict[int, bytes] = {}
 
-        # Skip rest of the initialisations for the unit test / mock run
-        if tap is None:
-            return
-
-        # Start subsystems
-        self.rx_ring: RxRing = RxRing(tap)
-        self.tx_ring: TxRing = TxRing(tap)
-        self.arp_cache: ArpCache = ArpCache()
-        self.nd_cache: NdCache = NdCache()
-
-        # Start packet handler so we can receive packets from network
-        threading.Thread(target=self.__thread_packet_handler).start()
+    def start(self) -> None:
+        """
+        Start packet handler thread.
+        """
         if __debug__:
-            log("stack", "Started packet handler")
+            log("stack", "Starting packet handler")
+        self._run_thread = True
+        threading.Thread(target=self.__thread_packet_handler).start()
+        time.sleep(0.1)
 
+    def stop(self) -> None:
+        """
+        Stop packet handler thread.
+        """
+        self._run_thread = False
+        if __debug__:
+            log("stack", "Stopping packet handler")
+        time.sleep(0.1)
+
+    def assign_ip6_addresses(self) -> None:
+        """
+        Assign the IPv6 addresses.
+        """
         if config.IP6_SUPPORT:
             # Assign All IPv6 Nodes multicast address
             self._assign_ip6_multicast(Ip6Address("ff02::1"))
@@ -213,6 +219,10 @@ class PacketHandler:
             )
             self._create_stack_ip6_addressing()
 
+    def assign_ip4_addresses(self) -> None:
+        """
+        Assign the IPv4 addresses.
+        """
         if config.IP4_SUPPORT:
             # Create list of IPv4 unicast/multicast/broadcast addresses stack
             # should listen on, use DHCP if enabled.
@@ -227,7 +237,11 @@ class PacketHandler:
             )
             self._create_stack_ip4_addressing()
 
-        # Log all the addresses stack will listen on
+    def log_stack_address_info(self) -> None:
+        """
+        Log all the addresses stack will listen on
+        """
+
         if __debug__:
             log(
                 "stack",
@@ -278,8 +292,16 @@ class PacketHandler:
         """
         Thread picks up incoming packets from RX ring and processes them.
         """
-        while True:
-            self._phrx_ether(self.rx_ring.dequeue())
+
+        if __debug__:
+            log("stack", "Started packet handler")
+
+        while self._run_thread:
+            if (packet_rx := stack.rx_ring.dequeue()) is not None:
+                self._phrx_ether(packet_rx)
+
+        if __debug__:
+            log("stack", "Stopped packet handler")
 
     @property
     def ip6_unicast(self) -> list[Ip6Address]:

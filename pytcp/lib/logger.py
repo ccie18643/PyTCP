@@ -34,9 +34,11 @@
 from __future__ import annotations
 
 import inspect
+import os
+import sys
 import time
 
-import config
+import pytcp.config as config
 
 STYLES = {
     "</>": "\33[0m",

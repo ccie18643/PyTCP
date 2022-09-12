@@ -29,3 +29,71 @@
 #
 # ver 2.7
 #
+
+
+import fcntl
+import os
+import struct
+import sys
+import time
+
+import pytcp.misc.stack as stack
+from pytcp.lib.logger import log
+from pytcp.subsystems.packet_handler import PacketHandler
+from pytcp.subsystems.rx_ring import RxRing
+from pytcp.subsystems.stack_cli_server import StackCliServer
+from pytcp.subsystems.timer import Timer
+from pytcp.subsystems.tx_ring import TxRing
+
+TUNSETIFF = 0x400454CA
+IFF_TAP = 0x0002
+IFF_NO_PI = 0x1000
+
+
+class TcpIpStack:
+    """
+    Main PyTCP library class.
+    """
+
+    def __init__(self, interface: str):
+        """
+        Initialize stack on given interface.
+        """
+
+        try:
+            self.tap = os.open("/dev/net/tun", os.O_RDWR)
+
+        except FileNotFoundError:
+            log("stack", "<CRIT>Unable to access '/dev/net/tun' device</>")
+            sys.exit(-1)
+
+        fcntl.ioctl(
+            self.tap,
+            TUNSETIFF,
+            struct.pack("16sH", interface.encode(), IFF_TAP | IFF_NO_PI),
+        )
+
+    def start(self):
+        """
+        Start stack components.
+        """
+        stack.timer.start()
+        stack.arp_cache.start()
+        stack.nd_cache.start()
+        stack.rx_ring.start(self.tap)
+        stack.tx_ring.start(self.tap)
+        stack.packet_handler.start()
+        stack.packet_handler.assign_ip6_addresses()
+        stack.packet_handler.assign_ip4_addresses()
+        stack.packet_handler.log_stack_address_info()
+
+    def stop(self):
+        """
+        Stop stack components.
+        """
+        stack.packet_handler.stop()
+        stack.tx_ring.stop()
+        stack.rx_ring.stop()
+        stack.arp_cache.stop()
+        stack.nd_cache.stop()
+        stack.timer.stop()

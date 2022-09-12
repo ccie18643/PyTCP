@@ -37,8 +37,8 @@ from __future__ import annotations
 import struct
 from typing import TYPE_CHECKING
 
-from lib.mac_address import MacAddress
-from protocols.ether.ps import (
+from pytcp.lib.mac_address import MacAddress
+from pytcp.protocols.ether.ps import (
     ETHER_HEADER_LEN,
     ETHER_TYPE_ARP,
     ETHER_TYPE_IP4,
@@ -46,13 +46,13 @@ from protocols.ether.ps import (
     ETHER_TYPE_RAW,
     ETHER_TYPE_TABLE,
 )
-from protocols.raw.fpa import RawAssembler
+from pytcp.protocols.raw.fpa import RawAssembler
 
 if TYPE_CHECKING:
-    from lib.tracker import Tracker
-    from protocols.arp.fpa import ArpAssembler
-    from protocols.ip4.fpa import Ip4Assembler
-    from protocols.ip6.fpa import Ip6Assembler
+    from pytcp.lib.tracker import Tracker
+    from pytcp.protocols.arp.fpa import ArpAssembler
+    from pytcp.protocols.ip4.fpa import Ip4Assembler
+    from pytcp.protocols.ip6.fpa import Ip6Assembler
 
 
 class EtherAssembler:

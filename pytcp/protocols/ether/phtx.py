@@ -35,16 +35,17 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from lib.logger import log
-from lib.mac_address import MacAddress
-from misc.tx_status import TxStatus
-from protocols.ether.fpa import EtherAssembler
-from protocols.ip4.fpa import Ip4Assembler, Ip4FragAssembler
-from protocols.ip6.fpa import Ip6Assembler
-from protocols.raw.fpa import RawAssembler
+import pytcp.misc.stack as stack
+from pytcp.lib.logger import log
+from pytcp.lib.mac_address import MacAddress
+from pytcp.misc.tx_status import TxStatus
+from pytcp.protocols.ether.fpa import EtherAssembler
+from pytcp.protocols.ip4.fpa import Ip4Assembler, Ip4FragAssembler
+from pytcp.protocols.ip6.fpa import Ip6Assembler
+from pytcp.protocols.raw.fpa import RawAssembler
 
 if TYPE_CHECKING:
-    from protocols.arp.fpa import ArpAssembler
+    from pytcp.protocols.arp.fpa import ArpAssembler
 
 
 def _phtx_ether(
@@ -65,7 +66,7 @@ def _phtx_ether(
     def _send_out_packet() -> None:
         if __debug__:
             log("ether", f"{ether_packet_tx.tracker} - {ether_packet_tx}")
-        self.tx_ring.enqueue(ether_packet_tx)
+        stack.tx_ring.enqueue(ether_packet_tx)
 
     if carried_packet is None:
         carried_packet = RawAssembler()
@@ -146,7 +147,7 @@ def _phtx_ether(
                             "dropping</>",
                         )
                     return TxStatus.DROPED__ETHER__DST_NO_GATEWAY_IP6
-                if mac_address := self.nd_cache.find_entry(ip6_host.gateway):
+                if mac_address := stack.nd_cache.find_entry(ip6_host.gateway):
                     ether_packet_tx.dst = mac_address
                     self.packet_stats_tx.ether__dst_unspec__ip6_lookup__extnet__gw_nd_cache_hit__send += (
                         1
@@ -167,7 +168,7 @@ def _phtx_ether(
 
         # Send out packet if we are able to obtain destination MAC
         # from ICMPv6 ND cache
-        if mac_address := self.nd_cache.find_entry(ip6_dst):
+        if mac_address := stack.nd_cache.find_entry(ip6_dst):
             self.packet_stats_tx.ether__dst_unspec__ip6_lookup__locnet__nd_cache_hit__send += (
                 1
             )
@@ -269,7 +270,7 @@ def _phtx_ether(
                             "dropping</>",
                         )
                     return TxStatus.DROPED__ETHER__DST_NO_GATEWAY_IP4
-                if mac_address := self.arp_cache.find_entry(ip4_host.gateway):
+                if mac_address := stack.arp_cache.find_entry(ip4_host.gateway):
                     self.packet_stats_tx.ether__dst_unspec__ip4_lookup__extnet__gw_arp_cache_hit__send += (
                         1
                     )
@@ -290,7 +291,7 @@ def _phtx_ether(
 
         # Send out packet if we are able to obtain destination MAC from
         # ARP cache, drop otherwise
-        if mac_address := self.arp_cache.find_entry(ip4_dst):
+        if mac_address := stack.arp_cache.find_entry(ip4_dst):
             self.packet_stats_tx.ether__dst_unspec__ip4_lookup__locnet__arp_cache_hit__send += (
                 1
             )

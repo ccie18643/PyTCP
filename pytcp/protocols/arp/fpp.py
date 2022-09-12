@@ -36,13 +36,13 @@ from __future__ import annotations
 import struct
 from typing import TYPE_CHECKING
 
-import config
-from lib.ip4_address import Ip4Address
-from lib.mac_address import MacAddress
-from protocols.arp.ps import ARP_HEADER_LEN, ARP_OP_REPLY, ARP_OP_REQUEST
+import pytcp.config as config
+from pytcp.lib.ip4_address import Ip4Address
+from pytcp.lib.mac_address import MacAddress
+from pytcp.protocols.arp.ps import ARP_HEADER_LEN, ARP_OP_REPLY, ARP_OP_REQUEST
 
 if TYPE_CHECKING:
-    from misc.packet import PacketRx
+    from pytcp.misc.packet import PacketRx
 
 
 class ArpParser:

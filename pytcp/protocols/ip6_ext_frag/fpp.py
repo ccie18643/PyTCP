@@ -37,14 +37,14 @@ from __future__ import annotations
 import struct
 from typing import TYPE_CHECKING
 
-import config
-from protocols.ip6_ext_frag.ps import (
+import pytcp.config as config
+from pytcp.protocols.ip6_ext_frag.ps import (
     IP6_EXT_FRAG_HEADER_LEN,
     IP6_EXT_FRAG_NEXT_HEADER_TABLE,
 )
 
 if TYPE_CHECKING:
-    from misc.packet import PacketRx
+    from pytcp.misc.packet import PacketRx
 
 
 class Ip6ExtFragParser:

@@ -35,18 +35,18 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from lib.tracker import Tracker
+from pytcp.lib.tracker import Tracker
 
 if TYPE_CHECKING:
-    from protocols.arp.fpp import ArpParser
-    from protocols.ether.fpp import EtherParser
-    from protocols.icmp4.fpp import Icmp4Parser
-    from protocols.icmp6.fpp import Icmp6Parser
-    from protocols.ip4.fpp import Ip4Parser
-    from protocols.ip6.fpp import Ip6Parser
-    from protocols.ip6_ext_frag.fpp import Ip6ExtFragParser
-    from protocols.tcp.fpp import TcpParser
-    from protocols.udp.fpp import UdpParser
+    from pytcp.protocols.arp.fpp import ArpParser
+    from pytcp.protocols.ether.fpp import EtherParser
+    from pytcp.protocols.icmp4.fpp import Icmp4Parser
+    from pytcp.protocols.icmp6.fpp import Icmp6Parser
+    from pytcp.protocols.ip4.fpp import Ip4Parser
+    from pytcp.protocols.ip6.fpp import Ip6Parser
+    from pytcp.protocols.ip6_ext_frag.fpp import Ip6ExtFragParser
+    from pytcp.protocols.tcp.fpp import TcpParser
+    from pytcp.protocols.udp.fpp import UdpParser
 
 
 class PacketRx:

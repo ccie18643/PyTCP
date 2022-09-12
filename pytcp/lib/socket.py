@@ -37,19 +37,19 @@ from abc import ABC, abstractmethod
 from enum import IntEnum
 from typing import TYPE_CHECKING
 
-import config
-import misc.stack as stack
-from lib.ip4_address import Ip4Address, Ip4AddressFormatError
-from lib.ip6_address import Ip6Address, Ip6AddressFormatError
-from misc.ip_helper import pick_local_ip_address
-from protocols.tcp.metadata import TcpMetadata
-from protocols.tcp.session import FsmState, TcpSession
-from protocols.udp.metadata import UdpMetadata
+import pytcp.config as config
+import pytcp.misc.stack as stack
+from pytcp.lib.ip4_address import Ip4Address, Ip4AddressFormatError
+from pytcp.lib.ip6_address import Ip6Address, Ip6AddressFormatError
+from pytcp.misc.ip_helper import pick_local_ip_address
+from pytcp.protocols.tcp.metadata import TcpMetadata
+from pytcp.protocols.tcp.session import FsmState, TcpSession
+from pytcp.protocols.udp.metadata import UdpMetadata
 
 if TYPE_CHECKING:
     from threading import Semaphore
 
-    from lib.ip_address import IpAddress
+    from pytcp.lib.ip_address import IpAddress
 
 
 class gaierror(OSError):
@@ -108,8 +108,8 @@ def socket(
 
     assert type is SOCK_STREAM or type is SOCK_DGRAM
 
-    from protocols.tcp.socket import TcpSocket
-    from protocols.udp.socket import UdpSocket
+    from pytcp.protocols.tcp.socket import TcpSocket
+    from pytcp.protocols.udp.socket import UdpSocket
 
     if type is SOCK_DGRAM:
         return UdpSocket(family)

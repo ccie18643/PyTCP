@@ -37,7 +37,7 @@ import re
 import socket
 import struct
 
-from lib.ip_address import (
+from pytcp.lib.ip_address import (
     IpAddress,
     IpAddressFormatError,
     IpHost,
@@ -47,7 +47,7 @@ from lib.ip_address import (
     IpNetwork,
     IpNetworkFormatError,
 )
-from lib.mac_address import MacAddress
+from pytcp.lib.mac_address import MacAddress
 
 IP6_REGEX = (
     r"(([0-9a-fA-F]{1,4}:){7,7}[0-9a-fA-F]{1,4}|"

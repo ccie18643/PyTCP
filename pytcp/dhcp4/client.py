@@ -36,13 +36,22 @@ from __future__ import annotations
 import random
 from typing import TYPE_CHECKING
 
-import dhcp4.ps
-import lib.socket as socket
-from lib.ip4_address import Ip4Address
-from lib.logger import log
+import pytcp.lib.socket as socket
+from pytcp.dhcp4.ps import (
+    DHCP4_MSG_DISCOVER,
+    DHCP4_MSG_REQUEST,
+    DHCP4_MSG_OFFER,
+    DHCP4_MSG_ACK,
+    DHCP4_OP_REQUEST,
+    DHCP4_OPT_ROUTER,
+    DHCP4_OPT_SUBNET_MASK,
+    Dhcp4Packet,
+)
+from pytcp.lib.ip4_address import Ip4Address
+from pytcp.lib.logger import log
 
 if TYPE_CHECKING:
-    from lib.mac_address import MacAddress
+    from pytcp.lib.mac_address import MacAddress
 
 
 class Dhcp4Client:
@@ -69,18 +78,18 @@ class Dhcp4Client:
 
         # Send DHCP Discover
         s.send(
-            dhcp4.ps.Dhcp4Packet(
-                dhcp_op=dhcp4.ps.DHCP4_OP_REQUEST,
+            Dhcp4Packet(
+                dhcp_op=DHCP4_OP_REQUEST,
                 dhcp_xid=dhcp_xid,
                 dhcp_ciaddr=Ip4Address("0.0.0.0"),
                 dhcp_yiaddr=Ip4Address("0.0.0.0"),
                 dhcp_siaddr=Ip4Address("0.0.0.0"),
                 dhcp_giaddr=Ip4Address("0.0.0.0"),
                 dhcp_chaddr=bytes(self._mac_address),
-                dhcp_msg_type=dhcp4.ps.DHCP4_MSG_DISCOVER,
+                dhcp_msg_type=DHCP4_MSG_DISCOVER,
                 dhcp_param_req_list=[
-                    dhcp4.ps.DHCP4_OPT_SUBNET_MASK,
-                    dhcp4.ps.DHCP4_OPT_ROUTER,
+                    DHCP4_OPT_SUBNET_MASK,
+                    DHCP4_OPT_ROUTER,
                 ],
                 dhcp_host_name="PyTCP",
             ).raw_packet
@@ -90,14 +99,14 @@ class Dhcp4Client:
 
         # Wait for DHCP Offer
         try:
-            dhcp_packet_rx = dhcp4.ps.Dhcp4Packet(s.recv(timeout=5))
+            dhcp_packet_rx = Dhcp4Packet(s.recv(timeout=5))
         except socket.ReceiveTimeout:
             if __debug__:
                 log("dhcp4", "Didn't receive DHCP Offer message - timeout")
             s.close()
             return None, None
 
-        if dhcp_packet_rx.dhcp_msg_type != dhcp4.ps.DHCP4_MSG_OFFER:
+        if dhcp_packet_rx.dhcp_msg_type != DHCP4_MSG_OFFER:
             if __debug__:
                 log(
                     "dhcp4",
@@ -122,20 +131,20 @@ class Dhcp4Client:
 
         # Send DHCP Request
         s.send(
-            dhcp4.ps.Dhcp4Packet(
-                dhcp_op=dhcp4.ps.DHCP4_OP_REQUEST,
+            Dhcp4Packet(
+                dhcp_op=DHCP4_OP_REQUEST,
                 dhcp_xid=dhcp_xid,
                 dhcp_ciaddr=Ip4Address("0.0.0.0"),
                 dhcp_yiaddr=Ip4Address("0.0.0.0"),
                 dhcp_siaddr=Ip4Address("0.0.0.0"),
                 dhcp_giaddr=Ip4Address("0.0.0.0"),
                 dhcp_chaddr=bytes(self._mac_address),
-                dhcp_msg_type=dhcp4.ps.DHCP4_MSG_REQUEST,
+                dhcp_msg_type=DHCP4_MSG_REQUEST,
                 dhcp_srv_id=dhcp_srv_id,
                 dhcp_req_ip_addr=dhcp_yiaddr,
                 dhcp_param_req_list=[
-                    dhcp4.ps.DHCP4_OPT_SUBNET_MASK,
-                    dhcp4.ps.DHCP4_OPT_ROUTER,
+                    DHCP4_OPT_SUBNET_MASK,
+                    DHCP4_OPT_ROUTER,
                 ],
                 dhcp_host_name="PyTCP",
             ).raw_packet
@@ -150,14 +159,14 @@ class Dhcp4Client:
 
         # Wait for DHCP Ack
         try:
-            dhcp_packet_rx = dhcp4.ps.Dhcp4Packet(s.recv(timeout=5))
+            dhcp_packet_rx = Dhcp4Packet(s.recv(timeout=5))
         except socket.ReceiveTimeout:
             if __debug__:
                 log("dhcp4", "Didn't receive DHCP ACK message - timeout")
             s.close()
             return None, None
 
-        if dhcp_packet_rx.dhcp_msg_type != dhcp4.ps.DHCP4_MSG_ACK:
+        if dhcp_packet_rx.dhcp_msg_type != DHCP4_MSG_ACK:
             if __debug__:
                 log(
                     "dhcp4",

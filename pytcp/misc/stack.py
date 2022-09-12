@@ -36,12 +36,21 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-if TYPE_CHECKING:
-    from lib.socket import Socket
-    from subsystems.packet_handler import PacketHandler
-    from subsystems.timer import Timer
+from pytcp.subsystems.arp_cache import ArpCache
+from pytcp.subsystems.nd_cache import NdCache
+from pytcp.subsystems.packet_handler import PacketHandler
+from pytcp.subsystems.rx_ring import RxRing
+from pytcp.subsystems.timer import Timer
+from pytcp.subsystems.tx_ring import TxRing
 
-timer: Timer
-packet_handler: PacketHandler
+if TYPE_CHECKING:
+    from pytcp.lib.socket import Socket
+
+timer = Timer()
+rx_ring = RxRing()
+tx_ring = TxRing()
+arp_cache = ArpCache()
+nd_cache = NdCache()
+packet_handler = PacketHandler()
 
 sockets: dict[str, Socket] = {}

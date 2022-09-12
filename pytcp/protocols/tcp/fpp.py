@@ -36,9 +36,9 @@ from __future__ import annotations
 import struct
 from typing import TYPE_CHECKING
 
-import config
-from misc.ip_helper import inet_cksum
-from protocols.tcp.ps import (
+import pytcp.config as config
+from pytcp.misc.ip_helper import inet_cksum
+from pytcp.protocols.tcp.ps import (
     TCP_HEADER_LEN,
     TCP_OPT_EOL,
     TCP_OPT_EOL_LEN,
@@ -51,7 +51,7 @@ from protocols.tcp.ps import (
 )
 
 if TYPE_CHECKING:
-    from misc.packet import PacketRx
+    from pytcp.misc.packet import PacketRx
 
 
 class TcpParser:

@@ -35,12 +35,12 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from lib.logger import log
-from misc.malpi import malpa, malpi, malpka
-from services.udp_generic import ServiceUdp
+from pytcp.lib.logger import log
+from pytcp.misc.malpi import malpa, malpi, malpka
+from pytcp.services.udp_generic import ServiceUdp
 
 if TYPE_CHECKING:
-    from lib.socket import Socket
+    from pytcp.lib.socket import Socket
 
 
 class ServiceUdpEcho(ServiceUdp):

@@ -35,11 +35,11 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from lib.logger import log
-from lib.tracker import Tracker
-from misc.tx_status import TxStatus
-from protocols.icmp4.fpa import Icmp4Assembler
-from protocols.icmp4.ps import (
+from pytcp.lib.logger import log
+from pytcp.lib.tracker import Tracker
+from pytcp.misc.tx_status import TxStatus
+from pytcp.protocols.icmp4.fpa import Icmp4Assembler
+from pytcp.protocols.icmp4.ps import (
     ICMP4_ECHO_REPLY,
     ICMP4_ECHO_REQUEST,
     ICMP4_UNREACHABLE,
@@ -47,7 +47,7 @@ from protocols.icmp4.ps import (
 )
 
 if TYPE_CHECKING:
-    from lib.ip4_address import Ip4Address
+    from pytcp.lib.ip4_address import Ip4Address
 
 
 def _phtx_icmp4(

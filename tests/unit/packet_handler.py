@@ -52,7 +52,7 @@ class TestPacketHandler(TestCase):
         self.mock_callable(
             "pytcp.subsystems.packet_handler", "log"
         ).to_return_value(None)
-        self.packet_handler = PacketHandler(None)
+        self.packet_handler = PacketHandler()
 
     def test__parse_stack_ip6_address_candidate(self):
         """

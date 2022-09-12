@@ -26,7 +26,7 @@
 
 
 #
-# tests/mock_network.py - module used to mock network for packet flow tests
+# tests.unit.mock_network.py - module used to mock network for packet flow tests
 #
 # ver 2.7
 #
@@ -40,6 +40,7 @@ from pytcp.lib.mac_address import MacAddress
 from pytcp.subsystems.arp_cache import ArpCache
 from pytcp.subsystems.nd_cache import NdCache
 from pytcp.subsystems.packet_handler import PacketHandler
+from pytcp.subsystems.timer import Timer
 from pytcp.subsystems.tx_ring import TxRing
 
 #
@@ -96,22 +97,22 @@ class MockNetworkSettings:
 
 PACKET_HANDLER_MODULES = [
     "pytcp.subsystems.packet_handler",
-    "protocols.ether.phrx",
-    "protocols.ether.phtx",
-    "protocols.arp.phrx",
-    "protocols.arp.phtx",
-    "protocols.ip4.phrx",
-    "protocols.ip4.phtx",
-    "protocols.ip6.phrx",
-    "protocols.ip6.phtx",
-    "protocols.icmp4.phrx",
-    "protocols.icmp4.phtx",
-    "protocols.icmp6.phrx",
-    "protocols.icmp6.phtx",
-    "protocols.udp.phrx",
-    "protocols.udp.phtx",
-    "protocols.tcp.phrx",
-    "protocols.tcp.phtx",
+    "pytcp.protocols.ether.phrx",
+    "pytcp.protocols.ether.phtx",
+    "pytcp.protocols.arp.phrx",
+    "pytcp.protocols.arp.phtx",
+    "pytcp.protocols.ip4.phrx",
+    "pytcp.protocols.ip4.phtx",
+    "pytcp.protocols.ip6.phrx",
+    "pytcp.protocols.ip6.phtx",
+    "pytcp.protocols.icmp4.phrx",
+    "pytcp.protocols.icmp4.phtx",
+    "pytcp.protocols.icmp6.phrx",
+    "pytcp.protocols.icmp6.phtx",
+    "pytcp.protocols.udp.phrx",
+    "pytcp.protocols.udp.phtx",
+    "pytcp.protocols.tcp.phrx",
+    "pytcp.protocols.tcp.phtx",
 ]
 
 
@@ -161,52 +162,57 @@ def setup_mock_packet_handler(self):
     physically connected to the network.
     """
 
-    self.arp_cache_mock = StrictMock(template=ArpCache)
+    # Mock the TxRing so we can record the assembled frames
+    mock_TxRing = StrictMock(template=TxRing)
     self.mock_callable(
-        target=self.arp_cache_mock,
-        method="find_entry",
-    ).for_call(self.mns.host_a_ip4_address).to_return_value(
-        self.mns.host_a_mac_address
-    )
-    self.mock_callable(
-        target=self.arp_cache_mock,
-        method="find_entry",
-    ).for_call(self.mns.host_b_ip4_address).to_return_value(None)
-    self.mock_callable(
-        target=self.arp_cache_mock,
-        method="find_entry",
-    ).for_call(self.mns.stack_ip4_gateway).to_return_value(
-        self.mns.stack_ip4_gateway_mac_address
-    )
-
-    self.nd_cache_mock = StrictMock(template=NdCache)
-    self.mock_callable(
-        target=self.nd_cache_mock,
-        method="find_entry",
-    ).for_call(self.mns.host_a_ip6_address).to_return_value(
-        self.mns.host_a_mac_address
-    )
-    self.mock_callable(
-        target=self.nd_cache_mock,
-        method="find_entry",
-    ).for_call(self.mns.host_b_ip6_address).to_return_value(None)
-    self.mock_callable(
-        target=self.nd_cache_mock,
-        method="find_entry",
-    ).for_call(self.mns.stack_ip6_gateway).to_return_value(
-        self.mns.stack_ip6_gateway_mac_address
-    )
-
-    self.tx_ring_mock = StrictMock(template=TxRing)
-    self.mock_callable(
-        target=self.tx_ring_mock,
+        target=mock_TxRing,
         method="enqueue",
     ).with_implementation(
         func=lambda packet_tx: packet_tx.assemble(self.frame_tx)
         or self.frames_tx.append(self.frame_tx)
     )
+    self.patch_attribute(
+        target="pytcp.misc.stack",
+        attribute="tx_ring",
+        new_value=mock_TxRing,
+    )
 
-    self.packet_handler = PacketHandler(None)
+    # Mock the ArpCache so we can get predictable responses
+    mock_ArpCache = StrictMock(template=ArpCache)
+    self.mock_callable(target=mock_ArpCache, method="find_entry",).for_call(
+        self.mns.host_a_ip4_address
+    ).to_return_value(self.mns.host_a_mac_address)
+    self.mock_callable(target=mock_ArpCache, method="find_entry",).for_call(
+        self.mns.host_b_ip4_address
+    ).to_return_value(None)
+    self.mock_callable(target=mock_ArpCache, method="find_entry",).for_call(
+        self.mns.stack_ip4_gateway
+    ).to_return_value(self.mns.stack_ip4_gateway_mac_address)
+    self.patch_attribute(
+        target="pytcp.misc.stack",
+        attribute="arp_cache",
+        new_value=mock_ArpCache,
+    )
+
+    # Mock the NdCache so we can get predictable responses
+    mock_NdCache = StrictMock(template=NdCache)
+    self.mock_callable(target=mock_NdCache, method="find_entry",).for_call(
+        self.mns.host_a_ip6_address
+    ).to_return_value(self.mns.host_a_mac_address)
+    self.mock_callable(target=mock_NdCache, method="find_entry",).for_call(
+        self.mns.host_b_ip6_address
+    ).to_return_value(None)
+    self.mock_callable(target=mock_NdCache, method="find_entry",).for_call(
+        self.mns.stack_ip6_gateway
+    ).to_return_value(self.mns.stack_ip6_gateway_mac_address)
+    self.patch_attribute(
+        target="pytcp.misc.stack",
+        attribute="nd_cache",
+        new_value=mock_NdCache,
+    )
+
+    # Prepare PacketHandler object to be used with the tests
+    self.packet_handler = PacketHandler()
     self.packet_handler.mac_unicast = self.mns.stack_mac_address
     self.packet_handler.mac_multicast = [
         self.mns.stack_ip6_host.address.solicited_node_multicast.multicast_mac
@@ -218,9 +224,9 @@ def setup_mock_packet_handler(self):
         self.mns.ip6_multicast_all_nodes,
         self.mns.stack_ip6_host.address.solicited_node_multicast,
     ]
-    self.packet_handler.arp_cache = self.arp_cache_mock
-    self.packet_handler.nd_cache = self.nd_cache_mock
-    self.packet_handler.tx_ring = self.tx_ring_mock
 
+    # Initialize the frame assembly buffer
     self.frame_tx = memoryview(bytearray(2048))
+
+    # Initialize the list holding the frames "sent" by mock TxRing
     self.frames_tx = []

@@ -1,0 +1,6 @@
+{
+    "python.analysis.extraPaths": [
+        "./pytcp"
+    ],
+    "python.formatting.provider": "black"
+}

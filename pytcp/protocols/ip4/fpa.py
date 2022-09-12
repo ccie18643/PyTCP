@@ -36,12 +36,12 @@ from __future__ import annotations
 import struct
 from typing import TYPE_CHECKING
 
-import config
-from lib.ip4_address import Ip4Address
-from lib.tracker import Tracker
-from misc.ip_helper import inet_cksum
-from protocols.ether.ps import ETHER_TYPE_IP4
-from protocols.ip4.ps import (
+import pytcp.config as config
+from pytcp.lib.ip4_address import Ip4Address
+from pytcp.lib.tracker import Tracker
+from pytcp.misc.ip_helper import inet_cksum
+from pytcp.protocols.ether.ps import ETHER_TYPE_IP4
+from pytcp.protocols.ip4.ps import (
     IP4_HEADER_LEN,
     IP4_OPT_EOL,
     IP4_OPT_EOL_LEN,
@@ -53,12 +53,12 @@ from protocols.ip4.ps import (
     IP4_PROTO_TCP,
     IP4_PROTO_UDP,
 )
-from protocols.raw.fpa import RawAssembler
+from pytcp.protocols.raw.fpa import RawAssembler
 
 if TYPE_CHECKING:
-    from protocols.icmp4.fpa import Icmp4Assembler
-    from protocols.tcp.fpa import TcpAssembler
-    from protocols.udp.fpa import UdpAssembler
+    from pytcp.protocols.icmp4.fpa import Icmp4Assembler
+    from pytcp.protocols.tcp.fpa import TcpAssembler
+    from pytcp.protocols.udp.fpa import UdpAssembler
 
 
 class Ip4Assembler:

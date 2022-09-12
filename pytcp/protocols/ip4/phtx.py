@@ -35,17 +35,17 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-import config
-from lib.ip4_address import Ip4Address
-from lib.logger import log
-from misc.tx_status import TxStatus
-from protocols.icmp4.fpa import Icmp4Assembler
-from protocols.ip4.fpa import Ip4Assembler, Ip4FragAssembler
-from protocols.raw.fpa import RawAssembler
-from protocols.udp.fpa import UdpAssembler
+import pytcp.config as config
+from pytcp.lib.ip4_address import Ip4Address
+from pytcp.lib.logger import log
+from pytcp.misc.tx_status import TxStatus
+from pytcp.protocols.icmp4.fpa import Icmp4Assembler
+from pytcp.protocols.ip4.fpa import Ip4Assembler, Ip4FragAssembler
+from pytcp.protocols.raw.fpa import RawAssembler
+from pytcp.protocols.udp.fpa import UdpAssembler
 
 if TYPE_CHECKING:
-    from protocols.tcp.fpa import TcpAssembler
+    from pytcp.protocols.tcp.fpa import TcpAssembler
 
 
 def _validate_src_ip4_address(

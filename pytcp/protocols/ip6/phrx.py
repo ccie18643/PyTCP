@@ -33,10 +33,10 @@
 
 from __future__ import annotations
 
-from lib.logger import log
-from misc.packet import PacketRx
-from protocols.ip6.fpp import Ip6Parser
-from protocols.ip6.ps import (
+from pytcp.lib.logger import log
+from pytcp.misc.packet import PacketRx
+from pytcp.protocols.ip6.fpp import Ip6Parser
+from pytcp.protocols.ip6.ps import (
     IP6_NEXT_EXT_FRAG,
     IP6_NEXT_ICMP6,
     IP6_NEXT_TCP,

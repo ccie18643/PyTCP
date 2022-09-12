@@ -35,11 +35,11 @@ from __future__ import annotations
 
 import struct
 
-from lib.tracker import Tracker
-from misc.ip_helper import inet_cksum
-from protocols.ip4.ps import IP4_PROTO_TCP
-from protocols.ip6.ps import IP6_NEXT_TCP
-from protocols.tcp.ps import (
+from pytcp.lib.tracker import Tracker
+from pytcp.misc.ip_helper import inet_cksum
+from pytcp.protocols.ip4.ps import IP4_PROTO_TCP
+from pytcp.protocols.ip6.ps import IP6_NEXT_TCP
+from pytcp.protocols.tcp.ps import (
     TCP_HEADER_LEN,
     TCP_OPT_EOL,
     TCP_OPT_EOL_LEN,

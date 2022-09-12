@@ -35,9 +35,9 @@ from __future__ import annotations
 
 import struct
 
-from lib.tracker import Tracker
-from misc.ip_helper import inet_cksum
-from protocols.icmp4.ps import (
+from pytcp.lib.tracker import Tracker
+from pytcp.misc.ip_helper import inet_cksum
+from pytcp.protocols.icmp4.ps import (
     ICMP4_ECHO_REPLY,
     ICMP4_ECHO_REPLY_LEN,
     ICMP4_ECHO_REQUEST,
@@ -46,7 +46,7 @@ from protocols.icmp4.ps import (
     ICMP4_UNREACHABLE__PORT,
     ICMP4_UNREACHABLE_LEN,
 )
-from protocols.ip4.ps import IP4_PROTO_ICMP4
+from pytcp.protocols.ip4.ps import IP4_PROTO_ICMP4
 
 
 class Icmp4Assembler:

@@ -101,7 +101,7 @@ class TestPacketHandlerRx(TestCase):
 
         # Initialize packet handler and manually set all the variables that
         # normally would require network connectivity
-        self.packet_handler = PacketHandler(None)
+        self.packet_handler = PacketHandler()
         self.packet_handler.mac_address = STACK_MAC_ADDRESS
         self.packet_handler.mac_multicast = [
             STACK_IP6_HOST.address.solicited_node_multicast.multicast_mac
@@ -136,7 +136,9 @@ class TestPacketHandlerRx(TestCase):
         [Ethernet] Receive Ethernet packet with unknown destination
         MAC address, drop.
         """
-        with open("tests/packets/rx/ether_unknown_dst.rx", "rb") as _:
+        with open(
+            "tests/integration/test_frames/rx/ether_unknown_dst.rx", "rb"
+        ) as _:
             packet_rx = _.read()
         self.packet_handler._phrx_ether(PacketRx(packet_rx))
         self.assertEqual(
@@ -155,7 +157,9 @@ class TestPacketHandlerRx(TestCase):
         """
         [Ethernet] Receive Ethernet packet with malformed header, drop.
         """
-        with open("tests/packets/rx/ether_malformed_header.rx", "rb") as _:
+        with open(
+            "tests/integration/test_frames/rx/ether_malformed_header.rx", "rb"
+        ) as _:
             packet_rx = _.read()
         self.packet_handler._phrx_ether(PacketRx(packet_rx))
         self.assertEqual(
@@ -174,7 +178,9 @@ class TestPacketHandlerRx(TestCase):
         """
         [IPv4] Receive IPv4 packet for unknown destination, drop.
         """
-        with open("tests/packets/rx/ip4_unknown_dst.rx", "rb") as _:
+        with open(
+            "tests/integration/test_frames/rx/ip4_unknown_dst.rx", "rb"
+        ) as _:
             packet_rx = _.read()
         self.packet_handler._phrx_ether(PacketRx(packet_rx))
         self.assertEqual(
@@ -195,7 +201,9 @@ class TestPacketHandlerRx(TestCase):
         """
         [IPv6] Receive IPv6 packet for unknown destination, drop.
         """
-        with open("tests/packets/rx/ip6_unknown_dst.rx", "rb") as _:
+        with open(
+            "tests/integration/test_frames/rx/ip6_unknown_dst.rx", "rb"
+        ) as _:
             packet_rx = _.read()
         self.packet_handler._phrx_ether(PacketRx(packet_rx))
         self.assertEqual(
@@ -216,7 +224,9 @@ class TestPacketHandlerRx(TestCase):
         """
         [ARP] Receive ARP Request packet for unknown IPv4 address, drop.
         """
-        with open("tests/packets/rx/arp_unknown_tpa.rx", "rb") as _:
+        with open(
+            "tests/integration/test_frames/rx/arp_unknown_tpa.rx", "rb"
+        ) as _:
             packet_rx = _.read()
         self.packet_handler._phrx_ether(PacketRx(packet_rx))
         self.assertEqual(
@@ -239,7 +249,10 @@ class TestPacketHandlerRx(TestCase):
         [ICMPv6 ND] Receive ICMPv6 Neighbor Solicitation DAD packet,
         respond with Neighbor Advertisement.
         """
-        with open("tests/packets/rx/ip6_icmp6_nd_ns__dad_slla.rx", "rb") as _:
+        with open(
+            "tests/integration/test_frames/rx/ip6_icmp6_nd_ns__dad_slla.rx",
+            "rb",
+        ) as _:
             packet_rx = _.read()
         self.packet_handler._phrx_ether(PacketRx(packet_rx))
         self.assertEqual(

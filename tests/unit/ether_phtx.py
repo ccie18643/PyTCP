@@ -42,13 +42,13 @@ from testslide import TestCase
 
 from pytcp.misc.packet_stats import PacketStatsTx
 from pytcp.misc.tx_status import TxStatus
-from tests.mock_network import (
+from tests.unit.mock_network import (
     MockNetworkSettings,
     patch_config,
     setup_mock_packet_handler,
 )
 
-TEST_FRAME_DIR = "tests/test_frames/ether_phtx/"
+TEST_FRAME_DIR = "tests/unit/test_frames/ether_phtx/"
 
 
 class TestEtherPhtx(TestCase):

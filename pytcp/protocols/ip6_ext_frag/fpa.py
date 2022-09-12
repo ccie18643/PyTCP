@@ -36,15 +36,15 @@ from __future__ import annotations
 
 import struct
 
-from lib.tracker import Tracker
-from protocols.ip6.ps import (
+from pytcp.lib.tracker import Tracker
+from pytcp.protocols.ip6.ps import (
     IP6_NEXT_EXT_FRAG,
     IP6_NEXT_ICMP6,
     IP6_NEXT_RAW,
     IP6_NEXT_TCP,
     IP6_NEXT_UDP,
 )
-from protocols.ip6_ext_frag.ps import (
+from pytcp.protocols.ip6_ext_frag.ps import (
     IP6_EXT_FRAG_HEADER_LEN,
     IP6_EXT_FRAG_NEXT_HEADER_TABLE,
 )

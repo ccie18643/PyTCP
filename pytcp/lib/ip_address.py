@@ -38,9 +38,9 @@ from re import A
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from lib.ip4_address import Ip4Address
-    from lib.ip6_address import Ip6Address, Ip6Host
-    from lib.mac_address import MacAddress
+    from pytcp.lib.ip4_address import Ip4Address
+    from pytcp.lib.ip6_address import Ip6Address, Ip6Host
+    from pytcp.lib.mac_address import MacAddress
 
 
 class IpAddressFormatError(Exception):

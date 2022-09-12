@@ -37,8 +37,9 @@ import threading
 import time
 
 import lib.socket as socket
-from lib.logger import log
-from misc.ip_helper import ip_version
+
+from pytcp.lib.logger import log
+from pytcp.misc.ip_helper import ip_version
 
 
 class ClientUdpEcho:

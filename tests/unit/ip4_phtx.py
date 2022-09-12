@@ -32,18 +32,18 @@
 #
 
 
-from protocols.raw.fpa import RawAssembler
 from testslide import TestCase
 
 from pytcp.misc.packet_stats import PacketStatsTx
 from pytcp.misc.tx_status import TxStatus
-from tests.mock_network import (
+from pytcp.protocols.raw.fpa import RawAssembler
+from tests.unit.mock_network import (
     MockNetworkSettings,
     patch_config,
     setup_mock_packet_handler,
 )
 
-TEST_FRAME_DIR = "tests/test_frames/ip4_phtx/"
+TEST_FRAME_DIR = "tests/unit/test_frames/ip4_phtx/"
 
 
 class TestIp4Phtx(TestCase):
@@ -378,7 +378,7 @@ class TestIp4Phtx(TestCase):
         )
         for index in range(5):
             with open(
-                f"tests/test_frames/ip4_phtx/ip4_fragmentation__frag_{index}.tx",
+                f"tests/unit/test_frames/ip4_phtx/ip4_fragmentation__frag_{index}.tx",
                 "rb",
             ) as _:
                 frame_tx = _.read()

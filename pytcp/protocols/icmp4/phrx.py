@@ -36,21 +36,21 @@ from __future__ import annotations
 import struct
 from typing import TYPE_CHECKING
 
-import misc.stack as stack
-from lib.ip4_address import Ip4Address
-from lib.logger import log
-from protocols.icmp4.fpp import Icmp4Parser
-from protocols.icmp4.ps import (
+import pytcp.misc.stack as stack
+from pytcp.lib.ip4_address import Ip4Address
+from pytcp.lib.logger import log
+from pytcp.protocols.icmp4.fpp import Icmp4Parser
+from pytcp.protocols.icmp4.ps import (
     ICMP4_ECHO_REPLY,
     ICMP4_ECHO_REQUEST,
     ICMP4_UNREACHABLE,
 )
-from protocols.ip4.ps import IP4_HEADER_LEN, IP4_PROTO_UDP
-from protocols.udp.metadata import UdpMetadata
-from protocols.udp.ps import UDP_HEADER_LEN
+from pytcp.protocols.ip4.ps import IP4_HEADER_LEN, IP4_PROTO_UDP
+from pytcp.protocols.udp.metadata import UdpMetadata
+from pytcp.protocols.udp.ps import UDP_HEADER_LEN
 
 if TYPE_CHECKING:
-    from misc.packet import PacketRx
+    from pytcp.misc.packet import PacketRx
 
 
 def _phrx_icmp4(self, packet_rx: PacketRx) -> None:

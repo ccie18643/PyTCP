@@ -35,11 +35,11 @@ from __future__ import annotations
 
 import struct
 
-from lib.ip4_address import Ip4Address
-from lib.mac_address import MacAddress
-from lib.tracker import Tracker
-from protocols.arp.ps import ARP_HEADER_LEN, ARP_OP_REPLY, ARP_OP_REQUEST
-from protocols.ether.ps import ETHER_TYPE_ARP
+from pytcp.lib.ip4_address import Ip4Address
+from pytcp.lib.mac_address import MacAddress
+from pytcp.lib.tracker import Tracker
+from pytcp.protocols.arp.ps import ARP_HEADER_LEN, ARP_OP_REPLY, ARP_OP_REQUEST
+from pytcp.protocols.ether.ps import ETHER_TYPE_ARP
 
 
 class ArpAssembler:
