@@ -25,7 +25,7 @@
 
 
 #
-# services/tcp_daytime.py - 'user space' service TCP Daytime (RFC 867)
+# examples/tcp_daytime_service.py - The 'user space' service TCP Daytime (RFC 867).
 #
 # ver 2.7
 #
@@ -37,21 +37,24 @@ import time
 from datetime import datetime
 from typing import TYPE_CHECKING
 
-from pytcp.lib.logger import log
-from pytcp.services.tcp_generic import ServiceTcp
+import click
+from tcp_service import TcpService
+
+from pytcp import TcpIpStack
 
 if TYPE_CHECKING:
     from pytcp.lib.socket import Socket
 
 
-class ServiceTcpDaytime(ServiceTcp):
+class TcpDaytimeService(TcpService):
     """
     TCP Daytime service support class.
     """
 
     def __init__(
         self,
-        local_ip_address: str,
+        *,
+        local_ip_address: str = "0.0.0.0",
         local_port: int = 13,
         message_count: int = -1,
         message_delay: int = 1,
@@ -60,53 +63,73 @@ class ServiceTcpDaytime(ServiceTcp):
         Class constructor.
         """
 
-        super().__init__("Daytime", local_ip_address, local_port)
+        super().__init__(
+            service_name="Daytime",
+            local_ip_address=local_ip_address,
+            local_port=local_port,
+        )
 
-        self.message_count = message_count
-        self.message_delay = message_delay
+        self._message_count = message_count
+        self._message_delay = message_delay
 
-    def service(self, cs: Socket) -> None:
-        """Inbound connection handler"""
+    def service(self, *, connected_socket: Socket) -> None:
+        """
+        Inbound connection handler.
+        """
 
-        # Don't want to be working on object variable as it may be shar by
-        # multiple connections.
-        message_count = self.message_count
+        # Create local copy of this variable.
+        message_count = self._message_count
 
-        if __debug__:
-            log(
-                "service",
-                "Service TCP Daytime: Sending first message to "
-                f"{cs.remote_ip_address}, port {cs.remote_port}",
-            )
-        cs.send(b"***CLIENT OPEN / SERVICE OPEN***\n")
+        click.echo(
+            "Service TCP Daytime: Sending first message to "
+            f"{connected_socket.remote_ip_address}, port {connected_socket.remote_port}."
+        )
+        connected_socket.send(b"***CLIENT OPEN / SERVICE OPEN***\n")
 
-        message_count = self.message_count
-        while message_count:
+        while self._run_thread and message_count:
             message = bytes(str(datetime.now()) + "\n", "utf-8")
 
             try:
-                cs.send(message)
+                connected_socket.send(message)
             except OSError as error:
-                if __debug__:
-                    log(
-                        "service",
-                        f"Service TCP Daytime: send() error - [{error}]",
-                    )
+                click.echo(f"Service TCP Daytime: send() error - {error!r}.")
                 break
 
-            if __debug__:
-                log(
-                    "service",
-                    f"Service TCP Daytime: Sent {len(message)} bytes of data "
-                    f"to {cs.remote_ip_address}, port {cs.remote_port}",
-                )
-            time.sleep(self.message_delay)
+            click.echo(
+                f"Service TCP Daytime: Sent {len(message)} bytes of data "
+                f"to {connected_socket.remote_ip_address}, port {connected_socket.remote_port}."
+            )
+            time.sleep(self._message_delay)
             message_count = min(message_count, message_count - 1)
 
-        cs.close()
-        if __debug__:
-            log(
-                "service",
-                "Service TCP Daytime: Closed connection to "
-                f"{cs.remote_ip_address}, port {cs.remote_port}",
-            )
+        connected_socket.close()
+        click.echo(
+            "Service TCP Daytime: Closed connection to "
+            f"{connected_socket.remote_ip_address}, port {connected_socket.remote_port}.",
+        )
+
+
+@click.command()
+@click.option("--interface", default="tap7")
+def cli(*, interface: str):
+    """
+    Start PyTCP stack and stop it when user presses Ctrl-C.
+    Run the TCP Daytime service.
+    """
+
+    stack = TcpIpStack(interface)
+    service = TcpDaytimeService()
+
+    try:
+        stack.start()
+        service.start()
+        while True:
+            time.sleep(60)
+
+    except KeyboardInterrupt:
+        service.stop()
+        stack.stop()
+
+
+if __name__ == "__main__":
+    cli()

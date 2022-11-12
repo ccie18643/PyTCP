@@ -64,6 +64,7 @@ class ArpCache:
             self.permanent: bool = permanent
             self.creation_time: float = time.time()
             self.hit_count: int = 0
+            self._run_thread: bool = False
 
     def __init__(self) -> None:
         """
@@ -85,9 +86,9 @@ class ArpCache:
         """
         Stop ARP cache thread.
         """
-        self._run_thread = False
         if __debug__:
             log("stack", "Stopping ARP cache")
+        self._run_thread = False
         time.sleep(0.1)
 
     def __thread_maintain_cache(self) -> None:

@@ -25,7 +25,81 @@
 
 
 #
-# services/__init__.py
+# examples/udp_daytime_service.py - The 'user space' service UDP Daytime (RFC 867).
 #
 # ver 2.7
 #
+
+
+from __future__ import annotations
+
+import time
+from datetime import datetime
+from typing import TYPE_CHECKING
+
+import click
+from udp_service import UdpService
+
+from pytcp import TcpIpStack
+
+if TYPE_CHECKING:
+    from pytcp.lib.socket import Socket
+
+
+class UdpDaytimeService(UdpService):
+    """
+    UDP Echo service support class.
+    """
+
+    def __init__(
+        self, *, local_ip_address: str = "0.0.0.0", local_port: int = 13
+    ):
+        """
+        Class constructor.
+        """
+
+        super().__init__(
+            service_name="Echo",
+            local_ip_address=local_ip_address,
+            local_port=local_port,
+        )
+
+    def service(self, *, listening_socket: Socket) -> None:
+        """
+        Inbound connection handler.
+        """
+
+        while self._run_thread:
+            _, remote_address = listening_socket.recvfrom()
+            message = bytes(str(datetime.now()), "utf-8")
+            listening_socket.sendto(message, remote_address)
+            click.echo(
+                f"Service UDP Daytime: Sent {len(message)} bytes to "
+                f"{remote_address[0]}, port {remote_address[1]}."
+            )
+
+
+@click.command()
+@click.option("--interface", default="tap7")
+def cli(*, interface: str):
+    """
+    Start PyTCP stack and stop it when user presses Ctrl-C.
+    Run the UDP Daytime service.
+    """
+
+    stack = TcpIpStack(interface)
+    service = UdpDaytimeService()
+
+    try:
+        stack.start()
+        service.start()
+        while True:
+            time.sleep(60)
+
+    except KeyboardInterrupt:
+        service.stop()
+        stack.stop()
+
+
+if __name__ == "__main__":
+    cli()

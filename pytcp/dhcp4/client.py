@@ -38,10 +38,10 @@ from typing import TYPE_CHECKING
 
 import pytcp.lib.socket as socket
 from pytcp.dhcp4.ps import (
-    DHCP4_MSG_DISCOVER,
-    DHCP4_MSG_REQUEST,
-    DHCP4_MSG_OFFER,
     DHCP4_MSG_ACK,
+    DHCP4_MSG_DISCOVER,
+    DHCP4_MSG_OFFER,
+    DHCP4_MSG_REQUEST,
     DHCP4_OP_REQUEST,
     DHCP4_OPT_ROUTER,
     DHCP4_OPT_SUBNET_MASK,

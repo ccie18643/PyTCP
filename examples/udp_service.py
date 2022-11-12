@@ -25,7 +25,7 @@
 
 
 #
-# services/udp_generic.py - 'user space' UDP generic service class
+# examples/udp_service.py - The 'user space' UDP generic service class.
 #
 # ver 2.7
 #
@@ -34,79 +34,104 @@
 from __future__ import annotations
 
 import threading
+import time
 from typing import TYPE_CHECKING
 
-import lib.socket as socket
+import click
 
-from pytcp.lib.logger import log
+import pytcp.lib.socket as sock
 from pytcp.misc.ip_helper import ip_version
 
 if TYPE_CHECKING:
     from pytcp.lib.socket import Socket
 
 
-class ServiceUdp:
+class UdpService:
     """
     UDP service support class.
     """
 
     def __init__(
-        self, name: str, local_ip_address: str, local_port: int
+        self,
+        *,
+        service_name: str,
+        local_ip_address: str,
+        local_port: int,
     ) -> None:
         """
         Class constructor.
         """
 
-        self.local_ip_address = local_ip_address
-        self.local_port = local_port
-        self.name = name
+        self._service_name = service_name
+        self._local_ip_address = local_ip_address
+        self._local_port = local_port
+        self._run_thread = False
 
+    def start(self) -> None:
+        """
+        Start the service thread.
+        """
+
+        click.echo(f"Starting the UDP {self._service_name} service.")
+        self._run_thread = True
         threading.Thread(target=self.__thread_service).start()
+        time.sleep(0.1)
+
+    def stop(self) -> None:
+        """
+        Stop the service thread.
+        """
+
+        click.echo(f"Stopinging the UDP {self._service_name} service.")
+        self._run_thread = False
+        time.sleep(0.1)
 
     def __thread_service(self) -> None:
         """
         Service initialization.
         """
 
-        version = ip_version(self.local_ip_address)
+        version = ip_version(self._local_ip_address)
         if version == 6:
-            s = socket.socket(family=socket.AF_INET6, type=socket.SOCK_DGRAM)
+            listening_socket = sock.socket(
+                family=sock.AF_INET6, type=sock.SOCK_DGRAM
+            )
         elif version == 4:
-            s = socket.socket(family=socket.AF_INET4, type=socket.SOCK_DGRAM)
+            listening_socket = sock.socket(
+                family=sock.AF_INET4, type=sock.SOCK_DGRAM
+            )
         else:
-            if __debug__:
-                log(
-                    "service",
-                    f"Service UDP {self.name}: Invalid local IP address - "
-                    f"{self.local_ip_address}",
-                )
+            click.echo(
+                f"Service UDP {self._service_name}: Invalid local IP address - "
+                f"{self._local_ip_address}."
+            )
             return
 
         try:
-            s.bind((self.local_ip_address, self.local_port))
-            if __debug__:
-                log(
-                    "service",
-                    f"Service UDP {self.name}: Socket created, bound to "
-                    f"{self.local_ip_address}, port {self.local_port}",
-                )
+            listening_socket.bind((self._local_ip_address, self._local_port))
+            click.echo(
+                f"Service UDP {self._service_name}: Socket created, bound to "
+                f"{self._local_ip_address}, port {self._local_port}."
+            )
         except OSError as error:
-            if __debug__:
-                log(
-                    "service",
-                    f"Service UDP {self.name}: bind() call failed - {error}",
-                )
+            click.echo(
+                f"Service UDP {self._service_name}: bind() call failed - {error!r}."
+            )
             return
 
-        self.service(s)
+        self.service(listening_socket=listening_socket)
 
-    def service(self, s: Socket) -> None:
-        """Service method"""
+    def service(
+        self,
+        *,
+        listening_socket: Socket,
+    ) -> None:
+        """
+        Service method.
+        """
 
-        if __debug__:
-            log(
-                "service",
-                f"Service UDP {self.name}: No service method defined, "
-                "closing connection",
-            )
-        s.close()
+        click.echo(
+            f"Service UDP {self._service_name}: No service method defined, "
+            "closing connection."
+        )
+        listening_socket.close()

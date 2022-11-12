@@ -92,7 +92,10 @@ class Tracker:
         """
         if self._echo_tracker is None:
             return f"Tracker(serial='{self._serial}')"
-        return f"Tracker(serial='{self._serial}', echo_tracker={self._echo_tracker})"
+        return (
+            f"Tracker(serial='{self._serial}', "
+            f"echo_tracker={self._echo_tracker})"
+        )
 
     @property
     def timestamp(self) -> float:

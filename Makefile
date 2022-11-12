@@ -1,18 +1,23 @@
 PYTHON_VERSION := 3.10
 VENV := venv
-PY_PATH := $(shell find pytcp -name '*.py')
-TEST_PATH := $(shell find tests -name '*.py')
-
-all: venv
+ROOT_PATH:=$(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
+PYTCP_PATH := pytcp
+TESTS_PATH := tests
+EXAMPLES_PATH := examples
+PYTCP_FILES := $(shell find ${PYTCP_PATH} -name '*.py')
+TEST_FILES := $(shell find ${TESTS_PATH} -name '*.py')
+EXAMPLES_FILES := $(shell find ${EXAMPLES_PATH} -name '*.py')
 
 $(VENV)/bin/activate: requirements.txt
 	@python$(PYTHON_VERSION) -m venv $(VENV)
+	@echo "export PYTHONPATH=$(ROOT_PATH)" >> venv/bin/activate
+	@./$(VENV)/bin/python3 -m pip install --upgrade pip
 	@./$(VENV)/bin/pip install -r requirements.txt
 
 venv: $(VENV)/bin/activate
 
 run: venv
-	@./$(VENV)/bin/python3 pytcp/pytcp.py
+	@PYTHONPATH=$(ROOT_PATH) ./$(VENV)/bin/python3 examples/run_stack.py
 
 clean:
 	@rm -rf $(VENV)
@@ -20,15 +25,16 @@ clean:
 
 lint: venv
 	@echo '<<< CODESPELL'
-	@./$(VENV)/bin/codespell -w --ignore-words-list="ect,ether,nd,tha" --quiet-level=2 ${PY_PATH} ${TEST_PATH} README.md
+	@./$(VENV)/bin/codespell -w --ignore-words-list="ect,ether,nd,tha" --quiet-level=2 ${PYTCP_FILES} ${TEST_FILES} ${EXAMPLES_FILES} README.md
 	@echo '<<< ISORT'
-	@./$(VENV)/bin/isort --profile black ${PY_PATH} ${TEST_PATH}
+	@./$(VENV)/bin/isort --profile black ${PYTCP_FILES} ${TEST_FILES} ${EXAMPLES_FILES}
 	@echo '<<< BLACK'
-	@./$(VENV)/bin/black ${PY_PATH} ${TEST_PATH}
+	@./$(VENV)/bin/black ${PYTCP_FILES} ${TEST_FILES} ${EXAMPLES_FILES}
 	@echo '<<< FLAKE8'
-	@./$(VENV)/bin/flake8 ${PY_PATH} ${TEST_PATH}
+	@./$(VENV)/bin/flake8 ${PYTCP_FILES} ${TEST_FILES} ${EXAMPLES_FILES}
 	@echo '<<< MYPY'
-	@./$(VENV)/bin/mypy -p pytcp
+	@PYTHONPATH=$(ROOT_PATH) ./$(VENV)/bin/mypy -p ${PYTCP_PATH}
+	@PYTHONPATH=$(ROOT_PATH) ./$(VENV)/bin/mypy -p ${EXAMPLES_PATH}
 
 test_unit: venv
 	@echo '<<< TESTSLIDE UNIT'

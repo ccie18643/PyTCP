@@ -35,15 +35,9 @@ import fcntl
 import os
 import struct
 import sys
-import time
 
 import pytcp.misc.stack as stack
 from pytcp.lib.logger import log
-from pytcp.subsystems.packet_handler import PacketHandler
-from pytcp.subsystems.rx_ring import RxRing
-from pytcp.subsystems.stack_cli_server import StackCliServer
-from pytcp.subsystems.timer import Timer
-from pytcp.subsystems.tx_ring import TxRing
 
 TUNSETIFF = 0x400454CA
 IFF_TAP = 0x0002

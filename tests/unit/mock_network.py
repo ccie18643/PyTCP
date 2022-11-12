@@ -40,7 +40,6 @@ from pytcp.lib.mac_address import MacAddress
 from pytcp.subsystems.arp_cache import ArpCache
 from pytcp.subsystems.nd_cache import NdCache
 from pytcp.subsystems.packet_handler import PacketHandler
-from pytcp.subsystems.timer import Timer
 from pytcp.subsystems.tx_ring import TxRing
 
 #

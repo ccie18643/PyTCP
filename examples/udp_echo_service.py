@@ -25,7 +25,7 @@
 
 
 #
-# services/udp_daytime.py - 'user space' service UDP Daytime (RFC 867)
+# examples/udp_echo.py - The 'user space' service UDP Echo (RFC 862).
 #
 # ver 2.7
 #
@@ -33,38 +33,86 @@
 
 from __future__ import annotations
 
-from datetime import datetime
+import time
 from typing import TYPE_CHECKING
 
-from pytcp.lib.logger import log
-from pytcp.services.udp_generic import ServiceUdp
+import click
+from udp_service import UdpService
+
+from pytcp import TcpIpStack
+from pytcp.misc.malpi import malpa, malpi, malpka
 
 if TYPE_CHECKING:
     from pytcp.lib.socket import Socket
 
 
-class ServiceUdpDaytime(ServiceUdp):
+class UdpEchoService(UdpService):
     """
     UDP Echo service support class.
     """
 
-    def __init__(self, local_ip_address: str, local_port: int = 13):
+    def __init__(
+        self, *, local_ip_address: str = "0.0.0.0", local_port: int = 7
+    ):
         """
         Class constructor.
         """
-        super().__init__("Echo", local_ip_address, local_port)
 
-    def service(self, s: Socket) -> None:
+        super().__init__(
+            service_name="Echo",
+            local_ip_address=local_ip_address,
+            local_port=local_port,
+        )
+
+    def service(self, *, listening_socket: Socket) -> None:
         """
         Inbound connection handler.
         """
+
+        while self._run_thread:
+            message, remote_address = listening_socket.recvfrom()
+
+            click.echo(
+                f"Service UDP Echo: Received {len(message)} bytes from "
+                f"{remote_address[0]}, port {remote_address[1]}."
+            )
+
+            if b"malpka" in message.strip().lower():
+                message = malpka
+            elif b"malpa" in message.strip().lower():
+                message = malpa
+            elif b"malpi" in message.strip().lower():
+                message = malpi
+
+            listening_socket.sendto(message, remote_address)
+
+            click.echo(
+                f"Service UDP Echo: Echo'ed {len(message)} bytes back to "
+                f"{remote_address[0]}, port {remote_address[1]}."
+            )
+
+
+@click.command()
+@click.option("--interface", default="tap7")
+def cli(*, interface: str):
+    """
+    Start PyTCP stack and stop it when user presses Ctrl-C.
+    Run the UDP Echo service.
+    """
+
+    stack = TcpIpStack(interface)
+    service = UdpEchoService()
+
+    try:
+        stack.start()
+        service.start()
         while True:
-            _, remote_address = s.recvfrom()
-            message = bytes(str(datetime.now()), "utf-8")
-            s.sendto(message, remote_address)
-            if __debug__:
-                log(
-                    "service",
-                    f"Service UDP Daytime: Sent {len(message)} bytes to "
-                    f"{remote_address[0]}, port {remote_address[1]}",
-                )
+            time.sleep(60)
+
+    except KeyboardInterrupt:
+        service.stop()
+        stack.stop()
+
+
+if __name__ == "__main__":
+    cli()

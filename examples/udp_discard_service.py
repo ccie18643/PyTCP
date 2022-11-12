@@ -25,7 +25,7 @@
 
 
 #
-# services/udp_discard.py - 'user space' service UDP Discard (RFC 863)
+# examples/udp_discard_service.py - The 'user space' service UDP Discard (RFC 863).
 #
 # ver 2.7
 #
@@ -33,36 +33,70 @@
 
 from __future__ import annotations
 
+import time
 from typing import TYPE_CHECKING
 
-from pytcp.lib.logger import log
-from pytcp.services.udp_generic import ServiceUdp
+import click
+from udp_service import UdpService
+
+from pytcp import TcpIpStack
 
 if TYPE_CHECKING:
     from pytcp.lib.socket import Socket
 
 
-class ServiceUdpDiscard(ServiceUdp):
+class UdpDiscardService(UdpService):
     """
     UDP Echo service support class.
     """
 
-    def __init__(self, local_ip_address: str, local_port: int = 9):
+    def __init__(
+        self, *, local_ip_address: str = "0.0.0.0", local_port: int = 9
+    ):
         """
         Class constructor.
         """
-        super().__init__("Discard", local_ip_address, local_port)
 
-    def service(self, s: Socket) -> None:
+        super().__init__(
+            service_name="Discard",
+            local_ip_address=local_ip_address,
+            local_port=local_port,
+        )
+
+    def service(self, listening_socket: Socket) -> None:
         """
         Inbound connection handler.
         """
-        while True:
-            message, remote_address = s.recvfrom()
 
-            if __debug__:
-                log(
-                    "service",
-                    f"Service UDP Discard: Received {len(message)} bytes from "
-                    f"{remote_address[0]}, port {remote_address[1]}",
-                )
+        while self._run_thread:
+            message, remote_address = listening_socket.recvfrom()
+            click.echo(
+                f"Service UDP Discard: Received {len(message)} bytes from "
+                f"{remote_address[0]}, port {remote_address[1]}."
+            )
+
+
+@click.command()
+@click.option("--interface", default="tap7")
+def cli(*, interface: str):
+    """
+    Start PyTCP stack and stop it when user presses Ctrl-C.
+    Run the UDP Discard service.
+    """
+
+    stack = TcpIpStack(interface)
+    service = UdpDiscardService()
+
+    try:
+        stack.start()
+        service.start()
+        while True:
+            time.sleep(60)
+
+    except KeyboardInterrupt:
+        service.stop()
+        stack.stop()
+
+
+if __name__ == "__main__":
+    cli()

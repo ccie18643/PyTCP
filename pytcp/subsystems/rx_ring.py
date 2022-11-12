@@ -37,9 +37,8 @@ import os
 import select
 import threading
 import time
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
-import pytcp.misc.stack as stack
 from pytcp.lib.logger import log
 from pytcp.misc.packet import PacketRx
 
@@ -58,6 +57,7 @@ class RxRing:
         """
         self.rx_ring: list[PacketRx] = []
         self.packet_enqueued: Semaphore = threading.Semaphore(0)
+        self._run_thread: bool = False
 
     def start(self, tap: int) -> None:
         """
@@ -74,9 +74,9 @@ class RxRing:
         """
         Stop Rx ring thread.
         """
-        self._run_thread = False
         if __debug__:
             log("stack", "Stopping RX ring")
+        self._run_thread = False
         time.sleep(0.1)
 
     def __thread_receive(self) -> None:

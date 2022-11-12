@@ -25,62 +25,31 @@
 
 
 #
-# services/udp_echo.py - 'user space' service UDP Echo (RFC 862)
+# examples/run_stack.py - Run stack without any 'user space' services
 #
 # ver 2.7
 #
 
+import time
 
-from __future__ import annotations
-
-from typing import TYPE_CHECKING
-
-from pytcp.lib.logger import log
-from pytcp.misc.malpi import malpa, malpi, malpka
-from pytcp.services.udp_generic import ServiceUdp
-
-if TYPE_CHECKING:
-    from pytcp.lib.socket import Socket
+from pytcp import TcpIpStack
 
 
-class ServiceUdpEcho(ServiceUdp):
+def main():
     """
-    UDP Echo service support class.
+    Start PyTCP stack and stop it when user presses Ctrl-C.
     """
 
-    def __init__(self, local_ip_address: str, local_port: int = 7):
-        """
-        Class constructor.
-        """
-        super().__init__("Echo", local_ip_address, local_port)
+    stack = TcpIpStack("tap7")
 
-    def service(self, s: Socket) -> None:
-        """
-        Inbound connection handler.
-        """
-
+    try:
+        stack.start()
         while True:
-            message, remote_address = s.recvfrom()
+            time.sleep(60)
 
-            if __debug__:
-                log(
-                    "service",
-                    f"Service UDP Echo: Received {len(message)} bytes from "
-                    f"{remote_address[0]}, port {remote_address[1]}",
-                )
+    except KeyboardInterrupt:
+        stack.stop()
 
-            if b"malpka" in message.strip().lower():
-                message = malpka
-            elif b"malpa" in message.strip().lower():
-                message = malpa
-            elif b"malpi" in message.strip().lower():
-                message = malpi
 
-            s.sendto(message, remote_address)
-
-            if __debug__:
-                log(
-                    "service",
-                    f"Service UDP Echo: Echo'ed {len(message)} bytes back to "
-                    f"{remote_address[0]}, port {remote_address[1]}",
-                )
+if __name__ == "__main__":
+    main()

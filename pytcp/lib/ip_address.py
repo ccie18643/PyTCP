@@ -34,7 +34,6 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod, abstractproperty
-from re import A
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:

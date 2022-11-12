@@ -38,7 +38,6 @@ import threading
 import time
 from typing import Any, Callable
 
-import pytcp.misc.stack as stack
 from pytcp.lib.logger import log
 
 
@@ -116,24 +115,25 @@ class Timer:
         """
         self._tasks: list[TimerTask] = []
         self._timers: dict[str, int] = {}
+        self._run_thread: bool = False
 
-    def start(self):
+    def start(self) -> None:
         """
         Start timer thread.
         """
         if __debug__:
             log("stack", "Starting timer thread")
-        self._run_thread: bool = True
+        self._run_thread = True
         threading.Thread(target=self.__thread_timer).start()
         time.sleep(0.1)
 
-    def stop(self):
+    def stop(self) -> None:
         """
         Stop timer thread.
         """
         if __debug__:
             log("stack", "Stopping timer thread")
-        self._run_thread: bool = False
+        self._run_thread = False
         time.sleep(0.1)
 
     def __thread_timer(self) -> None:

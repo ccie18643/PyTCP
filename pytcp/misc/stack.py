@@ -44,6 +44,7 @@ from pytcp.subsystems.timer import Timer
 from pytcp.subsystems.tx_ring import TxRing
 
 if TYPE_CHECKING:
+    from pytcp.lib.ip4_address import Ip4Address
     from pytcp.lib.socket import Socket
 
 timer = Timer()
@@ -54,3 +55,4 @@ nd_cache = NdCache()
 packet_handler = PacketHandler()
 
 sockets: dict[str, Socket] = {}
+arp_probe_unicast_conflict: set[Ip4Address] = set()

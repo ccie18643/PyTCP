@@ -100,8 +100,6 @@ from pytcp.protocols.tcp.phrx import _phrx_tcp
 from pytcp.protocols.tcp.phtx import _phtx_tcp
 from pytcp.protocols.udp.phrx import _phrx_udp
 from pytcp.protocols.udp.phtx import _phtx_udp
-from pytcp.subsystems.rx_ring import RxRing
-from pytcp.subsystems.tx_ring import TxRing
 
 if TYPE_CHECKING:
     from threading import Semaphore
@@ -186,6 +184,9 @@ class PacketHandler:
         self.ip4_frag_flows: dict[int, bytes] = {}
         self.ip6_frag_flows: dict[int, bytes] = {}
 
+        # Thread control
+        self._run_thread: bool = False
+
     def start(self) -> None:
         """
         Start packet handler thread.
@@ -200,9 +201,9 @@ class PacketHandler:
         """
         Stop packet handler thread.
         """
-        self._run_thread = False
         if __debug__:
             log("stack", "Stopping packet handler")
+        self._run_thread = False
         time.sleep(0.1)
 
     def assign_ip6_addresses(self) -> None:
@@ -268,7 +269,7 @@ class PacketHandler:
                 log(
                     "stack",
                     "<INFO>Stack listening on multicast IPv6 addresses: "
-                    "{', '.join([str(_) for _ in set(self.ip6_multicast)])})</>",
+                    f"{', '.join([str(_) for _ in set(self.ip6_multicast)])})</>",
                 )
 
             if config.IP4_SUPPORT:

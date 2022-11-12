@@ -37,7 +37,6 @@ from __future__ import annotations
 import random
 import threading
 from enum import Enum, auto
-from re import I
 from typing import TYPE_CHECKING, Any, Callable
 
 import pytcp.config as config
@@ -170,7 +169,7 @@ class TcpSession:
         """
 
         ###
-        ### Parameters derived from the socket
+        # Parameters derived from the socket
         ###
 
         self._local_ip_address: IpAddress = local_ip_address
@@ -183,7 +182,7 @@ class TcpSession:
         self._socket: Socket = socket
 
         ###
-        ### Buffers
+        # Buffers
         ###
 
         # Keeps data received from peer and not received by application yet
@@ -193,7 +192,7 @@ class TcpSession:
         self._tx_buffer: bytearray = bytearray()
 
         ###
-        ### Receiving window parameters
+        # Receiving window parameters
         ###
 
         # Initial sequence number
@@ -215,7 +214,7 @@ class TcpSession:
         self._rcv_wsc: int = 1
 
         ###
-        ### Sending window parameters
+        # Sending window parameters
         ###
 
         # Initial sequence number
@@ -247,7 +246,7 @@ class TcpSession:
         self._snd_wsc: int = 1
 
         ###
-        ### Other variables
+        # Other variables
         ###
 
         # Keeps track of number of DUP packets sent by peer to determine if any

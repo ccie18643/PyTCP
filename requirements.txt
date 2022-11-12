@@ -8,3 +8,4 @@ isort
 argparse
 mock
 types-mock
+click

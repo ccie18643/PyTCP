@@ -100,12 +100,6 @@ class ArpAssembler:
         return f"ARP request unknown operation {self._oper}"
 
     @property
-    def ethertype(self) -> int:
-        """
-        Return the proper 'Ethertype' for ARP protocol packet.
-        """
-
-    @property
     def tracker(self) -> Tracker:
         """
         Getter for the '_tracker' property.
