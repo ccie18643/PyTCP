@@ -44,9 +44,12 @@ from pytcp.protocols.ip6_ext_frag.ps import IP6_EXT_FRAG_HEADER_LEN
 
 if TYPE_CHECKING:
     from pytcp.protocols.ip6.fpa import Ip6Assembler
+    from pytcp.subsystems.packet_handler import PacketHandler
 
 
-def _phtx_ip6_ext_frag(self, *, ip6_packet_tx: Ip6Assembler) -> TxStatus:
+def _phtx_ip6_ext_frag(
+    self: PacketHandler, *, ip6_packet_tx: Ip6Assembler
+) -> TxStatus:
     """
     Handle outbound IPv6 fagment extension header.
     """

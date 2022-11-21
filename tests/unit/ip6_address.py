@@ -53,7 +53,7 @@ class TestIp6Address(TestCase):
     Unit tests for 'Ip6Address' class.
     """
 
-    def setUp(self):
+    def setUp(self) -> None:
         """
         Setup tests.
         """
@@ -118,7 +118,7 @@ class TestIp6Address(TestCase):
             ),
         ]
 
-    def test___init__(self):
+    def test___init__(self) -> None:
         """
         Test the 'Ip6Address' object constructor.
         """
@@ -197,7 +197,7 @@ class TestIp6Address(TestCase):
             340282366920938463463374607431768211456,
         )
 
-    def test___str__(self):
+    def test___str__(self) -> None:
         """
         Test the '__str__()' dunder.
         """
@@ -206,7 +206,7 @@ class TestIp6Address(TestCase):
             "2001::1234:5678:90ab:cdef",
         )
 
-    def test___repr__(self):
+    def test___repr__(self) -> None:
         """
         Test the '__repr__()' dunder.
         """
@@ -215,7 +215,7 @@ class TestIp6Address(TestCase):
             "Ip6Address('2001::1234:5678:90ab:cdef')",
         )
 
-    def test___bytes__(self):
+    def test___bytes__(self) -> None:
         """
         Test the '__bytes__()' dunder.
         """
@@ -224,7 +224,7 @@ class TestIp6Address(TestCase):
             b" \x01\x00\x00\x00\x00\x00\x00\x124Vx\x90\xab\xcd\xef",
         )
 
-    def test___eq__(self):
+    def test___eq__(self) -> None:
         """
         Test the '__eq__()' dunder.
         """
@@ -233,7 +233,7 @@ class TestIp6Address(TestCase):
             Ip6Address("2001::1234:5678:90ab:cdef"),
         )
 
-    def test___hash__(self):
+    def test___hash__(self) -> None:
         """
         Test the '__hash__()' dunder.
         """
@@ -242,13 +242,13 @@ class TestIp6Address(TestCase):
             hash(42540488161975842761862124892595146223),
         )
 
-    def test_version(self):
+    def test_version(self) -> None:
         """
         Test the 'version' property.
         """
         self.assertEqual(Ip6Address("2001::1234:5678:90ab:cdef").version, 6)
 
-    def test_is_unspecified(self):
+    def test_is_unspecified(self) -> None:
         """
         Test the 'is_unspecified' property.
         """
@@ -257,28 +257,28 @@ class TestIp6Address(TestCase):
                 sample.ip6_address.is_unspecified, sample.is_unspecified
             )
 
-    def test_is_loopback(self):
+    def test_is_loopback(self) -> None:
         """
         Test the 'is_loopback' property.
         """
         for sample in self.ip6_samples:
             self.assertEqual(sample.ip6_address.is_loopback, sample.is_loopback)
 
-    def test_is_global(self):
+    def test_is_global(self) -> None:
         """
         Test the 'is_global' property.
         """
         for sample in self.ip6_samples:
             self.assertEqual(sample.ip6_address.is_global, sample.is_global)
 
-    def test_is_private(self):
+    def test_is_private(self) -> None:
         """
         Test the 'is_private' property.
         """
         for sample in self.ip6_samples:
             self.assertEqual(sample.ip6_address.is_private, sample.is_private)
 
-    def test_is_link_local(self):
+    def test_is_link_local(self) -> None:
         """
         Test the 'is_link_local' property.
         """
@@ -287,7 +287,7 @@ class TestIp6Address(TestCase):
                 sample.ip6_address.is_link_local, sample.is_link_local
             )
 
-    def test_is_multicast(self):
+    def test_is_multicast(self) -> None:
         """
         Test the 'is_multicast' property.
         """
@@ -296,7 +296,7 @@ class TestIp6Address(TestCase):
                 sample.ip6_address.is_multicast, sample.is_multicast
             )
 
-    def test_is_solicited_node_multicast(self):
+    def test_is_solicited_node_multicast(self) -> None:
         """
         Test the 'is_solicited_multicast' property.
         """
@@ -306,14 +306,14 @@ class TestIp6Address(TestCase):
                 sample.is_solicited_node_multicast,
             )
 
-    def test_is_unicast(self):
+    def test_is_unicast(self) -> None:
         """
         Test the 'is_unicast' property.
         """
         for sample in self.ip6_samples:
             self.assertEqual(sample.ip6_address.is_unicast, sample.is_unicast)
 
-    def test_solicited_node_multicast(self):
+    def test_solicited_node_multicast(self) -> None:
         """
         Test the 'solicited_node_multicast' property.
         """
@@ -322,7 +322,7 @@ class TestIp6Address(TestCase):
             Ip6Address("ff02::1:ffab:cdef"),
         )
 
-    def test_multicast_mac(self):
+    def test_multicast_mac(self) -> None:
         """
         Test the 'multicast_mac' property.
         """
@@ -331,7 +331,7 @@ class TestIp6Address(TestCase):
             MacAddress("33:33:ff:ab:cd:ef"),
         )
 
-    def test_unspecified(self):
+    def test_unspecified(self) -> None:
         """
         Test the 'unspecified' property.
         """
@@ -346,7 +346,7 @@ class TestIp6Mask(TestCase):
     Unit tests for 'Ip6Mask' class.
     """
 
-    def test___init__(self):
+    def test___init__(self) -> None:
         """
         Test the constructor for 'Ip6Mask' object.
         """
@@ -400,19 +400,19 @@ class TestIp6Mask(TestCase):
         )
         self.assertRaises(Ip6MaskFormatError, Ip6Mask, 64)
 
-    def test___str__(self):
+    def test___str__(self) -> None:
         """
         Test the '__str__()' dunder.
         """
         self.assertEqual(str(Ip6Mask("/64")), "/64")
 
-    def test___repr__(self):
+    def test___repr__(self) -> None:
         """
         Test the '__repr__()' dunder.
         """
         self.assertEqual(repr(Ip6Mask("/80")), "Ip6Mask('/80')")
 
-    def test___bytes__(self):
+    def test___bytes__(self) -> None:
         """
         Test the '__bytes__()' dunder.
         """
@@ -426,7 +426,7 @@ class TestIp6Mask(TestCase):
             b"\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\x00\x00\x00\x00",
         )
 
-    def test___int__(self):
+    def test___int__(self) -> None:
         """
         Test the '__int__()' dunder.
         """
@@ -434,14 +434,14 @@ class TestIp6Mask(TestCase):
             int(Ip6Mask("/48")), 340282366920937254537554992802593505280
         )
 
-    def test___eq__(self):
+    def test___eq__(self) -> None:
         """
         Test the '__eq__()' dunder.
         """
         self.assertEqual(Ip6Mask("/64"), Ip6Mask("/64"))
         self.assertNotEqual(Ip6Mask("/64"), Ip6Mask("/128"))
 
-    def test___hash__(self):
+    def test___hash__(self) -> None:
         """
         Test the '__hash__' dunder.
         """
@@ -449,14 +449,14 @@ class TestIp6Mask(TestCase):
             hash(Ip6Mask("/64")), hash(340282366920938463444927863358058659840)
         )
 
-    def test___len__(self):
+    def test___len__(self) -> None:
         """
         Test the '__len__()' dunder.
         """
         for n in range(129):
             self.assertEqual(len(Ip6Mask(f"/{n}")), n)
 
-    def test_version(self):
+    def test_version(self) -> None:
         """
         Test the 'version' property.
         """
@@ -468,7 +468,7 @@ class TestIp6Network(TestCase):
     Unit tests for 'Ip6Network' class.
     """
 
-    def test___init__(self):
+    def test___init__(self) -> None:
         """
         Test the constructor for 'Ip6Network' object.
         """
@@ -517,7 +517,7 @@ class TestIp6Network(TestCase):
             Ip6NetworkFormatError, Ip6Network, "1234:5678:90ab:cdef::"
         )
 
-    def test___str__(self):
+    def test___str__(self) -> None:
         """
         Test the '__str__()' dunder.
         """
@@ -526,7 +526,7 @@ class TestIp6Network(TestCase):
             "1234:5678:90ab:cdef::/64",
         )
 
-    def test___repr__(self):
+    def test___repr__(self) -> None:
         """
         Test the '__repr__()' dunder.
         """
@@ -535,14 +535,14 @@ class TestIp6Network(TestCase):
             "Ip6Network('1234:5678:90ab:cdef::/64')",
         )
 
-    def test___eq__(self):
+    def test___eq__(self) -> None:
         """
         Test the '__eq__()' dunder.
         """
         self.assertEqual(Ip6Network("::/0"), Ip6Network("::/0"))
         self.assertNotEqual(Ip6Network("::/0"), Ip6Network("::/128"))
 
-    def test___hash__(self):
+    def test___hash__(self) -> None:
         """
         Test the '__hash__()' dunder.
         """
@@ -551,7 +551,7 @@ class TestIp6Network(TestCase):
             hash(Ip6Address("1234:5678:90ab:cdef::")) ^ hash(Ip6Mask("/64")),
         )
 
-    def test___contains__(self):
+    def test___contains__(self) -> None:
         """
         Test the '__contains__()' dunder.
         """
@@ -565,7 +565,7 @@ class TestIp6Network(TestCase):
             Ip6Address("2002::1234:5678:90ab:cdef"), Ip6Network("2001::/64")
         )
 
-    def test_address(self):
+    def test_address(self) -> None:
         """
         Test the 'address' property.
         """
@@ -574,7 +574,7 @@ class TestIp6Network(TestCase):
             Ip6Address("1234:5678:90ab:cdef::"),
         )
 
-    def test_mask(self):
+    def test_mask(self) -> None:
         """
         Test the 'mask' property.
         """
@@ -582,7 +582,7 @@ class TestIp6Network(TestCase):
             Ip6Network("1234:5678:90ab:cdef::/64").mask, Ip6Mask("/64")
         )
 
-    def test_last(self):
+    def test_last(self) -> None:
         """
         Test the 'last' property.
         """
@@ -591,7 +591,7 @@ class TestIp6Network(TestCase):
             Ip6Address("1234:5678:90ab:cdef:ffff:ffff:ffff:ffff"),
         )
 
-    def test_eui64(self):
+    def test_eui64(self) -> None:
         """
         Test the 'eui64' property.
         """
@@ -602,7 +602,7 @@ class TestIp6Network(TestCase):
             Ip6Host("1234:5678:90ab:cdef:302:3ff:fe04:506/64"),
         )
 
-    def test_version(self):
+    def test_version(self) -> None:
         self.assertEqual(Ip6Network("1234:5678:90ab:cdef::/64").version, 6)
 
 
@@ -611,7 +611,7 @@ class TestIp6Host(TestCase):
     Unit tests for 'Ip6Host' class.
     """
 
-    def test___init__(self):
+    def test___init__(self) -> None:
         """
         Test the constructor for 'Ip6Host' object.
         """
@@ -666,7 +666,7 @@ class TestIp6Host(TestCase):
         )
         self.assertRaises(Ip6HostFormatError, Ip6Host, "1234:5678:90ab:cdef::1")
 
-    def test___str__(self):
+    def test___str__(self) -> None:
         """
         Test the '__str__()' dunder.
         """
@@ -675,7 +675,7 @@ class TestIp6Host(TestCase):
             "1234:5678:90ab:cdef::1/64",
         )
 
-    def test___repr__(self):
+    def test___repr__(self) -> None:
         """
         Test the '__repr__()' dunder.
         """
@@ -684,7 +684,7 @@ class TestIp6Host(TestCase):
             "Ip6Host('1234:5678:90ab:cdef::1/64')",
         )
 
-    def test___eq__(self):
+    def test___eq__(self) -> None:
         """
         Test the '__eq__()' dunder.
         """
@@ -700,7 +700,7 @@ class TestIp6Host(TestCase):
             Ip6Host("1234:5678:90ab:cdef::1/64"), Ip6Host("::/64")
         )
 
-    def test___hash__(self):
+    def test___hash__(self) -> None:
         """
         Test the '__hash__()' dunder.
         """
@@ -710,7 +710,7 @@ class TestIp6Host(TestCase):
             ^ hash(Ip6Network("1234:5678:90ab:cdef::/64")),
         )
 
-    def test_address(self):
+    def test_address(self) -> None:
         """
         Test the 'address' property.
         """
@@ -719,7 +719,7 @@ class TestIp6Host(TestCase):
             Ip6Address("1234:5678:90ab:cdef::1"),
         )
 
-    def test_network(self):
+    def test_network(self) -> None:
         """
         Test the 'network' property.
         """
@@ -728,7 +728,7 @@ class TestIp6Host(TestCase):
             Ip6Network("1234:5678:90ab:cdef::/64"),
         )
 
-    def test_version(self):
+    def test_version(self) -> None:
         """
         Test the 'version' property.
         """

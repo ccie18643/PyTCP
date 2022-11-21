@@ -44,7 +44,7 @@ class TestPacketHandler(TestCase):
     Packet handler main unit test class.
     """
 
-    def setUp(self):
+    def setUp(self) -> None:
         """
         Set up the test environment.
         """
@@ -54,7 +54,7 @@ class TestPacketHandler(TestCase):
         ).to_return_value(None)
         self.packet_handler = PacketHandler()
 
-    def test__parse_stack_ip6_address_candidate(self):
+    def test__parse_stack_ip6_address_candidate(self) -> None:
         """
         Test the '_parse_stack_ip6_address_candidate()' method.
         """
@@ -125,7 +125,7 @@ class TestPacketHandler(TestCase):
         result = [ip6_address.gateway for ip6_address in result]
         self.assertEqual(result, expected)
 
-    def test_parse_stack_ip4_host_candidate(self):
+    def test_parse_stack_ip4_host_candidate(self) -> None:
         sample = [
             (
                 "192.168.9.7/24",

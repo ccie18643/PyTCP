@@ -48,10 +48,11 @@ from pytcp.protocols.icmp4.ps import (
 
 if TYPE_CHECKING:
     from pytcp.lib.ip4_address import Ip4Address
+    from pytcp.subsystems.packet_handler import PacketHandler
 
 
 def _phtx_icmp4(
-    self,
+    self: PacketHandler,
     *,
     ip4_src: Ip4Address,
     ip4_dst: Ip4Address,

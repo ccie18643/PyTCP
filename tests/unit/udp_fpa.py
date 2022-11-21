@@ -45,21 +45,21 @@ class TestUdpAssembler(TestCase):
     UDP packet assembler unit test class.
     """
 
-    def test_udp_fpa__ip4_proto_udp(self):
+    def test_udp_fpa__ip4_proto_udp(self) -> None:
         """
         Make sure the 'UdpAssembler' class has the proper
         'ip4_proto' value assigned.
         """
         self.assertEqual(UdpAssembler.ip4_proto, IP4_PROTO_UDP)
 
-    def test_udp_fpa__ip6_next_udp(self):
+    def test_udp_fpa__ip6_next_udp(self) -> None:
         """
         Make sure the 'UdpAssembler' class has the proper
         'ip6_next' value assigned.
         """
         self.assertEqual(UdpAssembler.ip6_next, IP6_NEXT_UDP)
 
-    def test_udp_fpa____init__(self):
+    def test_udp_fpa____init__(self) -> None:
         """
         Test class constructor.
         """
@@ -79,7 +79,7 @@ class TestUdpAssembler(TestCase):
             )
         )
 
-    def test_udp_fpa____init____defaults(self):
+    def test_udp_fpa____init____defaults(self) -> None:
         """
         Test class constructor with default arguments.
         """
@@ -89,42 +89,42 @@ class TestUdpAssembler(TestCase):
         self.assertEqual(packet._data, b"")
         self.assertEqual(packet._plen, UDP_HEADER_LEN)
 
-    def test_udp_fpa____init____assert_sport__under(self):
+    def test_udp_fpa____init____assert_sport__under(self) -> None:
         """
         Test assertion for the 'sport' argument.
         """
         with self.assertRaises(AssertionError):
             UdpAssembler(sport=-1)
 
-    def test_udp_fpa____init____assert_sport__over(self):
+    def test_udp_fpa____init____assert_sport__over(self) -> None:
         """
         Test assertion for the 'sport'
         """
         with self.assertRaises(AssertionError):
             UdpAssembler(sport=0x10000)
 
-    def test_udp_fpa____init____assert_dport__under(self):
+    def test_udp_fpa____init____assert_dport__under(self) -> None:
         """
         Test assertion for the 'dport'.
         """
         with self.assertRaises(AssertionError):
             UdpAssembler(dport=-1)
 
-    def test_udp_fpa____init____assert_dport__over(self):
+    def test_udp_fpa____init____assert_dport__over(self) -> None:
         """
         Test assertion for the dport.
         """
         with self.assertRaises(AssertionError):
             UdpAssembler(dport=0x10000)
 
-    def test_udp_fpa____len__(self):
+    def test_udp_fpa____len__(self) -> None:
         """
         Test the '__len__()' dunder.
         """
         packet = UdpAssembler()
         self.assertEqual(len(packet), UDP_HEADER_LEN)
 
-    def test_udp_fpa____len____data(self):
+    def test_udp_fpa____len____data(self) -> None:
         """
         Test the '__len__()' dunder.
         """
@@ -134,7 +134,7 @@ class TestUdpAssembler(TestCase):
 
         self.assertEqual(len(packet), UDP_HEADER_LEN + 16)
 
-    def test_udp_fpa____str__(self):
+    def test_udp_fpa____str__(self) -> None:
         """
         Test the '__str__() dunder.
         """
@@ -145,7 +145,7 @@ class TestUdpAssembler(TestCase):
         )
         self.assertEqual(str(packet), "UDP 12345 > 54321, len 24")
 
-    def test_udp_fpa__tracker_getter(self):
+    def test_udp_fpa__tracker_getter(self) -> None:
         """
         Test the tracker property.
         """
@@ -154,7 +154,7 @@ class TestUdpAssembler(TestCase):
             repr(packet.tracker).startswith("Tracker(serial='<lr>TX")
         )
 
-    def test_udp_fpa__assemble(self):
+    def test_udp_fpa__assemble(self) -> None:
         """
         Test the 'assemble()' method.
         """

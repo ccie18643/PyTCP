@@ -311,7 +311,9 @@ class Ip4Parser:
                 self.proto,
                 self.plen - self.hlen,
             )
-            self._cache__pshdr_sum = sum(struct.unpack("! 3L", pseudo_header))
+            self._cache__pshdr_sum = int(
+                sum(struct.unpack("! 3L", pseudo_header))
+            )
         return self._cache__pshdr_sum
 
     def _packet_integrity_check(self) -> str:

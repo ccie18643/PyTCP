@@ -33,6 +33,8 @@
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 from pytcp.lib.logger import log
 from pytcp.misc.packet import PacketRx
 from pytcp.protocols.ip6.fpp import Ip6Parser
@@ -43,8 +45,11 @@ from pytcp.protocols.ip6.ps import (
     IP6_NEXT_UDP,
 )
 
+if TYPE_CHECKING:
+    from pytcp.subsystems.packet_handler import PacketHandler
 
-def _phrx_ip6(self, packet_rx: PacketRx) -> None:
+
+def _phrx_ip6(self: PacketHandler, packet_rx: PacketRx) -> None:
     """
     Handle inbound IPv6 packets.
     """

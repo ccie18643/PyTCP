@@ -45,14 +45,14 @@ class TestArpAssembler(TestCase):
     ARP Assembler unit test class.
     """
 
-    def test_arp_fpa__ethertype(self):
+    def test_arp_fpa__ethertype(self) -> None:
         """
         Make sure the 'ArpAssembler' class has the proper
         'ethertype' value assigned.
         """
         self.assertEqual(ArpAssembler.ether_type, ETHER_TYPE_ARP)
 
-    def test_arp_fpa____init__(self):
+    def test_arp_fpa____init__(self) -> None:
         """
         Test the packet constructor.
         """
@@ -69,7 +69,7 @@ class TestArpAssembler(TestCase):
         self.assertEqual(packet._tpa, Ip4Address("5.6.7.8"))
         self.assertEqual(packet._oper, ARP_OP_REPLY)
 
-    def test_arp_fpa____init____defaults(self):
+    def test_arp_fpa____init____defaults(self) -> None:
         """
         Test the packet constructor with default arguments.
         """
@@ -80,33 +80,33 @@ class TestArpAssembler(TestCase):
         self.assertEqual(packet._tpa, Ip4Address("0.0.0.0"))
         self.assertEqual(packet._oper, ARP_OP_REQUEST)
 
-    def test_arp_fpa____init____assert_oper_request(self):
+    def test_arp_fpa____init____assert_oper_request(self) -> None:
         """
         Test assertion for the request operation.
         """
         ArpAssembler(oper=ARP_OP_REQUEST)
 
-    def test_arp_fpa____init____assert_oper_reply(self):
+    def test_arp_fpa____init____assert_oper_reply(self) -> None:
         """
         Test assertion for the request operation.
         """
         ArpAssembler(oper=ARP_OP_REPLY)
 
-    def test_arp_fpa____init____assert_oper_unknown(self):
+    def test_arp_fpa____init____assert_oper_unknown(self) -> None:
         """
         Test assertion for the unknown operation.
         """
         with self.assertRaises(AssertionError):
             ArpAssembler(oper=-1)
 
-    def test_arp_fpa____len__(self):
+    def test_arp_fpa____len__(self) -> None:
         """
         Test the '__len__()' dunder.
         """
         packet = ArpAssembler()
         self.assertEqual(len(packet), ARP_HEADER_LEN)
 
-    def test_arp_fpa____str____request(self):
+    def test_arp_fpa____str____request(self) -> None:
         """
         Test the '__str__()' dunder.
         """
@@ -123,7 +123,7 @@ class TestArpAssembler(TestCase):
             "5.6.7.8 / 66:77:88:99:aa:bb",
         )
 
-    def test_arp_fpa____str____reply(self):
+    def test_arp_fpa____str____reply(self) -> None:
         """
         Test the '__str__()' dudner..
         """
@@ -140,7 +140,7 @@ class TestArpAssembler(TestCase):
             "5.6.7.8 / 66:77:88:99:aa:bb",
         )
 
-    def test_arp_fpa__tracker_getter(self):
+    def test_arp_fpa__tracker_getter(self) -> None:
         """
         Test the '_tracker' attribute getter.
         """
@@ -149,7 +149,7 @@ class TestArpAssembler(TestCase):
             repr(packet.tracker).startswith("Tracker(serial='<lr>TX")
         )
 
-    def test_ether_fpa__assemble(self):
+    def test_ether_fpa__assemble(self) -> None:
         """
         Test the 'assemble()' method.
         """

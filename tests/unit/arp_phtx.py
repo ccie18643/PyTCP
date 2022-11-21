@@ -51,7 +51,7 @@ class TestArpPhtx(TestCase):
     ARP packet handler TX unit test class.
     """
 
-    def setUp(self):
+    def setUp(self) -> None:
         """
         Test setup.
         """
@@ -62,7 +62,7 @@ class TestArpPhtx(TestCase):
 
     # Test name format: 'test_name__test_description__optional_condition'
 
-    def test_arp_phtx__arp_request(self):
+    def test_arp_phtx__arp_request(self) -> None:
         """
         Test sending ARP request packet.
         """
@@ -90,7 +90,7 @@ class TestArpPhtx(TestCase):
             frame_tx = _.read()
         self.assertEqual(self.frame_tx[: len(frame_tx)], frame_tx)
 
-    def test_arp_phtx__arp_reply(self):
+    def test_arp_phtx__arp_reply(self) -> None:
         """
         Test sending ARP request packet.
         """

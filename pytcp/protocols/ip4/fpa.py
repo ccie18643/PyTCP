@@ -411,7 +411,7 @@ class Ip4OptEol:
         """
         return struct.pack("!B", IP4_OPT_EOL)
 
-    def __eq__(self, other) -> bool:
+    def __eq__(self, other: object) -> bool:
         """
         Equal operator.
         """
@@ -447,7 +447,7 @@ class Ip4OptNop:
         """
         return struct.pack("!B", IP4_OPT_NOP)
 
-    def __eq__(self, other) -> bool:
+    def __eq__(self, other: object) -> bool:
         """
         Equal operator.
         """

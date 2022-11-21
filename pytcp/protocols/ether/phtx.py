@@ -46,15 +46,23 @@ from pytcp.protocols.raw.fpa import RawAssembler
 
 if TYPE_CHECKING:
     from pytcp.protocols.arp.fpa import ArpAssembler
+    from pytcp.subsystems.packet_handler import PacketHandler
+
+
+def _send_out_packet(ether_packet_tx: EtherAssembler) -> None:
+    if __debug__:
+        log("ether", f"{ether_packet_tx.tracker} - {ether_packet_tx}")
+    stack.tx_ring.enqueue(ether_packet_tx)
 
 
 def _phtx_ether(
-    self,
+    self: PacketHandler,
     *,
     ether_src: MacAddress = MacAddress(0),
     ether_dst: MacAddress = MacAddress(0),
     carried_packet: ArpAssembler
     | Ip4Assembler
+    | Ip4FragAssembler
     | Ip6Assembler
     | RawAssembler
     | None = None,
@@ -62,11 +70,6 @@ def _phtx_ether(
     """
     Handle outbound Ethernet packets.
     """
-
-    def _send_out_packet() -> None:
-        if __debug__:
-            log("ether", f"{ether_packet_tx.tracker} - {ether_packet_tx}")
-        stack.tx_ring.enqueue(ether_packet_tx)
 
     if carried_packet is None:
         carried_packet = RawAssembler()
@@ -105,7 +108,7 @@ def _phtx_ether(
                 f"{ether_packet_tx.tracker} - Contains valid destination "
                 "MAC address",
             )
-        _send_out_packet()
+        _send_out_packet(ether_packet_tx)
         return TxStatus.PASSED__ETHER__TO_TX_RING
 
     # Check if we can obtain destination MAC based on IPv6 header data
@@ -127,7 +130,7 @@ def _phtx_ether(
                     f"{ether_packet_tx.tracker} - Resolved destination IPv6 "
                     f"{ip6_dst} to MAC {ether_packet_tx.dst}",
                 )
-            _send_out_packet()
+            _send_out_packet(ether_packet_tx)
             return TxStatus.PASSED__ETHER__TO_TX_RING
 
         # Send out packet if is destined to external network (in relation to
@@ -159,7 +162,7 @@ def _phtx_ether(
                             f"IPv6 {ip6_dst}"
                             f" to Default Gateway MAC {ether_packet_tx.dst}",
                         )
-                    _send_out_packet()
+                    _send_out_packet(ether_packet_tx)
                     return TxStatus.PASSED__ETHER__TO_TX_RING
                 self.packet_stats_tx.ether__dst_unspec__ip6_lookup__extnet__gw_nd_cache_miss__drop += (
                     1
@@ -179,7 +182,7 @@ def _phtx_ether(
                     f"{ether_packet_tx.tracker} - Resolved destination IPv6 "
                     f"{ip6_dst} to MAC {ether_packet_tx.dst}",
                 )
-            _send_out_packet()
+            _send_out_packet(ether_packet_tx)
             return TxStatus.PASSED__ETHER__TO_TX_RING
         else:
             self.packet_stats_tx.ether__dst_unspec__ip6_lookup__locnet__nd_cache_miss__drop += (
@@ -214,7 +217,7 @@ def _phtx_ether(
                     f"{ether_packet_tx.tracker} - Resolved destination IPv4 "
                     f"{ip4_dst} to MAC {ether_packet_tx.dst}",
                 )
-            _send_out_packet()
+            _send_out_packet(ether_packet_tx)
             return TxStatus.PASSED__ETHER__TO_TX_RING
 
         # Send out packet if its destinied to limited broadcast addresses
@@ -229,7 +232,7 @@ def _phtx_ether(
                     f"{ether_packet_tx.tracker} - Resolved destination IPv4 "
                     f"{ip4_dst} to MAC {ether_packet_tx.dst}",
                 )
-            _send_out_packet()
+            _send_out_packet(ether_packet_tx)
             return TxStatus.PASSED__ETHER__TO_TX_RING
 
         # Send out packet if its destinied to network broadcast or network
@@ -250,7 +253,7 @@ def _phtx_ether(
                             f"{ether_packet_tx.tracker} - Resolved destination "
                             f"IPv4 {ip4_dst} to MAC {ether_packet_tx.dst}",
                         )
-                    _send_out_packet()
+                    _send_out_packet(ether_packet_tx)
                     return TxStatus.PASSED__ETHER__TO_TX_RING
 
         # Send out packet if is destined to external network (in relation to
@@ -282,7 +285,7 @@ def _phtx_ether(
                             f"IPv4 {ip4_dst} to Default Gateway MAC "
                             f"{ether_packet_tx.dst}",
                         )
-                    _send_out_packet()
+                    _send_out_packet(ether_packet_tx)
                     return TxStatus.PASSED__ETHER__TO_TX_RING
                 self.packet_stats_tx.ether__dst_unspec__ip4_lookup__extnet__gw_arp_cache_miss__drop += (
                     1
@@ -302,7 +305,7 @@ def _phtx_ether(
                     f"{ether_packet_tx.tracker} - Resolved destination IPv4 "
                     f"{ip4_dst} to MAC {ether_packet_tx.dst}",
                 )
-            _send_out_packet()
+            _send_out_packet(ether_packet_tx)
             return TxStatus.PASSED__ETHER__TO_TX_RING
         else:
             self.packet_stats_tx.ether__dst_unspec__ip4_lookup__locnet__arp_cache_miss__drop += (

@@ -51,7 +51,7 @@ class TestIp6Phtx(TestCase):
     IPv6 packet handler TX unit test class.
     """
 
-    def setUp(self):
+    def setUp(self) -> None:
         """
         Setup tests.
         """
@@ -62,7 +62,9 @@ class TestIp6Phtx(TestCase):
 
     # Test name format: 'test_name__test_description__optional_condition'
 
-    def test_ip6_phtx__ip6_to_unicast_address_on_local_network__src_valid(self):
+    def test_ip6_phtx__ip6_to_unicast_address_on_local_network__src_valid(
+        self,
+    ) -> None:
         """
         Test sending IPv6 packet to unicast address on local network,
         valid source.
@@ -250,7 +252,9 @@ class TestIp6Phtx(TestCase):
             ),
         )
 
-    def test_ip6_phtx__ip6_to_unspecified_address__dst_unspecified_drop(self):
+    def test_ip6_phtx__ip6_to_unspecified_address__dst_unspecified_drop(
+        self,
+    ) -> None:
         """
         Test sending IPv6 packet to unspecified address.
         """
@@ -268,7 +272,7 @@ class TestIp6Phtx(TestCase):
             ),
         )
 
-    def test_ip6_phtx__ip6_fragmentation(self):
+    def test_ip6_phtx__ip6_fragmentation(self) -> None:
         """
         Test sending IPv6 packet large enough to require fragmentation.
         """

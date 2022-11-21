@@ -51,7 +51,7 @@ class TestIp4Phtx(TestCase):
     IPv4 packet handler TX unit test class.
     """
 
-    def setUp(self):
+    def setUp(self) -> None:
         """
         Setup tests.
         """
@@ -62,7 +62,9 @@ class TestIp4Phtx(TestCase):
 
     # Test name format: 'test_name__test_description__optional_condition'
 
-    def test_ip4_phtx__ip4_to_unicast_address_on_local_network__src_valid(self):
+    def test_ip4_phtx__ip4_to_unicast_address_on_local_network__src_valid(
+        self,
+    ) -> None:
         """
         Test sending IPv4 packet to unicast address on local network,
         valid source.
@@ -335,7 +337,9 @@ class TestIp4Phtx(TestCase):
             ),
         )
 
-    def test_ip4_phtx__ip4_to_unspecified_address__dst_unspecified_drop(self):
+    def test_ip4_phtx__ip4_to_unspecified_address__dst_unspecified_drop(
+        self,
+    ) -> None:
         """
         Test sending IPv4 packet to unspecified address.
         """
@@ -353,7 +357,7 @@ class TestIp4Phtx(TestCase):
             ),
         )
 
-    def test_ip4_phtx__ip4_fragmentation(self):
+    def test_ip4_phtx__ip4_fragmentation(self) -> None:
         """
         Test sending IPv4 packet large enough to require fragmentation.
         """

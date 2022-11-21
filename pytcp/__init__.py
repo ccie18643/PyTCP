@@ -67,7 +67,7 @@ class TcpIpStack:
             struct.pack("16sH", interface.encode(), IFF_TAP | IFF_NO_PI),
         )
 
-    def start(self):
+    def start(self) -> None:
         """
         Start stack components.
         """
@@ -81,7 +81,7 @@ class TcpIpStack:
         stack.packet_handler.assign_ip4_addresses()
         stack.packet_handler.log_stack_address_info()
 
-    def stop(self):
+    def stop(self) -> None:
         """
         Stop stack components.
         """

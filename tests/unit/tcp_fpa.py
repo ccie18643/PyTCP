@@ -57,21 +57,21 @@ class TestTcpAssembler(TestCase):
     TCP protocol assembler unit test class.
     """
 
-    def test_tcp_fpa__ip4_proto_tcp(self):
+    def test_tcp_fpa__ip4_proto_tcp(self) -> None:
         """
         Make sure the 'TcpAssembler' class has the proper
         'ip4_proto' value assigned.
         """
         self.assertEqual(TcpAssembler.ip4_proto, IP4_PROTO_TCP)
 
-    def test_tcp_fpa__ip6_next_tcp(self):
+    def test_tcp_fpa__ip6_next_tcp(self) -> None:
         """
         Make sure the 'TcpAssembler' class has the proper
         'ip6_next' value assigned.
         """
         self.assertEqual(TcpAssembler.ip6_next, IP6_NEXT_TCP)
 
-    def test_tcp_fpa____init__(self):
+    def test_tcp_fpa____init__(self) -> None:
         """
         Test the class constructor.
         """
@@ -189,7 +189,7 @@ class TestTcpAssembler(TestCase):
             )
         )
 
-    def test_tcp_fpa____init____defaults(self):
+    def test_tcp_fpa____init____defaults(self) -> None:
         """
         Test class constructor with default arguments.
         """
@@ -263,97 +263,97 @@ class TestTcpAssembler(TestCase):
             b"",
         )
 
-    def test_tcp_fpa____init____assert_sport__under(self):
+    def test_tcp_fpa____init____assert_sport__under(self) -> None:
         """
         Test assertion for the 'sport' argument.
         """
         with self.assertRaises(AssertionError):
             TcpAssembler(sport=-1)
 
-    def test_tcp_fpa____init____assert_sport__over(self):
+    def test_tcp_fpa____init____assert_sport__over(self) -> None:
         """
         Test assertion for the 'sport' argument.
         """
         with self.assertRaises(AssertionError):
             TcpAssembler(sport=0x10000)
 
-    def test_tcp_fpa____init____assert_dport__under(self):
+    def test_tcp_fpa____init____assert_dport__under(self) -> None:
         """
         Test assertion for the 'dport' argument.
         """
         with self.assertRaises(AssertionError):
             TcpAssembler(dport=-1)
 
-    def test_tcp_fpa____init____assert_dport__over(self):
+    def test_tcp_fpa____init____assert_dport__over(self) -> None:
         """
         Test assertion for the 'dport' argument.
         """
         with self.assertRaises(AssertionError):
             TcpAssembler(dport=0x10000)
 
-    def test_tcp_fpa____init____assert_seq__under(self):
+    def test_tcp_fpa____init____assert_seq__under(self) -> None:
         """
         Test assertion for the 'seq' argument.
         """
         with self.assertRaises(AssertionError):
             TcpAssembler(seq=-1)
 
-    def test_tcp_fpa____init____assert_seq__over(self):
+    def test_tcp_fpa____init____assert_seq__over(self) -> None:
         """
         Test assertion for the 'seq' argument.
         """
         with self.assertRaises(AssertionError):
             TcpAssembler(seq=0x100000000)
 
-    def test_tcp_fpa____init____assert_ack__under(self):
+    def test_tcp_fpa____init____assert_ack__under(self) -> None:
         """
         Test assertion for the 'ack' argument.
         """
         with self.assertRaises(AssertionError):
             TcpAssembler(seq=-1)
 
-    def test_tcp_fpa____init____assert_ack__over(self):
+    def test_tcp_fpa____init____assert_ack__over(self) -> None:
         """Test assertion for the ack"""
 
         with self.assertRaises(AssertionError):
             TcpAssembler(ack=0x100000000)
 
-    def test_tcp_fpa____init____assert_win__under(self):
+    def test_tcp_fpa____init____assert_win__under(self) -> None:
         """
         Test assertion for the 'win' argument.
         """
         with self.assertRaises(AssertionError):
             TcpAssembler(win=-1)
 
-    def test_tcp_fpa____init____assert_win__over(self):
+    def test_tcp_fpa____init____assert_win__over(self) -> None:
         """
         Test assertion for the 'win' argument.
         """
         with self.assertRaises(AssertionError):
             TcpAssembler(win=0x10000)
 
-    def test_tcp_fpa____init____assert_urp__under(self):
+    def test_tcp_fpa____init____assert_urp__under(self) -> None:
         """
         Test assertion for the 'urp' argument.
         """
         with self.assertRaises(AssertionError):
             TcpAssembler(urp=-1)
 
-    def test_tcp_fpa____init____assert_urp__over(self):
+    def test_tcp_fpa____init____assert_urp__over(self) -> None:
         """
         Test assertion for the 'urp' argument.
         """
         with self.assertRaises(AssertionError):
             TcpAssembler(win=0x10000)
 
-    def test_tcp_fpa____len__(self):
+    def test_tcp_fpa____len__(self) -> None:
         """
         Test the '__len__()' dunder.
         """
         packet = TcpAssembler()
         self.assertEqual(len(packet), TCP_HEADER_LEN)
 
-    def test_tcp_fpa____len____data(self):
+    def test_tcp_fpa____len____data(self) -> None:
         """
         Test the '__len__()' dunder.
         """
@@ -362,7 +362,7 @@ class TestTcpAssembler(TestCase):
         )
         self.assertEqual(len(packet), TCP_HEADER_LEN + 16)
 
-    def test_tcp_fpa____len____opts(self):
+    def test_tcp_fpa____len____opts(self) -> None:
         """
         Test the '__len__()' dunder.
         """
@@ -376,7 +376,7 @@ class TestTcpAssembler(TestCase):
             len(packet), TCP_HEADER_LEN + TCP_OPT_WSCALE_LEN + TCP_OPT_EOL_LEN
         )
 
-    def test_tcp_fpa____len____opts_data(self):
+    def test_tcp_fpa____len____opts_data(self) -> None:
         """
         Test the '__len__()' dunder.
         """
@@ -392,7 +392,7 @@ class TestTcpAssembler(TestCase):
             TCP_HEADER_LEN + TCP_OPT_WSCALE_LEN + TCP_OPT_EOL_LEN + 16,
         )
 
-    def test_tcp_fpa____str__(self):
+    def test_tcp_fpa____str__(self) -> None:
         """
         Test the '__str__()' dunder.
         """
@@ -433,7 +433,7 @@ class TestTcpAssembler(TestCase):
             "ts 12345678/87654321, nop, nop, nop, nop, eol",
         )
 
-    def test_tcp_fpa__tracker_getter(self):
+    def test_tcp_fpa__tracker_getter(self) -> None:
         """
         Test the 'tracker' property getter.
         """
@@ -442,7 +442,7 @@ class TestTcpAssembler(TestCase):
             repr(packet.tracker).startswith("Tracker(serial='<lr>TX")
         )
 
-    def test_tcp_fpa___raw_options(self):
+    def test_tcp_fpa___raw_options(self) -> None:
         """
         Test the 'options' argument.
         """
@@ -452,7 +452,7 @@ class TestTcpAssembler(TestCase):
 
         self.assertEqual(packet._raw_options, b"\x03\x03\x00\x00")
 
-    def test_tcp_fpa__assemble(self):
+    def test_tcp_fpa__assemble(self) -> None:
         """
         Test the 'assemble' method.
         """
@@ -497,28 +497,28 @@ class TestTcpAssembler(TestCase):
 
 
 class TestTcpOptEol(TestCase):
-    def test_tcp_fpa_opt_eol____str__(self):
+    def test_tcp_fpa_opt_eol____str__(self) -> None:
         """Test the __str__ dunder"""
 
         option = TcpOptEol()
 
         self.assertEqual(str(option), "eol")
 
-    def test_tcp_fpa_opt_eol____repr__(self):
+    def test_tcp_fpa_opt_eol____repr__(self) -> None:
         """Test the __repr__ dunder"""
 
         option = TcpOptEol()
 
         self.assertEqual(repr(option), "TcpOptEol()")
 
-    def test_tcp_fpa_opt_eol____bytes__(self):
+    def test_tcp_fpa_opt_eol____bytes__(self) -> None:
         """Test the __bytes__ dunder"""
 
         option = TcpOptEol()
 
         self.assertEqual(bytes(option), b"\x00")
 
-    def test_tcp_fpa_opt_eol____eq__(self):
+    def test_tcp_fpa_opt_eol____eq__(self) -> None:
         """Test the __eq__ dunder"""
 
         option = TcpOptEol()
@@ -527,28 +527,28 @@ class TestTcpOptEol(TestCase):
 
 
 class TestTcpOptNop(TestCase):
-    def test_tcp_fpa_opt_nop____str__(self):
+    def test_tcp_fpa_opt_nop____str__(self) -> None:
         """Test the __str__ dunder"""
 
         option = TcpOptNop()
 
         self.assertEqual(str(option), "nop")
 
-    def test_tcp_fpa_opt_nop____repr__(self):
+    def test_tcp_fpa_opt_nop____repr__(self) -> None:
         """Test the __repr__ dunder"""
 
         option = TcpOptNop()
 
         self.assertEqual(repr(option), "TcpOptNop()")
 
-    def test_tcp_fpa_opt_nop____bytes__(self):
+    def test_tcp_fpa_opt_nop____bytes__(self) -> None:
         """Test the __bytes__ dunder"""
 
         option = TcpOptNop()
 
         self.assertEqual(bytes(option), b"\x01")
 
-    def test_tcp_fpa_opt_nop____eq__(self):
+    def test_tcp_fpa_opt_nop____eq__(self) -> None:
         """Test the __eq__ dunder"""
 
         option = TcpOptNop()
@@ -561,49 +561,49 @@ class TestTcpOptMss(TestCase):
     The TCP MSS option unit test class.
     """
 
-    def test_tcp_fpa_opt_mss____init__(self):
+    def test_tcp_fpa_opt_mss____init__(self) -> None:
         """
         Test class constructor.
         """
         option = TcpOptMss(12345)
         self.assertEqual(option._mss, 12345)
 
-    def test_tcp_fpa_opt_mss____init____assert_mss__under(self):
+    def test_tcp_fpa_opt_mss____init____assert_mss__under(self) -> None:
         """
         Test assertion for the 'mss' argument.
         """
         with self.assertRaises(AssertionError):
             TcpOptMss(-1)
 
-    def test_tcp_fpa_opt_mss____init____assert_mss__over(self):
+    def test_tcp_fpa_opt_mss____init____assert_mss__over(self) -> None:
         """
         Test assertion for the 'mss' argument.
         """
         with self.assertRaises(AssertionError):
             TcpOptMss(0x10000)
 
-    def test_tcp_fpa_opt_mss____str__(self):
+    def test_tcp_fpa_opt_mss____str__(self) -> None:
         """
         Test the '__str__()' dunder.
         """
         option = TcpOptMss(12345)
         self.assertEqual(str(option), "mss 12345")
 
-    def test_tcp_fpa_opt_mss____repr__(self):
+    def test_tcp_fpa_opt_mss____repr__(self) -> None:
         """
         Test the '__repr__()' dunder.
         """
         option = TcpOptMss(12345)
         self.assertEqual(repr(option), "TcpOptMss(12345)")
 
-    def test_tcp_fpa_opt_mss____bytes__(self):
+    def test_tcp_fpa_opt_mss____bytes__(self) -> None:
         """
         Test the '__bytes__()' dunder.
         """
         option = TcpOptMss(12345)
         self.assertEqual(bytes(option), b"\x02\x0409")
 
-    def test_tcp_fpa_opt_mss____eq__(self):
+    def test_tcp_fpa_opt_mss____eq__(self) -> None:
         """
         Test the '__eq__()' dunder.
         """
@@ -616,49 +616,49 @@ class TestTcpOptWscale(TestCase):
     The TCP WSCALE option unit test class.
     """
 
-    def test_tcp_fpa_opt_wscale____init__(self):
+    def test_tcp_fpa_opt_wscale____init__(self) -> None:
         """
         Test class constructor.
         """
         option = TcpOptWscale(123)
         self.assertEqual(option._wscale, 123)
 
-    def test_tcp_fpa_opt_wscale____init____assert_wscale__under(self):
+    def test_tcp_fpa_opt_wscale____init____assert_wscale__under(self) -> None:
         """
         Test assertion for the 'wscale' argument.
         """
         with self.assertRaises(AssertionError):
             TcpOptWscale(-1)
 
-    def test_tcp_fpa_opt_wscale____init____assert_wscale__over(self):
+    def test_tcp_fpa_opt_wscale____init____assert_wscale__over(self) -> None:
         """
         Test assertion for the 'wscale' argument.
         """
         with self.assertRaises(AssertionError):
             TcpOptWscale(0x100)
 
-    def test_tcp_fpa_opt_wscale____str__(self):
+    def test_tcp_fpa_opt_wscale____str__(self) -> None:
         """
         Test the '__str__()' dunder.
         """
         option = TcpOptWscale(123)
         self.assertEqual(str(option), "wscale 123")
 
-    def test_tcp_fpa_opt_wscale____repr__(self):
+    def test_tcp_fpa_opt_wscale____repr__(self) -> None:
         """
         Test the '__repr__()' dunder.
         """
         option = TcpOptWscale(123)
         self.assertEqual(repr(option), "TcpOptWscale(123)")
 
-    def test_tcp_fpa_opt_wscale____bytes__(self):
+    def test_tcp_fpa_opt_wscale____bytes__(self) -> None:
         """
         Test the '__bytes__()' dunder.
         """
         option = TcpOptWscale(123)
         self.assertEqual(bytes(option), b"\x03\x03{")
 
-    def test_tcp_fpa_opt_wscale____eq__(self):
+    def test_tcp_fpa_opt_wscale____eq__(self) -> None:
         """
         Test the '__eq__()' dunder.
         """
@@ -671,28 +671,28 @@ class TestTcpOptSackPerm(TestCase):
     The TCP Sack Permit option unit test class.
     """
 
-    def test_tcp_fpa_opt_sack_perm____str__(self):
+    def test_tcp_fpa_opt_sack_perm____str__(self) -> None:
         """
         Test the '__str__()' dunder.
         """
         option = TcpOptSackPerm()
         self.assertEqual(str(option), "sack_perm")
 
-    def test_tcp_fpa_opt_sack_perm____repr__(self):
+    def test_tcp_fpa_opt_sack_perm____repr__(self) -> None:
         """
         Test the '__repr__()' dunder.
         """
         option = TcpOptSackPerm()
         self.assertEqual(repr(option), "TcpOptSackPerm()")
 
-    def test_tcp_fpa_opt_sack_perm____bytes__(self):
+    def test_tcp_fpa_opt_sack_perm____bytes__(self) -> None:
         """
         Test the '__bytes__()' dunder.
         """
         option = TcpOptSackPerm()
         self.assertEqual(bytes(option), b"\x04\x02")
 
-    def test_tcp_fpa_opt_sack_perm____eq__(self):
+    def test_tcp_fpa_opt_sack_perm____eq__(self) -> None:
         """
         Test the '__eq__()' dunder.
         """
@@ -705,7 +705,7 @@ class TestTcpOptTimestamp(TestCase):
     The TCP Timestamp option unit test class.
     """
 
-    def test_tcp_fpa_opt_timestamp____init__(self):
+    def test_tcp_fpa_opt_timestamp____init__(self) -> None:
         """
         Test class constructor.
         """
@@ -713,56 +713,56 @@ class TestTcpOptTimestamp(TestCase):
         self.assertEqual(option._tsval, 12345678)
         self.assertEqual(option._tsecr, 87654321)
 
-    def test_tcp_fpa_opt_timestamp____init____assert_tsval__under(self):
+    def test_tcp_fpa_opt_timestamp____init____assert_tsval__under(self) -> None:
         """
         Test assertion for the 'tsval' argument.
         """
         with self.assertRaises(AssertionError):
             TcpOptTimestamp(-1, 0)
 
-    def test_tcp_fpa_opt_timestamp____init____assert_tsval__over(self):
+    def test_tcp_fpa_opt_timestamp____init____assert_tsval__over(self) -> None:
         """
         Test assertion for the 'tsval' argument.
         """
         with self.assertRaises(AssertionError):
             TcpOptTimestamp(0x100000000, 0)
 
-    def test_tcp_fpa_opt_timestamp____init____assert_tsecr__under(self):
+    def test_tcp_fpa_opt_timestamp____init____assert_tsecr__under(self) -> None:
         """
         Test assertion for the 'tsecr' argument.
         """
         with self.assertRaises(AssertionError):
             TcpOptTimestamp(0, -1)
 
-    def test_tcp_fpa_opt_timestamp____init____assert_tsecr__over(self):
+    def test_tcp_fpa_opt_timestamp____init____assert_tsecr__over(self) -> None:
         """
         Test assertion for the 'tsecr' argument.
         """
         with self.assertRaises(AssertionError):
             TcpOptTimestamp(0, 0x100000000)
 
-    def test_tcp_fpa_opt_timestamp____str__(self):
+    def test_tcp_fpa_opt_timestamp____str__(self) -> None:
         """
         Test the '__str__()' dunder.
         """
         option = TcpOptTimestamp(12345678, 87654321)
         self.assertEqual(str(option), "ts 12345678/87654321")
 
-    def test_tcp_fpa_opt_timestamp____repr__(self):
+    def test_tcp_fpa_opt_timestamp____repr__(self) -> None:
         """
         Test the '__repr__()' dunder.
         """
         option = TcpOptTimestamp(12345678, 87654321)
         self.assertEqual(repr(option), "TcpOptTimestamp(12345678, 87654321)")
 
-    def test_tcp_fpa_opt_timestamp____bytes__(self):
+    def test_tcp_fpa_opt_timestamp____bytes__(self) -> None:
         """
         Test the '__bytes__()' dunder.
         """
         option = TcpOptTimestamp(12345678, 87654321)
         self.assertEqual(bytes(option), b"\x08\n\x00\xbcaN\x059\x7f\xb1")
 
-    def test_tcp_fpa_opt_timestamp____eq__(self):
+    def test_tcp_fpa_opt_timestamp____eq__(self) -> None:
         """
         Test the '__eq__()' dunder.
         """

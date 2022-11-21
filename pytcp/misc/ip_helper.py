@@ -49,9 +49,9 @@ def inet_cksum(data: memoryview, init: int = 0) -> int:
     Compute Internet Checksum used by IPv4/ICMPv4/ICMPv6/UDP/TCP protocols.
     """
     if (dlen := len(data)) == 20:
-        cksum = init + sum(struct.unpack("!5L", data))
+        cksum = init + int(sum(struct.unpack("!5L", data)))
     else:
-        cksum = init + sum(struct.unpack_from(f"!{dlen >> 3}Q", data))
+        cksum = init + int(sum(struct.unpack_from(f"!{dlen >> 3}Q", data)))
         if remainder := dlen & 7:
             cksum += int().from_bytes(data[-remainder:], byteorder="big") << (
                 (8 - remainder) << 3

@@ -59,7 +59,7 @@ class MockNetworkSettings:
     Mock network setting to mimic the above network.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         """
         Mock class constructor.
         """
@@ -155,7 +155,7 @@ def patch_config(self, *, enable_log=False):
                 continue
 
 
-def setup_mock_packet_handler(self):
+def setup_mock_packet_handler(self) -> None:
     """
     Prepare packet handler so it can pass packets without need of being
     physically connected to the network.

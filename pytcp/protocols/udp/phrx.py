@@ -33,6 +33,8 @@
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 import pytcp.config as config
 import pytcp.misc.stack as stack
 from pytcp.lib.logger import log
@@ -42,8 +44,11 @@ from pytcp.protocols.icmp6.ps import ICMP6_UNREACHABLE, ICMP6_UNREACHABLE__PORT
 from pytcp.protocols.udp.fpp import UdpParser
 from pytcp.protocols.udp.metadata import UdpMetadata
 
+if TYPE_CHECKING:
+    from pytcp.subsystems.packet_handler import PacketHandler
 
-def _phrx_udp(self, packet_rx: PacketRx) -> None:
+
+def _phrx_udp(self: PacketHandler, packet_rx: PacketRx) -> None:
     """
     Handle inbound UDP packets.
     """
@@ -55,7 +60,10 @@ def _phrx_udp(self, packet_rx: PacketRx) -> None:
     if packet_rx.parse_failed:
         self.packet_stats_rx.udp__failed_parse__drop += 1
         if __debug__:
-            log("udp", f"{self.tracker} - <CRIT>{packet_rx.parse_failed}</>")
+            log(
+                "udp",
+                f"{packet_rx.tracker} - <CRIT>{packet_rx.parse_failed}</>",
+            )
         return
 
     if __debug__:
@@ -137,8 +145,8 @@ def _phrx_udp(self, packet_rx: PacketRx) -> None:
             1
         )
         self._phtx_icmp6(
-            ip6_src=packet_rx.ip.dst,
-            ip6_dst=packet_rx.ip.src,
+            ip6_src=packet_rx.ip6.dst,
+            ip6_dst=packet_rx.ip6.src,
             icmp6_type=ICMP6_UNREACHABLE,
             icmp6_code=ICMP6_UNREACHABLE__PORT,
             icmp6_un_data=packet_rx.ip.packet_copy,
@@ -150,8 +158,8 @@ def _phrx_udp(self, packet_rx: PacketRx) -> None:
             1
         )
         self._phtx_icmp4(
-            ip4_src=packet_rx.ip.dst,
-            ip4_dst=packet_rx.ip.src,
+            ip4_src=packet_rx.ip4.dst,
+            ip4_dst=packet_rx.ip4.src,
             icmp4_type=ICMP4_UNREACHABLE,
             icmp4_code=ICMP4_UNREACHABLE__PORT,
             icmp4_un_data=packet_rx.ip.packet_copy,

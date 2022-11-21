@@ -241,7 +241,7 @@ class TcpOptEol:
         """
         return struct.pack("!B", TCP_OPT_EOL)
 
-    def __eq__(self, other) -> bool:
+    def __eq__(self, other: object) -> bool:
         """
         Equal operator.
         """
@@ -277,7 +277,7 @@ class TcpOptNop:
         """
         return struct.pack("!B", TCP_OPT_NOP)
 
-    def __eq__(self, other) -> bool:
+    def __eq__(self, other: object) -> bool:
         """
         Equal operator.
         """
@@ -320,7 +320,7 @@ class TcpOptMss:
         """
         return struct.pack("! BB H", TCP_OPT_MSS, TCP_OPT_MSS_LEN, self._mss)
 
-    def __eq__(self, other) -> bool:
+    def __eq__(self, other: object) -> bool:
         """
         Equal operator.
         """
@@ -365,7 +365,7 @@ class TcpOptWscale:
             "! BB B", TCP_OPT_WSCALE, TCP_OPT_WSCALE_LEN, self._wscale
         )
 
-    def __eq__(self, other) -> bool:
+    def __eq__(self, other: object) -> bool:
         """
         Equal operator.
         """
@@ -401,7 +401,7 @@ class TcpOptSackPerm:
         """
         return struct.pack("! BB", TCP_OPT_SACKPERM, TCP_OPT_SACKPERM_LEN)
 
-    def __eq__(self, other) -> bool:
+    def __eq__(self, other: object) -> bool:
         """
         Equal operator.
         """
@@ -452,7 +452,7 @@ class TcpOptTimestamp:
             self._tsecr,
         )
 
-    def __eq__(self, other) -> bool:
+    def __eq__(self, other: object) -> bool:
         """
         Equal operator.
         """

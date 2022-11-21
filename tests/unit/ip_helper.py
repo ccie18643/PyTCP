@@ -43,7 +43,7 @@ class TestIpHelper(TestCase):
     IP helper library unit test class.
     """
 
-    def test_inet_cksum(self):
+    def test_inet_cksum(self) -> None:
         """
         Test calculating the Internet Checksum
         """
@@ -87,7 +87,7 @@ class TestIpHelper(TestCase):
             result = inet_cksum(data=memoryview(sample.data), init=sample.init)
             self.assertEqual(result, sample.result)
 
-    def test_ip_version(self):
+    def test_ip_version(self) -> None:
         """
         Test detecting the version of IP protocol.
         """

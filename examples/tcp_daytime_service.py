@@ -111,7 +111,7 @@ class TcpDaytimeService(TcpService):
 
 @click.command()
 @click.option("--interface", default="tap7")
-def cli(*, interface: str):
+def cli(*, interface: str) -> None:
     """
     Start PyTCP stack and stop it when user presses Ctrl-C.
     Run the TCP Daytime service.

@@ -43,9 +43,10 @@ from pytcp.protocols.arp.ps import ARP_OP_REPLY, ARP_OP_REQUEST
 
 if TYPE_CHECKING:
     from pytcp.misc.packet import PacketRx
+    from pytcp.subsystems.packet_handler import PacketHandler
 
 
-def _phrx_arp(self, packet_rx: PacketRx) -> None:
+def _phrx_arp(self: PacketHandler, packet_rx: PacketRx) -> None:
     """
     Handle inbound ARP packets.
     """
@@ -71,7 +72,7 @@ def _phrx_arp(self, packet_rx: PacketRx) -> None:
         # Check if request contains our IP address in SPA field,
         # this indicates IP address conflict
         if packet_rx.arp.spa in self.ip4_unicast:
-            self.packet_stats_rx.arp__op_request_ip_conflict += 1
+            self.packet_stats_rx.arp__op_request__ip_conflict += 1
             if __debug__:
                 log(
                     "arp",

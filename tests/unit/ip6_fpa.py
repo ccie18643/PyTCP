@@ -50,14 +50,14 @@ class TestIp6Assembler(TestCase):
     IPv6 packet assembler unit test class.
     """
 
-    def test_ip6_fpa__ethertype(self):
+    def test_ip6_fpa__ethertype(self) -> None:
         """
         Make sure the 'Ip6Assembler' class has the proper
         'ethertype' value assigned.
         """
         self.assertEqual(Ip6Assembler.ether_type, ETHER_TYPE_IP6)
 
-    def test_ip6_fpa____init__(self):
+    def test_ip6_fpa____init__(self) -> None:
         """
         Test the packet constructor.
         """
@@ -84,7 +84,7 @@ class TestIp6Assembler(TestCase):
         self.assertEqual(packet._next, IP6_NEXT_RAW)
         self.assertEqual(packet._dlen, 16)
 
-    def test_ip6_fpa____init____defaults(self):
+    def test_ip6_fpa____init____defaults(self) -> None:
         """
         Test the packet constructor with default arguments.
         """
@@ -101,87 +101,87 @@ class TestIp6Assembler(TestCase):
         self.assertEqual(packet._next, IP6_NEXT_RAW)
         self.assertEqual(packet._dlen, 0)
 
-    def test_ip6_fpa____init____assert_hop__under(self):
+    def test_ip6_fpa____init____assert_hop__under(self) -> None:
         """
         Test assertion for the the 'hop' argument.
         """
         with self.assertRaises(AssertionError):
             Ip6Assembler(hop=-1)
 
-    def test_ip6_fpa____init____assert_hop__over(self):
+    def test_ip6_fpa____init____assert_hop__over(self) -> None:
         """
         Test assertion for the 'hop' argument.
         """
         with self.assertRaises(AssertionError):
             Ip6Assembler(hop=0x100)
 
-    def test_ip6_fpa____init____assert_dscp__under(self):
+    def test_ip6_fpa____init____assert_dscp__under(self) -> None:
         """
         Test assertion for the 'dscp' argument.
         """
         with self.assertRaises(AssertionError):
             Ip6Assembler(dscp=-1)
 
-    def test_ip6_fpa____init____assert_dscp__over(self):
+    def test_ip6_fpa____init____assert_dscp__over(self) -> None:
         """
         Test assertion for the 'dscp' argument.
         """
         with self.assertRaises(AssertionError):
             Ip6Assembler(dscp=0x40)
 
-    def test_ip6_fpa____init____assert_ecn__under(self):
+    def test_ip6_fpa____init____assert_ecn__under(self) -> None:
         """
         Test assertion for the 'ecn' argument.
         """
         with self.assertRaises(AssertionError):
             Ip6Assembler(ecn=-1)
 
-    def test_ip6_fpa____init____assert_ecn__over(self):
+    def test_ip6_fpa____init____assert_ecn__over(self) -> None:
         """
         Test assertion for the 'ecn' argument.
         """
         with self.assertRaises(AssertionError):
             Ip6Assembler(ecn=4)
 
-    def test_ip6_fpa____init____assert_flow__under(self):
+    def test_ip6_fpa____init____assert_flow__under(self) -> None:
         """
         Test assertion for the 'flow' argument.
         """
         with self.assertRaises(AssertionError):
             Ip6Assembler(flow=-1)
 
-    def test_ip6_fpa____init____assert_flow__over(self):
+    def test_ip6_fpa____init____assert_flow__over(self) -> None:
         """
         Test assertion for the 'flow' argument.
         """
         with self.assertRaises(AssertionError):
             Ip6Assembler(flow=0x1000000)
 
-    def test_ip6_fpa____init____assert_next_header_udp(self):
+    def test_ip6_fpa____init____assert_next_header_udp(self) -> None:
         """
         Test assertion for carried packet 'ip6_next_header' attribute.
         """
         Ip6Assembler(carried_packet=UdpAssembler())
 
-    def test_ip6_fpa____init____assert_next_header_tcp(self):
+    def test_ip6_fpa____init____assert_next_header_tcp(self) -> None:
         """
         Test assertion for carried packet 'ip6_next_header' attribute.
         """
         Ip6Assembler(carried_packet=TcpAssembler())
 
-    def test_ip6_fpa____init____assert_next_header_icmp6(self):
+    def test_ip6_fpa____init____assert_next_header_icmp6(self) -> None:
         """
         Test assertion for carried packet 'ip6_next_header' attribute.
         """
         Ip6Assembler(carried_packet=Icmp6Assembler())
 
-    def test_ip6_fpa____init____assert_next_header_raw(self):
+    def test_ip6_fpa____init____assert_next_header_raw(self) -> None:
         """
         Test assertion for carried packet 'ip6_next_header' attribute.
         """
         Ip6Assembler(carried_packet=RawAssembler())
 
-    def test_ip6_fpa____init____assert_next_header_unknown(self):
+    def test_ip6_fpa____init____assert_next_header_unknown(self) -> None:
         """
         Test assertion for carried packet 'ip6_next_header' attribute.
         """
@@ -191,7 +191,7 @@ class TestIp6Assembler(TestCase):
             carried_packet_mock.tracker = StrictMock(Tracker)
             Ip6Assembler(carried_packet=carried_packet_mock)
 
-    def test_ip6_fpa____len__(self):
+    def test_ip6_fpa____len__(self) -> None:
         """
         Test the '__len__()' dunder.
         """
@@ -199,7 +199,7 @@ class TestIp6Assembler(TestCase):
 
         self.assertEqual(len(packet), IP6_HEADER_LEN)
 
-    def test_ip6_fpa____len____data(self):
+    def test_ip6_fpa____len____data(self) -> None:
         """
         Test the '__len__()' dunder.
         """
@@ -208,7 +208,7 @@ class TestIp6Assembler(TestCase):
         )
         self.assertEqual(len(packet), IP6_HEADER_LEN + 16)
 
-    def test_ip6_fpa____str__(self):
+    def test_ip6_fpa____str__(self) -> None:
         """
         Test the '__str__()' dunder.
         """
@@ -226,7 +226,7 @@ class TestIp6Assembler(TestCase):
             "IPv6 0:1:2:3:4:5:6:7 > 8:9:a:b:c:d:e:f, next 255 (raw_data), flow 12345678, dlen 16, hop 32",
         )
 
-    def test_ip6_fpa__tracker_getter(self):
+    def test_ip6_fpa__tracker_getter(self) -> None:
         """
         Test the '_tracker' attribute getter.
         """
@@ -235,7 +235,7 @@ class TestIp6Assembler(TestCase):
             repr(packet.tracker).startswith("Tracker(serial='<lr>TX")
         )
 
-    def test_ip6_fpa__dst_getter(self):
+    def test_ip6_fpa__dst_getter(self) -> None:
         """
         Test the '_dst' attribute getter.
         """
@@ -244,7 +244,7 @@ class TestIp6Assembler(TestCase):
         )
         self.assertEqual(packet.dst, Ip6Address("8:9:A:B:C:D:E:F"))
 
-    def test_ip6_fpa__src_getter(self):
+    def test_ip6_fpa__src_getter(self) -> None:
         """
         Test the '_src' attribute getter.
         """
@@ -253,7 +253,7 @@ class TestIp6Assembler(TestCase):
         )
         self.assertEqual(packet.src, Ip6Address("0:1:2:3:4:5:6:7"))
 
-    def test_ip6_fpa__dlen_getter(self):
+    def test_ip6_fpa__dlen_getter(self) -> None:
         """
         Test the 'dlen' property.
         """
@@ -262,14 +262,14 @@ class TestIp6Assembler(TestCase):
         )
         self.assertEqual(packet._dlen, 16)
 
-    def test_ip6_fpa__next_getter(self):
+    def test_ip6_fpa__next_getter(self) -> None:
         """
         Test the 'next' property getter.
         """
         packet = Ip6Assembler()
         self.assertEqual(packet.next, IP6_NEXT_RAW)
 
-    def test_ip6_fpa__pshdr_sum(self):
+    def test_ip6_fpa__pshdr_sum(self) -> None:
         """
         Test the 'pshdr_sum' property getter.
         """
@@ -280,7 +280,7 @@ class TestIp6Assembler(TestCase):
         )
         self.assertEqual(packet.pshdr_sum, 6755588421714211)
 
-    def test_ip6_fpa__assemble(self):
+    def test_ip6_fpa__assemble(self) -> None:
         """
         Test the 'assemble() method.
         """

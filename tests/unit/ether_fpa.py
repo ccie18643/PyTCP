@@ -48,7 +48,7 @@ class TestEtherAssembler(TestCase):
     Ethernet Assembler unit test class.
     """
 
-    def test_ether_fpa____init__(self):
+    def test_ether_fpa____init__(self) -> None:
         """
         Test the packet constructor.
         """
@@ -63,7 +63,7 @@ class TestEtherAssembler(TestCase):
         self.assertEqual(packet._dst, MacAddress("66:77:88:99:AA:BB"))
         self.assertEqual(packet._type, ETHER_TYPE_RAW)
 
-    def test_ether_fpa____init____defaults(self):
+    def test_ether_fpa____init____defaults(self) -> None:
         """
         Test the packet constructor with default arguments.
         """
@@ -74,31 +74,31 @@ class TestEtherAssembler(TestCase):
         self.assertEqual(packet._dst, MacAddress("00:00:00:00:00:00"))
         self.assertEqual(packet._type, ETHER_TYPE_RAW)
 
-    def test_ether_fpa____init____assert_ethertype_arp(self):
+    def test_ether_fpa____init____assert_ethertype_arp(self) -> None:
         """
         Test assertion for carried packet 'ether_type' attribute.
         """
         EtherAssembler(carried_packet=ArpAssembler())
 
-    def test_ether_fpa____init____assert_ethertype_ip4(self):
+    def test_ether_fpa____init____assert_ethertype_ip4(self) -> None:
         """
         Test assertion for carried packet 'ether_type' attribute.
         """
         EtherAssembler(carried_packet=Ip4Assembler())
 
-    def test_ether_fpa____init____assert_ethertype_ip6(self):
+    def test_ether_fpa____init____assert_ethertype_ip6(self) -> None:
         """
         Test assertion for carried packet 'ether_type' attribute.
         """
         EtherAssembler(carried_packet=Ip6Assembler())
 
-    def test_ether_fpa____init____assert_ethertype_raw(self):
+    def test_ether_fpa____init____assert_ethertype_raw(self) -> None:
         """
         Test assertion for carried packet 'ether_type' attribute.
         """
         EtherAssembler(carried_packet=RawAssembler())
 
-    def test_ether_fpa____init____assert_ethertype_unknown(self):
+    def test_ether_fpa____init____assert_ethertype_unknown(self) -> None:
         """
         Test assertion for carried packet 'ether_type' attribute.
         """
@@ -108,7 +108,7 @@ class TestEtherAssembler(TestCase):
             carried_packet_mock.tracker = StrictMock(Tracker)
             EtherAssembler(carried_packet=carried_packet_mock)
 
-    def test_ether_fpa____len__(self):
+    def test_ether_fpa____len__(self) -> None:
         """
         Test the '__len__' dunder.
         """
@@ -118,7 +118,7 @@ class TestEtherAssembler(TestCase):
 
         self.assertEqual(len(packet), ETHER_HEADER_LEN + 16)
 
-    def test_ether_fpa____str__(self):
+    def test_ether_fpa____str__(self) -> None:
         """
         Test the '__str__()' dunder.
         """
@@ -133,7 +133,7 @@ class TestEtherAssembler(TestCase):
             "0xffff (raw_data), plen 30",
         )
 
-    def test_ether_fpa__tracker_getter(self):
+    def test_ether_fpa__tracker_getter(self) -> None:
         """
         Test the '_tracker' attribute getter.
         """
@@ -146,7 +146,7 @@ class TestEtherAssembler(TestCase):
 
         self.assertEqual(packet.tracker, carried_packet_mock.tracker)
 
-    def test_ether_fpa__dst_getter(self):
+    def test_ether_fpa__dst_getter(self) -> None:
         """
         Test the 'dst' attribute getter.
         """
@@ -155,7 +155,7 @@ class TestEtherAssembler(TestCase):
         )
         self.assertEqual(packet.dst, MacAddress("66:77:88:99:AA:BB"))
 
-    def test_ether_fpa__dst_setter(self):
+    def test_ether_fpa__dst_setter(self) -> None:
         """
         Test the 'dst' attribute setter.
         """
@@ -164,7 +164,7 @@ class TestEtherAssembler(TestCase):
         )
         self.assertEqual(packet.dst, MacAddress("66:77:88:99:AA:BB"))
 
-    def test_ether_fpa__src_getter(self):
+    def test_ether_fpa__src_getter(self) -> None:
         """
         Test the 'src' attribute getter.
         """
@@ -173,7 +173,7 @@ class TestEtherAssembler(TestCase):
         )
         self.assertEqual(packet.src, MacAddress("11:22:33:44:55:66"))
 
-    def test_ether_fpa__src_setter(self):
+    def test_ether_fpa__src_setter(self) -> None:
         """
         Test the 'src' attribute setter.
         """
@@ -182,7 +182,7 @@ class TestEtherAssembler(TestCase):
         )
         self.assertEqual(packet.src, MacAddress("11:22:33:44:55:66"))
 
-    def test_ether_fpa__assemble(self):
+    def test_ether_fpa__assemble(self) -> None:
         """
         Test the 'assemble()' method.
         """

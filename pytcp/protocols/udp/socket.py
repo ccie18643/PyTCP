@@ -299,7 +299,7 @@ class UdpSocket(Socket):
                 "[Remote host sent ICMP Unreachable]"
             )
 
-        if self._packet_rx_md_ready.acquire(timeout=timeout):  # type: ignore
+        if self._packet_rx_md_ready.acquire(timeout=timeout):
             data_rx = self._packet_rx_md.pop(0).data
             if __debug__:
                 log(
@@ -319,7 +319,7 @@ class UdpSocket(Socket):
 
         # TODO - Implement support for buffsize
 
-        if self._packet_rx_md_ready.acquire(timeout=timeout):  # type: ignore
+        if self._packet_rx_md_ready.acquire(timeout=timeout):
             packet_rx_md = self._packet_rx_md.pop(0)
             if __debug__:
                 log(

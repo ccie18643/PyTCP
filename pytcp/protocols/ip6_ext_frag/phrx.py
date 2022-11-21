@@ -36,14 +36,20 @@ from __future__ import annotations
 
 import struct
 from time import time
+from typing import TYPE_CHECKING
 
 import pytcp.config as config
 from pytcp.lib.logger import log
 from pytcp.misc.packet import PacketRx
 from pytcp.protocols.ip6_ext_frag.fpp import Ip6ExtFragParser
 
+if TYPE_CHECKING:
+    from pytcp.subsystems.packet_handler import PacketHandler
 
-def _defragment_ip6_packet(self, packet_rx: PacketRx) -> PacketRx | None:
+
+def _defragment_ip6_packet(
+    self: PacketHandler, packet_rx: PacketRx
+) -> PacketRx | None:
     """
     Defragment IPv6 packet.
     """
@@ -116,7 +122,7 @@ def _defragment_ip6_packet(self, packet_rx: PacketRx) -> PacketRx | None:
     return packet_rx
 
 
-def _phrx_ip6_ext_frag(self, packet_rx: PacketRx) -> None:
+def _phrx_ip6_ext_frag(self: PacketHandler, packet_rx: PacketRx) -> None:
     """
     Handle inbound IPv6 fragment extension header.
     """
@@ -137,6 +143,6 @@ def _phrx_ip6_ext_frag(self, packet_rx: PacketRx) -> None:
     if __debug__:
         log("ip6", f"{packet_rx.tracker} - {packet_rx.ip6_ext_frag}")
 
-    if packet_rx := self._defragment_ip6_packet(packet_rx):
+    if defragmented_packet_rx := self._defragment_ip6_packet(packet_rx):
         self.packet_stats_rx.ip6_ext_frag__defrag += 1
-        self._phrx_ip6(packet_rx)
+        self._phrx_ip6(defragmented_packet_rx)

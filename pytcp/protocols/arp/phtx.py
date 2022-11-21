@@ -45,10 +45,11 @@ from pytcp.protocols.arp.ps import ARP_OP_REPLY, ARP_OP_REQUEST
 
 if TYPE_CHECKING:
     from pytcp.lib.ip4_address import Ip4Address
+    from pytcp.subsystems.packet_handler import PacketHandler
 
 
 def _phtx_arp(
-    self,
+    self: PacketHandler,
     *,
     ether_src: MacAddress,
     ether_dst: MacAddress,

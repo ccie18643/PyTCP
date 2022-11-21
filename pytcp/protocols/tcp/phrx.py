@@ -33,14 +33,19 @@
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 import pytcp.misc.stack as stack
 from pytcp.lib.logger import log
 from pytcp.misc.packet import PacketRx
 from pytcp.protocols.tcp.fpp import TcpParser
 from pytcp.protocols.tcp.metadata import TcpMetadata
 
+if TYPE_CHECKING:
+    from pytcp.subsystems.packet_handler import PacketHandler
 
-def _phrx_tcp(self, packet_rx: PacketRx) -> None:
+
+def _phrx_tcp(self: PacketHandler, packet_rx: PacketRx) -> None:
     """
     Handle inbound TCP packets.
     """
@@ -52,7 +57,10 @@ def _phrx_tcp(self, packet_rx: PacketRx) -> None:
     if packet_rx.parse_failed:
         self.packet_stats_rx.tcp__failed_parse__drop += 1
         if __debug__:
-            log("tcp", f"{self.tracker} - <CRIT>{packet_rx.parse_failed}</>")
+            log(
+                "tcp",
+                f"{packet_rx.tracker} - <CRIT>{packet_rx.parse_failed}</>",
+            )
         return
 
     if __debug__:

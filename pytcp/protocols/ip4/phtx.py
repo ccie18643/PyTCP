@@ -45,14 +45,20 @@ from pytcp.protocols.raw.fpa import RawAssembler
 from pytcp.protocols.udp.fpa import UdpAssembler
 
 if TYPE_CHECKING:
+    from pytcp.lib.tracker import Tracker
     from pytcp.protocols.tcp.fpa import TcpAssembler
+    from pytcp.subsystems.packet_handler import PacketHandler
 
 
 def _validate_src_ip4_address(
-    self,
+    self: PacketHandler,
     ip4_src: Ip4Address,
     ip4_dst: Ip4Address,
-    carried_packet: Icmp4Assembler | TcpAssembler | UdpAssembler | RawAssembler,
+    carried_packet: Icmp4Assembler
+    | TcpAssembler
+    | UdpAssembler
+    | Ip4FragAssembler
+    | RawAssembler,
 ) -> Ip4Address | TxStatus:
     """
     Make sure source ip address is valid, supplement with valid one
@@ -208,7 +214,7 @@ def _validate_src_ip4_address(
 
 
 def _validate_dst_ip4_address(
-    self, ip4_dst: Ip4Address, tracker
+    self: PacketHandler, ip4_dst: Ip4Address, tracker: Tracker
 ) -> Ip4Address | TxStatus:
     """Make sure destination ip address is valid"""
 
@@ -227,7 +233,7 @@ def _validate_dst_ip4_address(
 
 
 def _phtx_ip4(
-    self,
+    self: PacketHandler,
     *,
     ip4_dst: Ip4Address,
     ip4_src: Ip4Address,

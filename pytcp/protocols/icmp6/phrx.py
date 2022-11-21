@@ -56,9 +56,10 @@ from pytcp.protocols.udp.ps import UDP_HEADER_LEN
 
 if TYPE_CHECKING:
     from pytcp.misc.packet import PacketRx
+    from pytcp.subsystems.packet_handler import PacketHandler
 
 
-def _phrx_icmp6(self, packet_rx: PacketRx) -> None:
+def _phrx_icmp6(self: PacketHandler, packet_rx: PacketRx) -> None:
     """
     Handle inbound ICMPv6 packets.
     """

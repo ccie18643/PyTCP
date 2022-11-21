@@ -117,7 +117,9 @@ def trace_fsm(function: Callable) -> Callable:
     Decorator for tracing FSM state.
     """
 
-    def wrapper(self, *args: list[Any], **kwargs: dict[str, Any]) -> Any:
+    def wrapper(
+        self: TcpSession, *args: list[Any], **kwargs: dict[str, Any]
+    ) -> Any:
         print(
             f"[ >>> ] snd_nxt {self._snd_nxt}, snd_una {self._snd_una},",
             f"rcv_nxt {self._rcv_nxt}, rcv_una {self._rcv_una}",
@@ -132,7 +134,7 @@ def trace_fsm(function: Callable) -> Callable:
     return wrapper
 
 
-def trace_win(self) -> None:
+def trace_win(self: TcpSession) -> None:
     """
     Method used to trace sliding window operation, invoke as 'trace_win(self)'
     from within the TcpSession object.
@@ -141,6 +143,7 @@ def trace_win(self) -> None:
     remaining_data_len = len(self._tx_buffer) - self._tx_buffer_nxt
     usable_window = self._tx_buffer_una + self._snd_ewn - self._tx_buffer_nxt
     transmit_data_len = min(self._snd_mss, usable_window, remaining_data_len)
+
     print("unsent_data:", remaining_data_len)
     print("usable_window:", usable_window)
     print("transmit_data_len:", transmit_data_len)
@@ -405,7 +408,7 @@ class TcpSession:
             "TCP session not in ESTABLISHED or CLOSE_WAIT state"
         )
 
-    def receive(self, byte_count=None) -> bytes:
+    def receive(self, byte_count: int | None = None) -> bytes:
         """
         The 'RECEIVE' syscall.
         """
@@ -556,7 +559,7 @@ class TcpSession:
             # If rx_buffer event has not been released yet
             # (it could be released if some data were siting in buffer already)
             # then release it.
-            if not self._event_rx_buffer._value:  # type: ignore
+            if not self._event_rx_buffer._value:
                 self._event_rx_buffer.release()
 
     def _transmit_data(self) -> None:

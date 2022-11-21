@@ -41,13 +41,13 @@ class TestConfig(TestCase):
     Config test class.
     """
 
-    def test_ipv6_support(self):
+    def test_ipv6_support(self) -> None:
         """
         Test the 'ipv6_support' config parameter.
         """
         self.assertEqual(IP6_SUPPORT, True)
 
-    def test_ipv4_support(self):
+    def test_ipv4_support(self) -> None:
         """
         Test the 'ipv4_support' config parameter.
         """

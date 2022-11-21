@@ -43,7 +43,7 @@ class TestMacAddress(TestCase):
     Unit tests for the 'MacAddress' class.
     """
 
-    def setUp(self):
+    def setUp(self) -> None:
         """
         Setup tests.
         """
@@ -71,7 +71,7 @@ class TestMacAddress(TestCase):
             MacSample(MacAddress("ff:ff:ff:ff:ff:ff"), is_broadcast=True),
         ]
 
-    def test___init__(self):
+    def test___init__(self) -> None:
         """
         Test the constructor for 'MacAddress' object.
         """
@@ -132,7 +132,7 @@ class TestMacAddress(TestCase):
             281474976710656,
         )
 
-    def test___str__(self):
+    def test___str__(self) -> None:
         """
         Test the '__str__()' dunder.'
         """
@@ -141,7 +141,7 @@ class TestMacAddress(TestCase):
             "ff:00:ab:c7:d4:33",
         )
 
-    def test___repr__(self):
+    def test___repr__(self) -> None:
         """
         Test the '__repr__()' dunder.
         """
@@ -150,7 +150,7 @@ class TestMacAddress(TestCase):
             "MacAddress('01:23:45:ab:cd:ef')",
         )
 
-    def test___bytes__(self):
+    def test___bytes__(self) -> None:
         """
         Test the '__bytes__()' dunder.
         """
@@ -159,7 +159,7 @@ class TestMacAddress(TestCase):
             b"\x01#E\xab\xcd\xef",
         )
 
-    def test___int__(self):
+    def test___int__(self) -> None:
         """
         Test the '__int__()' dunder.
         """
@@ -168,7 +168,7 @@ class TestMacAddress(TestCase):
             1251004370415,
         )
 
-    def test___eq__(self):
+    def test___eq__(self) -> None:
         """
         Test the '__eq__()' dunder.
         """
@@ -181,7 +181,7 @@ class TestMacAddress(TestCase):
             MacAddress("11:11:11:11:11:11"),
         )
 
-    def test___hash__(self):
+    def test___hash__(self) -> None:
         """
         Test the '__hash__()' dunder.
         """
@@ -190,7 +190,7 @@ class TestMacAddress(TestCase):
             1251004370415,
         )
 
-    def test_is_iunicast(self):
+    def test_is_iunicast(self) -> None:
         """
         Test the 'is_unicast' property.
         """
@@ -200,7 +200,7 @@ class TestMacAddress(TestCase):
                 sample.is_unicast,
             )
 
-    def test_is_multicast_ip4(self):
+    def test_is_multicast_ip4(self) -> None:
         """
         Test the 'is_multicast_ip4' property.
         """
@@ -210,7 +210,7 @@ class TestMacAddress(TestCase):
                 sample.is_multicast_ip4,
             )
 
-    def test_is_multicast_ip6(self):
+    def test_is_multicast_ip6(self) -> None:
         """
         Test the 'is_multicast_ip6' property.
         """
@@ -220,7 +220,7 @@ class TestMacAddress(TestCase):
                 sample.is_multicast_ip6,
             )
 
-    def test_is_multicast_ip6_solicited_node(self):
+    def test_is_multicast_ip6_solicited_node(self) -> None:
         """
         Test the 'is_multicast_ip6_solicited_node' property.
         """
@@ -230,7 +230,7 @@ class TestMacAddress(TestCase):
                 sample.is_multicast_ip6_solicited_node,
             )
 
-    def test_is_broadcast(self):
+    def test_is_broadcast(self) -> None:
         """
         Test 'is_broadcast' property.
         """

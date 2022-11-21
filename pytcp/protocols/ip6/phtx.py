@@ -48,13 +48,15 @@ from pytcp.protocols.ip6.fpa import Ip6Assembler
 from pytcp.protocols.raw.fpa import RawAssembler
 
 if TYPE_CHECKING:
+    from pytcp.lib.tracker import Tracker
     from pytcp.protocols.ip6_ext_frag.fpa import Ip6ExtFragAssembler
     from pytcp.protocols.tcp.fpa import TcpAssembler
     from pytcp.protocols.udp.fpa import UdpAssembler
+    from pytcp.subsystems.packet_handler import PacketHandler
 
 
 def _validate_src_ip6_address(
-    self,
+    self: PacketHandler,
     ip6_src: Ip6Address,
     ip6_dst: Ip6Address,
     carried_packet: Ip6ExtFragAssembler
@@ -187,7 +189,7 @@ def _validate_src_ip6_address(
 
 
 def _validate_dst_ip6_address(
-    self, ip6_dst: Ip6Address, tracker
+    self: PacketHandler, ip6_dst: Ip6Address, tracker: Tracker
 ) -> Ip6Address | TxStatus:
     """Make sure destination ip address is valid"""
 
@@ -206,7 +208,7 @@ def _validate_dst_ip6_address(
 
 
 def _phtx_ip6(
-    self,
+    self: PacketHandler,
     *,
     ip6_dst: Ip6Address,
     ip6_src: Ip6Address,

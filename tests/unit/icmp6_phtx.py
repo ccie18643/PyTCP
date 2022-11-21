@@ -58,7 +58,7 @@ class TestIcmp6Phtx(TestCase):
     ICMPv6 packet handler TX unit test class.
     """
 
-    def setUp(self):
+    def setUp(self) -> None:
         """
         Setup tests.
         """
@@ -69,7 +69,7 @@ class TestIcmp6Phtx(TestCase):
 
     # Test name format: 'test_name__test_description__optional_condition'
 
-    def test_icmp6_phtx__ip6_icmp6_echo_request(self):
+    def test_icmp6_phtx__ip6_icmp6_echo_request(self) -> None:
         """
         Test sending the IPv6/ICMPv6 'Echo Request' packet.
         """
@@ -99,7 +99,7 @@ class TestIcmp6Phtx(TestCase):
             frame_tx = _.read()
         self.assertEqual(self.frame_tx[: len(frame_tx)], frame_tx)
 
-    def test_icmp6_phtx__ip6_icmp6_echo_reply(self):
+    def test_icmp6_phtx__ip6_icmp6_echo_reply(self) -> None:
         """
         Test sending the IPv6/ICMPv6 'Echo Reply' packet.
         """
@@ -130,7 +130,7 @@ class TestIcmp6Phtx(TestCase):
             frame_tx = _.read()
         self.assertEqual(self.frame_tx[: len(frame_tx)], frame_tx)
 
-    def test_icmp6_phtx__ip6_icmp6_unreachable_port(self):
+    def test_icmp6_phtx__ip6_icmp6_unreachable_port(self) -> None:
         """
         Test sending the IPv6/ICMPv6 'Unreachable Port' packet.
         """
@@ -159,7 +159,7 @@ class TestIcmp6Phtx(TestCase):
             frame_tx = _.read()
         self.assertEqual(self.frame_tx[: len(frame_tx)], frame_tx)
 
-    def test_icmp6_phtx__ip6_icmp6_nd_router_solicitation(self):
+    def test_icmp6_phtx__ip6_icmp6_nd_router_solicitation(self) -> None:
         """
         Test sending the IPv6/ICMPv6 'ND Router Solicitation' packet.
         """

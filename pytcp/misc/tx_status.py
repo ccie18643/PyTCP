@@ -87,13 +87,13 @@ class TxStatus(Enum):
         """
         return str(self.name)
 
-    def __eq__(self, other):
+    def __eq__(self, other: object) -> bool:
         """
-        The '__repr__()' dunder.
+        The '__eq__()' dunder.
         """
         return repr(self) == repr(other)
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         """
         The '__hash__()' dunder.
         """

@@ -35,6 +35,7 @@ from __future__ import annotations
 
 import struct
 from time import time
+from typing import TYPE_CHECKING
 
 import pytcp.config as config
 from pytcp.lib.logger import log
@@ -48,8 +49,13 @@ from pytcp.protocols.ip4.ps import (
     IP4_PROTO_UDP,
 )
 
+if TYPE_CHECKING:
+    from pytcp.subsystems.packet_handler import PacketHandler
 
-def _defragment_ip4_packet(self, packet_rx: PacketRx) -> PacketRx | None:
+
+def _defragment_ip4_packet(
+    self: PacketHandler, packet_rx: PacketRx
+) -> PacketRx | None:
     """
     Defragment IPv4 packet.
     """
@@ -122,7 +128,7 @@ def _defragment_ip4_packet(self, packet_rx: PacketRx) -> PacketRx | None:
     return packet_rx
 
 
-def _phrx_ip4(self, packet_rx: PacketRx) -> None:
+def _phrx_ip4(self: PacketHandler, packet_rx: PacketRx) -> None:
     """Handle inbound IPv4 packets"""
 
     self.packet_stats_rx.ip4__pre_parse += 1
@@ -170,9 +176,12 @@ def _phrx_ip4(self, packet_rx: PacketRx) -> None:
     # Check if packet is a fragment and if so process it accordingly
     if packet_rx.ip4.offset != 0 or packet_rx.ip4.flag_mf:
         self.packet_stats_rx.ip4__frag += 1
-        if not (packet_rx := self._defragment_ip4_packet(packet_rx)):
+        if not (
+            defragmented_packet_rx := self._defragment_ip4_packet(packet_rx)
+        ):
             return
         else:
+            packet_rx = defragmented_packet_rx
             self.packet_stats_rx.ip4__defrag += 1
 
     if packet_rx.ip4.proto == IP4_PROTO_ICMP4:

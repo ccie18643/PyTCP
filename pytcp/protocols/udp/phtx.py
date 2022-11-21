@@ -33,8 +33,10 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
+from pytcp.lib.ip4_address import Ip4Address
+from pytcp.lib.ip6_address import Ip6Address
 from pytcp.lib.logger import log
 from pytcp.lib.tracker import Tracker
 from pytcp.misc.tx_status import TxStatus
@@ -42,10 +44,11 @@ from pytcp.protocols.udp.fpa import UdpAssembler
 
 if TYPE_CHECKING:
     from pytcp.lib.ip_address import IpAddress
+    from pytcp.subsystems.packet_handler import PacketHandler
 
 
 def _phtx_udp(
-    self,
+    self: PacketHandler,
     *,
     ip_src: IpAddress,
     ip_dst: IpAddress,
@@ -73,13 +76,17 @@ def _phtx_udp(
     if ip_src.is_ip6 and ip_dst.is_ip6:
         self.packet_stats_tx.udp__send += 1
         return self._phtx_ip6(
-            ip6_src=ip_src, ip6_dst=ip_dst, carried_packet=udp_packet_tx
+            ip6_src=cast(Ip6Address, ip_src),
+            ip6_dst=cast(Ip6Address, ip_dst),
+            carried_packet=udp_packet_tx,
         )
 
     if ip_src.is_ip4 and ip_dst.is_ip4:
         self.packet_stats_tx.udp__send += 1
         return self._phtx_ip4(
-            ip4_src=ip_src, ip4_dst=ip_dst, carried_packet=udp_packet_tx
+            ip4_src=cast(Ip4Address, ip_src),
+            ip4_dst=cast(Ip4Address, ip_dst),
+            carried_packet=udp_packet_tx,
         )
 
     self.packet_stats_tx.udp__unknown__drop += 1

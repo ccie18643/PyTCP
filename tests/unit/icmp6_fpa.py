@@ -73,13 +73,13 @@ class TestIcmp6Assembler(TestCase):
     ICMPv6 protocol packet assembler unit test class.
     """
 
-    def test_icmp6_fpa__ip6_next_icmp6(self):
+    def test_icmp6_fpa__ip6_next_icmp6(self) -> None:
         """
         Make sure the 'Icmp6Assembler' class has the proper 'ip6_next' set.
         """
         self.assertEqual(Icmp6Assembler.ip6_next, IP6_NEXT_ICMP6)
 
-    def test_icmp6_fpa____init____unreachable_port(self):
+    def test_icmp6_fpa____init____unreachable_port(self) -> None:
         """
         Test packet constructor for the 'Unreachable Port' message.
         """
@@ -96,7 +96,9 @@ class TestIcmp6Assembler(TestCase):
             )
         )
 
-    def test_icmp6_fpa____init____unreachable_port__assert_code__under(self):
+    def test_icmp6_fpa____init____unreachable_port__assert_code__under(
+        self,
+    ) -> None:
         """
         Test packet constructor for the 'Unreachable Port' message.
         """
@@ -106,7 +108,9 @@ class TestIcmp6Assembler(TestCase):
                 code=ICMP6_UNREACHABLE__PORT - 1,
             )
 
-    def test_icmp6_fpa____init____unreachable_port__assert_code__over(self):
+    def test_icmp6_fpa____init____unreachable_port__assert_code__over(
+        self,
+    ) -> None:
         """
         Test packet constructor for the 'Unreachable Port' message.
         """
@@ -116,7 +120,7 @@ class TestIcmp6Assembler(TestCase):
                 code=ICMP6_UNREACHABLE__PORT + 1,
             )
 
-    def test_icmp6_fpa____init____echo_request(self):
+    def test_icmp6_fpa____init____echo_request(self) -> None:
         """
         Test packet constructor for the 'Echo Request' message.
         """
@@ -137,7 +141,9 @@ class TestIcmp6Assembler(TestCase):
             )
         )
 
-    def test_icmp6_fpa____init____echo_request__assert_code__under(self):
+    def test_icmp6_fpa____init____echo_request__assert_code__under(
+        self,
+    ) -> None:
         """
         Test packet constructor for the 'Echo Request' message.
         """
@@ -147,7 +153,7 @@ class TestIcmp6Assembler(TestCase):
                 code=-1,
             )
 
-    def test_icmp6_fpa____init____echo_request__assert_code__over(self):
+    def test_icmp6_fpa____init____echo_request__assert_code__over(self) -> None:
         """
         Test class constructor for the 'Echo Request' message.
         """
@@ -157,7 +163,9 @@ class TestIcmp6Assembler(TestCase):
                 code=1,
             )
 
-    def test_icmp6_fpa____init____echo_request__assert_ec_id__under(self):
+    def test_icmp6_fpa____init____echo_request__assert_ec_id__under(
+        self,
+    ) -> None:
         """
         Test assertion for the 'ec_id' argument.
         """
@@ -168,7 +176,9 @@ class TestIcmp6Assembler(TestCase):
                 ec_id=-1,
             )
 
-    def test_icmp6_fpa____init____echo_request__assert_ec_id__over(self):
+    def test_icmp6_fpa____init____echo_request__assert_ec_id__over(
+        self,
+    ) -> None:
         """
         Test assertion for the 'ec_id' argument.
         """
@@ -179,7 +189,9 @@ class TestIcmp6Assembler(TestCase):
                 ec_id=0x10000,
             )
 
-    def test_icmp6_fpa____init____echo_request__assert_ec_seq__under(self):
+    def test_icmp6_fpa____init____echo_request__assert_ec_seq__under(
+        self,
+    ) -> None:
         """
         Test assertion for the 'ec_id' argument.
         """
@@ -190,7 +202,9 @@ class TestIcmp6Assembler(TestCase):
                 ec_seq=-1,
             )
 
-    def test_icmp6_fpa____init____echo_request__assert_ec_seq__over(self):
+    def test_icmp6_fpa____init____echo_request__assert_ec_seq__over(
+        self,
+    ) -> None:
         """
         Test assertion for the 'ec_seq' argument.
         """
@@ -201,7 +215,7 @@ class TestIcmp6Assembler(TestCase):
                 ec_seq=0x10000,
             )
 
-    def test_icmp6_fpa____init____echo_reply(self):
+    def test_icmp6_fpa____init____echo_reply(self) -> None:
         """
         Test packet constructor for the 'Echo Reply' message.
         """
@@ -224,7 +238,7 @@ class TestIcmp6Assembler(TestCase):
             )
         )
 
-    def test_icmp6_fpa____init____echo_reply__assert_code__under(self):
+    def test_icmp6_fpa____init____echo_reply__assert_code__under(self) -> None:
         """
         Test packet constructor for the 'Echo Reply' message.
         """
@@ -234,7 +248,7 @@ class TestIcmp6Assembler(TestCase):
                 code=-1,
             )
 
-    def test_icmp6_fpa____init____echo_reply__assert_code__over(self):
+    def test_icmp6_fpa____init____echo_reply__assert_code__over(self) -> None:
         """
         Test packet constructor for the 'Echo Reply' message.
         """
@@ -244,7 +258,7 @@ class TestIcmp6Assembler(TestCase):
                 code=1,
             )
 
-    def test_icmp6_fpa____init____echo_reply__assert_ec_id__under(self):
+    def test_icmp6_fpa____init____echo_reply__assert_ec_id__under(self) -> None:
         """
         Test assertion for the 'ec_id' argument.
         """
@@ -255,7 +269,7 @@ class TestIcmp6Assembler(TestCase):
                 ec_id=-1,
             )
 
-    def test_icmp6_fpa____init____echo_reply__assert_ec_id__over(self):
+    def test_icmp6_fpa____init____echo_reply__assert_ec_id__over(self) -> None:
         """
         Test assertion for the 'ec_id' argument.
         """
@@ -266,7 +280,9 @@ class TestIcmp6Assembler(TestCase):
                 ec_id=0x10000,
             )
 
-    def test_icmp6_fpa____init____echo_reply__assert_ec_seq__under(self):
+    def test_icmp6_fpa____init____echo_reply__assert_ec_seq__under(
+        self,
+    ) -> None:
         """
         Test assertion for the 'ec_id' argument.
         """
@@ -277,7 +293,7 @@ class TestIcmp6Assembler(TestCase):
                 ec_seq=-1,
             )
 
-    def test_icmp6_fpa____init____echo_reply__assert_ec_seq__over(self):
+    def test_icmp6_fpa____init____echo_reply__assert_ec_seq__over(self) -> None:
         """
         Test assertion for the 'ec_seq' argument.
         """
@@ -288,7 +304,7 @@ class TestIcmp6Assembler(TestCase):
                 ec_seq=0x10000,
             )
 
-    def test_icmp6_fpa____init____unknown(self):
+    def test_icmp6_fpa____init____unknown(self) -> None:
         """
         Test packet constructor for message with unknown type.
         """
@@ -297,7 +313,7 @@ class TestIcmp6Assembler(TestCase):
                 type=255,
             )
 
-    def test_icmp6_fpa____init____nd_router_solicitation(self):
+    def test_icmp6_fpa____init____nd_router_solicitation(self) -> None:
         """
         Test packet constructor for the 'ND Router Solicitation' message.
         """
@@ -348,7 +364,7 @@ class TestIcmp6Assembler(TestCase):
                 code=1,
             )
 
-    def test_icmp6_fpa____init____nd_router_advertisement(self):
+    def test_icmp6_fpa____init____nd_router_advertisement(self) -> None:
         """
         Test packet constructor for the 'ND Router Advertisement' message.
         """
@@ -506,7 +522,7 @@ class TestIcmp6Assembler(TestCase):
                 ra_retrans_timer=0x100000000,
             )
 
-    def test_icmp6_fpa____init____nd_neighbor_solicitation(self):
+    def test_icmp6_fpa____init____nd_neighbor_solicitation(self) -> None:
         """
         Test packet constructor for the 'ND Neighbor Solicitation' message.
         """
@@ -560,7 +576,7 @@ class TestIcmp6Assembler(TestCase):
                 code=1,
             )
 
-    def test_icmp6_fpa____init____nd_neighbor_advertisement(self):
+    def test_icmp6_fpa____init____nd_neighbor_advertisement(self) -> None:
         """
         Test packet constructor for the 'ND Neighbor Advertisement' message.
         """
@@ -621,7 +637,7 @@ class TestIcmp6Assembler(TestCase):
                 code=1,
             )
 
-    def test_icmp6_fpa____init____mld2_report(self):
+    def test_icmp6_fpa____init____mld2_report(self) -> None:
         """
         Test packet constructor for the 'Multicast Discovery v2 Report' message.
         """
@@ -657,7 +673,7 @@ class TestIcmp6Assembler(TestCase):
             )
         )
 
-    def test_icmp6_fpa____init____mld2_record__assert_code__under(self):
+    def test_icmp6_fpa____init____mld2_record__assert_code__under(self) -> None:
         """
         Test packet constructor for the 'Multicast Discovery v2 Report' message.
         """
@@ -667,7 +683,7 @@ class TestIcmp6Assembler(TestCase):
                 code=-1,
             )
 
-    def test_icmp6_fpa____init____mld2_record__assert_code__over(self):
+    def test_icmp6_fpa____init____mld2_record__assert_code__over(self) -> None:
         """
         Test class constructor for the 'Multicast Discovery v2 Report' message.
         """
@@ -677,7 +693,7 @@ class TestIcmp6Assembler(TestCase):
                 code=1,
             )
 
-    def test_icmp6_fpa____len____unreachable_port(self):
+    def test_icmp6_fpa____len____unreachable_port(self) -> None:
         """
         Test the '__len__()' dunder for 'Unreachable Port' message.
         """
@@ -689,7 +705,7 @@ class TestIcmp6Assembler(TestCase):
 
         self.assertEqual(len(packet), ICMP6_UNREACHABLE_LEN + 16)
 
-    def test_icmp6_fpa____len____echo_request(self):
+    def test_icmp6_fpa____len____echo_request(self) -> None:
         """
         Test the '__len__()' dunder for 'Unreachable Port' message.
         """
@@ -701,7 +717,7 @@ class TestIcmp6Assembler(TestCase):
 
         self.assertEqual(len(packet), ICMP6_ECHO_REQUEST_LEN + 16)
 
-    def test_icmp6_fpa____len____echo_reply(self):
+    def test_icmp6_fpa____len____echo_reply(self) -> None:
         """
         Test the '__len__()' dunder for 'Echo Reply' message.
         """
@@ -713,7 +729,7 @@ class TestIcmp6Assembler(TestCase):
 
         self.assertEqual(len(packet), ICMP6_ECHO_REPLY_LEN + 16)
 
-    def test_icmp6_fpa____len____nd_router_solicitation(self):
+    def test_icmp6_fpa____len____nd_router_solicitation(self) -> None:
         """
         Test the '__len__()' dunder for 'Router Solicitation' message.
         """
@@ -732,7 +748,7 @@ class TestIcmp6Assembler(TestCase):
             + ICMP6_ND_OPT_TLLA_LEN,
         )
 
-    def test_icmp6_fpa____len____nd_router_advertisement(self):
+    def test_icmp6_fpa____len____nd_router_advertisement(self) -> None:
         """
         Test the '__len__() dunder for 'Router Advertisement' message.
         """
@@ -758,7 +774,7 @@ class TestIcmp6Assembler(TestCase):
             + ICMP6_ND_OPT_TLLA_LEN,
         )
 
-    def test_icmp6_fpa____len____nd_neighbor_solicitation(self):
+    def test_icmp6_fpa____len____nd_neighbor_solicitation(self) -> None:
         """
         Test the '__len__() dunder for 'Neighbor Solicitation' message.
         """
@@ -778,7 +794,7 @@ class TestIcmp6Assembler(TestCase):
             + ICMP6_ND_OPT_TLLA_LEN,
         )
 
-    def test_icmp6_fpa____len____nd_neighbor_advertisement(self):
+    def test_icmp6_fpa____len____nd_neighbor_advertisement(self) -> None:
         """
         Test the '__len__()' dunder for 'Neighbor Advertisement' message.
         """
@@ -802,7 +818,7 @@ class TestIcmp6Assembler(TestCase):
             + ICMP6_ND_OPT_TLLA_LEN,
         )
 
-    def test_icmp6_fpa____str____unreachable_port(self):
+    def test_icmp6_fpa____str____unreachable_port(self) -> None:
         """
         Test the '__str__()' dunder for 'Unreachable Port' message.
         """
@@ -813,7 +829,7 @@ class TestIcmp6Assembler(TestCase):
         )
         self.assertEqual(str(packet), "ICMPv6 1/4 (unreachable_port), dlen 16")
 
-    def test_icmp6_fpa____str____echo_request(self):
+    def test_icmp6_fpa____str____echo_request(self) -> None:
         """
         Test the '__str__() dunder for 'Echo Request' message.
         """
@@ -829,7 +845,7 @@ class TestIcmp6Assembler(TestCase):
             "ICMPv6 128/0 (echo_request), id 12345, seq 54321, dlen 16",
         )
 
-    def test_icmp6_fpa____str____echo_reply(self):
+    def test_icmp6_fpa____str____echo_reply(self) -> None:
         """
         Test the '__str__()'dunder for 'Echo Reply' message.
         """
@@ -845,7 +861,7 @@ class TestIcmp6Assembler(TestCase):
             "ICMPv6 129/0 (echo_reply), id 12345, seq 54321, dlen 16",
         )
 
-    def test_icmp6_fpa____str____nd_router_solicitation(self):
+    def test_icmp6_fpa____str____nd_router_solicitation(self) -> None:
         """
         Test the '__str__()' dunder for 'Router Solicitation' message.
         """
@@ -863,7 +879,9 @@ class TestIcmp6Assembler(TestCase):
             "tlla 66:55:44:33:22:11",
         )
 
-    def test_icmp6_fpa____str____nd_router_solicitation__no_options(self):
+    def test_icmp6_fpa____str____nd_router_solicitation__no_options(
+        self,
+    ) -> None:
         """
         Test the '__str__()' dunder for 'Router Solicitation' message.
         """
@@ -873,7 +891,7 @@ class TestIcmp6Assembler(TestCase):
         )
         self.assertEqual(str(packet), "ICMPv6 133/0 (nd_router_solicitation)")
 
-    def test_icmp6_fpa____str____nd_router_advertisement(self):
+    def test_icmp6_fpa____str____nd_router_advertisement(self) -> None:
         """
         Test the '__str__()' dunder for the 'Router Advertisement' message.
         """
@@ -899,7 +917,9 @@ class TestIcmp6Assembler(TestCase):
             "slla 11:22:33:44:55:66, tlla 66:55:44:33:22:11",
         )
 
-    def test_icmp6_fpa____str____nd_router_advertisement__no_options(self):
+    def test_icmp6_fpa____str____nd_router_advertisement__no_options(
+        self,
+    ) -> None:
         """
         Test the '__str__ ()' dunder for 'Router Advertisement' message.
         """
@@ -920,7 +940,7 @@ class TestIcmp6Assembler(TestCase):
             "rlft 12345, reacht 12345678, retrt 87654321",
         )
 
-    def test_icmp6_fpa____str____nd_neighbor_solicitation(self):
+    def test_icmp6_fpa____str____nd_neighbor_solicitation(self) -> None:
         """
         Test the '__str__()' dunder for 'Neighbor Solicitation' message.
         """
@@ -939,7 +959,9 @@ class TestIcmp6Assembler(TestCase):
             "slla 11:22:33:44:55:66, tlla 66:55:44:33:22:11",
         )
 
-    def test_icmp6_fpa____str____nd_neighbor_solicitation__no_options(self):
+    def test_icmp6_fpa____str____nd_neighbor_solicitation__no_options(
+        self,
+    ) -> None:
         """
         Test the '__str__()' dunder for 'Neighbor Solicitation' message.
         """
@@ -953,7 +975,7 @@ class TestIcmp6Assembler(TestCase):
             "ICMPv6 135/0 (nd_neighbor_solicitation), target 1:2:3:4:5:6:7:8",
         )
 
-    def test_icmp6_fpa____str____nd_neighbor_advertisement(self):
+    def test_icmp6_fpa____str____nd_neighbor_advertisement(self) -> None:
         """
         Test '__str__()' dunder for 'Neighbor Advertisement' message.
         """
@@ -976,7 +998,9 @@ class TestIcmp6Assembler(TestCase):
             "flags RSO, slla 11:22:33:44:55:66, tlla 66:55:44:33:22:11",
         )
 
-    def test_icmp6_fpa____str____nd_neighbor_advertisement__no_options(self):
+    def test_icmp6_fpa____str____nd_neighbor_advertisement__no_options(
+        self,
+    ) -> None:
         """
         Test the '__str__()' dunder for 'Neighbor Advertisement' message.
         """
@@ -995,7 +1019,7 @@ class TestIcmp6Assembler(TestCase):
             "flags RSO",
         )
 
-    def test_icmp6_fpa__tracker_getter(self):
+    def test_icmp6_fpa__tracker_getter(self) -> None:
         """
         Test the '_tracker' attribute getter.
         """
@@ -1004,7 +1028,7 @@ class TestIcmp6Assembler(TestCase):
             repr(packet.tracker).startswith("Tracker(serial='<lr>TX")
         )
 
-    def test_icmp6_fpa__asssemble__unreachable_port(self):
+    def test_icmp6_fpa__asssemble__unreachable_port(self) -> None:
         """
         Test the 'assemble()' method for 'Unreachable Port' message.
         """
@@ -1019,7 +1043,7 @@ class TestIcmp6Assembler(TestCase):
             bytes(frame), b"\x01\x04Y\x8b\x00\x00\x00\x000123456789ABCDEF"
         )
 
-    def test_icmp6_fpa__assemble__echo_request(self):
+    def test_icmp6_fpa__assemble__echo_request(self) -> None:
         """
         Test the 'assemble()' method for 'Echo Request' message.
         """
@@ -1034,7 +1058,7 @@ class TestIcmp6Assembler(TestCase):
         packet.assemble(frame, 12345678)
         self.assertEqual(bytes(frame), b"\x80\x00J\xb309\xd410123456789ABCDEF")
 
-    def test_icmp6_fpa__assemble__echo_reply(self):
+    def test_icmp6_fpa__assemble__echo_reply(self) -> None:
         """
         Test the 'assemble() method for 'Echo Reply' message..
         """
@@ -1049,7 +1073,7 @@ class TestIcmp6Assembler(TestCase):
         packet.assemble(frame, 12345678)
         self.assertEqual(bytes(frame), b"\x81\x00I\xb309\xd410123456789ABCDEF")
 
-    def test_icmp6_fpa__assemble__nd_router_solicitation(self):
+    def test_icmp6_fpa__assemble__nd_router_solicitation(self) -> None:
         """
         Test the 'assemble()' method for 'Router Solicitation' message.
         """
@@ -1069,7 +1093,7 @@ class TestIcmp6Assembler(TestCase):
             b'\x11"3DUf\x02\x01fUD3"\x11',
         )
 
-    def test_icmp6_fpa__assemble__nd_router_advertisement(self):
+    def test_icmp6_fpa__assemble__nd_router_advertisement(self) -> None:
         """
         Test 'assemble()' method for 'Router Advertisement' message.
         """
@@ -1096,7 +1120,7 @@ class TestIcmp6Assembler(TestCase):
             b'\x11"3DUf\x02\x01fUD3"\x11',
         )
 
-    def test_icmp6_fpa__assemble__nd_neighbor_solicitation(self):
+    def test_icmp6_fpa__assemble__nd_neighbor_solicitation(self) -> None:
         """
         Test the 'assemble() method for 'Neighbor Solicitation' message.
         """
@@ -1117,7 +1141,7 @@ class TestIcmp6Assembler(TestCase):
             b'\x00\x05\x00\x06\x00\x07\x00\x08\x01\x01\x11"3DUf\x02\x01fUD3"\x11',
         )
 
-    def test_icmp6_fpa__assemble__nd_neighbor_advertisement(self):
+    def test_icmp6_fpa__assemble__nd_neighbor_advertisement(self) -> None:
         """
         Test the 'assemble()' method for 'Neighbor Advertisement' message.
         """
@@ -1149,35 +1173,35 @@ class TestIcmp6NdOptSLLA(TestCase):
     ICMPv6 ND SLLA Option unit test class.
     """
 
-    def test_icmp6_fpa_nd_opt_slla____init__(self):
+    def test_icmp6_fpa_nd_opt_slla____init__(self) -> None:
         """
         Test the option constructor.
         """
         option = Icmp6NdOptSLLA(MacAddress("11:22:33:44:55:66"))
         self.assertEqual(option._slla, MacAddress("11:22:33:44:55:66"))
 
-    def test_icmp6_fpa_nd_opt_slla____str__(self):
+    def test_icmp6_fpa_nd_opt_slla____str__(self) -> None:
         """
         Test the '__str__()' dunder.
         """
         option = Icmp6NdOptSLLA(MacAddress("11:22:33:44:55:66"))
         self.assertEqual(str(option), "slla 11:22:33:44:55:66")
 
-    def test_icmp6_fpa_nd_opt_slla____repr__(self):
+    def test_icmp6_fpa_nd_opt_slla____repr__(self) -> None:
         """
         Test the '__repr__()' dunder.
         """
         option = Icmp6NdOptSLLA(MacAddress("11:22:33:44:55:66"))
         self.assertEqual(repr(option), f"Icmp6NdOptSLLA({repr(option._slla)})")
 
-    def test_icmp6_fpa_nd_opt_slla____bytes__(self):
+    def test_icmp6_fpa_nd_opt_slla____bytes__(self) -> None:
         """
         Test the '__bytes__()' dunder.
         """
         option = Icmp6NdOptSLLA(MacAddress("11:22:33:44:55:66"))
         self.assertEqual(bytes(option), b'\x01\x01\x11"3DUf')
 
-    def test_icmp6_fpa_nd_opt_slla____eq__(self):
+    def test_icmp6_fpa_nd_opt_slla____eq__(self) -> None:
         """
         Test the '__eq__()' dunder.
         """
@@ -1192,35 +1216,35 @@ class TestIcmp6NdOptTLLA(TestCase):
     ICMPv6 ND TLLA Option unit test class.
     """
 
-    def test_icmp6_fpa_nd_opt_tlla____init__(self):
+    def test_icmp6_fpa_nd_opt_tlla____init__(self) -> None:
         """
         Test the option constructor.
         """
         option = Icmp6NdOptTLLA(MacAddress("66:55:44:33:22:11"))
         self.assertEqual(option._tlla, MacAddress("66:55:44:33:22:11"))
 
-    def test_icmp6_fpa_nd_opt_tlla____str__(self):
+    def test_icmp6_fpa_nd_opt_tlla____str__(self) -> None:
         """
         Test the '__str__()' dunder.
         """
         option = Icmp6NdOptTLLA(MacAddress("66:55:44:33:22:11"))
         self.assertEqual(str(option), "tlla 66:55:44:33:22:11")
 
-    def test_icmp6_fpa_nd_opt_tlla____repr__(self):
+    def test_icmp6_fpa_nd_opt_tlla____repr__(self) -> None:
         """
         Test the '__repr__()' dunder.
         """
         option = Icmp6NdOptTLLA(MacAddress("66:55:44:33:22:11"))
         self.assertEqual(repr(option), f"Icmp6NdOptTLLA({repr(option._tlla)})")
 
-    def test_icmp6_fpa_nd_opt_tlla____bytes__(self):
+    def test_icmp6_fpa_nd_opt_tlla____bytes__(self) -> None:
         """
         Test the '__bytes__()' dunder.
         """
         option = Icmp6NdOptTLLA(MacAddress("66:55:44:33:22:11"))
         self.assertEqual(bytes(option), b'\x02\x01fUD3"\x11')
 
-    def test_icmp6_fpa_nd_opt_tlla____eq__(self):
+    def test_icmp6_fpa_nd_opt_tlla____eq__(self) -> None:
         """
         Test the '__eq__()' dunder.
         """
@@ -1235,7 +1259,7 @@ class TestIcmp6NdOptPI(TestCase):
     ICMPv6 ND PI Option unit test class.
     """
 
-    def test_icmp6_fpa_nd_opt_pi____init__(self):
+    def test_icmp6_fpa_nd_opt_pi____init__(self) -> None:
         """
         Test the option constructor.
         """
@@ -1254,7 +1278,9 @@ class TestIcmp6NdOptPI(TestCase):
         self.assertEqual(option._flag_a, True)
         self.assertEqual(option._flag_r, True)
 
-    def test_icmp6_fpa_nd_opt_pi____init____assert_valid_lifetime__under(self):
+    def test_icmp6_fpa_nd_opt_pi____init____assert_valid_lifetime__under(
+        self,
+    ) -> None:
         """
         Test assertion for the 'valid_lifetime' argument.
         """
@@ -1265,7 +1291,9 @@ class TestIcmp6NdOptPI(TestCase):
                 prefix=Ip6Network("1:2:3:4::/64"),
             )
 
-    def test_icmp6_fpa_nd_opt_pi____init____assert_valid_lifetime__over(self):
+    def test_icmp6_fpa_nd_opt_pi____init____assert_valid_lifetime__over(
+        self,
+    ) -> None:
         """
         Test assertion for the 'valid_lifetime' argument.
         """
@@ -1276,7 +1304,9 @@ class TestIcmp6NdOptPI(TestCase):
                 prefix=Ip6Network("1:2:3:4::/64"),
             )
 
-    def test_icmp6_fpa_nd_opt_pi____init____assert_prefer_lifetime__under(self):
+    def test_icmp6_fpa_nd_opt_pi____init____assert_prefer_lifetime__under(
+        self,
+    ) -> None:
         """
         Test assertion for the 'prefer_lifetime' argument.
         """
@@ -1287,7 +1317,9 @@ class TestIcmp6NdOptPI(TestCase):
                 prefix=Ip6Network("1:2:3:4::/64"),
             )
 
-    def test_icmp6_fpa_nd_opt_pi____init____assert_prefer_lifetime__over(self):
+    def test_icmp6_fpa_nd_opt_pi____init____assert_prefer_lifetime__over(
+        self,
+    ) -> None:
         """
         Test assertion for the 'prefer_lifetime' argument.
         """
@@ -1298,7 +1330,7 @@ class TestIcmp6NdOptPI(TestCase):
                 prefix=Ip6Network("1:2:3:4::/64"),
             )
 
-    def test_icmp6_fpa_nd_opt_pi____str__(self):
+    def test_icmp6_fpa_nd_opt_pi____str__(self) -> None:
         """
         Test the '__str__()' dunder.
         """
@@ -1316,7 +1348,7 @@ class TestIcmp6NdOptPI(TestCase):
             "flags LAR",
         )
 
-    def test_icmp6_fpa_nd_opt_pi____repr__(self):
+    def test_icmp6_fpa_nd_opt_pi____repr__(self) -> None:
         """
         Test the '__repr__()' dunder.
         """
@@ -1335,7 +1367,7 @@ class TestIcmp6NdOptPI(TestCase):
             "flag_r=True)",
         )
 
-    def test_icmp6_fpa_nd_opt_pi____bytes__(self):
+    def test_icmp6_fpa_nd_opt_pi____bytes__(self) -> None:
         """
         Test the '__bytes__() dunder.
         """
@@ -1353,7 +1385,7 @@ class TestIcmp6NdOptPI(TestCase):
             b"\x02\x00\x03\x00\x04\x00\x00\x00\x00\x00\x00\x00\x00",
         )
 
-    def test_icmp6_fpa_nd_opt_pi____eq__(self):
+    def test_icmp6_fpa_nd_opt_pi____eq__(self) -> None:
         """
         Test the '__eq__()' dunder.
         """

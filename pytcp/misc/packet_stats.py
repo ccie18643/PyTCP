@@ -115,7 +115,10 @@ class PacketStatsRx:
     tcp__socket_match_listening__forward_to_socket: int = 0
     tcp__no_socket_match__respond_rst: int = 0
 
-    def __eq__(self, other):
+    def __eq__(self, other: object) -> bool:
+        """
+        The '__eq__()' dunder.
+        """
         return repr(self) == repr(other)
 
 
@@ -222,5 +225,8 @@ class PacketStatsTx:
     udp__send: int = 0
     udp__unknown__drop: int = 0
 
-    def __eq__(self, other):
+    def __eq__(self, other: object) -> bool:
+        """
+        The '__eq__()' dunder.
+        """
         return repr(self) == repr(other)

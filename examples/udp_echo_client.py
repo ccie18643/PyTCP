@@ -165,7 +165,7 @@ class UdpEchoClient:
 @click.command()
 @click.option("--interface", default="tap7")
 @click.argument("remote_ip_address")
-def cli(*, interface: str, remote_ip_address: str):
+def cli(*, interface: str, remote_ip_address: str) -> None:
     """
     Start PyTCP stack and stop it when user presses Ctrl-C.
     Run the TCP Echo client.

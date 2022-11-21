@@ -51,7 +51,7 @@ from pytcp.protocols.raw.fpa import RawAssembler
 if TYPE_CHECKING:
     from pytcp.lib.tracker import Tracker
     from pytcp.protocols.arp.fpa import ArpAssembler
-    from pytcp.protocols.ip4.fpa import Ip4Assembler
+    from pytcp.protocols.ip4.fpa import Ip4Assembler, Ip4FragAssembler
     from pytcp.protocols.ip6.fpa import Ip6Assembler
 
 
@@ -67,6 +67,7 @@ class EtherAssembler:
         dst: MacAddress = MacAddress(0),
         carried_packet: ArpAssembler
         | Ip4Assembler
+        | Ip4FragAssembler
         | Ip6Assembler
         | RawAssembler = RawAssembler(),
     ) -> None:
@@ -81,7 +82,7 @@ class EtherAssembler:
             ETHER_TYPE_RAW,
         }, f"{carried_packet.ether_type=}"
 
-        self._carried_packet: ArpAssembler | Ip4Assembler | Ip6Assembler | RawAssembler = (
+        self._carried_packet: ArpAssembler | Ip4Assembler | Ip4FragAssembler | Ip6Assembler | RawAssembler = (
             carried_packet
         )
         self._tracker: Tracker = self._carried_packet.tracker
@@ -119,7 +120,7 @@ class EtherAssembler:
         return self._dst
 
     @dst.setter
-    def dst(self, mac_address: MacAddress):
+    def dst(self, mac_address: MacAddress) -> None:
         """
         Setter for the '_dst' attribute.
         """
@@ -133,7 +134,7 @@ class EtherAssembler:
         return self._src
 
     @src.setter
-    def src(self, mac_address: MacAddress):
+    def src(self, mac_address: MacAddress) -> None:
         """
         Setter for the '_src' attribute.
         """

@@ -52,13 +52,13 @@ class TestIcmp4Assembler(TestCase):
     ICMPv4 Assembler unit test class.
     """
 
-    def test_icmp4_fpa__ip4_proto_icmp4(self):
+    def test_icmp4_fpa__ip4_proto_icmp4(self) -> None:
         """
         Make sure the 'Icmp4Assembler' class has the proper 'ip4_proto' set.
         """
         self.assertEqual(Icmp4Assembler.ip4_proto, IP4_PROTO_ICMP4)
 
-    def test_icmp4_fpa____init____echo_request(self):
+    def test_icmp4_fpa____init____echo_request(self) -> None:
         """
         Test the packet constructor for the 'Echo Request' message.
         """
@@ -79,7 +79,9 @@ class TestIcmp4Assembler(TestCase):
             )
         )
 
-    def test_icmp4_fpa____init____echo_request__assert_code__under(self):
+    def test_icmp4_fpa____init____echo_request__assert_code__under(
+        self,
+    ) -> None:
         """
         Test packet constructor for the 'Echo Request' message.
         """
@@ -89,7 +91,7 @@ class TestIcmp4Assembler(TestCase):
                 code=-1,
             )
 
-    def test_icmp4_fpa____init____echo_request__assert_code__over(self):
+    def test_icmp4_fpa____init____echo_request__assert_code__over(self) -> None:
         """
         Test packet constructor for the 'Echo Request' message.
         """
@@ -99,7 +101,9 @@ class TestIcmp4Assembler(TestCase):
                 code=1,
             )
 
-    def test_icmp4_fpa____init____echo_request__assert_ec_id__under(self):
+    def test_icmp4_fpa____init____echo_request__assert_ec_id__under(
+        self,
+    ) -> None:
         """
         Test assertion for the 'ec_id' argument.
         """
@@ -110,7 +114,9 @@ class TestIcmp4Assembler(TestCase):
                 ec_id=-1,
             )
 
-    def test_icmp4_fpa____init____echo_request__assert_ec_id__over(self):
+    def test_icmp4_fpa____init____echo_request__assert_ec_id__over(
+        self,
+    ) -> None:
         """
         Test assertion for the 'ec_id' argument.
         """
@@ -121,7 +127,9 @@ class TestIcmp4Assembler(TestCase):
                 ec_id=0x10000,
             )
 
-    def test_icmp4_fpa____init____echo_request__assert_ec_seq__under(self):
+    def test_icmp4_fpa____init____echo_request__assert_ec_seq__under(
+        self,
+    ) -> None:
         """
         Test assertion for the 'ec_id' argument.
         """
@@ -132,7 +140,9 @@ class TestIcmp4Assembler(TestCase):
                 ec_seq=-1,
             )
 
-    def test_icmp4_fpa____init____echo_request__assert_ec_seq__over(self):
+    def test_icmp4_fpa____init____echo_request__assert_ec_seq__over(
+        self,
+    ) -> None:
         """
         Test assertion for the 'ec_seq' argument.
         """
@@ -143,7 +153,7 @@ class TestIcmp4Assembler(TestCase):
                 ec_seq=0x10000,
             )
 
-    def test_icmp4_fpa____init____unreachable_port(self):
+    def test_icmp4_fpa____init____unreachable_port(self) -> None:
         """
         Test packet constructor for the 'Unreachable Port' message.
         """
@@ -160,7 +170,9 @@ class TestIcmp4Assembler(TestCase):
             )
         )
 
-    def test_icmp4_fpa____init____unreachable_port__assert_code__under(self):
+    def test_icmp4_fpa____init____unreachable_port__assert_code__under(
+        self,
+    ) -> None:
         """
         Test packet constructor for the 'Unreachable Port' message.
         """
@@ -170,7 +182,9 @@ class TestIcmp4Assembler(TestCase):
                 code=ICMP4_UNREACHABLE__PORT - 1,
             )
 
-    def test_icmp4_fpa____init____unreachable_port__assert_code__over(self):
+    def test_icmp4_fpa____init____unreachable_port__assert_code__over(
+        self,
+    ) -> None:
         """
         Test packet constructor for the 'Unreachable Port' message.
         """
@@ -180,7 +194,7 @@ class TestIcmp4Assembler(TestCase):
                 code=ICMP4_UNREACHABLE__PORT + 1,
             )
 
-    def test_icmp4_fpa____init____echo_reply(self):
+    def test_icmp4_fpa____init____echo_reply(self) -> None:
         """
         Test packet constructor for the 'Echo Reply' message.
         """
@@ -201,7 +215,7 @@ class TestIcmp4Assembler(TestCase):
             )
         )
 
-    def test_icmp4_fpa____init____echo_reply__assert_code__under(self):
+    def test_icmp4_fpa____init____echo_reply__assert_code__under(self) -> None:
         """
         Test packet constructor for the 'Echo Reply' message.
         """
@@ -211,7 +225,7 @@ class TestIcmp4Assembler(TestCase):
                 code=-1,
             )
 
-    def test_icmp4_fpa____init____echo_reply__assert_code__over(self):
+    def test_icmp4_fpa____init____echo_reply__assert_code__over(self) -> None:
         """
         Test packet constructor for the 'Echo Reply' message.
         """
@@ -221,7 +235,7 @@ class TestIcmp4Assembler(TestCase):
                 code=1,
             )
 
-    def test_icmp4_fpa____init____echo_reply__assert_ec_id__under(self):
+    def test_icmp4_fpa____init____echo_reply__assert_ec_id__under(self) -> None:
         """
         Test assertion for the 'ec_id' argument.
         """
@@ -232,7 +246,7 @@ class TestIcmp4Assembler(TestCase):
                 ec_id=-1,
             )
 
-    def test_icmp4_fpa____init____echo_reply__assert_ec_id__over(self):
+    def test_icmp4_fpa____init____echo_reply__assert_ec_id__over(self) -> None:
         """
         Test assertion for the 'ec_id' argument.
         """
@@ -243,7 +257,9 @@ class TestIcmp4Assembler(TestCase):
                 ec_id=0x10000,
             )
 
-    def test_icmp4_fpa____init____echo_reply__assert_ec_seq__under(self):
+    def test_icmp4_fpa____init____echo_reply__assert_ec_seq__under(
+        self,
+    ) -> None:
         """
         Test assertion for the 'ec_id' argument.
         """
@@ -254,7 +270,7 @@ class TestIcmp4Assembler(TestCase):
                 ec_seq=-1,
             )
 
-    def test_icmp4_fpa____init____echo_reply__assert_ec_seq__over(self):
+    def test_icmp4_fpa____init____echo_reply__assert_ec_seq__over(self) -> None:
         """
         Test assertion for the 'ec_seq' argument.
         """
@@ -265,7 +281,7 @@ class TestIcmp4Assembler(TestCase):
                 ec_seq=0x10000,
             )
 
-    def test_icmp4_fpa____init____unknown(self):
+    def test_icmp4_fpa____init____unknown(self) -> None:
         """
         Test packet constructor for the message with unknown type.
         """
@@ -274,7 +290,7 @@ class TestIcmp4Assembler(TestCase):
                 type=255,
             )
 
-    def test_icmp4_fpa____len____echo_reply(self):
+    def test_icmp4_fpa____len____echo_reply(self) -> None:
         """
         Test the '__len__()' dunder for the 'Echo Reply' message.
         """
@@ -285,7 +301,7 @@ class TestIcmp4Assembler(TestCase):
         )
         self.assertEqual(len(packet), ICMP4_ECHO_REPLY_LEN + 16)
 
-    def test_icmp4_fpa____len____unreachable_port(self):
+    def test_icmp4_fpa____len____unreachable_port(self) -> None:
         """
         Test the '__len__()' dunder for the 'Unreachable Port' message.
         """
@@ -296,7 +312,7 @@ class TestIcmp4Assembler(TestCase):
         )
         self.assertEqual(len(packet), ICMP4_UNREACHABLE_LEN + 16)
 
-    def test_icmp4_fpa____len____echo_request(self):
+    def test_icmp4_fpa____len____echo_request(self) -> None:
         """
         Test the '__len__() dudner for the 'Echo Request' message.
         """
@@ -307,7 +323,7 @@ class TestIcmp4Assembler(TestCase):
         )
         self.assertEqual(len(packet), ICMP4_ECHO_REQUEST_LEN + 16)
 
-    def test_icmp4_fpa____str____echo_reply(self):
+    def test_icmp4_fpa____str____echo_reply(self) -> None:
         """
         Test the '__str__()' dunder for the 'Echo Reply' message.
         """
@@ -322,7 +338,7 @@ class TestIcmp4Assembler(TestCase):
             str(packet), "ICMPv4 0/0 (echo_reply), id 12345, seq 54321, dlen 16"
         )
 
-    def test_icmp4_fpa____str____unreachable_port(self):
+    def test_icmp4_fpa____str____unreachable_port(self) -> None:
         """
         Test the '__str__() dunder for the 'Unreachable Port' message.
         """
@@ -333,7 +349,7 @@ class TestIcmp4Assembler(TestCase):
         )
         self.assertEqual(str(packet), "ICMPv4 3/3 (unreachable_port), dlen 16")
 
-    def test_icmp4_fpa____str____echo_request(self):
+    def test_icmp4_fpa____str____echo_request(self) -> None:
         """
         Test the '__str__()' dunder for the 'Echo Request' message.
         """
@@ -349,7 +365,7 @@ class TestIcmp4Assembler(TestCase):
             "ICMPv4 8/0 (echo_request), id 12345, seq 54321, dlen 16",
         )
 
-    def test_icmp4_fpa__tracker_getter(self):
+    def test_icmp4_fpa__tracker_getter(self) -> None:
         """
         Test the '_tracker' attribute getter.
         """
@@ -358,7 +374,7 @@ class TestIcmp4Assembler(TestCase):
             repr(packet.tracker).startswith("Tracker(serial='<lr>TX")
         )
 
-    def test_icmp4_fpa__assemble__echo_reply(self):
+    def test_icmp4_fpa__assemble__echo_reply(self) -> None:
         """
         Test the 'assemble()' method for the 'Echo Reply' message.
         """
@@ -373,7 +389,7 @@ class TestIcmp4Assembler(TestCase):
         packet.assemble(frame)
         self.assertEqual(bytes(frame), b"\x00\x00,\xbe09\xd410123456789ABCDEF")
 
-    def test_icmp4_fpa__asssemble__unreachable_port(self):
+    def test_icmp4_fpa__asssemble__unreachable_port(self) -> None:
         """
         Test the 'assemble()' method for the 'Unreachable Port' message.
         """
@@ -388,7 +404,7 @@ class TestIcmp4Assembler(TestCase):
             bytes(frame), b"\x03\x03.&\x00\x00\x00\x000123456789ABCDEF"
         )
 
-    def test_icmp4_fpa__assemble__echo_request(self):
+    def test_icmp4_fpa__assemble__echo_request(self) -> None:
         """
         Test the 'assemble()' method for the 'Echo Request' message.
         """

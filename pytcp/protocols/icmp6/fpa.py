@@ -529,7 +529,7 @@ class Icmp6NdOptSLLA:
             bytes(self._slla),
         )
 
-    def __eq__(self, other) -> bool:
+    def __eq__(self, other: object) -> bool:
         """
         Equal operator.
         """
@@ -576,7 +576,7 @@ class Icmp6NdOptTLLA:
             bytes(self._tlla),
         )
 
-    def __eq__(self, other) -> bool:
+    def __eq__(self, other: object) -> bool:
         """
         Equal operator.
         """
@@ -657,7 +657,7 @@ class Icmp6NdOptPI:
             bytes(self._prefix.address),
         )
 
-    def __eq__(self, other) -> bool:
+    def __eq__(self, other: object) -> bool:
         """
         Equal operator.
         """

@@ -56,7 +56,7 @@ class TestEtherPhtx(TestCase):
     Ethernet packet handler TX unit test class.
     """
 
-    def setUp(self):
+    def setUp(self) -> None:
         """
         Test setup.
         """
@@ -67,7 +67,9 @@ class TestEtherPhtx(TestCase):
 
     # Test name format: 'test_name__test_description__optional_condition'
 
-    def test_ehter_phtx__ip4_packet_to_unicast_address_on_local_network(self):
+    def test_ehter_phtx__ip4_packet_to_unicast_address_on_local_network(
+        self,
+    ) -> None:
         """
         Test sending IPv4 packet to unicast address on local network.
         """
@@ -95,7 +97,7 @@ class TestEtherPhtx(TestCase):
             frame_tx = _.read()
         self.assertEqual(self.frame_tx[: len(frame_tx)], frame_tx)
 
-    def test_ether_phtx__ip4_packet_to_multicast_address(self):
+    def test_ether_phtx__ip4_packet_to_multicast_address(self) -> None:
         """
         Test sending IPv4 packet to the multicast address.
         """
@@ -125,7 +127,7 @@ class TestEtherPhtx(TestCase):
             frame_tx = _.read()
         self.assertEqual(self.frame_tx[: len(frame_tx)], frame_tx)
 
-    def test_ether_phtx__ip4_packet_to_limited_broadcast_address(self):
+    def test_ether_phtx__ip4_packet_to_limited_broadcast_address(self) -> None:
         """
         Test sending IPv4 packet to the limited broadcast address.
         """
@@ -151,7 +153,9 @@ class TestEtherPhtx(TestCase):
             frame_tx = _.read()
         self.assertEqual(self.frame_tx[: len(frame_tx)], frame_tx)
 
-    def test_ether_phtx__ip4_packet_to_local_network_broadcast_address(self):
+    def test_ether_phtx__ip4_packet_to_local_network_broadcast_address(
+        self,
+    ) -> None:
         """
         Test sending IPv4 packet to the broadcast address of local network.
         """
@@ -178,7 +182,9 @@ class TestEtherPhtx(TestCase):
             frame_tx = _.read()
         self.assertEqual(self.frame_tx[: len(frame_tx)], frame_tx)
 
-    def test_ether_phtx__ip4_packet_to_local_network_network_address(self):
+    def test_ether_phtx__ip4_packet_to_local_network_network_address(
+        self,
+    ) -> None:
         """
         Test sending IPv4 packet to the network address of local network.
         """
@@ -313,7 +319,9 @@ class TestEtherPhtx(TestCase):
             ),
         )
 
-    def test_ehter_phtx__ip6_packet_to_unicast_address_on_local_network(self):
+    def test_ehter_phtx__ip6_packet_to_unicast_address_on_local_network(
+        self,
+    ) -> None:
         """
         Test sending IPv6 packet to unicast address on local network.
         """
@@ -341,7 +349,7 @@ class TestEtherPhtx(TestCase):
             frame_tx = _.read()
         self.assertEqual(self.frame_tx[: len(frame_tx)], frame_tx)
 
-    def test_ether_phtx__ip6_packet_to_multicast_address(self):
+    def test_ether_phtx__ip6_packet_to_multicast_address(self) -> None:
         """
         Test sending IPv6 packet to the multicast address.
         """
@@ -477,7 +485,9 @@ class TestEtherPhtx(TestCase):
             ),
         )
 
-    def test_ether_phtx__ether_packet_with_specified_source_mac_address(self):
+    def test_ether_phtx__ether_packet_with_specified_source_mac_address(
+        self,
+    ) -> None:
         """
         Send Ethernet packet with specified source MAC address.
         """
@@ -502,7 +512,9 @@ class TestEtherPhtx(TestCase):
             frame_tx = _.read()
         self.assertEqual(self.frame_tx[: len(frame_tx)], frame_tx)
 
-    def test_ether_phtx__ether_packet_with_unspecified_source_mac_address(self):
+    def test_ether_phtx__ether_packet_with_unspecified_source_mac_address(
+        self,
+    ) -> None:
         """
         Send Ethernet packet with unspecified source MAC address.
         """

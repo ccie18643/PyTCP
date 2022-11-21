@@ -78,7 +78,7 @@ class RawAssembler:
         """
         return f"RawAssembler(data={self._data!r})"
 
-    def __eq__(self, other) -> bool:
+    def __eq__(self, other: object) -> bool:
         """
         Equal operator.
         """

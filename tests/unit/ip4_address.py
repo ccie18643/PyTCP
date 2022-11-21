@@ -53,7 +53,7 @@ class TestIp4Address(TestCase):
     Unit tests for the 'Ip4Address' class.
     """
 
-    def setUp(self):
+    def setUp(self) -> None:
         """
         Setup tests.
         """
@@ -251,7 +251,7 @@ class TestIp4Address(TestCase):
             ),
         ]
 
-    def test___init__(self):
+    def test___init__(self) -> None:
         """
         Test the 'Ip4Address' object constructor.
         """
@@ -310,13 +310,13 @@ class TestIp4Address(TestCase):
             4294967296,
         )
 
-    def test___str__(self):
+    def test___str__(self) -> None:
         """
         Test the '__str__()' dunder.
         """
         self.assertEqual(str(Ip4Address("192.168.9.1")), "192.168.9.1")
 
-    def test___repr__(self):
+    def test___repr__(self) -> None:
         """
         Test the '__repr__()' dunder.
         """
@@ -324,25 +324,25 @@ class TestIp4Address(TestCase):
             repr(Ip4Address("192.168.9.1")), "Ip4Address('192.168.9.1')"
         )
 
-    def test___bytes__(self):
+    def test___bytes__(self) -> None:
         """
         Test the '__bytes__()' dunder.
         """
         self.assertEqual(bytes(Ip4Address("192.168.9.1")), b"\xc0\xa8\t\x01")
 
-    def test___eq__(self):
+    def test___eq__(self) -> None:
         """
         Test the '__eq__()' dunder.
         """
         self.assertEqual(Ip4Address("192.168.9.1"), Ip4Address("192.168.9.1"))
 
-    def test___hash__(self):
+    def test___hash__(self) -> None:
         """
         Test the '__hash__()' dunder.
         """
         self.assertEqual(hash(Ip4Address("192.168.9.1")), hash(3232237825))
 
-    def test___contains__(self):
+    def test___contains__(self) -> None:
         """
         Test the '__contains__()' dunder.
         """
@@ -350,27 +350,27 @@ class TestIp4Address(TestCase):
         self.assertNotIn(Ip4Address("192.168.9.7"), Ip4Network("172.16.0.0/12"))
         self.assertNotIn(Ip4Address("192.168.9.7"), Ip4Network("10.0.0.0/8"))
 
-    def test_version(self):
+    def test_version(self) -> None:
         """
         Test the 'version' property.
         """
         self.assertEqual(Ip4Address("192.168.9.1").version, 4)
 
-    def test_is_invalid(self):
+    def test_is_invalid(self) -> None:
         """
         Test the 'is_invalid' property.
         """
         for sample in self.ip4_samples:
             self.assertEqual(sample.ip4_address.is_invalid, sample.is_invalid)
 
-    def test_is_global(self):
+    def test_is_global(self) -> None:
         """
         Test the 'is_global' property.
         """
         for sample in self.ip4_samples:
             self.assertEqual(sample.ip4_address.is_global, sample.is_global)
 
-    def test_is_link_local(self):
+    def test_is_link_local(self) -> None:
         """
         Test the 'is_link_local' property.
         """
@@ -379,14 +379,14 @@ class TestIp4Address(TestCase):
                 sample.ip4_address.is_link_local, sample.is_link_local
             )
 
-    def test_is_loopback(self):
+    def test_is_loopback(self) -> None:
         """
         Test the 'is_loopback' property.
         """
         for sample in self.ip4_samples:
             self.assertEqual(sample.ip4_address.is_loopback, sample.is_loopback)
 
-    def test_is_multicast(self):
+    def test_is_multicast(self) -> None:
         """
         Test the 'is_multicast' property.
         """
@@ -395,14 +395,14 @@ class TestIp4Address(TestCase):
                 sample.ip4_address.is_multicast, sample.is_multicast
             )
 
-    def test_is_private(self):
+    def test_is_private(self) -> None:
         """
         Test the 'is_private' property.
         """
         for sample in self.ip4_samples:
             self.assertEqual(sample.ip4_address.is_private, sample.is_private)
 
-    def test_is_unspecified(self):
+    def test_is_unspecified(self) -> None:
         """
         Test the 'is_unspecified' property.
         """
@@ -411,7 +411,7 @@ class TestIp4Address(TestCase):
                 sample.ip4_address.is_unspecified, sample.is_unspecified
             )
 
-    def test_is_limited_broadcast(self):
+    def test_is_limited_broadcast(self) -> None:
         """
         Test 'is_limited_broadcast' property.
         """
@@ -421,14 +421,14 @@ class TestIp4Address(TestCase):
                 sample.is_limited_broadcast,
             )
 
-    def test_is_unicast(self):
+    def test_is_unicast(self) -> None:
         """
         Test 'is_unicast' property.
         """
         for sample in self.ip4_samples:
             self.assertEqual(sample.ip4_address.is_unicast, sample.is_unicast)
 
-    def test_unspecified(self):
+    def test_unspecified(self) -> None:
         """
         Test 'unspecified' property.
         """
@@ -436,7 +436,7 @@ class TestIp4Address(TestCase):
             Ip4Address("192.168.9.1").unspecified, Ip4Address("0.0.0.0")
         )
 
-    def test_multicast_mac(self):
+    def test_multicast_mac(self) -> None:
         """
         Test 'multicast_mac' property.
         """
@@ -451,7 +451,7 @@ class TestIp4Mask(TestCase):
     Unit tests for the 'Ip4Mask' class.
     """
 
-    def test___init__(self):
+    def test___init__(self) -> None:
         """
         Test the 'Ip4Mask' object constructor.
         """
@@ -539,51 +539,51 @@ class TestIp4Mask(TestCase):
             8,
         )
 
-    def test___str__(self):
+    def test___str__(self) -> None:
         """
         Test the '__str__()' dunder.
         """
         self.assertEqual(str(Ip4Mask("255.255.240.0")), "/20")
 
-    def test___repr__(self):
+    def test___repr__(self) -> None:
         """
         Test the '__repr__()' dunder.
         """
         self.assertEqual(repr(Ip4Mask("/12")), "Ip4Mask('/12')")
 
-    def test___bytes__(self):
+    def test___bytes__(self) -> None:
         """
         Test the '__bytes__()' dunder.
         """
         self.assertEqual(bytes(Ip4Mask("255.255.0.0")), b"\xff\xff\x00\x00")
 
-    def test___int__(self):
+    def test___int__(self) -> None:
         """
         Test the '__int__()' dunder.
         """
         self.assertEqual(int(Ip4Mask("255.255.192.0")), 4294950912)
 
-    def test___eq__(self):
+    def test___eq__(self) -> None:
         """
         Test the '__eq__()' dunder.
         """
         self.assertEqual(Ip4Mask("255.255.255.240"), Ip4Mask("/28"))
         self.assertNotEqual(Ip4Mask("255.255.255.240"), Ip4Mask("/29"))
 
-    def test___hash__(self):
+    def test___hash__(self) -> None:
         """
         Test the '__hash__()' dunder.
         """
         self.assertEqual(hash(Ip4Mask("/32")), hash(4294967295))
 
-    def test___len__(self):
+    def test___len__(self) -> None:
         """
         Test the '__len__()' dunder.
         """
         for n in range(33):
             self.assertEqual(len(Ip4Mask(f"/{n}")), n)
 
-    def test_version(self):
+    def test_version(self) -> None:
         """
         Test the 'version' property.
         """
@@ -595,7 +595,7 @@ class TestIp4Network(TestCase):
     Unit tests for the 'Ip4Network' class.
     """
 
-    def test___init__(self):
+    def test___init__(self) -> None:
         """
         Test the 'Ip4Network' object constructor.
         """
@@ -659,13 +659,13 @@ class TestIp4Network(TestCase):
             "192.168.9.0",
         )
 
-    def test___str__(self):
+    def test___str__(self) -> None:
         """
         Test the '__str__()' dunder.
         """
         self.assertEqual(str(Ip4Network("192.168.9.0/24")), "192.168.9.0/24")
 
-    def test___repr__(self):
+    def test___repr__(self) -> None:
         """
         Test the '__repr__()' dunder.
         """
@@ -673,14 +673,14 @@ class TestIp4Network(TestCase):
             repr(Ip4Network("172.16.0.0/12")), "Ip4Network('172.16.0.0/12')"
         )
 
-    def test___eq__(self):
+    def test___eq__(self) -> None:
         """
         Test the '__eq__()' dunder.
         """
         self.assertEqual(Ip4Network("0.0.0.0/0"), Ip4Network("0.0.0.0/0"))
         self.assertNotEqual(Ip4Network("0.0.0.0/0"), Ip4Network("0.0.0.0/32"))
 
-    def test___hash__(self):
+    def test___hash__(self) -> None:
         """
         Test the '__hash__()' dinder.
         """
@@ -689,7 +689,7 @@ class TestIp4Network(TestCase):
             hash(Ip4Address("10.0.0.0")) ^ hash(Ip4Mask("255.0.0.0")),
         )
 
-    def test_address(self):
+    def test_address(self) -> None:
         """
         Test the 'address' property.
         """
@@ -697,7 +697,7 @@ class TestIp4Network(TestCase):
             Ip4Network("192.168.9.100/24").address, Ip4Address("192.168.9.0")
         )
 
-    def test_mask(self):
+    def test_mask(self) -> None:
         """
         Test the 'mask' property.
         """
@@ -705,7 +705,7 @@ class TestIp4Network(TestCase):
             Ip4Network("192.168.9.0/24").mask, Ip4Mask("255.255.255.0")
         )
 
-    def test_broadcast(self):
+    def test_broadcast(self) -> None:
         """
         Test the 'broadcast' property.
         """
@@ -714,7 +714,7 @@ class TestIp4Network(TestCase):
             Ip4Address("192.168.9.255"),
         )
 
-    def test_version(self):
+    def test_version(self) -> None:
         """
         Test the 'version' property.
         """
@@ -726,7 +726,7 @@ class TestIp4Host(TestCase):
     Unit tests for the 'Ip4Host' class.
     """
 
-    def test___init__(self):
+    def test___init__(self) -> None:
         """
         Test the 'Ip4Host' object constructor.
         """
@@ -781,13 +781,13 @@ class TestIp4Host(TestCase):
             "192.168.9.5",
         )
 
-    def test___str__(self):
+    def test___str__(self) -> None:
         """
         Test the '__str__()' dunder.
         """
         self.assertEqual(str(Ip4Host("192.168.9.100/24")), "192.168.9.100/24")
 
-    def test___repr__(self):
+    def test___repr__(self) -> None:
         """
         Test the '__repr__()' dunder.
         """
@@ -795,7 +795,7 @@ class TestIp4Host(TestCase):
             repr(Ip4Host("172.16.0.50/12")), "Ip4Host('172.16.0.50/12')"
         )
 
-    def test___eq__(self):
+    def test___eq__(self) -> None:
         """
         Test the '__eq__()' dunder.
         """
@@ -803,7 +803,7 @@ class TestIp4Host(TestCase):
         self.assertNotEqual(Ip4Host("0.0.0.0/0"), Ip4Host("0.0.0.0/32"))
         self.assertNotEqual(Ip4Host("0.0.0.0/0"), Ip4Host("1.1.1.1/0"))
 
-    def test___hash__(self):
+    def test___hash__(self) -> None:
         """
         Test the '__hash__()' dunder.
         """
@@ -812,13 +812,13 @@ class TestIp4Host(TestCase):
             hash(Ip4Address("10.0.0.1")) ^ hash(Ip4Network("10.0.0.0/8")),
         )
 
-    def test_version(self):
+    def test_version(self) -> None:
         """
         Test the 'version' property.
         """
         self.assertEqual(Ip4Host("0.0.0.0/0").version, 4)
 
-    def test_address(self):
+    def test_address(self) -> None:
         """
         Test the 'address' property.
         """
@@ -826,7 +826,7 @@ class TestIp4Host(TestCase):
             Ip4Host("192.168.9.100/24").address, Ip4Address("192.168.9.100")
         )
 
-    def test_network(self):
+    def test_network(self) -> None:
         """
         Test the 'network' property.
         """

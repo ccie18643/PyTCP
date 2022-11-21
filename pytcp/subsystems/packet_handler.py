@@ -170,7 +170,7 @@ class PacketHandler:
         # Used for the ICMPv6 ND DAD process
         self.ip6_unicast_candidate: Ip6Address | None = None
         self.event_icmp6_nd_dad: Semaphore = threading.Semaphore(0)
-        self.icmp6_nd_dad_tlla: Ip6Address | None = None
+        self.icmp6_nd_dad_tlla: MacAddress | None = None
 
         # Used for the IcMPv6 ND RA address auto configuration
         self.icmp6_ra_prefixes: list[tuple[Ip6Network, Ip6Address]] = []
@@ -181,8 +181,8 @@ class PacketHandler:
         self.ip6_id: int = 0
 
         # Used to defragment IPv4 and IPv6 packets
-        self.ip4_frag_flows: dict[int, bytes] = {}
-        self.ip6_frag_flows: dict[int, bytes] = {}
+        self.ip4_frag_flows: dict[tuple[Ip4Address, Ip4Address, int], dict] = {}
+        self.ip6_frag_flows: dict[tuple[Ip6Address, Ip6Address, int], dict] = {}
 
         # Thread control
         self._run_thread: bool = False
@@ -708,7 +708,9 @@ class PacketHandler:
                 ip6_dst=Ip6Address("ff02::16"),
                 ip6_hop=1,
                 icmp6_type=ICMP6_MLD2_REPORT,
-                icmp6_mlr2_multicast_address_record=icmp6_mlr2_multicast_address_record,
+                icmp6_mlr2_multicast_address_record=list(
+                    icmp6_mlr2_multicast_address_record
+                ),
             )
             if __debug__:
                 log(
@@ -903,7 +905,8 @@ class PacketHandler:
         na_target_address: Ip6Address | None = None,
         nd_options: list[Icmp6NdOptSLLA | Icmp6NdOptTLLA | Icmp6NdOptPI]
         | None = None,
-        mlr2_multicast_address_record=None,
+        mlr2_multicast_address_record: list[Icmp6MulticastAddressRecord]
+        | None = None,
     ) -> TxStatus:
         """
         Interface method for ICMPv4 Socket -> FPA communication.
@@ -911,6 +914,7 @@ class PacketHandler:
         return self._phtx_icmp6(
             ip6_src=local_ip_address,
             ip6_dst=remote_ip_address,
+            ip6_hop=hop,
             icmp6_type=type,
             icmp6_code=code,
             icmp6_un_data=un_data,

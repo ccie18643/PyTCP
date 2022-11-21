@@ -50,7 +50,7 @@ class TestUdpPhtx(TestCase):
     UDP packet handler TX unit test class.
     """
 
-    def setUp(self):
+    def setUp(self) -> None:
         """
         Set up the test environment.
         """
@@ -61,7 +61,7 @@ class TestUdpPhtx(TestCase):
 
     # Test name format: 'test_name__test_description__optional_condition'
 
-    def test_udp_phtx__ip4_udp_packet(self):
+    def test_udp_phtx__ip4_udp_packet(self) -> None:
         """
         Test sending the IPv4/UDP packet with no data.
         """
@@ -90,7 +90,7 @@ class TestUdpPhtx(TestCase):
             frame_tx = _.read()
         self.assertEqual(self.frame_tx[: len(frame_tx)], frame_tx)
 
-    def test_udp_phtx__ip4_udp_packet__data(self):
+    def test_udp_phtx__ip4_udp_packet__data(self) -> None:
         """Test sending IPv4/UDP packet with data"""
 
         tx_status = self.packet_handler._phtx_udp(
@@ -118,7 +118,7 @@ class TestUdpPhtx(TestCase):
             frame_tx = _.read()
         self.assertEqual(self.frame_tx[: len(frame_tx)], frame_tx)
 
-    def test_udp_phtx__ip4_udp_packet__ip6_src(self):
+    def test_udp_phtx__ip4_udp_packet__ip6_src(self) -> None:
         """Test sending IPv4/UDP packet with src set to ip6 address"""
 
         tx_status = self.packet_handler._phtx_udp(
@@ -136,7 +136,7 @@ class TestUdpPhtx(TestCase):
             ),
         )
 
-    def test_udp_phtx__ip4_udp_packet__ip6_dst(self):
+    def test_udp_phtx__ip4_udp_packet__ip6_dst(self) -> None:
         """Test sending IPv6/UDP packet with dst set to ip4 address"""
 
         tx_status = self.packet_handler._phtx_udp(
@@ -154,7 +154,7 @@ class TestUdpPhtx(TestCase):
             ),
         )
 
-    def test_udp_phtx__ip6_udp_packet(self):
+    def test_udp_phtx__ip6_udp_packet(self) -> None:
         """Test sending IPv6/UDP packet with no data"""
 
         tx_status = self.packet_handler._phtx_udp(
@@ -181,7 +181,7 @@ class TestUdpPhtx(TestCase):
             frame_tx = _.read()
         self.assertEqual(self.frame_tx[: len(frame_tx)], frame_tx)
 
-    def test_udp_phtx__ip6_udp_packet__data(self):
+    def test_udp_phtx__ip6_udp_packet__data(self) -> None:
         """Test sending IPv6/UDP packet with data"""
 
         tx_status = self.packet_handler._phtx_udp(
@@ -209,7 +209,7 @@ class TestUdpPhtx(TestCase):
             frame_tx = _.read()
         self.assertEqual(self.frame_tx[: len(frame_tx)], frame_tx)
 
-    def test_udp_phtx__ip6_udp_packet__ip4_src(self):
+    def test_udp_phtx__ip6_udp_packet__ip4_src(self) -> None:
         """Test sending IPv6/UDP packet with src set to ip4 address"""
 
         tx_status = self.packet_handler._phtx_udp(
@@ -227,7 +227,7 @@ class TestUdpPhtx(TestCase):
             ),
         )
 
-    def test_udp_phtx__ip6_udp_packet__ip4_dst(self):
+    def test_udp_phtx__ip6_udp_packet__ip4_dst(self) -> None:
         """Test sending IPv6/UDP packet with dst set to ip4 address"""
 
         tx_status = self.packet_handler._phtx_udp(

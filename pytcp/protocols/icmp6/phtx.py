@@ -39,6 +39,7 @@ from pytcp.lib.logger import log
 from pytcp.lib.tracker import Tracker
 from pytcp.protocols.icmp6.fpa import (
     Icmp6Assembler,
+    Icmp6MulticastAddressRecord,
     Icmp6NdOptPI,
     Icmp6NdOptSLLA,
     Icmp6NdOptTLLA,
@@ -58,10 +59,11 @@ from pytcp.protocols.icmp6.ps import (
 if TYPE_CHECKING:
     from pytcp.lib.ip6_address import Ip6Address
     from pytcp.misc.tx_status import TxStatus
+    from pytcp.subsystems.packet_handler import PacketHandler
 
 
 def _phtx_icmp6(
-    self,
+    self: PacketHandler,
     *,
     ip6_src: Ip6Address,
     ip6_dst: Ip6Address,
@@ -79,7 +81,8 @@ def _phtx_icmp6(
     icmp6_na_target_address: Ip6Address | None = None,
     icmp6_nd_options: list[Icmp6NdOptSLLA | Icmp6NdOptTLLA | Icmp6NdOptPI]
     | None = None,
-    icmp6_mlr2_multicast_address_record=None,
+    icmp6_mlr2_multicast_address_record: list[Icmp6MulticastAddressRecord]
+    | None = None,
     echo_tracker: Tracker | None = None,
 ) -> TxStatus:
     """

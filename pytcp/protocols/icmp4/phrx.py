@@ -51,9 +51,10 @@ from pytcp.protocols.udp.ps import UDP_HEADER_LEN
 
 if TYPE_CHECKING:
     from pytcp.misc.packet import PacketRx
+    from pytcp.subsystems.packet_handler import PacketHandler
 
 
-def _phrx_icmp4(self, packet_rx: PacketRx) -> None:
+def _phrx_icmp4(self: PacketHandler, packet_rx: PacketRx) -> None:
     """Handle inbound ICMPv4 packets"""
 
     self.packet_stats_rx.icmp4__pre_parse += 1

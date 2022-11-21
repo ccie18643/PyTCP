@@ -36,6 +36,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 import pytcp.config as config
+from pytcp.lib.logger import log
 from pytcp.protocols.ether.fpp import EtherParser
 from pytcp.protocols.ether.ps import (
     ETHER_TYPE_ARP,
@@ -45,11 +46,10 @@ from pytcp.protocols.ether.ps import (
 
 if TYPE_CHECKING:
     from pytcp.misc.packet import PacketRx
+    from pytcp.subsystems.packet_handler import PacketHandler
 
-from pytcp.lib.logger import log
 
-
-def _phrx_ether(self, packet_rx: PacketRx) -> None:
+def _phrx_ether(self: PacketHandler, packet_rx: PacketRx) -> None:
     """
     Handle inbound Ethernet packets.
     """
