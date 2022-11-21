@@ -35,12 +35,12 @@ import time
 from pytcp import TcpIpStack
 
 
-def main():
+def main() -> None:
     """
     Start PyTCP stack and stop it when user presses Ctrl-C.
     """
 
-    stack = TcpIpStack("tap7")
+    stack = TcpIpStack(interface="tap7")
 
     try:
         stack.start()

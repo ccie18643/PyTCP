@@ -37,8 +37,8 @@ import time
 from typing import TYPE_CHECKING
 
 import click
-from udp_service import UdpService
 
+from examples.udp_service import UdpService
 from pytcp import TcpIpStack
 from pytcp.misc.malpi import malpa, malpi, malpka
 

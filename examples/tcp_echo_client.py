@@ -144,7 +144,7 @@ class TcpEchoClient:
         message_count = self._message_count
         while message_count:
             message = "[------START------] "
-            for i in range(self.message_size - 2):
+            for i in range(self._message_size - 2):
                 message += f"[------{i + 1:05}------] "
             message += "[-------END-------]\n"
 
@@ -158,7 +158,7 @@ class TcpEchoClient:
                 f"Client TCP Echo: Sent {len(message)} bytes of data to "
                 f"{self._remote_ip_address}, port {self._remote_port}."
             )
-            time.sleep(self.message_delay)
+            time.sleep(self._message_delay)
             message_count = min(message_count, message_count - 1)
 
         client_socket.close()

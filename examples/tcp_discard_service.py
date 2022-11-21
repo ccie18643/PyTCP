@@ -37,8 +37,8 @@ import time
 from typing import TYPE_CHECKING
 
 import click
-from tcp_service import TcpService
 
+from examples.tcp_service import TcpService
 from pytcp import TcpIpStack
 
 if TYPE_CHECKING:

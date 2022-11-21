@@ -38,8 +38,8 @@ from datetime import datetime
 from typing import TYPE_CHECKING
 
 import click
-from udp_service import UdpService
 
+from examples.udp_service import UdpService
 from pytcp import TcpIpStack
 
 if TYPE_CHECKING:

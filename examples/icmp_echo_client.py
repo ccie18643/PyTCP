@@ -89,6 +89,8 @@ class IcmpEchoClient:
 
     def __thread_client(self) -> None:
 
+        assert self._local_ip_address is not None
+
         flow_id = random.randint(0, 65535)
 
         message_count = self._message_count
@@ -141,7 +143,7 @@ def cli(*, interface: str, remote_ip_address: str):
     Run the ICMP Echo client.
     """
 
-    stack = TcpIpStack(interface)
+    stack = TcpIpStack(interface=interface)
     client = IcmpEchoClient(
         remote_ip_address=remote_ip_address,
     )
