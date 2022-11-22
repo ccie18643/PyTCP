@@ -55,9 +55,10 @@ class RxRing:
         """
         Initialize access to tap interface and the inbound queue.
         """
-        self.rx_ring: list[PacketRx] = []
-        self.packet_enqueued: Semaphore = threading.Semaphore(0)
+        self._rx_ring: list[PacketRx] = []
+        self._packet_enqueued: Semaphore = threading.Semaphore(0)
         self._run_thread: bool = False
+        self._tap: int = -1
 
     def start(self, tap: int) -> None:
         """
@@ -66,7 +67,7 @@ class RxRing:
         if __debug__:
             log("stack", "Starting RX ring")
         self._run_thread = True
-        self.tap: int = tap
+        self._tap = tap
         threading.Thread(target=self.__thread_receive).start()
         time.sleep(0.1)
 
@@ -90,19 +91,19 @@ class RxRing:
         while self._run_thread:
             # Need to use select here so the we ar enot blocking on the read
             # call and can exit the thread gracefully
-            read_ready, _, _ = select.select([self.tap], [], [], 0.1)
+            read_ready, _, _ = select.select([self._tap], [], [], 0.1)
             if not read_ready:
                 continue
 
-            packet_rx = PacketRx(os.read(self.tap, 2048))
+            packet_rx = PacketRx(os.read(self._tap, 2048))
             if __debug__:
                 log(
                     "rx-ring",
                     f"<B><lg>[RX]</> {packet_rx.tracker} - received frame, "
                     f"{len(packet_rx.frame)} bytes",
                 )
-            self.rx_ring.append(packet_rx)
-            self.packet_enqueued.release()
+            self._rx_ring.append(packet_rx)
+            self._packet_enqueued.release()
 
         if __debug__:
             log("stack", "Stopped RX ring")
@@ -114,6 +115,6 @@ class RxRing:
 
         # Timeout here is needed so this call doesn't block forever and we are
         # able to exit the thread in packet_handler gracefully.
-        self.packet_enqueued.acquire(timeout=0.1)
+        self._packet_enqueued.acquire(timeout=0.1)
 
-        return self.rx_ring.pop(0) if self.rx_ring else None
+        return self._rx_ring.pop(0) if self._rx_ring else None

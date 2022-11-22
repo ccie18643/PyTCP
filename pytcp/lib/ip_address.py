@@ -193,24 +193,28 @@ class IpAddress(ABC):
             """
             The 'is_solicited_node_multicast' property placeholder.
             """
+            raise NotImplementedError
 
         @property
         def is_invalid(self) -> bool:
             """
             The 'is_invalid' property placeholder.
             """
+            raise NotImplementedError
 
         @property
         def solicited_node_multicast(self) -> Ip6Address:
             """
             The 'solicited_node_multicast' property placeholder.
             """
+            raise NotImplementedError
 
         @property
         def multicast_mac(self) -> MacAddress:
             """
             The 'multicast_mac' property placeholder.
             """
+            raise NotImplementedError
 
 
 class IpMask(ABC):

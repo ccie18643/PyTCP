@@ -56,9 +56,10 @@ class TxRing:
         """
         Initialize access to tap interface and the outbound queue.
         """
-        self.tx_ring: list[EtherAssembler] = []
-        self.packet_enqueued: Semaphore = threading.Semaphore(0)
+        self._tx_ring: list[EtherAssembler] = []
+        self._packet_enqueued: Semaphore = threading.Semaphore(0)
         self._run_thread: bool = False
+        self._tap: int = -1
 
     def start(self, tap: int) -> None:
         """
@@ -66,7 +67,7 @@ class TxRing:
         """
         if __debug__:
             log("stack", "Starting TX ring")
-        self.tap = tap
+        self._tap = tap
         self._run_thread = True
         threading.Thread(target=self.__thread_transmit).start()
         time.sleep(0.1)
@@ -95,11 +96,11 @@ class TxRing:
         while self._run_thread:
             # Timeout here is needed so the call doesn't block forever and
             # we are able to end the thread gracefully
-            self.packet_enqueued.acquire(timeout=0.1)
-            if not self.tx_ring:
+            self._packet_enqueued.acquire(timeout=0.1)
+            if not self._tx_ring:
                 continue
 
-            packet_tx = self.tx_ring.pop(0)
+            packet_tx = self._tx_ring.pop(0)
 
             if (packet_tx_len := len(packet_tx)) > config.TAP_MTU + 14:
                 if __debug__:
@@ -112,7 +113,7 @@ class TxRing:
             frame = memoryview(frame_buffer)[:packet_tx_len]
             packet_tx.assemble(frame)
             try:
-                os.write(self.tap, frame)
+                os.write(self._tap, frame)
             except OSError as error:
                 if __debug__:
                     log(
@@ -137,10 +138,10 @@ class TxRing:
         """
         Enqueue outbound packet into TX ring.
         """
-        self.tx_ring.append(packet_tx)
+        self._tx_ring.append(packet_tx)
         if __debug__:
             log(
                 "rx-ring",
-                f"{packet_tx.tracker}, queue len: {len(self.tx_ring)}",
+                f"{packet_tx.tracker}, queue len: {len(self._tx_ring)}",
             )
-        self.packet_enqueued.release()
+        self._packet_enqueued.release()

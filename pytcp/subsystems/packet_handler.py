@@ -159,8 +159,10 @@ class PacketHandler:
         self.mac_unicast: MacAddress = MacAddress(config.MAC_ADDRESS)
         self.mac_multicast: list[MacAddress] = []
         self.mac_broadcast: MacAddress = MacAddress(0xFFFFFFFFFFFF)
+        self.ip6_host_candidae: list[Ip6Host] = []
         self.ip6_host: list[Ip6Host] = []
         self.ip6_multicast: list[Ip6Address] = []
+        self.ip4_host_candidae: list[Ip4Host] = []
         self.ip4_host: list[Ip4Host] = []
         self.ip4_multicast: list[Ip4Address] = []
 
