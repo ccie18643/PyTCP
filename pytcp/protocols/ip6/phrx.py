@@ -36,7 +36,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from pytcp.lib.logger import log
-from pytcp.misc.packet import PacketRx
+from pytcp.lib.packet import PacketRx
 from pytcp.protocols.ip6.fpp import Ip6Parser
 from pytcp.protocols.ip6.ps import (
     IP6_NEXT_EXT_FRAG,

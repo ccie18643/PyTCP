@@ -38,9 +38,9 @@ from time import time
 from typing import TYPE_CHECKING
 
 import pytcp.config as config
+from pytcp.lib.ip_helper import inet_cksum
 from pytcp.lib.logger import log
-from pytcp.misc.ip_helper import inet_cksum
-from pytcp.misc.packet import PacketRx
+from pytcp.lib.packet import PacketRx
 from pytcp.protocols.ip4.fpp import Ip4Parser
 from pytcp.protocols.ip4.ps import (
     IP4_HEADER_LEN,

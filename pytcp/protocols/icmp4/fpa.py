@@ -35,8 +35,8 @@ from __future__ import annotations
 
 import struct
 
+from pytcp.lib.ip_helper import inet_cksum
 from pytcp.lib.tracker import Tracker
-from pytcp.misc.ip_helper import inet_cksum
 from pytcp.protocols.icmp4.ps import (
     ICMP4_ECHO_REPLY,
     ICMP4_ECHO_REPLY_LEN,

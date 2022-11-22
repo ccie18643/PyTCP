@@ -38,9 +38,9 @@ from typing import TYPE_CHECKING
 
 import click
 
-from examples.tcp_service import TcpService
+from examples.lib.malpi import malpa, malpi, malpka
+from examples.lib.tcp_service import TcpService
 from pytcp import TcpIpStack
-from pytcp.misc.malpi import malpa, malpi, malpka
 
 if TYPE_CHECKING:
     from pytcp.lib.socket import Socket
@@ -93,7 +93,7 @@ class TcpEchoService(TcpService):
                 connected_socket.close()
                 break
 
-            if message.strip().lower() in {b"quit", b"close", b"bye"}:
+            if message.strip().lower() in {b"quit", b"close", b"bye", b"exit"}:
                 click.echo(
                     "Service TCP Echo: Sending last message to "
                     f"{connected_socket.remote_ip_address}, port {connected_socket.remote_port}."

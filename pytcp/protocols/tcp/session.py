@@ -40,7 +40,7 @@ from enum import Enum, auto
 from typing import TYPE_CHECKING, Any, Callable
 
 import pytcp.config as config
-import pytcp.misc.stack as stack
+import pytcp.lib.stack as stack
 from pytcp.lib.logger import log
 
 if TYPE_CHECKING:

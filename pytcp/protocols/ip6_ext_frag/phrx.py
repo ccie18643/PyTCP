@@ -40,7 +40,7 @@ from typing import TYPE_CHECKING
 
 import pytcp.config as config
 from pytcp.lib.logger import log
-from pytcp.misc.packet import PacketRx
+from pytcp.lib.packet import PacketRx
 from pytcp.protocols.ip6_ext_frag.fpp import Ip6ExtFragParser
 
 if TYPE_CHECKING:

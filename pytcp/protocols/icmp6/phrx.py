@@ -36,7 +36,7 @@ from __future__ import annotations
 import struct
 from typing import TYPE_CHECKING
 
-import pytcp.misc.stack as stack
+import pytcp.lib.stack as stack
 from pytcp.lib.ip6_address import Ip6Address
 from pytcp.lib.logger import log
 from pytcp.protocols.icmp6.fpa import Icmp6NdOptTLLA
@@ -55,7 +55,7 @@ from pytcp.protocols.udp.metadata import UdpMetadata
 from pytcp.protocols.udp.ps import UDP_HEADER_LEN
 
 if TYPE_CHECKING:
-    from pytcp.misc.packet import PacketRx
+    from pytcp.lib.packet import PacketRx
     from pytcp.subsystems.packet_handler import PacketHandler
 
 

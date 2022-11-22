@@ -40,7 +40,7 @@ import click
 
 import pytcp.lib.socket as socket
 from pytcp import TcpIpStack
-from pytcp.misc.ip_helper import ip_version
+from pytcp.lib.ip_helper import ip_version
 
 
 class UdpEchoClient:

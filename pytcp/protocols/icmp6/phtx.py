@@ -58,7 +58,7 @@ from pytcp.protocols.icmp6.ps import (
 
 if TYPE_CHECKING:
     from pytcp.lib.ip6_address import Ip6Address
-    from pytcp.misc.tx_status import TxStatus
+    from pytcp.lib.tx_status import TxStatus
     from pytcp.subsystems.packet_handler import PacketHandler
 
 

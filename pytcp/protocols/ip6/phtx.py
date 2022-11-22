@@ -38,7 +38,7 @@ from typing import TYPE_CHECKING
 import pytcp.config as config
 from pytcp.lib.ip6_address import Ip6Address
 from pytcp.lib.logger import log
-from pytcp.misc.tx_status import TxStatus
+from pytcp.lib.tx_status import TxStatus
 from pytcp.protocols.icmp6.fpa import (
     ICMP6_MLD2_REPORT,
     ICMP6_ND_NEIGHBOR_SOLICITATION,

@@ -37,7 +37,7 @@ import struct
 from typing import TYPE_CHECKING
 
 import pytcp.config as config
-from pytcp.misc.ip_helper import inet_cksum
+from pytcp.lib.ip_helper import inet_cksum
 from pytcp.protocols.icmp4.ps import (
     ICMP4_ECHO_REPLY,
     ICMP4_ECHO_REQUEST,
@@ -47,7 +47,7 @@ from pytcp.protocols.icmp4.ps import (
 )
 
 if TYPE_CHECKING:
-    from pytcp.misc.packet import PacketRx
+    from pytcp.lib.packet import PacketRx
 
 
 class Icmp4Parser:

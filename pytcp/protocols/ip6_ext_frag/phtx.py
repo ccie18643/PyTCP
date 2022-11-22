@@ -37,7 +37,7 @@ from typing import TYPE_CHECKING
 
 import pytcp.config as config
 from pytcp.lib.logger import log
-from pytcp.misc.tx_status import TxStatus
+from pytcp.lib.tx_status import TxStatus
 from pytcp.protocols.ip6.ps import IP6_HEADER_LEN
 from pytcp.protocols.ip6_ext_frag.fpa import Ip6ExtFragAssembler
 from pytcp.protocols.ip6_ext_frag.ps import IP6_EXT_FRAG_HEADER_LEN

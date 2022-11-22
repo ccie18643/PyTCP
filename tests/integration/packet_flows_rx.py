@@ -38,8 +38,8 @@ from testslide import TestCase
 from pytcp.lib.ip4_address import Ip4Address, Ip4Host
 from pytcp.lib.ip6_address import Ip6Address, Ip6Host
 from pytcp.lib.mac_address import MacAddress
-from pytcp.misc.packet import PacketRx
-from pytcp.misc.packet_stats import PacketStatsRx, PacketStatsTx
+from pytcp.lib.packet import PacketRx
+from pytcp.lib.packet_stats import PacketStatsRx, PacketStatsTx
 from pytcp.subsystems.packet_handler import PacketHandler
 
 PACKET_HANDLER_MODULES = [

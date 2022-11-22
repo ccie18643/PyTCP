@@ -38,7 +38,7 @@ from typing import TYPE_CHECKING
 import pytcp.config as config
 from pytcp.lib.ip4_address import Ip4Address
 from pytcp.lib.logger import log
-from pytcp.misc.tx_status import TxStatus
+from pytcp.lib.tx_status import TxStatus
 from pytcp.protocols.icmp4.fpa import Icmp4Assembler
 from pytcp.protocols.ip4.fpa import Ip4Assembler, Ip4FragAssembler
 from pytcp.protocols.raw.fpa import RawAssembler

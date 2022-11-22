@@ -37,7 +37,7 @@ import struct
 import sys
 
 import pytcp.config as config
-import pytcp.misc.stack as stack
+import pytcp.lib.stack as stack
 from pytcp.lib.ip4_address import Ip4Address, Ip4Host
 from pytcp.lib.ip6_address import Ip6Address, Ip6Host
 from pytcp.lib.logger import log

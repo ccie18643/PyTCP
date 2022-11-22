@@ -38,7 +38,7 @@ import threading
 import time
 
 import pytcp.config as config
-import pytcp.misc.stack as stack
+import pytcp.lib.stack as stack
 from pytcp.lib.ip6_address import Ip6Address
 from pytcp.lib.logger import log
 from pytcp.lib.mac_address import MacAddress

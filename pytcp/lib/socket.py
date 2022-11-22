@@ -38,10 +38,10 @@ from enum import IntEnum
 from typing import TYPE_CHECKING
 
 import pytcp.config as config
-import pytcp.misc.stack as stack
+import pytcp.lib.stack as stack
 from pytcp.lib.ip4_address import Ip4Address, Ip4AddressFormatError
 from pytcp.lib.ip6_address import Ip6Address, Ip6AddressFormatError
-from pytcp.misc.ip_helper import pick_local_ip_address
+from pytcp.lib.ip_helper import pick_local_ip_address
 from pytcp.protocols.tcp.metadata import TcpMetadata
 from pytcp.protocols.tcp.session import FsmState, TcpSession
 from pytcp.protocols.udp.metadata import UdpMetadata

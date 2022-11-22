@@ -38,9 +38,9 @@ from typing import TYPE_CHECKING
 
 import click
 
-from examples.udp_service import UdpService
+from examples.lib.malpi import malpa, malpi, malpka
+from examples.lib.udp_service import UdpService
 from pytcp import TcpIpStack
-from pytcp.misc.malpi import malpa, malpi, malpka
 
 if TYPE_CHECKING:
     from pytcp.lib.socket import Socket

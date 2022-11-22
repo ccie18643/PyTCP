@@ -2,7 +2,7 @@
 
 ############################################################################
 #                                                                          #
-#  PyTCP - Python TCP/IP stack                                             #
+#  PyUDP - Python UDP/IP stack                                             #
 #  Copyright (C) 2020-present Sebastian Majewski                           #
 #                                                                          #
 #  This program is free software: you can redistribute it and/or modify    #
@@ -19,13 +19,13 @@
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.  #
 #                                                                          #
 #  Author's email: ccie18643@gmail.com                                     #
-#  Github repository: https://github.com/ccie18643/PyTCP                   #
+#  Github repository: https://github.com/ccie18643/PyUDP                   #
 #                                                                          #
 ############################################################################
 
 
 #
-# examples/tcp_service.py - The 'user space' TCP generic service class.
+# examples/lib/udp_service.py - The 'user space' UDP generic service class.
 #
 # ver 2.7
 #
@@ -39,20 +39,24 @@ from typing import TYPE_CHECKING
 
 import click
 
-import pytcp.lib.socket as socket
-from pytcp.misc.ip_helper import ip_version
+import pytcp.lib.socket as sock
+from pytcp.lib.ip_helper import ip_version
 
 if TYPE_CHECKING:
     from pytcp.lib.socket import Socket
 
 
-class TcpService:
+class UdpService:
     """
-    TCP service support class.
+    UDP service support class.
     """
 
     def __init__(
-        self, *, service_name: str, local_ip_address: str, local_port: int
+        self,
+        *,
+        service_name: str,
+        local_ip_address: str,
+        local_port: int,
     ) -> None:
         """
         Class constructor.
@@ -68,7 +72,7 @@ class TcpService:
         Start the service thread.
         """
 
-        click.echo(f"Starting the TCP {self._service_name} service.")
+        click.echo(f"Starting the UDP {self._service_name} service.")
         self._run_thread = True
         threading.Thread(target=self.__thread_service).start()
         time.sleep(0.1)
@@ -78,7 +82,7 @@ class TcpService:
         Stop the service thread.
         """
 
-        click.echo(f"Stopinging the TCP {self._service_name} service.")
+        click.echo(f"Stopinging the UDP {self._service_name} service.")
         self._run_thread = False
         time.sleep(0.1)
 
@@ -89,16 +93,16 @@ class TcpService:
 
         version = ip_version(self._local_ip_address)
         if version == 6:
-            listening_socket = socket.socket(
-                family=socket.AF_INET6, type=socket.SOCK_STREAM
+            listening_socket = sock.socket(
+                family=sock.AF_INET6, type=sock.SOCK_DGRAM
             )
         elif version == 4:
-            listening_socket = socket.socket(
-                family=socket.AF_INET4, type=socket.SOCK_STREAM
+            listening_socket = sock.socket(
+                family=sock.AF_INET4, type=sock.SOCK_DGRAM
             )
         else:
             click.echo(
-                f"Service TCP {self._service_name}: Invalid local IP address - "
+                f"Service UDP {self._service_name}: Invalid local IP address - "
                 f"{self._local_ip_address}."
             )
             return
@@ -106,45 +110,28 @@ class TcpService:
         try:
             listening_socket.bind((self._local_ip_address, self._local_port))
             click.echo(
-                f"Service TCP {self._service_name}: Socket created, bound to "
+                f"Service UDP {self._service_name}: Socket created, bound to "
                 f"{self._local_ip_address}, port {self._local_port}."
             )
         except OSError as error:
             click.echo(
-                f"Service TCP {self._service_name}: bind() call failed - {error!r}."
+                f"Service UDP {self._service_name}: bind() call failed - {error!r}."
             )
             return
 
-        listening_socket.listen()
-        click.echo(
-            f"Service TCP {self._service_name}: Socket set to listening mode."
-        )
+        self.service(listening_socket=listening_socket)
 
-        while True:
-            connected_socket, _ = listening_socket.accept()
-            click.echo(
-                f"Service TCP {self._service_name}: Inbound connection received from "
-                f"{connected_socket.remote_ip_address}, port {connected_socket.remote_port}."
-            )
-            threading.Thread(
-                target=self.__thread_connection,
-                kwargs={"connected_socket": connected_socket},
-            ).start()
-
-    def __thread_connection(self, *, connected_socket: Socket) -> None:
-        """
-        Inbound connection handler.
-        """
-
-        self.service(connected_socket=connected_socket)
-
-    def service(self, *, connected_socket: Socket) -> None:
+    def service(
+        self,
+        *,
+        listening_socket: Socket,
+    ) -> None:
         """
         Service method.
         """
 
         click.echo(
-            f"Service TCP {self._service_name}: No service method defined, "
+            f"Service UDP {self._service_name}: No service method defined, "
             "closing connection."
         )
-        connected_socket.close()
+        listening_socket.close()

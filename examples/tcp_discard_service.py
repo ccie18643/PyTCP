@@ -38,7 +38,7 @@ from typing import TYPE_CHECKING
 
 import click
 
-from examples.tcp_service import TcpService
+from examples.lib.tcp_service import TcpService
 from pytcp import TcpIpStack
 
 if TYPE_CHECKING:
@@ -91,7 +91,7 @@ class TcpDiscardService(TcpService):
                 connected_socket.close()
                 break
 
-            if message.strip().lower() in {b"quit", b"close", b"bye"}:
+            if message.strip().lower() in {b"quit", b"close", b"bye", b"exit"}:
                 click.echo(
                     "Service TCP Discard: Sending last message to "
                     f"{connected_socket.remote_ip_address}, port {connected_socket.remote_port}."

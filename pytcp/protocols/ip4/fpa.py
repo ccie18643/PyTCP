@@ -38,8 +38,8 @@ from typing import TYPE_CHECKING
 
 import pytcp.config as config
 from pytcp.lib.ip4_address import Ip4Address
+from pytcp.lib.ip_helper import inet_cksum
 from pytcp.lib.tracker import Tracker
-from pytcp.misc.ip_helper import inet_cksum
 from pytcp.protocols.ether.ps import ETHER_TYPE_IP4
 from pytcp.protocols.ip4.ps import (
     IP4_HEADER_LEN,

@@ -36,9 +36,9 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 import pytcp.config as config
-import pytcp.misc.stack as stack
+import pytcp.lib.stack as stack
 from pytcp.lib.logger import log
-from pytcp.misc.packet import PacketRx
+from pytcp.lib.packet import PacketRx
 from pytcp.protocols.icmp4.ps import ICMP4_UNREACHABLE, ICMP4_UNREACHABLE__PORT
 from pytcp.protocols.icmp6.ps import ICMP6_UNREACHABLE, ICMP6_UNREACHABLE__PORT
 from pytcp.protocols.udp.fpp import UdpParser

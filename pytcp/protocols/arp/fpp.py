@@ -42,7 +42,7 @@ from pytcp.lib.mac_address import MacAddress
 from pytcp.protocols.arp.ps import ARP_HEADER_LEN, ARP_OP_REPLY, ARP_OP_REQUEST
 
 if TYPE_CHECKING:
-    from pytcp.misc.packet import PacketRx
+    from pytcp.lib.packet import PacketRx
 
 
 class ArpParser:

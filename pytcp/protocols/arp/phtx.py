@@ -39,7 +39,7 @@ import pytcp.config as config
 from pytcp.lib.logger import log
 from pytcp.lib.mac_address import MacAddress
 from pytcp.lib.tracker import Tracker
-from pytcp.misc.tx_status import TxStatus
+from pytcp.lib.tx_status import TxStatus
 from pytcp.protocols.arp.fpa import ArpAssembler
 from pytcp.protocols.arp.ps import ARP_OP_REPLY, ARP_OP_REQUEST
 

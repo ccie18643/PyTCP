@@ -40,8 +40,8 @@ from testslide import StrictMock, TestCase
 from pytcp.lib.ip4_address import Ip4Address, Ip4Host
 from pytcp.lib.ip6_address import Ip6Address, Ip6Host
 from pytcp.lib.mac_address import MacAddress
-from pytcp.misc.packet import PacketRx
-from pytcp.misc.packet_stats import PacketStatsRx, PacketStatsTx
+from pytcp.lib.packet import PacketRx
+from pytcp.lib.packet_stats import PacketStatsRx, PacketStatsTx
 from pytcp.subsystems.arp_cache import ArpCache
 from pytcp.subsystems.nd_cache import NdCache
 from pytcp.subsystems.packet_handler import PacketHandler
@@ -115,7 +115,7 @@ class TestPacketHandlerRxTx(TestCase):
             method="find_entry",
         ).for_call(LOCNET_IP4_ADDRESS).to_return_value(LOCNET_MAC_ADDRESS)
         self.patch_attribute(
-            target="pytcp.misc.stack",
+            target="pytcp.lib.stack",
             attribute="arp_cache",
             new_value=self.mock_ArpCache,
         )
@@ -128,7 +128,7 @@ class TestPacketHandlerRxTx(TestCase):
             LOCNET_IP6_ADDRESS, LOCNET_MAC_ADDRESS
         ).to_return_value(None)
         self.patch_attribute(
-            target="pytcp.misc.stack",
+            target="pytcp.lib.stack",
             attribute="nd_cache",
             new_value=mock_NdCache,
         )
@@ -142,7 +142,7 @@ class TestPacketHandlerRxTx(TestCase):
             or self.packets_tx.append(self.packet_tx)
         )
         self.patch_attribute(
-            target="pytcp.misc.stack",
+            target="pytcp.lib.stack",
             attribute="tx_ring",
             new_value=mock_TxRing,
             type_validation=False,

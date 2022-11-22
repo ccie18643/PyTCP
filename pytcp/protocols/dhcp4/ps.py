@@ -25,7 +25,10 @@
 
 
 #
-# dhcp4/ps.py - protocol support library for DHCP
+# protocols/dhcp4/ps.py - Protocol support library for DHCPv4.
+#
+# This library uses old (pre-FPP) format and needs to be revritten
+# at some point.
 #
 # ver 2.7
 #

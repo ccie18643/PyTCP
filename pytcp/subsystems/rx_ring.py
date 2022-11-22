@@ -40,7 +40,7 @@ import time
 from typing import TYPE_CHECKING, Optional
 
 from pytcp.lib.logger import log
-from pytcp.misc.packet import PacketRx
+from pytcp.lib.packet import PacketRx
 
 if TYPE_CHECKING:
     from threading import Semaphore

@@ -40,16 +40,16 @@ import time
 from typing import TYPE_CHECKING
 
 import pytcp.config as config
-import pytcp.misc.stack as stack
-from pytcp.dhcp4.client import Dhcp4Client
+import pytcp.lib.stack as stack
 from pytcp.lib.ip4_address import Ip4Address, Ip4Host
 from pytcp.lib.ip6_address import Ip6Address, Ip6Host, Ip6Network
 from pytcp.lib.logger import log
 from pytcp.lib.mac_address import MacAddress
-from pytcp.misc.packet_stats import PacketStatsRx, PacketStatsTx
+from pytcp.lib.packet_stats import PacketStatsRx, PacketStatsTx
 from pytcp.protocols.arp.phrx import _phrx_arp
 from pytcp.protocols.arp.phtx import _phtx_arp
 from pytcp.protocols.arp.ps import ARP_OP_REPLY, ARP_OP_REQUEST
+from pytcp.protocols.dhcp4.client import Dhcp4Client
 from pytcp.protocols.ether.phrx import _phrx_ether
 from pytcp.protocols.ether.phtx import _phtx_ether
 from pytcp.protocols.icmp4.phrx import _phrx_icmp4
@@ -94,7 +94,7 @@ if TYPE_CHECKING:
     from threading import Semaphore
 
     from pytcp.lib.ip_address import IpAddress
-    from pytcp.misc.tx_status import TxStatus
+    from pytcp.lib.tx_status import TxStatus
 
 
 class PacketHandler:

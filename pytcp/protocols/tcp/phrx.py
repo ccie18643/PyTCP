@@ -35,9 +35,9 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-import pytcp.misc.stack as stack
+import pytcp.lib.stack as stack
 from pytcp.lib.logger import log
-from pytcp.misc.packet import PacketRx
+from pytcp.lib.packet import PacketRx
 from pytcp.protocols.tcp.fpp import TcpParser
 from pytcp.protocols.tcp.metadata import TcpMetadata
 

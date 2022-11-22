@@ -44,7 +44,7 @@ from pytcp.protocols.ip6_ext_frag.ps import (
 )
 
 if TYPE_CHECKING:
-    from pytcp.misc.packet import PacketRx
+    from pytcp.lib.packet import PacketRx
 
 
 class Ip6ExtFragParser:

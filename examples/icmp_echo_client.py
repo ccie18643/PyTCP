@@ -40,11 +40,11 @@ from datetime import datetime
 
 import click
 
-import pytcp.misc.stack as stack
+import pytcp.lib.stack as stack
 from pytcp import TcpIpStack
 from pytcp.lib.ip4_address import Ip4Address
 from pytcp.lib.ip6_address import Ip6Address
-from pytcp.misc.ip_helper import str_to_ip
+from pytcp.lib.ip_helper import str_to_ip
 
 
 class IcmpEchoClient:

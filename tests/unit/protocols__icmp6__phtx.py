@@ -34,8 +34,8 @@
 
 from testslide import TestCase
 
-from pytcp.misc.packet_stats import PacketStatsTx
-from pytcp.misc.tx_status import TxStatus
+from pytcp.lib.packet_stats import PacketStatsTx
+from pytcp.lib.tx_status import TxStatus
 from pytcp.protocols.icmp6.fpa import Icmp6NdOptSLLA
 from pytcp.protocols.icmp6.ps import (
     ICMP6_ECHO_REPLY,

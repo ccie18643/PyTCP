@@ -38,8 +38,8 @@ from typing import TYPE_CHECKING
 
 import pytcp.config as config
 from pytcp.lib.ip6_address import Ip6Address, Ip6Mask, Ip6Network
+from pytcp.lib.ip_helper import inet_cksum
 from pytcp.lib.mac_address import MacAddress
-from pytcp.misc.ip_helper import inet_cksum
 from pytcp.protocols.icmp6.ps import (
     ICMP6_ECHO_REPLY,
     ICMP6_ECHO_REQUEST,
@@ -61,7 +61,7 @@ from pytcp.protocols.icmp6.ps import (
 )
 
 if TYPE_CHECKING:
-    from pytcp.misc.packet import PacketRx
+    from pytcp.lib.packet import PacketRx
 
 
 class Icmp6Parser:

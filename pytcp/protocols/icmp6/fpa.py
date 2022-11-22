@@ -38,8 +38,8 @@ import struct
 from typing import TYPE_CHECKING
 
 from pytcp.lib.ip6_address import Ip6Address, Ip6Network
+from pytcp.lib.ip_helper import inet_cksum
 from pytcp.lib.tracker import Tracker
-from pytcp.misc.ip_helper import inet_cksum
 from pytcp.protocols.icmp6.ps import (
     ICMP6_ECHO_REPLY,
     ICMP6_ECHO_REPLY_LEN,

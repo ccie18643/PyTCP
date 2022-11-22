@@ -38,7 +38,7 @@ from typing import TYPE_CHECKING
 
 import click
 
-from examples.udp_service import UdpService
+from examples.lib.udp_service import UdpService
 from pytcp import TcpIpStack
 
 if TYPE_CHECKING:

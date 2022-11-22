@@ -35,10 +35,10 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-import pytcp.misc.stack as stack
+import pytcp.lib.stack as stack
 from pytcp.lib.logger import log
 from pytcp.lib.mac_address import MacAddress
-from pytcp.misc.tx_status import TxStatus
+from pytcp.lib.tx_status import TxStatus
 from pytcp.protocols.ether.fpa import EtherAssembler
 from pytcp.protocols.ip4.fpa import Ip4Assembler, Ip4FragAssembler
 from pytcp.protocols.ip6.fpa import Ip6Assembler

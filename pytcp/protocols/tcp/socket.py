@@ -37,7 +37,7 @@ from __future__ import annotations
 import threading
 from typing import TYPE_CHECKING
 
-import pytcp.misc.stack as stack
+import pytcp.lib.stack as stack
 from pytcp.lib.ip4_address import Ip4Address, Ip4AddressFormatError
 from pytcp.lib.ip6_address import Ip6Address, Ip6AddressFormatError
 from pytcp.lib.logger import log

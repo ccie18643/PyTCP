@@ -39,7 +39,7 @@ from typing import TYPE_CHECKING
 
 import click
 
-from examples.tcp_service import TcpService
+from examples.lib.tcp_service import TcpService
 from pytcp import TcpIpStack
 
 if TYPE_CHECKING:

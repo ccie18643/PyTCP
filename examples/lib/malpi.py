@@ -25,7 +25,7 @@
 
 
 #
-# misc/malpi.py - module contains test monkeys used by various services
+# examples/lib/malpi.py - Module contains test monkeys used by various services.
 #
 # ver 2.7
 #

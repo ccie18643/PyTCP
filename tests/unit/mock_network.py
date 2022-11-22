@@ -192,7 +192,7 @@ def setup_mock_packet_handler(self) -> None:
         or self.frames_tx.append(self.frame_tx)
     )
     self.patch_attribute(
-        target="pytcp.misc.stack",
+        target="pytcp.lib.stack",
         attribute="tx_ring",
         new_value=mock_TxRing,
     )
@@ -209,7 +209,7 @@ def setup_mock_packet_handler(self) -> None:
         self.mns.stack_ip4_gateway
     ).to_return_value(self.mns.stack_ip4_gateway_mac_address)
     self.patch_attribute(
-        target="pytcp.misc.stack",
+        target="pytcp.lib.stack",
         attribute="arp_cache",
         new_value=mock_ArpCache,
     )
@@ -229,7 +229,7 @@ def setup_mock_packet_handler(self) -> None:
         self.mns.router_b_ip6_address
     ).to_return_value(None)
     self.patch_attribute(
-        target="pytcp.misc.stack",
+        target="pytcp.lib.stack",
         attribute="nd_cache",
         new_value=mock_NdCache,
     )

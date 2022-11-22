@@ -37,7 +37,7 @@ from typing import TYPE_CHECKING
 
 from pytcp.lib.logger import log
 from pytcp.lib.tracker import Tracker
-from pytcp.misc.tx_status import TxStatus
+from pytcp.lib.tx_status import TxStatus
 from pytcp.protocols.icmp4.fpa import Icmp4Assembler
 from pytcp.protocols.icmp4.ps import (
     ICMP4_ECHO_REPLY,

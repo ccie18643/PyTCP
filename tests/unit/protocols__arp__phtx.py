@@ -34,8 +34,8 @@
 
 from testslide import TestCase
 
-from pytcp.misc.packet_stats import PacketStatsTx
-from pytcp.misc.tx_status import TxStatus
+from pytcp.lib.packet_stats import PacketStatsTx
+from pytcp.lib.tx_status import TxStatus
 from pytcp.protocols.arp.ps import ARP_OP_REPLY, ARP_OP_REQUEST
 from tests.unit.mock_network import (
     MockNetworkSettings,

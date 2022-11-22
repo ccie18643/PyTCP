@@ -35,8 +35,8 @@ from __future__ import annotations
 
 import struct
 
+from pytcp.lib.ip_helper import inet_cksum
 from pytcp.lib.tracker import Tracker
-from pytcp.misc.ip_helper import inet_cksum
 from pytcp.protocols.ip4.ps import IP4_PROTO_UDP
 from pytcp.protocols.ip6.ps import IP6_NEXT_UDP
 from pytcp.protocols.udp.ps import UDP_HEADER_LEN

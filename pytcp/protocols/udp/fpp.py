@@ -37,11 +37,11 @@ import struct
 from typing import TYPE_CHECKING
 
 import pytcp.config as config
-from pytcp.misc.ip_helper import inet_cksum
+from pytcp.lib.ip_helper import inet_cksum
 from pytcp.protocols.udp.ps import UDP_HEADER_LEN
 
 if TYPE_CHECKING:
-    from pytcp.misc.packet import PacketRx
+    from pytcp.lib.packet import PacketRx
 
 
 class UdpParser:

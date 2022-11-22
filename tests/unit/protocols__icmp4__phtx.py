@@ -34,8 +34,8 @@
 
 from testslide import TestCase
 
-from pytcp.misc.packet_stats import PacketStatsTx
-from pytcp.misc.tx_status import TxStatus
+from pytcp.lib.packet_stats import PacketStatsTx
+from pytcp.lib.tx_status import TxStatus
 from pytcp.protocols.icmp4.ps import (
     ICMP4_ECHO_REPLY,
     ICMP4_ECHO_REQUEST,

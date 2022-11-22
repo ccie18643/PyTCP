@@ -37,7 +37,9 @@ import random
 from typing import TYPE_CHECKING
 
 import pytcp.lib.socket as socket
-from pytcp.dhcp4.ps import (
+from pytcp.lib.ip4_address import Ip4Address, Ip4Host, Ip4Mask
+from pytcp.lib.logger import log
+from pytcp.protocols.dhcp4.ps import (
     DHCP4_MSG_ACK,
     DHCP4_MSG_DISCOVER,
     DHCP4_MSG_OFFER,
@@ -47,8 +49,6 @@ from pytcp.dhcp4.ps import (
     DHCP4_OPT_SUBNET_MASK,
     Dhcp4Packet,
 )
-from pytcp.lib.ip4_address import Ip4Address, Ip4Host, Ip4Mask
-from pytcp.lib.logger import log
 
 if TYPE_CHECKING:
     from pytcp.lib.mac_address import MacAddress

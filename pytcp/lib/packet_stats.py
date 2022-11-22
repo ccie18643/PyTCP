@@ -25,8 +25,8 @@
 
 
 #
-# packet_stats.py - module contains class used to store packet handler
-# statistics
+# lib/packet_stats.py - Module contains classes used to store packet
+# statistics.
 #
 # ver 2.7
 #

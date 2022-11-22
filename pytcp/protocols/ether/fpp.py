@@ -46,7 +46,7 @@ from pytcp.protocols.ether.ps import (
 )
 
 if TYPE_CHECKING:
-    from pytcp.misc.packet import PacketRx
+    from pytcp.lib.packet import PacketRx
 
 
 class EtherParser:
