@@ -465,7 +465,7 @@ class TestEtherPhtx(TestCase):
         Test sending IPv6 packet to unicast address on external
         network / gateway ND cache miss.
         """
-        self.mns.stack_ip6_host.gateway = self.mns.host_b_ip6_address
+        self.mns.stack_ip6_host.gateway = self.mns.router_b_ip6_address
         tx_status = self.packet_handler._phtx_ip6(
             ip6_src=self.mns.stack_ip6_host.address,
             ip6_dst=self.mns.host_c_ip6_address,

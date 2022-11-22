@@ -40,6 +40,7 @@ from pytcp.lib.ip4_address import (
     Ip4AddressFormatError,
     Ip4Host,
     Ip4HostFormatError,
+    Ip4HostGatewayError,
     Ip4Mask,
     Ip4MaskFormatError,
     Ip4Network,
@@ -814,13 +815,13 @@ class TestIp4Host(TestCase):
 
     def test_version(self) -> None:
         """
-        Test the 'version' property.
+        Test the 'version' property getter.
         """
         self.assertEqual(Ip4Host("0.0.0.0/0").version, 4)
 
     def test_address(self) -> None:
         """
-        Test the 'address' property.
+        Test the 'address' property getter.
         """
         self.assertEqual(
             Ip4Host("192.168.9.100/24").address, Ip4Address("192.168.9.100")
@@ -828,8 +829,87 @@ class TestIp4Host(TestCase):
 
     def test_network(self) -> None:
         """
-        Test the 'network' property.
+        Test the 'network' property getter.
         """
         self.assertEqual(
             Ip4Host("192.168.9.50/24").network, Ip4Network("192.168.9.0/24")
         )
+
+    def test__gateway_getter__success(self) -> None:
+        """
+        Ensure that the 'gateway' property getter returns correct value.
+        """
+
+        gateway = Ip4Address("192.168.9.1")
+        host = Ip4Host("192.168.9.50/24")
+        host._gateway = gateway
+
+        self.assertEqual(host.gateway, gateway)
+
+    def test__gateway_setter__success(self) -> None:
+        """
+        Ensure that the 'gateway' property setter sets the correct value.
+        """
+
+        gateway = Ip4Address("192.168.9.1")
+        host = Ip4Host("192.168.9.50/24")
+
+        host.gateway = gateway
+
+        self.assertEqual(host._gateway, gateway)
+
+    def test__gateway_setter__error__wrong_subnet(self) -> None:
+        """
+        Ensure that the 'gateway' property setter raises the 'Ip4HostGatewayError'
+        exception when the provided gateway address doesn't belong to host subnet.
+        """
+
+        gateway = Ip4Address("192.168.10.1")
+        host = Ip4Host("192.168.9.50/24")
+
+        with self.assertRaises(Ip4HostGatewayError) as error:
+            host.gateway = gateway
+
+        self.assertEqual(f"{error.exception}", f"{gateway}")
+
+    def test__gateway_setter__error__overlaps_network_address(self) -> None:
+        """
+        Ensure that the 'gateway' property setter raises the 'Ip4HostGatewayError'
+        exception when the provided gateway address overlaps network address.
+        """
+
+        gateway = Ip4Address("192.168.9.0")
+        host = Ip4Host("192.168.9.50/24")
+
+        with self.assertRaises(Ip4HostGatewayError) as error:
+            host.gateway = gateway
+
+        self.assertEqual(f"{error.exception}", f"{gateway}")
+
+    def test__gateway_setter__error__overlaps_broadcast_address(self) -> None:
+        """
+        Ensure that the 'gateway' property setter raises the 'Ip4HostGatewayError'
+        exception when the provided gateway address overlaps broadcast address.
+        """
+
+        gateway = Ip4Address("192.168.9.255")
+        host = Ip4Host("192.168.9.50/24")
+
+        with self.assertRaises(Ip4HostGatewayError) as error:
+            host.gateway = gateway
+
+        self.assertEqual(f"{error.exception}", f"{gateway}")
+
+    def test__gateway_setter__error__overlaps_host_address(self) -> None:
+        """
+        Ensure that the 'gateway' property setter raises the 'Ip4HostGatewayError'
+        exception when the provided gateway address overlaps host address.
+        """
+
+        gateway = Ip4Address("192.168.9.50")
+        host = Ip4Host("192.168.9.50/24")
+
+        with self.assertRaises(Ip4HostGatewayError) as error:
+            host.gateway = gateway
+
+        self.assertEqual(f"{error.exception}", f"{gateway}")

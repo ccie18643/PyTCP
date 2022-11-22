@@ -40,6 +40,7 @@ from pytcp.lib.ip6_address import (
     Ip6AddressFormatError,
     Ip6Host,
     Ip6HostFormatError,
+    Ip6HostGatewayError,
     Ip6Mask,
     Ip6MaskFormatError,
     Ip6Network,
@@ -733,3 +734,40 @@ class TestIp6Host(TestCase):
         Test the 'version' property.
         """
         self.assertEqual(Ip6Host("::/128").version, 6)
+
+    def test__gateway_getter__success(self) -> None:
+        """
+        Ensure that the 'gateway' property getter returns correct value.
+        """
+
+        gateway = Ip6Address("fe80::1")
+        host = Ip6Host("2001::7/64")
+        host._gateway = gateway
+
+        self.assertEqual(host.gateway, gateway)
+
+    def test__gateway_setter__success(self) -> None:
+        """
+        Ensure that the 'gateway' property setter sets the correct value.
+        """
+
+        gateway = Ip6Address("fe80::1")
+        host = Ip6Host("2001::7/64")
+
+        host.gateway = gateway
+
+        self.assertEqual(host._gateway, gateway)
+
+    def test__gateway_setter__error__not_lla(self) -> None:
+        """
+        Ensure that the 'gateway' property setter raises the 'Ip4HostGatewayError'
+        exception when the provided gateway address is not LLA.
+        """
+
+        gateway = Ip6Address("2001::1")
+        host = Ip6Host("2001::7/64")
+
+        with self.assertRaises(Ip6HostGatewayError) as error:
+            host.gateway = gateway
+
+        self.assertEqual(f"{error.exception}", f"{gateway}")

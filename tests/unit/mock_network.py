@@ -42,15 +42,32 @@ from pytcp.subsystems.nd_cache import NdCache
 from pytcp.subsystems.packet_handler import PacketHandler
 from pytcp.subsystems.tx_ring import TxRing
 
+# # #  IPv4
 #
 #           .7  10.0.1.0/24  .1          .1  10.0.2.0/24  .50
 #   [STACK] ------------------- [ROUTER] -------------------- [HOST C]
 #             |
 #             |   .91
-#             |------ [HOST A] (working arp/nd resolution)
+#             |------ [HOST A] (working arp cache resolution)
 #             |
 #             |   .92
-#             |------ [HOST B] (not working arp/nd resolution)
+#             |------ [HOST B] (not working arp cache resolution)
+#
+
+# # #  IPv6
+#
+#        .7  2001:db8:0:1::/64  .1    .1  2001:db8:0:2::/64  .50
+#        .7  fe80::/64          .1    .1  fe80::             .50
+#   [STACK] ------------------- [ROUTER A] -------------------- [HOST C]
+#             |
+#             |    .2
+#             |------ [ROUTER B] (not working nd cache resolution)
+#             |
+#             |   .91
+#             |------ [HOST A] (working nd cache resolution)
+#             |
+#             |   .92
+#             |------ [HOST B] (not working nd cache resolution)
 #
 
 
@@ -65,12 +82,14 @@ class MockNetworkSettings:
         """
 
         self.stack_mac_address = MacAddress("02:00:00:00:00:07")
+
         self.stack_ip4_host = Ip4Host("10.0.1.7/24")
         self.stack_ip4_gateway = Ip4Address("10.0.1.1")
         self.stack_ip4_host.gateway = self.stack_ip4_gateway
         self.stack_ip4_gateway_mac_address = MacAddress("02:00:00:00:00:01")
+
         self.stack_ip6_host = Ip6Host("2001:db8:0:1::7/64")
-        self.stack_ip6_gateway = Ip6Address("2001::1")
+        self.stack_ip6_gateway = Ip6Address("fe80::1")
         self.stack_ip6_host.gateway = self.stack_ip6_gateway
         self.stack_ip6_gateway_mac_address = MacAddress("02:00:00:00:00:01")
 
@@ -92,6 +111,8 @@ class MockNetworkSettings:
         self.ip6_unspecified = Ip6Address("::")
         self.ip6_multicast_all_nodes = Ip6Address("ff01::1")
         self.ip6_multicast_all_routers = Ip6Address("ff01::2")
+
+        self.router_b_ip6_address = Ip6Address("fe80::2")
 
 
 PACKET_HANDLER_MODULES = [
@@ -204,6 +225,9 @@ def setup_mock_packet_handler(self) -> None:
     self.mock_callable(target=mock_NdCache, method="find_entry",).for_call(
         self.mns.stack_ip6_gateway
     ).to_return_value(self.mns.stack_ip6_gateway_mac_address)
+    self.mock_callable(target=mock_NdCache, method="find_entry",).for_call(
+        self.mns.router_b_ip6_address
+    ).to_return_value(None)
     self.patch_attribute(
         target="pytcp.misc.stack",
         attribute="nd_cache",

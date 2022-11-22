@@ -33,7 +33,7 @@
 
 from __future__ import annotations
 
-from abc import ABC, abstractmethod, abstractproperty
+from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -55,6 +55,10 @@ class IpNetworkFormatError(Exception):
 
 
 class IpHostFormatError(Exception):
+    ...
+
+
+class IpHostGatewayError(Exception):
     ...
 
 
@@ -150,37 +154,43 @@ class IpAddress(ABC):
         The '__bytes__()' dunder placeholder.
         """
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def is_loopback(self) -> bool:
         """
         The 'is_loopback' property placeholder.
         """
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def is_global(self) -> bool:
         """
         The 'is_global' property placeholder.
         """
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def is_private(self) -> bool:
         """
         The 'is_private' property placeholder.
         """
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def is_link_local(self) -> bool:
         """
         The 'is_link_local' property placeholder.
         """
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def is_multicast(self) -> bool:
         """
         The 'is_multicast' property placeholder.
         """
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def unspecified(self) -> IpAddress:
         """
         The 'unspecified' property placeholder.
@@ -221,6 +231,15 @@ class IpMask(ABC):
     """
     IP network support base class.
     """
+
+    @abstractmethod
+    def __init__(self, address: int) -> None:
+        """
+        Class constructor placeholder.
+        """
+        if TYPE_CHECKING:
+            self._mask: int
+            self._version: int
 
     def __str__(self) -> str:
         """
@@ -280,15 +299,6 @@ class IpMask(ABC):
         return self._version == 4
 
     @abstractmethod
-    def __init__(self, address: int) -> None:
-        """
-        Class constructor placeholder.
-        """
-        if TYPE_CHECKING:
-            self._mask: int
-            self._version: int
-
-    @abstractmethod
     def __bytes__(self) -> bytes:
         """
         The '__bytes__()' dunder placeholder.
@@ -299,6 +309,15 @@ class IpNetwork(ABC):
     """
     IP network support base class.
     """
+
+    @abstractmethod
+    def __init__(self) -> None:
+        """
+        Class constructor placeholder.
+        """
+        self._address: IpAddress
+        self._mask: IpMask
+        self._version: int
 
     def __str__(self) -> str:
         """
@@ -363,28 +382,22 @@ class IpNetwork(ABC):
         """
         return self._version == 4
 
+    @property
     @abstractmethod
-    def __init__(self) -> None:
-        """
-        Class constructor placeholder.
-        """
-        self._address: IpAddress
-        self._mask: IpMask
-        self._version: int
-
-    @abstractproperty
     def address(self) -> IpAddress:
         """
         The 'address' property placeholder.
         """
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def mask(self) -> IpMask:
         """
         The 'mask' property placeholder.
         """
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def last(self) -> IpAddress:
         """
         The 'last' property placeholder.
@@ -408,6 +421,16 @@ class IpHost(ABC):
     """
     IP host support base class.
     """
+
+    @abstractmethod
+    def __init__(self) -> None:
+        """
+        Class constructor placeholder.
+        """
+        self._address: IpAddress
+        self._network: IpNetwork
+        self._version: int
+        self._gateway: IpAddress | None
 
     def __str__(self) -> str:
         """
@@ -454,24 +477,33 @@ class IpHost(ABC):
         """
         return self._version == 4
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def address(self) -> IpAddress:
         """
         The 'address' property placeholder.
         """
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def network(self) -> IpNetwork:
         """
         The 'network' property placeholder.
         """
 
+    @property
     @abstractmethod
-    def __init__(self) -> None:
+    def gateway(self) -> IpAddress | None:
         """
-        Class constructor placeholder.
+        The 'gateway' property getter placeholder.
         """
-        self._address: IpAddress
-        self._network: IpNetwork
-        self._version: int
-        self.gateway: IpAddress | None
+
+    @gateway.setter
+    @abstractmethod
+    def gateway(
+        self,
+        address: IpAddress | str | bytes | bytearray | memoryview | int | None,
+    ) -> None:
+        """
+        The 'gateway' property setter placeholder.
+        """

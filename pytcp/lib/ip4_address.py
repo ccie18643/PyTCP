@@ -42,6 +42,7 @@ from pytcp.lib.ip_address import (
     IpAddressFormatError,
     IpHost,
     IpHostFormatError,
+    IpHostGatewayError,
     IpMask,
     IpMaskFormatError,
     IpNetwork,
@@ -68,6 +69,10 @@ class Ip4NetworkFormatError(IpNetworkFormatError):
 
 
 class Ip4HostFormatError(IpHostFormatError):
+    ...
+
+
+class Ip4HostGatewayError(IpHostGatewayError):
     ...
 
 
@@ -393,7 +398,7 @@ class Ip4Host(IpHost):
         self._network: Ip4Network
         self._version: int = 4
 
-        self.gateway: Ip4Address | None = None
+        self._gateway: Ip4Address | None = None
 
         if isinstance(host, tuple):
             if len(host) == 2:
@@ -439,3 +444,35 @@ class Ip4Host(IpHost):
         Getter for the '_network' attribute.
         """
         return self._network
+
+    @property  # type: ignore[override]
+    def gateway(self) -> Ip4Address | None:
+        """
+        Getter for the '_gateway' attribute.
+        """
+        return self._gateway
+
+    @gateway.setter
+    def gateway(
+        self,
+        address: Ip4Address | str | bytes | bytearray | memoryview | int | None,
+    ) -> None:
+        """
+        Setter for the '_gateway' attribute.
+        """
+
+        if address is None:
+            self._gateway = None
+            return
+
+        gateway = Ip4Address(address)
+
+        if (
+            gateway not in self.network
+            or gateway == self._network.address
+            or gateway == self._network.broadcast
+            or gateway == self._address
+        ):
+            raise Ip4HostGatewayError(gateway)
+
+        self._gateway = gateway

@@ -42,6 +42,7 @@ from pytcp.lib.ip_address import (
     IpAddressFormatError,
     IpHost,
     IpHostFormatError,
+    IpHostGatewayError,
     IpMask,
     IpMaskFormatError,
     IpNetwork,
@@ -75,6 +76,10 @@ class Ip6NetworkFormatError(IpNetworkFormatError):
 
 
 class Ip6HostFormatError(IpHostFormatError):
+    ...
+
+
+class Ip6HostGatewayError(IpHostGatewayError):
     ...
 
 
@@ -395,8 +400,7 @@ class Ip6Host(IpHost):
         self._address: Ip6Address
         self._network: Ip6Network
         self._version: int = 6
-
-        self.gateway: Ip6Address | None = None
+        self._gateway: Ip6Address | None = None
 
         if isinstance(host, tuple):
             if len(host) == 2:
@@ -442,3 +446,30 @@ class Ip6Host(IpHost):
         Getter for the '_network' attribute.
         """
         return self._network
+
+    @property  # type: ignore[override]
+    def gateway(self) -> Ip6Address | None:
+        """
+        Getter for the '_gateway' attribute.
+        """
+        return self._gateway
+
+    @gateway.setter
+    def gateway(
+        self,
+        address: Ip6Address | str | bytes | bytearray | memoryview | int | None,
+    ) -> None:
+        """
+        Setter for the '_gateway' attribute.
+        """
+
+        if address is None:
+            self._gateway = None
+            return
+
+        gateway = Ip6Address(address)
+
+        if gateway not in Ip6Network("fe80::/64"):
+            raise Ip6HostGatewayError(gateway)
+
+        self._gateway = gateway

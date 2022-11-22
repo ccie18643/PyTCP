@@ -90,15 +90,11 @@ class TestPacketHandler(TestCase):
             (
                 "2099::99/64",
                 "2222::99",
-            ),  # valid global address with out of subnet gateway [fail]
+            ),  # valid global address with non link local gateway [fail]
             (
                 "2007::7/64",
                 "FE80::1",
             ),  # valid global address with valid link local gateway [pass]
-            (
-                "2009::9/64",
-                "2009::1",
-            ),  # valid global address with valid global gateway [pass]
             (
                 "2015::15/64",
                 None,
@@ -109,7 +105,6 @@ class TestPacketHandler(TestCase):
             Ip6Host("fe80::77/64"),
             Ip6Host("fe80::7777/64"),
             Ip6Host("2007::7/64"),
-            Ip6Host("2009::9/64"),
             Ip6Host("2015::15/64"),
         ]
         result = self.packet_handler._parse_stack_ip6_host_candidate(sample)
@@ -119,7 +114,6 @@ class TestPacketHandler(TestCase):
             None,
             None,
             Ip6Address("fe80::1"),
-            Ip6Address("2009::1"),
             None,
         ]
         result = [ip6_address.gateway for ip6_address in result]
