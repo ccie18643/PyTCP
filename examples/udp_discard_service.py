@@ -84,7 +84,7 @@ def cli(*, interface: str) -> None:
     Run the UDP Discard service.
     """
 
-    stack = TcpIpStack(interface)
+    stack = TcpIpStack(interface=interface)
     service = UdpDiscardService()
 
     try:

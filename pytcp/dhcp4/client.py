@@ -47,7 +47,7 @@ from pytcp.dhcp4.ps import (
     DHCP4_OPT_SUBNET_MASK,
     Dhcp4Packet,
 )
-from pytcp.lib.ip4_address import Ip4Address
+from pytcp.lib.ip4_address import Ip4Address, Ip4Host, Ip4Mask
 from pytcp.lib.logger import log
 
 if TYPE_CHECKING:
@@ -65,7 +65,7 @@ class Dhcp4Client:
         """
         self._mac_address = mac_address
 
-    def fetch(self) -> tuple[str, str | None] | tuple[None, None]:
+    def fetch(self) -> Ip4Host | None:
         """
         IPv4 DHCP client.
         """
@@ -104,7 +104,7 @@ class Dhcp4Client:
             if __debug__:
                 log("dhcp4", "Didn't receive DHCP Offer message - timeout")
             s.close()
-            return None, None
+            return None
 
         if dhcp_packet_rx.dhcp_msg_type != DHCP4_MSG_OFFER:
             if __debug__:
@@ -113,7 +113,7 @@ class Dhcp4Client:
                     "Didn't receive DHCP Offer message - message type error",
                 )
             s.close()
-            return None, None
+            return None
 
         dhcp_srv_id = dhcp_packet_rx.dhcp_srv_id
         dhcp_yiaddr = dhcp_packet_rx.dhcp_yiaddr
@@ -164,7 +164,7 @@ class Dhcp4Client:
             if __debug__:
                 log("dhcp4", "Didn't receive DHCP ACK message - timeout")
             s.close()
-            return None, None
+            return None
 
         if dhcp_packet_rx.dhcp_msg_type != DHCP4_MSG_ACK:
             if __debug__:
@@ -173,7 +173,7 @@ class Dhcp4Client:
                     "Didn't receive DHCP ACK message - message type error",
                 )
             s.close()
-            return None, None
+            return None
 
         if __debug__:
             log(
@@ -188,10 +188,14 @@ class Dhcp4Client:
         s.close()
 
         assert dhcp_packet_rx.dhcp_subnet_mask is not None
-        return (
-            str(dhcp_packet_rx.dhcp_yiaddr)
-            + str(dhcp_packet_rx.dhcp_subnet_mask),
-            str(dhcp_packet_rx.dhcp_router[0])
-            if dhcp_packet_rx.dhcp_router is not None
-            else None,
+
+        ip4_host = Ip4Host(
+            (
+                Ip4Address(dhcp_packet_rx.dhcp_yiaddr),
+                Ip4Mask(dhcp_packet_rx.dhcp_subnet_mask),
+            )
         )
+        if dhcp_packet_rx.dhcp_router is not None:
+            ip4_host.gateway = Ip4Address(dhcp_packet_rx.dhcp_router[0])
+
+        return ip4_host

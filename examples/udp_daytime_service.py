@@ -87,7 +87,7 @@ def cli(*, interface: str) -> None:
     Run the UDP Daytime service.
     """
 
-    stack = TcpIpStack(interface)
+    stack = TcpIpStack(interface=interface)
     service = UdpDaytimeService()
 
     try:

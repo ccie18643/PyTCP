@@ -756,7 +756,18 @@ class TestIp6Host(TestCase):
 
         host.gateway = gateway
 
-        self.assertEqual(host._gateway, gateway)
+        self.assertIs(host._gateway, gateway)
+
+    def test__gateway_setter__success__none(self) -> None:
+        """
+        Ensure that the 'gateway' property setter sets the None value.
+        """
+
+        host = Ip6Host("2001::7/64")
+
+        host.gateway = None
+
+        self.assertIsNone(host._gateway)
 
     def test__gateway_setter__error__not_lla(self) -> None:
         """

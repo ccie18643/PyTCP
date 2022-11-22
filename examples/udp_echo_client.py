@@ -171,7 +171,7 @@ def cli(*, interface: str, remote_ip_address: str) -> None:
     Run the TCP Echo client.
     """
 
-    stack = TcpIpStack(interface)
+    stack = TcpIpStack(interface=interface)
     client = UdpEchoClient(
         remote_ip_address=remote_ip_address,
     )

@@ -100,7 +100,7 @@ def cli(*, interface: str) -> None:
     Run the UDP Echo service.
     """
 
-    stack = TcpIpStack(interface)
+    stack = TcpIpStack(interface=interface)
     service = UdpEchoService()
 
     try:

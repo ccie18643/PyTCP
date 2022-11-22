@@ -135,7 +135,7 @@ def cli(*, interface: str) -> None:
     Run the TCP Echo service.
     """
 
-    stack = TcpIpStack(interface)
+    stack = TcpIpStack(interface=interface)
     service = TcpEchoService()
 
     try:

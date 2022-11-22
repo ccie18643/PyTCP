@@ -455,24 +455,18 @@ class Ip4Host(IpHost):
     @gateway.setter
     def gateway(
         self,
-        address: Ip4Address | str | bytes | bytearray | memoryview | int | None,
+        address: Ip4Address | None,
     ) -> None:
         """
         Setter for the '_gateway' attribute.
         """
 
-        if address is None:
-            self._gateway = None
-            return
-
-        gateway = Ip4Address(address)
-
-        if (
-            gateway not in self.network
-            or gateway == self._network.address
-            or gateway == self._network.broadcast
-            or gateway == self._address
+        if address is not None and (
+            address not in self.network
+            or address == self._network.address
+            or address == self._network.broadcast
+            or address == self._address
         ):
-            raise Ip4HostGatewayError(gateway)
+            raise Ip4HostGatewayError(address)
 
-        self._gateway = gateway
+        self._gateway = address

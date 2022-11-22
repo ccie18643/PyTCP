@@ -124,7 +124,7 @@ def cli(*, interface: str) -> None:
     Run the TCP Discard service.
     """
 
-    stack = TcpIpStack(interface)
+    stack = TcpIpStack(interface=interface)
     service = TcpDiscardService()
 
     try:

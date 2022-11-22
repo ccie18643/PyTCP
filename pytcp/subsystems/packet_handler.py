@@ -42,19 +42,8 @@ from typing import TYPE_CHECKING
 import pytcp.config as config
 import pytcp.misc.stack as stack
 from pytcp.dhcp4.client import Dhcp4Client
-from pytcp.lib.ip4_address import (
-    Ip4Address,
-    Ip4AddressFormatError,
-    Ip4Host,
-    Ip4HostFormatError,
-)
-from pytcp.lib.ip6_address import (
-    Ip6Address,
-    Ip6AddressFormatError,
-    Ip6Host,
-    Ip6HostFormatError,
-    Ip6Network,
-)
+from pytcp.lib.ip4_address import Ip4Address, Ip4Host
+from pytcp.lib.ip6_address import Ip6Address, Ip6Host, Ip6Network
 from pytcp.lib.logger import log
 from pytcp.lib.mac_address import MacAddress
 from pytcp.misc.packet_stats import PacketStatsRx, PacketStatsTx
@@ -159,10 +148,10 @@ class PacketHandler:
         self.mac_unicast: MacAddress = MacAddress(config.MAC_ADDRESS)
         self.mac_multicast: list[MacAddress] = []
         self.mac_broadcast: MacAddress = MacAddress(0xFFFFFFFFFFFF)
-        self.ip6_host_candidae: list[Ip6Host] = []
+        self.ip6_host_candidate: list[Ip6Host] = []
         self.ip6_host: list[Ip6Host] = []
         self.ip6_multicast: list[Ip6Address] = []
-        self.ip4_host_candidae: list[Ip4Host] = []
+        self.ip4_host_candidate: list[Ip4Host] = []
         self.ip4_host: list[Ip4Host] = []
         self.ip4_multicast: list[Ip4Address] = []
 
@@ -208,36 +197,35 @@ class PacketHandler:
         self._run_thread = False
         time.sleep(0.1)
 
-    def assign_ip6_addresses(self) -> None:
+    def assign_ip6_address(self, ip6_host: Ip6Host) -> None:
+        """
+        Assign IPv6 address information.
+        """
+        self.ip6_host_candidate.append(ip6_host)
+
+    def acquire_ip6_addresses(self) -> None:
         """
         Assign the IPv6 addresses.
         """
         if config.IP6_SUPPORT:
-            # Assign All IPv6 Nodes multicast address
             self._assign_ip6_multicast(Ip6Address("ff02::1"))
-            # Create list of IPv6 unicast/multicast addresses stack should
-            # listen on.
-            self.ip6_host_candidate = self._parse_stack_ip6_host_candidate(
-                config.IP6_HOST_CANDIDATE
-            )
             self._create_stack_ip6_addressing()
 
-    def assign_ip4_addresses(self) -> None:
+    def assign_ip4_address(self, ip4_host: Ip4Host) -> None:
         """
-        Assign the IPv4 addresses.
+        Assign IPv4 address information.
+        """
+        self.ip4_host_candidate.append(ip4_host)
+
+    def acquire_ip4_addresses(self) -> None:
+        """
+        Acquire the IPv4 addresses.
         """
         if config.IP4_SUPPORT:
-            # Create list of IPv4 unicast/multicast/broadcast addresses stack
-            # should listen on, use DHCP if enabled.
-            if config.IP4_HOST_DHCP:
-                dhcp4_client = Dhcp4Client(self.mac_unicast)
-                ip4_host_dhcp = dhcp4_client.fetch()
-            else:
-                ip4_host_dhcp = (None, None)
-            self.ip4_host_candidate = self._parse_stack_ip4_host_candidate(
-                config.IP4_HOST_CANDIDATE
-                + ([ip4_host_dhcp] if ip4_host_dhcp[0] is not None else [])
-            )
+            if not self.ip4_host_candidate:
+                if config.IP4_HOST_DHCP:
+                    if ip4_host := Dhcp4Client(self.mac_unicast).fetch():
+                        self.ip4_host_candidate.append(ip4_host)
             self._create_stack_ip4_addressing()
 
     def log_stack_address_info(self) -> None:
@@ -271,7 +259,7 @@ class PacketHandler:
                 log(
                     "stack",
                     "<INFO>Stack listening on multicast IPv6 addresses: "
-                    f"{', '.join([str(_) for _ in set(self.ip6_multicast)])})</>",
+                    f"{', '.join([str(_) for _ in set(self.ip6_multicast)])}</>",
                 )
 
             if config.IP4_SUPPORT:
@@ -365,95 +353,13 @@ class PacketHandler:
         )
         return not event
 
-    def _parse_stack_ip6_host_candidate(
-        self, configured_host_candidate: list[tuple[str, str | None]]
-    ) -> list[Ip6Host]:
-        """
-        Parse IPv6 candidate address list.
-        """
-
-        valid_host_candidate: list[Ip6Host] = []
-
-        for str_host, str_gateway in configured_host_candidate:
-            if __debug__:
-                log("stack", f"Parsing ('{str_host}', '{str_gateway}') entry")
-            try:
-                host = Ip6Host(str_host)
-            except Ip6HostFormatError:
-                if __debug__:
-                    log(
-                        "stack",
-                        f"<WARN>Invalid host address '{str_host}' format, "
-                        "skipping</>",
-                    )
-                continue
-            if (
-                not host.address.is_private
-                and not host.address.is_global
-                and not host.address.is_link_local
-            ):
-                if __debug__:
-                    log(
-                        "stack",
-                        f"<WARN>Invalid host address '{host.address}' type, "
-                        "skipping</>",
-                    )
-                continue
-            if host.address in [_.address for _ in valid_host_candidate]:
-                if __debug__:
-                    log(
-                        "stack",
-                        f"<WARN>Duplicate host address '{host.address}' "
-                        "configured, skipping</>",
-                    )
-                continue
-            if host.address.is_link_local and str_gateway:
-                if __debug__:
-                    log(
-                        "stack",
-                        "<WARN>Gateway cannot be configured for link local "
-                        "address skipping</>",
-                    )
-                continue
-            if str_gateway is not None:
-                try:
-                    gateway: Ip6Address | None = Ip6Address(str_gateway)
-                    assert gateway is not None
-                    if not (
-                        gateway.is_link_local
-                        or (gateway in host.network and gateway != host.address)
-                    ):
-                        if __debug__:
-                            log(
-                                "stack",
-                                f"<WARN>Invalid gateway '{gateway}' configured "
-                                f"for host address '{host}', skipping</>",
-                            )
-                        continue
-                except Ip6AddressFormatError:
-                    if __debug__:
-                        log(
-                            "stack",
-                            f"<WARN>Invalid gateway '{str_gateway}' format "
-                            f"configured for host address '{host}' skipping</>",
-                        )
-                    continue
-            else:
-                gateway = None
-            host.gateway = gateway
-            valid_host_candidate.append(host)
-            if __debug__:
-                log("stack", f"Parsed ('{host}', '{host.gateway}') entry")
-
-        return valid_host_candidate
-
     def _create_stack_ip6_addressing(self) -> None:
         """
         Create lists of IPv6 unicast and multicast addresses stack
         should listen on.
         """
 
-        def __(ip6_host: Ip6Host) -> None:
+        def _claim_ip6_address(ip6_host: Ip6Host) -> None:
             if self._perform_ip6_nd_dad(ip6_host.address):
                 self._assign_ip6_host(ip6_host)
                 if __debug__:
@@ -471,13 +377,13 @@ class PacketHandler:
         for ip6_host in list(self.ip6_host_candidate):
             if ip6_host.address.is_link_local:
                 self.ip6_host_candidate.remove(ip6_host)
-                __(ip6_host)
+                _claim_ip6_address(ip6_host)
 
         # Configure Link Local address automatically
         if config.IP6_LLA_AUTOCONFIG:
             ip6_host = Ip6Network("fe80::/64").eui64(self.mac_unicast)
             ip6_host.gateway = None
-            __(ip6_host)
+            _claim_ip6_address(ip6_host)
 
         # If we don't have any link local address set disable
         # IPv6 protocol operations
@@ -494,7 +400,7 @@ class PacketHandler:
         # Check if there are any statically configures GUA addresses
         for ip6_host in list(self.ip6_host_candidate):
             self.ip6_host_candidate.remove(ip6_host)
-            __(ip6_host)
+            _claim_ip6_address(ip6_host)
 
         # Send out IPv6 Router Solicitation message and wait for response
         # in attempt to auto configure addresses based on
@@ -511,88 +417,7 @@ class PacketHandler:
                     )
                 ip6_address = prefix.eui64(self.mac_unicast)
                 ip6_address.gateway = gateway
-                __(ip6_address)
-
-    def _parse_stack_ip4_host_candidate(
-        self, configured_ip4_address_candidate: list[tuple[str, str | None]]
-    ) -> list[Ip4Host]:
-        """
-        Parse IPv4 candidate host addresses configured in config.py module.
-        """
-
-        valid_address_candidate: list[Ip4Host] = []
-
-        for str_host, str_gateway in configured_ip4_address_candidate:
-            if __debug__:
-                log("stack", f"Parsing ('{str_host}', '{str_gateway}') entry")
-            try:
-                host = Ip4Host(str_host)
-            except Ip4HostFormatError:
-                if __debug__:
-                    log(
-                        "stack",
-                        f"<WARN>Invalid host address '{str_host}' format, "
-                        "skipping</>",
-                    )
-                continue
-            if not host.address.is_private and not host.address.is_global:
-                if __debug__:
-                    log(
-                        "stack",
-                        f"<WARN>Invalid host address '{host.address}' type, "
-                        "skipping</>",
-                    )
-                continue
-            if (
-                host.address == host.network.address
-                or host.address == host.network.broadcast
-            ):
-                if __debug__:
-                    log(
-                        "stack",
-                        f"<WARN>Invalid host address '{host.address}' "
-                        f"configured for network '{host.network}', skipping</>",
-                    )
-                continue
-            if host.address in [_.address for _ in valid_address_candidate]:
-                if __debug__:
-                    log(
-                        "stack",
-                        f"<WARN>Duplicate host address '{host.address}' "
-                        "configured, skipping</>",
-                    )
-                continue
-            if str_gateway is not None:
-                try:
-                    gateway: Ip4Address | None = Ip4Address(str_gateway)
-                    if gateway not in host.network or gateway in {
-                        host.network.address,
-                        host.network.broadcast,
-                        host.address,
-                    }:
-                        if __debug__:
-                            log(
-                                "stack",
-                                f"<WARN>Invalid gateway '{gateway}' configuren "
-                                f"for host address '{host}', skipping</>",
-                            )
-                        continue
-                except Ip4AddressFormatError:
-                    if __debug__:
-                        log(
-                            "stack",
-                            f"<WARN>Invalid gateway '{str_gateway}' format "
-                            f"configured for host address '{host}' skipping</>",
-                        )
-                    continue
-            else:
-                gateway = None
-            host.gateway = gateway
-            valid_address_candidate.append(host)
-            if __debug__:
-                log("stack", f"Parsed ('{host}', '{host.gateway}') entry")
-
-        return valid_address_candidate
+                _claim_ip6_address(ip6_address)
 
     def _create_stack_ip4_addressing(self) -> None:
         """

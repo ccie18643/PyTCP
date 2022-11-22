@@ -32,15 +32,36 @@
 
 import time
 
+import click
+
 from pytcp import TcpIpStack
 
 
-def main() -> None:
+@click.command()
+@click.option("--interface", default="tap7")
+@click.option("--ip6-address", default=None)
+@click.option("--ip6-gateway", default=None)
+@click.option("--ip4-address", default=None)
+@click.option("--ip4-gateway", default=None)
+def main(
+    *,
+    interface: str,
+    ip6_address: str | None,
+    ip6_gateway: str | None,
+    ip4_address: str | None,
+    ip4_gateway: str | None,
+) -> None:
     """
     Start PyTCP stack and stop it when user presses Ctrl-C.
     """
 
-    stack = TcpIpStack(interface="tap7")
+    stack = TcpIpStack(
+        interface=interface,
+        ip6_address=ip6_address,
+        ip6_gateway=ip6_gateway,
+        ip4_address=ip4_address,
+        ip4_gateway=ip4_gateway,
+    )
 
     try:
         stack.start()

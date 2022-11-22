@@ -502,7 +502,7 @@ class IpHost(ABC):
     @abstractmethod
     def gateway(
         self,
-        address: IpAddress | str | bytes | bytearray | memoryview | int | None,
+        address: IpAddress | None,
     ) -> None:
         """
         The 'gateway' property setter placeholder.

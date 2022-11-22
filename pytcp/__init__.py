@@ -36,7 +36,10 @@ import os
 import struct
 import sys
 
+import pytcp.config as config
 import pytcp.misc.stack as stack
+from pytcp.lib.ip4_address import Ip4Address, Ip4Host
+from pytcp.lib.ip6_address import Ip6Address, Ip6Host
 from pytcp.lib.logger import log
 
 TUNSETIFF = 0x400454CA
@@ -49,18 +52,51 @@ class TcpIpStack:
     Main PyTCP library class.
     """
 
-    def __init__(self, interface: str):
+    def __init__(
+        self,
+        *,
+        interface: str,
+        ip4_address: str | None = None,
+        ip4_gateway: str | None = None,
+        ip6_address: str | None = None,
+        ip6_gateway: str | None = None,
+    ):
         """
         Initialize stack on given interface.
         """
 
+        # Set the IPv4 addressing.
+        if ip4_address is not None:
+            ip4_host = Ip4Host(ip4_address)
+            if ip4_gateway:
+                ip4_host.gateway = Ip4Address(ip4_gateway)
+            stack.packet_handler.assign_ip4_address(ip4_host)
+            config.IP4_SUPPORT = True
+            config.IP4_HOST_DHCP = False
+        else:
+            config.IP4_SUPPORT = True
+            config.IP4_HOST_DHCP = True
+
+        # Set the IPv6 addressing.
+        if ip6_address is not None:
+            ip6_host = Ip6Host(ip6_address)
+            if ip6_gateway:
+                ip6_host.gateway = Ip6Address(ip6_gateway)
+            stack.packet_handler.assign_ip6_address(ip6_host)
+            config.IP6_SUPPORT = True
+            config.IP6_LLA_AUTOCONFIG = True
+            config.IP6_GUA_AUTOCONFIG = False
+        else:
+            config.IP6_SUPPORT = True
+            config.IP6_LLA_AUTOCONFIG = True
+            config.IP6_GUA_AUTOCONFIG = True
+
+        # Initialize the TAP interface.
         try:
             self.tap = os.open("/dev/net/tun", os.O_RDWR)
-
         except FileNotFoundError:
             log("stack", "<CRIT>Unable to access '/dev/net/tun' device</>")
             sys.exit(-1)
-
         fcntl.ioctl(
             self.tap,
             TUNSETIFF,
@@ -77,8 +113,8 @@ class TcpIpStack:
         stack.rx_ring.start(self.tap)
         stack.tx_ring.start(self.tap)
         stack.packet_handler.start()
-        stack.packet_handler.assign_ip6_addresses()
-        stack.packet_handler.assign_ip4_addresses()
+        stack.packet_handler.acquire_ip6_addresses()
+        stack.packet_handler.acquire_ip4_addresses()
         stack.packet_handler.log_stack_address_info()
 
     def stop(self) -> None:

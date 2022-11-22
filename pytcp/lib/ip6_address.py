@@ -457,19 +457,13 @@ class Ip6Host(IpHost):
     @gateway.setter
     def gateway(
         self,
-        address: Ip6Address | str | bytes | bytearray | memoryview | int | None,
+        address: Ip6Address | None,
     ) -> None:
         """
         Setter for the '_gateway' attribute.
         """
 
-        if address is None:
-            self._gateway = None
-            return
+        if address is not None and address not in Ip6Network("fe80::/10"):
+            raise Ip6HostGatewayError(address)
 
-        gateway = Ip6Address(address)
-
-        if gateway not in Ip6Network("fe80::/64"):
-            raise Ip6HostGatewayError(gateway)
-
-        self._gateway = gateway
+        self._gateway = address
