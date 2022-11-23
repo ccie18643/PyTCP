@@ -23,12 +23,17 @@
 #                                                                          #
 ############################################################################
 
+# pylint: disable = too-many-instance-attributes
+# pylint: disable = too-many-return-statements
+# pylint: disable = attribute-defined-outside-init
 
-#
-# protocols/arp/fpp.py - Fast Packet Parser support class for ARP protocol
-#
-# ver 2.7
-#
+"""
+Module contains Fast Packet Parser support class for the ARP protocol.
+
+pytcp/protocols/arp/fpp.py
+
+ver 2.7
+"""
 
 
 from __future__ import annotations
@@ -36,7 +41,7 @@ from __future__ import annotations
 import struct
 from typing import TYPE_CHECKING
 
-import pytcp.config as config
+from pytcp import config
 from pytcp.lib.ip4_address import Ip4Address
 from pytcp.lib.mac_address import MacAddress
 from pytcp.protocols.arp.ps import ARP_HEADER_LEN, ARP_OP_REPLY, ARP_OP_REQUEST

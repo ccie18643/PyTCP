@@ -23,12 +23,16 @@
 #                                                                          #
 ############################################################################
 
+# pylint: disable = too-many-instance-attributes
+# pylint: disable = attribute-defined-outside-init
 
-#
-# protocols/ip6.py/fpp - Fast Packet Parser support class for IPv6 protocol
-#
-# ver 2.7
-#
+"""
+Module contains Fast Packet Parser support class for the IPv6 protocol.
+
+pytcp/protocols/ip6.py/fpp
+
+ver 2.7
+"""
 
 
 from __future__ import annotations
@@ -36,7 +40,7 @@ from __future__ import annotations
 import struct
 from typing import TYPE_CHECKING
 
-import pytcp.config as config
+from pytcp import config
 from pytcp.lib.ip6_address import Ip6Address
 from pytcp.protocols.ip6.ps import IP6_HEADER_LEN, IP6_NEXT_TABLE
 

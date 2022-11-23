@@ -24,11 +24,16 @@
 ############################################################################
 
 
-#
-# protocols/icmp4/phtx.py - packet handler for outbound ICMPv4 packets
-#
-# ver 2.7
-#
+# pylint: disable = expression-not-assigned
+# pylint: disable = protected-access
+
+"""
+Module contains packet handler for the outbound ICMPv4 packets
+
+pytcp/protocols/icmp4/phtx.py
+
+ver 2.7
+"""
 
 
 from __future__ import annotations
@@ -80,8 +85,7 @@ def _phtx_icmp4(
         echo_tracker=echo_tracker,
     )
 
-    if __debug__:
-        log("icmp4", f"{icmp4_packet_tx.tracker} - {icmp4_packet_tx}")
+    __debug__ and log("icmp4", f"{icmp4_packet_tx.tracker} - {icmp4_packet_tx}")
 
     if icmp4_type == ICMP4_ECHO_REPLY and icmp4_code == 0:
         self.packet_stats_tx.icmp4__echo_reply__send += 1

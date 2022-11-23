@@ -23,12 +23,16 @@
 #                                                                          #
 ############################################################################
 
+# pylint: disable = expression-not-assigned
+# pylint: disable = consider-using-with
 
-#
-# subsystems/tx_ring.py - module contains class supporting TX operations
-#
-# ver 2.7
-#
+"""
+Module contains class supporting stack interface TX operations.
+
+pytcp/subsystems/tx_ring.py
+
+ver 2.7
+"""
 
 
 from __future__ import annotations
@@ -38,7 +42,7 @@ import threading
 import time
 from typing import TYPE_CHECKING
 
-import pytcp.config as config
+from pytcp import config
 from pytcp.lib.logger import log
 
 if TYPE_CHECKING:
@@ -65,8 +69,7 @@ class TxRing:
         """
         Start Tx ring thread.
         """
-        if __debug__:
-            log("stack", "Starting TX ring")
+        __debug__ and log("stack", "Starting TX ring")
         self._tap = tap
         self._run_thread = True
         threading.Thread(target=self.__thread_transmit).start()
@@ -76,8 +79,7 @@ class TxRing:
         """
         Stop Tx ring thread.
         """
-        if __debug__:
-            log("stack", "Stopping TX ring")
+        __debug__ and log("stack", "Stopping TX ring")
         self._run_thread = False
         time.sleep(0.1)
 
@@ -86,8 +88,7 @@ class TxRing:
         Dequeue packet from TX ring and send it out.
         """
 
-        if __debug__:
-            log("stack", "Started TX ring")
+        __debug__ and log("stack", "Started TX ring")
 
         # Using static frame buffer to avoid dynamic memory allocation
         # for each frame.
@@ -103,45 +104,40 @@ class TxRing:
             packet_tx = self._tx_ring.pop(0)
 
             if (packet_tx_len := len(packet_tx)) > config.TAP_MTU + 14:
-                if __debug__:
-                    log(
-                        "tx-ring",
-                        f"{packet_tx.tracker} - Unable to send frame, frame"
-                        f"len ({packet_tx_len}) > mtu ({config.TAP_MTU + 14})",
-                    )
+                __debug__ and log(
+                    "tx-ring",
+                    f"{packet_tx.tracker} - Unable to send frame, frame"
+                    f"len ({packet_tx_len}) > mtu ({config.TAP_MTU + 14})",
+                )
                 continue
             frame = memoryview(frame_buffer)[:packet_tx_len]
             packet_tx.assemble(frame)
             try:
                 os.write(self._tap, frame)
             except OSError as error:
-                if __debug__:
-                    log(
-                        "tx-ring",
-                        f"{packet_tx.tracker} - <CRIT>Unable to send frame, "
-                        f"OSError: {error}</>",
-                    )
+                __debug__ and log(
+                    "tx-ring",
+                    f"{packet_tx.tracker} - <CRIT>Unable to send frame, "
+                    f"OSError: {error}</>",
+                )
                 continue
 
-            if __debug__:
-                log(
-                    "tx-ring",
-                    f"<B><lr>[TX]</> {packet_tx.tracker}<y>"
-                    f"{packet_tx.tracker.latency}</> - sent frame, "
-                    f"{len(packet_tx)} bytes",
-                )
+            __debug__ and log(
+                "tx-ring",
+                f"<B><lr>[TX]</> {packet_tx.tracker}<y>"
+                f"{packet_tx.tracker.latency}</> - sent frame, "
+                f"{len(packet_tx)} bytes",
+            )
 
-        if __debug__:
-            log("stack", "Stopped TX ring")
+        __debug__ and log("stack", "Stopped TX ring")
 
     def enqueue(self, packet_tx: EtherAssembler) -> None:
         """
         Enqueue outbound packet into TX ring.
         """
         self._tx_ring.append(packet_tx)
-        if __debug__:
-            log(
-                "rx-ring",
-                f"{packet_tx.tracker}, queue len: {len(self._tx_ring)}",
-            )
+        __debug__ and log(
+            "rx-ring",
+            f"{packet_tx.tracker}, queue len: {len(self._tx_ring)}",
+        )
         self._packet_enqueued.release()

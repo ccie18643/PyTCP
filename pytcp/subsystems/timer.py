@@ -23,13 +23,17 @@
 #                                                                          #
 ############################################################################
 
+# pylint: disable = expression-not-assigned
+# pylint: disable = too-many-instance-attributes
+# pylint: disable = too-many-arguments
 
-#
-# subsystems/timer.py - module contains class supporting timer that can be
-# used by other stack components
-#
-# ver 2.7
-#
+"""
+Module contains class supporting timer that can be used by other stack components.
+
+pytcp/subsystems/timer.py
+
+ver 2.7
+"""
 
 
 from __future__ import annotations
@@ -121,8 +125,7 @@ class Timer:
         """
         Start timer thread.
         """
-        if __debug__:
-            log("stack", "Starting timer thread")
+        __debug__ and log("stack", "Starting timer thread")
         self._run_thread = True
         threading.Thread(target=self.__thread_timer).start()
         time.sleep(0.1)
@@ -131,8 +134,7 @@ class Timer:
         """
         Stop timer thread.
         """
-        if __debug__:
-            log("stack", "Stopping timer thread")
+        __debug__ and log("stack", "Stopping timer thread")
         self._run_thread = False
         time.sleep(0.1)
 
@@ -141,8 +143,7 @@ class Timer:
         Thread responsible for executing register methods on every timer tick.
         """
 
-        if __debug__:
-            log("stack", "Started timer thread")
+        __debug__ and log("stack", "Started timer thread")
 
         while self._run_thread:
             time.sleep(0.001)
@@ -161,8 +162,7 @@ class Timer:
             # Cleanup expired methods
             self._tasks = [_ for _ in self._tasks if _.remaining_delay]
 
-        if __debug__:
-            log("stack", "Stopped timer thread")
+        __debug__ and log("stack", "Stopped timer thread")
 
     def register_method(
         self,
@@ -199,6 +199,5 @@ class Timer:
         """
         Check if timer expired.
         """
-        if __debug__:
-            log("timer", f"<r>Active timers: {self._timers}</>")
+        __debug__ and log("timer", f"<r>Active timers: {self._timers}</>")
         return not self._timers.get(name, None)

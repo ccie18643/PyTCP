@@ -23,19 +23,23 @@
 #                                                                          #
 ############################################################################
 
+# pylint: disable = expression-not-assigned
+# pylint: disable = protected-access
 
-#
-# protocols/tcp/phrx.py - packet handler for inbound TCP packets
-#
-# ver 2.7
-#
+"""
+Module contains packet handler for the inbound TCP packets.
+
+pytcp/protocols/tcp/phrx.py
+
+ver 2.7
+"""
 
 
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-import pytcp.lib.stack as stack
+from pytcp.lib import stack
 from pytcp.lib.logger import log
 from pytcp.lib.packet import PacketRx
 from pytcp.protocols.tcp.fpp import TcpParser
@@ -56,15 +60,13 @@ def _phrx_tcp(self: PacketHandler, packet_rx: PacketRx) -> None:
 
     if packet_rx.parse_failed:
         self.packet_stats_rx.tcp__failed_parse__drop += 1
-        if __debug__:
-            log(
-                "tcp",
-                f"{packet_rx.tracker} - <CRIT>{packet_rx.parse_failed}</>",
-            )
+        __debug__ and log(
+            "tcp",
+            f"{packet_rx.tracker} - <CRIT>{packet_rx.parse_failed}</>",
+        )
         return
 
-    if __debug__:
-        log("tcp", f"{packet_rx.tracker} - {packet_rx.tcp}")
+    __debug__ and log("tcp", f"{packet_rx.tracker} - {packet_rx.tcp}")
 
     assert isinstance(
         packet_rx.tcp.data, memoryview
@@ -94,12 +96,11 @@ def _phrx_tcp(self: PacketHandler, packet_rx: PacketRx) -> None:
     # Check if incoming packet matches active TCP socket.
     if tcp_socket := stack.sockets.get(str(packet_rx_md), None):
         self.packet_stats_rx.tcp__socket_match_active__forward_to_socket += 1
-        if __debug__:
-            log(
-                "tcp",
-                f"{packet_rx_md.tracker} - <INFO>TCP packet is part of active "
-                f"socket [{tcp_socket}]</>",
-            )
+        __debug__ and log(
+            "tcp",
+            f"{packet_rx_md.tracker} - <INFO>TCP packet is part of active "
+            f"socket [{tcp_socket}]</>",
+        )
         tcp_socket.process_tcp_packet(packet_rx_md)
         return
 
@@ -117,25 +118,23 @@ def _phrx_tcp(self: PacketHandler, packet_rx: PacketRx) -> None:
                 self.packet_stats_rx.tcp__socket_match_listening__forward_to_socket += (
                     1
                 )
-                if __debug__:
-                    log(
-                        "tcp",
-                        f"{packet_rx_md.tracker} - <INFO>TCP packet matches "
-                        f"listening socket [{tcp_socket}]</>",
-                    )
+                __debug__ and log(
+                    "tcp",
+                    f"{packet_rx_md.tracker} - <INFO>TCP packet matches "
+                    f"listening socket [{tcp_socket}]</>",
+                )
                 tcp_socket.process_tcp_packet(packet_rx_md)
                 return
 
     # In case packet doesn't match any session send RST packet
     # in response to it.
     self.packet_stats_rx.tcp__no_socket_match__respond_rst += 1
-    if __debug__:
-        log(
-            "tcp",
-            f"{packet_rx.tracker} - TCP packet from {packet_rx.ip.src} to "
-            f"closed port {packet_rx.tcp.dport}, responding with TCP RST "
-            "packet",
-        )
+    __debug__ and log(
+        "tcp",
+        f"{packet_rx.tracker} - TCP packet from {packet_rx.ip.src} to "
+        f"closed port {packet_rx.tcp.dport}, responding with TCP RST "
+        "packet",
+    )
     self._phtx_tcp(
         ip_src=packet_rx.ip.dst,
         ip_dst=packet_rx.ip.src,

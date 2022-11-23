@@ -23,12 +23,15 @@
 #                                                                          #
 ############################################################################
 
+# pylint: disable = redefined-outer-name
 
-#
-# examples/icmp_echo_client.py - The 'user space' client for ICMPv4/v6 Echo.
-#
-# ver 2.7
-#
+"""
+The example 'user space' client for ICMPv4/v6 Echo.
+
+examples/icmp_echo_client.py
+
+ver 2.7
+"""
 
 
 from __future__ import annotations
@@ -40,8 +43,8 @@ from datetime import datetime
 
 import click
 
-import pytcp.lib.stack as stack
 from pytcp import TcpIpStack
+from pytcp.lib import stack
 from pytcp.lib.ip4_address import Ip4Address
 from pytcp.lib.ip6_address import Ip6Address
 from pytcp.lib.ip_helper import str_to_ip
@@ -160,4 +163,4 @@ def cli(*, interface: str, remote_ip_address: str) -> None:
 
 
 if __name__ == "__main__":
-    cli()
+    cli()  # pylint: disable = missing-kwoa

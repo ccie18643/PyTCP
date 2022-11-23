@@ -23,13 +23,17 @@
 #                                                                          #
 ############################################################################
 
+# pylint: disable = too-many-instance-attributes
+# pylint: disable = too-many-arguments
+# pylint: disable = too-many-locals
 
-#
-# protocols/tcp/metadata.py - module contains interface class
-# for FPP -> TCP Socket communication
-#
-# cer 2.7
-#
+"""
+Module contains interface class for the FPP -> TCP Socket communication.
+
+pytcp/protocols/tcp/metadata.py
+
+ver 2.7
+"""
 
 
 from __future__ import annotations

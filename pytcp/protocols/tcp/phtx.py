@@ -24,11 +24,18 @@
 ############################################################################
 
 
-#
-# protocols/tcp/phtx.py - packet handler for outbound TCP packets
-#
-# ver 2.7
-#
+# pylint: disable = expression-not-assigned
+# pylint: disable = too-many-locals
+# pylint: disable = too-many-branches
+# pylint: disable = protected-access
+
+"""
+Module contains packet handler for the outbound TCP packets.
+
+pytcp/protocols/tcp/phtx.py
+
+ver 2.7
+"""
 
 
 from __future__ import annotations
@@ -153,8 +160,7 @@ def _phtx_tcp(
     if tcp_flag_fin:
         self.packet_stats_tx.tcp__flag_fin += 1
 
-    if __debug__:
-        log("tcp", f"{tcp_packet_tx.tracker} - {tcp_packet_tx}")
+    __debug__ and log("tcp", f"{tcp_packet_tx.tracker} - {tcp_packet_tx}")
 
     if ip_src.is_ip6 and ip_dst.is_ip6:
         self.packet_stats_tx.tcp__send += 1

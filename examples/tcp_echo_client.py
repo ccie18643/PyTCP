@@ -24,12 +24,16 @@
 ############################################################################
 
 
-#
-# examples/tcp_echo_client.py - The 'user space' client for TCP echo,
-# it activelly connects to TCP Echo service and sends messages.
-#
-# ver 2.7
-#
+# pylint: disable = too-many-instance-attributes
+
+"""
+The example 'user space' client for TCP echo. It activelly connects to
+TCP Echo service and sends messages.
+
+examples/tcp_echo_client.py
+
+ver 2.7
+"""
 
 
 from __future__ import annotations
@@ -39,8 +43,8 @@ import time
 
 import click
 
-import pytcp.lib.socket as socket
 from pytcp import TcpIpStack
+from pytcp.lib import socket
 from pytcp.lib.ip_helper import ip_version
 
 
@@ -194,4 +198,4 @@ def cli(*, interface: str, remote_ip_address: str) -> None:
 
 
 if __name__ == "__main__":
-    cli()
+    cli()  # pylint: disable = missing-kwoa

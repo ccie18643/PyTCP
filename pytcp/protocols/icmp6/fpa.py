@@ -23,13 +23,19 @@
 #                                                                          #
 ############################################################################
 
+# pylint: disable = too-many-instance-attributes
+# pylint: disable = too-many-locals
+# pylint: disable = too-many-return-statements
+# pylint: disable = too-many-arguments
+# pylint: disable = redefined-builtin
 
-#
-# protocols/icmp6/fpa.py - Fast Packet Assembler support class
-# for ICMPv6 protocol
-#
-# ver 2.7
-#
+"""
+Module contains Fast Packet Assembler support class for the ICMPv6 protocol.
+
+pytcp/protocols/icmp6/fpa.py
+
+ver 2.7
+"""
 
 
 from __future__ import annotations
@@ -459,7 +465,7 @@ class Icmp6Assembler:
 
         if self._type == ICMP6_MLD2_REPORT and self._code == 0:
             struct.pack_into(
-                f"! BBH HH {sum([len(_) for _ in self._mlr2_multicast_address_record])}s",
+                f"! BBH HH {sum((len(_) for _ in self._mlr2_multicast_address_record))}s",
                 frame,
                 0,
                 self._type,

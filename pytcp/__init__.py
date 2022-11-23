@@ -24,11 +24,13 @@
 ############################################################################
 
 
-#
-# __init__.py
-#
-# ver 2.7
-#
+"""
+Module contains the main PyTCP stack class.
+
+pytcp/__init__.py
+
+ver 2.7
+"""
 
 
 import fcntl
@@ -36,8 +38,8 @@ import os
 import struct
 import sys
 
-import pytcp.config as config
-import pytcp.lib.stack as stack
+from pytcp import config
+from pytcp.lib import stack
 from pytcp.lib.ip4_address import Ip4Address, Ip4Host
 from pytcp.lib.ip6_address import Ip6Address, Ip6Host
 from pytcp.lib.logger import log

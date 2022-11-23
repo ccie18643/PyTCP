@@ -23,13 +23,16 @@
 #                                                                          #
 ############################################################################
 
+# pylint: disable = expression-not-assigned
+# pylint: disable = protected-access
 
-#
-# ip6_ext_frag/phrx.py - packet handler for inbound IPv6 fragment
-# extension header
-#
-# ver 2.6
-#
+"""
+Module contains packet handler for inbound the IPv6 fragment extension header.
+
+pytcp/protocols/ip6_ext_frag/phrx.py
+
+ver 2.7
+"""
 
 
 from __future__ import annotations
@@ -38,7 +41,7 @@ import struct
 from time import time
 from typing import TYPE_CHECKING
 
-import pytcp.config as config
+from pytcp import config
 from pytcp.lib.logger import log
 from pytcp.lib.packet import PacketRx
 from pytcp.protocols.ip6_ext_frag.fpp import Ip6ExtFragParser
@@ -62,14 +65,13 @@ def _defragment_ip6_packet(
         < config.IP6_FRAG_FLOW_TIMEOUT
     }
 
-    if __debug__:
-        log(
-            "ip6",
-            f"{packet_rx.tracker} - IPv6 packet fragment, "
-            f"offset {packet_rx.ip6_ext_frag.offset}, "
-            f"dlen {packet_rx.ip6_ext_frag.dlen}"
-            f"{'' if packet_rx.ip6_ext_frag.flag_mf else ', last'}",
-        )
+    __debug__ and log(
+        "ip6",
+        f"{packet_rx.tracker} - IPv6 packet fragment, "
+        f"offset {packet_rx.ip6_ext_frag.offset}, "
+        f"dlen {packet_rx.ip6_ext_frag.dlen}"
+        f"{'' if packet_rx.ip6_ext_frag.flag_mf else ', last'}",
+    )
 
     flow_id = (packet_rx.ip6.src, packet_rx.ip6.dst, packet_rx.ip6_ext_frag.id)
 
@@ -113,12 +115,11 @@ def _defragment_ip6_packet(
     struct.pack_into("!H", header, 4, len(data))
     header[6] = packet_rx.ip6_ext_frag.next
     packet_rx = PacketRx(bytes(header) + data)
-    if __debug__:
-        log(
-            "ip6",
-            f"{packet_rx.tracker} - Defragmented IPv6 packet, "
-            f"dlen {len(data)} bytes",
-        )
+    __debug__ and log(
+        "ip6",
+        f"{packet_rx.tracker} - Defragmented IPv6 packet, "
+        f"dlen {len(data)} bytes",
+    )
     return packet_rx
 
 
@@ -133,15 +134,13 @@ def _phrx_ip6_ext_frag(self: PacketHandler, packet_rx: PacketRx) -> None:
 
     if packet_rx.parse_failed:
         self.packet_stats_rx.ip6_ext_frag__failed_parse += 1
-        if __debug__:
-            log(
-                "ip6",
-                f"{packet_rx.tracker} - <CRIT>{packet_rx.parse_failed}</>",
-            )
+        __debug__ and log(
+            "ip6",
+            f"{packet_rx.tracker} - <CRIT>{packet_rx.parse_failed}</>",
+        )
         return
 
-    if __debug__:
-        log("ip6", f"{packet_rx.tracker} - {packet_rx.ip6_ext_frag}")
+    __debug__ and log("ip6", f"{packet_rx.tracker} - {packet_rx.ip6_ext_frag}")
 
     if defragmented_packet_rx := self._defragment_ip6_packet(packet_rx):
         self.packet_stats_rx.ip6_ext_frag__defrag += 1

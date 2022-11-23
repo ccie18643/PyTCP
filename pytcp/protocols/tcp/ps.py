@@ -23,12 +23,13 @@
 #                                                                          #
 ############################################################################
 
+"""
+Module contains packet structure information for the TCP protccol.
 
-#
-# protocols/tcp/ps.py - protocol support for TCP
-#
-# ver 2.7
-#
+pytcp/protocols/tcp/ps.py
+
+ver 2.7
+"""
 
 
 from __future__ import annotations

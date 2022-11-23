@@ -23,19 +23,23 @@
 #                                                                          #
 ############################################################################
 
+# pylint: disable = protected-access
+# pylint: disable = expression-not-assigned
 
-#
-# protocols/ether/phrx.py - packet handler for inbound Ethernet packets
-#
-# ver 2.7
-#
+"""
+Module contains packet handler for the inbound Ethernet packets.
+
+pytcp/protocols/ether/phrx.py
+
+ver 2.7
+"""
 
 
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-import pytcp.config as config
+from pytcp import config
 from pytcp.lib.logger import log
 from pytcp.protocols.ether.fpp import EtherParser
 from pytcp.protocols.ether.ps import (
@@ -60,15 +64,13 @@ def _phrx_ether(self: PacketHandler, packet_rx: PacketRx) -> None:
 
     if packet_rx.parse_failed:
         self.packet_stats_rx.ether__failed_parse__drop += 1
-        if __debug__:
-            log(
-                "ether",
-                f"{packet_rx.tracker} - <CRIT>{packet_rx.parse_failed}</>",
-            )
+        __debug__ and log(
+            "ether",
+            f"{packet_rx.tracker} - <CRIT>{packet_rx.parse_failed}</>",
+        )
         return
 
-    if __debug__:
-        log("ether", f"{packet_rx.tracker} - {packet_rx.ether}")
+    __debug__ and log("ether", f"{packet_rx.tracker} - {packet_rx.ether}")
 
     # Check if received packet matches any of stack MAC addresses
     if packet_rx.ether.dst not in {
@@ -77,12 +79,11 @@ def _phrx_ether(self: PacketHandler, packet_rx: PacketRx) -> None:
         self.mac_broadcast,
     }:
         self.packet_stats_rx.ether__dst_unknown__drop += 1
-        if __debug__:
-            log(
-                "ether",
-                f"{packet_rx.tracker} - Ethernet packet not destined for this "
-                "stack, dropping",
-            )
+        __debug__ and log(
+            "ether",
+            f"{packet_rx.tracker} - Ethernet packet not destined for this "
+            "stack, dropping",
+        )
         return
 
     if packet_rx.ether.dst == self.mac_unicast:

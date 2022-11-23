@@ -23,15 +23,22 @@
 #                                                                          #
 ############################################################################
 
+# pylint: disable = too-many-lines
+# pylint: disable = too-many-instance-attributes
+# pylint: disable = too-many-locals
+# pylint: disable = too-many-branches
+# pylint: disable = too-many-arguments
+# pylint: disable = too-many-statements
 
-#
-# protocols/dhcp4/ps.py - Protocol support library for DHCPv4.
-#
-# This library uses old (pre-FPP) format and needs to be revritten
-# at some point.
-#
-# ver 2.7
-#
+"""
+Module contains protocol support library for the DHCPv4 protocol.
+This library uses old (pre-FPP) format and needs to be revritten
+at some point.
+
+pytcp/protocols/dhcp4/ps.py
+
+ver 2.7
+"""
 
 
 from __future__ import annotations

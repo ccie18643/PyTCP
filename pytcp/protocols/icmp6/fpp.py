@@ -23,12 +23,19 @@
 #                                                                          #
 ############################################################################
 
+# pylint: disable = too-many-instance-attributes
+# pylint: disable = too-many-return-statements
+# pylint: disable = too-many-branches
+# pylint: disable = too-many-public-methods
+# pylint: disable = attribute-defined-outside-init
 
-#
-# protocols/icmp6/fpp.py - Fast Packet Parse support class for ICMPv6 protocol
-#
-# ver 2.7
-#
+"""
+Module contains Fast Packet Parse support class for the ICMPv6 protocol.
+
+pytcp/protocols/icmp6/fpp.py
+
+ver 2.7
+"""
 
 
 from __future__ import annotations
@@ -36,7 +43,7 @@ from __future__ import annotations
 import struct
 from typing import TYPE_CHECKING
 
-import pytcp.config as config
+from pytcp import config
 from pytcp.lib.ip6_address import Ip6Address, Ip6Mask, Ip6Network
 from pytcp.lib.ip_helper import inet_cksum
 from pytcp.lib.mac_address import MacAddress

@@ -23,12 +23,16 @@
 #                                                                          #
 ############################################################################
 
+# pylint: disable = too-many-instance-attributes
+# pylint: disable = too-many-locals
 
-#
-# protocols/tcp/fpa.py - Fast Packet Assembler support class for TCP protocol
-#
-# ver 2.7
-#
+"""
+Module contains Fast Packet Assembler support class for the TCP protocol.
+
+pytcp/protocols/tcp/fpa.py
+
+ver 2.7
+"""
 
 
 from __future__ import annotations

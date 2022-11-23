@@ -24,11 +24,13 @@
 ############################################################################
 
 
-#
-# misc/ip_helper.py - module contains helper functions
-#
-# ver 2.7
-#
+"""
+Module contains helper functions for IP related operations.
+
+pycp/misc/ip_helper.py
+
+ver 2.7
+"""
 
 
 from __future__ import annotations
@@ -36,7 +38,7 @@ from __future__ import annotations
 import struct
 from typing import TYPE_CHECKING
 
-import pytcp.lib.stack as stack
+from pytcp.lib import stack
 from pytcp.lib.ip4_address import Ip4Address, Ip4AddressFormatError
 from pytcp.lib.ip6_address import Ip6Address, Ip6AddressFormatError
 
@@ -95,9 +97,7 @@ def pick_local_ip_address(
     Pick appropriate source IP address based on provided
     destination IP address.
     """
-    assert isinstance(remote_ip_address, Ip6Address) or isinstance(
-        remote_ip_address, Ip4Address
-    )
+    assert isinstance(remote_ip_address, (Ip6Address, Ip4Address))
     if isinstance(remote_ip_address, Ip6Address):
         return pick_local_ip6_address(remote_ip_address)
     return pick_local_ip4_address(remote_ip_address)

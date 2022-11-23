@@ -23,12 +23,17 @@
 #                                                                          #
 ############################################################################
 
+# pylint: disable = line-too-long
+# pylint: disable = too-many-instance-attributes
+# pylint: disable = attribute-defined-outside-init
 
-#
-# protocols/icmp4/fpp.py - Fast Packet Parser support class for ICMPv4 protocol
-#
-# ver 2.7
-#
+"""
+Module contains Fast Packet Parser support class for the ICMPv4 protocol.
+
+pytcp/protocols/icmp4/fpp.py
+
+ver 2.7
+"""
 
 
 from __future__ import annotations
@@ -36,7 +41,7 @@ from __future__ import annotations
 import struct
 from typing import TYPE_CHECKING
 
-import pytcp.config as config
+from pytcp import config
 from pytcp.lib.ip_helper import inet_cksum
 from pytcp.protocols.icmp4.ps import (
     ICMP4_ECHO_REPLY,

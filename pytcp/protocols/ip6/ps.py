@@ -24,11 +24,13 @@
 ############################################################################
 
 
-#
-# protocols/ip6/ps.py - protocol support for IPv6
-#
-# ver 2.7
-#
+"""
+Module contains packet structure information for the IPv6 protccol.
+
+pytcp/protocols/ip6/ps.py
+
+ver 2.7
+"""
 
 
 from __future__ import annotations

@@ -24,11 +24,13 @@
 ############################################################################
 
 
-#
-# protocols/udp/fpa.py - Fast Packet Assembler support class for UDP protocol
-#
-# ver 2.7
-#
+"""
+Module contains Fast Packet Assembler support class for the UDP protocol.
+
+pytcp/protocols/udp/fpa.py
+
+ver 2.7
+"""
 
 
 from __future__ import annotations

@@ -23,12 +23,16 @@
 #                                                                          #
 ############################################################################
 
+# pylint: disable = expression-not-assigned
+# pylint: disable = protected-access
 
-#
-# protocols/udp/phtx.py - protocol support for outbound UDP packets
-#
-# ver 2.7
-#
+"""
+Module contains protocol support for the outbound UDP packets.
+
+pytcp/protocols/udp/phtx.py
+
+ver 2.7
+"""
 
 
 from __future__ import annotations
@@ -70,8 +74,7 @@ def _phtx_udp(
         echo_tracker=echo_tracker,
     )
 
-    if __debug__:
-        log("udp", f"{udp_packet_tx.tracker} - {udp_packet_tx}")
+    __debug__ and log("udp", f"{udp_packet_tx.tracker} - {udp_packet_tx}")
 
     if ip_src.is_ip6 and ip_dst.is_ip6:
         self.packet_stats_tx.udp__send += 1

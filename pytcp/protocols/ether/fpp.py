@@ -23,13 +23,16 @@
 #                                                                          #
 ############################################################################
 
+# pylint: disable = too-many-instance-attributes
+# pylint: disable = attribute-defined-outside-init
 
-#
-# protocols/ether/fpp.py - Fast Packet Parser support class
-# for Ethernet protocol
-#
-# ver 2.7
-#
+"""
+Module contains Fast Packet Parser support class for the Ethernet protocol.
+
+pytcp/protocols/ether/fpp.py
+
+ver 2.7
+"""
 
 
 from __future__ import annotations
@@ -37,7 +40,7 @@ from __future__ import annotations
 import struct
 from typing import TYPE_CHECKING
 
-import pytcp.config as config
+from pytcp import config
 from pytcp.lib.mac_address import MacAddress
 from pytcp.protocols.ether.ps import (
     ETHER_HEADER_LEN,

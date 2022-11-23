@@ -23,12 +23,19 @@
 #                                                                          #
 ############################################################################
 
+# pylint: disable=attribute-defined-outside-init
+# pylint: disable=too-many-instance-attributes
+# pylint: disable=too-many-return-statements
+# pylint: disable=too-many-public-methods
+# pylint: disable=invalid-name
 
-#
-# protocols/ip4/fpp.py - Fast Packet Parser support class for IPv4 protocol
-#
-# ver 2.7
-#
+"""
+Module contains Fast Packet Parser support class for the IPv4 protocol.
+
+pytcp/protocols/ip4/fpp.py
+
+ver 2.7
+"""
 
 
 from __future__ import annotations
@@ -36,7 +43,7 @@ from __future__ import annotations
 import struct
 from typing import TYPE_CHECKING
 
-import pytcp.config as config
+from pytcp import config
 from pytcp.lib.ip4_address import Ip4Address
 from pytcp.lib.ip_helper import inet_cksum
 from pytcp.protocols.ip4.ps import (
@@ -230,7 +237,8 @@ class Ip4Parser:
                     self._cache__options.append(Ip4OptNop())
                     optr += IP4_OPT_NOP_LEN
                     continue
-                # typing: Had to put single mapping (0: lambda _: None) into dict to suppress typng error
+                # typing: Had to put single mapping (0: lambda _: None)
+                # into dict to suppress typng error
                 self._cache__options.append(
                     {0: lambda _: None}.get(self._frame[optr], Ip4OptUnk)(
                         self._frame[optr:]

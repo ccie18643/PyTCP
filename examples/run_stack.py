@@ -24,11 +24,14 @@
 ############################################################################
 
 
-#
-# examples/run_stack.py - Run stack without any 'user space' services
-#
-# ver 2.7
-#
+"""
+Run stack without any 'user space' services. Stack should only respond to
+ping packets.
+
+examples/run_stack.py
+
+ver 2.7
+"""
 
 import time
 
@@ -43,7 +46,7 @@ from pytcp import TcpIpStack
 @click.option("--ip6-gateway", default=None)
 @click.option("--ip4-address", default=None)
 @click.option("--ip4-gateway", default=None)
-def main(
+def cli(
     *,
     interface: str,
     ip6_address: str | None,
@@ -73,4 +76,4 @@ def main(
 
 
 if __name__ == "__main__":
-    main()
+    cli()  # pylint: disable = missing-kwoa

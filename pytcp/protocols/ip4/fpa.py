@@ -23,12 +23,16 @@
 #                                                                          #
 ############################################################################
 
+# pylint: disable = too-many-instance-attributes
+# pylint: disable = redefined-builtin
 
-#
-# protocols/ip4/fpa.py - Fast Packet Assembler support class for IPv4 protocol
-#
-# ver 2.7
-#
+"""
+Module contain Fast Packet Assembler support class for the IPv4 protocol.
+
+pytcp/protocols/ip4/fpa.py
+
+ver 2.7
+"""
 
 
 from __future__ import annotations
@@ -36,7 +40,7 @@ from __future__ import annotations
 import struct
 from typing import TYPE_CHECKING
 
-import pytcp.config as config
+from pytcp import config
 from pytcp.lib.ip4_address import Ip4Address
 from pytcp.lib.ip_helper import inet_cksum
 from pytcp.lib.tracker import Tracker

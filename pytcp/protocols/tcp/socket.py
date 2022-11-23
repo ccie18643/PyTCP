@@ -23,13 +23,17 @@
 #                                                                          #
 ############################################################################
 
+# pylint: disable = expression-not-assigned
+# pylint: disable = too-many-instance-attributes
+# pylint: disable = fixme
 
-#
-# protocols/tcp/socket.py - module contains BSD like socket interface
-# for the stack
-#
-# ver 2.7
-#
+"""
+Module contains BSD like socket interface for the stack.
+
+pytcp/protocols/tcp/socket.py
+
+ver 2.7
+"""
 
 
 from __future__ import annotations
@@ -37,7 +41,7 @@ from __future__ import annotations
 import threading
 from typing import TYPE_CHECKING
 
-import pytcp.lib.stack as stack
+from pytcp.lib import stack
 from pytcp.lib.ip4_address import Ip4Address, Ip4AddressFormatError
 from pytcp.lib.ip6_address import Ip6Address, Ip6AddressFormatError
 from pytcp.lib.logger import log
@@ -99,8 +103,7 @@ class TcpSocket(Socket):
             self._remote_port = 0
             self._tcp_session = None
 
-        if __debug__:
-            log("socket", f"<g>[{self}]</> - Create socket")
+        __debug__ and log("socket", f"<g>[{self}]</> - Create socket")
 
     @property
     def state(self) -> FsmState:
@@ -152,11 +155,11 @@ class TcpSocket(Socket):
                         "[Errno 99] Cannot assign requested address - "
                         "[Local IP address not owned by stack]"
                     )
-            except Ip6AddressFormatError:
+            except Ip6AddressFormatError as error:
                 raise gaierror(
                     "[Errno -2] Name or service not known - "
                     "[Malformed local IP address]"
-                )
+                ) from error
 
         if self._family is AF_INET4:
             try:
@@ -167,11 +170,11 @@ class TcpSocket(Socket):
                         "[Errno 99] Cannot assign requested address - "
                         "[Local IP address not owned by stack]"
                     )
-            except Ip4AddressFormatError:
+            except Ip4AddressFormatError as error:
                 raise gaierror(
                     "[Errno -2] Name or service not known - "
                     "[Malformed local IP address]"
-                )
+                ) from error
 
         # Sanity check on local port number
         if address[1] not in range(0, 65536):
@@ -195,8 +198,7 @@ class TcpSocket(Socket):
         self._local_port = local_port
         stack.sockets[str(self)] = self
 
-        if __debug__:
-            log("socket", f"<g>[{self}]</> - Bound socket")
+        __debug__ and log("socket", f"<g>[{self}]</> - Bound socket")
 
     def connect(self, address: tuple[str, int]) -> None:
         """
@@ -239,8 +241,9 @@ class TcpSocket(Socket):
             socket=self,
         )
 
-        if __debug__:
-            log("socket", f"<g>[{self}]</> - Socket attempting connection")
+        __debug__ and log(
+            "socket", f"<g>[{self}]</> - Socket attempting connection"
+        )
 
         try:
             self._tcp_session.connect()
@@ -249,15 +252,14 @@ class TcpSocket(Socket):
                 raise ConnectionRefusedError(
                     "[Errno 111] Connection refused - "
                     "[Received RST packet from remote host]"
-                )
+                ) from error
             if str(error) == "Connection timeout":
                 raise TimeoutError(
                     "[Errno 110] Connection timed out - "
                     "[No valid response received from remote host]"
-                )
+                ) from error
 
-        if __debug__:
-            log("socket", f"<g>[{self}]</> - Bound")
+        __debug__ and log("socket", f"<g>[{self}]</> - Bound")
 
     def listen(self) -> None:
         """
@@ -272,12 +274,11 @@ class TcpSocket(Socket):
             socket=self,
         )
 
-        if __debug__:
-            log(
-                "socket",
-                f"<g>[{self}]</> - Socket starting to listen for inbound "
-                "connections",
-            )
+        __debug__ and log(
+            "socket",
+            f"<g>[{self}]</> - Socket starting to listen for inbound "
+            "connections",
+        )
 
         stack.sockets[str(self)] = self
         self._tcp_session.listen()
@@ -288,18 +289,18 @@ class TcpSocket(Socket):
         it's socket.
         """
 
-        if __debug__:
-            log("socket", f"<g>[{self}]</> - Waiting for inbound connection")
+        __debug__ and log(
+            "socket", f"<g>[{self}]</> - Waiting for inbound connection"
+        )
 
         self._event_tcp_session_established.acquire()
         socket = self._tcp_accept.pop(0)
 
-        if __debug__:
-            log(
-                "socket",
-                f"<g>[{self}]</> - Socket accepted connection from "
-                f"{(str(socket.remote_ip_address), socket.remote_port)}",
-            )
+        __debug__ and log(
+            "socket",
+            f"<g>[{self}]</> - Socket accepted connection from "
+            f"{(str(socket.remote_ip_address), socket.remote_port)}",
+        )
 
         return socket, (str(socket.remote_ip_address), socket.remote_port)
 
@@ -318,13 +319,14 @@ class TcpSocket(Socket):
         try:
             bytes_sent = self._tcp_session.send(data)
         except TcpSessionError as error:
-            raise BrokenPipeError(f"[Errno 32] Broken pipe - [{error}]")
+            raise BrokenPipeError(
+                f"[Errno 32] Broken pipe - [{error}]"
+            ) from error
 
-        if __debug__:
-            log(
-                "socket",
-                f"<g>[{self}]</> - Sent data segment, len {bytes_sent}",
-            )
+        __debug__ and log(
+            "socket",
+            f"<g>[{self}]</> - Sent data segment, len {bytes_sent}",
+        )
         return bytes_sent
 
     def recv(
@@ -339,18 +341,16 @@ class TcpSocket(Socket):
         assert self._tcp_session is not None
 
         if data_rx := self._tcp_session.receive(bufsize):
-            if __debug__:
-                log(
-                    "socket",
-                    f"<g>[{self}]</> - Received {len(data_rx)} bytes of data",
-                )
+            __debug__ and log(
+                "socket",
+                f"<g>[{self}]</> - Received {len(data_rx)} bytes of data",
+            )
         else:
-            if __debug__:
-                log(
-                    "socket",
-                    f"<g>[{self}]</> - Received empty data byte string, remote "
-                    "end closed connection",
-                )
+            __debug__ and log(
+                "socket",
+                f"<g>[{self}]</> - Received empty data byte string, remote "
+                "end closed connection",
+            )
 
         return data_rx
 
@@ -360,8 +360,7 @@ class TcpSocket(Socket):
         """
         assert self._tcp_session is not None
         self._tcp_session.close()
-        if __debug__:
-            log("socket", f"<g>[{self}]</> - Closed socket")
+        __debug__ and log("socket", f"<g>[{self}]</> - Closed socket")
 
     def process_tcp_packet(self, packet_rx_md: TcpMetadata) -> None:
         """

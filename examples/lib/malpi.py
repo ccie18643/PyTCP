@@ -24,11 +24,13 @@
 ############################################################################
 
 
-#
-# examples/lib/malpi.py - Module contains test monkeys used by various services.
-#
-# ver 2.7
-#
+"""
+Module contains test monkeys used on various occasions.
+
+examples/lib/malpi.py
+
+ver 2.7
+"""
 
 
 from __future__ import annotations

@@ -24,11 +24,13 @@
 ############################################################################
 
 
-#
-# lib/logger.py - module contains methods supporting logging
-#
-# ver 2.7
-#
+"""
+Module contains methods supporting logging.
+
+pytcp/lib/logger.py
+
+ver 2.7
+"""
 
 
 from __future__ import annotations
@@ -36,7 +38,7 @@ from __future__ import annotations
 import inspect
 import time
 
-import pytcp.config as config
+from pytcp import config
 
 STYLES = {
     "</>": "\33[0m",
@@ -64,7 +66,7 @@ STYLES = {
 START_TIME = time.time()
 
 
-def log(channel: str, message: str, inspect_depth: int = 1) -> None:
+def log(channel: str, message: str, inspect_depth: int = 1) -> bool:
     """
     Log message if channel and severity match configured values.
     """
@@ -86,7 +88,11 @@ def log(channel: str, message: str, inspect_depth: int = 1) -> None:
                 f"<b>{channel.upper():7}</> | {message}"
             )
 
-        for key in STYLES.keys():
-            output = output.replace(key, STYLES[key])
+        for key, value in STYLES.items():
+            output = output.replace(key, value)
 
         print(output)
+
+        return True
+
+    return False

@@ -24,12 +24,13 @@
 ############################################################################
 
 
-#
-# protocols/ether/fpa.py - Fast Packet Assembler support class
-# for Ethernet protocol
-#
-# ver 2.7
-#
+"""
+Module contains Fast Packet Assembler support class for the Ethernet protocol.
+
+pytcp/protocols/ether/fpa.py
+
+ver 2.7
+"""
 
 
 from __future__ import annotations
@@ -82,9 +83,13 @@ class EtherAssembler:
             ETHER_TYPE_RAW,
         }, f"{carried_packet.ether_type=}"
 
-        self._carried_packet: ArpAssembler | Ip4Assembler | Ip4FragAssembler | Ip6Assembler | RawAssembler = (
-            carried_packet
-        )
+        self._carried_packet: (
+            ArpAssembler
+            | Ip4Assembler
+            | Ip4FragAssembler
+            | Ip6Assembler
+            | RawAssembler
+        ) = carried_packet
         self._tracker: Tracker = self._carried_packet.tracker
         self._dst: MacAddress = dst
         self._src: MacAddress = src

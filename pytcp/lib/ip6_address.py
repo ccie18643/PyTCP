@@ -23,12 +23,15 @@
 #                                                                          #
 ############################################################################
 
+# pylint: disable = missing-class-docstring
 
-#
-# lib/ip6_address.py - module contains IPv6 address manipulation classes
-#
-# ver 2.7
-#
+"""
+Module contains IPv6 address manipulation classes.
+
+pytcp/lib/ip6_address.py
+
+ver 2.7
+"""
 
 
 from __future__ import annotations
@@ -103,23 +106,21 @@ class Ip6Address(IpAddress):
                 self._address = address
                 return
 
-        if (
-            isinstance(address, memoryview)
-            or isinstance(address, bytes)
-            or isinstance(address, bytearray)
-        ):
+        if isinstance(address, (memoryview, bytes, bytearray)):
             if len(address) == 16:
-                v1, v2, v3, v4 = struct.unpack("!LLLL", address)
-                self._address = (v1 << 96) + (v2 << 64) + (v3 << 32) + v4
+                v_1, v_2, v_3, v_4 = struct.unpack("!LLLL", address)
+                self._address = (v_1 << 96) + (v_2 << 64) + (v_3 << 32) + v_4
                 return
 
         if isinstance(address, str):
             if re.search(IP6_REGEX, address):
                 try:
-                    v1, v2, v3, v4 = struct.unpack(
+                    v_1, v_2, v_3, v_4 = struct.unpack(
                         "!LLLL", socket.inet_pton(socket.AF_INET6, address)
                     )
-                    self._address = (v1 << 96) + (v2 << 64) + (v3 << 32) + v4
+                    self._address = (
+                        (v_1 << 96) + (v_2 << 64) + (v_3 << 32) + v_4
+                    )
                     return
                 except OSError:
                     pass
@@ -261,14 +262,10 @@ class Ip6Mask(IpMask):
                 if _validate_bits():
                     return
 
-        if (
-            isinstance(mask, memoryview)
-            or isinstance(mask, bytes)
-            or isinstance(mask, bytearray)
-        ):
+        if isinstance(mask, (memoryview, bytes, bytearray)):
             if len(mask) == 16:
-                v1, v2, v3, v4 = struct.unpack("!LLLL", mask)
-                self._mask = (v1 << 96) + (v2 << 64) + (v3 << 32) + v4
+                v_1, v_2, v_3, v_4 = struct.unpack("!LLLL", mask)
+                self._mask = (v_1 << 96) + (v_2 << 64) + (v_3 << 32) + v_4
                 if _validate_bits():
                     return
 
@@ -419,7 +416,7 @@ class Ip6Host(IpHost):
 
         if isinstance(host, str):
             try:
-                address, mask = host.split("/")
+                address, _ = host.split("/")
                 self._address = Ip6Address(address)
                 self._network = Ip6Network(host)
                 return

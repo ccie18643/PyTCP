@@ -23,12 +23,16 @@
 #                                                                          #
 ############################################################################
 
+# pylint: disable = expression-not-assigned
+# pylint: disable = consider-using-with
 
-#
-# subsystems/rx_ring.py - module contains class supporting RX operations
-#
-# ver 2.7
-#
+"""
+Module contains class supporting stack interface RX operations.
+
+pytcp/subsystems/rx_ring.py
+
+ver 2.7
+"""
 
 
 from __future__ import annotations
@@ -64,8 +68,7 @@ class RxRing:
         """
         Start Rx ring thread.
         """
-        if __debug__:
-            log("stack", "Starting RX ring")
+        __debug__ and log("stack", "Starting RX ring")
         self._run_thread = True
         self._tap = tap
         threading.Thread(target=self.__thread_receive).start()
@@ -75,8 +78,7 @@ class RxRing:
         """
         Stop Rx ring thread.
         """
-        if __debug__:
-            log("stack", "Stopping RX ring")
+        __debug__ and log("stack", "Stopping RX ring")
         self._run_thread = False
         time.sleep(0.1)
 
@@ -85,8 +87,7 @@ class RxRing:
         Thread responsible for receiving and enqueuing incoming packets.
         """
 
-        if __debug__:
-            log("stack", "Started RX ring")
+        __debug__ and log("stack", "Started RX ring")
 
         while self._run_thread:
             # Need to use select here so the we ar enot blocking on the read
@@ -96,17 +97,15 @@ class RxRing:
                 continue
 
             packet_rx = PacketRx(os.read(self._tap, 2048))
-            if __debug__:
-                log(
-                    "rx-ring",
-                    f"<B><lg>[RX]</> {packet_rx.tracker} - received frame, "
-                    f"{len(packet_rx.frame)} bytes",
-                )
+            __debug__ and log(
+                "rx-ring",
+                f"<B><lg>[RX]</> {packet_rx.tracker} - received frame, "
+                f"{len(packet_rx.frame)} bytes",
+            )
             self._rx_ring.append(packet_rx)
             self._packet_enqueued.release()
 
-        if __debug__:
-            log("stack", "Stopped RX ring")
+        __debug__ and log("stack", "Stopped RX ring")
 
     def dequeue(self) -> Optional[PacketRx]:
         """

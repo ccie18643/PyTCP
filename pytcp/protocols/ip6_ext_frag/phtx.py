@@ -23,19 +23,23 @@
 #                                                                          #
 ############################################################################
 
+# pylint: disable = expression-not-assigned
+# pylint: disable = protected-access
 
-#
-# ip6_ext_frag/phtx.py - packet handler for outbound IPv6 fragment extension header
-#
-# ver 2.7
-#
+"""
+Module contains packet handler for the outbound IPv6 fragment extension header.
+
+pytcp/protocols/ip6_ext_frag/phtx.py
+
+ver 2.7
+"""
 
 
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-import pytcp.config as config
+from pytcp import config
 from pytcp.lib.logger import log
 from pytcp.lib.tx_status import TxStatus
 from pytcp.protocols.ip6.ps import IP6_HEADER_LEN
@@ -73,8 +77,9 @@ def _phtx_ip6_ext_frag(
             id=self.ip6_id,
             data=data_frag,
         )
-        if __debug__:
-            log("ip6", f"{ip6_ext_frag_tx.tracker} - {ip6_ext_frag_tx}")
+        __debug__ and log(
+            "ip6", f"{ip6_ext_frag_tx.tracker} - {ip6_ext_frag_tx}"
+        )
         offset += len(data_frag)
         self.packet_stats_tx.ip6_ext_frag__send += 1
         ip6_tx_status.add(

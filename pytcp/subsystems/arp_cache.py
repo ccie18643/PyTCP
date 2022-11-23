@@ -23,12 +23,17 @@
 #                                                                          #
 ############################################################################
 
+# pylint: disable = too-few-public-methods
+# pylint: disable = expression-not-assigned
+# pylint: disable = protected-access
 
-#
-# protocols/arp/cache.py - module contains class supporting ARP cache
-#
-# ver 2.7
-#
+"""
+Module contains class supporting ARP cache operations.
+
+pytcp/protocols/arp/cache.py
+
+ver 2.7
+"""
 
 
 from __future__ import annotations
@@ -36,8 +41,8 @@ from __future__ import annotations
 import threading
 import time
 
-import pytcp.config as config
-import pytcp.lib.stack as stack
+from pytcp import config
+from pytcp.lib import stack
 from pytcp.lib.ip4_address import Ip4Address
 from pytcp.lib.logger import log
 from pytcp.lib.mac_address import MacAddress
@@ -76,8 +81,7 @@ class ArpCache:
         """
         Start ARP cache thread.
         """
-        if __debug__:
-            log("stack", "Starting ARP cache")
+        __debug__ and log("stack", "Starting ARP cache")
         self._run_thread = True
         threading.Thread(target=self.__thread_maintain_cache).start()
         time.sleep(0.1)
@@ -86,8 +90,7 @@ class ArpCache:
         """
         Stop ARP cache thread.
         """
-        if __debug__:
-            log("stack", "Stopping ARP cache")
+        __debug__ and log("stack", "Stopping ARP cache")
         self._run_thread = False
         time.sleep(0.1)
 
@@ -96,8 +99,7 @@ class ArpCache:
         Thread responsible for maintaining ARP cache entries.
         """
 
-        if __debug__:
-            log("stack", "Started ARP cache")
+        __debug__ and log("stack", "Started ARP cache")
 
         while self._run_thread:
             for ip4_address in list(self._arp_cache):
@@ -112,12 +114,11 @@ class ArpCache:
                     > config.ARP_CACHE_ENTRY_MAX_AGE
                 ):
                     mac_address = self._arp_cache.pop(ip4_address).mac_address
-                    if __debug__:
-                        log(
-                            "arp-c",
-                            f"Discarded expir ARP cache entry - {ip4_address} -> "
-                            f"{mac_address}",
-                        )
+                    __debug__ and log(
+                        "arp-c",
+                        f"Discarded expir ARP cache entry - {ip4_address} -> "
+                        f"{mac_address}",
+                    )
 
                 # If entry age is close to maximum age but the entry has been
                 # used since last refresh then send out request in attempt
@@ -129,19 +130,17 @@ class ArpCache:
                 ) and self._arp_cache[ip4_address].hit_count:
                     self._arp_cache[ip4_address].hit_count = 0
                     self._send_arp_request(ip4_address)
-                    if __debug__:
-                        log(
-                            "arp-c",
-                            "Trying to refresh expiring ARP cache entry for "
-                            f"{ip4_address} -> "
-                            f"{self._arp_cache[ip4_address].mac_address}",
-                        )
+                    __debug__ and log(
+                        "arp-c",
+                        "Trying to refresh expiring ARP cache entry for "
+                        f"{ip4_address} -> "
+                        f"{self._arp_cache[ip4_address].mac_address}",
+                    )
 
             # Put thread to sleep for a 10 milliseconds
             time.sleep(0.1)
 
-        if __debug__:
-            log("stack", "Stopped ARP cache")
+        __debug__ and log("stack", "Stopped ARP cache")
 
     def add_entry(
         self, ip4_address: Ip4Address, mac_address: MacAddress
@@ -149,12 +148,11 @@ class ArpCache:
         """
         Add / refresh entry in cache.
         """
-        if __debug__:
-            log(
-                "arp-c",
-                f"<INFO>Adding/refreshing ARP cache entry - {ip4_address} -> "
-                f"{mac_address}</>",
-            )
+        __debug__ and log(
+            "arp-c",
+            f"<INFO>Adding/refreshing ARP cache entry - {ip4_address} -> "
+            f"{mac_address}</>",
+        )
         self._arp_cache[ip4_address] = self.CacheEntry(mac_address)
 
     def find_entry(self, ip4_address: Ip4Address) -> MacAddress | None:
@@ -164,20 +162,18 @@ class ArpCache:
 
         if arp_entry := self._arp_cache.get(ip4_address, None):
             arp_entry.hit_count += 1
-            if __debug__:
-                log(
-                    "arp-c",
-                    f"Found {ip4_address} -> {arp_entry.mac_address} entry, "
-                    f"age {time.time() - arp_entry.creation_time:.0f}s, "
-                    f"hit_count {arp_entry.hit_count}",
-                )
+            __debug__ and log(
+                "arp-c",
+                f"Found {ip4_address} -> {arp_entry.mac_address} entry, "
+                f"age {time.time() - arp_entry.creation_time:.0f}s, "
+                f"hit_count {arp_entry.hit_count}",
+            )
             return arp_entry.mac_address
 
-        if __debug__:
-            log(
-                "arp-c",
-                f"Unable to find entry for {ip4_address}, sending ARP request",
-            )
+        __debug__ and log(
+            "arp-c",
+            f"Unable to find entry for {ip4_address}, sending ARP request",
+        )
         self._send_arp_request(ip4_address)
         return None
 

@@ -23,12 +23,15 @@
 #                                                                          #
 ############################################################################
 
+# pylint: disable = too-many-instance-attributes
 
-#
-# protocols/arp/fpa.py - Fast Packet Assembler support class for ARP protocol
-#
-# ver 2.7
-#
+"""
+Module contains Fast Packet Assembler support class for the ARP protocol.
+
+pytcp/protocols/arp/fpa.py
+
+ver 2.7
+"""
 
 
 from __future__ import annotations

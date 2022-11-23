@@ -23,13 +23,17 @@
 #                                                                          #
 ############################################################################
 
+# pylint: disable = attribute-defined-outside-init
+# pylint: disable = invalid-name
 
-#
-# ip6_ext_frag/fpp.py - Fast Packet Parser for  IPv6 fragmentation
-# extension header
-#
-# ver 2.7
-#
+"""
+Module contains Fast Packet Parser for the IPv6 fragmentation
+extension header.
+
+pytcp/protocols/ip6_ext_frag/fpp.py
+
+ver 2.7
+"""
 
 
 from __future__ import annotations
@@ -37,7 +41,7 @@ from __future__ import annotations
 import struct
 from typing import TYPE_CHECKING
 
-import pytcp.config as config
+from pytcp import config
 from pytcp.protocols.ip6_ext_frag.ps import (
     IP6_EXT_FRAG_HEADER_LEN,
     IP6_EXT_FRAG_NEXT_HEADER_TABLE,

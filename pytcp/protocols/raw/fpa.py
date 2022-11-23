@@ -24,11 +24,13 @@
 ############################################################################
 
 
-#
-# protocols/raw/fpa.py - Fast Packet Assembler support class for raw protocol
-#
-# ver 2.7
-#
+"""
+Module contains Fast Packet Assembler support class for the raw protocol.
+
+pytcp/protocols/raw/fpa.py
+
+ver 2.7
+"""
 
 
 from __future__ import annotations

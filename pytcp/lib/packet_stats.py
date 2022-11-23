@@ -23,13 +23,15 @@
 #                                                                          #
 ############################################################################
 
+# pylint: disable = too-many-instance-attributes
 
-#
-# lib/packet_stats.py - Module contains classes used to store packet
-# statistics.
-#
-# ver 2.7
-#
+"""
+Module contains classes used to store packet statistics.
+
+pytcp/lib/packet_stats.py
+
+ver 2.7
+"""
 
 
 from __future__ import annotations

@@ -24,11 +24,13 @@
 ############################################################################
 
 
-#
-# examples/lib/udp_service.py - The 'user space' UDP generic service class.
-#
-# ver 2.7
-#
+"""
+The 'user space' UDP generic service class used in examples.
+
+examples/lib/udp_service.py
+
+ver 2.7
+"""
 
 
 from __future__ import annotations

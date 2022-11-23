@@ -24,12 +24,13 @@
 ############################################################################
 
 
-#
-# stack.py - module holds references to the stack components
-#  and global structures
-#
-# ver 2.7
-#
+"""
+Module holds references to the stack components and global structures.
+
+pytcp/lib/stack.py
+
+ver 2.7
+"""
 
 
 from __future__ import annotations

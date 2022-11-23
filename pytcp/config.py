@@ -24,11 +24,13 @@
 ############################################################################
 
 
-#
-# config.py - module contains global configuration parameters
-#
-# ver 2.7
-#
+"""
+Module contains global configuration parameters.
+
+pytcp/config.py
+
+ver 2.7
+"""
 
 
 from __future__ import annotations

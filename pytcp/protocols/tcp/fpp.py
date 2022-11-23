@@ -23,12 +23,18 @@
 #                                                                          #
 ############################################################################
 
+# pylint: disable = too-many-instance-attributes
+# pylint: disable = too-many-return-statements
+# pylint: disable = too-many-public-methods
+# pylint: disable = attribute-defined-outside-init
 
-#
-# protocols/tcp/fpp.py - Fast Packet Parser support class for TCP protocol
-#
-# ver 2.7
-#
+"""
+Module contains Fast Packet Parser support class the for TCP protocol.
+
+pytcp/protocols/tcp/fpp.py
+
+ver 2.7
+"""
 
 
 from __future__ import annotations
@@ -36,7 +42,7 @@ from __future__ import annotations
 import struct
 from typing import TYPE_CHECKING
 
-import pytcp.config as config
+from pytcp import config
 from pytcp.lib.ip_helper import inet_cksum
 from pytcp.protocols.tcp.ps import (
     TCP_HEADER_LEN,

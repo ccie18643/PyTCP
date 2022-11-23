@@ -23,12 +23,16 @@
 #                                                                          #
 ############################################################################
 
+# pylint: disable = attribute-defined-outside-init
+# pylint: disable = too-many-instance-attributes
 
-#
-# protocols/udp/fpp.py - Fast Packet Parser support class for UDP protocol
-#
-# ver 2.7
-#
+"""
+Module contains Fast Packet Parser support class for UDP protocol.
+
+protocols/udp/fpp.py
+
+ver 2.7
+"""
 
 
 from __future__ import annotations
@@ -36,7 +40,7 @@ from __future__ import annotations
 import struct
 from typing import TYPE_CHECKING
 
-import pytcp.config as config
+from pytcp import config
 from pytcp.lib.ip_helper import inet_cksum
 from pytcp.protocols.udp.ps import UDP_HEADER_LEN
 

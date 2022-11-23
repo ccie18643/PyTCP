@@ -23,12 +23,18 @@
 #                                                                          #
 ############################################################################
 
+# pylint: disable = expression-not-assigned
+# pylint: disable = too-many-locals
+# pylint: disable = too-many-return-statements
+# pylint: disable = protected-access
 
-#
-# protocols/icmp6/phtx.py - packet handler for outbound ICMPv6 packets
-#
-# 2.7
-#
+"""
+Module contains packet handler for the outbound ICMPv6 packets.
+
+pytcp/protocols/icmp6/phtx.py
+
+2.7
+"""
 
 
 from __future__ import annotations
@@ -110,8 +116,7 @@ def _phtx_icmp6(
         echo_tracker=echo_tracker,
     )
 
-    if __debug__:
-        log("icmp6", f"{icmp6_packet_tx.tracker} - {icmp6_packet_tx}")
+    __debug__ and log("icmp6", f"{icmp6_packet_tx.tracker} - {icmp6_packet_tx}")
 
     if icmp6_type == ICMP6_ECHO_REPLY and icmp6_code == 0:
         self.packet_stats_tx.icmp6__echo_reply__send += 1

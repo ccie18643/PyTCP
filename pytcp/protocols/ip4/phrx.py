@@ -23,12 +23,16 @@
 #                                                                          #
 ############################################################################
 
+# pylint: disable = expression-not-assigned
+# pylint: disable = protected-access
 
-#
-# protocols/ip4/phrx.py - packet handler for inbound IPv4 packets
-#
-# ver 2.7
-#
+"""
+Module contains packet handler for the inbound IPv4 packets.
+
+pytcp/protocols/ip4/phrx.py
+
+ver 2.7
+"""
 
 
 from __future__ import annotations
@@ -37,7 +41,7 @@ import struct
 from time import time
 from typing import TYPE_CHECKING
 
-import pytcp.config as config
+from pytcp import config
 from pytcp.lib.ip_helper import inet_cksum
 from pytcp.lib.logger import log
 from pytcp.lib.packet import PacketRx
@@ -68,13 +72,12 @@ def _defragment_ip4_packet(
         < config.IP4_FRAG_FLOW_TIMEOUT
     }
 
-    if __debug__:
-        log(
-            "ip4",
-            f"{packet_rx.tracker} - IPv4 packet fragment, offset "
-            f"{packet_rx.ip4.offset}, dlen {packet_rx.ip4.dlen}"
-            f"{'' if packet_rx.ip4.flag_mf else ', last'}",
-        )
+    __debug__ and log(
+        "ip4",
+        f"{packet_rx.tracker} - IPv4 packet fragment, offset "
+        f"{packet_rx.ip4.offset}, dlen {packet_rx.ip4.dlen}"
+        f"{'' if packet_rx.ip4.flag_mf else ', last'}",
+    )
 
     flow_id = (packet_rx.ip4.src, packet_rx.ip4.dst, packet_rx.ip4.id)
 
@@ -119,12 +122,11 @@ def _defragment_ip4_packet(
     struct.pack_into("!H", header, 10, inet_cksum(memoryview(header)))
     packet_rx = PacketRx(bytes(header) + data)
     Ip4Parser(packet_rx)
-    if __debug__:
-        log(
-            "ip4",
-            f"{packet_rx.tracker} - Reasembled fragmented IPv4 packet, "
-            f"dlen {len(data)} bytes",
-        )
+    __debug__ and log(
+        "ip4",
+        f"{packet_rx.tracker} - Reasembled fragmented IPv4 packet, "
+        f"dlen {len(data)} bytes",
+    )
     return packet_rx
 
 
@@ -137,15 +139,13 @@ def _phrx_ip4(self: PacketHandler, packet_rx: PacketRx) -> None:
 
     if packet_rx.parse_failed:
         self.packet_stats_rx.ip4__failed_parse__drop += 1
-        if __debug__:
-            log(
-                "ip4",
-                f"{packet_rx.tracker} - <CRIT>{packet_rx.parse_failed}</>",
-            )
+        __debug__ and log(
+            "ip4",
+            f"{packet_rx.tracker} - <CRIT>{packet_rx.parse_failed}</>",
+        )
         return
 
-    if __debug__:
-        log("ip4", f"{packet_rx.tracker} - {packet_rx.ip4}")
+    __debug__ and log("ip4", f"{packet_rx.tracker} - {packet_rx.ip4}")
 
     # Check if received packet has been sent to us directly or by
     # unicast/broadcast, allow any destination if no unicast address
@@ -156,12 +156,11 @@ def _phrx_ip4(self: PacketHandler, packet_rx: PacketRx) -> None:
         *self.ip4_broadcast,
     }:
         self.packet_stats_rx.ip4__dst_unknown__drop += 1
-        if __debug__:
-            log(
-                "ip4",
-                f"{packet_rx.tracker} - IP packet not destined for this stack, "
-                "dropping",
-            )
+        __debug__ and log(
+            "ip4",
+            f"{packet_rx.tracker} - IP packet not destined for this stack, "
+            "dropping",
+        )
         return
 
     if packet_rx.ip4.dst in self.ip4_unicast:
@@ -180,9 +179,8 @@ def _phrx_ip4(self: PacketHandler, packet_rx: PacketRx) -> None:
             defragmented_packet_rx := self._defragment_ip4_packet(packet_rx)
         ):
             return
-        else:
-            packet_rx = defragmented_packet_rx
-            self.packet_stats_rx.ip4__defrag += 1
+        packet_rx = defragmented_packet_rx
+        self.packet_stats_rx.ip4__defrag += 1
 
     if packet_rx.ip4.proto == IP4_PROTO_ICMP4:
         self._phrx_icmp4(packet_rx)

@@ -23,13 +23,17 @@
 #                                                                          #
 ############################################################################
 
+# pylint: disable = too-many-instance-attributes
+# pylint: disable = redefined-builtin
 
-#
-# ip6_ext_frag/fpa.py - Fast Packet Assembler support class for IPv6 fragment
-# extension header
-#
-# ver 2.7
-#
+"""
+Module contains Fast Packet Assembler support class for the IPv6 fragment
+extension header.
+
+pytcp/protocols/ip6_ext_frag/fpa.py
+
+ver 2.7
+"""
 
 
 from __future__ import annotations

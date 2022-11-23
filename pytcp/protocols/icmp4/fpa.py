@@ -23,12 +23,15 @@
 #                                                                          #
 ############################################################################
 
+# pylint: disable = redefined-builtin
 
-#
-# protocols/icmp4/fpa.py - Fast Packet Assembler support class for ICMPv4 protocol
-#
-# ver 2.7
-#
+"""
+Module contains Fast Packet Assembler support class for the ICMPv4 protocol.
+
+pytcp/protocols/icmp4/fpa.py
+
+ver 2.7
+"""
 
 
 from __future__ import annotations

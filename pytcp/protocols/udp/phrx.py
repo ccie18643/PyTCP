@@ -23,20 +23,24 @@
 #                                                                          #
 ############################################################################
 
+# pylint: disable = expression-not-assigned
+# pylint: disable = protected-access
 
-#
-# protocols/udp/phrx.py - packet handler for inbound UDP packets
-#
-# ver 2.7
-#
+"""
+Module contains packet handler for the inbound UDP packets.
+
+pytcp/protocols/udp/phrx.py
+
+ver 2.7
+"""
 
 
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-import pytcp.config as config
-import pytcp.lib.stack as stack
+from pytcp import config
+from pytcp.lib import stack
 from pytcp.lib.logger import log
 from pytcp.lib.packet import PacketRx
 from pytcp.protocols.icmp4.ps import ICMP4_UNREACHABLE, ICMP4_UNREACHABLE__PORT
@@ -59,15 +63,13 @@ def _phrx_udp(self: PacketHandler, packet_rx: PacketRx) -> None:
 
     if packet_rx.parse_failed:
         self.packet_stats_rx.udp__failed_parse__drop += 1
-        if __debug__:
-            log(
-                "udp",
-                f"{packet_rx.tracker} - <CRIT>{packet_rx.parse_failed}</>",
-            )
+        __debug__ and log(
+            "udp",
+            f"{packet_rx.tracker} - <CRIT>{packet_rx.parse_failed}</>",
+        )
         return
 
-    if __debug__:
-        log("udp", f"{packet_rx.tracker} - {packet_rx.udp}")
+    __debug__ and log("udp", f"{packet_rx.tracker} - {packet_rx.udp}")
 
     assert isinstance(
         packet_rx.udp.data, memoryview
@@ -89,37 +91,34 @@ def _phrx_udp(self: PacketHandler, packet_rx: PacketRx) -> None:
         socket = stack.sockets.get(socket_pattern, None)
         if socket:
             self.packet_stats_rx.udp__socket_match += 1
-            if __debug__:
-                log(
-                    "udp",
-                    f"{packet_rx_md.tracker} - <INFO>Found matching listening "
-                    f"socket [{socket}]</>",
-                )
+            __debug__ and log(
+                "udp",
+                f"{packet_rx_md.tracker} - <INFO>Found matching listening "
+                f"socket [{socket}]</>",
+            )
             socket.process_udp_packet(packet_rx_md)
             return
 
     # Silently drop packet if it's source address is unspecified
     if packet_rx.ip.src.is_unspecified:
         self.packet_stats_rx.udp__ip_source_unspecified += 1
-        if __debug__:
-            log(
-                "udp",
-                f"{packet_rx_md.tracker} - Received UDP packet from "
-                f"{packet_rx.ip.src}, port {packet_rx.udp.sport} to "
-                f"{packet_rx.ip.dst}, port {packet_rx.udp.dport}, dropping",
-            )
+        __debug__ and log(
+            "udp",
+            f"{packet_rx_md.tracker} - Received UDP packet from "
+            f"{packet_rx.ip.src}, port {packet_rx.udp.sport} to "
+            f"{packet_rx.ip.dst}, port {packet_rx.udp.dport}, dropping",
+        )
         return
 
     # Handle the UDP Echo operation in case its enabled
     # (used for packet flow unit testing only).
     if config.UDP_ECHO_NATIVE_DISABLE is False and packet_rx.udp.dport == 7:
         self.packet_stats_rx.udp__echo_native__respond_udp += 1
-        if __debug__:
-            log(
-                "udp",
-                f"{packet_rx_md.tracker} - <INFO>Performing native "
-                "UDP Echo operation</>",
-            )
+        __debug__ and log(
+            "udp",
+            f"{packet_rx_md.tracker} - <INFO>Performing native "
+            "UDP Echo operation</>",
+        )
 
         self._phtx_udp(
             ip_src=packet_rx.ip.dst,
@@ -132,13 +131,12 @@ def _phrx_udp(self: PacketHandler, packet_rx: PacketRx) -> None:
 
     # Respond with ICMP Port Unreachable message if no matching
     # socket has been found.
-    if __debug__:
-        log(
-            "udp",
-            f"{packet_rx_md.tracker} - Received UDP packet from "
-            f"{packet_rx.ip.src} to closed port "
-            f"{packet_rx.udp.dport}, sending ICMPv4 Port Unreachable",
-        )
+    __debug__ and log(
+        "udp",
+        f"{packet_rx_md.tracker} - Received UDP packet from "
+        f"{packet_rx.ip.src} to closed port "
+        f"{packet_rx.udp.dport}, sending ICMPv4 Port Unreachable",
+    )
 
     if packet_rx.ip.ver == 6:
         self.packet_stats_rx.udp__no_socket_match__respond_icmp6_unreachable += (

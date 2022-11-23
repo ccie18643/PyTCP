@@ -24,11 +24,13 @@
 ############################################################################
 
 
-#
-# protocols/icmp4/ps.py - protocol support for ICMPv4
-#
-# ver 2.7
-#
+"""
+Module contains packet structure information for the ICMPv4 protccol.
+
+pytcp/protocols/icmp4/ps.py
+
+ver 2.7
+"""
 
 
 from __future__ import annotations

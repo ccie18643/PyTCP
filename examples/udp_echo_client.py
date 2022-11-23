@@ -24,12 +24,17 @@
 ############################################################################
 
 
-#
-# examples/udp_echo_client.py - The 'user space' client for UDP echo, it activelly sends
-# messages to the UDP Echo service.
-#
-# ver 2.7
-#
+# pylint: disable = too-many-instance-attributes
+
+"""
+The example 'user space' client for UDP echo. It activelly sends messages
+to the UDP Echo service.
+
+examples/udp_echo_client.py
+
+ver 2.7
+"""
+
 
 from __future__ import annotations
 
@@ -38,8 +43,8 @@ import time
 
 import click
 
-import pytcp.lib.socket as socket
 from pytcp import TcpIpStack
+from pytcp.lib import socket
 from pytcp.lib.ip_helper import ip_version
 
 
@@ -70,6 +75,7 @@ class UdpEchoClient:
         self._message_count = message_count
         self._message_delay = message_delay
         self._message_size = message_size
+        self._run_thread = False
 
     def start(self) -> None:
         """
@@ -188,4 +194,4 @@ def cli(*, interface: str, remote_ip_address: str) -> None:
 
 
 if __name__ == "__main__":
-    cli()
+    cli()  # pylint: disable = missing-kwoa

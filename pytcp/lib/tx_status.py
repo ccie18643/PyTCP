@@ -24,11 +24,13 @@
 ############################################################################
 
 
-#
-# misc/tx_status.py - module contains definition of TX status codes
-#
-# ver 2.7
-#
+"""
+Module contains definition of TX status codes.
+
+pytcp/lib/tx_status.py
+
+ver 2.7
+"""
 
 
 from __future__ import annotations

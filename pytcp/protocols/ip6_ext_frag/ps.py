@@ -24,12 +24,14 @@
 ############################################################################
 
 
-#
-# ip6_ext_frag/ps.py - protocol support for IPv6 fragmentation
-# extension header
-#
-# ver 2.7
-#
+"""
+Module contains packet structure information for the IPv6 fragmentation
+extension header.
+
+pytcp/protocols/ip6_ext_frag/ps.py
+
+ver 2.7
+"""
 
 
 from __future__ import annotations

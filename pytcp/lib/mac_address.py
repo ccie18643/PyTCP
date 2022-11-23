@@ -23,12 +23,15 @@
 #                                                                          #
 ############################################################################
 
+# pylint: disable = missing-class-docstring
 
-#
-# lib/mac_address.py - module contains Ethernet MAC address manipulation class
-#
-# ver 2.7
-#
+"""
+Module contains Ethernet MAC address manipulation class.
+
+pytcp/lib/mac_address.py
+
+ver 2.7
+"""
 
 
 from __future__ import annotations
@@ -58,27 +61,23 @@ class MacAddress:
                 self._address = address
                 return
 
-        if (
-            isinstance(address, memoryview)
-            or isinstance(address, bytes)
-            or isinstance(address, bytearray)
-        ):
+        if isinstance(address, (memoryview, bytes, bytearray)):
             if len(address) == 6:
-                v1, v2, v3 = struct.unpack("!HHH", address)
-                self._address = (v1 << 32) + (v2 << 16) + v3
+                v_1, v_2, v_3 = struct.unpack("!HHH", address)
+                self._address = (v_1 << 32) + (v_2 << 16) + v_3
                 return
 
         if isinstance(address, str):
             if re.search(
                 r"^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$", address.strip()
             ):
-                v1, v2, v3 = struct.unpack(
+                v_1, v_2, v_3 = struct.unpack(
                     "!HHH",
                     bytes.fromhex(
                         re.sub(r":|-|\.", "", address.lower().strip())
                     ),
                 )
-                self._address = (v1 << 32) + (v2 << 16) + v3
+                self._address = (v_1 << 32) + (v_2 << 16) + v_3
                 return
 
         if isinstance(address, MacAddress):

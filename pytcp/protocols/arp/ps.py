@@ -24,11 +24,14 @@
 ############################################################################
 
 
-#
-# arp/ps.py - protocol support for ARP
-#
-# ver 2.7
-#
+"""
+Module contains packet structure information for the ARP protccol.
+
+pytcp/protocols/arp/ps.py
+
+ver 2.7
+"""
+
 
 from __future__ import annotations
 

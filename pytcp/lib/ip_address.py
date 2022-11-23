@@ -23,12 +23,15 @@
 #                                                                          #
 ############################################################################
 
+# pylint: disable = missing-class-docstring
 
-#
-# lib/ip_address.py - module contains base class for address manipulation
-#
-# ver 2.7
-#
+"""
+Module contains base class for IP address manipulation.
+
+pytcp/lib/ip_address.py
+
+ver 2.7
+"""
 
 
 from __future__ import annotations

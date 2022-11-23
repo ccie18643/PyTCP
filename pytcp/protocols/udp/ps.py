@@ -24,11 +24,13 @@
 ############################################################################
 
 
-#
-# protocols/udp/ps.py - protocol support for UDP
-#
-# ver 2.7
-#
+"""
+Module contains packet structure information for the UDP protccol.
+
+pytcp/protocols/udp/ps.py
+
+ver 2.7
+"""
 
 
 from __future__ import annotations

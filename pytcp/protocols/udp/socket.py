@@ -23,13 +23,18 @@
 #                                                                          #
 ############################################################################
 
+# pylint: disable = expression-not-assigned
+# pylint: disable = too-many-instance-attributes
+# pylint: disable = consider-using-with
+# pylint: disable = fixme
 
-#
-# protocols/udp/socket.py - module contains BSD like socket interface
-# for the stack
-#
-# ver 2.7
-#
+"""
+Module contains BSD like socket interface for the stack.
+
+pytcp/protocols/udp/socket.py
+
+ver 2.7
+"""
 
 
 from __future__ import annotations
@@ -37,7 +42,7 @@ from __future__ import annotations
 import threading
 from typing import TYPE_CHECKING
 
-import pytcp.lib.stack as stack
+from pytcp.lib import stack
 from pytcp.lib.ip4_address import Ip4Address, Ip4AddressFormatError
 from pytcp.lib.ip6_address import Ip6Address, Ip6AddressFormatError
 from pytcp.lib.logger import log
@@ -88,8 +93,7 @@ class UdpSocket(Socket):
             self._local_ip_address = Ip4Address(0)
             self._remote_ip_address = Ip4Address(0)
 
-        if __debug__:
-            log("socket", f"<g>[{self}]</> - Created socket")
+        __debug__ and log("socket", f"<g>[{self}]</> - Created socket")
 
     def bind(self, address: tuple[str, int]) -> None:
         """
@@ -118,11 +122,11 @@ class UdpSocket(Socket):
                         "[Errno 99] Cannot assign requested address - "
                         "[Local IP address not owned by stack]"
                     )
-            except Ip6AddressFormatError:
+            except Ip6AddressFormatError as error:
                 raise gaierror(
                     "[Errno -2] Name or service not known - "
                     "[Malformed local IP address]"
-                )
+                ) from error
 
         if self._family is AF_INET4:
             try:
@@ -133,11 +137,11 @@ class UdpSocket(Socket):
                         "[Errno 99] Cannot assign requested address - "
                         "[Local IP address not owned by stack]"
                     )
-            except Ip4AddressFormatError:
+            except Ip4AddressFormatError as error:
                 raise gaierror(
                     "[Errno -2] Name or service not known - "
                     "[Malformed local IP address]"
-                )
+                ) from error
 
         # Sanity check on local port number
         if address[1] not in range(0, 65536):
@@ -161,8 +165,7 @@ class UdpSocket(Socket):
         self._local_port = local_port
         stack.sockets[str(self)] = self
 
-        if __debug__:
-            log("socket", f"<g>[{self}]</> - Bound")
+        __debug__ and log("socket", f"<g>[{self}]</> - Bound")
 
     def connect(self, address: tuple[str, int]) -> None:
         """
@@ -197,8 +200,7 @@ class UdpSocket(Socket):
         self._remote_port = remote_port
         stack.sockets[str(self)] = self
 
-        if __debug__:
-            log("socket", f"<g>[{self}]</> - Connected socket")
+        __debug__ and log("socket", f"<g>[{self}]</> - Connected socket")
 
     def send(self, data: bytes) -> int:
         """
@@ -231,11 +233,10 @@ class UdpSocket(Socket):
             len(data) if tx_status is TxStatus.PASSED__ETHER__TO_TX_RING else 0
         )
 
-        if __debug__:
-            log(
-                "socket",
-                f"<g>[{self}]</> - <lr>Sent</> {sent_data_len} bytes of data",
-            )
+        __debug__ and log(
+            "socket",
+            f"<g>[{self}]</> - <lr>Sent</> {sent_data_len} bytes of data",
+        )
 
         return sent_data_len
 
@@ -277,11 +278,10 @@ class UdpSocket(Socket):
             len(data) if tx_status is TxStatus.PASSED__ETHER__TO_TX_RING else 0
         )
 
-        if __debug__:
-            log(
-                "socket",
-                f"<g>[{self}]</> - <lr>Sent</> {sent_data_len} bytes of data",
-            )
+        __debug__ and log(
+            "socket",
+            f"<g>[{self}]</> - <lr>Sent</> {sent_data_len} bytes of data",
+        )
 
         return sent_data_len
 
@@ -301,12 +301,11 @@ class UdpSocket(Socket):
 
         if self._packet_rx_md_ready.acquire(timeout=timeout):
             data_rx = self._packet_rx_md.pop(0).data
-            if __debug__:
-                log(
-                    "socket",
-                    f"<g>[{self}]</> - <lg>Received</> {len(data_rx)} "
-                    "bytes of data",
-                )
+            __debug__ and log(
+                "socket",
+                f"<g>[{self}]</> - <lg>Received</> {len(data_rx)} "
+                "bytes of data",
+            )
             return data_rx
         raise ReceiveTimeout
 
@@ -321,12 +320,11 @@ class UdpSocket(Socket):
 
         if self._packet_rx_md_ready.acquire(timeout=timeout):
             packet_rx_md = self._packet_rx_md.pop(0)
-            if __debug__:
-                log(
-                    "socket",
-                    f"<g>[{self}]</> - <lg>Received</> "
-                    f"{len(packet_rx_md.data)} bytes of data",
-                )
+            __debug__ and log(
+                "socket",
+                f"<g>[{self}]</> - <lg>Received</> "
+                f"{len(packet_rx_md.data)} bytes of data",
+            )
             return (
                 packet_rx_md.data,
                 (str(packet_rx_md.remote_ip_address), packet_rx_md.remote_port),
@@ -338,8 +336,7 @@ class UdpSocket(Socket):
         Close socket.
         """
         stack.sockets.pop(str(self), None)
-        if __debug__:
-            log("socket", f"<g>[{self}]</> - Closed socket")
+        __debug__ and log("socket", f"<g>[{self}]</> - Closed socket")
 
     def process_udp_packet(self, packet_rx_md: UdpMetadata) -> None:
         """

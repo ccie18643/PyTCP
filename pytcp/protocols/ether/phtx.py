@@ -23,19 +23,28 @@
 #                                                                          #
 ############################################################################
 
+# pylint: disable = line-too-long
+# pylint: disable = too-many-return-statements
+# pylint: disable = too-many-branches
+# pylint: disable = too-many-statements
+# pylint: disable = expression-not-assigned
+# pylint: disable = protected-access
+# pylint: disable = no-else-return
 
-#
-# protocols/ether/phtx.py - packet handler for outbound Ethernet packets
-#
-# ver 2.7
-#
+"""
+Module contains packet handler for the outbound Ethernet packets.
+
+pytcp/protocols/ether/phtx.py
+
+ver 2.7
+"""
 
 
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-import pytcp.lib.stack as stack
+from pytcp.lib import stack
 from pytcp.lib.logger import log
 from pytcp.lib.mac_address import MacAddress
 from pytcp.lib.tx_status import TxStatus
@@ -50,8 +59,7 @@ if TYPE_CHECKING:
 
 
 def _send_out_packet(ether_packet_tx: EtherAssembler) -> None:
-    if __debug__:
-        log("ether", f"{ether_packet_tx.tracker} - {ether_packet_tx}")
+    __debug__ and log("ether", f"{ether_packet_tx.tracker} - {ether_packet_tx}")
     stack.tx_ring.enqueue(ether_packet_tx)
 
 
@@ -84,30 +92,27 @@ def _phtx_ether(
     if ether_packet_tx.src.is_unspecified:
         self.packet_stats_tx.ether__src_unspec__fill += 1
         ether_packet_tx.src = self.mac_unicast
-        if __debug__:
-            log(
-                "ether",
-                f"{ether_packet_tx.tracker} - Set source to stack MAC "
-                f"{ether_packet_tx.src}",
-            )
+        __debug__ and log(
+            "ether",
+            f"{ether_packet_tx.tracker} - Set source to stack MAC "
+            f"{ether_packet_tx.src}",
+        )
     else:
         self.packet_stats_tx.ether__src_spec += 1
-        if __debug__:
-            log(
-                "ether",
-                f"{ether_packet_tx.tracker} - Source MAC specified to "
-                f"{ether_packet_tx.src}",
-            )
+        __debug__ and log(
+            "ether",
+            f"{ether_packet_tx.tracker} - Source MAC specified to "
+            f"{ether_packet_tx.src}",
+        )
 
     # Send out packet if it contains valid destination MAC address
     if not ether_packet_tx.dst.is_unspecified:
         self.packet_stats_tx.ether__dst_spec__send += 1
-        if __debug__:
-            log(
-                "ether",
-                f"{ether_packet_tx.tracker} - Contains valid destination "
-                "MAC address",
-            )
+        __debug__ and log(
+            "ether",
+            f"{ether_packet_tx.tracker} - Contains valid destination "
+            "MAC address",
+        )
         _send_out_packet(ether_packet_tx)
         return TxStatus.PASSED__ETHER__TO_TX_RING
 
@@ -124,12 +129,11 @@ def _phtx_ether(
                 1
             )
             ether_packet_tx.dst = ip6_dst.multicast_mac
-            if __debug__:
-                log(
-                    "ether",
-                    f"{ether_packet_tx.tracker} - Resolved destination IPv6 "
-                    f"{ip6_dst} to MAC {ether_packet_tx.dst}",
-                )
+            __debug__ and log(
+                "ether",
+                f"{ether_packet_tx.tracker} - Resolved destination IPv6 "
+                f"{ip6_dst} to MAC {ether_packet_tx.dst}",
+            )
             _send_out_packet(ether_packet_tx)
             return TxStatus.PASSED__ETHER__TO_TX_RING
 
@@ -142,26 +146,24 @@ def _phtx_ether(
                     self.packet_stats_tx.ether__dst_unspec__ip6_lookup__extnet__no_gw__drop += (
                         1
                     )
-                    if __debug__:
-                        log(
-                            "ether",
-                            f"<{ether_packet_tx.tracker} - <WARN>No default "
-                            f"gateway set for {ip6_host} source address, "
-                            "dropping</>",
-                        )
+                    __debug__ and log(
+                        "ether",
+                        f"<{ether_packet_tx.tracker} - <WARN>No default "
+                        f"gateway set for {ip6_host} source address, "
+                        "dropping</>",
+                    )
                     return TxStatus.DROPED__ETHER__DST_NO_GATEWAY_IP6
                 if mac_address := stack.nd_cache.find_entry(ip6_host.gateway):
                     ether_packet_tx.dst = mac_address
                     self.packet_stats_tx.ether__dst_unspec__ip6_lookup__extnet__gw_nd_cache_hit__send += (
                         1
                     )
-                    if __debug__:
-                        log(
-                            "ether",
-                            f"{ether_packet_tx.tracker} - Resolved destination "
-                            f"IPv6 {ip6_dst}"
-                            f" to Default Gateway MAC {ether_packet_tx.dst}",
-                        )
+                    __debug__ and log(
+                        "ether",
+                        f"{ether_packet_tx.tracker} - Resolved destination "
+                        f"IPv6 {ip6_dst}"
+                        f" to Default Gateway MAC {ether_packet_tx.dst}",
+                    )
                     _send_out_packet(ether_packet_tx)
                     return TxStatus.PASSED__ETHER__TO_TX_RING
                 self.packet_stats_tx.ether__dst_unspec__ip6_lookup__extnet__gw_nd_cache_miss__drop += (
@@ -176,24 +178,22 @@ def _phtx_ether(
                 1
             )
             ether_packet_tx.dst = mac_address
-            if __debug__:
-                log(
-                    "ether",
-                    f"{ether_packet_tx.tracker} - Resolved destination IPv6 "
-                    f"{ip6_dst} to MAC {ether_packet_tx.dst}",
-                )
+            __debug__ and log(
+                "ether",
+                f"{ether_packet_tx.tracker} - Resolved destination IPv6 "
+                f"{ip6_dst} to MAC {ether_packet_tx.dst}",
+            )
             _send_out_packet(ether_packet_tx)
             return TxStatus.PASSED__ETHER__TO_TX_RING
         else:
             self.packet_stats_tx.ether__dst_unspec__ip6_lookup__locnet__nd_cache_miss__drop += (
                 1
             )
-            if __debug__:
-                log(
-                    "ether",
-                    f"{ether_packet_tx.tracker} - <WARN>No valid destination "
-                    f"MAC could be obtained from ND cache, dropping</>",
-                )
+            __debug__ and log(
+                "ether",
+                f"{ether_packet_tx.tracker} - <WARN>No valid destination "
+                f"MAC could be obtained from ND cache, dropping</>",
+            )
             return TxStatus.DROPED__ETHER__DST_ND_CACHE_FAIL
 
     # Check if we can obtain destination MAC based on IPv4 header data
@@ -211,12 +211,11 @@ def _phtx_ether(
                 1
             )
             ether_packet_tx.dst = ip4_dst.multicast_mac
-            if __debug__:
-                log(
-                    "ether",
-                    f"{ether_packet_tx.tracker} - Resolved destination IPv4 "
-                    f"{ip4_dst} to MAC {ether_packet_tx.dst}",
-                )
+            __debug__ and log(
+                "ether",
+                f"{ether_packet_tx.tracker} - Resolved destination IPv4 "
+                f"{ip4_dst} to MAC {ether_packet_tx.dst}",
+            )
             _send_out_packet(ether_packet_tx)
             return TxStatus.PASSED__ETHER__TO_TX_RING
 
@@ -226,12 +225,11 @@ def _phtx_ether(
                 1
             )
             ether_packet_tx.dst = MacAddress(0xFFFFFFFFFFFF)
-            if __debug__:
-                log(
-                    "ether",
-                    f"{ether_packet_tx.tracker} - Resolved destination IPv4 "
-                    f"{ip4_dst} to MAC {ether_packet_tx.dst}",
-                )
+            __debug__ and log(
+                "ether",
+                f"{ether_packet_tx.tracker} - Resolved destination IPv4 "
+                f"{ip4_dst} to MAC {ether_packet_tx.dst}",
+            )
             _send_out_packet(ether_packet_tx)
             return TxStatus.PASSED__ETHER__TO_TX_RING
 
@@ -247,12 +245,11 @@ def _phtx_ether(
                         1
                     )
                     ether_packet_tx.dst = MacAddress(0xFFFFFFFFFFFF)
-                    if __debug__:
-                        log(
-                            "ether",
-                            f"{ether_packet_tx.tracker} - Resolved destination "
-                            f"IPv4 {ip4_dst} to MAC {ether_packet_tx.dst}",
-                        )
+                    __debug__ and log(
+                        "ether",
+                        f"{ether_packet_tx.tracker} - Resolved destination "
+                        f"IPv4 {ip4_dst} to MAC {ether_packet_tx.dst}",
+                    )
                     _send_out_packet(ether_packet_tx)
                     return TxStatus.PASSED__ETHER__TO_TX_RING
 
@@ -265,26 +262,24 @@ def _phtx_ether(
                     self.packet_stats_tx.ether__dst_unspec__ip4_lookup__extnet__no_gw__drop += (
                         1
                     )
-                    if __debug__:
-                        log(
-                            "ether",
-                            f"{ether_packet_tx.tracker} - <WARN>No default "
-                            f"gateway set for {ip4_host} source address, "
-                            "dropping</>",
-                        )
+                    __debug__ and log(
+                        "ether",
+                        f"{ether_packet_tx.tracker} - <WARN>No default "
+                        f"gateway set for {ip4_host} source address, "
+                        "dropping</>",
+                    )
                     return TxStatus.DROPED__ETHER__DST_NO_GATEWAY_IP4
                 if mac_address := stack.arp_cache.find_entry(ip4_host.gateway):
                     self.packet_stats_tx.ether__dst_unspec__ip4_lookup__extnet__gw_arp_cache_hit__send += (
                         1
                     )
                     ether_packet_tx.dst = mac_address
-                    if __debug__:
-                        log(
-                            "ether",
-                            f"{ether_packet_tx.tracker} - Resolved destination "
-                            f"IPv4 {ip4_dst} to Default Gateway MAC "
-                            f"{ether_packet_tx.dst}",
-                        )
+                    __debug__ and log(
+                        "ether",
+                        f"{ether_packet_tx.tracker} - Resolved destination "
+                        f"IPv4 {ip4_dst} to Default Gateway MAC "
+                        f"{ether_packet_tx.dst}",
+                    )
                     _send_out_packet(ether_packet_tx)
                     return TxStatus.PASSED__ETHER__TO_TX_RING
                 self.packet_stats_tx.ether__dst_unspec__ip4_lookup__extnet__gw_arp_cache_miss__drop += (
@@ -299,32 +294,29 @@ def _phtx_ether(
                 1
             )
             ether_packet_tx.dst = mac_address
-            if __debug__:
-                log(
-                    "ether",
-                    f"{ether_packet_tx.tracker} - Resolved destination IPv4 "
-                    f"{ip4_dst} to MAC {ether_packet_tx.dst}",
-                )
+            __debug__ and log(
+                "ether",
+                f"{ether_packet_tx.tracker} - Resolved destination IPv4 "
+                f"{ip4_dst} to MAC {ether_packet_tx.dst}",
+            )
             _send_out_packet(ether_packet_tx)
             return TxStatus.PASSED__ETHER__TO_TX_RING
         else:
             self.packet_stats_tx.ether__dst_unspec__ip4_lookup__locnet__arp_cache_miss__drop += (
                 1
             )
-            if __debug__:
-                log(
-                    "ether",
-                    f"{ether_packet_tx.tracker} - <WARN>No valid destination "
-                    "MAC could be obtained from ARP cache, dropping</>",
-                )
+            __debug__ and log(
+                "ether",
+                f"{ether_packet_tx.tracker} - <WARN>No valid destination "
+                "MAC could be obtained from ARP cache, dropping</>",
+            )
             return TxStatus.DROPED__ETHER__DST_ARP_CACHE_FAIL
 
     # Drop packet in case we are not able to obtain valid destination MAC address
     self.packet_stats_tx.ether__dst_unspec__drop += 1
-    if __debug__:
-        log(
-            "ether",
-            f"{ether_packet_tx.tracker} - <WARN>No valid destination MAC could "
-            "be obtained, dropping</>",
-        )
+    __debug__ and log(
+        "ether",
+        f"{ether_packet_tx.tracker} - <WARN>No valid destination MAC could "
+        "be obtained, dropping</>",
+    )
     return TxStatus.DROPED__ETHER__DST_RESOLUTION_FAIL

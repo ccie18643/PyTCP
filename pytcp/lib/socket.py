@@ -23,12 +23,21 @@
 #                                                                          #
 ############################################################################
 
+# pylint: disable = invalid-name
+# pylint: disable = redefined-builtin
+# pylint: disable = import-outside-toplevel
+# pylint: disable = too-many-instance-attributes
+# pylint: disable = too-many-public-methods
+# pylint: disable = protected-access
+# pylint: disable = too-many-boolean-expressions
 
-#
-# lib/socket.py - module contains BSD like socket interface for the stack
-#
-# ver 2.7
-#
+"""
+Module contains BSD like socket interface for the stack.
+
+pytcp/lib/socket.py
+
+ver 2.7
+"""
 
 
 from __future__ import annotations
@@ -37,8 +46,8 @@ from abc import ABC, abstractmethod
 from enum import IntEnum
 from typing import TYPE_CHECKING
 
-import pytcp.config as config
-import pytcp.lib.stack as stack
+from pytcp import config
+from pytcp.lib import stack
 from pytcp.lib.ip4_address import Ip4Address, Ip4AddressFormatError
 from pytcp.lib.ip6_address import Ip6Address, Ip6AddressFormatError
 from pytcp.lib.ip_helper import pick_local_ip_address
@@ -138,6 +147,7 @@ class Socket(ABC):
             self._tcp_session: TcpSession | None
             self._tcp_accept: list[Socket]
             self._event_tcp_session_established: Semaphore
+            self._unreachable: bool
 
     def __str__(self) -> str:
         """
@@ -211,18 +221,18 @@ class Socket(ABC):
         """
         Check if IP address / port combination is already in use.
         """
-        for socket in stack.sockets.values():
+        for opened_socket in stack.sockets.values():
             if (
-                socket.family == self._family
-                and socket._type == self._type
+                opened_socket.family == self._family
+                and opened_socket._type == self._type
                 and (
                     (
-                        socket._local_ip_address.is_unspecified
-                        or socket._local_ip_address == local_ip_address
+                        opened_socket._local_ip_address.is_unspecified
+                        or opened_socket._local_ip_address == local_ip_address
                     )
                     or local_ip_address.is_unspecified
                 )
-                and socket._local_port == local_port
+                and opened_socket._local_port == local_port
             ):
                 return True
         return False
@@ -245,11 +255,11 @@ class Socket(ABC):
                 if self._family is AF_INET6
                 else Ip4Address(remote_address[0])
             )
-        except (Ip6AddressFormatError, Ip4AddressFormatError):
+        except (Ip6AddressFormatError, Ip4AddressFormatError) as error:
             raise gaierror(
                 "[Errno -2] Name or service not known - "
                 "[Malformed remote IP address]"
-            )
+            ) from error
 
         # This contraption here is to mimic behavior
         # of BSD socket implementation
@@ -272,9 +282,7 @@ class Socket(ABC):
                     "[Malformed remote IP address]"
                 )
 
-        assert isinstance(local_ip_address, Ip4Address) or isinstance(
-            local_ip_address, Ip6Address
-        )
+        assert isinstance(local_ip_address, (Ip6Address, Ip4Address))
         return local_ip_address, remote_ip_address
 
     @abstractmethod
@@ -315,16 +323,19 @@ class Socket(ABC):
             """
             The 'listen()' socket API placeholder.
             """
+            raise NotImplementedError
 
         def accept(self) -> tuple[Socket, tuple[str, int]]:
             """
             The 'accept()' socket API placeholder.
             """
+            raise NotImplementedError
 
         def sendto(self, data: bytes, address: tuple[str, int]) -> int:
             """
             The 'sendto()' socket API placeholder.
             """
+            raise NotImplementedError
 
         def recvfrom(
             self, bufsize: int | None = None, timeout: float | None = None
@@ -332,36 +343,43 @@ class Socket(ABC):
             """
             The 'recvfrom()' socket API placeholder.
             """
+            raise NotImplementedError
 
-        def process_udp_packet(self, packet: UdpMetadata) -> None:
+        def process_udp_packet(self, packet_rx_md: UdpMetadata) -> None:
             """
             The 'process_udp_packet()' method plceholder.
             """
+            raise NotImplementedError
 
-        def process_tcp_packet(self, packet: TcpMetadata) -> None:
+        def process_tcp_packet(self, packet_rx_md: TcpMetadata) -> None:
             """
             The 'process_tcp_packet()' method plceholder.
             """
+            raise NotImplementedError
 
         def notify_unreachable(self) -> None:
             """
             The 'notify_unreachable()' method plceholder.
             """
+            raise NotImplementedError
 
         @property
         def tcp_session(self) -> TcpSession | None:
             """
             The 'tcp_session' property plceholder.
             """
+            raise NotImplementedError
 
         @property
         def state(self) -> FsmState:
             """
             The 'state' property plceholder.
             """
+            raise NotImplementedError
 
         @property
         def parent_socket(self) -> Socket | None:
             """
             The 'parent_socket' property plceholder.
             """
+            raise NotImplementedError

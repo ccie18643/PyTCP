@@ -23,13 +23,17 @@
 #                                                                          #
 ############################################################################
 
+# pylint: disable = too-few-public-methods
+# pylint: disable = expression-not-assigned
+# pylint: disable = protected-access
 
-#
-# protocols/icmp6/nd_cache.py - module contains class supporting
-# ICMPv6 Neighbor Discovery cache
-#
-# ver 2.7
-#
+"""
+Module contains class supporting ICMPv6 Neighbor Discovery cache operations.
+
+pycp/protocols/icmp6/nd_cache.py
+
+ver 2.7
+"""
 
 
 from __future__ import annotations
@@ -37,8 +41,8 @@ from __future__ import annotations
 import threading
 import time
 
-import pytcp.config as config
-import pytcp.lib.stack as stack
+from pytcp import config
+from pytcp.lib import stack
 from pytcp.lib.ip6_address import Ip6Address
 from pytcp.lib.logger import log
 from pytcp.lib.mac_address import MacAddress
@@ -68,21 +72,20 @@ class NdCache:
             self.permanent: bool = permanent
             self.creation_time: float = time.time()
             self.hit_count: int = 0
-            self._run_thread: bool = False
 
     def __init__(self) -> None:
         """
         Class constructor.
         """
 
-        self.nd_cache: dict[Ip6Address, NdCache.CacheEntry] = {}
+        self._nd_cache: dict[Ip6Address, NdCache.CacheEntry] = {}
+        self._run_thread: bool = False
 
     def start(self) -> None:
         """
         Start ND cache thread.
         """
-        if __debug__:
-            log("stack", "Starting IPv6 ND cache")
+        __debug__ and log("stack", "Starting IPv6 ND cache")
         self._run_thread = True
         threading.Thread(target=self.__thread_maintain_cache).start()
         time.sleep(0.1)
@@ -91,8 +94,7 @@ class NdCache:
         """
         Stop ND cache thread.
         """
-        if __debug__:
-            log("stack", "Stopping IPv6 ND cache")
+        __debug__ and log("stack", "Stopping IPv6 ND cache")
         self._run_thread = False
         time.sleep(0.1)
 
@@ -101,52 +103,48 @@ class NdCache:
         Method responsible for maintaining ND cache entries.
         """
 
-        if __debug__:
-            log("stack", "Started IPv6 ND cache")
+        __debug__ and log("stack", "Started IPv6 ND cache")
 
         while self._run_thread:
-            for ip6_address in list(self.nd_cache):
+            for ip6_address in list(self._nd_cache):
 
                 # Skip permanent entries
-                if self.nd_cache[ip6_address].permanent:
+                if self._nd_cache[ip6_address].permanent:
                     continue
 
                 # If entry age is over maximum age then discard the entry
                 if (
-                    time.time() - self.nd_cache[ip6_address].creation_time
+                    time.time() - self._nd_cache[ip6_address].creation_time
                     > config.ND_CACHE_ENTRY_MAX_AGE
                 ):
-                    mac_address = self.nd_cache.pop(ip6_address).mac_address
-                    if __debug__:
-                        log(
-                            "nd-c",
-                            "Discarded expir ICMPv6 ND cache entry - "
-                            f"{ip6_address} -> {mac_address}",
-                        )
+                    mac_address = self._nd_cache.pop(ip6_address).mac_address
+                    __debug__ and log(
+                        "nd-c",
+                        "Discarded expir ICMPv6 ND cache entry - "
+                        f"{ip6_address} -> {mac_address}",
+                    )
 
                 # If entry age is close to maximum age but the entry has been
                 # used since last refresh then send out request in attempt
                 # to refresh it.
                 elif (
-                    time.time() - self.nd_cache[ip6_address].creation_time
+                    time.time() - self._nd_cache[ip6_address].creation_time
                     > config.ND_CACHE_ENTRY_MAX_AGE
                     - config.ND_CACHE_ENTRY_REFRESH_TIME
-                ) and self.nd_cache[ip6_address].hit_count:
-                    self.nd_cache[ip6_address].hit_count = 0
+                ) and self._nd_cache[ip6_address].hit_count:
+                    self._nd_cache[ip6_address].hit_count = 0
                     self._send_icmp6_neighbor_solicitation(ip6_address)
-                    if __debug__:
-                        log(
-                            "nd-c",
-                            f"Trying to refresh expiring ICMPv6 ND cache entry for "
-                            f"{ip6_address} -> "
-                            f"{self.nd_cache[ip6_address].mac_address}",
-                        )
+                    __debug__ and log(
+                        "nd-c",
+                        f"Trying to refresh expiring ICMPv6 ND cache entry for "
+                        f"{ip6_address} -> "
+                        f"{self._nd_cache[ip6_address].mac_address}",
+                    )
 
             # Put thread to sleep for a 10 milliseconds
             time.sleep(0.1)
 
-        if __debug__:
-            log("stack", "Stopped IPv6 ND cache")
+        __debug__ and log("stack", "Stopped IPv6 ND cache")
 
     def add_entry(
         self, ip6_address: Ip6Address, mac_address: MacAddress
@@ -154,36 +152,33 @@ class NdCache:
         """
         Add / refresh entry in cache.
         """
-        if __debug__:
-            log(
-                "nd-c",
-                f"<INFO>Adding/refreshing ARP cache entry from direct reply - "
-                f"{ip6_address} -> {mac_address}</>",
-            )
-        self.nd_cache[ip6_address] = self.CacheEntry(mac_address)
+        __debug__ and log(
+            "nd-c",
+            f"<INFO>Adding/refreshing ARP cache entry from direct reply - "
+            f"{ip6_address} -> {mac_address}</>",
+        )
+        self._nd_cache[ip6_address] = self.CacheEntry(mac_address)
 
     def find_entry(self, ip6_address: Ip6Address) -> MacAddress | None:
         """
         Find entry in cache and return MAC address.
         """
 
-        if nd_entry := self.nd_cache.get(ip6_address, None):
+        if nd_entry := self._nd_cache.get(ip6_address, None):
             nd_entry.hit_count += 1
-            if __debug__:
-                log(
-                    "nd-c",
-                    f"Found {ip6_address} -> {nd_entry.mac_address} entry, "
-                    f"age {time.time() - nd_entry.creation_time:.0f}s, "
-                    f"hit_count {nd_entry.hit_count}",
-                )
+            __debug__ and log(
+                "nd-c",
+                f"Found {ip6_address} -> {nd_entry.mac_address} entry, "
+                f"age {time.time() - nd_entry.creation_time:.0f}s, "
+                f"hit_count {nd_entry.hit_count}",
+            )
             return nd_entry.mac_address
 
-        if __debug__:
-            log(
-                "nd-c",
-                f"Unable to find entry for {ip6_address}, sending ICMPv6 "
-                "Neighbor Solicitation message",
-            )
+        __debug__ and log(
+            "nd-c",
+            f"Unable to find entry for {ip6_address}, sending ICMPv6 "
+            "Neighbor Solicitation message",
+        )
         self._send_icmp6_neighbor_solicitation(ip6_address)
         return None
 

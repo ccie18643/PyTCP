@@ -24,11 +24,17 @@
 ############################################################################
 
 
-#
-# packet.py - module contains class representing packet
-#
-# ver 2.7
-#
+# pylint: disable = invalid-name
+# pylint: disable = too-many-instance-attributes
+# pylint: disable = too-few-public-methods
+
+"""
+Module contains class representing packet.
+
+pytcp/lib/packet.py
+
+ver 2.7
+"""
 
 
 from __future__ import annotations

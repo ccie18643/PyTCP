@@ -24,11 +24,13 @@
 ############################################################################
 
 
-#
-# protocols/icmp6/ps.py - protocol support for ICMPv6
-#
-# ver 2.7
-#
+"""
+Module contains packet structure information for the ICMPv6 protccol.
+
+pytcp/protocols/icmp6/ps.py
+
+ver 2.7
+"""
 
 
 from __future__ import annotations

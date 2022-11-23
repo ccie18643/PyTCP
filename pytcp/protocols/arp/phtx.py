@@ -23,19 +23,23 @@
 #                                                                          #
 ############################################################################
 
+# pylint: disable = expression-not-assigned
+# pylint: disable = protected-access
 
-#
-# protocols/arp/phtx.py - packet handler for outbound ARP packets
-#
-# ver 2.7
-#
+"""
+Module contains packet handler for the outbound ARP packets.
+
+pytcp/protocols/arp/phtx.py
+
+ver 2.7
+"""
 
 
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-import pytcp.config as config
+from pytcp import config
 from pytcp.lib.logger import log
 from pytcp.lib.mac_address import MacAddress
 from pytcp.lib.tracker import Tracker
@@ -87,8 +91,7 @@ def _phtx_arp(
         echo_tracker=echo_tracker,
     )
 
-    if __debug__:
-        log("arp", f"{arp_packet_tx.tracker} - {arp_packet_tx}")
+    __debug__ and log("arp", f"{arp_packet_tx.tracker} - {arp_packet_tx}")
 
     return self._phtx_ether(
         ether_src=ether_src,

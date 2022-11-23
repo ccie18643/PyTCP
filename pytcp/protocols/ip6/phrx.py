@@ -23,12 +23,16 @@
 #                                                                          #
 ############################################################################
 
+# pylint: disable = expression-not-assigned
+# pylint: disable = protected-access
 
-#
-# protocols/ip6/phrx.py - packet handler for inbound IPv6 packets
-#
-# ver 2.7
-#
+"""
+Module contains packet handler for the inbound IPv6 packets.
+
+pytcp/protocols/ip6/phrx.py
+
+ver 2.7
+"""
 
 
 from __future__ import annotations
@@ -60,23 +64,22 @@ def _phrx_ip6(self: PacketHandler, packet_rx: PacketRx) -> None:
 
     if packet_rx.parse_failed:
         self.packet_stats_rx.ip6__failed_parse__drop += 1
-        if __debug__:
-            log("ip6", f"{packet_rx.tracker} - <rb>{packet_rx.parse_failed}</>")
+        __debug__ and log(
+            "ip6", f"{packet_rx.tracker} - <rb>{packet_rx.parse_failed}</>"
+        )
         return
 
-    if __debug__:
-        log("ip6", f"{packet_rx.tracker} - {packet_rx.ip6}")
+    __debug__ and log("ip6", f"{packet_rx.tracker} - {packet_rx.ip6}")
 
     # Check if received packet has been sent to us directly or by unicast
     # or multicast
     if packet_rx.ip6.dst not in {*self.ip6_unicast, *self.ip6_multicast}:
         self.packet_stats_rx.ip6__dst_unknown__drop += 1
-        if __debug__:
-            log(
-                "ip6",
-                f"{packet_rx.tracker} - IP packet not destined for this stack, "
-                "dropping",
-            )
+        __debug__ and log(
+            "ip6",
+            f"{packet_rx.tracker} - IP packet not destined for this stack, "
+            "dropping",
+        )
         return
 
     if packet_rx.ip6.dst in self.ip6_unicast:

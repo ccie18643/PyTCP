@@ -23,13 +23,15 @@
 #                                                                          #
 ############################################################################
 
+# pylint: disable = too-many-arguments
 
-#
-# protocols/udp/metadata.py - module contains interface class for FPP -> UDP
-# Socket communication
-#
-# ver 2.7
-#
+"""
+Module contains interface class for the FPP -> UDP Socket communication.
+
+pytcp/protocols/udp/metadata.py
+
+ver 2.7
+"""
 
 
 from __future__ import annotations

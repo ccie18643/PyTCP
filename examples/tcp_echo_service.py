@@ -24,11 +24,13 @@
 ############################################################################
 
 
-#
-# examples/tcp_echo_service.py - The 'user space' service TCP Echo (RFC 862).
-#
-# ver 2.7
-#
+"""
+The example 'user space' service TCP Echo (RFC 862).
+
+examples/tcp_echo_service.py
+
+ver 2.7
+"""
 
 
 from __future__ import annotations
@@ -150,4 +152,4 @@ def cli(*, interface: str) -> None:
 
 
 if __name__ == "__main__":
-    cli()
+    cli()  # pylint: disable = missing-kwoa

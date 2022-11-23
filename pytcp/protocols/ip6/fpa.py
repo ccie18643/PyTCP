@@ -23,12 +23,15 @@
 #                                                                          #
 ############################################################################
 
+# pylint: disable = too-many-instance-attributes
 
-#
-# protocols/ip6/fpa.py - Fast Packet Assembler support class for IPv6 protocol
-#
-# ver 2.7
-#
+"""
+Module contains Fast Packet Assembler support class for the IPv6 protocol.
+
+pytcp/protocols/ip6/fpa.py
+
+ver 2.7
+"""
 
 
 from __future__ import annotations
@@ -36,7 +39,7 @@ from __future__ import annotations
 import struct
 from typing import TYPE_CHECKING
 
-import pytcp.config as config
+from pytcp import config
 from pytcp.lib.ip6_address import Ip6Address
 from pytcp.protocols.ether.ps import ETHER_TYPE_IP6
 from pytcp.protocols.ip6.ps import (
@@ -96,9 +99,13 @@ class Ip6Assembler:
             IP6_NEXT_RAW,
         }
 
-        self._carried_packet: Ip6ExtFragAssembler | Icmp6Assembler | TcpAssembler | UdpAssembler | RawAssembler = (
-            carried_packet
-        )
+        self._carried_packet: (
+            Ip6ExtFragAssembler
+            | Icmp6Assembler
+            | TcpAssembler
+            | UdpAssembler
+            | RawAssembler
+        ) = carried_packet
         self._tracker: Tracker = self._carried_packet.tracker
         self._ver: int = 6
         self._dscp: int = dscp

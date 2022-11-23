@@ -24,12 +24,14 @@
 ############################################################################
 
 
-#
-# lib/tracker.py - class used to generate serial number information
-# for new packets
-#
-# ver 2.7
-#
+"""
+Module contains class used to generate serial number information
+for new packets.
+
+pytcp/lib/tracker.py
+
+ver 2.7
+"""
 
 
 from __future__ import annotations

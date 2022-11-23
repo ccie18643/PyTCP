@@ -23,12 +23,15 @@
 #                                                                          #
 ############################################################################
 
+# pylint: disable = missing-class-docstring
 
-#
-# lib/ip4_address.py - module contains IPv4 address manipulation classes
-#
-# ver 2.7
-#
+"""
+Module contains IPv4 address manipulation classes.
+
+pytcp/lib/ip4_address.py
+
+ver 2.7
+"""
 
 
 from __future__ import annotations
@@ -96,11 +99,7 @@ class Ip4Address(IpAddress):
                 self._address = address
                 return
 
-        if (
-            isinstance(address, memoryview)
-            or isinstance(address, bytes)
-            or isinstance(address, bytearray)
-        ):
+        if isinstance(address, (memoryview, bytes, bytearray)):
             if len(address) == 4:
                 self._address = struct.unpack("!L", address)[0]
                 return
@@ -264,11 +263,7 @@ class Ip4Mask(IpMask):
                 if _validate_bits():
                     return
 
-        if (
-            isinstance(mask, memoryview)
-            or isinstance(mask, bytes)
-            or isinstance(mask, bytearray)
-        ):
+        if isinstance(mask, (memoryview, bytes, bytearray)):
             if len(mask) == 4:
                 self._mask = struct.unpack("!L", mask)[0]
                 if _validate_bits():
@@ -417,7 +412,7 @@ class Ip4Host(IpHost):
 
         if isinstance(host, str):
             try:
-                address, mask = host.split("/")
+                address, _ = host.split("/")
                 self._address = Ip4Address(address)
                 self._network = Ip4Network(host)
                 return

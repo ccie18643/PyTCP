@@ -24,11 +24,13 @@
 ############################################################################
 
 
-#
-# examples/tcp_daytime_service.py - The 'user space' service TCP Daytime (RFC 867).
-#
-# ver 2.7
-#
+"""
+The example 'user space' service TCP Daytime (RFC 867).
+
+examples/tcp_daytime_service.py - The 'user space' service TCP Daytime (RFC 867).
+
+ver 2.7
+"""
 
 
 from __future__ import annotations
@@ -132,4 +134,4 @@ def cli(*, interface: str) -> None:
 
 
 if __name__ == "__main__":
-    cli()
+    cli()  # pylint: disable = missing-kwoa

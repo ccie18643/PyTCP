@@ -24,11 +24,13 @@
 ############################################################################
 
 
-#
-# examples/lib/tcp_service.py - The 'user space' TCP generic service class.
-#
-# ver 2.7
-#
+"""
+The 'user space' TCP generic service class used in examples.
+
+examples/lib/tcp_service.py
+
+ver 2.7
+"""
 
 
 from __future__ import annotations
@@ -39,7 +41,7 @@ from typing import TYPE_CHECKING
 
 import click
 
-import pytcp.lib.socket as socket
+from pytcp.lib import socket
 from pytcp.lib.ip_helper import ip_version
 
 if TYPE_CHECKING:

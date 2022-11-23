@@ -24,11 +24,13 @@
 ############################################################################
 
 
-#
-# ether/ps.py - protocol support for Ethernet
-#
-# ver 2.7
-#
+"""
+Module contains packet structure information for the Ethernet protccol.
+
+pytcp/protocols/ether/ps.py
+
+ver 2.7
+"""
 
 
 from __future__ import annotations
