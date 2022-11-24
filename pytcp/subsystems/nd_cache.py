@@ -27,6 +27,7 @@
 # pylint: disable = expression-not-assigned
 # pylint: disable = protected-access
 
+
 """
 Module contains class supporting ICMPv6 Neighbor Discovery cache operations.
 
