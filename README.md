@@ -1,8 +1,8 @@
 # PyTCP (version 2.7)
 
-### Version 2.7, unlike its predecessors, contains the PyTCP stack code as a library so that it can be easily imported and used in external code. This should make the user experience smoother and eventually provide the full ability to replace the standard Linux stack calls (e.g., socket library) with the PyTcp calls in any 3rd party application.
-
 PyTCP is a fully functional TCP/IP stack written in Python. It supports TCP stream-based transport with reliable packet delivery based on a sliding window mechanism and basic congestion control. It also supports IPv6/ICMPv6 protocols with SLAAC address configuration. It operates as a user space program attached to the Linux TAP interface. Today, the stack can send and receive traffic over the Internet using IPv4 and IPv6 default gateways for routing. 
+
+Version 2.7, unlike its predecessors, contains the PyTCP stack code as a library so that it can be easily imported and used in external code. This should make the user experience smoother and eventually provide the full ability to replace the standard Linux stack calls (e.g., socket library) with the PyTcp calls in any 3rd party application.
 
 This program is a work in progress, and it often changes due to new features being implemented, changes being made to implement features, bug fixes, etc. Therefore, if the current version is not working as expected, try to clone it again the next day or email me the problem. Any input is appreciated. Also, remember that some stack features may be implemented only partially (as needed for stack operation). They may be implemented in a sub-optimal fashion or not 100% RFC-compliant way (due to lack of time), or they may contain bug(s) that I still need to fix.
 
