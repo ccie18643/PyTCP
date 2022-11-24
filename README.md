@@ -146,12 +146,12 @@ y assigned by another host so stack cannot us it
  - stack receives lost packet, pulls all the packets stored in ooo queue so far and processes them
  - stacks sends out ACK packet to acknowledge latest of the packets pulled from queue
 
-![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/master/doc/images/tcp_ooo_ret_01.png)
-![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/master/doc/images/tcp_ooo_ret_02.png)
-![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/master/doc/images/tcp_ooo_ret_03.png)
-![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/master/doc/images/tcp_ooo_ret_04.png)
-![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/master/doc/images/tcp_ooo_ret_05.png)
-![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/master/doc/images/tcp_ooo_ret_06.png)
+![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/master/docs/images/tcp_ooo_ret_01.png)
+![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/master/docs/images/tcp_ooo_ret_02.png)
+![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/master/docs/images/tcp_ooo_ret_03.png)
+![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/master/docs/images/tcp_ooo_ret_04.png)
+![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/master/docs/images/tcp_ooo_ret_05.png)
+![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/master/docs/images/tcp_ooo_ret_06.png)
 
 
 #### TCP Finite State Machine - stack is running TCP Echo service
@@ -160,10 +160,10 @@ y assigned by another host so stack cannot us it
  - stack echoes the data back
  - peer closes connection
 
-![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/master/doc/images/tcp_fsm_srv_01.png)
-![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/master/doc/images/tcp_fsm_srv_02.png)
-![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/master/doc/images/tcp_fsm_srv_03.png)
-![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/master/doc/images/tcp_fsm_srv_04.png)
+![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/master/docs/images/tcp_fsm_srv_01.png)
+![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/master/docs/images/tcp_fsm_srv_02.png)
+![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/master/docs/images/tcp_fsm_srv_03.png)
+![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/master/docs/images/tcp_fsm_srv_04.png)
 
 
 #### TCP Finite State Machine - stack is running TCP Echo client
@@ -172,10 +172,10 @@ y assigned by another host so stack cannot us it
  - peer echoes the data back
  - stack closes connection
 
-![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/master/doc/images/tcp_fsm_clt_01.png)
-![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/master/doc/images/tcp_fsm_clt_02.png)
-![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/master/doc/images/tcp_fsm_clt_03.png)
-![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/master/doc/images/tcp_fsm_clt_04.png)
+![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/master/docs/images/tcp_fsm_clt_01.png)
+![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/master/docs/images/tcp_fsm_clt_02.png)
+![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/master/docs/images/tcp_fsm_clt_03.png)
+![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/master/docs/images/tcp_fsm_clt_04.png)
 
 
 #### Pre-parse packet sanity check in action
@@ -183,9 +183,9 @@ y assigned by another host so stack cannot us it
  - second screenshot shows stack with sanity check turned on, malformed ICMPv6 packet is being discarded before being passed to ICMPv6 protocol parser
  - third screenshot shows the malformed packet, number of MA records field has been set to 777 despite packet contains only one record
 
-![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/master/doc/images/pre_sanity_chk_01.png)
-![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/master/doc/images/pre_sanity_chk_02.png)
-![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/master/doc/images/pre_sanity_chk_03.png)
+![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/master/docs/images/pre_sanity_chk_01.png)
+![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/master/docs/images/pre_sanity_chk_02.png)
+![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/master/docs/images/pre_sanity_chk_03.png)
 
 
 #### ARP Probe/Announcement mechanism
@@ -193,10 +193,10 @@ y assigned by another host so stack cannot us it
  - one of IP addresses (192.168.9.102) is already taken so stack gets notified about it and skips it
  - rest of IP addresses are free so stack claims them by sending ARP Announcement for each of them
 
-![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/master/doc/images/ip_arp_probe_01.png)
-![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/master/doc/images/ip_arp_probe_02.png)
-![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/master/doc/images/ip_arp_probe_03.png)
-![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/master/doc/images/ip_arp_probe_04.png)
+![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/master/docs/images/ip_arp_probe_01.png)
+![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/master/docs/images/ip_arp_probe_02.png)
+![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/master/docs/images/ip_arp_probe_03.png)
+![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/master/docs/images/ip_arp_probe_04.png)
 
 
 #### ARP resolution and handling ping packets
@@ -204,8 +204,8 @@ y assigned by another host so stack cannot us it
  - stack responds by sending ARP Reply packet (stack doesn't need to send out its own request since it already made note of the host's MAC from host's request)
  - hosts sends ping packets, stack responds to them
 
-![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/master/doc/images/arp_ping_01.png)
-![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/master/doc/images/arp_ping_02.png)
+![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/master/docs/images/arp_ping_01.png)
+![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/master/docs/images/arp_ping_02.png)
 
 
 #### IP fragmentation
@@ -215,7 +215,7 @@ y assigned by another host so stack cannot us it
  - UDP datagram is being passed to IP protocol handler which creates IP packet and after checking that it exceedes link MTU fragments it into three separate IP packets
  - IP packets are being encapsulated in Ethernet frames and put on TX ring
 
-![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/master/doc/images/ip_udp_frag_01.png)
-![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/master/doc/images/ip_udp_frag_02.png)
-![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/master/doc/images/ip_udp_frag_03.png)
+![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/master/docs/images/ip_udp_frag_01.png)
+![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/master/docs/images/ip_udp_frag_02.png)
+![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/master/docs/images/ip_udp_frag_03.png)
 

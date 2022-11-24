@@ -1,2 +1,16 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
 [tool.black]
 line-length = 80
+
+[tool.isort]
+profile = "black"
+src_paths = ["pytcp", "examples", "tests"]
+line_length = 80
+honor_noqa = true
+
+[tool.codespell]
+quiet-level = 2
+ignore-words-list = "ect, ether, nd, tha"
