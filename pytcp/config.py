@@ -95,7 +95,8 @@ PACKET_SANITY_CHECK = True
 IP4_OPTION_PACKET_DROP = False
 
 # Unicast MAC addresses assigned to stack, currently there is not any kind of
-# duplicate MAC detection performed.
+# duplicate MAC detection performed. This can be overridden when stack object
+# is created.
 MAC_ADDRESS = "02:00:00:77:77:77"
 
 # IPv6 address auto configuration is implemented using EUI64 addressing and

@@ -203,6 +203,12 @@ class PacketHandler:
         self._run_thread = False
         time.sleep(0.1)
 
+    def assign_mac_address(self, mac_unicast: MacAddress) -> None:
+        """
+        Assign MAC address information.
+        """
+        self.mac_unicast = mac_unicast
+
     def assign_ip6_address(self, ip6_host: Ip6Host) -> None:
         """
         Assign IPv6 address information.

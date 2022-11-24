@@ -42,6 +42,7 @@ from pytcp import TcpIpStack
 
 @click.command()
 @click.option("--interface", default="tap7")
+@click.option("--mac-address", default=None)
 @click.option("--ip6-address", default=None)
 @click.option("--ip6-gateway", default=None)
 @click.option("--ip4-address", default=None)
@@ -49,6 +50,7 @@ from pytcp import TcpIpStack
 def cli(
     *,
     interface: str,
+    mac_address: str | None,
     ip6_address: str | None,
     ip6_gateway: str | None,
     ip4_address: str | None,
@@ -60,6 +62,7 @@ def cli(
 
     stack = TcpIpStack(
         interface=interface,
+        mac_address=mac_address,
         ip6_address=ip6_address,
         ip6_gateway=ip6_gateway,
         ip4_address=ip4_address,
