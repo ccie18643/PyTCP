@@ -25,9 +25,9 @@ clean:
 
 lint: venv
 	@echo '<<< CODESPELL'
-	@./$(VENV)/bin/codespell -w --ignore-words-list="ect,ether,nd,tha" --quiet-level=2 ${PYTCP_FILES} ${TEST_FILES} ${EXAMPLES_FILES} README.md
+	@./$(VENV)/bin/codespell --write-changes ${PYTCP_FILES} ${TEST_FILES} ${EXAMPLES_FILES} README.md
 	@echo '<<< ISORT'
-	@./$(VENV)/bin/isort --line-length 80 --profile black ${PYTCP_FILES} ${TEST_FILES} ${EXAMPLES_FILES}
+	@./$(VENV)/bin/isort ${PYTCP_FILES} ${TEST_FILES} ${EXAMPLES_FILES}
 	@echo '<<< BLACK'
 	@./$(VENV)/bin/black ${PYTCP_FILES} ${TEST_FILES} ${EXAMPLES_FILES}
 	@echo '<<< FLAKE8'
