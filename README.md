@@ -95,17 +95,17 @@ Please feel free to check my two other related projects:
 
 #### Couple ping packets and two monkeys delivered via TCP over IPv6 protocol
 
-![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/master/doc/images/malpi_00.png)
-![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/master/doc/images/malpi_01.png)
-![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/master/doc/images/malpi_02.png)
-![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/master/doc/images/malpi_03.png)
-![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/master/doc/images/malpi_04.png)
-![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/master/doc/images/malpi_05.png)
-![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/master/doc/images/malpi_06.png)
-![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/master/doc/images/malpi_07.png)
-![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/master/doc/images/malpi_08.png)
-![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/master/doc/images/malpi_09.png)
-![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/master/doc/images/malpi_10.png)
+![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/master/docs/images/malpi_00.png)
+![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/master/docs/images/malpi_01.png)
+![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/master/docs/images/malpi_02.png)
+![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/master/docs/images/malpi_03.png)
+![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/master/docs/images/malpi_04.png)
+![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/master/docs/images/malpi_05.png)
+![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/master/docs/images/malpi_06.png)
+![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/master/docs/images/malpi_07.png)
+![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/master/docs/images/malpi_08.png)
+![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/master/docs/images/malpi_09.png)
+![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/master/docs/images/malpi_10.png)
 
 
 #### IPv6 Neighbor Discovery / Duplicate Address Detection / Address Auto Configuration
@@ -120,11 +120,11 @@ y assigned by another host so stack cannot us it
  - stack doesn't receive any Neighbor Advertisement for the address it generated so assigns it to its interface
  - after all addresses are assigned stacks sends out one more Multicast Listener report listing all of the multicast addresses it wants to listen to
 
-![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/master/doc/images/ipv6_nd_dad_01.png)
-![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/master/doc/images/ipv6_nd_dad_02.png)
-![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/master/doc/images/ipv6_nd_dad_03.png)
-![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/master/doc/images/ipv6_nd_dad_04.png)
-![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/master/doc/images/ipv6_nd_dad_05.png)
+![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/master/docs/images/ipv6_nd_dad_01.png)
+![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/master/docs/images/ipv6_nd_dad_02.png)
+![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/master/docs/images/ipv6_nd_dad_03.png)
+![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/master/docs/images/ipv6_nd_dad_04.png)
+![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/master/docs/images/ipv6_nd_dad_05.png)
 
 
 #### TCP Fast Retransmit in action after lost TX packet
@@ -132,10 +132,10 @@ y assigned by another host so stack cannot us it
  - peer notices the inconsistence in packet SEQ numbers and sends out 'fast retransmit request'
  - stack eceives the request and retransmits lost packet
 
-![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/master/doc/images/tcp_tx_fst_ret_01.png)
-![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/master/doc/images/tcp_tx_fst_ret_02.png)
-![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/master/doc/images/tcp_tx_fst_ret_03.png)
-![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/master/doc/images/tcp_tx_fst_ret_04.png)
+![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/master/docs/images/tcp_tx_fst_ret_01.png)
+![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/master/docs/images/tcp_tx_fst_ret_02.png)
+![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/master/docs/images/tcp_tx_fst_ret_03.png)
+![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/master/docs/images/tcp_tx_fst_ret_04.png)
 
 
 #### Out of order queue in action during RX packet loss event
