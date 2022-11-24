@@ -8,7 +8,7 @@ jobs:
       - uses: actions/setup-python@v2
       - run: pip install -r requirements.txt
       - run: codespell --ignore-words-list="ect,ether,nd,tha" --quiet-level=2 README.md $(find . -name '*.py')
-      - run: isort -c --profile black $(find . -name '*.py')
+      - run: isort -c --line-length 80 --profile black $(find . -name '*.py')
       - run: black --check $(find . -name '*.py')
       - run: flake8 $(find . -name '*.py')
       - run: mypy -p pytcp
