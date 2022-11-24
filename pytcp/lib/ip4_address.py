@@ -95,7 +95,7 @@ class Ip4Address(IpAddress):
         self._version: int = 4
 
         if isinstance(address, int):
-            if address in range(4294967296):
+            if address & 0xFF_FF_FF_FF == address:
                 self._address = address
                 return
 
@@ -155,8 +155,8 @@ class Ip4Address(IpAddress):
         """
         Check if IPv4 address is link local.
         """
-        return self._address in range(
-            2851995648, 2852061184
+        return (
+            self._address & 0xFF_FF_00_00 == 0xA9_FE_00_00
         )  # 169.254.0.0 - 169.254.255.255
 
     @property
@@ -164,8 +164,9 @@ class Ip4Address(IpAddress):
         """
         Check if IPv4 address is loopback.
         """
-        return self._address in range(
-            2130706432, 2147483648
+
+        return (
+            self._address & 0xFF_00_00_00 == 0x7F_00_00_00
         )  # 127.0.0.0 - 127.255.255.255
 
     @property
@@ -173,8 +174,8 @@ class Ip4Address(IpAddress):
         """
         Check if IPv4 address is multicast.
         """
-        return self._address in range(
-            3758096384, 4026531840
+        return (
+            self._address & 0xF0_00_00_00 == 0xE0_00_00_00
         )  # 224.0.0.0 - 239.255.255.255
 
     @property
@@ -183,12 +184,12 @@ class Ip4Address(IpAddress):
         Check if IPv4 address is private.
         """
         return (
-            self._address
-            in range(167772160, 184549376)  # 10.0.0.0 - 10.255.255.255
-            or self._address
-            in range(2886729728, 2887778304)  # 172.16.0.0 - 172.31.255.255
-            or self._address
-            in range(3232235520, 3232301056)  # 192.168.0.0 - 192.168.255.255
+            self._address & 0xFF_00_00_00
+            == 0x0A_00_00_00  # 10.0.0.0 - 10.255.255.255
+            or self._address & 0xFF_F0_00_00
+            == 0xAC_10_00_00  # 172.16.0.0 - 172.31.255.255
+            or self._address & 0xFF_FF_00_00
+            == 0xC0_A8_00_00  # 192.168.0.0 - 192.168.255.255
         )
 
     @property
@@ -196,8 +197,8 @@ class Ip4Address(IpAddress):
         """
         Check if IPv4 address is reserved.
         """
-        return self._address in range(
-            4026531840, 4294967295
+        return (
+            self._address & 0xF0_00_00_01 == 0xF0_00_00_00
         )  # 240.0.0.0 - 255.255.255.254
 
     @property
@@ -205,14 +206,17 @@ class Ip4Address(IpAddress):
         """
         Check if IPv4 address is a limited broadcast.
         """
-        return self._address == 4294967295
+        return self._address == 0xFF_FF_FF_FF  # 255.255.255.255
 
     @property
     def is_invalid(self) -> bool:
         """
         Check if IPv4 address is reserved.
         """
-        return self._address in range(1, 16777216)  # 0.0.0.1 - 0.255.255.255
+        return (
+            self._address != 0x00_00_00_00
+            and self._address & 0xFF_00_00_00 == 0x00_00_00_00
+        )  # 0.0.0.1 - 0.255.255.255
 
     @property
     def unspecified(self) -> Ip4Address:
@@ -258,7 +262,7 @@ class Ip4Mask(IpMask):
                 return True
 
         if isinstance(mask, int):
-            if mask in range(4294967296):
+            if mask & 0xFF_FF_FF_FF == mask:
                 self._mask = mask
                 if _validate_bits():
                     return

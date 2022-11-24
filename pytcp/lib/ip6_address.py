@@ -102,7 +102,7 @@ class Ip6Address(IpAddress):
         self._version: int = 6
 
         if isinstance(address, int):
-            if address in range(340282366920938463463374607431768211455):
+            if address & 0xFFFF_FFFF_FFFF_FFFF_FFFF_FFFF_FFFF_FFFF == address:
                 self._address = address
                 return
 
@@ -159,9 +159,9 @@ class Ip6Address(IpAddress):
         """
         Check if IPv6 address is global.
         """
-        return self._address in range(
-            42535295865117307932921825928971026432,
-            85070591730234615865843651857942052864,
+        return (
+            self._address & 0xE000_0000_0000_0000_0000_0000_0000_0000
+            == 0x2000_0000_0000_0000_0000_0000_0000_0000
         )  # 2000::/3
 
     @property
@@ -169,9 +169,9 @@ class Ip6Address(IpAddress):
         """
         Check if IPv6 address is private.
         """
-        return self._address in range(
-            334965454937798799971759379190646833152,
-            337623910929368631717566993311207522304,
+        return (
+            self._address & 0xFE00_0000_0000_0000_0000_0000_0000_0000
+            == 0xFC00_0000_0000_0000_0000_0000_0000_0000
         )  # fc00::/7
 
     @property
@@ -179,9 +179,9 @@ class Ip6Address(IpAddress):
         """
         Check if IPv6 address is link local.
         """
-        return self._address in range(
-            338288524927261089654018896841347694592,
-            338620831926207318622244848606417780736,
+        return (
+            self._address & 0xFFC0_0000_0000_0000_0000_0000_0000_0000
+            == 0xFE80_0000_0000_0000_0000_0000_0000_0000
         )  # fe80::/10
 
     @property
@@ -189,9 +189,9 @@ class Ip6Address(IpAddress):
         """
         Check if IPv6 address is multicast.
         """
-        return self._address in range(
-            338953138925153547590470800371487866880,
-            340282366920938463463374607431768211456,
+        return (
+            self._address & 0xFF00_0000_0000_0000_0000_0000_0000_0000
+            == 0xFF00_0000_0000_0000_0000_0000_0000_0000
         )  # ff00::/8
 
     @property
@@ -199,9 +199,9 @@ class Ip6Address(IpAddress):
         """
         Check if address is IPv6 solicited node multicast address.
         """
-        return self._address in range(
-            338963523518870617245727861372719464448,
-            338963523518870617245727861372736241664,
+        return (
+            self._address & 0xFFFF_FFFF_FFFF_FFFF_FFFF_FFFF_FF00_0000
+            == 0xFF02_0000_0000_0000_0000_0001_FF00_0000
         )  # ff02::1:ff00:0/104
 
     @property
@@ -257,7 +257,7 @@ class Ip6Mask(IpMask):
                 return True
 
         if isinstance(mask, int):
-            if mask in range(340282366920938463463374607431768211456):
+            if mask & 0xFFFF_FFFF_FFFF_FFFF_FFFF_FFFF_FFFF_FFFF == mask:
                 self._mask = mask
                 if _validate_bits():
                     return
