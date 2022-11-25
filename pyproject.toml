@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "PyTCP"
-version = "2.7.0"
+version = "2.7.1"
 description = "TCP/IP stack written in Python."
 readme = "README.md"
 authors = [{ name = "Sebastian Majewski", email = "ccie18643@gmail.com" }]
@@ -23,9 +23,6 @@ keywords = ["networking", "tcpip", "stack"]
 dependencies = [    
 ]
 requires-python = ">=3.10"
-
-[project.optional-dependencies]
-dev = ["click", "testslide", "black", "mypy", "flake8", "codespell", "isort", "pylint", "build", "twine"]
 
 [project.urls]
 "Homepage" = "https://github.com/ccie18643/PyTCP"
