@@ -452,7 +452,7 @@ class PacketHandler:
                 self._send_arp_announcement(ip4_host.address)
                 __debug__ and log(
                     "stack",
-                    f"Successfully claimed IPv4 address {ip4_unicast}",
+                    f"Successfully claimed IPv4 address {ip4_host.address}",
                 )
 
         # If don't have any IPv4 address assigned disable IPv4 protocol
