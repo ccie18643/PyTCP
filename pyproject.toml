@@ -2,6 +2,38 @@
 requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
 
+<<<<<<< HEAD
+=======
+[project]
+name = "tcp-ip-stack"
+version = "2.7.0"
+description = "TCP/IP stack written in Python."
+readme = "README.md"
+authors = [{ name = "Sebastian Majewski", email = "ccie18643@gmail.com" }]
+license = { file = "LICENSE" }
+classifiers = [
+    "Programming Language :: Python :: 3.10",
+    "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
+    "Development Status :: 3 - Alpha",
+    "Operating System :: POSIX :: Linux",
+    "Natural Language :: English",
+    "Environment :: Console",
+    "Topic :: System :: Networking",
+    "Typing :: Typed",
+]
+keywords = ["networking", "tcpip", "stack"]
+dependencies = [    
+]
+requires-python = ">=3.10"
+
+[project.optional-dependencies]
+dev = ["click", "testslide", "black", "mypy", "flake8", "codespell", "isort", "pylint", "build", "twine"]
+
+[project.urls]
+"Homepage" = "https://github.com/ccie18643/PyTCP"
+"Bug Tracker" = "https://github.com/ccie18643/PyTCP/issues"
+
+>>>>>>> PyTCP_2_7
 [tool.black]
 line-length = 80
 
@@ -14,3 +46,15 @@ honor_noqa = true
 [tool.codespell]
 quiet-level = 2
 ignore-words-list = "ect, ether, nd, tha"
+
+[tool.mypy]
+python_version = "3.10"
+check_untyped_defs = true
+disallow_untyped_defs = true
+disallow_any_unimported = true
+disallow_incomplete_defs = true
+disallow_untyped_decorators = true
+no_implicit_optional = true
+warn_return_any = true
+warn_unused_ignores = true
+show_error_codes = true

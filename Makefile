@@ -21,6 +21,8 @@ run: venv
 
 clean:
 	@rm -rf $(VENV)
+	@rm -rf dist
+	@rm -rf tcp_ip_stack.egg-info
 	@find . -type d -name '__pycache__' -exec rm -rf {} +
 
 lint: venv
@@ -48,6 +50,18 @@ test: test_unit test_integration
 
 bridge:
 	@brctl addbr br0
+
+install: venv
+	@./$(VENV)/bin/pip install -e .
+
+package: venv
+	@./$(VENV)/bin/python -m build
+
+dist: package
+
+pypi: dist
+	@./$(VENV)/bin/twine check dist/*
+	@./$(VENV)/bin/twine upload dist/*
 
 tap:
 	@ip tuntap add name tap7 mode tap

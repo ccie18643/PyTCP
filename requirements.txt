@@ -1,11 +1,11 @@
+click
 testslide
-mock
 black
 mypy
 flake8
 codespell
 isort
-argparse
-mock
-types-mock
-click
+pylint
+build
+twine
+ipython
