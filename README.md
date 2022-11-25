@@ -1,4 +1,6 @@
-# PyTCP ver. 2.7
+# PyTCP
+### The TCP/IP stack written in Python
+<br>
 
 PyTCP is a fully functional TCP/IP stack written in Python. It supports TCP stream-based transport with reliable packet delivery based on a sliding window mechanism and basic congestion control. It also supports IPv6/ICMPv6 protocols with SLAAC address configuration. It operates as a user space program attached to the Linux TAP interface. It has implemented simple routing and can send and receive traffic over a local network and the Internet. 
 
@@ -41,11 +43,11 @@ directly by calling one of the '_*_phtx()' methods from PacketHandler class.
 
 ### Clonning PyTCP from the GitHub repository
 
-In most cases, PyTCP should be cloned directly from GitHub, as this type of installation provides
-full development and testing environment.
+In most cases, PyTCP should be cloned directly from the [GitHub repository](https://github.com/ccie18643/PyTCP),
+as this type of installation provides full development and testing environment.
 
 ```shell
-git clone https://github.com/ccie18643/RusTCP
+git clone https://github.com/ccie18643/PyTCP
 ```
 
 After cloning, we can run one of the included examples:
@@ -63,7 +65,7 @@ To fine-tune various stack operational parameters, please edit the ```pytcp/conf
 
 ### Installing PyTCP from the PyPi repository
 
-PyTCP can also be installed as a regular module from the PyPi repository.
+PyTCP can also be installed as a regular module from the [PyPi repository](https://pypi.org/project/PyTCP/).
 
 ```console
 $ python -m pip install PyTCP
