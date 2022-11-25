@@ -25,7 +25,7 @@ dependencies = [
 requires-python = ">=3.10"
 
 [project.optional-dependencies]
-dev = ["testslide", "black", "mypy", "flake8", "codespell", "isort", "pylint", "click"]
+dev = ["click", "testslide", "black", "mypy", "flake8", "codespell", "isort", "pylint", "build", "twine"]
 
 [project.urls]
 "Homepage" = "https://github.com/ccie18643/PyTCP"
@@ -43,3 +43,15 @@ honor_noqa = true
 [tool.codespell]
 quiet-level = 2
 ignore-words-list = "ect, ether, nd, tha"
+
+[tool.mypy]
+python_version = "3.10"
+check_untyped_defs = true
+disallow_untyped_defs = true
+disallow_any_unimported = true
+disallow_incomplete_defs = true
+disallow_untyped_decorators = true
+no_implicit_optional = true
+warn_return_any = true
+warn_unused_ignores = true
+show_error_codes = true

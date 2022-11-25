@@ -1,3 +1,4 @@
+click
 testslide
 black
 mypy
@@ -5,4 +6,6 @@ flake8
 codespell
 isort
 pylint
-click
+build
+twine
+ipython
