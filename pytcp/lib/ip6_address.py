@@ -411,7 +411,7 @@ class Ip6Host(IpHost):
                     host[1], Ip6Mask
                 ):
                     self._address = host[0]
-                    self._network = Ip6Network(host)
+                    self._network = Ip6Network((host[0], host[1]))
                     return
 
         if isinstance(host, str):

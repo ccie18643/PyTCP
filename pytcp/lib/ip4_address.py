@@ -411,7 +411,7 @@ class Ip4Host(IpHost):
                     host[1], Ip4Mask
                 ):
                     self._address = host[0]
-                    self._network = Ip4Network(host)
+                    self._network = Ip4Network((host[0], host[1]))
                     return
 
         if isinstance(host, str):
