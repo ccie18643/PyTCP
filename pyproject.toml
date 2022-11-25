@@ -2,8 +2,6 @@
 requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
 
-<<<<<<< HEAD
-=======
 [project]
 name = "tcp-ip-stack"
 version = "2.7.0"
@@ -33,7 +31,6 @@ dev = ["click", "testslide", "black", "mypy", "flake8", "codespell", "isort", "p
 "Homepage" = "https://github.com/ccie18643/PyTCP"
 "Bug Tracker" = "https://github.com/ccie18643/PyTCP/issues"
 
->>>>>>> PyTCP_2_7
 [tool.black]
 line-length = 80
 
