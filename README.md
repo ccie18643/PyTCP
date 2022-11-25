@@ -39,7 +39,7 @@ directly by calling one of the '_*_phtx()' methods from PacketHandler class.
 
 ---
 
-### Clonning the GitHub repository
+### Clonning PyTCP from the GitHub repository
 
 In most cases, PyTCP should be cloned directly from GitHub, as this type of installation provides
 full development and testing environment.
@@ -57,7 +57,7 @@ After cloning, we can run one of the included examples:
  - Execute any example, e.g., ```example/run_stack.py```.
  - Hit Ctrl-C to stop it.
 
-To fine-tune various stack operational parameters, please edit the ```PyTCP/config.py``` file accordingly.
+To fine-tune various stack operational parameters, please edit the ```pytcp/config.py``` file accordingly.
 
 ---
 
