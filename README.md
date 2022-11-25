@@ -1,5 +1,5 @@
 # PyTCP
-### The TCP/IP stack written in Python
+## The TCP/IP stack written in Python
 <br>
 
 PyTCP is a fully functional TCP/IP stack written in Python. It supports TCP stream-based transport with reliable packet delivery based on a sliding window mechanism and basic congestion control. It also supports IPv6/ICMPv6 protocols with SLAAC address configuration. It operates as a user space program attached to the Linux TAP interface. It has implemented simple routing and can send and receive traffic over a local network and the Internet. 
