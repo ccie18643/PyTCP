@@ -27,7 +27,7 @@ clean:
 
 lint: venv
 	@echo '<<< CODESPELL'
-	@./$(VENV)/bin/codespell --write-changes ${PYTCP_FILES} ${TEST_FILES} ${EXAMPLES_FILES} README.md
+	@./$(VENV)/bin/codespell --write-changes ${PYTCP_FILES} ${TEST_FILES} ${EXAMPLES_FILES}
 	@echo '<<< ISORT'
 	@./$(VENV)/bin/isort ${PYTCP_FILES} ${TEST_FILES} ${EXAMPLES_FILES}
 	@echo '<<< BLACK'
