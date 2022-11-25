@@ -43,8 +43,8 @@ directly by calling one of the '_*_phtx()' methods from PacketHandler class.
 
 ### Clonning PyTCP from the GitHub repository
 
-In most cases, PyTCP should be cloned directly from GitHub [repository](https://github.com/ccie18643/PyTCP)
-repository, as this type of installation provides full development and testing environment.
+In most cases, PyTCP should be cloned directly from the [GitHub repository](https://github.com/ccie18643/PyTCP),
+as this type of installation provides full development and testing environment.
 
 ```shell
 git clone https://github.com/ccie18643/PyTCP
@@ -65,7 +65,7 @@ To fine-tune various stack operational parameters, please edit the ```pytcp/conf
 
 ### Installing PyTCP from the PyPi repository
 
-PyTCP can also be installed as a regular module from the PyPi [repository](https://pypi.org/project/PyTCP/).
+PyTCP can also be installed as a regular module from the [PyPi repository](https://pypi.org/project/PyTCP/).
 
 ```console
 $ python -m pip install PyTCP
