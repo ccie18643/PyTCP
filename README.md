@@ -14,6 +14,7 @@ Please feel free to check my two other related projects:
  - [RusTCP](https://github.com/ccie18643/RusTCP) - Attempt to rewrite some of PyTCP funcionality in Rust and use it to create IPv6/SRv6 lab router.
  - [SeaTCP](https://github.com/ccie18643/SeaTCP) - Attempt to create low latency stack using C and Assembly languages.
 
+---
 
 ### Principle of operation and the test setup
 
@@ -36,8 +37,9 @@ After the example program (either client or service) starts the stack, it can co
 via simplified BSD Sockets like API interface. There is also the possibility of sending packets
 directly by calling one of the '_*_phtx()' methods from PacketHandler class.
 
+---
 
-### Clonning the repository
+### Clonning the GitHub repository
 
 In most cases PyTCP should be cloned directly from GitHub.
 
@@ -54,6 +56,7 @@ After cloning, we can run one of the included examples:
  - Execute any example, e.g., 'example/run_stack.py'.
  - Hit Ctrl-C to stop it.
 
+---
 
 ### Installing PyTCP from the PyPi repository
 
@@ -88,6 +91,8 @@ the user code and can be stopped using the following call.
 ```python
 stack.stop()
 ```
+
+---
 
 ### Features
 
@@ -167,6 +172,7 @@ stack.stop()
  - [x] UDP sockets - *Overhaul is needed to make the 'end user' interface match Berkeley sockets more closely so 3rd party applications can use it without porting.*
  - [x] TCP sockets - *Overhaul is needed to make the 'end user' interface match Berkeley sockets more closely so 3rd party applications can use it without porting.*
 
+---
 
 ### Examples
 
