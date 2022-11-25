@@ -68,7 +68,7 @@ To fine-tune various stack operational parameters, please edit the ```pytcp/conf
 PyTCP can also be installed as a regular module from the [PyPi repository](https://pypi.org/project/PyTCP/).
 
 ```console
-$ python -m pip install PyTCP
+python -m pip install PyTCP
 ```
 
 After installation, please ensure the TAP interface is operational and added to the bridge.
