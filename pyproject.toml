@@ -3,7 +3,7 @@ requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "tcp-ip-stack"
+name = "PyTCP"
 version = "2.7.0"
 description = "TCP/IP stack written in Python."
 readme = "README.md"
