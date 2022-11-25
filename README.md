@@ -43,11 +43,11 @@ directly by calling one of the '_*_phtx()' methods from PacketHandler class.
 
 ### Clonning PyTCP from the GitHub repository
 
-In most cases, PyTCP should be cloned directly from [GitHub](https://github.com/ccie18643/RusTCP),
+In most cases, PyTCP should be cloned directly from [GitHub](https://github.com/ccie18643/PyTCP),
 as this type of installation provides full development and testing environment.
 
 ```shell
-git clone https://github.com/ccie18643/RusTCP
+git clone https://github.com/ccie18643/PyTCP
 ```
 
 After cloning, we can run one of the included examples:
