@@ -17,43 +17,43 @@ Please feel free to check my two other related projects:
 
 #### Already implemented:
 
- - Stack - *fast packet parser using 'zero copy' approach*
- - Stack - *fast packet assembler using 'zero copy' approach*
- - Stack - *MAC address manipulation library - compatible with buffer protocol (Memoryview)*
- - Stack - *IPv4 address manipulation library - compatible with buffer protocol (Memoryview) (not dependent on Python standard library)*
- - Stack - *IPv6 address manipulation library - compatible with buffer protocol (Memoryview) (not dependent on Python standard library)*
- - Code - *Unit testing for some of libraries and modules (based on Facebook's Testslide library)*
- - Ethernet protocol - *support of Ethernet II standard frame*
- - Ethernet protocol - *unicast, IPv4 multicast, IPv6 multicast and broadcast addressing supported*
- - ARP protocol - *replies, queries, ARP cache mechanism*
- - ARP protocol - *ARP Probe/Announcement IP conflict detection (ACD) mechanism*
- - IPv4 protocol - *default routing, stack can talk to hosts over Internet using IPv4 protocol*
- - IPv4 protocol - *automatic address configuration using DHCP protocol*
- - IPv4 protocol - *inbound packet defragmentation, robust mechanism able to handle out of order and overlapping data fragments*
- - IPv4 protocol - *outbound packet fragmentation*
- - IPv4 protocol - *IPv4 options accepted but not supported*
- - IPv4 protocol -  *multiple stack's IPv4 addresses supported, each of them acts as it was assigned to separate VRF* 
- - ICMPv4 protocol - *echo request, echo reply, port unreachable*
- - IPv6 protocol - *default routing, stack can talk to hosts over Internet using IPv6 protocol*
- - IPv6 protocol - *automatic Link Local address configuration using EUI64 and Duplicate Address Detection*
- - IPv6 protocol - *automatic GUA address configuration using Router Advertisement / EUI64*
- - IPv6 protocol - *automatic assignment of Solicited Node Multicast addresses*
- - IPv6 protocol - *automatic assignment of IPv6 multicast MAC addresses*
- - IPv6 protocol - *inbound packet defragmentation, robust mechanism able to handle out of order and overlapping data fragments*
- - IPv6 protocol - *outbound packet fragmentation*
- - ICMPv6 protocol - *echo request, echo reply, port unreachable*
- - ICMPv6 protocol - *Neighbor Discovery, Duplicate Address Detection*
- - ICMPv6 protocol - *Neighbor Discovery cache mechanism*
- - ICMPv6 protocol - *Multicast Listener Discovery v2 (MLDv2) protocol implementation (only messages needed by stack)*
- - UDP protocol - *full support, stack is able to exchange data with other hosts using UDP protocol*
- - UDP sockets - *full support, stack's 'end user' API similar to Berkeley sockets*
- - UDP services - *UDP Echo, Discard, Daytime implemented for testing purposes*
- - TCP protocol - *full implementation of TCP Finite State Machine, at this point stack is able to exchange bulk data with other hosts over TCP protocol*
- - TCP protocol - *TCP option support for: MSS, WSCALE, SACKPERM, TIMESTAMP*
- - TCP protocol - *TCP sliding window mechanism with and data retransmission (fast retransmit and time based scenarios)*
- - TCP protocol - *TCP backoff mechanism / basic congestion control*
- - TCP protocol - *TCP SYN/FIN packet retransmission*
- - TCP sockets - *full support, stack's 'end user' API similar to Berkeley sockets*
+ - Stack - *Fast Packet Parser using 'zero copy' approach.*
+ - Stack - *Fast Packet Assembler using 'zero copy' approach.*
+ - Stack - *MAC address manipulation library - Compatible with buffer protocol (Memoryview).*
+ - Stack - *IPv4 address manipulation library - Compatible with buffer protocol (Memoryview) and not dependent on Python standard library.*
+ - Stack - *IPv6 address manipulation library - Compatible with buffer protocol (Memoryview) and not dependent on Python standard library.*
+ - Code - *Unit testing for some of the libraries and modules (based on Facebook's Testslide framework)*
+ - Ethernet protocol - *Support of Ethernet II standard frames.*
+ - Ethernet protocol - *Unicast, IPv4 multicast, IPv6 multicast and broadcast addressing.*
+ - ARP protocol - *Replies, queries, ARP cache mechanism.*
+ - ARP protocol - *ARP Probe/Announcement IP conflict detection (ACD) mechanism.*
+ - IPv4 protocol - *Default routing, the stack can talk to hosts over the Internet using IPv4 protocol.*
+ - IPv4 protocol - *Automatic IPv4 address configuration using DHCPv4 protocol.*
+ - IPv4 protocol - *Inbound packet defragmentation, robust mechanism able to handle out-of-order and overlapping data fragments.*
+ - IPv4 protocol - *Outbound packet fragmentation.*
+ - IPv4 protocol - *IPv4 options accepted but not supported.*
+ - IPv4 protocol -  *Multiple stack's IPv4 addresses supported, each of them acts as it was assigned to separate VRF* 
+ - ICMPv4 protocol - *The echo-request, echo-reply, and port-unreachable messages.*
+ - IPv6 protocol - *Default routing, the stack can talk to hosts over the Internet using IPv6 protocol.*
+ - IPv6 protocol - *Automatic link-local address configuration using EUI64 and Duplicate Address Detection.*
+ - IPv6 protocol - *Automatic GUA address configuration using Router Advertisement / EUI64.*
+ - IPv6 protocol - *Automatic assignment of Solicited Node Multicast addresses.*
+ - IPv6 protocol - *Automatic assignment of IPv6 multicast MAC addresses.*
+ - IPv6 protocol - *Inbound packet defragmentation, robust mechanism able to handle out-of-order and overlapping data fragments.*
+ - IPv6 protocol - *Outbound packet fragmentation.*
+ - ICMPv6 protocol - *The echo-request, echo-reply, and port-unreachable messages.*
+ - ICMPv6 protocol - *Neighbor Discovery, Duplicate Address Detection.*
+ - ICMPv6 protocol - *Neighbor Discovery cache mechanism.*
+ - ICMPv6 protocol - *Multicast Listener Discovery v2 (MLDv2) protocol implementation (only messages needed by stack).*
+ - UDP protocol - *Full support. The stack can exchange data with other hosts using the UDP protocol.*
+ - UDP sockets - *Full support, stack's 'end user' API similar to Berkeley sockets.*
+ - UDP services - *The Echo, Discard, and Daytime services implemented for testing purposes (in 'examples').*
+ - TCP protocol - *Full implementation of TCP Finite State Machine. At this point, the stack can exchange bulk data with other hosts over the TCP protocol.*
+ - TCP protocol - *TCP options support for: MSS, WSCALE, SACKPERM, TIMESTAMP.*
+ - TCP protocol - *TCP sliding window mechanism with and data retransmission (fast retransmit and time-based scenarios).*
+ - TCP protocol - *TCP backoff mechanism / basic congestion control.*
+ - TCP protocol - *TCP SYN/FIN packet retransmission.*
+ - TCP sockets - *Full support, stack's 'end user' API similar to Berkeley sockets*
 
 #### To be implemented:
 
@@ -73,7 +73,7 @@ Please feel free to check my two other related projects:
  - [ ] ICMPv6 protocol - *Implement ND Redirect message.*
  - [ ] ICMPv6 protocol - *Multicast Listener Discovery v2 (MLDv2) full implementation <-- it may be required by stack to respond to MLD queries.*
  - [ ] TCP protocol - *Proper handling of RST packets in various states. Need to research this. There is a bug report submitted on that.*
- - [ ] TCP protocol - *Need to rework the CLOSE syscall mechanism so the FIN flag can be set on the last data packet instead of being carried in separate one.*
+ - [ ] TCP protocol - *Need to rework the CLOSE syscall mechanism so the FIN flag can be set on the last data packet instead of being carried in a separate one.*
  - [ ] TCP protocol - *ACK packet retransmission in case we got FIN retransmission in TIME_WAIT state. Need to investigate this.*
  - [ ] TCP protocol - *implement proper response to packets containing old SEQ and/or ACK numbers. Need to investigate this.*
  - [ ] IPv6/IPv4 protocols - *proper routing mechanism, route tables, etc...*
@@ -81,7 +81,7 @@ Please feel free to check my two other related projects:
  - [ ] ARP cache - *implement proper FSM*
  - [ ] ICMPv6 ND cache - *implement proper FSM*
  - [x] Logging - *Replace Loguru with a homegrown logger to improve performance and flexibility.*
- - [x] Stack - *Convert the PyTCP stack to a library so it can be easily imported by external applications.*
+ - [x] Stack - *Convert the PyTCP stack to a library so external applications can easily import it.*
  - [x] Stack - *Packet flow counters to help gather packet statistics and let packet flow trace for unit testing.*
  - [x] Stack - *Implement feedback mechanism for TX path so packet sending failures can be communicated to sockets.*
  - [x] IPv6 protocol - *Ability to route traffic to external destinations via default gateway.*
