@@ -413,11 +413,13 @@ class IpNetwork(ABC):
             """
             The 'broadcast' property placeholder.
             """
+            raise NotImplementedError
 
         def eui64(self, mac_address: MacAddress) -> Ip6Host:
             """
             The 'eui64' property placeholder.
             """
+            raise NotImplementedError
 
 
 class IpHost(ABC):
