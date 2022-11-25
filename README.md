@@ -37,7 +37,7 @@ PyTCP stack to your local network at the same time.
 
 After the example program (either client or service) starts the stack, it can comunicate with it
 via simplified BSD Sockets like API interface. There is also the possibility of sending packets
-directly by calling one of the '_*_phtx()' methods from PacketHandler class.
+directly by calling one of the ```_*_phtx()``` methods from ```PacketHandler``` class.
 
 ---
 
