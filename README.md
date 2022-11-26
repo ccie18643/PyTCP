@@ -4,8 +4,8 @@
 
 [![Version](https://img.shields.io/badge/version-2.7-blue)](/https://github.com/ccie18643/PyTCP/tree/PyTCP_2_7)
 [![OS](https://img.shields.io/badge/os-Linux-blue)](https://kernel.org)
-[![GitHub License](https://img.shields.io/badge/license-GPL--3.0-blue)](https://github.com/ccie18643/PyTCP/blob/master/LICENSE)
 [![Supported Versions](https://img.shields.io/pypi/pyversions/PyTCP.svg)](https://pypi.org/project/PyTCP)
+[![GitHub License](https://img.shields.io/badge/license-GPL--3.0-lightgrey)](https://github.com/ccie18643/PyTCP/blob/master/LICENSE)
 [![CI](https://github.com/ccie18643/PyTCP/actions/workflows/ci.yml/badge.svg)](https://github.com/ccie18643/PyTCP/actions/workflows/ci.yml)
 
 PyTCP is a fully functional TCP/IP stack written in Python. It supports TCP stream-based transport with reliable packet delivery based on a sliding window mechanism and basic congestion control. It also supports IPv6/ICMPv6 protocols with SLAAC address configuration. It operates as a user space program attached to the Linux TAP interface. It has implemented simple routing and can send and receive traffic over a local network and the Internet. 
