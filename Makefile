@@ -8,11 +8,11 @@ PYTCP_FILES := $(shell find ${PYTCP_PATH} -name '*.py')
 TEST_FILES := $(shell find ${TESTS_PATH} -name '*.py')
 EXAMPLES_FILES := $(shell find ${EXAMPLES_PATH} -name '*.py')
 
-$(VENV)/bin/activate: requirements.txt
+$(VENV)/bin/activate: requirements_dev.txt
 	@python$(PYTHON_VERSION) -m venv $(VENV)
 	@echo "export PYTHONPATH=$(ROOT_PATH)" >> venv/bin/activate
 	@./$(VENV)/bin/python3 -m pip install --upgrade pip
-	@./$(VENV)/bin/pip install -r requirements.txt
+	@./$(VENV)/bin/pip install -r requirements_dev.txt
 
 venv: $(VENV)/bin/activate
 
@@ -21,8 +21,8 @@ run: venv
 
 clean:
 	@rm -rf $(VENV)
-	@rm -rf dist
-	@rm -rf tcp_ip_stack.egg-info
+	@rm -rf dist tcp_ip_stack.egg-info PyTCP.egg-info
+	@rm -rf .mypy_cache .pytest_cache .pyre
 	@find . -type d -name '__pycache__' -exec rm -rf {} +
 
 lint: venv

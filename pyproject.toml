@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "PyTCP"
-version = "2.7.3"
+version = "2.7.4"
 description = "TCP/IP stack written in Python."
 readme = "README.md"
 authors = [{ name = "Sebastian Majewski", email = "ccie18643@gmail.com" }]
@@ -19,9 +19,8 @@ classifiers = [
     "Topic :: System :: Networking",
     "Typing :: Typed",
 ]
-keywords = ["networking", "tcpip", "stack"]
-dependencies = [    
-]
+keywords = ["pytcp", "stack", "networking", "tcp", "ip", "ipv4", "ipv6", "arp", "ethernet", "icmp"]
+dependencies = []
 requires-python = ">=3.10"
 
 [project.urls]
