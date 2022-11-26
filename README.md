@@ -226,6 +226,7 @@ stack.stop()
 ![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/master/docs/images/ipv6_nd_dad_04.png)
 ![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/master/docs/images/ipv6_nd_dad_05.png)
 
+<br>
 
 #### TCP Fast Retransmit in action after lost TX packet.
  - Outgoing packet is 'lost' due to simulated packet loss mechanism.
@@ -237,6 +238,7 @@ stack.stop()
 ![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/master/docs/images/tcp_tx_fst_ret_03.png)
 ![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/master/docs/images/tcp_tx_fst_ret_04.png)
 
+<br>
 
 #### Out-of-order queue in action during RX packet loss event
  - Incoming packet is 'lost' due to simulated packet loss mechanism.
@@ -253,6 +255,7 @@ stack.stop()
 ![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/master/docs/images/tcp_ooo_ret_05.png)
 ![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/master/docs/images/tcp_ooo_ret_06.png)
 
+<br>
 
 #### TCP Finite State Machine - stack is running TCP Echo service.
  - Peer opens the connection.
@@ -265,6 +268,7 @@ stack.stop()
 ![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/master/docs/images/tcp_fsm_srv_03.png)
 ![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/master/docs/images/tcp_fsm_srv_04.png)
 
+<br>
 
 #### TCP Finite State Machine - stack is running TCP Echo client.
  - Stack opens the connection.
@@ -277,6 +281,7 @@ stack.stop()
 ![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/master/docs/images/tcp_fsm_clt_03.png)
 ![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/master/docs/images/tcp_fsm_clt_04.png)
 
+<br>
 
 #### Pre-parse packet sanity checks in action.
  - The first screenshot shows the stack with the sanity check turned off. A malformed ICMPv6 packet can crash it.
@@ -287,6 +292,7 @@ stack.stop()
 ![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/master/docs/images/pre_sanity_chk_02.png)
 ![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/master/docs/images/pre_sanity_chk_03.png)
 
+<br>
 
 #### ARP Probe/Announcement mechanism.
  - Stack uses ARP Probes to find any possible conflicts for every IP address configured.
@@ -298,6 +304,7 @@ stack.stop()
 ![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/master/docs/images/ip_arp_probe_03.png)
 ![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/master/docs/images/ip_arp_probe_04.png)
 
+<br>
 
 #### ARP resolution and handling ping packets.
  - Host 192.168.9.20 tries to ping the stack. To be able to do it, it first sends an ARP Request packet to find out the stack's MAC address.
@@ -307,6 +314,7 @@ stack.stop()
 ![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/master/docs/images/arp_ping_01.png)
 ![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/master/docs/images/arp_ping_02.png)
 
+<br>
 
 #### IP fragmentation.
  - Host sends 4Kb UDP datagram using three fragmented IP packets (three fragments).
