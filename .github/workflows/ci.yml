@@ -4,11 +4,22 @@ jobs:
   lint:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-python@v2
-      - run: pip install -r requirements.txt
-      - run: codespell --ignore-words-list="ect,ether,nd,tha" --quiet-level=2 $(find . -name '*.py')
-      - run: isort -c --line-length 80 --profile black $(find . -name '*.py')
-      - run: black --check $(find . -name '*.py')
-      - run: flake8 $(find . -name '*.py')
-      - run: mypy -p pytcp
+    - uses: actions/checkout@v3
+    - name: Set up Python 3.10
+      uses: actions/setup-python@v3
+      with:
+        python-version: "3.10"
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+    - name: Check spelling
+      run: codespell --ignore-words-list="ect,ether,nd,tha" --quiet-level=2 $(find . -name '*.py')
+    - name: Sort includes
+      run: isort -c --line-length 80 --profile black $(find . -name '*.py')
+    - name: Format code
+      run: black --check $(find . -name '*.py')
+    - name: Lint
+      run: flake8 $(find . -name '*.py')
+    - name: Type check
+      run: mypy -p pytcp
