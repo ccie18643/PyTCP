@@ -1,7 +1,9 @@
 name: CI
-on: [pull_request, push]
+on:
+  release:
+    types: [published]
 jobs:
-  lint:
+  deploy:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
@@ -27,3 +29,10 @@ jobs:
       run: testslide tests/unit/*.py
     - name: Test integration
       run: testslide tests/integration/*.py
+    - name: Build package
+      run: python -m build
+    - name: Publish package
+      uses: pypa/gh-action-pypi-publish@release/v1
+      with:
+        user: __token__
+        password: ${{ secrets.PYPI_API_TOKEN__PYTCP }}

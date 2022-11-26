@@ -12,6 +12,7 @@
 [![GitHub forks](https://img.shields.io/github/forks/ccie18643/PyTCP.svg?style=social&label=Fork&maxAge=2592000)](https://GitHub.com/ccie18643/PyTCP/network/)
 [![GitHub stars](https://img.shields.io/github/stars/ccie18643/PyTCP.svg?style=social&label=Star&maxAge=2592000)](https://GitHub.com/ccie18643/PyTCP/stargazers/)
 
+<br>
 
 PyTCP is a fully functional TCP/IP stack written in Python. It supports TCP stream-based transport with reliable packet delivery based on a sliding window mechanism and basic congestion control. It also supports IPv6/ICMPv6 protocols with SLAAC address configuration. It operates as a user space program attached to the Linux TAP interface. It has implemented simple routing and can send and receive traffic over a local network and the Internet. 
 
@@ -28,6 +29,7 @@ Please feel free to check my two other related projects:
  - [SeaTCP](https://github.com/ccie18643/SeaTCP) - Attempt to create low latency stack using C and Assembly languages.
 
 ---
+
 
 ### Principle of operation and the test setup
 
@@ -52,6 +54,7 @@ directly by calling one of the ```_*_phtx()``` methods from ```PacketHandler``` 
 
 ---
 
+
 ### Clonning PyTCP from the GitHub repository
 
 In most cases, PyTCP should be cloned directly from the [GitHub repository](https://github.com/ccie18643/PyTCP),
@@ -73,6 +76,7 @@ After cloning, we can run one of the included examples:
 To fine-tune various stack operational parameters, please edit the ```pytcp/config.py``` file accordingly.
 
 ---
+
 
 ### Installing PyTCP from the PyPi repository
 
@@ -109,6 +113,7 @@ stack.stop()
 ```
 
 ---
+
 
 ### Features
 
@@ -190,6 +195,7 @@ stack.stop()
 
 ---
 
+
 ### Examples
 
 #### Several ping packets and two monkeys were delivered via TCP over the IPv6 protocol.
@@ -206,6 +212,7 @@ stack.stop()
 ![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/master/docs/images/malpi_09.png)
 ![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/master/docs/images/malpi_10.png)
 
+<br>
 
 #### IPv6 Neighbor Discovery / Duplicate Address Detection / Address Auto Configuration.
  - Stack tries to auto-configure its link-local address. It generates it as a EUI64 address. As part of the DAD process, it joins the appropriate solicited-node multicast group and sends neighbor solicitation for its generated address.
@@ -224,6 +231,7 @@ stack.stop()
 ![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/master/docs/images/ipv6_nd_dad_04.png)
 ![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/master/docs/images/ipv6_nd_dad_05.png)
 
+<br>
 
 #### TCP Fast Retransmit in action after lost TX packet.
  - Outgoing packet is 'lost' due to simulated packet loss mechanism.
@@ -235,6 +243,7 @@ stack.stop()
 ![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/master/docs/images/tcp_tx_fst_ret_03.png)
 ![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/master/docs/images/tcp_tx_fst_ret_04.png)
 
+<br>
 
 #### Out-of-order queue in action during RX packet loss event
  - Incoming packet is 'lost' due to simulated packet loss mechanism.
@@ -251,6 +260,7 @@ stack.stop()
 ![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/master/docs/images/tcp_ooo_ret_05.png)
 ![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/master/docs/images/tcp_ooo_ret_06.png)
 
+<br>
 
 #### TCP Finite State Machine - stack is running TCP Echo service.
  - Peer opens the connection.
@@ -263,6 +273,7 @@ stack.stop()
 ![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/master/docs/images/tcp_fsm_srv_03.png)
 ![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/master/docs/images/tcp_fsm_srv_04.png)
 
+<br>
 
 #### TCP Finite State Machine - stack is running TCP Echo client.
  - Stack opens the connection.
@@ -275,6 +286,7 @@ stack.stop()
 ![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/master/docs/images/tcp_fsm_clt_03.png)
 ![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/master/docs/images/tcp_fsm_clt_04.png)
 
+<br>
 
 #### Pre-parse packet sanity checks in action.
  - The first screenshot shows the stack with the sanity check turned off. A malformed ICMPv6 packet can crash it.
@@ -285,6 +297,7 @@ stack.stop()
 ![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/master/docs/images/pre_sanity_chk_02.png)
 ![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/master/docs/images/pre_sanity_chk_03.png)
 
+<br>
 
 #### ARP Probe/Announcement mechanism.
  - Stack uses ARP Probes to find any possible conflicts for every IP address configured.
@@ -296,6 +309,7 @@ stack.stop()
 ![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/master/docs/images/ip_arp_probe_03.png)
 ![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/master/docs/images/ip_arp_probe_04.png)
 
+<br>
 
 #### ARP resolution and handling ping packets.
  - Host 192.168.9.20 tries to ping the stack. To be able to do it, it first sends an ARP Request packet to find out the stack's MAC address.
@@ -305,6 +319,7 @@ stack.stop()
 ![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/master/docs/images/arp_ping_01.png)
 ![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/master/docs/images/arp_ping_02.png)
 
+<br>
 
 #### IP fragmentation.
  - Host sends 4Kb UDP datagram using three fragmented IP packets (three fragments).
