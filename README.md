@@ -28,8 +28,7 @@ Please feel free to check my two other related projects:
  - [RusTCP](https://github.com/ccie18643/RusTCP) - Attempt to rewrite some of PyTCP funcionality in Rust and use it to create IPv6/SRv6 lab router.
  - [SeaTCP](https://github.com/ccie18643/SeaTCP) - Attempt to create low latency stack using C and Assembly languages.
 
----
-<br>
+---<br>
 
 ### Principle of operation and the test setup
 
