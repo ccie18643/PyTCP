@@ -8,6 +8,11 @@
 [![GitHub License](https://img.shields.io/badge/license-GPL--3.0-yellowgreen)](https://github.com/ccie18643/PyTCP/blob/master/LICENSE)
 [![CI](https://github.com/ccie18643/PyTCP/actions/workflows/ci.yml/badge.svg)](https://github.com/ccie18643/PyTCP/actions/workflows/ci.yml)
 
+[![GitHub watchers](https://img.shields.io/github/watchers/ccie18643/PyTCP.svg?style=social&label=Watch&maxAge=2592000)]
+[![GitHub forks](https://img.shields.io/github/forks/ccie18643/PyTCP.svg?style=social&label=Fork&maxAge=2592000)](https://GitHub.com/ccie18643/PyTCP/network/)
+[![GitHub stars](https://img.shields.io/github/stars/ccie18643/PyTCP.svg?style=social&label=Star&maxAge=2592000)](https://GitHub.com/ccie18643/PyTCP/stargazers/)
+
+
 PyTCP is a fully functional TCP/IP stack written in Python. It supports TCP stream-based transport with reliable packet delivery based on a sliding window mechanism and basic congestion control. It also supports IPv6/ICMPv6 protocols with SLAAC address configuration. It operates as a user space program attached to the Linux TAP interface. It has implemented simple routing and can send and receive traffic over a local network and the Internet. 
 
 Version 2.7, unlike its predecessors, contains the PyTCP stack code in the form of a library so that it can be easily imported and used by external code. This should make the user experience smoother and eventually provide the full ability to replace the standard Linux stack calls (e.g., socket library) with the PyTCP calls in any 3rd party application.
