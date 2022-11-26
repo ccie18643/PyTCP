@@ -207,7 +207,7 @@ stack.stop()
 ![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/master/docs/images/malpi_09.png)
 ![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/master/docs/images/malpi_10.png)
 
-<br>
+<br><br>
 
 #### IPv6 Neighbor Discovery / Duplicate Address Detection / Address Auto Configuration.
  - Stack tries to auto-configure its link-local address. It generates it as a EUI64 address. As part of the DAD process, it joins the appropriate solicited-node multicast group and sends neighbor solicitation for its generated address.
