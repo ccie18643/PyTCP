@@ -2,6 +2,7 @@
 ### The TCP/IP stack written in Python
 <br>
 
+![GitHub release](https://img.shields.io/github/v/release/ccie18643/PyTCP)
 [![Version](https://img.shields.io/badge/version-2.7-blue)](/https://github.com/ccie18643/PyTCP/tree/PyTCP_2_7)
 [![OS](https://img.shields.io/badge/os-Linux-blue)](https://kernel.org)
 [![Supported Versions](https://img.shields.io/pypi/pyversions/PyTCP.svg)](https://pypi.org/project/PyTCP)
