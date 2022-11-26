@@ -6,6 +6,7 @@ flake8
 codespell
 isort
 pylint
+pyre-check
 build
 twine
 ipython
