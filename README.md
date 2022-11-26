@@ -2,6 +2,9 @@
 ### The TCP/IP stack written in Python
 <br>
 
+[![Supported Versions](https://img.shields.io/pypi/pyversions/PyTCP.svg)](https://pypi.org/project/PyTCP)
+[![Contributors](https://img.shields.io/github/contributors/ccie18643/PyTCP.svg)](https://github.com/ccie18643/PyTCP/graphs/contributors)
+
 PyTCP is a fully functional TCP/IP stack written in Python. It supports TCP stream-based transport with reliable packet delivery based on a sliding window mechanism and basic congestion control. It also supports IPv6/ICMPv6 protocols with SLAAC address configuration. It operates as a user space program attached to the Linux TAP interface. It has implemented simple routing and can send and receive traffic over a local network and the Internet. 
 
 Version 2.7, unlike its predecessors, contains the PyTCP stack code in the form of a library so that it can be easily imported and used by external code. This should make the user experience smoother and eventually provide the full ability to replace the standard Linux stack calls (e.g., socket library) with the PyTCP calls in any 3rd party application.
@@ -15,9 +18,6 @@ I still need to fix.
 Please feel free to check my two other related projects:
  - [RusTCP](https://github.com/ccie18643/RusTCP) - Attempt to rewrite some of PyTCP funcionality in Rust and use it to create IPv6/SRv6 lab router.
  - [SeaTCP](https://github.com/ccie18643/SeaTCP) - Attempt to create low latency stack using C and Assembly languages.
-
-[![Supported Versions](https://img.shields.io/pypi/pyversions/PyTCP.svg)](https://pypi.org/project/PyTCP)
-[![Contributors](https://img.shields.io/github/contributors/ccie18643/PyTCP.svg)](https://github.com/ccie18643/PyTCP/graphs/contributors)
 
 ---
 
