@@ -45,7 +45,7 @@ PyTCP stack to your local network at the same time.
 ```console
 <INTERNET> <---> [ROUTER] <---> (eth0)-[Linux bridge]-(br0) <---> [Linux TCP/IP stack]
                                             |
-                                            |--(tap7) <---> [PyTCP TCP/IP stack]
+                                            |-(tap7) <---> [PyTCP TCP/IP stack]
 ```
 
 After the example program (either client or service) starts the stack, it can comunicate with it
