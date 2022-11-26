@@ -23,3 +23,5 @@ jobs:
       run: flake8 $(find . -name '*.py')
     - name: Type check
       run: mypy -p pytcp
+    - name: Test unit
+      run: testslide tests/unit/*.py
