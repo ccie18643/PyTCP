@@ -25,3 +25,5 @@ jobs:
       run: mypy -p pytcp
     - name: Test unit
       run: testslide tests/unit/*.py
+    - name: Test integration
+      run: testslide tests/integration/*.py
