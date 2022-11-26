@@ -2,6 +2,17 @@
 ### The TCP/IP stack written in Python
 <br>
 
+[![Version](https://img.shields.io/badge/version-2.7-blue)](/https://github.com/ccie18643/PyTCP/tree/PyTCP_2_7)
+[![OS](https://img.shields.io/badge/os-Linux-blue)](https://kernel.org)
+[![Supported Versions](https://img.shields.io/pypi/pyversions/PyTCP.svg)](https://pypi.org/project/PyTCP)
+[![GitHub License](https://img.shields.io/badge/license-GPL--3.0-yellowgreen)](https://github.com/ccie18643/PyTCP/blob/master/LICENSE)
+[![CI](https://github.com/ccie18643/PyTCP/actions/workflows/ci.yml/badge.svg)](https://github.com/ccie18643/PyTCP/actions/workflows/ci.yml)
+
+[![GitHub watchers](https://img.shields.io/github/watchers/ccie18643/PyTCP.svg?style=social&label=Watch&maxAge=2592000)](https://GitHub.com/ccie18643/PyTCP/watchers/)
+[![GitHub forks](https://img.shields.io/github/forks/ccie18643/PyTCP.svg?style=social&label=Fork&maxAge=2592000)](https://GitHub.com/ccie18643/PyTCP/network/)
+[![GitHub stars](https://img.shields.io/github/stars/ccie18643/PyTCP.svg?style=social&label=Star&maxAge=2592000)](https://GitHub.com/ccie18643/PyTCP/stargazers/)
+
+
 PyTCP is a fully functional TCP/IP stack written in Python. It supports TCP stream-based transport with reliable packet delivery based on a sliding window mechanism and basic congestion control. It also supports IPv6/ICMPv6 protocols with SLAAC address configuration. It operates as a user space program attached to the Linux TAP interface. It has implemented simple routing and can send and receive traffic over a local network and the Internet. 
 
 Version 2.7, unlike its predecessors, contains the PyTCP stack code in the form of a library so that it can be easily imported and used by external code. This should make the user experience smoother and eventually provide the full ability to replace the standard Linux stack calls (e.g., socket library) with the PyTCP calls in any 3rd party application.
@@ -37,7 +48,7 @@ PyTCP stack to your local network at the same time.
 
 After the example program (either client or service) starts the stack, it can comunicate with it
 via simplified BSD Sockets like API interface. There is also the possibility of sending packets
-directly by calling one of the '_*_phtx()' methods from PacketHandler class.
+directly by calling one of the ```_*_phtx()``` methods from ```PacketHandler``` class.
 
 ---
 
@@ -68,7 +79,7 @@ To fine-tune various stack operational parameters, please edit the ```pytcp/conf
 PyTCP can also be installed as a regular module from the [PyPi repository](https://pypi.org/project/PyTCP/).
 
 ```console
-$ python -m pip install PyTCP
+python -m pip install PyTCP
 ```
 
 After installation, please ensure the TAP interface is operational and added to the bridge.
