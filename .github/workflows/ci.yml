@@ -41,6 +41,7 @@ jobs:
       run: |
         mypy -p pytcp
         mypy -p examples
+        mypy -p tests
     - name: Test unit
       run: testslide tests/unit/*.py
     - name: Test integration

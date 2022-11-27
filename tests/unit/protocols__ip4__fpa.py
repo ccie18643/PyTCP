@@ -219,7 +219,7 @@ class TestIp4Assembler(TestCase):
             carried_packet_mock = StrictMock()
             carried_packet_mock.ip4_proto = -1
             carried_packet_mock.tracker = StrictMock(Tracker)
-            Ip4Assembler(carried_packet=carried_packet_mock)
+            Ip4Assembler(carried_packet=carried_packet_mock)  # type: ignore[arg-type]
 
     def test_ip4_fpa____len__(self) -> None:
         """

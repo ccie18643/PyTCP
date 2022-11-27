@@ -189,7 +189,7 @@ class TestIp6Assembler(TestCase):
             carried_packet_mock = StrictMock()
             carried_packet_mock.ip6_next = -1
             carried_packet_mock.tracker = StrictMock(Tracker)
-            Ip6Assembler(carried_packet=carried_packet_mock)
+            Ip6Assembler(carried_packet=carried_packet_mock)  # type: ignore[arg-type]
 
     def test_ip6_fpa____len__(self) -> None:
         """
@@ -276,7 +276,7 @@ class TestIp6Assembler(TestCase):
         packet = Ip6Assembler(
             src=Ip6Address("0:1:2:3:4:5:6:7"),
             dst=Ip6Address("8:9:A:B:C:D:E:F"),
-            carried_packet=RawAssembler(data="0123456789ABCDEF"),
+            carried_packet=RawAssembler(data=b"0123456789ABCDEF"),
         )
         self.assertEqual(packet.pshdr_sum, 6755588421714211)
 

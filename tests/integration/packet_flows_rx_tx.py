@@ -139,7 +139,9 @@ class TestPacketHandlerRxTx(TestCase):
             method="enqueue",
         ).with_implementation(
             lambda _: _.assemble(self.packet_tx)
-            or self.packets_tx.append(self.packet_tx)
+            or self.packets_tx.append(
+                self.packet_tx
+            )  # type: ignore[func-returns-value]
         )
         self.patch_attribute(
             target="pytcp.lib.stack",
