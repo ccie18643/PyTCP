@@ -36,6 +36,7 @@ from testslide import TestCase
 
 from pytcp.lib.packet_stats import PacketStatsTx
 from pytcp.lib.tx_status import TxStatus
+from pytcp.subsystems.packet_handler import PacketHandler
 from tests.unit.mock_network import (
     MockNetworkSettings,
     patch_config,
@@ -58,6 +59,8 @@ class TestUdpPhtx(TestCase):
         self.mns = MockNetworkSettings()
         patch_config(self)
         setup_mock_packet_handler(self)
+        self.frame_tx: bytearray
+        self.packet_handler: PacketHandler
 
     # Test name format: 'test_name__test_description__optional_condition'
 

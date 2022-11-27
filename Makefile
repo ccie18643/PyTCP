@@ -37,6 +37,7 @@ lint: venv
 	@echo '<<< MYPY'
 	@PYTHONPATH=$(ROOT_PATH) ./$(VENV)/bin/mypy -p ${PYTCP_PATH}
 	@PYTHONPATH=$(ROOT_PATH) ./$(VENV)/bin/mypy -p ${EXAMPLES_PATH}
+	@PYTHONPATH=$(ROOT_PATH) ./$(VENV)/bin/mypy -p ${TESTS_PATH}
 
 test_unit: venv
 	@echo '<<< TESTSLIDE UNIT'

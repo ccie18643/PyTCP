@@ -106,7 +106,7 @@ class TestEtherAssembler(TestCase):
             carried_packet_mock = StrictMock()
             carried_packet_mock.ether_type = -1
             carried_packet_mock.tracker = StrictMock(Tracker)
-            EtherAssembler(carried_packet=carried_packet_mock)
+            EtherAssembler(carried_packet=carried_packet_mock)  # type: ignore[arg-type]
 
     def test_ether_fpa____len__(self) -> None:
         """
@@ -142,7 +142,7 @@ class TestEtherAssembler(TestCase):
         carried_packet_mock.ether_type = ETHER_TYPE_RAW
         carried_packet_mock.tracker = StrictMock(Tracker)
 
-        packet = EtherAssembler(carried_packet=carried_packet_mock)
+        packet = EtherAssembler(carried_packet=carried_packet_mock)  # type: ignore[arg-type]
 
         self.assertEqual(packet.tracker, carried_packet_mock.tracker)
 
