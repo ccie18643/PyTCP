@@ -2,15 +2,15 @@
 ### The TCP/IP stack written in Python
 <br>
 
-[![GitHub release](https://img.shields.io/github/v/release/ccie18643/PyTCP)](https://github.com/ccie18643/PyTCP/releases)
-[![OS](https://img.shields.io/badge/os-Linux-blue)](https://kernel.org)
-[![Supported Versions](https://img.shields.io/pypi/pyversions/PyTCP.svg)](https://pypi.org/project/PyTCP)
-[![GitHub License](https://img.shields.io/badge/license-GPL--3.0-yellowgreen)](https://pytcp.io/LICENSE)
-[![CI](https://github.com/ccie18643/PyTCP/actions/workflows/ci.yml/badge.svg)](https://github.com/ccie18643/PyTCP/actions/workflows/ci.yml)
+[![GitHub release](http://img.shields.io/github/v/release/ccie18643/PyTCP)](http://github.com/ccie18643/PyTCP/releases)
+[![OS](http://img.shields.io/badge/os-Linux-blue)](http://kernel.org)
+[![Supported Versions](http://img.shields.io/pypi/pyversions/PyTCP.svg)](http://pypi.org/project/PyTCP)
+[![GitHub License](http://img.shields.io/badge/license-GPL--3.0-yellowgreen)](http://pytcp.io/LICENSE)
+[![CI](http://github.com/ccie18643/PyTCP/actions/workflows/ci.yml/badge.svg)](http://github.com/ccie18643/PyTCP/actions/workflows/ci.yml)
 
-[![GitHub watchers](https://img.shields.io/github/watchers/ccie18643/PyTCP.svg?style=social&label=Watch&maxAge=2592000)](https://GitHub.com/ccie18643/PyTCP/watchers/)
-[![GitHub forks](https://img.shields.io/github/forks/ccie18643/PyTCP.svg?style=social&label=Fork&maxAge=2592000)](https://GitHub.com/ccie18643/PyTCP/network/)
-[![GitHub stars](https://img.shields.io/github/stars/ccie18643/PyTCP.svg?style=social&label=Star&maxAge=2592000)](https://GitHub.com/ccie18643/PyTCP/stargazers/)
+[![GitHub watchers](http://img.shields.io/github/watchers/ccie18643/PyTCP.svg?style=social&label=Watch&maxAge=2592000)](http://GitHub.com/ccie18643/PyTCP/watchers/)
+[![GitHub forks](http://img.shields.io/github/forks/ccie18643/PyTCP.svg?style=social&label=Fork&maxAge=2592000)](http://GitHub.com/ccie18643/PyTCP/network/)
+[![GitHub stars](http://img.shields.io/github/stars/ccie18643/PyTCP.svg?style=social&label=Star&maxAge=2592000)](http://GitHub.com/ccie18643/PyTCP/stargazers/)
 
 <br>
 
@@ -25,8 +25,8 @@ I welcome any contributions and help from anyone interested in network programmi
 I still need to fix.
 
 Please feel free to check my two other related projects:
- - [RusTCP](https://github.com/ccie18643/RusTCP) - Attempt to rewrite some of PyTCP funcionality in Rust and use it to create IPv6/SRv6 lab router.
- - [SeaTCP](https://github.com/ccie18643/SeaTCP) - Attempt to create low latency stack using C and Assembly languages.
+ - [RusTCP](http://github.com/ccie18643/RusTCP) - Attempt to rewrite some of PyTCP funcionality in Rust and use it to create IPv6/SRv6 lab router.
+ - [SeaTCP](http://github.com/ccie18643/SeaTCP) - Attempt to create low latency stack using C and Assembly languages.
 
 ---
 
@@ -57,11 +57,11 @@ directly by calling one of the ```_*_phtx()``` methods from ```PacketHandler``` 
 
 ### Clonning PyTCP from the GitHub repository
 
-In most cases, PyTCP should be cloned directly from the [GitHub repository](https://github.com/ccie18643/PyTCP),
+In most cases, PyTCP should be cloned directly from the [GitHub repository](http://github.com/ccie18643/PyTCP),
 as this type of installation provides full development and testing environment.
 
 ```shell
-git clone https://github.com/ccie18643/PyTCP
+git clone http://github.com/ccie18643/PyTCP
 ```
 
 After cloning, we can run one of the included examples:
@@ -80,7 +80,7 @@ To fine-tune various stack operational parameters, please edit the ```pytcp/conf
 
 ### Installing PyTCP from the PyPi repository
 
-PyTCP can also be installed as a regular module from the [PyPi repository](https://pypi.org/project/PyTCP/).
+PyTCP can also be installed as a regular module from the [PyPi repository](http://pypi.org/project/PyTCP/).
 
 ```console
 python -m pip install PyTCP
@@ -200,17 +200,17 @@ stack.stop()
 
 #### Several ping packets and two monkeys were delivered via TCP over the IPv6 protocol.
 
-![Sample PyTCP log output](https://pytcp.io/docs/images/malpi_00.png)
-![Sample PyTCP log output](https://pytcp.io/docs/images/malpi_01.png)
-![Sample PyTCP log output](https://pytcp.io/docs/images/malpi_02.png)
-![Sample PyTCP log output](https://pytcp.io/docs/images/malpi_03.png)
-![Sample PyTCP log output](https://pytcp.io/docs/images/malpi_04.png)
-![Sample PyTCP log output](https://pytcp.io/docs/images/malpi_05.png)
-![Sample PyTCP log output](https://pytcp.io/docs/images/malpi_06.png)
-![Sample PyTCP log output](https://pytcp.io/docs/images/malpi_07.png)
-![Sample PyTCP log output](https://pytcp.io/docs/images/malpi_08.png)
-![Sample PyTCP log output](https://pytcp.io/docs/images/malpi_09.png)
-![Sample PyTCP log output](https://pytcp.io/docs/images/malpi_10.png)
+![Sample PyTCP log output](http://pytcp.io/docs/images/malpi_00.png)
+![Sample PyTCP log output](http://pytcp.io/docs/images/malpi_01.png)
+![Sample PyTCP log output](http://pytcp.io/docs/images/malpi_02.png)
+![Sample PyTCP log output](http://pytcp.io/docs/images/malpi_03.png)
+![Sample PyTCP log output](http://pytcp.io/docs/images/malpi_04.png)
+![Sample PyTCP log output](http://pytcp.io/docs/images/malpi_05.png)
+![Sample PyTCP log output](http://pytcp.io/docs/images/malpi_06.png)
+![Sample PyTCP log output](http://pytcp.io/docs/images/malpi_07.png)
+![Sample PyTCP log output](http://pytcp.io/docs/images/malpi_08.png)
+![Sample PyTCP log output](http://pytcp.io/docs/images/malpi_09.png)
+![Sample PyTCP log output](http://pytcp.io/docs/images/malpi_10.png)
 
 <br>
 
@@ -225,11 +225,11 @@ stack.stop()
  - Stack doesn't receive any Neighbor Advertisement for the address it generated, so it assigns it to its interface.
  - After all the addresses are assigned, stack sends out one more Multicast Listener report listing all the multicast addresses it wants to listen to.
 
-![Sample PyTCP log output](https://pytcp.io/docs/images/ipv6_nd_dad_01.png)
-![Sample PyTCP log output](https://pytcp.io/docs/images/ipv6_nd_dad_02.png)
-![Sample PyTCP log output](https://pytcp.io/docs/images/ipv6_nd_dad_03.png)
-![Sample PyTCP log output](https://pytcp.io/docs/images/ipv6_nd_dad_04.png)
-![Sample PyTCP log output](https://pytcp.io/docs/images/ipv6_nd_dad_05.png)
+![Sample PyTCP log output](http://pytcp.io/docs/images/ipv6_nd_dad_01.png)
+![Sample PyTCP log output](http://pytcp.io/docs/images/ipv6_nd_dad_02.png)
+![Sample PyTCP log output](http://pytcp.io/docs/images/ipv6_nd_dad_03.png)
+![Sample PyTCP log output](http://pytcp.io/docs/images/ipv6_nd_dad_04.png)
+![Sample PyTCP log output](http://pytcp.io/docs/images/ipv6_nd_dad_05.png)
 
 <br>
 
@@ -238,10 +238,10 @@ stack.stop()
  - Peer notices the inconsistency in packet SEQ numbers and sends out a 'fast retransmit request'.
  - Stack receives the request and retransmits the lost packet.
 
-![Sample PyTCP log output](https://pytcp.io/docs/images/tcp_tx_fst_ret_01.png)
-![Sample PyTCP log output](https://pytcp.io/docs/images/tcp_tx_fst_ret_02.png)
-![Sample PyTCP log output](https://pytcp.io/docs/images/tcp_tx_fst_ret_03.png)
-![Sample PyTCP log output](https://pytcp.io/docs/images/tcp_tx_fst_ret_04.png)
+![Sample PyTCP log output](http://pytcp.io/docs/images/tcp_tx_fst_ret_01.png)
+![Sample PyTCP log output](http://pytcp.io/docs/images/tcp_tx_fst_ret_02.png)
+![Sample PyTCP log output](http://pytcp.io/docs/images/tcp_tx_fst_ret_03.png)
+![Sample PyTCP log output](http://pytcp.io/docs/images/tcp_tx_fst_ret_04.png)
 
 <br>
 
@@ -253,12 +253,12 @@ stack.stop()
  - Stack receives the lost packet, pulls all the packets stored in the out-of-order queue, and processes them.
  - Stacks sends out ACK packet to acknowledge the latest packets pulled from the queue.
 
-![Sample PyTCP log output](https://pytcp.io/docs/images/tcp_ooo_ret_01.png)
-![Sample PyTCP log output](https://pytcp.io/docs/images/tcp_ooo_ret_02.png)
-![Sample PyTCP log output](https://pytcp.io/docs/images/tcp_ooo_ret_03.png)
-![Sample PyTCP log output](https://pytcp.io/docs/images/tcp_ooo_ret_04.png)
-![Sample PyTCP log output](https://pytcp.io/docs/images/tcp_ooo_ret_05.png)
-![Sample PyTCP log output](https://pytcp.io/docs/images/tcp_ooo_ret_06.png)
+![Sample PyTCP log output](http://pytcp.io/docs/images/tcp_ooo_ret_01.png)
+![Sample PyTCP log output](http://pytcp.io/docs/images/tcp_ooo_ret_02.png)
+![Sample PyTCP log output](http://pytcp.io/docs/images/tcp_ooo_ret_03.png)
+![Sample PyTCP log output](http://pytcp.io/docs/images/tcp_ooo_ret_04.png)
+![Sample PyTCP log output](http://pytcp.io/docs/images/tcp_ooo_ret_05.png)
+![Sample PyTCP log output](http://pytcp.io/docs/images/tcp_ooo_ret_06.png)
 
 <br>
 
@@ -268,10 +268,10 @@ stack.stop()
  - Stack echoes the data back.
  - Peer closes the connection.
 
-![Sample PyTCP log output](https://pytcp.io/docs/images/tcp_fsm_srv_01.png)
-![Sample PyTCP log output](https://pytcp.io/docs/images/tcp_fsm_srv_02.png)
-![Sample PyTCP log output](https://pytcp.io/docs/images/tcp_fsm_srv_03.png)
-![Sample PyTCP log output](https://pytcp.io/docs/images/tcp_fsm_srv_04.png)
+![Sample PyTCP log output](http://pytcp.io/docs/images/tcp_fsm_srv_01.png)
+![Sample PyTCP log output](http://pytcp.io/docs/images/tcp_fsm_srv_02.png)
+![Sample PyTCP log output](http://pytcp.io/docs/images/tcp_fsm_srv_03.png)
+![Sample PyTCP log output](http://pytcp.io/docs/images/tcp_fsm_srv_04.png)
 
 <br>
 
@@ -281,10 +281,10 @@ stack.stop()
  - Peer echoes the data back.
  - Stack closes the connection.
 
-![Sample PyTCP log output](https://pytcp.io/docs/images/tcp_fsm_clt_01.png)
-![Sample PyTCP log output](https://pytcp.io/docs/images/tcp_fsm_clt_02.png)
-![Sample PyTCP log output](https://pytcp.io/docs/images/tcp_fsm_clt_03.png)
-![Sample PyTCP log output](https://pytcp.io/docs/images/tcp_fsm_clt_04.png)
+![Sample PyTCP log output](http://pytcp.io/docs/images/tcp_fsm_clt_01.png)
+![Sample PyTCP log output](http://pytcp.io/docs/images/tcp_fsm_clt_02.png)
+![Sample PyTCP log output](http://pytcp.io/docs/images/tcp_fsm_clt_03.png)
+![Sample PyTCP log output](http://pytcp.io/docs/images/tcp_fsm_clt_04.png)
 
 <br>
 
@@ -293,9 +293,9 @@ stack.stop()
  - The second screenshot shows the stack with the sanity check turned on. A malformed ICMPv6 packet is discarded before being passed to the ICMPv6 protocol parser.
  - The third screenshot shows the malformed packet. The number of MA records field has been set to 777 even though the packet contains only one record.
 
-![Sample PyTCP log output](https://pytcp.io/docs/images/pre_sanity_chk_01.png)
-![Sample PyTCP log output](https://pytcp.io/docs/images/pre_sanity_chk_02.png)
-![Sample PyTCP log output](https://pytcp.io/docs/images/pre_sanity_chk_03.png)
+![Sample PyTCP log output](http://pytcp.io/docs/images/pre_sanity_chk_01.png)
+![Sample PyTCP log output](http://pytcp.io/docs/images/pre_sanity_chk_02.png)
+![Sample PyTCP log output](http://pytcp.io/docs/images/pre_sanity_chk_03.png)
 
 <br>
 
@@ -304,10 +304,10 @@ stack.stop()
  - One of the IP addresses (192.168.9.102) is already taken, so the stack gets notified about it and skips it.
  - The rest of the IP addresses are free, so stack claims them by sending ARP Announcement for each of them.
 
-![Sample PyTCP log output](https://pytcp.io/docs/images/ip_arp_probe_01.png)
-![Sample PyTCP log output](https://pytcp.io/docs/images/ip_arp_probe_02.png)
-![Sample PyTCP log output](https://pytcp.io/docs/images/ip_arp_probe_03.png)
-![Sample PyTCP log output](https://pytcp.io/docs/images/ip_arp_probe_04.png)
+![Sample PyTCP log output](http://pytcp.io/docs/images/ip_arp_probe_01.png)
+![Sample PyTCP log output](http://pytcp.io/docs/images/ip_arp_probe_02.png)
+![Sample PyTCP log output](http://pytcp.io/docs/images/ip_arp_probe_03.png)
+![Sample PyTCP log output](http://pytcp.io/docs/images/ip_arp_probe_04.png)
 
 <br>
 
@@ -316,8 +316,8 @@ stack.stop()
  - Stack responds by sending an ARP Reply packet (stack doesn't need to send out its request since it already made a note of the host's MAC from the host's request).
  - Host sends ping packets, and stack responds to them.
 
-![Sample PyTCP log output](https://pytcp.io/docs/images/arp_ping_01.png)
-![Sample PyTCP log output](https://pytcp.io/docs/images/arp_ping_02.png)
+![Sample PyTCP log output](http://pytcp.io/docs/images/arp_ping_01.png)
+![Sample PyTCP log output](http://pytcp.io/docs/images/arp_ping_02.png)
 
 <br>
 
@@ -328,7 +328,7 @@ stack.stop()
  - UDP datagram is passed to the IP protocol handler, which creates an IP packet, and after checking that it exceeds the link, MTU fragments it into three separate IP packets.
  - IP packets are encapsulated in Ethernet frames and put on a TX ring.
 
-![Sample PyTCP log output](https://pytcp.io/docs/images/ip_udp_frag_01.png)
-![Sample PyTCP log output](https://pytcp.io/docs/images/ip_udp_frag_02.png)
-![Sample PyTCP log output](https://pytcp.io/docs/images/ip_udp_frag_03.png)
+![Sample PyTCP log output](http://pytcp.io/docs/images/ip_udp_frag_01.png)
+![Sample PyTCP log output](http://pytcp.io/docs/images/ip_udp_frag_02.png)
+![Sample PyTCP log output](http://pytcp.io/docs/images/ip_udp_frag_03.png)
 
