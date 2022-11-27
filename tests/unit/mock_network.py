@@ -32,7 +32,7 @@
 #
 
 
-from testslide import StrictMock
+from testslide import StrictMock, TestCase
 
 from pytcp.lib.ip4_address import Ip4Address, Ip4Host
 from pytcp.lib.ip6_address import Ip6Address, Ip6Host
@@ -149,7 +149,7 @@ CONFIG_PATCHES = {
 }
 
 
-def patch_config(self, *, enable_log=False):
+def patch_config(self: TestCase, *, enable_log: bool = False) -> None:
     """
     Patch critical config setting for all packet handler modules.
     """
@@ -176,7 +176,7 @@ def patch_config(self, *, enable_log=False):
                 continue
 
 
-def setup_mock_packet_handler(self) -> None:
+def setup_mock_packet_handler(self: TestCase) -> None:
     """
     Prepare packet handler so it can pass packets without need of being
     physically connected to the network.

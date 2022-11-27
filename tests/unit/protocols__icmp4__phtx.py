@@ -42,6 +42,7 @@ from pytcp.protocols.icmp4.ps import (
     ICMP4_UNREACHABLE,
     ICMP4_UNREACHABLE__PORT,
 )
+from pytcp.subsystems.packet_handler import PacketHandler
 from tests.unit.mock_network import (
     MockNetworkSettings,
     patch_config,
@@ -64,6 +65,8 @@ class TestIcmp4Phtx(TestCase):
         self.mns = MockNetworkSettings()
         patch_config(self)
         setup_mock_packet_handler(self)
+        self.frame_tx: bytearray
+        self.packet_handler: PacketHandler
 
     # Test name format: 'test_name__test_description__optional_condition'
 

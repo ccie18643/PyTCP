@@ -37,6 +37,7 @@ from testslide import TestCase
 from pytcp.lib.packet_stats import PacketStatsTx
 from pytcp.lib.tx_status import TxStatus
 from pytcp.protocols.raw.fpa import RawAssembler
+from pytcp.subsystems.packet_handler import PacketHandler
 from tests.unit.mock_network import (
     MockNetworkSettings,
     patch_config,
@@ -59,6 +60,9 @@ class TestIp4Phtx(TestCase):
         self.mns = MockNetworkSettings()
         patch_config(self)
         setup_mock_packet_handler(self)
+        self.frame_tx: bytearray
+        self.frames_tx: list[bytearray]
+        self.packet_handler: PacketHandler
 
     # Test name format: 'test_name__test_description__optional_condition'
 
@@ -95,7 +99,7 @@ class TestIp4Phtx(TestCase):
 
     def test_ip4_phtx__ip4_to_unicast_address_on_local_network__src_not_owned_drop(
         self,
-    ):
+    ) -> None:
         """
         Test sending IPv4 packet to unicast address on local network,
         src not owned.
@@ -115,7 +119,7 @@ class TestIp4Phtx(TestCase):
 
     def test_ip4_phtx__ip4_to_unicast_address_on_local_network__src_multicast_replace(
         self,
-    ):
+    ) -> None:
         """
         Test sending IPv4 packet to unicast address on local network,
         multicast source, able to replace.
@@ -147,7 +151,7 @@ class TestIp4Phtx(TestCase):
 
     def test_ip4_phtx__ip4_to_unicast_address_on_local_network__src_multicast_drop(
         self,
-    ):
+    ) -> None:
         """
         Test sending IPv4 packet to unicast address on local network,
         multicast source, not able to replace.
@@ -169,7 +173,7 @@ class TestIp4Phtx(TestCase):
 
     def test_ip4_phtx__ip4_to_unicast_address_on_local_network__src_limited_broadcast_replace(
         self,
-    ):
+    ) -> None:
         """
         Test sending IPv4 packet to unicast address on local network,
         limited broadcst source, able to replace.
@@ -201,7 +205,7 @@ class TestIp4Phtx(TestCase):
 
     def test_ip4_phtx__ip4_to_unicast_address_on_local_network__src_limited_broadcast_drop(
         self,
-    ):
+    ) -> None:
         """
         Test sending IPv4 packet to unicast address on local network,
         limited broadcast source, not able to replace.
@@ -222,7 +226,7 @@ class TestIp4Phtx(TestCase):
 
     def test_ip4_phtx__ip4_to_unicast_address_on_local_network__src_network_broadcast_replace(
         self,
-    ):
+    ) -> None:
         """
         Test sending IPv4 packet to unicast address on local network,
         network broadcst source, able to replace.
@@ -254,7 +258,7 @@ class TestIp4Phtx(TestCase):
 
     def test_ip4_phtx__ip4_to_unicast_address_on_local_network__src_unspecified_replace_local(
         self,
-    ):
+    ) -> None:
         """
         Test sending IPv4 packet to unicast address on local network,
         uspecified source, able to replace.
@@ -286,7 +290,7 @@ class TestIp4Phtx(TestCase):
 
     def test_ip4_phtx__ip4_to_unicast_address_on_local_network__src_unspecified_replace_external(
         self,
-    ):
+    ) -> None:
         """
         Test sending IPv4 packet to unicast address on local network,
         uspecified source, able to replace with ip from subnet with gateway.
@@ -318,7 +322,7 @@ class TestIp4Phtx(TestCase):
 
     def test_ip4_phtx__ip4_to_unicast_address_on_local_network__src_unspecified_drop(
         self,
-    ):
+    ) -> None:
         """
         Test sending IPv4 packet to unicast address on local network,
         uspecified source, not able to replace.

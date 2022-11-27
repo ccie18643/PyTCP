@@ -342,7 +342,7 @@ class TestIcmp6Assembler(TestCase):
 
     def test_icmp6_fpa____init____nd_router_solicitation__assert_code__under(
         self,
-    ):
+    ) -> None:
         """
         Test packet constructor for the 'ND Router Solicitation' message.
         """
@@ -354,7 +354,7 @@ class TestIcmp6Assembler(TestCase):
 
     def test_icmp6_fpa____init____nd_router_solicitation__assert_code__over(
         self,
-    ):
+    ) -> None:
         """
         Test packet constructor for the 'ND Router Solicitation' message.
         """
@@ -368,6 +368,7 @@ class TestIcmp6Assembler(TestCase):
         """
         Test packet constructor for the 'ND Router Advertisement' message.
         """
+
         packet = Icmp6Assembler(
             type=ICMP6_ND_ROUTER_ADVERTISEMENT,
             code=0,
@@ -383,12 +384,13 @@ class TestIcmp6Assembler(TestCase):
             ],
             echo_tracker=Tracker(prefix="TX"),
         )
-        self.assertEqual(packet._ra_hop, 255),
-        self.assertEqual(packet._ra_flag_m, True),
-        self.assertEqual(packet._ra_flag_o, True),
-        self.assertEqual(packet._ra_router_lifetime, 12345),
-        self.assertEqual(packet._ra_reachable_time, 12345678),
-        self.assertEqual(packet._ra_retrans_timer, 87654321),
+
+        self.assertEqual(packet._ra_hop, 255)
+        self.assertEqual(packet._ra_flag_m, True)
+        self.assertEqual(packet._ra_flag_o, True)
+        self.assertEqual(packet._ra_router_lifetime, 12345)
+        self.assertEqual(packet._ra_reachable_time, 12345678)
+        self.assertEqual(packet._ra_retrans_timer, 87654321)
         self.assertEqual(
             packet._nd_options,
             [
@@ -404,7 +406,7 @@ class TestIcmp6Assembler(TestCase):
 
     def test_icmp6_fpa____init____nd_router_advertisement__assert_code__under(
         self,
-    ):
+    ) -> None:
         """
         Test packet constructor for the 'ND Router Advertisement' message.
         """
@@ -416,7 +418,7 @@ class TestIcmp6Assembler(TestCase):
 
     def test_icmp6_fpa____init____nd_router_advertisement__assert_code__over(
         self,
-    ):
+    ) -> None:
         """
         Test packet constructor for the 'ND Router Advertisement' message.
         """
@@ -428,7 +430,7 @@ class TestIcmp6Assembler(TestCase):
 
     def test_icmp6_fpa____init____nd_router_advertisement__assert_hop__under(
         self,
-    ):
+    ) -> None:
         """
         Test packet constructor for the 'ND Router Advertisement' message.
         """
@@ -440,7 +442,7 @@ class TestIcmp6Assembler(TestCase):
 
     def test_icmp6_fpa____init____nd_router_advertisement__assert_hop__over(
         self,
-    ):
+    ) -> None:
         """
         Test packet constructor for the 'ND Router Advertisement' message.
         """
@@ -452,7 +454,7 @@ class TestIcmp6Assembler(TestCase):
 
     def test_icmp6_fpa____init____nd_router_advertisement__assert_router_lifetime__under(
         self,
-    ):
+    ) -> None:
         """
         Test packet constructor for the 'ND Router Advertisement' message.
         """
@@ -464,7 +466,7 @@ class TestIcmp6Assembler(TestCase):
 
     def test_icmp6_fpa____init____nd_router_advertisement__assert_router_lifetime__over(
         self,
-    ):
+    ) -> None:
         """
         Test packet constructor for the 'ND Router Advertisement' message.
         """
@@ -476,7 +478,7 @@ class TestIcmp6Assembler(TestCase):
 
     def test_icmp6_fpa____init____nd_router_advertisement__assert_reachable_time__under(
         self,
-    ):
+    ) -> None:
         """
         Test packet constructor for the 'ND Router Advertisement' message.
         """
@@ -488,7 +490,7 @@ class TestIcmp6Assembler(TestCase):
 
     def test_icmp6_fpa____init____nd_router_advertisement__assert_reachable_time__over(
         self,
-    ):
+    ) -> None:
         """
         Test packet constructor for the 'ND Router Advertisement' message.
         """
@@ -500,7 +502,7 @@ class TestIcmp6Assembler(TestCase):
 
     def test_icmp6_fpa____init____nd_router_advertisement__assert_retrans_timer__under(
         self,
-    ):
+    ) -> None:
         """
         Test packet constructor for the 'ND Router Advertisement' message.
         """
@@ -512,7 +514,7 @@ class TestIcmp6Assembler(TestCase):
 
     def test_icmp6_fpa____init____nd_router_advertisement__assert_retrans_timer__over(
         self,
-    ):
+    ) -> None:
         """
         Test packet constructor for the 'ND Router Advertisement' message.
         """
@@ -554,7 +556,7 @@ class TestIcmp6Assembler(TestCase):
 
     def test_icmp6_fpa____init____nd_neighbor_solicitation__assert_code__under(
         self,
-    ):
+    ) -> None:
         """
         Test packet constructor for the 'ND Router Solicitation' message.
         """
@@ -566,7 +568,7 @@ class TestIcmp6Assembler(TestCase):
 
     def test_icmp6_fpa____init____nd_neighbor_solicitation__assert_code__over(
         self,
-    ):
+    ) -> None:
         """
         Test packet constructor for the 'ND Router Solicitation' message.
         """
@@ -615,7 +617,7 @@ class TestIcmp6Assembler(TestCase):
 
     def test_icmp6_fpa____init____nd_neighbor_advertisement__assert_code__under(
         self,
-    ):
+    ) -> None:
         """
         Test packet constructor for the 'ND Router Advertisement' message.
         """
@@ -627,7 +629,7 @@ class TestIcmp6Assembler(TestCase):
 
     def test_icmp6_fpa____init____nd_neighbor_advertisement__assert_code__over(
         self,
-    ):
+    ) -> None:
         """
         Test packet constructor for the 'ND Router Advertisement' message.
         """

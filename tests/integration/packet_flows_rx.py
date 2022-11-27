@@ -90,7 +90,7 @@ class TestPacketHandlerRx(TestCase):
     The RX packet flow integration test class.
     """
 
-    def setUp(self):
+    def setUp(self) -> None:
         """
         Set up the test environment.
         """
@@ -102,7 +102,7 @@ class TestPacketHandlerRx(TestCase):
         # Initialize packet handler and manually set all the variables that
         # normally would require network connectivity
         self.packet_handler = PacketHandler()
-        self.packet_handler.mac_address = STACK_MAC_ADDRESS
+        self.packet_handler.mac_unicast = STACK_MAC_ADDRESS
         self.packet_handler.mac_multicast = [
             STACK_IP6_HOST.address.solicited_node_multicast.multicast_mac
         ]
@@ -115,7 +115,7 @@ class TestPacketHandlerRx(TestCase):
 
         self.packet_tx = memoryview(bytearray(2048))
 
-    def _patch_config(self):
+    def _patch_config(self) -> None:
         """
         Patch critical config setting for all packet handler modules.
         """
@@ -131,7 +131,7 @@ class TestPacketHandlerRx(TestCase):
     # Test name format:
     # 'test_name__protocol_tested__test_description__optional_condition'
 
-    def test_packet_flow_rx__ether__ether_unknown_dst(self):
+    def test_packet_flow_rx__ether__ether_unknown_dst(self) -> None:
         """
         [Ethernet] Receive Ethernet packet with unknown destination
         MAC address, drop.
@@ -153,7 +153,7 @@ class TestPacketHandlerRx(TestCase):
             PacketStatsTx(),
         )
 
-    def test_packet_flow_rx__ether__ether_malformed_header(self):
+    def test_packet_flow_rx__ether__ether_malformed_header(self) -> None:
         """
         [Ethernet] Receive Ethernet packet with malformed header, drop.
         """
@@ -174,7 +174,7 @@ class TestPacketHandlerRx(TestCase):
             PacketStatsTx(),
         )
 
-    def test_packet_flow_rx__ip4__ip4_unknown_dst(self):
+    def test_packet_flow_rx__ip4__ip4_unknown_dst(self) -> None:
         """
         [IPv4] Receive IPv4 packet for unknown destination, drop.
         """
@@ -197,7 +197,7 @@ class TestPacketHandlerRx(TestCase):
             PacketStatsTx(),
         )
 
-    def test_packet_flow_rx__ip6__ip6_unknown_dst(self):
+    def test_packet_flow_rx__ip6__ip6_unknown_dst(self) -> None:
         """
         [IPv6] Receive IPv6 packet for unknown destination, drop.
         """
@@ -220,7 +220,7 @@ class TestPacketHandlerRx(TestCase):
             PacketStatsTx(),
         )
 
-    def test_packet_flow_rx__arp__arp_unknown_tpa(self):
+    def test_packet_flow_rx__arp__arp_unknown_tpa(self) -> None:
         """
         [ARP] Receive ARP Request packet for unknown IPv4 address, drop.
         """
@@ -244,7 +244,7 @@ class TestPacketHandlerRx(TestCase):
             PacketStatsTx(),
         )
 
-    def test_packet_flow_rx_tx__icmp6_nd__nd_ns__dad(self):
+    def test_packet_flow_rx_tx__icmp6_nd__nd_ns__dad(self) -> None:
         """
         [ICMPv6 ND] Receive ICMPv6 Neighbor Solicitation DAD packet,
         respond with Neighbor Advertisement.

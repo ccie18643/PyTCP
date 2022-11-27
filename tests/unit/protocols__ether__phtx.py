@@ -42,6 +42,7 @@ from testslide import TestCase
 
 from pytcp.lib.packet_stats import PacketStatsTx
 from pytcp.lib.tx_status import TxStatus
+from pytcp.subsystems.packet_handler import PacketHandler
 from tests.unit.mock_network import (
     MockNetworkSettings,
     patch_config,
@@ -64,6 +65,8 @@ class TestEtherPhtx(TestCase):
         self.mns = MockNetworkSettings()
         patch_config(self)
         setup_mock_packet_handler(self)
+        self.frame_tx: bytearray
+        self.packet_handler: PacketHandler
 
     # Test name format: 'test_name__test_description__optional_condition'
 
@@ -213,7 +216,7 @@ class TestEtherPhtx(TestCase):
 
     def test_ether_phtx__ip4_packet_to_unicast_address_on_local_network__arp_cache_miss(
         self,
-    ):
+    ) -> None:
         """
         Test sending IPv4 packet to unicast address on local network / arp
         cache miss.
@@ -237,7 +240,7 @@ class TestEtherPhtx(TestCase):
 
     def test_ether_phtx__ip4_packet_to_unicast_address_on_external_network(
         self,
-    ):
+    ) -> None:
         """
         Test sending IPv4 packet to unicast address on external network.
         """
@@ -267,7 +270,7 @@ class TestEtherPhtx(TestCase):
 
     def test_ether_phtx__ip4_packet_to_unicast_address_on_external_network__no_gateway(
         self,
-    ):
+    ) -> None:
         """
         Test sending IPv4 packet to unicast address on external
         network / no gateway set.
@@ -293,7 +296,7 @@ class TestEtherPhtx(TestCase):
 
     def test_ether_phtx__ip4_packet_to_unicast_address_on_external_network__gateway_arp_cache_miss(
         self,
-    ):
+    ) -> None:
         """
         Test sending IPv4 packet to unicast address on external
         network / gateway ARP cache miss.
@@ -381,7 +384,7 @@ class TestEtherPhtx(TestCase):
 
     def test_ether_phtx__ip6_packet_to_unicast_address_on_local_network__nd_cache_miss(
         self,
-    ):
+    ) -> None:
         """
         Test sending IPv6 packet to unicast address on local
         network / ND cache miss.
@@ -405,7 +408,7 @@ class TestEtherPhtx(TestCase):
 
     def test_ether_phtx__ip6_packet_to_unicast_address_on_external_network(
         self,
-    ):
+    ) -> None:
         """
         Test sending IPv6 packet to unicast address on external network.
         """
@@ -435,7 +438,7 @@ class TestEtherPhtx(TestCase):
 
     def test_ether_phtx__ip6_packet_to_unicast_address_on_external_network__no_gateway(
         self,
-    ):
+    ) -> None:
         """
         Test sending IPv6 packet to unicast address on external
         network / no gateway set.
@@ -460,7 +463,7 @@ class TestEtherPhtx(TestCase):
 
     def test_ether_phtx__ip6_packet_to_unicast_address_on_external_network__gateway_nd_cache_miss(
         self,
-    ):
+    ) -> None:
         """
         Test sending IPv6 packet to unicast address on external
         network / gateway ND cache miss.
@@ -541,7 +544,7 @@ class TestEtherPhtx(TestCase):
 
     def test_ether_phtx__ether_packet_with_unspecified_destination_mac_address(
         self,
-    ):
+    ) -> None:
         """
         Send Ethernet packet with unspecified destination MAC address.
         """
