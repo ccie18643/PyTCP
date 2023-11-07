@@ -37,6 +37,7 @@ import fcntl
 import os
 import struct
 import sys
+from typing import Tuple
 
 from pytcp import config
 from pytcp.lib import stack
@@ -54,16 +55,31 @@ class TcpIpStack:
     """
     Main PyTCP library class.
     """
+    @staticmethod
+    def create_tun(interface:str):
+        # Initialize the TAP interface.
+        try:
+            fd = os.open("/dev/net/tun", os.O_RDWR)
+        except FileNotFoundError:
+            log("stack", "<CRIT>Unable to access '/dev/net/tun' device</>")
+            sys.exit(-1)
+        fcntl.ioctl(
+            fd,
+            TUNSETIFF,
+            struct.pack("16sH", interface.encode(), IFF_TAP | IFF_NO_PI),
+        )
+        return fd, fd
 
     def __init__(
         self,
         *,
-        interface: str,
+        fd:Tuple[int,int],
         mac_address: str | None = None,
         ip4_address: str | None = None,
         ip4_gateway: str | None = None,
         ip6_address: str | None = None,
         ip6_gateway: str | None = None,
+
     ):
         """
         Initialize stack on given interface.
@@ -100,18 +116,9 @@ class TcpIpStack:
             config.IP6_SUPPORT = True
             config.IP6_LLA_AUTOCONFIG = True
             config.IP6_GUA_AUTOCONFIG = False
+        self.rx_fd = fd[0]
+        self.tx_fd = fd[1]
 
-        # Initialize the TAP interface.
-        try:
-            self.tap = os.open("/dev/net/tun", os.O_RDWR)
-        except FileNotFoundError:
-            log("stack", "<CRIT>Unable to access '/dev/net/tun' device</>")
-            sys.exit(-1)
-        fcntl.ioctl(
-            self.tap,
-            TUNSETIFF,
-            struct.pack("16sH", interface.encode(), IFF_TAP | IFF_NO_PI),
-        )
 
     def start(self) -> None:
         """
@@ -120,8 +127,8 @@ class TcpIpStack:
         stack.timer.start()
         stack.arp_cache.start()
         stack.nd_cache.start()
-        stack.rx_ring.start(self.tap)
-        stack.tx_ring.start(self.tap)
+        stack.rx_ring.start(self.rx_fd)
+        stack.tx_ring.start(self.tx_fd)
         stack.packet_handler.start()
         stack.packet_handler.acquire_ip6_addresses()
         stack.packet_handler.acquire_ip4_addresses()
