@@ -1,4 +1,4 @@
-PYTHON_VERSION := 3.11
+PYTHON_VERSION := 3.12
 VENV := venv
 ROOT_PATH:=$(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
 PYTCP_PATH := pytcp
