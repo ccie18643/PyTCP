@@ -43,7 +43,7 @@ from datetime import datetime
 
 import click
 
-from pytcp import TcpIpStack
+from pytcp import TcpIpStack, initialize_tap
 from pytcp.lib import stack
 from pytcp.lib.ip4_address import Ip4Address
 from pytcp.lib.ip6_address import Ip6Address
@@ -145,7 +145,7 @@ def cli(*, interface: str, remote_ip_address: str) -> None:
     Run the ICMP Echo client.
     """
 
-    stack = TcpIpStack(interface=interface)
+    stack = TcpIpStack(fd=initialize_tap(tap_name=interface))
     client = IcmpEchoClient(
         remote_ip_address=remote_ip_address,
     )
