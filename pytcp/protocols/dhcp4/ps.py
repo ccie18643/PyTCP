@@ -223,7 +223,6 @@ class Dhcp4Packet:
             i = 0
 
             while i < len(raw_options):
-
                 if raw_options[i] == DHCP4_OPT_END:
                     self.dhcp_options.append(Dhcp4OptEnd())
                     break

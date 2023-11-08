@@ -121,10 +121,16 @@ class TestPacketHandlerRxTx(TestCase):
         )
 
         mock_NdCache = StrictMock(template=NdCache)
-        self.mock_callable(target=mock_NdCache, method="find_entry",).for_call(
+        self.mock_callable(
+            target=mock_NdCache,
+            method="find_entry",
+        ).for_call(
             LOCNET_IP6_ADDRESS
         ).to_return_value(LOCNET_MAC_ADDRESS)
-        self.mock_callable(target=mock_NdCache, method="add_entry",).for_call(
+        self.mock_callable(
+            target=mock_NdCache,
+            method="add_entry",
+        ).for_call(
             LOCNET_IP6_ADDRESS, LOCNET_MAC_ADDRESS
         ).to_return_value(None)
         self.patch_attribute(

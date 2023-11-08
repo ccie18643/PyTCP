@@ -375,8 +375,8 @@ class Ip4FragAssembler:
             0,
             bytes(self._src),
             bytes(self._dst),
-            bytes(self._raw_options),  # memoryview: conversion to bytes requir
-            bytes(self._data),  # memoryview: conversion to bytes requir
+            bytes(self._raw_options),  # memoryview: conversion to bytes require
+            bytes(self._data),  # memoryview: conversion to bytes require
         )
         struct.pack_into("! H", frame, 10, inet_cksum(frame[: self._hlen]))
 

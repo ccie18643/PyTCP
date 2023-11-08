@@ -108,7 +108,6 @@ class NdCache:
 
         while self._run_thread:
             for ip6_address in list(self._nd_cache):
-
                 # Skip permanent entries
                 if self._nd_cache[ip6_address].permanent:
                     continue

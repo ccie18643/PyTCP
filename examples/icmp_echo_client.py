@@ -91,7 +91,6 @@ class IcmpEchoClient:
         time.sleep(0.1)
 
     def __thread_client(self) -> None:
-
         assert self._local_ip_address is not None
 
         flow_id = random.randint(0, 65535)

@@ -103,7 +103,6 @@ class ArpCache:
 
         while self._run_thread:
             for ip4_address in list(self._arp_cache):
-
                 # Skip permanent entries
                 if self._arp_cache[ip4_address].permanent:
                     continue

@@ -27,7 +27,7 @@
 # pylint: disable = too-many-instance-attributes
 
 """
-The example 'user space' client for UDP echo. It activelly sends messages
+The example 'user space' client for UDP echo. It actively sends messages
 to the UDP Echo service.
 
 examples/udp_echo_client.py
@@ -97,7 +97,6 @@ class UdpEchoClient:
         time.sleep(0.1)
 
     def __thread_client(self) -> None:
-
         version = ip_version(self._local_ip_address)
         if version == 6:
             client_socket = socket.socket(

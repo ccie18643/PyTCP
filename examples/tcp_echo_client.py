@@ -27,7 +27,7 @@
 # pylint: disable = too-many-instance-attributes
 
 """
-The example 'user space' client for TCP echo. It activelly connects to
+The example 'user space' client for TCP echo. It actively connects to
 TCP Echo service and sends messages.
 
 examples/tcp_echo_client.py
