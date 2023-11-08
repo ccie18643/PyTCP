@@ -312,7 +312,7 @@ class TcpSocket(Socket):
         # The 'send' call requires 'connect' call to be run prior to it.
 
         if self._remote_ip_address.is_unspecified or self._remote_port == 0:
-            raise OSError("send(): Destination address requir")
+            raise OSError("send(): Destination address require")
 
         assert self._tcp_session is not None
 

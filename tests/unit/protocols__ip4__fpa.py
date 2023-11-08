@@ -592,7 +592,6 @@ class TestIp4FragAssembler(TestCase):
         self.assertEqual(len(packet), IP4_HEADER_LEN + 16)
 
     def test_ip4_frag_fpa____len____options_data(self) -> None:
-
         """
         Test the '__len__() dunder with options and data present.
         """

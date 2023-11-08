@@ -140,7 +140,7 @@ def _phrx_icmp6(self: PacketHandler, packet_rx: PacketRx) -> None:
             ip6_dst=Ip6Address("ff02::1")
             if ip6_nd_dad
             else packet_rx.ip6.src,  # use ff02::1 destination addriess when
-            # responding to DAD equest
+            # responding to DAD request
             ip6_hop=255,
             icmp6_type=ICMP6_ND_NEIGHBOR_ADVERTISEMENT,
             icmp6_na_flag_s=not ip6_nd_dad,  # no S flag when responding to

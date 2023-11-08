@@ -444,7 +444,7 @@ class Ip4Host(IpHost):
         """
         return self._network
 
-    @property  # type: ignore[override]
+    @property
     def gateway(self) -> Ip4Address | None:
         """
         Getter for the '_gateway' attribute.

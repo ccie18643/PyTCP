@@ -137,7 +137,7 @@ class TcpAssembler:
         self._hlen: int = TCP_HEADER_LEN + sum(len(_) for _ in self._options)
 
         assert self._hlen % 4 == 0, (
-            f"TCP header len {self._hlen} is not multiplcation of 4 bytes, "
+            f"TCP header len {self._hlen} is not multiplication of 4 bytes, "
             f"check options... {self._options}"
         )
 
@@ -419,7 +419,7 @@ class TcpOptTimestamp:
 
     def __init__(self, tsval: int, tsecr: int) -> None:
         """
-        Optiona constructor.
+        Optional constructor.
         """
         assert 0 <= tsval <= 0xFFFFFFFF, f"{tsval=}"
         assert 0 <= tsecr <= 0xFFFFFFFF, f"{tsecr=}"

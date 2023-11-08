@@ -210,7 +210,7 @@ class UdpSocket(Socket):
         # The 'send' call requires 'connect' call to be run prior to it.
         if self._remote_ip_address.is_unspecified or self._remote_port == 0:
             raise OSError(
-                "[Errno 89] Destination address requir - "
+                "[Errno 89] Destination address require - "
                 "[Socket has no destination address set]"
             )
 
