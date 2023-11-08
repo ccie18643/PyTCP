@@ -42,7 +42,7 @@ import click
 
 from examples.lib.malpi import malpa, malpi, malpka
 from examples.lib.tcp_service import TcpService
-from pytcp import TcpIpStack
+from pytcp import TcpIpStack, initialize_tap
 
 if TYPE_CHECKING:
     from pytcp.lib.socket import Socket
@@ -137,7 +137,7 @@ def cli(*, interface: str) -> None:
     Run the TCP Echo service.
     """
 
-    stack = TcpIpStack(interface=interface)
+    stack = TcpIpStack(fd=initialize_tap(tap_name=interface))
     service = TcpEchoService()
 
     try:

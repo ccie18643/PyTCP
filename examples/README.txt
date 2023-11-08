@@ -22,5 +22,5 @@ Before running any of the examples, please make sure to:
  - Run the 'sudo make tap' command to create the tap7 interface and assign it to the 'br0' bridge.
  - Run the 'make' command to create the proper virtual environment.
  - Run '. venv/bin/activate' command to start the stack virtual environment.
- - Execute any example, e.g., 'example/run_stack.py'.
+ - Execute any example, e.g., 'examples/run_stack.py'.
  - Hit Ctrl-C to stop it.

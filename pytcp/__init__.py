@@ -37,7 +37,6 @@ import fcntl
 import os
 import struct
 import sys
-from typing import Tuple
 
 from pytcp import config
 from pytcp.lib import stack
@@ -51,35 +50,41 @@ IFF_TAP = 0x0002
 IFF_NO_PI = 0x1000
 
 
+def initialize_tap(*, tap_name: str) -> tuple[int, int]:
+    """
+    Initialize the TAP interface.
+    """
+
+    try:
+        fd = os.open("/dev/net/tun", os.O_RDWR)
+
+    except FileNotFoundError:
+        log("stack", "<CRIT>Unable to access '/dev/net/tun' device</>")
+        sys.exit(-1)
+
+    fcntl.ioctl(
+        fd,
+        TUNSETIFF,
+        struct.pack("16sH", tap_name.encode(), IFF_TAP | IFF_NO_PI),
+    )
+
+    return fd, fd
+
+
 class TcpIpStack:
     """
     Main PyTCP library class.
     """
-    @staticmethod
-    def create_tun(interface:str):
-        # Initialize the TAP interface.
-        try:
-            fd = os.open("/dev/net/tun", os.O_RDWR)
-        except FileNotFoundError:
-            log("stack", "<CRIT>Unable to access '/dev/net/tun' device</>")
-            sys.exit(-1)
-        fcntl.ioctl(
-            fd,
-            TUNSETIFF,
-            struct.pack("16sH", interface.encode(), IFF_TAP | IFF_NO_PI),
-        )
-        return fd, fd
 
     def __init__(
         self,
         *,
-        fd:Tuple[int,int],
+        fd: tuple[int, int],
         mac_address: str | None = None,
         ip4_address: str | None = None,
         ip4_gateway: str | None = None,
         ip6_address: str | None = None,
         ip6_gateway: str | None = None,
-
     ):
         """
         Initialize stack on given interface.
@@ -118,7 +123,6 @@ class TcpIpStack:
             config.IP6_GUA_AUTOCONFIG = False
         self.rx_fd = fd[0]
         self.tx_fd = fd[1]
-
 
     def start(self) -> None:
         """
