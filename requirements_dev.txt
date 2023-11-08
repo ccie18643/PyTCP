@@ -10,3 +10,4 @@ pyre-check
 build
 twine
 ipython
+pyupgrade

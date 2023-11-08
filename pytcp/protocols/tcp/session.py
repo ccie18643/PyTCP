@@ -46,8 +46,9 @@ from __future__ import annotations
 
 import random
 import threading
+from collections.abc import Callable
 from enum import Enum, auto
-from typing import TYPE_CHECKING, Any, Callable
+from typing import TYPE_CHECKING, Any
 
 from pytcp import config
 from pytcp.lib import stack

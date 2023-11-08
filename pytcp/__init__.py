@@ -37,7 +37,6 @@ import fcntl
 import os
 import struct
 import sys
-from typing import Tuple
 
 from pytcp import config
 from pytcp.lib import stack
@@ -51,7 +50,7 @@ IFF_TAP = 0x0002
 IFF_NO_PI = 0x1000
 
 
-def initialize_tap(*, tap_name: str) -> Tuple[int, int]:
+def initialize_tap(*, tap_name: str) -> tuple[int, int]:
     """
     Initialize the TAP interface.
     """
@@ -80,7 +79,7 @@ class TcpIpStack:
     def __init__(
         self,
         *,
-        fd: Tuple[int, int],
+        fd: tuple[int, int],
         mac_address: str | None = None,
         ip4_address: str | None = None,
         ip4_gateway: str | None = None,

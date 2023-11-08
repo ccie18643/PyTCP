@@ -41,7 +41,7 @@ import os
 import select
 import threading
 import time
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from pytcp.lib.logger import log
 from pytcp.lib.packet import PacketRx
@@ -107,7 +107,7 @@ class RxRing:
 
         __debug__ and log("stack", "Stopped RX ring")
 
-    def dequeue(self) -> Optional[PacketRx]:
+    def dequeue(self) -> PacketRx | None:
         """
         Dequeue inboutd frame from RX ring.
         """
