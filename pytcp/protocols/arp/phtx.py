@@ -37,6 +37,7 @@ ver 2.7
 
 from __future__ import annotations
 
+from abc import ABC
 from typing import TYPE_CHECKING
 
 from pytcp import config
@@ -45,56 +46,76 @@ from pytcp.lib.mac_address import MacAddress
 from pytcp.lib.tracker import Tracker
 from pytcp.lib.tx_status import TxStatus
 from pytcp.protocols.arp.fpa import ArpAssembler
-from pytcp.protocols.arp.ps import ARP_OP_REPLY, ARP_OP_REQUEST
-
-if TYPE_CHECKING:
-    from pytcp.lib.ip4_address import Ip4Address
-    from pytcp.subsystems.packet_handler import PacketHandler
+from pytcp.protocols.arp.ps import ArpOperation
 
 
-def _phtx_arp(
-    self: PacketHandler,
-    *,
-    ether_src: MacAddress,
-    ether_dst: MacAddress,
-    arp_oper: int,
-    arp_sha: MacAddress,
-    arp_spa: Ip4Address,
-    arp_tha: MacAddress,
-    arp_tpa: Ip4Address,
-    echo_tracker: Tracker | None = None,
-) -> TxStatus:
+class PacketHandlerTxArp(ABC):
     """
-    Handle outbound ARP packets.
+    Packet handler for the outbound ARP packets.
     """
 
-    self.packet_stats_tx.arp__pre_assemble += 1
+    if TYPE_CHECKING:
+        from pytcp.lib.ip4_address import Ip4Address
+        from pytcp.lib.packet_stats import PacketStatsTx
+        from pytcp.protocols.ethernet.ps import EthernetPayload
+        from pytcp.protocols.ip4.fpa import Ip4Assembler, Ip4FragAssembler
+        from pytcp.protocols.ip6.fpa import Ip6Assembler
+        from pytcp.protocols.raw.fpa import RawAssembler
 
-    # Check if IPv4 protocol support is enabled, if not then silently
-    # drop the packet
-    if not config.IP4_SUPPORT:
-        self.packet_stats_tx.arp__no_proto_support__drop += 1
-        return TxStatus.DROPED__ARP__NO_PROTOCOL_SUPPORT
+        packet_stats_tx: PacketStatsTx
 
-    if arp_oper == ARP_OP_REQUEST:
-        self.packet_stats_tx.arp__op_request__send += 1
+        def _phtx_ethernet(
+            self,
+            *,
+            ethernet__src: MacAddress = MacAddress(0),
+            ethernet__dst: MacAddress = MacAddress(0),
+            ethernet__payload: EthernetPayload | None = None,
+        ) -> TxStatus:
+            ...
 
-    if arp_oper == ARP_OP_REPLY:
-        self.packet_stats_tx.arp__op_reply__send += 1
+    def _phtx_arp(
+        self,
+        *,
+        ethernet__src: MacAddress,
+        ethernet__dst: MacAddress,
+        arp__oper: ArpOperation,
+        arp__sha: MacAddress,
+        arp__spa: Ip4Address,
+        arp__tha: MacAddress,
+        arp__tpa: Ip4Address,
+        echo_tracker: Tracker | None = None,
+    ) -> TxStatus:
+        """
+        Handle outbound ARP packets.
+        """
 
-    arp_packet_tx = ArpAssembler(
-        oper=arp_oper,
-        sha=arp_sha,
-        spa=arp_spa,
-        tha=arp_tha,
-        tpa=arp_tpa,
-        echo_tracker=echo_tracker,
-    )
+        self.packet_stats_tx.arp__pre_assemble += 1
 
-    __debug__ and log("arp", f"{arp_packet_tx.tracker} - {arp_packet_tx}")
+        # Check if IPv4 protocol support is enabled, if not then silently
+        # drop the packet
+        if not config.IP4_SUPPORT:
+            self.packet_stats_tx.arp__no_proto_support__drop += 1
+            return TxStatus.DROPED__ARP__NO_PROTOCOL_SUPPORT
 
-    return self._phtx_ether(
-        ether_src=ether_src,
-        ether_dst=ether_dst,
-        carried_packet=arp_packet_tx,
-    )
+        match arp__oper:
+            case ArpOperation.REQUEST:
+                self.packet_stats_tx.arp__op_request__send += 1
+            case ArpOperation.REPLY:
+                self.packet_stats_tx.arp__op_reply__send += 1
+
+        arp_packet_tx = ArpAssembler(
+            arp__oper=arp__oper,
+            arp__sha=arp__sha,
+            arp__spa=arp__spa,
+            arp__tha=arp__tha,
+            arp__tpa=arp__tpa,
+            echo_tracker=echo_tracker,
+        )
+
+        __debug__ and log("arp", f"{arp_packet_tx.tracker} - {arp_packet_tx}")
+
+        return self._phtx_ethernet(
+            ethernet__src=ethernet__src,
+            ethernet__dst=ethernet__dst,
+            ethernet__payload=arp_packet_tx,
+        )

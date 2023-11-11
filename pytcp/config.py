@@ -73,22 +73,6 @@ LOG_CHANEL = {
 }
 LOG_DEBUG = False
 
-# Packet integrity sanity check, if enabled it protects the protocol parsers
-# from being exposed to malformed or malicious packets that could cause them
-# to crash during packet parsing. It progessively check appropriate length
-# fields and ensure they are set within sane boundaries. It also checks
-# packet's actual header/options/data lengths against above values and default
-# minimum/maximum lengths for given protocol. Also packet options (if any) are
-# checked in similar fashion to ensure they will not exploit or crash parser.
-PACKET_INTEGRITY_CHECK = True
-
-# Packet sanity check, if enabled it validates packet's fields to detect invalid
-# values or invalid combinations of values. For example in TCP/UDP it drops
-# packets with port set to 0, in TCP it drop packet with SYN and FIN flags set
-# simultaneously, for ICMPv6 it provides very detailed check of messages
-# integrity.
-PACKET_SANITY_CHECK = True
-
 # Drop IPv4 packets containing options - this seems to be widely adopted
 # security feature. Stack parses but doesn't support IPv4 options as they are
 # mostly useless anyway.
@@ -144,3 +128,6 @@ LOCAL_TCP_WIN = (
 # Native support for UDP Echo (used for packet flow unit testing only and should
 # always be disabled).
 UDP_ECHO_NATIVE_DISABLE = True
+
+# LRU cache size, used by packet parsers to cache parsed field values.
+LRU_CACHE_SIZE = 16

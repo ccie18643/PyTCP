@@ -42,7 +42,7 @@ from __future__ import annotations
 import struct
 from typing import TYPE_CHECKING
 
-from pytcp import config
+from pytcp.lib.errors import PacketIntegrityError, PacketSanityError
 from pytcp.lib.ip_helper import inet_cksum
 from pytcp.protocols.tcp.ps import (
     TCP_HEADER_LEN,
@@ -60,30 +60,43 @@ if TYPE_CHECKING:
     from pytcp.lib.packet import PacketRx
 
 
+class TcpIntegrityError(PacketIntegrityError):
+    """
+    Exception raised when TCP packet integrity check fails.
+    """
+
+    def __init__(self, message: str):
+        super().__init__("[TCP] " + message)
+
+
+class TcpSanityError(PacketSanityError):
+    """
+    Exception raised when TCP packet sanity check fails.
+    """
+
+    def __init__(self, message: str):
+        super().__init__("[TCP] " + message)
+
+
 class TcpParser:
     """
     TCP packet parser class.
     """
 
-    def __init__(self, packet_rx: PacketRx) -> None:
+    def __init__(self, *, packet_rx: PacketRx) -> None:
         """
         Class constructor.
         """
 
-        assert packet_rx.ip is not None
-
-        packet_rx.tcp = self
-
         self._frame = packet_rx.frame
         self._plen = packet_rx.ip.dlen
-
-        packet_rx.parse_failed = (
-            self._packet_integrity_check(packet_rx.ip.pshdr_sum)
-            or self._packet_sanity_check()
+        self._packet_integrity_check(
+            pshdr_sum=packet_rx.ip.pshdr_sum,
         )
+        self._packet_sanity_check()
 
-        if packet_rx.parse_failed:
-            packet_rx.frame = packet_rx.frame[self.hlen :]
+        packet_rx.tcp = self
+        packet_rx.frame = packet_rx.frame[self.hlen :]
 
     def __len__(self) -> int:
         """
@@ -432,24 +445,27 @@ class TcpParser:
                 self._cache__timestamp = None
         return self._cache__timestamp
 
-    def _packet_integrity_check(self, pshdr_sum: int) -> str:
+    def _packet_integrity_check(self, *, pshdr_sum: int) -> None:
         """
         Packet integrity check to be run on raw frame prior to parsing
         to make sure parsing is safe.
         """
 
-        if not config.PACKET_INTEGRITY_CHECK:
-            return ""
-
         if inet_cksum(self._frame[: self._plen], pshdr_sum):
-            return "TCP integrity - wrong packet checksum"
+            raise TcpIntegrityError(
+                "The wrong packet checksum",
+            )
 
         if not TCP_HEADER_LEN <= self._plen <= len(self):
-            return "TCP integrity - wrong packet length (I)"
+            raise TcpIntegrityError(
+                "The wrong packet length (I)",
+            )
 
         hlen = (self._frame[12] & 0b11110000) >> 2
         if not TCP_HEADER_LEN <= hlen <= self._plen <= len(self):
-            return "TCP integrity - wrong packet length (II)"
+            raise TcpIntegrityError(
+                "The wrong packet length (II)",
+            )
 
         optr = TCP_HEADER_LEN
         while optr < hlen:
@@ -458,61 +474,69 @@ class TcpParser:
             if self._frame[optr] == TCP_OPT_NOP:
                 optr += 1
                 if optr > hlen:
-                    return "TCP integrity - wrong option length (I)"
+                    raise TcpIntegrityError(
+                        "The wrong option length (I)",
+                    )
                 continue
             if optr + 1 > hlen:
-                return "TCP integrity - wrong option length (II)"
+                raise TcpIntegrityError(
+                    "The wrong option length (II)",
+                )
             if self._frame[optr + 1] == 0:
-                return "TCP integrity - wrong option length (III)"
+                raise TcpIntegrityError(
+                    "The wrong option length (III)",
+                )
             optr += self._frame[optr + 1]
             if optr > hlen:
-                return "TCP integrity - wrong option length (IV)"
+                raise TcpIntegrityError(
+                    "The wrong option length (IV)",
+                )
 
-        return ""
-
-    def _packet_sanity_check(self) -> str:
+    def _packet_sanity_check(self) -> None:
         """
         Packet sanity check to be run on parsed packet to make sure packets's
         fields contain sane values.
         """
 
-        if not config.PACKET_SANITY_CHECK:
-            return ""
-
         if self.sport == 0:
-            return "TCP sanity - 'sport' must be greater than 0"
+            raise TcpSanityError(
+                "The 'sport' must be greater than 0",
+            )
 
         if self.dport == 0:
-            return "TCP sanity - 'dport' must be greater than  0"
+            raise TcpSanityError(
+                "The 'dport' must be greater than  0",
+            )
 
         if self.flag_syn and self.flag_fin:
-            return (
-                "TCP sanity - 'flag_syn' and 'flag_fin' must not be set "
-                "simultaneously"
+            raise TcpSanityError(
+                "The 'flag_syn' and 'flag_fin' must not be set simultaneously",
             )
 
         if self.flag_syn and self.flag_rst:
-            return (
-                "TCP sanity - 'flag_syn' and 'flag_rst' must not set "
-                "simultaneously"
+            raise TcpSanityError(
+                "The 'flag_syn' and 'flag_rst' must not set simultaneously",
             )
 
         if self.flag_fin and self.flag_rst:
-            return (
-                "TCP sanity - 'flag_fin' and 'flag_rst' must not be set "
-                "simultaneously"
+            raise TcpSanityError(
+                "The 'flag_fin' and 'flag_rst' must not be set simultaneously",
             )
 
         if self.flag_fin and not self.flag_ack:
-            return "TCP sanity - 'flag_ack' must be set when 'flag_fin' is set"
+            raise TcpSanityError(
+                "The 'flag_ack' must be set when 'flag_fin' is set",
+            )
 
         if self.ack and not self.flag_ack:
-            return "TCP sanity - 'flag_ack' must be set when 'ack' is not 0"
+            raise TcpSanityError(
+                "The 'flag_ack' must be set when 'ack' is not 0",
+            )
 
         if self.urg and not self.flag_urg:
-            return "TCP sanity - 'flag_urg' must be set when 'urg' is not 0"
-
-        return ""
+            raise TcpSanityError(
+                "The 'flag_urg' must be set when 'urg' is not 0",
+            )
 
 
 #

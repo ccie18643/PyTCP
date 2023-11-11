@@ -36,6 +36,18 @@ ver 2.7
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING, TypeAlias
+
+if TYPE_CHECKING:
+    from pytcp.protocols.icmp6.fpa import Icmp6Assembler
+    from pytcp.protocols.raw.fpa import RawAssembler
+    from pytcp.protocols.tcp.fpa import TcpAssembler
+    from pytcp.protocols.udp.fpa import UdpAssembler
+
+    Ip6ExtFragPayload: TypeAlias = (
+        Icmp6Assembler | TcpAssembler | UdpAssembler | RawAssembler
+    )
+
 # IPv6 protocol fragmentation extension header
 
 # +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+

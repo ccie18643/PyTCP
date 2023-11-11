@@ -45,12 +45,12 @@ class PacketStatsRx:
     Data store for rx packet handler statistics.
     """
 
-    ether__pre_parse: int = 0
-    ether__failed_parse__drop: int = 0
-    ether__dst_unknown__drop: int = 0
-    ether__dst_unicast: int = 0
-    ether__dst_multicast: int = 0
-    ether__dst_broadcast: int = 0
+    ethernet__pre_parse: int = 0
+    ethernet__failed_parse__drop: int = 0
+    ethernet__dst_unknown__drop: int = 0
+    ethernet__dst_unicast: int = 0
+    ethernet__dst_multicast: int = 0
+    ethernet__dst_broadcast: int = 0
 
     arp__pre_parse: int = 0
     arp__failed_parse__drop: int = 0
@@ -86,7 +86,7 @@ class PacketStatsRx:
     icmp4__pre_parse: int = 0
     icmp4__failed_parse__drop: int = 0
     icmp4__echo_request__respond_echo_reply: int = 0
-    icmp4__unreachable: int = 0
+    icmp4__port_unreachable: int = 0
 
     icmp6__pre_parse: int = 0
     icmp6__failed_parse__drop: int = 0
@@ -101,7 +101,8 @@ class PacketStatsRx:
     icmp6__nd_router_solicitation: int = 0
     icmp6__nd_router_advertisement: int = 0
     icmp6__echo_request__respond_echo_reply: int = 0
-    icmp6__unreachable: int = 0
+    icmp6__port_unreachable: int = 0
+    icmp6__unknown: int = 0
 
     udp__pre_parse: int = 0
     udp__failed_parse__drop: int = 0
@@ -130,27 +131,27 @@ class PacketStatsTx:
     Data store for tx packet handler statistics.
     """
 
-    ether__pre_assemble: int = 0
-    ether__src_unspec__fill: int = 0
-    ether__src_spec: int = 0
-    ether__dst_spec__send: int = 0
-    ether__dst_unspec__ip6_lookup: int = 0
-    ether__dst_unspec__ip6_lookup__multicast__send: int = 0
-    ether__dst_unspec__ip6_lookup__extnet__no_gw__drop: int = 0
-    ether__dst_unspec__ip6_lookup__extnet__gw_nd_cache_hit__send: int = 0
-    ether__dst_unspec__ip6_lookup__extnet__gw_nd_cache_miss__drop: int = 0
-    ether__dst_unspec__ip6_lookup__locnet__nd_cache_hit__send: int = 0
-    ether__dst_unspec__ip6_lookup__locnet__nd_cache_miss__drop: int = 0
-    ether__dst_unspec__ip4_lookup: int = 0
-    ether__dst_unspec__ip4_lookup__multicast__send: int = 0
-    ether__dst_unspec__ip4_lookup__limited_broadcast__send: int = 0
-    ether__dst_unspec__ip4_lookup__network_broadcast__send: int = 0
-    ether__dst_unspec__ip4_lookup__extnet__no_gw__drop: int = 0
-    ether__dst_unspec__ip4_lookup__extnet__gw_arp_cache_hit__send: int = 0
-    ether__dst_unspec__ip4_lookup__extnet__gw_arp_cache_miss__drop: int = 0
-    ether__dst_unspec__ip4_lookup__locnet__arp_cache_hit__send: int = 0
-    ether__dst_unspec__ip4_lookup__locnet__arp_cache_miss__drop: int = 0
-    ether__dst_unspec__drop: int = 0
+    ethernet__pre_assemble: int = 0
+    ethernet__src_unspec__fill: int = 0
+    ethernet__src_spec: int = 0
+    ethernet__dst_spec__send: int = 0
+    ethernet__dst_unspec__ip6_lookup: int = 0
+    ethernet__dst_unspec__ip6_lookup__multicast__send: int = 0
+    ethernet__dst_unspec__ip6_lookup__extnet__no_gw__drop: int = 0
+    ethernet__dst_unspec__ip6_lookup__extnet__gw_nd_cache_hit__send: int = 0
+    ethernet__dst_unspec__ip6_lookup__extnet__gw_nd_cache_miss__drop: int = 0
+    ethernet__dst_unspec__ip6_lookup__locnet__nd_cache_hit__send: int = 0
+    ethernet__dst_unspec__ip6_lookup__locnet__nd_cache_miss__drop: int = 0
+    ethernet__dst_unspec__ip4_lookup: int = 0
+    ethernet__dst_unspec__ip4_lookup__multicast__send: int = 0
+    ethernet__dst_unspec__ip4_lookup__limited_broadcast__send: int = 0
+    ethernet__dst_unspec__ip4_lookup__network_broadcast__send: int = 0
+    ethernet__dst_unspec__ip4_lookup__extnet__no_gw__drop: int = 0
+    ethernet__dst_unspec__ip4_lookup__extnet__gw_arp_cache_hit__send: int = 0
+    ethernet__dst_unspec__ip4_lookup__extnet__gw_arp_cache_miss__drop: int = 0
+    ethernet__dst_unspec__ip4_lookup__locnet__arp_cache_hit__send: int = 0
+    ethernet__dst_unspec__ip4_lookup__locnet__arp_cache_miss__drop: int = 0
+    ethernet__dst_unspec__drop: int = 0
 
     arp__pre_assemble: int = 0
     arp__no_proto_support__drop: int = 0

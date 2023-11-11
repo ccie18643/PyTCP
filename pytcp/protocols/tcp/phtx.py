@@ -40,6 +40,7 @@ ver 2.7
 
 from __future__ import annotations
 
+from abc import ABC
 from typing import TYPE_CHECKING, cast
 
 from pytcp.lib.ip4_address import Ip4Address
@@ -57,126 +58,161 @@ from pytcp.protocols.tcp.fpa import (
     TcpOptWscale,
 )
 
-if TYPE_CHECKING:
-    from pytcp.lib.ip_address import IpAddress
-    from pytcp.subsystems.packet_handler import PacketHandler
 
-
-def _phtx_tcp(
-    self: PacketHandler,
-    *,
-    ip_src: IpAddress,
-    ip_dst: IpAddress,
-    tcp_sport: int,
-    tcp_dport: int,
-    tcp_seq: int = 0,
-    tcp_ack: int = 0,
-    tcp_flag_ns: bool = False,
-    tcp_flag_crw: bool = False,
-    tcp_flag_ece: bool = False,
-    tcp_flag_urg: bool = False,
-    tcp_flag_ack: bool = False,
-    tcp_flag_psh: bool = False,
-    tcp_flag_rst: bool = False,
-    tcp_flag_syn: bool = False,
-    tcp_flag_fin: bool = False,
-    tcp_mss: int | None = None,
-    tcp_wscale: int | None = None,
-    tcp_win: int = 0,
-    tcp_urp: int = 0,
-    tcp_data: bytes | None = None,
-    echo_tracker: Tracker | None = None,
-) -> TxStatus:
+class PacketHandlerTxTcp(ABC):
     """
-    Handle outbound TCP packets.
+    Class implements packet handler for the outbound TCP packets.
     """
 
-    self.packet_stats_tx.tcp__pre_assemble += 1
+    if TYPE_CHECKING:
+        from pytcp.config import IP4_DEFAULT_TTL, IP6_DEFAULT_HOP
+        from pytcp.lib.ip_address import IpAddress
+        from pytcp.lib.packet_stats import PacketStatsTx
+        from pytcp.protocols.icmp4.fpa import Icmp4Assembler
+        from pytcp.protocols.icmp6.fpa import Icmp6Assembler
+        from pytcp.protocols.ip4.ps import Ip4Payload
+        from pytcp.protocols.ip6.ps import Ip6Payload
+        from pytcp.protocols.ip6_ext_frag.fpa import Ip6ExtFragAssembler
+        from pytcp.protocols.raw.fpa import RawAssembler
+        from pytcp.protocols.udp.fpa import UdpAssembler
 
-    tcp_options: list[
-        TcpOptMss
-        | TcpOptWscale
-        | TcpOptSackPerm
-        | TcpOptTimestamp
-        | TcpOptEol
-        | TcpOptNop
-    ] = []
+        packet_stats_tx: PacketStatsTx
 
-    if tcp_mss:
-        self.packet_stats_tx.tcp__opt_mss += 1
-        tcp_options.append(TcpOptMss(tcp_mss))
+        def _phtx_ip6(
+            self,
+            *,
+            ip6__dst: Ip6Address,
+            ip6__src: Ip6Address,
+            ip6__hop: int = IP6_DEFAULT_HOP,
+            ip6__payload: Ip6Payload = RawAssembler(),
+        ) -> TxStatus:
+            ...
 
-    if tcp_wscale:
-        self.packet_stats_tx.tcp__opt_nop += 1
-        self.packet_stats_tx.tcp__opt_wscale += 1
-        tcp_options.append(TcpOptNop())
-        tcp_options.append(TcpOptWscale(tcp_wscale))
+        def _phtx_ip4(
+            self,
+            *,
+            ip4__dst: Ip4Address,
+            ip4__src: Ip4Address,
+            ip4__ttl: int = IP4_DEFAULT_TTL,
+            ip4__payload: Ip4Payload = RawAssembler(),
+        ) -> TxStatus:
+            ...
 
-    tcp_packet_tx = TcpAssembler(
-        sport=tcp_sport,
-        dport=tcp_dport,
-        seq=tcp_seq,
-        ack=tcp_ack,
-        flag_ns=tcp_flag_ns,
-        flag_crw=tcp_flag_crw,
-        flag_ece=tcp_flag_ece,
-        flag_urg=tcp_flag_urg,
-        flag_ack=tcp_flag_ack,
-        flag_psh=tcp_flag_psh,
-        flag_rst=tcp_flag_rst,
-        flag_syn=tcp_flag_syn,
-        flag_fin=tcp_flag_fin,
-        win=tcp_win,
-        urp=tcp_urp,
-        options=tcp_options,
-        data=tcp_data,
-        echo_tracker=echo_tracker,
-    )
+    def _phtx_tcp(
+        self,
+        *,
+        ip__src: IpAddress,
+        ip__dst: IpAddress,
+        tcp__sport: int,
+        tcp__dport: int,
+        tcp__seq: int = 0,
+        tcp__ack: int = 0,
+        tcp__flag_ns: bool = False,
+        tcp__flag_crw: bool = False,
+        tcp__flag_ece: bool = False,
+        tcp__flag_urg: bool = False,
+        tcp__flag_ack: bool = False,
+        tcp__flag_psh: bool = False,
+        tcp__flag_rst: bool = False,
+        tcp__flag_syn: bool = False,
+        tcp__flag_fin: bool = False,
+        tcp__mss: int | None = None,
+        tcp__wscale: int | None = None,
+        tcp__win: int = 0,
+        tcp__urp: int = 0,
+        tcp__data: bytes | None = None,
+        echo_tracker: Tracker | None = None,
+    ) -> TxStatus:
+        """
+        Handle outbound TCP packets.
+        """
 
-    if tcp_flag_ns:
-        self.packet_stats_tx.tcp__flag_ns += 1
+        self.packet_stats_tx.tcp__pre_assemble += 1
 
-    if tcp_flag_crw:
-        self.packet_stats_tx.tcp__flag_crw += 1
+        tcp_options: list[
+            TcpOptMss
+            | TcpOptWscale
+            | TcpOptSackPerm
+            | TcpOptTimestamp
+            | TcpOptEol
+            | TcpOptNop
+        ] = []
 
-    if tcp_flag_ece:
-        self.packet_stats_tx.tcp__flag_ece += 1
+        if tcp__mss:
+            self.packet_stats_tx.tcp__opt_mss += 1
+            tcp_options.append(TcpOptMss(tcp__mss))
 
-    if tcp_flag_urg:
-        self.packet_stats_tx.tcp__flag_urg += 1
+        if tcp__wscale:
+            self.packet_stats_tx.tcp__opt_nop += 1
+            self.packet_stats_tx.tcp__opt_wscale += 1
+            tcp_options.append(TcpOptNop())
+            tcp_options.append(TcpOptWscale(tcp__wscale))
 
-    if tcp_flag_ack:
-        self.packet_stats_tx.tcp__flag_ack += 1
-
-    if tcp_flag_psh:
-        self.packet_stats_tx.tcp__flag_psh += 1
-
-    if tcp_flag_rst:
-        self.packet_stats_tx.tcp__flag_rst += 1
-
-    if tcp_flag_syn:
-        self.packet_stats_tx.tcp__flag_syn += 1
-
-    if tcp_flag_fin:
-        self.packet_stats_tx.tcp__flag_fin += 1
-
-    __debug__ and log("tcp", f"{tcp_packet_tx.tracker} - {tcp_packet_tx}")
-
-    if ip_src.is_ip6 and ip_dst.is_ip6:
-        self.packet_stats_tx.tcp__send += 1
-        return self._phtx_ip6(
-            ip6_src=cast(Ip6Address, ip_src),
-            ip6_dst=cast(Ip6Address, ip_dst),
-            carried_packet=tcp_packet_tx,
+        tcp_packet_tx = TcpAssembler(
+            sport=tcp__sport,
+            dport=tcp__dport,
+            seq=tcp__seq,
+            ack=tcp__ack,
+            flag_ns=tcp__flag_ns,
+            flag_crw=tcp__flag_crw,
+            flag_ece=tcp__flag_ece,
+            flag_urg=tcp__flag_urg,
+            flag_ack=tcp__flag_ack,
+            flag_psh=tcp__flag_psh,
+            flag_rst=tcp__flag_rst,
+            flag_syn=tcp__flag_syn,
+            flag_fin=tcp__flag_fin,
+            win=tcp__win,
+            urp=tcp__urp,
+            options=tcp_options,
+            data=tcp__data,
+            echo_tracker=echo_tracker,
         )
 
-    if ip_src.is_ip4 and ip_dst.is_ip4:
-        self.packet_stats_tx.tcp__send += 1
-        return self._phtx_ip4(
-            ip4_src=cast(Ip4Address, ip_src),
-            ip4_dst=cast(Ip4Address, ip_dst),
-            carried_packet=tcp_packet_tx,
-        )
+        if tcp__flag_ns:
+            self.packet_stats_tx.tcp__flag_ns += 1
 
-    self.packet_stats_tx.tcp__unknown__drop += 1
-    return TxStatus.DROPED__TCP__UNKNOWN
+        if tcp__flag_crw:
+            self.packet_stats_tx.tcp__flag_crw += 1
+
+        if tcp__flag_ece:
+            self.packet_stats_tx.tcp__flag_ece += 1
+
+        if tcp__flag_urg:
+            self.packet_stats_tx.tcp__flag_urg += 1
+
+        if tcp__flag_ack:
+            self.packet_stats_tx.tcp__flag_ack += 1
+
+        if tcp__flag_psh:
+            self.packet_stats_tx.tcp__flag_psh += 1
+
+        if tcp__flag_rst:
+            self.packet_stats_tx.tcp__flag_rst += 1
+
+        if tcp__flag_syn:
+            self.packet_stats_tx.tcp__flag_syn += 1
+
+        if tcp__flag_fin:
+            self.packet_stats_tx.tcp__flag_fin += 1
+
+        __debug__ and log("tcp", f"{tcp_packet_tx.tracker} - {tcp_packet_tx}")
+
+        if ip__src.is_ip6 and ip__dst.is_ip6:
+            self.packet_stats_tx.tcp__send += 1
+            return self._phtx_ip6(
+                ip6__src=cast(Ip6Address, ip__src),
+                ip6__dst=cast(Ip6Address, ip__dst),
+                ip6__payload=tcp_packet_tx,
+            )
+
+        if ip__src.is_ip4 and ip__dst.is_ip4:
+            self.packet_stats_tx.tcp__send += 1
+            return self._phtx_ip4(
+                ip4__src=cast(Ip4Address, ip__src),
+                ip4__dst=cast(Ip4Address, ip__dst),
+                ip4__payload=tcp_packet_tx,
+            )
+
+        self.packet_stats_tx.tcp__unknown__drop += 1
+        return TxStatus.DROPED__TCP__UNKNOWN

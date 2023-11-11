@@ -69,12 +69,12 @@ class TestUdpPhtx(TestCase):
         Test sending the IPv4/TCP packet.
         """
         tx_status = self.packet_handler._phtx_tcp(
-            ip_src=self.mns.stack_ip4_host.address,
-            ip_dst=self.mns.host_a_ip4_address,
-            tcp_sport=1000,
-            tcp_dport=2000,
+            ip__src=self.mns.stack_ip4_host.address,
+            ip__dst=self.mns.host_a_ip4_address,
+            tcp__sport=1000,
+            tcp__dport=2000,
         )
-        self.assertEqual(tx_status, TxStatus.PASSED__ETHER__TO_TX_RING)
+        self.assertEqual(tx_status, TxStatus.PASSED__ETHERNET__TO_TX_RING)
         self.assertEqual(
             self.packet_handler.packet_stats_tx,
             PacketStatsTx(
@@ -82,10 +82,10 @@ class TestUdpPhtx(TestCase):
                 tcp__send=1,
                 ip4__pre_assemble=1,
                 ip4__mtu_ok__send=1,
-                ether__pre_assemble=1,
-                ether__src_unspec__fill=1,
-                ether__dst_unspec__ip4_lookup=1,
-                ether__dst_unspec__ip4_lookup__locnet__arp_cache_hit__send=1,
+                ethernet__pre_assemble=1,
+                ethernet__src_unspec__fill=1,
+                ethernet__dst_unspec__ip4_lookup=1,
+                ethernet__dst_unspec__ip4_lookup__locnet__arp_cache_hit__send=1,
             ),
         )
         with open(TEST_FRAME_DIR + "ip4_tcp_packet.tx", "rb") as _:
@@ -97,13 +97,13 @@ class TestUdpPhtx(TestCase):
         Test sending the IPv4/TCP packet with set 'seq' field.
         """
         tx_status = self.packet_handler._phtx_tcp(
-            ip_src=self.mns.stack_ip4_host.address,
-            ip_dst=self.mns.host_a_ip4_address,
-            tcp_sport=1000,
-            tcp_dport=2000,
-            tcp_seq=12345,
+            ip__src=self.mns.stack_ip4_host.address,
+            ip__dst=self.mns.host_a_ip4_address,
+            tcp__sport=1000,
+            tcp__dport=2000,
+            tcp__seq=12345,
         )
-        self.assertEqual(tx_status, TxStatus.PASSED__ETHER__TO_TX_RING)
+        self.assertEqual(tx_status, TxStatus.PASSED__ETHERNET__TO_TX_RING)
         self.assertEqual(
             self.packet_handler.packet_stats_tx,
             PacketStatsTx(
@@ -111,10 +111,10 @@ class TestUdpPhtx(TestCase):
                 tcp__send=1,
                 ip4__pre_assemble=1,
                 ip4__mtu_ok__send=1,
-                ether__pre_assemble=1,
-                ether__src_unspec__fill=1,
-                ether__dst_unspec__ip4_lookup=1,
-                ether__dst_unspec__ip4_lookup__locnet__arp_cache_hit__send=1,
+                ethernet__pre_assemble=1,
+                ethernet__src_unspec__fill=1,
+                ethernet__dst_unspec__ip4_lookup=1,
+                ethernet__dst_unspec__ip4_lookup__locnet__arp_cache_hit__send=1,
             ),
         )
         with open(TEST_FRAME_DIR + "ip4_tcp_packet__seq.tx", "rb") as _:
@@ -126,13 +126,13 @@ class TestUdpPhtx(TestCase):
         Test sending the IPv4/TCP packet with set 'ack' field.
         """
         tx_status = self.packet_handler._phtx_tcp(
-            ip_src=self.mns.stack_ip4_host.address,
-            ip_dst=self.mns.host_a_ip4_address,
-            tcp_sport=1000,
-            tcp_dport=2000,
-            tcp_ack=12345,
+            ip__src=self.mns.stack_ip4_host.address,
+            ip__dst=self.mns.host_a_ip4_address,
+            tcp__sport=1000,
+            tcp__dport=2000,
+            tcp__ack=12345,
         )
-        self.assertEqual(tx_status, TxStatus.PASSED__ETHER__TO_TX_RING)
+        self.assertEqual(tx_status, TxStatus.PASSED__ETHERNET__TO_TX_RING)
         self.assertEqual(
             self.packet_handler.packet_stats_tx,
             PacketStatsTx(
@@ -140,10 +140,10 @@ class TestUdpPhtx(TestCase):
                 tcp__send=1,
                 ip4__pre_assemble=1,
                 ip4__mtu_ok__send=1,
-                ether__pre_assemble=1,
-                ether__src_unspec__fill=1,
-                ether__dst_unspec__ip4_lookup=1,
-                ether__dst_unspec__ip4_lookup__locnet__arp_cache_hit__send=1,
+                ethernet__pre_assemble=1,
+                ethernet__src_unspec__fill=1,
+                ethernet__dst_unspec__ip4_lookup=1,
+                ethernet__dst_unspec__ip4_lookup__locnet__arp_cache_hit__send=1,
             ),
         )
         with open(TEST_FRAME_DIR + "ip4_tcp_packet__ack.tx", "rb") as _:
@@ -155,13 +155,13 @@ class TestUdpPhtx(TestCase):
         Test sending Ithe Pv4/TCP packet with set 'flag_ns' field.
         """
         tx_status = self.packet_handler._phtx_tcp(
-            ip_src=self.mns.stack_ip4_host.address,
-            ip_dst=self.mns.host_a_ip4_address,
-            tcp_sport=1000,
-            tcp_dport=2000,
-            tcp_flag_ns=True,
+            ip__src=self.mns.stack_ip4_host.address,
+            ip__dst=self.mns.host_a_ip4_address,
+            tcp__sport=1000,
+            tcp__dport=2000,
+            tcp__flag_ns=True,
         )
-        self.assertEqual(tx_status, TxStatus.PASSED__ETHER__TO_TX_RING)
+        self.assertEqual(tx_status, TxStatus.PASSED__ETHERNET__TO_TX_RING)
         self.assertEqual(
             self.packet_handler.packet_stats_tx,
             PacketStatsTx(
@@ -170,10 +170,10 @@ class TestUdpPhtx(TestCase):
                 tcp__send=1,
                 ip4__pre_assemble=1,
                 ip4__mtu_ok__send=1,
-                ether__pre_assemble=1,
-                ether__src_unspec__fill=1,
-                ether__dst_unspec__ip4_lookup=1,
-                ether__dst_unspec__ip4_lookup__locnet__arp_cache_hit__send=1,
+                ethernet__pre_assemble=1,
+                ethernet__src_unspec__fill=1,
+                ethernet__dst_unspec__ip4_lookup=1,
+                ethernet__dst_unspec__ip4_lookup__locnet__arp_cache_hit__send=1,
             ),
         )
         with open(TEST_FRAME_DIR + "ip4_tcp_packet__flag_ns.tx", "rb") as _:
@@ -185,13 +185,13 @@ class TestUdpPhtx(TestCase):
         Test sending the IPv4/TCP packet with set 'flag_crw' field.
         """
         tx_status = self.packet_handler._phtx_tcp(
-            ip_src=self.mns.stack_ip4_host.address,
-            ip_dst=self.mns.host_a_ip4_address,
-            tcp_sport=1000,
-            tcp_dport=2000,
-            tcp_flag_crw=True,
+            ip__src=self.mns.stack_ip4_host.address,
+            ip__dst=self.mns.host_a_ip4_address,
+            tcp__sport=1000,
+            tcp__dport=2000,
+            tcp__flag_crw=True,
         )
-        self.assertEqual(tx_status, TxStatus.PASSED__ETHER__TO_TX_RING)
+        self.assertEqual(tx_status, TxStatus.PASSED__ETHERNET__TO_TX_RING)
         self.assertEqual(
             self.packet_handler.packet_stats_tx,
             PacketStatsTx(
@@ -200,10 +200,10 @@ class TestUdpPhtx(TestCase):
                 tcp__send=1,
                 ip4__pre_assemble=1,
                 ip4__mtu_ok__send=1,
-                ether__pre_assemble=1,
-                ether__src_unspec__fill=1,
-                ether__dst_unspec__ip4_lookup=1,
-                ether__dst_unspec__ip4_lookup__locnet__arp_cache_hit__send=1,
+                ethernet__pre_assemble=1,
+                ethernet__src_unspec__fill=1,
+                ethernet__dst_unspec__ip4_lookup=1,
+                ethernet__dst_unspec__ip4_lookup__locnet__arp_cache_hit__send=1,
             ),
         )
         with open(TEST_FRAME_DIR + "ip4_tcp_packet__flag_crw.tx", "rb") as _:
@@ -215,13 +215,13 @@ class TestUdpPhtx(TestCase):
         Test sending the IPv4/TCP packet with set 'flag_ece' field.
         """
         tx_status = self.packet_handler._phtx_tcp(
-            ip_src=self.mns.stack_ip4_host.address,
-            ip_dst=self.mns.host_a_ip4_address,
-            tcp_sport=1000,
-            tcp_dport=2000,
-            tcp_flag_ece=True,
+            ip__src=self.mns.stack_ip4_host.address,
+            ip__dst=self.mns.host_a_ip4_address,
+            tcp__sport=1000,
+            tcp__dport=2000,
+            tcp__flag_ece=True,
         )
-        self.assertEqual(tx_status, TxStatus.PASSED__ETHER__TO_TX_RING)
+        self.assertEqual(tx_status, TxStatus.PASSED__ETHERNET__TO_TX_RING)
         self.assertEqual(
             self.packet_handler.packet_stats_tx,
             PacketStatsTx(
@@ -230,10 +230,10 @@ class TestUdpPhtx(TestCase):
                 tcp__send=1,
                 ip4__pre_assemble=1,
                 ip4__mtu_ok__send=1,
-                ether__pre_assemble=1,
-                ether__src_unspec__fill=1,
-                ether__dst_unspec__ip4_lookup=1,
-                ether__dst_unspec__ip4_lookup__locnet__arp_cache_hit__send=1,
+                ethernet__pre_assemble=1,
+                ethernet__src_unspec__fill=1,
+                ethernet__dst_unspec__ip4_lookup=1,
+                ethernet__dst_unspec__ip4_lookup__locnet__arp_cache_hit__send=1,
             ),
         )
         with open(TEST_FRAME_DIR + "ip4_tcp_packet__flag_ece.tx", "rb") as _:
@@ -245,13 +245,13 @@ class TestUdpPhtx(TestCase):
         Test sending the IPv4/TCP packet with set 'flag_urg' field.
         """
         tx_status = self.packet_handler._phtx_tcp(
-            ip_src=self.mns.stack_ip4_host.address,
-            ip_dst=self.mns.host_a_ip4_address,
-            tcp_sport=1000,
-            tcp_dport=2000,
-            tcp_flag_urg=True,
+            ip__src=self.mns.stack_ip4_host.address,
+            ip__dst=self.mns.host_a_ip4_address,
+            tcp__sport=1000,
+            tcp__dport=2000,
+            tcp__flag_urg=True,
         )
-        self.assertEqual(tx_status, TxStatus.PASSED__ETHER__TO_TX_RING)
+        self.assertEqual(tx_status, TxStatus.PASSED__ETHERNET__TO_TX_RING)
         self.assertEqual(
             self.packet_handler.packet_stats_tx,
             PacketStatsTx(
@@ -260,10 +260,10 @@ class TestUdpPhtx(TestCase):
                 tcp__send=1,
                 ip4__pre_assemble=1,
                 ip4__mtu_ok__send=1,
-                ether__pre_assemble=1,
-                ether__src_unspec__fill=1,
-                ether__dst_unspec__ip4_lookup=1,
-                ether__dst_unspec__ip4_lookup__locnet__arp_cache_hit__send=1,
+                ethernet__pre_assemble=1,
+                ethernet__src_unspec__fill=1,
+                ethernet__dst_unspec__ip4_lookup=1,
+                ethernet__dst_unspec__ip4_lookup__locnet__arp_cache_hit__send=1,
             ),
         )
         with open(TEST_FRAME_DIR + "ip4_tcp_packet__flag_urg.tx", "rb") as _:
@@ -275,13 +275,13 @@ class TestUdpPhtx(TestCase):
         Test sending the IPv4/TCP packet with set 'flag_ack' field.
         """
         tx_status = self.packet_handler._phtx_tcp(
-            ip_src=self.mns.stack_ip4_host.address,
-            ip_dst=self.mns.host_a_ip4_address,
-            tcp_sport=1000,
-            tcp_dport=2000,
-            tcp_flag_ack=True,
+            ip__src=self.mns.stack_ip4_host.address,
+            ip__dst=self.mns.host_a_ip4_address,
+            tcp__sport=1000,
+            tcp__dport=2000,
+            tcp__flag_ack=True,
         )
-        self.assertEqual(tx_status, TxStatus.PASSED__ETHER__TO_TX_RING)
+        self.assertEqual(tx_status, TxStatus.PASSED__ETHERNET__TO_TX_RING)
         self.assertEqual(
             self.packet_handler.packet_stats_tx,
             PacketStatsTx(
@@ -290,10 +290,10 @@ class TestUdpPhtx(TestCase):
                 tcp__send=1,
                 ip4__pre_assemble=1,
                 ip4__mtu_ok__send=1,
-                ether__pre_assemble=1,
-                ether__src_unspec__fill=1,
-                ether__dst_unspec__ip4_lookup=1,
-                ether__dst_unspec__ip4_lookup__locnet__arp_cache_hit__send=1,
+                ethernet__pre_assemble=1,
+                ethernet__src_unspec__fill=1,
+                ethernet__dst_unspec__ip4_lookup=1,
+                ethernet__dst_unspec__ip4_lookup__locnet__arp_cache_hit__send=1,
             ),
         )
         with open(TEST_FRAME_DIR + "ip4_tcp_packet__flag_ack.tx", "rb") as _:
@@ -305,13 +305,13 @@ class TestUdpPhtx(TestCase):
         Test sending the IPv4/TCP packet with set 'flag_psh' field.
         """
         tx_status = self.packet_handler._phtx_tcp(
-            ip_src=self.mns.stack_ip4_host.address,
-            ip_dst=self.mns.host_a_ip4_address,
-            tcp_sport=1000,
-            tcp_dport=2000,
-            tcp_flag_psh=True,
+            ip__src=self.mns.stack_ip4_host.address,
+            ip__dst=self.mns.host_a_ip4_address,
+            tcp__sport=1000,
+            tcp__dport=2000,
+            tcp__flag_psh=True,
         )
-        self.assertEqual(tx_status, TxStatus.PASSED__ETHER__TO_TX_RING)
+        self.assertEqual(tx_status, TxStatus.PASSED__ETHERNET__TO_TX_RING)
         self.assertEqual(
             self.packet_handler.packet_stats_tx,
             PacketStatsTx(
@@ -320,10 +320,10 @@ class TestUdpPhtx(TestCase):
                 tcp__send=1,
                 ip4__pre_assemble=1,
                 ip4__mtu_ok__send=1,
-                ether__pre_assemble=1,
-                ether__src_unspec__fill=1,
-                ether__dst_unspec__ip4_lookup=1,
-                ether__dst_unspec__ip4_lookup__locnet__arp_cache_hit__send=1,
+                ethernet__pre_assemble=1,
+                ethernet__src_unspec__fill=1,
+                ethernet__dst_unspec__ip4_lookup=1,
+                ethernet__dst_unspec__ip4_lookup__locnet__arp_cache_hit__send=1,
             ),
         )
         with open(TEST_FRAME_DIR + "ip4_tcp_packet__flag_psh.tx", "rb") as _:
@@ -335,13 +335,13 @@ class TestUdpPhtx(TestCase):
         Test sending the IPv4/TCP packet with set 'flag_rst' field.
         """
         tx_status = self.packet_handler._phtx_tcp(
-            ip_src=self.mns.stack_ip4_host.address,
-            ip_dst=self.mns.host_a_ip4_address,
-            tcp_sport=1000,
-            tcp_dport=2000,
-            tcp_flag_rst=True,
+            ip__src=self.mns.stack_ip4_host.address,
+            ip__dst=self.mns.host_a_ip4_address,
+            tcp__sport=1000,
+            tcp__dport=2000,
+            tcp__flag_rst=True,
         )
-        self.assertEqual(tx_status, TxStatus.PASSED__ETHER__TO_TX_RING)
+        self.assertEqual(tx_status, TxStatus.PASSED__ETHERNET__TO_TX_RING)
         self.assertEqual(
             self.packet_handler.packet_stats_tx,
             PacketStatsTx(
@@ -350,10 +350,10 @@ class TestUdpPhtx(TestCase):
                 tcp__send=1,
                 ip4__pre_assemble=1,
                 ip4__mtu_ok__send=1,
-                ether__pre_assemble=1,
-                ether__src_unspec__fill=1,
-                ether__dst_unspec__ip4_lookup=1,
-                ether__dst_unspec__ip4_lookup__locnet__arp_cache_hit__send=1,
+                ethernet__pre_assemble=1,
+                ethernet__src_unspec__fill=1,
+                ethernet__dst_unspec__ip4_lookup=1,
+                ethernet__dst_unspec__ip4_lookup__locnet__arp_cache_hit__send=1,
             ),
         )
         with open(TEST_FRAME_DIR + "ip4_tcp_packet__flag_rst.tx", "rb") as _:
@@ -365,13 +365,13 @@ class TestUdpPhtx(TestCase):
         Test sending the IPv4/TCP packet with set 'flag_syn' field.
         """
         tx_status = self.packet_handler._phtx_tcp(
-            ip_src=self.mns.stack_ip4_host.address,
-            ip_dst=self.mns.host_a_ip4_address,
-            tcp_sport=1000,
-            tcp_dport=2000,
-            tcp_flag_syn=True,
+            ip__src=self.mns.stack_ip4_host.address,
+            ip__dst=self.mns.host_a_ip4_address,
+            tcp__sport=1000,
+            tcp__dport=2000,
+            tcp__flag_syn=True,
         )
-        self.assertEqual(tx_status, TxStatus.PASSED__ETHER__TO_TX_RING)
+        self.assertEqual(tx_status, TxStatus.PASSED__ETHERNET__TO_TX_RING)
         self.assertEqual(
             self.packet_handler.packet_stats_tx,
             PacketStatsTx(
@@ -380,10 +380,10 @@ class TestUdpPhtx(TestCase):
                 tcp__send=1,
                 ip4__pre_assemble=1,
                 ip4__mtu_ok__send=1,
-                ether__pre_assemble=1,
-                ether__src_unspec__fill=1,
-                ether__dst_unspec__ip4_lookup=1,
-                ether__dst_unspec__ip4_lookup__locnet__arp_cache_hit__send=1,
+                ethernet__pre_assemble=1,
+                ethernet__src_unspec__fill=1,
+                ethernet__dst_unspec__ip4_lookup=1,
+                ethernet__dst_unspec__ip4_lookup__locnet__arp_cache_hit__send=1,
             ),
         )
         with open(TEST_FRAME_DIR + "ip4_tcp_packet__flag_syn.tx", "rb") as _:
@@ -395,13 +395,13 @@ class TestUdpPhtx(TestCase):
         Test sending the IPv4/TCP packet with set 'win' field.
         """
         tx_status = self.packet_handler._phtx_tcp(
-            ip_src=self.mns.stack_ip4_host.address,
-            ip_dst=self.mns.host_a_ip4_address,
-            tcp_sport=1000,
-            tcp_dport=2000,
-            tcp_win=12345,
+            ip__src=self.mns.stack_ip4_host.address,
+            ip__dst=self.mns.host_a_ip4_address,
+            tcp__sport=1000,
+            tcp__dport=2000,
+            tcp__win=12345,
         )
-        self.assertEqual(tx_status, TxStatus.PASSED__ETHER__TO_TX_RING)
+        self.assertEqual(tx_status, TxStatus.PASSED__ETHERNET__TO_TX_RING)
         self.assertEqual(
             self.packet_handler.packet_stats_tx,
             PacketStatsTx(
@@ -409,10 +409,10 @@ class TestUdpPhtx(TestCase):
                 tcp__send=1,
                 ip4__pre_assemble=1,
                 ip4__mtu_ok__send=1,
-                ether__pre_assemble=1,
-                ether__src_unspec__fill=1,
-                ether__dst_unspec__ip4_lookup=1,
-                ether__dst_unspec__ip4_lookup__locnet__arp_cache_hit__send=1,
+                ethernet__pre_assemble=1,
+                ethernet__src_unspec__fill=1,
+                ethernet__dst_unspec__ip4_lookup=1,
+                ethernet__dst_unspec__ip4_lookup__locnet__arp_cache_hit__send=1,
             ),
         )
         with open(TEST_FRAME_DIR + "ip4_tcp_packet__win.tx", "rb") as _:
@@ -424,13 +424,13 @@ class TestUdpPhtx(TestCase):
         Test sending the IPv4/TCP packet with set 'urp' field.
         """
         tx_status = self.packet_handler._phtx_tcp(
-            ip_src=self.mns.stack_ip4_host.address,
-            ip_dst=self.mns.host_a_ip4_address,
-            tcp_sport=1000,
-            tcp_dport=2000,
-            tcp_urp=12345,
+            ip__src=self.mns.stack_ip4_host.address,
+            ip__dst=self.mns.host_a_ip4_address,
+            tcp__sport=1000,
+            tcp__dport=2000,
+            tcp__urp=12345,
         )
-        self.assertEqual(tx_status, TxStatus.PASSED__ETHER__TO_TX_RING)
+        self.assertEqual(tx_status, TxStatus.PASSED__ETHERNET__TO_TX_RING)
         self.assertEqual(
             self.packet_handler.packet_stats_tx,
             PacketStatsTx(
@@ -438,10 +438,10 @@ class TestUdpPhtx(TestCase):
                 tcp__send=1,
                 ip4__pre_assemble=1,
                 ip4__mtu_ok__send=1,
-                ether__pre_assemble=1,
-                ether__src_unspec__fill=1,
-                ether__dst_unspec__ip4_lookup=1,
-                ether__dst_unspec__ip4_lookup__locnet__arp_cache_hit__send=1,
+                ethernet__pre_assemble=1,
+                ethernet__src_unspec__fill=1,
+                ethernet__dst_unspec__ip4_lookup=1,
+                ethernet__dst_unspec__ip4_lookup__locnet__arp_cache_hit__send=1,
             ),
         )
         with open(TEST_FRAME_DIR + "ip4_tcp_packet__urp.tx", "rb") as _:
@@ -453,13 +453,13 @@ class TestUdpPhtx(TestCase):
         Test sending the IPv4/TCPP packet with data.
         """
         tx_status = self.packet_handler._phtx_tcp(
-            ip_src=self.mns.stack_ip4_host.address,
-            ip_dst=self.mns.host_a_ip4_address,
-            tcp_sport=1000,
-            tcp_dport=2000,
-            tcp_data=b"01234567890ABCDEF" * 50,
+            ip__src=self.mns.stack_ip4_host.address,
+            ip__dst=self.mns.host_a_ip4_address,
+            tcp__sport=1000,
+            tcp__dport=2000,
+            tcp__data=b"01234567890ABCDEF" * 50,
         )
-        self.assertEqual(tx_status, TxStatus.PASSED__ETHER__TO_TX_RING)
+        self.assertEqual(tx_status, TxStatus.PASSED__ETHERNET__TO_TX_RING)
         self.assertEqual(
             self.packet_handler.packet_stats_tx,
             PacketStatsTx(
@@ -467,10 +467,10 @@ class TestUdpPhtx(TestCase):
                 tcp__send=1,
                 ip4__pre_assemble=1,
                 ip4__mtu_ok__send=1,
-                ether__pre_assemble=1,
-                ether__src_unspec__fill=1,
-                ether__dst_unspec__ip4_lookup=1,
-                ether__dst_unspec__ip4_lookup__locnet__arp_cache_hit__send=1,
+                ethernet__pre_assemble=1,
+                ethernet__src_unspec__fill=1,
+                ethernet__dst_unspec__ip4_lookup=1,
+                ethernet__dst_unspec__ip4_lookup__locnet__arp_cache_hit__send=1,
             ),
         )
         with open(TEST_FRAME_DIR + "ip4_tcp_packet__data.tx", "rb") as _:
@@ -482,10 +482,10 @@ class TestUdpPhtx(TestCase):
         Test sending the IPv4/TCP packet with 'src' set to IPv6 address.
         """
         tx_status = self.packet_handler._phtx_tcp(
-            ip_src=self.mns.stack_ip6_host.address,
-            ip_dst=self.mns.host_a_ip4_address,
-            tcp_sport=1000,
-            tcp_dport=2000,
+            ip__src=self.mns.stack_ip6_host.address,
+            ip__dst=self.mns.host_a_ip4_address,
+            tcp__sport=1000,
+            tcp__dport=2000,
         )
         self.assertEqual(tx_status, TxStatus.DROPED__TCP__UNKNOWN)
         self.assertEqual(
@@ -501,10 +501,10 @@ class TestUdpPhtx(TestCase):
         Test sending the IPv6/TCP packet with 'dst' set to IPv6 address.
         """
         tx_status = self.packet_handler._phtx_tcp(
-            ip_src=self.mns.stack_ip4_host.address,
-            ip_dst=self.mns.host_a_ip6_address,
-            tcp_sport=1000,
-            tcp_dport=2000,
+            ip__src=self.mns.stack_ip4_host.address,
+            ip__dst=self.mns.host_a_ip6_address,
+            tcp__sport=1000,
+            tcp__dport=2000,
         )
         self.assertEqual(tx_status, TxStatus.DROPED__TCP__UNKNOWN)
         self.assertEqual(
@@ -520,13 +520,13 @@ class TestUdpPhtx(TestCase):
         Test sending Ithe Pv4/TCP packet with 'MSS' option.
         """
         tx_status = self.packet_handler._phtx_tcp(
-            ip_src=self.mns.stack_ip4_host.address,
-            ip_dst=self.mns.host_a_ip4_address,
-            tcp_sport=1000,
-            tcp_dport=2000,
-            tcp_mss=12345,
+            ip__src=self.mns.stack_ip4_host.address,
+            ip__dst=self.mns.host_a_ip4_address,
+            tcp__sport=1000,
+            tcp__dport=2000,
+            tcp__mss=12345,
         )
-        self.assertEqual(tx_status, TxStatus.PASSED__ETHER__TO_TX_RING)
+        self.assertEqual(tx_status, TxStatus.PASSED__ETHERNET__TO_TX_RING)
         self.assertEqual(
             self.packet_handler.packet_stats_tx,
             PacketStatsTx(
@@ -535,10 +535,10 @@ class TestUdpPhtx(TestCase):
                 tcp__send=1,
                 ip4__pre_assemble=1,
                 ip4__mtu_ok__send=1,
-                ether__pre_assemble=1,
-                ether__src_unspec__fill=1,
-                ether__dst_unspec__ip4_lookup=1,
-                ether__dst_unspec__ip4_lookup__locnet__arp_cache_hit__send=1,
+                ethernet__pre_assemble=1,
+                ethernet__src_unspec__fill=1,
+                ethernet__dst_unspec__ip4_lookup=1,
+                ethernet__dst_unspec__ip4_lookup__locnet__arp_cache_hit__send=1,
             ),
         )
         with open(TEST_FRAME_DIR + "ip4_tcp_packet__mss.tx", "rb") as _:
@@ -550,13 +550,13 @@ class TestUdpPhtx(TestCase):
         Test sending the IPv4/TCP packet with 'WSCALE' option.
         """
         tx_status = self.packet_handler._phtx_tcp(
-            ip_src=self.mns.stack_ip4_host.address,
-            ip_dst=self.mns.host_a_ip4_address,
-            tcp_sport=1000,
-            tcp_dport=2000,
-            tcp_wscale=123,
+            ip__src=self.mns.stack_ip4_host.address,
+            ip__dst=self.mns.host_a_ip4_address,
+            tcp__sport=1000,
+            tcp__dport=2000,
+            tcp__wscale=123,
         )
-        self.assertEqual(tx_status, TxStatus.PASSED__ETHER__TO_TX_RING)
+        self.assertEqual(tx_status, TxStatus.PASSED__ETHERNET__TO_TX_RING)
         self.assertEqual(
             self.packet_handler.packet_stats_tx,
             PacketStatsTx(
@@ -566,10 +566,10 @@ class TestUdpPhtx(TestCase):
                 tcp__send=1,
                 ip4__pre_assemble=1,
                 ip4__mtu_ok__send=1,
-                ether__pre_assemble=1,
-                ether__src_unspec__fill=1,
-                ether__dst_unspec__ip4_lookup=1,
-                ether__dst_unspec__ip4_lookup__locnet__arp_cache_hit__send=1,
+                ethernet__pre_assemble=1,
+                ethernet__src_unspec__fill=1,
+                ethernet__dst_unspec__ip4_lookup=1,
+                ethernet__dst_unspec__ip4_lookup__locnet__arp_cache_hit__send=1,
             ),
         )
         with open(TEST_FRAME_DIR + "ip4_tcp_packet__wscale.tx", "rb") as _:
@@ -581,12 +581,12 @@ class TestUdpPhtx(TestCase):
         Test sending the IPv6/TCP packet.
         """
         tx_status = self.packet_handler._phtx_tcp(
-            ip_src=self.mns.stack_ip6_host.address,
-            ip_dst=self.mns.host_a_ip6_address,
-            tcp_sport=1000,
-            tcp_dport=2000,
+            ip__src=self.mns.stack_ip6_host.address,
+            ip__dst=self.mns.host_a_ip6_address,
+            tcp__sport=1000,
+            tcp__dport=2000,
         )
-        self.assertEqual(tx_status, TxStatus.PASSED__ETHER__TO_TX_RING)
+        self.assertEqual(tx_status, TxStatus.PASSED__ETHERNET__TO_TX_RING)
         self.assertEqual(
             self.packet_handler.packet_stats_tx,
             PacketStatsTx(
@@ -594,10 +594,10 @@ class TestUdpPhtx(TestCase):
                 tcp__send=1,
                 ip6__pre_assemble=1,
                 ip6__mtu_ok__send=1,
-                ether__pre_assemble=1,
-                ether__src_unspec__fill=1,
-                ether__dst_unspec__ip6_lookup=1,
-                ether__dst_unspec__ip6_lookup__locnet__nd_cache_hit__send=1,
+                ethernet__pre_assemble=1,
+                ethernet__src_unspec__fill=1,
+                ethernet__dst_unspec__ip6_lookup=1,
+                ethernet__dst_unspec__ip6_lookup__locnet__nd_cache_hit__send=1,
             ),
         )
         with open(TEST_FRAME_DIR + "ip6_tcp_packet.tx", "rb") as _:
@@ -609,13 +609,13 @@ class TestUdpPhtx(TestCase):
         Test sending the IPv6/TCP packet with set 'seq' field.
         """
         tx_status = self.packet_handler._phtx_tcp(
-            ip_src=self.mns.stack_ip6_host.address,
-            ip_dst=self.mns.host_a_ip6_address,
-            tcp_sport=1000,
-            tcp_dport=2000,
-            tcp_seq=12345,
+            ip__src=self.mns.stack_ip6_host.address,
+            ip__dst=self.mns.host_a_ip6_address,
+            tcp__sport=1000,
+            tcp__dport=2000,
+            tcp__seq=12345,
         )
-        self.assertEqual(tx_status, TxStatus.PASSED__ETHER__TO_TX_RING)
+        self.assertEqual(tx_status, TxStatus.PASSED__ETHERNET__TO_TX_RING)
         self.assertEqual(
             self.packet_handler.packet_stats_tx,
             PacketStatsTx(
@@ -623,10 +623,10 @@ class TestUdpPhtx(TestCase):
                 tcp__send=1,
                 ip6__pre_assemble=1,
                 ip6__mtu_ok__send=1,
-                ether__pre_assemble=1,
-                ether__src_unspec__fill=1,
-                ether__dst_unspec__ip6_lookup=1,
-                ether__dst_unspec__ip6_lookup__locnet__nd_cache_hit__send=1,
+                ethernet__pre_assemble=1,
+                ethernet__src_unspec__fill=1,
+                ethernet__dst_unspec__ip6_lookup=1,
+                ethernet__dst_unspec__ip6_lookup__locnet__nd_cache_hit__send=1,
             ),
         )
         with open(TEST_FRAME_DIR + "ip6_tcp_packet__seq.tx", "rb") as _:
@@ -638,13 +638,13 @@ class TestUdpPhtx(TestCase):
         Test sending the IPv6/TCP packet with set 'ack' field.
         """
         tx_status = self.packet_handler._phtx_tcp(
-            ip_src=self.mns.stack_ip6_host.address,
-            ip_dst=self.mns.host_a_ip6_address,
-            tcp_sport=1000,
-            tcp_dport=2000,
-            tcp_ack=12345,
+            ip__src=self.mns.stack_ip6_host.address,
+            ip__dst=self.mns.host_a_ip6_address,
+            tcp__sport=1000,
+            tcp__dport=2000,
+            tcp__ack=12345,
         )
-        self.assertEqual(tx_status, TxStatus.PASSED__ETHER__TO_TX_RING)
+        self.assertEqual(tx_status, TxStatus.PASSED__ETHERNET__TO_TX_RING)
         self.assertEqual(
             self.packet_handler.packet_stats_tx,
             PacketStatsTx(
@@ -652,10 +652,10 @@ class TestUdpPhtx(TestCase):
                 tcp__send=1,
                 ip6__pre_assemble=1,
                 ip6__mtu_ok__send=1,
-                ether__pre_assemble=1,
-                ether__src_unspec__fill=1,
-                ether__dst_unspec__ip6_lookup=1,
-                ether__dst_unspec__ip6_lookup__locnet__nd_cache_hit__send=1,
+                ethernet__pre_assemble=1,
+                ethernet__src_unspec__fill=1,
+                ethernet__dst_unspec__ip6_lookup=1,
+                ethernet__dst_unspec__ip6_lookup__locnet__nd_cache_hit__send=1,
             ),
         )
         with open(TEST_FRAME_DIR + "ip6_tcp_packet__ack.tx", "rb") as _:
@@ -667,13 +667,13 @@ class TestUdpPhtx(TestCase):
         Test sending the IPv6/TCP packet with set 'flag_ns' field.
         """
         tx_status = self.packet_handler._phtx_tcp(
-            ip_src=self.mns.stack_ip6_host.address,
-            ip_dst=self.mns.host_a_ip6_address,
-            tcp_sport=1000,
-            tcp_dport=2000,
-            tcp_flag_ns=True,
+            ip__src=self.mns.stack_ip6_host.address,
+            ip__dst=self.mns.host_a_ip6_address,
+            tcp__sport=1000,
+            tcp__dport=2000,
+            tcp__flag_ns=True,
         )
-        self.assertEqual(tx_status, TxStatus.PASSED__ETHER__TO_TX_RING)
+        self.assertEqual(tx_status, TxStatus.PASSED__ETHERNET__TO_TX_RING)
         self.assertEqual(
             self.packet_handler.packet_stats_tx,
             PacketStatsTx(
@@ -682,10 +682,10 @@ class TestUdpPhtx(TestCase):
                 tcp__send=1,
                 ip6__pre_assemble=1,
                 ip6__mtu_ok__send=1,
-                ether__pre_assemble=1,
-                ether__src_unspec__fill=1,
-                ether__dst_unspec__ip6_lookup=1,
-                ether__dst_unspec__ip6_lookup__locnet__nd_cache_hit__send=1,
+                ethernet__pre_assemble=1,
+                ethernet__src_unspec__fill=1,
+                ethernet__dst_unspec__ip6_lookup=1,
+                ethernet__dst_unspec__ip6_lookup__locnet__nd_cache_hit__send=1,
             ),
         )
         with open(TEST_FRAME_DIR + "ip6_tcp_packet__flag_ns.tx", "rb") as _:
@@ -697,13 +697,13 @@ class TestUdpPhtx(TestCase):
         Test sending the IPv6/TCP packet with set 'flag_crw' field.
         """
         tx_status = self.packet_handler._phtx_tcp(
-            ip_src=self.mns.stack_ip6_host.address,
-            ip_dst=self.mns.host_a_ip6_address,
-            tcp_sport=1000,
-            tcp_dport=2000,
-            tcp_flag_crw=True,
+            ip__src=self.mns.stack_ip6_host.address,
+            ip__dst=self.mns.host_a_ip6_address,
+            tcp__sport=1000,
+            tcp__dport=2000,
+            tcp__flag_crw=True,
         )
-        self.assertEqual(tx_status, TxStatus.PASSED__ETHER__TO_TX_RING)
+        self.assertEqual(tx_status, TxStatus.PASSED__ETHERNET__TO_TX_RING)
         self.assertEqual(
             self.packet_handler.packet_stats_tx,
             PacketStatsTx(
@@ -712,10 +712,10 @@ class TestUdpPhtx(TestCase):
                 tcp__send=1,
                 ip6__pre_assemble=1,
                 ip6__mtu_ok__send=1,
-                ether__pre_assemble=1,
-                ether__src_unspec__fill=1,
-                ether__dst_unspec__ip6_lookup=1,
-                ether__dst_unspec__ip6_lookup__locnet__nd_cache_hit__send=1,
+                ethernet__pre_assemble=1,
+                ethernet__src_unspec__fill=1,
+                ethernet__dst_unspec__ip6_lookup=1,
+                ethernet__dst_unspec__ip6_lookup__locnet__nd_cache_hit__send=1,
             ),
         )
         with open(TEST_FRAME_DIR + "ip6_tcp_packet__flag_crw.tx", "rb") as _:
@@ -727,13 +727,13 @@ class TestUdpPhtx(TestCase):
         Test sending the IPv6/TCP packet with set 'flag_ece' field.
         """
         tx_status = self.packet_handler._phtx_tcp(
-            ip_src=self.mns.stack_ip6_host.address,
-            ip_dst=self.mns.host_a_ip6_address,
-            tcp_sport=1000,
-            tcp_dport=2000,
-            tcp_flag_ece=True,
+            ip__src=self.mns.stack_ip6_host.address,
+            ip__dst=self.mns.host_a_ip6_address,
+            tcp__sport=1000,
+            tcp__dport=2000,
+            tcp__flag_ece=True,
         )
-        self.assertEqual(tx_status, TxStatus.PASSED__ETHER__TO_TX_RING)
+        self.assertEqual(tx_status, TxStatus.PASSED__ETHERNET__TO_TX_RING)
         self.assertEqual(
             self.packet_handler.packet_stats_tx,
             PacketStatsTx(
@@ -742,10 +742,10 @@ class TestUdpPhtx(TestCase):
                 tcp__send=1,
                 ip6__pre_assemble=1,
                 ip6__mtu_ok__send=1,
-                ether__pre_assemble=1,
-                ether__src_unspec__fill=1,
-                ether__dst_unspec__ip6_lookup=1,
-                ether__dst_unspec__ip6_lookup__locnet__nd_cache_hit__send=1,
+                ethernet__pre_assemble=1,
+                ethernet__src_unspec__fill=1,
+                ethernet__dst_unspec__ip6_lookup=1,
+                ethernet__dst_unspec__ip6_lookup__locnet__nd_cache_hit__send=1,
             ),
         )
         with open(TEST_FRAME_DIR + "ip6_tcp_packet__flag_ece.tx", "rb") as _:
@@ -757,13 +757,13 @@ class TestUdpPhtx(TestCase):
         Test sending the IPv6/TCP packet with set 'flag_urg' field.
         """
         tx_status = self.packet_handler._phtx_tcp(
-            ip_src=self.mns.stack_ip6_host.address,
-            ip_dst=self.mns.host_a_ip6_address,
-            tcp_sport=1000,
-            tcp_dport=2000,
-            tcp_flag_urg=True,
+            ip__src=self.mns.stack_ip6_host.address,
+            ip__dst=self.mns.host_a_ip6_address,
+            tcp__sport=1000,
+            tcp__dport=2000,
+            tcp__flag_urg=True,
         )
-        self.assertEqual(tx_status, TxStatus.PASSED__ETHER__TO_TX_RING)
+        self.assertEqual(tx_status, TxStatus.PASSED__ETHERNET__TO_TX_RING)
         self.assertEqual(
             self.packet_handler.packet_stats_tx,
             PacketStatsTx(
@@ -772,10 +772,10 @@ class TestUdpPhtx(TestCase):
                 tcp__send=1,
                 ip6__pre_assemble=1,
                 ip6__mtu_ok__send=1,
-                ether__pre_assemble=1,
-                ether__src_unspec__fill=1,
-                ether__dst_unspec__ip6_lookup=1,
-                ether__dst_unspec__ip6_lookup__locnet__nd_cache_hit__send=1,
+                ethernet__pre_assemble=1,
+                ethernet__src_unspec__fill=1,
+                ethernet__dst_unspec__ip6_lookup=1,
+                ethernet__dst_unspec__ip6_lookup__locnet__nd_cache_hit__send=1,
             ),
         )
         with open(TEST_FRAME_DIR + "ip6_tcp_packet__flag_urg.tx", "rb") as _:
@@ -787,13 +787,13 @@ class TestUdpPhtx(TestCase):
         Test sending the IPv6/TCP packet with set 'flag_ack' field.
         """
         tx_status = self.packet_handler._phtx_tcp(
-            ip_src=self.mns.stack_ip6_host.address,
-            ip_dst=self.mns.host_a_ip6_address,
-            tcp_sport=1000,
-            tcp_dport=2000,
-            tcp_flag_ack=True,
+            ip__src=self.mns.stack_ip6_host.address,
+            ip__dst=self.mns.host_a_ip6_address,
+            tcp__sport=1000,
+            tcp__dport=2000,
+            tcp__flag_ack=True,
         )
-        self.assertEqual(tx_status, TxStatus.PASSED__ETHER__TO_TX_RING)
+        self.assertEqual(tx_status, TxStatus.PASSED__ETHERNET__TO_TX_RING)
         self.assertEqual(
             self.packet_handler.packet_stats_tx,
             PacketStatsTx(
@@ -802,10 +802,10 @@ class TestUdpPhtx(TestCase):
                 tcp__send=1,
                 ip6__pre_assemble=1,
                 ip6__mtu_ok__send=1,
-                ether__pre_assemble=1,
-                ether__src_unspec__fill=1,
-                ether__dst_unspec__ip6_lookup=1,
-                ether__dst_unspec__ip6_lookup__locnet__nd_cache_hit__send=1,
+                ethernet__pre_assemble=1,
+                ethernet__src_unspec__fill=1,
+                ethernet__dst_unspec__ip6_lookup=1,
+                ethernet__dst_unspec__ip6_lookup__locnet__nd_cache_hit__send=1,
             ),
         )
         with open(TEST_FRAME_DIR + "ip6_tcp_packet__flag_ack.tx", "rb") as _:
@@ -817,13 +817,13 @@ class TestUdpPhtx(TestCase):
         Test sending the IPv6/TCP packet with set 'flag_psh' field.
         """
         tx_status = self.packet_handler._phtx_tcp(
-            ip_src=self.mns.stack_ip6_host.address,
-            ip_dst=self.mns.host_a_ip6_address,
-            tcp_sport=1000,
-            tcp_dport=2000,
-            tcp_flag_psh=True,
+            ip__src=self.mns.stack_ip6_host.address,
+            ip__dst=self.mns.host_a_ip6_address,
+            tcp__sport=1000,
+            tcp__dport=2000,
+            tcp__flag_psh=True,
         )
-        self.assertEqual(tx_status, TxStatus.PASSED__ETHER__TO_TX_RING)
+        self.assertEqual(tx_status, TxStatus.PASSED__ETHERNET__TO_TX_RING)
         self.assertEqual(
             self.packet_handler.packet_stats_tx,
             PacketStatsTx(
@@ -832,10 +832,10 @@ class TestUdpPhtx(TestCase):
                 tcp__send=1,
                 ip6__pre_assemble=1,
                 ip6__mtu_ok__send=1,
-                ether__pre_assemble=1,
-                ether__src_unspec__fill=1,
-                ether__dst_unspec__ip6_lookup=1,
-                ether__dst_unspec__ip6_lookup__locnet__nd_cache_hit__send=1,
+                ethernet__pre_assemble=1,
+                ethernet__src_unspec__fill=1,
+                ethernet__dst_unspec__ip6_lookup=1,
+                ethernet__dst_unspec__ip6_lookup__locnet__nd_cache_hit__send=1,
             ),
         )
         with open(TEST_FRAME_DIR + "ip6_tcp_packet__flag_psh.tx", "rb") as _:
@@ -847,13 +847,13 @@ class TestUdpPhtx(TestCase):
         Test sending the IPv6/TCP packet with set 'flag_rst' field.
         """
         tx_status = self.packet_handler._phtx_tcp(
-            ip_src=self.mns.stack_ip6_host.address,
-            ip_dst=self.mns.host_a_ip6_address,
-            tcp_sport=1000,
-            tcp_dport=2000,
-            tcp_flag_rst=True,
+            ip__src=self.mns.stack_ip6_host.address,
+            ip__dst=self.mns.host_a_ip6_address,
+            tcp__sport=1000,
+            tcp__dport=2000,
+            tcp__flag_rst=True,
         )
-        self.assertEqual(tx_status, TxStatus.PASSED__ETHER__TO_TX_RING)
+        self.assertEqual(tx_status, TxStatus.PASSED__ETHERNET__TO_TX_RING)
         self.assertEqual(
             self.packet_handler.packet_stats_tx,
             PacketStatsTx(
@@ -862,10 +862,10 @@ class TestUdpPhtx(TestCase):
                 tcp__send=1,
                 ip6__pre_assemble=1,
                 ip6__mtu_ok__send=1,
-                ether__pre_assemble=1,
-                ether__src_unspec__fill=1,
-                ether__dst_unspec__ip6_lookup=1,
-                ether__dst_unspec__ip6_lookup__locnet__nd_cache_hit__send=1,
+                ethernet__pre_assemble=1,
+                ethernet__src_unspec__fill=1,
+                ethernet__dst_unspec__ip6_lookup=1,
+                ethernet__dst_unspec__ip6_lookup__locnet__nd_cache_hit__send=1,
             ),
         )
         with open(TEST_FRAME_DIR + "ip6_tcp_packet__flag_rst.tx", "rb") as _:
@@ -877,13 +877,13 @@ class TestUdpPhtx(TestCase):
         Test sending the IPv6/TCP packet with set 'flag_syn' field.
         """
         tx_status = self.packet_handler._phtx_tcp(
-            ip_src=self.mns.stack_ip6_host.address,
-            ip_dst=self.mns.host_a_ip6_address,
-            tcp_sport=1000,
-            tcp_dport=2000,
-            tcp_flag_syn=True,
+            ip__src=self.mns.stack_ip6_host.address,
+            ip__dst=self.mns.host_a_ip6_address,
+            tcp__sport=1000,
+            tcp__dport=2000,
+            tcp__flag_syn=True,
         )
-        self.assertEqual(tx_status, TxStatus.PASSED__ETHER__TO_TX_RING)
+        self.assertEqual(tx_status, TxStatus.PASSED__ETHERNET__TO_TX_RING)
         self.assertEqual(
             self.packet_handler.packet_stats_tx,
             PacketStatsTx(
@@ -892,10 +892,10 @@ class TestUdpPhtx(TestCase):
                 tcp__send=1,
                 ip6__pre_assemble=1,
                 ip6__mtu_ok__send=1,
-                ether__pre_assemble=1,
-                ether__src_unspec__fill=1,
-                ether__dst_unspec__ip6_lookup=1,
-                ether__dst_unspec__ip6_lookup__locnet__nd_cache_hit__send=1,
+                ethernet__pre_assemble=1,
+                ethernet__src_unspec__fill=1,
+                ethernet__dst_unspec__ip6_lookup=1,
+                ethernet__dst_unspec__ip6_lookup__locnet__nd_cache_hit__send=1,
             ),
         )
         with open(TEST_FRAME_DIR + "ip6_tcp_packet__flag_syn.tx", "rb") as _:
@@ -907,13 +907,13 @@ class TestUdpPhtx(TestCase):
         Test sending the IPv6/TCP packet with set 'win' field.
         """
         tx_status = self.packet_handler._phtx_tcp(
-            ip_src=self.mns.stack_ip6_host.address,
-            ip_dst=self.mns.host_a_ip6_address,
-            tcp_sport=1000,
-            tcp_dport=2000,
-            tcp_win=12345,
+            ip__src=self.mns.stack_ip6_host.address,
+            ip__dst=self.mns.host_a_ip6_address,
+            tcp__sport=1000,
+            tcp__dport=2000,
+            tcp__win=12345,
         )
-        self.assertEqual(tx_status, TxStatus.PASSED__ETHER__TO_TX_RING)
+        self.assertEqual(tx_status, TxStatus.PASSED__ETHERNET__TO_TX_RING)
         self.assertEqual(
             self.packet_handler.packet_stats_tx,
             PacketStatsTx(
@@ -921,10 +921,10 @@ class TestUdpPhtx(TestCase):
                 tcp__send=1,
                 ip6__pre_assemble=1,
                 ip6__mtu_ok__send=1,
-                ether__pre_assemble=1,
-                ether__src_unspec__fill=1,
-                ether__dst_unspec__ip6_lookup=1,
-                ether__dst_unspec__ip6_lookup__locnet__nd_cache_hit__send=1,
+                ethernet__pre_assemble=1,
+                ethernet__src_unspec__fill=1,
+                ethernet__dst_unspec__ip6_lookup=1,
+                ethernet__dst_unspec__ip6_lookup__locnet__nd_cache_hit__send=1,
             ),
         )
         with open(TEST_FRAME_DIR + "ip6_tcp_packet__win.tx", "rb") as _:
@@ -936,13 +936,13 @@ class TestUdpPhtx(TestCase):
         Test sending the IPv6/TCP packet with set 'urp' field.
         """
         tx_status = self.packet_handler._phtx_tcp(
-            ip_src=self.mns.stack_ip6_host.address,
-            ip_dst=self.mns.host_a_ip6_address,
-            tcp_sport=1000,
-            tcp_dport=2000,
-            tcp_urp=12345,
+            ip__src=self.mns.stack_ip6_host.address,
+            ip__dst=self.mns.host_a_ip6_address,
+            tcp__sport=1000,
+            tcp__dport=2000,
+            tcp__urp=12345,
         )
-        self.assertEqual(tx_status, TxStatus.PASSED__ETHER__TO_TX_RING)
+        self.assertEqual(tx_status, TxStatus.PASSED__ETHERNET__TO_TX_RING)
         self.assertEqual(
             self.packet_handler.packet_stats_tx,
             PacketStatsTx(
@@ -950,10 +950,10 @@ class TestUdpPhtx(TestCase):
                 tcp__send=1,
                 ip6__pre_assemble=1,
                 ip6__mtu_ok__send=1,
-                ether__pre_assemble=1,
-                ether__src_unspec__fill=1,
-                ether__dst_unspec__ip6_lookup=1,
-                ether__dst_unspec__ip6_lookup__locnet__nd_cache_hit__send=1,
+                ethernet__pre_assemble=1,
+                ethernet__src_unspec__fill=1,
+                ethernet__dst_unspec__ip6_lookup=1,
+                ethernet__dst_unspec__ip6_lookup__locnet__nd_cache_hit__send=1,
             ),
         )
         with open(TEST_FRAME_DIR + "ip6_tcp_packet__urp.tx", "rb") as _:
@@ -965,13 +965,13 @@ class TestUdpPhtx(TestCase):
         Test sending the IPv6/TCP packet with data.
         """
         tx_status = self.packet_handler._phtx_tcp(
-            ip_src=self.mns.stack_ip6_host.address,
-            ip_dst=self.mns.host_a_ip6_address,
-            tcp_sport=1000,
-            tcp_dport=2000,
-            tcp_data=b"01234567890ABCDEF" * 50,
+            ip__src=self.mns.stack_ip6_host.address,
+            ip__dst=self.mns.host_a_ip6_address,
+            tcp__sport=1000,
+            tcp__dport=2000,
+            tcp__data=b"01234567890ABCDEF" * 50,
         )
-        self.assertEqual(tx_status, TxStatus.PASSED__ETHER__TO_TX_RING)
+        self.assertEqual(tx_status, TxStatus.PASSED__ETHERNET__TO_TX_RING)
         self.assertEqual(
             self.packet_handler.packet_stats_tx,
             PacketStatsTx(
@@ -979,10 +979,10 @@ class TestUdpPhtx(TestCase):
                 tcp__send=1,
                 ip6__pre_assemble=1,
                 ip6__mtu_ok__send=1,
-                ether__pre_assemble=1,
-                ether__src_unspec__fill=1,
-                ether__dst_unspec__ip6_lookup=1,
-                ether__dst_unspec__ip6_lookup__locnet__nd_cache_hit__send=1,
+                ethernet__pre_assemble=1,
+                ethernet__src_unspec__fill=1,
+                ethernet__dst_unspec__ip6_lookup=1,
+                ethernet__dst_unspec__ip6_lookup__locnet__nd_cache_hit__send=1,
             ),
         )
         with open(TEST_FRAME_DIR + "ip6_tcp_packet__data.tx", "rb") as _:
@@ -994,10 +994,10 @@ class TestUdpPhtx(TestCase):
         Test sending the IPv6/TCP packet with 'src' set to IPv4 address.
         """
         tx_status = self.packet_handler._phtx_tcp(
-            ip_src=self.mns.stack_ip4_host.address,
-            ip_dst=self.mns.host_a_ip6_address,
-            tcp_sport=1000,
-            tcp_dport=2000,
+            ip__src=self.mns.stack_ip4_host.address,
+            ip__dst=self.mns.host_a_ip6_address,
+            tcp__sport=1000,
+            tcp__dport=2000,
         )
         self.assertEqual(tx_status, TxStatus.DROPED__TCP__UNKNOWN)
         self.assertEqual(
@@ -1013,10 +1013,10 @@ class TestUdpPhtx(TestCase):
         Test sending the IPv6/TCP packet with 'dst' set to IPv6 address.
         """
         tx_status = self.packet_handler._phtx_tcp(
-            ip_src=self.mns.stack_ip6_host.address,
-            ip_dst=self.mns.host_a_ip4_address,
-            tcp_sport=1000,
-            tcp_dport=2000,
+            ip__src=self.mns.stack_ip6_host.address,
+            ip__dst=self.mns.host_a_ip4_address,
+            tcp__sport=1000,
+            tcp__dport=2000,
         )
         self.assertEqual(tx_status, TxStatus.DROPED__TCP__UNKNOWN)
         self.assertEqual(

@@ -26,7 +26,7 @@
 
 
 #
-# tests/arp_phtx.py -  tests specific for ARP phtx module
+# tests/unit/arp_phtx.py -  Tests specific for ARP PHTX module.
 #
 # ver 2.7
 #
@@ -36,7 +36,7 @@ from testslide import TestCase
 
 from pytcp.lib.packet_stats import PacketStatsTx
 from pytcp.lib.tx_status import TxStatus
-from pytcp.protocols.arp.ps import ARP_OP_REPLY, ARP_OP_REQUEST
+from pytcp.protocols.arp.ps import ArpOperation
 from pytcp.subsystems.packet_handler import PacketHandler
 from tests.unit.mock_network import (
     MockNetworkSettings,
@@ -44,79 +44,95 @@ from tests.unit.mock_network import (
     setup_mock_packet_handler,
 )
 
-TEST_FRAME_DIR = "tests/unit/test_frames/arp_phtx/"
-
 
 class TestArpPhtx(TestCase):
     """
-    ARP packet handler TX unit test class.
+    Test ARP phtx module.
     """
+
+    frame_tx: bytearray
+    packet_handler: PacketHandler
 
     def setUp(self) -> None:
         """
-        Test setup.
+        Setup test environment.
         """
+
         super().setUp()
+
         self.mns = MockNetworkSettings()
+
         patch_config(self)
         setup_mock_packet_handler(self)
-        self.frame_tx: bytearray
-        self.packet_handler: PacketHandler
 
-    # Test name format: 'test_name__test_description__optional_condition'
+    def test__arp_phtx__arp_request(self) -> None:
+        """
+        Validate that sending ARP request packet works as expected.
+        """
 
-    def test_arp_phtx__arp_request(self) -> None:
-        """
-        Test sending ARP request packet.
-        """
-        tx_status = self.packet_handler._phtx_arp(
-            ether_src=self.mns.stack_mac_address,
-            ether_dst=self.mns.mac_broadcast,
-            arp_oper=ARP_OP_REQUEST,
-            arp_sha=self.mns.stack_mac_address,
-            arp_spa=self.mns.stack_ip4_host.address,
-            arp_tha=self.mns.mac_unspecified,
-            arp_tpa=self.mns.host_a_ip4_address,
+        expected_frame_tx = (
+            b"\xFF\xFF\xFF\xFF\xFF\xFF\x02\x00\x00\x00\x00\x07\x08\x06\x00\x01"
+            b"\x08\x00\x06\x04\x00\x01\x02\x00\x00\x00\x00\x07\x0A\x00\x01\x07"
+            b"\x00\x00\x00\x00\x00\x00\x0A\x00\x01\x5B"
         )
-        self.assertEqual(tx_status, TxStatus.PASSED__ETHER__TO_TX_RING)
+
+        tx_status = self.packet_handler._phtx_arp(
+            ethernet__src=self.mns.stack_mac_address,
+            ethernet__dst=self.mns.mac_broadcast,
+            arp__oper=ArpOperation.REQUEST,
+            arp__sha=self.mns.stack_mac_address,
+            arp__spa=self.mns.stack_ip4_host.address,
+            arp__tha=self.mns.mac_unspecified,
+            arp__tpa=self.mns.host_a_ip4_address,
+        )
+
+        self.assertEqual(tx_status, TxStatus.PASSED__ETHERNET__TO_TX_RING)
         self.assertEqual(
             self.packet_handler.packet_stats_tx,
             PacketStatsTx(
                 arp__pre_assemble=1,
                 arp__op_request__send=1,
-                ether__pre_assemble=1,
-                ether__src_spec=1,
-                ether__dst_spec__send=1,
+                ethernet__pre_assemble=1,
+                ethernet__src_spec=1,
+                ethernet__dst_spec__send=1,
             ),
         )
-        with open(TEST_FRAME_DIR + "arp_request.tx", "rb") as _:
-            frame_tx = _.read()
-        self.assertEqual(self.frame_tx[: len(frame_tx)], frame_tx)
-
-    def test_arp_phtx__arp_reply(self) -> None:
-        """
-        Test sending ARP request packet.
-        """
-        tx_status = self.packet_handler._phtx_arp(
-            ether_src=self.mns.stack_mac_address,
-            ether_dst=self.mns.host_a_mac_address,
-            arp_oper=ARP_OP_REPLY,
-            arp_sha=self.mns.stack_mac_address,
-            arp_spa=self.mns.stack_ip4_host.address,
-            arp_tha=self.mns.host_a_mac_address,
-            arp_tpa=self.mns.host_a_ip4_address,
+        self.assertEqual(
+            self.frame_tx[: len(expected_frame_tx)], expected_frame_tx
         )
-        self.assertEqual(tx_status, TxStatus.PASSED__ETHER__TO_TX_RING)
+
+    def test__arp_phtx__arp_reply(self) -> None:
+        """
+        Validate that sending ARP request packet works as expected.
+        """
+
+        expected_frame_tx = (
+            b"\x02\x00\x00\x00\x00\x91\x02\x00\x00\x00\x00\x07\x08\x06\x00\x01"
+            b"\x08\x00\x06\x04\x00\x02\x02\x00\x00\x00\x00\x07\x0A\x00\x01\x07"
+            b"\x02\x00\x00\x00\x00\x91\x0A\x00\x01\x5B"
+        )
+
+        tx_status = self.packet_handler._phtx_arp(
+            ethernet__src=self.mns.stack_mac_address,
+            ethernet__dst=self.mns.host_a_mac_address,
+            arp__oper=ArpOperation.REPLY,
+            arp__sha=self.mns.stack_mac_address,
+            arp__spa=self.mns.stack_ip4_host.address,
+            arp__tha=self.mns.host_a_mac_address,
+            arp__tpa=self.mns.host_a_ip4_address,
+        )
+
+        self.assertEqual(tx_status, TxStatus.PASSED__ETHERNET__TO_TX_RING)
         self.assertEqual(
             self.packet_handler.packet_stats_tx,
             PacketStatsTx(
                 arp__pre_assemble=1,
                 arp__op_reply__send=1,
-                ether__pre_assemble=1,
-                ether__src_spec=1,
-                ether__dst_spec__send=1,
+                ethernet__pre_assemble=1,
+                ethernet__src_spec=1,
+                ethernet__dst_spec__send=1,
             ),
         )
-        with open(TEST_FRAME_DIR + "arp_reply.tx", "rb") as _:
-            frame_tx = _.read()
-        self.assertEqual(self.frame_tx[: len(frame_tx)], frame_tx)
+        self.assertEqual(
+            self.frame_tx[: len(expected_frame_tx)], expected_frame_tx
+        )

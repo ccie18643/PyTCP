@@ -40,90 +40,63 @@ import struct
 
 from pytcp.lib.ip4_address import Ip4Address
 from pytcp.lib.mac_address import MacAddress
+from pytcp.lib.proto import ProtoAssembler
 from pytcp.lib.tracker import Tracker
-from pytcp.protocols.arp.ps import ARP_HEADER_LEN, ARP_OP_REPLY, ARP_OP_REQUEST
-from pytcp.protocols.ether.ps import ETHER_TYPE_ARP
+from pytcp.protocols.arp.ps import (
+    ARP_HEADER_LEN,
+    Arp,
+    ArpHardwareLength,
+    ArpHardwareType,
+    ArpOperation,
+    ArpProtocolLength,
+    ArpProtocolType,
+)
 
 
-class ArpAssembler:
+class ArpAssembler(Arp, ProtoAssembler):
     """
-    ARP packet assembler support class.
+    ARP packet assembler class.
     """
-
-    ether_type = ETHER_TYPE_ARP
 
     def __init__(
         self,
         *,
-        sha: MacAddress = MacAddress(0),
-        spa: Ip4Address = Ip4Address(0),
-        tha: MacAddress = MacAddress(0),
-        tpa: Ip4Address = Ip4Address(0),
-        oper: int = ARP_OP_REQUEST,
+        arp__oper: ArpOperation = ArpOperation.REQUEST,
+        arp__sha: MacAddress = MacAddress(0),
+        arp__spa: Ip4Address = Ip4Address(0),
+        arp__tha: MacAddress = MacAddress(0),
+        arp__tpa: Ip4Address = Ip4Address(0),
         echo_tracker: Tracker | None = None,
     ) -> None:
         """
-        Class constructor.
+        Create the ARP packet assembler object.
         """
-
-        assert oper in (ARP_OP_REQUEST, ARP_OP_REPLY), f"{oper=}"
 
         self._tracker = Tracker(prefix="TX", echo_tracker=echo_tracker)
 
-        self._hrtype: int = 1
-        self._prtype: int = 0x0800
-        self._hrlen: int = 6
-        self._prlen: int = 4
-        self._oper: int = oper
-        self._sha: MacAddress = sha
-        self._spa: Ip4Address = spa
-        self._tha: MacAddress = tha
-        self._tpa: Ip4Address = tpa
+        self._hrtype = ArpHardwareType.ETHERNET
+        self._prtype = ArpProtocolType.IP4
+        self._hrlen = ArpHardwareLength.ETHERNET
+        self._prlen = ArpProtocolLength.IP4
+
+        self._oper = arp__oper
+        self._sha = arp__sha
+        self._spa = arp__spa
+        self._tha = arp__tha
+        self._tpa = arp__tpa
 
     def __len__(self) -> int:
         """
-        Length of the packet.
+        Get the packet length.
         """
+
         return ARP_HEADER_LEN
 
-    def __str__(self) -> str:
+    def assemble(self, /, frame: memoryview) -> None:
         """
-        Packet log string.
+        Write packet into the provided frame.
         """
-        if self._oper == ARP_OP_REQUEST:
-            return (
-                f"ARP request {self._spa} / {self._sha}"
-                f" > {self._tpa} / {self._tha}"
-            )
-        if self._oper == ARP_OP_REPLY:
-            return (
-                f"ARP reply {self._spa} / {self._sha}"
-                f" > {self._tpa} / {self._tha}"
-            )
-        return f"ARP request unknown operation {self._oper}"
 
-    @property
-    def tracker(self) -> Tracker:
-        """
-        Getter for the '_tracker' property.
-        """
-        return self._tracker
+        packet = bytes(self)
 
-    def assemble(self, frame: memoryview) -> None:
-        """
-        Assemble packet into the raw form.
-        """
-        struct.pack_into(
-            "!HH BBH 6s 4s 6s 4s",
-            frame,
-            0,
-            self._hrtype,
-            self._prtype,
-            self._hrlen,
-            self._prlen,
-            self._oper,
-            bytes(self._sha),
-            bytes(self._spa),
-            bytes(self._tha),
-            bytes(self._tpa),
-        )
+        struct.pack_into(f"{len(packet)}s", frame, 0, packet)

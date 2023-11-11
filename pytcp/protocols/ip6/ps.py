@@ -35,6 +35,23 @@ ver 2.7
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING, TypeAlias
+
+if TYPE_CHECKING:
+    from pytcp.protocols.icmp6.fpa import Icmp6Assembler
+    from pytcp.protocols.ip6_ext_frag.fpa import Ip6ExtFragAssembler
+    from pytcp.protocols.raw.fpa import RawAssembler
+    from pytcp.protocols.tcp.fpa import TcpAssembler
+    from pytcp.protocols.udp.fpa import UdpAssembler
+
+    Ip6Payload: TypeAlias = (
+        Ip6ExtFragAssembler
+        | Icmp6Assembler
+        | TcpAssembler
+        | UdpAssembler
+        | RawAssembler
+    )
+
 # IPv6 protocol header
 
 # +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
@@ -75,3 +92,5 @@ IP6_NEXT_TABLE = {
     IP6_NEXT_ICMP6: "ICMPv6",
     IP6_NEXT_RAW: "raw_data",
 }
+
+IP6_MIN_MTU = 1280  # RFC 8200

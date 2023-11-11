@@ -41,7 +41,7 @@ import struct
 
 from pytcp.lib.ip_helper import inet_cksum
 from pytcp.lib.tracker import Tracker
-from pytcp.protocols.ip4.ps import IP4_PROTO_TCP
+from pytcp.protocols.ip4.ps import Ip4Proto
 from pytcp.protocols.ip6.ps import IP6_NEXT_TCP
 from pytcp.protocols.tcp.ps import (
     TCP_HEADER_LEN,
@@ -65,7 +65,7 @@ class TcpAssembler:
     TCP packet assembler support class.
     """
 
-    ip4_proto = IP4_PROTO_TCP
+    ip4_proto = Ip4Proto.TCP
     ip6_next = IP6_NEXT_TCP
 
     def __init__(

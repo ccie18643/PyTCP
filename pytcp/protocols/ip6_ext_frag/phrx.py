@@ -38,6 +38,7 @@ ver 2.7
 from __future__ import annotations
 
 import struct
+from abc import ABC
 from time import time
 from typing import TYPE_CHECKING
 
@@ -46,102 +47,125 @@ from pytcp.lib.logger import log
 from pytcp.lib.packet import PacketRx
 from pytcp.protocols.ip6_ext_frag.fpp import Ip6ExtFragParser
 
-if TYPE_CHECKING:
-    from pytcp.subsystems.packet_handler import PacketHandler
 
-
-def _defragment_ip6_packet(
-    self: PacketHandler, packet_rx: PacketRx
-) -> PacketRx | None:
+class PacketHandlerRxIp6ExtFrag(ABC):
     """
-    Defragment IPv6 packet.
+    Class implements packet handler for inbound the IPv6 fragment extension.
     """
 
-    # Cleanup expir flows
-    self.ip6_frag_flows = {
-        _: self.ip6_frag_flows[_]
-        for _ in self.ip6_frag_flows
-        if self.ip6_frag_flows[_]["timestamp"] - time()
-        < config.IP6_FRAG_FLOW_TIMEOUT
-    }
+    if TYPE_CHECKING:
+        from pytcp.lib.ip6_address import Ip6Address
+        from pytcp.lib.packet_stats import PacketStatsRx
 
-    __debug__ and log(
-        "ip6",
-        f"{packet_rx.tracker} - IPv6 packet fragment, "
-        f"offset {packet_rx.ip6_ext_frag.offset}, "
-        f"dlen {packet_rx.ip6_ext_frag.dlen}"
-        f"{'' if packet_rx.ip6_ext_frag.flag_mf else ', last'}",
-    )
+        packet_stats_rx: PacketStatsRx
+        ip6_frag_flows: dict[tuple[Ip6Address, Ip6Address, int], dict]
 
-    flow_id = (packet_rx.ip6.src, packet_rx.ip6.dst, packet_rx.ip6_ext_frag.id)
+        def _phrx_ip6(self, *, packet_rx: PacketRx) -> None:
+            ...
 
-    # Update flow db
-    if flow_id in self.ip6_frag_flows:
-        self.ip6_frag_flows[flow_id]["data"][
-            packet_rx.ip6_ext_frag.offset
-        ] = packet_rx.ip6_ext_frag.data_copy
-    else:
-        self.ip6_frag_flows[flow_id] = {
-            "header": packet_rx.ip6.header_copy,
-            "timestamp": time(),
-            "last": False,
-            "data": {
-                packet_rx.ip6_ext_frag.offset: packet_rx.ip6_ext_frag.data_copy
-            },
-        }
-    if not packet_rx.ip6_ext_frag.flag_mf:
-        self.ip6_frag_flows[flow_id]["last"] = True
+    def _phrx_ip6_ext_frag(self, *, packet_rx: PacketRx) -> None:
+        """
+        Handle inbound IPv6 fragment extension header.
+        """
 
-    # Test if we received all fragments
-    if not self.ip6_frag_flows[flow_id]["last"]:
-        return None
-    data_len = 0
-    for offset in sorted(self.ip6_frag_flows[flow_id]["data"]):
-        if offset > data_len:
-            return None
-        data_len = offset + len(self.ip6_frag_flows[flow_id]["data"][offset])
+        self.packet_stats_rx.ip6_ext_frag__pre_parse += 1
 
-    # Defragment packet
-    header = bytearray(self.ip6_frag_flows[flow_id]["header"])
-    data = bytearray(data_len)
-    for offset in sorted(self.ip6_frag_flows[flow_id]["data"]):
-        struct.pack_into(
-            f"{len(self.ip6_frag_flows[flow_id]['data'][offset])}s",
-            data,
-            offset,
-            self.ip6_frag_flows[flow_id]["data"][offset],
+        Ip6ExtFragParser(packet_rx=packet_rx)
+
+        if packet_rx.parse_failed:
+            self.packet_stats_rx.ip6_ext_frag__failed_parse += 1
+            __debug__ and log(
+                "ip6",
+                f"{packet_rx.tracker} - <CRIT>{packet_rx.parse_failed}</>",
+            )
+            return
+
+        __debug__ and log(
+            "ip6", f"{packet_rx.tracker} - {packet_rx.ip6_ext_frag}"
         )
-    del self.ip6_frag_flows[flow_id]
-    struct.pack_into("!H", header, 4, len(data))
-    header[6] = packet_rx.ip6_ext_frag.next
-    packet_rx = PacketRx(bytes(header) + data)
-    __debug__ and log(
-        "ip6",
-        f"{packet_rx.tracker} - Defragmented IPv6 packet, "
-        f"dlen {len(data)} bytes",
-    )
-    return packet_rx
 
+        if defragmented_packet_rx := self.__defragment_ip6_packet(
+            packet_rx=packet_rx
+        ):
+            self.packet_stats_rx.ip6_ext_frag__defrag += 1
+            self._phrx_ip6(
+                packet_rx=defragmented_packet_rx,
+            )
 
-def _phrx_ip6_ext_frag(self: PacketHandler, packet_rx: PacketRx) -> None:
-    """
-    Handle inbound IPv6 fragment extension header.
-    """
+    def __defragment_ip6_packet(
+        self, *, packet_rx: PacketRx
+    ) -> PacketRx | None:
+        """
+        Defragment IPv6 packet.
+        """
 
-    self.packet_stats_rx.ip6_ext_frag__pre_parse += 1
+        # Cleanup expired flows.
+        self.ip6_frag_flows = {
+            flow: self.ip6_frag_flows[flow]
+            for flow in self.ip6_frag_flows
+            if self.ip6_frag_flows[flow]["timestamp"] - time()
+            < config.IP6_FRAG_FLOW_TIMEOUT
+        }
 
-    Ip6ExtFragParser(packet_rx)
-
-    if packet_rx.parse_failed:
-        self.packet_stats_rx.ip6_ext_frag__failed_parse += 1
         __debug__ and log(
             "ip6",
-            f"{packet_rx.tracker} - <CRIT>{packet_rx.parse_failed}</>",
+            f"{packet_rx.tracker} - IPv6 packet fragment, "
+            f"offset {packet_rx.ip6_ext_frag.offset}, "
+            f"dlen {packet_rx.ip6_ext_frag.dlen}"
+            f"{'' if packet_rx.ip6_ext_frag.flag_mf else ', last'}",
         )
-        return
 
-    __debug__ and log("ip6", f"{packet_rx.tracker} - {packet_rx.ip6_ext_frag}")
+        flow_id = (
+            packet_rx.ip6.src,
+            packet_rx.ip6.dst,
+            packet_rx.ip6_ext_frag.id,
+        )
 
-    if defragmented_packet_rx := self._defragment_ip6_packet(packet_rx):
-        self.packet_stats_rx.ip6_ext_frag__defrag += 1
-        self._phrx_ip6(defragmented_packet_rx)
+        # Update flow db
+        if flow_id in self.ip6_frag_flows:
+            self.ip6_frag_flows[flow_id]["data"][
+                packet_rx.ip6_ext_frag.offset
+            ] = packet_rx.ip6_ext_frag.data_copy
+        else:
+            self.ip6_frag_flows[flow_id] = {
+                "header": packet_rx.ip6.header_copy,
+                "timestamp": time(),
+                "last": False,
+                "data": {
+                    packet_rx.ip6_ext_frag.offset: packet_rx.ip6_ext_frag.data_copy
+                },
+            }
+        if not packet_rx.ip6_ext_frag.flag_mf:
+            self.ip6_frag_flows[flow_id]["last"] = True
+
+        # Test if we received all fragments
+        if not self.ip6_frag_flows[flow_id]["last"]:
+            return None
+        data_len = 0
+        for offset in sorted(self.ip6_frag_flows[flow_id]["data"]):
+            if offset > data_len:
+                return None
+            data_len = offset + len(
+                self.ip6_frag_flows[flow_id]["data"][offset]
+            )
+
+        # Defragment packet
+        header = bytearray(self.ip6_frag_flows[flow_id]["header"])
+        data = bytearray(data_len)
+        for offset in sorted(self.ip6_frag_flows[flow_id]["data"]):
+            struct.pack_into(
+                f"{len(self.ip6_frag_flows[flow_id]['data'][offset])}s",
+                data,
+                offset,
+                self.ip6_frag_flows[flow_id]["data"][offset],
+            )
+        del self.ip6_frag_flows[flow_id]
+        struct.pack_into("!H", header, 4, len(data))
+        header[6] = packet_rx.ip6_ext_frag.next
+        packet_rx = PacketRx(bytes(header) + data)
+        __debug__ and log(
+            "ip6",
+            f"{packet_rx.tracker} - Defragmented IPv6 packet, "
+            f"dlen {len(data)} bytes",
+        )
+        return packet_rx

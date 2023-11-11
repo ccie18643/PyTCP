@@ -37,8 +37,10 @@ ver 2.7
 
 from __future__ import annotations
 
+from abc import ABC, abstractproperty
 from typing import TYPE_CHECKING
 
+from pytcp.lib.errors import PacketValidationError
 from pytcp.lib.logger import log
 from pytcp.lib.packet import PacketRx
 from pytcp.protocols.ip6.fpp import Ip6Parser
@@ -49,57 +51,91 @@ from pytcp.protocols.ip6.ps import (
     IP6_NEXT_UDP,
 )
 
-if TYPE_CHECKING:
-    from pytcp.subsystems.packet_handler import PacketHandler
 
-
-def _phrx_ip6(self: PacketHandler, packet_rx: PacketRx) -> None:
+class PacketHandlerRxIp6(ABC):
     """
-    Handle inbound IPv6 packets.
+    Class implements packet handler for the inbound IPv6 packets.
     """
 
-    self.packet_stats_rx.ip6__pre_parse += 1
+    if TYPE_CHECKING:
+        from pytcp.lib.ip6_address import Ip6Address
+        from pytcp.lib.packet_stats import PacketStatsRx
 
-    Ip6Parser(packet_rx)
+        packet_stats_rx: PacketStatsRx
 
-    if packet_rx.parse_failed:
-        self.packet_stats_rx.ip6__failed_parse__drop += 1
-        __debug__ and log(
-            "ip6", f"{packet_rx.tracker} - <rb>{packet_rx.parse_failed}</>"
-        )
-        return
+        def _phrx_ip6_ext_frag(self, *, packet_rx: PacketRx) -> None:
+            ...
 
-    __debug__ and log("ip6", f"{packet_rx.tracker} - {packet_rx.ip6}")
+        def _phrx_icmp6(self, *, packet_rx: PacketRx) -> None:
+            ...
 
-    # Check if received packet has been sent to us directly or by unicast
-    # or multicast
-    if packet_rx.ip6.dst not in {*self.ip6_unicast, *self.ip6_multicast}:
-        self.packet_stats_rx.ip6__dst_unknown__drop += 1
-        __debug__ and log(
-            "ip6",
-            f"{packet_rx.tracker} - IP packet not destined for this stack, "
-            "dropping",
-        )
-        return
+        def _phrx_udp(self, *, packet_rx: PacketRx) -> None:
+            ...
 
-    if packet_rx.ip6.dst in self.ip6_unicast:
-        self.packet_stats_rx.ip6__dst_unicast += 1
+        def _phrx_tcp(self, *, packet_rx: PacketRx) -> None:
+            ...
 
-    if packet_rx.ip6.dst in self.ip6_multicast:
-        self.packet_stats_rx.ip6__dst_multicast += 1
+        @abstractproperty
+        def ip6_unicast(self) -> list[Ip6Address]:
+            ...
 
-    if packet_rx.ip6.next == IP6_NEXT_EXT_FRAG:
-        self._phrx_ip6_ext_frag(packet_rx)
-        return
+        @abstractproperty
+        def ip6_multicast(self) -> list[Ip6Address]:
+            ...
 
-    if packet_rx.ip6.next == IP6_NEXT_ICMP6:
-        self._phrx_icmp6(packet_rx)
-        return
+    def _phrx_ip6(self, *, packet_rx: PacketRx) -> None:
+        """
+        Handle inbound IPv6 packets.
+        """
 
-    if packet_rx.ip6.next == IP6_NEXT_UDP:
-        self._phrx_udp(packet_rx)
-        return
+        self.packet_stats_rx.ip6__pre_parse += 1
 
-    if packet_rx.ip6.next == IP6_NEXT_TCP:
-        self._phrx_tcp(packet_rx)
-        return
+        try:
+            Ip6Parser(packet_rx)
+        except PacketValidationError as error:
+            self.packet_stats_rx.ip6__failed_parse__drop += 1
+            __debug__ and log("ip6", f"{packet_rx.tracker} - <rb>{error}</>")
+            return
+
+        __debug__ and log("ip6", f"{packet_rx.tracker} - {packet_rx.ip6}")
+
+        # Check if received packet has been sent to us directly or by unicast
+        # or multicast
+        if packet_rx.ip6.dst not in {*self.ip6_unicast, *self.ip6_multicast}:
+            self.packet_stats_rx.ip6__dst_unknown__drop += 1
+            __debug__ and log(
+                "ip6",
+                f"{packet_rx.tracker} - IP packet not destined for this stack, "
+                "dropping",
+            )
+            return
+
+        if packet_rx.ip6.dst in self.ip6_unicast:
+            self.packet_stats_rx.ip6__dst_unicast += 1
+
+        if packet_rx.ip6.dst in self.ip6_multicast:
+            self.packet_stats_rx.ip6__dst_multicast += 1
+
+        if packet_rx.ip6.next == IP6_NEXT_EXT_FRAG:
+            self._phrx_ip6_ext_frag(
+                packet_rx=packet_rx,
+            )
+            return
+
+        if packet_rx.ip6.next == IP6_NEXT_ICMP6:
+            self._phrx_icmp6(
+                packet_rx=packet_rx,
+            )
+            return
+
+        if packet_rx.ip6.next == IP6_NEXT_UDP:
+            self._phrx_udp(
+                packet_rx=packet_rx,
+            )
+            return
+
+        if packet_rx.ip6.next == IP6_NEXT_TCP:
+            self._phrx_tcp(
+                packet_rx=packet_rx,
+            )
+            return

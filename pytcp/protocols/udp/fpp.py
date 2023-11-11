@@ -40,12 +40,30 @@ from __future__ import annotations
 import struct
 from typing import TYPE_CHECKING
 
-from pytcp import config
+from pytcp.lib.errors import PacketIntegrityError, PacketSanityError
 from pytcp.lib.ip_helper import inet_cksum
 from pytcp.protocols.udp.ps import UDP_HEADER_LEN
 
 if TYPE_CHECKING:
     from pytcp.lib.packet import PacketRx
+
+
+class UdpIntegrityError(PacketIntegrityError):
+    """
+    Exception raised when UDP packet integrity check fails.
+    """
+
+    def __init__(self, message: str):
+        super().__init__("[UDP] " + message)
+
+
+class UdpSanityError(PacketSanityError):
+    """
+    Exception raised when UDP packet sanity check fails.
+    """
+
+    def __init__(self, message: str):
+        super().__init__("[UDP] " + message)
 
 
 class UdpParser:
@@ -58,20 +76,13 @@ class UdpParser:
         Class constructor.
         """
 
-        assert packet_rx.ip is not None
-
-        packet_rx.udp = self
-
         self._frame = packet_rx.frame
         self._plen = packet_rx.ip.dlen
+        self._packet_integrity_check(pshdr_sum=packet_rx.ip.pshdr_sum)
+        self._packet_sanity_check()
 
-        packet_rx.parse_failed = (
-            self._packet_integrity_check(packet_rx.ip.pshdr_sum)
-            or self._packet_sanity_check()
-        )
-
-        if not packet_rx.parse_failed:
-            packet_rx.frame = packet_rx.frame[UDP_HEADER_LEN:]
+        packet_rx.udp = self
+        packet_rx.frame = packet_rx.frame[UDP_HEADER_LEN:]
 
     def __len__(self) -> int:
         """
@@ -166,40 +177,40 @@ class UdpParser:
             self._cache__packet_copy = bytes(self._frame[: self.plen])
         return self._cache__packet_copy
 
-    def _packet_integrity_check(self, pshdr_sum: int) -> str:
+    def _packet_integrity_check(self, pshdr_sum: int) -> None:
         """
         Packet integrity check to be run on raw frame prior to parsing
         to make sure parsing is safe.
         """
 
-        if not config.PACKET_INTEGRITY_CHECK:
-            return ""
-
         if inet_cksum(self._frame[: self._plen], pshdr_sum):
-            return "UDP integrity - wrong packet checksum"
+            raise UdpIntegrityError(
+                "The wrong packet checksum",
+            )
 
         if not UDP_HEADER_LEN <= self._plen <= len(self):
-            return "UDP integrity - wrong packet length (I)"
+            raise UdpIntegrityError(
+                "The wrong packet length (I)",
+            )
 
         plen = struct.unpack("!H", self._frame[4:6])[0]
         if not UDP_HEADER_LEN <= plen == self._plen <= len(self):
-            return "UDP integrity - wrong packet length (II)"
+            raise UdpIntegrityError(
+                "The wrong packet length (II)",
+            )
 
-        return ""
-
-    def _packet_sanity_check(self) -> str:
+    def _packet_sanity_check(self) -> None:
         """
         Packet sanity check to be run on parsed packet to make sure packet's
         fields contain sane values.
         """
 
-        if not config.PACKET_SANITY_CHECK:
-            return ""
-
         if self.sport == 0:
-            return "UDP sanity - 'udp_sport' must be greater than 0"
+            raise UdpSanityError(
+                "The 'udp_sport' must be greater than 0",
+            )
 
         if self.dport == 0:
-            return "UDP sanity - 'udp_dport' must be greater then 0"
-
-        return ""
+            raise UdpSanityError(
+                "The 'udp_dport' must be greater then 0",
+            )

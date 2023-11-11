@@ -41,7 +41,7 @@ from __future__ import annotations
 import struct
 from typing import TYPE_CHECKING
 
-from pytcp import config
+from pytcp.lib.errors import PacketIntegrityError, PacketSanityError
 from pytcp.protocols.ip6_ext_frag.ps import (
     IP6_EXT_FRAG_HEADER_LEN,
     IP6_EXT_FRAG_NEXT_HEADER_TABLE,
@@ -51,29 +51,41 @@ if TYPE_CHECKING:
     from pytcp.lib.packet import PacketRx
 
 
+class Ip6ExtFragIntegrityError(PacketIntegrityError):
+    """
+    Exception raised when IPv6 Ext Frag packet integrity check fails.
+    """
+
+    def __init__(self, message: str):
+        super().__init__("[IPv6 Ext Frag] " + message)
+
+
+class Ip6ExtFragSanityError(PacketSanityError):
+    """
+    Exception raised when IPv6 Ext Frag packet sanity check fails.
+    """
+
+    def __init__(self, message: str):
+        super().__init__("[IPv6 Ext Frag] " + message)
+
+
 class Ip6ExtFragParser:
     """
     IPv6 fragmentation extension header parser class.
     """
 
-    def __init__(self, packet_rx: PacketRx) -> None:
+    def __init__(self, *, packet_rx: PacketRx) -> None:
         """
         Class constructor.
         """
 
-        assert packet_rx.ip6 is not None
-
-        packet_rx.ip6_ext_frag = self
-
         self._frame = packet_rx.frame
         self._plen = packet_rx.ip6.dlen
+        self._packet_integrity_check()
+        self._packet_sanity_check()
 
-        packet_rx.parse_failed = (
-            self._packet_integrity_check() or self._packet_sanity_check()
-        )
-
-        if not packet_rx.parse_failed:
-            packet_rx.frame = packet_rx.frame[IP6_EXT_FRAG_HEADER_LEN:]
+        packet_rx.ip6_ext_frag = self
+        packet_rx.frame = packet_rx.frame[IP6_EXT_FRAG_HEADER_LEN:]
 
     def __len__(self) -> int:
         """
@@ -177,27 +189,21 @@ class Ip6ExtFragParser:
             self._cache__packet_copy = bytes(self._frame[: self.plen])
         return self._cache__packet_copy
 
-    def _packet_integrity_check(self) -> str:
+    def _packet_integrity_check(self) -> None:
         """
         Packet integrity check to be run on raw packet prior to parsing
         to make sure parsing is safe.
         """
 
-        if not config.PACKET_INTEGRITY_CHECK:
-            return ""
-
         if len(self) < IP6_EXT_FRAG_HEADER_LEN:
-            return "IPv4 integrity - wrong packet length (I)"
+            raise Ip6ExtFragIntegrityError(
+                "The wrong packet length (I)",
+            )
 
-        return ""
-
-    def _packet_sanity_check(self) -> str:
+    def _packet_sanity_check(self) -> None:
         """
         Packet sanity check to be run on parsed packet to make sure packet's
         fields contain sane values.
         """
 
-        if not config.PACKET_SANITY_CHECK:
-            return ""
-
-        return ""
+        pass

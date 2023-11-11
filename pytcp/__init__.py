@@ -104,7 +104,7 @@ class TcpIpStack:
             ip4_host = Ip4Host(ip4_address)
             if ip4_gateway:
                 ip4_host.gateway = Ip4Address(ip4_gateway)
-            stack.packet_handler.assign_ip4_address(ip4_host)
+            stack.packet_handler.assign_ip4_address(ip4_host=ip4_host)
             config.IP4_SUPPORT = True
             config.IP4_HOST_DHCP = False
 
@@ -117,7 +117,7 @@ class TcpIpStack:
             ip6_host = Ip6Host(ip6_address)
             if ip6_gateway:
                 ip6_host.gateway = Ip6Address(ip6_gateway)
-            stack.packet_handler.assign_ip6_address(ip6_host)
+            stack.packet_handler.assign_ip6_address(ip6_host=ip6_host)
             config.IP6_SUPPORT = True
             config.IP6_LLA_AUTOCONFIG = True
             config.IP6_GUA_AUTOCONFIG = False

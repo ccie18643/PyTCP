@@ -36,8 +36,7 @@ from testslide import StrictMock, TestCase
 from pytcp.config import IP6_DEFAULT_HOP
 from pytcp.lib.ip6_address import Ip6Address
 from pytcp.lib.tracker import Tracker
-from pytcp.protocols.ether.ps import ETHER_TYPE_IP6
-from pytcp.protocols.icmp6.fpa import Icmp6Assembler
+from pytcp.protocols.ethernet.ps import EthernetType
 from pytcp.protocols.ip6.fpa import Ip6Assembler
 from pytcp.protocols.ip6.ps import IP6_HEADER_LEN, IP6_NEXT_RAW
 from pytcp.protocols.raw.fpa import RawAssembler
@@ -55,7 +54,7 @@ class TestIp6Assembler(TestCase):
         Make sure the 'Ip6Assembler' class has the proper
         'ethertype' value assigned.
         """
-        self.assertEqual(Ip6Assembler.ether_type, ETHER_TYPE_IP6)
+        self.assertEqual(Ip6Assembler.ethernet_type, EthernetType.IP6)
 
     def test_ip6_fpa____init__(self) -> None:
         """
@@ -168,12 +167,6 @@ class TestIp6Assembler(TestCase):
         Test assertion for carried packet 'ip6_next_header' attribute.
         """
         Ip6Assembler(carried_packet=TcpAssembler())
-
-    def test_ip6_fpa____init____assert_next_header_icmp6(self) -> None:
-        """
-        Test assertion for carried packet 'ip6_next_header' attribute.
-        """
-        Ip6Assembler(carried_packet=Icmp6Assembler())
 
     def test_ip6_fpa____init____assert_next_header_raw(self) -> None:
         """

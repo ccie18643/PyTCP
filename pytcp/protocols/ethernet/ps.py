@@ -25,9 +25,9 @@
 
 
 """
-Module contains Fast Packet Assembler support class for the Ethernet protocol.
+Module contains packet structure information for the Ethernet protccol.
 
-pytcp/protocols/ether/fpa.py
+pytcp/protocols/ethernet/ps.py
 
 ver 2.7
 """
@@ -36,92 +36,105 @@ ver 2.7
 from __future__ import annotations
 
 import struct
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, TypeAlias
 
+from pytcp.lib.enum import ProtoEnum
 from pytcp.lib.mac_address import MacAddress
-from pytcp.protocols.ether.ps import (
-    ETHER_HEADER_LEN,
-    ETHER_TYPE_ARP,
-    ETHER_TYPE_IP4,
-    ETHER_TYPE_IP6,
-    ETHER_TYPE_RAW,
-    ETHER_TYPE_TABLE,
-)
-from pytcp.protocols.raw.fpa import RawAssembler
+from pytcp.lib.proto import Proto
 
 if TYPE_CHECKING:
-    from pytcp.lib.tracker import Tracker
     from pytcp.protocols.arp.fpa import ArpAssembler
     from pytcp.protocols.ip4.fpa import Ip4Assembler, Ip4FragAssembler
     from pytcp.protocols.ip6.fpa import Ip6Assembler
+    from pytcp.protocols.raw.fpa import RawAssembler
 
-
-class EtherAssembler:
-    """
-    Ethernet packet assembler support class.
-    """
-
-    def __init__(
-        self,
-        *,
-        src: MacAddress = MacAddress(0),
-        dst: MacAddress = MacAddress(0),
-        carried_packet: ArpAssembler
+    EthernetPayload: TypeAlias = (
+        ArpAssembler
         | Ip4Assembler
         | Ip4FragAssembler
         | Ip6Assembler
-        | RawAssembler = RawAssembler(),
-    ) -> None:
-        """
-        Class constructor.
-        """
+        | RawAssembler
+    )
 
-        assert carried_packet.ether_type in {
-            ETHER_TYPE_ARP,
-            ETHER_TYPE_IP4,
-            ETHER_TYPE_IP6,
-            ETHER_TYPE_RAW,
-        }, f"{carried_packet.ether_type=}"
+# Ethernet packet header.
 
-        self._carried_packet: (
-            ArpAssembler
-            | Ip4Assembler
-            | Ip4FragAssembler
-            | Ip6Assembler
-            | RawAssembler
-        ) = carried_packet
-        self._tracker: Tracker = self._carried_packet.tracker
-        self._dst: MacAddress = dst
-        self._src: MacAddress = src
-        self._type: int = self._carried_packet.ether_type
+# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+# |                                                               >
+# +    Destination MAC Address    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+# >                               |                               >
+# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+      Source MAC Address       +
+# >                                                               |
+# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+# |           EthernetType           |
+# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 
-    def __len__(self) -> int:
-        """
-        Length of the packet.
-        """
-        return ETHER_HEADER_LEN + len(self._carried_packet)
+ETHERNET_HEADER_LEN = 14
+
+
+class EthernetType(ProtoEnum):
+    """
+    Ethernet packet type enum.
+    """
+
+    ARP = 0x0806
+    IP4 = 0x0800
+    IP6 = 0x86DD
+    RAW = 0xFFFF
+
+    @staticmethod
+    def _extract(frame: bytes) -> int:
+        return int(struct.unpack("! H", frame[12:14])[0])
+
+
+class Ethernet(Proto):
+    """
+    Base class for Ethernet packet parser and assembler.
+    """
+
+    _dst: MacAddress
+    _src: MacAddress
+    _type: EthernetType
 
     def __str__(self) -> str:
         """
-        Packet log string.
+        Get packet log string.
         """
+
         return (
-            f"ETHER {self._src} > {self._dst}, 0x{self._type:0>4x} "
-            f"({ETHER_TYPE_TABLE.get(self._type, '???')}), plen {len(self)}"
+            f"ETHER {self._src} > {self._dst}, 0x{int(self._type):0>4x} "
+            f"({self._type}), plen {len(self)}"
         )
 
-    @property
-    def tracker(self) -> Tracker:
+    def __repr__(self) -> str:
         """
-        Getter for the '_tracker' attribute.
+        Get the packet representation string.
         """
-        return self._tracker
+
+        return (
+            "Ethernet("
+            f"src={repr(self._src)}, "
+            f"dst={repr(self._dst)}, "
+            f"type={repr(self._type)})"
+        )
+
+    def __bytes__(self) -> bytes:
+        """
+        Get the packet in raw form.
+        """
+
+        return struct.pack(
+            "! 6s 6s H",
+            bytes(self._dst),
+            bytes(self._src),
+            int(self._type),
+        )
 
     @property
     def dst(self) -> MacAddress:
         """
-        Getter for the '_dst' attribute.
+        Getter for '_dst' attribute.
         """
+
         return self._dst
 
     @dst.setter
@@ -129,13 +142,15 @@ class EtherAssembler:
         """
         Setter for the '_dst' attribute.
         """
+
         self._dst = mac_address
 
     @property
     def src(self) -> MacAddress:
         """
-        Getter for the '_src' attribute.
+        Getter for '_src' attribute.
         """
+
         return self._src
 
     @src.setter
@@ -143,18 +158,13 @@ class EtherAssembler:
         """
         Setter for the '_src' attribute.
         """
+
         self._src = mac_address
 
-    def assemble(self, frame: memoryview) -> None:
+    @property
+    def type(self) -> EthernetType:
         """
-        Assemble packet into the raw form.
+        Getter for '_type' attribute.
         """
-        struct.pack_into(
-            "! 6s 6s H",
-            frame,
-            0,
-            bytes(self._dst),
-            bytes(self._src),
-            self._type,
-        )
-        self._carried_packet.assemble(frame[ETHER_HEADER_LEN:])
+
+        return self._type

@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+
 ############################################################################
 #                                                                          #
 #  PyTCP - Python TCP/IP stack                                             #
@@ -24,41 +25,24 @@
 ############################################################################
 
 
-"""
-Module contains packet structure information for the Ethernet protccol.
-
-pytcp/protocols/ether/ps.py
-
-ver 2.7
-"""
+#
+# tests/unit/ethernet_phrx.py -  Tests specific for ARP PHRX module.
+#
+# ver 2.7
+#
 
 
-from __future__ import annotations
-
-# Ethernet packet header
-
-# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-# |                                                               >
-# +    Destination MAC Address    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-# >                               |                               >
-# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+      Source MAC Address       +
-# >                                                               |
-# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-# |           EtherType           |
-# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+from testslide import TestCase
 
 
-ETHER_HEADER_LEN = 14
+class TestEthernetPhrx(TestCase):
+    """
+    Test Ethernet phtx module.
+    """
 
-ETHER_TYPE_MIN = 0x0600
-ETHER_TYPE_ARP = 0x0806
-ETHER_TYPE_IP4 = 0x0800
-ETHER_TYPE_IP6 = 0x86DD
-ETHER_TYPE_RAW = 0xFFFF
+    def setUp(self) -> None:
+        """
+        Setup test environment.
+        """
 
-ETHER_TYPE_TABLE = {
-    ETHER_TYPE_ARP: "ARP",
-    ETHER_TYPE_IP4: "IPv4",
-    ETHER_TYPE_IP6: "IPv6",
-    ETHER_TYPE_RAW: "raw_data",
-}
+        super().setUp()

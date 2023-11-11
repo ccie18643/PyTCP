@@ -46,7 +46,7 @@ from pytcp.lib import stack
 from pytcp.lib.ip4_address import Ip4Address
 from pytcp.lib.logger import log
 from pytcp.lib.mac_address import MacAddress
-from pytcp.protocols.arp.ps import ARP_OP_REQUEST
+from pytcp.protocols.arp.ps import ArpOperation
 
 
 class ArpCache:
@@ -128,7 +128,7 @@ class ArpCache:
                     - config.ARP_CACHE_ENTRY_REFRESH_TIME
                 ) and self._arp_cache[ip4_address].hit_count:
                     self._arp_cache[ip4_address].hit_count = 0
-                    self._send_arp_request(ip4_address)
+                    self._send_arp_request(arp__tpa=ip4_address)
                     __debug__ and log(
                         "arp-c",
                         "Trying to refresh expiring ARP cache entry for "
@@ -173,19 +173,19 @@ class ArpCache:
             "arp-c",
             f"Unable to find entry for {ip4_address}, sending ARP request",
         )
-        self._send_arp_request(ip4_address)
+        self._send_arp_request(arp__tpa=ip4_address)
         return None
 
-    def _send_arp_request(self, arp_tpa: Ip4Address) -> None:
+    def _send_arp_request(self, *, arp__tpa: Ip4Address) -> None:
         """Enqueue ARP request packet with TX ring."""
         stack.packet_handler._phtx_arp(
-            ether_src=stack.packet_handler.mac_unicast,
-            ether_dst=MacAddress(0xFFFFFFFFFFFF),
-            arp_oper=ARP_OP_REQUEST,
-            arp_sha=stack.packet_handler.mac_unicast,
-            arp_spa=stack.packet_handler.ip4_unicast[0]
+            ethernet__src=stack.packet_handler.mac_unicast,
+            ethernet__dst=MacAddress(0xFFFFFFFFFFFF),
+            arp__oper=ArpOperation.REQUEST,
+            arp__sha=stack.packet_handler.mac_unicast,
+            arp__spa=stack.packet_handler.ip4_unicast[0]
             if stack.packet_handler.ip4_unicast
             else Ip4Address(0),
-            arp_tha=MacAddress(0),
-            arp_tpa=arp_tpa,
+            arp__tha=MacAddress(0),
+            arp__tpa=arp__tpa,
         )

@@ -48,8 +48,8 @@ from pytcp.lib.ip6_address import Ip6Address
 from pytcp.lib.logger import log
 from pytcp.lib.mac_address import MacAddress
 from pytcp.protocols.icmp6.fpa import (
-    ICMP6_ND_NEIGHBOR_SOLICITATION,
-    Icmp6NdOptSLLA,
+    Icmp6NdNeighborSolicitationMessageAssembler,
+    Icmp6NdOptSllaAssembler,
 )
 
 
@@ -190,17 +190,22 @@ class NdCache:
         """
 
         # Pick appropriate source address
-        ip6_src = Ip6Address(0)
+        ip6__src = Ip6Address(0)
         for ip6_host in stack.packet_handler.ip6_host:
             if icmp6_ns_target_address in ip6_host.network:
-                ip6_src = ip6_host.address
+                ip6__src = ip6_host.address
 
         # Send out ND Solicitation message
         stack.packet_handler._phtx_icmp6(
-            ip6_src=ip6_src,
-            ip6_dst=icmp6_ns_target_address.solicited_node_multicast,
-            ip6_hop=255,
-            icmp6_type=ICMP6_ND_NEIGHBOR_SOLICITATION,
-            icmp6_ns_target_address=icmp6_ns_target_address,
-            icmp6_nd_options=[Icmp6NdOptSLLA(stack.packet_handler.mac_unicast)],
+            ip6__src=ip6__src,
+            ip6__dst=icmp6_ns_target_address.solicited_node_multicast,
+            ip6__hop=255,
+            icmp6__message=Icmp6NdNeighborSolicitationMessageAssembler(
+                target_address=icmp6_ns_target_address,
+                nd_options=[
+                    Icmp6NdOptSllaAssembler(
+                        slla=stack.packet_handler.mac_unicast
+                    )
+                ],
+            ),
         )

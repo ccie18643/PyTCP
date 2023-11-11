@@ -36,8 +36,11 @@ from testslide import StrictMock, TestCase
 from pytcp.config import IP4_DEFAULT_TTL
 from pytcp.lib.ip4_address import Ip4Address
 from pytcp.lib.tracker import Tracker
-from pytcp.protocols.ether.ps import ETHER_TYPE_IP4
-from pytcp.protocols.icmp4.fpa import Icmp4Assembler
+from pytcp.protocols.ethernet.ps import EthernetType
+from pytcp.protocols.icmp4.fpa import (
+    Icmp4Assembler,
+    Icmp4EchoReplyMessageAssembler,
+)
 from pytcp.protocols.ip4.fpa import (
     Ip4Assembler,
     Ip4FragAssembler,
@@ -68,7 +71,7 @@ class TestIp4Assembler(TestCase):
         Make sure the 'Ip4Assembler' class has the proper
         'ethertype' value assigned.
         """
-        self.assertEqual(Ip4Assembler.ether_type, ETHER_TYPE_IP4)
+        self.assertEqual(Ip4Assembler.ethernet_type, EthernetType.IP4)
 
     def test_ip4_fpa____init__(self) -> None:
         """
@@ -203,7 +206,11 @@ class TestIp4Assembler(TestCase):
         """
         Test assertion for the carried packet 'ip4_proto' attribute.
         """
-        Ip4Assembler(carried_packet=Icmp4Assembler())
+        Ip4Assembler(
+            carried_packet=Icmp4Assembler(
+                message=Icmp4EchoReplyMessageAssembler(),
+            )
+        )
 
     def test_ip4_fpa____init____assert_proto_raw(self) -> None:
         """
@@ -417,7 +424,7 @@ class TestIp4FragAssembler(TestCase):
         """
         Test the 'ethertype' property of the 'Ip4FragAssembler' class.
         """
-        self.assertEqual(Ip4Assembler.ether_type, ETHER_TYPE_IP4)
+        self.assertEqual(Ip4Assembler.ethernet_type, EthernetType.IP4)
 
     def test_ip4_frag_fpa____init__(self) -> None:
         """

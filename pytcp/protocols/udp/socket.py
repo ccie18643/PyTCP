@@ -222,15 +222,17 @@ class UdpSocket(Socket):
             )
 
         tx_status = stack.packet_handler.send_udp_packet(
-            local_ip_address=self._local_ip_address,
-            remote_ip_address=self._remote_ip_address,
-            local_port=self._local_port,
-            remote_port=self._remote_port,
-            data=data,
+            ip__local_address=self._local_ip_address,
+            ip__remote_address=self._remote_ip_address,
+            udp__local_port=self._local_port,
+            udp__remote_port=self._remote_port,
+            udp__data=data,
         )
 
         sent_data_len = (
-            len(data) if tx_status is TxStatus.PASSED__ETHER__TO_TX_RING else 0
+            len(data)
+            if tx_status is TxStatus.PASSED__ETHERNET__TO_TX_RING
+            else 0
         )
 
         __debug__ and log(
@@ -267,15 +269,17 @@ class UdpSocket(Socket):
         )
 
         tx_status = stack.packet_handler.send_udp_packet(
-            local_ip_address=local_ip_address,
-            remote_ip_address=remote_ip_address,
-            local_port=self._local_port,
-            remote_port=remote_port,
-            data=data,
+            ip__local_address=local_ip_address,
+            ip__remote_address=remote_ip_address,
+            udp__local_port=self._local_port,
+            udp__remote_port=remote_port,
+            udp__data=data,
         )
 
         sent_data_len = (
-            len(data) if tx_status is TxStatus.PASSED__ETHER__TO_TX_RING else 0
+            len(data)
+            if tx_status is TxStatus.PASSED__ETHERNET__TO_TX_RING
+            else 0
         )
 
         __debug__ and log(

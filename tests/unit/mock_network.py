@@ -26,7 +26,7 @@
 
 
 #
-# tests.unit.mock_network.py - module used to mock network for packet flow tests
+# tests/unit/mock_network.py - module used to mock network for packet flow tests
 #
 # ver 2.7
 #
@@ -142,8 +142,6 @@ CONFIG_PATCHES = {
     "LOG_CHANEL": set(),
     "IP6_SUPPORT": True,
     "IP4_SUPPORT": True,
-    "PACKET_INTEGRITY_CHECK": True,
-    "PACKET_SANITY_CHECK": True,
     "TAP_MTU": 1500,
     "UDP_ECHO_NATIVE_DISABLE": False,
     "IP4_DEFAULT_TTL": 64,

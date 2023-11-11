@@ -70,12 +70,12 @@ class TestUdpPhtx(TestCase):
         """
 
         tx_status = self.packet_handler._phtx_udp(
-            ip_src=self.mns.stack_ip4_host.address,
-            ip_dst=self.mns.host_a_ip4_address,
-            udp_sport=1000,
-            udp_dport=2000,
+            ip__src=self.mns.stack_ip4_host.address,
+            ip__dst=self.mns.host_a_ip4_address,
+            udp__sport=1000,
+            udp__dport=2000,
         )
-        self.assertEqual(tx_status, TxStatus.PASSED__ETHER__TO_TX_RING)
+        self.assertEqual(tx_status, TxStatus.PASSED__ETHERNET__TO_TX_RING)
         self.assertEqual(
             self.packet_handler.packet_stats_tx,
             PacketStatsTx(
@@ -83,10 +83,10 @@ class TestUdpPhtx(TestCase):
                 udp__send=1,
                 ip4__pre_assemble=1,
                 ip4__mtu_ok__send=1,
-                ether__pre_assemble=1,
-                ether__src_unspec__fill=1,
-                ether__dst_unspec__ip4_lookup=1,
-                ether__dst_unspec__ip4_lookup__locnet__arp_cache_hit__send=1,
+                ethernet__pre_assemble=1,
+                ethernet__src_unspec__fill=1,
+                ethernet__dst_unspec__ip4_lookup=1,
+                ethernet__dst_unspec__ip4_lookup__locnet__arp_cache_hit__send=1,
             ),
         )
         with open(TEST_FRAME_DIR + "ip4_udp_packet.tx", "rb") as _:
@@ -97,13 +97,13 @@ class TestUdpPhtx(TestCase):
         """Test sending IPv4/UDP packet with data"""
 
         tx_status = self.packet_handler._phtx_udp(
-            ip_src=self.mns.stack_ip4_host.address,
-            ip_dst=self.mns.host_a_ip4_address,
-            udp_sport=1000,
-            udp_dport=2000,
-            udp_data=b"01234567890ABCDEF" * 50,
+            ip__src=self.mns.stack_ip4_host.address,
+            ip__dst=self.mns.host_a_ip4_address,
+            udp__sport=1000,
+            udp__dport=2000,
+            udp__data=b"01234567890ABCDEF" * 50,
         )
-        self.assertEqual(tx_status, TxStatus.PASSED__ETHER__TO_TX_RING)
+        self.assertEqual(tx_status, TxStatus.PASSED__ETHERNET__TO_TX_RING)
         self.assertEqual(
             self.packet_handler.packet_stats_tx,
             PacketStatsTx(
@@ -111,10 +111,10 @@ class TestUdpPhtx(TestCase):
                 udp__send=1,
                 ip4__pre_assemble=1,
                 ip4__mtu_ok__send=1,
-                ether__pre_assemble=1,
-                ether__src_unspec__fill=1,
-                ether__dst_unspec__ip4_lookup=1,
-                ether__dst_unspec__ip4_lookup__locnet__arp_cache_hit__send=1,
+                ethernet__pre_assemble=1,
+                ethernet__src_unspec__fill=1,
+                ethernet__dst_unspec__ip4_lookup=1,
+                ethernet__dst_unspec__ip4_lookup__locnet__arp_cache_hit__send=1,
             ),
         )
         with open(TEST_FRAME_DIR + "ip4_udp_packet__data.tx", "rb") as _:
@@ -125,10 +125,10 @@ class TestUdpPhtx(TestCase):
         """Test sending IPv4/UDP packet with src set to ip6 address"""
 
         tx_status = self.packet_handler._phtx_udp(
-            ip_src=self.mns.stack_ip6_host.address,
-            ip_dst=self.mns.host_a_ip4_address,
-            udp_sport=1000,
-            udp_dport=2000,
+            ip__src=self.mns.stack_ip6_host.address,
+            ip__dst=self.mns.host_a_ip4_address,
+            udp__sport=1000,
+            udp__dport=2000,
         )
         self.assertEqual(tx_status, TxStatus.DROPED__UDP__UNKNOWN)
         self.assertEqual(
@@ -143,10 +143,10 @@ class TestUdpPhtx(TestCase):
         """Test sending IPv6/UDP packet with dst set to ip4 address"""
 
         tx_status = self.packet_handler._phtx_udp(
-            ip_src=self.mns.stack_ip4_host.address,
-            ip_dst=self.mns.host_a_ip6_address,
-            udp_sport=1000,
-            udp_dport=2000,
+            ip__src=self.mns.stack_ip4_host.address,
+            ip__dst=self.mns.host_a_ip6_address,
+            udp__sport=1000,
+            udp__dport=2000,
         )
         self.assertEqual(tx_status, TxStatus.DROPED__UDP__UNKNOWN)
         self.assertEqual(
@@ -161,12 +161,12 @@ class TestUdpPhtx(TestCase):
         """Test sending IPv6/UDP packet with no data"""
 
         tx_status = self.packet_handler._phtx_udp(
-            ip_src=self.mns.stack_ip6_host.address,
-            ip_dst=self.mns.host_a_ip6_address,
-            udp_sport=1000,
-            udp_dport=2000,
+            ip__src=self.mns.stack_ip6_host.address,
+            ip__dst=self.mns.host_a_ip6_address,
+            udp__sport=1000,
+            udp__dport=2000,
         )
-        self.assertEqual(tx_status, TxStatus.PASSED__ETHER__TO_TX_RING)
+        self.assertEqual(tx_status, TxStatus.PASSED__ETHERNET__TO_TX_RING)
         self.assertEqual(
             self.packet_handler.packet_stats_tx,
             PacketStatsTx(
@@ -174,10 +174,10 @@ class TestUdpPhtx(TestCase):
                 udp__send=1,
                 ip6__pre_assemble=1,
                 ip6__mtu_ok__send=1,
-                ether__pre_assemble=1,
-                ether__src_unspec__fill=1,
-                ether__dst_unspec__ip6_lookup=1,
-                ether__dst_unspec__ip6_lookup__locnet__nd_cache_hit__send=1,
+                ethernet__pre_assemble=1,
+                ethernet__src_unspec__fill=1,
+                ethernet__dst_unspec__ip6_lookup=1,
+                ethernet__dst_unspec__ip6_lookup__locnet__nd_cache_hit__send=1,
             ),
         )
         with open(TEST_FRAME_DIR + "ip6_udp_packet.tx", "rb") as _:
@@ -188,13 +188,13 @@ class TestUdpPhtx(TestCase):
         """Test sending IPv6/UDP packet with data"""
 
         tx_status = self.packet_handler._phtx_udp(
-            ip_src=self.mns.stack_ip6_host.address,
-            ip_dst=self.mns.host_a_ip6_address,
-            udp_sport=1000,
-            udp_dport=2000,
-            udp_data=b"01234567890ABCDEF" * 50,
+            ip__src=self.mns.stack_ip6_host.address,
+            ip__dst=self.mns.host_a_ip6_address,
+            udp__sport=1000,
+            udp__dport=2000,
+            udp__data=b"01234567890ABCDEF" * 50,
         )
-        self.assertEqual(tx_status, TxStatus.PASSED__ETHER__TO_TX_RING)
+        self.assertEqual(tx_status, TxStatus.PASSED__ETHERNET__TO_TX_RING)
         self.assertEqual(
             self.packet_handler.packet_stats_tx,
             PacketStatsTx(
@@ -202,10 +202,10 @@ class TestUdpPhtx(TestCase):
                 udp__send=1,
                 ip6__pre_assemble=1,
                 ip6__mtu_ok__send=1,
-                ether__pre_assemble=1,
-                ether__src_unspec__fill=1,
-                ether__dst_unspec__ip6_lookup=1,
-                ether__dst_unspec__ip6_lookup__locnet__nd_cache_hit__send=1,
+                ethernet__pre_assemble=1,
+                ethernet__src_unspec__fill=1,
+                ethernet__dst_unspec__ip6_lookup=1,
+                ethernet__dst_unspec__ip6_lookup__locnet__nd_cache_hit__send=1,
             ),
         )
         with open(TEST_FRAME_DIR + "ip6_udp_packet__data.tx", "rb") as _:
@@ -216,10 +216,10 @@ class TestUdpPhtx(TestCase):
         """Test sending IPv6/UDP packet with src set to ip4 address"""
 
         tx_status = self.packet_handler._phtx_udp(
-            ip_src=self.mns.stack_ip4_host.address,
-            ip_dst=self.mns.host_a_ip6_address,
-            udp_sport=1000,
-            udp_dport=2000,
+            ip__src=self.mns.stack_ip4_host.address,
+            ip__dst=self.mns.host_a_ip6_address,
+            udp__sport=1000,
+            udp__dport=2000,
         )
         self.assertEqual(tx_status, TxStatus.DROPED__UDP__UNKNOWN)
         self.assertEqual(
@@ -234,10 +234,10 @@ class TestUdpPhtx(TestCase):
         """Test sending IPv6/UDP packet with dst set to ip4 address"""
 
         tx_status = self.packet_handler._phtx_udp(
-            ip_src=self.mns.stack_ip6_host.address,
-            ip_dst=self.mns.host_a_ip4_address,
-            udp_sport=1000,
-            udp_dport=2000,
+            ip__src=self.mns.stack_ip6_host.address,
+            ip__dst=self.mns.host_a_ip4_address,
+            udp__sport=1000,
+            udp__dport=2000,
         )
         self.assertEqual(tx_status, TxStatus.DROPED__UDP__UNKNOWN)
         self.assertEqual(

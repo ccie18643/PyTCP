@@ -25,7 +25,7 @@
 
 
 #
-# tests/test_config.py - unit tests for config
+# tests/unit/test_config.py - unit tests for config
 #
 # ver 2.7
 #

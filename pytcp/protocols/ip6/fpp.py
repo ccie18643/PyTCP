@@ -40,12 +40,30 @@ from __future__ import annotations
 import struct
 from typing import TYPE_CHECKING
 
-from pytcp import config
+from pytcp.lib.errors import PacketIntegrityError, PacketSanityError
 from pytcp.lib.ip6_address import Ip6Address
 from pytcp.protocols.ip6.ps import IP6_HEADER_LEN, IP6_NEXT_TABLE
 
 if TYPE_CHECKING:
     from pytcp.lib.packet import PacketRx
+
+
+class Ip6IntegrityError(PacketIntegrityError):
+    """
+    Exception raised when IPv6 packet integrity check fails.
+    """
+
+    def __init__(self, message: str):
+        super().__init__("[IPv6] " + message)
+
+
+class Ip6SanityError(PacketSanityError):
+    """
+    Exception raised when IPv6 packet sanity check fails.
+    """
+
+    def __init__(self, message: str):
+        super().__init__("[IPv6] " + message)
 
 
 class Ip6Parser:
@@ -58,17 +76,12 @@ class Ip6Parser:
         Class constructor.
         """
 
-        packet_rx.ip6 = self
-        packet_rx.ip = self
-
         self._frame = packet_rx.frame
+        self._packet_integrity_check()
+        self._packet_sanity_check()
 
-        packet_rx.parse_failed = (
-            self._packet_integrity_check() or self._packet_sanity_check()
-        )
-
-        if not packet_rx.parse_failed:
-            packet_rx.frame = packet_rx.frame[IP6_HEADER_LEN:]
+        packet_rx.ip = packet_rx.ip6 = self
+        packet_rx.frame = packet_rx.frame[IP6_HEADER_LEN:]
 
     def __len__(self) -> int:
         """
@@ -235,41 +248,42 @@ class Ip6Parser:
 
         return self._cache__pshdr_sum
 
-    def _packet_integrity_check(self) -> str:
+    def _packet_integrity_check(self) -> None:
         """
         Packet integrity check to be run on raw packet prior to parsing
         to make sure parsing is safe.
         """
-        if not config.PACKET_INTEGRITY_CHECK:
-            return ""
 
         if len(self) < IP6_HEADER_LEN:
-            return "IPv6 integrity - wrong packet length (I)"
+            raise Ip6IntegrityError(
+                "The wrong packet length (I)",
+            )
 
         if (
             struct.unpack("!H", self._frame[4:6])[0]
             != len(self) - IP6_HEADER_LEN
         ):
-            return "IPv6 integrity - wrong packet length (II)"
+            raise Ip6IntegrityError(
+                "The wrong packet length (II)",
+            )
 
-        return ""
-
-    def _packet_sanity_check(self) -> str:
+    def _packet_sanity_check(self) -> None:
         """
         Packet sanity check to be run on parsed packet to make sure packet's
         fields contain sane values.
         """
 
-        if not config.PACKET_SANITY_CHECK:
-            return ""
-
         if self.ver != 6:
-            return "IPv6 sanity - 'ver' must be 6"
+            raise Ip6SanityError(
+                "The 'ver' must be 6",
+            )
 
         if self.hop == 0:
-            return "IPv6 sanity - 'hop' must not be 0"
+            raise Ip6SanityError(
+                "The 'hop' must not be 0",
+            )
 
         if self.src.is_multicast:
-            return "IPv6 sanity - 'src' must not be multicast"
-
-        return ""
+            raise Ip6SanityError(
+                "The 'src' must not be multicast",
+            )

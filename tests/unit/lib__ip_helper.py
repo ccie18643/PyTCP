@@ -25,7 +25,7 @@
 
 
 #
-# tests/test_ip_helper.py - unit tests for ip helper functions
+# tests/unit/test_ip_helper.py - unit tests for ip helper functions
 #
 # ver 2.7
 #

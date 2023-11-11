@@ -38,8 +38,8 @@ from __future__ import annotations
 import struct
 
 from pytcp.lib.tracker import Tracker
-from pytcp.protocols.ether.ps import ETHER_TYPE_RAW
-from pytcp.protocols.ip4.ps import IP4_PROTO_RAW
+from pytcp.protocols.ethernet.ps import EthernetType
+from pytcp.protocols.ip4.ps import Ip4Proto
 from pytcp.protocols.ip6.ps import IP6_NEXT_RAW
 
 
@@ -48,9 +48,9 @@ class RawAssembler:
     Raw packet assembler support class.
     """
 
-    ip4_proto = IP4_PROTO_RAW
+    ethernet_type = EthernetType.RAW
     ip6_next = IP6_NEXT_RAW
-    ether_type = ETHER_TYPE_RAW
+    ip4_proto = Ip4Proto.RAW
 
     def __init__(
         self, *, data: bytes | None = None, echo_tracker: Tracker | None = None

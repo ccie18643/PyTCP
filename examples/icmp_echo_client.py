@@ -48,6 +48,8 @@ from pytcp.lib import stack
 from pytcp.lib.ip4_address import Ip4Address
 from pytcp.lib.ip6_address import Ip6Address
 from pytcp.lib.ip_helper import str_to_ip
+from pytcp.protocols.icmp4.fpa import Icmp4EchoRequestMessageAssembler
+from pytcp.protocols.icmp6.fpa import Icmp6EchoRequestMessageAssembler
 
 
 class IcmpEchoClient:
@@ -105,26 +107,26 @@ class IcmpEchoClient:
                 assert isinstance(self._local_ip_address, Ip4Address)
                 assert isinstance(self._remote_ip_address, Ip4Address)
                 stack.packet_handler.send_icmp4_packet(
-                    local_ip_address=self._local_ip_address,
-                    remote_ip_address=self._remote_ip_address,
-                    type=8,
-                    code=0,
-                    ec_id=flow_id,
-                    ec_seq=message_seq,
-                    ec_data=message,
+                    ip4__local_address=self._local_ip_address,
+                    ip4__remote_address=self._remote_ip_address,
+                    icmp4__message=Icmp4EchoRequestMessageAssembler(
+                        id=flow_id,
+                        seq=message_seq,
+                        data=message,
+                    ),
                 )
 
             if self._local_ip_address.version == 6:
                 assert isinstance(self._local_ip_address, Ip6Address)
                 assert isinstance(self._remote_ip_address, Ip6Address)
                 stack.packet_handler.send_icmp6_packet(
-                    local_ip_address=self._local_ip_address,
-                    remote_ip_address=self._remote_ip_address,
-                    type=128,
-                    code=0,
-                    ec_id=flow_id,
-                    ec_seq=message_seq,
-                    ec_data=message,
+                    ip6__local_address=self._local_ip_address,
+                    ip6__remote_address=self._remote_ip_address,
+                    icmp6__message=Icmp6EchoRequestMessageAssembler(
+                        id=flow_id,
+                        seq=message_seq,
+                        data=message,
+                    ),
                 )
 
             click.echo(

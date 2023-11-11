@@ -41,7 +41,7 @@ from typing import TYPE_CHECKING
 
 from pytcp import config
 from pytcp.lib.ip6_address import Ip6Address
-from pytcp.protocols.ether.ps import ETHER_TYPE_IP6
+from pytcp.protocols.ethernet.ps import EthernetType
 from pytcp.protocols.ip6.ps import (
     IP6_HEADER_LEN,
     IP6_NEXT_EXT_FRAG,
@@ -55,10 +55,7 @@ from pytcp.protocols.raw.fpa import RawAssembler
 
 if TYPE_CHECKING:
     from pytcp.lib.tracker import Tracker
-    from pytcp.protocols.icmp6.fpa import Icmp6Assembler
-    from pytcp.protocols.ip6_ext_frag.fpa import Ip6ExtFragAssembler
-    from pytcp.protocols.tcp.fpa import TcpAssembler
-    from pytcp.protocols.udp.fpa import UdpAssembler
+    from pytcp.protocols.ip6.ps import Ip6Payload
 
 
 class Ip6Assembler:
@@ -66,7 +63,7 @@ class Ip6Assembler:
     IPv6 packet assembler support class.
     """
 
-    ether_type = ETHER_TYPE_IP6
+    ethernet_type = EthernetType.IP6
 
     def __init__(
         self,
@@ -77,11 +74,7 @@ class Ip6Assembler:
         dscp: int = 0,
         ecn: int = 0,
         flow: int = 0,
-        carried_packet: Ip6ExtFragAssembler
-        | Icmp6Assembler
-        | TcpAssembler
-        | UdpAssembler
-        | RawAssembler = RawAssembler(),
+        ip6__payload: Ip6Payload = RawAssembler(),
     ) -> None:
         """
         Class constructor.
@@ -91,7 +84,7 @@ class Ip6Assembler:
         assert 0 <= dscp <= 0x3F
         assert 0 <= ecn <= 0x03
         assert 0 <= flow <= 0xFFFFFF
-        assert carried_packet.ip6_next in {
+        assert ip6__payload.ip6_next in {
             IP6_NEXT_ICMP6,
             IP6_NEXT_UDP,
             IP6_NEXT_TCP,
@@ -99,14 +92,8 @@ class Ip6Assembler:
             IP6_NEXT_RAW,
         }
 
-        self._carried_packet: (
-            Ip6ExtFragAssembler
-            | Icmp6Assembler
-            | TcpAssembler
-            | UdpAssembler
-            | RawAssembler
-        ) = carried_packet
-        self._tracker: Tracker = self._carried_packet.tracker
+        self._payload = ip6__payload
+        self._tracker: Tracker = self._payload.tracker
         self._ver: int = 6
         self._dscp: int = dscp
         self._ecn: int = ecn
@@ -114,15 +101,15 @@ class Ip6Assembler:
         self._hop: int = hop
         self._src: Ip6Address = src
         self._dst: Ip6Address = dst
-        self._next: int = self._carried_packet.ip6_next
-        self._dlen: int = len(carried_packet)
+        self._next: int = self._payload.ip6_next
+        self._dlen: int = len(self._payload)
 
     def __len__(self) -> int:
         """
         Length of the packet.
         """
 
-        return IP6_HEADER_LEN + len(self._carried_packet)
+        return IP6_HEADER_LEN + len(self._payload)
 
     def __str__(self) -> str:
         """
@@ -207,4 +194,4 @@ class Ip6Assembler:
             bytes(self._src),
             bytes(self._dst),
         )
-        self._carried_packet.assemble(frame[IP6_HEADER_LEN:], self.pshdr_sum)
+        self._payload.assemble(frame[IP6_HEADER_LEN:], self.pshdr_sum)

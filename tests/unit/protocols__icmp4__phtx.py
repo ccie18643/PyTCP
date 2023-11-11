@@ -36,11 +36,10 @@ from testslide import TestCase
 
 from pytcp.lib.packet_stats import PacketStatsTx
 from pytcp.lib.tx_status import TxStatus
-from pytcp.protocols.icmp4.ps import (
-    ICMP4_ECHO_REPLY,
-    ICMP4_ECHO_REQUEST,
-    ICMP4_UNREACHABLE,
-    ICMP4_UNREACHABLE__PORT,
+from pytcp.protocols.icmp4.fpa import (
+    Icmp4EchoReplyMessageAssembler,
+    Icmp4EchoRequestMessageAssembler,
+    Icmp4PortUnreachableMessageAssembler,
 )
 from pytcp.subsystems.packet_handler import PacketHandler
 from tests.unit.mock_network import (
@@ -76,14 +75,15 @@ class TestIcmp4Phtx(TestCase):
         """
 
         tx_status = self.packet_handler._phtx_icmp4(
-            ip4_src=self.mns.stack_ip4_host.address,
-            ip4_dst=self.mns.host_a_ip4_address,
-            icmp4_type=ICMP4_ECHO_REQUEST,
-            icmp4_ec_id=12345,
-            icmp4_ec_seq=54320,
-            icmp4_ec_data=b"0123456789ABCDEF" * 20,
+            ip4__src=self.mns.stack_ip4_host.address,
+            ip4__dst=self.mns.host_a_ip4_address,
+            icmp4__message=Icmp4EchoRequestMessageAssembler(
+                id=12345,
+                seq=54320,
+                data=b"0123456789ABCDEF" * 20,
+            ),
         )
-        self.assertEqual(tx_status, TxStatus.PASSED__ETHER__TO_TX_RING)
+        self.assertEqual(tx_status, TxStatus.PASSED__ETHERNET__TO_TX_RING)
         self.assertEqual(
             self.packet_handler.packet_stats_tx,
             PacketStatsTx(
@@ -91,10 +91,10 @@ class TestIcmp4Phtx(TestCase):
                 icmp4__echo_request__send=1,
                 ip4__pre_assemble=1,
                 ip4__mtu_ok__send=1,
-                ether__pre_assemble=1,
-                ether__src_unspec__fill=1,
-                ether__dst_unspec__ip4_lookup=1,
-                ether__dst_unspec__ip4_lookup__locnet__arp_cache_hit__send=1,
+                ethernet__pre_assemble=1,
+                ethernet__src_unspec__fill=1,
+                ethernet__dst_unspec__ip4_lookup=1,
+                ethernet__dst_unspec__ip4_lookup__locnet__arp_cache_hit__send=1,
             ),
         )
         with open(TEST_FRAME_DIR + "ip4_icmp4_echo_request.tx", "rb") as _:
@@ -106,14 +106,15 @@ class TestIcmp4Phtx(TestCase):
         Test sending the IPv4/ICMPv4 'Echo Reply' packet.
         """
         tx_status = self.packet_handler._phtx_icmp4(
-            ip4_src=self.mns.stack_ip4_host.address,
-            ip4_dst=self.mns.host_a_ip4_address,
-            icmp4_type=ICMP4_ECHO_REPLY,
-            icmp4_ec_id=12345,
-            icmp4_ec_seq=54320,
-            icmp4_ec_data=b"0123456789ABCDEF" * 20,
+            ip4__src=self.mns.stack_ip4_host.address,
+            ip4__dst=self.mns.host_a_ip4_address,
+            icmp4__message=Icmp4EchoReplyMessageAssembler(
+                id=12345,
+                seq=54320,
+                data=b"0123456789ABCDEF" * 20,
+            ),
         )
-        self.assertEqual(tx_status, TxStatus.PASSED__ETHER__TO_TX_RING)
+        self.assertEqual(tx_status, TxStatus.PASSED__ETHERNET__TO_TX_RING)
         self.assertEqual(
             self.packet_handler.packet_stats_tx,
             PacketStatsTx(
@@ -121,10 +122,10 @@ class TestIcmp4Phtx(TestCase):
                 icmp4__echo_reply__send=1,
                 ip4__pre_assemble=1,
                 ip4__mtu_ok__send=1,
-                ether__pre_assemble=1,
-                ether__src_unspec__fill=1,
-                ether__dst_unspec__ip4_lookup=1,
-                ether__dst_unspec__ip4_lookup__locnet__arp_cache_hit__send=1,
+                ethernet__pre_assemble=1,
+                ethernet__src_unspec__fill=1,
+                ethernet__dst_unspec__ip4_lookup=1,
+                ethernet__dst_unspec__ip4_lookup__locnet__arp_cache_hit__send=1,
             ),
         )
         with open(TEST_FRAME_DIR + "ip4_icmp4_echo_reply.tx", "rb") as _:
@@ -136,13 +137,13 @@ class TestIcmp4Phtx(TestCase):
         Test sending the IPv4/ICMPv4 'Unreachable Port' packet.
         """
         tx_status = self.packet_handler._phtx_icmp4(
-            ip4_src=self.mns.stack_ip4_host.address,
-            ip4_dst=self.mns.host_a_ip4_address,
-            icmp4_type=ICMP4_UNREACHABLE,
-            icmp4_code=ICMP4_UNREACHABLE__PORT,
-            icmp4_un_data=b"0123456789ABCDEF" * 100,
+            ip4__src=self.mns.stack_ip4_host.address,
+            ip4__dst=self.mns.host_a_ip4_address,
+            icmp4__message=Icmp4PortUnreachableMessageAssembler(
+                data=b"0123456789ABCDEF" * 100,
+            ),
         )
-        self.assertEqual(tx_status, TxStatus.PASSED__ETHER__TO_TX_RING)
+        self.assertEqual(tx_status, TxStatus.PASSED__ETHERNET__TO_TX_RING)
         self.assertEqual(
             self.packet_handler.packet_stats_tx,
             PacketStatsTx(
@@ -150,10 +151,10 @@ class TestIcmp4Phtx(TestCase):
                 icmp4__unreachable_port__send=1,
                 ip4__pre_assemble=1,
                 ip4__mtu_ok__send=1,
-                ether__pre_assemble=1,
-                ether__src_unspec__fill=1,
-                ether__dst_unspec__ip4_lookup=1,
-                ether__dst_unspec__ip4_lookup__locnet__arp_cache_hit__send=1,
+                ethernet__pre_assemble=1,
+                ethernet__src_unspec__fill=1,
+                ethernet__dst_unspec__ip4_lookup=1,
+                ethernet__dst_unspec__ip4_lookup__locnet__arp_cache_hit__send=1,
             ),
         )
         with open(TEST_FRAME_DIR + "ip4_icmp4_unreachable_port.tx", "rb") as _:

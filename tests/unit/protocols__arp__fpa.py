@@ -26,7 +26,7 @@
 
 
 #
-# tests/arp_fpa.py -  tests specific for ARP fpa module
+# tests/unit/arp_fpa.py -  Tests specific for ARP FPA module.
 #
 # ver 2.7
 #
@@ -36,8 +36,19 @@ from testslide import TestCase
 from pytcp.lib.ip4_address import Ip4Address
 from pytcp.lib.mac_address import MacAddress
 from pytcp.protocols.arp.fpa import ArpAssembler
-from pytcp.protocols.arp.ps import ARP_HEADER_LEN, ARP_OP_REPLY, ARP_OP_REQUEST
-from pytcp.protocols.ether.ps import ETHER_TYPE_ARP
+from pytcp.protocols.arp.ps import ARP_HEADER_LEN, ArpOperation
+from tests.unit.protocols__arp__ps import (
+    ARP__HRLEN,
+    ARP__HRTYPE,
+    ARP__OPER,
+    ARP__PRLEN,
+    ARP__PRTYPE,
+    ARP__SHA,
+    ARP__SPA,
+    ARP__TEST_FRAME,
+    ARP__THA,
+    ARP__TPA,
+)
 
 
 class TestArpAssembler(TestCase):
@@ -45,125 +56,84 @@ class TestArpAssembler(TestCase):
     ARP Assembler unit test class.
     """
 
-    def test_arp_fpa__ethertype(self) -> None:
+    def setUp(self) -> None:
         """
-        Make sure the 'ArpAssembler' class has the proper
-        'ethertype' value assigned.
+        Set up the test environment.
         """
-        self.assertEqual(ArpAssembler.ether_type, ETHER_TYPE_ARP)
 
-    def test_arp_fpa____init__(self) -> None:
-        """
-        Test the packet constructor.
-        """
-        packet = ArpAssembler(
-            sha=MacAddress("00:11:22:33:44:55"),
-            spa=Ip4Address("1.2.3.4"),
-            tha=MacAddress("66:77:88:99:AA:BB"),
-            tpa=Ip4Address("5.6.7.8"),
-            oper=ARP_OP_REPLY,
-        )
-        self.assertEqual(packet._sha, MacAddress("00:11:22:33:44:55"))
-        self.assertEqual(packet._spa, Ip4Address("1.2.3.4"))
-        self.assertEqual(packet._tha, MacAddress("66:77:88:99:AA:BB"))
-        self.assertEqual(packet._tpa, Ip4Address("5.6.7.8"))
-        self.assertEqual(packet._oper, ARP_OP_REPLY)
+        super().setUp()
 
-    def test_arp_fpa____init____defaults(self) -> None:
-        """
-        Test the packet constructor with default arguments.
-        """
-        packet = ArpAssembler()
-        self.assertEqual(packet._sha, MacAddress("00:00:00:00:00:00"))
-        self.assertEqual(packet._spa, Ip4Address("0.0.0.0"))
-        self.assertEqual(packet._tha, MacAddress("00:00:00:00:00:00"))
-        self.assertEqual(packet._tpa, Ip4Address("0.0.0.0"))
-        self.assertEqual(packet._oper, ARP_OP_REQUEST)
+        self._arp__hrtype = ARP__HRTYPE
+        self._arp__prtype = ARP__PRTYPE
+        self._arp__hrlen = ARP__HRLEN
+        self._arp__prlen = ARP__PRLEN
+        self._arp__oper = ARP__OPER
+        self._arp__sha = ARP__SHA
+        self._arp__spa = ARP__SPA
+        self._arp__tha = ARP__THA
+        self._arp__tpa = ARP__TPA
+        self._arp__test_frame = ARP__TEST_FRAME
 
-    def test_arp_fpa____init____assert_oper_request(self) -> None:
-        """
-        Test assertion for the request operation.
-        """
-        ArpAssembler(oper=ARP_OP_REQUEST)
-
-    def test_arp_fpa____init____assert_oper_reply(self) -> None:
-        """
-        Test assertion for the request operation.
-        """
-        ArpAssembler(oper=ARP_OP_REPLY)
-
-    def test_arp_fpa____init____assert_oper_unknown(self) -> None:
-        """
-        Test assertion for the unknown operation.
-        """
-        with self.assertRaises(AssertionError):
-            ArpAssembler(oper=-1)
-
-    def test_arp_fpa____len__(self) -> None:
-        """
-        Test the '__len__()' dunder.
-        """
-        packet = ArpAssembler()
-        self.assertEqual(len(packet), ARP_HEADER_LEN)
-
-    def test_arp_fpa____str____request(self) -> None:
-        """
-        Test the '__str__()' dunder.
-        """
-        packet = ArpAssembler(
-            sha=MacAddress("00:11:22:33:44:55"),
-            spa=Ip4Address("1.2.3.4"),
-            tha=MacAddress("66:77:88:99:AA:BB"),
-            tpa=Ip4Address("5.6.7.8"),
-            oper=ARP_OP_REQUEST,
-        )
-        self.assertEqual(
-            str(packet),
-            "ARP request 1.2.3.4 / 00:11:22:33:44:55 > "
-            "5.6.7.8 / 66:77:88:99:aa:bb",
+        self._packet = ArpAssembler(
+            arp__oper=self._arp__oper,
+            arp__sha=self._arp__sha,
+            arp__spa=self._arp__spa,
+            arp__tha=self._arp__tha,
+            arp__tpa=self._arp__tpa,
         )
 
-    def test_arp_fpa____str____reply(self) -> None:
+    def test__arp_fpa____init__(self) -> None:
         """
-        Test the '__str__()' dudner..
+        Validate that the class constructor creates packet matching
+        provided arguments.
         """
-        packet = ArpAssembler(
-            sha=MacAddress("00:11:22:33:44:55"),
-            spa=Ip4Address("1.2.3.4"),
-            tha=MacAddress("66:77:88:99:AA:BB"),
-            tpa=Ip4Address("5.6.7.8"),
-            oper=ARP_OP_REPLY,
-        )
-        self.assertEqual(
-            str(packet),
-            "ARP reply 1.2.3.4 / 00:11:22:33:44:55 > "
-            "5.6.7.8 / 66:77:88:99:aa:bb",
+
+        self.assertIs(self._packet._hrtype, self._arp__hrtype)
+        self.assertIs(self._packet._prtype, self._arp__prtype)
+        self.assertIs(self._packet._hrlen, self._arp__hrlen)
+        self.assertIs(self._packet._prlen, self._arp__prlen)
+        self.assertIs(self._packet._oper, self._arp__oper)
+        self.assertIs(self._packet._sha, self._arp__sha)
+        self.assertIs(self._packet._spa, self._arp__spa)
+        self.assertIs(self._packet._tha, self._arp__tha)
+        self.assertIs(self._packet._tpa, self._arp__tpa)
+
+    def test__arp_fpa____init____defaults(self) -> None:
+        """
+        Validate that the packet constructor has set specific default
+        values.
+        """
+
+        default_packet = ArpAssembler()
+
+        self.assertIs(default_packet._oper, ArpOperation.REQUEST)
+        self.assertEqual(default_packet._sha, MacAddress("00:00:00:00:00:00"))
+        self.assertEqual(default_packet._spa, Ip4Address("0.0.0.0"))
+        self.assertEqual(default_packet._tha, MacAddress("00:00:00:00:00:00"))
+        self.assertEqual(default_packet._tpa, Ip4Address("0.0.0.0"))
+
+    def test__arp_fpa____len__(self) -> None:
+        """
+        Verify that the '__len__()' dunder provides valid packet length.
+        """
+
+        self.assertEqual(len(self._packet), ARP_HEADER_LEN)
+
+    def test__arp_fpa__getter__tracker(self) -> None:
+        """
+        Validate that the '_tracker' attribute getter provides correct value.
+        """
+
+        self.assertRegex(
+            repr(self._packet.tracker), r"^Tracker\(serial='<lr>TX"
         )
 
-    def test_arp_fpa__tracker_getter(self) -> None:
+    def test__arp_fpa__assemble(self) -> None:
         """
-        Test the '_tracker' attribute getter.
+        Validate that the 'assemble()' method correctly writes data into frame.
         """
-        packet = ArpAssembler()
-        self.assertTrue(
-            repr(packet.tracker).startswith("Tracker(serial='<lr>TX")
-        )
 
-    def test_ether_fpa__assemble(self) -> None:
-        """
-        Test the 'assemble()' method.
-        """
-        packet = ArpAssembler(
-            sha=MacAddress("00:11:22:33:44:55"),
-            spa=Ip4Address("1.2.3.4"),
-            tha=MacAddress("66:77:88:99:AA:BB"),
-            tpa=Ip4Address("5.6.7.8"),
-            oper=ARP_OP_REPLY,
-        )
-        frame = memoryview(bytearray(len(packet)))
-        packet.assemble(frame)
-        self.assertEqual(
-            frame,
-            b'\x00\x01\x08\x00\x06\x04\x00\x02\x00\x11"3DU\x01\x02\x03'
-            b"\x04fw\x88\x99\xaa\xbb\x05\x06\x07\x08",
-        )
+        frame = memoryview(bytearray(len(self._packet)))
+        self._packet.assemble(frame)
+
+        self.assertEqual(bytes(frame), self._arp__test_frame)

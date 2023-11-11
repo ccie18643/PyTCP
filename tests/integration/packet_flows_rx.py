@@ -69,8 +69,6 @@ CONFIG_PATCHES = {
     "LOG_CHANEL": set(),
     "IP6_SUPPORT": True,
     "IP4_SUPPORT": True,
-    "PACKET_INTEGRITY_CHECK": True,
-    "PACKET_SANITY_CHECK": True,
     "TAP_MTU": 1500,
     "UDP_ECHO_NATIVE_DISABLE": False,
 }
@@ -131,21 +129,21 @@ class TestPacketHandlerRx(TestCase):
     # Test name format:
     # 'test_name__protocol_tested__test_description__optional_condition'
 
-    def test_packet_flow_rx__ether__ether_unknown_dst(self) -> None:
+    def test_packet_flow_rx__ethernet__ethernet_unknown_dst(self) -> None:
         """
         [Ethernet] Receive Ethernet packet with unknown destination
         MAC address, drop.
         """
         with open(
-            "tests/integration/test_frames/rx/ether_unknown_dst.rx", "rb"
+            "tests/integration/test_frames/rx/ethernet_unknown_dst.rx", "rb"
         ) as _:
             packet_rx = _.read()
-        self.packet_handler._phrx_ether(PacketRx(packet_rx))
+        self.packet_handler._phrx_ethernet(packet_rx=PacketRx(packet_rx))
         self.assertEqual(
             self.packet_handler.packet_stats_rx,
             PacketStatsRx(
-                ether__pre_parse=1,
-                ether__dst_unknown__drop=1,
+                ethernet__pre_parse=1,
+                ethernet__dst_unknown__drop=1,
             ),
         )
         self.assertEqual(
@@ -153,20 +151,21 @@ class TestPacketHandlerRx(TestCase):
             PacketStatsTx(),
         )
 
-    def test_packet_flow_rx__ether__ether_malformed_header(self) -> None:
+    def test_packet_flow_rx__ethernet__ethernet_malformed_header(self) -> None:
         """
         [Ethernet] Receive Ethernet packet with malformed header, drop.
         """
         with open(
-            "tests/integration/test_frames/rx/ether_malformed_header.rx", "rb"
+            "tests/integration/test_frames/rx/ethernet_malformed_header.rx",
+            "rb",
         ) as _:
             packet_rx = _.read()
-        self.packet_handler._phrx_ether(PacketRx(packet_rx))
+        self.packet_handler._phrx_ethernet(packet_rx=PacketRx(packet_rx))
         self.assertEqual(
             self.packet_handler.packet_stats_rx,
             PacketStatsRx(
-                ether__pre_parse=1,
-                ether__failed_parse__drop=1,
+                ethernet__pre_parse=1,
+                ethernet__failed_parse__drop=1,
             ),
         )
         self.assertEqual(
@@ -182,12 +181,12 @@ class TestPacketHandlerRx(TestCase):
             "tests/integration/test_frames/rx/ip4_unknown_dst.rx", "rb"
         ) as _:
             packet_rx = _.read()
-        self.packet_handler._phrx_ether(PacketRx(packet_rx))
+        self.packet_handler._phrx_ethernet(packet_rx=PacketRx(packet_rx))
         self.assertEqual(
             self.packet_handler.packet_stats_rx,
             PacketStatsRx(
-                ether__pre_parse=1,
-                ether__dst_unicast=1,
+                ethernet__pre_parse=1,
+                ethernet__dst_unicast=1,
                 ip4__pre_parse=1,
                 ip4__dst_unknown__drop=1,
             ),
@@ -205,12 +204,12 @@ class TestPacketHandlerRx(TestCase):
             "tests/integration/test_frames/rx/ip6_unknown_dst.rx", "rb"
         ) as _:
             packet_rx = _.read()
-        self.packet_handler._phrx_ether(PacketRx(packet_rx))
+        self.packet_handler._phrx_ethernet(packet_rx=PacketRx(packet_rx))
         self.assertEqual(
             self.packet_handler.packet_stats_rx,
             PacketStatsRx(
-                ether__pre_parse=1,
-                ether__dst_unicast=1,
+                ethernet__pre_parse=1,
+                ethernet__dst_unicast=1,
                 ip6__pre_parse=1,
                 ip6__dst_unknown__drop=1,
             ),
@@ -228,12 +227,12 @@ class TestPacketHandlerRx(TestCase):
             "tests/integration/test_frames/rx/arp_unknown_tpa.rx", "rb"
         ) as _:
             packet_rx = _.read()
-        self.packet_handler._phrx_ether(PacketRx(packet_rx))
+        self.packet_handler._phrx_ethernet(packet_rx=PacketRx(packet_rx))
         self.assertEqual(
             self.packet_handler.packet_stats_rx,
             PacketStatsRx(
-                ether__pre_parse=1,
-                ether__dst_broadcast=1,
+                ethernet__pre_parse=1,
+                ethernet__dst_broadcast=1,
                 arp__pre_parse=1,
                 arp__op_request=1,
                 arp__op_request__tpa_unknown__drop=1,
@@ -254,12 +253,12 @@ class TestPacketHandlerRx(TestCase):
             "rb",
         ) as _:
             packet_rx = _.read()
-        self.packet_handler._phrx_ether(PacketRx(packet_rx))
+        self.packet_handler._phrx_ethernet(packet_rx=PacketRx(packet_rx))
         self.assertEqual(
             self.packet_handler.packet_stats_rx,
             PacketStatsRx(
-                ether__pre_parse=1,
-                ether__dst_multicast=1,
+                ethernet__pre_parse=1,
+                ethernet__dst_multicast=1,
                 ip6__pre_parse=1,
                 ip6__dst_multicast=1,
                 icmp6__pre_parse=1,

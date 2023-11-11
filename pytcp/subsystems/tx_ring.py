@@ -48,7 +48,7 @@ from pytcp.lib.logger import log
 if TYPE_CHECKING:
     from threading import Semaphore
 
-    from pytcp.protocols.ether.fpa import EtherAssembler
+    from pytcp.protocols.ethernet.fpa import EthernetAssembler
 
 
 class TxRing:
@@ -60,7 +60,7 @@ class TxRing:
         """
         Initialize access to tap interface and the outbound queue.
         """
-        self._tx_ring: list[EtherAssembler] = []
+        self._tx_ring: list[EthernetAssembler] = []
         self._packet_enqueued: Semaphore = threading.Semaphore(0)
         self._run_thread: bool = False
         self._tap: int = -1
@@ -131,10 +131,11 @@ class TxRing:
 
         __debug__ and log("stack", "Stopped TX ring")
 
-    def enqueue(self, packet_tx: EtherAssembler) -> None:
+    def enqueue(self, packet_tx: EthernetAssembler) -> None:
         """
         Enqueue outbound packet into TX ring.
         """
+
         self._tx_ring.append(packet_tx)
         __debug__ and log(
             "rx-ring",

@@ -36,13 +36,11 @@ from testslide import TestCase
 
 from pytcp.lib.packet_stats import PacketStatsTx
 from pytcp.lib.tx_status import TxStatus
-from pytcp.protocols.icmp6.fpa import Icmp6NdOptSLLA
-from pytcp.protocols.icmp6.ps import (
-    ICMP6_ECHO_REPLY,
-    ICMP6_ECHO_REQUEST,
-    ICMP6_ND_ROUTER_SOLICITATION,
-    ICMP6_UNREACHABLE,
-    ICMP6_UNREACHABLE__PORT,
+from pytcp.protocols.icmp6.fpa import (
+    Icmp6EchoRequestMessageAssembler,
+    Icmp6NdOptSllaAssembler,
+    Icmp6NdRouterSolicitationMessageAssembler,
+    Icmp6PortUnreachableMessageAssembler,
 )
 from pytcp.subsystems.packet_handler import PacketHandler
 from tests.unit.mock_network import (
@@ -77,14 +75,15 @@ class TestIcmp6Phtx(TestCase):
         Test sending the IPv6/ICMPv6 'Echo Request' packet.
         """
         tx_status = self.packet_handler._phtx_icmp6(
-            ip6_src=self.mns.stack_ip6_host.address,
-            ip6_dst=self.mns.host_a_ip6_address,
-            icmp6_type=ICMP6_ECHO_REQUEST,
-            icmp6_ec_id=12345,
-            icmp6_ec_seq=54320,
-            icmp6_ec_data=b"0123456789ABCDEF" * 20,
+            ip6__src=self.mns.stack_ip6_host.address,
+            ip6__dst=self.mns.host_a_ip6_address,
+            icmp6__message=Icmp6EchoRequestMessageAssembler(
+                id=12345,
+                seq=54320,
+                data=b"0123456789ABCDEF" * 20,
+            ),
         )
-        self.assertEqual(tx_status, TxStatus.PASSED__ETHER__TO_TX_RING)
+        self.assertEqual(tx_status, TxStatus.PASSED__ETHERNET__TO_TX_RING)
         self.assertEqual(
             self.packet_handler.packet_stats_tx,
             PacketStatsTx(
@@ -92,10 +91,10 @@ class TestIcmp6Phtx(TestCase):
                 icmp6__echo_request__send=1,
                 ip6__pre_assemble=1,
                 ip6__mtu_ok__send=1,
-                ether__pre_assemble=1,
-                ether__src_unspec__fill=1,
-                ether__dst_unspec__ip6_lookup=1,
-                ether__dst_unspec__ip6_lookup__locnet__nd_cache_hit__send=1,
+                ethernet__pre_assemble=1,
+                ethernet__src_unspec__fill=1,
+                ethernet__dst_unspec__ip6_lookup=1,
+                ethernet__dst_unspec__ip6_lookup__locnet__nd_cache_hit__send=1,
             ),
         )
         with open(TEST_FRAME_DIR + "ip6_icmp6_echo_request.tx", "rb") as _:
@@ -108,14 +107,15 @@ class TestIcmp6Phtx(TestCase):
         """
 
         tx_status = self.packet_handler._phtx_icmp6(
-            ip6_src=self.mns.stack_ip6_host.address,
-            ip6_dst=self.mns.host_a_ip6_address,
-            icmp6_type=ICMP6_ECHO_REPLY,
-            icmp6_ec_id=12345,
-            icmp6_ec_seq=54320,
-            icmp6_ec_data=b"0123456789ABCDEF" * 20,
+            ip6__src=self.mns.stack_ip6_host.address,
+            ip6__dst=self.mns.host_a_ip6_address,
+            icmp6__message=Icmp6EchoRequestMessageAssembler(
+                id=12345,
+                seq=54320,
+                data=b"0123456789ABCDEF" * 20,
+            ),
         )
-        self.assertEqual(tx_status, TxStatus.PASSED__ETHER__TO_TX_RING)
+        self.assertEqual(tx_status, TxStatus.PASSED__ETHERNET__TO_TX_RING)
         self.assertEqual(
             self.packet_handler.packet_stats_tx,
             PacketStatsTx(
@@ -123,10 +123,10 @@ class TestIcmp6Phtx(TestCase):
                 icmp6__echo_reply__send=1,
                 ip6__pre_assemble=1,
                 ip6__mtu_ok__send=1,
-                ether__pre_assemble=1,
-                ether__src_unspec__fill=1,
-                ether__dst_unspec__ip6_lookup=1,
-                ether__dst_unspec__ip6_lookup__locnet__nd_cache_hit__send=1,
+                ethernet__pre_assemble=1,
+                ethernet__src_unspec__fill=1,
+                ethernet__dst_unspec__ip6_lookup=1,
+                ethernet__dst_unspec__ip6_lookup__locnet__nd_cache_hit__send=1,
             ),
         )
         with open(TEST_FRAME_DIR + "ip6_icmp6_echo_reply.tx", "rb") as _:
@@ -138,13 +138,13 @@ class TestIcmp6Phtx(TestCase):
         Test sending the IPv6/ICMPv6 'Unreachable Port' packet.
         """
         tx_status = self.packet_handler._phtx_icmp6(
-            ip6_src=self.mns.stack_ip6_host.address,
-            ip6_dst=self.mns.host_a_ip6_address,
-            icmp6_type=ICMP6_UNREACHABLE,
-            icmp6_code=ICMP6_UNREACHABLE__PORT,
-            icmp6_un_data=b"0123456789ABCDEF" * 100,
+            ip6__src=self.mns.stack_ip6_host.address,
+            ip6__dst=self.mns.host_a_ip6_address,
+            icmp6__message=Icmp6PortUnreachableMessageAssembler(
+                data=b"0123456789ABCDEF" * 100,
+            ),
         )
-        self.assertEqual(tx_status, TxStatus.PASSED__ETHER__TO_TX_RING)
+        self.assertEqual(tx_status, TxStatus.PASSED__ETHERNET__TO_TX_RING)
         self.assertEqual(
             self.packet_handler.packet_stats_tx,
             PacketStatsTx(
@@ -152,10 +152,10 @@ class TestIcmp6Phtx(TestCase):
                 icmp6__unreachable_port__send=1,
                 ip6__pre_assemble=1,
                 ip6__mtu_ok__send=1,
-                ether__pre_assemble=1,
-                ether__src_unspec__fill=1,
-                ether__dst_unspec__ip6_lookup=1,
-                ether__dst_unspec__ip6_lookup__locnet__nd_cache_hit__send=1,
+                ethernet__pre_assemble=1,
+                ethernet__src_unspec__fill=1,
+                ethernet__dst_unspec__ip6_lookup=1,
+                ethernet__dst_unspec__ip6_lookup__locnet__nd_cache_hit__send=1,
             ),
         )
         with open(TEST_FRAME_DIR + "ip6_icmp6_unreachable_port.tx", "rb") as _:
@@ -167,13 +167,16 @@ class TestIcmp6Phtx(TestCase):
         Test sending the IPv6/ICMPv6 'ND Router Solicitation' packet.
         """
         tx_status = self.packet_handler._phtx_icmp6(
-            ip6_src=self.mns.stack_ip6_host.address,
-            ip6_dst=self.mns.ip6_multicast_all_routers,
-            ip6_hop=255,
-            icmp6_type=ICMP6_ND_ROUTER_SOLICITATION,
-            icmp6_nd_options=[Icmp6NdOptSLLA(self.mns.stack_mac_address)],
+            ip6__src=self.mns.stack_ip6_host.address,
+            ip6__dst=self.mns.ip6_multicast_all_routers,
+            ip6__hop=255,
+            icmp6__message=Icmp6NdRouterSolicitationMessageAssembler(
+                nd_options=[
+                    Icmp6NdOptSllaAssembler(slla=self.mns.stack_mac_address)
+                ],
+            ),
         )
-        self.assertEqual(tx_status, TxStatus.PASSED__ETHER__TO_TX_RING)
+        self.assertEqual(tx_status, TxStatus.PASSED__ETHERNET__TO_TX_RING)
         self.assertEqual(
             self.packet_handler.packet_stats_tx,
             PacketStatsTx(
@@ -181,10 +184,10 @@ class TestIcmp6Phtx(TestCase):
                 icmp6__nd_router_solicitation__send=1,
                 ip6__pre_assemble=1,
                 ip6__mtu_ok__send=1,
-                ether__pre_assemble=1,
-                ether__src_unspec__fill=1,
-                ether__dst_unspec__ip6_lookup=1,
-                ether__dst_unspec__ip6_lookup__multicast__send=1,
+                ethernet__pre_assemble=1,
+                ethernet__src_unspec__fill=1,
+                ethernet__dst_unspec__ip6_lookup=1,
+                ethernet__dst_unspec__ip6_lookup__multicast__send=1,
             ),
         )
         with open(

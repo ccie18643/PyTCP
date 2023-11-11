@@ -36,34 +36,38 @@ from testslide import TestCase
 from pytcp.lib.ip6_address import Ip6Address, Ip6Network
 from pytcp.lib.mac_address import MacAddress
 from pytcp.lib.tracker import Tracker
+from pytcp.protocols.icmp4.fpa import Icmp4EchoReplyMessageAssembler
 from pytcp.protocols.icmp6.fpa import (
     Icmp6Assembler,
-    Icmp6MulticastAddressRecord,
-    Icmp6NdOptPI,
-    Icmp6NdOptSLLA,
-    Icmp6NdOptTLLA,
+    Icmp6EchoReplyMessageAssembler,
+    Icmp6EchoRequestMessageAssembler,
+    Icmp6Mld2AddressRecordAssembler,
+    Icmp6Mld2ReportMessageAssembler,
+    Icmp6NdNeighborAdvertisementMessageAssembler,
+    Icmp6NdNeighborSolicitationMessageAssembler,
+    Icmp6NdOptPiAssembler,
+    Icmp6NdOptSllaAssembler,
+    Icmp6NdOptTllaAssembler,
+    Icmp6NdRouterAdvertisementMessageAssembler,
+    Icmp6NdRouterSolicitationMessageAssembler,
+    Icmp6PortUnreachableMessageAssembler,
 )
+from pytcp.protocols.icmp6.fpp import Icmp6Mld2ReportMessageParser
 from pytcp.protocols.icmp6.ps import (
-    ICMP6_ECHO_REPLY,
-    ICMP6_ECHO_REPLY_LEN,
-    ICMP6_ECHO_REQUEST,
-    ICMP6_ECHO_REQUEST_LEN,
-    ICMP6_MART_MODE_IS_EXCLUDE,
-    ICMP6_MART_MODE_IS_INCLUDE,
-    ICMP6_MLD2_REPORT,
-    ICMP6_ND_NEIGHBOR_ADVERTISEMENT,
-    ICMP6_ND_NEIGHBOR_ADVERTISEMENT_LEN,
-    ICMP6_ND_NEIGHBOR_SOLICITATION,
-    ICMP6_ND_NEIGHBOR_SOLICITATION_LEN,
-    ICMP6_ND_OPT_SLLA_LEN,
-    ICMP6_ND_OPT_TLLA_LEN,
-    ICMP6_ND_ROUTER_ADVERTISEMENT,
-    ICMP6_ND_ROUTER_ADVERTISEMENT_LEN,
-    ICMP6_ND_ROUTER_SOLICITATION,
-    ICMP6_ND_ROUTER_SOLICITATION_LEN,
-    ICMP6_UNREACHABLE,
-    ICMP6_UNREACHABLE__PORT,
-    ICMP6_UNREACHABLE_LEN,
+    ICMP6_MESSAGE_LEN__ECHO_REPLY,
+    ICMP6_MESSAGE_LEN__ECHO_REQUEST,
+    ICMP6_MESSAGE_LEN__ND_NEIGHBOR_ADVERTISEMENT,
+    ICMP6_MESSAGE_LEN__ND_NEIGHBOR_SOLICITATION,
+    ICMP6_MESSAGE_LEN__ND_ROUTER_ADVERTISEMENT,
+    ICMP6_MESSAGE_LEN__ND_ROUTER_SOLICITATION,
+    ICMP6_MESSAGE_LEN__UNREACHABLE,
+    Icmp6EchoRequestMessage,
+    Icmp6Mld2RecordType,
+    Icmp6NdNeighborAdvertisementMessage,
+    Icmp6NdNeighborSolicitationMessage,
+    Icmp6NdRouterAdvertisementMessage,
+    Icmp6NdRouterSolicitationMessage,
+    Icmp6PortUnreachableMessage,
 )
 from pytcp.protocols.ip6.ps import IP6_NEXT_ICMP6
 
@@ -73,146 +77,138 @@ class TestIcmp6Assembler(TestCase):
     ICMPv6 protocol packet assembler unit test class.
     """
 
+    def setUp(self) -> None:
+        """
+        Set up the test environment.
+        """
+        super().setUp()
+
+        self._dummy__mac_address_1 = MacAddress("11:22:33:44:55:66")
+        self._dummy__mac_address_2 = MacAddress("66:55:44:33:22:11")
+
+        self._dummy__id = 12345
+        self._dummy__seq = 54321
+        self._dummy__data = b"0123456789ABCDEF" * 50
+
+        self._dummy__nd_options = [
+            Icmp6NdOptSllaAssembler(slla=self._dummy__mac_address_1),
+            Icmp6NdOptTllaAssembler(tlla=self._dummy__mac_address_2),
+        ]
+
+        self._dummy__hop = 255
+        self._dummy__flag_m = True
+        self._dummy__flag_o = True
+        self._dummy__flag_r = True
+        self._dummy__flag_s = True
+        self._dummy__router_lifetime = 12345
+        self._dummy__reachable_time = 12345678
+        self._dummy__retrans_timer = 87654321
+        self._dummy__target_address = Ip6Address("1:2:3:4:5:6:7:8")
+
     def test_icmp6_fpa__ip6_next_icmp6(self) -> None:
         """
         Make sure the 'Icmp6Assembler' class has the proper 'ip6_next' set.
         """
+
         self.assertEqual(Icmp6Assembler.ip6_next, IP6_NEXT_ICMP6)
 
     def test_icmp6_fpa____init____unreachable_port(self) -> None:
         """
         Test packet constructor for the 'Unreachable Port' message.
         """
+
         packet = Icmp6Assembler(
-            type=ICMP6_UNREACHABLE,
-            code=ICMP6_UNREACHABLE__PORT,
-            un_data=b"0123456789ABCDEF" * 50,
-            echo_tracker=Tracker(prefix="TX"),
-        )
-        self.assertEqual(packet._un_data, (b"0123456789ABCDEF" * 50)[:520])
-        self.assertTrue(
-            repr(packet.tracker._echo_tracker).startswith(
-                "Tracker(serial='<lr>TX"
-            )
+            message=Icmp6PortUnreachableMessageAssembler(
+                data=self._dummy__data,
+            ),
         )
 
-    def test_icmp6_fpa____init____unreachable_port__assert_code__under(
-        self,
-    ) -> None:
-        """
-        Test packet constructor for the 'Unreachable Port' message.
-        """
-        with self.assertRaises(AssertionError):
-            Icmp6Assembler(
-                type=ICMP6_ECHO_REQUEST,
-                code=ICMP6_UNREACHABLE__PORT - 1,
-            )
+        assert isinstance(packet.message, Icmp6PortUnreachableMessage)
 
-    def test_icmp6_fpa____init____unreachable_port__assert_code__over(
-        self,
-    ) -> None:
-        """
-        Test packet constructor for the 'Unreachable Port' message.
-        """
-        with self.assertRaises(AssertionError):
-            Icmp6Assembler(
-                type=ICMP6_ECHO_REQUEST,
-                code=ICMP6_UNREACHABLE__PORT + 1,
-            )
+        self.assertEqual(packet.message._reserved, 0)
+        self.assertEqual(packet.message.data, self._dummy__data[:520])
 
     def test_icmp6_fpa____init____echo_request(self) -> None:
         """
         Test packet constructor for the 'Echo Request' message.
         """
+
         packet = Icmp6Assembler(
-            type=ICMP6_ECHO_REQUEST,
-            code=0,
-            ec_id=12345,
-            ec_seq=54321,
-            ec_data=b"0123456789ABCDEF",
-            echo_tracker=Tracker(prefix="TX"),
-        )
-        self.assertEqual(packet._ec_id, 12345)
-        self.assertEqual(packet._ec_seq, 54321)
-        self.assertEqual(packet._ec_data, b"0123456789ABCDEF")
-        self.assertTrue(
-            repr(packet.tracker._echo_tracker).startswith(
-                "Tracker(serial='<lr>TX"
-            )
+            message=Icmp6EchoRequestMessageAssembler(
+                id=self._dummy__id,
+                seq=self._dummy__seq,
+                data=self._dummy__data,
+            ),
         )
 
-    def test_icmp6_fpa____init____echo_request__assert_code__under(
+        assert isinstance(packet.message, Icmp6EchoRequestMessage)
+
+        self.assertEqual(packet.message.id, self._dummy__id)
+        self.assertEqual(packet.message.seq, self._dummy__seq)
+        self.assertEqual(packet.message.data, self._dummy__data)
+
+    def test_icmp6_fpa____init____echo_request__assert_id__under(
         self,
     ) -> None:
         """
-        Test packet constructor for the 'Echo Request' message.
+        Test assertion for the 'id' argument.
         """
+
         with self.assertRaises(AssertionError):
             Icmp6Assembler(
-                type=ICMP6_ECHO_REQUEST,
-                code=-1,
+                message=Icmp6EchoRequestMessageAssembler(
+                    id=-1,
+                    seq=self._dummy__seq,
+                    data=self._dummy__data,
+                ),
             )
 
-    def test_icmp6_fpa____init____echo_request__assert_code__over(self) -> None:
-        """
-        Test class constructor for the 'Echo Request' message.
-        """
-        with self.assertRaises(AssertionError):
-            Icmp6Assembler(
-                type=ICMP6_ECHO_REQUEST,
-                code=1,
-            )
-
-    def test_icmp6_fpa____init____echo_request__assert_ec_id__under(
+    def test_icmp6_fpa____init____echo_request__assert_id__over(
         self,
     ) -> None:
         """
-        Test assertion for the 'ec_id' argument.
+        Test assertion for the 'id' argument.
         """
+
         with self.assertRaises(AssertionError):
             Icmp6Assembler(
-                type=ICMP6_ECHO_REQUEST,
-                code=0,
-                ec_id=-1,
+                message=Icmp6EchoRequestMessageAssembler(
+                    id=0x10000,
+                    seq=self._dummy__seq,
+                    data=self._dummy__data,
+                ),
             )
 
-    def test_icmp6_fpa____init____echo_request__assert_ec_id__over(
+    def test_icmp6_fpa____init____echo_request__assert_seq__under(
         self,
     ) -> None:
         """
-        Test assertion for the 'ec_id' argument.
+        Test assertion for the 'id' argument.
         """
-        with self.assertRaises(AssertionError):
-            Icmp6Assembler(
-                type=ICMP6_ECHO_REQUEST,
-                code=0,
-                ec_id=0x10000,
-            )
 
-    def test_icmp6_fpa____init____echo_request__assert_ec_seq__under(
-        self,
-    ) -> None:
-        """
-        Test assertion for the 'ec_id' argument.
-        """
         with self.assertRaises(AssertionError):
             Icmp6Assembler(
-                type=ICMP6_ECHO_REQUEST,
-                code=0,
-                ec_seq=-1,
+                message=Icmp6EchoRequestMessageAssembler(
+                    id=self._dummy__id,
+                    seq=-1,
+                    data=self._dummy__data,
+                ),
             )
 
     def test_icmp6_fpa____init____echo_request__assert_ec_seq__over(
         self,
     ) -> None:
         """
-        Test assertion for the 'ec_seq' argument.
+        Test assertion for the 'seq' argument.
         """
+
         with self.assertRaises(AssertionError):
             Icmp6Assembler(
-                type=ICMP6_ECHO_REQUEST,
-                code=0,
-                ec_seq=0x10000,
+                message=Icmp6EchoRequestMessageAssembler(
+                    id=self._dummy__id,
+                    seq=0x10000,
+                    data=self._dummy__data,
+                ),
             )
 
     def test_icmp6_fpa____init____echo_reply(self) -> None:
@@ -221,148 +217,98 @@ class TestIcmp6Assembler(TestCase):
         """
 
         packet = Icmp6Assembler(
-            type=ICMP6_ECHO_REPLY,
-            code=0,
-            ec_id=12345,
-            ec_seq=54321,
-            ec_data=b"0123456789ABCDEF",
-            echo_tracker=Tracker(prefix="TX"),
+            message=Icmp6EchoReplyMessageAssembler(
+                id=self._dummy__id,
+                seq=self._dummy__seq,
+                data=self._dummy__data,
+            ),
         )
 
-        self.assertEqual(packet._ec_id, 12345)
-        self.assertEqual(packet._ec_seq, 54321)
-        self.assertEqual(packet._ec_data, b"0123456789ABCDEF")
-        self.assertTrue(
-            repr(packet.tracker._echo_tracker).startswith(
-                "Tracker(serial='<lr>TX"
-            )
-        )
+        assert isinstance(packet.message, Icmp4EchoReplyMessageAssembler)
 
-    def test_icmp6_fpa____init____echo_reply__assert_code__under(self) -> None:
-        """
-        Test packet constructor for the 'Echo Reply' message.
-        """
-        with self.assertRaises(AssertionError):
-            Icmp6Assembler(
-                type=ICMP6_ECHO_REPLY,
-                code=-1,
-            )
+        self.assertEqual(packet.message.id, self._dummy__id)
+        self.assertEqual(packet.message.seq, self._dummy__seq)
+        self.assertEqual(packet.message.data, self._dummy__data)
 
-    def test_icmp6_fpa____init____echo_reply__assert_code__over(self) -> None:
-        """
-        Test packet constructor for the 'Echo Reply' message.
-        """
-        with self.assertRaises(AssertionError):
-            Icmp6Assembler(
-                type=ICMP6_ECHO_REPLY,
-                code=1,
-            )
-
-    def test_icmp6_fpa____init____echo_reply__assert_ec_id__under(self) -> None:
-        """
-        Test assertion for the 'ec_id' argument.
-        """
-        with self.assertRaises(AssertionError):
-            Icmp6Assembler(
-                type=ICMP6_ECHO_REPLY,
-                code=0,
-                ec_id=-1,
-            )
-
-    def test_icmp6_fpa____init____echo_reply__assert_ec_id__over(self) -> None:
-        """
-        Test assertion for the 'ec_id' argument.
-        """
-        with self.assertRaises(AssertionError):
-            Icmp6Assembler(
-                type=ICMP6_ECHO_REPLY,
-                code=0,
-                ec_id=0x10000,
-            )
-
-    def test_icmp6_fpa____init____echo_reply__assert_ec_seq__under(
+    def test_icmp6_fpa____init____echo_reply__assert_id__under(
         self,
     ) -> None:
         """
-        Test assertion for the 'ec_id' argument.
+        Test assertion for the 'id' argument.
         """
+
         with self.assertRaises(AssertionError):
             Icmp6Assembler(
-                type=ICMP6_ECHO_REPLY,
-                code=0,
-                ec_seq=-1,
+                message=Icmp6EchoReplyMessageAssembler(
+                    id=-1,
+                    seq=self._dummy__seq,
+                    data=self._dummy__data,
+                ),
             )
 
-    def test_icmp6_fpa____init____echo_reply__assert_ec_seq__over(self) -> None:
+    def test_icmp6_fpa____init____echo_reply__assert_id__over(
+        self,
+    ) -> None:
+        """
+        Test assertion for the 'id' argument.
+        """
+
+        with self.assertRaises(AssertionError):
+            Icmp6Assembler(
+                message=Icmp6EchoReplyMessageAssembler(
+                    id=0x10000,
+                    seq=self._dummy__seq,
+                    data=self._dummy__data,
+                ),
+            )
+
+    def test_icmp6_fpa____init____echo_reply__assert_seq__under(
+        self,
+    ) -> None:
+        """
+        Test assertion for the 'id' argument.
+        """
+
+        with self.assertRaises(AssertionError):
+            Icmp6Assembler(
+                message=Icmp6EchoReplyMessageAssembler(
+                    id=self._dummy__id,
+                    seq=-1,
+                    data=self._dummy__data,
+                ),
+            )
+
+    def test_icmp6_fpa____init____echo_reply__assert_ec_seq__over(
+        self,
+    ) -> None:
         """
         Test assertion for the 'ec_seq' argument.
         """
-        with self.assertRaises(AssertionError):
-            Icmp6Assembler(
-                type=ICMP6_ECHO_REPLY,
-                code=0,
-                ec_seq=0x10000,
-            )
 
-    def test_icmp6_fpa____init____unknown(self) -> None:
-        """
-        Test packet constructor for message with unknown type.
-        """
         with self.assertRaises(AssertionError):
             Icmp6Assembler(
-                type=255,
+                message=Icmp6EchoReplyMessageAssembler(
+                    id=self._dummy__id,
+                    seq=0x10000,
+                    data=self._dummy__data,
+                ),
             )
 
     def test_icmp6_fpa____init____nd_router_solicitation(self) -> None:
         """
         Test packet constructor for the 'ND Router Solicitation' message.
         """
+
         packet = Icmp6Assembler(
-            type=ICMP6_ND_ROUTER_SOLICITATION,
-            code=0,
-            nd_options=[
-                Icmp6NdOptSLLA(MacAddress("11:22:33:44:55:66")),
-                Icmp6NdOptTLLA(MacAddress("66:55:44:33:22:11")),
-            ],
-            echo_tracker=Tracker(prefix="TX"),
-        )
-        self.assertEqual(packet._rs_reserved, 0)
-        self.assertEqual(
-            packet._nd_options,
-            [
-                Icmp6NdOptSLLA(MacAddress("11:22:33:44:55:66")),
-                Icmp6NdOptTLLA(MacAddress("66:55:44:33:22:11")),
-            ],
-        )
-        self.assertTrue(
-            repr(packet.tracker._echo_tracker).startswith(
-                "Tracker(serial='<lr>TX"
-            )
+            message=Icmp6NdRouterSolicitationMessageAssembler(
+                nd_options=self._dummy__nd_options,
+            ),
         )
 
-    def test_icmp6_fpa____init____nd_router_solicitation__assert_code__under(
-        self,
-    ) -> None:
-        """
-        Test packet constructor for the 'ND Router Solicitation' message.
-        """
-        with self.assertRaises(AssertionError):
-            Icmp6Assembler(
-                type=ICMP6_ND_ROUTER_SOLICITATION,
-                code=-1,
-            )
+        assert isinstance(packet.message, Icmp6NdRouterSolicitationMessage)
 
-    def test_icmp6_fpa____init____nd_router_solicitation__assert_code__over(
-        self,
-    ) -> None:
-        """
-        Test packet constructor for the 'ND Router Solicitation' message.
-        """
-        with self.assertRaises(AssertionError):
-            Icmp6Assembler(
-                type=ICMP6_ND_ROUTER_SOLICITATION,
-                code=1,
-            )
+        self.assertEqual(packet.message._reserved, 0)
+        self.assertEqual(packet.message.nd_options, self._dummy__nd_options)
 
     def test_icmp6_fpa____init____nd_router_advertisement(self) -> None:
         """
@@ -370,63 +316,32 @@ class TestIcmp6Assembler(TestCase):
         """
 
         packet = Icmp6Assembler(
-            type=ICMP6_ND_ROUTER_ADVERTISEMENT,
-            code=0,
-            ra_hop=255,
-            ra_flag_m=True,
-            ra_flag_o=True,
-            ra_router_lifetime=12345,
-            ra_reachable_time=12345678,
-            ra_retrans_timer=87654321,
-            nd_options=[
-                Icmp6NdOptSLLA(MacAddress("11:22:33:44:55:66")),
-                Icmp6NdOptTLLA(MacAddress("66:55:44:33:22:11")),
-            ],
-            echo_tracker=Tracker(prefix="TX"),
+            message=Icmp6NdRouterAdvertisementMessageAssembler(
+                hop=self._dummy__hop,
+                flag_m=self._dummy__flag_m,
+                flag_o=self._dummy__flag_o,
+                router_lifetime=self._dummy__router_lifetime,
+                reachable_time=self._dummy__reachable_time,
+                retrans_timer=self._dummy__retrans_timer,
+                nd_options=self._dummy__nd_options,
+            ),
         )
 
-        self.assertEqual(packet._ra_hop, 255)
-        self.assertEqual(packet._ra_flag_m, True)
-        self.assertEqual(packet._ra_flag_o, True)
-        self.assertEqual(packet._ra_router_lifetime, 12345)
-        self.assertEqual(packet._ra_reachable_time, 12345678)
-        self.assertEqual(packet._ra_retrans_timer, 87654321)
+        assert isinstance(packet.message, Icmp6NdRouterAdvertisementMessage)
+
+        self.assertEqual(packet.message.hop, self._dummy__hop)
+        self.assertEqual(packet.message.flag_m, self._dummy__flag_m)
+        self.assertEqual(packet.message.flag_o, self._dummy__flag_o)
         self.assertEqual(
-            packet._nd_options,
-            [
-                Icmp6NdOptSLLA(MacAddress("11:22:33:44:55:66")),
-                Icmp6NdOptTLLA(MacAddress("66:55:44:33:22:11")),
-            ],
+            packet.message.router_lifetime, self._dummy__router_lifetime
         )
-        self.assertTrue(
-            repr(packet.tracker._echo_tracker).startswith(
-                "Tracker(serial='<lr>TX"
-            )
+        self.assertEqual(
+            packet.message.reachable_time, self._dummy__reachable_time
         )
-
-    def test_icmp6_fpa____init____nd_router_advertisement__assert_code__under(
-        self,
-    ) -> None:
-        """
-        Test packet constructor for the 'ND Router Advertisement' message.
-        """
-        with self.assertRaises(AssertionError):
-            Icmp6Assembler(
-                type=ICMP6_ND_ROUTER_ADVERTISEMENT,
-                code=-1,
-            )
-
-    def test_icmp6_fpa____init____nd_router_advertisement__assert_code__over(
-        self,
-    ) -> None:
-        """
-        Test packet constructor for the 'ND Router Advertisement' message.
-        """
-        with self.assertRaises(AssertionError):
-            Icmp6Assembler(
-                type=ICMP6_ND_ROUTER_ADVERTISEMENT,
-                code=1,
-            )
+        self.assertEqual(
+            packet.message.retrans_timer, self._dummy__retrans_timer
+        )
+        self.assertEqual(packet.message.nd_options, self._dummy__nd_options)
 
     def test_icmp6_fpa____init____nd_router_advertisement__assert_hop__under(
         self,
@@ -434,10 +349,18 @@ class TestIcmp6Assembler(TestCase):
         """
         Test packet constructor for the 'ND Router Advertisement' message.
         """
+
         with self.assertRaises(AssertionError):
             Icmp6Assembler(
-                type=ICMP6_ND_ROUTER_ADVERTISEMENT,
-                ra_hop=-1,
+                message=Icmp6NdRouterAdvertisementMessageAssembler(
+                    hop=-1,
+                    flag_m=self._dummy__flag_m,
+                    flag_o=self._dummy__flag_o,
+                    router_lifetime=self._dummy__router_lifetime,
+                    reachable_time=self._dummy__reachable_time,
+                    retrans_timer=self._dummy__retrans_timer,
+                    nd_options=self._dummy__nd_options,
+                ),
             )
 
     def test_icmp6_fpa____init____nd_router_advertisement__assert_hop__over(
@@ -448,8 +371,15 @@ class TestIcmp6Assembler(TestCase):
         """
         with self.assertRaises(AssertionError):
             Icmp6Assembler(
-                type=ICMP6_ND_ROUTER_ADVERTISEMENT,
-                ra_hop=0x100,
+                message=Icmp6NdRouterAdvertisementMessageAssembler(
+                    hop=0x100,
+                    flag_m=self._dummy__flag_m,
+                    flag_o=self._dummy__flag_o,
+                    router_lifetime=self._dummy__router_lifetime,
+                    reachable_time=self._dummy__reachable_time,
+                    retrans_timer=self._dummy__retrans_timer,
+                    nd_options=self._dummy__nd_options,
+                ),
             )
 
     def test_icmp6_fpa____init____nd_router_advertisement__assert_router_lifetime__under(
@@ -460,8 +390,15 @@ class TestIcmp6Assembler(TestCase):
         """
         with self.assertRaises(AssertionError):
             Icmp6Assembler(
-                type=ICMP6_ND_ROUTER_ADVERTISEMENT,
-                ra_router_lifetime=-1,
+                message=Icmp6NdRouterAdvertisementMessageAssembler(
+                    hop=self._dummy__hop,
+                    flag_m=self._dummy__flag_m,
+                    flag_o=self._dummy__flag_o,
+                    router_lifetime=-1,
+                    reachable_time=self._dummy__reachable_time,
+                    retrans_timer=self._dummy__retrans_timer,
+                    nd_options=self._dummy__nd_options,
+                ),
             )
 
     def test_icmp6_fpa____init____nd_router_advertisement__assert_router_lifetime__over(
@@ -472,8 +409,15 @@ class TestIcmp6Assembler(TestCase):
         """
         with self.assertRaises(AssertionError):
             Icmp6Assembler(
-                type=ICMP6_ND_ROUTER_ADVERTISEMENT,
-                ra_router_lifetime=0x10000,
+                message=Icmp6NdRouterAdvertisementMessageAssembler(
+                    hop=self._dummy__hop,
+                    flag_m=self._dummy__flag_m,
+                    flag_o=self._dummy__flag_o,
+                    router_lifetime=0x10000,
+                    reachable_time=self._dummy__reachable_time,
+                    retrans_timer=self._dummy__retrans_timer,
+                    nd_options=self._dummy__nd_options,
+                ),
             )
 
     def test_icmp6_fpa____init____nd_router_advertisement__assert_reachable_time__under(
@@ -484,8 +428,15 @@ class TestIcmp6Assembler(TestCase):
         """
         with self.assertRaises(AssertionError):
             Icmp6Assembler(
-                type=ICMP6_ND_ROUTER_ADVERTISEMENT,
-                ra_reachable_time=-1,
+                message=Icmp6NdRouterAdvertisementMessageAssembler(
+                    hop=self._dummy__hop,
+                    flag_m=self._dummy__flag_m,
+                    flag_o=self._dummy__flag_o,
+                    router_lifetime=self._dummy__router_lifetime,
+                    reachable_time=-1,
+                    retrans_timer=self._dummy__retrans_timer,
+                    nd_options=self._dummy__nd_options,
+                ),
             )
 
     def test_icmp6_fpa____init____nd_router_advertisement__assert_reachable_time__over(
@@ -496,8 +447,15 @@ class TestIcmp6Assembler(TestCase):
         """
         with self.assertRaises(AssertionError):
             Icmp6Assembler(
-                type=ICMP6_ND_ROUTER_ADVERTISEMENT,
-                ra_reachable_time=0x100000000,
+                message=Icmp6NdRouterAdvertisementMessageAssembler(
+                    hop=self._dummy__hop,
+                    flag_m=self._dummy__flag_m,
+                    flag_o=self._dummy__flag_o,
+                    router_lifetime=self._dummy__router_lifetime,
+                    reachable_time=0x100000000,
+                    retrans_timer=self._dummy__retrans_timer,
+                    nd_options=self._dummy__nd_options,
+                ),
             )
 
     def test_icmp6_fpa____init____nd_router_advertisement__assert_retrans_timer__under(
@@ -508,8 +466,15 @@ class TestIcmp6Assembler(TestCase):
         """
         with self.assertRaises(AssertionError):
             Icmp6Assembler(
-                type=ICMP6_ND_ROUTER_ADVERTISEMENT,
-                ra_retrans_timer=-1,
+                message=Icmp6NdRouterAdvertisementMessageAssembler(
+                    hop=self._dummy__hop,
+                    flag_m=self._dummy__flag_m,
+                    flag_o=self._dummy__flag_o,
+                    router_lifetime=self._dummy__router_lifetime,
+                    reachable_time=self._dummy__reachable_time,
+                    retrans_timer=-1,
+                    nd_options=self._dummy__nd_options,
+                ),
             )
 
     def test_icmp6_fpa____init____nd_router_advertisement__assert_retrans_timer__over(
@@ -520,8 +485,15 @@ class TestIcmp6Assembler(TestCase):
         """
         with self.assertRaises(AssertionError):
             Icmp6Assembler(
-                type=ICMP6_ND_ROUTER_ADVERTISEMENT,
-                ra_retrans_timer=0x100000000,
+                message=Icmp6NdRouterAdvertisementMessageAssembler(
+                    hop=self._dummy__hop,
+                    flag_m=self._dummy__flag_m,
+                    flag_o=self._dummy__flag_o,
+                    router_lifetime=self._dummy__router_lifetime,
+                    reachable_time=self._dummy__reachable_time,
+                    retrans_timer=0x100000000,
+                    nd_options=self._dummy__nd_options,
+                ),
             )
 
     def test_icmp6_fpa____init____nd_neighbor_solicitation(self) -> None:
@@ -529,225 +501,140 @@ class TestIcmp6Assembler(TestCase):
         Test packet constructor for the 'ND Neighbor Solicitation' message.
         """
         packet = Icmp6Assembler(
-            type=ICMP6_ND_NEIGHBOR_SOLICITATION,
-            code=0,
-            ns_target_address=Ip6Address("1:2:3:4:5:6:7:8"),
-            nd_options=[
-                Icmp6NdOptSLLA(MacAddress("11:22:33:44:55:66")),
-                Icmp6NdOptTLLA(MacAddress("66:55:44:33:22:11")),
-            ],
-            echo_tracker=Tracker(prefix="TX"),
-        )
-        self.assertEqual(
-            packet._ns_target_address, Ip6Address("1:2:3:4:5:6:7:8")
-        )
-        self.assertEqual(
-            packet._nd_options,
-            [
-                Icmp6NdOptSLLA(MacAddress("11:22:33:44:55:66")),
-                Icmp6NdOptTLLA(MacAddress("66:55:44:33:22:11")),
-            ],
-        )
-        self.assertTrue(
-            repr(packet.tracker._echo_tracker).startswith(
-                "Tracker(serial='<lr>TX"
-            )
+            message=Icmp6NdNeighborSolicitationMessageAssembler(
+                target_address=self._dummy__target_address,
+                nd_options=self._dummy__nd_options,
+            ),
         )
 
-    def test_icmp6_fpa____init____nd_neighbor_solicitation__assert_code__under(
-        self,
-    ) -> None:
-        """
-        Test packet constructor for the 'ND Router Solicitation' message.
-        """
-        with self.assertRaises(AssertionError):
-            Icmp6Assembler(
-                type=ICMP6_ND_NEIGHBOR_SOLICITATION,
-                code=-1,
-            )
+        assert isinstance(packet.message, Icmp6NdNeighborSolicitationMessage)
 
-    def test_icmp6_fpa____init____nd_neighbor_solicitation__assert_code__over(
-        self,
-    ) -> None:
-        """
-        Test packet constructor for the 'ND Router Solicitation' message.
-        """
-        with self.assertRaises(AssertionError):
-            Icmp6Assembler(
-                type=ICMP6_ND_NEIGHBOR_SOLICITATION,
-                code=1,
-            )
+        self.assertEqual(
+            packet.message.target_address, self._dummy__target_address
+        )
+        self.assertEqual(packet.message.nd_options, self._dummy__nd_options)
 
     def test_icmp6_fpa____init____nd_neighbor_advertisement(self) -> None:
         """
         Test packet constructor for the 'ND Neighbor Advertisement' message.
         """
         packet = Icmp6Assembler(
-            type=ICMP6_ND_NEIGHBOR_ADVERTISEMENT,
-            code=0,
-            na_flag_r=True,
-            na_flag_s=True,
-            na_flag_o=True,
-            na_target_address=Ip6Address("1:2:3:4:5:6:7:8"),
-            nd_options=[
-                Icmp6NdOptSLLA(MacAddress("11:22:33:44:55:66")),
-                Icmp6NdOptTLLA(MacAddress("66:55:44:33:22:11")),
-            ],
-            echo_tracker=Tracker(prefix="TX"),
-        )
-        self.assertEqual(packet._na_flag_r, True)
-        self.assertEqual(packet._na_flag_s, True)
-        self.assertEqual(packet._na_flag_o, True)
-        self.assertEqual(packet._na_reserved, 0)
-        self.assertEqual(
-            packet._na_target_address, Ip6Address("1:2:3:4:5:6:7:8")
-        )
-        self.assertEqual(
-            packet._nd_options,
-            [
-                Icmp6NdOptSLLA(MacAddress("11:22:33:44:55:66")),
-                Icmp6NdOptTLLA(MacAddress("66:55:44:33:22:11")),
-            ],
-        )
-        self.assertTrue(
-            repr(packet.tracker._echo_tracker).startswith(
-                "Tracker(serial='<lr>TX"
-            )
+            message=Icmp6NdNeighborAdvertisementMessageAssembler(
+                flag_r=self._dummy__flag_r,
+                flag_s=self._dummy__flag_s,
+                flag_o=self._dummy__flag_o,
+                target_address=self._dummy__target_address,
+                nd_options=self._dummy__nd_options,
+            ),
         )
 
-    def test_icmp6_fpa____init____nd_neighbor_advertisement__assert_code__under(
-        self,
-    ) -> None:
-        """
-        Test packet constructor for the 'ND Router Advertisement' message.
-        """
-        with self.assertRaises(AssertionError):
-            Icmp6Assembler(
-                type=ICMP6_ND_NEIGHBOR_ADVERTISEMENT,
-                code=-1,
-            )
+        assert isinstance(packet.message, Icmp6NdNeighborAdvertisementMessage)
 
-    def test_icmp6_fpa____init____nd_neighbor_advertisement__assert_code__over(
-        self,
-    ) -> None:
-        """
-        Test packet constructor for the 'ND Router Advertisement' message.
-        """
-        with self.assertRaises(AssertionError):
-            Icmp6Assembler(
-                type=ICMP6_ND_NEIGHBOR_ADVERTISEMENT,
-                code=1,
-            )
+        self.assertEqual(packet.message.flag_r, self._dummy__flag_r)
+        self.assertEqual(packet.message.flag_s, self._dummy__flag_s)
+        self.assertEqual(packet.message.flag_o, self._dummy__flag_o)
+        self.assertEqual(packet.message._reserved, 0)
+        self.assertEqual(
+            packet.message.target_address, self._dummy__target_address
+        )
+        self.assertEqual(packet.message._nd_options, self._dummy__nd_options)
 
     def test_icmp6_fpa____init____mld2_report(self) -> None:
         """
         Test packet constructor for the 'Multicast Discovery v2 Report' message.
         """
         packet = Icmp6Assembler(
-            type=ICMP6_MLD2_REPORT,
-            code=0,
-            mlr2_multicast_address_record=[
-                Icmp6MulticastAddressRecord(
-                    ICMP6_MART_MODE_IS_INCLUDE, Ip6Address("FF00:2:3:4:5:6:7:8")
-                ),
-                Icmp6MulticastAddressRecord(
-                    ICMP6_MART_MODE_IS_EXCLUDE, Ip6Address("FF00:8:7:6:5:4:3:2")
-                ),
-            ],
-            echo_tracker=Tracker(prefix="TX"),
+            message=Icmp6Mld2ReportMessageAssembler(
+                records=[
+                    Icmp6Mld2AddressRecordAssembler(
+                        record_type=Icmp6Mld2RecordType.MODE_IS_INCLUDE,
+                        multicast_address=Ip6Address("FF00:2:3:4:5:6:7:8"),
+                    ),
+                    Icmp6Mld2AddressRecordAssembler(
+                        record_type=Icmp6Mld2RecordType.MODE_IS_EXCLUDE,
+                        multicast_address=Ip6Address("FF00:8:7:6:5:4:3:2"),
+                    ),
+                ],
+            ),
         )
-        self.assertEqual(packet._mlr2_reserved, 0)
+
+        assert isinstance(packet.message, Icmp6Mld2ReportMessageParser)
+
+        self.assertEqual(packet.message._reserved, 0)
         self.assertEqual(
-            packet._mlr2_multicast_address_record,
+            packet.message.records,
             [
-                Icmp6MulticastAddressRecord(
-                    ICMP6_MART_MODE_IS_INCLUDE, Ip6Address("FF00:2:3:4:5:6:7:8")
+                Icmp6Mld2AddressRecordAssembler(
+                    record_type=Icmp6Mld2RecordType.MODE_IS_INCLUDE,
+                    multicast_address=Ip6Address("FF00:2:3:4:5:6:7:8"),
                 ),
-                Icmp6MulticastAddressRecord(
-                    ICMP6_MART_MODE_IS_EXCLUDE, Ip6Address("FF00:8:7:6:5:4:3:2")
+                Icmp6Mld2AddressRecordAssembler(
+                    record_type=Icmp6Mld2RecordType.MODE_IS_EXCLUDE,
+                    multicast_address=Ip6Address("FF00:8:7:6:5:4:3:2"),
                 ),
             ],
         )
-        self.assertEqual(packet._mlr2_number_of_multicast_address_records, 2)
-        self.assertTrue(
-            repr(packet.tracker._echo_tracker).startswith(
-                "Tracker(serial='<lr>TX"
-            )
-        )
 
-    def test_icmp6_fpa____init____mld2_record__assert_code__under(self) -> None:
+    def test_icmp6_fpa____len____port_unreachable(self) -> None:
         """
-        Test packet constructor for the 'Multicast Discovery v2 Report' message.
-        """
-        with self.assertRaises(AssertionError):
-            Icmp6Assembler(
-                type=ICMP6_MLD2_REPORT,
-                code=-1,
-            )
-
-    def test_icmp6_fpa____init____mld2_record__assert_code__over(self) -> None:
-        """
-        Test class constructor for the 'Multicast Discovery v2 Report' message.
-        """
-        with self.assertRaises(AssertionError):
-            Icmp6Assembler(
-                type=ICMP6_MLD2_REPORT,
-                code=1,
-            )
-
-    def test_icmp6_fpa____len____unreachable_port(self) -> None:
-        """
-        Test the '__len__()' dunder for 'Unreachable Port' message.
+        Test the '__len__()' dunder for 'Port Unreachable' message.
         """
         packet = Icmp6Assembler(
-            type=ICMP6_UNREACHABLE,
-            code=ICMP6_UNREACHABLE__PORT,
-            un_data=b"0123456789ABCDEF",
+            message=Icmp6PortUnreachableMessageAssembler(
+                data=self._dummy__data,
+            ),
         )
 
-        self.assertEqual(len(packet), ICMP6_UNREACHABLE_LEN + 16)
+        self.assertEqual(
+            len(packet), ICMP6_MESSAGE_LEN__UNREACHABLE + len(self._dummy__data)
+        )
 
     def test_icmp6_fpa____len____echo_request(self) -> None:
         """
-        Test the '__len__()' dunder for 'Unreachable Port' message.
+        Test the '__len__()' dunder for 'Echo Request' message.
         """
         packet = Icmp6Assembler(
-            type=ICMP6_ECHO_REQUEST,
-            code=0,
-            ec_data=b"0123456789ABCDEF",
+            message=Icmp6EchoRequestMessageAssembler(
+                id=self._dummy__id,
+                seq=self._dummy__seq,
+                data=self._dummy__data,
+            ),
         )
 
-        self.assertEqual(len(packet), ICMP6_ECHO_REQUEST_LEN + 16)
+        self.assertEqual(
+            len(packet),
+            ICMP6_MESSAGE_LEN__ECHO_REQUEST + len(self._dummy__data),
+        )
 
     def test_icmp6_fpa____len____echo_reply(self) -> None:
         """
         Test the '__len__()' dunder for 'Echo Reply' message.
         """
         packet = Icmp6Assembler(
-            type=ICMP6_ECHO_REPLY,
-            code=0,
-            ec_data=b"0123456789ABCDEF",
+            message=Icmp6EchoReplyMessageAssembler(
+                id=self._dummy__id,
+                seq=self._dummy__seq,
+                data=self._dummy__data,
+            ),
         )
 
-        self.assertEqual(len(packet), ICMP6_ECHO_REPLY_LEN + 16)
+        self.assertEqual(
+            len(packet), ICMP6_MESSAGE_LEN__ECHO_REPLY + len(self._dummy__data)
+        )
 
     def test_icmp6_fpa____len____nd_router_solicitation(self) -> None:
         """
         Test the '__len__()' dunder for 'Router Solicitation' message.
         """
         packet = Icmp6Assembler(
-            type=ICMP6_ND_ROUTER_SOLICITATION,
-            code=0,
-            nd_options=[
-                Icmp6NdOptSLLA(MacAddress("11:22:33:44:55:66")),
-                Icmp6NdOptTLLA(MacAddress("66:55:44:33:22:11")),
-            ],
+            message=Icmp6NdRouterSolicitationMessageAssembler(
+                nd_options=self._dummy__nd_options,
+            ),
         )
         self.assertEqual(
             len(packet),
-            ICMP6_ND_ROUTER_SOLICITATION_LEN
-            + ICMP6_ND_OPT_SLLA_LEN
-            + ICMP6_ND_OPT_TLLA_LEN,
+            ICMP6_MESSAGE_LEN__ND_ROUTER_SOLICITATION
+            + sum(len(opt) for opt in self._dummy__nd_options),
         )
 
     def test_icmp6_fpa____len____nd_router_advertisement(self) -> None:
@@ -755,25 +642,20 @@ class TestIcmp6Assembler(TestCase):
         Test the '__len__() dunder for 'Router Advertisement' message.
         """
         packet = Icmp6Assembler(
-            type=ICMP6_ND_ROUTER_ADVERTISEMENT,
-            code=0,
-            ra_hop=255,
-            ra_flag_m=True,
-            ra_flag_o=True,
-            ra_router_lifetime=12345,
-            ra_reachable_time=12345678,
-            ra_retrans_timer=87654321,
-            nd_options=[
-                Icmp6NdOptSLLA(MacAddress("11:22:33:44:55:66")),
-                Icmp6NdOptTLLA(MacAddress("66:55:44:33:22:11")),
-            ],
-            echo_tracker=Tracker(prefix="TX"),
+            message=Icmp6NdRouterAdvertisementMessageAssembler(
+                hop=self._dummy__hop,
+                flag_m=self._dummy__flag_m,
+                flag_o=self._dummy__flag_o,
+                router_lifetime=self._dummy__router_lifetime,
+                reachable_time=self._dummy__reachable_time,
+                retrans_timer=self._dummy__retrans_timer,
+                nd_options=self._dummy__nd_options,
+            ),
         )
         self.assertEqual(
             len(packet),
-            ICMP6_ND_ROUTER_ADVERTISEMENT_LEN
-            + ICMP6_ND_OPT_SLLA_LEN
-            + ICMP6_ND_OPT_TLLA_LEN,
+            ICMP6_MESSAGE_LEN__ND_ROUTER_ADVERTISEMENT
+            + sum(len(opt) for opt in self._dummy__nd_options),
         )
 
     def test_icmp6_fpa____len____nd_neighbor_solicitation(self) -> None:
@@ -781,19 +663,15 @@ class TestIcmp6Assembler(TestCase):
         Test the '__len__() dunder for 'Neighbor Solicitation' message.
         """
         packet = Icmp6Assembler(
-            type=ICMP6_ND_NEIGHBOR_SOLICITATION,
-            code=0,
-            ns_target_address=Ip6Address("1:2:3:4:5:6:7:8"),
-            nd_options=[
-                Icmp6NdOptSLLA(MacAddress("11:22:33:44:55:66")),
-                Icmp6NdOptTLLA(MacAddress("66:55:44:33:22:11")),
-            ],
+            message=Icmp6NdNeighborSolicitationMessageAssembler(
+                target_address=self._dummy__target_address,
+                nd_options=self._dummy__nd_options,
+            ),
         )
         self.assertEqual(
             len(packet),
-            ICMP6_ND_NEIGHBOR_SOLICITATION_LEN
-            + ICMP6_ND_OPT_SLLA_LEN
-            + ICMP6_ND_OPT_TLLA_LEN,
+            ICMP6_MESSAGE_LEN__ND_NEIGHBOR_SOLICITATION
+            + sum(len(opt) for opt in self._dummy__nd_options),
         )
 
     def test_icmp6_fpa____len____nd_neighbor_advertisement(self) -> None:
@@ -801,23 +679,18 @@ class TestIcmp6Assembler(TestCase):
         Test the '__len__()' dunder for 'Neighbor Advertisement' message.
         """
         packet = Icmp6Assembler(
-            type=ICMP6_ND_NEIGHBOR_ADVERTISEMENT,
-            code=0,
-            na_flag_r=True,
-            na_flag_s=True,
-            na_flag_o=True,
-            na_target_address=Ip6Address("1:2:3:4:5:6:7:8"),
-            nd_options=[
-                Icmp6NdOptSLLA(MacAddress("11:22:33:44:55:66")),
-                Icmp6NdOptTLLA(MacAddress("66:55:44:33:22:11")),
-            ],
-            echo_tracker=Tracker(prefix="TX"),
+            message=Icmp6NdNeighborAdvertisementMessageAssembler(
+                flag_r=self._dummy__flag_r,
+                flag_s=self._dummy__flag_s,
+                flag_o=self._dummy__flag_o,
+                target_address=self._dummy__target_address,
+                nd_options=self._dummy__nd_options,
+            ),
         )
         self.assertEqual(
             len(packet),
-            ICMP6_ND_NEIGHBOR_ADVERTISEMENT_LEN
-            + ICMP6_ND_OPT_SLLA_LEN
-            + ICMP6_ND_OPT_TLLA_LEN,
+            ICMP6_MESSAGE_LEN__ND_NEIGHBOR_ADVERTISEMENT
+            + sum(len(opt) for opt in self._dummy__nd_options),
         )
 
     def test_icmp6_fpa____str____unreachable_port(self) -> None:
@@ -825,26 +698,30 @@ class TestIcmp6Assembler(TestCase):
         Test the '__str__()' dunder for 'Unreachable Port' message.
         """
         packet = Icmp6Assembler(
-            type=ICMP6_UNREACHABLE,
-            code=ICMP6_UNREACHABLE__PORT,
-            un_data=b"0123456789ABCDEF",
+            message=Icmp6PortUnreachableMessageAssembler(
+                data=self._dummy__data,
+            ),
         )
-        self.assertEqual(str(packet), "ICMPv6 1/4 (unreachable_port), dlen 16")
+        self.assertEqual(
+            str(packet),
+            f"ICMPv6 Unreachable Port, dlen {len(self._dummy__data)}",
+        )
 
     def test_icmp6_fpa____str____echo_request(self) -> None:
         """
         Test the '__str__() dunder for 'Echo Request' message.
         """
         packet = Icmp6Assembler(
-            type=ICMP6_ECHO_REQUEST,
-            code=0,
-            ec_id=12345,
-            ec_seq=54321,
-            ec_data=b"0123456789ABCDEF",
+            message=Icmp6EchoRequestMessageAssembler(
+                id=self._dummy__id,
+                seq=self._dummy__seq,
+                data=self._dummy__data,
+            ),
         )
         self.assertEqual(
             str(packet),
-            "ICMPv6 128/0 (echo_request), id 12345, seq 54321, dlen 16",
+            f"ICMPv6 Echo Request, id {self._dummy__id}, seq {self._dummy__seq}, "
+            f"dlen {len(self._dummy__data)}",
         )
 
     def test_icmp6_fpa____str____echo_reply(self) -> None:
@@ -852,15 +729,16 @@ class TestIcmp6Assembler(TestCase):
         Test the '__str__()'dunder for 'Echo Reply' message.
         """
         packet = Icmp6Assembler(
-            type=ICMP6_ECHO_REPLY,
-            code=0,
-            ec_id=12345,
-            ec_seq=54321,
-            ec_data=b"0123456789ABCDEF",
+            message=Icmp6EchoReplyMessageAssembler(
+                id=self._dummy__id,
+                seq=self._dummy__seq,
+                data=self._dummy__data,
+            ),
         )
         self.assertEqual(
             str(packet),
-            "ICMPv6 129/0 (echo_reply), id 12345, seq 54321, dlen 16",
+            f"ICMPv6 Echo Reply, id {self._dummy__id}, seq {self._dummy__seq}, "
+            f"dlen {len(self._dummy__data)}",
         )
 
     def test_icmp6_fpa____str____nd_router_solicitation(self) -> None:
@@ -868,16 +746,14 @@ class TestIcmp6Assembler(TestCase):
         Test the '__str__()' dunder for 'Router Solicitation' message.
         """
         packet = Icmp6Assembler(
-            type=ICMP6_ND_ROUTER_SOLICITATION,
-            code=0,
-            nd_options=[
-                Icmp6NdOptSLLA(MacAddress("11:22:33:44:55:66")),
-                Icmp6NdOptTLLA(MacAddress("66:55:44:33:22:11")),
-            ],
+            message=Icmp6NdRouterSolicitationMessageAssembler(
+                nd_options=self._dummy__nd_options,
+            ),
         )
         self.assertEqual(
             str(packet),
-            "ICMPv6 133/0 (nd_router_solicitation), slla 11:22:33:44:55:66, "
+            "ICMPv6 ND Router Solicitation, "
+            "slla 11:22:33:44:55:66, "
             "tlla 66:55:44:33:22:11",
         )
 
@@ -888,8 +764,9 @@ class TestIcmp6Assembler(TestCase):
         Test the '__str__()' dunder for 'Router Solicitation' message.
         """
         packet = Icmp6Assembler(
-            type=ICMP6_ND_ROUTER_SOLICITATION,
-            code=0,
+            message=Icmp6NdRouterSolicitationMessageAssembler(
+                nd_options=[],
+            ),
         )
         self.assertEqual(str(packet), "ICMPv6 133/0 (nd_router_solicitation)")
 
@@ -898,19 +775,22 @@ class TestIcmp6Assembler(TestCase):
         Test the '__str__()' dunder for the 'Router Advertisement' message.
         """
         packet = Icmp6Assembler(
-            type=ICMP6_ND_ROUTER_ADVERTISEMENT,
-            code=0,
-            ra_hop=255,
-            ra_flag_m=True,
-            ra_flag_o=True,
-            ra_router_lifetime=12345,
-            ra_reachable_time=12345678,
-            ra_retrans_timer=87654321,
-            nd_options=[
-                Icmp6NdOptSLLA(MacAddress("11:22:33:44:55:66")),
-                Icmp6NdOptTLLA(MacAddress("66:55:44:33:22:11")),
-            ],
-            echo_tracker=Tracker(prefix="TX"),
+            message=Icmp6NdRouterAdvertisementMessageAssembler(
+                hop=255,
+                flag_m=True,
+                flag_o=True,
+                router_lifetime=12345,
+                reachable_time=12345678,
+                retrans_timer=87654321,
+                nd_options=[
+                    Icmp6NdOptSllaAssembler(
+                        slla=MacAddress("11:22:33:44:55:66")
+                    ),
+                    Icmp6NdOptTllaAssembler(
+                        tlla=MacAddress("66:55:44:33:22:11")
+                    ),
+                ],
+            ),
         )
         self.assertEqual(
             str(packet),
@@ -926,19 +806,19 @@ class TestIcmp6Assembler(TestCase):
         Test the '__str__ ()' dunder for 'Router Advertisement' message.
         """
         packet = Icmp6Assembler(
-            type=ICMP6_ND_ROUTER_ADVERTISEMENT,
-            code=0,
-            ra_hop=255,
-            ra_flag_m=True,
-            ra_flag_o=True,
-            ra_router_lifetime=12345,
-            ra_reachable_time=12345678,
-            ra_retrans_timer=87654321,
-            echo_tracker=Tracker(prefix="TX"),
+            message=Icmp6NdRouterAdvertisementMessageAssembler(
+                hop=self._dummy__hop,
+                flag_m=self._dummy__flag_m,
+                flag_o=self._dummy__flag_o,
+                router_lifetime=self._dummy__router_lifetime,
+                reachable_time=self._dummy__reachable_time,
+                retrans_timer=self._dummy__retrans_timer,
+                nd_options=[],
+            ),
         )
         self.assertEqual(
             str(packet),
-            "ICMPv6 134/0 (nd_router_advertisement), hop 255, flags MO, "
+            "ICMPv6 ND Router Advertisement, hop 255, flags MO, "
             "rlft 12345, reacht 12345678, retrt 87654321",
         )
 
@@ -947,17 +827,14 @@ class TestIcmp6Assembler(TestCase):
         Test the '__str__()' dunder for 'Neighbor Solicitation' message.
         """
         packet = Icmp6Assembler(
-            type=ICMP6_ND_NEIGHBOR_SOLICITATION,
-            code=0,
-            ns_target_address=Ip6Address("1:2:3:4:5:6:7:8"),
-            nd_options=[
-                Icmp6NdOptSLLA(MacAddress("11:22:33:44:55:66")),
-                Icmp6NdOptTLLA(MacAddress("66:55:44:33:22:11")),
-            ],
+            message=Icmp6NdNeighborSolicitationMessageAssembler(
+                target_address=self._dummy__target_address,
+                nd_options=self._dummy__nd_options,
+            ),
         )
         self.assertEqual(
             str(packet),
-            "ICMPv6 135/0 (nd_neighbor_solicitation), target 1:2:3:4:5:6:7:8, "
+            "ICMPv6 Neighbor Solicitation, target 1:2:3:4:5:6:7:8, "
             "slla 11:22:33:44:55:66, tlla 66:55:44:33:22:11",
         )
 
@@ -968,9 +845,10 @@ class TestIcmp6Assembler(TestCase):
         Test the '__str__()' dunder for 'Neighbor Solicitation' message.
         """
         packet = Icmp6Assembler(
-            type=ICMP6_ND_NEIGHBOR_SOLICITATION,
-            code=0,
-            ns_target_address=Ip6Address("1:2:3:4:5:6:7:8"),
+            message=Icmp6NdNeighborSolicitationMessageAssembler(
+                target_address=self._dummy__target_address,
+                nd_options=[],
+            )
         )
         self.assertEqual(
             str(packet),
@@ -982,17 +860,20 @@ class TestIcmp6Assembler(TestCase):
         Test '__str__()' dunder for 'Neighbor Advertisement' message.
         """
         packet = Icmp6Assembler(
-            type=ICMP6_ND_NEIGHBOR_ADVERTISEMENT,
-            code=0,
-            na_flag_r=True,
-            na_flag_s=True,
-            na_flag_o=True,
-            na_target_address=Ip6Address("1:2:3:4:5:6:7:8"),
-            nd_options=[
-                Icmp6NdOptSLLA(MacAddress("11:22:33:44:55:66")),
-                Icmp6NdOptTLLA(MacAddress("66:55:44:33:22:11")),
-            ],
-            echo_tracker=Tracker(prefix="TX"),
+            message=Icmp6NdNeighborAdvertisementMessageAssembler(
+                flag_r=True,
+                flag_s=True,
+                flag_o=True,
+                target_address=Ip6Address("1:2:3:4:5:6:7:8"),
+                nd_options=[
+                    Icmp6NdOptSllaAssembler(
+                        slla=MacAddress("11:22:33:44:55:66")
+                    ),
+                    Icmp6NdOptTllaAssembler(
+                        tlla=MacAddress("66:55:44:33:22:11")
+                    ),
+                ],
+            ),
         )
         self.assertEqual(
             str(packet),
@@ -1007,25 +888,28 @@ class TestIcmp6Assembler(TestCase):
         Test the '__str__()' dunder for 'Neighbor Advertisement' message.
         """
         packet = Icmp6Assembler(
-            type=ICMP6_ND_NEIGHBOR_ADVERTISEMENT,
-            code=0,
-            na_flag_r=True,
-            na_flag_s=True,
-            na_flag_o=True,
-            na_target_address=Ip6Address("1:2:3:4:5:6:7:8"),
-            echo_tracker=Tracker(prefix="TX"),
+            message=Icmp6NdNeighborAdvertisementMessageAssembler(
+                flag_r=self._dummy__flag_r,
+                flag_s=self._dummy__flag_s,
+                flag_o=self._dummy__flag_o,
+                target_address=self._dummy__target_address,
+                nd_options=[],
+            ),
         )
         self.assertEqual(
             str(packet),
-            "ICMPv6 136/0 (nd_neighbor_advertisement), target 1:2:3:4:5:6:7:8, "
-            "flags RSO",
+            "ICMPv6 136/0 (nd_neighbor_advertisement), "
+            "target 1:2:3:4:5:6:7:8, flags RSO",
         )
 
     def test_icmp6_fpa__tracker_getter(self) -> None:
         """
         Test the '_tracker' attribute getter.
         """
-        packet = Icmp6Assembler()
+        packet = Icmp6Assembler(
+            message=Icmp6PortUnreachableMessageAssembler(data=b""),
+            echo_tracker=Tracker(prefix="TX"),
+        )
         self.assertTrue(
             repr(packet.tracker).startswith("Tracker(serial='<lr>TX")
         )
@@ -1035,9 +919,9 @@ class TestIcmp6Assembler(TestCase):
         Test the 'assemble()' method for 'Unreachable Port' message.
         """
         packet = Icmp6Assembler(
-            type=ICMP6_UNREACHABLE,
-            code=ICMP6_UNREACHABLE__PORT,
-            un_data=b"0123456789ABCDEF",
+            message=Icmp6PortUnreachableMessageAssembler(
+                data=b"0123456789ABCDEF"
+            )
         )
         frame = memoryview(bytearray(len(packet)))
         packet.assemble(frame, 1234567)
@@ -1050,11 +934,11 @@ class TestIcmp6Assembler(TestCase):
         Test the 'assemble()' method for 'Echo Request' message.
         """
         packet = Icmp6Assembler(
-            type=ICMP6_ECHO_REQUEST,
-            code=0,
-            ec_id=12345,
-            ec_seq=54321,
-            ec_data=b"0123456789ABCDEF",
+            message=Icmp6EchoRequestMessageAssembler(
+                id=12345,
+                seq=54321,
+                data=b"0123456789ABCDEF",
+            ),
         )
         frame = memoryview(bytearray(len(packet)))
         packet.assemble(frame, 12345678)
@@ -1065,11 +949,11 @@ class TestIcmp6Assembler(TestCase):
         Test the 'assemble() method for 'Echo Reply' message..
         """
         packet = Icmp6Assembler(
-            type=ICMP6_ECHO_REPLY,
-            code=0,
-            ec_id=12345,
-            ec_seq=54321,
-            ec_data=b"0123456789ABCDEF",
+            message=Icmp6EchoReplyMessageAssembler(
+                id=12345,
+                seq=54321,
+                data=b"0123456789ABCDEF",
+            ),
         )
         frame = memoryview(bytearray(len(packet)))
         packet.assemble(frame, 12345678)
@@ -1080,12 +964,16 @@ class TestIcmp6Assembler(TestCase):
         Test the 'assemble()' method for 'Router Solicitation' message.
         """
         packet = Icmp6Assembler(
-            type=ICMP6_ND_ROUTER_SOLICITATION,
-            code=0,
-            nd_options=[
-                Icmp6NdOptSLLA(MacAddress("11:22:33:44:55:66")),
-                Icmp6NdOptTLLA(MacAddress("66:55:44:33:22:11")),
-            ],
+            message=Icmp6NdRouterSolicitationMessageAssembler(
+                nd_options=[
+                    Icmp6NdOptSllaAssembler(
+                        slla=MacAddress("11:22:33:44:55:66")
+                    ),
+                    Icmp6NdOptTllaAssembler(
+                        tlla=MacAddress("66:55:44:33:22:11")
+                    ),
+                ],
+            ),
         )
         frame = memoryview(bytearray(len(packet)))
         packet.assemble(frame, 12345678)
@@ -1100,19 +988,22 @@ class TestIcmp6Assembler(TestCase):
         Test 'assemble()' method for 'Router Advertisement' message.
         """
         packet = Icmp6Assembler(
-            type=ICMP6_ND_ROUTER_ADVERTISEMENT,
-            code=0,
-            ra_hop=255,
-            ra_flag_m=True,
-            ra_flag_o=True,
-            ra_router_lifetime=12345,
-            ra_reachable_time=12345678,
-            ra_retrans_timer=87654321,
-            nd_options=[
-                Icmp6NdOptSLLA(MacAddress("11:22:33:44:55:66")),
-                Icmp6NdOptTLLA(MacAddress("66:55:44:33:22:11")),
-            ],
-            echo_tracker=Tracker(prefix="TX"),
+            message=Icmp6NdRouterAdvertisementMessageAssembler(
+                hop=255,
+                flag_m=True,
+                flag_o=True,
+                router_lifetime=12345,
+                reachable_time=12345678,
+                retrans_timer=87654321,
+                nd_options=[
+                    Icmp6NdOptSllaAssembler(
+                        slla=MacAddress("11:22:33:44:55:66")
+                    ),
+                    Icmp6NdOptTllaAssembler(
+                        tlla=MacAddress("66:55:44:33:22:11")
+                    ),
+                ],
+            )
         )
         frame = memoryview(bytearray(len(packet)))
         packet.assemble(frame, 12345678)
@@ -1127,13 +1018,17 @@ class TestIcmp6Assembler(TestCase):
         Test the 'assemble() method for 'Neighbor Solicitation' message.
         """
         packet = Icmp6Assembler(
-            type=ICMP6_ND_NEIGHBOR_SOLICITATION,
-            code=0,
-            ns_target_address=Ip6Address("1:2:3:4:5:6:7:8"),
-            nd_options=[
-                Icmp6NdOptSLLA(MacAddress("11:22:33:44:55:66")),
-                Icmp6NdOptTLLA(MacAddress("66:55:44:33:22:11")),
-            ],
+            message=Icmp6NdNeighborSolicitationMessageAssembler(
+                target_address=Ip6Address("1:2:3:4:5:6:7:8"),
+                nd_options=[
+                    Icmp6NdOptSllaAssembler(
+                        slla=MacAddress("11:22:33:44:55:66")
+                    ),
+                    Icmp6NdOptTllaAssembler(
+                        tlla=MacAddress("66:55:44:33:22:11")
+                    ),
+                ],
+            ),
         )
         frame = memoryview(bytearray(len(packet)))
         packet.assemble(frame, 12345678)
@@ -1148,17 +1043,20 @@ class TestIcmp6Assembler(TestCase):
         Test the 'assemble()' method for 'Neighbor Advertisement' message.
         """
         packet = Icmp6Assembler(
-            type=ICMP6_ND_NEIGHBOR_ADVERTISEMENT,
-            code=0,
-            na_flag_r=True,
-            na_flag_s=True,
-            na_flag_o=True,
-            na_target_address=Ip6Address("1:2:3:4:5:6:7:8"),
-            nd_options=[
-                Icmp6NdOptSLLA(MacAddress("11:22:33:44:55:66")),
-                Icmp6NdOptTLLA(MacAddress("66:55:44:33:22:11")),
-            ],
-            echo_tracker=Tracker(prefix="TX"),
+            message=Icmp6NdNeighborAdvertisementMessageAssembler(
+                flag_r=True,
+                flag_s=True,
+                flag_o=True,
+                target_address=Ip6Address("1:2:3:4:5:6:7:8"),
+                nd_options=[
+                    Icmp6NdOptSllaAssembler(
+                        slla=MacAddress("11:22:33:44:55:66")
+                    ),
+                    Icmp6NdOptTllaAssembler(
+                        tlla=MacAddress("66:55:44:33:22:11")
+                    ),
+                ],
+            ),
         )
         frame = memoryview(bytearray(len(packet)))
         packet.assemble(frame, 12345678)
@@ -1179,37 +1077,43 @@ class TestIcmp6NdOptSLLA(TestCase):
         """
         Test the option constructor.
         """
-        option = Icmp6NdOptSLLA(MacAddress("11:22:33:44:55:66"))
+
+        option = Icmp6NdOptSllaAssembler(slla=MacAddress("11:22:33:44:55:66"))
         self.assertEqual(option._slla, MacAddress("11:22:33:44:55:66"))
 
     def test_icmp6_fpa_nd_opt_slla____str__(self) -> None:
         """
         Test the '__str__()' dunder.
         """
-        option = Icmp6NdOptSLLA(MacAddress("11:22:33:44:55:66"))
+
+        option = Icmp6NdOptSllaAssembler(slla=MacAddress("11:22:33:44:55:66"))
         self.assertEqual(str(option), "slla 11:22:33:44:55:66")
 
     def test_icmp6_fpa_nd_opt_slla____repr__(self) -> None:
         """
         Test the '__repr__()' dunder.
         """
-        option = Icmp6NdOptSLLA(MacAddress("11:22:33:44:55:66"))
+
+        option = Icmp6NdOptSllaAssembler(slla=MacAddress("11:22:33:44:55:66"))
         self.assertEqual(repr(option), f"Icmp6NdOptSLLA({repr(option._slla)})")
 
     def test_icmp6_fpa_nd_opt_slla____bytes__(self) -> None:
         """
         Test the '__bytes__()' dunder.
         """
-        option = Icmp6NdOptSLLA(MacAddress("11:22:33:44:55:66"))
+
+        option = Icmp6NdOptSllaAssembler(slla=MacAddress("11:22:33:44:55:66"))
         self.assertEqual(bytes(option), b'\x01\x01\x11"3DUf')
 
     def test_icmp6_fpa_nd_opt_slla____eq__(self) -> None:
         """
         Test the '__eq__()' dunder.
         """
-        option = Icmp6NdOptSLLA(MacAddress("11:22:33:44:55:66"))
+
+        option = Icmp6NdOptSllaAssembler(slla=MacAddress("11:22:33:44:55:66"))
         self.assertEqual(
-            option, Icmp6NdOptSLLA(MacAddress("11:22:33:44:55:66"))
+            option,
+            Icmp6NdOptSllaAssembler(slla=MacAddress("11:22:33:44:55:66")),
         )
 
 
@@ -1222,37 +1126,43 @@ class TestIcmp6NdOptTLLA(TestCase):
         """
         Test the option constructor.
         """
-        option = Icmp6NdOptTLLA(MacAddress("66:55:44:33:22:11"))
+
+        option = Icmp6NdOptTllaAssembler(tlla=MacAddress("66:55:44:33:22:11"))
         self.assertEqual(option._tlla, MacAddress("66:55:44:33:22:11"))
 
     def test_icmp6_fpa_nd_opt_tlla____str__(self) -> None:
         """
         Test the '__str__()' dunder.
         """
-        option = Icmp6NdOptTLLA(MacAddress("66:55:44:33:22:11"))
+
+        option = Icmp6NdOptTllaAssembler(tlla=MacAddress("66:55:44:33:22:11"))
         self.assertEqual(str(option), "tlla 66:55:44:33:22:11")
 
     def test_icmp6_fpa_nd_opt_tlla____repr__(self) -> None:
         """
         Test the '__repr__()' dunder.
         """
-        option = Icmp6NdOptTLLA(MacAddress("66:55:44:33:22:11"))
+
+        option = Icmp6NdOptTllaAssembler(tlla=MacAddress("66:55:44:33:22:11"))
         self.assertEqual(repr(option), f"Icmp6NdOptTLLA({repr(option._tlla)})")
 
     def test_icmp6_fpa_nd_opt_tlla____bytes__(self) -> None:
         """
         Test the '__bytes__()' dunder.
         """
-        option = Icmp6NdOptTLLA(MacAddress("66:55:44:33:22:11"))
+
+        option = Icmp6NdOptTllaAssembler(tlla=MacAddress("66:55:44:33:22:11"))
         self.assertEqual(bytes(option), b'\x02\x01fUD3"\x11')
 
     def test_icmp6_fpa_nd_opt_tlla____eq__(self) -> None:
         """
         Test the '__eq__()' dunder.
         """
-        option = Icmp6NdOptTLLA(MacAddress("66:55:44:33:22:11"))
+
+        option = Icmp6NdOptTllaAssembler(tlla=MacAddress("66:55:44:33:22:11"))
         self.assertEqual(
-            option, Icmp6NdOptTLLA(MacAddress("66:55:44:33:22:11"))
+            option,
+            Icmp6NdOptTllaAssembler(tlla=MacAddress("66:55:44:33:22:11")),
         )
 
 
@@ -1265,7 +1175,8 @@ class TestIcmp6NdOptPI(TestCase):
         """
         Test the option constructor.
         """
-        option = Icmp6NdOptPI(
+
+        option = Icmp6NdOptPiAssembler(
             valid_lifetime=12345678,
             prefer_lifetime=87654321,
             prefix=Ip6Network("1:2:3:4::/64"),
@@ -1287,7 +1198,7 @@ class TestIcmp6NdOptPI(TestCase):
         Test assertion for the 'valid_lifetime' argument.
         """
         with self.assertRaises(AssertionError):
-            Icmp6NdOptPI(
+            Icmp6NdOptPiAssembler(
                 valid_lifetime=-1,
                 prefer_lifetime=87654321,
                 prefix=Ip6Network("1:2:3:4::/64"),
@@ -1300,7 +1211,7 @@ class TestIcmp6NdOptPI(TestCase):
         Test assertion for the 'valid_lifetime' argument.
         """
         with self.assertRaises(AssertionError):
-            Icmp6NdOptPI(
+            Icmp6NdOptPiAssembler(
                 valid_lifetime=0x100000000,
                 prefer_lifetime=87654321,
                 prefix=Ip6Network("1:2:3:4::/64"),
@@ -1313,7 +1224,7 @@ class TestIcmp6NdOptPI(TestCase):
         Test assertion for the 'prefer_lifetime' argument.
         """
         with self.assertRaises(AssertionError):
-            Icmp6NdOptPI(
+            Icmp6NdOptPiAssembler(
                 valid_lifetime=12345678,
                 prefer_lifetime=-1,
                 prefix=Ip6Network("1:2:3:4::/64"),
@@ -1326,7 +1237,7 @@ class TestIcmp6NdOptPI(TestCase):
         Test assertion for the 'prefer_lifetime' argument.
         """
         with self.assertRaises(AssertionError):
-            Icmp6NdOptPI(
+            Icmp6NdOptPiAssembler(
                 valid_lifetime=12345678,
                 prefer_lifetime=0x100000000,
                 prefix=Ip6Network("1:2:3:4::/64"),
@@ -1336,7 +1247,7 @@ class TestIcmp6NdOptPI(TestCase):
         """
         Test the '__str__()' dunder.
         """
-        option = Icmp6NdOptPI(
+        option = Icmp6NdOptPiAssembler(
             valid_lifetime=12345678,
             prefer_lifetime=87654321,
             prefix=Ip6Network("1:2:3:4::/64"),
@@ -1354,7 +1265,7 @@ class TestIcmp6NdOptPI(TestCase):
         """
         Test the '__repr__()' dunder.
         """
-        option = Icmp6NdOptPI(
+        option = Icmp6NdOptPiAssembler(
             valid_lifetime=12345678,
             prefer_lifetime=87654321,
             prefix=Ip6Network("1:2:3:4::/64"),
@@ -1373,7 +1284,7 @@ class TestIcmp6NdOptPI(TestCase):
         """
         Test the '__bytes__() dunder.
         """
-        option = Icmp6NdOptPI(
+        option = Icmp6NdOptPiAssembler(
             valid_lifetime=12345678,
             prefer_lifetime=87654321,
             prefix=Ip6Network("1:2:3:4::/64"),
@@ -1391,7 +1302,7 @@ class TestIcmp6NdOptPI(TestCase):
         """
         Test the '__eq__()' dunder.
         """
-        option = Icmp6NdOptPI(
+        option = Icmp6NdOptPiAssembler(
             valid_lifetime=12345678,
             prefer_lifetime=87654321,
             prefix=Ip6Network("1:2:3:4::/64"),
@@ -1401,7 +1312,7 @@ class TestIcmp6NdOptPI(TestCase):
         )
         self.assertEqual(
             option,
-            Icmp6NdOptPI(
+            Icmp6NdOptPiAssembler(
                 valid_lifetime=12345678,
                 prefer_lifetime=87654321,
                 prefix=Ip6Network("1:2:3:4::/64"),

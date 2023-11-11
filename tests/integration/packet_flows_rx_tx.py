@@ -49,8 +49,8 @@ from pytcp.subsystems.tx_ring import TxRing
 
 PACKET_HANDLER_MODULES = [
     "pytcp.subsystems.packet_handler",
-    "protocols.ether.phrx",
-    "protocols.ether.phtx",
+    "protocols.ethernet.phrx",
+    "protocols.ethernet.phtx",
     "protocols.arp.phrx",
     "protocols.arp.phtx",
     "protocols.ip4.phrx",
@@ -74,8 +74,6 @@ CONFIG_PATCHES = {
     "LOG_CHANEL": set(),
     "IP6_SUPPORT": True,
     "IP4_SUPPORT": True,
-    "PACKET_INTEGRITY_CHECK": True,
-    "PACKET_SANITY_CHECK": True,
     "TAP_MTU": 1500,
     "UDP_ECHO_NATIVE_DISABLE": False,
 }
@@ -198,12 +196,12 @@ class TestPacketHandlerRxTx(TestCase):
             packet_rx = _.read()
         with open("tests/integration/test_frames/rx_tx/ip4_ping.tx", "rb") as _:
             packet_tx = _.read()
-        self.packet_handler._phrx_ether(PacketRx(packet_rx))
+        self.packet_handler._phrx_ethernet(packet_rx=PacketRx(packet_rx))
         self.assertEqual(
             self.packet_handler.packet_stats_rx,
             PacketStatsRx(
-                ether__pre_parse=1,
-                ether__dst_unicast=1,
+                ethernet__pre_parse=1,
+                ethernet__dst_unicast=1,
                 ip4__pre_parse=1,
                 ip4__dst_unicast=1,
                 icmp4__pre_parse=1,
@@ -217,10 +215,10 @@ class TestPacketHandlerRxTx(TestCase):
                 icmp4__echo_reply__send=1,
                 ip4__pre_assemble=1,
                 ip4__mtu_ok__send=1,
-                ether__pre_assemble=1,
-                ether__src_unspec__fill=1,
-                ether__dst_unspec__ip4_lookup=1,
-                ether__dst_unspec__ip4_lookup__locnet__arp_cache_hit__send=1,
+                ethernet__pre_assemble=1,
+                ethernet__src_unspec__fill=1,
+                ethernet__dst_unspec__ip4_lookup=1,
+                ethernet__dst_unspec__ip4_lookup__locnet__arp_cache_hit__send=1,
             ),
         )
         self.assertEqual(self.packet_tx[: len(packet_tx)], packet_tx)
@@ -240,12 +238,12 @@ class TestPacketHandlerRxTx(TestCase):
             "rb",
         ) as _:
             packet_tx = _.read()
-        self.packet_handler._phrx_ether(PacketRx(packet_rx))
+        self.packet_handler._phrx_ethernet(packet_rx=PacketRx(packet_rx))
         self.assertEqual(
             self.packet_handler.packet_stats_rx,
             PacketStatsRx(
-                ether__pre_parse=1,
-                ether__dst_unicast=1,
+                ethernet__pre_parse=1,
+                ethernet__dst_unicast=1,
                 ip4__pre_parse=1,
                 ip4__dst_unicast=1,
                 udp__pre_parse=1,
@@ -259,10 +257,10 @@ class TestPacketHandlerRxTx(TestCase):
                 icmp4__unreachable_port__send=1,
                 ip4__pre_assemble=1,
                 ip4__mtu_ok__send=1,
-                ether__pre_assemble=1,
-                ether__src_unspec__fill=1,
-                ether__dst_unspec__ip4_lookup=1,
-                ether__dst_unspec__ip4_lookup__locnet__arp_cache_hit__send=1,
+                ethernet__pre_assemble=1,
+                ethernet__src_unspec__fill=1,
+                ethernet__dst_unspec__ip4_lookup=1,
+                ethernet__dst_unspec__ip4_lookup__locnet__arp_cache_hit__send=1,
             ),
         )
         self.assertEqual(self.packet_tx[: len(packet_tx)], packet_tx)
@@ -279,12 +277,12 @@ class TestPacketHandlerRxTx(TestCase):
             "tests/integration/test_frames/rx_tx/ip4_udp_echo.tx", "rb"
         ) as _:
             packet_tx = _.read()
-        self.packet_handler._phrx_ether(PacketRx(packet_rx))
+        self.packet_handler._phrx_ethernet(packet_rx=PacketRx(packet_rx))
         self.assertEqual(
             self.packet_handler.packet_stats_rx,
             PacketStatsRx(
-                ether__pre_parse=1,
-                ether__dst_unicast=1,
+                ethernet__pre_parse=1,
+                ethernet__dst_unicast=1,
                 ip4__pre_parse=1,
                 ip4__dst_unicast=1,
                 udp__pre_parse=1,
@@ -298,10 +296,10 @@ class TestPacketHandlerRxTx(TestCase):
                 udp__send=1,
                 ip4__pre_assemble=1,
                 ip4__mtu_ok__send=1,
-                ether__pre_assemble=1,
-                ether__src_unspec__fill=1,
-                ether__dst_unspec__ip4_lookup=1,
-                ether__dst_unspec__ip4_lookup__locnet__arp_cache_hit__send=1,
+                ethernet__pre_assemble=1,
+                ethernet__src_unspec__fill=1,
+                ethernet__dst_unspec__ip4_lookup=1,
+                ethernet__dst_unspec__ip4_lookup__locnet__arp_cache_hit__send=1,
             ),
         )
         self.assertEqual(self.packet_tx[: len(packet_tx)], packet_tx)
@@ -325,12 +323,12 @@ class TestPacketHandlerRxTx(TestCase):
         ) as _:
             packet_tx = _.read()
         for index in order:
-            self.packet_handler._phrx_ether(PacketRx(frags[index]))
+            self.packet_handler._phrx_ethernet(packet_rx=PacketRx(frags[index]))
         self.assertEqual(
             self.packet_handler.packet_stats_rx,
             PacketStatsRx(
-                ether__pre_parse=len(order),
-                ether__dst_unicast=len(order),
+                ethernet__pre_parse=len(order),
+                ethernet__dst_unicast=len(order),
                 ip4__pre_parse=len(order),
                 ip4__dst_unicast=len(order),
                 ip4__frag=len(order),
@@ -346,10 +344,10 @@ class TestPacketHandlerRxTx(TestCase):
                 udp__send=1,
                 ip4__pre_assemble=1,
                 ip4__mtu_ok__send=1,
-                ether__pre_assemble=1,
-                ether__src_unspec__fill=1,
-                ether__dst_unspec__ip4_lookup=1,
-                ether__dst_unspec__ip4_lookup__locnet__arp_cache_hit__send=1,
+                ethernet__pre_assemble=1,
+                ethernet__src_unspec__fill=1,
+                ethernet__dst_unspec__ip4_lookup=1,
+                ethernet__dst_unspec__ip4_lookup__locnet__arp_cache_hit__send=1,
             ),
         )
         self.assertEqual(self.packet_tx[: len(packet_tx)], packet_tx)
@@ -415,12 +413,12 @@ class TestPacketHandlerRxTx(TestCase):
                 "rb",
             ) as _:
                 frags.append(_.read())
-        self.packet_handler._phrx_ether(PacketRx(packet_rx))
+        self.packet_handler._phrx_ethernet(packet_rx=PacketRx(packet_rx))
         self.assertEqual(
             self.packet_handler.packet_stats_rx,
             PacketStatsRx(
-                ether__pre_parse=1,
-                ether__dst_unicast=1,
+                ethernet__pre_parse=1,
+                ethernet__dst_unicast=1,
                 ip4__pre_parse=1,
                 ip4__dst_unicast=1,
                 udp__pre_parse=1,
@@ -435,10 +433,10 @@ class TestPacketHandlerRxTx(TestCase):
                 ip4__pre_assemble=1,
                 ip4__mtu_exceed__frag=1,
                 ip4__mtu_exceed__frag__send=5,
-                ether__pre_assemble=5,
-                ether__src_unspec__fill=5,
-                ether__dst_unspec__ip4_lookup=5,
-                ether__dst_unspec__ip4_lookup__locnet__arp_cache_hit__send=5,
+                ethernet__pre_assemble=5,
+                ethernet__src_unspec__fill=5,
+                ethernet__dst_unspec__ip4_lookup=5,
+                ethernet__dst_unspec__ip4_lookup__locnet__arp_cache_hit__send=5,
             ),
         )
         for index in range(5):
@@ -461,12 +459,12 @@ class TestPacketHandlerRxTx(TestCase):
             "rb",
         ) as _:
             packet_tx = _.read()
-        self.packet_handler._phrx_ether(PacketRx(packet_rx))
+        self.packet_handler._phrx_ethernet(packet_rx=PacketRx(packet_rx))
         self.assertEqual(
             self.packet_handler.packet_stats_rx,
             PacketStatsRx(
-                ether__pre_parse=1,
-                ether__dst_unicast=1,
+                ethernet__pre_parse=1,
+                ethernet__dst_unicast=1,
                 ip4__pre_parse=1,
                 ip4__dst_unicast=1,
                 tcp__pre_parse=1,
@@ -482,10 +480,10 @@ class TestPacketHandlerRxTx(TestCase):
                 tcp__send=1,
                 ip4__pre_assemble=1,
                 ip4__mtu_ok__send=1,
-                ether__pre_assemble=1,
-                ether__src_unspec__fill=1,
-                ether__dst_unspec__ip4_lookup=1,
-                ether__dst_unspec__ip4_lookup__locnet__arp_cache_hit__send=1,
+                ethernet__pre_assemble=1,
+                ethernet__src_unspec__fill=1,
+                ethernet__dst_unspec__ip4_lookup=1,
+                ethernet__dst_unspec__ip4_lookup__locnet__arp_cache_hit__send=1,
             ),
         )
         self.assertEqual(self.packet_tx[: len(packet_tx)], packet_tx)
@@ -498,12 +496,12 @@ class TestPacketHandlerRxTx(TestCase):
             packet_rx = _.read()
         with open("tests/integration/test_frames/rx_tx/ip6_ping.tx", "rb") as _:
             packet_tx = _.read()
-        self.packet_handler._phrx_ether(PacketRx(packet_rx))
+        self.packet_handler._phrx_ethernet(packet_rx=PacketRx(packet_rx))
         self.assertEqual(
             self.packet_handler.packet_stats_rx,
             PacketStatsRx(
-                ether__pre_parse=1,
-                ether__dst_unicast=1,
+                ethernet__pre_parse=1,
+                ethernet__dst_unicast=1,
                 ip6__pre_parse=1,
                 ip6__dst_unicast=1,
                 icmp6__pre_parse=1,
@@ -517,10 +515,10 @@ class TestPacketHandlerRxTx(TestCase):
                 icmp6__echo_reply__send=1,
                 ip6__pre_assemble=1,
                 ip6__mtu_ok__send=1,
-                ether__pre_assemble=1,
-                ether__src_unspec__fill=1,
-                ether__dst_unspec__ip6_lookup=1,
-                ether__dst_unspec__ip6_lookup__locnet__nd_cache_hit__send=1,
+                ethernet__pre_assemble=1,
+                ethernet__src_unspec__fill=1,
+                ethernet__dst_unspec__ip6_lookup=1,
+                ethernet__dst_unspec__ip6_lookup__locnet__nd_cache_hit__send=1,
             ),
         )
         self.assertEqual(self.packet_tx[: len(packet_tx)], packet_tx)
@@ -540,12 +538,12 @@ class TestPacketHandlerRxTx(TestCase):
             "rb",
         ) as _:
             packet_tx = _.read()
-        self.packet_handler._phrx_ether(PacketRx(packet_rx))
+        self.packet_handler._phrx_ethernet(packet_rx=PacketRx(packet_rx))
         self.assertEqual(
             self.packet_handler.packet_stats_rx,
             PacketStatsRx(
-                ether__pre_parse=1,
-                ether__dst_unicast=1,
+                ethernet__pre_parse=1,
+                ethernet__dst_unicast=1,
                 ip6__pre_parse=1,
                 ip6__dst_unicast=1,
                 udp__pre_parse=1,
@@ -559,10 +557,10 @@ class TestPacketHandlerRxTx(TestCase):
                 icmp6__unreachable_port__send=1,
                 ip6__pre_assemble=1,
                 ip6__mtu_ok__send=1,
-                ether__pre_assemble=1,
-                ether__src_unspec__fill=1,
-                ether__dst_unspec__ip6_lookup=1,
-                ether__dst_unspec__ip6_lookup__locnet__nd_cache_hit__send=1,
+                ethernet__pre_assemble=1,
+                ethernet__src_unspec__fill=1,
+                ethernet__dst_unspec__ip6_lookup=1,
+                ethernet__dst_unspec__ip6_lookup__locnet__nd_cache_hit__send=1,
             ),
         )
         self.assertEqual(self.packet_tx[: len(packet_tx)], packet_tx)
@@ -579,12 +577,12 @@ class TestPacketHandlerRxTx(TestCase):
             "tests/integration/test_frames/rx_tx/ip6_udp_echo.tx", "rb"
         ) as _:
             packet_tx = _.read()
-        self.packet_handler._phrx_ether(PacketRx(packet_rx))
+        self.packet_handler._phrx_ethernet(packet_rx=PacketRx(packet_rx))
         self.assertEqual(
             self.packet_handler.packet_stats_rx,
             PacketStatsRx(
-                ether__pre_parse=1,
-                ether__dst_unicast=1,
+                ethernet__pre_parse=1,
+                ethernet__dst_unicast=1,
                 ip6__pre_parse=1,
                 ip6__dst_unicast=1,
                 udp__pre_parse=1,
@@ -598,10 +596,10 @@ class TestPacketHandlerRxTx(TestCase):
                 udp__send=1,
                 ip6__pre_assemble=1,
                 ip6__mtu_ok__send=1,
-                ether__pre_assemble=1,
-                ether__src_unspec__fill=1,
-                ether__dst_unspec__ip6_lookup=1,
-                ether__dst_unspec__ip6_lookup__locnet__nd_cache_hit__send=1,
+                ethernet__pre_assemble=1,
+                ethernet__src_unspec__fill=1,
+                ethernet__dst_unspec__ip6_lookup=1,
+                ethernet__dst_unspec__ip6_lookup__locnet__nd_cache_hit__send=1,
             ),
         )
         self.assertEqual(self.packet_tx[: len(packet_tx)], packet_tx)
@@ -625,12 +623,12 @@ class TestPacketHandlerRxTx(TestCase):
         ) as _:
             packet_tx = _.read()
         for index in order:
-            self.packet_handler._phrx_ether(PacketRx(frags[index]))
+            self.packet_handler._phrx_ethernet(packet_rx=PacketRx(frags[index]))
         self.assertEqual(
             self.packet_handler.packet_stats_rx,
             PacketStatsRx(
-                ether__pre_parse=len(order),
-                ether__dst_unicast=len(order),
+                ethernet__pre_parse=len(order),
+                ethernet__dst_unicast=len(order),
                 ip6__pre_parse=len(order)
                 + 1,  # For the IPv6 frag implementation packet once reasembled
                 ip6__dst_unicast=len(order)
@@ -648,10 +646,10 @@ class TestPacketHandlerRxTx(TestCase):
                 udp__send=1,
                 ip6__pre_assemble=1,
                 ip6__mtu_ok__send=1,
-                ether__pre_assemble=1,
-                ether__src_unspec__fill=1,
-                ether__dst_unspec__ip6_lookup=1,
-                ether__dst_unspec__ip6_lookup__locnet__nd_cache_hit__send=1,
+                ethernet__pre_assemble=1,
+                ethernet__src_unspec__fill=1,
+                ethernet__dst_unspec__ip6_lookup=1,
+                ethernet__dst_unspec__ip6_lookup__locnet__nd_cache_hit__send=1,
             ),
         )
         self.assertEqual(self.packet_tx[: len(packet_tx)], packet_tx)
@@ -716,12 +714,12 @@ class TestPacketHandlerRxTx(TestCase):
                 "rb",
             ) as _:
                 frags.append(_.read())
-        self.packet_handler._phrx_ether(PacketRx(packet_rx))
+        self.packet_handler._phrx_ethernet(packet_rx=PacketRx(packet_rx))
         self.assertEqual(
             self.packet_handler.packet_stats_rx,
             PacketStatsRx(
-                ether__pre_parse=1,
-                ether__dst_unicast=1,
+                ethernet__pre_parse=1,
+                ethernet__dst_unicast=1,
                 ip6__pre_parse=1,
                 ip6__dst_unicast=1,
                 udp__pre_parse=1,
@@ -739,10 +737,10 @@ class TestPacketHandlerRxTx(TestCase):
                 ip6__mtu_ok__send=5,
                 ip6_ext_frag__pre_assemble=1,
                 ip6_ext_frag__send=5,
-                ether__pre_assemble=5,
-                ether__src_unspec__fill=5,
-                ether__dst_unspec__ip6_lookup=5,
-                ether__dst_unspec__ip6_lookup__locnet__nd_cache_hit__send=5,
+                ethernet__pre_assemble=5,
+                ethernet__src_unspec__fill=5,
+                ethernet__dst_unspec__ip6_lookup=5,
+                ethernet__dst_unspec__ip6_lookup__locnet__nd_cache_hit__send=5,
             ),
         )
         for index in range(5):
@@ -765,12 +763,12 @@ class TestPacketHandlerRxTx(TestCase):
             "rb",
         ) as _:
             packet_tx = _.read()
-        self.packet_handler._phrx_ether(PacketRx(packet_rx))
+        self.packet_handler._phrx_ethernet(packet_rx=PacketRx(packet_rx))
         self.assertEqual(
             self.packet_handler.packet_stats_rx,
             PacketStatsRx(
-                ether__pre_parse=1,
-                ether__dst_unicast=1,
+                ethernet__pre_parse=1,
+                ethernet__dst_unicast=1,
                 ip6__pre_parse=1,
                 ip6__dst_unicast=1,
                 tcp__pre_parse=1,
@@ -786,10 +784,10 @@ class TestPacketHandlerRxTx(TestCase):
                 tcp__send=1,
                 ip6__pre_assemble=1,
                 ip6__mtu_ok__send=1,
-                ether__pre_assemble=1,
-                ether__src_unspec__fill=1,
-                ether__dst_unspec__ip6_lookup=1,
-                ether__dst_unspec__ip6_lookup__locnet__nd_cache_hit__send=1,
+                ethernet__pre_assemble=1,
+                ethernet__src_unspec__fill=1,
+                ethernet__dst_unspec__ip6_lookup=1,
+                ethernet__dst_unspec__ip6_lookup__locnet__nd_cache_hit__send=1,
             ),
         )
         self.assertEqual(self.packet_tx[: len(packet_tx)], packet_tx)
@@ -810,12 +808,12 @@ class TestPacketHandlerRxTx(TestCase):
         self.mock_callable(self.mock_ArpCache, "add_entry").for_call(
             Ip4Address("192.168.9.102"), MacAddress("52:54:00:df:85:37")
         ).to_return_value(None).and_assert_called_once()
-        self.packet_handler._phrx_ether(PacketRx(packet_rx))
+        self.packet_handler._phrx_ethernet(packet_rx=PacketRx(packet_rx))
         self.assertEqual(
             self.packet_handler.packet_stats_rx,
             PacketStatsRx(
-                ether__pre_parse=1,
-                ether__dst_broadcast=1,
+                ethernet__pre_parse=1,
+                ethernet__dst_broadcast=1,
                 arp__pre_parse=1,
                 arp__op_request=1,
                 arp__op_request__tpa_stack__respond=1,
@@ -827,9 +825,9 @@ class TestPacketHandlerRxTx(TestCase):
             PacketStatsTx(
                 arp__pre_assemble=1,
                 arp__op_reply__send=1,
-                ether__pre_assemble=1,
-                ether__src_spec=1,
-                ether__dst_spec__send=1,
+                ethernet__pre_assemble=1,
+                ethernet__src_spec=1,
+                ethernet__dst_spec__send=1,
             ),
         )
         self.assertEqual(self.packet_tx[: len(packet_tx)], packet_tx)
@@ -849,12 +847,12 @@ class TestPacketHandlerRxTx(TestCase):
             "rb",
         ) as _:
             packet_tx = _.read()
-        self.packet_handler._phrx_ether(PacketRx(packet_rx))
+        self.packet_handler._phrx_ethernet(packet_rx=PacketRx(packet_rx))
         self.assertEqual(
             self.packet_handler.packet_stats_rx,
             PacketStatsRx(
-                ether__pre_parse=1,
-                ether__dst_unicast=1,
+                ethernet__pre_parse=1,
+                ethernet__dst_unicast=1,
                 ip6__pre_parse=1,
                 ip6__dst_unicast=1,
                 icmp6__pre_parse=1,
@@ -870,10 +868,10 @@ class TestPacketHandlerRxTx(TestCase):
                 icmp6__nd_neighbor_advertisement__send=1,
                 ip6__pre_assemble=1,
                 ip6__mtu_ok__send=1,
-                ether__pre_assemble=1,
-                ether__src_unspec__fill=1,
-                ether__dst_unspec__ip6_lookup=1,
-                ether__dst_unspec__ip6_lookup__locnet__nd_cache_hit__send=1,
+                ethernet__pre_assemble=1,
+                ethernet__src_unspec__fill=1,
+                ethernet__dst_unspec__ip6_lookup=1,
+                ethernet__dst_unspec__ip6_lookup__locnet__nd_cache_hit__send=1,
             ),
         )
         self.assertEqual(self.packet_tx[: len(packet_tx)], packet_tx)
@@ -893,12 +891,12 @@ class TestPacketHandlerRxTx(TestCase):
             "rb",
         ) as _:
             packet_tx = _.read()
-        self.packet_handler._phrx_ether(PacketRx(packet_rx))
+        self.packet_handler._phrx_ethernet(packet_rx=PacketRx(packet_rx))
         self.assertEqual(
             self.packet_handler.packet_stats_rx,
             PacketStatsRx(
-                ether__pre_parse=1,
-                ether__dst_multicast=1,
+                ethernet__pre_parse=1,
+                ethernet__dst_multicast=1,
                 ip6__pre_parse=1,
                 ip6__dst_multicast=1,
                 icmp6__pre_parse=1,
@@ -913,10 +911,10 @@ class TestPacketHandlerRxTx(TestCase):
                 icmp6__nd_neighbor_advertisement__send=1,
                 ip6__pre_assemble=1,
                 ip6__mtu_ok__send=1,
-                ether__pre_assemble=1,
-                ether__src_unspec__fill=1,
-                ether__dst_unspec__ip6_lookup=1,
-                ether__dst_unspec__ip6_lookup__locnet__nd_cache_hit__send=1,
+                ethernet__pre_assemble=1,
+                ethernet__src_unspec__fill=1,
+                ethernet__dst_unspec__ip6_lookup=1,
+                ethernet__dst_unspec__ip6_lookup__locnet__nd_cache_hit__send=1,
             ),
         )
         self.assertEqual(self.packet_tx[: len(packet_tx)], packet_tx)
@@ -934,12 +932,12 @@ class TestPacketHandlerRxTx(TestCase):
             "tests/integration/test_frames/rx_tx/ip6_icmp6_nd_ns.tx", "rb"
         ) as _:
             packet_tx = _.read()
-        self.packet_handler._phrx_ether(PacketRx(packet_rx))
+        self.packet_handler._phrx_ethernet(packet_rx=PacketRx(packet_rx))
         self.assertEqual(
             self.packet_handler.packet_stats_rx,
             PacketStatsRx(
-                ether__pre_parse=1,
-                ether__dst_multicast=1,
+                ethernet__pre_parse=1,
+                ethernet__dst_multicast=1,
                 ip6__pre_parse=1,
                 ip6__dst_multicast=1,
                 icmp6__pre_parse=1,
@@ -955,10 +953,10 @@ class TestPacketHandlerRxTx(TestCase):
                 icmp6__nd_neighbor_advertisement__send=1,
                 ip6__pre_assemble=1,
                 ip6__mtu_ok__send=1,
-                ether__pre_assemble=1,
-                ether__src_unspec__fill=1,
-                ether__dst_unspec__ip6_lookup=1,
-                ether__dst_unspec__ip6_lookup__locnet__nd_cache_hit__send=1,
+                ethernet__pre_assemble=1,
+                ethernet__src_unspec__fill=1,
+                ethernet__dst_unspec__ip6_lookup=1,
+                ethernet__dst_unspec__ip6_lookup__locnet__nd_cache_hit__send=1,
             ),
         )
         self.assertEqual(self.packet_tx[: len(packet_tx)], packet_tx)
@@ -976,12 +974,12 @@ class TestPacketHandlerRxTx(TestCase):
             "tests/integration/test_frames/rx_tx/ip6_icmp6_nd_ns__dad.tx", "rb"
         ) as _:
             packet_tx = _.read()
-        self.packet_handler._phrx_ether(PacketRx(packet_rx))
+        self.packet_handler._phrx_ethernet(packet_rx=PacketRx(packet_rx))
         self.assertEqual(
             self.packet_handler.packet_stats_rx,
             PacketStatsRx(
-                ether__pre_parse=1,
-                ether__dst_multicast=1,
+                ethernet__pre_parse=1,
+                ethernet__dst_multicast=1,
                 ip6__pre_parse=1,
                 ip6__dst_multicast=1,
                 icmp6__pre_parse=1,
@@ -997,10 +995,10 @@ class TestPacketHandlerRxTx(TestCase):
                 icmp6__nd_neighbor_advertisement__send=1,
                 ip6__pre_assemble=1,
                 ip6__mtu_ok__send=1,
-                ether__pre_assemble=1,
-                ether__src_unspec__fill=1,
-                ether__dst_unspec__ip6_lookup=1,
-                ether__dst_unspec__ip6_lookup__multicast__send=1,
+                ethernet__pre_assemble=1,
+                ethernet__src_unspec__fill=1,
+                ethernet__dst_unspec__ip6_lookup=1,
+                ethernet__dst_unspec__ip6_lookup__multicast__send=1,
             ),
         )
         self.assertEqual(self.packet_tx[: len(packet_tx)], packet_tx)

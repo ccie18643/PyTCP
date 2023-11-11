@@ -25,7 +25,7 @@
 
 
 #
-# tests/test_ip4_address.py - unit tests for Ip4Address library
+# tests/unit/test_ip4_address.py - unit tests for Ip4Address library
 #
 # ver 2.7
 #

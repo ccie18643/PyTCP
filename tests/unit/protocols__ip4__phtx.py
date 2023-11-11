@@ -74,19 +74,19 @@ class TestIp4Phtx(TestCase):
         valid source.
         """
         tx_status = self.packet_handler._phtx_ip4(
-            ip4_src=self.mns.stack_ip4_host.address,
-            ip4_dst=self.mns.host_a_ip4_address,
+            ip4__src=self.mns.stack_ip4_host.address,
+            ip4__dst=self.mns.host_a_ip4_address,
         )
-        self.assertEqual(tx_status, TxStatus.PASSED__ETHER__TO_TX_RING)
+        self.assertEqual(tx_status, TxStatus.PASSED__ETHERNET__TO_TX_RING)
         self.assertEqual(
             self.packet_handler.packet_stats_tx,
             PacketStatsTx(
                 ip4__pre_assemble=1,
                 ip4__mtu_ok__send=1,
-                ether__pre_assemble=1,
-                ether__src_unspec__fill=1,
-                ether__dst_unspec__ip4_lookup=1,
-                ether__dst_unspec__ip4_lookup__locnet__arp_cache_hit__send=1,
+                ethernet__pre_assemble=1,
+                ethernet__src_unspec__fill=1,
+                ethernet__dst_unspec__ip4_lookup=1,
+                ethernet__dst_unspec__ip4_lookup__locnet__arp_cache_hit__send=1,
             ),
         )
         with open(
@@ -105,8 +105,8 @@ class TestIp4Phtx(TestCase):
         src not owned.
         """
         tx_status = self.packet_handler._phtx_ip4(
-            ip4_src=self.mns.host_b_ip4_address,
-            ip4_dst=self.mns.host_a_ip4_address,
+            ip4__src=self.mns.host_b_ip4_address,
+            ip4__dst=self.mns.host_a_ip4_address,
         )
         self.assertEqual(tx_status, TxStatus.DROPED__IP4__SRC_NOT_OWNED)
         self.assertEqual(
@@ -125,20 +125,20 @@ class TestIp4Phtx(TestCase):
         multicast source, able to replace.
         """
         tx_status = self.packet_handler._phtx_ip4(
-            ip4_src=self.mns.ip4_multicast_all_nodes,
-            ip4_dst=self.mns.host_a_ip4_address,
+            ip4__src=self.mns.ip4_multicast_all_nodes,
+            ip4__dst=self.mns.host_a_ip4_address,
         )
-        self.assertEqual(tx_status, TxStatus.PASSED__ETHER__TO_TX_RING)
+        self.assertEqual(tx_status, TxStatus.PASSED__ETHERNET__TO_TX_RING)
         self.assertEqual(
             self.packet_handler.packet_stats_tx,
             PacketStatsTx(
                 ip4__pre_assemble=1,
                 ip4__src_multicast__replace=1,
                 ip4__mtu_ok__send=1,
-                ether__pre_assemble=1,
-                ether__src_unspec__fill=1,
-                ether__dst_unspec__ip4_lookup=1,
-                ether__dst_unspec__ip4_lookup__locnet__arp_cache_hit__send=1,
+                ethernet__pre_assemble=1,
+                ethernet__src_unspec__fill=1,
+                ethernet__dst_unspec__ip4_lookup=1,
+                ethernet__dst_unspec__ip4_lookup__locnet__arp_cache_hit__send=1,
             ),
         )
         with open(
@@ -159,8 +159,8 @@ class TestIp4Phtx(TestCase):
         self.packet_handler.ip4_host = []
 
         tx_status = self.packet_handler._phtx_ip4(
-            ip4_src=self.mns.ip4_multicast_all_nodes,
-            ip4_dst=self.mns.host_a_ip4_address,
+            ip4__src=self.mns.ip4_multicast_all_nodes,
+            ip4__dst=self.mns.host_a_ip4_address,
         )
         self.assertEqual(tx_status, TxStatus.DROPED__IP4__SRC_MULTICAST)
         self.assertEqual(
@@ -179,20 +179,20 @@ class TestIp4Phtx(TestCase):
         limited broadcst source, able to replace.
         """
         tx_status = self.packet_handler._phtx_ip4(
-            ip4_src=self.mns.ip4_limited_broadcast,
-            ip4_dst=self.mns.host_a_ip4_address,
+            ip4__src=self.mns.ip4_limited_broadcast,
+            ip4__dst=self.mns.host_a_ip4_address,
         )
-        self.assertEqual(tx_status, TxStatus.PASSED__ETHER__TO_TX_RING)
+        self.assertEqual(tx_status, TxStatus.PASSED__ETHERNET__TO_TX_RING)
         self.assertEqual(
             self.packet_handler.packet_stats_tx,
             PacketStatsTx(
                 ip4__pre_assemble=1,
                 ip4__src_limited_broadcast__replace=1,
                 ip4__mtu_ok__send=1,
-                ether__pre_assemble=1,
-                ether__src_unspec__fill=1,
-                ether__dst_unspec__ip4_lookup=1,
-                ether__dst_unspec__ip4_lookup__locnet__arp_cache_hit__send=1,
+                ethernet__pre_assemble=1,
+                ethernet__src_unspec__fill=1,
+                ethernet__dst_unspec__ip4_lookup=1,
+                ethernet__dst_unspec__ip4_lookup__locnet__arp_cache_hit__send=1,
             ),
         )
         with open(
@@ -212,8 +212,8 @@ class TestIp4Phtx(TestCase):
         """
         self.packet_handler.ip4_host = []
         tx_status = self.packet_handler._phtx_ip4(
-            ip4_src=self.mns.ip4_limited_broadcast,
-            ip4_dst=self.mns.host_a_ip4_address,
+            ip4__src=self.mns.ip4_limited_broadcast,
+            ip4__dst=self.mns.host_a_ip4_address,
         )
         self.assertEqual(tx_status, TxStatus.DROPED__IP4__SRC_LIMITED_BROADCAST)
         self.assertEqual(
@@ -232,20 +232,20 @@ class TestIp4Phtx(TestCase):
         network broadcst source, able to replace.
         """
         tx_status = self.packet_handler._phtx_ip4(
-            ip4_src=self.mns.stack_ip4_host.network.broadcast,
-            ip4_dst=self.mns.host_a_ip4_address,
+            ip4__src=self.mns.stack_ip4_host.network.broadcast,
+            ip4__dst=self.mns.host_a_ip4_address,
         )
-        self.assertEqual(tx_status, TxStatus.PASSED__ETHER__TO_TX_RING)
+        self.assertEqual(tx_status, TxStatus.PASSED__ETHERNET__TO_TX_RING)
         self.assertEqual(
             self.packet_handler.packet_stats_tx,
             PacketStatsTx(
                 ip4__pre_assemble=1,
                 ip4__src_network_broadcast__replace=1,
                 ip4__mtu_ok__send=1,
-                ether__pre_assemble=1,
-                ether__src_unspec__fill=1,
-                ether__dst_unspec__ip4_lookup=1,
-                ether__dst_unspec__ip4_lookup__locnet__arp_cache_hit__send=1,
+                ethernet__pre_assemble=1,
+                ethernet__src_unspec__fill=1,
+                ethernet__dst_unspec__ip4_lookup=1,
+                ethernet__dst_unspec__ip4_lookup__locnet__arp_cache_hit__send=1,
             ),
         )
         with open(
@@ -264,20 +264,20 @@ class TestIp4Phtx(TestCase):
         uspecified source, able to replace.
         """
         tx_status = self.packet_handler._phtx_ip4(
-            ip4_src=self.mns.ip4_unspecified,
-            ip4_dst=self.mns.host_a_ip4_address,
+            ip4__src=self.mns.ip4_unspecified,
+            ip4__dst=self.mns.host_a_ip4_address,
         )
-        self.assertEqual(tx_status, TxStatus.PASSED__ETHER__TO_TX_RING)
+        self.assertEqual(tx_status, TxStatus.PASSED__ETHERNET__TO_TX_RING)
         self.assertEqual(
             self.packet_handler.packet_stats_tx,
             PacketStatsTx(
                 ip4__pre_assemble=1,
                 ip4__src_network_unspecified__replace_local=1,
                 ip4__mtu_ok__send=1,
-                ether__pre_assemble=1,
-                ether__src_unspec__fill=1,
-                ether__dst_unspec__ip4_lookup=1,
-                ether__dst_unspec__ip4_lookup__locnet__arp_cache_hit__send=1,
+                ethernet__pre_assemble=1,
+                ethernet__src_unspec__fill=1,
+                ethernet__dst_unspec__ip4_lookup=1,
+                ethernet__dst_unspec__ip4_lookup__locnet__arp_cache_hit__send=1,
             ),
         )
         with open(
@@ -296,20 +296,20 @@ class TestIp4Phtx(TestCase):
         uspecified source, able to replace with ip from subnet with gateway.
         """
         tx_status = self.packet_handler._phtx_ip4(
-            ip4_src=self.mns.ip4_unspecified,
-            ip4_dst=self.mns.host_c_ip4_address,
+            ip4__src=self.mns.ip4_unspecified,
+            ip4__dst=self.mns.host_c_ip4_address,
         )
-        self.assertEqual(tx_status, TxStatus.PASSED__ETHER__TO_TX_RING)
+        self.assertEqual(tx_status, TxStatus.PASSED__ETHERNET__TO_TX_RING)
         self.assertEqual(
             self.packet_handler.packet_stats_tx,
             PacketStatsTx(
                 ip4__pre_assemble=1,
                 ip4__src_network_unspecified__replace_external=1,
                 ip4__mtu_ok__send=1,
-                ether__pre_assemble=1,
-                ether__src_unspec__fill=1,
-                ether__dst_unspec__ip4_lookup=1,
-                ether__dst_unspec__ip4_lookup__extnet__gw_arp_cache_hit__send=1,
+                ethernet__pre_assemble=1,
+                ethernet__src_unspec__fill=1,
+                ethernet__dst_unspec__ip4_lookup=1,
+                ethernet__dst_unspec__ip4_lookup__extnet__gw_arp_cache_hit__send=1,
             ),
         )
         with open(
@@ -329,8 +329,8 @@ class TestIp4Phtx(TestCase):
         """
         self.mns.stack_ip4_host.gateway = None
         tx_status = self.packet_handler._phtx_ip4(
-            ip4_src=self.mns.ip4_unspecified,
-            ip4_dst=self.mns.host_c_ip4_address,
+            ip4__src=self.mns.ip4_unspecified,
+            ip4__dst=self.mns.host_c_ip4_address,
         )
         self.assertEqual(tx_status, TxStatus.DROPED__IP4__SRC_UNSPECIFIED)
         self.assertEqual(
@@ -349,8 +349,8 @@ class TestIp4Phtx(TestCase):
         """
         self.mns.stack_ip4_host.gateway = None
         tx_status = self.packet_handler._phtx_ip4(
-            ip4_src=self.mns.stack_ip4_host.address,
-            ip4_dst=self.mns.ip4_unspecified,
+            ip4__src=self.mns.stack_ip4_host.address,
+            ip4__dst=self.mns.ip4_unspecified,
         )
         self.assertEqual(tx_status, TxStatus.DROPED__IP4__DST_UNSPECIFIED)
         self.assertEqual(
@@ -367,21 +367,21 @@ class TestIp4Phtx(TestCase):
         """
         self.mns.stack_ip4_host.gateway = None
         tx_status = self.packet_handler._phtx_ip4(
-            ip4_src=self.mns.stack_ip4_host.address,
-            ip4_dst=self.mns.host_a_ip4_address,
+            ip4__src=self.mns.stack_ip4_host.address,
+            ip4__dst=self.mns.host_a_ip4_address,
             carried_packet=RawAssembler(data=b"01234567890ABCDEF" * 400),
         )
-        self.assertEqual(tx_status, TxStatus.PASSED__ETHER__TO_TX_RING)
+        self.assertEqual(tx_status, TxStatus.PASSED__ETHERNET__TO_TX_RING)
         self.assertEqual(
             self.packet_handler.packet_stats_tx,
             PacketStatsTx(
                 ip4__pre_assemble=1,
                 ip4__mtu_exceed__frag=1,
                 ip4__mtu_exceed__frag__send=5,
-                ether__pre_assemble=5,
-                ether__src_unspec__fill=5,
-                ether__dst_unspec__ip4_lookup=5,
-                ether__dst_unspec__ip4_lookup__locnet__arp_cache_hit__send=5,
+                ethernet__pre_assemble=5,
+                ethernet__src_unspec__fill=5,
+                ethernet__dst_unspec__ip4_lookup=5,
+                ethernet__dst_unspec__ip4_lookup__locnet__arp_cache_hit__send=5,
             ),
         )
         for index in range(5):

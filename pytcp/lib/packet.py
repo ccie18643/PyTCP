@@ -45,7 +45,7 @@ from pytcp.lib.tracker import Tracker
 
 if TYPE_CHECKING:
     from pytcp.protocols.arp.fpp import ArpParser
-    from pytcp.protocols.ether.fpp import EtherParser
+    from pytcp.protocols.ethernet.fpp import EthernetParser
     from pytcp.protocols.icmp4.fpp import Icmp4Parser
     from pytcp.protocols.icmp6.fpp import Icmp6Parser
     from pytcp.protocols.ip4.fpp import Ip4Parser
@@ -69,7 +69,7 @@ class PacketRx:
         self.tracker: Tracker = Tracker(prefix="RX")
         self.parse_failed: str = ""
 
-        self.ether: EtherParser
+        self.ethernet: EthernetParser
         self.arp: ArpParser
         self.ip: Ip6Parser | Ip4Parser
         self.ip4: Ip4Parser

@@ -504,20 +504,20 @@ class TcpSession:
         ack = self._rcv_nxt if flag_ack else 0
 
         stack.packet_handler.send_tcp_packet(
-            local_ip_address=self._local_ip_address,
-            remote_ip_address=self._remote_ip_address,
-            local_port=self._local_port,
-            remote_port=self._remote_port,
-            flag_syn=flag_syn,
-            flag_ack=flag_ack,
-            flag_fin=flag_fin,
-            flag_rst=flag_rst,
-            seq=seq,
-            ack=ack,
-            win=self._rcv_wnd,
-            mss=self._rcv_mss if flag_syn else None,
-            wscale=0 if flag_syn else None,
-            data=data,
+            ip__local_address=self._local_ip_address,
+            ip__remote_address=self._remote_ip_address,
+            tcp__local_port=self._local_port,
+            tcp__remote_port=self._remote_port,
+            tcp__flag_syn=flag_syn,
+            tcp__flag_ack=flag_ack,
+            tcp__flag_fin=flag_fin,
+            tcp__flag_rst=flag_rst,
+            tcp__seq=seq,
+            tcp__ack=ack,
+            tcp__win=self._rcv_wnd,
+            tcp__mss=self._rcv_mss if flag_syn else None,
+            tcp__wscale=0 if flag_syn else None,
+            tcp__data=data,
         )
         self._rcv_una = self._rcv_nxt
         self._snd_nxt = (

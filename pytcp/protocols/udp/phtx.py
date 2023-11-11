@@ -37,6 +37,7 @@ ver 2.7
 
 from __future__ import annotations
 
+from abc import ABC
 from typing import TYPE_CHECKING, cast
 
 from pytcp.lib.ip4_address import Ip4Address
@@ -46,51 +47,86 @@ from pytcp.lib.tracker import Tracker
 from pytcp.lib.tx_status import TxStatus
 from pytcp.protocols.udp.fpa import UdpAssembler
 
-if TYPE_CHECKING:
-    from pytcp.lib.ip_address import IpAddress
-    from pytcp.subsystems.packet_handler import PacketHandler
 
-
-def _phtx_udp(
-    self: PacketHandler,
-    *,
-    ip_src: IpAddress,
-    ip_dst: IpAddress,
-    udp_sport: int,
-    udp_dport: int,
-    udp_data: bytes | None = None,
-    echo_tracker: Tracker | None = None,
-) -> TxStatus:
+class PacketHandlerTxUdp(ABC):
     """
-    Handle outbound UDP packets.
+    Class implements packet handler for the outbound TCP packets.
     """
 
-    self.packet_stats_tx.udp__pre_assemble += 1
+    if TYPE_CHECKING:
+        from pytcp.config import IP4_DEFAULT_TTL, IP6_DEFAULT_HOP
+        from pytcp.lib.ip_address import IpAddress
+        from pytcp.lib.packet_stats import PacketStatsTx
+        from pytcp.protocols.icmp4.fpa import Icmp4Assembler
+        from pytcp.protocols.icmp6.fpa import Icmp6Assembler
+        from pytcp.protocols.ip4.ps import Ip4Payload
+        from pytcp.protocols.ip6.ps import Ip6Payload
+        from pytcp.protocols.ip6_ext_frag.fpa import Ip6ExtFragAssembler
+        from pytcp.protocols.raw.fpa import RawAssembler
+        from pytcp.protocols.udp.fpa import UdpAssembler
 
-    udp_packet_tx = UdpAssembler(
-        sport=udp_sport,
-        dport=udp_dport,
-        data=udp_data,
-        echo_tracker=echo_tracker,
-    )
+        packet_stats_tx: PacketStatsTx
 
-    __debug__ and log("udp", f"{udp_packet_tx.tracker} - {udp_packet_tx}")
+        def _phtx_ip6(
+            self,
+            *,
+            ip6__dst: Ip6Address,
+            ip6__src: Ip6Address,
+            ip6__hop: int = IP6_DEFAULT_HOP,
+            ip6__payload: Ip6Payload = RawAssembler(),
+        ) -> TxStatus:
+            ...
 
-    if ip_src.is_ip6 and ip_dst.is_ip6:
-        self.packet_stats_tx.udp__send += 1
-        return self._phtx_ip6(
-            ip6_src=cast(Ip6Address, ip_src),
-            ip6_dst=cast(Ip6Address, ip_dst),
-            carried_packet=udp_packet_tx,
+        def _phtx_ip4(
+            self,
+            *,
+            ip4__dst: Ip4Address,
+            ip4__src: Ip4Address,
+            ip4__ttl: int = IP4_DEFAULT_TTL,
+            ip4__payload: Ip4Payload = RawAssembler(),
+        ) -> TxStatus:
+            ...
+
+    def _phtx_udp(
+        self,
+        *,
+        ip__src: IpAddress,
+        ip__dst: IpAddress,
+        udp__sport: int,
+        udp__dport: int,
+        udp__data: bytes | None = None,
+        echo_tracker: Tracker | None = None,
+    ) -> TxStatus:
+        """
+        Handle outbound UDP packets.
+        """
+
+        self.packet_stats_tx.udp__pre_assemble += 1
+
+        udp_packet_tx = UdpAssembler(
+            sport=udp__sport,
+            dport=udp__dport,
+            data=udp__data,
+            echo_tracker=echo_tracker,
         )
 
-    if ip_src.is_ip4 and ip_dst.is_ip4:
-        self.packet_stats_tx.udp__send += 1
-        return self._phtx_ip4(
-            ip4_src=cast(Ip4Address, ip_src),
-            ip4_dst=cast(Ip4Address, ip_dst),
-            carried_packet=udp_packet_tx,
-        )
+        __debug__ and log("udp", f"{udp_packet_tx.tracker} - {udp_packet_tx}")
 
-    self.packet_stats_tx.udp__unknown__drop += 1
-    return TxStatus.DROPED__UDP__UNKNOWN
+        if ip__src.is_ip6 and ip__dst.is_ip6:
+            self.packet_stats_tx.udp__send += 1
+            return self._phtx_ip6(
+                ip6__src=cast(Ip6Address, ip__src),
+                ip6__dst=cast(Ip6Address, ip__dst),
+                ip6__payload=udp_packet_tx,
+            )
+
+        if ip__src.is_ip4 and ip__dst.is_ip4:
+            self.packet_stats_tx.udp__send += 1
+            return self._phtx_ip4(
+                ip4__src=cast(Ip4Address, ip__src),
+                ip4__dst=cast(Ip4Address, ip__dst),
+                ip4__payload=udp_packet_tx,
+            )
+
+        self.packet_stats_tx.udp__unknown__drop += 1
+        return TxStatus.DROPED__UDP__UNKNOWN

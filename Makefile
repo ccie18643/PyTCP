@@ -8,10 +8,11 @@ PYTCP_FILES := $(shell find ${PYTCP_PATH} -name '*.py')
 TEST_FILES := $(shell find ${TESTS_PATH} -name '*.py')
 EXAMPLES_FILES := $(shell find ${EXAMPLES_PATH} -name '*.py')
 
-$(VENV)/bin/activate: requirements_dev.txt
+$(VENV)/bin/activate: requirements.txt requirements_dev.txt
 	@python$(PYTHON_VERSION) -m venv $(VENV)
 	@echo "export PYTHONPATH=$(ROOT_PATH)" >> venv/bin/activate
 	@./$(VENV)/bin/python3 -m pip install --upgrade pip
+	@./$(VENV)/bin/pip install -r requirements.txt
 	@./$(VENV)/bin/pip install -r requirements_dev.txt
 
 venv: $(VENV)/bin/activate

@@ -38,77 +38,87 @@ ver 2.7
 
 from __future__ import annotations
 
+from abc import ABC
 from typing import TYPE_CHECKING
 
+from pytcp.lib.errors import UnsupportedCaseError
 from pytcp.lib.logger import log
 from pytcp.lib.tracker import Tracker
 from pytcp.lib.tx_status import TxStatus
 from pytcp.protocols.icmp4.fpa import Icmp4Assembler
 from pytcp.protocols.icmp4.ps import (
-    ICMP4_ECHO_REPLY,
-    ICMP4_ECHO_REQUEST,
-    ICMP4_UNREACHABLE,
-    ICMP4_UNREACHABLE__PORT,
+    Icmp4EchoReplyCode,
+    Icmp4EchoRequestCode,
+    Icmp4Message,
+    Icmp4Type,
+    Icmp4UnreachableCode,
 )
 
-if TYPE_CHECKING:
-    from pytcp.lib.ip4_address import Ip4Address
-    from pytcp.subsystems.packet_handler import PacketHandler
 
-
-def _phtx_icmp4(
-    self: PacketHandler,
-    *,
-    ip4_src: Ip4Address,
-    ip4_dst: Ip4Address,
-    icmp4_type: int,
-    icmp4_code: int = 0,
-    icmp4_ec_id: int | None = None,
-    icmp4_ec_seq: int | None = None,
-    icmp4_ec_data: bytes | None = None,
-    icmp4_un_data: bytes | None = None,
-    echo_tracker: Tracker | None = None,
-) -> TxStatus:
+class PacketHandlerTxIcmp4(ABC):
     """
-    Handle outbound ICMPv4 packets.
+    Class implements packet handler for the outbound ICMPv4 packets.
     """
 
-    self.packet_stats_tx.icmp4__pre_assemble += 1
+    if TYPE_CHECKING:
+        from pytcp.config import IP4_DEFAULT_TTL
+        from pytcp.lib.ip4_address import Ip4Address
+        from pytcp.lib.packet_stats import PacketStatsTx
+        from pytcp.protocols.ip4.ps import Ip4Payload
+        from pytcp.protocols.raw.fpa import RawAssembler
+        from pytcp.protocols.tcp.fpa import TcpAssembler
+        from pytcp.protocols.udp.fpa import UdpAssembler
 
-    icmp4_packet_tx = Icmp4Assembler(
-        type=icmp4_type,
-        code=icmp4_code,
-        ec_id=icmp4_ec_id,
-        ec_seq=icmp4_ec_seq,
-        ec_data=icmp4_ec_data,
-        un_data=icmp4_un_data,
-        echo_tracker=echo_tracker,
-    )
+        packet_stats_tx: PacketStatsTx
 
-    __debug__ and log("icmp4", f"{icmp4_packet_tx.tracker} - {icmp4_packet_tx}")
+        def _phtx_ip4(
+            self,
+            *,
+            ip4__dst: Ip4Address,
+            ip4__src: Ip4Address,
+            ip4__ttl: int = IP4_DEFAULT_TTL,
+            ip4__payload: Ip4Payload = RawAssembler(),
+        ) -> TxStatus:
+            ...
 
-    if icmp4_type == ICMP4_ECHO_REPLY and icmp4_code == 0:
-        self.packet_stats_tx.icmp4__echo_reply__send += 1
-        return self._phtx_ip4(
-            ip4_src=ip4_src, ip4_dst=ip4_dst, carried_packet=icmp4_packet_tx
+    def _phtx_icmp4(
+        self,
+        *,
+        ip4__src: Ip4Address,
+        ip4__dst: Ip4Address,
+        icmp4__message: Icmp4Message,
+        echo_tracker: Tracker | None = None,
+    ) -> TxStatus:
+        """
+        Handle outbound ICMPv4 packets.
+        """
+
+        self.packet_stats_tx.icmp4__pre_assemble += 1
+
+        icmp4_packet_tx = Icmp4Assembler(
+            message=icmp4__message,
+            echo_tracker=echo_tracker,
         )
 
-    if icmp4_type == ICMP4_ECHO_REQUEST and icmp4_code == 0:
-        self.packet_stats_tx.icmp4__echo_request__send += 1
-        return self._phtx_ip4(
-            ip4_src=ip4_src, ip4_dst=ip4_dst, carried_packet=icmp4_packet_tx
+        __debug__ and log(
+            "icmp4", f"{icmp4_packet_tx.tracker} - {icmp4_packet_tx}"
         )
 
-    if (
-        icmp4_type == ICMP4_UNREACHABLE
-        and icmp4_code == ICMP4_UNREACHABLE__PORT
-    ):
-        self.packet_stats_tx.icmp4__unreachable_port__send += 1
-        return self._phtx_ip4(
-            ip4_src=ip4_src, ip4_dst=ip4_dst, carried_packet=icmp4_packet_tx
-        )
+        match (icmp4__message.type, icmp4__message.code):
+            case (Icmp4Type.ECHO_REPLY, Icmp4EchoReplyCode.DEFAULT):
+                self.packet_stats_tx.icmp4__echo_reply__send += 1
 
-    # This code will never be executed in debug mode due to assertions present
-    # in Packet Assembler
-    self.packet_stats_tx.icmp4__unknown__drop += 1
-    return TxStatus.DROPED__ICMP4__UNKNOWN
+            case (Icmp4Type.UNREACHABLE, Icmp4UnreachableCode.PORT):
+                self.packet_stats_tx.icmp4__unreachable_port__send += 1
+
+            case (Icmp4Type.ECHO_REQUEST, Icmp4EchoRequestCode.DEFAULT):
+                self.packet_stats_tx.icmp4__echo_request__send += 1
+
+            case _:
+                raise UnsupportedCaseError
+
+        return self._phtx_ip4(
+            ip4__src=ip4__src,
+            ip4__dst=ip4__dst,
+            ip4__payload=icmp4_packet_tx,
+        )

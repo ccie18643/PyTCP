@@ -74,19 +74,19 @@ class TestIp6Phtx(TestCase):
         valid source.
         """
         tx_status = self.packet_handler._phtx_ip6(
-            ip6_src=self.mns.stack_ip6_host.address,
-            ip6_dst=self.mns.host_a_ip6_address,
+            ip6__src=self.mns.stack_ip6_host.address,
+            ip6__dst=self.mns.host_a_ip6_address,
         )
-        self.assertEqual(tx_status, TxStatus.PASSED__ETHER__TO_TX_RING)
+        self.assertEqual(tx_status, TxStatus.PASSED__ETHERNET__TO_TX_RING)
         self.assertEqual(
             self.packet_handler.packet_stats_tx,
             PacketStatsTx(
                 ip6__pre_assemble=1,
                 ip6__mtu_ok__send=1,
-                ether__pre_assemble=1,
-                ether__src_unspec__fill=1,
-                ether__dst_unspec__ip6_lookup=1,
-                ether__dst_unspec__ip6_lookup__locnet__nd_cache_hit__send=1,
+                ethernet__pre_assemble=1,
+                ethernet__src_unspec__fill=1,
+                ethernet__dst_unspec__ip6_lookup=1,
+                ethernet__dst_unspec__ip6_lookup__locnet__nd_cache_hit__send=1,
             ),
         )
         with open(
@@ -105,8 +105,8 @@ class TestIp6Phtx(TestCase):
         src not owned.
         """
         tx_status = self.packet_handler._phtx_ip6(
-            ip6_src=self.mns.host_b_ip6_address,
-            ip6_dst=self.mns.host_a_ip6_address,
+            ip6__src=self.mns.host_b_ip6_address,
+            ip6__dst=self.mns.host_a_ip6_address,
         )
         self.assertEqual(tx_status, TxStatus.DROPED__IP6__SRC_NOT_OWNED)
         self.assertEqual(
@@ -125,20 +125,20 @@ class TestIp6Phtx(TestCase):
         multicast source, able to replace.
         """
         tx_status = self.packet_handler._phtx_ip6(
-            ip6_src=self.mns.ip6_multicast_all_nodes,
-            ip6_dst=self.mns.host_a_ip6_address,
+            ip6__src=self.mns.ip6_multicast_all_nodes,
+            ip6__dst=self.mns.host_a_ip6_address,
         )
-        self.assertEqual(tx_status, TxStatus.PASSED__ETHER__TO_TX_RING)
+        self.assertEqual(tx_status, TxStatus.PASSED__ETHERNET__TO_TX_RING)
         self.assertEqual(
             self.packet_handler.packet_stats_tx,
             PacketStatsTx(
                 ip6__pre_assemble=1,
                 ip6__src_multicast__replace=1,
                 ip6__mtu_ok__send=1,
-                ether__pre_assemble=1,
-                ether__src_unspec__fill=1,
-                ether__dst_unspec__ip6_lookup=1,
-                ether__dst_unspec__ip6_lookup__locnet__nd_cache_hit__send=1,
+                ethernet__pre_assemble=1,
+                ethernet__src_unspec__fill=1,
+                ethernet__dst_unspec__ip6_lookup=1,
+                ethernet__dst_unspec__ip6_lookup__locnet__nd_cache_hit__send=1,
             ),
         )
         with open(
@@ -159,8 +159,8 @@ class TestIp6Phtx(TestCase):
         self.packet_handler.ip6_host = []
 
         tx_status = self.packet_handler._phtx_ip6(
-            ip6_src=self.mns.ip6_multicast_all_nodes,
-            ip6_dst=self.mns.host_a_ip6_address,
+            ip6__src=self.mns.ip6_multicast_all_nodes,
+            ip6__dst=self.mns.host_a_ip6_address,
         )
         self.assertEqual(tx_status, TxStatus.DROPED__IP6__SRC_MULTICAST)
         self.assertEqual(
@@ -179,20 +179,20 @@ class TestIp6Phtx(TestCase):
         uspecified source, able to replace.
         """
         tx_status = self.packet_handler._phtx_ip6(
-            ip6_src=self.mns.ip6_unspecified,
-            ip6_dst=self.mns.host_a_ip6_address,
+            ip6__src=self.mns.ip6_unspecified,
+            ip6__dst=self.mns.host_a_ip6_address,
         )
-        self.assertEqual(tx_status, TxStatus.PASSED__ETHER__TO_TX_RING)
+        self.assertEqual(tx_status, TxStatus.PASSED__ETHERNET__TO_TX_RING)
         self.assertEqual(
             self.packet_handler.packet_stats_tx,
             PacketStatsTx(
                 ip6__pre_assemble=1,
                 ip6__src_network_unspecified__replace_local=1,
                 ip6__mtu_ok__send=1,
-                ether__pre_assemble=1,
-                ether__src_unspec__fill=1,
-                ether__dst_unspec__ip6_lookup=1,
-                ether__dst_unspec__ip6_lookup__locnet__nd_cache_hit__send=1,
+                ethernet__pre_assemble=1,
+                ethernet__src_unspec__fill=1,
+                ethernet__dst_unspec__ip6_lookup=1,
+                ethernet__dst_unspec__ip6_lookup__locnet__nd_cache_hit__send=1,
             ),
         )
         with open(
@@ -211,20 +211,20 @@ class TestIp6Phtx(TestCase):
         uspecified source, able to replace with ip from subnet with gateway.
         """
         tx_status = self.packet_handler._phtx_ip6(
-            ip6_src=self.mns.ip6_unspecified,
-            ip6_dst=self.mns.host_c_ip6_address,
+            ip6__src=self.mns.ip6_unspecified,
+            ip6__dst=self.mns.host_c_ip6_address,
         )
-        self.assertEqual(tx_status, TxStatus.PASSED__ETHER__TO_TX_RING)
+        self.assertEqual(tx_status, TxStatus.PASSED__ETHERNET__TO_TX_RING)
         self.assertEqual(
             self.packet_handler.packet_stats_tx,
             PacketStatsTx(
                 ip6__pre_assemble=1,
                 ip6__src_network_unspecified__replace_external=1,
                 ip6__mtu_ok__send=1,
-                ether__pre_assemble=1,
-                ether__src_unspec__fill=1,
-                ether__dst_unspec__ip6_lookup=1,
-                ether__dst_unspec__ip6_lookup__extnet__gw_nd_cache_hit__send=1,
+                ethernet__pre_assemble=1,
+                ethernet__src_unspec__fill=1,
+                ethernet__dst_unspec__ip6_lookup=1,
+                ethernet__dst_unspec__ip6_lookup__extnet__gw_nd_cache_hit__send=1,
             ),
         )
         with open(
@@ -244,8 +244,8 @@ class TestIp6Phtx(TestCase):
         """
         self.mns.stack_ip6_host.gateway = None
         tx_status = self.packet_handler._phtx_ip6(
-            ip6_src=self.mns.ip6_unspecified,
-            ip6_dst=self.mns.host_c_ip6_address,
+            ip6__src=self.mns.ip6_unspecified,
+            ip6__dst=self.mns.host_c_ip6_address,
         )
         self.assertEqual(tx_status, TxStatus.DROPED__IP6__SRC_UNSPECIFIED)
         self.assertEqual(
@@ -264,8 +264,8 @@ class TestIp6Phtx(TestCase):
         """
         self.mns.stack_ip6_host.gateway = None
         tx_status = self.packet_handler._phtx_ip6(
-            ip6_src=self.mns.stack_ip6_host.address,
-            ip6_dst=self.mns.ip6_unspecified,
+            ip6__src=self.mns.stack_ip6_host.address,
+            ip6__dst=self.mns.ip6_unspecified,
         )
         self.assertEqual(tx_status, TxStatus.DROPED__IP6__DST_UNSPECIFIED)
         self.assertEqual(
@@ -282,11 +282,11 @@ class TestIp6Phtx(TestCase):
         """
         self.mns.stack_ip4_host.gateway = None
         tx_status = self.packet_handler._phtx_ip6(
-            ip6_src=self.mns.stack_ip6_host.address,
-            ip6_dst=self.mns.host_a_ip6_address,
+            ip6__src=self.mns.stack_ip6_host.address,
+            ip6__dst=self.mns.host_a_ip6_address,
             carried_packet=RawAssembler(data=b"01234567890ABCDEF" * 400),
         )
-        self.assertEqual(tx_status, TxStatus.PASSED__ETHER__TO_TX_RING)
+        self.assertEqual(tx_status, TxStatus.PASSED__ETHERNET__TO_TX_RING)
         self.assertEqual(
             self.packet_handler.packet_stats_tx,
             PacketStatsTx(
@@ -295,10 +295,10 @@ class TestIp6Phtx(TestCase):
                 ip6__mtu_ok__send=5,
                 ip6_ext_frag__pre_assemble=1,
                 ip6_ext_frag__send=5,
-                ether__pre_assemble=5,
-                ether__src_unspec__fill=5,
-                ether__dst_unspec__ip6_lookup=5,
-                ether__dst_unspec__ip6_lookup__locnet__nd_cache_hit__send=5,
+                ethernet__pre_assemble=5,
+                ethernet__src_unspec__fill=5,
+                ethernet__dst_unspec__ip6_lookup=5,
+                ethernet__dst_unspec__ip6_lookup__locnet__nd_cache_hit__send=5,
             ),
         )
         for index in range(5):
