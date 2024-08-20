@@ -76,7 +76,9 @@ class Icmp4EchoRequestMessage(Icmp4Message):
     """
 
     type: Icmp4Type = field(
-        repr=False, init=False, default=Icmp4Type.ECHO_REQUEST
+        repr=False,
+        init=False,
+        default=Icmp4Type.ECHO_REQUEST,
     )
     code: Icmp4EchoRequestCode = Icmp4EchoRequestCode.DEFAULT
     cksum: int = 0

@@ -59,9 +59,15 @@ class TcpOptionSackperm(TcpOption):
     """
 
     type: TcpOptionType = field(
-        repr=False, init=False, default=TcpOptionType.SACKPERM
+        repr=False,
+        init=False,
+        default=TcpOptionType.SACKPERM,
     )
-    len: int = field(repr=False, init=False, default=TCP__OPTION_SACKPERM__LEN)
+    len: int = field(
+        repr=False,
+        init=False,
+        default=TCP__OPTION_SACKPERM__LEN,
+    )
 
     @override
     def __post_init__(self) -> None:

@@ -57,9 +57,15 @@ class TcpOptionNop(TcpOption):
     """
 
     type: TcpOptionType = field(
-        repr=False, init=False, default=TcpOptionType.NOP
+        repr=False,
+        init=False,
+        default=TcpOptionType.NOP,
     )
-    len: int = field(repr=False, init=False, default=TCP__OPTION_NOP__LEN)
+    len: int = field(
+        repr=False,
+        init=False,
+        default=TCP__OPTION_NOP__LEN,
+    )
 
     @override
     def __post_init__(self) -> None:

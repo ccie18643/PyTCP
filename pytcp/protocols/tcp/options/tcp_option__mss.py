@@ -60,9 +60,15 @@ class TcpOptionMss(TcpOption):
     """
 
     type: TcpOptionType = field(
-        repr=False, init=False, default=TcpOptionType.MSS
+        repr=False,
+        init=False,
+        default=TcpOptionType.MSS,
     )
-    len: int = field(repr=False, init=False, default=TCP__OPTION_MSS__LEN)
+    len: int = field(
+        repr=False,
+        init=False,
+        default=TCP__OPTION_MSS__LEN,
+    )
 
     mss: int
 

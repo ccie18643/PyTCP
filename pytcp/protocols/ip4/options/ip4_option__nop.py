@@ -57,9 +57,15 @@ class Ip4OptionNop(Ip4Option):
     """
 
     type: Ip4OptionType = field(
-        repr=False, init=False, default=Ip4OptionType.NOP
+        repr=False,
+        init=False,
+        default=Ip4OptionType.NOP,
     )
-    len: int = field(repr=False, init=False, default=IP4__OPTION_NOP__LEN)
+    len: int = field(
+        repr=False,
+        init=False,
+        default=IP4__OPTION_NOP__LEN,
+    )
 
     @override
     def __post_init__(self) -> None:

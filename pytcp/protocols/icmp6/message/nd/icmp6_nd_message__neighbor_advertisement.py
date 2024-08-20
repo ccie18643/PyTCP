@@ -86,7 +86,9 @@ class Icmp6NdNeighborAdvertisementMessage(Icmp6NdMessage):
     """
 
     type: Icmp6Type = field(
-        repr=False, init=False, default=Icmp6Type.ND__NEIGHBOR_ADVERTISEMENT
+        repr=False,
+        init=False,
+        default=Icmp6Type.ND__NEIGHBOR_ADVERTISEMENT,
     )
     code: Icmp6NdNeighborAdvertisementCode = (
         Icmp6NdNeighborAdvertisementCode.DEFAULT

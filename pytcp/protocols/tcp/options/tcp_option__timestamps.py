@@ -74,10 +74,14 @@ class TcpOptionTimestamps(TcpOption):
     """
 
     type: TcpOptionType = field(
-        repr=False, init=False, default=TcpOptionType.TIMESTAMPS
+        repr=False,
+        init=False,
+        default=TcpOptionType.TIMESTAMPS,
     )
     len: int = field(
-        repr=False, init=False, default=TCP__OPTION_TIMESTAMPS__LEN
+        repr=False,
+        init=False,
+        default=TCP__OPTION_TIMESTAMPS__LEN,
     )
 
     tsval: int

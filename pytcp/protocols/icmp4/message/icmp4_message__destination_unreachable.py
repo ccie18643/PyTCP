@@ -123,7 +123,9 @@ class Icmp4DestinationUnreachableMessage(Icmp4Message):
     """
 
     type: Icmp4Type = field(
-        repr=False, init=False, default=Icmp4Type.DESTINATION_UNREACHABLE
+        repr=False,
+        init=False,
+        default=Icmp4Type.DESTINATION_UNREACHABLE,
     )
     code: Icmp4DestinationUnreachableCode
     cksum: int = 0

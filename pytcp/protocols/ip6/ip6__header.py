@@ -87,7 +87,11 @@ class Ip6Header(ProtoStruct):
     The IPv6 packet header.
     """
 
-    ver: int = field(repr=False, init=False, default=6)
+    ver: int = field(
+        repr=False,
+        init=False,
+        default=6,
+    )
     dscp: int
     ecn: int
     flow: int

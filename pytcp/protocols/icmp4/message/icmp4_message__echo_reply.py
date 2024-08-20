@@ -76,7 +76,9 @@ class Icmp4EchoReplyMessage(Icmp4Message):
     """
 
     type: Icmp4Type = field(
-        repr=False, init=False, default=Icmp4Type.ECHO_REPLY
+        repr=False,
+        init=False,
+        default=Icmp4Type.ECHO_REPLY,
     )
     code: Icmp4EchoReplyCode = Icmp4EchoReplyCode.DEFAULT
     cksum: int = 0

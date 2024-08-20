@@ -61,9 +61,15 @@ class TcpOptionWscale(TcpOption):
     """
 
     type: TcpOptionType = field(
-        repr=False, init=False, default=TcpOptionType.WSCALE
+        repr=False,
+        init=False,
+        default=TcpOptionType.WSCALE,
     )
-    len: int = field(repr=False, init=False, default=TCP__OPTION_WSCALE__LEN)
+    len: int = field(
+        repr=False,
+        init=False,
+        default=TCP__OPTION_WSCALE__LEN,
+    )
 
     wscale: int
 

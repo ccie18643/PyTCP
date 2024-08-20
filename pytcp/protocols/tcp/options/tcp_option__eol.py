@@ -57,9 +57,15 @@ class TcpOptionEol(TcpOption):
     """
 
     type: TcpOptionType = field(
-        repr=False, init=False, default=TcpOptionType.EOL
+        repr=False,
+        init=False,
+        default=TcpOptionType.EOL,
     )
-    len: int = field(repr=False, init=False, default=TCP__OPTION_EOL__LEN)
+    len: int = field(
+        repr=False,
+        init=False,
+        default=TCP__OPTION_EOL__LEN,
+    )
 
     @override
     def __post_init__(self) -> None:

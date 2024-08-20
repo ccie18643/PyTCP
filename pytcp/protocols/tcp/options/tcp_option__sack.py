@@ -105,9 +105,15 @@ class TcpOptionSack(TcpOption):
     """
 
     type: TcpOptionType = field(
-        repr=False, init=False, default=TcpOptionType.SACK
+        repr=False,
+        init=False,
+        default=TcpOptionType.SACK,
     )
-    len: int = field(repr=False, init=False, default=TCP__OPTION_SACK__LEN)
+    len: int = field(
+        repr=False,
+        init=False,
+        default=TCP__OPTION_SACK__LEN,
+    )
 
     blocks: list[TcpSackBlock]
 

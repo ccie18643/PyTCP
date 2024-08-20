@@ -56,9 +56,15 @@ class Ip4OptionUnknown(Ip4Option):
     """
 
     type: Ip4OptionType = field(
-        repr=True, init=True, default=Ip4OptionType.from_int(255)
+        repr=True,
+        init=True,
+        default=Ip4OptionType.from_int(255),
     )
-    len: int = field(repr=True, init=True, default=IP4__OPTION__LEN)
+    len: int = field(
+        repr=True,
+        init=True,
+        default=IP4__OPTION__LEN,
+    )
 
     data: bytes
 

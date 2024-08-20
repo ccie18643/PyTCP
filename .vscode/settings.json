@@ -3,7 +3,10 @@
         "./"
     ],
     "[python]": {
-        "editor.defaultFormatter": "ms-python.black-formatter"
+        "editor.defaultFormatter": "ms-python.black-formatter",
+        "editor.tabSize": 4,
+        "editor.insertSpaces": true,
+        "editor.formatOnSave": true
     },
     "python.REPL.enableREPLSmartSend": false,
     "makefile.configureOnOpen": false

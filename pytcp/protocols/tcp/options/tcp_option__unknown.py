@@ -56,9 +56,15 @@ class TcpOptionUnknown(TcpOption):
     """
 
     type: TcpOptionType = field(
-        repr=True, init=True, default=TcpOptionType.from_int(255)
+        repr=True,
+        init=True,
+        default=TcpOptionType.from_int(255),
     )
-    len: int = field(repr=True, init=True, default=TCP__OPTION__LEN)
+    len: int = field(
+        repr=True,
+        init=True,
+        default=TCP__OPTION__LEN,
+    )
 
     data: bytes
 

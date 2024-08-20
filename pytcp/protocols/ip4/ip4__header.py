@@ -82,7 +82,11 @@ class Ip4Header(ProtoStruct):
     The IPv4 packet header.
     """
 
-    ver: int = field(repr=False, init=False, default=4)
+    ver: int = field(
+        repr=False,
+        init=False,
+        default=4,
+    )
     hlen: int
     dscp: int
     ecn: int

@@ -81,15 +81,25 @@ class ArpHeader(ProtoStruct):
     """
 
     hrtype: ArpHardwareType = field(
-        repr=False, init=False, default=ArpHardwareType.ETHERNET
+        repr=False,
+        init=False,
+        default=ArpHardwareType.ETHERNET,
     )
     prtype: ArpProtocolType = field(
-        repr=False, init=False, default=ArpProtocolType.IP4
+        repr=False,
+        init=False,
+        default=ArpProtocolType.IP4,
     )
     hrlen: int = field(
-        repr=False, init=False, default=ARP__HARDWARE_LEN__ETHERNET
+        repr=False,
+        init=False,
+        default=ARP__HARDWARE_LEN__ETHERNET,
     )
-    prlen: int = field(repr=False, init=False, default=ARP__PROTOCOL_LEN__IP4)
+    prlen: int = field(
+        repr=False,
+        init=False,
+        default=ARP__PROTOCOL_LEN__IP4,
+    )
     oper: ArpOperation
     sha: MacAddress
     spa: Ip4Address

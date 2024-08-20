@@ -77,7 +77,9 @@ class Icmp6EchoReplyMessage(Icmp6Message):
     """
 
     type: Icmp6Type = field(
-        repr=False, init=False, default=Icmp6Type.ECHO_REPLY
+        repr=False,
+        init=False,
+        default=Icmp6Type.ECHO_REPLY,
     )
     code: Icmp6EchoReplyCode = Icmp6EchoReplyCode.DEFAULT
     cksum: int = 0

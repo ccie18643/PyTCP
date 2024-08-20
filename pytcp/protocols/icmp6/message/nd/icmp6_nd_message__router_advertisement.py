@@ -82,7 +82,9 @@ class Icmp6NdRouterAdvertisementMessage(Icmp6NdMessage):
     """
 
     type: Icmp6Type = field(
-        repr=False, init=False, default=Icmp6Type.ND__ROUTER_ADVERTISEMENT
+        repr=False,
+        init=False,
+        default=Icmp6Type.ND__ROUTER_ADVERTISEMENT,
     )
     code: Icmp6NdRouterAdvertisementCode = (
         Icmp6NdRouterAdvertisementCode.DEFAULT

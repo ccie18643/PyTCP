@@ -87,7 +87,9 @@ class Icmp6NdNeighborSolicitationMessage(Icmp6NdMessage):
     """
 
     type: Icmp6Type = field(
-        repr=False, init=False, default=Icmp6Type.ND__NEIGHBOR_SOLICITATION
+        repr=False,
+        init=False,
+        default=Icmp6Type.ND__NEIGHBOR_SOLICITATION,
     )
     code: Icmp6NdNeighborSolicitationCode = (
         Icmp6NdNeighborSolicitationCode.DEFAULT

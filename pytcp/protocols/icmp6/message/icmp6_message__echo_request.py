@@ -76,7 +76,9 @@ class Icmp6EchoRequestMessage(Icmp6Message):
     """
 
     type: Icmp6Type = field(
-        repr=False, init=False, default=Icmp6Type.ECHO_REQUEST
+        repr=False,
+        init=False,
+        default=Icmp6Type.ECHO_REQUEST,
     )
     code: Icmp6EchoRequestCode = Icmp6EchoRequestCode.DEFAULT
     cksum: int = 0

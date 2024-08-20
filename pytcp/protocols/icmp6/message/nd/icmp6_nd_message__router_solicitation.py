@@ -78,7 +78,9 @@ class Icmp6NdRouterSolicitationMessage(Icmp6NdMessage):
     """
 
     type: Icmp6Type = field(
-        repr=False, init=False, default=Icmp6Type.ND__ROUTER_SOLICITATION
+        repr=False,
+        init=False,
+        default=Icmp6Type.ND__ROUTER_SOLICITATION,
     )
     code: Icmp6NdRouterSolicitationCode = Icmp6NdRouterSolicitationCode.DEFAULT
     cksum: int = 0

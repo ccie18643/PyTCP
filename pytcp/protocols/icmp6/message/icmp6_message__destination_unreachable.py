@@ -92,7 +92,9 @@ class Icmp6DestinationUnreachableMessage(Icmp6Message):
     """
 
     type: Icmp6Type = field(
-        repr=False, init=False, default=Icmp6Type.DESTINATION_UNREACHABLE
+        repr=False,
+        init=False,
+        default=Icmp6Type.DESTINATION_UNREACHABLE,
     )
     code: Icmp6DestinationUnreachableCode
     cksum: int = 0
