@@ -56,7 +56,6 @@ from pytcp.protocols.ip6.ip6__parser import Ip6Parser
             },
             "_results": {
                 "header": Ip6Header(
-                    ver=6,
                     dscp=0,
                     ecn=0,
                     flow=0,
@@ -92,7 +91,6 @@ from pytcp.protocols.ip6.ip6__parser import Ip6Parser
             },
             "_results": {
                 "header": Ip6Header(
-                    ver=6,
                     dscp=38,
                     ecn=2,
                     flow=1048575,
@@ -130,7 +128,6 @@ from pytcp.protocols.ip6.ip6__parser import Ip6Parser
             },
             "_results": {
                 "header": Ip6Header(
-                    ver=6,
                     dscp=63,
                     ecn=3,
                     flow=0,

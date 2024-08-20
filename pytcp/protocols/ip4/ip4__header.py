@@ -37,7 +37,7 @@ from __future__ import annotations
 
 import struct
 from abc import ABC
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import override
 
 from pytcp.lib.int_checks import (
@@ -82,7 +82,7 @@ class Ip4Header(ProtoStruct):
     The IPv4 packet header.
     """
 
-    ver: int = 4
+    ver: int = field(repr=False, init=False, default=4)
     hlen: int
     dscp: int
     ecn: int
@@ -102,8 +102,6 @@ class Ip4Header(ProtoStruct):
         """
         Ensure integrity of the Ip4 header fields.
         """
-
-        assert self.ver == 4, f"The 'ver' field must be 4. Got: {self.ver!r}"
 
         assert (
             is_uint6(self.hlen) and self.hlen >= IP4__HEADER__LEN
@@ -210,7 +208,6 @@ class Ip4Header(ProtoStruct):
         ) = struct.unpack(IP4__HEADER__STRUCT, _bytes[:IP4__HEADER__LEN])
 
         return Ip4Header(
-            ver=ver__hlen >> 4,
             hlen=(ver__hlen & 0b00001111) << 2,
             dscp=dscp__ecn >> 2,
             ecn=dscp__ecn & 0b00000011,

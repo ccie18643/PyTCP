@@ -100,7 +100,6 @@ class Ip4Assembler(Ip4, ProtoAssembler):
         self._options = ip4__options
 
         self._header = Ip4Header(
-            ver=4,
             dscp=ip4__dscp,
             hlen=IP4__HEADER__LEN + len(self._options),
             ecn=ip4__ecn,
@@ -171,7 +170,6 @@ class Ip4FragAssembler(Ip4, ProtoAssembler):
         self._options = ip4_frag__options
 
         self._header = Ip4Header(
-            ver=4,
             hlen=IP4__HEADER__LEN + len(self._options),
             dscp=ip4_frag__dscp,
             ecn=ip4_frag__ecn,

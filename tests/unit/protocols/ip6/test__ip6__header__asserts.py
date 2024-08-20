@@ -63,7 +63,6 @@ class TestIp6HeaderAsserts(TestCase):
         """
 
         self._header_args = {
-            "ver": 6,
             "dscp": 0,
             "ecn": 0,
             "flow": 0,
@@ -73,26 +72,6 @@ class TestIp6HeaderAsserts(TestCase):
             "src": Ip6Address(0),
             "dst": Ip6Address(0),
         }
-
-    def test__ip6__header__ver__incorrect(self) -> None:
-        """
-        Ensure the IPv6 header constructor raises an exception when the provided
-        'ver' argument is incorrect.
-        """
-
-        for value in range(0, 17):
-            if value == 6:
-                continue
-
-            self._header_args["ver"] = value
-
-            with self.assertRaises(AssertionError) as error:
-                Ip6Header(**self._header_args)  # type: ignore
-
-            self.assertEqual(
-                str(error.exception),
-                f"The 'ver' field must be 6. Got: {value!r}",
-            )
 
     def test__ip6__header__dscp__under_min(self) -> None:
         """

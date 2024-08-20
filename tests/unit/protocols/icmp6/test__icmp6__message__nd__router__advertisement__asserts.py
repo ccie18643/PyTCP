@@ -36,12 +36,12 @@ ver 3.0.0
 from testslide import TestCase
 
 from pytcp.lib.int_checks import (
-    UINT_32__MAX,
-    UINT_32__MIN,
     UINT_8__MAX,
     UINT_8__MIN,
     UINT_16__MAX,
     UINT_16__MIN,
+    UINT_32__MAX,
+    UINT_32__MIN,
 )
 from pytcp.protocols.icmp6.message.nd.icmp6_nd_message__router_advertisement import (
     Icmp6NdRouterAdvertisementCode,

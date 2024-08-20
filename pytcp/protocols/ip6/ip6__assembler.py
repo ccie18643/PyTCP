@@ -77,7 +77,6 @@ class Ip6Assembler(Ip6, ProtoAssembler):
         self._payload = ip6__payload
 
         self._header = Ip6Header(
-            ver=6,
             dscp=ip6__dscp,
             ecn=ip6__ecn,
             flow=ip6__flow,

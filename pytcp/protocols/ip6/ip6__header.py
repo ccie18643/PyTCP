@@ -37,7 +37,7 @@ from __future__ import annotations
 
 import struct
 from abc import ABC
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import override
 
 from pytcp.lib.int_checks import (
@@ -87,7 +87,7 @@ class Ip6Header(ProtoStruct):
     The IPv6 packet header.
     """
 
-    ver: int
+    ver: int = field(repr=False, init=False, default=6)
     dscp: int
     ecn: int
     flow: int
@@ -102,8 +102,6 @@ class Ip6Header(ProtoStruct):
         """
         Ensure integrity of the Ip6 header fields.
         """
-
-        assert self.ver == 6, f"The 'ver' field must be 6. Got: {self.ver!r}"
 
         assert is_uint6(
             self.dscp
@@ -173,7 +171,6 @@ class Ip6Header(ProtoStruct):
         )
 
         return Ip6Header(
-            ver=ver__dscp__ecn__flow >> 28,
             dscp=(ver__dscp__ecn__flow >> 22) & 0b00111111,
             ecn=(ver__dscp__ecn__flow >> 20) & 0b00000011,
             flow=ver__dscp__ecn__flow & 0b00000000_00001111_11111111_11111111,

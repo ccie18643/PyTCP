@@ -64,7 +64,6 @@ class TestIp4HeaderAsserts(TestCase):
         """
 
         self._header_args = {
-            "ver": 4,
             "hlen": IP4__HEADER__LEN,
             "dscp": 0,
             "ecn": 0,
@@ -79,26 +78,6 @@ class TestIp4HeaderAsserts(TestCase):
             "src": Ip4Address(0),
             "dst": Ip4Address(0),
         }
-
-    def test__ip4__header__ver__incorrect(self) -> None:
-        """
-        Ensure the IPv4 header constructor raises an exception when the provided
-        'ver' argument is incorrect.
-        """
-
-        for value in range(0, 17):
-            if value == 4:
-                continue
-
-            self._header_args["ver"] = value
-
-            with self.assertRaises(AssertionError) as error:
-                Ip4Header(**self._header_args)  # type: ignore
-
-            self.assertEqual(
-                str(error.exception),
-                f"The 'ver' field must be 4. Got: {value!r}",
-            )
 
     def test__ip4__header__hlen__under_min(self) -> None:
         """
