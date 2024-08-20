@@ -51,11 +51,19 @@ class MacAddress:
 
     def __init__(
         self,
-        address: MacAddress | str | bytes | bytearray | memoryview | int,
+        address: (
+            MacAddress | str | bytes | bytearray | memoryview | int | None
+        ) = None,
     ) -> None:
         """
         Class constructor.
         """
+
+        self._address: int
+
+        if address is None:
+            self._address = 0
+            return
 
         if isinstance(address, int):
             if address in range(281474976710656):

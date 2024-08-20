@@ -91,7 +91,9 @@ class Ip6Address(IpAddress):
 
     def __init__(
         self,
-        address: Ip6Address | str | bytes | bytearray | memoryview | int,
+        address: (
+            Ip6Address | str | bytes | bytearray | memoryview | int | None
+        ) = None,
     ) -> None:
         """
         Class constructor.
@@ -99,6 +101,10 @@ class Ip6Address(IpAddress):
 
         self._address: int
         self._version: int = 6
+
+        if address is None:
+            self._address = 0
+            return
 
         if isinstance(address, int):
             if address & 0xFFFF_FFFF_FFFF_FFFF_FFFF_FFFF_FFFF_FFFF == address:

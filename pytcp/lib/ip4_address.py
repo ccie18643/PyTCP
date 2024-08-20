@@ -84,7 +84,9 @@ class Ip4Address(IpAddress):
 
     def __init__(
         self,
-        address: Ip4Address | str | bytes | bytearray | memoryview | int,
+        address: (
+            Ip4Address | str | bytes | bytearray | memoryview | int | None
+        ) = None,
     ) -> None:
         """
         Class constructor.
@@ -92,6 +94,10 @@ class Ip4Address(IpAddress):
 
         self._address: int
         self._version: int = 4
+
+        if address is None:
+            self._address = 0
+            return
 
         if isinstance(address, int):
             if address & 0xFF_FF_FF_FF == address:
