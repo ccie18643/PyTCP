@@ -23,13 +23,15 @@
 #                                                                          #
 ############################################################################
 
+# pylint: disable=too-many-arguments
+
 
 """
 Module contains the main PyTCP stack class.
 
 pytcp/__init__.py
 
-ver 2.7
+ver 3.0.0
 """
 
 
@@ -87,40 +89,39 @@ class TcpIpStack:
         ip6_gateway: str | None = None,
     ):
         """
-        Initialize stack on given interface.
+        Initialize stack on the provided interface.
         """
 
         # Set the MAC address.
         if mac_address is not None:
-            stack.packet_handler.assign_mac_address(
+            stack.packet_handler._assign_mac_address(
                 mac_unicast=MacAddress(mac_address)
             )
 
         # Set the IPv4 address.
-        if ip4_address is None:
-            config.IP4_SUPPORT = True
-            config.IP4_HOST_DHCP = True
-        else:
-            ip4_host = Ip4Host(ip4_address)
-            if ip4_gateway:
-                ip4_host.gateway = Ip4Address(ip4_gateway)
-            stack.packet_handler.assign_ip4_address(ip4_host)
-            config.IP4_SUPPORT = True
-            config.IP4_HOST_DHCP = False
+        if config.IP4__SUPPORT_ENABLED is True:
+            if ip4_address is None:
+                config.IP4__HOST_DHCP = True
+            else:
+                ip4_host = Ip4Host(ip4_address)
+                if ip4_gateway:
+                    ip4_host.gateway = Ip4Address(ip4_gateway)
+                stack.packet_handler._assign_ip4_address(ip4_host=ip4_host)
+                config.IP4__HOST_DHCP = False
 
         # Set the IPv6 address.
-        if ip6_address is None:
-            config.IP6_SUPPORT = True
-            config.IP6_LLA_AUTOCONFIG = True
-            config.IP6_GUA_AUTOCONFIG = True
-        else:
-            ip6_host = Ip6Host(ip6_address)
-            if ip6_gateway:
-                ip6_host.gateway = Ip6Address(ip6_gateway)
-            stack.packet_handler.assign_ip6_address(ip6_host)
-            config.IP6_SUPPORT = True
-            config.IP6_LLA_AUTOCONFIG = True
-            config.IP6_GUA_AUTOCONFIG = False
+        if config.IP6__SUPPORT_ENABLED is True:
+            if ip6_address is None:
+                config.IP6__LLA_AUTOCONFIG = True
+                config.IP6__GUA_AUTOCONFIG = True
+            else:
+                ip6_host = Ip6Host(ip6_address)
+                if ip6_gateway:
+                    ip6_host.gateway = Ip6Address(ip6_gateway)
+                stack.packet_handler._assign_ip6_address(ip6_host=ip6_host)
+                config.IP6__LLA_AUTOCONFIG = True
+                config.IP6__GUA_AUTOCONFIG = False
+
         self.rx_fd = fd[0]
         self.tx_fd = fd[1]
 
@@ -128,20 +129,22 @@ class TcpIpStack:
         """
         Start stack components.
         """
+
         stack.timer.start()
         stack.arp_cache.start()
         stack.nd_cache.start()
         stack.rx_ring.start(self.rx_fd)
         stack.tx_ring.start(self.tx_fd)
         stack.packet_handler.start()
-        stack.packet_handler.acquire_ip6_addresses()
-        stack.packet_handler.acquire_ip4_addresses()
-        stack.packet_handler.log_stack_address_info()
+        stack.packet_handler._acquire_ip6_addresses()
+        stack.packet_handler._acquire_ip4_addresses()
+        stack.packet_handler._log_stack_address_info()
 
     def stop(self) -> None:
         """
         Stop stack components.
         """
+
         stack.packet_handler.stop()
         stack.tx_ring.stop()
         stack.rx_ring.stop()

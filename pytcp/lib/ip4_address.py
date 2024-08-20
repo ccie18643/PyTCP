@@ -23,14 +23,14 @@
 #                                                                          #
 ############################################################################
 
-# pylint: disable = missing-class-docstring
+# pylint: disable=missing-class-docstring
 
 """
 Module contains IPv4 address manipulation classes.
 
 pytcp/lib/ip4_address.py
 
-ver 2.7
+ver 3.0.0
 """
 
 
@@ -39,6 +39,7 @@ from __future__ import annotations
 import re
 import socket
 import struct
+from typing import override
 
 from pytcp.lib.ip_address import (
     IpAddress,
@@ -53,30 +54,27 @@ from pytcp.lib.ip_address import (
 )
 from pytcp.lib.mac_address import MacAddress
 
+IP4_ADDRESS_LEN = 4
+
 IP4_REGEX = (
     r"((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}"
     r"(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])"
 )
 
 
-class Ip4AddressFormatError(IpAddressFormatError):
-    ...
+class Ip4AddressFormatError(IpAddressFormatError): ...
 
 
-class Ip4MaskFormatError(IpMaskFormatError):
-    ...
+class Ip4MaskFormatError(IpMaskFormatError): ...
 
 
-class Ip4NetworkFormatError(IpNetworkFormatError):
-    ...
+class Ip4NetworkFormatError(IpNetworkFormatError): ...
 
 
-class Ip4HostFormatError(IpHostFormatError):
-    ...
+class Ip4HostFormatError(IpHostFormatError): ...
 
 
-class Ip4HostGatewayError(IpHostGatewayError):
-    ...
+class Ip4HostGatewayError(IpHostGatewayError): ...
 
 
 class Ip4Address(IpAddress):
@@ -85,7 +83,8 @@ class Ip4Address(IpAddress):
     """
 
     def __init__(
-        self, address: Ip4Address | str | bytes | bytearray | memoryview | int
+        self,
+        address: Ip4Address | str | bytes | bytearray | memoryview | int,
     ) -> None:
         """
         Class constructor.
@@ -120,12 +119,14 @@ class Ip4Address(IpAddress):
 
         raise Ip4AddressFormatError(address)
 
+    @override
     def __str__(self) -> str:
         """
         The '__str__()' dunder.
         """
         return socket.inet_ntoa(bytes(self))
 
+    @override
     def __bytes__(self) -> bytes:
         """
         The '__bytes__()' dunder.
@@ -133,6 +134,7 @@ class Ip4Address(IpAddress):
         return struct.pack("!L", self._address)
 
     @property
+    @override
     def is_global(self) -> bool:
         """
         Check if IPv4 address is global.
@@ -151,6 +153,7 @@ class Ip4Address(IpAddress):
         )
 
     @property
+    @override
     def is_link_local(self) -> bool:
         """
         Check if IPv4 address is link local.
@@ -160,6 +163,7 @@ class Ip4Address(IpAddress):
         )  # 169.254.0.0 - 169.254.255.255
 
     @property
+    @override
     def is_loopback(self) -> bool:
         """
         Check if IPv4 address is loopback.
@@ -170,19 +174,23 @@ class Ip4Address(IpAddress):
         )  # 127.0.0.0 - 127.255.255.255
 
     @property
+    @override
     def is_multicast(self) -> bool:
         """
         Check if IPv4 address is multicast.
         """
+
         return (
             self._address & 0xF0_00_00_00 == 0xE0_00_00_00
         )  # 224.0.0.0 - 239.255.255.255
 
     @property
+    @override
     def is_private(self) -> bool:
         """
         Check if IPv4 address is private.
         """
+
         return (
             self._address & 0xFF_00_00_00
             == 0x0A_00_00_00  # 10.0.0.0 - 10.255.255.255
@@ -197,8 +205,9 @@ class Ip4Address(IpAddress):
         """
         Check if IPv4 address is reserved.
         """
-        return (
-            self._address & 0xF0_00_00_01 == 0xF0_00_00_00
+
+        return (self._address & 0xF0_00_00_00 == 0xF0_00_00_00) & (
+            self._address != 0xFF_FF_FF_FF
         )  # 240.0.0.0 - 255.255.255.254
 
     @property
@@ -206,31 +215,39 @@ class Ip4Address(IpAddress):
         """
         Check if IPv4 address is a limited broadcast.
         """
+
         return self._address == 0xFF_FF_FF_FF  # 255.255.255.255
 
     @property
+    @override
     def is_invalid(self) -> bool:
         """
         Check if IPv4 address is reserved.
         """
+
         return (
             self._address != 0x00_00_00_00
             and self._address & 0xFF_00_00_00 == 0x00_00_00_00
         )  # 0.0.0.1 - 0.255.255.255
 
     @property
+    @override
     def unspecified(self) -> Ip4Address:
         """
         Return unspecified IPv4 Address.
         """
+
         return Ip4Address(0)
 
     @property
+    @override
     def multicast_mac(self) -> MacAddress:
         """
         Create IPv6 multicast MAC address.
         """
+
         assert self.is_multicast
+
         return MacAddress(
             int(MacAddress(0x01005E000000)) | self._address & 0x7FFFFF
         )
@@ -242,7 +259,8 @@ class Ip4Mask(IpMask):
     """
 
     def __init__(
-        self, mask: Ip4Mask | str | bytes | bytearray | memoryview | int
+        self,
+        mask: Ip4Mask | str | bytes | bytearray | memoryview | int,
     ) -> None:
         """
         Class constructor.
@@ -255,6 +273,7 @@ class Ip4Mask(IpMask):
             """
             Validate that mask is made of consecutive bits.
             """
+
             bit_mask = f"{self._mask:032b}"
             try:
                 return not bit_mask[bit_mask.index("0") :].count("1")
@@ -293,10 +312,12 @@ class Ip4Mask(IpMask):
 
         raise Ip4MaskFormatError(mask)
 
+    @override
     def __bytes__(self) -> bytes:
         """
         The '__bytes_()' dunder.
         """
+
         return struct.pack("!L", self._mask)
 
 
@@ -306,7 +327,8 @@ class Ip4Network(IpNetwork):
     """
 
     def __init__(
-        self, network: Ip4Network | tuple[Ip4Address, Ip4Mask] | str
+        self,
+        network: Ip4Network | tuple[Ip4Address, Ip4Mask] | str,
     ) -> None:
         """
         Class constructor.
@@ -349,31 +371,39 @@ class Ip4Network(IpNetwork):
         raise Ip4NetworkFormatError(network)
 
     @property
+    @override
     def address(self) -> Ip4Address:
         """
         Getter for the '_address' attribute.
         """
+
         return self._address
 
     @property
+    @override
     def mask(self) -> Ip4Mask:
         """
         Getter for the '_mask' attribute.
         """
+
         return self._mask
 
     @property
+    @override
     def last(self) -> Ip4Address:
         """
         Last address in the network.
         """
+
         return Ip4Address(int(self._address) + (~int(self._mask) & 0xFFFFFFFF))
 
     @property
+    @override
     def broadcast(self) -> Ip4Address:
         """
         Broadcast address (same as last address in the network).
         """
+
         return self.last
 
 
@@ -384,10 +414,12 @@ class Ip4Host(IpHost):
 
     def __init__(
         self,
-        host: Ip4Host
-        | tuple[Ip4Address, Ip4Network]
-        | tuple[Ip4Address, Ip4Mask]
-        | str,
+        host: (
+            Ip4Host
+            | tuple[Ip4Address, Ip4Network]
+            | tuple[Ip4Address, Ip4Mask]
+            | str
+        ),
     ) -> None:
         """
         Class constructor.
@@ -431,27 +463,34 @@ class Ip4Host(IpHost):
         raise Ip4HostFormatError(host)
 
     @property
+    @override
     def address(self) -> Ip4Address:
         """
         Getter for the '_address' attribute.
         """
+
         return self._address
 
     @property
+    @override
     def network(self) -> Ip4Network:
         """
         Getter for the '_network' attribute.
         """
+
         return self._network
 
     @property
+    @override
     def gateway(self) -> Ip4Address | None:
         """
         Getter for the '_gateway' attribute.
         """
+
         return self._gateway
 
     @gateway.setter
+    @override
     def gateway(
         self,
         address: Ip4Address | None,

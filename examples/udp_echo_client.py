@@ -32,7 +32,7 @@ to the UDP Echo service.
 
 examples/udp_echo_client.py
 
-ver 2.7
+ver 3.0.0
 """
 
 

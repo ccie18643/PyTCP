@@ -29,7 +29,7 @@ The example 'user space' service UDP Discard (RFC 863).
 
 examples/udp_discard_service.py
 
-ver 2.7
+ver 3.0.0
 """
 
 
@@ -52,9 +52,7 @@ class UdpDiscardService(UdpService):
     UDP Echo service support class.
     """
 
-    def __init__(
-        self, *, local_ip_address: str = "0.0.0.0", local_port: int = 9
-    ):
+    def __init__(self, *, local_ip_address: str, local_port: int):
         """
         Class constructor.
         """
@@ -80,14 +78,24 @@ class UdpDiscardService(UdpService):
 
 @click.command()
 @click.option("--interface", default="tap7")
-def cli(*, interface: str) -> None:
+@click.option("--local-ip-address", default="0.0.0.0")
+@click.option("--local-port", default=9, type=int)
+def cli(
+    *,
+    interface: str,
+    local_ip_address: str,
+    local_port: int,
+) -> None:
     """
     Start PyTCP stack and stop it when user presses Ctrl-C.
     Run the UDP Discard service.
     """
 
     stack = TcpIpStack(fd=initialize_tap(tap_name=interface))
-    service = UdpDiscardService()
+    service = UdpDiscardService(
+        local_ip_address=local_ip_address,
+        local_port=local_port,
+    )
 
     try:
         stack.start()

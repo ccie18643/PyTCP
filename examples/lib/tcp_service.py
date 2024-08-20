@@ -29,7 +29,7 @@ The 'user space' TCP generic service class used in examples.
 
 examples/lib/tcp_service.py
 
-ver 2.7
+ver 3.0.0
 """
 
 

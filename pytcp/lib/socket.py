@@ -23,20 +23,20 @@
 #                                                                          #
 ############################################################################
 
-# pylint: disable = invalid-name
-# pylint: disable = redefined-builtin
-# pylint: disable = import-outside-toplevel
-# pylint: disable = too-many-instance-attributes
-# pylint: disable = too-many-public-methods
-# pylint: disable = protected-access
-# pylint: disable = too-many-boolean-expressions
+# pylint: disable=invalid-name
+# pylint: disable=redefined-builtin
+# pylint: disable=import-outside-toplevel
+# pylint: disable=too-many-instance-attributes
+# pylint: disable=too-many-public-methods
+# pylint: disable=protected-access
+# pylint: disable=too-many-boolean-expressions
 
 """
 Module contains BSD like socket interface for the stack.
 
 pytcp/lib/socket.py
 
-ver 2.7
+ver 3.0.0
 """
 
 
@@ -51,9 +51,9 @@ from pytcp.lib import stack
 from pytcp.lib.ip4_address import Ip4Address, Ip4AddressFormatError
 from pytcp.lib.ip6_address import Ip6Address, Ip6AddressFormatError
 from pytcp.lib.ip_helper import pick_local_ip_address
-from pytcp.protocols.tcp.metadata import TcpMetadata
-from pytcp.protocols.tcp.session import FsmState, TcpSession
-from pytcp.protocols.udp.metadata import UdpMetadata
+from pytcp.protocols.tcp.tcp__metadata import TcpMetadata
+from pytcp.protocols.tcp.tcp__session import FsmState, TcpSession
+from pytcp.protocols.udp.udp__metadata import UdpMetadata
 
 if TYPE_CHECKING:
     from threading import Semaphore
@@ -83,6 +83,10 @@ class AddressFamily(IntEnum):
     AF_INET6 = 2
 
     def __str__(self) -> str:
+        """
+        The '__str__()' dunder.
+        """
+
         return str(self.name)
 
 
@@ -101,6 +105,10 @@ class SocketType(IntEnum):
     SOCK_DGRAM = 2
 
     def __str__(self) -> str:
+        """
+        The '__str__()' dunder.
+        """
+
         return str(self.name)
 
 
@@ -109,7 +117,8 @@ SOCK_DGRAM = SocketType.SOCK_DGRAM
 
 
 def socket(
-    family: AddressFamily = AF_INET4, type: SocketType = SOCK_STREAM
+    family: AddressFamily = AF_INET4,
+    type: SocketType = SOCK_STREAM,
 ) -> Socket:
     """
     Return Socket class object.
@@ -117,8 +126,8 @@ def socket(
 
     assert type is SOCK_STREAM or type is SOCK_DGRAM
 
-    from pytcp.protocols.tcp.socket import TcpSocket
-    from pytcp.protocols.udp.socket import UdpSocket
+    from pytcp.protocols.tcp.tcp__socket import TcpSocket
+    from pytcp.protocols.udp.udp__socket import UdpSocket
 
     if type is SOCK_DGRAM:
         return UdpSocket(family)
@@ -153,6 +162,7 @@ class Socket(ABC):
         """
         The '__str__()' dunder.
         """
+
         return (
             f"{self._family}/{self._type}/{self._local_ip_address}/"
             f"{self._local_port}/{self._remote_ip_address}/{self._remote_port}"
@@ -163,6 +173,7 @@ class Socket(ABC):
         """
         Getter for the '_family' attribute.
         """
+
         return self._family
 
     @property
@@ -170,6 +181,7 @@ class Socket(ABC):
         """
         Getter for the '_type' attribute.
         """
+
         return self._type
 
     @property
@@ -177,6 +189,7 @@ class Socket(ABC):
         """
         Getter for the '_local_ip_address' attribute.
         """
+
         return self._local_ip_address
 
     @property
@@ -184,6 +197,7 @@ class Socket(ABC):
         """
         Getter for the '_remote_ip_address' attribute.
         """
+
         return self._remote_ip_address
 
     @property
@@ -191,6 +205,7 @@ class Socket(ABC):
         """
         Getter for the '_local_port' attribute.
         """
+
         return self._local_port
 
     @property
@@ -198,6 +213,7 @@ class Socket(ABC):
         """
         Getter for the '_remote_port' attribute.
         """
+
         return self._remote_port
 
     def _pick_local_port(self) -> int:
@@ -205,22 +221,28 @@ class Socket(ABC):
         Pick ephemeral local port, making sure it is not already being used
         by any socket.
         """
+
         available_ephemeral_ports = set(config.EPHEMERAL_PORT_RANGE) - {
             int(_.split("/")[3]) for _ in stack.sockets
         }
+
         if len(available_ephemeral_ports):
             return available_ephemeral_ports.pop()
+
         raise OSError(
             "[Errno 98] Address already in use - [Unable to find free "
             "local ephemeral port]"
         )
 
     def _is_address_in_use(
-        self, local_ip_address: IpAddress, local_port: int
+        self,
+        local_ip_address: IpAddress,
+        local_port: int,
     ) -> bool:
         """
         Check if IP address / port combination is already in use.
         """
+
         for opened_socket in stack.sockets.values():
             if (
                 opened_socket.family == self._family
@@ -235,6 +257,7 @@ class Socket(ABC):
                 and opened_socket._local_port == local_port
             ):
                 return True
+
         return False
 
     def _set_ip_addresses(
@@ -246,7 +269,7 @@ class Socket(ABC):
     ) -> tuple[Ip6Address | Ip4Address, Ip6Address | Ip4Address]:
         """
         Validate the remote address and pick appropriate local IP
-        address as needed
+        address as needed.
         """
 
         try:
@@ -262,7 +285,7 @@ class Socket(ABC):
             ) from error
 
         # This contraption here is to mimic behavior
-        # of BSD socket implementation
+        # of BSD socket implementation.
         if remote_ip_address.is_unspecified:
             if self._type is SOCK_STREAM:
                 raise ConnectionRefusedError(
@@ -283,29 +306,41 @@ class Socket(ABC):
                 )
 
         assert isinstance(local_ip_address, (Ip6Address, Ip4Address))
+
         return local_ip_address, remote_ip_address
 
     @abstractmethod
-    def bind(self, address: tuple[str, int]) -> None:
+    def bind(
+        self,
+        address: tuple[str, int],
+    ) -> None:
         """
         The 'bind()' socket API method placeholder.
         """
 
     @abstractmethod
-    def connect(self, address: tuple[str, int]) -> None:
+    def connect(
+        self,
+        address: tuple[str, int],
+    ) -> None:
         """
         The 'connect()' socket API method placeholder.
         """
 
     @abstractmethod
-    def send(self, data: bytes) -> int:
+    def send(
+        self,
+        data: bytes,
+    ) -> int:
         """
         The 'send()' socket API method placeholder.
         """
 
     @abstractmethod
     def recv(
-        self, bufsize: int | None = None, timeout: float | None = None
+        self,
+        bufsize: int | None = None,
+        timeout: float | None = None,
     ) -> bytes:
         """
         The 'recv()' socket API method placeholder.
@@ -323,32 +358,39 @@ class Socket(ABC):
             """
             The 'listen()' socket API placeholder.
             """
+
             raise NotImplementedError
 
         def accept(self) -> tuple[Socket, tuple[str, int]]:
             """
             The 'accept()' socket API placeholder.
             """
+
             raise NotImplementedError
 
         def sendto(self, data: bytes, address: tuple[str, int]) -> int:
             """
             The 'sendto()' socket API placeholder.
             """
+
             raise NotImplementedError
 
         def recvfrom(
-            self, bufsize: int | None = None, timeout: float | None = None
+            self,
+            bufsize: int | None = None,
+            timeout: float | None = None,
         ) -> tuple[bytes, tuple[str, int]]:
             """
             The 'recvfrom()' socket API placeholder.
             """
+
             raise NotImplementedError
 
         def process_udp_packet(self, packet_rx_md: UdpMetadata) -> None:
             """
             The 'process_udp_packet()' method plceholder.
             """
+
             raise NotImplementedError
 
         def process_tcp_packet(self, packet_rx_md: TcpMetadata) -> None:
@@ -361,6 +403,7 @@ class Socket(ABC):
             """
             The 'notify_unreachable()' method plceholder.
             """
+
             raise NotImplementedError
 
         @property
@@ -368,6 +411,7 @@ class Socket(ABC):
             """
             The 'tcp_session' property plceholder.
             """
+
             raise NotImplementedError
 
         @property
@@ -375,6 +419,7 @@ class Socket(ABC):
             """
             The 'state' property plceholder.
             """
+
             raise NotImplementedError
 
         @property
@@ -382,4 +427,5 @@ class Socket(ABC):
             """
             The 'parent_socket' property plceholder.
             """
+
             raise NotImplementedError

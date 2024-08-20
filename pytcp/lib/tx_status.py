@@ -29,7 +29,7 @@ Module contains definition of TX status codes.
 
 pytcp/lib/tx_status.py
 
-ver 2.7
+ver 3.0.0
 """
 
 
@@ -43,15 +43,19 @@ class TxStatus(Enum):
     TX status codes.
     """
 
-    PASSED__ETHER__TO_TX_RING = auto()
+    PASSED__ETHERNET__TO_TX_RING = auto()
 
-    DROPED__ETHER__DST_ARP_CACHE_FAIL = auto()
-    DROPED__ETHER__DST_ND_CACHE_FAIL = auto()
-    DROPED__ETHER__DST_NO_GATEWAY_IP4 = auto()
-    DROPED__ETHER__DST_NO_GATEWAY_IP6 = auto()
-    DROPED__ETHER__DST_GATEWAY_ARP_CACHE_FAIL = auto()
-    DROPED__ETHER__DST_GATEWAY_ND_CACHE_FAIL = auto()
-    DROPED__ETHER__DST_RESOLUTION_FAIL = auto()
+    DROPED__ETHERNET__DST_ARP_CACHE_FAIL = auto()
+    DROPED__ETHERNET__DST_ND_CACHE_FAIL = auto()
+    DROPED__ETHERNET__DST_NO_GATEWAY_IP4 = auto()
+    DROPED__ETHERNET__DST_NO_GATEWAY_IP6 = auto()
+    DROPED__ETHERNET__DST_GATEWAY_ARP_CACHE_FAIL = auto()
+    DROPED__ETHERNET__DST_GATEWAY_ND_CACHE_FAIL = auto()
+    DROPED__ETHERNET__DST_RESOLUTION_FAIL = auto()
+
+    PASSED__ETHERNET_802_3__TO_TX_RING = auto()
+
+    DROPED__ETHERNET_802_3__DST_RESOLUTION_FAIL = auto()
 
     DROPED__ARP__NO_PROTOCOL_SUPPORT = auto()
 
@@ -87,16 +91,19 @@ class TxStatus(Enum):
         """
         The '__str__()' dunder.
         """
+
         return str(self.name)
 
     def __eq__(self, other: object) -> bool:
         """
         The '__eq__()' dunder.
         """
+
         return repr(self) == repr(other)
 
     def __hash__(self) -> int:
         """
         The '__hash__()' dunder.
         """
+
         return hash(repr)

@@ -29,7 +29,7 @@ Module contains methods supporting logging.
 
 pytcp/lib/logger.py
 
-ver 2.7
+ver 3.0.0
 """
 
 
@@ -66,13 +66,17 @@ STYLES = {
 START_TIME = time.time()
 
 
-def log(channel: str, message: str, inspect_depth: int = 1) -> bool:
+def log(
+    channel: str,
+    message: str,
+    inspect_depth: int = 1,
+) -> bool:
     """
     Log message if channel and severity match configured values.
     """
 
-    if channel in config.LOG_CHANEL:
-        if config.LOG_DEBUG:
+    if channel in config.LOG__CHANNEL:
+        if config.LOG__DEBUG:
             frame_info = inspect.stack()[inspect_depth]
             caller_class = frame_info.frame.f_locals["self"].__class__.__name__
             caller_method = frame_info.function

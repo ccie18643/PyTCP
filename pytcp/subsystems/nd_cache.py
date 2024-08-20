@@ -23,9 +23,8 @@
 #                                                                          #
 ############################################################################
 
-# pylint: disable = too-few-public-methods
-# pylint: disable = expression-not-assigned
-# pylint: disable = protected-access
+# pylint: disable=too-few-public-methods
+# pylint: disable=expression-not-assigned
 
 
 """
@@ -33,7 +32,7 @@ Module contains class supporting ICMPv6 Neighbor Discovery cache operations.
 
 pycp/protocols/icmp6/nd_cache.py
 
-ver 2.7
+ver 3.0.0
 """
 
 
@@ -47,9 +46,12 @@ from pytcp.lib import stack
 from pytcp.lib.ip6_address import Ip6Address
 from pytcp.lib.logger import log
 from pytcp.lib.mac_address import MacAddress
-from pytcp.protocols.icmp6.fpa import (
-    ICMP6_ND_NEIGHBOR_SOLICITATION,
-    Icmp6NdOptSLLA,
+from pytcp.protocols.icmp6.message.nd.icmp6_nd_message__neighbor_solicitation import (
+    Icmp6NdNeighborSolicitationMessage,
+)
+from pytcp.protocols.icmp6.message.nd.option.icmp6_nd_options import (
+    Icmp6NdOptions,
+    Icmp6NdOptionSlla,
 )
 
 
@@ -115,7 +117,7 @@ class NdCache:
                 # If entry age is over maximum age then discard the entry
                 if (
                     time.time() - self._nd_cache[ip6_address].creation_time
-                    > config.ND_CACHE_ENTRY_MAX_AGE
+                    > config.ICMP6__ND__CACHE__ENTRY_MAX_AGE
                 ):
                     mac_address = self._nd_cache.pop(ip6_address).mac_address
                     __debug__ and log(
@@ -129,8 +131,8 @@ class NdCache:
                 # to refresh it.
                 elif (
                     time.time() - self._nd_cache[ip6_address].creation_time
-                    > config.ND_CACHE_ENTRY_MAX_AGE
-                    - config.ND_CACHE_ENTRY_REFRESH_TIME
+                    > config.ICMP6__ND__CACHE__ENTRY_MAX_AGE
+                    - config.ICMP6__ND__CACHE__ENTRY_REFRESH_TIME
                 ) and self._nd_cache[ip6_address].hit_count:
                     self._nd_cache[ip6_address].hit_count = 0
                     self._send_icmp6_neighbor_solicitation(ip6_address)
@@ -190,17 +192,20 @@ class NdCache:
         """
 
         # Pick appropriate source address
-        ip6_src = Ip6Address(0)
+        ip6__src = Ip6Address(0)
         for ip6_host in stack.packet_handler.ip6_host:
             if icmp6_ns_target_address in ip6_host.network:
-                ip6_src = ip6_host.address
+                ip6__src = ip6_host.address
 
         # Send out ND Solicitation message
         stack.packet_handler._phtx_icmp6(
-            ip6_src=ip6_src,
-            ip6_dst=icmp6_ns_target_address.solicited_node_multicast,
-            ip6_hop=255,
-            icmp6_type=ICMP6_ND_NEIGHBOR_SOLICITATION,
-            icmp6_ns_target_address=icmp6_ns_target_address,
-            icmp6_nd_options=[Icmp6NdOptSLLA(stack.packet_handler.mac_unicast)],
+            ip6__src=ip6__src,
+            ip6__dst=icmp6_ns_target_address.solicited_node_multicast,
+            ip6__hop=255,
+            icmp6__message=Icmp6NdNeighborSolicitationMessage(
+                target_address=icmp6_ns_target_address,
+                options=Icmp6NdOptions(
+                    Icmp6NdOptionSlla(slla=stack.packet_handler.mac_unicast)
+                ),
+            ),
         )

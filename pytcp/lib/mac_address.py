@@ -23,14 +23,15 @@
 #                                                                          #
 ############################################################################
 
-# pylint: disable = missing-class-docstring
+# pylint: disable=missing-class-docstring
+# pylint: disable=redefined-builtin
 
 """
 Module contains Ethernet MAC address manipulation class.
 
 pytcp/lib/mac_address.py
 
-ver 2.7
+ver 3.0.0
 """
 
 
@@ -40,8 +41,7 @@ import re
 import struct
 
 
-class MacIp4AddressFormatError(Exception):
-    ...
+class MacIp4AddressFormatError(Exception): ...
 
 
 class MacAddress:
@@ -50,7 +50,8 @@ class MacAddress:
     """
 
     def __init__(
-        self, address: MacAddress | str | bytes | bytearray | memoryview | int
+        self,
+        address: MacAddress | str | bytes | bytearray | memoryview | int,
     ) -> None:
         """
         Class constructor.
@@ -90,18 +91,21 @@ class MacAddress:
         """
         The '__str__()' dunder.
         """
+
         return ":".join([f"{_:0>2x}" for _ in bytes(self)])
 
     def __repr__(self) -> str:
         """
         The '__repr__()' dunder.
         """
+
         return f"MacAddress('{str(self)}')"
 
     def __bytes__(self) -> bytes:
         """
         The '__bytes__() dunder.
         """
+
         return struct.pack(
             "!HHH",
             (self._address >> 32) & 0xFFFF,
@@ -113,18 +117,21 @@ class MacAddress:
         """
         The '__int__()' dunder.
         """
+
         return self._address
 
     def __eq__(self, other: object) -> bool:
         """
         The '__eq__()' dunder.
         """
+
         return repr(self) == repr(other)
 
     def __hash__(self) -> int:
         """
         The '__hash__' dunder.
         """
+
         return self._address
 
     @property
@@ -132,6 +139,7 @@ class MacAddress:
         """
         Check if address is unspecified.
         """
+
         return self._address == 0
 
     @property
@@ -139,6 +147,7 @@ class MacAddress:
         """
         Check if address is unicast.
         """
+
         return (
             self._address != 0  # unspecified
             and self._address
@@ -153,6 +162,7 @@ class MacAddress:
         """
         Check if address is a MAC for IPv4 multicast.
         """
+
         return self._address in range(1101088686080, 1101105463296)
 
     @property
@@ -160,6 +170,7 @@ class MacAddress:
         """
         Check if address is a MAC for IPv6 multicast.
         """
+
         return self._address in range(56294136348672, 56298431315968)
 
     @property
@@ -167,6 +178,7 @@ class MacAddress:
         """
         Check if address is a MAC for IPv6 solicited node multicast.
         """
+
         return self._address in range(56298414538752, 56298431315968)
 
     @property
@@ -174,4 +186,5 @@ class MacAddress:
         """
         Check if address is a broadcast MAC.
         """
+
         return self._address == 281474976710655

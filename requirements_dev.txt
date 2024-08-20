@@ -11,3 +11,4 @@ build
 twine
 ipython
 pyupgrade
+parameterized

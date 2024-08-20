@@ -23,16 +23,16 @@
 #                                                                          #
 ############################################################################
 
-# pylint: disable = expression-not-assigned
-# pylint: disable = too-many-instance-attributes
-# pylint: disable = too-many-arguments
+# pylint: disable=expression-not-assigned
+# pylint: disable=too-many-instance-attributes
+# pylint: disable=too-many-arguments
 
 """
 Module contains class supporting timer that can be used by other stack components.
 
 pytcp/subsystems/timer.py
 
-ver 2.7
+ver 3.0.0
 """
 
 

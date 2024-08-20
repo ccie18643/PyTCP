@@ -23,15 +23,14 @@
 #                                                                          #
 ############################################################################
 
-# pylint: disable = expression-not-assigned
-# pylint: disable = too-few-public-methods
+# pylint: disable=expression-not-assigned
 
 """
 Module contains the DHCPv4 client that is used internally by the stack.
 
 pytcp/protocols/dhcp4/client.py
 
-ver 2.7
+ver 3.0.0
 """
 
 
@@ -43,7 +42,7 @@ from typing import TYPE_CHECKING
 from pytcp.lib import socket
 from pytcp.lib.ip4_address import Ip4Address, Ip4Host, Ip4Mask
 from pytcp.lib.logger import log
-from pytcp.protocols.dhcp4.ps import (
+from pytcp.protocols.dhcp4.base import (
     DHCP4_MSG_ACK,
     DHCP4_MSG_DISCOVER,
     DHCP4_MSG_OFFER,

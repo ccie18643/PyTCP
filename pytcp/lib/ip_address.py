@@ -23,14 +23,14 @@
 #                                                                          #
 ############################################################################
 
-# pylint: disable = missing-class-docstring
+# pylint: disable=missing-class-docstring
 
 """
 Module contains base class for IP address manipulation.
 
 pytcp/lib/ip_address.py
 
-ver 2.7
+ver 3.0.0
 """
 
 
@@ -45,24 +45,19 @@ if TYPE_CHECKING:
     from pytcp.lib.mac_address import MacAddress
 
 
-class IpAddressFormatError(Exception):
-    ...
+class IpAddressFormatError(Exception): ...
 
 
-class IpMaskFormatError(Exception):
-    ...
+class IpMaskFormatError(Exception): ...
 
 
-class IpNetworkFormatError(Exception):
-    ...
+class IpNetworkFormatError(Exception): ...
 
 
-class IpHostFormatError(Exception):
-    ...
+class IpHostFormatError(Exception): ...
 
 
-class IpHostGatewayError(Exception):
-    ...
+class IpHostGatewayError(Exception): ...
 
 
 class IpAddress(ABC):
@@ -74,24 +69,31 @@ class IpAddress(ABC):
         """
         Integer representation.
         """
+
         return self._address
 
-    def __eq__(self, other: object) -> bool:
+    def __eq__(
+        self,
+        other: object,
+    ) -> bool:
         """
         The '__eq__()' dunder.
         """
+
         return repr(self) == repr(other)
 
     def __repr__(self) -> str:
         """
         The '__repr()__' dunder.
         """
+
         return f"Ip{self._version}Address('{str(self)}')"
 
     def __hash__(self) -> int:
         """
         The '__hash__()' dunder.
         """
+
         return self._address
 
     @property
@@ -99,6 +101,7 @@ class IpAddress(ABC):
         """
         Getter for '_version' attribute.
         """
+
         return self._version
 
     @property
@@ -106,6 +109,7 @@ class IpAddress(ABC):
         """
         Check if the IP version is 6.
         """
+
         return self._version == 6
 
     @property
@@ -113,6 +117,7 @@ class IpAddress(ABC):
         """
         Check if the IP version is 4.
         """
+
         return self._version == 4
 
     @property
@@ -120,6 +125,7 @@ class IpAddress(ABC):
         """
         Check if address is a unspecified.
         """
+
         return self._address == 0
 
     @property
@@ -127,6 +133,7 @@ class IpAddress(ABC):
         """
         Check if address is a unicast address.
         """
+
         return any(
             (
                 self.is_global,
@@ -137,10 +144,14 @@ class IpAddress(ABC):
         )
 
     @abstractmethod
-    def __init__(self, address: int) -> None:
+    def __init__(
+        self,
+        address: int,
+    ) -> None:
         """
         Class constructor placeholder.
         """
+
         if TYPE_CHECKING:
             self._address: int
             self._version: int
@@ -206,6 +217,7 @@ class IpAddress(ABC):
             """
             The 'is_solicited_node_multicast' property placeholder.
             """
+
             raise NotImplementedError
 
         @property
@@ -213,6 +225,7 @@ class IpAddress(ABC):
             """
             The 'is_invalid' property placeholder.
             """
+
             raise NotImplementedError
 
         @property
@@ -220,6 +233,7 @@ class IpAddress(ABC):
             """
             The 'solicited_node_multicast' property placeholder.
             """
+
             raise NotImplementedError
 
         @property
@@ -227,6 +241,7 @@ class IpAddress(ABC):
             """
             The 'multicast_mac' property placeholder.
             """
+
             raise NotImplementedError
 
 
@@ -236,10 +251,14 @@ class IpMask(ABC):
     """
 
     @abstractmethod
-    def __init__(self, address: int) -> None:
+    def __init__(
+        self,
+        address: int,
+    ) -> None:
         """
         Class constructor placeholder.
         """
+
         if TYPE_CHECKING:
             self._mask: int
             self._version: int
@@ -248,21 +267,27 @@ class IpMask(ABC):
         """
         The '__str__()' dunder.
         """
+
         return f"/{len(self)}"
 
     def __repr__(self) -> str:
         """
         The '__str__()' dunder.
         """
+
         return f"Ip{self._version}Mask('{str(self)}')"
 
     def __int__(self) -> int:
         """
         The '__int__()' dunder.
         """
+
         return self._mask
 
-    def __eq__(self, other: object) -> bool:
+    def __eq__(
+        self,
+        other: object,
+    ) -> bool:
         """
         The '__eq__()' dunder.
         """
@@ -272,12 +297,14 @@ class IpMask(ABC):
         """
         The '__hash__()' dunder.
         """
+
         return self._mask
 
     def __len__(self) -> int:
         """
         The '__len__()' dunder that returns the bit length of mask.
         """
+
         return f"{self._mask:b}".count("1")
 
     @property
@@ -285,6 +312,7 @@ class IpMask(ABC):
         """
         Getter for the '_version' attribute.
         """
+
         return self._version
 
     @property
@@ -292,6 +320,7 @@ class IpMask(ABC):
         """
         Check if the IP version is 6.
         """
+
         return self._version == 6
 
     @property
@@ -299,6 +328,7 @@ class IpMask(ABC):
         """
         Check if the IP version is 4.
         """
+
         return self._version == 4
 
     @abstractmethod
@@ -318,6 +348,7 @@ class IpNetwork(ABC):
         """
         Class constructor placeholder.
         """
+
         self._address: IpAddress
         self._mask: IpMask
         self._version: int
@@ -326,42 +357,55 @@ class IpNetwork(ABC):
         """
         The '__str__()' dunder.
         """
+
         return str(self._address) + "/" + str(len(self._mask))
 
     def __repr__(self) -> str:
         """
         The '__repr__()' dunder.
         """
+
         return f"Ip{self._version}Network('{str(self)}')"
 
-    def __eq__(self, other: object) -> bool:
+    def __eq__(
+        self,
+        other: object,
+    ) -> bool:
         """
         The '__eq__()' dunder.
         """
+
         return repr(self) == repr(other)
 
     def __hash__(self) -> int:
         """
         The '__hash__()' dunder.
         """
+
         return hash(self._address) ^ hash(self._mask)
 
-    def __contains__(self, other: object) -> bool:
+    def __contains__(
+        self,
+        other: object,
+    ) -> bool:
         """
         The '__contains__()' dunder for the 'in' operator.
         """
+
         if isinstance(other, IpAddress):
             return (
                 isinstance(other, IpAddress)
                 and self._version == other.version
                 and int(self.address) <= int(other) <= int(self.last)
             )
+
         if isinstance(other, IpHost):
             return (
                 isinstance(other, IpHost)
                 and self._version == other.version
                 and int(self.address) <= int(other.address) <= int(self.last)
             )
+
         return False
 
     @property
@@ -369,6 +413,7 @@ class IpNetwork(ABC):
         """
         Getter for the '_version' attribute.
         """
+
         return self._version
 
     @property
@@ -376,6 +421,7 @@ class IpNetwork(ABC):
         """
         Check if the IP version is 6.
         """
+
         return self._version == 6
 
     @property
@@ -383,6 +429,7 @@ class IpNetwork(ABC):
         """
         Check if the IP version is 4.
         """
+
         return self._version == 4
 
     @property
@@ -413,12 +460,14 @@ class IpNetwork(ABC):
             """
             The 'broadcast' property placeholder.
             """
+
             raise NotImplementedError
 
         def eui64(self, mac_address: MacAddress) -> Ip6Host:
             """
             The 'eui64' property placeholder.
             """
+
             raise NotImplementedError
 
 
@@ -432,6 +481,7 @@ class IpHost(ABC):
         """
         Class constructor placeholder.
         """
+
         self._address: IpAddress
         self._network: IpNetwork
         self._version: int
@@ -441,24 +491,31 @@ class IpHost(ABC):
         """
         The '__str__()' dunder.
         """
+
         return str(self._address) + "/" + str(len(self._network.mask))
 
     def __repr__(self) -> str:
         """
         The '__repr__()' dunder.
         """
+
         return f"Ip{self._version}Host('{str(self)}')"
 
-    def __eq__(self, other: object) -> bool:
+    def __eq__(
+        self,
+        other: object,
+    ) -> bool:
         """
         The '__eq__()' dunder.
         """
+
         return repr(self) == repr(other)
 
     def __hash__(self) -> int:
         """
         The '__hash__()' dunder.
         """
+
         return hash(self._address) ^ hash(self._network)
 
     @property
@@ -466,6 +523,7 @@ class IpHost(ABC):
         """
         Getter for the '_version' attribute.
         """
+
         return self._version
 
     @property
@@ -473,6 +531,7 @@ class IpHost(ABC):
         """
         Check if the IP version is 6.
         """
+
         return self._version == 6
 
     @property
@@ -480,6 +539,7 @@ class IpHost(ABC):
         """
         Check if the IP version is 4.
         """
+
         return self._version == 4
 
     @property

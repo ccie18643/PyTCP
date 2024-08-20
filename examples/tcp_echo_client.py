@@ -32,7 +32,7 @@ TCP Echo service and sends messages.
 
 examples/tcp_echo_client.py
 
-ver 2.7
+ver 3.0.0
 """
 
 

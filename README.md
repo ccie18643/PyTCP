@@ -159,6 +159,14 @@ stack.stop()
 
 #### To be implemented:
 
+ - [ ] Ethernet II - *Ensure the minimum value for the 'type' field is 0x600, part of integrity checks*
+ - [ ] Protocols - *Refactor integrity and sanity messages to be more consistent and provide more detail on the issue, eg. length of the bad packet, etc.*
+ - [ ] IPv4/TCP/ICMPv6 - *Reconsider mechanism of adding options after creating initial options object.*
+ - [ ] IMCPv4 - *Add proper assert messages.*
+ - [ ] IMCPv6 - *Add proper assert messages.*
+ - [ ] ICMPv4 - *Refactor unit tests to test assembling and parsing on packet vs message classes.
+ - [ ] ICMPv6 - *Refactor unit tests to test assembling and parsing on packet vs message classes.
+
  - [ ] ICMPv6 - *MLDv2 support is quite a mess now. Need to finish it.*
  - [ ] Testing - *Need to refactor packet flow tests (tests/packet_flow_*.py) to use the same format and dir as FPA tests based on test_frames.*
  - [ ] Testing - *Create FPA unit tests for MLDv2 Report (len, str, assemble).*

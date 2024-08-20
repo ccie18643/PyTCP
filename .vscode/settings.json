@@ -1,6 +1,10 @@
 {
     "python.analysis.extraPaths": [
-        "./pytcp"
+        "./"
     ],
-    "python.formatting.provider": "black"
+    "[python]": {
+        "editor.defaultFormatter": "ms-python.black-formatter"
+    },
+    "python.REPL.enableREPLSmartSend": false,
+    "makefile.configureOnOpen": false
 }

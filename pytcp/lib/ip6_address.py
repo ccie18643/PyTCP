@@ -23,14 +23,14 @@
 #                                                                          #
 ############################################################################
 
-# pylint: disable = missing-class-docstring
+# pylint: disable=missing-class-docstring
 
 """
 Module contains IPv6 address manipulation classes.
 
 pytcp/lib/ip6_address.py
 
-ver 2.7
+ver 3.0.0
 """
 
 
@@ -39,6 +39,7 @@ from __future__ import annotations
 import re
 import socket
 import struct
+from typing import override
 
 from pytcp.lib.ip_address import (
     IpAddress,
@@ -53,6 +54,8 @@ from pytcp.lib.ip_address import (
 )
 from pytcp.lib.mac_address import MacAddress
 
+IP6_ADDRESS_LEN = 16
+
 IP6_REGEX = (
     r"(([0-9a-fA-F]{1,4}:){7,7}[0-9a-fA-F]{1,4}|"
     r"([0-9a-fA-F]{1,4}:){1,7}:|"
@@ -66,24 +69,19 @@ IP6_REGEX = (
 )
 
 
-class Ip6AddressFormatError(IpAddressFormatError):
-    ...
+class Ip6AddressFormatError(IpAddressFormatError): ...
 
 
-class Ip6MaskFormatError(IpMaskFormatError):
-    ...
+class Ip6MaskFormatError(IpMaskFormatError): ...
 
 
-class Ip6NetworkFormatError(IpNetworkFormatError):
-    ...
+class Ip6NetworkFormatError(IpNetworkFormatError): ...
 
 
-class Ip6HostFormatError(IpHostFormatError):
-    ...
+class Ip6HostFormatError(IpHostFormatError): ...
 
 
-class Ip6HostGatewayError(IpHostGatewayError):
-    ...
+class Ip6HostGatewayError(IpHostGatewayError): ...
 
 
 class Ip6Address(IpAddress):
@@ -92,7 +90,8 @@ class Ip6Address(IpAddress):
     """
 
     def __init__(
-        self, address: Ip6Address | str | bytes | bytearray | memoryview | int
+        self,
+        address: Ip6Address | str | bytes | bytearray | memoryview | int,
     ) -> None:
         """
         Class constructor.
@@ -131,13 +130,19 @@ class Ip6Address(IpAddress):
 
         raise Ip6AddressFormatError(address)
 
+    @override
     def __str__(self) -> str:
-        """String representation"""
+        """
+        String representation
+        """
 
         return socket.inet_ntop(socket.AF_INET6, bytes(self))
 
+    @override
     def __bytes__(self) -> bytes:
-        """Bytes representation"""
+        """
+        Bytes representation
+        """
 
         return struct.pack(
             "!LLLL",
@@ -148,86 +153,104 @@ class Ip6Address(IpAddress):
         )
 
     @property
+    @override
     def is_loopback(self) -> bool:
         """
         Check if IPv6 address is loopback.
         """
+
         return self._address == 1  # ::1/128
 
     @property
+    @override
     def is_global(self) -> bool:
         """
         Check if IPv6 address is global.
         """
+
         return (
             self._address & 0xE000_0000_0000_0000_0000_0000_0000_0000
             == 0x2000_0000_0000_0000_0000_0000_0000_0000
         )  # 2000::/3
 
     @property
+    @override
     def is_private(self) -> bool:
         """
         Check if IPv6 address is private.
         """
+
         return (
             self._address & 0xFE00_0000_0000_0000_0000_0000_0000_0000
             == 0xFC00_0000_0000_0000_0000_0000_0000_0000
         )  # fc00::/7
 
     @property
+    @override
     def is_link_local(self) -> bool:
         """
         Check if IPv6 address is link local.
         """
+
         return (
             self._address & 0xFFC0_0000_0000_0000_0000_0000_0000_0000
             == 0xFE80_0000_0000_0000_0000_0000_0000_0000
         )  # fe80::/10
 
     @property
+    @override
     def is_multicast(self) -> bool:
         """
         Check if IPv6 address is multicast.
         """
+
         return (
             self._address & 0xFF00_0000_0000_0000_0000_0000_0000_0000
             == 0xFF00_0000_0000_0000_0000_0000_0000_0000
         )  # ff00::/8
 
     @property
+    @override
     def is_solicited_node_multicast(self) -> bool:
         """
         Check if address is IPv6 solicited node multicast address.
         """
+
         return (
             self._address & 0xFFFF_FFFF_FFFF_FFFF_FFFF_FFFF_FF00_0000
             == 0xFF02_0000_0000_0000_0000_0001_FF00_0000
         )  # ff02::1:ff00:0/104
 
     @property
+    @override
     def solicited_node_multicast(self) -> Ip6Address:
         """
         Create IPv6 solicited node multicast address.
         """
+
         return Ip6Address(
             self._address & 0xFFFFFF | int(Ip6Address("ff02::1:ff00:0"))
         )
 
     @property
+    @override
     def multicast_mac(self) -> MacAddress:
         """
         Create IPv6 multicast MAC address.
         """
+
         assert self.is_multicast
         return MacAddress(
             int(MacAddress(0x333300000000)) | self._address & 0xFFFFFFFF
         )
 
     @property
+    @override
     def unspecified(self) -> Ip6Address:
         """
         Return unspecified IPv6 Address.
         """
+
         return Ip6Address(0)
 
 
@@ -237,7 +260,8 @@ class Ip6Mask(IpMask):
     """
 
     def __init__(
-        self, mask: Ip6Mask | str | bytes | bytearray | memoryview | int
+        self,
+        mask: Ip6Mask | str | bytes | bytearray | memoryview | int,
     ) -> None:
         """
         Class constructor.
@@ -250,6 +274,7 @@ class Ip6Mask(IpMask):
             """
             Validate that mask is made of consecutive bits.
             """
+
             bit_mask = f"{self._mask:0128b}"
             try:
                 return not bit_mask[bit_mask.index("0") :].count("1")
@@ -281,10 +306,12 @@ class Ip6Mask(IpMask):
 
         raise Ip6MaskFormatError(mask)
 
+    @override
     def __bytes__(self) -> bytes:
         """
         The '__bytes__()' dunder.
         """
+
         return struct.pack(
             "!LLLL",
             (self._mask >> 96) & 0xFFFFFFFF,
@@ -300,7 +327,8 @@ class Ip6Network(IpNetwork):
     """
 
     def __init__(
-        self, network: Ip6Network | tuple[Ip6Address, Ip6Mask] | str
+        self,
+        network: Ip6Network | tuple[Ip6Address, Ip6Mask] | str,
     ) -> None:
         """
         Class constructor.
@@ -340,39 +368,51 @@ class Ip6Network(IpNetwork):
         raise Ip6NetworkFormatError(network)
 
     @property
+    @override
     def address(self) -> Ip6Address:
         """
         Getter for the '_address' attribute.
         """
+
         return self._address
 
     @property
+    @override
     def mask(self) -> Ip6Mask:
         """
         Getter for the '_mask' attribute.
         """
+
         return self._mask
 
     @property
+    @override
     def last(self) -> Ip6Address:
         """
         Last address in the network.
         """
+
         return Ip6Address(
             int(self._address)
             + (~int(self._mask) & 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF)
         )
 
-    def eui64(self, mac_address: MacAddress) -> Ip6Host:
+    @override
+    def eui64(
+        self,
+        mac_address: MacAddress,
+    ) -> Ip6Host:
         """
         Create IPv6 EUI64 interface address.
         """
+
         assert len(self.mask) == 64
         interface_id = (
             ((int(mac_address) & 0xFFFFFF000000) << 16)
             | int(mac_address) & 0xFFFFFF
             | 0xFFFE000000
         ) ^ 0x0200000000000000
+
         return Ip6Host(
             (Ip6Address(int(self._address) | interface_id), Ip6Mask("/64"))
         )
@@ -385,10 +425,12 @@ class Ip6Host(IpHost):
 
     def __init__(
         self,
-        host: Ip6Host
-        | tuple[Ip6Address, Ip6Network]
-        | tuple[Ip6Address, Ip6Mask]
-        | str,
+        host: (
+            Ip6Host
+            | tuple[Ip6Address, Ip6Network]
+            | tuple[Ip6Address, Ip6Mask]
+            | str
+        ),
     ) -> None:
         """
         Class constructor.
@@ -431,27 +473,34 @@ class Ip6Host(IpHost):
         raise Ip6HostFormatError(host)
 
     @property
+    @override
     def address(self) -> Ip6Address:
         """
         Getter for the '_address' attribute.
         """
+
         return self._address
 
     @property
+    @override
     def network(self) -> Ip6Network:
         """
         Getter for the '_network' attribute.
         """
+
         return self._network
 
     @property
+    @override
     def gateway(self) -> Ip6Address | None:
         """
         Getter for the '_gateway' attribute.
         """
+
         return self._gateway
 
     @gateway.setter
+    @override
     def gateway(
         self,
         address: Ip6Address | None,

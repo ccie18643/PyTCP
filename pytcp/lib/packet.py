@@ -24,16 +24,16 @@
 ############################################################################
 
 
-# pylint: disable = invalid-name
-# pylint: disable = too-many-instance-attributes
-# pylint: disable = too-few-public-methods
+# pylint: disable=invalid-name
+# pylint: disable=too-many-instance-attributes
+# pylint: disable=too-few-public-methods
 
 """
 Module contains class representing packet.
 
 pytcp/lib/packet.py
 
-ver 2.7
+ver 3.0.0
 """
 
 
@@ -42,17 +42,22 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from pytcp.lib.tracker import Tracker
+from pytcp.protocols.arp.arp__parser import ArpParser
+from pytcp.protocols.ethernet.ethernet__parser import EthernetParser
+from pytcp.protocols.ip4.ip4__parser import Ip4Parser
+from pytcp.protocols.ip6.ip6__parser import Ip6Parser
+from pytcp.protocols.tcp.tcp__parser import TcpParser
+from pytcp.protocols.udp.udp__parser import UdpParser
 
 if TYPE_CHECKING:
-    from pytcp.protocols.arp.fpp import ArpParser
-    from pytcp.protocols.ether.fpp import EtherParser
-    from pytcp.protocols.icmp4.fpp import Icmp4Parser
-    from pytcp.protocols.icmp6.fpp import Icmp6Parser
-    from pytcp.protocols.ip4.fpp import Ip4Parser
-    from pytcp.protocols.ip6.fpp import Ip6Parser
-    from pytcp.protocols.ip6_ext_frag.fpp import Ip6ExtFragParser
-    from pytcp.protocols.tcp.fpp import TcpParser
-    from pytcp.protocols.udp.fpp import UdpParser
+    from pytcp.protocols.ethernet_802_3.ethernet_802_3__parser import (
+        Ethernet8023Parser,
+    )
+    from pytcp.protocols.icmp4.icmp4__parser import Icmp4Parser
+    from pytcp.protocols.icmp6.icmp6__parser import Icmp6Parser
+    from pytcp.protocols.ip6_ext_frag.ip6_ext_frag__parser import (
+        Ip6ExtFragParser,
+    )
 
 
 class PacketRx:
@@ -69,7 +74,8 @@ class PacketRx:
         self.tracker: Tracker = Tracker(prefix="RX")
         self.parse_failed: str = ""
 
-        self.ether: EtherParser
+        self.ethernet: EthernetParser
+        self.ethernet_802_3: Ethernet8023Parser
         self.arp: ArpParser
         self.ip: Ip6Parser | Ip4Parser
         self.ip4: Ip4Parser
@@ -84,4 +90,5 @@ class PacketRx:
         """
         Return length of raw frame.
         """
+
         return len(self.frame)

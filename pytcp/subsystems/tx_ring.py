@@ -23,15 +23,15 @@
 #                                                                          #
 ############################################################################
 
-# pylint: disable = expression-not-assigned
-# pylint: disable = consider-using-with
+# pylint: disable=expression-not-assigned
+# pylint: disable=consider-using-with
 
 """
 Module contains class supporting stack interface TX operations.
 
 pytcp/subsystems/tx_ring.py
 
-ver 2.7
+ver 3.0.0
 """
 
 
@@ -44,11 +44,14 @@ from typing import TYPE_CHECKING
 
 from pytcp import config
 from pytcp.lib.logger import log
+from pytcp.protocols.ethernet.ethernet__assembler import EthernetAssembler
 
 if TYPE_CHECKING:
     from threading import Semaphore
 
-    from pytcp.protocols.ether.fpa import EtherAssembler
+    from pytcp.protocols.ethernet_802_3.ethernet_802_3__assembler import (
+        Ethernet8023Assembler,
+    )
 
 
 class TxRing:
@@ -60,7 +63,7 @@ class TxRing:
         """
         Initialize access to tap interface and the outbound queue.
         """
-        self._tx_ring: list[EtherAssembler] = []
+        self._tx_ring: list[EthernetAssembler | Ethernet8023Assembler] = []
         self._packet_enqueued: Semaphore = threading.Semaphore(0)
         self._run_thread: bool = False
         self._tap: int = -1
@@ -90,10 +93,6 @@ class TxRing:
 
         __debug__ and log("stack", "Started TX ring")
 
-        # Using static frame buffer to avoid dynamic memory allocation
-        # for each frame.
-        frame_buffer = bytearray(config.TAP_MTU + 14)
-
         while self._run_thread:
             # Timeout here is needed so the call doesn't block forever and
             # we are able to end the thread gracefully
@@ -103,17 +102,18 @@ class TxRing:
 
             packet_tx = self._tx_ring.pop(0)
 
-            if (packet_tx_len := len(packet_tx)) > config.TAP_MTU + 14:
+            if (
+                packet_tx_len := len(packet_tx)
+            ) > config.INTERFACE__TAP__MTU + 14:
                 __debug__ and log(
                     "tx-ring",
                     f"{packet_tx.tracker} - Unable to send frame, frame"
-                    f"len ({packet_tx_len}) > mtu ({config.TAP_MTU + 14})",
+                    f"len ({packet_tx_len}) > mtu ({config.INTERFACE__TAP__MTU + 14})",
                 )
                 continue
-            frame = memoryview(frame_buffer)[:packet_tx_len]
-            packet_tx.assemble(frame)
+
             try:
-                os.write(self._tap, frame)
+                os.write(self._tap, bytes(packet_tx))
             except OSError as error:
                 __debug__ and log(
                     "tx-ring",
@@ -131,10 +131,13 @@ class TxRing:
 
         __debug__ and log("stack", "Stopped TX ring")
 
-    def enqueue(self, packet_tx: EtherAssembler) -> None:
+    def enqueue(
+        self, packet_tx: EthernetAssembler | Ethernet8023Assembler
+    ) -> None:
         """
         Enqueue outbound packet into TX ring.
         """
+
         self._tx_ring.append(packet_tx)
         __debug__ and log(
             "rx-ring",

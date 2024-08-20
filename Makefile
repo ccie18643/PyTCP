@@ -8,10 +8,11 @@ PYTCP_FILES := $(shell find ${PYTCP_PATH} -name '*.py')
 TEST_FILES := $(shell find ${TESTS_PATH} -name '*.py')
 EXAMPLES_FILES := $(shell find ${EXAMPLES_PATH} -name '*.py')
 
-$(VENV)/bin/activate: requirements_dev.txt
+$(VENV)/bin/activate: requirements.txt requirements_dev.txt
 	@python$(PYTHON_VERSION) -m venv $(VENV)
 	@echo "export PYTHONPATH=$(ROOT_PATH)" >> venv/bin/activate
 	@./$(VENV)/bin/python3 -m pip install --upgrade pip
+	@./$(VENV)/bin/pip install -r requirements.txt
 	@./$(VENV)/bin/pip install -r requirements_dev.txt
 
 venv: $(VENV)/bin/activate
@@ -27,27 +28,47 @@ clean:
 
 lint: venv
 	@echo '<<< CODESPELL'
-	@./$(VENV)/bin/codespell --write-changes ${PYTCP_FILES} ${TEST_FILES} ${EXAMPLES_FILES}
+	@./$(VENV)/bin/codespell --write-changes ${PYTCP_FILES}
+	@./$(VENV)/bin/codespell --write-changes ${TEST_FILES}
+	@./$(VENV)/bin/codespell --write-changes ${EXAMPLES_FILES}
 	@echo '<<< ISORT'
-	@./$(VENV)/bin/isort ${PYTCP_FILES} ${TEST_FILES} ${EXAMPLES_FILES}
+	@./$(VENV)/bin/isort ${PYTCP_FILES}
+	@./$(VENV)/bin/isort ${TEST_FILES}
+	@./$(VENV)/bin/isort ${EXAMPLES_FILES}
 	@echo '<<< BLACK'
-	@./$(VENV)/bin/black ${PYTCP_FILES} ${TEST_FILES} ${EXAMPLES_FILES}
+	@./$(VENV)/bin/black ${PYTCP_FILES}
+	@./$(VENV)/bin/black ${TEST_FILES}
+	@./$(VENV)/bin/black ${EXAMPLES_FILES}
 	@echo '<<< FLAKE8'
-	@./$(VENV)/bin/flake8 ${PYTCP_FILES} ${TEST_FILES} ${EXAMPLES_FILES}
+	@./$(VENV)/bin/flake8 ${PYTCP_FILES}
+	@./$(VENV)/bin/flake8 ${TEST_FILES}
+	@./$(VENV)/bin/flake8 ${EXAMPLES_FILES}
 	@echo '<<< MYPY'
 	@PYTHONPATH=$(ROOT_PATH) ./$(VENV)/bin/mypy -p ${PYTCP_PATH}
-	@PYTHONPATH=$(ROOT_PATH) ./$(VENV)/bin/mypy -p ${EXAMPLES_PATH}
 	@PYTHONPATH=$(ROOT_PATH) ./$(VENV)/bin/mypy -p ${TESTS_PATH}
+	@PYTHONPATH=$(ROOT_PATH) ./$(VENV)/bin/mypy -p ${EXAMPLES_PATH}
+
+test_legacy_unit: venv
+	@echo '<<< TESTSLIDE LEGACY UNIT'
+	@./$(VENV)/bin/testslide tests__legacy/unit/*.py
+
+test_legacy_integration: venv
+	@echo '<<< TESTSLIDE LEGACY INTEGRATION'
+	@./$(VENV)/bin/testslide tests__legacy/integration/*.py
+
+test_legacy: test_legacy_unit test_legacy_integration
 
 test_unit: venv
 	@echo '<<< TESTSLIDE UNIT'
-	@./$(VENV)/bin/testslide tests/unit/*.py
+	@./$(VENV)/bin/testslide $(shell find 'tests/unit' -name '*.py')
 
 test_integration: venv
 	@echo '<<< TESTSLIDE INTEGRATION'
-	@./$(VENV)/bin/testslide tests/integration/*.py
+	@./$(VENV)/bin/testslide $(shell find 'tests/unit' -name '*.py')
 
 test: test_unit test_integration
+
+validate: lint test_unit test_legacy
 
 bridge:
 	@brctl addbr br0

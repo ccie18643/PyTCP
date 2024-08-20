@@ -23,15 +23,15 @@
 #                                                                          #
 ############################################################################
 
-# pylint: disable = expression-not-assigned
-# pylint: disable = consider-using-with
+# pylint: disable=expression-not-assigned
+# pylint: disable=consider-using-with
 
 """
 Module contains class supporting stack interface RX operations.
 
 pytcp/subsystems/rx_ring.py
 
-ver 2.7
+ver 3.0.0
 """
 
 

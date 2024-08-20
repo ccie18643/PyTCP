@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "PyTCP"
-version = "2.7.7"
+version = "3.0.0"
 description = "TCP/IP stack written in Python."
 readme = "README.md"
 authors = [{ name = "Sebastian Majewski", email = "ccie18643@gmail.com" }]
@@ -19,7 +19,18 @@ classifiers = [
     "Topic :: System :: Networking",
     "Typing :: Typed",
 ]
-keywords = ["pytcp", "stack", "networking", "tcp", "ip", "ipv4", "ipv6", "arp", "ethernet", "icmp"]
+keywords = [
+    "pytcp",
+    "stack",
+    "networking",
+    "tcp",
+    "ip",
+    "ipv4",
+    "ipv6",
+    "arp",
+    "ethernet",
+    "icmp",
+]
 dependencies = []
 requires-python = ">=3.12"
 
@@ -38,7 +49,7 @@ honor_noqa = true
 
 [tool.codespell]
 quiet-level = 2
-ignore-words-list = "ect, ether, nd, tha"
+ignore-words-list = "ect, ether, nd, tha, assertIn, sourc"
 
 [tool.mypy]
 python_version = "3.12"
@@ -51,3 +62,21 @@ no_implicit_optional = true
 warn_return_any = true
 warn_unused_ignores = true
 show_error_codes = true
+
+[tool.pylint.'MESSAGES CONTROL']
+max-line-length = 120
+disable = """
+    super-init-not-called,
+    no-name-in-module,
+    import-error,
+    dangerous-default-value,
+    too-many-instance-attributes,
+    too-many-public-methods,
+    too-many-arguments,
+    too-many-locals,
+    too-few-public-methods,
+    import-outside-toplevel,
+    fixme,
+    multiple-statements,
+    invalid-name,
+"""

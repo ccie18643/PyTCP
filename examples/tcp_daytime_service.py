@@ -29,7 +29,7 @@ The example 'user space' service TCP Daytime (RFC 867).
 
 examples/tcp_daytime_service.py - The 'user space' service TCP Daytime (RFC 867).
 
-ver 2.7
+ver 3.0.0
 """
 
 
@@ -56,8 +56,8 @@ class TcpDaytimeService(TcpService):
     def __init__(
         self,
         *,
-        local_ip_address: str = "0.0.0.0",
-        local_port: int = 13,
+        local_ip_address: str,
+        local_port: int,
         message_count: int = -1,
         message_delay: int = 1,
     ):
@@ -113,14 +113,24 @@ class TcpDaytimeService(TcpService):
 
 @click.command()
 @click.option("--interface", default="tap7")
-def cli(*, interface: str) -> None:
+@click.option("--local-ip-address", default="0.0.0.0")
+@click.option("--local-port", default=13, type=int)
+def cli(
+    *,
+    interface: str,
+    local_ip_address: str,
+    local_port: int,
+) -> None:
     """
     Start PyTCP stack and stop it when user presses Ctrl-C.
     Run the TCP Daytime service.
     """
 
     stack = TcpIpStack(fd=initialize_tap(tap_name=interface))
-    service = TcpDaytimeService()
+    service = TcpDaytimeService(
+        local_ip_address=local_ip_address,
+        local_port=local_port,
+    )
 
     try:
         stack.start()
