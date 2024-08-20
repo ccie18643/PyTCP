@@ -70,8 +70,7 @@ from pytcp.protocols.arp.arp__header import ArpHeader
                     "101.102.103.104 / 0a:0b:0c:0d:0e:0f, len 28"
                 ),
                 "__repr__": (
-                    "ArpAssembler(header=ArpHeader(hrtype=<ArpHardwareType.ETHERNET: 1>, "
-                    "prtype=<ArpProtocolType.IP4: 2048>, hrlen=6, prlen=4, oper=<ArpOperation.REQUEST: 1>, "
+                    "ArpAssembler(header=ArpHeader(oper=<ArpOperation.REQUEST: 1>, "
                     "sha=MacAddress('01:02:03:04:05:06'), spa=Ip4Address('11.22.33.44'), "
                     "tha=MacAddress('0a:0b:0c:0d:0e:0f'), tpa=Ip4Address('101.102.103.104')))"
                 ),
@@ -114,8 +113,7 @@ from pytcp.protocols.arp.arp__header import ArpHeader
                     "7.7.7.7 / 7a:7b:7c:7d:7e:7f, len 28"
                 ),
                 "__repr__": (
-                    "ArpAssembler(header=ArpHeader(hrtype=<ArpHardwareType.ETHERNET: 1>, "
-                    "prtype=<ArpProtocolType.IP4: 2048>, hrlen=6, prlen=4, oper=<ArpOperation.REPLY: 2>, "
+                    "ArpAssembler(header=ArpHeader(oper=<ArpOperation.REPLY: 2>, "
                     "sha=MacAddress('a1:b2:c3:d4:e5:f6'), spa=Ip4Address('5.5.5.5'), "
                     "tha=MacAddress('7a:7b:7c:7d:7e:7f'), tpa=Ip4Address('7.7.7.7')))"
                 ),

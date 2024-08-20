@@ -37,13 +37,7 @@ from testslide import TestCase
 
 from pytcp.lib.ip4_address import Ip4Address
 from pytcp.lib.mac_address import MacAddress
-from pytcp.protocols.arp.arp__enums import (
-    ARP__HARDWARE_LEN__ETHERNET,
-    ARP__PROTOCOL_LEN__IP4,
-    ArpHardwareType,
-    ArpOperation,
-    ArpProtocolType,
-)
+from pytcp.protocols.arp.arp__enums import ArpOperation
 from pytcp.protocols.arp.arp__header import ArpHeader
 
 
@@ -58,88 +52,12 @@ class TestArpHeaderAsserts(TestCase):
         """
 
         self._header_args = {
-            "hrtype": ArpHardwareType.ETHERNET,
-            "prtype": ArpProtocolType.IP4,
-            "hrlen": 6,
-            "prlen": 4,
             "oper": ArpOperation.REQUEST,
             "sha": MacAddress(0),
             "spa": Ip4Address(0),
             "tha": MacAddress(0),
             "tpa": Ip4Address(0),
         }
-
-    def test__arp__header__hrtype__incorrect(self) -> None:
-        """
-        Ensure the ARP header constructor raises an exception when the provided
-        'hrtype' argument is incorrect.
-        """
-
-        self._header_args["hrtype"] = value = ArpHardwareType.from_int(0)
-
-        with self.assertRaises(AssertionError) as error:
-            ArpHeader(**self._header_args)  # type: ignore
-
-        self.assertEqual(
-            str(error.exception),
-            f"The 'hrtype' field must be an ArpHardwareType.ETHERNET. Got: {value!r}",
-        )
-
-    def test__arp__header__prtype__incorrect(self) -> None:
-        """
-        Ensure the ARP header constructor raises an exception when the provided
-        'prtype' argument is incorrect.
-        """
-
-        self._header_args["prtype"] = value = ArpProtocolType.from_int(0)
-
-        with self.assertRaises(AssertionError) as error:
-            ArpHeader(**self._header_args)  # type: ignore
-
-        self.assertEqual(
-            str(error.exception),
-            f"The 'prtype' field must be an ArpProtocolType.IP4. Got: {value!r}",
-        )
-
-    def test__arp__header__hrlen__incorrect(self) -> None:
-        """
-        Ensure the ARP header constructor raises an exception when the provided
-        'hrlen' argument is incorrect.
-        """
-
-        for value in range(0, 256):
-            if value == ARP__HARDWARE_LEN__ETHERNET:
-                continue
-
-            self._header_args["hrlen"] = value
-
-            with self.assertRaises(AssertionError) as error:
-                ArpHeader(**self._header_args)  # type: ignore
-
-            self.assertEqual(
-                str(error.exception),
-                f"The 'hrlen' field must be {ARP__HARDWARE_LEN__ETHERNET}. Got: {value!r}",
-            )
-
-    def test__arp__header__prlen__incorrect(self) -> None:
-        """
-        Ensure the ARP header constructor raises an exception when the provided
-        'prlen' argument is incorrect.
-        """
-
-        for value in range(0, 256):
-            if value == ARP__PROTOCOL_LEN__IP4:
-                continue
-
-            self._header_args["prlen"] = value
-
-            with self.assertRaises(AssertionError) as error:
-                ArpHeader(**self._header_args)  # type: ignore
-
-            self.assertEqual(
-                str(error.exception),
-                f"The 'prlen' field must be {ARP__PROTOCOL_LEN__IP4}. Got: {value!r}",
-            )
 
     def test__arp__header__sha__not_MacAddress(self) -> None:
         """

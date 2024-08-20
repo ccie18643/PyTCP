@@ -37,7 +37,7 @@ from __future__ import annotations
 
 import struct
 from abc import ABC
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import override
 
 from pytcp.lib.ip4_address import Ip4Address
@@ -80,10 +80,16 @@ class ArpHeader(ProtoStruct):
     The ARP packet header.
     """
 
-    hrtype: ArpHardwareType = ArpHardwareType.ETHERNET
-    prtype: ArpProtocolType = ArpProtocolType.IP4
-    hrlen: int = ARP__HARDWARE_LEN__ETHERNET
-    prlen: int = ARP__PROTOCOL_LEN__IP4
+    hrtype: ArpHardwareType = field(
+        repr=False, init=False, default=ArpHardwareType.ETHERNET
+    )
+    prtype: ArpProtocolType = field(
+        repr=False, init=False, default=ArpProtocolType.IP4
+    )
+    hrlen: int = field(
+        repr=False, init=False, default=ARP__HARDWARE_LEN__ETHERNET
+    )
+    prlen: int = field(repr=False, init=False, default=ARP__PROTOCOL_LEN__IP4)
     oper: ArpOperation
     sha: MacAddress
     spa: Ip4Address
@@ -95,22 +101,6 @@ class ArpHeader(ProtoStruct):
         """
         Ensure integrity of the ARP header fields.
         """
-
-        assert (
-            self.hrtype == ArpHardwareType.ETHERNET
-        ), f"The 'hrtype' field must be an ArpHardwareType.ETHERNET. Got: {self.hrtype!r}"
-
-        assert (
-            self.prtype == ArpProtocolType.IP4
-        ), f"The 'prtype' field must be an ArpProtocolType.IP4. Got: {self.prtype!r}"
-
-        assert (
-            self.hrlen == ARP__HARDWARE_LEN__ETHERNET
-        ), f"The 'hrlen' field must be {ARP__HARDWARE_LEN__ETHERNET}. Got: {self.hrlen!r}"
-
-        assert (
-            self.prlen == ARP__PROTOCOL_LEN__IP4
-        ), f"The 'prlen' field must be {ARP__PROTOCOL_LEN__IP4}. Got: {self.prlen!r}"
 
         assert isinstance(
             self.oper, ArpOperation
