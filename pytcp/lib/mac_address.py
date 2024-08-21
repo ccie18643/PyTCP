@@ -41,7 +41,7 @@ import re
 import struct
 
 
-class MacIp4AddressFormatError(Exception): ...
+class MacAddressFormatError(Exception): ...
 
 
 class MacAddress:
@@ -93,7 +93,7 @@ class MacAddress:
             self._address = int(address)
             return
 
-        raise MacIp4AddressFormatError(address)
+        raise MacAddressFormatError(address)
 
     def __str__(self) -> str:
         """
