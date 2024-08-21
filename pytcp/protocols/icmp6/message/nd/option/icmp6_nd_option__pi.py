@@ -41,6 +41,7 @@ from typing import override
 
 from pytcp.lib.int_checks import is_uint32
 from pytcp.lib.ip6_address import Ip6Address, Ip6Mask, Ip6Network
+from pytcp.protocols.icmp6.icmp6__errors import Icmp6IntegrityError
 from pytcp.protocols.icmp6.message.nd.option.icmp6_nd_option import (
     Icmp6NdOption,
     Icmp6NdOptionType,
@@ -91,9 +92,15 @@ class Icmp6NdOptionPi(Icmp6NdOption):
     """
 
     type: Icmp6NdOptionType = field(
-        repr=False, init=False, default=Icmp6NdOptionType.PI
+        repr=False,
+        init=False,
+        default=Icmp6NdOptionType.PI,
     )
-    len: int = field(repr=False, init=False, default=ICMP6__ND_OPTION_PI__LEN)
+    len: int = field(
+        repr=False,
+        init=False,
+        default=ICMP6__ND_OPTION_PI__LEN,
+    )
 
     flag_l: bool = False
     flag_a: bool = False
@@ -169,7 +176,14 @@ class Icmp6NdOptionPi(Icmp6NdOption):
         Initialize the ICMPv6 ND Pi option from bytes.
         """
 
-        # TODO: Refactor this code after unit tests are in place.
+        assert len(_bytes) >= 2
+        assert _bytes[0] == int(Icmp6NdOptionType.PI)
+
+        if _bytes[1] << 3 != ICMP6__ND_OPTION_PI__LEN:
+            raise Icmp6IntegrityError("Invalid ND Pi option length (I).")
+
+        if _bytes[1] << 3 > len(_bytes):
+            raise Icmp6IntegrityError("Invalid ND Pi option length (II).")
 
         return Icmp6NdOptionPi(
             flag_l=bool(_bytes[3] & 0b10000000),

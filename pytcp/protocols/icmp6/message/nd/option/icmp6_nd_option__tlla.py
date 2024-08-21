@@ -40,6 +40,7 @@ from dataclasses import dataclass, field
 from typing import override
 
 from pytcp.lib.mac_address import MacAddress
+from pytcp.protocols.icmp6.icmp6__errors import Icmp6IntegrityError
 from pytcp.protocols.icmp6.message.nd.option.icmp6_nd_option import (
     Icmp6NdOption,
     Icmp6NdOptionType,
@@ -64,9 +65,15 @@ class Icmp6NdOptionTlla(Icmp6NdOption):
     """
 
     type: Icmp6NdOptionType = field(
-        repr=False, init=False, default=Icmp6NdOptionType.TLLA
+        repr=False,
+        init=False,
+        default=Icmp6NdOptionType.TLLA,
     )
-    len: int = field(repr=False, init=False, default=ICMP6__ND_OPTION_TLLA__LEN)
+    len: int = field(
+        repr=False,
+        init=False,
+        default=ICMP6__ND_OPTION_TLLA__LEN,
+    )
 
     tlla: MacAddress
 
@@ -78,7 +85,7 @@ class Icmp6NdOptionTlla(Icmp6NdOption):
 
         assert isinstance(
             self.tlla, MacAddress
-        ), f"The 'tlla' field must be a MacAddress. Got: {type(self.tlla)!r}."
+        ), f"The 'tlla' field must be a MacAddress. Got: {type(self.tlla)!r}"
 
     @override
     def __str__(self) -> str:
@@ -106,5 +113,14 @@ class Icmp6NdOptionTlla(Icmp6NdOption):
         """
         Initialize the ICMPv6 ND Tlla option from bytes.
         """
+
+        assert len(_bytes) >= 2
+        assert _bytes[0] == int(Icmp6NdOptionType.TLLA)
+
+        if _bytes[1] << 3 != ICMP6__ND_OPTION_TLLA__LEN:
+            raise Icmp6IntegrityError("Invalid ND Tlla option length (I).")
+
+        if _bytes[1] << 3 > len(_bytes):
+            raise Icmp6IntegrityError("Invalid ND Tlla option length (II).")
 
         return Icmp6NdOptionTlla(tlla=MacAddress(_bytes[2:8]))
