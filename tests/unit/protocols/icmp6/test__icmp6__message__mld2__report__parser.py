@@ -163,7 +163,7 @@ from pytcp.protocols.icmp6.message.mld2.icmp6_mld2_message__report import (
             },
             "_results": {
                 "error": (
-                    "The 'type' field must be <Icmp6Type.MLD2_REPORT: 143>. "
+                    "The 'type' field must be <Icmp6Type.MLD2__REPORT: 143>. "
                     "Got: <Icmp6Type.UNKNOWN_255: 255>"
                 ),
             },

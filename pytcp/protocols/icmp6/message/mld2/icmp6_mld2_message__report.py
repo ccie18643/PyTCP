@@ -173,19 +173,23 @@ class Icmp6Mld2ReportMessage(Icmp6Message):
         Initialize the ICMPv6 MLDv2 Report message from bytes.
         """
 
-        assert (
-            Icmp6Type.from_bytes(_bytes[0:1]) == Icmp6Type.MLD2__REPORT
-        ), f"The 'type' field must be <Icmp6Type.MLD2_REPORT: 143>. Got: {Icmp6Type.from_bytes(_bytes[0:1])!r}"
-
-        records: list[Icmp6Mld2MulticastAddressRecord] = []
+        type, code, cksum, _, number_of_records = struct.unpack(
+            ICMP6__MLD2__REPORT__STRUCT, _bytes[:ICMP6__MLD2__REPORT__LEN]
+        )
         record_bytes = _bytes[ICMP6__MLD2__REPORT__LEN:]
 
-        for _ in range(int.from_bytes(_bytes[6:8])):
+        assert (received_type := Icmp6Type.from_int(type)) == (
+            valid_type := Icmp6Type.MLD2__REPORT
+        ), f"The 'type' field must be {valid_type!r}. Got: {received_type!r}"
+
+        records: list[Icmp6Mld2MulticastAddressRecord] = []
+        for _ in range(number_of_records):
             record = Icmp6Mld2MulticastAddressRecord.from_bytes(record_bytes)
             record_bytes = record_bytes[len(record) :]
             records.append(record)
 
         return Icmp6Mld2ReportMessage(
-            cksum=int.from_bytes(_bytes[2:4]),
+            code=Icmp6Mld2ReportCode.from_int(code),
+            cksum=cksum,
             records=records,
         )
