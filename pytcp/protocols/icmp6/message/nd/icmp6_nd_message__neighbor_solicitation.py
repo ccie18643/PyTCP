@@ -163,16 +163,19 @@ class Icmp6NdNeighborSolicitationMessage(Icmp6NdMessage):
         Initialize the ICMPv6 ND Neighbor Solicitation message from bytes.
         """
 
-        assert (
-            Icmp6Type.from_bytes(_bytes[0:1])
-            == Icmp6Type.ND__NEIGHBOR_SOLICITATION
-        ), (
-            f"The 'type' field must be {Icmp6Type.ND__NEIGHBOR_SOLICITATION!r}. "
-            f"Got: {Icmp6Type.from_bytes(_bytes[0:1])!r}"
+        type, code, cksum, _, target_address = struct.unpack(
+            ICMP6__ND__NEIGHBOR_SOLICITATION__STRUCT,
+            _bytes[:ICMP6__ND__NEIGHBOR_SOLICITATION__LEN],
         )
 
+        assert (received_type := Icmp6Type.from_int(type)) == (
+            valid_type := Icmp6Type.ND__NEIGHBOR_SOLICITATION
+        ), f"The 'type' field must be {valid_type!r}. Got: {received_type!r}"
+
         return Icmp6NdNeighborSolicitationMessage(
-            target_address=Ip6Address(_bytes[8:24]),
+            code=Icmp6NdNeighborSolicitationCode(code),
+            cksum=cksum,
+            target_address=Ip6Address(target_address),
             options=Icmp6NdOptions.from_bytes(
                 _bytes[ICMP6__ND__NEIGHBOR_SOLICITATION__LEN:]
             ),

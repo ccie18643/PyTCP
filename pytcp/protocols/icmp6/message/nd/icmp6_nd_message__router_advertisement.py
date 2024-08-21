@@ -29,7 +29,7 @@ This Module contains ICMPv6 ND Router Advertisement message support class.
 
 pytcp/protocols/icmp6/message/nd/icmp6_nd_message__router_advertisement.py
 
-ver 3.0.0 - Refactor needed for the 'from_bytes()' method.
+ver 3.0.0
 """
 
 
@@ -187,23 +187,33 @@ class Icmp6NdRouterAdvertisementMessage(Icmp6NdMessage):
         Initialize the ICMPv6 ND Router Advertisement message from bytes.
         """
 
-        assert (
-            Icmp6Type.from_bytes(_bytes[0:1])
-            == Icmp6Type.ND__ROUTER_ADVERTISEMENT
-        ), (
-            f"The 'type' field must be {Icmp6Type.ND__ROUTER_ADVERTISEMENT!r}. "
-            f"Got: {Icmp6Type.from_bytes(_bytes[0:1])!r}"
+        (
+            type,
+            code,
+            cksum,
+            hop,
+            flags,
+            router_lifetime,
+            reachable_time,
+            retrans_timer,
+        ) = struct.unpack(
+            ICMP6__ND__ROUTER_ADVERTISEMENT__STRUCT,
+            _bytes[:ICMP6__ND__ROUTER_ADVERTISEMENT__LEN],
         )
 
-        # TODO: Refactor this code after unit tests are implemented.
+        assert (received_type := Icmp6Type.from_int(type)) == (
+            valid_type := Icmp6Type.ND__ROUTER_ADVERTISEMENT
+        ), f"The 'type' field must be {valid_type!r}. Got: {received_type!r}"
 
         return Icmp6NdRouterAdvertisementMessage(
-            hop=_bytes[4],
-            flag_m=bool(_bytes[5] & 0b10000000),
-            flag_o=bool(_bytes[5] & 0b01000000),
-            router_lifetime=int.from_bytes(_bytes[6:8]),
-            reachable_time=int.from_bytes(_bytes[8:12]),
-            retrans_timer=int.from_bytes(_bytes[12:16]),
+            code=Icmp6NdRouterAdvertisementCode(code),
+            cksum=cksum,
+            hop=hop,
+            flag_m=bool(flags & 0b10000000),
+            flag_o=bool(flags & 0b01000000),
+            router_lifetime=router_lifetime,
+            reachable_time=reachable_time,
+            retrans_timer=retrans_timer,
             options=Icmp6NdOptions.from_bytes(
                 _bytes[ICMP6__ND__ROUTER_ADVERTISEMENT__LEN:]
             ),

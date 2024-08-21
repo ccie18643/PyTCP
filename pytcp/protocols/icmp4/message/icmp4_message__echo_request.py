@@ -162,17 +162,18 @@ class Icmp4EchoRequestMessage(Icmp4Message):
         Initialize the ICMPv4 Echo Request message from bytes.
         """
 
-        _type, _, cksum, _id, seq = struct.unpack(
+        type, code, cksum, id, seq = struct.unpack(
             ICMP4__ECHO_REQUEST__STRUCT, _bytes[:ICMP4__ECHO_REQUEST__LEN]
         )
 
-        assert (
-            Icmp4Type.from_int(_type) == Icmp4Type.ECHO_REQUEST
-        ), f"The 'type' field must be <Icmp4Type.ECHO_REQUEST: 8>. Got: {Icmp4Type.from_int(_type)!r}"
+        assert (received_type := Icmp4Type.from_int(type)) == (
+            valid_type := Icmp4Type.ECHO_REQUEST
+        ), f"The 'type' field must be {valid_type!r}. Got: {received_type!r}"
 
         return Icmp4EchoRequestMessage(
+            code=Icmp4EchoRequestCode.from_int(code),
             cksum=cksum,
-            id=_id,
+            id=id,
             seq=seq,
             data=_bytes[ICMP4__ECHO_REQUEST__LEN:],
         )

@@ -236,20 +236,20 @@ class Icmp4DestinationUnreachableMessage(Icmp4Message):
 
         match Icmp4DestinationUnreachableCode.from_bytes(_bytes[1:2]):
             case Icmp4DestinationUnreachableCode.FRAGMENTATION_NEEDED:
-                _type, code, cksum, _, mtu = struct.unpack(
+                type, code, cksum, _, mtu = struct.unpack(
                     ICMP4__DESTINATION_UNREACHABLE__FRAGMENTATION_NEEDED__STRUCT,
                     _bytes[:ICMP4__DESTINATION_UNREACHABLE__LEN],
                 )
             case _:
-                _type, code, cksum, _ = struct.unpack(
+                type, code, cksum, _ = struct.unpack(
                     ICMP4__DESTINATION_UNREACHABLE__STRUCT,
                     _bytes[:ICMP4__DESTINATION_UNREACHABLE__LEN],
                 )
                 mtu = None
 
-        assert (
-            Icmp4Type.from_int(_type) == Icmp4Type.DESTINATION_UNREACHABLE
-        ), f"The 'type' field must be <Icmp4Type.DESTINATION_UNREACHABLE: 3>. Got: {Icmp4Type.from_int(_type)!r}"
+        assert (received_type := Icmp4Type.from_int(type)) == (
+            valid_type := Icmp4Type.DESTINATION_UNREACHABLE
+        ), f"The 'type' field must be {valid_type!r}. Got: {received_type!r}"
 
         return Icmp4DestinationUnreachableMessage(
             code=Icmp4DestinationUnreachableCode.from_int(code),

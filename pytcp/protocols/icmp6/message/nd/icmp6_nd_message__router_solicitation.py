@@ -146,16 +146,19 @@ class Icmp6NdRouterSolicitationMessage(Icmp6NdMessage):
         Initialize the ICMPv6 ND Router Solicitation message from bytes.
         """
 
-        assert (
-            Icmp6Type.from_bytes(_bytes[0:1])
-            == Icmp6Type.ND__ROUTER_SOLICITATION
-        ), (
-            f"The 'type' field must be {Icmp6Type.ND__ROUTER_SOLICITATION!r}. "
-            f"Got: {Icmp6Type.from_bytes(_bytes[0:1])!r}"
+        type, code, cksum, _ = struct.unpack(
+            ICMP6__ND__ROUTER_SOLICITATION__STRUCT,
+            _bytes[:ICMP6__ND__ROUTER_SOLICITATION__LEN],
         )
 
+        assert (received_type := Icmp6Type.from_int(type)) == (
+            valid_type := Icmp6Type.ND__ROUTER_SOLICITATION
+        ), f"The 'type' field must be {valid_type!r}. Got: {received_type!r}"
+
         return Icmp6NdRouterSolicitationMessage(
+            code=Icmp6NdRouterSolicitationCode(code),
+            cksum=cksum,
             options=Icmp6NdOptions.from_bytes(
                 _bytes[ICMP6__ND__ROUTER_SOLICITATION__LEN:]
-            )
+            ),
         )

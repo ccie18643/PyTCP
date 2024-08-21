@@ -96,7 +96,10 @@ from pytcp.protocols.icmp6.message.nd.option.icmp6_nd_options import (
         {
             "_description": "ICMPv6 ND Neighbor Advertisement message, incorrect 'type' field.",
             "_args": {
-                "bytes": b"\xff\x00\x00\x00\x00\x00\x00\x00",
+                "bytes": (
+                    b"\xff\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+                    b"\x00\x00\x00\x00\x00\x00\x00\x00"
+                ),
             },
             "_results": {
                 "error": (

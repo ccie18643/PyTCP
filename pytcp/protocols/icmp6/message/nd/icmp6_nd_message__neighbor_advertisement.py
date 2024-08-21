@@ -29,7 +29,7 @@ This module contains the ICMPv6 ND Neighbor Advertisement message support class.
 
 pytcp/protocols/icmp6/message/nd/icmp6_nd_message__neighbor_advertisement.py
 
-ver 3.0.0 - Code refactoring needed for the 'from_bytes()' method.
+ver 3.0.0
 """
 
 
@@ -179,21 +179,22 @@ class Icmp6NdNeighborAdvertisementMessage(Icmp6NdMessage):
         Initialize the ICMPv6 ND Neighbor Advertisement message from bytes.
         """
 
-        assert (
-            Icmp6Type.from_bytes(_bytes[0:1])
-            == Icmp6Type.ND__NEIGHBOR_ADVERTISEMENT
-        ), (
-            f"The 'type' field must be {Icmp6Type.ND__NEIGHBOR_ADVERTISEMENT!r}. "
-            f"Got: {Icmp6Type.from_bytes(_bytes[0:1])!r}"
+        type, code, cksum, flags, target_address = struct.unpack(
+            ICMP6__ND__NEIGHBOR_ADVERTISEMENT__STRUCT,
+            _bytes[:ICMP6__ND__NEIGHBOR_ADVERTISEMENT__LEN],
         )
 
-        # TODO: Refactor this code after unit test are implemented.
+        assert (received_type := Icmp6Type.from_int(type)) == (
+            valid_type := Icmp6Type.ND__NEIGHBOR_ADVERTISEMENT
+        ), f"The 'type' field must be {valid_type!r}. Got: {received_type!r}"
 
         return Icmp6NdNeighborAdvertisementMessage(
-            flag_r=bool(_bytes[4] & 0b10000000),
-            flag_s=bool(_bytes[4] & 0b01000000),
-            flag_o=bool(_bytes[4] & 0b00100000),
-            target_address=Ip6Address(_bytes[8:24]),
+            code=Icmp6NdNeighborAdvertisementCode(code),
+            cksum=cksum,
+            flag_r=bool(flags & 0b10000000_00000000_00000000_00000000),
+            flag_s=bool(flags & 0b01000000_00000000_00000000_00000000),
+            flag_o=bool(flags & 0b00100000_00000000_00000000_00000000),
+            target_address=Ip6Address(target_address),
             options=Icmp6NdOptions.from_bytes(
                 _bytes[ICMP6__ND__NEIGHBOR_ADVERTISEMENT__LEN:]
             ),

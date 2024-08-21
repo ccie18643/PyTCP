@@ -108,12 +108,12 @@ class Icmp4UnknownMessage(Icmp4Message):
         Initialize the ICMPv4 unknown message from bytes.
         """
 
-        _type, code, cksum = struct.unpack(
+        type, code, cksum = struct.unpack(
             ICMP4__HEADER__STRUCT, _bytes[:ICMP4__HEADER__LEN]
         )
 
         return Icmp4UnknownMessage(
-            type=Icmp4Type.from_int(_type),
+            type=Icmp4Type.from_int(type),
             code=Icmp4Code.from_int(code),
             cksum=cksum,
         )

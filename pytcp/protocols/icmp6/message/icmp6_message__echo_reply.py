@@ -164,17 +164,18 @@ class Icmp6EchoReplyMessage(Icmp6Message):
         Initialize the ICMPv6 Echo Reply message from bytes.
         """
 
-        _type, _, cksum, _id, seq = struct.unpack(
+        type, code, cksum, id, seq = struct.unpack(
             ICMP6__ECHO_REPLY__STRUCT, _bytes[:ICMP6__ECHO_REPLY__LEN]
         )
 
-        assert (
-            Icmp6Type.from_int(_type) == Icmp6Type.ECHO_REPLY
-        ), f"The 'type' field must be <Icmp6Type.ECHO_REPLY: 129>. Got: {Icmp6Type.from_int(_type)!r}"
+        assert (received_type := Icmp6Type.from_int(type)) == (
+            valid_type := Icmp6Type.ECHO_REPLY
+        ), f"The 'type' field must be {valid_type!r}. Got: {received_type!r}"
 
         return Icmp6EchoReplyMessage(
+            code=Icmp6EchoReplyCode.from_int(code),
             cksum=cksum,
-            id=_id,
+            id=id,
             seq=seq,
             data=_bytes[ICMP6__ECHO_REPLY__LEN:],
         )
