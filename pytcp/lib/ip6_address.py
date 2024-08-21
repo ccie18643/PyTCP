@@ -267,7 +267,9 @@ class Ip6Mask(IpMask):
 
     def __init__(
         self,
-        mask: Ip6Mask | str | bytes | bytearray | memoryview | int,
+        mask: (
+            Ip6Mask | str | bytes | bytearray | memoryview | int | None
+        ) = None,
     ) -> None:
         """
         Class constructor.
@@ -286,6 +288,10 @@ class Ip6Mask(IpMask):
                 return not bit_mask[bit_mask.index("0") :].count("1")
             except ValueError:
                 return True
+
+        if mask is None:
+            self._mask = 0
+            return
 
         if isinstance(mask, int):
             if mask & 0xFFFF_FFFF_FFFF_FFFF_FFFF_FFFF_FFFF_FFFF == mask:
@@ -334,7 +340,7 @@ class Ip6Network(IpNetwork):
 
     def __init__(
         self,
-        network: Ip6Network | tuple[Ip6Address, Ip6Mask] | str,
+        network: Ip6Network | tuple[Ip6Address, Ip6Mask] | str | None = None,
     ) -> None:
         """
         Class constructor.
@@ -343,6 +349,11 @@ class Ip6Network(IpNetwork):
         self._address: Ip6Address
         self._mask: Ip6Mask
         self._version: int = 6
+
+        if network is None:
+            self._address = Ip6Address()
+            self._mask = Ip6Mask()
+            return
 
         if isinstance(network, tuple):
             if len(network) == 2:

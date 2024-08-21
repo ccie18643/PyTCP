@@ -266,7 +266,9 @@ class Ip4Mask(IpMask):
 
     def __init__(
         self,
-        mask: Ip4Mask | str | bytes | bytearray | memoryview | int,
+        mask: (
+            Ip4Mask | str | bytes | bytearray | memoryview | int | None
+        ) = None,
     ) -> None:
         """
         Class constructor.
@@ -285,6 +287,10 @@ class Ip4Mask(IpMask):
                 return not bit_mask[bit_mask.index("0") :].count("1")
             except ValueError:
                 return True
+
+        if mask is None:
+            self._mask = 0
+            return
 
         if isinstance(mask, int):
             if mask & 0xFF_FF_FF_FF == mask:
@@ -334,7 +340,7 @@ class Ip4Network(IpNetwork):
 
     def __init__(
         self,
-        network: Ip4Network | tuple[Ip4Address, Ip4Mask] | str,
+        network: Ip4Network | tuple[Ip4Address, Ip4Mask] | str | None = None,
     ) -> None:
         """
         Class constructor.
@@ -343,6 +349,11 @@ class Ip4Network(IpNetwork):
         self._address: Ip4Address
         self._mask: Ip4Mask
         self._version: int = 4
+
+        if network is None:
+            self._address = Ip4Address()
+            self._mask = Ip4Mask()
+            return
 
         if isinstance(network, tuple):
             if len(network) == 2:
