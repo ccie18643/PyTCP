@@ -79,4 +79,5 @@ disable = """
     fixme,
     multiple-statements,
     invalid-name,
+    redefined-builtin,
 """
