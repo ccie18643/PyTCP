@@ -109,7 +109,7 @@ class Icmp6NdNeighborAdvertisementMessage(Icmp6NdMessage):
 
         assert isinstance(
             self.code, Icmp6NdNeighborAdvertisementCode
-        ), f"The 'code' field must be an Icmp4NeighborAdvertisementCode. Got: {type(self.code)!r}"
+        ), f"The 'code' field must be an Icmp6NdNeighborAdvertisementCode. Got: {type(self.code)!r}"
 
         assert is_uint16(
             self.cksum
@@ -117,23 +117,23 @@ class Icmp6NdNeighborAdvertisementMessage(Icmp6NdMessage):
 
         assert isinstance(
             self.flag_r, bool
-        ), f"The 'flag_r' field must be a boolean. Got: {type(self.code)!r}"
+        ), f"The 'flag_r' field must be a boolean. Got: {type(self.flag_r)!r}"
 
         assert isinstance(
             self.flag_s, bool
-        ), f"The 'flag_s' field must be a boolean. Got: {type(self.code)!r}"
+        ), f"The 'flag_s' field must be a boolean. Got: {type(self.flag_s)!r}"
 
         assert isinstance(
             self.flag_o, bool
-        ), f"The 'flag_o' field must be a boolean. Got: {type(self.code)!r}"
+        ), f"The 'flag_o' field must be a boolean. Got: {type(self.flag_o)!r}"
 
         assert isinstance(
             self.target_address, Ip6Address
-        ), f"The 'target_address' field must be an Ip6Address. Got: {type(self.code)!r}"
+        ), f"The 'target_address' field must be an Ip6Address. Got: {type(self.target_address)!r}"
 
         assert isinstance(
             self.options, Icmp6NdOptions
-        ), f"The 'options' field must be an Icmp6NdOptions. Got: {type(self.code)!r}"
+        ), f"The 'options' field must be an Icmp6NdOptions. Got: {type(self.options)!r}"
 
     @override
     def __len__(self) -> int:
@@ -182,6 +182,9 @@ class Icmp6NdNeighborAdvertisementMessage(Icmp6NdMessage):
         assert (
             Icmp6Type.from_bytes(_bytes[0:1])
             == Icmp6Type.ND__NEIGHBOR_ADVERTISEMENT
+        ), (
+            f"The 'type' field must be {Icmp6Type.ND__NEIGHBOR_ADVERTISEMENT!r}. "
+            f"Got: {Icmp6Type.from_bytes(_bytes[0:1])!r}"
         )
 
         # TODO: Refactor this code after unit test are implemented.

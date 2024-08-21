@@ -150,7 +150,7 @@ class Icmp6NdRouterSolicitationMessage(Icmp6NdMessage):
             Icmp6Type.from_bytes(_bytes[0:1])
             == Icmp6Type.ND__ROUTER_SOLICITATION
         ), (
-            "The 'type' field must be <Icmp6Type.ND__ROUTER_SOLICITATION: 143>. "
+            f"The 'type' field must be {Icmp6Type.ND__ROUTER_SOLICITATION!r}. "
             f"Got: {Icmp6Type.from_bytes(_bytes[0:1])!r}"
         )
 

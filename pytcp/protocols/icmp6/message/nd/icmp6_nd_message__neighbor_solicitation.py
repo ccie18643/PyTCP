@@ -107,7 +107,7 @@ class Icmp6NdNeighborSolicitationMessage(Icmp6NdMessage):
 
         assert isinstance(
             self.code, Icmp6NdNeighborSolicitationCode
-        ), f"The 'code' field must be an Icmp4NeighborSolicitationCode. Got: {type(self.code)!r}"
+        ), f"The 'code' field must be an Icmp6NdNeighborSolicitationCode. Got: {type(self.code)!r}"
 
         assert is_uint16(
             self.cksum
@@ -115,11 +115,11 @@ class Icmp6NdNeighborSolicitationMessage(Icmp6NdMessage):
 
         assert isinstance(
             self.target_address, Ip6Address
-        ), f"The 'target_address' field must be an Ip6Address. Got: {type(self.code)!r}"
+        ), f"The 'target_address' field must be an Ip6Address. Got: {type(self.target_address)!r}"
 
         assert isinstance(
             self.options, Icmp6NdOptions
-        ), f"The 'options' field must be an Icmp6NdOptions. Got: {type(self.code)!r}"
+        ), f"The 'options' field must be an Icmp6NdOptions. Got: {type(self.options)!r}"
 
     @override
     def __len__(self) -> int:
@@ -166,6 +166,9 @@ class Icmp6NdNeighborSolicitationMessage(Icmp6NdMessage):
         assert (
             Icmp6Type.from_bytes(_bytes[0:1])
             == Icmp6Type.ND__NEIGHBOR_SOLICITATION
+        ), (
+            f"The 'type' field must be {Icmp6Type.ND__NEIGHBOR_SOLICITATION!r}. "
+            f"Got: {Icmp6Type.from_bytes(_bytes[0:1])!r}"
         )
 
         return Icmp6NdNeighborSolicitationMessage(

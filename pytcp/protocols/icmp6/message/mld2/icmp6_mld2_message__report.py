@@ -94,7 +94,9 @@ class Icmp6Mld2ReportMessage(Icmp6Message):
     """
 
     type: Icmp6Type = field(
-        repr=False, init=False, default=Icmp6Type.MLD2__REPORT,
+        repr=False,
+        init=False,
+        default=Icmp6Type.MLD2__REPORT,
     )
     code: Icmp6Mld2ReportCode = Icmp6Mld2ReportCode.DEFAULT
     cksum: int = 0

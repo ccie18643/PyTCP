@@ -85,7 +85,7 @@ from pytcp.protocols.icmp6.message.nd.option.icmp6_nd_options import (
             },
             "_results": {
                 "error": (
-                    "The 'type' field must be <Icmp6Type.ND__ROUTER_SOLICITATION: 143>. "
+                    "The 'type' field must be <Icmp6Type.ND__ROUTER_SOLICITATION: 133>. "
                     "Got: <Icmp6Type.UNKNOWN_255: 255>"
                 ),
             },
