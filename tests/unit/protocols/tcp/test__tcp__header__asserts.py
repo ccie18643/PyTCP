@@ -252,7 +252,7 @@ class TestTcpHeaderAsserts(TestCase):
             f"The 'hlen' field must be 4-byte aligned. Got: {value!r}",
         )
 
-    def test__tcp__assembler__flag_ns__not_bool(self) -> None:
+    def test__tcp__assembler__flag_ns__not_boolean(self) -> None:
         """
         Ensure the TCP header constructor raises an exception when the
         provided 'flag_ns' argument is not a boolean.
@@ -268,7 +268,7 @@ class TestTcpHeaderAsserts(TestCase):
             f"The 'flag_ns' field must be a boolean. Got: {type(value)!r}",
         )
 
-    def test__tcp__assembler__flag_cwr__not_bool(self) -> None:
+    def test__tcp__assembler__flag_cwr__not_boolean(self) -> None:
         """
         Ensure the TCP header constructor raises an exception when the
         provided 'flag_cwr' argument is not a boolean.
@@ -284,7 +284,7 @@ class TestTcpHeaderAsserts(TestCase):
             f"The 'flag_cwr' field must be a boolean. Got: {type(value)!r}",
         )
 
-    def test__tcp__assembler__flag_ece__not_bool(self) -> None:
+    def test__tcp__assembler__flag_ece__not_boolean(self) -> None:
         """
         Ensure the TCP header constructor raises an exception when the
         provided 'flag_ece' argument is not a boolean.
@@ -300,7 +300,7 @@ class TestTcpHeaderAsserts(TestCase):
             f"The 'flag_ece' field must be a boolean. Got: {type(value)!r}",
         )
 
-    def test__tcp__assembler__flag_urg__not_bool(self) -> None:
+    def test__tcp__assembler__flag_urg__not_boolean(self) -> None:
         """
         Ensure the TCP header constructor raises an exception when the
         provided 'flag_urg' argument is not a boolean.
@@ -316,7 +316,7 @@ class TestTcpHeaderAsserts(TestCase):
             f"The 'flag_urg' field must be a boolean. Got: {type(value)!r}",
         )
 
-    def test__tcp__assembler__flag_ack__not_bool(self) -> None:
+    def test__tcp__assembler__flag_ack__not_boolean(self) -> None:
         """
         Ensure the TCP header constructor raises an exception when the
         provided 'flag_ack' argument is not a boolean.
@@ -332,7 +332,7 @@ class TestTcpHeaderAsserts(TestCase):
             f"The 'flag_ack' field must be a boolean. Got: {type(value)!r}",
         )
 
-    def test__tcp__assembler__flag_psh__not_bool(self) -> None:
+    def test__tcp__assembler__flag_psh__not_boolean(self) -> None:
         """
         Ensure the TCP header constructor raises an exception when the
         provided 'flag_psh' argument is not a boolean.
@@ -348,7 +348,7 @@ class TestTcpHeaderAsserts(TestCase):
             f"The 'flag_psh' field must be a boolean. Got: {type(value)!r}",
         )
 
-    def test__tcp__assembler__flag_rst__not_bool(self) -> None:
+    def test__tcp__assembler__flag_rst__not_boolean(self) -> None:
         """
         Ensure the TCP header constructor raises an exception when the
         provided 'flag_rst' argument is not a boolean.
@@ -364,7 +364,7 @@ class TestTcpHeaderAsserts(TestCase):
             f"The 'flag_rst' field must be a boolean. Got: {type(value)!r}",
         )
 
-    def test__tcp__assembler__flag_syn__not_bool(self) -> None:
+    def test__tcp__assembler__flag_syn__not_boolean(self) -> None:
         """
         Ensure the TCP header constructor raises an exception when the
         provided 'flag_syn' argument is not a boolean.
@@ -380,7 +380,7 @@ class TestTcpHeaderAsserts(TestCase):
             f"The 'flag_syn' field must be a boolean. Got: {type(value)!r}",
         )
 
-    def test__tcp__assembler__flag_fin__not_bool(self) -> None:
+    def test__tcp__assembler__flag_fin__not_boolean(self) -> None:
         """
         Ensure the TCP header constructor raises an exception when the
         provided 'flag_fin' argument is not a boolean.

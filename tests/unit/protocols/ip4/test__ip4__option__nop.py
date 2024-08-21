@@ -79,7 +79,7 @@ class TestIp4OptionNopAssembler(TestCase):
 
         self._ip4_option_nop = Ip4OptionNop(**self._args)
 
-    def test__ip4_option_nop__len(self) -> None:
+    def test__ip4__option__nop__len(self) -> None:
         """
         Ensure the IPv4 Nop option '__len__()' method returns a correct value.
         """
@@ -89,7 +89,7 @@ class TestIp4OptionNopAssembler(TestCase):
             self._results["__len__"],
         )
 
-    def test__ip4_option_nop__str(self) -> None:
+    def test__ip4__option__nop__str(self) -> None:
         """
         Ensure the IPv4 Nop option '__str__()' method returns a correct value.
         """
@@ -99,7 +99,7 @@ class TestIp4OptionNopAssembler(TestCase):
             self._results["__str__"],
         )
 
-    def test__ip4_option_nop__repr(self) -> None:
+    def test__ip4__option__nop__repr(self) -> None:
         """
         Ensure the IPv4 Nop option '__repr__()' method returns a correct value.
         """
@@ -109,7 +109,7 @@ class TestIp4OptionNopAssembler(TestCase):
             self._results["__repr__"],
         )
 
-    def test__ip4_option_nop__bytes(self) -> None:
+    def test__ip4__option__nop__bytes(self) -> None:
         """
         Ensure the IPv4 Nop option '__bytes__()' method returns a correct value.
         """
@@ -160,7 +160,7 @@ class TestIp4OptionNopParser(TestCase):
     _args: dict[str, Any]
     _results: dict[str, Any]
 
-    def test__ip4_option_nop__from_bytes(self) -> None:
+    def test__ip4__option__nop__from_bytes(self) -> None:
         """
         Ensure the IPv4 Nop option parser creates the proper option object
         or throws assertion error.

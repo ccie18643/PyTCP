@@ -152,7 +152,7 @@ class TestTcpOptionUnknownAssembler(TestCase):
 
         self._tcp_option_unknown = TcpOptionUnknown(**self._args)
 
-    def test__tcp_option_unknown__len(self) -> None:
+    def test__tcp__option__unknown__len(self) -> None:
         """
         Ensure the unknown TCP option '__len__()' method returns a correct value.
         """
@@ -162,7 +162,7 @@ class TestTcpOptionUnknownAssembler(TestCase):
             self._results["__len__"],
         )
 
-    def test__tcp_option_unknown__str(self) -> None:
+    def test__tcp__option__unknown__str(self) -> None:
         """
         Ensure the unknown TCP option '__str__()' method returns a correct value.
         """
@@ -172,7 +172,7 @@ class TestTcpOptionUnknownAssembler(TestCase):
             self._results["__str__"],
         )
 
-    def test__tcp_option_unknown__repr(self) -> None:
+    def test__tcp__option__unknown__repr(self) -> None:
         """
         Ensure the unknown TCP option '__repr__()' method returns a correct value.
         """
@@ -182,7 +182,7 @@ class TestTcpOptionUnknownAssembler(TestCase):
             self._results["__repr__"],
         )
 
-    def test__tcp_option_unknown__bytes(self) -> None:
+    def test__tcp__option__unknown__bytes(self) -> None:
         """
         Ensure the unknown TCP option '__bytes__()' method returns a correct value.
         """
@@ -346,7 +346,7 @@ class TestTcpOptionUnknownParser(TestCase):
     _args: dict[str, Any]
     _results: dict[str, Any]
 
-    def test__tcp_option_unknown__from_bytes(self) -> None:
+    def test__tcp__option__unknown__from_bytes(self) -> None:
         """
         Ensure the unknown TCP option parser creates the proper option object
         or throws assertion error.

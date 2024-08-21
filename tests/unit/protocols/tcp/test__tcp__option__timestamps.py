@@ -175,7 +175,7 @@ class TestTcpOptionTimestampsAssembler(TestCase):
 
         self._tcp_option_timestamps = TcpOptionTimestamps(**self._args)
 
-    def test__tcp_option_timestamps__len(self) -> None:
+    def test__tcp__option__timestamps__len(self) -> None:
         """
         Ensure the TCP Timestamps option '__len__()' method returns a correct value.
         """
@@ -185,7 +185,7 @@ class TestTcpOptionTimestampsAssembler(TestCase):
             self._results["__len__"],
         )
 
-    def test__tcp_option_timestamps__str(self) -> None:
+    def test__tcp__option__timestamps__str(self) -> None:
         """
         Ensure the TCP Timestamps option '__str__()' method returns a correct value.
         """
@@ -195,7 +195,7 @@ class TestTcpOptionTimestampsAssembler(TestCase):
             self._results["__str__"],
         )
 
-    def test__tcp_option_timestamps__repr(self) -> None:
+    def test__tcp__option__timestamps__repr(self) -> None:
         """
         Ensure the TCP Timestamps option '__repr__()' method returns a correct value.
         """
@@ -205,7 +205,7 @@ class TestTcpOptionTimestampsAssembler(TestCase):
             self._results["__repr__"],
         )
 
-    def test__tcp_option_timestamps__bytes(self) -> None:
+    def test__tcp__option__timestamps__bytes(self) -> None:
         """
         Ensure the TCP Timestamps option '__bytes__()' method returns a correct value.
         """
@@ -215,7 +215,7 @@ class TestTcpOptionTimestampsAssembler(TestCase):
             self._results["__bytes__"],
         )
 
-    def test__tcp_option_timestamps__tsval(self) -> None:
+    def test__tcp__option__timestamps__tsval(self) -> None:
         """
         Ensure the TCP Timestamps option 'tsval' property returns a correct value.
         """
@@ -225,7 +225,7 @@ class TestTcpOptionTimestampsAssembler(TestCase):
             self._results["tsval"],
         )
 
-    def test__tcp_option_timestamps__tsecr(self) -> None:
+    def test__tcp__option__timestamps__tsecr(self) -> None:
         """
         Ensure the TCP Timestamps option 'tsecr' property returns a correct value.
         """
@@ -309,7 +309,7 @@ class TestTcpOptionTimestampsParser(TestCase):
     _args: dict[str, Any]
     _results: dict[str, Any]
 
-    def test__tcp_option_timestamps__from_bytes(self) -> None:
+    def test__tcp__option__timestamps__from_bytes(self) -> None:
         """
         Ensure the TCP Timestamps option parser creates the proper option object
         or throws assertion error.

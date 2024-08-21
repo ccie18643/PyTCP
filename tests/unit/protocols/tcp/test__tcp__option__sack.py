@@ -183,7 +183,7 @@ class TestTcpOptionSackAssembler(TestCase):
 
         self._tcp_option_sack = TcpOptionSack(**self._args)  # type: ignore
 
-    def test__tcp_option_sack__len(self) -> None:
+    def test__tcp__option__sack__len(self) -> None:
         """
         Ensure the TCP Sack option '__len__()' method returns a correct value.
         """
@@ -193,7 +193,7 @@ class TestTcpOptionSackAssembler(TestCase):
             self._results["__len__"],
         )
 
-    def test__tcp_option_sack__str(self) -> None:
+    def test__tcp__option__sack__str(self) -> None:
         """
         Ensure the TCP Sack option '__str__()' method returns a correct value.
         """
@@ -203,7 +203,7 @@ class TestTcpOptionSackAssembler(TestCase):
             self._results["__str__"],
         )
 
-    def test__tcp_option_sack__repr(self) -> None:
+    def test__tcp__option__sack__repr(self) -> None:
         """
         Ensure the TCP Sack option '__repr__()' method returns a correct value.
         """
@@ -213,7 +213,7 @@ class TestTcpOptionSackAssembler(TestCase):
             self._results["__repr__"],
         )
 
-    def test__tcp_option_sack__bytes(self) -> None:
+    def test__tcp__option__sack__bytes(self) -> None:
         """
         Ensure the TCP Sack option '__bytes__()' method returns a correct value.
         """
@@ -223,7 +223,7 @@ class TestTcpOptionSackAssembler(TestCase):
             self._results["__bytes__"],
         )
 
-    def test__tcp_option_sack__blocks(self) -> None:
+    def test__tcp__option__sack__blocks(self) -> None:
         """
         Ensure the TCP Sack option 'blocks' property returns a correct value.
         """
@@ -307,7 +307,7 @@ class TestTcpOptionSackParser(TestCase):
     _args: dict[str, Any]
     _results: dict[str, Any]
 
-    def test__tcp_option_sack__from_bytes(self) -> None:
+    def test__tcp__option__sack__from_bytes(self) -> None:
         """
         Ensure the TCP Sackp option parser creates the proper option object
         or throws assertion error.

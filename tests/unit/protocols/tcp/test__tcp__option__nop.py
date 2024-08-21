@@ -79,7 +79,7 @@ class TestTcpOptionNopAssembler(TestCase):
 
         self._tcp_option_nop = TcpOptionNop(**self._args)
 
-    def test__tcp_option_nop__len(self) -> None:
+    def test__tcp__option__nop__len(self) -> None:
         """
         Ensure the TCP Nop option '__len__()' method returns a correct value.
         """
@@ -89,7 +89,7 @@ class TestTcpOptionNopAssembler(TestCase):
             self._results["__len__"],
         )
 
-    def test__tcp_option_nop__str(self) -> None:
+    def test__tcp__option__nop__str(self) -> None:
         """
         Ensure the TCP Nop option '__str__()' method returns a correct value.
         """
@@ -99,7 +99,7 @@ class TestTcpOptionNopAssembler(TestCase):
             self._results["__str__"],
         )
 
-    def test__tcp_option_nop__repr(self) -> None:
+    def test__tcp__option__nop__repr(self) -> None:
         """
         Ensure the TCP Nop option '__repr__()' method returns a correct value.
         """
@@ -109,7 +109,7 @@ class TestTcpOptionNopAssembler(TestCase):
             self._results["__repr__"],
         )
 
-    def test__tcp_option_nop__bytes(self) -> None:
+    def test__tcp__option__nop__bytes(self) -> None:
         """
         Ensure the TCP Nop option '__bytes__()' method returns a correct value.
         """
@@ -160,7 +160,7 @@ class TestTcpOptionNopParser(TestCase):
     _args: dict[str, Any]
     _results: dict[str, Any]
 
-    def test__tcp_option_nop__from_bytes(self) -> None:
+    def test__tcp__option__nop__from_bytes(self) -> None:
         """
         Ensure the TCP Nop option parser creates the proper option object
         or throws assertion error.

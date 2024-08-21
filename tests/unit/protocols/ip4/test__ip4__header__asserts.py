@@ -239,13 +239,13 @@ class TestIp4HeaderAsserts(TestCase):
             f"The 'id' field must be a 16-bit unsigned integer. Got: {value!r}",
         )
 
-    def test__ip4__header__flag_df__not_bool(self) -> None:
+    def test__ip4__header__flag_df__not_boolean(self) -> None:
         """
         Ensure the IPv4 header constructor raises an exception when the provided
         'flag_df' argument is not a boolean.
         """
 
-        self._header_args["flag_df"] = value = 1
+        self._header_args["flag_df"] = value = "not a boolean"
 
         with self.assertRaises(AssertionError) as error:
             Ip4Header(**self._header_args)  # type: ignore
@@ -255,13 +255,13 @@ class TestIp4HeaderAsserts(TestCase):
             f"The 'flag_df' field must be a boolean. Got: {type(value)!r}",
         )
 
-    def test__ip4__header__flag_mf__not_bool(self) -> None:
+    def test__ip4__header__flag_mf__not_boolean(self) -> None:
         """
         Ensure the IPv4 header constructor raises an exception when the provided
         'flag_mf' argument is not a boolean.
         """
 
-        self._header_args["flag_mf"] = value = 1
+        self._header_args["flag_mf"] = value = "not a boolean"
 
         with self.assertRaises(AssertionError) as error:
             Ip4Header(**self._header_args)  # type: ignore

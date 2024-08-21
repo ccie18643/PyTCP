@@ -128,7 +128,7 @@ class TestTcpOptionWscaleAssembler(TestCase):
 
         self._tcp_option_wscale = TcpOptionWscale(**self._args)
 
-    def test__tcp_option_wscale__len(self) -> None:
+    def test__tcp__option__wscale__len(self) -> None:
         """
         Ensure the TCP Wscale option '__len__()' method returns a correct value.
         """
@@ -138,7 +138,7 @@ class TestTcpOptionWscaleAssembler(TestCase):
             self._results["__len__"],
         )
 
-    def test__tcp_option_wscale__str(self) -> None:
+    def test__tcp__option__wscale__str(self) -> None:
         """
         Ensure the TCP Wscale option '__str__()' method returns a correct value.
         """
@@ -148,7 +148,7 @@ class TestTcpOptionWscaleAssembler(TestCase):
             self._results["__str__"],
         )
 
-    def test__tcp_option_wscale__repr(self) -> None:
+    def test__tcp__option__wscale__repr(self) -> None:
         """
         Ensure the TCP Wscale option '__repr__()' method returns a correct value.
         """
@@ -158,7 +158,7 @@ class TestTcpOptionWscaleAssembler(TestCase):
             self._results["__repr__"],
         )
 
-    def test__tcp_option_wscale__bytes(self) -> None:
+    def test__tcp__option__wscale__bytes(self) -> None:
         """
         Ensure the TCP Wscale option '__bytes__()' method returns a correct value.
         """
@@ -168,7 +168,7 @@ class TestTcpOptionWscaleAssembler(TestCase):
             self._results["__bytes__"],
         )
 
-    def test__tcp_option_wscale__wscale(self) -> None:
+    def test__tcp__option__wscale__wscale(self) -> None:
         """
         Ensure the TCP Wscale option 'wscale' property returns a correct value.
         """
@@ -248,7 +248,7 @@ class TestTcpOptionWscaleParser(TestCase):
     _args: dict[str, Any]
     _results: dict[str, Any]
 
-    def test__tcp_option_wscale__from_bytes(self) -> None:
+    def test__tcp__option__wscale__from_bytes(self) -> None:
         """
         Ensure the TCP Wscale option parser creates the proper option object
         or throws assertion error.

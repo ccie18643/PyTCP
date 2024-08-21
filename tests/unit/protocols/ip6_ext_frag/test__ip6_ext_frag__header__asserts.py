@@ -126,7 +126,7 @@ class TestIpExtFrag6HeaderAsserts(TestCase):
             f"The 'offset' field must be 8-byte aligned. Got: {value!r}",
         )
 
-    def test__ip6_ext_frag__header__flag_mf__not_bool(self) -> None:
+    def test__ip6_ext_frag__header__flag_mf__not_boolean(self) -> None:
         """
         Ensure the IPv6 Ext Frag header constructor raises an exception when
         the provided 'flag_mf' argument is not a boolean.
