@@ -172,7 +172,7 @@ class TestIcmp6MessageNdRouterAdvertisementAsserts(TestCase):
             f"The 'hop' field must be a 8-bit unsigned integer. Got: {value!r}",
         )
 
-    def test__icmp6__message__nd__router_advertisement__flag_m__not_bool(
+    def test__icmp6__message__nd__router_advertisement__flag_m__not_boolean(
         self,
     ) -> None:
         """
