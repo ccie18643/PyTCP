@@ -1,27 +1,27 @@
 #!/usr/bin/env python3
 
-############################################################################
-#                                                                          #
-#  PyTCP - Python TCP/IP stack                                             #
-#  Copyright (C) 2020-present Sebastian Majewski                           #
-#                                                                          #
-#  This program is free software: you can redistribute it and/or modify    #
-#  it under the terms of the GNU General Public License as published by    #
-#  the Free Software Foundation, either version 3 of the License, or       #
-#  (at your option) any later version.                                     #
-#                                                                          #
-#  This program is distributed in the hope that it will be useful,         #
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of          #
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the           #
-#  GNU General Public License for more details.                            #
-#                                                                          #
-#  You should have received a copy of the GNU General Public License       #
-#  along with this program.  If not, see <https://www.gnu.org/licenses/>.  #
-#                                                                          #
-#  Author's email: ccie18643@gmail.com                                     #
-#  Github repository: https://github.com/ccie18643/PyTCP                   #
-#                                                                          #
-############################################################################
+################################################################################
+##                                                                            ##
+##   PyTCP - Python TCP/IP stack                                              ##
+##   Copyright (C) 2020-present Sebastian Majewski                            ##
+##                                                                            ##
+##   This program is free software: you can redistribute it and/or modify     ##
+##   it under the terms of the GNU General Public License as published by     ##
+##   the Free Software Foundation, either version 3 of the License, or        ##
+##   (at your option) any later version.                                      ##
+##                                                                            ##
+##   This program is distributed in the hope that it will be useful,          ##
+##   but WITHOUT ANY WARRANTY; without even the implied warranty of           ##
+##   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the             ##
+##   GNU General Public License for more details.                             ##
+##                                                                            ##
+##   You should have received a copy of the GNU General Public License        ##
+##   along with this program. If not, see <https://www.gnu.org/licenses/>.    ##
+##                                                                            ##
+##   Author's email: ccie18643@gmail.com                                      ##
+##   Github repository: https://github.com/ccie18643/PyTCP                    ##
+##                                                                            ##
+################################################################################
 
 
 """
@@ -29,7 +29,7 @@ This module contains tests for the ICMPv6 ND options support code.
 
 tests/unit/protocols/icmp6/test__icmp6__nd__options.py
 
-ver 3.0.0
+ver 3.0.1
 """
 
 
@@ -67,9 +67,11 @@ from pytcp.protocols.icmp6.message.nd.option.icmp6_nd_options import (
                     "slla 00:00:00:00:00:00, slla 00:00:00:00:00:00"
                 ),
                 "__repr__": (
-                    "Icmp6NdOptions(options=[Icmp6NdOptionSlla(slla=MacAddress('00:00:00:00:00:00')), "
-                    "Icmp6NdOptionSlla(slla=MacAddress('00:00:00:00:00:00')), Icmp6NdOptionSlla(slla="
-                    "MacAddress('00:00:00:00:00:00')), Icmp6NdOptionSlla(slla=MacAddress('00:00:00:00:00:00'))])"
+                    "Icmp6NdOptions(options=[Icmp6NdOptionSlla(slla=MacAddress("
+                    "'00:00:00:00:00:00')), Icmp6NdOptionSlla(slla=MacAddress("
+                    "'00:00:00:00:00:00')), Icmp6NdOptionSlla(slla="
+                    "MacAddress('00:00:00:00:00:00')), Icmp6NdOptionSlla(slla="
+                    "MacAddress('00:00:00:00:00:00'))])"
                 ),
                 "__bytes__": (
                     b"\x01\x01\x00\x00\x00\x00\x00\x00\x01\x01\x00\x00\x00\x00\x00\x00"
@@ -90,14 +92,14 @@ class TestIcmp6NdOptionsAssembler(TestCase):
 
     def setUp(self) -> None:
         """
-        Initialize the 'Icmp6NdOptions' class object with testcase arguments.
+        Initialize an Icmp6NdOptions object with the testcase arguments.
         """
 
         self._icmp6_nd_options = Icmp6NdOptions(*self._args)
 
     def test__icmp6_nd_options__len(self) -> None:
         """
-        Ensure the 'Icmp6NdOptions' class '__len__()' method returns a correct value.
+        Ensure the Icmp6NdOptions '__len__()' method returns a correct value.
         """
 
         self.assertEqual(
@@ -107,7 +109,7 @@ class TestIcmp6NdOptionsAssembler(TestCase):
 
     def test__icmp6_nd_options__str(self) -> None:
         """
-        Ensure the 'Icmp6NdOptions' class '__str__()' method returns a correct value.
+        Ensure the Icmp6NdOptions '__str__()' method returns a correct value.
         """
 
         self.assertEqual(
@@ -117,7 +119,7 @@ class TestIcmp6NdOptionsAssembler(TestCase):
 
     def test__icmp6_nd_options__repr(self) -> None:
         """
-        Ensure the 'Icmp6NdOptions' class '__repr__()' method returns a correct value.
+        Ensure the Icmp6NdOptions '__repr__()' method returns a correct value.
         """
 
         self.assertEqual(
@@ -127,7 +129,7 @@ class TestIcmp6NdOptionsAssembler(TestCase):
 
     def test__icmp6_options__bytes(self) -> None:
         """
-        Ensure the 'Icmp6NdOptions' class '__bytes__()' method returns a correct value.
+        Ensure the Icmp6NdOptions '__bytes__()' method returns a correct value.
         """
 
         self.assertEqual(
@@ -168,7 +170,8 @@ class TestIcmp6NdOptionsParser(TestCase):
 
     def test__icmp6_nd_options__from_bytes(self) -> None:
         """
-        Ensure the 'Icmp6NdOptions' class parser creates the proper option object.
+        Ensure the 'Icmp6NdOptions' class parser creates the proper options
+        object.
         """
 
         icmp6_nd_options = Icmp6NdOptions.from_bytes(self._args["bytes"])

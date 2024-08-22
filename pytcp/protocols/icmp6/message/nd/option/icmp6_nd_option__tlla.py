@@ -1,35 +1,36 @@
 #!/usr/bin/env python3
 
-############################################################################
-#                                                                          #
-#  PyTCP - Python TCP/IP stack                                             #
-#  Copyright (C) 2020-present Sebastian Majewski                           #
-#                                                                          #
-#  This program is free software: you can redistribute it and/or modify    #
-#  it under the terms of the GNU General Public License as published by    #
-#  the Free Software Foundation, either version 3 of the License, or       #
-#  (at your option) any later version.                                     #
-#                                                                          #
-#  This program is distributed in the hope that it will be useful,         #
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of          #
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the           #
-#  GNU General Public License for more details.                            #
-#                                                                          #
-#  You should have received a copy of the GNU General Public License       #
-#  along with this program.  If not, see <https://www.gnu.org/licenses/>.  #
-#                                                                          #
-#  Author's email: ccie18643@gmail.com                                     #
-#  Github repository: https://github.com/ccie18643/PyTCP                   #
-#                                                                          #
-############################################################################
+################################################################################
+##                                                                            ##
+##   PyTCP - Python TCP/IP stack                                              ##
+##   Copyright (C) 2020-present Sebastian Majewski                            ##
+##                                                                            ##
+##   This program is free software: you can redistribute it and/or modify     ##
+##   it under the terms of the GNU General Public License as published by     ##
+##   the Free Software Foundation, either version 3 of the License, or        ##
+##   (at your option) any later version.                                      ##
+##                                                                            ##
+##   This program is distributed in the hope that it will be useful,          ##
+##   but WITHOUT ANY WARRANTY; without even the implied warranty of           ##
+##   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the             ##
+##   GNU General Public License for more details.                             ##
+##                                                                            ##
+##   You should have received a copy of the GNU General Public License        ##
+##   along with this program. If not, see <https://www.gnu.org/licenses/>.    ##
+##                                                                            ##
+##   Author's email: ccie18643@gmail.com                                      ##
+##   Github repository: https://github.com/ccie18643/PyTCP                    ##
+##                                                                            ##
+################################################################################
 
 
 """
-This module contains the ICMPv6 Tlla (Target Link Layer Address) option support code.
+This module contains the ICMPv6 Tlla (Target Link Layer Address) option support
+code.
 
 pytcp/protocols/icmp6/message/nd/option/icmp6_nd_option__tlla.py
 
-ver 3.0.0
+ver 3.0.1
 """
 
 
@@ -42,6 +43,7 @@ from typing import override
 from pytcp.lib.mac_address import MacAddress
 from pytcp.protocols.icmp6.icmp6__errors import Icmp6IntegrityError
 from pytcp.protocols.icmp6.message.nd.option.icmp6_nd_option import (
+    ICMP6__ND_OPTION__LEN,
     Icmp6NdOption,
     Icmp6NdOptionType,
 )
@@ -114,13 +116,26 @@ class Icmp6NdOptionTlla(Icmp6NdOption):
         Initialize the ICMPv6 ND Tlla option from bytes.
         """
 
-        assert len(_bytes) >= 2
-        assert _bytes[0] == int(Icmp6NdOptionType.TLLA)
+        assert (value := len(_bytes)) >= ICMP6__ND_OPTION__LEN, (
+            f"The minimum length of the ICMPv6 ND Tlla option must be "
+            f"{ICMP6__ND_OPTION__LEN} bytes. Got: {value!r}"
+        )
 
-        if _bytes[1] << 3 != ICMP6__ND_OPTION_TLLA__LEN:
-            raise Icmp6IntegrityError("Invalid ND Tlla option length (I).")
+        assert (value := _bytes[0]) == int(Icmp6NdOptionType.TLLA), (
+            f"The ICMPv6 ND Tlla option type must be {Icmp6NdOptionType.TLLA!r}. "
+            f"Got: {Icmp6NdOptionType.from_int(value)!r}"
+        )
 
-        if _bytes[1] << 3 > len(_bytes):
-            raise Icmp6IntegrityError("Invalid ND Tlla option length (II).")
+        if (value := _bytes[1] << 3) != ICMP6__ND_OPTION_TLLA__LEN:
+            raise Icmp6IntegrityError(
+                f"The ICMPv6 ND Tlla option length must be {ICMP6__ND_OPTION_TLLA__LEN} "
+                f"bytes. Got: {value!r}"
+            )
+
+        if (value := _bytes[1] << 3) > len(_bytes):
+            raise Icmp6IntegrityError(
+                "The ICMPv6 ND Tlla option length must be less than or equal to "
+                f"the length of provided bytes ({len(_bytes)}). Got: {value!r}"
+            )
 
         return Icmp6NdOptionTlla(tlla=MacAddress(_bytes[2:8]))

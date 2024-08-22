@@ -1,27 +1,27 @@
 #!/usr/bin/env python3
 
-############################################################################
-#                                                                          #
-#  PyTCP - Python TCP/IP stack                                             #
-#  Copyright (C) 2020-present Sebastian Majewski                           #
-#                                                                          #
-#  This program is free software: you can redistribute it and/or modify    #
-#  it under the terms of the GNU General Public License as published by    #
-#  the Free Software Foundation, either version 3 of the License, or       #
-#  (at your option) any later version.                                     #
-#                                                                          #
-#  This program is distributed in the hope that it will be useful,         #
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of          #
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the           #
-#  GNU General Public License for more details.                            #
-#                                                                          #
-#  You should have received a copy of the GNU General Public License       #
-#  along with this program.  If not, see <https://www.gnu.org/licenses/>.  #
-#                                                                          #
-#  Author's email: ccie18643@gmail.com                                     #
-#  Github repository: https://github.com/ccie18643/PyTCP                   #
-#                                                                          #
-############################################################################
+################################################################################
+##                                                                            ##
+##   PyTCP - Python TCP/IP stack                                              ##
+##   Copyright (C) 2020-present Sebastian Majewski                            ##
+##                                                                            ##
+##   This program is free software: you can redistribute it and/or modify     ##
+##   it under the terms of the GNU General Public License as published by     ##
+##   the Free Software Foundation, either version 3 of the License, or        ##
+##   (at your option) any later version.                                      ##
+##                                                                            ##
+##   This program is distributed in the hope that it will be useful,          ##
+##   but WITHOUT ANY WARRANTY; without even the implied warranty of           ##
+##   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the             ##
+##   GNU General Public License for more details.                             ##
+##                                                                            ##
+##   You should have received a copy of the GNU General Public License        ##
+##   along with this program. If not, see <https://www.gnu.org/licenses/>.    ##
+##                                                                            ##
+##   Author's email: ccie18643@gmail.com                                      ##
+##   Github repository: https://github.com/ccie18643/PyTCP                    ##
+##                                                                            ##
+################################################################################
 
 
 """
@@ -29,7 +29,7 @@ This module contains tests for the TCP Wscale (Window Scale) option code.
 
 tests/unit/protocols/tcp/test__tcp__option__wscale.py
 
-ver 3.0.0
+ver 3.0.1
 """
 
 
@@ -39,6 +39,7 @@ from parameterized import parameterized_class  # type: ignore
 from testslide import TestCase
 
 from pytcp.lib.int_checks import UINT_8__MIN
+from pytcp.protocols.tcp.options.tcp_option import TcpOptionType
 from pytcp.protocols.tcp.options.tcp_option__wscale import (
     TCP__OPTION_WSCALE__MAX_VALUE,
     TcpOptionWscale,
@@ -130,7 +131,8 @@ class TestTcpOptionWscaleAssembler(TestCase):
 
     def test__tcp__option__wscale__len(self) -> None:
         """
-        Ensure the TCP Wscale option '__len__()' method returns a correct value.
+        Ensure the TCP Wscale option '__len__()' method returns a correct
+        value.
         """
 
         self.assertEqual(
@@ -140,7 +142,8 @@ class TestTcpOptionWscaleAssembler(TestCase):
 
     def test__tcp__option__wscale__str(self) -> None:
         """
-        Ensure the TCP Wscale option '__str__()' method returns a correct value.
+        Ensure the TCP Wscale option '__str__()' method returns a correct
+        value.
         """
 
         self.assertEqual(
@@ -150,7 +153,8 @@ class TestTcpOptionWscaleAssembler(TestCase):
 
     def test__tcp__option__wscale__repr(self) -> None:
         """
-        Ensure the TCP Wscale option '__repr__()' method returns a correct value.
+        Ensure the TCP Wscale option '__repr__()' method returns a correct
+        value.
         """
 
         self.assertEqual(
@@ -160,7 +164,8 @@ class TestTcpOptionWscaleAssembler(TestCase):
 
     def test__tcp__option__wscale__bytes(self) -> None:
         """
-        Ensure the TCP Wscale option '__bytes__()' method returns a correct value.
+        Ensure the TCP Wscale option '__bytes__()' method returns a correct
+        value.
         """
 
         self.assertEqual(
@@ -170,7 +175,7 @@ class TestTcpOptionWscaleAssembler(TestCase):
 
     def test__tcp__option__wscale__wscale(self) -> None:
         """
-        Ensure the TCP Wscale option 'wscale' property returns a correct value.
+        Ensure the TCP Wscale option 'wscale' field returns a correct value.
         """
 
         self.assertEqual(
@@ -191,12 +196,25 @@ class TestTcpOptionWscaleAssembler(TestCase):
             },
         },
         {
+            "_description": "The TCP Wscale option (maximum value correction).",
+            "_args": {
+                "bytes": b"\x03\x03\xff",
+            },
+            "_results": {
+                "option": TcpOptionWscale(wscale=14),
+            },
+        },
+        {
             "_description": "The TCP Wscale option minimum length assert.",
             "_args": {
                 "bytes": b"\x03",
             },
             "_results": {
                 "error": AssertionError,
+                "error_message": (
+                    "The minimum length of the TCP Wscale option must be 2 "
+                    "bytes. Got: 1"
+                ),
             },
         },
         {
@@ -206,6 +224,10 @@ class TestTcpOptionWscaleAssembler(TestCase):
             },
             "_results": {
                 "error": AssertionError,
+                "error_message": (
+                    f"The TCP Wscale option type must be {TcpOptionType.WSCALE!r}. "
+                    f"Got: {TcpOptionType.from_int(255)!r}"
+                ),
             },
         },
         {
@@ -215,7 +237,10 @@ class TestTcpOptionWscaleAssembler(TestCase):
             },
             "_results": {
                 "error": TcpIntegrityError,
-                "error_message": "Invalid Wscale option length (I).",
+                "error_message": (
+                    "[INTEGRITY ERROR][TCP] The TCP Wscale option length must be "
+                    "3 bytes. Got: 2"
+                ),
             },
         },
         {
@@ -225,16 +250,11 @@ class TestTcpOptionWscaleAssembler(TestCase):
             },
             "_results": {
                 "error": TcpIntegrityError,
-                "error_message": "Invalid Wscale option length (II).",
-            },
-        },
-        {
-            "_description": "The TCP Wscale option maximum value correction.",
-            "_args": {
-                "bytes": b"\x03\x03\xff",
-            },
-            "_results": {
-                "option": TcpOptionWscale(wscale=14),
+                "error_message": (
+                    "[INTEGRITY ERROR][TCP] The TCP Wscale option length must "
+                    "be less than or equal to the length of provided bytes "
+                    "(2). Got: 3"
+                ),
             },
         },
     ]
@@ -250,8 +270,8 @@ class TestTcpOptionWscaleParser(TestCase):
 
     def test__tcp__option__wscale__from_bytes(self) -> None:
         """
-        Ensure the TCP Wscale option parser creates the proper option object
-        or throws assertion error.
+        Ensure the TCP Wscale option parser creates the proper option
+        object or throws assertion error.
         """
 
         if "option" in self._results:
@@ -266,8 +286,7 @@ class TestTcpOptionWscaleParser(TestCase):
             with self.assertRaises(self._results["error"]) as error:
                 TcpOptionWscale.from_bytes(self._args["bytes"])
 
-            if "error_message" in self._results:
-                self.assertEqual(
-                    str(error.exception),
-                    f"[INTEGRITY ERROR][TCP] {self._results['error_message']}",
-                )
+            self.assertEqual(
+                str(error.exception),
+                self._results["error_message"],
+            )

@@ -88,13 +88,13 @@ class ArpParser(Arp, ProtoParser):
         if (hrtype := ArpHardwareType.from_bytes(self._frame[0:2])).is_unknown:
             raise ArpIntegrityError(
                 "The 'hrtype' field value must be one of "
-                f"{ArpHardwareType.get_core_values()}, got {int(hrtype)}."
+                f"{ArpHardwareType.get_known_values()}, got {int(hrtype)}."
             )
 
         if (prtype := ArpProtocolType.from_bytes(self._frame[2:4])).is_unknown:
             raise ArpIntegrityError(
                 "The 'prtype' field value must be one of "
-                f"{ArpProtocolType.get_core_values()}, got {int(prtype)}."
+                f"{ArpProtocolType.get_known_values()}, got {int(prtype)}."
             )
 
         if (hrlen := self._frame[4]) != ARP__HARDWARE_LEN__ETHERNET:
@@ -126,5 +126,5 @@ class ArpParser(Arp, ProtoParser):
         if self._header.oper.is_unknown:
             raise ArpSanityError(
                 "The 'oper' field value must be one of "
-                f"{ArpOperation.get_core_values()}, got {int(self._header.oper)}."
+                f"{ArpOperation.get_known_values()}, got {int(self._header.oper)}."
             )

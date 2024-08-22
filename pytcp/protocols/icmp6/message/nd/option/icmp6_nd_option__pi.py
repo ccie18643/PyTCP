@@ -1,27 +1,27 @@
 #!/usr/bin/env python3
 
-############################################################################
-#                                                                          #
-#  PyTCP - Python TCP/IP stack                                             #
-#  Copyright (C) 2020-present Sebastian Majewski                           #
-#                                                                          #
-#  This program is free software: you can redistribute it and/or modify    #
-#  it under the terms of the GNU General Public License as published by    #
-#  the Free Software Foundation, either version 3 of the License, or       #
-#  (at your option) any later version.                                     #
-#                                                                          #
-#  This program is distributed in the hope that it will be useful,         #
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of          #
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the           #
-#  GNU General Public License for more details.                            #
-#                                                                          #
-#  You should have received a copy of the GNU General Public License       #
-#  along with this program.  If not, see <https://www.gnu.org/licenses/>.  #
-#                                                                          #
-#  Author's email: ccie18643@gmail.com                                     #
-#  Github repository: https://github.com/ccie18643/PyTCP                   #
-#                                                                          #
-############################################################################
+################################################################################
+##                                                                            ##
+##   PyTCP - Python TCP/IP stack                                              ##
+##   Copyright (C) 2020-present Sebastian Majewski                            ##
+##                                                                            ##
+##   This program is free software: you can redistribute it and/or modify     ##
+##   it under the terms of the GNU General Public License as published by     ##
+##   the Free Software Foundation, either version 3 of the License, or        ##
+##   (at your option) any later version.                                      ##
+##                                                                            ##
+##   This program is distributed in the hope that it will be useful,          ##
+##   but WITHOUT ANY WARRANTY; without even the implied warranty of           ##
+##   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the             ##
+##   GNU General Public License for more details.                             ##
+##                                                                            ##
+##   You should have received a copy of the GNU General Public License        ##
+##   along with this program. If not, see <https://www.gnu.org/licenses/>.    ##
+##                                                                            ##
+##   Author's email: ccie18643@gmail.com                                      ##
+##   Github repository: https://github.com/ccie18643/PyTCP                    ##
+##                                                                            ##
+################################################################################
 
 
 """
@@ -29,7 +29,7 @@ This module contains the ICMPv6 Pi (Prefix Information) option support code.
 
 pytcp/protocols/icmp6/message/nd/option/icmp6_nd_option__pi.py
 
-ver 3.0.0 (code refactor needed for 'from_bytes' method)
+ver 3.0.1
 """
 
 
@@ -43,6 +43,7 @@ from pytcp.lib.int_checks import is_uint32
 from pytcp.lib.ip6_address import Ip6Address, Ip6Mask, Ip6Network
 from pytcp.protocols.icmp6.icmp6__errors import Icmp6IntegrityError
 from pytcp.protocols.icmp6.message.nd.option.icmp6_nd_option import (
+    ICMP6__ND_OPTION__LEN,
     Icmp6NdOption,
     Icmp6NdOptionType,
 )
@@ -115,29 +116,35 @@ class Icmp6NdOptionPi(Icmp6NdOption):
         Validate the ICMPv4 ND Pi option fields.
         """
 
-        assert isinstance(
-            self.flag_l, bool
-        ), f"The 'flag_l' field must be a boolean. Got: {type(self.flag_l)!r}"
+        assert isinstance(self.flag_l, bool), (
+            f"The 'flag_l' field must be a boolean. "
+            f"Got: {type(self.flag_l)!r}"
+        )
 
-        assert isinstance(
-            self.flag_a, bool
-        ), f"The 'flag_a' field must be a boolean. Got: {type(self.flag_a)!r}"
+        assert isinstance(self.flag_a, bool), (
+            f"The 'flag_a' field must be a boolean. "
+            f"Got: {type(self.flag_a)!r}"
+        )
 
-        assert isinstance(
-            self.flag_r, bool
-        ), f"The 'flag_r' field must be a boolean. Got: {type(self.flag_r)!r}"
+        assert isinstance(self.flag_r, bool), (
+            f"The 'flag_r' field must be a boolean. "
+            f"Got: {type(self.flag_r)!r}"
+        )
 
-        assert is_uint32(
-            self.valid_lifetime
-        ), f"The 'valid_lifetime' field must be a 32-bit unsigned integer. Got: {self.valid_lifetime!r}"
+        assert is_uint32(self.valid_lifetime), (
+            f"The 'valid_lifetime' field must be a 32-bit unsigned integer. "
+            f"Got: {self.valid_lifetime!r}"
+        )
 
-        assert is_uint32(
-            self.preferred_lifetime
-        ), f"The 'preferred_lifetime' field must be a 32-bit unsigned integer. Got: {self.preferred_lifetime!r}"
+        assert is_uint32(self.preferred_lifetime), (
+            f"The 'preferred_lifetime' field must be a 32-bit unsigned integer. "
+            f"Got: {self.preferred_lifetime!r}"
+        )
 
-        assert isinstance(
-            self.prefix, Ip6Network
-        ), f"The 'prefix' field must be an Ip6Network. Got: {type(self.prefix)!r}"
+        assert isinstance(self.prefix, Ip6Network), (
+            f"The 'prefix' field must be an Ip6Network. "
+            f"Got: {type(self.prefix)!r}"
+        )
 
     @override
     def __str__(self) -> str:
@@ -145,9 +152,14 @@ class Icmp6NdOptionPi(Icmp6NdOption):
         Get the ICMPv6 ND Pi option log string.
         """
 
-        # TODO: Update the option string to show all data.
-
-        return f"prefix_info {self.prefix}"
+        return (
+            f"prefix_info (prefix {self.prefix}, flags "
+            f"{'L' if self.flag_l else '-'}"
+            f"{'A' if self.flag_a else '-'}"
+            f"{'R' if self.flag_r else '-'}, "
+            f"valid_lifetime {self.valid_lifetime}, "
+            f"preferred_lifetime {self.preferred_lifetime})"
+        )
 
     @override
     def __bytes__(self) -> bytes:
@@ -176,22 +188,44 @@ class Icmp6NdOptionPi(Icmp6NdOption):
         Initialize the ICMPv6 ND Pi option from bytes.
         """
 
-        assert len(_bytes) >= 2
-        assert _bytes[0] == int(Icmp6NdOptionType.PI)
+        assert (value := len(_bytes)) >= ICMP6__ND_OPTION__LEN, (
+            f"The minimum length of the ICMPv6 ND Pi option must be "
+            f"{ICMP6__ND_OPTION__LEN} bytes. Got: {value!r}"
+        )
 
-        if _bytes[1] << 3 != ICMP6__ND_OPTION_PI__LEN:
-            raise Icmp6IntegrityError("Invalid ND Pi option length (I).")
+        assert (value := _bytes[0]) == int(Icmp6NdOptionType.PI), (
+            f"The ICMPv6 ND Pi option type must be {Icmp6NdOptionType.PI!r}. "
+            f"Got: {Icmp6NdOptionType.from_int(value)!r}"
+        )
 
-        if _bytes[1] << 3 > len(_bytes):
-            raise Icmp6IntegrityError("Invalid ND Pi option length (II).")
+        if (value := _bytes[1] << 3) != ICMP6__ND_OPTION_PI__LEN:
+            raise Icmp6IntegrityError(
+                f"The ICMPv6 ND Pi option length must be {ICMP6__ND_OPTION_PI__LEN} "
+                f"bytes. Got: {value!r}"
+            )
+
+        if (value := _bytes[1] << 3) > len(_bytes):
+            raise Icmp6IntegrityError(
+                "The ICMPv6 ND Pi option length must be less than or equal to the "
+                f"length of provided bytes ({len(_bytes)}). Got: {value!r}"
+            )
+
+        (
+            _,
+            _,
+            prefix_len,
+            flags,
+            valid_lifetime,
+            preferred_lifetime,
+            _,
+            prefix,
+        ) = struct.unpack(ICMP6__ND_OPTION_PI__STRUCT, _bytes)
 
         return Icmp6NdOptionPi(
-            flag_l=bool(_bytes[3] & 0b10000000),
-            flag_a=bool(_bytes[3] & 0b01000000),
-            flag_r=bool(_bytes[3] & 0b00100000),
-            valid_lifetime=struct.unpack_from("!L", _bytes, 4)[0],
-            preferred_lifetime=struct.unpack_from("!L", _bytes, 8)[0],
-            prefix=Ip6Network(
-                (Ip6Address(_bytes[16:32]), Ip6Mask(f"/{_bytes[2]}"))
-            ),
+            flag_l=bool(flags & 0b10000000),
+            flag_a=bool(flags & 0b01000000),
+            flag_r=bool(flags & 0b00100000),
+            valid_lifetime=valid_lifetime,
+            preferred_lifetime=preferred_lifetime,
+            prefix=Ip6Network((Ip6Address(prefix), Ip6Mask(f"/{prefix_len}"))),
         )

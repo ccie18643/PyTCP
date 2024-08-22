@@ -73,7 +73,7 @@ class ProtoEnum(Enum):
         Check if the provided value is a valid core enum value.
         """
 
-        return value in self.get_core_values()
+        return value in self.get_known_values()
 
     @classmethod
     def from_int(cls, /, value: int) -> Self:
@@ -95,9 +95,9 @@ class ProtoEnum(Enum):
         return cls.from_int((int.from_bytes(bytes[:size])))
 
     @classmethod
-    def get_core_values(cls) -> list[int]:
+    def get_known_values(cls) -> list[int]:
         """
-        Get the list of core values.
+        Get the list of known values.
         """
 
         return [int(value) for value in cls if value.is_unknown is False]

@@ -1,27 +1,27 @@
 #!/usr/bin/env python3
 
-############################################################################
-#                                                                          #
-#  PyTCP - Python TCP/IP stack                                             #
-#  Copyright (C) 2020-present Sebastian Majewski                           #
-#                                                                          #
-#  This program is free software: you can redistribute it and/or modify    #
-#  it under the terms of the GNU General Public License as published by    #
-#  the Free Software Foundation, either version 3 of the License, or       #
-#  (at your option) any later version.                                     #
-#                                                                          #
-#  This program is distributed in the hope that it will be useful,         #
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of          #
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the           #
-#  GNU General Public License for more details.                            #
-#                                                                          #
-#  You should have received a copy of the GNU General Public License       #
-#  along with this program.  If not, see <https://www.gnu.org/licenses/>.  #
-#                                                                          #
-#  Author's email: ccie18643@gmail.com                                     #
-#  Github repository: https://github.com/ccie18643/PyTCP                   #
-#                                                                          #
-############################################################################
+################################################################################
+##                                                                            ##
+##   PyTCP - Python TCP/IP stack                                              ##
+##   Copyright (C) 2020-present Sebastian Majewski                            ##
+##                                                                            ##
+##   This program is free software: you can redistribute it and/or modify     ##
+##   it under the terms of the GNU General Public License as published by     ##
+##   the Free Software Foundation, either version 3 of the License, or        ##
+##   (at your option) any later version.                                      ##
+##                                                                            ##
+##   This program is distributed in the hope that it will be useful,          ##
+##   but WITHOUT ANY WARRANTY; without even the implied warranty of           ##
+##   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the             ##
+##   GNU General Public License for more details.                             ##
+##                                                                            ##
+##   You should have received a copy of the GNU General Public License        ##
+##   along with this program. If not, see <https://www.gnu.org/licenses/>.    ##
+##                                                                            ##
+##   Author's email: ccie18643@gmail.com                                      ##
+##   Github repository: https://github.com/ccie18643/PyTCP                    ##
+##                                                                            ##
+################################################################################
 
 
 """
@@ -29,7 +29,7 @@ This module contains tests for the unknown TCP option code.
 
 tests/unit/protocols/tcp/test__tcp__option__unknown.py
 
-ver 3.0.0
+ver 3.0.1
 """
 
 
@@ -39,7 +39,10 @@ from parameterized import parameterized_class  # type: ignore
 from testslide import TestCase
 
 from pytcp.lib.int_checks import UINT_8__MAX, UINT_8__MIN
-from pytcp.protocols.tcp.options.tcp_option import TcpOptionType
+from pytcp.protocols.tcp.options.tcp_option import (
+    TCP__OPTION__LEN,
+    TcpOptionType,
+)
 from pytcp.protocols.tcp.options.tcp_option__unknown import TcpOptionUnknown
 from pytcp.protocols.tcp.tcp__errors import TcpIntegrityError
 
@@ -56,14 +59,14 @@ class TestTcpOptionUnknownAsserts(TestCase):
 
         self._option_args = {
             "type": TcpOptionType.from_int(255),
-            "len": 2,
-            "data": b"",
+            "len": 8,
+            "data": b"012345",
         }
 
     def test__tcp__option__unknown__type__not_TcpOptionType(self) -> None:
         """
-        Ensure the TCP unknown option constructor raises an exception when the
-        provided 'type' argument is not a TcpOptionType.
+        Ensure the TCP unknown option constructor raises an exception when
+        the provided 'type' argument is not a TcpOptionType.
         """
 
         self._option_args["type"] = value = "not a TcpOptionType"
@@ -76,10 +79,31 @@ class TestTcpOptionUnknownAsserts(TestCase):
             f"The 'type' field must be a TcpOptionType. Got: {type(value)!r}",
         )
 
+    def test__tcp__option__unknown__type__core_value(
+        self,
+    ) -> None:
+        """
+        Ensure the TCP unknown option constructor raises an exception when
+        the provided 'type' argument is a core TcpOptionType.
+        """
+
+        for type in TcpOptionType.get_known_values():
+            self._option_args["type"] = value = TcpOptionType(type)
+
+            with self.assertRaises(AssertionError) as error:
+                TcpOptionUnknown(**self._option_args)  # type: ignore
+
+            self.assertEqual(
+                str(error.exception),
+                "The 'type' field must not be a core TcpOptionType. "
+                f"Got: {value!r}",
+            )
+
     def test__tcp__option__unknown__len__under_min(self) -> None:
         """
-        Ensure the TCP unknown option constructor raises an exception when the
-        provided 'len' argument is lower than the minimum supported value.
+        Ensure the TCP unknown option constructor raises an exception when
+        the provided 'len' argument is lower than the minimum supported
+        value.
         """
 
         self._option_args["len"] = value = UINT_8__MIN - 1
@@ -94,8 +118,9 @@ class TestTcpOptionUnknownAsserts(TestCase):
 
     def test__tcp__option__unknown__len__over_max(self) -> None:
         """
-        Ensure the TCP unknown option constructor raises an exception when the
-        provided 'len' argument is higher than the maximum supported value.
+        Ensure the TCP unknown option constructor raises an exception when
+        the provided 'len' argument is higher than the maximum supported
+        value.
         """
 
         self._option_args["len"] = value = UINT_8__MAX + 1
@@ -106,6 +131,28 @@ class TestTcpOptionUnknownAsserts(TestCase):
         self.assertEqual(
             str(error.exception),
             f"The 'len' field must be an 8-bit unsigned integer. Got: {value}",
+        )
+
+    def test__tcp__option__unknown__len__mismatch(self) -> None:
+        """
+        Ensure the TCP unknown option constructor raises an exception when
+        the provided 'len' argument is different than the length of the
+        'data' field.
+        """
+
+        self._option_args["len"] = value = (
+            TCP__OPTION__LEN + len(self._option_args["data"]) + 1  # type: ignore
+        )
+
+        with self.assertRaises(AssertionError) as error:
+            TcpOptionUnknown(**self._option_args)  # type: ignore
+
+        self.assertEqual(
+            str(error.exception),
+            (
+                "The 'len' field must reflect the length of the 'data' field. "
+                f"Got: {value} != {TCP__OPTION__LEN + len(self._option_args['data'])}"  # type: ignore
+            ),
         )
 
 
@@ -122,8 +169,8 @@ class TestTcpOptionUnknownAsserts(TestCase):
                 "__len__": 18,
                 "__str__": "unk-255-18",
                 "__repr__": (
-                    "TcpOptionUnknown(type=<TcpOptionType.UNKNOWN_255: 255>, len=18, "
-                    "data=b'0123456789ABCDEF')"
+                    f"TcpOptionUnknown(type={TcpOptionType.from_int(255)!r}, "
+                    "len=18, data=b'0123456789ABCDEF')"
                 ),
                 "__bytes__": (
                     b"\xff\x12\x30\x31\x32\x33\x34\x35\x36\x37\x38\x39\x41\x42\x43\x44"
@@ -154,7 +201,8 @@ class TestTcpOptionUnknownAssembler(TestCase):
 
     def test__tcp__option__unknown__len(self) -> None:
         """
-        Ensure the unknown TCP option '__len__()' method returns a correct value.
+        Ensure the unknown TCP option '__len__()' method returns a correct
+        value.
         """
 
         self.assertEqual(
@@ -164,7 +212,8 @@ class TestTcpOptionUnknownAssembler(TestCase):
 
     def test__tcp__option__unknown__str(self) -> None:
         """
-        Ensure the unknown TCP option '__str__()' method returns a correct value.
+        Ensure the unknown TCP option '__str__()' method returns a correct
+        value.
         """
 
         self.assertEqual(
@@ -174,7 +223,8 @@ class TestTcpOptionUnknownAssembler(TestCase):
 
     def test__tcp__option__unknown__repr(self) -> None:
         """
-        Ensure the unknown TCP option '__repr__()' method returns a correct value.
+        Ensure the unknown TCP option '__repr__()' method returns a correct
+        value.
         """
 
         self.assertEqual(
@@ -184,7 +234,8 @@ class TestTcpOptionUnknownAssembler(TestCase):
 
     def test__tcp__option__unknown__bytes(self) -> None:
         """
-        Ensure the unknown TCP option '__bytes__()' method returns a correct value.
+        Ensure the unknown TCP option '__bytes__()' method returns a correct
+        value.
         """
 
         self.assertEqual(
@@ -194,7 +245,7 @@ class TestTcpOptionUnknownAssembler(TestCase):
 
     def test__tcp_option_unknonwn__type(self) -> None:
         """
-        Ensure the unknown TCP option 'type' property returns a correct value.
+        Ensure the unknown TCP option 'type' field returns a correct value.
         """
 
         self.assertEqual(
@@ -204,7 +255,7 @@ class TestTcpOptionUnknownAssembler(TestCase):
 
     def test__tcp_option_unknonwn__len(self) -> None:
         """
-        Ensure the unknown TCP option 'len' property returns a correct value.
+        Ensure the unknown TCP option 'len' field returns a correct value.
         """
 
         self.assertEqual(
@@ -214,7 +265,7 @@ class TestTcpOptionUnknownAssembler(TestCase):
 
     def test__tcp_option_unknonwn__data(self) -> None:
         """
-        Ensure the unknown TCP option 'data' property returns a correct value.
+        Ensure the unknown TCP option 'data' field returns a correct value.
         """
 
         self.assertEqual(
@@ -248,10 +299,14 @@ class TestTcpOptionUnknownAssembler(TestCase):
             },
             "_results": {
                 "error": AssertionError,
+                "error_message": (
+                    "The minimum length of the unknown TCP option must be 2 "
+                    "bytes. Got: 1"
+                ),
             },
         },
         {
-            "_description": "The unknown TCP option incorrect 'type' field (0) assert.",
+            "_description": "The unknown TCP option incorrect 'type' field (Eol) assert.",
             "_args": {
                 "bytes": (
                     b"\x00\x12\x30\x31\x32\x33\x34\x35\x36\x37\x38\x39\x41\x42\x43\x44"
@@ -260,10 +315,14 @@ class TestTcpOptionUnknownAssembler(TestCase):
             },
             "_results": {
                 "error": AssertionError,
+                "error_message": (
+                    "The unknown TCP option type must not be known. "
+                    "Got: <TcpOptionType.EOL: 0>"
+                ),
             },
         },
         {
-            "_description": "The unknown TCP option incorrect 'type' field (1) assert.",
+            "_description": "The unknown TCP option incorrect 'type' field (Nop) assert.",
             "_args": {
                 "bytes": (
                     b"\x01\x12\x30\x31\x32\x33\x34\x35\x36\x37\x38\x39\x41\x42\x43\x44"
@@ -272,10 +331,30 @@ class TestTcpOptionUnknownAssembler(TestCase):
             },
             "_results": {
                 "error": AssertionError,
+                "error_message": (
+                    "The unknown TCP option type must not be known. "
+                    f"Got: {TcpOptionType.NOP!r}"
+                ),
             },
         },
         {
-            "_description": "The unknown TCP option incorrect 'type' field (3) assert.",
+            "_description": "The unknown TCP option incorrect 'type' field (Mss) assert.",
+            "_args": {
+                "bytes": (
+                    b"\x02\x12\x30\x31\x32\x33\x34\x35\x36\x37\x38\x39\x41\x42\x43\x44"
+                    b"\x45\x46"
+                ),
+            },
+            "_results": {
+                "error": AssertionError,
+                "error_message": (
+                    "The unknown TCP option type must not be known. "
+                    f"Got: {TcpOptionType.MSS!r}"
+                ),
+            },
+        },
+        {
+            "_description": "The unknown TCP option incorrect 'type' field (Wscale) assert.",
             "_args": {
                 "bytes": (
                     b"\x03\x12\x30\x31\x32\x33\x34\x35\x36\x37\x38\x39\x41\x42\x43\x44"
@@ -284,10 +363,14 @@ class TestTcpOptionUnknownAssembler(TestCase):
             },
             "_results": {
                 "error": AssertionError,
+                "error_message": (
+                    "The unknown TCP option type must not be known. "
+                    f"Got: {TcpOptionType.WSCALE!r}"
+                ),
             },
         },
         {
-            "_description": "The unknown TCP option incorrect 'type' field (4) assert.",
+            "_description": "The unknown TCP option incorrect 'type' field (Sackperm) assert.",
             "_args": {
                 "bytes": (
                     b"\x04\x12\x30\x31\x32\x33\x34\x35\x36\x37\x38\x39\x41\x42\x43\x44"
@@ -296,10 +379,14 @@ class TestTcpOptionUnknownAssembler(TestCase):
             },
             "_results": {
                 "error": AssertionError,
+                "error_message": (
+                    "The unknown TCP option type must not be known. "
+                    f"Got: {TcpOptionType.SACKPERM!r}"
+                ),
             },
         },
         {
-            "_description": "The unknown TCP option incorrect 'type' field (5) assert.",
+            "_description": "The unknown TCP option incorrect 'type' field (Sack) assert.",
             "_args": {
                 "bytes": (
                     b"\x05\x12\x30\x31\x32\x33\x34\x35\x36\x37\x38\x39\x41\x42\x43\x44"
@@ -308,10 +395,14 @@ class TestTcpOptionUnknownAssembler(TestCase):
             },
             "_results": {
                 "error": AssertionError,
+                "error_message": (
+                    "The unknown TCP option type must not be known. "
+                    f"Got: {TcpOptionType.SACK!r}"
+                ),
             },
         },
         {
-            "_description": "The unknown TCP option incorrect 'type' field (8) assert.",
+            "_description": "The unknown TCP option incorrect 'type' field (Timestamps) assert.",
             "_args": {
                 "bytes": (
                     b"\x08\x12\x30\x31\x32\x33\x34\x35\x36\x37\x38\x39\x41\x42\x43\x44"
@@ -320,6 +411,10 @@ class TestTcpOptionUnknownAssembler(TestCase):
             },
             "_results": {
                 "error": AssertionError,
+                "error_message": (
+                    "The unknown TCP option type must not be known. "
+                    f"Got: {TcpOptionType.TIMESTAMPS!r}"
+                ),
             },
         },
         {
@@ -332,7 +427,10 @@ class TestTcpOptionUnknownAssembler(TestCase):
             },
             "_results": {
                 "error": TcpIntegrityError,
-                "error_message": "Invalid unknown option length (II).",
+                "error_message": (
+                    "[INTEGRITY ERROR][TCP] The unknown TCP option length must be "
+                    "less than or equal to the length of provided bytes (17). Got: 18"
+                ),
             },
         },
     ]
@@ -366,8 +464,7 @@ class TestTcpOptionUnknownParser(TestCase):
             with self.assertRaises(self._results["error"]) as error:
                 TcpOptionUnknown.from_bytes(self._args["bytes"])
 
-            if "error_message" in self._results:
-                self.assertEqual(
-                    str(error.exception),
-                    f"[INTEGRITY ERROR][TCP] {self._results['error_message']}",
-                )
+            self.assertEqual(
+                str(error.exception),
+                self._results["error_message"],
+            )

@@ -1,27 +1,27 @@
 #!/usr/bin/env python3
 
-############################################################################
-#                                                                          #
-#  PyTCP - Python TCP/IP stack                                             #
-#  Copyright (C) 2020-present Sebastian Majewski                           #
-#                                                                          #
-#  This program is free software: you can redistribute it and/or modify    #
-#  it under the terms of the GNU General Public License as published by    #
-#  the Free Software Foundation, either version 3 of the License, or       #
-#  (at your option) any later version.                                     #
-#                                                                          #
-#  This program is distributed in the hope that it will be useful,         #
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of          #
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the           #
-#  GNU General Public License for more details.                            #
-#                                                                          #
-#  You should have received a copy of the GNU General Public License       #
-#  along with this program.  If not, see <https://www.gnu.org/licenses/>.  #
-#                                                                          #
-#  Author's email: ccie18643@gmail.com                                     #
-#  Github repository: https://github.com/ccie18643/PyTCP                   #
-#                                                                          #
-############################################################################
+################################################################################
+##                                                                            ##
+##   PyTCP - Python TCP/IP stack                                              ##
+##   Copyright (C) 2020-present Sebastian Majewski                            ##
+##                                                                            ##
+##   This program is free software: you can redistribute it and/or modify     ##
+##   it under the terms of the GNU General Public License as published by     ##
+##   the Free Software Foundation, either version 3 of the License, or        ##
+##   (at your option) any later version.                                      ##
+##                                                                            ##
+##   This program is distributed in the hope that it will be useful,          ##
+##   but WITHOUT ANY WARRANTY; without even the implied warranty of           ##
+##   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the             ##
+##   GNU General Public License for more details.                             ##
+##                                                                            ##
+##   You should have received a copy of the GNU General Public License        ##
+##   along with this program. If not, see <https://www.gnu.org/licenses/>.    ##
+##                                                                            ##
+##   Author's email: ccie18643@gmail.com                                      ##
+##   Github repository: https://github.com/ccie18643/PyTCP                    ##
+##                                                                            ##
+################################################################################
 
 
 """
@@ -29,7 +29,7 @@ This module contains tests for the TCP Sack (Selective ACK) option code.
 
 tests/unit/protocols/tcp/test__tcp__option__sack.py
 
-ver 3.0.0
+ver 3.0.1
 """
 
 
@@ -38,11 +38,14 @@ from typing import Any
 from parameterized import parameterized_class  # type: ignore
 from testslide import TestCase
 
+from pytcp.protocols.tcp.options.tcp_option import TcpOptionType
 from pytcp.protocols.tcp.options.tcp_option__sack import (
+    TCP__OPTION_SACK__LEN,
     TCP__OPTION_SACK__MAX_BLOCK_NUM,
     TcpOptionSack,
     TcpSackBlock,
 )
+from pytcp.protocols.tcp.tcp__errors import TcpIntegrityError
 
 
 class TestTcpOptionSackAsserts(TestCase):
@@ -73,7 +76,8 @@ class TestTcpOptionSackAsserts(TestCase):
 
         self.assertEqual(
             str(error.exception),
-            f"The 'blocks' field must have at most {TCP__OPTION_SACK__MAX_BLOCK_NUM} elements. Got: {value}",
+            f"The 'blocks' field must have at most {TCP__OPTION_SACK__MAX_BLOCK_NUM} "
+            f"elements. Got: {value}",
         )
 
 
@@ -89,6 +93,8 @@ class TestTcpOptionSackAsserts(TestCase):
                 "__str__": "sack []",
                 "__repr__": "TcpOptionSack(blocks=[])",
                 "__bytes__": b"\x05\x02",
+                "type": TcpOptionType.SACK,
+                "length": TCP__OPTION_SACK__LEN,
                 "blocks": [],
             },
         },
@@ -102,8 +108,13 @@ class TestTcpOptionSackAsserts(TestCase):
             "_results": {
                 "__len__": 10,
                 "__str__": "sack [4294967295-4294967295]",
-                "__repr__": "TcpOptionSack(blocks=[TcpSackBlock(left=4294967295, right=4294967295)])",
+                "__repr__": (
+                    "TcpOptionSack(blocks=[TcpSackBlock(left=4294967295, "
+                    "right=4294967295)])"
+                ),
                 "__bytes__": b"\x05\x0a\xff\xff\xff\xff\xff\xff\xff\xff",
+                "type": TcpOptionType.SACK,
+                "length": TCP__OPTION_SACK__LEN + 8 * 1,
                 "blocks": [TcpSackBlock(4294967295, 4294967295)],
             },
         },
@@ -121,12 +132,15 @@ class TestTcpOptionSackAsserts(TestCase):
                 "__str__": "sack [1111-2222, 3333-4444, 5555-6666]",
                 "__repr__": (
                     "TcpOptionSack(blocks=[TcpSackBlock(left=1111, right=2222), "
-                    "TcpSackBlock(left=3333, right=4444), TcpSackBlock(left=5555, right=6666)])"
+                    "TcpSackBlock(left=3333, right=4444), TcpSackBlock(left=5555, "
+                    "right=6666)])"
                 ),
                 "__bytes__": (
                     b"\x05\x1a\x00\x00\x04\x57\x00\x00\x08\xae\x00\x00\x0d\x05\x00\x00"
                     b"\x11\x5c\x00\x00\x15\xb3\x00\x00\x1a\x0a"
                 ),
+                "type": TcpOptionType.SACK,
+                "length": TCP__OPTION_SACK__LEN + 8 * 3,
                 "blocks": [
                     TcpSackBlock(1111, 2222),
                     TcpSackBlock(3333, 4444),
@@ -157,6 +171,8 @@ class TestTcpOptionSackAsserts(TestCase):
                     b"\x01\xbc\x00\x00\x02\x2b\x00\x00\x02\x9a\x00\x00\x03\x09\x00\x00"
                     b"\x03\x78"
                 ),
+                "type": TcpOptionType.SACK,
+                "length": TCP__OPTION_SACK__LEN + 8 * 4,
                 "blocks": [
                     TcpSackBlock(111, 222),
                     TcpSackBlock(333, 444),
@@ -185,7 +201,8 @@ class TestTcpOptionSackAssembler(TestCase):
 
     def test__tcp__option__sack__len(self) -> None:
         """
-        Ensure the TCP Sack option '__len__()' method returns a correct value.
+        Ensure the TCP Sack option '__len__()' method returns a correct
+        value.
         """
 
         self.assertEqual(
@@ -195,7 +212,8 @@ class TestTcpOptionSackAssembler(TestCase):
 
     def test__tcp__option__sack__str(self) -> None:
         """
-        Ensure the TCP Sack option '__str__()' method returns a correct value.
+        Ensure the TCP Sack option '__str__()' method returns a correct
+        value.
         """
 
         self.assertEqual(
@@ -205,7 +223,8 @@ class TestTcpOptionSackAssembler(TestCase):
 
     def test__tcp__option__sack__repr(self) -> None:
         """
-        Ensure the TCP Sack option '__repr__()' method returns a correct value.
+        Ensure the TCP Sack option '__repr__()' method returns a correct
+        value.
         """
 
         self.assertEqual(
@@ -215,7 +234,8 @@ class TestTcpOptionSackAssembler(TestCase):
 
     def test__tcp__option__sack__bytes(self) -> None:
         """
-        Ensure the TCP Sack option '__bytes__()' method returns a correct value.
+        Ensure the TCP Sack option '__bytes__()' method returns a correct
+        value.
         """
 
         self.assertEqual(
@@ -225,12 +245,32 @@ class TestTcpOptionSackAssembler(TestCase):
 
     def test__tcp__option__sack__blocks(self) -> None:
         """
-        Ensure the TCP Sack option 'blocks' property returns a correct value.
+        Ensure the TCP Sack option 'blocks' field returns a correct value.
         """
 
         self.assertEqual(
             self._tcp_option_sack.blocks,
             self._results["blocks"],
+        )
+
+    def test__tcp__option__sack__type(self) -> None:
+        """
+        Ensure the TCP Sack option 'type' field returns a correct value.
+        """
+
+        self.assertEqual(
+            self._tcp_option_sack.type,
+            self._results["type"],
+        )
+
+    def test__tcp__option__sack__length(self) -> None:
+        """
+        Ensure the TCP Sack option 'len' field returns a correct value.
+        """
+
+        self.assertEqual(
+            self._tcp_option_sack.len,
+            self._results["length"],
         )
 
 
@@ -296,6 +336,46 @@ class TestTcpOptionSackAssembler(TestCase):
                 ),
             },
         },
+        {
+            "_description": "The TCP Sack option minimum length assert.",
+            "_args": {
+                "bytes": b"\x05",
+            },
+            "_results": {
+                "error": AssertionError,
+                "error_message": (
+                    "The minimum length of the TCP Sack option must be 2 "
+                    "bytes. Got: 1"
+                ),
+            },
+        },
+        {
+            "_description": "The TCP Sack option incorrect 'type' field assert.",
+            "_args": {
+                "bytes": b"\xff\x02",
+            },
+            "_results": {
+                "error": AssertionError,
+                "error_message": (
+                    f"The TCP Sack option type must be {TcpOptionType.SACK!r}. "
+                    f"Got: {TcpOptionType.from_int(255)!r}"
+                ),
+            },
+        },
+        {
+            "_description": "The TCP Sack option length integrity check (II).",
+            "_args": {
+                "bytes": b"\x05\x0a\xff\xff\xff\xff\xff\xff\xff",
+            },
+            "_results": {
+                "error": TcpIntegrityError,
+                "error_message": (
+                    "[INTEGRITY ERROR][TCP] The TCP Sack option length must "
+                    "be less than or equal to the length of provided bytes "
+                    "(9). Got: 10"
+                ),
+            },
+        },
     ]
 )
 class TestTcpOptionSackParser(TestCase):
@@ -327,8 +407,7 @@ class TestTcpOptionSackParser(TestCase):
             with self.assertRaises(self._results["error"]) as error:
                 TcpOptionSack.from_bytes(self._args["bytes"])
 
-            if "error_message" in self._results:
-                self.assertEqual(
-                    str(error.exception),
-                    f"[INTEGRITY ERROR][TCP] {self._results['error_message']}",
-                )
+            self.assertEqual(
+                str(error.exception),
+                self._results["error_message"],
+            )

@@ -1,27 +1,27 @@
 #!/usr/bin/env python3
 
-############################################################################
-#                                                                          #
-#  PyTCP - Python TCP/IP stack                                             #
-#  Copyright (C) 2020-present Sebastian Majewski                           #
-#                                                                          #
-#  This program is free software: you can redistribute it and/or modify    #
-#  it under the terms of the GNU General Public License as published by    #
-#  the Free Software Foundation, either version 3 of the License, or       #
-#  (at your option) any later version.                                     #
-#                                                                          #
-#  This program is distributed in the hope that it will be useful,         #
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of          #
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the           #
-#  GNU General Public License for more details.                            #
-#                                                                          #
-#  You should have received a copy of the GNU General Public License       #
-#  along with this program.  If not, see <https://www.gnu.org/licenses/>.  #
-#                                                                          #
-#  Author's email: ccie18643@gmail.com                                     #
-#  Github repository: https://github.com/ccie18643/PyTCP                   #
-#                                                                          #
-############################################################################
+################################################################################
+##                                                                            ##
+##   PyTCP - Python TCP/IP stack                                              ##
+##   Copyright (C) 2020-present Sebastian Majewski                            ##
+##                                                                            ##
+##   This program is free software: you can redistribute it and/or modify     ##
+##   it under the terms of the GNU General Public License as published by     ##
+##   the Free Software Foundation, either version 3 of the License, or        ##
+##   (at your option) any later version.                                      ##
+##                                                                            ##
+##   This program is distributed in the hope that it will be useful,          ##
+##   but WITHOUT ANY WARRANTY; without even the implied warranty of           ##
+##   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the             ##
+##   GNU General Public License for more details.                             ##
+##                                                                            ##
+##   You should have received a copy of the GNU General Public License        ##
+##   along with this program. If not, see <https://www.gnu.org/licenses/>.    ##
+##                                                                            ##
+##   Author's email: ccie18643@gmail.com                                      ##
+##   Github repository: https://github.com/ccie18643/PyTCP                    ##
+##                                                                            ##
+################################################################################
 
 
 """
@@ -29,7 +29,7 @@ This module contains the unknown TCP option support code.
 
 pytcp/protocols/tcp/options/tcp_option__unknown.py
 
-ver 3.0.0
+ver 3.0.1
 """
 
 
@@ -74,13 +74,25 @@ class TcpOptionUnknown(TcpOption):
         Validate the TCP unknown option fields.
         """
 
-        assert isinstance(
-            self.type, TcpOptionType
-        ), f"The 'type' field must be a TcpOptionType. Got: {type(self.type)!r}"
+        assert isinstance(self.type, TcpOptionType), (
+            f"The 'type' field must be a TcpOptionType. "
+            f"Got: {type(self.type)!r}"
+        )
 
-        assert is_uint8(
-            self.len
-        ), f"The 'len' field must be an 8-bit unsigned integer. Got: {self.len!r}"
+        assert int(self.type) not in TcpOptionType.get_known_values(), (
+            "The 'type' field must not be a core TcpOptionType. "
+            f"Got: {self.type!r}"
+        )
+
+        assert is_uint8(self.len), (
+            f"The 'len' field must be an 8-bit unsigned integer. "
+            f"Got: {self.len!r}"
+        )
+
+        assert self.len == TCP__OPTION__LEN + len(self.data), (
+            "The 'len' field must reflect the length of the 'data' field. "
+            f"Got: {self.len!r} != {TCP__OPTION__LEN + len(self.data)!r}"
+        )
 
     @override
     def __str__(self) -> str:
@@ -111,17 +123,26 @@ class TcpOptionUnknown(TcpOption):
         Initialize the unknown TCP option from bytes.
         """
 
-        assert len(_bytes) >= 2
-        assert _bytes[0] not in TcpOptionType.get_core_values()
+        assert (value := len(_bytes)) >= TCP__OPTION__LEN, (
+            f"The minimum length of the unknown TCP option must be "
+            f"{TCP__OPTION__LEN} bytes. Got: {value!r}"
+        )
 
-        # There is no option length integrity check (I) here as the length
-        # of the unown option is not known in advance.
+        assert (value := _bytes[0]) not in TcpOptionType.get_known_values(), (
+            f"The unknown TCP option type must not be known. "
+            f"Got: {TcpOptionType.from_int(value)!r}"
+        )
 
-        if _bytes[1] > len(_bytes):
-            raise TcpIntegrityError("Invalid unknown option length (II).")
+        _len = _bytes[1]
+
+        if (value := _len) > len(_bytes):
+            raise TcpIntegrityError(
+                "The unknown TCP option length must be less than or equal to "
+                f"the length of provided bytes ({len(_bytes)}). Got: {value!r}"
+            )
 
         return TcpOptionUnknown(
             type=TcpOptionType(_bytes[0]),
-            len=_bytes[1],
-            data=_bytes[2 : _bytes[1]],
+            len=_len,
+            data=_bytes[TCP__OPTION__LEN:_len],
         )

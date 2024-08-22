@@ -1,27 +1,27 @@
 #!/usr/bin/env python3
 
-############################################################################
-#                                                                          #
-#  PyTCP - Python TCP/IP stack                                             #
-#  Copyright (C) 2020-present Sebastian Majewski                           #
-#                                                                          #
-#  This program is free software: you can redistribute it and/or modify    #
-#  it under the terms of the GNU General Public License as published by    #
-#  the Free Software Foundation, either version 3 of the License, or       #
-#  (at your option) any later version.                                     #
-#                                                                          #
-#  This program is distributed in the hope that it will be useful,         #
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of          #
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the           #
-#  GNU General Public License for more details.                            #
-#                                                                          #
-#  You should have received a copy of the GNU General Public License       #
-#  along with this program.  If not, see <https://www.gnu.org/licenses/>.  #
-#                                                                          #
-#  Author's email: ccie18643@gmail.com                                     #
-#  Github repository: https://github.com/ccie18643/PyTCP                   #
-#                                                                          #
-############################################################################
+################################################################################
+##                                                                            ##
+##   PyTCP - Python TCP/IP stack                                              ##
+##   Copyright (C) 2020-present Sebastian Majewski                            ##
+##                                                                            ##
+##   This program is free software: you can redistribute it and/or modify     ##
+##   it under the terms of the GNU General Public License as published by     ##
+##   the Free Software Foundation, either version 3 of the License, or        ##
+##   (at your option) any later version.                                      ##
+##                                                                            ##
+##   This program is distributed in the hope that it will be useful,          ##
+##   but WITHOUT ANY WARRANTY; without even the implied warranty of           ##
+##   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the             ##
+##   GNU General Public License for more details.                             ##
+##                                                                            ##
+##   You should have received a copy of the GNU General Public License        ##
+##   along with this program. If not, see <https://www.gnu.org/licenses/>.    ##
+##                                                                            ##
+##   Author's email: ccie18643@gmail.com                                      ##
+##   Github repository: https://github.com/ccie18643/PyTCP                    ##
+##                                                                            ##
+################################################################################
 
 
 """
@@ -29,7 +29,7 @@ This module contains tests for the TCP Timestamps option code.
 
 tests/unit/protocols/tcp/test__tcp__option__timestamps.py
 
-ver 3.0.0
+ver 3.0.1
 """
 
 
@@ -39,7 +39,9 @@ from parameterized import parameterized_class  # type: ignore
 from testslide import TestCase
 
 from pytcp.lib.int_checks import UINT_32__MAX, UINT_32__MIN
+from pytcp.protocols.tcp.options.tcp_option import TcpOptionType
 from pytcp.protocols.tcp.options.tcp_option__timestamps import (
+    TCP__OPTION_TIMESTAMPS__LEN,
     TcpOptionTimestamps,
 )
 from pytcp.protocols.tcp.tcp__errors import TcpIntegrityError
@@ -62,8 +64,8 @@ class TestTcpOptionTimestampsAsserts(TestCase):
 
     def test__tcp__option__timestamps__tsval__under_min(self) -> None:
         """
-        Ensure the TCP Timestamps option constructor raises an exception when the
-        provided 'tsval' argument is lower than the minimum supported value.
+        Ensure the TCP Timestamps option constructor raises an exception when
+        the provided 'tsval' argument is lower than the minimum supported value.
         """
 
         self._option_args["tsval"] = value = UINT_32__MIN - 1
@@ -78,8 +80,8 @@ class TestTcpOptionTimestampsAsserts(TestCase):
 
     def test__tcp__option__timestamps__tsval__over_max(self) -> None:
         """
-        Ensure the TCP Timestamps option constructor raises an exception when the
-        provided 'tsval' argument is higher than the maximum supported value.
+        Ensure the TCP Timestamps option constructor raises an exception when
+        the provided 'tsval' argument is higher than the maximum supported value.
         """
 
         self._option_args["tsval"] = value = UINT_32__MAX + 1
@@ -94,8 +96,8 @@ class TestTcpOptionTimestampsAsserts(TestCase):
 
     def test__tcp__option__timestamps__tsecr__under_min(self) -> None:
         """
-        Ensure the TCP Timestamps option constructor raises an exception when the
-        provided 'tsecr' argument is lower than the minimum supported value.
+        Ensure the TCP Timestamps option constructor raises an exception when
+        the provided 'tsecr' argument is lower than the minimum supported value.
         """
 
         self._option_args["tsecr"] = value = UINT_32__MIN - 1
@@ -110,8 +112,8 @@ class TestTcpOptionTimestampsAsserts(TestCase):
 
     def test__tcp__option__timestamps__tsecr__over_max(self) -> None:
         """
-        Ensure the TCP Timestamps option constructor raises an exception when the
-        provided 'tsecr' argument is higher than the maximum supported value.
+        Ensure the TCP Timestamps option constructor raises an exception when
+        the provided 'tsecr' argument is higher than the maximum supported value.
         """
 
         self._option_args["tsecr"] = value = UINT_32__MAX + 1
@@ -136,8 +138,12 @@ class TestTcpOptionTimestampsAsserts(TestCase):
             "_results": {
                 "__len__": 10,
                 "__str__": "timestamps 4294967295/4294967295",
-                "__repr__": "TcpOptionTimestamps(tsval=4294967295, tsecr=4294967295)",
+                "__repr__": (
+                    "TcpOptionTimestamps(tsval=4294967295, tsecr=4294967295)"
+                ),
                 "__bytes__": b"\x08\x0a\xff\xff\xff\xff\xff\xff\xff\xff",
+                "type": TcpOptionType.TIMESTAMPS,
+                "len": TCP__OPTION_TIMESTAMPS__LEN,
                 "tsval": 4294967295,
                 "tsecr": 4294967295,
             },
@@ -151,8 +157,12 @@ class TestTcpOptionTimestampsAsserts(TestCase):
             "_results": {
                 "__len__": 10,
                 "__str__": "timestamps 1111111111/2222222222",
-                "__repr__": "TcpOptionTimestamps(tsval=1111111111, tsecr=2222222222)",
+                "__repr__": (
+                    "TcpOptionTimestamps(tsval=1111111111, tsecr=2222222222)"
+                ),
                 "__bytes__": b"\x08\x0a\x42\x3a\x35\xc7\x84\x74\x6b\x8e",
+                "type": TcpOptionType.TIMESTAMPS,
+                "len": TCP__OPTION_TIMESTAMPS__LEN,
                 "tsval": 1111111111,
                 "tsecr": 2222222222,
             },
@@ -177,7 +187,8 @@ class TestTcpOptionTimestampsAssembler(TestCase):
 
     def test__tcp__option__timestamps__len(self) -> None:
         """
-        Ensure the TCP Timestamps option '__len__()' method returns a correct value.
+        Ensure the TCP Timestamps option '__len__()' method returns a correct
+        value.
         """
 
         self.assertEqual(
@@ -187,7 +198,8 @@ class TestTcpOptionTimestampsAssembler(TestCase):
 
     def test__tcp__option__timestamps__str(self) -> None:
         """
-        Ensure the TCP Timestamps option '__str__()' method returns a correct value.
+        Ensure the TCP Timestamps option '__str__()' method returns a correct
+        value.
         """
 
         self.assertEqual(
@@ -197,7 +209,8 @@ class TestTcpOptionTimestampsAssembler(TestCase):
 
     def test__tcp__option__timestamps__repr(self) -> None:
         """
-        Ensure the TCP Timestamps option '__repr__()' method returns a correct value.
+        Ensure the TCP Timestamps option '__repr__()' method returns a correct
+        value.
         """
 
         self.assertEqual(
@@ -207,7 +220,8 @@ class TestTcpOptionTimestampsAssembler(TestCase):
 
     def test__tcp__option__timestamps__bytes(self) -> None:
         """
-        Ensure the TCP Timestamps option '__bytes__()' method returns a correct value.
+        Ensure the TCP Timestamps option '__bytes__()' method returns a correct
+        value.
         """
 
         self.assertEqual(
@@ -215,9 +229,29 @@ class TestTcpOptionTimestampsAssembler(TestCase):
             self._results["__bytes__"],
         )
 
+    def test__tcp__option__timestamps__type(self) -> None:
+        """
+        Ensure the TCP Timestamps option 'type' field returns a correct value.
+        """
+
+        self.assertEqual(
+            self._tcp_option_timestamps.type,
+            self._results["type"],
+        )
+
+    def test__tcp__option__timestamps__length(self) -> None:
+        """
+        Ensure the TCP Timestamps option 'len' field returns a correct value.
+        """
+
+        self.assertEqual(
+            self._tcp_option_timestamps.len,
+            self._results["len"],
+        )
+
     def test__tcp__option__timestamps__tsval(self) -> None:
         """
-        Ensure the TCP Timestamps option 'tsval' property returns a correct value.
+        Ensure the TCP Timestamps option 'tsval' field returns a correct value.
         """
 
         self.assertEqual(
@@ -227,7 +261,7 @@ class TestTcpOptionTimestampsAssembler(TestCase):
 
     def test__tcp__option__timestamps__tsecr(self) -> None:
         """
-        Ensure the TCP Timestamps option 'tsecr' property returns a correct value.
+        Ensure the TCP Timestamps option 'tsecr' field returns a correct value.
         """
 
         self.assertEqual(
@@ -250,7 +284,7 @@ class TestTcpOptionTimestampsAssembler(TestCase):
             },
         },
         {
-            "_description": "The TCP Timestamps option (I).",
+            "_description": "The TCP Timestamps option (II).",
             "_args": {
                 "bytes": b"\x08\x0a\x42\x3a\x35\xc7\x84\x74\x6b\x8e",
             },
@@ -267,6 +301,10 @@ class TestTcpOptionTimestampsAssembler(TestCase):
             },
             "_results": {
                 "error": AssertionError,
+                "error_message": (
+                    "The minimum length of the TCP Timestamps option must be 2 "
+                    "bytes. Got: 1"
+                ),
             },
         },
         {
@@ -276,6 +314,10 @@ class TestTcpOptionTimestampsAssembler(TestCase):
             },
             "_results": {
                 "error": AssertionError,
+                "error_message": (
+                    f"The TCP Timestamps option type must be {TcpOptionType.TIMESTAMPS!r}. "
+                    f"Got: {TcpOptionType.from_int(255)!r}"
+                ),
             },
         },
         {
@@ -285,7 +327,10 @@ class TestTcpOptionTimestampsAssembler(TestCase):
             },
             "_results": {
                 "error": TcpIntegrityError,
-                "error_message": "Invalid Timestamps option length (I).",
+                "error_message": (
+                    "[INTEGRITY ERROR][TCP] The TCP Timestamps option length "
+                    "must be 10 bytes. Got: 9"
+                ),
             },
         },
         {
@@ -295,7 +340,11 @@ class TestTcpOptionTimestampsAssembler(TestCase):
             },
             "_results": {
                 "error": TcpIntegrityError,
-                "error_message": "Invalid Timestamps option length (II).",
+                "error_message": (
+                    "[INTEGRITY ERROR][TCP] The TCP Timestamps option length "
+                    "must be less than or equal to the length of provided "
+                    "bytes (9). Got: 10"
+                ),
             },
         },
     ]
@@ -311,8 +360,8 @@ class TestTcpOptionTimestampsParser(TestCase):
 
     def test__tcp__option__timestamps__from_bytes(self) -> None:
         """
-        Ensure the TCP Timestamps option parser creates the proper option object
-        or throws assertion error.
+        Ensure the TCP Timestamps option parser creates the proper option
+        object or throws assertion error.
         """
 
         if "option" in self._results:
@@ -329,8 +378,7 @@ class TestTcpOptionTimestampsParser(TestCase):
             with self.assertRaises(self._results["error"]) as error:
                 TcpOptionTimestamps.from_bytes(self._args["bytes"])
 
-            if "error_message" in self._results:
-                self.assertEqual(
-                    str(error.exception),
-                    f"[INTEGRITY ERROR][TCP] {self._results['error_message']}",
-                )
+            self.assertEqual(
+                str(error.exception),
+                self._results["error_message"],
+            )

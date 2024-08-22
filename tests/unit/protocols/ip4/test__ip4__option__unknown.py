@@ -1,27 +1,27 @@
 #!/usr/bin/env python3
 
-############################################################################
-#                                                                          #
-#  PyTCP - Python TCP/IP stack                                             #
-#  Copyright (C) 2020-present Sebastian Majewski                           #
-#                                                                          #
-#  This program is free software: you can redistribute it and/or modify    #
-#  it under the terms of the GNU General Public License as published by    #
-#  the Free Software Foundation, either version 3 of the License, or       #
-#  (at your option) any later version.                                     #
-#                                                                          #
-#  This program is distributed in the hope that it will be useful,         #
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of          #
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the           #
-#  GNU General Public License for more details.                            #
-#                                                                          #
-#  You should have received a copy of the GNU General Public License       #
-#  along with this program.  If not, see <https://www.gnu.org/licenses/>.  #
-#                                                                          #
-#  Author's email: ccie18643@gmail.com                                     #
-#  Github repository: https://github.com/ccie18643/PyTCP                   #
-#                                                                          #
-############################################################################
+################################################################################
+##                                                                            ##
+##   PyTCP - Python TCP/IP stack                                              ##
+##   Copyright (C) 2020-present Sebastian Majewski                            ##
+##                                                                            ##
+##   This program is free software: you can redistribute it and/or modify     ##
+##   it under the terms of the GNU General Public License as published by     ##
+##   the Free Software Foundation, either version 3 of the License, or        ##
+##   (at your option) any later version.                                      ##
+##                                                                            ##
+##   This program is distributed in the hope that it will be useful,          ##
+##   but WITHOUT ANY WARRANTY; without even the implied warranty of           ##
+##   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the             ##
+##   GNU General Public License for more details.                             ##
+##                                                                            ##
+##   You should have received a copy of the GNU General Public License        ##
+##   along with this program. If not, see <https://www.gnu.org/licenses/>.    ##
+##                                                                            ##
+##   Author's email: ccie18643@gmail.com                                      ##
+##   Github repository: https://github.com/ccie18643/PyTCP                    ##
+##                                                                            ##
+################################################################################
 
 
 """
@@ -29,7 +29,7 @@ This module contains tests for the unknown IPv4 option code.
 
 tests/unit/protocols/tcp/test__ip4__option__unknown.py
 
-ver 3.0.0
+ver 3.0.1
 """
 
 
@@ -40,7 +40,10 @@ from testslide import TestCase
 
 from pytcp.lib.int_checks import UINT_8__MAX, UINT_8__MIN
 from pytcp.protocols.ip4.ip4__errors import Ip4IntegrityError
-from pytcp.protocols.ip4.options.ip4_option import Ip4OptionType
+from pytcp.protocols.ip4.options.ip4_option import (
+    IP4__OPTION__LEN,
+    Ip4OptionType,
+)
 from pytcp.protocols.ip4.options.ip4_option__unknown import Ip4OptionUnknown
 
 
@@ -62,8 +65,8 @@ class TestIp4OptionUnknownAsserts(TestCase):
 
     def test__ip4__option__unknown__type__not_Ip4OptionType(self) -> None:
         """
-        Ensure the IPv4 unknown option constructor raises an exception when the
-        provided 'type' argument is not a Ip4OptionType.
+        Ensure the IPv4 unknown option constructor raises an exception when
+        the provided 'type' argument is not a Ip4OptionType.
         """
 
         self._option_args["type"] = value = "not a Ip4OptionType"
@@ -76,10 +79,31 @@ class TestIp4OptionUnknownAsserts(TestCase):
             f"The 'type' field must be a Ip4OptionType. Got: {type(value)!r}",
         )
 
+    def test__ip4__option__unknown__type__known_value(
+        self,
+    ) -> None:
+        """
+        Ensure the IPv4 unknown option constructor raises an exception when
+        the provided 'type' argument is a known Ip4OptionType.
+        """
+
+        for type in Ip4OptionType.get_known_values():
+            self._option_args["type"] = value = Ip4OptionType(type)
+
+            with self.assertRaises(AssertionError) as error:
+                Ip4OptionUnknown(**self._option_args)  # type: ignore
+
+            self.assertEqual(
+                str(error.exception),
+                "The 'type' field must not be a known Ip4OptionType. "
+                f"Got: {value!r}",
+            )
+
     def test__ip4__option__unknown__len__under_min(self) -> None:
         """
-        Ensure the Pv4 unknown option constructor raises an exception when the
-        provided 'len' argument is lower than the minimum supported value.
+        Ensure the Pv4 unknown option constructor raises an exception when
+        the provided 'len' argument is lower than the minimum supported
+        value.
         """
 
         self._option_args["len"] = value = UINT_8__MIN - 1
@@ -94,8 +118,9 @@ class TestIp4OptionUnknownAsserts(TestCase):
 
     def test__ip4__option__unknown__len__over_max(self) -> None:
         """
-        Ensure the IPv4 unknown option constructor raises an exception when the
-        provided 'len' argument is higher than the maximum supported value.
+        Ensure the IPv4 unknown option constructor raises an exception when
+        the provided 'len' argument is higher than the maximum supported
+        value.
         """
 
         self._option_args["len"] = value = UINT_8__MAX + 1
@@ -106,6 +131,28 @@ class TestIp4OptionUnknownAsserts(TestCase):
         self.assertEqual(
             str(error.exception),
             f"The 'len' field must be an 8-bit unsigned integer. Got: {value}",
+        )
+
+    def test__ip4__option__unknown__len__mismatch(self) -> None:
+        """
+        Ensure the IPv4 unknown option constructor raises an exception when
+        the provided 'len' argument is different than the length of the 'data'
+        field.
+        """
+
+        self._option_args["len"] = value = (
+            IP4__OPTION__LEN + len(self._option_args["data"]) + 1  # type: ignore
+        )
+
+        with self.assertRaises(AssertionError) as error:
+            Ip4OptionUnknown(**self._option_args)  # type: ignore
+
+        self.assertEqual(
+            str(error.exception),
+            (
+                "The 'len' field must reflect the length of the 'data' field. "
+                f"Got: {value} != {IP4__OPTION__LEN + len(self._option_args['data'])}"  # type: ignore
+            ),
         )
 
 
@@ -122,8 +169,8 @@ class TestIp4OptionUnknownAsserts(TestCase):
                 "__len__": 18,
                 "__str__": "unk-255-18",
                 "__repr__": (
-                    "Ip4OptionUnknown(type=<Ip4OptionType.UNKNOWN_255: 255>, len=18, "
-                    "data=b'0123456789ABCDEF')"
+                    f"Ip4OptionUnknown(type={Ip4OptionType.from_int(255)!r}, "
+                    "len=18, data=b'0123456789ABCDEF')"
                 ),
                 "__bytes__": (
                     b"\xff\x12\x30\x31\x32\x33\x34\x35\x36\x37\x38\x39\x41\x42\x43\x44"
@@ -152,9 +199,10 @@ class TestIp4OptionUnknownAssembler(TestCase):
 
         self._ip4_option_unknown = Ip4OptionUnknown(**self._args)
 
-    def test__ip4_option_unknown__len(self) -> None:
+    def test__ip4__option__unknown__len(self) -> None:
         """
-        Ensure the unknown IPv4 option '__len__()' method returns a correct value.
+        Ensure the unknown IPv4 option '__len__()' method returns a correct
+        value.
         """
 
         self.assertEqual(
@@ -162,9 +210,10 @@ class TestIp4OptionUnknownAssembler(TestCase):
             self._results["__len__"],
         )
 
-    def test__ip4_option_unknown__str(self) -> None:
+    def test__ip4__option__unknown__str(self) -> None:
         """
-        Ensure the unknown IPv4 option '__str__()' method returns a correct value.
+        Ensure the unknown IPv4 option '__str__()' method returns a correct
+        value.
         """
 
         self.assertEqual(
@@ -172,9 +221,10 @@ class TestIp4OptionUnknownAssembler(TestCase):
             self._results["__str__"],
         )
 
-    def test__ip4_option_unknown__repr(self) -> None:
+    def test__ip4__option__unknown__repr(self) -> None:
         """
-        Ensure the unknown IPv4 option '__repr__()' method returns a correct value.
+        Ensure the unknown IPv4 option '__repr__()' method returns a correct
+        value.
         """
 
         self.assertEqual(
@@ -182,9 +232,10 @@ class TestIp4OptionUnknownAssembler(TestCase):
             self._results["__repr__"],
         )
 
-    def test__ip4_option_unknown__bytes(self) -> None:
+    def test__ip4__option__unknown__bytes(self) -> None:
         """
-        Ensure the unknown IPv4 option '__bytes__()' method returns a correct value.
+        Ensure the unknown IPv4 option '__bytes__()' method returns a correct
+        value.
         """
 
         self.assertEqual(
@@ -192,9 +243,9 @@ class TestIp4OptionUnknownAssembler(TestCase):
             self._results["__bytes__"],
         )
 
-    def test__ip4_option_unknonwn__type(self) -> None:
+    def test__ip4__option__unknonwn__type(self) -> None:
         """
-        Ensure the unknown IPv4 option 'type' property returns a correct value.
+        Ensure the unknown IPv4 option 'type' field returns a correct value.
         """
 
         self.assertEqual(
@@ -202,9 +253,9 @@ class TestIp4OptionUnknownAssembler(TestCase):
             self._results["type"],
         )
 
-    def test__ip4_option_unknonwn__len(self) -> None:
+    def test__ip4__option__unknonwn__len(self) -> None:
         """
-        Ensure the unknown IPv4 option 'len' property returns a correct value.
+        Ensure the unknown IPv4 option 'len' field returns a correct value.
         """
 
         self.assertEqual(
@@ -212,9 +263,9 @@ class TestIp4OptionUnknownAssembler(TestCase):
             self._results["len"],
         )
 
-    def test__ip4_option_unknonwn__data(self) -> None:
+    def test__ip4__option__unknonwn__data(self) -> None:
         """
-        Ensure the unknown IPv4 option 'data' property returns a correct value.
+        Ensure the unknown IPv4 option 'data' field returns a correct value.
         """
 
         self.assertEqual(
@@ -248,10 +299,14 @@ class TestIp4OptionUnknownAssembler(TestCase):
             },
             "_results": {
                 "error": AssertionError,
+                "error_message": (
+                    "The minimum length of the unknown IPv4 option must be 2 "
+                    "bytes. Got: 1"
+                ),
             },
         },
         {
-            "_description": "The unknown IPv4 option incorrect 'type' field (0) assert.",
+            "_description": "The unknown IPv4 option incorrect 'type' field (Eol) assert.",
             "_args": {
                 "bytes": (
                     b"\x00\x12\x30\x31\x32\x33\x34\x35\x36\x37\x38\x39\x41\x42\x43\x44"
@@ -260,10 +315,14 @@ class TestIp4OptionUnknownAssembler(TestCase):
             },
             "_results": {
                 "error": AssertionError,
+                "error_message": (
+                    "The unknown IPv4 option type must not be known. "
+                    "Got: <Ip4OptionType.EOL: 0>"
+                ),
             },
         },
         {
-            "_description": "The unknown IPv4 option incorrect 'type' field (1) assert.",
+            "_description": "The unknown IPv4 option incorrect 'type' field (Nop) assert.",
             "_args": {
                 "bytes": (
                     b"\x01\x12\x30\x31\x32\x33\x34\x35\x36\x37\x38\x39\x41\x42\x43\x44"
@@ -272,6 +331,10 @@ class TestIp4OptionUnknownAssembler(TestCase):
             },
             "_results": {
                 "error": AssertionError,
+                "error_message": (
+                    "The unknown IPv4 option type must not be known. "
+                    f"Got: {Ip4OptionType.NOP!r}"
+                ),
             },
         },
         {
@@ -284,7 +347,11 @@ class TestIp4OptionUnknownAssembler(TestCase):
             },
             "_results": {
                 "error": Ip4IntegrityError,
-                "error_message": "Invalid unknown option length (II).",
+                "error_message": (
+                    "[INTEGRITY ERROR][IPv4] The unknown IPv4 option length must "
+                    "be less than or equal to the length of provided bytes (17). "
+                    "Got: 18"
+                ),
             },
         },
     ]
@@ -318,8 +385,7 @@ class TestIp4OptionUnknownParser(TestCase):
             with self.assertRaises(self._results["error"]) as error:
                 Ip4OptionUnknown.from_bytes(self._args["bytes"])
 
-            if "error_message" in self._results:
-                self.assertEqual(
-                    str(error.exception),
-                    f"[INTEGRITY ERROR][IPv4] {self._results['error_message']}",
-                )
+            self.assertEqual(
+                str(error.exception),
+                self._results["error_message"],
+            )

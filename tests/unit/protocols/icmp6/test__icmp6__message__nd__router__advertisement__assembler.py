@@ -165,7 +165,8 @@ from pytcp.protocols.icmp6.message.nd.option.icmp6_nd_options import (
                 "__len__": 56,
                 "__str__": (
                     "ICMPv6 ND Router Advertisement, hop 22, flags M-, rlft 33, reacht 44, retrt 55, "
-                    "opts [slla 00:11:22:33:44:55, prefix_info 2001:db8::/64], len 56 (16+40)"
+                    "opts [slla 00:11:22:33:44:55, prefix_info (prefix 2001:db8::/64, flags LAR, "
+                    "valid_lifetime 123456, preferred_lifetime 654321)], len 56 (16+40)"
                 ),
                 "__repr__": (
                     "Icmp6NdRouterAdvertisementMessage(code=<Icmp6NdRouterAdvertisementCode.DEFAULT: 0>, "
