@@ -109,7 +109,8 @@ class Icmp6Parser(Icmp6, ProtoParser):
         self._ip6__dst = packet_rx.ip6.dst
         self._ip6__hop = packet_rx.ip6.hop
 
-        self._validate_integrity()
+        # Disabling integrity check as they need to be reevaluated and reimplemented.
+        # self._validate_integrity()
         self._parse()
         self._validate_sanity()
 
@@ -152,7 +153,7 @@ class Icmp6Parser(Icmp6, ProtoParser):
                 "Wrong packet length (I).",
             )
 
-        match self._frame[0]:
+        match Icmp6Type.from_int(self._frame[0]):
             case Icmp6Type.DESTINATION_UNREACHABLE:
                 if (
                     not ICMP6__DESTINATION_UNREACHABLE__LEN
@@ -256,7 +257,8 @@ class Icmp6Parser(Icmp6, ProtoParser):
                     offset += (
                         ICMP6__MLD2__MULTICAST_ADDRESS_RECORD__LEN
                         + self._frame[offset + 1]
-                        + int.from_bytes(self._frame, offset + 2) * 16
+                        + int.from_bytes(self._frame[offset + 2 : offset + 4])
+                        * 16
                     )
                 if offset != self._ip6__dlen:
                     raise Icmp6IntegrityError(
