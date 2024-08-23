@@ -25,7 +25,7 @@
 
 
 """
-This module contains the unknown IPv4 option support code.
+Module contains the unknown IPv4 option support code.
 
 pytcp/protocols/ip4/options/ip4_option__unknown.py
 

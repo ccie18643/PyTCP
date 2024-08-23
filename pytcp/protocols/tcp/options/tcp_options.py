@@ -25,7 +25,7 @@
 
 
 """
-This module contains the TCP packet options class.
+Module contains the TCP packet options class.
 
 pytcp/protocols/tcp/options/tcp_options.py
 

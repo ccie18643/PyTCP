@@ -25,7 +25,7 @@
 
 
 """
-This module contains the TCP Sack (Selective ACK) option support code.
+Module contains the TCP Sack (Selective ACK) option support code.
 
 pytcp/protocols/tcp/options/tcp_option__sack.py
 

@@ -25,7 +25,7 @@
 
 
 """
-This module contains TCP Nop (No Operation) option support code.
+Module contains TCP Nop (No Operation) option support code.
 
 pytcp/protocols/tcp/options/tcp_option__nop.py
 

@@ -206,7 +206,9 @@ class TestIp4OptionNopParser(TestCase):
         """
 
         if "option" in self._results:
-            ip4_option_nop = Ip4OptionNop.from_bytes(self._args["bytes"])
+            ip4_option_nop = Ip4OptionNop.from_bytes(
+                self._args["bytes"] + b"ZH0PA"
+            )
 
             self.assertEqual(
                 ip4_option_nop,

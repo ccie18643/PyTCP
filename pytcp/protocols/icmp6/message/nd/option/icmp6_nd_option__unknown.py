@@ -25,7 +25,7 @@
 
 
 """
-This module contains the unknown ICMPv6 option support code.
+Module contains the unknown ICMPv6 option support code.
 
 pytcp/protocols/icmp6/options/icmp6_nd_option__unknown.py
 

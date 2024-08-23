@@ -25,7 +25,7 @@
 
 
 """
-This module contains the unknown TCP option support code.
+Module contains the unknown TCP option support code.
 
 pytcp/protocols/tcp/options/tcp_option__unknown.py
 

@@ -25,8 +25,7 @@
 
 
 """
-This module contains the ICMPv6 Tlla (Target Link Layer Address) option support
-code.
+Module contains the ICMPv6 Tlla (Target Link Layer Address) option support code.
 
 pytcp/protocols/icmp6/message/nd/option/icmp6_nd_option__tlla.py
 

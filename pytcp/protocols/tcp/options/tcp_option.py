@@ -25,7 +25,7 @@
 
 
 """
-This module contains the TCP option base class.
+Module contains the TCP option base class.
 
 pytcp/protocols/tcp/options/tcp_option.py
 

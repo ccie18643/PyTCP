@@ -25,7 +25,7 @@
 
 
 """
-This module contains the TCP Timestamps option support code.
+Module contains the TCP Timestamps option support code.
 
 pytcp/protocols/tcp/options/tcp_option__timestamps.py
 

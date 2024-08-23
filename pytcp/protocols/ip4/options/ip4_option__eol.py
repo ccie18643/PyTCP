@@ -25,7 +25,7 @@
 
 
 """
-This module contains the IPv4 Eol (End of Option List) option support code.
+Module contains the IPv4 Eol (End of Option List) option support code.
 
 pytcp/protocols/tcp/options/ip4_option__eol.py
 

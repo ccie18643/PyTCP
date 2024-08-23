@@ -25,7 +25,7 @@
 
 
 """
-This module contains the TCP Eol (End of Option List) option support code.
+Module contains the TCP Eol (End of Option List) option support code.
 
 pytcp/protocols/tcp/options/tcp_option__eol.py
 

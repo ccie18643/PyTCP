@@ -221,7 +221,7 @@ class TestTcpOptionSackpermParser(TestCase):
 
         if "option" in self._results:
             tcp_option_sackperm = TcpOptionSackperm.from_bytes(
-                self._args["bytes"]
+                self._args["bytes"] + b"ZH0PA"
             )
 
             self.assertEqual(

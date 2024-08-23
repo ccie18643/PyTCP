@@ -25,7 +25,7 @@
 
 
 """
-This module contains the TCP Sackperm (SACK Permitted) option support code.
+Module contains the TCP Sackperm (SACK Permitted) option support code.
 
 pytcp/protocols/tcp/options/tcp_option__sackperm.py
 

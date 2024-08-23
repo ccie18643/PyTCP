@@ -25,7 +25,7 @@
 
 
 """
-This module contains the IPv4 packet option classes.
+Module contains the IPv4 packet option classes.
 
 pytcp/protocols/ip4/options/ip4_options.py
 

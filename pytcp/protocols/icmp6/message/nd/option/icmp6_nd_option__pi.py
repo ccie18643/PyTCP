@@ -25,7 +25,7 @@
 
 
 """
-This module contains the ICMPv6 Pi (Prefix Information) option support code.
+Module contains the ICMPv6 Pi (Prefix Information) option support code.
 
 pytcp/protocols/icmp6/message/nd/option/icmp6_nd_option__pi.py
 
@@ -219,7 +219,9 @@ class Icmp6NdOptionPi(Icmp6NdOption):
             preferred_lifetime,
             _,
             prefix,
-        ) = struct.unpack(ICMP6__ND_OPTION_PI__STRUCT, _bytes)
+        ) = struct.unpack(
+            ICMP6__ND_OPTION_PI__STRUCT, _bytes[:ICMP6__ND_OPTION_PI__LEN]
+        )
 
         return Icmp6NdOptionPi(
             flag_l=bool(flags & 0b10000000),

@@ -25,7 +25,7 @@
 
 
 """
-This module contains ICMPv6 Neighbor Discovery option support classes.
+Module contains ICMPv6 Neighbor Discovery option support classes.
 
 pytcp/protocols/icmp6/message/nd/option/icmp6_nd_options.py
 

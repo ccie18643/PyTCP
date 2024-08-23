@@ -25,7 +25,7 @@
 
 
 """
-This module contains the TCP Mss (Maximum Segment Size) option support code.
+Module contains the TCP Mss (Maximum Segment Size) option support code.
 
 pytcp/protocols/tcp/options/tcp_option__mss.py
 

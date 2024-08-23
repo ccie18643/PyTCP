@@ -206,7 +206,9 @@ class TestIp4OptionEolParser(TestCase):
         """
 
         if "option" in self._results:
-            ip4_option_eol = Ip4OptionEol.from_bytes(self._args["bytes"])
+            ip4_option_eol = Ip4OptionEol.from_bytes(
+                self._args["bytes"] + b"ZH0PA"
+            )
 
             self.assertEqual(
                 ip4_option_eol,

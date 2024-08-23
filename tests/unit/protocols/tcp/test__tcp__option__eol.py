@@ -206,7 +206,9 @@ class TestTcpOptionEolParser(TestCase):
         """
 
         if "option" in self._results:
-            tcp_option_eol = TcpOptionEol.from_bytes(self._args["bytes"])
+            tcp_option_eol = TcpOptionEol.from_bytes(
+                self._args["bytes"] + b"ZH0PA"
+            )
 
             self.assertEqual(
                 tcp_option_eol,
