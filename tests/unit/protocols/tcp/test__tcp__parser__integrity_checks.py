@@ -131,7 +131,6 @@ from pytcp.protocols.tcp.tcp__parser import TcpParser
             "_description": (
                 "The value of the option 'len' field (1) is lower than the minimum "
                 "acceptable value (2)."
-                "of the 'ip__payload_len' variable."
             ),
             "_args": {
                 "bytes": (
@@ -141,12 +140,14 @@ from pytcp.protocols.tcp.tcp__parser import TcpParser
             },
             "_conditions": {},
             "_results": {
-                "error_message": "The wrong option length (I).",
+                "error_message": (
+                    "The TCP option length must be greater than 1. Got: 1."
+                ),
             },
         },
         {
             "_description": (
-                "The value of the option 'len' field (5 vs 3) is extends past the value "
+                "The value of the option 'len' field (5 vs 3) extends past the value "
                 "of the 'hlen' header field."
             ),
             "_args": {
@@ -157,7 +158,10 @@ from pytcp.protocols.tcp.tcp__parser import TcpParser
             },
             "_conditions": {},
             "_results": {
-                "error_message": "The wrong option length (II).",
+                "error_message": (
+                    "The TCP option length must not extend past the header length. "
+                    "Got: offset=25, hlen=24"
+                ),
             },
         },
     ],

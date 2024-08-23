@@ -39,6 +39,7 @@ from typing import override
 
 from pytcp.lib.mac_address import MacAddress
 from pytcp.lib.proto_option import ProtoOptions
+from pytcp.protocols.icmp6.icmp6__errors import Icmp6IntegrityError
 from pytcp.protocols.icmp6.message.nd.option.icmp6_nd_option import (
     Icmp6NdOption,
     Icmp6NdOptionType,
@@ -109,6 +110,32 @@ class Icmp6NdOptions(ProtoOptions):
                 )
 
         return prefix_info_list
+
+    @staticmethod
+    def validate_integrity(
+        *,
+        frame: bytes,
+        offset: int,
+    ) -> None:
+        """
+        Run the IPv4 options integrity checks before parsing options.
+        """
+
+        plen = len(frame)
+
+        while offset < plen:
+            if (value := frame[offset + 1] << 3) < 8:
+                raise Icmp6IntegrityError(
+                    f"The ICMPv6 ND option length must be greater than or equal to 8."
+                    f"Got: {value!r}.",
+                )
+
+            offset += frame[offset + 1] << 3
+            if offset > plen:
+                raise Icmp6IntegrityError(
+                    f"The ICMPv6 ND option length must not extend past the header "
+                    f"length. Got: {offset=}, {plen=}",
+                )
 
     @override
     @staticmethod

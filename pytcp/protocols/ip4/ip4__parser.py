@@ -42,8 +42,7 @@ from pytcp.lib.proto_parser import ProtoParser
 from pytcp.protocols.ip4.ip4__base import Ip4
 from pytcp.protocols.ip4.ip4__errors import Ip4IntegrityError, Ip4SanityError
 from pytcp.protocols.ip4.ip4__header import IP4__HEADER__LEN, Ip4Header
-from pytcp.protocols.ip4.options.ip4_option__nop import IP4__OPTION_NOP__LEN
-from pytcp.protocols.ip4.options.ip4_options import Ip4Options, Ip4OptionType
+from pytcp.protocols.ip4.options.ip4_options import Ip4Options
 
 if TYPE_CHECKING:
     from pytcp.lib.packet import PacketRx
@@ -99,25 +98,7 @@ class Ip4Parser(Ip4, ProtoParser):
                 "The wrong packet checksum.",
             )
 
-        offset = IP4__HEADER__LEN
-        while offset < hlen:
-            if self._frame[offset] == Ip4OptionType.EOL.value:
-                break
-
-            if self._frame[offset] == Ip4OptionType.NOP.value:
-                offset += IP4__OPTION_NOP__LEN
-                continue
-
-            if self._frame[offset + 1] < 2:
-                raise Ip4IntegrityError(
-                    "The wrong option length (I).",
-                )
-
-            offset += self._frame[offset + 1]
-            if offset > hlen:
-                raise Ip4IntegrityError(
-                    "The wrong option length (II).",
-                )
+        Ip4Options.validate_integrity(frame=self._frame, hlen=hlen)
 
     @override
     def _parse(self) -> None:

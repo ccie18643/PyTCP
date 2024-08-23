@@ -139,7 +139,9 @@ from pytcp.protocols.ip4.ip4__parser import Ip4Parser
                 ),
             },
             "_results": {
-                "error_message": "The wrong option length (I).",
+                "error_message": (
+                    "The IPv4 option length must be greater than 1. Got: 1."
+                ),
             },
         },
         {
@@ -155,7 +157,10 @@ from pytcp.protocols.ip4.ip4__parser import Ip4Parser
             },
             "_conditions": {},
             "_results": {
-                "error_message": "The wrong option length (II).",
+                "error_message": (
+                    "The IPv4 option length must not extend past the header "
+                    "length. Got: offset=25, hlen=24"
+                ),
             },
         },
     ],

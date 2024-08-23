@@ -39,8 +39,7 @@ from typing import TYPE_CHECKING, override
 
 from pytcp.lib.inet_cksum import inet_cksum
 from pytcp.lib.proto_parser import ProtoParser
-from pytcp.protocols.tcp.options.tcp_option__nop import TCP__OPTION_NOP__LEN
-from pytcp.protocols.tcp.options.tcp_options import TcpOptions, TcpOptionType
+from pytcp.protocols.tcp.options.tcp_options import TcpOptions
 from pytcp.protocols.tcp.tcp__base import Tcp
 from pytcp.protocols.tcp.tcp__errors import TcpIntegrityError, TcpSanityError
 from pytcp.protocols.tcp.tcp__header import TCP__HEADER__LEN, TcpHeader
@@ -101,25 +100,7 @@ class TcpParser(Tcp, ProtoParser):
                 "The wrong packet checksum.",
             )
 
-        offset = TCP__HEADER__LEN
-        while offset < hlen:
-            if self._frame[offset] == TcpOptionType.EOL.value:
-                break
-
-            if self._frame[offset] == TcpOptionType.NOP.value:
-                offset += TCP__OPTION_NOP__LEN
-                continue
-
-            if self._frame[offset + 1] < 2:
-                raise TcpIntegrityError(
-                    "The wrong option length (I).",
-                )
-
-            offset += self._frame[offset + 1]
-            if offset > hlen:
-                raise TcpIntegrityError(
-                    "The wrong option length (II).",
-                )
+        TcpOptions.validate_integrity(frame=self._frame, hlen=hlen)
 
     @override
     def _parse(self) -> None:

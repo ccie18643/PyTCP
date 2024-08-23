@@ -87,6 +87,9 @@ from pytcp.protocols.icmp6.message.nd.icmp6_nd_message__router_solicitation impo
     ICMP6__ND__ROUTER_SOLICITATION__LEN,
     Icmp6NdRouterSolicitationMessage,
 )
+from pytcp.protocols.icmp6.message.nd.option.icmp6_nd_options import (
+    Icmp6NdOptions,
+)
 
 if TYPE_CHECKING:
     from pytcp.lib.packet import PacketRx
@@ -109,33 +112,12 @@ class Icmp6Parser(Icmp6, ProtoParser):
         self._ip6__dst = packet_rx.ip6.dst
         self._ip6__hop = packet_rx.ip6.hop
 
-        # Disabling integrity check as they need to be reevaluated and reimplemented.
-        # self._validate_integrity()
+        self._validate_integrity()
         self._parse()
         self._validate_sanity()
 
         packet_rx.icmp6 = self
         packet_rx.frame = packet_rx.frame[len(self._frame) :]
-
-    def _nd_option_integrity_check(self, offset: int) -> None:
-        """
-        Check integrity of the ICMPv6 ND options.
-        """
-
-        while offset < len(self._frame):
-            if offset + 1 > len(self._frame):
-                raise Icmp6IntegrityError(
-                    "Wrong ND option length (I).",
-                )
-            if self._frame[offset + 1] == 0:
-                raise Icmp6IntegrityError(
-                    "Wrong ND option length (II).",
-                )
-            offset += self._frame[offset + 1] << 3
-            if offset > len(self._frame):
-                raise Icmp6IntegrityError(
-                    "Wrong ND option length (III).",
-                )
 
     @override
     def _validate_integrity(self) -> None:
@@ -193,8 +175,9 @@ class Icmp6Parser(Icmp6, ProtoParser):
                     raise Icmp6IntegrityError(
                         "Wrong packet length (II).",
                     )
-                self._nd_option_integrity_check(
-                    ICMP6__HEADER__LEN + ICMP6__ND__ROUTER_SOLICITATION__LEN
+                Icmp6NdOptions.validate_integrity(
+                    frame=self._frame,
+                    offset=ICMP6__ND__ROUTER_SOLICITATION__LEN,
                 )
 
             case Icmp6Type.ND__ROUTER_ADVERTISEMENT:
@@ -206,8 +189,9 @@ class Icmp6Parser(Icmp6, ProtoParser):
                     raise Icmp6IntegrityError(
                         "Wrong packet length (II).",
                     )
-                self._nd_option_integrity_check(
-                    ICMP6__ND__ROUTER_ADVERTISEMENT__LEN
+                Icmp6NdOptions.validate_integrity(
+                    frame=self._frame,
+                    offset=ICMP6__ND__ROUTER_ADVERTISEMENT__LEN,
                 )
 
             case Icmp6Type.ND__NEIGHBOR_SOLICITATION:
@@ -219,8 +203,9 @@ class Icmp6Parser(Icmp6, ProtoParser):
                     raise Icmp6IntegrityError(
                         "Wrong packet length (II).",
                     )
-                self._nd_option_integrity_check(
-                    ICMP6__ND__ROUTER_SOLICITATION__LEN
+                Icmp6NdOptions.validate_integrity(
+                    frame=self._frame,
+                    offset=ICMP6__ND__NEIGHBOR_SOLICITATION__LEN,
                 )
 
             case Icmp6Type.ND__NEIGHBOR_ADVERTISEMENT:
@@ -232,8 +217,9 @@ class Icmp6Parser(Icmp6, ProtoParser):
                     raise Icmp6IntegrityError(
                         "Wrong packet length (II).",
                     )
-                self._nd_option_integrity_check(
-                    ICMP6__ND__ROUTER_ADVERTISEMENT__LEN
+                Icmp6NdOptions.validate_integrity(
+                    frame=self._frame,
+                    offset=ICMP6__ND__NEIGHBOR_ADVERTISEMENT__LEN,
                 )
 
             case Icmp6Type.MLD2__REPORT:

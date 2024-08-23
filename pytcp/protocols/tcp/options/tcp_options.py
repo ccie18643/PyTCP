@@ -43,7 +43,10 @@ from pytcp.lib.proto_option import ProtoOptions
 from pytcp.protocols.tcp.options.tcp_option import TcpOption, TcpOptionType
 from pytcp.protocols.tcp.options.tcp_option__eol import TcpOptionEol
 from pytcp.protocols.tcp.options.tcp_option__mss import TcpOptionMss
-from pytcp.protocols.tcp.options.tcp_option__nop import TcpOptionNop
+from pytcp.protocols.tcp.options.tcp_option__nop import (
+    TCP__OPTION_NOP__LEN,
+    TcpOptionNop,
+)
 from pytcp.protocols.tcp.options.tcp_option__sack import (
     TcpOptionSack,
     TcpSackBlock,
@@ -55,6 +58,8 @@ from pytcp.protocols.tcp.options.tcp_option__timestamps import (
 )
 from pytcp.protocols.tcp.options.tcp_option__unknown import TcpOptionUnknown
 from pytcp.protocols.tcp.options.tcp_option__wscale import TcpOptionWscale
+from pytcp.protocols.tcp.tcp__errors import TcpIntegrityError
+from pytcp.protocols.tcp.tcp__header import TCP__HEADER__LEN
 
 TCP__OPTIONS__MAX_LEN = 40
 
@@ -123,6 +128,39 @@ class TcpOptions(ProtoOptions):
                 return TcpTimestamps(option.tsval, option.tsecr)
 
         return None
+
+    @staticmethod
+    def validate_integrity(
+        *,
+        frame: bytes,
+        hlen: int,
+    ) -> None:
+        """
+        Run the TCP options integrity checks before parsing options.
+        """
+
+        offset = TCP__HEADER__LEN
+
+        while offset < hlen:
+            if frame[offset] == int(TcpOptionType.EOL):
+                break
+
+            if frame[offset] == int(TcpOptionType.NOP):
+                offset += TCP__OPTION_NOP__LEN
+                continue
+
+            if (value := frame[offset + 1]) < 2:
+                raise TcpIntegrityError(
+                    f"The TCP option length must be greater than 1. "
+                    f"Got: {value!r}.",
+                )
+
+            offset += frame[offset + 1]
+            if offset > hlen:
+                raise TcpIntegrityError(
+                    f"The TCP option length must not extend past the header "
+                    f"length. Got: {offset=}, {hlen=}",
+                )
 
     @override
     @staticmethod
