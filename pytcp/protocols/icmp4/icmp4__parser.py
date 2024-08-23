@@ -1,35 +1,35 @@
 #!/usr/bin/env python3
 
-############################################################################
-#                                                                          #
-#  PyTCP - Python TCP/IP stack                                             #
-#  Copyright (C) 2020-present Sebastian Majewski                           #
-#                                                                          #
-#  This program is free software: you can redistribute it and/or modify    #
-#  it under the terms of the GNU General Public License as published by    #
-#  the Free Software Foundation, either version 3 of the License, or       #
-#  (at your option) any later version.                                     #
-#                                                                          #
-#  This program is distributed in the hope that it will be useful,         #
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of          #
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the           #
-#  GNU General Public License for more details.                            #
-#                                                                          #
-#  You should have received a copy of the GNU General Public License       #
-#  along with this program.  If not, see <https://www.gnu.org/licenses/>.  #
-#                                                                          #
-#  Author's email: ccie18643@gmail.com                                     #
-#  Github repository: https://github.com/ccie18643/PyTCP                   #
-#                                                                          #
-############################################################################
+################################################################################
+##                                                                            ##
+##   PyTCP - Python TCP/IP stack                                              ##
+##   Copyright (C) 2020-present Sebastian Majewski                            ##
+##                                                                            ##
+##   This program is free software: you can redistribute it and/or modify     ##
+##   it under the terms of the GNU General Public License as published by     ##
+##   the Free Software Foundation, either version 3 of the License, or        ##
+##   (at your option) any later version.                                      ##
+##                                                                            ##
+##   This program is distributed in the hope that it will be useful,          ##
+##   but WITHOUT ANY WARRANTY; without even the implied warranty of           ##
+##   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the             ##
+##   GNU General Public License for more details.                             ##
+##                                                                            ##
+##   You should have received a copy of the GNU General Public License        ##
+##   along with this program. If not, see <https://www.gnu.org/licenses/>.    ##
+##                                                                            ##
+##   Author's email: ccie18643@gmail.com                                      ##
+##   Github repository: https://github.com/ccie18643/PyTCP                    ##
+##                                                                            ##
+################################################################################
 
 
 """
-This module contains the ICMPv4 packet parser.
+Module contains the ICMPv4 packet parser.
 
 pytcp/protocols/icmp4/icmp4__parser.py
 
-ver 3.0.0
+ver 3.0.1
 """
 
 
@@ -91,17 +91,12 @@ class Icmp4Parser(Icmp4, ProtoParser):
         Validate integrity of the ICMPv4 packet before parsing it.
         """
 
-        if inet_cksum(self._frame[: self._ip4__payload_len]):
-            raise Icmp4IntegrityError(
-                "Wrong packet checksum.",
-            )
-
         if not ICMP4__HEADER__LEN <= self._ip4__payload_len <= len(self._frame):
             raise Icmp4IntegrityError(
                 "Wrong packet length (I).",
             )
 
-        match self._frame[0]:
+        match Icmp4Type.from_int(self._frame[0]):
             case Icmp4Type.ECHO_REPLY:
                 if (
                     not ICMP4__ECHO_REPLY__LEN
@@ -131,6 +126,11 @@ class Icmp4Parser(Icmp4, ProtoParser):
                     raise Icmp4IntegrityError(
                         "Wrong packet length (II)",
                     )
+
+        if inet_cksum(self._frame[: self._ip4__payload_len]):
+            raise Icmp4IntegrityError(
+                "Wrong packet checksum.",
+            )
 
     @override
     def _parse(self) -> None:
