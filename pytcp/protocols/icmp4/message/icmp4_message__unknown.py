@@ -1,35 +1,35 @@
 #!/usr/bin/env python3
 
-############################################################################
-#                                                                          #
-#  PyTCP - Python TCP/IP stack                                             #
-#  Copyright (C) 2020-present Sebastian Majewski                           #
-#                                                                          #
-#  This program is free software: you can redistribute it and/or modify    #
-#  it under the terms of the GNU General Public License as published by    #
-#  the Free Software Foundation, either version 3 of the License, or       #
-#  (at your option) any later version.                                     #
-#                                                                          #
-#  This program is distributed in the hope that it will be useful,         #
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of          #
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the           #
-#  GNU General Public License for more details.                            #
-#                                                                          #
-#  You should have received a copy of the GNU General Public License       #
-#  along with this program.  If not, see <https://www.gnu.org/licenses/>.  #
-#                                                                          #
-#  Author's email: ccie18643@gmail.com                                     #
-#  Github repository: https://github.com/ccie18643/PyTCP                   #
-#                                                                          #
-############################################################################
+################################################################################
+##                                                                            ##
+##   PyTCP - Python TCP/IP stack                                              ##
+##   Copyright (C) 2020-present Sebastian Majewski                            ##
+##                                                                            ##
+##   This program is free software: you can redistribute it and/or modify     ##
+##   it under the terms of the GNU General Public License as published by     ##
+##   the Free Software Foundation, either version 3 of the License, or        ##
+##   (at your option) any later version.                                      ##
+##                                                                            ##
+##   This program is distributed in the hope that it will be useful,          ##
+##   but WITHOUT ANY WARRANTY; without even the implied warranty of           ##
+##   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the             ##
+##   GNU General Public License for more details.                             ##
+##                                                                            ##
+##   You should have received a copy of the GNU General Public License        ##
+##   along with this program. If not, see <https://www.gnu.org/licenses/>.    ##
+##                                                                            ##
+##   Author's email: ccie18643@gmail.com                                      ##
+##   Github repository: https://github.com/ccie18643/PyTCP                    ##
+##                                                                            ##
+################################################################################
 
 
 """
-This module contains the ICMPv4 unknown message support class.
+Module contains the ICMPv4 unknown message support class.
 
 pytcp/protocols/icmp4/message/icmp4_message__unknown.py
 
-ver 3.0.0
+ver 3.0.1
 """
 
 
@@ -65,17 +65,20 @@ class Icmp4UnknownMessage(Icmp4Message):
         Validate the ICMPv4 unknown message fields.
         """
 
-        assert isinstance(
-            self.type, Icmp4Type
-        ), f"The 'type' field must be an Icmp4Type. Got: {type(self.type)!r}"
+        assert isinstance(self.type, Icmp4Type), (
+            f"The 'type' field must be an Icmp4Type. "
+            f"Got: {type(self.type)!r}"
+        )
 
-        assert isinstance(
-            self.code, Icmp4Code
-        ), f"The 'code' field must be an Icmp4Code. Got: {type(self.code)!r}"
+        assert isinstance(self.code, Icmp4Code), (
+            f"The 'code' field must be an Icmp4Code. "
+            f"Got: {type(self.code)!r}"
+        )
 
-        assert is_uint16(
-            self.cksum
-        ), f"The 'cksum' field must be a 16-bit unsigned integer. Got: {self.cksum!r}"
+        assert is_uint16(self.cksum), (
+            f"The 'cksum' field must be a 16-bit unsigned integer. "
+            f"Got: {self.cksum!r}"
+        )
 
     @override
     def __len__(self) -> int:

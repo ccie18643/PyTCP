@@ -277,7 +277,7 @@ class TestIcmp6NdOptionTllaParser(TestCase):
 
         if "option" in self._results:
             icmp6_nd_option_tlla = Icmp6NdOptionTlla.from_bytes(
-                self._args["bytes"]
+                self._args["bytes"] + b"ZH0PA"
             )
 
             self.assertEqual(

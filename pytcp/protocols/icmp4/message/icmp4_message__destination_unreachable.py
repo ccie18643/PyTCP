@@ -1,35 +1,35 @@
 #!/usr/bin/env python3
 
-############################################################################
-#                                                                          #
-#  PyTCP - Python TCP/IP stack                                             #
-#  Copyright (C) 2020-present Sebastian Majewski                           #
-#                                                                          #
-#  This program is free software: you can redistribute it and/or modify    #
-#  it under the terms of the GNU General Public License as published by    #
-#  the Free Software Foundation, either version 3 of the License, or       #
-#  (at your option) any later version.                                     #
-#                                                                          #
-#  This program is distributed in the hope that it will be useful,         #
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of          #
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the           #
-#  GNU General Public License for more details.                            #
-#                                                                          #
-#  You should have received a copy of the GNU General Public License       #
-#  along with this program.  If not, see <https://www.gnu.org/licenses/>.  #
-#                                                                          #
-#  Author's email: ccie18643@gmail.com                                     #
-#  Github repository: https://github.com/ccie18643/PyTCP                   #
-#                                                                          #
-############################################################################
+################################################################################
+##                                                                            ##
+##   PyTCP - Python TCP/IP stack                                              ##
+##   Copyright (C) 2020-present Sebastian Majewski                            ##
+##                                                                            ##
+##   This program is free software: you can redistribute it and/or modify     ##
+##   it under the terms of the GNU General Public License as published by     ##
+##   the Free Software Foundation, either version 3 of the License, or        ##
+##   (at your option) any later version.                                      ##
+##                                                                            ##
+##   This program is distributed in the hope that it will be useful,          ##
+##   but WITHOUT ANY WARRANTY; without even the implied warranty of           ##
+##   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the             ##
+##   GNU General Public License for more details.                             ##
+##                                                                            ##
+##   You should have received a copy of the GNU General Public License        ##
+##   along with this program. If not, see <https://www.gnu.org/licenses/>.    ##
+##                                                                            ##
+##   Author's email: ccie18643@gmail.com                                      ##
+##   Github repository: https://github.com/ccie18643/PyTCP                    ##
+##                                                                            ##
+################################################################################
 
 
 """
-This module contains the ICMPv4 Destination Unreachable message support class.
+Module contains the ICMPv4 Destination Unreachable message support class.
 
 pytcp/protocols/icmp4/message/icmp4_message__destination_unreachable.py
 
-ver 3.0.0
+ver 3.0.1
 """
 
 
@@ -139,30 +139,34 @@ class Icmp4DestinationUnreachableMessage(Icmp4Message):
         Validate the ICMPv4 Destination Unreachable message fields.
         """
 
-        assert isinstance(
-            self.code, Icmp4DestinationUnreachableCode
-        ), f"The 'code' field must be an Icmp4DestinationUnreachableCode. Got: {type(self.code)!r}"
+        assert isinstance(self.code, Icmp4DestinationUnreachableCode), (
+            f"The 'code' field must be an Icmp4DestinationUnreachableCode. "
+            f"Got: {type(self.code)!r}"
+        )
 
         if self.code == Icmp4DestinationUnreachableCode.FRAGMENTATION_NEEDED:
-            assert self.mtu is not None and is_uint16(
-                self.mtu
-            ), f"The 'mtu' field must be a 16-bit unsigned integer. Got: {self.mtu}"
+            assert self.mtu is not None and is_uint16(self.mtu), (
+                f"The 'mtu' field must be a 16-bit unsigned integer. "
+                f"Got: {self.mtu}"
+            )
 
         if self.code != Icmp4DestinationUnreachableCode.FRAGMENTATION_NEEDED:
             assert (
                 self.mtu is None
             ), f"The 'mtu' field must not be set. Got: {self.mtu}"
 
-        assert is_uint16(
-            self.cksum
-        ), f"The 'cksum' field must be a 16-bit unsigned integer. Got: {self.cksum}"
+        assert is_uint16(self.cksum), (
+            f"The 'cksum' field must be a 16-bit unsigned integer. "
+            f"Got: {self.cksum}"
+        )
 
         assert (
             len(self.data)
             <= IP4__PAYLOAD__MAX_LEN - ICMP4__DESTINATION_UNREACHABLE__LEN
         ), (
-            "The 'data' field length must be a 16-bit unsigned integer less than or equal to "
-            f"{IP4__PAYLOAD__MAX_LEN - ICMP4__DESTINATION_UNREACHABLE__LEN}. Got: {len(self.data)}"
+            "The 'data' field length must be a 16-bit unsigned integer less than or "
+            f"equal to {IP4__PAYLOAD__MAX_LEN - ICMP4__DESTINATION_UNREACHABLE__LEN}. "
+            f"Got: {len(self.data)}"
         )
 
         # Hack to bypass the 'frozen=True' dataclass decorator.
@@ -193,10 +197,10 @@ class Icmp4DestinationUnreachableMessage(Icmp4Message):
         return (
             f"ICMPv4 Destination Unreachable - {self.code}, "
             f"{(
-                f"mtu {self.mtu}, "
+                f'mtu {self.mtu}, '
                 if self.code
                 == Icmp4DestinationUnreachableCode.FRAGMENTATION_NEEDED
-                else ""
+                else ''
             )}"
             f"len {len(self)} "
             f"({ICMP4__DESTINATION_UNREACHABLE__LEN}+{len(self.data)})"
@@ -234,7 +238,7 @@ class Icmp4DestinationUnreachableMessage(Icmp4Message):
         Initialize the ICMPv4 Destination Unreachable message from bytes.
         """
 
-        match Icmp4DestinationUnreachableCode.from_bytes(_bytes[1:2]):
+        match Icmp4DestinationUnreachableCode.from_int(_bytes[1]):
             case Icmp4DestinationUnreachableCode.FRAGMENTATION_NEEDED:
                 type, code, cksum, _, mtu = struct.unpack(
                     ICMP4__DESTINATION_UNREACHABLE__FRAGMENTATION_NEEDED__STRUCT,

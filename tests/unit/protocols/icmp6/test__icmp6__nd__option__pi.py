@@ -539,7 +539,9 @@ class TestIcmp6NdOptionPiParser(TestCase):
         """
 
         if "option" in self._results:
-            icmp6_nd_option_pi = Icmp6NdOptionPi.from_bytes(self._args["bytes"])
+            icmp6_nd_option_pi = Icmp6NdOptionPi.from_bytes(
+                self._args["bytes"] + b"ZH0PA"
+            )
 
             self.assertEqual(
                 icmp6_nd_option_pi,

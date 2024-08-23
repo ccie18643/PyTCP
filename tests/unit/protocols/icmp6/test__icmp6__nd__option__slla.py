@@ -277,7 +277,7 @@ class TestIcmp6NdOptionSllaParser(TestCase):
 
         if "option" in self._results:
             icmp6_nd_option_slla = Icmp6NdOptionSlla.from_bytes(
-                self._args["bytes"]
+                self._args["bytes"] + b"ZH0PA"
             )
 
             self.assertEqual(
