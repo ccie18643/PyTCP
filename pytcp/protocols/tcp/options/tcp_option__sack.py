@@ -128,9 +128,10 @@ class TcpOptionSack(TcpOption):
         Validate the TCP Sack option fields.
         """
 
-        assert (
-            len(self.blocks) <= TCP__OPTION_SACK__MAX_BLOCK_NUM
-        ), f"The 'blocks' field must have at most {TCP__OPTION_SACK__MAX_BLOCK_NUM} elements. Got: {len(self.blocks)}"
+        assert len(self.blocks) <= TCP__OPTION_SACK__MAX_BLOCK_NUM, (
+            f"The 'blocks' field must have at most {TCP__OPTION_SACK__MAX_BLOCK_NUM} "
+            f"elements. Got: {len(self.blocks)}"
+        )
 
         # Hack to bypass the 'frozen=True' dataclass decorator.
         object.__setattr__(
@@ -162,6 +163,27 @@ class TcpOptionSack(TcpOption):
         )
 
     @staticmethod
+    def _validate_integrity(_bytes: bytes) -> None:
+        """
+        Validate the TCP Sack option integrity before parsing it.
+        """
+
+        if (value := _bytes[1]) > len(_bytes):
+            raise TcpIntegrityError(
+                "The TCP Sack option length must be less than or equal to "
+                f"the length of provided bytes ({len(_bytes)}). Got: {value!r}"
+            )
+
+        if (
+            value := _bytes[1] - TCP__OPTION_SACK__LEN
+        ) % TCP__OPTION_SACK__BLOCK_LEN:
+            raise TcpIntegrityError(
+                "The TCP Sack option blocks length must be a multiple of "
+                f"{TCP__OPTION_SACK__BLOCK_LEN}. Got: {value!r}"
+            )
+
+    @override
+    @staticmethod
     def from_bytes(_bytes: bytes) -> TcpOptionSack:
         """
         Initialize the TCP Sack option from bytes.
@@ -177,11 +199,7 @@ class TcpOptionSack(TcpOption):
             f"Got: {TcpOptionType.from_int(value)!r}"
         )
 
-        if (value := _bytes[1]) > len(_bytes):
-            raise TcpIntegrityError(
-                "The TCP Sack option length must be less than or equal to "
-                f"the length of provided bytes ({len(_bytes)}). Got: {value!r}"
-            )
+        TcpOptionSack._validate_integrity(_bytes)
 
         return TcpOptionSack(
             blocks=[

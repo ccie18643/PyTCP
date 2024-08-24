@@ -89,6 +89,7 @@ class TcpOptionEol(TcpOption):
 
         return bytes(self.type)
 
+    @override
     @staticmethod
     def from_bytes(_bytes: bytes) -> TcpOptionEol:
         """

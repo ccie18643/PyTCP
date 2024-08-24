@@ -183,6 +183,25 @@ class Icmp6NdOptionPi(Icmp6NdOption):
         )
 
     @staticmethod
+    def _validate_integrity(_bytes: bytes) -> None:
+        """
+        Validate the ICMPv6 ND Pi option integrity before parsing it.
+        """
+
+        if (value := _bytes[1] << 3) != ICMP6__ND_OPTION_PI__LEN:
+            raise Icmp6IntegrityError(
+                f"The ICMPv6 ND Pi option length must be {ICMP6__ND_OPTION_PI__LEN} "
+                f"bytes. Got: {value!r}"
+            )
+
+        if (value := _bytes[1] << 3) > len(_bytes):
+            raise Icmp6IntegrityError(
+                "The ICMPv6 ND Pi option length must be less than or equal to the "
+                f"length of provided bytes ({len(_bytes)}). Got: {value!r}"
+            )
+
+    @override
+    @staticmethod
     def from_bytes(_bytes: bytes) -> Icmp6NdOptionPi:
         """
         Initialize the ICMPv6 ND Pi option from bytes.
@@ -198,17 +217,7 @@ class Icmp6NdOptionPi(Icmp6NdOption):
             f"Got: {Icmp6NdOptionType.from_int(value)!r}"
         )
 
-        if (value := _bytes[1] << 3) != ICMP6__ND_OPTION_PI__LEN:
-            raise Icmp6IntegrityError(
-                f"The ICMPv6 ND Pi option length must be {ICMP6__ND_OPTION_PI__LEN} "
-                f"bytes. Got: {value!r}"
-            )
-
-        if (value := _bytes[1] << 3) > len(_bytes):
-            raise Icmp6IntegrityError(
-                "The ICMPv6 ND Pi option length must be less than or equal to the "
-                f"length of provided bytes ({len(_bytes)}). Got: {value!r}"
-            )
+        Icmp6NdOptionPi._validate_integrity(_bytes)
 
         (
             _,

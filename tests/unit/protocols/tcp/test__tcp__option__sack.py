@@ -376,6 +376,19 @@ class TestTcpOptionSackAssembler(TestCase):
                 ),
             },
         },
+        {
+            "_description": "The TCP Sack option length integrity check (III).",
+            "_args": {
+                "bytes": b"\x05\x0b\xff\xff\xff\xff\xff\xff\xff\xff\x00",
+            },
+            "_results": {
+                "error": TcpIntegrityError,
+                "error_message": (
+                    "[INTEGRITY ERROR][TCP] The TCP Sack option blocks length "
+                    "must be a multiple of 8. Got: 9"
+                ),
+            },
+        },
     ]
 )
 class TestTcpOptionSackParser(TestCase):

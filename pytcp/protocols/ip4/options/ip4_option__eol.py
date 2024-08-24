@@ -89,6 +89,7 @@ class Ip4OptionEol(Ip4Option):
 
         return bytes(self.type)
 
+    @override
     @staticmethod
     def from_bytes(_bytes: bytes) -> Ip4OptionEol:
         """

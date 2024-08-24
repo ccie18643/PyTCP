@@ -130,6 +130,25 @@ class TcpOptionTimestamps(TcpOption):
         )
 
     @staticmethod
+    def _validate_integrity(_bytes: bytes) -> None:
+        """
+        Validate the TCP Timestamps option integrity before parsing it.
+        """
+
+        if (value := _bytes[1]) != TCP__OPTION_TIMESTAMPS__LEN:
+            raise TcpIntegrityError(
+                f"The TCP Timestamps option length must be {TCP__OPTION_TIMESTAMPS__LEN} "
+                f"bytes. Got: {value!r}"
+            )
+
+        if (value := _bytes[1]) > len(_bytes):
+            raise TcpIntegrityError(
+                "The TCP Timestamps option length must be less than or equal to "
+                f"the length of provided bytes ({len(_bytes)}). Got: {value!r}"
+            )
+
+    @override
+    @staticmethod
     def from_bytes(_bytes: bytes) -> TcpOptionTimestamps:
         """
         Initialize the TCP Timestamps option from bytes.
@@ -145,17 +164,7 @@ class TcpOptionTimestamps(TcpOption):
             f"Got: {TcpOptionType.from_int(value)!r}"
         )
 
-        if (value := _bytes[1]) != TCP__OPTION_TIMESTAMPS__LEN:
-            raise TcpIntegrityError(
-                f"The TCP Timestamps option length must be {TCP__OPTION_TIMESTAMPS__LEN} "
-                f"bytes. Got: {value!r}"
-            )
-
-        if (value := _bytes[1]) > len(_bytes):
-            raise TcpIntegrityError(
-                "The TCP Timestamps option length must be less than or equal to "
-                f"the length of provided bytes ({len(_bytes)}). Got: {value!r}"
-            )
+        TcpOptionTimestamps._validate_integrity(_bytes)
 
         _, _, tsval, tsecr = struct.unpack_from("! BB LL", _bytes)
 

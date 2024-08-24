@@ -109,6 +109,25 @@ class TcpOptionMss(TcpOption):
         )
 
     @staticmethod
+    def _validate_integrity(_bytes: bytes) -> None:
+        """
+        Validate the TCP Mss option integrity before parsing it.
+        """
+
+        if (value := _bytes[1]) != TCP__OPTION_MSS__LEN:
+            raise TcpIntegrityError(
+                f"The TCP Mss option length must be {TCP__OPTION_MSS__LEN} "
+                f"bytes. Got: {value!r}"
+            )
+
+        if (value := _bytes[1]) > len(_bytes):
+            raise TcpIntegrityError(
+                "The TCP Mss option length must be less than or equal to "
+                f"the length of provided bytes ({len(_bytes)}). Got: {value!r}"
+            )
+
+    @override
+    @staticmethod
     def from_bytes(_bytes: bytes) -> TcpOptionMss:
         """
         Initialize the TCP Mss option from bytes.
@@ -124,16 +143,6 @@ class TcpOptionMss(TcpOption):
             f"Got: {TcpOptionType.from_int(value)!r}"
         )
 
-        if (value := _bytes[1]) != TCP__OPTION_MSS__LEN:
-            raise TcpIntegrityError(
-                f"The TCP Mss option length must be {TCP__OPTION_MSS__LEN} "
-                f"bytes. Got: {value!r}"
-            )
-
-        if (value := _bytes[1]) > len(_bytes):
-            raise TcpIntegrityError(
-                "The TCP Mss option length must be less than or equal to "
-                f"the length of provided bytes ({len(_bytes)}). Got: {value!r}"
-            )
+        TcpOptionMss._validate_integrity(_bytes)
 
         return TcpOptionMss(mss=int.from_bytes(_bytes[2:4]))

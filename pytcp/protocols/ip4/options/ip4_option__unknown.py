@@ -118,6 +118,19 @@ class Ip4OptionUnknown(Ip4Option):
         )
 
     @staticmethod
+    def _validate_integrity(_bytes: bytes) -> None:
+        """
+        Validate the unknown IPv4 option integrity before parsing it.
+        """
+
+        if (value := _bytes[1]) > len(_bytes):
+            raise Ip4IntegrityError(
+                "The unknown IPv4 option length must be less than or equal to "
+                f"the length of provided bytes ({len(_bytes)}). Got: {value!r}"
+            )
+
+    @override
+    @staticmethod
     def from_bytes(_bytes: bytes) -> Ip4OptionUnknown:
         """
         Initialize the unknown IPv4 option from bytes.
@@ -133,16 +146,10 @@ class Ip4OptionUnknown(Ip4Option):
             f"Got: {Ip4OptionType.from_int(value)!r}"
         )
 
-        _len = _bytes[1]
-
-        if (value := _len) > len(_bytes):
-            raise Ip4IntegrityError(
-                "The unknown IPv4 option length must be less than or equal to "
-                f"the length of provided bytes ({len(_bytes)}). Got: {value!r}"
-            )
+        Ip4OptionUnknown._validate_integrity(_bytes)
 
         return Ip4OptionUnknown(
             type=Ip4OptionType(_bytes[0]),
-            len=_len,
-            data=_bytes[IP4__OPTION__LEN:_len],
+            len=_bytes[1],
+            data=_bytes[IP4__OPTION__LEN : _bytes[1]],
         )

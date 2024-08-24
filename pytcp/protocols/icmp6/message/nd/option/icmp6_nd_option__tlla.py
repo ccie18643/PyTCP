@@ -110,6 +110,25 @@ class Icmp6NdOptionTlla(Icmp6NdOption):
         )
 
     @staticmethod
+    def _validate_integrity(_bytes: bytes) -> None:
+        """
+        Validate the integrity of the ICMPv6 ND Tlla option before parsing it.
+        """
+
+        if (value := _bytes[1] << 3) != ICMP6__ND_OPTION_TLLA__LEN:
+            raise Icmp6IntegrityError(
+                f"The ICMPv6 ND Tlla option length must be {ICMP6__ND_OPTION_TLLA__LEN} "
+                f"bytes. Got: {value!r}"
+            )
+
+        if (value := _bytes[1] << 3) > len(_bytes):
+            raise Icmp6IntegrityError(
+                "The ICMPv6 ND Tlla option length must be less than or equal to "
+                f"the length of provided bytes ({len(_bytes)}). Got: {value!r}"
+            )
+
+    @override
+    @staticmethod
     def from_bytes(_bytes: bytes) -> Icmp6NdOptionTlla:
         """
         Initialize the ICMPv6 ND Tlla option from bytes.
@@ -125,16 +144,6 @@ class Icmp6NdOptionTlla(Icmp6NdOption):
             f"Got: {Icmp6NdOptionType.from_int(value)!r}"
         )
 
-        if (value := _bytes[1] << 3) != ICMP6__ND_OPTION_TLLA__LEN:
-            raise Icmp6IntegrityError(
-                f"The ICMPv6 ND Tlla option length must be {ICMP6__ND_OPTION_TLLA__LEN} "
-                f"bytes. Got: {value!r}"
-            )
-
-        if (value := _bytes[1] << 3) > len(_bytes):
-            raise Icmp6IntegrityError(
-                "The ICMPv6 ND Tlla option length must be less than or equal to "
-                f"the length of provided bytes ({len(_bytes)}). Got: {value!r}"
-            )
+        Icmp6NdOptionTlla._validate_integrity(_bytes)
 
         return Icmp6NdOptionTlla(tlla=MacAddress(_bytes[2:8]))

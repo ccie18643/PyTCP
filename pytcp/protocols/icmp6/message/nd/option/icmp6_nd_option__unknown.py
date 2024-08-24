@@ -122,6 +122,19 @@ class Icmp6NdOptionUnknown(Icmp6NdOption):
         )
 
     @staticmethod
+    def _validate_integrity(_bytes: bytes) -> None:
+        """
+        Validate the unknown ICMPv6 option integrity before parsing it.
+        """
+
+        if (value := _bytes[1] << 3) > len(_bytes):
+            raise Icmp6IntegrityError(
+                "The unknown ICMPv6 ND option length must be less than or equal to "
+                f"the length of provided bytes ({len(_bytes)}). Got: {value!r}"
+            )
+
+    @override
+    @staticmethod
     def from_bytes(_bytes: bytes) -> Icmp6NdOptionUnknown:
         """
         Initialize the unknown ICMPv6 option from bytes.
@@ -139,16 +152,10 @@ class Icmp6NdOptionUnknown(Icmp6NdOption):
             f"Got: {Icmp6NdOptionType.from_int(value)!r}"
         )
 
-        _len = _bytes[1] << 3
-
-        if (value := _len) > len(_bytes):
-            raise Icmp6IntegrityError(
-                "The unknown ICMPv6 ND option length must be less than or equal to "
-                f"the length of provided bytes ({len(_bytes)}). Got: {value!r}"
-            )
+        Icmp6NdOptionUnknown._validate_integrity(_bytes)
 
         return Icmp6NdOptionUnknown(
             type=Icmp6NdOptionType(_bytes[0]),
-            len=_len,
-            data=_bytes[ICMP6__ND_OPTION__LEN:_len],
+            len=_bytes[1] << 3,
+            data=_bytes[ICMP6__ND_OPTION__LEN : _bytes[1] << 3],
         )

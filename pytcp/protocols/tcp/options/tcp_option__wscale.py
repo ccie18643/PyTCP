@@ -113,6 +113,25 @@ class TcpOptionWscale(TcpOption):
         )
 
     @staticmethod
+    def _validate_integrity(_bytes: bytes) -> None:
+        """
+        Validate the TCP Wscale option integrity before parsing it.
+        """
+
+        if (value := _bytes[1]) != TCP__OPTION_WSCALE__LEN:
+            raise TcpIntegrityError(
+                f"The TCP Wscale option length must be {TCP__OPTION_WSCALE__LEN} "
+                f"bytes. Got: {value!r}"
+            )
+
+        if (value := _bytes[1]) > len(_bytes):
+            raise TcpIntegrityError(
+                "The TCP Wscale option length must be less than or equal to "
+                f"the length of provided bytes ({len(_bytes)}). Got: {value!r}"
+            )
+
+    @override
+    @staticmethod
     def from_bytes(_bytes: bytes) -> TcpOptionWscale:
         """
         Initialize the TCP Wscale option from bytes.
@@ -128,17 +147,7 @@ class TcpOptionWscale(TcpOption):
             f"Got: {TcpOptionType.from_int(value)!r}"
         )
 
-        if (value := _bytes[1]) != TCP__OPTION_WSCALE__LEN:
-            raise TcpIntegrityError(
-                f"The TCP Wscale option length must be {TCP__OPTION_WSCALE__LEN} "
-                f"bytes. Got: {value!r}"
-            )
-
-        if (value := _bytes[1]) > len(_bytes):
-            raise TcpIntegrityError(
-                "The TCP Wscale option length must be less than or equal to "
-                f"the length of provided bytes ({len(_bytes)}). Got: {value!r}"
-            )
+        TcpOptionWscale._validate_integrity(_bytes)
 
         # Correct the received Wscale option value to maximum allowed
         # if it exceeds the limit.

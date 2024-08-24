@@ -100,6 +100,24 @@ class TcpOptionSackperm(TcpOption):
         )
 
     @staticmethod
+    def _validate_integrity(_bytes: bytes) -> None:
+        """
+        Validate the TCP Sackperm option integrity before parsing it.
+        """
+
+        if (value := _bytes[1]) != TCP__OPTION_SACKPERM__LEN:
+            raise TcpIntegrityError(
+                f"The TCP Sackperm option length must be {TCP__OPTION_SACKPERM__LEN} "
+                f"bytes. Got: {value!r}"
+            )
+
+        # The Sackperm option has no data, so the length should be exactly 2
+        # and the option length integrity check (II) here wouldn't function
+        # properly as the condition when length field is missing is already
+        # being handled assert.
+
+    @override
+    @staticmethod
     def from_bytes(_bytes: bytes) -> TcpOptionSackperm:
         """
         Initialize the TCP Sackperm option from bytes.
@@ -115,15 +133,6 @@ class TcpOptionSackperm(TcpOption):
             f"Got: {TcpOptionType.from_int(value)!r}"
         )
 
-        if (value := _bytes[1]) != TCP__OPTION_SACKPERM__LEN:
-            raise TcpIntegrityError(
-                f"The TCP Sackperm option length must be {TCP__OPTION_SACKPERM__LEN} "
-                f"bytes. Got: {value!r}"
-            )
-
-        # The Sackperm option has no data, so the length should be exactly 2
-        # and the option length integrity check (II) here wouldn't function
-        # properly as the condition when length field is missing is already
-        # being handled assert.
+        TcpOptionSackperm._validate_integrity(_bytes)
 
         return TcpOptionSackperm()

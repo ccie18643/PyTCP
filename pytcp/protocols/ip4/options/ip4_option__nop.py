@@ -89,6 +89,7 @@ class Ip4OptionNop(Ip4Option):
 
         return bytes(self.type)
 
+    @override
     @staticmethod
     def from_bytes(_bytes: bytes) -> Ip4OptionNop:
         """
