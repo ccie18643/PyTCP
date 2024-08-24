@@ -64,7 +64,7 @@ test_unit: venv
 
 test_integration: venv
 	@echo '<<< TESTSLIDE INTEGRATION'
-	@./$(VENV)/bin/testslide $(shell find 'tests/unit' -name '*.py')
+	@./$(VENV)/bin/testslide $(shell find 'tests/integration' -name '*.py')
 
 test: test_unit test_integration
 
