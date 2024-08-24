@@ -43,6 +43,6 @@ jobs:
         mypy -p examples
         mypy -p tests
     - name: Test unit
-      run: testslide $(shell find 'tests/unit' -name '*.py')
+      run: testslide $(find 'tests/unit' -name '*.py')
     - name: Test integration
-      run: testslide $(shell find 'tests/integration' -name '*.py')
+      run: testslide $(find 'tests/integration' -name '*.py')
