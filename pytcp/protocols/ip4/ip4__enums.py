@@ -71,7 +71,7 @@ class Ip4Proto(ProtoEnumByte):
             case Ip4Proto.RAW:
                 name = "Raw"
 
-        return f"{self.value}{"" if self.is_unknown else f" ({name})"}"
+        return f"{self.value}{'' if self.is_unknown else f' ({name})'}"
 
     @staticmethod
     def from_proto(proto: Proto) -> Ip4Proto:

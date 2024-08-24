@@ -72,7 +72,7 @@ class EthernetType(ProtoEnumWord):
                 name = "Raw"
 
         return (
-            f"0x{int(self.value):0>4x}{"" if self.is_unknown else f" ({name})"}"
+            f"0x{int(self.value):0>4x}{'' if self.is_unknown else f' ({name})'}"
         )
 
     @staticmethod
