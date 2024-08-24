@@ -140,7 +140,7 @@ from pytcp.protocols.tcp.tcp__parser import TcpParser
             },
             "_conditions": {},
             "_results": {
-                "error_message": "The packet checksum must be correct.",
+                "error_message": "The packet checksum must be valid.",
             },
         },
         {

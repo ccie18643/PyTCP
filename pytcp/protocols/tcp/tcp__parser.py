@@ -126,14 +126,14 @@ class TcpParser(Tcp, ProtoParser):
         Validate sanity of the TCP packet after parsing it.
         """
 
-        if self._header.sport == 0:
+        if (value := self._header.sport) == 0:
             raise TcpSanityError(
-                "The 'sport' value must be greater than 0.",
+                f"The 'sport' field must be greater than 0. Got: {value}",
             )
 
-        if self._header.dport == 0:
+        if (value := self._header.dport) == 0:
             raise TcpSanityError(
-                "The 'dport' value must be greater than 0.",
+                f"The 'dport' field must be greater than 0. Got: {value}",
             )
 
         if self._header.flag_syn and self._header.flag_fin:

@@ -55,7 +55,7 @@ from pytcp.protocols.tcp.tcp__parser import TcpParser
                 ),
             },
             "_results": {
-                "error_message": "The 'sport' value must be greater than 0.",
+                "error_message": "The 'sport' field must be greater than 0. Got: 0",
             },
         },
         {
@@ -67,7 +67,7 @@ from pytcp.protocols.tcp.tcp__parser import TcpParser
                 ),
             },
             "_results": {
-                "error_message": "The 'dport' value must be greater than 0.",
+                "error_message": "The 'dport' field must be greater than 0. Got: 0",
             },
         },
         {
