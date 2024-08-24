@@ -48,21 +48,31 @@ from pytcp.protocols.icmp4.message.icmp4_message__unknown import (
 @parameterized_class(
     [
         {
-            "_description": "ICMPv4 unknown message, empty data.",
+            "_description": "ICMPv4 unknown message.",
             "_args": {
                 "type": Icmp4Type.from_int(255),
                 "code": Icmp4Code.from_int(255),
                 "cksum": 12345,
+                "raw": b"0123456789ABCDEF",
             },
             "_results": {
-                "__str__": "ICMPv4 Unknown Message, type 255, code 255",
+                "__len__": 20,
+                "__str__": (
+                    "ICMPv4 Unknown Message, type 255, code 255, cksum 12345, len 20(4+16)"
+                ),
                 "__repr__": (
                     "Icmp4UnknownMessage(type=<Icmp4Type.UNKNOWN_255: 255>, "
-                    "code=<Icmp4Code.UNKNOWN_255: 255>, cksum=12345)"
+                    "code=<Icmp4Code.UNKNOWN_255: 255>, cksum=12345, "
+                    "raw=b'0123456789ABCDEF')"
+                ),
+                "bytes": (
+                    b"\xff\xff\x30\x39\x30\x31\x32\x33\x34\x35\x36\x37\x38\x39\x41\x42"
+                    b"\x43\x44\x45\x46"
                 ),
                 "type": Icmp4Type.from_int(255),
                 "code": Icmp4Code.from_int(255),
                 "cksum": 12345,
+                "raw": b"0123456789ABCDEF",
             },
         },
     ]
@@ -90,8 +100,10 @@ class TestIcmp4MessageUnknownAssembler(TestCase):
         a correct value.
         """
 
-        with self.assertRaises(NotImplementedError):
-            len(self._icmp4__unknown__message)
+        self.assertEqual(
+            len(self._icmp4__unknown__message),
+            self._results["__len__"],
+        )
 
     def test__icmp4__message__unknown__assembler__str(self) -> None:
         """
@@ -121,8 +133,10 @@ class TestIcmp4MessageUnknownAssembler(TestCase):
         a correct value.
         """
 
-        with self.assertRaises(NotImplementedError):
-            bytes(self._icmp4__unknown__message)
+        self.assertEqual(
+            bytes(self._icmp4__unknown__message),
+            self._results["bytes"],
+        )
 
     def test__icmp4__message__unknown__assembler__type(self) -> None:
         """

@@ -83,9 +83,9 @@ class Icmp4EchoRequestMessage(Icmp4Message):
     code: Icmp4EchoRequestCode = Icmp4EchoRequestCode.DEFAULT
     cksum: int = 0
 
-    id: int
-    seq: int
-    data: bytes
+    id: int = 0
+    seq: int = 0
+    data: bytes = bytes()
 
     @override
     def __post_init__(self) -> None:
@@ -159,6 +159,20 @@ class Icmp4EchoRequestMessage(Icmp4Message):
             self.id,
             self.seq,
         ) + bytes(self.data)
+
+    @override
+    @staticmethod
+    def validate_integrity(*, frame: bytes, ip4__payload_len: int) -> None:
+        """
+        Validate the integrity of the ICMPv4 Echo Request message before parsing it.
+        """
+
+        if not ICMP4__ECHO_REQUEST__LEN <= ip4__payload_len <= len(frame):
+            raise ValueError(
+                "The condition 'ICMP4__ECHO_REQUEST__LEN <= ip4__payload_len <= "
+                f"len(frame)' must be met. Got: {ICMP4__ECHO_REQUEST__LEN=}, "
+                f"{ip4__payload_len=}, {len(frame)=}"
+            )
 
     @override
     @staticmethod

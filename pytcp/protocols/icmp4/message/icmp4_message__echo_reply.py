@@ -40,6 +40,7 @@ from dataclasses import dataclass, field
 from typing import override
 
 from pytcp.lib.int_checks import is_uint16
+from pytcp.protocols.icmp4.icmp4__errors import Icmp4IntegrityError
 from pytcp.protocols.icmp4.message.icmp4_message import (
     Icmp4Code,
     Icmp4Message,
@@ -83,9 +84,9 @@ class Icmp4EchoReplyMessage(Icmp4Message):
     code: Icmp4EchoReplyCode = Icmp4EchoReplyCode.DEFAULT
     cksum: int = 0
 
-    id: int
-    seq: int
-    data: bytes
+    id: int = 0
+    seq: int = 0
+    data: bytes = bytes()
 
     @override
     def __post_init__(self) -> None:
@@ -162,6 +163,20 @@ class Icmp4EchoReplyMessage(Icmp4Message):
             )
             + self.data
         )
+
+    @override
+    @staticmethod
+    def validate_integrity(*, frame: bytes, ip4__payload_len: int) -> None:
+        """
+        Validate integrity of the ICMPv4 Echo Reply message before parsing it.
+        """
+
+        if not ICMP4__ECHO_REPLY__LEN <= ip4__payload_len <= len(frame):
+            raise Icmp4IntegrityError(
+                "The condition 'ICMP4__ECHO_REPLY__LEN <= ip4__payload_len <= "
+                f"len(frame)' must be met. Got: {ICMP4__ECHO_REPLY__LEN=}, "
+                f"{ip4__payload_len=}, {len(frame)=}"
+            )
 
     @override
     @staticmethod

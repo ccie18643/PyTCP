@@ -41,6 +41,7 @@ from typing import override
 
 from pytcp.config import IP4__MIN_MTU
 from pytcp.lib.int_checks import is_uint16
+from pytcp.protocols.icmp4.icmp4__errors import Icmp4IntegrityError
 from pytcp.protocols.icmp4.message.icmp4_message import (
     Icmp4Code,
     Icmp4Message,
@@ -131,7 +132,7 @@ class Icmp4DestinationUnreachableMessage(Icmp4Message):
     cksum: int = 0
 
     mtu: int | None = None
-    data: bytes
+    data: bytes = bytes()
 
     @override
     def __post_init__(self) -> None:
@@ -230,6 +231,25 @@ class Icmp4DestinationUnreachableMessage(Icmp4Message):
                     0,
                     0,
                 ) + bytes(self.data)
+
+    @override
+    @staticmethod
+    def validate_integrity(*, frame: bytes, ip4__payload_len: int) -> None:
+        """
+        Validate the ICMPv4 Destination Unreachable message integrity before parsing it.
+        """
+
+        if (
+            not ICMP4__DESTINATION_UNREACHABLE__LEN
+            <= ip4__payload_len
+            <= len(frame)
+        ):
+            raise Icmp4IntegrityError(
+                "The condition 'ICMP4__DESTINATION_UNREACHABLE__LEN <= "
+                "ip4__payload_len <= len(frame)' must be met. Got: "
+                f"{ICMP4__DESTINATION_UNREACHABLE__LEN=}, "
+                f"{ip4__payload_len=}, {len(frame)=}"
+            )
 
     @override
     @staticmethod

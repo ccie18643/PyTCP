@@ -43,18 +43,16 @@ from pytcp.protocols.icmp4.icmp4__base import Icmp4
 from pytcp.protocols.icmp4.icmp4__errors import Icmp4IntegrityError
 from pytcp.protocols.icmp4.message.icmp4_message import (
     ICMP4__HEADER__LEN,
+    Icmp4Message,
     Icmp4Type,
 )
 from pytcp.protocols.icmp4.message.icmp4_message__destination_unreachable import (
-    ICMP4__DESTINATION_UNREACHABLE__LEN,
     Icmp4DestinationUnreachableMessage,
 )
 from pytcp.protocols.icmp4.message.icmp4_message__echo_reply import (
-    ICMP4__ECHO_REPLY__LEN,
     Icmp4EchoReplyMessage,
 )
 from pytcp.protocols.icmp4.message.icmp4_message__echo_request import (
-    ICMP4__ECHO_REQUEST__LEN,
     Icmp4EchoRequestMessage,
 )
 from pytcp.protocols.icmp4.message.icmp4_message__unknown import (
@@ -93,43 +91,33 @@ class Icmp4Parser(Icmp4, ProtoParser):
 
         if not ICMP4__HEADER__LEN <= self._ip4__payload_len <= len(self._frame):
             raise Icmp4IntegrityError(
-                "Wrong packet length (I).",
+                "The condition 'ICMP4__HEADER__LEN <= self._ip4__payload_len <= "
+                f"len(self._frame)' must be met. Got: {ICMP4__HEADER__LEN=}, "
+                f"{self._ip4__payload_len=}, {len(self._frame)=}"
             )
 
+        message_cls = Icmp4Message
         match Icmp4Type.from_int(self._frame[0]):
             case Icmp4Type.ECHO_REPLY:
-                if (
-                    not ICMP4__ECHO_REPLY__LEN
-                    <= self._ip4__payload_len
-                    <= len(self._frame)
-                ):
-                    raise Icmp4IntegrityError(
-                        "Wrong packet length (II)",
-                    )
+                message_cls = Icmp4EchoReplyMessage  # type: ignore
 
             case Icmp4Type.DESTINATION_UNREACHABLE:
-                if (
-                    not ICMP4__DESTINATION_UNREACHABLE__LEN
-                    <= self._ip4__payload_len
-                    <= len(self._frame)
-                ):
-                    raise Icmp4IntegrityError(
-                        "Wrong packet length (II)",
-                    )
+                message_cls = Icmp4DestinationUnreachableMessage  # type: ignore
 
             case Icmp4Type.ECHO_REQUEST:
-                if (
-                    not ICMP4__ECHO_REQUEST__LEN
-                    <= self._ip4__payload_len
-                    <= len(self._frame)
-                ):
-                    raise Icmp4IntegrityError(
-                        "Wrong packet length (II)",
-                    )
+                message_cls = Icmp4EchoRequestMessage  # type: ignore
+
+            case _:
+                message_cls = Icmp4UnknownMessage
+
+        message_cls.validate_integrity(
+            frame=self._frame,
+            ip4__payload_len=self._ip4__payload_len,
+        )
 
         if inet_cksum(self._frame[: self._ip4__payload_len]):
             raise Icmp4IntegrityError(
-                "Wrong packet checksum.",
+                "The packet checksum must be valid.",
             )
 
     @override

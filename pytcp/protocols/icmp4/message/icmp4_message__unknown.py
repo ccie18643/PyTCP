@@ -57,7 +57,8 @@ class Icmp4UnknownMessage(Icmp4Message):
 
     type: Icmp4Type
     code: Icmp4Code
-    cksum: int
+    cksum: int = 0
+    raw: bytes = bytes()
 
     @override
     def __post_init__(self) -> None:
@@ -86,7 +87,7 @@ class Icmp4UnknownMessage(Icmp4Message):
         Get the ICMPv4 unknown message length.
         """
 
-        raise NotImplementedError
+        return ICMP4__HEADER__LEN + len(self.raw)
 
     @override
     def __str__(self) -> str:
@@ -94,7 +95,10 @@ class Icmp4UnknownMessage(Icmp4Message):
         Get the ICMPv4 unknown message log string.
         """
 
-        return f"ICMPv4 Unknown Message, type {int(self.type)}, code {int(self.code)}"
+        return (
+            f"ICMPv4 Unknown Message, type {int(self.type)}, code {int(self.code)}, "
+            f"cksum {self.cksum}, len {len(self)}({ICMP4__HEADER__LEN}+{len(self.raw)})"
+        )
 
     @override
     def __bytes__(self) -> bytes:
@@ -102,7 +106,22 @@ class Icmp4UnknownMessage(Icmp4Message):
         Get the ICMPv4 unknown message as bytes.
         """
 
-        raise NotImplementedError
+        return (
+            struct.pack(
+                ICMP4__HEADER__STRUCT,
+                int(self.type),
+                int(self.code),
+                self.cksum,
+            )
+            + self.raw
+        )
+
+    @override
+    @staticmethod
+    def validate_integrity(*, frame: bytes, ip4__payload_len: int) -> None:
+        """
+        Validate integrity of the ICMPv4 unknown message before parsing it.
+        """
 
     @override
     @staticmethod
@@ -119,4 +138,5 @@ class Icmp4UnknownMessage(Icmp4Message):
             type=Icmp4Type.from_int(type),
             code=Icmp4Code.from_int(code),
             cksum=cksum,
+            raw=_bytes[ICMP4__HEADER__LEN:],
         )

@@ -49,13 +49,17 @@ from pytcp.protocols.icmp4.message.icmp4_message__unknown import (
         {
             "_description": "ICMPv4 unknown message, no data.",
             "_args": {
-                "bytes": b"\xff\xff\x00\x00\x00\x00\x00\x00",
+                "bytes": (
+                    b"\xff\xff\x30\x39\x30\x31\x32\x33\x34\x35\x36\x37\x38\x39\x41\x42"
+                    b"\x43\x44\x45\x46"
+                ),
             },
             "_results": {
                 "from_bytes": Icmp4UnknownMessage(
                     type=Icmp4Type.from_int(255),
                     code=Icmp4Code.from_int(255),
-                    cksum=0,
+                    cksum=12345,
+                    raw=b"0123456789ABCDEF",
                 ),
             },
         },

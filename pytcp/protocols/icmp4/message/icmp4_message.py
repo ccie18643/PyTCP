@@ -35,6 +35,7 @@ ver 3.0.1
 
 from __future__ import annotations
 
+from abc import abstractmethod
 from dataclasses import dataclass
 
 from pytcp.lib.proto_enum import ProtoEnumByte
@@ -75,3 +76,12 @@ class Icmp4Message(ProtoStruct):
     type: Icmp4Type
     code: Icmp4Code
     cksum: int
+
+    @staticmethod
+    @abstractmethod
+    def validate_integrity(*, frame: bytes, ip4__payload_len: int) -> None:
+        """
+        Validate the ICMPv4 message integrity.
+        """
+
+        raise NotImplementedError

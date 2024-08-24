@@ -59,6 +59,7 @@ class TestIcmp4MessageUnknownArgAsserts(TestCase):
             "type": Icmp4Type.from_int(255),
             "code": Icmp4Code.from_int(255),
             "cksum": 0,
+            "raw": b"",
         }
 
     def test__icmp4__message__unknown__type__not_Icmp4Type(self) -> None:
