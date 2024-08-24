@@ -96,7 +96,7 @@ from pytcp.protocols.icmp4.message.icmp4_message__unknown import (
                     "Icmp4DestinationUnreachableMessage(code=<Icmp4DestinationUnreachableCode"
                     ".PORT: 3>, cksum=0, mtu=None, data=b'')"
                 ),
-                "__bytes__": (b"\x03\x03\xfc\xfc\x00\x00\x00\x00"),
+                "__bytes__": b"\x03\x03\xfc\xfc\x00\x00\x00\x00",
                 "message": Icmp4DestinationUnreachableMessage(
                     code=Icmp4DestinationUnreachableCode.PORT,
                     cksum=0,
