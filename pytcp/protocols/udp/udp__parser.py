@@ -1,35 +1,35 @@
 #!/usr/bin/env python3
 
-############################################################################
-#                                                                          #
-#  PyTCP - Python TCP/IP stack                                             #
-#  Copyright (C) 2020-present Sebastian Majewski                           #
-#                                                                          #
-#  This program is free software: you can redistribute it and/or modify    #
-#  it under the terms of the GNU General Public License as published by    #
-#  the Free Software Foundation, either version 3 of the License, or       #
-#  (at your option) any later version.                                     #
-#                                                                          #
-#  This program is distributed in the hope that it will be useful,         #
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of          #
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the           #
-#  GNU General Public License for more details.                            #
-#                                                                          #
-#  You should have received a copy of the GNU General Public License       #
-#  along with this program.  If not, see <https://www.gnu.org/licenses/>.  #
-#                                                                          #
-#  Author's email: ccie18643@gmail.com                                     #
-#  Github repository: https://github.com/ccie18643/PyTCP                   #
-#                                                                          #
-############################################################################
+################################################################################
+##                                                                            ##
+##   PyTCP - Python TCP/IP stack                                              ##
+##   Copyright (C) 2020-present Sebastian Majewski                            ##
+##                                                                            ##
+##   This program is free software: you can redistribute it and/or modify     ##
+##   it under the terms of the GNU General Public License as published by     ##
+##   the Free Software Foundation, either version 3 of the License, or        ##
+##   (at your option) any later version.                                      ##
+##                                                                            ##
+##   This program is distributed in the hope that it will be useful,          ##
+##   but WITHOUT ANY WARRANTY; without even the implied warranty of           ##
+##   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the             ##
+##   GNU General Public License for more details.                             ##
+##                                                                            ##
+##   You should have received a copy of the GNU General Public License        ##
+##   along with this program. If not, see <https://www.gnu.org/licenses/>.    ##
+##                                                                            ##
+##   Author's email: ccie18643@gmail.com                                      ##
+##   Github repository: https://github.com/ccie18643/PyTCP                    ##
+##                                                                            ##
+################################################################################
 
 
 """
-This module contains the UDP packet parser class.
+Module contains the UDP packet parser class.
 
 protocols/udp/udp__parser.py
 
-ver 3.0.0
+ver 3.0.1
 """
 
 
@@ -78,7 +78,9 @@ class UdpParser(Udp, ProtoParser):
 
         if not UDP__HEADER__LEN <= self._ip__payload_len <= len(self._frame):
             raise UdpIntegrityError(
-                "The wrong packet length (I).",
+                "The condition 'UDP__HEADER__LEN <= self._ip__payload_len <= "
+                f"len(self._frame)' must be met. Got: {UDP__HEADER__LEN=}, "
+                f"{self._ip__payload_len=}, {len(self._frame)=}",
             )
 
         if (
@@ -88,13 +90,16 @@ class UdpParser(Udp, ProtoParser):
             <= len(self._frame)
         ):
             raise UdpIntegrityError(
-                "The wrong packet length (II).",
+                "The condition 'UDP__HEADER__LEN <= int.from_bytes(self._frame[4:6]) "
+                "== self._ip__payload_len <= len(self._frame)' must be met. Got: "
+                f"{UDP__HEADER__LEN=}, {int.from_bytes(self._frame[4:6])=}, "
+                f"{self._ip__payload_len=}, {len(self._frame)=}",
             )
 
         if int.from_bytes(self._frame[6:8]) != 0 and inet_cksum(
             self._frame[: self._ip__payload_len], self._ip__pshdr_sum
         ):
-            raise UdpIntegrityError("The wrong packet checksum.")
+            raise UdpIntegrityError("The packet checksum must be correct.")
 
     @override
     def _parse(self) -> None:
@@ -111,12 +116,12 @@ class UdpParser(Udp, ProtoParser):
         Validate sanity of the UDP packet after parsing it.
         """
 
-        if self.sport == 0:
+        if (value := self.sport) == 0:
             raise UdpSanityError(
-                "The 'sport' value must be greater than 0.",
+                f"The 'sport' field must be greater than 0. Got: {value}",
             )
 
-        if self.dport == 0:
+        if (value := self.dport) == 0:
             raise UdpSanityError(
-                "The 'dport' value must be greater than 0.",
+                f"The 'dport' field must be greater than 0. Got: {value}",
             )

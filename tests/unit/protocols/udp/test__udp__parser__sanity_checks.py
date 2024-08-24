@@ -1,35 +1,35 @@
 #!/usr/bin/env python3
 
-############################################################################
-#                                                                          #
-#  PyTCP - Python TCP/IP stack                                             #
-#  Copyright (C) 2020-present Sebastian Majewski                           #
-#                                                                          #
-#  This program is free software: you can redistribute it and/or modify    #
-#  it under the terms of the GNU General Public License as published by    #
-#  the Free Software Foundation, either version 3 of the License, or       #
-#  (at your option) any later version.                                     #
-#                                                                          #
-#  This program is distributed in the hope that it will be useful,         #
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of          #
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the           #
-#  GNU General Public License for more details.                            #
-#                                                                          #
-#  You should have received a copy of the GNU General Public License       #
-#  along with this program.  If not, see <https://www.gnu.org/licenses/>.  #
-#                                                                          #
-#  Author's email: ccie18643@gmail.com                                     #
-#  Github repository: https://github.com/ccie18643/PyTCP                   #
-#                                                                          #
-############################################################################
+################################################################################
+##                                                                            ##
+##   PyTCP - Python TCP/IP stack                                              ##
+##   Copyright (C) 2020-present Sebastian Majewski                            ##
+##                                                                            ##
+##   This program is free software: you can redistribute it and/or modify     ##
+##   it under the terms of the GNU General Public License as published by     ##
+##   the Free Software Foundation, either version 3 of the License, or        ##
+##   (at your option) any later version.                                      ##
+##                                                                            ##
+##   This program is distributed in the hope that it will be useful,          ##
+##   but WITHOUT ANY WARRANTY; without even the implied warranty of           ##
+##   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the             ##
+##   GNU General Public License for more details.                             ##
+##                                                                            ##
+##   You should have received a copy of the GNU General Public License        ##
+##   along with this program. If not, see <https://www.gnu.org/licenses/>.    ##
+##                                                                            ##
+##   Author's email: ccie18643@gmail.com                                      ##
+##   Github repository: https://github.com/ccie18643/PyTCP                    ##
+##                                                                            ##
+################################################################################
 
 
 """
-This module contains tests for the UDP packet sanity checks.
+Module contains tests for the UDP packet sanity checks.
 
 tests/unit/protocols/udp/test__udp__parser__sanity_checks.py
 
-ver 3.0.0
+ver 3.0.1
 """
 
 
@@ -52,7 +52,9 @@ from pytcp.protocols.udp.udp__parser import UdpParser
                 "bytes": b"\x00\x00\xd4\x31\x00\x08\x2b\xc6",
             },
             "_results": {
-                "error_message": "The 'sport' value must be greater than 0.",
+                "error_message": (
+                    "The 'sport' field must be greater than 0. Got: 0"
+                ),
             },
         },
         {
@@ -61,7 +63,9 @@ from pytcp.protocols.udp.udp__parser import UdpParser
                 "bytes": b"\x30\x39\x00\x00\x00\x08\xcf\xbe",
             },
             "_results": {
-                "error_message": "The 'dport' value must be greater than 0.",
+                "error_message": (
+                    "The 'dport' field must be greater than 0. Got: 0"
+                ),
             },
         },
     ]
