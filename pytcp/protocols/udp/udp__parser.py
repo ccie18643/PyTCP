@@ -99,7 +99,7 @@ class UdpParser(Udp, ProtoParser):
         if int.from_bytes(self._frame[6:8]) != 0 and inet_cksum(
             self._frame[: self._ip__payload_len], self._ip__pshdr_sum
         ):
-            raise UdpIntegrityError("The packet checksum must be correct.")
+            raise UdpIntegrityError("The packet checksum must be valid.")
 
     @override
     def _parse(self) -> None:
