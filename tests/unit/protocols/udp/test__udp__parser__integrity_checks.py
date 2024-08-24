@@ -94,9 +94,8 @@ from pytcp.protocols.udp.udp__parser import UdpParser
             "_conditions": {},
             "_results": {
                 "error_message": (
-                    "The condition 'UDP__HEADER__LEN <= int.from_bytes(self._frame[4:6]) "
-                    "== self._ip__payload_len <= len(self._frame)' must be met. Got: "
-                    "UDP__HEADER__LEN=8, int.from_bytes(self._frame[4:6])=7, "
+                    "The condition 'UDP__HEADER__LEN <= plen == self._ip__payload_len "
+                    "<= len(self._frame)' must be met. Got: UDP__HEADER__LEN=8, plen=7, "
                     "self._ip__payload_len=8, len(self._frame)=8"
                 ),
             },
@@ -114,9 +113,8 @@ from pytcp.protocols.udp.udp__parser import UdpParser
             },
             "_results": {
                 "error_message": (
-                    "The condition 'UDP__HEADER__LEN <= int.from_bytes(self._frame[4:6]) "
-                    "== self._ip__payload_len <= len(self._frame)' must be met. Got: "
-                    "UDP__HEADER__LEN=8, int.from_bytes(self._frame[4:6])=8, "
+                    "The condition 'UDP__HEADER__LEN <= plen == self._ip__payload_len "
+                    "<= len(self._frame)' must be met. Got: UDP__HEADER__LEN=8, plen=8, "
                     "self._ip__payload_len=9, len(self._frame)=10"
                 ),
             },

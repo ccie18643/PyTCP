@@ -83,17 +83,17 @@ class UdpParser(Udp, ProtoParser):
                 f"{self._ip__payload_len=}, {len(self._frame)=}",
             )
 
+        plen = int.from_bytes(self._frame[4:6])
         if (
             not UDP__HEADER__LEN
-            <= int.from_bytes(self._frame[4:6])
+            <= plen
             == self._ip__payload_len
             <= len(self._frame)
         ):
             raise UdpIntegrityError(
-                "The condition 'UDP__HEADER__LEN <= int.from_bytes(self._frame[4:6]) "
-                "== self._ip__payload_len <= len(self._frame)' must be met. Got: "
-                f"{UDP__HEADER__LEN=}, {int.from_bytes(self._frame[4:6])=}, "
-                f"{self._ip__payload_len=}, {len(self._frame)=}",
+                "The condition 'UDP__HEADER__LEN <= plen == self._ip__payload_len "
+                f"<= len(self._frame)' must be met. Got: {UDP__HEADER__LEN=}, "
+                f"{plen=}, {self._ip__payload_len=}, {len(self._frame)=}",
             )
 
         if int.from_bytes(self._frame[6:8]) != 0 and inet_cksum(
