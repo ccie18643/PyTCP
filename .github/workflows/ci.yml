@@ -15,8 +15,8 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        python -m pip install codespell isort black flake8 mypy testslide
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+        if [ -f requirements_dev.txt ]; then pip install -r requirements_dev.txt; fi
     - name: Check spelling
       run: |
         codespell --ignore-words-list="ect,ether,nd,tha" --quiet-level=2 $(find pytcp -name '*.py')
