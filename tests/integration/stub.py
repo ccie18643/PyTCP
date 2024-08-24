@@ -25,7 +25,7 @@
 
 
 """
-This module is a intergration tests stub. It will be removed once the real
+This module is a integration tests stub. It will be removed once the real
 integration tests are implemented.
 
 pytcp/tests/integration/stub.py
