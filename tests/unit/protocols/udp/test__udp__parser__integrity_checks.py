@@ -129,7 +129,7 @@ from pytcp.protocols.udp.udp__parser import UdpParser
             },
             "_conditions": {},
             "_results": {
-                "error_message": "The packet checksum must be correct.",
+                "error_message": "The packet checksum must be valid.",
             },
         },
     ]

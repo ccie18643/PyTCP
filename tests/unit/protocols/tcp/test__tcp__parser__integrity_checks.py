@@ -1,35 +1,35 @@
 #!/usr/bin/env python3
 
-############################################################################
-#                                                                          #
-#  PyTCP - Python TCP/IP stack                                             #
-#  Copyright (C) 2020-present Sebastian Majewski                           #
-#                                                                          #
-#  This program is free software: you can redistribute it and/or modify    #
-#  it under the terms of the GNU General Public License as published by    #
-#  the Free Software Foundation, either version 3 of the License, or       #
-#  (at your option) any later version.                                     #
-#                                                                          #
-#  This program is distributed in the hope that it will be useful,         #
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of          #
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the           #
-#  GNU General Public License for more details.                            #
-#                                                                          #
-#  You should have received a copy of the GNU General Public License       #
-#  along with this program.  If not, see <https://www.gnu.org/licenses/>.  #
-#                                                                          #
-#  Author's email: ccie18643@gmail.com                                     #
-#  Github repository: https://github.com/ccie18643/PyTCP                   #
-#                                                                          #
-############################################################################
+################################################################################
+##                                                                            ##
+##   PyTCP - Python TCP/IP stack                                              ##
+##   Copyright (C) 2020-present Sebastian Majewski                            ##
+##                                                                            ##
+##   This program is free software: you can redistribute it and/or modify     ##
+##   it under the terms of the GNU General Public License as published by     ##
+##   the Free Software Foundation, either version 3 of the License, or        ##
+##   (at your option) any later version.                                      ##
+##                                                                            ##
+##   This program is distributed in the hope that it will be useful,          ##
+##   but WITHOUT ANY WARRANTY; without even the implied warranty of           ##
+##   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the             ##
+##   GNU General Public License for more details.                             ##
+##                                                                            ##
+##   You should have received a copy of the GNU General Public License        ##
+##   along with this program. If not, see <https://www.gnu.org/licenses/>.    ##
+##                                                                            ##
+##   Author's email: ccie18643@gmail.com                                      ##
+##   Github repository: https://github.com/ccie18643/PyTCP                    ##
+##                                                                            ##
+################################################################################
 
 
 """
-This module contains tests for the TCP packet integrity checks.
+Module contains tests for the TCP packet integrity checks.
 
 tests/unit/protocols/tcp/test__tcp__parser__integrity_checks.py
 
-ver 3.0.0
+ver 3.0.1
 """
 
 
@@ -62,7 +62,11 @@ from pytcp.protocols.tcp.tcp__parser import TcpParser
                 "ip__payload_len": TCP__HEADER__LEN - 1,
             },
             "_results": {
-                "error_message": "The wrong packet length (I).",
+                "error_message": (
+                    "The condition 'TCP__HEADER__LEN <= self._ip__payload_len <= "
+                    "len(self._frame)' must be met. Got: TCP__HEADER__LEN=20, "
+                    "self._ip__payload_len=19, len(self._frame)=24"
+                ),
             },
         },
         {
@@ -79,7 +83,11 @@ from pytcp.protocols.tcp.tcp__parser import TcpParser
                 "ip__payload_len": TCP__HEADER__LEN + 4 + 1,
             },
             "_results": {
-                "error_message": "The wrong packet length (I).",
+                "error_message": (
+                    "The condition 'TCP__HEADER__LEN <= self._ip__payload_len <= "
+                    "len(self._frame)' must be met. Got: TCP__HEADER__LEN=20, "
+                    "self._ip__payload_len=25, len(self._frame)=24"
+                ),
             },
         },
         {
@@ -94,7 +102,11 @@ from pytcp.protocols.tcp.tcp__parser import TcpParser
             },
             "_conditions": {},
             "_results": {
-                "error_message": "The wrong packet length (II).",
+                "error_message": (
+                    "The condition 'TCP__HEADER__LEN <= hlen <= self._ip__payload_len <= "
+                    "len(self._frame)' must be met. Got: TCP__HEADER__LEN=20, hlen=16, "
+                    "self._ip__payload_len=24, len(self._frame)=24"
+                ),
             },
         },
         {
@@ -110,7 +122,11 @@ from pytcp.protocols.tcp.tcp__parser import TcpParser
             },
             "_conditions": {},
             "_results": {
-                "error_message": "The wrong packet length (II).",
+                "error_message": (
+                    "The condition 'TCP__HEADER__LEN <= hlen <= self._ip__payload_len <= "
+                    "len(self._frame)' must be met. Got: TCP__HEADER__LEN=20, hlen=28, "
+                    "self._ip__payload_len=24, len(self._frame)=24"
+                ),
             },
         },
         {
@@ -124,7 +140,7 @@ from pytcp.protocols.tcp.tcp__parser import TcpParser
             },
             "_conditions": {},
             "_results": {
-                "error_message": "The wrong packet checksum.",
+                "error_message": "The packet checksum must be correct.",
             },
         },
         {

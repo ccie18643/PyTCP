@@ -1,35 +1,35 @@
 #!/usr/bin/env python3
 
-############################################################################
-#                                                                          #
-#  PyTCP - Python TCP/IP stack                                             #
-#  Copyright (C) 2020-present Sebastian Majewski                           #
-#                                                                          #
-#  This program is free software: you can redistribute it and/or modify    #
-#  it under the terms of the GNU General Public License as published by    #
-#  the Free Software Foundation, either version 3 of the License, or       #
-#  (at your option) any later version.                                     #
-#                                                                          #
-#  This program is distributed in the hope that it will be useful,         #
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of          #
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the           #
-#  GNU General Public License for more details.                            #
-#                                                                          #
-#  You should have received a copy of the GNU General Public License       #
-#  along with this program.  If not, see <https://www.gnu.org/licenses/>.  #
-#                                                                          #
-#  Author's email: ccie18643@gmail.com                                     #
-#  Github repository: https://github.com/ccie18643/PyTCP                   #
-#                                                                          #
-############################################################################
+################################################################################
+##                                                                            ##
+##   PyTCP - Python TCP/IP stack                                              ##
+##   Copyright (C) 2020-present Sebastian Majewski                            ##
+##                                                                            ##
+##   This program is free software: you can redistribute it and/or modify     ##
+##   it under the terms of the GNU General Public License as published by     ##
+##   the Free Software Foundation, either version 3 of the License, or        ##
+##   (at your option) any later version.                                      ##
+##                                                                            ##
+##   This program is distributed in the hope that it will be useful,          ##
+##   but WITHOUT ANY WARRANTY; without even the implied warranty of           ##
+##   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the             ##
+##   GNU General Public License for more details.                             ##
+##                                                                            ##
+##   You should have received a copy of the GNU General Public License        ##
+##   along with this program. If not, see <https://www.gnu.org/licenses/>.    ##
+##                                                                            ##
+##   Author's email: ccie18643@gmail.com                                      ##
+##   Github repository: https://github.com/ccie18643/PyTCP                    ##
+##                                                                            ##
+################################################################################
 
 
 """
-This module contains the TCP packet parser class.
+Module contains the TCP packet parser class.
 
 pytcp/protocols/tcp/tcp__parser.py
 
-ver 3.0.0
+ver 3.0.1
 """
 
 
@@ -79,7 +79,9 @@ class TcpParser(Tcp, ProtoParser):
 
         if not TCP__HEADER__LEN <= self._ip__payload_len <= len(self._frame):
             raise TcpIntegrityError(
-                "The wrong packet length (I).",
+                "The condition 'TCP__HEADER__LEN <= self._ip__payload_len <= "
+                f"len(self._frame)' must be met. Got: {TCP__HEADER__LEN=}, "
+                f"{self._ip__payload_len=}, {len(self._frame)=}",
             )
 
         hlen = (self._frame[12] & 0b11110000) >> 2
@@ -90,14 +92,16 @@ class TcpParser(Tcp, ProtoParser):
             <= len(self._frame)
         ):
             raise TcpIntegrityError(
-                "The wrong packet length (II).",
+                "The condition 'TCP__HEADER__LEN <= hlen <= self._ip__payload_len <= "
+                f"len(self._frame)' must be met. Got: {TCP__HEADER__LEN=}, {hlen=}, "
+                f"{self._ip__payload_len=}, {len(self._frame)=}"
             )
 
         if inet_cksum(
             self._frame[: self._ip__payload_len], self._ip__pshdr_sum
         ):
             raise TcpIntegrityError(
-                "The wrong packet checksum.",
+                "The packet checksum must be valid.",
             )
 
         TcpOptions.validate_integrity(frame=self._frame, hlen=hlen)
