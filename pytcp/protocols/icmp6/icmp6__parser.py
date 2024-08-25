@@ -113,7 +113,7 @@ class Icmp6Parser(Icmp6, ProtoParser):
 
         if not ICMP6__HEADER__LEN <= self._ip6__dlen <= len(self._frame):
             raise Icmp6IntegrityError(
-                "The condition 'ICMP6__HEADER__LEN <= self._ip6__dlen_len <= "
+                "The condition 'ICMP6__HEADER__LEN <= self._ip6__dlen <= "
                 f"len(self._frame)' must be met. Got: {ICMP6__HEADER__LEN=}, "
                 f"{self._ip6__dlen=}, {len(self._frame)=}"
             )
@@ -166,7 +166,7 @@ class Icmp6Parser(Icmp6, ProtoParser):
 
         if inet_cksum(self._frame[: self._ip6__dlen], self._ip6__pshdr_sum):
             raise Icmp6IntegrityError(
-                "Packet checksum must be valid.",
+                "The packet checksum must be valid.",
             )
 
     @override
