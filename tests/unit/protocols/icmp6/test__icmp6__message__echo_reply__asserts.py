@@ -1,36 +1,35 @@
 #!/usr/bin/env python3
 
-############################################################################
-#                                                                          #
-#  PyTCP - Python TCP/IP stack                                             #
-#  Copyright (C) 2020-present Sebastian Majewski                           #
-#                                                                          #
-#  This program is free software: you can redistribute it and/or modify    #
-#  it under the terms of the GNU General Public License as published by    #
-#  the Free Software Foundation, either version 3 of the License, or       #
-#  (at your option) any later version.                                     #
-#                                                                          #
-#  This program is distributed in the hope that it will be useful,         #
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of          #
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the           #
-#  GNU General Public License for more details.                            #
-#                                                                          #
-#  You should have received a copy of the GNU General Public License       #
-#  along with this program.  If not, see <https://www.gnu.org/licenses/>.  #
-#                                                                          #
-#  Author's email: ccie18643@gmail.com                                     #
-#  Github repository: https://github.com/ccie18643/PyTCP                   #
-#                                                                          #
-############################################################################
+################################################################################
+##                                                                            ##
+##   PyTCP - Python TCP/IP stack                                              ##
+##   Copyright (C) 2020-present Sebastian Majewski                            ##
+##                                                                            ##
+##   This program is free software: you can redistribute it and/or modify     ##
+##   it under the terms of the GNU General Public License as published by     ##
+##   the Free Software Foundation, either version 3 of the License, or        ##
+##   (at your option) any later version.                                      ##
+##                                                                            ##
+##   This program is distributed in the hope that it will be useful,          ##
+##   but WITHOUT ANY WARRANTY; without even the implied warranty of           ##
+##   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the             ##
+##   GNU General Public License for more details.                             ##
+##                                                                            ##
+##   You should have received a copy of the GNU General Public License        ##
+##   along with this program. If not, see <https://www.gnu.org/licenses/>.    ##
+##                                                                            ##
+##   Author's email: ccie18643@gmail.com                                      ##
+##   Github repository: https://github.com/ccie18643/PyTCP                    ##
+##                                                                            ##
+################################################################################
 
 
 """
-This module contains tests for the ICMPv6 Echo Reply message assembler & parser
-argument asserts.
+Module contains tests for the ICMPv6 Echo Reply message assembler argument asserts.
 
 tests/unit/protocols/icmp6/test__icmp6__message__echo_reply__asserts.py
 
-ver 3.0.0
+ver 3.0.1
 """
 
 from testslide import TestCase
@@ -46,8 +45,7 @@ from pytcp.protocols.ip6.ip6__header import IP6__PAYLOAD__MAX_LEN
 
 class TestIcmp6MessageEchoReplyAsserts(TestCase):
     """
-    The ICMPv6 Echo Reply message assembler & parser argument
-    constructors assert tests.
+    The ICMPv6 Echo Reply message assembler argument constructor assert tests.
     """
 
     def setUp(self) -> None:
@@ -79,7 +77,10 @@ class TestIcmp6MessageEchoReplyAsserts(TestCase):
 
         self.assertEqual(
             str(error.exception),
-            f"The 'code' field must be an Icmp6EchoReplyCode. Got: {type(value)!r}",
+            (
+                f"The 'code' field must be an Icmp6EchoReplyCode. "
+                f"Got: {type(value)!r}"
+            ),
         )
 
     def test__icmp6__message__echo_reply__cksum__under_min(self) -> None:
@@ -96,7 +97,10 @@ class TestIcmp6MessageEchoReplyAsserts(TestCase):
 
         self.assertEqual(
             str(error.exception),
-            f"The 'cksum' field must be a 16-bit unsigned integer. Got: {value!r}",
+            (
+                f"The 'cksum' field must be a 16-bit unsigned integer. "
+                f"Got: {value!r}"
+            ),
         )
 
     def test__icmp6__message__echo_reply__cksum__over_max(self) -> None:
@@ -113,7 +117,10 @@ class TestIcmp6MessageEchoReplyAsserts(TestCase):
 
         self.assertEqual(
             str(error.exception),
-            f"The 'cksum' field must be a 16-bit unsigned integer. Got: {value!r}",
+            (
+                f"The 'cksum' field must be a 16-bit unsigned integer. "
+                f"Got: {value!r}"
+            ),
         )
 
     def test__icmp6__message__echo_reply__id__under_min(self) -> None:
@@ -130,7 +137,10 @@ class TestIcmp6MessageEchoReplyAsserts(TestCase):
 
         self.assertEqual(
             str(error.exception),
-            f"The 'id' field must be a 16-bit unsigned integer. Got: {value!r}",
+            (
+                f"The 'id' field must be a 16-bit unsigned integer. "
+                f"Got: {value!r}"
+            ),
         )
 
     def test__icmp6__message__echo_reply__id__over_max(self) -> None:
@@ -147,7 +157,10 @@ class TestIcmp6MessageEchoReplyAsserts(TestCase):
 
         self.assertEqual(
             str(error.exception),
-            f"The 'id' field must be a 16-bit unsigned integer. Got: {value!r}",
+            (
+                f"The 'id' field must be a 16-bit unsigned integer. "
+                f"Got: {value!r}"
+            ),
         )
 
     def test__icmp6__message__echo_reply__seq__under_min(self) -> None:
@@ -164,7 +177,10 @@ class TestIcmp6MessageEchoReplyAsserts(TestCase):
 
         self.assertEqual(
             str(error.exception),
-            f"The 'seq' field must be a 16-bit unsigned integer. Got: {value!r}",
+            (
+                f"The 'seq' field must be a 16-bit unsigned integer. "
+                f"Got: {value!r}"
+            ),
         )
 
     def test__icmp6__message__echo_reply__seq__over_max(self) -> None:
@@ -181,7 +197,10 @@ class TestIcmp6MessageEchoReplyAsserts(TestCase):
 
         self.assertEqual(
             str(error.exception),
-            f"The 'seq' field must be a 16-bit unsigned integer. Got: {value!r}",
+            (
+                f"The 'seq' field must be a 16-bit unsigned integer. "
+                f"Got: {value!r}"
+            ),
         )
 
     def test__icmp6__message__echo_reply__data_len__over_max(self) -> None:
