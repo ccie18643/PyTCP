@@ -47,21 +47,32 @@ from pytcp.protocols.icmp6.message.icmp6_message__unknown import (
 @parameterized_class(
     [
         {
-            "_description": "ICMPv6 unknown message, empty data.",
+            "_description": "ICMPv6 unknown message.",
             "_args": {
                 "type": Icmp6Type.from_int(255),
                 "code": Icmp6Code.from_int(255),
                 "cksum": 12345,
+                "raw": b"0123456789ABCDEF",
             },
             "_results": {
-                "__str__": "ICMPv6 Unknown Message, type 255, code 255",
+                "__len__": 20,
+                "__str__": (
+                    "ICMPv6 Unknown Message, type 255, code 255, cksum 12345, "
+                    "len 20(4+16)"
+                ),
                 "__repr__": (
                     "Icmp6UnknownMessage(type=<Icmp6Type.UNKNOWN_255: 255>, "
-                    "code=<Icmp6Code.UNKNOWN_255: 255>, cksum=12345)"
+                    "code=<Icmp6Code.UNKNOWN_255: 255>, cksum=12345, "
+                    "raw=b'0123456789ABCDEF')"
+                ),
+                "__bytes__": (
+                    b"\xff\xff\x00\x00\x30\x31\x32\x33\x34\x35\x36\x37\x38\x39\x41\x42"
+                    b"\x43\x44\x45\x46"
                 ),
                 "type": Icmp6Type.from_int(255),
                 "code": Icmp6Code.from_int(255),
                 "cksum": 12345,
+                "raw": b"0123456789ABCDEF",
             },
         },
     ]
@@ -89,8 +100,10 @@ class TestIcmp6MessageUnknownAssembler(TestCase):
         a correct value.
         """
 
-        with self.assertRaises(NotImplementedError):
-            len(self._icmp6__unknown__message)
+        self.assertEqual(
+            len(self._icmp6__unknown__message),
+            self._results["__len__"],
+        )
 
     def test__icmp6__message__unknown__assembler__str(self) -> None:
         """
@@ -120,8 +133,10 @@ class TestIcmp6MessageUnknownAssembler(TestCase):
         a correct value.
         """
 
-        with self.assertRaises(NotImplementedError):
-            bytes(self._icmp6__unknown__message)
+        self.assertEqual(
+            bytes(self._icmp6__unknown__message),
+            self._results["__bytes__"],
+        )
 
     def test__icmp6__message__unknown__assembler__type(self) -> None:
         """

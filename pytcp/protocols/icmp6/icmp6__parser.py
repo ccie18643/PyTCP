@@ -50,15 +50,12 @@ from pytcp.protocols.icmp6.message.icmp6_message import (
     Icmp6Type,
 )
 from pytcp.protocols.icmp6.message.icmp6_message__destination_unreachable import (
-    ICMP6__DESTINATION_UNREACHABLE__LEN,
     Icmp6DestinationUnreachableMessage,
 )
 from pytcp.protocols.icmp6.message.icmp6_message__echo_reply import (
-    ICMP6__ECHO_REPLY__LEN,
     Icmp6EchoReplyMessage,
 )
 from pytcp.protocols.icmp6.message.icmp6_message__echo_request import (
-    ICMP6__ECHO_REQUEST__LEN,
     Icmp6EchoRequestMessage,
 )
 from pytcp.protocols.icmp6.message.icmp6_message__unknown import (
@@ -125,46 +122,28 @@ class Icmp6Parser(Icmp6, ProtoParser):
         Validate integrity of the ICMPv6 packet before parsing it.
         """
 
-        if inet_cksum(self._frame[: self._ip6__dlen], self._ip6__pshdr_sum):
-            raise Icmp6IntegrityError(
-                "Wrong packet checksum.",
-            )
-
         if not ICMP6__HEADER__LEN <= self._ip6__dlen <= len(self._frame):
             raise Icmp6IntegrityError(
-                "Wrong packet length (I).",
+                "The condition 'ICMP6__HEADER__LEN <= self._ip6__dlen_len <= "
+                f"len(self._frame)' must be met. Got: {ICMP6__HEADER__LEN=}, "
+                f"{self._ip6__dlen=}, {len(self._frame)=}"
             )
 
         match Icmp6Type.from_int(self._frame[0]):
             case Icmp6Type.DESTINATION_UNREACHABLE:
-                if (
-                    not ICMP6__DESTINATION_UNREACHABLE__LEN
-                    <= self._ip6__dlen
-                    <= len(self._frame)
-                ):
-                    raise Icmp6IntegrityError(
-                        "Wrong packet length (II).",
-                    )
+                Icmp6DestinationUnreachableMessage.validate_integrity(
+                    frame=self._frame, ip6__dlen=self._ip6__dlen
+                )
 
             case Icmp6Type.ECHO_REQUEST:
-                if (
-                    not ICMP6__ECHO_REQUEST__LEN
-                    <= self._ip6__dlen
-                    <= len(self._frame)
-                ):
-                    raise Icmp6IntegrityError(
-                        "Wrong packet length (II).",
-                    )
+                Icmp6EchoRequestMessage.validate_integrity(
+                    frame=self._frame, ip6__dlen=self._ip6__dlen
+                )
 
             case Icmp6Type.ECHO_REPLY:
-                if (
-                    not ICMP6__ECHO_REPLY__LEN
-                    <= self._ip6__dlen
-                    <= len(self._frame)
-                ):
-                    raise Icmp6IntegrityError(
-                        "Wrong packet length (II).",
-                    )
+                Icmp6EchoReplyMessage.validate_integrity(
+                    frame=self._frame, ip6__dlen=self._ip6__dlen
+                )
 
             case Icmp6Type.ND__ROUTER_SOLICITATION:
                 if (
@@ -250,6 +229,16 @@ class Icmp6Parser(Icmp6, ProtoParser):
                     raise Icmp6IntegrityError(
                         "Wrong packet length (IV).",
                     )
+
+            case _:
+                Icmp6UnknownMessage.validate_integrity(
+                    frame=self._frame, ip6__dlen=self._ip6__dlen
+                )
+
+        if inet_cksum(self._frame[: self._ip6__dlen], self._ip6__pshdr_sum):
+            raise Icmp6IntegrityError(
+                "Packet checksum must be valid.",
+            )
 
     @override
     def _parse(self) -> None:

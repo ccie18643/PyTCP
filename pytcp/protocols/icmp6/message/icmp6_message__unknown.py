@@ -57,7 +57,8 @@ class Icmp6UnknownMessage(Icmp6Message):
 
     type: Icmp6Type
     code: Icmp6Code
-    cksum: int
+    cksum: int = 0
+    raw: bytes = bytes()
 
     @override
     def __post_init__(self) -> None:
@@ -67,15 +68,19 @@ class Icmp6UnknownMessage(Icmp6Message):
 
         assert isinstance(
             self.type, Icmp6Type
-        ), f"The 'type' field must be an Icmp4Type. Got: {type(self.type)!r}"
+        ), f"The 'type' field must be an Icmp6Type. Got: {type(self.type)!r}"
 
         assert isinstance(
             self.code, Icmp6Code
-        ), f"The 'code' field must be an Icmp4Code. Got: {type(self.code)!r}"
+        ), f"The 'code' field must be an Icmp6Code. Got: {type(self.code)!r}"
 
         assert is_uint16(
             self.cksum
         ), f"The 'cksum' field must be a 16-bit unsigned integer. Got: {self.cksum!r}"
+
+        assert isinstance(
+            self.raw, (bytes, memoryview)
+        ), f"The 'raw' field must be a bytes or memoryview. Got: {type(self.raw)!r}"
 
     @override
     def __len__(self) -> int:
@@ -83,7 +88,7 @@ class Icmp6UnknownMessage(Icmp6Message):
         Get the ICMPv6 unknown message length.
         """
 
-        raise NotImplementedError
+        return ICMP6__HEADER__LEN + len(self.raw)
 
     @override
     def __str__(self) -> str:
@@ -91,7 +96,10 @@ class Icmp6UnknownMessage(Icmp6Message):
         Get the ICMPv6 unknown message log string.
         """
 
-        return f"ICMPv6 Unknown Message, type {int(self.type)}, code {int(self.code)}"
+        return (
+            f"ICMPv6 Unknown Message, type {int(self.type)}, code {int(self.code)}, "
+            f"cksum {self.cksum}, len {len(self)}({ICMP6__HEADER__LEN}+{len(self.raw)})"
+        )
 
     @override
     def __bytes__(self) -> bytes:
@@ -99,8 +107,23 @@ class Icmp6UnknownMessage(Icmp6Message):
         Get the ICMPv6 unknown message as bytes.
         """
 
-        raise NotImplementedError
+        return (
+            struct.pack(
+                ICMP6__HEADER__STRUCT,
+                int(self.type),
+                int(self.code),
+                0,
+            )
+            + self.raw
+        )
 
+    @staticmethod
+    def validate_integrity(*, frame: bytes, ip6__dlen: int) -> None:
+        """
+        Validate integrity of the ICMPv6 unknown message before parsing it.
+        """
+
+    @override
     @staticmethod
     def from_bytes(_bytes: bytes) -> Icmp6UnknownMessage:
         """
@@ -115,4 +138,5 @@ class Icmp6UnknownMessage(Icmp6Message):
             type=Icmp6Type.from_int(_type),
             code=Icmp6Code.from_int(code),
             cksum=cksum,
+            raw=_bytes[ICMP6__HEADER__LEN:],
         )

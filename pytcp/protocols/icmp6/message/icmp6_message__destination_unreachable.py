@@ -41,6 +41,7 @@ from typing import override
 
 from pytcp.config import IP6__MIN_MTU
 from pytcp.lib.int_checks import is_uint16
+from pytcp.protocols.icmp4.icmp4__errors import Icmp4IntegrityError
 from pytcp.protocols.icmp6.message.icmp6_message import (
     Icmp6Code,
     Icmp6Message,
@@ -170,6 +171,21 @@ class Icmp6DestinationUnreachableMessage(Icmp6Message):
             + self.data
         )
 
+    @staticmethod
+    def validate_integrity(*, frame: bytes, ip6__dlen: int) -> None:
+        """
+        Validate the ICMPv6 Destination Unreachable message integrity before parsing it.
+        """
+
+        if not ICMP6__DESTINATION_UNREACHABLE__LEN <= ip6__dlen <= len(frame):
+            raise Icmp4IntegrityError(
+                "The condition 'ICMP6__DESTINATION_UNREACHABLE__LEN <= "
+                "ip4__dlen <= len(frame)' must be met. Got: "
+                f"{ICMP6__DESTINATION_UNREACHABLE__LEN=}, "
+                f"{ip6__dlen=}, {len(frame)=}"
+            )
+
+    @override
     @staticmethod
     def from_bytes(_bytes: bytes) -> Icmp6DestinationUnreachableMessage:
         """

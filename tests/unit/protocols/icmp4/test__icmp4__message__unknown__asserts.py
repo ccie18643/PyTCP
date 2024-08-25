@@ -127,3 +127,19 @@ class TestIcmp4MessageUnknownArgAsserts(TestCase):
             str(error.exception),
             f"The 'cksum' field must be a 16-bit unsigned integer. Got: {value!r}",
         )
+
+    def test__icmp4__message__unknown__raw__not_bytes(self) -> None:
+        """
+        Ensure the ICMPv4 message constructor raises an exception when the
+        provided 'raw' argument is not bytes.
+        """
+
+        self._message_args["raw"] = value = "not bytes or memoryview"
+
+        with self.assertRaises(AssertionError) as error:
+            Icmp4UnknownMessage(**self._message_args)  # type: ignore
+
+        self.assertEqual(
+            str(error.exception),
+            f"The 'raw' field must be a bytes or memoryview. Got: {type(value)!r}",
+        )

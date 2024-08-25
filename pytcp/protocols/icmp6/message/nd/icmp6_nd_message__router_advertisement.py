@@ -181,6 +181,7 @@ class Icmp6NdRouterAdvertisementMessage(Icmp6NdMessage):
             self.retrans_timer,
         ) + bytes(self.options)
 
+    @override
     @staticmethod
     def from_bytes(_bytes: bytes) -> Icmp6NdRouterAdvertisementMessage:
         """

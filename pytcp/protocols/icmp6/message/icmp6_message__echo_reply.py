@@ -40,6 +40,7 @@ from dataclasses import dataclass, field
 from typing import override
 
 from pytcp.lib.int_checks import is_uint16
+from pytcp.protocols.icmp6.icmp6__errors import Icmp6IntegrityError
 from pytcp.protocols.icmp6.message.icmp6_message import (
     Icmp6Code,
     Icmp6Message,
@@ -158,6 +159,20 @@ class Icmp6EchoReplyMessage(Icmp6Message):
             + self.data
         )
 
+    @staticmethod
+    def validate_integrity(*, frame: bytes, ip6__dlen: int) -> None:
+        """
+        Validate integrity of the ICMPv6 Echo Reply message before parsing it.
+        """
+
+        if not ICMP6__ECHO_REPLY__LEN <= ip6__dlen <= len(frame):
+            raise Icmp6IntegrityError(
+                "The condition 'ICMP6__ECHO_REPLY__LEN <= ip6__dlen <= "
+                f"len(frame)' must be met. Got: {ICMP6__ECHO_REPLY__LEN=}, "
+                f"{ip6__dlen=}, {len(frame)=}"
+            )
+
+    @override
     @staticmethod
     def from_bytes(_bytes: bytes) -> Icmp6EchoReplyMessage:
         """

@@ -81,6 +81,10 @@ class Icmp4UnknownMessage(Icmp4Message):
             f"Got: {self.cksum!r}"
         )
 
+        assert isinstance(
+            self.raw, (bytes, memoryview)
+        ), f"The 'raw' field must be a bytes or memoryview. Got: {type(self.raw)!r}"
+
     @override
     def __len__(self) -> int:
         """
@@ -111,7 +115,7 @@ class Icmp4UnknownMessage(Icmp4Message):
                 ICMP4__HEADER__STRUCT,
                 int(self.type),
                 int(self.code),
-                self.cksum,
+                0,
             )
             + self.raw
         )

@@ -140,6 +140,7 @@ class Icmp6NdRouterSolicitationMessage(Icmp6NdMessage):
             0,
         ) + bytes(self.options)
 
+    @override
     @staticmethod
     def from_bytes(_bytes: bytes) -> Icmp6NdRouterSolicitationMessage:
         """

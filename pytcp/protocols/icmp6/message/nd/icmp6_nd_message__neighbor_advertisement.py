@@ -173,6 +173,7 @@ class Icmp6NdNeighborAdvertisementMessage(Icmp6NdMessage):
             bytes(self.target_address),
         ) + bytes(self.options)
 
+    @override
     @staticmethod
     def from_bytes(_bytes: bytes) -> Icmp6NdNeighborAdvertisementMessage:
         """

@@ -167,6 +167,7 @@ class Icmp6Mld2ReportMessage(Icmp6Message):
 
         return len(self.records)
 
+    @override
     @staticmethod
     def from_bytes(_bytes: bytes) -> Icmp6Mld2ReportMessage:
         """

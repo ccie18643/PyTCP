@@ -49,13 +49,17 @@ from pytcp.protocols.icmp6.message.icmp6_message__unknown import (
         {
             "_description": "ICMPv6 unknown message, empty data.",
             "_args": {
-                "bytes": b"\xff\xff\x00\x00\x00\x00\x00\x00",
+                "bytes": (
+                    b"\xff\xff\x00\x00\x30\x31\x32\x33\x34\x35\x36\x37\x38\x39\x41\x42"
+                    b"\x43\x44\x45\x46"
+                ),
             },
             "_results": {
                 "from_bytes": Icmp6UnknownMessage(
                     type=Icmp6Type.from_int(255),
                     code=Icmp6Code.from_int(255),
                     cksum=0,
+                    raw=b"0123456789ABCDEF",
                 ),
             },
         },
