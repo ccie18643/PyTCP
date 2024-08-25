@@ -88,7 +88,9 @@ class Icmp4Parser(Icmp4, ProtoParser):
         Validate integrity of the ICMPv4 packet before parsing it.
         """
 
-        if not ICMP4__HEADER__LEN <= self._ip4__payload_len <= len(self._frame):
+        if not (
+            ICMP4__HEADER__LEN <= self._ip4__payload_len <= len(self._frame)
+        ):
             raise Icmp4IntegrityError(
                 "The condition 'ICMP4__HEADER__LEN <= self._ip4__payload_len <= "
                 f"len(self._frame)' must be met. Got: {ICMP4__HEADER__LEN=}, "

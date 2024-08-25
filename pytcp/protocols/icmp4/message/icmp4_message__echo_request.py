@@ -40,6 +40,7 @@ from dataclasses import dataclass, field
 from typing import override
 
 from pytcp.lib.int_checks import is_uint16
+from pytcp.protocols.icmp4.icmp4__errors import Icmp4IntegrityError
 from pytcp.protocols.icmp4.message.icmp4_message import (
     Icmp4Code,
     Icmp4Message,
@@ -168,7 +169,7 @@ class Icmp4EchoRequestMessage(Icmp4Message):
         """
 
         if not (ICMP4__ECHO_REQUEST__LEN <= ip4__payload_len <= len(frame)):
-            raise ValueError(
+            raise Icmp4IntegrityError(
                 "The condition 'ICMP4__ECHO_REQUEST__LEN <= ip4__payload_len <= "
                 f"len(frame)' must be met. Got: {ICMP4__ECHO_REQUEST__LEN=}, "
                 f"{ip4__payload_len=}, {len(frame)=}"
