@@ -25,7 +25,7 @@
 
 
 """
-This module contains tests for the ICMPv6 Destination Unreachable message parser.
+Module contains tests for the ICMPv6 Destination Unreachable message parser.
 
 tests/unit/protocols/icmp4/test__icmp6__message__destination_unreachable__parser.py
 
