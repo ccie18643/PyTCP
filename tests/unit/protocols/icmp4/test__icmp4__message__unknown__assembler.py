@@ -1,36 +1,36 @@
 #!/usr/bin/env python3
 
-############################################################################
-#                                                                          #
-#  PyTCP - Python TCP/IP stack                                             #
-#  Copyright (C) 2020-present Sebastian Majewski                           #
-#                                                                          #
-#  This program is free software: you can redistribute it and/or modify    #
-#  it under the terms of the GNU General Public License as published by    #
-#  the Free Software Foundation, either version 3 of the License, or       #
-#  (at your option) any later version.                                     #
-#                                                                          #
-#  This program is distributed in the hope that it will be useful,         #
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of          #
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the           #
-#  GNU General Public License for more details.                            #
-#                                                                          #
-#  You should have received a copy of the GNU General Public License       #
-#  along with this program.  If not, see <https://www.gnu.org/licenses/>.  #
-#                                                                          #
-#  Author's email: ccie18643@gmail.com                                     #
-#  Github repository: https://github.com/ccie18643/PyTCP                   #
-#                                                                          #
-############################################################################
+################################################################################
+##                                                                            ##
+##   PyTCP - Python TCP/IP stack                                              ##
+##   Copyright (C) 2020-present Sebastian Majewski                            ##
+##                                                                            ##
+##   This program is free software: you can redistribute it and/or modify     ##
+##   it under the terms of the GNU General Public License as published by     ##
+##   the Free Software Foundation, either version 3 of the License, or        ##
+##   (at your option) any later version.                                      ##
+##                                                                            ##
+##   This program is distributed in the hope that it will be useful,          ##
+##   but WITHOUT ANY WARRANTY; without even the implied warranty of           ##
+##   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the             ##
+##   GNU General Public License for more details.                             ##
+##                                                                            ##
+##   You should have received a copy of the GNU General Public License        ##
+##   along with this program. If not, see <https://www.gnu.org/licenses/>.    ##
+##                                                                            ##
+##   Author's email: ccie18643@gmail.com                                      ##
+##   Github repository: https://github.com/ccie18643/PyTCP                    ##
+##                                                                            ##
+################################################################################
 
 
 """
-This module contains tests for the ICMPv4 unknown message assembler.
+Module contains tests for the ICMPv4 unknown message assembler.
 
 
 tests/unit/protocols/icmp4/test__icmp4__message__unknown__assembler.py
 
-ver 3.0.0
+ver 3.0.1
 """
 
 
@@ -58,7 +58,8 @@ from pytcp.protocols.icmp4.message.icmp4_message__unknown import (
             "_results": {
                 "__len__": 20,
                 "__str__": (
-                    "ICMPv4 Unknown Message, type 255, code 255, cksum 12345, len 20(4+16)"
+                    "ICMPv4 Unknown Message, type 255, code 255, cksum 12345, "
+                    "len 20 (4+16)"
                 ),
                 "__repr__": (
                     "Icmp4UnknownMessage(type=<Icmp4Type.UNKNOWN_255: 255>, "
@@ -140,7 +141,7 @@ class TestIcmp4MessageUnknownAssembler(TestCase):
 
     def test__icmp4__message__unknown__assembler__type(self) -> None:
         """
-        Ensure the ICMPv4 unknown message 'type' property returns
+        Ensure the ICMPv4 unknown message 'type' field contains
         a correct value.
         """
 
@@ -151,7 +152,7 @@ class TestIcmp4MessageUnknownAssembler(TestCase):
 
     def test__icmp4__message__unknown__assembler__code(self) -> None:
         """
-        Ensure the ICMPv4 unknown message 'code' property returns
+        Ensure the ICMPv4 unknown message 'code' field contains
         a correct value.
         """
 
@@ -162,7 +163,7 @@ class TestIcmp4MessageUnknownAssembler(TestCase):
 
     def test__icmp4__message__unknown__assembler__cksum(self) -> None:
         """
-        Ensure the ICMPv4 unknown message 'cksum' property returns
+        Ensure the ICMPv4 unknown message 'cksum' field contains
         a correct value.
         """
 

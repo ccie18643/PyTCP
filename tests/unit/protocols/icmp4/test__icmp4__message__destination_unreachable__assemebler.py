@@ -1,35 +1,35 @@
 #!/usr/bin/env python3
 
-############################################################################
-#                                                                          #
-#  PyTCP - Python TCP/IP stack                                             #
-#  Copyright (C) 2020-present Sebastian Majewski                           #
-#                                                                          #
-#  This program is free software: you can redistribute it and/or modify    #
-#  it under the terms of the GNU General Public License as published by    #
-#  the Free Software Foundation, either version 3 of the License, or       #
-#  (at your option) any later version.                                     #
-#                                                                          #
-#  This program is distributed in the hope that it will be useful,         #
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of          #
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the           #
-#  GNU General Public License for more details.                            #
-#                                                                          #
-#  You should have received a copy of the GNU General Public License       #
-#  along with this program.  If not, see <https://www.gnu.org/licenses/>.  #
-#                                                                          #
-#  Author's email: ccie18643@gmail.com                                     #
-#  Github repository: https://github.com/ccie18643/PyTCP                   #
-#                                                                          #
-############################################################################
+################################################################################
+##                                                                            ##
+##   PyTCP - Python TCP/IP stack                                              ##
+##   Copyright (C) 2020-present Sebastian Majewski                            ##
+##                                                                            ##
+##   This program is free software: you can redistribute it and/or modify     ##
+##   it under the terms of the GNU General Public License as published by     ##
+##   the Free Software Foundation, either version 3 of the License, or        ##
+##   (at your option) any later version.                                      ##
+##                                                                            ##
+##   This program is distributed in the hope that it will be useful,          ##
+##   but WITHOUT ANY WARRANTY; without even the implied warranty of           ##
+##   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the             ##
+##   GNU General Public License for more details.                             ##
+##                                                                            ##
+##   You should have received a copy of the GNU General Public License        ##
+##   along with this program. If not, see <https://www.gnu.org/licenses/>.    ##
+##                                                                            ##
+##   Author's email: ccie18643@gmail.com                                      ##
+##   Github repository: https://github.com/ccie18643/PyTCP                    ##
+##                                                                            ##
+################################################################################
 
 
 """
-This module contains tests for the ICMPv4 Destination Unreachable message assembler.
+Module contains tests for the ICMPv4 Destination Unreachable message assembler.
 
 tests/unit/protocols/icmp4/test__icmp4__message__destination_unreachable__assembler.py
 
-ver 3.0.0
+ver 3.0.1
 """
 
 
@@ -507,8 +507,8 @@ class TestIcmp4MessageDestinationUnreachableAssembler(TestCase):
         self,
     ) -> None:
         """
-        Ensure the ICMPv4 Destination Unreachable message 'type' property
-        returns a correct value.
+        Ensure the ICMPv4 Destination Unreachable message 'type' field
+        contains a correct value.
         """
 
         self.assertEqual(
@@ -520,8 +520,8 @@ class TestIcmp4MessageDestinationUnreachableAssembler(TestCase):
         self,
     ) -> None:
         """
-        Ensure the ICMPv4 Destination Unreachable message 'code' property
-        returns a correct value.
+        Ensure the ICMPv4 Destination Unreachable message 'code' field
+        contains a correct value.
         """
 
         self.assertEqual(
@@ -533,8 +533,8 @@ class TestIcmp4MessageDestinationUnreachableAssembler(TestCase):
         self,
     ) -> None:
         """
-        Ensure the ICMPv4 Destination Unreachable message 'cksum' property
-        returns a correct value.
+        Ensure the ICMPv4 Destination Unreachable message 'cksum' field
+        contains a correct value.
         """
 
         self.assertEqual(
@@ -546,8 +546,8 @@ class TestIcmp4MessageDestinationUnreachableAssembler(TestCase):
         self,
     ) -> None:
         """
-        Ensure the ICMPv4 Destination Unreachable message 'mtu' property
-        returns a correct value.
+        Ensure the ICMPv4 Destination Unreachable message 'mtu' field
+        contains a correct value.
         """
 
         if "mtu" in self._results:
@@ -560,8 +560,8 @@ class TestIcmp4MessageDestinationUnreachableAssembler(TestCase):
         self,
     ) -> None:
         """
-        Ensure the ICMPv4 Destination Unreachable message 'data' property
-        returns a correct value.
+        Ensure the ICMPv4 Destination Unreachable message 'data' field
+        contains a correct value.
         """
 
         self.assertEqual(

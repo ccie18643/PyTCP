@@ -58,7 +58,7 @@ from pytcp.protocols.icmp6.message.icmp6_message__unknown import (
                 "__len__": 20,
                 "__str__": (
                     "ICMPv6 Unknown Message, type 255, code 255, cksum 12345, "
-                    "len 20(4+16)"
+                    "len 20 (4+16)"
                 ),
                 "__repr__": (
                     "Icmp6UnknownMessage(type=<Icmp6Type.UNKNOWN_255: 255>, "

@@ -1,35 +1,35 @@
 #!/usr/bin/env python3
 
-############################################################################
-#                                                                          #
-#  PyTCP - Python TCP/IP stack                                             #
-#  Copyright (C) 2020-present Sebastian Majewski                           #
-#                                                                          #
-#  This program is free software: you can redistribute it and/or modify    #
-#  it under the terms of the GNU General Public License as published by    #
-#  the Free Software Foundation, either version 3 of the License, or       #
-#  (at your option) any later version.                                     #
-#                                                                          #
-#  This program is distributed in the hope that it will be useful,         #
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of          #
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the           #
-#  GNU General Public License for more details.                            #
-#                                                                          #
-#  You should have received a copy of the GNU General Public License       #
-#  along with this program.  If not, see <https://www.gnu.org/licenses/>.  #
-#                                                                          #
-#  Author's email: ccie18643@gmail.com                                     #
-#  Github repository: https://github.com/ccie18643/PyTCP                   #
-#                                                                          #
-############################################################################
+################################################################################
+##                                                                            ##
+##   PyTCP - Python TCP/IP stack                                              ##
+##   Copyright (C) 2020-present Sebastian Majewski                            ##
+##                                                                            ##
+##   This program is free software: you can redistribute it and/or modify     ##
+##   it under the terms of the GNU General Public License as published by     ##
+##   the Free Software Foundation, either version 3 of the License, or        ##
+##   (at your option) any later version.                                      ##
+##                                                                            ##
+##   This program is distributed in the hope that it will be useful,          ##
+##   but WITHOUT ANY WARRANTY; without even the implied warranty of           ##
+##   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the             ##
+##   GNU General Public License for more details.                             ##
+##                                                                            ##
+##   You should have received a copy of the GNU General Public License        ##
+##   along with this program. If not, see <https://www.gnu.org/licenses/>.    ##
+##                                                                            ##
+##   Author's email: ccie18643@gmail.com                                      ##
+##   Github repository: https://github.com/ccie18643/PyTCP                    ##
+##                                                                            ##
+################################################################################
 
 
 """
-This module contains tests for the ICMPv4 Echo Request message assembler.
+Module contains tests for the ICMPv4 Echo Request message assembler.
 
 tests/unit/protocols/icmp4/test__icmp4__message__echo_request__packets.py
 
-ver 3.0.0
+ver 3.0.1
 """
 
 
@@ -139,8 +139,8 @@ class TestIcmp4MessageEchoRequestPackets(TestCase):
 
     def setUp(self) -> None:
         """
-        Initialize the ICMPv4 Echo Request message assembler object
-        with testcase arguments.
+        Initialize the ICMPv4 Echo Request message assembler object with
+        testcase arguments.
         """
 
         self._icmp4__echo_request__message = Icmp4EchoRequestMessage(
@@ -193,7 +193,7 @@ class TestIcmp4MessageEchoRequestPackets(TestCase):
 
     def test__icmp4__message__echo_request__assembler__type(self) -> None:
         """
-        Ensure the ICMPv4 Echo Request message 'type' property returns
+        Ensure the ICMPv4 Echo Request message 'type' field contains
         a correct value.
         """
 
@@ -204,7 +204,7 @@ class TestIcmp4MessageEchoRequestPackets(TestCase):
 
     def test__icmp4__message__echo_request__assembler__code(self) -> None:
         """
-        Ensure the ICMPv4 Echo Request message 'code' property returns
+        Ensure the ICMPv4 Echo Request message 'code' field contains
         a correct value.
         """
 
@@ -215,7 +215,7 @@ class TestIcmp4MessageEchoRequestPackets(TestCase):
 
     def test__icmp4__message__echo_request__assembler__cksum(self) -> None:
         """
-        Ensure the ICMPv4 Echo Request message 'cksum' property returns
+        Ensure the ICMPv4 Echo Request message 'cksum' field contains
         a correct value.
         """
 
@@ -226,7 +226,7 @@ class TestIcmp4MessageEchoRequestPackets(TestCase):
 
     def test__icmp4__message__echo_request__assembler__id(self) -> None:
         """
-        Ensure the ICMPv4 Echo Request message 'id' property returns
+        Ensure the ICMPv4 Echo Request message 'id' field contains
         a correct value.
         """
 
@@ -237,7 +237,7 @@ class TestIcmp4MessageEchoRequestPackets(TestCase):
 
     def test__icmp4__message__echo_request__assembler__seq(self) -> None:
         """
-        Ensure the ICMPv4 Echo Request message 'seq' property returns
+        Ensure the ICMPv4 Echo Request message 'seq' field contains
         a correct value.
         """
 
@@ -248,7 +248,7 @@ class TestIcmp4MessageEchoRequestPackets(TestCase):
 
     def test__icmp4__message__echo_request__assembler__data(self) -> None:
         """
-        Ensure the ICMPv4 Echo Request message 'data' property returns
+        Ensure the ICMPv4 Echo Request message 'data' field contains
         a correct value.
         """
 

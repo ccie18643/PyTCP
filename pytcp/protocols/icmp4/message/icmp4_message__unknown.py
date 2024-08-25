@@ -101,7 +101,7 @@ class Icmp4UnknownMessage(Icmp4Message):
 
         return (
             f"ICMPv4 Unknown Message, type {int(self.type)}, code {int(self.code)}, "
-            f"cksum {self.cksum}, len {len(self)}({ICMP4__HEADER__LEN}+{len(self.raw)})"
+            f"cksum {self.cksum}, len {len(self)} ({ICMP4__HEADER__LEN}+{len(self.raw)})"
         )
 
     @override

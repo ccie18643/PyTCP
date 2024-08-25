@@ -98,7 +98,7 @@ class Icmp6UnknownMessage(Icmp6Message):
 
         return (
             f"ICMPv6 Unknown Message, type {int(self.type)}, code {int(self.code)}, "
-            f"cksum {self.cksum}, len {len(self)}({ICMP6__HEADER__LEN}+{len(self.raw)})"
+            f"cksum {self.cksum}, len {len(self)} ({ICMP6__HEADER__LEN}+{len(self.raw)})"
         )
 
     @override
