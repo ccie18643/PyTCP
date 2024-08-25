@@ -47,8 +47,8 @@ from pytcp.protocols.ip4.ip4__header import IP4__PAYLOAD__MAX_LEN
 
 class TestIcmp4MessageDestinationUnreachableAsserts(TestCase):
     """
-    The ICMPv4 Destination Unreachable message assembler & parser
-    constructors argument assert tests.
+    The ICMPv4 Destination Unreachable message assembler constructor
+    argument assert tests.
     """
 
     def setUp(self) -> None:

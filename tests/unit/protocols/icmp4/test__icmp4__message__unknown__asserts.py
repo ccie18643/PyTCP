@@ -25,8 +25,7 @@
 
 
 """
-Module contains tests for the ICMPv4 unknown message assembler
-asserts.
+Module contains tests for the ICMPv4 unknown message assembler asserts.
 
 tests/unit/protocols/icmp4/test__icmp4__message__unknown__asserts.py
 
@@ -45,8 +44,7 @@ from pytcp.protocols.icmp4.message.icmp4_message__unknown import (
 
 class TestIcmp4MessageUnknownArgAsserts(TestCase):
     """
-    The ICMPv4 unknown message assembler & parser constructors argument
-    assert tests.
+    The ICMPv4 unknown message assembler constructor argument assert tests.
     """
 
     def setUp(self) -> None:

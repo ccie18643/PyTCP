@@ -48,7 +48,7 @@ from pytcp.protocols.ip4.ip4__parser import Ip4Parser
     [
         {
             "_description": (
-                "ICMP4 Echo Request message, the 'ICMP4_HEADER_LEN <= self._ip4_payload_len' "
+                "ICMPv4 Echo Request message, the 'ICMP4_HEADER_LEN <= self._ip4_payload_len' "
                 "condition not met."
             ),
             "_args": {
@@ -67,7 +67,7 @@ from pytcp.protocols.ip4.ip4__parser import Ip4Parser
         },
         {
             "_description": (
-                "ICMP4 Echo Request message, the 'self._ip4_payload_len <= len(self._frame)' "
+                "ICMPv4 Echo Request message, the 'self._ip4_payload_len <= len(self._frame)' "
                 "condition not met."
             ),
             "_args": {
@@ -86,7 +86,7 @@ from pytcp.protocols.ip4.ip4__parser import Ip4Parser
         },
         {
             "_description": (
-                "ICMP4 Echo Request message, the 'ICMP4_ECHO_REQUEST_LEN <= self._ip4_payload_len' "
+                "ICMPv4 Echo Request message, the 'ICMP4_ECHO_REQUEST_LEN <= self._ip4_payload_len' "
                 "condition not met."
             ),
             "_args": {
@@ -104,7 +104,7 @@ from pytcp.protocols.ip4.ip4__parser import Ip4Parser
             },
         },
         {
-            "_description": "ICMP4 Echo Request message, invalid checksum.",
+            "_description": "ICMPv4 Echo Request message, invalid checksum.",
             "_args": {
                 "bytes": b"\x08\x00\x00\x00\x30\x39\xd4\x31",
             },

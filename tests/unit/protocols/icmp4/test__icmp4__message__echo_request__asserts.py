@@ -46,8 +46,8 @@ from pytcp.protocols.ip4.ip4__header import IP4__PAYLOAD__MAX_LEN
 
 class TestIcmp4MessageEchoRequestAsserts(TestCase):
     """
-    The ICMPv4 Echo Request message assembler & parser constructors
-    argument assert tests.
+    The ICMPv4 Echo Request message assembler constructor argument assert
+    tests.
     """
 
     def setUp(self) -> None:
