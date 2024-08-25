@@ -1,35 +1,35 @@
 #!/usr/bin/env python3
 
-############################################################################
-#                                                                          #
-#  PyTCP - Python TCP/IP stack                                             #
-#  Copyright (C) 2020-present Sebastian Majewski                           #
-#                                                                          #
-#  This program is free software: you can redistribute it and/or modify    #
-#  it under the terms of the GNU General Public License as published by    #
-#  the Free Software Foundation, either version 3 of the License, or       #
-#  (at your option) any later version.                                     #
-#                                                                          #
-#  This program is distributed in the hope that it will be useful,         #
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of          #
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the           #
-#  GNU General Public License for more details.                            #
-#                                                                          #
-#  You should have received a copy of the GNU General Public License       #
-#  along with this program.  If not, see <https://www.gnu.org/licenses/>.  #
-#                                                                          #
-#  Author's email: ccie18643@gmail.com                                     #
-#  Github repository: https://github.com/ccie18643/PyTCP                   #
-#                                                                          #
-############################################################################
+################################################################################
+##                                                                            ##
+##   PyTCP - Python TCP/IP stack                                              ##
+##   Copyright (C) 2020-present Sebastian Majewski                            ##
+##                                                                            ##
+##   This program is free software: you can redistribute it and/or modify     ##
+##   it under the terms of the GNU General Public License as published by     ##
+##   the Free Software Foundation, either version 3 of the License, or        ##
+##   (at your option) any later version.                                      ##
+##                                                                            ##
+##   This program is distributed in the hope that it will be useful,          ##
+##   but WITHOUT ANY WARRANTY; without even the implied warranty of           ##
+##   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the             ##
+##   GNU General Public License for more details.                             ##
+##                                                                            ##
+##   You should have received a copy of the GNU General Public License        ##
+##   along with this program. If not, see <https://www.gnu.org/licenses/>.    ##
+##                                                                            ##
+##   Author's email: ccie18643@gmail.com                                      ##
+##   Github repository: https://github.com/ccie18643/PyTCP                    ##
+##                                                                            ##
+################################################################################
 
 
 """
-This module contains the ICMPv6 Destination Unreachable message support class.
+Module contains the ICMPv6 Destination Unreachable message support class.
 
 pytcp/protocols/icmp6/message/icmp6_message__destination_unreachable.py
 
-ver 3.0.0
+ver 3.0.1
 """
 
 
@@ -108,20 +108,23 @@ class Icmp6DestinationUnreachableMessage(Icmp6Message):
         Validate the ICMPv6 Destination Unreachable message fields.
         """
 
-        assert isinstance(
-            self.code, Icmp6DestinationUnreachableCode
-        ), f"The 'code' field must be an Icmp6DestinationUnreachableCode. Got: {type(self.code)!r}"
+        assert isinstance(self.code, Icmp6DestinationUnreachableCode), (
+            f"The 'code' field must be an Icmp6DestinationUnreachableCode. "
+            f"Got: {type(self.code)!r}"
+        )
 
-        assert is_uint16(
-            self.cksum
-        ), f"The 'cksum' field must be a 16-bit unsigned integer. Got: {self.cksum}"
+        assert is_uint16(self.cksum), (
+            f"The 'cksum' field must be a 16-bit unsigned integer. "
+            f"Got: {self.cksum}"
+        )
 
         assert (
             len(self.data)
             <= IP6__PAYLOAD__MAX_LEN - ICMP6__DESTINATION_UNREACHABLE__LEN
         ), (
-            "The 'data' field length must be a 16-bit unsigned integer less than or equal to "
-            f"{IP6__PAYLOAD__MAX_LEN - ICMP6__DESTINATION_UNREACHABLE__LEN}. Got: {len(self.data)}"
+            "The 'data' field length must be a 16-bit unsigned integer less than or "
+            f"equal to {IP6__PAYLOAD__MAX_LEN - ICMP6__DESTINATION_UNREACHABLE__LEN}. "
+            f"Got: {len(self.data)}"
         )
 
         # Hack to bypass the 'frozen=True' dataclass decorator.
@@ -171,10 +174,12 @@ class Icmp6DestinationUnreachableMessage(Icmp6Message):
             + self.data
         )
 
+    @override
     @staticmethod
     def validate_integrity(*, frame: bytes, ip6__dlen: int) -> None:
         """
-        Validate the ICMPv6 Destination Unreachable message integrity before parsing it.
+        Validate the ICMPv6 Destination Unreachable message integrity before
+        parsing it.
         """
 
         if not ICMP6__DESTINATION_UNREACHABLE__LEN <= ip6__dlen <= len(frame):
@@ -199,7 +204,10 @@ class Icmp6DestinationUnreachableMessage(Icmp6Message):
 
         assert (received_type := Icmp6Type.from_int(type)) == (
             valid_type := Icmp6Type.DESTINATION_UNREACHABLE
-        ), f"The 'type' field must be {valid_type!r}. Got: {received_type!r}"
+        ), (
+            f"The 'type' field must be {valid_type!r}. "
+            f"Got: {received_type!r}"
+        )
 
         return Icmp6DestinationUnreachableMessage(
             code=Icmp6DestinationUnreachableCode.from_int(code),

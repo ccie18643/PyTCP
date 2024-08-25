@@ -1,31 +1,31 @@
 #!/usr/bin/env python3
 
-############################################################################
-#                                                                          #
-#  PyTCP - Python TCP/IP stack                                             #
-#  Copyright (C) 2020-present Sebastian Majewski                           #
-#                                                                          #
-#  This program is free software: you can redistribute it and/or modify    #
-#  it under the terms of the GNU General Public License as published by    #
-#  the Free Software Foundation, either version 3 of the License, or       #
-#  (at your option) any later version.                                     #
-#                                                                          #
-#  This program is distributed in the hope that it will be useful,         #
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of          #
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the           #
-#  GNU General Public License for more details.                            #
-#                                                                          #
-#  You should have received a copy of the GNU General Public License       #
-#  along with this program.  If not, see <https://www.gnu.org/licenses/>.  #
-#                                                                          #
-#  Author's email: ccie18643@gmail.com                                     #
-#  Github repository: https://github.com/ccie18643/PyTCP                   #
-#                                                                          #
-############################################################################
+################################################################################
+##                                                                            ##
+##   PyTCP - Python TCP/IP stack                                              ##
+##   Copyright (C) 2020-present Sebastian Majewski                            ##
+##                                                                            ##
+##   This program is free software: you can redistribute it and/or modify     ##
+##   it under the terms of the GNU General Public License as published by     ##
+##   the Free Software Foundation, either version 3 of the License, or        ##
+##   (at your option) any later version.                                      ##
+##                                                                            ##
+##   This program is distributed in the hope that it will be useful,          ##
+##   but WITHOUT ANY WARRANTY; without even the implied warranty of           ##
+##   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the             ##
+##   GNU General Public License for more details.                             ##
+##                                                                            ##
+##   You should have received a copy of the GNU General Public License        ##
+##   along with this program. If not, see <https://www.gnu.org/licenses/>.    ##
+##                                                                            ##
+##   Author's email: ccie18643@gmail.com                                      ##
+##   Github repository: https://github.com/ccie18643/PyTCP                    ##
+##                                                                            ##
+################################################################################
 
 
 """
-This module contains the ICMPv6 packet parser.
+Module contains the ICMPv6 packet parser.
 
 pytcp/protocols/icmp6/icmp6__parser.py
 
@@ -61,31 +61,20 @@ from pytcp.protocols.icmp6.message.icmp6_message__echo_request import (
 from pytcp.protocols.icmp6.message.icmp6_message__unknown import (
     Icmp6UnknownMessage,
 )
-from pytcp.protocols.icmp6.message.mld2.icmp6_mld2__multicast_address_record import (
-    ICMP6__MLD2__MULTICAST_ADDRESS_RECORD__LEN,
-)
 from pytcp.protocols.icmp6.message.mld2.icmp6_mld2_message__report import (
-    ICMP6__MLD2__REPORT__LEN,
     Icmp6Mld2ReportMessage,
 )
 from pytcp.protocols.icmp6.message.nd.icmp6_nd_message__neighbor_advertisement import (
-    ICMP6__ND__NEIGHBOR_ADVERTISEMENT__LEN,
     Icmp6NdNeighborAdvertisementMessage,
 )
 from pytcp.protocols.icmp6.message.nd.icmp6_nd_message__neighbor_solicitation import (
-    ICMP6__ND__NEIGHBOR_SOLICITATION__LEN,
     Icmp6NdNeighborSolicitationMessage,
 )
 from pytcp.protocols.icmp6.message.nd.icmp6_nd_message__router_advertisement import (
-    ICMP6__ND__ROUTER_ADVERTISEMENT__LEN,
     Icmp6NdRouterAdvertisementMessage,
 )
 from pytcp.protocols.icmp6.message.nd.icmp6_nd_message__router_solicitation import (
-    ICMP6__ND__ROUTER_SOLICITATION__LEN,
     Icmp6NdRouterSolicitationMessage,
-)
-from pytcp.protocols.icmp6.message.nd.option.icmp6_nd_options import (
-    Icmp6NdOptions,
 )
 
 if TYPE_CHECKING:
@@ -146,89 +135,29 @@ class Icmp6Parser(Icmp6, ProtoParser):
                 )
 
             case Icmp6Type.ND__ROUTER_SOLICITATION:
-                if (
-                    not ICMP6__ND__ROUTER_SOLICITATION__LEN
-                    <= self._ip6__dlen
-                    <= len(self._frame)
-                ):
-                    raise Icmp6IntegrityError(
-                        "Wrong packet length (II).",
-                    )
-                Icmp6NdOptions.validate_integrity(
-                    frame=self._frame,
-                    offset=ICMP6__ND__ROUTER_SOLICITATION__LEN,
+                Icmp6NdRouterSolicitationMessage.validate_integrity(
+                    frame=self._frame, ip6__dlen=self._ip6__dlen
                 )
 
             case Icmp6Type.ND__ROUTER_ADVERTISEMENT:
-                if (
-                    not ICMP6__ND__ROUTER_ADVERTISEMENT__LEN
-                    <= self._ip6__dlen
-                    <= len(self._frame)
-                ):
-                    raise Icmp6IntegrityError(
-                        "Wrong packet length (II).",
-                    )
-                Icmp6NdOptions.validate_integrity(
-                    frame=self._frame,
-                    offset=ICMP6__ND__ROUTER_ADVERTISEMENT__LEN,
+                Icmp6NdRouterAdvertisementMessage.validate_integrity(
+                    frame=self._frame, ip6__dlen=self._ip6__dlen
                 )
 
             case Icmp6Type.ND__NEIGHBOR_SOLICITATION:
-                if (
-                    not ICMP6__ND__NEIGHBOR_SOLICITATION__LEN
-                    <= self._ip6__dlen
-                    <= len(self._frame)
-                ):
-                    raise Icmp6IntegrityError(
-                        "Wrong packet length (II).",
-                    )
-                Icmp6NdOptions.validate_integrity(
-                    frame=self._frame,
-                    offset=ICMP6__ND__NEIGHBOR_SOLICITATION__LEN,
+                Icmp6NdNeighborSolicitationMessage.validate_integrity(
+                    frame=self._frame, ip6__dlen=self._ip6__dlen
                 )
 
             case Icmp6Type.ND__NEIGHBOR_ADVERTISEMENT:
-                if (
-                    not ICMP6__ND__NEIGHBOR_ADVERTISEMENT__LEN
-                    <= self._ip6__dlen
-                    <= len(self._frame)
-                ):
-                    raise Icmp6IntegrityError(
-                        "Wrong packet length (II).",
-                    )
-                Icmp6NdOptions.validate_integrity(
-                    frame=self._frame,
-                    offset=ICMP6__ND__NEIGHBOR_ADVERTISEMENT__LEN,
+                Icmp6NdNeighborAdvertisementMessage.validate_integrity(
+                    frame=self._frame, ip6__dlen=self._ip6__dlen
                 )
 
             case Icmp6Type.MLD2__REPORT:
-                if (
-                    not ICMP6__MLD2__REPORT__LEN
-                    <= self._ip6__dlen
-                    <= len(self._frame)
-                ):
-                    raise Icmp6IntegrityError(
-                        "Wrong packet length (II).",
-                    )
-                offset = ICMP6__MLD2__REPORT__LEN
-                for _ in range(int.from_bytes(self._frame[6:8])):
-                    if (
-                        offset + ICMP6__MLD2__MULTICAST_ADDRESS_RECORD__LEN
-                        > self._ip6__dlen
-                    ):
-                        raise Icmp6IntegrityError(
-                            "Wrong packet length (III).",
-                        )
-                    offset += (
-                        ICMP6__MLD2__MULTICAST_ADDRESS_RECORD__LEN
-                        + self._frame[offset + 1]
-                        + int.from_bytes(self._frame[offset + 2 : offset + 4])
-                        * 16
-                    )
-                if offset != self._ip6__dlen:
-                    raise Icmp6IntegrityError(
-                        "Wrong packet length (IV).",
-                    )
+                Icmp6Mld2ReportMessage.validate_integrity(
+                    frame=self._frame, ip6__dlen=self._ip6__dlen
+                )
 
             case _:
                 Icmp6UnknownMessage.validate_integrity(

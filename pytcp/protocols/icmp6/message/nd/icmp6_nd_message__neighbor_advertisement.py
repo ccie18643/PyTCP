@@ -1,35 +1,35 @@
 #!/usr/bin/env python3
 
-############################################################################
-#                                                                          #
-#  PyTCP - Python TCP/IP stack                                             #
-#  Copyright (C) 2020-present Sebastian Majewski                           #
-#                                                                          #
-#  This program is free software: you can redistribute it and/or modify    #
-#  it under the terms of the GNU General Public License as published by    #
-#  the Free Software Foundation, either version 3 of the License, or       #
-#  (at your option) any later version.                                     #
-#                                                                          #
-#  This program is distributed in the hope that it will be useful,         #
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of          #
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the           #
-#  GNU General Public License for more details.                            #
-#                                                                          #
-#  You should have received a copy of the GNU General Public License       #
-#  along with this program.  If not, see <https://www.gnu.org/licenses/>.  #
-#                                                                          #
-#  Author's email: ccie18643@gmail.com                                     #
-#  Github repository: https://github.com/ccie18643/PyTCP                   #
-#                                                                          #
-############################################################################
+################################################################################
+##                                                                            ##
+##   PyTCP - Python TCP/IP stack                                              ##
+##   Copyright (C) 2020-present Sebastian Majewski                            ##
+##                                                                            ##
+##   This program is free software: you can redistribute it and/or modify     ##
+##   it under the terms of the GNU General Public License as published by     ##
+##   the Free Software Foundation, either version 3 of the License, or        ##
+##   (at your option) any later version.                                      ##
+##                                                                            ##
+##   This program is distributed in the hope that it will be useful,          ##
+##   but WITHOUT ANY WARRANTY; without even the implied warranty of           ##
+##   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the             ##
+##   GNU General Public License for more details.                             ##
+##                                                                            ##
+##   You should have received a copy of the GNU General Public License        ##
+##   along with this program. If not, see <https://www.gnu.org/licenses/>.    ##
+##                                                                            ##
+##   Author's email: ccie18643@gmail.com                                      ##
+##   Github repository: https://github.com/ccie18643/PyTCP                    ##
+##                                                                            ##
+################################################################################
 
 
 """
-This module contains the ICMPv6 ND Neighbor Advertisement message support class.
+Module contains the ICMPv6 ND Neighbor Advertisement message support class.
 
 pytcp/protocols/icmp6/message/nd/icmp6_nd_message__neighbor_advertisement.py
 
-ver 3.0.0
+ver 3.0.1
 """
 
 
@@ -41,6 +41,7 @@ from typing import override
 
 from pytcp.lib.int_checks import is_uint16
 from pytcp.lib.ip6_address import Ip6Address
+from pytcp.protocols.icmp6.icmp6__errors import Icmp6IntegrityError
 from pytcp.protocols.icmp6.message.icmp6_message import Icmp6Code, Icmp6Type
 from pytcp.protocols.icmp6.message.nd.icmp6_nd_message import Icmp6NdMessage
 from pytcp.protocols.icmp6.message.nd.option.icmp6_nd_options import (
@@ -107,33 +108,40 @@ class Icmp6NdNeighborAdvertisementMessage(Icmp6NdMessage):
         Validate the ICMPv6 ND Neighbor Advertisement message fields.
         """
 
-        assert isinstance(
-            self.code, Icmp6NdNeighborAdvertisementCode
-        ), f"The 'code' field must be an Icmp6NdNeighborAdvertisementCode. Got: {type(self.code)!r}"
+        assert isinstance(self.code, Icmp6NdNeighborAdvertisementCode), (
+            f"The 'code' field must be an Icmp6NdNeighborAdvertisementCode. "
+            f"Got: {type(self.code)!r}"
+        )
 
-        assert is_uint16(
-            self.cksum
-        ), f"The 'cksum' field must be a 16-bit unsigned integer. Got: {self.cksum!r}"
+        assert is_uint16(self.cksum), (
+            f"The 'cksum' field must be a 16-bit unsigned integer. "
+            f"Got: {self.cksum!r}"
+        )
 
-        assert isinstance(
-            self.flag_r, bool
-        ), f"The 'flag_r' field must be a boolean. Got: {type(self.flag_r)!r}"
+        assert isinstance(self.flag_r, bool), (
+            f"The 'flag_r' field must be a boolean. "
+            f"Got: {type(self.flag_r)!r}"
+        )
 
-        assert isinstance(
-            self.flag_s, bool
-        ), f"The 'flag_s' field must be a boolean. Got: {type(self.flag_s)!r}"
+        assert isinstance(self.flag_s, bool), (
+            f"The 'flag_s' field must be a boolean. "
+            f"Got: {type(self.flag_s)!r}"
+        )
 
-        assert isinstance(
-            self.flag_o, bool
-        ), f"The 'flag_o' field must be a boolean. Got: {type(self.flag_o)!r}"
+        assert isinstance(self.flag_o, bool), (
+            f"The 'flag_o' field must be a boolean. "
+            f"Got: {type(self.flag_o)!r}"
+        )
 
-        assert isinstance(
-            self.target_address, Ip6Address
-        ), f"The 'target_address' field must be an Ip6Address. Got: {type(self.target_address)!r}"
+        assert isinstance(self.target_address, Ip6Address), (
+            f"The 'target_address' field must be an Ip6Address. "
+            f"Got: {type(self.target_address)!r}"
+        )
 
-        assert isinstance(
-            self.options, Icmp6NdOptions
-        ), f"The 'options' field must be an Icmp6NdOptions. Got: {type(self.options)!r}"
+        assert isinstance(self.options, Icmp6NdOptions), (
+            f"The 'options' field must be an Icmp6NdOptions. "
+            f"Got: {type(self.options)!r}"
+        )
 
     @override
     def __len__(self) -> int:
@@ -155,7 +163,8 @@ class Icmp6NdNeighborAdvertisementMessage(Icmp6NdMessage):
             f"{'S' if self.flag_s else '-'}"
             f"{'O' if self.flag_o else '-'}, "
             f"target {self.target_address}, opts [{self.options}], "
-            f"len {len(self)} ({ICMP6__ND__NEIGHBOR_ADVERTISEMENT__LEN}+{len(self.options)})"
+            f"len {len(self)} ({ICMP6__ND__NEIGHBOR_ADVERTISEMENT__LEN}+"
+            f"{len(self.options)})"
         )
 
     @override
@@ -175,6 +184,30 @@ class Icmp6NdNeighborAdvertisementMessage(Icmp6NdMessage):
 
     @override
     @staticmethod
+    def validate_integrity(*, frame: bytes, ip6__dlen: int) -> None:
+        """
+        Validate integrity of the ICMPv6 ND Neighbor Advertisement message
+        before parsing it.
+        """
+
+        if (
+            not ICMP6__ND__NEIGHBOR_ADVERTISEMENT__LEN
+            <= ip6__dlen
+            <= len(frame)
+        ):
+            raise Icmp6IntegrityError(
+                "The condition 'ICMP6__ND__NEIGHBOR_ADVERTISEMENT__LEN <= ip6__dlen "
+                f"<= len(frame)' is not met. Got: {ICMP6__ND__NEIGHBOR_ADVERTISEMENT__LEN=}, "
+                f"{ip6__dlen=}, {len(frame)=}"
+            )
+
+        Icmp6NdOptions.validate_integrity(
+            frame=frame,
+            offset=ICMP6__ND__NEIGHBOR_ADVERTISEMENT__LEN,
+        )
+
+    @override
+    @staticmethod
     def from_bytes(_bytes: bytes) -> Icmp6NdNeighborAdvertisementMessage:
         """
         Initialize the ICMPv6 ND Neighbor Advertisement message from bytes.
@@ -187,7 +220,10 @@ class Icmp6NdNeighborAdvertisementMessage(Icmp6NdMessage):
 
         assert (received_type := Icmp6Type.from_int(type)) == (
             valid_type := Icmp6Type.ND__NEIGHBOR_ADVERTISEMENT
-        ), f"The 'type' field must be {valid_type!r}. Got: {received_type!r}"
+        ), (
+            f"The 'type' field must be {valid_type!r}. "
+            f"Got: {received_type!r}"
+        )
 
         return Icmp6NdNeighborAdvertisementMessage(
             code=Icmp6NdNeighborAdvertisementCode(code),

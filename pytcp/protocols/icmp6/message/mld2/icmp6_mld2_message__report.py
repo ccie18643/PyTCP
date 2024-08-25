@@ -1,35 +1,35 @@
 #!/usr/bin/env python3
 
-############################################################################
-#                                                                          #
-#  PyTCP - Python TCP/IP stack                                             #
-#  Copyright (C) 2020-present Sebastian Majewski                           #
-#                                                                          #
-#  This program is free software: you can redistribute it and/or modify    #
-#  it under the terms of the GNU General Public License as published by    #
-#  the Free Software Foundation, either version 3 of the License, or       #
-#  (at your option) any later version.                                     #
-#                                                                          #
-#  This program is distributed in the hope that it will be useful,         #
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of          #
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the           #
-#  GNU General Public License for more details.                            #
-#                                                                          #
-#  You should have received a copy of the GNU General Public License       #
-#  along with this program.  If not, see <https://www.gnu.org/licenses/>.  #
-#                                                                          #
-#  Author's email: ccie18643@gmail.com                                     #
-#  Github repository: https://github.com/ccie18643/PyTCP                   #
-#                                                                          #
-############################################################################
+################################################################################
+##                                                                            ##
+##   PyTCP - Python TCP/IP stack                                              ##
+##   Copyright (C) 2020-present Sebastian Majewski                            ##
+##                                                                            ##
+##   This program is free software: you can redistribute it and/or modify     ##
+##   it under the terms of the GNU General Public License as published by     ##
+##   the Free Software Foundation, either version 3 of the License, or        ##
+##   (at your option) any later version.                                      ##
+##                                                                            ##
+##   This program is distributed in the hope that it will be useful,          ##
+##   but WITHOUT ANY WARRANTY; without even the implied warranty of           ##
+##   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the             ##
+##   GNU General Public License for more details.                             ##
+##                                                                            ##
+##   You should have received a copy of the GNU General Public License        ##
+##   along with this program. If not, see <https://www.gnu.org/licenses/>.    ##
+##                                                                            ##
+##   Author's email: ccie18643@gmail.com                                      ##
+##   Github repository: https://github.com/ccie18643/PyTCP                    ##
+##                                                                            ##
+################################################################################
 
 
 """
-This Module contains the ICMPv6 MLDv2 Report message support class.
+Module contains the ICMPv6 MLDv2 Report message support class.
 
 pytcp/protocols/icmp6/message/mld2/icmp6_mld2_message__report.py
 
-ver 3.0.0
+ver 3.0.1
 """
 
 
@@ -40,12 +40,14 @@ from dataclasses import dataclass, field
 from typing import override
 
 from pytcp.lib.int_checks import is_uint16
+from pytcp.protocols.icmp6.icmp6__errors import Icmp6IntegrityError
 from pytcp.protocols.icmp6.message.icmp6_message import (
     Icmp6Code,
     Icmp6Message,
     Icmp6Type,
 )
 from pytcp.protocols.icmp6.message.mld2.icmp6_mld2__multicast_address_record import (
+    ICMP6__MLD2__MULTICAST_ADDRESS_RECORD__LEN,
     Icmp6Mld2MulticastAddressRecord,
 )
 from pytcp.protocols.ip6.ip6__header import IP6__PAYLOAD__MAX_LEN
@@ -109,17 +111,22 @@ class Icmp6Mld2ReportMessage(Icmp6Message):
         Validate the ICMPv6 MLDv2 message fields.
         """
 
-        assert isinstance(
-            self.code, Icmp6Mld2ReportCode
-        ), f"The 'code' field must be an Icmp6Mld2ReportCode. Got: {type(self.code)!r}"
+        assert isinstance(self.code, Icmp6Mld2ReportCode), (
+            f"The 'code' field must be an Icmp6Mld2ReportCode. "
+            f"Got: {type(self.code)!r}"
+        )
 
-        assert is_uint16(
-            self.cksum
-        ), f"The 'cksum' field must be a 16-bit unsigned integer. Got: {self.cksum}"
+        assert is_uint16(self.cksum), (
+            f"The 'cksum' field must be a 16-bit unsigned integer. "
+            f"Got: {self.cksum}"
+        )
 
         assert (records_len := sum(len(record) for record in self.records)) <= (
             records_len_max := IP6__PAYLOAD__MAX_LEN - ICMP6__MLD2__REPORT__LEN
-        ), f"The 'records' field length must be less than or equal to {records_len_max}. Got: {records_len}"
+        ), (
+            f"The 'records' field length must be less than or equal to {records_len_max}. "
+            f"Got: {records_len}"
+        )
 
     @override
     def __len__(self) -> int:
@@ -169,6 +176,46 @@ class Icmp6Mld2ReportMessage(Icmp6Message):
 
     @override
     @staticmethod
+    def validate_integrity(*, frame: bytes, ip6__dlen: int) -> None:
+        """
+        Validate integrity of the ICMPv6 MLDv2 Report message before
+        parsing it.
+        """
+
+        if not (ICMP6__MLD2__REPORT__LEN <= ip6__dlen <= len(frame)):
+            raise Icmp6IntegrityError(
+                "The condition 'ICMP6__MLD2__REPORT__LEN <= ip6__dlen "
+                f"<= len(frame)' is not met. Got: {ICMP6__MLD2__REPORT__LEN=}, "
+                f"{ip6__dlen=}, {len(frame)=}"
+            )
+
+        record_offset = ICMP6__MLD2__REPORT__LEN
+        for _ in range(int.from_bytes(frame[6:8])):
+            if not (
+                record_offset + ICMP6__MLD2__MULTICAST_ADDRESS_RECORD__LEN
+                <= ip6__dlen
+            ):
+                raise Icmp6IntegrityError(
+                    "The condition 'record_offset + ICMP6__MLD2__MULTICAST_ADDRESS_"
+                    f"RECORD__LEN <= ip6__dlen' is not met. Got: {record_offset=}, "
+                    f"{ICMP6__MLD2__MULTICAST_ADDRESS_RECORD__LEN=}, {ip6__dlen=}"
+                )
+
+            record_offset += (
+                ICMP6__MLD2__MULTICAST_ADDRESS_RECORD__LEN
+                + frame[record_offset + 1]
+                + int.from_bytes(frame[record_offset + 2 : record_offset + 4])
+                * 16
+            )
+
+        if not (record_offset == ip6__dlen):
+            raise Icmp6IntegrityError(
+                "The condition 'record_offset == ip6__dlen' is not met. "
+                f"Got: {record_offset=}, {ip6__dlen=}"
+            )
+
+    @override
+    @staticmethod
     def from_bytes(_bytes: bytes) -> Icmp6Mld2ReportMessage:
         """
         Initialize the ICMPv6 MLDv2 Report message from bytes.
@@ -181,7 +228,10 @@ class Icmp6Mld2ReportMessage(Icmp6Message):
 
         assert (received_type := Icmp6Type.from_int(type)) == (
             valid_type := Icmp6Type.MLD2__REPORT
-        ), f"The 'type' field must be {valid_type!r}. Got: {received_type!r}"
+        ), (
+            f"The 'type' field must be {valid_type!r}. "
+            f"Got: {received_type!r}"
+        )
 
         records: list[Icmp6Mld2MulticastAddressRecord] = []
         for _ in range(number_of_records):
