@@ -152,7 +152,7 @@ class Icmp6NdRouterSolicitationMessage(Icmp6NdMessage):
         before parsing it.
         """
 
-        if not ICMP6__ND__ROUTER_SOLICITATION__LEN <= ip6__dlen <= len(frame):
+        if not (ICMP6__ND__ROUTER_SOLICITATION__LEN <= ip6__dlen <= len(frame)):
             raise Icmp6IntegrityError(
                 "The condition 'ICMP6__ND__ROUTER_SOLICITATION__LEN <= ip6__dlen "
                 f"<= len(frame)' is not met. Got: {ICMP6__ND__ROUTER_SOLICITATION__LEN=}, "

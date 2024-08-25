@@ -172,7 +172,7 @@ class Icmp6EchoReplyMessage(Icmp6Message):
         Validate integrity of the ICMPv6 Echo Reply message before parsing it.
         """
 
-        if not ICMP6__ECHO_REPLY__LEN <= ip6__dlen <= len(frame):
+        if not (ICMP6__ECHO_REPLY__LEN <= ip6__dlen <= len(frame)):
             raise Icmp6IntegrityError(
                 "The condition 'ICMP6__ECHO_REPLY__LEN <= ip6__dlen <= "
                 f"len(frame)' must be met. Got: {ICMP6__ECHO_REPLY__LEN=}, "

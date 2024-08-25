@@ -239,8 +239,8 @@ class Icmp4DestinationUnreachableMessage(Icmp4Message):
         Validate the ICMPv4 Destination Unreachable message integrity before parsing it.
         """
 
-        if (
-            not ICMP4__DESTINATION_UNREACHABLE__LEN
+        if not (
+            ICMP4__DESTINATION_UNREACHABLE__LEN
             <= ip4__payload_len
             <= len(frame)
         ):

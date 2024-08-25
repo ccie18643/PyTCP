@@ -182,7 +182,7 @@ class Icmp6DestinationUnreachableMessage(Icmp6Message):
         parsing it.
         """
 
-        if not ICMP6__DESTINATION_UNREACHABLE__LEN <= ip6__dlen <= len(frame):
+        if not (ICMP6__DESTINATION_UNREACHABLE__LEN <= ip6__dlen <= len(frame)):
             raise Icmp4IntegrityError(
                 "The condition 'ICMP6__DESTINATION_UNREACHABLE__LEN <= "
                 "ip4__dlen <= len(frame)' must be met. Got: "

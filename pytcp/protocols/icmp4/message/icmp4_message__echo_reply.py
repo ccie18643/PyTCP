@@ -171,7 +171,7 @@ class Icmp4EchoReplyMessage(Icmp4Message):
         Validate integrity of the ICMPv4 Echo Reply message before parsing it.
         """
 
-        if not ICMP4__ECHO_REPLY__LEN <= ip4__payload_len <= len(frame):
+        if not (ICMP4__ECHO_REPLY__LEN <= ip4__payload_len <= len(frame)):
             raise Icmp4IntegrityError(
                 "The condition 'ICMP4__ECHO_REPLY__LEN <= ip4__payload_len <= "
                 f"len(frame)' must be met. Got: {ICMP4__ECHO_REPLY__LEN=}, "

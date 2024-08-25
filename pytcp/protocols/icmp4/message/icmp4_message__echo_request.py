@@ -167,7 +167,7 @@ class Icmp4EchoRequestMessage(Icmp4Message):
         Validate the integrity of the ICMPv4 Echo Request message before parsing it.
         """
 
-        if not ICMP4__ECHO_REQUEST__LEN <= ip4__payload_len <= len(frame):
+        if not (ICMP4__ECHO_REQUEST__LEN <= ip4__payload_len <= len(frame)):
             raise ValueError(
                 "The condition 'ICMP4__ECHO_REQUEST__LEN <= ip4__payload_len <= "
                 f"len(frame)' must be met. Got: {ICMP4__ECHO_REQUEST__LEN=}, "

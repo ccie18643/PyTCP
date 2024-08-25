@@ -81,4 +81,5 @@ disable = """
     multiple-statements,
     invalid-name,
     redefined-builtin,
+    superfluous-parens,
 """

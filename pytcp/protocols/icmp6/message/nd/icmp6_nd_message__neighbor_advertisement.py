@@ -190,10 +190,8 @@ class Icmp6NdNeighborAdvertisementMessage(Icmp6NdMessage):
         before parsing it.
         """
 
-        if (
-            not ICMP6__ND__NEIGHBOR_ADVERTISEMENT__LEN
-            <= ip6__dlen
-            <= len(frame)
+        if not (
+            ICMP6__ND__NEIGHBOR_ADVERTISEMENT__LEN <= ip6__dlen <= len(frame)
         ):
             raise Icmp6IntegrityError(
                 "The condition 'ICMP6__ND__NEIGHBOR_ADVERTISEMENT__LEN <= ip6__dlen "
