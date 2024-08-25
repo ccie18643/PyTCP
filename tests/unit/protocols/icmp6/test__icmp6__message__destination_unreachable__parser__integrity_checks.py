@@ -50,8 +50,8 @@ from pytcp.protocols.ip6.ip6__parser import Ip6Parser
     [
         {
             "_description": (
-                "ICMPv6 Destination Unreachable message, the 'ICMP6_HEADER_LEN <= self._ip6_payload_len' "
-                "condition not met."
+                "ICMPv6 Destination Unreachable message, "
+                "the 'ICMP6_HEADER_LEN <= self._ip6_payload_len' condition not met."
             ),
             "_args": {
                 "bytes": b"\x01\x00\xfb",
@@ -69,8 +69,8 @@ from pytcp.protocols.ip6.ip6__parser import Ip6Parser
         },
         {
             "_description": (
-                "ICMPv6 Destination Unreachable message, the 'self._ip6__dlen <= len(self._frame)' "
-                "condition not met."
+                "ICMPv6 Destination Unreachable message, "
+                "the 'self._ip6__dlen <= len(self._frame)' condition not met."
             ),
             "_args": {
                 "bytes": b"\x01\x00\xfb\x94\x30\x39\xd4",

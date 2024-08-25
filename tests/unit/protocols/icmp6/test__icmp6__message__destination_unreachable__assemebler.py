@@ -347,8 +347,8 @@ class TestIcmp6MessageDestinationUnreachableAssembler(TestCase):
         self,
     ) -> None:
         """
-        Ensure the ICMPv6 Destination Unreachable message 'type' property
-        returns a correct value.
+        Ensure the ICMPv6 Destination Unreachable message 'type' field
+        contains a correct value.
         """
 
         self.assertEqual(
@@ -360,8 +360,8 @@ class TestIcmp6MessageDestinationUnreachableAssembler(TestCase):
         self,
     ) -> None:
         """
-        Ensure the ICMPv6 Destination Unreachable message 'code' property
-        returns a correct value.
+        Ensure the ICMPv6 Destination Unreachable message 'code' field
+        contains a correct value.
         """
 
         self.assertEqual(
@@ -373,8 +373,8 @@ class TestIcmp6MessageDestinationUnreachableAssembler(TestCase):
         self,
     ) -> None:
         """
-        Ensure the ICMPv6 Destination Unreachable message 'cksum' property
-        returns a correct value.
+        Ensure the ICMPv6 Destination Unreachable message 'cksum' field
+        contains a correct value.
         """
 
         self.assertEqual(
@@ -386,8 +386,8 @@ class TestIcmp6MessageDestinationUnreachableAssembler(TestCase):
         self,
     ) -> None:
         """
-        Ensure the ICMPv6 Destination Unreachable message 'data' property
-        returns a correct value.
+        Ensure the ICMPv6 Destination Unreachable message 'data' field
+        contains a correct value.
         """
 
         self.assertEqual(
