@@ -25,7 +25,7 @@
 
 
 """
-This module contains tests for the TCP Sackperm (SACK Permitted) option code.
+Module contains tests for the TCP Sackperm (SACK Permitted) option code.
 
 tests/unit/protocols/tcp/test__tcp__option__sackperm.py
 
@@ -133,7 +133,7 @@ class TestTcpOptionSackpermAssembler(TestCase):
 
     def test__tcp__option__sackperm__type(self) -> None:
         """
-        Ensure the TCP Sackperm option 'type' field returns a correct value.
+        Ensure the TCP Sackperm option 'type' field contains a correct value.
         """
 
         self.assertEqual(
@@ -143,7 +143,7 @@ class TestTcpOptionSackpermAssembler(TestCase):
 
     def test__tcp__option__sackperm__lenght(self) -> None:
         """
-        Ensure the TCP Sackperm option 'len' field returns a correct value.
+        Ensure the TCP Sackperm option 'len' field contains a correct value.
         """
 
         self.assertEqual(

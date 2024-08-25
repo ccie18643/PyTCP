@@ -25,7 +25,7 @@
 
 
 """
-This module contains tests for the TCP Wscale (Window Scale) option code.
+Module contains tests for the TCP Wscale (Window Scale) option code.
 
 tests/unit/protocols/tcp/test__tcp__option__wscale.py
 
@@ -175,7 +175,7 @@ class TestTcpOptionWscaleAssembler(TestCase):
 
     def test__tcp__option__wscale__wscale(self) -> None:
         """
-        Ensure the TCP Wscale option 'wscale' field returns a correct value.
+        Ensure the TCP Wscale option 'wscale' field contains a correct value.
         """
 
         self.assertEqual(

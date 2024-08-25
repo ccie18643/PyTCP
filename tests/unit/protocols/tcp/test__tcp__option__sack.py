@@ -25,7 +25,7 @@
 
 
 """
-This module contains tests for the TCP Sack (Selective ACK) option code.
+Module contains tests for the TCP Sack (Selective ACK) option code.
 
 tests/unit/protocols/tcp/test__tcp__option__sack.py
 
@@ -245,7 +245,7 @@ class TestTcpOptionSackAssembler(TestCase):
 
     def test__tcp__option__sack__blocks(self) -> None:
         """
-        Ensure the TCP Sack option 'blocks' field returns a correct value.
+        Ensure the TCP Sack option 'blocks' field contains a correct value.
         """
 
         self.assertEqual(
@@ -255,7 +255,7 @@ class TestTcpOptionSackAssembler(TestCase):
 
     def test__tcp__option__sack__type(self) -> None:
         """
-        Ensure the TCP Sack option 'type' field returns a correct value.
+        Ensure the TCP Sack option 'type' field contains a correct value.
         """
 
         self.assertEqual(
@@ -265,7 +265,7 @@ class TestTcpOptionSackAssembler(TestCase):
 
     def test__tcp__option__sack__length(self) -> None:
         """
-        Ensure the TCP Sack option 'len' field returns a correct value.
+        Ensure the TCP Sack option 'len' field contains a correct value.
         """
 
         self.assertEqual(

@@ -25,7 +25,7 @@
 
 
 """
-This module contains tests for the TCP Mss (Maximum Segment Size) option code.
+Module contains tests for the TCP Mss (Maximum Segment Size) option code.
 
 tests/unit/protocols/tcp/test__tcp__option__mss.py
 
@@ -175,7 +175,7 @@ class TestTcpOptionMssAssembler(TestCase):
 
     def test__tcp__option__mss__mss(self) -> None:
         """
-        Ensure the TCP Mss option 'mss' field returns a correct value.
+        Ensure the TCP Mss option 'mss' field contains a correct value.
         """
 
         self.assertEqual(
@@ -185,7 +185,7 @@ class TestTcpOptionMssAssembler(TestCase):
 
     def test__tcp__option__mss__type(self) -> None:
         """
-        Ensure the TCP Mss option 'type' field returns a correct value.
+        Ensure the TCP Mss option 'type' field contains a correct value.
         """
 
         self.assertEqual(
@@ -195,7 +195,7 @@ class TestTcpOptionMssAssembler(TestCase):
 
     def test__tcp__option__mss__length(self) -> None:
         """
-        Ensure the TCP Mss option 'len' field returns a correct value.
+        Ensure the TCP Mss option 'len' field contains a correct value.
         """
 
         self.assertEqual(

@@ -25,7 +25,7 @@
 
 
 """
-This module contains tests for the unknown IPv4 option code.
+Module contains tests for the unknown IPv4 option code.
 
 tests/unit/protocols/tcp/test__ip4__option__unknown.py
 
@@ -245,7 +245,7 @@ class TestIp4OptionUnknownAssembler(TestCase):
 
     def test__ip4__option__unknonwn__type(self) -> None:
         """
-        Ensure the unknown IPv4 option 'type' field returns a correct value.
+        Ensure the unknown IPv4 option 'type' field contains a correct value.
         """
 
         self.assertEqual(
@@ -255,7 +255,7 @@ class TestIp4OptionUnknownAssembler(TestCase):
 
     def test__ip4__option__unknonwn__len(self) -> None:
         """
-        Ensure the unknown IPv4 option 'len' field returns a correct value.
+        Ensure the unknown IPv4 option 'len' field contains a correct value.
         """
 
         self.assertEqual(
@@ -265,7 +265,7 @@ class TestIp4OptionUnknownAssembler(TestCase):
 
     def test__ip4__option__unknonwn__data(self) -> None:
         """
-        Ensure the unknown IPv4 option 'data' field returns a correct value.
+        Ensure the unknown IPv4 option 'data' field contains a correct value.
         """
 
         self.assertEqual(

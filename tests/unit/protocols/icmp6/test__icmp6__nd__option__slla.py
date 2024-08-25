@@ -25,8 +25,8 @@
 
 
 """
-This module contains tests for the ICMPv6 ND Slla (Source Link Layer Address)
-option code.
+Module contains tests for the ICMPv6 ND Slla (Source Link Layer Address) option
+code.
 
 tests/unit/protocols/icmp6/test__icmp6__nd__option__slla.py
 
@@ -163,7 +163,7 @@ class TestIcmp6NdOptionSllaAssembler(TestCase):
 
     def test__icmp6__nd__option__slla__type(self) -> None:
         """
-        Ensure the ICMPv6 ND Slla option 'type' field returns a correct value.
+        Ensure the ICMPv6 ND Slla option 'type' field contains a correct value.
         """
 
         self.assertEqual(
@@ -173,7 +173,7 @@ class TestIcmp6NdOptionSllaAssembler(TestCase):
 
     def test__icmp6__nd__option__slla__length(self) -> None:
         """
-        Ensure the ICMPv6 ND Slla option 'len' field returns a correct value.
+        Ensure the ICMPv6 ND Slla option 'len' field contains a correct value.
         """
 
         self.assertEqual(
@@ -183,7 +183,7 @@ class TestIcmp6NdOptionSllaAssembler(TestCase):
 
     def test__icmp6__nd__option__slla__slla(self) -> None:
         """
-        Ensure the ICMPv6 ND Slla option 'slla' field returns a correct value.
+        Ensure the ICMPv6 ND Slla option 'slla' field contains a correct value.
         """
 
         self.assertEqual(

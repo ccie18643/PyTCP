@@ -25,7 +25,7 @@
 
 
 """
-This module contains tests for the ICMPv6 ND options support code.
+Module contains tests for the ICMPv6 ND options support code.
 
 tests/unit/protocols/icmp6/test__icmp6__nd__options.py
 

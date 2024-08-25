@@ -25,7 +25,7 @@
 
 
 """
-This module contains tests for the TCP Nop (No Operation) option code.
+Module contains tests for the TCP Nop (No Operation) option code.
 
 tests/unit/protocols/tcp/test__tcp__option__nop.py
 
@@ -132,7 +132,7 @@ class TestTcpOptionNopAssembler(TestCase):
 
     def test__tcp__option__nop__type(self) -> None:
         """
-        Ensure the TCP Nop option 'type' field returns a correct value.
+        Ensure the TCP Nop option 'type' field contains a correct value.
         """
 
         self.assertEqual(
@@ -142,7 +142,7 @@ class TestTcpOptionNopAssembler(TestCase):
 
     def test__tcp__option__nop__length(self) -> None:
         """
-        Ensure the TCP Nop option 'len' field returns a correct value.
+        Ensure the TCP Nop option 'len' field contains a correct value.
         """
 
         self.assertEqual(

@@ -25,7 +25,7 @@
 
 
 """
-This module contains tests for the TCP Eol (End of Option List) option code.
+Module contains tests for the TCP Eol (End of Option List) option code.
 
 tests/unit/protocols/tcp/test__tcp__option__eol.py
 
@@ -132,7 +132,7 @@ class TestTcpOptionEolAssembler(TestCase):
 
     def test__tcp__option__eol__type(self) -> None:
         """
-        Ensure the TCP Eol option 'type' field returns a correct value.
+        Ensure the TCP Eol option 'type' field contains a correct value.
         """
 
         self.assertEqual(
@@ -142,7 +142,7 @@ class TestTcpOptionEolAssembler(TestCase):
 
     def test__tcp__option__eol__length(self) -> None:
         """
-        Ensure the TCP Eol option 'len' field returns a correct value.
+        Ensure the TCP Eol option 'len' field contains a correct value.
         """
 
         self.assertEqual(

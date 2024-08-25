@@ -25,8 +25,7 @@
 
 
 """
-This module contains tests for the ICMPv6 ND Pi (Prefix Information) option
-code.
+Module contains tests for the ICMPv6 ND Pi (Prefix Information) option code.
 
 tests/unit/protocols/icmp6/test__icmp6__nd__option__pi.py
 
@@ -337,7 +336,7 @@ class TestIcmp6NdOptionPiAssembler(TestCase):
 
     def test__icmp6__nd__option__pi__flag_l(self) -> None:
         """
-        Ensure the ICMPv6 ND Pi option 'flag_l' field returns a correct
+        Ensure the ICMPv6 ND Pi option 'flag_l' field contains a correct
         value.
         """
 
@@ -348,7 +347,7 @@ class TestIcmp6NdOptionPiAssembler(TestCase):
 
     def test__icmp6__nd__option__pi__flag_a(self) -> None:
         """
-        Ensure the ICMPv6 ND Pi option 'flag_a' field returns a correct
+        Ensure the ICMPv6 ND Pi option 'flag_a' field contains a correct
         value.
         """
 
@@ -359,7 +358,7 @@ class TestIcmp6NdOptionPiAssembler(TestCase):
 
     def test__icmp6__nd__option__pi__flag_r(self) -> None:
         """
-        Ensure the ICMPv6 ND Pi option 'flag_r' field returns a correct
+        Ensure the ICMPv6 ND Pi option 'flag_r' field contains a correct
         value.
         """
 
@@ -370,7 +369,7 @@ class TestIcmp6NdOptionPiAssembler(TestCase):
 
     def test__icmp6__nd__option__pi__valid_lifetime(self) -> None:
         """
-        Ensure the ICMPv6 ND Pi option 'valid_lifetime' field returns
+        Ensure the ICMPv6 ND Pi option 'valid_lifetime' field contains
         a correct value.
         """
 
@@ -381,7 +380,7 @@ class TestIcmp6NdOptionPiAssembler(TestCase):
 
     def test__icmp6__nd__option__pi__preferred_lifetime(self) -> None:
         """
-        Ensure the ICMPv6 ND Pi option 'preferred_lifetime' field returns
+        Ensure the ICMPv6 ND Pi option 'preferred_lifetime' field contains
         a correct value.
         """
 
@@ -392,7 +391,7 @@ class TestIcmp6NdOptionPiAssembler(TestCase):
 
     def test__icmp6__nd__option__pi__prefix(self) -> None:
         """
-        Ensure the ICMPv6 ND Pi option 'prefix' field returns a correct
+        Ensure the ICMPv6 ND Pi option 'prefix' field contains a correct
         value.
         """
 

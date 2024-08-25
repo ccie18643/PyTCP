@@ -25,8 +25,8 @@
 
 
 """
-This module contains tests for the ICMPv6 ND Tlla (Target Link Layer Address)
-option code.
+Module contains tests for the ICMPv6 ND Tlla (Target Link Layer Address) option
+code.
 
 tests/unit/protocols/icmp6/test__icmp6__nd__option__tlla.py
 
@@ -163,7 +163,7 @@ class TestIcmp6NdOptionTllaAssembler(TestCase):
 
     def test__icmp6__nd__option__tlla__type(self) -> None:
         """
-        Ensure the ICMPv6 ND Tlla option 'type' field returns a correct value.
+        Ensure the ICMPv6 ND Tlla option 'type' field contains a correct value.
         """
 
         self.assertEqual(
@@ -173,7 +173,7 @@ class TestIcmp6NdOptionTllaAssembler(TestCase):
 
     def test__icmp6__nd__option__tlla__length(self) -> None:
         """
-        Ensure the ICMPv6 ND Tlla option 'len' field returns a correct value.
+        Ensure the ICMPv6 ND Tlla option 'len' field contains a correct value.
         """
 
         self.assertEqual(
@@ -183,7 +183,7 @@ class TestIcmp6NdOptionTllaAssembler(TestCase):
 
     def test__icmp6__nd__option__tlla__tlla(self) -> None:
         """
-        Ensure the ICMPv6 ND Tlla option 'tlla' field returns a correct value.
+        Ensure the ICMPv6 ND Tlla option 'tlla' field contains a correct value.
         """
 
         self.assertEqual(

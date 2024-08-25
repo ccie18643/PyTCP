@@ -25,7 +25,7 @@
 
 
 """
-This module contains tests for the unknown TCP option code.
+Module contains tests for the unknown TCP option code.
 
 tests/unit/protocols/tcp/test__tcp__option__unknown.py
 
@@ -245,7 +245,7 @@ class TestTcpOptionUnknownAssembler(TestCase):
 
     def test__tcp_option_unknonwn__type(self) -> None:
         """
-        Ensure the unknown TCP option 'type' field returns a correct value.
+        Ensure the unknown TCP option 'type' field contains a correct value.
         """
 
         self.assertEqual(
@@ -255,7 +255,7 @@ class TestTcpOptionUnknownAssembler(TestCase):
 
     def test__tcp_option_unknonwn__len(self) -> None:
         """
-        Ensure the unknown TCP option 'len' field returns a correct value.
+        Ensure the unknown TCP option 'len' field contains a correct value.
         """
 
         self.assertEqual(
@@ -265,7 +265,7 @@ class TestTcpOptionUnknownAssembler(TestCase):
 
     def test__tcp_option_unknonwn__data(self) -> None:
         """
-        Ensure the unknown TCP option 'data' field returns a correct value.
+        Ensure the unknown TCP option 'data' field contains a correct value.
         """
 
         self.assertEqual(

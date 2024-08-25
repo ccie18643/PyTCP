@@ -25,7 +25,7 @@
 
 
 """
-This module contains tests for the IPv4 Nop (No Operation) option code.
+Module contains tests for the IPv4 Nop (No Operation) option code.
 
 tests/unit/protocols/ip4/test__ip4__option__nop.py
 
@@ -132,7 +132,7 @@ class TestIp4OptionNopAssembler(TestCase):
 
     def test__ip4__option__nop__type(self) -> None:
         """
-        Ensure the IPv4 Nop option 'type' field returns a correct value.
+        Ensure the IPv4 Nop option 'type' field contains a correct value.
         """
 
         self.assertEqual(
@@ -142,7 +142,7 @@ class TestIp4OptionNopAssembler(TestCase):
 
     def test__ip4__option__nop__lenght(self) -> None:
         """
-        Ensure the IPv4 Nop option 'len' field returns a correct value.
+        Ensure the IPv4 Nop option 'len' field contains a correct value.
         """
 
         self.assertEqual(

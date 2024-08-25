@@ -1,35 +1,35 @@
 #!/usr/bin/env python3
 
-############################################################################
-#                                                                          #
-#  PyTCP - Python TCP/IP stack                                             #
-#  Copyright (C) 2020-present Sebastian Majewski                           #
-#                                                                          #
-#  This program is free software: you can redistribute it and/or modify    #
-#  it under the terms of the GNU General Public License as published by    #
-#  the Free Software Foundation, either version 3 of the License, or       #
-#  (at your option) any later version.                                     #
-#                                                                          #
-#  This program is distributed in the hope that it will be useful,         #
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of          #
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the           #
-#  GNU General Public License for more details.                            #
-#                                                                          #
-#  You should have received a copy of the GNU General Public License       #
-#  along with this program.  If not, see <https://www.gnu.org/licenses/>.  #
-#                                                                          #
-#  Author's email: ccie18643@gmail.com                                     #
-#  Github repository: https://github.com/ccie18643/PyTCP                   #
-#                                                                          #
-############################################################################
+################################################################################
+##                                                                            ##
+##   PyTCP - Python TCP/IP stack                                              ##
+##   Copyright (C) 2020-present Sebastian Majewski                            ##
+##                                                                            ##
+##   This program is free software: you can redistribute it and/or modify     ##
+##   it under the terms of the GNU General Public License as published by     ##
+##   the Free Software Foundation, either version 3 of the License, or        ##
+##   (at your option) any later version.                                      ##
+##                                                                            ##
+##   This program is distributed in the hope that it will be useful,          ##
+##   but WITHOUT ANY WARRANTY; without even the implied warranty of           ##
+##   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the             ##
+##   GNU General Public License for more details.                             ##
+##                                                                            ##
+##   You should have received a copy of the GNU General Public License        ##
+##   along with this program. If not, see <https://www.gnu.org/licenses/>.    ##
+##                                                                            ##
+##   Author's email: ccie18643@gmail.com                                      ##
+##   Github repository: https://github.com/ccie18643/PyTCP                    ##
+##                                                                            ##
+################################################################################
 
 
 """
-This module contains tests for the TCP options support code.
+Module contains tests for the TCP options support code.
 
 tests/unit/protocols/tcp/test__tcp__options.py
 
-ver 3.0.0
+ver 3.0.1
 """
 
 
@@ -70,8 +70,8 @@ from pytcp.protocols.tcp.options.tcp_options import TcpOptions
                 "__len__": 4,
                 "__str__": "nop, nop, nop, eol",
                 "__repr__": (
-                    "TcpOptions(options=[TcpOptionNop(), TcpOptionNop(), TcpOptionNop(), "
-                    "TcpOptionEol()])"
+                    "TcpOptions(options=[TcpOptionNop(), TcpOptionNop(), "
+                    "TcpOptionNop(), TcpOptionEol()])"
                 ),
                 "__bytes__": b"\x01\x01\x01\x00",
                 "mss": None,
@@ -105,9 +105,10 @@ from pytcp.protocols.tcp.options.tcp_options import TcpOptions
                 ),
                 "__repr__": (
                     "TcpOptions(options=[TcpOptionMss(mss=1460), TcpOptionWscale(wscale=7), "
-                    "TcpOptionSackperm(), TcpOptionTimestamps(tsval=1111111111, tsecr=2222222222), "
-                    "TcpOptionNop(), TcpOptionUnknown(type=<TcpOptionType.UNKNOWN_255: 255>, "
-                    "len=18, data=b'0123456789ABCDEF'), TcpOptionNop(), TcpOptionEol()])"
+                    "TcpOptionSackperm(), TcpOptionTimestamps(tsval=1111111111, "
+                    "tsecr=2222222222), TcpOptionNop(), TcpOptionUnknown(type=<TcpOptionType."
+                    "UNKNOWN_255: 255>, len=18, data=b'0123456789ABCDEF'), TcpOptionNop(), "
+                    "TcpOptionEol()])"
                 ),
                 "__bytes__": (
                     b"\x02\x04\x05\xb4\x03\x03\x07\x04\x02\x08\x0a\x42\x3a\x35\xc7\x84"
@@ -167,9 +168,9 @@ from pytcp.protocols.tcp.options.tcp_options import TcpOptions
                 "__len__": 36,
                 "__str__": "sack [1111-2222, 3333-4444, 5555-6666], timestamps 123456/654321",
                 "__repr__": (
-                    "TcpOptions(options=[TcpOptionSack(blocks=[TcpSackBlock(left=1111, right=2222), "
-                    "TcpSackBlock(left=3333, right=4444), TcpSackBlock(left=5555, right=6666)]), "
-                    "TcpOptionTimestamps(tsval=123456, tsecr=654321)])"
+                    "TcpOptions(options=[TcpOptionSack(blocks=[TcpSackBlock(left=1111, "
+                    "right=2222), TcpSackBlock(left=3333, right=4444), TcpSackBlock(left=5555, "
+                    "right=6666)]), TcpOptionTimestamps(tsval=123456, tsecr=654321)])"
                 ),
                 "__bytes__": (
                     b"\x05\x1a\x00\x00\x04\x57\x00\x00\x08\xae\x00\x00\x0d\x05\x00\x00"

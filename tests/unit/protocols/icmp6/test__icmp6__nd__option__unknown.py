@@ -25,7 +25,7 @@
 
 
 """
-This module contains tests for the unknown ICMPv6 ND option code.
+Module contains tests for the unknown ICMPv6 ND option code.
 
 tests/unit/protocols/icmp6/test__icmp6__nd__option__unknown.py
 
@@ -262,7 +262,7 @@ class TestIcmp6NdOptionUnknownAssembler(TestCase):
 
     def test__icmp6__nd__option__unknown__type(self) -> None:
         """
-        Ensure the unknown ICMPv6 ND option 'type' field returns a correct value.
+        Ensure the unknown ICMPv6 ND option 'type' field contains a correct value.
         """
 
         self.assertEqual(
@@ -272,7 +272,7 @@ class TestIcmp6NdOptionUnknownAssembler(TestCase):
 
     def test__icmp6__nd__option__unknown__length(self) -> None:
         """
-        Ensure the unknown ICMPv6 ND option 'len' field returns a correct value.
+        Ensure the unknown ICMPv6 ND option 'len' field contains a correct value.
         """
 
         self.assertEqual(
@@ -282,7 +282,7 @@ class TestIcmp6NdOptionUnknownAssembler(TestCase):
 
     def test__icmp6__nd__option__unknown__data(self) -> None:
         """
-        Ensure the unknown ICMPv6 ND option 'data' field returns a correct value.
+        Ensure the unknown ICMPv6 ND option 'data' field contains a correct value.
         """
 
         self.assertEqual(

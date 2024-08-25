@@ -25,7 +25,7 @@
 
 
 """
-This module contains tests for the TCP Timestamps option code.
+Module contains tests for the TCP Timestamps option code.
 
 tests/unit/protocols/tcp/test__tcp__option__timestamps.py
 
@@ -231,7 +231,7 @@ class TestTcpOptionTimestampsAssembler(TestCase):
 
     def test__tcp__option__timestamps__type(self) -> None:
         """
-        Ensure the TCP Timestamps option 'type' field returns a correct value.
+        Ensure the TCP Timestamps option 'type' field contains a correct value.
         """
 
         self.assertEqual(
@@ -241,7 +241,7 @@ class TestTcpOptionTimestampsAssembler(TestCase):
 
     def test__tcp__option__timestamps__length(self) -> None:
         """
-        Ensure the TCP Timestamps option 'len' field returns a correct value.
+        Ensure the TCP Timestamps option 'len' field contains a correct value.
         """
 
         self.assertEqual(
@@ -251,7 +251,7 @@ class TestTcpOptionTimestampsAssembler(TestCase):
 
     def test__tcp__option__timestamps__tsval(self) -> None:
         """
-        Ensure the TCP Timestamps option 'tsval' field returns a correct value.
+        Ensure the TCP Timestamps option 'tsval' field contains a correct value.
         """
 
         self.assertEqual(
@@ -261,7 +261,7 @@ class TestTcpOptionTimestampsAssembler(TestCase):
 
     def test__tcp__option__timestamps__tsecr(self) -> None:
         """
-        Ensure the TCP Timestamps option 'tsecr' field returns a correct value.
+        Ensure the TCP Timestamps option 'tsecr' field contains a correct value.
         """
 
         self.assertEqual(
