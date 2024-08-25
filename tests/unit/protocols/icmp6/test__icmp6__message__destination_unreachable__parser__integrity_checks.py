@@ -146,24 +146,16 @@ class TestIcmp6DestinationUnreachableMessageParserIntegrityChecks(TestCase):
             ),
         )
         self.patch_attribute(
-            target=packet_rx.ip6,
-            attribute="pshdr_sum",
-            new_value=0
+            target=packet_rx.ip6, attribute="pshdr_sum", new_value=0
         )
         self.patch_attribute(
-            target=packet_rx.ip6,
-            attribute="src",
-            new_value=Ip6Address()
+            target=packet_rx.ip6, attribute="src", new_value=Ip6Address()
         )
         self.patch_attribute(
-            target=packet_rx.ip6,
-            attribute="dst",
-            new_value=Ip6Address()
+            target=packet_rx.ip6, attribute="dst", new_value=Ip6Address()
         )
         self.patch_attribute(
-            target=packet_rx.ip6,
-            attribute="hop",
-            new_value=64
+            target=packet_rx.ip6, attribute="hop", new_value=64
         )
 
         with self.assertRaises(Icmp6IntegrityError) as error:

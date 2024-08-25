@@ -79,7 +79,8 @@ class TestIcmp6MessageDestinationUnreachableAsserts(TestCase):
 
         self.assertEqual(
             str(error.exception),
-            f"The 'code' field must be an Icmp6DestinationUnreachableCode. Got: {type(value)!r}",
+            f"The 'code' field must be an Icmp6DestinationUnreachableCode. "
+            f"Got: {type(value)!r}",
         )
 
     def test__icmp6__message__destination_unreachable__cksum__under_min(
@@ -143,6 +144,7 @@ class TestIcmp6MessageDestinationUnreachableAsserts(TestCase):
 
         self.assertEqual(
             str(error.exception),
-            f"The 'data' field length must be a 16-bit unsigned integer less than or equal "
-            f"to {IP6__PAYLOAD__MAX_LEN - ICMP6__DESTINATION_UNREACHABLE__LEN}. Got: {value!r}",
+            f"The 'data' field length must be a 16-bit unsigned integer less than "
+            f"or equal to {IP6__PAYLOAD__MAX_LEN - ICMP6__DESTINATION_UNREACHABLE__LEN}. "
+            f"Got: {value!r}",
         )
