@@ -1,36 +1,36 @@
 #!/usr/bin/env python3
 
-############################################################################
-#                                                                          #
-#  PyTCP - Python TCP/IP stack                                             #
-#  Copyright (C) 2020-present Sebastian Majewski                           #
-#                                                                          #
-#  This program is free software: you can redistribute it and/or modify    #
-#  it under the terms of the GNU General Public License as published by    #
-#  the Free Software Foundation, either version 3 of the License, or       #
-#  (at your option) any later version.                                     #
-#                                                                          #
-#  This program is distributed in the hope that it will be useful,         #
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of          #
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the           #
-#  GNU General Public License for more details.                            #
-#                                                                          #
-#  You should have received a copy of the GNU General Public License       #
-#  along with this program.  If not, see <https://www.gnu.org/licenses/>.  #
-#                                                                          #
-#  Author's email: ccie18643@gmail.com                                     #
-#  Github repository: https://github.com/ccie18643/PyTCP                   #
-#                                                                          #
-############################################################################
+################################################################################
+##                                                                            ##
+##   PyTCP - Python TCP/IP stack                                              ##
+##   Copyright (C) 2020-present Sebastian Majewski                            ##
+##                                                                            ##
+##   This program is free software: you can redistribute it and/or modify     ##
+##   it under the terms of the GNU General Public License as published by     ##
+##   the Free Software Foundation, either version 3 of the License, or        ##
+##   (at your option) any later version.                                      ##
+##                                                                            ##
+##   This program is distributed in the hope that it will be useful,          ##
+##   but WITHOUT ANY WARRANTY; without even the implied warranty of           ##
+##   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the             ##
+##   GNU General Public License for more details.                             ##
+##                                                                            ##
+##   You should have received a copy of the GNU General Public License        ##
+##   along with this program. If not, see <https://www.gnu.org/licenses/>.    ##
+##                                                                            ##
+##   Author's email: ccie18643@gmail.com                                      ##
+##   Github repository: https://github.com/ccie18643/PyTCP                    ##
+##                                                                            ##
+################################################################################
 
 
 """
-This module contains tests for the ICMPv6 Echo Request message assembler & parser
-argument asserts.
+Module contains tests for the ICMPv6 Echo Request message assembler argument
+asserts.
 
 tests/unit/protocols/icmp6/test__icmp6__message__echo_request__asserts.py
 
-ver 3.0.0
+ver 3.0.1
 """
 
 from testslide import TestCase
@@ -46,8 +46,7 @@ from pytcp.protocols.ip6.ip6__header import IP6__PAYLOAD__MAX_LEN
 
 class TestIcmp6MessageEchoRequestAsserts(TestCase):
     """
-    The ICMPv6 Echo Request message assembler & parser argument
-    constructors assert tests.
+    The ICMPv6 Echo Request message assembler argument constructor assert tests.
     """
 
     def setUp(self) -> None:
@@ -201,6 +200,7 @@ class TestIcmp6MessageEchoRequestAsserts(TestCase):
 
         self.assertEqual(
             str(error.exception),
-            f"The 'data' field length must be a 16-bit unsigned integer less than or equal "
-            f"to {IP6__PAYLOAD__MAX_LEN - ICMP6__ECHO_REQUEST__LEN}. Got: {value!r}",
+            f"The 'data' field length must be a 16-bit unsigned integer less than "
+            f"or equal to {IP6__PAYLOAD__MAX_LEN - ICMP6__ECHO_REQUEST__LEN}. "
+            f"Got: {value!r}",
         )
