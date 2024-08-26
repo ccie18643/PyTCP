@@ -245,5 +245,5 @@ class TestIcmp6MessageEchoReplyAssembler(TestCase):
 
         self.assertEqual(
             self._icmp6__echo_reply__message.data,
-            (b"" if self._results["data"] is None else self._results["data"]),
+            self._results["data"],
         )
