@@ -106,7 +106,8 @@ class TestIcmp4MessageUnknownArgAsserts(TestCase):
 
         self.assertEqual(
             str(error.exception),
-            f"The 'cksum' field must be a 16-bit unsigned integer. Got: {value!r}",
+            f"The 'cksum' field must be a 16-bit unsigned integer. "
+            f"Got: {value!r}",
         )
 
     def test__icmp4__message__echo_request__cksum__over_max(self) -> None:
@@ -123,7 +124,8 @@ class TestIcmp4MessageUnknownArgAsserts(TestCase):
 
         self.assertEqual(
             str(error.exception),
-            f"The 'cksum' field must be a 16-bit unsigned integer. Got: {value!r}",
+            f"The 'cksum' field must be a 16-bit unsigned integer. "
+            f"Got: {value!r}",
         )
 
     def test__icmp4__message__unknown__raw__not_bytes(self) -> None:
@@ -139,5 +141,6 @@ class TestIcmp4MessageUnknownArgAsserts(TestCase):
 
         self.assertEqual(
             str(error.exception),
-            f"The 'raw' field must be a bytes or memoryview. Got: {type(value)!r}",
+            f"The 'raw' field must be a bytes or memoryview. "
+            f"Got: {type(value)!r}",
         )
