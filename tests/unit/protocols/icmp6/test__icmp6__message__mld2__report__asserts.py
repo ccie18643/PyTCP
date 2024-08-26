@@ -82,7 +82,8 @@ class TestIcmp6MessageMld2ReportAsserts(TestCase):
 
         self.assertEqual(
             str(error.exception),
-            f"The 'code' field must be an Icmp6Mld2ReportCode. Got: {type(value)!r}",
+            f"The 'code' field must be an Icmp6Mld2ReportCode. "
+            f"Got: {type(value)!r}",
         )
 
     def test__icmp6__message__mld2__report__cksum__under_min(self) -> None:
@@ -99,7 +100,8 @@ class TestIcmp6MessageMld2ReportAsserts(TestCase):
 
         self.assertEqual(
             str(error.exception),
-            f"The 'cksum' field must be a 16-bit unsigned integer. Got: {value!r}",
+            f"The 'cksum' field must be a 16-bit unsigned integer. "
+            f"Got: {value!r}",
         )
 
     def test__icmp6__message__mld2__report__cksum__over_max(self) -> None:
@@ -116,7 +118,8 @@ class TestIcmp6MessageMld2ReportAsserts(TestCase):
 
         self.assertEqual(
             str(error.exception),
-            f"The 'cksum' field must be a 16-bit unsigned integer. Got: {value!r}",
+            f"The 'cksum' field must be a 16-bit unsigned integer. "
+            f"Got: {value!r}",
         )
 
     def test__icmp6__message__mld2__report__records_len__over_max(self) -> None:
