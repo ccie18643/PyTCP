@@ -25,10 +25,10 @@
 
 
 """
-Module contains tests for the ICMPv6 Echo Request message parser integrity
+Module contains tests for the ICMPv6 unknown message parser integrity
 checks.
 
-tests/unit/protocols/icmp6/test__icmp6__message__echo_request__parser__integrity_checks.py
+tests/unit/protocols/icmp6/test__icmp6__message__unknown__parser__integrity_checks.py
 
 ver 3.0.1
 """
@@ -50,11 +50,11 @@ from pytcp.protocols.ip6.ip6__parser import Ip6Parser
     [
         {
             "_description": (
-                "ICMPv6 Echo Request message, "
+                "ICMPv6 unknown message, "
                 "the 'ICMP6_HEADER_LEN <= self._ip6_payload_len' condition not met."
             ),
             "_args": {
-                "bytes": b"\x80\x00\xfb",
+                "bytes": b"\x81\x00\xfb",
             },
             "_conditions": {
                 "ip6__dlen": 3,
@@ -69,11 +69,11 @@ from pytcp.protocols.ip6.ip6__parser import Ip6Parser
         },
         {
             "_description": (
-                "ICMPv6 Echo Request message, "
+                "ICMPv6 unknown message, "
                 "the 'self._ip6__dlen <= len(self._frame)' condition not met."
             ),
             "_args": {
-                "bytes": b"\x80\x00\xfb\x94\x30\x39\xd4",
+                "bytes": b"\x81\x00\xfb\x94\x30\x39\xd4",
             },
             "_conditions": {
                 "ip6__dlen": 8,
@@ -87,28 +87,9 @@ from pytcp.protocols.ip6.ip6__parser import Ip6Parser
             },
         },
         {
-            "_description": (
-                "ICMPv6 Echo Request message, "
-                "the 'ICMP6__ECHO_REQUEST__LEN <= self._ip6__dlen' condition not met."
-            ),
-            "_args": {
-                "bytes": b"\x80\x00\xfb\x94\x30\x39\xd4",
-            },
-            "_conditions": {
-                "ip6__dlen": 7,
-            },
-            "_results": {
-                "error_message": (
-                    "The condition 'ICMP6__ECHO_REQUEST__LEN <= ip6__dlen "
-                    "<= len(frame)' must be met. Got: ICMP6__ECHO_REQUEST__LEN=8, "
-                    "ip6__dlen=7, len(frame)=7"
-                ),
-            },
-        },
-        {
             "_description": "ICMPv6 Destination Unreachable message, invalid checksum.",
             "_args": {
-                "bytes": b"\x80\x00\x00\x00\x30\x39\xd4\x31",
+                "bytes": b"\x81\x00\x00\x00\x30\x39\xd4\x31",
             },
             "_conditions": {},
             "_results": {
@@ -117,9 +98,9 @@ from pytcp.protocols.ip6.ip6__parser import Ip6Parser
         },
     ]
 )
-class TestIcmp6EchoRequestMessageParserIntegrityChecks(TestCase):
+class TestIcmp6UnknownMessageParserIntegrityChecks(TestCase):
     """
-    The ICMPv6 Echo Request message parser integrity checks tests.
+    The ICMPv6 unknown message parser integrity checks tests.
     """
 
     _description: str
@@ -127,11 +108,11 @@ class TestIcmp6EchoRequestMessageParserIntegrityChecks(TestCase):
     _conditions: dict[str, Any]
     _results: dict[str, Any]
 
-    def test__icmp6__message__echo_request__parser__from_bytes(
+    def test__icmp6__message__unknown__parser__from_bytes(
         self,
     ) -> None:
         """
-        Ensure the ICMPv6 Echo Request message parser raises integrity error
+        Ensure the ICMPv6 unknown message parser raises integrity error
         on malformed packets.
         """
 

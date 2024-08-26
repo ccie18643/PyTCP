@@ -1,36 +1,35 @@
 #!/usr/bin/env python3
 
-############################################################################
-#                                                                          #
-#  PyTCP - Python TCP/IP stack                                             #
-#  Copyright (C) 2020-present Sebastian Majewski                           #
-#                                                                          #
-#  This program is free software: you can redistribute it and/or modify    #
-#  it under the terms of the GNU General Public License as published by    #
-#  the Free Software Foundation, either version 3 of the License, or       #
-#  (at your option) any later version.                                     #
-#                                                                          #
-#  This program is distributed in the hope that it will be useful,         #
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of          #
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the           #
-#  GNU General Public License for more details.                            #
-#                                                                          #
-#  You should have received a copy of the GNU General Public License       #
-#  along with this program.  If not, see <https://www.gnu.org/licenses/>.  #
-#                                                                          #
-#  Author's email: ccie18643@gmail.com                                     #
-#  Github repository: https://github.com/ccie18643/PyTCP                   #
-#                                                                          #
-############################################################################
+################################################################################
+##                                                                            ##
+##   PyTCP - Python TCP/IP stack                                              ##
+##   Copyright (C) 2020-present Sebastian Majewski                            ##
+##                                                                            ##
+##   This program is free software: you can redistribute it and/or modify     ##
+##   it under the terms of the GNU General Public License as published by     ##
+##   the Free Software Foundation, either version 3 of the License, or        ##
+##   (at your option) any later version.                                      ##
+##                                                                            ##
+##   This program is distributed in the hope that it will be useful,          ##
+##   but WITHOUT ANY WARRANTY; without even the implied warranty of           ##
+##   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the             ##
+##   GNU General Public License for more details.                             ##
+##                                                                            ##
+##   You should have received a copy of the GNU General Public License        ##
+##   along with this program. If not, see <https://www.gnu.org/licenses/>.    ##
+##                                                                            ##
+##   Author's email: ccie18643@gmail.com                                      ##
+##   Github repository: https://github.com/ccie18643/PyTCP                    ##
+##                                                                            ##
+################################################################################
 
 
 """
-This module contains tests for the ICMPv6 unknown message assembler
-asserts.
+Module contains tests for the ICMPv6 unknown message assembler asserts.
 
 tests/unit/protocols/icmp6/test__icmp6__message__unknown__asserts.py
 
-ver 3.0.0
+ver 3.0.1
 """
 
 
@@ -45,8 +44,7 @@ from pytcp.protocols.icmp6.message.icmp6_message__unknown import (
 
 class TestIcmp6MessageUnknownArgAsserts(TestCase):
     """
-    The ICMPv6 unknown message assembler & parser constructors argument
-    assert tests.
+    The ICMPv6 unknown message assembler constructor argument assert tests.
     """
 
     def setUp(self) -> None:
@@ -125,7 +123,8 @@ class TestIcmp6MessageUnknownArgAsserts(TestCase):
 
         self.assertEqual(
             str(error.exception),
-            f"The 'cksum' field must be a 16-bit unsigned integer. Got: {value!r}",
+            f"The 'cksum' field must be a 16-bit unsigned integer. "
+            f"Got: {value!r}",
         )
 
     def test__icmp6__message__unknown__raw__not_bytes(self) -> None:
@@ -141,5 +140,6 @@ class TestIcmp6MessageUnknownArgAsserts(TestCase):
 
         self.assertEqual(
             str(error.exception),
-            f"The 'raw' field must be a bytes or memoryview. Got: {type(value)!r}",
+            f"The 'raw' field must be a bytes or memoryview. "
+            f"Got: {type(value)!r}",
         )
