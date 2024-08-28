@@ -53,11 +53,11 @@ from pytcp.protocols.icmp6.message.mld2.icmp6_mld2_message__report import (
         {
             "_description": "ICMPv6 MLDv2 Report message, no records.",
             "_args": {
-                "bytes": b"\x8f\x00\xff\xff\x00\x00\x00\x00",
+                "bytes": b"\x8f\x00\x00\x00\x00\x00\x00\x00",
             },
             "_results": {
                 "from_bytes": Icmp6Mld2ReportMessage(
-                    cksum=65535,
+                    cksum=0,
                     records=[],
                 ),
             },
