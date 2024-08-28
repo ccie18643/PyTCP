@@ -162,6 +162,14 @@ class Icmp4EchoRequestMessage(Icmp4Message):
         ) + bytes(self.data)
 
     @override
+    def validate_sanity(self) -> None:
+        """
+        Validate the ICMPv4 Echo Request message sanity after parsing it.
+        """
+
+        # Currently no sanity checks are implemented.
+
+    @override
     @staticmethod
     def validate_integrity(*, frame: bytes, ip4__payload_len: int) -> None:
         """

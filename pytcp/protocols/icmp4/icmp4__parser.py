@@ -150,18 +150,4 @@ class Icmp4Parser(Icmp4, ProtoParser):
         Validate sanity of the ICMPv4 packet after parsing it.
         """
 
-        # TODO: Perhaps come up with some actual message sanity checks here.
-        # At this point not sure if they are really needed though as the
-        # ICMPv4 messages are quite simple.
-
-        if isinstance(self._message, Icmp4EchoReplyMessage):
-            return
-
-        if isinstance(self._message, Icmp4DestinationUnreachableMessage):
-            return
-
-        if isinstance(self._message, Icmp4EchoRequestMessage):
-            return
-
-        if isinstance(self._message, Icmp4UnknownMessage):
-            return
+        self._message.validate_sanity()
