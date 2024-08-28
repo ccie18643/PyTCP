@@ -56,7 +56,7 @@ from pytcp.protocols.ip6.ip6__parser import Ip6Parser
             "_args": {
                 "bytes": b"\x81\x00\xfb",
             },
-            "_conditions": {
+            "_mocked_values": {
                 "ip6__dlen": 3,
             },
             "_results": {
@@ -75,7 +75,7 @@ from pytcp.protocols.ip6.ip6__parser import Ip6Parser
             "_args": {
                 "bytes": b"\x81\x00\xfb\x94\x30\x39\xd4",
             },
-            "_conditions": {
+            "_mocked_values": {
                 "ip6__dlen": 8,
             },
             "_results": {
@@ -91,7 +91,7 @@ from pytcp.protocols.ip6.ip6__parser import Ip6Parser
             "_args": {
                 "bytes": b"\x81\x00\x00\x00\x30\x39\xd4\x31",
             },
-            "_conditions": {},
+            "_mocked_values": {},
             "_results": {
                 "error_message": "The packet checksum must be valid.",
             },
@@ -105,7 +105,7 @@ class TestIcmp6UnknownMessageParserIntegrityChecks(TestCase):
 
     _description: str
     _args: dict[str, Any]
-    _conditions: dict[str, Any]
+    _mocked_values: dict[str, Any]
     _results: dict[str, Any]
 
     def test__icmp6__message__unknown__parser__from_bytes(
@@ -122,21 +122,29 @@ class TestIcmp6UnknownMessageParserIntegrityChecks(TestCase):
         self.patch_attribute(
             target=packet_rx.ip6,
             attribute="dlen",
-            new_value=self._conditions.get(
+            new_value=self._mocked_values.get(
                 "ip6__dlen", len(self._args["bytes"])
             ),
         )
         self.patch_attribute(
-            target=packet_rx.ip6, attribute="pshdr_sum", new_value=0
+            target=packet_rx.ip6,
+            attribute="pshdr_sum",
+            new_value=0,
         )
         self.patch_attribute(
-            target=packet_rx.ip6, attribute="src", new_value=Ip6Address()
+            target=packet_rx.ip6,
+            attribute="src",
+            new_value=Ip6Address(),
         )
         self.patch_attribute(
-            target=packet_rx.ip6, attribute="dst", new_value=Ip6Address()
+            target=packet_rx.ip6,
+            attribute="dst",
+            new_value=Ip6Address(),
         )
         self.patch_attribute(
-            target=packet_rx.ip6, attribute="hop", new_value=64
+            target=packet_rx.ip6,
+            attribute="hop",
+            new_value=64,
         )
 
         with self.assertRaises(Icmp6IntegrityError) as error:

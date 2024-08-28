@@ -55,7 +55,7 @@ from pytcp.protocols.udp.udp__parser import UdpParser
             "_args": {
                 "bytes": b"\x30\x39\xd4\x31\x00\x08\xfb\x8c",
             },
-            "_conditions": {
+            "_mocked_values": {
                 "ip__payload_len": UDP__HEADER__LEN - 1,
             },
             "_results": {
@@ -73,7 +73,7 @@ from pytcp.protocols.udp.udp__parser import UdpParser
             "_args": {
                 "bytes": b"\x30\x39\xd4\x31\x00\x08\xfb\x8c",
             },
-            "_conditions": {
+            "_mocked_values": {
                 "ip__payload_len": UDP__HEADER__LEN + 1,
             },
             "_results": {
@@ -91,7 +91,7 @@ from pytcp.protocols.udp.udp__parser import UdpParser
             "_args": {
                 "bytes": b"\x30\x39\xd4\x31\x00\x07\xfb\x8c",
             },
-            "_conditions": {},
+            "_mocked_values": {},
             "_results": {
                 "error_message": (
                     "The condition 'UDP__HEADER__LEN <= plen == self._ip__payload_len "
@@ -108,7 +108,7 @@ from pytcp.protocols.udp.udp__parser import UdpParser
             "_args": {
                 "bytes": b"\x30\x39\xd4\x31\x00\x08\xfb\x8c\00\00",
             },
-            "_conditions": {
+            "_mocked_values": {
                 "ip__payload_len": UDP__HEADER__LEN + 1,
             },
             "_results": {
@@ -127,7 +127,7 @@ from pytcp.protocols.udp.udp__parser import UdpParser
                     b"\x38\x39\x41\x42\x43\x44\x45\x46"
                 ),
             },
-            "_conditions": {},
+            "_mocked_values": {},
             "_results": {
                 "error_message": "The packet checksum must be valid.",
             },
@@ -141,7 +141,7 @@ class TestUdpParserIntegrityChecks(TestCase):
 
     _description: str
     _args: dict[str, Any]
-    _conditions: dict[str, Any]
+    _mocked_values: dict[str, Any]
     _results: dict[str, Any]
 
     def test__udp__parser__from_bytes(self) -> None:
@@ -155,7 +155,7 @@ class TestUdpParserIntegrityChecks(TestCase):
         self.patch_attribute(
             target=packet_rx.ip,
             attribute="payload_len",
-            new_value=self._conditions.get(
+            new_value=self._mocked_values.get(
                 "ip__payload_len", len(self._args["bytes"])
             ),
         )

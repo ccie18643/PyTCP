@@ -155,7 +155,6 @@ from pytcp.protocols.ip4.ip4__parser import Ip4Parser
                     b"\x32\x3c\x46\x50\xff\x05\x00\x00"
                 ),
             },
-            "_conditions": {},
             "_results": {
                 "error_message": (
                     "The IPv4 option length must not extend past the header "

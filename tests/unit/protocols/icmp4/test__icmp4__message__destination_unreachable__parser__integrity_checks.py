@@ -55,7 +55,7 @@ from pytcp.protocols.ip4.ip4__parser import Ip4Parser
             "_args": {
                 "bytes": b"\x03\x00\xfb",
             },
-            "_conditions": {
+            "_mocked_values": {
                 "ip4__payload_len": 3,
             },
             "_results": {
@@ -74,7 +74,7 @@ from pytcp.protocols.ip4.ip4__parser import Ip4Parser
             "_args": {
                 "bytes": b"\x03\x00\xfb\x94\x30\x39\xd4",
             },
-            "_conditions": {
+            "_mocked_values": {
                 "ip4__payload_len": 8,
             },
             "_results": {
@@ -93,7 +93,7 @@ from pytcp.protocols.ip4.ip4__parser import Ip4Parser
             "_args": {
                 "bytes": b"\x03\x00\xfb\x94\x30\x39\xd4",
             },
-            "_conditions": {
+            "_mocked_values": {
                 "ip4__payload_len": 7,
             },
             "_results": {
@@ -109,7 +109,7 @@ from pytcp.protocols.ip4.ip4__parser import Ip4Parser
             "_args": {
                 "bytes": b"\x03\x00\x00\x00\x30\x39\xd4\x31",
             },
-            "_conditions": {},
+            "_mocked_values": {},
             "_results": {
                 "error_message": "The packet checksum must be valid.",
             },
@@ -123,7 +123,7 @@ class TestIcmp4DestinationUnreachableMessageParserIntegrityChecks(TestCase):
 
     _description: str
     _args: dict[str, Any]
-    _conditions: dict[str, Any]
+    _mocked_values: dict[str, Any]
     _results: dict[str, Any]
 
     def test__icmp4__message__destination_unreachable__parser__from_bytes(
@@ -140,7 +140,7 @@ class TestIcmp4DestinationUnreachableMessageParserIntegrityChecks(TestCase):
         self.patch_attribute(
             target=packet_rx.ip4,
             attribute="payload_len",
-            new_value=self._conditions.get(
+            new_value=self._mocked_values.get(
                 "ip4__payload_len", len(self._args["bytes"])
             ),
         )

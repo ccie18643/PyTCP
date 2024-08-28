@@ -36,12 +36,13 @@ ver 3.0.0
 from __future__ import annotations
 
 import struct
+from dataclasses import dataclass, field
 from typing import override
 
 from pytcp.lib.int_checks import is_4_byte_alligned
 from pytcp.lib.ip6_address import IP6_ADDRESS_LEN, Ip6Address
-from pytcp.lib.proto import Proto
 from pytcp.lib.proto_enum import ProtoEnumByte
+from pytcp.lib.proto_struct import ProtoStruct
 
 # The ICMPv6 MLDv2 Multicast Address Record [RFC 3810].
 
@@ -109,41 +110,40 @@ class Icmp6Mld2MulticastAddressRecordType(ProtoEnumByte):
     BLOCK_OLD_SOURCES = 6
 
 
-class Icmp6Mld2MulticastAddressRecord(Proto):
+@dataclass(frozen=True, kw_only=True)
+class Icmp6Mld2MulticastAddressRecord(ProtoStruct):
     """
     The ICMPv6 MLDv2 Multicast Address Record support.
     """
 
-    _type: Icmp6Mld2MulticastAddressRecordType
-    _aux_data_len: int
-    _number_of_sources: int
-    _multicast_address: Ip6Address
-    _source_addresses: list[Ip6Address]
-    _aux_data: bytes
+    type: Icmp6Mld2MulticastAddressRecordType
+    # The 'aux_data_len' field is available as a property.
+    # The 'number_of_sources' field is available as a property.
+    multicast_address: Ip6Address
+    source_addresses: list[Ip6Address] = field(default_factory=list)
+    aux_data: bytes = bytes()
 
-    def __init__(
-        self,
-        *,
-        type: Icmp6Mld2MulticastAddressRecordType,
-        multicast_address: Ip6Address,
-        source_addresses: list[Ip6Address] = [],
-        aux_data: bytes = bytes(),
-    ) -> None:
+    @override
+    def __post_init__(self) -> None:
         """
-        Initialize the ICMPv6 MLDv2 Multicast Address Record.
+        Validate the ICMPv6 MLDv2 Multicast Address Record fields.
         """
 
-        assert multicast_address.is_multicast
-        for address in source_addresses or []:
-            assert address.is_unicast
-        assert is_4_byte_alligned(len(aux_data))
+        assert self.multicast_address.is_multicast, (
+            f"The 'multicast_address' field must be a multicast address. "
+            f"Got: {self.multicast_address!r}"
+        )
 
-        self._type = type
-        self._multicast_address = multicast_address
-        self._source_addresses = source_addresses
-        self._number_of_sources = len(self._source_addresses)
-        self._aux_data = aux_data
-        self._aux_data_len = len(self._aux_data)
+        for address in self.source_addresses:
+            assert address.is_unicast, (
+                f"The 'source_addresses' field must contain only unicast addresses. "
+                f"Got: {address!r}"
+            )
+
+        assert is_4_byte_alligned(len(self.aux_data)), (
+            f"The 'aux_data' field must be 4-byte aligned. "
+            f"Got: {len(self.aux_data)!r}"
+        )
 
     @override
     def __len__(self) -> int:
@@ -153,8 +153,8 @@ class Icmp6Mld2MulticastAddressRecord(Proto):
 
         return (
             ICMP6__MLD2__MULTICAST_ADDRESS_RECORD__LEN
-            + IP6_ADDRESS_LEN * self._number_of_sources
-            + self._aux_data_len
+            + IP6_ADDRESS_LEN * self.number_of_sources
+            + self.aux_data_len
         )
 
     @override
@@ -164,27 +164,13 @@ class Icmp6Mld2MulticastAddressRecord(Proto):
         """
 
         return (
-            f"[type '{self._type}', addr {self._multicast_address}"
+            f"[type '{self.type}', addr {self.multicast_address}"
             f"{(
                 ', sources (' + ', '.join(str(source_address)
                                           for source_address
-                                          in self._source_addresses) + ')'
-            ) if self._source_addresses else ''}"
-            f"{f', aux data {self._aux_data!r}' if self._aux_data else ''}]"
-        )
-
-    @override
-    def __repr__(self) -> str:
-        """
-        Get the ICMPv6 MLDv2 Multicast Address Record representation string.
-        """
-
-        return (
-            f"{self.__class__.__name__}("
-            f"type={self._type!r}, "
-            f"multicast_address={self._multicast_address!r}, "
-            f"source_addresses={self._source_addresses!r}, "
-            f"aux_data={self._aux_data!r})"
+                                          in self.source_addresses) + ')'
+            ) if self.source_addresses else ''}"
+            f"{f', aux data {self.aux_data!r}' if self.aux_data else ''}]"
         )
 
     @override
@@ -196,19 +182,35 @@ class Icmp6Mld2MulticastAddressRecord(Proto):
         return (
             struct.pack(
                 ICMP6__MLD2__MULTICAST_ADDRESS_RECORD__STRUCT,
-                int(self._type),
-                self._aux_data_len >> 2,
-                self._number_of_sources,
-                bytes(self._multicast_address),
+                int(self.type),
+                self.aux_data_len >> 2,
+                self.number_of_sources,
+                bytes(self.multicast_address),
             )
             + b"".join(
                 [
                     bytes(source_address)
-                    for source_address in self._source_addresses
+                    for source_address in self.source_addresses
                 ]
             )
-            + self._aux_data
+            + self.aux_data
         )
+
+    @property
+    def number_of_sources(self) -> int:
+        """
+        Get the ICMPv6 MLDv2 Multicast Address Record 'number_of_sources' field.
+        """
+
+        return len(self.source_addresses)
+
+    @property
+    def aux_data_len(self) -> int:
+        """
+        Get the ICMPv6 MLDv2 Multicast Address Record 'aux_data_len' field.
+        """
+
+        return len(self.aux_data)
 
     @staticmethod
     def from_bytes(_bytes: bytes) -> Icmp6Mld2MulticastAddressRecord:
@@ -249,51 +251,3 @@ class Icmp6Mld2MulticastAddressRecord(Proto):
             source_addresses=source_addresses,
             aux_data=aux_data,
         )
-
-    @property
-    def type(self) -> Icmp6Mld2MulticastAddressRecordType:
-        """
-        Get the ICMPv6 MLDv2 Multicast Address Record 'type' field.
-        """
-
-        return self._type
-
-    @property
-    def aux_data_len(self) -> int:
-        """
-        Get the ICMPv6 MLDv2 Multicast Address Record 'aux_data_len' field.
-        """
-
-        return self._aux_data_len
-
-    @property
-    def number_of_sources(self) -> int:
-        """
-        Get the ICMPv6 MLDv2 Multicast Address Record 'number_of_sources' field.
-        """
-
-        return self._number_of_sources
-
-    @property
-    def multicast_address(self) -> Ip6Address:
-        """
-        Get the ICMPv6 MLDv2 Multicast Address Record 'multicast_address' field.
-        """
-
-        return self._multicast_address
-
-    @property
-    def source_addresses(self) -> list[Ip6Address]:
-        """
-        Get the ICMPv6 MLDv2 Multicast Address Record 'source_addresses' field.
-        """
-
-        return self._source_addresses
-
-    @property
-    def aux_data(self) -> bytes:
-        """
-        Get the ICMPv6 MLDv2 Multicast Address Record 'aux_data' field.
-        """
-
-        return self._aux_data

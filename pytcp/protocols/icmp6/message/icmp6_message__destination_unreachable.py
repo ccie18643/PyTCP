@@ -100,7 +100,7 @@ class Icmp6DestinationUnreachableMessage(Icmp6Message):
     code: Icmp6DestinationUnreachableCode
     cksum: int = 0
 
-    data: bytes
+    data: bytes = bytes()
 
     @override
     def __post_init__(self) -> None:

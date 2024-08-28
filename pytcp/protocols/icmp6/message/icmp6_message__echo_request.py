@@ -84,9 +84,9 @@ class Icmp6EchoRequestMessage(Icmp6Message):
     code: Icmp6EchoRequestCode = Icmp6EchoRequestCode.DEFAULT
     cksum: int = 0
 
-    id: int
-    seq: int
-    data: bytes
+    id: int = 0
+    seq: int = 0
+    data: bytes = bytes()
 
     @override
     def __post_init__(self) -> None:

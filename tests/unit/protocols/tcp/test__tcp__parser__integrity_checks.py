@@ -58,7 +58,7 @@ from pytcp.protocols.tcp.tcp__parser import TcpParser
                     b"\xcb\x5b\x00\x00\x01\x01\x01\x01"
                 ),
             },
-            "_conditions": {
+            "_mocked_values": {
                 "ip__payload_len": TCP__HEADER__LEN - 1,
             },
             "_results": {
@@ -79,7 +79,7 @@ from pytcp.protocols.tcp.tcp__parser import TcpParser
                     b"\xcb\x5b\x00\x00\x01\x01\x01\x01"
                 ),
             },
-            "_conditions": {
+            "_mocked_values": {
                 "ip__payload_len": TCP__HEADER__LEN + 4 + 1,
             },
             "_results": {
@@ -100,7 +100,7 @@ from pytcp.protocols.tcp.tcp__parser import TcpParser
                     b"\xdf\x5b\x00\x00\x01\x01\x01\x01"
                 ),
             },
-            "_conditions": {},
+            "_mocked_values": {},
             "_results": {
                 "error_message": (
                     "The condition 'TCP__HEADER__LEN <= hlen <= self._ip__payload_len <= "
@@ -120,7 +120,7 @@ from pytcp.protocols.tcp.tcp__parser import TcpParser
                     b"\xbb\x5b\x00\x00\x01\x01\x01\x01"
                 ),
             },
-            "_conditions": {},
+            "_mocked_values": {},
             "_results": {
                 "error_message": (
                     "The condition 'TCP__HEADER__LEN <= hlen <= self._ip__payload_len <= "
@@ -138,7 +138,7 @@ from pytcp.protocols.tcp.tcp__parser import TcpParser
                     b"\x38\x39\x30\x41\x42\x43\x44\x45\x46"
                 ),
             },
-            "_conditions": {},
+            "_mocked_values": {},
             "_results": {
                 "error_message": "The packet checksum must be valid.",
             },
@@ -154,7 +154,7 @@ from pytcp.protocols.tcp.tcp__parser import TcpParser
                     b"\xce\x5b\x00\x00\xff\x01\x00\x00"
                 ),
             },
-            "_conditions": {},
+            "_mocked_values": {},
             "_results": {
                 "error_message": (
                     "The TCP option length must be greater than 1. Got: 1."
@@ -172,7 +172,7 @@ from pytcp.protocols.tcp.tcp__parser import TcpParser
                     b"\xce\x57\x00\x00\xff\x05\x00\x00"
                 ),
             },
-            "_conditions": {},
+            "_mocked_values": {},
             "_results": {
                 "error_message": (
                     "The TCP option length must not extend past the header length. "
@@ -189,7 +189,7 @@ class TestTcpParserIntegrityChecks(TestCase):
 
     _description: str
     _args: dict[str, Any]
-    _conditions: dict[str, Any]
+    _mocked_values: dict[str, Any]
     _results: dict[str, Any]
 
     def test__tcp__parser__from_bytes(self) -> None:
@@ -203,7 +203,7 @@ class TestTcpParserIntegrityChecks(TestCase):
         self.patch_attribute(
             target=packet_rx.ip,
             attribute="payload_len",
-            new_value=self._conditions.get(
+            new_value=self._mocked_values.get(
                 "ip__payload_len", len(self._args["bytes"])
             ),
         )
