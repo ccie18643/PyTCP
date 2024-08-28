@@ -205,7 +205,7 @@ class Icmp6NdRouterAdvertisementMessage(Icmp6NdMessage):
         ):
             raise Icmp6IntegrityError(
                 "The condition 'ICMP6__ND__ROUTER_ADVERTISEMENT__LEN <= ip6__dlen "
-                f"<= len(frame)' is not met. Got: {ICMP6__ND__ROUTER_ADVERTISEMENT__LEN=}, "
+                f"<= len(frame)' must be met. Got: {ICMP6__ND__ROUTER_ADVERTISEMENT__LEN=}, "
                 f"{ip6__dlen=}, {len(frame)=}"
             )
 

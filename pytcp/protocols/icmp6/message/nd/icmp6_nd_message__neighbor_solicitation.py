@@ -175,7 +175,7 @@ class Icmp6NdNeighborSolicitationMessage(Icmp6NdMessage):
         ):
             raise Icmp6IntegrityError(
                 "The condition 'ICMP6__ND__NEIGHBOR_SOLICITATION__LEN <= ip6__dlen "
-                f"<= len(frame)' is not met. Got: {ICMP6__ND__NEIGHBOR_SOLICITATION__LEN=}, "
+                f"<= len(frame)' must be met. Got: {ICMP6__ND__NEIGHBOR_SOLICITATION__LEN=}, "
                 f"{ip6__dlen=}, {len(frame)=}"
             )
 
