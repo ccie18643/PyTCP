@@ -211,6 +211,11 @@ class Icmp6Parser(Icmp6, ProtoParser):
                     self._frame,
                 )
 
+            case Icmp6Type.MLD2__REPORT:
+                self._message = Icmp6Mld2ReportMessage.from_bytes(
+                    self._frame,
+                )
+
             case _:
                 self._message = Icmp6UnknownMessage.from_bytes(
                     self._frame,
