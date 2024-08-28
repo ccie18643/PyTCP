@@ -51,7 +51,7 @@ from pytcp.protocols.ip6.ip6__parser import Ip6Parser
         {
             "_description": (
                 "ICMPv6 Echo Request message, "
-                "the 'ICMP6_HEADER_LEN <= self._ip6_payload_len' condition not met."
+                "the 'ICMP6_HEADER_LEN <= self._ip6__dlen' condition not met."
             ),
             "_args": {
                 "bytes": b"\x80\x00\xfb",
@@ -106,7 +106,7 @@ from pytcp.protocols.ip6.ip6__parser import Ip6Parser
             },
         },
         {
-            "_description": "ICMPv6 Destination Unreachable message, invalid checksum.",
+            "_description": "ICMPv6 Echo Request message, invalid checksum.",
             "_args": {
                 "bytes": b"\x80\x00\x00\x00\x30\x39\xd4\x31",
             },
@@ -148,24 +148,23 @@ class TestIcmp6EchoRequestMessageParserIntegrityChecks(TestCase):
         self.patch_attribute(
             target=packet_rx.ip6,
             attribute="pshdr_sum",
-            new_value=0,
+            new_value=self._mocked_values.get("ip6__pshdr_sum", 0),
         )
         self.patch_attribute(
             target=packet_rx.ip6,
             attribute="src",
-            new_value=Ip6Address(),
+            new_value=self._mocked_values.get("ip6__src", Ip6Address()),
         )
         self.patch_attribute(
             target=packet_rx.ip6,
             attribute="dst",
-            new_value=Ip6Address(),
+            new_value=self._mocked_values.get("ip6__dst", Ip6Address()),
         )
         self.patch_attribute(
             target=packet_rx.ip6,
             attribute="hop",
-            new_value=64,
+            new_value=self._mocked_values.get("ip6__hop", 64),
         )
-
         with self.assertRaises(Icmp6IntegrityError) as error:
             Icmp6Parser(packet_rx=packet_rx)
 

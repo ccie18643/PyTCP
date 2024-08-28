@@ -25,10 +25,10 @@
 
 
 """
-Module contains tests for the ICMPv6 Destination Unreachable message parser integrity
+Module contains tests for the ICMPv6 MLDv2 Report message parser integrity
 checks.
 
-tests/unit/protocols/icmp6/test__icmp6__message__destination_unreachable__parser__integrity_checks.py
+tests/unit/protocols/icmp6/test__icmp6__message__mld2__report__parser__integrity_checks.py
 
 ver 3.0.1
 """
@@ -50,11 +50,11 @@ from pytcp.protocols.ip6.ip6__parser import Ip6Parser
     [
         {
             "_description": (
-                "ICMPv6 Destination Unreachable message, "
+                "ICMPv6 MLDv2 message, "
                 "the 'ICMP6_HEADER_LEN <= self._ip6__dlen' condition not met."
             ),
             "_args": {
-                "bytes": b"\x01\x00\xfb",
+                "bytes": b"\x8f\x00\x70",
             },
             "_mocked_values": {
                 "ip6__dlen": 3,
@@ -69,11 +69,11 @@ from pytcp.protocols.ip6.ip6__parser import Ip6Parser
         },
         {
             "_description": (
-                "ICMPv6 Destination Unreachable message, "
+                "ICMPv6 MLDv2 Report message, "
                 "the 'self._ip6__dlen <= len(self._frame)' condition not met."
             ),
             "_args": {
-                "bytes": b"\x01\x00\xfb\x94\x30\x39\xd4",
+                "bytes": b"\x8f\x00\x70\xff\x00\x00\x00",
             },
             "_mocked_values": {
                 "ip6__dlen": 8,
@@ -88,27 +88,71 @@ from pytcp.protocols.ip6.ip6__parser import Ip6Parser
         },
         {
             "_description": (
-                "ICMPv6 Destination Unreachable message, "
-                "the 'ICMP6_DESTINATION_UNREACHABLE_LEN <= self._ip6__dlen' condition not met."
+                "ICMPv6 MLDv2 message, "
+                "the 'ICMP6__MLD2__REPORT__LEN <= ip6__dlen' condition not met."
             ),
             "_args": {
-                "bytes": b"\x01\x00\xfb\x94\x30\x39\xd4",
+                "bytes": b"\x8f\x00\x70\xff\x00\x00\x00\x00",
             },
             "_mocked_values": {
                 "ip6__dlen": 7,
             },
             "_results": {
                 "error_message": (
-                    "The condition 'ICMP6__DESTINATION_UNREACHABLE__LEN <= ip6__dlen "
-                    "<= len(frame)' must be met. Got: ICMP6__DESTINATION_UNREACHABLE__LEN=8, "
-                    "ip6__dlen=7, len(frame)=7"
+                    "The condition 'ICMP6__MLD2__REPORT__LEN <= ip6__dlen <= len(frame)' "
+                    "is not met. Got: ICMP6__MLD2__REPORT__LEN=8, ip6__dlen=7, len(frame)=8"
                 ),
             },
         },
         {
-            "_description": "ICMPv6 Destination Unreachable message, invalid checksum.",
+            "_description": (
+                "ICMPv6 MLDv2 message, "
+                "the 'record_offset + ICMP6__MLD2__MULTICAST_ADDRESS_RECORD__LEN <= ip6__dlen' "
+                "condition not met."
+            ),
             "_args": {
-                "bytes": b"\x01\x00\x00\x00\x30\x39\xd4\x31",
+                "bytes": (
+                    b"\x8f\x00\x15\x82\x00\x00\x00\x02\x01\x00\x00\x02\xff\x02\x00\x00"
+                    b"\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01\x20\x01\x0d\xb8"
+                    b"\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01\x20\x01\x0d\xb8"
+                    b"\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x02"
+                ),
+            },
+            "_mocked_values": {},
+            "_results": {
+                "error_message": (
+                    "The condition 'record_offset + ICMP6__MLD2__MULTICAST_ADDRESS_RECORD__LEN "
+                    "<= ip6__dlen' is not met. Got: record_offset=60, "
+                    "ICMP6__MLD2__MULTICAST_ADDRESS_RECORD__LEN=20, ip6__dlen=60"
+                ),
+            },
+        },
+        {
+            "_description": (
+                "ICMPv6 MLDv2 message, the 'record_offset == ip6__dlen' condition not met."
+            ),
+            "_args": {
+                "bytes": (
+                    b"\x8f\x00\x15\x83\x00\x00\x00\x01\x01\x00\x00\x02\xff\x02\x00\x00"
+                    b"\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01\x20\x01\x0d\xb8"
+                    b"\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01\x20\x01\x0d\xb8"
+                    b"\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x02"
+                ),
+            },
+            "_mocked_values": {
+                "ip6__dlen": 59,
+            },
+            "_results": {
+                "error_message": (
+                    "The condition 'record_offset == ip6__dlen' is not met. "
+                    "Got: record_offset=60, ip6__dlen=59"
+                ),
+            },
+        },
+        {
+            "_description": "ICMPv6 MLDv2 Report, invalid checksum.",
+            "_args": {
+                "bytes": b"\x8f\x00\x00\x00\x00\x00\x00\x00",
             },
             "_mocked_values": {},
             "_results": {
@@ -117,9 +161,9 @@ from pytcp.protocols.ip6.ip6__parser import Ip6Parser
         },
     ]
 )
-class TestIcmp6DestinationUnreachableMessageParserIntegrityChecks(TestCase):
+class TestIcmp6Mld2ReportMessageParserIntegrityChecks(TestCase):
     """
-    The ICMPv6 Destination Unreachable message parser integrity checks tests.
+    The ICMPv6 MLDv2 Report message parser integrity checks tests.
     """
 
     _description: str
@@ -127,11 +171,11 @@ class TestIcmp6DestinationUnreachableMessageParserIntegrityChecks(TestCase):
     _mocked_values: dict[str, Any]
     _results: dict[str, Any]
 
-    def test__icmp6__message__destination_unreachable__parser__from_bytes(
+    def test__icmp6__message__mld2__report__parser__from_bytes(
         self,
     ) -> None:
         """
-        Ensure the ICMPv6 Destination Unreachable message parser raises integrity error
+        Ensure the ICMPv6 MLDv2 Report message parser raises integrity error
         on malformed packets.
         """
 
