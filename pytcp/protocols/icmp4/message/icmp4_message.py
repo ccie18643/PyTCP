@@ -77,19 +77,19 @@ class Icmp4Message(ProtoStruct):
     code: Icmp4Code
     cksum: int
 
+    @abstractmethod
+    def validate_sanity(self) -> None:
+        """
+        Validate the ICMPv4 message sanity.
+        """
+
+        raise NotImplementedError
+
     @staticmethod
     @abstractmethod
     def validate_integrity(*, frame: bytes, ip4__payload_len: int) -> None:
         """
         Validate the ICMPv4 message integrity.
-        """
-
-        raise NotImplementedError
-
-    @abstractmethod
-    def validate_sanity(self) -> None:
-        """
-        Validate the ICMPv4 message sanity.
         """
 
         raise NotImplementedError
