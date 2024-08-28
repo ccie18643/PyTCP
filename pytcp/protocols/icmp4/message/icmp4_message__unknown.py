@@ -123,7 +123,7 @@ class Icmp4UnknownMessage(Icmp4Message):
     @override
     def validate_sanity(self) -> None:
         """
-        Validate the unknown ICMPv4 message sanity after parsing it.
+        Validate the ICMPv4 unknown message sanity after parsing it.
         """
 
         # Currently no sanity checks are implemented.
@@ -134,6 +134,8 @@ class Icmp4UnknownMessage(Icmp4Message):
         """
         Validate integrity of the ICMPv4 unknown message before parsing it.
         """
+
+        # Currently no integrity checks are implemented.
 
     @override
     @staticmethod

@@ -25,34 +25,40 @@
 
 
 """
-Module contains tests for the ICMPv6 Echo Reply message parser.
+Module contains tests for the ICMPv6 Echo Request message parser.
 
-tests/unit/protocols/icmp6/test__icmp6__message__echo_reply__parser.py
+tests/unit/protocols/icmp6/test__icmp6__echo_request__parser.py
 
 ver 3.0.1
 """
 
 
-from typing import Any
+from typing import Any, cast
 
 from parameterized import parameterized_class  # type: ignore
-from testslide import TestCase
 
+from pytcp.lib.packet import PacketRx
+from pytcp.protocols.icmp6.icmp6__parser import Icmp6Parser
 from pytcp.protocols.icmp6.message.icmp6_message__echo_reply import (
     Icmp6EchoReplyMessage,
 )
+from pytcp.protocols.icmp6.message.icmp6_message__echo_request import (
+    Icmp6EchoRequestMessage,
+)
+from tests.lib.testcase__packet_rx__ip6 import TestCasePacketRxIp6
 
 
 @parameterized_class(
     [
         {
-            "_description": "ICMP6 Echo Reply message, empty data.",
+            "_description": "ICMPv6 Echo Request message, empty data.",
             "_args": {
-                "bytes": b"\x81\x00\x00\x00\x30\x39\xd4\x31",
+                "bytes": b"\x80\x00\x7b\x94\x30\x39\xd4\x31",
             },
+            "_mocked_values": {},
             "_results": {
-                "from_bytes": Icmp6EchoReplyMessage(
-                    cksum=0,
+                "message": Icmp6EchoRequestMessage(
+                    cksum=31636,
                     id=12345,
                     seq=54321,
                     data=b"",
@@ -60,16 +66,17 @@ from pytcp.protocols.icmp6.message.icmp6_message__echo_reply import (
             },
         },
         {
-            "_description": "ICMP6 Echo Reply message, non-empty data.",
+            "_description": "ICMPv6 Echo Request message, non-empty data.",
             "_args": {
                 "bytes": (
-                    b"\x81\x00\x00\x00\x30\x39\xd4\x31\x30\x31\x32\x33\x34\x35\x36\x37"
+                    b"\x80\x00\xac\xbd\x30\x39\xd4\x31\x30\x31\x32\x33\x34\x35\x36\x37"
                     b"\x38\x39\x41\x42\x43\x44\x45\x46"
                 ),
             },
+            "_mocked_values": {},
             "_results": {
-                "from_bytes": Icmp6EchoReplyMessage(
-                    cksum=0,
+                "message": Icmp6EchoRequestMessage(
+                    cksum=44221,
                     id=12345,
                     seq=54321,
                     data=b"0123456789ABCDEF",
@@ -77,59 +84,49 @@ from pytcp.protocols.icmp6.message.icmp6_message__echo_reply import (
             },
         },
         {
-            "_description": "ICMP6 Echo Reply message, maximum length of data.",
+            "_description": "ICMPv6 Echo Request message, maximum length of data.",
             "_args": {
-                "bytes": b"\x81\x00\x00\x00\x2b\x67\x56\xce" + b"X" * 65527,
+                "bytes": b"\x80\x00\x33\x57\x2b\x67\x56\xce" + b"X" * 65527,
             },
+            "_mocked_values": {},
             "_results": {
-                "from_bytes": Icmp6EchoReplyMessage(
-                    cksum=0,
+                "message": Icmp6EchoRequestMessage(
+                    cksum=13143,
                     id=11111,
                     seq=22222,
                     data=b"X" * 65527,
                 ),
             },
         },
-        {
-            "_description": "ICMPv6 Echo Reply message, incorrect 'type' field.",
-            "_args": {
-                "bytes": b"\xff\x00\x00\x00\x00\x00\x00\x00",
-            },
-            "_results": {
-                "error": (
-                    "The 'type' field must be <Icmp6Type.ECHO_REPLY: 129>. "
-                    "Got: <Icmp6Type.UNKNOWN_255: 255>"
-                ),
-            },
-        },
     ]
 )
-class TestIcmp6MessageEchoReplyParser(TestCase):
+class TestIcmp6MessageEchoRequestParser(TestCasePacketRxIp6):
     """
-    The ICMPv6 Echo Reply message parser tests.
+    The ICMPv6 Echo Request message parser tests.
     """
 
     _description: str
     _args: dict[str, Any]
     _results: dict[str, Any]
 
-    def test__icmp6__message__echo_reply__parser__from_bytes(self) -> None:
+    _packet_rx: PacketRx
+
+    def test__icmp6__message__echo_request__parser__message(self) -> None:
         """
-        Ensure the ICMPv6 'Echo Reply' message 'from_bytes()' method
+        Ensure the ICMPv6 Echo Request message 'message()' method
         creates a proper message object.
         """
 
-        if "error" in self._results:
-            with self.assertRaises(AssertionError) as error:
-                Icmp6EchoReplyMessage.from_bytes(self._args["bytes"])
+        icmp6_parser = Icmp6Parser(packet_rx=self._packet_rx)
 
-            self.assertEqual(
-                str(error.exception),
-                self._results["error"],
-            )
+        # Convert the 'data' field from memoryview to bytes so we can compare.
+        object.__setattr__(
+            icmp6_parser.message,
+            "data",
+            bytes(cast(Icmp6EchoReplyMessage, icmp6_parser.message).data),
+        )
 
-        if "from_bytes" in self._results:
-            self.assertEqual(
-                Icmp6EchoReplyMessage.from_bytes(self._args["bytes"]),
-                self._results["from_bytes"],
-            )
+        self.assertEqual(
+            icmp6_parser.message,
+            self._results["message"],
+        )

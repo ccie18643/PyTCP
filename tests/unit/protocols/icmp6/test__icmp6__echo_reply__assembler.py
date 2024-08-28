@@ -29,15 +29,16 @@ Module contains tests for the ICMPv6 Echo Reply message assembler.
 
 tests/unit/protocols/icmp6/test__icmp6__message__echo_reply__packets.py
 
-ver 3.0.1
+ver 3.0.2
 """
 
 
-from typing import Any
+from typing import Any, cast
 
 from parameterized import parameterized_class  # type: ignore
 from testslide import TestCase
 
+from pytcp.protocols.icmp6.icmp6__assembler import Icmp6Assembler
 from pytcp.protocols.icmp6.message.icmp6_message import Icmp6Type
 from pytcp.protocols.icmp6.message.icmp6_message__echo_reply import (
     Icmp6EchoReplyCode,
@@ -61,7 +62,7 @@ from pytcp.protocols.icmp6.message.icmp6_message__echo_reply import (
                     "Icmp6EchoReplyMessage(code=<Icmp6EchoReplyCode.DEFAULT: 0>, "
                     "cksum=0, id=12345, seq=54321, data=b'')"
                 ),
-                "__bytes__": b"\x81\x00\x00\x00\x30\x39\xd4\x31",
+                "__bytes__": b"\x81\x00\x7a\x94\x30\x39\xd4\x31",
                 "type": Icmp6Type.ECHO_REPLY,
                 "code": Icmp6EchoReplyCode.DEFAULT,
                 "cksum": 0,
@@ -85,7 +86,7 @@ from pytcp.protocols.icmp6.message.icmp6_message__echo_reply import (
                     "cksum=0, id=12345, seq=54321, data=b'0123456789ABCDEF')"
                 ),
                 "__bytes__": (
-                    b"\x81\x00\x00\x00\x30\x39\xd4\x31\x30\x31\x32\x33\x34\x35\x36\x37"
+                    b"\x81\x00\xab\xbd\x30\x39\xd4\x31\x30\x31\x32\x33\x34\x35\x36\x37"
                     b"\x38\x39\x41\x42\x43\x44\x45\x46"
                 ),
                 "type": Icmp6Type.ECHO_REPLY,
@@ -110,7 +111,7 @@ from pytcp.protocols.icmp6.message.icmp6_message__echo_reply import (
                     "Icmp6EchoReplyMessage(code=<Icmp6EchoReplyCode.DEFAULT: 0>, cksum=0, "
                     f"id=11111, seq=22222, data=b'{"X" * 65527}')"
                 ),
-                "__bytes__": b"\x81\x00\x00\x00\x2b\x67\x56\xce" + b"X" * 65527,
+                "__bytes__": b"\x81\x00\x32\x57\x2b\x67\x56\xce" + b"X" * 65527,
                 "type": Icmp6Type.ECHO_REPLY,
                 "code": Icmp6EchoReplyCode.DEFAULT,
                 "cksum": 0,
@@ -136,7 +137,9 @@ class TestIcmp6MessageEchoReplyAssembler(TestCase):
         with testcase arguments.
         """
 
-        self._icmp6__echo_reply__message = Icmp6EchoReplyMessage(**self._args)
+        self._icmp6__assembler = Icmp6Assembler(
+            icmp6__message=Icmp6EchoReplyMessage(**self._args)
+        )
 
     def test__icmp6__message__echo_reply__assembler__len(self) -> None:
         """
@@ -145,7 +148,7 @@ class TestIcmp6MessageEchoReplyAssembler(TestCase):
         """
 
         self.assertEqual(
-            len(self._icmp6__echo_reply__message),
+            len(self._icmp6__assembler),
             self._results["__len__"],
         )
 
@@ -156,7 +159,7 @@ class TestIcmp6MessageEchoReplyAssembler(TestCase):
         """
 
         self.assertEqual(
-            str(self._icmp6__echo_reply__message),
+            str(self._icmp6__assembler),
             self._results["__str__"],
         )
 
@@ -167,7 +170,7 @@ class TestIcmp6MessageEchoReplyAssembler(TestCase):
         """
 
         self.assertEqual(
-            repr(self._icmp6__echo_reply__message),
+            repr(self._icmp6__assembler),
             self._results["__repr__"],
         )
 
@@ -178,7 +181,7 @@ class TestIcmp6MessageEchoReplyAssembler(TestCase):
         """
 
         self.assertEqual(
-            bytes(self._icmp6__echo_reply__message),
+            bytes(self._icmp6__assembler),
             self._results["__bytes__"],
         )
 
@@ -189,7 +192,7 @@ class TestIcmp6MessageEchoReplyAssembler(TestCase):
         """
 
         self.assertEqual(
-            self._icmp6__echo_reply__message.type,
+            self._icmp6__assembler.message.type,
             self._results["type"],
         )
 
@@ -200,7 +203,7 @@ class TestIcmp6MessageEchoReplyAssembler(TestCase):
         """
 
         self.assertEqual(
-            self._icmp6__echo_reply__message.code,
+            self._icmp6__assembler.message.code,
             self._results["code"],
         )
 
@@ -211,7 +214,7 @@ class TestIcmp6MessageEchoReplyAssembler(TestCase):
         """
 
         self.assertEqual(
-            self._icmp6__echo_reply__message.cksum,
+            self._icmp6__assembler.message.cksum,
             self._results["cksum"],
         )
 
@@ -222,7 +225,7 @@ class TestIcmp6MessageEchoReplyAssembler(TestCase):
         """
 
         self.assertEqual(
-            self._icmp6__echo_reply__message.id,
+            cast(Icmp6EchoReplyMessage, self._icmp6__assembler.message).id,
             self._results["id"],
         )
 
@@ -233,7 +236,7 @@ class TestIcmp6MessageEchoReplyAssembler(TestCase):
         """
 
         self.assertEqual(
-            self._icmp6__echo_reply__message.seq,
+            cast(Icmp6EchoReplyMessage, self._icmp6__assembler.message).seq,
             self._results["seq"],
         )
 
@@ -244,6 +247,6 @@ class TestIcmp6MessageEchoReplyAssembler(TestCase):
         """
 
         self.assertEqual(
-            self._icmp6__echo_reply__message.data,
+            cast(Icmp6EchoReplyMessage, self._icmp6__assembler.message).data,
             self._results["data"],
         )

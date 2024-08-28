@@ -29,7 +29,7 @@ Module contains the ICMPv6 packet parser.
 
 pytcp/protocols/icmp6/icmp6__parser.py
 
-ver 3.0.0
+ver 3.0.1
 """
 
 
@@ -38,13 +38,9 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, override
 
 from pytcp.lib.inet_cksum import inet_cksum
-from pytcp.lib.ip6_address import Ip6Address
 from pytcp.lib.proto_parser import ProtoParser
 from pytcp.protocols.icmp6.icmp6__base import Icmp6
-from pytcp.protocols.icmp6.icmp6__errors import (
-    Icmp6IntegrityError,
-    Icmp6SanityError,
-)
+from pytcp.protocols.icmp6.icmp6__errors import Icmp6IntegrityError
 from pytcp.protocols.icmp6.message.icmp6_message import (
     ICMP6__HEADER__LEN,
     Icmp6Type,
@@ -227,117 +223,8 @@ class Icmp6Parser(Icmp6, ProtoParser):
         Validate sanity of the ICMPv6 packet after parsing it.
         """
 
-        if isinstance(self._message, Icmp6DestinationUnreachableMessage):
-            return
-
-        if isinstance(self._message, Icmp6EchoRequestMessage):
-            return
-
-        if isinstance(self._message, Icmp6EchoReplyMessage):
-            return
-
-        if isinstance(self._message, Icmp6NdRouterSolicitationMessage):
-            if not self._ip6__hop == 255:
-                raise Icmp6SanityError(
-                    "The 'hop' field must be '255'. [RFC 4861]",
-                )
-            if not (self._ip6__src.is_unicast or self._ip6__src.is_unspecified):
-                raise Icmp6SanityError(
-                    "The 'src' address must be unicast or unspecified. [RFC 4861]",
-                )
-            if not self._ip6__dst == Ip6Address("ff02::2"):
-                raise Icmp6SanityError(
-                    "The 'dst' must be all-routers. [RFC 4861]",
-                )
-            if self._ip6__src.is_unspecified and self._message.option_slla:
-                raise Icmp6SanityError(
-                    "The 'nd_opt_slla' field must not be included if "
-                    "the 'src' address is unspecified. [RFC 4861]",
-                )
-
-            # TODO: Enforce proper option presence.
-
-        if isinstance(self._message, Icmp6NdRouterAdvertisementMessage):
-            if not self._ip6__hop == 255:
-                raise Icmp6SanityError(
-                    "The 'hop' field must be '255'. [RFC 4861]",
-                )
-            if not self._ip6__src.is_link_local:
-                raise Icmp6SanityError(
-                    "The 'src' address must be link local. [RFC 4861]",
-                )
-            if not (
-                self._ip6__dst.is_unicast
-                or self._ip6__dst == Ip6Address("ff02::1")
-            ):
-                raise Icmp6SanityError(
-                    "The 'dst' address must be unicast or all-nodes. [RFC 4861]",
-                )
-
-            # TODO: Enforce proper option presence.
-
-        if isinstance(self._message, Icmp6NdNeighborSolicitationMessage):
-            if not self._ip6__hop == 255:
-                raise Icmp6SanityError(
-                    "The 'hop' field must be '255'. [RFC 4861]",
-                )
-            if not (self._ip6__src.is_unicast or self._ip6__src.is_unspecified):
-                raise Icmp6SanityError(
-                    "The 'src' address must be unicast or unspecified. [RFC 4861]",
-                )
-            if self._ip6__dst not in {
-                self._message.target_address,
-                self._message.target_address.solicited_node_multicast,
-            }:
-                raise Icmp6SanityError(
-                    "The 'dst' address must be 'ns_target_address' address or it's "
-                    "solicited-node multicast address. [RFC 4861]",
-                )
-            if not self._message.target_address.is_unicast:
-                raise Icmp6SanityError(
-                    "The 'ns_target_address' address must be unicast. [RFC 4861]",
-                )
-            if (
-                self._ip6__src.is_unspecified
-                and self._message.option_slla is not None
-            ):
-                raise Icmp6SanityError(
-                    "The 'nd_opt_slla' address must not be included if "
-                    "the 'src' is unspecified. [RFC 4861]",
-                )
-
-            # TODO: Enforce proper option presence.
-
-        if isinstance(self._message, Icmp6NdNeighborAdvertisementMessage):
-            if not self._ip6__hop == 255:
-                raise Icmp6SanityError(
-                    "The 'hop' field must be '255'. [RFC 4861]",
-                )
-            if not self._ip6__src.is_unicast:
-                raise Icmp6SanityError(
-                    "The 'src' address must be unicast. [RFC 4861]",
-                )
-            if self._message.flag_s is True and not (
-                self._ip6__dst.is_unicast
-                or self._ip6__dst == Ip6Address("ff02::1")
-            ):
-                raise Icmp6SanityError(
-                    "If 'na_flag_s' flag is set then 'dst' address must be "
-                    "either unicast or all-nodes. [RFC 4861]",
-                )
-            if (
-                self._message.flag_s is False
-                and not self._ip6__dst == Ip6Address("ff02::1")
-            ):
-                raise Icmp6SanityError(
-                    "If 'na_flag_s' flag is not set then 'dst' address must "
-                    "be all-nodes address. [RFC 4861]",
-                )
-
-            # TODO: Enforce proper option presence.
-
-        if isinstance(self._message, Icmp6Mld2ReportMessage):
-            if not self._ip6__hop == 1:
-                raise Icmp6SanityError(
-                    "The 'hop' field must be set to '1'. [RFC 3810]",
-                )
+        self._message.validate_sanity(
+            ip6__hop=self._ip6__hop,
+            ip6__src=self._ip6__src,
+            ip6__dst=self._ip6__dst,
+        )

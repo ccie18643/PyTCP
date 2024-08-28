@@ -25,83 +25,65 @@
 
 
 """
-Module contains the ICMPv6 message base class.
+Module contains tests for the ICMPv6 ND Router Solicitation message parser sanity
+checks.
 
-pytcp/protocols/icmp6/message/icmp6_message.py
+tests/unit/protocols/icmp6/test__icmp6__message__nd__router_addvertisement__parser__sanity_checks.py
 
 ver 3.0.1
 """
 
 
-from __future__ import annotations
+from typing import Any
 
-from abc import abstractmethod
-from dataclasses import dataclass
-from typing import TYPE_CHECKING
+from parameterized import parameterized_class  # type: ignore
 
-from pytcp.lib.proto_enum import ProtoEnumByte
-from pytcp.lib.proto_struct import ProtoStruct
-
-if TYPE_CHECKING:
-    from pytcp.lib.ip6_address import Ip6Address
+from pytcp.lib.packet import PacketRx
+from pytcp.protocols.icmp6.icmp6__errors import Icmp6SanityError
+from pytcp.protocols.icmp6.icmp6__parser import Icmp6Parser
+from tests.lib.testcase__packet_rx__ip6 import TestCasePacketRxIp6
 
 
-# ICMPv6 message header [RFC 4443].
-
-# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-# |     Type      |     Code      |           Checksum            |
-# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-
-ICMP6__HEADER__LEN = 4
-ICMP6__HEADER__STRUCT = "! BBH"
-
-
-class Icmp6Type(ProtoEnumByte):
+@parameterized_class(
+    [
+        {
+            "_description": "The value of the 'ip6__hop' field is not 255.",
+            "_args": {
+                "bytes": b"\x85\x00\x7a\xff\x00\x00\x00\x00",
+            },
+            "_mocked_values": {
+                "ip6__hop": 64,
+            },
+            "_results": {
+                "error_message": (
+                    "ND Router Solicitation - [RFC 4861] The 'ip6__hop' field must be 255. Got: 64"
+                ),
+            },
+        },
+    ]
+)
+class TestIcmp4NdRouterSolicitationParserSanityChecks(TestCasePacketRxIp6):
     """
-    The ICMPv6 message 'type' field values.
-    """
-
-    DESTINATION_UNREACHABLE = 1
-    ECHO_REQUEST = 128
-    ECHO_REPLY = 129
-    ND__ROUTER_SOLICITATION = 133
-    ND__ROUTER_ADVERTISEMENT = 134
-    ND__NEIGHBOR_SOLICITATION = 135
-    ND__NEIGHBOR_ADVERTISEMENT = 136
-    MLD2__REPORT = 143
-
-
-class Icmp6Code(ProtoEnumByte):
-    """
-    The ICMPv6 message 'code' field values.
+    The ICMPv4 ND Router Solicitation message parser sanity checks tests.
     """
 
+    _description: str
+    _args: dict[str, Any]
+    _mocked_values: dict[str, Any]
+    _results: dict[str, Any]
 
-@dataclass(frozen=True, kw_only=True)
-class Icmp6Message(ProtoStruct):
-    """
-    The ICMPv6 message base.
-    """
+    _packet_rx: PacketRx
 
-    type: Icmp6Type
-    code: Icmp6Code
-    cksum: int
-
-    @abstractmethod
-    def validate_sanity(
-        self, *, ip6__hop: int, ip6__src: Ip6Address, ip6__dst: Ip6Address
-    ) -> None:
+    def test__icmp6__nd__router_solicitation__parser__from_bytes(self) -> None:
         """
-        Validate the ICMPv6 message sanity.
+        Ensure the ICMPv6 ND Router Solicitation parser raises sanity errors
+        on crazy packets.
         """
 
-        raise NotImplementedError
+        with self.assertRaises(Icmp6SanityError) as error:
+            Icmp6Parser(packet_rx=self._packet_rx)
 
-    @staticmethod
-    @abstractmethod
-    def validate_integrity(*, frame: bytes, ip6__dlen: int) -> None:
-        """
-        Validate the ICMPv6 message integrity.
-        """
-
-        raise NotImplementedError
+        self.assertEqual(
+            str(error.exception),
+            f"[SANITY ERROR][ICMPv6] {self._results["error_message"]}",
+        )

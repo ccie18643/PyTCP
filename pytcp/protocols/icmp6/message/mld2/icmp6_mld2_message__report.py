@@ -37,10 +37,13 @@ from __future__ import annotations
 
 import struct
 from dataclasses import dataclass, field
-from typing import override
+from typing import TYPE_CHECKING, override
 
 from pytcp.lib.int_checks import is_uint16
-from pytcp.protocols.icmp6.icmp6__errors import Icmp6IntegrityError
+from pytcp.protocols.icmp6.icmp6__errors import (
+    Icmp6IntegrityError,
+    Icmp6SanityError,
+)
 from pytcp.protocols.icmp6.message.icmp6_message import (
     Icmp6Code,
     Icmp6Message,
@@ -51,6 +54,10 @@ from pytcp.protocols.icmp6.message.mld2.icmp6_mld2__multicast_address_record imp
     Icmp6Mld2MulticastAddressRecord,
 )
 from pytcp.protocols.ip6.ip6__header import IP6__PAYLOAD__MAX_LEN
+
+if TYPE_CHECKING:
+    from pytcp.lib.ip6_address import Ip6Address
+
 
 # The ICMPv6 MLDv2 Report message (143/0) [RFC3810].
 
@@ -173,6 +180,20 @@ class Icmp6Mld2ReportMessage(Icmp6Message):
         """
 
         return len(self.records)
+
+    @override
+    def validate_sanity(
+        self, *, ip6__hop: int, ip6__src: Ip6Address, ip6__dst: Ip6Address
+    ) -> None:
+        """
+        Validate the ICMPv6 MLDv2 Report message sanity after parsing it.
+        """
+
+        if not (ip6__hop == 1):
+            raise Icmp6SanityError(
+                "[RFC 3810] The 'ip6__hop' field must be set to 1. "
+                f"Got: {ip6__hop!r}",
+            )
 
     @override
     @staticmethod

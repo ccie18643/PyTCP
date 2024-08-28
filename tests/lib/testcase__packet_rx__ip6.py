@@ -25,83 +25,65 @@
 
 
 """
-Module contains the ICMPv6 message base class.
+Module contains the customized TestCase class that mocks the IPv6 related values.
 
-pytcp/protocols/icmp6/message/icmp6_message.py
+tests/mocks/testcase__ip6.py
 
 ver 3.0.1
 """
 
 
-from __future__ import annotations
+from typing import Any, cast
 
-from abc import abstractmethod
-from dataclasses import dataclass
-from typing import TYPE_CHECKING
+from testslide import StrictMock, TestCase
 
-from pytcp.lib.proto_enum import ProtoEnumByte
-from pytcp.lib.proto_struct import ProtoStruct
-
-if TYPE_CHECKING:
-    from pytcp.lib.ip6_address import Ip6Address
+from pytcp.lib.ip6_address import Ip6Address
+from pytcp.lib.packet import PacketRx
+from pytcp.protocols.ip6.ip6__parser import Ip6Parser
 
 
-# ICMPv6 message header [RFC 4443].
-
-# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-# |     Type      |     Code      |           Checksum            |
-# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-
-ICMP6__HEADER__LEN = 4
-ICMP6__HEADER__STRUCT = "! BBH"
-
-
-class Icmp6Type(ProtoEnumByte):
+class TestCasePacketRxIp6(TestCase):
     """
-    The ICMPv6 message 'type' field values.
+    Customized TestCase class that provides PacketRx object and mocks
+    the IPv6 parser values.
     """
 
-    DESTINATION_UNREACHABLE = 1
-    ECHO_REQUEST = 128
-    ECHO_REPLY = 129
-    ND__ROUTER_SOLICITATION = 133
-    ND__ROUTER_ADVERTISEMENT = 134
-    ND__NEIGHBOR_SOLICITATION = 135
-    ND__NEIGHBOR_ADVERTISEMENT = 136
-    MLD2__REPORT = 143
+    _args: dict[str, Any] = {}
+    _mocked_values: dict[str, Any] = {}
+    _packet_rx: PacketRx
 
-
-class Icmp6Code(ProtoEnumByte):
-    """
-    The ICMPv6 message 'code' field values.
-    """
-
-
-@dataclass(frozen=True, kw_only=True)
-class Icmp6Message(ProtoStruct):
-    """
-    The ICMPv6 message base.
-    """
-
-    type: Icmp6Type
-    code: Icmp6Code
-    cksum: int
-
-    @abstractmethod
-    def validate_sanity(
-        self, *, ip6__hop: int, ip6__src: Ip6Address, ip6__dst: Ip6Address
-    ) -> None:
+    def setUp(self) -> None:
         """
-        Validate the ICMPv6 message sanity.
+        Set up the mocked values for the IPv6 related fields.
         """
 
-        raise NotImplementedError
+        self._packet_rx = PacketRx(self._args["bytes"])
 
-    @staticmethod
-    @abstractmethod
-    def validate_integrity(*, frame: bytes, ip6__dlen: int) -> None:
-        """
-        Validate the ICMPv6 message integrity.
-        """
-
-        raise NotImplementedError
+        self._packet_rx.ip6 = cast(Ip6Parser, StrictMock(template=Ip6Parser))
+        self.patch_attribute(
+            target=self._packet_rx.ip6,
+            attribute="dlen",
+            new_value=self._mocked_values.get(
+                "ip6__dlen", len(self._args["bytes"])
+            ),
+        )
+        self.patch_attribute(
+            target=self._packet_rx.ip6,
+            attribute="pshdr_sum",
+            new_value=self._mocked_values.get("ip6__pshdr_sum", 0),
+        )
+        self.patch_attribute(
+            target=self._packet_rx.ip6,
+            attribute="hop",
+            new_value=self._mocked_values.get("ip6__hop", 0),
+        )
+        self.patch_attribute(
+            target=self._packet_rx.ip6,
+            attribute="src",
+            new_value=self._mocked_values.get("ip6__src", Ip6Address()),
+        )
+        self.patch_attribute(
+            target=self._packet_rx.ip6,
+            attribute="dst",
+            new_value=self._mocked_values.get("ip6__dst", Ip6Address()),
+        )

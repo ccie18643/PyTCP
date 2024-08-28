@@ -27,7 +27,7 @@
 """
 Module contains tests for the ICMPv6 unknown message assembler.
 
-tests/unit/protocols/icmp6/test__icmp6__message__unknown__packets.py
+tests/unit/protocols/icmp6/test__icmp6__unknown__assembler.py
 
 ver 3.0.1
 """
@@ -38,6 +38,7 @@ from typing import Any
 from parameterized import parameterized_class  # type: ignore
 from testslide import TestCase
 
+from pytcp.protocols.icmp6.icmp6__assembler import Icmp6Assembler
 from pytcp.protocols.icmp6.message.icmp6_message import Icmp6Code, Icmp6Type
 from pytcp.protocols.icmp6.message.icmp6_message__unknown import (
     Icmp6UnknownMessage,
@@ -66,7 +67,7 @@ from pytcp.protocols.icmp6.message.icmp6_message__unknown import (
                     "raw=b'0123456789ABCDEF')"
                 ),
                 "__bytes__": (
-                    b"\xff\xff\x00\x00\x30\x31\x32\x33\x34\x35\x36\x37\x38\x39\x41\x42"
+                    b"\xff\xff\x31\x29\x30\x31\x32\x33\x34\x35\x36\x37\x38\x39\x41\x42"
                     b"\x43\x44\x45\x46"
                 ),
                 "type": Icmp6Type.from_int(255),
@@ -92,7 +93,9 @@ class TestIcmp6MessageUnknownAssembler(TestCase):
         arguments.
         """
 
-        self._icmp6__unknown__message = Icmp6UnknownMessage(**self._args)
+        self._icmp6__assembler = Icmp6Assembler(
+            icmp6__message=Icmp6UnknownMessage(**self._args)
+        )
 
     def test__icmp6__message__unknown__assembler__len(self) -> None:
         """
@@ -101,7 +104,7 @@ class TestIcmp6MessageUnknownAssembler(TestCase):
         """
 
         self.assertEqual(
-            len(self._icmp6__unknown__message),
+            len(self._icmp6__assembler),
             self._results["__len__"],
         )
 
@@ -112,7 +115,7 @@ class TestIcmp6MessageUnknownAssembler(TestCase):
         """
 
         self.assertEqual(
-            str(self._icmp6__unknown__message),
+            str(self._icmp6__assembler),
             self._results["__str__"],
         )
 
@@ -123,7 +126,7 @@ class TestIcmp6MessageUnknownAssembler(TestCase):
         """
 
         self.assertEqual(
-            repr(self._icmp6__unknown__message),
+            repr(self._icmp6__assembler),
             self._results["__repr__"],
         )
 
@@ -134,7 +137,7 @@ class TestIcmp6MessageUnknownAssembler(TestCase):
         """
 
         self.assertEqual(
-            bytes(self._icmp6__unknown__message),
+            bytes(self._icmp6__assembler),
             self._results["__bytes__"],
         )
 
@@ -145,7 +148,7 @@ class TestIcmp6MessageUnknownAssembler(TestCase):
         """
 
         self.assertEqual(
-            self._icmp6__unknown__message.type,
+            self._icmp6__assembler.message.type,
             self._results["type"],
         )
 
@@ -156,7 +159,7 @@ class TestIcmp6MessageUnknownAssembler(TestCase):
         """
 
         self.assertEqual(
-            self._icmp6__unknown__message.code,
+            self._icmp6__assembler.message.code,
             self._results["code"],
         )
 
@@ -167,6 +170,6 @@ class TestIcmp6MessageUnknownAssembler(TestCase):
         """
 
         self.assertEqual(
-            self._icmp6__unknown__message.cksum,
+            self._icmp6__assembler.message.cksum,
             self._results["cksum"],
         )

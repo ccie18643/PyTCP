@@ -25,11 +25,12 @@
 
 
 """
-Module contains tests for the ICMPv6 Destination Unreachable message assembler asserts.
+Module contains tests for the ICMPv6 Destination Unreachable message assembler
+& parser asserts.
 
-tests/unit/protocols/icmp6/test__icmp6__message__destination_unreachable__asserts.py
+tests/unit/protocols/icmp6/test__icmp6__destination_unreachable__asserts.py
 
-ver 3.0.1
+ver 3.0.2
 """
 
 
@@ -44,7 +45,7 @@ from pytcp.protocols.icmp6.message.icmp6_message__destination_unreachable import
 from pytcp.protocols.ip6.ip6__header import IP6__PAYLOAD__MAX_LEN
 
 
-class TestIcmp6MessageDestinationUnreachableAsserts(TestCase):
+class TestIcmp6MessageDestinationUnreachableAssemblerAsserts(TestCase):
     """
     The ICMPv6 Destination Unreachable message assembler & parser
     constructors argument assert tests.
@@ -147,4 +148,31 @@ class TestIcmp6MessageDestinationUnreachableAsserts(TestCase):
             f"The 'data' field length must be a 16-bit unsigned integer less than "
             f"or equal to {IP6__PAYLOAD__MAX_LEN - ICMP6__DESTINATION_UNREACHABLE__LEN}. "
             f"Got: {value!r}",
+        )
+
+
+class TestIcmp6MessageDestinationUnreachableParserAsserts(TestCase):
+    """
+    The ICMPv6 Destination Unreachable message parser argument constructor assert
+    tests.
+    """
+
+    def test__icmp6__message__destination_unreachable__wrong_type(self) -> None:
+        """
+        Ensure the ICMPv6 Destination Unreachable message parser raises
+        an exception when the provided '_bytes' argument contains incorrect
+        'type' field.
+        """
+
+        with self.assertRaises(AssertionError) as error:
+            Icmp6DestinationUnreachableMessage.from_bytes(
+                b"\xff\x00\xff\x00\x00\x00\x00\x00"
+            )
+
+        self.assertEqual(
+            str(error.exception),
+            (
+                "The 'type' field must be <Icmp6Type.DESTINATION_UNREACHABLE: 1>. "
+                "Got: <Icmp6Type.UNKNOWN_255: 255>"
+            ),
         )

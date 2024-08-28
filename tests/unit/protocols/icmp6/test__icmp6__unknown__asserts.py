@@ -25,16 +25,17 @@
 
 
 """
-Module contains tests for the ICMPv6 unknown message assembler asserts.
+Module contains tests for the ICMPv6 unknown message assembler & parser asserts.
 
-tests/unit/protocols/icmp6/test__icmp6__message__unknown__asserts.py
+tests/unit/protocols/icmp6/test__icmp6__unknown__asserts.py
 
-ver 3.0.1
+ver 3.0.2
 """
 
 
 from testslide import TestCase
 
+from pytcp.lib.inet_cksum import inet_cksum
 from pytcp.lib.int_checks import UINT_16__MAX, UINT_16__MIN
 from pytcp.protocols.icmp6.message.icmp6_message import Icmp6Code, Icmp6Type
 from pytcp.protocols.icmp6.message.icmp6_message__unknown import (
@@ -42,7 +43,7 @@ from pytcp.protocols.icmp6.message.icmp6_message__unknown import (
 )
 
 
-class TestIcmp6MessageUnknownArgAsserts(TestCase):
+class TestIcmp6MessageUnknownAssemblerAsserts(TestCase):
     """
     The ICMPv6 unknown message assembler constructor argument assert tests.
     """
@@ -143,3 +144,34 @@ class TestIcmp6MessageUnknownArgAsserts(TestCase):
             f"The 'raw' field must be a bytes or memoryview. "
             f"Got: {type(value)!r}",
         )
+
+
+class TestIcmp6MessageUnknownParserAsserts(TestCase):
+    """
+    The ICMPv6 unknown message parser argument constructor assert tests.
+    """
+
+    def test__icmp6__message__unknown__wrong_type(self) -> None:
+        """
+        Ensure the ICMPv6 unknown message parser raises an exception when
+        the provided '_bytes' argument contains incorrect 'type' field.
+        """
+
+        for type in range(0, 256):
+            if type not in Icmp6Type.get_known_values():
+                continue
+
+            _bytes = bytearray(b"\x00\x00\x00\x00\x00\x00\x00\x00")
+            _bytes[0] = type
+            _bytes[2:4] = inet_cksum(_bytes).to_bytes(2)
+
+            with self.assertRaises(AssertionError) as error:
+                Icmp6UnknownMessage.from_bytes(bytes(_bytes))
+
+            self.assertEqual(
+                str(error.exception),
+                (
+                    "The 'type' field must not be known. "
+                    f"Got: {Icmp6Type.from_int(type)!r}"
+                ),
+            )

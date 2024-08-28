@@ -41,7 +41,10 @@ from typing import override
 
 from pytcp.lib.int_checks import is_uint16
 from pytcp.lib.ip6_address import Ip6Address
-from pytcp.protocols.icmp6.icmp6__errors import Icmp6IntegrityError
+from pytcp.protocols.icmp6.icmp6__errors import (
+    Icmp6IntegrityError,
+    Icmp6SanityError,
+)
 from pytcp.protocols.icmp6.message.icmp6_message import Icmp6Code, Icmp6Type
 from pytcp.protocols.icmp6.message.nd.icmp6_nd_message import Icmp6NdMessage
 from pytcp.protocols.icmp6.message.nd.option.icmp6_nd_options import (
@@ -161,6 +164,56 @@ class Icmp6NdNeighborSolicitationMessage(Icmp6NdMessage):
             0,
             bytes(self.target_address),
         ) + bytes(self.options)
+
+    @override
+    def validate_sanity(
+        self, *, ip6__hop: int, ip6__src: Ip6Address, ip6__dst: Ip6Address
+    ) -> None:
+        """
+        Validate the ICMPv6 ND Neighbor Solicitation message sanity after
+        parsing it.
+        """
+
+        if not (ip6__hop == 255):
+            raise Icmp6SanityError(
+                "ND Neighbor Solicitation - [RFC 4861] The 'ip6__hop' field "
+                f"must be 255. Got: {ip6__hop!r}",
+            )
+
+        if not (ip6__src.is_unicast or ip6__src.is_unspecified):
+            raise Icmp6SanityError(
+                "ND Neighbor Solicitation - [RFC 4861] The 'ip6__src' address "
+                f"must be unicast or unspecified. Got: {ip6__hop!r}",
+            )
+
+        if not (
+            ip6__dst
+            in {
+                self.target_address,
+                self.target_address.solicited_node_multicast,
+            },
+        ):
+            raise Icmp6SanityError(
+                "ND Neighbor Solicitation - [RFC 4861] The 'ip6__dst' address "
+                "must be the same as 'target_address' address or related "
+                f"solicited-node multicast address. Got: {ip6__dst!r}",
+            )
+
+        if not (self.target_address.is_unicast):
+            raise Icmp6SanityError(
+                "ND Neighbor Solicitation - [RFC 4861] The 'target_address' "
+                f"address must be unicast. Got: {self.target_address!r}",
+            )
+
+        if ip6__src.is_unspecified:
+            if not (self.option_slla is None):
+                raise Icmp6SanityError(
+                    "ND Neighbor Solicitation - [RFC 4861] When the 'ip6__src' "
+                    "is unspecified, the 'slla' option must not be included. "
+                    f"Got: {self.option_slla!r}",
+                )
+
+        # TODO: Enforce proper option presence.
 
     @override
     @staticmethod

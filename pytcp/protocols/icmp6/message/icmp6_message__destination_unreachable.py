@@ -37,7 +37,7 @@ from __future__ import annotations
 
 import struct
 from dataclasses import dataclass, field
-from typing import override
+from typing import TYPE_CHECKING, override
 
 from pytcp.config import IP6__MIN_MTU
 from pytcp.lib.int_checks import is_uint16
@@ -51,6 +51,10 @@ from pytcp.protocols.ip6.ip6__header import (
     IP6__HEADER__LEN,
     IP6__PAYLOAD__MAX_LEN,
 )
+
+if TYPE_CHECKING:
+    from pytcp.lib.ip6_address import Ip6Address
+
 
 # The ICMPv6 Destination Unreachable message (1/0-6) [RFC4443].
 
@@ -173,6 +177,17 @@ class Icmp6DestinationUnreachableMessage(Icmp6Message):
             )
             + self.data
         )
+
+    @override
+    def validate_sanity(
+        self, *, ip6__hop: int, ip6__src: Ip6Address, ip6__dst: Ip6Address
+    ) -> None:
+        """
+        Validate the ICMPv6 Destination Unreachable message sanity after
+        parsing it.
+        """
+
+        # Currently no sanity checks are implemented.
 
     @override
     @staticmethod

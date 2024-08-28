@@ -41,7 +41,10 @@ from typing import override
 
 from pytcp.lib.int_checks import is_uint16
 from pytcp.lib.ip6_address import Ip6Address
-from pytcp.protocols.icmp6.icmp6__errors import Icmp6IntegrityError
+from pytcp.protocols.icmp6.icmp6__errors import (
+    Icmp6IntegrityError,
+    Icmp6SanityError,
+)
 from pytcp.protocols.icmp6.message.icmp6_message import Icmp6Code, Icmp6Type
 from pytcp.protocols.icmp6.message.nd.icmp6_nd_message import Icmp6NdMessage
 from pytcp.protocols.icmp6.message.nd.option.icmp6_nd_options import (
@@ -181,6 +184,45 @@ class Icmp6NdNeighborAdvertisementMessage(Icmp6NdMessage):
             (self.flag_r << 31) | (self.flag_s << 30) | (self.flag_o << 29),
             bytes(self.target_address),
         ) + bytes(self.options)
+
+    @override
+    def validate_sanity(
+        self, *, ip6__hop: int, ip6__src: Ip6Address, ip6__dst: Ip6Address
+    ) -> None:
+        """
+        Validate the ICMPv6 ND Neighbor Advertisement message sanity after
+        parsing it.
+        """
+
+        if not (ip6__hop == 255):
+            raise Icmp6SanityError(
+                "ND Neighbor Advertisement - [RFC 4861] The 'ip6__hop' field "
+                f"must be 255. Got: {ip6__hop!r}",
+            )
+
+        if not (ip6__src.is_unicast):
+            raise Icmp6SanityError(
+                "ND Neighbor Advertisement - [RFC 4861] The 'ip6__src' address "
+                f"must be unicast. Got: {ip6__src!r}",
+            )
+
+        if self.flag_s is True:
+            if not (ip6__dst.is_unicast or ip6__dst.is_multicast__all_nodes):
+                raise Icmp6SanityError(
+                    "ND Neighbor Advertisement - [RFC 4861] If 'na_flag_s' flag is "
+                    "set then 'ip6__dst' address must be either unicast or all-nodes "
+                    f"multicast. Got: {ip6__dst!r}",
+                )
+
+        if self.flag_s is False:
+            if not (ip6__dst.is_multicast__all_nodes):
+                raise Icmp6SanityError(
+                    "ND Neighbor Advertisement - [RFC 4861] If 'na_flag_s' flag is not "
+                    "set then 'ip6__dst' address must be all-nodes multicast address. "
+                    f"Got: {ip6__dst!r}",
+                )
+
+        # TODO: Enforce proper option presence.
 
     @override
     @staticmethod

@@ -25,11 +25,12 @@
 
 
 """
-Module contains tests for the ICMPv6 Echo Reply message assembler argument asserts.
+Module contains tests for the ICMPv6 Echo Reply message assembler & parser
+argument asserts.
 
 tests/unit/protocols/icmp6/test__icmp6__message__echo_reply__asserts.py
 
-ver 3.0.1
+ver 3.0.2
 """
 
 from testslide import TestCase
@@ -43,7 +44,7 @@ from pytcp.protocols.icmp6.message.icmp6_message__echo_reply import (
 from pytcp.protocols.ip6.ip6__header import IP6__PAYLOAD__MAX_LEN
 
 
-class TestIcmp6MessageEchoReplyAsserts(TestCase):
+class TestIcmp6MessageEchoReplyAssemblerAsserts(TestCase):
     """
     The ICMPv6 Echo Reply message assembler argument constructor assert tests.
     """
@@ -206,8 +207,8 @@ class TestIcmp6MessageEchoReplyAsserts(TestCase):
     def test__icmp6__message__echo_reply__data_len__over_max(self) -> None:
         """
         Ensure the ICMPv6 Echo Reply message assembler constructor raises
-        an exception when the length of the provided 'data' argument is higher
-        than the maximum supported value.
+        an exception when the length of the provided 'data' argument is
+        higher than the maximum supported value.
         """
 
         value = IP6__PAYLOAD__MAX_LEN - ICMP6__ECHO_REPLY__LEN + 1
@@ -223,4 +224,29 @@ class TestIcmp6MessageEchoReplyAsserts(TestCase):
             f"The 'data' field length must be a 16-bit unsigned integer less than "
             f"or equal to {IP6__PAYLOAD__MAX_LEN - ICMP6__ECHO_REPLY__LEN}. "
             f"Got: {value!r}",
+        )
+
+
+class TestIcmp6MessageEchoReplyParserAsserts(TestCase):
+    """
+    The ICMPv6 Echo Reply message parser argument constructor assert tests.
+    """
+
+    def test__icmp6__message__echo_reply__wrong_type(self) -> None:
+        """
+        Ensure the ICMPv6 Echo Reply message parser raises an exception when
+        the provided '_bytes' argument contains incorrect 'type' field.
+        """
+
+        with self.assertRaises(AssertionError) as error:
+            Icmp6EchoReplyMessage.from_bytes(
+                b"\xff\x00\xff\x00\x00\x00\x00\x00"
+            )
+
+        self.assertEqual(
+            str(error.exception),
+            (
+                "The 'type' field must be <Icmp6Type.ECHO_REPLY: 129>. "
+                "Got: <Icmp6Type.UNKNOWN_255: 255>"
+            ),
         )

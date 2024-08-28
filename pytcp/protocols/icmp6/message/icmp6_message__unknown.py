@@ -25,7 +25,7 @@
 
 
 """
-Module contains the unknown ICMPv6 message support class.
+Module contains the ICMPv6 unknown message support class.
 
 pytcp/protocols/icmp6/message/icmp6_message__unknown.py
 
@@ -37,7 +37,7 @@ from __future__ import annotations
 
 import struct
 from dataclasses import dataclass
-from typing import override
+from typing import TYPE_CHECKING, override
 
 from pytcp.lib.int_checks import is_uint16
 from pytcp.protocols.icmp6.message.icmp6_message import (
@@ -47,6 +47,9 @@ from pytcp.protocols.icmp6.message.icmp6_message import (
     Icmp6Message,
     Icmp6Type,
 )
+
+if TYPE_CHECKING:
+    from pytcp.lib.ip6_address import Ip6Address
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -123,11 +126,23 @@ class Icmp6UnknownMessage(Icmp6Message):
         )
 
     @override
+    def validate_sanity(
+        self, *, ip6__hop: int, ip6__src: Ip6Address, ip6__dst: Ip6Address
+    ) -> None:
+        """
+        Validate the ICMPv6 unknown message sanity after parsing it.
+        """
+
+        # Currently no sanity checks are implemented.
+
+    @override
     @staticmethod
     def validate_integrity(*, frame: bytes, ip6__dlen: int) -> None:
         """
         Validate integrity of the ICMPv6 unknown message before parsing it.
         """
+
+        # Currently no integrity checks are implemented.
 
     @override
     @staticmethod
@@ -138,6 +153,11 @@ class Icmp6UnknownMessage(Icmp6Message):
 
         type, code, cksum = struct.unpack(
             ICMP6__HEADER__STRUCT, _bytes[:ICMP6__HEADER__LEN]
+        )
+
+        assert (received_type := type) not in Icmp6Type.get_known_values(), (
+            "The 'type' field must not be known. "
+            f"Got: {Icmp6Type.from_int(received_type)!r}"
         )
 
         return Icmp6UnknownMessage(

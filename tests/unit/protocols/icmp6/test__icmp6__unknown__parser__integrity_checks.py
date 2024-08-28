@@ -28,22 +28,20 @@
 Module contains tests for the ICMPv6 unknown message parser integrity
 checks.
 
-tests/unit/protocols/icmp6/test__icmp6__message__unknown__parser__integrity_checks.py
+tests/unit/protocols/icmp6/test__icmp6__unknown__parser__integrity_checks.py
 
-ver 3.0.1
+ver 3.0.2
 """
 
 
-from typing import Any, cast
+from typing import Any
 
 from parameterized import parameterized_class  # type: ignore
-from testslide import StrictMock, TestCase
 
-from pytcp.lib.ip6_address import Ip6Address
 from pytcp.lib.packet import PacketRx
 from pytcp.protocols.icmp6.icmp6__errors import Icmp6IntegrityError
 from pytcp.protocols.icmp6.icmp6__parser import Icmp6Parser
-from pytcp.protocols.ip6.ip6__parser import Ip6Parser
+from tests.lib.testcase__packet_rx__ip6 import TestCasePacketRxIp6
 
 
 @parameterized_class(
@@ -98,7 +96,7 @@ from pytcp.protocols.ip6.ip6__parser import Ip6Parser
         },
     ]
 )
-class TestIcmp6UnknownMessageParserIntegrityChecks(TestCase):
+class TestIcmp6UnknownMessageParserIntegrityChecks(TestCasePacketRxIp6):
     """
     The ICMPv6 unknown message parser integrity checks tests.
     """
@@ -108,6 +106,8 @@ class TestIcmp6UnknownMessageParserIntegrityChecks(TestCase):
     _mocked_values: dict[str, Any]
     _results: dict[str, Any]
 
+    _packet_rx: PacketRx
+
     def test__icmp6__message__unknown__parser__from_bytes(
         self,
     ) -> None:
@@ -116,39 +116,8 @@ class TestIcmp6UnknownMessageParserIntegrityChecks(TestCase):
         on malformed packets.
         """
 
-        packet_rx = PacketRx(self._args["bytes"])
-
-        packet_rx.ip6 = cast(Ip6Parser, StrictMock(template=Ip6Parser))
-        self.patch_attribute(
-            target=packet_rx.ip6,
-            attribute="dlen",
-            new_value=self._mocked_values.get(
-                "ip6__dlen", len(self._args["bytes"])
-            ),
-        )
-        self.patch_attribute(
-            target=packet_rx.ip6,
-            attribute="pshdr_sum",
-            new_value=0,
-        )
-        self.patch_attribute(
-            target=packet_rx.ip6,
-            attribute="src",
-            new_value=Ip6Address(),
-        )
-        self.patch_attribute(
-            target=packet_rx.ip6,
-            attribute="dst",
-            new_value=Ip6Address(),
-        )
-        self.patch_attribute(
-            target=packet_rx.ip6,
-            attribute="hop",
-            new_value=64,
-        )
-
         with self.assertRaises(Icmp6IntegrityError) as error:
-            Icmp6Parser(packet_rx=packet_rx)
+            Icmp6Parser(packet_rx=self._packet_rx)
 
         self.assertEqual(
             str(error.exception),

@@ -216,6 +216,26 @@ class Ip6Address(IpAddress):
         )  # ff00::/8
 
     @property
+    def is_multicast__all_nodes(self) -> bool:
+        """
+        Check if address is IPv6 all nodes multicast address.
+        """
+
+        return (
+            self._address == 0xFF02_0000_0000_0000_0000_0000_0000_0001
+        )  # ff02::1/128
+
+    @property
+    def is_multicast__all_routers(self) -> bool:
+        """
+        Check if address is IPv6 all routers multicast address.
+        """
+
+        return (
+            self._address == 0xFF02_0000_0000_0000_0000_0000_0000_0002
+        )  # ff02::2/128
+
+    @property
     @override
     def is_solicited_node_multicast(self) -> bool:
         """

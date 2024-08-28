@@ -25,9 +25,10 @@
 
 
 """
-Module contains tests for the ICMPv6 unknown message parser.
+Module contains tests for the ICMPv6 ND Neighbor Advertisement message parser sanity
+checks.
 
-tests/unit/protocols/icmp6/test__icmp6__message__echo_request__parser.py
+tests/unit/protocols/icmp6/test__icmp6__message__nd__neighbor_addvertisement__parser__sanity_checks.py
 
 ver 3.0.1
 """
@@ -36,51 +37,58 @@ ver 3.0.1
 from typing import Any
 
 from parameterized import parameterized_class  # type: ignore
-from testslide import TestCase
 
-from pytcp.protocols.icmp6.message.icmp6_message import Icmp6Code, Icmp6Type
-from pytcp.protocols.icmp6.message.icmp6_message__unknown import (
-    Icmp6UnknownMessage,
-)
+from pytcp.lib.packet import PacketRx
+from pytcp.protocols.icmp6.icmp6__errors import Icmp6SanityError
+from pytcp.protocols.icmp6.icmp6__parser import Icmp6Parser
+from tests.lib.testcase__packet_rx__ip6 import TestCasePacketRxIp6
 
 
 @parameterized_class(
     [
         {
-            "_description": "ICMPv6 unknown message, empty data.",
+            "_description": "The value of the 'ip6__hop' field is not 255.",
             "_args": {
                 "bytes": (
-                    b"\xff\xff\x00\x00\x30\x31\x32\x33\x34\x35\x36\x37\x38\x39\x41\x42"
-                    b"\x43\x44\x45\x46"
+                    b"\x88\x00\xaa\x44\xa0\x00\x00\x00\x20\x01\x0d\xb8\x00\x00\x00\x00"
+                    b"\x00\x00\x00\x00\x00\x00\x00\x01"
                 ),
             },
+            "_mocked_values": {
+                "ip6__hop": 64,
+            },
             "_results": {
-                "from_bytes": Icmp6UnknownMessage(
-                    type=Icmp6Type.from_int(255),
-                    code=Icmp6Code.from_int(255),
-                    cksum=0,
-                    raw=b"0123456789ABCDEF",
+                "error_message": (
+                    "ND Neighbor Advertisement - [RFC 4861] The 'ip6__hop' field must be 255. Got: 64"
                 ),
             },
         },
     ]
 )
-class TestIcmp6MessageUnknownParser(TestCase):
+class TestIcmp4NdNeighborAdvertisementParserSanityChecks(TestCasePacketRxIp6):
     """
-    The ICMPv6 unknown message parser tests.
+    The ICMPv6 ND Neighbor Advertisement message parser sanity checks tests.
     """
 
     _description: str
     _args: dict[str, Any]
+    _mocked_values: dict[str, Any]
     _results: dict[str, Any]
 
-    def test__icmp6__message__unknown__parser__from_bytes(self) -> None:
+    _packet_rx: PacketRx
+
+    def test__icmp6__nd__neighbor_advertisement__parser__from_bytes(
+        self,
+    ) -> None:
         """
-        Ensure the ICMPv6 unknown message 'from_bytes()' method creates
-        a proper message object.
+        Ensure the ICMPv6 ND Neighbor Advertisement parser raises sanity errors
+        on crazy packets.
         """
 
+        with self.assertRaises(Icmp6SanityError) as error:
+            Icmp6Parser(packet_rx=self._packet_rx)
+
         self.assertEqual(
-            Icmp6UnknownMessage.from_bytes(self._args["bytes"]),
-            self._results["from_bytes"],
+            str(error.exception),
+            f"[SANITY ERROR][ICMPv6] {self._results["error_message"]}",
         )

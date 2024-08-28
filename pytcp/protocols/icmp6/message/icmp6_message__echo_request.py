@@ -37,7 +37,7 @@ from __future__ import annotations
 
 import struct
 from dataclasses import dataclass, field
-from typing import override
+from typing import TYPE_CHECKING, override
 
 from pytcp.lib.int_checks import is_uint16
 from pytcp.protocols.icmp6.icmp6__errors import Icmp6IntegrityError
@@ -47,6 +47,10 @@ from pytcp.protocols.icmp6.message.icmp6_message import (
     Icmp6Type,
 )
 from pytcp.protocols.ip6.ip6__header import IP6__PAYLOAD__MAX_LEN
+
+if TYPE_CHECKING:
+    from pytcp.lib.ip6_address import Ip6Address
+
 
 # The 'Echo Request' message (128/0) [RFC4443].
 
@@ -163,6 +167,16 @@ class Icmp6EchoRequestMessage(Icmp6Message):
             )
             + self.data
         )
+
+    @override
+    def validate_sanity(
+        self, *, ip6__hop: int, ip6__src: Ip6Address, ip6__dst: Ip6Address
+    ) -> None:
+        """
+        Validate the ICMPv6 Echo Request message sanity after parsing it.
+        """
+
+        # Currently no sanity checks are implemented.
 
     @override
     @staticmethod

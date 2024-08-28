@@ -25,12 +25,12 @@
 
 
 """
-Module contains tests for the ICMPv6 Echo Request message assembler argument
-asserts.
+Module contains tests for the ICMPv6 Echo Request message assembler & parser
+argument asserts.
 
-tests/unit/protocols/icmp6/test__icmp6__message__echo_request__asserts.py
+tests/unit/protocols/icmp6/test__icmp6__echo_request__asserts.py
 
-ver 3.0.1
+ver 3.0.2
 """
 
 from testslide import TestCase
@@ -44,7 +44,7 @@ from pytcp.protocols.icmp6.message.icmp6_message__echo_request import (
 from pytcp.protocols.ip6.ip6__header import IP6__PAYLOAD__MAX_LEN
 
 
-class TestIcmp6MessageEchoRequestAsserts(TestCase):
+class TestIcmp6MessageEchoRequestAssemblerAsserts(TestCase):
     """
     The ICMPv6 Echo Request message assembler argument constructor assert tests.
     """
@@ -210,4 +210,29 @@ class TestIcmp6MessageEchoRequestAsserts(TestCase):
             f"The 'data' field length must be a 16-bit unsigned integer less than "
             f"or equal to {IP6__PAYLOAD__MAX_LEN - ICMP6__ECHO_REQUEST__LEN}. "
             f"Got: {value!r}",
+        )
+
+
+class TestIcmp6MessageEchoRequestParserAsserts(TestCase):
+    """
+    The ICMPv6 Echo Request message parser argument constructor assert tests.
+    """
+
+    def test__icmp6__message__echo_request__wrong_type(self) -> None:
+        """
+        Ensure the ICMPv6 Echo Request message parser raises an exception when
+        the provided '_bytes' argument contains incorrect 'type' field.
+        """
+
+        with self.assertRaises(AssertionError) as error:
+            Icmp6EchoRequestMessage.from_bytes(
+                b"\xff\x00\xff\x00\x00\x00\x00\x00"
+            )
+
+        self.assertEqual(
+            str(error.exception),
+            (
+                "The 'type' field must be <Icmp6Type.ECHO_REQUEST: 128>. "
+                "Got: <Icmp6Type.UNKNOWN_255: 255>"
+            ),
         )
