@@ -27,7 +27,7 @@
 """
 Module contains tests for the ICMPv6 Echo Request message assembler.
 
-tests/unit/protocols/icmp6/test__icmp6__message__echo_request__packets.py
+tests/unit/protocols/icmp6/test__icmp6__echo_request__assembler.py
 
 ver 3.0.2
 """
@@ -122,7 +122,7 @@ from pytcp.protocols.icmp6.message.icmp6_message__echo_request import (
         },
     ]
 )
-class TestIcmp6MessageEchoRequestAssembler(TestCase):
+class TestIcmp6EchoRequestAssembler(TestCase):
     """
     The ICMPv6 Echo Request message assembler tests.
     """
@@ -141,7 +141,7 @@ class TestIcmp6MessageEchoRequestAssembler(TestCase):
             icmp6__message=Icmp6EchoRequestMessage(**self._args)
         )
 
-    def test__icmp6__message__echo_request__assembler__len(self) -> None:
+    def test__icmp6__echo_request__assembler__len(self) -> None:
         """
         Ensure the ICMPv6 Echo Request message '__len__()' method returns
         a correct value.
@@ -152,7 +152,7 @@ class TestIcmp6MessageEchoRequestAssembler(TestCase):
             self._results["__len__"],
         )
 
-    def test__icmp6__message__echo_request__assembler__str(self) -> None:
+    def test__icmp6__echo_request__assembler__str(self) -> None:
         """
         Ensure the ICMPv6 Echo Request message '__str__()' method returns
         a correct value.
@@ -163,7 +163,7 @@ class TestIcmp6MessageEchoRequestAssembler(TestCase):
             self._results["__str__"],
         )
 
-    def test__icmp6__message__echo_request__assembler__repr(self) -> None:
+    def test__icmp6__echo_request__assembler__repr(self) -> None:
         """
         Ensure the ICMPv6 Echo Request message '__repr__()' method returns
         a correct value.
@@ -174,7 +174,7 @@ class TestIcmp6MessageEchoRequestAssembler(TestCase):
             self._results["__repr__"],
         )
 
-    def test__icmp6__message__echo_request__assembler__bytes(self) -> None:
+    def test__icmp6__echo_request__assembler__bytes(self) -> None:
         """
         Ensure the ICMPv6 Echo Request message '__bytes__()' method returns
         a correct value.
@@ -185,7 +185,7 @@ class TestIcmp6MessageEchoRequestAssembler(TestCase):
             self._results["__bytes__"],
         )
 
-    def test__icmp6__message__echo_request__assembler__type(self) -> None:
+    def test__icmp6__echo_request__assembler__type(self) -> None:
         """
         Ensure the ICMPv6 Echo Request message 'type' field contains
         a correct value.
@@ -196,7 +196,7 @@ class TestIcmp6MessageEchoRequestAssembler(TestCase):
             self._results["type"],
         )
 
-    def test__icmp6__message__echo_request__assembler__code(self) -> None:
+    def test__icmp6__echo_request__assembler__code(self) -> None:
         """
         Ensure the ICMPv6 Echo Request message 'code' field contains
         a correct value.
@@ -207,7 +207,7 @@ class TestIcmp6MessageEchoRequestAssembler(TestCase):
             self._results["code"],
         )
 
-    def test__icmp6__message__echo_request__assembler__cksum(self) -> None:
+    def test__icmp6__echo_request__assembler__cksum(self) -> None:
         """
         Ensure the ICMPv6 Echo Request message 'cksum' field contains
         a correct value.
@@ -218,7 +218,7 @@ class TestIcmp6MessageEchoRequestAssembler(TestCase):
             self._results["cksum"],
         )
 
-    def test__icmp6__message__echo_request__assembler__id(self) -> None:
+    def test__icmp6__echo_request__assembler__id(self) -> None:
         """
         Ensure the ICMPv6 Echo Request message 'id' field contains
         a correct value.
@@ -229,7 +229,7 @@ class TestIcmp6MessageEchoRequestAssembler(TestCase):
             self._results["id"],
         )
 
-    def test__icmp6__message__echo_request__assembler__seq(self) -> None:
+    def test__icmp6__echo_request__assembler__seq(self) -> None:
         """
         Ensure the ICMPv6 Echo Request message 'seq' field contains
         a correct value.
@@ -240,7 +240,7 @@ class TestIcmp6MessageEchoRequestAssembler(TestCase):
             self._results["seq"],
         )
 
-    def test__icmp6__message__echo_request__assembler__data(self) -> None:
+    def test__icmp6__echo_request__assembler__data(self) -> None:
         """
         Ensure the ICMPv6 Echo Request message 'data' field contains
         a correct value.

@@ -96,7 +96,7 @@ from tests.lib.testcase__packet_rx__ip6 import TestCasePacketRxIp6
         },
     ]
 )
-class TestIcmp6UnknownMessageParserIntegrityChecks(TestCasePacketRxIp6):
+class TestIcmp6UnknownParserIntegrityChecks(TestCasePacketRxIp6):
     """
     The ICMPv6 unknown message parser integrity checks tests.
     """
@@ -108,7 +108,7 @@ class TestIcmp6UnknownMessageParserIntegrityChecks(TestCasePacketRxIp6):
 
     _packet_rx: PacketRx
 
-    def test__icmp6__message__unknown__parser__from_bytes(
+    def test__icmp6__unknown__parser__from_bytes(
         self,
     ) -> None:
         """

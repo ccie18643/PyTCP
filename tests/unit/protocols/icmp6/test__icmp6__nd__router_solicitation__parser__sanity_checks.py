@@ -28,9 +28,9 @@
 Module contains tests for the ICMPv6 ND Router Solicitation message parser sanity
 checks.
 
-tests/unit/protocols/icmp6/test__icmp6__message__nd__router_addvertisement__parser__sanity_checks.py
+tests/unit/protocols/icmp6/test__icmp6__nd__router_addvertisement__parser__sanity_checks.py
 
-ver 3.0.1
+ver 3.0.2
 """
 
 
@@ -56,7 +56,8 @@ from tests.lib.testcase__packet_rx__ip6 import TestCasePacketRxIp6
             },
             "_results": {
                 "error_message": (
-                    "ND Router Solicitation - [RFC 4861] The 'ip6__hop' field must be 255. Got: 64"
+                    "ND Router Solicitation - [RFC 4861] The 'ip6__hop' field "
+                    "must be 255. Got: 64"
                 ),
             },
         },

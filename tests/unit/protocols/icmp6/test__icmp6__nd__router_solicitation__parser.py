@@ -25,20 +25,22 @@
 
 
 """
-This module contains tests for the ICMPv6 ND Router Solicitation message parser.
+Module contains tests for the ICMPv6 ND Router Solicitation message parser.
 
 tests/unit/protocols/icmp6/test__icmp6__message__nd__router_solicitation__parser.py
 
-ver 3.0.0
+ver 3.0.2
 """
 
 
 from typing import Any
 
 from parameterized import parameterized_class  # type: ignore
-from testslide import TestCase
 
+from pytcp.lib.ip6_address import Ip6Address
 from pytcp.lib.mac_address import MacAddress
+from pytcp.lib.packet import PacketRx
+from pytcp.protocols.icmp6.icmp6__parser import Icmp6Parser
 from pytcp.protocols.icmp6.message.nd.icmp6_nd_message__router_solicitation import (
     Icmp6NdRouterSolicitationMessage,
 )
@@ -48,6 +50,7 @@ from pytcp.protocols.icmp6.message.nd.option.icmp6_nd_option__slla import (
 from pytcp.protocols.icmp6.message.nd.option.icmp6_nd_options import (
     Icmp6NdOptions,
 )
+from tests.lib.testcase__packet_rx__ip6 import TestCasePacketRxIp6
 
 
 @parameterized_class(
@@ -55,11 +58,16 @@ from pytcp.protocols.icmp6.message.nd.option.icmp6_nd_options import (
         {
             "_description": "ICMPv6 ND Router Solicitation message, no options.",
             "_args": {
-                "bytes": b"\x85\x00\x00\x00\x00\x00\x00\x00",
+                "bytes": b"\x85\x00\x7a\xff\x00\x00\x00\x00",
+            },
+            "_mocked_values": {
+                "ip6__hop": 255,
+                "ip6__src": Ip6Address("::"),
+                "ip6__dst": Ip6Address("ff02::2"),
             },
             "_results": {
-                "from_bytes": Icmp6NdRouterSolicitationMessage(
-                    cksum=0,
+                "message": Icmp6NdRouterSolicitationMessage(
+                    cksum=31487,
                     options=Icmp6NdOptions(),
                 ),
             },
@@ -67,32 +75,25 @@ from pytcp.protocols.icmp6.message.nd.option.icmp6_nd_options import (
         {
             "_description": "ICMPv6 ND Router Solicitation message, Slla option present.",
             "_args": {
-                "bytes": b"\x85\x00\x00\x00\x00\x00\x00\x00\x01\x01\x00\x11\x22\x33\x44\x55",
+                "bytes": b"\x85\x00\x13\x65\x00\x00\x00\x00\x01\x01\x00\x11\x22\x33\x44\x55",
+            },
+            "_mocked_values": {
+                "ip6__hop": 255,
+                "ip6__src": Ip6Address("2001:db8::1"),
+                "ip6__dst": Ip6Address("ff02::2"),
             },
             "_results": {
-                "from_bytes": Icmp6NdRouterSolicitationMessage(
-                    cksum=0,
+                "message": Icmp6NdRouterSolicitationMessage(
+                    cksum=4965,
                     options=Icmp6NdOptions(
                         Icmp6NdOptionSlla(slla=MacAddress("00:11:22:33:44:55")),
                     ),
                 ),
             },
         },
-        {
-            "_description": "ICMPv6 ND Router Solicitation message, incorrect 'type' field.",
-            "_args": {
-                "bytes": b"\xff\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00",
-            },
-            "_results": {
-                "error": (
-                    "The 'type' field must be <Icmp6Type.ND__ROUTER_SOLICITATION: 133>. "
-                    "Got: <Icmp6Type.UNKNOWN_255: 255>"
-                ),
-            },
-        },
     ]
 )
-class TestIcmp6MessageNdRouterSolicitationParser(TestCase):
+class TestIcmp6MessageNdRouterSolicitationParser(TestCasePacketRxIp6):
     """
     The ICMPv6 ND Router Solicitation message parser tests.
     """
@@ -100,6 +101,8 @@ class TestIcmp6MessageNdRouterSolicitationParser(TestCase):
     _description: str
     _args: dict[str, Any]
     _results: dict[str, Any]
+
+    _packet_rx: PacketRx
 
     def test__icmp6__message__nd__router_solicitation__parser__from_bytes(
         self,
@@ -109,19 +112,9 @@ class TestIcmp6MessageNdRouterSolicitationParser(TestCase):
         creates a proper message object.
         """
 
-        if "error" in self._results:
-            with self.assertRaises(AssertionError) as error:
-                Icmp6NdRouterSolicitationMessage.from_bytes(self._args["bytes"])
+        icmp6_parser = Icmp6Parser(packet_rx=self._packet_rx)
 
-            self.assertEqual(
-                str(error.exception),
-                self._results["error"],
-            )
-
-        if "from_bytes" in self._results:
-            self.assertEqual(
-                Icmp6NdRouterSolicitationMessage.from_bytes(
-                    self._args["bytes"]
-                ),
-                self._results["from_bytes"],
-            )
+        self.assertEqual(
+            icmp6_parser.message,
+            self._results["message"],
+        )

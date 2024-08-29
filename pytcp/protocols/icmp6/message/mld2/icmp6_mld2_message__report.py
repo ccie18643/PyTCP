@@ -40,6 +40,7 @@ from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, override
 
 from pytcp.lib.int_checks import is_uint16
+from pytcp.lib.ip6_address import IP6_ADDRESS_LEN
 from pytcp.protocols.icmp6.icmp6__errors import (
     Icmp6IntegrityError,
     Icmp6SanityError,
@@ -191,7 +192,7 @@ class Icmp6Mld2ReportMessage(Icmp6Message):
 
         if not (ip6__hop == 1):
             raise Icmp6SanityError(
-                "[RFC 3810] The 'ip6__hop' field must be set to 1. "
+                "MLDv2 Report - [RFC 3810] The 'ip6__hop' field must be 1. "
                 f"Got: {ip6__hop!r}",
             )
 
@@ -224,9 +225,9 @@ class Icmp6Mld2ReportMessage(Icmp6Message):
 
             record_offset += (
                 ICMP6__MLD2__MULTICAST_ADDRESS_RECORD__LEN
-                + frame[record_offset + 1]
+                + (frame[record_offset + 1] << 2)
                 + int.from_bytes(frame[record_offset + 2 : record_offset + 4])
-                * 16
+                * IP6_ADDRESS_LEN
             )
 
         if not (record_offset == ip6__dlen):

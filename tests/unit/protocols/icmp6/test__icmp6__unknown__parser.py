@@ -56,6 +56,7 @@ from tests.lib.testcase__packet_rx__ip6 import TestCasePacketRxIp6
                     b"\x43\x44\x45\x46"
                 ),
             },
+            "mocked_values": {},
             "_results": {
                 "message": Icmp6UnknownMessage(
                     type=Icmp6Type.from_int(255),
@@ -67,7 +68,7 @@ from tests.lib.testcase__packet_rx__ip6 import TestCasePacketRxIp6
         },
     ]
 )
-class TestIcmp6MessageUnknownParser(TestCasePacketRxIp6):
+class TestIcmp6UnknownParser(TestCasePacketRxIp6):
     """
     The ICMPv6 unknown message parser tests.
     """
@@ -78,7 +79,7 @@ class TestIcmp6MessageUnknownParser(TestCasePacketRxIp6):
 
     _packet_rx: PacketRx
 
-    def test__icmp6__message__unknown__parser__from_bytes(self) -> None:
+    def test__icmp6__unknown__parser__from_bytes(self) -> None:
         """
         Ensure the ICMPv6 unknown message 'from_bytes()' method creates
         a proper message object.

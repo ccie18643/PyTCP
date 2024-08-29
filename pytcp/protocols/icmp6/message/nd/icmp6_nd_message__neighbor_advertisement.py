@@ -165,7 +165,8 @@ class Icmp6NdNeighborAdvertisementMessage(Icmp6NdMessage):
             f"{'R' if self.flag_r else '-'}"
             f"{'S' if self.flag_s else '-'}"
             f"{'O' if self.flag_o else '-'}, "
-            f"target {self.target_address}, opts [{self.options}], "
+            f"target {self.target_address}, "
+            f"{f'opts [{self.options}], ' if self.options else ''}"
             f"len {len(self)} ({ICMP6__ND__NEIGHBOR_ADVERTISEMENT__LEN}+"
             f"{len(self.options)})"
         )

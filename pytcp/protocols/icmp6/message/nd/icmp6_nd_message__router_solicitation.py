@@ -131,9 +131,9 @@ class Icmp6NdRouterSolicitationMessage(Icmp6NdMessage):
         """
 
         return (
-            f"ICMPv6 ND Router Solicitation"
-            f"{f', opts [{self.options}]' if self.options else ''}"
-            f", len {len(self)} ({ICMP6__ND__ROUTER_SOLICITATION__LEN}+"
+            f"ICMPv6 ND Router Solicitation, "
+            f"{f'opts [{self.options}], ' if self.options else ''}"
+            f"len {len(self)} ({ICMP6__ND__ROUTER_SOLICITATION__LEN}+"
             f"{len(self.options)})"
         )
 

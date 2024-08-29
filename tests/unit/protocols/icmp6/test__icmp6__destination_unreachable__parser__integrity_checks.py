@@ -115,9 +115,7 @@ from tests.lib.testcase__packet_rx__ip6 import TestCasePacketRxIp6
         },
     ]
 )
-class TestIcmp6DestinationUnreachableMessageParserIntegrityChecks(
-    TestCasePacketRxIp6
-):
+class TestIcmp6DestinationUnreachableParserIntegrityChecks(TestCasePacketRxIp6):
     """
     The ICMPv6 Destination Unreachable message parser integrity checks tests.
     """
@@ -129,7 +127,7 @@ class TestIcmp6DestinationUnreachableMessageParserIntegrityChecks(
 
     _packet_rx: PacketRx
 
-    def test__icmp6__message__destination_unreachable__parser__from_bytes(
+    def test__icmp6__destination_unreachable__parser__from_bytes(
         self,
     ) -> None:
         """

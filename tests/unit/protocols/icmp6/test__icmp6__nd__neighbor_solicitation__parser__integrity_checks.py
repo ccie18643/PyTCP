@@ -25,36 +25,34 @@
 
 
 """
-Module contains tests for the ICMPv6 ND Neighbor Advertisement message parser integrity
+Module contains tests for the ICMPv6 ND Neighbor Solicitation message parser integrity
 checks.
 
-tests/unit/protocols/icmp6/test__icmp6__message__nd__neighbor_addvertisement__parser__integrity_checks.py
+tests/unit/protocols/icmp6/test__icmp6__nd__neighbor_addvertisement__parser__integrity_checks.py
 
-ver 3.0.1
+ver 3.0.2
 """
 
 
-from typing import Any, cast
+from typing import Any
 
 from parameterized import parameterized_class  # type: ignore
-from testslide import StrictMock, TestCase
 
-from pytcp.lib.ip6_address import Ip6Address
 from pytcp.lib.packet import PacketRx
 from pytcp.protocols.icmp6.icmp6__errors import Icmp6IntegrityError
 from pytcp.protocols.icmp6.icmp6__parser import Icmp6Parser
-from pytcp.protocols.ip6.ip6__parser import Ip6Parser
+from tests.lib.testcase__packet_rx__ip6 import TestCasePacketRxIp6
 
 
 @parameterized_class(
     [
         {
             "_description": (
-                "ICMPv6 ND Neighbor Advertisement message, "
+                "ICMPv6 ND Neighbor Solicitation message, "
                 "the 'ICMP6_HEADER_LEN <= self._ip6__dlen' condition not met."
             ),
             "_args": {
-                "bytes": b"\x88\x00\x00",
+                "bytes": b"\x87\x00\x00",
             },
             "_mocked_values": {
                 "ip6__dlen": 3,
@@ -69,12 +67,12 @@ from pytcp.protocols.ip6.ip6__parser import Ip6Parser
         },
         {
             "_description": (
-                "ICMPv6 ND Neighbor Advertisement message, "
+                "ICMPv6 ND Neighbor Solicitation message, "
                 "the 'self._ip6__dlen <= len(self._frame)' condition not met."
             ),
             "_args": {
                 "bytes": (
-                    b"\x88\x00\x00\x00\xa0\x00\x00\x00\x20\x01\x0d\xb8\x00\x00\x00\x00"
+                    b"\x87\x00\x00\x00\x00\x00\x00\x00\x20\x01\x0d\xb8\x00\x00\x00\x00"
                     b"\x00\x00\x00\x00\x00\x00\x00"
                 ),
             },
@@ -91,12 +89,13 @@ from pytcp.protocols.ip6.ip6__parser import Ip6Parser
         },
         {
             "_description": (
-                "ICMPv6 ND Neighbor Advertisement message, "
-                "the 'ICMP6__ND__NEIGHBOR_ADVERTISEMENT__LEN <= self._ip6__dlen' condition not met."
+                "ICMPv6 ND Neighbor Solicitation message, "
+                "the 'ICMP6__ND__NEIGHBOR_SOLICITATION__LEN <= self._ip6__dlen' "
+                "condition not met."
             ),
             "_args": {
                 "bytes": (
-                    b"\x88\x00\x00\x00\xa0\x00\x00\x00\x20\x01\x0d\xb8\x00\x00\x00\x00"
+                    b"\x87\x00\x00\x00\x00\x00\x00\x00\x20\x01\x0d\xb8\x00\x00\x00\x00"
                     b"\x00\x00\x00\x00\x00\x00\x00"
                 ),
             },
@@ -105,8 +104,8 @@ from pytcp.protocols.ip6.ip6__parser import Ip6Parser
             },
             "_results": {
                 "error_message": (
-                    "The condition 'ICMP6__ND__NEIGHBOR_ADVERTISEMENT__LEN <= ip6__dlen "
-                    "<= len(frame)' must be met. Got: ICMP6__ND__NEIGHBOR_ADVERTISEMENT__LEN=24, "
+                    "The condition 'ICMP6__ND__NEIGHBOR_SOLICITATION__LEN <= ip6__dlen "
+                    "<= len(frame)' must be met. Got: ICMP6__ND__NEIGHBOR_SOLICITATION__LEN=24, "
                     "ip6__dlen=23, len(frame)=23"
                 ),
             },
@@ -115,7 +114,7 @@ from pytcp.protocols.ip6.ip6__parser import Ip6Parser
             "_description": "ICMPv6 ND Neighbor Advertisement message, invalid checksum.",
             "_args": {
                 "bytes": (
-                    b"\x88\x00\x00\x00\xa0\x00\x00\x00\x20\x01\x0d\xb8\x00\x00\x00\x00"
+                    b"\x87\x00\x00\x00\x00\x00\x00\x00\x20\x01\x0d\xb8\x00\x00\x00\x00"
                     b"\x00\x00\x00\x00\x00\x00\x00\x01"
                 ),
             },
@@ -126,9 +125,11 @@ from pytcp.protocols.ip6.ip6__parser import Ip6Parser
         },
     ]
 )
-class TestIcmp6NdNeighborAdvertisementMessageParserIntegrityChecks(TestCase):
+class TestIcmp6NdNeighborSolicitationMessageParserIntegrityChecks(
+    TestCasePacketRxIp6
+):
     """
-    The ICMPv6 ND Neighbor Advertisement message parser integrity checks tests.
+    The ICMPv6 ND Neighbor Solicitation message parser integrity checks tests.
     """
 
     _description: str
@@ -136,47 +137,18 @@ class TestIcmp6NdNeighborAdvertisementMessageParserIntegrityChecks(TestCase):
     _mocked_values: dict[str, Any]
     _results: dict[str, Any]
 
-    def test__icmp6__message__nd__neighbor_advertisement__parser__from_bytes(
+    _packet_rx: PacketRx
+
+    def test__icmp6__message__nd__neighbor_solicitation__parser__from_bytes(
         self,
     ) -> None:
         """
-        Ensure the ICMPv6 ND Neighbor Advertisement message parser raises
+        Ensure the ICMPv6 ND Neighbor Solicitation message parser raises
         integrity error on malformed packets.
         """
 
-        packet_rx = PacketRx(self._args["bytes"])
-
-        packet_rx.ip6 = cast(Ip6Parser, StrictMock(template=Ip6Parser))
-        self.patch_attribute(
-            target=packet_rx.ip6,
-            attribute="dlen",
-            new_value=self._mocked_values.get(
-                "ip6__dlen", len(self._args["bytes"])
-            ),
-        )
-        self.patch_attribute(
-            target=packet_rx.ip6,
-            attribute="pshdr_sum",
-            new_value=self._mocked_values.get("ip6__pshdr_sum", 0),
-        )
-        self.patch_attribute(
-            target=packet_rx.ip6,
-            attribute="src",
-            new_value=self._mocked_values.get("ip6__src", Ip6Address()),
-        )
-        self.patch_attribute(
-            target=packet_rx.ip6,
-            attribute="dst",
-            new_value=self._mocked_values.get("ip6__dst", Ip6Address()),
-        )
-        self.patch_attribute(
-            target=packet_rx.ip6,
-            attribute="hop",
-            new_value=self._mocked_values.get("ip6__hop", 64),
-        )
-
         with self.assertRaises(Icmp6IntegrityError) as error:
-            Icmp6Parser(packet_rx=packet_rx)
+            Icmp6Parser(packet_rx=self._packet_rx)
 
         self.assertEqual(
             str(error.exception),

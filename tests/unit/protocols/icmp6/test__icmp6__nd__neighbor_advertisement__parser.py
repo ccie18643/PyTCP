@@ -25,22 +25,30 @@
 
 
 """
-Module contains tests for the ICMPv6 Echo Reply message parser.
+Module contains tests for the ICMPv6 ND Neighbor Advertisement message parser.
 
-tests/unit/protocols/icmp6/test__icmp6__echo_reply__parser.py
+tests/unit/protocols/icmp6/test__icmp6__nd__neighbor_advertisement__parser.py
 
 ver 3.0.2
 """
 
 
-from typing import Any, cast
+from typing import Any
 
 from parameterized import parameterized_class  # type: ignore
 
+from pytcp.lib.ip6_address import Ip6Address
+from pytcp.lib.mac_address import MacAddress
 from pytcp.lib.packet import PacketRx
 from pytcp.protocols.icmp6.icmp6__parser import Icmp6Parser
-from pytcp.protocols.icmp6.message.icmp6_message__echo_reply import (
-    Icmp6EchoReplyMessage,
+from pytcp.protocols.icmp6.message.nd.icmp6_nd_message__neighbor_advertisement import (
+    Icmp6NdNeighborAdvertisementMessage,
+)
+from pytcp.protocols.icmp6.message.nd.option.icmp6_nd_option__slla import (
+    Icmp6NdOptionSlla,
+)
+from pytcp.protocols.icmp6.message.nd.option.icmp6_nd_options import (
+    Icmp6NdOptions,
 )
 from tests.lib.testcase__packet_rx__ip6 import TestCasePacketRxIp6
 
@@ -48,58 +56,60 @@ from tests.lib.testcase__packet_rx__ip6 import TestCasePacketRxIp6
 @parameterized_class(
     [
         {
-            "_description": "ICMP6 Echo Reply message, empty data.",
-            "_args": {
-                "bytes": b"\x81\x00\x7a\x94\x30\x39\xd4\x31",
-            },
-            "_mocked_values": {},
-            "_results": {
-                "message": Icmp6EchoReplyMessage(
-                    cksum=31380,
-                    id=12345,
-                    seq=54321,
-                    data=b"",
-                ),
-            },
-        },
-        {
-            "_description": "ICMP6 Echo Reply message, non-empty data.",
+            "_description": "ICMPv6 ND Neighbor Advertisement message, no options.",
             "_args": {
                 "bytes": (
-                    b"\x81\x00\xab\xbd\x30\x39\xd4\x31\x30\x31\x32\x33\x34\x35\x36\x37"
-                    b"\x38\x39\x41\x42\x43\x44\x45\x46"
+                    b"\x88\x00\xaa\x44\xa0\x00\x00\x00\x20\x01\x0d\xb8\x00\x00\x00\x00"
+                    b"\x00\x00\x00\x00\x00\x00\x00\x01"
                 ),
             },
-            "_mocked_values": {},
+            "_mocked_values": {
+                "ip6__hop": 255,
+                "ip6__src": Ip6Address("2001:db8::1"),
+                "ip6__dst": Ip6Address("ff02::1"),
+            },
             "_results": {
-                "message": Icmp6EchoReplyMessage(
-                    cksum=43965,
-                    id=12345,
-                    seq=54321,
-                    data=b"0123456789ABCDEF",
+                "message": Icmp6NdNeighborAdvertisementMessage(
+                    cksum=43588,
+                    flag_r=True,
+                    flag_s=False,
+                    flag_o=True,
+                    target_address=Ip6Address("2001:db8::1"),
+                    options=Icmp6NdOptions(),
                 ),
             },
         },
         {
-            "_description": "ICMP6 Echo Reply message, maximum length of data.",
+            "_description": "ICMPv6 ND Neighbor Advertisement message, Slla option present.",
             "_args": {
-                "bytes": b"\x81\x00\x32\x57\x2b\x67\x56\xce" + b"X" * 65527,
+                "bytes": (
+                    b"\x88\x00\xa2\xa9\x40\x00\x00\x00\x20\x01\x0d\xb8\x00\x00\x00\x00"
+                    b"\x00\x00\x00\x00\x00\x00\x00\x02\x01\x01\x00\x11\x22\x33\x44\x55"
+                ),
             },
-            "_mocked_values": {},
+            "_mocked_values": {
+                "ip6__hop": 255,
+                "ip6__src": Ip6Address("2001:db8::1"),
+                "ip6__dst": Ip6Address("ff02::1"),
+            },
             "_results": {
-                "message": Icmp6EchoReplyMessage(
-                    cksum=12887,
-                    id=11111,
-                    seq=22222,
-                    data=b"X" * 65527,
+                "message": Icmp6NdNeighborAdvertisementMessage(
+                    cksum=41641,
+                    flag_r=False,
+                    flag_s=True,
+                    flag_o=False,
+                    target_address=Ip6Address("2001:db8::2"),
+                    options=Icmp6NdOptions(
+                        Icmp6NdOptionSlla(slla=MacAddress("00:11:22:33:44:55")),
+                    ),
                 ),
             },
         },
     ]
 )
-class TestIcmp6EchoReplyParser(TestCasePacketRxIp6):
+class TestIcmp6NdNeighborAdvertisementParser(TestCasePacketRxIp6):
     """
-    The ICMPv6 Echo Reply message parser tests.
+    The ICMPv6 ND Neighbor Advertisement message parser tests.
     """
 
     _description: str
@@ -109,20 +119,15 @@ class TestIcmp6EchoReplyParser(TestCasePacketRxIp6):
 
     _packet_rx: PacketRx
 
-    def test__icmp6__echo_reply__parser__from_bytes(self) -> None:
+    def test__icmp6__nd__neighbor_advertisement__parser__from_bytes(
+        self,
+    ) -> None:
         """
-        Ensure the ICMPv6 Echo Reply message 'from_bytes()' method
-        creates a proper message object.
+        Ensure the ICMPv6 ND Neighbor Advertisement message 'from_bytes()'
+        method creates a proper message object.
         """
 
         icmp6_parser = Icmp6Parser(packet_rx=self._packet_rx)
-
-        # Convert the 'data' field from memoryview to bytes so we can compare.
-        object.__setattr__(
-            icmp6_parser.message,
-            "data",
-            bytes(cast(Icmp6EchoReplyMessage, icmp6_parser.message).data),
-        )
 
         self.assertEqual(
             icmp6_parser.message,

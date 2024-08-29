@@ -176,7 +176,8 @@ class Icmp6NdRouterAdvertisementMessage(Icmp6NdMessage):
             f"ICMPv6 ND Router Advertisement, hop {self.hop}, flags "
             f"{'M' if self.flag_m else '-'}{'O' if self.flag_o else '-'}, "
             f"rlft {self.router_lifetime}, reacht {self.reachable_time}, "
-            f"retrt {self.retrans_timer}, opts [{self.options}], "
+            f"retrt {self.retrans_timer}, "
+            f"{f'opts [{self.options}], ' if self.options else ''}"
             f"len {len(self)} ({ICMP6__ND__ROUTER_ADVERTISEMENT__LEN}+"
             f"{len(self.options)})"
         )

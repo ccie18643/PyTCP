@@ -25,12 +25,12 @@
 
 
 """
-This module contains tests for the ICMPv6 ND Router Solicitation message assembler & parser
-argument asserts.
+Module contains tests for the ICMPv6 ND Router Solicitation message assembler
+& parser argument asserts.
 
-tests/unit/protocols/icmp6/test__icmp6__message__nd__router_solicitation__asserts.py
+tests/unit/protocols/icmp6/test__icmp6__nd__router_solicitation__asserts.py
 
-ver 3.0.0
+ver 3.0.2
 """
 
 from testslide import TestCase
@@ -45,7 +45,7 @@ from pytcp.protocols.icmp6.message.nd.option.icmp6_nd_options import (
 )
 
 
-class TestIcmp6MessageNdRouterSolicitationAsserts(TestCase):
+class TestIcmp6NdRouterSolicitationAsserts(TestCase):
     """
     The ICMPv6 ND Router Solicitation message assembler & parser argument
     constructors assert tests.
@@ -63,7 +63,7 @@ class TestIcmp6MessageNdRouterSolicitationAsserts(TestCase):
             "options": Icmp6NdOptions(),
         }
 
-    def test__icmp6__message__nd__router_solicitation__code__not_Icmp6NdRouterSolicitationCode(
+    def test__icmp6__nd__router_solicitation__code__not_Icmp6NdRouterSolicitationCode(
         self,
     ) -> None:
         """
@@ -80,10 +80,13 @@ class TestIcmp6MessageNdRouterSolicitationAsserts(TestCase):
 
         self.assertEqual(
             str(error.exception),
-            f"The 'code' field must be an Icmp6NdRouterSolicitationCode. Got: {type(value)!r}",
+            (
+                "The 'code' field must be an Icmp6NdRouterSolicitationCode. "
+                f"Got: {type(value)!r}"
+            ),
         )
 
-    def test__icmp6__message__nd__router_solicitation__cksum__under_min(
+    def test__icmp6__nd__router_solicitation__cksum__under_min(
         self,
     ) -> None:
         """
@@ -99,10 +102,13 @@ class TestIcmp6MessageNdRouterSolicitationAsserts(TestCase):
 
         self.assertEqual(
             str(error.exception),
-            f"The 'cksum' field must be a 16-bit unsigned integer. Got: {value!r}",
+            (
+                "The 'cksum' field must be a 16-bit unsigned integer. "
+                f"Got: {value!r}"
+            ),
         )
 
-    def test__icmp6__message__nd__router_solicitation__cksum__over_max(
+    def test__icmp6__nd__router_solicitation__cksum__over_max(
         self,
     ) -> None:
         """
@@ -118,10 +124,13 @@ class TestIcmp6MessageNdRouterSolicitationAsserts(TestCase):
 
         self.assertEqual(
             str(error.exception),
-            f"The 'cksum' field must be a 16-bit unsigned integer. Got: {value!r}",
+            (
+                "The 'cksum' field must be a 16-bit unsigned integer. "
+                f"Got: {value!r}"
+            ),
         )
 
-    def test__icmp6__message__nd__router_solicitation__options__not_Icmp6NdOptions(
+    def test__icmp6__nd__router_solicitation__options__not_Icmp6NdOptions(
         self,
     ) -> None:
         """
@@ -136,5 +145,35 @@ class TestIcmp6MessageNdRouterSolicitationAsserts(TestCase):
 
         self.assertEqual(
             str(error.exception),
-            f"The 'options' field must be an Icmp6NdOptions. Got: {type(value)!r}",
+            (
+                "The 'options' field must be an Icmp6NdOptions. "
+                f"Got: {type(value)!r}"
+            ),
+        )
+
+
+class TestIcmp6NdRouterSolicitationParserAsserts(TestCase):
+    """
+    The ICMPv6 ND Router Solicitation message parser argument constructor
+    assert tests.
+    """
+
+    def test__icmp6__nd__router_solicitation__wrong_type(self) -> None:
+        """
+        Ensure the ICMPv6 ND Router Soliciataion message parser raises
+        an exception when the provided '_bytes' argument contains incorrect
+        'type' field.
+        """
+
+        with self.assertRaises(AssertionError) as error:
+            Icmp6NdRouterSolicitationMessage.from_bytes(
+                b"\xff\x00\x00\xff\x00\x00\x00\x00"
+            )
+
+        self.assertEqual(
+            str(error.exception),
+            (
+                "The 'type' field must be <Icmp6Type.ND__ROUTER_SOLICITATION: "
+                "133>. Got: <Icmp6Type.UNKNOWN_255: 255>"
+            ),
         )

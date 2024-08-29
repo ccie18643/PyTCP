@@ -53,6 +53,7 @@ from tests.lib.testcase__packet_rx__ip6 import TestCasePacketRxIp6
             "_args": {
                 "bytes": b"\x01\x00\xfe\xff\x00\x00\x00\x00",
             },
+            "mocked_values": {},
             "_results": {
                 "message": Icmp6DestinationUnreachableMessage(
                     code=Icmp6DestinationUnreachableCode.NO_ROUTE,
@@ -66,6 +67,7 @@ from tests.lib.testcase__packet_rx__ip6 import TestCasePacketRxIp6
             "_args": {
                 "bytes": b"\x01\x01\xfe\xfe\x00\x00\x00\x00",
             },
+            "mocked_values": {},
             "_results": {
                 "message": Icmp6DestinationUnreachableMessage(
                     code=Icmp6DestinationUnreachableCode.PROHIBITED,
@@ -79,6 +81,7 @@ from tests.lib.testcase__packet_rx__ip6 import TestCasePacketRxIp6
             "_args": {
                 "bytes": b"\x01\x02\xfe\xfd\x00\x00\x00\x00",
             },
+            "mocked_values": {},
             "_results": {
                 "message": Icmp6DestinationUnreachableMessage(
                     code=Icmp6DestinationUnreachableCode.SCOPE,
@@ -92,6 +95,7 @@ from tests.lib.testcase__packet_rx__ip6 import TestCasePacketRxIp6
             "_args": {
                 "bytes": b"\x01\x03\xfe\xfc\x00\x00\x00\x00",
             },
+            "mocked_values": {},
             "_results": {
                 "message": Icmp6DestinationUnreachableMessage(
                     code=Icmp6DestinationUnreachableCode.ADDRESS,
@@ -105,6 +109,7 @@ from tests.lib.testcase__packet_rx__ip6 import TestCasePacketRxIp6
             "_args": {
                 "bytes": b"\x01\x04\xfe\xfb\x00\x00\x00\x00",
             },
+            "mocked_values": {},
             "_results": {
                 "message": Icmp6DestinationUnreachableMessage(
                     code=Icmp6DestinationUnreachableCode.PORT,
@@ -118,6 +123,7 @@ from tests.lib.testcase__packet_rx__ip6 import TestCasePacketRxIp6
             "_args": {
                 "bytes": b"\x01\x05\xfe\xfa\x00\x00\x00\x00",
             },
+            "mocked_values": {},
             "_results": {
                 "message": Icmp6DestinationUnreachableMessage(
                     code=Icmp6DestinationUnreachableCode.FAILED_POLICY,
@@ -131,6 +137,7 @@ from tests.lib.testcase__packet_rx__ip6 import TestCasePacketRxIp6
             "_args": {
                 "bytes": b"\x01\x06\xfe\xf9\x00\x00\x00\x00",
             },
+            "mocked_values": {},
             "_results": {
                 "message": Icmp6DestinationUnreachableMessage(
                     code=Icmp6DestinationUnreachableCode.REJECT_ROUTE,
@@ -144,6 +151,7 @@ from tests.lib.testcase__packet_rx__ip6 import TestCasePacketRxIp6
             "_args": {
                 "bytes": b"\x01\x07\xfe\xf8\x00\x00\x00\x00",
             },
+            "mocked_values": {},
             "_results": {
                 "message": Icmp6DestinationUnreachableMessage(
                     code=Icmp6DestinationUnreachableCode.SOURCE_ROUTING_HEADER,
@@ -160,6 +168,7 @@ from tests.lib.testcase__packet_rx__ip6 import TestCasePacketRxIp6
                     b"\x38\x39\x41\x42\x43\x44\x45\x46"
                 ),
             },
+            "mocked_values": {},
             "_results": {
                 "message": Icmp6DestinationUnreachableMessage(
                     code=Icmp6DestinationUnreachableCode.PORT,
@@ -173,6 +182,7 @@ from tests.lib.testcase__packet_rx__ip6 import TestCasePacketRxIp6
             "_args": {
                 "bytes": b"\x01\x04\x6a\x67\x00\x00\x00\x00" + b"X" * 1232,
             },
+            "mocked_values": {},
             "_results": {
                 "message": Icmp6DestinationUnreachableMessage(
                     code=Icmp6DestinationUnreachableCode.PORT,
@@ -183,7 +193,7 @@ from tests.lib.testcase__packet_rx__ip6 import TestCasePacketRxIp6
         },
     ]
 )
-class TestIcmp6MessageDestinationUnreachableParser(TestCasePacketRxIp6):
+class TestIcmp6DestinationUnreachableParser(TestCasePacketRxIp6):
     """
     The ICMPv6 Destination Unreachable message parser tests.
     """
@@ -195,7 +205,7 @@ class TestIcmp6MessageDestinationUnreachableParser(TestCasePacketRxIp6):
 
     _packet_rx: PacketRx
 
-    def test__icmp6__message__destination_unreachable__parser__message(
+    def test__icmp6__destination_unreachable__parser__message(
         self,
     ) -> None:
         """

@@ -28,7 +28,7 @@
 Module contains tests for the ICMPv6 Echo Reply message assembler & parser
 argument asserts.
 
-tests/unit/protocols/icmp6/test__icmp6__message__echo_reply__asserts.py
+tests/unit/protocols/icmp6/test__icmp6__echo_reply__asserts.py
 
 ver 3.0.2
 """
@@ -44,7 +44,7 @@ from pytcp.protocols.icmp6.message.icmp6_message__echo_reply import (
 from pytcp.protocols.ip6.ip6__header import IP6__PAYLOAD__MAX_LEN
 
 
-class TestIcmp6MessageEchoReplyAssemblerAsserts(TestCase):
+class TestIcmp6EchoReplyAssemblerAsserts(TestCase):
     """
     The ICMPv6 Echo Reply message assembler argument constructor assert tests.
     """
@@ -63,7 +63,7 @@ class TestIcmp6MessageEchoReplyAssemblerAsserts(TestCase):
             "data": b"",
         }
 
-    def test__icmp6__message__echo_reply__code__not_Icmp6EchoReplyCode(
+    def test__icmp6__echo_reply__code__not_Icmp6EchoReplyCode(
         self,
     ) -> None:
         """
@@ -84,7 +84,7 @@ class TestIcmp6MessageEchoReplyAssemblerAsserts(TestCase):
             ),
         )
 
-    def test__icmp6__message__echo_reply__cksum__under_min(self) -> None:
+    def test__icmp6__echo_reply__cksum__under_min(self) -> None:
         """
         Ensure the ICMPv6 Echo Reply message assembler constructor raises
         an exception when the provided 'cksum' argument is lower than the
@@ -104,7 +104,7 @@ class TestIcmp6MessageEchoReplyAssemblerAsserts(TestCase):
             ),
         )
 
-    def test__icmp6__message__echo_reply__cksum__over_max(self) -> None:
+    def test__icmp6__echo_reply__cksum__over_max(self) -> None:
         """
         Ensure the ICMPv6 Echo Reply message assembler constructor raises
         an exception when the provided 'cksum' argument is higher than the
@@ -124,7 +124,7 @@ class TestIcmp6MessageEchoReplyAssemblerAsserts(TestCase):
             ),
         )
 
-    def test__icmp6__message__echo_reply__id__under_min(self) -> None:
+    def test__icmp6__echo_reply__id__under_min(self) -> None:
         """
         Ensure the ICMPv6 Echo Reply message assembler constructor raises
         an exception when the provided 'id' argument is lower than the
@@ -144,7 +144,7 @@ class TestIcmp6MessageEchoReplyAssemblerAsserts(TestCase):
             ),
         )
 
-    def test__icmp6__message__echo_reply__id__over_max(self) -> None:
+    def test__icmp6__echo_reply__id__over_max(self) -> None:
         """
         Ensure the ICMPv6 Echo Reply message assembler constructor raises
         an exception when the provided 'id' argument is higher than the
@@ -164,7 +164,7 @@ class TestIcmp6MessageEchoReplyAssemblerAsserts(TestCase):
             ),
         )
 
-    def test__icmp6__message__echo_reply__seq__under_min(self) -> None:
+    def test__icmp6__echo_reply__seq__under_min(self) -> None:
         """
         Ensure the ICMPv6 Echo Reply message assembler constructor raises
         an exception when the provided 'seq' argument is lower than the
@@ -184,7 +184,7 @@ class TestIcmp6MessageEchoReplyAssemblerAsserts(TestCase):
             ),
         )
 
-    def test__icmp6__message__echo_reply__seq__over_max(self) -> None:
+    def test__icmp6__echo_reply__seq__over_max(self) -> None:
         """
         Ensure the ICMPv6 Echo Reply message assembler constructor raises
         an exception when the provided 'seq' argument is higher than the
@@ -204,7 +204,7 @@ class TestIcmp6MessageEchoReplyAssemblerAsserts(TestCase):
             ),
         )
 
-    def test__icmp6__message__echo_reply__data_len__over_max(self) -> None:
+    def test__icmp6__echo_reply__data_len__over_max(self) -> None:
         """
         Ensure the ICMPv6 Echo Reply message assembler constructor raises
         an exception when the length of the provided 'data' argument is
@@ -227,12 +227,12 @@ class TestIcmp6MessageEchoReplyAssemblerAsserts(TestCase):
         )
 
 
-class TestIcmp6MessageEchoReplyParserAsserts(TestCase):
+class TestIcmp6EchoReplyParserAsserts(TestCase):
     """
     The ICMPv6 Echo Reply message parser argument constructor assert tests.
     """
 
-    def test__icmp6__message__echo_reply__wrong_type(self) -> None:
+    def test__icmp6__echo_reply__wrong_type(self) -> None:
         """
         Ensure the ICMPv6 Echo Reply message parser raises an exception when
         the provided '_bytes' argument contains incorrect 'type' field.

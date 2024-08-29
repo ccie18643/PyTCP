@@ -45,7 +45,7 @@ from pytcp.protocols.icmp6.message.icmp6_message__destination_unreachable import
 from pytcp.protocols.ip6.ip6__header import IP6__PAYLOAD__MAX_LEN
 
 
-class TestIcmp6MessageDestinationUnreachableAssemblerAsserts(TestCase):
+class TestIcmp6DestinationUnreachableAssemblerAsserts(TestCase):
     """
     The ICMPv6 Destination Unreachable message assembler & parser
     constructors argument assert tests.
@@ -63,7 +63,7 @@ class TestIcmp6MessageDestinationUnreachableAssemblerAsserts(TestCase):
             "data": b"",
         }
 
-    def test__icmp6__message__destination_unreachable__code__not_Icmp6DestinationUnreachableCode(
+    def test__icmp6__destination_unreachable__code__not_Icmp6DestinationUnreachableCode(
         self,
     ) -> None:
         """
@@ -84,7 +84,7 @@ class TestIcmp6MessageDestinationUnreachableAssemblerAsserts(TestCase):
             f"Got: {type(value)!r}",
         )
 
-    def test__icmp6__message__destination_unreachable__cksum__under_min(
+    def test__icmp6__destination_unreachable__cksum__under_min(
         self,
     ) -> None:
         """
@@ -105,7 +105,7 @@ class TestIcmp6MessageDestinationUnreachableAssemblerAsserts(TestCase):
             f"The 'cksum' field must be a 16-bit unsigned integer. Got: {value!r}",
         )
 
-    def test__icmp6__message__destination_unreachable__cksum__over_max(
+    def test__icmp6__destination_unreachable__cksum__over_max(
         self,
     ) -> None:
         """
@@ -126,7 +126,7 @@ class TestIcmp6MessageDestinationUnreachableAssemblerAsserts(TestCase):
             f"The 'cksum' field must be a 16-bit unsigned integer. Got: {value!r}",
         )
 
-    def test__icmp6__message__destination_unreachable__data_len__over_max(
+    def test__icmp6__destination_unreachable__data_len__over_max(
         self,
     ) -> None:
         """
@@ -151,13 +151,13 @@ class TestIcmp6MessageDestinationUnreachableAssemblerAsserts(TestCase):
         )
 
 
-class TestIcmp6MessageDestinationUnreachableParserAsserts(TestCase):
+class TestIcmp6DestinationUnreachableParserAsserts(TestCase):
     """
     The ICMPv6 Destination Unreachable message parser argument constructor assert
     tests.
     """
 
-    def test__icmp6__message__destination_unreachable__wrong_type(self) -> None:
+    def test__icmp6__destination_unreachable__wrong_type(self) -> None:
         """
         Ensure the ICMPv6 Destination Unreachable message parser raises
         an exception when the provided '_bytes' argument contains incorrect

@@ -29,11 +29,11 @@ Module contains tests for the ICMPv6 unknown message assembler.
 
 tests/unit/protocols/icmp6/test__icmp6__unknown__assembler.py
 
-ver 3.0.1
+ver 3.0.2
 """
 
 
-from typing import Any
+from typing import Any, cast
 
 from parameterized import parameterized_class  # type: ignore
 from testslide import TestCase
@@ -52,18 +52,17 @@ from pytcp.protocols.icmp6.message.icmp6_message__unknown import (
             "_args": {
                 "type": Icmp6Type.from_int(255),
                 "code": Icmp6Code.from_int(255),
-                "cksum": 12345,
                 "raw": b"0123456789ABCDEF",
             },
             "_results": {
                 "__len__": 20,
                 "__str__": (
-                    "ICMPv6 Unknown Message, type 255, code 255, cksum 12345, "
+                    "ICMPv6 Unknown Message, type 255, code 255, cksum 0, "
                     "len 20 (4+16)"
                 ),
                 "__repr__": (
                     "Icmp6UnknownMessage(type=<Icmp6Type.UNKNOWN_255: 255>, "
-                    "code=<Icmp6Code.UNKNOWN_255: 255>, cksum=12345, "
+                    "code=<Icmp6Code.UNKNOWN_255: 255>, cksum=0, "
                     "raw=b'0123456789ABCDEF')"
                 ),
                 "__bytes__": (
@@ -72,13 +71,13 @@ from pytcp.protocols.icmp6.message.icmp6_message__unknown import (
                 ),
                 "type": Icmp6Type.from_int(255),
                 "code": Icmp6Code.from_int(255),
-                "cksum": 12345,
+                "cksum": 0,
                 "raw": b"0123456789ABCDEF",
             },
         },
     ]
 )
-class TestIcmp6MessageUnknownAssembler(TestCase):
+class TestIcmp6UnknownAssembler(TestCase):
     """
     The ICMPv6 unknown message assembler tests.
     """
@@ -97,7 +96,7 @@ class TestIcmp6MessageUnknownAssembler(TestCase):
             icmp6__message=Icmp6UnknownMessage(**self._args)
         )
 
-    def test__icmp6__message__unknown__assembler__len(self) -> None:
+    def test__icmp6__unknown__assembler__len(self) -> None:
         """
         Ensure the ICMPv6 unknown message '__len__()' method returns
         a correct value.
@@ -108,7 +107,7 @@ class TestIcmp6MessageUnknownAssembler(TestCase):
             self._results["__len__"],
         )
 
-    def test__icmp6__message__unknown__assembler__str(self) -> None:
+    def test__icmp6__unknown__assembler__str(self) -> None:
         """
         Ensure the ICMPv6 unknown message '__str__()' method returns
         a correct value.
@@ -119,7 +118,7 @@ class TestIcmp6MessageUnknownAssembler(TestCase):
             self._results["__str__"],
         )
 
-    def test__icmp6__message__unknown__assembler__repr(self) -> None:
+    def test__icmp6__unknown__assembler__repr(self) -> None:
         """
         Ensure the ICMPv6 unknown message '__repr__()' method returns
         a correct value.
@@ -130,7 +129,7 @@ class TestIcmp6MessageUnknownAssembler(TestCase):
             self._results["__repr__"],
         )
 
-    def test__icmp6__message__unknown__assembler__bytes(self) -> None:
+    def test__icmp6__unknown__assembler__bytes(self) -> None:
         """
         Ensure the ICMPv6 unknown message '__bytes__()' method returns
         a correct value.
@@ -141,7 +140,7 @@ class TestIcmp6MessageUnknownAssembler(TestCase):
             self._results["__bytes__"],
         )
 
-    def test__icmp6__message__unknown__assembler__type(self) -> None:
+    def test__icmp6__unknown__assembler__type(self) -> None:
         """
         Ensure the ICMPv6 unknown message 'type' field contains
         a correct value.
@@ -152,7 +151,7 @@ class TestIcmp6MessageUnknownAssembler(TestCase):
             self._results["type"],
         )
 
-    def test__icmp6__message__unknown__assembler__code(self) -> None:
+    def test__icmp6__unknown__assembler__code(self) -> None:
         """
         Ensure the ICMPv6 unknown message 'code' field contains
         a correct value.
@@ -163,7 +162,7 @@ class TestIcmp6MessageUnknownAssembler(TestCase):
             self._results["code"],
         )
 
-    def test__icmp6__message__unknown__assembler__cksum(self) -> None:
+    def test__icmp6__unknown__assembler__cksum(self) -> None:
         """
         Ensure the ICMPv6 unknown message 'cksum' field contains
         a correct value.
@@ -172,4 +171,15 @@ class TestIcmp6MessageUnknownAssembler(TestCase):
         self.assertEqual(
             self._icmp6__assembler.message.cksum,
             self._results["cksum"],
+        )
+
+    def test__icmp6__unknown__assembler__raw(self) -> None:
+        """
+        Ensure the ICMPv6 unknown message 'raw' field contains
+        a correct value.
+        """
+
+        self.assertEqual(
+            cast(Icmp6UnknownMessage, self._icmp6__assembler.message).raw,
+            self._results["raw"],
         )

@@ -145,7 +145,8 @@ class Icmp6NdNeighborSolicitationMessage(Icmp6NdMessage):
 
         return (
             f"ICMP6 ND Neighbor Solicitation, "
-            f"target {self.target_address}, opts [{self.options}], "
+            f"target {self.target_address}, "
+            f"{f'opts [{self.options}], ' if self.options else ''}"
             f"len {len(self)} ({ICMP6__ND__NEIGHBOR_SOLICITATION__LEN}+"
             f"{len(self.options)})"
         )
@@ -183,7 +184,7 @@ class Icmp6NdNeighborSolicitationMessage(Icmp6NdMessage):
         if not (ip6__src.is_unicast or ip6__src.is_unspecified):
             raise Icmp6SanityError(
                 "ND Neighbor Solicitation - [RFC 4861] The 'ip6__src' address "
-                f"must be unicast or unspecified. Got: {ip6__hop!r}",
+                f"must be unicast or unspecified. Got: {ip6__src!r}",
             )
 
         if not (
@@ -191,7 +192,7 @@ class Icmp6NdNeighborSolicitationMessage(Icmp6NdMessage):
             in {
                 self.target_address,
                 self.target_address.solicited_node_multicast,
-            },
+            }
         ):
             raise Icmp6SanityError(
                 "ND Neighbor Solicitation - [RFC 4861] The 'ip6__dst' address "

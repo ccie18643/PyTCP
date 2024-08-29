@@ -28,7 +28,7 @@
 Module contains tests for the ICMPv6 Echo Reply message parser integrity
 checks.
 
-tests/unit/protocols/icmp6/test__icmp6__message__echo_reply__parser__integrity_checks.py
+tests/unit/protocols/icmp6/test__icmp6__echo_reply__parser__integrity_checks.py
 
 ver 3.0.2
 """
@@ -115,7 +115,7 @@ from tests.lib.testcase__packet_rx__ip6 import TestCasePacketRxIp6
         },
     ]
 )
-class TestIcmp6EchoReplyMessageParserIntegrityChecks(TestCasePacketRxIp6):
+class TestIcmp6EchoReplyParserIntegrityChecks(TestCasePacketRxIp6):
     """
     The ICMPv6 Echo Reply message parser integrity checks tests.
     """
@@ -127,7 +127,7 @@ class TestIcmp6EchoReplyMessageParserIntegrityChecks(TestCasePacketRxIp6):
 
     _packet_rx: PacketRx
 
-    def test__icmp6__message__echo_reply__parser__from_bytes(self) -> None:
+    def test__icmp6__echo_reply__parser__from_bytes(self) -> None:
         """
         Ensure the ICMPv6 Echo Reply message parser raises integrity error
         on malformed packets.

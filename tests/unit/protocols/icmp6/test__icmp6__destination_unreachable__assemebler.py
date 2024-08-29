@@ -52,7 +52,6 @@ from pytcp.protocols.icmp6.message.icmp6_message__destination_unreachable import
             "_description": "ICMPv6 Destination Unreachable (No Route) message.",
             "_args": {
                 "code": Icmp6DestinationUnreachableCode.NO_ROUTE,
-                "cksum": 12345,
                 "data": b"",
             },
             "_results": {
@@ -60,13 +59,13 @@ from pytcp.protocols.icmp6.message.icmp6_message__destination_unreachable import
                 "__str__": "ICMPv6 Destination Unreachable - No Route, len 8 (8+0)",
                 "__repr__": (
                     "Icmp6DestinationUnreachableMessage("
-                    "code=<Icmp6DestinationUnreachableCode.NO_ROUTE: 0>, cksum=12345, "
+                    "code=<Icmp6DestinationUnreachableCode.NO_ROUTE: 0>, cksum=0, "
                     "data=b'')"
                 ),
                 "__bytes__": b"\x01\x00\xfe\xff\x00\x00\x00\x00",
                 "type": Icmp6Type.DESTINATION_UNREACHABLE,
                 "code": Icmp6DestinationUnreachableCode.NO_ROUTE,
-                "cksum": 12345,
+                "cksum": 0,
                 "data": b"",
             },
         },
@@ -74,7 +73,6 @@ from pytcp.protocols.icmp6.message.icmp6_message__destination_unreachable import
             "_description": "ICMPv6 Destination Unreachable (Prohibited) message.",
             "_args": {
                 "code": Icmp6DestinationUnreachableCode.PROHIBITED,
-                "cksum": 12345,
                 "data": b"",
             },
             "_results": {
@@ -82,13 +80,13 @@ from pytcp.protocols.icmp6.message.icmp6_message__destination_unreachable import
                 "__str__": "ICMPv6 Destination Unreachable - Prohibited, len 8 (8+0)",
                 "__repr__": (
                     "Icmp6DestinationUnreachableMessage("
-                    "code=<Icmp6DestinationUnreachableCode.PROHIBITED: 1>, cksum=12345, "
+                    "code=<Icmp6DestinationUnreachableCode.PROHIBITED: 1>, cksum=0, "
                     "data=b'')"
                 ),
                 "__bytes__": b"\x01\x01\xfe\xfe\x00\x00\x00\x00",
                 "type": Icmp6Type.DESTINATION_UNREACHABLE,
                 "code": Icmp6DestinationUnreachableCode.PROHIBITED,
-                "cksum": 12345,
+                "cksum": 0,
                 "data": b"",
             },
         },
@@ -96,7 +94,6 @@ from pytcp.protocols.icmp6.message.icmp6_message__destination_unreachable import
             "_description": "ICMPv6 Destination Unreachable (Scope) message.",
             "_args": {
                 "code": Icmp6DestinationUnreachableCode.SCOPE,
-                "cksum": 12345,
                 "data": b"",
             },
             "_results": {
@@ -104,13 +101,13 @@ from pytcp.protocols.icmp6.message.icmp6_message__destination_unreachable import
                 "__str__": "ICMPv6 Destination Unreachable - Scope, len 8 (8+0)",
                 "__repr__": (
                     "Icmp6DestinationUnreachableMessage("
-                    "code=<Icmp6DestinationUnreachableCode.SCOPE: 2>, cksum=12345, "
+                    "code=<Icmp6DestinationUnreachableCode.SCOPE: 2>, cksum=0, "
                     "data=b'')"
                 ),
                 "__bytes__": b"\x01\x02\xfe\xfd\x00\x00\x00\x00",
                 "type": Icmp6Type.DESTINATION_UNREACHABLE,
                 "code": Icmp6DestinationUnreachableCode.SCOPE,
-                "cksum": 12345,
+                "cksum": 0,
                 "data": b"",
             },
         },
@@ -118,7 +115,6 @@ from pytcp.protocols.icmp6.message.icmp6_message__destination_unreachable import
             "_description": "ICMPv6 Destination Unreachable (Address) message.",
             "_args": {
                 "code": Icmp6DestinationUnreachableCode.ADDRESS,
-                "cksum": 12345,
                 "data": b"",
             },
             "_results": {
@@ -126,13 +122,13 @@ from pytcp.protocols.icmp6.message.icmp6_message__destination_unreachable import
                 "__str__": "ICMPv6 Destination Unreachable - Address, len 8 (8+0)",
                 "__repr__": (
                     "Icmp6DestinationUnreachableMessage("
-                    "code=<Icmp6DestinationUnreachableCode.ADDRESS: 3>, cksum=12345, "
+                    "code=<Icmp6DestinationUnreachableCode.ADDRESS: 3>, cksum=0, "
                     "data=b'')"
                 ),
                 "__bytes__": b"\x01\x03\xfe\xfc\x00\x00\x00\x00",
                 "type": Icmp6Type.DESTINATION_UNREACHABLE,
                 "code": Icmp6DestinationUnreachableCode.ADDRESS,
-                "cksum": 12345,
+                "cksum": 0,
                 "data": b"",
             },
         },
@@ -140,7 +136,6 @@ from pytcp.protocols.icmp6.message.icmp6_message__destination_unreachable import
             "_description": "ICMPv6 Destination Unreachable (Port) message.",
             "_args": {
                 "code": Icmp6DestinationUnreachableCode.PORT,
-                "cksum": 12345,
                 "data": b"",
             },
             "_results": {
@@ -148,13 +143,13 @@ from pytcp.protocols.icmp6.message.icmp6_message__destination_unreachable import
                 "__str__": "ICMPv6 Destination Unreachable - Port, len 8 (8+0)",
                 "__repr__": (
                     "Icmp6DestinationUnreachableMessage("
-                    "code=<Icmp6DestinationUnreachableCode.PORT: 4>, cksum=12345, "
+                    "code=<Icmp6DestinationUnreachableCode.PORT: 4>, cksum=0, "
                     "data=b'')"
                 ),
                 "__bytes__": b"\x01\x04\xfe\xfb\x00\x00\x00\x00",
                 "type": Icmp6Type.DESTINATION_UNREACHABLE,
                 "code": Icmp6DestinationUnreachableCode.PORT,
-                "cksum": 12345,
+                "cksum": 0,
                 "data": b"",
             },
         },
@@ -162,7 +157,6 @@ from pytcp.protocols.icmp6.message.icmp6_message__destination_unreachable import
             "_description": "ICMPv6 Destination Unreachable (Failed Policy) message.",
             "_args": {
                 "code": Icmp6DestinationUnreachableCode.FAILED_POLICY,
-                "cksum": 12345,
                 "data": b"",
             },
             "_results": {
@@ -170,13 +164,13 @@ from pytcp.protocols.icmp6.message.icmp6_message__destination_unreachable import
                 "__str__": "ICMPv6 Destination Unreachable - Failed Policy, len 8 (8+0)",
                 "__repr__": (
                     "Icmp6DestinationUnreachableMessage("
-                    "code=<Icmp6DestinationUnreachableCode.FAILED_POLICY: 5>, cksum=12345, "
+                    "code=<Icmp6DestinationUnreachableCode.FAILED_POLICY: 5>, cksum=0, "
                     "data=b'')"
                 ),
                 "__bytes__": b"\x01\x05\xfe\xfa\x00\x00\x00\x00",
                 "type": Icmp6Type.DESTINATION_UNREACHABLE,
                 "code": Icmp6DestinationUnreachableCode.FAILED_POLICY,
-                "cksum": 12345,
+                "cksum": 0,
                 "data": b"",
             },
         },
@@ -184,7 +178,6 @@ from pytcp.protocols.icmp6.message.icmp6_message__destination_unreachable import
             "_description": "ICMPv6 Destination Unreachable (Reject Route) message.",
             "_args": {
                 "code": Icmp6DestinationUnreachableCode.REJECT_ROUTE,
-                "cksum": 12345,
                 "data": b"",
             },
             "_results": {
@@ -192,13 +185,13 @@ from pytcp.protocols.icmp6.message.icmp6_message__destination_unreachable import
                 "__str__": "ICMPv6 Destination Unreachable - Reject Route, len 8 (8+0)",
                 "__repr__": (
                     "Icmp6DestinationUnreachableMessage("
-                    "code=<Icmp6DestinationUnreachableCode.REJECT_ROUTE: 6>, cksum=12345, "
+                    "code=<Icmp6DestinationUnreachableCode.REJECT_ROUTE: 6>, cksum=0, "
                     "data=b'')"
                 ),
                 "__bytes__": b"\x01\x06\xfe\xf9\x00\x00\x00\x00",
                 "type": Icmp6Type.DESTINATION_UNREACHABLE,
                 "code": Icmp6DestinationUnreachableCode.REJECT_ROUTE,
-                "cksum": 12345,
+                "cksum": 0,
                 "data": b"",
             },
         },
@@ -206,7 +199,6 @@ from pytcp.protocols.icmp6.message.icmp6_message__destination_unreachable import
             "_description": "ICMPv6 Destination Unreachable (Source Routing Header) message.",
             "_args": {
                 "code": Icmp6DestinationUnreachableCode.SOURCE_ROUTING_HEADER,
-                "cksum": 12345,
                 "data": b"",
             },
             "_results": {
@@ -214,13 +206,13 @@ from pytcp.protocols.icmp6.message.icmp6_message__destination_unreachable import
                 "__str__": "ICMPv6 Destination Unreachable - Source Routing Header, len 8 (8+0)",
                 "__repr__": (
                     "Icmp6DestinationUnreachableMessage("
-                    "code=<Icmp6DestinationUnreachableCode.SOURCE_ROUTING_HEADER: 7>, cksum=12345, "
+                    "code=<Icmp6DestinationUnreachableCode.SOURCE_ROUTING_HEADER: 7>, cksum=0, "
                     "data=b'')"
                 ),
                 "__bytes__": b"\x01\x07\xfe\xf8\x00\x00\x00\x00",
                 "type": Icmp6Type.DESTINATION_UNREACHABLE,
                 "code": Icmp6DestinationUnreachableCode.SOURCE_ROUTING_HEADER,
-                "cksum": 12345,
+                "cksum": 0,
                 "data": b"",
             },
         },
@@ -228,7 +220,6 @@ from pytcp.protocols.icmp6.message.icmp6_message__destination_unreachable import
             "_description": "ICMPv6 Destination Unreachable message, non-empty payload.",
             "_args": {
                 "code": Icmp6DestinationUnreachableCode.PORT,
-                "cksum": 12345,
                 "data": b"0123456789ABCDEF",
             },
             "_results": {
@@ -236,7 +227,7 @@ from pytcp.protocols.icmp6.message.icmp6_message__destination_unreachable import
                 "__str__": "ICMPv6 Destination Unreachable - Port, len 24 (8+16)",
                 "__repr__": (
                     "Icmp6DestinationUnreachableMessage("
-                    "code=<Icmp6DestinationUnreachableCode.PORT: 4>, cksum=12345, "
+                    "code=<Icmp6DestinationUnreachableCode.PORT: 4>, cksum=0, "
                     "data=b'0123456789ABCDEF')"
                 ),
                 "__bytes__": (
@@ -245,7 +236,7 @@ from pytcp.protocols.icmp6.message.icmp6_message__destination_unreachable import
                 ),
                 "type": Icmp6Type.DESTINATION_UNREACHABLE,
                 "code": Icmp6DestinationUnreachableCode.PORT,
-                "cksum": 12345,
+                "cksum": 0,
                 "data": b"0123456789ABCDEF",
             },
         },
@@ -253,7 +244,6 @@ from pytcp.protocols.icmp6.message.icmp6_message__destination_unreachable import
             "_description": "ICMPv6 Destination Unreachable message, maximum length payload.",
             "_args": {
                 "code": Icmp6DestinationUnreachableCode.PORT,
-                "cksum": 12345,
                 "data": b"X" * 65527,
             },
             "_results": {
@@ -261,19 +251,19 @@ from pytcp.protocols.icmp6.message.icmp6_message__destination_unreachable import
                 "__str__": "ICMPv6 Destination Unreachable - Port, len 1240 (8+1232)",
                 "__repr__": (
                     "Icmp6DestinationUnreachableMessage("
-                    "code=<Icmp6DestinationUnreachableCode.PORT: 4>, cksum=12345, "
+                    "code=<Icmp6DestinationUnreachableCode.PORT: 4>, cksum=0, "
                     f"data=b'{"X" * 1232}')"
                 ),
                 "__bytes__": b"\x01\x04\x6a\x67\x00\x00\x00\x00" + b"X" * 1232,
                 "type": Icmp6Type.DESTINATION_UNREACHABLE,
                 "code": Icmp6DestinationUnreachableCode.PORT,
-                "cksum": 12345,
+                "cksum": 0,
                 "data": b"X" * 1232,
             },
         },
     ]
 )
-class TestIcmp6MessageDestinationUnreachableAssembler(TestCase):
+class TestIcmp6DestinationUnreachableAssembler(TestCase):
     """
     The ICMPv6 Destination Unreachable message assembler tests.
     """
@@ -292,7 +282,7 @@ class TestIcmp6MessageDestinationUnreachableAssembler(TestCase):
             icmp6__message=Icmp6DestinationUnreachableMessage(**self._args)
         )
 
-    def test__icmp6__message__destination_unreachable__assembler__len(
+    def test__icmp6__destination_unreachable__assembler__len(
         self,
     ) -> None:
         """
@@ -305,7 +295,7 @@ class TestIcmp6MessageDestinationUnreachableAssembler(TestCase):
             self._results["__len__"],
         )
 
-    def test__icmp6__message__destination_unreachable__assembler__str(
+    def test__icmp6__destination_unreachable__assembler__str(
         self,
     ) -> None:
         """
@@ -318,7 +308,7 @@ class TestIcmp6MessageDestinationUnreachableAssembler(TestCase):
             self._results["__str__"],
         )
 
-    def test__icmp6__message__destination_unreachable__assembler__repr(
+    def test__icmp6__destination_unreachable__assembler__repr(
         self,
     ) -> None:
         """
@@ -331,7 +321,7 @@ class TestIcmp6MessageDestinationUnreachableAssembler(TestCase):
             self._results["__repr__"],
         )
 
-    def test__icmp6__message__destination_unreachable__assembler__bytes(
+    def test__icmp6__destination_unreachable__assembler__bytes(
         self,
     ) -> None:
         """
@@ -344,7 +334,7 @@ class TestIcmp6MessageDestinationUnreachableAssembler(TestCase):
             self._results["__bytes__"],
         )
 
-    def test__icmp6__message__destination_unreachable__assembler__type(
+    def test__icmp6__destination_unreachable__assembler__type(
         self,
     ) -> None:
         """
@@ -357,7 +347,7 @@ class TestIcmp6MessageDestinationUnreachableAssembler(TestCase):
             self._results["type"],
         )
 
-    def test__icmp6__message__destination_unreachable__assembler__code(
+    def test__icmp6__destination_unreachable__assembler__code(
         self,
     ) -> None:
         """
@@ -370,7 +360,7 @@ class TestIcmp6MessageDestinationUnreachableAssembler(TestCase):
             self._results["code"],
         )
 
-    def test__icmp6__message__destination_unreachable__assembler__cksum(
+    def test__icmp6__destination_unreachable__assembler__cksum(
         self,
     ) -> None:
         """
@@ -383,7 +373,7 @@ class TestIcmp6MessageDestinationUnreachableAssembler(TestCase):
             self._results["cksum"],
         )
 
-    def test__icmp6__message__destination_unreachable__assembler__data(
+    def test__icmp6__destination_unreachable__assembler__data(
         self,
     ) -> None:
         """

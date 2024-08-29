@@ -43,7 +43,7 @@ from pytcp.protocols.icmp6.message.icmp6_message__unknown import (
 )
 
 
-class TestIcmp6MessageUnknownAssemblerAsserts(TestCase):
+class TestIcmp6UnknownAssemblerAsserts(TestCase):
     """
     The ICMPv6 unknown message assembler constructor argument assert tests.
     """
@@ -61,7 +61,7 @@ class TestIcmp6MessageUnknownAssemblerAsserts(TestCase):
             "raw": b"",
         }
 
-    def test__icmp6__message__unknown__type__not_Icmp6Type(self) -> None:
+    def test__icmp6__unknown__type__not_Icmp6Type(self) -> None:
         """
         Ensure the ICMPv6 message constructor raises an exception when the
         provided 'type' argument is not an Icmp6Type.
@@ -77,7 +77,7 @@ class TestIcmp6MessageUnknownAssemblerAsserts(TestCase):
             f"The 'type' field must be an Icmp6Type. Got: {type(value)!r}",
         )
 
-    def test__icmp6__message__unknown__code__not_Icmp6Code(self) -> None:
+    def test__icmp6__unknown__code__not_Icmp6Code(self) -> None:
         """
         Ensure the ICMPv6 message constructor raises an exception when the
         provided 'code' argument is not an Icmp6Code.
@@ -93,7 +93,7 @@ class TestIcmp6MessageUnknownAssemblerAsserts(TestCase):
             f"The 'code' field must be an Icmp6Code. Got: {type(value)!r}",
         )
 
-    def test__icmp6__message__echo_request__cksum__under_min(self) -> None:
+    def test__icmp6__echo_request__cksum__under_min(self) -> None:
         """
         Ensure the ICMPv6 unknown message assembler constructor raises
         an exception when the provided 'cksum' argument is lower than the
@@ -110,7 +110,7 @@ class TestIcmp6MessageUnknownAssemblerAsserts(TestCase):
             f"The 'cksum' field must be a 16-bit unsigned integer. Got: {value!r}",
         )
 
-    def test__icmp6__message__echo_request__cksum__over_max(self) -> None:
+    def test__icmp6__echo_request__cksum__over_max(self) -> None:
         """
         Ensure the ICMPv6 unknown message assembler constructor raises
         an exception when the provided 'cksum' argument is higher than the
@@ -128,7 +128,7 @@ class TestIcmp6MessageUnknownAssemblerAsserts(TestCase):
             f"Got: {value!r}",
         )
 
-    def test__icmp6__message__unknown__raw__not_bytes(self) -> None:
+    def test__icmp6__unknown__raw__not_bytes(self) -> None:
         """
         Ensure the ICMPv6 message constructor raises an exception when the
         provided 'raw' argument is not bytes.
@@ -146,12 +146,12 @@ class TestIcmp6MessageUnknownAssemblerAsserts(TestCase):
         )
 
 
-class TestIcmp6MessageUnknownParserAsserts(TestCase):
+class TestIcmp6UnknownParserAsserts(TestCase):
     """
     The ICMPv6 unknown message parser argument constructor assert tests.
     """
 
-    def test__icmp6__message__unknown__wrong_type(self) -> None:
+    def test__icmp6__unknown__wrong_type(self) -> None:
         """
         Ensure the ICMPv6 unknown message parser raises an exception when
         the provided '_bytes' argument contains incorrect 'type' field.

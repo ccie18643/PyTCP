@@ -1,44 +1,45 @@
 #!/usr/bin/env python3
 
-############################################################################
-#                                                                          #
-#  PyTCP - Python TCP/IP stack                                             #
-#  Copyright (C) 2020-present Sebastian Majewski                           #
-#                                                                          #
-#  This program is free software: you can redistribute it and/or modify    #
-#  it under the terms of the GNU General Public License as published by    #
-#  the Free Software Foundation, either version 3 of the License, or       #
-#  (at your option) any later version.                                     #
-#                                                                          #
-#  This program is distributed in the hope that it will be useful,         #
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of          #
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the           #
-#  GNU General Public License for more details.                            #
-#                                                                          #
-#  You should have received a copy of the GNU General Public License       #
-#  along with this program.  If not, see <https://www.gnu.org/licenses/>.  #
-#                                                                          #
-#  Author's email: ccie18643@gmail.com                                     #
-#  Github repository: https://github.com/ccie18643/PyTCP                   #
-#                                                                          #
-############################################################################
+################################################################################
+##                                                                            ##
+##   PyTCP - Python TCP/IP stack                                              ##
+##   Copyright (C) 2020-present Sebastian Majewski                            ##
+##                                                                            ##
+##   This program is free software: you can redistribute it and/or modify     ##
+##   it under the terms of the GNU General Public License as published by     ##
+##   the Free Software Foundation, either version 3 of the License, or        ##
+##   (at your option) any later version.                                      ##
+##                                                                            ##
+##   This program is distributed in the hope that it will be useful,          ##
+##   but WITHOUT ANY WARRANTY; without even the implied warranty of           ##
+##   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the             ##
+##   GNU General Public License for more details.                             ##
+##                                                                            ##
+##   You should have received a copy of the GNU General Public License        ##
+##   along with this program. If not, see <https://www.gnu.org/licenses/>.    ##
+##                                                                            ##
+##   Author's email: ccie18643@gmail.com                                      ##
+##   Github repository: https://github.com/ccie18643/PyTCP                    ##
+##                                                                            ##
+################################################################################
 
 
 """
-This module contains tests for the ICMPv6 MLDv2 Report message assembler.
+Module contains tests for the ICMPv6 MLDv2 Report message assembler.
 
-tests/unit/protocols/icmp6/test__icmp6__message__mld2__report__assembler.py
+tests/unit/protocols/icmp6/test__icmp6__mld2__report__assembler.py
 
-ver 3.0.0
+ver 3.0.2
 """
 
 
-from typing import Any
+from typing import Any, cast
 
 from parameterized import parameterized_class  # type: ignore
 from testslide import TestCase
 
 from pytcp.lib.ip6_address import Ip6Address
+from pytcp.protocols.icmp6.icmp6__assembler import Icmp6Assembler
 from pytcp.protocols.icmp6.message.icmp6_message import Icmp6Type
 from pytcp.protocols.icmp6.message.mld2.icmp6_mld2__multicast_address_record import (
     Icmp6Mld2MulticastAddressRecord,
@@ -55,7 +56,6 @@ from pytcp.protocols.icmp6.message.mld2.icmp6_mld2_message__report import (
         {
             "_description": "ICMPv6 MLDv2 Report message, no records.",
             "_args": {
-                "cksum": 12345,
                 "records": [],
             },
             "_results": {
@@ -63,12 +63,12 @@ from pytcp.protocols.icmp6.message.mld2.icmp6_mld2_message__report import (
                 "__str__": "ICMPv6 MLDv2 Report",
                 "__repr__": (
                     "Icmp6Mld2ReportMessage(code=<Icmp6Mld2ReportCode.DEFAULT: 0>, "
-                    "cksum=12345, records=[])"
+                    "cksum=0, records=[])"
                 ),
-                "__bytes__": b"\x8f\x00\x00\x00\x00\x00\x00\x00",
+                "__bytes__": b"\x8f\x00\x70\xff\x00\x00\x00\x00",
                 "type": Icmp6Type.MLD2__REPORT,
                 "code": Icmp6Mld2ReportCode.DEFAULT,
-                "cksum": 12345,
+                "cksum": 0,
                 "number_of_records": 0,
                 "records": [],
             },
@@ -76,7 +76,6 @@ from pytcp.protocols.icmp6.message.mld2.icmp6_mld2_message__report import (
         {
             "_description": ("ICMPv6 MLDv2 Report message, single record."),
             "_args": {
-                "cksum": 12345,
                 "records": [
                     Icmp6Mld2MulticastAddressRecord(
                         type=Icmp6Mld2MulticastAddressRecordType.MODE_IS_INCLUDE,
@@ -91,26 +90,26 @@ from pytcp.protocols.icmp6.message.mld2.icmp6_mld2_message__report import (
             "_results": {
                 "__len__": 60,
                 "__str__": (
-                    "ICMPv6 MLDv2 Report, records "
-                    "[type 'Mode Is Include', addr ff02::1, sources (2001:db8::1, 2001:db8::2)]"
+                    "ICMPv6 MLDv2 Report, records [type 'Mode Is Include', "
+                    "addr ff02::1, sources (2001:db8::1, 2001:db8::2)]"
                 ),
                 "__repr__": (
                     "Icmp6Mld2ReportMessage(code=<Icmp6Mld2ReportCode.DEFAULT: 0>, "
-                    "cksum=12345, records=[Icmp6Mld2MulticastAddressRecord("
+                    "cksum=0, records=[Icmp6Mld2MulticastAddressRecord("
                     "type=<Icmp6Mld2MulticastAddressRecordType.MODE_IS_INCLUDE: 1>, "
                     "multicast_address=Ip6Address('ff02::1'), "
                     "source_addresses=[Ip6Address('2001:db8::1'), "
                     "Ip6Address('2001:db8::2')], aux_data=b'')])"
                 ),
                 "__bytes__": (
-                    b"\x8f\x00\x00\x00\x00\x00\x00\x01\x01\x00\x00\x02\xff\x02\x00\x00"
+                    b"\x8f\x00\x15\x83\x00\x00\x00\x01\x01\x00\x00\x02\xff\x02\x00\x00"
                     b"\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01\x20\x01\x0d\xb8"
                     b"\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01\x20\x01\x0d\xb8"
                     b"\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x02"
                 ),
                 "type": Icmp6Type.MLD2__REPORT,
                 "code": Icmp6Mld2ReportCode.DEFAULT,
-                "cksum": 12345,
+                "cksum": 0,
                 "number_of_records": 1,
                 "records": [
                     Icmp6Mld2MulticastAddressRecord(
@@ -128,7 +127,6 @@ from pytcp.protocols.icmp6.message.mld2.icmp6_mld2_message__report import (
         {
             "_description": "ICMPv6 MLDv2 Report message, multiple records.",
             "_args": {
-                "cksum": 12345,
                 "records": [
                     Icmp6Mld2MulticastAddressRecord(
                         type=Icmp6Mld2MulticastAddressRecordType.MODE_IS_INCLUDE,
@@ -161,39 +159,45 @@ from pytcp.protocols.icmp6.message.mld2.icmp6_mld2_message__report import (
                     Icmp6Mld2MulticastAddressRecord(
                         type=Icmp6Mld2MulticastAddressRecordType.BLOCK_OLD_SOURCES,
                         multicast_address=Ip6Address("ff02::4"),
-                        aux_data=b"0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF",
+                        aux_data=(
+                            b"0123456789ABCDEF0123456789ABCDEF"
+                            b"0123456789ABCDEF0123456789ABCDEF"
+                        ),
                     ),
                 ],
             },
             "_results": {
                 "__len__": 328,
                 "__str__": (
-                    "ICMPv6 MLDv2 Report, records [type 'Mode Is Include', addr ff02::1, sources (200"
-                    "1:db8::1), aux data b'0123456789ABCDEF'], [type 'Mode Is Exclude', addr ff02::2,"
-                    " sources (2001:db8::2, 2001:db8::3, 2001:db8::4), aux data b'0123456789ABCDEF012"
-                    "3456789ABCDEF'], [type 'Change To Include', addr ff02::3, sources (2001:db8::6, "
-                    "2001:db8::7, 2001:db8::8, 2001:db8::9)], [type 'Block Old Sources', addr ff02::4"
-                    ", aux data b'0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF']"
+                    "ICMPv6 MLDv2 Report, records [type 'Mode Is Include', addr ff02::1, "
+                    "sources (2001:db8::1), aux data b'0123456789ABCDEF'], [type "
+                    "'Mode Is Exclude', addr ff02::2, sources (2001:db8::2, 2001:db8::3, "
+                    "2001:db8::4), aux data b'0123456789ABCDEF0123456789ABCDEF'], [type "
+                    "'Change To Include', addr ff02::3, sources (2001:db8::6, 2001:db8::7, "
+                    "2001:db8::8, 2001:db8::9)], [type 'Block Old Sources', addr ff02::4, "
+                    "aux data b'0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF"
+                    "0123456789ABCDEF']"
                 ),
                 "__repr__": (
-                    "Icmp6Mld2ReportMessage(code=<Icmp6Mld2ReportCode.DEFAULT: 0>, cksum=12345, "
-                    "records=[Icmp6Mld2MulticastAddressRecord(type=<Icmp6Mld2M"
-                    "ulticastAddressRecordType.MODE_IS_INCLUDE: 1>, multicast_address=Ip6Address('ff0"
-                    "2::1'), source_addresses=[Ip6Address('2001:db8::1')], aux_data=b'0123456789ABCDE"
-                    "F'), Icmp6Mld2MulticastAddressRecord(type=<Icmp6Mld2MulticastAddressRecordType.M"
-                    "ODE_IS_EXCLUDE: 2>, multicast_address=Ip6Address('ff02::2'), source_addresses=[I"
-                    "p6Address('2001:db8::2'), Ip6Address('2001:db8::3'), Ip6Address('2001:db8::4')],"
-                    " aux_data=b'0123456789ABCDEF0123456789ABCDEF'), Icmp6Mld2MulticastAddressRecord("
-                    "type=<Icmp6Mld2MulticastAddressRecordType.CHANGE_TO_INCLUDE: 3>, multicast_addre"
-                    "ss=Ip6Address('ff02::3'), source_addresses=[Ip6Address('2001:db8::6'), Ip6Addres"
-                    "s('2001:db8::7'), Ip6Address('2001:db8::8'), Ip6Address('2001:db8::9')], aux_dat"
-                    "a=b''), Icmp6Mld2MulticastAddressRecord(type=<Icmp6Mld2MulticastAddressRecordTyp"
-                    "e.BLOCK_OLD_SOURCES: 6>, multicast_address=Ip6Address('ff02::4'), source_address"
-                    "es=[], aux_data=b'0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCD"
-                    "EF')])"
+                    "Icmp6Mld2ReportMessage(code=<Icmp6Mld2ReportCode.DEFAULT: 0>, cksum=0, "
+                    "records=[Icmp6Mld2MulticastAddressRecord(type="
+                    "<Icmp6Mld2MulticastAddressRecordType.MODE_IS_INCLUDE: 1>, multicast_address="
+                    "Ip6Address('ff02::1'), source_addresses=[Ip6Address('2001:db8::1')], "
+                    "aux_data=b'0123456789ABCDEF'), Icmp6Mld2MulticastAddressRecord(type="
+                    "<Icmp6Mld2MulticastAddressRecordType.MODE_IS_EXCLUDE: 2>, multicast_address="
+                    "Ip6Address('ff02::2'), source_addresses=[Ip6Address('2001:db8::2'), "
+                    "Ip6Address('2001:db8::3'), Ip6Address('2001:db8::4')], aux_data="
+                    "b'0123456789ABCDEF0123456789ABCDEF'), Icmp6Mld2MulticastAddressRecord("
+                    "type=<Icmp6Mld2MulticastAddressRecordType.CHANGE_TO_INCLUDE: 3>, "
+                    "multicast_address=Ip6Address('ff02::3'), source_addresses=[Ip6Address("
+                    "'2001:db8::6'), Ip6Address('2001:db8::7'), Ip6Address('2001:db8::8'), "
+                    "Ip6Address('2001:db8::9')], aux_data=b''), Icmp6Mld2MulticastAddressRecord("
+                    "type=<Icmp6Mld2MulticastAddressRecordType.BLOCK_OLD_SOURCES: 6>, "
+                    "multicast_address=Ip6Address('ff02::4'), source_addresses=[], aux_data="
+                    "b'0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF')])"
                 ),
                 "__bytes__": (
-                    b"\x8f\x00\x00\x00\x00\x00\x00\x04\x01\x04\x00\x01\xff\x02\x00\x00"
+                    b"\x8f\x00\x52\xf0\x00\x00\x00\x04\x01\x04\x00\x01\xff\x02\x00\x00"
                     b"\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01\x20\x01\x0d\xb8"
                     b"\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01\x30\x31\x32\x33"
                     b"\x34\x35\x36\x37\x38\x39\x41\x42\x43\x44\x45\x46\x02\x08\x00\x03"
@@ -217,7 +221,7 @@ from pytcp.protocols.icmp6.message.mld2.icmp6_mld2_message__report import (
                 ),
                 "type": Icmp6Type.MLD2__REPORT,
                 "code": Icmp6Mld2ReportCode.DEFAULT,
-                "cksum": 12345,
+                "cksum": 0,
                 "number_of_records": 4,
                 "records": [
                     Icmp6Mld2MulticastAddressRecord(
@@ -251,14 +255,17 @@ from pytcp.protocols.icmp6.message.mld2.icmp6_mld2_message__report import (
                     Icmp6Mld2MulticastAddressRecord(
                         type=Icmp6Mld2MulticastAddressRecordType.BLOCK_OLD_SOURCES,
                         multicast_address=Ip6Address("ff02::4"),
-                        aux_data=b"0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF",
+                        aux_data=(
+                            b"0123456789ABCDEF0123456789ABCDEF"
+                            b"0123456789ABCDEF0123456789ABCDEF"
+                        ),
                     ),
                 ],
             },
         },
     ]
 )
-class TestIcmp6MessageMld2ReportAssembler(TestCase):
+class TestIcmp6Mld2ReportAssembler(TestCase):
     """
     The ICMPv6 MLDv2 Report message assembler tests.
     """
@@ -272,97 +279,99 @@ class TestIcmp6MessageMld2ReportAssembler(TestCase):
         The ICMPv6 MLDv2 message assembler tests.
         """
 
-        self._icmp6__mld2__report__message = Icmp6Mld2ReportMessage(
-            **self._args
+        self._icmp6__assembler = Icmp6Assembler(
+            icmp6__message=Icmp6Mld2ReportMessage(**self._args)
         )
 
-    def test__icmp6__message__mld2__report__assembler__len(self) -> None:
+    def test__icmp6__mld2__report__assembler__len(self) -> None:
         """
-        Ensure the ICMPv6 MLDv2 Report message '__len__()' method returns
-        a correct value.
+        Ensure the ICMPv6 MLDv2 Report message '__len__()' method
+        returns a correct value.
         """
 
         self.assertEqual(
-            len(self._icmp6__mld2__report__message),
+            len(self._icmp6__assembler),
             self._results["__len__"],
         )
 
-    def test__icmp6__message__mld2__report__assembler__str(self) -> None:
+    def test__icmp6__mld2__report__assembler__str(self) -> None:
         """
-        Ensure the ICMPv6 MLDv2 Report message '__str__()' method returns
-        a correct value.
+        Ensure the ICMPv6 MLDv2 Report message '__str__()' method
+        returns a correct value.
         """
 
         self.assertEqual(
-            str(self._icmp6__mld2__report__message),
+            str(self._icmp6__assembler),
             self._results["__str__"],
         )
 
-    def test__icmp6__message__mld2__report__assembler__repr(self) -> None:
+    def test__icmp6__mld2__report__assembler__repr(self) -> None:
         """
-        Ensure the ICMPv6 MLDv2 Report message '__repr__()' method returns
-        a correct value.
+        Ensure the ICMPv6 MLDv2 Report message '__repr__()' method
+        returns a correct value.
         """
 
         self.assertEqual(
-            repr(self._icmp6__mld2__report__message),
+            repr(self._icmp6__assembler),
             self._results["__repr__"],
         )
 
-    def test__icmp6__message__mld2__report__assembler__bytes(self) -> None:
+    def test__icmp6__mld2__report__assembler__bytes(self) -> None:
         """
-        Ensure the ICMPv6 MLDv2 Report message '__bytes__()' method returns
-        a correct value.
+        Ensure the ICMPv6 MLDv2 Report message '__bytes__()' method
+        returns a correct value.
         """
 
         self.assertEqual(
-            bytes(self._icmp6__mld2__report__message),
+            bytes(self._icmp6__assembler),
             self._results["__bytes__"],
         )
 
-    def test__icmp6__message__mld2__report__assembler__type(self) -> None:
+    def test__icmp6__mld2__report__assembler__type(self) -> None:
         """
-        Ensure the ICMPv6 MLDv2 Report message 'type' property returns
+        Ensure the ICMPv6 MLDv2 Report message 'type' field contains
         a correct value.
         """
 
         self.assertEqual(
-            self._icmp6__mld2__report__message.type,
+            self._icmp6__assembler.message.type,
             self._results["type"],
         )
 
-    def test__icmp6__message__mld2__report__assembler__code(self) -> None:
+    def test__icmp6__mld2__report__assembler__code(self) -> None:
         """
-        Ensure the ICMPv6 MLDv2 Report message 'code' property returns
+        Ensure the ICMPv6 MLDv2 Report message 'code' field contains
         a correct value.
         """
 
         self.assertEqual(
-            self._icmp6__mld2__report__message.code,
+            self._icmp6__assembler.message.code,
             self._results["code"],
         )
 
-    def test__icmp6__message__mld2__report__assembler__cksum(self) -> None:
+    def test__icmp6__mld2__report__assembler__cksum(self) -> None:
         """
-        Ensure the ICMPv6 MLDv2 Report message 'cksum' property returns
+        Ensure the ICMPv6 MLDv2 Report message 'cksum' field contains
         a correct value.
         """
 
         self.assertEqual(
-            self._icmp6__mld2__report__message.cksum,
+            self._icmp6__assembler.message.cksum,
             self._results["cksum"],
         )
 
-    def test__icmp6__message__mld2__report__assembler__number_of_records(
+    def test__icmp6__mld2__report__assembler__number_of_records(
         self,
     ) -> None:
         """
-        Ensure the ICMPv6 MLDv2 Report message 'number_of_records' property returns
+        Ensure the ICMPv6 MLDv2 Report message 'number_of_records' field contains
         a correct value.
         """
 
         self.assertEqual(
-            self._icmp6__mld2__report__message.number_of_records,
+            cast(
+                Icmp6Mld2ReportMessage, self._icmp6__assembler.message
+            ).number_of_records,
             self._results["number_of_records"],
         )
 
@@ -373,6 +382,8 @@ class TestIcmp6MessageMld2ReportAssembler(TestCase):
         """
 
         self.assertEqual(
-            self._icmp6__mld2__report__message.records,
+            cast(
+                Icmp6Mld2ReportMessage, self._icmp6__assembler.message
+            ).records,
             self._results["records"],
         )

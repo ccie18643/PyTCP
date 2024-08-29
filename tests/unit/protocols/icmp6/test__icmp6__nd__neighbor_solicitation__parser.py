@@ -25,21 +25,22 @@
 
 
 """
-This module contains tests for the ICMPv6 ND Neighbor Solicitation message parser.
+Module contains tests for the ICMPv6 ND Neighbor Solicitation message parser.
 
 tests/unit/protocols/icmp6/test__icmp6__message__nd__neighbor_solicitation__parser.py
 
-ver 3.0.0
+ver 3.0.2
 """
 
 
 from typing import Any
 
 from parameterized import parameterized_class  # type: ignore
-from testslide import TestCase
 
 from pytcp.lib.ip6_address import Ip6Address
 from pytcp.lib.mac_address import MacAddress
+from pytcp.lib.packet import PacketRx
+from pytcp.protocols.icmp6.icmp6__parser import Icmp6Parser
 from pytcp.protocols.icmp6.message.nd.icmp6_nd_message__neighbor_solicitation import (
     Icmp6NdNeighborSolicitationMessage,
 )
@@ -49,6 +50,7 @@ from pytcp.protocols.icmp6.message.nd.option.icmp6_nd_option__slla import (
 from pytcp.protocols.icmp6.message.nd.option.icmp6_nd_options import (
     Icmp6NdOptions,
 )
+from tests.lib.testcase__packet_rx__ip6 import TestCasePacketRxIp6
 
 
 @parameterized_class(
@@ -57,13 +59,18 @@ from pytcp.protocols.icmp6.message.nd.option.icmp6_nd_options import (
             "_description": "ICMPv6 ND Neighbor Solicitation message, no options.",
             "_args": {
                 "bytes": (
-                    b"\x87\x00\x00\x00\x00\x00\x00\x00\x20\x01\x0d\xb8\x00\x00\x00\x00"
+                    b"\x87\x00\x4b\x45\x00\x00\x00\x00\x20\x01\x0d\xb8\x00\x00\x00\x00"
                     b"\x00\x00\x00\x00\x00\x00\x00\x01"
                 ),
             },
+            "_mocked_values": {
+                "ip6__hop": 255,
+                "ip6__src": Ip6Address("2001:db8::2"),
+                "ip6__dst": Ip6Address("2001:db8::1"),
+            },
             "_results": {
-                "from_bytes": Icmp6NdNeighborSolicitationMessage(
-                    cksum=0,
+                "message": Icmp6NdNeighborSolicitationMessage(
+                    cksum=19269,
                     target_address=Ip6Address("2001:db8::1"),
                     options=Icmp6NdOptions(),
                 ),
@@ -73,13 +80,18 @@ from pytcp.protocols.icmp6.message.nd.option.icmp6_nd_options import (
             "_description": "ICMPv6 ND Neighbor Solicitation message, Slla option present.",
             "_args": {
                 "bytes": (
-                    b"\x87\x00\x00\x00\x00\x00\x00\x00\x20\x01\x0d\xb8\x00\x00\x00\x00"
+                    b"\x87\x00\xe3\xa9\x00\x00\x00\x00\x20\x01\x0d\xb8\x00\x00\x00\x00"
                     b"\x00\x00\x00\x00\x00\x00\x00\x02\x01\x01\x00\x11\x22\x33\x44\x55"
                 ),
             },
+            "_mocked_values": {
+                "ip6__hop": 255,
+                "ip6__src": Ip6Address("2001:db8::1"),
+                "ip6__dst": Ip6Address("2001:db8::2"),
+            },
             "_results": {
-                "from_bytes": Icmp6NdNeighborSolicitationMessage(
-                    cksum=0,
+                "message": Icmp6NdNeighborSolicitationMessage(
+                    cksum=58281,
                     target_address=Ip6Address("2001:db8::2"),
                     options=Icmp6NdOptions(
                         Icmp6NdOptionSlla(slla=MacAddress("00:11:22:33:44:55")),
@@ -87,33 +99,21 @@ from pytcp.protocols.icmp6.message.nd.option.icmp6_nd_options import (
                 ),
             },
         },
-        {
-            "_description": "ICMPv6 ND Neighbor Solicitation message, incorrect 'type' field.",
-            "_args": {
-                "bytes": (
-                    b"\xff\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
-                    b"\x00\x00\x00\x00\x00\x00\x00\x00"
-                ),
-            },
-            "_results": {
-                "error": (
-                    "The 'type' field must be <Icmp6Type.ND__NEIGHBOR_SOLICITATION: 135>. "
-                    "Got: <Icmp6Type.UNKNOWN_255: 255>"
-                ),
-            },
-        },
     ]
 )
-class TestIcmp6MessageNdNeighborSolicitationParser(TestCase):
+class TestIcmp6MessageNdNeighborSolicitationParser(TestCasePacketRxIp6):
     """
     The ICMPv6 ND Neighbor Solicitation message parser tests.
     """
 
     _description: str
     _args: dict[str, Any]
+    _mocked_values: dict[str, Any]
     _results: dict[str, Any]
 
-    def test__icmp6__message__nd__neighbor_solicitation__parser__from_bytes(
+    _packet_rx: PacketRx
+
+    def test__icmp6__nd__neighbor_solicitation__parser__from_bytes(
         self,
     ) -> None:
         """
@@ -121,21 +121,9 @@ class TestIcmp6MessageNdNeighborSolicitationParser(TestCase):
         creates a proper message object.
         """
 
-        if "error" in self._results:
-            with self.assertRaises(AssertionError) as error:
-                Icmp6NdNeighborSolicitationMessage.from_bytes(
-                    self._args["bytes"]
-                )
+        icmp6_parser = Icmp6Parser(packet_rx=self._packet_rx)
 
-            self.assertEqual(
-                str(error.exception),
-                self._results["error"],
-            )
-
-        if "from_bytes" in self._results:
-            self.assertEqual(
-                Icmp6NdNeighborSolicitationMessage.from_bytes(
-                    self._args["bytes"]
-                ),
-                self._results["from_bytes"],
-            )
+        self.assertEqual(
+            icmp6_parser.message,
+            self._results["message"],
+        )

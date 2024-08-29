@@ -115,7 +115,7 @@ from tests.lib.testcase__packet_rx__ip6 import TestCasePacketRxIp6
         },
     ]
 )
-class TestIcmp6EchoRequestMessageParserIntegrityChecks(TestCasePacketRxIp6):
+class TestIcmp6EchoRequestParserIntegrityChecks(TestCasePacketRxIp6):
     """
     The ICMPv6 Echo Request message parser integrity checks tests.
     """
@@ -127,7 +127,7 @@ class TestIcmp6EchoRequestMessageParserIntegrityChecks(TestCasePacketRxIp6):
 
     _packet_rx: PacketRx
 
-    def test__icmp6__message__echo_request__parser__from_bytes(
+    def test__icmp6__echo_request__parser__from_bytes(
         self,
     ) -> None:
         """
