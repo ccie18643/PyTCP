@@ -168,20 +168,20 @@ class Icmp6NdRouterSolicitationMessage(Icmp6NdMessage):
 
         if not (ip6__src.is_unicast or ip6__src.is_unspecified):
             raise Icmp6SanityError(
-                "ND Neighbor Solicitation - [RFC 4861] The 'ip6__src' address "
+                "ND Router Solicitation - [RFC 4861] The 'ip6__src' address "
                 f"must be unicast or unspecified. Got: {ip6__src!r}",
             )
 
         if not (ip6__dst.is_multicast__all_routers):
             raise Icmp6SanityError(
-                "ND Neighbor Solicitation - [RFC 4861] The 'ip6__dst' address "
+                "ND Router Solicitation - [RFC 4861] The 'ip6__dst' address "
                 f"must be all-routers multicast. Got: {ip6__dst!r}",
             )
 
         if ip6__src.is_unspecified:
             if not (self.option_slla is None):
                 raise Icmp6SanityError(
-                    "ND Neighbor Solicitation - [RFC 4861] When the 'ip6__src' "
+                    "ND Router Solicitation - [RFC 4861] When the 'ip6__src' "
                     "is unspecified, the 'slla' option must not be included. "
                     f"Got: {self.option_slla!r}",
                 )

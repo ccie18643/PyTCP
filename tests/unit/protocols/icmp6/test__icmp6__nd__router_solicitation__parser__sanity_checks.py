@@ -38,6 +38,7 @@ from typing import Any
 
 from parameterized import parameterized_class  # type: ignore
 
+from pytcp.lib.ip6_address import Ip6Address
 from pytcp.lib.packet import PacketRx
 from pytcp.protocols.icmp6.icmp6__errors import Icmp6SanityError
 from pytcp.protocols.icmp6.icmp6__parser import Icmp6Parser
@@ -47,12 +48,16 @@ from tests.lib.testcase__packet_rx__ip6 import TestCasePacketRxIp6
 @parameterized_class(
     [
         {
-            "_description": "The value of the 'ip6__hop' field is not 255.",
+            "_description": (
+                "The value of the 'ip6__hop' field must be 255. It is 64."
+            ),
             "_args": {
                 "bytes": b"\x85\x00\x7a\xff\x00\x00\x00\x00",
             },
             "_mocked_values": {
                 "ip6__hop": 64,
+                "ip6__src": Ip6Address("2001:db8::1"),
+                "ip6__dst": Ip6Address("ff02::2"),
             },
             "_results": {
                 "error_message": (
@@ -60,6 +65,141 @@ from tests.lib.testcase__packet_rx__ip6 import TestCasePacketRxIp6
                     "must be 255. Got: 64"
                 ),
             },
+        },
+        {
+            "_description": (
+                "The value of the 'ip6__hop' field must be 255. It is 255."
+            ),
+            "_args": {
+                "bytes": b"\x85\x00\x7a\xff\x00\x00\x00\x00",
+            },
+            "_mocked_values": {
+                "ip6__hop": 255,
+                "ip6__src": Ip6Address("2001:db8::1"),
+                "ip6__dst": Ip6Address("ff02::2"),
+            },
+            "_results": {},
+        },
+        {
+            "_description": (
+                "The value of the 'ip6__src' must be unicast or unspecified. "
+                "It's multicast."
+            ),
+            "_args": {
+                "bytes": b"\x85\x00\x7a\xff\x00\x00\x00\x00",
+            },
+            "_mocked_values": {
+                "ip6__hop": 255,
+                "ip6__src": Ip6Address("ff02::1"),
+                "ip6__dst": Ip6Address("ff02::2"),
+            },
+            "_results": {
+                "error_message": (
+                    "ND Router Solicitation - [RFC 4861] The 'ip6__src' address "
+                    "must be unicast or unspecified. Got: Ip6Address('ff02::1')"
+                ),
+            },
+        },
+        {
+            "_description": (
+                "The value of the 'ip6__src' must be unicast or unspecified. "
+                "It's unicast."
+            ),
+            "_args": {
+                "bytes": b"\x85\x00\x7a\xff\x00\x00\x00\x00",
+            },
+            "_mocked_values": {
+                "ip6__hop": 255,
+                "ip6__src": Ip6Address("2001:db8::2"),
+                "ip6__dst": Ip6Address("ff02::2"),
+            },
+            "_results": {},
+        },
+        {
+            "_description": (
+                "The value of the 'ip6__src' must be unicast or unspecified. "
+                "It's unspecified."
+            ),
+            "_args": {
+                "bytes": b"\x85\x00\x7a\xff\x00\x00\x00\x00",
+            },
+            "_mocked_values": {
+                "ip6__hop": 255,
+                "ip6__src": Ip6Address("::"),
+                "ip6__dst": Ip6Address("ff02::2"),
+            },
+            "_results": {},
+        },
+        {
+            "_description": (
+                "The value of the 'ip6__dst' must be all-routers multicast. "
+                "It's unicast."
+            ),
+            "_args": {
+                "bytes": b"\x85\x00\x7a\xff\x00\x00\x00\x00",
+            },
+            "_mocked_values": {
+                "ip6__hop": 255,
+                "ip6__src": Ip6Address("ff02::1"),
+                "ip6__dst": Ip6Address("2001:db8::1"),
+            },
+            "_results": {
+                "error_message": (
+                    "ND Router Solicitation - [RFC 4861] The 'ip6__src' address "
+                    "must be unicast or unspecified. Got: Ip6Address('ff02::1')"
+                ),
+            },
+        },
+        {
+            "_description": (
+                "The value of the 'ip6__dst' must be all-routers multicast. "
+                "It's all-routers multicast."
+            ),
+            "_args": {
+                "bytes": b"\x85\x00\x7a\xff\x00\x00\x00\x00",
+            },
+            "_mocked_values": {
+                "ip6__hop": 255,
+                "ip6__src": Ip6Address("2001:db8::2"),
+                "ip6__dst": Ip6Address("ff02::2"),
+            },
+            "_results": {},
+        },
+        {
+            "_description": (
+                "If the 'ip6__src' is unspecified, the 'slla' option must not be present. "
+                "It's not present."
+            ),
+            "_args": {
+                "bytes": b"\x85\x00\x13\x65\x00\x00\x00\x00\x01\x01\x00\x11\x22\x33\x44\x55",
+            },
+            "_mocked_values": {
+                "ip6__hop": 255,
+                "ip6__src": Ip6Address("::"),
+                "ip6__dst": Ip6Address("ff02::2"),
+            },
+            "_results": {
+                "error_message": (
+                    "ND Router Solicitation - [RFC 4861] When the 'ip6__src' is "
+                    "unspecified, the 'slla' option must not be included. Got: "
+                    "MacAddress('00:11:22:33:44:55')"
+                ),
+            },
+        },
+        {
+            "_description": (
+                "If the 'ip6__src' is unspecified, the 'slla' option must not be present. "
+                "It's not present."
+            ),
+            "_args": {
+                "bytes": b"\x85\x00\x7a\xff\x00\x00\x00\x00",
+            },
+            "_mocked_values": {
+                "ip6__hop": 255,
+                "ip6__src": Ip6Address("::"),
+                "ip6__dst": Ip6Address("ff02::2"),
+            },
+            "_results": {},
         },
     ]
 )
@@ -81,10 +221,14 @@ class TestIcmp4NdRouterSolicitationParserSanityChecks(TestCasePacketRxIp6):
         on crazy packets.
         """
 
-        with self.assertRaises(Icmp6SanityError) as error:
-            Icmp6Parser(packet_rx=self._packet_rx)
+        if "error_message" in self._results:
+            with self.assertRaises(Icmp6SanityError) as error:
+                Icmp6Parser(packet_rx=self._packet_rx)
 
-        self.assertEqual(
-            str(error.exception),
-            f"[SANITY ERROR][ICMPv6] {self._results["error_message"]}",
-        )
+            self.assertEqual(
+                str(error.exception),
+                f"[SANITY ERROR][ICMPv6] {self._results["error_message"]}",
+            )
+
+        else:
+            Icmp6Parser(packet_rx=self._packet_rx)
