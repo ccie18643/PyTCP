@@ -49,7 +49,7 @@ from tests.lib.testcase__packet_rx__ip6 import TestCasePacketRxIp6
 @parameterized_class(
     [
         {
-            "_description": "ICMPv6 unknown message, empty data.",
+            "_description": "ICMPv6 unknown message.",
             "_args": {
                 "bytes": (
                     b"\xff\xff\x31\x29\x30\x31\x32\x33\x34\x35\x36\x37\x38\x39\x41\x42"

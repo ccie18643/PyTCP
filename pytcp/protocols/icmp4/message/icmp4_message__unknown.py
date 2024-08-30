@@ -148,6 +148,10 @@ class Icmp4UnknownMessage(Icmp4Message):
             ICMP4__HEADER__STRUCT, _bytes[:ICMP4__HEADER__LEN]
         )
 
+        assert (received_type := type) not in Icmp4Type.get_known_values(), (
+            "The 'type' field must not be known. "
+            f"Got: {Icmp4Type.from_int(received_type)!r}"
+        )
         return Icmp4UnknownMessage(
             type=Icmp4Type.from_int(type),
             code=Icmp4Code.from_int(code),

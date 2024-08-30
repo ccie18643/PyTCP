@@ -25,62 +25,42 @@
 
 
 """
-Module contains tests for the ICMPv6 unknown message parser.
+Module contains tests for the ICMPv4 packet assembler miscellaneous functions.
 
-tests/unit/protocols/icmp4/test__icmp4__message__unknown__parser.py
+tests/unit/protocols/icmp4/test__icmp4__assembler__misc.py
 
-ver 3.0.1
+ver 3.0.2
 """
 
 
-from typing import Any
-
-from parameterized import parameterized_class  # type: ignore
 from testslide import TestCase
 
-from pytcp.protocols.icmp4.message.icmp4_message import Icmp4Code, Icmp4Type
-from pytcp.protocols.icmp4.message.icmp4_message__unknown import (
-    Icmp4UnknownMessage,
+from pytcp.lib.tracker import Tracker
+from pytcp.protocols.icmp4.icmp4__assembler import Icmp4Assembler
+from pytcp.protocols.icmp4.message.icmp4_message__echo_reply import (
+    Icmp4EchoReplyMessage,
 )
 
 
-@parameterized_class(
-    [
-        {
-            "_description": "ICMPv4 unknown message, no data.",
-            "_args": {
-                "bytes": (
-                    b"\xff\xff\x30\x39\x30\x31\x32\x33\x34\x35\x36\x37\x38\x39\x41\x42"
-                    b"\x43\x44\x45\x46"
-                ),
-            },
-            "_results": {
-                "from_bytes": Icmp4UnknownMessage(
-                    type=Icmp4Type.from_int(255),
-                    code=Icmp4Code.from_int(255),
-                    cksum=12345,
-                    raw=b"0123456789ABCDEF",
-                ),
-            },
-        },
-    ]
-)
-class TestIcmp4MessageUnknownParser(TestCase):
+class TestIcmp4AssemblerMisc(TestCase):
     """
-    The ICMPv4 unknown message parser tests.
+    The ICMPv4 packet assembler miscellaneous functions tests.
     """
 
-    _description: str
-    _args: dict[str, Any]
-    _results: dict[str, Any]
+    def test__icmp4__assembler__echo_tracker(self) -> None:
+        """
+        Ensure the ICMPv4 packet assembler 'tracker' property returns
+        a correct value.
+        """
 
-    def test__icmp4__message__unknown__parser__from_bytes(self) -> None:
-        """
-        Ensure the ICMPv4 unknown message 'from_bytes()' method creates
-        a proper message object.
-        """
+        echo_tracker = Tracker(prefix="RX")
+
+        icmp4__assembler = Icmp4Assembler(
+            icmp4__message=Icmp4EchoReplyMessage(),
+            echo_tracker=echo_tracker,
+        )
 
         self.assertEqual(
-            Icmp4UnknownMessage.from_bytes(self._args["bytes"]),
-            self._results["from_bytes"],
+            icmp4__assembler.tracker.echo_tracker,
+            echo_tracker,
         )

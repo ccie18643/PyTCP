@@ -27,20 +27,22 @@
 """
 Module contains tests for the ICMPv4 Echo Request message parser.
 
-tests/unit/protocols/icmp4/test__icmp4__message__echo_request__parser.py
+tests/unit/protocols/icmp4/test__icmp4__echo_request__parser.py
 
-ver 3.0.1
+ver 3.0.2
 """
 
 
-from typing import Any
+from typing import Any, cast
 
 from parameterized import parameterized_class  # type: ignore
-from testslide import TestCase
 
+from pytcp.lib.packet import PacketRx
+from pytcp.protocols.icmp4.icmp4__parser import Icmp4Parser
 from pytcp.protocols.icmp4.message.icmp4_message__echo_request import (
     Icmp4EchoRequestMessage,
 )
+from tests.lib.testcase__packet_rx__ip4 import TestCasePacketRxIp4
 
 
 @parameterized_class(
@@ -48,11 +50,11 @@ from pytcp.protocols.icmp4.message.icmp4_message__echo_request import (
         {
             "_description": "ICMPv4 Echo Request message, empty data.",
             "_args": {
-                "bytes": b"\x08\x00\x00\x00\x30\x39\xd4\x31",
+                "bytes": b"\x08\x00\xf3\x94\x30\x39\xd4\x31",
             },
             "_results": {
-                "from_bytes": Icmp4EchoRequestMessage(
-                    cksum=0,
+                "message": Icmp4EchoRequestMessage(
+                    cksum=62356,
                     id=12345,
                     seq=54321,
                     data=b"",
@@ -63,13 +65,13 @@ from pytcp.protocols.icmp4.message.icmp4_message__echo_request import (
             "_description": "ICMPv4 Echo Request message, non-empty data.",
             "_args": {
                 "bytes": (
-                    b"\x08\x00\x00\x00\x30\x39\xd4\x31\x30\x31\x32\x33\x34\x35\x36\x37"
+                    b"\x08\x00\x24\xbe\x30\x39\xd4\x31\x30\x31\x32\x33\x34\x35\x36\x37"
                     b"\x38\x39\x41\x42\x43\x44\x45\x46"
                 ),
             },
             "_results": {
-                "from_bytes": Icmp4EchoRequestMessage(
-                    cksum=0,
+                "message": Icmp4EchoRequestMessage(
+                    cksum=9406,
                     id=12345,
                     seq=54321,
                     data=b"0123456789ABCDEF",
@@ -79,29 +81,20 @@ from pytcp.protocols.icmp4.message.icmp4_message__echo_request import (
         {
             "_description": "ICMP4 Echo Request message, maximum length of data.",
             "_args": {
-                "bytes": b"\x08\x00\x00\x00\x2b\x67\x56\xce" + b"X" * 65507,
+                "bytes": b"\x08\x00\x1e\xcb\x2b\x67\x56\xce" + b"X" * 65507,
             },
             "_results": {
-                "from_bytes": Icmp4EchoRequestMessage(
-                    cksum=0, id=11111, seq=22222, data=b"X" * 65507
-                ),
-            },
-        },
-        {
-            "_description": "ICMPv4 Echo Request message, incorrect 'type' field.",
-            "_args": {
-                "bytes": b"\xff\x00\x00\x00\x00\x00\x00\x00",
-            },
-            "_results": {
-                "error": (
-                    "The 'type' field must be <Icmp4Type.ECHO_REQUEST: 8>. "
-                    "Got: <Icmp4Type.UNKNOWN_255: 255>"
+                "message": Icmp4EchoRequestMessage(
+                    cksum=7883,
+                    id=11111,
+                    seq=22222,
+                    data=b"X" * 65507,
                 ),
             },
         },
     ]
 )
-class TestIcmp4MessageEchoRequestParser(TestCase):
+class TestIcmp4MessageEchoRequestParser(TestCasePacketRxIp4):
     """
     The ICMPv4 Echo Request message parser tests.
     """
@@ -110,23 +103,24 @@ class TestIcmp4MessageEchoRequestParser(TestCase):
     _args: dict[str, Any]
     _results: dict[str, Any]
 
+    _packet_rx: PacketRx
+
     def test__icmp4__message__echo_request__parser__from_bytes(self) -> None:
         """
         Ensure the ICMPv4 'Echo Request' message 'from_bytes()' method
         creates a proper message object.
         """
 
-        if "error" in self._results:
-            with self.assertRaises(AssertionError) as error:
-                Icmp4EchoRequestMessage.from_bytes(self._args["bytes"])
+        icmp4_parser = Icmp4Parser(packet_rx=self._packet_rx)
 
-            self.assertEqual(
-                str(error.exception),
-                self._results["error"],
-            )
+        # Convert the 'data' field from memoryview to bytes so we can compare.
+        object.__setattr__(
+            icmp4_parser.message,
+            "data",
+            bytes(cast(Icmp4EchoRequestMessage, icmp4_parser.message).data),
+        )
 
-        if "from_bytes" in self._results:
-            self.assertEqual(
-                Icmp4EchoRequestMessage.from_bytes(self._args["bytes"]),
-                self._results["from_bytes"],
-            )
+        self.assertEqual(
+            icmp4_parser.message,
+            self._results["message"],
+        )

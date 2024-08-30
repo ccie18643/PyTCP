@@ -25,34 +25,34 @@
 
 
 """
-Module contains tests for the ICMPv4 Echo Request message parser integrity checks.
+Module contains tests for the ICMPv4 Destination Unreachable message parser
+integrity checks.
 
-tests/unit/protocols/icmp4/test__icmp4__message__echo_request__parser__integrity_checks.py
+tests/unit/protocols/icmp4/test__icmp4__destination_unreachable__parser__integrity_checks.py
 
-ver 3.0.1
+ver 3.0.2
 """
 
 
-from typing import Any, cast
+from typing import Any
 
 from parameterized import parameterized_class  # type: ignore
-from testslide import StrictMock, TestCase
 
 from pytcp.lib.packet import PacketRx
 from pytcp.protocols.icmp4.icmp4__errors import Icmp4IntegrityError
 from pytcp.protocols.icmp4.icmp4__parser import Icmp4Parser
-from pytcp.protocols.ip4.ip4__parser import Ip4Parser
+from tests.lib.testcase__packet_rx__ip4 import TestCasePacketRxIp4
 
 
 @parameterized_class(
     [
         {
             "_description": (
-                "ICMPv4 Echo Request message, the 'ICMP4_HEADER_LEN <= self._ip4_payload_len' "
-                "condition not met."
+                "ICMPv4 Destination Unreachable message, "
+                "the 'ICMP4_HEADER_LEN <= self._ip4_payload_len' condition not met."
             ),
             "_args": {
-                "bytes": b"\x08\x00\xfb",
+                "bytes": b"\x03\x00\xfb",
             },
             "_mocked_values": {
                 "ip4__payload_len": 3,
@@ -67,11 +67,11 @@ from pytcp.protocols.ip4.ip4__parser import Ip4Parser
         },
         {
             "_description": (
-                "ICMPv4 Echo Request message, the 'self._ip4_payload_len <= len(self._frame)' "
-                "condition not met."
+                "ICMPv4 Destination Unreachable message, "
+                "the 'self._ip4_payload_len <= len(self._frame)' condition not met."
             ),
             "_args": {
-                "bytes": b"\x08\x00\xfb\x94\x30\x39\xd4",
+                "bytes": b"\x03\x00\xfb\x94\x30\x39\xd4",
             },
             "_mocked_values": {
                 "ip4__payload_len": 8,
@@ -86,27 +86,28 @@ from pytcp.protocols.ip4.ip4__parser import Ip4Parser
         },
         {
             "_description": (
-                "ICMPv4 Echo Request message, the 'ICMP4_ECHO_REQUEST_LEN <= self._ip4_payload_len' "
+                "ICMPv4 Destination Unreachable message, "
+                "the 'ICMP4_DESTINATION_UNREACHABLE_LEN <= self._ip4_payload_len' "
                 "condition not met."
             ),
             "_args": {
-                "bytes": b"\x08\x00\xfb\x94\x30\x39\xd4",
+                "bytes": b"\x03\x00\xfb\x94\x30\x39\xd4",
             },
             "_mocked_values": {
                 "ip4__payload_len": 7,
             },
             "_results": {
                 "error_message": (
-                    "The condition 'ICMP4__ECHO_REQUEST__LEN <= ip4__payload_len "
-                    "<= len(frame)' must be met. Got: ICMP4__ECHO_REQUEST__LEN=8, "
+                    "The condition 'ICMP4__DESTINATION_UNREACHABLE__LEN <= ip4__payload_len "
+                    "<= len(frame)' must be met. Got: ICMP4__DESTINATION_UNREACHABLE__LEN=8, "
                     "ip4__payload_len=7, len(frame)=7"
                 ),
             },
         },
         {
-            "_description": "ICMPv4 Echo Request message, invalid checksum.",
+            "_description": "ICMPv4 Destination Unreachable message, invalid checksum.",
             "_args": {
-                "bytes": b"\x08\x00\x00\x00\x30\x39\xd4\x31",
+                "bytes": b"\x03\x00\x00\x00\x30\x39\xd4\x31",
             },
             "_mocked_values": {},
             "_results": {
@@ -115,9 +116,9 @@ from pytcp.protocols.ip4.ip4__parser import Ip4Parser
         },
     ]
 )
-class TestIcmp4EchoRequestMessageParserIntegrityChecks(TestCase):
+class TestIcmp4DestinationUnreachableParserIntegrityChecks(TestCasePacketRxIp4):
     """
-    The ICMPv4 Echo Request message parser integrity checks tests.
+    The ICMPv4 Destination Unreachable message parser integrity checks tests.
     """
 
     _description: str
@@ -125,25 +126,18 @@ class TestIcmp4EchoRequestMessageParserIntegrityChecks(TestCase):
     _mocked_values: dict[str, Any]
     _results: dict[str, Any]
 
-    def test__icmp4__message__echo_request__parser__from_bytes(self) -> None:
-        """
-        Ensure the ICMPv4 Echo Request message parser raises integrity error
-        on malformed packets.
-        """
+    _packet_rx: PacketRx
 
-        packet_rx = PacketRx(self._args["bytes"])
-
-        packet_rx.ip4 = cast(Ip4Parser, StrictMock(template=Ip4Parser))
-        self.patch_attribute(
-            target=packet_rx.ip4,
-            attribute="payload_len",
-            new_value=self._mocked_values.get(
-                "ip4__payload_len", len(self._args["bytes"])
-            ),
-        )
+    def test__icmp4__destination_unreachable__parser__from_bytes(
+        self,
+    ) -> None:
+        """
+        Ensure the ICMPv4 Destination Unreachable message parser raises
+        integrity error on malformed packets.
+        """
 
         with self.assertRaises(Icmp4IntegrityError) as error:
-            Icmp4Parser(packet_rx=packet_rx)
+            Icmp4Parser(packet_rx=self._packet_rx)
 
         self.assertEqual(
             str(error.exception),

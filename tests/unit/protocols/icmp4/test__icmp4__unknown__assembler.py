@@ -28,17 +28,18 @@
 Module contains tests for the ICMPv4 unknown message assembler.
 
 
-tests/unit/protocols/icmp4/test__icmp4__message__unknown__assembler.py
+tests/unit/protocols/icmp4/test__icmp4__unknown__assembler.py
 
-ver 3.0.1
+ver 3.0.2
 """
 
 
-from typing import Any
+from typing import Any, cast
 
 from parameterized import parameterized_class  # type: ignore
 from testslide import TestCase
 
+from pytcp.protocols.icmp4.icmp4__assembler import Icmp4Assembler
 from pytcp.protocols.icmp4.message.icmp4_message import Icmp4Code, Icmp4Type
 from pytcp.protocols.icmp4.message.icmp4_message__unknown import (
     Icmp4UnknownMessage,
@@ -52,33 +53,32 @@ from pytcp.protocols.icmp4.message.icmp4_message__unknown import (
             "_args": {
                 "type": Icmp4Type.from_int(255),
                 "code": Icmp4Code.from_int(255),
-                "cksum": 12345,
                 "raw": b"0123456789ABCDEF",
             },
             "_results": {
                 "__len__": 20,
                 "__str__": (
-                    "ICMPv4 Unknown Message, type 255, code 255, cksum 12345, "
+                    "ICMPv4 Unknown Message, type 255, code 255, cksum 0, "
                     "len 20 (4+16)"
                 ),
                 "__repr__": (
                     "Icmp4UnknownMessage(type=<Icmp4Type.UNKNOWN_255: 255>, "
-                    "code=<Icmp4Code.UNKNOWN_255: 255>, cksum=12345, "
+                    "code=<Icmp4Code.UNKNOWN_255: 255>, cksum=0, "
                     "raw=b'0123456789ABCDEF')"
                 ),
-                "bytes": (
-                    b"\xff\xff\x00\x00\x30\x31\x32\x33\x34\x35\x36\x37\x38\x39\x41\x42"
+                "__bytes__": (
+                    b"\xff\xff\x31\x29\x30\x31\x32\x33\x34\x35\x36\x37\x38\x39\x41\x42"
                     b"\x43\x44\x45\x46"
                 ),
                 "type": Icmp4Type.from_int(255),
                 "code": Icmp4Code.from_int(255),
-                "cksum": 12345,
+                "cksum": 0,
                 "raw": b"0123456789ABCDEF",
             },
         },
     ]
 )
-class TestIcmp4MessageUnknownAssembler(TestCase):
+class TestIcmp4UnknownAssembler(TestCase):
     """
     The ICMPv4 unknown message assembler tests.
     """
@@ -89,85 +89,98 @@ class TestIcmp4MessageUnknownAssembler(TestCase):
 
     def setUp(self) -> None:
         """
-        Initialize the ICMPv4 unknown message assembler object with
-        testcase arguments.
+        Initialize the ICMPv4 unknown message assembler object with testcase
+        arguments.
         """
 
-        self._icmp4__unknown__message = Icmp4UnknownMessage(**self._args)
+        self._icmp4__assembler = Icmp4Assembler(
+            icmp4__message=Icmp4UnknownMessage(**self._args)
+        )
 
-    def test__icmp4__message__unknown__assembler__len(self) -> None:
+    def test__icmp4__unknown__assembler__len(self) -> None:
         """
         Ensure the ICMPv4 unknown message '__len__()' method returns
         a correct value.
         """
 
         self.assertEqual(
-            len(self._icmp4__unknown__message),
+            len(self._icmp4__assembler),
             self._results["__len__"],
         )
 
-    def test__icmp4__message__unknown__assembler__str(self) -> None:
+    def test__icmp4__unknown__assembler__str(self) -> None:
         """
         Ensure the ICMPv4 unknown message '__str__()' method returns
         a correct value.
         """
 
         self.assertEqual(
-            str(self._icmp4__unknown__message),
+            str(self._icmp4__assembler),
             self._results["__str__"],
         )
 
-    def test__icmp4__message__unknown__assembler__repr(self) -> None:
+    def test__icmp4__unknown__assembler__repr(self) -> None:
         """
         Ensure the ICMPv4 unknown message '__repr__()' method returns
         a correct value.
         """
 
         self.assertEqual(
-            repr(self._icmp4__unknown__message),
+            repr(self._icmp4__assembler),
             self._results["__repr__"],
         )
 
-    def test__icmp4__message__unknown__assembler__bytes(self) -> None:
+    def test__icmp4__unknown__assembler__bytes(self) -> None:
         """
         Ensure the ICMPv4 unknown message '__bytes__()' method returns
         a correct value.
         """
 
         self.assertEqual(
-            bytes(self._icmp4__unknown__message),
-            self._results["bytes"],
+            bytes(self._icmp4__assembler),
+            self._results["__bytes__"],
         )
 
-    def test__icmp4__message__unknown__assembler__type(self) -> None:
+    def test__icmp4__unknown__assembler__type(self) -> None:
         """
         Ensure the ICMPv4 unknown message 'type' field contains
         a correct value.
         """
 
         self.assertEqual(
-            self._icmp4__unknown__message.type,
+            self._icmp4__assembler.message.type,
             self._results["type"],
         )
 
-    def test__icmp4__message__unknown__assembler__code(self) -> None:
+    def test__icmp4__unknown__assembler__code(self) -> None:
         """
         Ensure the ICMPv4 unknown message 'code' field contains
         a correct value.
         """
 
         self.assertEqual(
-            self._icmp4__unknown__message.code,
+            self._icmp4__assembler.message.code,
             self._results["code"],
         )
 
-    def test__icmp4__message__unknown__assembler__cksum(self) -> None:
+    def test__icmp4__unknown__assembler__cksum(self) -> None:
         """
         Ensure the ICMPv4 unknown message 'cksum' field contains
         a correct value.
         """
 
         self.assertEqual(
-            self._icmp4__unknown__message.cksum,
+            self._icmp4__assembler.message.cksum,
             self._results["cksum"],
+        )
+
+    def test__icmp4__unknown__assembler__raw(self) -> None:
+        """
+        Ensure the ICMPv4 unknown message 'raw' field contains
+        a correct value.
+        """
+
+        self.assertEqual(
+            cast(Icmp4UnknownMessage, self._icmp4__assembler.message).raw,
+            self._results["raw"],
         )

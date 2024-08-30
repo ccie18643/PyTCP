@@ -25,11 +25,12 @@
 
 
 """
-Module contains tests for the ICMPv4 Echo Request message assembler asserts.
+Module contains tests for the ICMPv4 Echo Request message assembler & parser
+asserts.
 
-tests/unit/protocols/icmp4/test__icmp4__message__echo_request__asserts.py
+tests/unit/protocols/icmp4/test__icmp4__echo_request__asserts.py
 
-ver 3.0.1
+ver 3.0.2
 """
 
 
@@ -44,7 +45,7 @@ from pytcp.protocols.icmp4.message.icmp4_message__echo_request import (
 from pytcp.protocols.ip4.ip4__header import IP4__PAYLOAD__MAX_LEN
 
 
-class TestIcmp4MessageEchoRequestAsserts(TestCase):
+class TestIcmp4EchoRequestAssemblerAsserts(TestCase):
     """
     The ICMPv4 Echo Request message assembler constructor argument assert
     tests.
@@ -64,7 +65,7 @@ class TestIcmp4MessageEchoRequestAsserts(TestCase):
             "data": b"",
         }
 
-    def test__icmp4__message__echo_request__code__not_Icmp4EchoRequestCode(
+    def test__icmp4__echo_request__code__not_Icmp4EchoRequestCode(
         self,
     ) -> None:
         """
@@ -83,7 +84,7 @@ class TestIcmp4MessageEchoRequestAsserts(TestCase):
             f"Got: {type(value)!r}",
         )
 
-    def test__icmp4__message__echo_request__cksum__under_min(self) -> None:
+    def test__icmp4__echo_request__cksum__under_min(self) -> None:
         """
         Ensure the ICMPv4 Echo Request message assembler constructor raises
         an exception when the provided 'cksum' argument is lower than the
@@ -101,7 +102,7 @@ class TestIcmp4MessageEchoRequestAsserts(TestCase):
             f"Got: {value!r}",
         )
 
-    def test__icmp4__message__echo_request__cksum__over_max(self) -> None:
+    def test__icmp4__echo_request__cksum__over_max(self) -> None:
         """
         Ensure the ICMPv4 Echo Request message assembler constructor raises
         an exception when the provided 'cksum' argument is higher than the
@@ -119,7 +120,7 @@ class TestIcmp4MessageEchoRequestAsserts(TestCase):
             f"Got: {value!r}",
         )
 
-    def test__icmp4__message__echo_request__id__under_min(self) -> None:
+    def test__icmp4__echo_request__id__under_min(self) -> None:
         """
         Ensure the ICMPv4 Echo Request message assembler constructor raises
         an exception when the provided 'id' argument is lower than the
@@ -137,7 +138,7 @@ class TestIcmp4MessageEchoRequestAsserts(TestCase):
             f"Got: {value!r}",
         )
 
-    def test__icmp4__message__echo_request__id__over_max(self) -> None:
+    def test__icmp4__echo_request__id__over_max(self) -> None:
         """
         Ensure the ICMPv4 Echo Request message assembler constructor raises
         an exception when the provided 'id' argument is higher than the
@@ -155,7 +156,7 @@ class TestIcmp4MessageEchoRequestAsserts(TestCase):
             f"Got: {value!r}",
         )
 
-    def test__icmp4__message__echo_request__seq__under_min(self) -> None:
+    def test__icmp4__echo_request__seq__under_min(self) -> None:
         """
         Ensure the ICMPv4 Echo Request message assembler constructor raises
         an exception when the provided 'seq' argument is lower than the
@@ -173,7 +174,7 @@ class TestIcmp4MessageEchoRequestAsserts(TestCase):
             f"Got: {value!r}",
         )
 
-    def test__icmp4__message__echo_request__seq__over_max(self) -> None:
+    def test__icmp4__echo_request__seq__over_max(self) -> None:
         """
         Ensure the ICMPv4 Echo Request message assembler constructor raises
         an exception when the provided 'seq' argument is higher than the
@@ -191,7 +192,7 @@ class TestIcmp4MessageEchoRequestAsserts(TestCase):
             f"Got: {value!r}",
         )
 
-    def test__icmp4__message__echo_request__data_len__over_max(self) -> None:
+    def test__icmp4__echo_request__data_len__over_max(self) -> None:
         """
         Ensure the ICMPv4 Echo Request message assembler constructor raises
         an exception when the length of the provided 'data' argument is higher
@@ -211,4 +212,29 @@ class TestIcmp4MessageEchoRequestAsserts(TestCase):
             f"The 'data' field length must be a 16-bit unsigned integer less than "
             f"or equal to {IP4__PAYLOAD__MAX_LEN - ICMP4__ECHO_REQUEST__LEN}. "
             f"Got: {value!r}",
+        )
+
+
+class TestIcmp4EchoReqestParserAsserts(TestCase):
+    """
+    The ICMPv4 Echo Request message parser argument constructor assert tests.
+    """
+
+    def test__icmp4__echo_request__wrong_type(self) -> None:
+        """
+        Ensure the ICMPv4 Echo Request message parser raises an exception when
+        the provided '_bytes' argument contains incorrect 'type' field.
+        """
+
+        with self.assertRaises(AssertionError) as error:
+            Icmp4EchoRequestMessage.from_bytes(
+                b"\xff\x00\xff\x00\x00\x00\x00\x00"
+            )
+
+        self.assertEqual(
+            str(error.exception),
+            (
+                "The 'type' field must be <Icmp4Type.ECHO_REQUEST: 8>. "
+                "Got: <Icmp4Type.UNKNOWN_255: 255>"
+            ),
         )

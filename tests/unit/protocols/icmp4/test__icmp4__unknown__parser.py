@@ -25,74 +25,75 @@
 
 
 """
-Module contains the customized TestCase class that mocks the IPv6 related values.
+Module contains tests for the ICMPv6 unknown message parser.
 
-tests/mocks/testcase__packet_rx__ip6.py
+tests/unit/protocols/icmp4/test__icmp4__unknown__parser.py
 
-ver 3.0.1
+ver 3.0.2
 """
 
 
 from typing import Any, cast
 
-from testslide import StrictMock, TestCase
+from parameterized import parameterized_class  # type: ignore
 
-from pytcp.lib.ip6_address import Ip6Address
 from pytcp.lib.packet import PacketRx
-from pytcp.protocols.ip6.ip6__parser import Ip6Parser
+from pytcp.protocols.icmp4.icmp4__parser import Icmp4Parser
+from pytcp.protocols.icmp4.message.icmp4_message import Icmp4Code, Icmp4Type
+from pytcp.protocols.icmp4.message.icmp4_message__unknown import (
+    Icmp4UnknownMessage,
+)
+from tests.lib.testcase__packet_rx__ip4 import TestCasePacketRxIp4
 
 
-class TestCasePacketRxIp6(TestCase):
+@parameterized_class(
+    [
+        {
+            "_description": "ICMPv4 unknown message.",
+            "_args": {
+                "bytes": (
+                    b"\xff\xff\x31\x29\x30\x31\x32\x33\x34\x35\x36\x37\x38\x39\x41\x42"
+                    b"\x43\x44\x45\x46"
+                ),
+            },
+            "_results": {
+                "message": Icmp4UnknownMessage(
+                    type=Icmp4Type.from_int(255),
+                    code=Icmp4Code.from_int(255),
+                    cksum=12585,
+                    raw=b"0123456789ABCDEF",
+                ),
+            },
+        },
+    ]
+)
+class TestIcmp4MessageUnknownParser(TestCasePacketRxIp4):
     """
-    Customized TestCase class that provides PacketRx object and mocks the
-    IPv6 parser values.
+    The ICMPv4 unknown message parser tests.
     """
 
-    _args: dict[str, Any] = {}
-    _mocked_values: dict[str, Any] = {}
+    _description: str
+    _args: dict[str, Any]
+    _results: dict[str, Any]
+
     _packet_rx: PacketRx
 
-    def setUp(self) -> None:
+    def test__icmp4__message__unknown__parser__from_bytes(self) -> None:
         """
-        Set up the mocked values for the IPv6 related fields.
+        Ensure the ICMPv4 unknown message 'from_bytes()' method creates
+        a proper message object.
         """
 
-        self._packet_rx = PacketRx(self._args["bytes"])
+        icmp4_parser = Icmp4Parser(packet_rx=self._packet_rx)
 
-        self._packet_rx.ip = self._packet_rx.ip6 = cast(
-            Ip6Parser, StrictMock(template=Ip6Parser)
+        # Convert the 'raw' field from memoryview to bytes so we can compare.
+        object.__setattr__(
+            icmp4_parser.message,
+            "raw",
+            bytes(cast(Icmp4UnknownMessage, icmp4_parser.message).raw),
         )
-        self.patch_attribute(
-            target=self._packet_rx.ip6,
-            attribute="dlen",
-            new_value=self._mocked_values.get(
-                "ip6__dlen", len(self._args["bytes"])
-            ),
-        )
-        self.patch_attribute(
-            target=self._packet_rx.ip6,
-            attribute="payload_len",
-            new_value=self._mocked_values.get(
-                "ip6__dlen", len(self._args["bytes"])
-            ),
-        )
-        self.patch_attribute(
-            target=self._packet_rx.ip6,
-            attribute="pshdr_sum",
-            new_value=self._mocked_values.get("ip6__pshdr_sum", 0),
-        )
-        self.patch_attribute(
-            target=self._packet_rx.ip6,
-            attribute="hop",
-            new_value=self._mocked_values.get("ip6__hop", 0),
-        )
-        self.patch_attribute(
-            target=self._packet_rx.ip6,
-            attribute="src",
-            new_value=self._mocked_values.get("ip6__src", Ip6Address()),
-        )
-        self.patch_attribute(
-            target=self._packet_rx.ip6,
-            attribute="dst",
-            new_value=self._mocked_values.get("ip6__dst", Ip6Address()),
+
+        self.assertEqual(
+            icmp4_parser.message,
+            self._results["message"],
         )

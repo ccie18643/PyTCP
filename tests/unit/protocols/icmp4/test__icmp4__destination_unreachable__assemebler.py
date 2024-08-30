@@ -27,17 +27,18 @@
 """
 Module contains tests for the ICMPv4 Destination Unreachable message assembler.
 
-tests/unit/protocols/icmp4/test__icmp4__message__destination_unreachable__assembler.py
+tests/unit/protocols/icmp4/test__icmp4__destination_unreachable__assembler.py
 
-ver 3.0.1
+ver 3.0.2
 """
 
 
-from typing import Any
+from typing import Any, cast
 
 from parameterized import parameterized_class  # type: ignore
 from testslide import TestCase
 
+from pytcp.protocols.icmp4.icmp4__assembler import Icmp4Assembler
 from pytcp.protocols.icmp4.message.icmp4_message import Icmp4Type
 from pytcp.protocols.icmp4.message.icmp4_message__destination_unreachable import (
     Icmp4DestinationUnreachableCode,
@@ -51,7 +52,6 @@ from pytcp.protocols.icmp4.message.icmp4_message__destination_unreachable import
             "_description": "ICMPv4 Destination Unreachable (Network) message.",
             "_args": {
                 "code": Icmp4DestinationUnreachableCode.NETWORK,
-                "cksum": 12345,
                 "data": b"",
             },
             "_results": {
@@ -59,12 +59,12 @@ from pytcp.protocols.icmp4.message.icmp4_message__destination_unreachable import
                 "__str__": "ICMPv4 Destination Unreachable - Network, len 8 (8+0)",
                 "__repr__": (
                     "Icmp4DestinationUnreachableMessage(code=<Icmp4DestinationUnreachableCode"
-                    ".NETWORK: 0>, cksum=12345, mtu=None, data=b'')"
+                    ".NETWORK: 0>, cksum=0, mtu=None, data=b'')"
                 ),
-                "__bytes__": b"\x03\x00\x00\x00\x00\x00\x00\x00",
+                "__bytes__": b"\x03\x00\xfc\xff\x00\x00\x00\x00",
                 "type": Icmp4Type.DESTINATION_UNREACHABLE,
                 "code": Icmp4DestinationUnreachableCode.NETWORK,
-                "cksum": 12345,
+                "cksum": 0,
                 "data": b"",
             },
         },
@@ -72,7 +72,6 @@ from pytcp.protocols.icmp4.message.icmp4_message__destination_unreachable import
             "_description": "ICMPv4 Destination Unreachable (Host) message.",
             "_args": {
                 "code": Icmp4DestinationUnreachableCode.HOST,
-                "cksum": 12345,
                 "data": b"",
             },
             "_results": {
@@ -80,12 +79,12 @@ from pytcp.protocols.icmp4.message.icmp4_message__destination_unreachable import
                 "__str__": "ICMPv4 Destination Unreachable - Host, len 8 (8+0)",
                 "__repr__": (
                     "Icmp4DestinationUnreachableMessage(code=<Icmp4DestinationUnreachableCode"
-                    ".HOST: 1>, cksum=12345, mtu=None, data=b'')"
+                    ".HOST: 1>, cksum=0, mtu=None, data=b'')"
                 ),
-                "__bytes__": b"\x03\x01\x00\x00\x00\x00\x00\x00",
+                "__bytes__": b"\x03\x01\xfc\xfe\x00\x00\x00\x00",
                 "type": Icmp4Type.DESTINATION_UNREACHABLE,
                 "code": Icmp4DestinationUnreachableCode.HOST,
-                "cksum": 12345,
+                "cksum": 0,
                 "data": b"",
             },
         },
@@ -93,7 +92,6 @@ from pytcp.protocols.icmp4.message.icmp4_message__destination_unreachable import
             "_description": "ICMPv4 Destination Unreachable (Protocol) message.",
             "_args": {
                 "code": Icmp4DestinationUnreachableCode.PROTOCOL,
-                "cksum": 12345,
                 "data": b"",
             },
             "_results": {
@@ -101,12 +99,12 @@ from pytcp.protocols.icmp4.message.icmp4_message__destination_unreachable import
                 "__str__": "ICMPv4 Destination Unreachable - Protocol, len 8 (8+0)",
                 "__repr__": (
                     "Icmp4DestinationUnreachableMessage(code=<Icmp4DestinationUnreachableCode"
-                    ".PROTOCOL: 2>, cksum=12345, mtu=None, data=b'')"
+                    ".PROTOCOL: 2>, cksum=0, mtu=None, data=b'')"
                 ),
-                "__bytes__": b"\x03\x02\x00\x00\x00\x00\x00\x00",
+                "__bytes__": b"\x03\x02\xfc\xfd\x00\x00\x00\x00",
                 "type": Icmp4Type.DESTINATION_UNREACHABLE,
                 "code": Icmp4DestinationUnreachableCode.PROTOCOL,
-                "cksum": 12345,
+                "cksum": 0,
                 "data": b"",
             },
         },
@@ -114,7 +112,6 @@ from pytcp.protocols.icmp4.message.icmp4_message__destination_unreachable import
             "_description": "ICMPv4 Destination Unreachable - (Port) message.",
             "_args": {
                 "code": Icmp4DestinationUnreachableCode.PORT,
-                "cksum": 12345,
                 "data": b"",
             },
             "_results": {
@@ -122,12 +119,12 @@ from pytcp.protocols.icmp4.message.icmp4_message__destination_unreachable import
                 "__str__": "ICMPv4 Destination Unreachable - Port, len 8 (8+0)",
                 "__repr__": (
                     "Icmp4DestinationUnreachableMessage(code=<Icmp4DestinationUnreachableCode"
-                    ".PORT: 3>, cksum=12345, mtu=None, data=b'')"
+                    ".PORT: 3>, cksum=0, mtu=None, data=b'')"
                 ),
-                "__bytes__": b"\x03\x03\x00\x00\x00\x00\x00\x00",
+                "__bytes__": b"\x03\x03\xfc\xfc\x00\x00\x00\x00",
                 "type": Icmp4Type.DESTINATION_UNREACHABLE,
                 "code": Icmp4DestinationUnreachableCode.PORT,
-                "cksum": 12345,
+                "cksum": 0,
                 "data": b"",
             },
         },
@@ -136,20 +133,22 @@ from pytcp.protocols.icmp4.message.icmp4_message__destination_unreachable import
             "_args": {
                 "code": Icmp4DestinationUnreachableCode.FRAGMENTATION_NEEDED,
                 "mtu": 1200,
-                "cksum": 12345,
                 "data": b"",
             },
             "_results": {
                 "__len__": 8,
-                "__str__": "ICMPv4 Destination Unreachable - Fragmentation Needed, mtu 1200, len 8 (8+0)",
+                "__str__": (
+                    "ICMPv4 Destination Unreachable - Fragmentation Needed, mtu 1200, "
+                    "len 8 (8+0)"
+                ),
                 "__repr__": (
                     "Icmp4DestinationUnreachableMessage(code=<Icmp4DestinationUnreachableCode"
-                    ".FRAGMENTATION_NEEDED: 4>, cksum=12345, mtu=1200, data=b'')"
+                    ".FRAGMENTATION_NEEDED: 4>, cksum=0, mtu=1200, data=b'')"
                 ),
-                "__bytes__": b"\x03\x04\x00\x00\x00\x00\x04\xb0",
+                "__bytes__": b"\x03\x04\xf8\x4b\x00\x00\x04\xb0",
                 "type": Icmp4Type.DESTINATION_UNREACHABLE,
                 "code": Icmp4DestinationUnreachableCode.FRAGMENTATION_NEEDED,
-                "cksum": 12345,
+                "cksum": 0,
                 "mtu": 1200,
                 "data": b"",
             },
@@ -158,7 +157,6 @@ from pytcp.protocols.icmp4.message.icmp4_message__destination_unreachable import
             "_description": "ICMPv4 Destination Unreachable (Source Route Failed) message.",
             "_args": {
                 "code": Icmp4DestinationUnreachableCode.SOURCE_ROUTE_FAILED,
-                "cksum": 12345,
                 "data": b"",
             },
             "_results": {
@@ -166,12 +164,12 @@ from pytcp.protocols.icmp4.message.icmp4_message__destination_unreachable import
                 "__str__": "ICMPv4 Destination Unreachable - Source Route Failed, len 8 (8+0)",
                 "__repr__": (
                     "Icmp4DestinationUnreachableMessage(code=<Icmp4DestinationUnreachableCode"
-                    ".SOURCE_ROUTE_FAILED: 5>, cksum=12345, mtu=None, data=b'')"
+                    ".SOURCE_ROUTE_FAILED: 5>, cksum=0, mtu=None, data=b'')"
                 ),
-                "__bytes__": b"\x03\x05\x00\x00\x00\x00\x00\x00",
+                "__bytes__": b"\x03\x05\xfc\xfa\x00\x00\x00\x00",
                 "type": Icmp4Type.DESTINATION_UNREACHABLE,
                 "code": Icmp4DestinationUnreachableCode.SOURCE_ROUTE_FAILED,
-                "cksum": 12345,
+                "cksum": 0,
                 "data": b"",
             },
         },
@@ -179,7 +177,6 @@ from pytcp.protocols.icmp4.message.icmp4_message__destination_unreachable import
             "_description": "ICMPv4 Destination Unreachable (Network Unknown) message.",
             "_args": {
                 "code": Icmp4DestinationUnreachableCode.NETWORK_UNKNOWN,
-                "cksum": 12345,
                 "data": b"",
             },
             "_results": {
@@ -187,12 +184,12 @@ from pytcp.protocols.icmp4.message.icmp4_message__destination_unreachable import
                 "__str__": "ICMPv4 Destination Unreachable - Network Unknown, len 8 (8+0)",
                 "__repr__": (
                     "Icmp4DestinationUnreachableMessage(code=<Icmp4DestinationUnreachableCode"
-                    ".NETWORK_UNKNOWN: 6>, cksum=12345, mtu=None, data=b'')"
+                    ".NETWORK_UNKNOWN: 6>, cksum=0, mtu=None, data=b'')"
                 ),
-                "__bytes__": b"\x03\x06\x00\x00\x00\x00\x00\x00",
+                "__bytes__": b"\x03\x06\xfc\xf9\x00\x00\x00\x00",
                 "type": Icmp4Type.DESTINATION_UNREACHABLE,
                 "code": Icmp4DestinationUnreachableCode.NETWORK_UNKNOWN,
-                "cksum": 12345,
+                "cksum": 0,
                 "data": b"",
             },
         },
@@ -200,7 +197,6 @@ from pytcp.protocols.icmp4.message.icmp4_message__destination_unreachable import
             "_description": "ICMPv4 Destination Unreachable (Host Unknown) message.",
             "_args": {
                 "code": Icmp4DestinationUnreachableCode.HOST_UNKNOWN,
-                "cksum": 12345,
                 "data": b"",
             },
             "_results": {
@@ -208,12 +204,12 @@ from pytcp.protocols.icmp4.message.icmp4_message__destination_unreachable import
                 "__str__": "ICMPv4 Destination Unreachable - Host Unknown, len 8 (8+0)",
                 "__repr__": (
                     "Icmp4DestinationUnreachableMessage(code=<Icmp4DestinationUnreachableCode"
-                    ".HOST_UNKNOWN: 7>, cksum=12345, mtu=None, data=b'')"
+                    ".HOST_UNKNOWN: 7>, cksum=0, mtu=None, data=b'')"
                 ),
-                "__bytes__": b"\x03\x07\x00\x00\x00\x00\x00\x00",
+                "__bytes__": b"\x03\x07\xfc\xf8\x00\x00\x00\x00",
                 "type": Icmp4Type.DESTINATION_UNREACHABLE,
                 "code": Icmp4DestinationUnreachableCode.HOST_UNKNOWN,
-                "cksum": 12345,
+                "cksum": 0,
                 "data": b"",
             },
         },
@@ -221,7 +217,6 @@ from pytcp.protocols.icmp4.message.icmp4_message__destination_unreachable import
             "_description": "ICMPv4 Destination Unreachable (Source Host Isolated) message.",
             "_args": {
                 "code": Icmp4DestinationUnreachableCode.SOURCE_HOST_ISOLATED,
-                "cksum": 12345,
                 "data": b"",
             },
             "_results": {
@@ -229,12 +224,12 @@ from pytcp.protocols.icmp4.message.icmp4_message__destination_unreachable import
                 "__str__": "ICMPv4 Destination Unreachable - Source Host Isolated, len 8 (8+0)",
                 "__repr__": (
                     "Icmp4DestinationUnreachableMessage(code=<Icmp4DestinationUnreachableCode"
-                    ".SOURCE_HOST_ISOLATED: 8>, cksum=12345, mtu=None, data=b'')"
+                    ".SOURCE_HOST_ISOLATED: 8>, cksum=0, mtu=None, data=b'')"
                 ),
-                "__bytes__": b"\x03\x08\x00\x00\x00\x00\x00\x00",
+                "__bytes__": b"\x03\x08\xfc\xf7\x00\x00\x00\x00",
                 "type": Icmp4Type.DESTINATION_UNREACHABLE,
                 "code": Icmp4DestinationUnreachableCode.SOURCE_HOST_ISOLATED,
-                "cksum": 12345,
+                "cksum": 0,
                 "data": b"",
             },
         },
@@ -242,7 +237,6 @@ from pytcp.protocols.icmp4.message.icmp4_message__destination_unreachable import
             "_description": "ICMPv4 Destination Unreachable (Network Prohibited) message'.",
             "_args": {
                 "code": Icmp4DestinationUnreachableCode.NETWORK_PROHIBITED,
-                "cksum": 12345,
                 "data": b"",
             },
             "_results": {
@@ -250,12 +244,12 @@ from pytcp.protocols.icmp4.message.icmp4_message__destination_unreachable import
                 "__str__": "ICMPv4 Destination Unreachable - Network Prohibited, len 8 (8+0)",
                 "__repr__": (
                     "Icmp4DestinationUnreachableMessage(code=<Icmp4DestinationUnreachableCode"
-                    ".NETWORK_PROHIBITED: 9>, cksum=12345, mtu=None, data=b'')"
+                    ".NETWORK_PROHIBITED: 9>, cksum=0, mtu=None, data=b'')"
                 ),
-                "__bytes__": b"\x03\x09\x00\x00\x00\x00\x00\x00",
+                "__bytes__": b"\x03\x09\xfc\xf6\x00\x00\x00\x00",
                 "type": Icmp4Type.DESTINATION_UNREACHABLE,
                 "code": Icmp4DestinationUnreachableCode.NETWORK_PROHIBITED,
-                "cksum": 12345,
+                "cksum": 0,
                 "data": b"",
             },
         },
@@ -263,7 +257,6 @@ from pytcp.protocols.icmp4.message.icmp4_message__destination_unreachable import
             "_description": "ICMPv4 Destination Unreachable (Host Prohibited) message.",
             "_args": {
                 "code": Icmp4DestinationUnreachableCode.HOST_PROHIBITED,
-                "cksum": 12345,
                 "data": b"",
             },
             "_results": {
@@ -271,12 +264,12 @@ from pytcp.protocols.icmp4.message.icmp4_message__destination_unreachable import
                 "__str__": "ICMPv4 Destination Unreachable - Host Prohibited, len 8 (8+0)",
                 "__repr__": (
                     "Icmp4DestinationUnreachableMessage(code=<Icmp4DestinationUnreachableCode"
-                    ".HOST_PROHIBITED: 10>, cksum=12345, mtu=None, data=b'')"
+                    ".HOST_PROHIBITED: 10>, cksum=0, mtu=None, data=b'')"
                 ),
-                "__bytes__": b"\x03\x0a\x00\x00\x00\x00\x00\x00",
+                "__bytes__": b"\x03\x0a\xfc\xf5\x00\x00\x00\x00",
                 "type": Icmp4Type.DESTINATION_UNREACHABLE,
                 "code": Icmp4DestinationUnreachableCode.HOST_PROHIBITED,
-                "cksum": 12345,
+                "cksum": 0,
                 "data": b"",
             },
         },
@@ -284,7 +277,6 @@ from pytcp.protocols.icmp4.message.icmp4_message__destination_unreachable import
             "_description": "ICMPv4 Destination Unreachable (Network TOS) message.",
             "_args": {
                 "code": Icmp4DestinationUnreachableCode.NETWORK_TOS,
-                "cksum": 12345,
                 "data": b"",
             },
             "_results": {
@@ -292,12 +284,12 @@ from pytcp.protocols.icmp4.message.icmp4_message__destination_unreachable import
                 "__str__": "ICMPv4 Destination Unreachable - Network TOS, len 8 (8+0)",
                 "__repr__": (
                     "Icmp4DestinationUnreachableMessage(code=<Icmp4DestinationUnreachableCode"
-                    ".NETWORK_TOS: 11>, cksum=12345, mtu=None, data=b'')"
+                    ".NETWORK_TOS: 11>, cksum=0, mtu=None, data=b'')"
                 ),
-                "__bytes__": b"\x03\x0b\x00\x00\x00\x00\x00\x00",
+                "__bytes__": b"\x03\x0b\xfc\xf4\x00\x00\x00\x00",
                 "type": Icmp4Type.DESTINATION_UNREACHABLE,
                 "code": Icmp4DestinationUnreachableCode.NETWORK_TOS,
-                "cksum": 12345,
+                "cksum": 0,
                 "data": b"",
             },
         },
@@ -305,7 +297,6 @@ from pytcp.protocols.icmp4.message.icmp4_message__destination_unreachable import
             "_description": "ICMPv4 Destination Unreachable (Host TOS) message.",
             "_args": {
                 "code": Icmp4DestinationUnreachableCode.HOST_TOS,
-                "cksum": 12345,
                 "data": b"",
             },
             "_results": {
@@ -313,12 +304,12 @@ from pytcp.protocols.icmp4.message.icmp4_message__destination_unreachable import
                 "__str__": "ICMPv4 Destination Unreachable - Host TOS, len 8 (8+0)",
                 "__repr__": (
                     "Icmp4DestinationUnreachableMessage(code=<Icmp4DestinationUnreachableCode"
-                    ".HOST_TOS: 12>, cksum=12345, mtu=None, data=b'')"
+                    ".HOST_TOS: 12>, cksum=0, mtu=None, data=b'')"
                 ),
-                "__bytes__": b"\x03\x0c\x00\x00\x00\x00\x00\x00",
+                "__bytes__": b"\x03\x0c\xfc\xf3\x00\x00\x00\x00",
                 "type": Icmp4Type.DESTINATION_UNREACHABLE,
                 "code": Icmp4DestinationUnreachableCode.HOST_TOS,
-                "cksum": 12345,
+                "cksum": 0,
                 "data": b"",
             },
         },
@@ -326,20 +317,21 @@ from pytcp.protocols.icmp4.message.icmp4_message__destination_unreachable import
             "_description": "ICMPv4 Destination Unreachable (Communication Prohibited) message.",
             "_args": {
                 "code": Icmp4DestinationUnreachableCode.COMMUNICATION_PROHIBITED,
-                "cksum": 12345,
                 "data": b"",
             },
             "_results": {
                 "__len__": 8,
-                "__str__": "ICMPv4 Destination Unreachable - Communication Prohibited, len 8 (8+0)",
+                "__str__": (
+                    "ICMPv4 Destination Unreachable - Communication Prohibited, len 8 (8+0)"
+                ),
                 "__repr__": (
                     "Icmp4DestinationUnreachableMessage(code=<Icmp4DestinationUnreachableCode"
-                    ".COMMUNICATION_PROHIBITED: 13>, cksum=12345, mtu=None, data=b'')"
+                    ".COMMUNICATION_PROHIBITED: 13>, cksum=0, mtu=None, data=b'')"
                 ),
-                "__bytes__": b"\x03\x0d\x00\x00\x00\x00\x00\x00",
+                "__bytes__": b"\x03\x0d\xfc\xf2\x00\x00\x00\x00",
                 "type": Icmp4Type.DESTINATION_UNREACHABLE,
                 "code": Icmp4DestinationUnreachableCode.COMMUNICATION_PROHIBITED,
-                "cksum": 12345,
+                "cksum": 0,
                 "data": b"",
             },
         },
@@ -347,7 +339,6 @@ from pytcp.protocols.icmp4.message.icmp4_message__destination_unreachable import
             "_description": "ICMPv4 Destination Unreachable (Host Precedence) message.",
             "_args": {
                 "code": Icmp4DestinationUnreachableCode.HOST_PRECEDENCE,
-                "cksum": 12345,
                 "data": b"",
             },
             "_results": {
@@ -355,12 +346,12 @@ from pytcp.protocols.icmp4.message.icmp4_message__destination_unreachable import
                 "__str__": "ICMPv4 Destination Unreachable - Host Precedence, len 8 (8+0)",
                 "__repr__": (
                     "Icmp4DestinationUnreachableMessage(code=<Icmp4DestinationUnreachableCode"
-                    ".HOST_PRECEDENCE: 14>, cksum=12345, mtu=None, data=b'')"
+                    ".HOST_PRECEDENCE: 14>, cksum=0, mtu=None, data=b'')"
                 ),
-                "__bytes__": b"\x03\x0e\x00\x00\x00\x00\x00\x00",
+                "__bytes__": b"\x03\x0e\xfc\xf1\x00\x00\x00\x00",
                 "type": Icmp4Type.DESTINATION_UNREACHABLE,
                 "code": Icmp4DestinationUnreachableCode.HOST_PRECEDENCE,
-                "cksum": 12345,
+                "cksum": 0,
                 "data": b"",
             },
         },
@@ -368,7 +359,6 @@ from pytcp.protocols.icmp4.message.icmp4_message__destination_unreachable import
             "_description": "ICMPv4 Destination Unreachable (Precedence Cutoff) message.",
             "_args": {
                 "code": Icmp4DestinationUnreachableCode.PRECEDENCE_CUTOFF,
-                "cksum": 12345,
                 "data": b"",
             },
             "_results": {
@@ -376,12 +366,12 @@ from pytcp.protocols.icmp4.message.icmp4_message__destination_unreachable import
                 "__str__": "ICMPv4 Destination Unreachable - Precedence Cutoff, len 8 (8+0)",
                 "__repr__": (
                     "Icmp4DestinationUnreachableMessage(code=<Icmp4DestinationUnreachableCode"
-                    ".PRECEDENCE_CUTOFF: 15>, cksum=12345, mtu=None, data=b'')"
+                    ".PRECEDENCE_CUTOFF: 15>, cksum=0, mtu=None, data=b'')"
                 ),
-                "__bytes__": b"\x03\x0f\x00\x00\x00\x00\x00\x00",
+                "__bytes__": b"\x03\x0f\xfc\xf0\x00\x00\x00\x00",
                 "type": Icmp4Type.DESTINATION_UNREACHABLE,
                 "code": Icmp4DestinationUnreachableCode.PRECEDENCE_CUTOFF,
-                "cksum": 12345,
+                "cksum": 0,
                 "data": b"",
             },
         },
@@ -389,7 +379,6 @@ from pytcp.protocols.icmp4.message.icmp4_message__destination_unreachable import
             "_description": "ICMPv4 Destination Unreachable message, non-empty payload.",
             "_args": {
                 "code": Icmp4DestinationUnreachableCode.PORT,
-                "cksum": 12345,
                 "data": b"0123456789ABCDEF",
             },
             "_results": {
@@ -397,15 +386,15 @@ from pytcp.protocols.icmp4.message.icmp4_message__destination_unreachable import
                 "__str__": "ICMPv4 Destination Unreachable - Port, len 24 (8+16)",
                 "__repr__": (
                     "Icmp4DestinationUnreachableMessage(code=<Icmp4DestinationUnreachableCode"
-                    ".PORT: 3>, cksum=12345, mtu=None, data=b'0123456789ABCDEF')"
+                    ".PORT: 3>, cksum=0, mtu=None, data=b'0123456789ABCDEF')"
                 ),
                 "__bytes__": (
-                    b"\x03\x03\x00\x00\x00\x00\x00\x00\x30\x31\x32\x33\x34\x35\x36\x37"
+                    b"\x03\x03\x2e\x26\x00\x00\x00\x00\x30\x31\x32\x33\x34\x35\x36\x37"
                     b"\x38\x39\x41\x42\x43\x44\x45\x46"
                 ),
                 "type": Icmp4Type.DESTINATION_UNREACHABLE,
                 "code": Icmp4DestinationUnreachableCode.PORT,
-                "cksum": 12345,
+                "cksum": 0,
                 "data": b"0123456789ABCDEF",
             },
         },
@@ -413,7 +402,6 @@ from pytcp.protocols.icmp4.message.icmp4_message__destination_unreachable import
             "_description": "ICMPv4 Destination Unreachable message, maximum length payload.",
             "_args": {
                 "code": Icmp4DestinationUnreachableCode.PORT,
-                "cksum": 12345,
                 "data": b"X" * 65507,
             },
             "_results": {
@@ -421,18 +409,18 @@ from pytcp.protocols.icmp4.message.icmp4_message__destination_unreachable import
                 "__str__": "ICMPv4 Destination Unreachable - Port, len 556 (8+548)",
                 "__repr__": (
                     "Icmp4DestinationUnreachableMessage(code=<Icmp4DestinationUnreachableCode"
-                    f".PORT: 3>, cksum=12345, mtu=None, data=b'{"X" * 548}')"
+                    f".PORT: 3>, cksum=0, mtu=None, data=b'{"X" * 548}')"
                 ),
-                "__bytes__": b"\x03\x03\x00\x00\x00\x00\x00\x00" + b"X" * 548,
+                "__bytes__": b"\x03\x03\x6e\x6e\x00\x00\x00\x00" + b"X" * 548,
                 "type": Icmp4Type.DESTINATION_UNREACHABLE,
                 "code": Icmp4DestinationUnreachableCode.PORT,
-                "cksum": 12345,
+                "cksum": 0,
                 "data": b"X" * 548,
             },
         },
     ]
 )
-class TestIcmp4MessageDestinationUnreachableAssembler(TestCase):
+class TestIcmp4DestinationUnreachableAssembler(TestCase):
     """
     The ICMPv4 Destination Unreachable message assembler tests.
     """
@@ -447,8 +435,8 @@ class TestIcmp4MessageDestinationUnreachableAssembler(TestCase):
         object with testcase arguments.
         """
 
-        self._icmp4__destination_unreachable__message = (
-            Icmp4DestinationUnreachableMessage(**self._args)
+        self._icmp4__assembler = Icmp4Assembler(
+            icmp4__message=Icmp4DestinationUnreachableMessage(**self._args)
         )
 
     def test__icmp4__message__destination_unreachable__assembler__len(
@@ -460,7 +448,7 @@ class TestIcmp4MessageDestinationUnreachableAssembler(TestCase):
         """
 
         self.assertEqual(
-            len(self._icmp4__destination_unreachable__message),
+            len(self._icmp4__assembler),
             self._results["__len__"],
         )
 
@@ -473,7 +461,7 @@ class TestIcmp4MessageDestinationUnreachableAssembler(TestCase):
         """
 
         self.assertEqual(
-            str(self._icmp4__destination_unreachable__message),
+            str(self._icmp4__assembler),
             self._results["__str__"],
         )
 
@@ -486,7 +474,7 @@ class TestIcmp4MessageDestinationUnreachableAssembler(TestCase):
         """
 
         self.assertEqual(
-            repr(self._icmp4__destination_unreachable__message),
+            repr(self._icmp4__assembler),
             self._results["__repr__"],
         )
 
@@ -499,7 +487,7 @@ class TestIcmp4MessageDestinationUnreachableAssembler(TestCase):
         """
 
         self.assertEqual(
-            bytes(self._icmp4__destination_unreachable__message),
+            bytes(self._icmp4__assembler),
             self._results["__bytes__"],
         )
 
@@ -512,7 +500,7 @@ class TestIcmp4MessageDestinationUnreachableAssembler(TestCase):
         """
 
         self.assertEqual(
-            self._icmp4__destination_unreachable__message.type,
+            self._icmp4__assembler.message.type,
             self._results["type"],
         )
 
@@ -525,7 +513,7 @@ class TestIcmp4MessageDestinationUnreachableAssembler(TestCase):
         """
 
         self.assertEqual(
-            self._icmp4__destination_unreachable__message.code,
+            self._icmp4__assembler.message.code,
             self._results["code"],
         )
 
@@ -538,7 +526,7 @@ class TestIcmp4MessageDestinationUnreachableAssembler(TestCase):
         """
 
         self.assertEqual(
-            self._icmp4__destination_unreachable__message.cksum,
+            self._icmp4__assembler.message.cksum,
             self._results["cksum"],
         )
 
@@ -552,7 +540,10 @@ class TestIcmp4MessageDestinationUnreachableAssembler(TestCase):
 
         if "mtu" in self._results:
             self.assertEqual(
-                self._icmp4__destination_unreachable__message.mtu,
+                cast(
+                    Icmp4DestinationUnreachableMessage,
+                    self._icmp4__assembler.message,
+                ).mtu,
                 self._results["mtu"],
             )
 
@@ -565,6 +556,9 @@ class TestIcmp4MessageDestinationUnreachableAssembler(TestCase):
         """
 
         self.assertEqual(
-            self._icmp4__destination_unreachable__message.data,
+            cast(
+                Icmp4DestinationUnreachableMessage,
+                self._icmp4__assembler.message,
+            ).data,
             self._results["data"],
         )

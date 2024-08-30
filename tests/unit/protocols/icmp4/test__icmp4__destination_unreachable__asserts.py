@@ -26,11 +26,11 @@
 
 """
 Module contains tests for the ICMPv4 Destination Unreachable message assembler
-asserts.
+& parser asserts.
 
-tests/unit/protocols/icmp4/test__icmp4__message__destination_unreachable__asserts.py
+tests/unit/protocols/icmp4/test__icmp4__destination_unreachable__asserts.py
 
-ver 3.0.1
+ver 3.0.2
 """
 
 
@@ -45,7 +45,7 @@ from pytcp.protocols.icmp4.message.icmp4_message__destination_unreachable import
 from pytcp.protocols.ip4.ip4__header import IP4__PAYLOAD__MAX_LEN
 
 
-class TestIcmp4MessageDestinationUnreachableAsserts(TestCase):
+class TestIcmp4DestinationUnreachableAssemblerAsserts(TestCase):
     """
     The ICMPv4 Destination Unreachable message assembler constructor
     argument assert tests.
@@ -64,12 +64,13 @@ class TestIcmp4MessageDestinationUnreachableAsserts(TestCase):
             "data": b"",
         }
 
-    def test__icmp4__message__destination_unreachable__code__not_Icmp4DestinationUnreachableCode(
+    def test__icmp4__destination_unreachable__code__not_Icmp4DestinationUnreachableCode(
         self,
     ) -> None:
         """
-        Ensure the ICMPv4 Destination Unreachable message constructor raisesan exception
-        when the provided 'code' argument is not an Icmp4DestinationUnreachableCode.
+        Ensure the ICMPv4 Destination Unreachable message constructor
+        raises an exception when the provided 'code' argument is not
+        an Icmp4DestinationUnreachableCode.
         """
 
         self._message_args["code"] = value = "not an Icmp4DestinationUnreachableCode"  # type: ignore
@@ -83,7 +84,7 @@ class TestIcmp4MessageDestinationUnreachableAsserts(TestCase):
             f"Got: {type(value)!r}",
         )
 
-    def test__icmp4__message__destination_unreachable__frag_no_mtu(
+    def test__icmp4__destination_unreachable__frag_no_mtu(
         self,
     ) -> None:
         """
@@ -109,7 +110,7 @@ class TestIcmp4MessageDestinationUnreachableAsserts(TestCase):
             f"Got: {value!r}",
         )
 
-    def test__icmp4__message__destination_unreachable__no_frag_mtu(
+    def test__icmp4__destination_unreachable__no_frag_mtu(
         self,
     ) -> None:
         """
@@ -133,7 +134,7 @@ class TestIcmp4MessageDestinationUnreachableAsserts(TestCase):
                 f"The 'mtu' field must not be set. Got: {value!r}",
             )
 
-    def test__icmp4__message__destination_unreachable__cksum__under_min(
+    def test__icmp4__destination_unreachable__cksum__under_min(
         self,
     ) -> None:
         """
@@ -155,7 +156,7 @@ class TestIcmp4MessageDestinationUnreachableAsserts(TestCase):
             f"Got: {value!r}",
         )
 
-    def test__icmp4__message__destination_unreachable__cksum__over_max(
+    def test__icmp4__destination_unreachable__cksum__over_max(
         self,
     ) -> None:
         """
@@ -177,7 +178,7 @@ class TestIcmp4MessageDestinationUnreachableAsserts(TestCase):
             f"Got: {value!r}",
         )
 
-    def test__icmp4__message__destination_unreachable__mtu__under_min(
+    def test__icmp4__destination_unreachable__mtu__under_min(
         self,
     ) -> None:
         """
@@ -202,7 +203,7 @@ class TestIcmp4MessageDestinationUnreachableAsserts(TestCase):
             f"Got: {value!r}",
         )
 
-    def test__icmp4__message__destination_unreachable__mtu__over_max(
+    def test__icmp4__destination_unreachable__mtu__over_max(
         self,
     ) -> None:
         """
@@ -227,7 +228,7 @@ class TestIcmp4MessageDestinationUnreachableAsserts(TestCase):
             f"Got: {value!r}",
         )
 
-    def test__icmp4__message__destination_unreachable__data_len__over_max(
+    def test__icmp4__destination_unreachable__data_len__over_max(
         self,
     ) -> None:
         """
@@ -249,4 +250,31 @@ class TestIcmp4MessageDestinationUnreachableAsserts(TestCase):
             f"The 'data' field length must be a 16-bit unsigned integer less than "
             f"or equal to {IP4__PAYLOAD__MAX_LEN - ICMP4__DESTINATION_UNREACHABLE__LEN}. "
             f"Got: {value!r}",
+        )
+
+
+class TestIcmp4DestinationUnreachableParserAsserts(TestCase):
+    """
+    The ICMPv4 Destination Unreachable message parser argument constructor
+    assert tests.
+    """
+
+    def test__icmp4__destination_unreachable__wrong_type(self) -> None:
+        """
+        Ensure the ICMPv4 Destination Unreachable message parser raises
+        an exception when the provided '_bytes' argument contains incorrect
+        'type' field.
+        """
+
+        with self.assertRaises(AssertionError) as error:
+            Icmp4DestinationUnreachableMessage.from_bytes(
+                b"\xff\x00\xff\x00\x00\x00\x00\x00"
+            )
+
+        self.assertEqual(
+            str(error.exception),
+            (
+                "The 'type' field must be <Icmp4Type.DESTINATION_UNREACHABLE: 3>. "
+                "Got: <Icmp4Type.UNKNOWN_255: 255>"
+            ),
         )

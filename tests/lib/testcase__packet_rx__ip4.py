@@ -25,9 +25,9 @@
 
 
 """
-Module contains the customized TestCase class that mocks the IPv6 related values.
+Module contains the customized TestCase class that mocks the IPv4 related values.
 
-tests/mocks/testcase__packet_rx__ip6.py
+tests/mocks/testcase__packet_rx__ip4.py
 
 ver 3.0.1
 """
@@ -37,15 +37,15 @@ from typing import Any, cast
 
 from testslide import StrictMock, TestCase
 
-from pytcp.lib.ip6_address import Ip6Address
+from pytcp.lib.ip4_address import Ip4Address
 from pytcp.lib.packet import PacketRx
-from pytcp.protocols.ip6.ip6__parser import Ip6Parser
+from pytcp.protocols.ip4.ip4__parser import Ip4Parser
 
 
-class TestCasePacketRxIp6(TestCase):
+class TestCasePacketRxIp4(TestCase):
     """
     Customized TestCase class that provides PacketRx object and mocks the
-    IPv6 parser values.
+    IPv4 parser values.
     """
 
     _args: dict[str, Any] = {}
@@ -54,45 +54,38 @@ class TestCasePacketRxIp6(TestCase):
 
     def setUp(self) -> None:
         """
-        Set up the mocked values for the IPv6 related fields.
+        Set up the mocked values for the IPv4 related fields.
         """
 
         self._packet_rx = PacketRx(self._args["bytes"])
 
-        self._packet_rx.ip = self._packet_rx.ip6 = cast(
-            Ip6Parser, StrictMock(template=Ip6Parser)
+        self._packet_rx.ip = self._packet_rx.ip4 = cast(
+            Ip4Parser, StrictMock(template=Ip4Parser)
         )
         self.patch_attribute(
-            target=self._packet_rx.ip6,
-            attribute="dlen",
-            new_value=self._mocked_values.get(
-                "ip6__dlen", len(self._args["bytes"])
-            ),
-        )
-        self.patch_attribute(
-            target=self._packet_rx.ip6,
+            target=self._packet_rx.ip4,
             attribute="payload_len",
             new_value=self._mocked_values.get(
-                "ip6__dlen", len(self._args["bytes"])
+                "ip4__payload_len", len(self._args["bytes"])
             ),
         )
         self.patch_attribute(
-            target=self._packet_rx.ip6,
+            target=self._packet_rx.ip4,
             attribute="pshdr_sum",
-            new_value=self._mocked_values.get("ip6__pshdr_sum", 0),
+            new_value=self._mocked_values.get("ip4__pshdr_sum", 0),
         )
         self.patch_attribute(
-            target=self._packet_rx.ip6,
-            attribute="hop",
-            new_value=self._mocked_values.get("ip6__hop", 0),
+            target=self._packet_rx.ip4,
+            attribute="ttl",
+            new_value=self._mocked_values.get("ip4__ttl", 0),
         )
         self.patch_attribute(
-            target=self._packet_rx.ip6,
+            target=self._packet_rx.ip4,
             attribute="src",
-            new_value=self._mocked_values.get("ip6__src", Ip6Address()),
+            new_value=self._mocked_values.get("ip4__src", Ip4Address()),
         )
         self.patch_attribute(
-            target=self._packet_rx.ip6,
+            target=self._packet_rx.ip4,
             attribute="dst",
-            new_value=self._mocked_values.get("ip6__dst", Ip6Address()),
+            new_value=self._mocked_values.get("ip4__dst", Ip4Address()),
         )

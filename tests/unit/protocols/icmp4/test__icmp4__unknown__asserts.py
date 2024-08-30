@@ -25,16 +25,17 @@
 
 
 """
-Module contains tests for the ICMPv4 unknown message assembler asserts.
+Module contains tests for the ICMPv4 unknown message assembler & parser asserts.
 
-tests/unit/protocols/icmp4/test__icmp4__message__unknown__asserts.py
+tests/unit/protocols/icmp4/test__icmp4__unknown__asserts.py
 
-ver 3.0.1
+ver 3.0.2
 """
 
 
 from testslide import TestCase
 
+from pytcp.lib.inet_cksum import inet_cksum
 from pytcp.lib.int_checks import UINT_16__MAX, UINT_16__MIN
 from pytcp.protocols.icmp4.message.icmp4_message import Icmp4Code, Icmp4Type
 from pytcp.protocols.icmp4.message.icmp4_message__unknown import (
@@ -42,7 +43,7 @@ from pytcp.protocols.icmp4.message.icmp4_message__unknown import (
 )
 
 
-class TestIcmp4MessageUnknownArgAsserts(TestCase):
+class TestIcmp4UnknownAssemblerAsserts(TestCase):
     """
     The ICMPv4 unknown message assembler constructor argument assert tests.
     """
@@ -60,10 +61,10 @@ class TestIcmp4MessageUnknownArgAsserts(TestCase):
             "raw": b"",
         }
 
-    def test__icmp4__message__unknown__type__not_Icmp4Type(self) -> None:
+    def test__icmp4__unknown__type__not_Icmp4Type(self) -> None:
         """
-        Ensure the ICMPv4 message constructor raises an exception when the
-        provided 'type' argument is not an Icmp4Type.
+        Ensure the ICMPv4 message constructor raises an exception
+        when the provided 'type' argument is not an Icmp4Type.
         """
 
         self._message_args["type"] = value = "not an Icmp4Type"
@@ -76,10 +77,10 @@ class TestIcmp4MessageUnknownArgAsserts(TestCase):
             f"The 'type' field must be an Icmp4Type. Got: {type(value)!r}",
         )
 
-    def test__icmp4__message__unknown__code__not_Icmp4Code(self) -> None:
+    def test__icmp4__unknown__code__not_Icmp4Code(self) -> None:
         """
-        Ensure the ICMPv4 message constructor raises an exception when the
-        provided 'code' argument is not an Icmp4Code.
+        Ensure the ICMPv4 message constructor raises an exception
+        when the provided 'code' argument is not an Icmp4Code.
         """
 
         self._message_args["code"] = value = "not an Icmp4Code"
@@ -92,11 +93,11 @@ class TestIcmp4MessageUnknownArgAsserts(TestCase):
             f"The 'code' field must be an Icmp4Code. Got: {type(value)!r}",
         )
 
-    def test__icmp4__message__echo_request__cksum__under_min(self) -> None:
+    def test__icmp4__echo_request__cksum__under_min(self) -> None:
         """
         Ensure the ICMPv4 unknown message assembler constructor raises
-        an exception when the provided 'cksum' argument is lower than the
-        minimum supported value.
+        an exception when the provided 'cksum' argument is lower than
+        the minimum supported value.
         """
 
         self._message_args["cksum"] = value = UINT_16__MIN - 1
@@ -110,11 +111,11 @@ class TestIcmp4MessageUnknownArgAsserts(TestCase):
             f"Got: {value!r}",
         )
 
-    def test__icmp4__message__echo_request__cksum__over_max(self) -> None:
+    def test__icmp4__echo_request__cksum__over_max(self) -> None:
         """
         Ensure the ICMPv4 unknown message assembler constructor raises
-        an exception when the provided 'cksum' argument is higher than the
-        maximum supported value.
+        an exception when the provided 'cksum' argument is higher than
+        the maximum supported value.
         """
 
         self._message_args["cksum"] = value = UINT_16__MAX + 1
@@ -128,10 +129,10 @@ class TestIcmp4MessageUnknownArgAsserts(TestCase):
             f"Got: {value!r}",
         )
 
-    def test__icmp4__message__unknown__raw__not_bytes(self) -> None:
+    def test__icmp4__unknown__raw__not_bytes(self) -> None:
         """
-        Ensure the ICMPv4 message constructor raises an exception when the
-        provided 'raw' argument is not bytes.
+        Ensure the ICMPv4 message constructor raises an exception
+        when the provided 'raw' argument is not bytes.
         """
 
         self._message_args["raw"] = value = "not bytes or memoryview"
@@ -144,3 +145,34 @@ class TestIcmp4MessageUnknownArgAsserts(TestCase):
             f"The 'raw' field must be a bytes or memoryview. "
             f"Got: {type(value)!r}",
         )
+
+
+class TestIcmp4UnknownParserAsserts(TestCase):
+    """
+    The ICMPv4 unknown message parser argument constructor assert tests.
+    """
+
+    def test__icmp4__unknown__wrong_type(self) -> None:
+        """
+        Ensure the ICMPv4 unknown message parser raises an exception when
+        the provided '_bytes' argument contains incorrect 'type' field.
+        """
+
+        for type in range(0, 256):
+            if type not in Icmp4Type.get_known_values():
+                continue
+
+            _bytes = bytearray(b"\x00\x00\x00\x00\x00\x00\x00\x00")
+            _bytes[0] = type
+            _bytes[2:4] = inet_cksum(_bytes).to_bytes(2)
+
+            with self.assertRaises(AssertionError) as error:
+                Icmp4UnknownMessage.from_bytes(bytes(_bytes))
+
+            self.assertEqual(
+                str(error.exception),
+                (
+                    "The 'type' field must not be known. "
+                    f"Got: {Icmp4Type.from_int(type)!r}"
+                ),
+            )
