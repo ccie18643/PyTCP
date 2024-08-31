@@ -23,9 +23,6 @@
 ##                                                                            ##
 ################################################################################
 
-# pylint: disable=expression-not-assigned
-# pylint: disable=missing-function-docstring
-# pylint: disable=unused-argument
 
 """
 Module contains packet handler for the inbound ARP packets.
@@ -66,6 +63,8 @@ class ArpPacketHandlerRx(ABC):
         packet_stats_rx: PacketStatsRx
         ip4_host_candidate: list[Ip4Host]
 
+        # pylint: disable=unused-argument
+
         def _phtx_arp(
             self,
             *,
@@ -78,6 +77,8 @@ class ArpPacketHandlerRx(ABC):
             arp__tpa: Ip4Address,
             echo_tracker: Tracker | None = None,
         ) -> TxStatus: ...
+
+        # pylint: disable=missing-function-docstring
 
         @property
         def ip4_unicast(self) -> list[Ip4Address]: ...

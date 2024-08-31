@@ -82,4 +82,5 @@ disable = """
     invalid-name,
     redefined-builtin,
     superfluous-parens,
+    expression-not-assigned,
 """

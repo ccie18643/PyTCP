@@ -23,9 +23,6 @@
 ##                                                                            ##
 ################################################################################
 
-# pylint: disable=expression-not-assigned
-# pylint: disable=unused-argument
-
 
 """
 Module contains packet handler for the inbound UDP packets.
@@ -74,6 +71,8 @@ class UdpPacketHandlerRx(ABC):
         from pytcp.protocols.icmp6.icmp6__base import Icmp6Message
 
         packet_stats_rx: PacketStatsRx
+
+        # pylint: disable=unused-argument
 
         def _phtx_udp(
             self,
@@ -186,7 +185,7 @@ class UdpPacketHandlerRx(ABC):
             )
             return
 
-        # Respond with ICMP Port Unreachable message if no matching
+        # Respond with ICMPv4 Port Unreachable message if no matching
         # socket has been found.
         __debug__ and log(
             "udp",

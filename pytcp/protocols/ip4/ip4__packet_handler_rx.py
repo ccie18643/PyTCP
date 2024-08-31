@@ -23,8 +23,6 @@
 ##                                                                            ##
 ################################################################################
 
-# pylint: disable=expression-not-assigned
-# pylint: disable=unused-argument
 
 """
 Module contains packet handler for the inbound IPv4 packets.
@@ -64,6 +62,8 @@ class Ip4PacketHandlerRx(ABC):
         packet_stats_rx: PacketStatsRx
         ip4_multicast: list[Ip4Address]
         ip4_frag_flows: dict[tuple[Ip4Address, Ip4Address, int], dict]
+
+        # pylint: disable=unused-argument
 
         def _phrx_icmp4(self, packet_rx: PacketRx) -> None: ...
         def _phrx_udp(self, packet_rx: PacketRx) -> None: ...

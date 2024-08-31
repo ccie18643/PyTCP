@@ -23,9 +23,6 @@
 ##                                                                            ##
 ################################################################################
 
-# pylint: disable=expression-not-assigned
-# pylint: disable=unused-argument
-
 
 """
 Module contains packet handler for inbound the IPv6 fragment extension header.
@@ -60,6 +57,8 @@ class Ip6ExtFragPacketHandlerRx(ABC):
 
         packet_stats_rx: PacketStatsRx
         ip6_frag_flows: dict[tuple[Ip6Address, Ip6Address, int], dict]
+
+        # pylint: disable=unused-argument
 
         def _phrx_ip6(self, packet_rx: PacketRx) -> None: ...
 

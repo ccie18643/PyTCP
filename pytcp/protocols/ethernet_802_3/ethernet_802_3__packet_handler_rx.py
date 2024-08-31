@@ -23,8 +23,6 @@
 ##                                                                            ##
 ################################################################################
 
-# pylint: disable=expression-not-assigned
-# pylint: disable=unused-argument
 
 """
 Module contains packet handler for the inbound Ethernet packets.
@@ -60,6 +58,8 @@ class Ethernet8023PacketHandlerRx(ABC):
         mac_unicast: MacAddress
         mac_multicast: list[MacAddress]
         mac_broadcast: MacAddress
+
+        # pylint: disable=unused-argument
 
         def _phrx_arp(self, packet_rx: PacketRx) -> None: ...
         def _phrx_ip6(self, packet_rx: PacketRx) -> None: ...

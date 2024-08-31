@@ -23,10 +23,6 @@
 ##                                                                            ##
 ################################################################################
 
-# pylint: disable=expression-not-assigned
-# pylint: disable=unused-argument
-# pylint: disable=too-many-locals
-
 
 """
 Module contains packet handler for the inbound TCP packets.
@@ -62,6 +58,8 @@ class TcpPacketHandlerRx(ABC):
         from pytcp.lib.tx_status import TxStatus
 
         packet_stats_rx: PacketStatsRx
+
+        # pylint: disable=unused-argument
 
         def _phtx_tcp(
             self,

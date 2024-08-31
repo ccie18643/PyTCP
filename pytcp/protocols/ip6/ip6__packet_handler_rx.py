@@ -23,10 +23,6 @@
 ##                                                                            ##
 ################################################################################
 
-# pylint: disable=expression-not-assigned
-# pylint: disable=unused-argument
-# pylint: disable=missing-function-docstring
-
 
 """
 Module contains packet handler for the inbound IPv6 packets.
@@ -60,10 +56,14 @@ class Ip6PacketHandlerRx(ABC):
 
         packet_stats_rx: PacketStatsRx
 
+        # pylint: disable=unused-argument
+
         def _phrx_ip6_ext_frag(self, packet_rx: PacketRx) -> None: ...
         def _phrx_icmp6(self, packet_rx: PacketRx) -> None: ...
         def _phrx_udp(self, packet_rx: PacketRx) -> None: ...
         def _phrx_tcp(self, packet_rx: PacketRx) -> None: ...
+
+        # pylint: disable=missing-function-docstring
 
         @property
         @abstractmethod

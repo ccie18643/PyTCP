@@ -23,9 +23,6 @@
 #                                                                          #
 ############################################################################
 
-# pylint: disable=expression-not-assigned
-# pylint: disable=unused-argument
-
 
 """
 Module contains packet handler for the inbound ICMPv4 packets.
@@ -76,6 +73,8 @@ class Icmp4PacketHandlerRx(ABC):
         from pytcp.protocols.icmp4.icmp4__base import Icmp4Message
 
         packet_stats_rx: PacketStatsRx
+
+        # pylint: disable=unused-argument
 
         def _phtx_icmp4(
             self,

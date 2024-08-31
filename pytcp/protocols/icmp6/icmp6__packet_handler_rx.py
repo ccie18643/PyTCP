@@ -23,14 +23,11 @@
 #                                                                          #
 ############################################################################
 
-# pylint: disable=expression-not-assigned
 # pylint: disable=too-many-return-statements
 # pylint: disable=too-many-statements
 # pylint: disable=too-many-branches
 # pylint: disable=protected-access
-# pylint: disable=unused-argument
 # pylint: disable=line-too-long
-# pylint: disable=missing-function-docstring
 
 
 """
@@ -93,6 +90,7 @@ class Icmp6PacketHandlerRx(ABC):
     if TYPE_CHECKING:
         from threading import Semaphore
 
+        from pytcp.lib.ip6_address import Ip6Network
         from pytcp.lib.mac_address import MacAddress
         from pytcp.lib.packet import PacketRx
         from pytcp.lib.packet_stats import PacketStatsRx
@@ -102,9 +100,13 @@ class Icmp6PacketHandlerRx(ABC):
 
         packet_stats_rx: PacketStatsRx
         icmp6_ra_event: Semaphore
+        icmp6_ra_prefixes: list[tuple[Ip6Network, Ip6Address]]
         icmp6_nd_dad_event: Semaphore
+        icmp6_nd_dad_tlla: MacAddress | None
         mac_unicast: MacAddress
         ip6_unicast_candidate: Ip6Address | None
+
+        # pylint: disable=unused-argument
 
         def _phtx_icmp6(
             self,
@@ -115,6 +117,8 @@ class Icmp6PacketHandlerRx(ABC):
             icmp6__message: Icmp6Message,
             echo_tracker: Tracker | None = None,
         ) -> TxStatus: ...
+
+        # pylint: disable=missing-function-docstring
 
         @property
         def ip6_unicast(self) -> list[Ip6Address]: ...
