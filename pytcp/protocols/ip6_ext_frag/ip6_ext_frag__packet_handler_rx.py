@@ -61,9 +61,9 @@ class Ip6ExtFragPacketHandlerRx(ABC):
         packet_stats_rx: PacketStatsRx
         ip6_frag_flows: dict[tuple[Ip6Address, Ip6Address, int], dict]
 
-        def _phrx_ip6(self, *, packet_rx: PacketRx) -> None: ...
+        def _phrx_ip6(self, packet_rx: PacketRx) -> None: ...
 
-    def _phrx_ip6_ext_frag(self, *, packet_rx: PacketRx) -> None:
+    def _phrx_ip6_ext_frag(self, packet_rx: PacketRx) -> None:
         """
         Handle inbound IPv6 fragment extension header.
         """

@@ -118,7 +118,7 @@ class Icmp6PacketHandlerRx(ABC):
         @property
         def ip6_unicast(self) -> list[Ip6Address]: ...
 
-    def _phrx_icmp6(self, *, packet_rx: PacketRx) -> None:
+    def _phrx_icmp6(self, packet_rx: PacketRx) -> None:
         """
         Handle inbound ICMPv6 packets.
         """

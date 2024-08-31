@@ -89,7 +89,7 @@ class TcpPacketHandlerRx(ABC):
             echo_tracker: Tracker | None = None,
         ) -> TxStatus: ...
 
-    def _phrx_tcp(self, *, packet_rx: PacketRx) -> None:
+    def _phrx_tcp(self, packet_rx: PacketRx) -> None:
         """
         Handle inbound TCP packets.
         """

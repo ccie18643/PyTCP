@@ -63,13 +63,13 @@ class EthernetPacketHandlerRx(ABC):
         mac_multicast: list[MacAddress]
         mac_broadcast: MacAddress
 
-        def _phrx_arp(self, *, packet_rx: PacketRx) -> None: ...
+        def _phrx_arp(self, packet_rx: PacketRx) -> None: ...
 
-        def _phrx_ip6(self, *, packet_rx: PacketRx) -> None: ...
+        def _phrx_ip6(self, packet_rx: PacketRx) -> None: ...
 
-        def _phrx_ip4(self, *, packet_rx: PacketRx) -> None: ...
+        def _phrx_ip4(self, packet_rx: PacketRx) -> None: ...
 
-    def _phrx_ethernet(self, *, packet_rx: PacketRx) -> None:
+    def _phrx_ethernet(self, packet_rx: PacketRx) -> None:
         """
         Handle inbound Ethernet packets.
         """
@@ -115,23 +115,10 @@ class EthernetPacketHandlerRx(ABC):
         if packet_rx.ethernet.dst == self.mac_broadcast:
             self.packet_stats_rx.ethernet__dst_broadcast += 1
 
-        if (
-            packet_rx.ethernet.type == EthernetType.ARP
-            and config.IP4__SUPPORT_ENABLED
-        ):
-            self._phrx_arp(packet_rx=packet_rx)
-            return
-
-        if (
-            packet_rx.ethernet.type == EthernetType.IP4
-            and config.IP4__SUPPORT_ENABLED
-        ):
-            self._phrx_ip4(packet_rx=packet_rx)
-            return
-
-        if (
-            packet_rx.ethernet.type == EthernetType.IP6
-            and config.IP6__SUPPORT_ENABLED
-        ):
-            self._phrx_ip6(packet_rx=packet_rx)
-            return
+        match packet_rx.ethernet.type:
+            case EthernetType.ARP if config.IP4__SUPPORT_ENABLED:
+                self._phrx_arp(packet_rx)
+            case EthernetType.IP4 if config.IP4__SUPPORT_ENABLED:
+                self._phrx_ip4(packet_rx)
+            case EthernetType.IP6 if config.IP6__SUPPORT_ENABLED:
+                self._phrx_ip6(packet_rx)

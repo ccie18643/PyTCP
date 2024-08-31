@@ -60,13 +60,13 @@ class Ip6PacketHandlerRx(ABC):
 
         packet_stats_rx: PacketStatsRx
 
-        def _phrx_ip6_ext_frag(self, *, packet_rx: PacketRx) -> None: ...
+        def _phrx_ip6_ext_frag(self, packet_rx: PacketRx) -> None: ...
 
-        def _phrx_icmp6(self, *, packet_rx: PacketRx) -> None: ...
+        def _phrx_icmp6(self, packet_rx: PacketRx) -> None: ...
 
-        def _phrx_udp(self, *, packet_rx: PacketRx) -> None: ...
+        def _phrx_udp(self, packet_rx: PacketRx) -> None: ...
 
-        def _phrx_tcp(self, *, packet_rx: PacketRx) -> None: ...
+        def _phrx_tcp(self, packet_rx: PacketRx) -> None: ...
 
         @property
         @abstractmethod
@@ -76,7 +76,7 @@ class Ip6PacketHandlerRx(ABC):
         @abstractmethod
         def ip6_multicast(self) -> list[Ip6Address]: ...
 
-    def _phrx_ip6(self, *, packet_rx: PacketRx) -> None:
+    def _phrx_ip6(self, packet_rx: PacketRx) -> None:
         """
         Handle inbound IPv6 packets.
         """
@@ -115,20 +115,10 @@ class Ip6PacketHandlerRx(ABC):
             )
             return
 
-        if packet_rx.ip6.next == Ip6Next.ICMP6:
-            self._phrx_icmp6(
-                packet_rx=packet_rx,
-            )
-            return
-
-        if packet_rx.ip6.next == Ip6Next.UDP:
-            self._phrx_udp(
-                packet_rx=packet_rx,
-            )
-            return
-
-        if packet_rx.ip6.next == Ip6Next.TCP:
-            self._phrx_tcp(
-                packet_rx=packet_rx,
-            )
-            return
+        match packet_rx.ip6.next:
+            case Ip6Next.ICMP6:
+                self._phrx_icmp6(packet_rx)
+            case Ip6Next.UDP:
+                self._phrx_udp(packet_rx)
+            case Ip6Next.TCP:
+                self._phrx_tcp(packet_rx)

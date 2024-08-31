@@ -65,11 +65,11 @@ class Ip4PacketHandlerRx(ABC):
         ip4_multicast: list[Ip4Address]
         ip4_frag_flows: dict[tuple[Ip4Address, Ip4Address, int], dict]
 
-        def _phrx_icmp4(self, *, packet_rx: PacketRx) -> None: ...
+        def _phrx_icmp4(self, packet_rx: PacketRx) -> None: ...
 
-        def _phrx_udp(self, *, packet_rx: PacketRx) -> None: ...
+        def _phrx_udp(self, packet_rx: PacketRx) -> None: ...
 
-        def _phrx_tcp(self, *, packet_rx: PacketRx) -> None: ...
+        def _phrx_tcp(self, packet_rx: PacketRx) -> None: ...
 
     @property
     @abstractmethod
@@ -89,7 +89,7 @@ class Ip4PacketHandlerRx(ABC):
 
         raise NotImplementedError
 
-    def _phrx_ip4(self, *, packet_rx: PacketRx) -> None:
+    def _phrx_ip4(self, packet_rx: PacketRx) -> None:
         """
         Handle inbound IPv4 packets.
         """
@@ -145,23 +145,13 @@ class Ip4PacketHandlerRx(ABC):
             packet_rx = defragmented_packet_rx
             self.packet_stats_rx.ip4__defrag += 1
 
-        if packet_rx.ip4.proto == Ip4Proto.ICMP4:
-            self._phrx_icmp4(
-                packet_rx=packet_rx,
-            )
-            return
-
-        if packet_rx.ip4.proto == Ip4Proto.UDP:
-            self._phrx_udp(
-                packet_rx=packet_rx,
-            )
-            return
-
-        if packet_rx.ip4.proto == Ip4Proto.TCP:
-            self._phrx_tcp(
-                packet_rx=packet_rx,
-            )
-            return
+        match packet_rx.ip4.proto:
+            case Ip4Proto.ICMP4:
+                self._phrx_icmp4(packet_rx)
+            case Ip4Proto.UDP:
+                self._phrx_udp(packet_rx)
+            case Ip4Proto.TCP:
+                self._phrx_tcp(packet_rx)
 
     def __defragment_ip4_packet(
         self, *, packet_rx: PacketRx

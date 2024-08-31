@@ -105,7 +105,7 @@ class UdpPacketHandlerRx(ABC):
             echo_tracker: Tracker | None = None,
         ) -> TxStatus: ...
 
-    def _phrx_udp(self, *, packet_rx: PacketRx) -> None:
+    def _phrx_udp(self, packet_rx: PacketRx) -> None:
         """
         Handle inbound UDP packets.
         """
