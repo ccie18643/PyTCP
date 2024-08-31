@@ -112,15 +112,15 @@ class UdpPacketHandlerTx(ABC):
 
         __debug__ and log("udp", f"{udp_packet_tx.tracker} - {udp_packet_tx}")
 
-        match ip__src.is_ip6 and ip__dst.is_ip6, ip__src.is_ip4 and ip__dst.is_ip4:
-            case True, False:
+        match ip__src.is_ip6, ip__dst.is_ip6, ip__src.is_ip4, ip__dst.is_ip4:
+            case True, True, False, False:
                 self.packet_stats_tx.udp__send += 1
                 return self._phtx_ip6(
                     ip6__src=cast(Ip6Address, ip__src),
                     ip6__dst=cast(Ip6Address, ip__dst),
                     ip6__payload=udp_packet_tx,
                 )
-            case False, True:
+            case False, False, True, True:
                 self.packet_stats_tx.udp__send += 1
                 return self._phtx_ip4(
                     ip4__src=cast(Ip4Address, ip__src),
