@@ -58,7 +58,7 @@ class Ip6ExtFragParser(Ip6ExtFrag, ProtoParser):
 
     _payload: memoryview
 
-    def __init__(self, *, packet_rx: PacketRx) -> None:
+    def __init__(self, packet_rx: PacketRx) -> None:
         """
         Initialize the IPv6 Ext Frag packet parser.
         """

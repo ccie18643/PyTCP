@@ -55,7 +55,7 @@ class TcpParser(Tcp, ProtoParser):
 
     _payload: memoryview
 
-    def __init__(self, *, packet_rx: PacketRx) -> None:
+    def __init__(self, packet_rx: PacketRx) -> None:
         """
         Initialize the TCP packet parser.
         """

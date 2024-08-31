@@ -53,7 +53,7 @@ class Ip6Parser(Ip6, ProtoParser):
 
     _payload: memoryview
 
-    def __init__(self, *, packet_rx: PacketRx) -> None:
+    def __init__(self, packet_rx: PacketRx) -> None:
         """
         Initialize the IPv6 packet parser.
         """

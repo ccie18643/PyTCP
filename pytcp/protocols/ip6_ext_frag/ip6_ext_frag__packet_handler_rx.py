@@ -70,7 +70,7 @@ class Ip6ExtFragPacketHandlerRx(ABC):
 
         self.packet_stats_rx.ip6_ext_frag__pre_parse += 1
 
-        Ip6ExtFragParser(packet_rx=packet_rx)
+        Ip6ExtFragParser(packet_rx)
 
         if packet_rx.parse_failed:
             self.packet_stats_rx.ip6_ext_frag__failed_parse += 1
@@ -84,17 +84,13 @@ class Ip6ExtFragPacketHandlerRx(ABC):
             "ip6", f"{packet_rx.tracker} - {packet_rx.ip6_ext_frag}"
         )
 
-        if defragmented_packet_rx := self.__defragment_ip6_packet(
-            packet_rx=packet_rx
-        ):
+        if defragmented_packet_rx := self.__defragment_ip6_packet(packet_rx):
             self.packet_stats_rx.ip6_ext_frag__defrag += 1
             self._phrx_ip6(
                 packet_rx=defragmented_packet_rx,
             )
 
-    def __defragment_ip6_packet(
-        self, *, packet_rx: PacketRx
-    ) -> PacketRx | None:
+    def __defragment_ip6_packet(self, packet_rx: PacketRx) -> PacketRx | None:
         """
         Defragment IPv6 packet.
         """

@@ -59,7 +59,7 @@ class EthernetParser(Ethernet, ProtoParser):
 
     _payload: memoryview
 
-    def __init__(self, *, packet_rx: PacketRx) -> None:
+    def __init__(self, packet_rx: PacketRx) -> None:
         """
         Initialize the Ethernet packet parser.
         """

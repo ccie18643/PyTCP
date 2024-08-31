@@ -113,7 +113,7 @@ class UdpPacketHandlerRx(ABC):
         self.packet_stats_rx.udp__pre_parse += 1
 
         try:
-            UdpParser(packet_rx=packet_rx)
+            UdpParser(packet_rx)
         except PacketValidationError as error:
             self.packet_stats_rx.udp__failed_parse__drop += 1
             __debug__ and log(

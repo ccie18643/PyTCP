@@ -97,7 +97,7 @@ class Ip4PacketHandlerRx(ABC):
         self.packet_stats_rx.ip4__pre_parse += 1
 
         try:
-            Ip4Parser(packet_rx=packet_rx)
+            Ip4Parser(packet_rx)
         except PacketValidationError as error:
             self.packet_stats_rx.ip4__failed_parse__drop += 1
             __debug__ and log(
@@ -138,7 +138,7 @@ class Ip4PacketHandlerRx(ABC):
             self.packet_stats_rx.ip4__frag += 1
             if not (
                 defragmented_packet_rx := self.__defragment_ip4_packet(
-                    packet_rx=packet_rx
+                    packet_rx
                 )
             ):
                 return
@@ -153,9 +153,7 @@ class Ip4PacketHandlerRx(ABC):
             case Ip4Proto.TCP:
                 self._phrx_tcp(packet_rx)
 
-    def __defragment_ip4_packet(
-        self, *, packet_rx: PacketRx
-    ) -> PacketRx | None:
+    def __defragment_ip4_packet(self, packet_rx: PacketRx) -> PacketRx | None:
         """
         Defragment IPv4 packet.
         """
@@ -219,7 +217,7 @@ class Ip4PacketHandlerRx(ABC):
         header[6] = header[7] = header[10] = header[11] = 0
         struct.pack_into("!H", header, 10, inet_cksum(memoryview(header)))
         packet_rx = PacketRx(bytes(header) + payload)
-        Ip4Parser(packet_rx=packet_rx)
+        Ip4Parser(packet_rx)
         __debug__ and log(
             "ip4",
             f"{packet_rx.tracker} - Reasembled fragmented IPv4 packet, "

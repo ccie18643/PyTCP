@@ -90,7 +90,7 @@ class ArpPacketHandlerRx(ABC):
         self.packet_stats_rx.arp__pre_parse += 1
 
         try:
-            ArpParser(packet_rx=packet_rx)
+            ArpParser(packet_rx)
         except PacketValidationError as error:
             self.packet_stats_rx.arp__failed_parse__drop += 1
             __debug__ and log(

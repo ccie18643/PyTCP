@@ -67,7 +67,7 @@ class Icmp4Parser(Icmp4, ProtoParser):
     The ICMPv4 packet parser.
     """
 
-    def __init__(self, *, packet_rx: PacketRx) -> None:
+    def __init__(self, packet_rx: PacketRx) -> None:
         """
         Initialize the ICMPv4 packet parser.
         """

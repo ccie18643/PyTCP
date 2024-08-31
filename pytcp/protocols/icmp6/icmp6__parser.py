@@ -82,7 +82,7 @@ class Icmp6Parser(Icmp6, ProtoParser):
     The ICMPv6 packet parser.
     """
 
-    def __init__(self, *, packet_rx: PacketRx) -> None:
+    def __init__(self, packet_rx: PacketRx) -> None:
         """
         Initialize the ICMPv6 packet parser.
         """

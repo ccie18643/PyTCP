@@ -93,7 +93,7 @@ class Icmp4PacketHandlerRx(ABC):
         self.packet_stats_rx.icmp4__pre_parse += 1
 
         try:
-            Icmp4Parser(packet_rx=packet_rx)
+            Icmp4Parser(packet_rx)
         except PacketValidationError as error:
             __debug__ and log(
                 "icmp4",
@@ -109,10 +109,10 @@ class Icmp4PacketHandlerRx(ABC):
             Icmp4EchoRequestMessage: self.__phrx_icmp4__echo_request,
         }.items():
             if isinstance(packet_rx.icmp4.message, message):
-                handler(packet_rx=packet_rx)
+                handler(packet_rx)
                 return
 
-    def __phrx_icmp4__echo_request(self, *, packet_rx: PacketRx) -> None:
+    def __phrx_icmp4__echo_request(self, packet_rx: PacketRx) -> None:
         """
         Handle inbound ICMPv4 Echo Reply packets.
         """
@@ -138,7 +138,7 @@ class Icmp4PacketHandlerRx(ABC):
         )
 
     def __phrx_icmp4__destination_unreachable(
-        self, *, packet_rx: PacketRx
+        self, packet_rx: PacketRx
     ) -> None:
         """
         Handle inbound ICMPv4 Port Unreachable packets.

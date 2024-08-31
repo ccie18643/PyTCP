@@ -55,7 +55,7 @@ class Ip4Parser(Ip4, ProtoParser):
 
     _payload: memoryview
 
-    def __init__(self, *, packet_rx: PacketRx) -> None:
+    def __init__(self, packet_rx: PacketRx) -> None:
         """
         Initialize the IPv4 packet parser.
         """

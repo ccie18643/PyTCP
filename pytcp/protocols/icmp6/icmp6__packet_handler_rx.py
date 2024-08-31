@@ -126,7 +126,7 @@ class Icmp6PacketHandlerRx(ABC):
         self.packet_stats_rx.icmp6__pre_parse += 1
 
         try:
-            Icmp6Parser(packet_rx=packet_rx)
+            Icmp6Parser(packet_rx)
         except PacketValidationError as error:
             __debug__ and log(
                 "icmp6",
@@ -146,11 +146,11 @@ class Icmp6PacketHandlerRx(ABC):
             Icmp6NdNeighborAdvertisementMessage: self.__phrx_icmp6__nd_neighbor_advertisement,
         }.items():
             if isinstance(packet_rx.icmp6.message, message):
-                handler(packet_rx=packet_rx)
+                handler(packet_rx)
                 return
 
     def __phrx_icmp6__destination_unreachable(
-        self, *, packet_rx: PacketRx
+        self, packet_rx: PacketRx
     ) -> None:
         """
         Handle inbound ICMPv6 Port Unreachbale packets.
@@ -213,7 +213,7 @@ class Icmp6PacketHandlerRx(ABC):
         )
         return
 
-    def __phrx_icmp6__echo_request(self, *, packet_rx: PacketRx) -> None:
+    def __phrx_icmp6__echo_request(self, packet_rx: PacketRx) -> None:
         """
         Handle inbound ICMPv6 Echo Request packets.
         """
@@ -240,9 +240,7 @@ class Icmp6PacketHandlerRx(ABC):
         )
         return
 
-    def __phrx_icmp6__nd_router_solicitation(
-        self, *, packet_rx: PacketRx
-    ) -> None:
+    def __phrx_icmp6__nd_router_solicitation(self, packet_rx: PacketRx) -> None:
         """
         Handle inbound ICMPv6 ND Router Solicitation packets.
         """
@@ -260,7 +258,7 @@ class Icmp6PacketHandlerRx(ABC):
         return
 
     def __phrx_icmp6__nd_router_advertisement(
-        self, *, packet_rx: PacketRx
+        self, packet_rx: PacketRx
     ) -> None:
         """
         Handle inbound ICMPv6 ND Router Advertisement packets.
@@ -285,7 +283,7 @@ class Icmp6PacketHandlerRx(ABC):
         return
 
     def __phrx_icmp6__nd_neighbor_solicitation(
-        self, *, packet_rx: PacketRx
+        self, packet_rx: PacketRx
     ) -> None:
         """
         Handle inbound ICMPv6 ND Neighbor Solicitation packets.
@@ -361,7 +359,7 @@ class Icmp6PacketHandlerRx(ABC):
         return
 
     def __phrx_icmp6__nd_neighbor_advertisement(
-        self, *, packet_rx: PacketRx
+        self, packet_rx: PacketRx
     ) -> None:
         """
         Handle inbound ICMPv6 ND Neighbor Advertisement packets.

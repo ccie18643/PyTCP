@@ -77,9 +77,7 @@ class EthernetPacketHandlerRx(ABC):
         self.packet_stats_rx.ethernet__pre_parse += 1
 
         try:
-            EthernetParser(
-                packet_rx=packet_rx,
-            )
+            EthernetParser(packet_rx)
         except PacketValidationError as error:
             self.packet_stats_rx.ethernet__failed_parse__drop += 1
             __debug__ and log(
