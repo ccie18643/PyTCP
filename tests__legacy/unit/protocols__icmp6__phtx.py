@@ -42,12 +42,19 @@ from pytcp.protocols.icmp6.message.icmp6_message__destination_unreachable import
     Icmp6DestinationUnreachableCode,
     Icmp6DestinationUnreachableMessage,
 )
-from pytcp.protocols.icmp6.message.icmp6_message__echo_reply import Icmp6EchoReplyMessage
-from pytcp.protocols.icmp6.message.icmp6_message__echo_request import Icmp6EchoRequestMessage
+from pytcp.protocols.icmp6.message.icmp6_message__echo_reply import (
+    Icmp6EchoReplyMessage,
+)
+from pytcp.protocols.icmp6.message.icmp6_message__echo_request import (
+    Icmp6EchoRequestMessage,
+)
 from pytcp.protocols.icmp6.message.nd.icmp6_nd_message__router_solicitation import (
     Icmp6NdRouterSolicitationMessage,
 )
-from pytcp.protocols.icmp6.message.nd.option.icmp6_nd_options import Icmp6NdOptions, Icmp6NdOptionSlla
+from pytcp.protocols.icmp6.message.nd.option.icmp6_nd_options import (
+    Icmp6NdOptions,
+    Icmp6NdOptionSlla,
+)
 from pytcp.subsystems.packet_handler import PacketHandler
 from tests__legacy.unit.mock_network import (
     MockNetworkSettings,
@@ -157,7 +164,7 @@ class TestIcmp6Phtx(TestCase):
             self.packet_handler.packet_stats_tx,
             PacketStatsTx(
                 icmp6__pre_assemble=1,
-                icmp6__unreachable_port__send=1,
+                icmp6__destination_unreachable__port__send=1,
                 ip6__pre_assemble=1,
                 ip6__mtu_ok__send=1,
                 ethernet__pre_assemble=1,
@@ -189,7 +196,7 @@ class TestIcmp6Phtx(TestCase):
             self.packet_handler.packet_stats_tx,
             PacketStatsTx(
                 icmp6__pre_assemble=1,
-                icmp6__nd_router_solicitation__send=1,
+                icmp6__nd__router_solicitation__send=1,
                 ip6__pre_assemble=1,
                 ip6__mtu_ok__send=1,
                 ethernet__pre_assemble=1,

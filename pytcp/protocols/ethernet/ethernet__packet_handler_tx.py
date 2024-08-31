@@ -23,12 +23,6 @@
 ##                                                                            ##
 ################################################################################
 
-# pylint: disable=line-too-long
-# pylint: disable=too-many-return-statements
-# pylint: disable=too-many-branches
-# pylint: disable=too-many-statements
-# pylint: disable=expression-not-assigned
-# pylint: disable=no-else-return
 
 """
 Module contains packet handler for the outbound Ethernet II packets.

@@ -23,11 +23,6 @@
 #                                                                          #
 ############################################################################
 
-# pylint: disable=expression-not-assigned
-# pylint: disable=too-many-locals
-# pylint: disable=too-many-return-statements
-# pylint: disable=unused-argument
-# pylint: disable=missing-function-docstring
 
 """
 Module contains packet handler for the outbound ICMPv6 packets.
@@ -43,6 +38,7 @@ from __future__ import annotations
 from abc import ABC
 from typing import TYPE_CHECKING
 
+from pytcp.lib.errors import UnsupportedCaseError
 from pytcp.lib.ip6_address import Ip6Address
 from pytcp.lib.logger import log
 from pytcp.lib.mac_address import MacAddress
@@ -53,32 +49,17 @@ from pytcp.protocols.icmp6.message.icmp6_message import Icmp6Message, Icmp6Type
 from pytcp.protocols.icmp6.message.icmp6_message__destination_unreachable import (
     Icmp6DestinationUnreachableCode,
 )
-from pytcp.protocols.icmp6.message.icmp6_message__echo_reply import (
-    Icmp6EchoReplyCode,
-)
-from pytcp.protocols.icmp6.message.icmp6_message__echo_request import (
-    Icmp6EchoRequestCode,
-)
 from pytcp.protocols.icmp6.message.mld2.icmp6_mld2__multicast_address_record import (
     Icmp6Mld2MulticastAddressRecord,
     Icmp6Mld2MulticastAddressRecordType,
 )
 from pytcp.protocols.icmp6.message.mld2.icmp6_mld2_message__report import (
-    Icmp6Mld2ReportCode,
     Icmp6Mld2ReportMessage,
 )
-from pytcp.protocols.icmp6.message.nd.icmp6_nd_message__neighbor_advertisement import (
-    Icmp6NdNeighborAdvertisementCode,
-)
 from pytcp.protocols.icmp6.message.nd.icmp6_nd_message__neighbor_solicitation import (
-    Icmp6NdNeighborSolicitationCode,
     Icmp6NdNeighborSolicitationMessage,
 )
-from pytcp.protocols.icmp6.message.nd.icmp6_nd_message__router_advertisement import (
-    Icmp6NdRouterAdvertisementCode,
-)
 from pytcp.protocols.icmp6.message.nd.icmp6_nd_message__router_solicitation import (
-    Icmp6NdRouterSolicitationCode,
     Icmp6NdRouterSolicitationMessage,
 )
 from pytcp.protocols.icmp6.message.nd.option.icmp6_nd_option__slla import (
@@ -104,6 +85,8 @@ class Icmp6PacketHandlerTx(ABC):
         mac_unicast: MacAddress
         ip6_multicast: list[Ip6Address]
 
+        # pylint: disable=unused-argument
+
         def _phtx_ip6(
             self,
             *,
@@ -112,6 +95,8 @@ class Icmp6PacketHandlerTx(ABC):
             ip6__hop: int = IP6__DEFAULT_HOP_LIMIT,
             ip6__payload: Ip6Payload = RawAssembler(),
         ) -> TxStatus: ...
+
+        # pylint: disable=missing-function-docstring
 
         @property
         def ip6_unicast(self) -> list[Ip6Address]: ...
@@ -140,45 +125,32 @@ class Icmp6PacketHandlerTx(ABC):
             "icmp6", f"{icmp6_packet_tx.tracker} - {icmp6_packet_tx}"
         )
 
-        match (icmp6__message.type, icmp6__message.code):
-            case (Icmp6Type.ECHO_REPLY, Icmp6EchoReplyCode.DEFAULT):
+        match icmp6__message.type, icmp6__message.code:
+            case Icmp6Type.ECHO_REPLY, _:
                 self.packet_stats_tx.icmp6__echo_reply__send += 1
-
-            case (Icmp6Type.ECHO_REQUEST, Icmp6EchoRequestCode.DEFAULT):
+            case Icmp6Type.ECHO_REQUEST, _:
                 self.packet_stats_tx.icmp6__echo_request__send += 1
-
             case (
                 Icmp6Type.DESTINATION_UNREACHABLE,
                 Icmp6DestinationUnreachableCode.PORT,
             ):
-                self.packet_stats_tx.icmp6__unreachable_port__send += 1
-
-            case (
-                Icmp6Type.ND__ROUTER_SOLICITATION,
-                Icmp6NdRouterSolicitationCode.DEFAULT,
-            ):
-                self.packet_stats_tx.icmp6__nd_router_solicitation__send += 1
-
-            case (
-                Icmp6Type.ND__ROUTER_ADVERTISEMENT,
-                Icmp6NdRouterAdvertisementCode.DEFAULT,
-            ):
-                self.packet_stats_tx.icmp6__nd_router_advertisement__send += 1
-
-            case (
-                Icmp6Type.ND__NEIGHBOR_SOLICITATION,
-                Icmp6NdNeighborSolicitationCode.DEFAULT,
-            ):
-                self.packet_stats_tx.icmp6__nd_neighbor_solicitation__send += 1
-
-            case (
-                Icmp6Type.ND__NEIGHBOR_ADVERTISEMENT,
-                Icmp6NdNeighborAdvertisementCode.DEFAULT,
-            ):
-                self.packet_stats_tx.icmp6__nd_neighbor_advertisement__send += 1
-
-            case (Icmp6Type.MLD2__REPORT, Icmp6Mld2ReportCode.DEFAULT):
-                self.packet_stats_tx.icmp6__mld2_report__send += 1
+                self.packet_stats_tx.icmp6__destination_unreachable__port__send += (
+                    1
+                )
+            case Icmp6Type.ND__ROUTER_SOLICITATION, _:
+                self.packet_stats_tx.icmp6__nd__router_solicitation__send += 1
+            case Icmp6Type.ND__ROUTER_ADVERTISEMENT, _:
+                self.packet_stats_tx.icmp6__nd__router_advertisement__send += 1
+            case Icmp6Type.ND__NEIGHBOR_SOLICITATION, _:
+                self.packet_stats_tx.icmp6__nd__neighbor_solicitation__send += 1
+            case Icmp6Type.ND__NEIGHBOR_ADVERTISEMENT, _:
+                self.packet_stats_tx.icmp6__nd__neighbor_advertisement__send += (
+                    1
+                )
+            case Icmp6Type.MLD2__REPORT, _:
+                self.packet_stats_tx.icmp6__mld2__report__send += 1
+            case _:
+                raise UnsupportedCaseError
 
         return self._phtx_ip6(
             ip6__src=ip6__src,

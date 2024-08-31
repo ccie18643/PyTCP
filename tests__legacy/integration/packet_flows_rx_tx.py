@@ -191,9 +191,13 @@ class TestPacketHandlerRxTx(TestCase):
         """
         [ICMPv4] Receive ICMPv4 echo-request packet, respond with echo-reply.
         """
-        with open("tests__legacy/integration/test_frames/rx_tx/ip4_ping.rx", "rb") as _:
+        with open(
+            "tests__legacy/integration/test_frames/rx_tx/ip4_ping.rx", "rb"
+        ) as _:
             packet_rx = _.read()
-        with open("tests__legacy/integration/test_frames/rx_tx/ip4_ping.tx", "rb") as _:
+        with open(
+            "tests__legacy/integration/test_frames/rx_tx/ip4_ping.tx", "rb"
+        ) as _:
             packet_tx = _.read()
         self.packet_handler._phrx_ethernet(packet_rx=PacketRx(packet_rx))
         self.assertEqual(
@@ -253,7 +257,7 @@ class TestPacketHandlerRxTx(TestCase):
             self.packet_handler.packet_stats_tx,
             PacketStatsTx(
                 icmp4__pre_assemble=1,
-                icmp4__unreachable_port__send=1,
+                icmp4__destination_unreachable__port__send=1,
                 ip4__pre_assemble=1,
                 ip4__mtu_ok__send=1,
                 ethernet__pre_assemble=1,
@@ -318,7 +322,8 @@ class TestPacketHandlerRxTx(TestCase):
             ) as _:
                 frags.append(_.read())
         with open(
-            "tests__legacy/integration/test_frames/rx_tx/ip4_udp_echo_rx_frag.tx", "rb"
+            "tests__legacy/integration/test_frames/rx_tx/ip4_udp_echo_rx_frag.tx",
+            "rb",
         ) as _:
             packet_tx = _.read()
         for index in order:
@@ -402,7 +407,8 @@ class TestPacketHandlerRxTx(TestCase):
         in fragments.
         """
         with open(
-            "tests__legacy/integration/test_frames/rx_tx/ip4_udp_echo_tx_frag.rx", "rb"
+            "tests__legacy/integration/test_frames/rx_tx/ip4_udp_echo_tx_frag.rx",
+            "rb",
         ) as _:
             packet_rx = _.read()
         frags = []
@@ -491,9 +497,13 @@ class TestPacketHandlerRxTx(TestCase):
         """
         [ICMPv6] Receive ICMPv6 echo-request packet, respond with echo-reply.
         """
-        with open("tests__legacy/integration/test_frames/rx_tx/ip6_ping.rx", "rb") as _:
+        with open(
+            "tests__legacy/integration/test_frames/rx_tx/ip6_ping.rx", "rb"
+        ) as _:
             packet_rx = _.read()
-        with open("tests__legacy/integration/test_frames/rx_tx/ip6_ping.tx", "rb") as _:
+        with open(
+            "tests__legacy/integration/test_frames/rx_tx/ip6_ping.tx", "rb"
+        ) as _:
             packet_tx = _.read()
         self.packet_handler._phrx_ethernet(packet_rx=PacketRx(packet_rx))
         self.assertEqual(
@@ -553,7 +563,7 @@ class TestPacketHandlerRxTx(TestCase):
             self.packet_handler.packet_stats_tx,
             PacketStatsTx(
                 icmp6__pre_assemble=1,
-                icmp6__unreachable_port__send=1,
+                icmp6__destination_unreachable__port__send=1,
                 ip6__pre_assemble=1,
                 ip6__mtu_ok__send=1,
                 ethernet__pre_assemble=1,
@@ -618,7 +628,8 @@ class TestPacketHandlerRxTx(TestCase):
             ) as _:
                 frags.append(_.read())
         with open(
-            "tests__legacy/integration/test_frames/rx_tx/ip6_udp_echo_rx_frag.tx", "rb"
+            "tests__legacy/integration/test_frames/rx_tx/ip6_udp_echo_rx_frag.tx",
+            "rb",
         ) as _:
             packet_tx = _.read()
         for index in order:
@@ -703,7 +714,8 @@ class TestPacketHandlerRxTx(TestCase):
         in fragments.
         """
         with open(
-            "tests__legacy/integration/test_frames/rx_tx/ip6_udp_echo_tx_frag.rx", "rb"
+            "tests__legacy/integration/test_frames/rx_tx/ip6_udp_echo_tx_frag.rx",
+            "rb",
         ) as _:
             packet_rx = _.read()
         frags = []
@@ -864,7 +876,7 @@ class TestPacketHandlerRxTx(TestCase):
             self.packet_handler.packet_stats_tx,
             PacketStatsTx(
                 icmp6__pre_assemble=1,
-                icmp6__nd_neighbor_advertisement__send=1,
+                icmp6__nd__neighbor_advertisement__send=1,
                 ip6__pre_assemble=1,
                 ip6__mtu_ok__send=1,
                 ethernet__pre_assemble=1,
@@ -907,7 +919,7 @@ class TestPacketHandlerRxTx(TestCase):
             self.packet_handler.packet_stats_tx,
             PacketStatsTx(
                 icmp6__pre_assemble=1,
-                icmp6__nd_neighbor_advertisement__send=1,
+                icmp6__nd__neighbor_advertisement__send=1,
                 ip6__pre_assemble=1,
                 ip6__mtu_ok__send=1,
                 ethernet__pre_assemble=1,
@@ -924,11 +936,13 @@ class TestPacketHandlerRxTx(TestCase):
         respond with Neighbor Advertisement.
         """
         with open(
-            "tests__legacy/integration/test_frames/rx_tx/ip6_icmp6_nd_ns.rx", "rb"
+            "tests__legacy/integration/test_frames/rx_tx/ip6_icmp6_nd_ns.rx",
+            "rb",
         ) as _:
             packet_rx = _.read()
         with open(
-            "tests__legacy/integration/test_frames/rx_tx/ip6_icmp6_nd_ns.tx", "rb"
+            "tests__legacy/integration/test_frames/rx_tx/ip6_icmp6_nd_ns.tx",
+            "rb",
         ) as _:
             packet_tx = _.read()
         self.packet_handler._phrx_ethernet(packet_rx=PacketRx(packet_rx))
@@ -949,7 +963,7 @@ class TestPacketHandlerRxTx(TestCase):
             self.packet_handler.packet_stats_tx,
             PacketStatsTx(
                 icmp6__pre_assemble=1,
-                icmp6__nd_neighbor_advertisement__send=1,
+                icmp6__nd__neighbor_advertisement__send=1,
                 ip6__pre_assemble=1,
                 ip6__mtu_ok__send=1,
                 ethernet__pre_assemble=1,
@@ -966,11 +980,13 @@ class TestPacketHandlerRxTx(TestCase):
         respond with Neighbor Advertisement
         """
         with open(
-            "tests__legacy/integration/test_frames/rx_tx/ip6_icmp6_nd_ns__dad.rx", "rb"
+            "tests__legacy/integration/test_frames/rx_tx/ip6_icmp6_nd_ns__dad.rx",
+            "rb",
         ) as _:
             packet_rx = _.read()
         with open(
-            "tests__legacy/integration/test_frames/rx_tx/ip6_icmp6_nd_ns__dad.tx", "rb"
+            "tests__legacy/integration/test_frames/rx_tx/ip6_icmp6_nd_ns__dad.tx",
+            "rb",
         ) as _:
             packet_tx = _.read()
         self.packet_handler._phrx_ethernet(packet_rx=PacketRx(packet_rx))
@@ -991,7 +1007,7 @@ class TestPacketHandlerRxTx(TestCase):
             self.packet_handler.packet_stats_tx,
             PacketStatsTx(
                 icmp6__pre_assemble=1,
-                icmp6__nd_neighbor_advertisement__send=1,
+                icmp6__nd__neighbor_advertisement__send=1,
                 ip6__pre_assemble=1,
                 ip6__mtu_ok__send=1,
                 ethernet__pre_assemble=1,

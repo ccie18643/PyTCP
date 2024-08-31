@@ -214,18 +214,18 @@ class PacketStatsTx:
     icmp4__pre_assemble: int = 0
     icmp4__echo_reply__send: int = 0
     icmp4__echo_request__send: int = 0
-    icmp4__unreachable_port__send: int = 0
+    icmp4__destination_unreachable__port__send: int = 0
     icmp4__unknown__drop: int = 0
 
     icmp6__pre_assemble: int = 0
     icmp6__echo_reply__send: int = 0
     icmp6__echo_request__send: int = 0
-    icmp6__unreachable_port__send: int = 0
-    icmp6__nd_router_solicitation__send: int = 0
-    icmp6__nd_router_advertisement__send: int = 0
-    icmp6__nd_neighbor_solicitation__send: int = 0
-    icmp6__nd_neighbor_advertisement__send: int = 0
-    icmp6__mld2_report__send: int = 0
+    icmp6__destination_unreachable__port__send: int = 0
+    icmp6__nd__router_solicitation__send: int = 0
+    icmp6__nd__router_advertisement__send: int = 0
+    icmp6__nd__neighbor_solicitation__send: int = 0
+    icmp6__nd__neighbor_advertisement__send: int = 0
+    icmp6__mld2__report__send: int = 0
     icmp6__unknown__drop: int = 0
 
     tcp__pre_assemble: int = 0

@@ -23,11 +23,6 @@
 ##                                                                            ##
 ################################################################################
 
-# pylint: disable=expression-not-assigned
-# pylint: disable=too-many-return-statements
-# pylint: disable=unused-argument
-# pylint: disable=missing-function-docstring
-
 
 """
 Module contains packet handler for the outbound IPv6 packets.
@@ -73,6 +68,8 @@ class Ip6PacketHandlerTx(ABC):
         packet_stats_tx: PacketStatsTx
         ip6_host: list[Ip6Host]
 
+        # pylint: disable=unused-argument
+
         def _phtx_ethernet(
             self,
             *,
@@ -84,6 +81,8 @@ class Ip6PacketHandlerTx(ABC):
         def _phtx_ip6_ext_frag(
             self, *, ip6_packet_tx: Ip6Assembler
         ) -> TxStatus: ...
+
+        # pylint: disable=missing-function-docstring
 
         @property
         def ip6_unicast(self) -> list[Ip6Address]: ...

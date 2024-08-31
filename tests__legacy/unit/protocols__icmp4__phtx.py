@@ -40,8 +40,12 @@ from pytcp.protocols.icmp4.message.icmp4_message__destination_unreachable import
     Icmp4DestinationUnreachableCode,
     Icmp4DestinationUnreachableMessage,
 )
-from pytcp.protocols.icmp4.message.icmp4_message__echo_reply import Icmp4EchoReplyMessage
-from pytcp.protocols.icmp4.message.icmp4_message__echo_request import Icmp4EchoRequestMessage
+from pytcp.protocols.icmp4.message.icmp4_message__echo_reply import (
+    Icmp4EchoReplyMessage,
+)
+from pytcp.protocols.icmp4.message.icmp4_message__echo_request import (
+    Icmp4EchoRequestMessage,
+)
 from pytcp.subsystems.packet_handler import PacketHandler
 from tests__legacy.unit.mock_network import (
     MockNetworkSettings,
@@ -150,7 +154,7 @@ class TestIcmp4Phtx(TestCase):
             self.packet_handler.packet_stats_tx,
             PacketStatsTx(
                 icmp4__pre_assemble=1,
-                icmp4__unreachable_port__send=1,
+                icmp4__destination_unreachable__port__send=1,
                 ip4__pre_assemble=1,
                 ip4__mtu_ok__send=1,
                 ethernet__pre_assemble=1,

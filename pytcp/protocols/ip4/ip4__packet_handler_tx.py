@@ -23,11 +23,6 @@
 ##                                                                            ##
 ################################################################################
 
-# pylint: disable=expression-not-assigned
-# pylint: disable=too-many-branches
-# pylint: disable=too-many-return-statements
-# pylint: disable=unused-argument
-
 
 """
 Module contains packet handler for the outbound IPv4 packets.
@@ -71,6 +66,8 @@ class Ip4PacketHandlerTx(ABC):
         ip4_host: list[Ip4Host]
         ip4_multicast: list[Ip4Address]
         ip4_id: int
+
+        # pylint: disable=unused-argument
 
         def _phtx_ethernet(
             self,

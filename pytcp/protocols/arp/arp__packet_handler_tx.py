@@ -23,9 +23,6 @@
 ##                                                                            ##
 ################################################################################
 
-# pylint: disable=expression-not-assigned
-# pylint: disable=unused-argument
-
 
 """
 Module contains packet handler for the outbound ARP packets.
@@ -62,6 +59,8 @@ class ArpPacketHandlerTx(ABC):
 
         packet_stats_tx: PacketStatsTx
         mac_unicast: MacAddress
+
+        # pylint: disable=unused-argument
 
         def _phtx_ethernet(
             self,
@@ -100,6 +99,8 @@ class ArpPacketHandlerTx(ABC):
                 self.packet_stats_tx.arp__op_request__send += 1
             case ArpOperation.REPLY:
                 self.packet_stats_tx.arp__op_reply__send += 1
+            case _:
+                raise ValueError(f"Invalid ARP operation: {arp__oper}")
 
         arp_packet_tx = ArpAssembler(
             arp__oper=arp__oper,

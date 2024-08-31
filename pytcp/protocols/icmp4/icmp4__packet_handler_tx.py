@@ -24,9 +24,6 @@
 ############################################################################
 
 
-# pylint: disable=expression-not-assigned
-# pylint: disable=unused-argument
-
 """
 Module contains packet handler for the outbound ICMPv4 packets
 
@@ -50,12 +47,6 @@ from pytcp.protocols.icmp4.message.icmp4_message import Icmp4Message, Icmp4Type
 from pytcp.protocols.icmp4.message.icmp4_message__destination_unreachable import (
     Icmp4DestinationUnreachableCode,
 )
-from pytcp.protocols.icmp4.message.icmp4_message__echo_reply import (
-    Icmp4EchoReplyCode,
-)
-from pytcp.protocols.icmp4.message.icmp4_message__echo_request import (
-    Icmp4EchoRequestCode,
-)
 
 
 class Icmp4PacketHandlerTx(ABC):
@@ -71,6 +62,8 @@ class Icmp4PacketHandlerTx(ABC):
         from pytcp.protocols.raw.raw__assembler import RawAssembler
 
         packet_stats_tx: PacketStatsTx
+
+        # pylint: disable=unused-argument
 
         def _phtx_ip4(
             self,
@@ -104,19 +97,18 @@ class Icmp4PacketHandlerTx(ABC):
             "icmp4", f"{icmp4_packet_tx.tracker} - {icmp4_packet_tx}"
         )
 
-        match (icmp4__message.type, icmp4__message.code):
-            case (Icmp4Type.ECHO_REPLY, Icmp4EchoReplyCode.DEFAULT):
+        match icmp4__message.type, icmp4__message.code:
+            case Icmp4Type.ECHO_REPLY, _:
                 self.packet_stats_tx.icmp4__echo_reply__send += 1
-
             case (
                 Icmp4Type.DESTINATION_UNREACHABLE,
                 Icmp4DestinationUnreachableCode.PORT,
             ):
-                self.packet_stats_tx.icmp4__unreachable_port__send += 1
-
-            case (Icmp4Type.ECHO_REQUEST, Icmp4EchoRequestCode.DEFAULT):
+                self.packet_stats_tx.icmp4__destination_unreachable__port__send += (
+                    1
+                )
+            case Icmp4Type.ECHO_REQUEST, _:
                 self.packet_stats_tx.icmp4__echo_request__send += 1
-
             case _:
                 raise UnsupportedCaseError
 
