@@ -32,7 +32,7 @@ Module contains packet handler for the outbound ARP packets.
 
 pytcp/protocols/arp/arp__packet_handler_tx.py
 
-ver 3.0.0
+ver 3.0.2
 """
 
 

@@ -29,7 +29,7 @@ Module contains the ICMPv6 ND option support code.
 
 pytcp/protocols/icmp6/message/nd/option/icmp6_nd_option.py
 
-ver 3.0.1
+ver 3.0.2
 """
 
 

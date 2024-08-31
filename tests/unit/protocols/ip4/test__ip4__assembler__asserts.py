@@ -29,7 +29,7 @@ This module contains tests for the IPv4 packet assembler constructor argument as
 
 tests/unit/protocols/ip4/test__ip4__assembler__asserts.py
 
-ver 3.0.0
+ver 3.0.2
 """
 
 

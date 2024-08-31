@@ -29,7 +29,7 @@ Module contains tests for the IPv6 Ext Frag protocol packet parsing functionalit
 
 tests/unit/protocols/ip6_ext_frag/test__ip6_ext_frag__parser__operation.py
 
-ver 3.0.0
+ver 3.0.2
 """
 
 

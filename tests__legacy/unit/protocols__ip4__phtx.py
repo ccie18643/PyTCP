@@ -28,7 +28,7 @@
 #
 # tests/ip4_phtx.py -  tests specific for IPv4 phtx module
 #
-# ver 3.0.0
+# ver 3.0.2
 #
 
 

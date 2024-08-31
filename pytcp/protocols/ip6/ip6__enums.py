@@ -29,7 +29,7 @@ This module contains the IPv6 protocol enum classes.
 
 pytcp/protocols/ip6_common/ip6__enums.py
 
-ver 3.0.0
+ver 3.0.2
 """
 
 

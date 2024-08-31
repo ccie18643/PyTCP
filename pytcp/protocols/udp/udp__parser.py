@@ -29,7 +29,7 @@ Module contains the UDP packet parser class.
 
 protocols/udp/udp__parser.py
 
-ver 3.0.1
+ver 3.0.2
 """
 
 

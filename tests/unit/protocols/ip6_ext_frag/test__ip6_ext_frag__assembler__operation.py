@@ -29,7 +29,7 @@ This module contains tests for the IPv6 Ext Frag packet assembler operation.
 
 tests/unit/protocols/ip6_ext_frag/test__ip6_ext_frag__assembler__packet.py
 
-ver 3.0.0
+ver 3.0.2
 """
 
 

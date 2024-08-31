@@ -29,7 +29,7 @@ This module contains tests for the IPv6 packet assembler operation.
 
 tests/unit/protocols/ip6/test__ip6__assembler__operation.py
 
-ver 3.0.0
+ver 3.0.2
 """
 
 from typing import Any

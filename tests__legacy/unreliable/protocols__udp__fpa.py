@@ -28,7 +28,7 @@
 #
 # tests/udp_fpa.py -  tests specific for UDP fpa module
 #
-# ver 3.0.0
+# ver 3.0.2
 #
 
 from testslide import TestCase

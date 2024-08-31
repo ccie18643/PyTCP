@@ -29,7 +29,7 @@ This module contains tests for the Ethernet II protocol packet assembling functi
 
 tests/unit/protocols/ethernet/test__ethernet__assembler__operation.py
 
-ver 3.0.0
+ver 3.0.2
 """
 
 

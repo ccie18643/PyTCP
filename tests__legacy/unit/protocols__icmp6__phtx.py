@@ -30,7 +30,7 @@
 #
 # tests/icmp6_phtx.py -  tests specific for ICMPv6 phtx module
 #
-# ver 3.0.0
+# ver 3.0.2
 #
 
 

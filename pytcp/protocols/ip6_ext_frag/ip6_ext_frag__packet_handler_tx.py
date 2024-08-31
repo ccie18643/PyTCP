@@ -32,7 +32,7 @@ Module contains packet handler for the outbound IPv6 fragment extension header.
 
 pytcp/protocols/ip6_ext_frag/ip6_ext_frag__packet_handler_tx.py
 
-ver 3.0.0
+ver 3.0.2
 """
 
 

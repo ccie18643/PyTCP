@@ -29,7 +29,7 @@ This module contains the IPv4 protocol error classes.
 
 pytcp/protocols/ip4/ip4__errors.py
 
-ver 3.0.0
+ver 3.0.2
 """
 
 

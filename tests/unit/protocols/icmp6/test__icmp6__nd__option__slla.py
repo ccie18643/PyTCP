@@ -30,7 +30,7 @@ code.
 
 tests/unit/protocols/icmp6/test__icmp6__nd__option__slla.py
 
-ver 3.0.1
+ver 3.0.2
 """
 
 

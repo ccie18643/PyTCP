@@ -29,7 +29,7 @@ This module contains tests for the IPv6 packet parser operation.
 
 tests/unit/protocols/ip6/test__ip6__parser__packet.py
 
-ver 3.0.0
+ver 3.0.2
 """
 
 

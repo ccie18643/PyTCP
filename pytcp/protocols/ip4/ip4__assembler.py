@@ -29,7 +29,7 @@ This module contain the IPv4 protocol assembler classes.
 
 pytcp/protocols/ip4/ip4__assembler.py
 
-ver 3.0.0
+ver 3.0.2
 """
 
 

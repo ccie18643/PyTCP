@@ -29,7 +29,7 @@ Module contains the ICMPv4 Echo Reply message support class.
 
 pytcp/protocols/icmp4/message/icmp4_message__echo_reply.py
 
-ver 3.0.1
+ver 3.0.2
 """
 
 

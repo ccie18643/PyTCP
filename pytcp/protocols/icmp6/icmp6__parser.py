@@ -29,7 +29,7 @@ Module contains the ICMPv6 packet parser.
 
 pytcp/protocols/icmp6/icmp6__parser.py
 
-ver 3.0.1
+ver 3.0.2
 """
 
 

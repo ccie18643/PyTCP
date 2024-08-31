@@ -33,7 +33,7 @@ Module contains packet handler for the inbound TCP packets.
 
 pytcp/protocols/tcp/tcp__packet_handler_rx.py
 
-ver 3.0.0
+ver 3.0.2
 """
 
 

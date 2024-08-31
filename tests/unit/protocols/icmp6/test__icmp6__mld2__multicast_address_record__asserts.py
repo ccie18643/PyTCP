@@ -30,7 +30,7 @@ assembler & parser argument asserts.
 
 tests/unit/protocols/icmp6/test__icmp6__mld2__multicast_address_record__asserts.py
 
-ver 3.0.0
+ver 3.0.2
 """
 
 from testslide import TestCase

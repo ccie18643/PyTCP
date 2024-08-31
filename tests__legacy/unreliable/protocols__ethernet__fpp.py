@@ -28,7 +28,7 @@
 #
 # tests/unit/ethernet_fpp.py -  Tests specific for Ethernet FPP module.
 #
-# ver 3.0.0
+# ver 3.0.2
 #
 
 from testslide import TestCase

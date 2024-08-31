@@ -29,7 +29,7 @@ Module contains the customized TestCase class that mocks the IPv6 related values
 
 tests/mocks/testcase__packet_rx__ip6.py
 
-ver 3.0.1
+ver 3.0.2
 """
 
 

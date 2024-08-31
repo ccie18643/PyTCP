@@ -29,7 +29,7 @@ The example 'user space' service TCP Daytime (RFC 867).
 
 examples/tcp_daytime_service.py - The 'user space' service TCP Daytime (RFC 867).
 
-ver 3.0.0
+ver 3.0.2
 """
 
 

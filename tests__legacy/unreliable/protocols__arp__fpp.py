@@ -28,7 +28,7 @@
 #
 # tests/unit/arp_fpp.py -  Tests specific for ARP FPP module.
 #
-# ver 3.0.0
+# ver 3.0.2
 #
 
 import struct

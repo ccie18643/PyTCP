@@ -32,7 +32,7 @@ Module contains protocol support for the outbound UDP packets.
 
 pytcp/protocols/udp/udp__packet_handler_tx.py
 
-ver 3.0.0
+ver 3.0.2
 """
 
 

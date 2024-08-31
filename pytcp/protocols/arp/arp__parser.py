@@ -29,7 +29,7 @@ This module contains the ARP packet parser class.
 
 pytcp/protocols/arp/arp__parser.py
 
-ver 3.0.0
+ver 3.0.2
 """
 
 

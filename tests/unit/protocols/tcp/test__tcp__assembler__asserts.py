@@ -29,7 +29,7 @@ This module contains tests for the TCP packet assembler constructor argument ass
 
 tests/unit/protocols/tcp/test__tcp_assembler__asserts.py
 
-ver 3.0.0
+ver 3.0.2
 """
 
 

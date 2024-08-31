@@ -31,7 +31,7 @@ Module contains the main PyTCP stack class.
 
 pytcp/__init__.py
 
-ver 3.0.0
+ver 3.0.2
 """
 
 

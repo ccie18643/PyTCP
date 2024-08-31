@@ -29,7 +29,7 @@ Module contains the ICMPv6 ND Neighbor Solicitation message support class.
 
 pytcp/protocols/icmp6/message/nd/icmp6_nd_message__neighbor_solicitation.py
 
-ver 3.0.1
+ver 3.0.2
 """
 
 

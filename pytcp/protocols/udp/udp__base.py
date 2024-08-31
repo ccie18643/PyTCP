@@ -29,7 +29,7 @@ Module contains the UDP protocol base class.
 
 pytcp/protocols/udp/udp__base.py
 
-ver 3.0.1
+ver 3.0.2
 """
 
 

@@ -32,7 +32,7 @@ Module contains class supporting ICMPv6 Neighbor Discovery cache operations.
 
 pycp/protocols/icmp6/nd_cache.py
 
-ver 3.0.0
+ver 3.0.2
 """
 
 

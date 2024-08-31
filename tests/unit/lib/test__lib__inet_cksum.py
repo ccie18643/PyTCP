@@ -29,7 +29,7 @@ Module contains tests for the function computing Internet Checksum.
 
 tests/unit/lib/test__lib__internet_checksum.py
 
-ver 3.0.0
+ver 3.0.2
 """
 
 

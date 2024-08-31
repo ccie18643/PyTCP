@@ -29,7 +29,7 @@ Module contains methods supporting logging.
 
 pytcp/lib/logger.py
 
-ver 3.0.0
+ver 3.0.2
 """
 
 

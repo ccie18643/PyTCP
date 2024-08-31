@@ -31,7 +31,7 @@ Module contains the base class for all of the option classes.
 
 pytcp/lib/proto_option.py
 
-ver 3.0.0
+ver 3.0.2
 """
 
 

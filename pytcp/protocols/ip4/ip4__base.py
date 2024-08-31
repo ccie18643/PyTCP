@@ -29,7 +29,7 @@ This module contains the IPv4 protccol base class.
 
 pytcp/protocols/ip4/ip4__base.py
 
-ver 3.0.0
+ver 3.0.2
 """
 
 

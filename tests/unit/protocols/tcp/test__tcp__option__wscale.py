@@ -29,7 +29,7 @@ Module contains tests for the TCP Wscale (Window Scale) option code.
 
 tests/unit/protocols/tcp/test__tcp__option__wscale.py
 
-ver 3.0.1
+ver 3.0.2
 """
 
 

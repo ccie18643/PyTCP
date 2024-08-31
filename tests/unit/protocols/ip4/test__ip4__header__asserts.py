@@ -29,7 +29,7 @@ This module contains tests for the IPv4 header fields asserts.
 
 tests/unit/protocols/ip4/test__ip4__header__asserts.py
 
-ver 3.0.0
+ver 3.0.2
 """
 
 

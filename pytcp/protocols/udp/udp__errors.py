@@ -29,7 +29,7 @@ Module contains the UDP protocol error classes.
 
 protocols/udp/udp__errors.py
 
-ver 3.0.1
+ver 3.0.2
 """
 
 

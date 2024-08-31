@@ -29,7 +29,7 @@ This module contains tests for the Ethernet 802.3 header fields asserts.
 
 tests/unit/protocols/ethernet_802_3/test__ethernet_802_3__header__asserts.py
 
-ver 3.0.0
+ver 3.0.2
 """
 
 

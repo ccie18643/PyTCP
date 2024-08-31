@@ -29,7 +29,7 @@ This module contains the TCP packet header class.
 
 pytcp/protocols/tcp/tcp__header.py
 
-ver 3.0.0
+ver 3.0.2
 """
 
 

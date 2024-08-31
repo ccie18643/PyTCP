@@ -28,7 +28,7 @@
 #
 # tests/ip6_phtx.py -  tests specific for IPv6 phtx module
 #
-# ver 3.0.0
+# ver 3.0.2
 #
 
 

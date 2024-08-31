@@ -27,7 +27,7 @@
 #
 # tests/unit/test_config.py - unit tests for config
 #
-# ver 3.0.0
+# ver 3.0.2
 #
 
 

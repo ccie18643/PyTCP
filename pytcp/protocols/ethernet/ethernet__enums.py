@@ -29,7 +29,7 @@ This module contains the Ethernet II enum classes.
 
 pytcp/protocols/ethernet/ethernet__enums.py
 
-ver 3.0.0
+ver 3.0.2
 """
 
 

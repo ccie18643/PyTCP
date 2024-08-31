@@ -31,7 +31,7 @@ Module contains globals and checks for various lengths integers.
 
 pytcp/lib/ints.py
 
-ver 3.0.0
+ver 3.0.2
 """
 
 

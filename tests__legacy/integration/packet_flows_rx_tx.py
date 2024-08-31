@@ -29,7 +29,7 @@
 # tests/test_packet_flows__rx_tx.py - unit tests for received packets
 # that generate stack's response
 #
-# ver 3.0.0
+# ver 3.0.2
 #
 
 

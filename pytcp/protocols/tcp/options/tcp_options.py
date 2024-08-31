@@ -29,7 +29,7 @@ Module contains the TCP packet options class.
 
 pytcp/protocols/tcp/options/tcp_options.py
 
-ver 3.0.1
+ver 3.0.2
 """
 
 

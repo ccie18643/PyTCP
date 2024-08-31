@@ -29,7 +29,7 @@ This module contains the TCP packet assembler class.
 
 pytcp/protocols/tcp/tcp__assembler.py
 
-ver 3.0.0
+ver 3.0.2
 """
 
 

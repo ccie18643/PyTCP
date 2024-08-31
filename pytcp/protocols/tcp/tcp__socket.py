@@ -31,7 +31,7 @@ Module contains BSD like socket interface for the stack.
 
 pytcp/protocols/tcp/tcp__socket.py
 
-ver 3.0.0
+ver 3.0.2
 """
 
 

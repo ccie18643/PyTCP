@@ -29,7 +29,7 @@ Module contains tests for the ICMPv6 Echo Request message parser.
 
 tests/unit/protocols/icmp6/test__icmp6__echo_request__parser.py
 
-ver 3.0.1
+ver 3.0.2
 """
 
 

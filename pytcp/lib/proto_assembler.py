@@ -29,7 +29,7 @@ Module contains the base class for all of the protocol classes.
 
 pytcp/lib/proto.py
 
-ver 3.0.0
+ver 3.0.2
 """
 
 

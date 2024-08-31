@@ -29,7 +29,7 @@ This module contains the IPv6 packet assembler.
 
 pytcp/protocols/ip6/ip6__assembler.py
 
-ver 3.0.0
+ver 3.0.2
 """
 
 

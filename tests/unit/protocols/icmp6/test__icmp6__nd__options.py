@@ -29,7 +29,7 @@ Module contains tests for the ICMPv6 ND options support code.
 
 tests/unit/protocols/icmp6/test__icmp6__nd__options.py
 
-ver 3.0.1
+ver 3.0.2
 """
 
 

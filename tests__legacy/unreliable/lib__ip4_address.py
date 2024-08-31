@@ -27,7 +27,7 @@
 #
 # tests/unit/test_ip4_address.py - unit tests for Ip4Address library
 #
-# ver 3.0.0
+# ver 3.0.2
 #
 
 

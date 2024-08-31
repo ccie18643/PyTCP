@@ -29,7 +29,7 @@ Module contains TCP Wscale (Window Scale) option support code.
 
 pytcp/protocols/tcp/options/tcp_option__wscale.py
 
-ver 3.0.1
+ver 3.0.2
 """
 
 

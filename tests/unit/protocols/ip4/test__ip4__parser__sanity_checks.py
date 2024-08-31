@@ -29,7 +29,7 @@ This module contains tests for the IPv4 packet sanity checks.
 
 tests/unit/protocols/tcp/test__ip4__parser__sanity_checks.py
 
-ver 3.0.0
+ver 3.0.2
 """
 
 

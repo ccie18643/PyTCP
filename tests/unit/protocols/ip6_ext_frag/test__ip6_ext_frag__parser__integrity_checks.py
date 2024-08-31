@@ -29,7 +29,7 @@ This module contains tests for the IPv6 Ext Frag packet integrity checks.
 
 tests/unit/protocols/tcp/test__ip6_ext_frag__parser__integrity_checks.py
 
-ver 3.0.0
+ver 3.0.2
 """
 
 

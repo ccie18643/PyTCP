@@ -29,7 +29,7 @@ This module contains tests for the Raw protocol packet assembling functionality.
 
 tests/unit/protocols/raw/test__raw__assembler__packets.py
 
-ver 3.0.0
+ver 3.0.2
 """
 
 

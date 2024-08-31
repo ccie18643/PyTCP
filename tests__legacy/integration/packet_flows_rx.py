@@ -29,7 +29,7 @@
 # tests/test_packet_flows_rx.py - unit tests for packets received by stack
 # with no response sent back
 #
-# ver 3.0.0
+# ver 3.0.2
 #
 
 

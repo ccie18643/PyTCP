@@ -29,7 +29,7 @@ Module contains ICMPv6 ND Router Advertisement message support class.
 
 pytcp/protocols/icmp6/message/nd/icmp6_nd_message__router_advertisement.py
 
-ver 3.0.1
+ver 3.0.2
 """
 
 

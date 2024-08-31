@@ -34,7 +34,7 @@ Module contains packet handler for the outbound IPv6 packets.
 
 pytcp/protocols/ip6/ip6__packet_handler_tx.py
 
-ver 3.0.0
+ver 3.0.2
 """
 
 

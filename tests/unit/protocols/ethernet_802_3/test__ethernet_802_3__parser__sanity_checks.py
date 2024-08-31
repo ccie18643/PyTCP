@@ -29,7 +29,7 @@ This module contains tests for the Ethernet 802.3 packet sanity checks.
 
 tests/unit/protocols/ethernet_802_3/test__ethernet_802_3__parser__sanity_check.py
 
-ver 3.0.0
+ver 3.0.2
 """
 
 

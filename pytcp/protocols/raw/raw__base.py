@@ -29,7 +29,7 @@ This module contains the Raw protocol base class.
 
 pytcp/protocols/raw/raw__base.py
 
-ver 3.0.0
+ver 3.0.2
 """
 
 

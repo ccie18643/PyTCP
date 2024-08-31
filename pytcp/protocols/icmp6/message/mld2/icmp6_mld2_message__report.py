@@ -29,7 +29,7 @@ Module contains the ICMPv6 MLDv2 Report message support class.
 
 pytcp/protocols/icmp6/message/mld2/icmp6_mld2_message__report.py
 
-ver 3.0.1
+ver 3.0.2
 """
 
 

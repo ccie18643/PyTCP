@@ -29,7 +29,7 @@ The example 'user space' service TCP Echo (RFC 862).
 
 examples/tcp_echo_service.py
 
-ver 3.0.0
+ver 3.0.2
 """
 
 

@@ -27,7 +27,7 @@
 #
 # tests/unit/test_ip6_address.py - unit tests for Ip6Address library
 #
-# ver 3.0.0
+# ver 3.0.2
 #
 
 

@@ -29,7 +29,7 @@ This module contains the Ethernet 802.3 protocol base class.
 
 pytcp/protocols/ethernet_802_3/ethernet_802_3__base.py
 
-ver 3.0.0
+ver 3.0.2
 """
 
 

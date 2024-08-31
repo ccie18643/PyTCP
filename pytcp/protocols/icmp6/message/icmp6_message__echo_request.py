@@ -29,7 +29,7 @@ Module contains the ICMPv6 Echo Reply message support class.
 
 pytcp/protocols/icmp6/message/icmp6_message__echo_request.py
 
-ver 3.0.1
+ver 3.0.2
 """
 
 

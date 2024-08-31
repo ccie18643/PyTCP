@@ -29,7 +29,7 @@ This module contains the Ethernet II protccol base class.
 
 pytcp/protocols/ethernet/ethernet__base.py
 
-ver 3.0.0
+ver 3.0.2
 """
 
 

@@ -29,7 +29,7 @@ Module contains tests for the TCP options support code.
 
 tests/unit/protocols/tcp/test__tcp__options.py
 
-ver 3.0.1
+ver 3.0.2
 """
 
 

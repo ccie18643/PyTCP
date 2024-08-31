@@ -29,7 +29,7 @@ This module contains the ARP protocol error classes.
 
 pytcp/protocols/arp/arp__errors.py
 
-ver 3.0.0
+ver 3.0.2
 """
 
 

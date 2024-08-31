@@ -29,7 +29,7 @@ This module contains the Ethernet II packet header class.
 
 pytcp/protocols/ethernet/ethernet__header.py
 
-ver 3.0.0
+ver 3.0.2
 """
 
 

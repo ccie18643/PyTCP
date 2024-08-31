@@ -29,7 +29,7 @@ Module contains tests for the UDP packet sanity checks.
 
 tests/unit/protocols/udp/test__udp__parser__sanity_checks.py
 
-ver 3.0.1
+ver 3.0.2
 """
 
 

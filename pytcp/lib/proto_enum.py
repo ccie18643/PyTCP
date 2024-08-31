@@ -30,7 +30,7 @@ Module contains the ProtoEnum class.
 
 pytcp/lib/enum.py
 
-ver 3.0.0
+ver 3.0.2
 """
 
 

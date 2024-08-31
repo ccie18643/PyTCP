@@ -29,7 +29,7 @@ Module contains the UDP packet header class.
 
 pytcp/protocols/udp/udp__header.py
 
-ver 3.0.1
+ver 3.0.2
 """
 
 

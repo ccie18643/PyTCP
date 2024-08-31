@@ -29,7 +29,7 @@ This module contains tests for the Ethernet II header fields asserts.
 
 tests/unit/protocols/ethernet/test__header__asserts.py
 
-ver 3.0.0
+ver 3.0.2
 """
 
 

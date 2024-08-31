@@ -29,7 +29,7 @@ This module contains the IPv6 Ext Frag protocol error classes.
 
 pytcp/protocols/ip6_ext_frag/ip6_ext_frag__errors.py
 
-ver 3.0.0
+ver 3.0.2
 """
 
 

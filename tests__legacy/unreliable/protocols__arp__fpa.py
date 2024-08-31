@@ -28,7 +28,7 @@
 #
 # tests/unit/arp_fpa.py -  Tests specific for ARP FPA module.
 #
-# ver 3.0.0
+# ver 3.0.2
 #
 
 from testslide import TestCase

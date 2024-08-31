@@ -33,7 +33,7 @@ Module contains packet handler for the inbound IPv6 packets.
 
 pytcp/protocols/ip6/ip6__packet_handler_rx.py
 
-ver 3.0.0
+ver 3.0.2
 """
 
 

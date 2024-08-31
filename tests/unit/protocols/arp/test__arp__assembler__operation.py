@@ -29,7 +29,7 @@ This module contains tests for the ARP protocol packet assembling functionality.
 
 tests/unit/protocols/arp/test__arp_assembler__operation.py
 
-ver 3.0.0
+ver 3.0.2
 """
 
 

@@ -29,7 +29,7 @@ Module contains the ICMPv4 protocol error classes.
 
 pytcp/protocols/icmp4/icmp4__errors.py
 
-ver 3.0.1
+ver 3.0.2
 """
 
 

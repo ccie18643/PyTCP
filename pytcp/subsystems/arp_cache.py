@@ -32,7 +32,7 @@ Module contains class supporting ARP cache operations.
 
 pytcp/protocols/arp/cache.py
 
-ver 3.0.0
+ver 3.0.2
 """
 
 

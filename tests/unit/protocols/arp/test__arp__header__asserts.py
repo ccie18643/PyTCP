@@ -29,7 +29,7 @@ This module contains tests for the ARP header fields asserts.
 
 tests/unit/protocols/arp/test__arp__header__asserts.py
 
-ver 3.0.0
+ver 3.0.2
 """
 
 

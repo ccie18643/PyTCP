@@ -30,7 +30,7 @@ ping packets.
 
 examples/run_stack.py
 
-ver 3.0.0
+ver 3.0.2
 """
 
 import time

@@ -29,7 +29,7 @@ Module contains the TCP Sackperm (SACK Permitted) option support code.
 
 pytcp/protocols/tcp/options/tcp_option__sackperm.py
 
-ver 3.0.1
+ver 3.0.2
 """
 
 

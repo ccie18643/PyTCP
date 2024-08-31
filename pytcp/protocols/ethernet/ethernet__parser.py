@@ -29,7 +29,7 @@ This module contains the Ethernet II packet parser class.
 
 pytcp/protocols/ethernet/ethernet__parser.py
 
-ver 3.0.0
+ver 3.0.2
 """
 
 

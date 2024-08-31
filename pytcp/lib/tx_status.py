@@ -29,7 +29,7 @@ Module contains definition of TX status codes.
 
 pytcp/lib/tx_status.py
 
-ver 3.0.0
+ver 3.0.2
 """
 
 

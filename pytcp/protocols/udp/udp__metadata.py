@@ -29,7 +29,7 @@ Module contains interface class for the FPP -> UDP Socket communication.
 
 pytcp/protocols/udp/udp__metadata.py
 
-ver 3.0.0
+ver 3.0.2
 """
 
 

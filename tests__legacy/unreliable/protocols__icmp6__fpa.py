@@ -28,7 +28,7 @@
 #
 # tests/icmp6_fpa.py -  tests specific for ICMPv6 fpa module
 #
-# ver 3.0.0
+# ver 3.0.2
 #
 
 from testslide import TestCase

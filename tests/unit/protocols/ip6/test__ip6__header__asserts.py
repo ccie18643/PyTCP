@@ -29,7 +29,7 @@ This module contains tests for the IPv6 header fields asserts.
 
 tests/unit/protocols/ip6/test__ip6__header__asserts.py
 
-ver 3.0.0
+ver 3.0.2
 """
 
 

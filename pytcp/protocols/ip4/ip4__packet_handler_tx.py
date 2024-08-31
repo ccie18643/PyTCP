@@ -34,7 +34,7 @@ Module contains packet handler for the outbound IPv4 packets.
 
 pytcp/protocols/ip4/ip4__packet_handler_tx.py
 
-ver 3.0.0
+ver 3.0.2
 """
 
 

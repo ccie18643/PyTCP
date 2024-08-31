@@ -30,7 +30,7 @@ The example 'user space' client for ICMPv4/v6 Echo.
 
 examples/icmp_echo_client.py
 
-ver 3.0.0
+ver 3.0.2
 """
 
 

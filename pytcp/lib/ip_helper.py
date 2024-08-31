@@ -29,7 +29,7 @@ Module contains helper functions for IP related operations.
 
 pycp/misc/ip_helper.py
 
-ver 3.0.0
+ver 3.0.2
 """
 
 

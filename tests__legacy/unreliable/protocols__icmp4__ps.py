@@ -28,7 +28,7 @@
 #
 # tests/unit/icmp4_ps.py -  Tests specific for ICMPv4 PS module.
 #
-# ver 3.0.0
+# ver 3.0.2
 #
 
 from testslide import StrictMock, TestCase

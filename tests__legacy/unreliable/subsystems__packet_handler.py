@@ -28,7 +28,7 @@
 #
 # tests/test_packet_handler.py - unit tests for PacketHandler class
 #
-# ver 3.0.0
+# ver 3.0.2
 #
 
 

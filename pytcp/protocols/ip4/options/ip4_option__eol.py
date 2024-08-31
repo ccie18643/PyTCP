@@ -29,7 +29,7 @@ Module contains the IPv4 Eol (End of Option List) option support code.
 
 pytcp/protocols/tcp/options/ip4_option__eol.py
 
-ver 3.0.1
+ver 3.0.2
 """
 
 

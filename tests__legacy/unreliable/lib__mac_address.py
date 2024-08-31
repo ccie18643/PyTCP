@@ -27,7 +27,7 @@
 #
 # tests/unit/test_lib_mac_address.py - unit tests for MacAddress library
 #
-# ver 3.0.0
+# ver 3.0.2
 #
 
 

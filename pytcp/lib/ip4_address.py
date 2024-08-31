@@ -30,7 +30,7 @@ Module contains IPv4 address manipulation classes.
 
 pytcp/lib/ip4_address.py
 
-ver 3.0.0
+ver 3.0.2
 """
 
 

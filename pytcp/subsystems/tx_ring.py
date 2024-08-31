@@ -31,7 +31,7 @@ Module contains class supporting stack interface TX operations.
 
 pytcp/subsystems/tx_ring.py
 
-ver 3.0.0
+ver 3.0.2
 """
 
 

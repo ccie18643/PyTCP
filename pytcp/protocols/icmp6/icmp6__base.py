@@ -29,7 +29,7 @@ Module contains the ICMPv6 protccol base class.
 
 pytcp/protocols/icmp6/icmp6__base.py
 
-ver 3.0.1
+ver 3.0.2
 """
 
 

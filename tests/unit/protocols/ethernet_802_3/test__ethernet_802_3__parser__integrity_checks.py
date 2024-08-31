@@ -29,7 +29,7 @@ This module contains tests for the Ethernet 802.3 packet integrity checks.
 
 tests/unit/protocols/ethernet/test__ethernet_802_3__parser__integrity_checks.py
 
-ver 3.0.0
+ver 3.0.2
 """
 
 

@@ -30,7 +30,7 @@ Module contains IPv6 address manipulation classes.
 
 pytcp/lib/ip6_address.py
 
-ver 3.0.0
+ver 3.0.2
 """
 
 

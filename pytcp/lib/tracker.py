@@ -30,7 +30,7 @@ for new packets.
 
 pytcp/lib/tracker.py
 
-ver 3.0.0
+ver 3.0.2
 """
 
 

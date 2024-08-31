@@ -36,7 +36,7 @@ Module contains packet handler class for inbound and outbound packets.
 
 pytcp/subsystems/icmp6__packet_handler.py
 
-ver 3.0.0
+ver 3.0.2
 """
 
 

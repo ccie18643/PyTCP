@@ -29,7 +29,7 @@ This module contains tests for the UDP packet assembler operation.
 
 tests/unit/protocols/udp/test__udp__assembler__operation.py
 
-ver 3.0.0
+ver 3.0.2
 """
 
 

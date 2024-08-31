@@ -30,7 +30,7 @@ integration tests are implemented.
 
 pytcp/tests/integration/stub.py
 
-ver 3.0.0
+ver 3.0.2
 """
 
 

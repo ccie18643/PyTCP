@@ -29,7 +29,7 @@ Module contains global configuration parameters.
 
 pytcp/config.py
 
-ver 3.0.0
+ver 3.0.2
 """
 
 

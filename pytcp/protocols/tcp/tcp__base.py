@@ -29,7 +29,7 @@ This module contains the TCP protccol base class.
 
 pytcp/protocols/tcp/tpc__base.py
 
-ver 3.0.0
+ver 3.0.2
 """
 
 

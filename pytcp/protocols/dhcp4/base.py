@@ -35,7 +35,7 @@ the RusTCP project.
 
 pytcp/protocols/dhcp4/base.py
 
-ver 3.0.0
+ver 3.0.2
 """
 
 

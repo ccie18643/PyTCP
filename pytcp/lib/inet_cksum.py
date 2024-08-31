@@ -29,7 +29,7 @@ Module contains function used to compute the Internet Checksum.
 
 pytcp/lib/inet_cksum.py
 
-ver 3.0.0
+ver 3.0.2
 """
 
 

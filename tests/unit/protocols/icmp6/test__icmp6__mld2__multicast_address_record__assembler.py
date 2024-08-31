@@ -29,7 +29,7 @@ This module contains tests for the ICMPv6 MLDv2 Multicast Address Record assembl
 
 tests/unit/protocols/icmp6/test__icmp6__mld2__address__record__assembler.py
 
-ver 3.0.0
+ver 3.0.2
 """
 
 

@@ -29,7 +29,7 @@ This module contains the IPv6 packet header.
 
 pytcp/protocols/ip6/ip6__header.py
 
-ver 3.0.0
+ver 3.0.2
 """
 
 

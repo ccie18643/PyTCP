@@ -28,7 +28,7 @@
 #
 # tests/unit/arp_ps.py -  Tests specific for ARP PS module.
 #
-# ver 3.0.0
+# ver 3.0.2
 #
 
 from testslide import TestCase

@@ -30,7 +30,7 @@ Module contains the DHCPv4 client that is used internally by the stack.
 
 pytcp/protocols/dhcp4/client.py
 
-ver 3.0.0
+ver 3.0.2
 """
 
 

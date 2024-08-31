@@ -28,7 +28,7 @@
 #
 # tests/unit/arp_phtx.py -  Tests specific for ARP PHTX module.
 #
-# ver 3.0.0
+# ver 3.0.2
 #
 
 

@@ -29,7 +29,7 @@ This module contains the Ethernet II protocol error classes.
 
 pytcp/protocols/ethernet/ethernet__errors.py
 
-ver 3.0.0
+ver 3.0.2
 """
 
 

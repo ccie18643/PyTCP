@@ -29,7 +29,7 @@ This module contains tests for the IPv4 packet parser operation.
 
 tests/unit/protocols/ip4/test__ip4__parser__packet.py
 
-ver 3.0.0
+ver 3.0.2
 """
 
 from typing import Any

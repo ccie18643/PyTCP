@@ -29,7 +29,7 @@ Module contains the TCP packet parser class.
 
 pytcp/protocols/tcp/tcp__parser.py
 
-ver 3.0.1
+ver 3.0.2
 """
 
 

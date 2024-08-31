@@ -28,7 +28,7 @@
 #
 # tests/udp_phtx.py -  tests specific for UDP phtx module
 #
-# ver 3.0.0
+# ver 3.0.2
 #
 
 

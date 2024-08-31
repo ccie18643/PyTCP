@@ -31,7 +31,7 @@ Module contains packet handler for the inbound IPv4 packets.
 
 pytcp/protocols/ip4/ip4__packet_handler_rx.py
 
-ver 3.0.0
+ver 3.0.2
 """
 
 

@@ -31,7 +31,7 @@ Module contains packet handler for the inbound Ethernet packets.
 
 pytcp/protocols/ethernet_802_3/ethernet_802_3__packet_handler_rx.py
 
-ver 3.0.0
+ver 3.0.2
 """
 
 from __future__ import annotations

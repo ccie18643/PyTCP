@@ -31,7 +31,7 @@ Module contains Ethernet MAC address manipulation class.
 
 pytcp/lib/mac_address.py
 
-ver 3.0.0
+ver 3.0.2
 """
 
 

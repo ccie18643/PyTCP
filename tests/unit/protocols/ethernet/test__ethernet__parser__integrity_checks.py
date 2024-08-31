@@ -29,7 +29,7 @@ This module contains tests for the Ethernet II packet integrity checks.
 
 tests/unit/protocols/ethernet/test__parser__integrity_checks.py
 
-ver 3.0.0
+ver 3.0.2
 """
 
 

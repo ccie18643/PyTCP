@@ -29,7 +29,7 @@ This module contains the TCP protocol error classes.
 
 pytcp/protocols/tcp/tcp__errors.py
 
-ver 3.0.0
+ver 3.0.2
 """
 
 

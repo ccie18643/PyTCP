@@ -29,7 +29,7 @@ The example 'user space' service UDP Discard (RFC 863).
 
 examples/udp_discard_service.py
 
-ver 3.0.0
+ver 3.0.2
 """
 
 

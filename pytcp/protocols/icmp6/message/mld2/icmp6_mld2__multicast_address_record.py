@@ -29,7 +29,7 @@ This module contains the ICMPv6 MLDv2 Multicast Address Record support class.
 
 pytcp/protocols/icmp6/icmp6_mld2__multicast_address_record.py
 
-ver 3.0.0
+ver 3.0.2
 """
 
 
@@ -194,6 +194,20 @@ class Icmp6Mld2MulticastAddressRecord(ProtoStruct):
                 ]
             )
             + self.aux_data
+        )
+
+    def __hash__(self) -> int:
+        """
+        Get the ICMPv6 MLDv2 Multicast Address Record hash.
+        """
+
+        return hash(
+            (
+                self.type,
+                self.multicast_address,
+                tuple(self.source_addresses),
+                self.aux_data,
+            )
         )
 
     @property

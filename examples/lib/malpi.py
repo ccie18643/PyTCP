@@ -29,7 +29,7 @@ Module contains test monkeys used on various occasions.
 
 examples/lib/malpi.py
 
-ver 3.0.0
+ver 3.0.2
 """
 
 

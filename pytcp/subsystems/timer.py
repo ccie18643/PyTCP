@@ -32,7 +32,7 @@ Module contains class supporting timer that can be used by other stack component
 
 pytcp/subsystems/timer.py
 
-ver 3.0.0
+ver 3.0.2
 """
 
 

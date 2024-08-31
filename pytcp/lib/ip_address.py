@@ -30,7 +30,7 @@ Module contains base class for IP address manipulation.
 
 pytcp/lib/ip_address.py
 
-ver 3.0.0
+ver 3.0.2
 """
 
 

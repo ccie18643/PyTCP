@@ -29,7 +29,7 @@ The example 'user space' service UDP Daytime (RFC 867).
 
 examples/udp_daytime_service.py
 
-ver 3.0.0
+ver 3.0.2
 """
 
 

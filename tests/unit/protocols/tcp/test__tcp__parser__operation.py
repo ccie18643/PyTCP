@@ -29,7 +29,7 @@ This module contains tests for the TCP packet parser operation.
 
 tests/unit/protocols/tcp/test__tcp__parser__operation.py
 
-ver 3.0.0
+ver 3.0.2
 """
 
 

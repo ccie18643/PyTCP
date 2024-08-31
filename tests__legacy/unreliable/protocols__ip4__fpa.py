@@ -28,7 +28,7 @@
 #
 # tests/ip4_fpa.py -  tests specific for IPv4 fpa module
 #
-# ver 3.0.0
+# ver 3.0.2
 #
 
 from testslide import StrictMock, TestCase

@@ -29,7 +29,7 @@ Module contains base class for protocol header.
 
 pytcp/lib/proto_struct.py
 
-ver 3.0.0
+ver 3.0.2
 """
 
 

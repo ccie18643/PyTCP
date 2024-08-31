@@ -29,7 +29,7 @@ Module contains the ICMPv4 Destination Unreachable message support class.
 
 pytcp/protocols/icmp4/message/icmp4_message__destination_unreachable.py
 
-ver 3.0.1
+ver 3.0.2
 """
 
 

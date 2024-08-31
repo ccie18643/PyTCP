@@ -29,7 +29,7 @@ Module contains the base class for all of the protocol parser classes.
 
 pytcp/lib/proto_parser.py
 
-ver 3.0.0
+ver 3.0.2
 """
 
 
