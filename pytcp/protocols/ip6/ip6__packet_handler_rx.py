@@ -116,3 +116,10 @@ class Ip6PacketHandlerRx(ABC):
                 self._phrx_udp(packet_rx)
             case Ip6Next.TCP:
                 self._phrx_tcp(packet_rx)
+            case _:
+                self.packet_stats_rx.ip6__no_proto_support__drop += 1
+                __debug__ and log(
+                    "ip6",
+                    f"{packet_rx.tracker} - Unsupported protocol "
+                    f"{packet_rx.ip6.next}, dropping.",
+                )

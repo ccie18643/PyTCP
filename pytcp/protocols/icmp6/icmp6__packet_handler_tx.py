@@ -38,7 +38,6 @@ from __future__ import annotations
 from abc import ABC
 from typing import TYPE_CHECKING
 
-from pytcp.lib.errors import UnsupportedCaseError
 from pytcp.lib.ip6_address import Ip6Address
 from pytcp.lib.logger import log
 from pytcp.lib.mac_address import MacAddress
@@ -150,7 +149,10 @@ class Icmp6PacketHandlerTx(ABC):
             case Icmp6Type.MLD2__REPORT, _:
                 self.packet_stats_tx.icmp6__mld2__report__send += 1
             case _:
-                raise UnsupportedCaseError
+                raise ValueError(
+                    f"Unsupported ICMPv6 type {icmp6__message.type}, "
+                    f"code {icmp6__message.code}."
+                )
 
         return self._phtx_ip6(
             ip6__src=ip6__src,

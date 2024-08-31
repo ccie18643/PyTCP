@@ -38,7 +38,6 @@ from __future__ import annotations
 from abc import ABC
 from typing import TYPE_CHECKING
 
-from pytcp.lib.errors import UnsupportedCaseError
 from pytcp.lib.logger import log
 from pytcp.lib.tracker import Tracker
 from pytcp.lib.tx_status import TxStatus
@@ -110,7 +109,10 @@ class Icmp4PacketHandlerTx(ABC):
             case Icmp4Type.ECHO_REQUEST, _:
                 self.packet_stats_tx.icmp4__echo_request__send += 1
             case _:
-                raise UnsupportedCaseError
+                raise ValueError(
+                    f"Unsupported ICMPv4 message type {icmp4__message.type}, "
+                    f"code {icmp4__message.code}."
+                )
 
         return self._phtx_ip4(
             ip4__src=ip4__src,

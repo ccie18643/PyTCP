@@ -151,6 +151,13 @@ class Ip4PacketHandlerRx(ABC):
                 self._phrx_udp(packet_rx)
             case Ip4Proto.TCP:
                 self._phrx_tcp(packet_rx)
+            case _:
+                self.packet_stats_rx.ip4__no_proto_support__drop += 1
+                __debug__ and log(
+                    "ip4",
+                    f"{packet_rx.tracker} - Unsupported protocol "
+                    f"{packet_rx.ip4.proto}, dropping.",
+                )
 
     def __defragment_ip4_packet(self, packet_rx: PacketRx) -> PacketRx | None:
         """

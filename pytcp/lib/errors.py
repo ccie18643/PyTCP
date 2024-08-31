@@ -42,13 +42,6 @@ class PyTcpError(Exception):
     """
 
 
-class UnsupportedCaseError(PyTcpError):
-    """
-    Exception raised when the not supposed to be reached
-    'match' case is being reached for whatever reason.
-    """
-
-
 class PacketValidationError(PyTcpError):
     """
     Exception raised when packet validation fails.

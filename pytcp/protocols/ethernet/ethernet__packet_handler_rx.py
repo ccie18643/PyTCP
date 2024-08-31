@@ -118,3 +118,10 @@ class EthernetPacketHandlerRx(ABC):
                 self._phrx_ip4(packet_rx)
             case EthernetType.IP6 if config.IP6__SUPPORT_ENABLED:
                 self._phrx_ip6(packet_rx)
+            case _:
+                self.packet_stats_rx.ethernet__no_proto_support__drop += 1
+                __debug__ and log(
+                    "ether",
+                    f"{packet_rx.tracker} - Unsupported protocol "
+                    f"{packet_rx.ethernet.type}, dropping.",
+                )

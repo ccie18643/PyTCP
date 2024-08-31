@@ -47,6 +47,7 @@ class PacketStatsRx:
 
     ethernet__pre_parse: int = 0
     ethernet__failed_parse__drop: int = 0
+    ethernet__no_proto_support__drop: int = 0
     ethernet__dst_unknown__drop: int = 0
     ethernet__dst_unicast: int = 0
     ethernet__dst_multicast: int = 0
@@ -61,6 +62,7 @@ class PacketStatsRx:
 
     arp__pre_parse: int = 0
     arp__failed_parse__drop: int = 0
+    arp__op_unknown__drop: int = 0
     arp__op_request: int = 0
     arp__op_request__ip_conflict: int = 0
     arp__op_request__tpa_stack__respond: int = 0
@@ -73,6 +75,7 @@ class PacketStatsRx:
 
     ip4__pre_parse: int = 0
     ip4__failed_parse__drop: int = 0
+    ip4__no_proto_support__drop: int = 0
     ip4__dst_unknown__drop: int = 0
     ip4__dst_unicast: int = 0
     ip4__dst_multicast: int = 0
@@ -82,6 +85,7 @@ class PacketStatsRx:
 
     ip6__pre_parse: int = 0
     ip6__failed_parse__drop: int = 0
+    ip6__no_proto_support__drop: int = 0
     ip6__dst_unknown__drop: int = 0
     ip6__dst_unicast: int = 0
     ip6__dst_multicast: int = 0

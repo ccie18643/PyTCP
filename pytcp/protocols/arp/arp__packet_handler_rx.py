@@ -108,6 +108,13 @@ class ArpPacketHandlerRx(ABC):
                 self.__phrx_arp__request(packet_rx)
             case ArpOperation.REPLY:
                 self.__phrx_arp__reply(packet_rx)
+            case _:
+                self.packet_stats_rx.arp__op_unknown__drop += 1
+                __debug__ and log(
+                    "ether",
+                    f"{packet_rx.tracker} - Unsupported operation "
+                    f"{packet_rx.arp.oper}, dropping.",
+                )
 
     def __phrx_arp__request(self, packet_rx: PacketRx) -> None:
         """
