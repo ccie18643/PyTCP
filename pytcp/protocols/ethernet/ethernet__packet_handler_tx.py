@@ -152,7 +152,7 @@ class EthernetPacketHandlerTx(ABC):
                         )
                         return TxStatus.DROPED__ETHERNET__DST_NO_GATEWAY_IP6
                     if mac_address := stack.nd_cache.find_entry(
-                        ip6_host.gateway
+                        ip6_address=ip6_host.gateway
                     ):
                         ethernet_packet_tx.dst = mac_address
                         self.packet_stats_tx.ethernet__dst_unspec__ip6_lookup__extnet__gw_nd_cache_hit__send += (
@@ -173,7 +173,9 @@ class EthernetPacketHandlerTx(ABC):
 
             # Send out packet if we are able to obtain destination MAC
             # from ICMPv6 ND cache
-            if mac_address := stack.nd_cache.find_entry(ip6_dst):
+            if mac_address := stack.nd_cache.find_entry(
+                ip6_address=ip6_dst,
+            ):
                 self.packet_stats_tx.ethernet__dst_unspec__ip6_lookup__locnet__nd_cache_hit__send += (
                     1
                 )
@@ -273,7 +275,7 @@ class EthernetPacketHandlerTx(ABC):
                         )
                         return TxStatus.DROPED__ETHERNET__DST_NO_GATEWAY_IP4
                     if mac_address := stack.arp_cache.find_entry(
-                        ip4_host.gateway
+                        ip4_address=ip4_host.gateway,
                     ):
                         self.packet_stats_tx.ethernet__dst_unspec__ip4_lookup__extnet__gw_arp_cache_hit__send += (
                             1
@@ -294,7 +296,9 @@ class EthernetPacketHandlerTx(ABC):
 
             # Send out packet if we are able to obtain destination MAC from
             # ARP cache, drop otherwise
-            if mac_address := stack.arp_cache.find_entry(ip4_dst):
+            if mac_address := stack.arp_cache.find_entry(
+                ip4_address=ip4_dst,
+            ):
                 self.packet_stats_tx.ethernet__dst_unspec__ip4_lookup__locnet__arp_cache_hit__send += (
                     1
                 )

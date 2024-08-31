@@ -158,7 +158,10 @@ class ArpPacketHandlerRx(ABC):
                     "ARP cache entry from direct request "
                     f"- {packet_rx.arp.spa} -> {packet_rx.arp.sha}</>",
                 )
-                stack.arp_cache.add_entry(packet_rx.arp.spa, packet_rx.arp.sha)
+                stack.arp_cache.add_entry(
+                    ip4_address=packet_rx.arp.spa,
+                    mac_address=packet_rx.arp.sha,
+                )
             return
 
         else:
@@ -200,7 +203,10 @@ class ArpPacketHandlerRx(ABC):
                 f"from direct reply - {packet_rx.arp.spa} "
                 f"-> {packet_rx.arp.sha}",
             )
-            stack.arp_cache.add_entry(packet_rx.arp.spa, packet_rx.arp.sha)
+            stack.arp_cache.add_entry(
+                ip4_address=packet_rx.arp.spa,
+                mac_address=packet_rx.arp.sha,
+            )
             return
 
         # Update ARP cache with mapping received as gratuitous ARP reply.
@@ -216,5 +222,8 @@ class ArpPacketHandlerRx(ABC):
                 f"from gratuitous reply - {packet_rx.arp.spa} "
                 f"-> {packet_rx.arp.sha}",
             )
-            stack.arp_cache.add_entry(packet_rx.arp.spa, packet_rx.arp.sha)
+            stack.arp_cache.add_entry(
+                ip4_address=packet_rx.arp.spa,
+                mac_address=packet_rx.arp.sha,
+            )
             return

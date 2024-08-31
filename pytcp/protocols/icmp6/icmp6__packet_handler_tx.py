@@ -38,7 +38,7 @@ from __future__ import annotations
 from abc import ABC
 from typing import TYPE_CHECKING
 
-from pytcp.lib.ip6_address import Ip6Address
+from pytcp.lib.ip6_address import Ip6Address, Ip6Host
 from pytcp.lib.logger import log
 from pytcp.lib.mac_address import MacAddress
 from pytcp.lib.tracker import Tracker
@@ -83,6 +83,7 @@ class Icmp6PacketHandlerTx(ABC):
         packet_stats_tx: PacketStatsTx
         mac_unicast: MacAddress
         ip6_multicast: list[Ip6Address]
+        ip6_host: list[Ip6Host]
 
         # pylint: disable=unused-argument
 
@@ -253,6 +254,42 @@ class Icmp6PacketHandlerTx(ABC):
             __debug__ and log(
                 "stack",
                 f"Failed to send out ICMPv6 ND Router Solicitation, {tx_status}",
+            )
+
+    def send_icmp6_neighbor_solicitation(
+        self, *, icmp6_ns_target_address: Ip6Address
+    ) -> None:
+        """
+        Enqueue ICMPv6 Neighbor Solicitation packet with TX ring.
+        """
+
+        # Pick appropriate source address
+        ip6__src = Ip6Address(0)
+        for ip6_host in self.ip6_host:
+            if icmp6_ns_target_address in ip6_host.network:
+                ip6__src = ip6_host.address
+
+        # Send out ND Neighbor Solicitation message
+        tx_status = self._phtx_icmp6(
+            ip6__src=ip6__src,
+            ip6__dst=icmp6_ns_target_address.solicited_node_multicast,
+            ip6__hop=255,
+            icmp6__message=Icmp6NdNeighborSolicitationMessage(
+                target_address=icmp6_ns_target_address,
+                options=Icmp6NdOptions(
+                    Icmp6NdOptionSlla(slla=self.mac_unicast)
+                ),
+            ),
+        )
+
+        if tx_status == TxStatus.PASSED__ETHERNET__TO_TX_RING:
+            __debug__ and log(
+                "stack", "Sent out ICMPv6 ND Neighbor Solicitation"
+            )
+        else:
+            __debug__ and log(
+                "stack",
+                f"Failed to send out ICMPv6 ND Neighbor Solicitation, {tx_status}",
             )
 
     def send_icmp6_packet(

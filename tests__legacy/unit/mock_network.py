@@ -215,19 +215,19 @@ def setup_mock_packet_handler(self: TestCase) -> None:
         target=mock_ArpCache,
         method="find_entry",
     ).for_call(
-        self.mns.host_a_ip4_address
+        ip4_address=self.mns.host_a_ip4_address
     ).to_return_value(self.mns.host_a_mac_address)
     self.mock_callable(
         target=mock_ArpCache,
         method="find_entry",
     ).for_call(
-        self.mns.host_b_ip4_address
+        ip4_address=self.mns.host_b_ip4_address
     ).to_return_value(None)
     self.mock_callable(
         target=mock_ArpCache,
         method="find_entry",
     ).for_call(
-        self.mns.stack_ip4_gateway
+        ip4_address=self.mns.stack_ip4_gateway
     ).to_return_value(self.mns.stack_ip4_gateway_mac_address)
     self.patch_attribute(
         target="pytcp.lib.stack",
@@ -241,25 +241,25 @@ def setup_mock_packet_handler(self: TestCase) -> None:
         target=mock_NdCache,
         method="find_entry",
     ).for_call(
-        self.mns.host_a_ip6_address
+        ip6_address=self.mns.host_a_ip6_address
     ).to_return_value(self.mns.host_a_mac_address)
     self.mock_callable(
         target=mock_NdCache,
         method="find_entry",
     ).for_call(
-        self.mns.host_b_ip6_address
+        ip6_address=self.mns.host_b_ip6_address
     ).to_return_value(None)
     self.mock_callable(
         target=mock_NdCache,
         method="find_entry",
     ).for_call(
-        self.mns.stack_ip6_gateway
+        ip6_address=self.mns.stack_ip6_gateway
     ).to_return_value(self.mns.stack_ip6_gateway_mac_address)
     self.mock_callable(
         target=mock_NdCache,
         method="find_entry",
     ).for_call(
-        self.mns.router_b_ip6_address
+        ip6_address=self.mns.router_b_ip6_address
     ).to_return_value(None)
     self.patch_attribute(
         target="pytcp.lib.stack",

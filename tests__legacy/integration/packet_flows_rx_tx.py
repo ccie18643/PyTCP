@@ -111,7 +111,9 @@ class TestPacketHandlerRxTx(TestCase):
         self.mock_callable(
             target=self.mock_ArpCache,
             method="find_entry",
-        ).for_call(LOCNET_IP4_ADDRESS).to_return_value(LOCNET_MAC_ADDRESS)
+        ).for_call(ip4_address=LOCNET_IP4_ADDRESS).to_return_value(
+            LOCNET_MAC_ADDRESS
+        )
         self.patch_attribute(
             target="pytcp.lib.stack",
             attribute="arp_cache",
@@ -123,13 +125,14 @@ class TestPacketHandlerRxTx(TestCase):
             target=mock_NdCache,
             method="find_entry",
         ).for_call(
-            LOCNET_IP6_ADDRESS
+            ip6_address=LOCNET_IP6_ADDRESS
         ).to_return_value(LOCNET_MAC_ADDRESS)
         self.mock_callable(
             target=mock_NdCache,
             method="add_entry",
         ).for_call(
-            LOCNET_IP6_ADDRESS, LOCNET_MAC_ADDRESS
+            ip6_address=LOCNET_IP6_ADDRESS,
+            mac_address=LOCNET_MAC_ADDRESS,
         ).to_return_value(None)
         self.patch_attribute(
             target="pytcp.lib.stack",
@@ -817,7 +820,8 @@ class TestPacketHandlerRxTx(TestCase):
         ) as _:
             packet_tx = _.read()
         self.mock_callable(self.mock_ArpCache, "add_entry").for_call(
-            Ip4Address("192.168.9.102"), MacAddress("52:54:00:df:85:37")
+            ip4_address=Ip4Address("192.168.9.102"),
+            mac_address=MacAddress("52:54:00:df:85:37"),
         ).to_return_value(None).and_assert_called_once()
         self.packet_handler._phrx_ethernet(packet_rx=PacketRx(packet_rx))
         self.assertEqual(

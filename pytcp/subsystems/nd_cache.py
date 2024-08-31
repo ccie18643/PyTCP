@@ -23,9 +23,6 @@
 ##                                                                            ##
 ################################################################################
 
-# pylint: disable=too-few-public-methods
-# pylint: disable=expression-not-assigned
-
 
 """
 Module contains class supporting ICMPv6 Neighbor Discovery cache operations.
@@ -46,13 +43,6 @@ from pytcp.lib import stack
 from pytcp.lib.ip6_address import Ip6Address
 from pytcp.lib.logger import log
 from pytcp.lib.mac_address import MacAddress
-from pytcp.protocols.icmp6.message.nd.icmp6_nd_message__neighbor_solicitation import (
-    Icmp6NdNeighborSolicitationMessage,
-)
-from pytcp.protocols.icmp6.message.nd.option.icmp6_nd_options import (
-    Icmp6NdOptions,
-    Icmp6NdOptionSlla,
-)
 
 
 class NdCache:
@@ -71,6 +61,7 @@ class NdCache:
             """
             Class constructor.
             """
+
             self.mac_address: MacAddress = mac_address
             self.permanent: bool = permanent
             self.creation_time: float = time.time()
@@ -88,7 +79,9 @@ class NdCache:
         """
         Start ND cache thread.
         """
+
         __debug__ and log("stack", "Starting IPv6 ND cache")
+
         self._run_thread = True
         threading.Thread(target=self.__thread_maintain_cache).start()
         time.sleep(0.1)
@@ -97,7 +90,9 @@ class NdCache:
         """
         Stop ND cache thread.
         """
+
         __debug__ and log("stack", "Stopping IPv6 ND cache")
+
         self._run_thread = False
         time.sleep(0.1)
 
@@ -135,7 +130,9 @@ class NdCache:
                     - config.ICMP6__ND__CACHE__ENTRY_REFRESH_TIME
                 ) and self._nd_cache[ip6_address].hit_count:
                     self._nd_cache[ip6_address].hit_count = 0
-                    self._send_icmp6_neighbor_solicitation(ip6_address)
+                    stack.packet_handler.send_icmp6_neighbor_solicitation(
+                        icmp6_ns_target_address=ip6_address
+                    )
                     __debug__ and log(
                         "nd-c",
                         f"Trying to refresh expiring ICMPv6 ND cache entry for "
@@ -149,19 +146,24 @@ class NdCache:
         __debug__ and log("stack", "Stopped IPv6 ND cache")
 
     def add_entry(
-        self, ip6_address: Ip6Address, mac_address: MacAddress
+        self,
+        *,
+        ip6_address: Ip6Address,
+        mac_address: MacAddress,
     ) -> None:
         """
         Add / refresh entry in cache.
         """
+
         __debug__ and log(
             "nd-c",
             f"<INFO>Adding/refreshing ARP cache entry from direct reply - "
             f"{ip6_address} -> {mac_address}</>",
         )
+
         self._nd_cache[ip6_address] = self.CacheEntry(mac_address)
 
-    def find_entry(self, ip6_address: Ip6Address) -> MacAddress | None:
+    def find_entry(self, *, ip6_address: Ip6Address) -> MacAddress | None:
         """
         Find entry in cache and return MAC address.
         """
@@ -181,31 +183,8 @@ class NdCache:
             f"Unable to find entry for {ip6_address}, sending ICMPv6 "
             "Neighbor Solicitation message",
         )
-        self._send_icmp6_neighbor_solicitation(ip6_address)
-        return None
-
-    def _send_icmp6_neighbor_solicitation(
-        self, icmp6_ns_target_address: Ip6Address
-    ) -> None:
-        """
-        Enqueue ICMPv6 Neighbor Solicitation packet with TX ring.
-        """
-
-        # Pick appropriate source address
-        ip6__src = Ip6Address(0)
-        for ip6_host in stack.packet_handler.ip6_host:
-            if icmp6_ns_target_address in ip6_host.network:
-                ip6__src = ip6_host.address
-
-        # Send out ND Solicitation message
-        stack.packet_handler._phtx_icmp6(
-            ip6__src=ip6__src,
-            ip6__dst=icmp6_ns_target_address.solicited_node_multicast,
-            ip6__hop=255,
-            icmp6__message=Icmp6NdNeighborSolicitationMessage(
-                target_address=icmp6_ns_target_address,
-                options=Icmp6NdOptions(
-                    Icmp6NdOptionSlla(slla=stack.packet_handler.mac_unicast)
-                ),
-            ),
+        stack.packet_handler.send_icmp6_neighbor_solicitation(
+            icmp6_ns_target_address=ip6_address
         )
+
+        return None
