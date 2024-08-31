@@ -33,114 +33,107 @@ ver 3.0.0
 """
 
 
-from typing import Any, cast
+from typing import Any
 
 from parameterized import parameterized_class  # type: ignore
-from testslide import StrictMock, TestCase
 
 from pytcp.lib.packet import PacketRx
-from pytcp.protocols.ip4.ip4__parser import Ip4Parser
 from pytcp.protocols.udp.udp__header import UdpHeader
 from pytcp.protocols.udp.udp__parser import UdpParser
+from tests.lib.testcase__packet_rx__ip4 import TestCasePacketRxIp4
+from tests.lib.testcase__packet_rx__ip6 import TestCasePacketRxIp6
+
+testcases = [
+    {
+        "_description": "UDP packet with the empty payload.",
+        "_args": {
+            "bytes": b"\xff\xff\xff\xff\x00\x08\xff\xf7",
+        },
+        "_mocked_values": {},
+        "_results": {
+            "header": UdpHeader(
+                sport=65535,
+                dport=65535,
+                plen=8,
+                cksum=65527,
+            ),
+            "payload": b"",
+        },
+    },
+    {
+        "_description": "UDP packet with the non-empty payload.",
+        "_args": {
+            "bytes": (
+                b"\x30\x39\xd4\x31\x00\x18\x2c\xa6\x30\x31\x32\x33\x34\x35\x36\x37"
+                b"\x38\x39\x41\x42\x43\x44\x45\x46"
+            ),
+        },
+        "_mocked_values": {},
+        "_results": {
+            "header": UdpHeader(
+                sport=12345,
+                dport=54321,
+                plen=24,
+                cksum=11430,
+            ),
+            "payload": b"0123456789ABCDEF",
+        },
+    },
+    {
+        "_description": "UDP packet with the maximum length payload.",
+        "_args": {
+            "bytes": b"\x2b\x67\x56\xce\xff\xff\xb3\x57" + b"X" * 65527,
+        },
+        "_mocked_values": {},
+        "_results": {
+            "header": UdpHeader(
+                sport=11111,
+                dport=22222,
+                plen=65535,
+                cksum=45911,
+            ),
+            "payload": b"X" * 65527,
+        },
+    },
+    {
+        "_description": "UDP packet with the 'cksum' field set to '0' (valid state).",
+        "_args": {
+            "bytes": b"\x30\x39\xd4\x31\x00\x08\x00\x00",
+        },
+        "_mocked_values": {},
+        "_results": {
+            "header": UdpHeader(
+                sport=12345,
+                dport=54321,
+                plen=8,
+                cksum=0,
+            ),
+            "payload": b"",
+        },
+    },
+]
 
 
-@parameterized_class(
-    [
-        {
-            "_description": "UDP packet with the empty payload.",
-            "_args": {
-                "bytes": b"\xff\xff\xff\xff\x00\x08\xff\xf7",
-            },
-            "_results": {
-                "header": UdpHeader(
-                    sport=65535,
-                    dport=65535,
-                    plen=8,
-                    cksum=65527,
-                ),
-                "payload": b"",
-            },
-        },
-        {
-            "_description": "UDP packet with the non-empty payload.",
-            "_args": {
-                "bytes": (
-                    b"\x30\x39\xd4\x31\x00\x18\x2c\xa6\x30\x31\x32\x33\x34\x35\x36\x37"
-                    b"\x38\x39\x41\x42\x43\x44\x45\x46"
-                ),
-            },
-            "_results": {
-                "header": UdpHeader(
-                    sport=12345,
-                    dport=54321,
-                    plen=24,
-                    cksum=11430,
-                ),
-                "payload": b"0123456789ABCDEF",
-            },
-        },
-        {
-            "_description": "UDP packet with the maximum length payload.",
-            "_args": {
-                "bytes": b"\x2b\x67\x56\xce\xff\xff\xb3\x57" + b"X" * 65527,
-            },
-            "_results": {
-                "header": UdpHeader(
-                    sport=11111,
-                    dport=22222,
-                    plen=65535,
-                    cksum=45911,
-                ),
-                "payload": b"X" * 65527,
-            },
-        },
-        {
-            "_description": "UDP packet with the 'cksum' field set to '0' (valid state).",
-            "_args": {
-                "bytes": b"\x30\x39\xd4\x31\x00\x08\x00\x00",
-            },
-            "_results": {
-                "header": UdpHeader(
-                    sport=12345,
-                    dport=54321,
-                    plen=8,
-                    cksum=0,
-                ),
-                "payload": b"",
-            },
-        },
-    ]
-)
-class TestUdpParserOperation(TestCase):
+@parameterized_class(testcases)
+class TestUdpParserOperation__Ip4(TestCasePacketRxIp4):
     """
     The UDP packet parser operation tests.
     """
 
     _description: str
     _args: dict[str, Any]
+    _mocked_values: dict[str, Any]
     _results: dict[str, Any]
+
+    _packet_rx: PacketRx
 
     def test__udp__parser__from_bytes(self) -> None:
         """
-        Ensure the UDP packet parser creates the proper header and payload objects
-        and also updates the appropriate 'tx_packet' object fields.
+        Ensure the UDP packet parser creates the proper header and payload
+        objects and also updates the appropriate 'tx_packet' object fields.
         """
 
-        packet_rx = PacketRx(self._args["bytes"])
-
-        packet_rx.ip = cast(Ip4Parser, StrictMock(template=Ip4Parser))
-        self.patch_attribute(
-            target=packet_rx.ip,
-            attribute="payload_len",
-            new_value=len(self._args["bytes"]),
-        )
-        self.patch_attribute(
-            target=packet_rx.ip,
-            attribute="pshdr_sum",
-            new_value=0,
-        )
-
-        udp_parser = UdpParser(packet_rx=packet_rx)
+        udp_parser = UdpParser(packet_rx=self._packet_rx)
 
         self.assertEqual(
             udp_parser.header,
@@ -153,11 +146,53 @@ class TestUdpParserOperation(TestCase):
         )
 
         self.assertIs(
-            packet_rx.udp,
+            self._packet_rx.udp,
             udp_parser,
         )
 
         self.assertEqual(
-            bytes(packet_rx.frame),
+            bytes(self._packet_rx.frame),
+            self._results["payload"],
+        )
+
+
+@parameterized_class(testcases)
+class TestUdpParserOperation__Ip6(TestCasePacketRxIp6):
+    """
+    The UDP packet parser operation tests.
+    """
+
+    _description: str
+    _args: dict[str, Any]
+    _mocked_values: dict[str, Any]
+    _results: dict[str, Any]
+
+    _packet_rx: PacketRx
+
+    def test__udp__parser__from_bytes(self) -> None:
+        """
+        Ensure the UDP packet parser creates the proper header and payload
+        objects and also updates the appropriate 'tx_packet' object fields.
+        """
+
+        udp_parser = UdpParser(packet_rx=self._packet_rx)
+
+        self.assertEqual(
+            udp_parser.header,
+            self._results["header"],
+        )
+
+        self.assertEqual(
+            udp_parser.payload,
+            self._results["payload"],
+        )
+
+        self.assertIs(
+            self._packet_rx.udp,
+            udp_parser,
+        )
+
+        self.assertEqual(
+            bytes(self._packet_rx.frame),
             self._results["payload"],
         )

@@ -76,7 +76,7 @@ class UdpParser(Udp, ProtoParser):
         Validate integrity of the UDP packet before parsing it.
         """
 
-        if not UDP__HEADER__LEN <= self._ip__payload_len <= len(self._frame):
+        if not (UDP__HEADER__LEN <= self._ip__payload_len <= len(self._frame)):
             raise UdpIntegrityError(
                 "The condition 'UDP__HEADER__LEN <= self._ip__payload_len <= "
                 f"len(self._frame)' must be met. Got: {UDP__HEADER__LEN=}, "

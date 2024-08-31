@@ -29,112 +29,115 @@ Module contains tests for the UDP packet integrity checks.
 
 tests/unit/protocols/udp/test__udp__parser__integrity_checks.py
 
-ver 3.0.1
+ver 3.0.2
 """
 
 
-from typing import Any, cast
+from typing import Any
 
 from parameterized import parameterized_class  # type: ignore
-from testslide import StrictMock, TestCase
 
 from pytcp.lib.packet import PacketRx
-from pytcp.protocols.ip4.ip4__parser import Ip4Parser
 from pytcp.protocols.udp.udp__errors import UdpIntegrityError
 from pytcp.protocols.udp.udp__header import UDP__HEADER__LEN
 from pytcp.protocols.udp.udp__parser import UdpParser
+from tests.lib.testcase__packet_rx__ip4 import TestCasePacketRxIp4
+from tests.lib.testcase__packet_rx__ip6 import TestCasePacketRxIp6
+
+testcases = [
+    {
+        "_description": (
+            "The value of the 'ip__payload_len' variable is lower than the "
+            "value of the 'UDP_HEADER_LEN' constant."
+        ),
+        "_args": {
+            "bytes": b"\x30\x39\xd4\x31\x00\x08\xfb\x8c",
+        },
+        "_mocked_values": {
+            "ip4__payload_len": UDP__HEADER__LEN - 1,
+            "ip6__dlen": UDP__HEADER__LEN - 1,
+        },
+        "_results": {
+            "error_message": (
+                "The condition 'UDP__HEADER__LEN <= self._ip__payload_len <= "
+                "len(self._frame)' must be met. Got: UDP__HEADER__LEN=8, "
+                "self._ip__payload_len=7, len(self._frame)=8"
+            ),
+        },
+    },
+    {
+        "_description": (
+            "The value of the 'ip__payload_len' variable is higher than the frame length."
+        ),
+        "_args": {
+            "bytes": b"\x30\x39\xd4\x31\x00\x08\xfb\x8c",
+        },
+        "_mocked_values": {
+            "ip4__payload_len": UDP__HEADER__LEN + 1,
+            "ip6__dlen": UDP__HEADER__LEN + 1,
+        },
+        "_results": {
+            "error_message": (
+                "The condition 'UDP__HEADER__LEN <= self._ip__payload_len <= "
+                "len(self._frame)' must be met. Got: UDP__HEADER__LEN=8, "
+                "self._ip__payload_len=9, len(self._frame)=8"
+            ),
+        },
+    },
+    {
+        "_description": (
+            "The value of the header 'plen' field is lower than the header length."
+        ),
+        "_args": {
+            "bytes": b"\x30\x39\xd4\x31\x00\x07\xfb\x8c",
+        },
+        "_mocked_values": {},
+        "_results": {
+            "error_message": (
+                "The condition 'UDP__HEADER__LEN <= plen == self._ip__payload_len "
+                "<= len(self._frame)' must be met. Got: UDP__HEADER__LEN=8, plen=7, "
+                "self._ip__payload_len=8, len(self._frame)=8"
+            ),
+        },
+    },
+    {
+        "_description": (
+            "The value of the  header 'plen' field is different than the 'ip__payload_len' "
+            "variable."
+        ),
+        "_args": {
+            "bytes": b"\x30\x39\xd4\x31\x00\x08\xfb\x8c\00\00",
+        },
+        "_mocked_values": {
+            "ip4__payload_len": UDP__HEADER__LEN + 1,
+            "ip6__dlen": UDP__HEADER__LEN + 1,
+        },
+        "_results": {
+            "error_message": (
+                "The condition 'UDP__HEADER__LEN <= plen == self._ip__payload_len "
+                "<= len(self._frame)' must be met. Got: UDP__HEADER__LEN=8, plen=8, "
+                "self._ip__payload_len=9, len(self._frame)=10"
+            ),
+        },
+    },
+    {
+        "_description": "Packet has incorrect checksum.",
+        "_args": {
+            "bytes": (
+                b"\x30\x39\xd4\x31\x00\x18\xab\xcd\x30\x31\x32\x33\x34\x35\x36\x37"
+                b"\x38\x39\x41\x42\x43\x44\x45\x46"
+            ),
+        },
+        "_mocked_values": {},
+        "_results": {
+            "error_message": "The packet checksum must be valid.",
+        },
+    },
+]
 
 
-@parameterized_class(
-    [
-        {
-            "_description": (
-                "The value of the 'ip__payload_len' variable is lower than the "
-                "value of the 'UDP_HEADER_LEN' constant."
-            ),
-            "_args": {
-                "bytes": b"\x30\x39\xd4\x31\x00\x08\xfb\x8c",
-            },
-            "_mocked_values": {
-                "ip__payload_len": UDP__HEADER__LEN - 1,
-            },
-            "_results": {
-                "error_message": (
-                    "The condition 'UDP__HEADER__LEN <= self._ip__payload_len <= "
-                    "len(self._frame)' must be met. Got: UDP__HEADER__LEN=8, "
-                    "self._ip__payload_len=7, len(self._frame)=8"
-                ),
-            },
-        },
-        {
-            "_description": (
-                "The value of the 'ip__payload_len' variable is higher than the frame length."
-            ),
-            "_args": {
-                "bytes": b"\x30\x39\xd4\x31\x00\x08\xfb\x8c",
-            },
-            "_mocked_values": {
-                "ip__payload_len": UDP__HEADER__LEN + 1,
-            },
-            "_results": {
-                "error_message": (
-                    "The condition 'UDP__HEADER__LEN <= self._ip__payload_len <= "
-                    "len(self._frame)' must be met. Got: UDP__HEADER__LEN=8, "
-                    "self._ip__payload_len=9, len(self._frame)=8"
-                ),
-            },
-        },
-        {
-            "_description": (
-                "The value of the header 'plen' field is lower than the header length."
-            ),
-            "_args": {
-                "bytes": b"\x30\x39\xd4\x31\x00\x07\xfb\x8c",
-            },
-            "_mocked_values": {},
-            "_results": {
-                "error_message": (
-                    "The condition 'UDP__HEADER__LEN <= plen == self._ip__payload_len "
-                    "<= len(self._frame)' must be met. Got: UDP__HEADER__LEN=8, plen=7, "
-                    "self._ip__payload_len=8, len(self._frame)=8"
-                ),
-            },
-        },
-        {
-            "_description": (
-                "The value of the  header 'plen' field is different than the 'ip__payload_len' "
-                "variable."
-            ),
-            "_args": {
-                "bytes": b"\x30\x39\xd4\x31\x00\x08\xfb\x8c\00\00",
-            },
-            "_mocked_values": {
-                "ip__payload_len": UDP__HEADER__LEN + 1,
-            },
-            "_results": {
-                "error_message": (
-                    "The condition 'UDP__HEADER__LEN <= plen == self._ip__payload_len "
-                    "<= len(self._frame)' must be met. Got: UDP__HEADER__LEN=8, plen=8, "
-                    "self._ip__payload_len=9, len(self._frame)=10"
-                ),
-            },
-        },
-        {
-            "_description": "Packet has incorrect checksum.",
-            "_args": {
-                "bytes": (
-                    b"\x30\x39\xd4\x31\x00\x18\xab\xcd\x30\x31\x32\x33\x34\x35\x36\x37"
-                    b"\x38\x39\x41\x42\x43\x44\x45\x46"
-                ),
-            },
-            "_mocked_values": {},
-            "_results": {
-                "error_message": "The packet checksum must be valid.",
-            },
-        },
-    ]
-)
-class TestUdpParserIntegrityChecks(TestCase):
+@parameterized_class(testcases)
+class TestUdpParserIntegrityChecks__Ip4(TestCasePacketRxIp4):
     """
     The UDP packet parser integrity checks tests.
     """
@@ -144,29 +147,42 @@ class TestUdpParserIntegrityChecks(TestCase):
     _mocked_values: dict[str, Any]
     _results: dict[str, Any]
 
+    _packet_rx: PacketRx
+
     def test__udp__parser__from_bytes(self) -> None:
         """
         Ensure the UDP packet parser raises integrity error on malformed packets.
         """
 
-        packet_rx = PacketRx(self._args["bytes"])
+        with self.assertRaises(UdpIntegrityError) as error:
+            UdpParser(packet_rx=self._packet_rx)
 
-        packet_rx.ip = cast(Ip4Parser, StrictMock(template=Ip4Parser))
-        self.patch_attribute(
-            target=packet_rx.ip,
-            attribute="payload_len",
-            new_value=self._mocked_values.get(
-                "ip__payload_len", len(self._args["bytes"])
-            ),
+        self.assertEqual(
+            str(error.exception),
+            f"[INTEGRITY ERROR][UDP] {self._results["error_message"]}",
         )
-        self.patch_attribute(
-            target=packet_rx.ip,
-            attribute="pshdr_sum",
-            new_value=0,
-        )
+
+
+@parameterized_class(testcases)
+class TestUdpParserIntegrityChecks__Ip6(TestCasePacketRxIp6):
+    """
+    The UDP packet parser integrity checks tests.
+    """
+
+    _description: str
+    _args: dict[str, Any]
+    _mocked_values: dict[str, Any]
+    _results: dict[str, Any]
+
+    _packet_rx: PacketRx
+
+    def test__udp__parser__from_bytes(self) -> None:
+        """
+        Ensure the UDP packet parser raises integrity error on malformed packets.
+        """
 
         with self.assertRaises(UdpIntegrityError) as error:
-            UdpParser(packet_rx=packet_rx)
+            UdpParser(packet_rx=self._packet_rx)
 
         self.assertEqual(
             str(error.exception),

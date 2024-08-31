@@ -33,73 +33,91 @@ ver 3.0.1
 """
 
 
-from typing import Any, cast
+from typing import Any
 
 from parameterized import parameterized_class  # type: ignore
-from testslide import StrictMock, TestCase
 
 from pytcp.lib.packet import PacketRx
-from pytcp.protocols.ip4.ip4__parser import Ip4Parser
 from pytcp.protocols.udp.udp__errors import UdpSanityError
 from pytcp.protocols.udp.udp__parser import UdpParser
+from tests.lib.testcase__packet_rx__ip4 import TestCasePacketRxIp4
+from tests.lib.testcase__packet_rx__ip6 import TestCasePacketRxIp6
+
+testcases = [
+    {
+        "_description": "The value of the 'sport' field equals 0.",
+        "_args": {
+            "bytes": b"\x00\x00\xd4\x31\x00\x08\x2b\xc6",
+        },
+        "_mocked_values": {},
+        "_results": {
+            "error_message": (
+                "The 'sport' field must be greater than 0. Got: 0"
+            ),
+        },
+    },
+    {
+        "_description": "The value of the 'dport' field equals 0.",
+        "_args": {
+            "bytes": b"\x30\x39\x00\x00\x00\x08\xcf\xbe",
+        },
+        "_mocked_values": {},
+        "_results": {
+            "error_message": (
+                "The 'dport' field must be greater than 0. Got: 0"
+            ),
+        },
+    },
+]
 
 
-@parameterized_class(
-    [
-        {
-            "_description": "The value of the 'sport' field equals '0'.",
-            "_args": {
-                "bytes": b"\x00\x00\xd4\x31\x00\x08\x2b\xc6",
-            },
-            "_results": {
-                "error_message": (
-                    "The 'sport' field must be greater than 0. Got: 0"
-                ),
-            },
-        },
-        {
-            "_description": "The value of the 'dport' field equals '0'.",
-            "_args": {
-                "bytes": b"\x30\x39\x00\x00\x00\x08\xcf\xbe",
-            },
-            "_results": {
-                "error_message": (
-                    "The 'dport' field must be greater than 0. Got: 0"
-                ),
-            },
-        },
-    ]
-)
-class TestUdpParserSanityChecks(TestCase):
+@parameterized_class(testcases)
+class TestUdpParserSanityChecks__Ip4(TestCasePacketRxIp4):
     """
     The UDP packet parser sanity checks tests.
     """
 
     _description: str
     _args: dict[str, Any]
+    _mocked_values: dict[str, Any]
     _results: dict[str, Any]
+
+    _packet_rx: PacketRx
 
     def test__udp__parser__from_bytes(self) -> None:
         """
         Ensure the UDP packet parser raises sanity errors on crazy packets.
         """
 
-        packet_rx = PacketRx(self._args["bytes"])
+        with self.assertRaises(UdpSanityError) as error:
+            UdpParser(packet_rx=self._packet_rx)
 
-        packet_rx.ip = cast(Ip4Parser, StrictMock(template=Ip4Parser))
-        self.patch_attribute(
-            target=packet_rx.ip,
-            attribute="payload_len",
-            new_value=len(self._args["bytes"]),
+        self.assertEqual(
+            str(error.exception),
+            f"[SANITY ERROR][UDP] {self._results["error_message"]}",
         )
-        self.patch_attribute(
-            target=packet_rx.ip,
-            attribute="pshdr_sum",
-            new_value=0,
-        )
+
+
+@parameterized_class(testcases)
+class TestUdpParserSanityChecks__Ip6(TestCasePacketRxIp6):
+    """
+    The UDP packet parser sanity checks tests.
+    """
+
+    _description: str
+    _args: dict[str, Any]
+    _mocked_values: dict[str, Any]
+    _results: dict[str, Any]
+
+    _packet_rx: PacketRx
+
+    def test__udp__parser__from_bytes(self) -> None:
+        """
+        Ensure the UDP packet parser raises sanity errors on crazy packets.
+        """
 
         with self.assertRaises(UdpSanityError) as error:
-            UdpParser(packet_rx=packet_rx)
+            UdpParser(packet_rx=self._packet_rx)
 
         self.assertEqual(
             str(error.exception),
