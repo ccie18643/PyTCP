@@ -152,7 +152,7 @@ class UdpPacketHandlerRx(ABC):
                 socket.process_udp_packet(packet_rx_md)
                 return
 
-        # Silently drop packet if it's source address is unspecified
+        # Silently drop packet if it's source address is unspecified.
         if packet_rx.ip.src.is_unspecified:
             self.packet_stats_rx.udp__ip_source_unspecified += 1
             __debug__ and log(

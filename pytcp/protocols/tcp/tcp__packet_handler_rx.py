@@ -169,6 +169,17 @@ class TcpPacketHandlerRx(ABC):
                     tcp_socket.process_tcp_packet(packet_rx_md)
                     return
 
+        # In case packet doesn't match any active or listening socket
+        # and it carries RST flag then drop it silently.
+        if packet_rx_md.flag_rst:
+            self.packet_stats_rx.tcp__no_socket_match__rst__drop += 1
+            __debug__ and log(
+                "tcp",
+                f"{packet_rx.tracker} - TCP RST packet from {packet_rx.ip.src} to "
+                f"closed port {packet_rx.tcp.dport}, droping.",
+            )
+            return
+
         # In case packet doesn't match any session send RST packet
         # in response to it.
         self.packet_stats_rx.tcp__no_socket_match__respond_rst += 1
@@ -176,7 +187,7 @@ class TcpPacketHandlerRx(ABC):
             "tcp",
             f"{packet_rx.tracker} - TCP packet from {packet_rx.ip.src} to "
             f"closed port {packet_rx.tcp.dport}, responding with TCP RST "
-            "packet",
+            "packet.",
         )
         self._phtx_tcp(
             ip__src=packet_rx.ip.dst,

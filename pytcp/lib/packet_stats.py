@@ -131,6 +131,7 @@ class PacketStatsRx:
     tcp__failed_parse__drop: int = 0
     tcp__socket_match_active__forward_to_socket: int = 0
     tcp__socket_match_listening__forward_to_socket: int = 0
+    tcp__no_socket_match__rst__drop: int = 0
     tcp__no_socket_match__respond_rst: int = 0
 
     def __eq__(
