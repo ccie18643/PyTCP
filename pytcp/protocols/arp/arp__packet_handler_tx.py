@@ -70,6 +70,11 @@ class ArpPacketHandlerTx(ABC):
             ethernet__payload: EthernetPayload | None = None,
         ) -> TxStatus: ...
 
+        # pylint: disable=missing-function-docstring
+
+        @property
+        def ip4_unicast(self) -> list[Ip4Address]: ...
+
     def _phtx_arp(
         self,
         *,
@@ -197,5 +202,34 @@ class ArpPacketHandlerTx(ABC):
             __debug__ and log(
                 "stack",
                 f"Failed to send out ARP probe for {ip4_unicast}, "
+                f"tx_status: {tx_status}",
+            )
+
+    def send_arp_request(self, *, arp__tpa: Ip4Address) -> None:
+        """
+        Enqueue ARP request packet with TX ring.
+        """
+
+        tx_status = self._phtx_arp(
+            ethernet__src=self.mac_unicast,
+            ethernet__dst=MacAddress(0xFFFFFFFFFFFF),
+            arp__oper=ArpOperation.REQUEST,
+            arp__sha=self.mac_unicast,
+            arp__spa=(
+                self.ip4_unicast[0] if self.ip4_unicast else Ip4Address(0)
+            ),
+            arp__tha=MacAddress(0),
+            arp__tpa=arp__tpa,
+        )
+
+        if tx_status == TxStatus.PASSED__ETHERNET__TO_TX_RING:
+            __debug__ and log(
+                "stack",
+                f"Sent out ARP Request for {arp__tpa}",
+            )
+        else:
+            __debug__ and log(
+                "stack",
+                f"Failed to send out ARP Request for {arp__tpa}, "
                 f"tx_status: {tx_status}",
             )

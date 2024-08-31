@@ -23,9 +23,6 @@
 ##                                                                            ##
 ################################################################################
 
-# pylint: disable=too-few-public-methods
-# pylint: disable=expression-not-assigned
-# pylint: disable=protected-access
 
 """
 Module contains class supporting ARP cache operations.
@@ -46,7 +43,6 @@ from pytcp.lib import stack
 from pytcp.lib.ip4_address import Ip4Address
 from pytcp.lib.logger import log
 from pytcp.lib.mac_address import MacAddress
-from pytcp.protocols.arp.arp__enums import ArpOperation
 
 
 class ArpCache:
@@ -65,6 +61,7 @@ class ArpCache:
             """
             Class constructor.
             """
+
             self.mac_address: MacAddress = mac_address
             self.permanent: bool = permanent
             self.creation_time: float = time.time()
@@ -74,6 +71,7 @@ class ArpCache:
         """
         Class constructor.
         """
+
         self._arp_cache: dict[Ip4Address, ArpCache.CacheEntry] = {}
         self._run_thread: bool = False
 
@@ -81,7 +79,9 @@ class ArpCache:
         """
         Start ARP cache thread.
         """
+
         __debug__ and log("stack", "Starting ARP cache")
+
         self._run_thread = True
         threading.Thread(target=self.__thread_maintain_cache).start()
         time.sleep(0.1)
@@ -90,7 +90,9 @@ class ArpCache:
         """
         Stop ARP cache thread.
         """
+
         __debug__ and log("stack", "Stopping ARP cache")
+
         self._run_thread = False
         time.sleep(0.1)
 
@@ -128,7 +130,7 @@ class ArpCache:
                     - config.ARP__CACHE__ENTRY_REFRESH_TIME
                 ) and self._arp_cache[ip4_address].hit_count:
                     self._arp_cache[ip4_address].hit_count = 0
-                    self._send_arp_request(arp__tpa=ip4_address)
+                    stack.packet_handler.send_arp_request(arp__tpa=ip4_address)
                     __debug__ and log(
                         "arp-c",
                         "Trying to refresh expiring ARP cache entry for "
@@ -147,6 +149,7 @@ class ArpCache:
         """
         Add / refresh entry in cache.
         """
+
         __debug__ and log(
             "arp-c",
             f"<INFO>Adding/refreshing ARP cache entry - {ip4_address} -> "
@@ -173,21 +176,5 @@ class ArpCache:
             "arp-c",
             f"Unable to find entry for {ip4_address}, sending ARP request",
         )
-        self._send_arp_request(arp__tpa=ip4_address)
+        stack.packet_handler.send_arp_request(arp__tpa=ip4_address)
         return None
-
-    def _send_arp_request(self, *, arp__tpa: Ip4Address) -> None:
-        """Enqueue ARP request packet with TX ring."""
-        stack.packet_handler._phtx_arp(
-            ethernet__src=stack.packet_handler.mac_unicast,
-            ethernet__dst=MacAddress(0xFFFFFFFFFFFF),
-            arp__oper=ArpOperation.REQUEST,
-            arp__sha=stack.packet_handler.mac_unicast,
-            arp__spa=(
-                stack.packet_handler.ip4_unicast[0]
-                if stack.packet_handler.ip4_unicast
-                else Ip4Address(0)
-            ),
-            arp__tha=MacAddress(0),
-            arp__tpa=arp__tpa,
-        )
