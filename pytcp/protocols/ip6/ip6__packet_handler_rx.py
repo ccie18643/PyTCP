@@ -85,6 +85,7 @@ class Ip6PacketHandlerRx(ABC):
 
         try:
             Ip6Parser(packet_rx)
+
         except PacketValidationError as error:
             self.packet_stats_rx.ip6__failed_parse__drop += 1
             __debug__ and log("ip6", f"{packet_rx.tracker} - <rb>{error}</>")
@@ -109,11 +110,9 @@ class Ip6PacketHandlerRx(ABC):
         if packet_rx.ip6.dst in self.ip6_multicast:
             self.packet_stats_rx.ip6__dst_multicast += 1
 
-        if packet_rx.ip6.next == Ip6Next.FRAG:
-            self._phrx_ip6_ext_frag(packet_rx)
-            return
-
         match packet_rx.ip6.next:
+            case Ip6Next.FRAG:
+                self._phrx_ip6_ext_frag(packet_rx)
             case Ip6Next.ICMP6:
                 self._phrx_icmp6(packet_rx)
             case Ip6Next.UDP:
