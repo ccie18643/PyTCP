@@ -94,6 +94,7 @@ class Icmp4PacketHandlerRx(ABC):
 
         try:
             Icmp4Parser(packet_rx)
+
         except PacketValidationError as error:
             __debug__ and log(
                 "icmp4",

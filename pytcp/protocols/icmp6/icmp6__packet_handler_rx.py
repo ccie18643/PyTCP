@@ -127,6 +127,7 @@ class Icmp6PacketHandlerRx(ABC):
 
         try:
             Icmp6Parser(packet_rx)
+
         except PacketValidationError as error:
             __debug__ and log(
                 "icmp6",

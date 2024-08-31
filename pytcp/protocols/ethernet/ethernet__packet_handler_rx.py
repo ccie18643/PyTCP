@@ -64,9 +64,7 @@ class EthernetPacketHandlerRx(ABC):
         mac_broadcast: MacAddress
 
         def _phrx_arp(self, packet_rx: PacketRx) -> None: ...
-
         def _phrx_ip6(self, packet_rx: PacketRx) -> None: ...
-
         def _phrx_ip4(self, packet_rx: PacketRx) -> None: ...
 
     def _phrx_ethernet(self, packet_rx: PacketRx) -> None:
@@ -78,6 +76,7 @@ class EthernetPacketHandlerRx(ABC):
 
         try:
             EthernetParser(packet_rx)
+
         except PacketValidationError as error:
             self.packet_stats_rx.ethernet__failed_parse__drop += 1
             __debug__ and log(

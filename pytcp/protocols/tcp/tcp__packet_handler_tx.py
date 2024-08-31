@@ -191,24 +191,24 @@ class TcpPacketHandlerTx(ABC):
 
         __debug__ and log("tcp", f"{tcp_packet_tx.tracker} - {tcp_packet_tx}")
 
-        if ip__src.is_ip6 and ip__dst.is_ip6:
-            self.packet_stats_tx.tcp__send += 1
-            return self._phtx_ip6(
-                ip6__src=cast(Ip6Address, ip__src),
-                ip6__dst=cast(Ip6Address, ip__dst),
-                ip6__payload=tcp_packet_tx,
-            )
-
-        if ip__src.is_ip4 and ip__dst.is_ip4:
-            self.packet_stats_tx.tcp__send += 1
-            return self._phtx_ip4(
-                ip4__src=cast(Ip4Address, ip__src),
-                ip4__dst=cast(Ip4Address, ip__dst),
-                ip4__payload=tcp_packet_tx,
-            )
-
-        self.packet_stats_tx.tcp__unknown__drop += 1
-        return TxStatus.DROPED__TCP__UNKNOWN
+        match ip__src.is_ip6 and ip__dst.is_ip6, ip__src.is_ip4 and ip__dst.is_ip4:
+            case True, False:
+                self.packet_stats_tx.tcp__send += 1
+                return self._phtx_ip6(
+                    ip6__src=cast(Ip6Address, ip__src),
+                    ip6__dst=cast(Ip6Address, ip__dst),
+                    ip6__payload=tcp_packet_tx,
+                )
+            case False, True:
+                self.packet_stats_tx.tcp__send += 1
+                return self._phtx_ip4(
+                    ip4__src=cast(Ip4Address, ip__src),
+                    ip4__dst=cast(Ip4Address, ip__dst),
+                    ip4__payload=tcp_packet_tx,
+                )
+            case _:
+                self.packet_stats_tx.tcp__unknown__drop += 1
+                return TxStatus.DROPED__TCP__UNKNOWN
 
     def send_tcp_packet(
         self,

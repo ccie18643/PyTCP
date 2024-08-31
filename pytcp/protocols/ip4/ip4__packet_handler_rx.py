@@ -66,9 +66,7 @@ class Ip4PacketHandlerRx(ABC):
         ip4_frag_flows: dict[tuple[Ip4Address, Ip4Address, int], dict]
 
         def _phrx_icmp4(self, packet_rx: PacketRx) -> None: ...
-
         def _phrx_udp(self, packet_rx: PacketRx) -> None: ...
-
         def _phrx_tcp(self, packet_rx: PacketRx) -> None: ...
 
     @property
@@ -98,6 +96,7 @@ class Ip4PacketHandlerRx(ABC):
 
         try:
             Ip4Parser(packet_rx)
+
         except PacketValidationError as error:
             self.packet_stats_rx.ip4__failed_parse__drop += 1
             __debug__ and log(

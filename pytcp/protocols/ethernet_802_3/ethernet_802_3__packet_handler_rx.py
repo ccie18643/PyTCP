@@ -62,9 +62,7 @@ class Ethernet8023PacketHandlerRx(ABC):
         mac_broadcast: MacAddress
 
         def _phrx_arp(self, packet_rx: PacketRx) -> None: ...
-
         def _phrx_ip6(self, packet_rx: PacketRx) -> None: ...
-
         def _phrx_ip4(self, packet_rx: PacketRx) -> None: ...
 
     def _phrx_ethernet_802_3(self, packet_rx: PacketRx) -> None:
@@ -75,9 +73,8 @@ class Ethernet8023PacketHandlerRx(ABC):
         self.packet_stats_rx.ethernet_802_3__pre_parse += 1
 
         try:
-            Ethernet8023Parser(
-                packet_rx=packet_rx,
-            )
+            Ethernet8023Parser(packet_rx)
+
         except PacketValidationError as error:
             self.packet_stats_rx.ethernet_802_3__failed_parse__drop += 1
             __debug__ and log(

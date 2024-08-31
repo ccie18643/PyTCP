@@ -114,6 +114,7 @@ class UdpPacketHandlerRx(ABC):
 
         try:
             UdpParser(packet_rx)
+
         except PacketValidationError as error:
             self.packet_stats_rx.udp__failed_parse__drop += 1
             __debug__ and log(
@@ -194,32 +195,30 @@ class UdpPacketHandlerRx(ABC):
             f"{packet_rx.udp.dport}, sending ICMPv4 Port Unreachable",
         )
 
-        if packet_rx.ip.ver == 6:
-            self.packet_stats_rx.udp__no_socket_match__respond_icmp6_unreachable += (
-                1
-            )
-            self._phtx_icmp6(
-                ip6__src=packet_rx.ip6.dst,
-                ip6__dst=packet_rx.ip6.src,
-                icmp6__message=Icmp6DestinationUnreachableMessage(
-                    code=Icmp6DestinationUnreachableCode.PORT,
-                    data=packet_rx.ip.packet_bytes,
-                ),
-                echo_tracker=packet_rx.tracker,
-            )
-
-        if packet_rx.ip.ver == 4:
-            self.packet_stats_rx.udp__no_socket_match__respond_icmp4_unreachable += (
-                1
-            )
-            self._phtx_icmp4(
-                ip4__src=packet_rx.ip4.dst,
-                ip4__dst=packet_rx.ip4.src,
-                icmp4__message=Icmp4DestinationUnreachableMessage(
-                    code=Icmp4DestinationUnreachableCode.PORT,
-                    data=packet_rx.ip.packet_bytes,
-                ),
-                echo_tracker=packet_rx.tracker,
-            )
-
-        return
+        match packet_rx.ip.ver:
+            case 6:
+                self.packet_stats_rx.udp__no_socket_match__respond_icmp6_unreachable += (
+                    1
+                )
+                self._phtx_icmp6(
+                    ip6__src=packet_rx.ip6.dst,
+                    ip6__dst=packet_rx.ip6.src,
+                    icmp6__message=Icmp6DestinationUnreachableMessage(
+                        code=Icmp6DestinationUnreachableCode.PORT,
+                        data=packet_rx.ip.packet_bytes,
+                    ),
+                    echo_tracker=packet_rx.tracker,
+                )
+            case 4:
+                self.packet_stats_rx.udp__no_socket_match__respond_icmp4_unreachable += (
+                    1
+                )
+                self._phtx_icmp4(
+                    ip4__src=packet_rx.ip4.dst,
+                    ip4__dst=packet_rx.ip4.src,
+                    icmp4__message=Icmp4DestinationUnreachableMessage(
+                        code=Icmp4DestinationUnreachableCode.PORT,
+                        data=packet_rx.ip.packet_bytes,
+                    ),
+                    echo_tracker=packet_rx.tracker,
+                )

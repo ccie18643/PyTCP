@@ -98,6 +98,7 @@ class TcpPacketHandlerRx(ABC):
 
         try:
             TcpParser(packet_rx)
+
         except PacketValidationError as error:
             self.packet_stats_rx.tcp__failed_parse__drop += 1
             __debug__ and log(
