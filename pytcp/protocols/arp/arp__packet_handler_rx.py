@@ -103,15 +103,11 @@ class ArpPacketHandlerRx(ABC):
 
         match packet_rx.arp.oper:
             case ArpOperation.REQUEST:
-                self.__phrx_arp__request(
-                    packet_rx=packet_rx,
-                )
+                self.__phrx_arp__request(packet_rx)
             case ArpOperation.REPLY:
-                self.__phrx_arp__reply(
-                    packet_rx=packet_rx,
-                )
+                self.__phrx_arp__reply(packet_rx)
 
-    def __phrx_arp__request(self, *, packet_rx: PacketRx) -> None:
+    def __phrx_arp__request(self, packet_rx: PacketRx) -> None:
         """
         Handle inbound ARP request packets.
         """
@@ -161,7 +157,7 @@ class ArpPacketHandlerRx(ABC):
             self.packet_stats_rx.arp__op_request__tpa_unknown__drop += 1
             return
 
-    def __phrx_arp__reply(self, *, packet_rx: PacketRx) -> None:
+    def __phrx_arp__reply(self, packet_rx: PacketRx) -> None:
         """
         Handle inbound ARP reply packets.
         """
