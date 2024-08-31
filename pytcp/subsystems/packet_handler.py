@@ -23,13 +23,6 @@
 ##                                                                            ##
 ################################################################################
 
-# pylint: disable=too-many-instance-attributes
-# pylint: disable=too-many-arguments
-# pylint: disable=too-many-locals
-# pylint: disable=too-many-ancestors
-# pylint: disable=redefined-builtin
-# pylint: disable=expression-not-assigned
-
 
 """
 Module contains packet handler class for inbound and outbound packets.

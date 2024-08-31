@@ -23,8 +23,6 @@
 ##                                                                            ##
 ################################################################################
 
-# pylint: disable=expression-not-assigned
-# pylint: disable=consider-using-with
 
 """
 Module contains class supporting stack interface RX operations.
@@ -59,6 +57,7 @@ class RxRing:
         """
         Initialize access to tap interface and the inbound queue.
         """
+
         self._rx_ring: list[PacketRx] = []
         self._packet_enqueued: Semaphore = threading.Semaphore(0)
         self._run_thread: bool = False
@@ -68,7 +67,9 @@ class RxRing:
         """
         Start Rx ring thread.
         """
+
         __debug__ and log("stack", "Starting RX ring")
+
         self._run_thread = True
         self._tap = tap
         threading.Thread(target=self.__thread_receive).start()
@@ -78,7 +79,9 @@ class RxRing:
         """
         Stop Rx ring thread.
         """
+
         __debug__ and log("stack", "Stopping RX ring")
+
         self._run_thread = False
         time.sleep(0.1)
 

@@ -23,8 +23,6 @@
 ##                                                                            ##
 ################################################################################
 
-# pylint: disable=expression-not-assigned
-# pylint: disable=consider-using-with
 
 """
 Module contains class supporting stack interface TX operations.
@@ -63,6 +61,7 @@ class TxRing:
         """
         Initialize access to tap interface and the outbound queue.
         """
+
         self._tx_ring: list[EthernetAssembler | Ethernet8023Assembler] = []
         self._packet_enqueued: Semaphore = threading.Semaphore(0)
         self._run_thread: bool = False
@@ -72,7 +71,9 @@ class TxRing:
         """
         Start Tx ring thread.
         """
+
         __debug__ and log("stack", "Starting TX ring")
+
         self._tap = tap
         self._run_thread = True
         threading.Thread(target=self.__thread_transmit).start()
@@ -82,7 +83,9 @@ class TxRing:
         """
         Stop Tx ring thread.
         """
+
         __debug__ and log("stack", "Stopping TX ring")
+
         self._run_thread = False
         time.sleep(0.1)
 
@@ -114,6 +117,7 @@ class TxRing:
 
             try:
                 os.write(self._tap, bytes(packet_tx))
+
             except OSError as error:
                 __debug__ and log(
                     "tx-ring",
@@ -139,8 +143,10 @@ class TxRing:
         """
 
         self._tx_ring.append(packet_tx)
+
         __debug__ and log(
             "rx-ring",
             f"{packet_tx.tracker}, queue len: {len(self._tx_ring)}",
         )
+
         self._packet_enqueued.release()

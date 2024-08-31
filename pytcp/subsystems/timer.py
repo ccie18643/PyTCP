@@ -23,9 +23,6 @@
 ##                                                                            ##
 ################################################################################
 
-# pylint: disable=expression-not-assigned
-# pylint: disable=too-many-instance-attributes
-# pylint: disable=too-many-arguments
 
 """
 Module contains class supporting timer that can be used by other stack components.
@@ -53,6 +50,7 @@ class TimerTask:
 
     def __init__(
         self,
+        *,
         method: Callable,
         args: list[Any],
         kwargs: dict[str, Any],
@@ -65,6 +63,7 @@ class TimerTask:
         Class constructor, repeat_count = -1 means infinite, delay_exp means
         to raise delay time exponentially after each method execution.
         """
+
         self._method: Callable = method
         self._args: list[Any] = args
         self._kwargs: dict[str, Any] = kwargs
@@ -80,6 +79,7 @@ class TimerTask:
         """
         Geter for the '_remaining_delay' attribute.
         """
+
         return self._remaining_delay
 
     def tick(self) -> None:
@@ -118,6 +118,7 @@ class Timer:
         """
         Class constructor.
         """
+
         self._tasks: list[TimerTask] = []
         self._timers: dict[str, int] = {}
         self._run_thread: bool = False
@@ -126,7 +127,9 @@ class Timer:
         """
         Start timer thread.
         """
+
         __debug__ and log("stack", "Starting timer thread")
+
         self._run_thread = True
         threading.Thread(target=self.__thread_timer).start()
         time.sleep(0.1)
@@ -135,7 +138,9 @@ class Timer:
         """
         Stop timer thread.
         """
+
         __debug__ and log("stack", "Stopping timer thread")
+
         self._run_thread = False
         time.sleep(0.1)
 
@@ -178,15 +183,16 @@ class Timer:
         """
         Register method to be executed by timer.
         """
+
         self._tasks.append(
             TimerTask(
-                method,
-                [] if args is None else args,
-                {} if kwargs is None else kwargs,
-                delay,
-                delay_exp,
-                repeat_count,
-                stop_condition,
+                method=method,
+                args=[] if args is None else args,
+                kwargs={} if kwargs is None else kwargs,
+                delay=delay,
+                delay_exp=delay_exp,
+                repeat_count=repeat_count,
+                stop_condition=stop_condition,
             )
         )
 
@@ -194,11 +200,14 @@ class Timer:
         """
         Register delay timer.
         """
+
         self._timers[name] = timeout
 
     def is_expired(self, name: str) -> bool:
         """
         Check if timer expired.
         """
+
         __debug__ and log("timer", f"<r>Active timers: {self._timers}</>")
+
         return not self._timers.get(name, None)
