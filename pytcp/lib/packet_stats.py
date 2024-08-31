@@ -92,11 +92,16 @@ class PacketStatsRx:
 
     icmp4__pre_parse: int = 0
     icmp4__failed_parse__drop: int = 0
+    icmp4__echo_reply: int = 0
+    icmp4__destination_unreachable: int = 0
     icmp4__echo_request__respond_echo_reply: int = 0
-    icmp4__port_unreachable: int = 0
+    icmp4__unknown: int = 0
 
     icmp6__pre_parse: int = 0
     icmp6__failed_parse__drop: int = 0
+    icmp6__destination_unreachable: int = 0
+    icmp6__echo_request__respond_echo_reply: int = 0
+    icmp6__echo_reply: int = 0
     icmp6__nd_neighbor_solicitation: int = 0
     icmp6__nd_neighbor_solicitation__target_unknown__drop: int = 0
     icmp6__nd_neighbor_solicitation__target_stack__respond: int = 0
@@ -107,8 +112,7 @@ class PacketStatsRx:
     icmp6__nd_neighbor_advertisement__update_nd_cache: int = 0
     icmp6__nd_router_solicitation: int = 0
     icmp6__nd_router_advertisement: int = 0
-    icmp6__echo_request__respond_echo_reply: int = 0
-    icmp6__port_unreachable: int = 0
+    icmp6__mld2_report: int = 0
     icmp6__unknown: int = 0
 
     udp__pre_parse: int = 0

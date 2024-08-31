@@ -53,6 +53,7 @@ from pytcp.lib.errors import PacketValidationError
 from pytcp.lib.ip6_address import Ip6Address
 from pytcp.lib.logger import log
 from pytcp.protocols.icmp6.icmp6__parser import Icmp6Parser
+from pytcp.protocols.icmp6.message.icmp6_message import Icmp6Type
 from pytcp.protocols.icmp6.message.icmp6_message__destination_unreachable import (
     Icmp6DestinationUnreachableMessage,
 )
@@ -138,17 +139,25 @@ class Icmp6PacketHandlerRx(ABC):
 
         __debug__ and log("icmp6", f"{packet_rx.tracker} - {packet_rx.icmp6}")
 
-        for message, handler in {
-            Icmp6DestinationUnreachableMessage: self.__phrx_icmp6__destination_unreachable,
-            Icmp6EchoRequestMessage: self.__phrx_icmp6__echo_request,
-            Icmp6NdRouterSolicitationMessage: self.__phrx_icmp6__nd_router_solicitation,
-            Icmp6NdRouterAdvertisementMessage: self.__phrx_icmp6__nd_router_advertisement,
-            Icmp6NdNeighborSolicitationMessage: self.__phrx_icmp6__nd_neighbor_solicitation,
-            Icmp6NdNeighborAdvertisementMessage: self.__phrx_icmp6__nd_neighbor_advertisement,
-        }.items():
-            if isinstance(packet_rx.icmp6.message, message):
-                handler(packet_rx)
-                return
+        match packet_rx.icmp6.message.type:
+            case Icmp6Type.DESTINATION_UNREACHABLE:
+                self.__phrx_icmp6__destination_unreachable(packet_rx)
+            case Icmp6Type.ECHO_REQUEST:
+                self.__phrx_icmp6__echo_request(packet_rx)
+            case Icmp6Type.ECHO_REPLY:
+                self.__phrx_icmp6__echo_reply(packet_rx)
+            case Icmp6Type.ND__ROUTER_SOLICITATION:
+                self.__phrx_icmp6__nd_router_solicitation(packet_rx)
+            case Icmp6Type.ND__ROUTER_ADVERTISEMENT:
+                self.__phrx_icmp6__nd_router_advertisement(packet_rx)
+            case Icmp6Type.ND__NEIGHBOR_SOLICITATION:
+                self.__phrx_icmp6__nd_neighbor_solicitation(packet_rx)
+            case Icmp6Type.ND__NEIGHBOR_ADVERTISEMENT:
+                self.__phrx_icmp6__nd_neighbor_advertisement(packet_rx)
+            case Icmp6Type.MLD2__REPORT:
+                self.__phrx_icmp6__mld2_report(packet_rx)
+            case _:
+                self.__phrx_icmp6__unknown(packet_rx)
 
     def __phrx_icmp6__destination_unreachable(
         self, packet_rx: PacketRx
@@ -159,7 +168,7 @@ class Icmp6PacketHandlerRx(ABC):
 
         assert isinstance(packet_rx.icmp6, Icmp6DestinationUnreachableMessage)
 
-        self.packet_stats_rx.icmp6__port_unreachable += 1
+        self.packet_stats_rx.icmp6__destination_unreachable += 1
         __debug__ and log(
             "icmp6",
             f"{packet_rx.tracker} - Received ICMPv6 Unreachable packet "
@@ -238,6 +247,21 @@ class Icmp6PacketHandlerRx(ABC):
                 data=packet_rx.icmp6.message.data,
             ),
             echo_tracker=packet_rx.tracker,
+        )
+        return
+
+    def __phrx_icmp6__echo_reply(self, packet_rx: PacketRx) -> None:
+        """
+        Handle inbound ICMPv6 Echo Reply packets.
+        """
+
+        assert isinstance(packet_rx.icmp6.message, Icmp6EchoReplyMessage)
+
+        self.packet_stats_rx.icmp6__echo_reply += 1
+        __debug__ and log(
+            "icmp6",
+            f"{packet_rx.tracker} - Received ICMPv6 Echo Reply packet "
+            f"from {packet_rx.ip6.src}",
         )
         return
 
@@ -395,3 +419,29 @@ class Icmp6PacketHandlerRx(ABC):
                 mac_address=packet_rx.icmp6.message.option_tlla,
             )
             return
+
+    def __phrx_icmp6__mld2_report(self, packet_rx: PacketRx) -> None:
+        """
+        Handle inbound ICMPv6 MLDv2 Report packets.
+        """
+
+        self.packet_stats_rx.icmp6__mld2_report += 1
+        __debug__ and log(
+            "icmp6",
+            f"{packet_rx.tracker} - Received ICMPv6 MLDv2 Report packet "
+            f"from {packet_rx.ip6.src}",
+        )
+        return
+
+    def __phrx_icmp6__unknown(self, packet_rx: PacketRx) -> None:
+        """
+        Handle inbound unknown ICMPv6 packets.
+        """
+
+        self.packet_stats_rx.icmp6__unknown += 1
+        __debug__ and log(
+            "icmp6",
+            f"{packet_rx.tracker} - Received unknown ICMPv6 packet "
+            f"from {packet_rx.ip6.src}",
+        )
+        return
