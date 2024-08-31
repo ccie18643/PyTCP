@@ -36,7 +36,7 @@ ver 3.0.2
 from __future__ import annotations
 
 import struct
-from abc import ABC, abstractmethod
+from abc import ABC
 from time import time
 from typing import TYPE_CHECKING
 
@@ -69,23 +69,13 @@ class Ip4PacketHandlerRx(ABC):
         def _phrx_udp(self, packet_rx: PacketRx) -> None: ...
         def _phrx_tcp(self, packet_rx: PacketRx) -> None: ...
 
-    @property
-    @abstractmethod
-    def ip4_unicast(self) -> list[Ip4Address]:
-        """
-        Return list of stack's IPv4 unicast addresses.
-        """
+        # pylint: disable=missing-function-docstring
 
-        raise NotImplementedError
+        @property
+        def ip4_unicast(self) -> list[Ip4Address]: ...
 
-    @property
-    @abstractmethod
-    def ip4_broadcast(self) -> list[Ip4Address]:
-        """
-        Return list of stack's IPv4 broadcast addresses.
-        """
-
-        raise NotImplementedError
+        @property
+        def ip4_broadcast(self) -> list[Ip4Address]: ...
 
     def _phrx_ip4(self, packet_rx: PacketRx) -> None:
         """

@@ -35,7 +35,7 @@ ver 3.0.2
 
 from __future__ import annotations
 
-from abc import ABC, abstractmethod
+from abc import ABC
 from typing import TYPE_CHECKING
 
 from pytcp import config
@@ -59,8 +59,7 @@ class Ip4PacketHandlerTx(ABC):
         from pytcp.lib.packet_stats import PacketStatsTx
         from pytcp.lib.tracker import Tracker
         from pytcp.protocols.ethernet.ethernet__base import EthernetPayload
-
-        from .ip4__base import Ip4Payload
+        from pytcp.protocols.ip4.ip4__base import Ip4Payload
 
         packet_stats_tx: PacketStatsTx
         ip4_host: list[Ip4Host]
@@ -77,23 +76,13 @@ class Ip4PacketHandlerTx(ABC):
             ethernet__payload: EthernetPayload = RawAssembler(),
         ) -> TxStatus: ...
 
-    @property
-    @abstractmethod
-    def ip4_unicast(self) -> list[Ip4Address]:
-        """
-        Return list of stack's IPv4 unicast addresses.
-        """
+        # pylint: disable=missing-function-docstring
 
-        raise NotImplementedError
+        @property
+        def ip4_unicast(self) -> list[Ip4Address]: ...
 
-    @property
-    @abstractmethod
-    def ip4_broadcast(self) -> list[Ip4Address]:
-        """
-        Return list of stack's IPv4 broadcast addresses.
-        """
-
-        raise NotImplementedError
+        @property
+        def ip4_broadcast(self) -> list[Ip4Address]: ...
 
     def _phtx_ip4(
         self,

@@ -23,12 +23,6 @@
 #                                                                          #
 ############################################################################
 
-# pylint: disable=too-many-return-statements
-# pylint: disable=too-many-statements
-# pylint: disable=too-many-branches
-# pylint: disable=protected-access
-# pylint: disable=line-too-long
-
 
 """
 Module contains packet handler for the inbound ICMPv6 packets.

@@ -35,7 +35,7 @@ ver 3.0.2
 
 from __future__ import annotations
 
-from abc import ABC, abstractmethod
+from abc import ABC
 from typing import TYPE_CHECKING
 
 from pytcp.lib.errors import PacketValidationError
@@ -66,11 +66,9 @@ class Ip6PacketHandlerRx(ABC):
         # pylint: disable=missing-function-docstring
 
         @property
-        @abstractmethod
         def ip6_unicast(self) -> list[Ip6Address]: ...
 
         @property
-        @abstractmethod
         def ip6_multicast(self) -> list[Ip6Address]: ...
 
     def _phrx_ip6(self, packet_rx: PacketRx) -> None:

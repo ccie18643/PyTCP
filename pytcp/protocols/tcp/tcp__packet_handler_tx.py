@@ -112,7 +112,7 @@ class TcpPacketHandlerTx(ABC):
         tcp__wscale: int | None = None,
         tcp__win: int = 0,
         tcp__urg: int = 0,
-        tcp__payload: bytes = b"",
+        tcp__payload: bytes = bytes(),
         echo_tracker: Tracker | None = None,
     ) -> TxStatus:
         """

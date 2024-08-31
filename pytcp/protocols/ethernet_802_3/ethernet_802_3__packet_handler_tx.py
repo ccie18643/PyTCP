@@ -57,8 +57,9 @@ class Ethernet8023PacketHandlerTx(ABC):
         from pytcp.lib.ip4_address import Ip4Host
         from pytcp.lib.ip6_address import Ip6Host
         from pytcp.lib.packet_stats import PacketStatsTx
-
-        from .ethernet_802_3__base import Ethernet8023Payload
+        from pytcp.protocols.ethernet_802_3.ethernet_802_3__base import (
+            Ethernet8023Payload,
+        )
 
         packet_stats_tx: PacketStatsTx
         mac_unicast: MacAddress

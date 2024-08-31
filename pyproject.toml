@@ -83,4 +83,5 @@ disable = """
     redefined-builtin,
     superfluous-parens,
     expression-not-assigned,
+    no-member,
 """
