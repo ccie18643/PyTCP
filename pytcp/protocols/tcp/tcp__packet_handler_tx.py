@@ -23,11 +23,6 @@
 ##                                                                            ##
 ################################################################################
 
-# pylint: disable=expression-not-assigned
-# pylint: disable=too-many-locals
-# pylint: disable=too-many-branches
-# pylint: disable=unused-argument
-
 
 """
 Module contains packet handler for the outbound TCP packets.
@@ -74,6 +69,8 @@ class TcpPacketHandlerTx(ABC):
         from pytcp.protocols.raw.raw__assembler import RawAssembler
 
         packet_stats_tx: PacketStatsTx
+
+        # pylint: disable=unused-argument
 
         def _phtx_ip6(
             self,
@@ -207,8 +204,9 @@ class TcpPacketHandlerTx(ABC):
                     ip4__payload=tcp_packet_tx,
                 )
             case _:
-                self.packet_stats_tx.tcp__unknown__drop += 1
-                return TxStatus.DROPED__TCP__UNKNOWN
+                raise ValueError(
+                    f"Invalid IP address version combination: {ip__src} -> {ip__dst}"
+                )
 
     def send_tcp_packet(
         self,

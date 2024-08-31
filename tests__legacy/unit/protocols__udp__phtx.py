@@ -124,36 +124,38 @@ class TestUdpPhtx(TestCase):
     def test_udp_phtx__ip4_udp_packet__ip6_src(self) -> None:
         """Test sending IPv4/UDP packet with src set to ip6 address"""
 
-        tx_status = self.packet_handler._phtx_udp(
-            ip__src=self.mns.stack_ip6_host.address,
-            ip__dst=self.mns.host_a_ip4_address,
-            udp__sport=1000,
-            udp__dport=2000,
-        )
-        self.assertEqual(tx_status, TxStatus.DROPED__UDP__UNKNOWN)
+        with self.assertRaises(ValueError) as error:
+            self.packet_handler._phtx_udp(
+                ip__src=self.mns.stack_ip6_host.address,
+                ip__dst=self.mns.host_a_ip4_address,
+                udp__sport=1000,
+                udp__dport=2000,
+            )
+
         self.assertEqual(
-            self.packet_handler.packet_stats_tx,
-            PacketStatsTx(
-                udp__pre_assemble=1,
-                udp__unknown__drop=1,
+            str(error.exception),
+            (
+                "Invalid IP address version combination: "
+                f"{self.mns.stack_ip6_host.address} -> {self.mns.host_a_ip4_address}"
             ),
         )
 
     def test_udp_phtx__ip4_udp_packet__ip6_dst(self) -> None:
-        """Test sending IPv6/UDP packet with dst set to ip4 address"""
+        """Test sending IPv4/UDP packet with dst set to ip6 address"""
 
-        tx_status = self.packet_handler._phtx_udp(
-            ip__src=self.mns.stack_ip4_host.address,
-            ip__dst=self.mns.host_a_ip6_address,
-            udp__sport=1000,
-            udp__dport=2000,
-        )
-        self.assertEqual(tx_status, TxStatus.DROPED__UDP__UNKNOWN)
+        with self.assertRaises(ValueError) as error:
+            self.packet_handler._phtx_udp(
+                ip__src=self.mns.stack_ip4_host.address,
+                ip__dst=self.mns.host_a_ip6_address,
+                udp__sport=1000,
+                udp__dport=2000,
+            )
+
         self.assertEqual(
-            self.packet_handler.packet_stats_tx,
-            PacketStatsTx(
-                udp__pre_assemble=1,
-                udp__unknown__drop=1,
+            str(error.exception),
+            (
+                "Invalid IP address version combination: "
+                f"{self.mns.stack_ip4_host.address} -> {self.mns.host_a_ip6_address}"
             ),
         )
 
@@ -215,36 +217,38 @@ class TestUdpPhtx(TestCase):
     def test_udp_phtx__ip6_udp_packet__ip4_src(self) -> None:
         """Test sending IPv6/UDP packet with src set to ip4 address"""
 
-        tx_status = self.packet_handler._phtx_udp(
-            ip__src=self.mns.stack_ip4_host.address,
-            ip__dst=self.mns.host_a_ip6_address,
-            udp__sport=1000,
-            udp__dport=2000,
-        )
-        self.assertEqual(tx_status, TxStatus.DROPED__UDP__UNKNOWN)
+        with self.assertRaises(ValueError) as error:
+            self.packet_handler._phtx_udp(
+                ip__src=self.mns.stack_ip4_host.address,
+                ip__dst=self.mns.host_a_ip6_address,
+                udp__sport=1000,
+                udp__dport=2000,
+            )
+
         self.assertEqual(
-            self.packet_handler.packet_stats_tx,
-            PacketStatsTx(
-                udp__pre_assemble=1,
-                udp__unknown__drop=1,
+            str(error.exception),
+            (
+                "Invalid IP address version combination: "
+                f"{self.mns.stack_ip4_host.address} -> {self.mns.host_a_ip6_address}"
             ),
         )
 
     def test_udp_phtx__ip6_udp_packet__ip4_dst(self) -> None:
         """Test sending IPv6/UDP packet with dst set to ip4 address"""
 
-        tx_status = self.packet_handler._phtx_udp(
-            ip__src=self.mns.stack_ip6_host.address,
-            ip__dst=self.mns.host_a_ip4_address,
-            udp__sport=1000,
-            udp__dport=2000,
-        )
-        self.assertEqual(tx_status, TxStatus.DROPED__UDP__UNKNOWN)
+        with self.assertRaises(ValueError) as error:
+            self.packet_handler._phtx_udp(
+                ip__src=self.mns.stack_ip6_host.address,
+                ip__dst=self.mns.host_a_ip4_address,
+                udp__sport=1000,
+                udp__dport=2000,
+            )
+
         self.assertEqual(
-            self.packet_handler.packet_stats_tx,
-            PacketStatsTx(
-                udp__pre_assemble=1,
-                udp__unknown__drop=1,
+            str(error.exception),
+            (
+                "Invalid IP address version combination: "
+                f"{self.mns.stack_ip6_host.address} -> {self.mns.host_a_ip4_address}"
             ),
         )
 

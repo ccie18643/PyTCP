@@ -478,40 +478,40 @@ class TestUdpPhtx(TestCase):
         self.assertEqual(self.frame_tx[: len(frame_tx)], frame_tx)
 
     def test_tcp_phtx__ip4_tcp_packet__ip6_src(self) -> None:
-        """
-        Test sending the IPv4/TCP packet with 'src' set to IPv6 address.
-        """
-        tx_status = self.packet_handler._phtx_tcp(
-            ip__src=self.mns.stack_ip6_host.address,
-            ip__dst=self.mns.host_a_ip4_address,
-            tcp__sport=1000,
-            tcp__dport=2000,
-        )
-        self.assertEqual(tx_status, TxStatus.DROPED__TCP__UNKNOWN)
+        """Test sending IPv4/tcp packet with src set to ip6 address"""
+
+        with self.assertRaises(ValueError) as error:
+            self.packet_handler._phtx_tcp(
+                ip__src=self.mns.stack_ip6_host.address,
+                ip__dst=self.mns.host_a_ip4_address,
+                tcp__sport=1000,
+                tcp__dport=2000,
+            )
+
         self.assertEqual(
-            self.packet_handler.packet_stats_tx,
-            PacketStatsTx(
-                tcp__pre_assemble=1,
-                tcp__unknown__drop=1,
+            str(error.exception),
+            (
+                "Invalid IP address version combination: "
+                f"{self.mns.stack_ip6_host.address} -> {self.mns.host_a_ip4_address}"
             ),
         )
 
     def test_tcp_phtx__ip4_tcp_packet__ip6_dst(self) -> None:
-        """
-        Test sending the IPv6/TCP packet with 'dst' set to IPv6 address.
-        """
-        tx_status = self.packet_handler._phtx_tcp(
-            ip__src=self.mns.stack_ip4_host.address,
-            ip__dst=self.mns.host_a_ip6_address,
-            tcp__sport=1000,
-            tcp__dport=2000,
-        )
-        self.assertEqual(tx_status, TxStatus.DROPED__TCP__UNKNOWN)
+        """Test sending IPv4/tcp packet with dst set to ip6 address"""
+
+        with self.assertRaises(ValueError) as error:
+            self.packet_handler._phtx_tcp(
+                ip__src=self.mns.stack_ip4_host.address,
+                ip__dst=self.mns.host_a_ip6_address,
+                tcp__sport=1000,
+                tcp__dport=2000,
+            )
+
         self.assertEqual(
-            self.packet_handler.packet_stats_tx,
-            PacketStatsTx(
-                tcp__pre_assemble=1,
-                tcp__unknown__drop=1,
+            str(error.exception),
+            (
+                "Invalid IP address version combination: "
+                f"{self.mns.stack_ip4_host.address} -> {self.mns.host_a_ip6_address}"
             ),
         )
 
@@ -990,39 +990,39 @@ class TestUdpPhtx(TestCase):
         self.assertEqual(self.frame_tx[: len(frame_tx)], frame_tx)
 
     def test_tcp_phtx__ip6_tcp_packet__ip4_src(self) -> None:
-        """
-        Test sending the IPv6/TCP packet with 'src' set to IPv4 address.
-        """
-        tx_status = self.packet_handler._phtx_tcp(
-            ip__src=self.mns.stack_ip4_host.address,
-            ip__dst=self.mns.host_a_ip6_address,
-            tcp__sport=1000,
-            tcp__dport=2000,
-        )
-        self.assertEqual(tx_status, TxStatus.DROPED__TCP__UNKNOWN)
+        """Test sending IPv6/tcp packet with src set to ip4 address"""
+
+        with self.assertRaises(ValueError) as error:
+            self.packet_handler._phtx_tcp(
+                ip__src=self.mns.stack_ip4_host.address,
+                ip__dst=self.mns.host_a_ip6_address,
+                tcp__sport=1000,
+                tcp__dport=2000,
+            )
+
         self.assertEqual(
-            self.packet_handler.packet_stats_tx,
-            PacketStatsTx(
-                tcp__pre_assemble=1,
-                tcp__unknown__drop=1,
+            str(error.exception),
+            (
+                "Invalid IP address version combination: "
+                f"{self.mns.stack_ip4_host.address} -> {self.mns.host_a_ip6_address}"
             ),
         )
 
     def test_tcp_phtx__ip6_tcp_packet__ip4_dst(self) -> None:
-        """
-        Test sending the IPv6/TCP packet with 'dst' set to IPv6 address.
-        """
-        tx_status = self.packet_handler._phtx_tcp(
-            ip__src=self.mns.stack_ip6_host.address,
-            ip__dst=self.mns.host_a_ip4_address,
-            tcp__sport=1000,
-            tcp__dport=2000,
-        )
-        self.assertEqual(tx_status, TxStatus.DROPED__TCP__UNKNOWN)
+        """Test sending IPv6/tcp packet with dst set to ip4 address"""
+
+        with self.assertRaises(ValueError) as error:
+            self.packet_handler._phtx_tcp(
+                ip__src=self.mns.stack_ip6_host.address,
+                ip__dst=self.mns.host_a_ip4_address,
+                tcp__sport=1000,
+                tcp__dport=2000,
+            )
+
         self.assertEqual(
-            self.packet_handler.packet_stats_tx,
-            PacketStatsTx(
-                tcp__pre_assemble=1,
-                tcp__unknown__drop=1,
+            str(error.exception),
+            (
+                "Invalid IP address version combination: "
+                f"{self.mns.stack_ip6_host.address} -> {self.mns.host_a_ip4_address}"
             ),
         )

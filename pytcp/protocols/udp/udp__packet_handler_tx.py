@@ -23,9 +23,6 @@
 ##                                                                            ##
 ################################################################################
 
-# pylint: disable=expression-not-assigned
-# pylint: disable=unused-argument
-
 
 """
 Module contains protocol support for the outbound UDP packets.
@@ -68,6 +65,8 @@ class UdpPacketHandlerTx(ABC):
         from pytcp.protocols.raw.raw__assembler import RawAssembler
 
         packet_stats_tx: PacketStatsTx
+
+        # pylint: disable=unused-argument
 
         def _phtx_ip6(
             self,
@@ -128,8 +127,9 @@ class UdpPacketHandlerTx(ABC):
                     ip4__payload=udp_packet_tx,
                 )
             case _:
-                self.packet_stats_tx.udp__unknown__drop += 1
-                return TxStatus.DROPED__UDP__UNKNOWN
+                raise ValueError(
+                    f"Invalid IP address version combination: {ip__src} -> {ip__dst}"
+                )
 
     def send_udp_packet(
         self,
