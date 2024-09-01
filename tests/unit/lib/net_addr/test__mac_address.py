@@ -44,7 +44,7 @@ from pytcp.lib.net_addr import MacAddress, MacAddressFormatError
 @parameterized_class(
     [
         {
-            "_description": "Test the MAC: 00:00:00:00:00:00 (str)",
+            "_description": "Test the MAC address: 00:00:00:00:00:00 (str)",
             "_args": {
                 "address": "00:00:00:00:00:00",
             },
@@ -64,7 +64,7 @@ from pytcp.lib.net_addr import MacAddress, MacAddressFormatError
             },
         },
         {
-            "_description": "Test the MAC: 00:00:00:00:00:00 (None)",
+            "_description": "Test the MAC address: 00:00:00:00:00:00 (None)",
             "_args": {
                 "address": None,
             },
@@ -84,7 +84,7 @@ from pytcp.lib.net_addr import MacAddress, MacAddressFormatError
             },
         },
         {
-            "_description": "Test the MAC: 02:03:04:aa:bb:cc (str)",
+            "_description": "Test the MAC address: 02:03:04:aa:bb:cc (str)",
             "_args": {
                 "address": "02:03:04:aa:bb:cc",
             },
@@ -104,7 +104,7 @@ from pytcp.lib.net_addr import MacAddress, MacAddressFormatError
             },
         },
         {
-            "_description": "Test the MAC: 02:03:04:aa:bb:cc (str uppercase)",
+            "_description": "Test the MAC address: 02:03:04:aa:bb:cc (str uppercase)",
             "_args": {
                 "address": "02:03:04:AA:BB:CC",
             },
@@ -124,7 +124,7 @@ from pytcp.lib.net_addr import MacAddress, MacAddressFormatError
             },
         },
         {
-            "_description": "Test the MAC: 02:03:04:aa:bb:cc (bytes)",
+            "_description": "Test the MAC address: 02:03:04:aa:bb:cc (bytes)",
             "_args": {
                 "address": b"\x02\x03\x04\xaa\xbb\xcc",
             },
@@ -144,7 +144,7 @@ from pytcp.lib.net_addr import MacAddress, MacAddressFormatError
             },
         },
         {
-            "_description": "Test the MAC: 02:03:04:aa:bb:cc (bytearray)",
+            "_description": "Test the MAC address: 02:03:04:aa:bb:cc (bytearray)",
             "_args": {
                 "address": bytearray(b"\x02\x03\x04\xaa\xbb\xcc"),
             },
@@ -164,7 +164,7 @@ from pytcp.lib.net_addr import MacAddress, MacAddressFormatError
             },
         },
         {
-            "_description": "Test the MAC: 02:03:04:aa:bb:cc (memoryview)",
+            "_description": "Test the MAC address: 02:03:04:aa:bb:cc (memoryview)",
             "_args": {
                 "address": memoryview(b"\x02\x03\x04\xaa\xbb\xcc"),
             },
@@ -184,7 +184,7 @@ from pytcp.lib.net_addr import MacAddress, MacAddressFormatError
             },
         },
         {
-            "_description": "Test the MAC: 02:03:04:aa:bb:cc (MacAddress)",
+            "_description": "Test the MAC address: 02:03:04:aa:bb:cc (MacAddress)",
             "_args": {
                 "address": MacAddress("02:03:04:aa:bb:cc"),
             },
@@ -204,7 +204,7 @@ from pytcp.lib.net_addr import MacAddress, MacAddressFormatError
             },
         },
         {
-            "_description": "Test the MAC: 02:03:04:aa:bb:cc (int)",
+            "_description": "Test the MAC address: 02:03:04:aa:bb:cc (int)",
             "_args": {
                 "address": 2211986455500,
             },
@@ -224,7 +224,7 @@ from pytcp.lib.net_addr import MacAddress, MacAddressFormatError
             },
         },
         {
-            "_description": "Test the MAC: 01:00:5e:01:02:03 (str)",
+            "_description": "Test the MAC address: 01:00:5e:01:02:03 (str)",
             "_args": {
                 "address": "01:00:5e:01:02:03",
             },
@@ -244,7 +244,7 @@ from pytcp.lib.net_addr import MacAddress, MacAddressFormatError
             },
         },
         {
-            "_description": "Test the MAC: 33:33:00:01:02:03 (str)",
+            "_description": "Test the MAC address: 33:33:00:01:02:03 (str)",
             "_args": {
                 "address": "33:33:00:01:02:03",
             },
@@ -264,7 +264,7 @@ from pytcp.lib.net_addr import MacAddress, MacAddressFormatError
             },
         },
         {
-            "_description": "Test the MAC: 33:33:00:01:02:03 (str)",
+            "_description": "Test the MAC address: 33:33:00:01:02:03 (str)",
             "_args": {
                 "address": "33:33:00:01:02:03",
             },
@@ -284,7 +284,7 @@ from pytcp.lib.net_addr import MacAddress, MacAddressFormatError
             },
         },
         {
-            "_description": "Test the MAC: 33:33:ff:01:02:03 (str)",
+            "_description": "Test the MAC address: 33:33:ff:01:02:03 (str)",
             "_args": {
                 "address": "33:33:ff:01:02:03",
             },
@@ -304,7 +304,7 @@ from pytcp.lib.net_addr import MacAddress, MacAddressFormatError
             },
         },
         {
-            "_description": "Test the MAC: ff:ff:ff:ff:ff:ff (str)",
+            "_description": "Test the MAC address: ff:ff:ff:ff:ff:ff (str)",
             "_args": {
                 "address": "ff:ff:ff:ff:ff:ff",
             },
