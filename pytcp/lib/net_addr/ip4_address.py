@@ -230,5 +230,5 @@ class Ip4Address(IpAddress):
         assert self.is_multicast
 
         return MacAddress(
-            int(MacAddress(0x01005E000000)) | self._address & 0x7FFFFF
+            int(MacAddress(0x0100_5E00_0000)) | self._address & 0x0000_007F_FFFF
         )

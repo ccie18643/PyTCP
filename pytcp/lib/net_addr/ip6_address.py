@@ -230,7 +230,8 @@ class Ip6Address(IpAddress):
         """
 
         return Ip6Address(
-            self._address & 0xFFFFFF | int(Ip6Address("ff02::1:ff00:0"))
+            self._address & 0x0000_0000_0000_0000_0000_0000_00FF_FFFF
+            | int(Ip6Address("ff02::1:ff00:0"))
         )
 
     @property
@@ -242,7 +243,7 @@ class Ip6Address(IpAddress):
 
         assert self.is_multicast
         return MacAddress(
-            int(MacAddress(0x333300000000)) | self._address & 0xFFFFFFFF
+            int(MacAddress(0x3333_0000_0000)) | self._address & 0x0000_FFFF_FFFF
         )
 
     @property

@@ -145,7 +145,7 @@ class MacAddress:
         Check if address is unspecified.
         """
 
-        return self._address == 0
+        return self._address == 0x0000_0000_0000
 
     @property
     def is_unicast(self) -> bool:
@@ -153,14 +153,15 @@ class MacAddress:
         Check if address is unicast.
         """
 
-        return (
-            self._address != 0  # unspecified
-            and self._address
-            not in range(1101088686080, 1101105463296)  # IPv4 multicast
-            and self._address
-            not in range(56294136348672, 56298431315968)  # IPv6 multicast
-            and self._address != 281474976710655  # broadcst
-        )
+        return (self._address & 0x0100_0000_0000) == 0x0000_0000_0000
+
+    @property
+    def is_multicast(self) -> bool:
+        """
+        Check if address is multicast.
+        """
+
+        return (self._address & 0x0100_0000_0000) == 0x0100_0000_0000
 
     @property
     def is_multicast_ip4(self) -> bool:
@@ -168,7 +169,7 @@ class MacAddress:
         Check if address is a MAC for IPv4 multicast.
         """
 
-        return self._address in range(1101088686080, 1101105463296)
+        return (self._address & 0xFFFF_FF00_0000) == 0x0100_5E00_0000
 
     @property
     def is_multicast_ip6(self) -> bool:
@@ -176,7 +177,7 @@ class MacAddress:
         Check if address is a MAC for IPv6 multicast.
         """
 
-        return self._address in range(56294136348672, 56298431315968)
+        return (self._address & 0xFFFF_0000_0000) == 0x3333_0000_0000
 
     @property
     def is_multicast_ip6_solicited_node(self) -> bool:
@@ -184,7 +185,7 @@ class MacAddress:
         Check if address is a MAC for IPv6 solicited node multicast.
         """
 
-        return self._address in range(56298414538752, 56298431315968)
+        return (self._address & 0xFFFF_FF00_0000) == 0x3333_FF00_0000
 
     @property
     def is_broadcast(self) -> bool:
@@ -192,4 +193,4 @@ class MacAddress:
         Check if address is a broadcast MAC.
         """
 
-        return self._address == 281474976710655
+        return self._address == 0xFFFF_FFFF_FFFF

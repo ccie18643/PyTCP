@@ -59,7 +59,11 @@ class TestMacAddress(TestCase):
             is_broadcast: bool = False
 
         self.mac_samples = [
-            MacSample(MacAddress("00:00:00:00:00:00"), is_unspecified=True),
+            MacSample(
+                MacAddress("00:00:00:00:00:00"),
+                is_unspecified=True,
+                is_unicast=True,
+            ),
             MacSample(MacAddress("02:03:04:aa:bb:cc"), is_unicast=True),
             MacSample(MacAddress("01:00:5e:01:02:03"), is_multicast_ip4=True),
             MacSample(MacAddress("33:33:00:01:02:03"), is_multicast_ip6=True),
