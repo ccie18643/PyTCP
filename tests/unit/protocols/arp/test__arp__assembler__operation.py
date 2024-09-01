@@ -38,8 +38,7 @@ from typing import Any
 from parameterized import parameterized_class  # type: ignore
 from testslide import TestCase
 
-from pytcp.lib.ip4_address import Ip4Address
-from pytcp.lib.mac_address import MacAddress
+from pytcp.lib.net_addr import Ip4Address, MacAddress
 from pytcp.lib.tracker import Tracker
 from pytcp.protocols.arp.arp__assembler import ArpAssembler
 from pytcp.protocols.arp.arp__enums import (

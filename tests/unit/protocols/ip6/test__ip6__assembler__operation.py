@@ -37,7 +37,7 @@ from typing import Any
 from parameterized import parameterized_class  # type: ignore
 from testslide import TestCase
 
-from pytcp.lib.ip6_address import Ip6Address
+from pytcp.lib.net_addr import Ip6Address
 from pytcp.protocols.ip6.ip6__assembler import Ip6Assembler
 from pytcp.protocols.ip6.ip6__enums import Ip6Next
 from pytcp.protocols.ip6.ip6__header import Ip6Header

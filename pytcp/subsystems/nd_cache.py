@@ -40,9 +40,8 @@ import time
 
 from pytcp import config
 from pytcp.lib import stack
-from pytcp.lib.ip6_address import Ip6Address
 from pytcp.lib.logger import log
-from pytcp.lib.mac_address import MacAddress
+from pytcp.lib.net_addr import Ip6Address, MacAddress
 
 
 class NdCache:

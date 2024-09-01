@@ -40,8 +40,7 @@ from abc import ABC
 from dataclasses import dataclass, field
 from typing import override
 
-from pytcp.lib.ip4_address import Ip4Address
-from pytcp.lib.mac_address import MacAddress
+from pytcp.lib.net_addr import Ip4Address, MacAddress
 from pytcp.lib.proto_struct import ProtoStruct
 from pytcp.protocols.arp.arp__enums import (
     ARP__HARDWARE_LEN__ETHERNET,

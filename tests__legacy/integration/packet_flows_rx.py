@@ -35,9 +35,9 @@
 
 from testslide import TestCase
 
-from pytcp.lib.ip4_address import Ip4Address, Ip4Host
-from pytcp.lib.ip6_address import Ip6Address, Ip6Host
-from pytcp.lib.mac_address import MacAddress
+from pytcp.lib.net_addr import Ip4Address, Ip4Host
+from pytcp.lib.net_addr import Ip6Address, Ip6Host
+from pytcp.lib.net_addr import MacAddress
 from pytcp.lib.packet import PacketRx
 from pytcp.lib.packet_stats import PacketStatsRx, PacketStatsTx
 from pytcp.subsystems.packet_handler import PacketHandler
@@ -135,7 +135,8 @@ class TestPacketHandlerRx(TestCase):
         MAC address, drop.
         """
         with open(
-            "tests__legacy/integration/test_frames/rx/ethernet_unknown_dst.rx", "rb"
+            "tests__legacy/integration/test_frames/rx/ethernet_unknown_dst.rx",
+            "rb",
         ) as _:
             packet_rx = _.read()
         self.packet_handler._phrx_ethernet(packet_rx=PacketRx(packet_rx))

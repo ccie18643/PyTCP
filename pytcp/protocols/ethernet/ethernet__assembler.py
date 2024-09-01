@@ -37,7 +37,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from pytcp.lib.mac_address import MacAddress
+from pytcp.lib.net_addr import MacAddress
 from pytcp.lib.proto_assembler import ProtoAssembler
 from pytcp.protocols.ethernet.ethernet__base import Ethernet
 from pytcp.protocols.ethernet.ethernet__header import (

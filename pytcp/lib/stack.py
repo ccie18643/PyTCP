@@ -45,7 +45,7 @@ from pytcp.subsystems.timer import Timer
 from pytcp.subsystems.tx_ring import TxRing
 
 if TYPE_CHECKING:
-    from pytcp.lib.ip4_address import Ip4Address
+    from pytcp.lib.net_addr import Ip4Address
     from pytcp.lib.socket import Socket
 
 timer = Timer()

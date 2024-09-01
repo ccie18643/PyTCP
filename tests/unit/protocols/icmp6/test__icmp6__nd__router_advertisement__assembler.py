@@ -38,8 +38,7 @@ from typing import Any, cast
 from parameterized import parameterized_class  # type: ignore
 from testslide import TestCase
 
-from pytcp.lib.ip6_address import Ip6Network
-from pytcp.lib.mac_address import MacAddress
+from pytcp.lib.net_addr import Ip6Network, MacAddress
 from pytcp.protocols.icmp6.icmp6__assembler import Icmp6Assembler
 from pytcp.protocols.icmp6.message.icmp6_message import Icmp6Type
 from pytcp.protocols.icmp6.message.nd.icmp6_nd_message__router_advertisement import (

@@ -39,9 +39,8 @@ from abc import ABC
 from typing import TYPE_CHECKING
 
 from pytcp import config
-from pytcp.lib.ip6_address import Ip6Address
 from pytcp.lib.logger import log
-from pytcp.lib.mac_address import MacAddress
+from pytcp.lib.net_addr import Ip6Address, MacAddress
 from pytcp.lib.tx_status import TxStatus
 from pytcp.protocols.icmp6.icmp6__base import Icmp6
 from pytcp.protocols.icmp6.message.mld2.icmp6_mld2_message__report import (
@@ -58,7 +57,7 @@ class Ip6PacketHandlerTx(ABC):
     """
 
     if TYPE_CHECKING:
-        from pytcp.lib.ip6_address import Ip6Host
+        from pytcp.lib.net_addr import Ip6Host
         from pytcp.lib.packet_stats import PacketStatsTx
         from pytcp.lib.tracker import Tracker
         from pytcp.protocols.ethernet.ethernet__base import EthernetPayload

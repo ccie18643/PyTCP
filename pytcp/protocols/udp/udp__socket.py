@@ -42,9 +42,13 @@ import threading
 from typing import TYPE_CHECKING
 
 from pytcp.lib import stack
-from pytcp.lib.ip4_address import Ip4Address, Ip4AddressFormatError
-from pytcp.lib.ip6_address import Ip6Address, Ip6AddressFormatError
 from pytcp.lib.logger import log
+from pytcp.lib.net_addr import (
+    Ip4Address,
+    Ip4AddressFormatError,
+    Ip6Address,
+    Ip6AddressFormatError,
+)
 from pytcp.lib.socket import (
     AF_INET4,
     AF_INET6,
@@ -58,7 +62,7 @@ from pytcp.lib.tx_status import TxStatus
 if TYPE_CHECKING:
     from threading import Semaphore
 
-    from pytcp.lib.ip_address import IpAddress
+    from pytcp.lib.net_addr import IpAddress
     from pytcp.lib.socket import AddressFamily, SocketType
     from pytcp.protocols.udp.udp__metadata import UdpMetadata
 

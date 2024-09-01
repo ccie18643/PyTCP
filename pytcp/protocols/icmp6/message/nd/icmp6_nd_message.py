@@ -37,7 +37,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from pytcp.lib.mac_address import MacAddress
+from pytcp.lib.net_addr import MacAddress
 from pytcp.protocols.icmp6.message.icmp6_message import Icmp6Message, Icmp6Type
 from pytcp.protocols.icmp6.message.nd.option.icmp6_nd_options import (
     Icmp6NdOptions,

@@ -23,13 +23,11 @@
 ##                                                                            ##
 ################################################################################
 
-# pylint: disable=missing-class-docstring
-# pylint: disable=redefined-builtin
 
 """
 Module contains Ethernet MAC address manipulation class.
 
-pytcp/lib/mac_address.py
+pytcp/lib/net_addr/mac_address.py
 
 ver 3.0.2
 """
@@ -40,8 +38,7 @@ from __future__ import annotations
 import re
 import struct
 
-
-class MacAddressFormatError(Exception): ...
+from .errors import MacAddressFormatError
 
 
 class MacAddress:

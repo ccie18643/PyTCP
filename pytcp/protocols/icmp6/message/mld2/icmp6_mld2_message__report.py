@@ -40,7 +40,7 @@ from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, override
 
 from pytcp.lib.int_checks import is_uint16
-from pytcp.lib.ip6_address import IP6_ADDRESS_LEN
+from pytcp.lib.net_addr import IP6_ADDRESS_LEN
 from pytcp.protocols.icmp6.icmp6__errors import (
     Icmp6IntegrityError,
     Icmp6SanityError,
@@ -57,7 +57,7 @@ from pytcp.protocols.icmp6.message.mld2.icmp6_mld2__multicast_address_record imp
 from pytcp.protocols.ip6.ip6__header import IP6__PAYLOAD__MAX_LEN
 
 if TYPE_CHECKING:
-    from pytcp.lib.ip6_address import Ip6Address
+    from pytcp.lib.net_addr import Ip6Address
 
 
 # The ICMPv6 MLDv2 Report message (143/0) [RFC3810].

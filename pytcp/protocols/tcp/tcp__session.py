@@ -56,7 +56,7 @@ from pytcp.lib.logger import log
 if TYPE_CHECKING:
     from threading import Lock, RLock, Semaphore
 
-    from pytcp.lib.ip_address import IpAddress
+    from pytcp.lib.net_addr import IpAddress
     from pytcp.lib.socket import Socket
     from pytcp.protocols.tcp.tcp__metadata import TcpMetadata
 

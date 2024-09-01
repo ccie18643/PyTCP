@@ -40,9 +40,8 @@ import time
 
 from pytcp import config
 from pytcp.lib import stack
-from pytcp.lib.ip4_address import Ip4Address
 from pytcp.lib.logger import log
-from pytcp.lib.mac_address import MacAddress
+from pytcp.lib.net_addr import Ip4Address, MacAddress
 
 
 class ArpCache:

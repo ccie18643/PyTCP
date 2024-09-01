@@ -35,7 +35,7 @@ ver 3.0.2
 
 from testslide import TestCase
 
-from pytcp.lib.ip6_address import Ip6Address
+from pytcp.lib.net_addr import Ip6Address
 from pytcp.protocols.icmp6.message.mld2.icmp6_mld2__multicast_address_record import (
     Icmp6Mld2MulticastAddressRecord,
     Icmp6Mld2MulticastAddressRecordType,

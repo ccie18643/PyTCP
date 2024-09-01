@@ -40,7 +40,7 @@ from dataclasses import dataclass, field
 from typing import override
 
 from pytcp.lib.int_checks import is_uint16
-from pytcp.lib.ip6_address import Ip6Address
+from pytcp.lib.net_addr import Ip6Address
 from pytcp.protocols.icmp6.icmp6__errors import (
     Icmp6IntegrityError,
     Icmp6SanityError,

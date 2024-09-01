@@ -48,9 +48,13 @@ from typing import TYPE_CHECKING
 
 from pytcp import config
 from pytcp.lib import stack
-from pytcp.lib.ip4_address import Ip4Address, Ip4AddressFormatError
-from pytcp.lib.ip6_address import Ip6Address, Ip6AddressFormatError
 from pytcp.lib.ip_helper import pick_local_ip_address
+from pytcp.lib.net_addr import (
+    Ip4Address,
+    Ip4AddressFormatError,
+    Ip6Address,
+    Ip6AddressFormatError,
+)
 from pytcp.protocols.tcp.tcp__metadata import TcpMetadata
 from pytcp.protocols.tcp.tcp__session import FsmState, TcpSession
 from pytcp.protocols.udp.udp__metadata import UdpMetadata
@@ -58,7 +62,7 @@ from pytcp.protocols.udp.udp__metadata import UdpMetadata
 if TYPE_CHECKING:
     from threading import Semaphore
 
-    from pytcp.lib.ip_address import IpAddress
+    from pytcp.lib.net_addr import IpAddress
 
 
 class gaierror(OSError):

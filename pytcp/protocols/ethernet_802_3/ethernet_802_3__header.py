@@ -41,7 +41,7 @@ from dataclasses import dataclass
 from typing import override
 
 from pytcp.lib.int_checks import is_uint16
-from pytcp.lib.mac_address import MacAddress
+from pytcp.lib.net_addr import MacAddress
 from pytcp.lib.proto_struct import ProtoStruct
 
 # The Ethernet 802.3 packet header [IEEE].

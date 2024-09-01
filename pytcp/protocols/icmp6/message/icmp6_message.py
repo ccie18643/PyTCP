@@ -43,7 +43,7 @@ from pytcp.lib.proto_enum import ProtoEnumByte
 from pytcp.lib.proto_struct import ProtoStruct
 
 if TYPE_CHECKING:
-    from pytcp.lib.ip6_address import Ip6Address
+    from pytcp.lib.net_addr import Ip6Address
 
 
 # ICMPv6 message header [RFC 4443].

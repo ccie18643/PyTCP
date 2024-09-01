@@ -37,9 +37,9 @@ from __future__ import annotations
 
 from testslide import StrictMock, TestCase
 
-from pytcp.lib.ip4_address import Ip4Address, Ip4Host
-from pytcp.lib.ip6_address import Ip6Address, Ip6Host
-from pytcp.lib.mac_address import MacAddress
+from pytcp.lib.net_addr import Ip4Address, Ip4Host
+from pytcp.lib.net_addr import Ip6Address, Ip6Host
+from pytcp.lib.net_addr import MacAddress
 from pytcp.lib.packet import PacketRx
 from pytcp.lib.packet_stats import PacketStatsRx, PacketStatsTx
 from pytcp.subsystems.arp_cache import ArpCache

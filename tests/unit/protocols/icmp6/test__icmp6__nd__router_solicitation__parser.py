@@ -37,8 +37,7 @@ from typing import Any
 
 from parameterized import parameterized_class  # type: ignore
 
-from pytcp.lib.ip6_address import Ip6Address
-from pytcp.lib.mac_address import MacAddress
+from pytcp.lib.net_addr import Ip6Address, MacAddress
 from pytcp.lib.packet import PacketRx
 from pytcp.protocols.icmp6.icmp6__parser import Icmp6Parser
 from pytcp.protocols.icmp6.message.nd.icmp6_nd_message__router_solicitation import (

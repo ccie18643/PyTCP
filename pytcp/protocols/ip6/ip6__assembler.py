@@ -38,7 +38,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from pytcp import config
-from pytcp.lib.ip6_address import Ip6Address
+from pytcp.lib.net_addr import Ip6Address
 from pytcp.lib.proto_assembler import ProtoAssembler
 from pytcp.protocols.ip6.ip6__base import Ip6
 from pytcp.protocols.ip6.ip6__header import Ip6Header, Ip6Next

@@ -35,7 +35,7 @@ from dataclasses import dataclass
 
 from testslide import TestCase
 
-from pytcp.lib.ip6_address import (
+from pytcp.lib.net_addr import (
     Ip6Address,
     Ip6AddressFormatError,
     Ip6Host,
@@ -46,7 +46,7 @@ from pytcp.lib.ip6_address import (
     Ip6Network,
     Ip6NetworkFormatError,
 )
-from pytcp.lib.mac_address import MacAddress
+from pytcp.lib.net_addr import MacAddress
 
 
 class TestIp6Address(TestCase):
@@ -592,17 +592,6 @@ class TestIp6Network(TestCase):
             Ip6Address("1234:5678:90ab:cdef:ffff:ffff:ffff:ffff"),
         )
 
-    def test_eui64(self) -> None:
-        """
-        Test the 'eui64' property.
-        """
-        self.assertEqual(
-            Ip6Network("1234:5678:90ab:cdef::/64").eui64(
-                MacAddress("01:02:03:04:05:06")
-            ),
-            Ip6Host("1234:5678:90ab:cdef:302:3ff:fe04:506/64"),
-        )
-
     def test_version(self) -> None:
         self.assertEqual(Ip6Network("1234:5678:90ab:cdef::/64").version, 6)
 
@@ -782,3 +771,16 @@ class TestIp6Host(TestCase):
             host.gateway = gateway
 
         self.assertEqual(f"{error.exception}", f"{gateway}")
+
+    def test_eui64(self) -> None:
+        """
+        Test the 'eui64' property.
+        """
+
+        self.assertEqual(
+            Ip6Host.from_eui64(
+                mac_address=MacAddress("01:02:03:04:05:06"),
+                ip6_network=Ip6Network("1234:5678:90ab:cdef::/64"),
+            ),
+            Ip6Host("1234:5678:90ab:cdef:302:3ff:fe04:506/64"),
+        )

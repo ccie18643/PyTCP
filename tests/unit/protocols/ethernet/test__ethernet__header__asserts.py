@@ -35,7 +35,7 @@ ver 3.0.2
 
 from testslide import TestCase
 
-from pytcp.lib.mac_address import MacAddress
+from pytcp.lib.net_addr import MacAddress
 from pytcp.protocols.ethernet.ethernet__enums import EthernetType
 from pytcp.protocols.ethernet.ethernet__header import EthernetHeader
 

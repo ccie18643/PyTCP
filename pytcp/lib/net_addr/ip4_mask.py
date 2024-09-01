@@ -1,0 +1,119 @@
+#!/usr/bin/env python3
+
+################################################################################
+##                                                                            ##
+##   PyTCP - Python TCP/IP stack                                              ##
+##   Copyright (C) 2020-present Sebastian Majewski                            ##
+##                                                                            ##
+##   This program is free software: you can redistribute it and/or modify     ##
+##   it under the terms of the GNU General Public License as published by     ##
+##   the Free Software Foundation, either version 3 of the License, or        ##
+##   (at your option) any later version.                                      ##
+##                                                                            ##
+##   This program is distributed in the hope that it will be useful,          ##
+##   but WITHOUT ANY WARRANTY; without even the implied warranty of           ##
+##   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the             ##
+##   GNU General Public License for more details.                             ##
+##                                                                            ##
+##   You should have received a copy of the GNU General Public License        ##
+##   along with this program. If not, see <https://www.gnu.org/licenses/>.    ##
+##                                                                            ##
+##   Author's email: ccie18643@gmail.com                                      ##
+##   Github repository: https://github.com/ccie18643/PyTCP                    ##
+##                                                                            ##
+################################################################################
+
+
+"""
+Module contains IPv4 mask support class.
+
+pytcp/lib/net_addr/ip4_mask.py
+
+ver 3.0.2
+"""
+
+
+from __future__ import annotations
+
+import re
+import socket
+import struct
+from typing import override
+
+from .errors import Ip4MaskFormatError
+from .ip4_address import IP4_REGEX
+from .ip_mask import IpMask
+
+
+class Ip4Mask(IpMask):
+    """
+    IPv4 mask support class.
+    """
+
+    def __init__(
+        self,
+        mask: (
+            Ip4Mask | str | bytes | bytearray | memoryview | int | None
+        ) = None,
+    ) -> None:
+        """
+        Class constructor.
+        """
+
+        self._mask: int
+        self._version: int = 4
+
+        def _validate_bits() -> bool:
+            """
+            Validate that mask is made of consecutive bits.
+            """
+
+            bit_mask = f"{self._mask:032b}"
+            try:
+                return not bit_mask[bit_mask.index("0") :].count("1")
+            except ValueError:
+                return True
+
+        if mask is None:
+            self._mask = 0
+            return
+
+        if isinstance(mask, int):
+            if mask & 0xFF_FF_FF_FF == mask:
+                self._mask = mask
+                if _validate_bits():
+                    return
+
+        if isinstance(mask, (memoryview, bytes, bytearray)):
+            if len(mask) == 4:
+                self._mask = struct.unpack("!L", mask)[0]
+                if _validate_bits():
+                    return
+
+        if isinstance(mask, str) and re.search(r"^\/\d{1,2}$", mask):
+            bit_count = int(mask[1:])
+            if bit_count in range(33):
+                self._mask = int("1" * bit_count + "0" * (32 - bit_count), 2)
+                return
+
+        if isinstance(mask, str) and re.search(IP4_REGEX, mask):
+            try:
+                self._mask = struct.unpack("!L", socket.inet_aton(mask))[0]
+                if _validate_bits():
+                    return
+            except OSError:
+                pass
+
+        if isinstance(mask, Ip4Mask):
+            self._mask = mask._mask
+            return
+
+        raise Ip4MaskFormatError(mask)
+
+    @override
+    def __bytes__(self) -> bytes:
+        """
+        The '__bytes_()' dunder.
+        """
+
+        return struct.pack("!L", self._mask)

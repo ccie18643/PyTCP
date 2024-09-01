@@ -48,7 +48,7 @@ from pytcp.lib.int_checks import (
     UINT_16__MAX,
     UINT_16__MIN,
 )
-from pytcp.lib.ip4_address import Ip4Address
+from pytcp.lib.net_addr import Ip4Address
 from pytcp.protocols.ip4.ip4__enums import Ip4Proto
 from pytcp.protocols.ip4.ip4__header import IP4__HEADER__LEN, Ip4Header
 

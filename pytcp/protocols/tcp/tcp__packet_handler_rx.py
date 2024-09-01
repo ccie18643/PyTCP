@@ -52,7 +52,7 @@ class TcpPacketHandlerRx(ABC):
     """
 
     if TYPE_CHECKING:
-        from pytcp.lib.ip_address import IpAddress
+        from pytcp.lib.net_addr import IpAddress
         from pytcp.lib.packet_stats import PacketStatsRx
         from pytcp.lib.tracker import Tracker
         from pytcp.lib.tx_status import TxStatus

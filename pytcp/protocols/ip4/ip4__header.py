@@ -49,7 +49,7 @@ from pytcp.lib.int_checks import (
     is_uint13,
     is_uint16,
 )
-from pytcp.lib.ip4_address import Ip4Address
+from pytcp.lib.net_addr import Ip4Address
 from pytcp.lib.proto_struct import ProtoStruct
 from pytcp.protocols.ip4.ip4__enums import Ip4Proto
 

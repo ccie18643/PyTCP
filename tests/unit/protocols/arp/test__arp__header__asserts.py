@@ -35,8 +35,7 @@ ver 3.0.2
 
 from testslide import TestCase
 
-from pytcp.lib.ip4_address import Ip4Address
-from pytcp.lib.mac_address import MacAddress
+from pytcp.lib.net_addr import Ip4Address, MacAddress
 from pytcp.protocols.arp.arp__enums import ArpOperation
 from pytcp.protocols.arp.arp__header import ArpHeader
 

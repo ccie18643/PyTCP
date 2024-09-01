@@ -37,7 +37,7 @@ from typing import Any
 from parameterized import parameterized_class  # type: ignore
 from testslide import TestCase
 
-from pytcp.lib.ip4_address import Ip4Address
+from pytcp.lib.net_addr import Ip4Address
 from pytcp.protocols.ip4.ip4__assembler import Ip4Assembler, Ip4FragAssembler
 from pytcp.protocols.ip4.ip4__enums import Ip4Proto
 from pytcp.protocols.ip4.ip4__header import Ip4Header

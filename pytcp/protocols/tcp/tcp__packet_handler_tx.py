@@ -38,9 +38,8 @@ from __future__ import annotations
 from abc import ABC
 from typing import TYPE_CHECKING, cast
 
-from pytcp.lib.ip4_address import Ip4Address
-from pytcp.lib.ip6_address import Ip6Address
 from pytcp.lib.logger import log
+from pytcp.lib.net_addr import Ip4Address, Ip6Address
 from pytcp.lib.tracker import Tracker
 from pytcp.lib.tx_status import TxStatus
 from pytcp.protocols.tcp.options.tcp_option__mss import TcpOptionMss
@@ -57,7 +56,7 @@ class TcpPacketHandlerTx(ABC):
 
     if TYPE_CHECKING:
         from pytcp.config import IP4__DEFAULT_TTL, IP6__DEFAULT_HOP_LIMIT
-        from pytcp.lib.ip_address import IpAddress
+        from pytcp.lib.net_addr import IpAddress
         from pytcp.lib.packet_stats import PacketStatsTx
         from pytcp.protocols.icmp4.icmp4__assembler import Icmp4Assembler
         from pytcp.protocols.icmp6.icmp6__assembler import Icmp6Assembler

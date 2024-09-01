@@ -36,7 +36,7 @@ ver 3.0.2
 from testslide import TestCase
 
 from pytcp.lib.int_checks import UINT_16__MIN
-from pytcp.lib.mac_address import MacAddress
+from pytcp.lib.net_addr import MacAddress
 from pytcp.protocols.ethernet_802_3.ethernet_802_3__header import (
     ETHERNET_802_3__PAYLOAD__MAX_LEN,
     Ethernet8023Header,

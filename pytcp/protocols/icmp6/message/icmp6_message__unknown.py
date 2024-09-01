@@ -49,7 +49,7 @@ from pytcp.protocols.icmp6.message.icmp6_message import (
 )
 
 if TYPE_CHECKING:
-    from pytcp.lib.ip6_address import Ip6Address
+    from pytcp.lib.net_addr import Ip6Address
 
 
 @dataclass(frozen=True, kw_only=True)

@@ -39,7 +39,7 @@ from parameterized import parameterized_class  # type: ignore
 from testslide import TestCase
 
 from pytcp.lib.int_checks import UINT_32__MAX, UINT_32__MIN
-from pytcp.lib.ip6_address import Ip6Network
+from pytcp.lib.net_addr import Ip6Network
 from pytcp.protocols.icmp6.icmp6__errors import Icmp6IntegrityError
 from pytcp.protocols.icmp6.message.nd.option.icmp6_nd_option import (
     Icmp6NdOptionType,

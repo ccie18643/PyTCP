@@ -38,7 +38,7 @@ from typing import Any, cast
 from parameterized import parameterized_class  # type: ignore
 from testslide import TestCase
 
-from pytcp.lib.ip6_address import Ip6Address
+from pytcp.lib.net_addr import Ip6Address
 from pytcp.protocols.icmp6.icmp6__assembler import Icmp6Assembler
 from pytcp.protocols.icmp6.message.icmp6_message import Icmp6Type
 from pytcp.protocols.icmp6.message.mld2.icmp6_mld2__multicast_address_record import (

@@ -51,7 +51,7 @@ from pytcp.protocols.icmp6.message.nd.option.icmp6_nd_options import (
 )
 
 if TYPE_CHECKING:
-    from pytcp.lib.ip6_address import Ip6Address
+    from pytcp.lib.net_addr import Ip6Address
 
 
 # The ICMPv6 ND Router Solicitation message (133/0) [RFC4861].

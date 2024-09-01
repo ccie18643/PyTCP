@@ -38,9 +38,8 @@ from __future__ import annotations
 from abc import ABC
 from typing import TYPE_CHECKING
 
-from pytcp.lib.ip6_address import Ip6Address, Ip6Host
 from pytcp.lib.logger import log
-from pytcp.lib.mac_address import MacAddress
+from pytcp.lib.net_addr import Ip6Address, Ip6Host, MacAddress
 from pytcp.lib.tracker import Tracker
 from pytcp.lib.tx_status import TxStatus
 from pytcp.protocols.icmp6.icmp6__assembler import Icmp6Assembler

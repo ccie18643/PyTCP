@@ -45,9 +45,8 @@ import click
 
 from pytcp import TcpIpStack, initialize_tap
 from pytcp.lib import stack
-from pytcp.lib.ip4_address import Ip4Address
-from pytcp.lib.ip6_address import Ip6Address
 from pytcp.lib.ip_helper import str_to_ip
+from pytcp.lib.net_addr import Ip4Address, Ip6Address
 from pytcp.protocols.icmp4.message.icmp4_message__echo_request import (
     Icmp4EchoRequestMessage,
 )

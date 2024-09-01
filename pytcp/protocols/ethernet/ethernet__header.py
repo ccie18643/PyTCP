@@ -40,7 +40,7 @@ from abc import ABC
 from dataclasses import dataclass
 from typing import override
 
-from pytcp.lib.mac_address import MacAddress
+from pytcp.lib.net_addr import MacAddress
 from pytcp.lib.proto_struct import ProtoStruct
 from pytcp.protocols.ethernet.ethernet__enums import EthernetType
 

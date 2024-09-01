@@ -41,8 +41,8 @@ from typing import TYPE_CHECKING
 from pytcp import config
 from pytcp.lib import stack
 from pytcp.lib.errors import PacketValidationError
-from pytcp.lib.ip4_address import Ip4Address
 from pytcp.lib.logger import log
+from pytcp.lib.net_addr import Ip4Address
 from pytcp.lib.packet import PacketRx
 from pytcp.protocols.icmp4.icmp4__base import Icmp4Message
 from pytcp.protocols.icmp4.message.icmp4_message__destination_unreachable import (
@@ -63,8 +63,7 @@ class UdpPacketHandlerRx(ABC):
     """
 
     if TYPE_CHECKING:
-        from pytcp.lib.ip6_address import Ip6Address
-        from pytcp.lib.ip_address import IpAddress
+        from pytcp.lib.net_addr import Ip6Address, IpAddress
         from pytcp.lib.packet_stats import PacketStatsRx
         from pytcp.lib.tracker import Tracker
         from pytcp.lib.tx_status import TxStatus

@@ -47,7 +47,7 @@ from pytcp.lib.int_checks import (
     UINT_20__MAX,
     UINT_20__MIN,
 )
-from pytcp.lib.ip6_address import Ip6Address
+from pytcp.lib.net_addr import Ip6Address
 from pytcp.protocols.ip6.ip6__enums import Ip6Next
 from pytcp.protocols.ip6.ip6__header import Ip6Header
 

@@ -40,7 +40,7 @@ from dataclasses import dataclass, field
 from typing import override
 
 from pytcp.lib.int_checks import is_uint32
-from pytcp.lib.ip6_address import Ip6Address, Ip6Mask, Ip6Network
+from pytcp.lib.net_addr import Ip6Address, Ip6Mask, Ip6Network
 from pytcp.protocols.icmp6.icmp6__errors import Icmp6IntegrityError
 from pytcp.protocols.icmp6.message.nd.option.icmp6_nd_option import (
     ICMP6__ND_OPTION__LEN,

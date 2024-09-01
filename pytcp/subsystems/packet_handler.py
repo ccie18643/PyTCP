@@ -42,10 +42,15 @@ from typing import TYPE_CHECKING
 
 from pytcp import config
 from pytcp.lib import stack
-from pytcp.lib.ip4_address import Ip4Address, Ip4Host
-from pytcp.lib.ip6_address import Ip6Address, Ip6Host, Ip6Network
 from pytcp.lib.logger import log
-from pytcp.lib.mac_address import MacAddress
+from pytcp.lib.net_addr import (
+    Ip4Address,
+    Ip4Host,
+    Ip6Address,
+    Ip6Host,
+    Ip6Network,
+    MacAddress,
+)
 from pytcp.lib.packet_stats import PacketStatsRx, PacketStatsTx
 from pytcp.protocols.arp.arp__packet_handler_rx import ArpPacketHandlerRx
 from pytcp.protocols.arp.arp__packet_handler_tx import ArpPacketHandlerTx
@@ -340,7 +345,10 @@ class PacketHandler(
 
         # Configure Link Local address automatically
         if config.IP6__LLA_AUTOCONFIG:
-            ip6_host = Ip6Network("fe80::/64").eui64(self.mac_unicast)
+            ip6_host = Ip6Host.from_eui64(
+                mac_address=self.mac_unicast,
+                ip6_network=Ip6Network("fe80::/64"),
+            )
             ip6_host.gateway = None
             _claim_ip6_address(ip6_host)
 
@@ -372,7 +380,10 @@ class PacketHandler(
                     f"Attempting IPv6 address auto configuration for RA "
                     f"prefix {prefix}",
                 )
-                ip6_address = prefix.eui64(self.mac_unicast)
+                ip6_address = Ip6Host.from_eui64(
+                    mac_address=self.mac_unicast,
+                    ip6_network=prefix,
+                )
                 ip6_address.gateway = gateway
                 _claim_ip6_address(ip6_address)
 

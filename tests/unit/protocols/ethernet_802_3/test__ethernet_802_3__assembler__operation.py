@@ -38,7 +38,7 @@ from typing import Any
 from parameterized import parameterized_class  # type: ignore
 from testslide import TestCase
 
-from pytcp.lib.mac_address import MacAddress
+from pytcp.lib.net_addr import MacAddress
 from pytcp.protocols.ethernet_802_3.ethernet_802_3__assembler import (
     Ethernet8023Assembler,
 )

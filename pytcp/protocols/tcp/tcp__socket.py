@@ -41,9 +41,13 @@ import threading
 from typing import TYPE_CHECKING
 
 from pytcp.lib import stack
-from pytcp.lib.ip4_address import Ip4Address, Ip4AddressFormatError
-from pytcp.lib.ip6_address import Ip6Address, Ip6AddressFormatError
 from pytcp.lib.logger import log
+from pytcp.lib.net_addr import (
+    Ip4Address,
+    Ip4AddressFormatError,
+    Ip6Address,
+    Ip6AddressFormatError,
+)
 from pytcp.lib.socket import AF_INET4, AF_INET6, SOCK_STREAM, Socket, gaierror
 from pytcp.protocols.tcp.tcp__session import (
     FsmState,

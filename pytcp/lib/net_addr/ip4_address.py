@@ -1,0 +1,234 @@
+#!/usr/bin/env python3
+
+################################################################################
+##                                                                            ##
+##   PyTCP - Python TCP/IP stack                                              ##
+##   Copyright (C) 2020-present Sebastian Majewski                            ##
+##                                                                            ##
+##   This program is free software: you can redistribute it and/or modify     ##
+##   it under the terms of the GNU General Public License as published by     ##
+##   the Free Software Foundation, either version 3 of the License, or        ##
+##   (at your option) any later version.                                      ##
+##                                                                            ##
+##   This program is distributed in the hope that it will be useful,          ##
+##   but WITHOUT ANY WARRANTY; without even the implied warranty of           ##
+##   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the             ##
+##   GNU General Public License for more details.                             ##
+##                                                                            ##
+##   You should have received a copy of the GNU General Public License        ##
+##   along with this program. If not, see <https://www.gnu.org/licenses/>.    ##
+##                                                                            ##
+##   Author's email: ccie18643@gmail.com                                      ##
+##   Github repository: https://github.com/ccie18643/PyTCP                    ##
+##                                                                            ##
+################################################################################
+
+
+"""
+Module contains IPv4 address support class.
+
+pytcp/lib/net_addr/ip4_address.py
+
+ver 3.0.2
+"""
+
+
+from __future__ import annotations
+
+import re
+import socket
+import struct
+from typing import override
+
+from .errors import Ip4AddressFormatError
+from .ip_address import IpAddress
+from .mac_address import MacAddress
+
+IP4_ADDRESS_LEN = 4
+
+IP4_REGEX = (
+    r"((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}"
+    r"(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])"
+)
+
+
+class Ip4Address(IpAddress):
+    """
+    IPv4 address support class.
+    """
+
+    def __init__(
+        self,
+        address: (
+            Ip4Address | str | bytes | bytearray | memoryview | int | None
+        ) = None,
+    ) -> None:
+        """
+        Class constructor.
+        """
+
+        self._address: int
+        self._version: int = 4
+
+        if address is None:
+            self._address = 0
+            return
+
+        if isinstance(address, int):
+            if address & 0xFF_FF_FF_FF == address:
+                self._address = address
+                return
+
+        if isinstance(address, (memoryview, bytes, bytearray)):
+            if len(address) == 4:
+                self._address = struct.unpack("!L", address)[0]
+                return
+
+        if isinstance(address, str):
+            if re.search(IP4_REGEX, address):
+                try:
+                    self._address = struct.unpack(
+                        "!L", socket.inet_aton(address)
+                    )[0]
+                    return
+                except OSError:
+                    pass
+
+        if isinstance(address, Ip4Address):
+            self._address = int(address)
+            return
+
+        raise Ip4AddressFormatError(address)
+
+    @override
+    def __str__(self) -> str:
+        """
+        The '__str__()' dunder.
+        """
+        return socket.inet_ntoa(bytes(self))
+
+    @override
+    def __bytes__(self) -> bytes:
+        """
+        The '__bytes__()' dunder.
+        """
+        return struct.pack("!L", self._address)
+
+    @property
+    @override
+    def is_global(self) -> bool:
+        """
+        Check if IPv4 address is global.
+        """
+        return not any(
+            (
+                self.is_unspecified,
+                self.is_invalid,
+                self.is_link_local,
+                self.is_loopback,
+                self.is_multicast,
+                self.is_private,
+                self.is_reserved,
+                self.is_limited_broadcast,
+            )
+        )
+
+    @property
+    @override
+    def is_link_local(self) -> bool:
+        """
+        Check if IPv4 address is link local.
+        """
+        return (
+            self._address & 0xFF_FF_00_00 == 0xA9_FE_00_00
+        )  # 169.254.0.0 - 169.254.255.255
+
+    @property
+    @override
+    def is_loopback(self) -> bool:
+        """
+        Check if IPv4 address is loopback.
+        """
+
+        return (
+            self._address & 0xFF_00_00_00 == 0x7F_00_00_00
+        )  # 127.0.0.0 - 127.255.255.255
+
+    @property
+    @override
+    def is_multicast(self) -> bool:
+        """
+        Check if IPv4 address is multicast.
+        """
+
+        return (
+            self._address & 0xF0_00_00_00 == 0xE0_00_00_00
+        )  # 224.0.0.0 - 239.255.255.255
+
+    @property
+    @override
+    def is_private(self) -> bool:
+        """
+        Check if IPv4 address is private.
+        """
+
+        return (
+            self._address & 0xFF_00_00_00
+            == 0x0A_00_00_00  # 10.0.0.0 - 10.255.255.255
+            or self._address & 0xFF_F0_00_00
+            == 0xAC_10_00_00  # 172.16.0.0 - 172.31.255.255
+            or self._address & 0xFF_FF_00_00
+            == 0xC0_A8_00_00  # 192.168.0.0 - 192.168.255.255
+        )
+
+    @property
+    def is_reserved(self) -> bool:
+        """
+        Check if IPv4 address is reserved.
+        """
+
+        return (self._address & 0xF0_00_00_00 == 0xF0_00_00_00) & (
+            self._address != 0xFF_FF_FF_FF
+        )  # 240.0.0.0 - 255.255.255.254
+
+    @property
+    def is_limited_broadcast(self) -> bool:
+        """
+        Check if IPv4 address is a limited broadcast.
+        """
+
+        return self._address == 0xFF_FF_FF_FF  # 255.255.255.255
+
+    @property
+    @override
+    def is_invalid(self) -> bool:
+        """
+        Check if IPv4 address is reserved.
+        """
+
+        return (
+            self._address != 0x00_00_00_00
+            and self._address & 0xFF_00_00_00 == 0x00_00_00_00
+        )  # 0.0.0.1 - 0.255.255.255
+
+    @property
+    @override
+    def unspecified(self) -> Ip4Address:
+        """
+        Return unspecified IPv4 Address.
+        """
+
+        return Ip4Address()
+
+    @property
+    @override
+    def multicast_mac(self) -> MacAddress:
+        """
+        Create IPv6 multicast MAC address.
+        """
+
+        assert self.is_multicast
+
+        return MacAddress(
+            int(MacAddress(0x01005E000000)) | self._address & 0x7FFFFF
+        )

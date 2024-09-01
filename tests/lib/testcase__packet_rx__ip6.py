@@ -37,7 +37,7 @@ from typing import Any, cast
 
 from testslide import StrictMock, TestCase
 
-from pytcp.lib.ip6_address import Ip6Address
+from pytcp.lib.net_addr import Ip6Address
 from pytcp.lib.packet import PacketRx
 from pytcp.protocols.ip6.ip6__parser import Ip6Parser
 

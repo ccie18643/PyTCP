@@ -39,7 +39,7 @@ from typing import TYPE_CHECKING
 
 from pytcp import config
 from pytcp.lib.int_checks import is_4_byte_alligned
-from pytcp.lib.ip4_address import Ip4Address
+from pytcp.lib.net_addr import Ip4Address
 from pytcp.lib.proto_assembler import ProtoAssembler
 from pytcp.lib.tracker import Tracker
 from pytcp.protocols.ip4.ip4__base import Ip4

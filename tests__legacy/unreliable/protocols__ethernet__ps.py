@@ -33,7 +33,7 @@
 
 from testslide import TestCase
 
-from pytcp.lib.mac_address import MacAddress
+from pytcp.lib.net_addr import MacAddress
 from protocols.ethernet.base import (
     ETHERNET_HEADER_LEN,
     Ethernet,

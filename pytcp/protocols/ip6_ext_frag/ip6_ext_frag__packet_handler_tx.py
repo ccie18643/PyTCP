@@ -59,7 +59,7 @@ class Ip6ExtFragPacketHandlerTx(ABC):
     """
 
     if TYPE_CHECKING:
-        from pytcp.lib.ip6_address import Ip6Address
+        from pytcp.lib.net_addr import Ip6Address
         from pytcp.lib.packet_stats import PacketStatsTx
         from pytcp.protocols.ip6.ip6__assembler import Ip6Assembler, Ip6Payload
         from pytcp.protocols.raw.raw__assembler import RawAssembler

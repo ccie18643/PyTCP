@@ -40,7 +40,7 @@ from typing import TYPE_CHECKING
 
 from pytcp.lib import stack
 from pytcp.lib.logger import log
-from pytcp.lib.mac_address import MacAddress
+from pytcp.lib.net_addr import MacAddress
 from pytcp.lib.tx_status import TxStatus
 from pytcp.protocols.ethernet.ethernet__assembler import EthernetAssembler
 from pytcp.protocols.ip4.ip4__assembler import Ip4Assembler, Ip4FragAssembler
@@ -54,8 +54,7 @@ class EthernetPacketHandlerTx(ABC):
     """
 
     if TYPE_CHECKING:
-        from pytcp.lib.ip4_address import Ip4Host
-        from pytcp.lib.ip6_address import Ip6Host
+        from pytcp.lib.net_addr import Ip4Host, Ip6Host
         from pytcp.lib.packet_stats import PacketStatsTx
         from pytcp.protocols.ethernet.ethernet__base import EthernetPayload
 

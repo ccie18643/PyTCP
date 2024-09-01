@@ -34,7 +34,7 @@
 from testslide import StrictMock, TestCase
 
 from pytcp.config import IP4__DEFAULT_TTL
-from pytcp.lib.ip4_address import Ip4Address
+from pytcp.lib.net_addr import Ip4Address
 from pytcp.lib.tracker import Tracker
 from protocols.ethernet.base import EthernetType
 from pytcp.protocols.icmp4.icmp4__assembler import (
@@ -264,7 +264,8 @@ class TestIp4Assembler(TestCase):
             carried_packet=RawAssembler(data=b"0123456789ABCDEF"),
         )
         self.assertEqual(
-            len(packet), IP4__HEADER__LEN + IP4_OPT_NOP_LEN + IP4_OPT_EOL_LEN + 16
+            len(packet),
+            IP4__HEADER__LEN + IP4_OPT_NOP_LEN + IP4_OPT_EOL_LEN + 16,
         )
 
     def test_ip4_fpa____str__(self) -> None:
@@ -607,7 +608,8 @@ class TestIp4FragAssembler(TestCase):
             data=b"0123456789ABCDEF",
         )
         self.assertEqual(
-            len(packet), IP4__HEADER__LEN + IP4_OPT_NOP_LEN + IP4_OPT_EOL_LEN + 16
+            len(packet),
+            IP4__HEADER__LEN + IP4_OPT_NOP_LEN + IP4_OPT_EOL_LEN + 16,
         )
 
     def test_ip4_frag_fpa____str__(self) -> None:
