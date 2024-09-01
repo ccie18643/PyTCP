@@ -75,8 +75,8 @@ class TestIp4HeaderAsserts(TestCase):
             "ttl": 0,
             "proto": Ip4Proto.RAW,
             "cksum": 0,
-            "src": Ip4Address(0),
-            "dst": Ip4Address(0),
+            "src": Ip4Address(),
+            "dst": Ip4Address(),
         }
 
     def test__ip4__header__hlen__under_min(self) -> None:

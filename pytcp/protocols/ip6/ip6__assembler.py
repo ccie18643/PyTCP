@@ -60,8 +60,8 @@ class Ip6Assembler(Ip6, ProtoAssembler):
     def __init__(
         self,
         *,
-        ip6__src: Ip6Address = Ip6Address(0),
-        ip6__dst: Ip6Address = Ip6Address(0),
+        ip6__src: Ip6Address = Ip6Address(),
+        ip6__dst: Ip6Address = Ip6Address(),
         ip6__hop: int = config.IP6__DEFAULT_HOP_LIMIT,
         ip6__dscp: int = 0,
         ip6__ecn: int = 0,

@@ -53,10 +53,10 @@ class TestArpHeaderAsserts(TestCase):
 
         self._header_args = {
             "oper": ArpOperation.REQUEST,
-            "sha": MacAddress(0),
-            "spa": Ip4Address(0),
-            "tha": MacAddress(0),
-            "tpa": Ip4Address(0),
+            "sha": MacAddress(),
+            "spa": Ip4Address(),
+            "tha": MacAddress(),
+            "tpa": Ip4Address(),
         }
 
     def test__arp__header__sha__not_MacAddress(self) -> None:

@@ -51,8 +51,8 @@ class TestEthernetHeaderAsserts(TestCase):
         """
 
         self._header_args = {
-            "dst": MacAddress(0),
-            "src": MacAddress(0),
+            "dst": MacAddress(),
+            "src": MacAddress(),
             "type": EthernetType.RAW,
         }
 

@@ -25,7 +25,7 @@
 
 
 """
-Module contains interface class for the FPP -> UDP Socket communication.
+Module contains interface class for the Packet Parser -> UDP Socket communication.
 
 pytcp/protocols/udp/udp__metadata.py
 
@@ -51,6 +51,7 @@ class UdpMetadata:
 
     def __init__(
         self,
+        *,
         local_ip_address: IpAddress,
         local_port: int,
         remote_ip_address: IpAddress,

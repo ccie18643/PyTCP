@@ -277,7 +277,7 @@ class Ip6Address(IpAddress):
         Return unspecified IPv6 Address.
         """
 
-        return Ip6Address(0)
+        return Ip6Address()
 
 
 class Ip6Mask(IpMask):

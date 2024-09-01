@@ -98,11 +98,11 @@ class TcpSocket(Socket):
         # Fresh socket initialization
         else:
             if self._family is AF_INET6:
-                self._local_ip_address = Ip6Address(0)
-                self._remote_ip_address = Ip6Address(0)
+                self._local_ip_address = Ip6Address()
+                self._remote_ip_address = Ip6Address()
             if self._family is AF_INET4:
-                self._local_ip_address = Ip4Address(0)
-                self._remote_ip_address = Ip4Address(0)
+                self._local_ip_address = Ip4Address()
+                self._remote_ip_address = Ip4Address()
             self._local_port = 0
             self._remote_port = 0
             self._tcp_session = None
@@ -154,7 +154,7 @@ class TcpSocket(Socket):
             try:
                 if (local_ip_address := Ip6Address(address[0])) not in set(
                     stack.packet_handler.ip6_unicast
-                ) | {Ip6Address(0)}:
+                ) | {Ip6Address()}:
                     raise OSError(
                         "[Errno 99] Cannot assign requested address - "
                         "[Local IP address not owned by stack]"
@@ -169,7 +169,7 @@ class TcpSocket(Socket):
             try:
                 if (local_ip_address := Ip4Address(address[0])) not in set(
                     stack.packet_handler.ip4_unicast
-                ) | {Ip4Address(0)}:
+                ) | {Ip4Address()}:
                     raise OSError(
                         "[Errno 99] Cannot assign requested address - "
                         "[Local IP address not owned by stack]"

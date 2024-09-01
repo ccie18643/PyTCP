@@ -243,7 +243,7 @@ class Ip4Address(IpAddress):
         Return unspecified IPv4 Address.
         """
 
-        return Ip4Address(0)
+        return Ip4Address()
 
     @property
     @override

@@ -67,8 +67,8 @@ class EthernetPacketHandlerTx(ABC):
     def _phtx_ethernet(
         self,
         *,
-        ethernet__src: MacAddress = MacAddress(0),
-        ethernet__dst: MacAddress = MacAddress(0),
+        ethernet__src: MacAddress = MacAddress(),
+        ethernet__dst: MacAddress = MacAddress(),
         ethernet__payload: EthernetPayload = RawAssembler(),
     ) -> TxStatus:
         """

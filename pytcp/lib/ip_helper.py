@@ -114,7 +114,7 @@ def pick_local_ip6_address(
             return ip6_host.address
 
     # In case everything else fails return unspecified.
-    return Ip6Address(0)
+    return Ip6Address()
 
 
 def pick_local_ip4_address(
@@ -138,4 +138,4 @@ def pick_local_ip4_address(
             return ip4_host.address
 
     # In case everything else fails return unspecified.
-    return Ip4Address(0)
+    return Ip4Address()

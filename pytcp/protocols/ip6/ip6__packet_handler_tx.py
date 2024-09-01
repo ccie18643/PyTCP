@@ -73,8 +73,8 @@ class Ip6PacketHandlerTx(ABC):
         def _phtx_ethernet(
             self,
             *,
-            ethernet__src: MacAddress = MacAddress(0),
-            ethernet__dst: MacAddress = MacAddress(0),
+            ethernet__src: MacAddress = MacAddress(),
+            ethernet__dst: MacAddress = MacAddress(),
             ethernet__payload: EthernetPayload = RawAssembler(),
         ) -> TxStatus: ...
 
@@ -147,8 +147,8 @@ class Ip6PacketHandlerTx(ABC):
                 "ip6", f"{ip6_packet_tx.tracker} - {ip6_packet_tx}"
             )
             return self._phtx_ethernet(
-                ethernet__src=MacAddress(0),
-                ethernet__dst=MacAddress(0),
+                ethernet__src=MacAddress(),
+                ethernet__dst=MacAddress(),
                 ethernet__payload=ip6_packet_tx,
             )
 
@@ -180,7 +180,7 @@ class Ip6PacketHandlerTx(ABC):
         if ip6__src not in {
             *self.ip6_unicast,
             *self.ip6_multicast,
-            Ip6Address(0),
+            Ip6Address(),
         }:
             self.packet_stats_tx.ip6__src_not_owned__drop += 1
             __debug__ and log(

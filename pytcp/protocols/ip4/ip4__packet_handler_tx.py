@@ -71,8 +71,8 @@ class Ip4PacketHandlerTx(ABC):
         def _phtx_ethernet(
             self,
             *,
-            ethernet__src: MacAddress = MacAddress(0),
-            ethernet__dst: MacAddress = MacAddress(0),
+            ethernet__src: MacAddress = MacAddress(),
+            ethernet__dst: MacAddress = MacAddress(),
             ethernet__payload: EthernetPayload = RawAssembler(),
         ) -> TxStatus: ...
 
@@ -140,8 +140,8 @@ class Ip4PacketHandlerTx(ABC):
                 "ip4", f"{ip4_packet_tx.tracker} - {ip4_packet_tx}"
             )
             return self._phtx_ethernet(
-                ethernet__src=MacAddress(0),
-                ethernet__dst=MacAddress(0),
+                ethernet__src=MacAddress(),
+                ethernet__dst=MacAddress(),
                 ethernet__payload=ip4_packet_tx,
             )
 
@@ -184,8 +184,8 @@ class Ip4PacketHandlerTx(ABC):
             self.packet_stats_tx.ip4__mtu_exceed__frag__send += 1
             ethernet_tx_status.add(
                 self._phtx_ethernet(
-                    ethernet__src=MacAddress(0),
-                    ethernet__dst=MacAddress(0),
+                    ethernet__src=MacAddress(),
+                    ethernet__dst=MacAddress(),
                     ethernet__payload=ip4_frag_tx,
                 )
             )
@@ -223,7 +223,7 @@ class Ip4PacketHandlerTx(ABC):
             *self.ip4_unicast,
             *self.ip4_multicast,
             *self.ip4_broadcast,
-            Ip4Address(0),
+            Ip4Address(),
         }:
             self.packet_stats_tx.ip4__src_not_owned__drop += 1
             __debug__ and log(

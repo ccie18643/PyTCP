@@ -59,8 +59,8 @@ class Ethernet8023Assembler(Ethernet8023, ProtoAssembler):
     def __init__(
         self,
         *,
-        ethernet_802_3__src: MacAddress = MacAddress(0),
-        ethernet_802_3__dst: MacAddress = MacAddress(0),
+        ethernet_802_3__src: MacAddress = MacAddress(),
+        ethernet_802_3__dst: MacAddress = MacAddress(),
         ethernet_802_3__payload: Ethernet8023Payload = RawAssembler(),
     ) -> None:
         """

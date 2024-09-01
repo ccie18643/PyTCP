@@ -170,7 +170,7 @@ class Icmp6PacketHandlerTx(ABC):
         """
 
         tx_status = self._phtx_icmp6(
-            ip6__src=Ip6Address(0),
+            ip6__src=Ip6Address(),
             ip6__dst=ip6_unicast_candidate.solicited_node_multicast,
             ip6__hop=255,
             icmp6__message=Icmp6NdNeighborSolicitationMessage(
@@ -209,7 +209,7 @@ class Icmp6PacketHandlerTx(ABC):
         }:
             tx_status = self._phtx_icmp6(
                 ip6__src=(
-                    self.ip6_unicast[0] if self.ip6_unicast else Ip6Address(0)
+                    self.ip6_unicast[0] if self.ip6_unicast else Ip6Address()
                 ),
                 ip6__dst=Ip6Address("ff02::16"),
                 ip6__hop=1,
@@ -264,7 +264,7 @@ class Icmp6PacketHandlerTx(ABC):
         """
 
         # Pick appropriate source address
-        ip6__src = Ip6Address(0)
+        ip6__src = Ip6Address()
         for ip6_host in self.ip6_host:
             if icmp6_ns_target_address in ip6_host.network:
                 ip6__src = ip6_host.address

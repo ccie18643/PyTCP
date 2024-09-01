@@ -66,8 +66,8 @@ class Ip4Assembler(Ip4, ProtoAssembler):
     def __init__(
         self,
         *,
-        ip4__src: Ip4Address = Ip4Address(0),
-        ip4__dst: Ip4Address = Ip4Address(0),
+        ip4__src: Ip4Address = Ip4Address(),
+        ip4__dst: Ip4Address = Ip4Address(),
         ip4__ttl: int = config.IP4__DEFAULT_TTL,
         ip4__dscp: int = 0,
         ip4__ecn: int = 0,
@@ -134,8 +134,8 @@ class Ip4FragAssembler(Ip4, ProtoAssembler):
     def __init__(
         self,
         *,
-        ip4_frag__src: Ip4Address = Ip4Address(0),
-        ip4_frag__dst: Ip4Address = Ip4Address(0),
+        ip4_frag__src: Ip4Address = Ip4Address(),
+        ip4_frag__dst: Ip4Address = Ip4Address(),
         ip4_frag__ttl: int = config.IP4__DEFAULT_TTL,
         ip4_frag__dscp: int = 0,
         ip4_frag__ecn: int = 0,

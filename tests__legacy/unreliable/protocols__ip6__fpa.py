@@ -95,8 +95,8 @@ class TestIp6Assembler(TestCase):
         self.assertEqual(packet._ecn, 0)
         self.assertEqual(packet._flow, 0)
         self.assertEqual(packet._hop, IP6__DEFAULT_HOP_LIMIT)
-        self.assertEqual(packet._src, Ip6Address(0))
-        self.assertEqual(packet._dst, Ip6Address(0))
+        self.assertEqual(packet._src, Ip6Address())
+        self.assertEqual(packet._dst, Ip6Address())
         self.assertEqual(packet._next, IP6_NEXT_RAW)
         self.assertEqual(packet._dlen, 0)
 

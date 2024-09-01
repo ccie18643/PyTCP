@@ -53,10 +53,10 @@ class ArpAssembler(Arp, ProtoAssembler):
         self,
         *,
         arp__oper: ArpOperation = ArpOperation.REQUEST,
-        arp__sha: MacAddress = MacAddress(0),
-        arp__spa: Ip4Address = Ip4Address(0),
-        arp__tha: MacAddress = MacAddress(0),
-        arp__tpa: Ip4Address = Ip4Address(0),
+        arp__sha: MacAddress = MacAddress(),
+        arp__spa: Ip4Address = Ip4Address(),
+        arp__tha: MacAddress = MacAddress(),
+        arp__tpa: Ip4Address = Ip4Address(),
         echo_tracker: Tracker | None = None,
     ) -> None:
         """

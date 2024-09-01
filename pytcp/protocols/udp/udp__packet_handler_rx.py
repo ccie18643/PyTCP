@@ -59,7 +59,7 @@ from pytcp.protocols.udp.udp__parser import UdpParser
 
 class UdpPacketHandlerRx(ABC):
     """
-    Class implements packet handler for the inbound TCP packets.
+    Class implements packet handler for the inbound UDP packets.
     """
 
     if TYPE_CHECKING:

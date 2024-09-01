@@ -65,8 +65,8 @@ class ArpPacketHandlerTx(ABC):
         def _phtx_ethernet(
             self,
             *,
-            ethernet__src: MacAddress = MacAddress(0),
-            ethernet__dst: MacAddress = MacAddress(0),
+            ethernet__src: MacAddress = MacAddress(),
+            ethernet__dst: MacAddress = MacAddress(),
             ethernet__payload: EthernetPayload | None = None,
         ) -> TxStatus: ...
 
@@ -135,7 +135,7 @@ class ArpPacketHandlerTx(ABC):
             arp__oper=ArpOperation.REQUEST,
             arp__sha=self.mac_unicast,
             arp__spa=ip4_unicast,
-            arp__tha=MacAddress(0),
+            arp__tha=MacAddress(),
             arp__tpa=ip4_unicast,
         )
 
@@ -162,7 +162,7 @@ class ArpPacketHandlerTx(ABC):
             arp__oper=ArpOperation.REPLY,
             arp__sha=self.mac_unicast,
             arp__spa=ip4_unicast,
-            arp__tha=MacAddress(0),
+            arp__tha=MacAddress(),
             arp__tpa=ip4_unicast,
         )
 
@@ -188,8 +188,8 @@ class ArpPacketHandlerTx(ABC):
             ethernet__dst=MacAddress(0xFFFFFFFFFFFF),
             arp__oper=ArpOperation.REQUEST,
             arp__sha=self.mac_unicast,
-            arp__spa=Ip4Address(0),
-            arp__tha=MacAddress(0),
+            arp__spa=Ip4Address(),
+            arp__tha=MacAddress(),
             arp__tpa=ip4_unicast,
         )
 
@@ -216,9 +216,9 @@ class ArpPacketHandlerTx(ABC):
             arp__oper=ArpOperation.REQUEST,
             arp__sha=self.mac_unicast,
             arp__spa=(
-                self.ip4_unicast[0] if self.ip4_unicast else Ip4Address(0)
+                self.ip4_unicast[0] if self.ip4_unicast else Ip4Address()
             ),
-            arp__tha=MacAddress(0),
+            arp__tha=MacAddress(),
             arp__tpa=arp__tpa,
         )
 

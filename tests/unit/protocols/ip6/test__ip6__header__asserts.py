@@ -69,8 +69,8 @@ class TestIp6HeaderAsserts(TestCase):
             "dlen": 0,
             "next": Ip6Next.RAW,
             "hop": 0,
-            "src": Ip6Address(0),
-            "dst": Ip6Address(0),
+            "src": Ip6Address(),
+            "dst": Ip6Address(),
         }
 
     def test__ip6__header__dscp__under_min(self) -> None:

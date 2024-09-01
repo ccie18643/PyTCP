@@ -54,8 +54,8 @@ class TestEthernet8023HeaderAsserts(TestCase):
         """
 
         self._header_args = {
-            "dst": MacAddress(0),
-            "src": MacAddress(0),
+            "dst": MacAddress(),
+            "src": MacAddress(),
             "dlen": 0,
         }
 

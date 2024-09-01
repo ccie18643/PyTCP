@@ -60,8 +60,8 @@ class EthernetAssembler(Ethernet, ProtoAssembler):
     def __init__(
         self,
         *,
-        ethernet__src: MacAddress = MacAddress(0),
-        ethernet__dst: MacAddress = MacAddress(0),
+        ethernet__src: MacAddress = MacAddress(),
+        ethernet__dst: MacAddress = MacAddress(),
         ethernet__payload: EthernetPayload = RawAssembler(),
     ) -> None:
         """

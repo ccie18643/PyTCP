@@ -67,8 +67,8 @@ class Ethernet8023PacketHandlerTx(ABC):
     def _phtx_ethernet_802_3(
         self,
         *,
-        ethernet_802_3__src: MacAddress = MacAddress(0),
-        ethernet_802_3__dst: MacAddress = MacAddress(0),
+        ethernet_802_3__src: MacAddress = MacAddress(),
+        ethernet_802_3__dst: MacAddress = MacAddress(),
         ethernet_802_3__payload: Ethernet8023Payload = RawAssembler(),
     ) -> TxStatus:
         """

@@ -48,7 +48,7 @@ from pytcp.protocols.udp.udp__assembler import UdpAssembler
 
 class UdpPacketHandlerTx(ABC):
     """
-    Class implements packet handler for the outbound TCP packets.
+    Class implements packet handler for the outbound UDP packets.
     """
 
     if TYPE_CHECKING:
@@ -141,7 +141,7 @@ class UdpPacketHandlerTx(ABC):
         udp__payload: bytes = bytes(),
     ) -> TxStatus:
         """
-        Interface method for UDP Socket -> FPA communication.
+        Interface method for UDP Socket -> Packet Assembler communication.
         """
 
         return self._phtx_udp(

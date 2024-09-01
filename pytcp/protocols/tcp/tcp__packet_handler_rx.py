@@ -176,7 +176,7 @@ class TcpPacketHandlerRx(ABC):
             __debug__ and log(
                 "tcp",
                 f"{packet_rx.tracker} - TCP RST packet from {packet_rx.ip.src} to "
-                f"closed port {packet_rx.tcp.dport}, droping.",
+                f"closed port {packet_rx.tcp.dport}, dropping.",
             )
             return
 
