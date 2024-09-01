@@ -53,7 +53,7 @@ class PacketIntegrityError(PacketValidationError):
     Exception raised when integrity check fails.
     """
 
-    def __init__(self, message: str):
+    def __init__(self, /, message: str):
         super().__init__("[INTEGRITY ERROR]" + message)
 
 
@@ -62,5 +62,5 @@ class PacketSanityError(PacketValidationError):
     Exception raised when sanity check fails.
     """
 
-    def __init__(self, message: str):
+    def __init__(self, /, message: str):
         super().__init__("[SANITY ERROR]" + message)

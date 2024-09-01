@@ -48,12 +48,13 @@ class MacAddress:
 
     def __init__(
         self,
+        /,
         address: (
             MacAddress | str | bytes | bytearray | memoryview | int | None
         ) = None,
     ) -> None:
         """
-        Class constructor.
+        Create a new MAC address object.
         """
 
         self._address: int
@@ -63,7 +64,7 @@ class MacAddress:
             return
 
         if isinstance(address, int):
-            if address in range(0xFFFF_FFFF_FFFF + 1):
+            if 0 <= address <= 0xFFFF_FFFF_FFFF:
                 self._address = address
                 return
 
@@ -94,21 +95,21 @@ class MacAddress:
 
     def __str__(self) -> str:
         """
-        The '__str__()' dunder.
+        Get the MAC address log string.
         """
 
         return ":".join([f"{_:0>2x}" for _ in bytes(self)])
 
     def __repr__(self) -> str:
         """
-        The '__repr__()' dunder.
+        Get the MAC address string representation.
         """
 
-        return f"MacAddress('{str(self)}')"
+        return f"{self.__class__.__name__}('{str(self)}')"
 
     def __bytes__(self) -> bytes:
         """
-        The '__bytes__() dunder.
+        Get the MAC address as bytes.
         """
 
         return struct.pack(
@@ -120,21 +121,21 @@ class MacAddress:
 
     def __int__(self) -> int:
         """
-        The '__int__()' dunder.
+        Get the MAC address as int.
         """
 
         return self._address
 
     def __eq__(self, other: object) -> bool:
         """
-        The '__eq__()' dunder.
+        Compare MAC address with another object.
         """
 
         return repr(self) == repr(other)
 
     def __hash__(self) -> int:
         """
-        The '__hash__' dunder.
+        Get the MAC address hash.
         """
 
         return self._address
@@ -142,7 +143,7 @@ class MacAddress:
     @property
     def is_unspecified(self) -> bool:
         """
-        Check if address is unspecified.
+        Check if MAC address is unspecified.
         """
 
         return self._address == 0x0000_0000_0000
@@ -150,7 +151,7 @@ class MacAddress:
     @property
     def is_unicast(self) -> bool:
         """
-        Check if address is unicast.
+        Check if MAC address is unicast.
         """
 
         return (self._address & 0x0100_0000_0000) == 0x0000_0000_0000
@@ -158,15 +159,17 @@ class MacAddress:
     @property
     def is_multicast(self) -> bool:
         """
-        Check if address is multicast.
+        Check if MAC address is multicast.
         """
 
-        return (self._address & 0x0100_0000_0000) == 0x0100_0000_0000
+        return (
+            (self._address & 0x0100_0000_0000) == 0x0100_0000_0000
+        ) and not self.is_broadcast
 
     @property
     def is_multicast_ip4(self) -> bool:
         """
-        Check if address is a MAC for IPv4 multicast.
+        Check if MAC address is a IPv4 multicast MAC.
         """
 
         return (self._address & 0xFFFF_FF00_0000) == 0x0100_5E00_0000
@@ -174,7 +177,7 @@ class MacAddress:
     @property
     def is_multicast_ip6(self) -> bool:
         """
-        Check if address is a MAC for IPv6 multicast.
+        Check if MAC address is a MAC for IPv6 multicast MAC.
         """
 
         return (self._address & 0xFFFF_0000_0000) == 0x3333_0000_0000
@@ -182,7 +185,7 @@ class MacAddress:
     @property
     def is_multicast_ip6_solicited_node(self) -> bool:
         """
-        Check if address is a MAC for IPv6 solicited node multicast.
+        Check if address is IPv6 solicited node multicast MAC.
         """
 
         return (self._address & 0xFFFF_FF00_0000) == 0x3333_FF00_0000
@@ -190,7 +193,7 @@ class MacAddress:
     @property
     def is_broadcast(self) -> bool:
         """
-        Check if address is a broadcast MAC.
+        Check if MAC address is a broadcast.
         """
 
         return self._address == 0xFFFF_FFFF_FFFF

@@ -35,53 +35,139 @@ ver 3.0.2
 
 from __future__ import annotations
 
-
-class NetAddrError(Exception): ...
-
-
-class IpAddressFormatError(NetAddrError): ...
+from typing import Any
 
 
-class IpMaskFormatError(NetAddrError): ...
+class NetAddrError(Exception):
+    """
+    Base class for all NetAddr exceptions.
+    """
 
 
-class IpNetworkFormatError(NetAddrError): ...
+class IpAddressFormatError(NetAddrError):
+    """
+    Base class for all IP address format exceptions.
+    """
 
 
-class IpHostFormatError(NetAddrError): ...
+class IpMaskFormatError(NetAddrError):
+    """
+    Base class for all IP mask format exceptions.
+    """
 
 
-class IpHostGatewayError(NetAddrError): ...
+class IpNetworkFormatError(NetAddrError):
+    """
+    Base class for all IP network format exceptions.
+    """
 
 
-class Ip4AddressFormatError(IpAddressFormatError): ...
+class IpHostFormatError(NetAddrError):
+    """
+    Base class for all IP host format exceptions.
+    """
 
 
-class Ip4MaskFormatError(IpMaskFormatError): ...
+class IpHostGatewayError(NetAddrError):
+    """
+    Base class for all IP host gateway exceptions.
+    """
 
 
-class Ip4NetworkFormatError(IpNetworkFormatError): ...
+class Ip4AddressFormatError(IpAddressFormatError):
+    """
+    Exception raised when IPv4 address format is invalid.
+    """
+
+    def __init__(self, /, message: Any):
+        super().__init__(f"The IPv4 address format is invalid: {message!r}")
 
 
-class Ip4HostFormatError(IpHostFormatError): ...
+class Ip4MaskFormatError(IpMaskFormatError):
+    """
+    Exception raised when IPv4 mask format is invalid.
+    """
+
+    def __init__(self, /, message: Any):
+        super().__init__(f"The IPv4 mask format is invalid: {message!r}")
 
 
-class Ip4HostGatewayError(IpHostGatewayError): ...
+class Ip4NetworkFormatError(IpNetworkFormatError):
+    """
+    Exception raised when IPv4 network format is invalid.
+    """
+
+    def __init__(self, /, message: Any):
+        super().__init__(f"The IPv4 network format is invalid: {message!r}")
 
 
-class Ip6AddressFormatError(IpAddressFormatError): ...
+class Ip4HostFormatError(IpHostFormatError):
+    """
+    Exception raised when IPv4 host format is invalid.
+    """
+
+    def __init__(self, /, message: Any):
+        super().__init__(f"The IPv4 host format is invalid: {message!r}")
 
 
-class Ip6MaskFormatError(IpMaskFormatError): ...
+class Ip4HostGatewayError(IpHostGatewayError):
+    """
+    Exception raised when IPv4 host gateway is invalid.
+    """
+
+    def __init__(self, /, message: Any):
+        super().__init__(f"The IPv4 host gateway is invalid: {message!r}")
 
 
-class Ip6NetworkFormatError(IpNetworkFormatError): ...
+class Ip6AddressFormatError(IpAddressFormatError):
+    """
+    Exception raised when IPv6 address format is invalid.
+    """
+
+    def __init__(self, /, message: Any):
+        super().__init__(f"The IPv6 address format is invalid: {message!r}")
 
 
-class Ip6HostFormatError(IpHostFormatError): ...
+class Ip6MaskFormatError(IpMaskFormatError):
+    """
+    Exception raised when IPv6 mask format is invalid.
+    """
+
+    def __init__(self, /, message: Any):
+        super().__init__(f"The IPv6 mask format is invalid: {message!r}")
 
 
-class Ip6HostGatewayError(IpHostGatewayError): ...
+class Ip6NetworkFormatError(IpNetworkFormatError):
+    """
+    Exception raised when IPv6 network format is invalid.
+    """
+
+    def __init__(self, /, message: Any):
+        super().__init__(f"The IPv6 network format is invalid: {message!r}")
 
 
-class MacAddressFormatError(Exception): ...
+class Ip6HostFormatError(IpHostFormatError):
+    """
+    Exception raised when IPv6 host format is invalid.
+    """
+
+    def __init__(self, /, message: Any):
+        super().__init__(f"The IPv6 host format is invalid: {message!r}")
+
+
+class Ip6HostGatewayError(IpHostGatewayError):
+    """
+    Exception raised when IPv6 host gateway is invalid.
+    """
+
+    def __init__(self, /, message: Any):
+        super().__init__(f"The IPv6 host gateway is invalid: {message!r}")
+
+
+class MacAddressFormatError(Exception):
+    """
+    Exception raised when MAC address format is invalid.
+    """
+
+    def __init__(self, /, message: Any):
+        super().__init__(f"The MAC address format is invalid: {message!r}")
