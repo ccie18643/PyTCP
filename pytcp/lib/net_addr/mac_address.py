@@ -154,7 +154,9 @@ class MacAddress:
         Check if MAC address is unicast.
         """
 
-        return (self._address & 0x0100_0000_0000) == 0x0000_0000_0000
+        return (
+            (self._address & 0x0100_0000_0000) == 0x0000_0000_0000
+        ) and not self.is_unspecified
 
     @property
     def is_multicast(self) -> bool:
