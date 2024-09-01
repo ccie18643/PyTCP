@@ -35,7 +35,7 @@ from dataclasses import dataclass
 
 from testslide import TestCase
 
-from pytcp.lib.mac_address import MacAddress, MacIp4AddressFormatError
+from pytcp.lib.mac_address import MacAddress, MacAddressFormatError
 
 
 class TestMacAddress(TestCase):
@@ -92,42 +92,42 @@ class TestMacAddress(TestCase):
             1251004370415,
         )
         self.assertRaises(
-            MacIp4AddressFormatError,
+            MacAddressFormatError,
             MacAddress,
             "01:23:45:ab:cd",
         )
         self.assertRaises(
-            MacIp4AddressFormatError,
+            MacAddressFormatError,
             MacAddress,
             "01:23:45:ab:cd:ef:01",
         )
         self.assertRaises(
-            MacIp4AddressFormatError,
+            MacAddressFormatError,
             MacAddress,
             "01:23:45:ab:cd:eg",
         )
         self.assertRaises(
-            MacIp4AddressFormatError,
+            MacAddressFormatError,
             MacAddress,
             "01:23:45:ab:cd::eg",
         )
         self.assertRaises(
-            MacIp4AddressFormatError,
+            MacAddressFormatError,
             MacAddress,
             b"\x01#E\xab\xcd",
         )
         self.assertRaises(
-            MacIp4AddressFormatError,
+            MacAddressFormatError,
             MacAddress,
             b"\x01#E\xab\xcd\xef\x01",
         )
         self.assertRaises(
-            MacIp4AddressFormatError,
+            MacAddressFormatError,
             MacAddress,
             -1,
         )
         self.assertRaises(
-            MacIp4AddressFormatError,
+            MacAddressFormatError,
             MacAddress,
             281474976710656,
         )
@@ -190,7 +190,7 @@ class TestMacAddress(TestCase):
             1251004370415,
         )
 
-    def test_is_iunicast(self) -> None:
+    def test_is_unicast(self) -> None:
         """
         Test the 'is_unicast' property.
         """
