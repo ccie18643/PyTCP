@@ -60,12 +60,19 @@ class IpMask(ABC):
 
         return f"/{len(self)}"
 
+    @abstractmethod
     def __repr__(self) -> str:
         """
         Get the IP mask string representation.
         """
 
-        return f"{self.__class__.__name__}('{str(self)}')"
+        raise NotImplementedError
+
+    @abstractmethod
+    def __bytes__(self) -> bytes:
+        """
+        Get the IP mask as bytes.
+        """
 
     def __int__(self) -> int:
         """
@@ -87,12 +94,6 @@ class IpMask(ABC):
         """
 
         return hash(repr(self))
-
-    @abstractmethod
-    def __bytes__(self) -> bytes:
-        """
-        Get the IP mask as bytes.
-        """
 
     def _validate_bits(self, /, bytes_len: int) -> bool:
         """

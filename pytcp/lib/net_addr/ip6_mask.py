@@ -36,6 +36,7 @@ ver 3.0.2
 from __future__ import annotations
 
 import re
+import socket
 from typing import override
 
 from pytcp.lib.net_addr.ip6_address import IP6__ADDRESS_LEN
@@ -53,6 +54,7 @@ class Ip6Mask(IpMask):
 
     def __init__(
         self,
+        /,
         mask: (
             Ip6Mask | str | bytes | bytearray | memoryview | int | None
         ) = None,
@@ -88,6 +90,14 @@ class Ip6Mask(IpMask):
             return
 
         raise Ip6MaskFormatError(mask)
+
+    @override
+    def __repr__(self) -> str:
+        """
+        Get the IPv6 mask string representation.
+        """
+
+        return f"{self.__class__.__name__}('{socket.inet_ntop(socket.AF_INET6, bytes(self))}')"
 
     @override
     def __bytes__(self) -> bytes:

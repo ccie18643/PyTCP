@@ -38,9 +38,7 @@ from typing import Any
 from parameterized import parameterized_class  # type: ignore
 from testslide import TestCase
 
-from pytcp.lib.net_addr.errors import Ip6AddressFormatError
-from pytcp.lib.net_addr.ip4_address import Ip4Address
-from pytcp.lib.net_addr.ip6_address import Ip6Address
+from pytcp.lib.net_addr import Ip4Address, Ip6Address, Ip6AddressFormatError
 
 
 @parameterized_class(

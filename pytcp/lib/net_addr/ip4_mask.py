@@ -53,6 +53,7 @@ class Ip4Mask(IpMask):
 
     def __init__(
         self,
+        /,
         mask: (
             Ip4Mask | str | bytes | bytearray | memoryview | int | None
         ) = None,
@@ -96,6 +97,14 @@ class Ip4Mask(IpMask):
             return
 
         raise Ip4MaskFormatError(mask)
+
+    @override
+    def __repr__(self) -> str:
+        """
+        Get the IPv4 mask string representation.
+        """
+
+        return f"{self.__class__.__name__}('{socket.inet_ntoa(bytes(self))}')"
 
     @override
     def __bytes__(self) -> bytes:

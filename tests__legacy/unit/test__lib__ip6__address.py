@@ -411,7 +411,9 @@ class TestIp6Mask(TestCase):
         """
         Test the '__repr__()' dunder.
         """
-        self.assertEqual(repr(Ip6Mask("/80")), "Ip6Mask('/80')")
+        self.assertEqual(
+            repr(Ip6Mask("/80")), "Ip6Mask('ffff:ffff:ffff:ffff:ffff::')"
+        )
 
     def test___bytes__(self) -> None:
         """
@@ -448,7 +450,7 @@ class TestIp6Mask(TestCase):
         """
         self.assertEqual(
             hash(Ip6Mask("/64")),
-            hash("Ip6Mask('/64')"),
+            hash("Ip6Mask('ffff:ffff:ffff:ffff::')"),
         )
 
     def test___len__(self) -> None:

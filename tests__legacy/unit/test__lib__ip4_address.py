@@ -552,7 +552,7 @@ class TestIp4Mask(TestCase):
         """
         Test the '__repr__()' dunder.
         """
-        self.assertEqual(repr(Ip4Mask("/12")), "Ip4Mask('/12')")
+        self.assertEqual(repr(Ip4Mask("/12")), "Ip4Mask('255.240.0.0')")
 
     def test___bytes__(self) -> None:
         """
@@ -579,7 +579,7 @@ class TestIp4Mask(TestCase):
         """
         self.assertEqual(
             hash(Ip4Mask("/32")),
-            hash("Ip4Mask('/32')"),
+            hash("Ip4Mask('255.255.255.255')"),
         )
 
     def test___len__(self) -> None:
