@@ -103,16 +103,40 @@ class Ip4Address(IpAddress):
     @override
     def __str__(self) -> str:
         """
-        The '__str__()' dunder.
+        Get the IPv4 address log string.
         """
+
         return socket.inet_ntoa(bytes(self))
 
     @override
     def __bytes__(self) -> bytes:
         """
-        The '__bytes__()' dunder.
+        Get the IPv4 address as bytes.
         """
+
         return struct.pack("!L", self._address)
+
+    @override
+    @property
+    def unspecified(self) -> Ip4Address:
+        """
+        Get the unspecified IPv4 address.
+        """
+
+        return Ip4Address()
+
+    @property
+    @override
+    def multicast_mac(self) -> MacAddress:
+        """
+        Get the IPv4 multicast MAC address.
+        """
+
+        assert self.is_multicast
+
+        return MacAddress(
+            int(MacAddress(0x0100_5E00_0000)) | self._address & 0x0000_007F_FFFF
+        )
 
     @property
     @override
@@ -203,32 +227,9 @@ class Ip4Address(IpAddress):
     @override
     def is_invalid(self) -> bool:
         """
-        Check if IPv4 address is reserved.
+        Check if IPv4 address is invalid.
         """
 
         return (
-            self._address != 0x00_00_00_00
-            and self._address & 0xFF_00_00_00 == 0x00_00_00_00
-        )  # 0.0.0.1 - 0.255.255.255
-
-    @property
-    @override
-    def unspecified(self) -> Ip4Address:
-        """
-        Return unspecified IPv4 Address.
-        """
-
-        return Ip4Address()
-
-    @property
-    @override
-    def multicast_mac(self) -> MacAddress:
-        """
-        Create IPv6 multicast MAC address.
-        """
-
-        assert self.is_multicast
-
-        return MacAddress(
-            int(MacAddress(0x0100_5E00_0000)) | self._address & 0x0000_007F_FFFF
-        )
+            self._address & 0xFF_00_00_00 == 0x00_00_00_00
+        ) and self._address != 0x00_00_00_00  # 0.0.0.1 - 0.255.255.255

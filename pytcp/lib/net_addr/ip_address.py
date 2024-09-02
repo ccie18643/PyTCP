@@ -48,9 +48,12 @@ class IpAddress(ABC):
     IP address support base class.
     """
 
+    _address: int
+    _version: int
+
     def __int__(self) -> int:
         """
-        Integer representation.
+        Get the IP address as int.
         """
 
         return self._address
@@ -60,21 +63,21 @@ class IpAddress(ABC):
         other: object,
     ) -> bool:
         """
-        The '__eq__()' dunder.
+        Compare IP address with another object.
         """
 
         return repr(self) == repr(other)
 
     def __repr__(self) -> str:
         """
-        The '__repr()__' dunder.
+        Get the IP address representation string.
         """
 
-        return f"Ip{self._version}Address('{str(self)}')"
+        return f"{self.__class__.__name__}('{str(self)}')"
 
     def __hash__(self) -> int:
         """
-        The '__hash__()' dunder.
+        Get the IP address hash.
         """
 
         return self._address
@@ -82,15 +85,24 @@ class IpAddress(ABC):
     @property
     def version(self) -> int:
         """
-        Getter for '_version' attribute.
+        Get the IP address version.
         """
 
         return self._version
 
     @property
+    @abstractmethod
+    def unspecified(self) -> IpAddress:
+        """
+        Get the unspecified IP address for current address family.
+        """
+
+        raise NotImplementedError
+
+    @property
     def is_ip6(self) -> bool:
         """
-        Check if the IP version is 6.
+        Check if the IP address version is 6.
         """
 
         return self._version == 6
@@ -98,7 +110,7 @@ class IpAddress(ABC):
     @property
     def is_ip4(self) -> bool:
         """
-        Check if the IP version is 4.
+        Check if the IP address version is 4.
         """
 
         return self._version == 4
@@ -106,7 +118,7 @@ class IpAddress(ABC):
     @property
     def is_unspecified(self) -> bool:
         """
-        Check if address is a unspecified.
+        Check if the IP address is an unspecified address.
         """
 
         return self._address == 0
@@ -114,7 +126,7 @@ class IpAddress(ABC):
     @property
     def is_unicast(self) -> bool:
         """
-        Check if address is a unicast address.
+        Check if IP address is an unicast address.
         """
 
         return any(
@@ -127,71 +139,65 @@ class IpAddress(ABC):
         )
 
     @abstractmethod
-    def __init__(
-        self,
-        address: int,
-    ) -> None:
-        """
-        Class constructor placeholder.
-        """
-
-        if TYPE_CHECKING:
-            self._address: int
-            self._version: int
-
-    @abstractmethod
     def __str__(self) -> str:
         """
-        The '__str__()' dunder placeholder.
+        Get the IP address log string.
         """
+
+        raise NotImplementedError
 
     @abstractmethod
     def __bytes__(self) -> bytes:
         """
-        The '__bytes__()' dunder placeholder.
+        Get the IP address as bytes.
         """
+
+        raise NotImplementedError
 
     @property
     @abstractmethod
     def is_loopback(self) -> bool:
         """
-        The 'is_loopback' property placeholder.
+        Check if IP address is a loopback address.
         """
+
+        raise NotImplementedError
 
     @property
     @abstractmethod
     def is_global(self) -> bool:
         """
-        The 'is_global' property placeholder.
+        Check if IP address is a global address.
         """
+
+        raise NotImplementedError
 
     @property
     @abstractmethod
     def is_private(self) -> bool:
         """
-        The 'is_private' property placeholder.
+        Check if IP address is a private address.
         """
+
+        raise NotImplementedError
 
     @property
     @abstractmethod
     def is_link_local(self) -> bool:
         """
-        The 'is_link_local' property placeholder.
+        Check if IP address is a link local address.
         """
+
+        raise NotImplementedError
 
     @property
     @abstractmethod
     def is_multicast(self) -> bool:
         """
-        The 'is_multicast' property placeholder.
+        Check if IP address is a multicast address.
         """
 
-    @property
-    @abstractmethod
-    def unspecified(self) -> IpAddress:
-        """
-        The 'unspecified' property placeholder.
-        """
+        raise NotImplementedError
 
     if TYPE_CHECKING:
 
