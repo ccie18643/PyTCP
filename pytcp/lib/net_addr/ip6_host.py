@@ -51,13 +51,11 @@ from .ip6_network import Ip6Network
 from .ip_host import IpHost
 
 
-class Ip6Host(IpHost):
+class Ip6Host(IpHost[Ip6Address, Ip6Network]):
     """
     IPv6 host support class.
     """
 
-    _address: Ip6Address
-    _network: Ip6Network
     _version: int = 6
     _gateway: Ip6Address | None = None
 
@@ -104,24 +102,6 @@ class Ip6Host(IpHost):
             return
 
         raise Ip6HostFormatError(host)
-
-    @property
-    @override
-    def address(self) -> Ip6Address:
-        """
-        Get the IPv6 host address '_address' attribute.
-        """
-
-        return self._address
-
-    @property
-    @override
-    def network(self) -> Ip6Network:
-        """
-        Get the IPv6 host address '_network' attribute.
-        """
-
-        return self._network
 
     @property
     @override

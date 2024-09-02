@@ -47,10 +47,12 @@ from .ip6_mask import Ip6Mask
 from .ip_network import IpNetwork
 
 
-class Ip6Network(IpNetwork):
+class Ip6Network(IpNetwork[Ip6Address, Ip6Mask]):
     """
     IPv6 network support class.
     """
+
+    _version: int = 6
 
     def __init__(
         self,
@@ -59,10 +61,6 @@ class Ip6Network(IpNetwork):
         """
         Create a new IPv4 network object.
         """
-
-        self._address: Ip6Address
-        self._mask: Ip6Mask
-        self._version: int = 6
 
         if network is None:
             self._address = Ip6Address()
@@ -97,24 +95,6 @@ class Ip6Network(IpNetwork):
             return
 
         raise Ip6NetworkFormatError(network)
-
-    @property
-    @override
-    def address(self) -> Ip6Address:
-        """
-        Get the IPv6 network '_address' attribute.
-        """
-
-        return self._address
-
-    @property
-    @override
-    def mask(self) -> Ip6Mask:
-        """
-        Get the IPv6 network '_mask' attribute.
-        """
-
-        return self._mask
 
     @property
     @override

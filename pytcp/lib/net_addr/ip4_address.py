@@ -44,7 +44,7 @@ from .ip_address import IpAddress
 from .mac_address import MacAddress
 
 IP4__ADDRESS_LEN = 4
-
+IP4__MASK = 0xFF_FF_FF_FF
 IP4__REGEX = (
     r"((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}"
     r"(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])"
@@ -74,7 +74,7 @@ class Ip4Address(IpAddress):
             return
 
         if isinstance(address, int):
-            if address & 0xFF_FF_FF_FF == address:
+            if address & IP4__MASK == address:
                 self._address = address
                 return
 

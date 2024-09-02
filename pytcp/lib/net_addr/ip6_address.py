@@ -44,7 +44,7 @@ from .ip_address import IpAddress
 from .mac_address import MacAddress
 
 IP6__ADDRESS_LEN = 16
-
+IP6__MASK = 0xFFFF_FFFF_FFFF_FFFF_FFFF_FFFF_FFFF_FFFF
 IP6__REGEX = (
     r"(([0-9a-fA-F]{1,4}:){7,7}[0-9a-fA-F]{1,4}|"
     r"([0-9a-fA-F]{1,4}:){1,7}:|"
@@ -81,7 +81,7 @@ class Ip6Address(IpAddress):
             return
 
         if isinstance(address, int):
-            if address & 0xFFFF_FFFF_FFFF_FFFF_FFFF_FFFF_FFFF_FFFF == address:
+            if address & IP6__MASK == address:
                 self._address = address
                 return
 

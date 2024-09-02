@@ -47,10 +47,12 @@ from .ip4_mask import Ip4Mask
 from .ip_network import IpNetwork
 
 
-class Ip4Network(IpNetwork):
+class Ip4Network(IpNetwork[Ip4Address, Ip4Mask]):
     """
     IPv4 network support class.
     """
+
+    _version = 4
 
     def __init__(
         self,
@@ -59,10 +61,6 @@ class Ip4Network(IpNetwork):
         """
         Create a new IPv4 network object.
         """
-
-        self._address: Ip4Address
-        self._mask: Ip4Mask
-        self._version: int = 4
 
         if network is None:
             self._address = Ip4Address()
@@ -100,24 +98,6 @@ class Ip4Network(IpNetwork):
             return
 
         raise Ip4NetworkFormatError(network)
-
-    @property
-    @override
-    def address(self) -> Ip4Address:
-        """
-        Get the IPv4 network '_address' attribute.
-        """
-
-        return self._address
-
-    @property
-    @override
-    def mask(self) -> Ip4Mask:
-        """
-        Getter the IPv4 network '_mask' attribute.
-        """
-
-        return self._mask
 
     @property
     @override

@@ -36,7 +36,7 @@ ver 3.0.2
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Generic, TypeVar
 
 from .ip_address import IpAddress
 from .ip_host import IpHost
@@ -45,13 +45,17 @@ if TYPE_CHECKING:
     from .ip_mask import IpMask
 
 
-class IpNetwork(ABC):
+A = TypeVar("A", bound="IpAddress")
+M = TypeVar("M", bound="IpMask")
+
+
+class IpNetwork(ABC, Generic[A, M]):
     """
     IP network support base class.
     """
 
-    _address: IpAddress
-    _mask: IpMask
+    _address: A
+    _mask: M
     _version: int
 
     def __str__(self) -> str:
@@ -128,22 +132,20 @@ class IpNetwork(ABC):
         return self._version == 4
 
     @property
-    @abstractmethod
-    def address(self) -> IpAddress:
+    def address(self) -> A:
         """
         Get the IP network '_address' attribute.
         """
 
-        raise NotImplementedError
+        return self._address
 
     @property
-    @abstractmethod
-    def mask(self) -> IpMask:
+    def mask(self) -> M:
         """
         Get the IP network '_mask' attribute.
         """
 
-        raise NotImplementedError
+        return self._mask
 
     @property
     @abstractmethod

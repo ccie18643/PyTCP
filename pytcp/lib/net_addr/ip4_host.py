@@ -49,13 +49,11 @@ from .ip4_network import Ip4Network
 from .ip_host import IpHost
 
 
-class Ip4Host(IpHost):
+class Ip4Host(IpHost[Ip4Address, Ip4Network]):
     """
     IPv4 host support class.
     """
 
-    _address: Ip4Address
-    _network: Ip4Network
     _version: int = 4
     _gateway: Ip4Address | None = None
 
@@ -102,24 +100,6 @@ class Ip4Host(IpHost):
             return
 
         raise Ip4HostFormatError(host)
-
-    @property
-    @override
-    def address(self) -> Ip4Address:
-        """
-        Get the IPv4 host address '_address' attribute.
-        """
-
-        return self._address
-
-    @property
-    @override
-    def network(self) -> Ip4Network:
-        """
-        Get the IPv4 host address '_network' attribute.
-        """
-
-        return self._network
 
     @property
     @override
