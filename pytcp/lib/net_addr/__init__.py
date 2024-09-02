@@ -51,11 +51,11 @@ from .errors import (
     IpNetworkFormatError,
     MacAddressFormatError,
 )
-from .ip4_address import IP4_ADDRESS_LEN, Ip4Address
+from .ip4_address import IP4__ADDRESS_LEN, Ip4Address
 from .ip4_host import Ip4Host
 from .ip4_mask import Ip4Mask
 from .ip4_network import Ip4Network
-from .ip6_address import IP6_ADDRESS_LEN, Ip6Address
+from .ip6_address import IP6__ADDRESS_LEN, Ip6Address
 from .ip6_host import Ip6Host
 from .ip6_mask import Ip6Mask
 from .ip6_network import Ip6Network

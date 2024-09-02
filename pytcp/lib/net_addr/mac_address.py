@@ -36,15 +36,19 @@ ver 3.0.2
 from __future__ import annotations
 
 import re
-import struct
+from typing import override
+
+from pytcp.lib.net_addr.address import Address
 
 from .errors import MacAddressFormatError
 
 
-class MacAddress:
+class MacAddress(Address):
     """
     Ethernet MAC address support class.
     """
+
+    _address: int
 
     def __init__(
         self,
@@ -57,8 +61,6 @@ class MacAddress:
         Create a new MAC address object.
         """
 
-        self._address: int
-
         if address is None:
             self._address = 0
             return
@@ -70,21 +72,18 @@ class MacAddress:
 
         if isinstance(address, (memoryview, bytes, bytearray)):
             if len(address) == 6:
-                v_1, v_2, v_3 = struct.unpack("!HHH", address)
-                self._address = (v_1 << 32) + (v_2 << 16) + v_3
+                self._address = int.from_bytes(address)
                 return
 
         if isinstance(address, str):
             if re.search(
                 r"^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$", address.strip()
             ):
-                v_1, v_2, v_3 = struct.unpack(
-                    "!HHH",
+                self._address = int.from_bytes(
                     bytes.fromhex(
                         re.sub(r":|-|\.", "", address.lower().strip())
                     ),
                 )
-                self._address = (v_1 << 32) + (v_2 << 16) + v_3
                 return
 
         if isinstance(address, MacAddress):
@@ -93,6 +92,7 @@ class MacAddress:
 
         raise MacAddressFormatError(address)
 
+    @override
     def __str__(self) -> str:
         """
         Get the MAC address log string.
@@ -100,53 +100,13 @@ class MacAddress:
 
         return ":".join([f"{_:0>2x}" for _ in bytes(self)])
 
-    def __repr__(self) -> str:
-        """
-        Get the MAC address string representation.
-        """
-
-        return f"{self.__class__.__name__}('{str(self)}')"
-
+    @override
     def __bytes__(self) -> bytes:
         """
         Get the MAC address as bytes.
         """
 
-        return struct.pack(
-            "!HHH",
-            (self._address >> 32) & 0xFFFF,
-            (self._address >> 16) & 0xFFFF,
-            self._address & 0xFFFF,
-        )
-
-    def __int__(self) -> int:
-        """
-        Get the MAC address as int.
-        """
-
-        return self._address
-
-    def __eq__(self, other: object) -> bool:
-        """
-        Compare MAC address with another object.
-        """
-
-        return repr(self) == repr(other)
-
-    def __hash__(self) -> int:
-        """
-        Get the MAC address hash.
-        """
-
-        return self._address
-
-    @property
-    def is_unspecified(self) -> bool:
-        """
-        Check if MAC address is unspecified.
-        """
-
-        return self._address == 0x0000_0000_0000
+        return int(self._address).to_bytes(6)
 
     @property
     def is_unicast(self) -> bool:
@@ -169,7 +129,7 @@ class MacAddress:
         ) and not self.is_broadcast
 
     @property
-    def is_multicast_ip4(self) -> bool:
+    def is_multicast__ip4(self) -> bool:
         """
         Check if MAC address is a IPv4 multicast MAC.
         """
@@ -177,7 +137,7 @@ class MacAddress:
         return (self._address & 0xFFFF_FF00_0000) == 0x0100_5E00_0000
 
     @property
-    def is_multicast_ip6(self) -> bool:
+    def is_multicast__ip6(self) -> bool:
         """
         Check if MAC address is a MAC for IPv6 multicast MAC.
         """
@@ -185,7 +145,7 @@ class MacAddress:
         return (self._address & 0xFFFF_0000_0000) == 0x3333_0000_0000
 
     @property
-    def is_multicast_ip6_solicited_node(self) -> bool:
+    def is_multicast__ip6__solicited_node(self) -> bool:
         """
         Check if address is IPv6 solicited node multicast MAC.
         """

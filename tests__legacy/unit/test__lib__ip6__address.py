@@ -240,7 +240,7 @@ class TestIp6Address(TestCase):
         """
         self.assertEqual(
             hash(Ip6Address("2001::1234:5678:90ab:cdef")),
-            hash(42540488161975842761862124892595146223),
+            hash("Ip6Address('2001::1234:5678:90ab:cdef')"),
         )
 
     def test_version(self) -> None:
@@ -303,7 +303,7 @@ class TestIp6Address(TestCase):
         """
         for sample in self.ip6_samples:
             self.assertEqual(
-                sample.ip6_address.is_solicited_node_multicast,
+                sample.ip6_address.is_multicast__solicited_node,
                 sample.is_solicited_node_multicast,
             )
 
@@ -447,7 +447,8 @@ class TestIp6Mask(TestCase):
         Test the '__hash__' dunder.
         """
         self.assertEqual(
-            hash(Ip6Mask("/64")), hash(340282366920938463444927863358058659840)
+            hash(Ip6Mask("/64")),
+            hash("Ip6Mask('/64')"),
         )
 
     def test___len__(self) -> None:
@@ -549,7 +550,7 @@ class TestIp6Network(TestCase):
         """
         self.assertEqual(
             hash(Ip6Network("1234:5678:90ab:cdef::/64")),
-            hash(Ip6Address("1234:5678:90ab:cdef::")) ^ hash(Ip6Mask("/64")),
+            hash("Ip6Network('1234:5678:90ab:cdef::/64')"),
         )
 
     def test___contains__(self) -> None:
@@ -696,8 +697,7 @@ class TestIp6Host(TestCase):
         """
         self.assertEqual(
             hash(Ip6Host("1234:5678:90ab:cdef::1/64")),
-            hash(Ip6Address("1234:5678:90ab:cdef::1"))
-            ^ hash(Ip6Network("1234:5678:90ab:cdef::/64")),
+            hash("Ip6Host('1234:5678:90ab:cdef::1/64')"),
         )
 
     def test_address(self) -> None:

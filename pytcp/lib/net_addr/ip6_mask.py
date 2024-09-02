@@ -36,8 +36,9 @@ ver 3.0.2
 from __future__ import annotations
 
 import re
-import struct
 from typing import override
+
+from pytcp.lib.net_addr.ip6_address import IP6__ADDRESS_LEN
 
 from .errors import Ip6MaskFormatError
 from .ip_mask import IpMask
@@ -48,6 +49,8 @@ class Ip6Mask(IpMask):
     IPv6 network mask support class.
     """
 
+    _version: int = 6
+
     def __init__(
         self,
         mask: (
@@ -55,22 +58,8 @@ class Ip6Mask(IpMask):
         ) = None,
     ) -> None:
         """
-        Class constructor.
+        Create a new IPv6 mask object.
         """
-
-        self._mask: int
-        self._version: int = 6
-
-        def _validate_bits() -> bool:
-            """
-            Validate that mask is made of consecutive bits.
-            """
-
-            bit_mask = f"{self._mask:0128b}"
-            try:
-                return not bit_mask[bit_mask.index("0") :].count("1")
-            except ValueError:
-                return True
 
         if mask is None:
             self._mask = 0
@@ -79,14 +68,13 @@ class Ip6Mask(IpMask):
         if isinstance(mask, int):
             if mask & 0xFFFF_FFFF_FFFF_FFFF_FFFF_FFFF_FFFF_FFFF == mask:
                 self._mask = mask
-                if _validate_bits():
+                if self._validate_bits(IP6__ADDRESS_LEN * 8):
                     return
 
         if isinstance(mask, (memoryview, bytes, bytearray)):
             if len(mask) == 16:
-                v_1, v_2, v_3, v_4 = struct.unpack("!LLLL", mask)
-                self._mask = (v_1 << 96) + (v_2 << 64) + (v_3 << 32) + v_4
-                if _validate_bits():
+                self._mask = int.from_bytes(mask)
+                if self._validate_bits(IP6__ADDRESS_LEN * 8):
                     return
 
         if isinstance(mask, str) and re.search(r"^\/\d{1,3}$", mask):
@@ -104,13 +92,7 @@ class Ip6Mask(IpMask):
     @override
     def __bytes__(self) -> bytes:
         """
-        The '__bytes__()' dunder.
+        Get the IPv6 mask as bytes.
         """
 
-        return struct.pack(
-            "!LLLL",
-            (self._mask >> 96) & 0xFFFFFFFF,
-            (self._mask >> 64) & 0xFFFFFFFF,
-            (self._mask >> 32) & 0xFFFFFFFF,
-            self._mask & 0xFFFFFFFF,
-        )
+        return self._mask.to_bytes(16)

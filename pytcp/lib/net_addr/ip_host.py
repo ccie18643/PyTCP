@@ -27,7 +27,7 @@
 """
 Module contains IP host base class.
 
-pytcp/lib/ip_host.py
+pytcp/lib/net_addr/ip_host.py
 
 ver 3.0.2
 """
@@ -49,52 +49,43 @@ class IpHost(ABC):
     IP host support base class.
     """
 
-    @abstractmethod
-    def __init__(self) -> None:
-        """
-        Class constructor placeholder.
-        """
-
-        self._address: IpAddress
-        self._network: IpNetwork
-        self._version: int
-        self._gateway: IpAddress | None
+    _address: IpAddress
+    _network: IpNetwork
+    _version: int
+    _gateway: IpAddress | None
 
     def __str__(self) -> str:
         """
-        The '__str__()' dunder.
+        Get the IP host address log string.
         """
 
         return str(self._address) + "/" + str(len(self._network.mask))
 
     def __repr__(self) -> str:
         """
-        The '__repr__()' dunder.
+        Get the IP host address string representation.
         """
 
-        return f"Ip{self._version}Host('{str(self)}')"
+        return f"{self.__class__.__name__}('{str(self)}')"
 
-    def __eq__(
-        self,
-        other: object,
-    ) -> bool:
+    def __eq__(self, other: object) -> bool:
         """
-        The '__eq__()' dunder.
+        Compare the IP host address with another object.
         """
 
         return repr(self) == repr(other)
 
     def __hash__(self) -> int:
         """
-        The '__hash__()' dunder.
+        Get the IP host address hash.
         """
 
-        return hash(self._address) ^ hash(self._network)
+        return hash(repr(self))
 
     @property
     def version(self) -> int:
         """
-        Getter for the '_version' attribute.
+        Get the IP host address version.
         """
 
         return self._version
@@ -102,7 +93,7 @@ class IpHost(ABC):
     @property
     def is_ip6(self) -> bool:
         """
-        Check if the IP version is 6.
+        Check if the IP host address version is 6.
         """
 
         return self._version == 6
@@ -110,7 +101,7 @@ class IpHost(ABC):
     @property
     def is_ip4(self) -> bool:
         """
-        Check if the IP version is 4.
+        Check if the IP host address version is 4.
         """
 
         return self._version == 4
@@ -119,29 +110,34 @@ class IpHost(ABC):
     @abstractmethod
     def address(self) -> IpAddress:
         """
-        The 'address' property placeholder.
+        Get the IP host address '_address' attribute.
         """
+
+        raise NotImplementedError
 
     @property
     @abstractmethod
     def network(self) -> IpNetwork:
         """
-        The 'network' property placeholder.
+        Get the IP host address '_network' attribute.
         """
+
+        raise NotImplementedError
 
     @property
     @abstractmethod
     def gateway(self) -> IpAddress | None:
         """
-        The 'gateway' property getter placeholder.
+        Get the IP host address '_gateway' attribute.
         """
+
+        raise NotImplementedError
 
     @gateway.setter
     @abstractmethod
-    def gateway(
-        self,
-        address: IpAddress | None,
-    ) -> None:
+    def gateway(self, /, address: IpAddress | None) -> None:
         """
-        The 'gateway' property setter placeholder.
+        Set the IP host address '_gateway' attribute.
         """
+
+        raise NotImplementedError

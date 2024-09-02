@@ -54,6 +54,11 @@ class Ip4Host(IpHost):
     IPv4 host support class.
     """
 
+    _address: Ip4Address
+    _network: Ip4Network
+    _version: int = 4
+    _gateway: Ip4Address | None = None
+
     def __init__(
         self,
         host: (
@@ -64,14 +69,8 @@ class Ip4Host(IpHost):
         ),
     ) -> None:
         """
-        Class constructor.
+        Get the IPv4 host address log string.
         """
-
-        self._address: Ip4Address
-        self._network: Ip4Network
-        self._version: int = 4
-
-        self._gateway: Ip4Address | None = None
 
         if isinstance(host, tuple):
             if len(host) == 2:
@@ -108,7 +107,7 @@ class Ip4Host(IpHost):
     @override
     def address(self) -> Ip4Address:
         """
-        Getter for the '_address' attribute.
+        Get the IPv4 host address '_address' attribute.
         """
 
         return self._address
@@ -117,7 +116,7 @@ class Ip4Host(IpHost):
     @override
     def network(self) -> Ip4Network:
         """
-        Getter for the '_network' attribute.
+        Get the IPv4 host address '_network' attribute.
         """
 
         return self._network
@@ -126,19 +125,16 @@ class Ip4Host(IpHost):
     @override
     def gateway(self) -> Ip4Address | None:
         """
-        Getter for the '_gateway' attribute.
+        Get the IPv4 host address '_gateway' attribute.
         """
 
         return self._gateway
 
     @gateway.setter
     @override
-    def gateway(
-        self,
-        address: Ip4Address | None,
-    ) -> None:
+    def gateway(self, /, address: Ip4Address | None) -> None:
         """
-        Setter for the '_gateway' attribute.
+        Set the IPv4 host address '_gateway' attribute.
         """
 
         if address is not None and (

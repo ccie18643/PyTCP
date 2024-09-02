@@ -57,7 +57,7 @@ class Ip6Network(IpNetwork):
         network: Ip6Network | tuple[Ip6Address, Ip6Mask] | str | None = None,
     ) -> None:
         """
-        Class constructor.
+        Create a new IPv4 network object.
         """
 
         self._address: Ip6Address
@@ -102,7 +102,7 @@ class Ip6Network(IpNetwork):
     @override
     def address(self) -> Ip6Address:
         """
-        Getter for the '_address' attribute.
+        Get the IPv6 network '_address' attribute.
         """
 
         return self._address
@@ -111,7 +111,7 @@ class Ip6Network(IpNetwork):
     @override
     def mask(self) -> Ip6Mask:
         """
-        Getter for the '_mask' attribute.
+        Get the IPv6 network '_mask' attribute.
         """
 
         return self._mask

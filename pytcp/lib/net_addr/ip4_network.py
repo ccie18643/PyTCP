@@ -57,7 +57,7 @@ class Ip4Network(IpNetwork):
         network: Ip4Network | tuple[Ip4Address, Ip4Mask] | str | None = None,
     ) -> None:
         """
-        Class constructor.
+        Create a new IPv4 network object.
         """
 
         self._address: Ip4Address
@@ -105,7 +105,7 @@ class Ip4Network(IpNetwork):
     @override
     def address(self) -> Ip4Address:
         """
-        Getter for the '_address' attribute.
+        Get the IPv4 network '_address' attribute.
         """
 
         return self._address
@@ -114,7 +114,7 @@ class Ip4Network(IpNetwork):
     @override
     def mask(self) -> Ip4Mask:
         """
-        Getter for the '_mask' attribute.
+        Getter the IPv4 network '_mask' attribute.
         """
 
         return self._mask
@@ -129,7 +129,6 @@ class Ip4Network(IpNetwork):
         return Ip4Address(int(self._address) + (~int(self._mask) & 0xFFFFFFFF))
 
     @property
-    @override
     def broadcast(self) -> Ip4Address:
         """
         Broadcast address (same as last address in the network).

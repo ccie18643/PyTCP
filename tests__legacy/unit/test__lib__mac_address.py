@@ -187,7 +187,7 @@ class TestMacAddress(TestCase):
         """
         self.assertEqual(
             hash(MacAddress("01:23:45:ab:cd:ef")),
-            1251004370415,
+            hash("MacAddress('01:23:45:ab:cd:ef')"),
         )
 
     def test_is_unicast(self) -> None:
@@ -206,7 +206,7 @@ class TestMacAddress(TestCase):
         """
         for sample in self.mac_samples:
             self.assertEqual(
-                sample.mac_address.is_multicast_ip4,
+                sample.mac_address.is_multicast__ip4,
                 sample.is_multicast_ip4,
             )
 
@@ -216,7 +216,7 @@ class TestMacAddress(TestCase):
         """
         for sample in self.mac_samples:
             self.assertEqual(
-                sample.mac_address.is_multicast_ip6,
+                sample.mac_address.is_multicast__ip6,
                 sample.is_multicast_ip6,
             )
 
@@ -226,7 +226,7 @@ class TestMacAddress(TestCase):
         """
         for sample in self.mac_samples:
             self.assertEqual(
-                sample.mac_address.is_multicast_ip6_solicited_node,
+                sample.mac_address.is_multicast__ip6__solicited_node,
                 sample.is_multicast_ip6_solicited_node,
             )
 

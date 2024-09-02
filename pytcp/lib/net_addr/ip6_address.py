@@ -37,16 +37,15 @@ from __future__ import annotations
 
 import re
 import socket
-import struct
 from typing import override
 
 from .errors import Ip6AddressFormatError
 from .ip_address import IpAddress
 from .mac_address import MacAddress
 
-IP6_ADDRESS_LEN = 16
+IP6__ADDRESS_LEN = 16
 
-IP6_REGEX = (
+IP6__REGEX = (
     r"(([0-9a-fA-F]{1,4}:){7,7}[0-9a-fA-F]{1,4}|"
     r"([0-9a-fA-F]{1,4}:){1,7}:|"
     r"([0-9a-fA-F]{1,4}:){1,6}:[0-9a-fA-F]{1,4}|"
@@ -64,18 +63,18 @@ class Ip6Address(IpAddress):
     IPv6 address support class.
     """
 
+    _version: int = 6
+
     def __init__(
         self,
+        /,
         address: (
             Ip6Address | str | bytes | bytearray | memoryview | int | None
         ) = None,
     ) -> None:
         """
-        Class constructor.
+        Create a new IPv6 address object.
         """
-
-        self._address: int
-        self._version: int = 6
 
         if address is None:
             self._address = 0
@@ -88,18 +87,14 @@ class Ip6Address(IpAddress):
 
         if isinstance(address, (memoryview, bytes, bytearray)):
             if len(address) == 16:
-                v_1, v_2, v_3, v_4 = struct.unpack("!LLLL", address)
-                self._address = (v_1 << 96) + (v_2 << 64) + (v_3 << 32) + v_4
+                self._address = int.from_bytes(address)
                 return
 
         if isinstance(address, str):
-            if re.search(IP6_REGEX, address):
+            if re.search(IP6__REGEX, address):
                 try:
-                    v_1, v_2, v_3, v_4 = struct.unpack(
-                        "!LLLL", socket.inet_pton(socket.AF_INET6, address)
-                    )
-                    self._address = (
-                        (v_1 << 96) + (v_2 << 64) + (v_3 << 32) + v_4
+                    self._address = int.from_bytes(
+                        socket.inet_pton(socket.AF_INET6, address)
                     )
                     return
                 except OSError:
@@ -114,7 +109,7 @@ class Ip6Address(IpAddress):
     @override
     def __str__(self) -> str:
         """
-        String representation
+        Get the IPv6 address log string.
         """
 
         return socket.inet_ntop(socket.AF_INET6, bytes(self))
@@ -122,25 +117,42 @@ class Ip6Address(IpAddress):
     @override
     def __bytes__(self) -> bytes:
         """
-        Bytes representation
+        Get the IPv6 address as bytes.
         """
 
-        return struct.pack(
-            "!LLLL",
-            (self._address >> 96) & 0xFFFFFFFF,
-            (self._address >> 64) & 0xFFFFFFFF,
-            (self._address >> 32) & 0xFFFFFFFF,
-            self._address & 0xFFFFFFFF,
-        )
+        return self._address.to_bytes(16)
 
     @property
     @override
-    def is_loopback(self) -> bool:
+    def multicast_mac(self) -> MacAddress:
         """
-        Check if IPv6 address is loopback.
+        Get the IPv6 multicast MAC address.
         """
 
-        return self._address == 1  # ::1/128
+        assert self.is_multicast, (
+            "The IPv6 address must be a multicast address to get a multicast "
+            f"MAC address. Got: {self}"
+        )
+
+        return MacAddress(
+            int(MacAddress(0x3333_0000_0000)) | self._address & 0x0000_FFFF_FFFF
+        )
+
+    @property
+    def solicited_node_multicast(self) -> Ip6Address:
+        """
+        Create IPv6 solicited node multicast address.
+        """
+
+        assert self.is_unicast or self.is_unspecified, (
+            "The IPv6 address must be a unicast or unspecified address "
+            f"to get a solicited node multicast address. Got: {self}"
+        )
+
+        return Ip6Address(
+            self._address & 0x0000_0000_0000_0000_0000_0000_00FF_FFFF
+            | int(Ip6Address("ff02::1:ff00:0"))
+        )
 
     @property
     @override
@@ -156,18 +168,6 @@ class Ip6Address(IpAddress):
 
     @property
     @override
-    def is_private(self) -> bool:
-        """
-        Check if IPv6 address is private.
-        """
-
-        return (
-            self._address & 0xFE00_0000_0000_0000_0000_0000_0000_0000
-            == 0xFC00_0000_0000_0000_0000_0000_0000_0000
-        )  # fc00::/7
-
-    @property
-    @override
     def is_link_local(self) -> bool:
         """
         Check if IPv6 address is link local.
@@ -177,6 +177,15 @@ class Ip6Address(IpAddress):
             self._address & 0xFFC0_0000_0000_0000_0000_0000_0000_0000
             == 0xFE80_0000_0000_0000_0000_0000_0000_0000
         )  # fe80::/10
+
+    @property
+    @override
+    def is_loopback(self) -> bool:
+        """
+        Check if the IPv6 address is a loopback address.
+        """
+
+        return self._address == 1  # ::1/128
 
     @property
     @override
@@ -211,8 +220,7 @@ class Ip6Address(IpAddress):
         )  # ff02::2/128
 
     @property
-    @override
-    def is_solicited_node_multicast(self) -> bool:
+    def is_multicast__solicited_node(self) -> bool:
         """
         Check if address is IPv6 solicited node multicast address.
         """
@@ -224,33 +232,12 @@ class Ip6Address(IpAddress):
 
     @property
     @override
-    def solicited_node_multicast(self) -> Ip6Address:
+    def is_private(self) -> bool:
         """
-        Create IPv6 solicited node multicast address.
-        """
-
-        return Ip6Address(
-            self._address & 0x0000_0000_0000_0000_0000_0000_00FF_FFFF
-            | int(Ip6Address("ff02::1:ff00:0"))
-        )
-
-    @property
-    @override
-    def multicast_mac(self) -> MacAddress:
-        """
-        Create IPv6 multicast MAC address.
+        Check if IPv6 address is private.
         """
 
-        assert self.is_multicast
-        return MacAddress(
-            int(MacAddress(0x3333_0000_0000)) | self._address & 0x0000_FFFF_FFFF
-        )
-
-    @property
-    @override
-    def unspecified(self) -> Ip6Address:
-        """
-        Return unspecified IPv6 Address.
-        """
-
-        return Ip6Address()
+        return (
+            self._address & 0xFE00_0000_0000_0000_0000_0000_0000_0000
+            == 0xFC00_0000_0000_0000_0000_0000_0000_0000
+        )  # fc00::/7

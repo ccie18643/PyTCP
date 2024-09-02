@@ -27,7 +27,7 @@
 """
 Module contains IP network base class.
 
-pytcp/lib/ip_network.py
+pytcp/lib/net_addr/ip_network.py
 
 ver 3.0.2
 """
@@ -42,10 +42,7 @@ from .ip_address import IpAddress
 from .ip_host import IpHost
 
 if TYPE_CHECKING:
-    from .ip4_address import Ip4Address
-    from .ip6_host import Ip6Host
     from .ip_mask import IpMask
-    from .mac_address import MacAddress
 
 
 class IpNetwork(ABC):
@@ -53,53 +50,41 @@ class IpNetwork(ABC):
     IP network support base class.
     """
 
-    @abstractmethod
-    def __init__(self) -> None:
-        """
-        Class constructor placeholder.
-        """
-
-        self._address: IpAddress
-        self._mask: IpMask
-        self._version: int
+    _address: IpAddress
+    _mask: IpMask
+    _version: int
 
     def __str__(self) -> str:
         """
-        The '__str__()' dunder.
+        Get the IP network log string.
         """
 
         return str(self._address) + "/" + str(len(self._mask))
 
     def __repr__(self) -> str:
         """
-        The '__repr__()' dunder.
+        Get the IP network representation string.
         """
 
-        return f"Ip{self._version}Network('{str(self)}')"
+        return f"{self.__class__.__name__}('{str(self)}')"
 
-    def __eq__(
-        self,
-        other: object,
-    ) -> bool:
+    def __eq__(self, other: object) -> bool:
         """
-        The '__eq__()' dunder.
+        Compare IP network with another object.
         """
 
         return repr(self) == repr(other)
 
     def __hash__(self) -> int:
         """
-        The '__hash__()' dunder.
+        Get the IP network hash.
         """
 
-        return hash(self._address) ^ hash(self._mask)
+        return hash(repr(self))
 
-    def __contains__(
-        self,
-        other: object,
-    ) -> bool:
+    def __contains__(self, other: object) -> bool:
         """
-        The '__contains__()' dunder for the 'in' operator.
+        Check if the IP network contains the IP address or host.
         """
 
         if isinstance(other, IpAddress):
@@ -121,7 +106,7 @@ class IpNetwork(ABC):
     @property
     def version(self) -> int:
         """
-        Getter for the '_version' attribute.
+        Getter the IP network version.
         """
 
         return self._version
@@ -129,7 +114,7 @@ class IpNetwork(ABC):
     @property
     def is_ip6(self) -> bool:
         """
-        Check if the IP version is 6.
+        Check if the IP network version is 6.
         """
 
         return self._version == 6
@@ -137,7 +122,7 @@ class IpNetwork(ABC):
     @property
     def is_ip4(self) -> bool:
         """
-        Check if the IP version is 4.
+        Check if the IP network version is 4.
         """
 
         return self._version == 4
@@ -146,36 +131,25 @@ class IpNetwork(ABC):
     @abstractmethod
     def address(self) -> IpAddress:
         """
-        The 'address' property placeholder.
+        Get the IP network '_address' attribute.
         """
+
+        raise NotImplementedError
 
     @property
     @abstractmethod
     def mask(self) -> IpMask:
         """
-        The 'mask' property placeholder.
+        Get the IP network '_mask' attribute.
         """
+
+        raise NotImplementedError
 
     @property
     @abstractmethod
     def last(self) -> IpAddress:
         """
-        The 'last' property placeholder.
+        Get the IP network last address.
         """
 
-    if TYPE_CHECKING:
-
-        @property
-        def broadcast(self) -> Ip4Address:
-            """
-            The 'broadcast' property placeholder.
-            """
-
-            raise NotImplementedError
-
-        def eui64(self, mac_address: MacAddress) -> Ip6Host:
-            """
-            The 'eui64' property placeholder.
-            """
-
-            raise NotImplementedError
+        raise NotImplementedError

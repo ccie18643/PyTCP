@@ -40,7 +40,7 @@ from dataclasses import dataclass, field
 from typing import override
 
 from pytcp.lib.int_checks import is_4_byte_alligned
-from pytcp.lib.net_addr import IP6_ADDRESS_LEN, Ip6Address
+from pytcp.lib.net_addr import IP6__ADDRESS_LEN, Ip6Address
 from pytcp.lib.proto_enum import ProtoEnumByte
 from pytcp.lib.proto_struct import ProtoStruct
 
@@ -153,7 +153,7 @@ class Icmp6Mld2MulticastAddressRecord(ProtoStruct):
 
         return (
             ICMP6__MLD2__MULTICAST_ADDRESS_RECORD__LEN
-            + IP6_ADDRESS_LEN * self.number_of_sources
+            + IP6__ADDRESS_LEN * self.number_of_sources
             + self.aux_data_len
         )
 
@@ -243,9 +243,9 @@ class Icmp6Mld2MulticastAddressRecord(ProtoStruct):
             Ip6Address(
                 _bytes[
                     ICMP6__MLD2__MULTICAST_ADDRESS_RECORD__LEN
-                    + IP6_ADDRESS_LEN
+                    + IP6__ADDRESS_LEN
                     * n : ICMP6__MLD2__MULTICAST_ADDRESS_RECORD__LEN
-                    + IP6_ADDRESS_LEN * (n + 1)
+                    + IP6__ADDRESS_LEN * (n + 1)
                 ]
             )
             for n in range(number_of_sources)
@@ -253,7 +253,7 @@ class Icmp6Mld2MulticastAddressRecord(ProtoStruct):
 
         aux_data_offset = (
             ICMP6__MLD2__MULTICAST_ADDRESS_RECORD__LEN
-            + IP6_ADDRESS_LEN * number_of_sources
+            + IP6__ADDRESS_LEN * number_of_sources
         )
         aux_data = _bytes[
             aux_data_offset : aux_data_offset + (aux_data_len << 2)

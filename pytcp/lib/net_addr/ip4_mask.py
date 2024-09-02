@@ -37,11 +37,10 @@ from __future__ import annotations
 
 import re
 import socket
-import struct
 from typing import override
 
 from .errors import Ip4MaskFormatError
-from .ip4_address import IP4_REGEX
+from .ip4_address import IP4__ADDRESS_LEN, IP4__REGEX
 from .ip_mask import IpMask
 
 
@@ -50,6 +49,8 @@ class Ip4Mask(IpMask):
     IPv4 mask support class.
     """
 
+    _version: int = 4
+
     def __init__(
         self,
         mask: (
@@ -57,22 +58,8 @@ class Ip4Mask(IpMask):
         ) = None,
     ) -> None:
         """
-        Class constructor.
+        Create a new IPv4 mask object.
         """
-
-        self._mask: int
-        self._version: int = 4
-
-        def _validate_bits() -> bool:
-            """
-            Validate that mask is made of consecutive bits.
-            """
-
-            bit_mask = f"{self._mask:032b}"
-            try:
-                return not bit_mask[bit_mask.index("0") :].count("1")
-            except ValueError:
-                return True
 
         if mask is None:
             self._mask = 0
@@ -81,13 +68,13 @@ class Ip4Mask(IpMask):
         if isinstance(mask, int):
             if mask & 0xFF_FF_FF_FF == mask:
                 self._mask = mask
-                if _validate_bits():
+                if self._validate_bits(IP4__ADDRESS_LEN * 8):
                     return
 
         if isinstance(mask, (memoryview, bytes, bytearray)):
             if len(mask) == 4:
-                self._mask = struct.unpack("!L", mask)[0]
-                if _validate_bits():
+                self._mask = int.from_bytes(mask)
+                if self._validate_bits(IP4__ADDRESS_LEN * 8):
                     return
 
         if isinstance(mask, str) and re.search(r"^\/\d{1,2}$", mask):
@@ -96,10 +83,10 @@ class Ip4Mask(IpMask):
                 self._mask = int("1" * bit_count + "0" * (32 - bit_count), 2)
                 return
 
-        if isinstance(mask, str) and re.search(IP4_REGEX, mask):
+        if isinstance(mask, str) and re.search(IP4__REGEX, mask):
             try:
-                self._mask = struct.unpack("!L", socket.inet_aton(mask))[0]
-                if _validate_bits():
+                self._mask = int.from_bytes(socket.inet_aton(mask))
+                if self._validate_bits(IP4__ADDRESS_LEN * 8):
                     return
             except OSError:
                 pass
@@ -113,7 +100,7 @@ class Ip4Mask(IpMask):
     @override
     def __bytes__(self) -> bytes:
         """
-        The '__bytes_()' dunder.
+        Get the IPv4 mask as bytes.
         """
 
-        return struct.pack("!L", self._mask)
+        return self._mask.to_bytes(4)

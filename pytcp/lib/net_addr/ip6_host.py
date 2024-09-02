@@ -56,6 +56,11 @@ class Ip6Host(IpHost):
     IPv6 host support class.
     """
 
+    _address: Ip6Address
+    _network: Ip6Network
+    _version: int = 6
+    _gateway: Ip6Address | None = None
+
     def __init__(
         self,
         host: (
@@ -66,13 +71,8 @@ class Ip6Host(IpHost):
         ),
     ) -> None:
         """
-        Class constructor.
+        Get the IPv6 host address log string.
         """
-
-        self._address: Ip6Address
-        self._network: Ip6Network
-        self._version: int = 6
-        self._gateway: Ip6Address | None = None
 
         if isinstance(host, tuple):
             if len(host) == 2:
@@ -109,7 +109,7 @@ class Ip6Host(IpHost):
     @override
     def address(self) -> Ip6Address:
         """
-        Getter for the '_address' attribute.
+        Get the IPv6 host address '_address' attribute.
         """
 
         return self._address
@@ -118,7 +118,7 @@ class Ip6Host(IpHost):
     @override
     def network(self) -> Ip6Network:
         """
-        Getter for the '_network' attribute.
+        Get the IPv6 host address '_network' attribute.
         """
 
         return self._network
@@ -127,19 +127,16 @@ class Ip6Host(IpHost):
     @override
     def gateway(self) -> Ip6Address | None:
         """
-        Getter for the '_gateway' attribute.
+        Get the IPv6 host address '_gateway' attribute.
         """
 
         return self._gateway
 
     @gateway.setter
     @override
-    def gateway(
-        self,
-        address: Ip6Address | None,
-    ) -> None:
+    def gateway(self, address: Ip6Address | None) -> None:
         """
-        Setter for the '_gateway' attribute.
+        Set the IPv6 host address '_gateway' attribute.
         """
 
         if address is not None and address not in Ip6Network("fe80::/10"):
@@ -149,15 +146,16 @@ class Ip6Host(IpHost):
 
     @staticmethod
     def from_eui64(
-        *,
-        mac_address: MacAddress,
-        ip6_network: Ip6Network,
+        *, mac_address: MacAddress, ip6_network: Ip6Network
     ) -> Ip6Host:
         """
-        Create IPv6 EUI64 interface address.
+        Create IPv6 EUI64 host address.
         """
 
-        assert len(ip6_network.mask) == 64
+        assert len(ip6_network.mask) == 64, (
+            "The IPv6 EUI64 network address mask must be /64. "
+            f"Got: {ip6_network.mask}"
+        )
 
         interface_id = (
             ((int(mac_address) & 0xFFFFFF000000) << 16)

@@ -37,16 +37,15 @@ from __future__ import annotations
 
 import re
 import socket
-import struct
 from typing import override
 
 from .errors import Ip4AddressFormatError
 from .ip_address import IpAddress
 from .mac_address import MacAddress
 
-IP4_ADDRESS_LEN = 4
+IP4__ADDRESS_LEN = 4
 
-IP4_REGEX = (
+IP4__REGEX = (
     r"((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}"
     r"(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])"
 )
@@ -57,18 +56,18 @@ class Ip4Address(IpAddress):
     IPv4 address support class.
     """
 
+    _version: int = 4
+
     def __init__(
         self,
+        /,
         address: (
             Ip4Address | str | bytes | bytearray | memoryview | int | None
         ) = None,
     ) -> None:
         """
-        Class constructor.
+        Create a new IPv4 address object.
         """
-
-        self._address: int
-        self._version: int = 4
 
         if address is None:
             self._address = 0
@@ -81,15 +80,13 @@ class Ip4Address(IpAddress):
 
         if isinstance(address, (memoryview, bytes, bytearray)):
             if len(address) == 4:
-                self._address = struct.unpack("!L", address)[0]
+                self._address = int.from_bytes(address)
                 return
 
         if isinstance(address, str):
-            if re.search(IP4_REGEX, address):
+            if re.search(IP4__REGEX, address):
                 try:
-                    self._address = struct.unpack(
-                        "!L", socket.inet_aton(address)
-                    )[0]
+                    self._address = int.from_bytes(socket.inet_aton(address))
                     return
                 except OSError:
                     pass
@@ -114,16 +111,7 @@ class Ip4Address(IpAddress):
         Get the IPv4 address as bytes.
         """
 
-        return struct.pack("!L", self._address)
-
-    @override
-    @property
-    def unspecified(self) -> Ip4Address:
-        """
-        Get the unspecified IPv4 address.
-        """
-
-        return Ip4Address()
+        return self._address.to_bytes(IP4__ADDRESS_LEN)
 
     @property
     @override
@@ -132,7 +120,10 @@ class Ip4Address(IpAddress):
         Get the IPv4 multicast MAC address.
         """
 
-        assert self.is_multicast
+        assert self.is_multicast, (
+            "The IPv4 address must be a multicast address to get a multicast "
+            f"MAC address. Got: {self}"
+        )
 
         return MacAddress(
             int(MacAddress(0x0100_5E00_0000)) | self._address & 0x0000_007F_FFFF
@@ -142,7 +133,7 @@ class Ip4Address(IpAddress):
     @override
     def is_global(self) -> bool:
         """
-        Check if IPv4 address is global.
+        Check if the IPv4 address is a global address.
         """
         return not any(
             (
@@ -161,7 +152,7 @@ class Ip4Address(IpAddress):
     @override
     def is_link_local(self) -> bool:
         """
-        Check if IPv4 address is link local.
+        Check if the IPv4 address is a link local address.
         """
         return (
             self._address & 0xFF_FF_00_00 == 0xA9_FE_00_00
@@ -171,7 +162,7 @@ class Ip4Address(IpAddress):
     @override
     def is_loopback(self) -> bool:
         """
-        Check if IPv4 address is loopback.
+        Check if the IPv4 address is a loopback address.
         """
 
         return (
@@ -182,7 +173,7 @@ class Ip4Address(IpAddress):
     @override
     def is_multicast(self) -> bool:
         """
-        Check if IPv4 address is multicast.
+        Check if the IPv4 address is a multicast address.
         """
 
         return (
@@ -193,7 +184,7 @@ class Ip4Address(IpAddress):
     @override
     def is_private(self) -> bool:
         """
-        Check if IPv4 address is private.
+        Check if the IPv4 address is a private address.
         """
 
         return (
@@ -208,7 +199,7 @@ class Ip4Address(IpAddress):
     @property
     def is_reserved(self) -> bool:
         """
-        Check if IPv4 address is reserved.
+        Check if the IPv4 address is a reserved address.
         """
 
         return (self._address & 0xF0_00_00_00 == 0xF0_00_00_00) & (
@@ -218,16 +209,15 @@ class Ip4Address(IpAddress):
     @property
     def is_limited_broadcast(self) -> bool:
         """
-        Check if IPv4 address is a limited broadcast.
+        Check if the IPv4 address is a limited broadcast address.
         """
 
         return self._address == 0xFF_FF_FF_FF  # 255.255.255.255
 
     @property
-    @override
     def is_invalid(self) -> bool:
         """
-        Check if IPv4 address is invalid.
+        Check if the IPv4 address is an invalid address.
         """
 
         return (

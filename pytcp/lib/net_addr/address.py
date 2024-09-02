@@ -25,9 +25,9 @@
 
 
 """
-Module contains IP mask base class.
+Module contains network address base class.
 
-pytcp/lib/net_addr/ip_mask.py
+pytcp/lib/net_addr/address.py
 
 ver 3.0.2
 """
@@ -38,95 +38,69 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 
 
-class IpMask(ABC):
+class Address(ABC):
     """
-    IP mask support base class.
+    Network address support base class.
     """
 
-    _mask: int
-    _version: int
+    _address: int
 
-    def __len__(self) -> int:
-        """
-        Get the IP mask bit-length.
-        """
-
-        return f"{self._mask:b}".count("1")
-
+    @abstractmethod
     def __str__(self) -> str:
         """
-        Get the IP mask log string.
+        Get the network address string representation.
         """
 
-        return f"/{len(self)}"
+        raise NotImplementedError
 
     def __repr__(self) -> str:
         """
-        Get the IP mask string representation.
+        Get the network address representation string.
         """
 
         return f"{self.__class__.__name__}('{str(self)}')"
 
     def __int__(self) -> int:
         """
-        Get the IP mask as integer.
+        Get the network address as integer.
         """
 
-        return self._mask
+        return self._address
+
+    @abstractmethod
+    def __bytes__(self) -> bytes:
+        """
+        Get the network address bytes representation.
+        """
+
+        raise NotImplementedError
 
     def __eq__(self, other: object) -> bool:
         """
-        Compare the IP mask with another object.
+        Compare the network address with another object.
         """
 
         return repr(self) == repr(other)
 
     def __hash__(self) -> int:
         """
-        Get the IP mask hash.
+        Get the network address hash.
         """
 
         return hash(repr(self))
 
-    @abstractmethod
-    def __bytes__(self) -> bytes:
+    @property
+    def unspecified(self) -> Address:
         """
-        Get the IP mask as bytes.
-        """
-
-    def _validate_bits(self, /, bytes_len: int) -> bool:
-        """
-        Validate that mask is made of consecutive bits.
+        Get the unspecified network address.
         """
 
-        bit_mask = f"{self._mask:0{bytes_len}b}"
-
-        try:
-            return not bit_mask[bit_mask.index("0") :].count("1")
-
-        except ValueError:
-            return True
+        return self.__class__()
 
     @property
-    def version(self) -> int:
+    def is_unspecified(self) -> bool:
         """
-        Get the IP mask version.
-        """
-
-        return self._version
-
-    @property
-    def is_ip6(self) -> bool:
-        """
-        Check if the IP mask version is 6.
+        Check if the network address is unspecified.
         """
 
-        return self._version == 6
-
-    @property
-    def is_ip4(self) -> bool:
-        """
-        Check if the IP mask version is 4.
-        """
-
-        return self._version == 4
+        return self._address == 0

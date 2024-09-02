@@ -40,7 +40,7 @@ from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, override
 
 from pytcp.lib.int_checks import is_uint16
-from pytcp.lib.net_addr import IP6_ADDRESS_LEN
+from pytcp.lib.net_addr import IP6__ADDRESS_LEN
 from pytcp.protocols.icmp6.icmp6__errors import (
     Icmp6IntegrityError,
     Icmp6SanityError,
@@ -227,7 +227,7 @@ class Icmp6Mld2ReportMessage(Icmp6Message):
                 ICMP6__MLD2__MULTICAST_ADDRESS_RECORD__LEN
                 + (frame[record_offset + 1] << 2)
                 + int.from_bytes(frame[record_offset + 2 : record_offset + 4])
-                * IP6_ADDRESS_LEN
+                * IP6__ADDRESS_LEN
             )
 
         if not (record_offset == ip6__dlen):

@@ -341,7 +341,9 @@ class TestIp4Address(TestCase):
         """
         Test the '__hash__()' dunder.
         """
-        self.assertEqual(hash(Ip4Address("192.168.9.1")), hash(3232237825))
+        self.assertEqual(
+            hash(Ip4Address("192.168.9.1")), hash("Ip4Address('192.168.9.1')")
+        )
 
     def test___contains__(self) -> None:
         """
@@ -575,7 +577,10 @@ class TestIp4Mask(TestCase):
         """
         Test the '__hash__()' dunder.
         """
-        self.assertEqual(hash(Ip4Mask("/32")), hash(4294967295))
+        self.assertEqual(
+            hash(Ip4Mask("/32")),
+            hash("Ip4Mask('/32')"),
+        )
 
     def test___len__(self) -> None:
         """
@@ -687,7 +692,7 @@ class TestIp4Network(TestCase):
         """
         self.assertEqual(
             hash(Ip4Network("10.0.0.0/8")),
-            hash(Ip4Address("10.0.0.0")) ^ hash(Ip4Mask("255.0.0.0")),
+            hash("Ip4Network('10.0.0.0/8')"),
         )
 
     def test_address(self) -> None:
@@ -810,7 +815,7 @@ class TestIp4Host(TestCase):
         """
         self.assertEqual(
             hash(Ip4Host("10.0.0.1/8")),
-            hash(Ip4Address("10.0.0.1")) ^ hash(Ip4Network("10.0.0.0/8")),
+            hash("Ip4Host('10.0.0.1/8')"),
         )
 
     def test_version(self) -> None:
