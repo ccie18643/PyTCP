@@ -273,7 +273,7 @@ class TestNetAddrIp4Mask(TestCase):
 
     def test__net_addr__ip4_mask__len(self) -> None:
         """
-        Ensure the IPv4 address '__len__()' method returns a correct value.
+        Ensure the IPv4 mask '__len__()' method returns a correct value.
         """
 
         self.assertEqual(
@@ -283,7 +283,7 @@ class TestNetAddrIp4Mask(TestCase):
 
     def test__net_addr__ip4_mask__str(self) -> None:
         """
-        Ensure the IPv4 address '__str__()' method returns a correct value.
+        Ensure the IPv4 mask '__str__()' method returns a correct value.
         """
 
         self.assertEqual(
@@ -293,7 +293,7 @@ class TestNetAddrIp4Mask(TestCase):
 
     def test__net_addr__ip4_mask__repr(self) -> None:
         """
-        Ensure the IPv4 address '__repr__()' method returns a correct value.
+        Ensure the IPv4 mask '__repr__()' method returns a correct value.
         """
 
         self.assertEqual(
@@ -303,7 +303,7 @@ class TestNetAddrIp4Mask(TestCase):
 
     def test__net_addr__ip4_mask__bytes(self) -> None:
         """
-        Ensure the IPv4 address '__bytes__()' method returns a correct value.
+        Ensure the IPv4 mask '__bytes__()' method returns a correct value.
         """
 
         self.assertEqual(
@@ -313,7 +313,7 @@ class TestNetAddrIp4Mask(TestCase):
 
     def test__net_addr__ip4_mask__int(self) -> None:
         """
-        Ensure the IPv4 address '__int__()' method returns a correct value.
+        Ensure the IPv4 mask '__int__()' method returns a correct value.
         """
 
         self.assertEqual(
@@ -323,7 +323,7 @@ class TestNetAddrIp4Mask(TestCase):
 
     def test__net_addr__ip4_mask__eq(self) -> None:
         """
-        Ensure the IPv4 address '__eq__()' method returns a correct value.
+        Ensure the IPv4 mask '__eq__()' method returns a correct value.
         """
 
         self.assertTrue(
@@ -335,12 +335,12 @@ class TestNetAddrIp4Mask(TestCase):
         )
 
         self.assertFalse(
-            self._ip4_mask == "not an IPv4 address",
+            self._ip4_mask == "not an IPv4 mask",
         )
 
     def test__net_addr__ip4_mask__hash(self) -> None:
         """
-        Ensure the IPv4 address '__hash__()' method returns a correct value.
+        Ensure the IPv4 mask '__hash__()' method returns a correct value.
         """
 
         self.assertEqual(
@@ -350,7 +350,7 @@ class TestNetAddrIp4Mask(TestCase):
 
     def test__net_addr__ip4_mask__version(self) -> None:
         """
-        Ensure the IPv4 address 'version' property returns a correct value.
+        Ensure the IPv4 mask 'version' property returns a correct value.
         """
 
         self.assertEqual(
@@ -360,7 +360,7 @@ class TestNetAddrIp4Mask(TestCase):
 
     def test__net_addr__ip4_mask__is_ip4(self) -> None:
         """
-        Ensure the IPv4 address 'is_ip4' property returns a correct
+        Ensure the IPv4 mask 'is_ip4' property returns a correct
         value.
         """
 
@@ -371,7 +371,7 @@ class TestNetAddrIp4Mask(TestCase):
 
     def test__net_addr__ip4_mask__is_ip6(self) -> None:
         """
-        Ensure the IPv4 address 'is_ip6' property returns a correct
+        Ensure the IPv4 mask 'is_ip6' property returns a correct
         value.
         """
 
@@ -447,7 +447,7 @@ class TestNetAddrIp4Mask(TestCase):
             "_results": {
                 "error": Ip4MaskFormatError,
                 "error_message": (
-                    "The IPv4 mask format is invalid: Ip6Mask('::')"
+                    "The IPv4 mask format is invalid: Ip6Mask('/0')"
                 ),
             },
         },
