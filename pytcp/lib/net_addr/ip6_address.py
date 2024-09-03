@@ -67,10 +67,10 @@ class Ip6Address(IpAddress):
 
     def __init__(
         self,
-        /,
         address: (
             Ip6Address | str | bytes | bytearray | memoryview | int | None
         ) = None,
+        /,
     ) -> None:
         """
         Create a new IPv6 address object.

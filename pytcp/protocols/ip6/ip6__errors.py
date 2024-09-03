@@ -43,7 +43,7 @@ class Ip6IntegrityError(PacketIntegrityError):
     Exception raised when IPv6 packet integrity check fails.
     """
 
-    def __init__(self, /, message: str):
+    def __init__(self, message: str, /):
         super().__init__("[IPv6] " + message)
 
 
@@ -52,5 +52,5 @@ class Ip6SanityError(PacketSanityError):
     Exception raised when IPv6 packet sanity check fails.
     """
 
-    def __init__(self, /, message: str):
+    def __init__(self, message: str, /):
         super().__init__("[IPv6] " + message)

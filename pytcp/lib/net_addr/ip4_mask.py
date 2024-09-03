@@ -53,10 +53,10 @@ class Ip4Mask(IpMask):
 
     def __init__(
         self,
-        /,
         mask: (
             Ip4Mask | str | bytes | bytearray | memoryview | int | None
         ) = None,
+        /,
     ) -> None:
         """
         Create a new IPv4 mask object.

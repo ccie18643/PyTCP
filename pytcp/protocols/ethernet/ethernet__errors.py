@@ -43,7 +43,7 @@ class EthernetIntegrityError(PacketIntegrityError):
     Exception raised when Ethernet packet integrity check fails.
     """
 
-    def __init__(self, /, message: str):
+    def __init__(self, message: str, /):
         super().__init__("[Ethernet] " + message)
 
 
@@ -52,5 +52,5 @@ class EthernetSanityError(PacketSanityError):
     Exception raised when Ethernet packet sanity check fails.
     """
 
-    def __init__(self, /, message: str):
+    def __init__(self, message: str, /):
         super().__init__("[Ethernet] " + message)

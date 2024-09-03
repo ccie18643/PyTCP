@@ -43,7 +43,7 @@ class TcpIntegrityError(PacketIntegrityError):
     Exception raised when TCP packet integrity check fails.
     """
 
-    def __init__(self, /, message: str):
+    def __init__(self, message: str, /):
         super().__init__("[TCP] " + message)
 
 
@@ -52,5 +52,5 @@ class TcpSanityError(PacketSanityError):
     Exception raised when TCP packet sanity check fails.
     """
 
-    def __init__(self, /, message: str):
+    def __init__(self, message: str, /):
         super().__init__("[TCP] " + message)

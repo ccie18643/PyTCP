@@ -43,7 +43,7 @@ class Icmp6IntegrityError(PacketIntegrityError):
     Exception raised when ICMPv6 packet integrity check fails.
     """
 
-    def __init__(self, /, message: str):
+    def __init__(self, message: str, /):
         super().__init__("[ICMPv6] " + message)
 
 
@@ -52,5 +52,5 @@ class Icmp6SanityError(PacketSanityError):
     Exception raised when ICMPv6 packet sanity check fails.
     """
 
-    def __init__(self, /, message: str):
+    def __init__(self, message: str, /):
         super().__init__("[ICMPv6] " + message)

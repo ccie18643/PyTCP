@@ -60,10 +60,10 @@ class Ip4Address(IpAddress):
 
     def __init__(
         self,
-        /,
         address: (
             Ip4Address | str | bytes | bytearray | memoryview | int | None
         ) = None,
+        /,
     ) -> None:
         """
         Create a new IPv4 address object.

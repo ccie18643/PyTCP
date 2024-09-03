@@ -43,7 +43,7 @@ class UdpIntegrityError(PacketIntegrityError):
     Exception raised when UDP packet integrity check fails.
     """
 
-    def __init__(self, /, message: str):
+    def __init__(self, message: str, /):
         super().__init__("[UDP] " + message)
 
 
@@ -52,5 +52,5 @@ class UdpSanityError(PacketSanityError):
     Exception raised when UDP packet sanity check fails.
     """
 
-    def __init__(self, /, message: str):
+    def __init__(self, message: str, /):
         super().__init__("[UDP] " + message)

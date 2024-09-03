@@ -45,9 +45,7 @@ from pytcp.lib.net_addr import Ip4Address, Ip6Address, Ip6AddressFormatError
     [
         {
             "_description": "Test the IPv6 address: :: (str)",
-            "_args": {
-                "address": "::",
-            },
+            "_args": ["::"],
             "_results": {
                 "__str__": "::",
                 "__repr__": "Ip6Address('::')",
@@ -72,9 +70,7 @@ from pytcp.lib.net_addr import Ip4Address, Ip6Address, Ip6AddressFormatError
         },
         {
             "_description": "Test the IPv6 address: :: (None)",
-            "_args": {
-                "address": None,
-            },
+            "_args": [None],
             "_results": {
                 "__str__": "::",
                 "__repr__": "Ip6Address('::')",
@@ -99,9 +95,7 @@ from pytcp.lib.net_addr import Ip4Address, Ip6Address, Ip6AddressFormatError
         },
         {
             "_description": "Test the IPv6 address: ::1 (str)",
-            "_args": {
-                "address": "::1",
-            },
+            "_args": ["::1"],
             "_results": {
                 "__str__": "::1",
                 "__repr__": "Ip6Address('::1')",
@@ -126,9 +120,7 @@ from pytcp.lib.net_addr import Ip4Address, Ip6Address, Ip6AddressFormatError
         },
         {
             "_description": "Test the IPv6 address: 2000:: (str)",
-            "_args": {
-                "address": "2000::",
-            },
+            "_args": ["2000::"],
             "_results": {
                 "__str__": "2000::",
                 "__repr__": "Ip6Address('2000::')",
@@ -153,9 +145,7 @@ from pytcp.lib.net_addr import Ip4Address, Ip6Address, Ip6AddressFormatError
         },
         {
             "_description": "Test the IPv6 address: 3fff:ffff:ffff:ffff:ffff:ffff:ffff:ffff (str)",
-            "_args": {
-                "address": "3fff:ffff:ffff:ffff:ffff:ffff:ffff:ffff",
-            },
+            "_args": ["3fff:ffff:ffff:ffff:ffff:ffff:ffff:ffff"],
             "_results": {
                 "__str__": "3fff:ffff:ffff:ffff:ffff:ffff:ffff:ffff",
                 "__repr__": "Ip6Address('3fff:ffff:ffff:ffff:ffff:ffff:ffff:ffff')",
@@ -182,9 +172,7 @@ from pytcp.lib.net_addr import Ip4Address, Ip6Address, Ip6AddressFormatError
         },
         {
             "_description": "Test the IPv6 address: fe80:: (str)",
-            "_args": {
-                "address": "fe80::",
-            },
+            "_args": ["fe80::"],
             "_results": {
                 "__str__": "fe80::",
                 "__repr__": "Ip6Address('fe80::')",
@@ -209,9 +197,7 @@ from pytcp.lib.net_addr import Ip4Address, Ip6Address, Ip6AddressFormatError
         },
         {
             "_description": "Test the IPv6 address: febf:ffff:ffff:ffff:ffff:ffff:ffff:ffff (str)",
-            "_args": {
-                "address": "febf:ffff:ffff:ffff:ffff:ffff:ffff:ffff",
-            },
+            "_args": ["febf:ffff:ffff:ffff:ffff:ffff:ffff:ffff"],
             "_results": {
                 "__str__": "febf:ffff:ffff:ffff:ffff:ffff:ffff:ffff",
                 "__repr__": "Ip6Address('febf:ffff:ffff:ffff:ffff:ffff:ffff:ffff')",
@@ -238,9 +224,7 @@ from pytcp.lib.net_addr import Ip4Address, Ip6Address, Ip6AddressFormatError
         },
         {
             "_description": "Test the IPv6 address: fc00:: (str)",
-            "_args": {
-                "address": "fc00::",
-            },
+            "_args": ["fc00::"],
             "_results": {
                 "__str__": "fc00::",
                 "__repr__": "Ip6Address('fc00::')",
@@ -265,9 +249,7 @@ from pytcp.lib.net_addr import Ip4Address, Ip6Address, Ip6AddressFormatError
         },
         {
             "_description": "Test the IPv6 address: fdff:ffff:ffff:ffff:ffff:ffff:ffff:ffff (str)",
-            "_args": {
-                "address": "fdff:ffff:ffff:ffff:ffff:ffff:ffff:ffff",
-            },
+            "_args": ["fdff:ffff:ffff:ffff:ffff:ffff:ffff:ffff"],
             "_results": {
                 "__str__": "fdff:ffff:ffff:ffff:ffff:ffff:ffff:ffff",
                 "__repr__": "Ip6Address('fdff:ffff:ffff:ffff:ffff:ffff:ffff:ffff')",
@@ -294,9 +276,7 @@ from pytcp.lib.net_addr import Ip4Address, Ip6Address, Ip6AddressFormatError
         },
         {
             "_description": "Test the IPv6 address: ff00:: (str)",
-            "_args": {
-                "address": "ff00::",
-            },
+            "_args": ["ff00::"],
             "_results": {
                 "__str__": "ff00::",
                 "__repr__": "Ip6Address('ff00::')",
@@ -321,9 +301,7 @@ from pytcp.lib.net_addr import Ip4Address, Ip6Address, Ip6AddressFormatError
         },
         {
             "_description": "Test the IPv6 address: ff02::1 (str)",
-            "_args": {
-                "address": "ff02::1",
-            },
+            "_args": ["ff02::1"],
             "_results": {
                 "__str__": "ff02::1",
                 "__repr__": "Ip6Address('ff02::1')",
@@ -348,9 +326,7 @@ from pytcp.lib.net_addr import Ip4Address, Ip6Address, Ip6AddressFormatError
         },
         {
             "_description": "Test the IPv6 address: ff02::2 (str)",
-            "_args": {
-                "address": "ff02::2",
-            },
+            "_args": ["ff02::2"],
             "_results": {
                 "__str__": "ff02::2",
                 "__repr__": "Ip6Address('ff02::2')",
@@ -375,9 +351,7 @@ from pytcp.lib.net_addr import Ip4Address, Ip6Address, Ip6AddressFormatError
         },
         {
             "_description": "Test the IPv6 address: ff02::1:ff00:0 (str)",
-            "_args": {
-                "address": "ff02::1:ff00:0",
-            },
+            "_args": ["ff02::1:ff00:0"],
             "_results": {
                 "__str__": "ff02::1:ff00:0",
                 "__repr__": "Ip6Address('ff02::1:ff00:0')",
@@ -402,9 +376,7 @@ from pytcp.lib.net_addr import Ip4Address, Ip6Address, Ip6AddressFormatError
         },
         {
             "_description": "Test the IPv6 address: ff02::1:ff00:0 (str uppercase)",
-            "_args": {
-                "address": "FF02::1:FF00:0",
-            },
+            "_args": ["FF02::1:FF00:0"],
             "_results": {
                 "__str__": "ff02::1:ff00:0",
                 "__repr__": "Ip6Address('ff02::1:ff00:0')",
@@ -429,9 +401,7 @@ from pytcp.lib.net_addr import Ip4Address, Ip6Address, Ip6AddressFormatError
         },
         {
             "_description": "Test the IPv6 address: ff02::1:ff00:0 (Ip6Address)",
-            "_args": {
-                "address": Ip6Address("ff02::1:ff00:0"),
-            },
+            "_args": [Ip6Address("ff02::1:ff00:0")],
             "_results": {
                 "__str__": "ff02::1:ff00:0",
                 "__repr__": "Ip6Address('ff02::1:ff00:0')",
@@ -456,9 +426,7 @@ from pytcp.lib.net_addr import Ip4Address, Ip6Address, Ip6AddressFormatError
         },
         {
             "_description": "Test the IPv6 address: ff02::1:ff00:0 (int)",
-            "_args": {
-                "address": 338963523518870617245727861372719464448,
-            },
+            "_args": [338963523518870617245727861372719464448],
             "_results": {
                 "__str__": "ff02::1:ff00:0",
                 "__repr__": "Ip6Address('ff02::1:ff00:0')",
@@ -483,9 +451,9 @@ from pytcp.lib.net_addr import Ip4Address, Ip6Address, Ip6AddressFormatError
         },
         {
             "_description": "Test the IPv6 address: ff02::1:ff00:0 (bytes)",
-            "_args": {
-                "address": b"\xff\x02\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01\xff\x00\x00\x00",
-            },
+            "_args": [
+                b"\xff\x02\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01\xff\x00\x00\x00"
+            ],
             "_results": {
                 "__str__": "ff02::1:ff00:0",
                 "__repr__": "Ip6Address('ff02::1:ff00:0')",
@@ -510,11 +478,11 @@ from pytcp.lib.net_addr import Ip4Address, Ip6Address, Ip6AddressFormatError
         },
         {
             "_description": "Test the IPv6 address: ff02::1:ff00:0 (bytearray)",
-            "_args": {
-                "address": bytearray(
+            "_args": [
+                bytearray(
                     b"\xff\x02\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01\xff\x00\x00\x00"
-                ),
-            },
+                )
+            ],
             "_results": {
                 "__str__": "ff02::1:ff00:0",
                 "__repr__": "Ip6Address('ff02::1:ff00:0')",
@@ -539,11 +507,11 @@ from pytcp.lib.net_addr import Ip4Address, Ip6Address, Ip6AddressFormatError
         },
         {
             "_description": "Test the IPv6 address: ff02::1:ff00:0 (memoryview)",
-            "_args": {
-                "address": memoryview(
+            "_args": [
+                memoryview(
                     b"\xff\x02\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01\xff\x00\x00\x00"
-                ),
-            },
+                )
+            ],
             "_results": {
                 "__str__": "ff02::1:ff00:0",
                 "__repr__": "Ip6Address('ff02::1:ff00:0')",
@@ -568,9 +536,7 @@ from pytcp.lib.net_addr import Ip4Address, Ip6Address, Ip6AddressFormatError
         },
         {
             "_description": "Test the IPv6 address: ff02::1:ffff:ffff (str)",
-            "_args": {
-                "address": "ff02::1:ffff:ffff",
-            },
+            "_args": ["ff02::1:ffff:ffff"],
             "_results": {
                 "__str__": "ff02::1:ffff:ffff",
                 "__repr__": "Ip6Address('ff02::1:ffff:ffff')",
@@ -595,9 +561,7 @@ from pytcp.lib.net_addr import Ip4Address, Ip6Address, Ip6AddressFormatError
         },
         {
             "_description": "Test the IPv6 address: ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff (str)",
-            "_args": {
-                "address": "ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff",
-            },
+            "_args": ["ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff"],
             "_results": {
                 "__str__": "ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff",
                 "__repr__": "Ip6Address('ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff')",
@@ -638,7 +602,7 @@ class TestNetAddrIp6Address(TestCase):
         Initialize the IPv6 address object with testcase arguments.
         """
 
-        self._ip6_address = Ip6Address(**self._args)
+        self._ip6_address = Ip6Address(*self._args)
 
     def test__net_addr__ip6_address__str(self) -> None:
         """
@@ -854,9 +818,7 @@ class TestNetAddrIp6Address(TestCase):
     [
         {
             "_description": "Test the IPv6 address format: '2000::10000'",
-            "_args": {
-                "address": "2000::10000",
-            },
+            "_args": ["2000::10000"],
             "_results": {
                 "error": Ip6AddressFormatError,
                 "error_message": (
@@ -866,9 +828,7 @@ class TestNetAddrIp6Address(TestCase):
         },
         {
             "_description": "Test the IPv6 address format: '2000:::'",
-            "_args": {
-                "address": "2000:::",
-            },
+            "_args": ["2000:::"],
             "_results": {
                 "error": Ip6AddressFormatError,
                 "error_message": (
@@ -878,9 +838,7 @@ class TestNetAddrIp6Address(TestCase):
         },
         {
             "_description": "Test the IPv6 address format: '2000;:1'",
-            "_args": {
-                "address": "2000;:1",
-            },
+            "_args": ["2000;:1"],
             "_results": {
                 "error": Ip6AddressFormatError,
                 "error_message": (
@@ -893,9 +851,9 @@ class TestNetAddrIp6Address(TestCase):
                 "Test the IPv6 address format: "
                 "b'\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff'"
             ),
-            "_args": {
-                "address": b"\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff",
-            },
+            "_args": [
+                b"\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff"
+            ],
             "_results": {
                 "error": Ip6AddressFormatError,
                 "error_message": (
@@ -909,9 +867,9 @@ class TestNetAddrIp6Address(TestCase):
                 "Test the IPv6 address format: "
                 "b'\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff'"
             ),
-            "_args": {
-                "address": b"\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff",
-            },
+            "_args": [
+                b"\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff"
+            ],
             "_results": {
                 "error": Ip6AddressFormatError,
                 "error_message": (
@@ -922,9 +880,7 @@ class TestNetAddrIp6Address(TestCase):
         },
         {
             "_description": "Test the IPv6 address format: -1",
-            "_args": {
-                "address": -1,
-            },
+            "_args": [-1],
             "_results": {
                 "error": Ip6AddressFormatError,
                 "error_message": ("The IPv6 address format is invalid: -1"),
@@ -934,9 +890,7 @@ class TestNetAddrIp6Address(TestCase):
             "_description": (
                 "Test the IPv6 address format: 340282366920938463463374607431768211456"
             ),
-            "_args": {
-                "address": 340282366920938463463374607431768211456,
-            },
+            "_args": [340282366920938463463374607431768211456],
             "_results": {
                 "error": Ip6AddressFormatError,
                 "error_message": (
@@ -946,9 +900,7 @@ class TestNetAddrIp6Address(TestCase):
         },
         {
             "_description": "Test the IPv6 address format: Ip4Address()",
-            "_args": {
-                "address": Ip4Address(),
-            },
+            "_args": [Ip4Address()],
             "_results": {
                 "error": Ip6AddressFormatError,
                 "error_message": "The IPv6 address format is invalid: Ip4Address('0.0.0.0')",
@@ -956,9 +908,7 @@ class TestNetAddrIp6Address(TestCase):
         },
         {
             "_description": "Test the IPv6 address format: {}",
-            "_args": {
-                "address": {},
-            },
+            "_args": [{}],
             "_results": {
                 "error": Ip6AddressFormatError,
                 "error_message": "The IPv6 address format is invalid: {}",
@@ -966,9 +916,7 @@ class TestNetAddrIp6Address(TestCase):
         },
         {
             "_description": "Test the IPv6 address format: 1.1",
-            "_args": {
-                "address": 1.1,
-            },
+            "_args": [1.1],
             "_results": {
                 "error": Ip6AddressFormatError,
                 "error_message": "The IPv6 address format is invalid: 1.1",
@@ -991,7 +939,7 @@ class TestNetAddrIp6AddressErrors(TestCase):
         """
 
         with self.assertRaises(self._results["error"]) as error:
-            Ip6Address(**self._args)
+            Ip6Address(*self._args)
 
         self.assertEqual(
             str(error.exception),

@@ -43,7 +43,7 @@ class ArpIntegrityError(PacketIntegrityError):
     Exception raised when ARP packet integrity check fails.
     """
 
-    def __init__(self, /, message: str):
+    def __init__(self, message: str, /):
         super().__init__("[ARP] " + message)
 
 
@@ -52,5 +52,5 @@ class ArpSanityError(PacketSanityError):
     Exception raised when ARP packet sanity check fails.
     """
 
-    def __init__(self, /, message: str):
+    def __init__(self, message: str, /):
         super().__init__("[ARP] " + message)

@@ -52,10 +52,10 @@ class MacAddress(Address):
 
     def __init__(
         self,
-        /,
         address: (
             MacAddress | str | bytes | bytearray | memoryview | int | None
         ) = None,
+        /,
     ) -> None:
         """
         Create a new MAC address object.

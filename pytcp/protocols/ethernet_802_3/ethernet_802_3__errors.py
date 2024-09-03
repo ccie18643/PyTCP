@@ -43,7 +43,7 @@ class Ethernet8023IntegrityError(PacketIntegrityError):
     Exception raised when Ethernet 802.3 packet integrity check fails.
     """
 
-    def __init__(self, /, message: str):
+    def __init__(self, message: str, /):
         super().__init__("[Ethernet 802.3] " + message)
 
 
@@ -52,5 +52,5 @@ class Ethernet8023SanityError(PacketSanityError):
     Exception raised when Ethernet 802.3 packet sanity check fails.
     """
 
-    def __init__(self, /, message: str):
+    def __init__(self, message: str, /):
         super().__init__("[Ethernet 802.3] " + message)

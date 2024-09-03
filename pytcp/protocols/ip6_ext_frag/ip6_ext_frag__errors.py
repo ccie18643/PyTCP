@@ -43,7 +43,7 @@ class Ip6ExtFragIntegrityError(PacketIntegrityError):
     Exception raised when IPv6 Ext Frag packet integrity check fails.
     """
 
-    def __init__(self, /, message: str):
+    def __init__(self, message: str, /):
         super().__init__("[IPv6 Ext Frag] " + message)
 
 
@@ -52,5 +52,5 @@ class Ip6ExtFragSanityError(PacketSanityError):
     Exception raised when IPv6 Ext Frag packet sanity check fails.
     """
 
-    def __init__(self, /, message: str):
+    def __init__(self, message: str, /):
         super().__init__("[IPv6 Ext Frag] " + message)

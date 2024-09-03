@@ -43,7 +43,7 @@ class Ip4IntegrityError(PacketIntegrityError):
     Exception raised when IPv4 packet integrity check fails.
     """
 
-    def __init__(self, /, message: str):
+    def __init__(self, message: str, /):
         super().__init__("[IPv4] " + message)
 
 
@@ -52,5 +52,5 @@ class Ip4SanityError(PacketSanityError):
     Exception raised when IPv4 packet sanity check fails.
     """
 
-    def __init__(self, /, message: str):
+    def __init__(self, message: str, /):
         super().__init__("[IPv4] " + message)
