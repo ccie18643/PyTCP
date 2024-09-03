@@ -417,7 +417,7 @@ from pytcp.lib.net_addr import Ip4Mask, Ip6Mask, Ip6MaskFormatError
 )
 class TestNetAddrIp6Mask(TestCase):
     """
-    The NetAddr IPv6 address tests.
+    The NetAddr IPv6 mask tests.
     """
 
     _description: str

@@ -81,11 +81,12 @@ class Ip4Network(IpNetwork[Ip4Address, Ip4Mask]):
 
         if isinstance(network, str):
             try:
-                address, mask = network.split("/")
-                bit_count = int(mask)
-                self._mask = Ip4Mask(
-                    int("1" * bit_count + "0" * (32 - bit_count), 2)
-                )
+                try:
+                    address, mask = network.split("/")
+                    mask = f"/{mask}"
+                except ValueError:
+                    address, mask = network.split(" ")
+                self._mask = Ip4Mask(mask)
                 self._address = Ip4Address(
                     int(Ip4Address(address)) & int(self._mask)
                 )

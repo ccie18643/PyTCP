@@ -257,7 +257,7 @@ from pytcp.lib.net_addr import Ip4Mask, Ip4MaskFormatError, Ip6Mask
 )
 class TestNetAddrIp4Mask(TestCase):
     """
-    The NetAddr IPv4 address tests.
+    The NetAddr IPv4 mask tests.
     """
 
     _description: str
@@ -400,6 +400,16 @@ class TestNetAddrIp4Mask(TestCase):
                 "error": Ip4MaskFormatError,
                 "error_message": (
                     "The IPv4 mask format is invalid: '255.255.255,255'"
+                ),
+            },
+        },
+        {
+            "_description": "Test the IPv4 mask format: '255.254.255.255'",
+            "_args": ["255.254.255.255"],
+            "_results": {
+                "error": Ip4MaskFormatError,
+                "error_message": (
+                    "The IPv4 mask format is invalid: '255.254.255.255'"
                 ),
             },
         },
