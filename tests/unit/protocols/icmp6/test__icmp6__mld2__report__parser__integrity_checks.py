@@ -180,7 +180,7 @@ class TestIcmp6Mld2ReportParserIntegrityChecks(TestCasePacketRxIp6):
         """
 
         with self.assertRaises(Icmp6IntegrityError) as error:
-            Icmp6Parser(packet_rx=self._packet_rx)
+            Icmp6Parser(self._packet_rx)
 
         self.assertEqual(
             str(error.exception),

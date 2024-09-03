@@ -133,7 +133,7 @@ class TestUdpParserOperation__Ip4(TestCasePacketRxIp4):
         objects and also updates the appropriate 'tx_packet' object fields.
         """
 
-        udp_parser = UdpParser(packet_rx=self._packet_rx)
+        udp_parser = UdpParser(self._packet_rx)
 
         self.assertEqual(
             udp_parser.header,
@@ -175,7 +175,7 @@ class TestUdpParserOperation__Ip6(TestCasePacketRxIp6):
         objects and also updates the appropriate 'tx_packet' object fields.
         """
 
-        udp_parser = UdpParser(packet_rx=self._packet_rx)
+        udp_parser = UdpParser(self._packet_rx)
 
         self.assertEqual(
             udp_parser.header,

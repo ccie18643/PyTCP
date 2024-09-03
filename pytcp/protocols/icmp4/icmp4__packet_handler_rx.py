@@ -85,7 +85,7 @@ class Icmp4PacketHandlerRx(ABC):
             echo_tracker: Tracker | None = None,
         ) -> TxStatus: ...
 
-    def _phrx_icmp4(self, packet_rx: PacketRx) -> None:
+    def _phrx_icmp4(self, packet_rx: PacketRx, /) -> None:
         """
         Handle inbound ICMPv4 packets.
         """

@@ -268,7 +268,7 @@ class TestIp4PacketParserOperation(TestCase):
 
         packet_rx = PacketRx(self._args["bytes"])
 
-        ip4_parser = Ip4Parser(packet_rx=packet_rx)
+        ip4_parser = Ip4Parser(packet_rx)
 
         self.assertEqual(
             ip4_parser.header,

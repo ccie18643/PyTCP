@@ -172,7 +172,7 @@ class TestIp6PacketParserOperation(TestCase):
 
         packet_rx = PacketRx(self._args["bytes"])
 
-        ip6_parser = Ip6Parser(packet_rx=packet_rx)
+        ip6_parser = Ip6Parser(packet_rx)
 
         self.assertEqual(
             ip6_parser.header,

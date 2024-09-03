@@ -103,7 +103,7 @@ class TestArpHeaderParserOperation(TestCase):
 
         packet_rx = PacketRx(self._args["bytes"])
 
-        arp_parser = ArpParser(packet_rx=packet_rx)
+        arp_parser = ArpParser(packet_rx)
 
         self.assertEqual(
             arp_parser.header,

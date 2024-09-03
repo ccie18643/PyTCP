@@ -77,7 +77,7 @@ class Ip4PacketHandlerRx(ABC):
         @property
         def ip4_broadcast(self) -> list[Ip4Address]: ...
 
-    def _phrx_ip4(self, packet_rx: PacketRx) -> None:
+    def _phrx_ip4(self, packet_rx: PacketRx, /) -> None:
         """
         Handle inbound IPv4 packets.
         """

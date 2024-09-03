@@ -232,9 +232,9 @@ class PacketHandler(
                     int.from_bytes(packet_rx.frame[12:14])
                     <= ETHERNET_802_3__PACKET__MAX_LEN
                 ):
-                    self._phrx_ethernet_802_3(packet_rx=packet_rx)
+                    self._phrx_ethernet_802_3(packet_rx)
                 else:
-                    self._phrx_ethernet(packet_rx=packet_rx)
+                    self._phrx_ethernet(packet_rx)
 
         __debug__ and log("stack", "Stopped packet handler")
 

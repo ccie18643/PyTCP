@@ -202,7 +202,7 @@ class TestPacketHandlerRxTx(TestCase):
             "tests__legacy/integration/test_frames/rx_tx/ip4_ping.tx", "rb"
         ) as _:
             packet_tx = _.read()
-        self.packet_handler._phrx_ethernet(packet_rx=PacketRx(packet_rx))
+        self.packet_handler._phrx_ethernet(PacketRx(packet_rx))
         self.assertEqual(
             self.packet_handler.packet_stats_rx,
             PacketStatsRx(
@@ -244,7 +244,7 @@ class TestPacketHandlerRxTx(TestCase):
             "rb",
         ) as _:
             packet_tx = _.read()
-        self.packet_handler._phrx_ethernet(packet_rx=PacketRx(packet_rx))
+        self.packet_handler._phrx_ethernet(PacketRx(packet_rx))
         self.assertEqual(
             self.packet_handler.packet_stats_rx,
             PacketStatsRx(
@@ -283,7 +283,7 @@ class TestPacketHandlerRxTx(TestCase):
             "tests__legacy/integration/test_frames/rx_tx/ip4_udp_echo.tx", "rb"
         ) as _:
             packet_tx = _.read()
-        self.packet_handler._phrx_ethernet(packet_rx=PacketRx(packet_rx))
+        self.packet_handler._phrx_ethernet(PacketRx(packet_rx))
         self.assertEqual(
             self.packet_handler.packet_stats_rx,
             PacketStatsRx(
@@ -330,7 +330,7 @@ class TestPacketHandlerRxTx(TestCase):
         ) as _:
             packet_tx = _.read()
         for index in order:
-            self.packet_handler._phrx_ethernet(packet_rx=PacketRx(frags[index]))
+            self.packet_handler._phrx_ethernet(PacketRx(frags[index]))
         self.assertEqual(
             self.packet_handler.packet_stats_rx,
             PacketStatsRx(
@@ -421,7 +421,7 @@ class TestPacketHandlerRxTx(TestCase):
                 "rb",
             ) as _:
                 frags.append(_.read())
-        self.packet_handler._phrx_ethernet(packet_rx=PacketRx(packet_rx))
+        self.packet_handler._phrx_ethernet(PacketRx(packet_rx))
         self.assertEqual(
             self.packet_handler.packet_stats_rx,
             PacketStatsRx(
@@ -467,7 +467,7 @@ class TestPacketHandlerRxTx(TestCase):
             "rb",
         ) as _:
             packet_tx = _.read()
-        self.packet_handler._phrx_ethernet(packet_rx=PacketRx(packet_rx))
+        self.packet_handler._phrx_ethernet(PacketRx(packet_rx))
         self.assertEqual(
             self.packet_handler.packet_stats_rx,
             PacketStatsRx(
@@ -508,7 +508,7 @@ class TestPacketHandlerRxTx(TestCase):
             "tests__legacy/integration/test_frames/rx_tx/ip6_ping.tx", "rb"
         ) as _:
             packet_tx = _.read()
-        self.packet_handler._phrx_ethernet(packet_rx=PacketRx(packet_rx))
+        self.packet_handler._phrx_ethernet(PacketRx(packet_rx))
         self.assertEqual(
             self.packet_handler.packet_stats_rx,
             PacketStatsRx(
@@ -550,7 +550,7 @@ class TestPacketHandlerRxTx(TestCase):
             "rb",
         ) as _:
             packet_tx = _.read()
-        self.packet_handler._phrx_ethernet(packet_rx=PacketRx(packet_rx))
+        self.packet_handler._phrx_ethernet(PacketRx(packet_rx))
         self.assertEqual(
             self.packet_handler.packet_stats_rx,
             PacketStatsRx(
@@ -589,7 +589,7 @@ class TestPacketHandlerRxTx(TestCase):
             "tests__legacy/integration/test_frames/rx_tx/ip6_udp_echo.tx", "rb"
         ) as _:
             packet_tx = _.read()
-        self.packet_handler._phrx_ethernet(packet_rx=PacketRx(packet_rx))
+        self.packet_handler._phrx_ethernet(PacketRx(packet_rx))
         self.assertEqual(
             self.packet_handler.packet_stats_rx,
             PacketStatsRx(
@@ -636,7 +636,7 @@ class TestPacketHandlerRxTx(TestCase):
         ) as _:
             packet_tx = _.read()
         for index in order:
-            self.packet_handler._phrx_ethernet(packet_rx=PacketRx(frags[index]))
+            self.packet_handler._phrx_ethernet(PacketRx(frags[index]))
         self.assertEqual(
             self.packet_handler.packet_stats_rx,
             PacketStatsRx(
@@ -728,7 +728,7 @@ class TestPacketHandlerRxTx(TestCase):
                 "rb",
             ) as _:
                 frags.append(_.read())
-        self.packet_handler._phrx_ethernet(packet_rx=PacketRx(packet_rx))
+        self.packet_handler._phrx_ethernet(PacketRx(packet_rx))
         self.assertEqual(
             self.packet_handler.packet_stats_rx,
             PacketStatsRx(
@@ -777,7 +777,7 @@ class TestPacketHandlerRxTx(TestCase):
             "rb",
         ) as _:
             packet_tx = _.read()
-        self.packet_handler._phrx_ethernet(packet_rx=PacketRx(packet_rx))
+        self.packet_handler._phrx_ethernet(PacketRx(packet_rx))
         self.assertEqual(
             self.packet_handler.packet_stats_rx,
             PacketStatsRx(
@@ -823,7 +823,7 @@ class TestPacketHandlerRxTx(TestCase):
             ip4_address=Ip4Address("192.168.9.102"),
             mac_address=MacAddress("52:54:00:df:85:37"),
         ).to_return_value(None).and_assert_called_once()
-        self.packet_handler._phrx_ethernet(packet_rx=PacketRx(packet_rx))
+        self.packet_handler._phrx_ethernet(PacketRx(packet_rx))
         self.assertEqual(
             self.packet_handler.packet_stats_rx,
             PacketStatsRx(
@@ -862,7 +862,7 @@ class TestPacketHandlerRxTx(TestCase):
             "rb",
         ) as _:
             packet_tx = _.read()
-        self.packet_handler._phrx_ethernet(packet_rx=PacketRx(packet_rx))
+        self.packet_handler._phrx_ethernet(PacketRx(packet_rx))
         self.assertEqual(
             self.packet_handler.packet_stats_rx,
             PacketStatsRx(
@@ -906,7 +906,7 @@ class TestPacketHandlerRxTx(TestCase):
             "rb",
         ) as _:
             packet_tx = _.read()
-        self.packet_handler._phrx_ethernet(packet_rx=PacketRx(packet_rx))
+        self.packet_handler._phrx_ethernet(PacketRx(packet_rx))
         self.assertEqual(
             self.packet_handler.packet_stats_rx,
             PacketStatsRx(
@@ -949,7 +949,7 @@ class TestPacketHandlerRxTx(TestCase):
             "rb",
         ) as _:
             packet_tx = _.read()
-        self.packet_handler._phrx_ethernet(packet_rx=PacketRx(packet_rx))
+        self.packet_handler._phrx_ethernet(PacketRx(packet_rx))
         self.assertEqual(
             self.packet_handler.packet_stats_rx,
             PacketStatsRx(
@@ -993,7 +993,7 @@ class TestPacketHandlerRxTx(TestCase):
             "rb",
         ) as _:
             packet_tx = _.read()
-        self.packet_handler._phrx_ethernet(packet_rx=PacketRx(packet_rx))
+        self.packet_handler._phrx_ethernet(PacketRx(packet_rx))
         self.assertEqual(
             self.packet_handler.packet_stats_rx,
             PacketStatsRx(

@@ -104,7 +104,7 @@ class TestEthernet8023ParserOperation(TestCase):
 
         packet_rx = PacketRx(self._args["bytes"])
 
-        ethernet_802_3_parser = Ethernet8023Parser(packet_rx=packet_rx)
+        ethernet_802_3_parser = Ethernet8023Parser(packet_rx)
 
         self.assertEqual(
             ethernet_802_3_parser.header,

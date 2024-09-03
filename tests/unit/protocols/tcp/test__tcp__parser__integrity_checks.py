@@ -202,7 +202,7 @@ class TestTcpParserIntegrityChecks__Ip4(TestCasePacketRxIp4):
         """
 
         with self.assertRaises(TcpIntegrityError) as error:
-            TcpParser(packet_rx=self._packet_rx)
+            TcpParser(self._packet_rx)
 
         self.assertEqual(
             str(error.exception),
@@ -229,7 +229,7 @@ class TestTcpParserIntegrityChecks__Ip6(TestCasePacketRxIp6):
         """
 
         with self.assertRaises(TcpIntegrityError) as error:
-            TcpParser(packet_rx=self._packet_rx)
+            TcpParser(self._packet_rx)
 
         self.assertEqual(
             str(error.exception),

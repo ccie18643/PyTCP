@@ -109,7 +109,7 @@ class TestIp6ParserIntegrityChecks(TestCase):
         packet_rx = PacketRx(self._args["bytes"])
 
         with self.assertRaises(Ip6IntegrityError) as error:
-            Ip6Parser(packet_rx=packet_rx)
+            Ip6Parser(packet_rx)
 
         self.assertEqual(
             str(error.exception),

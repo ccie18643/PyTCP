@@ -155,7 +155,7 @@ class TestUdpParserIntegrityChecks__Ip4(TestCasePacketRxIp4):
         """
 
         with self.assertRaises(UdpIntegrityError) as error:
-            UdpParser(packet_rx=self._packet_rx)
+            UdpParser(self._packet_rx)
 
         self.assertEqual(
             str(error.exception),
@@ -182,7 +182,7 @@ class TestUdpParserIntegrityChecks__Ip6(TestCasePacketRxIp6):
         """
 
         with self.assertRaises(UdpIntegrityError) as error:
-            UdpParser(packet_rx=self._packet_rx)
+            UdpParser(self._packet_rx)
 
         self.assertEqual(
             str(error.exception),

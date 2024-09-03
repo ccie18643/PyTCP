@@ -120,7 +120,7 @@ class TestEthernet8023ParserIntegrityChecks(TestCase):
         packet_rx = PacketRx(self._args["bytes"])
 
         with self.assertRaises(Ethernet8023IntegrityError) as error:
-            Ethernet8023Parser(packet_rx=packet_rx)
+            Ethernet8023Parser(packet_rx)
 
         self.assertEqual(
             str(error.exception),

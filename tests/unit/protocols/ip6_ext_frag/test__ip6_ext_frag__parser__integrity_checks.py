@@ -86,7 +86,7 @@ class TestIp6ExtFragParserIntegrityChecks(TestCase):
         )
 
         with self.assertRaises(Ip6ExtFragIntegrityError) as error:
-            Ip6ExtFragParser(packet_rx=packet_rx)
+            Ip6ExtFragParser(packet_rx)
 
         self.assertEqual(
             str(error.exception),

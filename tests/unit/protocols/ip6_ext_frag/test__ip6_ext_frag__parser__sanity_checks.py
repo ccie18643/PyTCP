@@ -63,7 +63,7 @@ class TestIp6ExtFragParserSanityChecks(TestCase):
         packet_rx = PacketRx(self._args["bytes"])
 
         with self.assertRaises(Ip6ExtFragSanityError) as error:
-            Ip6ExtFragParser(packet_rx=packet_rx)
+            Ip6ExtFragParser(packet_rx)
 
         self.assertEqual(
             str(error.exception),

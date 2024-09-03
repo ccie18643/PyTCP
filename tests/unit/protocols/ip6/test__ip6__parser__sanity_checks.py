@@ -90,7 +90,7 @@ class TestIp6ParserSanityChecks(TestCase):
         packet_rx = PacketRx(self._args["bytes"])
 
         with self.assertRaises(Ip6SanityError) as error:
-            Ip6Parser(packet_rx=packet_rx)
+            Ip6Parser(packet_rx)
 
         self.assertEqual(
             str(error.exception),

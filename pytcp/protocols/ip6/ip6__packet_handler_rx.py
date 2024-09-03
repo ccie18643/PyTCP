@@ -71,7 +71,7 @@ class Ip6PacketHandlerRx(ABC):
         @property
         def ip6_multicast(self) -> list[Ip6Address]: ...
 
-    def _phrx_ip6(self, packet_rx: PacketRx) -> None:
+    def _phrx_ip6(self, packet_rx: PacketRx, /) -> None:
         """
         Handle inbound IPv6 packets.
         """

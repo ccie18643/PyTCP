@@ -76,7 +76,7 @@ class TestArpParserSanityChecks(TestCase):
         packet_rx = PacketRx(self._args["bytes"])
 
         with self.assertRaises(ArpSanityError) as error:
-            ArpParser(packet_rx=packet_rx)
+            ArpParser(packet_rx)
 
         self.assertEqual(
             str(error.exception),

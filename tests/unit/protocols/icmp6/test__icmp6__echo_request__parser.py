@@ -117,7 +117,7 @@ class TestIcmp6EchoRequestParser(TestCasePacketRxIp6):
         creates a proper message object.
         """
 
-        icmp6_parser = Icmp6Parser(packet_rx=self._packet_rx)
+        icmp6_parser = Icmp6Parser(self._packet_rx)
 
         # Convert the 'data' field from memoryview to bytes so we can compare.
         object.__setattr__(

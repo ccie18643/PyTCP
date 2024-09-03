@@ -277,7 +277,7 @@ class TestTcpParserOperation__Ip4(TestCasePacketRxIp4):
         object fields.
         """
 
-        tcp_parser = TcpParser(packet_rx=self._packet_rx)
+        tcp_parser = TcpParser(self._packet_rx)
 
         self.assertEqual(
             tcp_parser.header,
@@ -320,7 +320,7 @@ class TestTcpParserOperation__Ip6(TestCasePacketRxIp6):
         object fields.
         """
 
-        tcp_parser = TcpParser(packet_rx=self._packet_rx)
+        tcp_parser = TcpParser(self._packet_rx)
 
         self.assertEqual(
             tcp_parser.header,

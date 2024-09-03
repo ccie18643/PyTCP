@@ -84,7 +84,7 @@ class TestIcmp4MessageUnknownParser(TestCasePacketRxIp4):
         a proper message object.
         """
 
-        icmp4_parser = Icmp4Parser(packet_rx=self._packet_rx)
+        icmp4_parser = Icmp4Parser(self._packet_rx)
 
         # Convert the 'raw' field from memoryview to bytes so we can compare.
         object.__setattr__(

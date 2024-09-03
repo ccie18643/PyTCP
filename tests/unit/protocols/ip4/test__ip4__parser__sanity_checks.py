@@ -136,7 +136,7 @@ class TestIp4ParserSanityChecks(TestCase):
         packet_rx = PacketRx(self._args["bytes"])
 
         with self.assertRaises(Ip4SanityError) as error:
-            Ip4Parser(packet_rx=packet_rx)
+            Ip4Parser(packet_rx)
 
         self.assertEqual(
             str(error.exception),

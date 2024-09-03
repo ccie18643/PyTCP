@@ -65,7 +65,7 @@ class TestEthernet8023ParserSanityChecks(TestCase):
         packet_rx = PacketRx(self._args["bytes"])
 
         with self.assertRaises(Ethernet8023SanityError) as error:
-            Ethernet8023Parser(packet_rx=packet_rx)
+            Ethernet8023Parser(packet_rx)
 
         self.assertEqual(
             str(error.exception),

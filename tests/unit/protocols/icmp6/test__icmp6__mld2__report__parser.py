@@ -189,7 +189,7 @@ class TestIcmp6Mld2ReportParser(TestCasePacketRxIp6):
         creates a proper message object.
         """
 
-        icmp6_parser = Icmp6Parser(packet_rx=self._packet_rx)
+        icmp6_parser = Icmp6Parser(self._packet_rx)
 
         self.assertEqual(
             icmp6_parser.message,

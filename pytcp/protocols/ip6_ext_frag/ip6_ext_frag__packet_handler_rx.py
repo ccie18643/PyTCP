@@ -62,7 +62,7 @@ class Ip6ExtFragPacketHandlerRx(ABC):
 
         def _phrx_ip6(self, packet_rx: PacketRx) -> None: ...
 
-    def _phrx_ip6_ext_frag(self, packet_rx: PacketRx) -> None:
+    def _phrx_ip6_ext_frag(self, packet_rx: PacketRx, /) -> None:
         """
         Handle inbound IPv6 fragment extension header.
         """
@@ -86,7 +86,7 @@ class Ip6ExtFragPacketHandlerRx(ABC):
         if defragmented_packet_rx := self.__defragment_ip6_packet(packet_rx):
             self.packet_stats_rx.ip6_ext_frag__defrag += 1
             self._phrx_ip6(
-                packet_rx=defragmented_packet_rx,
+                defragmented_packet_rx,
             )
 
     def __defragment_ip6_packet(self, packet_rx: PacketRx) -> PacketRx | None:

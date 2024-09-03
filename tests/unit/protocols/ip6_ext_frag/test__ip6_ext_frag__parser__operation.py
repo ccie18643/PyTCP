@@ -135,7 +135,7 @@ class TestIp6PacketParserOperation(TestCase):
             new_value=len(self._args["bytes"]),
         )
 
-        ip6_ext_frag_parser = Ip6ExtFragParser(packet_rx=packet_rx)
+        ip6_ext_frag_parser = Ip6ExtFragParser(packet_rx)
 
         self.assertEqual(
             ip6_ext_frag_parser.header,

@@ -82,7 +82,7 @@ class ArpPacketHandlerRx(ABC):
         @property
         def ip4_unicast(self) -> list[Ip4Address]: ...
 
-    def _phrx_arp(self, packet_rx: PacketRx) -> None:
+    def _phrx_arp(self, packet_rx: PacketRx, /) -> None:
         """
         Handle inbound ARP packets.
         """

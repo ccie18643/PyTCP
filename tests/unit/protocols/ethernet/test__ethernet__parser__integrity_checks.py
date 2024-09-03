@@ -79,7 +79,7 @@ class TestEthernetParserIntegrityChecks(TestCase):
         packet_rx = PacketRx(self._args["bytes"])
 
         with self.assertRaises(EthernetIntegrityError) as error:
-            EthernetParser(packet_rx=packet_rx)
+            EthernetParser(packet_rx)
 
         self.assertEqual(
             str(error.exception),

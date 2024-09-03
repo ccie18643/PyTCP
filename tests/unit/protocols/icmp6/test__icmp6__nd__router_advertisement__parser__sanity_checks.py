@@ -187,7 +187,7 @@ class TestIcmp4NdRouterAdvertisementParserSanityChecks(TestCasePacketRxIp6):
 
         if "error_message" in self._results:
             with self.assertRaises(Icmp6SanityError) as error:
-                Icmp6Parser(packet_rx=self._packet_rx)
+                Icmp6Parser(self._packet_rx)
 
             self.assertEqual(
                 str(error.exception),
@@ -195,4 +195,4 @@ class TestIcmp4NdRouterAdvertisementParserSanityChecks(TestCasePacketRxIp6):
             )
 
         else:
-            Icmp6Parser(packet_rx=self._packet_rx)
+            Icmp6Parser(self._packet_rx)

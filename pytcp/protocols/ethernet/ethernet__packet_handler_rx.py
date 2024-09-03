@@ -66,7 +66,7 @@ class EthernetPacketHandlerRx(ABC):
         def _phrx_ip6(self, packet_rx: PacketRx) -> None: ...
         def _phrx_ip4(self, packet_rx: PacketRx) -> None: ...
 
-    def _phrx_ethernet(self, packet_rx: PacketRx) -> None:
+    def _phrx_ethernet(self, packet_rx: PacketRx, /) -> None:
         """
         Handle inbound Ethernet packets.
         """

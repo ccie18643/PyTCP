@@ -100,7 +100,7 @@ class TestEthernetHeaderParserOperation(TestCase):
 
         packet_rx = PacketRx(self._args["bytes"])
 
-        ethernet_parser = EthernetParser(packet_rx=packet_rx)
+        ethernet_parser = EthernetParser(packet_rx)
 
         self.assertEqual(
             ethernet_parser.header,

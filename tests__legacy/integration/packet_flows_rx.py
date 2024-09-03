@@ -139,7 +139,7 @@ class TestPacketHandlerRx(TestCase):
             "rb",
         ) as _:
             packet_rx = _.read()
-        self.packet_handler._phrx_ethernet(packet_rx=PacketRx(packet_rx))
+        self.packet_handler._phrx_ethernet(PacketRx(packet_rx))
         self.assertEqual(
             self.packet_handler.packet_stats_rx,
             PacketStatsRx(
@@ -161,7 +161,7 @@ class TestPacketHandlerRx(TestCase):
             "rb",
         ) as _:
             packet_rx = _.read()
-        self.packet_handler._phrx_ethernet(packet_rx=PacketRx(packet_rx))
+        self.packet_handler._phrx_ethernet(PacketRx(packet_rx))
         self.assertEqual(
             self.packet_handler.packet_stats_rx,
             PacketStatsRx(
@@ -182,7 +182,7 @@ class TestPacketHandlerRx(TestCase):
             "tests__legacy/integration/test_frames/rx/ip4_unknown_dst.rx", "rb"
         ) as _:
             packet_rx = _.read()
-        self.packet_handler._phrx_ethernet(packet_rx=PacketRx(packet_rx))
+        self.packet_handler._phrx_ethernet(PacketRx(packet_rx))
         self.assertEqual(
             self.packet_handler.packet_stats_rx,
             PacketStatsRx(
@@ -205,7 +205,7 @@ class TestPacketHandlerRx(TestCase):
             "tests__legacy/integration/test_frames/rx/ip6_unknown_dst.rx", "rb"
         ) as _:
             packet_rx = _.read()
-        self.packet_handler._phrx_ethernet(packet_rx=PacketRx(packet_rx))
+        self.packet_handler._phrx_ethernet(PacketRx(packet_rx))
         self.assertEqual(
             self.packet_handler.packet_stats_rx,
             PacketStatsRx(
@@ -228,7 +228,7 @@ class TestPacketHandlerRx(TestCase):
             "tests__legacy/integration/test_frames/rx/arp_unknown_tpa.rx", "rb"
         ) as _:
             packet_rx = _.read()
-        self.packet_handler._phrx_ethernet(packet_rx=PacketRx(packet_rx))
+        self.packet_handler._phrx_ethernet(PacketRx(packet_rx))
         self.assertEqual(
             self.packet_handler.packet_stats_rx,
             PacketStatsRx(
@@ -254,7 +254,7 @@ class TestPacketHandlerRx(TestCase):
             "rb",
         ) as _:
             packet_rx = _.read()
-        self.packet_handler._phrx_ethernet(packet_rx=PacketRx(packet_rx))
+        self.packet_handler._phrx_ethernet(PacketRx(packet_rx))
         self.assertEqual(
             self.packet_handler.packet_stats_rx,
             PacketStatsRx(

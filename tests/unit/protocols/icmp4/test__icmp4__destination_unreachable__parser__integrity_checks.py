@@ -137,7 +137,7 @@ class TestIcmp4DestinationUnreachableParserIntegrityChecks(TestCasePacketRxIp4):
         """
 
         with self.assertRaises(Icmp4IntegrityError) as error:
-            Icmp4Parser(packet_rx=self._packet_rx)
+            Icmp4Parser(self._packet_rx)
 
         self.assertEqual(
             str(error.exception),

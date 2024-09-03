@@ -65,7 +65,7 @@ class Ethernet8023PacketHandlerRx(ABC):
         def _phrx_ip6(self, packet_rx: PacketRx) -> None: ...
         def _phrx_ip4(self, packet_rx: PacketRx) -> None: ...
 
-    def _phrx_ethernet_802_3(self, packet_rx: PacketRx) -> None:
+    def _phrx_ethernet_802_3(self, packet_rx: PacketRx, /) -> None:
         """
         Handle inbound Ethernet 802.3 packets.
         """
