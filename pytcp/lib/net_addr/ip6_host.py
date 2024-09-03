@@ -67,6 +67,7 @@ class Ip6Host(IpHost[Ip6Address, Ip6Network]):
             | tuple[Ip6Address, Ip6Mask]
             | str
         ),
+        /,
     ) -> None:
         """
         Get the IPv6 host address log string.

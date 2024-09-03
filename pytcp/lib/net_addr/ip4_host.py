@@ -65,6 +65,7 @@ class Ip4Host(IpHost[Ip4Address, Ip4Network]):
             | tuple[Ip4Address, Ip4Mask]
             | str
         ),
+        /,
     ) -> None:
         """
         Get the IPv4 host address log string.

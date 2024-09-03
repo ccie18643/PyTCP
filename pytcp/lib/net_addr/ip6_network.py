@@ -57,6 +57,7 @@ class Ip6Network(IpNetwork[Ip6Address, Ip6Mask]):
     def __init__(
         self,
         network: Ip6Network | tuple[Ip6Address, Ip6Mask] | str | None = None,
+        /,
     ) -> None:
         """
         Create a new IPv4 network object.
