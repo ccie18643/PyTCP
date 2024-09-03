@@ -65,7 +65,7 @@ class PacketRx:
     Base packet RX class.
     """
 
-    def __init__(self, frame: bytes) -> None:
+    def __init__(self, frame: bytes, /) -> None:
         """
         Class constructor.
         """
