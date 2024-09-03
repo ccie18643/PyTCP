@@ -227,7 +227,7 @@ class Icmp6Mld2MulticastAddressRecord(ProtoStruct):
         return len(self.aux_data)
 
     @staticmethod
-    def from_bytes(_bytes: bytes) -> Icmp6Mld2MulticastAddressRecord:
+    def from_bytes(_bytes: bytes, /) -> Icmp6Mld2MulticastAddressRecord:
         """
         Initialize the ICMPv6 MLDv2 Multicast Address Record from bytes.
         """

@@ -146,7 +146,7 @@ class Icmp6UnknownMessage(Icmp6Message):
 
     @override
     @staticmethod
-    def from_bytes(_bytes: bytes) -> Icmp6UnknownMessage:
+    def from_bytes(_bytes: bytes, /) -> Icmp6UnknownMessage:
         """
         Initialize the ICMPv6 unknown message from bytes.
         """

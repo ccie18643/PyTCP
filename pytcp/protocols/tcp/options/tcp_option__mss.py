@@ -109,7 +109,7 @@ class TcpOptionMss(TcpOption):
         )
 
     @staticmethod
-    def _validate_integrity(_bytes: bytes) -> None:
+    def _validate_integrity(_bytes: bytes, /) -> None:
         """
         Validate the TCP Mss option integrity before parsing it.
         """
@@ -128,7 +128,7 @@ class TcpOptionMss(TcpOption):
 
     @override
     @staticmethod
-    def from_bytes(_bytes: bytes) -> TcpOptionMss:
+    def from_bytes(_bytes: bytes, /) -> TcpOptionMss:
         """
         Initialize the TCP Mss option from bytes.
         """

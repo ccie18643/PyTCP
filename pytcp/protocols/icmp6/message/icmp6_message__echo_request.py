@@ -194,7 +194,7 @@ class Icmp6EchoRequestMessage(Icmp6Message):
 
     @override
     @staticmethod
-    def from_bytes(_bytes: bytes) -> Icmp6EchoRequestMessage:
+    def from_bytes(_bytes: bytes, /) -> Icmp6EchoRequestMessage:
         """
         Initialize the ICMPv6 Echo Request message from bytes.
         """

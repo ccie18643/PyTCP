@@ -113,7 +113,7 @@ class TcpOptionWscale(TcpOption):
         )
 
     @staticmethod
-    def _validate_integrity(_bytes: bytes) -> None:
+    def _validate_integrity(_bytes: bytes, /) -> None:
         """
         Validate the TCP Wscale option integrity before parsing it.
         """
@@ -132,7 +132,7 @@ class TcpOptionWscale(TcpOption):
 
     @override
     @staticmethod
-    def from_bytes(_bytes: bytes) -> TcpOptionWscale:
+    def from_bytes(_bytes: bytes, /) -> TcpOptionWscale:
         """
         Initialize the TCP Wscale option from bytes.
         """

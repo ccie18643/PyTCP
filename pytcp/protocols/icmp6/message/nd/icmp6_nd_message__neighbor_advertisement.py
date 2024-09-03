@@ -249,7 +249,7 @@ class Icmp6NdNeighborAdvertisementMessage(Icmp6NdMessage):
 
     @override
     @staticmethod
-    def from_bytes(_bytes: bytes) -> Icmp6NdNeighborAdvertisementMessage:
+    def from_bytes(_bytes: bytes, /) -> Icmp6NdNeighborAdvertisementMessage:
         """
         Initialize the ICMPv6 ND Neighbor Advertisement message from bytes.
         """

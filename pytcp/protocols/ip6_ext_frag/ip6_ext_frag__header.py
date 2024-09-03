@@ -118,7 +118,7 @@ class Ip6ExtFragHeader(ProtoStruct):
 
     @override
     @staticmethod
-    def from_bytes(_bytes: bytes) -> Ip6ExtFragHeader:
+    def from_bytes(_bytes: bytes, /) -> Ip6ExtFragHeader:
         """
         Initialize the IPv6 Ext Frag header from bytes.
         """

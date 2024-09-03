@@ -164,7 +164,7 @@ class TcpOptions(ProtoOptions):
 
     @override
     @staticmethod
-    def from_bytes(_bytes: bytes) -> TcpOptions:
+    def from_bytes(_bytes: bytes, /) -> TcpOptions:
         """
         Read the TCP options from bytes.
         """

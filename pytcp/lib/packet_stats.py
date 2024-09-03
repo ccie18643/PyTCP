@@ -134,16 +134,6 @@ class PacketStatsRx:
     tcp__no_socket_match__rst__drop: int = 0
     tcp__no_socket_match__respond_rst: int = 0
 
-    def __eq__(
-        self,
-        other: object,
-    ) -> bool:
-        """
-        The '__eq__()' dunder.
-        """
-
-        return repr(self) == repr(other)
-
 
 @dataclass
 class PacketStatsTx:
@@ -252,13 +242,3 @@ class PacketStatsTx:
     udp__pre_assemble: int = 0
     udp__send: int = 0
     udp__unknown__drop: int = 0
-
-    def __eq__(
-        self,
-        other: object,
-    ) -> bool:
-        """
-        The '__eq__()' dunder.
-        """
-
-        return repr(self) == repr(other)

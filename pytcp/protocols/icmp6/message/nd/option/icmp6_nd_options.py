@@ -139,7 +139,7 @@ class Icmp6NdOptions(ProtoOptions):
 
     @override
     @staticmethod
-    def from_bytes(bytes: bytes) -> Icmp6NdOptions:
+    def from_bytes(bytes: bytes, /) -> Icmp6NdOptions:
         """
         Read the ICMPv6 ND options from bytes.
         """

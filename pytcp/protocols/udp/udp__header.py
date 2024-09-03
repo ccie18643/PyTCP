@@ -116,7 +116,7 @@ class UdpHeader(ProtoStruct):
 
     @override
     @staticmethod
-    def from_bytes(_bytes: bytes) -> UdpHeader:
+    def from_bytes(_bytes: bytes, /) -> UdpHeader:
         """
         Initialize UDP header from bytes.
         """

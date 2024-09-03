@@ -76,7 +76,7 @@ class ProtoEnum(Enum):
         return value in self.get_known_values()
 
     @classmethod
-    def from_int(cls, /, value: int) -> Self:
+    def from_int(cls, value: int, /) -> Self:
         """
         Extract the enum value from the provided int.
         """
@@ -124,7 +124,7 @@ class ProtoEnumByte(ProtoEnum):
         return int(self).to_bytes(1)
 
     @classmethod
-    def from_bytes(cls, /, bytes: bytes) -> Self:
+    def from_bytes(cls, bytes: bytes, /) -> Self:
         """
         Extract the enum value from the provided bytes.
         """
@@ -145,7 +145,7 @@ class ProtoEnumWord(ProtoEnum):
         return int(self).to_bytes(2)
 
     @classmethod
-    def from_bytes(cls, /, bytes: bytes) -> Self:
+    def from_bytes(cls, bytes: bytes, /) -> Self:
         """
         Extract the enum value from the provided bytes.
         """

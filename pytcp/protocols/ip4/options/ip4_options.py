@@ -92,7 +92,7 @@ class Ip4Options(ProtoOptions):
 
     @override
     @staticmethod
-    def from_bytes(_bytes: bytes) -> Ip4Options:
+    def from_bytes(_bytes: bytes, /) -> Ip4Options:
         """
         Read the IPv4 options from bytes.
         """

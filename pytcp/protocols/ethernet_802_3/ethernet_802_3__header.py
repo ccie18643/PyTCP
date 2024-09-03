@@ -120,7 +120,7 @@ class Ethernet8023Header(ProtoStruct):
 
     @override
     @staticmethod
-    def from_bytes(_bytes: bytes) -> Ethernet8023Header:
+    def from_bytes(_bytes: bytes, /) -> Ethernet8023Header:
         """
         Initialize the Ethernet 802.3 header from bytes.
         """

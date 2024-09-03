@@ -112,7 +112,7 @@ class EthernetHeader(ProtoStruct):
 
     @override
     @staticmethod
-    def from_bytes(_bytes: bytes) -> EthernetHeader:
+    def from_bytes(_bytes: bytes, /) -> EthernetHeader:
         """
         Initialize the Ethernet header from bytes.
         """

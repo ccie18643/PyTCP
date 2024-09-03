@@ -110,7 +110,7 @@ class Icmp6NdOptionSlla(Icmp6NdOption):
         )
 
     @staticmethod
-    def _validate_integrity(_bytes: bytes) -> None:
+    def _validate_integrity(_bytes: bytes, /) -> None:
         """
         Validate the ICMPv6 ND Slla option integrity before parsing it.
         """
@@ -129,7 +129,7 @@ class Icmp6NdOptionSlla(Icmp6NdOption):
 
     @override
     @staticmethod
-    def from_bytes(_bytes: bytes) -> Icmp6NdOptionSlla:
+    def from_bytes(_bytes: bytes, /) -> Icmp6NdOptionSlla:
         """
         Initialize the ICMPv6 ND Slla option from bytes.
         """

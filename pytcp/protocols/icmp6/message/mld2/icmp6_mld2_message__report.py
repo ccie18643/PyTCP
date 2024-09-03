@@ -238,7 +238,7 @@ class Icmp6Mld2ReportMessage(Icmp6Message):
 
     @override
     @staticmethod
-    def from_bytes(_bytes: bytes) -> Icmp6Mld2ReportMessage:
+    def from_bytes(_bytes: bytes, /) -> Icmp6Mld2ReportMessage:
         """
         Initialize the ICMPv6 MLDv2 Report message from bytes.
         """

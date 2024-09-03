@@ -91,7 +91,7 @@ class TcpOptionEol(TcpOption):
 
     @override
     @staticmethod
-    def from_bytes(_bytes: bytes) -> TcpOptionEol:
+    def from_bytes(_bytes: bytes, /) -> TcpOptionEol:
         """
         Initialize the TCP Eol option from bytes.
         """

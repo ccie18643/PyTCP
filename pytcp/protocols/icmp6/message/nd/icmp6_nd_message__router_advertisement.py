@@ -253,7 +253,7 @@ class Icmp6NdRouterAdvertisementMessage(Icmp6NdMessage):
 
     @override
     @staticmethod
-    def from_bytes(_bytes: bytes) -> Icmp6NdRouterAdvertisementMessage:
+    def from_bytes(_bytes: bytes, /) -> Icmp6NdRouterAdvertisementMessage:
         """
         Initialize the ICMPv6 ND Router Advertisement message from bytes.
         """

@@ -209,7 +209,7 @@ class TcpHeader(ProtoStruct):
 
     @override
     @staticmethod
-    def from_bytes(_bytes: bytes) -> TcpHeader:
+    def from_bytes(_bytes: bytes, /) -> TcpHeader:
         """
         Initialize the TCP header from bytes.
         """

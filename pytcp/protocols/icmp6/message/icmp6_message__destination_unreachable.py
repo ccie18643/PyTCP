@@ -207,7 +207,7 @@ class Icmp6DestinationUnreachableMessage(Icmp6Message):
 
     @override
     @staticmethod
-    def from_bytes(_bytes: bytes) -> Icmp6DestinationUnreachableMessage:
+    def from_bytes(_bytes: bytes, /) -> Icmp6DestinationUnreachableMessage:
         """
         Initialize the ICMPv6 Destination Unreachable message from bytes.
         """

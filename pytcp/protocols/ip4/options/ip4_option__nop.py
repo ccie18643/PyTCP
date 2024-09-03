@@ -91,7 +91,7 @@ class Ip4OptionNop(Ip4Option):
 
     @override
     @staticmethod
-    def from_bytes(_bytes: bytes) -> Ip4OptionNop:
+    def from_bytes(_bytes: bytes, /) -> Ip4OptionNop:
         """
         Initialize the IPv4 Nop option from bytes.
         """

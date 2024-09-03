@@ -122,7 +122,7 @@ class Icmp6NdOptionUnknown(Icmp6NdOption):
         )
 
     @staticmethod
-    def _validate_integrity(_bytes: bytes) -> None:
+    def _validate_integrity(_bytes: bytes, /) -> None:
         """
         Validate the unknown ICMPv6 option integrity before parsing it.
         """
@@ -135,7 +135,7 @@ class Icmp6NdOptionUnknown(Icmp6NdOption):
 
     @override
     @staticmethod
-    def from_bytes(_bytes: bytes) -> Icmp6NdOptionUnknown:
+    def from_bytes(_bytes: bytes, /) -> Icmp6NdOptionUnknown:
         """
         Initialize the unknown ICMPv6 option from bytes.
         """

@@ -71,7 +71,7 @@ class ProtoStruct(ABC):
 
     @staticmethod
     @abstractmethod
-    def from_bytes(_bytes: bytes) -> ProtoStruct:
+    def from_bytes(_bytes: bytes, /) -> ProtoStruct:
         """
         Create an ICMPv4 message from bytes.
         """

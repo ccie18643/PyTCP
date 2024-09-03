@@ -62,7 +62,7 @@ UINT_32__MIN = 0x00000000
 UINT_32__MAX = 0xFFFFFFFF
 
 
-def is_uint2(x: int) -> bool:
+def is_uint2(x: int, /) -> bool:
     """
     Check if provided value is a valid 2-bit unsigned integer.
     """
@@ -70,7 +70,7 @@ def is_uint2(x: int) -> bool:
     return UINT_2__MIN <= x <= UINT_2__MAX
 
 
-def is_uint4(x: int) -> bool:
+def is_uint4(x: int, /) -> bool:
     """
     Check if provided value is a valid 4-bit unsigned integer.
     """
@@ -78,7 +78,7 @@ def is_uint4(x: int) -> bool:
     return UINT_4__MIN <= x <= UINT_4__MAX
 
 
-def is_uint6(x: int) -> bool:
+def is_uint6(x: int, /) -> bool:
     """
     Check if provided value is a valid 6-bit unsigned integer.
     """
@@ -86,7 +86,7 @@ def is_uint6(x: int) -> bool:
     return UINT_6__MIN <= x <= UINT_6__MAX
 
 
-def is_uint8(x: int) -> bool:
+def is_uint8(x: int, /) -> bool:
     """
     Check if provided value is a valid 8-bit unsigned integer.
     """
@@ -94,7 +94,7 @@ def is_uint8(x: int) -> bool:
     return UINT_8__MIN <= x <= UINT_8__MAX
 
 
-def is_uint13(x: int) -> bool:
+def is_uint13(x: int, /) -> bool:
     """
     Check if provided value is a valid 13-bit unsigned integer.
     """
@@ -102,7 +102,7 @@ def is_uint13(x: int) -> bool:
     return UINT_13__MIN <= x <= UINT_13__MAX
 
 
-def is_uint16(x: int) -> bool:
+def is_uint16(x: int, /) -> bool:
     """
     Check if provided value is a valid 16-bit unsigned integer.
     """
@@ -110,7 +110,7 @@ def is_uint16(x: int) -> bool:
     return UINT_16__MIN <= x <= UINT_16__MAX
 
 
-def is_uint20(x: int) -> bool:
+def is_uint20(x: int, /) -> bool:
     """
     Check if provided value is a valid 20-bit unsigned integer.
     """
@@ -118,7 +118,7 @@ def is_uint20(x: int) -> bool:
     return UINT_20__MIN <= x <= UINT_20__MAX
 
 
-def is_uint32(x: int) -> bool:
+def is_uint32(x: int, /) -> bool:
     """
     Check if provided value is a valid 32-bit unsigned integer.
     """
@@ -126,7 +126,7 @@ def is_uint32(x: int) -> bool:
     return UINT_32__MIN <= x <= UINT_32__MAX
 
 
-def is_4_byte_alligned(x: int) -> bool:
+def is_4_byte_alligned(x: int, /) -> bool:
     """
     Check if provided value is aligned to 4-byte boundary.
     """
@@ -134,7 +134,7 @@ def is_4_byte_alligned(x: int) -> bool:
     return x % 4 == 0
 
 
-def is_8_byte_alligned(x: int) -> bool:
+def is_8_byte_alligned(x: int, /) -> bool:
     """
     Check if provided value is aligned to 8-byte boundary.
     """

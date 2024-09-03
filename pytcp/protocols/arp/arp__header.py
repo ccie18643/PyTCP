@@ -160,7 +160,7 @@ class ArpHeader(ProtoStruct):
 
     @override
     @staticmethod
-    def from_bytes(_bytes: bytes) -> ArpHeader:
+    def from_bytes(_bytes: bytes, /) -> ArpHeader:
         """
         Initialize the ARP header from bytes.
         """

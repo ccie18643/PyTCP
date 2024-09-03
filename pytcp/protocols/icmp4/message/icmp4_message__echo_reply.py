@@ -188,7 +188,7 @@ class Icmp4EchoReplyMessage(Icmp4Message):
 
     @override
     @staticmethod
-    def from_bytes(_bytes: bytes) -> Icmp4EchoReplyMessage:
+    def from_bytes(_bytes: bytes, /) -> Icmp4EchoReplyMessage:
         """
         Initialize the ICMPv4 Echo Reply message from bytes.
         """

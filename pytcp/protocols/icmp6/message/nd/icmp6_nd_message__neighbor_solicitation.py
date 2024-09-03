@@ -240,7 +240,7 @@ class Icmp6NdNeighborSolicitationMessage(Icmp6NdMessage):
 
     @override
     @staticmethod
-    def from_bytes(_bytes: bytes) -> Icmp6NdNeighborSolicitationMessage:
+    def from_bytes(_bytes: bytes, /) -> Icmp6NdNeighborSolicitationMessage:
         """
         Initialize the ICMPv6 ND Neighbor Solicitation message from bytes.
         """

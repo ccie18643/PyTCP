@@ -210,7 +210,7 @@ class Icmp6NdRouterSolicitationMessage(Icmp6NdMessage):
 
     @override
     @staticmethod
-    def from_bytes(_bytes: bytes) -> Icmp6NdRouterSolicitationMessage:
+    def from_bytes(_bytes: bytes, /) -> Icmp6NdRouterSolicitationMessage:
         """
         Initialize the ICMPv6 ND Router Solicitation message from bytes.
         """

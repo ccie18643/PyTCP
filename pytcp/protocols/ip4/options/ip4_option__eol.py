@@ -91,7 +91,7 @@ class Ip4OptionEol(Ip4Option):
 
     @override
     @staticmethod
-    def from_bytes(_bytes: bytes) -> Ip4OptionEol:
+    def from_bytes(_bytes: bytes, /) -> Ip4OptionEol:
         """
         Initialize the IPv4 Eol option from bytes.
         """

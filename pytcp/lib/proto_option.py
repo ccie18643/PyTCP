@@ -117,7 +117,7 @@ class ProtoOptions(ABC):
 
         return bool(self._options)
 
-    def __eq__(self, other: object) -> bool:
+    def __eq__(self, other: object, /) -> bool:
         """
         Check if the options are equal.
         """
@@ -127,7 +127,7 @@ class ProtoOptions(ABC):
             and self._options == other._options
         )
 
-    def __contains__(self, option: ProtoOption) -> bool:
+    def __contains__(self, option: ProtoOption, /) -> bool:
         """
         Check if the options contain the provided option.
         """
@@ -141,14 +141,14 @@ class ProtoOptions(ABC):
 
         return iter(self._options)
 
-    def __getitem__(self, index: int) -> ProtoOption:
+    def __getitem__(self, index: int, /) -> ProtoOption:
         """
         Get the option by index.
         """
 
         return self._options[index]
 
-    def index(self, option: ProtoOption) -> int:
+    def index(self, option: ProtoOption, /) -> int:
         """
         Get the option index.
         """
@@ -157,7 +157,7 @@ class ProtoOptions(ABC):
 
     @staticmethod
     @abstractmethod
-    def from_bytes(_bytes: bytes) -> ProtoOptions:
+    def from_bytes(_bytes: bytes, /) -> ProtoOptions:
         """
         Extract the options from the provided bytes.
         """

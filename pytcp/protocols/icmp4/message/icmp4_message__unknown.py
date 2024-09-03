@@ -139,7 +139,7 @@ class Icmp4UnknownMessage(Icmp4Message):
 
     @override
     @staticmethod
-    def from_bytes(_bytes: bytes) -> Icmp4UnknownMessage:
+    def from_bytes(_bytes: bytes, /) -> Icmp4UnknownMessage:
         """
         Initialize the ICMPv4 unknown message from bytes.
         """

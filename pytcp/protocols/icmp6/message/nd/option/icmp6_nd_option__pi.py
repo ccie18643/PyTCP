@@ -183,7 +183,7 @@ class Icmp6NdOptionPi(Icmp6NdOption):
         )
 
     @staticmethod
-    def _validate_integrity(_bytes: bytes) -> None:
+    def _validate_integrity(_bytes: bytes, /) -> None:
         """
         Validate the ICMPv6 ND Pi option integrity before parsing it.
         """
@@ -202,7 +202,7 @@ class Icmp6NdOptionPi(Icmp6NdOption):
 
     @override
     @staticmethod
-    def from_bytes(_bytes: bytes) -> Icmp6NdOptionPi:
+    def from_bytes(_bytes: bytes, /) -> Icmp6NdOptionPi:
         """
         Initialize the ICMPv6 ND Pi option from bytes.
         """

@@ -91,7 +91,7 @@ class TcpOptionNop(TcpOption):
 
     @override
     @staticmethod
-    def from_bytes(_bytes: bytes) -> TcpOptionNop:
+    def from_bytes(_bytes: bytes, /) -> TcpOptionNop:
         """
         Initialize the TCP Nop option from bytes.
         """

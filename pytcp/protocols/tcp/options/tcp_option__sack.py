@@ -163,7 +163,7 @@ class TcpOptionSack(TcpOption):
         )
 
     @staticmethod
-    def _validate_integrity(_bytes: bytes) -> None:
+    def _validate_integrity(_bytes: bytes, /) -> None:
         """
         Validate the TCP Sack option integrity before parsing it.
         """
@@ -184,7 +184,7 @@ class TcpOptionSack(TcpOption):
 
     @override
     @staticmethod
-    def from_bytes(_bytes: bytes) -> TcpOptionSack:
+    def from_bytes(_bytes: bytes, /) -> TcpOptionSack:
         """
         Initialize the TCP Sack option from bytes.
         """
