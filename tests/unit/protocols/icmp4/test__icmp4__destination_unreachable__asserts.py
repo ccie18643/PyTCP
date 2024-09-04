@@ -57,7 +57,7 @@ class TestIcmp4DestinationUnreachableAssemblerAsserts(TestCase):
         message constructor.
         """
 
-        self._message_args = {
+        self._message_kwargs = {
             "code": Icmp4DestinationUnreachableCode.NETWORK,
             "mtu": None,
             "cksum": 0,
@@ -73,10 +73,10 @@ class TestIcmp4DestinationUnreachableAssemblerAsserts(TestCase):
         an Icmp4DestinationUnreachableCode.
         """
 
-        self._message_args["code"] = value = "not an Icmp4DestinationUnreachableCode"  # type: ignore
+        self._message_kwargs["code"] = value = "not an Icmp4DestinationUnreachableCode"  # type: ignore
 
         with self.assertRaises(AssertionError) as error:
-            Icmp4DestinationUnreachableMessage(**self._message_args)  # type: ignore
+            Icmp4DestinationUnreachableMessage(**self._message_kwargs)  # type: ignore
 
         self.assertEqual(
             str(error.exception),
@@ -94,14 +94,14 @@ class TestIcmp4DestinationUnreachableAssemblerAsserts(TestCase):
         provided.
         """
 
-        self._message_args["code"] = (
+        self._message_kwargs["code"] = (
             Icmp4DestinationUnreachableCode.FRAGMENTATION_NEEDED
         )
-        self._message_args["mtu"] = value = None
+        self._message_kwargs["mtu"] = value = None
 
         with self.assertRaises(AssertionError) as error:
             Icmp4DestinationUnreachableMessage(
-                **self._message_args,  # type: ignore
+                **self._message_kwargs,  # type: ignore
             )
 
         self.assertEqual(
@@ -120,13 +120,13 @@ class TestIcmp4DestinationUnreachableAssemblerAsserts(TestCase):
         provided.
         """
 
-        self._message_args["mtu"] = value = 1500
+        self._message_kwargs["mtu"] = value = 1500
 
         for code in Icmp4DestinationUnreachableCode:
             if code != Icmp4DestinationUnreachableCode.FRAGMENTATION_NEEDED:
                 with self.assertRaises(AssertionError) as error:
                     Icmp4DestinationUnreachableMessage(
-                        **self._message_args,  # type: ignore
+                        **self._message_kwargs,  # type: ignore
                     )
 
             self.assertEqual(
@@ -143,11 +143,11 @@ class TestIcmp4DestinationUnreachableAssemblerAsserts(TestCase):
         is lower than the minimum supported value.
         """
 
-        self._message_args["cksum"] = value = UINT_16__MIN - 1
+        self._message_kwargs["cksum"] = value = UINT_16__MIN - 1
 
         with self.assertRaises(AssertionError) as error:
             Icmp4DestinationUnreachableMessage(
-                **self._message_args,  # type: ignore
+                **self._message_kwargs,  # type: ignore
             )
 
         self.assertEqual(
@@ -165,11 +165,11 @@ class TestIcmp4DestinationUnreachableAssemblerAsserts(TestCase):
         is higher than the maximum supported value.
         """
 
-        self._message_args["cksum"] = value = UINT_16__MAX + 1
+        self._message_kwargs["cksum"] = value = UINT_16__MAX + 1
 
         with self.assertRaises(AssertionError) as error:
             Icmp4DestinationUnreachableMessage(
-                **self._message_args,  # type: ignore
+                **self._message_kwargs,  # type: ignore
             )
 
         self.assertEqual(
@@ -187,14 +187,14 @@ class TestIcmp4DestinationUnreachableAssemblerAsserts(TestCase):
         is lower than the minimum supported value.
         """
 
-        self._message_args["code"] = (
+        self._message_kwargs["code"] = (
             Icmp4DestinationUnreachableCode.FRAGMENTATION_NEEDED
         )
-        self._message_args["mtu"] = value = UINT_16__MIN - 1
+        self._message_kwargs["mtu"] = value = UINT_16__MIN - 1
 
         with self.assertRaises(AssertionError) as error:
             Icmp4DestinationUnreachableMessage(
-                **self._message_args,  # type: ignore
+                **self._message_kwargs,  # type: ignore
             )
 
         self.assertEqual(
@@ -212,14 +212,14 @@ class TestIcmp4DestinationUnreachableAssemblerAsserts(TestCase):
         is higher than the maximum supported value.
         """
 
-        self._message_args["code"] = (
+        self._message_kwargs["code"] = (
             Icmp4DestinationUnreachableCode.FRAGMENTATION_NEEDED
         )
-        self._message_args["mtu"] = value = UINT_16__MAX + 1
+        self._message_kwargs["mtu"] = value = UINT_16__MAX + 1
 
         with self.assertRaises(AssertionError) as error:
             Icmp4DestinationUnreachableMessage(
-                **self._message_args,  # type: ignore
+                **self._message_kwargs,  # type: ignore
             )
 
         self.assertEqual(
@@ -238,11 +238,11 @@ class TestIcmp4DestinationUnreachableAssemblerAsserts(TestCase):
         """
 
         value = IP4__PAYLOAD__MAX_LEN - ICMP4__DESTINATION_UNREACHABLE__LEN + 1
-        self._message_args["data"] = b"X" * value
+        self._message_kwargs["data"] = b"X" * value
 
         with self.assertRaises(AssertionError) as error:
             Icmp4DestinationUnreachableMessage(
-                **self._message_args,  # type: ignore
+                **self._message_kwargs,  # type: ignore
             )
 
         self.assertEqual(

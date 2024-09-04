@@ -56,7 +56,7 @@ class TestTcpHeaderAsserts(TestCase):
         Create the default arguments for the TCP header constructor.
         """
 
-        self._header_args = {
+        self._header_kwargs = {
             "sport": 0,
             "dport": 0,
             "seq": 0,
@@ -82,10 +82,10 @@ class TestTcpHeaderAsserts(TestCase):
         'sport' argument is lower than the minimum supported value.
         """
 
-        self._header_args["sport"] = value = UINT_16__MIN - 1
+        self._header_kwargs["sport"] = value = UINT_16__MIN - 1
 
         with self.assertRaises(AssertionError) as error:
-            TcpHeader(**self._header_args)  # type: ignore
+            TcpHeader(**self._header_kwargs)  # type: ignore
 
         self.assertEqual(
             str(error.exception),
@@ -98,10 +98,10 @@ class TestTcpHeaderAsserts(TestCase):
         'sport' argument is higher than the maximum supported value.
         """
 
-        self._header_args["sport"] = value = UINT_16__MAX + 1
+        self._header_kwargs["sport"] = value = UINT_16__MAX + 1
 
         with self.assertRaises(AssertionError) as error:
-            TcpHeader(**self._header_args)  # type: ignore
+            TcpHeader(**self._header_kwargs)  # type: ignore
 
         self.assertEqual(
             str(error.exception),
@@ -114,10 +114,10 @@ class TestTcpHeaderAsserts(TestCase):
         'dport' argument is lower than the minimum supported value.
         """
 
-        self._header_args["dport"] = value = UINT_16__MIN - 1
+        self._header_kwargs["dport"] = value = UINT_16__MIN - 1
 
         with self.assertRaises(AssertionError) as error:
-            TcpHeader(**self._header_args)  # type: ignore
+            TcpHeader(**self._header_kwargs)  # type: ignore
 
         self.assertEqual(
             str(error.exception),
@@ -130,10 +130,10 @@ class TestTcpHeaderAsserts(TestCase):
         'dport' argument is higher than the maximum supported value.
         """
 
-        self._header_args["dport"] = value = UINT_16__MAX + 1
+        self._header_kwargs["dport"] = value = UINT_16__MAX + 1
 
         with self.assertRaises(AssertionError) as error:
-            TcpHeader(**self._header_args)  # type: ignore
+            TcpHeader(**self._header_kwargs)  # type: ignore
 
         self.assertEqual(
             str(error.exception),
@@ -146,10 +146,10 @@ class TestTcpHeaderAsserts(TestCase):
         'seq' argument is lower than the minimum supported value.
         """
 
-        self._header_args["seq"] = value = UINT_32__MIN - 1
+        self._header_kwargs["seq"] = value = UINT_32__MIN - 1
 
         with self.assertRaises(AssertionError) as error:
-            TcpHeader(**self._header_args)  # type: ignore
+            TcpHeader(**self._header_kwargs)  # type: ignore
 
         self.assertEqual(
             str(error.exception),
@@ -162,10 +162,10 @@ class TestTcpHeaderAsserts(TestCase):
         'seq' argument is higher than the maximum supported value.
         """
 
-        self._header_args["seq"] = value = UINT_32__MAX + 1
+        self._header_kwargs["seq"] = value = UINT_32__MAX + 1
 
         with self.assertRaises(AssertionError) as error:
-            TcpHeader(**self._header_args)  # type: ignore
+            TcpHeader(**self._header_kwargs)  # type: ignore
 
         self.assertEqual(
             str(error.exception),
@@ -178,10 +178,10 @@ class TestTcpHeaderAsserts(TestCase):
         'ack' argument is lower than the minimum supported value.
         """
 
-        self._header_args["ack"] = value = UINT_32__MIN - 1
+        self._header_kwargs["ack"] = value = UINT_32__MIN - 1
 
         with self.assertRaises(AssertionError) as error:
-            TcpHeader(**self._header_args)  # type: ignore
+            TcpHeader(**self._header_kwargs)  # type: ignore
 
         self.assertEqual(
             str(error.exception),
@@ -194,10 +194,10 @@ class TestTcpHeaderAsserts(TestCase):
         'ack' argument is higher than the maximum supported value.
         """
 
-        self._header_args["ack"] = value = UINT_32__MAX + 1
+        self._header_kwargs["ack"] = value = UINT_32__MAX + 1
 
         with self.assertRaises(AssertionError) as error:
-            TcpHeader(**self._header_args)  # type: ignore
+            TcpHeader(**self._header_kwargs)  # type: ignore
 
         self.assertEqual(
             str(error.exception),
@@ -210,10 +210,10 @@ class TestTcpHeaderAsserts(TestCase):
         'hlen' argument is lower than the minimum supported value.
         """
 
-        self._header_args["hlen"] = value = UINT_6__MIN - 1
+        self._header_kwargs["hlen"] = value = UINT_6__MIN - 1
 
         with self.assertRaises(AssertionError) as error:
-            TcpHeader(**self._header_args)  # type: ignore
+            TcpHeader(**self._header_kwargs)  # type: ignore
 
         self.assertEqual(
             str(error.exception),
@@ -226,10 +226,10 @@ class TestTcpHeaderAsserts(TestCase):
         'hlen' argument is higher than the maximum supported value.
         """
 
-        self._header_args["hlen"] = value = UINT_6__MAX + 1
+        self._header_kwargs["hlen"] = value = UINT_6__MAX + 1
 
         with self.assertRaises(AssertionError) as error:
-            TcpHeader(**self._header_args)  # type: ignore
+            TcpHeader(**self._header_kwargs)  # type: ignore
 
         self.assertEqual(
             str(error.exception),
@@ -242,10 +242,10 @@ class TestTcpHeaderAsserts(TestCase):
         the value of the provided 'hlen' argument is not 4 bytes aligned.
         """
 
-        self._header_args["hlen"] = value = UINT_6__MAX - 1
+        self._header_kwargs["hlen"] = value = UINT_6__MAX - 1
 
         with self.assertRaises(AssertionError) as error:
-            TcpHeader(**self._header_args)  # type: ignore
+            TcpHeader(**self._header_kwargs)  # type: ignore
 
         self.assertEqual(
             str(error.exception),
@@ -258,10 +258,10 @@ class TestTcpHeaderAsserts(TestCase):
         provided 'flag_ns' argument is not a boolean.
         """
 
-        self._header_args["flag_ns"] = value = "not a boolean"  # type: ignore
+        self._header_kwargs["flag_ns"] = value = "not a boolean"  # type: ignore
 
         with self.assertRaises(AssertionError) as error:
-            TcpHeader(**self._header_args)  # type: ignore
+            TcpHeader(**self._header_kwargs)  # type: ignore
 
         self.assertEqual(
             str(error.exception),
@@ -274,10 +274,10 @@ class TestTcpHeaderAsserts(TestCase):
         provided 'flag_cwr' argument is not a boolean.
         """
 
-        self._header_args["flag_cwr"] = value = "not a boolean"  # type: ignore
+        self._header_kwargs["flag_cwr"] = value = "not a boolean"  # type: ignore
 
         with self.assertRaises(AssertionError) as error:
-            TcpHeader(**self._header_args)  # type: ignore
+            TcpHeader(**self._header_kwargs)  # type: ignore
 
         self.assertEqual(
             str(error.exception),
@@ -290,10 +290,10 @@ class TestTcpHeaderAsserts(TestCase):
         provided 'flag_ece' argument is not a boolean.
         """
 
-        self._header_args["flag_ece"] = value = "not a boolean"  # type: ignore
+        self._header_kwargs["flag_ece"] = value = "not a boolean"  # type: ignore
 
         with self.assertRaises(AssertionError) as error:
-            TcpHeader(**self._header_args)  # type: ignore
+            TcpHeader(**self._header_kwargs)  # type: ignore
 
         self.assertEqual(
             str(error.exception),
@@ -306,10 +306,10 @@ class TestTcpHeaderAsserts(TestCase):
         provided 'flag_urg' argument is not a boolean.
         """
 
-        self._header_args["flag_urg"] = value = "not a boolean"  # type: ignore
+        self._header_kwargs["flag_urg"] = value = "not a boolean"  # type: ignore
 
         with self.assertRaises(AssertionError) as error:
-            TcpHeader(**self._header_args)  # type: ignore
+            TcpHeader(**self._header_kwargs)  # type: ignore
 
         self.assertEqual(
             str(error.exception),
@@ -322,10 +322,10 @@ class TestTcpHeaderAsserts(TestCase):
         provided 'flag_ack' argument is not a boolean.
         """
 
-        self._header_args["flag_ack"] = value = "not a boolean"  # type: ignore
+        self._header_kwargs["flag_ack"] = value = "not a boolean"  # type: ignore
 
         with self.assertRaises(AssertionError) as error:
-            TcpHeader(**self._header_args)  # type: ignore
+            TcpHeader(**self._header_kwargs)  # type: ignore
 
         self.assertEqual(
             str(error.exception),
@@ -338,10 +338,10 @@ class TestTcpHeaderAsserts(TestCase):
         provided 'flag_psh' argument is not a boolean.
         """
 
-        self._header_args["flag_psh"] = value = "not a boolean"  # type: ignore
+        self._header_kwargs["flag_psh"] = value = "not a boolean"  # type: ignore
 
         with self.assertRaises(AssertionError) as error:
-            TcpHeader(**self._header_args)  # type: ignore
+            TcpHeader(**self._header_kwargs)  # type: ignore
 
         self.assertEqual(
             str(error.exception),
@@ -354,10 +354,10 @@ class TestTcpHeaderAsserts(TestCase):
         provided 'flag_rst' argument is not a boolean.
         """
 
-        self._header_args["flag_rst"] = value = "not a boolean"  # type: ignore
+        self._header_kwargs["flag_rst"] = value = "not a boolean"  # type: ignore
 
         with self.assertRaises(AssertionError) as error:
-            TcpHeader(**self._header_args)  # type: ignore
+            TcpHeader(**self._header_kwargs)  # type: ignore
 
         self.assertEqual(
             str(error.exception),
@@ -370,10 +370,10 @@ class TestTcpHeaderAsserts(TestCase):
         provided 'flag_syn' argument is not a boolean.
         """
 
-        self._header_args["flag_syn"] = value = "not a boolean"  # type: ignore
+        self._header_kwargs["flag_syn"] = value = "not a boolean"  # type: ignore
 
         with self.assertRaises(AssertionError) as error:
-            TcpHeader(**self._header_args)  # type: ignore
+            TcpHeader(**self._header_kwargs)  # type: ignore
 
         self.assertEqual(
             str(error.exception),
@@ -386,10 +386,10 @@ class TestTcpHeaderAsserts(TestCase):
         provided 'flag_fin' argument is not a boolean.
         """
 
-        self._header_args["flag_fin"] = value = "not a boolean"  # type: ignore
+        self._header_kwargs["flag_fin"] = value = "not a boolean"  # type: ignore
 
         with self.assertRaises(AssertionError) as error:
-            TcpHeader(**self._header_args)  # type: ignore
+            TcpHeader(**self._header_kwargs)  # type: ignore
 
         self.assertEqual(
             str(error.exception),
@@ -402,10 +402,10 @@ class TestTcpHeaderAsserts(TestCase):
         'win' argument is lower than the minimum supported value.
         """
 
-        self._header_args["win"] = value = UINT_16__MIN - 1
+        self._header_kwargs["win"] = value = UINT_16__MIN - 1
 
         with self.assertRaises(AssertionError) as error:
-            TcpHeader(**self._header_args)  # type: ignore
+            TcpHeader(**self._header_kwargs)  # type: ignore
 
         self.assertEqual(
             str(error.exception),
@@ -418,10 +418,10 @@ class TestTcpHeaderAsserts(TestCase):
         'win' argument is higher than the maximum supported value.
         """
 
-        self._header_args["win"] = value = UINT_16__MAX + 1
+        self._header_kwargs["win"] = value = UINT_16__MAX + 1
 
         with self.assertRaises(AssertionError) as error:
-            TcpHeader(**self._header_args)  # type: ignore
+            TcpHeader(**self._header_kwargs)  # type: ignore
 
         self.assertEqual(
             str(error.exception),
@@ -434,10 +434,10 @@ class TestTcpHeaderAsserts(TestCase):
         'cksum' argument is lower than the minimum supported value.
         """
 
-        self._header_args["cksum"] = value = UINT_16__MIN - 1
+        self._header_kwargs["cksum"] = value = UINT_16__MIN - 1
 
         with self.assertRaises(AssertionError) as error:
-            TcpHeader(**self._header_args)  # type: ignore
+            TcpHeader(**self._header_kwargs)  # type: ignore
 
         self.assertEqual(
             str(error.exception),
@@ -450,10 +450,10 @@ class TestTcpHeaderAsserts(TestCase):
         'cksum' argument is higher than the maximum supported value.
         """
 
-        self._header_args["cksum"] = value = UINT_16__MAX + 1
+        self._header_kwargs["cksum"] = value = UINT_16__MAX + 1
 
         with self.assertRaises(AssertionError) as error:
-            TcpHeader(**self._header_args)  # type: ignore
+            TcpHeader(**self._header_kwargs)  # type: ignore
 
         self.assertEqual(
             str(error.exception),
@@ -466,10 +466,10 @@ class TestTcpHeaderAsserts(TestCase):
         'urg' argument is lower than the minimum supported value.
         """
 
-        self._header_args["urg"] = value = UINT_16__MIN - 1
+        self._header_kwargs["urg"] = value = UINT_16__MIN - 1
 
         with self.assertRaises(AssertionError) as error:
-            TcpHeader(**self._header_args)  # type: ignore
+            TcpHeader(**self._header_kwargs)  # type: ignore
 
         self.assertEqual(
             str(error.exception),
@@ -482,10 +482,10 @@ class TestTcpHeaderAsserts(TestCase):
         'urg' argument is higher than the maximum supported value.
         """
 
-        self._header_args["urg"] = value = UINT_16__MAX + 1
+        self._header_kwargs["urg"] = value = UINT_16__MAX + 1
 
         with self.assertRaises(AssertionError) as error:
-            TcpHeader(**self._header_args)  # type: ignore
+            TcpHeader(**self._header_kwargs)  # type: ignore
 
         self.assertEqual(
             str(error.exception),

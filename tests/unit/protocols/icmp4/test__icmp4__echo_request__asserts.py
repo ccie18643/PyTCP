@@ -57,7 +57,7 @@ class TestIcmp4EchoRequestAssemblerAsserts(TestCase):
         constructor.
         """
 
-        self._message_args = {
+        self._message_kwargs = {
             "code": Icmp4EchoRequestCode.DEFAULT,
             "cksum": 0,
             "id": 0,
@@ -73,10 +73,10 @@ class TestIcmp4EchoRequestAssemblerAsserts(TestCase):
         when the provided 'code' argument is not an Icmp4EchoRequestCode.
         """
 
-        self._message_args["code"] = value = "not an Icmp4EchoRequestCode"
+        self._message_kwargs["code"] = value = "not an Icmp4EchoRequestCode"
 
         with self.assertRaises(AssertionError) as error:
-            Icmp4EchoRequestMessage(**self._message_args)  # type: ignore
+            Icmp4EchoRequestMessage(**self._message_kwargs)  # type: ignore
 
         self.assertEqual(
             str(error.exception),
@@ -91,10 +91,10 @@ class TestIcmp4EchoRequestAssemblerAsserts(TestCase):
         minimum supported value.
         """
 
-        self._message_args["cksum"] = value = UINT_16__MIN - 1
+        self._message_kwargs["cksum"] = value = UINT_16__MIN - 1
 
         with self.assertRaises(AssertionError) as error:
-            Icmp4EchoRequestMessage(**self._message_args)  # type: ignore
+            Icmp4EchoRequestMessage(**self._message_kwargs)  # type: ignore
 
         self.assertEqual(
             str(error.exception),
@@ -109,10 +109,10 @@ class TestIcmp4EchoRequestAssemblerAsserts(TestCase):
         maximum supported value.
         """
 
-        self._message_args["cksum"] = value = UINT_16__MAX + 1
+        self._message_kwargs["cksum"] = value = UINT_16__MAX + 1
 
         with self.assertRaises(AssertionError) as error:
-            Icmp4EchoRequestMessage(**self._message_args)  # type: ignore
+            Icmp4EchoRequestMessage(**self._message_kwargs)  # type: ignore
 
         self.assertEqual(
             str(error.exception),
@@ -127,10 +127,10 @@ class TestIcmp4EchoRequestAssemblerAsserts(TestCase):
         minimum supported value.
         """
 
-        self._message_args["id"] = value = UINT_16__MIN - 1
+        self._message_kwargs["id"] = value = UINT_16__MIN - 1
 
         with self.assertRaises(AssertionError) as error:
-            Icmp4EchoRequestMessage(**self._message_args)  # type: ignore
+            Icmp4EchoRequestMessage(**self._message_kwargs)  # type: ignore
 
         self.assertEqual(
             str(error.exception),
@@ -145,10 +145,10 @@ class TestIcmp4EchoRequestAssemblerAsserts(TestCase):
         maximum supported value.
         """
 
-        self._message_args["id"] = value = UINT_16__MAX + 1
+        self._message_kwargs["id"] = value = UINT_16__MAX + 1
 
         with self.assertRaises(AssertionError) as error:
-            Icmp4EchoRequestMessage(**self._message_args)  # type: ignore
+            Icmp4EchoRequestMessage(**self._message_kwargs)  # type: ignore
 
         self.assertEqual(
             str(error.exception),
@@ -163,10 +163,10 @@ class TestIcmp4EchoRequestAssemblerAsserts(TestCase):
         minimum supported value.
         """
 
-        self._message_args["seq"] = value = UINT_16__MIN - 1
+        self._message_kwargs["seq"] = value = UINT_16__MIN - 1
 
         with self.assertRaises(AssertionError) as error:
-            Icmp4EchoRequestMessage(**self._message_args)  # type: ignore
+            Icmp4EchoRequestMessage(**self._message_kwargs)  # type: ignore
 
         self.assertEqual(
             str(error.exception),
@@ -181,10 +181,10 @@ class TestIcmp4EchoRequestAssemblerAsserts(TestCase):
         maximum supported value.
         """
 
-        self._message_args["seq"] = value = UINT_16__MAX + 1
+        self._message_kwargs["seq"] = value = UINT_16__MAX + 1
 
         with self.assertRaises(AssertionError) as error:
-            Icmp4EchoRequestMessage(**self._message_args)  # type: ignore
+            Icmp4EchoRequestMessage(**self._message_kwargs)  # type: ignore
 
         self.assertEqual(
             str(error.exception),
@@ -200,11 +200,11 @@ class TestIcmp4EchoRequestAssemblerAsserts(TestCase):
         """
 
         value = IP4__PAYLOAD__MAX_LEN - ICMP4__ECHO_REQUEST__LEN + 1
-        self._message_args["data"] = b"X" * value
+        self._message_kwargs["data"] = b"X" * value
 
         with self.assertRaises(AssertionError) as error:
             Icmp4EchoRequestMessage(
-                **self._message_args,  # type: ignore
+                **self._message_kwargs,  # type: ignore
             )
 
         self.assertEqual(

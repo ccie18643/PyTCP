@@ -55,7 +55,7 @@ class TestIpExtFrag6HeaderAsserts(TestCase):
         Create the default arguments for the IPv6 Ext Frag header constructor.
         """
 
-        self._header_args = {
+        self._header_kwargs = {
             "next": Ip6Next.RAW,
             "offset": 0,
             "flag_mf": False,
@@ -68,10 +68,10 @@ class TestIpExtFrag6HeaderAsserts(TestCase):
         the provided 'next' argument is not an Ip6Next.
         """
 
-        self._header_args["next"] = value = "not an Ip6Next"
+        self._header_kwargs["next"] = value = "not an Ip6Next"
 
         with self.assertRaises(AssertionError) as error:
-            Ip6ExtFragHeader(**self._header_args)  # type: ignore
+            Ip6ExtFragHeader(**self._header_kwargs)  # type: ignore
 
         self.assertEqual(
             str(error.exception),
@@ -84,10 +84,10 @@ class TestIpExtFrag6HeaderAsserts(TestCase):
         the provided 'offset' argument is lower than the minimum supported value.
         """
 
-        self._header_args["offset"] = value = UINT_13__MIN - 1
+        self._header_kwargs["offset"] = value = UINT_13__MIN - 1
 
         with self.assertRaises(AssertionError) as error:
-            Ip6ExtFragHeader(**self._header_args)  # type: ignore
+            Ip6ExtFragHeader(**self._header_kwargs)  # type: ignore
 
         self.assertEqual(
             str(error.exception),
@@ -100,10 +100,10 @@ class TestIpExtFrag6HeaderAsserts(TestCase):
         the provided 'offset' argument is higher than the maximum supported value.
         """
 
-        self._header_args["offset"] = value = UINT_13__MAX + 1
+        self._header_kwargs["offset"] = value = UINT_13__MAX + 1
 
         with self.assertRaises(AssertionError) as error:
-            Ip6ExtFragHeader(**self._header_args)  # type: ignore
+            Ip6ExtFragHeader(**self._header_kwargs)  # type: ignore
 
         self.assertEqual(
             str(error.exception),
@@ -116,10 +116,10 @@ class TestIpExtFrag6HeaderAsserts(TestCase):
         the provided 'offset' argument is not 8-byte aligned.
         """
 
-        self._header_args["offset"] = value = UINT_13__MAX - 1
+        self._header_kwargs["offset"] = value = UINT_13__MAX - 1
 
         with self.assertRaises(AssertionError) as error:
-            Ip6ExtFragHeader(**self._header_args)  # type: ignore
+            Ip6ExtFragHeader(**self._header_kwargs)  # type: ignore
 
         self.assertEqual(
             str(error.exception),
@@ -132,10 +132,10 @@ class TestIpExtFrag6HeaderAsserts(TestCase):
         the provided 'flag_mf' argument is not a boolean.
         """
 
-        self._header_args["flag_mf"] = value = "not a boolean"
+        self._header_kwargs["flag_mf"] = value = "not a boolean"
 
         with self.assertRaises(AssertionError) as error:
-            Ip6ExtFragHeader(**self._header_args)  # type: ignore
+            Ip6ExtFragHeader(**self._header_kwargs)  # type: ignore
 
         self.assertEqual(
             str(error.exception),
@@ -148,10 +148,10 @@ class TestIpExtFrag6HeaderAsserts(TestCase):
         'id' argument is lower than the minimum supported value.
         """
 
-        self._header_args["id"] = value = UINT_32__MIN - 1
+        self._header_kwargs["id"] = value = UINT_32__MIN - 1
 
         with self.assertRaises(AssertionError) as error:
-            Ip6ExtFragHeader(**self._header_args)  # type: ignore
+            Ip6ExtFragHeader(**self._header_kwargs)  # type: ignore
 
         self.assertEqual(
             str(error.exception),
@@ -164,10 +164,10 @@ class TestIpExtFrag6HeaderAsserts(TestCase):
         'id' argument is higher than the maximum supported value.
         """
 
-        self._header_args["id"] = value = UINT_32__MAX + 1
+        self._header_kwargs["id"] = value = UINT_32__MAX + 1
 
         with self.assertRaises(AssertionError) as error:
-            Ip6ExtFragHeader(**self._header_args)  # type: ignore
+            Ip6ExtFragHeader(**self._header_kwargs)  # type: ignore
 
         self.assertEqual(
             str(error.exception),

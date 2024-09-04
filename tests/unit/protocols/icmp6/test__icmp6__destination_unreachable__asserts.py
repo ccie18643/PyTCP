@@ -57,7 +57,7 @@ class TestIcmp6DestinationUnreachableAssemblerAsserts(TestCase):
         message constructor.
         """
 
-        self._message_args = {
+        self._message_kwargs = {
             "code": Icmp6DestinationUnreachableCode.NO_ROUTE,
             "cksum": 0,
             "data": b"",
@@ -71,12 +71,12 @@ class TestIcmp6DestinationUnreachableAssemblerAsserts(TestCase):
         when the provided 'code' argument is not an Icmp6DestinationUnreachableCode.
         """
 
-        self._message_args["code"] = value = (
+        self._message_kwargs["code"] = value = (
             "not an Icmp6DestinationUnreachableCode"
         )
 
         with self.assertRaises(AssertionError) as error:
-            Icmp6DestinationUnreachableMessage(**self._message_args)  # type: ignore
+            Icmp6DestinationUnreachableMessage(**self._message_kwargs)  # type: ignore
 
         self.assertEqual(
             str(error.exception),
@@ -93,11 +93,11 @@ class TestIcmp6DestinationUnreachableAssemblerAsserts(TestCase):
         is lower than the minimum supported value.
         """
 
-        self._message_args["cksum"] = value = UINT_16__MIN - 1
+        self._message_kwargs["cksum"] = value = UINT_16__MIN - 1
 
         with self.assertRaises(AssertionError) as error:
             Icmp6DestinationUnreachableMessage(
-                **self._message_args,  # type: ignore
+                **self._message_kwargs,  # type: ignore
             )
 
         self.assertEqual(
@@ -114,11 +114,11 @@ class TestIcmp6DestinationUnreachableAssemblerAsserts(TestCase):
         is higher than the maximum supported value.
         """
 
-        self._message_args["cksum"] = value = UINT_16__MAX + 1
+        self._message_kwargs["cksum"] = value = UINT_16__MAX + 1
 
         with self.assertRaises(AssertionError) as error:
             Icmp6DestinationUnreachableMessage(
-                **self._message_args,  # type: ignore
+                **self._message_kwargs,  # type: ignore
             )
 
         self.assertEqual(
@@ -136,11 +136,11 @@ class TestIcmp6DestinationUnreachableAssemblerAsserts(TestCase):
         """
 
         value = IP6__PAYLOAD__MAX_LEN - ICMP6__DESTINATION_UNREACHABLE__LEN + 1
-        self._message_args["data"] = b"X" * value
+        self._message_kwargs["data"] = b"X" * value
 
         with self.assertRaises(AssertionError) as error:
             Icmp6DestinationUnreachableMessage(
-                **self._message_args,  # type: ignore
+                **self._message_kwargs,  # type: ignore
             )
 
         self.assertEqual(

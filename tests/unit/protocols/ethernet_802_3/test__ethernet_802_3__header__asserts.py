@@ -53,7 +53,7 @@ class TestEthernet8023HeaderAsserts(TestCase):
         Create the default arguments for the Ethernet 802.3 header constructor.
         """
 
-        self._header_args = {
+        self._header_kwargs = {
             "dst": MacAddress(),
             "src": MacAddress(),
             "dlen": 0,
@@ -65,10 +65,10 @@ class TestEthernet8023HeaderAsserts(TestCase):
         provided 'dst' argument is not a MacAddress.
         """
 
-        self._header_args["dst"] = value = "not a MacAddress"
+        self._header_kwargs["dst"] = value = "not a MacAddress"
 
         with self.assertRaises(AssertionError) as error:
-            Ethernet8023Header(**self._header_args)  # type: ignore
+            Ethernet8023Header(**self._header_kwargs)  # type: ignore
 
         self.assertEqual(
             str(error.exception),
@@ -81,10 +81,10 @@ class TestEthernet8023HeaderAsserts(TestCase):
         provided 'src' argument is not a MacAddress.
         """
 
-        self._header_args["src"] = value = "not a MacAddress"
+        self._header_kwargs["src"] = value = "not a MacAddress"
 
         with self.assertRaises(AssertionError) as error:
-            Ethernet8023Header(**self._header_args)  # type: ignore
+            Ethernet8023Header(**self._header_kwargs)  # type: ignore
 
         self.assertEqual(
             str(error.exception),
@@ -97,10 +97,10 @@ class TestEthernet8023HeaderAsserts(TestCase):
         provided 'dlen' argument is lower than the minimum supported value.
         """
 
-        self._header_args["dlen"] = value = UINT_16__MIN - 1
+        self._header_kwargs["dlen"] = value = UINT_16__MIN - 1
 
         with self.assertRaises(AssertionError) as error:
-            Ethernet8023Header(**self._header_args)  # type: ignore
+            Ethernet8023Header(**self._header_kwargs)  # type: ignore
 
         self.assertEqual(
             str(error.exception),
@@ -114,10 +114,12 @@ class TestEthernet8023HeaderAsserts(TestCase):
         provided 'plen' argument is higher than the maximum supported value.
         """
 
-        self._header_args["dlen"] = value = ETHERNET_802_3__PAYLOAD__MAX_LEN + 1
+        self._header_kwargs["dlen"] = value = (
+            ETHERNET_802_3__PAYLOAD__MAX_LEN + 1
+        )
 
         with self.assertRaises(AssertionError) as error:
-            Ethernet8023Header(**self._header_args)  # type: ignore
+            Ethernet8023Header(**self._header_kwargs)  # type: ignore
 
         self.assertEqual(
             str(error.exception),

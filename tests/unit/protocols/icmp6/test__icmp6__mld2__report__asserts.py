@@ -61,7 +61,7 @@ class TestIcmp6MessageMld2ReportAsserts(TestCase):
         constructor.
         """
 
-        self._message_args = {
+        self._message_kwargs = {
             "code": Icmp6Mld2ReportCode.DEFAULT,
             "cksum": 0,
             "records": [],
@@ -75,10 +75,10 @@ class TestIcmp6MessageMld2ReportAsserts(TestCase):
         when the provided 'code' argument is not an Icmp6EchoRequestCode.
         """
 
-        self._message_args["code"] = value = "not an Icmp6Mld2ReportCode"
+        self._message_kwargs["code"] = value = "not an Icmp6Mld2ReportCode"
 
         with self.assertRaises(AssertionError) as error:
-            Icmp6Mld2ReportMessage(**self._message_args)  # type: ignore
+            Icmp6Mld2ReportMessage(**self._message_kwargs)  # type: ignore
 
         self.assertEqual(
             str(error.exception),
@@ -95,10 +95,10 @@ class TestIcmp6MessageMld2ReportAsserts(TestCase):
         minimum supported value.
         """
 
-        self._message_args["cksum"] = value = UINT_16__MIN - 1
+        self._message_kwargs["cksum"] = value = UINT_16__MIN - 1
 
         with self.assertRaises(AssertionError) as error:
-            Icmp6Mld2ReportMessage(**self._message_args)  # type: ignore
+            Icmp6Mld2ReportMessage(**self._message_kwargs)  # type: ignore
 
         self.assertEqual(
             str(error.exception),
@@ -115,10 +115,10 @@ class TestIcmp6MessageMld2ReportAsserts(TestCase):
         maximum supported value.
         """
 
-        self._message_args["cksum"] = value = UINT_16__MAX + 1
+        self._message_kwargs["cksum"] = value = UINT_16__MAX + 1
 
         with self.assertRaises(AssertionError) as error:
-            Icmp6Mld2ReportMessage(**self._message_args)  # type: ignore
+            Icmp6Mld2ReportMessage(**self._message_kwargs)  # type: ignore
 
         self.assertEqual(
             str(error.exception),
@@ -148,10 +148,10 @@ class TestIcmp6MessageMld2ReportAsserts(TestCase):
             ),
         )
 
-        self._message_args["records"] = [multicast_address_report]
+        self._message_kwargs["records"] = [multicast_address_report]
 
         with self.assertRaises(AssertionError) as error:
-            Icmp6Mld2ReportMessage(**self._message_args)  # type: ignore
+            Icmp6Mld2ReportMessage(**self._message_kwargs)  # type: ignore
 
         self.assertEqual(
             str(error.exception),

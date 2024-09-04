@@ -49,7 +49,7 @@ class TestUdpHeaderAsserts(TestCase):
         Create the default arguments for the UDP header constructor.
         """
 
-        self._header_args = {
+        self._header_kwargs = {
             "sport": 0,
             "dport": 0,
             "plen": 0,
@@ -62,10 +62,10 @@ class TestUdpHeaderAsserts(TestCase):
         'sport' argument is lower than the minimum supported value.
         """
 
-        self._header_args["sport"] = value = UINT_16__MIN - 1
+        self._header_kwargs["sport"] = value = UINT_16__MIN - 1
 
         with self.assertRaises(AssertionError) as error:
-            UdpHeader(**self._header_args)
+            UdpHeader(**self._header_kwargs)
 
         self.assertEqual(
             str(error.exception),
@@ -78,10 +78,10 @@ class TestUdpHeaderAsserts(TestCase):
         'sport' argument is higher than the maximum supported value.
         """
 
-        self._header_args["sport"] = value = UINT_16__MAX + 1
+        self._header_kwargs["sport"] = value = UINT_16__MAX + 1
 
         with self.assertRaises(AssertionError) as error:
-            UdpHeader(**self._header_args)
+            UdpHeader(**self._header_kwargs)
 
         self.assertEqual(
             str(error.exception),
@@ -94,10 +94,10 @@ class TestUdpHeaderAsserts(TestCase):
         'dport' argument is lower than the minimum supported value.
         """
 
-        self._header_args["dport"] = value = UINT_16__MIN - 1
+        self._header_kwargs["dport"] = value = UINT_16__MIN - 1
 
         with self.assertRaises(AssertionError) as error:
-            UdpHeader(**self._header_args)
+            UdpHeader(**self._header_kwargs)
 
         self.assertEqual(
             str(error.exception),
@@ -110,10 +110,10 @@ class TestUdpHeaderAsserts(TestCase):
         'dport' argument is higher than the maximum supported value.
         """
 
-        self._header_args["dport"] = value = UINT_16__MAX + 1
+        self._header_kwargs["dport"] = value = UINT_16__MAX + 1
 
         with self.assertRaises(AssertionError) as error:
-            UdpHeader(**self._header_args)
+            UdpHeader(**self._header_kwargs)
 
         self.assertEqual(
             str(error.exception),
@@ -126,10 +126,10 @@ class TestUdpHeaderAsserts(TestCase):
         'plen' argument is lower than the minimum supported value.
         """
 
-        self._header_args["plen"] = value = UINT_16__MIN - 1
+        self._header_kwargs["plen"] = value = UINT_16__MIN - 1
 
         with self.assertRaises(AssertionError) as error:
-            UdpHeader(**self._header_args)
+            UdpHeader(**self._header_kwargs)
 
         self.assertEqual(
             str(error.exception),
@@ -142,10 +142,10 @@ class TestUdpHeaderAsserts(TestCase):
         'plen' argument is higher than the maximum supported value.
         """
 
-        self._header_args["plen"] = value = UINT_16__MAX + 1
+        self._header_kwargs["plen"] = value = UINT_16__MAX + 1
 
         with self.assertRaises(AssertionError) as error:
-            UdpHeader(**self._header_args)
+            UdpHeader(**self._header_kwargs)
 
         self.assertEqual(
             str(error.exception),
@@ -158,10 +158,10 @@ class TestUdpHeaderAsserts(TestCase):
         'cksum' argument is lower than the minimum supported value.
         """
 
-        self._header_args["cksum"] = value = UINT_16__MIN - 1
+        self._header_kwargs["cksum"] = value = UINT_16__MIN - 1
 
         with self.assertRaises(AssertionError) as error:
-            UdpHeader(**self._header_args)
+            UdpHeader(**self._header_kwargs)
 
         self.assertEqual(
             str(error.exception),
@@ -174,10 +174,10 @@ class TestUdpHeaderAsserts(TestCase):
         'cksum' argument is higher than the maximum supported value.
         """
 
-        self._header_args["cksum"] = value = UINT_16__MAX + 1
+        self._header_kwargs["cksum"] = value = UINT_16__MAX + 1
 
         with self.assertRaises(AssertionError) as error:
-            UdpHeader(**self._header_args)
+            UdpHeader(**self._header_kwargs)
 
         self.assertEqual(
             str(error.exception),

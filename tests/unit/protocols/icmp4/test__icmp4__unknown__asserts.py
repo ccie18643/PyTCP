@@ -54,7 +54,7 @@ class TestIcmp4UnknownAssemblerAsserts(TestCase):
         constructor.
         """
 
-        self._message_args = {
+        self._message_kwargs = {
             "type": Icmp4Type.from_int(255),
             "code": Icmp4Code.from_int(255),
             "cksum": 0,
@@ -67,10 +67,10 @@ class TestIcmp4UnknownAssemblerAsserts(TestCase):
         when the provided 'type' argument is not an Icmp4Type.
         """
 
-        self._message_args["type"] = value = "not an Icmp4Type"
+        self._message_kwargs["type"] = value = "not an Icmp4Type"
 
         with self.assertRaises(AssertionError) as error:
-            Icmp4UnknownMessage(**self._message_args)  # type: ignore
+            Icmp4UnknownMessage(**self._message_kwargs)  # type: ignore
 
         self.assertEqual(
             str(error.exception),
@@ -83,10 +83,10 @@ class TestIcmp4UnknownAssemblerAsserts(TestCase):
         when the provided 'code' argument is not an Icmp4Code.
         """
 
-        self._message_args["code"] = value = "not an Icmp4Code"
+        self._message_kwargs["code"] = value = "not an Icmp4Code"
 
         with self.assertRaises(AssertionError) as error:
-            Icmp4UnknownMessage(**self._message_args)  # type: ignore
+            Icmp4UnknownMessage(**self._message_kwargs)  # type: ignore
 
         self.assertEqual(
             str(error.exception),
@@ -100,10 +100,10 @@ class TestIcmp4UnknownAssemblerAsserts(TestCase):
         the minimum supported value.
         """
 
-        self._message_args["cksum"] = value = UINT_16__MIN - 1
+        self._message_kwargs["cksum"] = value = UINT_16__MIN - 1
 
         with self.assertRaises(AssertionError) as error:
-            Icmp4UnknownMessage(**self._message_args)  # type: ignore
+            Icmp4UnknownMessage(**self._message_kwargs)  # type: ignore
 
         self.assertEqual(
             str(error.exception),
@@ -118,10 +118,10 @@ class TestIcmp4UnknownAssemblerAsserts(TestCase):
         the maximum supported value.
         """
 
-        self._message_args["cksum"] = value = UINT_16__MAX + 1
+        self._message_kwargs["cksum"] = value = UINT_16__MAX + 1
 
         with self.assertRaises(AssertionError) as error:
-            Icmp4UnknownMessage(**self._message_args)  # type: ignore
+            Icmp4UnknownMessage(**self._message_kwargs)  # type: ignore
 
         self.assertEqual(
             str(error.exception),
@@ -135,10 +135,10 @@ class TestIcmp4UnknownAssemblerAsserts(TestCase):
         when the provided 'raw' argument is not bytes.
         """
 
-        self._message_args["raw"] = value = "not bytes or memoryview"
+        self._message_kwargs["raw"] = value = "not bytes or memoryview"
 
         with self.assertRaises(AssertionError) as error:
-            Icmp4UnknownMessage(**self._message_args)  # type: ignore
+            Icmp4UnknownMessage(**self._message_kwargs)  # type: ignore
 
         self.assertEqual(
             str(error.exception),

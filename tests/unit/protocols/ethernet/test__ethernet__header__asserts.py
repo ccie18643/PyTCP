@@ -50,7 +50,7 @@ class TestEthernetHeaderAsserts(TestCase):
         Create the default arguments for the Ethernet header constructor.
         """
 
-        self._header_args = {
+        self._header_kwargs = {
             "dst": MacAddress(),
             "src": MacAddress(),
             "type": EthernetType.RAW,
@@ -62,10 +62,10 @@ class TestEthernetHeaderAsserts(TestCase):
         provided 'dst' argument is not a MacAddress.
         """
 
-        self._header_args["dst"] = value = "not a MacAddress"
+        self._header_kwargs["dst"] = value = "not a MacAddress"
 
         with self.assertRaises(AssertionError) as error:
-            EthernetHeader(**self._header_args)  # type: ignore
+            EthernetHeader(**self._header_kwargs)  # type: ignore
 
         self.assertEqual(
             str(error.exception),
@@ -78,10 +78,10 @@ class TestEthernetHeaderAsserts(TestCase):
         provided 'src' argument is not a MacAddress.
         """
 
-        self._header_args["src"] = value = "not a MacAddress"
+        self._header_kwargs["src"] = value = "not a MacAddress"
 
         with self.assertRaises(AssertionError) as error:
-            EthernetHeader(**self._header_args)  # type: ignore
+            EthernetHeader(**self._header_kwargs)  # type: ignore
 
         self.assertEqual(
             str(error.exception),
@@ -94,10 +94,10 @@ class TestEthernetHeaderAsserts(TestCase):
         provided 'type' argument is not an EthernetType.
         """
 
-        self._header_args["type"] = value = "not an EthernetType"
+        self._header_kwargs["type"] = value = "not an EthernetType"
 
         with self.assertRaises(AssertionError) as error:
-            EthernetHeader(**self._header_args)  # type: ignore
+            EthernetHeader(**self._header_kwargs)  # type: ignore
 
         self.assertEqual(
             str(error.exception),

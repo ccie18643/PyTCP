@@ -62,7 +62,7 @@ class TestIp6HeaderAsserts(TestCase):
         Create the default arguments for the IPv6 header constructor.
         """
 
-        self._header_args = {
+        self._header_kwargs = {
             "dscp": 0,
             "ecn": 0,
             "flow": 0,
@@ -79,10 +79,10 @@ class TestIp6HeaderAsserts(TestCase):
         'dscp' argument is lower than the minimum supported value.
         """
 
-        self._header_args["dscp"] = value = UINT_6__MIN - 1
+        self._header_kwargs["dscp"] = value = UINT_6__MIN - 1
 
         with self.assertRaises(AssertionError) as error:
-            Ip6Header(**self._header_args)  # type: ignore
+            Ip6Header(**self._header_kwargs)  # type: ignore
 
         self.assertEqual(
             str(error.exception),
@@ -95,10 +95,10 @@ class TestIp6HeaderAsserts(TestCase):
         'dscp' argument is higher than the maximum supported value.
         """
 
-        self._header_args["dscp"] = value = UINT_6__MAX + 1
+        self._header_kwargs["dscp"] = value = UINT_6__MAX + 1
 
         with self.assertRaises(AssertionError) as error:
-            Ip6Header(**self._header_args)  # type: ignore
+            Ip6Header(**self._header_kwargs)  # type: ignore
 
         self.assertEqual(
             str(error.exception),
@@ -111,10 +111,10 @@ class TestIp6HeaderAsserts(TestCase):
         'ecn' argument is lower than the minimum supported value.
         """
 
-        self._header_args["ecn"] = value = UINT_2__MIN - 1
+        self._header_kwargs["ecn"] = value = UINT_2__MIN - 1
 
         with self.assertRaises(AssertionError) as error:
-            Ip6Header(**self._header_args)  # type: ignore
+            Ip6Header(**self._header_kwargs)  # type: ignore
 
         self.assertEqual(
             str(error.exception),
@@ -127,10 +127,10 @@ class TestIp6HeaderAsserts(TestCase):
         'ecn' argument is higher than the maximum supported value.
         """
 
-        self._header_args["ecn"] = value = UINT_2__MAX + 1
+        self._header_kwargs["ecn"] = value = UINT_2__MAX + 1
 
         with self.assertRaises(AssertionError) as error:
-            Ip6Header(**self._header_args)  # type: ignore
+            Ip6Header(**self._header_kwargs)  # type: ignore
 
         self.assertEqual(
             str(error.exception),
@@ -143,10 +143,10 @@ class TestIp6HeaderAsserts(TestCase):
         'flow' argument is lower than the minimum supported value.
         """
 
-        self._header_args["flow"] = value = UINT_20__MIN - 1
+        self._header_kwargs["flow"] = value = UINT_20__MIN - 1
 
         with self.assertRaises(AssertionError) as error:
-            Ip6Header(**self._header_args)  # type: ignore
+            Ip6Header(**self._header_kwargs)  # type: ignore
 
         self.assertEqual(
             str(error.exception),
@@ -159,10 +159,10 @@ class TestIp6HeaderAsserts(TestCase):
         'flow' argument is higher than the maximum supported value.
         """
 
-        self._header_args["flow"] = value = UINT_20__MAX + 1
+        self._header_kwargs["flow"] = value = UINT_20__MAX + 1
 
         with self.assertRaises(AssertionError) as error:
-            Ip6Header(**self._header_args)  # type: ignore
+            Ip6Header(**self._header_kwargs)  # type: ignore
 
         self.assertEqual(
             str(error.exception),
@@ -175,10 +175,10 @@ class TestIp6HeaderAsserts(TestCase):
         'dlen' argument is lower than the minimum supported value.
         """
 
-        self._header_args["dlen"] = value = UINT_16__MIN - 1
+        self._header_kwargs["dlen"] = value = UINT_16__MIN - 1
 
         with self.assertRaises(AssertionError) as error:
-            Ip6Header(**self._header_args)  # type: ignore
+            Ip6Header(**self._header_kwargs)  # type: ignore
 
         self.assertEqual(
             str(error.exception),
@@ -191,10 +191,10 @@ class TestIp6HeaderAsserts(TestCase):
         'dlen' argument is higher than the maximum supported value.
         """
 
-        self._header_args["dlen"] = value = UINT_16__MAX + 1
+        self._header_kwargs["dlen"] = value = UINT_16__MAX + 1
 
         with self.assertRaises(AssertionError) as error:
-            Ip6Header(**self._header_args)  # type: ignore
+            Ip6Header(**self._header_kwargs)  # type: ignore
 
         self.assertEqual(
             str(error.exception),
@@ -207,10 +207,10 @@ class TestIp6HeaderAsserts(TestCase):
         'next' argument is not an Ip6Next.
         """
 
-        self._header_args["next"] = value = "not an Ip6Next"
+        self._header_kwargs["next"] = value = "not an Ip6Next"
 
         with self.assertRaises(AssertionError) as error:
-            Ip6Header(**self._header_args)  # type: ignore
+            Ip6Header(**self._header_kwargs)  # type: ignore
 
         self.assertEqual(
             str(error.exception),
@@ -223,10 +223,10 @@ class TestIp6HeaderAsserts(TestCase):
         'hop' argument is lower than the minimum supported value.
         """
 
-        self._header_args["hop"] = value = UINT_8__MIN - 1
+        self._header_kwargs["hop"] = value = UINT_8__MIN - 1
 
         with self.assertRaises(AssertionError) as error:
-            Ip6Header(**self._header_args)  # type: ignore
+            Ip6Header(**self._header_kwargs)  # type: ignore
 
         self.assertEqual(
             str(error.exception),
@@ -239,10 +239,10 @@ class TestIp6HeaderAsserts(TestCase):
         'hop' argument is higher than the maximum supported value.
         """
 
-        self._header_args["hop"] = value = UINT_8__MAX + 1
+        self._header_kwargs["hop"] = value = UINT_8__MAX + 1
 
         with self.assertRaises(AssertionError) as error:
-            Ip6Header(**self._header_args)  # type: ignore
+            Ip6Header(**self._header_kwargs)  # type: ignore
 
         self.assertEqual(
             str(error.exception),
@@ -255,10 +255,10 @@ class TestIp6HeaderAsserts(TestCase):
         'src' argument is not an Ip6Address.
         """
 
-        self._header_args["src"] = value = "not an Ip6Address"
+        self._header_kwargs["src"] = value = "not an Ip6Address"
 
         with self.assertRaises(AssertionError) as error:
-            Ip6Header(**self._header_args)  # type: ignore
+            Ip6Header(**self._header_kwargs)  # type: ignore
 
         self.assertEqual(
             str(error.exception),
@@ -271,10 +271,10 @@ class TestIp6HeaderAsserts(TestCase):
         'dst' argument is not an Ip6Address.
         """
 
-        self._header_args["dst"] = value = "not an Ip6Address"
+        self._header_kwargs["dst"] = value = "not an Ip6Address"
 
         with self.assertRaises(AssertionError) as error:
-            Ip6Header(**self._header_args)  # type: ignore
+            Ip6Header(**self._header_kwargs)  # type: ignore
 
         self.assertEqual(
             str(error.exception),

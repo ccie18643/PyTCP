@@ -50,7 +50,7 @@ class TestArpHeaderAsserts(TestCase):
         Create the default arguments for the ARP header constructor.
         """
 
-        self._header_args = {
+        self._header_kwargs = {
             "oper": ArpOperation.REQUEST,
             "sha": MacAddress(),
             "spa": Ip4Address(),
@@ -64,10 +64,10 @@ class TestArpHeaderAsserts(TestCase):
         'sha' argument is not a MacAddress.
         """
 
-        self._header_args["sha"] = value = "not a MacAddress"
+        self._header_kwargs["sha"] = value = "not a MacAddress"
 
         with self.assertRaises(AssertionError) as error:
-            ArpHeader(**self._header_args)  # type: ignore
+            ArpHeader(**self._header_kwargs)  # type: ignore
 
         self.assertEqual(
             str(error.exception),
@@ -80,10 +80,10 @@ class TestArpHeaderAsserts(TestCase):
         'sha' argument is not an Ip4Address.
         """
 
-        self._header_args["spa"] = value = "not an Ip4Address"
+        self._header_kwargs["spa"] = value = "not an Ip4Address"
 
         with self.assertRaises(AssertionError) as error:
-            ArpHeader(**self._header_args)  # type: ignore
+            ArpHeader(**self._header_kwargs)  # type: ignore
 
         self.assertEqual(
             str(error.exception),
@@ -96,10 +96,10 @@ class TestArpHeaderAsserts(TestCase):
         'tha' argument is not a MacAddress.
         """
 
-        self._header_args["tha"] = value = "not a MacAddress"
+        self._header_kwargs["tha"] = value = "not a MacAddress"
 
         with self.assertRaises(AssertionError) as error:
-            ArpHeader(**self._header_args)  # type: ignore
+            ArpHeader(**self._header_kwargs)  # type: ignore
 
         self.assertEqual(
             str(error.exception),
@@ -112,10 +112,10 @@ class TestArpHeaderAsserts(TestCase):
         'tha' argument is not a Ip4Address.
         """
 
-        self._header_args["tpa"] = value = "not an Ip4Address"
+        self._header_kwargs["tpa"] = value = "not an Ip4Address"
 
         with self.assertRaises(AssertionError) as error:
-            ArpHeader(**self._header_args)  # type: ignore
+            ArpHeader(**self._header_kwargs)  # type: ignore
 
         self.assertEqual(
             str(error.exception),
