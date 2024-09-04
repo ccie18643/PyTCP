@@ -36,34 +36,34 @@ ver 3.0.2
 from typing import Any
 
 from parameterized import parameterized_class  # type: ignore
-from testslide import TestCase
 
 from pytcp.lib.packet import PacketRx
 from pytcp.protocols.ip6_ext_frag.ip6_ext_frag__errors import (
     Ip6ExtFragSanityError,
 )
 from pytcp.protocols.ip6_ext_frag.ip6_ext_frag__parser import Ip6ExtFragParser
+from tests.lib.testcase__packet_rx__ip6 import TestCasePacketRxIp6
 
 
 @parameterized_class([])
-class TestIp6ExtFragParserSanityChecks(TestCase):
+class TestIp6ExtFragParserSanityChecks(TestCasePacketRxIp6):
     """
     The IPv6 Ext Frag packet parser sanity checks tests.
     """
 
     _description: str
-    _args: dict[str, Any]
+    _args: list[Any]
     _results: dict[str, Any]
+
+    _packet_rx: PacketRx
 
     def test__ip6_ext_frag__parser__from_bytes(self) -> None:
         """
         Ensure the IPv6 Ext Frag packet parser raises sanity error on crazy packets.
         """
 
-        packet_rx = PacketRx(self._args["bytes"])
-
         with self.assertRaises(Ip6ExtFragSanityError) as error:
-            Ip6ExtFragParser(packet_rx)
+            Ip6ExtFragParser(self._packet_rx)
 
         self.assertEqual(
             str(error.exception),

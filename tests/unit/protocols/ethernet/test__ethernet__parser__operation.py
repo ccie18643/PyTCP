@@ -36,25 +36,23 @@ ver 3.0.2
 from typing import Any
 
 from parameterized import parameterized_class  # type: ignore
-from testslide import TestCase
 
 from pytcp.lib.net_addr import MacAddress
 from pytcp.lib.packet import PacketRx
 from pytcp.protocols.ethernet.ethernet__enums import EthernetType
 from pytcp.protocols.ethernet.ethernet__header import EthernetHeader
 from pytcp.protocols.ethernet.ethernet__parser import EthernetParser
+from tests.lib.testcase__packet_rx import TestCasePacketRx
 
 
 @parameterized_class(
     [
         {
             "_description": "Ethernet packet (I).",
-            "_args": {
-                "bytes": (
-                    b"\x11\x22\x33\x44\x55\x66\x77\x88\x99\xaa\xbb\xcc\xff\xff\x30\x31"
-                    b"\x32\x33\x34\x35\x36\x37\x38\x39\x41\x42\x43\x44\x45\x46"
-                ),
-            },
+            "_args": [
+                b"\x11\x22\x33\x44\x55\x66\x77\x88\x99\xaa\xbb\xcc\xff\xff\x30\x31"
+                b"\x32\x33\x34\x35\x36\x37\x38\x39\x41\x42\x43\x44\x45\x46"
+            ],
             "_results": {
                 "header": EthernetHeader(
                     dst=MacAddress("11:22:33:44:55:66"),
@@ -66,12 +64,10 @@ from pytcp.protocols.ethernet.ethernet__parser import EthernetParser
         },
         {
             "_description": "Ethernet header (II).",
-            "_args": {
-                "bytes": (
-                    b"\xa1\xb2\xc3\xd4\xe5\xf6\x11\x12\x13\x14\x15\x16\xff\xff"
-                    + b"X" * 1500
-                ),
-            },
+            "_args": [
+                b"\xa1\xb2\xc3\xd4\xe5\xf6\x11\x12\x13\x14\x15\x16\xff\xff"
+                + b"X" * 1500
+            ],
             "_results": {
                 "header": EthernetHeader(
                     dst=MacAddress("a1:b2:c3:d4:e5:f6"),
@@ -83,14 +79,16 @@ from pytcp.protocols.ethernet.ethernet__parser import EthernetParser
         },
     ]
 )
-class TestEthernetHeaderParserOperation(TestCase):
+class TestEthernetHeaderParserOperation(TestCasePacketRx):
     """
     Ethernet header parseer packet tests.
     """
 
     _description: str
-    _args: dict[str, Any]
+    _args: list[Any]
     _results: dict[str, Any]
+
+    _packet_rx: PacketRx
 
     def test__ethernet__parser__from_bytes(self) -> None:
         """
@@ -98,9 +96,7 @@ class TestEthernetHeaderParserOperation(TestCase):
         objects and also updates the appropriate 'tx_packet' object fields.
         """
 
-        packet_rx = PacketRx(self._args["bytes"])
-
-        ethernet_parser = EthernetParser(packet_rx)
+        ethernet_parser = EthernetParser(self._packet_rx)
 
         self.assertEqual(
             ethernet_parser.header,
@@ -108,11 +104,11 @@ class TestEthernetHeaderParserOperation(TestCase):
         )
 
         self.assertIs(
-            packet_rx.ethernet,
+            self._packet_rx.ethernet,
             ethernet_parser,
         )
 
         self.assertEqual(
-            bytes(packet_rx.frame),
+            bytes(self._packet_rx.frame),
             self._results["payload"],
         )

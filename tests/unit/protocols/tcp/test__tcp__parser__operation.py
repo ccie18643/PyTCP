@@ -48,12 +48,10 @@ from tests.lib.testcase__packet_rx__ip6 import TestCasePacketRxIp6
 testcases = [
     {
         "_description": "TCP packet with no payload and no options (I).",
-        "_args": {
-            "bytes": (
-                b"\x30\x39\xd4\x31\x07\x5b\xcd\x15\x3a\xde\x68\xb1\x51\xfa\x2b\x67"
-                b"\xaf\x64\x56\xce"
-            ),
-        },
+        "_args": [
+            b"\x30\x39\xd4\x31\x07\x5b\xcd\x15\x3a\xde\x68\xb1\x51\xfa\x2b\x67"
+            b"\xaf\x64\x56\xce"
+        ],
         "_mocked_values": {},
         "_results": {
             "header": TcpHeader(
@@ -81,12 +79,10 @@ testcases = [
     },
     {
         "_description": "TCP packet with no payload and no options (II).",
-        "_args": {
-            "bytes": (
-                b"\x04\x57\x08\xae\x00\x00\x0d\x05\x00\x00\x11\x5c\x50\x11\x15\xb3"
-                b"\x6e\xd5\x00\x00"
-            ),
-        },
+        "_args": [
+            b"\x04\x57\x08\xae\x00\x00\x0d\x05\x00\x00\x11\x5c\x50\x11\x15\xb3"
+            b"\x6e\xd5\x00\x00"
+        ],
         "_mocked_values": {},
         "_results": {
             "header": TcpHeader(
@@ -114,12 +110,10 @@ testcases = [
     },
     {
         "_description": "TCP packet with no payload and options.",
-        "_args": {
-            "bytes": (
-                b"\x30\x39\xd4\x31\x00\x00\x00\x00\x00\x00\x00\x00\x70\x04\x2b\x67"
-                b"\x5c\x25\x00\x00\x01\x01\x01\x01\x01\x01\x01\x01"
-            ),
-        },
+        "_args": [
+            b"\x30\x39\xd4\x31\x00\x00\x00\x00\x00\x00\x00\x00\x70\x04\x2b\x67"
+            b"\x5c\x25\x00\x00\x01\x01\x01\x01\x01\x01\x01\x01"
+        ],
         "_mocked_values": {},
         "_results": {
             "header": TcpHeader(
@@ -149,13 +143,11 @@ testcases = [
     },
     {
         "_description": "TCP packet with payload and options, no flags.",
-        "_args": {
-            "bytes": (
-                b"\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\x60\x00\xff\xff"
-                b"\xcf\x26\xff\xff\x01\x01\x01\x01\x30\x31\x32\x33\x34\x35\x36\x37"
-                b"\x38\x39\x41\x42\x43\x44\x45\x46"
-            ),
-        },
+        "_args": [
+            b"\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\x60\x00\xff\xff"
+            b"\xcf\x26\xff\xff\x01\x01\x01\x01\x30\x31\x32\x33\x34\x35\x36\x37"
+            b"\x38\x39\x41\x42\x43\x44\x45\x46"
+        ],
         "_mocked_values": {},
         "_results": {
             "header": TcpHeader(
@@ -185,12 +177,10 @@ testcases = [
     },
     {
         "_description": "TCP packet with maximum payload size and no options.",
-        "_args": {
-            "bytes": (
-                b"\x04\x57\x08\xae\x00\x00\x0d\x05\x00\x00\x11\x5c\x51\x58\x15\xb3"
-                b"\xb5\x2d\x00\x00" + b"X" * 65515
-            ),
-        },
+        "_args": [
+            b"\x04\x57\x08\xae\x00\x00\x0d\x05\x00\x00\x11\x5c\x51\x58\x15\xb3"
+            b"\xb5\x2d\x00\x00" + b"X" * 65515
+        ],
         "_mocked_values": {},
         "_results": {
             "header": TcpHeader(
@@ -218,15 +208,12 @@ testcases = [
     },
     {
         "_description": "TCP packet with maximum payload size and maximum options.",
-        "_args": {
-            "bytes": (
-                b"\x04\x57\x0d\x05\x00\x00\x15\xb3\x00\x00\x1e\x61\xf0\xb8\x00\x00"
-                b"\xbd\x39\x27\x0f\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01"
-                b"\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01"
-                b"\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01"
-                + b"X" * 65475
-            ),
-        },
+        "_args": [
+            b"\x04\x57\x0d\x05\x00\x00\x15\xb3\x00\x00\x1e\x61\xf0\xb8\x00\x00"
+            b"\xbd\x39\x27\x0f\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01"
+            b"\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01"
+            b"\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01" + b"X" * 65475
+        ],
         "_mocked_values": {},
         "_results": {
             "header": TcpHeader(
@@ -264,7 +251,7 @@ class TestTcpParserOperation__Ip4(TestCasePacketRxIp4):
     """
 
     _description: str
-    _args: dict[str, Any]
+    _args: list[Any]
     _mocked_values: dict[str, Any]
     _results: dict[str, Any]
 
@@ -307,7 +294,7 @@ class TestTcpParserOperation__Ip6(TestCasePacketRxIp6):
     """
 
     _description: str
-    _args: dict[str, Any]
+    _args: list[Any]
     _mocked_values: dict[str, Any]
     _results: dict[str, Any]
 

@@ -51,12 +51,10 @@ from tests.lib.testcase__packet_rx__ip6 import TestCasePacketRxIp6
             "_description": (
                 "The value of the 'ip6__hop' field must be 255. It's 64."
             ),
-            "_args": {
-                "bytes": (
-                    b"\x87\x00\x4b\x45\x00\x00\x00\x00\x20\x01\x0d\xb8\x00\x00\x00\x00"
-                    b"\x00\x00\x00\x00\x00\x00\x00\x01"
-                ),
-            },
+            "_args": [
+                b"\x87\x00\x4b\x45\x00\x00\x00\x00\x20\x01\x0d\xb8\x00\x00\x00\x00"
+                b"\x00\x00\x00\x00\x00\x00\x00\x01"
+            ],
             "_mocked_values": {
                 "ip6__hop": 64,
                 "ip6__src": Ip6Address("2001:db8::2"),
@@ -73,12 +71,10 @@ from tests.lib.testcase__packet_rx__ip6 import TestCasePacketRxIp6
             "_description": (
                 "The value of the 'ip6__hop' field must be 255. It's 255."
             ),
-            "_args": {
-                "bytes": (
-                    b"\x87\x00\x4b\x45\x00\x00\x00\x00\x20\x01\x0d\xb8\x00\x00\x00\x00"
-                    b"\x00\x00\x00\x00\x00\x00\x00\x01"
-                ),
-            },
+            "_args": [
+                b"\x87\x00\x4b\x45\x00\x00\x00\x00\x20\x01\x0d\xb8\x00\x00\x00\x00"
+                b"\x00\x00\x00\x00\x00\x00\x00\x01"
+            ],
             "_mocked_values": {
                 "ip6__hop": 255,
                 "ip6__src": Ip6Address("2001:db8::2"),
@@ -91,12 +87,10 @@ from tests.lib.testcase__packet_rx__ip6 import TestCasePacketRxIp6
                 "The value of the 'ip6__src' must be unicast or unspecified. "
                 "It's multicast."
             ),
-            "_args": {
-                "bytes": (
-                    b"\x87\x00\x4b\x45\x00\x00\x00\x00\x20\x01\x0d\xb8\x00\x00\x00\x00"
-                    b"\x00\x00\x00\x00\x00\x00\x00\x01"
-                ),
-            },
+            "_args": [
+                b"\x87\x00\x4b\x45\x00\x00\x00\x00\x20\x01\x0d\xb8\x00\x00\x00\x00"
+                b"\x00\x00\x00\x00\x00\x00\x00\x01"
+            ],
             "_mocked_values": {
                 "ip6__hop": 255,
                 "ip6__src": Ip6Address("ff02::1"),
@@ -114,12 +108,10 @@ from tests.lib.testcase__packet_rx__ip6 import TestCasePacketRxIp6
                 "The value of the 'ip6__src' must be unicast or unspecified. "
                 "It's unicast."
             ),
-            "_args": {
-                "bytes": (
-                    b"\x87\x00\x4b\x45\x00\x00\x00\x00\x20\x01\x0d\xb8\x00\x00\x00\x00"
-                    b"\x00\x00\x00\x00\x00\x00\x00\x01"
-                ),
-            },
+            "_args": [
+                b"\x87\x00\x4b\x45\x00\x00\x00\x00\x20\x01\x0d\xb8\x00\x00\x00\x00"
+                b"\x00\x00\x00\x00\x00\x00\x00\x01"
+            ],
             "_mocked_values": {
                 "ip6__hop": 255,
                 "ip6__src": Ip6Address("2001:db8::2"),
@@ -132,12 +124,10 @@ from tests.lib.testcase__packet_rx__ip6 import TestCasePacketRxIp6
                 "The value of the 'ip6__src' must be unicast or unspecified. "
                 "It's unspecified."
             ),
-            "_args": {
-                "bytes": (
-                    b"\x87\x00\x4b\x45\x00\x00\x00\x00\x20\x01\x0d\xb8\x00\x00\x00\x00"
-                    b"\x00\x00\x00\x00\x00\x00\x00\x01"
-                ),
-            },
+            "_args": [
+                b"\x87\x00\x4b\x45\x00\x00\x00\x00\x20\x01\x0d\xb8\x00\x00\x00\x00"
+                b"\x00\x00\x00\x00\x00\x00\x00\x01"
+            ],
             "_mocked_values": {
                 "ip6__hop": 255,
                 "ip6__src": Ip6Address("::"),
@@ -150,12 +140,10 @@ from tests.lib.testcase__packet_rx__ip6 import TestCasePacketRxIp6
                 "The value of the 'ip6__dst' must be same as target address or its "
                 "solicited-node multicast address. It's different."
             ),
-            "_args": {
-                "bytes": (
-                    b"\x87\x00\x4b\x45\x00\x00\x00\x00\x20\x01\x0d\xb8\x00\x00\x00\x00"
-                    b"\x00\x00\x00\x00\x00\x00\x00\x01"
-                ),
-            },
+            "_args": [
+                b"\x87\x00\x4b\x45\x00\x00\x00\x00\x20\x01\x0d\xb8\x00\x00\x00\x00"
+                b"\x00\x00\x00\x00\x00\x00\x00\x01"
+            ],
             "_mocked_values": {
                 "ip6__hop": 255,
                 "ip6__src": Ip6Address("2001:db8::1"),
@@ -174,12 +162,10 @@ from tests.lib.testcase__packet_rx__ip6 import TestCasePacketRxIp6
                 "The value of the 'ip6__dst' must be same as target address or its "
                 "solicited-node multicast address. It's the same as target address."
             ),
-            "_args": {
-                "bytes": (
-                    b"\x87\x00\x4b\x45\x00\x00\x00\x00\x20\x01\x0d\xb8\x00\x00\x00\x00"
-                    b"\x00\x00\x00\x00\x00\x00\x00\x01"
-                ),
-            },
+            "_args": [
+                b"\x87\x00\x4b\x45\x00\x00\x00\x00\x20\x01\x0d\xb8\x00\x00\x00\x00"
+                b"\x00\x00\x00\x00\x00\x00\x00\x01"
+            ],
             "_mocked_values": {
                 "ip6__hop": 255,
                 "ip6__src": Ip6Address("2001:db8::2"),
@@ -193,12 +179,10 @@ from tests.lib.testcase__packet_rx__ip6 import TestCasePacketRxIp6
                 "solicited-node multicast address. It's the related solicited-node "
                 "multicast address."
             ),
-            "_args": {
-                "bytes": (
-                    b"\x87\x00\x4b\x45\x00\x00\x00\x00\x20\x01\x0d\xb8\x00\x00\x00\x00"
-                    b"\x00\x00\x00\x00\x00\x00\x00\x01"
-                ),
-            },
+            "_args": [
+                b"\x87\x00\x4b\x45\x00\x00\x00\x00\x20\x01\x0d\xb8\x00\x00\x00\x00"
+                b"\x00\x00\x00\x00\x00\x00\x00\x01"
+            ],
             "_mocked_values": {
                 "ip6__hop": 255,
                 "ip6__src": Ip6Address("2001:db8::2"),
@@ -210,12 +194,10 @@ from tests.lib.testcase__packet_rx__ip6 import TestCasePacketRxIp6
             "_description": (
                 "The target address must be unicast. It's unspecified."
             ),
-            "_args": {
-                "bytes": (
-                    b"\x87\x00\x78\xff\x00\x00\x00\x00\00\x00\x00\x00\x00\x00\x00\x00"
-                    b"\x00\x00\x00\x00\x00\x00\x00\x00"
-                ),
-            },
+            "_args": [
+                b"\x87\x00\x78\xff\x00\x00\x00\x00\00\x00\x00\x00\x00\x00\x00\x00"
+                b"\x00\x00\x00\x00\x00\x00\x00\x00"
+            ],
             "_mocked_values": {
                 "ip6__hop": 255,
                 "ip6__src": Ip6Address("2001:db8::2"),
@@ -232,12 +214,10 @@ from tests.lib.testcase__packet_rx__ip6 import TestCasePacketRxIp6
             "_description": (
                 "The target address must be unicast. It's unicast."
             ),
-            "_args": {
-                "bytes": (
-                    b"\x87\x00\x4b\x45\x00\x00\x00\x00\x20\x01\x0d\xb8\x00\x00\x00\x00"
-                    b"\x00\x00\x00\x00\x00\x00\x00\x01"
-                ),
-            },
+            "_args": [
+                b"\x87\x00\x4b\x45\x00\x00\x00\x00\x20\x01\x0d\xb8\x00\x00\x00\x00"
+                b"\x00\x00\x00\x00\x00\x00\x00\x01"
+            ],
             "_mocked_values": {
                 "ip6__hop": 255,
                 "ip6__src": Ip6Address("2001:db8::2"),
@@ -250,12 +230,10 @@ from tests.lib.testcase__packet_rx__ip6 import TestCasePacketRxIp6
                 "If the 'ip6__src' is unspecified, the 'slla' option must not be present. "
                 "It's not present."
             ),
-            "_args": {
-                "bytes": (
-                    b"\x87\x00\xe3\xa9\x00\x00\x00\x00\x20\x01\x0d\xb8\x00\x00\x00\x00"
-                    b"\x00\x00\x00\x00\x00\x00\x00\x02\x01\x01\x00\x11\x22\x33\x44\x55"
-                ),
-            },
+            "_args": [
+                b"\x87\x00\xe3\xa9\x00\x00\x00\x00\x20\x01\x0d\xb8\x00\x00\x00\x00"
+                b"\x00\x00\x00\x00\x00\x00\x00\x02\x01\x01\x00\x11\x22\x33\x44\x55"
+            ],
             "_mocked_values": {
                 "ip6__hop": 255,
                 "ip6__src": Ip6Address("::"),
@@ -274,12 +252,10 @@ from tests.lib.testcase__packet_rx__ip6 import TestCasePacketRxIp6
                 "If the 'ip6__src' is unspecified, the 'slla' option must not be present. "
                 "It's not present."
             ),
-            "_args": {
-                "bytes": (
-                    b"\x87\x00\x4b\x45\x00\x00\x00\x00\x20\x01\x0d\xb8\x00\x00\x00\x00"
-                    b"\x00\x00\x00\x00\x00\x00\x00\x01"
-                ),
-            },
+            "_args": [
+                b"\x87\x00\x4b\x45\x00\x00\x00\x00\x20\x01\x0d\xb8\x00\x00\x00\x00"
+                b"\x00\x00\x00\x00\x00\x00\x00\x01"
+            ],
             "_mocked_values": {
                 "ip6__hop": 255,
                 "ip6__src": Ip6Address("::"),
@@ -295,7 +271,7 @@ class TestIcmp4NdNeighborSolicitationParserSanityChecks(TestCasePacketRxIp6):
     """
 
     _description: str
-    _args: dict[str, Any]
+    _args: list[Any]
     _mocked_values: dict[str, Any]
     _results: dict[str, Any]
 

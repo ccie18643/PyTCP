@@ -46,12 +46,10 @@ from tests.lib.testcase__packet_rx__ip6 import TestCasePacketRxIp6
 testcases = [
     {
         "_description": "The value of the 'sport' field equals 0.",
-        "_args": {
-            "bytes": (
-                b"\x00\x00\xd4\x31\x00\x12\xd6\x87\x00\x74\xcb\xb1\x50\x10\x2b\x67"
-                b"\x0d\x97\x00\x00"
-            ),
-        },
+        "_args": [
+            b"\x00\x00\xd4\x31\x00\x12\xd6\x87\x00\x74\xcb\xb1\x50\x10\x2b\x67"
+            b"\x0d\x97\x00\x00"
+        ],
         "_mocked_values": {},
         "_results": {
             "error_message": "The 'sport' field must be greater than 0. Got: 0",
@@ -59,12 +57,10 @@ testcases = [
     },
     {
         "_description": "The value of the 'dport' field equals 0.",
-        "_args": {
-            "bytes": (
-                b"\x30\x39\x00\x00\x00\x12\xd6\x87\x00\x74\xcb\xb1\x50\x10\x2b\x67"
-                b"\xb1\x8f\x00\x00"
-            ),
-        },
+        "_args": [
+            b"\x30\x39\x00\x00\x00\x12\xd6\x87\x00\x74\xcb\xb1\x50\x10\x2b\x67"
+            b"\xb1\x8f\x00\x00"
+        ],
         "_mocked_values": {},
         "_results": {
             "error_message": "The 'dport' field must be greater than 0. Got: 0",
@@ -72,12 +68,10 @@ testcases = [
     },
     {
         "_description": "The SYN and FIN flags are set simultaneously.",
-        "_args": {
-            "bytes": (
-                b"\x30\x39\xd4\x31\x00\x12\xd6\x87\x00\x74\xcb\xb1\x50\x13\x2b\x67"
-                b"\xdd\x5a\x00\x00"
-            ),
-        },
+        "_args": [
+            b"\x30\x39\xd4\x31\x00\x12\xd6\x87\x00\x74\xcb\xb1\x50\x13\x2b\x67"
+            b"\xdd\x5a\x00\x00"
+        ],
         "_mocked_values": {},
         "_results": {
             "error_message": "The 'flag_syn' and 'flag_fin' must not be set simultaneously.",
@@ -85,12 +79,10 @@ testcases = [
     },
     {
         "_description": "The SYN and RST flags are set simultaneously.",
-        "_args": {
-            "bytes": (
-                b"\x30\x39\xd4\x31\x00\x12\xd6\x87\x00\x74\xcb\xb1\x50\x16\x2b\x67"
-                b"\xdd\x57\x00\x00"
-            ),
-        },
+        "_args": [
+            b"\x30\x39\xd4\x31\x00\x12\xd6\x87\x00\x74\xcb\xb1\x50\x16\x2b\x67"
+            b"\xdd\x57\x00\x00"
+        ],
         "_mocked_values": {},
         "_results": {
             "error_message": "The 'flag_syn' and 'flag_rst' must not be set simultaneously.",
@@ -98,12 +90,10 @@ testcases = [
     },
     {
         "_description": "The FIN and RST flags are set simultaneously.",
-        "_args": {
-            "bytes": (
-                b"\x30\x39\xd4\x31\x00\x12\xd6\x87\x00\x74\xcb\xb1\x50\x15\x2b\x67"
-                b"\xdd\x58\x00\x00"
-            ),
-        },
+        "_args": [
+            b"\x30\x39\xd4\x31\x00\x12\xd6\x87\x00\x74\xcb\xb1\x50\x15\x2b\x67"
+            b"\xdd\x58\x00\x00"
+        ],
         "_mocked_values": {},
         "_results": {
             "error_message": "The 'flag_fin' and 'flag_rst' must not be set simultaneously.",
@@ -111,12 +101,10 @@ testcases = [
     },
     {
         "_description": "The ACK flag must be set when FIN flag is set.",
-        "_args": {
-            "bytes": (
-                b"\x30\x39\xd4\x31\x00\x12\xd6\x87\x00\x74\xcb\xb1\x50\x01\x2b\x67"
-                b"\xdd\x6c\x00\x00"
-            ),
-        },
+        "_args": [
+            b"\x30\x39\xd4\x31\x00\x12\xd6\x87\x00\x74\xcb\xb1\x50\x01\x2b\x67"
+            b"\xdd\x6c\x00\x00"
+        ],
         "_mocked_values": {},
         "_results": {
             "error_message": "The 'flag_ack' must be set when 'flag_fin' is set.",
@@ -132,7 +120,7 @@ class TestTcpParserSanityChecks__Ip4(TestCasePacketRxIp4):
     """
 
     _description: str
-    _args: dict[str, Any]
+    _args: list[Any]
     _mocked_values: dict[str, Any]
     _results: dict[str, Any]
 
@@ -159,7 +147,7 @@ class TestTcpParserSanityChecks__Ip6(TestCasePacketRxIp6):
     """
 
     _description: str
-    _args: dict[str, Any]
+    _args: list[Any]
     _mocked_values: dict[str, Any]
     _results: dict[str, Any]
 

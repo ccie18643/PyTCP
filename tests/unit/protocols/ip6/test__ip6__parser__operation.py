@@ -36,26 +36,24 @@ ver 3.0.2
 from typing import Any
 
 from parameterized import parameterized_class  # type: ignore
-from testslide import TestCase
 
 from pytcp.lib.net_addr import Ip6Address
 from pytcp.lib.packet import PacketRx
 from pytcp.protocols.ip6.ip6__enums import Ip6Next
 from pytcp.protocols.ip6.ip6__header import Ip6Header
 from pytcp.protocols.ip6.ip6__parser import Ip6Parser
+from tests.lib.testcase__packet_rx import TestCasePacketRx
 
 
 @parameterized_class(
     [
         {
             "_description": "IPv6 packet (I)",
-            "_args": {
-                "bytes": (
-                    b"\x60\x00\x00\x00\x00\x00\xff\x01\x10\x01\x20\x02\x30\x03\x40\x04"
-                    b"\x50\x05\x60\x06\x70\x07\x80\x08\xa0\x0a\xb0\x0b\xc0\x0c\xd0\x0d"
-                    b"\xe0\x0e\xf0\x0f\x0a\x0a\x0b\x0b"
-                )
-            },
+            "_args": [
+                b"\x60\x00\x00\x00\x00\x00\xff\x01\x10\x01\x20\x02\x30\x03\x40\x04"
+                b"\x50\x05\x60\x06\x70\x07\x80\x08\xa0\x0a\xb0\x0b\xc0\x0c\xd0\x0d"
+                b"\xe0\x0e\xf0\x0f\x0a\x0a\x0b\x0b"
+            ],
             "_results": {
                 "header": Ip6Header(
                     dscp=0,
@@ -83,14 +81,12 @@ from pytcp.protocols.ip6.ip6__parser import Ip6Parser
         },
         {
             "_description": "IPv6 packet (II)",
-            "_args": {
-                "bytes": (
-                    b"\x69\xaf\xff\xff\x00\x10\xff\xff\x11\x11\x22\x22\x33\x33\x44\x44"
-                    b"\x55\x55\x66\x66\x77\x77\x88\x88\x88\x88\x77\x77\x66\x66\x55\x55"
-                    b"\x44\x44\x33\x33\x22\x22\x11\x11\x30\x31\x32\x33\x34\x35\x36\x37"
-                    b"\x38\x39\x41\x42\x43\x44\x45\x46"
-                )
-            },
+            "_args": [
+                b"\x69\xaf\xff\xff\x00\x10\xff\xff\x11\x11\x22\x22\x33\x33\x44\x44"
+                b"\x55\x55\x66\x66\x77\x77\x88\x88\x88\x88\x77\x77\x66\x66\x55\x55"
+                b"\x44\x44\x33\x33\x22\x22\x11\x11\x30\x31\x32\x33\x34\x35\x36\x37"
+                b"\x38\x39\x41\x42\x43\x44\x45\x46"
+            ],
             "_results": {
                 "header": Ip6Header(
                     dscp=38,
@@ -121,13 +117,11 @@ from pytcp.protocols.ip6.ip6__parser import Ip6Parser
         },
         {
             "_description": "IPv6 packet (III)",
-            "_args": {
-                "bytes": (
-                    b"\x6f\xf0\x00\x00\xff\xd7\xff\x80\x11\x11\x22\x22\x33\x33\x44\x44"
-                    b"\x55\x55\x66\x66\x77\x77\x88\x88\x88\x88\x77\x77\x66\x66\x55\x55"
-                    b"\x44\x44\x33\x33\x22\x22\x11\x11" + b"X" * 65495
-                )
-            },
+            "_args": [
+                b"\x6f\xf0\x00\x00\xff\xd7\xff\x80\x11\x11\x22\x22\x33\x33\x44\x44"
+                b"\x55\x55\x66\x66\x77\x77\x88\x88\x88\x88\x77\x77\x66\x66\x55\x55"
+                b"\x44\x44\x33\x33\x22\x22\x11\x11" + b"X" * 65495
+            ],
             "_results": {
                 "header": Ip6Header(
                     dscp=63,
@@ -155,14 +149,16 @@ from pytcp.protocols.ip6.ip6__parser import Ip6Parser
         },
     ]
 )
-class TestIp6PacketParserOperation(TestCase):
+class TestIp6PacketParserOperation(TestCasePacketRx):
     """
     The IPv6 packet parser operation tests.
     """
 
     _description: str
-    _args: dict[str, Any]
+    _args: list[Any]
     _results: dict[str, Any]
+
+    _packet_rx: PacketRx
 
     def test__ip6__header_parser__from_bytes(self) -> None:
         """
@@ -170,9 +166,7 @@ class TestIp6PacketParserOperation(TestCase):
         objects and also updates the appropriate 'tx_packet' object fields.
         """
 
-        packet_rx = PacketRx(self._args["bytes"])
-
-        ip6_parser = Ip6Parser(packet_rx)
+        ip6_parser = Ip6Parser(self._packet_rx)
 
         self.assertEqual(
             ip6_parser.header,
@@ -190,11 +184,11 @@ class TestIp6PacketParserOperation(TestCase):
         )
 
         self.assertIs(
-            packet_rx.ip6,
+            self._packet_rx.ip6,
             ip6_parser,
         )
 
         self.assertEqual(
-            bytes(packet_rx.frame),
+            bytes(self._packet_rx.frame),
             self._results["payload"],
         )

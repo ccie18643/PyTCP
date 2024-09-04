@@ -36,12 +36,12 @@ ver 3.0.2
 from typing import Any
 
 from parameterized import parameterized_class  # type: ignore
-from testslide import TestCase
 
 from pytcp.lib.packet import PacketRx
 from pytcp.protocols.arp.arp__errors import ArpIntegrityError
 from pytcp.protocols.arp.arp__header import ARP__HEADER__LEN
 from pytcp.protocols.arp.arp__parser import ArpParser
+from tests.lib.testcase__packet_rx import TestCasePacketRx
 
 
 @parameterized_class(
@@ -50,12 +50,10 @@ from pytcp.protocols.arp.arp__parser import ArpParser
             "_description": (
                 "The frame length is less than the value of the 'ARP__HEADER__LEN' constant."
             ),
-            "_args": {
-                "bytes": (
-                    b"\x00\x01\x08\x00\x06\x04\x00\x01\x01\x02\x03\x04\x05\x06\x0b\x16"
-                    b"\x21\x2c\x0a\x0b\x0c\x0d\x0e\x0f\x65\x66\x67"
-                ),
-            },
+            "_args": [
+                b"\x00\x01\x08\x00\x06\x04\x00\x01\x01\x02\x03\x04\x05\x06\x0b\x16"
+                b"\x21\x2c\x0a\x0b\x0c\x0d\x0e\x0f\x65\x66\x67"
+            ],
             "_results": {
                 "error_message": (
                     f"The minimum packet length must be {ARP__HEADER__LEN} "
@@ -65,72 +63,64 @@ from pytcp.protocols.arp.arp__parser import ArpParser
         },
         {
             "_description": "The value of the 'hrtype' field is incorrect.",
-            "_args": {
-                "bytes": (
-                    b"\x00\x00\x08\x00\x06\x04\x00\x01\x01\x02\x03\x04\x05\x06\x0b\x16"
-                    b"\x21\x2c\x0a\x0b\x0c\x0d\x0e\x0f\x65\x66\x67\x68"
-                ),
-            },
+            "_args": [
+                b"\x00\x00\x08\x00\x06\x04\x00\x01\x01\x02\x03\x04\x05\x06\x0b\x16"
+                b"\x21\x2c\x0a\x0b\x0c\x0d\x0e\x0f\x65\x66\x67\x68"
+            ],
             "_results": {
                 "error_message": "The 'hrtype' field value must be one of [1], got 0.",
             },
         },
         {
             "_description": "The value of the 'prtype' field is incorrect.",
-            "_args": {
-                "bytes": (
-                    b"\x00\x01\x00\x00\x06\x04\x00\x01\x01\x02\x03\x04\x05\x06\x0b\x16"
-                    b"\x21\x2c\x0a\x0b\x0c\x0d\x0e\x0f\x65\x66\x67\x68"
-                ),
-            },
+            "_args": [
+                b"\x00\x01\x00\x00\x06\x04\x00\x01\x01\x02\x03\x04\x05\x06\x0b\x16"
+                b"\x21\x2c\x0a\x0b\x0c\x0d\x0e\x0f\x65\x66\x67\x68"
+            ],
             "_results": {
                 "error_message": "The 'prtype' field value must be one of [2048], got 0.",
             },
         },
         {
             "_description": "The value of the 'hrlen' field is incorrect.",
-            "_args": {
-                "bytes": (
-                    b"\x00\x01\x08\x00\x00\x04\x00\x01\x01\x02\x03\x04\x05\x06\x0b\x16"
-                    b"\x21\x2c\x0a\x0b\x0c\x0d\x0e\x0f\x65\x66\x67\x68"
-                ),
-            },
+            "_args": [
+                b"\x00\x01\x08\x00\x00\x04\x00\x01\x01\x02\x03\x04\x05\x06\x0b\x16"
+                b"\x21\x2c\x0a\x0b\x0c\x0d\x0e\x0f\x65\x66\x67\x68"
+            ],
             "_results": {
                 "error_message": "The 'hrlen' field value must be 6, got 0.",
             },
         },
         {
             "_description": "The value of the 'prlen' field is incorrect.",
-            "_args": {
-                "bytes": (
-                    b"\x00\x01\x08\x00\x06\x00\x00\x01\x01\x02\x03\x04\x05\x06\x0b\x16"
-                    b"\x21\x2c\x0a\x0b\x0c\x0d\x0e\x0f\x65\x66\x67\x68"
-                ),
-            },
+            "_args": [
+                b"\x00\x01\x08\x00\x06\x00\x00\x01\x01\x02\x03\x04\x05\x06\x0b\x16"
+                b"\x21\x2c\x0a\x0b\x0c\x0d\x0e\x0f\x65\x66\x67\x68"
+            ],
             "_results": {
                 "error_message": "The 'prlen' field value must be 4, got 0.",
             },
         },
     ]
 )
-class TestArpParserIntegrityChecks(TestCase):
+class TestArpParserIntegrityChecks(TestCasePacketRx):
     """
     The Arp packet parser integrity checks tests.
     """
 
     _description: str
-    _args: dict[str, Any]
+    _args: list[Any]
     _results: dict[str, Any]
+
+    _packet_rx: PacketRx
 
     def test__arp__parser__from_bytes(self) -> None:
         """
         Ensure the ARP packet parser raises integrity error on malformed packets.
         """
 
-        packet_rx = PacketRx(self._args["bytes"])
-
         with self.assertRaises(ArpIntegrityError) as error:
-            ArpParser(packet_rx)
+            ArpParser(self._packet_rx)
 
         self.assertEqual(
             str(error.exception),

@@ -59,9 +59,9 @@ from tests.lib.testcase__packet_rx__ip6 import TestCasePacketRxIp6
     [
         {
             "_description": "ICMPv6 ND Router Advertisement message, no options.",
-            "_args": {
-                "bytes": b"\x86\x00\x7a\x3e\xff\xc0\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff",
-            },
+            "_args": [
+                b"\x86\x00\x7a\x3e\xff\xc0\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff"
+            ],
             "_mocked_values": {
                 "ip6__hop": 255,
                 "ip6__src": Ip6Address("fe80::1"),
@@ -82,12 +82,10 @@ from tests.lib.testcase__packet_rx__ip6 import TestCasePacketRxIp6
         },
         {
             "_description": "ICMPv6 ND Router Advertisement message, Slla option present.",
-            "_args": {
-                "bytes": (
-                    b"\x86\x00\xcd\x0c\x40\x00\x00\x7b\x00\x00\x01\xc8\x00\x00\x03\x15"
-                    b"\x01\x01\x00\x11\x22\x33\x44\x55"
-                ),
-            },
+            "_args": [
+                b"\x86\x00\xcd\x0c\x40\x00\x00\x7b\x00\x00\x01\xc8\x00\x00\x03\x15"
+                b"\x01\x01\x00\x11\x22\x33\x44\x55"
+            ],
             "_mocked_values": {
                 "ip6__hop": 255,
                 "ip6__src": Ip6Address("fe80::1"),
@@ -110,14 +108,12 @@ from tests.lib.testcase__packet_rx__ip6 import TestCasePacketRxIp6
         },
         {
             "_description": "ICMPv6 ND Router Advertisement message, Slla & Pi options present.",
-            "_args": {
-                "bytes": (
-                    b"\x86\x00\xab\x86\x16\x80\x00\x21\x00\x00\x00\x2c\x00\x00\x00\x37"
-                    b"\x01\x01\x00\x11\x22\x33\x44\x55\x03\x04\x40\xe0\x00\x01\xe2\x40"
-                    b"\x00\x09\xfb\xf1\x00\x00\x00\x00\x20\x01\x0d\xb8\x00\x00\x00\x00"
-                    b"\x00\x00\x00\x00\x00\x00\x00\x00"
-                ),
-            },
+            "_args": [
+                b"\x86\x00\xab\x86\x16\x80\x00\x21\x00\x00\x00\x2c\x00\x00\x00\x37"
+                b"\x01\x01\x00\x11\x22\x33\x44\x55\x03\x04\x40\xe0\x00\x01\xe2\x40"
+                b"\x00\x09\xfb\xf1\x00\x00\x00\x00\x20\x01\x0d\xb8\x00\x00\x00\x00"
+                b"\x00\x00\x00\x00\x00\x00\x00\x00"
+            ],
             "_mocked_values": {
                 "ip6__hop": 255,
                 "ip6__src": Ip6Address("fe80::1"),
@@ -154,7 +150,7 @@ class TestIcmp6MessageNdRouterAdvertisementParser(TestCasePacketRxIp6):
     """
 
     _description: str
-    _args: dict[str, Any]
+    _args: list[Any]
     _mocked_values: dict[str, Any]
     _results: dict[str, Any]
 

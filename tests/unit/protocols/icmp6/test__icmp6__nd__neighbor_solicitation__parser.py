@@ -56,12 +56,10 @@ from tests.lib.testcase__packet_rx__ip6 import TestCasePacketRxIp6
     [
         {
             "_description": "ICMPv6 ND Neighbor Solicitation message, no options.",
-            "_args": {
-                "bytes": (
-                    b"\x87\x00\x4b\x45\x00\x00\x00\x00\x20\x01\x0d\xb8\x00\x00\x00\x00"
-                    b"\x00\x00\x00\x00\x00\x00\x00\x01"
-                ),
-            },
+            "_args": [
+                b"\x87\x00\x4b\x45\x00\x00\x00\x00\x20\x01\x0d\xb8\x00\x00\x00\x00"
+                b"\x00\x00\x00\x00\x00\x00\x00\x01"
+            ],
             "_mocked_values": {
                 "ip6__hop": 255,
                 "ip6__src": Ip6Address("2001:db8::2"),
@@ -77,12 +75,10 @@ from tests.lib.testcase__packet_rx__ip6 import TestCasePacketRxIp6
         },
         {
             "_description": "ICMPv6 ND Neighbor Solicitation message, Slla option present.",
-            "_args": {
-                "bytes": (
-                    b"\x87\x00\xe3\xa9\x00\x00\x00\x00\x20\x01\x0d\xb8\x00\x00\x00\x00"
-                    b"\x00\x00\x00\x00\x00\x00\x00\x02\x01\x01\x00\x11\x22\x33\x44\x55"
-                ),
-            },
+            "_args": [
+                b"\x87\x00\xe3\xa9\x00\x00\x00\x00\x20\x01\x0d\xb8\x00\x00\x00\x00"
+                b"\x00\x00\x00\x00\x00\x00\x00\x02\x01\x01\x00\x11\x22\x33\x44\x55"
+            ],
             "_mocked_values": {
                 "ip6__hop": 255,
                 "ip6__src": Ip6Address("2001:db8::1"),
@@ -106,7 +102,7 @@ class TestIcmp6MessageNdNeighborSolicitationParser(TestCasePacketRxIp6):
     """
 
     _description: str
-    _args: dict[str, Any]
+    _args: list[Any]
     _mocked_values: dict[str, Any]
     _results: dict[str, Any]
 

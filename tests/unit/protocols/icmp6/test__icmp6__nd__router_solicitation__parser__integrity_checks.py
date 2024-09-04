@@ -51,9 +51,7 @@ from tests.lib.testcase__packet_rx__ip6 import TestCasePacketRxIp6
                 "ICMPv6 ND Router Solicitation message, "
                 "the 'ICMP6_HEADER_LEN <= self._ip6__dlen' condition not met."
             ),
-            "_args": {
-                "bytes": b"\x85\x00\x00",
-            },
+            "_args": [b"\x85\x00\x00"],
             "_mocked_values": {
                 "ip6__dlen": 3,
             },
@@ -70,9 +68,7 @@ from tests.lib.testcase__packet_rx__ip6 import TestCasePacketRxIp6
                 "ICMPv6 ND Router Solicitation message, "
                 "the 'self._ip6__dlen <= len(self._frame)' condition not met."
             ),
-            "_args": {
-                "bytes": b"\x85\x00\x00\x00\x00\x00\x00",
-            },
+            "_args": [b"\x85\x00\x00\x00\x00\x00\x00"],
             "_mocked_values": {
                 "ip6__dlen": 8,
             },
@@ -90,9 +86,7 @@ from tests.lib.testcase__packet_rx__ip6 import TestCasePacketRxIp6
                 "the 'ICMP6__ND__ROUTER_SOLICITATION__LEN <= self._ip6__dlen' "
                 "condition not met."
             ),
-            "_args": {
-                "bytes": b"\x85\x00\x00\x00\x00\x00\x00",
-            },
+            "_args": [b"\x85\x00\x00\x00\x00\x00\x00"],
             "_mocked_values": {
                 "ip6__dlen": 7,
             },
@@ -106,9 +100,7 @@ from tests.lib.testcase__packet_rx__ip6 import TestCasePacketRxIp6
         },
         {
             "_description": "ICMPv6 ND Neighbor Advertisement message, invalid checksum.",
-            "_args": {
-                "bytes": b"\x85\x00\x00\x00\x00\x00\x00\x00",
-            },
+            "_args": [b"\x85\x00\x00\x00\x00\x00\x00\x00"],
             "_mocked_values": {},
             "_results": {
                 "error_message": "The packet checksum must be valid.",
@@ -124,7 +116,7 @@ class TestIcmp6NdRouterSolicitationMessageParserIntegrityChecks(
     """
 
     _description: str
-    _args: dict[str, Any]
+    _args: list[Any]
     _mocked_values: dict[str, Any]
     _results: dict[str, Any]
 

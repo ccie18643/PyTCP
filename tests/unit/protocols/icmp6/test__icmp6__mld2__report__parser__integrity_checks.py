@@ -51,9 +51,7 @@ from tests.lib.testcase__packet_rx__ip6 import TestCasePacketRxIp6
                 "ICMPv6 MLDv2 message, "
                 "the 'ICMP6_HEADER_LEN <= self._ip6__dlen' condition not met."
             ),
-            "_args": {
-                "bytes": b"\x8f\x00\x70",
-            },
+            "_args": [b"\x8f\x00\x70"],
             "_mocked_values": {
                 "ip6__dlen": 3,
             },
@@ -70,9 +68,7 @@ from tests.lib.testcase__packet_rx__ip6 import TestCasePacketRxIp6
                 "ICMPv6 MLDv2 Report message, "
                 "the 'self._ip6__dlen <= len(self._frame)' condition not met."
             ),
-            "_args": {
-                "bytes": b"\x8f\x00\x70\xff\x00\x00\x00",
-            },
+            "_args": [b"\x8f\x00\x70\xff\x00\x00\x00"],
             "_mocked_values": {
                 "ip6__dlen": 8,
             },
@@ -89,9 +85,7 @@ from tests.lib.testcase__packet_rx__ip6 import TestCasePacketRxIp6
                 "ICMPv6 MLDv2 message, "
                 "the 'ICMP6__MLD2__REPORT__LEN <= ip6__dlen' condition not met."
             ),
-            "_args": {
-                "bytes": b"\x8f\x00\x70\xff\x00\x00\x00\x00",
-            },
+            "_args": [b"\x8f\x00\x70\xff\x00\x00\x00\x00"],
             "_mocked_values": {
                 "ip6__dlen": 7,
             },
@@ -108,14 +102,12 @@ from tests.lib.testcase__packet_rx__ip6 import TestCasePacketRxIp6
                 "'record_offset + ICMP6__MLD2__MULTICAST_ADDRESS_RECORD__LEN <= ip6__dlen' "
                 "condition not met."
             ),
-            "_args": {
-                "bytes": (
-                    b"\x8f\x00\x15\x82\x00\x00\x00\x02\x01\x00\x00\x02\xff\x02\x00\x00"
-                    b"\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01\x20\x01\x0d\xb8"
-                    b"\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01\x20\x01\x0d\xb8"
-                    b"\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x02"
-                ),
-            },
+            "_args": [
+                b"\x8f\x00\x15\x82\x00\x00\x00\x02\x01\x00\x00\x02\xff\x02\x00\x00"
+                b"\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01\x20\x01\x0d\xb8"
+                b"\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01\x20\x01\x0d\xb8"
+                b"\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x02"
+            ],
             "_mocked_values": {},
             "_results": {
                 "error_message": (
@@ -129,14 +121,12 @@ from tests.lib.testcase__packet_rx__ip6 import TestCasePacketRxIp6
             "_description": (
                 "ICMPv6 MLDv2 message, the 'record_offset == ip6__dlen' condition not met."
             ),
-            "_args": {
-                "bytes": (
-                    b"\x8f\x00\x15\x83\x00\x00\x00\x01\x01\x00\x00\x02\xff\x02\x00\x00"
-                    b"\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01\x20\x01\x0d\xb8"
-                    b"\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01\x20\x01\x0d\xb8"
-                    b"\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x02"
-                ),
-            },
+            "_args": [
+                b"\x8f\x00\x15\x83\x00\x00\x00\x01\x01\x00\x00\x02\xff\x02\x00\x00"
+                b"\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01\x20\x01\x0d\xb8"
+                b"\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01\x20\x01\x0d\xb8"
+                b"\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x02"
+            ],
             "_mocked_values": {
                 "ip6__dlen": 59,
             },
@@ -149,9 +139,7 @@ from tests.lib.testcase__packet_rx__ip6 import TestCasePacketRxIp6
         },
         {
             "_description": "ICMPv6 MLDv2 Report, invalid checksum.",
-            "_args": {
-                "bytes": b"\x8f\x00\x00\x00\x00\x00\x00\x00",
-            },
+            "_args": [b"\x8f\x00\x00\x00\x00\x00\x00\x00"],
             "_mocked_values": {},
             "_results": {
                 "error_message": "The packet checksum must be valid.",
@@ -165,7 +153,7 @@ class TestIcmp6Mld2ReportParserIntegrityChecks(TestCasePacketRxIp6):
     """
 
     _description: str
-    _args: dict[str, Any]
+    _args: list[Any]
     _mocked_values: dict[str, Any]
     _results: dict[str, Any]
 

@@ -36,12 +36,12 @@ ver 3.0.2
 from typing import Any
 
 from parameterized import parameterized_class  # type: ignore
-from testslide import TestCase
 
 from pytcp.lib.packet import PacketRx
 from pytcp.protocols.ethernet.ethernet__errors import EthernetIntegrityError
 from pytcp.protocols.ethernet.ethernet__header import ETHERNET__HEADER__LEN
 from pytcp.protocols.ethernet.ethernet__parser import EthernetParser
+from tests.lib.testcase__packet_rx import TestCasePacketRx
 
 
 @parameterized_class(
@@ -50,9 +50,7 @@ from pytcp.protocols.ethernet.ethernet__parser import EthernetParser
             "_description": (
                 "The frame length is less than the value of the 'ETHERNET__HEADER__LEN' constant."
             ),
-            "_args": {
-                "bytes": b"\xa1\xb2\xc3\xd4\xe5\xf6\x11\x12\x13\x14\x15\x16\xff"
-            },
+            "_args": [b"\xa1\xb2\xc3\xd4\xe5\xf6\x11\x12\x13\x14\x15\x16\xff"],
             "_results": {
                 "error_message": (
                     f"The minimum packet length must be {ETHERNET__HEADER__LEN} "
@@ -62,24 +60,24 @@ from pytcp.protocols.ethernet.ethernet__parser import EthernetParser
         },
     ]
 )
-class TestEthernetParserIntegrityChecks(TestCase):
+class TestEthernetParserIntegrityChecks(TestCasePacketRx):
     """
     The Ethernet packet parser integrity checks tests.
     """
 
     _description: str
-    _args: dict[str, Any]
+    _args: list[Any]
     _results: dict[str, Any]
+
+    _packet_rx: PacketRx
 
     def test__ethernet__parser__from_bytes(self) -> None:
         """
         Ensure the Ethernet packet parser raises integrity error on malformed packets.
         """
 
-        packet_rx = PacketRx(self._args["bytes"])
-
         with self.assertRaises(EthernetIntegrityError) as error:
-            EthernetParser(packet_rx)
+            EthernetParser(self._packet_rx)
 
         self.assertEqual(
             str(error.exception),

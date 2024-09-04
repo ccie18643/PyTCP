@@ -36,7 +36,6 @@ ver 3.0.2
 from typing import Any
 
 from parameterized import parameterized_class  # type: ignore
-from testslide import TestCase
 
 from pytcp.lib.packet import PacketRx
 from pytcp.protocols.ethernet_802_3.ethernet_802_3__errors import (
@@ -49,6 +48,7 @@ from pytcp.protocols.ethernet_802_3.ethernet_802_3__header import (
 from pytcp.protocols.ethernet_802_3.ethernet_802_3__parser import (
     Ethernet8023Parser,
 )
+from tests.lib.testcase__packet_rx import TestCasePacketRx
 
 
 @parameterized_class(
@@ -58,9 +58,7 @@ from pytcp.protocols.ethernet_802_3.ethernet_802_3__parser import (
                 "The frame length is less than the value of the 'ETHERNET_802_3__HEADER__LEN' "
                 "constant."
             ),
-            "_args": {
-                "bytes": b"\x11\x22\x33\x44\x55\x66\x77\x88\x99\xaa\xbb\xcc\x00"
-            },
+            "_args": [b"\x11\x22\x33\x44\x55\x66\x77\x88\x99\xaa\xbb\xcc\x00"],
             "_results": {
                 "error_message": (
                     f"The minimum packet length must be {ETHERNET_802_3__HEADER__LEN} "
@@ -72,12 +70,10 @@ from pytcp.protocols.ethernet_802_3.ethernet_802_3__parser import (
             "_description": (
                 "The 'dlen' field value is different than the actual payload length."
             ),
-            "_args": {
-                "bytes": (
-                    b"\x11\x22\x33\x44\x55\x66\x77\x88\x99\xaa\xbb\xcc\x00\x10\x30\x31"
-                    b"\x32\x33\x34\x35\x36\x37\x38\x39\x41\x42\x43\x44\x45\x46\x47"
-                ),
-            },
+            "_args": [
+                b"\x11\x22\x33\x44\x55\x66\x77\x88\x99\xaa\xbb\xcc\x00\x10\x30\x31"
+                b"\x32\x33\x34\x35\x36\x37\x38\x39\x41\x42\x43\x44\x45\x46\x47"
+            ],
             "_results": {
                 "error_message": (
                     f"Inconsistent payload length (16 bytes) in the Ethernet 802.3 header. "
@@ -87,12 +83,10 @@ from pytcp.protocols.ethernet_802_3.ethernet_802_3__parser import (
         },
         {
             "_description": "Ethernet 802.3 packet (III).",
-            "_args": {
-                "bytes": (
-                    b"\xa1\xb2\xc3\xd4\xe5\xf6\x11\x12\x13\x14\x15\x16\x05\xdd"
-                    + b"X" * (ETHERNET_802_3__PAYLOAD__MAX_LEN + 1)
-                ),
-            },
+            "_args": [
+                b"\xa1\xb2\xc3\xd4\xe5\xf6\x11\x12\x13\x14\x15\x16\x05\xdd"
+                + b"X" * (ETHERNET_802_3__PAYLOAD__MAX_LEN + 1)
+            ],
             "_results": {
                 "error_message": (
                     f"Payload length ({ETHERNET_802_3__PAYLOAD__MAX_LEN + 1} bytes) exceeds the "
@@ -102,14 +96,16 @@ from pytcp.protocols.ethernet_802_3.ethernet_802_3__parser import (
         },
     ]
 )
-class TestEthernet8023ParserIntegrityChecks(TestCase):
+class TestEthernet8023ParserIntegrityChecks(TestCasePacketRx):
     """
     The Ethernet 802.3 packet parser integrity checks tests.
     """
 
     _description: str
-    _args: dict[str, Any]
+    _args: list[Any]
     _results: dict[str, Any]
+
+    _packet_rx: PacketRx
 
     def test__ethernet_802_3__parser__from_bytes(self) -> None:
         """
@@ -117,10 +113,8 @@ class TestEthernet8023ParserIntegrityChecks(TestCase):
         packets.
         """
 
-        packet_rx = PacketRx(self._args["bytes"])
-
         with self.assertRaises(Ethernet8023IntegrityError) as error:
-            Ethernet8023Parser(packet_rx)
+            Ethernet8023Parser(self._packet_rx)
 
         self.assertEqual(
             str(error.exception),

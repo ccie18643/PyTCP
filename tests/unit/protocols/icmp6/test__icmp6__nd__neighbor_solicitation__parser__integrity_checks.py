@@ -51,9 +51,7 @@ from tests.lib.testcase__packet_rx__ip6 import TestCasePacketRxIp6
                 "ICMPv6 ND Neighbor Solicitation message, "
                 "the 'ICMP6_HEADER_LEN <= self._ip6__dlen' condition not met."
             ),
-            "_args": {
-                "bytes": b"\x87\x00\x00",
-            },
+            "_args": [b"\x87\x00\x00"],
             "_mocked_values": {
                 "ip6__dlen": 3,
             },
@@ -70,12 +68,10 @@ from tests.lib.testcase__packet_rx__ip6 import TestCasePacketRxIp6
                 "ICMPv6 ND Neighbor Solicitation message, "
                 "the 'self._ip6__dlen <= len(self._frame)' condition not met."
             ),
-            "_args": {
-                "bytes": (
-                    b"\x87\x00\x00\x00\x00\x00\x00\x00\x20\x01\x0d\xb8\x00\x00\x00\x00"
-                    b"\x00\x00\x00\x00\x00\x00\x00"
-                ),
-            },
+            "_args": [
+                b"\x87\x00\x00\x00\x00\x00\x00\x00\x20\x01\x0d\xb8\x00\x00\x00\x00"
+                b"\x00\x00\x00\x00\x00\x00\x00"
+            ],
             "_mocked_values": {
                 "ip6__dlen": 24,
             },
@@ -93,12 +89,10 @@ from tests.lib.testcase__packet_rx__ip6 import TestCasePacketRxIp6
                 "the 'ICMP6__ND__NEIGHBOR_SOLICITATION__LEN <= self._ip6__dlen' "
                 "condition not met."
             ),
-            "_args": {
-                "bytes": (
-                    b"\x87\x00\x00\x00\x00\x00\x00\x00\x20\x01\x0d\xb8\x00\x00\x00\x00"
-                    b"\x00\x00\x00\x00\x00\x00\x00"
-                ),
-            },
+            "_args": [
+                b"\x87\x00\x00\x00\x00\x00\x00\x00\x20\x01\x0d\xb8\x00\x00\x00\x00"
+                b"\x00\x00\x00\x00\x00\x00\x00"
+            ],
             "_mocked_values": {
                 "ip6__dlen": 23,
             },
@@ -112,12 +106,10 @@ from tests.lib.testcase__packet_rx__ip6 import TestCasePacketRxIp6
         },
         {
             "_description": "ICMPv6 ND Neighbor Advertisement message, invalid checksum.",
-            "_args": {
-                "bytes": (
-                    b"\x87\x00\x00\x00\x00\x00\x00\x00\x20\x01\x0d\xb8\x00\x00\x00\x00"
-                    b"\x00\x00\x00\x00\x00\x00\x00\x01"
-                ),
-            },
+            "_args": [
+                b"\x87\x00\x00\x00\x00\x00\x00\x00\x20\x01\x0d\xb8\x00\x00\x00\x00"
+                b"\x00\x00\x00\x00\x00\x00\x00\x01"
+            ],
             "_mocked_values": {},
             "_results": {
                 "error_message": "The packet checksum must be valid.",
@@ -133,7 +125,7 @@ class TestIcmp6NdNeighborSolicitationMessageParserIntegrityChecks(
     """
 
     _description: str
-    _args: dict[str, Any]
+    _args: list[Any]
     _mocked_values: dict[str, Any]
     _results: dict[str, Any]
 

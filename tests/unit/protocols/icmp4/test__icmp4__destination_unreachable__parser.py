@@ -50,9 +50,7 @@ from tests.lib.testcase__packet_rx__ip4 import TestCasePacketRxIp4
     [
         {
             "_description": "ICMPv4 Destination Unreachable (Network) message.",
-            "_args": {
-                "bytes": b"\x03\x00\xfc\xff\x00\x00\x00\x00",
-            },
+            "_args": [b"\x03\x00\xfc\xff\x00\x00\x00\x00"],
             "_results": {
                 "message": Icmp4DestinationUnreachableMessage(
                     code=Icmp4DestinationUnreachableCode.NETWORK,
@@ -63,9 +61,7 @@ from tests.lib.testcase__packet_rx__ip4 import TestCasePacketRxIp4
         },
         {
             "_description": "ICMPv4 Destination Unreachable (Host) message.",
-            "_args": {
-                "bytes": b"\x03\x01\xfc\xfe\x00\x00\x00\x00",
-            },
+            "_args": [b"\x03\x01\xfc\xfe\x00\x00\x00\x00"],
             "_results": {
                 "message": Icmp4DestinationUnreachableMessage(
                     code=Icmp4DestinationUnreachableCode.HOST,
@@ -76,9 +72,7 @@ from tests.lib.testcase__packet_rx__ip4 import TestCasePacketRxIp4
         },
         {
             "_description": "ICMPv4 Destination Unreachable (Protocol) message.",
-            "_args": {
-                "bytes": b"\x03\x02\xfc\xfd\x00\x00\x00\x00",
-            },
+            "_args": [b"\x03\x02\xfc\xfd\x00\x00\x00\x00"],
             "_results": {
                 "message": Icmp4DestinationUnreachableMessage(
                     code=Icmp4DestinationUnreachableCode.PROTOCOL,
@@ -89,9 +83,7 @@ from tests.lib.testcase__packet_rx__ip4 import TestCasePacketRxIp4
         },
         {
             "_description": "ICMPv4 Destination Unreachable (Port) message.",
-            "_args": {
-                "bytes": b"\x03\x03\xfc\xfc\x00\x00\x00\x00",
-            },
+            "_args": [b"\x03\x03\xfc\xfc\x00\x00\x00\x00"],
             "_results": {
                 "message": Icmp4DestinationUnreachableMessage(
                     code=Icmp4DestinationUnreachableCode.PORT,
@@ -102,9 +94,7 @@ from tests.lib.testcase__packet_rx__ip4 import TestCasePacketRxIp4
         },
         {
             "_description": "ICMPv4 Destination Unreachable (Fragmentation Needed) message.",
-            "_args": {
-                "bytes": b"\x03\x04\xf8\x4b\x00\x00\x04\xb0",
-            },
+            "_args": [b"\x03\x04\xf8\x4b\x00\x00\x04\xb0"],
             "_results": {
                 "message": Icmp4DestinationUnreachableMessage(
                     code=Icmp4DestinationUnreachableCode.FRAGMENTATION_NEEDED,
@@ -116,9 +106,7 @@ from tests.lib.testcase__packet_rx__ip4 import TestCasePacketRxIp4
         },
         {
             "_description": "ICMPv4 Destination Unreachable (Source Route Failed) message.",
-            "_args": {
-                "bytes": b"\x03\x05\xfc\xfa\x00\x00\x00\x00",
-            },
+            "_args": [b"\x03\x05\xfc\xfa\x00\x00\x00\x00"],
             "_results": {
                 "message": Icmp4DestinationUnreachableMessage(
                     code=Icmp4DestinationUnreachableCode.SOURCE_ROUTE_FAILED,
@@ -129,9 +117,7 @@ from tests.lib.testcase__packet_rx__ip4 import TestCasePacketRxIp4
         },
         {
             "_description": "ICMPv4 Destination Unreachable (Network Unknown) message.",
-            "_args": {
-                "bytes": b"\x03\x06\xfc\xf9\x00\x00\x00\x00",
-            },
+            "_args": [b"\x03\x06\xfc\xf9\x00\x00\x00\x00"],
             "_results": {
                 "message": Icmp4DestinationUnreachableMessage(
                     code=Icmp4DestinationUnreachableCode.NETWORK_UNKNOWN,
@@ -142,9 +128,7 @@ from tests.lib.testcase__packet_rx__ip4 import TestCasePacketRxIp4
         },
         {
             "_description": "ICMPv4 Destination Unreachable (Host Unknown) message.",
-            "_args": {
-                "bytes": b"\x03\x07\xfc\xf8\x00\x00\x00\x00",
-            },
+            "_args": [b"\x03\x07\xfc\xf8\x00\x00\x00\x00"],
             "_results": {
                 "message": Icmp4DestinationUnreachableMessage(
                     code=Icmp4DestinationUnreachableCode.HOST_UNKNOWN,
@@ -155,9 +139,7 @@ from tests.lib.testcase__packet_rx__ip4 import TestCasePacketRxIp4
         },
         {
             "_description": "ICMPv4 Destination Unreachable (Source Host Isolated) message.",
-            "_args": {
-                "bytes": b"\x03\x08\xfc\xf7\x00\x00\x00\x00",
-            },
+            "_args": [b"\x03\x08\xfc\xf7\x00\x00\x00\x00"],
             "_results": {
                 "message": Icmp4DestinationUnreachableMessage(
                     code=Icmp4DestinationUnreachableCode.SOURCE_HOST_ISOLATED,
@@ -168,9 +150,7 @@ from tests.lib.testcase__packet_rx__ip4 import TestCasePacketRxIp4
         },
         {
             "_description": "ICMPv4 Destination Unreachable (Network Prohibited) message.",
-            "_args": {
-                "bytes": b"\x03\x09\xfc\xf6\x00\x00\x00\x00",
-            },
+            "_args": [b"\x03\x09\xfc\xf6\x00\x00\x00\x00"],
             "_results": {
                 "message": Icmp4DestinationUnreachableMessage(
                     code=Icmp4DestinationUnreachableCode.NETWORK_PROHIBITED,
@@ -181,9 +161,7 @@ from tests.lib.testcase__packet_rx__ip4 import TestCasePacketRxIp4
         },
         {
             "_description": "ICMPv4 Destination Unreachable (Host Prohibited) message.",
-            "_args": {
-                "bytes": b"\x03\x0a\xfc\xf5\x00\x00\x00\x00",
-            },
+            "_args": [b"\x03\x0a\xfc\xf5\x00\x00\x00\x00"],
             "_results": {
                 "message": Icmp4DestinationUnreachableMessage(
                     code=Icmp4DestinationUnreachableCode.HOST_PROHIBITED,
@@ -194,9 +172,7 @@ from tests.lib.testcase__packet_rx__ip4 import TestCasePacketRxIp4
         },
         {
             "_description": "ICMPv4 Destination Unreachable (Network TOS) message.",
-            "_args": {
-                "bytes": b"\x03\x0b\xfc\xf4\x00\x00\x00\x00",
-            },
+            "_args": [b"\x03\x0b\xfc\xf4\x00\x00\x00\x00"],
             "_results": {
                 "message": Icmp4DestinationUnreachableMessage(
                     code=Icmp4DestinationUnreachableCode.NETWORK_TOS,
@@ -207,9 +183,7 @@ from tests.lib.testcase__packet_rx__ip4 import TestCasePacketRxIp4
         },
         {
             "_description": "ICMPv4 Destination Unreachable (Host TOS) message.",
-            "_args": {
-                "bytes": b"\x03\x0c\xfc\xf3\x00\x00\x00\x00",
-            },
+            "_args": [b"\x03\x0c\xfc\xf3\x00\x00\x00\x00"],
             "_results": {
                 "message": Icmp4DestinationUnreachableMessage(
                     code=Icmp4DestinationUnreachableCode.HOST_TOS,
@@ -220,9 +194,7 @@ from tests.lib.testcase__packet_rx__ip4 import TestCasePacketRxIp4
         },
         {
             "_description": "ICMPv4 Destination Unreachable (Communication Prohibited) message.",
-            "_args": {
-                "bytes": b"\x03\x0d\xfc\xf2\x00\x00\x00\x00",
-            },
+            "_args": [b"\x03\x0d\xfc\xf2\x00\x00\x00\x00"],
             "_results": {
                 "message": Icmp4DestinationUnreachableMessage(
                     code=Icmp4DestinationUnreachableCode.COMMUNICATION_PROHIBITED,
@@ -233,9 +205,7 @@ from tests.lib.testcase__packet_rx__ip4 import TestCasePacketRxIp4
         },
         {
             "_description": "ICMPv4 Destination Unreachable (Host Precedence) message.",
-            "_args": {
-                "bytes": b"\x03\x0e\xfc\xf1\x00\x00\x00\x00",
-            },
+            "_args": [b"\x03\x0e\xfc\xf1\x00\x00\x00\x00"],
             "_results": {
                 "message": Icmp4DestinationUnreachableMessage(
                     code=Icmp4DestinationUnreachableCode.HOST_PRECEDENCE,
@@ -246,9 +216,7 @@ from tests.lib.testcase__packet_rx__ip4 import TestCasePacketRxIp4
         },
         {
             "_description": "ICMPv4 Destination Unreachable (Precedence Cutoff) message.",
-            "_args": {
-                "bytes": b"\x03\x0f\xfc\xf0\x00\x00\x00\x00",
-            },
+            "_args": [b"\x03\x0f\xfc\xf0\x00\x00\x00\x00"],
             "_results": {
                 "message": Icmp4DestinationUnreachableMessage(
                     code=Icmp4DestinationUnreachableCode.PRECEDENCE_CUTOFF,
@@ -259,12 +227,10 @@ from tests.lib.testcase__packet_rx__ip4 import TestCasePacketRxIp4
         },
         {
             "_description": "ICMPv4 Destination Unreachable message, non-empty payload.",
-            "_args": {
-                "bytes": (
-                    b"\x03\x03\x2e\x26\x00\x00\x00\x00\x30\x31\x32\x33\x34\x35\x36\x37"
-                    b"\x38\x39\x41\x42\x43\x44\x45\x46"
-                ),
-            },
+            "_args": [
+                b"\x03\x03\x2e\x26\x00\x00\x00\x00\x30\x31\x32\x33\x34\x35\x36\x37"
+                b"\x38\x39\x41\x42\x43\x44\x45\x46"
+            ],
             "_results": {
                 "message": Icmp4DestinationUnreachableMessage(
                     code=Icmp4DestinationUnreachableCode.PORT,
@@ -275,9 +241,7 @@ from tests.lib.testcase__packet_rx__ip4 import TestCasePacketRxIp4
         },
         {
             "_description": "ICMPv4 Destination Unreachable message, maximum length payload.",
-            "_args": {
-                "bytes": b"\x03\x03\x6e\x6e\x00\x00\x00\x00" + b"X" * 548,
-            },
+            "_args": [b"\x03\x03\x6e\x6e\x00\x00\x00\x00" + b"X" * 548],
             "_results": {
                 "message": Icmp4DestinationUnreachableMessage(
                     code=Icmp4DestinationUnreachableCode.PORT,
@@ -294,7 +258,7 @@ class TestIcmp4MessageDestinationUnreachableParser(TestCasePacketRxIp4):
     """
 
     _description: str
-    _args: dict[str, Any]
+    _args: list[Any]
     _mocked_values: dict[str, Any]
     _results: dict[str, Any]
 

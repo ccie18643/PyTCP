@@ -36,7 +36,6 @@ ver 3.0.2
 from typing import Any
 
 from parameterized import parameterized_class  # type: ignore
-from testslide import TestCase
 
 from pytcp.lib.net_addr import MacAddress
 from pytcp.lib.packet import PacketRx
@@ -47,18 +46,17 @@ from pytcp.protocols.ethernet_802_3.ethernet_802_3__header import (
 from pytcp.protocols.ethernet_802_3.ethernet_802_3__parser import (
     Ethernet8023Parser,
 )
+from tests.lib.testcase__packet_rx import TestCasePacketRx
 
 
 @parameterized_class(
     [
         {
             "_description": "Ethernet 802.3 packet (I).",
-            "_args": {
-                "bytes": (
-                    b"\x11\x22\x33\x44\x55\x66\x77\x88\x99\xaa\xbb\xcc\x00\x10\x30\x31"
-                    b"\x32\x33\x34\x35\x36\x37\x38\x39\x41\x42\x43\x44\x45\x46"
-                ),
-            },
+            "_args": [
+                b"\x11\x22\x33\x44\x55\x66\x77\x88\x99\xaa\xbb\xcc\x00\x10\x30\x31"
+                b"\x32\x33\x34\x35\x36\x37\x38\x39\x41\x42\x43\x44\x45\x46"
+            ],
             "_results": {
                 "header": Ethernet8023Header(
                     dst=MacAddress("11:22:33:44:55:66"),
@@ -70,12 +68,10 @@ from pytcp.protocols.ethernet_802_3.ethernet_802_3__parser import (
         },
         {
             "_description": "Ethernet 802.3 packet (II).",
-            "_args": {
-                "bytes": (
-                    b"\xa1\xb2\xc3\xd4\xe5\xf6\x11\x12\x13\x14\x15\x16\x05\xdc"
-                    + b"X" * ETHERNET_802_3__PAYLOAD__MAX_LEN
-                ),
-            },
+            "_args": [
+                b"\xa1\xb2\xc3\xd4\xe5\xf6\x11\x12\x13\x14\x15\x16\x05\xdc"
+                + b"X" * ETHERNET_802_3__PAYLOAD__MAX_LEN
+            ],
             "_results": {
                 "header": Ethernet8023Header(
                     dst=MacAddress("a1:b2:c3:d4:e5:f6"),
@@ -87,14 +83,16 @@ from pytcp.protocols.ethernet_802_3.ethernet_802_3__parser import (
         },
     ]
 )
-class TestEthernet8023ParserOperation(TestCase):
+class TestEthernet8023ParserOperation(TestCasePacketRx):
     """
     Ethernet 802.3 packet parser packet tests.
     """
 
     _description: str
-    _args: dict[str, Any]
+    _args: list[Any]
     _results: dict[str, Any]
+
+    _packet_rx: PacketRx
 
     def test__ethernet__parser__from_bytes(self) -> None:
         """
@@ -102,9 +100,7 @@ class TestEthernet8023ParserOperation(TestCase):
         objects and also updates the appropriate 'tx_packet' object fields.
         """
 
-        packet_rx = PacketRx(self._args["bytes"])
-
-        ethernet_802_3_parser = Ethernet8023Parser(packet_rx)
+        ethernet_802_3_parser = Ethernet8023Parser(self._packet_rx)
 
         self.assertEqual(
             ethernet_802_3_parser.header,
@@ -112,11 +108,11 @@ class TestEthernet8023ParserOperation(TestCase):
         )
 
         self.assertIs(
-            packet_rx.ethernet_802_3,
+            self._packet_rx.ethernet_802_3,
             ethernet_802_3_parser,
         )
 
         self.assertEqual(
-            bytes(packet_rx.frame),
+            bytes(self._packet_rx.frame),
             self._results["payload"],
         )

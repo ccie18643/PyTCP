@@ -35,7 +35,6 @@ ver 3.0.2
 from typing import Any
 
 from parameterized import parameterized_class  # type: ignore
-from testslide import TestCase
 
 from pytcp.lib.net_addr import Ip4Address
 from pytcp.lib.packet import PacketRx
@@ -44,18 +43,17 @@ from pytcp.protocols.ip4.ip4__header import Ip4Header
 from pytcp.protocols.ip4.ip4__parser import Ip4Parser
 from pytcp.protocols.ip4.options.ip4_option__nop import Ip4OptionNop
 from pytcp.protocols.ip4.options.ip4_options import Ip4Options
+from tests.lib.testcase__packet_rx import TestCasePacketRx
 
 
 @parameterized_class(
     [
         {
             "_description": "IPv4 packet (I)",
-            "_args": {
-                "bytes": (
-                    b"\x45\xff\x00\x14\xff\xff\x40\x00\xff\xff\xd9\x23\x0a\x14\x1e\x28"
-                    b"\x32\x3c\x46\x50"
-                )
-            },
+            "_args": [
+                b"\x45\xff\x00\x14\xff\xff\x40\x00\xff\xff\xd9\x23\x0a\x14\x1e\x28"
+                b"\x32\x3c\x46\x50"
+            ],
             "_results": {
                 "header": Ip4Header(
                     hlen=20,
@@ -87,13 +85,11 @@ from pytcp.protocols.ip4.options.ip4_options import Ip4Options
         },
         {
             "_description": "IPv4 packet (II)",
-            "_args": {
-                "bytes": (
-                    b"\x45\x46\x00\x24\x30\x39\x40\x00\xff\xff\x3a\x48\x01\x02\x03\x04"
-                    b"\x05\x06\x07\x08\x30\x31\x32\x33\x34\x35\x36\x37\x38\x39\x41\x42"
-                    b"\x43\x44\x45\x46"
-                )
-            },
+            "_args": [
+                b"\x45\x46\x00\x24\x30\x39\x40\x00\xff\xff\x3a\x48\x01\x02\x03\x04"
+                b"\x05\x06\x07\x08\x30\x31\x32\x33\x34\x35\x36\x37\x38\x39\x41\x42"
+                b"\x43\x44\x45\x46"
+            ],
             "_results": {
                 "header": Ip4Header(
                     hlen=20,
@@ -128,15 +124,13 @@ from pytcp.protocols.ip4.options.ip4_options import Ip4Options
         },
         {
             "_description": "IPv4 packet (III)",
-            "_args": {
-                "bytes": (
-                    b"\x4f\x20\xff\xff\x52\xdc\x00\x00\x40\xff\x02\xea\x01\x01\x01\x01"
-                    b"\x02\x02\x02\x02\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01"
-                    b"\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01"
-                    b"\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01"
-                    + b"X" * 65475
-                )
-            },
+            "_args": [
+                b"\x4f\x20\xff\xff\x52\xdc\x00\x00\x40\xff\x02\xea\x01\x01\x01\x01"
+                b"\x02\x02\x02\x02\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01"
+                b"\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01"
+                b"\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01"
+                + b"X" * 65475
+            ],
             "_results": {
                 "header": Ip4Header(
                     hlen=60,
@@ -173,13 +167,11 @@ from pytcp.protocols.ip4.options.ip4_options import Ip4Options
         },
         {
             "_description": "IPv4 packet (IV)",
-            "_args": {
-                "bytes": (
-                    b"\x45\x29\x00\x24\xd4\x31\x0f\xa1\x80\xff\x41\xd0\x04\x03\x02\x01"
-                    b"\x08\x07\x06\x05\x30\x31\x32\x33\x34\x35\x36\x37\x38\x39\x41\x42"
-                    b"\x43\x44\x45\x46"
-                )
-            },
+            "_args": [
+                b"\x45\x29\x00\x24\xd4\x31\x0f\xa1\x80\xff\x41\xd0\x04\x03\x02\x01"
+                b"\x08\x07\x06\x05\x30\x31\x32\x33\x34\x35\x36\x37\x38\x39\x41\x42"
+                b"\x43\x44\x45\x46"
+            ],
             "_results": {
                 "header": Ip4Header(
                     hlen=20,
@@ -214,12 +206,10 @@ from pytcp.protocols.ip4.options.ip4_options import Ip4Options
         },
         {
             "_description": "IPv4 packet (V)",
-            "_args": {
-                "bytes": (
-                    b"\x45\x46\x05\xce\x30\x39\x20\x00\xff\xff\x54\x9e\x01\x02\x03\x04"
-                    b"\x05\x06\x07\x08" + b"X" * 1466
-                )
-            },
+            "_args": [
+                b"\x45\x46\x05\xce\x30\x39\x20\x00\xff\xff\x54\x9e\x01\x02\x03\x04"
+                b"\x05\x06\x07\x08" + b"X" * 1466
+            ],
             "_results": {
                 "header": Ip4Header(
                     hlen=20,
@@ -251,14 +241,16 @@ from pytcp.protocols.ip4.options.ip4_options import Ip4Options
         },
     ]
 )
-class TestIp4PacketParserOperation(TestCase):
+class TestIp4PacketParserOperation(TestCasePacketRx):
     """
     The IPv4 packet parser operation tests.
     """
 
     _description: str
-    _args: dict[str, Any]
+    _args: list[Any]
     _results: dict[str, Any]
+
+    _packet_rx: PacketRx
 
     def test__ip4__header_parser__from_bytes(self) -> None:
         """
@@ -266,9 +258,7 @@ class TestIp4PacketParserOperation(TestCase):
         objects and also updates the appropriate 'tx_packet' object fields.
         """
 
-        packet_rx = PacketRx(self._args["bytes"])
-
-        ip4_parser = Ip4Parser(packet_rx)
+        ip4_parser = Ip4Parser(self._packet_rx)
 
         self.assertEqual(
             ip4_parser.header,
@@ -296,11 +286,11 @@ class TestIp4PacketParserOperation(TestCase):
         )
 
         self.assertIs(
-            packet_rx.ip4,
+            self._packet_rx.ip4,
             ip4_parser,
         )
 
         self.assertEqual(
-            bytes(packet_rx.frame),
+            bytes(self._packet_rx.frame),
             self._results["payload"],
         )

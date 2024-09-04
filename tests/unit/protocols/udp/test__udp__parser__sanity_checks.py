@@ -46,9 +46,7 @@ from tests.lib.testcase__packet_rx__ip6 import TestCasePacketRxIp6
 testcases = [
     {
         "_description": "The value of the 'sport' field equals 0.",
-        "_args": {
-            "bytes": b"\x00\x00\xd4\x31\x00\x08\x2b\xc6",
-        },
+        "_args": [b"\x00\x00\xd4\x31\x00\x08\x2b\xc6"],
         "_mocked_values": {},
         "_results": {
             "error_message": (
@@ -58,9 +56,7 @@ testcases = [
     },
     {
         "_description": "The value of the 'dport' field equals 0.",
-        "_args": {
-            "bytes": b"\x30\x39\x00\x00\x00\x08\xcf\xbe",
-        },
+        "_args": [b"\x30\x39\x00\x00\x00\x08\xcf\xbe"],
         "_mocked_values": {},
         "_results": {
             "error_message": (
@@ -78,7 +74,7 @@ class TestUdpParserSanityChecks__Ip4(TestCasePacketRxIp4):
     """
 
     _description: str
-    _args: dict[str, Any]
+    _args: list[Any]
     _mocked_values: dict[str, Any]
     _results: dict[str, Any]
 
@@ -105,7 +101,7 @@ class TestUdpParserSanityChecks__Ip6(TestCasePacketRxIp6):
     """
 
     _description: str
-    _args: dict[str, Any]
+    _args: list[Any]
     _mocked_values: dict[str, Any]
     _results: dict[str, Any]
 

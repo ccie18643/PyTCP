@@ -50,12 +50,10 @@ testcases = [
             "The value of the 'ip__payload_len' variable is lower than the "
             "value of the 'TCP_HEADER_LEN' constant."
         ),
-        "_args": {
-            "bytes": (
-                b"\x30\x39\xd4\x31\x00\x12\xd6\x87\x00\x74\xcb\xb1\x60\x10\x2b\x67"
-                b"\xcb\x5b\x00\x00\x01\x01\x01\x01"
-            ),
-        },
+        "_args": [
+            b"\x30\x39\xd4\x31\x00\x12\xd6\x87\x00\x74\xcb\xb1\x60\x10\x2b\x67"
+            b"\xcb\x5b\x00\x00\x01\x01\x01\x01"
+        ],
         "_mocked_values": {
             "ip4__payload_len": TCP__HEADER__LEN - 1,
             "ip6__dlen": TCP__HEADER__LEN - 1,
@@ -72,12 +70,10 @@ testcases = [
         "_description": (
             "The value of the 'ip__payload_len' variable is higher than the frame length."
         ),
-        "_args": {
-            "bytes": (
-                b"\x30\x39\xd4\x31\x00\x12\xd6\x87\x00\x74\xcb\xb1\x60\x10\x2b\x67"
-                b"\xcb\x5b\x00\x00\x01\x01\x01\x01"
-            ),
-        },
+        "_args": [
+            b"\x30\x39\xd4\x31\x00\x12\xd6\x87\x00\x74\xcb\xb1\x60\x10\x2b\x67"
+            b"\xcb\x5b\x00\x00\x01\x01\x01\x01"
+        ],
         "_mocked_values": {
             "ip4__payload_len": TCP__HEADER__LEN + 4 + 1,
             "ip6__dlen": TCP__HEADER__LEN + 4 + 1,
@@ -94,12 +90,10 @@ testcases = [
         "_description": (
             "The value of the header 'hlen' field (19) is lower than the 'TCP_HEADER_LEN'."
         ),
-        "_args": {
-            "bytes": (
-                b"\x30\x39\xd4\x31\x00\x12\xd6\x87\x00\x74\xcb\xb1\x4c\x10\x2b\x67"
-                b"\xdf\x5b\x00\x00\x01\x01\x01\x01"
-            ),
-        },
+        "_args": [
+            b"\x30\x39\xd4\x31\x00\x12\xd6\x87\x00\x74\xcb\xb1\x4c\x10\x2b\x67"
+            b"\xdf\x5b\x00\x00\x01\x01\x01\x01"
+        ],
         "_mocked_values": {},
         "_results": {
             "error_message": (
@@ -114,12 +108,10 @@ testcases = [
             "The value of the header 'hlen' field (28) is higher than the value "
             "of the 'ip__payload_len' variable."
         ),
-        "_args": {
-            "bytes": (
-                b"\x30\x39\xd4\x31\x00\x12\xd6\x87\x00\x74\xcb\xb1\x70\x10\x2b\x67"
-                b"\xbb\x5b\x00\x00\x01\x01\x01\x01"
-            ),
-        },
+        "_args": [
+            b"\x30\x39\xd4\x31\x00\x12\xd6\x87\x00\x74\xcb\xb1\x70\x10\x2b\x67"
+            b"\xbb\x5b\x00\x00\x01\x01\x01\x01"
+        ],
         "_mocked_values": {},
         "_results": {
             "error_message": (
@@ -131,13 +123,11 @@ testcases = [
     },
     {
         "_description": "Packet has incorrect checksum.",
-        "_args": {
-            "bytes": (
-                b"\x30\x39\xd4\x31\x00\x12\xd6\x87\x00\x74\xcb\xb1\x60\x10\x2b\x67"
-                b"\xbe\x86\x00\x00\x03\x03\x0a\x01\x30\x31\x32\x33\x34\x35\x36\x37"
-                b"\x38\x39\x30\x41\x42\x43\x44\x45\x46"
-            ),
-        },
+        "_args": [
+            b"\x30\x39\xd4\x31\x00\x12\xd6\x87\x00\x74\xcb\xb1\x60\x10\x2b\x67"
+            b"\xbe\x86\x00\x00\x03\x03\x0a\x01\x30\x31\x32\x33\x34\x35\x36\x37"
+            b"\x38\x39\x30\x41\x42\x43\x44\x45\x46"
+        ],
         "_mocked_values": {},
         "_results": {
             "error_message": "The packet checksum must be valid.",
@@ -148,12 +138,10 @@ testcases = [
             "The value of the option 'len' field (1) is lower than the minimum "
             "acceptable value (2)."
         ),
-        "_args": {
-            "bytes": (
-                b"\x30\x39\xd4\x31\x00\x12\xd6\x87\x00\x74\xcb\xb1\x60\x10\x2b\x67"
-                b"\xce\x5b\x00\x00\xff\x01\x00\x00"
-            ),
-        },
+        "_args": [
+            b"\x30\x39\xd4\x31\x00\x12\xd6\x87\x00\x74\xcb\xb1\x60\x10\x2b\x67"
+            b"\xce\x5b\x00\x00\xff\x01\x00\x00"
+        ],
         "_mocked_values": {},
         "_results": {
             "error_message": (
@@ -166,12 +154,10 @@ testcases = [
             "The value of the option 'len' field (5 vs 3) extends past the value "
             "of the 'hlen' header field."
         ),
-        "_args": {
-            "bytes": (
-                b"\x30\x39\xd4\x31\x00\x12\xd6\x87\x00\x74\xcb\xb1\x60\x10\x2b\x67"
-                b"\xce\x57\x00\x00\xff\x05\x00\x00"
-            ),
-        },
+        "_args": [
+            b"\x30\x39\xd4\x31\x00\x12\xd6\x87\x00\x74\xcb\xb1\x60\x10\x2b\x67"
+            b"\xce\x57\x00\x00\xff\x05\x00\x00"
+        ],
         "_mocked_values": {},
         "_results": {
             "error_message": (
@@ -190,7 +176,7 @@ class TestTcpParserIntegrityChecks__Ip4(TestCasePacketRxIp4):
     """
 
     _description: str
-    _args: dict[str, Any]
+    _args: list[Any]
     _mocked_values: dict[str, Any]
     _results: dict[str, Any]
 
@@ -217,7 +203,7 @@ class TestTcpParserIntegrityChecks__Ip6(TestCasePacketRxIp6):
     """
 
     _description: str
-    _args: dict[str, Any]
+    _args: list[Any]
     _mocked_values: dict[str, Any]
     _results: dict[str, Any]
 

@@ -36,7 +36,6 @@ ver 3.0.2
 from typing import Any
 
 from parameterized import parameterized_class  # type: ignore
-from testslide import TestCase
 
 from pytcp.lib.packet import PacketRx
 from pytcp.protocols.ethernet_802_3.ethernet_802_3__errors import (
@@ -45,27 +44,28 @@ from pytcp.protocols.ethernet_802_3.ethernet_802_3__errors import (
 from pytcp.protocols.ethernet_802_3.ethernet_802_3__parser import (
     Ethernet8023Parser,
 )
+from tests.lib.testcase__packet_rx import TestCasePacketRx
 
 
 @parameterized_class([])
-class TestEthernet8023ParserSanityChecks(TestCase):
+class TestEthernet8023ParserSanityChecks(TestCasePacketRx):
     """
     The Ethernet 802.3 packet parser sanity checks tests.
     """
 
     _description: str
-    _args: dict[str, Any]
+    _args: list[Any]
     _results: dict[str, Any]
+
+    _packet_rx: PacketRx
 
     def test__ethernet__parser__from_bytes(self) -> None:
         """
         Ensure the Ethernet 802.3 packet parser raises sanity errors on crazy packets.
         """
 
-        packet_rx = PacketRx(self._args["bytes"])
-
         with self.assertRaises(Ethernet8023SanityError) as error:
-            Ethernet8023Parser(packet_rx)
+            Ethernet8023Parser(self._packet_rx)
 
         self.assertEqual(
             str(error.exception),

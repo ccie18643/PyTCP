@@ -48,7 +48,7 @@ class TestCasePacketRxIp6(TestCase):
     IPv6 parser values.
     """
 
-    _args: dict[str, Any] = {}
+    _args: list[Any] = []
     _mocked_values: dict[str, Any] = {}
     _packet_rx: PacketRx
 
@@ -57,7 +57,7 @@ class TestCasePacketRxIp6(TestCase):
         Set up the mocked values for the IPv6 related fields.
         """
 
-        self._packet_rx = PacketRx(self._args["bytes"])
+        self._packet_rx = PacketRx(self._args[0])
 
         self._packet_rx.ip = self._packet_rx.ip6 = cast(
             Ip6Parser, StrictMock(template=Ip6Parser)
@@ -65,16 +65,12 @@ class TestCasePacketRxIp6(TestCase):
         self.patch_attribute(
             target=self._packet_rx.ip6,
             attribute="dlen",
-            new_value=self._mocked_values.get(
-                "ip6__dlen", len(self._args["bytes"])
-            ),
+            new_value=self._mocked_values.get("ip6__dlen", len(self._args[0])),
         )
         self.patch_attribute(
             target=self._packet_rx.ip6,
             attribute="payload_len",
-            new_value=self._mocked_values.get(
-                "ip6__dlen", len(self._args["bytes"])
-            ),
+            new_value=self._mocked_values.get("ip6__dlen", len(self._args[0])),
         )
         self.patch_attribute(
             target=self._packet_rx.ip6,

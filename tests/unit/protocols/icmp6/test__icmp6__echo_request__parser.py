@@ -52,9 +52,7 @@ from tests.lib.testcase__packet_rx__ip6 import TestCasePacketRxIp6
     [
         {
             "_description": "ICMPv6 Echo Request message, empty data.",
-            "_args": {
-                "bytes": b"\x80\x00\x7b\x94\x30\x39\xd4\x31",
-            },
+            "_args": [b"\x80\x00\x7b\x94\x30\x39\xd4\x31"],
             "_mocked_values": {},
             "_results": {
                 "message": Icmp6EchoRequestMessage(
@@ -67,12 +65,10 @@ from tests.lib.testcase__packet_rx__ip6 import TestCasePacketRxIp6
         },
         {
             "_description": "ICMPv6 Echo Request message, non-empty data.",
-            "_args": {
-                "bytes": (
-                    b"\x80\x00\xac\xbd\x30\x39\xd4\x31\x30\x31\x32\x33\x34\x35\x36\x37"
-                    b"\x38\x39\x41\x42\x43\x44\x45\x46"
-                ),
-            },
+            "_args": [
+                b"\x80\x00\xac\xbd\x30\x39\xd4\x31\x30\x31\x32\x33\x34\x35\x36\x37"
+                b"\x38\x39\x41\x42\x43\x44\x45\x46"
+            ],
             "_mocked_values": {},
             "_results": {
                 "message": Icmp6EchoRequestMessage(
@@ -85,9 +81,7 @@ from tests.lib.testcase__packet_rx__ip6 import TestCasePacketRxIp6
         },
         {
             "_description": "ICMPv6 Echo Request message, maximum length of data.",
-            "_args": {
-                "bytes": b"\x80\x00\x33\x57\x2b\x67\x56\xce" + b"X" * 65527,
-            },
+            "_args": [b"\x80\x00\x33\x57\x2b\x67\x56\xce" + b"X" * 65527],
             "_mocked_values": {},
             "_results": {
                 "message": Icmp6EchoRequestMessage(
@@ -106,7 +100,7 @@ class TestIcmp6EchoRequestParser(TestCasePacketRxIp6):
     """
 
     _description: str
-    _args: dict[str, Any]
+    _args: list[Any]
     _results: dict[str, Any]
 
     _packet_rx: PacketRx

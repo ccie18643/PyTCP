@@ -49,12 +49,10 @@ from pytcp.protocols.icmp6.message.mld2.icmp6_mld2__multicast_address_record imp
     [
         {
             "_description": "ICMPv6 MLDv2 Multicast Address Record (Mode Is Include).",
-            "_args": {
-                "bytes": (
-                    b"\x01\x00\x00\x00\xff\x02\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
-                    b"\x00\x00\x00\x01"
-                ),
-            },
+            "_args": [
+                b"\x01\x00\x00\x00\xff\x02\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+                b"\x00\x00\x00\x01"
+            ],
             "_results": {
                 "from_bytes": Icmp6Mld2MulticastAddressRecord(
                     type=Icmp6Mld2MulticastAddressRecordType.MODE_IS_INCLUDE,
@@ -64,12 +62,10 @@ from pytcp.protocols.icmp6.message.mld2.icmp6_mld2__multicast_address_record imp
         },
         {
             "_description": "ICMPv6 MLDv2 Multicast Address Record (Mode Is Exclude).",
-            "_args": {
-                "bytes": (
-                    b"\x02\x00\x00\x00\xff\x02\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
-                    b"\x00\x00\x00\x01"
-                ),
-            },
+            "_args": [
+                b"\x02\x00\x00\x00\xff\x02\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+                b"\x00\x00\x00\x01"
+            ],
             "_results": {
                 "from_bytes": Icmp6Mld2MulticastAddressRecord(
                     type=Icmp6Mld2MulticastAddressRecordType.MODE_IS_EXCLUDE,
@@ -79,12 +75,10 @@ from pytcp.protocols.icmp6.message.mld2.icmp6_mld2__multicast_address_record imp
         },
         {
             "_description": "ICMPv6 MLDv2 Multicast Address Record (Change To Include).",
-            "_args": {
-                "bytes": (
-                    b"\x03\x00\x00\x00\xff\x02\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
-                    b"\x00\x00\x00\x01"
-                ),
-            },
+            "_args": [
+                b"\x03\x00\x00\x00\xff\x02\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+                b"\x00\x00\x00\x01"
+            ],
             "_results": {
                 "from_bytes": Icmp6Mld2MulticastAddressRecord(
                     type=Icmp6Mld2MulticastAddressRecordType.CHANGE_TO_INCLUDE,
@@ -94,12 +88,10 @@ from pytcp.protocols.icmp6.message.mld2.icmp6_mld2__multicast_address_record imp
         },
         {
             "_description": "ICMPv6 MLDv2 Multicast Address Record (Change To Exclude).",
-            "_args": {
-                "bytes": (
-                    b"\x04\x00\x00\x00\xff\x02\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
-                    b"\x00\x00\x00\x01"
-                ),
-            },
+            "_args": [
+                b"\x04\x00\x00\x00\xff\x02\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+                b"\x00\x00\x00\x01"
+            ],
             "_results": {
                 "from_bytes": Icmp6Mld2MulticastAddressRecord(
                     type=Icmp6Mld2MulticastAddressRecordType.CHANGE_TO_EXCLUDE,
@@ -109,12 +101,10 @@ from pytcp.protocols.icmp6.message.mld2.icmp6_mld2__multicast_address_record imp
         },
         {
             "_description": "ICMPv6 MLDv2 Multicast Address Record (Allow New Sources).",
-            "_args": {
-                "bytes": (
-                    b"\x05\x00\x00\x00\xff\x02\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
-                    b"\x00\x00\x00\x01"
-                ),
-            },
+            "_args": [
+                b"\x05\x00\x00\x00\xff\x02\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+                b"\x00\x00\x00\x01"
+            ],
             "_results": {
                 "from_bytes": Icmp6Mld2MulticastAddressRecord(
                     type=Icmp6Mld2MulticastAddressRecordType.ALLOW_NEW_SOURCES,
@@ -124,12 +114,10 @@ from pytcp.protocols.icmp6.message.mld2.icmp6_mld2__multicast_address_record imp
         },
         {
             "_description": "ICMPv6 MLDv2 Multicast Address Record (Block Old Sources).",
-            "_args": {
-                "bytes": (
-                    b"\x06\x00\x00\x00\xff\x02\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
-                    b"\x00\x00\x00\x01"
-                ),
-            },
+            "_args": [
+                b"\x06\x00\x00\x00\xff\x02\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+                b"\x00\x00\x00\x01"
+            ],
             "_results": {
                 "from_bytes": Icmp6Mld2MulticastAddressRecord(
                     type=Icmp6Mld2MulticastAddressRecordType.BLOCK_OLD_SOURCES,
@@ -141,15 +129,13 @@ from pytcp.protocols.icmp6.message.mld2.icmp6_mld2__multicast_address_record imp
             "_description": (
                 "ICMPv6 MLDv2 Multicast Address Record', multiple sources, no aux data."
             ),
-            "_args": {
-                "bytes": (
-                    b"\x01\x00\x00\x03\xff\x02\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
-                    b"\x00\x00\x00\x01\x20\x01\x0d\xb8\x00\x00\x00\x00\x00\x00\x00\x00"
-                    b"\x00\x00\x00\x01\x20\x01\x0d\xb8\x00\x00\x00\x00\x00\x00\x00\x00"
-                    b"\x00\x00\x00\x02\x20\x01\x0d\xb8\x00\x00\x00\x00\x00\x00\x00\x00"
-                    b"\x00\x00\x00\x03"
-                ),
-            },
+            "_args": [
+                b"\x01\x00\x00\x03\xff\x02\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+                b"\x00\x00\x00\x01\x20\x01\x0d\xb8\x00\x00\x00\x00\x00\x00\x00\x00"
+                b"\x00\x00\x00\x01\x20\x01\x0d\xb8\x00\x00\x00\x00\x00\x00\x00\x00"
+                b"\x00\x00\x00\x02\x20\x01\x0d\xb8\x00\x00\x00\x00\x00\x00\x00\x00"
+                b"\x00\x00\x00\x03"
+            ],
             "_results": {
                 "from_bytes": Icmp6Mld2MulticastAddressRecord(
                     type=Icmp6Mld2MulticastAddressRecordType.MODE_IS_INCLUDE,
@@ -166,13 +152,11 @@ from pytcp.protocols.icmp6.message.mld2.icmp6_mld2__multicast_address_record imp
             "_description": (
                 "ICMPv6 'MLDv2 Multicast Address Record', no sources, aux data."
             ),
-            "_args": {
-                "bytes": (
-                    b"\x01\x04\x00\x00\xff\x02\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
-                    b"\x00\x00\x00\x01\x30\x31\x32\x33\x34\x35\x36\x37\x38\x39\x41\x42"
-                    b"\x43\x44\x45\x46"
-                ),
-            },
+            "_args": [
+                b"\x01\x04\x00\x00\xff\x02\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+                b"\x00\x00\x00\x01\x30\x31\x32\x33\x34\x35\x36\x37\x38\x39\x41\x42"
+                b"\x43\x44\x45\x46"
+            ],
             "_results": {
                 "from_bytes": Icmp6Mld2MulticastAddressRecord(
                     type=Icmp6Mld2MulticastAddressRecordType.MODE_IS_INCLUDE,
@@ -185,16 +169,14 @@ from pytcp.protocols.icmp6.message.mld2.icmp6_mld2__multicast_address_record imp
             "_description": (
                 "ICMPv6 'MLDv2 Multicast Address Record', multiple sources, aux data."
             ),
-            "_args": {
-                "bytes": (
-                    b"\x01\x04\x00\x03\xff\x02\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
-                    b"\x00\x00\x00\x01\x20\x01\x0d\xb8\x00\x00\x00\x00\x00\x00\x00\x00"
-                    b"\x00\x00\x00\x01\x20\x01\x0d\xb8\x00\x00\x00\x00\x00\x00\x00\x00"
-                    b"\x00\x00\x00\x02\x20\x01\x0d\xb8\x00\x00\x00\x00\x00\x00\x00\x00"
-                    b"\x00\x00\x00\x03\x30\x31\x32\x33\x34\x35\x36\x37\x38\x39\x41\x42"
-                    b"\x43\x44\x45\x46"
-                ),
-            },
+            "_args": [
+                b"\x01\x04\x00\x03\xff\x02\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+                b"\x00\x00\x00\x01\x20\x01\x0d\xb8\x00\x00\x00\x00\x00\x00\x00\x00"
+                b"\x00\x00\x00\x01\x20\x01\x0d\xb8\x00\x00\x00\x00\x00\x00\x00\x00"
+                b"\x00\x00\x00\x02\x20\x01\x0d\xb8\x00\x00\x00\x00\x00\x00\x00\x00"
+                b"\x00\x00\x00\x03\x30\x31\x32\x33\x34\x35\x36\x37\x38\x39\x41\x42"
+                b"\x43\x44\x45\x46"
+            ],
             "_results": {
                 "from_bytes": Icmp6Mld2MulticastAddressRecord(
                     type=Icmp6Mld2MulticastAddressRecordType.MODE_IS_INCLUDE,
@@ -216,7 +198,7 @@ class TestIcmp6Mld2MulticastAddressRecordParser(TestCase):
     """
 
     _description: str
-    _args: dict[str, Any]
+    _args: list[Any]
     _results: dict[str, Any]
 
     def test__icmp6__mld2__multicast_address_record__parser__from_bytes(
@@ -229,7 +211,7 @@ class TestIcmp6Mld2MulticastAddressRecordParser(TestCase):
 
         self.assertEqual(
             Icmp6Mld2MulticastAddressRecord.from_bytes(
-                self._args["bytes"] + b"ZH0PA"
+                self._args[0] + b"ZH0PA"
             ),
             self._results["from_bytes"],
         )

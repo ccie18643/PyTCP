@@ -36,11 +36,11 @@ ver 3.0.2
 from typing import Any
 
 from parameterized import parameterized_class  # type: ignore
-from testslide import TestCase
 
 from pytcp.lib.packet import PacketRx
 from pytcp.protocols.ip6.ip6__errors import Ip6IntegrityError
 from pytcp.protocols.ip6.ip6__parser import Ip6Parser
+from tests.lib.testcase__packet_rx import TestCasePacketRx
 
 
 @parameterized_class(
@@ -50,26 +50,22 @@ from pytcp.protocols.ip6.ip6__parser import Ip6Parser
                 "The length of the frame is lower than the value of the "
                 "'IP6__HEADER__LEN' constant."
             ),
-            "_args": {
-                "bytes": (
-                    b"\x60\x00\x00\x00\x00\x00\xff\x01\x10\x01\x20\x02\x30\x03\x40\x04"
-                    b"\x50\x05\x60\x06\x70\x07\x80\x08\xa0\x0a\xb0\x0b\xc0\x0c\xd0\x0d"
-                    b"\xe0\x0e\xf0\x0f\x0a\x0a\x0b"
-                ),
-            },
+            "_args": [
+                b"\x60\x00\x00\x00\x00\x00\xff\x01\x10\x01\x20\x02\x30\x03\x40\x04"
+                b"\x50\x05\x60\x06\x70\x07\x80\x08\xa0\x0a\xb0\x0b\xc0\x0c\xd0\x0d"
+                b"\xe0\x0e\xf0\x0f\x0a\x0a\x0b"
+            ],
             "_results": {
                 "error_message": "The wrong packet length (I).",
             },
         },
         {
             "_description": ("The value of the 'ver' field is incorrect"),
-            "_args": {
-                "bytes": (
-                    b"\x50\x00\x00\x00\x00\x00\xff\x01\x10\x01\x20\x02\x30\x03\x40\x04"
-                    b"\x50\x05\x60\x06\x70\x07\x80\x08\xa0\x0a\xb0\x0b\xc0\x0c\xd0\x0d"
-                    b"\xe0\x0e\xf0\x0f\x0a\x0a\x0b\x0b"
-                ),
-            },
+            "_args": [
+                b"\x50\x00\x00\x00\x00\x00\xff\x01\x10\x01\x20\x02\x30\x03\x40\x04"
+                b"\x50\x05\x60\x06\x70\x07\x80\x08\xa0\x0a\xb0\x0b\xc0\x0c\xd0\x0d"
+                b"\xe0\x0e\xf0\x0f\x0a\x0a\x0b\x0b"
+            ],
             "_results": {
                 "error_message": "The 'ver' must be 6.",
             },
@@ -79,37 +75,35 @@ from pytcp.protocols.ip6.ip6__parser import Ip6Parser
                 "The value of the 'dlen' field is different the length of the frame less "
                 "the value of the 'IP6_HEADER_LEN' constant."
             ),
-            "_args": {
-                "bytes": (
-                    b"\x60\x00\x00\x00\x00\x00\xff\x01\x10\x01\x20\x02\x30\x03\x40\x04"
-                    b"\x50\x05\x60\x06\x70\x07\x80\x08\xa0\x0a\xb0\x0b\xc0\x0c\xd0\x0d"
-                    b"\xe0\x0e\xf0\x0f\x0a\x0a\x0b\x0b\x00"
-                ),
-            },
+            "_args": [
+                b"\x60\x00\x00\x00\x00\x00\xff\x01\x10\x01\x20\x02\x30\x03\x40\x04"
+                b"\x50\x05\x60\x06\x70\x07\x80\x08\xa0\x0a\xb0\x0b\xc0\x0c\xd0\x0d"
+                b"\xe0\x0e\xf0\x0f\x0a\x0a\x0b\x0b\x00"
+            ],
             "_results": {
                 "error_message": "The wrong packet length (II).",
             },
         },
     ],
 )
-class TestIp6ParserIntegrityChecks(TestCase):
+class TestIp6ParserIntegrityChecks(TestCasePacketRx):
     """
     The IPv6 packet parser integrity checks tests.
     """
 
     _description: str
-    _args: dict[str, Any]
+    _args: list[Any]
     _results: dict[str, Any]
+
+    _packet_rx: PacketRx
 
     def test__ip6__parser__from_bytes(self) -> None:
         """
         Ensure the IPv6 packet parser raises integrity error on malformed packets.
         """
 
-        packet_rx = PacketRx(self._args["bytes"])
-
         with self.assertRaises(Ip6IntegrityError) as error:
-            Ip6Parser(packet_rx)
+            Ip6Parser(self._packet_rx)
 
         self.assertEqual(
             str(error.exception),

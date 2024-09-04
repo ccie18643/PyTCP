@@ -25,67 +25,32 @@
 
 
 """
-Module contains the customized TestCase class that mocks the IPv4 related values.
+Module contains the customized TestCase class.
 
-tests/mocks/testcase__packet_rx__ip4.py
+tests/mocks/testcase__packet_rx.py
 
 ver 3.0.2
 """
 
 
-from typing import Any, cast
+from typing import Any
 
-from testslide import StrictMock, TestCase
+from testslide import TestCase
 
-from pytcp.lib.net_addr import Ip4Address
 from pytcp.lib.packet import PacketRx
-from pytcp.protocols.ip4.ip4__parser import Ip4Parser
 
 
-class TestCasePacketRxIp4(TestCase):
+class TestCasePacketRx(TestCase):
     """
-    Customized TestCase class that provides PacketRx object and mocks the
-    IPv4 parser values.
+    Customized TestCase class that provides PacketRx object.
     """
 
     _args: list[Any] = []
-    _mocked_values: dict[str, Any] = {}
     _packet_rx: PacketRx
 
     def setUp(self) -> None:
         """
-        Set up the mocked values for the IPv4 related fields.
+        Set up the PacketRx object.
         """
 
         self._packet_rx = PacketRx(self._args[0])
-
-        self._packet_rx.ip = self._packet_rx.ip4 = cast(
-            Ip4Parser, StrictMock(template=Ip4Parser)
-        )
-        self.patch_attribute(
-            target=self._packet_rx.ip4,
-            attribute="payload_len",
-            new_value=self._mocked_values.get(
-                "ip4__payload_len", len(self._args[0])
-            ),
-        )
-        self.patch_attribute(
-            target=self._packet_rx.ip4,
-            attribute="pshdr_sum",
-            new_value=self._mocked_values.get("ip4__pshdr_sum", 0),
-        )
-        self.patch_attribute(
-            target=self._packet_rx.ip4,
-            attribute="ttl",
-            new_value=self._mocked_values.get("ip4__ttl", 0),
-        )
-        self.patch_attribute(
-            target=self._packet_rx.ip4,
-            attribute="src",
-            new_value=self._mocked_values.get("ip4__src", Ip4Address()),
-        )
-        self.patch_attribute(
-            target=self._packet_rx.ip4,
-            attribute="dst",
-            new_value=self._mocked_values.get("ip4__dst", Ip4Address()),
-        )

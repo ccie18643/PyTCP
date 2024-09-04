@@ -50,9 +50,7 @@ testcases = [
             "The value of the 'ip__payload_len' variable is lower than the "
             "value of the 'UDP_HEADER_LEN' constant."
         ),
-        "_args": {
-            "bytes": b"\x30\x39\xd4\x31\x00\x08\xfb\x8c",
-        },
+        "_args": [b"\x30\x39\xd4\x31\x00\x08\xfb\x8c"],
         "_mocked_values": {
             "ip4__payload_len": UDP__HEADER__LEN - 1,
             "ip6__dlen": UDP__HEADER__LEN - 1,
@@ -69,9 +67,7 @@ testcases = [
         "_description": (
             "The value of the 'ip__payload_len' variable is higher than the frame length."
         ),
-        "_args": {
-            "bytes": b"\x30\x39\xd4\x31\x00\x08\xfb\x8c",
-        },
+        "_args": [b"\x30\x39\xd4\x31\x00\x08\xfb\x8c"],
         "_mocked_values": {
             "ip4__payload_len": UDP__HEADER__LEN + 1,
             "ip6__dlen": UDP__HEADER__LEN + 1,
@@ -88,9 +84,7 @@ testcases = [
         "_description": (
             "The value of the header 'plen' field is lower than the header length."
         ),
-        "_args": {
-            "bytes": b"\x30\x39\xd4\x31\x00\x07\xfb\x8c",
-        },
+        "_args": [b"\x30\x39\xd4\x31\x00\x07\xfb\x8c"],
         "_mocked_values": {},
         "_results": {
             "error_message": (
@@ -105,9 +99,7 @@ testcases = [
             "The value of the  header 'plen' field is different than the 'ip__payload_len' "
             "variable."
         ),
-        "_args": {
-            "bytes": b"\x30\x39\xd4\x31\x00\x08\xfb\x8c\00\00",
-        },
+        "_args": [b"\x30\x39\xd4\x31\x00\x08\xfb\x8c\00\00"],
         "_mocked_values": {
             "ip4__payload_len": UDP__HEADER__LEN + 1,
             "ip6__dlen": UDP__HEADER__LEN + 1,
@@ -122,12 +114,10 @@ testcases = [
     },
     {
         "_description": "Packet has incorrect checksum.",
-        "_args": {
-            "bytes": (
-                b"\x30\x39\xd4\x31\x00\x18\xab\xcd\x30\x31\x32\x33\x34\x35\x36\x37"
-                b"\x38\x39\x41\x42\x43\x44\x45\x46"
-            ),
-        },
+        "_args": [
+            b"\x30\x39\xd4\x31\x00\x18\xab\xcd\x30\x31\x32\x33\x34\x35\x36\x37"
+            b"\x38\x39\x41\x42\x43\x44\x45\x46"
+        ],
         "_mocked_values": {},
         "_results": {
             "error_message": "The packet checksum must be valid.",
@@ -143,7 +133,7 @@ class TestUdpParserIntegrityChecks__Ip4(TestCasePacketRxIp4):
     """
 
     _description: str
-    _args: dict[str, Any]
+    _args: list[Any]
     _mocked_values: dict[str, Any]
     _results: dict[str, Any]
 
@@ -170,7 +160,7 @@ class TestUdpParserIntegrityChecks__Ip6(TestCasePacketRxIp6):
     """
 
     _description: str
-    _args: dict[str, Any]
+    _args: list[Any]
     _mocked_values: dict[str, Any]
     _results: dict[str, Any]
 

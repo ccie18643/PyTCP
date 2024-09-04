@@ -50,9 +50,7 @@ from tests.lib.testcase__packet_rx__ip4 import TestCasePacketRxIp4
                 "ICMPv4 Echo Reply message, "
                 "the 'ICMP4_HEADER_LEN <= self._ip4_payload_len' condition not met."
             ),
-            "_args": {
-                "bytes": b"\x00\x00\xfb",
-            },
+            "_args": [b"\x00\x00\xfb"],
             "_mocked_values": {
                 "ip4__payload_len": 3,
             },
@@ -69,9 +67,7 @@ from tests.lib.testcase__packet_rx__ip4 import TestCasePacketRxIp4
                 "ICMPv4 Echo Reply message, "
                 "the 'self._ip4_payload_len <= len(self._frame)' condition not met."
             ),
-            "_args": {
-                "bytes": b"\x00\x00\xfb\x94\x30\x39\xd4",
-            },
+            "_args": [b"\x00\x00\xfb\x94\x30\x39\xd4"],
             "_mocked_values": {
                 "ip4__payload_len": 8,
             },
@@ -88,9 +84,7 @@ from tests.lib.testcase__packet_rx__ip4 import TestCasePacketRxIp4
                 "ICMPv4 Echo Reply message, "
                 "the 'ICMP4_ECHO_REPLY_LEN <= self._ip4_payload_len' condition not met."
             ),
-            "_args": {
-                "bytes": b"\x00\x00\xfb\x94\x30\x39\xd4",
-            },
+            "_args": [b"\x00\x00\xfb\x94\x30\x39\xd4"],
             "_mocked_values": {
                 "ip4__payload_len": 7,
             },
@@ -104,9 +98,7 @@ from tests.lib.testcase__packet_rx__ip4 import TestCasePacketRxIp4
         },
         {
             "_description": "ICMPv4 Echo Reply message, invalid checksum.",
-            "_args": {
-                "bytes": b"\x00\x00\x00\x00\x30\x39\xd4\x31",
-            },
+            "_args": [b"\x00\x00\x00\x00\x30\x39\xd4\x31"],
             "_mocked_values": {},
             "_results": {
                 "error_message": "The packet checksum must be valid.",
@@ -120,7 +112,7 @@ class TestIcmp4EchoReplyParserIntegrityChecks(TestCasePacketRxIp4):
     """
 
     _description: str
-    _args: dict[str, Any]
+    _args: list[Any]
     _mocked_values: dict[str, Any]
     _results: dict[str, Any]
 

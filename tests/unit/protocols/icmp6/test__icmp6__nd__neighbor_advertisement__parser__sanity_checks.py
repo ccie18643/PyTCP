@@ -51,12 +51,10 @@ from tests.lib.testcase__packet_rx__ip6 import TestCasePacketRxIp6
             "_description": (
                 "The value of the 'ip6__hop' field must be 255. It's 64."
             ),
-            "_args": {
-                "bytes": (
-                    b"\x88\x00\xaa\x44\xa0\x00\x00\x00\x20\x01\x0d\xb8\x00\x00\x00\x00"
-                    b"\x00\x00\x00\x00\x00\x00\x00\x01"
-                ),
-            },
+            "_args": [
+                b"\x88\x00\xaa\x44\xa0\x00\x00\x00\x20\x01\x0d\xb8\x00\x00\x00\x00"
+                b"\x00\x00\x00\x00\x00\x00\x00\x01"
+            ],
             "_mocked_values": {
                 "ip6__hop": 64,
                 "ip6__src": Ip6Address("2001:db8::1"),
@@ -73,12 +71,10 @@ from tests.lib.testcase__packet_rx__ip6 import TestCasePacketRxIp6
             "_description": (
                 "The value of the 'ip6__hop' field must be 255. It's 255."
             ),
-            "_args": {
-                "bytes": (
-                    b"\x88\x00\xaa\x44\xa0\x00\x00\x00\x20\x01\x0d\xb8\x00\x00\x00\x00"
-                    b"\x00\x00\x00\x00\x00\x00\x00\x01"
-                ),
-            },
+            "_args": [
+                b"\x88\x00\xaa\x44\xa0\x00\x00\x00\x20\x01\x0d\xb8\x00\x00\x00\x00"
+                b"\x00\x00\x00\x00\x00\x00\x00\x01"
+            ],
             "_mocked_values": {
                 "ip6__hop": 255,
                 "ip6__src": Ip6Address("2001:db8::1"),
@@ -91,12 +87,10 @@ from tests.lib.testcase__packet_rx__ip6 import TestCasePacketRxIp6
                 "The value of the 'ip6__src' field must be unicast. "
                 "It's multicast."
             ),
-            "_args": {
-                "bytes": (
-                    b"\x88\x00\xaa\x44\xa0\x00\x00\x00\x20\x01\x0d\xb8\x00\x00\x00\x00"
-                    b"\x00\x00\x00\x00\x00\x00\x00\x01"
-                ),
-            },
+            "_args": [
+                b"\x88\x00\xaa\x44\xa0\x00\x00\x00\x20\x01\x0d\xb8\x00\x00\x00\x00"
+                b"\x00\x00\x00\x00\x00\x00\x00\x01"
+            ],
             "_mocked_values": {
                 "ip6__hop": 255,
                 "ip6__src": Ip6Address("ff02::1"),
@@ -114,12 +108,10 @@ from tests.lib.testcase__packet_rx__ip6 import TestCasePacketRxIp6
                 "The value of the 'ip6__src' field must be unicast. "
                 "It's unicast."
             ),
-            "_args": {
-                "bytes": (
-                    b"\x88\x00\xaa\x44\xa0\x00\x00\x00\x20\x01\x0d\xb8\x00\x00\x00\x00"
-                    b"\x00\x00\x00\x00\x00\x00\x00\x01"
-                ),
-            },
+            "_args": [
+                b"\x88\x00\xaa\x44\xa0\x00\x00\x00\x20\x01\x0d\xb8\x00\x00\x00\x00"
+                b"\x00\x00\x00\x00\x00\x00\x00\x01"
+            ],
             "_mocked_values": {
                 "ip6__hop": 255,
                 "ip6__src": Ip6Address("2001:db8::1"),
@@ -132,12 +124,10 @@ from tests.lib.testcase__packet_rx__ip6 import TestCasePacketRxIp6
                 "The 'flag_s' is set and 'ip6__dst' must be unicast or all-nodes multicast. "
                 "It's all-routers unicast."
             ),
-            "_args": {
-                "bytes": (
-                    b"\x88\x00\x0a\x45\x40\x00\x00\x00\x20\x01\x0d\xb8\x00\x00\x00\x00"
-                    b"\x00\x00\x00\x00\x00\x00\x00\x01"
-                ),
-            },
+            "_args": [
+                b"\x88\x00\x0a\x45\x40\x00\x00\x00\x20\x01\x0d\xb8\x00\x00\x00\x00"
+                b"\x00\x00\x00\x00\x00\x00\x00\x01"
+            ],
             "_mocked_values": {
                 "ip6__hop": 255,
                 "ip6__src": Ip6Address("2001:db8::1"),
@@ -156,12 +146,10 @@ from tests.lib.testcase__packet_rx__ip6 import TestCasePacketRxIp6
                 "The 'flag_s' is set and 'ip6__dst' must be unicast or all-nodes multicast. "
                 "It's unicast."
             ),
-            "_args": {
-                "bytes": (
-                    b"\x88\x00\x0a\x45\x40\x00\x00\x00\x20\x01\x0d\xb8\x00\x00\x00\x00"
-                    b"\x00\x00\x00\x00\x00\x00\x00\x01"
-                ),
-            },
+            "_args": [
+                b"\x88\x00\x0a\x45\x40\x00\x00\x00\x20\x01\x0d\xb8\x00\x00\x00\x00"
+                b"\x00\x00\x00\x00\x00\x00\x00\x01"
+            ],
             "_mocked_values": {
                 "ip6__hop": 255,
                 "ip6__src": Ip6Address("2001:db8::1"),
@@ -174,12 +162,10 @@ from tests.lib.testcase__packet_rx__ip6 import TestCasePacketRxIp6
                 "The 'flag_s' is set and 'ip6__dst' must be unicast or all-nodes multicast. "
                 "It's all-nodes multicast."
             ),
-            "_args": {
-                "bytes": (
-                    b"\x88\x00\x0a\x45\x40\x00\x00\x00\x20\x01\x0d\xb8\x00\x00\x00\x00"
-                    b"\x00\x00\x00\x00\x00\x00\x00\x01"
-                ),
-            },
+            "_args": [
+                b"\x88\x00\x0a\x45\x40\x00\x00\x00\x20\x01\x0d\xb8\x00\x00\x00\x00"
+                b"\x00\x00\x00\x00\x00\x00\x00\x01"
+            ],
             "_mocked_values": {
                 "ip6__hop": 255,
                 "ip6__src": Ip6Address("2001:db8::1"),
@@ -192,12 +178,10 @@ from tests.lib.testcase__packet_rx__ip6 import TestCasePacketRxIp6
                 "The 'flag_s' is not set and 'ip6__dst' must be all-nodes multicast. "
                 "It's unicast."
             ),
-            "_args": {
-                "bytes": (
-                    b"\x88\x00\x4a\x45\x00\x00\x00\x00\x20\x01\x0d\xb8\x00\x00\x00\x00"
-                    b"\x00\x00\x00\x00\x00\x00\x00\x01"
-                ),
-            },
+            "_args": [
+                b"\x88\x00\x4a\x45\x00\x00\x00\x00\x20\x01\x0d\xb8\x00\x00\x00\x00"
+                b"\x00\x00\x00\x00\x00\x00\x00\x01"
+            ],
             "_mocked_values": {
                 "ip6__hop": 255,
                 "ip6__src": Ip6Address("2001:db8::1"),
@@ -216,12 +200,10 @@ from tests.lib.testcase__packet_rx__ip6 import TestCasePacketRxIp6
                 "The 'flag_s' is not set and 'ip6__dst' must be all-nodes multicast. "
                 "It's all-nodes multicast."
             ),
-            "_args": {
-                "bytes": (
-                    b"\x88\x00\x4a\x45\x00\x00\x00\x00\x20\x01\x0d\xb8\x00\x00\x00\x00"
-                    b"\x00\x00\x00\x00\x00\x00\x00\x01"
-                ),
-            },
+            "_args": [
+                b"\x88\x00\x4a\x45\x00\x00\x00\x00\x20\x01\x0d\xb8\x00\x00\x00\x00"
+                b"\x00\x00\x00\x00\x00\x00\x00\x01"
+            ],
             "_mocked_values": {
                 "ip6__hop": 255,
                 "ip6__src": Ip6Address("2001:db8::1"),
@@ -237,7 +219,7 @@ class TestIcmp4NdNeighborAdvertisementParserSanityChecks(TestCasePacketRxIp6):
     """
 
     _description: str
-    _args: dict[str, Any]
+    _args: list[Any]
     _mocked_values: dict[str, Any]
     _results: dict[str, Any]
 

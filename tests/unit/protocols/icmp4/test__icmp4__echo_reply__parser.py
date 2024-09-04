@@ -49,9 +49,7 @@ from tests.lib.testcase__packet_rx__ip4 import TestCasePacketRxIp4
     [
         {
             "_description": "ICMP4 Echo Reply message, empty data.",
-            "_args": {
-                "bytes": b"\x00\x00\xfb\x94\x30\x39\xd4\x31",
-            },
+            "_args": [b"\x00\x00\xfb\x94\x30\x39\xd4\x31"],
             "_results": {
                 "message": Icmp4EchoReplyMessage(
                     cksum=64404,
@@ -63,12 +61,10 @@ from tests.lib.testcase__packet_rx__ip4 import TestCasePacketRxIp4
         },
         {
             "_description": "ICMP4 Echo Reply message, non-empty data.",
-            "_args": {
-                "bytes": (
-                    b"\x00\x00\x2c\xbe\x30\x39\xd4\x31\x30\x31\x32\x33\x34\x35\x36\x37"
-                    b"\x38\x39\x41\x42\x43\x44\x45\x46"
-                ),
-            },
+            "_args": [
+                b"\x00\x00\x2c\xbe\x30\x39\xd4\x31\x30\x31\x32\x33\x34\x35\x36\x37"
+                b"\x38\x39\x41\x42\x43\x44\x45\x46"
+            ],
             "_results": {
                 "message": Icmp4EchoReplyMessage(
                     cksum=11454,
@@ -80,9 +76,7 @@ from tests.lib.testcase__packet_rx__ip4 import TestCasePacketRxIp4
         },
         {
             "_description": "ICMP4 Echo Reply message, maximum length of data.",
-            "_args": {
-                "bytes": b"\x00\x00\x26\xcb\x2b\x67\x56\xce" + b"X" * 65507,
-            },
+            "_args": [b"\x00\x00\x26\xcb\x2b\x67\x56\xce" + b"X" * 65507],
             "_results": {
                 "message": Icmp4EchoReplyMessage(
                     cksum=9931,
@@ -100,7 +94,7 @@ class TestIcmp4MessageEchoReplyParser(TestCasePacketRxIp4):
     """
 
     _description: str
-    _args: dict[str, Any]
+    _args: list[Any]
     _results: dict[str, Any]
 
     _packet_rx: PacketRx

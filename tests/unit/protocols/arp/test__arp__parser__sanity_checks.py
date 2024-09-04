@@ -36,47 +36,45 @@ ver 3.0.2
 from typing import Any
 
 from parameterized import parameterized_class  # type: ignore
-from testslide import TestCase
 
 from pytcp.lib.packet import PacketRx
 from pytcp.protocols.arp.arp__errors import ArpSanityError
 from pytcp.protocols.arp.arp__parser import ArpParser
+from tests.lib.testcase__packet_rx import TestCasePacketRx
 
 
 @parameterized_class(
     [
         {
             "_description": "The value of the 'prlen' field is incorrect.",
-            "_args": {
-                "bytes": (
-                    b"\x00\x01\x08\x00\x06\x04\x00\x00\x01\x02\x03\x04\x05\x06\x0b\x16"
-                    b"\x21\x2c\x0a\x0b\x0c\x0d\x0e\x0f\x65\x66\x67\x68"
-                ),
-            },
+            "_args": [
+                b"\x00\x01\x08\x00\x06\x04\x00\x00\x01\x02\x03\x04\x05\x06\x0b\x16"
+                b"\x21\x2c\x0a\x0b\x0c\x0d\x0e\x0f\x65\x66\x67\x68"
+            ],
             "_results": {
                 "error_message": "The 'oper' field value must be one of [1, 2], got 0.",
             },
         },
     ]
 )
-class TestArpParserSanityChecks(TestCase):
+class TestArpParserSanityChecks(TestCasePacketRx):
     """
     The ARP packet parser sanity checks tests.
     """
 
     _description: str
-    _args: dict[str, Any]
+    _args: list[Any]
     _results: dict[str, Any]
+
+    _packet_rx: PacketRx
 
     def test__arp__parser__from_bytes(self) -> None:
         """
         Ensure the ARP packet parser raises sanity errors on crazy packets.
         """
 
-        packet_rx = PacketRx(self._args["bytes"])
-
         with self.assertRaises(ArpSanityError) as error:
-            ArpParser(packet_rx)
+            ArpParser(self._packet_rx)
 
         self.assertEqual(
             str(error.exception),

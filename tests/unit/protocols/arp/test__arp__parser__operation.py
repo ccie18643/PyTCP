@@ -36,25 +36,23 @@ ver 3.0.2
 from typing import Any
 
 from parameterized import parameterized_class  # type: ignore
-from testslide import TestCase
 
 from pytcp.lib.net_addr import Ip4Address, MacAddress
 from pytcp.lib.packet import PacketRx
 from pytcp.protocols.arp.arp__enums import ArpOperation
 from pytcp.protocols.arp.arp__header import ArpHeader
 from pytcp.protocols.arp.arp__parser import ArpParser
+from tests.lib.testcase__packet_rx import TestCasePacketRx
 
 
 @parameterized_class(
     [
         {
             "_description": "ARP Request.",
-            "_args": {
-                "bytes": (
-                    b"\x00\x01\x08\x00\x06\x04\x00\x01\x01\x02\x03\x04\x05\x06\x0b\x16"
-                    b"\x21\x2c\x0a\x0b\x0c\x0d\x0e\x0f\x65\x66\x67\x68"
-                ),
-            },
+            "_args": [
+                b"\x00\x01\x08\x00\x06\x04\x00\x01\x01\x02\x03\x04\x05\x06\x0b\x16"
+                b"\x21\x2c\x0a\x0b\x0c\x0d\x0e\x0f\x65\x66\x67\x68"
+            ],
             "_results": {
                 "header": ArpHeader(
                     oper=ArpOperation.REQUEST,
@@ -67,12 +65,10 @@ from pytcp.protocols.arp.arp__parser import ArpParser
         },
         {
             "_description": "ARP Reply.",
-            "_args": {
-                "bytes": (
-                    b"\x00\x01\x08\x00\x06\x04\x00\x02\xa1\xb2\xc3\xd4\xe5\xf6\x05\x05"
-                    b"\x05\x05\x7a\x7b\x7c\x7d\x7e\x7f\x07\x07\x07\x07"
-                ),
-            },
+            "_args": [
+                b"\x00\x01\x08\x00\x06\x04\x00\x02\xa1\xb2\xc3\xd4\xe5\xf6\x05\x05"
+                b"\x05\x05\x7a\x7b\x7c\x7d\x7e\x7f\x07\x07\x07\x07"
+            ],
             "_results": {
                 "header": ArpHeader(
                     oper=ArpOperation.REPLY,
@@ -85,14 +81,16 @@ from pytcp.protocols.arp.arp__parser import ArpParser
         },
     ]
 )
-class TestArpHeaderParserOperation(TestCase):
+class TestArpHeaderParserOperation(TestCasePacketRx):
     """
     The ARP packet parser operation tests.
     """
 
     _description: str
-    _args: dict[str, Any]
+    _args: list[Any]
     _results: dict[str, Any]
+
+    _packet_rx: PacketRx
 
     def test__arp_parser__from_bytes(self) -> None:
         """
@@ -101,9 +99,7 @@ class TestArpHeaderParserOperation(TestCase):
         object fields.
         """
 
-        packet_rx = PacketRx(self._args["bytes"])
-
-        arp_parser = ArpParser(packet_rx)
+        arp_parser = ArpParser(self._packet_rx)
 
         self.assertEqual(
             arp_parser.header,
@@ -111,11 +107,11 @@ class TestArpHeaderParserOperation(TestCase):
         )
 
         self.assertIs(
-            packet_rx.arp,
+            self._packet_rx.arp,
             arp_parser,
         )
 
         self.assertEqual(
-            bytes(packet_rx.frame),
+            bytes(self._packet_rx.frame),
             b"",
         )

@@ -47,9 +47,7 @@ from tests.lib.testcase__packet_rx__ip6 import TestCasePacketRxIp6
     [
         {
             "_description": "The value of the 'ip6__hop' field must be 1. It's 64.",
-            "_args": {
-                "bytes": b"\x8f\x00\x70\xff\x00\x00\x00\x00",
-            },
+            "_args": [b"\x8f\x00\x70\xff\x00\x00\x00\x00"],
             "_mocked_values": {
                 "ip6__hop": 64,
             },
@@ -61,9 +59,7 @@ from tests.lib.testcase__packet_rx__ip6 import TestCasePacketRxIp6
         },
         {
             "_description": "The value of the 'ip6__hop' field must be 1. It's 1.",
-            "_args": {
-                "bytes": b"\x8f\x00\x70\xff\x00\x00\x00\x00",
-            },
+            "_args": [b"\x8f\x00\x70\xff\x00\x00\x00\x00"],
             "_mocked_values": {
                 "ip6__hop": 1,
             },
@@ -77,7 +73,7 @@ class TestIcmp4Mld2ReportParserSanityChecks(TestCasePacketRxIp6):
     """
 
     _description: str
-    _args: dict[str, Any]
+    _args: list[Any]
     _mocked_values: dict[str, Any]
     _results: dict[str, Any]
 

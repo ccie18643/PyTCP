@@ -36,11 +36,11 @@ ver 3.0.2
 from typing import Any
 
 from parameterized import parameterized_class  # type: ignore
-from testslide import TestCase
 
 from pytcp.lib.packet import PacketRx
 from pytcp.protocols.ethernet.ethernet__errors import EthernetSanityError
 from pytcp.protocols.ethernet.ethernet__parser import EthernetParser
+from tests.lib.testcase__packet_rx import TestCasePacketRx
 
 
 @parameterized_class(
@@ -49,9 +49,9 @@ from pytcp.protocols.ethernet.ethernet__parser import EthernetParser
             "_description": (
                 "The 'type' field value is lowere than the minimum allowed value."
             ),
-            "_args": {
-                "bytes": b"\xa1\xb2\xc3\xd4\xe5\xf6\x11\x12\x13\x14\x15\x16\x05\xff"
-            },
+            "_args": [
+                b"\xa1\xb2\xc3\xd4\xe5\xf6\x11\x12\x13\x14\x15\x16\x05\xff"
+            ],
             "_results": {
                 "error_message": (
                     "The minimum 'type' field value must be 0x0600, got 0x05ff."
@@ -60,24 +60,24 @@ from pytcp.protocols.ethernet.ethernet__parser import EthernetParser
         },
     ]
 )
-class TestEthernetParserSanityChecks(TestCase):
+class TestEthernetParserSanityChecks(TestCasePacketRx):
     """
     The Ethernet packet parser sanity checks tests.
     """
 
     _description: str
-    _args: dict[str, Any]
+    _args: list[Any]
     _results: dict[str, Any]
+
+    _packet_rx: PacketRx
 
     def test__ethernet__parser__from_bytes(self) -> None:
         """
         Ensure the Ethernet packet parser raises sanity errors on crazy packets.
         """
 
-        packet_rx = PacketRx(self._args["bytes"])
-
         with self.assertRaises(EthernetSanityError) as error:
-            EthernetParser(packet_rx)
+            EthernetParser(self._packet_rx)
 
         self.assertEqual(
             str(error.exception),

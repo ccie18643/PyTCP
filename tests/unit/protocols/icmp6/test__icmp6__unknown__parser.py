@@ -50,12 +50,10 @@ from tests.lib.testcase__packet_rx__ip6 import TestCasePacketRxIp6
     [
         {
             "_description": "ICMPv6 unknown message.",
-            "_args": {
-                "bytes": (
-                    b"\xff\xff\x31\x29\x30\x31\x32\x33\x34\x35\x36\x37\x38\x39\x41\x42"
-                    b"\x43\x44\x45\x46"
-                ),
-            },
+            "_args": [
+                b"\xff\xff\x31\x29\x30\x31\x32\x33\x34\x35\x36\x37\x38\x39\x41\x42"
+                b"\x43\x44\x45\x46"
+            ],
             "mocked_values": {},
             "_results": {
                 "message": Icmp6UnknownMessage(
@@ -74,7 +72,7 @@ class TestIcmp6UnknownParser(TestCasePacketRxIp6):
     """
 
     _description: str
-    _args: dict[str, Any]
+    _args: list[Any]
     _results: dict[str, Any]
 
     _packet_rx: PacketRx
