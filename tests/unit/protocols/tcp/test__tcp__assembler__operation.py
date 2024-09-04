@@ -49,7 +49,8 @@ from pytcp.protocols.tcp.tcp__header import TcpHeader
     [
         {
             "_description": "TCP packet with no payload and no options (I).",
-            "_args": {
+            "_args": [],
+            "_kwargs": {
                 "tcp__sport": 12345,
                 "tcp__dport": 54321,
                 "tcp__seq": 123456789,
@@ -127,7 +128,8 @@ from pytcp.protocols.tcp.tcp__header import TcpHeader
         },
         {
             "_description": "TCP packet with no payload and no options (II).",
-            "_args": {
+            "_args": [],
+            "_kwargs": {
                 "tcp__sport": 1111,
                 "tcp__dport": 2222,
                 "tcp__seq": 3333,
@@ -205,7 +207,8 @@ from pytcp.protocols.tcp.tcp__header import TcpHeader
         },
         {
             "_description": "TCP packet with no payload and options.",
-            "_args": {
+            "_args": [],
+            "_kwargs": {
                 "tcp__sport": 12345,
                 "tcp__dport": 54321,
                 "tcp__seq": 0,
@@ -288,7 +291,8 @@ from pytcp.protocols.tcp.tcp__header import TcpHeader
         },
         {
             "_description": "TCP packet with payload and options, no flags.",
-            "_args": {
+            "_args": [],
+            "_kwargs": {
                 "tcp__sport": 65535,
                 "tcp__dport": 65535,
                 "tcp__seq": 4294967295,
@@ -372,7 +376,8 @@ from pytcp.protocols.tcp.tcp__header import TcpHeader
         },
         {
             "_description": "TCP packet with maximum payload size and no options.",
-            "_args": {
+            "_args": [],
+            "_kwargs": {
                 "tcp__sport": 1111,
                 "tcp__dport": 2222,
                 "tcp__seq": 3333,
@@ -450,7 +455,8 @@ from pytcp.protocols.tcp.tcp__header import TcpHeader
         },
         {
             "_description": "TCP packet with maximum payload size and maximum options.",
-            "_args": {
+            "_args": [],
+            "_kwargs": {
                 "tcp__sport": 1111,
                 "tcp__dport": 3333,
                 "tcp__seq": 5555,
@@ -557,7 +563,8 @@ class TestTcpAssemblerOperation(TestCase):
     """
 
     _description: str
-    _args: dict[str, Any]
+    _args: list[Any]
+    _kwargs: dict[str, Any]
     _results: dict[str, Any]
 
     def setUp(self) -> None:
@@ -565,7 +572,7 @@ class TestTcpAssemblerOperation(TestCase):
         Initialize the TCP packet assembler object with testcase arguments.
         """
 
-        self._tcp__assembler = TcpAssembler(**self._args)
+        self._tcp__assembler = TcpAssembler(*self._args, **self._kwargs)
 
     def test__tcp__assembler__len(self) -> None:
         """

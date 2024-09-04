@@ -55,7 +55,8 @@ from pytcp.protocols.raw.raw__assembler import RawAssembler
     [
         {
             "_description": "Ethernet 802.3 packet (I).",
-            "_args": {
+            "_args": [],
+            "_kwargs": {
                 "ethernet_802_3__src": MacAddress("77:88:99:aa:bb:cc"),
                 "ethernet_802_3__dst": MacAddress("11:22:33:44:55:66"),
                 "ethernet_802_3__payload": RawAssembler(
@@ -90,7 +91,8 @@ from pytcp.protocols.raw.raw__assembler import RawAssembler
         },
         {
             "_description": "Ethernet 802.3 packet (II).",
-            "_args": {
+            "_args": [],
+            "_kwargs": {
                 "ethernet_802_3__dst": MacAddress("a1:b2:c3:d4:e5:f6"),
                 "ethernet_802_3__src": MacAddress("11:12:13:14:15:16"),
                 "ethernet_802_3__payload": RawAssembler(
@@ -135,7 +137,8 @@ class TestEthernet8023AssemblerOperation(TestCase):
     """
 
     _description: str
-    _args: dict[str, Any]
+    _args: list[Any]
+    _kwargs: dict[str, Any]
     _results: dict[str, Any]
 
     def setUp(self) -> None:
@@ -143,7 +146,9 @@ class TestEthernet8023AssemblerOperation(TestCase):
         Set up the test environment.
         """
 
-        self._ethernet_802_3__assembler = Ethernet8023Assembler(**self._args)
+        self._ethernet_802_3__assembler = Ethernet8023Assembler(
+            *self._args, **self._kwargs
+        )
 
     def test__ehternet_802_3__assembler__len(self) -> None:
         """

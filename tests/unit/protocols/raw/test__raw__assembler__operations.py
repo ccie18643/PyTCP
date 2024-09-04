@@ -46,7 +46,8 @@ from pytcp.protocols.raw.raw__assembler import RawAssembler
     [
         {
             "_description": "Raw packet with no payload.",
-            "_args": {
+            "_args": [],
+            "_kwargs": {
                 "raw__payload": b"",
             },
             "_results": {
@@ -65,7 +66,8 @@ class TestRawAssemblerOperation(TestCase):
     """
 
     _description: str
-    _args: dict[str, Any]
+    _args: list[Any]
+    _kwargs: dict[str, Any]
     _results: dict[str, Any]
 
     def setUp(self) -> None:
@@ -73,7 +75,7 @@ class TestRawAssemblerOperation(TestCase):
         Initialize the Raw packet assembler object with testcase arguments.
         """
 
-        self._raw__assembler = RawAssembler(**self._args)
+        self._raw__assembler = RawAssembler(*self._args, **self._kwargs)
 
     def test__raw__assembler__len(self) -> None:
         """

@@ -50,7 +50,8 @@ from pytcp.protocols.raw.raw__assembler import RawAssembler
     [
         {
             "_description": "The IPv4 packet (I).",
-            "_args": {
+            "_args": [],
+            "_kwargs": {
                 "ip4__src": Ip4Address("10.20.30.40"),
                 "ip4__dst": Ip4Address("50.60.70.80"),
                 "ip4__ttl": 255,
@@ -112,7 +113,8 @@ from pytcp.protocols.raw.raw__assembler import RawAssembler
         },
         {
             "_description": "The IPv4 packet (II).",
-            "_args": {
+            "_args": [],
+            "_kwargs": {
                 "ip4__src": Ip4Address("1.2.3.4"),
                 "ip4__dst": Ip4Address("5.6.7.8"),
                 "ip4__ttl": 255,
@@ -174,7 +176,8 @@ from pytcp.protocols.raw.raw__assembler import RawAssembler
         },
         {
             "_description": "The IPv4 packet (III).",
-            "_args": {
+            "_args": [],
+            "_kwargs": {
                 "ip4__src": Ip4Address("1.1.1.1"),
                 "ip4__dst": Ip4Address("2.2.2.2"),
                 "ip4__ttl": 64,
@@ -261,7 +264,8 @@ class TestIp4AssemblerOperation(TestCase):
     """
 
     _description: str
-    _args: dict[str, Any]
+    _args: list[Any]
+    _kwargs: dict[str, Any]
     _results: dict[str, Any]
 
     def setUp(self) -> None:
@@ -269,7 +273,7 @@ class TestIp4AssemblerOperation(TestCase):
         Initialize the IPv4 packet assembler object with testcase arguments.
         """
 
-        self._ip4__assembler = Ip4Assembler(**self._args)
+        self._ip4__assembler = Ip4Assembler(*self._args, **self._kwargs)
 
     def test__ip4__assembler__len(self) -> None:
         """
@@ -508,7 +512,7 @@ class TestIp4AssemblerOperation(TestCase):
     [
         {
             "_description": "The IPv4 (Frag) packet (IV).",
-            "_args": {
+            "_kwargs": {
                 "ip4_frag__src": Ip4Address("4.3.2.1"),
                 "ip4_frag__dst": Ip4Address("8.7.6.5"),
                 "ip4_frag__ttl": 128,
@@ -579,7 +583,7 @@ class TestIp4AssemblerOperation(TestCase):
         },
         {
             "_description": "The IPv4 (Frag) packet (V).",
-            "_args": {
+            "_kwargs": {
                 "ip4_frag__src": Ip4Address("1.2.3.4"),
                 "ip4_frag__dst": Ip4Address("5.6.7.8"),
                 "ip4_frag__ttl": 255,
@@ -652,7 +656,7 @@ class TestIp4FragAssemblerOperation(TestCase):
     """
 
     _description: str
-    _args: dict[str, Any]
+    _kwargs: dict[str, Any]
     _results: dict[str, Any]
 
     def setUp(self) -> None:
@@ -660,7 +664,7 @@ class TestIp4FragAssemblerOperation(TestCase):
         Initialize the IPv4 (Frag) packet assembler object with testcase arguments.
         """
 
-        self._ip4_frag__assembler = Ip4FragAssembler(**self._args)
+        self._ip4_frag__assembler = Ip4FragAssembler(**self._kwargs)
 
     def test__ip4_frag__assembler__len(self) -> None:
         """

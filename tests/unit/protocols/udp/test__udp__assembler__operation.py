@@ -47,7 +47,8 @@ from pytcp.protocols.udp.udp__header import UdpHeader
     [
         {
             "_description": "UDP packet with the empty payload.",
-            "_args": {
+            "_args": [],
+            "_kwargs": {
                 "udp__sport": 65535,
                 "udp__dport": 65535,
                 "udp__payload": b"",
@@ -75,7 +76,8 @@ from pytcp.protocols.udp.udp__header import UdpHeader
         },
         {
             "_description": "UDP packet with the non-empty payload.",
-            "_args": {
+            "_args": [],
+            "_kwargs": {
                 "udp__sport": 12345,
                 "udp__dport": 54321,
                 "udp__payload": b"0123456789ABCDEF",
@@ -106,7 +108,8 @@ from pytcp.protocols.udp.udp__header import UdpHeader
         },
         {
             "_description": "UDP packet with the maximum length payload.",
-            "_args": {
+            "_args": [],
+            "_kwargs": {
                 "udp__sport": 11111,
                 "udp__dport": 22222,
                 "udp__payload": b"X" * 65527,
@@ -140,7 +143,8 @@ class TestUdpAssemblerOperation(TestCase):
     """
 
     _description: str
-    _args: dict[str, Any]
+    _args: list[Any]
+    _kwargs: dict[str, Any]
     _results: dict[str, Any]
 
     def setUp(self) -> None:
@@ -148,7 +152,7 @@ class TestUdpAssemblerOperation(TestCase):
         Initialize the UDP packet assembler object with testcase arguments.
         """
 
-        self._udp__assembler = UdpAssembler(**self._args)
+        self._udp__assembler = UdpAssembler(*self._args, **self._kwargs)
 
     def test__udp__assembler__len(self) -> None:
         """

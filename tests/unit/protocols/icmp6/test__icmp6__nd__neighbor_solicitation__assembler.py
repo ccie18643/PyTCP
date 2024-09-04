@@ -57,7 +57,8 @@ from pytcp.protocols.icmp6.message.nd.option.icmp6_nd_options import (
     [
         {
             "_description": "ICMPv6 ND Neighbor Solicitation message, no options.",
-            "_args": {
+            "_args": [],
+            "_kwargs": {
                 "target_address": Ip6Address("2001:db8::1"),
                 "options": Icmp6NdOptions(),
             },
@@ -85,7 +86,8 @@ from pytcp.protocols.icmp6.message.nd.option.icmp6_nd_options import (
         },
         {
             "_description": "ICMPv6 ND Neighbor Solicitation message, Slla option present.",
-            "_args": {
+            "_args": [],
+            "_kwargs": {
                 "target_address": Ip6Address("2001:db8::2"),
                 "options": Icmp6NdOptions(
                     Icmp6NdOptionSlla(slla=MacAddress("00:11:22:33:44:55"))
@@ -124,7 +126,8 @@ class TestIcmp6NdNeighborSolicitationAssembler(TestCase):
     """
 
     _description: str
-    _args: dict[str, Any]
+    _args: list[Any]
+    _kwargs: dict[str, Any]
     _results: dict[str, Any]
 
     def setUp(self) -> None:
@@ -133,7 +136,9 @@ class TestIcmp6NdNeighborSolicitationAssembler(TestCase):
         """
 
         self._icmp6__assembler = Icmp6Assembler(
-            icmp6__message=Icmp6NdNeighborSolicitationMessage(**self._args)
+            icmp6__message=Icmp6NdNeighborSolicitationMessage(
+                *self._args, **self._kwargs
+            )
         )
 
     def test__icmp6__nd__neighbor_solicitation__assembler__len(

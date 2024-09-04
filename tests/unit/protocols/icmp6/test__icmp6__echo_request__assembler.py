@@ -50,7 +50,8 @@ from pytcp.protocols.icmp6.message.icmp6_message__echo_request import (
     [
         {
             "_description": "ICMPv6 Echo Request message, empty data.",
-            "_args": {
+            "_args": [],
+            "_kwargs": {
                 "id": 12345,
                 "seq": 54321,
                 "data": b"",
@@ -73,7 +74,8 @@ from pytcp.protocols.icmp6.message.icmp6_message__echo_request import (
         },
         {
             "_description": "ICMPv6 Echo Request message, non-empty data.",
-            "_args": {
+            "_args": [],
+            "_kwargs": {
                 "id": 12345,
                 "seq": 54321,
                 "data": b"0123456789ABCDEF",
@@ -99,7 +101,8 @@ from pytcp.protocols.icmp6.message.icmp6_message__echo_request import (
         },
         {
             "_description": "ICMPv6 Echo Request packet, maximum length of data.",
-            "_args": {
+            "_args": [],
+            "_kwargs": {
                 "id": 11111,
                 "seq": 22222,
                 "data": b"X" * 65527,
@@ -128,7 +131,8 @@ class TestIcmp6EchoRequestAssembler(TestCase):
     """
 
     _description: str
-    _args: dict[str, Any]
+    _args: list[Any]
+    _kwargs: dict[str, Any]
     _results: dict[str, Any]
 
     def setUp(self) -> None:
@@ -138,7 +142,7 @@ class TestIcmp6EchoRequestAssembler(TestCase):
         """
 
         self._icmp6__assembler = Icmp6Assembler(
-            icmp6__message=Icmp6EchoRequestMessage(**self._args)
+            icmp6__message=Icmp6EchoRequestMessage(*self._args, **self._kwargs)
         )
 
     def test__icmp6__echo_request__assembler__len(self) -> None:

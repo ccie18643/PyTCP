@@ -55,7 +55,8 @@ from pytcp.protocols.arp.arp__header import ArpHeader
     [
         {
             "_description": "ARP Request.",
-            "_args": {
+            "_args": [],
+            "_kwargs": {
                 "arp__oper": ArpOperation.REQUEST,
                 "arp__sha": MacAddress("01:02:03:04:05:06"),
                 "arp__spa": Ip4Address("11.22.33.44"),
@@ -98,7 +99,8 @@ from pytcp.protocols.arp.arp__header import ArpHeader
         },
         {
             "_description": "ARP Reply.",
-            "_args": {
+            "_args": [],
+            "_kwargs": {
                 "arp__oper": ArpOperation.REPLY,
                 "arp__sha": MacAddress("a1:b2:c3:d4:e5:f6"),
                 "arp__spa": Ip4Address("5.5.5.5"),
@@ -147,7 +149,8 @@ class TestArpAssemblerPackets(TestCase):
     """
 
     _description: str
-    _args: dict[str, Any]
+    _args: list[Any]
+    _kwargs: dict[str, Any]
     _results: dict[str, Any]
 
     def setUp(self) -> None:
@@ -155,7 +158,7 @@ class TestArpAssemblerPackets(TestCase):
         Initialize the ARP packet assembler object with testcase arguments.
         """
 
-        self._arp__assembler = ArpAssembler(**self._args)
+        self._arp__assembler = ArpAssembler(*self._args, **self._kwargs)
 
     def test__arp__assembler__len(self) -> None:
         """

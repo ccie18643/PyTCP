@@ -58,7 +58,8 @@ from pytcp.protocols.icmp6.message.nd.option.icmp6_nd_options import (
     [
         {
             "_description": "ICMPv6 ND Neighbor Advertisement message, no options.",
-            "_args": {
+            "_args": [],
+            "_kwargs": {
                 "flag_r": True,
                 "flag_s": False,
                 "flag_o": True,
@@ -92,7 +93,8 @@ from pytcp.protocols.icmp6.message.nd.option.icmp6_nd_options import (
         },
         {
             "_description": "ICMPv6 ND Neighbor Advertisement message, Slla option present.",
-            "_args": {
+            "_args": [],
+            "_kwargs": {
                 "flag_r": False,
                 "flag_s": True,
                 "flag_o": False,
@@ -137,7 +139,8 @@ class TestIcmp6NdNeighborAdvertisementAssembler(TestCase):
     """
 
     _description: str
-    _args: dict[str, Any]
+    _args: list[Any]
+    _kwargs: dict[str, Any]
     _results: dict[str, Any]
 
     def setUp(self) -> None:
@@ -146,7 +149,9 @@ class TestIcmp6NdNeighborAdvertisementAssembler(TestCase):
         """
 
         self._icmp6__assembler = Icmp6Assembler(
-            icmp6__message=Icmp6NdNeighborAdvertisementMessage(**self._args)
+            icmp6__message=Icmp6NdNeighborAdvertisementMessage(
+                *self._args, **self._kwargs
+            )
         )
 
     def test__icmp6__nd__neighbor_advertisement__assembler__len(

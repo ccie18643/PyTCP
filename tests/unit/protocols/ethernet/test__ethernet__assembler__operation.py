@@ -49,7 +49,8 @@ from pytcp.protocols.raw.raw__assembler import RawAssembler
     [
         {
             "_description": "Ethernet packet with Raw payload (I).",
-            "_args": {
+            "_args": [],
+            "_kwargs": {
                 "ethernet__src": MacAddress("77:88:99:aa:bb:cc"),
                 "ethernet__dst": MacAddress("11:22:33:44:55:66"),
                 "ethernet__payload": RawAssembler(
@@ -83,7 +84,8 @@ from pytcp.protocols.raw.raw__assembler import RawAssembler
         },
         {
             "_description": "Ethernet packet with Raw payload (II).",
-            "_args": {
+            "_args": [],
+            "_kwargs": {
                 "ethernet__dst": MacAddress("a1:b2:c3:d4:e5:f6"),
                 "ethernet__src": MacAddress("11:12:13:14:15:16"),
                 "ethernet__payload": RawAssembler(raw__payload=b"X" * 1500),
@@ -121,7 +123,8 @@ class TestEthernetAssemblerOperation(TestCase):
     """
 
     _description: str
-    _args: dict[str, Any]
+    _args: list[Any]
+    _kwargs: dict[str, Any]
     _results: dict[str, Any]
 
     def setUp(self) -> None:
@@ -129,7 +132,9 @@ class TestEthernetAssemblerOperation(TestCase):
         Initialize the Ethernet packet assembler object with testcase arguments.
         """
 
-        self._ethernet__assembler = EthernetAssembler(**self._args)
+        self._ethernet__assembler = EthernetAssembler(
+            *self._args, **self._kwargs
+        )
 
     def test__ehternet__assembler__len(self) -> None:
         """

@@ -49,7 +49,8 @@ from pytcp.protocols.ip6_ext_frag.ip6_ext_frag__header import Ip6ExtFragHeader
     [
         {
             "_description": "IPv6 Ext Frag packet (I).",
-            "_args": {
+            "_args": [],
+            "_kwargs": {
                 "ip6_ext_frag__next": Ip6Next.RAW,
                 "ip6_ext_frag__offset": 0,
                 "ip6_ext_frag__flag_mf": False,
@@ -81,7 +82,8 @@ from pytcp.protocols.ip6_ext_frag.ip6_ext_frag__header import Ip6ExtFragHeader
         },
         {
             "_description": "IPv6 Ext Frag packet (II).",
-            "_args": {
+            "_args": [],
+            "_kwargs": {
                 "ip6_ext_frag__next": Ip6Next.RAW,
                 "ip6_ext_frag__offset": 3208,
                 "ip6_ext_frag__flag_mf": True,
@@ -116,7 +118,8 @@ from pytcp.protocols.ip6_ext_frag.ip6_ext_frag__header import Ip6ExtFragHeader
         },
         {
             "_description": "IPv6 Ext Frag packet (III).",
-            "_args": {
+            "_args": [],
+            "_kwargs": {
                 "ip6_ext_frag__next": Ip6Next.RAW,
                 "ip6_ext_frag__offset": 65528,
                 "ip6_ext_frag__flag_mf": False,
@@ -154,7 +157,8 @@ class TestIp6ExtFragAssemblerOperation(TestCase):
     """
 
     _description: str
-    _args: dict[str, Any]
+    _args: list[Any]
+    _kwargs: dict[str, Any]
     _results: dict[str, Any]
 
     def setUp(self) -> None:
@@ -163,7 +167,9 @@ class TestIp6ExtFragAssemblerOperation(TestCase):
         arguments.
         """
 
-        self._ip6_ext_frag__assembler = Ip6ExtFragAssembler(**self._args)
+        self._ip6_ext_frag__assembler = Ip6ExtFragAssembler(
+            *self._args, **self._kwargs
+        )
 
     def test__ip6_ext_frag__assembler__len(self) -> None:
         """

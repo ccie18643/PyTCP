@@ -48,7 +48,8 @@ from pytcp.protocols.raw.raw__assembler import RawAssembler
     [
         {
             "_description": "IPv6 packet (I).",
-            "_args": {
+            "_args": [],
+            "_kwargs": {
                 "ip6__src": Ip6Address(
                     "1001:2002:3003:4004:5005:6006:7007:8008"
                 ),
@@ -103,7 +104,8 @@ from pytcp.protocols.raw.raw__assembler import RawAssembler
         },
         {
             "_description": "IPv6 packet (II).",
-            "_args": {
+            "_args": [],
+            "_kwargs": {
                 "ip6__src": Ip6Address(
                     "1111:2222:3333:4444:5555:6666:7777:8888"
                 ),
@@ -159,7 +161,8 @@ from pytcp.protocols.raw.raw__assembler import RawAssembler
         },
         {
             "_description": "IPv6 packet (III).",
-            "_args": {
+            "_args": [],
+            "_kwargs": {
                 "ip6__src": Ip6Address(
                     "1111:2222:3333:4444:5555:6666:7777:8888"
                 ),
@@ -220,7 +223,8 @@ class TestIp6AssemblerOperation(TestCase):
     """
 
     _description: str
-    _args: dict[str, Any]
+    _args: list[Any]
+    _kwargs: dict[str, Any]
     _results: dict[str, Any]
 
     def setUp(self) -> None:
@@ -228,7 +232,7 @@ class TestIp6AssemblerOperation(TestCase):
         Initialize the IPv6 packet assembler object with testcase arguments.
         """
 
-        self._ip6__assembler = Ip6Assembler(**self._args)
+        self._ip6__assembler = Ip6Assembler(*self._args, **self._kwargs)
 
     def test__ip6__assembler__len(self) -> None:
         """

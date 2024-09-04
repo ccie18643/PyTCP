@@ -50,7 +50,8 @@ from pytcp.protocols.icmp4.message.icmp4_message__unknown import (
     [
         {
             "_description": "ICMPv4 unknown message.",
-            "_args": {
+            "_args": [],
+            "_kwargs": {
                 "type": Icmp4Type.from_int(255),
                 "code": Icmp4Code.from_int(255),
                 "raw": b"0123456789ABCDEF",
@@ -84,7 +85,8 @@ class TestIcmp4UnknownAssembler(TestCase):
     """
 
     _description: str
-    _args: dict[str, Any]
+    _args: list[Any]
+    _kwargs: dict[str, Any]
     _results: dict[str, Any]
 
     def setUp(self) -> None:
@@ -94,7 +96,7 @@ class TestIcmp4UnknownAssembler(TestCase):
         """
 
         self._icmp4__assembler = Icmp4Assembler(
-            icmp4__message=Icmp4UnknownMessage(**self._args)
+            icmp4__message=Icmp4UnknownMessage(*self._args, **self._kwargs)
         )
 
     def test__icmp4__unknown__assembler__len(self) -> None:

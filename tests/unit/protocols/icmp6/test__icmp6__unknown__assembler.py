@@ -49,7 +49,8 @@ from pytcp.protocols.icmp6.message.icmp6_message__unknown import (
     [
         {
             "_description": "ICMPv6 unknown message.",
-            "_args": {
+            "_args": [],
+            "_kwargs": {
                 "type": Icmp6Type.from_int(255),
                 "code": Icmp6Code.from_int(255),
                 "raw": b"0123456789ABCDEF",
@@ -83,7 +84,8 @@ class TestIcmp6UnknownAssembler(TestCase):
     """
 
     _description: str
-    _args: dict[str, Any]
+    _args: list[Any]
+    _kwargs: dict[str, Any]
     _results: dict[str, Any]
 
     def setUp(self) -> None:
@@ -93,7 +95,7 @@ class TestIcmp6UnknownAssembler(TestCase):
         """
 
         self._icmp6__assembler = Icmp6Assembler(
-            icmp6__message=Icmp6UnknownMessage(**self._args)
+            icmp6__message=Icmp6UnknownMessage(*self._args, **self._kwargs)
         )
 
     def test__icmp6__unknown__assembler__len(self) -> None:

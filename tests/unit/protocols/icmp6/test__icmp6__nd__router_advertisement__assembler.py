@@ -60,7 +60,8 @@ from pytcp.protocols.icmp6.message.nd.option.icmp6_nd_options import (
     [
         {
             "_description": "ICMPv6 ND Router Advertisement message, no options.",
-            "_args": {
+            "_args": [],
+            "_kwargs": {
                 "hop": 255,
                 "flag_m": True,
                 "flag_o": True,
@@ -97,7 +98,8 @@ from pytcp.protocols.icmp6.message.nd.option.icmp6_nd_options import (
         },
         {
             "_description": "ICMPv6 ND Router Advertisement message, Slla option present.",
-            "_args": {
+            "_args": [],
+            "_kwargs": {
                 "hop": 64,
                 "flag_m": False,
                 "flag_o": False,
@@ -140,7 +142,8 @@ from pytcp.protocols.icmp6.message.nd.option.icmp6_nd_options import (
         },
         {
             "_description": "ICMPv6 ND Router Advertisement message, Slla & Pi options present.",
-            "_args": {
+            "_args": [],
+            "_kwargs": {
                 "hop": 22,
                 "flag_m": True,
                 "flag_o": False,
@@ -211,7 +214,8 @@ class TestIcmp6NdRouterAdvertisementAssembler(TestCase):
     """
 
     _description: str
-    _args: dict[str, Any]
+    _args: list[Any]
+    _kwargs: dict[str, Any]
     _results: dict[str, Any]
 
     def setUp(self) -> None:
@@ -220,7 +224,9 @@ class TestIcmp6NdRouterAdvertisementAssembler(TestCase):
         """
 
         self._icmp6__assembler = Icmp6Assembler(
-            icmp6__message=Icmp6NdRouterAdvertisementMessage(**self._args)
+            icmp6__message=Icmp6NdRouterAdvertisementMessage(
+                *self._args, **self._kwargs
+            )
         )
 
     def test__icmp6__nd__router_advertisement__assembler__len(

@@ -51,7 +51,8 @@ from pytcp.protocols.icmp6.message.mld2.icmp6_mld2__multicast_address_record imp
             "_description": (
                 "ICMPv6 MLDv2 Multicast Address Record (Mode Is Include)."
             ),
-            "_args": {
+            "_args": [],
+            "_kwargs": {
                 "type": Icmp6Mld2MulticastAddressRecordType.MODE_IS_INCLUDE,
                 "multicast_address": Ip6Address("ff02::1"),
             },
@@ -79,7 +80,8 @@ from pytcp.protocols.icmp6.message.mld2.icmp6_mld2__multicast_address_record imp
             "_description": (
                 "ICMPv6 MLDv2 Multicast Address Record (Mode Is Exclude)."
             ),
-            "_args": {
+            "_args": [],
+            "_kwargs": {
                 "type": Icmp6Mld2MulticastAddressRecordType.MODE_IS_EXCLUDE,
                 "multicast_address": Ip6Address("ff02::1"),
             },
@@ -107,7 +109,8 @@ from pytcp.protocols.icmp6.message.mld2.icmp6_mld2__multicast_address_record imp
             "_description": (
                 "ICMPv6 MLDv2 Multicast Address Record (Change To Include)."
             ),
-            "_args": {
+            "_args": [],
+            "_kwargs": {
                 "type": Icmp6Mld2MulticastAddressRecordType.CHANGE_TO_INCLUDE,
                 "multicast_address": Ip6Address("ff02::1"),
             },
@@ -135,7 +138,8 @@ from pytcp.protocols.icmp6.message.mld2.icmp6_mld2__multicast_address_record imp
             "_description": (
                 "ICMPv6 MLDv2 Multicast Address Record (Change To Exclude)."
             ),
-            "_args": {
+            "_args": [],
+            "_kwargs": {
                 "type": Icmp6Mld2MulticastAddressRecordType.CHANGE_TO_EXCLUDE,
                 "multicast_address": Ip6Address("ff02::1"),
             },
@@ -163,7 +167,8 @@ from pytcp.protocols.icmp6.message.mld2.icmp6_mld2__multicast_address_record imp
             "_description": (
                 "ICMPv6 MLDv2 Multicast Address Record (Allow New Sources)."
             ),
-            "_args": {
+            "_args": [],
+            "_kwargs": {
                 "type": Icmp6Mld2MulticastAddressRecordType.ALLOW_NEW_SOURCES,
                 "multicast_address": Ip6Address("ff02::1"),
             },
@@ -191,7 +196,8 @@ from pytcp.protocols.icmp6.message.mld2.icmp6_mld2__multicast_address_record imp
             "_description": (
                 "ICMPv6 MLDv2 Multicast Address Record (Block Old Sources)."
             ),
-            "_args": {
+            "_args": [],
+            "_kwargs": {
                 "type": Icmp6Mld2MulticastAddressRecordType.BLOCK_OLD_SOURCES,
                 "multicast_address": Ip6Address("ff02::1"),
             },
@@ -219,7 +225,8 @@ from pytcp.protocols.icmp6.message.mld2.icmp6_mld2__multicast_address_record imp
             "_description": (
                 "ICMPv6 MLDv2 Multicast Address Record, multiple sources, no aux data."
             ),
-            "_args": {
+            "_args": [],
+            "_kwargs": {
                 "type": Icmp6Mld2MulticastAddressRecordType.MODE_IS_INCLUDE,
                 "multicast_address": Ip6Address("ff02::1"),
                 "source_addresses": [
@@ -263,7 +270,8 @@ from pytcp.protocols.icmp6.message.mld2.icmp6_mld2__multicast_address_record imp
             "_description": (
                 "ICMPv6 MLDv2 Multicast Address Record, no sources, aux data."
             ),
-            "_args": {
+            "_args": [],
+            "_kwargs": {
                 "type": Icmp6Mld2MulticastAddressRecordType.MODE_IS_INCLUDE,
                 "multicast_address": Ip6Address("ff02::1"),
                 "aux_data": b"0123456789ABCDEF",
@@ -295,7 +303,8 @@ from pytcp.protocols.icmp6.message.mld2.icmp6_mld2__multicast_address_record imp
             "_description": (
                 "ICMPv6 MLDv2 Multicast Address Record, multiple sources, aux data."
             ),
-            "_args": {
+            "_args": [],
+            "_kwargs": {
                 "type": Icmp6Mld2MulticastAddressRecordType.MODE_IS_INCLUDE,
                 "multicast_address": Ip6Address("ff02::1"),
                 "source_addresses": [
@@ -345,7 +354,8 @@ class TestIcmp6Mld2MulticastAddressRecordAssembler(TestCase):
     """
 
     _description: str
-    _args: dict[str, Any]
+    _args: list[Any]
+    _kwargs: dict[str, Any]
     _results: dict[str, Any]
 
     def setUp(self) -> None:
@@ -355,7 +365,7 @@ class TestIcmp6Mld2MulticastAddressRecordAssembler(TestCase):
         """
 
         self._icmp6__mld2__multicast_address_record = (
-            Icmp6Mld2MulticastAddressRecord(**self._args)
+            Icmp6Mld2MulticastAddressRecord(*self._args, **self._kwargs)
         )
 
     def test__icmp6__mld2__multicast_address_record__assembler__len(

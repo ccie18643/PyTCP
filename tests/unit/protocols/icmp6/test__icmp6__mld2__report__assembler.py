@@ -55,7 +55,8 @@ from pytcp.protocols.icmp6.message.mld2.icmp6_mld2_message__report import (
     [
         {
             "_description": "ICMPv6 MLDv2 Report message, no records.",
-            "_args": {
+            "_args": [],
+            "_kwargs": {
                 "records": [],
             },
             "_results": {
@@ -75,7 +76,8 @@ from pytcp.protocols.icmp6.message.mld2.icmp6_mld2_message__report import (
         },
         {
             "_description": ("ICMPv6 MLDv2 Report message, single record."),
-            "_args": {
+            "_args": [],
+            "_kwargs": {
                 "records": [
                     Icmp6Mld2MulticastAddressRecord(
                         type=Icmp6Mld2MulticastAddressRecordType.MODE_IS_INCLUDE,
@@ -126,7 +128,8 @@ from pytcp.protocols.icmp6.message.mld2.icmp6_mld2_message__report import (
         },
         {
             "_description": "ICMPv6 MLDv2 Report message, multiple records.",
-            "_args": {
+            "_args": [],
+            "_kwargs": {
                 "records": [
                     Icmp6Mld2MulticastAddressRecord(
                         type=Icmp6Mld2MulticastAddressRecordType.MODE_IS_INCLUDE,
@@ -271,7 +274,8 @@ class TestIcmp6Mld2ReportAssembler(TestCase):
     """
 
     _description: str
-    _args: dict[str, Any]
+    _args: list[Any]
+    _kwargs: dict[str, Any]
     _results: dict[str, Any]
 
     def setUp(self) -> None:
@@ -280,7 +284,7 @@ class TestIcmp6Mld2ReportAssembler(TestCase):
         """
 
         self._icmp6__assembler = Icmp6Assembler(
-            icmp6__message=Icmp6Mld2ReportMessage(**self._args)
+            icmp6__message=Icmp6Mld2ReportMessage(*self._args, **self._kwargs)
         )
 
     def test__icmp6__mld2__report__assembler__len(self) -> None:
