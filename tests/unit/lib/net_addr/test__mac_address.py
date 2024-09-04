@@ -46,6 +46,7 @@ from pytcp.lib.net_addr import MacAddress, MacAddressFormatError
         {
             "_description": "Test the MAC address: 00:00:00:00:00:00 (str)",
             "_args": ["00:00:00:00:00:00"],
+            "_kwargs": {},
             "_results": {
                 "__str__": "00:00:00:00:00:00",
                 "__repr__": "MacAddress('00:00:00:00:00:00')",
@@ -64,6 +65,7 @@ from pytcp.lib.net_addr import MacAddress, MacAddressFormatError
         {
             "_description": "Test the MAC address: 00:00:00:00:00:00 (None)",
             "_args": [None],
+            "_kwargs": {},
             "_results": {
                 "__str__": "00:00:00:00:00:00",
                 "__repr__": "MacAddress('00:00:00:00:00:00')",
@@ -82,6 +84,7 @@ from pytcp.lib.net_addr import MacAddress, MacAddressFormatError
         {
             "_description": "Test the MAC address: 02:03:04:aa:bb:cc (str)",
             "_args": ["02:03:04:aa:bb:cc"],
+            "_kwargs": {},
             "_results": {
                 "__str__": "02:03:04:aa:bb:cc",
                 "__repr__": "MacAddress('02:03:04:aa:bb:cc')",
@@ -100,6 +103,7 @@ from pytcp.lib.net_addr import MacAddress, MacAddressFormatError
         {
             "_description": "Test the MAC address: 02:03:04:aa:bb:cc (str uppercase)",
             "_args": ["02:03:04:AA:BB:CC"],
+            "_kwargs": {},
             "_results": {
                 "__str__": "02:03:04:aa:bb:cc",
                 "__repr__": "MacAddress('02:03:04:aa:bb:cc')",
@@ -118,6 +122,7 @@ from pytcp.lib.net_addr import MacAddress, MacAddressFormatError
         {
             "_description": "Test the MAC address: 02:03:04:aa:bb:cc (bytes)",
             "_args": [b"\x02\x03\x04\xaa\xbb\xcc"],
+            "_kwargs": {},
             "_results": {
                 "__str__": "02:03:04:aa:bb:cc",
                 "__repr__": "MacAddress('02:03:04:aa:bb:cc')",
@@ -136,6 +141,7 @@ from pytcp.lib.net_addr import MacAddress, MacAddressFormatError
         {
             "_description": "Test the MAC address: 02:03:04:aa:bb:cc (bytearray)",
             "_args": [bytearray(b"\x02\x03\x04\xaa\xbb\xcc")],
+            "_kwargs": {},
             "_results": {
                 "__str__": "02:03:04:aa:bb:cc",
                 "__repr__": "MacAddress('02:03:04:aa:bb:cc')",
@@ -154,6 +160,7 @@ from pytcp.lib.net_addr import MacAddress, MacAddressFormatError
         {
             "_description": "Test the MAC address: 02:03:04:aa:bb:cc (memoryview)",
             "_args": [memoryview(b"\x02\x03\x04\xaa\xbb\xcc")],
+            "_kwargs": {},
             "_results": {
                 "__str__": "02:03:04:aa:bb:cc",
                 "__repr__": "MacAddress('02:03:04:aa:bb:cc')",
@@ -172,6 +179,7 @@ from pytcp.lib.net_addr import MacAddress, MacAddressFormatError
         {
             "_description": "Test the MAC address: 02:03:04:aa:bb:cc (MacAddress)",
             "_args": [MacAddress("02:03:04:aa:bb:cc")],
+            "_kwargs": {},
             "_results": {
                 "__str__": "02:03:04:aa:bb:cc",
                 "__repr__": "MacAddress('02:03:04:aa:bb:cc')",
@@ -190,6 +198,7 @@ from pytcp.lib.net_addr import MacAddress, MacAddressFormatError
         {
             "_description": "Test the MAC address: 02:03:04:aa:bb:cc (int)",
             "_args": [2211986455500],
+            "_kwargs": {},
             "_results": {
                 "__str__": "02:03:04:aa:bb:cc",
                 "__repr__": "MacAddress('02:03:04:aa:bb:cc')",
@@ -208,6 +217,7 @@ from pytcp.lib.net_addr import MacAddress, MacAddressFormatError
         {
             "_description": "Test the MAC address: 01:00:5e:01:02:03 (str)",
             "_args": ["01:00:5e:01:02:03"],
+            "_kwargs": {},
             "_results": {
                 "__str__": "01:00:5e:01:02:03",
                 "__repr__": "MacAddress('01:00:5e:01:02:03')",
@@ -226,6 +236,7 @@ from pytcp.lib.net_addr import MacAddress, MacAddressFormatError
         {
             "_description": "Test the MAC address: 33:33:00:01:02:03 (str)",
             "_args": ["33:33:00:01:02:03"],
+            "_kwargs": {},
             "_results": {
                 "__str__": "33:33:00:01:02:03",
                 "__repr__": "MacAddress('33:33:00:01:02:03')",
@@ -244,6 +255,7 @@ from pytcp.lib.net_addr import MacAddress, MacAddressFormatError
         {
             "_description": "Test the MAC address: 33:33:00:01:02:03 (str)",
             "_args": ["33:33:00:01:02:03"],
+            "_kwargs": {},
             "_results": {
                 "__str__": "33:33:00:01:02:03",
                 "__repr__": "MacAddress('33:33:00:01:02:03')",
@@ -262,6 +274,7 @@ from pytcp.lib.net_addr import MacAddress, MacAddressFormatError
         {
             "_description": "Test the MAC address: 33:33:ff:01:02:03 (str)",
             "_args": ["33:33:ff:01:02:03"],
+            "_kwargs": {},
             "_results": {
                 "__str__": "33:33:ff:01:02:03",
                 "__repr__": "MacAddress('33:33:ff:01:02:03')",
@@ -280,6 +293,7 @@ from pytcp.lib.net_addr import MacAddress, MacAddressFormatError
         {
             "_description": "Test the MAC address: ff:ff:ff:ff:ff:ff (str)",
             "_args": ["ff:ff:ff:ff:ff:ff"],
+            "_kwargs": {},
             "_results": {
                 "__str__": "ff:ff:ff:ff:ff:ff",
                 "__repr__": "MacAddress('ff:ff:ff:ff:ff:ff')",
@@ -304,6 +318,7 @@ class TestNetAddrMacAddress(TestCase):
 
     _description: str
     _args: dict[str, Any]
+    _kwargs: dict[str, Any]
     _results: dict[str, Any]
 
     def setUp(self) -> None:
@@ -311,7 +326,7 @@ class TestNetAddrMacAddress(TestCase):
         Initialize the MAC address object with testcase arguments.
         """
 
-        self._mac_address = MacAddress(*self._args)
+        self._mac_address = MacAddress(*self._args, **self._kwargs)
 
     def test__net_addr__mac_address__str(self) -> None:
         """
@@ -466,6 +481,7 @@ class TestNetAddrMacAddress(TestCase):
         {
             "_description": "Test the MAC address format: '01:23:45:ab:cd'",
             "_args": ["01:23:45:ab:cd"],
+            "_kwargs": {},
             "_results": {
                 "error": MacAddressFormatError,
                 "error_message": (
@@ -476,6 +492,7 @@ class TestNetAddrMacAddress(TestCase):
         {
             "_description": "Test the MAC address format: '01:23:45:ab:cd:ef:01'",
             "_args": ["01:23:45:ab:cd:ef:01"],
+            "_kwargs": {},
             "_results": {
                 "error": MacAddressFormatError,
                 "error_message": (
@@ -486,6 +503,7 @@ class TestNetAddrMacAddress(TestCase):
         {
             "_description": "Test the MAC address format: '01:23:45:ab:cd:eg'",
             "_args": ["01:23:45:ab:cd:eg"],
+            "_kwargs": {},
             "_results": {
                 "error": MacAddressFormatError,
                 "error_message": (
@@ -496,6 +514,7 @@ class TestNetAddrMacAddress(TestCase):
         {
             "_description": "Test the MAC address format: b'\x01\x23\x45\xab\xcd'",
             "_args": [b"\x01\x23\x45\xab\xcd"],
+            "_kwargs": {},
             "_results": {
                 "error": MacAddressFormatError,
                 "error_message": (
@@ -506,6 +525,7 @@ class TestNetAddrMacAddress(TestCase):
         {
             "_description": "Test the MAC address format: b'\x01\x23\x45\xab\xcd\xef\x01'",
             "_args": [b"\x01\x23\x45\xab\xcd\xef\x01"],
+            "_kwargs": {},
             "_results": {
                 "error": MacAddressFormatError,
                 "error_message": (
@@ -516,6 +536,7 @@ class TestNetAddrMacAddress(TestCase):
         {
             "_description": "Test the MAC address format: -1",
             "_args": [-1],
+            "_kwargs": {},
             "_results": {
                 "error": MacAddressFormatError,
                 "error_message": "The MAC address format is invalid: -1",
@@ -524,6 +545,7 @@ class TestNetAddrMacAddress(TestCase):
         {
             "_description": "Test the MAC address format: 281474976710656",
             "_args": [281474976710656],
+            "_kwargs": {},
             "_results": {
                 "error": MacAddressFormatError,
                 "error_message": "The MAC address format is invalid: 281474976710656",
@@ -532,6 +554,7 @@ class TestNetAddrMacAddress(TestCase):
         {
             "_description": "Test the MAC address format: {}",
             "_args": [{}],
+            "_kwargs": {},
             "_results": {
                 "error": MacAddressFormatError,
                 "error_message": "The MAC address format is invalid: {}",
@@ -540,6 +563,7 @@ class TestNetAddrMacAddress(TestCase):
         {
             "_description": "Test the MAC address format: 1.1",
             "_args": [1.1],
+            "_kwargs": {},
             "_results": {
                 "error": MacAddressFormatError,
                 "error_message": "The MAC address format is invalid: 1.1",
@@ -554,6 +578,7 @@ class TestNetAddrMacAddressErrors(TestCase):
 
     _description: str
     _args: dict[str, Any]
+    _kwargs: dict[str, Any]
     _results: dict[str, Any]
 
     def test__net_addr__mac_address__errors(self) -> None:
@@ -562,7 +587,7 @@ class TestNetAddrMacAddressErrors(TestCase):
         """
 
         with self.assertRaises(self._results["error"]) as error:
-            MacAddress(*self._args)
+            MacAddress(*self._args, **self._kwargs)
 
         self.assertEqual(
             str(error.exception),

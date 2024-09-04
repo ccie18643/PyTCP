@@ -46,6 +46,7 @@ from pytcp.lib.net_addr import Ip4Address, Ip4AddressFormatError, Ip6Address
         {
             "_description": "Test the IPv4 address: 0.0.0.0 (str)",
             "_args": ["0.0.0.0"],
+            "_kwargs": {},
             "_results": {
                 "__str__": "0.0.0.0",
                 "__repr__": "Ip4Address('0.0.0.0')",
@@ -71,6 +72,7 @@ from pytcp.lib.net_addr import Ip4Address, Ip4AddressFormatError, Ip6Address
         {
             "_description": "Test the IPv4 address: 0.0.0.0 (None)",
             "_args": [None],
+            "_kwargs": {},
             "_results": {
                 "__str__": "0.0.0.0",
                 "__repr__": "Ip4Address('0.0.0.0')",
@@ -96,6 +98,7 @@ from pytcp.lib.net_addr import Ip4Address, Ip4AddressFormatError, Ip6Address
         {
             "_description": "Test the IPv4 address: 0.0.0.1 (str)",
             "_args": ["0.0.0.1"],
+            "_kwargs": {},
             "_results": {
                 "__str__": "0.0.0.1",
                 "__repr__": "Ip4Address('0.0.0.1')",
@@ -121,6 +124,7 @@ from pytcp.lib.net_addr import Ip4Address, Ip4AddressFormatError, Ip6Address
         {
             "_description": "Test the IPv4 address: 0.255.255.255 (str)",
             "_args": ["0.255.255.255"],
+            "_kwargs": {},
             "_results": {
                 "__str__": "0.255.255.255",
                 "__repr__": "Ip4Address('0.255.255.255')",
@@ -146,6 +150,7 @@ from pytcp.lib.net_addr import Ip4Address, Ip4AddressFormatError, Ip6Address
         {
             "_description": "Test the IPv4 address: 1.0.0.0 (str)",
             "_args": ["1.0.0.0"],
+            "_kwargs": {},
             "_results": {
                 "__str__": "1.0.0.0",
                 "__repr__": "Ip4Address('1.0.0.0')",
@@ -171,6 +176,7 @@ from pytcp.lib.net_addr import Ip4Address, Ip4AddressFormatError, Ip6Address
         {
             "_description": "Test the IPv4 address: 9.255.255.255 (str)",
             "_args": ["9.255.255.255"],
+            "_kwargs": {},
             "_results": {
                 "__str__": "9.255.255.255",
                 "__repr__": "Ip4Address('9.255.255.255')",
@@ -196,6 +202,7 @@ from pytcp.lib.net_addr import Ip4Address, Ip4AddressFormatError, Ip6Address
         {
             "_description": "Test the IPv4 address: 10.0.0.0 (str)",
             "_args": ["10.0.0.0"],
+            "_kwargs": {},
             "_results": {
                 "__str__": "10.0.0.0",
                 "__repr__": "Ip4Address('10.0.0.0')",
@@ -221,6 +228,7 @@ from pytcp.lib.net_addr import Ip4Address, Ip4AddressFormatError, Ip6Address
         {
             "_description": "Test the IPv4 address: 10.255.255.255 (str)",
             "_args": ["10.255.255.255"],
+            "_kwargs": {},
             "_results": {
                 "__str__": "10.255.255.255",
                 "__repr__": "Ip4Address('10.255.255.255')",
@@ -246,6 +254,7 @@ from pytcp.lib.net_addr import Ip4Address, Ip4AddressFormatError, Ip6Address
         {
             "_description": "Test the IPv4 address: 11.0.0.0 (str)",
             "_args": ["11.0.0.0"],
+            "_kwargs": {},
             "_results": {
                 "__str__": "11.0.0.0",
                 "__repr__": "Ip4Address('11.0.0.0')",
@@ -271,6 +280,7 @@ from pytcp.lib.net_addr import Ip4Address, Ip4AddressFormatError, Ip6Address
         {
             "_description": "Test the IPv4 address: 126.255.255.255 (str)",
             "_args": ["126.255.255.255"],
+            "_kwargs": {},
             "_results": {
                 "__str__": "126.255.255.255",
                 "__repr__": "Ip4Address('126.255.255.255')",
@@ -296,6 +306,7 @@ from pytcp.lib.net_addr import Ip4Address, Ip4AddressFormatError, Ip6Address
         {
             "_description": "Test the IPv4 address: 127.0.0.0 (str)",
             "_args": ["127.0.0.0"],
+            "_kwargs": {},
             "_results": {
                 "__str__": "127.0.0.0",
                 "__repr__": "Ip4Address('127.0.0.0')",
@@ -321,6 +332,7 @@ from pytcp.lib.net_addr import Ip4Address, Ip4AddressFormatError, Ip6Address
         {
             "_description": "Test the IPv4 address: 127.255.255.255 (str)",
             "_args": ["127.255.255.255"],
+            "_kwargs": {},
             "_results": {
                 "__str__": "127.255.255.255",
                 "__repr__": "Ip4Address('127.255.255.255')",
@@ -346,6 +358,7 @@ from pytcp.lib.net_addr import Ip4Address, Ip4AddressFormatError, Ip6Address
         {
             "_description": "Test the IPv4 address: 128.0.0.0 (str)",
             "_args": ["128.0.0.0"],
+            "_kwargs": {},
             "_results": {
                 "__str__": "128.0.0.0",
                 "__repr__": "Ip4Address('128.0.0.0')",
@@ -371,6 +384,7 @@ from pytcp.lib.net_addr import Ip4Address, Ip4AddressFormatError, Ip6Address
         {
             "_description": "Test the IPv4 address: 169.253.255.255 (str)",
             "_args": ["169.253.255.255"],
+            "_kwargs": {},
             "_results": {
                 "__str__": "169.253.255.255",
                 "__repr__": "Ip4Address('169.253.255.255')",
@@ -396,6 +410,7 @@ from pytcp.lib.net_addr import Ip4Address, Ip4AddressFormatError, Ip6Address
         {
             "_description": "Test the IPv4 address: 169.255.0.0 (str)",
             "_args": ["169.255.0.0"],
+            "_kwargs": {},
             "_results": {
                 "__str__": "169.255.0.0",
                 "__repr__": "Ip4Address('169.255.0.0')",
@@ -421,6 +436,7 @@ from pytcp.lib.net_addr import Ip4Address, Ip4AddressFormatError, Ip6Address
         {
             "_description": "Test the IPv4 address: 170.0.0.0 (str)",
             "_args": ["170.0.0.0"],
+            "_kwargs": {},
             "_results": {
                 "__str__": "170.0.0.0",
                 "__repr__": "Ip4Address('170.0.0.0')",
@@ -446,6 +462,7 @@ from pytcp.lib.net_addr import Ip4Address, Ip4AddressFormatError, Ip6Address
         {
             "_description": "Test the IPv4 address: 172.15.255.255 (str)",
             "_args": ["172.15.255.255"],
+            "_kwargs": {},
             "_results": {
                 "__str__": "172.15.255.255",
                 "__repr__": "Ip4Address('172.15.255.255')",
@@ -471,6 +488,7 @@ from pytcp.lib.net_addr import Ip4Address, Ip4AddressFormatError, Ip6Address
         {
             "_description": "Test the IPv4 address: 172.16.0.0 (str)",
             "_args": ["172.16.0.0"],
+            "_kwargs": {},
             "_results": {
                 "__str__": "172.16.0.0",
                 "__repr__": "Ip4Address('172.16.0.0')",
@@ -496,6 +514,7 @@ from pytcp.lib.net_addr import Ip4Address, Ip4AddressFormatError, Ip6Address
         {
             "_description": "Test the IPv4 address: 172.31.255.255 (str)",
             "_args": ["172.31.255.255"],
+            "_kwargs": {},
             "_results": {
                 "__str__": "172.31.255.255",
                 "__repr__": "Ip4Address('172.31.255.255')",
@@ -521,6 +540,7 @@ from pytcp.lib.net_addr import Ip4Address, Ip4AddressFormatError, Ip6Address
         {
             "_description": "Test the IPv4 address: 172.32.0.0 (str)",
             "_args": ["172.32.0.0"],
+            "_kwargs": {},
             "_results": {
                 "__str__": "172.32.0.0",
                 "__repr__": "Ip4Address('172.32.0.0')",
@@ -546,6 +566,7 @@ from pytcp.lib.net_addr import Ip4Address, Ip4AddressFormatError, Ip6Address
         {
             "_description": "Test the IPv4 address: 192.167.255.255 (str)",
             "_args": ["192.167.255.255"],
+            "_kwargs": {},
             "_results": {
                 "__str__": "192.167.255.255",
                 "__repr__": "Ip4Address('192.167.255.255')",
@@ -571,6 +592,7 @@ from pytcp.lib.net_addr import Ip4Address, Ip4AddressFormatError, Ip6Address
         {
             "_description": "Test the IPv4 address: 192.168.0.0 (str)",
             "_args": ["192.168.0.0"],
+            "_kwargs": {},
             "_results": {
                 "__str__": "192.168.0.0",
                 "__repr__": "Ip4Address('192.168.0.0')",
@@ -596,6 +618,7 @@ from pytcp.lib.net_addr import Ip4Address, Ip4AddressFormatError, Ip6Address
         {
             "_description": "Test the IPv4 address: 192.168.255.255 (str)",
             "_args": ["192.168.255.255"],
+            "_kwargs": {},
             "_results": {
                 "__str__": "192.168.255.255",
                 "__repr__": "Ip4Address('192.168.255.255')",
@@ -621,6 +644,7 @@ from pytcp.lib.net_addr import Ip4Address, Ip4AddressFormatError, Ip6Address
         {
             "_description": "Test the IPv4 address: 192.168.255.255 (Ip4Address)",
             "_args": [Ip4Address("192.168.255.255")],
+            "_kwargs": {},
             "_results": {
                 "__str__": "192.168.255.255",
                 "__repr__": "Ip4Address('192.168.255.255')",
@@ -646,6 +670,7 @@ from pytcp.lib.net_addr import Ip4Address, Ip4AddressFormatError, Ip6Address
         {
             "_description": "Test the IPv4 address: 192.168.255.255 (int)",
             "_args": [3232301055],
+            "_kwargs": {},
             "_results": {
                 "__str__": "192.168.255.255",
                 "__repr__": "Ip4Address('192.168.255.255')",
@@ -671,6 +696,7 @@ from pytcp.lib.net_addr import Ip4Address, Ip4AddressFormatError, Ip6Address
         {
             "_description": "Test the IPv4 address: 192.168.255.255 (bytes)",
             "_args": [b"\xc0\xa8\xff\xff"],
+            "_kwargs": {},
             "_results": {
                 "__str__": "192.168.255.255",
                 "__repr__": "Ip4Address('192.168.255.255')",
@@ -696,6 +722,7 @@ from pytcp.lib.net_addr import Ip4Address, Ip4AddressFormatError, Ip6Address
         {
             "_description": "Test the IPv4 address: 192.168.255.255 (bytearray)",
             "_args": [bytearray(b"\xc0\xa8\xff\xff")],
+            "_kwargs": {},
             "_results": {
                 "__str__": "192.168.255.255",
                 "__repr__": "Ip4Address('192.168.255.255')",
@@ -721,6 +748,7 @@ from pytcp.lib.net_addr import Ip4Address, Ip4AddressFormatError, Ip6Address
         {
             "_description": "Test the IPv4 address: 192.168.255.255 (memoryview)",
             "_args": [memoryview(b"\xc0\xa8\xff\xff")],
+            "_kwargs": {},
             "_results": {
                 "__str__": "192.168.255.255",
                 "__repr__": "Ip4Address('192.168.255.255')",
@@ -746,6 +774,7 @@ from pytcp.lib.net_addr import Ip4Address, Ip4AddressFormatError, Ip6Address
         {
             "_description": "Test the IPv4 address: 192.169.0.0 (str)",
             "_args": ["192.169.0.0"],
+            "_kwargs": {},
             "_results": {
                 "__str__": "192.169.0.0",
                 "__repr__": "Ip4Address('192.169.0.0')",
@@ -771,6 +800,7 @@ from pytcp.lib.net_addr import Ip4Address, Ip4AddressFormatError, Ip6Address
         {
             "_description": "Test the IPv4 address: 223.255.255.255 (str)",
             "_args": ["223.255.255.255"],
+            "_kwargs": {},
             "_results": {
                 "__str__": "223.255.255.255",
                 "__repr__": "Ip4Address('223.255.255.255')",
@@ -796,6 +826,7 @@ from pytcp.lib.net_addr import Ip4Address, Ip4AddressFormatError, Ip6Address
         {
             "_description": "Test the IPv4 address: 224.0.0.0 (str)",
             "_args": ["224.0.0.0"],
+            "_kwargs": {},
             "_results": {
                 "__str__": "224.0.0.0",
                 "__repr__": "Ip4Address('224.0.0.0')",
@@ -821,6 +852,7 @@ from pytcp.lib.net_addr import Ip4Address, Ip4AddressFormatError, Ip6Address
         {
             "_description": "Test the IPv4 address: 239.255.255.255 (str)",
             "_args": ["239.255.255.255"],
+            "_kwargs": {},
             "_results": {
                 "__str__": "239.255.255.255",
                 "__repr__": "Ip4Address('239.255.255.255')",
@@ -846,6 +878,7 @@ from pytcp.lib.net_addr import Ip4Address, Ip4AddressFormatError, Ip6Address
         {
             "_description": "Test the IPv4 address: 240.0.0.0 (str)",
             "_args": ["240.0.0.0"],
+            "_kwargs": {},
             "_results": {
                 "__str__": "240.0.0.0",
                 "__repr__": "Ip4Address('240.0.0.0')",
@@ -871,6 +904,7 @@ from pytcp.lib.net_addr import Ip4Address, Ip4AddressFormatError, Ip6Address
         {
             "_description": "Test the IPv4 address: 255.255.255.254 (str)",
             "_args": ["255.255.255.254"],
+            "_kwargs": {},
             "_results": {
                 "__str__": "255.255.255.254",
                 "__repr__": "Ip4Address('255.255.255.254')",
@@ -896,6 +930,7 @@ from pytcp.lib.net_addr import Ip4Address, Ip4AddressFormatError, Ip6Address
         {
             "_description": "Test the IPv4 address: 255.255.255.255 (str)",
             "_args": ["255.255.255.255"],
+            "_kwargs": {},
             "_results": {
                 "__str__": "255.255.255.255",
                 "__repr__": "Ip4Address('255.255.255.255')",
@@ -927,6 +962,7 @@ class TestNetAddrIp4Address(TestCase):
 
     _description: str
     _args: dict[str, Any]
+    _kwargs: dict[str, Any]
     _results: dict[str, Any]
 
     def setUp(self) -> None:
@@ -934,7 +970,7 @@ class TestNetAddrIp4Address(TestCase):
         Initialize the IPv4 address object with testcase arguments.
         """
 
-        self._ip4_address = Ip4Address(*self._args)
+        self._ip4_address = Ip4Address(*self._args, **self._kwargs)
 
     def test__net_addr__ip4_address__str(self) -> None:
         """
@@ -1162,6 +1198,7 @@ class TestNetAddrIp4Address(TestCase):
         {
             "_description": "Test the IPv4 address format: '10.10.10.256'",
             "_args": ["10.10.10.256"],
+            "_kwargs": {},
             "_results": {
                 "error": Ip4AddressFormatError,
                 "error_message": (
@@ -1172,6 +1209,7 @@ class TestNetAddrIp4Address(TestCase):
         {
             "_description": "Test the IPv4 address format: '10.10..10'",
             "_args": ["10.10..10"],
+            "_kwargs": {},
             "_results": {
                 "error": Ip4AddressFormatError,
                 "error_message": (
@@ -1182,6 +1220,7 @@ class TestNetAddrIp4Address(TestCase):
         {
             "_description": "Test the IPv4 address format: '10.10.10,10'",
             "_args": ["10.10.10,10"],
+            "_kwargs": {},
             "_results": {
                 "error": Ip4AddressFormatError,
                 "error_message": (
@@ -1192,6 +1231,7 @@ class TestNetAddrIp4Address(TestCase):
         {
             "_description": "Test the IPv4 address format: b'\xff\xff\xff'",
             "_args": [b"\xff\xff\xff"],
+            "_kwargs": {},
             "_results": {
                 "error": Ip4AddressFormatError,
                 "error_message": (
@@ -1202,6 +1242,7 @@ class TestNetAddrIp4Address(TestCase):
         {
             "_description": "Test the IPv4 address format: b'\xff\xff\xff\xff\xff'",
             "_args": [b"\xff\xff\xff\xff\xff"],
+            "_kwargs": {},
             "_results": {
                 "error": Ip4AddressFormatError,
                 "error_message": (
@@ -1212,6 +1253,7 @@ class TestNetAddrIp4Address(TestCase):
         {
             "_description": "Test the IPv4 address format: -1",
             "_args": [-1],
+            "_kwargs": {},
             "_results": {
                 "error": Ip4AddressFormatError,
                 "error_message": ("The IPv4 address format is invalid: -1"),
@@ -1220,6 +1262,7 @@ class TestNetAddrIp4Address(TestCase):
         {
             "_description": "Test the IPv4 address format: 4294967296",
             "_args": [4294967296],
+            "_kwargs": {},
             "_results": {
                 "error": Ip4AddressFormatError,
                 "error_message": (
@@ -1230,6 +1273,7 @@ class TestNetAddrIp4Address(TestCase):
         {
             "_description": "Test the IPv4 address format: Ip6Address()",
             "_args": [Ip6Address()],
+            "_kwargs": {},
             "_results": {
                 "error": Ip4AddressFormatError,
                 "error_message": "The IPv4 address format is invalid: Ip6Address('::')",
@@ -1238,6 +1282,7 @@ class TestNetAddrIp4Address(TestCase):
         {
             "_description": "Test the IPv4 address format: {}",
             "_args": [{}],
+            "_kwargs": {},
             "_results": {
                 "error": Ip4AddressFormatError,
                 "error_message": "The IPv4 address format is invalid: {}",
@@ -1246,6 +1291,7 @@ class TestNetAddrIp4Address(TestCase):
         {
             "_description": "Test the IPv4 address format: 1.1",
             "_args": [1.1],
+            "_kwargs": {},
             "_results": {
                 "error": Ip4AddressFormatError,
                 "error_message": "The IPv4 address format is invalid: 1.1",
@@ -1260,6 +1306,7 @@ class TestNetAddrIp4AddressErrors(TestCase):
 
     _description: str
     _args: dict[str, Any]
+    _kwargs: dict[str, Any]
     _results: dict[str, Any]
 
     def test__net_addr__ip4_address__errors(self) -> None:
@@ -1268,7 +1315,7 @@ class TestNetAddrIp4AddressErrors(TestCase):
         """
 
         with self.assertRaises(self._results["error"]) as error:
-            Ip4Address(*self._args)
+            Ip4Address(*self._args, **self._kwargs)
 
         self.assertEqual(
             str(error.exception),

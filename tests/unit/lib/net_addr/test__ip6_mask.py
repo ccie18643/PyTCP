@@ -46,6 +46,7 @@ from pytcp.lib.net_addr import Ip4Mask, Ip6Mask, Ip6MaskFormatError
         {
             "_description": "Test the IPv6 mask: '/0' (str)",
             "_args": ["/0"],
+            "_kwargs": {},
             "_results": {
                 "__len__": 0,
                 "__str__": "/0",
@@ -61,6 +62,7 @@ from pytcp.lib.net_addr import Ip4Mask, Ip6Mask, Ip6MaskFormatError
         {
             "_description": "Test the IPv6 mask: None (str)",
             "_args": [None],
+            "_kwargs": {},
             "_results": {
                 "__len__": 0,
                 "__str__": "/0",
@@ -76,6 +78,7 @@ from pytcp.lib.net_addr import Ip4Mask, Ip6Mask, Ip6MaskFormatError
         {
             "_description": "Test the IPv6 mask: '/8' (str)",
             "_args": ["/8"],
+            "_kwargs": {},
             "_results": {
                 "__len__": 8,
                 "__str__": "/8",
@@ -91,6 +94,7 @@ from pytcp.lib.net_addr import Ip4Mask, Ip6Mask, Ip6MaskFormatError
         {
             "_description": "Test the IPv6 mask: '/16' (str)",
             "_args": ["/16"],
+            "_kwargs": {},
             "_results": {
                 "__len__": 16,
                 "__str__": "/16",
@@ -106,6 +110,7 @@ from pytcp.lib.net_addr import Ip4Mask, Ip6Mask, Ip6MaskFormatError
         {
             "_description": "Test the IPv6 mask: '/16' (Ip6Mask)",
             "_args": [Ip6Mask("/16")],
+            "_kwargs": {},
             "_results": {
                 "__len__": 16,
                 "__str__": "/16",
@@ -121,6 +126,7 @@ from pytcp.lib.net_addr import Ip4Mask, Ip6Mask, Ip6MaskFormatError
         {
             "_description": "Test the IPv6 mask: '/16' (Ip6Mask)",
             "_args": [Ip6Mask("/16")],
+            "_kwargs": {},
             "_results": {
                 "__len__": 16,
                 "__str__": "/16",
@@ -138,6 +144,7 @@ from pytcp.lib.net_addr import Ip4Mask, Ip6Mask, Ip6MaskFormatError
             "_args": [
                 b"\xff\xff\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
             ],
+            "_kwargs": {},
             "_results": {
                 "__len__": 16,
                 "__str__": "/16",
@@ -157,6 +164,7 @@ from pytcp.lib.net_addr import Ip4Mask, Ip6Mask, Ip6MaskFormatError
                     b"\xff\xff\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
                 )
             ],
+            "_kwargs": {},
             "_results": {
                 "__len__": 16,
                 "__str__": "/16",
@@ -176,6 +184,7 @@ from pytcp.lib.net_addr import Ip4Mask, Ip6Mask, Ip6MaskFormatError
                     b"\xff\xff\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
                 )
             ],
+            "_kwargs": {},
             "_results": {
                 "__len__": 16,
                 "__str__": "/16",
@@ -191,6 +200,7 @@ from pytcp.lib.net_addr import Ip4Mask, Ip6Mask, Ip6MaskFormatError
         {
             "_description": "Test the IPv6 mask: '/16' (int)",
             "_args": [340277174624079928635746076935438991360],
+            "_kwargs": {},
             "_results": {
                 "__len__": 16,
                 "__str__": "/16",
@@ -206,6 +216,7 @@ from pytcp.lib.net_addr import Ip4Mask, Ip6Mask, Ip6MaskFormatError
         {
             "_description": "Test the IPv6 mask: '/24' (str)",
             "_args": ["/24"],
+            "_kwargs": {},
             "_results": {
                 "__len__": 24,
                 "__str__": "/24",
@@ -221,6 +232,7 @@ from pytcp.lib.net_addr import Ip4Mask, Ip6Mask, Ip6MaskFormatError
         {
             "_description": "Test the IPv6 mask: '/32' (str)",
             "_args": ["/32"],
+            "_kwargs": {},
             "_results": {
                 "__len__": 32,
                 "__str__": "/32",
@@ -236,6 +248,7 @@ from pytcp.lib.net_addr import Ip4Mask, Ip6Mask, Ip6MaskFormatError
         {
             "_description": "Test the IPv6 mask: '/40' (str)",
             "_args": ["/40"],
+            "_kwargs": {},
             "_results": {
                 "__len__": 40,
                 "__str__": "/40",
@@ -251,6 +264,7 @@ from pytcp.lib.net_addr import Ip4Mask, Ip6Mask, Ip6MaskFormatError
         {
             "_description": "Test the IPv6 mask: '/48' (str)",
             "_args": ["/48"],
+            "_kwargs": {},
             "_results": {
                 "__len__": 48,
                 "__str__": "/48",
@@ -266,6 +280,7 @@ from pytcp.lib.net_addr import Ip4Mask, Ip6Mask, Ip6MaskFormatError
         {
             "_description": "Test the IPv6 mask: '/56' (str)",
             "_args": ["/56"],
+            "_kwargs": {},
             "_results": {
                 "__len__": 56,
                 "__str__": "/56",
@@ -281,6 +296,7 @@ from pytcp.lib.net_addr import Ip4Mask, Ip6Mask, Ip6MaskFormatError
         {
             "_description": "Test the IPv6 mask: '/64' (str)",
             "_args": ["/64"],
+            "_kwargs": {},
             "_results": {
                 "__len__": 64,
                 "__str__": "/64",
@@ -296,6 +312,7 @@ from pytcp.lib.net_addr import Ip4Mask, Ip6Mask, Ip6MaskFormatError
         {
             "_description": "Test the IPv6 mask: '/72' (str)",
             "_args": ["/72"],
+            "_kwargs": {},
             "_results": {
                 "__len__": 72,
                 "__str__": "/72",
@@ -311,6 +328,7 @@ from pytcp.lib.net_addr import Ip4Mask, Ip6Mask, Ip6MaskFormatError
         {
             "_description": "Test the IPv6 mask: '/80' (str)",
             "_args": ["/80"],
+            "_kwargs": {},
             "_results": {
                 "__len__": 80,
                 "__str__": "/80",
@@ -326,6 +344,7 @@ from pytcp.lib.net_addr import Ip4Mask, Ip6Mask, Ip6MaskFormatError
         {
             "_description": "Test the IPv6 mask: '/88' (str)",
             "_args": ["/88"],
+            "_kwargs": {},
             "_results": {
                 "__len__": 88,
                 "__str__": "/88",
@@ -341,6 +360,7 @@ from pytcp.lib.net_addr import Ip4Mask, Ip6Mask, Ip6MaskFormatError
         {
             "_description": "Test the IPv6 mask: '/96' (str)",
             "_args": ["/96"],
+            "_kwargs": {},
             "_results": {
                 "__len__": 96,
                 "__str__": "/96",
@@ -356,6 +376,7 @@ from pytcp.lib.net_addr import Ip4Mask, Ip6Mask, Ip6MaskFormatError
         {
             "_description": "Test the IPv6 mask: '/104' (str)",
             "_args": ["/104"],
+            "_kwargs": {},
             "_results": {
                 "__len__": 104,
                 "__str__": "/104",
@@ -371,6 +392,7 @@ from pytcp.lib.net_addr import Ip4Mask, Ip6Mask, Ip6MaskFormatError
         {
             "_description": "Test the IPv6 mask: '/112' (str)",
             "_args": ["/112"],
+            "_kwargs": {},
             "_results": {
                 "__len__": 112,
                 "__str__": "/112",
@@ -386,6 +408,7 @@ from pytcp.lib.net_addr import Ip4Mask, Ip6Mask, Ip6MaskFormatError
         {
             "_description": "Test the IPv6 mask: '/120' (str)",
             "_args": ["/120"],
+            "_kwargs": {},
             "_results": {
                 "__len__": 120,
                 "__str__": "/120",
@@ -401,6 +424,7 @@ from pytcp.lib.net_addr import Ip4Mask, Ip6Mask, Ip6MaskFormatError
         {
             "_description": "Test the IPv6 mask: '/128' (str)",
             "_args": ["/128"],
+            "_kwargs": {},
             "_results": {
                 "__len__": 128,
                 "__str__": "/128",
@@ -422,6 +446,7 @@ class TestNetAddrIp6Mask(TestCase):
 
     _description: str
     _args: dict[str, Any]
+    _kwargs: dict[str, Any]
     _results: dict[str, Any]
 
     def setUp(self) -> None:
@@ -429,7 +454,7 @@ class TestNetAddrIp6Mask(TestCase):
         Initialize the IPv6 mask object with testcase arguments.
         """
 
-        self._ip6_mask = Ip6Mask(*self._args)
+        self._ip6_mask = Ip6Mask(*self._args, **self._kwargs)
 
     def test__net_addr__ip6_mask__len(self) -> None:
         """
@@ -546,6 +571,7 @@ class TestNetAddrIp6Mask(TestCase):
         {
             "_description": "Test the IPv6 mask format: '64'",
             "_args": ["64"],
+            "_kwargs": {},
             "_results": {
                 "error": Ip6MaskFormatError,
                 "error_message": "The IPv6 mask format is invalid: '64'",
@@ -554,6 +580,7 @@ class TestNetAddrIp6Mask(TestCase):
         {
             "_description": "Test the IPv6 mask format: '/-1'",
             "_args": ["/-1"],
+            "_kwargs": {},
             "_results": {
                 "error": Ip6MaskFormatError,
                 "error_message": "The IPv6 mask format is invalid: '/-1'",
@@ -562,6 +589,7 @@ class TestNetAddrIp6Mask(TestCase):
         {
             "_description": "Test the IPv6 mask format: '/129'",
             "_args": ["/129"],
+            "_kwargs": {},
             "_results": {
                 "error": Ip6MaskFormatError,
                 "error_message": "The IPv6 mask format is invalid: '/129'",
@@ -570,6 +598,7 @@ class TestNetAddrIp6Mask(TestCase):
         {
             "_description": "Test the IPv6 mask: b'ffff:ffff:ffff:ffff:ffff:ffff:ffff'",
             "_args": [b"ffff:ffff:ffff:ffff:ffff:ffff:ffff"],
+            "_kwargs": {},
             "_results": {
                 "error": Ip6MaskFormatError,
                 "error_message": (
@@ -580,6 +609,7 @@ class TestNetAddrIp6Mask(TestCase):
         {
             "_description": "Test the IPv6 mask: b'ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff'",
             "_args": [b"ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff"],
+            "_kwargs": {},
             "_results": {
                 "error": Ip6MaskFormatError,
                 "error_message": (
@@ -590,6 +620,7 @@ class TestNetAddrIp6Mask(TestCase):
         {
             "_description": "Test the IPv6 mask: -1",
             "_args": [-1],
+            "_kwargs": {},
             "_results": {
                 "error": Ip6MaskFormatError,
                 "error_message": "The IPv6 mask format is invalid: -1",
@@ -598,6 +629,7 @@ class TestNetAddrIp6Mask(TestCase):
         {
             "_description": "Test the IPv6 mask: 340282366920938463463374607431768211456",
             "_args": [340282366920938463463374607431768211456],
+            "_kwargs": {},
             "_results": {
                 "error": Ip6MaskFormatError,
                 "error_message": (
@@ -608,6 +640,7 @@ class TestNetAddrIp6Mask(TestCase):
         {
             "_description": "Test the IPv6 mask format: Ip4Mask()",
             "_args": [Ip4Mask()],
+            "_kwargs": {},
             "_results": {
                 "error": Ip6MaskFormatError,
                 "error_message": (
@@ -618,6 +651,7 @@ class TestNetAddrIp6Mask(TestCase):
         {
             "_description": "Test the IPv4 mask format: {}",
             "_args": [{}],
+            "_kwargs": {},
             "_results": {
                 "error": Ip6MaskFormatError,
                 "error_message": "The IPv6 mask format is invalid: {}",
@@ -626,6 +660,7 @@ class TestNetAddrIp6Mask(TestCase):
         {
             "_description": "Test the IPv4 address format: 1.1",
             "_args": [1.1],
+            "_kwargs": {},
             "_results": {
                 "error": Ip6MaskFormatError,
                 "error_message": "The IPv6 mask format is invalid: 1.1",
@@ -640,6 +675,7 @@ class TestNetAddrIp4MaskErrors(TestCase):
 
     _description: str
     _args: dict[str, Any]
+    _kwargs: dict[str, Any]
     _results: dict[str, Any]
 
     def test__net_addr__ip6_mask__errors(self) -> None:
@@ -648,7 +684,7 @@ class TestNetAddrIp4MaskErrors(TestCase):
         """
 
         with self.assertRaises(self._results["error"]) as error:
-            Ip6Mask(*self._args)
+            Ip6Mask(*self._args, **self._kwargs)
 
         self.assertEqual(
             str(error.exception),

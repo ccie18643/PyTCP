@@ -45,7 +45,8 @@ from pytcp.lib.inet_cksum import inet_cksum
     [
         {
             "_description": "Compute checksum.",
-            "_args": {
+            "_args": [],
+            "_kwargs": {
                 "data": (
                     b"\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0A\x0B\x0C\x0D\x0E\x0F"
                     * 80
@@ -56,7 +57,8 @@ from pytcp.lib.inet_cksum import inet_cksum
         },
         {
             "_description": "Compute checksum.",
-            "_args": {
+            "_args": [],
+            "_kwargs": {
                 "data": b"\xFF" * 1500,
                 "init": 0,
             },
@@ -64,7 +66,8 @@ from pytcp.lib.inet_cksum import inet_cksum
         },
         {
             "_description": "Compute checksum.",
-            "_args": {
+            "_args": [],
+            "_kwargs": {
                 "data": b"\x00" * 1500,
                 "init": 0,
             },
@@ -72,7 +75,8 @@ from pytcp.lib.inet_cksum import inet_cksum
         },
         {
             "_description": "Compute checksum.",
-            "_args": {
+            "_args": [],
+            "_kwargs": {
                 "data": b"\xF7\x24\x09" * 100 + b"\x35\x67\x0F\x00" * 250,
                 "init": 0,
             },
@@ -80,7 +84,8 @@ from pytcp.lib.inet_cksum import inet_cksum
         },
         {
             "_description": "Compute checksum.",
-            "_args": {
+            "_args": [],
+            "_kwargs": {
                 "data": (
                     b"\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0A\x0B\x0C\x0D\x0E\x0F"
                     * 80
@@ -91,7 +96,8 @@ from pytcp.lib.inet_cksum import inet_cksum
         },
         {
             "_description": "Compute checksum.",
-            "_args": {
+            "_args": [],
+            "_kwargs": {
                 "data": b"\xFF" * 1500,
                 "init": 0x0015,
             },
@@ -99,7 +105,8 @@ from pytcp.lib.inet_cksum import inet_cksum
         },
         {
             "_description": "Compute checksum.",
-            "_args": {
+            "_args": [],
+            "_kwargs": {
                 "data": b"\x00" * 1500,
                 "init": 0xF3FF,
             },
@@ -107,7 +114,8 @@ from pytcp.lib.inet_cksum import inet_cksum
         },
         {
             "_description": "Compute checksum.",
-            "_args": {
+            "_args": [],
+            "_kwargs": {
                 "data": b"\xF7\x24\x09" * 100 + b"\x35\x67\x0F\x00" * 250,
                 "init": 0x7314,
             },
@@ -115,7 +123,8 @@ from pytcp.lib.inet_cksum import inet_cksum
         },
         {
             "_description": "Compute checksum.",
-            "_args": {
+            "_args": [],
+            "_kwargs": {
                 "data": b"\x07" * 9999,
                 "init": 0xA3DC,
             },
@@ -129,7 +138,8 @@ class TestLibInetChecksum(TestCase):
     """
 
     _description: str
-    _args: dict[str, Any]
+    _args: list[Any]
+    _kwargs: dict[str, Any]
     _results: dict[str, Any]
 
     def test__lib__inet_cksum(self) -> None:
@@ -138,6 +148,6 @@ class TestLibInetChecksum(TestCase):
         """
 
         self.assertEqual(
-            inet_cksum(**self._args),
+            inet_cksum(*self._args, **self._kwargs),
             self._results["inet_cksum"],
         )

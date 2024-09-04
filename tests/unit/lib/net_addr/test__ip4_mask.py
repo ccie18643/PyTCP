@@ -46,6 +46,7 @@ from pytcp.lib.net_addr import Ip4Mask, Ip4MaskFormatError, Ip6Mask
         {
             "_description": "Test the IPv4 mask: 0.0.0.0 (str)",
             "_args": ["0.0.0.0"],
+            "_kwargs": {},
             "_results": {
                 "__len__": 0,
                 "__str__": "/0",
@@ -61,6 +62,7 @@ from pytcp.lib.net_addr import Ip4Mask, Ip4MaskFormatError, Ip6Mask
         {
             "_description": "Test the IPv4 mask: 0.0.0.0 (None)",
             "_args": [None],
+            "_kwargs": {},
             "_results": {
                 "__len__": 0,
                 "__str__": "/0",
@@ -76,6 +78,7 @@ from pytcp.lib.net_addr import Ip4Mask, Ip4MaskFormatError, Ip6Mask
         {
             "_description": "Test the IPv4 mask: 255.0.0.0 (str)",
             "_args": ["255.0.0.0"],
+            "_kwargs": {},
             "_results": {
                 "__len__": 8,
                 "__str__": "/8",
@@ -91,6 +94,7 @@ from pytcp.lib.net_addr import Ip4Mask, Ip4MaskFormatError, Ip6Mask
         {
             "_description": "Test the IPv4 mask: 255.128.0.0 (str)",
             "_args": ["255.128.0.0"],
+            "_kwargs": {},
             "_results": {
                 "__len__": 9,
                 "__str__": "/9",
@@ -106,6 +110,7 @@ from pytcp.lib.net_addr import Ip4Mask, Ip4MaskFormatError, Ip6Mask
         {
             "_description": "Test the IPv4 mask: 255.128.0.0 (Ip4Mask)",
             "_args": [Ip4Mask("255.128.0.0")],
+            "_kwargs": {},
             "_results": {
                 "__len__": 9,
                 "__str__": "/9",
@@ -121,6 +126,7 @@ from pytcp.lib.net_addr import Ip4Mask, Ip4MaskFormatError, Ip6Mask
         {
             "_description": "Test the IPv4 mask: 255.128.0.0 (bytes)",
             "_args": [b"\xff\x80\x00\x00"],
+            "_kwargs": {},
             "_results": {
                 "__len__": 9,
                 "__str__": "/9",
@@ -136,6 +142,7 @@ from pytcp.lib.net_addr import Ip4Mask, Ip4MaskFormatError, Ip6Mask
         {
             "_description": "Test the IPv4 mask: 255.128.0.0 (bytearray)",
             "_args": [bytearray(b"\xff\x80\x00\x00")],
+            "_kwargs": {},
             "_results": {
                 "__len__": 9,
                 "__str__": "/9",
@@ -151,6 +158,7 @@ from pytcp.lib.net_addr import Ip4Mask, Ip4MaskFormatError, Ip6Mask
         {
             "_description": "Test the IPv4 mask: 255.128.0.0 (memoryview)",
             "_args": [memoryview(b"\xff\x80\x00\x00")],
+            "_kwargs": {},
             "_results": {
                 "__len__": 9,
                 "__str__": "/9",
@@ -166,6 +174,7 @@ from pytcp.lib.net_addr import Ip4Mask, Ip4MaskFormatError, Ip6Mask
         {
             "_description": "Test the IPv4 mask: 255.128.0.0 (int)",
             "_args": [4286578688],
+            "_kwargs": {},
             "_results": {
                 "__len__": 9,
                 "__str__": "/9",
@@ -181,6 +190,7 @@ from pytcp.lib.net_addr import Ip4Mask, Ip4MaskFormatError, Ip6Mask
         {
             "_description": "Test the IPv4 mask: 255.255.0.0 (str)",
             "_args": ["255.255.0.0"],
+            "_kwargs": {},
             "_results": {
                 "__len__": 16,
                 "__str__": "/16",
@@ -196,6 +206,7 @@ from pytcp.lib.net_addr import Ip4Mask, Ip4MaskFormatError, Ip6Mask
         {
             "_description": "Test the IPv4 mask: 255.255.224.0 (str)",
             "_args": ["255.255.224.0"],
+            "_kwargs": {},
             "_results": {
                 "__len__": 19,
                 "__str__": "/19",
@@ -211,6 +222,7 @@ from pytcp.lib.net_addr import Ip4Mask, Ip4MaskFormatError, Ip6Mask
         {
             "_description": "Test the IPv4 mask: 255.255.255.0 (str)",
             "_args": ["255.255.255.0"],
+            "_kwargs": {},
             "_results": {
                 "__len__": 24,
                 "__str__": "/24",
@@ -226,6 +238,7 @@ from pytcp.lib.net_addr import Ip4Mask, Ip4MaskFormatError, Ip6Mask
         {
             "_description": "Test the IPv4 mask: 255.255.255.252 (str)",
             "_args": ["255.255.255.252"],
+            "_kwargs": {},
             "_results": {
                 "__len__": 30,
                 "__str__": "/30",
@@ -241,6 +254,7 @@ from pytcp.lib.net_addr import Ip4Mask, Ip4MaskFormatError, Ip6Mask
         {
             "_description": "Test the IPv4 mask: 255.255.255.255 (str)",
             "_args": ["255.255.255.255"],
+            "_kwargs": {},
             "_results": {
                 "__len__": 32,
                 "__str__": "/32",
@@ -262,6 +276,7 @@ class TestNetAddrIp4Mask(TestCase):
 
     _description: str
     _args: dict[str, Any]
+    _kwargs: dict[str, Any]
     _results: dict[str, Any]
 
     def setUp(self) -> None:
@@ -269,7 +284,7 @@ class TestNetAddrIp4Mask(TestCase):
         Initialize the IPv4 mask object with testcase arguments.
         """
 
-        self._ip4_mask = Ip4Mask(*self._args)
+        self._ip4_mask = Ip4Mask(*self._args, **self._kwargs)
 
     def test__net_addr__ip4_mask__len(self) -> None:
         """
@@ -386,6 +401,7 @@ class TestNetAddrIp4Mask(TestCase):
         {
             "_description": "Test the IPv4 mask format: '255.255.255.256'",
             "_args": ["255.255.255.256"],
+            "_kwargs": {},
             "_results": {
                 "error": Ip4MaskFormatError,
                 "error_message": (
@@ -396,6 +412,7 @@ class TestNetAddrIp4Mask(TestCase):
         {
             "_description": "Test the IPv4 mask format: '255.255.255,255'",
             "_args": ["255.255.255,255"],
+            "_kwargs": {},
             "_results": {
                 "error": Ip4MaskFormatError,
                 "error_message": (
@@ -406,6 +423,7 @@ class TestNetAddrIp4Mask(TestCase):
         {
             "_description": "Test the IPv4 mask format: '255.254.255.255'",
             "_args": ["255.254.255.255"],
+            "_kwargs": {},
             "_results": {
                 "error": Ip4MaskFormatError,
                 "error_message": (
@@ -416,6 +434,7 @@ class TestNetAddrIp4Mask(TestCase):
         {
             "_description": "Test the IPv4 mask format: b'\xff\xff\xff'",
             "_args": [b"\xff\xff\xff"],
+            "_kwargs": {},
             "_results": {
                 "error": Ip4MaskFormatError,
                 "error_message": (
@@ -426,6 +445,7 @@ class TestNetAddrIp4Mask(TestCase):
         {
             "_description": "Test the IPv4 mask format: b'\xff\xff\xff\xff\xff'",
             "_args": [b"\xff\xff\xff\xff\xff"],
+            "_kwargs": {},
             "_results": {
                 "error": Ip4MaskFormatError,
                 "error_message": (
@@ -436,6 +456,7 @@ class TestNetAddrIp4Mask(TestCase):
         {
             "_description": "Test the IPv4 mask format: -1",
             "_args": [-1],
+            "_kwargs": {},
             "_results": {
                 "error": Ip4MaskFormatError,
                 "error_message": ("The IPv4 mask format is invalid: -1"),
@@ -444,6 +465,7 @@ class TestNetAddrIp4Mask(TestCase):
         {
             "_description": "Test the IPv4 mask format: 4294967296",
             "_args": [4294967296],
+            "_kwargs": {},
             "_results": {
                 "error": Ip4MaskFormatError,
                 "error_message": (
@@ -454,6 +476,7 @@ class TestNetAddrIp4Mask(TestCase):
         {
             "_description": "Test the IPv4 mask format: Ip6Mask()",
             "_args": [Ip6Mask()],
+            "_kwargs": {},
             "_results": {
                 "error": Ip4MaskFormatError,
                 "error_message": (
@@ -464,6 +487,7 @@ class TestNetAddrIp4Mask(TestCase):
         {
             "_description": "Test the IPv4 mask format: {}",
             "_args": [{}],
+            "_kwargs": {},
             "_results": {
                 "error": Ip4MaskFormatError,
                 "error_message": "The IPv4 mask format is invalid: {}",
@@ -472,6 +496,7 @@ class TestNetAddrIp4Mask(TestCase):
         {
             "_description": "Test the IPv4 address format: 1.1",
             "_args": [1.1],
+            "_kwargs": {},
             "_results": {
                 "error": Ip4MaskFormatError,
                 "error_message": "The IPv4 mask format is invalid: 1.1",
@@ -486,6 +511,7 @@ class TestNetAddrIp4MaskErrors(TestCase):
 
     _description: str
     _args: dict[str, Any]
+    _kwargs: dict[str, Any]
     _results: dict[str, Any]
 
     def test__net_addr__ip4_mask__errors(self) -> None:
@@ -494,7 +520,7 @@ class TestNetAddrIp4MaskErrors(TestCase):
         """
 
         with self.assertRaises(self._results["error"]) as error:
-            Ip4Mask(*self._args)
+            Ip4Mask(*self._args, **self._kwargs)
 
         self.assertEqual(
             str(error.exception),
