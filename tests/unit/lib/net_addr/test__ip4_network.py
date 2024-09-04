@@ -249,6 +249,29 @@ class TestNetAddrIp4Network(TestCase):
             self._ip4_network == self._ip4_network,
         )
 
+        if int(self._ip4_network.mask) != 0:
+            self.assertFalse(
+                self._ip4_network
+                == Ip4Network(
+                    (
+                        Ip4Address(
+                            (int(self._ip4_network.address) - 1) & 0xFF_FF_FF_FF
+                        ),
+                        self._ip4_network.mask,
+                    ),
+                ),
+            )
+
+        self.assertFalse(
+            self._ip4_network
+            == Ip4Network(
+                (
+                    self._ip4_network.address,
+                    Ip4Mask(f"/{(len(self._ip4_network.mask) + 1) % 33}"),
+                ),
+            ),
+        )
+
         self.assertFalse(
             self._ip4_network == "not an IPv4 network",
         )
