@@ -169,6 +169,9 @@ class PacketHandler(
         # Thread control
         self._run_thread: bool = False
 
+        # Used for IPv4 and IPv6 address configuration
+        self.ip_configuration_in_progress: Semaphore = threading.Semaphore(0)
+
     @property
     def ip6_unicast(self) -> list[Ip6Address]:
         """
@@ -206,8 +209,13 @@ class PacketHandler(
         __debug__ and log("stack", "Starting packet handler")
 
         self._run_thread = True
-        threading.Thread(target=self.__thread_packet_handler).start()
+        threading.Thread(target=self.__thread__packet_handler).start()
         time.sleep(0.1)
+
+        self._acquire_ip4_addresses()
+        self._acquire_ip6_addresses()
+
+        self._log_stack_address_info()
 
     def stop(self) -> None:
         """
@@ -219,79 +227,38 @@ class PacketHandler(
         self._run_thread = False
         time.sleep(0.1)
 
-    def acquire_ip6_addresses(self) -> None:
+    def __thread__acquire_ip6_addresses(self) -> None:
         """
-        Assign the IPv6 addresses.
-        """
-
-        if config.IP6__SUPPORT_ENABLED:
-            self._assign_ip6_multicast(Ip6Address("ff02::1"))
-            self._create_stack_ip6_addressing()
-
-    def acquire_ip4_addresses(self) -> None:
-        """
-        Acquire the IPv4 addresses.
+        Thread to acquire the IPv6 addresses.
         """
 
-        if config.IP4__SUPPORT_ENABLED:
-            if not self.ip4_host_candidate:
-                if config.IP4__HOST_DHCP:
-                    if ip4_host := Dhcp4Client(self.mac_unicast).fetch():
-                        self.ip4_host_candidate.append(ip4_host)
-            self._create_stack_ip4_addressing()
+        __debug__ and log("stack", "Started the IPv6 address acquire thread")
 
-    def log_stack_address_info(self) -> None:
+        self._assign_ip6_multicast(Ip6Address("ff02::1"))
+        self._create_stack_ip6_addressing()
+
+        self.ip_configuration_in_progress.release()
+
+        __debug__ and log("stack", "Finished the IPv6 address acquire thread")
+
+    def __thread__acquire_ip4_addresses(self) -> None:
         """
-        Log all the addresses stack will listen on
+        Thread to acquire the IPv4 addresses.
         """
 
-        if __debug__:
-            log(
-                "stack",
-                "<INFO>Stack listening on unicast MAC address: "
-                f"{self.mac_unicast}</>",
-            )
-            log(
-                "stack",
-                "<INFO>Stack listening on multicast MAC addresses: "
-                f"{', '.join([str(mac_multicast) for mac_multicast in set(self.mac_multicast)])}</>",
-            )
-            log(
-                "stack",
-                "<INFO>Stack listening on broadcast MAC address: "
-                f"{self.mac_broadcast}</>",
-            )
+        __debug__ and log("stack", "Started the IPv4 address acquire thread")
 
-            if config.IP6__SUPPORT_ENABLED:
-                log(
-                    "stack",
-                    "<INFO>Stack listening on unicast IPv6 addresses: "
-                    f"{', '.join([str(ip6_unicast) for ip6_unicast in self.ip6_unicast])}</>",
-                )
-                log(
-                    "stack",
-                    "<INFO>Stack listening on multicast IPv6 addresses: "
-                    f"{', '.join([str(ip6_multicast) for ip6_multicast in set(self.ip6_multicast)])}</>",
-                )
+        if not self.ip4_host_candidate:
+            if config.IP4__HOST_DHCP:
+                if ip4_host := Dhcp4Client(self.mac_unicast).fetch():
+                    self.ip4_host_candidate.append(ip4_host)
+        self._create_stack_ip4_addressing()
 
-            if config.IP4__SUPPORT_ENABLED:
-                log(
-                    "stack",
-                    "<INFO>Stack listening on unicast IPv4 addresses: "
-                    f"{', '.join([str(ip4_unicast) for ip4_unicast in self.ip4_unicast])}</>",
-                )
-                log(
-                    "stack",
-                    "<INFO>Stack listening on multicast IPv4 addresses: "
-                    f"{', '.join([str(ip4_multicast) for ip4_multicast in self.ip4_multicast])}</>",
-                )
-                log(
-                    "stack",
-                    "<INFO>Stack listening on broadcast IPv4 addresses: "
-                    f"{', '.join([str(ip4_broadcast) for ip4_broadcast in self.ip4_broadcast])}</>",
-                )
+        self.ip_configuration_in_progress.release()
 
-    def __thread_packet_handler(self) -> None:
+        __debug__ and log("stack", "Finished the IPv4 address acquire thread")
+
+    def __thread__packet_handler(self) -> None:
         """
         Thread picks up incoming packets from RX ring and processes them.
         """
@@ -309,6 +276,24 @@ class PacketHandler(
                     self._phrx_ethernet(packet_rx)
 
         __debug__ and log("stack", "Stopped packet handler")
+
+    def _acquire_ip6_addresses(self) -> None:
+        """
+        Start thread to acquire the IPv6 addresses.
+        """
+
+        __debug__ and log("stack", "Starting the IPv6 address acquire thread")
+
+        threading.Thread(target=self.__thread__acquire_ip6_addresses).start()
+
+    def _acquire_ip4_addresses(self) -> None:
+        """
+        Start thread to acquire the IPv4 addresses.
+        """
+
+        __debug__ and log("stack", "Starting the IPv4 address acquire thread")
+
+        threading.Thread(target=self.__thread__acquire_ip4_addresses).start()
 
     def _assign_mac_address(self, *, mac_unicast: MacAddress) -> None:
         """
@@ -545,3 +530,59 @@ class PacketHandler(
         self.mac_multicast.remove(mac_multicast)
 
         __debug__ and log("stack", f"Removed MAC multicast {mac_multicast}")
+
+    def _log_stack_address_info(self) -> None:
+        """
+        Log all the addresses stack will listen on
+        """
+
+        for _ in (config.IP6__SUPPORT_ENABLED, config.IP4__SUPPORT_ENABLED):
+            stack.packet_handler.ip_configuration_in_progress.acquire(
+                timeout=15
+            )
+
+        if __debug__:
+            log(
+                "stack",
+                "<INFO>Stack listening on unicast MAC address: "
+                f"{self.mac_unicast}</>",
+            )
+            log(
+                "stack",
+                "<INFO>Stack listening on multicast MAC addresses: "
+                f"{', '.join([str(mac_multicast) for mac_multicast in set(self.mac_multicast)])}</>",
+            )
+            log(
+                "stack",
+                "<INFO>Stack listening on broadcast MAC address: "
+                f"{self.mac_broadcast}</>",
+            )
+
+            if config.IP6__SUPPORT_ENABLED:
+                log(
+                    "stack",
+                    "<INFO>Stack listening on unicast IPv6 addresses: "
+                    f"{', '.join([str(ip6_unicast) for ip6_unicast in self.ip6_unicast])}</>",
+                )
+                log(
+                    "stack",
+                    "<INFO>Stack listening on multicast IPv6 addresses: "
+                    f"{', '.join([str(ip6_multicast) for ip6_multicast in set(self.ip6_multicast)])}</>",
+                )
+
+            if config.IP4__SUPPORT_ENABLED:
+                log(
+                    "stack",
+                    "<INFO>Stack listening on unicast IPv4 addresses: "
+                    f"{', '.join([str(ip4_unicast) for ip4_unicast in self.ip4_unicast])}</>",
+                )
+                log(
+                    "stack",
+                    "<INFO>Stack listening on multicast IPv4 addresses: "
+                    f"{', '.join([str(ip4_multicast) for ip4_multicast in self.ip4_multicast])}</>",
+                )
+                log(
+                    "stack",
+                    "<INFO>Stack listening on broadcast IPv4 addresses: "
+                    f"{', '.join([str(ip4_broadcast) for ip4_broadcast in self.ip4_broadcast])}</>",
+                )
