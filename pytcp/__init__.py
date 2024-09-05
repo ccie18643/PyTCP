@@ -140,9 +140,11 @@ class TcpIpStack:
         stack.rx_ring.start(self.rx_fd)
         stack.tx_ring.start(self.tx_fd)
         stack.packet_handler.start()
-        stack.packet_handler._acquire_ip6_addresses()
-        stack.packet_handler._acquire_ip4_addresses()
-        stack.packet_handler._log_stack_address_info()
+
+        stack.packet_handler.acquire_ip6_addresses()
+        stack.packet_handler.acquire_ip4_addresses()
+
+        stack.packet_handler.log_stack_address_info()
 
     def stop(self) -> None:
         """

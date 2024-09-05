@@ -84,4 +84,5 @@ disable = """
     superfluous-parens,
     expression-not-assigned,
     no-member,
+    too-many-ancestors,
 """
