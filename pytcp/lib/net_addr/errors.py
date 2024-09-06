@@ -110,6 +110,17 @@ class Ip4HostFormatError(IpHostFormatError):
         super().__init__(f"The IPv4 host format is invalid: {message!r}")
 
 
+class Ip4HostSanityError(IpHostFormatError):
+    """
+    Exception raised when IPv4 host doesn't belong to provided network.
+    """
+
+    def __init__(self, message: Any, /):
+        super().__init__(
+            f"The IPv4 address doesn't belong to the provided network: {message!r}"
+        )
+
+
 class Ip4HostGatewayError(IpHostGatewayError):
     """
     Exception raised when IPv4 host gateway is invalid.
@@ -153,6 +164,17 @@ class Ip6HostFormatError(IpHostFormatError):
 
     def __init__(self, message: Any, /):
         super().__init__(f"The IPv6 host format is invalid: {message!r}")
+
+
+class Ip6HostSanityError(IpHostFormatError):
+    """
+    Exception raised when IPv6 host doesn't belong to provided network.
+    """
+
+    def __init__(self, message: Any, /):
+        super().__init__(
+            f"The IPv6 host doesn't belong to provided network: {message!r}"
+        )
 
 
 class Ip6HostGatewayError(IpHostGatewayError):

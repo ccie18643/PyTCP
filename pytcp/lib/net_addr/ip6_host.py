@@ -35,6 +35,8 @@ ver 3.0.2
 
 from __future__ import annotations
 
+import time
+from enum import auto
 from typing import override
 
 from pytcp.lib.net_addr.mac_address import MacAddress
@@ -43,21 +45,35 @@ from .errors import (
     Ip6AddressFormatError,
     Ip6HostFormatError,
     Ip6HostGatewayError,
+    Ip6HostSanityError,
     Ip6MaskFormatError,
 )
 from .ip6_address import Ip6Address
 from .ip6_mask import Ip6Mask
 from .ip6_network import Ip6Network
-from .ip_host import IpHost
+from .ip_host import IpHost, IpHostOrigin
 
 
-class Ip6Host(IpHost[Ip6Address, Ip6Network]):
+class Ip6HostOrigin(IpHostOrigin):
+    """
+    IPv4 address origin enumeration.
+    """
+
+    STATIC = auto()
+    ND = auto()
+    DHCP = auto()
+    UNKNOWN = auto()
+
+
+class Ip6Host(IpHost[Ip6Address, Ip6Network, Ip6HostOrigin]):
     """
     IPv6 host support class.
     """
 
     _version: int = 6
     _gateway: Ip6Address | None = None
+    _origin: Ip6HostOrigin
+    _expiration_time: int
 
     def __init__(
         self,
@@ -68,10 +84,23 @@ class Ip6Host(IpHost[Ip6Address, Ip6Network]):
             | str
         ),
         /,
+        *,
+        gateway: Ip6Address | None = None,
+        origin: Ip6HostOrigin | None = None,
+        expiration_time: int | None = None,
     ) -> None:
         """
         Get the IPv6 host address log string.
         """
+
+        self._gateway = gateway
+        self._origin = origin or Ip6HostOrigin.UNKNOWN
+        self._expiration_time = expiration_time or 0
+
+        if self._origin in {Ip6HostOrigin.ND, Ip6HostOrigin.DHCP}:
+            assert self._expiration_time >= int(time.time())
+        else:
+            assert self._expiration_time == 0
 
         if isinstance(host, tuple):
             if len(host) == 2:
@@ -80,6 +109,9 @@ class Ip6Host(IpHost[Ip6Address, Ip6Network]):
                 ):
                     self._address = host[0]
                     self._network = host[1]
+                    if self._address not in self._network:
+                        raise Ip6HostSanityError(host)
+                    self._validate_gateway(gateway)
                     return
                 if isinstance(host[0], Ip6Address) and isinstance(
                     host[1], Ip6Mask
@@ -98,32 +130,36 @@ class Ip6Host(IpHost[Ip6Address, Ip6Network]):
                 pass
 
         if isinstance(host, Ip6Host):
+            assert (
+                gateway is None
+            ), f"Gateway cannot be set when copying host. Got: {gateway!r}"
+            assert (
+                origin is None
+            ), f"Origin cannot be set when copying host. Got: {origin!r}"
+            assert (
+                expiration_time is None
+            ), f"Expiration time cannot be set when copying host. Got: {expiration_time!r}"
             self._address = host.address
             self._network = host.network
+            self._gateway = host.gateway
+            self._origin = host.origin
+            self._expiration_time = host.expiration_time
             return
 
         raise Ip6HostFormatError(host)
 
-    @property
     @override
-    def gateway(self) -> Ip6Address | None:
+    def _validate_gateway(self, address: Ip6Address | None, /) -> None:
         """
-        Get the IPv6 host address '_gateway' attribute.
-        """
-
-        return self._gateway
-
-    @gateway.setter
-    @override
-    def gateway(self, address: Ip6Address | None) -> None:
-        """
-        Set the IPv6 host address '_gateway' attribute.
+        Validate the IPv6 host address gateway.
         """
 
-        if address is not None and address not in Ip6Network("fe80::/10"):
+        if address is not None and (
+            address not in Ip6Network("fe80::/10")
+            or address == self._network.address
+            or address == self._address
+        ):
             raise Ip6HostGatewayError(address)
-
-        self._gateway = address
 
     @staticmethod
     def from_eui64(

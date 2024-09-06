@@ -50,6 +50,8 @@ from pytcp.lib.net_addr import (
     Ip6Host,
     MacAddress,
 )
+from pytcp.lib.net_addr.ip4_host import Ip4HostOrigin
+from pytcp.lib.net_addr.ip6_host import Ip6HostOrigin
 
 TUNSETIFF = 0x400454CA
 IFF_TAP = 0x0002
@@ -107,9 +109,11 @@ class TcpIpStack:
             if ip4_address is None:
                 config.IP4__HOST_DHCP = True
             else:
-                ip4_host = Ip4Host(ip4_address)
-                if ip4_gateway:
-                    ip4_host.gateway = Ip4Address(ip4_gateway)
+                ip4_host = Ip4Host(
+                    ip4_address,
+                    gateway=Ip4Address(ip4_gateway) if ip4_gateway else None,
+                    origin=Ip4HostOrigin.STATIC,
+                )
                 stack.packet_handler._assign_ip4_address(ip4_host=ip4_host)
                 config.IP4__HOST_DHCP = False
 
@@ -119,9 +123,11 @@ class TcpIpStack:
                 config.IP6__LLA_AUTOCONFIG = True
                 config.IP6__GUA_AUTOCONFIG = True
             else:
-                ip6_host = Ip6Host(ip6_address)
-                if ip6_gateway:
-                    ip6_host.gateway = Ip6Address(ip6_gateway)
+                ip6_host = Ip6Host(
+                    ip6_address,
+                    gateway=Ip6Address(ip6_gateway) if ip6_gateway else None,
+                    origin=Ip6HostOrigin.STATIC,
+                )
                 stack.packet_handler._assign_ip6_address(ip6_host=ip6_host)
                 config.IP6__LLA_AUTOCONFIG = True
                 config.IP6__GUA_AUTOCONFIG = False

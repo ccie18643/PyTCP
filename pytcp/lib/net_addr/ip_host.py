@@ -36,19 +36,26 @@ ver 3.0.2
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
+from enum import Enum
 from typing import TYPE_CHECKING, Generic, TypeVar
 
-from .ip_address import IpAddress
-
 if TYPE_CHECKING:
+    from .ip_address import IpAddress
     from .ip_network import IpNetwork
+
+
+class IpHostOrigin(Enum):
+    """
+    IP host address origin enumeration.
+    """
 
 
 A = TypeVar("A", bound="IpAddress")
 N = TypeVar("N", bound="IpNetwork")
+O = TypeVar("O", bound="IpHostOrigin")
 
 
-class IpHost(ABC, Generic[A, N]):
+class IpHost(ABC, Generic[A, N, O]):
     """
     IP host support base class.
     """
@@ -56,7 +63,9 @@ class IpHost(ABC, Generic[A, N]):
     _address: A
     _network: N
     _version: int
-    _gateway: IpAddress | None
+    _gateway: A | None
+    _origin: O
+    _expiration_time: int
 
     def __str__(self) -> str:
         """
@@ -85,6 +94,14 @@ class IpHost(ABC, Generic[A, N]):
         """
 
         return hash(repr(self))
+
+    @abstractmethod
+    def _validate_gateway(self, address: A | None, /) -> None:
+        """
+        Validate the IPv4 host address gateway.
+        """
+
+        raise NotImplementedError
 
     @property
     def version(self) -> int:
@@ -127,19 +144,43 @@ class IpHost(ABC, Generic[A, N]):
         return self._network
 
     @property
-    @abstractmethod
-    def gateway(self) -> IpAddress | None:
+    def origin(self) -> O:
         """
-        Get the IP host address '_gateway' attribute.
+        Get the IPv4 host address '_origin' attribute.
         """
 
-        raise NotImplementedError
+        return self._origin
+
+    @property
+    def expiration_time(self) -> int:
+        """
+        Get the IPv4 host address '_expiration_time' attribute.
+        """
+
+        return self._expiration_time
+
+    @expiration_time.setter
+    def expiration_time(self, time: int, /) -> None:
+        """
+        Set the IPv4 host address '_expiration_time' attribute.
+        """
+
+        self._expiration_time = time
+
+    @property
+    def gateway(self) -> A | None:
+        """
+        Get the IPv4 host address '_gateway' attribute.
+        """
+
+        return self._gateway
 
     @gateway.setter
-    @abstractmethod
-    def gateway(self, /, address: IpAddress | None) -> None:
+    def gateway(self, address: A | None, /) -> None:
         """
-        Set the IP host address '_gateway' attribute.
+        Set the IPv4 host address '_gateway' attribute.
         """
 
-        raise NotImplementedError
+        self._validate_gateway(address)
+
+        self._gateway = address
