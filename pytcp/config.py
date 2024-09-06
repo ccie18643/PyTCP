@@ -72,6 +72,7 @@ LOG__CHANNEL = {
     "tcp",
     "socket",
     "tcp-ss",
+    "dhcp4",
     "service",
     "client",
 }

@@ -99,7 +99,9 @@ class Dhcp4Client:
                 dhcp_host_name="PyTCP",
             ).raw_packet
         )
-        __debug__ and log("dhcp4", "Sent out DHCP Discover message")
+        __debug__ and log(
+            "dhcp4", "Sent out DHCP Discover message to 255.255.255.255"
+        )
 
         # Wait for DHCP Offer
         try:
@@ -121,13 +123,24 @@ class Dhcp4Client:
 
         dhcp_srv_id = dhcp_packet_rx.dhcp_srv_id
         dhcp_yiaddr = dhcp_packet_rx.dhcp_yiaddr
+
+        dhcp_router_log = (
+            None
+            if dhcp_packet_rx.dhcp_router is None
+            else (
+                ", ".join(
+                    str(address) for address in dhcp_packet_rx.dhcp_router
+                )
+            )
+        )
+
         __debug__ and log(
             "dhcp4",
-            f"ClientUdpDhcp: Received DHCP Offer from "
-            f"{dhcp_packet_rx.dhcp_srv_id}"
+            f"Received DHCP Offer from "
+            f"{dhcp_packet_rx.dhcp_srv_id} - "
             f"IP: {dhcp_packet_rx.dhcp_yiaddr}, "
             f"Mask: {dhcp_packet_rx.dhcp_subnet_mask}, "
-            f"Router: {dhcp_packet_rx.dhcp_router}"
+            f"Router: {dhcp_router_log}, "
             f"DNS: {dhcp_packet_rx.dhcp_dns}, "
             f"Domain: {dhcp_packet_rx.dhcp_domain_name}",
         )
@@ -176,12 +189,22 @@ class Dhcp4Client:
             client_socket.close()
             return None
 
+        dhcp_router_log = (
+            None
+            if dhcp_packet_rx.dhcp_router is None
+            else (
+                ", ".join(
+                    str(address) for address in dhcp_packet_rx.dhcp_router
+                )
+            )
+        )
+
         __debug__ and log(
             "dhcp4",
-            f"Received DHCP Offer from {dhcp_packet_rx.dhcp_srv_id}"
+            f"Received DHCP Offer from {dhcp_packet_rx.dhcp_srv_id} - "
             f"IP: {dhcp_packet_rx.dhcp_yiaddr}, "
             f"Mask: {dhcp_packet_rx.dhcp_subnet_mask}, "
-            f"Router: {dhcp_packet_rx.dhcp_router}, "
+            f"Router: {dhcp_router_log}, "
             f"DNS: {dhcp_packet_rx.dhcp_dns}, "
             f"Domain: {dhcp_packet_rx.dhcp_domain_name}",
         )

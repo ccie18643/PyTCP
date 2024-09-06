@@ -145,8 +145,8 @@ class TxRing:
         self._tx_ring.append(packet_tx)
 
         __debug__ and log(
-            "rx-ring",
-            f"{packet_tx.tracker}, queue len: {len(self._tx_ring)}",
+            "tx-ring",
+            f"{packet_tx.tracker} - TX Queue len: {len(self._tx_ring)}",
         )
 
         self._packet_enqueued.release()
