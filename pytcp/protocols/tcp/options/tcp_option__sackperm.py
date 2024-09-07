@@ -53,7 +53,7 @@ from pytcp.protocols.tcp.tcp__errors import TcpIntegrityError
 # +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 
 
-TCP__OPTION_SACKPERM__LEN = 2
+TCP__OPTION__SACKPERM__LEN = 2
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -70,7 +70,7 @@ class TcpOptionSackperm(TcpOption):
     len: int = field(
         repr=False,
         init=False,
-        default=TCP__OPTION_SACKPERM__LEN,
+        default=TCP__OPTION__SACKPERM__LEN,
     )
 
     @override
@@ -105,9 +105,9 @@ class TcpOptionSackperm(TcpOption):
         Validate the TCP Sackperm option integrity before parsing it.
         """
 
-        if (value := _bytes[1]) != TCP__OPTION_SACKPERM__LEN:
+        if (value := _bytes[1]) != TCP__OPTION__SACKPERM__LEN:
             raise TcpIntegrityError(
-                f"The TCP Sackperm option length must be {TCP__OPTION_SACKPERM__LEN} "
+                f"The TCP Sackperm option length must be {TCP__OPTION__SACKPERM__LEN} "
                 f"bytes. Got: {value!r}"
             )
 

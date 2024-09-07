@@ -40,7 +40,7 @@ from testslide import TestCase
 
 from pytcp.protocols.tcp.options.tcp_option import TcpOptionType
 from pytcp.protocols.tcp.options.tcp_option__nop import (
-    TCP__OPTION_NOP__LEN,
+    TCP__OPTION__NOP__LEN,
     TcpOptionNop,
 )
 
@@ -65,7 +65,7 @@ class TestTcpOptionNopAsserts(TestCase):
                 "__repr__": "TcpOptionNop()",
                 "__bytes__": b"\x01",
                 "type": TcpOptionType.NOP,
-                "len": TCP__OPTION_NOP__LEN,
+                "len": TCP__OPTION__NOP__LEN,
             },
         },
     ]

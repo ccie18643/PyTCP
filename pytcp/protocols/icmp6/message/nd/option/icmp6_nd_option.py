@@ -39,8 +39,8 @@ from dataclasses import dataclass
 
 from pytcp.lib.proto_option import ProtoOption, ProtoOptionType
 
-ICMP6__ND_OPTION__STRUCT = "! BB"
-ICMP6__ND_OPTION__LEN = 2
+ICMP6__ND__OPTION__STRUCT = "! BB"
+ICMP6__ND__OPTION__LEN = 2
 
 
 class Icmp6NdOptionType(ProtoOptionType):

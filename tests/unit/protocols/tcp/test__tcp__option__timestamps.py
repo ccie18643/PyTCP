@@ -41,7 +41,7 @@ from testslide import TestCase
 from pytcp.lib.int_checks import UINT_32__MAX, UINT_32__MIN
 from pytcp.protocols.tcp.options.tcp_option import TcpOptionType
 from pytcp.protocols.tcp.options.tcp_option__timestamps import (
-    TCP__OPTION_TIMESTAMPS__LEN,
+    TCP__OPTION__TIMESTAMPS__LEN,
     TcpOptionTimestamps,
 )
 from pytcp.protocols.tcp.tcp__errors import TcpIntegrityError
@@ -143,7 +143,7 @@ class TestTcpOptionTimestampsAsserts(TestCase):
                 ),
                 "__bytes__": b"\x08\x0a\xff\xff\xff\xff\xff\xff\xff\xff",
                 "type": TcpOptionType.TIMESTAMPS,
-                "len": TCP__OPTION_TIMESTAMPS__LEN,
+                "len": TCP__OPTION__TIMESTAMPS__LEN,
                 "tsval": 4294967295,
                 "tsecr": 4294967295,
             },
@@ -162,7 +162,7 @@ class TestTcpOptionTimestampsAsserts(TestCase):
                 ),
                 "__bytes__": b"\x08\x0a\x42\x3a\x35\xc7\x84\x74\x6b\x8e",
                 "type": TcpOptionType.TIMESTAMPS,
-                "len": TCP__OPTION_TIMESTAMPS__LEN,
+                "len": TCP__OPTION__TIMESTAMPS__LEN,
                 "tsval": 1111111111,
                 "tsecr": 2222222222,
             },

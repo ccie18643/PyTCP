@@ -54,7 +54,7 @@ from pytcp.protocols.tcp.tcp__errors import TcpIntegrityError
 # +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 
 
-TCP__OPTION_MSS__LEN = 4
+TCP__OPTION__MSS__LEN = 4
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -71,7 +71,7 @@ class TcpOptionMss(TcpOption):
     len: int = field(
         repr=False,
         init=False,
-        default=TCP__OPTION_MSS__LEN,
+        default=TCP__OPTION__MSS__LEN,
     )
 
     mss: int
@@ -114,9 +114,9 @@ class TcpOptionMss(TcpOption):
         Validate the TCP Mss option integrity before parsing it.
         """
 
-        if (value := _bytes[1]) != TCP__OPTION_MSS__LEN:
+        if (value := _bytes[1]) != TCP__OPTION__MSS__LEN:
             raise TcpIntegrityError(
-                f"The TCP Mss option length must be {TCP__OPTION_MSS__LEN} "
+                f"The TCP Mss option length must be {TCP__OPTION__MSS__LEN} "
                 f"bytes. Got: {value!r}"
             )
 

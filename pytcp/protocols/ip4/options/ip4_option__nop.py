@@ -47,7 +47,7 @@ from pytcp.protocols.ip4.options.ip4_option import Ip4Option, Ip4OptionType
 # +-+-+-+-+-+-+-+-+
 
 
-IP4__OPTION_NOP__LEN = 1
+IP4__OPTION__NOP__LEN = 1
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -64,7 +64,7 @@ class Ip4OptionNop(Ip4Option):
     len: int = field(
         repr=False,
         init=False,
-        default=IP4__OPTION_NOP__LEN,
+        default=IP4__OPTION__NOP__LEN,
     )
 
     @override
@@ -96,9 +96,9 @@ class Ip4OptionNop(Ip4Option):
         Initialize the IPv4 Nop option from bytes.
         """
 
-        assert (value := len(_bytes)) >= IP4__OPTION_NOP__LEN, (
+        assert (value := len(_bytes)) >= IP4__OPTION__NOP__LEN, (
             f"The minimum length of the IPv4 Nop option must be "
-            f"{IP4__OPTION_NOP__LEN} byte. Got: {value!r}"
+            f"{IP4__OPTION__NOP__LEN} byte. Got: {value!r}"
         )
 
         assert (value := _bytes[0]) == int(Ip4OptionType.NOP), (

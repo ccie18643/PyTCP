@@ -47,7 +47,7 @@ from pytcp.protocols.tcp.options.tcp_option import TcpOption, TcpOptionType
 # +-+-+-+-+-+-+-+-+
 
 
-TCP__OPTION_NOP__LEN = 1
+TCP__OPTION__NOP__LEN = 1
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -64,7 +64,7 @@ class TcpOptionNop(TcpOption):
     len: int = field(
         repr=False,
         init=False,
-        default=TCP__OPTION_NOP__LEN,
+        default=TCP__OPTION__NOP__LEN,
     )
 
     @override
@@ -96,9 +96,9 @@ class TcpOptionNop(TcpOption):
         Initialize the TCP Nop option from bytes.
         """
 
-        assert (value := len(_bytes)) >= TCP__OPTION_NOP__LEN, (
+        assert (value := len(_bytes)) >= TCP__OPTION__NOP__LEN, (
             f"The minimum length of the TCP Nop option must be "
-            f"{TCP__OPTION_NOP__LEN} byte. Got: {value!r}"
+            f"{TCP__OPTION__NOP__LEN} byte. Got: {value!r}"
         )
 
         assert (value := _bytes[0]) == int(TcpOptionType.NOP), (

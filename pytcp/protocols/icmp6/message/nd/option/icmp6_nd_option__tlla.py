@@ -42,7 +42,7 @@ from typing import override
 from pytcp.lib.net_addr import MacAddress
 from pytcp.protocols.icmp6.icmp6__errors import Icmp6IntegrityError
 from pytcp.protocols.icmp6.message.nd.option.icmp6_nd_option import (
-    ICMP6__ND_OPTION__LEN,
+    ICMP6__ND__OPTION__LEN,
     Icmp6NdOption,
     Icmp6NdOptionType,
 )
@@ -55,8 +55,8 @@ from pytcp.protocols.icmp6.message.nd.option.icmp6_nd_option import (
 # >                           MAC Address                         |
 # +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 
-ICMP6__ND_OPTION_TLLA__LEN = 8
-ICMP6__ND_OPTION_TLLA__STRUCT = "! BB 6s"
+ICMP6__ND__OPTION__TLLA__LEN = 8
+ICMP6__ND__OPTION__TLLA__STRUCT = "! BB 6s"
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -73,7 +73,7 @@ class Icmp6NdOptionTlla(Icmp6NdOption):
     len: int = field(
         repr=False,
         init=False,
-        default=ICMP6__ND_OPTION_TLLA__LEN,
+        default=ICMP6__ND__OPTION__TLLA__LEN,
     )
 
     tlla: MacAddress
@@ -103,7 +103,7 @@ class Icmp6NdOptionTlla(Icmp6NdOption):
         """
 
         return struct.pack(
-            ICMP6__ND_OPTION_TLLA__STRUCT,
+            ICMP6__ND__OPTION__TLLA__STRUCT,
             int(self.type),
             self.len >> 3,
             bytes(self.tlla),
@@ -115,9 +115,9 @@ class Icmp6NdOptionTlla(Icmp6NdOption):
         Validate the integrity of the ICMPv6 ND Tlla option before parsing it.
         """
 
-        if (value := _bytes[1] << 3) != ICMP6__ND_OPTION_TLLA__LEN:
+        if (value := _bytes[1] << 3) != ICMP6__ND__OPTION__TLLA__LEN:
             raise Icmp6IntegrityError(
-                f"The ICMPv6 ND Tlla option length must be {ICMP6__ND_OPTION_TLLA__LEN} "
+                f"The ICMPv6 ND Tlla option length must be {ICMP6__ND__OPTION__TLLA__LEN} "
                 f"bytes. Got: {value!r}"
             )
 
@@ -134,9 +134,9 @@ class Icmp6NdOptionTlla(Icmp6NdOption):
         Initialize the ICMPv6 ND Tlla option from bytes.
         """
 
-        assert (value := len(_bytes)) >= ICMP6__ND_OPTION__LEN, (
+        assert (value := len(_bytes)) >= ICMP6__ND__OPTION__LEN, (
             f"The minimum length of the ICMPv6 ND Tlla option must be "
-            f"{ICMP6__ND_OPTION__LEN} bytes. Got: {value!r}"
+            f"{ICMP6__ND__OPTION__LEN} bytes. Got: {value!r}"
         )
 
         assert (value := _bytes[0]) == int(Icmp6NdOptionType.TLLA), (

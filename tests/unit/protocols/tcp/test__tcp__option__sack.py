@@ -40,8 +40,8 @@ from testslide import TestCase
 
 from pytcp.protocols.tcp.options.tcp_option import TcpOptionType
 from pytcp.protocols.tcp.options.tcp_option__sack import (
-    TCP__OPTION_SACK__LEN,
-    TCP__OPTION_SACK__MAX_BLOCK_NUM,
+    TCP__OPTION__SACK__LEN,
+    TCP__OPTION__SACK__MAX_BLOCK_NUM,
     TcpOptionSack,
     TcpSackBlock,
 )
@@ -68,7 +68,7 @@ class TestTcpOptionSackAsserts(TestCase):
         provided 'blocks' argument has too many elements.
         """
 
-        value = TCP__OPTION_SACK__MAX_BLOCK_NUM + 1
+        value = TCP__OPTION__SACK__MAX_BLOCK_NUM + 1
         self._option_args["blocks"] = [TcpSackBlock(0, 0)] * value
 
         with self.assertRaises(AssertionError) as error:
@@ -76,7 +76,7 @@ class TestTcpOptionSackAsserts(TestCase):
 
         self.assertEqual(
             str(error.exception),
-            f"The 'blocks' field must have at most {TCP__OPTION_SACK__MAX_BLOCK_NUM} "
+            f"The 'blocks' field must have at most {TCP__OPTION__SACK__MAX_BLOCK_NUM} "
             f"elements. Got: {value}",
         )
 
@@ -94,7 +94,7 @@ class TestTcpOptionSackAsserts(TestCase):
                 "__repr__": "TcpOptionSack(blocks=[])",
                 "__bytes__": b"\x05\x02",
                 "type": TcpOptionType.SACK,
-                "length": TCP__OPTION_SACK__LEN,
+                "length": TCP__OPTION__SACK__LEN,
                 "blocks": [],
             },
         },
@@ -114,7 +114,7 @@ class TestTcpOptionSackAsserts(TestCase):
                 ),
                 "__bytes__": b"\x05\x0a\xff\xff\xff\xff\xff\xff\xff\xff",
                 "type": TcpOptionType.SACK,
-                "length": TCP__OPTION_SACK__LEN + 8 * 1,
+                "length": TCP__OPTION__SACK__LEN + 8 * 1,
                 "blocks": [TcpSackBlock(4294967295, 4294967295)],
             },
         },
@@ -140,7 +140,7 @@ class TestTcpOptionSackAsserts(TestCase):
                     b"\x11\x5c\x00\x00\x15\xb3\x00\x00\x1a\x0a"
                 ),
                 "type": TcpOptionType.SACK,
-                "length": TCP__OPTION_SACK__LEN + 8 * 3,
+                "length": TCP__OPTION__SACK__LEN + 8 * 3,
                 "blocks": [
                     TcpSackBlock(1111, 2222),
                     TcpSackBlock(3333, 4444),
@@ -172,7 +172,7 @@ class TestTcpOptionSackAsserts(TestCase):
                     b"\x03\x78"
                 ),
                 "type": TcpOptionType.SACK,
-                "length": TCP__OPTION_SACK__LEN + 8 * 4,
+                "length": TCP__OPTION__SACK__LEN + 8 * 4,
                 "blocks": [
                     TcpSackBlock(111, 222),
                     TcpSackBlock(333, 444),

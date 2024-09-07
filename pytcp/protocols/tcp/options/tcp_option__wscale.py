@@ -54,8 +54,8 @@ from pytcp.protocols.tcp.tcp__errors import TcpIntegrityError
 # +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 
 
-TCP__OPTION_WSCALE__LEN = 3
-TCP__OPTION_WSCALE__MAX_VALUE = 14
+TCP__OPTION__WSCALE__LEN = 3
+TCP__OPTION__WSCALE__MAX_VALUE = 14
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -72,7 +72,7 @@ class TcpOptionWscale(TcpOption):
     len: int = field(
         repr=False,
         init=False,
-        default=TCP__OPTION_WSCALE__LEN,
+        default=TCP__OPTION__WSCALE__LEN,
     )
 
     wscale: int
@@ -85,10 +85,10 @@ class TcpOptionWscale(TcpOption):
 
         assert (
             is_uint8(self.wscale)
-            and self.wscale <= TCP__OPTION_WSCALE__MAX_VALUE
+            and self.wscale <= TCP__OPTION__WSCALE__MAX_VALUE
         ), (
             f"The 'wscale' field must be a 8-bit unsigned integer less than "
-            f"or equal to {TCP__OPTION_WSCALE__MAX_VALUE}. Got: {self.wscale}"
+            f"or equal to {TCP__OPTION__WSCALE__MAX_VALUE}. Got: {self.wscale}"
         )
 
     @override
@@ -118,9 +118,9 @@ class TcpOptionWscale(TcpOption):
         Validate the TCP Wscale option integrity before parsing it.
         """
 
-        if (value := _bytes[1]) != TCP__OPTION_WSCALE__LEN:
+        if (value := _bytes[1]) != TCP__OPTION__WSCALE__LEN:
             raise TcpIntegrityError(
-                f"The TCP Wscale option length must be {TCP__OPTION_WSCALE__LEN} "
+                f"The TCP Wscale option length must be {TCP__OPTION__WSCALE__LEN} "
                 f"bytes. Got: {value!r}"
             )
 
@@ -151,6 +151,6 @@ class TcpOptionWscale(TcpOption):
 
         # Correct the received Wscale option value to maximum allowed
         # if it exceeds the limit.
-        wscale = min(_bytes[2], TCP__OPTION_WSCALE__MAX_VALUE)
+        wscale = min(_bytes[2], TCP__OPTION__WSCALE__MAX_VALUE)
 
         return TcpOptionWscale(wscale=wscale)

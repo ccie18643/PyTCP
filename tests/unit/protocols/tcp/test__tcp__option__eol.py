@@ -40,7 +40,7 @@ from testslide import TestCase
 
 from pytcp.protocols.tcp.options.tcp_option import TcpOptionType
 from pytcp.protocols.tcp.options.tcp_option__eol import (
-    TCP__OPTION_EOL__LEN,
+    TCP__OPTION__EOL__LEN,
     TcpOptionEol,
 )
 
@@ -65,7 +65,7 @@ class TestTcpOptionEolAsserts(TestCase):
                 "__repr__": "TcpOptionEol()",
                 "__bytes__": b"\x00",
                 "type": TcpOptionType.EOL,
-                "len": TCP__OPTION_EOL__LEN,
+                "len": TCP__OPTION__EOL__LEN,
             },
         },
     ]

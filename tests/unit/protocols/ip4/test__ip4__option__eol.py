@@ -40,7 +40,7 @@ from testslide import TestCase
 
 from pytcp.protocols.ip4.options.ip4_option import Ip4OptionType
 from pytcp.protocols.ip4.options.ip4_option__eol import (
-    IP4__OPTION_EOL__LEN,
+    IP4__OPTION__EOL__LEN,
     Ip4OptionEol,
 )
 
@@ -65,7 +65,7 @@ class TestIp4OptionEolAsserts(TestCase):
                 "__repr__": "Ip4OptionEol()",
                 "__bytes__": b"\x00",
                 "type": Ip4OptionType.EOL,
-                "len": IP4__OPTION_EOL__LEN,
+                "len": IP4__OPTION__EOL__LEN,
             },
         },
     ]

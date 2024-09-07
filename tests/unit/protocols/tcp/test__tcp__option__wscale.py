@@ -41,7 +41,7 @@ from testslide import TestCase
 from pytcp.lib.int_checks import UINT_8__MIN
 from pytcp.protocols.tcp.options.tcp_option import TcpOptionType
 from pytcp.protocols.tcp.options.tcp_option__wscale import (
-    TCP__OPTION_WSCALE__MAX_VALUE,
+    TCP__OPTION__WSCALE__MAX_VALUE,
     TcpOptionWscale,
 )
 from pytcp.protocols.tcp.tcp__errors import TcpIntegrityError
@@ -75,7 +75,7 @@ class TestTcpOptionWscaleAsserts(TestCase):
         self.assertEqual(
             str(error.exception),
             "The 'wscale' field must be a 8-bit unsigned integer less than "
-            f"or equal to {TCP__OPTION_WSCALE__MAX_VALUE}. Got: {value}",
+            f"or equal to {TCP__OPTION__WSCALE__MAX_VALUE}. Got: {value}",
         )
 
     def test__tcp__option__wscale__wscale__over_max(self) -> None:
@@ -84,7 +84,7 @@ class TestTcpOptionWscaleAsserts(TestCase):
         provided 'wscale' argument is higher than the maximum supported value.
         """
 
-        self._option_args["wscale"] = value = TCP__OPTION_WSCALE__MAX_VALUE + 1
+        self._option_args["wscale"] = value = TCP__OPTION__WSCALE__MAX_VALUE + 1
 
         with self.assertRaises(AssertionError) as error:
             TcpOptionWscale(**self._option_args)
@@ -92,7 +92,7 @@ class TestTcpOptionWscaleAsserts(TestCase):
         self.assertEqual(
             str(error.exception),
             "The 'wscale' field must be a 8-bit unsigned integer less than "
-            f"or equal to {TCP__OPTION_WSCALE__MAX_VALUE}. Got: {value}",
+            f"or equal to {TCP__OPTION__WSCALE__MAX_VALUE}. Got: {value}",
         )
 
 

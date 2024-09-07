@@ -44,7 +44,7 @@ from pytcp.protocols.ip4.ip4__header import IP4__HEADER__LEN
 from pytcp.protocols.ip4.options.ip4_option import Ip4Option, Ip4OptionType
 from pytcp.protocols.ip4.options.ip4_option__eol import Ip4OptionEol
 from pytcp.protocols.ip4.options.ip4_option__nop import (
-    IP4__OPTION_NOP__LEN,
+    IP4__OPTION__NOP__LEN,
     Ip4OptionNop,
 )
 from pytcp.protocols.ip4.options.ip4_option__unknown import Ip4OptionUnknown
@@ -74,7 +74,7 @@ class Ip4Options(ProtoOptions):
                 break
 
             if frame[offset] == int(Ip4OptionType.NOP):
-                offset += IP4__OPTION_NOP__LEN
+                offset += IP4__OPTION__NOP__LEN
                 continue
 
             if (value := frame[offset + 1]) < 2:

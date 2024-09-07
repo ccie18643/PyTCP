@@ -58,7 +58,7 @@ from pytcp.protocols.tcp.tcp__errors import TcpIntegrityError
 # +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 
 
-TCP__OPTION_TIMESTAMPS__LEN = 10
+TCP__OPTION__TIMESTAMPS__LEN = 10
 
 
 @dataclass
@@ -85,7 +85,7 @@ class TcpOptionTimestamps(TcpOption):
     len: int = field(
         repr=False,
         init=False,
-        default=TCP__OPTION_TIMESTAMPS__LEN,
+        default=TCP__OPTION__TIMESTAMPS__LEN,
     )
 
     tsval: int
@@ -135,9 +135,9 @@ class TcpOptionTimestamps(TcpOption):
         Validate the TCP Timestamps option integrity before parsing it.
         """
 
-        if (value := _bytes[1]) != TCP__OPTION_TIMESTAMPS__LEN:
+        if (value := _bytes[1]) != TCP__OPTION__TIMESTAMPS__LEN:
             raise TcpIntegrityError(
-                f"The TCP Timestamps option length must be {TCP__OPTION_TIMESTAMPS__LEN} "
+                f"The TCP Timestamps option length must be {TCP__OPTION__TIMESTAMPS__LEN} "
                 f"bytes. Got: {value!r}"
             )
 

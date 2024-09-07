@@ -25,9 +25,9 @@
 
 
 """
-Module contains the TCP Eol (End of Option List) option support code.
+Module contains the DHCPv4 Message Type option support code.
 
-pytcp/protocols/tcp/options/tcp_option__eol.py
+pytcp/protocols/dhcp4/options/dhcp4_option__message_type.py
 
 ver 3.0.2
 """
@@ -35,75 +35,117 @@ ver 3.0.2
 
 from __future__ import annotations
 
+"""
+import struct
 from dataclasses import dataclass, field
 from typing import override
 
-from pytcp.protocols.tcp.options.tcp_option import TcpOption, TcpOptionType
+from pytcp.lib.int_checks import is_uint16
+from pytcp.protocols.tcp.options.tcp_option import (
+    TCP__OPTION__LEN,
+    TcpOption,
+    TcpOptionType,
+)
+from pytcp.protocols.tcp.tcp__errors import TcpIntegrityError
+"""
 
-# The TCP Eol (End of Option List) option [RFC 793].
+# The DHCPv4 Message Type option [RFC 2132].
 
-# +-+-+-+-+-+-+-+-+
-# |    Type = 0   |
-# +-+-+-+-+-+-+-+-+
-
-
-TCP__OPTION__EOL__LEN = 1
+# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+# |    Type = 1   |   Length = 1  |     Value     |
+# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 
 
+DHCP4__OPTION__MESSAGE_TYPE__LEN = 4
+
+'''
 @dataclass(frozen=True, kw_only=True)
-class TcpOptionEol(TcpOption):
+class TcpOptionMss(TcpOption):
     """
-    The TCP Eol (End of Option List) option support.
+    The TCP Mss (Maximum Segment Size) option support class.
     """
 
     type: TcpOptionType = field(
         repr=False,
         init=False,
-        default=TcpOptionType.EOL,
+        default=TcpOptionType.MSS,
     )
     len: int = field(
         repr=False,
         init=False,
-        default=TCP__OPTION__EOL__LEN,
+        default=TCP__OPTION_MSS__LEN,
     )
+
+    mss: int
 
     @override
     def __post_init__(self) -> None:
         """
-        Validate the TCP Eol option fields.
+        Validate the TCP Mss option fields.
         """
+
+        assert is_uint16(self.mss), (
+            f"The 'mss' field must be a 16-bit unsigned integer. "
+            f"Got: {self.mss}"
+        )
 
     @override
     def __str__(self) -> str:
         """
-        Get the the TCP Eol option log string.
+        Get the TCP Mss option log string.
         """
 
-        return "eol"
+        return f"mss {self.mss}"
 
     @override
     def __bytes__(self) -> bytes:
         """
-        Get the TCP Eol option as bytes.
+        Get the TCP Mss option as bytes.
         """
 
-        return bytes(self.type)
+        return struct.pack(
+            "! BB H",
+            int(self.type),
+            self.len,
+            self.mss,
+        )
+
+    @staticmethod
+    def _validate_integrity(_bytes: bytes, /) -> None:
+        """
+        Validate the TCP Mss option integrity before parsing it.
+        """
+
+        if (value := _bytes[1]) != TCP__OPTION_MSS__LEN:
+            raise TcpIntegrityError(
+                f"The TCP Mss option length must be {TCP__OPTION_MSS__LEN} "
+                f"bytes. Got: {value!r}"
+            )
+
+        if (value := _bytes[1]) > len(_bytes):
+            raise TcpIntegrityError(
+                "The TCP Mss option length must be less than or equal to "
+                f"the length of provided bytes ({len(_bytes)}). Got: {value!r}"
+            )
 
     @override
     @staticmethod
-    def from_bytes(_bytes: bytes, /) -> TcpOptionEol:
+    def from_bytes(_bytes: bytes, /) -> TcpOptionMss:
         """
-        Initialize the TCP Eol option from bytes.
+        Initialize the TCP Mss option from bytes.
         """
 
-        assert (value := len(_bytes)) >= TCP__OPTION__EOL__LEN, (
-            f"The minimum length of the TCP Eol option must be "
-            f"{TCP__OPTION__EOL__LEN} byte. Got: {value!r}"
+        assert (value := len(_bytes)) >= TCP__OPTION__LEN, (
+            f"The minimum length of the TCP Mss option must be "
+            f"{TCP__OPTION__LEN} bytes. Got: {value!r}"
         )
 
-        assert (value := _bytes[0]) == int(TcpOptionType.EOL), (
-            f"The TCP Eol option type must be {TcpOptionType.EOL!r}. "
+        assert (value := _bytes[0]) == int(TcpOptionType.MSS), (
+            f"The TCP Mss option type must be {TcpOptionType.MSS!r}. "
             f"Got: {TcpOptionType.from_int(value)!r}"
         )
 
-        return TcpOptionEol()
+        TcpOptionMss._validate_integrity(_bytes)
+
+        return TcpOptionMss(mss=int.from_bytes(_bytes[2:4]))
+'''

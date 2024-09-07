@@ -40,7 +40,7 @@ from testslide import TestCase
 
 from pytcp.protocols.ip4.options.ip4_option import Ip4OptionType
 from pytcp.protocols.ip4.options.ip4_option__nop import (
-    IP4__OPTION_NOP__LEN,
+    IP4__OPTION__NOP__LEN,
     Ip4OptionNop,
 )
 
@@ -65,7 +65,7 @@ class TestIp4OptionNopAsserts(TestCase):
                 "__repr__": "Ip4OptionNop()",
                 "__bytes__": b"\x01",
                 "type": Ip4OptionType.NOP,
-                "len": IP4__OPTION_NOP__LEN,
+                "len": IP4__OPTION__NOP__LEN,
             },
         },
     ]

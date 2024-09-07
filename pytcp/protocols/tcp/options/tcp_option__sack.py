@@ -63,9 +63,9 @@ from pytcp.protocols.tcp.tcp__errors import TcpIntegrityError
 # +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 
 
-TCP__OPTION_SACK__LEN = 2
-TCP__OPTION_SACK__BLOCK_LEN = 8
-TCP__OPTION_SACK__MAX_BLOCK_NUM = 4
+TCP__OPTION__SACK__LEN = 2
+TCP__OPTION__SACK__BLOCK_LEN = 8
+TCP__OPTION__SACK__MAX_BLOCK_NUM = 4
 
 
 @dataclass(frozen=True, kw_only=False)
@@ -82,7 +82,7 @@ class TcpSackBlock:
         Get the TCP Sack block length.
         """
 
-        return TCP__OPTION_SACK__BLOCK_LEN
+        return TCP__OPTION__SACK__BLOCK_LEN
 
     def __bytes__(self) -> bytes:
         """
@@ -117,7 +117,7 @@ class TcpOptionSack(TcpOption):
     len: int = field(
         repr=False,
         init=False,
-        default=TCP__OPTION_SACK__LEN,
+        default=TCP__OPTION__SACK__LEN,
     )
 
     blocks: list[TcpSackBlock]
@@ -128,8 +128,8 @@ class TcpOptionSack(TcpOption):
         Validate the TCP Sack option fields.
         """
 
-        assert len(self.blocks) <= TCP__OPTION_SACK__MAX_BLOCK_NUM, (
-            f"The 'blocks' field must have at most {TCP__OPTION_SACK__MAX_BLOCK_NUM} "
+        assert len(self.blocks) <= TCP__OPTION__SACK__MAX_BLOCK_NUM, (
+            f"The 'blocks' field must have at most {TCP__OPTION__SACK__MAX_BLOCK_NUM} "
             f"elements. Got: {len(self.blocks)}"
         )
 
@@ -137,8 +137,8 @@ class TcpOptionSack(TcpOption):
         object.__setattr__(
             self,
             "len",
-            TCP__OPTION_SACK__LEN
-            + TCP__OPTION_SACK__BLOCK_LEN * len(self.blocks),
+            TCP__OPTION__SACK__LEN
+            + TCP__OPTION__SACK__BLOCK_LEN * len(self.blocks),
         )
 
     @override
@@ -156,7 +156,7 @@ class TcpOptionSack(TcpOption):
         """
 
         return struct.pack(
-            f"! BB {TCP__OPTION_SACK__BLOCK_LEN * len(self.blocks)}s",
+            f"! BB {TCP__OPTION__SACK__BLOCK_LEN * len(self.blocks)}s",
             int(self.type),
             self.len,
             b"".join([bytes(block) for block in self.blocks]),
@@ -175,11 +175,11 @@ class TcpOptionSack(TcpOption):
             )
 
         if (
-            value := _bytes[1] - TCP__OPTION_SACK__LEN
-        ) % TCP__OPTION_SACK__BLOCK_LEN:
+            value := _bytes[1] - TCP__OPTION__SACK__LEN
+        ) % TCP__OPTION__SACK__BLOCK_LEN:
             raise TcpIntegrityError(
                 "The TCP Sack option blocks length must be a multiple of "
-                f"{TCP__OPTION_SACK__BLOCK_LEN}. Got: {value!r}"
+                f"{TCP__OPTION__SACK__BLOCK_LEN}. Got: {value!r}"
             )
 
     @override
@@ -206,21 +206,21 @@ class TcpOptionSack(TcpOption):
                 TcpSackBlock(
                     left=int.from_bytes(
                         _bytes[
-                            offset : offset + TCP__OPTION_SACK__BLOCK_LEN // 2
+                            offset : offset + TCP__OPTION__SACK__BLOCK_LEN // 2
                         ]
                     ),
                     right=int.from_bytes(
                         _bytes[
                             offset
-                            + TCP__OPTION_SACK__BLOCK_LEN // 2 : offset
-                            + TCP__OPTION_SACK__BLOCK_LEN
+                            + TCP__OPTION__SACK__BLOCK_LEN // 2 : offset
+                            + TCP__OPTION__SACK__BLOCK_LEN
                         ]
                     ),
                 )
                 for offset in range(
-                    TCP__OPTION_SACK__LEN,
-                    _bytes[1] - TCP__OPTION_SACK__LEN,
-                    TCP__OPTION_SACK__BLOCK_LEN,
+                    TCP__OPTION__SACK__LEN,
+                    _bytes[1] - TCP__OPTION__SACK__LEN,
+                    TCP__OPTION__SACK__BLOCK_LEN,
                 )
             ]
         )

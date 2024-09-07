@@ -44,7 +44,7 @@ from pytcp.protocols.tcp.options.tcp_option import TcpOption, TcpOptionType
 from pytcp.protocols.tcp.options.tcp_option__eol import TcpOptionEol
 from pytcp.protocols.tcp.options.tcp_option__mss import TcpOptionMss
 from pytcp.protocols.tcp.options.tcp_option__nop import (
-    TCP__OPTION_NOP__LEN,
+    TCP__OPTION__NOP__LEN,
     TcpOptionNop,
 )
 from pytcp.protocols.tcp.options.tcp_option__sack import (
@@ -146,7 +146,7 @@ class TcpOptions(ProtoOptions):
                 break
 
             if frame[offset] == int(TcpOptionType.NOP):
-                offset += TCP__OPTION_NOP__LEN
+                offset += TCP__OPTION__NOP__LEN
                 continue
 
             if (value := frame[offset + 1]) < 2:

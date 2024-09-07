@@ -40,7 +40,7 @@ from testslide import TestCase
 
 from pytcp.protocols.tcp.options.tcp_option import TcpOptionType
 from pytcp.protocols.tcp.options.tcp_option__sackperm import (
-    TCP__OPTION_SACKPERM__LEN,
+    TCP__OPTION__SACKPERM__LEN,
     TcpOptionSackperm,
 )
 from pytcp.protocols.tcp.tcp__errors import TcpIntegrityError
@@ -66,7 +66,7 @@ class TestTcpOptionSackpermAsserts(TestCase):
                 "__repr__": "TcpOptionSackperm()",
                 "__bytes__": b"\x04\x02",
                 "type": TcpOptionType.SACKPERM,
-                "len": TCP__OPTION_SACKPERM__LEN,
+                "len": TCP__OPTION__SACKPERM__LEN,
             },
         },
     ]

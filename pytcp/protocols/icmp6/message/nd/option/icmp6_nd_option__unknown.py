@@ -42,8 +42,8 @@ from typing import override
 from pytcp.lib.int_checks import is_8_byte_alligned, is_uint8
 from pytcp.protocols.icmp6.icmp6__errors import Icmp6IntegrityError
 from pytcp.protocols.icmp6.message.nd.option.icmp6_nd_option import (
-    ICMP6__ND_OPTION__LEN,
-    ICMP6__ND_OPTION__STRUCT,
+    ICMP6__ND__OPTION__LEN,
+    ICMP6__ND__OPTION__STRUCT,
     Icmp6NdOption,
     Icmp6NdOptionType,
 )
@@ -63,7 +63,7 @@ class Icmp6NdOptionUnknown(Icmp6NdOption):
     len: int = field(
         repr=True,
         init=True,
-        default=ICMP6__ND_OPTION__LEN,
+        default=ICMP6__ND__OPTION__LEN,
     )
 
     data: bytes
@@ -93,9 +93,9 @@ class Icmp6NdOptionUnknown(Icmp6NdOption):
             self.len
         ), f"The 'len' field must be 8-byte aligned. Got: {self.len!r}"
 
-        assert self.len == ICMP6__ND_OPTION__LEN + len(self.data), (
+        assert self.len == ICMP6__ND__OPTION__LEN + len(self.data), (
             "The 'len' field must reflect the length of the 'data' field. "
-            f"Got: {self.len!r} != {ICMP6__ND_OPTION__LEN + len(self.data)!r}"
+            f"Got: {self.len!r} != {ICMP6__ND__OPTION__LEN + len(self.data)!r}"
         )
 
     @override
@@ -114,7 +114,7 @@ class Icmp6NdOptionUnknown(Icmp6NdOption):
 
         return (
             struct.pack(
-                ICMP6__ND_OPTION__STRUCT,
+                ICMP6__ND__OPTION__STRUCT,
                 int(self.type),
                 self.len >> 3,
             )
@@ -140,9 +140,9 @@ class Icmp6NdOptionUnknown(Icmp6NdOption):
         Initialize the unknown ICMPv6 option from bytes.
         """
 
-        assert (value := len(_bytes)) >= ICMP6__ND_OPTION__LEN, (
+        assert (value := len(_bytes)) >= ICMP6__ND__OPTION__LEN, (
             f"The minimum length of the unknown ICMPv6 ND option must be "
-            f"{ICMP6__ND_OPTION__LEN} bytes. Got: {value!r}"
+            f"{ICMP6__ND__OPTION__LEN} bytes. Got: {value!r}"
         )
 
         assert (
@@ -157,5 +157,5 @@ class Icmp6NdOptionUnknown(Icmp6NdOption):
         return Icmp6NdOptionUnknown(
             type=Icmp6NdOptionType(_bytes[0]),
             len=_bytes[1] << 3,
-            data=_bytes[ICMP6__ND_OPTION__LEN : _bytes[1] << 3],
+            data=_bytes[ICMP6__ND__OPTION__LEN : _bytes[1] << 3],
         )

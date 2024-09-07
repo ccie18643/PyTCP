@@ -43,7 +43,7 @@ from pytcp.lib.int_checks import is_uint32
 from pytcp.lib.net_addr import Ip6Address, Ip6Mask, Ip6Network
 from pytcp.protocols.icmp6.icmp6__errors import Icmp6IntegrityError
 from pytcp.protocols.icmp6.message.nd.option.icmp6_nd_option import (
-    ICMP6__ND_OPTION__LEN,
+    ICMP6__ND__OPTION__LEN,
     Icmp6NdOption,
     Icmp6NdOptionType,
 )
@@ -68,8 +68,8 @@ from pytcp.protocols.icmp6.message.nd.option.icmp6_nd_option import (
 # |                                                               |
 # +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 
-ICMP6__ND_OPTION_PI__LEN = 32
-ICMP6__ND_OPTION_PI__STRUCT = "! BB BB L L L 16s"
+ICMP6__ND__OPTION__PI__LEN = 32
+ICMP6__ND__OPTION__PI__STRUCT = "! BB BB L L L 16s"
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -100,7 +100,7 @@ class Icmp6NdOptionPi(Icmp6NdOption):
     len: int = field(
         repr=False,
         init=False,
-        default=ICMP6__ND_OPTION_PI__LEN,
+        default=ICMP6__ND__OPTION__PI__LEN,
     )
 
     flag_l: bool = False
@@ -168,7 +168,7 @@ class Icmp6NdOptionPi(Icmp6NdOption):
         """
 
         return struct.pack(
-            ICMP6__ND_OPTION_PI__STRUCT,
+            ICMP6__ND__OPTION__PI__STRUCT,
             int(self.type),
             self.len >> 3,
             len(self.prefix.mask),
@@ -188,9 +188,9 @@ class Icmp6NdOptionPi(Icmp6NdOption):
         Validate the ICMPv6 ND Pi option integrity before parsing it.
         """
 
-        if (value := _bytes[1] << 3) != ICMP6__ND_OPTION_PI__LEN:
+        if (value := _bytes[1] << 3) != ICMP6__ND__OPTION__PI__LEN:
             raise Icmp6IntegrityError(
-                f"The ICMPv6 ND Pi option length must be {ICMP6__ND_OPTION_PI__LEN} "
+                f"The ICMPv6 ND Pi option length must be {ICMP6__ND__OPTION__PI__LEN} "
                 f"bytes. Got: {value!r}"
             )
 
@@ -207,9 +207,9 @@ class Icmp6NdOptionPi(Icmp6NdOption):
         Initialize the ICMPv6 ND Pi option from bytes.
         """
 
-        assert (value := len(_bytes)) >= ICMP6__ND_OPTION__LEN, (
+        assert (value := len(_bytes)) >= ICMP6__ND__OPTION__LEN, (
             f"The minimum length of the ICMPv6 ND Pi option must be "
-            f"{ICMP6__ND_OPTION__LEN} bytes. Got: {value!r}"
+            f"{ICMP6__ND__OPTION__LEN} bytes. Got: {value!r}"
         )
 
         assert (value := _bytes[0]) == int(Icmp6NdOptionType.PI), (
@@ -229,7 +229,7 @@ class Icmp6NdOptionPi(Icmp6NdOption):
             _,
             prefix,
         ) = struct.unpack(
-            ICMP6__ND_OPTION_PI__STRUCT, _bytes[:ICMP6__ND_OPTION_PI__LEN]
+            ICMP6__ND__OPTION__PI__STRUCT, _bytes[:ICMP6__ND__OPTION__PI__LEN]
         )
 
         return Icmp6NdOptionPi(

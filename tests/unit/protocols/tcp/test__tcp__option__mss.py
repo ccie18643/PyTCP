@@ -41,7 +41,7 @@ from testslide import TestCase
 from pytcp.lib.int_checks import UINT_16__MAX, UINT_16__MIN
 from pytcp.protocols.tcp.options.tcp_option import TcpOptionType
 from pytcp.protocols.tcp.options.tcp_option__mss import (
-    TCP__OPTION_MSS__LEN,
+    TCP__OPTION__MSS__LEN,
     TcpOptionMss,
 )
 from pytcp.protocols.tcp.tcp__errors import TcpIntegrityError
@@ -107,7 +107,7 @@ class TestTcpOptionMssAsserts(TestCase):
                 "__repr__": "TcpOptionMss(mss=65535)",
                 "__bytes__": b"\x02\x04\xff\xff",
                 "type": TcpOptionType.MSS,
-                "len": TCP__OPTION_MSS__LEN,
+                "len": TCP__OPTION__MSS__LEN,
                 "mss": 65535,
             },
         },
