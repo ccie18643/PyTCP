@@ -25,9 +25,9 @@
 
 
 """
-Module contains tests for the unknown IPv4 option code.
+Module contains tests for the unknown DHCPv4 option code.
 
-tests/unit/protocols/tcp/test__ip4__option__unknown.py
+tests/unit/protocols/dhcp4/test__dhcp4__option__unknown.py
 
 ver 3.0.2
 """
@@ -39,119 +39,121 @@ from parameterized import parameterized_class  # type: ignore
 from testslide import TestCase
 
 from pytcp.lib.int_checks import UINT_8__MAX, UINT_8__MIN
-from pytcp.protocols.ip4.ip4__errors import Ip4IntegrityError
-from pytcp.protocols.ip4.options.ip4_option import (
-    IP4__OPTION__LEN,
-    Ip4OptionType,
+from pytcp.protocols.dhcp4.dhcp4__errors import Dhcp4IntegrityError
+from pytcp.protocols.dhcp4.options.dhcp4_option import (
+    DHCP4__OPTION__LEN,
+    Dhcp4OptionType,
 )
-from pytcp.protocols.ip4.options.ip4_option__unknown import Ip4OptionUnknown
+from pytcp.protocols.dhcp4.options.dhcp4_option__unknown import (
+    Dhcp4OptionUnknown,
+)
 
 
-class TestIp4OptionUnknownAsserts(TestCase):
+class TestDhcp4OptionUnknownAsserts(TestCase):
     """
-    The unknown IPv4 option constructor argument assert tests.
+    The unknown DHCPv4 option constructor argument assert tests.
     """
 
     def setUp(self) -> None:
         """
-        Create the default arguments for the IPv4 unknown option constructor.
+        Create the default arguments for the DHCPv4 unknown option constructor.
         """
 
         self._option_args = {
-            "type": Ip4OptionType.from_int(255),
-            "len": 2,
-            "data": b"",
+            "type": Dhcp4OptionType.from_int(254),
+            "len": 8,
+            "data": b"012345",
         }
 
-    def test__ip4__option__unknown__type__not_Ip4OptionType(self) -> None:
+    def test__dhcp4__option__unknown__type__not_Dhcp4OptionType(self) -> None:
         """
-        Ensure the IPv4 unknown option constructor raises an exception when
-        the provided 'type' argument is not a Ip4OptionType.
+        Ensure the DHCPv4 unknown option constructor raises an exception
+        when the provided 'type' argument is not a Dhcp4OptionType.
         """
 
-        self._option_args["type"] = value = "not a Ip4OptionType"
+        self._option_args["type"] = value = "not a Dhcp4OptionType"
 
         with self.assertRaises(AssertionError) as error:
-            Ip4OptionUnknown(**self._option_args)  # type: ignore
+            Dhcp4OptionUnknown(**self._option_args)  # type: ignore
 
         self.assertEqual(
             str(error.exception),
-            f"The 'type' field must be a Ip4OptionType. Got: {type(value)!r}",
+            f"The 'type' field must be a Dhcp4OptionType. Got: {type(value)!r}",
         )
 
-    def test__ip4__option__unknown__type__known_value(
+    def test__dhcp4__option__unknown__type__core_value(
         self,
     ) -> None:
         """
-        Ensure the IPv4 unknown option constructor raises an exception when
-        the provided 'type' argument is a known Ip4OptionType.
+        Ensure the DHCPv4 unknown option constructor raises an exception
+        when the provided 'type' argument is a core Dhcp4OptionType.
         """
 
-        for type in Ip4OptionType.get_known_values():
-            self._option_args["type"] = value = Ip4OptionType(type)
+        for type in Dhcp4OptionType.get_known_values():
+            self._option_args["type"] = value = Dhcp4OptionType(type)
 
             with self.assertRaises(AssertionError) as error:
-                Ip4OptionUnknown(**self._option_args)  # type: ignore
+                Dhcp4OptionUnknown(**self._option_args)  # type: ignore
 
             self.assertEqual(
                 str(error.exception),
-                "The 'type' field must not be a known Ip4OptionType. "
+                "The 'type' field must not be a core Dhcp4OptionType. "
                 f"Got: {value!r}",
             )
 
-    def test__ip4__option__unknown__len__under_min(self) -> None:
+    def test__dhcp4__option__unknown__len__under_min(self) -> None:
         """
-        Ensure the Pv4 unknown option constructor raises an exception when
-        the provided 'len' argument is lower than the minimum supported
+        Ensure the DHCPv4 unknown option constructor raises an exception
+        when the provided 'len' argument is lower than the minimum supported
         value.
         """
 
         self._option_args["len"] = value = UINT_8__MIN - 1
 
         with self.assertRaises(AssertionError) as error:
-            Ip4OptionUnknown(**self._option_args)  # type: ignore
+            Dhcp4OptionUnknown(**self._option_args)  # type: ignore
 
         self.assertEqual(
             str(error.exception),
             f"The 'len' field must be an 8-bit unsigned integer. Got: {value}",
         )
 
-    def test__ip4__option__unknown__len__over_max(self) -> None:
+    def test__dhcp4__option__unknown__len__over_max(self) -> None:
         """
-        Ensure the IPv4 unknown option constructor raises an exception when
-        the provided 'len' argument is higher than the maximum supported
+        Ensure the DHCPv4 unknown option constructor raises an exception
+        when the provided 'len' argument is higher than the maximum supported
         value.
         """
 
         self._option_args["len"] = value = UINT_8__MAX + 1
 
         with self.assertRaises(AssertionError) as error:
-            Ip4OptionUnknown(**self._option_args)  # type: ignore
+            Dhcp4OptionUnknown(**self._option_args)  # type: ignore
 
         self.assertEqual(
             str(error.exception),
             f"The 'len' field must be an 8-bit unsigned integer. Got: {value}",
         )
 
-    def test__ip4__option__unknown__len__mismatch(self) -> None:
+    def test__dhcp4__option__unknown__len__mismatch(self) -> None:
         """
-        Ensure the IPv4 unknown option constructor raises an exception when
-        the provided 'len' argument is different than the length of the 'data'
-        field.
+        Ensure the DHCPv4 unknown option constructor raises an exception
+        when the provided 'len' argument is different than the length of the
+        'data' field.
         """
 
         self._option_args["len"] = value = (
-            IP4__OPTION__LEN + len(self._option_args["data"]) + 1  # type: ignore
+            DHCP4__OPTION__LEN + len(self._option_args["data"]) + 1  # type: ignore
         )
 
         with self.assertRaises(AssertionError) as error:
-            Ip4OptionUnknown(**self._option_args)  # type: ignore
+            Dhcp4OptionUnknown(**self._option_args)  # type: ignore
 
         self.assertEqual(
             str(error.exception),
             (
                 "The 'len' field must reflect the length of the 'data' field. "
-                f"Got: {value} != {IP4__OPTION__LEN + len(self._option_args['data'])}"  # type: ignore
+                f"Got: {value} != {DHCP4__OPTION__LEN + len(self._option_args['data'])}"  # type: ignore
             ),
         )
 
@@ -159,33 +161,33 @@ class TestIp4OptionUnknownAsserts(TestCase):
 @parameterized_class(
     [
         {
-            "_description": "The unknown IPv4 option.",
+            "_description": "The unknown DHCPv4 option.",
             "_args": {
-                "type": Ip4OptionType.from_int(255),
+                "type": Dhcp4OptionType.from_int(254),
                 "len": 18,
                 "data": b"0123456789ABCDEF",
             },
             "_results": {
                 "__len__": 18,
-                "__str__": "unk-255-18",
+                "__str__": "unk-254-18",
                 "__repr__": (
-                    f"Ip4OptionUnknown(type={Ip4OptionType.from_int(255)!r}, "
+                    f"Dhcp4OptionUnknown(type={Dhcp4OptionType.from_int(254)!r}, "
                     "len=18, data=b'0123456789ABCDEF')"
                 ),
                 "__bytes__": (
-                    b"\xff\x12\x30\x31\x32\x33\x34\x35\x36\x37\x38\x39\x41\x42\x43\x44"
+                    b"\xfe\x12\x30\x31\x32\x33\x34\x35\x36\x37\x38\x39\x41\x42\x43\x44"
                     b"\x45\x46"
                 ),
-                "type": Ip4OptionType.from_int(255),
+                "type": Dhcp4OptionType.from_int(254),
                 "len": 18,
                 "data": b"0123456789ABCDEF",
             },
         },
     ]
 )
-class TestIp4OptionUnknownAssembler(TestCase):
+class TestDhcp4OptionUnknownAssembler(TestCase):
     """
-    The unknown IPv4 option assembler tests.
+    The unknown DHCPv4 option assembler tests.
     """
 
     _description: str
@@ -194,82 +196,82 @@ class TestIp4OptionUnknownAssembler(TestCase):
 
     def setUp(self) -> None:
         """
-        Initialize the unknown IPv4 option object with testcase arguments.
+        Initialize the unknown DHCPv4 option object with testcase arguments.
         """
 
-        self._ip4_option_unknown = Ip4OptionUnknown(**self._args)
+        self._dhcp4_option_unknown = Dhcp4OptionUnknown(**self._args)
 
-    def test__ip4__option__unknown__len(self) -> None:
+    def test__dhcp4__option__unknown__len(self) -> None:
         """
-        Ensure the unknown IPv4 option '__len__()' method returns a correct
+        Ensure the unknown DHCPv4 option '__len__()' method returns a correct
         value.
         """
 
         self.assertEqual(
-            len(self._ip4_option_unknown),
+            len(self._dhcp4_option_unknown),
             self._results["__len__"],
         )
 
-    def test__ip4__option__unknown__str(self) -> None:
+    def test__dhcp4__option__unknown__str(self) -> None:
         """
-        Ensure the unknown IPv4 option '__str__()' method returns a correct
+        Ensure the unknown DHCPv4 option '__str__()' method returns a correct
         value.
         """
 
         self.assertEqual(
-            str(self._ip4_option_unknown),
+            str(self._dhcp4_option_unknown),
             self._results["__str__"],
         )
 
-    def test__ip4__option__unknown__repr(self) -> None:
+    def test__dhcp4__option__unknown__repr(self) -> None:
         """
-        Ensure the unknown IPv4 option '__repr__()' method returns a correct
+        Ensure the unknown DHCPv4 option '__repr__()' method returns a correct
         value.
         """
 
         self.assertEqual(
-            repr(self._ip4_option_unknown),
+            repr(self._dhcp4_option_unknown),
             self._results["__repr__"],
         )
 
-    def test__ip4__option__unknown__bytes(self) -> None:
+    def test__dhcp4__option__unknown__bytes(self) -> None:
         """
-        Ensure the unknown IPv4 option '__bytes__()' method returns a correct
+        Ensure the unknown DHCPv4 option '__bytes__()' method returns a correct
         value.
         """
 
         self.assertEqual(
-            bytes(self._ip4_option_unknown),
+            bytes(self._dhcp4_option_unknown),
             self._results["__bytes__"],
         )
 
-    def test__ip4__option__unknown__type(self) -> None:
+    def test__dhcp4__option__unknown__type(self) -> None:
         """
-        Ensure the unknown IPv4 option 'type' field contains a correct value.
+        Ensure the unknown DHCPv4 option 'type' field contains a correct value.
         """
 
         self.assertEqual(
-            self._ip4_option_unknown.type,
+            self._dhcp4_option_unknown.type,
             self._results["type"],
         )
 
-    def test__ip4__option__unknown__length(self) -> None:
+    def test__dhcp4__option__unknown__length(self) -> None:
         """
-        Ensure the unknown IPv4 option 'len' field contains a correct value.
+        Ensure the unknown DHCPv4 option 'len' field contains a correct value.
         """
 
         self.assertEqual(
-            self._ip4_option_unknown.len,
+            self._dhcp4_option_unknown.len,
             self._results["len"],
         )
 
-    def test__ip4__option__unknown__data(self) -> None:
+    def test__dhcp4__option__unknown__data(self) -> None:
         """
-        Ensure the unknown IPv4 option 'data' field contains a correct value.
+        Ensure the unknown DHCPv4 option 'data' field contains a correct value.
         """
 
         self.assertEqual(
-            self._ip4_option_unknown.data,
+            self._dhcp4_option_unknown.data,
             self._results["data"],
         )
 
@@ -277,7 +279,36 @@ class TestIp4OptionUnknownAssembler(TestCase):
 @parameterized_class(
     [
         {
-            "_description": "The unknown IPv4 option.",
+            "_description": "The unknown DHCPv4 option.",
+            "_args": {
+                "bytes": (
+                    b"\xfe\x12\x30\x31\x32\x33\x34\x35\x36\x37\x38\x39\x41\x42\x43\x44"
+                    b"\x45\x46"
+                ),
+            },
+            "_results": {
+                "option": Dhcp4OptionUnknown(
+                    type=Dhcp4OptionType.from_int(254),
+                    len=18,
+                    data=b"0123456789ABCDEF",
+                ),
+            },
+        },
+        {
+            "_description": "The unknown DHCPv4 option minimum length assert.",
+            "_args": {
+                "bytes": b"\xfe",
+            },
+            "_results": {
+                "error": AssertionError,
+                "error_message": (
+                    "The minimum length of the unknown DHCPv4 option must be 2 "
+                    "bytes. Got: 1"
+                ),
+            },
+        },
+        {
+            "_description": "The unknown DHCPv4 option incorrect 'type' field (End) assert.",
             "_args": {
                 "bytes": (
                     b"\xff\x12\x30\x31\x32\x33\x34\x35\x36\x37\x38\x39\x41\x42\x43\x44"
@@ -285,28 +316,15 @@ class TestIp4OptionUnknownAssembler(TestCase):
                 ),
             },
             "_results": {
-                "option": Ip4OptionUnknown(
-                    type=Ip4OptionType.from_int(255),
-                    len=18,
-                    data=b"0123456789ABCDEF",
-                ),
-            },
-        },
-        {
-            "_description": "The unknown IPv4 option minimum length assert.",
-            "_args": {
-                "bytes": b"\xff",
-            },
-            "_results": {
                 "error": AssertionError,
                 "error_message": (
-                    "The minimum length of the unknown IPv4 option must be 2 "
-                    "bytes. Got: 1"
+                    "The unknown DHCPv4 option type must not be known. "
+                    "Got: <Dhcp4OptionType.END: 255>"
                 ),
             },
         },
         {
-            "_description": "The unknown IPv4 option incorrect 'type' field (Eol) assert.",
+            "_description": "The unknown DHCPv4 option incorrect 'type' field (Pad) assert.",
             "_args": {
                 "bytes": (
                     b"\x00\x12\x30\x31\x32\x33\x34\x35\x36\x37\x38\x39\x41\x42\x43\x44"
@@ -316,74 +334,57 @@ class TestIp4OptionUnknownAssembler(TestCase):
             "_results": {
                 "error": AssertionError,
                 "error_message": (
-                    "The unknown IPv4 option type must not be known. "
-                    "Got: <Ip4OptionType.EOL: 0>"
+                    "The unknown DHCPv4 option type must not be known. "
+                    f"Got: {Dhcp4OptionType.PAD!r}"
                 ),
             },
         },
         {
-            "_description": "The unknown IPv4 option incorrect 'type' field (Nop) assert.",
+            "_description": "The unknown DHCPv4 option length integrity check (II).",
             "_args": {
                 "bytes": (
-                    b"\x01\x12\x30\x31\x32\x33\x34\x35\x36\x37\x38\x39\x41\x42\x43\x44"
-                    b"\x45\x46"
-                ),
-            },
-            "_results": {
-                "error": AssertionError,
-                "error_message": (
-                    "The unknown IPv4 option type must not be known. "
-                    f"Got: {Ip4OptionType.NOP!r}"
-                ),
-            },
-        },
-        {
-            "_description": "The unknown IPv4 option length integrity check (II).",
-            "_args": {
-                "bytes": (
-                    b"\xff\x12\x30\x31\x32\x33\x34\x35\x36\x37\x38\x39\x41\x42\x43\x44"
+                    b"\xfe\x12\x30\x31\x32\x33\x34\x35\x36\x37\x38\x39\x41\x42\x43\x44"
                     b"\x45"
                 ),
             },
             "_results": {
-                "error": Ip4IntegrityError,
+                "error": Dhcp4IntegrityError,
                 "error_message": (
-                    "[INTEGRITY ERROR][IPv4] The unknown IPv4 option length must "
-                    "be less than or equal to the length of provided bytes (17). "
-                    "Got: 18"
+                    "[INTEGRITY ERROR][DHCPv4] The unknown DHCPv4 option length must be "
+                    "less than or equal to the length of provided bytes (17). Got: 18"
                 ),
             },
         },
     ]
 )
-class TestIp4OptionUnknownParser(TestCase):
+class TestDhcp4OptionUnknownParser(TestCase):
     """
-    The unknown IPv4 option parser tests.
+    The unknown DHCPv4 option parser tests.
     """
 
     _description: str
     _args: dict[str, Any]
     _results: dict[str, Any]
 
-    def test__ip4_option_unknown__from_bytes(self) -> None:
+    def test__dhcp4__option__unknown__from_bytes(self) -> None:
         """
-        Ensure the unknown IPv4 option parser creates the proper option object
-        or throws assertion error.
+        Ensure the unknown DHCPv4 option parser creates the proper option
+        object or throws assertion error.
         """
 
         if "option" in self._results:
-            ip4_option_unknown = Ip4OptionUnknown.from_bytes(
+            dhcp4_option_unknown = Dhcp4OptionUnknown.from_bytes(
                 self._args["bytes"]
             )
 
             self.assertEqual(
-                ip4_option_unknown,
+                dhcp4_option_unknown,
                 self._results["option"],
             )
 
         if "error" in self._results:
             with self.assertRaises(self._results["error"]) as error:
-                Ip4OptionUnknown.from_bytes(self._args["bytes"])
+                Dhcp4OptionUnknown.from_bytes(self._args["bytes"])
 
             self.assertEqual(
                 str(error.exception),

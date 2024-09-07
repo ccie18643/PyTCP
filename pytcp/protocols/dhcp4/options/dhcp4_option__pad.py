@@ -82,7 +82,7 @@ class Dhcp4OptionPad(Dhcp4Option):
         Get the the DHCPv4 Pad option log string.
         """
 
-        return "eol"
+        return "pad"
 
     @override
     def __bytes__(self) -> bytes:

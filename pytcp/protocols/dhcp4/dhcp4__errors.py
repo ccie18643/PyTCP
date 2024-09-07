@@ -44,7 +44,7 @@ class Dhcp4IntegrityError(PacketIntegrityError):
     """
 
     def __init__(self, message: str, /):
-        super().__init__("[Ethernet] " + message)
+        super().__init__("[DHCPv4] " + message)
 
 
 class Dhcp4SanityError(PacketSanityError):
@@ -53,4 +53,4 @@ class Dhcp4SanityError(PacketSanityError):
     """
 
     def __init__(self, message: str, /):
-        super().__init__("[Ethernet] " + message)
+        super().__init__("[DHCPv4] " + message)

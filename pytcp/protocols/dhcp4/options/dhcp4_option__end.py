@@ -25,7 +25,7 @@
 
 
 """
-Module contains the DHCPv4 End (End of Option List) option support code.
+Module contains the DHCPv4 End option support code.
 
 pytcp/protocols/dhcp4/options/dhcp4_option__end.py
 
@@ -56,7 +56,7 @@ DHCP4__OPTION_END__LEN = 1
 @dataclass(frozen=True, kw_only=True)
 class Dhcp4OptionEnd(Dhcp4Option):
     """
-    The DHCPv4 End (End of Option List) option support.
+    The DHCPv4 End option support.
     """
 
     type: Dhcp4OptionType = field(
@@ -82,7 +82,7 @@ class Dhcp4OptionEnd(Dhcp4Option):
         Get the the DHCPv4 End option log string.
         """
 
-        return "eol"
+        return "end"
 
     @override
     def __bytes__(self) -> bytes:

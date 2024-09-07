@@ -243,7 +243,7 @@ class TestTcpOptionUnknownAssembler(TestCase):
             self._results["__bytes__"],
         )
 
-    def test__tcp_option_unknonwn__type(self) -> None:
+    def test__tcp__option__unknown__type(self) -> None:
         """
         Ensure the unknown TCP option 'type' field contains a correct value.
         """
@@ -253,7 +253,7 @@ class TestTcpOptionUnknownAssembler(TestCase):
             self._results["type"],
         )
 
-    def test__tcp_option_unknonwn__len(self) -> None:
+    def test__tcp__option__unknown__length(self) -> None:
         """
         Ensure the unknown TCP option 'len' field contains a correct value.
         """
@@ -263,7 +263,7 @@ class TestTcpOptionUnknownAssembler(TestCase):
             self._results["len"],
         )
 
-    def test__tcp_option_unknonwn__data(self) -> None:
+    def test__tcp__option__unknown__data(self) -> None:
         """
         Ensure the unknown TCP option 'data' field contains a correct value.
         """
