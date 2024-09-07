@@ -25,9 +25,9 @@
 
 
 """
-This module contains the Ethernet II protccol base class.
+This module contains the DHCPv4 protccol base class.
 
-pytcp/protocols/ethernet/ethernet__base.py
+pytcp/protocols/dhcp4/dhcp4__base.py
 
 ver 3.0.2
 """
@@ -35,77 +35,11 @@ ver 3.0.2
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, TypeAlias, override
-
 from pytcp.lib.proto import Proto
-from pytcp.protocols.ethernet.ethernet__header import EthernetHeaderProperties
-
-if TYPE_CHECKING:
-    from pytcp.protocols.arp.arp__assembler import ArpAssembler
-    from pytcp.protocols.ethernet.ethernet__header import EthernetHeader
-    from pytcp.protocols.ip4.ip4__assembler import (
-        Ip4Assembler,
-        Ip4FragAssembler,
-    )
-    from pytcp.protocols.ip6.ip6__assembler import Ip6Assembler
-    from pytcp.protocols.raw.raw__assembler import RawAssembler
-
-    EthernetPayload: TypeAlias = (
-        ArpAssembler
-        | Ip4Assembler
-        | Ip4FragAssembler
-        | Ip6Assembler
-        | RawAssembler
-    )
+from pytcp.protocols.dhcp4.dhcp4__header import Dhcp4HeaderProperties
 
 
-class Ethernet(Proto, EthernetHeaderProperties):
+class Dhcp4(Proto, Dhcp4HeaderProperties):
     """
     The Ethernet protocol base class.
     """
-
-    _header: EthernetHeader
-    _payload: EthernetPayload | memoryview
-
-    @override
-    def __len__(self) -> int:
-        """
-        Get the Ethernet packet length.
-        """
-
-        return len(self._header) + len(self._payload)
-
-    @override
-    def __str__(self) -> str:
-        """
-        Get the Ethernet packet log string.
-        """
-
-        return (
-            f"ETHER {self._header.src} > {self._header.dst}, type {self._header.type}, "
-            f"len {len(self)} ({len(self._header)}+{len(self) - len(self._header)})"
-        )
-
-    @override
-    def __repr__(self) -> str:
-        """
-        Get the Ethernet packet representation string.
-        """
-
-        return f"{self.__class__.__name__}(header={self._header}, payload={self._payload!r})"
-
-    @override
-    def __bytes__(self) -> bytes:
-        """
-        Get the Ethernet packet as bytes.
-        """
-
-        return bytes(self._header) + bytes(self._payload)
-
-    @property
-    def header(self) -> EthernetHeader:
-        """
-        Get the Ethernet packet '_header' attribute.
-        """
-
-        return self._header

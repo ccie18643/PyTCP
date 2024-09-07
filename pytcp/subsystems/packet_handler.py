@@ -54,7 +54,7 @@ from pytcp.lib.net_addr import (
 from pytcp.lib.packet_stats import PacketStatsRx, PacketStatsTx
 from pytcp.protocols.arp.arp__packet_handler_rx import ArpPacketHandlerRx
 from pytcp.protocols.arp.arp__packet_handler_tx import ArpPacketHandlerTx
-from pytcp.protocols.dhcp4.client import Dhcp4Client
+from pytcp.protocols.dhcp4__legacy.client import Dhcp4Client
 from pytcp.protocols.ethernet.ethernet__packet_handler_rx import (
     EthernetPacketHandlerRx,
 )

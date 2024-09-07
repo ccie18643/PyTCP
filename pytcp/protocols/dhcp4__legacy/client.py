@@ -42,7 +42,7 @@ from typing import TYPE_CHECKING
 from pytcp.lib import socket
 from pytcp.lib.logger import log
 from pytcp.lib.net_addr import Ip4Address, Ip4Host, Ip4Mask
-from pytcp.protocols.dhcp4.base import (
+from pytcp.protocols.dhcp4__legacy.base import (
     DHCP4_MSG_ACK,
     DHCP4_MSG_DISCOVER,
     DHCP4_MSG_OFFER,

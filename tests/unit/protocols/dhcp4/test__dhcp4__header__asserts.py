@@ -25,9 +25,9 @@
 
 
 """
-This module contains tests for the ARP header fields asserts.
+This module contains tests for the DHCPv4 header fields asserts.
 
-tests/unit/protocols/arp/test__arp__header__asserts.py
+tests/unit/protocols/arp/test__dhcp4__header__asserts.py
 
 ver 3.0.2
 """
@@ -36,13 +36,13 @@ ver 3.0.2
 from testslide import TestCase
 
 from pytcp.lib.net_addr import Ip4Address, MacAddress
-from pytcp.protocols.arp.arp__enums import ArpOperation
-from pytcp.protocols.arp.arp__header import ArpHeader
+from pytcp.protocols.dhcp4.dhcp4__enums import Dhcp4Operation
+from pytcp.protocols.dhcp4.dhcp4__header import Dhcp4Header
 
 
-class TestArpHeaderAsserts(TestCase):
+class TestDhcp4HeaderAsserts(TestCase):
     """
-    The ARP header fields asserts tests.
+    The DHCPv4 header fields asserts tests.
     """
 
     def setUp(self) -> None:
@@ -51,45 +51,37 @@ class TestArpHeaderAsserts(TestCase):
         """
 
         self._header_kwargs = {
-            "oper": ArpOperation.REQUEST,
-            "sha": MacAddress(),
-            "spa": Ip4Address(),
-            "tha": MacAddress(),
-            "tpa": Ip4Address(),
+            "oper": Dhcp4Operation.REQUEST,
+            "hops": 0,
+            "xid": 0x12345678,
+            "secs": 0,
+            "flag_b": 0,
+            "ciaddr": Ip4Address(),
+            "yiaddr": Ip4Address(),
+            "siaddr": Ip4Address(),
+            "giaddr": Ip4Address(),
+            "chaddr": MacAddress(),
+            "sname": "",
+            "file": "",
         }
 
-    def test__arp__header__oper__not_ArpOperation(self) -> None:
+    def test__dhcp4__header__oper__not_Dhcp4Operation(self) -> None:
         """
-        Ensure the Arp header constructor raises an exception when the
+        Ensure the DHCPv4 header constructor raises an exception when the
         provided 'oper' argument is not a Dhcp4Operation.
         """
 
-        self._header_kwargs["oper"] = value = "not a ArpOperation"
+        self._header_kwargs["oper"] = value = "not a Dhcp4Operation"
 
         with self.assertRaises(AssertionError) as error:
-            ArpHeader(**self._header_kwargs)  # type: ignore
+            Dhcp4Header(**self._header_kwargs)  # type: ignore
 
         self.assertEqual(
             str(error.exception),
-            f"The 'oper' field must be an ArpOperation. Got: {type(value)!r}",
+            f"The 'oper' field must be a Dhcp4Operation. Got: {type(value)!r}",
         )
 
-    def test__arp__header__sha__not_MacAddress(self) -> None:
-        """
-        Ensure the ARP header constructor raises an exception when the provided
-        'sha' argument is not a MacAddress.
-        """
-
-        self._header_kwargs["sha"] = value = "not a MacAddress"
-
-        with self.assertRaises(AssertionError) as error:
-            ArpHeader(**self._header_kwargs)  # type: ignore
-
-        self.assertEqual(
-            str(error.exception),
-            f"The 'sha' field must be a MacAddress. Got: {type(value)!r}",
-        )
-
+    '''
     def test__arp__header__spa__not_Ip4Address(self) -> None:
         """
         Ensure the ARP header constructor raises an exception when the provided
@@ -137,3 +129,4 @@ class TestArpHeaderAsserts(TestCase):
             str(error.exception),
             f"The 'tpa' field must be an Ip4Address. Got: {type(value)!r}",
         )
+    '''
