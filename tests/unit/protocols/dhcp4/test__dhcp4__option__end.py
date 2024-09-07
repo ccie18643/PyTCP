@@ -40,7 +40,7 @@ from testslide import TestCase
 
 from pytcp.protocols.dhcp4.options.dhcp4_option import Dhcp4OptionType
 from pytcp.protocols.dhcp4.options.dhcp4_option__end import (
-    DHCP4__OPTION_END__LEN,
+    DHCP4__OPTION__END__LEN,
     Dhcp4OptionEnd,
 )
 
@@ -65,7 +65,7 @@ class TestDhcp4OptionEndAsserts(TestCase):
                 "__repr__": "Dhcp4OptionEnd()",
                 "__bytes__": b"\xff",
                 "type": Dhcp4OptionType.END,
-                "len": DHCP4__OPTION_END__LEN,
+                "len": DHCP4__OPTION__END__LEN,
             },
         },
     ]

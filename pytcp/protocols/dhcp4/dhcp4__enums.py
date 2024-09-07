@@ -56,3 +56,18 @@ class Dhcp4HardwareType(ProtoEnumWord):
 
 
 DHCP4__HARDWARE_LEN__ETHERNET = 6
+
+
+class Dhcp4MessageType(ProtoEnumWord):
+    """
+    The DHCPv4 message type option values.
+    """
+
+    DISCOVER = 0x01
+    OFFER = 0x02
+    REQUEST = 0x03
+    DECLINE = 0x04
+    ACK = 0x05
+    NAK = 0x06
+    RELEASE = 0x07
+    INFORM = 0x08

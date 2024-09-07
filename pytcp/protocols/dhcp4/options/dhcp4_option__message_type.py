@@ -35,19 +35,17 @@ ver 3.0.2
 
 from __future__ import annotations
 
-"""
 import struct
 from dataclasses import dataclass, field
 from typing import override
 
-from pytcp.lib.int_checks import is_uint16
-from pytcp.protocols.tcp.options.tcp_option import (
-    TCP__OPTION__LEN,
-    TcpOption,
-    TcpOptionType,
+from pytcp.protocols.dhcp4.dhcp4__enums import Dhcp4MessageType
+from pytcp.protocols.dhcp4.dhcp4__errors import Dhcp4IntegrityError
+from pytcp.protocols.dhcp4.options.dhcp4_option import (
+    DHCP4__OPTION__LEN,
+    Dhcp4Option,
+    Dhcp4OptionType,
 )
-from pytcp.protocols.tcp.tcp__errors import TcpIntegrityError
-"""
 
 # The DHCPv4 Message Type option [RFC 2132].
 
@@ -57,95 +55,95 @@ from pytcp.protocols.tcp.tcp__errors import TcpIntegrityError
 
 
 DHCP4__OPTION__MESSAGE_TYPE__LEN = 4
+DHCP4__OPTION__MESSAGE_TYPE__STRUCT = "! BB B"
 
-'''
-@dataclass(frozen=True, kw_only=True)
-class TcpOptionMss(TcpOption):
+
+@dataclass(frozen=True, kw_only=False)
+class Dhcp4OptionMessageType(Dhcp4Option):
     """
-    The TCP Mss (Maximum Segment Size) option support class.
+    The DHCPv4 Message Type option support class.
     """
 
-    type: TcpOptionType = field(
+    type: Dhcp4OptionType = field(
         repr=False,
         init=False,
-        default=TcpOptionType.MSS,
+        default=Dhcp4OptionType.MESSAGE_TYPE,
     )
     len: int = field(
         repr=False,
         init=False,
-        default=TCP__OPTION_MSS__LEN,
+        default=DHCP4__OPTION__MESSAGE_TYPE__LEN,
     )
 
-    mss: int
+    message_type: Dhcp4MessageType
 
     @override
     def __post_init__(self) -> None:
         """
-        Validate the TCP Mss option fields.
+        Validate the DHCPv4 Message Type option fields.
         """
 
-        assert is_uint16(self.mss), (
-            f"The 'mss' field must be a 16-bit unsigned integer. "
-            f"Got: {self.mss}"
+        assert isinstance(self.message_type, Dhcp4MessageType), (
+            f"The 'message_type' field must be a Dhcp4MessageType. "
+            f"Got: {type(self.message_type)!r}"
         )
 
     @override
     def __str__(self) -> str:
         """
-        Get the TCP Mss option log string.
+        Get the DHCPv4 Message Type option log string.
         """
 
-        return f"mss {self.mss}"
+        return f"message_type {self.message_type}"
 
     @override
     def __bytes__(self) -> bytes:
         """
-        Get the TCP Mss option as bytes.
+        Get the DHCPv4 Message Type option as bytes.
         """
 
         return struct.pack(
-            "! BB H",
+            DHCP4__OPTION__MESSAGE_TYPE__STRUCT,
             int(self.type),
             self.len,
-            self.mss,
+            int(self.message_type),
         )
 
     @staticmethod
     def _validate_integrity(_bytes: bytes, /) -> None:
         """
-        Validate the TCP Mss option integrity before parsing it.
+        Validate the DHCPv4 Message Type option integrity before parsing it.
         """
 
-        if (value := _bytes[1]) != TCP__OPTION_MSS__LEN:
-            raise TcpIntegrityError(
-                f"The TCP Mss option length must be {TCP__OPTION_MSS__LEN} "
-                f"bytes. Got: {value!r}"
+        if (value := _bytes[1]) != DHCP4__OPTION__MESSAGE_TYPE__LEN:
+            raise Dhcp4IntegrityError(
+                "The DHCPv4 Message Type option length must be "
+                f"{DHCP4__OPTION__MESSAGE_TYPE__LEN} bytes. Got: {value!r}"
             )
 
         if (value := _bytes[1]) > len(_bytes):
-            raise TcpIntegrityError(
-                "The TCP Mss option length must be less than or equal to "
-                f"the length of provided bytes ({len(_bytes)}). Got: {value!r}"
+            raise Dhcp4IntegrityError(
+                "The DHCPv4 Message Type option length must be less than or equal "
+                "to the length of provided bytes ({len(_bytes)}). Got: {value!r}"
             )
 
     @override
     @staticmethod
-    def from_bytes(_bytes: bytes, /) -> TcpOptionMss:
+    def from_bytes(_bytes: bytes, /) -> Dhcp4OptionMessageType:
         """
-        Initialize the TCP Mss option from bytes.
+        Initialize the DHCPv4 Message Type option from bytes.
         """
 
-        assert (value := len(_bytes)) >= TCP__OPTION__LEN, (
-            f"The minimum length of the TCP Mss option must be "
-            f"{TCP__OPTION__LEN} bytes. Got: {value!r}"
+        assert (value := len(_bytes)) >= DHCP4__OPTION__LEN, (
+            f"The minimum length of the DHCPv4 Message Type option must "
+            f"be {DHCP4__OPTION__LEN} bytes. Got: {value!r}"
         )
 
-        assert (value := _bytes[0]) == int(TcpOptionType.MSS), (
-            f"The TCP Mss option type must be {TcpOptionType.MSS!r}. "
-            f"Got: {TcpOptionType.from_int(value)!r}"
+        assert (value := _bytes[0]) == int(Dhcp4OptionType.MESSAGE_TYPE), (
+            f"The DHCPv4 Message Type option type must be {Dhcp4OptionType.MESSAGE_TYPE!r}. "
+            f"Got: {Dhcp4OptionType.from_int(value)!r}"
         )
 
-        TcpOptionMss._validate_integrity(_bytes)
+        Dhcp4OptionMessageType._validate_integrity(_bytes)
 
-        return TcpOptionMss(mss=int.from_bytes(_bytes[2:4]))
-'''
+        return Dhcp4OptionMessageType(Dhcp4MessageType.from_int(_bytes[3]))

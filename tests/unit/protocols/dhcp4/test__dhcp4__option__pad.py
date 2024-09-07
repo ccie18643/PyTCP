@@ -40,7 +40,7 @@ from testslide import TestCase
 
 from pytcp.protocols.dhcp4.options.dhcp4_option import Dhcp4OptionType
 from pytcp.protocols.dhcp4.options.dhcp4_option__pad import (
-    DHCP4__OPTION_PAD__LEN,
+    DHCP4__OPTION__PAD__LEN,
     Dhcp4OptionPad,
 )
 
@@ -65,7 +65,7 @@ class TestDhcp4OptionPadAsserts(TestCase):
                 "__repr__": "Dhcp4OptionPad()",
                 "__bytes__": b"\x00",
                 "type": Dhcp4OptionType.PAD,
-                "len": DHCP4__OPTION_PAD__LEN,
+                "len": DHCP4__OPTION__PAD__LEN,
             },
         },
     ]

@@ -49,6 +49,7 @@ class Dhcp4OptionType(ProtoOptionType):
     """
 
     PAD = 0
+    MESSAGE_TYPE = 53
     END = 255
 
 

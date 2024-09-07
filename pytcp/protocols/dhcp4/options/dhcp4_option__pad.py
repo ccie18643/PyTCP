@@ -50,7 +50,8 @@ from pytcp.protocols.dhcp4.options.dhcp4_option import (
 # +-+-+-+-+-+-+-+-+
 
 
-DHCP4__OPTION_PAD__LEN = 1
+DHCP4__OPTION__PAD__LEN = 1
+DHCP4__OPTION__PAD__STRUCT = "! B"
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -67,7 +68,7 @@ class Dhcp4OptionPad(Dhcp4Option):
     len: int = field(
         repr=False,
         init=False,
-        default=DHCP4__OPTION_PAD__LEN,
+        default=DHCP4__OPTION__PAD__LEN,
     )
 
     @override
@@ -99,9 +100,9 @@ class Dhcp4OptionPad(Dhcp4Option):
         Initialize the DHCPv4 Pad option from bytes.
         """
 
-        assert (value := len(_bytes)) >= DHCP4__OPTION_PAD__LEN, (
+        assert (value := len(_bytes)) >= DHCP4__OPTION__PAD__LEN, (
             f"The minimum length of the DHCPv4 Pad option must be "
-            f"{DHCP4__OPTION_PAD__LEN} byte. Got: {value!r}"
+            f"{DHCP4__OPTION__PAD__LEN} byte. Got: {value!r}"
         )
 
         assert (value := _bytes[0]) == int(Dhcp4OptionType.PAD), (

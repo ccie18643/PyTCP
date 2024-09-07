@@ -48,7 +48,7 @@ from pytcp.protocols.dhcp4.options.dhcp4_option import (
 )
 from pytcp.protocols.dhcp4.options.dhcp4_option__end import Dhcp4OptionEnd
 from pytcp.protocols.dhcp4.options.dhcp4_option__pad import (
-    DHCP4__OPTION_PAD__LEN,
+    DHCP4__OPTION__PAD__LEN,
     Dhcp4OptionPad,
 )
 from pytcp.protocols.dhcp4.options.dhcp4_option__unknown import (
@@ -84,7 +84,7 @@ class Dhcp4Options(ProtoOptions):
                 break
 
             if frame[offset] == int(Dhcp4OptionType.PAD):
-                offset += DHCP4__OPTION_PAD__LEN
+                offset += DHCP4__OPTION__PAD__LEN
                 continue
 
             if (value := frame[offset + 1]) < 2:
