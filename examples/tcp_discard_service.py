@@ -41,7 +41,7 @@ from typing import TYPE_CHECKING
 import click
 
 from examples.lib.tcp_service import TcpService
-from pytcp import TcpIpStack, initialize_tap
+from pytcp import TcpIpStack, initialize_interface
 
 if TYPE_CHECKING:
     from pytcp.lib.socket import Socket
@@ -131,7 +131,7 @@ def cli(
     Run the TCP Discard service.
     """
 
-    stack = TcpIpStack(fd=initialize_tap(tap_name=interface))
+    stack = TcpIpStack(fd=initialize_interface(interface))
     service = TcpDiscardService(
         local_ip_address=local_ip_address,
         local_port=local_port,

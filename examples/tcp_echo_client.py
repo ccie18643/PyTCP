@@ -43,7 +43,7 @@ import time
 
 import click
 
-from pytcp import TcpIpStack, initialize_tap
+from pytcp import TcpIpStack, initialize_interface
 from pytcp.lib import socket
 from pytcp.lib.ip_helper import ip_version
 
@@ -181,7 +181,7 @@ def cli(*, interface: str, remote_ip_address: str) -> None:
     Run the TCP Echo client.
     """
 
-    stack = TcpIpStack(fd=initialize_tap(tap_name=interface))
+    stack = TcpIpStack(fd=initialize_interface(interface))
     client = TcpEchoClient(
         remote_ip_address=remote_ip_address,
     )

@@ -54,14 +54,27 @@ from pytcp.lib.net_addr.ip4_host import Ip4HostOrigin
 from pytcp.lib.net_addr.ip6_host import Ip6HostOrigin
 
 TUNSETIFF = 0x400454CA
+IFF_TUN = 0x0001
 IFF_TAP = 0x0002
 IFF_NO_PI = 0x1000
 
 
-def initialize_tap(*, tap_name: str) -> tuple[int, int]:
+def initialize_interface(if_name: str, /) -> tuple[int, int]:
     """
-    Initialize the TAP interface.
+    Initialize the TAP/TUN interface.
     """
+
+    match if_name[0:3].lower():
+        case "tap":
+            if_type = IFF_TAP
+        case "tun":
+            if_type = IFF_TUN
+        case _:
+            log(
+                "stack",
+                "<CRIT>Interface name must start with 'tap' or 'tun'</>",
+            )
+            sys.exit(-1)
 
     try:
         fd = os.open("/dev/net/tun", os.O_RDWR)
@@ -73,7 +86,7 @@ def initialize_tap(*, tap_name: str) -> tuple[int, int]:
     fcntl.ioctl(
         fd,
         TUNSETIFF,
-        struct.pack("16sH", tap_name.encode(), IFF_TAP | IFF_NO_PI),
+        struct.pack("16sH", if_name.encode(), if_type | IFF_NO_PI),
     )
 
     return fd, fd

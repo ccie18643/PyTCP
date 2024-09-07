@@ -37,7 +37,7 @@ import time
 
 import click
 
-from pytcp import TcpIpStack, initialize_tap
+from pytcp import TcpIpStack, initialize_interface
 
 
 @click.command()
@@ -61,7 +61,7 @@ def cli(
     """
 
     stack = TcpIpStack(
-        fd=initialize_tap(tap_name=interface),
+        fd=initialize_interface(interface),
         mac_address=mac_address,
         ip6_address=ip6_address,
         ip6_gateway=ip6_gateway,

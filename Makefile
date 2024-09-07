@@ -20,6 +20,9 @@ venv: $(VENV)/bin/activate
 run: venv
 	@PYTHONPATH=$(ROOT_PATH) ./$(VENV)/bin/python3 examples/run_stack.py
 
+run_tun: venv
+	@PYTHONPATH=$(ROOT_PATH) ./$(VENV)/bin/python3 examples/run_stack.py --interface tun7 --ip4-address 10.0.0.2/24
+
 clean:
 	@rm -rf $(VENV)
 	@rm -rf dist tcp_ip_stack.egg-info PyTCP.egg-info
@@ -89,6 +92,12 @@ tap:
 	@ip tuntap add name tap7 mode tap
 	@ip link set dev tap7 up
 	@brctl addif br0 tap7
-	@echo 'Interface tap7 created and added to bridge br0'
+	@echo 'Interface tap7 created and added to bridge br0.'
 
-.PHONY: all venv run clean lint bridge tap
+tun:
+	@ip tuntap add name tun7 mode tun
+	@ip link set dev tun7 up
+	@ip addr add 10.0.0.1/24 dev tun7
+	@echo 'Interface tun7 created and assigned 10.0.0.1/24 address.'
+
+.PHONY: all venv run clean lint bridge tap tun

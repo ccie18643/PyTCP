@@ -41,7 +41,7 @@ from typing import TYPE_CHECKING
 import click
 
 from examples.lib.udp_service import UdpService
-from pytcp import TcpIpStack, initialize_tap
+from pytcp import TcpIpStack, initialize_interface
 
 if TYPE_CHECKING:
     from pytcp.lib.socket import Socket
@@ -91,7 +91,7 @@ def cli(
     Run the UDP Discard service.
     """
 
-    stack = TcpIpStack(fd=initialize_tap(tap_name=interface))
+    stack = TcpIpStack(fd=initialize_interface(interface))
     service = UdpDiscardService(
         local_ip_address=local_ip_address,
         local_port=local_port,
