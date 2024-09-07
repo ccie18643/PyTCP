@@ -55,6 +55,7 @@ from pytcp.protocols.tcp.tcp__errors import TcpIntegrityError
 
 
 TCP__OPTION__MSS__LEN = 4
+TCP__OPTION__MSS__STRUCT = "! BB H"
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -102,7 +103,7 @@ class TcpOptionMss(TcpOption):
         """
 
         return struct.pack(
-            "! BB H",
+            TCP__OPTION__MSS__STRUCT,
             int(self.type),
             self.len,
             self.mss,

@@ -59,6 +59,7 @@ from pytcp.protocols.tcp.tcp__errors import TcpIntegrityError
 
 
 TCP__OPTION__TIMESTAMPS__LEN = 10
+TCP__OPTION__TIMESTAMPS__STRUCT = "! BB LL"
 
 
 @dataclass
@@ -122,7 +123,7 @@ class TcpOptionTimestamps(TcpOption):
         """
 
         return struct.pack(
-            "! BB LL",
+            TCP__OPTION__TIMESTAMPS__STRUCT,
             int(self.type),
             self.len,
             self.tsval,
@@ -166,7 +167,9 @@ class TcpOptionTimestamps(TcpOption):
 
         TcpOptionTimestamps._validate_integrity(_bytes)
 
-        _, _, tsval, tsecr = struct.unpack_from("! BB LL", _bytes)
+        _, _, tsval, tsecr = struct.unpack_from(
+            TCP__OPTION__TIMESTAMPS__STRUCT, _bytes
+        )
 
         return TcpOptionTimestamps(
             tsval=tsval,

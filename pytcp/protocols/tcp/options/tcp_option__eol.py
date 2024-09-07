@@ -48,6 +48,7 @@ from pytcp.protocols.tcp.options.tcp_option import TcpOption, TcpOptionType
 
 
 TCP__OPTION__EOL__LEN = 1
+TCP__OPTION__EOL__STRUCT = "! B"
 
 
 @dataclass(frozen=True, kw_only=True)

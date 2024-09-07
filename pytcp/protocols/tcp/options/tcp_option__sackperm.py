@@ -54,6 +54,7 @@ from pytcp.protocols.tcp.tcp__errors import TcpIntegrityError
 
 
 TCP__OPTION__SACKPERM__LEN = 2
+TCP__OPTION__SACKPERM__STRUCT = "! BB"
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -94,7 +95,7 @@ class TcpOptionSackperm(TcpOption):
         """
 
         return struct.pack(
-            "! BB",
+            TCP__OPTION__SACKPERM__STRUCT,
             self.type.value,
             self.len,
         )

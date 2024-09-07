@@ -55,6 +55,7 @@ from pytcp.protocols.tcp.tcp__errors import TcpIntegrityError
 
 
 TCP__OPTION__WSCALE__LEN = 3
+TCP__OPTION__WSCALE__STRUCT = "! BB B"
 TCP__OPTION__WSCALE__MAX_VALUE = 14
 
 
@@ -106,7 +107,7 @@ class TcpOptionWscale(TcpOption):
         """
 
         return struct.pack(
-            "! BB B",
+            TCP__OPTION__WSCALE__STRUCT,
             int(self.type),
             self.len,
             self.wscale,

@@ -48,6 +48,7 @@ from pytcp.protocols.ip4.options.ip4_option import Ip4Option, Ip4OptionType
 
 
 IP4__OPTION__EOL__LEN = 1
+IP4__OPTION__EOL__STRUCT = "! B"
 
 
 @dataclass(frozen=True, kw_only=True)

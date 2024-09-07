@@ -64,7 +64,9 @@ from pytcp.protocols.tcp.tcp__errors import TcpIntegrityError
 
 
 TCP__OPTION__SACK__LEN = 2
+TCP__OPTION__SACK__STRUCT = "! BB"
 TCP__OPTION__SACK__BLOCK_LEN = 8
+TCP__OPTION__SACK__BLOCK_STRUCT = "! LL"
 TCP__OPTION__SACK__MAX_BLOCK_NUM = 4
 
 
@@ -90,7 +92,7 @@ class TcpSackBlock:
         """
 
         return struct.pack(
-            "! LL",
+            TCP__OPTION__SACK__BLOCK_STRUCT,
             self.left,
             self.right,
         )
@@ -156,7 +158,7 @@ class TcpOptionSack(TcpOption):
         """
 
         return struct.pack(
-            f"! BB {TCP__OPTION__SACK__BLOCK_LEN * len(self.blocks)}s",
+            f"{TCP__OPTION__SACK__STRUCT} {TCP__OPTION__SACK__BLOCK_LEN * len(self.blocks)}s",
             int(self.type),
             self.len,
             b"".join([bytes(block) for block in self.blocks]),
