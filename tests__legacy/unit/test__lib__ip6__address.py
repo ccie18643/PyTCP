@@ -758,13 +758,13 @@ class TestIp6Host(TestCase):
 
         self.assertIsNone(host._gateway)
 
-    def test__gateway_setter__error__not_lla(self) -> None:
+    def test__gateway_setter__error__not_lla_gua(self) -> None:
         """
         Ensure that the 'gateway' property setter raises the 'Ip4HostGatewayError'
-        exception when the provided gateway address is not LLA.
+        exception when the provided gateway address is not LLA or GUA.
         """
 
-        gateway = Ip6Address("2001::1")
+        gateway = Ip6Address("::")
         host = Ip6Host("2001::7/64")
 
         with self.assertRaises(Ip6HostGatewayError) as error:

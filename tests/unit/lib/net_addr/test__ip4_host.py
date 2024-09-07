@@ -39,11 +39,14 @@ from typing import Any
 from parameterized import parameterized_class  # type: ignore
 from testslide import TestCase
 
-from pytcp.lib.net_addr.errors import Ip4HostSanityError
-from pytcp.lib.net_addr.ip4_address import Ip4Address
-from pytcp.lib.net_addr.ip4_host import Ip4Host, Ip4HostOrigin
-from pytcp.lib.net_addr.ip4_mask import Ip4Mask
-from pytcp.lib.net_addr.ip4_network import Ip4Network
+from pytcp.lib.net_addr import (
+    Ip4Address,
+    Ip4Host,
+    Ip4HostOrigin,
+    Ip4HostSanityError,
+    Ip4Mask,
+    Ip4Network,
+)
 
 IP4_ADDRESS_EXPIRATION_TIME = int(time.time() + 3600)
 
@@ -96,7 +99,6 @@ IP4_ADDRESS_EXPIRATION_TIME = int(time.time() + 3600)
             "_kwargs": {
                 "gateway": Ip4Address("192.168.1.1"),
                 "origin": Ip4HostOrigin.STATIC,
-                "expiration_time": 0,
             },
             "_results": {
                 "__str__": "192.168.1.100/24",
@@ -120,7 +122,6 @@ IP4_ADDRESS_EXPIRATION_TIME = int(time.time() + 3600)
             "_kwargs": {
                 "gateway": Ip4Address("192.168.1.1"),
                 "origin": Ip4HostOrigin.STATIC,
-                "expiration_time": 0,
             },
             "_results": {
                 "__str__": "192.168.1.100/24",
@@ -267,7 +268,7 @@ class TestNetAddrIp4Host(TestCase):
 @parameterized_class(
     [
         {
-            "_description": "Test the IPv4 host: 192.168.1.100/24 (Ip4Address, Ip4Network)",
+            "_description": "Test the IPv4 host where address is not part of the network.",
             "_args": [
                 (Ip4Address("192.168.1.100"), Ip4Network("192.168.2.0/24"))
             ],

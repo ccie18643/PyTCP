@@ -60,7 +60,7 @@ class Ip6HostOrigin(IpHostOrigin):
     """
 
     STATIC = auto()
-    ND = auto()
+    AUTOCONFIG = auto()
     DHCP = auto()
     UNKNOWN = auto()
 
@@ -97,7 +97,7 @@ class Ip6Host(IpHost[Ip6Address, Ip6Network, Ip6HostOrigin]):
         self._origin = origin or Ip6HostOrigin.UNKNOWN
         self._expiration_time = expiration_time or 0
 
-        if self._origin in {Ip6HostOrigin.ND, Ip6HostOrigin.DHCP}:
+        if self._origin in {Ip6HostOrigin.AUTOCONFIG, Ip6HostOrigin.DHCP}:
             assert self._expiration_time >= int(time.time())
         else:
             assert self._expiration_time == 0
@@ -155,7 +155,8 @@ class Ip6Host(IpHost[Ip6Address, Ip6Network, Ip6HostOrigin]):
         """
 
         if address is not None and (
-            address not in Ip6Network("fe80::/10")
+            not address.is_global
+            and not address.is_link_local
             or address == self._network.address
             or address == self._address
         ):

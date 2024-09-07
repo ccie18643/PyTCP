@@ -173,7 +173,7 @@ class Ip6HostSanityError(IpHostFormatError):
 
     def __init__(self, message: Any, /):
         super().__init__(
-            f"The IPv6 host doesn't belong to provided network: {message!r}"
+            f"The IPv6 address doesn't belong to the provided network: {message!r}"
         )
 
 
