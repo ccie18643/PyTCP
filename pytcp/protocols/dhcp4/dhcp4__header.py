@@ -133,6 +133,8 @@ from pytcp.protocols.dhcp4.dhcp4__enums import (
 DHCP4__HEADER__LEN = 240
 DHCP4__HEADER__STRUCT = "! BBBB L HH L L L L 16s 64s 128s 4s"
 DHCP4__HEADER__MAGIC_COOKIE = b"\x63\x82\x53\x63"
+DHCP4__HEADER__SNAME__MAX_LEN = 64
+DHCP4__HEADER__FILE__MAX_LEN = 128
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -180,17 +182,17 @@ class Dhcp4Header(ProtoStruct):
         ), f"The 'oper' field must be a Dhcp4Operation. Got: {type(self.oper)!r}"
 
         assert is_uint8(self.hops), (
-            "The 'hops' field must be an unsigned 8-bit integer. "
+            "The 'hops' field must be an 8-bit unsigned integer. "
             f"Got: {self.hops!r}"
         )
 
         assert is_uint32(self.xid), (
-            "The 'xid' field must be an unsigned 32-bit integer. "
+            "The 'xid' field must be a 32-bit unsigned integer. "
             f"Got: {self.xid!r}"
         )
 
         assert is_uint16(self.secs), (
-            "The 'secs' field must be an unsigned 16-bit integer. "
+            "The 'secs' field must be a 16-bit unsigned integer. "
             f"Got: {self.secs!r}"
         )
 
@@ -228,9 +230,19 @@ class Dhcp4Header(ProtoStruct):
             self.sname, str
         ), f"The 'sname' field must be a string. Got: {type(self.sname)!r}"
 
+        assert len(self.sname) <= DHCP4__HEADER__SNAME__MAX_LEN, (
+            "The 'sname' field length must less or equal to "
+            f"{DHCP4__HEADER__SNAME__MAX_LEN!r}. Got: {len(self.sname)!r}"
+        )
+
         assert isinstance(
             self.file, str
         ), f"The 'file' field must be a string. Got: {type(self.file)!r}"
+
+        assert len(self.file) <= DHCP4__HEADER__FILE__MAX_LEN, (
+            "The 'file' field length must less or equal to "
+            f"{DHCP4__HEADER__FILE__MAX_LEN!r}. Got: {len(self.file)!r}"
+        )
 
     @override
     def __len__(self) -> int:

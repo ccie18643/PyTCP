@@ -35,9 +35,21 @@ ver 3.0.2
 
 from testslide import TestCase
 
+from pytcp.lib.int_checks import (
+    UINT_8__MAX,
+    UINT_8__MIN,
+    UINT_16__MAX,
+    UINT_16__MIN,
+    UINT_32__MAX,
+    UINT_32__MIN,
+)
 from pytcp.lib.net_addr import Ip4Address, MacAddress
 from pytcp.protocols.dhcp4.dhcp4__enums import Dhcp4Operation
-from pytcp.protocols.dhcp4.dhcp4__header import Dhcp4Header
+from pytcp.protocols.dhcp4.dhcp4__header import (
+    DHCP4__HEADER__FILE__MAX_LEN,
+    DHCP4__HEADER__SNAME__MAX_LEN,
+    Dhcp4Header,
+)
 
 
 class TestDhcp4HeaderAsserts(TestCase):
@@ -55,7 +67,7 @@ class TestDhcp4HeaderAsserts(TestCase):
             "hops": 0,
             "xid": 0x12345678,
             "secs": 0,
-            "flag_b": 0,
+            "flag_b": False,
             "ciaddr": Ip4Address(),
             "yiaddr": Ip4Address(),
             "siaddr": Ip4Address(),
@@ -81,52 +93,272 @@ class TestDhcp4HeaderAsserts(TestCase):
             f"The 'oper' field must be a Dhcp4Operation. Got: {type(value)!r}",
         )
 
-    '''
-    def test__arp__header__spa__not_Ip4Address(self) -> None:
+    def test__dhcp4__header__hops__under_min(self) -> None:
         """
-        Ensure the ARP header constructor raises an exception when the provided
-        'sha' argument is not an Ip4Address.
+        Ensure the DHCPv4 header constructor raises an exception when the
+        provided 'hops' argument is lower than the minimum supported value.
         """
 
-        self._header_kwargs["spa"] = value = "not an Ip4Address"
+        self._header_kwargs["hops"] = value = UINT_8__MIN - 1
 
         with self.assertRaises(AssertionError) as error:
-            ArpHeader(**self._header_kwargs)  # type: ignore
+            Dhcp4Header(**self._header_kwargs)  # type: ignore
 
         self.assertEqual(
             str(error.exception),
-            f"The 'spa' field must be an Ip4Address. Got: {type(value)!r}",
+            "The 'hops' field must be an 8-bit unsigned integer. "
+            f"Got: {value!r}",
         )
 
-    def test__arp__header__tha__not_MacAddress(self) -> None:
+    def test__dhcp4__header__hops__over_max(self) -> None:
         """
-        Ensure the ARP header constructor raises an exception when the provided
-        'tha' argument is not a MacAddress.
+        Ensure the DHCPv4 header constructor raises an exception when the
+        provided 'hops' argument is higher than the maximum supported value.
         """
 
-        self._header_kwargs["tha"] = value = "not a MacAddress"
+        self._header_kwargs["hops"] = value = UINT_8__MAX + 1
 
         with self.assertRaises(AssertionError) as error:
-            ArpHeader(**self._header_kwargs)  # type: ignore
+            Dhcp4Header(**self._header_kwargs)  # type: ignore
 
         self.assertEqual(
             str(error.exception),
-            f"The 'tha' field must be a MacAddress. Got: {type(value)!r}",
+            "The 'hops' field must be an 8-bit unsigned integer. "
+            f"Got: {value!r}",
         )
 
-    def test__arp__header__tpa__not_Ip4Address(self) -> None:
+    def test__dhcp4__header__xid__under_min(self) -> None:
         """
-        Ensure the ARP header constructor raises an exception when the provided
-        'tha' argument is not a Ip4Address.
+        Ensure the DHCPv4 header constructor raises an exception when the
+        provided 'xid' argument is lower than the minimum supported value.
         """
 
-        self._header_kwargs["tpa"] = value = "not an Ip4Address"
+        self._header_kwargs["xid"] = value = UINT_32__MIN - 1
 
         with self.assertRaises(AssertionError) as error:
-            ArpHeader(**self._header_kwargs)  # type: ignore
+            Dhcp4Header(**self._header_kwargs)  # type: ignore
 
         self.assertEqual(
             str(error.exception),
-            f"The 'tpa' field must be an Ip4Address. Got: {type(value)!r}",
+            "The 'xid' field must be a 32-bit unsigned integer. "
+            f"Got: {value!r}",
         )
-    '''
+
+    def test__dhcp4__header__xid__over_max(self) -> None:
+        """
+        Ensure the DHCPv4 header constructor raises an exception when the
+        provided 'xid' argument is higher than the maximum supported value.
+        """
+
+        self._header_kwargs["xid"] = value = UINT_32__MAX + 1
+
+        with self.assertRaises(AssertionError) as error:
+            Dhcp4Header(**self._header_kwargs)  # type: ignore
+
+        self.assertEqual(
+            str(error.exception),
+            "The 'xid' field must be a 32-bit unsigned integer. "
+            f"Got: {value!r}",
+        )
+
+    def test__dhcp4__header__secs__under_min(self) -> None:
+        """
+        Ensure the DHCPv4 header constructor raises an exception when the
+        provided 'secs' argument is lower than the minimum supported value.
+        """
+
+        self._header_kwargs["secs"] = value = UINT_16__MIN - 1
+
+        with self.assertRaises(AssertionError) as error:
+            Dhcp4Header(**self._header_kwargs)  # type: ignore
+
+        self.assertEqual(
+            str(error.exception),
+            "The 'secs' field must be a 16-bit unsigned integer. "
+            f"Got: {value!r}",
+        )
+
+    def test__dhcp4__header__secs__over_max(self) -> None:
+        """
+        Ensure the DHCPv4 header constructor raises an exception when the
+        provided 'secs' argument is higher than the maximum supported value.
+        """
+
+        self._header_kwargs["secs"] = value = UINT_16__MAX + 1
+
+        with self.assertRaises(AssertionError) as error:
+            Dhcp4Header(**self._header_kwargs)  # type: ignore
+
+        self.assertEqual(
+            str(error.exception),
+            "The 'secs' field must be a 16-bit unsigned integer. "
+            f"Got: {value!r}",
+        )
+
+    def test__dhcp4__header__flag_b__not_boolean(self) -> None:
+        """
+        Ensure the DHCPv4 header constructor raises an exception when the
+        provided 'flag_b' argument is not a boolean.
+        """
+
+        self._header_kwargs["flag_b"] = value = "not a boolean"
+
+        with self.assertRaises(AssertionError) as error:
+            Dhcp4Header(**self._header_kwargs)  # type: ignore
+
+        self.assertEqual(
+            str(error.exception),
+            f"The 'flag_b' field must be a boolean. Got: {type(value)!r}",
+        )
+
+    def test__dhcp4__header__ciaddr__not_Ip4Address(self) -> None:
+        """
+        Ensure the DHCPv4 header constructor raises an exception when the
+        provided 'ciaddr' argument is not an Ip4Address.
+        """
+
+        self._header_kwargs["ciaddr"] = value = "not an Ip4Address"
+
+        with self.assertRaises(AssertionError) as error:
+            Dhcp4Header(**self._header_kwargs)  # type: ignore
+
+        self.assertEqual(
+            str(error.exception),
+            f"The 'ciaddr' field must be an Ip4Address. Got: {type(value)!r}",
+        )
+
+    def test__dhcp4__header__yiaddr__not_Ip4Address(self) -> None:
+        """
+        Ensure the DHCPv4 header constructor raises an exception when the
+        provided 'yiaddr' argument is not an Ip4Address.
+        """
+
+        self._header_kwargs["yiaddr"] = value = "not an Ip4Address"
+
+        with self.assertRaises(AssertionError) as error:
+            Dhcp4Header(**self._header_kwargs)  # type: ignore
+
+        self.assertEqual(
+            str(error.exception),
+            f"The 'yiaddr' field must be an Ip4Address. Got: {type(value)!r}",
+        )
+
+    def test__dhcp4__header__siaddr__not_Ip4Address(self) -> None:
+        """
+        Ensure the DHCPv4 header constructor raises an exception when the
+        provided 'siaddr' argument is not an Ip4Address.
+        """
+
+        self._header_kwargs["siaddr"] = value = "not an Ip4Address"
+
+        with self.assertRaises(AssertionError) as error:
+            Dhcp4Header(**self._header_kwargs)  # type: ignore
+
+        self.assertEqual(
+            str(error.exception),
+            f"The 'siaddr' field must be an Ip4Address. Got: {type(value)!r}",
+        )
+
+    def test__dhcp4__header__giaddr__not_Ip4Address(self) -> None:
+        """
+        Ensure the DHCPv4 header constructor raises an exception when the
+        provided 'giaddr' argument is not an Ip4Address.
+        """
+
+        self._header_kwargs["giaddr"] = value = "not an Ip4Address"
+
+        with self.assertRaises(AssertionError) as error:
+            Dhcp4Header(**self._header_kwargs)  # type: ignore
+
+        self.assertEqual(
+            str(error.exception),
+            f"The 'giaddr' field must be an Ip4Address. Got: {type(value)!r}",
+        )
+
+    def test__dhcp4__header__chaddr__not_Ip4Address(self) -> None:
+        """
+        Ensure the DHCPv4 header constructor raises an exception when the
+        provided 'chaddr' argument is not an Ip4Address.
+        """
+
+        self._header_kwargs["chaddr"] = value = "not an MacAddress"
+
+        with self.assertRaises(AssertionError) as error:
+            Dhcp4Header(**self._header_kwargs)  # type: ignore
+
+        self.assertEqual(
+            str(error.exception),
+            f"The 'chaddr' field must be a MacAddress. Got: {type(value)!r}",
+        )
+
+    def test__dhcp4__header__sname__not_string(self) -> None:
+        """
+        Ensure the DHCPv4 header constructor raises an exception when the
+        provided 'sname' argument is not a string.
+        """
+
+        self._header_kwargs["sname"] = value = b"not a string"
+
+        with self.assertRaises(AssertionError) as error:
+            Dhcp4Header(**self._header_kwargs)  # type: ignore
+
+        self.assertEqual(
+            str(error.exception),
+            f"The 'sname' field must be a string. Got: {type(value)!r}",
+        )
+
+    def test__dhcp4__header__sname__over_max_len(self) -> None:
+        """
+        Ensure the DHCPv4 header constructor raises an exception when the
+        length of provided 'sname' argument is over maximum allowable
+        value.
+        """
+
+        self._header_kwargs["sname"] = value = "X" * (
+            DHCP4__HEADER__SNAME__MAX_LEN + 1
+        )
+
+        with self.assertRaises(AssertionError) as error:
+            Dhcp4Header(**self._header_kwargs)  # type: ignore
+
+        self.assertEqual(
+            str(error.exception),
+            "The 'sname' field length must less or equal to "
+            f"{DHCP4__HEADER__SNAME__MAX_LEN!r}. Got: {len(value)!r}",
+        )
+
+    def test__dhcp4__header__file__not_string(self) -> None:
+        """
+        Ensure the DHCPv4 header constructor raises an exception when the
+        provided 'file' argument is not a string.
+        """
+
+        self._header_kwargs["file"] = value = b"not a string"
+
+        with self.assertRaises(AssertionError) as error:
+            Dhcp4Header(**self._header_kwargs)  # type: ignore
+
+        self.assertEqual(
+            str(error.exception),
+            f"The 'file' field must be a string. Got: {type(value)!r}",
+        )
+
+    def test__dhcp4__header__file__over_max_len(self) -> None:
+        """
+        Ensure the DHCPv4 header constructor raises an exception when the
+        length of provided 'file' argument is over maximum allowable
+        value.
+        """
+
+        self._header_kwargs["file"] = value = "X" * (
+            DHCP4__HEADER__FILE__MAX_LEN + 1
+        )
+
+        with self.assertRaises(AssertionError) as error:
+            Dhcp4Header(**self._header_kwargs)  # type: ignore
+
+        self.assertEqual(
+            str(error.exception),
+            "The 'file' field length must less or equal to "
+            f"{DHCP4__HEADER__FILE__MAX_LEN!r}. Got: {len(value)!r}",
+        )
