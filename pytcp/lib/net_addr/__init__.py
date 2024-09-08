@@ -36,12 +36,13 @@ ver 3.0.2
 from .click_types import (
     ClickTypeIp4Address,
     ClickTypeIp4Host,
-    ClickTypeIp4Mask,
     ClickTypeIp4Network,
     ClickTypeIp6Address,
     ClickTypeIp6Host,
-    ClickTypeIp6Mask,
     ClickTypeIp6Network,
+    ClickTypeIpAddress,
+    ClickTypeIpHost,
+    ClickTypeIpNetwork,
     ClickTypeMacAddress,
 )
 from .errors import (

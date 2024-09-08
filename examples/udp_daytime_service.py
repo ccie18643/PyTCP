@@ -43,19 +43,19 @@ import click
 
 from examples.lib.udp_service import UdpService
 from pytcp import TcpIpStack, initialize_interface
-from pytcp.lib.net_addr.click_types import (
+from pytcp.lib.net_addr import (
     ClickTypeIp4Address,
     ClickTypeIp4Host,
     ClickTypeIp6Address,
     ClickTypeIp6Host,
     ClickTypeMacAddress,
+    Ip4Address,
+    Ip4Host,
+    Ip6Address,
+    Ip6Host,
+    IpAddress,
+    MacAddress,
 )
-from pytcp.lib.net_addr.ip4_address import Ip4Address
-from pytcp.lib.net_addr.ip4_host import Ip4Host
-from pytcp.lib.net_addr.ip6_address import Ip6Address
-from pytcp.lib.net_addr.ip6_host import Ip6Host
-from pytcp.lib.net_addr.ip_address import IpAddress
-from pytcp.lib.net_addr.mac_address import MacAddress
 
 if TYPE_CHECKING:
     from pytcp.lib.socket import Socket
