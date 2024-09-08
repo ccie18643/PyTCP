@@ -51,7 +51,7 @@ TCP__OPTION__NOP__LEN = 1
 TCP__OPTION__NOP__STRUCT = "! B"
 
 
-@dataclass(frozen=True, kw_only=True)
+@dataclass(frozen=True, kw_only=False)
 class TcpOptionNop(TcpOption):
     """
     The TCP Nop (No Operation) option support class.

@@ -158,18 +158,16 @@ class TestTcpOptionSackpermAssembler(TestCase):
     [
         {
             "_description": "The TCP Sackperm option.",
-            "_kwargs": {
-                "bytes": b"\x04\x02",
-            },
+            "_args": [b"\x04\x02" + b"ZH0PA"],
+            "_kwargs": {},
             "_results": {
                 "option": TcpOptionSackperm(),
             },
         },
         {
             "_description": "The 'Sackperm' TCP option minimum length assert.",
-            "_kwargs": {
-                "bytes": b"\x04",
-            },
+            "_args": [b"\x04"],
+            "_kwargs": {},
             "_results": {
                 "error": AssertionError,
                 "error_message": (
@@ -180,9 +178,8 @@ class TestTcpOptionSackpermAssembler(TestCase):
         },
         {
             "_description": "The TCP Sackperm option 'type' incorrect field assert.",
-            "_kwargs": {
-                "bytes": b"\xff\02",
-            },
+            "_args": [b"\xff\02"],
+            "_kwargs": {},
             "_results": {
                 "error": AssertionError,
                 "error_message": (
@@ -193,9 +190,8 @@ class TestTcpOptionSackpermAssembler(TestCase):
         },
         {
             "_description": "The TCP Sackperm option length integrity check (I).",
-            "_kwargs": {
-                "bytes": b"\x04\01",
-            },
+            "_args": [b"\x04\01"],
+            "_kwargs": {},
             "_results": {
                 "error": TcpIntegrityError,
                 "error_message": (
@@ -212,6 +208,7 @@ class TestTcpOptionSackpermParser(TestCase):
     """
 
     _description: str
+    _args: list[Any]
     _kwargs: dict[str, Any]
     _results: dict[str, Any]
 
@@ -222,9 +219,7 @@ class TestTcpOptionSackpermParser(TestCase):
         """
 
         if "option" in self._results:
-            option = TcpOptionSackperm.from_bytes(
-                self._kwargs["bytes"] + b"ZH0PA"
-            )
+            option = TcpOptionSackperm.from_bytes(*self._args, **self._kwargs)
 
             self.assertEqual(
                 option,
@@ -233,7 +228,7 @@ class TestTcpOptionSackpermParser(TestCase):
 
         if "error" in self._results:
             with self.assertRaises(self._results["error"]) as error:
-                TcpOptionSackperm.from_bytes(self._kwargs["bytes"])
+                TcpOptionSackperm.from_bytes(*self._args, **self._kwargs)
 
             self.assertEqual(
                 str(error.exception),

@@ -58,7 +58,7 @@ TCP__OPTION__MSS__LEN = 4
 TCP__OPTION__MSS__STRUCT = "! BB H"
 
 
-@dataclass(frozen=True, kw_only=True)
+@dataclass(frozen=True, kw_only=False)
 class TcpOptionMss(TcpOption):
     """
     The TCP Mss (Maximum Segment Size) option support class.

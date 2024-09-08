@@ -57,9 +57,8 @@ class TestTcpOptionMssAsserts(TestCase):
         Create the default arguments for the TCP Mss option constructor.
         """
 
-        self._option_kwargs = {
-            "mss": 0,
-        }
+        self._args: list[Any] = [0]
+        self._kwargs: dict[str, Any] = {}
 
     def test__tcp__option__mss__mss__under_min(self) -> None:
         """
@@ -67,10 +66,10 @@ class TestTcpOptionMssAsserts(TestCase):
         provided 'mss' argument is lower than the minimum supported value.
         """
 
-        self._option_kwargs["mss"] = value = UINT_16__MIN - 1
+        self._args[0] = value = UINT_16__MIN - 1
 
         with self.assertRaises(AssertionError) as error:
-            TcpOptionMss(**self._option_kwargs)
+            TcpOptionMss(*self._args, **self._kwargs)
 
         self.assertEqual(
             str(error.exception),
@@ -83,10 +82,10 @@ class TestTcpOptionMssAsserts(TestCase):
         provided 'mss' argument is higher than the maximum supported value.
         """
 
-        self._option_kwargs["mss"] = value = UINT_16__MAX + 1
+        self._args[0] = value = UINT_16__MAX + 1
 
         with self.assertRaises(AssertionError) as error:
-            TcpOptionMss(**self._option_kwargs)
+            TcpOptionMss(*self._args, **self._kwargs)
 
         self.assertEqual(
             str(error.exception),
@@ -98,10 +97,8 @@ class TestTcpOptionMssAsserts(TestCase):
     [
         {
             "_description": "The TCP Mss option.",
-            "_args": [],
-            "_kwargs": {
-                "mss": 65535,
-            },
+            "_args": [65535],
+            "_kwargs": {},
             "_results": {
                 "__len__": 4,
                 "__str__": "mss 65535",
@@ -210,18 +207,16 @@ class TestTcpOptionMssAssembler(TestCase):
     [
         {
             "_description": "The TCP Mss option.",
-            "_kwargs": {
-                "bytes": b"\x02\x04\xff\xff",
-            },
+            "_args": [b"\x02\x04\xff\xff" + b"ZH0PA"],
+            "_kwargs": {},
             "_results": {
                 "option": TcpOptionMss(mss=65535),
             },
         },
         {
             "_description": "The TCP Mss option minimum length assert.",
-            "_kwargs": {
-                "bytes": b"\x02",
-            },
+            "_args": [b"\x02"],
+            "_kwargs": {},
             "_results": {
                 "error": AssertionError,
                 "error_message": (
@@ -232,9 +227,8 @@ class TestTcpOptionMssAssembler(TestCase):
         },
         {
             "_description": "The TCP Mss option incorrect 'type' field assert.",
-            "_kwargs": {
-                "bytes": b"\xff\04\xff\xff",
-            },
+            "_args": [b"\xff\04\xff\xff"],
+            "_kwargs": {},
             "_results": {
                 "error": AssertionError,
                 "error_message": (
@@ -245,9 +239,8 @@ class TestTcpOptionMssAssembler(TestCase):
         },
         {
             "_description": "The TCP Mss option length integrity check (I).",
-            "_kwargs": {
-                "bytes": b"\x02\03\xff\xff",
-            },
+            "_args": [b"\x02\03\xff\xff"],
+            "_kwargs": {},
             "_results": {
                 "error": TcpIntegrityError,
                 "error_message": (
@@ -258,9 +251,8 @@ class TestTcpOptionMssAssembler(TestCase):
         },
         {
             "_description": "The TCP Mss option length integrity check (II).",
-            "_kwargs": {
-                "bytes": b"\x02\04\xff",
-            },
+            "_args": [b"\x02\04\xff"],
+            "_kwargs": {},
             "_results": {
                 "error": TcpIntegrityError,
                 "error_message": (
@@ -278,6 +270,7 @@ class TestTcpOptionMssParser(TestCase):
     """
 
     _description: str
+    _args: list[Any]
     _kwargs: dict[str, Any]
     _results: dict[str, Any]
 
@@ -288,7 +281,7 @@ class TestTcpOptionMssParser(TestCase):
         """
 
         if "option" in self._results:
-            option = TcpOptionMss.from_bytes(self._kwargs["bytes"] + b"ZH0PA")
+            option = TcpOptionMss.from_bytes(*self._args, **self._kwargs)
 
             self.assertEqual(
                 option,
@@ -297,7 +290,7 @@ class TestTcpOptionMssParser(TestCase):
 
         if "error" in self._results:
             with self.assertRaises(self._results["error"]) as error:
-                TcpOptionMss.from_bytes(self._kwargs["bytes"])
+                TcpOptionMss.from_bytes(*self._args, **self._kwargs)
 
             self.assertEqual(
                 str(error.exception),

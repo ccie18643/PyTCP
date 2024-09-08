@@ -58,9 +58,8 @@ class TestTcpOptionSackAsserts(TestCase):
         Create the default arguments for the TCP Sack option constructor.
         """
 
-        self._option_kwargs: dict[str, Any] = {
-            "blocks": [],
-        }
+        self._args: list[Any] = [[]]
+        self._kwargs: dict[str, Any] = {}
 
     def test__tcp__option__sack__blocks__too_many(self) -> None:
         """
@@ -69,10 +68,10 @@ class TestTcpOptionSackAsserts(TestCase):
         """
 
         value = TCP__OPTION__SACK__MAX_BLOCK_NUM + 1
-        self._option_kwargs["blocks"] = [TcpSackBlock(0, 0)] * value
+        self._args[0] = [TcpSackBlock(0, 0)] * value
 
         with self.assertRaises(AssertionError) as error:
-            TcpOptionSack(**self._option_kwargs)
+            TcpOptionSack(*self._args, **self._kwargs)
 
         self.assertEqual(
             str(error.exception),
@@ -85,10 +84,8 @@ class TestTcpOptionSackAsserts(TestCase):
     [
         {
             "_description": "The TCP Sack option (I).",
-            "_args": [],
-            "_kwargs": {
-                "blocks": [],
-            },
+            "_args": [[]],
+            "_kwargs": {},
             "_results": {
                 "__len__": 2,
                 "__str__": "sack []",
@@ -101,12 +98,8 @@ class TestTcpOptionSackAsserts(TestCase):
         },
         {
             "_description": "The TCP Sack option (II).",
-            "_args": [],
-            "_kwargs": {
-                "blocks": [
-                    TcpSackBlock(4294967295, 4294967295),
-                ],
-            },
+            "_args": [[TcpSackBlock(4294967295, 4294967295)]],
+            "_kwargs": {},
             "_results": {
                 "__len__": 10,
                 "__str__": "sack [4294967295-4294967295]",
@@ -122,14 +115,14 @@ class TestTcpOptionSackAsserts(TestCase):
         },
         {
             "_description": "The TCP Sack option (III).",
-            "_args": [],
-            "_kwargs": {
-                "blocks": [
+            "_args": [
+                [
                     TcpSackBlock(1111, 2222),
                     TcpSackBlock(3333, 4444),
                     TcpSackBlock(5555, 6666),
-                ],
-            },
+                ]
+            ],
+            "_kwargs": {},
             "_results": {
                 "__len__": 26,
                 "__str__": "sack [1111-2222, 3333-4444, 5555-6666]",
@@ -153,15 +146,15 @@ class TestTcpOptionSackAsserts(TestCase):
         },
         {
             "_description": "The TCP Sack option (IV).",
-            "_args": [],
-            "_kwargs": {
-                "blocks": [
+            "_args": [
+                [
                     TcpSackBlock(111, 222),
                     TcpSackBlock(333, 444),
                     TcpSackBlock(555, 666),
                     TcpSackBlock(777, 888),
-                ],
-            },
+                ]
+            ],
+            "_kwargs": {},
             "_results": {
                 "__len__": 34,
                 "__str__": "sack [111-222, 333-444, 555-666, 777-888]",
@@ -283,18 +276,16 @@ class TestTcpOptionSackAssembler(TestCase):
     [
         {
             "_description": "The TCP Sack option (I).",
-            "_kwargs": {
-                "bytes": b"\x05\x02",
-            },
+            "_args": [b"\x05\x02" + b"ZH0PA"],
+            "_kwargs": {},
             "_results": {
                 "option": TcpOptionSack(blocks=[]),
             },
         },
         {
             "_description": "The TCP Sack option (II).",
-            "_kwargs": {
-                "bytes": b"\x05\x0a\xff\xff\xff\xff\xff\xff\xff\xff",
-            },
+            "_args": [b"\x05\x0a\xff\xff\xff\xff\xff\xff\xff\xff" + b"ZH0PA"],
+            "_kwargs": {},
             "_results": {
                 "option": TcpOptionSack(
                     blocks=[
@@ -305,12 +296,11 @@ class TestTcpOptionSackAssembler(TestCase):
         },
         {
             "_description": "The TCP Sack option (III).",
-            "_kwargs": {
-                "bytes": (
-                    b"\x05\x1a\x00\x00\x04\x57\x00\x00\x08\xae\x00\x00\x0d\x05\x00\x00"
-                    b"\x11\x5c\x00\x00\x15\xb3\x00\x00\x1a\x0a"
-                ),
-            },
+            "_args": [
+                b"\x05\x1a\x00\x00\x04\x57\x00\x00\x08\xae\x00\x00\x0d\x05\x00\x00"
+                b"\x11\x5c\x00\x00\x15\xb3\x00\x00\x1a\x0a" + b"ZH0PA",
+            ],
+            "_kwargs": {},
             "_results": {
                 "option": TcpOptionSack(
                     blocks=[
@@ -323,13 +313,12 @@ class TestTcpOptionSackAssembler(TestCase):
         },
         {
             "_description": "The TCP Sack option (IV).",
-            "_kwargs": {
-                "bytes": (
-                    b"\x05\x22\x00\x00\x00\x6f\x00\x00\x00\xde\x00\x00\x01\x4d\x00\x00"
-                    b"\x01\xbc\x00\x00\x02\x2b\x00\x00\x02\x9a\x00\x00\x03\x09\x00\x00"
-                    b"\x03\x78"
-                ),
-            },
+            "_args": [
+                b"\x05\x22\x00\x00\x00\x6f\x00\x00\x00\xde\x00\x00\x01\x4d\x00\x00"
+                b"\x01\xbc\x00\x00\x02\x2b\x00\x00\x02\x9a\x00\x00\x03\x09\x00\x00"
+                b"\x03\x78" + b"ZH0PA",
+            ],
+            "_kwargs": {},
             "_results": {
                 "option": TcpOptionSack(
                     blocks=[
@@ -343,9 +332,8 @@ class TestTcpOptionSackAssembler(TestCase):
         },
         {
             "_description": "The TCP Sack option minimum length assert.",
-            "_kwargs": {
-                "bytes": b"\x05",
-            },
+            "_args": [b"\x05"],
+            "_kwargs": {},
             "_results": {
                 "error": AssertionError,
                 "error_message": (
@@ -356,9 +344,8 @@ class TestTcpOptionSackAssembler(TestCase):
         },
         {
             "_description": "The TCP Sack option incorrect 'type' field assert.",
-            "_kwargs": {
-                "bytes": b"\xff\x02",
-            },
+            "_args": [b"\xff\x02"],
+            "_kwargs": {},
             "_results": {
                 "error": AssertionError,
                 "error_message": (
@@ -369,9 +356,8 @@ class TestTcpOptionSackAssembler(TestCase):
         },
         {
             "_description": "The TCP Sack option length integrity check (II).",
-            "_kwargs": {
-                "bytes": b"\x05\x0a\xff\xff\xff\xff\xff\xff\xff",
-            },
+            "_args": [b"\x05\x0a\xff\xff\xff\xff\xff\xff\xff"],
+            "_kwargs": {},
             "_results": {
                 "error": TcpIntegrityError,
                 "error_message": (
@@ -383,9 +369,8 @@ class TestTcpOptionSackAssembler(TestCase):
         },
         {
             "_description": "The TCP Sack option length integrity check (III).",
-            "_kwargs": {
-                "bytes": b"\x05\x0b\xff\xff\xff\xff\xff\xff\xff\xff\x00",
-            },
+            "_args": [b"\x05\x0b\xff\xff\xff\xff\xff\xff\xff\xff\x00"],
+            "_kwargs": {},
             "_results": {
                 "error": TcpIntegrityError,
                 "error_message": (
@@ -402,6 +387,7 @@ class TestTcpOptionSackParser(TestCase):
     """
 
     _description: str
+    _args: list[Any]
     _kwargs: dict[str, Any]
     _results: dict[str, Any]
 
@@ -412,7 +398,7 @@ class TestTcpOptionSackParser(TestCase):
         """
 
         if "option" in self._results:
-            option = TcpOptionSack.from_bytes(self._kwargs["bytes"] + b"ZH0PA")
+            option = TcpOptionSack.from_bytes(*self._args, **self._kwargs)
 
             self.assertEqual(
                 option,
@@ -421,7 +407,7 @@ class TestTcpOptionSackParser(TestCase):
 
         if "error" in self._results:
             with self.assertRaises(self._results["error"]) as error:
-                TcpOptionSack.from_bytes(self._kwargs["bytes"])
+                TcpOptionSack.from_bytes(*self._args, **self._kwargs)
 
             self.assertEqual(
                 str(error.exception),

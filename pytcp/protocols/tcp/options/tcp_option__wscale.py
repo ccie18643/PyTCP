@@ -59,7 +59,7 @@ TCP__OPTION__WSCALE__STRUCT = "! BB B"
 TCP__OPTION__WSCALE__MAX_VALUE = 14
 
 
-@dataclass(frozen=True, kw_only=True)
+@dataclass(frozen=True, kw_only=False)
 class TcpOptionWscale(TcpOption):
     """
     The TCP Wscale (Window Scale) option support class.

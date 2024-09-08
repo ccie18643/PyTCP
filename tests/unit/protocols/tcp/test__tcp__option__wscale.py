@@ -57,9 +57,8 @@ class TestTcpOptionWscaleAsserts(TestCase):
         Create the default arguments for the TCP Wscale option constructor.
         """
 
-        self._option_kwargs = {
-            "wscale": 0,
-        }
+        self._args: list[Any] = [0]
+        self._kwargs: dict[str, Any] = {}
 
     def test__tcp__option__wscale__wscale__under_min(self) -> None:
         """
@@ -67,10 +66,10 @@ class TestTcpOptionWscaleAsserts(TestCase):
         provided 'wscale' argument is lower than the minimum supported value.
         """
 
-        self._option_kwargs["wscale"] = value = UINT_8__MIN - 1
+        self._args[0] = value = UINT_8__MIN - 1
 
         with self.assertRaises(AssertionError) as error:
-            TcpOptionWscale(**self._option_kwargs)
+            TcpOptionWscale(*self._args, **self._kwargs)
 
         self.assertEqual(
             str(error.exception),
@@ -84,12 +83,10 @@ class TestTcpOptionWscaleAsserts(TestCase):
         provided 'wscale' argument is higher than the maximum supported value.
         """
 
-        self._option_kwargs["wscale"] = value = (
-            TCP__OPTION__WSCALE__MAX_VALUE + 1
-        )
+        self._args[0] = value = TCP__OPTION__WSCALE__MAX_VALUE + 1
 
         with self.assertRaises(AssertionError) as error:
-            TcpOptionWscale(**self._option_kwargs)
+            TcpOptionWscale(*self._args, **self._kwargs)
 
         self.assertEqual(
             str(error.exception),
@@ -102,10 +99,8 @@ class TestTcpOptionWscaleAsserts(TestCase):
     [
         {
             "_description": "The TCP Wscale option.",
-            "_args": [],
-            "_kwargs": {
-                "wscale": 14,
-            },
+            "_args": [14],
+            "_kwargs": {},
             "_results": {
                 "__len__": 3,
                 "__str__": "wscale 14",
@@ -192,27 +187,24 @@ class TestTcpOptionWscaleAssembler(TestCase):
     [
         {
             "_description": "The TCP Wscale option.",
-            "_kwargs": {
-                "bytes": b"\x03\x03\x0e",
-            },
+            "_args": [b"\x03\x03\x0e" + b"ZH0PA"],
+            "_kwargs": {},
             "_results": {
                 "option": TcpOptionWscale(wscale=14),
             },
         },
         {
             "_description": "The TCP Wscale option (maximum value correction).",
-            "_kwargs": {
-                "bytes": b"\x03\x03\xff",
-            },
+            "_args": [b"\x03\x03\xff" + b"ZH0PA"],
+            "_kwargs": {},
             "_results": {
                 "option": TcpOptionWscale(wscale=14),
             },
         },
         {
             "_description": "The TCP Wscale option minimum length assert.",
-            "_kwargs": {
-                "bytes": b"\x03",
-            },
+            "_args": [b"\x03"],
+            "_kwargs": {},
             "_results": {
                 "error": AssertionError,
                 "error_message": (
@@ -223,9 +215,8 @@ class TestTcpOptionWscaleAssembler(TestCase):
         },
         {
             "_description": "The TCP Wscale option incorrect 'type' field assert.",
-            "_kwargs": {
-                "bytes": b"\xff\03\x0e",
-            },
+            "_args": [b"\xff\03\x0e"],
+            "_kwargs": {},
             "_results": {
                 "error": AssertionError,
                 "error_message": (
@@ -236,9 +227,8 @@ class TestTcpOptionWscaleAssembler(TestCase):
         },
         {
             "_description": "The TCP Wscale option length integrity check (I).",
-            "_kwargs": {
-                "bytes": b"\x03\02\x0e",
-            },
+            "_args": [b"\x03\02\x0e"],
+            "_kwargs": {},
             "_results": {
                 "error": TcpIntegrityError,
                 "error_message": (
@@ -249,9 +239,8 @@ class TestTcpOptionWscaleAssembler(TestCase):
         },
         {
             "_description": "The TCP Wscale option length integrity check (II).",
-            "_kwargs": {
-                "bytes": b"\x03\03",
-            },
+            "_args": [b"\x03\03"],
+            "_kwargs": {},
             "_results": {
                 "error": TcpIntegrityError,
                 "error_message": (
@@ -269,6 +258,7 @@ class TestTcpOptionWscaleParser(TestCase):
     """
 
     _description: str
+    _args: list[Any]
     _kwargs: dict[str, Any]
     _results: dict[str, Any]
 
@@ -279,9 +269,7 @@ class TestTcpOptionWscaleParser(TestCase):
         """
 
         if "option" in self._results:
-            option = TcpOptionWscale.from_bytes(
-                self._kwargs["bytes"] + b"ZH0PA"
-            )
+            option = TcpOptionWscale.from_bytes(*self._args, **self._kwargs)
 
             self.assertEqual(
                 option,
@@ -290,7 +278,7 @@ class TestTcpOptionWscaleParser(TestCase):
 
         if "error" in self._results:
             with self.assertRaises(self._results["error"]) as error:
-                TcpOptionWscale.from_bytes(self._kwargs["bytes"])
+                TcpOptionWscale.from_bytes(*self._args, **self._kwargs)
 
             self.assertEqual(
                 str(error.exception),

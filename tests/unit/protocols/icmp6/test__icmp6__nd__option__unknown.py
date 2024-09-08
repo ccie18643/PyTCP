@@ -59,7 +59,8 @@ class TestIcmp6NdOptionUnknownAsserts(TestCase):
         Create the default arguments for the ICMPv6 ND unknown option constructor.
         """
 
-        self._option_kwargs = {
+        self._args: list[Any] = []
+        self._kwargs: dict[str, Any] = {
             "type": Icmp6NdOptionType.from_int(255),
             "len": 8,
             "data": b"012345",
@@ -73,10 +74,10 @@ class TestIcmp6NdOptionUnknownAsserts(TestCase):
         the provided 'type' argument is not an Icmp6NdOptionType.
         """
 
-        self._option_kwargs["type"] = value = "not an Icmp6NdOptionType"
+        self._kwargs["type"] = value = "not an Icmp6NdOptionType"
 
         with self.assertRaises(AssertionError) as error:
-            Icmp6NdOptionUnknown(**self._option_kwargs)  # type: ignore
+            Icmp6NdOptionUnknown(*self._args, **self._kwargs)
 
         self.assertEqual(
             str(error.exception),
@@ -92,10 +93,10 @@ class TestIcmp6NdOptionUnknownAsserts(TestCase):
         """
 
         for type in Icmp6NdOptionType.get_known_values():
-            self._option_kwargs["type"] = value = Icmp6NdOptionType(type)
+            self._kwargs["type"] = value = Icmp6NdOptionType(type)
 
             with self.assertRaises(AssertionError) as error:
-                Icmp6NdOptionUnknown(**self._option_kwargs)  # type: ignore
+                Icmp6NdOptionUnknown(*self._args, **self._kwargs)
 
             self.assertEqual(
                 str(error.exception),
@@ -109,10 +110,10 @@ class TestIcmp6NdOptionUnknownAsserts(TestCase):
         the provided 'len' argument is lower than the minimum supported value.
         """
 
-        self._option_kwargs["len"] = value = UINT_8__MIN - 1
+        self._kwargs["len"] = value = UINT_8__MIN - 1
 
         with self.assertRaises(AssertionError) as error:
-            Icmp6NdOptionUnknown(**self._option_kwargs)  # type: ignore
+            Icmp6NdOptionUnknown(*self._args, **self._kwargs)
 
         self.assertEqual(
             str(error.exception),
@@ -125,10 +126,10 @@ class TestIcmp6NdOptionUnknownAsserts(TestCase):
         the provided 'len' argument is higher than the maximum supported value.
         """
 
-        self._option_kwargs["len"] = value = UINT_8__MAX + 1
+        self._kwargs["len"] = value = UINT_8__MAX + 1
 
         with self.assertRaises(AssertionError) as error:
-            Icmp6NdOptionUnknown(**self._option_kwargs)  # type: ignore
+            Icmp6NdOptionUnknown(*self._args, **self._kwargs)
 
         self.assertEqual(
             str(error.exception),
@@ -141,10 +142,10 @@ class TestIcmp6NdOptionUnknownAsserts(TestCase):
         the value of the 'len' field is not 8 bytes aligned.
         """
 
-        self._option_kwargs["len"] = value = UINT_8__MAX - 1
+        self._kwargs["len"] = value = UINT_8__MAX - 1
 
         with self.assertRaises(AssertionError) as error:
-            Icmp6NdOptionUnknown(**self._option_kwargs)  # type: ignore
+            Icmp6NdOptionUnknown(*self._args, **self._kwargs)
 
         self.assertEqual(
             str(error.exception),
@@ -158,18 +159,18 @@ class TestIcmp6NdOptionUnknownAsserts(TestCase):
         field.
         """
 
-        self._option_kwargs["len"] = value = (
-            ICMP6__ND__OPTION__LEN + len(self._option_kwargs["data"]) + 8  # type: ignore
+        self._kwargs["len"] = value = (
+            ICMP6__ND__OPTION__LEN + len(self._kwargs["data"]) + 8
         )
 
         with self.assertRaises(AssertionError) as error:
-            Icmp6NdOptionUnknown(**self._option_kwargs)  # type: ignore
+            Icmp6NdOptionUnknown(**self._kwargs)
 
         self.assertEqual(
             str(error.exception),
             (
                 "The 'len' field must reflect the length of the 'data' field. "
-                f"Got: {value} != {ICMP6__ND__OPTION__LEN + len(self._option_kwargs['data'])}"  # type: ignore
+                f"Got: {value} != {ICMP6__ND__OPTION__LEN + len(self._kwargs['data'])}"
             ),
         )
 
@@ -297,11 +298,11 @@ class TestIcmp6NdOptionUnknownAssembler(TestCase):
     [
         {
             "_description": "The unknown ICMPv6 ND option.",
-            "_kwargs": {
-                "bytes": (
-                    b"\xff\x02\x30\x31\x32\x33\x34\x35\x36\x37\x38\x39\x41\x42\x43\x44"
-                ),
-            },
+            "_args": [
+                b"\xff\x02\x30\x31\x32\x33\x34\x35\x36\x37\x38\x39\x41\x42\x43\x44"
+                + b"ZH0PA"
+            ],
+            "_kwargs": {},
             "_results": {
                 "option": Icmp6NdOptionUnknown(
                     type=Icmp6NdOptionType.from_int(255),
@@ -312,9 +313,8 @@ class TestIcmp6NdOptionUnknownAssembler(TestCase):
         },
         {
             "_description": "The unknown ICMPv6 ND option minimum length assert.",
-            "_kwargs": {
-                "bytes": b"\xff",
-            },
+            "_args": [b"\xff"],
+            "_kwargs": {},
             "_results": {
                 "error": AssertionError,
                 "error_message": (
@@ -325,11 +325,10 @@ class TestIcmp6NdOptionUnknownAssembler(TestCase):
         },
         {
             "_description": "The unknown ICMPv6 option incorrect 'type' field (1) assert.",
-            "_kwargs": {
-                "bytes": (
-                    b"\x01\x02\x30\x31\x32\x33\x34\x35\x36\x37\x38\x39\x41\x42\x43\x44"
-                ),
-            },
+            "_args": [
+                b"\x01\x02\x30\x31\x32\x33\x34\x35\x36\x37\x38\x39\x41\x42\x43\x44"
+            ],
+            "_kwargs": {},
             "_results": {
                 "error": AssertionError,
                 "error_message": (
@@ -340,11 +339,10 @@ class TestIcmp6NdOptionUnknownAssembler(TestCase):
         },
         {
             "_description": "The unknown TCP option incorrect 'type' field (2) assert.",
-            "_kwargs": {
-                "bytes": (
-                    b"\x02\x02\x30\x31\x32\x33\x34\x35\x36\x37\x38\x39\x41\x42\x43\x44"
-                ),
-            },
+            "_args": [
+                b"\x02\x02\x30\x31\x32\x33\x34\x35\x36\x37\x38\x39\x41\x42\x43\x44"
+            ],
+            "_kwargs": {},
             "_results": {
                 "error": AssertionError,
                 "error_message": (
@@ -355,11 +353,10 @@ class TestIcmp6NdOptionUnknownAssembler(TestCase):
         },
         {
             "_description": "The unknown TCP option incorrect 'type' field (3) assert.",
-            "_kwargs": {
-                "bytes": (
-                    b"\x03\x02\x30\x31\x32\x33\x34\x35\x36\x37\x38\x39\x41\x42\x43\x44"
-                ),
-            },
+            "_args": [
+                b"\x03\x02\x30\x31\x32\x33\x34\x35\x36\x37\x38\x39\x41\x42\x43\x44"
+            ],
+            "_kwargs": {},
             "_results": {
                 "error": AssertionError,
                 "error_message": (
@@ -370,11 +367,10 @@ class TestIcmp6NdOptionUnknownAssembler(TestCase):
         },
         {
             "_description": "The unknown ICMPv4 ND option length integrity check (II).",
-            "_kwargs": {
-                "bytes": (
-                    b"\xff\x02\x30\x31\x32\x33\x34\x35\x36\x37\x38\x39\x41\x42\x43"
-                ),
-            },
+            "_args": [
+                b"\xff\x02\x30\x31\x32\x33\x34\x35\x36\x37\x38\x39\x41\x42\x43"
+            ],
+            "_kwargs": {},
             "_results": {
                 "error": Icmp6IntegrityError,
                 "error_message": (
@@ -392,6 +388,7 @@ class TestIcmp4NdOptionUnknownParser(TestCase):
     """
 
     _description: str
+    _args: list[Any]
     _kwargs: dict[str, Any]
     _results: dict[str, Any]
 
@@ -402,7 +399,9 @@ class TestIcmp4NdOptionUnknownParser(TestCase):
         """
 
         if "option" in self._results:
-            option = Icmp6NdOptionUnknown.from_bytes(self._kwargs["bytes"])
+            option = Icmp6NdOptionUnknown.from_bytes(
+                *self._args, **self._kwargs
+            )
 
             self.assertEqual(
                 option,
@@ -411,7 +410,7 @@ class TestIcmp4NdOptionUnknownParser(TestCase):
 
         if "error" in self._results:
             with self.assertRaises(self._results["error"]) as error:
-                Icmp6NdOptionUnknown.from_bytes(self._kwargs["bytes"])
+                Icmp6NdOptionUnknown.from_bytes(*self._args, **self._kwargs)
 
             self.assertEqual(
                 str(error.exception),

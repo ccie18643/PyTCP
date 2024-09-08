@@ -25,86 +25,32 @@
 
 
 """
-Module contains IPv4 Nop (No Operation) option support code.
+Module contains the customized TestCase class.
 
-pytcp/protocols/ip4/options/ip4_option__nop.py
+tests/mocks/testcase__packet_rx.py
 
 ver 3.0.2
 """
 
 
-from __future__ import annotations
+from typing import Any
 
-from dataclasses import dataclass, field
-from typing import override
+from testslide import TestCase
 
-from pytcp.protocols.ip4.options.ip4_option import Ip4Option, Ip4OptionType
-
-# The IPv4 Nop (No Operation) option [RFC 793].
-
-# +-+-+-+-+-+-+-+-+
-# |    Type = 1   |
-# +-+-+-+-+-+-+-+-+
+from pytcp.lib.packet import PacketRx
 
 
-IP4__OPTION__NOP__LEN = 1
-IP4__OPTION__NOP__STRUCT = "! B"
-
-
-@dataclass(frozen=True, kw_only=False)
-class Ip4OptionNop(Ip4Option):
+class TestCasePacketRx(TestCase):
     """
-    The IPv4 Nop (No Operation) option support class.
+    Customized TestCase class that provides PacketRx object.
     """
 
-    type: Ip4OptionType = field(
-        repr=False,
-        init=False,
-        default=Ip4OptionType.NOP,
-    )
-    len: int = field(
-        repr=False,
-        init=False,
-        default=IP4__OPTION__NOP__LEN,
-    )
+    _args: list[Any] = []
+    _packet_rx: PacketRx
 
-    @override
-    def __post_init__(self) -> None:
+    def setUp(self) -> None:
         """
-        Validate the IPv4 Nop option fields.
+        Set up the PacketRx object.
         """
 
-    @override
-    def __str__(self) -> str:
-        """
-        Get the IPv4 Nop option log string.
-        """
-
-        return "nop"
-
-    @override
-    def __bytes__(self) -> bytes:
-        """
-        Get the IPv4 Nop option as bytes.
-        """
-
-        return bytes(self.type)
-
-    @override
-    @staticmethod
-    def from_bytes(_bytes: bytes, /) -> Ip4OptionNop:
-        """
-        Initialize the IPv4 Nop option from bytes.
-        """
-
-        assert (value := len(_bytes)) >= IP4__OPTION__NOP__LEN, (
-            f"The minimum length of the IPv4 Nop option must be "
-            f"{IP4__OPTION__NOP__LEN} byte. Got: {value!r}"
-        )
-
-        assert (value := _bytes[0]) == int(Ip4OptionType.NOP), (
-            f"The IPv4 Nop option type must be {Ip4OptionType.NOP!r}. "
-            f"Got: {Ip4OptionType.from_int(value)!r}"
-        )
-
-        return Ip4OptionNop()
+        self._packet_rx = PacketRx(self._args[0])

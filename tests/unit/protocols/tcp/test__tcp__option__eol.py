@@ -157,18 +157,16 @@ class TestTcpOptionEolAssembler(TestCase):
     [
         {
             "_description": "The TCP Eol option.",
-            "_kwargs": {
-                "bytes": b"\x00",
-            },
+            "_args": [b"\x00" + b"ZH0PA"],
+            "_kwargs": {},
             "_results": {
                 "option": TcpOptionEol(),
             },
         },
         {
             "_description": "The TCP Eol option minimum length assert.",
-            "_kwargs": {
-                "bytes": b"",
-            },
+            "_args": [b""],
+            "_kwargs": {},
             "_results": {
                 "error": AssertionError,
                 "error_message": (
@@ -179,9 +177,8 @@ class TestTcpOptionEolAssembler(TestCase):
         },
         {
             "_description": "The TCP Eol option incorrect 'type' field assert.",
-            "_kwargs": {
-                "bytes": b"\xff",
-            },
+            "_args": [b"\xff"],
+            "_kwargs": {},
             "_results": {
                 "error": AssertionError,
                 "error_message": (
@@ -198,6 +195,7 @@ class TestTcpOptionEolParser(TestCase):
     """
 
     _description: str
+    _args: list[Any]
     _kwargs: dict[str, Any]
     _results: dict[str, Any]
 
@@ -208,7 +206,7 @@ class TestTcpOptionEolParser(TestCase):
         """
 
         if "option" in self._results:
-            option = TcpOptionEol.from_bytes(self._kwargs["bytes"] + b"ZH0PA")
+            option = TcpOptionEol.from_bytes(*self._args, **self._kwargs)
 
             self.assertEqual(
                 option,
@@ -217,7 +215,7 @@ class TestTcpOptionEolParser(TestCase):
 
         if "error" in self._results:
             with self.assertRaises(self._results["error"]) as error:
-                TcpOptionEol.from_bytes(self._kwargs["bytes"])
+                TcpOptionEol.from_bytes(*self._args, **self._kwargs)
 
             self.assertEqual(
                 str(error.exception),

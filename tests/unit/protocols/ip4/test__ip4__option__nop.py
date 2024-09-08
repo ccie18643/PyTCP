@@ -157,18 +157,16 @@ class TestIp4OptionNopAssembler(TestCase):
     [
         {
             "_description": "The IPv4 Nop option.",
-            "_kwargs": {
-                "bytes": b"\x01",
-            },
+            "_args": [b"\x01" + b"ZH0PA"],
+            "_kwargs": {},
             "_results": {
                 "option": Ip4OptionNop(),
             },
         },
         {
             "_description": "The IPv4 Nop option minimum length assert.",
-            "_kwargs": {
-                "bytes": b"",
-            },
+            "_args": [b""],
+            "_kwargs": {},
             "_results": {
                 "error": AssertionError,
                 "error_message": (
@@ -179,9 +177,8 @@ class TestIp4OptionNopAssembler(TestCase):
         },
         {
             "_description": "The IPv4 Nop option incorrect 'type' field assert.",
-            "_kwargs": {
-                "bytes": b"\xff",
-            },
+            "_args": [b"\xff"],
+            "_kwargs": {},
             "_results": {
                 "error": AssertionError,
                 "error_message": (
@@ -198,6 +195,7 @@ class TestIp4OptionNopParser(TestCase):
     """
 
     _description: str
+    _args: list[Any]
     _kwargs: dict[str, Any]
     _results: dict[str, Any]
 
@@ -208,7 +206,7 @@ class TestIp4OptionNopParser(TestCase):
         """
 
         if "option" in self._results:
-            option = Ip4OptionNop.from_bytes(self._kwargs["bytes"] + b"ZH0PA")
+            option = Ip4OptionNop.from_bytes(*self._args, **self._kwargs)
 
             self.assertEqual(
                 option,
@@ -217,7 +215,7 @@ class TestIp4OptionNopParser(TestCase):
 
         if "error" in self._results:
             with self.assertRaises(self._results["error"]) as error:
-                Ip4OptionNop.from_bytes(self._kwargs["bytes"])
+                Ip4OptionNop.from_bytes(*self._args, **self._kwargs)
 
             self.assertEqual(
                 str(error.exception),

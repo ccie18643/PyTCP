@@ -57,7 +57,8 @@ class TestIp4OptionUnknownAsserts(TestCase):
         Create the default arguments for the IPv4 unknown option constructor.
         """
 
-        self._option_kwargs = {
+        self._args: list[Any] = []
+        self._kwargs: dict[str, Any] = {
             "type": Ip4OptionType.from_int(255),
             "len": 2,
             "data": b"",
@@ -69,10 +70,10 @@ class TestIp4OptionUnknownAsserts(TestCase):
         the provided 'type' argument is not a Ip4OptionType.
         """
 
-        self._option_kwargs["type"] = value = "not a Ip4OptionType"
+        self._kwargs["type"] = value = "not a Ip4OptionType"
 
         with self.assertRaises(AssertionError) as error:
-            Ip4OptionUnknown(**self._option_kwargs)  # type: ignore
+            Ip4OptionUnknown(*self._args, **self._kwargs)
 
         self.assertEqual(
             str(error.exception),
@@ -88,10 +89,10 @@ class TestIp4OptionUnknownAsserts(TestCase):
         """
 
         for type in Ip4OptionType.get_known_values():
-            self._option_kwargs["type"] = value = Ip4OptionType(type)
+            self._kwargs["type"] = value = Ip4OptionType(type)
 
             with self.assertRaises(AssertionError) as error:
-                Ip4OptionUnknown(**self._option_kwargs)  # type: ignore
+                Ip4OptionUnknown(**self._kwargs)
 
             self.assertEqual(
                 str(error.exception),
@@ -106,10 +107,10 @@ class TestIp4OptionUnknownAsserts(TestCase):
         value.
         """
 
-        self._option_kwargs["len"] = value = UINT_8__MIN - 1
+        self._kwargs["len"] = value = UINT_8__MIN - 1
 
         with self.assertRaises(AssertionError) as error:
-            Ip4OptionUnknown(**self._option_kwargs)  # type: ignore
+            Ip4OptionUnknown(**self._kwargs)
 
         self.assertEqual(
             str(error.exception),
@@ -123,10 +124,10 @@ class TestIp4OptionUnknownAsserts(TestCase):
         value.
         """
 
-        self._option_kwargs["len"] = value = UINT_8__MAX + 1
+        self._kwargs["len"] = value = UINT_8__MAX + 1
 
         with self.assertRaises(AssertionError) as error:
-            Ip4OptionUnknown(**self._option_kwargs)  # type: ignore
+            Ip4OptionUnknown(**self._kwargs)
 
         self.assertEqual(
             str(error.exception),
@@ -140,18 +141,18 @@ class TestIp4OptionUnknownAsserts(TestCase):
         field.
         """
 
-        self._option_kwargs["len"] = value = (
-            IP4__OPTION__LEN + len(self._option_kwargs["data"]) + 1  # type: ignore
+        self._kwargs["len"] = value = (
+            IP4__OPTION__LEN + len(self._kwargs["data"]) + 1
         )
 
         with self.assertRaises(AssertionError) as error:
-            Ip4OptionUnknown(**self._option_kwargs)  # type: ignore
+            Ip4OptionUnknown(**self._kwargs)
 
         self.assertEqual(
             str(error.exception),
             (
                 "The 'len' field must reflect the length of the 'data' field. "
-                f"Got: {value} != {IP4__OPTION__LEN + len(self._option_kwargs['data'])}"  # type: ignore
+                f"Got: {value} != {IP4__OPTION__LEN + len(self._kwargs['data'])}"
             ),
         )
 
@@ -280,12 +281,11 @@ class TestIp4OptionUnknownAssembler(TestCase):
     [
         {
             "_description": "The unknown IPv4 option.",
-            "_kwargs": {
-                "bytes": (
-                    b"\xff\x12\x30\x31\x32\x33\x34\x35\x36\x37\x38\x39\x41\x42\x43\x44"
-                    b"\x45\x46"
-                ),
-            },
+            "_args": [
+                b"\xff\x12\x30\x31\x32\x33\x34\x35\x36\x37\x38\x39\x41\x42\x43\x44"
+                b"\x45\x46"
+            ],
+            "_kwargs": {},
             "_results": {
                 "option": Ip4OptionUnknown(
                     type=Ip4OptionType.from_int(255),
@@ -296,9 +296,8 @@ class TestIp4OptionUnknownAssembler(TestCase):
         },
         {
             "_description": "The unknown IPv4 option minimum length assert.",
-            "_kwargs": {
-                "bytes": b"\xff",
-            },
+            "_args": [b"\xff"],
+            "_kwargs": {},
             "_results": {
                 "error": AssertionError,
                 "error_message": (
@@ -309,12 +308,11 @@ class TestIp4OptionUnknownAssembler(TestCase):
         },
         {
             "_description": "The unknown IPv4 option incorrect 'type' field (Eol) assert.",
-            "_kwargs": {
-                "bytes": (
-                    b"\x00\x12\x30\x31\x32\x33\x34\x35\x36\x37\x38\x39\x41\x42\x43\x44"
-                    b"\x45\x46"
-                ),
-            },
+            "_args": [
+                b"\x00\x12\x30\x31\x32\x33\x34\x35\x36\x37\x38\x39\x41\x42\x43\x44"
+                b"\x45\x46"
+            ],
+            "_kwargs": {},
             "_results": {
                 "error": AssertionError,
                 "error_message": (
@@ -325,12 +323,11 @@ class TestIp4OptionUnknownAssembler(TestCase):
         },
         {
             "_description": "The unknown IPv4 option incorrect 'type' field (Nop) assert.",
-            "_kwargs": {
-                "bytes": (
-                    b"\x01\x12\x30\x31\x32\x33\x34\x35\x36\x37\x38\x39\x41\x42\x43\x44"
-                    b"\x45\x46"
-                ),
-            },
+            "_args": [
+                b"\x01\x12\x30\x31\x32\x33\x34\x35\x36\x37\x38\x39\x41\x42\x43\x44"
+                b"\x45\x46"
+            ],
+            "_kwargs": {},
             "_results": {
                 "error": AssertionError,
                 "error_message": (
@@ -341,12 +338,11 @@ class TestIp4OptionUnknownAssembler(TestCase):
         },
         {
             "_description": "The unknown IPv4 option length integrity check (II).",
-            "_kwargs": {
-                "bytes": (
-                    b"\xff\x12\x30\x31\x32\x33\x34\x35\x36\x37\x38\x39\x41\x42\x43\x44"
-                    b"\x45"
-                ),
-            },
+            "_args": [
+                b"\xff\x12\x30\x31\x32\x33\x34\x35\x36\x37\x38\x39\x41\x42\x43\x44"
+                b"\x45"
+            ],
+            "_kwargs": {},
             "_results": {
                 "error": Ip4IntegrityError,
                 "error_message": (
@@ -364,6 +360,7 @@ class TestIp4OptionUnknownParser(TestCase):
     """
 
     _description: str
+    _args: list[Any]
     _kwargs: dict[str, Any]
     _results: dict[str, Any]
 
@@ -374,7 +371,7 @@ class TestIp4OptionUnknownParser(TestCase):
         """
 
         if "option" in self._results:
-            option = Ip4OptionUnknown.from_bytes(self._kwargs["bytes"])
+            option = Ip4OptionUnknown.from_bytes(*self._args, **self._kwargs)
 
             self.assertEqual(
                 option,
@@ -383,7 +380,7 @@ class TestIp4OptionUnknownParser(TestCase):
 
         if "error" in self._results:
             with self.assertRaises(self._results["error"]) as error:
-                Ip4OptionUnknown.from_bytes(self._kwargs["bytes"])
+                Ip4OptionUnknown.from_bytes(*self._args, **self._kwargs)
 
             self.assertEqual(
                 str(error.exception),

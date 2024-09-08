@@ -59,7 +59,8 @@ class TestIcmp6NdOptionPiAsserts(TestCase):
         Create the default arguments for the ICMPv6 ND Pi option constructor.
         """
 
-        self._option_kwargs = {
+        self._args: list[Any] = []
+        self._kwargs: dict[str, Any] = {
             "flag_l": False,
             "flag_a": False,
             "flag_r": False,
@@ -74,10 +75,10 @@ class TestIcmp6NdOptionPiAsserts(TestCase):
         the provided 'flag_l' argument is not a boolean.
         """
 
-        self._option_kwargs["flag_l"] = value = "not a boolean"
+        self._kwargs["flag_l"] = value = "not a boolean"
 
         with self.assertRaises(AssertionError) as error:
-            Icmp6NdOptionPi(**self._option_kwargs)  # type: ignore
+            Icmp6NdOptionPi(*self._args, **self._kwargs)
 
         self.assertEqual(
             str(error.exception),
@@ -90,10 +91,10 @@ class TestIcmp6NdOptionPiAsserts(TestCase):
         the provided 'flag_a' argument is not a boolean.
         """
 
-        self._option_kwargs["flag_a"] = value = "not a boolean"
+        self._kwargs["flag_a"] = value = "not a boolean"
 
         with self.assertRaises(AssertionError) as error:
-            Icmp6NdOptionPi(**self._option_kwargs)  # type: ignore
+            Icmp6NdOptionPi(*self._args, **self._kwargs)
 
         self.assertEqual(
             str(error.exception),
@@ -106,10 +107,10 @@ class TestIcmp6NdOptionPiAsserts(TestCase):
         the provided 'flag_r' argument is not a boolean.
         """
 
-        self._option_kwargs["flag_r"] = value = "not a boolean"
+        self._kwargs["flag_r"] = value = "not a boolean"
 
         with self.assertRaises(AssertionError) as error:
-            Icmp6NdOptionPi(**self._option_kwargs)  # type: ignore
+            Icmp6NdOptionPi(*self._args, **self._kwargs)
 
         self.assertEqual(
             str(error.exception),
@@ -122,10 +123,10 @@ class TestIcmp6NdOptionPiAsserts(TestCase):
         'valid_lifetime' argument is lower than the minimum supported value.
         """
 
-        self._option_kwargs["valid_lifetime"] = value = UINT_32__MIN - 1
+        self._kwargs["valid_lifetime"] = value = UINT_32__MIN - 1
 
         with self.assertRaises(AssertionError) as error:
-            Icmp6NdOptionPi(**self._option_kwargs)  # type: ignore
+            Icmp6NdOptionPi(*self._args, **self._kwargs)
 
         self.assertEqual(
             str(error.exception),
@@ -139,10 +140,10 @@ class TestIcmp6NdOptionPiAsserts(TestCase):
         'valid_lifetime' argument is lower than the minimum supported value.
         """
 
-        self._option_kwargs["valid_lifetime"] = value = UINT_32__MAX + 1
+        self._kwargs["valid_lifetime"] = value = UINT_32__MAX + 1
 
         with self.assertRaises(AssertionError) as error:
-            Icmp6NdOptionPi(**self._option_kwargs)  # type: ignore
+            Icmp6NdOptionPi(*self._args, **self._kwargs)
 
         self.assertEqual(
             str(error.exception),
@@ -159,10 +160,10 @@ class TestIcmp6NdOptionPiAsserts(TestCase):
         value.
         """
 
-        self._option_kwargs["preferred_lifetime"] = value = UINT_32__MIN - 1
+        self._kwargs["preferred_lifetime"] = value = UINT_32__MIN - 1
 
         with self.assertRaises(AssertionError) as error:
-            Icmp6NdOptionPi(**self._option_kwargs)  # type: ignore
+            Icmp6NdOptionPi(*self._args, **self._kwargs)
 
         self.assertEqual(
             str(error.exception),
@@ -176,10 +177,10 @@ class TestIcmp6NdOptionPiAsserts(TestCase):
         'preferred_lifetime' argument is lower than the minimum supported value.
         """
 
-        self._option_kwargs["preferred_lifetime"] = value = UINT_32__MAX + 1
+        self._kwargs["preferred_lifetime"] = value = UINT_32__MAX + 1
 
         with self.assertRaises(AssertionError) as error:
-            Icmp6NdOptionPi(**self._option_kwargs)  # type: ignore
+            Icmp6NdOptionPi(*self._args, **self._kwargs)
 
         self.assertEqual(
             str(error.exception),
@@ -193,10 +194,10 @@ class TestIcmp6NdOptionPiAsserts(TestCase):
         the provided 'prefix' argument is not a Ip6Network.
         """
 
-        self._option_kwargs["prefix"] = value = "not a Ip6Network"
+        self._kwargs["prefix"] = value = "not a Ip6Network"
 
         with self.assertRaises(AssertionError) as error:
-            Icmp6NdOptionPi(**self._option_kwargs)  # type: ignore
+            Icmp6NdOptionPi(*self._args, **self._kwargs)
 
         self.assertEqual(
             str(error.exception),
@@ -408,12 +409,12 @@ class TestIcmp6NdOptionPiAssembler(TestCase):
     [
         {
             "_description": "The ICMPv6 ND Pi option .",
-            "_kwargs": {
-                "bytes": (
-                    b"\x03\x04\x40\xa0\xff\xff\xff\xff\x00\x00\x00\x00\x00\x00\x00\x00"
-                    b"\x20\x01\x0d\xb8\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
-                ),
-            },
+            "_args": [
+                b"\x03\x04\x40\xa0\xff\xff\xff\xff\x00\x00\x00\x00\x00\x00\x00\x00"
+                b"\x20\x01\x0d\xb8\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+                + b"ZH0PA"
+            ],
+            "_kwargs": {},
             "_results": {
                 "option": Icmp6NdOptionPi(
                     flag_l=True,
@@ -427,12 +428,12 @@ class TestIcmp6NdOptionPiAssembler(TestCase):
         },
         {
             "_description": "The ICMPv6 ND Pi option (I).",
-            "_kwargs": {
-                "bytes": (
-                    b"\x03\x04\x40\xa0\xff\xff\xff\xff\x00\x00\x00\x00\x00\x00\x00\x00"
-                    b"\x20\x01\x0d\xb8\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
-                ),
-            },
+            "_args": [
+                b"\x03\x04\x40\xa0\xff\xff\xff\xff\x00\x00\x00\x00\x00\x00\x00\x00"
+                b"\x20\x01\x0d\xb8\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+                + b"ZH0PA"
+            ],
+            "_kwargs": {},
             "_results": {
                 "option": Icmp6NdOptionPi(
                     flag_l=True,
@@ -446,12 +447,12 @@ class TestIcmp6NdOptionPiAssembler(TestCase):
         },
         {
             "_description": "The ICMPv6 ND Pi option (II).",
-            "_kwargs": {
-                "bytes": (
-                    b"\x03\x04\x80\x40\x00\x00\x00\x00\xff\xff\xff\xff\x00\x00\x00\x00"
-                    b"\x20\x07\x0d\xb8\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\xab\xcd"
-                ),
-            },
+            "_args": [
+                b"\x03\x04\x80\x40\x00\x00\x00\x00\xff\xff\xff\xff\x00\x00\x00\x00"
+                b"\x20\x07\x0d\xb8\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\xab\xcd"
+                + b"ZH0PA"
+            ],
+            "_kwargs": {},
             "_results": {
                 "option": Icmp6NdOptionPi(
                     flag_l=False,
@@ -465,9 +466,8 @@ class TestIcmp6NdOptionPiAssembler(TestCase):
         },
         {
             "_description": "The ICMPv6 ND Pi option minimum length assert.",
-            "_kwargs": {
-                "bytes": b"\x03",
-            },
+            "_args": [b"\x03"],
+            "_kwargs": {},
             "_results": {
                 "error": AssertionError,
                 "error_message": (
@@ -477,12 +477,11 @@ class TestIcmp6NdOptionPiAssembler(TestCase):
         },
         {
             "_description": "The ICMPv6 ND Pi option incorrect 'type' field assert.",
-            "_kwargs": {
-                "bytes": (
-                    b"\xff\x04\x80\x40\x00\x00\x00\x00\xff\xff\xff\xff\x00\x00\x00\x00"
-                    b"\x20\x07\x0d\xb8\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\xab\xcd"
-                ),
-            },
+            "_args": [
+                b"\xff\x04\x80\x40\x00\x00\x00\x00\xff\xff\xff\xff\x00\x00\x00\x00"
+                b"\x20\x07\x0d\xb8\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\xab\xcd"
+            ],
+            "_kwargs": {},
             "_results": {
                 "error": AssertionError,
                 "error_message": (
@@ -493,12 +492,11 @@ class TestIcmp6NdOptionPiAssembler(TestCase):
         },
         {
             "_description": "The ICMPv6 ND Pi option length integrity check (I).",
-            "_kwargs": {
-                "bytes": (
-                    b"\x03\x05\x80\x40\x00\x00\x00\x00\xff\xff\xff\xff\x00\x00\x00\x00"
-                    b"\x20\x07\x0d\xb8\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\xab\xcd"
-                ),
-            },
+            "_args": [
+                b"\x03\x05\x80\x40\x00\x00\x00\x00\xff\xff\xff\xff\x00\x00\x00\x00"
+                b"\x20\x07\x0d\xb8\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\xab\xcd"
+            ],
+            "_kwargs": {},
             "_results": {
                 "error": Icmp6IntegrityError,
                 "error_message": (
@@ -509,12 +507,11 @@ class TestIcmp6NdOptionPiAssembler(TestCase):
         },
         {
             "_description": "The ICMPv6 ND Pi option length integrity check (II).",
-            "_kwargs": {
-                "bytes": (
-                    b"\x03\x04\x80\x40\x00\x00\x00\x00\xff\xff\xff\xff\x00\x00\x00\x00"
-                    b"\x20\x07\x0d\xb8\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\xab"
-                ),
-            },
+            "_args": [
+                b"\x03\x04\x80\x40\x00\x00\x00\x00\xff\xff\xff\xff\x00\x00\x00\x00"
+                b"\x20\x07\x0d\xb8\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\xab"
+            ],
+            "_kwargs": {},
             "_results": {
                 "error": Icmp6IntegrityError,
                 "error_message": (
@@ -531,6 +528,7 @@ class TestIcmp6NdOptionPiParser(TestCase):
     """
 
     _description: str
+    _args: list[Any]
     _kwargs: dict[str, Any]
     _results: dict[str, Any]
 
@@ -541,9 +539,7 @@ class TestIcmp6NdOptionPiParser(TestCase):
         """
 
         if "option" in self._results:
-            option = Icmp6NdOptionPi.from_bytes(
-                self._kwargs["bytes"] + b"ZH0PA"
-            )
+            option = Icmp6NdOptionPi.from_bytes(*self._args, **self._kwargs)
 
             self.assertEqual(
                 option,
@@ -552,7 +548,7 @@ class TestIcmp6NdOptionPiParser(TestCase):
 
         if "error" in self._results:
             with self.assertRaises(self._results["error"]) as error:
-                Icmp6NdOptionPi.from_bytes(self._kwargs["bytes"])
+                Icmp6NdOptionPi.from_bytes(*self._args, **self._kwargs)
 
             self.assertEqual(
                 str(error.exception),

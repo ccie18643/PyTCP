@@ -157,18 +157,16 @@ class TestTcpOptionNopAssembler(TestCase):
     [
         {
             "_description": "The TCP Nop option.",
-            "_kwargs": {
-                "bytes": b"\x01",
-            },
+            "_args": [b"\x01" + b"ZH0PA"],
+            "_kwargs": {},
             "_results": {
                 "option": TcpOptionNop(),
             },
         },
         {
             "_description": "The TCP Nop option minimum length assert.",
-            "_kwargs": {
-                "bytes": b"",
-            },
+            "_args": [b""],
+            "_kwargs": {},
             "_results": {
                 "error": AssertionError,
                 "error_message": (
@@ -179,9 +177,8 @@ class TestTcpOptionNopAssembler(TestCase):
         },
         {
             "_description": "The TCP Nop option incorrect 'type' field assert.",
-            "_kwargs": {
-                "bytes": b"\xff",
-            },
+            "_args": [b"\xff"],
+            "_kwargs": {},
             "_results": {
                 "error": AssertionError,
                 "error_message": (
@@ -198,6 +195,7 @@ class TestTcpOptionNopParser(TestCase):
     """
 
     _description: str
+    _args: list[Any]
     _kwargs: dict[str, Any]
     _results: dict[str, Any]
 
@@ -208,7 +206,7 @@ class TestTcpOptionNopParser(TestCase):
         """
 
         if "option" in self._results:
-            option = TcpOptionNop.from_bytes(self._kwargs["bytes"] + b"ZH0PA")
+            option = TcpOptionNop.from_bytes(*self._args, **self._kwargs)
 
             self.assertEqual(
                 option,
@@ -217,7 +215,7 @@ class TestTcpOptionNopParser(TestCase):
 
         if "error" in self._results:
             with self.assertRaises(self._results["error"]) as error:
-                TcpOptionNop.from_bytes(self._kwargs["bytes"])
+                TcpOptionNop.from_bytes(*self._args, **self._kwargs)
 
             self.assertEqual(
                 str(error.exception),

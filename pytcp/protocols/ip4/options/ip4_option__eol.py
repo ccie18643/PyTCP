@@ -51,7 +51,7 @@ IP4__OPTION__EOL__LEN = 1
 IP4__OPTION__EOL__STRUCT = "! B"
 
 
-@dataclass(frozen=True, kw_only=True)
+@dataclass(frozen=True, kw_only=False)
 class Ip4OptionEol(Ip4Option):
     """
     The IPv4 Eol (End of Option List) option support.

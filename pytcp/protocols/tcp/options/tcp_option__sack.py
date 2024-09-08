@@ -105,7 +105,7 @@ class TcpSackBlock:
         return f"{self.left}-{self.right}"
 
 
-@dataclass(frozen=True, kw_only=True)
+@dataclass(frozen=True, kw_only=False)
 class TcpOptionSack(TcpOption):
     """
     The TCP Sack option support class.
