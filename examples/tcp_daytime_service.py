@@ -139,6 +139,7 @@ class TcpDaytimeService(TcpService):
 )
 @click.option(
     "--ip6-address",
+    "ip6_host",
     type=ClickTypeIp6Host(),
     default=None,
     help="IPv6 address/mask to be assigned to the interface.",
@@ -151,6 +152,7 @@ class TcpDaytimeService(TcpService):
 )
 @click.option(
     "--ip4-address",
+    "ip4_host",
     type=ClickTypeIp4Host(),
     default=None,
     help="IPv4 address/mask to be assigned to the interface.",
@@ -171,9 +173,9 @@ def cli(
     *,
     interface: str,
     mac_address: MacAddress | None,
-    ip6_address: Ip6Host | None,
+    ip6_host: Ip6Host | None,
     ip6_gateway: Ip6Address | None,
-    ip4_address: Ip4Host | None,
+    ip4_host: Ip4Host | None,
     ip4_gateway: Ip4Address | None,
     local_port: int,
 ) -> None:
@@ -184,16 +186,11 @@ def cli(
 
     fd, mtu = initialize_interface(interface)
 
-    ip6_host = (
-        None
-        if ip6_address is None
-        else Ip6Host(ip6_address, gateway=ip6_gateway)
-    )
-    ip4_host = (
-        None
-        if ip4_address is None
-        else Ip4Host(ip4_address, gateway=ip4_gateway)
-    )
+    if ip6_host:
+        ip6_host.gateway = ip6_gateway
+
+    if ip4_host:
+        ip4_host.gateway = ip4_gateway
 
     stack = TcpIpStack(
         fd=fd,
