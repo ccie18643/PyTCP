@@ -82,7 +82,9 @@ class NdCache:
         __debug__ and log("stack", "Starting IPv6 ND cache")
 
         self._run_thread = True
-        threading.Thread(target=self.__thread_maintain_cache).start()
+        threading.Thread(
+            target=self.__thread__nd_cache__maintain_entries
+        ).start()
         time.sleep(0.1)
 
     def stop(self) -> None:
@@ -95,7 +97,7 @@ class NdCache:
         self._run_thread = False
         time.sleep(0.1)
 
-    def __thread_maintain_cache(self) -> None:
+    def __thread__nd_cache__maintain_entries(self) -> None:
         """
         Method responsible for maintaining ND cache entries.
         """

@@ -209,7 +209,7 @@ class PacketHandler(
         __debug__ and log("stack", "Starting packet handler")
 
         self._run_thread = True
-        threading.Thread(target=self.__thread__packet_handler).start()
+        threading.Thread(target=self.__thread__packet_handler__receive).start()
         time.sleep(0.1)
 
         self._acquire_ip4_addresses()
@@ -227,7 +227,7 @@ class PacketHandler(
         self._run_thread = False
         time.sleep(0.1)
 
-    def __thread__acquire_ip6_addresses(self) -> None:
+    def __thread__packet_handler__acquire_ip6_addresses(self) -> None:
         """
         Thread to acquire the IPv6 addresses.
         """
@@ -241,7 +241,7 @@ class PacketHandler(
 
         __debug__ and log("stack", "Finished the IPv6 address acquire thread")
 
-    def __thread__acquire_ip4_addresses(self) -> None:
+    def __thread__packet_handler__acquire_ip4_addresses(self) -> None:
         """
         Thread to acquire the IPv4 addresses.
         """
@@ -258,7 +258,7 @@ class PacketHandler(
 
         __debug__ and log("stack", "Finished the IPv4 address acquire thread")
 
-    def __thread__packet_handler(self) -> None:
+    def __thread__packet_handler__receive(self) -> None:
         """
         Thread picks up incoming packets from RX ring and processes them.
         """
@@ -284,7 +284,9 @@ class PacketHandler(
 
         __debug__ and log("stack", "Starting the IPv6 address acquire thread")
 
-        threading.Thread(target=self.__thread__acquire_ip6_addresses).start()
+        threading.Thread(
+            target=self.__thread__packet_handler__acquire_ip6_addresses
+        ).start()
 
     def _acquire_ip4_addresses(self) -> None:
         """
@@ -293,7 +295,9 @@ class PacketHandler(
 
         __debug__ and log("stack", "Starting the IPv4 address acquire thread")
 
-        threading.Thread(target=self.__thread__acquire_ip4_addresses).start()
+        threading.Thread(
+            target=self.__thread__packet_handler__acquire_ip4_addresses
+        ).start()
 
     def _assign_mac_address(self, *, mac_unicast: MacAddress) -> None:
         """

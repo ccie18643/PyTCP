@@ -131,7 +131,7 @@ class Timer:
         __debug__ and log("stack", "Starting timer thread")
 
         self._run_thread = True
-        threading.Thread(target=self.__thread_timer).start()
+        threading.Thread(target=self.__thread__timer__run_tasks).start()
         time.sleep(0.1)
 
     def stop(self) -> None:
@@ -144,7 +144,7 @@ class Timer:
         self._run_thread = False
         time.sleep(0.1)
 
-    def __thread_timer(self) -> None:
+    def __thread__timer__run_tasks(self) -> None:
         """
         Thread responsible for executing register methods on every timer tick.
         """
