@@ -54,6 +54,7 @@ from tests.lib.testcase__packet_rx import TestCasePacketRx
                 b"\x00\x01\x08\x00\x06\x04\x00\x01\x01\x02\x03\x04\x05\x06\x0b\x16"
                 b"\x21\x2c\x0a\x0b\x0c\x0d\x0e\x0f\x65\x66\x67"
             ],
+            "_kwargs": {},
             "_results": {
                 "error_message": (
                     f"The minimum packet length must be {ARP__HEADER__LEN} "
@@ -67,6 +68,7 @@ from tests.lib.testcase__packet_rx import TestCasePacketRx
                 b"\x00\x00\x08\x00\x06\x04\x00\x01\x01\x02\x03\x04\x05\x06\x0b\x16"
                 b"\x21\x2c\x0a\x0b\x0c\x0d\x0e\x0f\x65\x66\x67\x68"
             ],
+            "_kwargs": {},
             "_results": {
                 "error_message": "The 'hrtype' field value must be one of [1], got 0.",
             },
@@ -77,6 +79,7 @@ from tests.lib.testcase__packet_rx import TestCasePacketRx
                 b"\x00\x01\x00\x00\x06\x04\x00\x01\x01\x02\x03\x04\x05\x06\x0b\x16"
                 b"\x21\x2c\x0a\x0b\x0c\x0d\x0e\x0f\x65\x66\x67\x68"
             ],
+            "_kwargs": {},
             "_results": {
                 "error_message": "The 'prtype' field value must be one of [2048], got 0.",
             },
@@ -87,6 +90,7 @@ from tests.lib.testcase__packet_rx import TestCasePacketRx
                 b"\x00\x01\x08\x00\x00\x04\x00\x01\x01\x02\x03\x04\x05\x06\x0b\x16"
                 b"\x21\x2c\x0a\x0b\x0c\x0d\x0e\x0f\x65\x66\x67\x68"
             ],
+            "_kwargs": {},
             "_results": {
                 "error_message": "The 'hrlen' field value must be 6, got 0.",
             },
@@ -97,6 +101,7 @@ from tests.lib.testcase__packet_rx import TestCasePacketRx
                 b"\x00\x01\x08\x00\x06\x00\x00\x01\x01\x02\x03\x04\x05\x06\x0b\x16"
                 b"\x21\x2c\x0a\x0b\x0c\x0d\x0e\x0f\x65\x66\x67\x68"
             ],
+            "_kwargs": {},
             "_results": {
                 "error_message": "The 'prlen' field value must be 4, got 0.",
             },
@@ -110,6 +115,7 @@ class TestArpParserIntegrityChecks(TestCasePacketRx):
 
     _description: str
     _args: list[Any]
+    _kwargs: dict[str, Any]
     _results: dict[str, Any]
 
     _packet_rx: PacketRx

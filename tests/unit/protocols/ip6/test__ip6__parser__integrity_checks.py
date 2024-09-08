@@ -50,6 +50,7 @@ from tests.lib.testcase__packet_rx import TestCasePacketRx
                 "The length of the frame is lower than the value of the "
                 "'IP6__HEADER__LEN' constant."
             ),
+            "_kwargs": {},
             "_args": [
                 b"\x60\x00\x00\x00\x00\x00\xff\x01\x10\x01\x20\x02\x30\x03\x40\x04"
                 b"\x50\x05\x60\x06\x70\x07\x80\x08\xa0\x0a\xb0\x0b\xc0\x0c\xd0\x0d"
@@ -66,6 +67,7 @@ from tests.lib.testcase__packet_rx import TestCasePacketRx
                 b"\x50\x05\x60\x06\x70\x07\x80\x08\xa0\x0a\xb0\x0b\xc0\x0c\xd0\x0d"
                 b"\xe0\x0e\xf0\x0f\x0a\x0a\x0b\x0b"
             ],
+            "_kwargs": {},
             "_results": {
                 "error_message": "The 'ver' must be 6.",
             },
@@ -80,6 +82,7 @@ from tests.lib.testcase__packet_rx import TestCasePacketRx
                 b"\x50\x05\x60\x06\x70\x07\x80\x08\xa0\x0a\xb0\x0b\xc0\x0c\xd0\x0d"
                 b"\xe0\x0e\xf0\x0f\x0a\x0a\x0b\x0b\x00"
             ],
+            "_kwargs": {},
             "_results": {
                 "error_message": "The wrong packet length (II).",
             },
@@ -93,6 +96,7 @@ class TestIp6ParserIntegrityChecks(TestCasePacketRx):
 
     _description: str
     _args: list[Any]
+    _kwargs: dict[str, Any]
     _results: dict[str, Any]
 
     _packet_rx: PacketRx

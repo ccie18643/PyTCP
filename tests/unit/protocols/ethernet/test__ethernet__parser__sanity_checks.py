@@ -52,6 +52,7 @@ from tests.lib.testcase__packet_rx import TestCasePacketRx
             "_args": [
                 b"\xa1\xb2\xc3\xd4\xe5\xf6\x11\x12\x13\x14\x15\x16\x05\xff"
             ],
+            "_kwargs": {},
             "_results": {
                 "error_message": (
                     "The minimum 'type' field value must be 0x0600, got 0x05ff."
@@ -67,6 +68,7 @@ class TestEthernetParserSanityChecks(TestCasePacketRx):
 
     _description: str
     _args: list[Any]
+    _kwargs: dict[str, Any]
     _results: dict[str, Any]
 
     _packet_rx: PacketRx

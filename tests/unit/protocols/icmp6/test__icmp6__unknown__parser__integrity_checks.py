@@ -52,6 +52,7 @@ from tests.lib.testcase__packet_rx__ip6 import TestCasePacketRxIp6
                 "the 'ICMP6_HEADER_LEN <= self._ip6_payload_len' condition not met."
             ),
             "_args": [b"\x81\x00\xfb"],
+            "_kwargs": {},
             "_mocked_values": {
                 "ip6__dlen": 3,
             },
@@ -69,6 +70,7 @@ from tests.lib.testcase__packet_rx__ip6 import TestCasePacketRxIp6
                 "the 'self._ip6__dlen <= len(self._frame)' condition not met."
             ),
             "_args": [b"\x81\x00\xfb\x94\x30\x39\xd4"],
+            "_kwargs": {},
             "_mocked_values": {
                 "ip6__dlen": 8,
             },
@@ -83,6 +85,7 @@ from tests.lib.testcase__packet_rx__ip6 import TestCasePacketRxIp6
         {
             "_description": "ICMPv6 Destination Unreachable message, invalid checksum.",
             "_args": [b"\x81\x00\x00\x00\x30\x39\xd4\x31"],
+            "_kwargs": {},
             "_mocked_values": {},
             "_results": {
                 "error_message": "The packet checksum must be valid.",
@@ -97,6 +100,7 @@ class TestIcmp6UnknownParserIntegrityChecks(TestCasePacketRxIp6):
 
     _description: str
     _args: list[Any]
+    _kwargs: dict[str, Any]
     _mocked_values: dict[str, Any]
     _results: dict[str, Any]
 

@@ -46,6 +46,8 @@ class TestCasePacketRx(TestCase):
     """
 
     _args: list[Any] = []
+    _kwargs: dict[str, Any] = {}
+
     _packet_rx: PacketRx
 
     def setUp(self) -> None:
@@ -53,4 +55,4 @@ class TestCasePacketRx(TestCase):
         Set up the PacketRx object.
         """
 
-        self._packet_rx = PacketRx(self._args[0])
+        self._packet_rx = PacketRx(*self._args, **self._kwargs)

@@ -54,6 +54,7 @@ from tests.lib.testcase__packet_rx import TestCasePacketRx
                 b"\x50\x05\x60\x06\x70\x07\x80\x08\xa0\x0a\xb0\x0b\xc0\x0c\xd0\x0d"
                 b"\xe0\x0e\xf0\x0f\x0a\x0a\x0b\x0b"
             ],
+            "_kwargs": {},
             "_results": {
                 "header": Ip6Header(
                     dscp=0,
@@ -87,6 +88,7 @@ from tests.lib.testcase__packet_rx import TestCasePacketRx
                 b"\x44\x44\x33\x33\x22\x22\x11\x11\x30\x31\x32\x33\x34\x35\x36\x37"
                 b"\x38\x39\x41\x42\x43\x44\x45\x46"
             ],
+            "_kwargs": {},
             "_results": {
                 "header": Ip6Header(
                     dscp=38,
@@ -122,6 +124,7 @@ from tests.lib.testcase__packet_rx import TestCasePacketRx
                 b"\x55\x55\x66\x66\x77\x77\x88\x88\x88\x88\x77\x77\x66\x66\x55\x55"
                 b"\x44\x44\x33\x33\x22\x22\x11\x11" + b"X" * 65495
             ],
+            "_kwargs": {},
             "_results": {
                 "header": Ip6Header(
                     dscp=63,
@@ -156,6 +159,7 @@ class TestIp6PacketParserOperation(TestCasePacketRx):
 
     _description: str
     _args: list[Any]
+    _kwargs: dict[str, Any]
     _results: dict[str, Any]
 
     _packet_rx: PacketRx

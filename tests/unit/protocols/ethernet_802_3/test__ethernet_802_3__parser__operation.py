@@ -57,6 +57,7 @@ from tests.lib.testcase__packet_rx import TestCasePacketRx
                 b"\x11\x22\x33\x44\x55\x66\x77\x88\x99\xaa\xbb\xcc\x00\x10\x30\x31"
                 b"\x32\x33\x34\x35\x36\x37\x38\x39\x41\x42\x43\x44\x45\x46"
             ],
+            "_kwargs": {},
             "_results": {
                 "header": Ethernet8023Header(
                     dst=MacAddress("11:22:33:44:55:66"),
@@ -72,6 +73,7 @@ from tests.lib.testcase__packet_rx import TestCasePacketRx
                 b"\xa1\xb2\xc3\xd4\xe5\xf6\x11\x12\x13\x14\x15\x16\x05\xdc"
                 + b"X" * ETHERNET_802_3__PAYLOAD__MAX_LEN
             ],
+            "_kwargs": {},
             "_results": {
                 "header": Ethernet8023Header(
                     dst=MacAddress("a1:b2:c3:d4:e5:f6"),
@@ -90,6 +92,7 @@ class TestEthernet8023ParserOperation(TestCasePacketRx):
 
     _description: str
     _args: list[Any]
+    _kwargs: dict[str, Any]
     _results: dict[str, Any]
 
     _packet_rx: PacketRx

@@ -49,6 +49,7 @@ from tests.lib.testcase__packet_rx__ip6 import TestCasePacketRxIp6
         {
             "_description": "IPv6 Ext Frag packet (I)",
             "_args": [b"\xff\x00\x00\x00\x00\x00\x00\x00"],
+            "_kwargs": {},
             "_results": {
                 "header": Ip6ExtFragHeader(
                     next=Ip6Next.RAW,
@@ -68,6 +69,7 @@ from tests.lib.testcase__packet_rx__ip6 import TestCasePacketRxIp6
                 b"\xff\x00\x0c\x89\xff\xff\xff\xff\x30\x31\x32\x33\x34\x35\x36\x37"
                 b"\x38\x39\x41\x42\x43\x44\x45\x46"
             ],
+            "_kwargs": {},
             "_results": {
                 "header": Ip6ExtFragHeader(
                     next=Ip6Next.RAW,
@@ -87,6 +89,7 @@ from tests.lib.testcase__packet_rx__ip6 import TestCasePacketRxIp6
         {
             "_description": "IPv6 Ext Frag packet (III)",
             "_args": [b"\xff\x00\xff\xf8\x00\x76\xad\xf1" + b"X" * 1422],
+            "_kwargs": {},
             "_results": {
                 "header": Ip6ExtFragHeader(
                     next=Ip6Next.RAW,
@@ -111,6 +114,7 @@ class TestIp6PacketParserOperation(TestCasePacketRxIp6):
 
     _description: str
     _args: list[Any]
+    _kwargs: dict[str, Any]
     _results: dict[str, Any]
 
     _packet_rx: PacketRx

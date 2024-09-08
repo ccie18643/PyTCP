@@ -47,6 +47,7 @@ testcases = [
     {
         "_description": "UDP packet with the empty payload.",
         "_args": [b"\xff\xff\xff\xff\x00\x08\xff\xf7"],
+        "_kwargs": {},
         "_mocked_values": {},
         "_results": {
             "header": UdpHeader(
@@ -64,6 +65,7 @@ testcases = [
             b"\x30\x39\xd4\x31\x00\x18\x2c\xa6\x30\x31\x32\x33\x34\x35\x36\x37"
             b"\x38\x39\x41\x42\x43\x44\x45\x46"
         ],
+        "_kwargs": {},
         "_mocked_values": {},
         "_results": {
             "header": UdpHeader(
@@ -78,6 +80,7 @@ testcases = [
     {
         "_description": "UDP packet with the maximum length payload.",
         "_args": [b"\x2b\x67\x56\xce\xff\xff\xb3\x57" + b"X" * 65527],
+        "_kwargs": {},
         "_mocked_values": {},
         "_results": {
             "header": UdpHeader(
@@ -92,6 +95,7 @@ testcases = [
     {
         "_description": "UDP packet with the 'cksum' field set to '0' (valid state).",
         "_args": [b"\x30\x39\xd4\x31\x00\x08\x00\x00"],
+        "_kwargs": {},
         "_mocked_values": {},
         "_results": {
             "header": UdpHeader(
@@ -114,6 +118,7 @@ class TestUdpParserOperation__Ip4(TestCasePacketRxIp4):
 
     _description: str
     _args: list[Any]
+    _kwargs: dict[str, Any]
     _mocked_values: dict[str, Any]
     _results: dict[str, Any]
 
@@ -156,6 +161,7 @@ class TestUdpParserOperation__Ip6(TestCasePacketRxIp6):
 
     _description: str
     _args: list[Any]
+    _kwargs: dict[str, Any]
     _mocked_values: dict[str, Any]
     _results: dict[str, Any]
 

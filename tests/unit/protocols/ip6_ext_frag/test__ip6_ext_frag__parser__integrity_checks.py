@@ -53,6 +53,7 @@ from tests.lib.testcase__packet_rx__ip6 import TestCasePacketRxIp6
                 "'IP6_EXT_FRAG__HEADER__LEN' constant."
             ),
             "_args": [b"\xff\x00\x00\x00\x00\x00\x00"],
+            "_kwargs": {},
             "_results": {
                 "error_message": "The wrong packet length (I).",
             },
@@ -66,6 +67,7 @@ class TestIp6ExtFragParserIntegrityChecks(TestCasePacketRxIp6):
 
     _description: str
     _args: list[Any]
+    _kwargs: dict[str, Any]
     _results: dict[str, Any]
 
     _packet_rx: PacketRx

@@ -49,6 +49,7 @@ class TestCasePacketRxIp6(TestCase):
     """
 
     _args: list[Any] = []
+    _kwargs: dict[str, Any] = {}
     _mocked_values: dict[str, Any] = {}
     _packet_rx: PacketRx
 
@@ -57,7 +58,7 @@ class TestCasePacketRxIp6(TestCase):
         Set up the mocked values for the IPv6 related fields.
         """
 
-        self._packet_rx = PacketRx(self._args[0])
+        self._packet_rx = PacketRx(*self._args, **self._kwargs)
 
         self._packet_rx.ip = self._packet_rx.ip6 = cast(
             Ip6Parser, StrictMock(template=Ip6Parser)

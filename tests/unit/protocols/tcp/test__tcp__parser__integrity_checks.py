@@ -54,6 +54,7 @@ testcases = [
             b"\x30\x39\xd4\x31\x00\x12\xd6\x87\x00\x74\xcb\xb1\x60\x10\x2b\x67"
             b"\xcb\x5b\x00\x00\x01\x01\x01\x01"
         ],
+        "_kwargs": {},
         "_mocked_values": {
             "ip4__payload_len": TCP__HEADER__LEN - 1,
             "ip6__dlen": TCP__HEADER__LEN - 1,
@@ -74,6 +75,7 @@ testcases = [
             b"\x30\x39\xd4\x31\x00\x12\xd6\x87\x00\x74\xcb\xb1\x60\x10\x2b\x67"
             b"\xcb\x5b\x00\x00\x01\x01\x01\x01"
         ],
+        "_kwargs": {},
         "_mocked_values": {
             "ip4__payload_len": TCP__HEADER__LEN + 4 + 1,
             "ip6__dlen": TCP__HEADER__LEN + 4 + 1,
@@ -94,6 +96,7 @@ testcases = [
             b"\x30\x39\xd4\x31\x00\x12\xd6\x87\x00\x74\xcb\xb1\x4c\x10\x2b\x67"
             b"\xdf\x5b\x00\x00\x01\x01\x01\x01"
         ],
+        "_kwargs": {},
         "_mocked_values": {},
         "_results": {
             "error_message": (
@@ -112,6 +115,7 @@ testcases = [
             b"\x30\x39\xd4\x31\x00\x12\xd6\x87\x00\x74\xcb\xb1\x70\x10\x2b\x67"
             b"\xbb\x5b\x00\x00\x01\x01\x01\x01"
         ],
+        "_kwargs": {},
         "_mocked_values": {},
         "_results": {
             "error_message": (
@@ -128,6 +132,7 @@ testcases = [
             b"\xbe\x86\x00\x00\x03\x03\x0a\x01\x30\x31\x32\x33\x34\x35\x36\x37"
             b"\x38\x39\x30\x41\x42\x43\x44\x45\x46"
         ],
+        "_kwargs": {},
         "_mocked_values": {},
         "_results": {
             "error_message": "The packet checksum must be valid.",
@@ -142,6 +147,7 @@ testcases = [
             b"\x30\x39\xd4\x31\x00\x12\xd6\x87\x00\x74\xcb\xb1\x60\x10\x2b\x67"
             b"\xce\x5b\x00\x00\xff\x01\x00\x00"
         ],
+        "_kwargs": {},
         "_mocked_values": {},
         "_results": {
             "error_message": (
@@ -158,6 +164,7 @@ testcases = [
             b"\x30\x39\xd4\x31\x00\x12\xd6\x87\x00\x74\xcb\xb1\x60\x10\x2b\x67"
             b"\xce\x57\x00\x00\xff\x05\x00\x00"
         ],
+        "_kwargs": {},
         "_mocked_values": {},
         "_results": {
             "error_message": (
@@ -177,6 +184,7 @@ class TestTcpParserIntegrityChecks__Ip4(TestCasePacketRxIp4):
 
     _description: str
     _args: list[Any]
+    _kwargs: dict[str, Any]
     _mocked_values: dict[str, Any]
     _results: dict[str, Any]
 
@@ -204,6 +212,7 @@ class TestTcpParserIntegrityChecks__Ip6(TestCasePacketRxIp6):
 
     _description: str
     _args: list[Any]
+    _kwargs: dict[str, Any]
     _mocked_values: dict[str, Any]
     _results: dict[str, Any]
 

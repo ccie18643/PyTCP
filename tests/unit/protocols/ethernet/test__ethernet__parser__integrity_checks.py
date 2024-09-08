@@ -51,6 +51,7 @@ from tests.lib.testcase__packet_rx import TestCasePacketRx
                 "The frame length is less than the value of the 'ETHERNET__HEADER__LEN' constant."
             ),
             "_args": [b"\xa1\xb2\xc3\xd4\xe5\xf6\x11\x12\x13\x14\x15\x16\xff"],
+            "_kwargs": {},
             "_results": {
                 "error_message": (
                     f"The minimum packet length must be {ETHERNET__HEADER__LEN} "
@@ -67,6 +68,7 @@ class TestEthernetParserIntegrityChecks(TestCasePacketRx):
 
     _description: str
     _args: list[Any]
+    _kwargs: dict[str, Any]
     _results: dict[str, Any]
 
     _packet_rx: PacketRx

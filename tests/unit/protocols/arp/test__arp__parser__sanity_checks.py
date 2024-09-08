@@ -51,6 +51,7 @@ from tests.lib.testcase__packet_rx import TestCasePacketRx
                 b"\x00\x01\x08\x00\x06\x04\x00\x00\x01\x02\x03\x04\x05\x06\x0b\x16"
                 b"\x21\x2c\x0a\x0b\x0c\x0d\x0e\x0f\x65\x66\x67\x68"
             ],
+            "_kwargs": {},
             "_results": {
                 "error_message": "The 'oper' field value must be one of [1, 2], got 0.",
             },
@@ -64,6 +65,7 @@ class TestArpParserSanityChecks(TestCasePacketRx):
 
     _description: str
     _args: list[Any]
+    _kwargs: dict[str, Any]
     _results: dict[str, Any]
 
     _packet_rx: PacketRx

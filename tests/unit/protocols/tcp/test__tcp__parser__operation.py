@@ -52,6 +52,7 @@ testcases = [
             b"\x30\x39\xd4\x31\x07\x5b\xcd\x15\x3a\xde\x68\xb1\x51\xfa\x2b\x67"
             b"\xaf\x64\x56\xce"
         ],
+        "_kwargs": {},
         "_mocked_values": {},
         "_results": {
             "header": TcpHeader(
@@ -83,6 +84,7 @@ testcases = [
             b"\x04\x57\x08\xae\x00\x00\x0d\x05\x00\x00\x11\x5c\x50\x11\x15\xb3"
             b"\x6e\xd5\x00\x00"
         ],
+        "_kwargs": {},
         "_mocked_values": {},
         "_results": {
             "header": TcpHeader(
@@ -114,6 +116,7 @@ testcases = [
             b"\x30\x39\xd4\x31\x00\x00\x00\x00\x00\x00\x00\x00\x70\x04\x2b\x67"
             b"\x5c\x25\x00\x00\x01\x01\x01\x01\x01\x01\x01\x01"
         ],
+        "_kwargs": {},
         "_mocked_values": {},
         "_results": {
             "header": TcpHeader(
@@ -148,6 +151,7 @@ testcases = [
             b"\xcf\x26\xff\xff\x01\x01\x01\x01\x30\x31\x32\x33\x34\x35\x36\x37"
             b"\x38\x39\x41\x42\x43\x44\x45\x46"
         ],
+        "_kwargs": {},
         "_mocked_values": {},
         "_results": {
             "header": TcpHeader(
@@ -181,6 +185,7 @@ testcases = [
             b"\x04\x57\x08\xae\x00\x00\x0d\x05\x00\x00\x11\x5c\x51\x58\x15\xb3"
             b"\xb5\x2d\x00\x00" + b"X" * 65515
         ],
+        "_kwargs": {},
         "_mocked_values": {},
         "_results": {
             "header": TcpHeader(
@@ -214,6 +219,7 @@ testcases = [
             b"\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01"
             b"\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01" + b"X" * 65475
         ],
+        "_kwargs": {},
         "_mocked_values": {},
         "_results": {
             "header": TcpHeader(
@@ -252,6 +258,7 @@ class TestTcpParserOperation__Ip4(TestCasePacketRxIp4):
 
     _description: str
     _args: list[Any]
+    _kwargs: dict[str, Any]
     _mocked_values: dict[str, Any]
     _results: dict[str, Any]
 
@@ -295,6 +302,7 @@ class TestTcpParserOperation__Ip6(TestCasePacketRxIp6):
 
     _description: str
     _args: list[Any]
+    _kwargs: dict[str, Any]
     _mocked_values: dict[str, Any]
     _results: dict[str, Any]
 

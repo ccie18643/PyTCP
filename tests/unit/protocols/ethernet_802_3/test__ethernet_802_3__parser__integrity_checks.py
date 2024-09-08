@@ -59,6 +59,7 @@ from tests.lib.testcase__packet_rx import TestCasePacketRx
                 "constant."
             ),
             "_args": [b"\x11\x22\x33\x44\x55\x66\x77\x88\x99\xaa\xbb\xcc\x00"],
+            "_kwargs": {},
             "_results": {
                 "error_message": (
                     f"The minimum packet length must be {ETHERNET_802_3__HEADER__LEN} "
@@ -74,6 +75,7 @@ from tests.lib.testcase__packet_rx import TestCasePacketRx
                 b"\x11\x22\x33\x44\x55\x66\x77\x88\x99\xaa\xbb\xcc\x00\x10\x30\x31"
                 b"\x32\x33\x34\x35\x36\x37\x38\x39\x41\x42\x43\x44\x45\x46\x47"
             ],
+            "_kwargs": {},
             "_results": {
                 "error_message": (
                     f"Inconsistent payload length (16 bytes) in the Ethernet 802.3 header. "
@@ -87,6 +89,7 @@ from tests.lib.testcase__packet_rx import TestCasePacketRx
                 b"\xa1\xb2\xc3\xd4\xe5\xf6\x11\x12\x13\x14\x15\x16\x05\xdd"
                 + b"X" * (ETHERNET_802_3__PAYLOAD__MAX_LEN + 1)
             ],
+            "_kwargs": {},
             "_results": {
                 "error_message": (
                     f"Payload length ({ETHERNET_802_3__PAYLOAD__MAX_LEN + 1} bytes) exceeds the "
@@ -103,6 +106,7 @@ class TestEthernet8023ParserIntegrityChecks(TestCasePacketRx):
 
     _description: str
     _args: list[Any]
+    _kwargs: dict[str, Any]
     _results: dict[str, Any]
 
     _packet_rx: PacketRx

@@ -54,6 +54,7 @@ from tests.lib.testcase__packet_rx import TestCasePacketRx
                 b"\x45\xff\x00\x14\xff\xff\x40\x00\xff\xff\xd9\x73\x0a\x14\x1e\x28"
                 b"\x32\x3c\x46"
             ],
+            "_kwargs": {},
             "_results": {
                 "error_message": "The wrong packet length (I).",
             },
@@ -64,6 +65,7 @@ from tests.lib.testcase__packet_rx import TestCasePacketRx
                 b"\x55\xff\x00\x14\xff\xff\x40\x00\xff\xff\xc9\x23\x0a\x14\x1e\x28"
                 b"\x32\x3c\x46\x50"
             ],
+            "_kwargs": {},
             "_results": {
                 "error_message": "Value of the 'ver' field must be set to 4.",
             },
@@ -77,6 +79,7 @@ from tests.lib.testcase__packet_rx import TestCasePacketRx
                 b"\x44\xff\x00\x14\xff\xff\x40\x00\xff\xff\xda\x23\x0a\x14\x1e\x28"
                 b"\x32\x3c\x46\x50"
             ],
+            "_kwargs": {},
             "_results": {
                 "error_message": "The wrong packet length (II).",
             },
@@ -89,6 +92,7 @@ from tests.lib.testcase__packet_rx import TestCasePacketRx
                 b"\x45\xff\x00\x13\xff\xff\x40\x00\xff\xff\xd9\x24\x0a\x14\x1e\x28"
                 b"\x32\x3c\x46\x50"
             ],
+            "_kwargs": {},
             "_results": {
                 "error_message": "The wrong packet length (II).",
             },
@@ -101,6 +105,7 @@ from tests.lib.testcase__packet_rx import TestCasePacketRx
                 b"\x46\xff\x00\x18\xff\xff\x40\x00\xff\xff\xd8\x1f\x0a\x14\x1e\x28"
                 b"\x32\x3c\x46\x50"
             ],
+            "_kwargs": {},
             "_results": {
                 "error_message": "The wrong packet length (II).",
             },
@@ -124,6 +129,7 @@ from tests.lib.testcase__packet_rx import TestCasePacketRx
                 b"\x46\xff\x00\x18\xff\xff\x40\x00\xff\xff\xd9\x1d\x0a\x14\x1e\x28"
                 b"\x32\x3c\x46\x50\xff\x01\x00\x00"
             ],
+            "_kwargs": {},
             "_results": {
                 "error_message": (
                     "The IPv4 option length must be greater than 1. Got: 1."
@@ -139,6 +145,7 @@ from tests.lib.testcase__packet_rx import TestCasePacketRx
                 b"\x46\xff\x00\x18\xff\xff\x40\x00\xff\xff\xd9\x19\x0a\x14\x1e\x28"
                 b"\x32\x3c\x46\x50\xff\x05\x00\x00"
             ],
+            "_kwargs": {},
             "_results": {
                 "error_message": (
                     "The IPv4 option length must not extend past the header "
@@ -155,6 +162,7 @@ class TestIp4ParserIntegrityChecks(TestCasePacketRx):
 
     _description: str
     _args: list[Any]
+    _kwargs: dict[str, Any]
     _results: dict[str, Any]
 
     _packet_rx: PacketRx

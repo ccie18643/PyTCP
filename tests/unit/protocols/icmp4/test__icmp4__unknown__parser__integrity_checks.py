@@ -51,6 +51,7 @@ from tests.lib.testcase__packet_rx__ip4 import TestCasePacketRxIp4
                 "the 'ICMP4_HEADER_LEN <= self._ip4_payload_len' condition not met."
             ),
             "_args": [b"\xff\x00\xfb"],
+            "_kwargs": {},
             "_mocked_values": {
                 "ip4__payload_len": 3,
             },
@@ -68,6 +69,7 @@ from tests.lib.testcase__packet_rx__ip4 import TestCasePacketRxIp4
                 "the 'self._ip4_payload_len <= len(self._frame)' condition not met."
             ),
             "_args": [b"\xff\x00\xfb\x94\x30\x39\xd4"],
+            "_kwargs": {},
             "_mocked_values": {
                 "ip4__payload_len": 8,
             },
@@ -82,6 +84,7 @@ from tests.lib.testcase__packet_rx__ip4 import TestCasePacketRxIp4
         {
             "_description": "ICMPv4 unknown message, invalid checksum.",
             "_args": [b"\xff\x00\x00\x00\x30\x39\xd4\x31"],
+            "_kwargs": {},
             "_mocked_values": {},
             "_results": {
                 "error_message": "The packet checksum must be valid.",
@@ -96,6 +99,7 @@ class TestIcmp4UnknownParserIntegrityChecks(TestCasePacketRxIp4):
 
     _description: str
     _args: list[Any]
+    _kwargs: dict[str, Any]
     _mocked_values: dict[str, Any]
     _results: dict[str, Any]
 

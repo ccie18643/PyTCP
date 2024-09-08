@@ -53,6 +53,7 @@ class TestIp6ExtFragParserSanityChecks(TestCasePacketRxIp6):
 
     _description: str
     _args: list[Any]
+    _kwargs: dict[str, Any]
     _results: dict[str, Any]
 
     _packet_rx: PacketRx
