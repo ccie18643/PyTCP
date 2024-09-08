@@ -33,6 +33,8 @@ ver 3.0.2
 """
 
 
+from typing import Any
+
 from testslide import TestCase
 
 from pytcp.lib.int_checks import (
@@ -63,7 +65,8 @@ class TestIp4HeaderAsserts(TestCase):
         Create the default arguments for the IPv4 header constructor.
         """
 
-        self._header_kwargs = {
+        self._args: list[Any] = []
+        self._kwargs: dict[str, Any] = {
             "hlen": IP4__HEADER__LEN,
             "dscp": 0,
             "ecn": 0,
@@ -85,10 +88,10 @@ class TestIp4HeaderAsserts(TestCase):
         'hlen' argument is lower than the minimum supported value.
         """
 
-        self._header_kwargs["hlen"] = value = IP4__HEADER__LEN - 1
+        self._kwargs["hlen"] = value = IP4__HEADER__LEN - 1
 
         with self.assertRaises(AssertionError) as error:
-            Ip4Header(**self._header_kwargs)  # type: ignore
+            Ip4Header(*self._args, **self._kwargs)
 
         self.assertEqual(
             str(error.exception),
@@ -101,10 +104,10 @@ class TestIp4HeaderAsserts(TestCase):
         'hlen' argument is higher than the maximum supported value.
         """
 
-        self._header_kwargs["hlen"] = value = UINT_4__MAX + 1
+        self._kwargs["hlen"] = value = UINT_4__MAX + 1
 
         with self.assertRaises(AssertionError) as error:
-            Ip4Header(**self._header_kwargs)  # type: ignore
+            Ip4Header(*self._args, **self._kwargs)
 
         self.assertEqual(
             str(error.exception),
@@ -117,10 +120,10 @@ class TestIp4HeaderAsserts(TestCase):
         'dscp' argument is lower than the minimum supported value.
         """
 
-        self._header_kwargs["dscp"] = value = UINT_6__MIN - 1
+        self._kwargs["dscp"] = value = UINT_6__MIN - 1
 
         with self.assertRaises(AssertionError) as error:
-            Ip4Header(**self._header_kwargs)  # type: ignore
+            Ip4Header(*self._args, **self._kwargs)
 
         self.assertEqual(
             str(error.exception),
@@ -133,10 +136,10 @@ class TestIp4HeaderAsserts(TestCase):
         'dscp' argument is higher than the maximum supported value.
         """
 
-        self._header_kwargs["dscp"] = value = UINT_6__MAX + 1
+        self._kwargs["dscp"] = value = UINT_6__MAX + 1
 
         with self.assertRaises(AssertionError) as error:
-            Ip4Header(**self._header_kwargs)  # type: ignore
+            Ip4Header(*self._args, **self._kwargs)
 
         self.assertEqual(
             str(error.exception),
@@ -149,10 +152,10 @@ class TestIp4HeaderAsserts(TestCase):
         'ecn' argument is lower than the minimum supported value.
         """
 
-        self._header_kwargs["ecn"] = value = UINT_2__MIN - 1
+        self._kwargs["ecn"] = value = UINT_2__MIN - 1
 
         with self.assertRaises(AssertionError) as error:
-            Ip4Header(**self._header_kwargs)  # type: ignore
+            Ip4Header(*self._args, **self._kwargs)
 
         self.assertEqual(
             str(error.exception),
@@ -165,10 +168,10 @@ class TestIp4HeaderAsserts(TestCase):
         'ecn' argument is higher than the maximum supported value.
         """
 
-        self._header_kwargs["ecn"] = value = UINT_2__MAX + 1
+        self._kwargs["ecn"] = value = UINT_2__MAX + 1
 
         with self.assertRaises(AssertionError) as error:
-            Ip4Header(**self._header_kwargs)  # type: ignore
+            Ip4Header(*self._args, **self._kwargs)
 
         self.assertEqual(
             str(error.exception),
@@ -181,10 +184,10 @@ class TestIp4HeaderAsserts(TestCase):
         'plen' argument is lower than the minimum supported value.
         """
 
-        self._header_kwargs["plen"] = value = IP4__HEADER__LEN - 1
+        self._kwargs["plen"] = value = IP4__HEADER__LEN - 1
 
         with self.assertRaises(AssertionError) as error:
-            Ip4Header(**self._header_kwargs)  # type: ignore
+            Ip4Header(*self._args, **self._kwargs)
 
         self.assertEqual(
             str(error.exception),
@@ -197,10 +200,10 @@ class TestIp4HeaderAsserts(TestCase):
         'plen' argument is higher than the maximum supported value.
         """
 
-        self._header_kwargs["plen"] = value = UINT_16__MAX + 1
+        self._kwargs["plen"] = value = UINT_16__MAX + 1
 
         with self.assertRaises(AssertionError) as error:
-            Ip4Header(**self._header_kwargs)  # type: ignore
+            Ip4Header(*self._args, **self._kwargs)
 
         self.assertEqual(
             str(error.exception),
@@ -213,10 +216,10 @@ class TestIp4HeaderAsserts(TestCase):
         'id' argument is lower than the minimum supported value.
         """
 
-        self._header_kwargs["id"] = value = UINT_16__MIN - 1
+        self._kwargs["id"] = value = UINT_16__MIN - 1
 
         with self.assertRaises(AssertionError) as error:
-            Ip4Header(**self._header_kwargs)  # type: ignore
+            Ip4Header(*self._args, **self._kwargs)
 
         self.assertEqual(
             str(error.exception),
@@ -229,10 +232,10 @@ class TestIp4HeaderAsserts(TestCase):
         'id' argument is higher than the maximum supported value.
         """
 
-        self._header_kwargs["id"] = value = UINT_16__MAX + 1
+        self._kwargs["id"] = value = UINT_16__MAX + 1
 
         with self.assertRaises(AssertionError) as error:
-            Ip4Header(**self._header_kwargs)  # type: ignore
+            Ip4Header(*self._args, **self._kwargs)
 
         self.assertEqual(
             str(error.exception),
@@ -245,10 +248,10 @@ class TestIp4HeaderAsserts(TestCase):
         'flag_df' argument is not a boolean.
         """
 
-        self._header_kwargs["flag_df"] = value = "not a boolean"
+        self._kwargs["flag_df"] = value = "not a boolean"
 
         with self.assertRaises(AssertionError) as error:
-            Ip4Header(**self._header_kwargs)  # type: ignore
+            Ip4Header(*self._args, **self._kwargs)
 
         self.assertEqual(
             str(error.exception),
@@ -261,10 +264,10 @@ class TestIp4HeaderAsserts(TestCase):
         'flag_mf' argument is not a boolean.
         """
 
-        self._header_kwargs["flag_mf"] = value = "not a boolean"
+        self._kwargs["flag_mf"] = value = "not a boolean"
 
         with self.assertRaises(AssertionError) as error:
-            Ip4Header(**self._header_kwargs)  # type: ignore
+            Ip4Header(*self._args, **self._kwargs)
 
         self.assertEqual(
             str(error.exception),
@@ -277,10 +280,10 @@ class TestIp4HeaderAsserts(TestCase):
         'offset' argument is lower than the minimum supported value.
         """
 
-        self._header_kwargs["offset"] = value = UINT_13__MIN - 1
+        self._kwargs["offset"] = value = UINT_13__MIN - 1
 
         with self.assertRaises(AssertionError) as error:
-            Ip4Header(**self._header_kwargs)  # type: ignore
+            Ip4Header(*self._args, **self._kwargs)
 
         self.assertEqual(
             str(error.exception),
@@ -293,10 +296,10 @@ class TestIp4HeaderAsserts(TestCase):
         'offset' argument is higher than the maximum supported value.
         """
 
-        self._header_kwargs["offset"] = value = UINT_13__MAX + 1
+        self._kwargs["offset"] = value = UINT_13__MAX + 1
 
         with self.assertRaises(AssertionError) as error:
-            Ip4Header(**self._header_kwargs)  # type: ignore
+            Ip4Header(*self._args, **self._kwargs)
 
         self.assertEqual(
             str(error.exception),
@@ -309,10 +312,10 @@ class TestIp4HeaderAsserts(TestCase):
         'offset' argument is not 8-byte aligned.
         """
 
-        self._header_kwargs["offset"] = value = UINT_13__MAX - 1
+        self._kwargs["offset"] = value = UINT_13__MAX - 1
 
         with self.assertRaises(AssertionError) as error:
-            Ip4Header(**self._header_kwargs)  # type: ignore
+            Ip4Header(*self._args, **self._kwargs)
 
         self.assertEqual(
             str(error.exception),
@@ -325,10 +328,10 @@ class TestIp4HeaderAsserts(TestCase):
         'ttl' argument is lower than the minimum supported value.
         """
 
-        self._header_kwargs["ttl"] = value = UINT_8__MIN - 1
+        self._kwargs["ttl"] = value = UINT_8__MIN - 1
 
         with self.assertRaises(AssertionError) as error:
-            Ip4Header(**self._header_kwargs)  # type: ignore
+            Ip4Header(*self._args, **self._kwargs)
 
         self.assertEqual(
             str(error.exception),
@@ -341,10 +344,10 @@ class TestIp4HeaderAsserts(TestCase):
         'ttl' argument is higher than the maximum supported value.
         """
 
-        self._header_kwargs["ttl"] = value = UINT_8__MAX + 1
+        self._kwargs["ttl"] = value = UINT_8__MAX + 1
 
         with self.assertRaises(AssertionError) as error:
-            Ip4Header(**self._header_kwargs)  # type: ignore
+            Ip4Header(*self._args, **self._kwargs)
 
         self.assertEqual(
             str(error.exception),
@@ -357,10 +360,10 @@ class TestIp4HeaderAsserts(TestCase):
         'proto' argument is not an Ip4Proto.
         """
 
-        self._header_kwargs["proto"] = value = "not an Ip4Proto"
+        self._kwargs["proto"] = value = "not an Ip4Proto"
 
         with self.assertRaises(AssertionError) as error:
-            Ip4Header(**self._header_kwargs)  # type: ignore
+            Ip4Header(*self._args, **self._kwargs)
 
         self.assertEqual(
             str(error.exception),
@@ -373,10 +376,10 @@ class TestIp4HeaderAsserts(TestCase):
         'cksum' argument is lower than the minimum supported value.
         """
 
-        self._header_kwargs["cksum"] = value = UINT_16__MIN - 1
+        self._kwargs["cksum"] = value = UINT_16__MIN - 1
 
         with self.assertRaises(AssertionError) as error:
-            Ip4Header(**self._header_kwargs)  # type: ignore
+            Ip4Header(*self._args, **self._kwargs)
 
         self.assertEqual(
             str(error.exception),
@@ -389,10 +392,10 @@ class TestIp4HeaderAsserts(TestCase):
         'cksum' argument is higher than the maximum supported value.
         """
 
-        self._header_kwargs["cksum"] = value = UINT_16__MAX + 1
+        self._kwargs["cksum"] = value = UINT_16__MAX + 1
 
         with self.assertRaises(AssertionError) as error:
-            Ip4Header(**self._header_kwargs)  # type: ignore
+            Ip4Header(*self._args, **self._kwargs)
 
         self.assertEqual(
             str(error.exception),
@@ -405,10 +408,10 @@ class TestIp4HeaderAsserts(TestCase):
         'src' argument is not a Ip4Address.
         """
 
-        self._header_kwargs["src"] = value = 0
+        self._kwargs["src"] = value = 0
 
         with self.assertRaises(AssertionError) as error:
-            Ip4Header(**self._header_kwargs)  # type: ignore
+            Ip4Header(*self._args, **self._kwargs)
 
         self.assertEqual(
             str(error.exception),
@@ -421,10 +424,10 @@ class TestIp4HeaderAsserts(TestCase):
         'dst' argument is not a Ip4Address.
         """
 
-        self._header_kwargs["dst"] = value = 0
+        self._kwargs["dst"] = value = 0
 
         with self.assertRaises(AssertionError) as error:
-            Ip4Header(**self._header_kwargs)  # type: ignore
+            Ip4Header(*self._args, **self._kwargs)
 
         self.assertEqual(
             str(error.exception),

@@ -33,6 +33,8 @@ ver 3.0.2
 """
 
 
+from typing import Any
+
 from testslide import TestCase
 
 from pytcp.lib.int_checks import UINT_16__MAX, UINT_16__MIN
@@ -49,7 +51,8 @@ class TestUdpHeaderAsserts(TestCase):
         Create the default arguments for the UDP header constructor.
         """
 
-        self._header_kwargs = {
+        self._args: list[Any] = []
+        self._kwargs: dict[str, Any] = {
             "sport": 0,
             "dport": 0,
             "plen": 0,
@@ -62,10 +65,10 @@ class TestUdpHeaderAsserts(TestCase):
         'sport' argument is lower than the minimum supported value.
         """
 
-        self._header_kwargs["sport"] = value = UINT_16__MIN - 1
+        self._kwargs["sport"] = value = UINT_16__MIN - 1
 
         with self.assertRaises(AssertionError) as error:
-            UdpHeader(**self._header_kwargs)
+            UdpHeader(*self._args, **self._kwargs)
 
         self.assertEqual(
             str(error.exception),
@@ -78,10 +81,10 @@ class TestUdpHeaderAsserts(TestCase):
         'sport' argument is higher than the maximum supported value.
         """
 
-        self._header_kwargs["sport"] = value = UINT_16__MAX + 1
+        self._kwargs["sport"] = value = UINT_16__MAX + 1
 
         with self.assertRaises(AssertionError) as error:
-            UdpHeader(**self._header_kwargs)
+            UdpHeader(*self._args, **self._kwargs)
 
         self.assertEqual(
             str(error.exception),
@@ -94,10 +97,10 @@ class TestUdpHeaderAsserts(TestCase):
         'dport' argument is lower than the minimum supported value.
         """
 
-        self._header_kwargs["dport"] = value = UINT_16__MIN - 1
+        self._kwargs["dport"] = value = UINT_16__MIN - 1
 
         with self.assertRaises(AssertionError) as error:
-            UdpHeader(**self._header_kwargs)
+            UdpHeader(*self._args, **self._kwargs)
 
         self.assertEqual(
             str(error.exception),
@@ -110,10 +113,10 @@ class TestUdpHeaderAsserts(TestCase):
         'dport' argument is higher than the maximum supported value.
         """
 
-        self._header_kwargs["dport"] = value = UINT_16__MAX + 1
+        self._kwargs["dport"] = value = UINT_16__MAX + 1
 
         with self.assertRaises(AssertionError) as error:
-            UdpHeader(**self._header_kwargs)
+            UdpHeader(*self._args, **self._kwargs)
 
         self.assertEqual(
             str(error.exception),
@@ -126,10 +129,10 @@ class TestUdpHeaderAsserts(TestCase):
         'plen' argument is lower than the minimum supported value.
         """
 
-        self._header_kwargs["plen"] = value = UINT_16__MIN - 1
+        self._kwargs["plen"] = value = UINT_16__MIN - 1
 
         with self.assertRaises(AssertionError) as error:
-            UdpHeader(**self._header_kwargs)
+            UdpHeader(*self._args, **self._kwargs)
 
         self.assertEqual(
             str(error.exception),
@@ -142,10 +145,10 @@ class TestUdpHeaderAsserts(TestCase):
         'plen' argument is higher than the maximum supported value.
         """
 
-        self._header_kwargs["plen"] = value = UINT_16__MAX + 1
+        self._kwargs["plen"] = value = UINT_16__MAX + 1
 
         with self.assertRaises(AssertionError) as error:
-            UdpHeader(**self._header_kwargs)
+            UdpHeader(*self._args, **self._kwargs)
 
         self.assertEqual(
             str(error.exception),
@@ -158,10 +161,10 @@ class TestUdpHeaderAsserts(TestCase):
         'cksum' argument is lower than the minimum supported value.
         """
 
-        self._header_kwargs["cksum"] = value = UINT_16__MIN - 1
+        self._kwargs["cksum"] = value = UINT_16__MIN - 1
 
         with self.assertRaises(AssertionError) as error:
-            UdpHeader(**self._header_kwargs)
+            UdpHeader(*self._args, **self._kwargs)
 
         self.assertEqual(
             str(error.exception),
@@ -174,10 +177,10 @@ class TestUdpHeaderAsserts(TestCase):
         'cksum' argument is higher than the maximum supported value.
         """
 
-        self._header_kwargs["cksum"] = value = UINT_16__MAX + 1
+        self._kwargs["cksum"] = value = UINT_16__MAX + 1
 
         with self.assertRaises(AssertionError) as error:
-            UdpHeader(**self._header_kwargs)
+            UdpHeader(*self._args, **self._kwargs)
 
         self.assertEqual(
             str(error.exception),

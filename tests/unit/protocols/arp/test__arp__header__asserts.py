@@ -33,6 +33,8 @@ ver 3.0.2
 """
 
 
+from typing import Any
+
 from testslide import TestCase
 
 from pytcp.lib.net_addr import Ip4Address, MacAddress
@@ -50,7 +52,8 @@ class TestArpHeaderAsserts(TestCase):
         Create the default arguments for the ARP header constructor.
         """
 
-        self._header_kwargs = {
+        self._args: list[Any] = []
+        self._kwargs: dict[str, Any] = {
             "oper": ArpOperation.REQUEST,
             "sha": MacAddress(),
             "spa": Ip4Address(),
@@ -64,10 +67,10 @@ class TestArpHeaderAsserts(TestCase):
         provided 'oper' argument is not a Dhcp4Operation.
         """
 
-        self._header_kwargs["oper"] = value = "not a ArpOperation"
+        self._kwargs["oper"] = value = "not a ArpOperation"
 
         with self.assertRaises(AssertionError) as error:
-            ArpHeader(**self._header_kwargs)  # type: ignore
+            ArpHeader(*self._args, **self._kwargs)
 
         self.assertEqual(
             str(error.exception),
@@ -80,10 +83,10 @@ class TestArpHeaderAsserts(TestCase):
         'sha' argument is not a MacAddress.
         """
 
-        self._header_kwargs["sha"] = value = "not a MacAddress"
+        self._kwargs["sha"] = value = "not a MacAddress"
 
         with self.assertRaises(AssertionError) as error:
-            ArpHeader(**self._header_kwargs)  # type: ignore
+            ArpHeader(*self._args, **self._kwargs)
 
         self.assertEqual(
             str(error.exception),
@@ -96,10 +99,10 @@ class TestArpHeaderAsserts(TestCase):
         'sha' argument is not an Ip4Address.
         """
 
-        self._header_kwargs["spa"] = value = "not an Ip4Address"
+        self._kwargs["spa"] = value = "not an Ip4Address"
 
         with self.assertRaises(AssertionError) as error:
-            ArpHeader(**self._header_kwargs)  # type: ignore
+            ArpHeader(*self._args, **self._kwargs)
 
         self.assertEqual(
             str(error.exception),
@@ -112,10 +115,10 @@ class TestArpHeaderAsserts(TestCase):
         'tha' argument is not a MacAddress.
         """
 
-        self._header_kwargs["tha"] = value = "not a MacAddress"
+        self._kwargs["tha"] = value = "not a MacAddress"
 
         with self.assertRaises(AssertionError) as error:
-            ArpHeader(**self._header_kwargs)  # type: ignore
+            ArpHeader(*self._args, **self._kwargs)
 
         self.assertEqual(
             str(error.exception),
@@ -128,10 +131,10 @@ class TestArpHeaderAsserts(TestCase):
         'tha' argument is not a Ip4Address.
         """
 
-        self._header_kwargs["tpa"] = value = "not an Ip4Address"
+        self._kwargs["tpa"] = value = "not an Ip4Address"
 
         with self.assertRaises(AssertionError) as error:
-            ArpHeader(**self._header_kwargs)  # type: ignore
+            ArpHeader(*self._args, **self._kwargs)
 
         self.assertEqual(
             str(error.exception),

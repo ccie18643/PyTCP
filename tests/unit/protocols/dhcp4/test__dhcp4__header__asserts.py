@@ -33,6 +33,8 @@ ver 3.0.2
 """
 
 
+from typing import Any
+
 from testslide import TestCase
 
 from pytcp.lib.int_checks import (
@@ -62,7 +64,8 @@ class TestDhcp4HeaderAsserts(TestCase):
         Create the default arguments for the ARP header constructor.
         """
 
-        self._header_kwargs = {
+        self._args: list[Any] = []
+        self._kwargs: dict[str, Any] = {
             "oper": Dhcp4Operation.REQUEST,
             "hops": 0,
             "xid": 0x12345678,
@@ -83,10 +86,10 @@ class TestDhcp4HeaderAsserts(TestCase):
         provided 'oper' argument is not a Dhcp4Operation.
         """
 
-        self._header_kwargs["oper"] = value = "not a Dhcp4Operation"
+        self._kwargs["oper"] = value = "not a Dhcp4Operation"
 
         with self.assertRaises(AssertionError) as error:
-            Dhcp4Header(**self._header_kwargs)  # type: ignore
+            Dhcp4Header(*self._args, **self._kwargs)
 
         self.assertEqual(
             str(error.exception),
@@ -99,10 +102,10 @@ class TestDhcp4HeaderAsserts(TestCase):
         provided 'hops' argument is lower than the minimum supported value.
         """
 
-        self._header_kwargs["hops"] = value = UINT_8__MIN - 1
+        self._kwargs["hops"] = value = UINT_8__MIN - 1
 
         with self.assertRaises(AssertionError) as error:
-            Dhcp4Header(**self._header_kwargs)  # type: ignore
+            Dhcp4Header(*self._args, **self._kwargs)
 
         self.assertEqual(
             str(error.exception),
@@ -116,10 +119,10 @@ class TestDhcp4HeaderAsserts(TestCase):
         provided 'hops' argument is higher than the maximum supported value.
         """
 
-        self._header_kwargs["hops"] = value = UINT_8__MAX + 1
+        self._kwargs["hops"] = value = UINT_8__MAX + 1
 
         with self.assertRaises(AssertionError) as error:
-            Dhcp4Header(**self._header_kwargs)  # type: ignore
+            Dhcp4Header(*self._args, **self._kwargs)
 
         self.assertEqual(
             str(error.exception),
@@ -133,10 +136,10 @@ class TestDhcp4HeaderAsserts(TestCase):
         provided 'xid' argument is lower than the minimum supported value.
         """
 
-        self._header_kwargs["xid"] = value = UINT_32__MIN - 1
+        self._kwargs["xid"] = value = UINT_32__MIN - 1
 
         with self.assertRaises(AssertionError) as error:
-            Dhcp4Header(**self._header_kwargs)  # type: ignore
+            Dhcp4Header(*self._args, **self._kwargs)
 
         self.assertEqual(
             str(error.exception),
@@ -150,10 +153,10 @@ class TestDhcp4HeaderAsserts(TestCase):
         provided 'xid' argument is higher than the maximum supported value.
         """
 
-        self._header_kwargs["xid"] = value = UINT_32__MAX + 1
+        self._kwargs["xid"] = value = UINT_32__MAX + 1
 
         with self.assertRaises(AssertionError) as error:
-            Dhcp4Header(**self._header_kwargs)  # type: ignore
+            Dhcp4Header(*self._args, **self._kwargs)
 
         self.assertEqual(
             str(error.exception),
@@ -167,10 +170,10 @@ class TestDhcp4HeaderAsserts(TestCase):
         provided 'secs' argument is lower than the minimum supported value.
         """
 
-        self._header_kwargs["secs"] = value = UINT_16__MIN - 1
+        self._kwargs["secs"] = value = UINT_16__MIN - 1
 
         with self.assertRaises(AssertionError) as error:
-            Dhcp4Header(**self._header_kwargs)  # type: ignore
+            Dhcp4Header(*self._args, **self._kwargs)
 
         self.assertEqual(
             str(error.exception),
@@ -184,10 +187,10 @@ class TestDhcp4HeaderAsserts(TestCase):
         provided 'secs' argument is higher than the maximum supported value.
         """
 
-        self._header_kwargs["secs"] = value = UINT_16__MAX + 1
+        self._kwargs["secs"] = value = UINT_16__MAX + 1
 
         with self.assertRaises(AssertionError) as error:
-            Dhcp4Header(**self._header_kwargs)  # type: ignore
+            Dhcp4Header(*self._args, **self._kwargs)
 
         self.assertEqual(
             str(error.exception),
@@ -201,10 +204,10 @@ class TestDhcp4HeaderAsserts(TestCase):
         provided 'flag_b' argument is not a boolean.
         """
 
-        self._header_kwargs["flag_b"] = value = "not a boolean"
+        self._kwargs["flag_b"] = value = "not a boolean"
 
         with self.assertRaises(AssertionError) as error:
-            Dhcp4Header(**self._header_kwargs)  # type: ignore
+            Dhcp4Header(*self._args, **self._kwargs)
 
         self.assertEqual(
             str(error.exception),
@@ -217,10 +220,10 @@ class TestDhcp4HeaderAsserts(TestCase):
         provided 'ciaddr' argument is not an Ip4Address.
         """
 
-        self._header_kwargs["ciaddr"] = value = "not an Ip4Address"
+        self._kwargs["ciaddr"] = value = "not an Ip4Address"
 
         with self.assertRaises(AssertionError) as error:
-            Dhcp4Header(**self._header_kwargs)  # type: ignore
+            Dhcp4Header(*self._args, **self._kwargs)
 
         self.assertEqual(
             str(error.exception),
@@ -233,10 +236,10 @@ class TestDhcp4HeaderAsserts(TestCase):
         provided 'yiaddr' argument is not an Ip4Address.
         """
 
-        self._header_kwargs["yiaddr"] = value = "not an Ip4Address"
+        self._kwargs["yiaddr"] = value = "not an Ip4Address"
 
         with self.assertRaises(AssertionError) as error:
-            Dhcp4Header(**self._header_kwargs)  # type: ignore
+            Dhcp4Header(*self._args, **self._kwargs)
 
         self.assertEqual(
             str(error.exception),
@@ -249,10 +252,10 @@ class TestDhcp4HeaderAsserts(TestCase):
         provided 'siaddr' argument is not an Ip4Address.
         """
 
-        self._header_kwargs["siaddr"] = value = "not an Ip4Address"
+        self._kwargs["siaddr"] = value = "not an Ip4Address"
 
         with self.assertRaises(AssertionError) as error:
-            Dhcp4Header(**self._header_kwargs)  # type: ignore
+            Dhcp4Header(*self._args, **self._kwargs)
 
         self.assertEqual(
             str(error.exception),
@@ -265,10 +268,10 @@ class TestDhcp4HeaderAsserts(TestCase):
         provided 'giaddr' argument is not an Ip4Address.
         """
 
-        self._header_kwargs["giaddr"] = value = "not an Ip4Address"
+        self._kwargs["giaddr"] = value = "not an Ip4Address"
 
         with self.assertRaises(AssertionError) as error:
-            Dhcp4Header(**self._header_kwargs)  # type: ignore
+            Dhcp4Header(*self._args, **self._kwargs)
 
         self.assertEqual(
             str(error.exception),
@@ -281,10 +284,10 @@ class TestDhcp4HeaderAsserts(TestCase):
         provided 'chaddr' argument is not an Ip4Address.
         """
 
-        self._header_kwargs["chaddr"] = value = "not an MacAddress"
+        self._kwargs["chaddr"] = value = "not an MacAddress"
 
         with self.assertRaises(AssertionError) as error:
-            Dhcp4Header(**self._header_kwargs)  # type: ignore
+            Dhcp4Header(*self._args, **self._kwargs)
 
         self.assertEqual(
             str(error.exception),
@@ -297,10 +300,10 @@ class TestDhcp4HeaderAsserts(TestCase):
         provided 'sname' argument is not a string.
         """
 
-        self._header_kwargs["sname"] = value = b"not a string"
+        self._kwargs["sname"] = value = b"not a string"
 
         with self.assertRaises(AssertionError) as error:
-            Dhcp4Header(**self._header_kwargs)  # type: ignore
+            Dhcp4Header(*self._args, **self._kwargs)
 
         self.assertEqual(
             str(error.exception),
@@ -314,12 +317,12 @@ class TestDhcp4HeaderAsserts(TestCase):
         value.
         """
 
-        self._header_kwargs["sname"] = value = "X" * (
+        self._kwargs["sname"] = value = "X" * (
             DHCP4__HEADER__SNAME__MAX_LEN + 1
         )
 
         with self.assertRaises(AssertionError) as error:
-            Dhcp4Header(**self._header_kwargs)  # type: ignore
+            Dhcp4Header(*self._args, **self._kwargs)
 
         self.assertEqual(
             str(error.exception),
@@ -333,10 +336,10 @@ class TestDhcp4HeaderAsserts(TestCase):
         provided 'file' argument is not a string.
         """
 
-        self._header_kwargs["file"] = value = b"not a string"
+        self._kwargs["file"] = value = b"not a string"
 
         with self.assertRaises(AssertionError) as error:
-            Dhcp4Header(**self._header_kwargs)  # type: ignore
+            Dhcp4Header(*self._args, **self._kwargs)
 
         self.assertEqual(
             str(error.exception),
@@ -350,12 +353,10 @@ class TestDhcp4HeaderAsserts(TestCase):
         value.
         """
 
-        self._header_kwargs["file"] = value = "X" * (
-            DHCP4__HEADER__FILE__MAX_LEN + 1
-        )
+        self._kwargs["file"] = value = "X" * (DHCP4__HEADER__FILE__MAX_LEN + 1)
 
         with self.assertRaises(AssertionError) as error:
-            Dhcp4Header(**self._header_kwargs)  # type: ignore
+            Dhcp4Header(*self._args, **self._kwargs)
 
         self.assertEqual(
             str(error.exception),

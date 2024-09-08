@@ -33,6 +33,8 @@ ver 3.0.2
 """
 
 
+from typing import Any
+
 from testslide import TestCase
 
 from pytcp.lib.net_addr import MacAddress
@@ -50,7 +52,8 @@ class TestEthernetHeaderAsserts(TestCase):
         Create the default arguments for the Ethernet header constructor.
         """
 
-        self._header_kwargs = {
+        self._args: list[Any] = []
+        self._kwargs: dict[str, Any] = {
             "dst": MacAddress(),
             "src": MacAddress(),
             "type": EthernetType.RAW,
@@ -62,10 +65,10 @@ class TestEthernetHeaderAsserts(TestCase):
         provided 'dst' argument is not a MacAddress.
         """
 
-        self._header_kwargs["dst"] = value = "not a MacAddress"
+        self._kwargs["dst"] = value = "not a MacAddress"
 
         with self.assertRaises(AssertionError) as error:
-            EthernetHeader(**self._header_kwargs)  # type: ignore
+            EthernetHeader(*self._args, **self._kwargs)
 
         self.assertEqual(
             str(error.exception),
@@ -78,10 +81,10 @@ class TestEthernetHeaderAsserts(TestCase):
         provided 'src' argument is not a MacAddress.
         """
 
-        self._header_kwargs["src"] = value = "not a MacAddress"
+        self._kwargs["src"] = value = "not a MacAddress"
 
         with self.assertRaises(AssertionError) as error:
-            EthernetHeader(**self._header_kwargs)  # type: ignore
+            EthernetHeader(*self._args, **self._kwargs)
 
         self.assertEqual(
             str(error.exception),
@@ -94,10 +97,10 @@ class TestEthernetHeaderAsserts(TestCase):
         provided 'type' argument is not an EthernetType.
         """
 
-        self._header_kwargs["type"] = value = "not an EthernetType"
+        self._kwargs["type"] = value = "not an EthernetType"
 
         with self.assertRaises(AssertionError) as error:
-            EthernetHeader(**self._header_kwargs)  # type: ignore
+            EthernetHeader(*self._args, **self._kwargs)
 
         self.assertEqual(
             str(error.exception),
