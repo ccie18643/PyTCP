@@ -85,4 +85,5 @@ disable = """
     expression-not-assigned,
     no-member,
     too-many-ancestors,
+    redefined-outer-name,
 """

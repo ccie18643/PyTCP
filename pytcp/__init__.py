@@ -43,13 +43,7 @@ import sys
 from pytcp import config
 from pytcp.lib import stack
 from pytcp.lib.logger import log
-from pytcp.lib.net_addr import (
-    Ip4Address,
-    Ip4Host,
-    Ip6Address,
-    Ip6Host,
-    MacAddress,
-)
+from pytcp.lib.net_addr import Ip4Host, Ip6Host, MacAddress
 from pytcp.lib.net_addr.ip4_host import Ip4HostOrigin
 from pytcp.lib.net_addr.ip6_host import Ip6HostOrigin
 
@@ -104,11 +98,9 @@ class TcpIpStack:
         *,
         fd: int,
         mtu: int,
-        mac_address: str | None = None,
-        ip4_address: str | None = None,
-        ip4_gateway: str | None = None,
-        ip6_address: str | None = None,
-        ip6_gateway: str | None = None,
+        mac_address: MacAddress | None = None,
+        ip4_host: Ip4Host | None = None,
+        ip6_host: Ip6Host | None = None,
     ):
         """
         Initialize stack on the provided interface.
@@ -125,28 +117,20 @@ class TcpIpStack:
 
         # Set the IPv4 address.
         if config.IP4__SUPPORT_ENABLED is True:
-            if ip4_address is None:
+            if ip4_host is None:
                 config.IP4__HOST_DHCP = True
             else:
-                ip4_host = Ip4Host(
-                    ip4_address,
-                    gateway=Ip4Address(ip4_gateway) if ip4_gateway else None,
-                    origin=Ip4HostOrigin.STATIC,
-                )
+                ip4_host.origin = Ip4HostOrigin.STATIC
                 stack.packet_handler._assign_ip4_address(ip4_host=ip4_host)
                 config.IP4__HOST_DHCP = False
 
         # Set the IPv6 address.
         if config.IP6__SUPPORT_ENABLED is True:
-            if ip6_address is None:
+            if ip6_host is None:
                 config.IP6__LLA_AUTOCONFIG = True
                 config.IP6__GUA_AUTOCONFIG = True
             else:
-                ip6_host = Ip6Host(
-                    ip6_address,
-                    gateway=Ip6Address(ip6_gateway) if ip6_gateway else None,
-                    origin=Ip6HostOrigin.STATIC,
-                )
+                ip6_host.origin = Ip6HostOrigin.STATIC
                 stack.packet_handler._assign_ip6_address(ip6_host=ip6_host)
                 config.IP6__LLA_AUTOCONFIG = True
                 config.IP6__GUA_AUTOCONFIG = False

@@ -24,8 +24,6 @@
 ################################################################################
 
 
-# pylint: disable = too-many-instance-attributes
-
 """
 The example 'user space' client for TCP echo. It actively connects to
 TCP Echo service and sends messages.
@@ -45,7 +43,20 @@ import click
 
 from pytcp import TcpIpStack, initialize_interface
 from pytcp.lib import socket
-from pytcp.lib.ip_helper import ip_version
+from pytcp.lib.net_addr.click_types import (
+    ClickTypeIp4Address,
+    ClickTypeIp4Host,
+    ClickTypeIp6Address,
+    ClickTypeIp6Host,
+    ClickTypeIpAddress,
+    ClickTypeMacAddress,
+)
+from pytcp.lib.net_addr.ip4_address import Ip4Address
+from pytcp.lib.net_addr.ip4_host import Ip4Host
+from pytcp.lib.net_addr.ip6_address import Ip6Address
+from pytcp.lib.net_addr.ip6_host import Ip6Host
+from pytcp.lib.net_addr.ip_address import IpAddress
+from pytcp.lib.net_addr.mac_address import MacAddress
 
 
 class TcpEchoClient:
@@ -56,8 +67,8 @@ class TcpEchoClient:
     def __init__(
         self,
         *,
-        local_ip_address: str = "0.0.0.0",
-        remote_ip_address: str,
+        local_ip_address: IpAddress,
+        remote_ip_address: IpAddress,
         local_port: int = 0,
         remote_port: int = 7,
         message_count: int = -1,
@@ -84,7 +95,7 @@ class TcpEchoClient:
 
         click.echo("Starting the TCP Echo client.")
         self._run_thread = True
-        threading.Thread(target=self.__thread_client).start()
+        threading.Thread(target=self.__thread__client).start()
         time.sleep(0.1)
 
     def stop(self) -> None:
@@ -96,30 +107,25 @@ class TcpEchoClient:
         self._run_thread = False
         time.sleep(0.1)
 
-    def __thread_client(self) -> None:
+    def __thread__client(self) -> None:
         """
         Client thread.
         """
 
-        version = ip_version(self._local_ip_address)
-        if version == 6:
-            client_socket = socket.socket(
-                family=socket.AF_INET6, type=socket.SOCK_STREAM
-            )
-        elif version == 4:
-            client_socket = socket.socket(
-                family=socket.AF_INET4, type=socket.SOCK_STREAM
-            )
-        else:
-            click.echo(
-                f"Client TCP Echo: Invalid local IP address - {self._local_ip_address}"
-            )
-            return
+        match self._local_ip_address.version:
+            case 6:
+                client_socket = socket.socket(
+                    family=socket.AF_INET6, type=socket.SOCK_STREAM
+                )
+            case 4:
+                client_socket = socket.socket(
+                    family=socket.AF_INET4, type=socket.SOCK_STREAM
+                )
 
         click.echo(f"Client TCP Echo: Created socket [{client_socket}].")
 
         try:
-            client_socket.bind((self._local_ip_address, self._local_port))
+            client_socket.bind((str(self._local_ip_address), self._local_port))
             click.echo(
                 "Client TCP Echo: Bound socket to "
                 f"{self._local_ip_address}, port {self._local_port}."
@@ -133,7 +139,9 @@ class TcpEchoClient:
             return
 
         try:
-            client_socket.connect((self._remote_ip_address, self._remote_port))
+            client_socket.connect(
+                (str(self._remote_ip_address), self._remote_port)
+            )
             click.echo(
                 "Client TCP Echo: Connection opened to "
                 f"{self._remote_ip_address}, port {self._remote_port}."
@@ -173,43 +181,94 @@ class TcpEchoClient:
 
 
 @click.command()
-@click.option("--interface", default="tap7")
-@click.option("--mac-address", default=None)
-@click.option("--ip6-address", default=None)
-@click.option("--ip6-gateway", default=None)
-@click.option("--ip4-address", default=None)
-@click.option("--ip4-gateway", default=None)
-@click.option("--remote-ip-address")
+@click.option(
+    "--interface",
+    default="tap7",
+    help="Name of the interface to be used by the stack.",
+)
+@click.option(
+    "--mac-address",
+    type=ClickTypeMacAddress(),
+    default=None,
+    help="MAC address to be assigned to the interface.",
+)
+@click.option(
+    "--ip6-address",
+    type=ClickTypeIp6Host(),
+    default=None,
+    help="IPv6 address/mask to be assigned to the interface.",
+)
+@click.option(
+    "--ip6-gateway",
+    type=ClickTypeIp6Address(),
+    default=None,
+    help="IPv6 gateway address to be assigned to the interface.",
+)
+@click.option(
+    "--ip4-address",
+    type=ClickTypeIp4Host(),
+    default=None,
+    help="IPv4 address/mask to be assigned to the interface.",
+)
+@click.option(
+    "--ip4-gateway",
+    type=ClickTypeIp4Address(),
+    default=None,
+    help="IPv4 gateway address to be assigned to the interface.",
+)
+@click.option(
+    "--remote-ip-address",
+    type=ClickTypeIpAddress(),
+    required=True,
+    help="Remote IP address of the TCP Echo server.",
+)
 def cli(
     *,
     interface: str,
-    mac_address: str,
-    ip6_address: str,
-    ip6_gateway: str,
-    ip4_address: str,
-    ip4_gateway: str,
-    remote_ip_address: str,
+    mac_address: MacAddress | None,
+    ip6_address: Ip6Host | None,
+    ip6_gateway: Ip6Address | None,
+    ip4_address: Ip4Host | None,
+    ip4_gateway: Ip4Address | None,
+    remote_ip_address: IpAddress,
 ) -> None:
     """
     Start PyTCP stack and stop it when user presses Ctrl-C.
-    Run the TCP Echo client.
+    Start TCP Echo client.
     """
 
     fd, mtu = initialize_interface(interface)
+
+    ip6_host = (
+        None
+        if ip6_address is None
+        else Ip6Host(ip6_address, gateway=ip6_gateway)
+    )
+    ip4_host = (
+        None
+        if ip4_address is None
+        else Ip4Host(ip4_address, gateway=ip4_gateway)
+    )
 
     stack = TcpIpStack(
         fd=fd,
         mtu=mtu,
         mac_address=mac_address,
-        ip6_address=ip6_address,
-        ip6_gateway=ip6_gateway,
-        ip4_address=ip4_address,
-        ip4_gateway=ip4_gateway,
+        ip6_host=ip6_host,
+        ip4_host=ip4_host,
     )
 
-    client = TcpEchoClient(
-        remote_ip_address=remote_ip_address,
-    )
+    match remote_ip_address.version:
+        case 6:
+            client = TcpEchoClient(
+                local_ip_address=ip6_host.address if ip6_host else Ip6Address(),
+                remote_ip_address=remote_ip_address,
+            )
+        case 4:
+            client = TcpEchoClient(
+                local_ip_address=ip4_host.address if ip4_host else Ip4Address(),
+                remote_ip_address=remote_ip_address,
+            )
 
     try:
         stack.start()

@@ -42,7 +42,7 @@ from typing import TYPE_CHECKING
 import click
 
 from pytcp.lib import socket
-from pytcp.lib.ip_helper import ip_version
+from pytcp.lib.net_addr.ip_address import IpAddress
 
 if TYPE_CHECKING:
     from pytcp.lib.socket import Socket
@@ -54,18 +54,14 @@ class TcpService:
     """
 
     def __init__(
-        self, *, service_name: str, local_ip_address: str, local_port: int
+        self, *, service_name: str, local_ip_address: IpAddress, local_port: int
     ) -> None:
         """
         Class constructor.
         """
 
         self._service_name = service_name
-        self._local_ip_address = (
-            local_ip_address.split("/")[0]
-            if "/" in local_ip_address
-            else local_ip_address
-        )
+        self._local_ip_address = local_ip_address
         self._local_port = local_port
         self._run_thread = False
 
@@ -76,7 +72,7 @@ class TcpService:
 
         click.echo(f"Starting the TCP {self._service_name} service.")
         self._run_thread = True
-        threading.Thread(target=self.__thread_service).start()
+        threading.Thread(target=self.__thread__service).start()
         time.sleep(0.1)
 
     def stop(self) -> None:
@@ -88,33 +84,30 @@ class TcpService:
         self._run_thread = False
         time.sleep(0.1)
 
-    def __thread_service(self) -> None:
+    def __thread__service(self) -> None:
         """
         Service initialization.
         """
 
-        version = ip_version(self._local_ip_address)
-        if version == 6:
-            listening_socket = socket.socket(
-                family=socket.AF_INET6, type=socket.SOCK_STREAM
-            )
-        elif version == 4:
-            listening_socket = socket.socket(
-                family=socket.AF_INET4, type=socket.SOCK_STREAM
-            )
-        else:
-            click.echo(
-                f"Service TCP {self._service_name}: Invalid local IP address - "
-                f"{self._local_ip_address}."
-            )
-            return
+        match self._local_ip_address.version:
+            case 6:
+                listening_socket = socket.socket(
+                    family=socket.AF_INET6, type=socket.SOCK_STREAM
+                )
+            case 4:
+                listening_socket = socket.socket(
+                    family=socket.AF_INET4, type=socket.SOCK_STREAM
+                )
 
         try:
-            listening_socket.bind((self._local_ip_address, self._local_port))
+            listening_socket.bind(
+                (str(self._local_ip_address), self._local_port)
+            )
             click.echo(
                 f"Service TCP {self._service_name}: Socket created, bound to "
                 f"{self._local_ip_address}, port {self._local_port}."
             )
+
         except OSError as error:
             click.echo(
                 f"Service TCP {self._service_name}: bind() call failed - {error!r}."
@@ -133,11 +126,13 @@ class TcpService:
                 f"{connected_socket.remote_ip_address}, port {connected_socket.remote_port}."
             )
             threading.Thread(
-                target=self.__thread_connection,
+                target=self.__thread__service__connection_handler,
                 kwargs={"connected_socket": connected_socket},
             ).start()
 
-    def __thread_connection(self, *, connected_socket: Socket) -> None:
+    def __thread__service__connection_handler(
+        self, *, connected_socket: Socket
+    ) -> None:
         """
         Inbound connection handler.
         """

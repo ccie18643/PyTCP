@@ -41,8 +41,8 @@ from typing import TYPE_CHECKING
 
 import click
 
-import pytcp.lib.socket as sock
-from pytcp.lib.ip_helper import ip_version
+from pytcp.lib import socket
+from pytcp.lib.net_addr.ip_address import IpAddress
 
 if TYPE_CHECKING:
     from pytcp.lib.socket import Socket
@@ -54,22 +54,14 @@ class UdpService:
     """
 
     def __init__(
-        self,
-        *,
-        service_name: str,
-        local_ip_address: str,
-        local_port: int,
+        self, *, service_name: str, local_ip_address: IpAddress, local_port: int
     ) -> None:
         """
         Class constructor.
         """
 
         self._service_name = service_name
-        self._local_ip_address = (
-            local_ip_address.split("/")[0]
-            if "/" in local_ip_address
-            else local_ip_address
-        )
+        self._local_ip_address = local_ip_address
         self._local_port = local_port
         self._run_thread = False
 
@@ -80,7 +72,7 @@ class UdpService:
 
         click.echo(f"Starting the UDP {self._service_name} service.")
         self._run_thread = True
-        threading.Thread(target=self.__thread_service).start()
+        threading.Thread(target=self.__thread__service).start()
         time.sleep(0.1)
 
     def stop(self) -> None:
@@ -92,29 +84,25 @@ class UdpService:
         self._run_thread = False
         time.sleep(0.1)
 
-    def __thread_service(self) -> None:
+    def __thread__service(self) -> None:
         """
         Service initialization.
         """
 
-        version = ip_version(self._local_ip_address)
-        if version == 6:
-            listening_socket = sock.socket(
-                family=sock.AF_INET6, type=sock.SOCK_DGRAM
-            )
-        elif version == 4:
-            listening_socket = sock.socket(
-                family=sock.AF_INET4, type=sock.SOCK_DGRAM
-            )
-        else:
-            click.echo(
-                f"Service UDP {self._service_name}: Invalid local IP address - "
-                f"{self._local_ip_address}."
-            )
-            return
+        match self._local_ip_address.version:
+            case 6:
+                listening_socket = socket.socket(
+                    family=socket.AF_INET6, type=socket.SOCK_DGRAM
+                )
+            case 4:
+                listening_socket = socket.socket(
+                    family=socket.AF_INET4, type=socket.SOCK_DGRAM
+                )
 
         try:
-            listening_socket.bind((self._local_ip_address, self._local_port))
+            listening_socket.bind(
+                (str(self._local_ip_address), self._local_port)
+            )
             click.echo(
                 f"Service UDP {self._service_name}: Socket created, bound to "
                 f"{self._local_ip_address}, port {self._local_port}."

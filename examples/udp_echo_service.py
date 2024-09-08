@@ -43,6 +43,19 @@ import click
 from examples.lib.malpi import malpa, malpi, malpka
 from examples.lib.udp_service import UdpService
 from pytcp import TcpIpStack, initialize_interface
+from pytcp.lib.net_addr.click_types import (
+    ClickTypeIp4Address,
+    ClickTypeIp4Host,
+    ClickTypeIp6Address,
+    ClickTypeIp6Host,
+    ClickTypeMacAddress,
+)
+from pytcp.lib.net_addr.ip4_address import Ip4Address
+from pytcp.lib.net_addr.ip4_host import Ip4Host
+from pytcp.lib.net_addr.ip6_address import Ip6Address
+from pytcp.lib.net_addr.ip6_host import Ip6Host
+from pytcp.lib.net_addr.ip_address import IpAddress
+from pytcp.lib.net_addr.mac_address import MacAddress
 
 if TYPE_CHECKING:
     from pytcp.lib.socket import Socket
@@ -53,7 +66,7 @@ class UdpEchoService(UdpService):
     UDP Echo service support class.
     """
 
-    def __init__(self, *, local_ip_address: str, local_port: int):
+    def __init__(self, *, local_ip_address: IpAddress, local_port: int):
         """
         Class constructor.
         """
@@ -93,47 +106,90 @@ class UdpEchoService(UdpService):
 
 
 @click.command()
-@click.option("--interface", default="tap7")
-@click.option("--mac-address", default=None)
-@click.option("--ip6-address", default=None)
-@click.option("--ip6-gateway", default=None)
-@click.option("--ip4-address", default=None)
-@click.option("--ip4-gateway", default=None)
-@click.option("--local-port", default=7, type=int)
+@click.option(
+    "--interface",
+    default="tap7",
+    help="Name of the interface to be used by the stack.",
+)
+@click.option(
+    "--mac-address",
+    type=ClickTypeMacAddress(),
+    default=None,
+    help="MAC address to be assigned to the interface.",
+)
+@click.option(
+    "--ip6-address",
+    type=ClickTypeIp6Host(),
+    default=None,
+    help="IPv6 address/mask to be assigned to the interface.",
+)
+@click.option(
+    "--ip6-gateway",
+    type=ClickTypeIp6Address(),
+    default=None,
+    help="IPv6 gateway address to be assigned to the interface.",
+)
+@click.option(
+    "--ip4-address",
+    type=ClickTypeIp4Host(),
+    default=None,
+    help="IPv4 address/mask to be assigned to the interface.",
+)
+@click.option(
+    "--ip4-gateway",
+    type=ClickTypeIp4Address(),
+    default=None,
+    help="IPv4 gateway address to be assigned to the interface.",
+)
+@click.option(
+    "--local-port",
+    default=7,
+    type=int,
+    help="Local port number to be used by the service.",
+)
 def cli(
     *,
     interface: str,
-    mac_address: str,
-    ip6_address: str,
-    ip6_gateway: str,
-    ip4_address: str,
-    ip4_gateway: str,
+    mac_address: MacAddress | None,
+    ip6_address: Ip6Host | None,
+    ip6_gateway: Ip6Address | None,
+    ip4_address: Ip4Host | None,
+    ip4_gateway: Ip4Address | None,
     local_port: int,
 ) -> None:
     """
     Start PyTCP stack and stop it when user presses Ctrl-C.
-    Run the UDP Echo service.
+    Start TCP Echo service.
     """
 
     fd, mtu = initialize_interface(interface)
+
+    ip6_host = (
+        None
+        if ip6_address is None
+        else Ip6Host(ip6_address, gateway=ip6_gateway)
+    )
+    ip4_host = (
+        None
+        if ip4_address is None
+        else Ip4Host(ip4_address, gateway=ip4_gateway)
+    )
 
     stack = TcpIpStack(
         fd=fd,
         mtu=mtu,
         mac_address=mac_address,
-        ip6_address=ip6_address,
-        ip6_gateway=ip6_gateway,
-        ip4_address=ip4_address,
-        ip4_gateway=ip4_gateway,
+        ip6_host=ip6_host,
+        ip4_host=ip4_host,
     )
 
     service_ip4 = UdpEchoService(
-        local_ip_address=ip4_address or "0.0.0.0",
+        local_ip_address=ip4_host.address if ip4_host else Ip4Address(),
         local_port=local_port,
     )
 
     service_ip6 = UdpEchoService(
-        local_ip_address=ip6_address or "::",
+        local_ip_address=ip6_host.address if ip6_host else Ip6Address(),
         local_port=local_port,
     )
 

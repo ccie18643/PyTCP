@@ -151,6 +151,14 @@ class IpHost(ABC, Generic[A, N, O]):
 
         return self._origin
 
+    @origin.setter
+    def origin(self, origin: O, /) -> None:
+        """
+        Set the IPv4 host address '_origin' attribute.
+        """
+
+        self._origin = origin
+
     @property
     def expiration_time(self) -> int:
         """

@@ -163,7 +163,9 @@ class Icmp6PacketHandlerRx(ABC):
         Handle inbound ICMPv6 Port Unreachbale packets.
         """
 
-        assert isinstance(packet_rx.icmp6, Icmp6DestinationUnreachableMessage)
+        assert isinstance(
+            packet_rx.icmp6.message, Icmp6DestinationUnreachableMessage
+        )
 
         self.packet_stats_rx.icmp6__destination_unreachable += 1
         __debug__ and log(
@@ -175,7 +177,7 @@ class Icmp6PacketHandlerRx(ABC):
         # Quick and dirty way to validate received data and pull useful
         # information from it
         # TODO - This will not work in case of IPv6 extension headers present
-        frame = packet_rx.icmp6.data
+        frame = packet_rx.icmp6.message.data
         if (
             len(frame) >= IP6__HEADER__LEN + UDP__HEADER__LEN
             and frame[0] >> 4 == 6
