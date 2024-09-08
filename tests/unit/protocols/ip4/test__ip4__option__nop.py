@@ -58,7 +58,8 @@ class TestIp4OptionNopAsserts(TestCase):
     [
         {
             "_description": "The IPv4 Nop option.",
-            "_args": {},
+            "_args": [],
+            "_kwargs": {},
             "_results": {
                 "__len__": 1,
                 "__str__": "nop",
@@ -76,7 +77,8 @@ class TestIp4OptionNopAssembler(TestCase):
     """
 
     _description: str
-    _args: dict[str, Any]
+    _args: list[Any]
+    _kwargs: dict[str, Any]
     _results: dict[str, Any]
 
     def setUp(self) -> None:
@@ -84,7 +86,7 @@ class TestIp4OptionNopAssembler(TestCase):
         Initialize the IPv4 Nop option object with testcase arguments.
         """
 
-        self._ip4_option_nop = Ip4OptionNop(**self._args)
+        self._option = Ip4OptionNop(*self._args, **self._kwargs)
 
     def test__ip4__option__nop__len(self) -> None:
         """
@@ -93,7 +95,7 @@ class TestIp4OptionNopAssembler(TestCase):
         """
 
         self.assertEqual(
-            len(self._ip4_option_nop),
+            len(self._option),
             self._results["__len__"],
         )
 
@@ -104,7 +106,7 @@ class TestIp4OptionNopAssembler(TestCase):
         """
 
         self.assertEqual(
-            str(self._ip4_option_nop),
+            str(self._option),
             self._results["__str__"],
         )
 
@@ -115,7 +117,7 @@ class TestIp4OptionNopAssembler(TestCase):
         """
 
         self.assertEqual(
-            repr(self._ip4_option_nop),
+            repr(self._option),
             self._results["__repr__"],
         )
 
@@ -126,7 +128,7 @@ class TestIp4OptionNopAssembler(TestCase):
         """
 
         self.assertEqual(
-            bytes(self._ip4_option_nop),
+            bytes(self._option),
             self._results["__bytes__"],
         )
 
@@ -136,7 +138,7 @@ class TestIp4OptionNopAssembler(TestCase):
         """
 
         self.assertEqual(
-            self._ip4_option_nop.type,
+            self._option.type,
             self._results["type"],
         )
 
@@ -146,7 +148,7 @@ class TestIp4OptionNopAssembler(TestCase):
         """
 
         self.assertEqual(
-            self._ip4_option_nop.len,
+            self._option.len,
             self._results["len"],
         )
 
@@ -155,7 +157,7 @@ class TestIp4OptionNopAssembler(TestCase):
     [
         {
             "_description": "The IPv4 Nop option.",
-            "_args": {
+            "_kwargs": {
                 "bytes": b"\x01",
             },
             "_results": {
@@ -164,7 +166,7 @@ class TestIp4OptionNopAssembler(TestCase):
         },
         {
             "_description": "The IPv4 Nop option minimum length assert.",
-            "_args": {
+            "_kwargs": {
                 "bytes": b"",
             },
             "_results": {
@@ -177,7 +179,7 @@ class TestIp4OptionNopAssembler(TestCase):
         },
         {
             "_description": "The IPv4 Nop option incorrect 'type' field assert.",
-            "_args": {
+            "_kwargs": {
                 "bytes": b"\xff",
             },
             "_results": {
@@ -196,7 +198,7 @@ class TestIp4OptionNopParser(TestCase):
     """
 
     _description: str
-    _args: dict[str, Any]
+    _kwargs: dict[str, Any]
     _results: dict[str, Any]
 
     def test__ip4__option__nop__from_bytes(self) -> None:
@@ -206,18 +208,16 @@ class TestIp4OptionNopParser(TestCase):
         """
 
         if "option" in self._results:
-            ip4_option_nop = Ip4OptionNop.from_bytes(
-                self._args["bytes"] + b"ZH0PA"
-            )
+            option = Ip4OptionNop.from_bytes(self._kwargs["bytes"] + b"ZH0PA")
 
             self.assertEqual(
-                ip4_option_nop,
+                option,
                 self._results["option"],
             )
 
         if "error" in self._results:
             with self.assertRaises(self._results["error"]) as error:
-                Ip4OptionNop.from_bytes(self._args["bytes"])
+                Ip4OptionNop.from_bytes(self._kwargs["bytes"])
 
             self.assertEqual(
                 str(error.exception),

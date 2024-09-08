@@ -199,7 +199,7 @@ class TestDhcp4OptionUnknownAssembler(TestCase):
         Initialize the unknown DHCPv4 option object with testcase arguments.
         """
 
-        self._dhcp4_option_unknown = Dhcp4OptionUnknown(**self._args)
+        self._option = Dhcp4OptionUnknown(**self._args)
 
     def test__dhcp4__option__unknown__len(self) -> None:
         """
@@ -208,7 +208,7 @@ class TestDhcp4OptionUnknownAssembler(TestCase):
         """
 
         self.assertEqual(
-            len(self._dhcp4_option_unknown),
+            len(self._option),
             self._results["__len__"],
         )
 
@@ -219,7 +219,7 @@ class TestDhcp4OptionUnknownAssembler(TestCase):
         """
 
         self.assertEqual(
-            str(self._dhcp4_option_unknown),
+            str(self._option),
             self._results["__str__"],
         )
 
@@ -230,7 +230,7 @@ class TestDhcp4OptionUnknownAssembler(TestCase):
         """
 
         self.assertEqual(
-            repr(self._dhcp4_option_unknown),
+            repr(self._option),
             self._results["__repr__"],
         )
 
@@ -241,7 +241,7 @@ class TestDhcp4OptionUnknownAssembler(TestCase):
         """
 
         self.assertEqual(
-            bytes(self._dhcp4_option_unknown),
+            bytes(self._option),
             self._results["__bytes__"],
         )
 
@@ -251,7 +251,7 @@ class TestDhcp4OptionUnknownAssembler(TestCase):
         """
 
         self.assertEqual(
-            self._dhcp4_option_unknown.type,
+            self._option.type,
             self._results["type"],
         )
 
@@ -261,7 +261,7 @@ class TestDhcp4OptionUnknownAssembler(TestCase):
         """
 
         self.assertEqual(
-            self._dhcp4_option_unknown.len,
+            self._option.len,
             self._results["len"],
         )
 
@@ -271,7 +271,7 @@ class TestDhcp4OptionUnknownAssembler(TestCase):
         """
 
         self.assertEqual(
-            self._dhcp4_option_unknown.data,
+            self._option.data,
             self._results["data"],
         )
 
@@ -373,12 +373,10 @@ class TestDhcp4OptionUnknownParser(TestCase):
         """
 
         if "option" in self._results:
-            dhcp4_option_unknown = Dhcp4OptionUnknown.from_bytes(
-                self._args["bytes"]
-            )
+            option = Dhcp4OptionUnknown.from_bytes(self._args["bytes"])
 
             self.assertEqual(
-                dhcp4_option_unknown,
+                option,
                 self._results["option"],
             )
 

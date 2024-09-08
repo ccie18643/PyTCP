@@ -58,7 +58,8 @@ class TestTcpOptionEolAsserts(TestCase):
     [
         {
             "_description": "The TCP Eol option.",
-            "_args": {},
+            "_args": [],
+            "_kwargs": {},
             "_results": {
                 "__len__": 1,
                 "__str__": "eol",
@@ -76,7 +77,8 @@ class TestTcpOptionEolAssembler(TestCase):
     """
 
     _description: str
-    _args: dict[str, Any]
+    _args: list[Any]
+    _kwargs: dict[str, Any]
     _results: dict[str, Any]
 
     def setUp(self) -> None:
@@ -84,7 +86,7 @@ class TestTcpOptionEolAssembler(TestCase):
         Initialize the TCP Eol option object with testcase arguments.
         """
 
-        self._tcp_option_eol = TcpOptionEol(**self._args)
+        self._option = TcpOptionEol(*self._args, **self._kwargs)
 
     def test__tcp__option__eol__len(self) -> None:
         """
@@ -93,7 +95,7 @@ class TestTcpOptionEolAssembler(TestCase):
         """
 
         self.assertEqual(
-            len(self._tcp_option_eol),
+            len(self._option),
             self._results["__len__"],
         )
 
@@ -104,7 +106,7 @@ class TestTcpOptionEolAssembler(TestCase):
         """
 
         self.assertEqual(
-            str(self._tcp_option_eol),
+            str(self._option),
             self._results["__str__"],
         )
 
@@ -115,7 +117,7 @@ class TestTcpOptionEolAssembler(TestCase):
         """
 
         self.assertEqual(
-            repr(self._tcp_option_eol),
+            repr(self._option),
             self._results["__repr__"],
         )
 
@@ -126,7 +128,7 @@ class TestTcpOptionEolAssembler(TestCase):
         """
 
         self.assertEqual(
-            bytes(self._tcp_option_eol),
+            bytes(self._option),
             self._results["__bytes__"],
         )
 
@@ -136,7 +138,7 @@ class TestTcpOptionEolAssembler(TestCase):
         """
 
         self.assertEqual(
-            self._tcp_option_eol.type,
+            self._option.type,
             self._results["type"],
         )
 
@@ -146,7 +148,7 @@ class TestTcpOptionEolAssembler(TestCase):
         """
 
         self.assertEqual(
-            self._tcp_option_eol.len,
+            self._option.len,
             self._results["len"],
         )
 
@@ -155,7 +157,7 @@ class TestTcpOptionEolAssembler(TestCase):
     [
         {
             "_description": "The TCP Eol option.",
-            "_args": {
+            "_kwargs": {
                 "bytes": b"\x00",
             },
             "_results": {
@@ -164,7 +166,7 @@ class TestTcpOptionEolAssembler(TestCase):
         },
         {
             "_description": "The TCP Eol option minimum length assert.",
-            "_args": {
+            "_kwargs": {
                 "bytes": b"",
             },
             "_results": {
@@ -177,7 +179,7 @@ class TestTcpOptionEolAssembler(TestCase):
         },
         {
             "_description": "The TCP Eol option incorrect 'type' field assert.",
-            "_args": {
+            "_kwargs": {
                 "bytes": b"\xff",
             },
             "_results": {
@@ -196,7 +198,7 @@ class TestTcpOptionEolParser(TestCase):
     """
 
     _description: str
-    _args: dict[str, Any]
+    _kwargs: dict[str, Any]
     _results: dict[str, Any]
 
     def test__tcp__option__eol__from_bytes(self) -> None:
@@ -206,18 +208,16 @@ class TestTcpOptionEolParser(TestCase):
         """
 
         if "option" in self._results:
-            tcp_option_eol = TcpOptionEol.from_bytes(
-                self._args["bytes"] + b"ZH0PA"
-            )
+            option = TcpOptionEol.from_bytes(self._kwargs["bytes"] + b"ZH0PA")
 
             self.assertEqual(
-                tcp_option_eol,
+                option,
                 self._results["option"],
             )
 
         if "error" in self._results:
             with self.assertRaises(self._results["error"]) as error:
-                TcpOptionEol.from_bytes(self._args["bytes"])
+                TcpOptionEol.from_bytes(self._kwargs["bytes"])
 
             self.assertEqual(
                 str(error.exception),

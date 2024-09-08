@@ -57,7 +57,7 @@ class TestTcpOptionUnknownAsserts(TestCase):
         Create the default arguments for the TCP unknown option constructor.
         """
 
-        self._option_args = {
+        self._option_kwargs = {
             "type": TcpOptionType.from_int(255),
             "len": 8,
             "data": b"012345",
@@ -69,10 +69,10 @@ class TestTcpOptionUnknownAsserts(TestCase):
         the provided 'type' argument is not a TcpOptionType.
         """
 
-        self._option_args["type"] = value = "not a TcpOptionType"
+        self._option_kwargs["type"] = value = "not a TcpOptionType"
 
         with self.assertRaises(AssertionError) as error:
-            TcpOptionUnknown(**self._option_args)  # type: ignore
+            TcpOptionUnknown(**self._option_kwargs)  # type: ignore
 
         self.assertEqual(
             str(error.exception),
@@ -88,10 +88,10 @@ class TestTcpOptionUnknownAsserts(TestCase):
         """
 
         for type in TcpOptionType.get_known_values():
-            self._option_args["type"] = value = TcpOptionType(type)
+            self._option_kwargs["type"] = value = TcpOptionType(type)
 
             with self.assertRaises(AssertionError) as error:
-                TcpOptionUnknown(**self._option_args)  # type: ignore
+                TcpOptionUnknown(**self._option_kwargs)  # type: ignore
 
             self.assertEqual(
                 str(error.exception),
@@ -106,10 +106,10 @@ class TestTcpOptionUnknownAsserts(TestCase):
         value.
         """
 
-        self._option_args["len"] = value = UINT_8__MIN - 1
+        self._option_kwargs["len"] = value = UINT_8__MIN - 1
 
         with self.assertRaises(AssertionError) as error:
-            TcpOptionUnknown(**self._option_args)  # type: ignore
+            TcpOptionUnknown(**self._option_kwargs)  # type: ignore
 
         self.assertEqual(
             str(error.exception),
@@ -123,10 +123,10 @@ class TestTcpOptionUnknownAsserts(TestCase):
         value.
         """
 
-        self._option_args["len"] = value = UINT_8__MAX + 1
+        self._option_kwargs["len"] = value = UINT_8__MAX + 1
 
         with self.assertRaises(AssertionError) as error:
-            TcpOptionUnknown(**self._option_args)  # type: ignore
+            TcpOptionUnknown(**self._option_kwargs)  # type: ignore
 
         self.assertEqual(
             str(error.exception),
@@ -140,18 +140,18 @@ class TestTcpOptionUnknownAsserts(TestCase):
         'data' field.
         """
 
-        self._option_args["len"] = value = (
-            TCP__OPTION__LEN + len(self._option_args["data"]) + 1  # type: ignore
+        self._option_kwargs["len"] = value = (
+            TCP__OPTION__LEN + len(self._option_kwargs["data"]) + 1  # type: ignore
         )
 
         with self.assertRaises(AssertionError) as error:
-            TcpOptionUnknown(**self._option_args)  # type: ignore
+            TcpOptionUnknown(**self._option_kwargs)  # type: ignore
 
         self.assertEqual(
             str(error.exception),
             (
                 "The 'len' field must reflect the length of the 'data' field. "
-                f"Got: {value} != {TCP__OPTION__LEN + len(self._option_args['data'])}"  # type: ignore
+                f"Got: {value} != {TCP__OPTION__LEN + len(self._option_kwargs['data'])}"  # type: ignore
             ),
         )
 
@@ -160,7 +160,8 @@ class TestTcpOptionUnknownAsserts(TestCase):
     [
         {
             "_description": "The unknown TCP option.",
-            "_args": {
+            "_args": [],
+            "_kwargs": {
                 "type": TcpOptionType.from_int(255),
                 "len": 18,
                 "data": b"0123456789ABCDEF",
@@ -189,7 +190,8 @@ class TestTcpOptionUnknownAssembler(TestCase):
     """
 
     _description: str
-    _args: dict[str, Any]
+    _args: list[Any]
+    _kwargs: dict[str, Any]
     _results: dict[str, Any]
 
     def setUp(self) -> None:
@@ -197,7 +199,7 @@ class TestTcpOptionUnknownAssembler(TestCase):
         Initialize the unknown TCP option object with testcase arguments.
         """
 
-        self._tcp_option_unknown = TcpOptionUnknown(**self._args)
+        self._option = TcpOptionUnknown(*self._args, **self._kwargs)
 
     def test__tcp__option__unknown__len(self) -> None:
         """
@@ -206,7 +208,7 @@ class TestTcpOptionUnknownAssembler(TestCase):
         """
 
         self.assertEqual(
-            len(self._tcp_option_unknown),
+            len(self._option),
             self._results["__len__"],
         )
 
@@ -217,7 +219,7 @@ class TestTcpOptionUnknownAssembler(TestCase):
         """
 
         self.assertEqual(
-            str(self._tcp_option_unknown),
+            str(self._option),
             self._results["__str__"],
         )
 
@@ -228,7 +230,7 @@ class TestTcpOptionUnknownAssembler(TestCase):
         """
 
         self.assertEqual(
-            repr(self._tcp_option_unknown),
+            repr(self._option),
             self._results["__repr__"],
         )
 
@@ -239,7 +241,7 @@ class TestTcpOptionUnknownAssembler(TestCase):
         """
 
         self.assertEqual(
-            bytes(self._tcp_option_unknown),
+            bytes(self._option),
             self._results["__bytes__"],
         )
 
@@ -249,7 +251,7 @@ class TestTcpOptionUnknownAssembler(TestCase):
         """
 
         self.assertEqual(
-            self._tcp_option_unknown.type,
+            self._option.type,
             self._results["type"],
         )
 
@@ -259,7 +261,7 @@ class TestTcpOptionUnknownAssembler(TestCase):
         """
 
         self.assertEqual(
-            self._tcp_option_unknown.len,
+            self._option.len,
             self._results["len"],
         )
 
@@ -269,7 +271,7 @@ class TestTcpOptionUnknownAssembler(TestCase):
         """
 
         self.assertEqual(
-            self._tcp_option_unknown.data,
+            self._option.data,
             self._results["data"],
         )
 
@@ -278,7 +280,7 @@ class TestTcpOptionUnknownAssembler(TestCase):
     [
         {
             "_description": "The unknown TCP option.",
-            "_args": {
+            "_kwargs": {
                 "bytes": (
                     b"\xff\x12\x30\x31\x32\x33\x34\x35\x36\x37\x38\x39\x41\x42\x43\x44"
                     b"\x45\x46"
@@ -294,7 +296,7 @@ class TestTcpOptionUnknownAssembler(TestCase):
         },
         {
             "_description": "The unknown TCP option minimum length assert.",
-            "_args": {
+            "_kwargs": {
                 "bytes": b"\xff",
             },
             "_results": {
@@ -307,7 +309,7 @@ class TestTcpOptionUnknownAssembler(TestCase):
         },
         {
             "_description": "The unknown TCP option incorrect 'type' field (Eol) assert.",
-            "_args": {
+            "_kwargs": {
                 "bytes": (
                     b"\x00\x12\x30\x31\x32\x33\x34\x35\x36\x37\x38\x39\x41\x42\x43\x44"
                     b"\x45\x46"
@@ -323,7 +325,7 @@ class TestTcpOptionUnknownAssembler(TestCase):
         },
         {
             "_description": "The unknown TCP option incorrect 'type' field (Nop) assert.",
-            "_args": {
+            "_kwargs": {
                 "bytes": (
                     b"\x01\x12\x30\x31\x32\x33\x34\x35\x36\x37\x38\x39\x41\x42\x43\x44"
                     b"\x45\x46"
@@ -339,7 +341,7 @@ class TestTcpOptionUnknownAssembler(TestCase):
         },
         {
             "_description": "The unknown TCP option incorrect 'type' field (Mss) assert.",
-            "_args": {
+            "_kwargs": {
                 "bytes": (
                     b"\x02\x12\x30\x31\x32\x33\x34\x35\x36\x37\x38\x39\x41\x42\x43\x44"
                     b"\x45\x46"
@@ -355,7 +357,7 @@ class TestTcpOptionUnknownAssembler(TestCase):
         },
         {
             "_description": "The unknown TCP option incorrect 'type' field (Wscale) assert.",
-            "_args": {
+            "_kwargs": {
                 "bytes": (
                     b"\x03\x12\x30\x31\x32\x33\x34\x35\x36\x37\x38\x39\x41\x42\x43\x44"
                     b"\x45\x46"
@@ -371,7 +373,7 @@ class TestTcpOptionUnknownAssembler(TestCase):
         },
         {
             "_description": "The unknown TCP option incorrect 'type' field (Sackperm) assert.",
-            "_args": {
+            "_kwargs": {
                 "bytes": (
                     b"\x04\x12\x30\x31\x32\x33\x34\x35\x36\x37\x38\x39\x41\x42\x43\x44"
                     b"\x45\x46"
@@ -387,7 +389,7 @@ class TestTcpOptionUnknownAssembler(TestCase):
         },
         {
             "_description": "The unknown TCP option incorrect 'type' field (Sack) assert.",
-            "_args": {
+            "_kwargs": {
                 "bytes": (
                     b"\x05\x12\x30\x31\x32\x33\x34\x35\x36\x37\x38\x39\x41\x42\x43\x44"
                     b"\x45\x46"
@@ -403,7 +405,7 @@ class TestTcpOptionUnknownAssembler(TestCase):
         },
         {
             "_description": "The unknown TCP option incorrect 'type' field (Timestamps) assert.",
-            "_args": {
+            "_kwargs": {
                 "bytes": (
                     b"\x08\x12\x30\x31\x32\x33\x34\x35\x36\x37\x38\x39\x41\x42\x43\x44"
                     b"\x45\x46"
@@ -419,7 +421,7 @@ class TestTcpOptionUnknownAssembler(TestCase):
         },
         {
             "_description": "The unknown TCP option length integrity check (II).",
-            "_args": {
+            "_kwargs": {
                 "bytes": (
                     b"\xff\x12\x30\x31\x32\x33\x34\x35\x36\x37\x38\x39\x41\x42\x43\x44"
                     b"\x45"
@@ -441,7 +443,7 @@ class TestTcpOptionUnknownParser(TestCase):
     """
 
     _description: str
-    _args: dict[str, Any]
+    _kwargs: dict[str, Any]
     _results: dict[str, Any]
 
     def test__tcp__option__unknown__from_bytes(self) -> None:
@@ -451,18 +453,16 @@ class TestTcpOptionUnknownParser(TestCase):
         """
 
         if "option" in self._results:
-            tcp_option_unknown = TcpOptionUnknown.from_bytes(
-                self._args["bytes"]
-            )
+            option = TcpOptionUnknown.from_bytes(self._kwargs["bytes"])
 
             self.assertEqual(
-                tcp_option_unknown,
+                option,
                 self._results["option"],
             )
 
         if "error" in self._results:
             with self.assertRaises(self._results["error"]) as error:
-                TcpOptionUnknown.from_bytes(self._args["bytes"])
+                TcpOptionUnknown.from_bytes(self._kwargs["bytes"])
 
             self.assertEqual(
                 str(error.exception),

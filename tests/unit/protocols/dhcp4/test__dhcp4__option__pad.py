@@ -84,7 +84,7 @@ class TestDhcp4OptionPadAssembler(TestCase):
         Initialize the DHCPv4 Pad option object with testcase arguments.
         """
 
-        self._dhcp4_option_pad = Dhcp4OptionPad(**self._args)
+        self._option = Dhcp4OptionPad(**self._args)
 
     def test__dhcp4__option__pad__len(self) -> None:
         """
@@ -93,7 +93,7 @@ class TestDhcp4OptionPadAssembler(TestCase):
         """
 
         self.assertEqual(
-            len(self._dhcp4_option_pad),
+            len(self._option),
             self._results["__len__"],
         )
 
@@ -104,7 +104,7 @@ class TestDhcp4OptionPadAssembler(TestCase):
         """
 
         self.assertEqual(
-            str(self._dhcp4_option_pad),
+            str(self._option),
             self._results["__str__"],
         )
 
@@ -115,7 +115,7 @@ class TestDhcp4OptionPadAssembler(TestCase):
         """
 
         self.assertEqual(
-            repr(self._dhcp4_option_pad),
+            repr(self._option),
             self._results["__repr__"],
         )
 
@@ -126,7 +126,7 @@ class TestDhcp4OptionPadAssembler(TestCase):
         """
 
         self.assertEqual(
-            bytes(self._dhcp4_option_pad),
+            bytes(self._option),
             self._results["__bytes__"],
         )
 
@@ -136,7 +136,7 @@ class TestDhcp4OptionPadAssembler(TestCase):
         """
 
         self.assertEqual(
-            self._dhcp4_option_pad.type,
+            self._option.type,
             self._results["type"],
         )
 
@@ -146,7 +146,7 @@ class TestDhcp4OptionPadAssembler(TestCase):
         """
 
         self.assertEqual(
-            self._dhcp4_option_pad.len,
+            self._option.len,
             self._results["len"],
         )
 
@@ -206,12 +206,10 @@ class TestDhcp4OptionPadParser(TestCase):
         """
 
         if "option" in self._results:
-            dhcp4_option_pad = Dhcp4OptionPad.from_bytes(
-                self._args["bytes"] + b"ZH0PA"
-            )
+            option = Dhcp4OptionPad.from_bytes(self._args["bytes"] + b"ZH0PA")
 
             self.assertEqual(
-                dhcp4_option_pad,
+                option,
                 self._results["option"],
             )
 

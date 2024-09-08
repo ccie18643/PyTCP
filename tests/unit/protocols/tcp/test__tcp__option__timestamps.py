@@ -57,7 +57,7 @@ class TestTcpOptionTimestampsAsserts(TestCase):
         Create the default arguments for the TCP Timestamps option constructor.
         """
 
-        self._option_args = {
+        self._option_kwargs = {
             "tsval": 0,
             "tsecr": 0,
         }
@@ -68,10 +68,10 @@ class TestTcpOptionTimestampsAsserts(TestCase):
         the provided 'tsval' argument is lower than the minimum supported value.
         """
 
-        self._option_args["tsval"] = value = UINT_32__MIN - 1
+        self._option_kwargs["tsval"] = value = UINT_32__MIN - 1
 
         with self.assertRaises(AssertionError) as error:
-            TcpOptionTimestamps(**self._option_args)
+            TcpOptionTimestamps(**self._option_kwargs)
 
         self.assertEqual(
             str(error.exception),
@@ -84,10 +84,10 @@ class TestTcpOptionTimestampsAsserts(TestCase):
         the provided 'tsval' argument is higher than the maximum supported value.
         """
 
-        self._option_args["tsval"] = value = UINT_32__MAX + 1
+        self._option_kwargs["tsval"] = value = UINT_32__MAX + 1
 
         with self.assertRaises(AssertionError) as error:
-            TcpOptionTimestamps(**self._option_args)
+            TcpOptionTimestamps(**self._option_kwargs)
 
         self.assertEqual(
             str(error.exception),
@@ -100,10 +100,10 @@ class TestTcpOptionTimestampsAsserts(TestCase):
         the provided 'tsecr' argument is lower than the minimum supported value.
         """
 
-        self._option_args["tsecr"] = value = UINT_32__MIN - 1
+        self._option_kwargs["tsecr"] = value = UINT_32__MIN - 1
 
         with self.assertRaises(AssertionError) as error:
-            TcpOptionTimestamps(**self._option_args)
+            TcpOptionTimestamps(**self._option_kwargs)
 
         self.assertEqual(
             str(error.exception),
@@ -116,10 +116,10 @@ class TestTcpOptionTimestampsAsserts(TestCase):
         the provided 'tsecr' argument is higher than the maximum supported value.
         """
 
-        self._option_args["tsecr"] = value = UINT_32__MAX + 1
+        self._option_kwargs["tsecr"] = value = UINT_32__MAX + 1
 
         with self.assertRaises(AssertionError) as error:
-            TcpOptionTimestamps(**self._option_args)
+            TcpOptionTimestamps(**self._option_kwargs)
 
         self.assertEqual(
             str(error.exception),
@@ -131,7 +131,8 @@ class TestTcpOptionTimestampsAsserts(TestCase):
     [
         {
             "_description": "The TCP Timestamps option (I).",
-            "_args": {
+            "_args": [],
+            "_kwargs": {
                 "tsval": 4294967295,
                 "tsecr": 4294967295,
             },
@@ -150,7 +151,8 @@ class TestTcpOptionTimestampsAsserts(TestCase):
         },
         {
             "_description": "The TCP Timestamps option (II).",
-            "_args": {
+            "_args": [],
+            "_kwargs": {
                 "tsval": 1111111111,
                 "tsecr": 2222222222,
             },
@@ -175,7 +177,8 @@ class TestTcpOptionTimestampsAssembler(TestCase):
     """
 
     _description: str
-    _args: dict[str, Any]
+    _args: list[Any]
+    _kwargs: dict[str, Any]
     _results: dict[str, Any]
 
     def setUp(self) -> None:
@@ -183,7 +186,7 @@ class TestTcpOptionTimestampsAssembler(TestCase):
         Initialize the TCP Timestamps option object with testcase arguments.
         """
 
-        self._tcp_option_timestamps = TcpOptionTimestamps(**self._args)
+        self._option = TcpOptionTimestamps(*self._args, **self._kwargs)
 
     def test__tcp__option__timestamps__len(self) -> None:
         """
@@ -192,7 +195,7 @@ class TestTcpOptionTimestampsAssembler(TestCase):
         """
 
         self.assertEqual(
-            len(self._tcp_option_timestamps),
+            len(self._option),
             self._results["__len__"],
         )
 
@@ -203,7 +206,7 @@ class TestTcpOptionTimestampsAssembler(TestCase):
         """
 
         self.assertEqual(
-            str(self._tcp_option_timestamps),
+            str(self._option),
             self._results["__str__"],
         )
 
@@ -214,7 +217,7 @@ class TestTcpOptionTimestampsAssembler(TestCase):
         """
 
         self.assertEqual(
-            repr(self._tcp_option_timestamps),
+            repr(self._option),
             self._results["__repr__"],
         )
 
@@ -225,7 +228,7 @@ class TestTcpOptionTimestampsAssembler(TestCase):
         """
 
         self.assertEqual(
-            bytes(self._tcp_option_timestamps),
+            bytes(self._option),
             self._results["__bytes__"],
         )
 
@@ -235,7 +238,7 @@ class TestTcpOptionTimestampsAssembler(TestCase):
         """
 
         self.assertEqual(
-            self._tcp_option_timestamps.type,
+            self._option.type,
             self._results["type"],
         )
 
@@ -245,7 +248,7 @@ class TestTcpOptionTimestampsAssembler(TestCase):
         """
 
         self.assertEqual(
-            self._tcp_option_timestamps.len,
+            self._option.len,
             self._results["len"],
         )
 
@@ -255,7 +258,7 @@ class TestTcpOptionTimestampsAssembler(TestCase):
         """
 
         self.assertEqual(
-            self._tcp_option_timestamps.tsval,
+            self._option.tsval,
             self._results["tsval"],
         )
 
@@ -265,7 +268,7 @@ class TestTcpOptionTimestampsAssembler(TestCase):
         """
 
         self.assertEqual(
-            self._tcp_option_timestamps.tsecr,
+            self._option.tsecr,
             self._results["tsecr"],
         )
 
@@ -274,7 +277,7 @@ class TestTcpOptionTimestampsAssembler(TestCase):
     [
         {
             "_description": "The TCP Timestamps option (I).",
-            "_args": {
+            "_kwargs": {
                 "bytes": b"\x08\x0a\xff\xff\xff\xff\xff\xff\xff\xff",
             },
             "_results": {
@@ -285,7 +288,7 @@ class TestTcpOptionTimestampsAssembler(TestCase):
         },
         {
             "_description": "The TCP Timestamps option (II).",
-            "_args": {
+            "_kwargs": {
                 "bytes": b"\x08\x0a\x42\x3a\x35\xc7\x84\x74\x6b\x8e",
             },
             "_results": {
@@ -296,7 +299,7 @@ class TestTcpOptionTimestampsAssembler(TestCase):
         },
         {
             "_description": "The TCP Timestamps option minimum length assert.",
-            "_args": {
+            "_kwargs": {
                 "bytes": b"\x08",
             },
             "_results": {
@@ -309,7 +312,7 @@ class TestTcpOptionTimestampsAssembler(TestCase):
         },
         {
             "_description": "The TCP Timestamps option incorrect 'type' field assert.",
-            "_args": {
+            "_kwargs": {
                 "bytes": b"\xff\x0a\x00\x00\x00\x00\x00\x00\x00\x00",
             },
             "_results": {
@@ -322,7 +325,7 @@ class TestTcpOptionTimestampsAssembler(TestCase):
         },
         {
             "_description": "The TCP Timestamps option length integrity check (I).",
-            "_args": {
+            "_kwargs": {
                 "bytes": b"\x08\x09\x00\x00\x00\x00\x00\x00\x00\x00",
             },
             "_results": {
@@ -335,7 +338,7 @@ class TestTcpOptionTimestampsAssembler(TestCase):
         },
         {
             "_description": "The TCP Timestamps option length integrity check (II).",
-            "_args": {
+            "_kwargs": {
                 "bytes": b"\x08\x0a\x00\x00\x00\x00\x00\x00\x00",
             },
             "_results": {
@@ -355,7 +358,7 @@ class TestTcpOptionTimestampsParser(TestCase):
     """
 
     _description: str
-    _args: dict[str, Any]
+    _kwargs: dict[str, Any]
     _results: dict[str, Any]
 
     def test__tcp__option__timestamps__from_bytes(self) -> None:
@@ -365,18 +368,18 @@ class TestTcpOptionTimestampsParser(TestCase):
         """
 
         if "option" in self._results:
-            tcp_option_timestamps = TcpOptionTimestamps.from_bytes(
-                self._args["bytes"] + b"ZH0PA"
+            option = TcpOptionTimestamps.from_bytes(
+                self._kwargs["bytes"] + b"ZH0PA"
             )
 
             self.assertEqual(
-                tcp_option_timestamps,
+                option,
                 self._results["option"],
             )
 
         if "error" in self._results:
             with self.assertRaises(self._results["error"]) as error:
-                TcpOptionTimestamps.from_bytes(self._args["bytes"])
+                TcpOptionTimestamps.from_bytes(self._kwargs["bytes"])
 
             self.assertEqual(
                 str(error.exception),

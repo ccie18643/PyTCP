@@ -59,7 +59,7 @@ class TestIcmp6NdOptionTllaAsserts(TestCase):
         Create the default arguments for the ICMPv6 ND Tlla option constructor.
         """
 
-        self._option_args = {
+        self._option_kwargs = {
             "tlla": MacAddress(),
         }
 
@@ -69,10 +69,10 @@ class TestIcmp6NdOptionTllaAsserts(TestCase):
         the provided 'tlla' argument is not a MacAddress.
         """
 
-        self._option_args["tlla"] = value = "not a MacAddress"  # type: ignore
+        self._option_kwargs["tlla"] = value = "not a MacAddress"  # type: ignore
 
         with self.assertRaises(AssertionError) as error:
-            Icmp6NdOptionTlla(**self._option_args)
+            Icmp6NdOptionTlla(**self._option_kwargs)
 
         self.assertEqual(
             str(error.exception),
@@ -84,7 +84,8 @@ class TestIcmp6NdOptionTllaAsserts(TestCase):
     [
         {
             "_description": "The ICMPv6 ND Tlla option (I).",
-            "_args": {
+            "_args": [],
+            "_kwargs": {
                 "tlla": MacAddress("01:02:03:04:05:06"),
             },
             "_results": {
@@ -107,7 +108,8 @@ class TestIcmp6NdOptionTllaAssembler(TestCase):
     """
 
     _description: str
-    _args: dict[str, Any]
+    _args: list[Any]
+    _kwargs: dict[str, Any]
     _results: dict[str, Any]
 
     def setUp(self) -> None:
@@ -115,7 +117,7 @@ class TestIcmp6NdOptionTllaAssembler(TestCase):
         Initialize the ICMPv6 ND Tlla option object with testcase arguments.
         """
 
-        self._icmp6_nd_option_tlla = Icmp6NdOptionTlla(**self._args)
+        self._option = Icmp6NdOptionTlla(*self._args, **self._kwargs)
 
     def test__icmp6__nd__option__tlla__len(self) -> None:
         """
@@ -124,7 +126,7 @@ class TestIcmp6NdOptionTllaAssembler(TestCase):
         """
 
         self.assertEqual(
-            len(self._icmp6_nd_option_tlla),
+            len(self._option),
             self._results["__len__"],
         )
 
@@ -135,7 +137,7 @@ class TestIcmp6NdOptionTllaAssembler(TestCase):
         """
 
         self.assertEqual(
-            str(self._icmp6_nd_option_tlla),
+            str(self._option),
             self._results["__str__"],
         )
 
@@ -146,7 +148,7 @@ class TestIcmp6NdOptionTllaAssembler(TestCase):
         """
 
         self.assertEqual(
-            repr(self._icmp6_nd_option_tlla),
+            repr(self._option),
             self._results["__repr__"],
         )
 
@@ -157,7 +159,7 @@ class TestIcmp6NdOptionTllaAssembler(TestCase):
         """
 
         self.assertEqual(
-            bytes(self._icmp6_nd_option_tlla),
+            bytes(self._option),
             self._results["__bytes__"],
         )
 
@@ -167,7 +169,7 @@ class TestIcmp6NdOptionTllaAssembler(TestCase):
         """
 
         self.assertEqual(
-            self._icmp6_nd_option_tlla.type,
+            self._option.type,
             self._results["type"],
         )
 
@@ -177,7 +179,7 @@ class TestIcmp6NdOptionTllaAssembler(TestCase):
         """
 
         self.assertEqual(
-            self._icmp6_nd_option_tlla.len,
+            self._option.len,
             self._results["len"],
         )
 
@@ -187,7 +189,7 @@ class TestIcmp6NdOptionTllaAssembler(TestCase):
         """
 
         self.assertEqual(
-            self._icmp6_nd_option_tlla.tlla,
+            self._option.tlla,
             self._results["tlla"],
         )
 
@@ -196,7 +198,7 @@ class TestIcmp6NdOptionTllaAssembler(TestCase):
     [
         {
             "_description": "The ICMPv6 ND Tlla option (I).",
-            "_args": {
+            "_kwargs": {
                 "bytes": b"\x02\x01\x01\x02\x03\x04\x05\x06",
             },
             "_results": {
@@ -207,7 +209,7 @@ class TestIcmp6NdOptionTllaAssembler(TestCase):
         },
         {
             "_description": "The ICMPv6 ND Tlla option minimum length assert.",
-            "_args": {
+            "_kwargs": {
                 "bytes": b"\x02",
             },
             "_results": {
@@ -220,7 +222,7 @@ class TestIcmp6NdOptionTllaAssembler(TestCase):
         },
         {
             "_description": "The ICMPv6 ND Tlla option incorrect 'type' field assert.",
-            "_args": {
+            "_kwargs": {
                 "bytes": b"\xff\x01\x01\x02\x03\x04\x05\x06",
             },
             "_results": {
@@ -233,7 +235,7 @@ class TestIcmp6NdOptionTllaAssembler(TestCase):
         },
         {
             "_description": "The ICMPv6 ND Tlla option length integrity check (I).",
-            "_args": {
+            "_kwargs": {
                 "bytes": b"\x02\x02\x01\x02\x03\x04\x05\x06",
             },
             "_results": {
@@ -246,7 +248,7 @@ class TestIcmp6NdOptionTllaAssembler(TestCase):
         },
         {
             "_description": "The ND Tlla option length integrity check (II).",
-            "_args": {
+            "_kwargs": {
                 "bytes": b"\x02\x01\x01\x02\x03\x04\x05",
             },
             "_results": {
@@ -266,7 +268,7 @@ class TestIcmp6NdOptionTllaParser(TestCase):
     """
 
     _description: str
-    _args: dict[str, Any]
+    _kwargs: dict[str, Any]
     _results: dict[str, Any]
 
     def test__icmp6__nd__option__tlla__from_bytes(self) -> None:
@@ -276,18 +278,18 @@ class TestIcmp6NdOptionTllaParser(TestCase):
         """
 
         if "option" in self._results:
-            icmp6_nd_option_tlla = Icmp6NdOptionTlla.from_bytes(
-                self._args["bytes"] + b"ZH0PA"
+            option = Icmp6NdOptionTlla.from_bytes(
+                self._kwargs["bytes"] + b"ZH0PA"
             )
 
             self.assertEqual(
-                icmp6_nd_option_tlla,
+                option,
                 self._results["option"],
             )
 
         if "error" in self._results:
             with self.assertRaises(self._results["error"]) as error:
-                Icmp6NdOptionTlla.from_bytes(self._args["bytes"])
+                Icmp6NdOptionTlla.from_bytes(self._kwargs["bytes"])
 
             self.assertEqual(
                 str(error.exception),

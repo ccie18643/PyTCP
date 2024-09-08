@@ -57,7 +57,7 @@ class TestTcpOptionMssAsserts(TestCase):
         Create the default arguments for the TCP Mss option constructor.
         """
 
-        self._option_args = {
+        self._option_kwargs = {
             "mss": 0,
         }
 
@@ -67,10 +67,10 @@ class TestTcpOptionMssAsserts(TestCase):
         provided 'mss' argument is lower than the minimum supported value.
         """
 
-        self._option_args["mss"] = value = UINT_16__MIN - 1
+        self._option_kwargs["mss"] = value = UINT_16__MIN - 1
 
         with self.assertRaises(AssertionError) as error:
-            TcpOptionMss(**self._option_args)
+            TcpOptionMss(**self._option_kwargs)
 
         self.assertEqual(
             str(error.exception),
@@ -83,10 +83,10 @@ class TestTcpOptionMssAsserts(TestCase):
         provided 'mss' argument is higher than the maximum supported value.
         """
 
-        self._option_args["mss"] = value = UINT_16__MAX + 1
+        self._option_kwargs["mss"] = value = UINT_16__MAX + 1
 
         with self.assertRaises(AssertionError) as error:
-            TcpOptionMss(**self._option_args)
+            TcpOptionMss(**self._option_kwargs)
 
         self.assertEqual(
             str(error.exception),
@@ -98,7 +98,8 @@ class TestTcpOptionMssAsserts(TestCase):
     [
         {
             "_description": "The TCP Mss option.",
-            "_args": {
+            "_args": [],
+            "_kwargs": {
                 "mss": 65535,
             },
             "_results": {
@@ -119,7 +120,8 @@ class TestTcpOptionMssAssembler(TestCase):
     """
 
     _description: str
-    _args: dict[str, Any]
+    _args: list[Any]
+    _kwargs: dict[str, Any]
     _results: dict[str, Any]
 
     def setUp(self) -> None:
@@ -127,7 +129,7 @@ class TestTcpOptionMssAssembler(TestCase):
         Initialize the TCP Mss option object with testcase arguments.
         """
 
-        self._tcp_option_mss = TcpOptionMss(**self._args)
+        self._option = TcpOptionMss(*self._args, **self._kwargs)
 
     def test__tcp__option__mss__len(self) -> None:
         """
@@ -136,7 +138,7 @@ class TestTcpOptionMssAssembler(TestCase):
         """
 
         self.assertEqual(
-            len(self._tcp_option_mss),
+            len(self._option),
             self._results["__len__"],
         )
 
@@ -147,7 +149,7 @@ class TestTcpOptionMssAssembler(TestCase):
         """
 
         self.assertEqual(
-            str(self._tcp_option_mss),
+            str(self._option),
             self._results["__str__"],
         )
 
@@ -158,7 +160,7 @@ class TestTcpOptionMssAssembler(TestCase):
         """
 
         self.assertEqual(
-            repr(self._tcp_option_mss),
+            repr(self._option),
             self._results["__repr__"],
         )
 
@@ -169,7 +171,7 @@ class TestTcpOptionMssAssembler(TestCase):
         """
 
         self.assertEqual(
-            bytes(self._tcp_option_mss),
+            bytes(self._option),
             self._results["__bytes__"],
         )
 
@@ -179,7 +181,7 @@ class TestTcpOptionMssAssembler(TestCase):
         """
 
         self.assertEqual(
-            self._tcp_option_mss.mss,
+            self._option.mss,
             self._results["mss"],
         )
 
@@ -189,7 +191,7 @@ class TestTcpOptionMssAssembler(TestCase):
         """
 
         self.assertEqual(
-            self._tcp_option_mss.type,
+            self._option.type,
             self._results["type"],
         )
 
@@ -199,7 +201,7 @@ class TestTcpOptionMssAssembler(TestCase):
         """
 
         self.assertEqual(
-            self._tcp_option_mss.len,
+            self._option.len,
             self._results["len"],
         )
 
@@ -208,7 +210,7 @@ class TestTcpOptionMssAssembler(TestCase):
     [
         {
             "_description": "The TCP Mss option.",
-            "_args": {
+            "_kwargs": {
                 "bytes": b"\x02\x04\xff\xff",
             },
             "_results": {
@@ -217,7 +219,7 @@ class TestTcpOptionMssAssembler(TestCase):
         },
         {
             "_description": "The TCP Mss option minimum length assert.",
-            "_args": {
+            "_kwargs": {
                 "bytes": b"\x02",
             },
             "_results": {
@@ -230,7 +232,7 @@ class TestTcpOptionMssAssembler(TestCase):
         },
         {
             "_description": "The TCP Mss option incorrect 'type' field assert.",
-            "_args": {
+            "_kwargs": {
                 "bytes": b"\xff\04\xff\xff",
             },
             "_results": {
@@ -243,7 +245,7 @@ class TestTcpOptionMssAssembler(TestCase):
         },
         {
             "_description": "The TCP Mss option length integrity check (I).",
-            "_args": {
+            "_kwargs": {
                 "bytes": b"\x02\03\xff\xff",
             },
             "_results": {
@@ -256,7 +258,7 @@ class TestTcpOptionMssAssembler(TestCase):
         },
         {
             "_description": "The TCP Mss option length integrity check (II).",
-            "_args": {
+            "_kwargs": {
                 "bytes": b"\x02\04\xff",
             },
             "_results": {
@@ -276,7 +278,7 @@ class TestTcpOptionMssParser(TestCase):
     """
 
     _description: str
-    _args: dict[str, Any]
+    _kwargs: dict[str, Any]
     _results: dict[str, Any]
 
     def test__tcp__option__mss__from_bytes(self) -> None:
@@ -286,18 +288,16 @@ class TestTcpOptionMssParser(TestCase):
         """
 
         if "option" in self._results:
-            tcp_option_mss = TcpOptionMss.from_bytes(
-                self._args["bytes"] + b"ZH0PA"
-            )
+            option = TcpOptionMss.from_bytes(self._kwargs["bytes"] + b"ZH0PA")
 
             self.assertEqual(
-                tcp_option_mss,
+                option,
                 self._results["option"],
             )
 
         if "error" in self._results:
             with self.assertRaises(self._results["error"]) as error:
-                TcpOptionMss.from_bytes(self._args["bytes"])
+                TcpOptionMss.from_bytes(self._kwargs["bytes"])
 
             self.assertEqual(
                 str(error.exception),
