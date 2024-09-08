@@ -48,6 +48,9 @@ if TYPE_CHECKING:
     from pytcp.lib.net_addr import Ip4Address
     from pytcp.lib.socket import Socket
 
+version_string = "ver 3.0.2"
+github_repository = "https://github.com/ccie18643/PyTCP"
+
 timer = Timer()
 rx_ring = RxRing()
 tx_ring = TxRing()

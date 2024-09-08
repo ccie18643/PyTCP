@@ -36,7 +36,7 @@ ver 3.0.2
 from __future__ import annotations
 
 import time
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, override
 
 import click
 
@@ -77,7 +77,8 @@ class TcpEchoService(TcpService):
             local_port=local_port,
         )
 
-    def service(self, *, connected_socket: Socket) -> None:
+    @override
+    def _service(self, *, connected_socket: Socket) -> None:
         """
         Inbound connection handler.
         """

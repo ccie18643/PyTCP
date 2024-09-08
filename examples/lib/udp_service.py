@@ -37,6 +37,7 @@ from __future__ import annotations
 
 import threading
 import time
+from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING
 
 import click
@@ -48,7 +49,7 @@ if TYPE_CHECKING:
     from pytcp.lib.socket import Socket
 
 
-class UdpService:
+class UdpService(ABC):
     """
     UDP service support class.
     """
@@ -113,9 +114,10 @@ class UdpService:
             )
             return
 
-        self.service(listening_socket=listening_socket)
+        self._service(listening_socket=listening_socket)
 
-    def service(
+    @abstractmethod
+    def _service(
         self,
         *,
         listening_socket: Socket,
@@ -124,8 +126,4 @@ class UdpService:
         Service method.
         """
 
-        click.echo(
-            f"Service UDP {self._service_name}: No service method defined, "
-            "closing connection."
-        )
-        listening_socket.close()
+        raise NotImplementedError

@@ -36,7 +36,7 @@ ver 3.0.2
 from __future__ import annotations
 
 import time
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, override
 
 import click
 
@@ -76,7 +76,8 @@ class UdpDiscardService(UdpService):
             local_port=local_port,
         )
 
-    def service(self, *, listening_socket: Socket) -> None:
+    @override
+    def _service(self, *, listening_socket: Socket) -> None:
         """
         Inbound connection handler.
         """

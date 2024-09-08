@@ -37,7 +37,7 @@ from __future__ import annotations
 
 import time
 from datetime import datetime
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, override
 
 import click
 
@@ -87,7 +87,8 @@ class TcpDaytimeService(TcpService):
         self._message_count = message_count
         self._message_delay = message_delay
 
-    def service(self, *, connected_socket: Socket) -> None:
+    @override
+    def _service(self, *, connected_socket: Socket) -> None:
         """
         Inbound connection handler.
         """

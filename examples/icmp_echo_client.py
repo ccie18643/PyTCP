@@ -39,6 +39,7 @@ import random
 import threading
 import time
 from datetime import datetime
+from typing import cast
 
 import click
 
@@ -57,6 +58,7 @@ from pytcp.lib.net_addr.ip4_host import Ip4Host
 from pytcp.lib.net_addr.ip6_host import Ip6Host
 from pytcp.lib.net_addr.ip_address import IpAddress
 from pytcp.lib.net_addr.mac_address import MacAddress
+from pytcp.lib.stack import github_repository, version_string
 from pytcp.protocols.icmp4.message.icmp4_message__echo_request import (
     Icmp4EchoRequestMessage,
 )
@@ -114,33 +116,46 @@ class IcmpEchoClient:
 
         message_seq = 0
         while self._run_thread and message_count:
-            message = bytes(str(datetime.now()) + "\n", "utf-8")
+            message = bytes(
+                f"PyTCP {version_string}, {github_repository} - {str(datetime.now())}",
+                "utf-8",
+            )
 
-            if self._local_ip_address.version == 4:
-                assert isinstance(self._local_ip_address, Ip4Address)
-                assert isinstance(self._remote_ip_address, Ip4Address)
-                stack.packet_handler.send_icmp4_packet(
-                    ip4__local_address=self._local_ip_address,
-                    ip4__remote_address=self._remote_ip_address,
-                    icmp4__message=Icmp4EchoRequestMessage(
-                        id=flow_id,
-                        seq=message_seq,
-                        data=message,
-                    ),
-                )
-
-            if self._local_ip_address.version == 6:
-                assert isinstance(self._local_ip_address, Ip6Address)
-                assert isinstance(self._remote_ip_address, Ip6Address)
-                stack.packet_handler.send_icmp6_packet(
-                    ip6__local_address=self._local_ip_address,
-                    ip6__remote_address=self._remote_ip_address,
-                    icmp6__message=Icmp6EchoRequestMessage(
-                        id=flow_id,
-                        seq=message_seq,
-                        data=message,
-                    ),
-                )
+            match self._local_ip_address.version, self._remote_ip_address.version:
+                case 4, 4:
+                    stack.packet_handler.send_icmp4_packet(
+                        ip4__local_address=cast(
+                            Ip4Address, self._local_ip_address
+                        ),
+                        ip4__remote_address=cast(
+                            Ip4Address, self._remote_ip_address
+                        ),
+                        icmp4__message=Icmp4EchoRequestMessage(
+                            id=flow_id,
+                            seq=message_seq,
+                            data=message,
+                        ),
+                    )
+                case 6, 6:
+                    stack.packet_handler.send_icmp6_packet(
+                        ip6__local_address=cast(
+                            Ip6Address, self._local_ip_address
+                        ),
+                        ip6__remote_address=cast(
+                            Ip6Address, self._remote_ip_address
+                        ),
+                        icmp6__message=Icmp6EchoRequestMessage(
+                            id=flow_id,
+                            seq=message_seq,
+                            data=message,
+                        ),
+                    )
+                case _:
+                    raise ValueError(
+                        "Unsupported IP version combination: "
+                        f"{self._local_ip_address.version=}, "
+                        f"{self._remote_ip_address.version=}"
+                    )
 
             click.echo(
                 f"Client ICMP Echo: Sent ICMP Echo ({flow_id}/{message_seq}) "

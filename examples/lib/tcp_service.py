@@ -37,6 +37,7 @@ from __future__ import annotations
 
 import threading
 import time
+from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING
 
 import click
@@ -48,7 +49,7 @@ if TYPE_CHECKING:
     from pytcp.lib.socket import Socket
 
 
-class TcpService:
+class TcpService(ABC):
     """
     TCP service support class.
     """
@@ -137,15 +138,12 @@ class TcpService:
         Inbound connection handler.
         """
 
-        self.service(connected_socket=connected_socket)
+        self._service(connected_socket=connected_socket)
 
-    def service(self, *, connected_socket: Socket) -> None:
+    @abstractmethod
+    def _service(self, *, connected_socket: Socket) -> None:
         """
         Service method.
         """
 
-        click.echo(
-            f"Service TCP {self._service_name}: No service method defined, "
-            "closing connection."
-        )
-        connected_socket.close()
+        raise NotImplementedError
