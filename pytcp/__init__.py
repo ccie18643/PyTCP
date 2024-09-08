@@ -67,8 +67,10 @@ def initialize_interface(if_name: str, /) -> tuple[int, int]:
     match if_name[0:3].lower():
         case "tap":
             if_type = IFF_TAP
+            mtu = config.INTERFACE__TAP__MTU
         case "tun":
             if_type = IFF_TUN
+            mtu = config.INTERFACE__TUN__MTU
         case _:
             log(
                 "stack",
@@ -89,7 +91,7 @@ def initialize_interface(if_name: str, /) -> tuple[int, int]:
         struct.pack("16sH", if_name.encode(), if_type | IFF_NO_PI),
     )
 
-    return fd, fd
+    return fd, mtu
 
 
 class TcpIpStack:
@@ -100,7 +102,8 @@ class TcpIpStack:
     def __init__(
         self,
         *,
-        fd: tuple[int, int],
+        fd: int,
+        mtu: int,
         mac_address: str | None = None,
         ip4_address: str | None = None,
         ip4_gateway: str | None = None,
@@ -110,6 +113,9 @@ class TcpIpStack:
         """
         Initialize stack on the provided interface.
         """
+
+        self._fd = fd
+        self._mtu = mtu
 
         # Set the MAC address.
         if mac_address is not None:
@@ -145,9 +151,6 @@ class TcpIpStack:
                 config.IP6__LLA_AUTOCONFIG = True
                 config.IP6__GUA_AUTOCONFIG = False
 
-        self.rx_fd = fd[0]
-        self.tx_fd = fd[1]
-
     def start(self) -> None:
         """
         Start stack components.
@@ -156,8 +159,8 @@ class TcpIpStack:
         stack.timer.start()
         stack.arp_cache.start()
         stack.nd_cache.start()
-        stack.rx_ring.start(self.rx_fd)
-        stack.tx_ring.start(self.tx_fd)
+        stack.rx_ring.start(fd=self._fd)
+        stack.tx_ring.start(fd=self._fd, mtu=self._mtu)
         stack.packet_handler.start()
 
     def stop(self) -> None:

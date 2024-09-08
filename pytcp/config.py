@@ -39,11 +39,11 @@ from sys import version_info
 
 assert version_info >= (3, 12), "PyTCP requires Python version 3.12 or higher."
 
-# TAP interface name stack should bind itself to.
-INTERFACE__TAP__NAME = b"tap7"
-
 # TAP interface MTU, describes how much payload Ethernet packet can carry.
 INTERFACE__TAP__MTU = 1500
+
+# TUN interface MTU..
+INTERFACE__TUN__MTU = 1500
 
 
 # Support for IPv6 and IPv4, at least one should be anabled.

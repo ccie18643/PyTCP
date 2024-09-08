@@ -94,28 +94,59 @@ class UdpEchoService(UdpService):
 
 @click.command()
 @click.option("--interface", default="tap7")
-@click.option("--local-ip-address", default="0.0.0.0")
+@click.option("--mac-address", default=None)
+@click.option("--ip6-address", default=None)
+@click.option("--ip6-gateway", default=None)
+@click.option("--ip4-address", default=None)
+@click.option("--ip4-gateway", default=None)
 @click.option("--local-port", default=7, type=int)
-def cli(*, interface: str, local_ip_address: str, local_port: int) -> None:
+def cli(
+    *,
+    interface: str,
+    mac_address: str,
+    ip6_address: str,
+    ip6_gateway: str,
+    ip4_address: str,
+    ip4_gateway: str,
+    local_port: int,
+) -> None:
     """
     Start PyTCP stack and stop it when user presses Ctrl-C.
     Run the UDP Echo service.
     """
 
-    stack = TcpIpStack(fd=initialize_interface(interface))
-    service = UdpEchoService(
-        local_ip_address=local_ip_address,
+    fd, mtu = initialize_interface(interface)
+
+    stack = TcpIpStack(
+        fd=fd,
+        mtu=mtu,
+        mac_address=mac_address,
+        ip6_address=ip6_address,
+        ip6_gateway=ip6_gateway,
+        ip4_address=ip4_address,
+        ip4_gateway=ip4_gateway,
+    )
+
+    service_ip4 = UdpEchoService(
+        local_ip_address=ip4_address or "0.0.0.0",
+        local_port=local_port,
+    )
+
+    service_ip6 = UdpEchoService(
+        local_ip_address=ip6_address or "::",
         local_port=local_port,
     )
 
     try:
         stack.start()
-        service.start()
+        service_ip4.start()
+        service_ip6.start()
         while True:
             time.sleep(60)
 
     except KeyboardInterrupt:
-        service.stop()
+        service_ip4.stop()
+        service_ip6.stop()
         stack.stop()
 
 

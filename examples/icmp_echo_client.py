@@ -143,14 +143,39 @@ class IcmpEchoClient:
 
 @click.command()
 @click.option("--interface", default="tap7")
-@click.argument("remote_ip_address")
-def cli(*, interface: str, remote_ip_address: str) -> None:
+@click.option("--mac-address", default=None)
+@click.option("--ip6-address", default=None)
+@click.option("--ip6-gateway", default=None)
+@click.option("--ip4-address", default=None)
+@click.option("--ip4-gateway", default=None)
+@click.option("--remote-ip-address")
+def cli(
+    *,
+    interface: str,
+    mac_address: str,
+    ip6_address: str,
+    ip6_gateway: str,
+    ip4_address: str,
+    ip4_gateway: str,
+    remote_ip_address: str,
+) -> None:
     """
     Start PyTCP stack and stop it when user presses Ctrl-C.
     Run the ICMP Echo client.
     """
 
-    stack = TcpIpStack(fd=initialize_interface(interface))
+    fd, mtu = initialize_interface(interface)
+
+    stack = TcpIpStack(
+        fd=fd,
+        mtu=mtu,
+        mac_address=mac_address,
+        ip6_address=ip6_address,
+        ip6_gateway=ip6_gateway,
+        ip4_address=ip4_address,
+        ip4_gateway=ip4_gateway,
+    )
+
     client = IcmpEchoClient(
         remote_ip_address=remote_ip_address,
     )

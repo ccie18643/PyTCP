@@ -25,7 +25,7 @@
 
 
 """
-Module contains class supporting stack interface TX operations.
+Module contains class supporting stack TX Ring operations.
 
 pytcp/subsystems/tx_ring.py
 
@@ -40,7 +40,6 @@ import threading
 import time
 from typing import TYPE_CHECKING
 
-from pytcp import config
 from pytcp.lib.logger import log
 from pytcp.protocols.ethernet.ethernet__assembler import EthernetAssembler
 
@@ -57,44 +56,47 @@ class TxRing:
     Support for sending packets to the network.
     """
 
+    _fd: int
+    _mtu: int
+
     def __init__(self) -> None:
         """
-        Initialize access to tap interface and the outbound queue.
+        Initialize access to TX file descriptor and the outbound queue.
         """
 
         self._tx_ring: list[EthernetAssembler | Ethernet8023Assembler] = []
         self._packet_enqueued: Semaphore = threading.Semaphore(0)
         self._run_thread: bool = False
-        self._tap: int = -1
 
-    def start(self, tap: int) -> None:
+    def start(self, *, fd: int, mtu: int) -> None:
         """
-        Start Tx ring thread.
+        Start TX Ring thread.
         """
 
-        __debug__ and log("stack", "Starting TX ring")
+        __debug__ and log("stack", "Starting TX Ring")
 
-        self._tap = tap
+        self._fd = fd
+        self._mtu = mtu
         self._run_thread = True
         threading.Thread(target=self.__thread_transmit).start()
         time.sleep(0.1)
 
     def stop(self) -> None:
         """
-        Stop Tx ring thread.
+        Stop TX Ring thread.
         """
 
-        __debug__ and log("stack", "Stopping TX ring")
+        __debug__ and log("stack", "Stopping TX Ring")
 
         self._run_thread = False
         time.sleep(0.1)
 
     def __thread_transmit(self) -> None:
         """
-        Dequeue packet from TX ring and send it out.
+        Dequeue packet from TX Ring and send it out.
         """
 
-        __debug__ and log("stack", "Started TX ring")
+        __debug__ and log("stack", "Started TX Ring")
 
         while self._run_thread:
             # Timeout here is needed so the call doesn't block forever and
@@ -105,18 +107,16 @@ class TxRing:
 
             packet_tx = self._tx_ring.pop(0)
 
-            if (
-                packet_tx_len := len(packet_tx)
-            ) > config.INTERFACE__TAP__MTU + 14:
+            if (packet_tx_len := len(packet_tx)) > self._mtu + 14:
                 __debug__ and log(
                     "tx-ring",
                     f"{packet_tx.tracker} - Unable to send frame, frame"
-                    f"len ({packet_tx_len}) > mtu ({config.INTERFACE__TAP__MTU + 14})",
+                    f"len ({packet_tx_len}) > mtu ({self._mtu + 14})",
                 )
                 continue
 
             try:
-                os.write(self._tap, bytes(packet_tx))
+                os.write(self._fd, bytes(packet_tx))
 
             except OSError as error:
                 __debug__ and log(
@@ -133,13 +133,13 @@ class TxRing:
                 f"{len(packet_tx)} bytes",
             )
 
-        __debug__ and log("stack", "Stopped TX ring")
+        __debug__ and log("stack", "Stopped TX Ring")
 
     def enqueue(
         self, packet_tx: EthernetAssembler | Ethernet8023Assembler
     ) -> None:
         """
-        Enqueue outbound packet into TX ring.
+        Enqueue outbound packet into TX Ring.
         """
 
         self._tx_ring.append(packet_tx)

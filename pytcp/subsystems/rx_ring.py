@@ -25,7 +25,7 @@
 
 
 """
-Module contains class supporting stack interface RX operations.
+Module contains class supporting stack RX Ring operations.
 
 pytcp/subsystems/rx_ring.py
 
@@ -53,53 +53,54 @@ class RxRing:
     Support for receiving packets from the network.
     """
 
+    _fd: int
+
     def __init__(self) -> None:
         """
-        Initialize access to tap interface and the inbound queue.
+        Initialize access to RX file descriptor and the inbound queue.
         """
 
         self._rx_ring: list[PacketRx] = []
         self._packet_enqueued: Semaphore = threading.Semaphore(0)
         self._run_thread: bool = False
-        self._tap: int = -1
 
-    def start(self, tap: int) -> None:
+    def start(self, *, fd: int) -> None:
         """
-        Start Rx ring thread.
+        Start RX Ring thread.
         """
 
-        __debug__ and log("stack", "Starting RX ring")
+        __debug__ and log("stack", "Starting RX Ring")
 
         self._run_thread = True
-        self._tap = tap
-        threading.Thread(target=self.__thread_receive).start()
+        self._fd = fd
+        threading.Thread(target=self.__thread__receive).start()
         time.sleep(0.1)
 
     def stop(self) -> None:
         """
-        Stop Rx ring thread.
+        Stop RX Ring thread.
         """
 
-        __debug__ and log("stack", "Stopping RX ring")
+        __debug__ and log("stack", "Stopping RX Ring")
 
         self._run_thread = False
         time.sleep(0.1)
 
-    def __thread_receive(self) -> None:
+    def __thread__receive(self) -> None:
         """
         Thread responsible for receiving and enqueuing incoming packets.
         """
 
-        __debug__ and log("stack", "Started RX ring")
+        __debug__ and log("stack", "Started RX Ring")
 
         while self._run_thread:
             # Need to use select here so the we ar enot blocking on the read
             # call and can exit the thread gracefully
-            read_ready, _, _ = select.select([self._tap], [], [], 0.1)
+            read_ready, _, _ = select.select([self._fd], [], [], 0.1)
             if not read_ready:
                 continue
 
-            packet_rx = PacketRx(os.read(self._tap, 2048))
+            packet_rx = PacketRx(os.read(self._fd, 2048))
             __debug__ and log(
                 "rx-ring",
                 f"<B><lg>[RX]</> {packet_rx.tracker} - received frame, "
@@ -108,11 +109,11 @@ class RxRing:
             self._rx_ring.append(packet_rx)
             self._packet_enqueued.release()
 
-        __debug__ and log("stack", "Stopped RX ring")
+        __debug__ and log("stack", "Stopped RX Ring")
 
     def dequeue(self) -> PacketRx | None:
         """
-        Dequeue inboutd frame from RX ring.
+        Dequeue inboutd frame from RX Ring.
         """
 
         # Timeout here is needed so this call doesn't block forever and we are

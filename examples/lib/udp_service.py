@@ -65,7 +65,11 @@ class UdpService:
         """
 
         self._service_name = service_name
-        self._local_ip_address = local_ip_address
+        self._local_ip_address = (
+            local_ip_address.split("/")[0]
+            if "/" in local_ip_address
+            else local_ip_address
+        )
         self._local_port = local_port
         self._run_thread = False
 

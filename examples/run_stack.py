@@ -50,18 +50,21 @@ from pytcp import TcpIpStack, initialize_interface
 def cli(
     *,
     interface: str,
-    mac_address: str | None,
-    ip6_address: str | None,
-    ip6_gateway: str | None,
-    ip4_address: str | None,
-    ip4_gateway: str | None,
+    mac_address: str,
+    ip6_address: str,
+    ip6_gateway: str,
+    ip4_address: str,
+    ip4_gateway: str,
 ) -> None:
     """
     Start PyTCP stack and stop it when user presses Ctrl-C.
     """
 
+    fd, mtu = initialize_interface(interface)
+
     stack = TcpIpStack(
-        fd=initialize_interface(interface),
+        fd=fd,
+        mtu=mtu,
         mac_address=mac_address,
         ip6_address=ip6_address,
         ip6_gateway=ip6_gateway,
