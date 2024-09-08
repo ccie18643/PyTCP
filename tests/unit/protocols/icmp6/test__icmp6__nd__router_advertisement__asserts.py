@@ -33,6 +33,8 @@ tests/unit/protocols/icmp6/test__icmp6__nd__router_advertisement__asserts.py
 ver 3.0.2
 """
 
+from typing import Any
+
 from testslide import TestCase
 
 from pytcp.lib.int_checks import (
@@ -64,7 +66,8 @@ class TestIcmp6NdRouterAdvertisementAsserts(TestCase):
         message constructor.
         """
 
-        self._message_kwargs = {
+        self._args: list[Any] = []
+        self._kwargs: dict[str, Any] = {
             "code": Icmp6NdRouterAdvertisementCode.DEFAULT,
             "cksum": 0,
             "hop": 0,
@@ -84,12 +87,10 @@ class TestIcmp6NdRouterAdvertisementAsserts(TestCase):
         provided 'code' argument is not an Icmp6NdRouterAdvertisementCode.
         """
 
-        self._message_kwargs["code"] = value = (
-            "not an Icmp6NdRouterAdvertisementCode"
-        )
+        self._kwargs["code"] = value = "not an Icmp6NdRouterAdvertisementCode"
 
         with self.assertRaises(AssertionError) as error:
-            Icmp6NdRouterAdvertisementMessage(**self._message_kwargs)  # type: ignore
+            Icmp6NdRouterAdvertisementMessage(*self._args, **self._kwargs)
 
         self.assertEqual(
             str(error.exception),
@@ -108,10 +109,10 @@ class TestIcmp6NdRouterAdvertisementAsserts(TestCase):
         the minimum supported value.
         """
 
-        self._message_kwargs["cksum"] = value = UINT_16__MIN - 1
+        self._kwargs["cksum"] = value = UINT_16__MIN - 1
 
         with self.assertRaises(AssertionError) as error:
-            Icmp6NdRouterAdvertisementMessage(**self._message_kwargs)  # type: ignore
+            Icmp6NdRouterAdvertisementMessage(*self._args, **self._kwargs)
 
         self.assertEqual(
             str(error.exception),
@@ -130,10 +131,10 @@ class TestIcmp6NdRouterAdvertisementAsserts(TestCase):
         the maximum supported value.
         """
 
-        self._message_kwargs["cksum"] = value = UINT_16__MAX + 1
+        self._kwargs["cksum"] = value = UINT_16__MAX + 1
 
         with self.assertRaises(AssertionError) as error:
-            Icmp6NdRouterAdvertisementMessage(**self._message_kwargs)  # type: ignore
+            Icmp6NdRouterAdvertisementMessage(*self._args, **self._kwargs)
 
         self.assertEqual(
             str(error.exception),
@@ -152,10 +153,10 @@ class TestIcmp6NdRouterAdvertisementAsserts(TestCase):
         the minimum supported value.
         """
 
-        self._message_kwargs["hop"] = value = UINT_8__MIN - 1
+        self._kwargs["hop"] = value = UINT_8__MIN - 1
 
         with self.assertRaises(AssertionError) as error:
-            Icmp6NdRouterAdvertisementMessage(**self._message_kwargs)  # type: ignore
+            Icmp6NdRouterAdvertisementMessage(*self._args, **self._kwargs)
 
         self.assertEqual(
             str(error.exception),
@@ -174,10 +175,10 @@ class TestIcmp6NdRouterAdvertisementAsserts(TestCase):
         the maximum supported value.
         """
 
-        self._message_kwargs["hop"] = value = UINT_8__MAX + 1
+        self._kwargs["hop"] = value = UINT_8__MAX + 1
 
         with self.assertRaises(AssertionError) as error:
-            Icmp6NdRouterAdvertisementMessage(**self._message_kwargs)  # type: ignore
+            Icmp6NdRouterAdvertisementMessage(*self._args, **self._kwargs)
 
         self.assertEqual(
             str(error.exception),
@@ -195,10 +196,10 @@ class TestIcmp6NdRouterAdvertisementAsserts(TestCase):
         provided 'flag_m' argument is not an Icmp6NdRouterAdvertisementCode.
         """
 
-        self._message_kwargs["flag_m"] = value = "not a boolean"
+        self._kwargs["flag_m"] = value = "not a boolean"
 
         with self.assertRaises(AssertionError) as error:
-            Icmp6NdRouterAdvertisementMessage(**self._message_kwargs)  # type: ignore
+            Icmp6NdRouterAdvertisementMessage(*self._args, **self._kwargs)
 
         self.assertEqual(
             str(error.exception),
@@ -214,10 +215,10 @@ class TestIcmp6NdRouterAdvertisementAsserts(TestCase):
         than the minimum supported value.
         """
 
-        self._message_kwargs["router_lifetime"] = value = UINT_16__MIN - 1
+        self._kwargs["router_lifetime"] = value = UINT_16__MIN - 1
 
         with self.assertRaises(AssertionError) as error:
-            Icmp6NdRouterAdvertisementMessage(**self._message_kwargs)  # type: ignore
+            Icmp6NdRouterAdvertisementMessage(*self._args, **self._kwargs)
 
         self.assertEqual(
             str(error.exception),
@@ -236,10 +237,10 @@ class TestIcmp6NdRouterAdvertisementAsserts(TestCase):
         than the maximum supported value.
         """
 
-        self._message_kwargs["router_lifetime"] = value = UINT_16__MAX + 1
+        self._kwargs["router_lifetime"] = value = UINT_16__MAX + 1
 
         with self.assertRaises(AssertionError) as error:
-            Icmp6NdRouterAdvertisementMessage(**self._message_kwargs)  # type: ignore
+            Icmp6NdRouterAdvertisementMessage(*self._args, **self._kwargs)
 
         self.assertEqual(
             str(error.exception),
@@ -258,10 +259,10 @@ class TestIcmp6NdRouterAdvertisementAsserts(TestCase):
         than the minimum supported value.
         """
 
-        self._message_kwargs["reachable_time"] = value = UINT_32__MIN - 1
+        self._kwargs["reachable_time"] = value = UINT_32__MIN - 1
 
         with self.assertRaises(AssertionError) as error:
-            Icmp6NdRouterAdvertisementMessage(**self._message_kwargs)  # type: ignore
+            Icmp6NdRouterAdvertisementMessage(*self._args, **self._kwargs)
 
         self.assertEqual(
             str(error.exception),
@@ -280,10 +281,10 @@ class TestIcmp6NdRouterAdvertisementAsserts(TestCase):
         than the maximum supported value.
         """
 
-        self._message_kwargs["reachable_time"] = value = UINT_32__MAX + 1
+        self._kwargs["reachable_time"] = value = UINT_32__MAX + 1
 
         with self.assertRaises(AssertionError) as error:
-            Icmp6NdRouterAdvertisementMessage(**self._message_kwargs)  # type: ignore
+            Icmp6NdRouterAdvertisementMessage(*self._args, **self._kwargs)
 
         self.assertEqual(
             str(error.exception),
@@ -302,10 +303,10 @@ class TestIcmp6NdRouterAdvertisementAsserts(TestCase):
         than the minimum supported value.
         """
 
-        self._message_kwargs["retrans_timer"] = value = UINT_32__MIN - 1
+        self._kwargs["retrans_timer"] = value = UINT_32__MIN - 1
 
         with self.assertRaises(AssertionError) as error:
-            Icmp6NdRouterAdvertisementMessage(**self._message_kwargs)  # type: ignore
+            Icmp6NdRouterAdvertisementMessage(*self._args, **self._kwargs)
 
         self.assertEqual(
             str(error.exception),
@@ -324,10 +325,10 @@ class TestIcmp6NdRouterAdvertisementAsserts(TestCase):
         than the maximum supported value.
         """
 
-        self._message_kwargs["retrans_timer"] = value = UINT_32__MAX + 1
+        self._kwargs["retrans_timer"] = value = UINT_32__MAX + 1
 
         with self.assertRaises(AssertionError) as error:
-            Icmp6NdRouterAdvertisementMessage(**self._message_kwargs)  # type: ignore
+            Icmp6NdRouterAdvertisementMessage(*self._args, **self._kwargs)
 
         self.assertEqual(
             str(error.exception),
@@ -345,10 +346,10 @@ class TestIcmp6NdRouterAdvertisementAsserts(TestCase):
         provided 'options' argument is not an Icmp6NdOptions.
         """
 
-        self._message_kwargs["options"] = value = "not an Icmp6NdOptions"
+        self._kwargs["options"] = value = "not an Icmp6NdOptions"
 
         with self.assertRaises(AssertionError) as error:
-            Icmp6NdRouterAdvertisementMessage(**self._message_kwargs)  # type: ignore
+            Icmp6NdRouterAdvertisementMessage(*self._args, **self._kwargs)
 
         self.assertEqual(
             str(error.exception),

@@ -33,6 +33,8 @@ ver 3.0.2
 """
 
 
+from typing import Any
+
 from testslide import TestCase
 
 from pytcp.lib.inet_cksum import inet_cksum
@@ -54,7 +56,8 @@ class TestIcmp6UnknownAssemblerAsserts(TestCase):
         constructor.
         """
 
-        self._message_kwargs = {
+        self._args: list[Any] = []
+        self._kwargs: dict[str, Any] = {
             "type": Icmp6Type.from_int(255),
             "code": Icmp6Code.from_int(255),
             "cksum": 0,
@@ -67,10 +70,10 @@ class TestIcmp6UnknownAssemblerAsserts(TestCase):
         provided 'type' argument is not an Icmp6Type.
         """
 
-        self._message_kwargs["type"] = value = "not an Icmp6Type"
+        self._kwargs["type"] = value = "not an Icmp6Type"
 
         with self.assertRaises(AssertionError) as error:
-            Icmp6UnknownMessage(**self._message_kwargs)  # type: ignore
+            Icmp6UnknownMessage(*self._args, **self._kwargs)
 
         self.assertEqual(
             str(error.exception),
@@ -83,10 +86,10 @@ class TestIcmp6UnknownAssemblerAsserts(TestCase):
         provided 'code' argument is not an Icmp6Code.
         """
 
-        self._message_kwargs["code"] = value = "not an Icmp6Code"
+        self._kwargs["code"] = value = "not an Icmp6Code"
 
         with self.assertRaises(AssertionError) as error:
-            Icmp6UnknownMessage(**self._message_kwargs)  # type: ignore
+            Icmp6UnknownMessage(*self._args, **self._kwargs)
 
         self.assertEqual(
             str(error.exception),
@@ -100,10 +103,10 @@ class TestIcmp6UnknownAssemblerAsserts(TestCase):
         minimum supported value.
         """
 
-        self._message_kwargs["cksum"] = value = UINT_16__MIN - 1
+        self._kwargs["cksum"] = value = UINT_16__MIN - 1
 
         with self.assertRaises(AssertionError) as error:
-            Icmp6UnknownMessage(**self._message_kwargs)  # type: ignore
+            Icmp6UnknownMessage(*self._args, **self._kwargs)
 
         self.assertEqual(
             str(error.exception),
@@ -117,10 +120,10 @@ class TestIcmp6UnknownAssemblerAsserts(TestCase):
         maximum supported value.
         """
 
-        self._message_kwargs["cksum"] = value = UINT_16__MAX + 1
+        self._kwargs["cksum"] = value = UINT_16__MAX + 1
 
         with self.assertRaises(AssertionError) as error:
-            Icmp6UnknownMessage(**self._message_kwargs)  # type: ignore
+            Icmp6UnknownMessage(*self._args, **self._kwargs)
 
         self.assertEqual(
             str(error.exception),
@@ -134,10 +137,10 @@ class TestIcmp6UnknownAssemblerAsserts(TestCase):
         provided 'raw' argument is not bytes.
         """
 
-        self._message_kwargs["raw"] = value = "not bytes or memoryview"
+        self._kwargs["raw"] = value = "not bytes or memoryview"
 
         with self.assertRaises(AssertionError) as error:
-            Icmp6UnknownMessage(**self._message_kwargs)  # type: ignore
+            Icmp6UnknownMessage(*self._args, **self._kwargs)
 
         self.assertEqual(
             str(error.exception),

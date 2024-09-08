@@ -33,6 +33,8 @@ tests/unit/protocols/icmp6/test__icmp6__nd__router_solicitation__asserts.py
 ver 3.0.2
 """
 
+from typing import Any
+
 from testslide import TestCase
 
 from pytcp.lib.int_checks import UINT_16__MAX, UINT_16__MIN
@@ -57,7 +59,8 @@ class TestIcmp6NdRouterSolicitationAsserts(TestCase):
         constructor.
         """
 
-        self._message_kwargs = {
+        self._args: list[Any] = []
+        self._kwargs: dict[str, Any] = {
             "code": Icmp6NdRouterSolicitationCode.DEFAULT,
             "cksum": 0,
             "options": Icmp6NdOptions(),
@@ -71,12 +74,10 @@ class TestIcmp6NdRouterSolicitationAsserts(TestCase):
         provided 'code' argument is not an Icmp6NdRouterSolicitationCode.
         """
 
-        self._message_kwargs["code"] = value = (
-            "not an Icmp6NdRouterSolicitationCode"
-        )
+        self._kwargs["code"] = value = "not an Icmp6NdRouterSolicitationCode"
 
         with self.assertRaises(AssertionError) as error:
-            Icmp6NdRouterSolicitationMessage(**self._message_kwargs)  # type: ignore
+            Icmp6NdRouterSolicitationMessage(*self._args, **self._kwargs)
 
         self.assertEqual(
             str(error.exception),
@@ -95,10 +96,10 @@ class TestIcmp6NdRouterSolicitationAsserts(TestCase):
         the minimum supported value.
         """
 
-        self._message_kwargs["cksum"] = value = UINT_16__MIN - 1
+        self._kwargs["cksum"] = value = UINT_16__MIN - 1
 
         with self.assertRaises(AssertionError) as error:
-            Icmp6NdRouterSolicitationMessage(**self._message_kwargs)  # type: ignore
+            Icmp6NdRouterSolicitationMessage(*self._args, **self._kwargs)
 
         self.assertEqual(
             str(error.exception),
@@ -117,10 +118,10 @@ class TestIcmp6NdRouterSolicitationAsserts(TestCase):
         the maximum supported value.
         """
 
-        self._message_kwargs["cksum"] = value = UINT_16__MAX + 1
+        self._kwargs["cksum"] = value = UINT_16__MAX + 1
 
         with self.assertRaises(AssertionError) as error:
-            Icmp6NdRouterSolicitationMessage(**self._message_kwargs)  # type: ignore
+            Icmp6NdRouterSolicitationMessage(*self._args, **self._kwargs)
 
         self.assertEqual(
             str(error.exception),
@@ -138,10 +139,10 @@ class TestIcmp6NdRouterSolicitationAsserts(TestCase):
         provided 'options' argument is not an Icmp6NdOptions.
         """
 
-        self._message_kwargs["options"] = value = "not an Icmp6NdOptions"
+        self._kwargs["options"] = value = "not an Icmp6NdOptions"
 
         with self.assertRaises(AssertionError) as error:
-            Icmp6NdRouterSolicitationMessage(**self._message_kwargs)  # type: ignore
+            Icmp6NdRouterSolicitationMessage(*self._args, **self._kwargs)
 
         self.assertEqual(
             str(error.exception),
