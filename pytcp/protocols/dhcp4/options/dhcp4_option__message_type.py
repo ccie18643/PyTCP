@@ -54,7 +54,7 @@ from pytcp.protocols.dhcp4.options.dhcp4_option import (
 # +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 
 
-DHCP4__OPTION__MESSAGE_TYPE__LEN = 4
+DHCP4__OPTION__MESSAGE_TYPE__LEN = 3
 DHCP4__OPTION__MESSAGE_TYPE__STRUCT = "! BB B"
 
 
@@ -124,7 +124,7 @@ class Dhcp4OptionMessageType(Dhcp4Option):
         if (value := _bytes[1]) > len(_bytes):
             raise Dhcp4IntegrityError(
                 "The DHCPv4 Message Type option length must be less than or equal "
-                "to the length of provided bytes ({len(_bytes)}). Got: {value!r}"
+                f"to the length of provided bytes ({len(_bytes)}). Got: {value!r}"
             )
 
     @override
@@ -146,4 +146,4 @@ class Dhcp4OptionMessageType(Dhcp4Option):
 
         Dhcp4OptionMessageType._validate_integrity(_bytes)
 
-        return Dhcp4OptionMessageType(Dhcp4MessageType.from_int(_bytes[3]))
+        return Dhcp4OptionMessageType(Dhcp4MessageType.from_int(_bytes[2]))
