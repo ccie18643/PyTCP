@@ -77,13 +77,13 @@ class UdpDiscardService(UdpService):
         )
 
     @override
-    def _service(self, *, listening_socket: Socket) -> None:
+    def _service(self, *, socket: Socket) -> None:
         """
         Inbound connection handler.
         """
 
         while self._run_thread:
-            message, remote_address = listening_socket.recvfrom()
+            message, remote_address = socket.recvfrom()
             click.echo(
                 f"Service UDP Discard: Received {len(message)} bytes from "
                 f"{remote_address[0]}, port {remote_address[1]}."

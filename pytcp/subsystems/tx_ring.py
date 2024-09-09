@@ -78,7 +78,7 @@ class TxRing:
         self._fd = fd
         self._mtu = mtu
         self._run_thread = True
-        threading.Thread(target=self.__thread__tx_ring__transmit).start()
+        threading.Thread(target=self._thread__tx_ring__transmit).start()
         time.sleep(0.1)
 
     def stop(self) -> None:
@@ -91,7 +91,7 @@ class TxRing:
         self._run_thread = False
         time.sleep(0.1)
 
-    def __thread__tx_ring__transmit(self) -> None:
+    def _thread__tx_ring__transmit(self) -> None:
         """
         Dequeue packet from TX Ring and send it out.
         """

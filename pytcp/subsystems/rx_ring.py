@@ -73,7 +73,7 @@ class RxRing:
 
         self._run_thread = True
         self._fd = fd
-        threading.Thread(target=self.__thread__rx_ring__receive).start()
+        threading.Thread(target=self._thread__rx_ring__receive).start()
         time.sleep(0.1)
 
     def stop(self) -> None:
@@ -86,7 +86,7 @@ class RxRing:
         self._run_thread = False
         time.sleep(0.1)
 
-    def __thread__rx_ring__receive(self) -> None:
+    def _thread__rx_ring__receive(self) -> None:
         """
         Thread responsible for receiving and enqueuing incoming packets.
         """

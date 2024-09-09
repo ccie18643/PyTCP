@@ -95,7 +95,7 @@ class UdpEchoClient:
 
         click.echo("Starting the UDP Echo client.")
         self._run_thread = True
-        threading.Thread(target=self.__thread__client).start()
+        threading.Thread(target=self._thread__client).start()
         time.sleep(0.1)
 
     def stop(self) -> None:
@@ -107,7 +107,7 @@ class UdpEchoClient:
         self._run_thread = False
         time.sleep(0.1)
 
-    def __thread__client(self) -> None:
+    def _thread__client(self) -> None:
         match self._local_ip_address.version:
             case 6:
                 client_socket = socket.socket(

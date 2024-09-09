@@ -88,7 +88,7 @@ class TcpDaytimeService(TcpService):
         self._message_delay = message_delay
 
     @override
-    def _service(self, *, connected_socket: Socket) -> None:
+    def _service(self, *, socket: Socket) -> None:
         """
         Inbound connection handler.
         """
@@ -98,30 +98,30 @@ class TcpDaytimeService(TcpService):
 
         click.echo(
             "Service TCP Daytime: Sending first message to "
-            f"{connected_socket.remote_ip_address}, port {connected_socket.remote_port}."
+            f"{socket.remote_ip_address}, port {socket.remote_port}."
         )
-        connected_socket.send(b"***CLIENT OPEN / SERVICE OPEN***\n")
+        socket.send(b"***CLIENT OPEN / SERVICE OPEN***\n")
 
         while self._run_thread and message_count:
             message = bytes(str(datetime.now()) + "\n", "utf-8")
 
             try:
-                connected_socket.send(message)
+                socket.send(message)
             except OSError as error:
                 click.echo(f"Service TCP Daytime: send() error - {error!r}.")
                 break
 
             click.echo(
                 f"Service TCP Daytime: Sent {len(message)} bytes of data "
-                f"to {connected_socket.remote_ip_address}, port {connected_socket.remote_port}."
+                f"to {socket.remote_ip_address}, port {socket.remote_port}."
             )
             time.sleep(self._message_delay)
             message_count = min(message_count, message_count - 1)
 
-        connected_socket.close()
+        socket.close()
         click.echo(
             "Service TCP Daytime: Closed connection to "
-            f"{connected_socket.remote_ip_address}, port {connected_socket.remote_port}.",
+            f"{socket.remote_ip_address}, port {socket.remote_port}.",
         )
 
 

@@ -96,7 +96,7 @@ class IcmpEchoClient:
 
         click.echo("Starting the ICMP Echo client.")
         self._run_thread = True
-        threading.Thread(target=self.__thread__client).start()
+        threading.Thread(target=self._thread__client).start()
         time.sleep(0.1)
 
     def stop(self) -> None:
@@ -108,7 +108,7 @@ class IcmpEchoClient:
         self._run_thread = False
         time.sleep(0.1)
 
-    def __thread__client(self) -> None:
+    def _thread__client(self) -> None:
         assert self._local_ip_address is not None
 
         flow_id = random.randint(0, 65535)

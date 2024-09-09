@@ -78,15 +78,15 @@ class UdpDaytimeService(UdpService):
         )
 
     @override
-    def _service(self, *, listening_socket: Socket) -> None:
+    def _service(self, *, socket: Socket) -> None:
         """
         Inbound connection handler.
         """
 
         while self._run_thread:
-            _, remote_address = listening_socket.recvfrom()
+            _, remote_address = socket.recvfrom()
             message = bytes(str(datetime.now()), "utf-8")
-            listening_socket.sendto(message, remote_address)
+            socket.sendto(message, remote_address)
             click.echo(
                 f"Service UDP Daytime: Sent {len(message)} bytes to "
                 f"{remote_address[0]}, port {remote_address[1]}."

@@ -78,51 +78,51 @@ class TcpEchoService(TcpService):
         )
 
     @override
-    def _service(self, *, connected_socket: Socket) -> None:
+    def _service(self, *, socket: Socket) -> None:
         """
         Inbound connection handler.
         """
 
         click.echo(
-            f"Service TCP Echo: Sending first message to {connected_socket.remote_ip_address}, "
-            f"port {connected_socket.remote_port}."
+            f"Service TCP Echo: Sending first message to {socket.remote_ip_address}, "
+            f"port {socket.remote_port}."
         )
-        connected_socket.send(b"***CLIENT OPEN / SERVICE OPEN***\n")
+        socket.send(b"***CLIENT OPEN / SERVICE OPEN***\n")
 
         while self._run_thread:
-            if not (message := connected_socket.recv()):
+            if not (message := socket.recv()):
                 click.echo(
-                    f"Service TCP Echo: Connection to {connected_socket.remote_ip_address}, "
-                    f"port {connected_socket.remote_port} has been closed by peer."
+                    f"Service TCP Echo: Connection to {socket.remote_ip_address}, "
+                    f"port {socket.remote_port} has been closed by peer."
                 )
                 click.echo(
                     "Service TCP Echo: Sending last message to "
-                    f"{connected_socket.remote_ip_address}, port {connected_socket.remote_port}."
+                    f"{socket.remote_ip_address}, port {socket.remote_port}."
                 )
-                connected_socket.send(b"***CLIENT CLOSED, SERVICE CLOSING***\n")
+                socket.send(b"***CLIENT CLOSED, SERVICE CLOSING***\n")
                 click.echo(
                     "Service TCP Echo: Closing connection to "
-                    f"{connected_socket.remote_ip_address}, port {connected_socket.remote_port}."
+                    f"{socket.remote_ip_address}, port {socket.remote_port}."
                 )
-                connected_socket.close()
+                socket.close()
                 break
 
             if message.strip().lower() in {b"quit", b"close", b"bye", b"exit"}:
                 click.echo(
                     "Service TCP Echo: Sending last message to "
-                    f"{connected_socket.remote_ip_address}, port {connected_socket.remote_port}."
+                    f"{socket.remote_ip_address}, port {socket.remote_port}."
                 )
-                connected_socket.send(b"***CLIENT OPEN, SERVICE CLOSING***\n")
+                socket.send(b"***CLIENT OPEN, SERVICE CLOSING***\n")
                 click.echo(
                     "Service TCP Echo: Closing connection to "
-                    f"{connected_socket.remote_ip_address}, port {connected_socket.remote_port}."
+                    f"{socket.remote_ip_address}, port {socket.remote_port}."
                 )
-                connected_socket.close()
+                socket.close()
                 continue
 
             click.echo(
                 f"Service TCP Echo: Received {len(message)} bytes from "
-                f"{connected_socket.remote_ip_address}, port {connected_socket.remote_port}."
+                f"{socket.remote_ip_address}, port {socket.remote_port}."
             )
 
             if b"malpka" in message.strip().lower():
@@ -134,10 +134,10 @@ class TcpEchoService(TcpService):
             elif b"malpi" in message.strip().lower():
                 message = malpi
 
-            if connected_socket.send(message):
+            if socket.send(message):
                 click.echo(
                     f"Service TCP Echo: Echo'ed {len(message)} bytes back "
-                    f"to {connected_socket.remote_ip_address}, port {connected_socket.remote_port}."
+                    f"to {socket.remote_ip_address}, port {socket.remote_port}."
                 )
 
 

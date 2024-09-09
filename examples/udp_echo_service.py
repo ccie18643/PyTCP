@@ -78,13 +78,13 @@ class UdpEchoService(UdpService):
         )
 
     @override
-    def _service(self, *, listening_socket: Socket) -> None:
+    def _service(self, *, socket: Socket) -> None:
         """
         Inbound connection handler.
         """
 
         while self._run_thread:
-            message, remote_address = listening_socket.recvfrom()
+            message, remote_address = socket.recvfrom()
 
             click.echo(
                 f"Service UDP Echo: Received {len(message)} bytes from "
@@ -98,7 +98,7 @@ class UdpEchoService(UdpService):
             elif b"malpi" in message.strip().lower():
                 message = malpi
 
-            listening_socket.sendto(message, remote_address)
+            socket.sendto(message, remote_address)
 
             click.echo(
                 f"Service UDP Echo: Echo'ed {len(message)} bytes back to "

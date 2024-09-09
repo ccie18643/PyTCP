@@ -83,7 +83,7 @@ class ArpCache:
 
         self._run_thread = True
         threading.Thread(
-            target=self.__thread__arp_cache__maintain_entries
+            target=self._thread__arp_cache__maintain_entries
         ).start()
         time.sleep(0.1)
 
@@ -97,7 +97,7 @@ class ArpCache:
         self._run_thread = False
         time.sleep(0.1)
 
-    def __thread__arp_cache__maintain_entries(self) -> None:
+    def _thread__arp_cache__maintain_entries(self) -> None:
         """
         Thread responsible for maintaining ARP cache entries.
         """

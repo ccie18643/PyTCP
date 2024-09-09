@@ -35,95 +35,23 @@ ver 3.0.2
 
 from __future__ import annotations
 
-import threading
-import time
-from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING
+from typing import override
 
-import click
-
-from pytcp.lib import socket
-from pytcp.lib.net_addr.ip_address import IpAddress
-
-if TYPE_CHECKING:
-    from pytcp.lib.socket import Socket
+from examples.lib.service import Service
 
 
-class UdpService(ABC):
+class UdpService(Service):
     """
     UDP service support class.
     """
 
-    def __init__(
-        self, *, service_name: str, local_ip_address: IpAddress, local_port: int
-    ) -> None:
-        """
-        Class constructor.
-        """
+    _protocol_name = "UDP"
 
-        self._service_name = service_name
-        self._local_ip_address = local_ip_address
-        self._local_port = local_port
-        self._run_thread = False
-
-    def start(self) -> None:
-        """
-        Start the service thread.
-        """
-
-        click.echo(f"Starting the UDP {self._service_name} service.")
-        self._run_thread = True
-        threading.Thread(target=self.__thread__service).start()
-        time.sleep(0.1)
-
-    def stop(self) -> None:
-        """
-        Stop the service thread.
-        """
-
-        click.echo(f"Stopinging the UDP {self._service_name} service.")
-        self._run_thread = False
-        time.sleep(0.1)
-
-    def __thread__service(self) -> None:
+    @override
+    def _thread__service(self) -> None:
         """
         Service initialization.
         """
 
-        match self._local_ip_address.version:
-            case 6:
-                listening_socket = socket.socket(
-                    family=socket.AF_INET6, type=socket.SOCK_DGRAM
-                )
-            case 4:
-                listening_socket = socket.socket(
-                    family=socket.AF_INET4, type=socket.SOCK_DGRAM
-                )
-
-        try:
-            listening_socket.bind(
-                (str(self._local_ip_address), self._local_port)
-            )
-            click.echo(
-                f"Service UDP {self._service_name}: Socket created, bound to "
-                f"{self._local_ip_address}, port {self._local_port}."
-            )
-        except OSError as error:
-            click.echo(
-                f"Service UDP {self._service_name}: bind() call failed - {error!r}."
-            )
-            return
-
-        self._service(listening_socket=listening_socket)
-
-    @abstractmethod
-    def _service(
-        self,
-        *,
-        listening_socket: Socket,
-    ) -> None:
-        """
-        Service method.
-        """
-
-        raise NotImplementedError
+        if listening_socket := self._get_listening_socket():
+            self._service(socket=listening_socket)

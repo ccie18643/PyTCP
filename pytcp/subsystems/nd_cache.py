@@ -83,7 +83,7 @@ class NdCache:
 
         self._run_thread = True
         threading.Thread(
-            target=self.__thread__nd_cache__maintain_entries
+            target=self._thread__nd_cache__maintain_entries
         ).start()
         time.sleep(0.1)
 
@@ -97,7 +97,7 @@ class NdCache:
         self._run_thread = False
         time.sleep(0.1)
 
-    def __thread__nd_cache__maintain_entries(self) -> None:
+    def _thread__nd_cache__maintain_entries(self) -> None:
         """
         Method responsible for maintaining ND cache entries.
         """
