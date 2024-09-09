@@ -53,5 +53,5 @@ class UdpService(Service):
         Service initialization.
         """
 
-        if listening_socket := self._get_listening_socket():
+        if listening_socket := self._get_service_socket():
             self._service(socket=listening_socket)

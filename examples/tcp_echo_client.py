@@ -41,8 +41,8 @@ import time
 
 import click
 
+from examples.lib.client import Client
 from pytcp import TcpIpStack, initialize_interface
-from pytcp.lib import socket
 from pytcp.lib.net_addr import (
     ClickTypeIp4Address,
     ClickTypeIp4Host,
@@ -59,10 +59,13 @@ from pytcp.lib.net_addr import (
 )
 
 
-class TcpEchoClient:
+class TcpEchoClient(Client):
     """
     TCP Echo client support class.
     """
+
+    _protocol_name = "TCP"
+    _client_name = "Echo"
 
     def __init__(
         self,
@@ -112,72 +115,32 @@ class TcpEchoClient:
         Client thread.
         """
 
-        match self._local_ip_address.version:
-            case 6:
-                client_socket = socket.socket(
-                    family=socket.AF_INET6, type=socket.SOCK_STREAM
+        if client_socket := self._get_client_socket():
+            message_count = self._message_count
+            while message_count:
+                message = "[------START------] "
+                for i in range(self._message_size - 2):
+                    message += f"[------{i + 1:05}------] "
+                message += "[-------END-------]\n"
+
+                try:
+                    client_socket.send(bytes(message, "utf-8"))
+                except OSError as error:
+                    click.echo(f"Client TCP Echo: send() error - {error!r}.")
+                    break
+
+                click.echo(
+                    f"Client TCP Echo: Sent {len(message)} bytes of data to "
+                    f"{self._remote_ip_address}, port {self._remote_port}."
                 )
-            case 4:
-                client_socket = socket.socket(
-                    family=socket.AF_INET4, type=socket.SOCK_STREAM
-                )
+                time.sleep(self._message_delay)
+                message_count = min(message_count, message_count - 1)
 
-        click.echo(f"Client TCP Echo: Created socket [{client_socket}].")
-
-        try:
-            client_socket.bind((str(self._local_ip_address), self._local_port))
+            client_socket.close()
             click.echo(
-                "Client TCP Echo: Bound socket to "
-                f"{self._local_ip_address}, port {self._local_port}."
-            )
-        except OSError as error:
-            click.echo(
-                "Client TCP Echo: Unable to bind socket to "
-                f"{self._local_ip_address}, port {self._local_port} - "
-                f"{error!r}.",
-            )
-            return
-
-        try:
-            client_socket.connect(
-                (str(self._remote_ip_address), self._remote_port)
-            )
-            click.echo(
-                "Client TCP Echo: Connection opened to "
+                "Client TCP Echo: Closed connection to "
                 f"{self._remote_ip_address}, port {self._remote_port}."
             )
-        except OSError as error:
-            click.echo(
-                f"Client TCP Echo: Connection to {self._remote_ip_address}, "
-                f"port {self._remote_port} failed - {error!r}."
-            )
-            return
-
-        message_count = self._message_count
-        while message_count:
-            message = "[------START------] "
-            for i in range(self._message_size - 2):
-                message += f"[------{i + 1:05}------] "
-            message += "[-------END-------]\n"
-
-            try:
-                client_socket.send(bytes(message, "utf-8"))
-            except OSError as error:
-                click.echo(f"Client TCP Echo: send() error - {error!r}.")
-                break
-
-            click.echo(
-                f"Client TCP Echo: Sent {len(message)} bytes of data to "
-                f"{self._remote_ip_address}, port {self._remote_port}."
-            )
-            time.sleep(self._message_delay)
-            message_count = min(message_count, message_count - 1)
-
-        client_socket.close()
-        click.echo(
-            "Client TCP Echo: Closed connection to "
-            f"{self._remote_ip_address}, port {self._remote_port}."
-        )
 
 
 @click.command()

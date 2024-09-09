@@ -208,6 +208,11 @@ class Icmp6PacketHandlerRx(ABC):
                     socket.notify_unreachable()
                     return
 
+            # TODO: Need to add here handler for situation where Destination Unreachable
+            # message is received as response to TCP SYN packet.
+            # Way to reproduce: 'examples/tcp_echo_client.py --remote-ip-address 2600::'
+            # Similar handler shlould be added to ICMPv4 as well.
+
             __debug__ and log(
                 "icmp6",
                 f"{packet_rx.tracker} - Unreachable data doesn't match "

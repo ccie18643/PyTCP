@@ -25,9 +25,9 @@
 
 
 """
-The 'user space' generic service base class used in examples.
+The 'user space' generic client base class used in examples.
 
-examples/lib/service.py
+examples/lib/client.py
 
 ver 3.0.2
 """
@@ -49,15 +49,17 @@ if TYPE_CHECKING:
     from pytcp.lib.socket import Socket
 
 
-class Service(ABC):
+class Client(ABC):
     """
-    Generic service support class.
+    Generic client support class.
     """
 
     _protocol_name: str
-    _service_name: str
+    _client_name: str
     _local_ip_address: IpAddress
     _local_port: int
+    _remote_ip_address: IpAddress
+    _remote_port: int
     _run_thread: bool
 
     def start(self) -> None:
@@ -66,10 +68,10 @@ class Service(ABC):
         """
 
         click.echo(
-            f"Starting the {self._protocol_name} {self._service_name} service."
+            f"Starting the {self._protocol_name} {self._client_name} service."
         )
         self._run_thread = True
-        threading.Thread(target=self._thread__service).start()
+        threading.Thread(target=self._thread__client).start()
         time.sleep(0.1)
 
     def stop(self) -> None:
@@ -78,62 +80,79 @@ class Service(ABC):
         """
 
         click.echo(
-            f"Stopinging the {self._protocol_name} {self._service_name} service."
+            f"Stopping the {self._protocol_name} {self._client_name} service."
         )
         self._run_thread = False
         time.sleep(0.1)
 
-    def _get_service_socket(self) -> Socket | None:
+    def _get_client_socket(self) -> Socket | None:
         """
-        Create and bind the service socket.
+        Create and bind the client socket.
         """
 
-        match self._local_ip_address.version, self._protocol_name:
-            case 6, "TCP":
-                service_socket = socket.socket(
+        match (
+            self._local_ip_address.version,
+            self._remote_ip_address.version,
+            self._protocol_name,
+        ):
+            case 6, 6, "TCP":
+                client_socket = socket.socket(
                     family=socket.AF_INET6, type=socket.SOCK_STREAM
                 )
-            case 4, "TCP":
-                service_socket = socket.socket(
+            case 4, 4, "TCP":
+                client_socket = socket.socket(
                     family=socket.AF_INET4, type=socket.SOCK_STREAM
                 )
-            case 6, "UDP":
-                service_socket = socket.socket(
+            case 6, 6, "UDP":
+                client_socket = socket.socket(
                     family=socket.AF_INET6, type=socket.SOCK_DGRAM
                 )
-            case 4, "UDP":
-                service_socket = socket.socket(
+            case 4, 4, "UDP":
+                client_socket = socket.socket(
                     family=socket.AF_INET4, type=socket.SOCK_DGRAM
                 )
+            case _:
+                raise ValueError("Invalid IP version or protocol.")
+
+        click.echo(
+            f"Client {self._protocol_name} {self._client_name}: "
+            f"Created socket [{client_socket}]."
+        )
 
         try:
-            service_socket.bind((str(self._local_ip_address), self._local_port))
+            client_socket.bind((str(self._local_ip_address), self._local_port))
             click.echo(
-                f"Service {self._protocol_name} {self._service_name}: Socket created, "
-                f"bound to {self._local_ip_address}, port {self._local_port}."
+                f"Client {self._protocol_name} {self._client_name}: Bound socket "
+                f"to {self._local_ip_address}, port {self._local_port}."
             )
-
         except OSError as error:
             click.echo(
-                f"Service {self._protocol_name} {self._service_name}: bind() call "
-                f"failed - {error!r}."
+                f"Client {self._protocol_name} {self._client_name}: Unable to bind socket "
+                f"to {self._local_ip_address}, port {self._local_port} - {error!r}.",
             )
             return None
 
-        return service_socket
+        try:
+            client_socket.connect(
+                (str(self._remote_ip_address), self._remote_port)
+            )
+            click.echo(
+                f"Client {self._protocol_name} {self._client_name}: Connection opened "
+                f"to {self._remote_ip_address}, port {self._remote_port}."
+            )
+        except OSError as error:
+            click.echo(
+                f"Client {self._protocol_name} {self._client_name}: Connection to "
+                f"{self._remote_ip_address}, port {self._remote_port} failed - {error!r}."
+            )
+            return None
+
+        return client_socket
 
     @abstractmethod
-    def _thread__service(self) -> None:
+    def _thread__client(self) -> None:
         """
-        Service thread.
-        """
-
-        raise NotImplementedError
-
-    @abstractmethod
-    def _service(self, *, socket: Socket) -> None:
-        """
-        Service logic handler.
+        Client thread.
         """
 
         raise NotImplementedError

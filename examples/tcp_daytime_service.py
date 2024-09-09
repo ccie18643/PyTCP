@@ -78,11 +78,9 @@ class TcpDaytimeService(TcpService):
         Class constructor.
         """
 
-        super().__init__(
-            service_name="Daytime",
-            local_ip_address=local_ip_address,
-            local_port=local_port,
-        )
+        self._service_name = "Daytime"
+        self._local_ip_address = local_ip_address
+        self._local_port = local_port
 
         self._message_count = message_count
         self._message_delay = message_delay

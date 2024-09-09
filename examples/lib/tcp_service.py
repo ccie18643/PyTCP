@@ -59,7 +59,7 @@ class TcpService(Service):
         Service thread.
         """
 
-        if listening_socket := self._get_listening_socket():
+        if listening_socket := self._get_service_socket():
             listening_socket.listen()
             click.echo(
                 f"Service {self._protocol_name} {self._service_name}: Socket "

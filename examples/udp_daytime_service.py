@@ -71,11 +71,9 @@ class UdpDaytimeService(UdpService):
         Class constructor.
         """
 
-        super().__init__(
-            service_name="Echo",
-            local_ip_address=local_ip_address,
-            local_port=local_port,
-        )
+        self._service_name = "Echo"
+        self._local_ip_address = local_ip_address
+        self._local_port = local_port
 
     @override
     def _service(self, *, socket: Socket) -> None:

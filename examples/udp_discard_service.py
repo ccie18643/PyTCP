@@ -70,11 +70,9 @@ class UdpDiscardService(UdpService):
         Class constructor.
         """
 
-        super().__init__(
-            service_name="Discard",
-            local_ip_address=local_ip_address,
-            local_port=local_port,
-        )
+        self._service_name = "Discard"
+        self._local_ip_address = local_ip_address
+        self._local_port = local_port
 
     @override
     def _service(self, *, socket: Socket) -> None:

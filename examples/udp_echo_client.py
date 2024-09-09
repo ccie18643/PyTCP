@@ -36,13 +36,12 @@ ver 3.0.2
 
 from __future__ import annotations
 
-import threading
 import time
 
 import click
 
+from examples.lib.client import Client
 from pytcp import TcpIpStack, initialize_interface
-from pytcp.lib import socket
 from pytcp.lib.net_addr import (
     ClickTypeIp4Address,
     ClickTypeIp4Host,
@@ -59,10 +58,13 @@ from pytcp.lib.net_addr import (
 )
 
 
-class UdpEchoClient:
+class UdpEchoClient(Client):
     """
     UDP Echo client support class.
     """
+
+    _protocol_name = "UDP"
+    _client_name = "Echo"
 
     def __init__(
         self,
@@ -88,91 +90,38 @@ class UdpEchoClient:
         self._message_size = message_size
         self._run_thread = False
 
-    def start(self) -> None:
-        """
-        Start the service thread.
-        """
-
-        click.echo("Starting the UDP Echo client.")
-        self._run_thread = True
-        threading.Thread(target=self._thread__client).start()
-        time.sleep(0.1)
-
-    def stop(self) -> None:
-        """
-        Stop the service thread.
-        """
-
-        click.echo("Stopinging the UDP Echo client.")
-        self._run_thread = False
-        time.sleep(0.1)
-
     def _thread__client(self) -> None:
-        match self._local_ip_address.version:
-            case 6:
-                client_socket = socket.socket(
-                    family=socket.AF_INET6, type=socket.SOCK_DGRAM
+        """
+        Client thread.
+        """
+
+        if client_socket := self._get_client_socket():
+            message_count = self._message_count
+
+            while self._run_thread and message_count:
+                message = "[------START------] "
+                for i in range(self._message_size - 2):
+                    message += f"[------{i + 1:05}------] "
+                message += "[-------END-------]\n"
+
+                try:
+                    client_socket.send(bytes(message, "utf-8"))
+                except OSError as error:
+                    click.echo(f"Client UDP Echo: send() error - {error!r}.")
+                    break
+
+                click.echo(
+                    f"Client UDP Echo: Sent {len(message)} bytes of data to "
+                    f"{self._remote_ip_address}, port {self._remote_port}."
                 )
-            case 4:
-                client_socket = socket.socket(
-                    family=socket.AF_INET4, type=socket.SOCK_DGRAM
-                )
+                time.sleep(self._message_delay)
+                message_count = min(message_count, message_count - 1)
 
-        click.echo(f"Client UDP Echo: Created socket [{client_socket}].")
-
-        try:
-            client_socket.bind((str(self._local_ip_address), self._local_port))
+            client_socket.close()
             click.echo(
-                "Client UDP Echo: Bound socket to "
-                f"{self._local_ip_address}, port {self._local_port}."
+                "Client UDP Echo: Closed connection to "
+                f"{self._remote_ip_address}, port {self._remote_port}.",
             )
-        except OSError as error:
-            click.echo(
-                "Client UDP Echo: Unable to bind socket to "
-                f"{self._local_ip_address}, port {self._local_port} - {error!r}.",
-            )
-            return
-
-        try:
-            client_socket.connect(
-                (str(self._remote_ip_address), self._remote_port)
-            )
-            click.echo(
-                f"Client UDP Echo: Connection opened to "
-                f"{self._remote_ip_address}, port {self._remote_port}."
-            )
-        except OSError as error:
-            click.echo(
-                f"Client UDP Echo: Connection to {self._remote_ip_address}, "
-                f"port {self._remote_port} failed - {error!r}."
-            )
-            return
-
-        message_count = self._message_count
-        while self._run_thread and message_count:
-            message = "[------START------] "
-            for i in range(self._message_size - 2):
-                message += f"[------{i + 1:05}------] "
-            message += "[-------END-------]\n"
-
-            try:
-                client_socket.send(bytes(message, "utf-8"))
-            except OSError as error:
-                click.echo(f"Client UDP Echo: send() error - {error!r}.")
-                break
-
-            click.echo(
-                f"Client UDP Echo: Sent {len(message)} bytes of data to "
-                f"{self._remote_ip_address}, port {self._remote_port}."
-            )
-            time.sleep(self._message_delay)
-            message_count = min(message_count, message_count - 1)
-
-        client_socket.close()
-        click.echo(
-            "Client UDP Echo: Closed connection to "
-            f"{self._remote_ip_address}, port {self._remote_port}.",
-        )
 
 
 @click.command()
