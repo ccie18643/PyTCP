@@ -80,7 +80,7 @@ class TcpEchoService(TcpService):
     @override
     def _service(self, *, socket: Socket) -> None:
         """
-        Inbound connection handler.
+        Service logic handler.
         """
 
         click.echo(
