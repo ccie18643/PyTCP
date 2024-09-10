@@ -140,8 +140,7 @@ class UdpPacketHandlerRx(ABC):
         )
 
         for socket_pattern in packet_rx_md.socket_patterns:
-            socket = stack.sockets.get(socket_pattern, None)
-            if socket:
+            if socket := stack.sockets.get(socket_pattern, None):
                 self.packet_stats_rx.udp__socket_match += 1
                 __debug__ and log(
                     "udp",
