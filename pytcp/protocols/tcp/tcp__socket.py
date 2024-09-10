@@ -38,7 +38,7 @@ ver 3.0.2
 from __future__ import annotations
 
 import threading
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, override
 
 from pytcp.lib import stack
 from pytcp.lib.logger import log
@@ -125,8 +125,10 @@ class TcpSocket(Socket):
         """
         Return FSM state of associated TCP session.
         """
+
         if self.tcp_session is not None:
             return self.tcp_session.state
+
         return FsmState.CLOSED
 
     @property
@@ -134,6 +136,7 @@ class TcpSocket(Socket):
         """
         Getter for the '_tcp_session' attribute.
         """
+
         return self._tcp_session
 
     @property
@@ -141,8 +144,10 @@ class TcpSocket(Socket):
         """
         Getter for the '_parent_socket' attribute.
         """
+
         return self._parent_socket
 
+    @override
     def bind(self, address: tuple[str, int]) -> None:
         """
         Bind the socket to local address.
@@ -199,7 +204,10 @@ class TcpSocket(Socket):
 
         # Confirm or pick local port number
         if (local_port := address[1]) > 0:
-            if self._is_address_in_use(local_ip_address, local_port):
+            if self._is_address_in_use(
+                local_ip_address=local_ip_address,
+                local_port=local_port,
+            ):
                 raise OSError(
                     "[Errno 98] Address already in use - "
                     "[Local address already in use]"
@@ -215,6 +223,7 @@ class TcpSocket(Socket):
 
         __debug__ and log("socket", f"<g>[{self}]</> - Bound socket")
 
+    @override
     def connect(self, address: tuple[str, int]) -> None:
         """
         Connect local socket to remote socket.
@@ -236,8 +245,10 @@ class TcpSocket(Socket):
             local_port = self._pick_local_port()
 
         # Set local and remote ip addresses aproprietely
-        local_ip_address, remote_ip_address = self._set_ip_addresses(
-            address, self._local_ip_address, local_port, remote_port
+        local_ip_address, remote_ip_address = self._get_ip_addresses(
+            remote_address=address,
+            local_ip_address=self._local_ip_address,
+            local_port=local_port,
         )
 
         # Re-register socket with new socket id
@@ -319,6 +330,7 @@ class TcpSocket(Socket):
 
         return socket, (str(socket.remote_ip_address), socket.remote_port)
 
+    @override
     def send(self, data: bytes) -> int:
         """
         Send the data to connected remote host.
@@ -344,6 +356,7 @@ class TcpSocket(Socket):
         )
         return bytes_sent
 
+    @override
     def recv(
         self, bufsize: int | None = None, timeout: float | None = None
     ) -> bytes:
@@ -369,17 +382,22 @@ class TcpSocket(Socket):
 
         return data_rx
 
+    @override
     def close(self) -> None:
         """
         Close socket and the TCP session(s) it owns.
         """
+
         assert self._tcp_session is not None
+
         self._tcp_session.close()
+
         __debug__ and log("socket", f"<g>[{self}]</> - Closed socket")
 
     def process_tcp_packet(self, packet_rx_md: TcpMetadata) -> None:
         """
         Process incoming packet's metadata.
         """
+
         if self._tcp_session:
             self._tcp_session.tcp_fsm(packet_rx_md)

@@ -234,6 +234,7 @@ class Socket(ABC):
 
     def _is_address_in_use(
         self,
+        *,
         local_ip_address: IpAddress,
         local_port: int,
     ) -> bool:
@@ -258,12 +259,12 @@ class Socket(ABC):
 
         return False
 
-    def _set_ip_addresses(
+    def _get_ip_addresses(
         self,
+        *,
         remote_address: tuple[str, int],
         local_ip_address: IpAddress,
         local_port: int,
-        remote_port: int,
     ) -> tuple[Ip6Address | Ip4Address, Ip6Address | Ip4Address]:
         """
         Validate the remote address and pick appropriate local IP
@@ -296,7 +297,7 @@ class Socket(ABC):
         if local_ip_address.is_unspecified:
             local_ip_address = pick_local_ip_address(remote_ip_address)
             if local_ip_address.is_unspecified and not (
-                local_port == 68 and remote_port == 67
+                local_port == 68 and remote_address[1] == 67
             ):
                 raise gaierror(
                     "[Errno -2] Name or service not known - "
@@ -316,6 +317,8 @@ class Socket(ABC):
         The 'bind()' socket API method placeholder.
         """
 
+        raise NotImplementedError
+
     @abstractmethod
     def connect(
         self,
@@ -325,6 +328,8 @@ class Socket(ABC):
         The 'connect()' socket API method placeholder.
         """
 
+        raise NotImplementedError
+
     @abstractmethod
     def send(
         self,
@@ -333,6 +338,8 @@ class Socket(ABC):
         """
         The 'send()' socket API method placeholder.
         """
+
+        raise NotImplementedError
 
     @abstractmethod
     def recv(
@@ -344,11 +351,15 @@ class Socket(ABC):
         The 'recv()' socket API method placeholder.
         """
 
+        raise NotImplementedError
+
     @abstractmethod
     def close(self) -> None:
         """
         The 'close()' socket API placeholder.
         """
+
+        raise NotImplementedError
 
     if TYPE_CHECKING:
 

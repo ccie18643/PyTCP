@@ -39,7 +39,7 @@ ver 3.0.2
 from __future__ import annotations
 
 import threading
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, override
 
 from pytcp.lib import stack
 from pytcp.lib.logger import log
@@ -98,6 +98,7 @@ class UdpSocket(Socket):
 
         __debug__ and log("socket", f"<g>[{self}]</> - Created socket")
 
+    @override
     def bind(self, address: tuple[str, int]) -> None:
         """
         Bind the socket to local address.
@@ -154,7 +155,10 @@ class UdpSocket(Socket):
 
         # Confirm or pick local port number
         if (local_port := address[1]) > 0:
-            if self._is_address_in_use(local_ip_address, local_port):
+            if self._is_address_in_use(
+                local_ip_address=local_ip_address,
+                local_port=local_port,
+            ):
                 raise OSError(
                     "[Errno 98] Address already in use - "
                     "[Local address already in use]"
@@ -170,6 +174,7 @@ class UdpSocket(Socket):
 
         __debug__ and log("socket", f"<g>[{self}]</> - Bound")
 
+    @override
     def connect(self, address: tuple[str, int]) -> None:
         """
         Connect local socket to remote socket.
@@ -191,8 +196,10 @@ class UdpSocket(Socket):
             local_port = self._pick_local_port()
 
         # Set local and remote ip addresses aproprietely
-        local_ip_address, remote_ip_address = self._set_ip_addresses(
-            address, self._local_ip_address, local_port, remote_port
+        local_ip_address, remote_ip_address = self._get_ip_addresses(
+            remote_address=address,
+            local_ip_address=self._local_ip_address,
+            local_port=local_port,
         )
 
         # Re-register socket with new socket id
@@ -205,6 +212,7 @@ class UdpSocket(Socket):
 
         __debug__ and log("socket", f"<g>[{self}]</> - Connected socket")
 
+    @override
     def send(self, data: bytes) -> int:
         """
         Send the data to connected remote host.
@@ -267,8 +275,10 @@ class UdpSocket(Socket):
             stack.sockets[str(self)] = self
 
         # Set local and remote ip addresses aproprietely
-        local_ip_address, remote_ip_address = self._set_ip_addresses(
-            address, self._local_ip_address, self._local_port, remote_port
+        local_ip_address, remote_ip_address = self._get_ip_addresses(
+            remote_address=address,
+            local_ip_address=self._local_ip_address,
+            local_port=self._local_port,
         )
 
         tx_status = stack.packet_handler.send_udp_packet(
@@ -292,10 +302,13 @@ class UdpSocket(Socket):
 
         return sent_data_len
 
+    @override
     def recv(
         self, bufsize: int | None = None, timeout: float | None = None
     ) -> bytes:
-        """Read data from socket"""
+        """
+        Read data from socket.
+        """
 
         # TODO - Implement support for buffsize
 
@@ -338,17 +351,21 @@ class UdpSocket(Socket):
             )
         raise ReceiveTimeout
 
+    @override
     def close(self) -> None:
         """
         Close socket.
         """
+
         stack.sockets.pop(str(self), None)
+
         __debug__ and log("socket", f"<g>[{self}]</> - Closed socket")
 
     def process_udp_packet(self, packet_rx_md: UdpMetadata) -> None:
         """
         Process incoming packet's metadata.
         """
+
         self._packet_rx_md.append(packet_rx_md)
         self._packet_rx_md_ready.release()
 
@@ -356,4 +373,5 @@ class UdpSocket(Socket):
         """
         Set the unreachable notification.
         """
+
         self._unreachable = True
