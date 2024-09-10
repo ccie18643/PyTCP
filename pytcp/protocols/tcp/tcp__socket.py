@@ -48,7 +48,14 @@ from pytcp.lib.net_addr import (
     Ip6Address,
     Ip6AddressFormatError,
 )
-from pytcp.lib.socket import AF_INET4, AF_INET6, SOCK_STREAM, Socket, gaierror
+from pytcp.lib.socket import (
+    AF_INET4,
+    AF_INET6,
+    SOCK_STREAM,
+    AddressFamily,
+    Socket,
+    gaierror,
+)
 from pytcp.protocols.tcp.tcp__session import (
     FsmState,
     TcpSession,
@@ -58,9 +65,9 @@ from pytcp.protocols.tcp.tcp__session import (
 if TYPE_CHECKING:
     from threading import Semaphore
 
-    from pytcp.lib.socket import AddressFamily, IpAddress, SocketType
-
-    from .tcp__metadata import TcpMetadata
+    from pytcp.lib.net_addr import IpAddress
+    from pytcp.lib.socket import SocketType
+    from pytcp.protocols.tcp.tcp__metadata import TcpMetadata
 
 
 class TcpSocket(Socket):
@@ -74,8 +81,6 @@ class TcpSocket(Socket):
         """
         Class constructor.
         """
-
-        super().__init__()
 
         self._family: AddressFamily = family
         self._type: SocketType = SOCK_STREAM
@@ -101,12 +106,14 @@ class TcpSocket(Socket):
 
         # Fresh socket initialization
         else:
-            if self._family is AF_INET6:
-                self._local_ip_address = Ip6Address()
-                self._remote_ip_address = Ip6Address()
-            if self._family is AF_INET4:
-                self._local_ip_address = Ip4Address()
-                self._remote_ip_address = Ip4Address()
+            match self._family:
+                case AddressFamily.AF_INET6:
+                    self._local_ip_address = Ip6Address()
+                    self._remote_ip_address = Ip6Address()
+                case AddressFamily.AF_INET4:
+                    self._local_ip_address = Ip4Address()
+                    self._remote_ip_address = Ip4Address()
+
             self._local_port = 0
             self._remote_port = 0
             self._tcp_session = None

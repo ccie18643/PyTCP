@@ -144,23 +144,17 @@ class Socket(ABC):
     Base class for other socket classes.
     """
 
-    def __init__(self) -> None:
-        """
-        Class constructor.
-        """
-
-        if TYPE_CHECKING:
-            self._family: AddressFamily
-            self._type: SocketType
-            self._local_ip_address: IpAddress
-            self._remote_ip_address: IpAddress
-            self._local_port: int
-            self._remote_port: int
-            self._parent_socket: Socket
-            self._tcp_session: TcpSession | None
-            self._tcp_accept: list[Socket]
-            self._event_tcp_session_established: Semaphore
-            self._unreachable: bool
+    _family: AddressFamily
+    _type: SocketType
+    _local_ip_address: IpAddress
+    _remote_ip_address: IpAddress
+    _local_port: int
+    _remote_port: int
+    _parent_socket: Socket
+    _tcp_session: TcpSession | None
+    _tcp_accept: list[Socket]
+    _event_tcp_session_established: Semaphore
+    _unreachable: bool
 
     def __str__(self) -> str:
         """

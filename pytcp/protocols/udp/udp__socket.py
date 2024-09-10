@@ -53,8 +53,10 @@ from pytcp.lib.socket import (
     AF_INET4,
     AF_INET6,
     SOCK_DGRAM,
+    AddressFamily,
     ReceiveTimeout,
     Socket,
+    SocketType,
     gaierror,
 )
 from pytcp.lib.tx_status import TxStatus
@@ -63,7 +65,6 @@ if TYPE_CHECKING:
     from threading import Semaphore
 
     from pytcp.lib.net_addr import IpAddress
-    from pytcp.lib.socket import AddressFamily, SocketType
     from pytcp.protocols.udp.udp__metadata import UdpMetadata
 
 
@@ -77,8 +78,6 @@ class UdpSocket(Socket):
         Class constructor.
         """
 
-        super().__init__()
-
         self._family: AddressFamily = family
         self._type: SocketType = SOCK_DGRAM
         self._local_port: int = 0
@@ -89,12 +88,13 @@ class UdpSocket(Socket):
         self._local_ip_address: IpAddress
         self._remote_ip_address: IpAddress
 
-        if self._family is AF_INET6:
-            self._local_ip_address = Ip6Address()
-            self._remote_ip_address = Ip6Address()
-        if self._family is AF_INET4:
-            self._local_ip_address = Ip4Address()
-            self._remote_ip_address = Ip4Address()
+        match self._family:
+            case AddressFamily.AF_INET6:
+                self._local_ip_address = Ip6Address()
+                self._remote_ip_address = Ip6Address()
+            case AddressFamily.AF_INET4:
+                self._local_ip_address = Ip4Address()
+                self._remote_ip_address = Ip4Address()
 
         __debug__ and log("socket", f"<g>[{self}]</> - Created socket")
 
