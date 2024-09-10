@@ -35,6 +35,7 @@ ver 3.0.2
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 from pytcp.lib.net_addr import Ip4Address
@@ -44,32 +45,24 @@ if TYPE_CHECKING:
     from pytcp.lib.tracker import Tracker
 
 
+@dataclass(frozen=True, kw_only=True)
 class UdpMetadata:
     """
     Store the 'AF_INET6/SOCK_DGRAM' metadata.
     """
 
-    def __init__(
-        self,
-        *,
-        local_ip_address: IpAddress,
-        local_port: int,
-        remote_ip_address: IpAddress,
-        remote_port: int,
-        data: bytes = b"",
-        tracker: Tracker | None = None,
-    ) -> None:
-        self.local_ip_address = local_ip_address
-        self.local_port = local_port
-        self.remote_ip_address = remote_ip_address
-        self.remote_port = remote_port
-        self.data = data
-        self.tracker = tracker
+    local_ip_address: IpAddress
+    local_port: int
+    remote_ip_address: IpAddress
+    remote_port: int
+    data: bytes = bytes()
+    tracker: Tracker | None = None
 
     def __str__(self) -> str:
         """
         String representation.
         """
+
         return (
             f"AF_INET{self.local_ip_address.version}/SOCK_DGRAM/"
             f"{self.local_ip_address}/{self.local_port}/"

@@ -48,14 +48,7 @@ from pytcp.lib.net_addr import (
     Ip6Address,
     Ip6AddressFormatError,
 )
-from pytcp.lib.socket import (
-    AF_INET4,
-    AF_INET6,
-    SOCK_STREAM,
-    AddressFamily,
-    Socket,
-    gaierror,
-)
+from pytcp.lib.socket import SOCK_STREAM, AddressFamily, Socket, gaierror
 from pytcp.protocols.tcp.tcp__session import (
     FsmState,
     TcpSession,
@@ -76,7 +69,7 @@ class TcpSocket(Socket):
     """
 
     def __init__(
-        self, family: AddressFamily, tcp_session: TcpSession | None = None
+        self, *, family: AddressFamily, tcp_session: TcpSession | None = None
     ) -> None:
         """
         Class constructor.
@@ -166,35 +159,36 @@ class TcpSocket(Socket):
 
         local_ip_address: IpAddress
 
-        if self._family is AF_INET6:
-            try:
-                if (local_ip_address := Ip6Address(address[0])) not in set(
-                    stack.packet_handler.ip6_unicast
-                ) | {Ip6Address()}:
-                    raise OSError(
-                        "[Errno 99] Cannot assign requested address - "
-                        "[Local IP address not owned by stack]"
-                    )
-            except Ip6AddressFormatError as error:
-                raise gaierror(
-                    "[Errno -2] Name or service not known - "
-                    "[Malformed local IP address]"
-                ) from error
+        match self._family:
+            case AddressFamily.AF_INET6:
+                try:
+                    if (local_ip_address := Ip6Address(address[0])) not in set(
+                        stack.packet_handler.ip6_unicast
+                    ) | {Ip6Address()}:
+                        raise OSError(
+                            "[Errno 99] Cannot assign requested address - "
+                            "[Local IP address not owned by stack]"
+                        )
+                except Ip6AddressFormatError as error:
+                    raise gaierror(
+                        "[Errno -2] Name or service not known - "
+                        "[Malformed local IP address]"
+                    ) from error
 
-        if self._family is AF_INET4:
-            try:
-                if (local_ip_address := Ip4Address(address[0])) not in set(
-                    stack.packet_handler.ip4_unicast
-                ) | {Ip4Address()}:
-                    raise OSError(
-                        "[Errno 99] Cannot assign requested address - "
-                        "[Local IP address not owned by stack]"
-                    )
-            except Ip4AddressFormatError as error:
-                raise gaierror(
-                    "[Errno -2] Name or service not known - "
-                    "[Malformed local IP address]"
-                ) from error
+            case AddressFamily.AF_INET4:
+                try:
+                    if (local_ip_address := Ip4Address(address[0])) not in set(
+                        stack.packet_handler.ip4_unicast
+                    ) | {Ip4Address()}:
+                        raise OSError(
+                            "[Errno 99] Cannot assign requested address - "
+                            "[Local IP address not owned by stack]"
+                        )
+                except Ip4AddressFormatError as error:
+                    raise gaierror(
+                        "[Errno -2] Name or service not known - "
+                        "[Malformed local IP address]"
+                    ) from error
 
         # Sanity check on local port number
         if address[1] not in range(0, 65536):

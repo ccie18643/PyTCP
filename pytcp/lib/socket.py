@@ -107,6 +107,7 @@ class SocketType(IntEnum):
     SOCK_UNSPECIFIED = 0
     SOCK_STREAM = 1
     SOCK_DGRAM = 2
+    SOCK_RAW = 3
 
     def __str__(self) -> str:
         """
@@ -128,15 +129,18 @@ def socket(
     Return Socket class object.
     """
 
-    assert type is SOCK_STREAM or type is SOCK_DGRAM
-
     from pytcp.protocols.tcp.tcp__socket import TcpSocket
     from pytcp.protocols.udp.udp__socket import UdpSocket
 
-    if type is SOCK_DGRAM:
-        return UdpSocket(family)
-
-    return TcpSocket(family)
+    match type:
+        case SocketType.SOCK_STREAM:
+            return TcpSocket(family=family)
+        case SocketType.SOCK_DGRAM:
+            return UdpSocket(family=family)
+        case SocketType.SOCK_RAW:
+            raise NotImplementedError
+        case _:
+            raise ValueError("Invalid socket type.")
 
 
 class Socket(ABC):
