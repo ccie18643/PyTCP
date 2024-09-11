@@ -33,8 +33,8 @@
 
 from testslide import TestCase
 
-from pytcp.lib.net_addr import Ip6Address, Ip6Network
-from pytcp.lib.net_addr import MacAddress
+from net_addr import Ip6Address, Ip6Network
+from net_addr import MacAddress
 from pytcp.lib.tracker import Tracker
 from pytcp.protocols.icmp4.icmp4__assembler import (
     Icmp4EchoReplyMessageAssembler,

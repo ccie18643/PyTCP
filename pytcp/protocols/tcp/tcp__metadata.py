@@ -39,7 +39,7 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from pytcp.lib.net_addr import IpAddress
+    from net_addr import IpAddress
     from pytcp.lib.tracker import Tracker
 
 

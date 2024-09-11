@@ -45,16 +45,16 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING
 
-from pytcp import config
-from pytcp.lib import stack
-from pytcp.lib.ip_helper import pick_local_ip_address
-from pytcp.lib.name_enum import NameEnum
-from pytcp.lib.net_addr import (
+from net_addr import (
     Ip4Address,
     Ip4AddressFormatError,
     Ip6Address,
     Ip6AddressFormatError,
 )
+from pytcp import config
+from pytcp.lib import stack
+from pytcp.lib.ip_helper import pick_local_ip_address
+from pytcp.lib.name_enum import NameEnum
 from pytcp.protocols.tcp.tcp__metadata import TcpMetadata
 from pytcp.protocols.tcp.tcp__session import FsmState, TcpSession
 from pytcp.protocols.udp.udp__metadata import UdpMetadata
@@ -62,7 +62,7 @@ from pytcp.protocols.udp.udp__metadata import UdpMetadata
 if TYPE_CHECKING:
     from threading import Semaphore
 
-    from pytcp.lib.net_addr import IpAddress
+    from net_addr import IpAddress
 
 
 class gaierror(OSError):

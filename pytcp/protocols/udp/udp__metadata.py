@@ -38,10 +38,10 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
-from pytcp.lib.net_addr import Ip4Address
+from net_addr import Ip4Address
 
 if TYPE_CHECKING:
-    from pytcp.lib.net_addr import IpAddress
+    from net_addr import IpAddress
     from pytcp.lib.tracker import Tracker
 
 

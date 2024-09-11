@@ -40,6 +40,7 @@ from abc import ABC
 from dataclasses import dataclass, field
 from typing import override
 
+from net_addr import Ip6Address
 from pytcp.lib.int_checks import (
     UINT_16__MAX,
     is_uint2,
@@ -48,7 +49,6 @@ from pytcp.lib.int_checks import (
     is_uint16,
     is_uint20,
 )
-from pytcp.lib.net_addr import Ip6Address
 from pytcp.lib.proto_struct import ProtoStruct
 from pytcp.protocols.ip6.ip6__enums import Ip6Next
 

@@ -40,10 +40,7 @@ import threading
 import time
 from typing import TYPE_CHECKING
 
-from pytcp import config
-from pytcp.lib import stack
-from pytcp.lib.logger import log
-from pytcp.lib.net_addr import (
+from net_addr import (
     Ip4Address,
     Ip4Host,
     Ip6Address,
@@ -51,6 +48,9 @@ from pytcp.lib.net_addr import (
     Ip6Network,
     MacAddress,
 )
+from pytcp import config
+from pytcp.lib import stack
+from pytcp.lib.logger import log
 from pytcp.lib.packet_stats import PacketStatsRx, PacketStatsTx
 from pytcp.protocols.arp.arp__packet_handler_rx import ArpPacketHandlerRx
 from pytcp.protocols.arp.arp__packet_handler_tx import ArpPacketHandlerTx

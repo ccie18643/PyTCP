@@ -42,8 +42,7 @@ from typing import TYPE_CHECKING, override
 import click
 
 from examples.lib.udp_service import UdpService
-from pytcp import TcpIpStack, initialize_interface
-from pytcp.lib.net_addr import (
+from net_addr import (
     ClickTypeIp4Address,
     ClickTypeIp4Host,
     ClickTypeIp6Address,
@@ -56,6 +55,7 @@ from pytcp.lib.net_addr import (
     IpAddress,
     MacAddress,
 )
+from pytcp import TcpIpStack, initialize_interface
 
 if TYPE_CHECKING:
     from pytcp.lib.socket import Socket

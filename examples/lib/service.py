@@ -41,8 +41,8 @@ from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING
 
 import click
+from net_addr.ip_address import IpAddress
 
-from pytcp.lib.net_addr.ip_address import IpAddress
 from pytcp.socket import AF_INET4, AF_INET6, SOCK_DGRAM, SOCK_STREAM, socket
 
 if TYPE_CHECKING:

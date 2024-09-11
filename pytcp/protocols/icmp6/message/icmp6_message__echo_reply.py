@@ -49,7 +49,7 @@ from pytcp.protocols.icmp6.message.icmp6_message import (
 from pytcp.protocols.ip6.ip6__header import IP6__PAYLOAD__MAX_LEN
 
 if TYPE_CHECKING:
-    from pytcp.lib.net_addr import Ip6Address
+    from net_addr import Ip6Address
 
 
 # The ICMPv6 Echo Reply message (129/0) [RFC4443].

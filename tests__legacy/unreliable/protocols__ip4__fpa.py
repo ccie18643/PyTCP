@@ -34,7 +34,7 @@
 from testslide import StrictMock, TestCase
 
 from pytcp.config import IP4__DEFAULT_TTL
-from pytcp.lib.net_addr import Ip4Address
+from net_addr import Ip4Address
 from pytcp.lib.tracker import Tracker
 from protocols.ethernet.base import EthernetType
 from pytcp.protocols.icmp4.icmp4__assembler import (

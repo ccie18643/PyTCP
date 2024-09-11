@@ -39,8 +39,8 @@ from __future__ import annotations
 import random
 from typing import TYPE_CHECKING
 
+from net_addr import Ip4Address, Ip4Host, Ip4Mask
 from pytcp.lib.logger import log
-from pytcp.lib.net_addr import Ip4Address, Ip4Host, Ip4Mask
 from pytcp.protocols.dhcp4__legacy.base import (
     DHCP4_MSG_ACK,
     DHCP4_MSG_DISCOVER,
@@ -54,7 +54,7 @@ from pytcp.protocols.dhcp4__legacy.base import (
 from pytcp.socket import AF_INET4, SOCK_DGRAM, ReceiveTimeout, socket
 
 if TYPE_CHECKING:
-    from pytcp.lib.net_addr import MacAddress
+    from net_addr import MacAddress
 
 
 class Dhcp4Client:

@@ -39,8 +39,8 @@ import struct
 from dataclasses import dataclass, field
 from typing import override
 
+from net_addr import IP6__ADDRESS_LEN, Ip6Address
 from pytcp.lib.int_checks import is_4_byte_alligned
-from pytcp.lib.net_addr import IP6__ADDRESS_LEN, Ip6Address
 from pytcp.lib.proto_enum import ProtoEnumByte
 from pytcp.lib.proto_struct import ProtoStruct
 

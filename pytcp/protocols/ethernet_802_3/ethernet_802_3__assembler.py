@@ -37,7 +37,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from pytcp.lib.net_addr import MacAddress
+from net_addr import MacAddress
 from pytcp.lib.proto_assembler import ProtoAssembler
 from pytcp.protocols.ethernet_802_3.ethernet_802_3__base import Ethernet8023
 from pytcp.protocols.ethernet_802_3.ethernet_802_3__header import (
@@ -46,7 +46,9 @@ from pytcp.protocols.ethernet_802_3.ethernet_802_3__header import (
 from pytcp.protocols.raw.raw__assembler import RawAssembler
 
 if TYPE_CHECKING:
-    from .ethernet_802_3__base import Ethernet8023Payload
+    from pytcp.protocols.ethernet_802_3.ethernet_802_3__base import (
+        Ethernet8023Payload,
+    )
 
 
 class Ethernet8023Assembler(Ethernet8023, ProtoAssembler):

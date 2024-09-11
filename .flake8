@@ -3,3 +3,4 @@ max-line-length = 120
 ignore = E203, E266, E701, E704, W503, E731, E741
 per-file-ignores =
     pytcp/**/__init__.py:F401
+    net_addr/__init__.py:F401

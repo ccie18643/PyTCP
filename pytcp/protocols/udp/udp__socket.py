@@ -41,14 +41,14 @@ from __future__ import annotations
 import threading
 from typing import TYPE_CHECKING, override
 
-from pytcp.lib import stack
-from pytcp.lib.logger import log
-from pytcp.lib.net_addr import (
+from net_addr import (
     Ip4Address,
     Ip4AddressFormatError,
     Ip6Address,
     Ip6AddressFormatError,
 )
+from pytcp.lib import stack
+from pytcp.lib.logger import log
 from pytcp.lib.socket import (
     AddressFamily,
     ReceiveTimeout,
@@ -61,7 +61,7 @@ from pytcp.lib.tx_status import TxStatus
 if TYPE_CHECKING:
     from threading import Semaphore
 
-    from pytcp.lib.net_addr import IpAddress
+    from net_addr import IpAddress
     from pytcp.protocols.udp.udp__metadata import UdpMetadata
 
 

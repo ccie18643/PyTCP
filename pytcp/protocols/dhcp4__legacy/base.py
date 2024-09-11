@@ -43,7 +43,7 @@ from __future__ import annotations
 
 import struct
 
-from pytcp.lib.net_addr import Ip4Address, Ip4Mask
+from net_addr import Ip4Address, Ip4Mask
 
 # DHCP packet header (RFC 2131)
 

@@ -56,7 +56,7 @@ class Ip4PacketHandlerRx(ABC):
     """
 
     if TYPE_CHECKING:
-        from pytcp.lib.net_addr import Ip4Address
+        from net_addr import Ip4Address
         from pytcp.lib.packet_stats import PacketStatsRx
 
         packet_stats_rx: PacketStatsRx

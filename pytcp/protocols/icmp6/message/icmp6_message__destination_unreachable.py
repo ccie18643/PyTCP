@@ -53,7 +53,7 @@ from pytcp.protocols.ip6.ip6__header import (
 )
 
 if TYPE_CHECKING:
-    from pytcp.lib.net_addr import Ip6Address
+    from net_addr import Ip6Address
 
 
 # The ICMPv6 Destination Unreachable message (1/0-6) [RFC4443].

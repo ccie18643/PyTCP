@@ -37,8 +37,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from net_addr import Ip6Address
 from pytcp import config
-from pytcp.lib.net_addr import Ip6Address
 from pytcp.lib.proto_assembler import ProtoAssembler
 from pytcp.protocols.ip6.ip6__base import Ip6
 from pytcp.protocols.ip6.ip6__header import Ip6Header, Ip6Next
@@ -46,8 +46,7 @@ from pytcp.protocols.raw.raw__assembler import RawAssembler
 
 if TYPE_CHECKING:
     from pytcp.lib.tracker import Tracker
-
-    from .ip6__base import Ip6Payload
+    from pytcp.protocols.ip6.ip6__base import Ip6Payload
 
 
 class Ip6Assembler(Ip6, ProtoAssembler):

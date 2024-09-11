@@ -35,7 +35,7 @@ from dataclasses import dataclass
 
 from testslide import TestCase
 
-from pytcp.lib.net_addr import MacAddress, MacAddressFormatError
+from net_addr import MacAddress, MacAddressFormatError
 
 
 class TestMacAddress(TestCase):

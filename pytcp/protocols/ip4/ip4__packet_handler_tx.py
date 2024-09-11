@@ -38,9 +38,9 @@ from __future__ import annotations
 from abc import ABC
 from typing import TYPE_CHECKING
 
+from net_addr import Ip4Address, MacAddress
 from pytcp import config
 from pytcp.lib.logger import log
-from pytcp.lib.net_addr import Ip4Address, MacAddress
 from pytcp.lib.tx_status import TxStatus
 from pytcp.protocols.ip4.ip4__assembler import Ip4Assembler, Ip4FragAssembler
 from pytcp.protocols.raw.raw__assembler import RawAssembler
@@ -54,7 +54,7 @@ class Ip4PacketHandlerTx(ABC):
     """
 
     if TYPE_CHECKING:
-        from pytcp.lib.net_addr import Ip4Host
+        from net_addr import Ip4Host
         from pytcp.lib.packet_stats import PacketStatsTx
         from pytcp.lib.tracker import Tracker
         from pytcp.protocols.ethernet.ethernet__base import EthernetPayload

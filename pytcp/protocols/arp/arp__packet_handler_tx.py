@@ -38,9 +38,9 @@ from __future__ import annotations
 from abc import ABC
 from typing import TYPE_CHECKING
 
+from net_addr import Ip4Address, MacAddress
 from pytcp import config
 from pytcp.lib.logger import log
-from pytcp.lib.net_addr import Ip4Address, MacAddress
 from pytcp.lib.tracker import Tracker
 from pytcp.lib.tx_status import TxStatus
 from pytcp.protocols.arp.arp__assembler import ArpAssembler

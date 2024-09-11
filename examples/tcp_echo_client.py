@@ -42,8 +42,7 @@ import time
 import click
 
 from examples.lib.client import Client
-from pytcp import TcpIpStack, initialize_interface
-from pytcp.lib.net_addr import (
+from net_addr import (
     ClickTypeIp4Address,
     ClickTypeIp4Host,
     ClickTypeIp6Address,
@@ -57,6 +56,7 @@ from pytcp.lib.net_addr import (
     IpAddress,
     MacAddress,
 )
+from pytcp import TcpIpStack, initialize_interface
 
 
 class TcpEchoClient(Client):

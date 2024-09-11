@@ -40,9 +40,10 @@ from abc import ABC
 from dataclasses import dataclass, field
 from typing import override
 
+from net_addr.ip4_address import Ip4Address
+from net_addr.mac_address import MacAddress
+
 from pytcp.lib.int_checks import is_uint8, is_uint16, is_uint32
-from pytcp.lib.net_addr.ip4_address import Ip4Address
-from pytcp.lib.net_addr.mac_address import MacAddress
 from pytcp.lib.proto_struct import ProtoStruct
 from pytcp.protocols.dhcp4.dhcp4__enums import (
     DHCP4__HARDWARE_LEN__ETHERNET,

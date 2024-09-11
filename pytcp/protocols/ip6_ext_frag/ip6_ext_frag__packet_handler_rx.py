@@ -52,7 +52,7 @@ class Ip6ExtFragPacketHandlerRx(ABC):
     """
 
     if TYPE_CHECKING:
-        from pytcp.lib.net_addr import Ip6Address
+        from net_addr import Ip6Address
         from pytcp.lib.packet_stats import PacketStatsRx
 
         packet_stats_rx: PacketStatsRx

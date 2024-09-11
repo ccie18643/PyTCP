@@ -35,7 +35,7 @@ from dataclasses import dataclass
 
 from testslide import TestCase
 
-from pytcp.lib.net_addr import (
+from net_addr import (
     Ip6Address,
     Ip6AddressFormatError,
     Ip6Host,
@@ -46,7 +46,7 @@ from pytcp.lib.net_addr import (
     Ip6Network,
     Ip6NetworkFormatError,
 )
-from pytcp.lib.net_addr import MacAddress
+from net_addr import MacAddress
 
 
 class TestIp6Address(TestCase):

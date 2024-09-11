@@ -39,7 +39,7 @@ import struct
 from dataclasses import dataclass, field
 from typing import override
 
-from pytcp.lib.net_addr import MacAddress
+from net_addr import MacAddress
 from pytcp.protocols.icmp6.icmp6__errors import Icmp6IntegrityError
 from pytcp.protocols.icmp6.message.nd.option.icmp6_nd_option import (
     ICMP6__ND__OPTION__LEN,

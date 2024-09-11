@@ -37,16 +37,16 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from pytcp.lib import stack
-from pytcp.lib.net_addr import (
+from net_addr import (
     Ip4Address,
     Ip4AddressFormatError,
     Ip6Address,
     Ip6AddressFormatError,
 )
+from pytcp.lib import stack
 
 if TYPE_CHECKING:
-    from pytcp.lib.net_addr import IpAddress
+    from net_addr import IpAddress
 
 
 def ip_version(

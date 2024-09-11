@@ -57,7 +57,7 @@ from pytcp.lib.name_enum import NameEnum
 if TYPE_CHECKING:
     from threading import Lock, RLock, Semaphore
 
-    from pytcp.lib.net_addr import IpAddress
+    from net_addr import IpAddress
     from pytcp.protocols.tcp.tcp__metadata import TcpMetadata
     from pytcp.protocols.tcp.tcp__socket import TcpSocket
 

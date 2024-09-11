@@ -38,10 +38,10 @@ from __future__ import annotations
 import threading
 import time
 
+from net_addr import Ip6Address, MacAddress
 from pytcp import config
 from pytcp.lib import stack
 from pytcp.lib.logger import log
-from pytcp.lib.net_addr import Ip6Address, MacAddress
 
 
 class NdCache:

@@ -35,7 +35,7 @@ ver 3.0.2
 
 from __future__ import annotations
 
-from pytcp.lib.net_addr import Ip4Address, MacAddress
+from net_addr import Ip4Address, MacAddress
 from pytcp.lib.proto_assembler import ProtoAssembler
 from pytcp.lib.tracker import Tracker
 from pytcp.protocols.arp.arp__base import Arp

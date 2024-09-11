@@ -40,6 +40,7 @@ from abc import ABC
 from dataclasses import dataclass, field
 from typing import override
 
+from net_addr import Ip4Address
 from pytcp.lib.int_checks import (
     UINT_16__MAX,
     is_8_byte_alligned,
@@ -49,7 +50,6 @@ from pytcp.lib.int_checks import (
     is_uint13,
     is_uint16,
 )
-from pytcp.lib.net_addr import Ip4Address
 from pytcp.lib.proto_struct import ProtoStruct
 from pytcp.protocols.ip4.ip4__enums import Ip4Proto
 

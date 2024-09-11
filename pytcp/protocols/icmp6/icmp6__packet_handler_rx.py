@@ -39,10 +39,10 @@ import struct
 from abc import ABC
 from typing import TYPE_CHECKING
 
+from net_addr import Ip6Address
 from pytcp.lib import stack
 from pytcp.lib.errors import PacketValidationError
 from pytcp.lib.logger import log
-from pytcp.lib.net_addr import Ip6Address
 from pytcp.protocols.icmp6.icmp6__parser import Icmp6Parser
 from pytcp.protocols.icmp6.message.icmp6_message import Icmp6Type
 from pytcp.protocols.icmp6.message.icmp6_message__destination_unreachable import (
@@ -84,7 +84,7 @@ class Icmp6PacketHandlerRx(ABC):
     if TYPE_CHECKING:
         from threading import Semaphore
 
-        from pytcp.lib.net_addr import Ip6Network, MacAddress
+        from net_addr import Ip6Network, MacAddress
         from pytcp.lib.packet import PacketRx
         from pytcp.lib.packet_stats import PacketStatsRx
         from pytcp.lib.tracker import Tracker

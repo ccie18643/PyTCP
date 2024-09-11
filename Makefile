@@ -63,11 +63,12 @@ test_legacy: test_legacy_unit test_legacy_integration
 
 test_unit: venv
 	@echo '<<< TESTSLIDE UNIT'
-	@./$(VENV)/bin/testslide $(shell find 'tests/unit' -name '*.py')
+	@./$(VENV)/bin/testslide $(shell find 'tests/pytcp/unit' -name '*.py')
+	@./$(VENV)/bin/testslide $(shell find 'tests/net_addr/unit' -name '*.py')
 
 test_integration: venv
 	@echo '<<< TESTSLIDE INTEGRATION'
-	@./$(VENV)/bin/testslide $(shell find 'tests/integration' -name '*.py')
+	@./$(VENV)/bin/testslide $(shell find 'tests/pytcp/integration' -name '*.py')
 
 test: test_unit test_integration
 

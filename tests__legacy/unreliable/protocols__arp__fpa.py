@@ -33,8 +33,8 @@
 
 from testslide import TestCase
 
-from pytcp.lib.net_addr import Ip4Address
-from pytcp.lib.net_addr import MacAddress
+from net_addr import Ip4Address
+from net_addr import MacAddress
 from pytcp.protocols.arp.fpa import ArpAssembler
 from protocols.arp.base import ARP_HEADER_LEN, ArpOperation
 from tests.unit.protocols__arp__ps import (

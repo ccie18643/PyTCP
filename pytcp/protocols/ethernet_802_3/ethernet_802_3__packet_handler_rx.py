@@ -50,7 +50,7 @@ class Ethernet8023PacketHandlerRx(ABC):
     """
 
     if TYPE_CHECKING:
-        from pytcp.lib.net_addr import MacAddress
+        from net_addr import MacAddress
         from pytcp.lib.packet import PacketRx
         from pytcp.lib.packet_stats import PacketStatsRx
 

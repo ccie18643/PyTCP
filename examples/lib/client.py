@@ -41,9 +41,9 @@ from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING
 
 import click
+from net_addr.ip_address import IpAddress
 
-from pytcp.lib import socket
-from pytcp.lib.net_addr.ip_address import IpAddress
+from pytcp.socket import AF_INET4, AF_INET6, SOCK_DGRAM, SOCK_STREAM, socket
 
 if TYPE_CHECKING:
     from pytcp.lib.socket import Socket
@@ -96,21 +96,13 @@ class Client(ABC):
             self._protocol_name,
         ):
             case 6, 6, "TCP":
-                client_socket = socket.socket(
-                    family=socket.AF_INET6, type=socket.SOCK_STREAM
-                )
+                client_socket = socket(family=AF_INET6, type=SOCK_STREAM)
             case 4, 4, "TCP":
-                client_socket = socket.socket(
-                    family=socket.AF_INET4, type=socket.SOCK_STREAM
-                )
+                client_socket = socket(family=AF_INET4, type=SOCK_STREAM)
             case 6, 6, "UDP":
-                client_socket = socket.socket(
-                    family=socket.AF_INET6, type=socket.SOCK_DGRAM
-                )
+                client_socket = socket(family=AF_INET6, type=SOCK_DGRAM)
             case 4, 4, "UDP":
-                client_socket = socket.socket(
-                    family=socket.AF_INET4, type=socket.SOCK_DGRAM
-                )
+                client_socket = socket(family=AF_INET4, type=SOCK_DGRAM)
             case _:
                 raise ValueError("Invalid IP version or protocol.")
 

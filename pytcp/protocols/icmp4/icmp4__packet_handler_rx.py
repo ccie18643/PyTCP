@@ -39,10 +39,10 @@ import struct
 from abc import ABC
 from typing import TYPE_CHECKING
 
+from net_addr import Ip4Address
 from pytcp.lib import stack
 from pytcp.lib.errors import PacketValidationError
 from pytcp.lib.logger import log
-from pytcp.lib.net_addr import Ip4Address
 from pytcp.protocols.icmp4.icmp4__parser import Icmp4Parser
 from pytcp.protocols.icmp4.message.icmp4_message import Icmp4Type
 from pytcp.protocols.icmp4.message.icmp4_message__destination_unreachable import (
