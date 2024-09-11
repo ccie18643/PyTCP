@@ -43,12 +43,12 @@ ver 3.0.2
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from enum import IntEnum
 from typing import TYPE_CHECKING
 
 from pytcp import config
 from pytcp.lib import stack
 from pytcp.lib.ip_helper import pick_local_ip_address
+from pytcp.lib.name_enum import NameEnum
 from pytcp.lib.net_addr import (
     Ip4Address,
     Ip4AddressFormatError,
@@ -77,7 +77,7 @@ class ReceiveTimeout(Exception):
     """
 
 
-class AddressFamily(IntEnum):
+class AddressFamily(NameEnum):
     """
     Address family identifier enum.
     """
@@ -86,20 +86,13 @@ class AddressFamily(IntEnum):
     AF_INET4 = 1
     AF_INET6 = 2
 
-    def __str__(self) -> str:
-        """
-        The '__str__()' dunder.
-        """
-
-        return str(self.name)
-
 
 AF_INET = AddressFamily.AF_INET4
 AF_INET4 = AddressFamily.AF_INET4
 AF_INET6 = AddressFamily.AF_INET6
 
 
-class SocketType(IntEnum):
+class SocketType(NameEnum):
     """
     Socket type identifier enum.
     """
@@ -109,19 +102,12 @@ class SocketType(IntEnum):
     SOCK_DGRAM = 2
     SOCK_RAW = 3
 
-    def __str__(self) -> str:
-        """
-        The '__str__()' dunder.
-        """
-
-        return str(self.name)
-
 
 SOCK_STREAM = SocketType.SOCK_STREAM
 SOCK_DGRAM = SocketType.SOCK_DGRAM
 
 
-class IpProto(IntEnum):
+class IpProto(NameEnum):
     """
     IP protocol identifier enum.
     """
@@ -134,13 +120,6 @@ class IpProto(IntEnum):
     IPPROTO_UDP = 17
     IPPROTO_IPV6 = 41
     IPPROTO_RAW = 255
-
-    def __str__(self) -> str:
-        """
-        The '__str__()' dunder.
-        """
-
-        return str(self.name)
 
 
 IPPROTO_IP = IpProto.IPPROTO_IP

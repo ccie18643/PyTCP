@@ -46,12 +46,13 @@ from __future__ import annotations
 import random
 import threading
 from collections.abc import Callable
-from enum import Enum, auto
+from enum import auto
 from typing import TYPE_CHECKING, Any
 
 from pytcp import config
 from pytcp.lib import stack
 from pytcp.lib.logger import log
+from pytcp.lib.name_enum import NameEnum
 
 if TYPE_CHECKING:
     from threading import Lock, RLock, Semaphore
@@ -75,7 +76,7 @@ class TcpSessionError(Exception):
     """
 
 
-class SysCall(Enum):
+class SysCall(NameEnum):
     """
     System call identifier.
     """
@@ -84,11 +85,8 @@ class SysCall(Enum):
     CONNECT = auto()
     CLOSE = auto()
 
-    def __str__(self) -> str:
-        return str(self.name)
 
-
-class FsmState(Enum):
+class FsmState(NameEnum):
     """
     TCP Finite State Machine state identifier.
     """
@@ -105,11 +103,8 @@ class FsmState(Enum):
     LAST_ACK = auto()
     TIME_WAIT = auto()
 
-    def __str__(self) -> str:
-        return str(self.name)
 
-
-class ConnError(Enum):
+class ConnError(NameEnum):
     """
     Connection fail reasons.
     """
@@ -117,9 +112,6 @@ class ConnError(Enum):
     NONE = auto()
     REFUSED = auto()
     TIMEOUT = auto()
-
-    def __str__(self) -> str:
-        return str(self.name)
 
 
 def trace_fsm(function: Callable) -> Callable:
