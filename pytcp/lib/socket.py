@@ -87,11 +87,6 @@ class AddressFamily(NameEnum):
     AF_INET6 = 2
 
 
-AF_INET = AddressFamily.AF_INET4
-AF_INET4 = AddressFamily.AF_INET4
-AF_INET6 = AddressFamily.AF_INET6
-
-
 class SocketType(NameEnum):
     """
     Socket type identifier enum.
@@ -101,10 +96,6 @@ class SocketType(NameEnum):
     SOCK_STREAM = 1
     SOCK_DGRAM = 2
     SOCK_RAW = 3
-
-
-SOCK_STREAM = SocketType.SOCK_STREAM
-SOCK_DGRAM = SocketType.SOCK_DGRAM
 
 
 class IpProto(NameEnum):
@@ -120,40 +111,6 @@ class IpProto(NameEnum):
     IPPROTO_UDP = 17
     IPPROTO_IPV6 = 41
     IPPROTO_RAW = 255
-
-
-IPPROTO_IP = IpProto.IPPROTO_IP
-IPPROTO_ICMP = IpProto.IPPROTO_ICMP
-IPPROTO_IGMP = IpProto.IPPROTO_IGMP
-IPPROTO_TCP = IpProto.IPPROTO_TCP
-IPPROTO_UDP = IpProto.IPPROTO_UDP
-IPPROTO_IPV6 = IpProto.IPPROTO_IPV6
-IPPROTO_RAW = IpProto.IPPROTO_RAW
-
-
-def socket(
-    family: AddressFamily = AF_INET4,
-    type: SocketType = SOCK_STREAM,
-    protocol: IpProto = IPPROTO_IP,
-) -> Socket:
-    """
-    Return Socket class object.
-    """
-
-    from pytcp.protocols.tcp.tcp__socket import TcpSocket
-    from pytcp.protocols.udp.udp__socket import UdpSocket
-
-    match type, protocol:
-        case SocketType.SOCK_STREAM, IpProto.IPPROTO_IP | IpProto.IPPROTO_TCP:
-            return TcpSocket(family=family)
-        case SocketType.SOCK_DGRAM, IpProto.IPPROTO_IP | IpProto.IPPROTO_UDP:
-            return UdpSocket(family=family)
-        case SocketType.SOCK_DGRAM, IpProto.IPPROTO_ICMP:
-            raise NotImplementedError
-        case SocketType.SOCK_RAW, _:
-            raise NotImplementedError
-        case _:
-            raise ValueError("Invalid socket type.")
 
 
 class Socket(ABC):
@@ -291,7 +248,7 @@ class Socket(ABC):
         try:
             remote_ip_address: Ip6Address | Ip4Address = (
                 Ip6Address(remote_address[0])
-                if self._family is AF_INET6
+                if self._family is AddressFamily.AF_INET6
                 else Ip4Address(remote_address[0])
             )
         except (Ip6AddressFormatError, Ip4AddressFormatError) as error:
@@ -303,12 +260,12 @@ class Socket(ABC):
         # This contraption here is to mimic behavior
         # of BSD socket implementation.
         if remote_ip_address.is_unspecified:
-            if self._type is SOCK_STREAM:
+            if self._type is SocketType.SOCK_STREAM:
                 raise ConnectionRefusedError(
                     "[Errno 111] Connection refused - "
                     "[Unspecified remote IP address]"
                 )
-            if self._type is SOCK_DGRAM:
+            if self._type is SocketType.SOCK_DGRAM:
                 self._unreachable = True
 
         if local_ip_address.is_unspecified:

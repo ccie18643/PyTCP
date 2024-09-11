@@ -48,18 +48,18 @@ from pytcp.lib.net_addr import (
     Ip6Address,
     Ip6AddressFormatError,
 )
-from pytcp.lib.socket import SOCK_STREAM, AddressFamily, Socket, gaierror
+from pytcp.lib.socket import AddressFamily, Socket, gaierror
 from pytcp.protocols.tcp.tcp__session import (
     FsmState,
     TcpSession,
     TcpSessionError,
 )
+from pytcp.lib.socket import SocketType
 
 if TYPE_CHECKING:
     from threading import Semaphore
 
     from pytcp.lib.net_addr import IpAddress
-    from pytcp.lib.socket import SocketType
     from pytcp.protocols.tcp.tcp__metadata import TcpMetadata
 
 
@@ -76,7 +76,7 @@ class TcpSocket(Socket):
         """
 
         self._family: AddressFamily = family
-        self._type: SocketType = SOCK_STREAM
+        self._type: SocketType = SocketType.SOCK_STREAM
         self._event_tcp_session_established: Semaphore = threading.Semaphore(0)
         self._tcp_accept: list[Socket] = []
         self._tcp_session: TcpSession | None

@@ -39,7 +39,6 @@ from __future__ import annotations
 import random
 from typing import TYPE_CHECKING
 
-from pytcp.lib import socket
 from pytcp.lib.logger import log
 from pytcp.lib.net_addr import Ip4Address, Ip4Host, Ip4Mask
 from pytcp.protocols.dhcp4__legacy.base import (
@@ -52,6 +51,7 @@ from pytcp.protocols.dhcp4__legacy.base import (
     DHCP4_OPT_SUBNET_MASK,
     Dhcp4Packet,
 )
+from pytcp.socket import AF_INET4, SOCK_DGRAM, ReceiveTimeout, socket
 
 if TYPE_CHECKING:
     from pytcp.lib.net_addr import MacAddress
@@ -73,8 +73,9 @@ class Dhcp4Client:
         IPv4 DHCP client.
         """
 
-        client_socket = socket.socket(
-            family=socket.AF_INET4, type=socket.SOCK_DGRAM
+        client_socket = socket(
+            family=AF_INET4,
+            type=SOCK_DGRAM,
         )
         client_socket.bind(("0.0.0.0", 68))
         client_socket.connect(("255.255.255.255", 67))
@@ -106,7 +107,7 @@ class Dhcp4Client:
         # Wait for DHCP Offer
         try:
             dhcp_packet_rx = Dhcp4Packet(client_socket.recv(timeout=5))
-        except socket.ReceiveTimeout:
+        except ReceiveTimeout:
             __debug__ and log(
                 "dhcp4", "Didn't receive DHCP Offer message - timeout"
             )
@@ -174,7 +175,7 @@ class Dhcp4Client:
         # Wait for DHCP Ack
         try:
             dhcp_packet_rx = Dhcp4Packet(client_socket.recv(timeout=5))
-        except socket.ReceiveTimeout:
+        except ReceiveTimeout:
             __debug__ and log(
                 "dhcp4", "Didn't receive DHCP ACK message - timeout"
             )

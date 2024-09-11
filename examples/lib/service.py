@@ -42,8 +42,8 @@ from typing import TYPE_CHECKING
 
 import click
 
-from pytcp.lib import socket
 from pytcp.lib.net_addr.ip_address import IpAddress
+from pytcp.socket import AF_INET4, AF_INET6, SOCK_DGRAM, SOCK_STREAM, socket
 
 if TYPE_CHECKING:
     from pytcp.lib.socket import Socket
@@ -90,21 +90,13 @@ class Service(ABC):
 
         match self._local_ip_address.version, self._protocol_name:
             case 6, "TCP":
-                service_socket = socket.socket(
-                    family=socket.AF_INET6, type=socket.SOCK_STREAM
-                )
+                service_socket = socket(family=AF_INET6, type=SOCK_STREAM)
             case 4, "TCP":
-                service_socket = socket.socket(
-                    family=socket.AF_INET4, type=socket.SOCK_STREAM
-                )
+                service_socket = socket(family=AF_INET4, type=SOCK_STREAM)
             case 6, "UDP":
-                service_socket = socket.socket(
-                    family=socket.AF_INET6, type=socket.SOCK_DGRAM
-                )
+                service_socket = socket(family=AF_INET6, type=SOCK_DGRAM)
             case 4, "UDP":
-                service_socket = socket.socket(
-                    family=socket.AF_INET4, type=socket.SOCK_DGRAM
-                )
+                service_socket = socket(family=AF_INET4, type=SOCK_DGRAM)
 
         try:
             service_socket.bind((str(self._local_ip_address), self._local_port))

@@ -50,7 +50,6 @@ from pytcp.lib.net_addr import (
     Ip6AddressFormatError,
 )
 from pytcp.lib.socket import (
-    SOCK_DGRAM,
     AddressFamily,
     ReceiveTimeout,
     Socket,
@@ -77,7 +76,7 @@ class UdpSocket(Socket):
         """
 
         self._family: AddressFamily = family
-        self._type: SocketType = SOCK_DGRAM
+        self._type: SocketType = SocketType.SOCK_DGRAM
         self._local_port: int = 0
         self._remote_port: int = 0
         self._packet_rx_md: list[UdpMetadata] = []

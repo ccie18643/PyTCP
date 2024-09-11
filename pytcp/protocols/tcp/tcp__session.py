@@ -839,7 +839,7 @@ class TcpSession:
         TCP FSM LISTEN state handler.
         """
 
-        from pytcp.lib.socket import AF_INET4, AF_INET6
+        from pytcp.lib.socket import AddressFamily
         from pytcp.protocols.tcp.tcp__socket import TcpSocket
 
         # Got SYN packet -> Send SYN + ACK packet / change state to SYN_RCVD
@@ -875,9 +875,9 @@ class TcpSession:
                 self._remote_port = packet_rx_md.remote_port
                 self._socket = TcpSocket(
                     family=(
-                        AF_INET6
+                        AddressFamily.AF_INET6
                         if self._local_ip_address.version == 6
-                        else AF_INET4
+                        else AddressFamily.AF_INET4
                     ),
                     tcp_session=self,
                 )
