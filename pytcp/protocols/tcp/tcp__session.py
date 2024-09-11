@@ -57,8 +57,8 @@ if TYPE_CHECKING:
     from threading import Lock, RLock, Semaphore
 
     from pytcp.lib.net_addr import IpAddress
-    from pytcp.lib.socket import Socket
     from pytcp.protocols.tcp.tcp__metadata import TcpMetadata
+    from pytcp.protocols.tcp.tcp__socket import TcpSocket
 
 
 PACKET_RETRANSMIT_TIMEOUT = 1000  # Retransmit data if ACK not received
@@ -175,7 +175,7 @@ class TcpSession:
         local_port: int,
         remote_ip_address: IpAddress,
         remote_port: int,
-        socket: Socket,
+        socket: TcpSocket,
     ) -> None:
         """
         Class constructor.
@@ -192,7 +192,7 @@ class TcpSession:
 
         # Keeps track of the socket that owns this session for
         # the session -> socket communication purposes
-        self._socket: Socket = socket
+        self._socket: TcpSocket = socket
 
         ###
         # Buffers
@@ -348,7 +348,7 @@ class TcpSession:
         return self._remote_port
 
     @property
-    def socket(self) -> Socket:
+    def socket(self) -> TcpSocket:
         """
         Getter for the '_socket' attribute.
         """
