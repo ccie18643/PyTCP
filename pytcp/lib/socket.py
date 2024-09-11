@@ -121,9 +121,41 @@ SOCK_STREAM = SocketType.SOCK_STREAM
 SOCK_DGRAM = SocketType.SOCK_DGRAM
 
 
+class IpProto(IntEnum):
+    """
+    IP protocol identifier enum.
+    """
+
+    IPPROTO_UNSPECIFIED = 0
+    IPPROTO_IP = 0
+    IPPROTO_ICMP = 1
+    IPPROTO_IGMP = 2
+    IPPROTO_TCP = 6
+    IPPROTO_UDP = 17
+    IPPROTO_IPV6 = 41
+    IPPROTO_RAW = 255
+
+    def __str__(self) -> str:
+        """
+        The '__str__()' dunder.
+        """
+
+        return str(self.name)
+
+
+IPPROTO_IP = IpProto.IPPROTO_IP
+IPPROTO_ICMP = IpProto.IPPROTO_ICMP
+IPPROTO_IGMP = IpProto.IPPROTO_IGMP
+IPPROTO_TCP = IpProto.IPPROTO_TCP
+IPPROTO_UDP = IpProto.IPPROTO_UDP
+IPPROTO_IPV6 = IpProto.IPPROTO_IPV6
+IPPROTO_RAW = IpProto.IPPROTO_RAW
+
+
 def socket(
     family: AddressFamily = AF_INET4,
     type: SocketType = SOCK_STREAM,
+    protocol: IpProto = IPPROTO_IP,
 ) -> Socket:
     """
     Return Socket class object.
@@ -132,12 +164,14 @@ def socket(
     from pytcp.protocols.tcp.tcp__socket import TcpSocket
     from pytcp.protocols.udp.udp__socket import UdpSocket
 
-    match type:
-        case SocketType.SOCK_STREAM:
+    match type, protocol:
+        case SocketType.SOCK_STREAM, IpProto.IPPROTO_IP | IpProto.IPPROTO_TCP:
             return TcpSocket(family=family)
-        case SocketType.SOCK_DGRAM:
+        case SocketType.SOCK_DGRAM, IpProto.IPPROTO_IP | IpProto.IPPROTO_UDP:
             return UdpSocket(family=family)
-        case SocketType.SOCK_RAW:
+        case SocketType.SOCK_DGRAM, IpProto.IPPROTO_ICMP:
+            raise NotImplementedError
+        case SocketType.SOCK_RAW, _:
             raise NotImplementedError
         case _:
             raise ValueError("Invalid socket type.")
