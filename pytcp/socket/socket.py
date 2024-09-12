@@ -42,7 +42,7 @@ ver 3.0.2
 
 from __future__ import annotations
 
-from abc import ABC, abstractmethod
+from abc import ABC
 from typing import TYPE_CHECKING
 
 from net_addr import (
@@ -282,60 +282,79 @@ class Socket(ABC):
 
         return local_ip_address, remote_ip_address
 
-    @abstractmethod
-    def bind(
-        self,
-        address: tuple[str, int],
-    ) -> None:
-        """
-        The 'bind()' socket API method placeholder.
-        """
-
-        raise NotImplementedError
-
-    @abstractmethod
-    def connect(
-        self,
-        address: tuple[str, int],
-    ) -> None:
-        """
-        The 'connect()' socket API method placeholder.
-        """
-
-        raise NotImplementedError
-
-    @abstractmethod
-    def send(
-        self,
-        data: bytes,
-    ) -> int:
-        """
-        The 'send()' socket API method placeholder.
-        """
-
-        raise NotImplementedError
-
-    @abstractmethod
-    def recv(
-        self,
-        bufsize: int | None = None,
-        timeout: float | None = None,
-    ) -> bytes:
-        """
-        The 'recv()' socket API method placeholder.
-        """
-
-        raise NotImplementedError
-
-    @abstractmethod
-    def close(self) -> None:
-        """
-        The 'close()' socket API placeholder.
-        """
-
-        raise NotImplementedError
-
     if TYPE_CHECKING:
+
+        @property
+        def tcp_session(self) -> TcpSession | None:
+            """
+            The 'tcp_session' property plceholder.
+            """
+
+            raise NotImplementedError
+
+        @property
+        def state(self) -> FsmState:
+            """
+            The 'state' property plceholder.
+            """
+
+            raise NotImplementedError
+
+        @property
+        def parent_socket(self) -> Socket | None:
+            """
+            The 'parent_socket' property plceholder.
+            """
+
+            raise NotImplementedError
+
+        def bind(
+            self,
+            address: tuple[str, int],
+        ) -> None:
+            """
+            The 'bind()' socket API method placeholder.
+            """
+
+            raise NotImplementedError
+
+        def connect(
+            self,
+            address: tuple[str, int],
+        ) -> None:
+            """
+            The 'connect()' socket API method placeholder.
+            """
+
+            raise NotImplementedError
+
+        def send(
+            self,
+            data: bytes,
+        ) -> int:
+            """
+            The 'send()' socket API method placeholder.
+            """
+
+            raise NotImplementedError
+
+        def recv(
+            self,
+            bufsize: int | None = None,
+            timeout: float | None = None,
+        ) -> bytes:
+            """
+            The 'recv()' socket API method placeholder.
+            """
+
+            raise NotImplementedError
+
+        def close(self) -> None:
+            """
+            The 'close()' socket API placeholder.
+            """
+
+            raise NotImplementedError
 
         def listen(self) -> None:
             """
@@ -385,30 +404,6 @@ class Socket(ABC):
         def notify_unreachable(self) -> None:
             """
             The 'notify_unreachable()' method plceholder.
-            """
-
-            raise NotImplementedError
-
-        @property
-        def tcp_session(self) -> TcpSession | None:
-            """
-            The 'tcp_session' property plceholder.
-            """
-
-            raise NotImplementedError
-
-        @property
-        def state(self) -> FsmState:
-            """
-            The 'state' property plceholder.
-            """
-
-            raise NotImplementedError
-
-        @property
-        def parent_socket(self) -> Socket | None:
-            """
-            The 'parent_socket' property plceholder.
             """
 
             raise NotImplementedError
