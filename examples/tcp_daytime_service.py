@@ -58,7 +58,7 @@ from net_addr import (
 from pytcp import TcpIpStack, initialize_interface
 
 if TYPE_CHECKING:
-    from pytcp.lib.socket import Socket
+    from pytcp.socket.socket import Socket
 
 
 class TcpDaytimeService(TcpService):

@@ -48,7 +48,7 @@ from net_addr import (
 )
 from pytcp.lib import stack
 from pytcp.lib.logger import log
-from pytcp.lib.socket import AddressFamily, Socket, SocketType, gaierror
+from pytcp.socket.socket import AddressFamily, Socket, SocketType, gaierror
 from pytcp.socket.tcp__session import FsmState, TcpSession, TcpSessionError
 
 if TYPE_CHECKING:

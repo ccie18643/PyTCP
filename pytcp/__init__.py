@@ -47,7 +47,7 @@ from net_addr import Ip4Host, Ip6Host, MacAddress
 from pytcp import config
 from pytcp.lib import stack
 from pytcp.lib.logger import log
-from pytcp.lib.socket import (  # noqa: F401
+from pytcp.socket.socket import (  # noqa: F401
     AddressFamily,
     IpProto,
     ReceiveTimeout,

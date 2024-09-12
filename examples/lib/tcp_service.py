@@ -43,7 +43,7 @@ import click
 from examples.lib.service import Service
 
 if TYPE_CHECKING:
-    from pytcp.lib.socket import Socket
+    from pytcp.socket.socket import Socket
 
 
 class TcpService(Service):

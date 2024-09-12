@@ -46,7 +46,7 @@ from pytcp.subsystems.tx_ring import TxRing
 
 if TYPE_CHECKING:
     from net_addr import Ip4Address
-    from pytcp.lib.socket import Socket
+    from pytcp.socket.socket import Socket
 
 version_string = "ver 3.0.2"
 github_repository = "https://github.com/ccie18643/PyTCP"

@@ -839,7 +839,7 @@ class TcpSession:
         TCP FSM LISTEN state handler.
         """
 
-        from pytcp.lib.socket import AddressFamily
+        from pytcp.socket.socket import AddressFamily
         from pytcp.socket.tcp__socket import TcpSocket
 
         # Got SYN packet -> Send SYN + ACK packet / change state to SYN_RCVD

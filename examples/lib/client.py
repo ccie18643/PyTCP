@@ -46,7 +46,7 @@ from net_addr.ip_address import IpAddress
 from pytcp.socket import AF_INET4, AF_INET6, SOCK_DGRAM, SOCK_STREAM, socket
 
 if TYPE_CHECKING:
-    from pytcp.lib.socket import Socket
+    from pytcp.socket.socket import Socket
 
 
 class Client(ABC):

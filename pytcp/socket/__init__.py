@@ -35,7 +35,7 @@ ver 3.0.2
 """
 
 
-from pytcp.lib.socket import (  # noqa: F401
+from pytcp.socket.socket import (  # noqa: F401
     AddressFamily,
     IpProto,
     ReceiveTimeout,

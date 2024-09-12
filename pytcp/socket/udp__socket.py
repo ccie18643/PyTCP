@@ -49,14 +49,14 @@ from net_addr import (
 )
 from pytcp.lib import stack
 from pytcp.lib.logger import log
-from pytcp.lib.socket import (
+from pytcp.lib.tx_status import TxStatus
+from pytcp.socket.socket import (
     AddressFamily,
     ReceiveTimeout,
     Socket,
     SocketType,
     gaierror,
 )
-from pytcp.lib.tx_status import TxStatus
 
 if TYPE_CHECKING:
     from threading import Semaphore
