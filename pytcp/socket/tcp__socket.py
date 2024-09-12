@@ -68,10 +68,6 @@ class TcpSocket(Socket):
     Support for IPv6/IPv4 TCP socket operations.
     """
 
-    _local_port: int
-    _remote_port: int
-    _tcp_accept: list[Socket]
-
     def __init__(
         self, *, family: AddressFamily, tcp_session: TcpSession | None = None
     ) -> None:

@@ -75,9 +75,6 @@ class UdpSocket(Socket):
     Support for IPv6/IPv4 UDP socket operations.
     """
 
-    _local_port: int
-    _remote_port: int
-
     def __init__(self, *, family: AddressFamily) -> None:
         """
         Class constructor.

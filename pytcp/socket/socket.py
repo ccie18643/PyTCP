@@ -142,86 +142,82 @@ class Socket(ABC):
 
         return self._remote_ip_address
 
-    if TYPE_CHECKING:
+    def bind(
+        self,
+        address: tuple[str, int],
+    ) -> None:
+        """
+        The 'bind()' socket API method placeholder.
+        """
 
-        # List all the interface methods that should be exposed to the user.
+        raise NotImplementedError
 
-        def bind(
-            self,
-            address: tuple[str, int],
-        ) -> None:
-            """
-            The 'bind()' socket API method placeholder.
-            """
+    def connect(
+        self,
+        address: tuple[str, int],
+    ) -> None:
+        """
+        The 'connect()' socket API method placeholder.
+        """
 
-            raise NotImplementedError
+        raise NotImplementedError
 
-        def connect(
-            self,
-            address: tuple[str, int],
-        ) -> None:
-            """
-            The 'connect()' socket API method placeholder.
-            """
+    def send(
+        self,
+        data: bytes,
+    ) -> int:
+        """
+        The 'send()' socket API method placeholder.
+        """
 
-            raise NotImplementedError
+        raise NotImplementedError
 
-        def send(
-            self,
-            data: bytes,
-        ) -> int:
-            """
-            The 'send()' socket API method placeholder.
-            """
+    def recv(
+        self,
+        bufsize: int | None = None,
+        timeout: float | None = None,
+    ) -> bytes:
+        """
+        The 'recv()' socket API method placeholder.
+        """
 
-            raise NotImplementedError
+        raise NotImplementedError
 
-        def recv(
-            self,
-            bufsize: int | None = None,
-            timeout: float | None = None,
-        ) -> bytes:
-            """
-            The 'recv()' socket API method placeholder.
-            """
+    def close(self) -> None:
+        """
+        The 'close()' socket API placeholder.
+        """
 
-            raise NotImplementedError
+        raise NotImplementedError
 
-        def close(self) -> None:
-            """
-            The 'close()' socket API placeholder.
-            """
+    def listen(self) -> None:
+        """
+        The 'listen()' socket API placeholder.
+        """
 
-            raise NotImplementedError
+        raise NotImplementedError
 
-        def listen(self) -> None:
-            """
-            The 'listen()' socket API placeholder.
-            """
+    def accept(self) -> tuple[Socket, tuple[str, int]]:
+        """
+        The 'accept()' socket API placeholder.
+        """
 
-            raise NotImplementedError
+        raise NotImplementedError
 
-        def accept(self) -> tuple[Socket, tuple[str, int]]:
-            """
-            The 'accept()' socket API placeholder.
-            """
+    def sendto(self, data: bytes, address: tuple[str, int]) -> int:
+        """
+        The 'sendto()' socket API placeholder.
+        """
 
-            raise NotImplementedError
+        raise NotImplementedError
 
-        def sendto(self, data: bytes, address: tuple[str, int]) -> int:
-            """
-            The 'sendto()' socket API placeholder.
-            """
+    def recvfrom(
+        self,
+        bufsize: int | None = None,
+        timeout: float | None = None,
+    ) -> tuple[bytes, tuple[str, int]]:
+        """
+        The 'recvfrom()' socket API placeholder.
+        """
 
-            raise NotImplementedError
-
-        def recvfrom(
-            self,
-            bufsize: int | None = None,
-            timeout: float | None = None,
-        ) -> tuple[bytes, tuple[str, int]]:
-            """
-            The 'recvfrom()' socket API placeholder.
-            """
-
-            raise NotImplementedError
+        raise NotImplementedError
