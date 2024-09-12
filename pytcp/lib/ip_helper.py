@@ -35,7 +35,7 @@ ver 3.0.2
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
 from net_addr import (
     Ip4Address,
@@ -177,19 +177,20 @@ def is_address_in_use(
     Check if IP address / port combination is already in use.
     """
 
+    from pytcp.socket.tcp__socket import TcpSocket
+    from pytcp.socket.udp__socket import UdpSocket
+
     for opened_socket in stack.sockets.values():
         if (
             opened_socket.family == address_family
             and opened_socket.type == socket_type
-            and (
-                (
-                    opened_socket.local_ip_address.is_unspecified
-                    or opened_socket.local_ip_address == local_ip_address
-                )
-                or local_ip_address.is_unspecified
-            )
-            and opened_socket.local_port == local_port
         ):
-            return True
+            opened_socket = cast(TcpSocket | UdpSocket, opened_socket)
+            if (
+                opened_socket.local_ip_address.is_unspecified
+                or opened_socket.local_ip_address == local_ip_address
+                or local_ip_address.is_unspecified
+            ) and opened_socket.local_port == local_port:
+                return True
 
     return False

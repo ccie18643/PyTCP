@@ -39,7 +39,6 @@ from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING
 
 from pytcp.lib.name_enum import NameEnum
-from pytcp.socket.tcp__session import FsmState, TcpSession
 
 if TYPE_CHECKING:
     from net_addr import IpAddress
@@ -145,48 +144,7 @@ class Socket(ABC):
 
     if TYPE_CHECKING:
 
-        # List all the abstract properties and methods contained
-        # by the derived classes for type checking.
-
-        @property
-        def local_port(self) -> int:
-            """
-            The 'local_port' property plceholder.
-            """
-
-            raise NotImplementedError
-
-        @property
-        def remote_port(self) -> int:
-            """
-            The 'remote_port' property plceholder.
-            """
-
-            raise NotImplementedError
-
-        @property
-        def tcp_session(self) -> TcpSession | None:
-            """
-            The 'tcp_session' property plceholder.
-            """
-
-            raise NotImplementedError
-
-        @property
-        def state(self) -> FsmState:
-            """
-            The 'state' property plceholder.
-            """
-
-            raise NotImplementedError
-
-        @property
-        def parent_socket(self) -> Socket | None:
-            """
-            The 'parent_socket' property plceholder.
-            """
-
-            raise NotImplementedError
+        # List all the interface methods that should be exposed to the user.
 
         def bind(
             self,

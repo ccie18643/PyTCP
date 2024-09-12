@@ -75,6 +75,7 @@ disable = """
     too-many-arguments,
     too-many-locals,
     too-many-branches,
+    too-many-boolean-expressions,
     too-few-public-methods,
     import-outside-toplevel,
     fixme,

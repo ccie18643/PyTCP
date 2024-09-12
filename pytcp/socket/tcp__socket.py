@@ -38,7 +38,7 @@ ver 3.0.2
 from __future__ import annotations
 
 import threading
-from typing import TYPE_CHECKING, override
+from typing import TYPE_CHECKING, cast, override
 
 from net_addr import (
     Ip4Address,
@@ -383,7 +383,7 @@ class TcpSocket(Socket):
         )
 
         self._event_tcp_session_established.acquire()
-        socket = self._tcp_accept.pop(0)
+        socket = cast(TcpSocket, self._tcp_accept.pop(0))
 
         __debug__ and log(
             "socket",
