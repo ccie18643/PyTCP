@@ -38,7 +38,7 @@ ver 3.0.2
 from __future__ import annotations
 
 import threading
-from typing import TYPE_CHECKING, override
+from typing import TYPE_CHECKING
 
 from net_addr import (
     Ip4Address,
@@ -62,6 +62,9 @@ class TcpSocket(Socket):
     """
     Support for IPv6/IPv4 TCP socket operations.
     """
+
+    _local_port: int
+    _remote_port: int
 
     def __init__(
         self, *, family: AddressFamily, tcp_session: TcpSession | None = None
@@ -108,6 +111,32 @@ class TcpSocket(Socket):
 
         __debug__ and log("socket", f"<g>[{self}]</> - Create socket")
 
+    def __str__(self) -> str:
+        """
+        The '__str__()' dunder.
+        """
+
+        return (
+            f"{self._family}/{self._type}/{self._local_ip_address}/"
+            f"{self._local_port}/{self._remote_ip_address}/{self._remote_port}"
+        )
+
+    @property
+    def local_port(self) -> int:
+        """
+        Get the '_local_port' attribute.
+        """
+
+        return self._local_port
+
+    @property
+    def remote_port(self) -> int:
+        """
+        Get the '_remote_port' attribute.
+        """
+
+        return self._remote_port
+
     @property
     def state(self) -> FsmState:
         """
@@ -135,7 +164,33 @@ class TcpSocket(Socket):
 
         return self._parent_socket
 
-    @override
+    def _is_address_in_use(
+        self,
+        *,
+        local_ip_address: IpAddress,
+        local_port: int,
+    ) -> bool:
+        """
+        Check if IP address / port combination is already in use.
+        """
+
+        for opened_socket in stack.sockets.values():
+            if (
+                opened_socket.family == self._family
+                and opened_socket.type == self._type
+                and (
+                    (
+                        opened_socket.local_ip_address.is_unspecified
+                        or opened_socket.local_ip_address == local_ip_address
+                    )
+                    or local_ip_address.is_unspecified
+                )
+                and opened_socket.local_port == local_port
+            ):
+                return True
+
+        return False
+
     def bind(self, address: tuple[str, int]) -> None:
         """
         Bind the socket to local address.
@@ -212,7 +267,6 @@ class TcpSocket(Socket):
 
         __debug__ and log("socket", f"<g>[{self}]</> - Bound socket")
 
-    @override
     def connect(self, address: tuple[str, int]) -> None:
         """
         Connect local socket to remote socket.
@@ -319,7 +373,6 @@ class TcpSocket(Socket):
 
         return socket, (str(socket.remote_ip_address), socket.remote_port)
 
-    @override
     def send(self, data: bytes) -> int:
         """
         Send the data to connected remote host.
@@ -345,7 +398,6 @@ class TcpSocket(Socket):
         )
         return bytes_sent
 
-    @override
     def recv(
         self, bufsize: int | None = None, timeout: float | None = None
     ) -> bytes:
@@ -371,7 +423,6 @@ class TcpSocket(Socket):
 
         return data_rx
 
-    @override
     def close(self) -> None:
         """
         Close socket and the TCP session(s) it owns.

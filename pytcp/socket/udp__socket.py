@@ -39,7 +39,7 @@ ver 3.0.2
 from __future__ import annotations
 
 import threading
-from typing import TYPE_CHECKING, override
+from typing import TYPE_CHECKING
 
 from net_addr import (
     Ip4Address,
@@ -70,6 +70,9 @@ class UdpSocket(Socket):
     Support for IPv6/IPv4 UDP socket operations.
     """
 
+    _local_port: int
+    _remote_port: int
+
     def __init__(self, *, family: AddressFamily) -> None:
         """
         Class constructor.
@@ -95,7 +98,59 @@ class UdpSocket(Socket):
 
         __debug__ and log("socket", f"<g>[{self}]</> - Created socket")
 
-    @override
+    def __str__(self) -> str:
+        """
+        The '__str__()' dunder.
+        """
+
+        return (
+            f"{self._family}/{self._type}/{self._local_ip_address}/"
+            f"{self._local_port}/{self._remote_ip_address}/{self._remote_port}"
+        )
+
+    @property
+    def local_port(self) -> int:
+        """
+        Get the '_local_port' attribute.
+        """
+
+        return self._local_port
+
+    @property
+    def remote_port(self) -> int:
+        """
+        Get the '_remote_port' attribute.
+        """
+
+        return self._remote_port
+
+    def _is_address_in_use(
+        self,
+        *,
+        local_ip_address: IpAddress,
+        local_port: int,
+    ) -> bool:
+        """
+        Check if IP address / port combination is already in use.
+        """
+
+        for opened_socket in stack.sockets.values():
+            if (
+                opened_socket.family == self._family
+                and opened_socket.type == self._type
+                and (
+                    (
+                        opened_socket.local_ip_address.is_unspecified
+                        or opened_socket.local_ip_address == local_ip_address
+                    )
+                    or local_ip_address.is_unspecified
+                )
+                and opened_socket.local_port == local_port
+            ):
+                return True
+
+        return False
+
     def bind(self, address: tuple[str, int]) -> None:
         """
         Bind the socket to local address.
@@ -172,7 +227,6 @@ class UdpSocket(Socket):
 
         __debug__ and log("socket", f"<g>[{self}]</> - Bound")
 
-    @override
     def connect(self, address: tuple[str, int]) -> None:
         """
         Connect local socket to remote socket.
@@ -210,7 +264,6 @@ class UdpSocket(Socket):
 
         __debug__ and log("socket", f"<g>[{self}]</> - Connected socket")
 
-    @override
     def send(self, data: bytes) -> int:
         """
         Send the data to connected remote host.
@@ -300,7 +353,6 @@ class UdpSocket(Socket):
 
         return sent_data_len
 
-    @override
     def recv(
         self, bufsize: int | None = None, timeout: float | None = None
     ) -> bytes:
@@ -349,7 +401,6 @@ class UdpSocket(Socket):
             )
         raise ReceiveTimeout
 
-    @override
     def close(self) -> None:
         """
         Close socket.

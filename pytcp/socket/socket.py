@@ -122,28 +122,16 @@ class Socket(ABC):
     _type: SocketType
     _local_ip_address: IpAddress
     _remote_ip_address: IpAddress
-    _local_port: int
-    _remote_port: int
     _parent_socket: Socket
     _tcp_session: TcpSession | None
     _tcp_accept: list[Socket]
     _event_tcp_session_established: Semaphore
     _unreachable: bool
 
-    def __str__(self) -> str:
-        """
-        The '__str__()' dunder.
-        """
-
-        return (
-            f"{self._family}/{self._type}/{self._local_ip_address}/"
-            f"{self._local_port}/{self._remote_ip_address}/{self._remote_port}"
-        )
-
     @property
     def family(self) -> AddressFamily:
         """
-        Getter for the '_family' attribute.
+        Get the '_family' attribute.
         """
 
         return self._family
@@ -151,7 +139,7 @@ class Socket(ABC):
     @property
     def type(self) -> SocketType:
         """
-        Getter for the '_type' attribute.
+        Get the '_type' attribute.
         """
 
         return self._type
@@ -159,7 +147,7 @@ class Socket(ABC):
     @property
     def local_ip_address(self) -> IpAddress:
         """
-        Getter for the '_local_ip_address' attribute.
+        Get the '_local_ip_address' attribute.
         """
 
         return self._local_ip_address
@@ -167,26 +155,10 @@ class Socket(ABC):
     @property
     def remote_ip_address(self) -> IpAddress:
         """
-        Getter for the '_remote_ip_address' attribute.
+        Get the '_remote_ip_address' attribute.
         """
 
         return self._remote_ip_address
-
-    @property
-    def local_port(self) -> int:
-        """
-        Getter for the '_local_port' attribute.
-        """
-
-        return self._local_port
-
-    @property
-    def remote_port(self) -> int:
-        """
-        Getter for the '_remote_port' attribute.
-        """
-
-        return self._remote_port
 
     def _pick_local_port(self) -> int:
         """
@@ -205,33 +177,6 @@ class Socket(ABC):
             "[Errno 98] Address already in use - [Unable to find free "
             "local ephemeral port]"
         )
-
-    def _is_address_in_use(
-        self,
-        *,
-        local_ip_address: IpAddress,
-        local_port: int,
-    ) -> bool:
-        """
-        Check if IP address / port combination is already in use.
-        """
-
-        for opened_socket in stack.sockets.values():
-            if (
-                opened_socket.family == self._family
-                and opened_socket._type == self._type
-                and (
-                    (
-                        opened_socket._local_ip_address.is_unspecified
-                        or opened_socket._local_ip_address == local_ip_address
-                    )
-                    or local_ip_address.is_unspecified
-                )
-                and opened_socket._local_port == local_port
-            ):
-                return True
-
-        return False
 
     def _get_ip_addresses(
         self,
@@ -283,6 +228,22 @@ class Socket(ABC):
         return local_ip_address, remote_ip_address
 
     if TYPE_CHECKING:
+
+        @property
+        def local_port(self) -> int:
+            """
+            The 'local_port' property plceholder.
+            """
+
+            raise NotImplementedError
+
+        @property
+        def remote_port(self) -> int:
+            """
+            The 'remote_port' property plceholder.
+            """
+
+            raise NotImplementedError
 
         @property
         def tcp_session(self) -> TcpSession | None:
