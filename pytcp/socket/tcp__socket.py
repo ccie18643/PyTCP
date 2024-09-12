@@ -38,7 +38,7 @@ ver 3.0.2
 from __future__ import annotations
 
 import threading
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, override
 
 from net_addr import (
     Ip4Address,
@@ -70,6 +70,7 @@ class TcpSocket(Socket):
 
     _local_port: int
     _remote_port: int
+    _tcp_accept: list[Socket]
 
     def __init__(
         self, *, family: AddressFamily, tcp_session: TcpSession | None = None
@@ -87,7 +88,7 @@ class TcpSocket(Socket):
         self._remote_ip_address: IpAddress
         self._local_port: int
         self._remote_port: int
-        self._parent_socket: Socket
+        self._parent_socket: TcpSocket
 
         # Create established socket based on established TCP session, called by
         # listening sockets only
@@ -116,9 +117,10 @@ class TcpSocket(Socket):
 
         __debug__ and log("socket", f"<g>[{self}]</> - Create socket")
 
+    @override
     def __str__(self) -> str:
         """
-        The '__str__()' dunder.
+        Get TCP socket log string.
         """
 
         return (
@@ -162,7 +164,7 @@ class TcpSocket(Socket):
         return self._tcp_session
 
     @property
-    def parent_socket(self) -> Socket | None:
+    def parent_socket(self) -> TcpSocket | None:
         """
         Getter for the '_parent_socket' attribute.
         """

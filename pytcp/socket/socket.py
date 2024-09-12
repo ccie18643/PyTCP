@@ -23,13 +23,6 @@
 ##                                                                            ##
 ################################################################################
 
-# pylint: disable=invalid-name
-# pylint: disable=redefined-builtin
-# pylint: disable=import-outside-toplevel
-# pylint: disable=too-many-instance-attributes
-# pylint: disable=too-many-public-methods
-# pylint: disable=protected-access
-# pylint: disable=too-many-boolean-expressions
 
 """
 Module contains BSD like socket interface for the stack.
@@ -42,7 +35,7 @@ ver 3.0.2
 
 from __future__ import annotations
 
-from abc import ABC
+from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING
 
 from pytcp.lib.name_enum import NameEnum
@@ -51,14 +44,12 @@ from pytcp.socket.tcp__session import FsmState, TcpSession
 from pytcp.socket.udp__metadata import UdpMetadata
 
 if TYPE_CHECKING:
-    from threading import Semaphore
-
     from net_addr import IpAddress
 
 
 class gaierror(OSError):
     """
-    BSD Socket's error for compatibility.
+    BSD Socket error for compatibility.
     """
 
 
@@ -70,7 +61,7 @@ class ReceiveTimeout(Exception):
 
 class AddressFamily(NameEnum):
     """
-    Address family identifier enum.
+    Address family identifier.
     """
 
     AF_UNSPECIFIED = 0
@@ -80,7 +71,7 @@ class AddressFamily(NameEnum):
 
 class SocketType(NameEnum):
     """
-    Socket type identifier enum.
+    Socket type identifier.
     """
 
     SOCK_UNSPECIFIED = 0
@@ -91,7 +82,7 @@ class SocketType(NameEnum):
 
 class IpProto(NameEnum):
     """
-    IP protocol identifier enum.
+    IP protocol identifier.
     """
 
     IPPROTO_UNSPECIFIED = 0
@@ -106,18 +97,21 @@ class IpProto(NameEnum):
 
 class Socket(ABC):
     """
-    Base class for other socket classes.
+    Base class for all socket classes.
     """
 
     _family: AddressFamily
     _type: SocketType
     _local_ip_address: IpAddress
     _remote_ip_address: IpAddress
-    _parent_socket: Socket
-    _tcp_session: TcpSession | None
-    _tcp_accept: list[Socket]
-    _event_tcp_session_established: Semaphore
-    _unreachable: bool
+
+    @abstractmethod
+    def __str__(self) -> str:
+        """
+        Get socket log string.
+        """
+
+        raise NotImplementedError
 
     @property
     def family(self) -> AddressFamily:
@@ -152,6 +146,9 @@ class Socket(ABC):
         return self._remote_ip_address
 
     if TYPE_CHECKING:
+
+        # List all the abstract properties and methods contained
+        # by the derived classes for type checking.
 
         @property
         def local_port(self) -> int:

@@ -39,7 +39,7 @@ ver 3.0.2
 from __future__ import annotations
 
 import threading
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, override
 
 from net_addr import (
     Ip4Address,
@@ -103,9 +103,10 @@ class UdpSocket(Socket):
 
         __debug__ and log("socket", f"<g>[{self}]</> - Created socket")
 
+    @override
     def __str__(self) -> str:
         """
-        The '__str__()' dunder.
+        Get the UDP log string.
         """
 
         return (
