@@ -48,6 +48,7 @@ from pytcp.lib import stack
 
 if TYPE_CHECKING:
     from net_addr import IpAddress
+    from pytcp.socket.socket import AddressFamily, SocketType
 
 
 def ip_version(
@@ -163,3 +164,32 @@ def pick_local_port() -> int:
         "[Errno 98] Address already in use - [Unable to find free "
         "local ephemeral port]"
     )
+
+
+def is_address_in_use(
+    *,
+    local_ip_address: IpAddress,
+    local_port: int,
+    address_family: AddressFamily,
+    socket_type: SocketType,
+) -> bool:
+    """
+    Check if IP address / port combination is already in use.
+    """
+
+    for opened_socket in stack.sockets.values():
+        if (
+            opened_socket.family == address_family
+            and opened_socket.type == socket_type
+            and (
+                (
+                    opened_socket.local_ip_address.is_unspecified
+                    or opened_socket.local_ip_address == local_ip_address
+                )
+                or local_ip_address.is_unspecified
+            )
+            and opened_socket.local_port == local_port
+        ):
+            return True
+
+    return False

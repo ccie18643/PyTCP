@@ -47,7 +47,11 @@ from net_addr import (
     Ip6AddressFormatError,
 )
 from pytcp.lib import stack
-from pytcp.lib.ip_helper import pick_local_ip_address, pick_local_port
+from pytcp.lib.ip_helper import (
+    is_address_in_use,
+    pick_local_ip_address,
+    pick_local_port,
+)
 from pytcp.lib.logger import log
 from pytcp.socket.socket import AddressFamily, Socket, SocketType, gaierror
 from pytcp.socket.tcp__session import FsmState, TcpSession, TcpSessionError
@@ -165,33 +169,6 @@ class TcpSocket(Socket):
 
         return self._parent_socket
 
-    def _is_address_in_use(
-        self,
-        *,
-        local_ip_address: IpAddress,
-        local_port: int,
-    ) -> bool:
-        """
-        Check if IP address / port combination is already in use.
-        """
-
-        for opened_socket in stack.sockets.values():
-            if (
-                opened_socket.family == self._family
-                and opened_socket.type == self._type
-                and (
-                    (
-                        opened_socket.local_ip_address.is_unspecified
-                        or opened_socket.local_ip_address == local_ip_address
-                    )
-                    or local_ip_address.is_unspecified
-                )
-                and opened_socket.local_port == local_port
-            ):
-                return True
-
-        return False
-
     def _get_ip_addresses(
         self,
         *,
@@ -289,9 +266,11 @@ class TcpSocket(Socket):
 
         # Confirm or pick local port number
         if (local_port := address[1]) > 0:
-            if self._is_address_in_use(
+            if is_address_in_use(
                 local_ip_address=local_ip_address,
                 local_port=local_port,
+                address_family=self._family,
+                socket_type=self._type,
             ):
                 raise OSError(
                     "[Errno 98] Address already in use - "
