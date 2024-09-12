@@ -73,7 +73,7 @@ from pytcp.protocols.icmp6.message.nd.option.icmp6_nd_options import (
 from pytcp.protocols.ip6.ip6__enums import Ip6Next
 from pytcp.protocols.ip6.ip6__header import IP6__HEADER__LEN
 from pytcp.protocols.udp.udp__header import UDP__HEADER__LEN
-from pytcp.protocols.udp.udp__metadata import UdpMetadata
+from pytcp.socket.udp__metadata import UdpMetadata
 
 
 class Icmp6PacketHandlerRx(ABC):
@@ -186,6 +186,7 @@ class Icmp6PacketHandlerRx(ABC):
             # Create UdpMetadata object and try to find matching UDP socket
             udp_offset = IP6__HEADER__LEN
             packet = UdpMetadata(
+                ver=6,
                 local_ip_address=Ip6Address(frame[8:24]),
                 remote_ip_address=Ip6Address(frame[24:40]),
                 local_port=struct.unpack(

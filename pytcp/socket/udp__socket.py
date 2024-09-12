@@ -24,12 +24,13 @@
 ################################################################################
 
 # pylint: disable=expression-not-assigned
+# pylint: disable=consider-using-with
 
 
 """
-Module contains BSD like socket interface for the stack.
+Module contains BSD like UDP socket interface for the stack.
 
-pytcp/protocols/tcp/tcp__socket.py
+pytcp/socket/udp__socket.py
 
 ver 3.0.2
 """
@@ -48,96 +49,51 @@ from net_addr import (
 )
 from pytcp.lib import stack
 from pytcp.lib.logger import log
-from pytcp.lib.socket import AddressFamily, Socket, SocketType, gaierror
-from pytcp.protocols.tcp.tcp__session import (
-    FsmState,
-    TcpSession,
-    TcpSessionError,
+from pytcp.lib.socket import (
+    AddressFamily,
+    ReceiveTimeout,
+    Socket,
+    SocketType,
+    gaierror,
 )
+from pytcp.lib.tx_status import TxStatus
 
 if TYPE_CHECKING:
     from threading import Semaphore
 
     from net_addr import IpAddress
-    from pytcp.protocols.tcp.tcp__metadata import TcpMetadata
+    from pytcp.socket.udp__metadata import UdpMetadata
 
 
-class TcpSocket(Socket):
+class UdpSocket(Socket):
     """
-    Support for IPv6/IPv4 TCP socket operations.
+    Support for IPv6/IPv4 UDP socket operations.
     """
 
-    def __init__(
-        self, *, family: AddressFamily, tcp_session: TcpSession | None = None
-    ) -> None:
+    def __init__(self, *, family: AddressFamily) -> None:
         """
         Class constructor.
         """
 
         self._family: AddressFamily = family
-        self._type: SocketType = SocketType.SOCK_STREAM
-        self._event_tcp_session_established: Semaphore = threading.Semaphore(0)
-        self._tcp_accept: list[Socket] = []
-        self._tcp_session: TcpSession | None
+        self._type: SocketType = SocketType.SOCK_DGRAM
+        self._local_port: int = 0
+        self._remote_port: int = 0
+        self._packet_rx_md: list[UdpMetadata] = []
+        self._packet_rx_md_ready: Semaphore = threading.Semaphore(0)
+        self._unreachable: bool = False
         self._local_ip_address: IpAddress
         self._remote_ip_address: IpAddress
-        self._local_port: int
-        self._remote_port: int
-        self._parent_socket: Socket
 
-        # Create established socket based on established TCP session, called by
-        # listening sockets only
-        if tcp_session:
-            self._tcp_session = tcp_session
-            self._local_ip_address = tcp_session.local_ip_address
-            self._remote_ip_address = tcp_session.remote_ip_address
-            self._local_port = tcp_session.local_port
-            self._remote_port = tcp_session.remote_port
-            self._parent_socket = tcp_session.socket
-            stack.sockets[str(self)] = self
+        match self._family:
+            case AddressFamily.AF_INET6:
+                self._local_ip_address = Ip6Address()
+                self._remote_ip_address = Ip6Address()
+            case AddressFamily.AF_INET4:
+                self._local_ip_address = Ip4Address()
+                self._remote_ip_address = Ip4Address()
 
-        # Fresh socket initialization
-        else:
-            match self._family:
-                case AddressFamily.AF_INET6:
-                    self._local_ip_address = Ip6Address()
-                    self._remote_ip_address = Ip6Address()
-                case AddressFamily.AF_INET4:
-                    self._local_ip_address = Ip4Address()
-                    self._remote_ip_address = Ip4Address()
-
-            self._local_port = 0
-            self._remote_port = 0
-            self._tcp_session = None
-
-        __debug__ and log("socket", f"<g>[{self}]</> - Create socket")
-
-    @property
-    def state(self) -> FsmState:
-        """
-        Return FSM state of associated TCP session.
-        """
-
-        if self.tcp_session is not None:
-            return self.tcp_session.state
-
-        return FsmState.CLOSED
-
-    @property
-    def tcp_session(self) -> TcpSession | None:
-        """
-        Getter for the '_tcp_session' attribute.
-        """
-
-        return self._tcp_session
-
-    @property
-    def parent_socket(self) -> Socket | None:
-        """
-        Getter for the '_parent_socket' attribute.
-        """
-
-        return self._parent_socket
+        __debug__ and log("socket", f"<g>[{self}]</> - Created socket")
 
     @override
     def bind(self, address: tuple[str, int]) -> None:
@@ -214,7 +170,7 @@ class TcpSocket(Socket):
         self._local_port = local_port
         stack.sockets[str(self)] = self
 
-        __debug__ and log("socket", f"<g>[{self}]</> - Bound socket")
+        __debug__ and log("socket", f"<g>[{self}]</> - Bound")
 
     @override
     def connect(self, address: tuple[str, int]) -> None:
@@ -222,9 +178,9 @@ class TcpSocket(Socket):
         Connect local socket to remote socket.
         """
 
-        # The 'connect' call will bind socket to specific local ip address
-        # (will rebind if necessary), specific local port, specific remote
-        # IP address and specific remote port.
+        # The 'connect' call will bind socket to specific local IP address (will
+        # rebind if necessary), specific local port, specific remote IP address
+        # and specific remote port.
 
         # Sanity check on remote port number (0 is a valid remote port in
         # BSD socket implementation).
@@ -252,76 +208,7 @@ class TcpSocket(Socket):
         self._remote_port = remote_port
         stack.sockets[str(self)] = self
 
-        self._tcp_session = TcpSession(
-            local_ip_address=self._local_ip_address,
-            local_port=self._local_port,
-            remote_ip_address=self._remote_ip_address,
-            remote_port=self._remote_port,
-            socket=self,
-        )
-
-        __debug__ and log(
-            "socket", f"<g>[{self}]</> - Socket attempting connection"
-        )
-
-        try:
-            self._tcp_session.connect()
-        except TcpSessionError as error:
-            if str(error) == "Connection refused":
-                raise ConnectionRefusedError(
-                    "[Errno 111] Connection refused - "
-                    "[Received RST packet from remote host]"
-                ) from error
-            if str(error) == "Connection timeout":
-                raise TimeoutError(
-                    "[Errno 110] Connection timed out - "
-                    "[No valid response received from remote host]"
-                ) from error
-
-        __debug__ and log("socket", f"<g>[{self}]</> - Bound")
-
-    def listen(self) -> None:
-        """
-        Starts to listen for incoming connections.
-        """
-
-        self._tcp_session = TcpSession(
-            local_ip_address=self._local_ip_address,
-            local_port=self._local_port,
-            remote_ip_address=self._remote_ip_address,
-            remote_port=self._remote_port,
-            socket=self,
-        )
-
-        __debug__ and log(
-            "socket",
-            f"<g>[{self}]</> - Socket starting to listen for inbound "
-            "connections",
-        )
-
-        stack.sockets[str(self)] = self
-        self._tcp_session.listen()
-
-    def accept(self) -> tuple[Socket, tuple[str, int]]:
-        """
-        Wait for the established inbound connection, once available return
-        it's socket.
-        """
-
-        __debug__ and log(
-            "socket", f"<g>[{self}]</> - Waiting for inbound connection"
-        )
-
-        self._event_tcp_session_established.acquire()
-        socket = self._tcp_accept.pop(0)
-
-        __debug__ and log(
-            "socket",
-            f"<g>[{self}]</> - Socket accepted connection from "
-            f"{(str(socket.remote_ip_address), socket.remote_port)}",
-        )
-
-        return socket, (str(socket.remote_ip_address), socket.remote_port)
+        __debug__ and log("socket", f"<g>[{self}]</> - Connected socket")
 
     @override
     def send(self, data: bytes) -> int:
@@ -330,67 +217,159 @@ class TcpSocket(Socket):
         """
 
         # The 'send' call requires 'connect' call to be run prior to it.
-
         if self._remote_ip_address.is_unspecified or self._remote_port == 0:
-            raise OSError("send(): Destination address require")
+            raise OSError(
+                "[Errno 89] Destination address require - "
+                "[Socket has no destination address set]"
+            )
 
-        assert self._tcp_session is not None
+        if self._unreachable:
+            self._unreachable = False
+            raise ConnectionRefusedError(
+                "[Errno 111] Connection refused - "
+                "[Remote host sent ICMP Unreachable]"
+            )
 
-        try:
-            bytes_sent = self._tcp_session.send(data)
-        except TcpSessionError as error:
-            raise BrokenPipeError(
-                f"[Errno 32] Broken pipe - [{error}]"
-            ) from error
+        tx_status = stack.packet_handler.send_udp_packet(
+            ip__local_address=self._local_ip_address,
+            ip__remote_address=self._remote_ip_address,
+            udp__local_port=self._local_port,
+            udp__remote_port=self._remote_port,
+            udp__payload=data,
+        )
+
+        sent_data_len = (
+            len(data)
+            if tx_status is TxStatus.PASSED__ETHERNET__TO_TX_RING
+            else 0
+        )
 
         __debug__ and log(
             "socket",
-            f"<g>[{self}]</> - Sent data segment, len {bytes_sent}",
+            f"<g>[{self}]</> - <lr>Sent</> {sent_data_len} bytes of data",
         )
-        return bytes_sent
+
+        return sent_data_len
+
+    def sendto(self, data: bytes, address: tuple[str, int]) -> int:
+        """
+        Send the data to remote host.
+        """
+
+        # The 'sendto' call will bind socket to specific local port,
+        # will leave local ip address intact.
+
+        # Sanity check on remote port number (0 is a valid remote port in
+        # BSD socket implementation).
+        if (remote_port := address[1]) not in range(0, 65536):
+            raise OverflowError(
+                "sendto(): port must be 0-65535. - [Port out of range]"
+            )
+
+        # Assigning local port makes socket "bound" if not "bound" already
+        if self._local_port not in range(1, 65536):
+            stack.sockets.pop(str(self), None)
+            self._local_port = self._pick_local_port()
+            stack.sockets[str(self)] = self
+
+        # Set local and remote ip addresses aproprietely
+        local_ip_address, remote_ip_address = self._get_ip_addresses(
+            remote_address=address,
+            local_ip_address=self._local_ip_address,
+            local_port=self._local_port,
+        )
+
+        tx_status = stack.packet_handler.send_udp_packet(
+            ip__local_address=local_ip_address,
+            ip__remote_address=remote_ip_address,
+            udp__local_port=self._local_port,
+            udp__remote_port=remote_port,
+            udp__payload=data,
+        )
+
+        sent_data_len = (
+            len(data)
+            if tx_status is TxStatus.PASSED__ETHERNET__TO_TX_RING
+            else 0
+        )
+
+        __debug__ and log(
+            "socket",
+            f"<g>[{self}]</> - <lr>Sent</> {sent_data_len} bytes of data",
+        )
+
+        return sent_data_len
 
     @override
     def recv(
         self, bufsize: int | None = None, timeout: float | None = None
     ) -> bytes:
         """
-        Receive data from socket.
+        Read data from socket.
         """
 
-        # TODO - Consider implementing timeout
+        # TODO - Implement support for buffsize
 
-        assert self._tcp_session is not None
-
-        if data_rx := self._tcp_session.receive(bufsize):
-            __debug__ and log(
-                "socket",
-                f"<g>[{self}]</> - Received {len(data_rx)} bytes of data",
-            )
-        else:
-            __debug__ and log(
-                "socket",
-                f"<g>[{self}]</> - Received empty data byte string, remote "
-                "end closed connection",
+        if self._unreachable:
+            self._unreachable = False
+            raise ConnectionRefusedError(
+                "[Errno 111] Connection refused - "
+                "[Remote host sent ICMP Unreachable]"
             )
 
-        return data_rx
+        if self._packet_rx_md_ready.acquire(timeout=timeout):
+            data_rx = self._packet_rx_md.pop(0).data
+            __debug__ and log(
+                "socket",
+                f"<g>[{self}]</> - <lg>Received</> {len(data_rx)} "
+                "bytes of data",
+            )
+            return data_rx
+        raise ReceiveTimeout
+
+    def recvfrom(
+        self, bufsize: int | None = None, timeout: float | None = None
+    ) -> tuple[bytes, tuple[str, int]]:
+        """
+        Read data from socket.
+        """
+
+        # TODO - Implement support for buffsize
+
+        if self._packet_rx_md_ready.acquire(timeout=timeout):
+            packet_rx_md = self._packet_rx_md.pop(0)
+            __debug__ and log(
+                "socket",
+                f"<g>[{self}]</> - <lg>Received</> "
+                f"{len(packet_rx_md.data)} bytes of data",
+            )
+            return (
+                packet_rx_md.data,
+                (str(packet_rx_md.remote_ip_address), packet_rx_md.remote_port),
+            )
+        raise ReceiveTimeout
 
     @override
     def close(self) -> None:
         """
-        Close socket and the TCP session(s) it owns.
+        Close socket.
         """
 
-        assert self._tcp_session is not None
-
-        self._tcp_session.close()
+        stack.sockets.pop(str(self), None)
 
         __debug__ and log("socket", f"<g>[{self}]</> - Closed socket")
 
-    def process_tcp_packet(self, packet_rx_md: TcpMetadata) -> None:
+    def process_udp_packet(self, packet_rx_md: UdpMetadata) -> None:
         """
         Process incoming packet's metadata.
         """
 
-        if self._tcp_session:
-            self._tcp_session.tcp_fsm(packet_rx_md)
+        self._packet_rx_md.append(packet_rx_md)
+        self._packet_rx_md_ready.release()
+
+    def notify_unreachable(self) -> None:
+        """
+        Set the unreachable notification.
+        """
+
+        self._unreachable = True

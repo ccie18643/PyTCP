@@ -55,9 +55,9 @@ from pytcp import config
 from pytcp.lib import stack
 from pytcp.lib.ip_helper import pick_local_ip_address
 from pytcp.lib.name_enum import NameEnum
-from pytcp.protocols.tcp.tcp__metadata import TcpMetadata
-from pytcp.protocols.tcp.tcp__session import FsmState, TcpSession
-from pytcp.protocols.udp.udp__metadata import UdpMetadata
+from pytcp.socket.tcp__metadata import TcpMetadata
+from pytcp.socket.tcp__session import FsmState, TcpSession
+from pytcp.socket.udp__metadata import UdpMetadata
 
 if TYPE_CHECKING:
     from threading import Semaphore

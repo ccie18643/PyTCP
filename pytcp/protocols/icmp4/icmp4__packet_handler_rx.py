@@ -57,7 +57,7 @@ from pytcp.protocols.icmp4.message.icmp4_message__echo_request import (
 from pytcp.protocols.ip4.ip4__enums import Ip4Proto
 from pytcp.protocols.ip4.ip4__header import IP4__HEADER__LEN
 from pytcp.protocols.udp.udp__header import UDP__HEADER__LEN
-from pytcp.protocols.udp.udp__metadata import UdpMetadata
+from pytcp.socket.udp__metadata import UdpMetadata
 
 
 class Icmp4PacketHandlerRx(ABC):
@@ -163,6 +163,7 @@ class Icmp4PacketHandlerRx(ABC):
             # Create UdpMetadata object and try to find matching UDP socket.
             udp_offset = (frame[0] & 0b00001111) << 2
             packet = UdpMetadata(
+                ver=4,
                 local_ip_address=Ip4Address(frame[12:16]),
                 remote_ip_address=Ip4Address(frame[16:20]),
                 local_port=struct.unpack(

@@ -23,70 +23,67 @@
 ##                                                                            ##
 ################################################################################
 
+# pylint: disable=unused-import
+
 
 """
-Module contains interface class for the FPP -> TCP Socket communication.
+Module contains the PyTCP socket class.
 
-pytcp/protocols/tcp/tcp__metadata.py
+pytcp/socket/__init__.py
 
 ver 3.0.2
 """
 
 
-from __future__ import annotations
+from pytcp.lib.socket import (  # noqa: F401
+    AddressFamily,
+    IpProto,
+    ReceiveTimeout,
+    Socket,
+    SocketType,
+    gaierror,
+)
 
-from dataclasses import dataclass
-from typing import TYPE_CHECKING
+AF_INET = AddressFamily.AF_INET4
+AF_INET4 = AddressFamily.AF_INET4
+AF_INET6 = AddressFamily.AF_INET6
 
-if TYPE_CHECKING:
-    from net_addr import IpAddress
-    from pytcp.lib.tracker import Tracker
+SOCK_STREAM = SocketType.SOCK_STREAM
+SOCK_DGRAM = SocketType.SOCK_DGRAM
+
+IPPROTO_IP = IpProto.IPPROTO_IP
+IPPROTO_ICMP = IpProto.IPPROTO_ICMP
+IPPROTO_IGMP = IpProto.IPPROTO_IGMP
+IPPROTO_TCP = IpProto.IPPROTO_TCP
+IPPROTO_UDP = IpProto.IPPROTO_UDP
+IPPROTO_IPV6 = IpProto.IPPROTO_IPV6
+IPPROTO_RAW = IpProto.IPPROTO_RAW
 
 
-@dataclass(frozen=True, kw_only=True)
-class TcpMetadata:
+def socket(
+    family: AddressFamily = AddressFamily.AF_INET4,
+    type: SocketType = SocketType.SOCK_STREAM,
+    protocol: IpProto = IpProto.IPPROTO_IP,
+) -> Socket:
     """
-    Store the TCP metadata for the RX packet.
+    Return Socket class object.
     """
 
-    local_ip_address: IpAddress
-    local_port: int
-    remote_ip_address: IpAddress
-    remote_port: int
-    flag_syn: bool
-    flag_ack: bool
-    flag_fin: bool
-    flag_rst: bool
-    seq: int
-    ack: int
-    win: int
-    wscale: int
-    mss: int
-    data: memoryview
-    tracker: Tracker | None
+    from pytcp.socket.tcp__socket import TcpSocket
+    from pytcp.socket.udp__socket import UdpSocket
 
-    def __str__(self) -> str:
-        """
-        Get the TCP metadata log string.
-        """
+    match type, protocol:
+        case SocketType.SOCK_STREAM, IpProto.IPPROTO_IP | IpProto.IPPROTO_TCP:
+            return TcpSocket(family=family)
 
-        return (
-            f"AF_INET{self.local_ip_address.version}/SOCK_STREAM/"
-            f"{self.local_ip_address}/{self.local_port}/"
-            f"{self.remote_ip_address}/{self.remote_port}"
-        )
+        case SocketType.SOCK_DGRAM, IpProto.IPPROTO_IP | IpProto.IPPROTO_UDP:
+            return UdpSocket(family=family)
 
-    @property
-    def tcp_listening_socket_patterns(self) -> list[str]:
-        """
-        Get the session ID patterns that match listening socket.
-        """
+        case SocketType.SOCK_DGRAM, IpProto.IPPROTO_ICMP:
+            raise NotImplementedError
 
-        return [
-            f"AF_INET{self.local_ip_address.version}/SOCK_STREAM/"
-            f"{self.local_ip_address}/{self.local_port}/"
-            f"{self.local_ip_address.unspecified}/0",
-            f"AF_INET{self.local_ip_address.version}/SOCK_STREAM/"
-            f"{self.local_ip_address.unspecified}/{self.local_port}/"
-            f"{self.local_ip_address.unspecified}/0",
-        ]
+        case SocketType.SOCK_RAW, _:
+            raise NotImplementedError
+
+        case _:
+            raise ValueError("Invalid socket type.")

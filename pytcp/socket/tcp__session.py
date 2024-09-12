@@ -35,7 +35,7 @@
 """
 Module contains class supporting TCP finite state machine.
 
-pytcp/protocols/tcp/tcp__session.py
+pytcp/socket/tcp__session.py
 
 ver 3.0.2
 """
@@ -58,8 +58,8 @@ if TYPE_CHECKING:
     from threading import Lock, RLock, Semaphore
 
     from net_addr import IpAddress
-    from pytcp.protocols.tcp.tcp__metadata import TcpMetadata
-    from pytcp.protocols.tcp.tcp__socket import TcpSocket
+    from pytcp.socket.tcp__metadata import TcpMetadata
+    from pytcp.socket.tcp__socket import TcpSocket
 
 
 PACKET_RETRANSMIT_TIMEOUT = 1000  # Retransmit data if ACK not received
@@ -840,7 +840,7 @@ class TcpSession:
         """
 
         from pytcp.lib.socket import AddressFamily
-        from pytcp.protocols.tcp.tcp__socket import TcpSocket
+        from pytcp.socket.tcp__socket import TcpSocket
 
         # Got SYN packet -> Send SYN + ACK packet / change state to SYN_RCVD
         if (

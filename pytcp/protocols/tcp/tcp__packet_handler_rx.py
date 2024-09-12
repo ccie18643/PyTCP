@@ -42,8 +42,8 @@ from pytcp.lib import stack
 from pytcp.lib.errors import PacketValidationError
 from pytcp.lib.logger import log
 from pytcp.lib.packet import PacketRx
-from pytcp.protocols.tcp.tcp__metadata import TcpMetadata
 from pytcp.protocols.tcp.tcp__parser import TcpParser
+from pytcp.socket.tcp__metadata import TcpMetadata
 
 
 class TcpPacketHandlerRx(ABC):
@@ -113,6 +113,7 @@ class TcpPacketHandlerRx(ABC):
 
         # Create TcpMetadata object for further processing by TCP FSM
         packet_rx_md = TcpMetadata(
+            ver=packet_rx.ip.ver,
             local_ip_address=packet_rx.ip.dst,
             local_port=packet_rx.tcp.dport,
             remote_ip_address=packet_rx.ip.src,

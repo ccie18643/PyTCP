@@ -53,8 +53,8 @@ from pytcp.protocols.icmp6.message.icmp6_message__destination_unreachable import
     Icmp6DestinationUnreachableCode,
     Icmp6DestinationUnreachableMessage,
 )
-from pytcp.protocols.udp.udp__metadata import UdpMetadata
 from pytcp.protocols.udp.udp__parser import UdpParser
+from pytcp.socket.udp__metadata import UdpMetadata
 
 
 class UdpPacketHandlerRx(ABC):
@@ -129,6 +129,7 @@ class UdpPacketHandlerRx(ABC):
 
         # Create UdpMetadata object and try to find matching UDP socket
         packet_rx_md = UdpMetadata(
+            ver=packet_rx.ip.ver,
             local_ip_address=packet_rx.ip.dst,
             local_port=packet_rx.udp.dport,
             remote_ip_address=packet_rx.ip.src,

@@ -122,8 +122,8 @@ def socket(
     Return Socket class object.
     """
 
-    from pytcp.protocols.tcp.tcp__socket import TcpSocket
-    from pytcp.protocols.udp.udp__socket import UdpSocket
+    from pytcp.socket.tcp__socket import TcpSocket
+    from pytcp.socket.udp__socket import UdpSocket
 
     match type, protocol:
         case SocketType.SOCK_STREAM, IpProto.IPPROTO_IP | IpProto.IPPROTO_TCP:

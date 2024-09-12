@@ -25,9 +25,9 @@
 
 
 """
-Module contains interface class for the Packet Parser -> UDP Socket communication.
+Module contains interface class for the UDP Parser -> UDP Socket communication.
 
-pytcp/protocols/udp/udp__metadata.py
+pytcp/socket/udp__metadata.py
 
 ver 3.0.2
 """
@@ -48,9 +48,10 @@ if TYPE_CHECKING:
 @dataclass(frozen=True, kw_only=True)
 class UdpMetadata:
     """
-    Store the 'AF_INET6/SOCK_DGRAM' metadata.
+    Store the UDP metadata taken from the received packet.
     """
 
+    ver: int
     local_ip_address: IpAddress
     local_port: int
     remote_ip_address: IpAddress
@@ -60,37 +61,33 @@ class UdpMetadata:
 
     def __str__(self) -> str:
         """
-        String representation.
+        Get the UDP metadata log string.
         """
 
-        return (
-            f"AF_INET{self.local_ip_address.version}/SOCK_DGRAM/"
-            f"{self.local_ip_address}/{self.local_port}/"
-            f"{self.remote_ip_address}/{self.remote_port}"
-        )
+        return self.socket_patterns[0]
 
     @property
     def socket_patterns(self) -> list[str]:
         """
-        Socket ID patterns that match this packet.
+        Get list of the socket ID patterns that match the metadata.
         """
 
+        ver = self.ver
+        laddr = self.local_ip_address
+        lport = self.local_port
+        raddr = self.remote_ip_address
+        rport = self.remote_port
+        unspecified = self.local_ip_address.unspecified
+
         patterns = [
-            f"AF_INET{self.local_ip_address.version}/SOCK_DGRAM/"
-            f"{self.local_ip_address}/{self.local_port}/"
-            f"{self.remote_ip_address}/{self.remote_port}",
-            f"AF_INET{self.local_ip_address.version}/SOCK_DGRAM/"
-            f"{self.local_ip_address}/{self.local_port}/"
-            f"{self.local_ip_address.unspecified}/0",
-            f"AF_INET{self.local_ip_address.version}/SOCK_DGRAM/"
-            f"{self.local_ip_address.unspecified}/{self.local_port}/"
-            f"{self.local_ip_address.unspecified}/0",
+            f"AF_INET{ver}/SOCK_DGRAM/{laddr}/{lport}/{raddr}/{rport}",
+            f"AF_INET{ver}/SOCK_DGRAM/{laddr}/{lport}/{unspecified}/0",
+            f"AF_INET{ver}/SOCK_DGRAM/{unspecified}/{lport}/{unspecified}/0",
         ]
 
         if isinstance(self.local_ip_address, Ip4Address):
             patterns.append(
-                f"AF_INET4/SOCK_DGRAM/0.0.0.0/{self.local_port}/"
-                f"255.255.255.255/{self.remote_port}"
-            )  # For DHCPv4 client
+                f"AF_INET4/SOCK_DGRAM/0.0.0.0/{lport}/255.255.255.255/{rport}"
+            )  # For the DHCPv4 client.
 
         return patterns
