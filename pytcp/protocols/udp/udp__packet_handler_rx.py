@@ -130,12 +130,12 @@ class UdpPacketHandlerRx(ABC):
 
         # Create UdpMetadata object and try to find matching UDP socket
         packet_rx_md = UdpMetadata(
-            ver=packet_rx.ip.ver,
-            local_ip_address=packet_rx.ip.dst,
-            local_port=packet_rx.udp.dport,
-            remote_ip_address=packet_rx.ip.src,
-            remote_port=packet_rx.udp.sport,
-            data=bytes(
+            ip__ver=packet_rx.ip.ver,
+            ip__local_address=packet_rx.ip.dst,
+            udp__local_port=packet_rx.udp.dport,
+            ip__remote_address=packet_rx.ip.src,
+            udp__remote_port=packet_rx.udp.sport,
+            udp__data=bytes(
                 packet_rx.udp.payload
             ),  # memoryview: conversion for end-user interface
             tracker=packet_rx.tracker,

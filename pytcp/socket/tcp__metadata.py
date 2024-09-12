@@ -49,21 +49,23 @@ class TcpMetadata:
     Store the TCP metadata taken from the received packet.
     """
 
-    ver: int
-    local_ip_address: IpAddress
-    local_port: int
-    remote_ip_address: IpAddress
-    remote_port: int
-    flag_syn: bool
-    flag_ack: bool
-    flag_fin: bool
-    flag_rst: bool
-    seq: int
-    ack: int
-    win: int
-    wscale: int
-    mss: int
-    data: memoryview
+    ip__ver: int
+    ip__local_address: IpAddress
+    ip__remote_address: IpAddress
+
+    tcp__local_port: int
+    tcp__remote_port: int
+    tcp__flag_syn: bool
+    tcp__flag_ack: bool
+    tcp__flag_fin: bool
+    tcp__flag_rst: bool
+    tcp__seq: int
+    tcp__ack: int
+    tcp__win: int
+    tcp__wscale: int
+    tcp__mss: int
+    tcp__data: memoryview
+
     tracker: Tracker | None
 
     def __str__(self) -> str:
@@ -71,11 +73,11 @@ class TcpMetadata:
         Get the TCP metadata log string.
         """
 
-        ver = self.ver
-        laddr = self.local_ip_address
-        lport = self.local_port
-        raddr = self.remote_ip_address
-        rport = self.remote_port
+        ver = self.ip__ver
+        laddr = self.ip__local_address
+        lport = self.tcp__local_port
+        raddr = self.ip__remote_address
+        rport = self.tcp__remote_port
 
         return f"AF_INET{ver}/SOCK_STREAM/{laddr}/{lport}/{raddr}/{rport}"
 
@@ -85,10 +87,10 @@ class TcpMetadata:
         Get list of the socket ID patterns that match the metadata.
         """
 
-        ver = self.ver
-        laddr = self.local_ip_address
-        lport = self.local_port
-        unspecified = self.local_ip_address.unspecified
+        ver = self.ip__ver
+        laddr = self.ip__local_address
+        lport = self.tcp__local_port
+        unspecified = self.ip__local_address.unspecified
 
         return [
             f"AF_INET{ver}/SOCK_STREAM/{laddr}/{lport}/{unspecified}/0",

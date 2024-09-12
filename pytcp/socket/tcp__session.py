@@ -714,10 +714,11 @@ class TcpSession:
         """
         Retransmit packet after rceiving request from peer.
         """
-        self._tx_retransmit_request_counter[packet_rx_md.ack] = (
-            self._tx_retransmit_request_counter.get(packet_rx_md.ack, 0) + 1
+        self._tx_retransmit_request_counter[packet_rx_md.tcp__ack] = (
+            self._tx_retransmit_request_counter.get(packet_rx_md.tcp__ack, 0)
+            + 1
         )
-        if self._tx_retransmit_request_counter[packet_rx_md.ack] > 1:
+        if self._tx_retransmit_request_counter[packet_rx_md.tcp__ack] > 1:
             self._snd_nxt = self._snd_una
             __debug__ and log(
                 "tcp-ss",
@@ -731,25 +732,25 @@ class TcpSession:
         """
 
         # Make note of the local SEQ that has been acked by peer
-        self._snd_una = max(self._snd_una, packet_rx_md.ack)
+        self._snd_una = max(self._snd_una, packet_rx_md.tcp__ack)
         # Adjust local SEQ accordingly to what peer acked (needed after the
         # retransmit happens and peer is jumping to previously received SEQ)
         if self._snd_nxt < self._snd_una <= self._snd_max:
             self._snd_nxt = self._snd_una
         # Make note of the remote SEQ number
         self._rcv_nxt = (
-            packet_rx_md.seq
-            + len(packet_rx_md.data)
-            + packet_rx_md.flag_syn
-            + packet_rx_md.flag_fin
+            packet_rx_md.tcp__seq
+            + len(packet_rx_md.tcp__data)
+            + packet_rx_md.tcp__flag_syn
+            + packet_rx_md.tcp__flag_fin
         )
         # In case packet contains data enqueue it
-        if packet_rx_md.data:
-            self._enqueue_rx_buffer(packet_rx_md.data)
+        if packet_rx_md.tcp__data:
+            self._enqueue_rx_buffer(packet_rx_md.tcp__data)
             __debug__ and log(
                 "tcp-ss",
-                f"[{self}] - Enqueued {len(packet_rx_md.data)} bytes "
-                f"starting at {packet_rx_md.seq}",
+                f"[{self}] - Enqueued {len(packet_rx_md.tcp__data)} bytes "
+                f"starting at {packet_rx_md.tcp__seq}",
             )
         # Purge acked data from TX buffer
         with self._lock_tx_buffer:
@@ -760,13 +761,13 @@ class TcpSession:
             f"[{self}] - Purged TX buffer up to SEQ {self._snd_una}",
         )
         # Update remote window size
-        if self._snd_wnd != packet_rx_md.win << self._snd_wsc:
+        if self._snd_wnd != packet_rx_md.tcp__win << self._snd_wsc:
             __debug__ and log(
                 "tcp-ss",
                 f"[{self}] - Updated sending window size {self._snd_wnd} "
-                f"-> {packet_rx_md.win << self._snd_wsc}",
+                f"-> {packet_rx_md.tcp__win << self._snd_wsc}",
             )
-            self._snd_wnd = packet_rx_md.win << self._snd_wsc
+            self._snd_wnd = packet_rx_md.tcp__win << self._snd_wsc
         # Enlarge effective sending window
         self._snd_ewn = min(self._snd_ewn << 1, self._snd_wnd)
         __debug__ and log(
@@ -776,7 +777,7 @@ class TcpSession:
         )
         # Purge expired tx packet retransmit requests
         for seq in list(self._tx_retransmit_request_counter):
-            if seq < packet_rx_md.ack:
+            if seq < packet_rx_md.tcp__ack:
                 self._tx_retransmit_request_counter.pop(seq)
                 __debug__ and log(
                     "tcp-ss",
@@ -785,7 +786,7 @@ class TcpSession:
                 )
         # Purge expired tx packet retransmit timeouts
         for seq in list(self._tx_retransmit_timeout_counter):
-            if seq < packet_rx_md.ack:
+            if seq < packet_rx_md.tcp__ack:
                 self._tx_retransmit_timeout_counter.pop(seq)
                 __debug__ and log(
                     "tcp-ss",
@@ -845,17 +846,17 @@ class TcpSession:
         # Got SYN packet -> Send SYN + ACK packet / change state to SYN_RCVD
         if (
             packet_rx_md
-            and all({packet_rx_md.flag_syn})
+            and all({packet_rx_md.tcp__flag_syn})
             and not any(
                 {
-                    packet_rx_md.flag_ack,
-                    packet_rx_md.flag_fin,
-                    packet_rx_md.flag_rst,
+                    packet_rx_md.tcp__flag_ack,
+                    packet_rx_md.tcp__flag_fin,
+                    packet_rx_md.tcp__flag_rst,
                 }
             )
         ):
             # Packet sanity check
-            if packet_rx_md.ack == 0 and not packet_rx_md.data:
+            if packet_rx_md.tcp__ack == 0 and not packet_rx_md.tcp__data:
                 # Create new session in LISTEN state and assign it to
                 # listening socket
                 tcp_session = TcpSession(
@@ -869,10 +870,10 @@ class TcpSession:
                 self._socket._tcp_session = tcp_session
                 # Adjust this session to match incoming connection and assign
                 # it to new socket
-                self._local_ip_address = packet_rx_md.local_ip_address
-                self._local_port = packet_rx_md.local_port
-                self._remote_ip_address = packet_rx_md.remote_ip_address
-                self._remote_port = packet_rx_md.remote_port
+                self._local_ip_address = packet_rx_md.ip__local_address
+                self._local_port = packet_rx_md.tcp__local_port
+                self._remote_ip_address = packet_rx_md.ip__remote_address
+                self._remote_port = packet_rx_md.tcp__remote_port
                 self._socket = TcpSocket(
                     family=(
                         AddressFamily.AF_INET6
@@ -883,20 +884,22 @@ class TcpSession:
                 )
                 # Initialize session parameters
                 self._snd_mss = min(
-                    packet_rx_md.mss, config.INTERFACE__TAP__MTU - 40
+                    packet_rx_md.tcp__mss, config.INTERFACE__TAP__MTU - 40
                 )
                 self._snd_wnd = (
-                    packet_rx_md.win << self._snd_wsc
+                    packet_rx_md.tcp__win << self._snd_wsc
                 )  # For SYN / SYN + ACK packets this is initialized with wscale=0
-                self._snd_wsc = packet_rx_md.wscale
+                self._snd_wsc = packet_rx_md.tcp__wscale
                 __debug__ and log(
                     "tcp-ss",
                     f"[{self}] - Initialized remote window scale at {self._snd_wsc}",
                 )
-                self._rcv_ini = packet_rx_md.seq
+                self._rcv_ini = packet_rx_md.tcp__seq
                 self._snd_ewn = self._snd_mss
                 # Make note of the remote SEQ number
-                self._rcv_nxt = packet_rx_md.seq + packet_rx_md.flag_syn
+                self._rcv_nxt = (
+                    packet_rx_md.tcp__seq + packet_rx_md.tcp__flag_syn
+                )
                 # Send SYN + ACK packet (this actually will be done in SYN_SENT
                 # state) / change state to SYN_RCVD
                 self._change_state(FsmState.SYN_RCVD)
@@ -926,25 +929,30 @@ class TcpSession:
         # Got SYN + ACK packet -> Send ACK / change state to ESTABLISHED
         if (
             packet_rx_md
-            and all({packet_rx_md.flag_syn, packet_rx_md.flag_ack})
-            and not any({packet_rx_md.flag_fin, packet_rx_md.flag_rst})
+            and all({packet_rx_md.tcp__flag_syn, packet_rx_md.tcp__flag_ack})
+            and not any(
+                {packet_rx_md.tcp__flag_fin, packet_rx_md.tcp__flag_rst}
+            )
         ):
             # Packet sanity check
-            if packet_rx_md.ack == self._snd_nxt and not packet_rx_md.data:
+            if (
+                packet_rx_md.tcp__ack == self._snd_nxt
+                and not packet_rx_md.tcp__data
+            ):
                 # Initialize session parameters
                 self._snd_mss = min(
-                    packet_rx_md.mss, config.INTERFACE__TAP__MTU - 40
+                    packet_rx_md.tcp__mss, config.INTERFACE__TAP__MTU - 40
                 )
                 self._snd_wnd = (
-                    packet_rx_md.win << self._snd_wsc
+                    packet_rx_md.tcp__win << self._snd_wsc
                 )  # For SYN / SYN + ACK packets this is initialized with wscale=0
-                self._snd_wsc = packet_rx_md.wscale
+                self._snd_wsc = packet_rx_md.tcp__wscale
                 __debug__ and log(
                     "tcp-ss",
                     f"[{self}] - Initialized remote window scale "
                     f"at {self._snd_wsc}",
                 )
-                self._rcv_ini = packet_rx_md.seq
+                self._rcv_ini = packet_rx_md.tcp__seq
                 self._snd_ewn = self._snd_mss
                 # Process ACK packet
                 self._process_ack_packet(packet_rx_md)
@@ -963,17 +971,17 @@ class TcpSession:
         # Got SYN packet -> Send SYN + ACK packet / change state to SYN_RCVD
         if (
             packet_rx_md
-            and all({packet_rx_md.flag_syn})
+            and all({packet_rx_md.tcp__flag_syn})
             and not any(
                 {
-                    packet_rx_md.flag_ack,
-                    packet_rx_md.flag_fin,
-                    packet_rx_md.flag_syn,
+                    packet_rx_md.tcp__flag_ack,
+                    packet_rx_md.tcp__flag_fin,
+                    packet_rx_md.tcp__flag_syn,
                 }
             )
         ):
             # Packet sanity check
-            if packet_rx_md.ack == 0 and not packet_rx_md.data:
+            if packet_rx_md.tcp__ack == 0 and not packet_rx_md.tcp__data:
                 # Send SYN + ACK packet
                 self._transmit_packet(flag_syn=True, flag_ack=True)
                 # Change state to SYN_RCVD
@@ -983,11 +991,16 @@ class TcpSession:
         # Got RST + ACK packet -> Change state to CLOSED
         if (
             packet_rx_md
-            and all({packet_rx_md.flag_rst, packet_rx_md.flag_ack})
-            and not any({packet_rx_md.flag_fin, packet_rx_md.flag_syn})
+            and all({packet_rx_md.tcp__flag_rst, packet_rx_md.tcp__flag_ack})
+            and not any(
+                {packet_rx_md.tcp__flag_fin, packet_rx_md.tcp__flag_syn}
+            )
         ):
             # Packet sanity_check
-            if packet_rx_md.seq == 0 and packet_rx_md.ack == self._snd_nxt:
+            if (
+                packet_rx_md.tcp__seq == 0
+                and packet_rx_md.tcp__ack == self._snd_nxt
+            ):
                 # Change state to CLOSED
                 self._change_state(FsmState.CLOSED)
                 # Inform connect syscall that connection related event happened
@@ -1019,20 +1032,20 @@ class TcpSession:
         # Got ACK packet -> Change state to ESTABLISHED
         if (
             packet_rx_md
-            and all({packet_rx_md.flag_ack})
+            and all({packet_rx_md.tcp__flag_ack})
             and not any(
                 {
-                    packet_rx_md.flag_syn,
-                    packet_rx_md.flag_fin,
-                    packet_rx_md.flag_rst,
+                    packet_rx_md.tcp__flag_syn,
+                    packet_rx_md.tcp__flag_fin,
+                    packet_rx_md.tcp__flag_rst,
                 }
             )
         ):
             # Packet sanity check
             if (
-                packet_rx_md.seq == self._rcv_nxt
-                and packet_rx_md.ack == self._snd_nxt
-                and not packet_rx_md.data
+                packet_rx_md.tcp__seq == self._rcv_nxt
+                and packet_rx_md.tcp__ack == self._snd_nxt
+                and not packet_rx_md.tcp__data
             ):
                 self._process_ack_packet(packet_rx_md)
                 # Change state to ESTABLISHED
@@ -1049,13 +1062,15 @@ class TcpSession:
         # Got RST + ACK packet -> Change state to CLOSED
         if (
             packet_rx_md
-            and all({packet_rx_md.flag_rst, packet_rx_md.flag_ack})
-            and not any({packet_rx_md.flag_fin, packet_rx_md.flag_syn})
+            and all({packet_rx_md.tcp__flag_rst, packet_rx_md.tcp__flag_ack})
+            and not any(
+                {packet_rx_md.tcp__flag_fin, packet_rx_md.tcp__flag_syn}
+            )
         ):
             # Packet sanity_check
             if (
-                packet_rx_md.seq == self._rcv_nxt
-                and self._snd_una <= packet_rx_md.ack <= self._snd_max
+                packet_rx_md.tcp__seq == self._rcv_nxt
+                and self._snd_una <= packet_rx_md.tcp__ack <= self._snd_max
             ):
                 # Change state to CLOSED
                 self._change_state(FsmState.CLOSED)
@@ -1064,17 +1079,20 @@ class TcpSession:
         # Got RST packet -> Change state to CLOSED
         if (
             packet_rx_md
-            and all({packet_rx_md.flag_rst})
+            and all({packet_rx_md.tcp__flag_rst})
             and not any(
                 {
-                    packet_rx_md.flag_ack,
-                    packet_rx_md.flag_fin,
-                    packet_rx_md.flag_syn,
+                    packet_rx_md.tcp__flag_ack,
+                    packet_rx_md.tcp__flag_fin,
+                    packet_rx_md.tcp__flag_syn,
                 }
             )
         ):
             # Packet sanity_check
-            if packet_rx_md.seq == self._rcv_nxt and packet_rx_md.ack == 0:
+            if (
+                packet_rx_md.tcp__seq == self._rcv_nxt
+                and packet_rx_md.tcp__ack == 0
+            ):
                 # Change state to CLOSED
                 self._change_state(FsmState.CLOSED)
             return
@@ -1108,13 +1126,13 @@ class TcpSession:
         if (
             packet_rx_md
             and not self._rcv_nxt
-            <= packet_rx_md.seq
-            <= self._rcv_nxt + self._rcv_wnd - len(packet_rx_md.data)
+            <= packet_rx_md.tcp__seq
+            <= self._rcv_nxt + self._rcv_wnd - len(packet_rx_md.tcp__data)
         ):
             __debug__ and log(
                 "tcp-ss",
-                f"[{self}] - Packet seq {packet_rx_md.seq} + "
-                f"{len(packet_rx_md.data)} doesn't fit into receive "
+                f"[{self}] - Packet seq {packet_rx_md.tcp__seq} + "
+                f"{len(packet_rx_md.tcp__data)} doesn't fit into receive "
                 "window, dropping",
             )
             return
@@ -1122,31 +1140,31 @@ class TcpSession:
         # Got ACK packet
         if (
             packet_rx_md
-            and all({packet_rx_md.flag_ack})
+            and all({packet_rx_md.tcp__flag_ack})
             and not any(
                 {
-                    packet_rx_md.flag_syn,
-                    packet_rx_md.flag_rst,
-                    packet_rx_md.flag_fin,
+                    packet_rx_md.tcp__flag_syn,
+                    packet_rx_md.tcp__flag_rst,
+                    packet_rx_md.tcp__flag_fin,
                 }
             )
         ):
             # Suspected retransmit request -> Reset TX window
             # and local SEQ number.
             if (
-                packet_rx_md.seq == self._rcv_nxt
-                and packet_rx_md.ack == self._snd_una
-                and not packet_rx_md.data
+                packet_rx_md.tcp__seq == self._rcv_nxt
+                and packet_rx_md.tcp__ack == self._snd_una
+                and not packet_rx_md.tcp__data
             ):
                 self._retransmit_packet_request(packet_rx_md)
                 return
             # Packet with higher SEQ than what we are expecting -> Store it and
             # send 'fast retransmit' request (don't send more than two).
             if (
-                packet_rx_md.seq > self._rcv_nxt
-                and self._snd_una <= packet_rx_md.ack <= self._snd_max
+                packet_rx_md.tcp__seq > self._rcv_nxt
+                and self._snd_una <= packet_rx_md.tcp__ack <= self._snd_max
             ):
-                self._ooo_packet_queue[packet_rx_md.seq] = packet_rx_md
+                self._ooo_packet_queue[packet_rx_md.tcp__seq] = packet_rx_md
                 self._rx_retransmit_request_counter[self._rcv_nxt] = (
                     self._rx_retransmit_request_counter.get(self._rcv_nxt, 0)
                     + 1
@@ -1156,8 +1174,8 @@ class TcpSession:
                 return
             # Regular data/ACK packet -> Process data
             if (
-                packet_rx_md.seq == self._rcv_nxt
-                and self._snd_una <= packet_rx_md.ack <= self._snd_max
+                packet_rx_md.tcp__seq == self._rcv_nxt
+                and self._snd_una <= packet_rx_md.tcp__ack <= self._snd_max
             ):
                 self._process_ack_packet(packet_rx_md)
                 return
@@ -1168,17 +1186,19 @@ class TcpSession:
         # connection.
         if (
             packet_rx_md
-            and all({packet_rx_md.flag_fin, packet_rx_md.flag_ack})
-            and not any({packet_rx_md.flag_syn, packet_rx_md.flag_rst})
+            and all({packet_rx_md.tcp__flag_fin, packet_rx_md.tcp__flag_ack})
+            and not any(
+                {packet_rx_md.tcp__flag_syn, packet_rx_md.tcp__flag_rst}
+            )
         ):
             # Packet sanity check
             if (
-                packet_rx_md.seq == self._rcv_nxt
-                and self._snd_una <= packet_rx_md.ack <= self._snd_max
+                packet_rx_md.tcp__seq == self._rcv_nxt
+                and self._snd_una <= packet_rx_md.tcp__ack <= self._snd_max
             ):
                 self._process_ack_packet(packet_rx_md)
                 # Immediately acknowledge the received data if any.
-                if packet_rx_md.data:
+                if packet_rx_md.tcp__data:
                     self._transmit_packet(flag_ack=True)
                 # Let application know that remote peer closed connection
                 # (let receive syscall bypass semaphore).
@@ -1190,13 +1210,15 @@ class TcpSession:
         # Got RST + ACK packet -> Change state to CLOSED
         if (
             packet_rx_md
-            and all({packet_rx_md.flag_rst, packet_rx_md.flag_ack})
-            and not any({packet_rx_md.flag_fin, packet_rx_md.flag_syn})
+            and all({packet_rx_md.tcp__flag_rst, packet_rx_md.tcp__flag_ack})
+            and not any(
+                {packet_rx_md.tcp__flag_fin, packet_rx_md.tcp__flag_syn}
+            )
         ):
             # Packet sanity_check
             if (
-                packet_rx_md.seq == self._rcv_nxt
-                and self._snd_una <= packet_rx_md.ack <= self._snd_max
+                packet_rx_md.tcp__seq == self._rcv_nxt
+                and self._snd_una <= packet_rx_md.tcp__ack <= self._snd_max
             ):
                 # Let application know that remote peer closed connection
                 # (let receive syscall bypass semaphore).
@@ -1230,26 +1252,26 @@ class TcpSession:
         # Got ACK (acking our FIN) packet -> Change state to FIN_WAIT_2
         if (
             packet_rx_md
-            and all({packet_rx_md.flag_ack})
+            and all({packet_rx_md.tcp__flag_ack})
             and not any(
                 {
-                    packet_rx_md.flag_syn,
-                    packet_rx_md.flag_rst,
-                    packet_rx_md.flag_fin,
+                    packet_rx_md.tcp__flag_syn,
+                    packet_rx_md.tcp__flag_rst,
+                    packet_rx_md.tcp__flag_fin,
                 }
             )
         ):
             # Packet sanity check
             if (
-                packet_rx_md.seq == self._rcv_nxt
-                and self._snd_una <= packet_rx_md.ack <= self._snd_max
+                packet_rx_md.tcp__seq == self._rcv_nxt
+                and self._snd_una <= packet_rx_md.tcp__ack <= self._snd_max
             ):
                 self._process_ack_packet(packet_rx_md)
                 # Immediately acknowledge the received data if any
-                if packet_rx_md.data:
+                if packet_rx_md.tcp__data:
                     self._transmit_packet(flag_ack=True)
                 # Check if packet acks our FIN
-                if packet_rx_md.ack >= self._snd_fin:
+                if packet_rx_md.tcp__ack >= self._snd_fin:
                     # Change state to FIN_WAIT_2
                     self._change_state(FsmState.FIN_WAIT_2)
             return
@@ -1258,13 +1280,15 @@ class TcpSession:
         # or CLOSING
         if (
             packet_rx_md
-            and all({packet_rx_md.flag_fin, packet_rx_md.flag_ack})
-            and not any({packet_rx_md.flag_syn, packet_rx_md.flag_rst})
+            and all({packet_rx_md.tcp__flag_fin, packet_rx_md.tcp__flag_ack})
+            and not any(
+                {packet_rx_md.tcp__flag_syn, packet_rx_md.tcp__flag_rst}
+            )
         ):
             # Packet sanity check
             if (
-                packet_rx_md.seq == self._rcv_nxt
-                and self._snd_una <= packet_rx_md.ack <= self._snd_max
+                packet_rx_md.tcp__seq == self._rcv_nxt
+                and self._snd_una <= packet_rx_md.tcp__ack <= self._snd_max
             ):
                 self._process_ack_packet(packet_rx_md)
                 # Send out final ACK packet
@@ -1274,7 +1298,7 @@ class TcpSession:
                     f"[{self}] - Sent final ACK ({self._rcv_nxt}) packet",
                 )
                 # Check if packet acks our FIN
-                if packet_rx_md.ack >= self._snd_fin:
+                if packet_rx_md.tcp__ack >= self._snd_fin:
                     # Change state to TIME_WAIT
                     self._change_state(FsmState.TIME_WAIT)
                     # Initialize TIME_WAIT delay
@@ -1289,13 +1313,15 @@ class TcpSession:
         # Got RST + ACK packet -> Change state to CLOSED
         if (
             packet_rx_md
-            and all({packet_rx_md.flag_rst, packet_rx_md.flag_ack})
-            and not any({packet_rx_md.flag_fin, packet_rx_md.flag_syn})
+            and all({packet_rx_md.tcp__flag_rst, packet_rx_md.tcp__flag_ack})
+            and not any(
+                {packet_rx_md.tcp__flag_fin, packet_rx_md.tcp__flag_syn}
+            )
         ):
             # Packet sanity_check
             if (
-                packet_rx_md.seq == self._rcv_nxt
-                and self._snd_una <= packet_rx_md.ack <= self._snd_max
+                packet_rx_md.tcp__seq == self._rcv_nxt
+                and self._snd_una <= packet_rx_md.tcp__ack <= self._snd_max
             ):
                 # Change state to CLOSED
                 self._change_state(FsmState.CLOSED)
@@ -1314,36 +1340,38 @@ class TcpSession:
         # Got ACK packet -> Process data
         if (
             packet_rx_md
-            and all({packet_rx_md.flag_ack})
+            and all({packet_rx_md.tcp__flag_ack})
             and not any(
                 {
-                    packet_rx_md.flag_syn,
-                    packet_rx_md.flag_rst,
-                    packet_rx_md.flag_fin,
+                    packet_rx_md.tcp__flag_syn,
+                    packet_rx_md.tcp__flag_rst,
+                    packet_rx_md.tcp__flag_fin,
                 }
             )
         ):
             # Packet sanity check
             if (
-                packet_rx_md.seq == self._rcv_nxt
-                and self._snd_una <= packet_rx_md.ack <= self._snd_max
+                packet_rx_md.tcp__seq == self._rcv_nxt
+                and self._snd_una <= packet_rx_md.tcp__ack <= self._snd_max
             ):
                 self._process_ack_packet(packet_rx_md)
                 # Immediately acknowledge the received data if any
-                if packet_rx_md.data:
+                if packet_rx_md.tcp__data:
                     self._transmit_packet(flag_ack=True)
                 return
 
         # Got FIN + ACK packet -> Send ACK packet / change state to TIME_WAIT
         if (
             packet_rx_md
-            and all({packet_rx_md.flag_fin, packet_rx_md.flag_ack})
-            and not any({packet_rx_md.flag_syn, packet_rx_md.flag_rst})
+            and all({packet_rx_md.tcp__flag_fin, packet_rx_md.tcp__flag_ack})
+            and not any(
+                {packet_rx_md.tcp__flag_syn, packet_rx_md.tcp__flag_rst}
+            )
         ):
             # Packet sanity check
             if (
-                packet_rx_md.seq == self._rcv_nxt
-                and self._snd_una <= packet_rx_md.ack <= self._snd_max
+                packet_rx_md.tcp__seq == self._rcv_nxt
+                and self._snd_una <= packet_rx_md.tcp__ack <= self._snd_max
             ):
                 self._process_ack_packet(packet_rx_md)
                 # Send out final ACK packet
@@ -1361,13 +1389,15 @@ class TcpSession:
         # Got RST + ACK packet -> Change state to CLOSED
         if (
             packet_rx_md
-            and all({packet_rx_md.flag_rst, packet_rx_md.flag_ack})
-            and not any({packet_rx_md.flag_fin, packet_rx_md.flag_syn})
+            and all({packet_rx_md.tcp__flag_rst, packet_rx_md.tcp__flag_ack})
+            and not any(
+                {packet_rx_md.tcp__flag_fin, packet_rx_md.tcp__flag_syn}
+            )
         ):
             # Packet sanity_check
             if (
-                packet_rx_md.seq == self._rcv_nxt
-                and self._snd_una <= packet_rx_md.ack <= self._snd_max
+                packet_rx_md.tcp__seq == self._rcv_nxt
+                and self._snd_una <= packet_rx_md.tcp__ack <= self._snd_max
             ):
                 # Change state to CLOSED
                 self._change_state(FsmState.CLOSED)
@@ -1386,21 +1416,21 @@ class TcpSession:
         # Got ACK packet -> Change state to TIME_WAIT
         if (
             packet_rx_md
-            and all({packet_rx_md.flag_ack})
+            and all({packet_rx_md.tcp__flag_ack})
             and not any(
                 {
-                    packet_rx_md.flag_fin,
-                    packet_rx_md.flag_syn,
-                    packet_rx_md.flag_rst,
+                    packet_rx_md.tcp__flag_fin,
+                    packet_rx_md.tcp__flag_syn,
+                    packet_rx_md.tcp__flag_rst,
                 }
             )
         ):
             # Packet sanity check
             if (
-                packet_rx_md.ack == self._snd_nxt
-                and self._snd_una <= packet_rx_md.ack <= self._snd_max
+                packet_rx_md.tcp__ack == self._snd_nxt
+                and self._snd_una <= packet_rx_md.tcp__ack <= self._snd_max
             ):
-                self._snd_una = packet_rx_md.ack
+                self._snd_una = packet_rx_md.tcp__ack
                 self._change_state(FsmState.TIME_WAIT)
                 # Initialize TIME_WAIT delay
                 stack.timer.register_timer(f"{self}-time_wait", TIME_WAIT_DELAY)
@@ -1409,13 +1439,15 @@ class TcpSession:
         # Got RST + ACK packet -> Change state to CLOSED
         if (
             packet_rx_md
-            and all({packet_rx_md.flag_rst, packet_rx_md.flag_ack})
-            and not any({packet_rx_md.flag_fin, packet_rx_md.flag_syn})
+            and all({packet_rx_md.tcp__flag_rst, packet_rx_md.tcp__flag_ack})
+            and not any(
+                {packet_rx_md.tcp__flag_fin, packet_rx_md.tcp__flag_syn}
+            )
         ):
             # Packet sanity_check
             if (
-                packet_rx_md.seq == self._rcv_nxt
-                and self._snd_una <= packet_rx_md.ack <= self._snd_max
+                packet_rx_md.tcp__seq == self._rcv_nxt
+                and self._snd_una <= packet_rx_md.tcp__ack <= self._snd_max
             ):
                 # Change state to CLOSED
                 self._change_state(FsmState.CLOSED)
@@ -1443,31 +1475,31 @@ class TcpSession:
         # Got ACK packet
         if (
             packet_rx_md
-            and all({packet_rx_md.flag_ack})
+            and all({packet_rx_md.tcp__flag_ack})
             and not any(
                 {
-                    packet_rx_md.flag_syn,
-                    packet_rx_md.flag_rst,
-                    packet_rx_md.flag_fin,
+                    packet_rx_md.tcp__flag_syn,
+                    packet_rx_md.tcp__flag_rst,
+                    packet_rx_md.tcp__flag_fin,
                 }
             )
         ):
             # Suspected retransmit request -> Reset TX window
             # and local SEQ number.
             if (
-                packet_rx_md.seq == self._rcv_nxt
-                and packet_rx_md.ack == self._snd_una
-                and not packet_rx_md.data
+                packet_rx_md.tcp__seq == self._rcv_nxt
+                and packet_rx_md.tcp__ack == self._snd_una
+                and not packet_rx_md.tcp__data
             ):
                 self._retransmit_packet_request(packet_rx_md)
                 return
             # Packet with higher SEQ than what we are expecting -> Store it and
             # send 'fast retransmit' request.
             if (
-                packet_rx_md.seq > self._rcv_nxt
-                and self._snd_una <= packet_rx_md.ack <= self._snd_max
+                packet_rx_md.tcp__seq > self._rcv_nxt
+                and self._snd_una <= packet_rx_md.tcp__ack <= self._snd_max
             ):
-                self._ooo_packet_queue[packet_rx_md.seq] = packet_rx_md
+                self._ooo_packet_queue[packet_rx_md.tcp__seq] = packet_rx_md
                 self._rx_retransmit_request_counter[self._rcv_nxt] = (
                     self._rx_retransmit_request_counter.get(self._rcv_nxt, 0)
                     + 1
@@ -1477,9 +1509,9 @@ class TcpSession:
                 return
             # Regular data/ACK packet -> Process data
             if (
-                packet_rx_md.seq == self._rcv_nxt
-                and self._snd_una <= packet_rx_md.ack <= self._snd_max
-                and not packet_rx_md.data
+                packet_rx_md.tcp__seq == self._rcv_nxt
+                and self._snd_una <= packet_rx_md.tcp__ack <= self._snd_max
+                and not packet_rx_md.tcp__data
             ):
                 self._process_ack_packet(packet_rx_md)
                 return
@@ -1488,17 +1520,17 @@ class TcpSession:
         # Got RST packet -> Change state to CLOSED
         if (
             packet_rx_md
-            and all({packet_rx_md.flag_rst})
+            and all({packet_rx_md.tcp__flag_rst})
             and not any(
                 {
-                    packet_rx_md.flag_ack,
-                    packet_rx_md.flag_fin,
-                    packet_rx_md.flag_syn,
+                    packet_rx_md.tcp__flag_ack,
+                    packet_rx_md.tcp__flag_fin,
+                    packet_rx_md.tcp__flag_syn,
                 }
             )
         ):
             # Packet sanity_check
-            if packet_rx_md.seq == self._rcv_nxt:
+            if packet_rx_md.tcp__seq == self._rcv_nxt:
                 # Change state to CLOSED
                 self._change_state(FsmState.CLOSED)
             return
@@ -1528,19 +1560,19 @@ class TcpSession:
         # Got ACK packet -> Change state to CLOSED
         if (
             packet_rx_md
-            and all({packet_rx_md.flag_ack})
+            and all({packet_rx_md.tcp__flag_ack})
             and not any(
                 {
-                    packet_rx_md.flag_syn,
-                    packet_rx_md.flag_fin,
-                    packet_rx_md.flag_rst,
+                    packet_rx_md.tcp__flag_syn,
+                    packet_rx_md.tcp__flag_fin,
+                    packet_rx_md.tcp__flag_rst,
                 }
             )
         ):
             # Packet sanity check
             if (
-                packet_rx_md.ack == self._snd_nxt
-                and self._snd_una <= packet_rx_md.ack <= self._snd_max
+                packet_rx_md.tcp__ack == self._snd_nxt
+                and self._snd_una <= packet_rx_md.tcp__ack <= self._snd_max
             ):
                 self._change_state(FsmState.CLOSED)
             return
@@ -1548,13 +1580,15 @@ class TcpSession:
         # Got RST + ACK packet -> Change state to CLOSED
         if (
             packet_rx_md
-            and all({packet_rx_md.flag_rst, packet_rx_md.flag_ack})
-            and not any({packet_rx_md.flag_fin, packet_rx_md.flag_syn})
+            and all({packet_rx_md.tcp__flag_rst, packet_rx_md.tcp__flag_ack})
+            and not any(
+                {packet_rx_md.tcp__flag_fin, packet_rx_md.tcp__flag_syn}
+            )
         ):
             # Packet sanity_check
             if (
-                packet_rx_md.seq == self._rcv_nxt
-                and self._snd_una <= packet_rx_md.ack <= self._snd_max
+                packet_rx_md.tcp__seq == self._rcv_nxt
+                and self._snd_una <= packet_rx_md.tcp__ack <= self._snd_max
             ):
                 # Change state to CLOSED
                 self._change_state(FsmState.CLOSED)

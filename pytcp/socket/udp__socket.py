@@ -383,7 +383,7 @@ class UdpSocket(Socket):
             )
 
         if self._packet_rx_md_ready.acquire(timeout=timeout):
-            data_rx = self._packet_rx_md.pop(0).data
+            data_rx = self._packet_rx_md.pop(0).udp__data
             __debug__ and log(
                 "socket",
                 f"<g>[{self}]</> - <lg>Received</> {len(data_rx)} "
@@ -406,11 +406,14 @@ class UdpSocket(Socket):
             __debug__ and log(
                 "socket",
                 f"<g>[{self}]</> - <lg>Received</> "
-                f"{len(packet_rx_md.data)} bytes of data",
+                f"{len(packet_rx_md.udp__data)} bytes of data",
             )
             return (
-                packet_rx_md.data,
-                (str(packet_rx_md.remote_ip_address), packet_rx_md.remote_port),
+                packet_rx_md.udp__data,
+                (
+                    str(packet_rx_md.ip__remote_address),
+                    packet_rx_md.udp__remote_port,
+                ),
             )
         raise ReceiveTimeout
 

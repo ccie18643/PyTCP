@@ -187,13 +187,13 @@ class Icmp6PacketHandlerRx(ABC):
             # Create UdpMetadata object and try to find matching UDP socket
             udp_offset = IP6__HEADER__LEN
             packet = UdpMetadata(
-                ver=6,
-                local_ip_address=Ip6Address(frame[8:24]),
-                remote_ip_address=Ip6Address(frame[24:40]),
-                local_port=struct.unpack(
+                ip__ver=6,
+                ip__local_address=Ip6Address(frame[8:24]),
+                ip__remote_address=Ip6Address(frame[24:40]),
+                udp__local_port=struct.unpack(
                     "!H", frame[udp_offset + 0 : udp_offset + 2]
                 )[0],
-                remote_port=struct.unpack(
+                udp__remote_port=struct.unpack(
                     "!H", frame[udp_offset + 2 : udp_offset + 4]
                 )[0],
             )

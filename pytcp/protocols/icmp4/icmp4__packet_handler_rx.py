@@ -163,13 +163,13 @@ class Icmp4PacketHandlerRx(ABC):
             # Create UdpMetadata object and try to find matching UDP socket.
             udp_offset = (frame[0] & 0b00001111) << 2
             packet = UdpMetadata(
-                ver=4,
-                local_ip_address=Ip4Address(frame[12:16]),
-                remote_ip_address=Ip4Address(frame[16:20]),
-                local_port=struct.unpack(
+                ip__ver=4,
+                ip__local_address=Ip4Address(frame[12:16]),
+                ip__remote_address=Ip4Address(frame[16:20]),
+                udp__local_port=struct.unpack(
                     "!H", frame[udp_offset + 0 : udp_offset + 2]
                 )[0],
-                remote_port=struct.unpack(
+                udp__remote_port=struct.unpack(
                     "!H", frame[udp_offset + 2 : udp_offset + 4]
                 )[0],
             )

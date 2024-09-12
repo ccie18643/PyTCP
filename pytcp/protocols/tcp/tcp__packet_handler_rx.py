@@ -114,21 +114,21 @@ class TcpPacketHandlerRx(ABC):
 
         # Create TcpMetadata object for further processing by TCP FSM
         packet_rx_md = TcpMetadata(
-            ver=packet_rx.ip.ver,
-            local_ip_address=packet_rx.ip.dst,
-            local_port=packet_rx.tcp.dport,
-            remote_ip_address=packet_rx.ip.src,
-            remote_port=packet_rx.tcp.sport,
-            flag_syn=packet_rx.tcp.flag_syn,
-            flag_ack=packet_rx.tcp.flag_ack,
-            flag_fin=packet_rx.tcp.flag_fin,
-            flag_rst=packet_rx.tcp.flag_rst,
-            seq=packet_rx.tcp.seq,
-            ack=packet_rx.tcp.ack,
-            win=packet_rx.tcp.win,
-            wscale=packet_rx.tcp.wscale,
-            mss=packet_rx.tcp.mss,
-            data=packet_rx.tcp.payload,
+            ip__ver=packet_rx.ip.ver,
+            ip__local_address=packet_rx.ip.dst,
+            tcp__local_port=packet_rx.tcp.dport,
+            ip__remote_address=packet_rx.ip.src,
+            tcp__remote_port=packet_rx.tcp.sport,
+            tcp__flag_syn=packet_rx.tcp.flag_syn,
+            tcp__flag_ack=packet_rx.tcp.flag_ack,
+            tcp__flag_fin=packet_rx.tcp.flag_fin,
+            tcp__flag_rst=packet_rx.tcp.flag_rst,
+            tcp__seq=packet_rx.tcp.seq,
+            tcp__ack=packet_rx.tcp.ack,
+            tcp__win=packet_rx.tcp.win,
+            tcp__wscale=packet_rx.tcp.wscale,
+            tcp__mss=packet_rx.tcp.mss,
+            tcp__data=packet_rx.tcp.payload,
             tracker=packet_rx.tracker,
         )
 
@@ -149,11 +149,11 @@ class TcpPacketHandlerRx(ABC):
 
         # Check if incoming packet is an initial SYN packet and if it matches any
         # listening TCP socket.
-        if all({packet_rx_md.flag_syn}) and not any(
+        if all({packet_rx_md.tcp__flag_syn}) and not any(
             {
-                packet_rx_md.flag_ack,
-                packet_rx_md.flag_fin,
-                packet_rx_md.flag_rst,
+                packet_rx_md.tcp__flag_ack,
+                packet_rx_md.tcp__flag_fin,
+                packet_rx_md.tcp__flag_rst,
             }
         ):
             for (
@@ -176,7 +176,7 @@ class TcpPacketHandlerRx(ABC):
 
         # In case packet doesn't match any active or listening socket
         # and it carries RST flag then drop it silently.
-        if packet_rx_md.flag_rst:
+        if packet_rx_md.tcp__flag_rst:
             self.packet_stats_rx.tcp__no_socket_match__rst__drop += 1
             __debug__ and log(
                 "tcp",

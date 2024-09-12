@@ -51,12 +51,14 @@ class UdpMetadata:
     Store the UDP metadata taken from the received packet.
     """
 
-    ver: int
-    local_ip_address: IpAddress
-    local_port: int
-    remote_ip_address: IpAddress
-    remote_port: int
-    data: bytes = bytes()
+    ip__ver: int
+    ip__local_address: IpAddress
+    ip__remote_address: IpAddress
+
+    udp__local_port: int
+    udp__remote_port: int
+    udp__data: bytes = bytes()
+
     tracker: Tracker | None = None
 
     def __str__(self) -> str:
@@ -72,12 +74,12 @@ class UdpMetadata:
         Get list of the socket ID patterns that match the metadata.
         """
 
-        ver = self.ver
-        laddr = self.local_ip_address
-        lport = self.local_port
-        raddr = self.remote_ip_address
-        rport = self.remote_port
-        unspecified = self.local_ip_address.unspecified
+        ver = self.ip__ver
+        laddr = self.ip__local_address
+        lport = self.udp__local_port
+        raddr = self.ip__remote_address
+        rport = self.udp__remote_port
+        unspecified = self.ip__local_address.unspecified
 
         patterns = [
             f"AF_INET{ver}/SOCK_DGRAM/{laddr}/{lport}/{raddr}/{rport}",
@@ -85,7 +87,7 @@ class UdpMetadata:
             f"AF_INET{ver}/SOCK_DGRAM/{unspecified}/{lport}/{unspecified}/0",
         ]
 
-        if isinstance(self.local_ip_address, Ip4Address):
+        if isinstance(self.ip__local_address, Ip4Address):
             patterns.append(
                 f"AF_INET4/SOCK_DGRAM/0.0.0.0/{lport}/255.255.255.255/{rport}"
             )  # For the DHCPv4 client.
