@@ -27,7 +27,7 @@
 """
 Module contains packet handler for the outbound TCP packets.
 
-pytcp/protocols/tcp/tcp__packet_handler_tx.py
+pytcp/subsystems/packet_handler/packet_handler__tcp__tx.py
 
 ver 3.0.2
 """
@@ -62,8 +62,8 @@ class PacketHandlerTcpTx(ABC):
         from pytcp.protocols.icmp6.icmp6__assembler import Icmp6Assembler
         from pytcp.protocols.ip4.ip4__assembler import Ip4Payload
         from pytcp.protocols.ip6.ip6__assembler import Ip6Payload
-        from pytcp.protocols.ip6_ext_frag.ip6_ext_frag__assembler import (
-            Ip6ExtFragAssembler,
+        from pytcp.protocols.ip6_frag.ip6_frag__assembler import (
+            Ip6FragAssembler,
         )
         from pytcp.protocols.raw.raw__assembler import RawAssembler
 

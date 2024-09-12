@@ -25,50 +25,60 @@
 
 
 """
-This module contains the IPv6 Ext Frag packet assembler.
+This module contains tests for the IPv6 Frag packet integrity checks.
 
-pytcp/protocols/ip6_ext_frag/ip6_ext_frag__assembler.py
+tests/pytcp/unit/protocols/tcp/test__ip6_frag__parser__integrity_checks.py
 
 ver 3.0.2
 """
 
 
-from __future__ import annotations
+from typing import Any
 
-from pytcp.lib.proto_assembler import ProtoAssembler
-from pytcp.lib.tracker import Tracker
-from pytcp.protocols.ip6.ip6__enums import Ip6Next
-from pytcp.protocols.ip6_ext_frag.ip6_ext_frag__base import Ip6ExtFrag
-from pytcp.protocols.ip6_ext_frag.ip6_ext_frag__header import Ip6ExtFragHeader
+from parameterized import parameterized_class  # type: ignore
+
+from pytcp.lib.packet import PacketRx
+from pytcp.protocols.ip6_frag.ip6_frag__errors import Ip6FragIntegrityError
+from pytcp.protocols.ip6_frag.ip6_frag__parser import Ip6FragParser
+from tests.pytcp.lib.testcase__packet_rx__ip6 import TestCasePacketRxIp6
 
 
-class Ip6ExtFragAssembler(Ip6ExtFrag, ProtoAssembler):
+@parameterized_class(
+    [
+        {
+            "_description": (
+                "The length of the frame is lower than the value of the "
+                "'IP6_EXT_FRAG__HEADER__LEN' constant."
+            ),
+            "_args": [b"\xff\x00\x00\x00\x00\x00\x00"],
+            "_kwargs": {},
+            "_results": {
+                "error_message": "The wrong packet length (I).",
+            },
+        },
+    ],
+)
+class TestIp6FragParserIntegrityChecks(TestCasePacketRxIp6):
     """
-    The IPv6 Ext Frag packet assembler.
+    The IPv6 Frag packet parser integrity checks tests.
     """
 
-    _payload: bytes
+    _description: str
+    _args: list[Any]
+    _kwargs: dict[str, Any]
+    _results: dict[str, Any]
 
-    def __init__(
-        self,
-        *,
-        ip6_ext_frag__next: Ip6Next = Ip6Next.RAW,
-        ip6_ext_frag__offset: int = 0,
-        ip6_ext_frag__flag_mf: bool = False,
-        ip6_ext_frag__id: int = 0,
-        ip6_ext_frag__payload: bytes = bytes(),
-    ) -> None:
+    _packet_rx: PacketRx
+
+    def test__ip6_frag__parser__from_bytes(self) -> None:
         """
-        Initialize the IPv6 Ext Frag packet assembler.
+        Ensure the IPv6 Frag packet parser raises integrity error on malformed packets.
         """
 
-        self._tracker: Tracker = Tracker(prefix="TX")
+        with self.assertRaises(Ip6FragIntegrityError) as error:
+            Ip6FragParser(self._packet_rx)
 
-        self._payload = ip6_ext_frag__payload
-
-        self._header = Ip6ExtFragHeader(
-            next=ip6_ext_frag__next,
-            offset=ip6_ext_frag__offset,
-            flag_mf=ip6_ext_frag__flag_mf,
-            id=ip6_ext_frag__id,
+        self.assertEqual(
+            str(error.exception),
+            f"[INTEGRITY ERROR][IPv6 Frag] {self._results["error_message"]}",
         )

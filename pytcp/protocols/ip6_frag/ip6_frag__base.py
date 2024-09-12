@@ -25,9 +25,9 @@
 
 
 """
-This module contains the IPv6 Ext Frag base class.
+This module contains the IPv6 Frag base class.
 
-pytcp/protocols/ip6_ext_frag/ip6_ext_frag__base.py
+pytcp/protocols/ip6_frag/ip6_frag__base.py
 
 ver 3.0.2
 """
@@ -38,9 +38,9 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, TypeAlias, override
 
 from pytcp.lib.proto import Proto
-from pytcp.protocols.ip6_ext_frag.ip6_ext_frag__header import (
-    Ip6ExtFragHeader,
-    Ip6ExtFragHeaderProperties,
+from pytcp.protocols.ip6_frag.ip6_frag__header import (
+    Ip6FragHeader,
+    Ip6FragHeaderProperties,
 )
 
 if TYPE_CHECKING:
@@ -49,17 +49,17 @@ if TYPE_CHECKING:
     from pytcp.protocols.tcp.tcp__assembler import TcpAssembler
     from pytcp.protocols.udp.udp__assembler import UdpAssembler
 
-    Ip6ExtFragPayload: TypeAlias = (
+    Ip6FragPayload: TypeAlias = (
         Icmp6Assembler | TcpAssembler | UdpAssembler | RawAssembler
     )
 
 
-class Ip6ExtFrag(Proto, Ip6ExtFragHeaderProperties):
+class Ip6Frag(Proto, Ip6FragHeaderProperties):
     """
-    The IPv6 Ext Frag base.
+    The IPv6 Frag base.
     """
 
-    _header: Ip6ExtFragHeader
+    _header: Ip6FragHeader
     _payload: memoryview | bytes
 
     pshdr_sum: int = 0
@@ -67,7 +67,7 @@ class Ip6ExtFrag(Proto, Ip6ExtFragHeaderProperties):
     @override
     def __len__(self) -> int:
         """
-        Get the IPv6 Ext Frag packet length.
+        Get the IPv6 Frag packet length.
         """
 
         return len(self._header) + len(self._payload)
@@ -75,7 +75,7 @@ class Ip6ExtFrag(Proto, Ip6ExtFragHeaderProperties):
     @override
     def __str__(self) -> str:
         """
-        Get the IPv6 Ext Frag packet log string.
+        Get the IPv6 Frag packet log string.
         """
 
         return (
@@ -88,7 +88,7 @@ class Ip6ExtFrag(Proto, Ip6ExtFragHeaderProperties):
     @override
     def __repr__(self) -> str:
         """
-        Get the IPv6 Ext Frag packet representation string.
+        Get the IPv6 Frag packet representation string.
         """
 
         return (
@@ -105,9 +105,9 @@ class Ip6ExtFrag(Proto, Ip6ExtFragHeaderProperties):
         return bytes(self._header) + self._payload
 
     @property
-    def header(self) -> Ip6ExtFragHeader:
+    def header(self) -> Ip6FragHeader:
         """
-        Get the IPv6 Ext Frag packet '_header' attribute.
+        Get the IPv6 Frag packet '_header' attribute.
         """
 
         return self._header
@@ -115,7 +115,7 @@ class Ip6ExtFrag(Proto, Ip6ExtFragHeaderProperties):
     @property
     def payload(self) -> bytes:
         """
-        Get the IPv6 Ext Frag packet '_payload' attribute.
+        Get the IPv6 Frag packet '_payload' attribute.
         """
 
         return self._payload

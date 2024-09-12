@@ -27,7 +27,7 @@
 """
 Module contains packet handler for the outbound ICMPv6 packets.
 
-pytcp/protocols/icmp6/icmp6__packet_handler_tx.py
+pytcp/subsystems/packet_handler/packet_handler__icmp6__tx.py
 
 ver 3.0.2
 """

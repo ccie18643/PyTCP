@@ -25,9 +25,9 @@
 
 
 """
-This module contains the IPv6 Ext Frag packet parser class.
+This module contains the IPv6 Frag packet parser class.
 
-pytcp/protocols/ip6_ext_frag/ip6_ext_frag__parser.py
+pytcp/protocols/ip6_frag/ip6_frag__parser.py
 
 ver 3.0.2
 """
@@ -38,29 +38,27 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, override
 
 from pytcp.lib.proto_parser import ProtoParser
-from pytcp.protocols.ip6_ext_frag.ip6_ext_frag__base import Ip6ExtFrag
-from pytcp.protocols.ip6_ext_frag.ip6_ext_frag__errors import (
-    Ip6ExtFragIntegrityError,
-)
-from pytcp.protocols.ip6_ext_frag.ip6_ext_frag__header import (
+from pytcp.protocols.ip6_frag.ip6_frag__base import Ip6Frag
+from pytcp.protocols.ip6_frag.ip6_frag__errors import Ip6FragIntegrityError
+from pytcp.protocols.ip6_frag.ip6_frag__header import (
     IP6_EXT_FRAG__HEADER__LEN,
-    Ip6ExtFragHeader,
+    Ip6FragHeader,
 )
 
 if TYPE_CHECKING:
     from pytcp.lib.packet import PacketRx
 
 
-class Ip6ExtFragParser(Ip6ExtFrag, ProtoParser):
+class Ip6FragParser(Ip6Frag, ProtoParser):
     """
-    IPv6 Ext Frag packet parser.
+    IPv6 Frag packet parser.
     """
 
     _payload: memoryview
 
     def __init__(self, packet_rx: PacketRx) -> None:
         """
-        Initialize the IPv6 Ext Frag packet parser.
+        Initialize the IPv6 Frag packet parser.
         """
 
         self._frame = packet_rx.frame
@@ -70,27 +68,27 @@ class Ip6ExtFragParser(Ip6ExtFrag, ProtoParser):
         self._parse()
         self._validate_sanity()
 
-        packet_rx.ip6_ext_frag = self
+        packet_rx.ip6_frag = self
         packet_rx.frame = self._payload
 
     @override
     def _validate_integrity(self) -> None:
         """
-        Validate integrity of the IPv6 Ext Frag packet before parsing it.
+        Validate integrity of the IPv6 Frag packet before parsing it.
         """
 
         if len(self._frame) < IP6_EXT_FRAG__HEADER__LEN:
-            raise Ip6ExtFragIntegrityError(
+            raise Ip6FragIntegrityError(
                 "The wrong packet length (I).",
             )
 
     @override
     def _parse(self) -> None:
         """
-        Parse the IPv6 Ext Frag packet.
+        Parse the IPv6 Frag packet.
         """
 
-        self._header = Ip6ExtFragHeader.from_bytes(self._frame)
+        self._header = Ip6FragHeader.from_bytes(self._frame)
         self._payload = self._frame[
             len(self._header) : len(self._header) + self._ip6__dlen
         ]
@@ -98,15 +96,15 @@ class Ip6ExtFragParser(Ip6ExtFrag, ProtoParser):
     @override
     def _validate_sanity(self) -> None:
         """
-        Validate sanity of the IPv6 Ext Frag packet after parsing it.
+        Validate sanity of the IPv6 Frag packet after parsing it.
         """
 
-        # Currently no sanity checks are implemented for the IPv6 Ext Frag protocol.
+        # Currently no sanity checks are implemented for the IPv6 Frag protocol.
 
     @property
     def header_bytes(self) -> bytes:
         """
-        Get the IPv6 Ext Frag packet header bytes.
+        Get the IPv6 Frag packet header bytes.
         """
 
         return bytes(self._frame[: len(self._header)])
@@ -114,7 +112,7 @@ class Ip6ExtFragParser(Ip6ExtFrag, ProtoParser):
     @property
     def payload_bytes(self) -> bytes:
         """
-        Get the IPv6 Ext Frag packet payload bytes.
+        Get the IPv6 Frag packet payload bytes.
         """
 
         return bytes(self._payload)
@@ -122,7 +120,7 @@ class Ip6ExtFragParser(Ip6ExtFrag, ProtoParser):
     @property
     def packet_bytes(self) -> bytes:
         """
-        Get the IPv6 Ext Frag packet bytes.
+        Get the IPv6 Frag packet bytes.
         """
 
         return bytes(self._frame[: len(self._header) + len(self._payload)])

@@ -27,7 +27,7 @@
 """
 Module contains packet handler for the inbound IPv6 packets.
 
-pytcp/protocols/ip6/ip6__packet_handler_rx.py
+pytcp/subsystems/packet_handler/packet_handler__ip6__rx.py
 
 ver 3.0.2
 """
@@ -58,7 +58,7 @@ class PacketHandlerIp6Rx(ABC):
 
         # pylint: disable=unused-argument
 
-        def _phrx_ip6_ext_frag(self, packet_rx: PacketRx) -> None: ...
+        def _phrx_ip6_frag(self, packet_rx: PacketRx) -> None: ...
         def _phrx_icmp6(self, packet_rx: PacketRx) -> None: ...
         def _phrx_udp(self, packet_rx: PacketRx) -> None: ...
         def _phrx_tcp(self, packet_rx: PacketRx) -> None: ...
@@ -107,7 +107,7 @@ class PacketHandlerIp6Rx(ABC):
 
         match packet_rx.ip6.next:
             case Ip6Next.FRAG:
-                self._phrx_ip6_ext_frag(packet_rx)
+                self._phrx_ip6_frag(packet_rx)
             case Ip6Next.ICMP6:
                 self._phrx_icmp6(packet_rx)
             case Ip6Next.UDP:

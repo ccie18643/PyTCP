@@ -646,8 +646,8 @@ class TestPacketHandlerRxTx(TestCase):
                 + 1,  # For the IPv6 frag implementation packet once reasembled
                 ip6__dst_unicast=len(order)
                 + 1,  # is put again through the IPv6 parser for processing
-                ip6_ext_frag__pre_parse=len(order),
-                ip6_ext_frag__defrag=1,
+                ip6_frag__pre_parse=len(order),
+                ip6_frag__defrag=1,
                 udp__pre_parse=1,
                 udp__echo_native__respond_udp=1,
             ),
@@ -749,8 +749,8 @@ class TestPacketHandlerRxTx(TestCase):
                 # and 5 times for frags
                 ip6__mtu_exceed__frag=1,
                 ip6__mtu_ok__send=5,
-                ip6_ext_frag__pre_assemble=1,
-                ip6_ext_frag__send=5,
+                ip6_frag__pre_assemble=1,
+                ip6_frag__send=5,
                 ethernet__pre_assemble=5,
                 ethernet__src_unspec__fill=5,
                 ethernet__dst_unspec__ip6_lookup=5,

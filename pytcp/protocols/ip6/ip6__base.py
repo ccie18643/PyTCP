@@ -46,13 +46,11 @@ from pytcp.protocols.udp.udp__assembler import UdpAssembler
 
 if TYPE_CHECKING:
     from pytcp.protocols.ip6.ip6__header import Ip6Header
-    from pytcp.protocols.ip6_ext_frag.ip6_ext_frag__assembler import (
-        Ip6ExtFragAssembler,
-    )
+    from pytcp.protocols.ip6_frag.ip6_frag__assembler import Ip6FragAssembler
     from pytcp.protocols.raw.raw__assembler import RawAssembler
 
     Ip6Payload: TypeAlias = (
-        Ip6ExtFragAssembler
+        Ip6FragAssembler
         | Icmp6Assembler
         | TcpAssembler
         | UdpAssembler

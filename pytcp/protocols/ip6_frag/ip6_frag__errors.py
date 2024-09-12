@@ -25,9 +25,9 @@
 
 
 """
-This module contains the IPv6 Ext Frag protocol error classes.
+This module contains the IPv6 Frag protocol error classes.
 
-pytcp/protocols/ip6_ext_frag/ip6_ext_frag__errors.py
+pytcp/protocols/ip6_frag/ip6_frag__errors.py
 
 ver 3.0.2
 """
@@ -38,19 +38,19 @@ from __future__ import annotations
 from pytcp.lib.errors import PacketIntegrityError, PacketSanityError
 
 
-class Ip6ExtFragIntegrityError(PacketIntegrityError):
+class Ip6FragIntegrityError(PacketIntegrityError):
     """
-    Exception raised when IPv6 Ext Frag packet integrity check fails.
-    """
-
-    def __init__(self, message: str, /):
-        super().__init__("[IPv6 Ext Frag] " + message)
-
-
-class Ip6ExtFragSanityError(PacketSanityError):
-    """
-    Exception raised when IPv6 Ext Frag packet sanity check fails.
+    Exception raised when IPv6 Frag packet integrity check fails.
     """
 
     def __init__(self, message: str, /):
-        super().__init__("[IPv6 Ext Frag] " + message)
+        super().__init__("[IPv6 Frag] " + message)
+
+
+class Ip6FragSanityError(PacketSanityError):
+    """
+    Exception raised when IPv6 Frag packet sanity check fails.
+    """
+
+    def __init__(self, message: str, /):
+        super().__init__("[IPv6 Frag] " + message)

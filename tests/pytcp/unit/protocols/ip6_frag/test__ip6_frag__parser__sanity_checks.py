@@ -25,9 +25,9 @@
 
 
 """
-This module contains tests for the IPv6 Ext Frag packet integrity checks.
+This module contains tests for the IPv6 Frag packet sanity checks.
 
-tests/pytcp/unit/protocols/tcp/test__ip6_ext_frag__parser__integrity_checks.py
+tests/pytcp/unit/protocols/tcp/test__ip6_frag__parser__sanity_checks.py
 
 ver 3.0.2
 """
@@ -38,31 +38,15 @@ from typing import Any
 from parameterized import parameterized_class  # type: ignore
 
 from pytcp.lib.packet import PacketRx
-from pytcp.protocols.ip6_ext_frag.ip6_ext_frag__errors import (
-    Ip6ExtFragIntegrityError,
-)
-from pytcp.protocols.ip6_ext_frag.ip6_ext_frag__parser import Ip6ExtFragParser
+from pytcp.protocols.ip6_frag.ip6_frag__errors import Ip6FragSanityError
+from pytcp.protocols.ip6_frag.ip6_frag__parser import Ip6FragParser
 from tests.pytcp.lib.testcase__packet_rx__ip6 import TestCasePacketRxIp6
 
 
-@parameterized_class(
-    [
-        {
-            "_description": (
-                "The length of the frame is lower than the value of the "
-                "'IP6_EXT_FRAG__HEADER__LEN' constant."
-            ),
-            "_args": [b"\xff\x00\x00\x00\x00\x00\x00"],
-            "_kwargs": {},
-            "_results": {
-                "error_message": "The wrong packet length (I).",
-            },
-        },
-    ],
-)
-class TestIp6ExtFragParserIntegrityChecks(TestCasePacketRxIp6):
+@parameterized_class([])
+class TestIp6FragParserSanityChecks(TestCasePacketRxIp6):
     """
-    The IPv6 Ext Frag packet parser integrity checks tests.
+    The IPv6 Frag packet parser sanity checks tests.
     """
 
     _description: str
@@ -72,15 +56,15 @@ class TestIp6ExtFragParserIntegrityChecks(TestCasePacketRxIp6):
 
     _packet_rx: PacketRx
 
-    def test__ip6_ext_frag__parser__from_bytes(self) -> None:
+    def test__ip6_frag__parser__from_bytes(self) -> None:
         """
-        Ensure the IPv6 Ext Frag packet parser raises integrity error on malformed packets.
+        Ensure the IPv6 Frag packet parser raises sanity error on crazy packets.
         """
 
-        with self.assertRaises(Ip6ExtFragIntegrityError) as error:
-            Ip6ExtFragParser(self._packet_rx)
+        with self.assertRaises(Ip6FragSanityError) as error:
+            Ip6FragParser(self._packet_rx)
 
         self.assertEqual(
             str(error.exception),
-            f"[INTEGRITY ERROR][IPv6 Ext Frag] {self._results["error_message"]}",
+            f"[SANITY ERROR][IPv6 Frag] {self._results["error_message"]}",
         )

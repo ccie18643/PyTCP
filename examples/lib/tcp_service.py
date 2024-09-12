@@ -67,10 +67,11 @@ class TcpService(Service):
             )
             while True:
                 connected_socket, _ = listening_socket.accept()
+                remote_ip_address, remote_port = connected_socket.getpeername()
                 click.echo(
                     f"Service {self._protocol_name} {self._service_name}: Inbound "
-                    f"connection received from {connected_socket.remote_ip_address}, "
-                    f"port {connected_socket.remote_port}."
+                    f"connection received from {remote_ip_address}, "
+                    f"port {remote_port}."
                 )
                 threading.Thread(
                     target=self._thread__service__connection_handler,

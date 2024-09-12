@@ -25,9 +25,9 @@
 
 
 """
-Module contains tests for the IPv6 Ext Frag protocol packet parsing functionality.
+Module contains tests for the IPv6 Frag protocol packet parsing functionality.
 
-tests/pytcp/unit/protocols/ip6_ext_frag/test__ip6_ext_frag__parser__operation.py
+tests/pytcp/unit/protocols/ip6_frag/test__ip6_frag__parser__operation.py
 
 ver 3.0.2
 """
@@ -39,19 +39,19 @@ from parameterized import parameterized_class  # type: ignore
 
 from pytcp.lib.packet import PacketRx
 from pytcp.protocols.ip6.ip6__enums import Ip6Next
-from pytcp.protocols.ip6_ext_frag.ip6_ext_frag__header import Ip6ExtFragHeader
-from pytcp.protocols.ip6_ext_frag.ip6_ext_frag__parser import Ip6ExtFragParser
+from pytcp.protocols.ip6_frag.ip6_frag__header import Ip6FragHeader
+from pytcp.protocols.ip6_frag.ip6_frag__parser import Ip6FragParser
 from tests.pytcp.lib.testcase__packet_rx__ip6 import TestCasePacketRxIp6
 
 
 @parameterized_class(
     [
         {
-            "_description": "IPv6 Ext Frag packet (I)",
+            "_description": "IPv6 Frag packet (I)",
             "_args": [b"\xff\x00\x00\x00\x00\x00\x00\x00"],
             "_kwargs": {},
             "_results": {
-                "header": Ip6ExtFragHeader(
+                "header": Ip6FragHeader(
                     next=Ip6Next.RAW,
                     offset=0,
                     flag_mf=False,
@@ -64,14 +64,14 @@ from tests.pytcp.lib.testcase__packet_rx__ip6 import TestCasePacketRxIp6
             },
         },
         {
-            "_description": "IPv6 Ext Frag packet (II)",
+            "_description": "IPv6 Frag packet (II)",
             "_args": [
                 b"\xff\x00\x0c\x89\xff\xff\xff\xff\x30\x31\x32\x33\x34\x35\x36\x37"
                 b"\x38\x39\x41\x42\x43\x44\x45\x46"
             ],
             "_kwargs": {},
             "_results": {
-                "header": Ip6ExtFragHeader(
+                "header": Ip6FragHeader(
                     next=Ip6Next.RAW,
                     offset=3208,
                     flag_mf=True,
@@ -87,11 +87,11 @@ from tests.pytcp.lib.testcase__packet_rx__ip6 import TestCasePacketRxIp6
             },
         },
         {
-            "_description": "IPv6 Ext Frag packet (III)",
+            "_description": "IPv6 Frag packet (III)",
             "_args": [b"\xff\x00\xff\xf8\x00\x76\xad\xf1" + b"X" * 1422],
             "_kwargs": {},
             "_results": {
-                "header": Ip6ExtFragHeader(
+                "header": Ip6FragHeader(
                     next=Ip6Next.RAW,
                     offset=65528,
                     flag_mf=False,
@@ -121,30 +121,30 @@ class TestIp6PacketParserOperation(TestCasePacketRxIp6):
 
     def test__ip6__header_parser__from_bytes(self) -> None:
         """
-        Ensure the IPv6 Ext Frag packet parser creates the proper header and payload
+        Ensure the IPv6 Frag packet parser creates the proper header and payload
         objects and also updates the appropriate 'tx_packet' object fields.
         """
 
-        ip6_ext_frag_parser = Ip6ExtFragParser(self._packet_rx)
+        ip6_frag_parser = Ip6FragParser(self._packet_rx)
 
         self.assertEqual(
-            ip6_ext_frag_parser.header,
+            ip6_frag_parser.header,
             self._results["header"],
         )
 
         self.assertEqual(
-            ip6_ext_frag_parser.header_bytes,
+            ip6_frag_parser.header_bytes,
             self._results["header_bytes"],
         )
 
         self.assertEqual(
-            ip6_ext_frag_parser.payload_bytes,
+            ip6_frag_parser.payload_bytes,
             self._results["payload_bytes"],
         )
 
         self.assertIs(
-            self._packet_rx.ip6_ext_frag,
-            ip6_ext_frag_parser,
+            self._packet_rx.ip6_frag,
+            ip6_frag_parser,
         )
 
         self.assertEqual(

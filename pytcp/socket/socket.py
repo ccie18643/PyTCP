@@ -94,13 +94,17 @@ class IpProto(NameEnum):
 
 class Socket(ABC):
     """
-    Base class for all socket classes.
+    Base class for all socket classes. It contains only the methods that are relevant
+    for the BSD socket API. The rest of the methods and actual socket logic are
+    implemented in the derived classes.
     """
 
     _family: AddressFamily
     _type: SocketType
     _local_ip_address: IpAddress
     _remote_ip_address: IpAddress
+    _local_port: int
+    _remote_port: int
 
     @abstractmethod
     def __str__(self) -> str:
@@ -109,6 +113,8 @@ class Socket(ABC):
         """
 
         raise NotImplementedError
+
+    # BSD socket API methods.
 
     @property
     def family(self) -> AddressFamily:
@@ -126,21 +132,19 @@ class Socket(ABC):
 
         return self._type
 
-    @property
-    def local_ip_address(self) -> IpAddress:
+    def getsockname(self) -> tuple[str, int]:
         """
-        Get the '_local_ip_address' attribute.
-        """
-
-        return self._local_ip_address
-
-    @property
-    def remote_ip_address(self) -> IpAddress:
-        """
-        Get the '_remote_ip_address' attribute.
+        Get the local address and port.
         """
 
-        return self._remote_ip_address
+        return str(self._local_ip_address), self._local_port
+
+    def getpeername(self) -> tuple[str, int]:
+        """
+        Get the remote address and port.
+        """
+
+        return str(self._remote_ip_address), self._local_port
 
     def bind(
         self,

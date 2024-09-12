@@ -79,7 +79,7 @@ class Ip6Next(ProtoEnumByte):
         """
 
         from pytcp.protocols.icmp6.icmp6__base import Icmp6
-        from pytcp.protocols.ip6_ext_frag.ip6_ext_frag__base import Ip6ExtFrag
+        from pytcp.protocols.ip6_frag.ip6_frag__base import Ip6Frag
         from pytcp.protocols.raw.raw__base import Raw
         from pytcp.protocols.tcp.tcp__base import Tcp
         from pytcp.protocols.udp.udp__base import Udp
@@ -93,7 +93,7 @@ class Ip6Next(ProtoEnumByte):
         if isinstance(proto, Icmp6):
             return Ip6Next.ICMP6
 
-        if isinstance(proto, Ip6ExtFrag):
+        if isinstance(proto, Ip6Frag):
             return Ip6Next.FRAG
 
         if isinstance(proto, Raw):

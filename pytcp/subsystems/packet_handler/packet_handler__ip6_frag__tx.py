@@ -27,7 +27,7 @@
 """
 Module contains packet handler for the outbound IPv6 fragment extension header.
 
-pytcp/protocols/ip6_ext_frag/ip6_ext_frag__packet_handler_tx.py
+pytcp/subsystems/packet_handler/packet_handler__ip6_frag__tx.py
 
 ver 3.0.2
 """
@@ -43,17 +43,13 @@ from pytcp.lib.logger import log
 from pytcp.lib.tx_status import TxStatus
 from pytcp.protocols.icmp6.icmp6__assembler import Icmp6Assembler
 from pytcp.protocols.ip6.ip6__header import IP6__HEADER__LEN
-from pytcp.protocols.ip6_ext_frag.ip6_ext_frag__assembler import (
-    Ip6ExtFragAssembler,
-)
-from pytcp.protocols.ip6_ext_frag.ip6_ext_frag__header import (
-    IP6_EXT_FRAG__HEADER__LEN,
-)
+from pytcp.protocols.ip6_frag.ip6_frag__assembler import Ip6FragAssembler
+from pytcp.protocols.ip6_frag.ip6_frag__header import IP6_EXT_FRAG__HEADER__LEN
 from pytcp.protocols.tcp.tcp__assembler import TcpAssembler
 from pytcp.protocols.udp.udp__assembler import UdpAssembler
 
 
-class PacketHandlerIp6ExtFragTx(ABC):
+class PacketHandlerIp6FragTx(ABC):
     """
     Packet handler for the outbound IPv6 fragment extension header.
     """
@@ -78,12 +74,12 @@ class PacketHandlerIp6ExtFragTx(ABC):
             ip6__payload: Ip6Payload = RawAssembler(),
         ) -> TxStatus: ...
 
-    def _phtx_ip6_ext_frag(self, *, ip6_packet_tx: Ip6Assembler) -> TxStatus:
+    def _phtx_ip6_frag(self, *, ip6_packet_tx: Ip6Assembler) -> TxStatus:
         """
         Handle outbound IPv6 fagment extension header.
         """
 
-        self.packet_stats_tx.ip6_ext_frag__pre_assemble += 1
+        self.packet_stats_tx.ip6_frag__pre_assemble += 1
 
         if isinstance(
             ip6_packet_tx.payload, (TcpAssembler, UdpAssembler, Icmp6Assembler)
@@ -105,23 +101,21 @@ class PacketHandlerIp6ExtFragTx(ABC):
         self.ip6_id += 1
         ip6_tx_status: set[TxStatus] = set()
         for data_frag in data_frags:
-            ip6_ext_frag_tx = Ip6ExtFragAssembler(
-                ip6_ext_frag__next=ip6_packet_tx.next,
-                ip6_ext_frag__offset=offset,
-                ip6_ext_frag__flag_mf=data_frag is not data_frags[-1],
-                ip6_ext_frag__id=self.ip6_id,
-                ip6_ext_frag__payload=data_frag,
+            ip6_frag_tx = Ip6FragAssembler(
+                ip6_frag__next=ip6_packet_tx.next,
+                ip6_frag__offset=offset,
+                ip6_frag__flag_mf=data_frag is not data_frags[-1],
+                ip6_frag__id=self.ip6_id,
+                ip6_frag__payload=data_frag,
             )
-            __debug__ and log(
-                "ip6", f"{ip6_ext_frag_tx.tracker} - {ip6_ext_frag_tx}"
-            )
+            __debug__ and log("ip6", f"{ip6_frag_tx.tracker} - {ip6_frag_tx}")
             offset += len(data_frag)
-            self.packet_stats_tx.ip6_ext_frag__send += 1
+            self.packet_stats_tx.ip6_frag__send += 1
             ip6_tx_status.add(
                 self._phtx_ip6(
                     ip6__src=ip6_packet_tx.src,
                     ip6__dst=ip6_packet_tx.dst,
-                    ip6__payload=ip6_ext_frag_tx,
+                    ip6__payload=ip6_frag_tx,
                 )
             )
 

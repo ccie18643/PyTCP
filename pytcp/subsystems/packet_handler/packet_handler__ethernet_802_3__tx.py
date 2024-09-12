@@ -27,7 +27,7 @@
 """
 Module contains packet handler for the outbound Ethernet 802.3 packets.
 
-pytcp/protocols/ethernet_802_3/ethernet_802_3__packet_handler_tx.py
+pytcp/subsystems/packet_handler/packet_handler__ethernet_802_3__tx.py
 
 ver 3.0.2
 """

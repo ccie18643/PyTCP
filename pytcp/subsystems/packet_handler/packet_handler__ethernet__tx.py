@@ -27,7 +27,7 @@
 """
 Module contains packet handler for the outbound Ethernet II packets.
 
-pytcp/protocols/ethernet/ethernet__packet_handler_tx.py
+pytcp/subsystems/packet_handler/packet_handler__ethernet__tx.py
 
 ver 3.0.2
 """

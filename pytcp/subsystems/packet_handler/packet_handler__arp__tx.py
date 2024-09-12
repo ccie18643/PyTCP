@@ -27,7 +27,7 @@
 """
 Module contains packet handler for the outbound ARP packets.
 
-pytcp/protocols/arp/arp__packet_handler_tx.py
+pytcp/subsystems/packet_handler/packet_handler__arp__tx.py
 
 ver 3.0.2
 """

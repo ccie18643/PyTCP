@@ -90,9 +90,9 @@ class PacketStatsRx:
     ip6__dst_unicast: int = 0
     ip6__dst_multicast: int = 0
 
-    ip6_ext_frag__pre_parse: int = 0
-    ip6_ext_frag__failed_parse: int = 0
-    ip6_ext_frag__defrag: int = 0
+    ip6_frag__pre_parse: int = 0
+    ip6_frag__failed_parse: int = 0
+    ip6_frag__defrag: int = 0
 
     icmp4__pre_parse: int = 0
     icmp4__failed_parse__drop: int = 0
@@ -203,8 +203,8 @@ class PacketStatsTx:
     ip6__mtu_ok__send: int = 0
     ip6__mtu_exceed__frag: int = 0
 
-    ip6_ext_frag__pre_assemble: int = 0
-    ip6_ext_frag__send: int = 0
+    ip6_frag__pre_assemble: int = 0
+    ip6_frag__send: int = 0
 
     icmp4__pre_assemble: int = 0
     icmp4__echo_reply__send: int = 0

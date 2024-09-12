@@ -293,8 +293,8 @@ class TestIp6Phtx(TestCase):
                 ip6__pre_assemble=6,  # 1 time for initial packet and 5 times for frags
                 ip6__mtu_exceed__frag=1,
                 ip6__mtu_ok__send=5,
-                ip6_ext_frag__pre_assemble=1,
-                ip6_ext_frag__send=5,
+                ip6_frag__pre_assemble=1,
+                ip6_frag__send=5,
                 ethernet__pre_assemble=5,
                 ethernet__src_unspec__fill=5,
                 ethernet__dst_unspec__ip6_lookup=5,

@@ -27,7 +27,7 @@
 """
 Module contains packet handler for the inbound Ethernet II packets.
 
-pytcp/protocols/ethernet/ethernet__packet_handler_rx.py
+pytcp/subsystems/packet_handler/packet_handler__ethernet__rx.py
 
 ver 3.0.2
 """

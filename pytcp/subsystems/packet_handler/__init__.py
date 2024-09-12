@@ -27,7 +27,7 @@
 """
 Module contains packet handler class for inbound and outbound packets.
 
-pytcp/subsystems/icmp6__packet_handler.py
+pytcp/subsystems/packet_handler/__init__.py
 
 ver 3.0.2
 """
@@ -71,8 +71,8 @@ from .packet_handler__ip4__rx import PacketHandlerIp4Rx
 from .packet_handler__ip4__tx import PacketHandlerIp4Tx
 from .packet_handler__ip6__rx import PacketHandlerIp6Rx
 from .packet_handler__ip6__tx import PacketHandlerIp6Tx
-from .packet_handler__ip6_ext_frag__rx import PacketHandlerIp6ExtFragRx
-from .packet_handler__ip6_ext_frag__tx import PacketHandlerIp6ExtFragTx
+from .packet_handler__ip6_frag__rx import PacketHandlerIp6FragRx
+from .packet_handler__ip6_frag__tx import PacketHandlerIp6FragTx
 from .packet_handler__tcp__rx import PacketHandlerTcpRx
 from .packet_handler__tcp__tx import PacketHandlerTcpTx
 from .packet_handler__udp__rx import PacketHandlerUdpRx
@@ -97,8 +97,8 @@ class PacketHandler(
     PacketHandlerIp4Tx,
     PacketHandlerIp6Rx,
     PacketHandlerIp6Tx,
-    PacketHandlerIp6ExtFragRx,
-    PacketHandlerIp6ExtFragTx,
+    PacketHandlerIp6FragRx,
+    PacketHandlerIp6FragTx,
     PacketHandlerTcpRx,
     PacketHandlerTcpTx,
     PacketHandlerUdpRx,

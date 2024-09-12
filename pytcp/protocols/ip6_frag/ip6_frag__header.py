@@ -25,9 +25,9 @@
 
 
 """
-This module contains the IPv6 Ext Frag header class.
+This module contains the IPv6 Frag header class.
 
-pytcp/protocols/ip6_ext_frag/ip6_ext_frag__header.py
+pytcp/protocols/ip6_frag/ip6_frag__header.py
 
 ver 3.0.2
 """
@@ -58,9 +58,9 @@ IP6_EXT_FRAG__HEADER__STRUCT = "! BBH L"
 
 
 @dataclass(frozen=True, kw_only=True)
-class Ip6ExtFragHeader(ProtoStruct):
+class Ip6FragHeader(ProtoStruct):
     """
-    The IPv6 Ext Frag header.
+    The IPv6 Frag header.
     """
 
     next: Ip6Next
@@ -71,7 +71,7 @@ class Ip6ExtFragHeader(ProtoStruct):
     @override
     def __post_init__(self) -> None:
         """
-        Validate the IPv6 Ext Frag header fields.
+        Validate the IPv6 Frag header fields.
         """
 
         assert isinstance(
@@ -97,7 +97,7 @@ class Ip6ExtFragHeader(ProtoStruct):
     @override
     def __len__(self) -> int:
         """
-        Get the IPv6 Ext Frag header length.
+        Get the IPv6 Frag header length.
         """
 
         return IP6_EXT_FRAG__HEADER__LEN
@@ -105,7 +105,7 @@ class Ip6ExtFragHeader(ProtoStruct):
     @override
     def __bytes__(self) -> bytes:
         """
-        Get the IPv6 Ext Frag header as bytes.
+        Get the IPv6 Frag header as bytes.
         """
 
         return struct.pack(
@@ -118,16 +118,16 @@ class Ip6ExtFragHeader(ProtoStruct):
 
     @override
     @staticmethod
-    def from_bytes(_bytes: bytes, /) -> Ip6ExtFragHeader:
+    def from_bytes(_bytes: bytes, /) -> Ip6FragHeader:
         """
-        Initialize the IPv6 Ext Frag header from bytes.
+        Initialize the IPv6 Frag header from bytes.
         """
 
         next, _, offset__flag_mf, id = struct.unpack(
             IP6_EXT_FRAG__HEADER__STRUCT, _bytes[:IP6_EXT_FRAG__HEADER__LEN]
         )
 
-        return Ip6ExtFragHeader(
+        return Ip6FragHeader(
             next=Ip6Next.from_int(next),
             offset=offset__flag_mf & 0b11111111_11111000,
             flag_mf=bool(offset__flag_mf & 0b00000000_00000001),
@@ -135,17 +135,17 @@ class Ip6ExtFragHeader(ProtoStruct):
         )
 
 
-class Ip6ExtFragHeaderProperties(ABC):
+class Ip6FragHeaderProperties(ABC):
     """
-    Properties used to access the IPv6 Ext Frag header fields.
+    Properties used to access the IPv6 Frag header fields.
     """
 
-    _header: Ip6ExtFragHeader
+    _header: Ip6FragHeader
 
     @property
     def next(self) -> Ip6Next:
         """
-        Get the IPv6 Ext Frag 'next' field.
+        Get the IPv6 Frag 'next' field.
         """
 
         return self._header.next
@@ -153,7 +153,7 @@ class Ip6ExtFragHeaderProperties(ABC):
     @property
     def offset(self) -> int:
         """
-        Get the IPv6 Ext Frag 'offset' field.
+        Get the IPv6 Frag 'offset' field.
         """
 
         return self._header.offset
@@ -161,7 +161,7 @@ class Ip6ExtFragHeaderProperties(ABC):
     @property
     def flag_mf(self) -> bool:
         """
-        Get the IPv6 Ext Frag 'flag_mf' field.
+        Get the IPv6 Frag 'flag_mf' field.
         """
 
         return self._header.flag_mf
@@ -169,7 +169,7 @@ class Ip6ExtFragHeaderProperties(ABC):
     @property
     def id(self) -> int:
         """
-        Get the IPv6 Ext Frag 'id' field.
+        Get the IPv6 Frag 'id' field.
         """
 
         return self._header.id

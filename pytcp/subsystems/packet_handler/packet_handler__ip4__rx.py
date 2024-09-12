@@ -27,7 +27,7 @@
 """
 Module contains packet handler for the inbound IPv4 packets.
 
-pytcp/protocols/ip4/ip4__packet_handler_rx.py
+pytcp/subsystems/packet_handler/packet_handler__ip4__rx.py
 
 ver 3.0.2
 """

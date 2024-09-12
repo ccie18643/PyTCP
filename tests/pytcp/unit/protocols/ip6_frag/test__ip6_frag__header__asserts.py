@@ -25,9 +25,9 @@
 
 
 """
-This module contains tests for the IPv6 Ext Frag header fields asserts.
+This module contains tests for the IPv6 Frag header fields asserts.
 
-tests/pytcp/unit/protocols/ip6/test__ip6_ext_frag__header__asserts.py
+tests/pytcp/unit/protocols/ip6/test__ip6_frag__header__asserts.py
 
 ver 3.0.2
 """
@@ -44,7 +44,7 @@ from pytcp.lib.int_checks import (
     UINT_32__MIN,
 )
 from pytcp.protocols.ip6.ip6__enums import Ip6Next
-from pytcp.protocols.ip6_ext_frag.ip6_ext_frag__header import Ip6ExtFragHeader
+from pytcp.protocols.ip6_frag.ip6_frag__header import Ip6FragHeader
 
 
 class TestIpExtFrag6HeaderAsserts(TestCase):
@@ -54,7 +54,7 @@ class TestIpExtFrag6HeaderAsserts(TestCase):
 
     def setUp(self) -> None:
         """
-        Create the default arguments for the IPv6 Ext Frag header constructor.
+        Create the default arguments for the IPv6 Frag header constructor.
         """
 
         self._args: list[Any] = []
@@ -65,87 +65,87 @@ class TestIpExtFrag6HeaderAsserts(TestCase):
             "id": 0,
         }
 
-    def test__ip6_ext_frag__header__next__not_Ip6Next(self) -> None:
+    def test__ip6_frag__header__next__not_Ip6Next(self) -> None:
         """
-        Ensure the IPv6 Ext Frag header constructor raises an exception when
+        Ensure the IPv6 Frag header constructor raises an exception when
         the provided 'next' argument is not an Ip6Next.
         """
 
         self._kwargs["next"] = value = "not an Ip6Next"
 
         with self.assertRaises(AssertionError) as error:
-            Ip6ExtFragHeader(*self._args, **self._kwargs)
+            Ip6FragHeader(*self._args, **self._kwargs)
 
         self.assertEqual(
             str(error.exception),
             f"The 'next' field must be an Ip6Next. Got: {type(value)!r}",
         )
 
-    def test__ip6_ext_frag__header__offset__under_min(self) -> None:
+    def test__ip6_frag__header__offset__under_min(self) -> None:
         """
-        Ensure the IPv6 Ext Frag header constructor raises an exception when
+        Ensure the IPv6 Frag header constructor raises an exception when
         the provided 'offset' argument is lower than the minimum supported value.
         """
 
         self._kwargs["offset"] = value = UINT_13__MIN - 1
 
         with self.assertRaises(AssertionError) as error:
-            Ip6ExtFragHeader(*self._args, **self._kwargs)
+            Ip6FragHeader(*self._args, **self._kwargs)
 
         self.assertEqual(
             str(error.exception),
             f"The 'offset' field must be a 13-bit unsigned integer. Got: {value!r}",
         )
 
-    def test__ip6_ext_frag__header__offset__over_max(self) -> None:
+    def test__ip6_frag__header__offset__over_max(self) -> None:
         """
-        Ensure the IPv6 Ext Frag header constructor raises an exception when
+        Ensure the IPv6 Frag header constructor raises an exception when
         the provided 'offset' argument is higher than the maximum supported value.
         """
 
         self._kwargs["offset"] = value = UINT_13__MAX + 1
 
         with self.assertRaises(AssertionError) as error:
-            Ip6ExtFragHeader(*self._args, **self._kwargs)
+            Ip6FragHeader(*self._args, **self._kwargs)
 
         self.assertEqual(
             str(error.exception),
             f"The 'offset' field must be a 13-bit unsigned integer. Got: {value!r}",
         )
 
-    def test__ip6_ext_frag__header__offset__not_8_byte_alligned(self) -> None:
+    def test__ip6_frag__header__offset__not_8_byte_alligned(self) -> None:
         """
-        Ensure the IPv6 Ext Frag header constructor raises an exception when
+        Ensure the IPv6 Frag header constructor raises an exception when
         the provided 'offset' argument is not 8-byte aligned.
         """
 
         self._kwargs["offset"] = value = UINT_13__MAX - 1
 
         with self.assertRaises(AssertionError) as error:
-            Ip6ExtFragHeader(*self._args, **self._kwargs)
+            Ip6FragHeader(*self._args, **self._kwargs)
 
         self.assertEqual(
             str(error.exception),
             f"The 'offset' field must be 8-byte aligned. Got: {value!r}",
         )
 
-    def test__ip6_ext_frag__header__flag_mf__not_boolean(self) -> None:
+    def test__ip6_frag__header__flag_mf__not_boolean(self) -> None:
         """
-        Ensure the IPv6 Ext Frag header constructor raises an exception when
+        Ensure the IPv6 Frag header constructor raises an exception when
         the provided 'flag_mf' argument is not a boolean.
         """
 
         self._kwargs["flag_mf"] = value = "not a boolean"
 
         with self.assertRaises(AssertionError) as error:
-            Ip6ExtFragHeader(*self._args, **self._kwargs)
+            Ip6FragHeader(*self._args, **self._kwargs)
 
         self.assertEqual(
             str(error.exception),
             f"The 'flag_mf' field must be a boolean. Got: {type(value)!r}",
         )
 
-    def test__ip6_ext_frag__header__id__under_min(self) -> None:
+    def test__ip6_frag__header__id__under_min(self) -> None:
         """
         Ensure the IPv6 header constructor raises an exception when the provided
         'id' argument is lower than the minimum supported value.
@@ -154,14 +154,14 @@ class TestIpExtFrag6HeaderAsserts(TestCase):
         self._kwargs["id"] = value = UINT_32__MIN - 1
 
         with self.assertRaises(AssertionError) as error:
-            Ip6ExtFragHeader(*self._args, **self._kwargs)
+            Ip6FragHeader(*self._args, **self._kwargs)
 
         self.assertEqual(
             str(error.exception),
             f"The 'id' field must be a 32-bit unsigned integer. Got: {value!r}",
         )
 
-    def test__ip6_ext_frag__header__id__over_max(self) -> None:
+    def test__ip6_frag__header__id__over_max(self) -> None:
         """
         Ensure the IPv6 header constructor raises an exception when the provided
         'id' argument is higher than the maximum supported value.
@@ -170,7 +170,7 @@ class TestIpExtFrag6HeaderAsserts(TestCase):
         self._kwargs["id"] = value = UINT_32__MAX + 1
 
         with self.assertRaises(AssertionError) as error:
-            Ip6ExtFragHeader(*self._args, **self._kwargs)
+            Ip6FragHeader(*self._args, **self._kwargs)
 
         self.assertEqual(
             str(error.exception),

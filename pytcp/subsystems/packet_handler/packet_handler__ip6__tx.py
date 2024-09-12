@@ -27,7 +27,7 @@
 """
 Module contains packet handler for the outbound IPv6 packets.
 
-pytcp/protocols/ip6/ip6__packet_handler_tx.py
+pytcp/subsystems/packet_handler/packet_handler__ip6__tx.py
 
 ver 3.0.2
 """
@@ -76,7 +76,7 @@ class PacketHandlerIp6Tx(ABC):
             ethernet__payload: EthernetPayload = RawAssembler(),
         ) -> TxStatus: ...
 
-        def _phtx_ip6_ext_frag(
+        def _phtx_ip6_frag(
             self, *, ip6_packet_tx: Ip6Assembler
         ) -> TxStatus: ...
 
@@ -157,7 +157,7 @@ class PacketHandlerIp6Tx(ABC):
             f"{ip6_packet_tx.tracker} - IPv6 packet len "
             f"{len(ip6_packet_tx)} bytes, fragmentation needed",
         )
-        return self._phtx_ip6_ext_frag(ip6_packet_tx=ip6_packet_tx)
+        return self._phtx_ip6_frag(ip6_packet_tx=ip6_packet_tx)
 
     def __validate_src_ip6_address(
         self,

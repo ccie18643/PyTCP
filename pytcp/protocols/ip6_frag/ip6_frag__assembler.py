@@ -25,48 +25,50 @@
 
 
 """
-This module contains tests for the IPv6 Ext Frag packet sanity checks.
+This module contains the IPv6 Frag packet assembler.
 
-tests/pytcp/unit/protocols/tcp/test__ip6_ext_frag__parser__sanity_checks.py
+pytcp/protocols/ip6_frag/ip6_frag__assembler.py
 
 ver 3.0.2
 """
 
 
-from typing import Any
+from __future__ import annotations
 
-from parameterized import parameterized_class  # type: ignore
-
-from pytcp.lib.packet import PacketRx
-from pytcp.protocols.ip6_ext_frag.ip6_ext_frag__errors import (
-    Ip6ExtFragSanityError,
-)
-from pytcp.protocols.ip6_ext_frag.ip6_ext_frag__parser import Ip6ExtFragParser
-from tests.pytcp.lib.testcase__packet_rx__ip6 import TestCasePacketRxIp6
+from pytcp.lib.proto_assembler import ProtoAssembler
+from pytcp.lib.tracker import Tracker
+from pytcp.protocols.ip6.ip6__enums import Ip6Next
+from pytcp.protocols.ip6_frag.ip6_frag__base import Ip6Frag
+from pytcp.protocols.ip6_frag.ip6_frag__header import Ip6FragHeader
 
 
-@parameterized_class([])
-class TestIp6ExtFragParserSanityChecks(TestCasePacketRxIp6):
+class Ip6FragAssembler(Ip6Frag, ProtoAssembler):
     """
-    The IPv6 Ext Frag packet parser sanity checks tests.
+    The IPv6 Frag packet assembler.
     """
 
-    _description: str
-    _args: list[Any]
-    _kwargs: dict[str, Any]
-    _results: dict[str, Any]
+    _payload: bytes
 
-    _packet_rx: PacketRx
-
-    def test__ip6_ext_frag__parser__from_bytes(self) -> None:
+    def __init__(
+        self,
+        *,
+        ip6_frag__next: Ip6Next = Ip6Next.RAW,
+        ip6_frag__offset: int = 0,
+        ip6_frag__flag_mf: bool = False,
+        ip6_frag__id: int = 0,
+        ip6_frag__payload: bytes = bytes(),
+    ) -> None:
         """
-        Ensure the IPv6 Ext Frag packet parser raises sanity error on crazy packets.
+        Initialize the IPv6 Frag packet assembler.
         """
 
-        with self.assertRaises(Ip6ExtFragSanityError) as error:
-            Ip6ExtFragParser(self._packet_rx)
+        self._tracker: Tracker = Tracker(prefix="TX")
 
-        self.assertEqual(
-            str(error.exception),
-            f"[SANITY ERROR][IPv6 Ext Frag] {self._results["error_message"]}",
+        self._payload = ip6_frag__payload
+
+        self._header = Ip6FragHeader(
+            next=ip6_frag__next,
+            offset=ip6_frag__offset,
+            flag_mf=ip6_frag__flag_mf,
+            id=ip6_frag__id,
         )

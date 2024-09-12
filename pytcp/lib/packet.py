@@ -55,9 +55,7 @@ if TYPE_CHECKING:
     )
     from pytcp.protocols.icmp4.icmp4__parser import Icmp4Parser
     from pytcp.protocols.icmp6.icmp6__parser import Icmp6Parser
-    from pytcp.protocols.ip6_ext_frag.ip6_ext_frag__parser import (
-        Ip6ExtFragParser,
-    )
+    from pytcp.protocols.ip6_frag.ip6_frag__parser import Ip6FragParser
 
 
 class PacketRx:
@@ -80,7 +78,7 @@ class PacketRx:
         self.ip: Ip6Parser | Ip4Parser
         self.ip4: Ip4Parser
         self.ip6: Ip6Parser
-        self.ip6_ext_frag: Ip6ExtFragParser
+        self.ip6_frag: Ip6FragParser
         self.icmp4: Icmp4Parser
         self.icmp6: Icmp6Parser
         self.tcp: TcpParser
