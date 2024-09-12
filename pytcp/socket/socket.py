@@ -101,6 +101,7 @@ class Socket(ABC):
 
     _family: AddressFamily
     _type: SocketType
+    _proto: IpProto
     _local_ip_address: IpAddress
     _remote_ip_address: IpAddress
     _local_port: int
@@ -131,6 +132,14 @@ class Socket(ABC):
         """
 
         return self._type
+
+    @property
+    def proto(self) -> IpProto:
+        """
+        Get the '_proto' attribute.
+        """
+
+        return self._proto
 
     def getsockname(self) -> tuple[str, int]:
         """
