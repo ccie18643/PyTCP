@@ -50,7 +50,7 @@ from pytcp.protocols.ip4.ip4__header import IP4__HEADER__LEN
 from pytcp.protocols.ip4.ip4__parser import Ip4Parser
 
 
-class Ip4PacketHandlerRx(ABC):
+class PacketHandlerIp4Rx(ABC):
     """
     Class implements packet handler for the inbound IPv4 packets.
     """

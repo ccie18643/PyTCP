@@ -46,7 +46,7 @@ from pytcp.lib.packet import PacketRx
 from pytcp.protocols.ip6_ext_frag.ip6_ext_frag__parser import Ip6ExtFragParser
 
 
-class Ip6ExtFragPacketHandlerRx(ABC):
+class PacketHandlerIp6ExtFragRx(ABC):
     """
     Class implements packet handler for inbound the IPv6 fragment extension.
     """

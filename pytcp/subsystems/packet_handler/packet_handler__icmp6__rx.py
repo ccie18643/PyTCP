@@ -77,7 +77,7 @@ from pytcp.socket.udp__metadata import UdpMetadata
 from pytcp.socket.udp__socket import UdpSocket
 
 
-class Icmp6PacketHandlerRx(ABC):
+class PacketHandlerIcmp6Rx(ABC):
     """
     Class implements packet handler for the inbound ICMPv6 packets.
     """

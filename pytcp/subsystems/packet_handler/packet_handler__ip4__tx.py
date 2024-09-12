@@ -48,7 +48,7 @@ from pytcp.protocols.tcp.tcp__assembler import TcpAssembler
 from pytcp.protocols.udp.udp__assembler import UdpAssembler
 
 
-class Ip4PacketHandlerTx(ABC):
+class PacketHandlerIp4Tx(ABC):
     """
     Abstract class for outbound IPv4 packet handler.
     """

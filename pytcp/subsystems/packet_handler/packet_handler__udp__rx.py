@@ -58,7 +58,7 @@ from pytcp.socket.udp__metadata import UdpMetadata
 from pytcp.socket.udp__socket import UdpSocket
 
 
-class UdpPacketHandlerRx(ABC):
+class PacketHandlerUdpRx(ABC):
     """
     Class implements packet handler for the inbound UDP packets.
     """

@@ -60,7 +60,7 @@ from pytcp.protocols.udp.udp__header import UDP__HEADER__LEN
 from pytcp.socket.udp__metadata import UdpMetadata
 
 
-class Icmp4PacketHandlerRx(ABC):
+class PacketHandlerIcmp4Rx(ABC):
     """
     Class implements packet handler for the inbound ICMPv4 packets.
     """

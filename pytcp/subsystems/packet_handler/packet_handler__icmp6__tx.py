@@ -68,7 +68,7 @@ from pytcp.protocols.icmp6.message.nd.option.icmp6_nd_options import (
 )
 
 
-class Icmp6PacketHandlerTx(ABC):
+class PacketHandlerIcmp6Tx(ABC):
     """
     Class defines methods for handling outbound ICMPv6 packets.
     """

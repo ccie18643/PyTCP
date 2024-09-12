@@ -53,7 +53,7 @@ from pytcp.protocols.tcp.tcp__assembler import TcpAssembler
 from pytcp.protocols.udp.udp__assembler import UdpAssembler
 
 
-class Ip6ExtFragPacketHandlerTx(ABC):
+class PacketHandlerIp6ExtFragTx(ABC):
     """
     Packet handler for the outbound IPv6 fragment extension header.
     """

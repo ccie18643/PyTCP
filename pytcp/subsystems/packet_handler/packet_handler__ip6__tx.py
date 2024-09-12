@@ -51,7 +51,7 @@ from pytcp.protocols.ip6.ip6__assembler import Ip6Assembler
 from pytcp.protocols.raw.raw__assembler import RawAssembler
 
 
-class Ip6PacketHandlerTx(ABC):
+class PacketHandlerIp6Tx(ABC):
     """
     Class implements packet handler for the outbound IPv6 packets.
     """

@@ -45,7 +45,7 @@ from pytcp.protocols.ethernet.ethernet__header import EthernetType
 from pytcp.protocols.ethernet.ethernet__parser import EthernetParser
 
 
-class EthernetPacketHandlerRx(ABC):
+class PacketHandlerEthernetRx(ABC):
     """
     Class implements packet handler for the inbound Ethernet packets.
     """

@@ -47,7 +47,7 @@ from pytcp.protocols.arp.arp__assembler import ArpAssembler
 from pytcp.protocols.arp.arp__header import ArpOperation
 
 
-class ArpPacketHandlerTx(ABC):
+class PacketHandlerArpTx(ABC):
     """
     Packet handler for the outbound ARP packets.
     """

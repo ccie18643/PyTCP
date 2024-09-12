@@ -46,7 +46,7 @@ from pytcp.protocols.arp.arp__header import ArpOperation
 from pytcp.protocols.arp.arp__parser import ArpParser
 
 
-class ArpPacketHandlerRx(ABC):
+class PacketHandlerArpRx(ABC):
     """
     Class implementing packet handler for the inbound ARP packets.
     """

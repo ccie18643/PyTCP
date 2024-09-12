@@ -44,7 +44,7 @@ from pytcp.protocols.ethernet_802_3.ethernet_802_3__parser import (
 )
 
 
-class Ethernet8023PacketHandlerRx(ABC):
+class PacketHandlerEthernet8023Rx(ABC):
     """
     Class implements packet handler for the inbound Ethernet 802.3 packets.
     """

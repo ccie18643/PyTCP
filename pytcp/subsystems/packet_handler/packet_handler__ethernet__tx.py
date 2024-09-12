@@ -48,7 +48,7 @@ from pytcp.protocols.ip6.ip6__assembler import Ip6Assembler
 from pytcp.protocols.raw.raw__assembler import RawAssembler
 
 
-class EthernetPacketHandlerTx(ABC):
+class PacketHandlerEthernetTx(ABC):
     """
     Class implements packet handler for the outbound Ethernet packets.
     """

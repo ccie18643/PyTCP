@@ -52,68 +52,57 @@ from pytcp import config
 from pytcp.lib import stack
 from pytcp.lib.logger import log
 from pytcp.lib.packet_stats import PacketStatsRx, PacketStatsTx
-from pytcp.protocols.arp.arp__packet_handler_rx import ArpPacketHandlerRx
-from pytcp.protocols.arp.arp__packet_handler_tx import ArpPacketHandlerTx
 from pytcp.protocols.dhcp4__legacy.client import Dhcp4Client
-from pytcp.protocols.ethernet.ethernet__packet_handler_rx import (
-    EthernetPacketHandlerRx,
-)
-from pytcp.protocols.ethernet.ethernet__packet_handler_tx import (
-    EthernetPacketHandlerTx,
-)
 from pytcp.protocols.ethernet_802_3.ethernet_802_3__header import (
     ETHERNET_802_3__PACKET__MAX_LEN,
 )
-from pytcp.protocols.ethernet_802_3.ethernet_802_3__packet_handler_rx import (
-    Ethernet8023PacketHandlerRx,
-)
-from pytcp.protocols.ethernet_802_3.ethernet_802_3__packet_handler_tx import (
-    Ethernet8023PacketHandlerTx,
-)
-from pytcp.protocols.icmp4.icmp4__packet_handler_rx import Icmp4PacketHandlerRx
-from pytcp.protocols.icmp4.icmp4__packet_handler_tx import Icmp4PacketHandlerTx
-from pytcp.protocols.icmp6.icmp6__packet_handler_rx import Icmp6PacketHandlerRx
-from pytcp.protocols.icmp6.icmp6__packet_handler_tx import Icmp6PacketHandlerTx
-from pytcp.protocols.ip4.ip4__packet_handler_rx import Ip4PacketHandlerRx
-from pytcp.protocols.ip4.ip4__packet_handler_tx import Ip4PacketHandlerTx
-from pytcp.protocols.ip6.ip6__packet_handler_rx import Ip6PacketHandlerRx
-from pytcp.protocols.ip6.ip6__packet_handler_tx import Ip6PacketHandlerTx
-from pytcp.protocols.ip6_ext_frag.ip6_ext_frag__packet_handler_rx import (
-    Ip6ExtFragPacketHandlerRx,
-)
-from pytcp.protocols.ip6_ext_frag.ip6_ext_frag__packet_handler_tx import (
-    Ip6ExtFragPacketHandlerTx,
-)
-from pytcp.protocols.tcp.tcp__packet_handler_rx import TcpPacketHandlerRx
-from pytcp.protocols.tcp.tcp__packet_handler_tx import TcpPacketHandlerTx
-from pytcp.protocols.udp.udp__packet_handler_rx import UdpPacketHandlerRx
-from pytcp.protocols.udp.udp__packet_handler_tx import UdpPacketHandlerTx
+
+from .packet_handler__arp__rx import PacketHandlerArpRx
+from .packet_handler__arp__tx import PacketHandlerArpTx
+from .packet_handler__ethernet_802_3__rx import PacketHandlerEthernet8023Rx
+from .packet_handler__ethernet_802_3__tx import PacketHandlerEthernet8023Tx
+from .packet_handler__ethernet__rx import PacketHandlerEthernetRx
+from .packet_handler__ethernet__tx import PacketHandlerEthernetTx
+from .packet_handler__icmp4__rx import PacketHandlerIcmp4Rx
+from .packet_handler__icmp4__tx import PacketHandlerIcmp4Tx
+from .packet_handler__icmp6__rx import PacketHandlerIcmp6Rx
+from .packet_handler__icmp6__tx import PacketHandlerIcmp6Tx
+from .packet_handler__ip4__rx import PacketHandlerIp4Rx
+from .packet_handler__ip4__tx import PacketHandlerIp4Tx
+from .packet_handler__ip6__rx import PacketHandlerIp6Rx
+from .packet_handler__ip6__tx import PacketHandlerIp6Tx
+from .packet_handler__ip6_ext_frag__rx import PacketHandlerIp6ExtFragRx
+from .packet_handler__ip6_ext_frag__tx import PacketHandlerIp6ExtFragTx
+from .packet_handler__tcp__rx import PacketHandlerTcpRx
+from .packet_handler__tcp__tx import PacketHandlerTcpTx
+from .packet_handler__udp__rx import PacketHandlerUdpRx
+from .packet_handler__udp__tx import PacketHandlerUdpTx
 
 if TYPE_CHECKING:
     from threading import Semaphore
 
 
 class PacketHandler(
-    ArpPacketHandlerRx,
-    ArpPacketHandlerTx,
-    EthernetPacketHandlerRx,
-    EthernetPacketHandlerTx,
-    Ethernet8023PacketHandlerRx,
-    Ethernet8023PacketHandlerTx,
-    Icmp6PacketHandlerRx,
-    Icmp6PacketHandlerTx,
-    Icmp4PacketHandlerRx,
-    Icmp4PacketHandlerTx,
-    Ip4PacketHandlerRx,
-    Ip4PacketHandlerTx,
-    Ip6PacketHandlerRx,
-    Ip6PacketHandlerTx,
-    Ip6ExtFragPacketHandlerRx,
-    Ip6ExtFragPacketHandlerTx,
-    TcpPacketHandlerRx,
-    TcpPacketHandlerTx,
-    UdpPacketHandlerRx,
-    UdpPacketHandlerTx,
+    PacketHandlerArpRx,
+    PacketHandlerArpTx,
+    PacketHandlerEthernetRx,
+    PacketHandlerEthernetTx,
+    PacketHandlerEthernet8023Rx,
+    PacketHandlerEthernet8023Tx,
+    PacketHandlerIcmp6Rx,
+    PacketHandlerIcmp6Tx,
+    PacketHandlerIcmp4Rx,
+    PacketHandlerIcmp4Tx,
+    PacketHandlerIp4Rx,
+    PacketHandlerIp4Tx,
+    PacketHandlerIp6Rx,
+    PacketHandlerIp6Tx,
+    PacketHandlerIp6ExtFragRx,
+    PacketHandlerIp6ExtFragTx,
+    PacketHandlerTcpRx,
+    PacketHandlerTcpTx,
+    PacketHandlerUdpRx,
+    PacketHandlerUdpTx,
 ):
     """
     Pick up and respond to incoming packets.

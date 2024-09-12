@@ -47,7 +47,7 @@ from pytcp.socket.tcp__metadata import TcpMetadata
 from pytcp.socket.tcp__socket import TcpSocket
 
 
-class TcpPacketHandlerRx(ABC):
+class PacketHandlerTcpRx(ABC):
     """
     Class implements packet handler for the inbound TCP packets.
     """

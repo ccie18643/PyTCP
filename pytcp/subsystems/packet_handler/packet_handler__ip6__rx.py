@@ -45,7 +45,7 @@ from pytcp.protocols.ip6.ip6__header import Ip6Next
 from pytcp.protocols.ip6.ip6__parser import Ip6Parser
 
 
-class Ip6PacketHandlerRx(ABC):
+class PacketHandlerIp6Rx(ABC):
     """
     Class implements packet handler for the inbound IPv6 packets.
     """

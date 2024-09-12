@@ -48,7 +48,7 @@ from pytcp.protocols.icmp4.message.icmp4_message__destination_unreachable import
 )
 
 
-class Icmp4PacketHandlerTx(ABC):
+class PacketHandlerIcmp4Tx(ABC):
     """
     Class implements packet handler for the outbound ICMPv4 packets.
     """

@@ -48,7 +48,7 @@ from pytcp.protocols.ethernet_802_3.ethernet_802_3__assembler import (
 from pytcp.protocols.raw.raw__assembler import RawAssembler
 
 
-class Ethernet8023PacketHandlerTx(ABC):
+class PacketHandlerEthernet8023Tx(ABC):
     """
     Class implements packet handler for the outbound Ethernet 802.3 packets.
     """
