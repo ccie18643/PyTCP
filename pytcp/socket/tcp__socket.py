@@ -47,6 +47,7 @@ from net_addr import (
     Ip6AddressFormatError,
 )
 from pytcp.lib import stack
+from pytcp.lib.ip_helper import pick_local_ip_address, pick_local_port
 from pytcp.lib.logger import log
 from pytcp.socket.socket import AddressFamily, Socket, SocketType, gaierror
 from pytcp.socket.tcp__session import FsmState, TcpSession, TcpSessionError
@@ -191,6 +192,46 @@ class TcpSocket(Socket):
 
         return False
 
+    def _get_ip_addresses(
+        self,
+        *,
+        remote_address: tuple[str, int],
+    ) -> tuple[Ip6Address | Ip4Address, Ip6Address | Ip4Address]:
+        """
+        Validate the remote address and pick appropriate local IP
+        address as needed.
+        """
+
+        try:
+            remote_ip_address: Ip6Address | Ip4Address = (
+                Ip6Address(remote_address[0])
+                if self._family is AddressFamily.AF_INET6
+                else Ip4Address(remote_address[0])
+            )
+        except (Ip6AddressFormatError, Ip4AddressFormatError) as error:
+            raise gaierror(
+                "[Errno -2] Name or service not known - "
+                "[Malformed remote IP address]"
+            ) from error
+
+        if remote_ip_address.is_unspecified:
+            raise ConnectionRefusedError(
+                "[Errno 111] Connection refused - "
+                "[Unspecified remote IP address]"
+            )
+
+        if self._local_ip_address.is_unspecified:
+            local_ip_address = pick_local_ip_address(remote_ip_address)
+            if local_ip_address.is_unspecified:
+                raise gaierror(
+                    "[Errno -2] Name or service not known - "
+                    "[Malformed remote IP address]"
+                )
+
+        assert isinstance(local_ip_address, (Ip6Address, Ip4Address))
+
+        return local_ip_address, remote_ip_address
+
     def bind(self, address: tuple[str, int]) -> None:
         """
         Bind the socket to local address.
@@ -257,7 +298,7 @@ class TcpSocket(Socket):
                     "[Local address already in use]"
                 )
         else:
-            local_port = self._pick_local_port()
+            local_port = pick_local_port()
 
         # Assigning local port makes socket "bound"
         stack.sockets.pop(str(self), None)
@@ -285,13 +326,11 @@ class TcpSocket(Socket):
 
         # Assigning local port makes socket "bound" if not "bound" already
         if (local_port := self._local_port) not in range(1, 65536):
-            local_port = self._pick_local_port()
+            local_port = pick_local_port()
 
         # Set local and remote ip addresses aproprietely
         local_ip_address, remote_ip_address = self._get_ip_addresses(
             remote_address=address,
-            local_ip_address=self._local_ip_address,
-            local_port=local_port,
         )
 
         # Re-register socket with new socket id

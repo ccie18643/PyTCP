@@ -43,6 +43,7 @@ from net_addr import (
     Ip6Address,
     Ip6AddressFormatError,
 )
+from pytcp.config import EPHEMERAL_PORT_RANGE
 from pytcp.lib import stack
 
 if TYPE_CHECKING:
@@ -143,3 +144,22 @@ def pick_local_ip4_address(
 
     # In case everything else fails return unspecified.
     return Ip4Address()
+
+
+def pick_local_port() -> int:
+    """
+    Pick ephemeral local port, making sure it is not already being used
+    by any socket.
+    """
+
+    available_ephemeral_ports = set(EPHEMERAL_PORT_RANGE) - {
+        int(_.split("/")[3]) for _ in stack.sockets
+    }
+
+    if len(available_ephemeral_ports):
+        return available_ephemeral_ports.pop()
+
+    raise OSError(
+        "[Errno 98] Address already in use - [Unable to find free "
+        "local ephemeral port]"
+    )

@@ -45,15 +45,6 @@ from __future__ import annotations
 from abc import ABC
 from typing import TYPE_CHECKING
 
-from net_addr import (
-    Ip4Address,
-    Ip4AddressFormatError,
-    Ip6Address,
-    Ip6AddressFormatError,
-)
-from pytcp import config
-from pytcp.lib import stack
-from pytcp.lib.ip_helper import pick_local_ip_address
 from pytcp.lib.name_enum import NameEnum
 from pytcp.socket.tcp__metadata import TcpMetadata
 from pytcp.socket.tcp__session import FsmState, TcpSession
@@ -159,73 +150,6 @@ class Socket(ABC):
         """
 
         return self._remote_ip_address
-
-    def _pick_local_port(self) -> int:
-        """
-        Pick ephemeral local port, making sure it is not already being used
-        by any socket.
-        """
-
-        available_ephemeral_ports = set(config.EPHEMERAL_PORT_RANGE) - {
-            int(_.split("/")[3]) for _ in stack.sockets
-        }
-
-        if len(available_ephemeral_ports):
-            return available_ephemeral_ports.pop()
-
-        raise OSError(
-            "[Errno 98] Address already in use - [Unable to find free "
-            "local ephemeral port]"
-        )
-
-    def _get_ip_addresses(
-        self,
-        *,
-        remote_address: tuple[str, int],
-        local_ip_address: IpAddress,
-        local_port: int,
-    ) -> tuple[Ip6Address | Ip4Address, Ip6Address | Ip4Address]:
-        """
-        Validate the remote address and pick appropriate local IP
-        address as needed.
-        """
-
-        try:
-            remote_ip_address: Ip6Address | Ip4Address = (
-                Ip6Address(remote_address[0])
-                if self._family is AddressFamily.AF_INET6
-                else Ip4Address(remote_address[0])
-            )
-        except (Ip6AddressFormatError, Ip4AddressFormatError) as error:
-            raise gaierror(
-                "[Errno -2] Name or service not known - "
-                "[Malformed remote IP address]"
-            ) from error
-
-        # This contraption here is to mimic behavior
-        # of BSD socket implementation.
-        if remote_ip_address.is_unspecified:
-            if self._type is SocketType.SOCK_STREAM:
-                raise ConnectionRefusedError(
-                    "[Errno 111] Connection refused - "
-                    "[Unspecified remote IP address]"
-                )
-            if self._type is SocketType.SOCK_DGRAM:
-                self._unreachable = True
-
-        if local_ip_address.is_unspecified:
-            local_ip_address = pick_local_ip_address(remote_ip_address)
-            if local_ip_address.is_unspecified and not (
-                local_port == 68 and remote_address[1] == 67
-            ):
-                raise gaierror(
-                    "[Errno -2] Name or service not known - "
-                    "[Malformed remote IP address]"
-                )
-
-        assert isinstance(local_ip_address, (Ip6Address, Ip4Address))
-
-        return local_ip_address, remote_ip_address
 
     if TYPE_CHECKING:
 
