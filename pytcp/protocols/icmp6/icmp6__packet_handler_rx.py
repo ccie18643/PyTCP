@@ -37,7 +37,7 @@ from __future__ import annotations
 
 import struct
 from abc import ABC
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
 from net_addr import Ip6Address
 from pytcp.lib import stack
@@ -74,6 +74,7 @@ from pytcp.protocols.ip6.ip6__enums import Ip6Next
 from pytcp.protocols.ip6.ip6__header import IP6__HEADER__LEN
 from pytcp.protocols.udp.udp__header import UDP__HEADER__LEN
 from pytcp.socket.udp__metadata import UdpMetadata
+from pytcp.socket.udp__socket import UdpSocket
 
 
 class Icmp6PacketHandlerRx(ABC):
@@ -198,8 +199,10 @@ class Icmp6PacketHandlerRx(ABC):
             )
 
             for socket_pattern in packet.socket_patterns:
-                socket = stack.sockets.get(socket_pattern, None)
-                if socket:
+                if socket := cast(
+                    UdpSocket,
+                    stack.sockets.get(socket_pattern, None),
+                ):
                     __debug__ and log(
                         "icmp6",
                         f"{packet_rx.tracker} - <INFO>Found matching "

@@ -36,7 +36,7 @@ ver 3.0.2
 from __future__ import annotations
 
 from abc import ABC
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
 from pytcp.lib import stack
 from pytcp.lib.errors import PacketValidationError
@@ -44,6 +44,7 @@ from pytcp.lib.logger import log
 from pytcp.lib.packet import PacketRx
 from pytcp.protocols.tcp.tcp__parser import TcpParser
 from pytcp.socket.tcp__metadata import TcpMetadata
+from pytcp.socket.tcp__socket import TcpSocket
 
 
 class TcpPacketHandlerRx(ABC):
@@ -132,7 +133,9 @@ class TcpPacketHandlerRx(ABC):
         )
 
         # Check if incoming packet matches active TCP socket.
-        if tcp_socket := stack.sockets.get(str(packet_rx_md), None):
+        if tcp_socket := cast(
+            TcpSocket, stack.sockets.get(str(packet_rx_md), None)
+        ):
             self.packet_stats_rx.tcp__socket_match_active__forward_to_socket += (
                 1
             )
@@ -156,8 +159,9 @@ class TcpPacketHandlerRx(ABC):
             for (
                 tcp_listening_socket_pattern
             ) in packet_rx_md.tcp_listening_socket_patterns:
-                if tcp_socket := stack.sockets.get(
-                    tcp_listening_socket_pattern, None
+                if tcp_socket := cast(
+                    TcpSocket,
+                    stack.sockets.get(tcp_listening_socket_pattern, None),
                 ):
                     self.packet_stats_rx.tcp__socket_match_listening__forward_to_socket += (
                         1

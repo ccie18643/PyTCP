@@ -39,9 +39,7 @@ from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING
 
 from pytcp.lib.name_enum import NameEnum
-from pytcp.socket.tcp__metadata import TcpMetadata
 from pytcp.socket.tcp__session import FsmState, TcpSession
-from pytcp.socket.udp__metadata import UdpMetadata
 
 if TYPE_CHECKING:
     from net_addr import IpAddress
@@ -266,26 +264,6 @@ class Socket(ABC):
         ) -> tuple[bytes, tuple[str, int]]:
             """
             The 'recvfrom()' socket API placeholder.
-            """
-
-            raise NotImplementedError
-
-        def process_udp_packet(self, packet_rx_md: UdpMetadata) -> None:
-            """
-            The 'process_udp_packet()' method plceholder.
-            """
-
-            raise NotImplementedError
-
-        def process_tcp_packet(self, packet_rx_md: TcpMetadata) -> None:
-            """
-            The 'process_tcp_packet()' method plceholder.
-            """
-            raise NotImplementedError
-
-        def notify_unreachable(self) -> None:
-            """
-            The 'notify_unreachable()' method plceholder.
             """
 
             raise NotImplementedError

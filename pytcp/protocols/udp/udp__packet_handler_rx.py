@@ -36,7 +36,7 @@ ver 3.0.2
 from __future__ import annotations
 
 from abc import ABC
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
 from net_addr import Ip4Address
 from pytcp import config
@@ -55,6 +55,7 @@ from pytcp.protocols.icmp6.message.icmp6_message__destination_unreachable import
 )
 from pytcp.protocols.udp.udp__parser import UdpParser
 from pytcp.socket.udp__metadata import UdpMetadata
+from pytcp.socket.udp__socket import UdpSocket
 
 
 class UdpPacketHandlerRx(ABC):
@@ -141,7 +142,9 @@ class UdpPacketHandlerRx(ABC):
         )
 
         for socket_pattern in packet_rx_md.socket_patterns:
-            if socket := stack.sockets.get(socket_pattern, None):
+            if socket := cast(
+                UdpSocket, stack.sockets.get(socket_pattern, None)
+            ):
                 self.packet_stats_rx.udp__socket_match += 1
                 __debug__ and log(
                     "udp",
