@@ -23,8 +23,6 @@
 ##                                                                            ##
 ################################################################################
 
-# pylint: disable=expression-not-assigned
-
 
 """
 Module contains BSD like TCP socket interface for the stack.

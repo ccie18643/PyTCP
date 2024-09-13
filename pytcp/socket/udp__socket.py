@@ -23,9 +23,6 @@
 ##                                                                            ##
 ################################################################################
 
-# pylint: disable=expression-not-assigned
-# pylint: disable=consider-using-with
-
 
 """
 Module contains BSD like UDP socket interface for the stack.

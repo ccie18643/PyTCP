@@ -38,8 +38,9 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 
-from net_addr import Ip4Address
 from net_addr.ip6_address import Ip6Address
+
+from net_addr import Ip4Address
 from pytcp.socket.socket import AddressFamily, IpProto, SocketType
 
 if TYPE_CHECKING:
