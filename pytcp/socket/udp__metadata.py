@@ -69,39 +69,9 @@ class UdpMetadata:
         Get list of the listening socket IDs that match the metadata.
         """
 
-        ids = [
-            (
-                AddressFamily.from_ver(self.ip__ver),
-                SocketType.SOCK_DGRAM,
-                IpProto.IPPROTO_UDP,
-                self.ip__local_address,
-                self.udp__local_port,
-                self.ip__remote_address,
-                self.udp__remote_port,
-            ),
-            (
-                AddressFamily.from_ver(self.ip__ver),
-                SocketType.SOCK_DGRAM,
-                IpProto.IPPROTO_UDP,
-                self.ip__local_address,
-                self.udp__local_port,
-                self.ip__remote_address.unspecified,
-                0,
-            ),
-            (
-                AddressFamily.from_ver(self.ip__ver),
-                SocketType.SOCK_DGRAM,
-                IpProto.IPPROTO_UDP,
-                self.ip__local_address.unspecified,
-                self.udp__local_port,
-                self.ip__remote_address.unspecified,
-                0,
-            ),
-        ]
-
         match self.ip__ver, self.udp__local_port, self.udp__remote_port:
             case 4, 68, 67:
-                ids.append(
+                return [
                     (
                         AddressFamily.AF_INET4,
                         SocketType.SOCK_DGRAM,
@@ -110,10 +80,10 @@ class UdpMetadata:
                         68,
                         Ip4Address("255.255.255.255"),
                         67,
-                    )
-                )  # ID for the DHCPv4 client operation.
+                    ),  # ID for the DHCPv4 client operation.
+                ]
             case 6, 546, 547:
-                ids.append(
+                return [
                     (
                         AddressFamily.AF_INET6,
                         SocketType.SOCK_DGRAM,
@@ -122,9 +92,7 @@ class UdpMetadata:
                         546,
                         Ip6Address("ff02::1:2"),
                         547,
-                    )
-                )  # ID for the DHCPv6 client operation.
-                ids.append(
+                    ),  # ID for the DHCPv6 client operation.
                     (
                         AddressFamily.AF_INET6,
                         SocketType.SOCK_DGRAM,
@@ -133,7 +101,35 @@ class UdpMetadata:
                         546,
                         Ip6Address("ff02::1:3"),
                         547,
-                    )
-                )  # ID for the DHCPv6 client operation.
-
-        return ids
+                    ),  # ID for the DHCPv6 client operation.
+                ]
+            case _:
+                return [
+                    (
+                        AddressFamily.from_ver(self.ip__ver),
+                        SocketType.SOCK_DGRAM,
+                        IpProto.IPPROTO_UDP,
+                        self.ip__local_address,
+                        self.udp__local_port,
+                        self.ip__remote_address,
+                        self.udp__remote_port,
+                    ),
+                    (
+                        AddressFamily.from_ver(self.ip__ver),
+                        SocketType.SOCK_DGRAM,
+                        IpProto.IPPROTO_UDP,
+                        self.ip__local_address,
+                        self.udp__local_port,
+                        self.ip__remote_address.unspecified,
+                        0,
+                    ),
+                    (
+                        AddressFamily.from_ver(self.ip__ver),
+                        SocketType.SOCK_DGRAM,
+                        IpProto.IPPROTO_UDP,
+                        self.ip__local_address.unspecified,
+                        self.udp__local_port,
+                        self.ip__remote_address.unspecified,
+                        0,
+                    ),
+                ]
