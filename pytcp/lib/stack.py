@@ -35,7 +35,7 @@ ver 3.0.2
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from pytcp.subsystems.arp_cache import ArpCache
 from pytcp.subsystems.nd_cache import NdCache
@@ -58,5 +58,5 @@ arp_cache = ArpCache()
 nd_cache = NdCache()
 packet_handler = PacketHandler()
 
-sockets: dict[str, Socket] = {}
+sockets: dict[tuple[Any, ...], Socket] = {}
 arp_probe_unicast_conflict: set[Ip4Address] = set()

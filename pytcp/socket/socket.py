@@ -65,6 +65,20 @@ class AddressFamily(NameEnum):
     AF_INET4 = 1
     AF_INET6 = 2
 
+    @staticmethod
+    def from_ver(ver: int) -> AddressFamily:
+        """
+        Get the address family from an IP version.
+        """
+
+        match ver:
+            case 4:
+                return AddressFamily.AF_INET4
+            case 6:
+                return AddressFamily.AF_INET6
+            case _:
+                return AddressFamily.AF_UNSPECIFIED
+
 
 class SocketType(NameEnum):
     """

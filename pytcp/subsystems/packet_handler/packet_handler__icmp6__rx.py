@@ -198,7 +198,7 @@ class PacketHandlerIcmp6Rx(ABC):
                 )[0],
             )
 
-            for socket_pattern in packet.socket_patterns:
+            for socket_pattern in packet.socket_ids:
                 if socket := cast(
                     UdpSocket,
                     stack.sockets.get(socket_pattern, None),

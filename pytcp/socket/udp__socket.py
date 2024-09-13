@@ -39,7 +39,7 @@ ver 3.0.2
 from __future__ import annotations
 
 import threading
-from typing import TYPE_CHECKING, override
+from typing import TYPE_CHECKING, Any, override
 
 from net_addr import (
     Ip4Address,
@@ -57,6 +57,7 @@ from pytcp.lib.logger import log
 from pytcp.lib.tx_status import TxStatus
 from pytcp.socket.socket import (
     AddressFamily,
+    IpProto,
     ReceiveTimeout,
     Socket,
     SocketType,
@@ -75,13 +76,15 @@ class UdpSocket(Socket):
     Support for IPv6/IPv4 UDP socket operations.
     """
 
+    _type: SocketType = SocketType.SOCK_DGRAM
+    _ip_proto: IpProto = IpProto.IPPROTO_UDP
+
     def __init__(self, *, family: AddressFamily) -> None:
         """
         Class constructor.
         """
 
         self._family: AddressFamily = family
-        self._type: SocketType = SocketType.SOCK_DGRAM
         self._local_port: int = 0
         self._remote_port: int = 0
         self._packet_rx_md: list[UdpMetadata] = []
@@ -107,8 +110,24 @@ class UdpSocket(Socket):
         """
 
         return (
-            f"{self._family}/{self._type}/{self._local_ip_address}/"
+            f"{self._family}/{self._type}/{self._ip_proto}/{self._local_ip_address}/"
             f"{self._local_port}/{self._remote_ip_address}/{self._remote_port}"
+        )
+
+    @property
+    def id(self) -> tuple[Any, ...]:
+        """
+        Get the socket ID.
+        """
+
+        return (
+            self._family,
+            self._type,
+            self._ip_proto,
+            self._local_ip_address,
+            self._local_port,
+            self._remote_ip_address,
+            self._remote_port,
         )
 
     @property
@@ -253,10 +272,10 @@ class UdpSocket(Socket):
             local_port = pick_local_port()
 
         # Assigning local port makes socket "bound"
-        stack.sockets.pop(str(self), None)
+        stack.sockets.pop(self.id, None)
         self._local_ip_address = local_ip_address
         self._local_port = local_port
-        stack.sockets[str(self)] = self
+        stack.sockets[self.id] = self
 
         __debug__ and log("socket", f"<g>[{self}]</> - Bound")
 
@@ -286,12 +305,12 @@ class UdpSocket(Socket):
         )
 
         # Re-register socket with new socket id
-        stack.sockets.pop(str(self), None)
+        stack.sockets.pop(self.id, None)
         self._local_ip_address = local_ip_address
         self._local_port = local_port
         self._remote_ip_address = remote_ip_address
         self._remote_port = remote_port
-        stack.sockets[str(self)] = self
+        stack.sockets[self.id] = self
 
         __debug__ and log("socket", f"<g>[{self}]</> - Connected socket")
 
@@ -352,9 +371,9 @@ class UdpSocket(Socket):
 
         # Assigning local port makes socket "bound" if not "bound" already
         if self._local_port not in range(1, 65536):
-            stack.sockets.pop(str(self), None)
+            stack.sockets.pop(self.id, None)
             self._local_port = pick_local_port()
-            stack.sockets[str(self)] = self
+            stack.sockets[self.id] = self
 
         # Set local and remote ip addresses aproprietely
         local_ip_address, remote_ip_address = self._get_ip_addresses(
@@ -438,7 +457,7 @@ class UdpSocket(Socket):
         Close socket.
         """
 
-        stack.sockets.pop(str(self), None)
+        stack.sockets.pop(self.id, None)
 
         __debug__ and log("socket", f"<g>[{self}]</> - Closed socket")
 

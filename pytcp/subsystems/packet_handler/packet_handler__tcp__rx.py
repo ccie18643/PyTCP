@@ -134,7 +134,7 @@ class PacketHandlerTcpRx(ABC):
 
         # Check if incoming packet matches active TCP socket.
         if tcp_socket := cast(
-            TcpSocket, stack.sockets.get(str(packet_rx_md), None)
+            TcpSocket, stack.sockets.get(packet_rx_md.socket_id, None)
         ):
             self.packet_stats_rx.tcp__socket_match_active__forward_to_socket += (
                 1
@@ -158,7 +158,7 @@ class PacketHandlerTcpRx(ABC):
         ):
             for (
                 tcp_listening_socket_pattern
-            ) in packet_rx_md.tcp_listening_socket_patterns:
+            ) in packet_rx_md.listening_socket_ids:
                 if tcp_socket := cast(
                     TcpSocket,
                     stack.sockets.get(tcp_listening_socket_pattern, None),

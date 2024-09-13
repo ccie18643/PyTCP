@@ -36,7 +36,9 @@ ver 3.0.2
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
+
+from .socket import AddressFamily, IpProto, SocketType
 
 if TYPE_CHECKING:
     from net_addr import IpAddress
@@ -68,31 +70,45 @@ class TcpMetadata:
 
     tracker: Tracker | None
 
-    def __str__(self) -> str:
+    @property
+    def socket_id(self) -> tuple[Any, ...]:
         """
-        Get the TCP metadata log string.
+        Get the exact match socket ID.
         """
 
-        ver = self.ip__ver
-        laddr = self.ip__local_address
-        lport = self.tcp__local_port
-        raddr = self.ip__remote_address
-        rport = self.tcp__remote_port
-
-        return f"AF_INET{ver}/SOCK_STREAM/{laddr}/{lport}/{raddr}/{rport}"
+        return (
+            AddressFamily.from_ver(self.ip__ver),
+            SocketType.SOCK_STREAM,
+            IpProto.IPPROTO_TCP,
+            self.ip__local_address,
+            self.tcp__local_port,
+            self.ip__remote_address,
+            self.tcp__remote_port,
+        )
 
     @property
-    def tcp_listening_socket_patterns(self) -> list[str]:
+    def listening_socket_ids(self) -> list[tuple[Any, ...]]:
         """
-        Get list of the socket ID patterns that match the metadata.
+        Get list of the listening socket IDs that match the metadata.
         """
-
-        ver = self.ip__ver
-        laddr = self.ip__local_address
-        lport = self.tcp__local_port
-        unspecified = self.ip__local_address.unspecified
 
         return [
-            f"AF_INET{ver}/SOCK_STREAM/{laddr}/{lport}/{unspecified}/0",
-            f"AF_INET{ver}/SOCK_STREAM/{unspecified}/{lport}/{unspecified}/0",
+            (
+                AddressFamily.from_ver(self.ip__ver),
+                SocketType.SOCK_STREAM,
+                IpProto.IPPROTO_TCP,
+                self.ip__local_address,
+                self.tcp__local_port,
+                self.ip__remote_address.unspecified,
+                0,
+            ),
+            (
+                AddressFamily.from_ver(self.ip__ver),
+                SocketType.SOCK_STREAM,
+                IpProto.IPPROTO_TCP,
+                self.ip__local_address.unspecified,
+                self.tcp__local_port,
+                self.ip__remote_address.unspecified,
+                0,
+            ),
         ]

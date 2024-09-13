@@ -36,9 +36,11 @@ ver 3.0.2
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from net_addr import Ip4Address
+from net_addr.ip6_address import Ip6Address
+from pytcp.socket.socket import AddressFamily, IpProto, SocketType
 
 if TYPE_CHECKING:
     from net_addr import IpAddress
@@ -61,35 +63,77 @@ class UdpMetadata:
 
     tracker: Tracker | None = None
 
-    def __str__(self) -> str:
-        """
-        Get the UDP metadata log string.
-        """
-
-        return self.socket_patterns[0]
-
     @property
-    def socket_patterns(self) -> list[str]:
+    def socket_ids(self) -> list[tuple[Any, ...]]:
         """
-        Get list of the socket ID patterns that match the metadata.
+        Get list of the listening socket IDs that match the metadata.
         """
 
-        ver = self.ip__ver
-        laddr = self.ip__local_address
-        lport = self.udp__local_port
-        raddr = self.ip__remote_address
-        rport = self.udp__remote_port
-        unspecified = self.ip__local_address.unspecified
-
-        patterns = [
-            f"AF_INET{ver}/SOCK_DGRAM/{laddr}/{lport}/{raddr}/{rport}",
-            f"AF_INET{ver}/SOCK_DGRAM/{laddr}/{lport}/{unspecified}/0",
-            f"AF_INET{ver}/SOCK_DGRAM/{unspecified}/{lport}/{unspecified}/0",
+        ids = [
+            (
+                AddressFamily.from_ver(self.ip__ver),
+                SocketType.SOCK_DGRAM,
+                IpProto.IPPROTO_UDP,
+                self.ip__local_address,
+                self.udp__local_port,
+                self.ip__remote_address,
+                self.udp__remote_port,
+            ),
+            (
+                AddressFamily.from_ver(self.ip__ver),
+                SocketType.SOCK_DGRAM,
+                IpProto.IPPROTO_UDP,
+                self.ip__local_address,
+                self.udp__local_port,
+                self.ip__remote_address.unspecified,
+                0,
+            ),
+            (
+                AddressFamily.from_ver(self.ip__ver),
+                SocketType.SOCK_DGRAM,
+                IpProto.IPPROTO_UDP,
+                self.ip__local_address.unspecified,
+                self.udp__local_port,
+                self.ip__remote_address.unspecified,
+                0,
+            ),
         ]
 
-        if isinstance(self.ip__local_address, Ip4Address):
-            patterns.append(
-                f"AF_INET4/SOCK_DGRAM/0.0.0.0/{lport}/255.255.255.255/{rport}"
-            )  # For the DHCPv4 client.
+        match self.ip__ver, self.udp__local_port, self.udp__remote_port:
+            case 4, 68, 67:
+                ids.append(
+                    (
+                        AddressFamily.AF_INET4,
+                        SocketType.SOCK_DGRAM,
+                        IpProto.IPPROTO_UDP,
+                        Ip4Address(),
+                        68,
+                        Ip4Address("255.255.255.255"),
+                        67,
+                    )
+                )  # ID for the DHCPv4 client operation.
+            case 6, 546, 547:
+                ids.append(
+                    (
+                        AddressFamily.AF_INET6,
+                        SocketType.SOCK_DGRAM,
+                        IpProto.IPPROTO_UDP,
+                        Ip6Address(),
+                        546,
+                        Ip6Address("ff02::1:2"),
+                        547,
+                    )
+                )  # ID for the DHCPv6 client operation.
+                ids.append(
+                    (
+                        AddressFamily.AF_INET6,
+                        SocketType.SOCK_DGRAM,
+                        IpProto.IPPROTO_UDP,
+                        Ip6Address(),
+                        546,
+                        Ip6Address("ff02::1:3"),
+                        547,
+                    )
+                )  # ID for the DHCPv6 client operation.
 
-        return patterns
+        return ids

@@ -38,7 +38,7 @@ ver 3.0.2
 from __future__ import annotations
 
 import threading
-from typing import TYPE_CHECKING, cast, override
+from typing import TYPE_CHECKING, Any, cast, override
 
 from net_addr import (
     Ip4Address,
@@ -53,7 +53,13 @@ from pytcp.lib.ip_helper import (
     pick_local_port,
 )
 from pytcp.lib.logger import log
-from pytcp.socket.socket import AddressFamily, Socket, SocketType, gaierror
+from pytcp.socket.socket import (
+    AddressFamily,
+    IpProto,
+    Socket,
+    SocketType,
+    gaierror,
+)
 from pytcp.socket.tcp__session import FsmState, TcpSession, TcpSessionError
 
 if TYPE_CHECKING:
@@ -68,6 +74,9 @@ class TcpSocket(Socket):
     Support for IPv6/IPv4 TCP socket operations.
     """
 
+    _type: SocketType = SocketType.SOCK_STREAM
+    _ip_proto: IpProto = IpProto.IPPROTO_TCP
+
     def __init__(
         self, *, family: AddressFamily, tcp_session: TcpSession | None = None
     ) -> None:
@@ -76,7 +85,6 @@ class TcpSocket(Socket):
         """
 
         self._family: AddressFamily = family
-        self._type: SocketType = SocketType.SOCK_STREAM
         self._event_tcp_session_established: Semaphore = threading.Semaphore(0)
         self._tcp_accept: list[Socket] = []
         self._tcp_session: TcpSession | None
@@ -95,7 +103,7 @@ class TcpSocket(Socket):
             self._local_port = tcp_session.local_port
             self._remote_port = tcp_session.remote_port
             self._parent_socket = tcp_session.socket
-            stack.sockets[str(self)] = self
+            stack.sockets[self.id] = self
 
         # Fresh socket initialization
         else:
@@ -120,8 +128,24 @@ class TcpSocket(Socket):
         """
 
         return (
-            f"{self._family}/{self._type}/{self._local_ip_address}/"
+            f"{self._family}/{self._type}/{self._ip_proto}/{self._local_ip_address}/"
             f"{self._local_port}/{self._remote_ip_address}/{self._remote_port}"
+        )
+
+    @property
+    def id(self) -> tuple[Any, ...]:
+        """
+        Get the socket ID.
+        """
+
+        return (
+            self._family,
+            self._type,
+            self._ip_proto,
+            self._local_ip_address,
+            self._local_port,
+            self._remote_ip_address,
+            self._remote_port,
         )
 
     @property
@@ -294,10 +318,10 @@ class TcpSocket(Socket):
             local_port = pick_local_port()
 
         # Assigning local port makes socket "bound"
-        stack.sockets.pop(str(self), None)
+        stack.sockets.pop(self.id, None)
         self._local_ip_address = local_ip_address
         self._local_port = local_port
-        stack.sockets[str(self)] = self
+        stack.sockets[self.id] = self
 
         __debug__ and log("socket", f"<g>[{self}]</> - Bound socket")
 
@@ -327,12 +351,12 @@ class TcpSocket(Socket):
         )
 
         # Re-register socket with new socket id
-        stack.sockets.pop(str(self), None)
+        stack.sockets.pop(self.id, None)
         self._local_ip_address = local_ip_address
         self._local_port = local_port
         self._remote_ip_address = remote_ip_address
         self._remote_port = remote_port
-        stack.sockets[str(self)] = self
+        stack.sockets[self.id] = self
 
         self._tcp_session = TcpSession(
             local_ip_address=self._local_ip_address,
@@ -381,7 +405,7 @@ class TcpSocket(Socket):
             "connections",
         )
 
-        stack.sockets[str(self)] = self
+        stack.sockets[self.id] = self
         self._tcp_session.listen()
 
     def accept(self) -> tuple[Socket, tuple[str, int]]:

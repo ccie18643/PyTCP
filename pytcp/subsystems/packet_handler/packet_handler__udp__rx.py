@@ -141,7 +141,7 @@ class PacketHandlerUdpRx(ABC):
             tracker=packet_rx.tracker,
         )
 
-        for socket_pattern in packet_rx_md.socket_patterns:
+        for socket_pattern in packet_rx_md.socket_ids:
             if socket := cast(
                 UdpSocket, stack.sockets.get(socket_pattern, None)
             ):
