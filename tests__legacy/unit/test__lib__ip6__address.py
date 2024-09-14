@@ -45,8 +45,8 @@ from net_addr import (
     Ip6MaskFormatError,
     Ip6Network,
     Ip6NetworkFormatError,
+    MacAddress,
 )
-from net_addr import MacAddress
 
 
 class TestIp6Address(TestCase):

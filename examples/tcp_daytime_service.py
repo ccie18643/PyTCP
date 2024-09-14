@@ -91,12 +91,14 @@ class TcpDaytimeService(TcpService):
         Service logic handler.
         """
 
+        remote_ip_address, remote_port = socket.getpeername()
+
         # Create local copy of this variable.
         message_count = self._message_count
 
         click.echo(
             "Service TCP Daytime: Sending first message to "
-            f"{socket.remote_ip_address}, port {socket.remote_port}."
+            f"{remote_ip_address}, port {remote_port}."
         )
         socket.send(b"***CLIENT OPEN / SERVICE OPEN***\n")
 
@@ -111,7 +113,7 @@ class TcpDaytimeService(TcpService):
 
             click.echo(
                 f"Service TCP Daytime: Sent {len(message)} bytes of data "
-                f"to {socket.remote_ip_address}, port {socket.remote_port}."
+                f"to {remote_ip_address}, port {remote_port}."
             )
             time.sleep(self._message_delay)
             message_count = min(message_count, message_count - 1)
@@ -119,7 +121,7 @@ class TcpDaytimeService(TcpService):
         socket.close()
         click.echo(
             "Service TCP Daytime: Closed connection to "
-            f"{socket.remote_ip_address}, port {socket.remote_port}.",
+            f"{remote_ip_address}, port {remote_port}.",
         )
 
 

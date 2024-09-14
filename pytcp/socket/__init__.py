@@ -74,10 +74,10 @@ def socket(
 
     match type, protocol:
         case SocketType.SOCK_STREAM, IpProto.IPPROTO_IP | IpProto.IPPROTO_TCP:
-            return TcpSocket(family=family)
+            return TcpSocket(address_family=family)
 
         case SocketType.SOCK_DGRAM, IpProto.IPPROTO_IP | IpProto.IPPROTO_UDP:
-            return UdpSocket(family=family)
+            return UdpSocket(address_family=family)
 
         case SocketType.SOCK_DGRAM, IpProto.IPPROTO_ICMP:
             raise NotImplementedError

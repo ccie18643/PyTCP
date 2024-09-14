@@ -36,9 +36,7 @@ from typing import no_type_check
 
 from testslide import StrictMock, TestCase
 
-from net_addr import Ip4Address, Ip4Host
-from net_addr import Ip6Address, Ip6Host
-from net_addr import MacAddress
+from net_addr import Ip4Address, Ip4Host, Ip6Address, Ip6Host, MacAddress
 from pytcp.subsystems.arp_cache import ArpCache
 from pytcp.subsystems.nd_cache import NdCache
 from pytcp.subsystems.packet_handler import PacketHandler

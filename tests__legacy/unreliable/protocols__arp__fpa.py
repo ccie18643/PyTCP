@@ -31,12 +31,6 @@
 # ver 3.0.2
 #
 
-from testslide import TestCase
-
-from net_addr import Ip4Address
-from net_addr import MacAddress
-from pytcp.protocols.arp.fpa import ArpAssembler
-from protocols.arp.base import ARP_HEADER_LEN, ArpOperation
 from tests.unit.protocols__arp__ps import (
     ARP__HRLEN,
     ARP__HRTYPE,
@@ -49,6 +43,11 @@ from tests.unit.protocols__arp__ps import (
     ARP__THA,
     ARP__TPA,
 )
+from testslide import TestCase
+
+from net_addr import Ip4Address, MacAddress
+from protocols.arp.base import ARP_HEADER_LEN, ArpOperation
+from pytcp.protocols.arp.fpa import ArpAssembler
 
 
 class TestArpAssembler(TestCase):

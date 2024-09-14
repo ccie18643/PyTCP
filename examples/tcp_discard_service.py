@@ -80,26 +80,28 @@ class TcpDiscardService(TcpService):
         Service logic handler.
         """
 
+        remote_ip_address, remote_port = socket.getpeername()
+
         click.echo(
             "Service TCP Echo: Sending first message to "
-            f"{socket.remote_ip_address}, port {socket.remote_port}."
+            f"{remote_ip_address}, port {remote_port}."
         )
         socket.send(b"***CLIENT OPEN / SERVICE OPEN***\n")
 
         while self._run_thread:
             if not (message := socket.recv()):
                 click.echo(
-                    f"Service TCP Discard: Connection to {socket.remote_ip_address}, "
-                    f"port {socket.remote_port} has been closed by peer."
+                    f"Service TCP Discard: Connection to {remote_ip_address}, "
+                    f"port {remote_port} has been closed by peer."
                 )
                 click.echo(
                     "Service TCP Discard: Sending last message to "
-                    f"{socket.remote_ip_address}, port {socket.remote_port}."
+                    f"{remote_ip_address}, port {remote_port}."
                 )
                 socket.send(b"***CLIENT CLOSED, SERVICE CLOSING***\n")
                 click.echo(
                     "Service TCP Discard: Closng connection to "
-                    f"{socket.remote_ip_address}, port {socket.remote_port}."
+                    f"{remote_ip_address}, port {remote_port}."
                 )
                 socket.close()
                 break
@@ -107,25 +109,25 @@ class TcpDiscardService(TcpService):
             if message.strip().lower() in {b"quit", b"close", b"bye", b"exit"}:
                 click.echo(
                     "Service TCP Discard: Sending last message to "
-                    f"{socket.remote_ip_address}, port {socket.remote_port}."
+                    f"{remote_ip_address}, port {remote_port}."
                 )
                 socket.send(b"***CLIENT OPEN, SERVICE CLOSING***\n")
                 click.echo(
                     "Service TCP Discard: Closng connection to "
-                    f"{socket.remote_ip_address}, port {socket.remote_port}."
+                    f"{remote_ip_address}, port {remote_port}."
                 )
                 socket.close()
                 continue
 
             click.echo(
                 f"Service TCP Discard: Received {len(message)} bytes from "
-                f"{socket.remote_ip_address}, port {socket.remote_port}."
+                f"{remote_ip_address}, port {remote_port}."
             )
 
         socket.close()
         click.echo(
-            f"Service TCP Discard: Connection from {socket.remote_ip_address}, "
-            f"port {socket.remote_port} has been closed by peer."
+            f"Service TCP Discard: Connection from {remote_ip_address}, "
+            f"port {remote_port} has been closed by peer."
         )
 
 

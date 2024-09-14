@@ -34,6 +34,11 @@
 #
 
 
+from tests__legacy.unit.mock_network import (
+    MockNetworkSettings,
+    patch_config,
+    setup_mock_packet_handler,
+)
 from testslide import TestCase
 
 from pytcp.lib.packet_stats import PacketStatsTx
@@ -56,11 +61,6 @@ from pytcp.protocols.icmp6.message.nd.option.icmp6_nd_options import (
     Icmp6NdOptionSlla,
 )
 from pytcp.subsystems.packet_handler import PacketHandler
-from tests__legacy.unit.mock_network import (
-    MockNetworkSettings,
-    patch_config,
-    setup_mock_packet_handler,
-)
 
 TEST_FRAME_DIR = "tests__legacy/unit/test_frames/icmp6_phtx/"
 

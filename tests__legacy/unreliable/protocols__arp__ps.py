@@ -33,8 +33,7 @@
 
 from testslide import TestCase
 
-from net_addr import Ip4Address
-from net_addr import MacAddress
+from net_addr import Ip4Address, MacAddress
 from protocols.arp.base import (
     Arp,
     ArpHardwareLength,

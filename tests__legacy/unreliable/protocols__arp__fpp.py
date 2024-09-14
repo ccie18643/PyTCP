@@ -33,17 +33,6 @@
 
 import struct
 
-from testslide import TestCase
-
-from pytcp.lib.packet import PacketRx
-from pytcp.protocols.arp.fpp import ArpIntegrityError, ArpParser, ArpSanityError
-from protocols.arp.base import (
-    ARP_HEADER_LEN,
-    ArpHardwareLength,
-    ArpHardwareType,
-    ArpProtocolLength,
-    ArpProtocolType,
-)
 from tests.unit.protocols__arp__ps import (
     ARP__HRLEN,
     ARP__HRTYPE,
@@ -56,6 +45,17 @@ from tests.unit.protocols__arp__ps import (
     ARP__THA,
     ARP__TPA,
 )
+from testslide import TestCase
+
+from protocols.arp.base import (
+    ARP_HEADER_LEN,
+    ArpHardwareLength,
+    ArpHardwareType,
+    ArpProtocolLength,
+    ArpProtocolType,
+)
+from pytcp.lib.packet import PacketRx
+from pytcp.protocols.arp.fpp import ArpIntegrityError, ArpParser, ArpSanityError
 
 
 class TestArpParser(TestCase):

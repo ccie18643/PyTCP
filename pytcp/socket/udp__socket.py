@@ -73,15 +73,15 @@ class UdpSocket(Socket):
     Support for IPv6/IPv4 UDP socket operations.
     """
 
-    _type: SocketType = SocketType.SOCK_DGRAM
+    _socket_type: SocketType = SocketType.SOCK_DGRAM
     _ip_proto: IpProto = IpProto.IPPROTO_UDP
 
-    def __init__(self, *, family: AddressFamily) -> None:
+    def __init__(self, *, address_family: AddressFamily) -> None:
         """
         Class constructor.
         """
 
-        self._family: AddressFamily = family
+        self._address_family: AddressFamily = address_family
         self._local_port: int = 0
         self._remote_port: int = 0
         self._packet_rx_md: list[UdpMetadata] = []
@@ -90,7 +90,7 @@ class UdpSocket(Socket):
         self._local_ip_address: IpAddress
         self._remote_ip_address: IpAddress
 
-        match self._family:
+        match self._address_family:
             case AddressFamily.AF_INET6:
                 self._local_ip_address = Ip6Address()
                 self._remote_ip_address = Ip6Address()
@@ -107,7 +107,7 @@ class UdpSocket(Socket):
         """
 
         return (
-            f"{self._family}/{self._type}/{self._ip_proto}/{self._local_ip_address}/"
+            f"{self._address_family}/{self._socket_type}/{self._ip_proto}/{self._local_ip_address}/"
             f"{self._local_port}/{self._remote_ip_address}/{self._remote_port}"
         )
 
@@ -118,8 +118,8 @@ class UdpSocket(Socket):
         """
 
         return (
-            self._family,
-            self._type,
+            self._address_family,
+            self._socket_type,
             self._ip_proto,
             self._local_ip_address,
             self._local_port,
@@ -172,7 +172,7 @@ class UdpSocket(Socket):
         try:
             remote_ip_address: Ip6Address | Ip4Address = (
                 Ip6Address(remote_address[0])
-                if self._family is AddressFamily.AF_INET6
+                if self._address_family is AddressFamily.AF_INET6
                 else Ip4Address(remote_address[0])
             )
         except (Ip6AddressFormatError, Ip4AddressFormatError) as error:
@@ -216,7 +216,7 @@ class UdpSocket(Socket):
 
         local_ip_address: IpAddress
 
-        match self._family:
+        match self._address_family:
             case AddressFamily.AF_INET6:
                 try:
                     if (local_ip_address := Ip6Address(address[0])) not in set(
@@ -258,8 +258,8 @@ class UdpSocket(Socket):
             if is_address_in_use(
                 local_ip_address=local_ip_address,
                 local_port=local_port,
-                address_family=self._family,
-                socket_type=self._type,
+                address_family=self._address_family,
+                socket_type=self._socket_type,
             ):
                 raise OSError(
                     "[Errno 98] Address already in use - "

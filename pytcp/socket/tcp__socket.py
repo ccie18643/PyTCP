@@ -72,25 +72,23 @@ class TcpSocket(Socket):
     Support for IPv6/IPv4 TCP socket operations.
     """
 
-    _type: SocketType = SocketType.SOCK_STREAM
-    _ip_proto: IpProto = IpProto.IPPROTO_TCP
+    _socket_type = SocketType.SOCK_STREAM
+    _ip_proto = IpProto.IPPROTO_TCP
 
     def __init__(
-        self, *, family: AddressFamily, tcp_session: TcpSession | None = None
+        self,
+        *,
+        address_family: AddressFamily,
+        tcp_session: TcpSession | None = None,
     ) -> None:
         """
         Class constructor.
         """
 
-        self._family: AddressFamily = family
+        self._address_family = address_family
         self._event_tcp_session_established: Semaphore = threading.Semaphore(0)
         self._tcp_accept: list[Socket] = []
         self._tcp_session: TcpSession | None
-        self._local_ip_address: IpAddress
-        self._remote_ip_address: IpAddress
-        self._local_port: int
-        self._remote_port: int
-        self._parent_socket: TcpSocket
 
         # Create established socket based on established TCP session, called by
         # listening sockets only
@@ -105,7 +103,7 @@ class TcpSocket(Socket):
 
         # Fresh socket initialization
         else:
-            match self._family:
+            match self._address_family:
                 case AddressFamily.AF_INET6:
                     self._local_ip_address = Ip6Address()
                     self._remote_ip_address = Ip6Address()
@@ -126,7 +124,7 @@ class TcpSocket(Socket):
         """
 
         return (
-            f"{self._family}/{self._type}/{self._ip_proto}/{self._local_ip_address}/"
+            f"{self._address_family}/{self._type}/{self._ip_proto}/{self._local_ip_address}/"
             f"{self._local_port}/{self._remote_ip_address}/{self._remote_port}"
         )
 
@@ -137,7 +135,7 @@ class TcpSocket(Socket):
         """
 
         return (
-            self._family,
+            self._address_family,
             self._type,
             self._ip_proto,
             self._local_ip_address,
@@ -218,7 +216,7 @@ class TcpSocket(Socket):
         try:
             remote_ip_address: Ip6Address | Ip4Address = (
                 Ip6Address(remote_address[0])
-                if self._family is AddressFamily.AF_INET6
+                if self._address_family is AddressFamily.AF_INET6
                 else Ip4Address(remote_address[0])
             )
         except (Ip6AddressFormatError, Ip4AddressFormatError) as error:
@@ -263,7 +261,7 @@ class TcpSocket(Socket):
 
         local_ip_address: IpAddress
 
-        match self._family:
+        match self._address_family:
             case AddressFamily.AF_INET6:
                 try:
                     if (local_ip_address := Ip6Address(address[0])) not in set(
@@ -305,7 +303,7 @@ class TcpSocket(Socket):
             if is_address_in_use(
                 local_ip_address=local_ip_address,
                 local_port=local_port,
-                address_family=self._family,
+                address_family=self._address_family,
                 socket_type=self._type,
             ):
                 raise OSError(

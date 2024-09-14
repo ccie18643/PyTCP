@@ -2,9 +2,11 @@ PYTHON_VERSION := 3.12
 VENV := venv
 ROOT_PATH:=$(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
 PYTCP_PATH := pytcp
+NET_ADDR_PATH := net_addr
 TESTS_PATH := tests
 EXAMPLES_PATH := examples
 PYTCP_FILES := $(shell find ${PYTCP_PATH} -name '*.py')
+NET_ADDR_FILES := $(shell find ${NET_ADDR_PATH} -name '*.py')
 TEST_FILES := $(shell find ${TESTS_PATH} -name '*.py')
 EXAMPLES_FILES := $(shell find ${EXAMPLES_PATH} -name '*.py')
 
@@ -32,22 +34,27 @@ clean:
 lint: venv
 	@echo '<<< CODESPELL'
 	@./$(VENV)/bin/codespell --write-changes ${PYTCP_FILES}
+	@./$(VENV)/bin/codespell --write-changes ${NET_ADDR_FILES}
 	@./$(VENV)/bin/codespell --write-changes ${TEST_FILES}
 	@./$(VENV)/bin/codespell --write-changes ${EXAMPLES_FILES}
 	@echo '<<< ISORT'
 	@./$(VENV)/bin/isort ${PYTCP_FILES}
+	@./$(VENV)/bin/isort ${NET_ADDR_FILES}
 	@./$(VENV)/bin/isort ${TEST_FILES}
 	@./$(VENV)/bin/isort ${EXAMPLES_FILES}
 	@echo '<<< BLACK'
 	@./$(VENV)/bin/black ${PYTCP_FILES}
+	@./$(VENV)/bin/black ${NET_ADDR_FILES}
 	@./$(VENV)/bin/black ${TEST_FILES}
 	@./$(VENV)/bin/black ${EXAMPLES_FILES}
 	@echo '<<< FLAKE8'
 	@./$(VENV)/bin/flake8 ${PYTCP_FILES}
+	@./$(VENV)/bin/flake8 ${NET_ADDR_FILES}
 	@./$(VENV)/bin/flake8 ${TEST_FILES}
 	@./$(VENV)/bin/flake8 ${EXAMPLES_FILES}
 	@echo '<<< MYPY'
 	@PYTHONPATH=$(ROOT_PATH) ./$(VENV)/bin/mypy -p ${PYTCP_PATH}
+	@PYTHONPATH=$(ROOT_PATH) ./$(VENV)/bin/mypy -p ${NET_ADDR_PATH}
 	@PYTHONPATH=$(ROOT_PATH) ./$(VENV)/bin/mypy -p ${TESTS_PATH}
 	@PYTHONPATH=$(ROOT_PATH) ./$(VENV)/bin/mypy -p ${EXAMPLES_PATH}
 

@@ -45,8 +45,8 @@ from net_addr import (
     Ip4MaskFormatError,
     Ip4Network,
     Ip4NetworkFormatError,
+    MacAddress,
 )
-from net_addr import MacAddress
 
 
 class TestIp4Address(TestCase):

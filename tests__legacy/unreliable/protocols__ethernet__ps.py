@@ -34,11 +34,7 @@
 from testslide import TestCase
 
 from net_addr import MacAddress
-from protocols.ethernet.base import (
-    ETHERNET_HEADER_LEN,
-    Ethernet,
-    EthernetType,
-)
+from protocols.ethernet.base import ETHERNET_HEADER_LEN, Ethernet, EthernetType
 from pytcp.protocols.raw.raw__assembler import RawAssembler
 
 ETHERNET__DST = MacAddress("00:11:22:33:44:55")

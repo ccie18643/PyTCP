@@ -31,6 +31,15 @@
 # ver 3.0.2
 #
 
+from tests.unit.protocols__icmp4__ps import (
+    ICMP4_ECHO_REPLY__DATA,
+    ICMP4_ECHO_REPLY__ID,
+    ICMP4_ECHO_REPLY__SEQ,
+    ICMP4_ECHO_REQUEST__DATA,
+    ICMP4_ECHO_REQUEST__ID,
+    ICMP4_ECHO_REQUEST__SEQ,
+    ICMP4_PORT_UNREACHABLE__DATA,
+)
 from testslide import StrictMock, TestCase
 
 from pytcp.lib.tracker import Tracker
@@ -47,15 +56,6 @@ from pytcp.protocols.icmp4.icmp4__base import (
     Icmp4Message,
 )
 from pytcp.protocols.ip4.ip4__base import IP4__HEADER__LEN
-from tests.unit.protocols__icmp4__ps import (
-    ICMP4_ECHO_REPLY__DATA,
-    ICMP4_ECHO_REPLY__ID,
-    ICMP4_ECHO_REPLY__SEQ,
-    ICMP4_ECHO_REQUEST__DATA,
-    ICMP4_ECHO_REQUEST__ID,
-    ICMP4_ECHO_REQUEST__SEQ,
-    ICMP4_PORT_UNREACHABLE__DATA,
-)
 
 
 class TestIcmp4Assembler(TestCase):

@@ -32,17 +32,17 @@
 #
 
 
+from tests__legacy.unit.mock_network import (
+    MockNetworkSettings,
+    patch_config,
+    setup_mock_packet_handler,
+)
 from testslide import TestCase
 
 from pytcp.lib.packet_stats import PacketStatsTx
 from pytcp.lib.tx_status import TxStatus
 from pytcp.protocols.raw.raw__assembler import RawAssembler
 from pytcp.subsystems.packet_handler import PacketHandler
-from tests__legacy.unit.mock_network import (
-    MockNetworkSettings,
-    patch_config,
-    setup_mock_packet_handler,
-)
 
 TEST_FRAME_DIR = "tests__legacy/unit/test_frames/ip6_phtx/"
 

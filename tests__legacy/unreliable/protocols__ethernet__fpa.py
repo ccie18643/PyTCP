@@ -31,16 +31,16 @@
 # ver 3.0.2
 #
 
-from testslide import TestCase
-
-from pytcp.protocols.ethernet.fpa import EthernetAssembler
-from protocols.ethernet.base import ETHERNET_HEADER_LEN
 from tests.unit.protocols__ethernet__ps import (
     ETHERNET__CARRIED_PACKET,
     ETHERNET__DST,
     ETHERNET__SRC,
     ETHERNET__TEST_FRAME,
 )
+from testslide import TestCase
+
+from protocols.ethernet.base import ETHERNET_HEADER_LEN
+from pytcp.protocols.ethernet.fpa import EthernetAssembler
 
 
 class TestEthernetAssembler(TestCase):

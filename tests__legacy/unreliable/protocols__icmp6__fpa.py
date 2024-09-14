@@ -33,8 +33,7 @@
 
 from testslide import TestCase
 
-from net_addr import Ip6Address, Ip6Network
-from net_addr import MacAddress
+from net_addr import Ip6Address, Ip6Network, MacAddress
 from pytcp.lib.tracker import Tracker
 from pytcp.protocols.icmp4.icmp4__assembler import (
     Icmp4EchoReplyMessageAssembler,
@@ -54,7 +53,6 @@ from pytcp.protocols.icmp6.icmp6__assembler import (
     Icmp6NdRouterSolicitationMessageAssembler,
     Icmp6PortUnreachableMessageAssembler,
 )
-from pytcp.protocols.icmp6.icmp6__parser import Icmp6Mld2ReportMessageParser
 from pytcp.protocols.icmp6.icmp6__base import (
     ICMP6_MESSAGE_LEN__ECHO_REPLY,
     ICMP6_MESSAGE_LEN__ECHO_REQUEST,
@@ -71,6 +69,7 @@ from pytcp.protocols.icmp6.icmp6__base import (
     Icmp6NdRouterSolicitationMessage,
     Icmp6PortUnreachableMessage,
 )
+from pytcp.protocols.icmp6.icmp6__parser import Icmp6Mld2ReportMessageParser
 from pytcp.protocols.ip6.ip6__base import IP6_NEXT_ICMP6
 
 

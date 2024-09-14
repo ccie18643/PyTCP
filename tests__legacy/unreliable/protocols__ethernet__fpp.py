@@ -31,18 +31,18 @@
 # ver 3.0.2
 #
 
-from testslide import TestCase
-
-from net_addr import MacAddress
-from pytcp.lib.packet import PacketRx
-from pytcp.protocols.ethernet.fpp import EthernetIntegrityError, EthernetParser
-from protocols.ethernet.base import ETHERNET_HEADER_LEN, EthernetType
 from tests.unit.protocols__ethernet__ps import (
     ETHERNET__CARRIED_PACKET,
     ETHERNET__DST,
     ETHERNET__SRC,
     ETHERNET__TEST_FRAME,
 )
+from testslide import TestCase
+
+from net_addr import MacAddress
+from protocols.ethernet.base import ETHERNET_HEADER_LEN, EthernetType
+from pytcp.lib.packet import PacketRx
+from pytcp.protocols.ethernet.fpp import EthernetIntegrityError, EthernetParser
 
 
 class TestEthernetParser(TestCase):

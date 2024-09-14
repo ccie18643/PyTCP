@@ -113,7 +113,7 @@ class Socket(ABC):
     implemented in the derived classes.
     """
 
-    _family: AddressFamily
+    _address_family: AddressFamily
     _type: SocketType
     _proto: IpProto
     _local_ip_address: IpAddress
@@ -137,7 +137,7 @@ class Socket(ABC):
         Get the '_family' attribute.
         """
 
-        return self._family
+        return self._address_family
 
     @property
     def type(self) -> SocketType:

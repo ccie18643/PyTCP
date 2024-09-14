@@ -40,7 +40,6 @@ from __future__ import annotations
 
 from click import ParamType
 from click.core import Context, Parameter
-
 from net_addr.errors import NetAddrError
 from net_addr.ip4_address import Ip4Address
 from net_addr.ip4_host import Ip4Host
