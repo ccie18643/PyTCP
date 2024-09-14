@@ -140,10 +140,8 @@ class PacketHandlerUdpRx(ABC):
             tracker=packet_rx.tracker,
         )
 
-        for socket_pattern in packet_rx_md.socket_ids:
-            if socket := cast(
-                UdpSocket, stack.sockets.get(socket_pattern, None)
-            ):
+        for socket_id in packet_rx_md.socket_ids:
+            if socket := cast(UdpSocket, stack.sockets.get(socket_id, None)):
                 self.packet_stats_rx.udp__socket_match += 1
                 __debug__ and log(
                     "udp",
