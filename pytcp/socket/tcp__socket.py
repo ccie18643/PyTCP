@@ -124,7 +124,7 @@ class TcpSocket(Socket):
         """
 
         return (
-            f"{self._address_family}/{self._type}/{self._ip_proto}/{self._local_ip_address}/"
+            f"{self._address_family}/{self._socket_type}/{self._ip_proto}/{self._local_ip_address}/"
             f"{self._local_port}/{self._remote_ip_address}/{self._remote_port}"
         )
 
@@ -136,7 +136,7 @@ class TcpSocket(Socket):
 
         return (
             self._address_family,
-            self._type,
+            self._socket_type,
             self._ip_proto,
             self._local_ip_address,
             self._local_port,
@@ -304,7 +304,7 @@ class TcpSocket(Socket):
                 local_ip_address=local_ip_address,
                 local_port=local_port,
                 address_family=self._address_family,
-                socket_type=self._type,
+                socket_type=self._socket_type,
             ):
                 raise OSError(
                     "[Errno 98] Address already in use - "

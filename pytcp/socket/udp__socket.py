@@ -62,8 +62,6 @@ from pytcp.socket.socket import (
 )
 
 if TYPE_CHECKING:
-    from threading import Semaphore
-
     from net_addr import IpAddress
     from pytcp.socket.udp__metadata import UdpMetadata
 
@@ -73,22 +71,20 @@ class UdpSocket(Socket):
     Support for IPv6/IPv4 UDP socket operations.
     """
 
-    _socket_type: SocketType = SocketType.SOCK_DGRAM
-    _ip_proto: IpProto = IpProto.IPPROTO_UDP
+    _socket_type = SocketType.SOCK_DGRAM
+    _ip_proto = IpProto.IPPROTO_UDP
 
     def __init__(self, *, address_family: AddressFamily) -> None:
         """
         Class constructor.
         """
 
-        self._address_family: AddressFamily = address_family
-        self._local_port: int = 0
-        self._remote_port: int = 0
+        self._address_family = address_family
+        self._local_port = 0
+        self._remote_port = 0
         self._packet_rx_md: list[UdpMetadata] = []
-        self._packet_rx_md_ready: Semaphore = threading.Semaphore(0)
-        self._unreachable: bool = False
-        self._local_ip_address: IpAddress
-        self._remote_ip_address: IpAddress
+        self._packet_rx_md_ready = threading.Semaphore(0)
+        self._unreachable = False
 
         match self._address_family:
             case AddressFamily.AF_INET6:
@@ -187,7 +183,16 @@ class UdpSocket(Socket):
         if self._local_ip_address.is_unspecified:
             local_ip_address = pick_local_ip_address(remote_ip_address)
             if local_ip_address.is_unspecified and not (
-                self._local_port == 68 and remote_address[1] == 67
+                (
+                    self._address_family == AddressFamily.AF_INET4
+                    and self._local_port == 68
+                    and remote_address[1] == 67
+                )  # The DHCPv4 client operation.
+                or (
+                    self._address_family == AddressFamily.AF_INET6
+                    and self._local_port == 546
+                    and remote_address[1] == 547
+                )  # The DHCPv6 client operation.
             ):
                 raise gaierror(
                     "[Errno -2] Name or service not known - "
