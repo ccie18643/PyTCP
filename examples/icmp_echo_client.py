@@ -57,15 +57,14 @@ from net_addr import (
     IpAddress,
     MacAddress,
 )
-from pytcp import TcpIpStack, initialize_interface
-from pytcp.lib import stack
-from pytcp.lib.stack import github_repository, version_string
+from pytcp import TcpIpStack, initialize_interface, stack
 from pytcp.protocols.icmp4.message.icmp4_message__echo_request import (
     Icmp4EchoRequestMessage,
 )
 from pytcp.protocols.icmp6.message.icmp6_message__echo_request import (
     Icmp6EchoRequestMessage,
 )
+from pytcp.stack import github_repository, version_string
 
 
 class IcmpEchoClient:

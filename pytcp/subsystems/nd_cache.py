@@ -39,8 +39,7 @@ import threading
 import time
 
 from net_addr import Ip6Address, MacAddress
-from pytcp import config
-from pytcp.lib import stack
+from pytcp import config, stack
 from pytcp.lib.logger import log
 
 

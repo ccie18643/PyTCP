@@ -113,7 +113,7 @@ class TestPacketHandlerRxTx(TestCase):
             LOCNET_MAC_ADDRESS
         )
         self.patch_attribute(
-            target="pytcp.lib.stack",
+            target="pytcp.stack",
             attribute="arp_cache",
             new_value=self.mock_ArpCache,
         )
@@ -133,7 +133,7 @@ class TestPacketHandlerRxTx(TestCase):
             mac_address=LOCNET_MAC_ADDRESS,
         ).to_return_value(None)
         self.patch_attribute(
-            target="pytcp.lib.stack",
+            target="pytcp.stack",
             attribute="nd_cache",
             new_value=mock_NdCache,
         )
@@ -148,7 +148,7 @@ class TestPacketHandlerRxTx(TestCase):
             method="enqueue",
         ).with_implementation(dupa)
         self.patch_attribute(
-            target="pytcp.lib.stack",
+            target="pytcp.stack",
             attribute="tx_ring",
             new_value=mock_TxRing,
             type_validation=False,

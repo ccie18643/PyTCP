@@ -44,8 +44,7 @@ from net_addr.ip4_host import Ip4HostOrigin
 from net_addr.ip6_host import Ip6HostOrigin
 
 from net_addr import Ip4Host, Ip6Host, MacAddress
-from pytcp import config
-from pytcp.lib import stack
+from pytcp import config, stack
 from pytcp.lib.logger import log
 from pytcp.socket.socket import (  # noqa: F401
     AddressFamily,

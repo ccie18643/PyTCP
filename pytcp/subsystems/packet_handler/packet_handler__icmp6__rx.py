@@ -40,7 +40,7 @@ from abc import ABC
 from typing import TYPE_CHECKING, cast
 
 from net_addr import Ip6Address
-from pytcp.lib import stack
+from pytcp import stack
 from pytcp.lib.errors import PacketValidationError
 from pytcp.lib.logger import log
 from pytcp.protocols.enums import IpProto

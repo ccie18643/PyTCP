@@ -38,8 +38,7 @@ from __future__ import annotations
 from abc import ABC
 from typing import TYPE_CHECKING
 
-from pytcp import config
-from pytcp.lib import stack
+from pytcp import config, stack
 from pytcp.lib.errors import PacketValidationError
 from pytcp.lib.logger import log
 from pytcp.protocols.arp.arp__header import ArpOperation

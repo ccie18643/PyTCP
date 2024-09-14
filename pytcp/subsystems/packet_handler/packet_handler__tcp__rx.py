@@ -38,7 +38,7 @@ from __future__ import annotations
 from abc import ABC
 from typing import TYPE_CHECKING, cast
 
-from pytcp.lib import stack
+from pytcp import stack
 from pytcp.lib.errors import PacketValidationError
 from pytcp.lib.logger import log
 from pytcp.lib.packet import PacketRx

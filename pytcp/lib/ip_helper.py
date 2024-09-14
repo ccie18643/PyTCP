@@ -43,8 +43,8 @@ from net_addr import (
     Ip6Address,
     Ip6AddressFormatError,
 )
+from pytcp import stack
 from pytcp.config import EPHEMERAL_PORT_RANGE
-from pytcp.lib import stack
 
 if TYPE_CHECKING:
     from net_addr import IpAddress

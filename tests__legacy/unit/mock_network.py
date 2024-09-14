@@ -202,7 +202,7 @@ def setup_mock_packet_handler(self: TestCase) -> None:
         func=_mock_enqueue,
     )
     self.patch_attribute(
-        target="pytcp.lib.stack",
+        target="pytcp.stack",
         attribute="tx_ring",
         new_value=mock_TxRing,
     )
@@ -228,7 +228,7 @@ def setup_mock_packet_handler(self: TestCase) -> None:
         ip4_address=self.mns.stack_ip4_gateway
     ).to_return_value(self.mns.stack_ip4_gateway_mac_address)
     self.patch_attribute(
-        target="pytcp.lib.stack",
+        target="pytcp.stack",
         attribute="arp_cache",
         new_value=mock_ArpCache,
     )
@@ -260,7 +260,7 @@ def setup_mock_packet_handler(self: TestCase) -> None:
         ip6_address=self.mns.router_b_ip6_address
     ).to_return_value(None)
     self.patch_attribute(
-        target="pytcp.lib.stack",
+        target="pytcp.stack",
         attribute="nd_cache",
         new_value=mock_NdCache,
     )

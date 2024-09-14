@@ -48,8 +48,7 @@ from net_addr import (
     Ip6Network,
     MacAddress,
 )
-from pytcp import config
-from pytcp.lib import stack
+from pytcp import config, stack
 from pytcp.lib.logger import log
 from pytcp.lib.packet_stats import PacketStatsRx, PacketStatsTx
 from pytcp.protocols.dhcp4__legacy.client import Dhcp4Client

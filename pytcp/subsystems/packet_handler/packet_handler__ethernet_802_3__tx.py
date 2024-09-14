@@ -39,7 +39,7 @@ from abc import ABC
 from typing import TYPE_CHECKING
 
 from net_addr import MacAddress
-from pytcp.lib import stack
+from pytcp import stack
 from pytcp.lib.logger import log
 from pytcp.lib.tx_status import TxStatus
 from pytcp.protocols.ethernet_802_3.ethernet_802_3__assembler import (
