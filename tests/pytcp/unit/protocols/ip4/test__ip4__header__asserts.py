@@ -51,7 +51,7 @@ from pytcp.lib.int_checks import (
     UINT_16__MAX,
     UINT_16__MIN,
 )
-from pytcp.protocols.ip4.ip4__enums import Ip4Proto
+from pytcp.protocols.enums import IpProto
 from pytcp.protocols.ip4.ip4__header import IP4__HEADER__LEN, Ip4Header
 
 
@@ -76,7 +76,7 @@ class TestIp4HeaderAsserts(TestCase):
             "flag_df": False,
             "offset": 0,
             "ttl": 0,
-            "proto": Ip4Proto.RAW,
+            "proto": IpProto.RAW,
             "cksum": 0,
             "src": Ip4Address(),
             "dst": Ip4Address(),
@@ -354,20 +354,20 @@ class TestIp4HeaderAsserts(TestCase):
             f"The 'ttl' field must be an 8-bit unsigned integer. Got: {value!r}",
         )
 
-    def test__ip4__header__proto__not_Ip4Proto(self) -> None:
+    def test__ip4__header__proto__not_IpProto(self) -> None:
         """
         Ensure the IPv4 header constructor raises an exception when the provided
-        'proto' argument is not an Ip4Proto.
+        'proto' argument is not an IpProto.
         """
 
-        self._kwargs["proto"] = value = "not an Ip4Proto"
+        self._kwargs["proto"] = value = "not an IpProto"
 
         with self.assertRaises(AssertionError) as error:
             Ip4Header(*self._args, **self._kwargs)
 
         self.assertEqual(
             str(error.exception),
-            f"The 'proto' field must be an Ip4Proto. Got: {type(value)!r}",
+            f"The 'proto' field must be an IpProto. Got: {type(value)!r}",
         )
 
     def test__ip4__header__cksum__under_min(self) -> None:

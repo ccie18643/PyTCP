@@ -40,7 +40,7 @@ from tests.unit.protocols__ethernet__ps import (
 from testslide import TestCase
 
 from net_addr import MacAddress
-from protocols.ethernet.base import ETHERNET_HEADER_LEN, EthernetType
+from protocols.ethernet.base import ETHERNET_HEADER_LEN, EtherType
 from pytcp.lib.packet import PacketRx
 from pytcp.protocols.ethernet.fpp import EthernetIntegrityError, EthernetParser
 
@@ -106,7 +106,7 @@ class TestEthernetParser(TestCase):
             packet.src, MacAddress(self._ethernet__test_frame[6:12])
         )
         self.assertEqual(
-            packet.type, EthernetType.from_frame(self._ethernet__test_frame)
+            packet.type, EtherType.from_frame(self._ethernet__test_frame)
         )
 
     def test__ethernet_fpp__integrity_error(self) -> None:

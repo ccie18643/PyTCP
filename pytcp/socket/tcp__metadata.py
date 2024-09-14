@@ -78,8 +78,8 @@ class TcpMetadata:
 
         return (
             AddressFamily.from_ver(self.ip__ver),
-            SocketType.SOCK_STREAM,
-            IpProto.IPPROTO_TCP,
+            SocketType.STREAM,
+            IpProto.TCP,
             self.ip__local_address,
             self.tcp__local_port,
             self.ip__remote_address,
@@ -95,8 +95,8 @@ class TcpMetadata:
         return [
             (
                 AddressFamily.from_ver(self.ip__ver),
-                SocketType.SOCK_STREAM,
-                IpProto.IPPROTO_TCP,
+                SocketType.STREAM,
+                IpProto.TCP,
                 self.ip__local_address,
                 self.tcp__local_port,
                 self.ip__remote_address.unspecified,
@@ -104,8 +104,8 @@ class TcpMetadata:
             ),
             (
                 AddressFamily.from_ver(self.ip__ver),
-                SocketType.SOCK_STREAM,
-                IpProto.IPPROTO_TCP,
+                SocketType.STREAM,
+                IpProto.TCP,
                 self.ip__local_address.unspecified,
                 self.tcp__local_port,
                 self.ip__remote_address.unspecified,

@@ -70,7 +70,10 @@ from tests.pytcp.lib.testcase__packet_rx import TestCasePacketRx
             ],
             "_kwargs": {},
             "_results": {
-                "error_message": "The 'hrtype' field value must be one of [1], got 0.",
+                "error_message": (
+                    "The 'hrtype' field value must be <ArpHardwareType.ETHERNET: 1>. "
+                    "Got: <ArpHardwareType.UNKNOWN_0: 0>."
+                ),
             },
         },
         {
@@ -81,7 +84,10 @@ from tests.pytcp.lib.testcase__packet_rx import TestCasePacketRx
             ],
             "_kwargs": {},
             "_results": {
-                "error_message": "The 'prtype' field value must be one of [2048], got 0.",
+                "error_message": (
+                    "The 'prtype' field value must be <EtherType.IP4: 2048>. "
+                    "Got: <EtherType.UNKNOWN_0: 0>."
+                ),
             },
         },
         {

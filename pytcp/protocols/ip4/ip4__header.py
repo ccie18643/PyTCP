@@ -51,7 +51,7 @@ from pytcp.lib.int_checks import (
     is_uint16,
 )
 from pytcp.lib.proto_struct import ProtoStruct
-from pytcp.protocols.ip4.ip4__enums import Ip4Proto
+from pytcp.protocols.enums import IpProto
 
 # The IPv4 packet header [RFC 791].
 
@@ -96,7 +96,7 @@ class Ip4Header(ProtoStruct):
     flag_mf: bool
     offset: int
     ttl: int
-    proto: Ip4Proto
+    proto: IpProto
     cksum: int
     src: Ip4Address
     dst: Ip4Address
@@ -148,8 +148,8 @@ class Ip4Header(ProtoStruct):
         ), f"The 'ttl' field must be an 8-bit unsigned integer. Got: {self.ttl!r}"
 
         assert isinstance(
-            self.proto, Ip4Proto
-        ), f"The 'proto' field must be an Ip4Proto. Got: {type(self.proto)!r}"
+            self.proto, IpProto
+        ), f"The 'proto' field must be an IpProto. Got: {type(self.proto)!r}"
 
         assert is_uint16(
             self.cksum
@@ -221,7 +221,7 @@ class Ip4Header(ProtoStruct):
             flag_mf=bool(flag__offset >> 8 & 0b00100000),
             offset=(flag__offset & 0b0001111111111111) << 3,
             ttl=ttl,
-            proto=Ip4Proto.from_int(proto),
+            proto=IpProto.from_int(proto),
             cksum=cksum,
             src=Ip4Address(src),
             dst=Ip4Address(dst),
@@ -316,7 +316,7 @@ class Ip4HeaderProperties(ABC):
         return self._header.ttl
 
     @property
-    def proto(self) -> Ip4Proto:
+    def proto(self) -> IpProto:
         """
         Get the IPv4 header 'proto' field.
         """

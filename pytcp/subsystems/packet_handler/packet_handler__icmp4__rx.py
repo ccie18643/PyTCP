@@ -37,12 +37,13 @@ from __future__ import annotations
 
 import struct
 from abc import ABC
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
 from net_addr import Ip4Address
 from pytcp.lib import stack
 from pytcp.lib.errors import PacketValidationError
 from pytcp.lib.logger import log
+from pytcp.protocols.enums import IpProto
 from pytcp.protocols.icmp4.icmp4__parser import Icmp4Parser
 from pytcp.protocols.icmp4.message.icmp4_message import Icmp4Type
 from pytcp.protocols.icmp4.message.icmp4_message__destination_unreachable import (
@@ -54,10 +55,10 @@ from pytcp.protocols.icmp4.message.icmp4_message__echo_reply import (
 from pytcp.protocols.icmp4.message.icmp4_message__echo_request import (
     Icmp4EchoRequestMessage,
 )
-from pytcp.protocols.ip4.ip4__enums import Ip4Proto
 from pytcp.protocols.ip4.ip4__header import IP4__HEADER__LEN
 from pytcp.protocols.udp.udp__header import UDP__HEADER__LEN
 from pytcp.socket.udp__metadata import UdpMetadata
+from pytcp.socket.udp__socket import UdpSocket
 
 
 class PacketHandlerIcmp4Rx(ABC):
@@ -157,7 +158,7 @@ class PacketHandlerIcmp4Rx(ABC):
             len(frame) >= IP4__HEADER__LEN
             and frame[0] >> 4 == 4
             and len(frame) >= ((frame[0] & 0b00001111) << 2)
-            and frame[9] == Ip4Proto.UDP
+            and frame[9] == IpProto.UDP
             and len(frame) >= ((frame[0] & 0b00001111) << 2) + UDP__HEADER__LEN
         ):
             # Create UdpMetadata object and try to find matching UDP socket.
@@ -174,9 +175,10 @@ class PacketHandlerIcmp4Rx(ABC):
                 )[0],
             )
 
-            for socket_pattern in packet.socket_patterns:
-                socket = stack.sockets.get(socket_pattern, None)
-                if socket:
+            for socket_id in packet.socket_ids:
+                if socket := cast(
+                    UdpSocket, stack.sockets.get(socket_id, None)
+                ):
                     __debug__ and log(
                         "icmp4",
                         f"{packet_rx.tracker} - <INFO>Found matching "

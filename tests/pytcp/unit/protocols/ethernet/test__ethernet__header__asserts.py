@@ -38,7 +38,7 @@ from typing import Any
 from testslide import TestCase
 
 from net_addr import MacAddress
-from pytcp.protocols.ethernet.ethernet__enums import EthernetType
+from pytcp.protocols.enums import EtherType
 from pytcp.protocols.ethernet.ethernet__header import EthernetHeader
 
 
@@ -56,7 +56,7 @@ class TestEthernetHeaderAsserts(TestCase):
         self._kwargs: dict[str, Any] = {
             "dst": MacAddress(),
             "src": MacAddress(),
-            "type": EthernetType.RAW,
+            "type": EtherType.RAW,
         }
 
     def test__ethernet_header__dst__not_MacAddress(self) -> None:
@@ -91,18 +91,18 @@ class TestEthernetHeaderAsserts(TestCase):
             f"The 'src' field must be a MacAddress. Got: {type(value)!r}",
         )
 
-    def test__ethernet__header__type__not_EthernetType(self) -> None:
+    def test__ethernet__header__type__not_EtherType(self) -> None:
         """
         Ensure the Ethernet header constructor raises an exception when the
-        provided 'type' argument is not an EthernetType.
+        provided 'type' argument is not an EtherType.
         """
 
-        self._kwargs["type"] = value = "not an EthernetType"
+        self._kwargs["type"] = value = "not an EtherType"
 
         with self.assertRaises(AssertionError) as error:
             EthernetHeader(*self._args, **self._kwargs)
 
         self.assertEqual(
             str(error.exception),
-            f"The 'type' field must be an EthernetType. Got: {type(value)!r}",
+            f"The 'type' field must be an EtherType. Got: {type(value)!r}",
         )

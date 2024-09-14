@@ -39,8 +39,8 @@ from parameterized import parameterized_class  # type: ignore
 from testslide import TestCase
 
 from net_addr import MacAddress
+from pytcp.protocols.enums import EtherType
 from pytcp.protocols.ethernet.ethernet__assembler import EthernetAssembler
-from pytcp.protocols.ethernet.ethernet__enums import EthernetType
 from pytcp.protocols.ethernet.ethernet__header import EthernetHeader
 from pytcp.protocols.raw.raw__assembler import RawAssembler
 
@@ -64,7 +64,7 @@ from pytcp.protocols.raw.raw__assembler import RawAssembler
                 ),
                 "__repr__": (
                     "EthernetAssembler(header=EthernetHeader(dst=MacAddress('11:22:33:44:55:66'), "
-                    "src=MacAddress('77:88:99:aa:bb:cc'), type=<EthernetType.RAW: 65535>), "
+                    "src=MacAddress('77:88:99:aa:bb:cc'), type=<EtherType.RAW: 65535>), "
                     "payload=RawAssembler(raw__payload=b'0123456789ABCDEF'))"
                 ),
                 "__bytes__": (
@@ -73,11 +73,11 @@ from pytcp.protocols.raw.raw__assembler import RawAssembler
                 ),
                 "dst": MacAddress("11:22:33:44:55:66"),
                 "src": MacAddress("77:88:99:aa:bb:cc"),
-                "type": EthernetType.RAW,
+                "type": EtherType.RAW,
                 "header": EthernetHeader(
                     dst=MacAddress("11:22:33:44:55:66"),
                     src=MacAddress("77:88:99:aa:bb:cc"),
-                    type=EthernetType.RAW,
+                    type=EtherType.RAW,
                 ),
                 "payload": RawAssembler(raw__payload=b"0123456789ABCDEF"),
             },
@@ -97,7 +97,7 @@ from pytcp.protocols.raw.raw__assembler import RawAssembler
                 ),
                 "__repr__": (
                     "EthernetAssembler(header=EthernetHeader(dst=MacAddress('a1:b2:c3:d4:e5:f6'), "
-                    "src=MacAddress('11:12:13:14:15:16'), type=<EthernetType.RAW: 65535>), "
+                    "src=MacAddress('11:12:13:14:15:16'), type=<EtherType.RAW: 65535>), "
                     f"payload=RawAssembler(raw__payload=b'{"X" * 1500}'))"
                 ),
                 "__bytes__": (
@@ -106,11 +106,11 @@ from pytcp.protocols.raw.raw__assembler import RawAssembler
                 ),
                 "dst": MacAddress("a1:b2:c3:d4:e5:f6"),
                 "src": MacAddress("11:12:13:14:15:16"),
-                "type": EthernetType.RAW,
+                "type": EtherType.RAW,
                 "header": EthernetHeader(
                     dst=MacAddress("a1:b2:c3:d4:e5:f6"),
                     src=MacAddress("11:12:13:14:15:16"),
-                    type=EthernetType.RAW,
+                    type=EtherType.RAW,
                 ),
                 "payload": RawAssembler(raw__payload=b"X" * 1500),
             },

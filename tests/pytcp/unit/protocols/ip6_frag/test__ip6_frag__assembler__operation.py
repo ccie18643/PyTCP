@@ -38,7 +38,7 @@ from typing import Any
 from parameterized import parameterized_class  # type: ignore
 from testslide import TestCase
 
-from pytcp.protocols.ip6.ip6__enums import Ip6Next
+from pytcp.protocols.enums import IpProto
 from pytcp.protocols.ip6_frag.ip6_frag__assembler import Ip6FragAssembler
 from pytcp.protocols.ip6_frag.ip6_frag__header import Ip6FragHeader
 
@@ -49,7 +49,7 @@ from pytcp.protocols.ip6_frag.ip6_frag__header import Ip6FragHeader
             "_description": "IPv6 Frag packet (I).",
             "_args": [],
             "_kwargs": {
-                "ip6_frag__next": Ip6Next.RAW,
+                "ip6_frag__next": IpProto.RAW,
                 "ip6_frag__offset": 0,
                 "ip6_frag__flag_mf": False,
                 "ip6_frag__id": 0,
@@ -61,16 +61,16 @@ from pytcp.protocols.ip6_frag.ip6_frag__header import Ip6FragHeader
                     "IPv6_FRAG id 0, offset 0, next 255 (Raw), len 8 (8+0)"
                 ),
                 "__repr__": (
-                    "Ip6FragAssembler(header=Ip6FragHeader(next=<Ip6Next.RAW: 255>, offset=0, "
+                    "Ip6FragAssembler(header=Ip6FragHeader(next=<IpProto.RAW: 255>, offset=0, "
                     "flag_mf=False, id=0), payload=b'')"
                 ),
                 "__bytes__": (b"\xff\x00\x00\x00\x00\x00\x00\x00"),
-                "next": Ip6Next.RAW,
+                "next": IpProto.RAW,
                 "offset": 0,
                 "flag_mf": False,
                 "id": 0,
                 "header": Ip6FragHeader(
-                    next=Ip6Next.RAW,
+                    next=IpProto.RAW,
                     offset=0,
                     flag_mf=False,
                     id=0,
@@ -82,7 +82,7 @@ from pytcp.protocols.ip6_frag.ip6_frag__header import Ip6FragHeader
             "_description": "IPv6 Frag packet (II).",
             "_args": [],
             "_kwargs": {
-                "ip6_frag__next": Ip6Next.RAW,
+                "ip6_frag__next": IpProto.RAW,
                 "ip6_frag__offset": 3208,
                 "ip6_frag__flag_mf": True,
                 "ip6_frag__id": 4294967295,
@@ -94,19 +94,19 @@ from pytcp.protocols.ip6_frag.ip6_frag__header import Ip6FragHeader
                     "IPv6_FRAG id 4294967295, MF, offset 3208, next 255 (Raw), len 24 (8+16)"
                 ),
                 "__repr__": (
-                    "Ip6FragAssembler(header=Ip6FragHeader(next=<Ip6Next.RAW: 255>, offset=3208, "
+                    "Ip6FragAssembler(header=Ip6FragHeader(next=<IpProto.RAW: 255>, offset=3208, "
                     "flag_mf=True, id=4294967295), payload=b'0123456789ABCDEF')"
                 ),
                 "__bytes__": (
                     b"\xff\x00\x0c\x89\xff\xff\xff\xff\x30\x31\x32\x33\x34\x35\x36\x37"
                     b"\x38\x39\x41\x42\x43\x44\x45\x46"
                 ),
-                "next": Ip6Next.RAW,
+                "next": IpProto.RAW,
                 "offset": 3208,
                 "flag_mf": True,
                 "id": 4294967295,
                 "header": Ip6FragHeader(
-                    next=Ip6Next.RAW,
+                    next=IpProto.RAW,
                     offset=3208,
                     flag_mf=True,
                     id=4294967295,
@@ -118,7 +118,7 @@ from pytcp.protocols.ip6_frag.ip6_frag__header import Ip6FragHeader
             "_description": "IPv6 Frag packet (III).",
             "_args": [],
             "_kwargs": {
-                "ip6_frag__next": Ip6Next.RAW,
+                "ip6_frag__next": IpProto.RAW,
                 "ip6_frag__offset": 65528,
                 "ip6_frag__flag_mf": False,
                 "ip6_frag__id": 7777777,
@@ -130,16 +130,16 @@ from pytcp.protocols.ip6_frag.ip6_frag__header import Ip6FragHeader
                     "IPv6_FRAG id 7777777, offset 65528, next 255 (Raw), len 1430 (8+1422)"
                 ),
                 "__repr__": (
-                    "Ip6FragAssembler(header=Ip6FragHeader(next=<Ip6Next.RAW: 255>, offset=65528, "
+                    "Ip6FragAssembler(header=Ip6FragHeader(next=<IpProto.RAW: 255>, offset=65528, "
                     f"flag_mf=False, id=7777777), payload=b'{"X" * 1422}')"
                 ),
                 "__bytes__": b"\xff\x00\xff\xf8\x00\x76\xad\xf1" + b"X" * 1422,
-                "next": Ip6Next.RAW,
+                "next": IpProto.RAW,
                 "offset": 65528,
                 "flag_mf": False,
                 "id": 7777777,
                 "header": Ip6FragHeader(
-                    next=Ip6Next.RAW,
+                    next=IpProto.RAW,
                     offset=65528,
                     flag_mf=False,
                     id=7777777,

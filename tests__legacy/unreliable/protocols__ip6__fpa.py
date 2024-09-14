@@ -34,7 +34,7 @@
 from testslide import StrictMock, TestCase
 
 from net_addr import Ip6Address
-from protocols.ethernet.base import EthernetType
+from protocols.ethernet.base import EtherType
 from pytcp.config import IP6__DEFAULT_HOP_LIMIT
 from pytcp.lib.tracker import Tracker
 from pytcp.protocols.ip6.ip6__assembler import Ip6Assembler
@@ -54,7 +54,7 @@ class TestIp6Assembler(TestCase):
         Make sure the 'Ip6Assembler' class has the proper
         'ethertype' value assigned.
         """
-        self.assertEqual(Ip6Assembler.ethernet_type, EthernetType.IP6)
+        self.assertEqual(Ip6Assembler.ethernet_type, EtherType.IP6)
 
     def test_ip6_fpa____init__(self) -> None:
         """

@@ -46,14 +46,6 @@ class ArpHardwareType(ProtoEnumWord):
     ETHERNET = 0x0001
 
 
-class ArpProtocolType(ProtoEnumWord):
-    """
-    The ARP header 'prtype' field values.
-    """
-
-    IP4 = 0x0800
-
-
 class ArpOperation(ProtoEnumWord):
     """
     The ARP header 'oper' field values.

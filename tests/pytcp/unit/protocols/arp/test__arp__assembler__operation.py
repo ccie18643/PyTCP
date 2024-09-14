@@ -46,9 +46,9 @@ from pytcp.protocols.arp.arp__enums import (
     ARP__PROTOCOL_LEN__IP4,
     ArpHardwareType,
     ArpOperation,
-    ArpProtocolType,
 )
 from pytcp.protocols.arp.arp__header import ArpHeader
+from pytcp.protocols.enums import EtherType
 
 
 @parameterized_class(
@@ -79,7 +79,7 @@ from pytcp.protocols.arp.arp__header import ArpHeader
                     b"\x21\x2c\x0a\x0b\x0c\x0d\x0e\x0f\x65\x66\x67\x68"
                 ),
                 "hrtype": ArpHardwareType.ETHERNET,
-                "prtype": ArpProtocolType.IP4,
+                "prtype": EtherType.IP4,
                 "hrlen": ARP__HARDWARE_LEN__ETHERNET,
                 "prlen": ARP__PROTOCOL_LEN__IP4,
                 "oper": ArpOperation.REQUEST,
@@ -123,7 +123,7 @@ from pytcp.protocols.arp.arp__header import ArpHeader
                     b"\x05\x05\x7a\x7b\x7c\x7d\x7e\x7f\x07\x07\x07\x07"
                 ),
                 "hrtype": ArpHardwareType.ETHERNET,
-                "prtype": ArpProtocolType.IP4,
+                "prtype": EtherType.IP4,
                 "hrlen": ARP__HARDWARE_LEN__ETHERNET,
                 "prlen": ARP__PROTOCOL_LEN__IP4,
                 "oper": ArpOperation.REPLY,

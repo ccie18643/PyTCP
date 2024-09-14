@@ -43,6 +43,7 @@ from net_addr import Ip6Address
 from pytcp.lib import stack
 from pytcp.lib.errors import PacketValidationError
 from pytcp.lib.logger import log
+from pytcp.protocols.enums import IpProto
 from pytcp.protocols.icmp6.icmp6__parser import Icmp6Parser
 from pytcp.protocols.icmp6.message.icmp6_message import Icmp6Type
 from pytcp.protocols.icmp6.message.icmp6_message__destination_unreachable import (
@@ -70,7 +71,6 @@ from pytcp.protocols.icmp6.message.nd.option.icmp6_nd_options import (
     Icmp6NdOptions,
     Icmp6NdOptionTlla,
 )
-from pytcp.protocols.ip6.ip6__enums import Ip6Next
 from pytcp.protocols.ip6.ip6__header import IP6__HEADER__LEN
 from pytcp.protocols.udp.udp__header import UDP__HEADER__LEN
 from pytcp.socket.udp__metadata import UdpMetadata
@@ -182,7 +182,7 @@ class PacketHandlerIcmp6Rx(ABC):
         if (
             len(frame) >= IP6__HEADER__LEN + UDP__HEADER__LEN
             and frame[0] >> 4 == 6
-            and frame[6] == int(Ip6Next.UDP)
+            and frame[6] == int(IpProto.UDP)
         ):
             # Create UdpMetadata object and try to find matching UDP socket
             udp_offset = IP6__HEADER__LEN
@@ -198,10 +198,10 @@ class PacketHandlerIcmp6Rx(ABC):
                 )[0],
             )
 
-            for socket_pattern in packet.socket_ids:
+            for socket_id in packet.socket_ids:
                 if socket := cast(
                     UdpSocket,
-                    stack.sockets.get(socket_pattern, None),
+                    stack.sockets.get(socket_id, None),
                 ):
                     __debug__ and log(
                         "icmp6",

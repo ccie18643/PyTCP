@@ -38,8 +38,8 @@ from parameterized import parameterized_class  # type: ignore
 from testslide import TestCase
 
 from net_addr import Ip4Address
+from pytcp.protocols.enums import IpProto
 from pytcp.protocols.ip4.ip4__assembler import Ip4Assembler, Ip4FragAssembler
-from pytcp.protocols.ip4.ip4__enums import Ip4Proto
 from pytcp.protocols.ip4.ip4__header import Ip4Header
 from pytcp.protocols.ip4.options.ip4_option__nop import Ip4OptionNop
 from pytcp.protocols.ip4.options.ip4_options import Ip4Options
@@ -70,7 +70,7 @@ from pytcp.protocols.raw.raw__assembler import RawAssembler
                 ),
                 "__repr__": (
                     "Ip4Assembler(header=Ip4Header(hlen=20, dscp=63, ecn=3, plen=20, "
-                    "id=65535, flag_df=True, flag_mf=False, offset=0, ttl=255, proto=<Ip4Proto.RAW: 255>, "
+                    "id=65535, flag_df=True, flag_mf=False, offset=0, ttl=255, proto=<IpProto.RAW: 255>, "
                     "cksum=0, src=Ip4Address('10.20.30.40'), dst=Ip4Address('50.60.70.80')), "
                     "options=Ip4Options(options=[]), payload=RawAssembler(raw__payload=b''))"
                 ),
@@ -88,7 +88,7 @@ from pytcp.protocols.raw.raw__assembler import RawAssembler
                 "flag_mf": False,
                 "offset": 0,
                 "ttl": 255,
-                "proto": Ip4Proto.RAW,
+                "proto": IpProto.RAW,
                 "cksum": 0,
                 "src": Ip4Address("10.20.30.40"),
                 "dst": Ip4Address("50.60.70.80"),
@@ -102,7 +102,7 @@ from pytcp.protocols.raw.raw__assembler import RawAssembler
                     flag_mf=False,
                     offset=0,
                     ttl=255,
-                    proto=Ip4Proto.RAW,
+                    proto=IpProto.RAW,
                     cksum=0,
                     src=Ip4Address("10.20.30.40"),
                     dst=Ip4Address("50.60.70.80"),
@@ -132,7 +132,7 @@ from pytcp.protocols.raw.raw__assembler import RawAssembler
                 ),
                 "__repr__": (
                     "Ip4Assembler(header=Ip4Header(hlen=20, dscp=17, ecn=2, plen=36, "
-                    "id=12345, flag_df=True, flag_mf=False, offset=0, ttl=255, proto=<Ip4Proto.RAW: 255>, "
+                    "id=12345, flag_df=True, flag_mf=False, offset=0, ttl=255, proto=<IpProto.RAW: 255>, "
                     "cksum=0, src=Ip4Address('1.2.3.4'), dst=Ip4Address('5.6.7.8')), "
                     "options=Ip4Options(options=[]), payload=RawAssembler(raw__payload=b'0123456789ABCDEF'))"
                 ),
@@ -151,7 +151,7 @@ from pytcp.protocols.raw.raw__assembler import RawAssembler
                 "flag_mf": False,
                 "offset": 0,
                 "ttl": 255,
-                "proto": Ip4Proto.RAW,
+                "proto": IpProto.RAW,
                 "cksum": 0,
                 "src": Ip4Address("1.2.3.4"),
                 "dst": Ip4Address("5.6.7.8"),
@@ -165,7 +165,7 @@ from pytcp.protocols.raw.raw__assembler import RawAssembler
                     flag_mf=False,
                     offset=0,
                     ttl=255,
-                    proto=Ip4Proto.RAW,
+                    proto=IpProto.RAW,
                     cksum=0,
                     src=Ip4Address("1.2.3.4"),
                     dst=Ip4Address("5.6.7.8"),
@@ -200,7 +200,7 @@ from pytcp.protocols.raw.raw__assembler import RawAssembler
                 ),
                 "__repr__": (
                     "Ip4Assembler(header=Ip4Header(hlen=60, dscp=8, ecn=0, plen=65535, id=21212, "
-                    "flag_df=False, flag_mf=False, offset=0, ttl=64, proto=<Ip4Proto.RAW: 255>, cksum=0, "
+                    "flag_df=False, flag_mf=False, offset=0, ttl=64, proto=<IpProto.RAW: 255>, cksum=0, "
                     "src=Ip4Address('1.1.1.1'), dst=Ip4Address('2.2.2.2')), options=Ip4Options(options=["
                     "Ip4OptionNop(), Ip4OptionNop(), Ip4OptionNop(), Ip4OptionNop(), "
                     "Ip4OptionNop(), Ip4OptionNop(), Ip4OptionNop(), Ip4OptionNop(), "
@@ -231,7 +231,7 @@ from pytcp.protocols.raw.raw__assembler import RawAssembler
                 "flag_mf": False,
                 "offset": 0,
                 "ttl": 64,
-                "proto": Ip4Proto.RAW,
+                "proto": IpProto.RAW,
                 "cksum": 0,
                 "src": Ip4Address("1.1.1.1"),
                 "dst": Ip4Address("2.2.2.2"),
@@ -245,7 +245,7 @@ from pytcp.protocols.raw.raw__assembler import RawAssembler
                     flag_mf=False,
                     offset=0,
                     ttl=64,
-                    proto=Ip4Proto.RAW,
+                    proto=IpProto.RAW,
                     cksum=0,
                     src=Ip4Address("1.1.1.1"),
                     dst=Ip4Address("2.2.2.2"),
@@ -538,7 +538,7 @@ class TestIp4AssemblerOperation(TestCase):
                 ),
                 "__repr__": (
                     "Ip4FragAssembler(header=Ip4Header(hlen=20, dscp=10, ecn=1, plen=36, "
-                    "id=54321, flag_df=False, flag_mf=False, offset=32008, ttl=128, proto=<Ip4Proto"
+                    "id=54321, flag_df=False, flag_mf=False, offset=32008, ttl=128, proto=<IpProto"
                     ".RAW: 255>, cksum=0, src=Ip4Address('4.3.2.1'), dst=Ip4Address('8.7.6.5')), "
                     "options=Ip4Options(options=[]), payload=RawAssembler(raw__payload="
                     "b'0123456789ABCDEF'))"
@@ -558,7 +558,7 @@ class TestIp4AssemblerOperation(TestCase):
                 "flag_mf": False,
                 "offset": 32008,
                 "ttl": 128,
-                "proto": Ip4Proto.RAW,
+                "proto": IpProto.RAW,
                 "cksum": 0,
                 "src": Ip4Address("4.3.2.1"),
                 "dst": Ip4Address("8.7.6.5"),
@@ -572,7 +572,7 @@ class TestIp4AssemblerOperation(TestCase):
                     flag_mf=False,
                     offset=32008,
                     ttl=128,
-                    proto=Ip4Proto.RAW,
+                    proto=IpProto.RAW,
                     cksum=0,
                     src=Ip4Address("4.3.2.1"),
                     dst=Ip4Address("8.7.6.5"),
@@ -607,7 +607,7 @@ class TestIp4AssemblerOperation(TestCase):
                 ),
                 "__repr__": (
                     "Ip4FragAssembler(header=Ip4Header(hlen=20, dscp=17, ecn=2, plen=1486, "
-                    "id=12345, flag_df=False, flag_mf=True, offset=0, ttl=255, proto=<Ip4Proto.RAW: 255>, "
+                    "id=12345, flag_df=False, flag_mf=True, offset=0, ttl=255, proto=<IpProto.RAW: 255>, "
                     "cksum=0, src=Ip4Address('1.2.3.4'), dst=Ip4Address('5.6.7.8')), "
                     f"options=Ip4Options(options=[]), payload=RawAssembler(raw__payload=b'{"X" * 1466}'))"
                 ),
@@ -625,7 +625,7 @@ class TestIp4AssemblerOperation(TestCase):
                 "flag_mf": True,
                 "offset": 0,
                 "ttl": 255,
-                "proto": Ip4Proto.RAW,
+                "proto": IpProto.RAW,
                 "cksum": 0,
                 "src": Ip4Address("1.2.3.4"),
                 "dst": Ip4Address("5.6.7.8"),
@@ -639,7 +639,7 @@ class TestIp4AssemblerOperation(TestCase):
                     flag_mf=True,
                     offset=0,
                     ttl=255,
-                    proto=Ip4Proto.RAW,
+                    proto=IpProto.RAW,
                     cksum=0,
                     src=Ip4Address("1.2.3.4"),
                     dst=Ip4Address("5.6.7.8"),

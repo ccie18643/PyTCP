@@ -39,11 +39,9 @@ from typing import TYPE_CHECKING
 
 from net_addr import MacAddress
 from pytcp.lib.proto_assembler import ProtoAssembler
+from pytcp.protocols.enums import EtherType
 from pytcp.protocols.ethernet.ethernet__base import Ethernet
-from pytcp.protocols.ethernet.ethernet__header import (
-    EthernetHeader,
-    EthernetType,
-)
+from pytcp.protocols.ethernet.ethernet__header import EthernetHeader
 from pytcp.protocols.raw.raw__assembler import RawAssembler
 
 if TYPE_CHECKING:
@@ -75,7 +73,7 @@ class EthernetAssembler(Ethernet, ProtoAssembler):
         self._header = EthernetHeader(
             dst=ethernet__dst,
             src=ethernet__src,
-            type=EthernetType.from_proto(self._payload),
+            type=EtherType.from_proto(self._payload),
         )
 
     @property

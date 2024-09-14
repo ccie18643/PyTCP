@@ -38,7 +38,7 @@ from typing import Any
 from parameterized import parameterized_class  # type: ignore
 
 from pytcp.lib.packet import PacketRx
-from pytcp.protocols.ip6.ip6__enums import Ip6Next
+from pytcp.protocols.enums import IpProto
 from pytcp.protocols.ip6_frag.ip6_frag__header import Ip6FragHeader
 from pytcp.protocols.ip6_frag.ip6_frag__parser import Ip6FragParser
 from tests.pytcp.lib.testcase__packet_rx__ip6 import TestCasePacketRxIp6
@@ -52,7 +52,7 @@ from tests.pytcp.lib.testcase__packet_rx__ip6 import TestCasePacketRxIp6
             "_kwargs": {},
             "_results": {
                 "header": Ip6FragHeader(
-                    next=Ip6Next.RAW,
+                    next=IpProto.RAW,
                     offset=0,
                     flag_mf=False,
                     id=0,
@@ -72,7 +72,7 @@ from tests.pytcp.lib.testcase__packet_rx__ip6 import TestCasePacketRxIp6
             "_kwargs": {},
             "_results": {
                 "header": Ip6FragHeader(
-                    next=Ip6Next.RAW,
+                    next=IpProto.RAW,
                     offset=3208,
                     flag_mf=True,
                     id=4294967295,
@@ -92,7 +92,7 @@ from tests.pytcp.lib.testcase__packet_rx__ip6 import TestCasePacketRxIp6
             "_kwargs": {},
             "_results": {
                 "header": Ip6FragHeader(
-                    next=Ip6Next.RAW,
+                    next=IpProto.RAW,
                     offset=65528,
                     flag_mf=False,
                     id=7777777,

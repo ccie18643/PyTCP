@@ -42,8 +42,8 @@ from pytcp import config
 from pytcp.lib.int_checks import is_4_byte_alligned
 from pytcp.lib.proto_assembler import ProtoAssembler
 from pytcp.lib.tracker import Tracker
+from pytcp.protocols.enums import IpProto
 from pytcp.protocols.ip4.ip4__base import Ip4
-from pytcp.protocols.ip4.ip4__enums import Ip4Proto
 from pytcp.protocols.ip4.ip4__header import IP4__HEADER__LEN, Ip4Header
 from pytcp.protocols.ip4.options.ip4_option__eol import Ip4OptionEol
 from pytcp.protocols.ip4.options.ip4_options import (
@@ -109,7 +109,7 @@ class Ip4Assembler(Ip4, ProtoAssembler):
             flag_mf=False,
             offset=0,
             ttl=ip4__ttl,
-            proto=Ip4Proto.from_proto(ip4__payload),
+            proto=IpProto.from_proto(ip4__payload),
             cksum=0,
             src=ip4__src,
             dst=ip4__dst,
@@ -143,7 +143,7 @@ class Ip4FragAssembler(Ip4, ProtoAssembler):
         ip4_frag__flag_mf: bool = False,
         ip4_frag__offset: int = 0,
         ip4_frag__options: Ip4Options = Ip4Options(),
-        ip4_frag__proto: Ip4Proto = Ip4Proto.RAW,
+        ip4_frag__proto: IpProto = IpProto.RAW,
         ip4_frag__payload: bytes = bytes(),
     ):
         """

@@ -38,8 +38,8 @@ from parameterized import parameterized_class  # type: ignore
 from testslide import TestCase
 
 from net_addr import Ip6Address
+from pytcp.protocols.enums import IpProto
 from pytcp.protocols.ip6.ip6__assembler import Ip6Assembler
-from pytcp.protocols.ip6.ip6__enums import Ip6Next
 from pytcp.protocols.ip6.ip6__header import Ip6Header
 from pytcp.protocols.raw.raw__assembler import RawAssembler
 
@@ -70,7 +70,7 @@ from pytcp.protocols.raw.raw__assembler import RawAssembler
                 ),
                 "__repr__": (
                     "Ip6Assembler(header=Ip6Header(dscp=0, ecn=0, flow=0, dlen=0, "
-                    "next=<Ip6Next.RAW: 255>, hop=1, "
+                    "next=<IpProto.RAW: 255>, hop=1, "
                     "src=Ip6Address('1001:2002:3003:4004:5005:6006:7007:8008'), "
                     "dst=Ip6Address('a00a:b00b:c00c:d00d:e00e:f00f:a0a:b0b')), "
                     "payload=RawAssembler(raw__payload=b''))"
@@ -85,7 +85,7 @@ from pytcp.protocols.raw.raw__assembler import RawAssembler
                 "ecn": 0,
                 "flow": 0,
                 "dlen": 0,
-                "next": Ip6Next.RAW,
+                "next": IpProto.RAW,
                 "hop": 1,
                 "src": Ip6Address("1001:2002:3003:4004:5005:6006:7007:8008"),
                 "dst": Ip6Address("a00a:b00b:c00c:d00d:e00e:f00f:0a0a:0b0b"),
@@ -94,7 +94,7 @@ from pytcp.protocols.raw.raw__assembler import RawAssembler
                     ecn=0,
                     flow=0,
                     dlen=0,
-                    next=Ip6Next.RAW,
+                    next=IpProto.RAW,
                     hop=1,
                     src=Ip6Address("1001:2002:3003:4004:5005:6006:7007:8008"),
                     dst=Ip6Address("a00a:b00b:c00c:d00d:e00e:f00f:0a0a:0b0b"),
@@ -126,7 +126,7 @@ from pytcp.protocols.raw.raw__assembler import RawAssembler
                 ),
                 "__repr__": (
                     "Ip6Assembler(header=Ip6Header(dscp=38, ecn=2, flow=1048575, dlen=16, "
-                    "next=<Ip6Next.RAW: 255>, hop=255, "
+                    "next=<IpProto.RAW: 255>, hop=255, "
                     "src=Ip6Address('1111:2222:3333:4444:5555:6666:7777:8888'), "
                     "dst=Ip6Address('8888:7777:6666:5555:4444:3333:2222:1111')), "
                     "payload=RawAssembler(raw__payload=b'0123456789ABCDEF'))"
@@ -142,7 +142,7 @@ from pytcp.protocols.raw.raw__assembler import RawAssembler
                 "ecn": 2,
                 "flow": 1048575,
                 "dlen": 16,
-                "next": Ip6Next.RAW,
+                "next": IpProto.RAW,
                 "hop": 255,
                 "src": Ip6Address("1111:2222:3333:4444:5555:6666:7777:8888"),
                 "dst": Ip6Address("8888:7777:6666:5555:4444:3333:2222:1111"),
@@ -151,7 +151,7 @@ from pytcp.protocols.raw.raw__assembler import RawAssembler
                     ecn=2,
                     flow=1048575,
                     dlen=16,
-                    next=Ip6Next.RAW,
+                    next=IpProto.RAW,
                     hop=255,
                     src=Ip6Address("1111:2222:3333:4444:5555:6666:7777:8888"),
                     dst=Ip6Address("8888:7777:6666:5555:4444:3333:2222:1111"),
@@ -183,7 +183,7 @@ from pytcp.protocols.raw.raw__assembler import RawAssembler
                 ),
                 "__repr__": (
                     "Ip6Assembler(header=Ip6Header(dscp=63, ecn=3, flow=0, dlen=65495, "
-                    "next=<Ip6Next.RAW: 255>, hop=128, "
+                    "next=<IpProto.RAW: 255>, hop=128, "
                     "src=Ip6Address('1111:2222:3333:4444:5555:6666:7777:8888'), "
                     "dst=Ip6Address('8888:7777:6666:5555:4444:3333:2222:1111')), "
                     f"payload=RawAssembler(raw__payload=b'{"X" * 65495}'))"
@@ -198,7 +198,7 @@ from pytcp.protocols.raw.raw__assembler import RawAssembler
                 "ecn": 3,
                 "flow": 0,
                 "dlen": 65495,
-                "next": Ip6Next.RAW,
+                "next": IpProto.RAW,
                 "hop": 128,
                 "src": Ip6Address("1111:2222:3333:4444:5555:6666:7777:8888"),
                 "dst": Ip6Address("8888:7777:6666:5555:4444:3333:2222:1111"),
@@ -207,7 +207,7 @@ from pytcp.protocols.raw.raw__assembler import RawAssembler
                     ecn=3,
                     flow=0,
                     dlen=65495,
-                    next=Ip6Next.RAW,
+                    next=IpProto.RAW,
                     hop=128,
                     src=Ip6Address("1111:2222:3333:4444:5555:6666:7777:8888"),
                     dst=Ip6Address("8888:7777:6666:5555:4444:3333:2222:1111"),

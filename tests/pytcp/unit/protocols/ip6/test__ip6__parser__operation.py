@@ -39,7 +39,7 @@ from parameterized import parameterized_class  # type: ignore
 
 from net_addr import Ip6Address
 from pytcp.lib.packet import PacketRx
-from pytcp.protocols.ip6.ip6__enums import Ip6Next
+from pytcp.protocols.enums import IpProto
 from pytcp.protocols.ip6.ip6__header import Ip6Header
 from pytcp.protocols.ip6.ip6__parser import Ip6Parser
 from tests.pytcp.lib.testcase__packet_rx import TestCasePacketRx
@@ -61,7 +61,7 @@ from tests.pytcp.lib.testcase__packet_rx import TestCasePacketRx
                     ecn=0,
                     flow=0,
                     dlen=0,
-                    next=Ip6Next.RAW,
+                    next=IpProto.RAW,
                     hop=1,
                     src=Ip6Address("1001:2002:3003:4004:5005:6006:7007:8008"),
                     dst=Ip6Address("a00a:b00b:c00c:d00d:e00e:f00f:0a0a:0b0b"),
@@ -95,7 +95,7 @@ from tests.pytcp.lib.testcase__packet_rx import TestCasePacketRx
                     ecn=2,
                     flow=1048575,
                     dlen=16,
-                    next=Ip6Next.RAW,
+                    next=IpProto.RAW,
                     hop=255,
                     src=Ip6Address("1111:2222:3333:4444:5555:6666:7777:8888"),
                     dst=Ip6Address("8888:7777:6666:5555:4444:3333:2222:1111"),
@@ -131,7 +131,7 @@ from tests.pytcp.lib.testcase__packet_rx import TestCasePacketRx
                     ecn=3,
                     flow=0,
                     dlen=65495,
-                    next=Ip6Next.RAW,
+                    next=IpProto.RAW,
                     hop=128,
                     src=Ip6Address("1111:2222:3333:4444:5555:6666:7777:8888"),
                     dst=Ip6Address("8888:7777:6666:5555:4444:3333:2222:1111"),

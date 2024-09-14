@@ -50,7 +50,7 @@ from pytcp.lib.int_checks import (
     is_uint20,
 )
 from pytcp.lib.proto_struct import ProtoStruct
-from pytcp.protocols.ip6.ip6__enums import Ip6Next
+from pytcp.protocols.enums import IpProto
 
 # The IPv6 packet header [RFC 2460].
 
@@ -96,7 +96,7 @@ class Ip6Header(ProtoStruct):
     ecn: int
     flow: int
     dlen: int
-    next: Ip6Next
+    next: IpProto
     hop: int
     src: Ip6Address
     dst: Ip6Address
@@ -124,8 +124,8 @@ class Ip6Header(ProtoStruct):
         ), f"The 'dlen' field must be a 16-bit unsigned integer. Got: {self.dlen!r}"
 
         assert isinstance(
-            self.next, Ip6Next
-        ), f"The 'next' field must be an Ip6Next. Got: {type(self.next)!r}"
+            self.next, IpProto
+        ), f"The 'next' field must be an IpProto. Got: {type(self.next)!r}"
 
         assert is_uint8(
             self.hop
@@ -179,7 +179,7 @@ class Ip6Header(ProtoStruct):
             ecn=(ver__dscp__ecn__flow >> 20) & 0b00000011,
             flow=ver__dscp__ecn__flow & 0b00000000_00001111_11111111_11111111,
             dlen=dlen,
-            next=Ip6Next.from_int(next),
+            next=IpProto.from_int(next),
             hop=hop,
             src=Ip6Address(src),
             dst=Ip6Address(dst),
@@ -234,7 +234,7 @@ class Ip6HeaderProperties(ABC):
         return self._header.dlen
 
     @property
-    def next(self) -> Ip6Next:
+    def next(self) -> IpProto:
         """
         Get the IPv6 header 'next' field.
         """

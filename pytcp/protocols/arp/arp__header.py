@@ -47,8 +47,8 @@ from pytcp.protocols.arp.arp__enums import (
     ARP__PROTOCOL_LEN__IP4,
     ArpHardwareType,
     ArpOperation,
-    ArpProtocolType,
 )
+from pytcp.protocols.enums import EtherType
 
 # The ARP packet header [RFC 826].
 
@@ -84,10 +84,10 @@ class ArpHeader(ProtoStruct):
         init=False,
         default=ArpHardwareType.ETHERNET,
     )
-    prtype: ArpProtocolType = field(
+    prtype: EtherType = field(
         repr=False,
         init=False,
-        default=ArpProtocolType.IP4,
+        default=EtherType.IP4,
     )
     hrlen: int = field(
         repr=False,
@@ -194,7 +194,7 @@ class ArpHeaderProperties(ABC):
         return self._header.hrtype
 
     @property
-    def prtype(self) -> ArpProtocolType:
+    def prtype(self) -> EtherType:
         """
         Get the ARP header 'prtype' field.
         """

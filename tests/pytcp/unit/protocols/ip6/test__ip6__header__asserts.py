@@ -50,7 +50,7 @@ from pytcp.lib.int_checks import (
     UINT_20__MAX,
     UINT_20__MIN,
 )
-from pytcp.protocols.ip6.ip6__enums import Ip6Next
+from pytcp.protocols.enums import IpProto
 from pytcp.protocols.ip6.ip6__header import Ip6Header
 
 
@@ -70,7 +70,7 @@ class TestIp6HeaderAsserts(TestCase):
             "ecn": 0,
             "flow": 0,
             "dlen": 0,
-            "next": Ip6Next.RAW,
+            "next": IpProto.RAW,
             "hop": 0,
             "src": Ip6Address(),
             "dst": Ip6Address(),
@@ -204,20 +204,20 @@ class TestIp6HeaderAsserts(TestCase):
             f"The 'dlen' field must be a 16-bit unsigned integer. Got: {value!r}",
         )
 
-    def test__ip6__header__next__not_Ip6Next(self) -> None:
+    def test__ip6__header__next__not_IpProto(self) -> None:
         """
         Ensure the IPv6 header constructor raises an exception when the provided
-        'next' argument is not an Ip6Next.
+        'next' argument is not an IpProto.
         """
 
-        self._kwargs["next"] = value = "not an Ip6Next"
+        self._kwargs["next"] = value = "not an IpProto"
 
         with self.assertRaises(AssertionError) as error:
             Ip6Header(*self._args, **self._kwargs)
 
         self.assertEqual(
             str(error.exception),
-            f"The 'next' field must be an Ip6Next. Got: {type(value)!r}",
+            f"The 'next' field must be an IpProto. Got: {type(value)!r}",
         )
 
     def test__ip6__header__hop__under_min(self) -> None:

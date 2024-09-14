@@ -34,12 +34,12 @@
 from testslide import TestCase
 
 from net_addr import MacAddress
-from protocols.ethernet.base import ETHERNET_HEADER_LEN, Ethernet, EthernetType
+from protocols.ethernet.base import ETHERNET_HEADER_LEN, Ethernet, EtherType
 from pytcp.protocols.raw.raw__assembler import RawAssembler
 
 ETHERNET__DST = MacAddress("00:11:22:33:44:55")
 ETHERNET__SRC = MacAddress("66:77:88:99:AA:BB")
-ETHERNET__TYPE = EthernetType.RAW
+ETHERNET__TYPE = EtherType.RAW
 ETHERNET__CARRIED_PACKET = RawAssembler()
 ETHERNET__TEST_FRAME = (
     b"\x00\x11\x22\x33\x44\x55\x66\x77\x88\x99\xAA\xBB\xFF\xFF"

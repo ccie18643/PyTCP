@@ -25,9 +25,9 @@
 
 
 """
-This module contains the IPv4 packet enum classes.
+Module contains interface class for the IP Parsers -> Raw Socket communication.
 
-pytcp/protocols/ip4/ip4__enums.py
+pytcp/socket/raw__metadata.py
 
 ver 3.0.2
 """
@@ -35,60 +35,51 @@ ver 3.0.2
 
 from __future__ import annotations
 
-from typing import override
+from dataclasses import dataclass
+from typing import TYPE_CHECKING, Any
 
-from pytcp.lib.proto import Proto
-from pytcp.lib.proto_enum import ProtoEnumByte
-from pytcp.protocols.icmp4.icmp4__base import Icmp4
-from pytcp.protocols.raw.raw__base import Raw
-from pytcp.protocols.tcp.tcp__base import Tcp
-from pytcp.protocols.udp.udp__base import Udp
+from pytcp.socket.socket import AddressFamily, IpProto, SocketType
+
+if TYPE_CHECKING:
+    from net_addr import IpAddress
+    from pytcp.lib.tracker import Tracker
 
 
-class Ip4Proto(ProtoEnumByte):
+@dataclass(frozen=True, kw_only=True)
+class RawMetadata:
     """
-    The IPv4 header 'proto' field values.
+    Store the Raw metadata taken from the received packet.
     """
 
-    ICMP4 = 1
-    TCP = 6
-    UDP = 17
-    RAW = 255
+    ip__ver: int
+    ip__local_address: IpAddress
+    ip__remote_address: IpAddress
 
-    @override
-    def __str__(self) -> str:
+    raw__data: bytes = bytes()
+
+    tracker: Tracker | None = None
+
+    @property
+    def socket_ids(self) -> list[tuple[Any, ...]]:
         """
-        Get the value as a string.
-        """
-
-        match self:
-            case Ip4Proto.ICMP4:
-                name = "ICMPv4"
-            case Ip4Proto.TCP:
-                name = "TCP"
-            case Ip4Proto.UDP:
-                name = "UDP"
-            case Ip4Proto.RAW:
-                name = "Raw"
-
-        return f"{self.value}{'' if self.is_unknown else f' ({name})'}"
-
-    @staticmethod
-    def from_proto(proto: Proto) -> Ip4Proto:
-        """
-        Get the Ip4Proto enum from a protocol object.
+        Get list of the listening socket IDs that match the metadata.
         """
 
-        if isinstance(proto, Tcp):
-            return Ip4Proto.TCP
-
-        if isinstance(proto, Udp):
-            return Ip4Proto.UDP
-
-        if isinstance(proto, Icmp4):
-            return Ip4Proto.ICMP4
-
-        if isinstance(proto, Raw):
-            return Ip4Proto.RAW
-
-        raise ValueError(f"Unknown protocol: {type(proto)}")
+        return [
+            (
+                AddressFamily.from_ver(self.ip__ver),
+                SocketType.SOCK_RAW,
+                IpProto.IPPROTO_ICMP4,
+                self.ip__local_address.unspecified,
+                self.ip__remote_address.unspecified,
+                0,
+            ),
+            (
+                AddressFamily.from_ver(self.ip__ver),
+                SocketType.SOCK_RAW,
+                IpProto.IPPROTO_ICMP6,
+                self.ip__local_address.unspecified,
+                self.ip__remote_address.unspecified,
+                0,
+            ),
+        ]

@@ -40,8 +40,9 @@ from typing import TYPE_CHECKING
 from net_addr import Ip6Address
 from pytcp import config
 from pytcp.lib.proto_assembler import ProtoAssembler
+from pytcp.protocols.enums import IpProto
 from pytcp.protocols.ip6.ip6__base import Ip6
-from pytcp.protocols.ip6.ip6__header import Ip6Header, Ip6Next
+from pytcp.protocols.ip6.ip6__header import Ip6Header
 from pytcp.protocols.raw.raw__assembler import RawAssembler
 
 if TYPE_CHECKING:
@@ -80,7 +81,7 @@ class Ip6Assembler(Ip6, ProtoAssembler):
             ecn=ip6__ecn,
             flow=ip6__flow,
             dlen=len(self._payload),
-            next=Ip6Next.from_proto(self._payload),
+            next=IpProto.from_proto(self._payload),
             hop=ip6__hop,
             src=ip6__src,
             dst=ip6__dst,

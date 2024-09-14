@@ -145,6 +145,11 @@ class TestIcmp6Phtx(TestCase):
         with open(TEST_FRAME_DIR + "ip6_icmp6_echo_reply.tx", "rb") as _:
             frame_tx = _.read()
 
+        print("*" * 80)
+        print(self.frame_tx[: len(frame_tx)])
+        print(frame_tx)
+        print("*" * 80)
+
         self.assertEqual(self.frame_tx[: len(frame_tx)], frame_tx)
 
     def test_icmp6_phtx__ip6_icmp6_unreachable_port(self) -> None:

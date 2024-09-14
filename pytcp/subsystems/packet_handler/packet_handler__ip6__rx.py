@@ -41,7 +41,7 @@ from typing import TYPE_CHECKING
 from pytcp.lib.errors import PacketValidationError
 from pytcp.lib.logger import log
 from pytcp.lib.packet import PacketRx
-from pytcp.protocols.ip6.ip6__header import Ip6Next
+from pytcp.protocols.enums import IpProto
 from pytcp.protocols.ip6.ip6__parser import Ip6Parser
 
 
@@ -106,13 +106,13 @@ class PacketHandlerIp6Rx(ABC):
             self.packet_stats_rx.ip6__dst_multicast += 1
 
         match packet_rx.ip6.next:
-            case Ip6Next.FRAG:
+            case IpProto.IP6_FRAG:
                 self._phrx_ip6_frag(packet_rx)
-            case Ip6Next.ICMP6:
+            case IpProto.ICMP6:
                 self._phrx_icmp6(packet_rx)
-            case Ip6Next.UDP:
+            case IpProto.UDP:
                 self._phrx_udp(packet_rx)
-            case Ip6Next.TCP:
+            case IpProto.TCP:
                 self._phrx_tcp(packet_rx)
             case _:
                 self.packet_stats_rx.ip6__no_proto_support__drop += 1

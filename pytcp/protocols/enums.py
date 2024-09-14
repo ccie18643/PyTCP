@@ -25,9 +25,9 @@
 
 
 """
-This module contains the IPv6 protocol enum classes.
+This module contains protocols related enums.
 
-pytcp/protocols/ip6_common/ip6__enums.py
+pytcp/protocols/enums.py
 
 ver 3.0.2
 """
@@ -38,17 +38,76 @@ from __future__ import annotations
 from typing import override
 
 from pytcp.lib.proto import Proto
-from pytcp.lib.proto_enum import ProtoEnumByte
+from pytcp.lib.proto_enum import ProtoEnumByte, ProtoEnumWord
 
 
-class Ip6Next(ProtoEnumByte):
+class EtherType(ProtoEnumWord):
     """
-    The IPv6 header 'next' field values.
+    The EtherType values.
     """
 
+    ARP = 0x0806
+    IP4 = 0x0800
+    IP6 = 0x86DD
+    RAW = 0xFFFF
+
+    @override
+    def __str__(self) -> str:
+        """
+        Get the value as a string.
+        """
+
+        match self:
+            case EtherType.ARP:
+                name = "ARP"
+            case EtherType.IP4:
+                name = "IPv4"
+            case EtherType.IP6:
+                name = "IPv6"
+            case EtherType.RAW:
+                name = "Raw"
+
+        return (
+            f"0x{int(self.value):0>4x}{'' if self.is_unknown else f' ({name})'}"
+        )
+
+    @staticmethod
+    def from_proto(proto: Proto) -> EtherType:
+        """
+        Get the EtherType enum from a protocol object.
+        """
+
+        from pytcp.protocols.arp.arp__base import Arp
+        from pytcp.protocols.ip4.ip4__base import Ip4
+        from pytcp.protocols.ip6.ip6__base import Ip6
+        from pytcp.protocols.raw.raw__base import Raw
+
+        if isinstance(proto, Ip6):
+            return EtherType.IP6
+
+        if isinstance(proto, Ip4):
+            return EtherType.IP4
+
+        if isinstance(proto, Arp):
+            return EtherType.ARP
+
+        if isinstance(proto, Raw):
+            return EtherType.RAW
+
+        assert False, f"Unknown protocol: {type(proto)}"
+
+
+class IpProto(ProtoEnumByte):
+    """
+    The IpProto values.
+    """
+
+    IP4 = 0
+    ICMP4 = 1
     TCP = 6
     UDP = 17
-    FRAG = 44
+    IP6 = 41
+    IP6_FRAG = 44
     ICMP6 = 58
     RAW = 255
 
@@ -59,44 +118,62 @@ class Ip6Next(ProtoEnumByte):
         """
 
         match self:
-            case Ip6Next.TCP:
+            case IpProto.IP4:
+                name = "IPv4"
+            case IpProto.ICMP4:
+                name = "ICMPv4"
+            case IpProto.TCP:
                 name = "TCP"
-            case Ip6Next.UDP:
+            case IpProto.UDP:
                 name = "UDP"
-            case Ip6Next.FRAG:
-                name = "Frag"
-            case Ip6Next.ICMP6:
+            case IpProto.IP6:
+                name = "IPv6"
+            case IpProto.IP6_FRAG:
+                name = "IPv6 Frag"
+            case IpProto.ICMP6:
                 name = "ICMPv6"
-            case Ip6Next.RAW:
+            case IpProto.RAW:
                 name = "Raw"
 
         return f"{self.value}{'' if self.is_unknown else f' ({name})'}"
 
     @staticmethod
-    def from_proto(proto: Proto) -> Ip6Next:
+    def from_proto(proto: Proto) -> IpProto:
         """
-        Get the Ip6Next enum from a protocol object.
+        Get the IpProto enum from a protocol object.
         """
 
+        from pytcp.protocols.icmp4.icmp4__base import Icmp4
         from pytcp.protocols.icmp6.icmp6__base import Icmp6
+        from pytcp.protocols.ip4.ip4__base import Ip4
+        from pytcp.protocols.ip6.ip6__base import Ip6
         from pytcp.protocols.ip6_frag.ip6_frag__base import Ip6Frag
         from pytcp.protocols.raw.raw__base import Raw
         from pytcp.protocols.tcp.tcp__base import Tcp
         from pytcp.protocols.udp.udp__base import Udp
 
+        if isinstance(proto, Ip4):
+            return IpProto.IP4
+
+        if isinstance(proto, Icmp4):
+            return IpProto.ICMP4
+
         if isinstance(proto, Tcp):
-            return Ip6Next.TCP
+            return IpProto.TCP
 
         if isinstance(proto, Udp):
-            return Ip6Next.UDP
+            return IpProto.UDP
 
-        if isinstance(proto, Icmp6):
-            return Ip6Next.ICMP6
+        if isinstance(proto, Ip6):
+            return IpProto.IP4
 
         if isinstance(proto, Ip6Frag):
-            return Ip6Next.FRAG
+            return IpProto.IP6_FRAG
+
+        if isinstance(proto, Icmp6):
+            return IpProto.ICMP6
 
         if isinstance(proto, Raw):
-            return Ip6Next.RAW
+            return IpProto.RAW
 
         raise ValueError(f"Unknown protocol: {type(proto)}")

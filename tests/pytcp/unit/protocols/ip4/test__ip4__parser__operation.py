@@ -38,7 +38,7 @@ from parameterized import parameterized_class  # type: ignore
 
 from net_addr import Ip4Address
 from pytcp.lib.packet import PacketRx
-from pytcp.protocols.ip4.ip4__enums import Ip4Proto
+from pytcp.protocols.enums import IpProto
 from pytcp.protocols.ip4.ip4__header import Ip4Header
 from pytcp.protocols.ip4.ip4__parser import Ip4Parser
 from pytcp.protocols.ip4.options.ip4_option__nop import Ip4OptionNop
@@ -66,7 +66,7 @@ from tests.pytcp.lib.testcase__packet_rx import TestCasePacketRx
                     flag_mf=False,
                     offset=0,
                     ttl=255,
-                    proto=Ip4Proto.RAW,
+                    proto=IpProto.RAW,
                     cksum=55587,
                     src=Ip4Address("10.20.30.40"),
                     dst=Ip4Address("50.60.70.80"),
@@ -103,7 +103,7 @@ from tests.pytcp.lib.testcase__packet_rx import TestCasePacketRx
                     flag_mf=False,
                     offset=0,
                     ttl=255,
-                    proto=Ip4Proto.RAW,
+                    proto=IpProto.RAW,
                     cksum=14920,
                     src=Ip4Address("1.2.3.4"),
                     dst=Ip4Address("5.6.7.8"),
@@ -145,7 +145,7 @@ from tests.pytcp.lib.testcase__packet_rx import TestCasePacketRx
                     flag_mf=False,
                     offset=0,
                     ttl=64,
-                    proto=Ip4Proto.RAW,
+                    proto=IpProto.RAW,
                     cksum=746,
                     src=Ip4Address("1.1.1.1"),
                     dst=Ip4Address("2.2.2.2"),
@@ -187,7 +187,7 @@ from tests.pytcp.lib.testcase__packet_rx import TestCasePacketRx
                     flag_mf=False,
                     offset=32008,
                     ttl=128,
-                    proto=Ip4Proto.RAW,
+                    proto=IpProto.RAW,
                     cksum=16848,
                     src=Ip4Address("4.3.2.1"),
                     dst=Ip4Address("8.7.6.5"),
@@ -226,7 +226,7 @@ from tests.pytcp.lib.testcase__packet_rx import TestCasePacketRx
                     flag_mf=True,
                     offset=0,
                     ttl=255,
-                    proto=Ip4Proto.RAW,
+                    proto=IpProto.RAW,
                     cksum=21662,
                     src=Ip4Address("1.2.3.4"),
                     dst=Ip4Address("5.6.7.8"),

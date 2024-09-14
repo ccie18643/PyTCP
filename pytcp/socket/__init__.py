@@ -44,26 +44,30 @@ from pytcp.socket.socket import (  # noqa: F401
     gaierror,
 )
 
-AF_INET = AddressFamily.AF_INET4
-AF_INET4 = AddressFamily.AF_INET4
-AF_INET6 = AddressFamily.AF_INET6
+AF_INET = AddressFamily.INET4
+AF_INET4 = AddressFamily.INET4
+AF_INET6 = AddressFamily.INET6
 
-SOCK_STREAM = SocketType.SOCK_STREAM
-SOCK_DGRAM = SocketType.SOCK_DGRAM
+SOCK_STREAM = SocketType.STREAM
+SOCK_DGRAM = SocketType.DGRAM
 
-IPPROTO_IP = IpProto.IPPROTO_IP
-IPPROTO_ICMP = IpProto.IPPROTO_ICMP
-IPPROTO_IGMP = IpProto.IPPROTO_IGMP
-IPPROTO_TCP = IpProto.IPPROTO_TCP
-IPPROTO_UDP = IpProto.IPPROTO_UDP
-IPPROTO_IPV6 = IpProto.IPPROTO_IPV6
-IPPROTO_RAW = IpProto.IPPROTO_RAW
+IPPROTO_IP = IpProto.IP4
+IPPROTO_IP4 = IpProto.IP4
+IPPROTO_ICMP = IpProto.ICMP4
+IPPROTO_ICMP4 = IpProto.ICMP4
+IPPROTO_TCP = IpProto.TCP
+IPPROTO_UDP = IpProto.UDP
+IPPROTO_IPV6 = IpProto.IP6
+IPPROTO_IP6 = IpProto.IP6
+IPPROTO_ICMPV6 = IpProto.ICMP6
+IPPROTO_ICMP6 = IpProto.ICMP6
+IPPROTO_RAW = IpProto.RAW
 
 
 def socket(
-    family: AddressFamily = AddressFamily.AF_INET4,
-    type: SocketType = SocketType.SOCK_STREAM,
-    protocol: IpProto = IpProto.IPPROTO_IP,
+    family: AddressFamily = AddressFamily.INET4,
+    type: SocketType = SocketType.STREAM,
+    protocol: IpProto | None = None,
 ) -> Socket:
     """
     Return Socket class object.
@@ -73,16 +77,16 @@ def socket(
     from pytcp.socket.udp__socket import UdpSocket
 
     match type, protocol:
-        case SocketType.SOCK_STREAM, IpProto.IPPROTO_IP | IpProto.IPPROTO_TCP:
+        case SocketType.STREAM, None | IpProto.TCP:
             return TcpSocket(address_family=family)
 
-        case SocketType.SOCK_DGRAM, IpProto.IPPROTO_IP | IpProto.IPPROTO_UDP:
+        case SocketType.DGRAM, None | IpProto.UDP:
             return UdpSocket(address_family=family)
 
-        case SocketType.SOCK_DGRAM, IpProto.IPPROTO_ICMP:
+        case SocketType.DGRAM, IpProto.ICMP4 | IpProto.ICMP6:
             raise NotImplementedError
 
-        case SocketType.SOCK_RAW, _:
+        case SocketType.RAW, IpProto.ICMP4 | IpProto.ICMP6:
             raise NotImplementedError
 
         case _:

@@ -42,7 +42,7 @@ from typing import override
 
 from net_addr import MacAddress
 from pytcp.lib.proto_struct import ProtoStruct
-from pytcp.protocols.ethernet.ethernet__enums import EthernetType
+from pytcp.protocols.enums import EtherType
 
 # The Ethernet II packet header [DIX].
 
@@ -53,7 +53,7 @@ from pytcp.protocols.ethernet.ethernet__enums import EthernetType
 # +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+      Source MAC Address       +
 # >                                                               |
 # +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-# |           EthernetType        |
+# |           EtherType        |
 # +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 
 
@@ -69,7 +69,7 @@ class EthernetHeader(ProtoStruct):
 
     dst: MacAddress
     src: MacAddress
-    type: EthernetType
+    type: EtherType
 
     @override
     def __post_init__(self) -> None:
@@ -86,8 +86,8 @@ class EthernetHeader(ProtoStruct):
         ), f"The 'src' field must be a MacAddress. Got: {type(self.src)!r}"
 
         assert isinstance(
-            self.type, EthernetType
-        ), f"The 'type' field must be an EthernetType. Got: {type(self.type)!r}"
+            self.type, EtherType
+        ), f"The 'type' field must be an EtherType. Got: {type(self.type)!r}"
 
     @override
     def __len__(self) -> int:
@@ -124,7 +124,7 @@ class EthernetHeader(ProtoStruct):
         return EthernetHeader(
             dst=MacAddress(dst),
             src=MacAddress(src),
-            type=EthernetType.from_int(type),
+            type=EtherType.from_int(type),
         )
 
 
@@ -170,7 +170,7 @@ class EthernetHeaderProperties(ABC):
         object.__setattr__(self._header, "src", mac_address)
 
     @property
-    def type(self) -> EthernetType:
+    def type(self) -> EtherType:
         """
         Get the Ethernet header 'type' field.
         """

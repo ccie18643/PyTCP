@@ -39,7 +39,7 @@ from parameterized import parameterized_class  # type: ignore
 
 from net_addr import MacAddress
 from pytcp.lib.packet import PacketRx
-from pytcp.protocols.ethernet.ethernet__enums import EthernetType
+from pytcp.protocols.enums import EtherType
 from pytcp.protocols.ethernet.ethernet__header import EthernetHeader
 from pytcp.protocols.ethernet.ethernet__parser import EthernetParser
 from tests.pytcp.lib.testcase__packet_rx import TestCasePacketRx
@@ -58,7 +58,7 @@ from tests.pytcp.lib.testcase__packet_rx import TestCasePacketRx
                 "header": EthernetHeader(
                     dst=MacAddress("11:22:33:44:55:66"),
                     src=MacAddress("77:88:99:aa:bb:cc"),
-                    type=EthernetType.RAW,
+                    type=EtherType.RAW,
                 ),
                 "payload": b"0123456789ABCDEF",
             },
@@ -74,7 +74,7 @@ from tests.pytcp.lib.testcase__packet_rx import TestCasePacketRx
                 "header": EthernetHeader(
                     dst=MacAddress("a1:b2:c3:d4:e5:f6"),
                     src=MacAddress("11:12:13:14:15:16"),
-                    type=EthernetType.RAW,
+                    type=EtherType.RAW,
                 ),
                 "payload": b"X" * 1500,
             },

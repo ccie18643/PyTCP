@@ -41,7 +41,7 @@ from typing import TYPE_CHECKING
 from pytcp import config
 from pytcp.lib.errors import PacketValidationError
 from pytcp.lib.logger import log
-from pytcp.protocols.ethernet.ethernet__header import EthernetType
+from pytcp.protocols.ethernet.ethernet__header import EtherType
 from pytcp.protocols.ethernet.ethernet__parser import EthernetParser
 
 
@@ -112,11 +112,11 @@ class PacketHandlerEthernetRx(ABC):
             self.packet_stats_rx.ethernet__dst_broadcast += 1
 
         match packet_rx.ethernet.type:
-            case EthernetType.ARP if config.IP4__SUPPORT_ENABLED:
+            case EtherType.ARP if config.IP4__SUPPORT_ENABLED:
                 self._phrx_arp(packet_rx)
-            case EthernetType.IP4 if config.IP4__SUPPORT_ENABLED:
+            case EtherType.IP4 if config.IP4__SUPPORT_ENABLED:
                 self._phrx_ip4(packet_rx)
-            case EthernetType.IP6 if config.IP6__SUPPORT_ENABLED:
+            case EtherType.IP6 if config.IP6__SUPPORT_ENABLED:
                 self._phrx_ip6(packet_rx)
             case _:
                 self.packet_stats_rx.ethernet__no_proto_support__drop += 1

@@ -37,7 +37,7 @@ from __future__ import annotations
 
 from pytcp.lib.proto_assembler import ProtoAssembler
 from pytcp.lib.tracker import Tracker
-from pytcp.protocols.ip6.ip6__enums import Ip6Next
+from pytcp.protocols.enums import IpProto
 from pytcp.protocols.ip6_frag.ip6_frag__base import Ip6Frag
 from pytcp.protocols.ip6_frag.ip6_frag__header import Ip6FragHeader
 
@@ -52,7 +52,7 @@ class Ip6FragAssembler(Ip6Frag, ProtoAssembler):
     def __init__(
         self,
         *,
-        ip6_frag__next: Ip6Next = Ip6Next.RAW,
+        ip6_frag__next: IpProto = IpProto.RAW,
         ip6_frag__offset: int = 0,
         ip6_frag__flag_mf: bool = False,
         ip6_frag__id: int = 0,

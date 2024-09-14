@@ -42,7 +42,7 @@ from typing import override
 
 from pytcp.lib.int_checks import is_8_byte_alligned, is_uint13, is_uint32
 from pytcp.lib.proto_struct import ProtoStruct
-from pytcp.protocols.ip6.ip6__enums import Ip6Next
+from pytcp.protocols.enums import IpProto
 
 # The IPv6 packet Fragmentation Extension header [RFC 2460].
 
@@ -63,7 +63,7 @@ class Ip6FragHeader(ProtoStruct):
     The IPv6 Frag header.
     """
 
-    next: Ip6Next
+    next: IpProto
     offset: int
     flag_mf: bool
     id: int
@@ -75,8 +75,8 @@ class Ip6FragHeader(ProtoStruct):
         """
 
         assert isinstance(
-            self.next, Ip6Next
-        ), f"The 'next' field must be an Ip6Next. Got: {type(self.next)!r}"
+            self.next, IpProto
+        ), f"The 'next' field must be an IpProto. Got: {type(self.next)!r}"
 
         assert is_uint13(
             self.offset
@@ -128,7 +128,7 @@ class Ip6FragHeader(ProtoStruct):
         )
 
         return Ip6FragHeader(
-            next=Ip6Next.from_int(next),
+            next=IpProto.from_int(next),
             offset=offset__flag_mf & 0b11111111_11111000,
             flag_mf=bool(offset__flag_mf & 0b00000000_00000001),
             id=id,
@@ -143,7 +143,7 @@ class Ip6FragHeaderProperties(ABC):
     _header: Ip6FragHeader
 
     @property
-    def next(self) -> Ip6Next:
+    def next(self) -> IpProto:
         """
         Get the IPv6 Frag 'next' field.
         """

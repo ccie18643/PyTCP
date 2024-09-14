@@ -47,8 +47,8 @@ from pytcp.protocols.arp.arp__header import (
     ArpHardwareType,
     ArpHeader,
     ArpOperation,
-    ArpProtocolType,
 )
+from pytcp.protocols.enums import EtherType
 
 if TYPE_CHECKING:
     from pytcp.lib.packet import PacketRx
@@ -85,28 +85,30 @@ class ArpParser(Arp, ProtoParser):
                 f"bytes, got {len(self._frame)} bytes."
             )
 
-        if (hrtype := ArpHardwareType.from_bytes(self._frame[0:2])).is_unknown:
+        if (
+            hrtype := ArpHardwareType.from_bytes(self._frame[0:2])
+        ) != ArpHardwareType.ETHERNET:
             raise ArpIntegrityError(
-                "The 'hrtype' field value must be one of "
-                f"{ArpHardwareType.get_known_values()}, got {int(hrtype)}."
+                f"The 'hrtype' field value must be {ArpHardwareType.ETHERNET!r}. "
+                f"Got: {hrtype!r}."
             )
 
-        if (prtype := ArpProtocolType.from_bytes(self._frame[2:4])).is_unknown:
+        if (prtype := EtherType.from_bytes(self._frame[2:4])) != EtherType.IP4:
             raise ArpIntegrityError(
-                "The 'prtype' field value must be one of "
-                f"{ArpProtocolType.get_known_values()}, got {int(prtype)}."
+                f"The 'prtype' field value must be {EtherType.IP4!r}. "
+                f"Got: {prtype!r}."
             )
 
         if (hrlen := self._frame[4]) != ARP__HARDWARE_LEN__ETHERNET:
             raise ArpIntegrityError(
                 f"The 'hrlen' field value must be {ARP__HARDWARE_LEN__ETHERNET}, "
-                f"got {hrlen}."
+                f"got {hrlen!r}."
             )
 
         if (prlen := self._frame[5]) != ARP__PROTOCOL_LEN__IP4:
             raise ArpIntegrityError(
                 f"The 'prlen' field value must be {ARP__PROTOCOL_LEN__IP4}, "
-                f"got {prlen}."
+                f"got {prlen!r}."
             )
 
     @override

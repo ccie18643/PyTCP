@@ -39,6 +39,7 @@ from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING
 
 from pytcp.lib.name_enum import NameEnum
+from pytcp.protocols.enums import IpProto
 
 if TYPE_CHECKING:
     from net_addr import IpAddress
@@ -61,9 +62,9 @@ class AddressFamily(NameEnum):
     Address family identifier.
     """
 
-    AF_UNSPECIFIED = 0
-    AF_INET4 = 1
-    AF_INET6 = 2
+    UNSPECIFIED = 0
+    INET4 = 1
+    INET6 = 2
 
     @staticmethod
     def from_ver(ver: int) -> AddressFamily:
@@ -73,11 +74,11 @@ class AddressFamily(NameEnum):
 
         match ver:
             case 4:
-                return AddressFamily.AF_INET4
+                return AddressFamily.INET4
             case 6:
-                return AddressFamily.AF_INET6
+                return AddressFamily.INET6
             case _:
-                return AddressFamily.AF_UNSPECIFIED
+                return AddressFamily.UNSPECIFIED
 
 
 class SocketType(NameEnum):
@@ -85,25 +86,10 @@ class SocketType(NameEnum):
     Socket type identifier.
     """
 
-    SOCK_UNSPECIFIED = 0
-    SOCK_STREAM = 1
-    SOCK_DGRAM = 2
-    SOCK_RAW = 3
-
-
-class IpProto(NameEnum):
-    """
-    IP protocol identifier.
-    """
-
-    IPPROTO_UNSPECIFIED = 0
-    IPPROTO_IP = 0
-    IPPROTO_ICMP = 1
-    IPPROTO_IGMP = 2
-    IPPROTO_TCP = 6
-    IPPROTO_UDP = 17
-    IPPROTO_IPV6 = 41
-    IPPROTO_RAW = 255
+    UNSPECIFIED = 0
+    STREAM = 1
+    DGRAM = 2
+    RAW = 3
 
 
 class Socket(ABC):

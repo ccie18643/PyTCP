@@ -74,9 +74,9 @@ class UdpMetadata:
             case 4, 68, 67:
                 return [
                     (
-                        AddressFamily.AF_INET4,
-                        SocketType.SOCK_DGRAM,
-                        IpProto.IPPROTO_UDP,
+                        AddressFamily.INET4,
+                        SocketType.DGRAM,
+                        IpProto.UDP,
                         Ip4Address(),
                         68,
                         Ip4Address("255.255.255.255"),
@@ -86,18 +86,18 @@ class UdpMetadata:
             case 6, 546, 547:
                 return [
                     (
-                        AddressFamily.AF_INET6,
-                        SocketType.SOCK_DGRAM,
-                        IpProto.IPPROTO_UDP,
+                        AddressFamily.INET6,
+                        SocketType.DGRAM,
+                        IpProto.UDP,
                         Ip6Address(),
                         546,
                         Ip6Address("ff02::1:2"),
                         547,
                     ),  # ID for the DHCPv6 client operation.
                     (
-                        AddressFamily.AF_INET6,
-                        SocketType.SOCK_DGRAM,
-                        IpProto.IPPROTO_UDP,
+                        AddressFamily.INET6,
+                        SocketType.DGRAM,
+                        IpProto.UDP,
                         Ip6Address(),
                         546,
                         Ip6Address("ff02::1:3"),
@@ -108,8 +108,8 @@ class UdpMetadata:
                 return [
                     (
                         AddressFamily.from_ver(self.ip__ver),
-                        SocketType.SOCK_DGRAM,
-                        IpProto.IPPROTO_UDP,
+                        SocketType.DGRAM,
+                        IpProto.UDP,
                         self.ip__local_address,
                         self.udp__local_port,
                         self.ip__remote_address,
@@ -117,8 +117,8 @@ class UdpMetadata:
                     ),
                     (
                         AddressFamily.from_ver(self.ip__ver),
-                        SocketType.SOCK_DGRAM,
-                        IpProto.IPPROTO_UDP,
+                        SocketType.DGRAM,
+                        IpProto.UDP,
                         self.ip__local_address,
                         self.udp__local_port,
                         self.ip__remote_address.unspecified,
@@ -126,8 +126,8 @@ class UdpMetadata:
                     ),
                     (
                         AddressFamily.from_ver(self.ip__ver),
-                        SocketType.SOCK_DGRAM,
-                        IpProto.IPPROTO_UDP,
+                        SocketType.DGRAM,
+                        IpProto.UDP,
                         self.ip__local_address.unspecified,
                         self.udp__local_port,
                         self.ip__remote_address.unspecified,

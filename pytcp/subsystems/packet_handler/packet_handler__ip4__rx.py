@@ -45,7 +45,7 @@ from pytcp.lib.errors import PacketValidationError
 from pytcp.lib.inet_cksum import inet_cksum
 from pytcp.lib.logger import log
 from pytcp.lib.packet import PacketRx
-from pytcp.protocols.ip4.ip4__enums import Ip4Proto
+from pytcp.protocols.enums import IpProto
 from pytcp.protocols.ip4.ip4__header import IP4__HEADER__LEN
 from pytcp.protocols.ip4.ip4__parser import Ip4Parser
 
@@ -135,11 +135,11 @@ class PacketHandlerIp4Rx(ABC):
             self.packet_stats_rx.ip4__defrag += 1
 
         match packet_rx.ip4.proto:
-            case Ip4Proto.ICMP4:
+            case IpProto.ICMP4:
                 self._phrx_icmp4(packet_rx)
-            case Ip4Proto.UDP:
+            case IpProto.UDP:
                 self._phrx_udp(packet_rx)
-            case Ip4Proto.TCP:
+            case IpProto.TCP:
                 self._phrx_tcp(packet_rx)
             case _:
                 self.packet_stats_rx.ip4__no_proto_support__drop += 1

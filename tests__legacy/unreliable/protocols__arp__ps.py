@@ -42,7 +42,7 @@ from protocols.arp.base import (
     ArpProtocolLength,
     ArpProtocolType,
 )
-from protocols.ethernet.base import EthernetType
+from protocols.ethernet.base import EtherType
 
 ARP__HRTYPE = ArpHardwareType.ETHERNET
 ARP__PRTYPE = ArpProtocolType.IP4
@@ -141,7 +141,7 @@ class TestArp(TestCase):
         Validate that the '_ethernet_type' attribute getter provides correct value.
         """
 
-        self.assertIs(self._packet.ethernet_type, EthernetType.ARP)
+        self.assertIs(self._packet.ethernet_type, EtherType.ARP)
 
     def test__arp_ps__getter__hrtype(self) -> None:
         """

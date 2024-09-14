@@ -43,7 +43,7 @@ from pytcp.lib.int_checks import (
     UINT_32__MAX,
     UINT_32__MIN,
 )
-from pytcp.protocols.ip6.ip6__enums import Ip6Next
+from pytcp.protocols.enums import IpProto
 from pytcp.protocols.ip6_frag.ip6_frag__header import Ip6FragHeader
 
 
@@ -59,26 +59,26 @@ class TestIpExtFrag6HeaderAsserts(TestCase):
 
         self._args: list[Any] = []
         self._kwargs: dict[str, Any] = {
-            "next": Ip6Next.RAW,
+            "next": IpProto.RAW,
             "offset": 0,
             "flag_mf": False,
             "id": 0,
         }
 
-    def test__ip6_frag__header__next__not_Ip6Next(self) -> None:
+    def test__ip6_frag__header__next__not_IpProto(self) -> None:
         """
         Ensure the IPv6 Frag header constructor raises an exception when
-        the provided 'next' argument is not an Ip6Next.
+        the provided 'next' argument is not an IpProto.
         """
 
-        self._kwargs["next"] = value = "not an Ip6Next"
+        self._kwargs["next"] = value = "not an IpProto"
 
         with self.assertRaises(AssertionError) as error:
             Ip6FragHeader(*self._args, **self._kwargs)
 
         self.assertEqual(
             str(error.exception),
-            f"The 'next' field must be an Ip6Next. Got: {type(value)!r}",
+            f"The 'next' field must be an IpProto. Got: {type(value)!r}",
         )
 
     def test__ip6_frag__header__offset__under_min(self) -> None:

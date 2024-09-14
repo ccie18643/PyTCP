@@ -72,8 +72,8 @@ class TcpSocket(Socket):
     Support for IPv6/IPv4 TCP socket operations.
     """
 
-    _socket_type = SocketType.SOCK_STREAM
-    _ip_proto = IpProto.IPPROTO_TCP
+    _socket_type = SocketType.STREAM
+    _ip_proto = IpProto.TCP
 
     def __init__(
         self,
@@ -104,10 +104,10 @@ class TcpSocket(Socket):
         # Fresh socket initialization
         else:
             match self._address_family:
-                case AddressFamily.AF_INET6:
+                case AddressFamily.INET6:
                     self._local_ip_address = Ip6Address()
                     self._remote_ip_address = Ip6Address()
-                case AddressFamily.AF_INET4:
+                case AddressFamily.INET4:
                     self._local_ip_address = Ip4Address()
                     self._remote_ip_address = Ip4Address()
 
@@ -124,8 +124,9 @@ class TcpSocket(Socket):
         """
 
         return (
-            f"{self._address_family}/{self._socket_type}/{self._ip_proto}/{self._local_ip_address}/"
-            f"{self._local_port}/{self._remote_ip_address}/{self._remote_port}"
+            f"{self._address_family}/{self._socket_type}/{self._ip_proto}/"
+            f"{self._local_ip_address}/{self._local_port}/"
+            f"{self._remote_ip_address}/{self._remote_port}"
         )
 
     @property
@@ -216,7 +217,7 @@ class TcpSocket(Socket):
         try:
             remote_ip_address: Ip6Address | Ip4Address = (
                 Ip6Address(remote_address[0])
-                if self._address_family is AddressFamily.AF_INET6
+                if self._address_family is AddressFamily.INET6
                 else Ip4Address(remote_address[0])
             )
         except (Ip6AddressFormatError, Ip4AddressFormatError) as error:
@@ -262,7 +263,7 @@ class TcpSocket(Socket):
         local_ip_address: IpAddress
 
         match self._address_family:
-            case AddressFamily.AF_INET6:
+            case AddressFamily.INET6:
                 try:
                     if (local_ip_address := Ip6Address(address[0])) not in set(
                         stack.packet_handler.ip6_unicast
@@ -277,7 +278,7 @@ class TcpSocket(Socket):
                         "[Malformed local IP address]"
                     ) from error
 
-            case AddressFamily.AF_INET4:
+            case AddressFamily.INET4:
                 try:
                     if (local_ip_address := Ip4Address(address[0])) not in set(
                         stack.packet_handler.ip4_unicast
