@@ -103,9 +103,9 @@ class TcpIpStack:
 
     def __init__(
         self,
-        *,
         fd: int,
         mtu: int,
+        *,
         mac_address: MacAddress | None = None,
         ip4_host: Ip4Host | None = None,
         ip6_host: Ip6Host | None = None,
