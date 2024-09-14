@@ -66,7 +66,7 @@ from pytcp.protocols.raw.raw__assembler import RawAssembler
                 "__len__": 40,
                 "__str__": (
                     "IPv6 1001:2002:3003:4004:5005:6006:7007:8008 > a00a:b00b:c00c:d00d:e00e:f00f:a0a:b0b, "
-                    "next 255 (Raw), flow 0, hop 1, len 40 (40+0)"
+                    "next Raw, flow 0, hop 1, len 40 (40+0)"
                 ),
                 "__repr__": (
                     "Ip6Assembler(header=Ip6Header(dscp=0, ecn=0, flow=0, dlen=0, "
@@ -122,7 +122,7 @@ from pytcp.protocols.raw.raw__assembler import RawAssembler
                 "__len__": 56,
                 "__str__": (
                     "IPv6 1111:2222:3333:4444:5555:6666:7777:8888 > 8888:7777:6666:5555:4444:3333:2222:1111, "
-                    "next 255 (Raw), flow 1048575, hop 255, len 56 (40+16)"
+                    "next Raw, flow 1048575, hop 255, len 56 (40+16)"
                 ),
                 "__repr__": (
                     "Ip6Assembler(header=Ip6Header(dscp=38, ecn=2, flow=1048575, dlen=16, "
@@ -179,7 +179,7 @@ from pytcp.protocols.raw.raw__assembler import RawAssembler
                 "__len__": 65535,
                 "__str__": (
                     "IPv6 1111:2222:3333:4444:5555:6666:7777:8888 > 8888:7777:6666:5555:4444:3333:2222:1111, "
-                    "next 255 (Raw), flow 0, hop 128, len 65535 (40+65495)"
+                    "next Raw, flow 0, hop 128, len 65535 (40+65495)"
                 ),
                 "__repr__": (
                     "Ip6Assembler(header=Ip6Header(dscp=63, ecn=3, flow=0, dlen=65495, "

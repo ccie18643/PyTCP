@@ -45,11 +45,7 @@ from net_addr import (
     Ip6AddressFormatError,
 )
 from pytcp.lib import stack
-from pytcp.lib.ip_helper import (
-    is_address_in_use,
-    pick_local_ip_address,
-    pick_local_port,
-)
+from pytcp.lib.ip_helper import pick_local_ip_address
 from pytcp.lib.logger import log
 from pytcp.lib.tx_status import TxStatus
 from pytcp.socket.raw__metadata import RawMetadata
@@ -72,7 +68,7 @@ class RawSocket(Socket):
     Support for IPv6/IPv4 Raw socket operations.
     """
 
-    _socket_type = SocketType.SOCK_RAW
+    _socket_type = SocketType.RAW
 
     def __init__(
         self, *, address_family: AddressFamily, ip_proto: IpProto
@@ -87,10 +83,10 @@ class RawSocket(Socket):
         self._packet_rx_md_ready = threading.Semaphore(0)
 
         match self._address_family:
-            case AddressFamily.AF_INET6:
+            case AddressFamily.INET6:
                 self._local_ip_address = Ip6Address()
                 self._remote_ip_address = Ip6Address()
-            case AddressFamily.AF_INET4:
+            case AddressFamily.INET4:
                 self._local_ip_address = Ip4Address()
                 self._remote_ip_address = Ip4Address()
 
@@ -150,7 +146,7 @@ class RawSocket(Socket):
         try:
             remote_ip_address: Ip6Address | Ip4Address = (
                 Ip6Address(remote_address[0])
-                if self._address_family is AddressFamily.AF_INET6
+                if self._address_family is AddressFamily.INET6
                 else Ip4Address(remote_address[0])
             )
         except (Ip6AddressFormatError, Ip4AddressFormatError) as error:
@@ -182,7 +178,7 @@ class RawSocket(Socket):
         )
 
         match self._address_family:
-            case AddressFamily.AF_INET6:
+            case AddressFamily.INET6:
                 tx_status = stack.packet_handler.send_ip6_packet(
                     ip6__local_address=local_ip_address,
                     ip6__remote_address=remote_ip_address,
@@ -216,13 +212,13 @@ class RawSocket(Socket):
             __debug__ and log(
                 "socket",
                 f"<g>[{self}]</> - <lg>Received</> "
-                f"{len(packet_rx_md.udp__data)} bytes of data",
+                f"{len(packet_rx_md.raw__data)} bytes of data",
             )
             return (
-                packet_rx_md.udp__data,
+                packet_rx_md.raw__data,
                 (
                     str(packet_rx_md.ip__remote_address),
-                    packet_rx_md.udp__remote_port,
+                    0,
                 ),
             )
         raise ReceiveTimeout
@@ -236,18 +232,11 @@ class RawSocket(Socket):
 
         __debug__ and log("socket", f"<g>[{self}]</> - Closed socket")
 
-    def process_udp_packet(self, packet_rx_md: UdpMetadata) -> None:
+    def process_raw_packet(self, packet_rx_md: RawMetadata) -> None:
         """
         Process incoming packet's metadata.
         """
 
         self._packet_rx_md.append(packet_rx_md)
         self._packet_rx_md_ready.release()
-
-    def notify_unreachable(self) -> None:
-        """
-        Set the unreachable notification.
-        """
-
-        self._unreachable = True
 '''

@@ -65,7 +65,7 @@ from pytcp.protocols.raw.raw__assembler import RawAssembler
             "_results": {
                 "__len__": 20,
                 "__str__": (
-                    "IPv4 10.20.30.40 > 50.60.70.80, proto 255 (Raw), id 65535, DF, offset 0, "
+                    "IPv4 10.20.30.40 > 50.60.70.80, proto Raw, id 65535, DF, offset 0, "
                     "ttl 255, len 20 (20+0+0)"
                 ),
                 "__repr__": (
@@ -128,7 +128,7 @@ from pytcp.protocols.raw.raw__assembler import RawAssembler
             "_results": {
                 "__len__": 36,
                 "__str__": (
-                    "IPv4 1.2.3.4 > 5.6.7.8, proto 255 (Raw), id 12345, DF, offset 0, ttl 255, len 36 (20+0+16)"
+                    "IPv4 1.2.3.4 > 5.6.7.8, proto Raw, id 12345, DF, offset 0, ttl 255, len 36 (20+0+16)"
                 ),
                 "__repr__": (
                     "Ip4Assembler(header=Ip4Header(hlen=20, dscp=17, ecn=2, plen=36, "
@@ -193,7 +193,7 @@ from pytcp.protocols.raw.raw__assembler import RawAssembler
             "_results": {
                 "__len__": 65535,
                 "__str__": (
-                    "IPv4 1.1.1.1 > 2.2.2.2, proto 255 (Raw), id 21212, offset 0, ttl 64, len 65535 "
+                    "IPv4 1.1.1.1 > 2.2.2.2, proto Raw, id 21212, offset 0, ttl 64, len 65535 "
                     "(20+40+65475), opts [nop, nop, nop, nop, nop, nop, nop, nop, nop, nop, nop, nop, "
                     "nop, nop, nop, nop, nop, nop, nop, nop, nop, nop, nop, nop, nop, nop, nop, nop, "
                     "nop, nop, nop, nop, nop, nop, nop, nop, nop, nop, nop, nop]"
@@ -533,7 +533,7 @@ class TestIp4AssemblerOperation(TestCase):
             "_results": {
                 "__len__": 36,
                 "__str__": (
-                    "IPv4 4.3.2.1 > 8.7.6.5, proto 255 (Raw), id 54321, offset 32008, "
+                    "IPv4 4.3.2.1 > 8.7.6.5, proto Raw, id 54321, offset 32008, "
                     "ttl 128, len 36 (20+0+16)"
                 ),
                 "__repr__": (
@@ -602,7 +602,7 @@ class TestIp4AssemblerOperation(TestCase):
             "_results": {
                 "__len__": 1486,
                 "__str__": (
-                    "IPv4 1.2.3.4 > 5.6.7.8, proto 255 (Raw), id 12345, MF, offset 0, ttl 255, "
+                    "IPv4 1.2.3.4 > 5.6.7.8, proto Raw, id 12345, MF, offset 0, ttl 255, "
                     "len 1486 (20+0+1466)"
                 ),
                 "__repr__": (

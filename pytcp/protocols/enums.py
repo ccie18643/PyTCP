@@ -67,9 +67,7 @@ class EtherType(ProtoEnumWord):
             case EtherType.RAW:
                 name = "Raw"
 
-        return (
-            f"0x{int(self.value):0>4x}{'' if self.is_unknown else f' ({name})'}"
-        )
+        return f"0x{self.value:0>4x}" if self.is_unknown else name
 
     @staticmethod
     def from_proto(proto: Proto) -> EtherType:
@@ -129,13 +127,13 @@ class IpProto(ProtoEnumByte):
             case IpProto.IP6:
                 name = "IPv6"
             case IpProto.IP6_FRAG:
-                name = "IPv6 Frag"
+                name = "IPv6_Frag"
             case IpProto.ICMP6:
                 name = "ICMPv6"
             case IpProto.RAW:
                 name = "Raw"
 
-        return f"{self.value}{'' if self.is_unknown else f' ({name})'}"
+        return f"{self.value}" if self.is_unknown else name
 
     @staticmethod
     def from_proto(proto: Proto) -> IpProto:

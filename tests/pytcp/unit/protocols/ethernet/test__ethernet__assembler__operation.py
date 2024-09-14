@@ -60,7 +60,7 @@ from pytcp.protocols.raw.raw__assembler import RawAssembler
             "_results": {
                 "__len__": 30,
                 "__str__": (
-                    "ETHER 77:88:99:aa:bb:cc > 11:22:33:44:55:66, type 0xffff (Raw), len 30 (14+16)"
+                    "ETHER 77:88:99:aa:bb:cc > 11:22:33:44:55:66, type Raw, len 30 (14+16)"
                 ),
                 "__repr__": (
                     "EthernetAssembler(header=EthernetHeader(dst=MacAddress('11:22:33:44:55:66'), "
@@ -93,7 +93,7 @@ from pytcp.protocols.raw.raw__assembler import RawAssembler
             "_results": {
                 "__len__": 1514,
                 "__str__": (
-                    "ETHER 11:12:13:14:15:16 > a1:b2:c3:d4:e5:f6, type 0xffff (Raw), len 1514 (14+1500)"
+                    "ETHER 11:12:13:14:15:16 > a1:b2:c3:d4:e5:f6, type Raw, len 1514 (14+1500)"
                 ),
                 "__repr__": (
                     "EthernetAssembler(header=EthernetHeader(dst=MacAddress('a1:b2:c3:d4:e5:f6'), "

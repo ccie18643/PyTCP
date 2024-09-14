@@ -57,9 +57,7 @@ from pytcp.protocols.ip6_frag.ip6_frag__header import Ip6FragHeader
             },
             "_results": {
                 "__len__": 8,
-                "__str__": (
-                    "IPv6_FRAG id 0, offset 0, next 255 (Raw), len 8 (8+0)"
-                ),
+                "__str__": ("IPv6_FRAG id 0, offset 0, next Raw, len 8 (8+0)"),
                 "__repr__": (
                     "Ip6FragAssembler(header=Ip6FragHeader(next=<IpProto.RAW: 255>, offset=0, "
                     "flag_mf=False, id=0), payload=b'')"
@@ -91,7 +89,7 @@ from pytcp.protocols.ip6_frag.ip6_frag__header import Ip6FragHeader
             "_results": {
                 "__len__": 24,
                 "__str__": (
-                    "IPv6_FRAG id 4294967295, MF, offset 3208, next 255 (Raw), len 24 (8+16)"
+                    "IPv6_FRAG id 4294967295, MF, offset 3208, next Raw, len 24 (8+16)"
                 ),
                 "__repr__": (
                     "Ip6FragAssembler(header=Ip6FragHeader(next=<IpProto.RAW: 255>, offset=3208, "
@@ -127,7 +125,7 @@ from pytcp.protocols.ip6_frag.ip6_frag__header import Ip6FragHeader
             "_results": {
                 "__len__": 1430,
                 "__str__": (
-                    "IPv6_FRAG id 7777777, offset 65528, next 255 (Raw), len 1430 (8+1422)"
+                    "IPv6_FRAG id 7777777, offset 65528, next Raw, len 1430 (8+1422)"
                 ),
                 "__repr__": (
                     "Ip6FragAssembler(header=Ip6FragHeader(next=<IpProto.RAW: 255>, offset=65528, "
