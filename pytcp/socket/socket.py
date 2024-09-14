@@ -35,7 +35,7 @@ ver 3.0.2
 
 from __future__ import annotations
 
-from abc import ABC, abstractmethod
+from abc import ABC
 from typing import TYPE_CHECKING
 
 from pytcp.lib.name_enum import NameEnum
@@ -100,22 +100,52 @@ class Socket(ABC):
     """
 
     _address_family: AddressFamily
-    _type: SocketType
-    _proto: IpProto
+    _socket_type: SocketType
+    _ip_proto: IpProto
     _local_ip_address: IpAddress
     _remote_ip_address: IpAddress
     _local_port: int
     _remote_port: int
 
-    @abstractmethod
     def __str__(self) -> str:
         """
         Get socket log string.
         """
 
-        raise NotImplementedError
+        return (
+            f"{self._address_family}/{self._socket_type}/{self._ip_proto}/"
+            f"{self._local_ip_address}/{self._local_port}/"
+            f"{self._remote_ip_address}/{self._remote_port}"
+        )
+
+    def __repr__(self) -> str:
+        """
+        Get socket string representation.
+        """
+
+        return self.__str__()
 
     # BSD socket API methods.
+
+    @property
+    def id(
+        self,
+    ) -> tuple[
+        AddressFamily, SocketType, IpProto, IpAddress, int, IpAddress, int
+    ]:
+        """
+        Get the socket ID.
+        """
+
+        return (
+            self._address_family,
+            self._socket_type,
+            self._ip_proto,
+            self._local_ip_address,
+            self._local_port,
+            self._remote_ip_address,
+            self._remote_port,
+        )
 
     @property
     def family(self) -> AddressFamily:
@@ -131,7 +161,7 @@ class Socket(ABC):
         Get the '_type' attribute.
         """
 
-        return self._type
+        return self._socket_type
 
     @property
     def proto(self) -> IpProto:
@@ -139,7 +169,7 @@ class Socket(ABC):
         Get the '_proto' attribute.
         """
 
-        return self._proto
+        return self._ip_proto
 
     def getsockname(self) -> tuple[str, int]:
         """

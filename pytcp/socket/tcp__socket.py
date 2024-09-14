@@ -36,7 +36,7 @@ ver 3.0.2
 from __future__ import annotations
 
 import threading
-from typing import TYPE_CHECKING, Any, cast, override
+from typing import TYPE_CHECKING, cast
 
 from net_addr import (
     Ip4Address,
@@ -116,34 +116,6 @@ class TcpSocket(Socket):
             self._tcp_session = None
 
         __debug__ and log("socket", f"<g>[{self}]</> - Create socket")
-
-    @override
-    def __str__(self) -> str:
-        """
-        Get TCP socket log string.
-        """
-
-        return (
-            f"{self._address_family}/{self._socket_type}/{self._ip_proto}/"
-            f"{self._local_ip_address}/{self._local_port}/"
-            f"{self._remote_ip_address}/{self._remote_port}"
-        )
-
-    @property
-    def id(self) -> tuple[Any, ...]:
-        """
-        Get the socket ID.
-        """
-
-        return (
-            self._address_family,
-            self._socket_type,
-            self._ip_proto,
-            self._local_ip_address,
-            self._local_port,
-            self._remote_ip_address,
-            self._remote_port,
-        )
 
     @property
     def local_ip_address(self) -> IpAddress:
