@@ -52,10 +52,10 @@ from pytcp import stack
 # the testing regardless of actual configuration
 CONFIG_PATCHES = {
     "LOG__CHANNEL": set(),
-    "IP6__SUPPORT_ENABLED": True,
-    "IP4__SUPPORT_ENABLED": True,
+    "IP6__SUPPORT": True,
+    "IP4__SUPPORT": True,
     "INTERFACE__TAP__MTU": 1500,
-    "UDP__ECHO_NATIVE__DISABLED": False,
+    "UDP__ECHO_NATIVE": True,
 }
 
 

@@ -64,7 +64,7 @@ from pytcp.protocols.icmp4.message.icmp4_message__echo_request import (
 from pytcp.protocols.icmp6.message.icmp6_message__echo_request import (
     Icmp6EchoRequestMessage,
 )
-from pytcp.stack import github_repository, version_string
+from pytcp.stack import GITHUB_REPO, PYTCP_VERSION
 
 
 class IcmpEchoClient:
@@ -117,7 +117,7 @@ class IcmpEchoClient:
         message_seq = 0
         while self._run_thread and message_count:
             message = bytes(
-                f"PyTCP {version_string}, {github_repository} - {str(datetime.now())}",
+                f"PyTCP {PYTCP_VERSION}, {GITHUB_REPO} - {str(datetime.now())}",
                 "utf-8",
             )
 

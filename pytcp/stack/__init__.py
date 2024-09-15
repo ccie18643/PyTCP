@@ -65,6 +65,10 @@ assert sys.version_info >= (
 ), "PyTCP stack requires Python version 3.12 or higher to run."
 
 
+# PyTCP code metadata.
+PYTCP_VERSION = "ver 3.0.2"
+GITHUB_REPO = "https://github.com/ccie18643/PyTCP"
+
 # Interface configuration.
 INTERFACE__TAP__MTU = 1500
 INTERFACE__TUN__MTU = 1500
@@ -77,8 +81,8 @@ IP6_ADDRESS = None
 IP6_GATEWAY = None
 
 # Protocol support configuration.
-IP6__SUPPORT_ENABLED = True
-IP4__SUPPORT_ENABLED = True
+IP6__SUPPORT = True
+IP4__SUPPORT = True
 
 # ARP cache configuration.
 ARP__CACHE__ENTRY_MAX_AGE = 3600
@@ -96,6 +100,10 @@ ICMP6__ND__CACHE__ENTRY_REFRESH_TIME = 300
 IP4__FRAG_FLOW_TIMEOUT = 5
 IP6__FRAG_FLOW_TIMEOUT = 5
 
+# Native support for UDP Echo (used for packet flow unit testing only
+# and should always be disabled).
+UDP__ECHO_NATIVE = False
+
 # Logger configuration - LOG__CHANNEL sets which subsystems of stack log to the
 # console, LOG__DEBUG adds info about class/method caller.
 # Following subsystems are supported:
@@ -103,7 +111,7 @@ IP6__FRAG_FLOW_TIMEOUT = 5
 # icmp6, udp, tcp, socket, tcp-ss, service.
 LOG__CHANNEL = {
     "stack",
-    #    "timer",
+    # "timer",
     "rx-ring",
     "tx-ring",
     "arp-c",
@@ -124,9 +132,7 @@ LOG__CHANNEL = {
 }
 LOG__DEBUG = False
 
-version_string = "ver 3.0.2"
-github_repository = "https://github.com/ccie18643/PyTCP"
-
+# Stack subsystems.
 timer: Timer
 rx_ring: RxRing
 tx_ring: TxRing
@@ -134,10 +140,10 @@ arp_cache: ArpCache
 nd_cache: NdCache
 packet_handler: PacketHandler
 
+# Stack shared data.
+stack_initialized: bool = False
 interface_mtu: int
-
 sockets: dict[tuple[Any, ...], Socket] = {}
-
 arp_probe_unicast_conflict: set[Ip4Address] = set()
 
 
@@ -244,7 +250,8 @@ def init(
     if mac_address is None:
         mac_address = MacAddress(MAC_ADDRESS)
 
-    global timer, rx_ring, tx_ring, arp_cache, nd_cache, packet_handler, interface_mtu
+    global timer, rx_ring, tx_ring, arp_cache, nd_cache, packet_handler
+    global interface_mtu, stack_initialized
 
     timer = Timer()
     tx_ring = TxRing(
@@ -270,12 +277,17 @@ def init(
     )
 
     interface_mtu = mtu
+    stack_initialized = True
 
 
 def start() -> None:
     """
     Start stack components.
     """
+
+    assert (
+        stack_initialized
+    ), "Stack not initialized. Call 'stack.init()' first."
 
     timer.start()
     arp_cache.start()
@@ -289,6 +301,10 @@ def stop() -> None:
     """
     Stop stack components.
     """
+
+    assert (
+        stack_initialized
+    ), "Stack not initialized. Call 'stack.init()' first."
 
     packet_handler.stop()
     rx_ring.stop()

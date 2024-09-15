@@ -56,7 +56,3 @@ TCP__LOCAL_MSS = 1460  # Maximum segment peer can send to us.
 TCP__LOCAL_WIN = (
     65535  # Maximum amount of data peer can send to us without confirmation.
 )
-
-# Native support for UDP Echo (used for packet flow unit testing only and should
-# always be disabled).
-UDP__ECHO_NATIVE__DISABLED = True

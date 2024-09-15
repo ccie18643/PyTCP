@@ -118,10 +118,10 @@ class MockNetworkSettings:
 
 CONFIG_PATCHES = {
     "LOG__CHANNEL": set(),
-    "IP6__SUPPORT_ENABLED": True,
-    "IP4__SUPPORT_ENABLED": True,
+    "IP6__SUPPORT": True,
+    "IP4__SUPPORT": True,
     "INTERFACE__TAP__MTU": 1500,
-    "UDP__ECHO_NATIVE__DISABLED": False,
+    "UDP__ECHO_NATIVE": True,
     "IP4__DEFAULT_TTL": 64,
     "IP6__DEFAULT_HOP_LIMIT": 64,
 }

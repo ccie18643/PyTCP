@@ -39,7 +39,7 @@ from abc import ABC
 from typing import TYPE_CHECKING, cast
 
 from net_addr import Ip4Address
-from pytcp import config, stack
+from pytcp import stack
 from pytcp.lib.errors import PacketValidationError
 from pytcp.lib.logger import log
 from pytcp.lib.packet import PacketRx
@@ -164,10 +164,7 @@ class PacketHandlerUdpRx(ABC):
 
         # Handle the UDP Echo operation in case its enabled
         # (used for packet flow unit testing only).
-        if (
-            config.UDP__ECHO_NATIVE__DISABLED is False
-            and packet_rx.udp.dport == 7
-        ):
+        if stack.UDP__ECHO_NATIVE and packet_rx.udp.dport == 7:
             self.packet_stats_rx.udp__echo_native__respond_udp += 1
             __debug__ and log(
                 "udp",
