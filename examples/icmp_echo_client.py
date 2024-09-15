@@ -57,7 +57,7 @@ from net_addr import (
     IpAddress,
     MacAddress,
 )
-from pytcp import TcpIpStack, initialize_interface, stack
+from pytcp import stack
 from pytcp.protocols.icmp4.message.icmp4_message__echo_request import (
     Icmp4EchoRequestMessage,
 )
@@ -225,17 +225,14 @@ def cli(
     Start Icmp Echo client.
     """
 
-    fd, mtu = initialize_interface(interface)
-
     if ip6_host:
         ip6_host.gateway = ip6_gateway
 
     if ip4_host:
         ip4_host.gateway = ip4_gateway
 
-    stack = TcpIpStack(
-        fd=fd,
-        mtu=mtu,
+    stack.init(
+        *stack.initialize_interface(interface),
         mac_address=mac_address,
         ip6_host=ip6_host,
         ip4_host=ip4_host,

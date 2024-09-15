@@ -55,7 +55,7 @@ from net_addr import (
     IpAddress,
     MacAddress,
 )
-from pytcp import TcpIpStack, initialize_interface
+from pytcp import stack
 
 if TYPE_CHECKING:
     from pytcp.socket.socket import Socket
@@ -163,17 +163,14 @@ def cli(
     Start TCP Echo service.
     """
 
-    fd, mtu = initialize_interface(interface)
-
     if ip6_host:
         ip6_host.gateway = ip6_gateway
 
     if ip4_host:
         ip4_host.gateway = ip4_gateway
 
-    stack = TcpIpStack(
-        fd=fd,
-        mtu=mtu,
+    stack.init(
+        *stack.initialize_interface(interface),
         mac_address=mac_address,
         ip6_host=ip6_host,
         ip4_host=ip4_host,
