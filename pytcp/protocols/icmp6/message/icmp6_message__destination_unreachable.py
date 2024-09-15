@@ -39,8 +39,8 @@ import struct
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, override
 
-from pytcp.config import IP6__MIN_MTU
 from pytcp.lib.int_checks import is_uint16
+from pytcp.protocols.defaults import IP6__MIN_MTU
 from pytcp.protocols.icmp6.icmp6__errors import Icmp6IntegrityError
 from pytcp.protocols.icmp6.message.icmp6_message import (
     Icmp6Code,

@@ -36,5 +36,7 @@ ver 3.0.2
 from __future__ import annotations
 
 IP4__DEFAULT_TTL = 64
+IP4__MIN_MTU = 576  # RFC 791
 
 IP6__DEFAULT_HOP_LIMIT = 64
+IP6__MIN_MTU = 1280  # RFC 8200

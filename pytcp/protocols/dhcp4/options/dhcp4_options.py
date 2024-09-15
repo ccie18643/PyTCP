@@ -38,8 +38,8 @@ from __future__ import annotations
 from abc import ABC
 from typing import override
 
-from pytcp.config import IP4__MIN_MTU
 from pytcp.lib.proto_option import ProtoOptions
+from pytcp.protocols.defaults import IP4__MIN_MTU
 from pytcp.protocols.dhcp4.dhcp4__errors import Dhcp4IntegrityError
 from pytcp.protocols.dhcp4.dhcp4__header import DHCP4__HEADER__LEN
 from pytcp.protocols.dhcp4.options.dhcp4_option import (

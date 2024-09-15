@@ -35,10 +35,6 @@ ver 3.0.2
 
 from __future__ import annotations
 
-# IPv4/IPv6 minimum MTU values.
-IP4__MIN_MTU = 576  # RFC 791
-IP6__MIN_MTU = 1280  # RFC 8200
-
 # TCP/UDP ephemeral port range to be used by outbound connections.
 EPHEMERAL_PORT_RANGE = range(32168, 60700, 2)
 
