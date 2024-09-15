@@ -37,12 +37,12 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
 
-from pytcp.subsystems.arp_cache import ArpCache
-from pytcp.subsystems.nd_cache import NdCache
+from pytcp.stack.arp_cache import ArpCache
+from pytcp.stack.nd_cache import NdCache
+from pytcp.stack.rx_ring import RxRing
+from pytcp.stack.timer import Timer
+from pytcp.stack.tx_ring import TxRing
 from pytcp.subsystems.packet_handler import PacketHandler
-from pytcp.subsystems.rx_ring import RxRing
-from pytcp.subsystems.timer import Timer
-from pytcp.subsystems.tx_ring import TxRing
 
 if TYPE_CHECKING:
     from net_addr import Ip4Address
