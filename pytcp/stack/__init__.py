@@ -94,6 +94,8 @@ arp_cache: ArpCache
 nd_cache: NdCache
 packet_handler: PacketHandler
 
+interface_mtu: int
+
 sockets: dict[tuple[Any, ...], Socket] = {}
 
 arp_probe_unicast_conflict: set[Ip4Address] = set()
@@ -202,7 +204,7 @@ def init(
     if mac_address is None:
         mac_address = MacAddress(MAC_ADDRESS)
 
-    global timer, rx_ring, tx_ring, arp_cache, nd_cache, packet_handler
+    global timer, rx_ring, tx_ring, arp_cache, nd_cache, packet_handler, interface_mtu
 
     timer = Timer()
     tx_ring = TxRing(
@@ -226,6 +228,8 @@ def init(
         ip6_gua_autoconfig=ip6_gua_autoconfig,
         ip6_lla_autoconfig=ip6_lla_autoconfig,
     )
+
+    interface_mtu = mtu
 
 
 def start() -> None:

@@ -68,8 +68,6 @@ DELAYED_ACK_DELAY = (
     100  # Delay between consecutive delayed ACK outbound packets
 )
 
-INTERFACE__TAP__MTU = 1500
-
 
 class TcpSessionError(Exception):
     """
@@ -211,7 +209,7 @@ class TcpSession:
         self._rcv_una: int = 0
 
         # Maximum segment size
-        self._rcv_mss: int = INTERFACE__TAP__MTU - 40
+        self._rcv_mss: int = stack.interface_mtu - 40
 
         # Window size
         self._rcv_wnd: int = 65535
@@ -885,7 +883,7 @@ class TcpSession:
                 )
                 # Initialize session parameters
                 self._snd_mss = min(
-                    packet_rx_md.tcp__mss, INTERFACE__TAP__MTU - 40
+                    packet_rx_md.tcp__mss, stack.interface_mtu - 40
                 )
                 self._snd_wnd = (
                     packet_rx_md.tcp__win << self._snd_wsc
@@ -942,7 +940,7 @@ class TcpSession:
             ):
                 # Initialize session parameters
                 self._snd_mss = min(
-                    packet_rx_md.tcp__mss, INTERFACE__TAP__MTU - 40
+                    packet_rx_md.tcp__mss, stack.interface_mtu - 40
                 )
                 self._snd_wnd = (
                     packet_rx_md.tcp__win << self._snd_wsc
