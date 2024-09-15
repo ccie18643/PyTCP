@@ -53,14 +53,13 @@ from .packet_handler import PacketHandler
 from .rx_ring import RxRing
 from .timer import Timer
 from .tx_ring import TxRing
-from sys import version_info
 
 if TYPE_CHECKING:
     from net_addr import Ip4Address
     from pytcp.socket.socket import Socket
 
 
-assert version_info >= (
+assert sys.version_info >= (
     3,
     12,
 ), "PyTCP stack requires Python version 3.12 or higher to run."
@@ -90,6 +89,12 @@ ARP__CACHE__UPDATE_FROM_GRATUITIOUS_REPLY = True
 # ICMPv6 ND cache configuration.
 ICMP6__ND__CACHE__ENTRY_MAX_AGE = 3600
 ICMP6__ND__CACHE__ENTRY_REFRESH_TIME = 300
+
+# IPv4 and IPv6 fragmnt flow expiration time, determines for how many seconds
+# IP fragment flow is considered valid. Fragemnt flows are being cleaned up prior
+# of handling every fragmented packet.
+IP4__FRAG_FLOW_TIMEOUT = 5
+IP6__FRAG_FLOW_TIMEOUT = 5
 
 # Logger configuration - LOG__CHANNEL sets which subsystems of stack log to the
 # console, LOG__DEBUG adds info about class/method caller.

@@ -40,7 +40,7 @@ from abc import ABC
 from time import time
 from typing import TYPE_CHECKING
 
-from pytcp import config
+from pytcp import stack
 from pytcp.lib.logger import log
 from pytcp.lib.packet import PacketRx
 from pytcp.protocols.ip6_frag.ip6_frag__parser import Ip6FragParser
@@ -97,7 +97,7 @@ class PacketHandlerIp6FragRx(ABC):
             flow: self.ip6_frag_flows[flow]
             for flow in self.ip6_frag_flows
             if self.ip6_frag_flows[flow]["timestamp"] - time()
-            < config.IP6__FRAG_FLOW_TIMEOUT
+            < stack.IP6__FRAG_FLOW_TIMEOUT
         }
 
         __debug__ and log(

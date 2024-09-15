@@ -40,7 +40,7 @@ from abc import ABC
 from time import time
 from typing import TYPE_CHECKING
 
-from pytcp import config
+from pytcp import stack
 from pytcp.lib.errors import PacketValidationError
 from pytcp.lib.inet_cksum import inet_cksum
 from pytcp.lib.logger import log
@@ -159,7 +159,7 @@ class PacketHandlerIp4Rx(ABC):
             flow: self.ip4_frag_flows[flow]
             for flow in self.ip4_frag_flows
             if self.ip4_frag_flows[flow]["timestamp"] - time()
-            < config.IP4__FRAG_FLOW_TIMEOUT
+            < stack.IP4__FRAG_FLOW_TIMEOUT
         }
 
         __debug__ and log(
