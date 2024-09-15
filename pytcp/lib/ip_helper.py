@@ -44,11 +44,13 @@ from net_addr import (
     Ip6AddressFormatError,
 )
 from pytcp import stack
-from pytcp.config import EPHEMERAL_PORT_RANGE
 
 if TYPE_CHECKING:
     from net_addr import IpAddress
     from pytcp.socket.socket import AddressFamily, SocketType
+
+
+EPHEMERAL_PORT_RANGE = range(32168, 60700, 2)
 
 
 def ip_version(
@@ -154,7 +156,7 @@ def pick_local_port() -> int:
     """
 
     available_ephemeral_ports = set(EPHEMERAL_PORT_RANGE) - {
-        int(_.split("/")[3]) for _ in stack.sockets
+        int(_.split("/")[3]) for _ in stack.sockets.values()
     }
 
     if len(available_ephemeral_ports):

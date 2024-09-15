@@ -38,8 +38,8 @@ from __future__ import annotations
 from abc import ABC
 from typing import override
 
-from pytcp.config import TCP__MIN_MSS
 from pytcp.lib.proto_option import ProtoOptions
+from pytcp.protocols.defaults import TCP__MIN_MSS
 from pytcp.protocols.tcp.options.tcp_option import TcpOption, TcpOptionType
 from pytcp.protocols.tcp.options.tcp_option__eol import TcpOptionEol
 from pytcp.protocols.tcp.options.tcp_option__mss import TcpOptionMss

@@ -40,3 +40,7 @@ IP4__MIN_MTU = 576  # RFC 791
 
 IP6__DEFAULT_HOP_LIMIT = 64
 IP6__MIN_MTU = 1280  # RFC 8200
+
+TCP__MIN_MSS = (
+    536  # The minimum recommended value of the  Maximum Segment Size (RFC 879).
+)

@@ -37,12 +37,3 @@ from __future__ import annotations
 
 # TCP/UDP ephemeral port range to be used by outbound connections.
 EPHEMERAL_PORT_RANGE = range(32168, 60700, 2)
-
-# TCP session related settings.
-TCP__MIN_MSS = (
-    536  # The minimum recommended value of the  Maximum Segment Size (RFC 879).
-)
-TCP__LOCAL_MSS = 1460  # Maximum segment peer can send to us.
-TCP__LOCAL_WIN = (
-    65535  # Maximum amount of data peer can send to us without confirmation.
-)
