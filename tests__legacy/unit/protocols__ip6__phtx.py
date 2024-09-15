@@ -42,7 +42,7 @@ from testslide import TestCase
 from pytcp.lib.packet_stats import PacketStatsTx
 from pytcp.lib.tx_status import TxStatus
 from pytcp.protocols.raw.raw__assembler import RawAssembler
-from pytcp.subsystems.packet_handler import PacketHandler
+from pytcp.stack.packet_handler import PacketHandler
 
 TEST_FRAME_DIR = "tests__legacy/unit/test_frames/ip6_phtx/"
 

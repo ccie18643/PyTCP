@@ -51,7 +51,7 @@ from pytcp.protocols.icmp4.message.icmp4_message__echo_reply import (
 from pytcp.protocols.icmp4.message.icmp4_message__echo_request import (
     Icmp4EchoRequestMessage,
 )
-from pytcp.subsystems.packet_handler import PacketHandler
+from pytcp.stack.packet_handler import PacketHandler
 
 TEST_FRAME_DIR = "tests__legacy/unit/test_frames/icmp4_phtx/"
 

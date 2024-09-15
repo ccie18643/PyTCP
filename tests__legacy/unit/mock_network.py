@@ -35,11 +35,11 @@
 from typing import no_type_check
 
 from testslide import StrictMock, TestCase
-
+from pytcp import config
 from net_addr import Ip4Address, Ip4Host, Ip6Address, Ip6Host, MacAddress
 from pytcp.stack.arp_cache import ArpCache
 from pytcp.stack.nd_cache import NdCache
-from pytcp.subsystems.packet_handler import PacketHandler
+from pytcp.stack.packet_handler import PacketHandler
 from pytcp.stack.tx_ring import TxRing
 
 # # #  IPv4
@@ -115,27 +115,6 @@ class MockNetworkSettings:
         self.router_b_ip6_address = Ip6Address("fe80::2")
 
 
-PACKET_HANDLER_MODULES = [
-    "pytcp.subsystems.packet_handler",
-    "pytcp.protocols.ether.phrx",
-    "pytcp.protocols.ether.phtx",
-    "pytcp.protocols.arp.phrx",
-    "pytcp.protocols.arp.phtx",
-    "pytcp.protocols.ip4.phrx",
-    "pytcp.protocols.ip4.phtx",
-    "pytcp.protocols.ip6.phrx",
-    "pytcp.protocols.ip6.phtx",
-    "pytcp.protocols.icmp4.phrx",
-    "pytcp.protocols.icmp4.phtx",
-    "pytcp.protocols.icmp6.phrx",
-    "pytcp.protocols.icmp6.phtx",
-    "pytcp.protocols.udp.phrx",
-    "pytcp.protocols.udp.phtx",
-    "pytcp.protocols.tcp.phrx",
-    "pytcp.protocols.tcp.phtx",
-]
-
-
 CONFIG_PATCHES = {
     "LOG__CHANNEL": set(),
     "IP6__SUPPORT_ENABLED": True,
@@ -151,27 +130,8 @@ def patch_config(self: TestCase, *, enable_log: bool = False) -> None:
     """
     Patch critical config setting for all packet handler modules.
     """
-    for module in PACKET_HANDLER_MODULES:
-        for variable, value in CONFIG_PATCHES.items():
-            if enable_log and variable == "LOG__CHANNEL":
-                value = {
-                    "stack",
-                    "arp-c",
-                    "nd-c",
-                    "ether",
-                    "arp",
-                    "ip4",
-                    "ip6",
-                    "icmp4",
-                    "icmp6",
-                    "udp",
-                    "tcp",
-                    "socket",
-                }
-            try:
-                self.patch_attribute(f"{module}.config", variable, value)
-            except ModuleNotFoundError:
-                continue
+    for attribute, new_value in CONFIG_PATCHES.items():
+        config.__dict__[attribute] = new_value
 
 
 # Had to disable type checking in this function because it modifies variables

@@ -37,33 +37,14 @@ from __future__ import annotations
 
 from testslide import StrictMock, TestCase
 
+from pytcp import config
 from net_addr import Ip4Address, Ip4Host, Ip6Address, Ip6Host, MacAddress
 from pytcp.lib.packet import PacketRx
 from pytcp.lib.packet_stats import PacketStatsRx, PacketStatsTx
 from pytcp.stack.arp_cache import ArpCache
 from pytcp.stack.nd_cache import NdCache
-from pytcp.subsystems.packet_handler import PacketHandler
+from pytcp.stack.packet_handler import PacketHandler
 from pytcp.stack.tx_ring import TxRing
-
-PACKET_HANDLER_MODULES = [
-    "pytcp.subsystems.packet_handler",
-    "protocols.ethernet.phrx",
-    "protocols.ethernet.phtx",
-    "protocols.arp.phrx",
-    "protocols.arp.phtx",
-    "protocols.ip4.phrx",
-    "protocols.ip4.phtx",
-    "protocols.ip6.phrx",
-    "protocols.ip6.phtx",
-    "protocols.icmp4.phrx",
-    "protocols.icmp4.phtx",
-    "protocols.icmp6.phrx",
-    "protocols.icmp6.phtx",
-    "protocols.udp.phrx",
-    "protocols.udp.phtx",
-    "protocols.tcp.phrx",
-    "protocols.tcp.phtx",
-]
 
 
 # Ensure critical configuration settings are set properly for
@@ -174,16 +155,8 @@ class TestPacketHandlerRxTx(TestCase):
         """
         Patch critical config setting for all packet handler modules.
         """
-        for module in PACKET_HANDLER_MODULES:
-            for attribute, new_value in CONFIG_PATCHES.items():
-                try:
-                    self.patch_attribute(
-                        target=f"{module}.config",
-                        attribute=attribute,
-                        new_value=new_value,
-                    )
-                except ModuleNotFoundError:
-                    continue
+        for attribute, new_value in CONFIG_PATCHES.items():
+            config.__dict__[attribute] = new_value
 
     # Test name format:
     # 'test_name__protocol_tested__test_description__optional_condition'

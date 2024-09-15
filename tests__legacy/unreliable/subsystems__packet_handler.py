@@ -34,7 +34,7 @@
 
 from testslide import TestCase
 
-from pytcp.subsystems.packet_handler import PacketHandler
+from pytcp.stack.packet_handler import PacketHandler
 
 
 class TestPacketHandler(TestCase):

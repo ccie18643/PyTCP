@@ -39,10 +39,10 @@ from typing import TYPE_CHECKING, Any
 
 from pytcp.stack.arp_cache import ArpCache
 from pytcp.stack.nd_cache import NdCache
+from pytcp.stack.packet_handler import PacketHandler
 from pytcp.stack.rx_ring import RxRing
 from pytcp.stack.timer import Timer
 from pytcp.stack.tx_ring import TxRing
-from pytcp.subsystems.packet_handler import PacketHandler
 
 if TYPE_CHECKING:
     from net_addr import Ip4Address

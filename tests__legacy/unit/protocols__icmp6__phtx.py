@@ -60,7 +60,7 @@ from pytcp.protocols.icmp6.message.nd.option.icmp6_nd_options import (
     Icmp6NdOptions,
     Icmp6NdOptionSlla,
 )
-from pytcp.subsystems.packet_handler import PacketHandler
+from pytcp.stack.packet_handler import PacketHandler
 
 TEST_FRAME_DIR = "tests__legacy/unit/test_frames/icmp6_phtx/"
 
