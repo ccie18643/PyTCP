@@ -25,9 +25,9 @@
 
 
 """
-This module contains the IPv6 packet assembler.
+This module contains protocols related defaults.
 
-pytcp/protocols/ip6/ip6__assembler.py
+pytcp/protocols/defaults.py
 
 ver 3.0.2
 """
@@ -35,70 +35,6 @@ ver 3.0.2
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+IP4__DEFAULT_TTL = 64
 
-from net_addr import Ip6Address
-from pytcp.lib.proto_assembler import ProtoAssembler
-from pytcp.protocols.defaults import IP6__DEFAULT_HOP_LIMIT
-from pytcp.protocols.enums import IpProto
-from pytcp.protocols.ip6.ip6__base import Ip6
-from pytcp.protocols.ip6.ip6__header import Ip6Header
-from pytcp.protocols.raw.raw__assembler import RawAssembler
-
-if TYPE_CHECKING:
-    from pytcp.lib.tracker import Tracker
-    from pytcp.protocols.ip6.ip6__base import Ip6Payload
-
-
-class Ip6Assembler(Ip6, ProtoAssembler):
-    """
-    The IPv6 packet assembler.
-    """
-
-    _payload: Ip6Payload
-
-    def __init__(
-        self,
-        *,
-        ip6__src: Ip6Address = Ip6Address(),
-        ip6__dst: Ip6Address = Ip6Address(),
-        ip6__hop: int = IP6__DEFAULT_HOP_LIMIT,
-        ip6__dscp: int = 0,
-        ip6__ecn: int = 0,
-        ip6__flow: int = 0,
-        ip6__payload: Ip6Payload = RawAssembler(),
-    ) -> None:
-        """
-        Initialize the IPv6 packet assembler.
-        """
-
-        self._tracker: Tracker = ip6__payload.tracker
-
-        self._payload = ip6__payload
-
-        self._header = Ip6Header(
-            dscp=ip6__dscp,
-            ecn=ip6__ecn,
-            flow=ip6__flow,
-            dlen=len(self._payload),
-            next=IpProto.from_proto(self._payload),
-            hop=ip6__hop,
-            src=ip6__src,
-            dst=ip6__dst,
-        )
-
-    @property
-    def header(self) -> Ip6Header:
-        """
-        Get the IPv6 packet 'header' attribute.
-        """
-
-        return self._header
-
-    @property
-    def payload(self) -> Ip6Payload:
-        """
-        Get the IPv6 packet 'payload' attribute.
-        """
-
-        return self._payload
+IP6__DEFAULT_HOP_LIMIT = 64

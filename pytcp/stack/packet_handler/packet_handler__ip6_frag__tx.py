@@ -38,7 +38,6 @@ from __future__ import annotations
 from abc import ABC
 from typing import TYPE_CHECKING
 
-from pytcp import config
 from pytcp.lib.logger import log
 from pytcp.lib.tx_status import TxStatus
 from pytcp.protocols.icmp6.icmp6__assembler import Icmp6Assembler
@@ -57,6 +56,7 @@ class PacketHandlerIp6FragTx(ABC):
     if TYPE_CHECKING:
         from net_addr import Ip6Address
         from pytcp.lib.packet_stats import PacketStatsTx
+        from pytcp.protocols.defaults import IP6__DEFAULT_HOP_LIMIT
         from pytcp.protocols.ip6.ip6__assembler import Ip6Assembler, Ip6Payload
         from pytcp.protocols.raw.raw__assembler import RawAssembler
 
@@ -71,7 +71,7 @@ class PacketHandlerIp6FragTx(ABC):
             *,
             ip6__dst: Ip6Address,
             ip6__src: Ip6Address,
-            ip6__hop: int = config.IP6__DEFAULT_HOP_LIMIT,
+            ip6__hop: int = IP6__DEFAULT_HOP_LIMIT,
             ip6__payload: Ip6Payload = RawAssembler(),
         ) -> TxStatus: ...
 

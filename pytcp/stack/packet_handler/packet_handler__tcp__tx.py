@@ -56,8 +56,11 @@ class PacketHandlerTcpTx(ABC):
 
     if TYPE_CHECKING:
         from net_addr import IpAddress
-        from pytcp.config import IP4__DEFAULT_TTL, IP6__DEFAULT_HOP_LIMIT
         from pytcp.lib.packet_stats import PacketStatsTx
+        from pytcp.protocols.defaults import (
+            IP4__DEFAULT_TTL,
+            IP6__DEFAULT_HOP_LIMIT,
+        )
         from pytcp.protocols.icmp4.icmp4__assembler import Icmp4Assembler
         from pytcp.protocols.icmp6.icmp6__assembler import Icmp6Assembler
         from pytcp.protocols.ip4.ip4__assembler import Ip4Payload

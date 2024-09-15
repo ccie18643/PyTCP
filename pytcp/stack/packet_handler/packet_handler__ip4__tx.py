@@ -39,9 +39,9 @@ from abc import ABC
 from typing import TYPE_CHECKING
 
 from net_addr import Ip4Address, MacAddress
-from pytcp import config
 from pytcp.lib.logger import log
 from pytcp.lib.tx_status import TxStatus
+from pytcp.protocols.defaults import IP4__DEFAULT_TTL
 from pytcp.protocols.ip4.ip4__assembler import Ip4Assembler, Ip4FragAssembler
 from pytcp.protocols.raw.raw__assembler import RawAssembler
 from pytcp.protocols.tcp.tcp__assembler import TcpAssembler
@@ -90,7 +90,7 @@ class PacketHandlerIp4Tx(ABC):
         *,
         ip4__dst: Ip4Address,
         ip4__src: Ip4Address,
-        ip4__ttl: int = config.IP4__DEFAULT_TTL,
+        ip4__ttl: int = IP4__DEFAULT_TTL,
         ip4__payload: Ip4Payload = RawAssembler(),
     ) -> TxStatus:
         """

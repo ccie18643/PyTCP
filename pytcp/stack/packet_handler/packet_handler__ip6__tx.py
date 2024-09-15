@@ -39,9 +39,9 @@ from abc import ABC
 from typing import TYPE_CHECKING
 
 from net_addr import Ip6Address, MacAddress
-from pytcp import config
 from pytcp.lib.logger import log
 from pytcp.lib.tx_status import TxStatus
+from pytcp.protocols.defaults import IP6__DEFAULT_HOP_LIMIT
 from pytcp.protocols.icmp6.icmp6__base import Icmp6
 from pytcp.protocols.icmp6.message.mld2.icmp6_mld2_message__report import (
     Icmp6Mld2ReportMessage,
@@ -95,7 +95,7 @@ class PacketHandlerIp6Tx(ABC):
         *,
         ip6__dst: Ip6Address,
         ip6__src: Ip6Address,
-        ip6__hop: int = config.IP6__DEFAULT_HOP_LIMIT,
+        ip6__hop: int = IP6__DEFAULT_HOP_LIMIT,
         ip6__payload: Ip6Payload = RawAssembler(),
     ) -> TxStatus:
         """

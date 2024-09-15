@@ -55,8 +55,8 @@ class PacketHandlerIcmp4Tx(ABC):
 
     if TYPE_CHECKING:
         from net_addr import Ip4Address
-        from pytcp.config import IP4__DEFAULT_TTL
         from pytcp.lib.packet_stats import PacketStatsTx
+        from pytcp.protocols.defaults import IP4__DEFAULT_TTL
         from pytcp.protocols.ip4.ip4__base import Ip4Payload
         from pytcp.protocols.raw.raw__assembler import RawAssembler
 

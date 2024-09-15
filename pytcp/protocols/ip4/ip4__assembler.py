@@ -38,10 +38,10 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from net_addr import Ip4Address
-from pytcp import config
 from pytcp.lib.int_checks import is_4_byte_alligned
 from pytcp.lib.proto_assembler import ProtoAssembler
 from pytcp.lib.tracker import Tracker
+from pytcp.protocols.defaults import IP4__DEFAULT_TTL
 from pytcp.protocols.enums import IpProto
 from pytcp.protocols.ip4.ip4__base import Ip4
 from pytcp.protocols.ip4.ip4__header import IP4__HEADER__LEN, Ip4Header
@@ -68,7 +68,7 @@ class Ip4Assembler(Ip4, ProtoAssembler):
         *,
         ip4__src: Ip4Address = Ip4Address(),
         ip4__dst: Ip4Address = Ip4Address(),
-        ip4__ttl: int = config.IP4__DEFAULT_TTL,
+        ip4__ttl: int = IP4__DEFAULT_TTL,
         ip4__dscp: int = 0,
         ip4__ecn: int = 0,
         ip4__id: int = 0,
@@ -136,7 +136,7 @@ class Ip4FragAssembler(Ip4, ProtoAssembler):
         *,
         ip4_frag__src: Ip4Address = Ip4Address(),
         ip4_frag__dst: Ip4Address = Ip4Address(),
-        ip4_frag__ttl: int = config.IP4__DEFAULT_TTL,
+        ip4_frag__ttl: int = IP4__DEFAULT_TTL,
         ip4_frag__dscp: int = 0,
         ip4_frag__ecn: int = 0,
         ip4_frag__id: int = 0,

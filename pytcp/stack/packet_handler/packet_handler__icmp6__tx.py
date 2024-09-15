@@ -74,8 +74,8 @@ class PacketHandlerIcmp6Tx(ABC):
     """
 
     if TYPE_CHECKING:
-        from pytcp.config import IP6__DEFAULT_HOP_LIMIT
         from pytcp.lib.packet_stats import PacketStatsTx
+        from pytcp.protocols.defaults import IP6__DEFAULT_HOP_LIMIT
         from pytcp.protocols.ip6.ip6__base import Ip6Payload
         from pytcp.protocols.raw.raw__assembler import RawAssembler
 
