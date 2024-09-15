@@ -35,6 +35,7 @@ ver 3.0.2
 
 from __future__ import annotations
 
+from dataclasses import dataclass, field
 import threading
 import time
 
@@ -43,27 +44,28 @@ from pytcp import stack
 from pytcp.lib.logger import log
 
 
+@dataclass
+class CacheEntry:
+    """
+    Container class for cache entries.
+    """
+
+    mac_address: MacAddress
+    permanent: bool = False
+    create_time: int = field(
+        init=False,
+        default_factory=lambda: int(time.time()),
+    )
+    hit_count: int = 0
+
+
 class NdCache:
     """
     Support for ICMPv6 ND Cache operations.
     """
 
-    class CacheEntry:
-        """
-        Container class for IPv6 ND Cache entries.
-        """
-
-        def __init__(
-            self, mac_address: MacAddress, permanent: bool = False
-        ) -> None:
-            """
-            Class constructor.
-            """
-
-            self.mac_address: MacAddress = mac_address
-            self.permanent: bool = permanent
-            self.creation_time: float = time.time()
-            self.hit_count: int = 0
+    _nd_cache: dict[Ip6Address, CacheEntry]
+    _run_thread: bool
 
     def __init__(self) -> None:
         """
@@ -72,8 +74,15 @@ class NdCache:
 
         __debug__ and log("stack", "Initializing IPv6 ND Cache")
 
-        self._nd_cache: dict[Ip6Address, NdCache.CacheEntry] = {}
-        self._run_thread: bool = False
+        self._nd_cache = {}
+        self._run_thread = False
+
+    def __repr__(self) -> str:
+        """
+        Return string representation of the ARP Cache.
+        """
+
+        return repr(self._nd_cache)
 
     def start(self) -> None:
         """
@@ -113,7 +122,7 @@ class NdCache:
 
                 # If entry age is over maximum age then discard the entry
                 if (
-                    time.time() - self._nd_cache[ip6_address].creation_time
+                    int(time.time()) - self._nd_cache[ip6_address].create_time
                     > stack.ICMP6__ND__CACHE__ENTRY_MAX_AGE
                 ):
                     mac_address = self._nd_cache.pop(ip6_address).mac_address
@@ -127,7 +136,7 @@ class NdCache:
                 # used since last refresh then send out request in attempt
                 # to refresh it.
                 elif (
-                    time.time() - self._nd_cache[ip6_address].creation_time
+                    int(time.time()) - self._nd_cache[ip6_address].create_time
                     > stack.ICMP6__ND__CACHE__ENTRY_MAX_AGE
                     - stack.ICMP6__ND__CACHE__ENTRY_REFRESH_TIME
                 ) and self._nd_cache[ip6_address].hit_count:
@@ -163,7 +172,7 @@ class NdCache:
             f"{ip6_address} -> {mac_address}</>",
         )
 
-        self._nd_cache[ip6_address] = self.CacheEntry(mac_address)
+        self._nd_cache[ip6_address] = CacheEntry(mac_address)
 
     def find_entry(self, *, ip6_address: Ip6Address) -> MacAddress | None:
         """
@@ -175,7 +184,7 @@ class NdCache:
             __debug__ and log(
                 "nd-c",
                 f"Found {ip6_address} -> {nd_entry.mac_address} entry, "
-                f"age {time.time() - nd_entry.creation_time:.0f}s, "
+                f"age {int(time.time()) - nd_entry.create_time}s, "
                 f"hit_count {nd_entry.hit_count}",
             )
             return nd_entry.mac_address
