@@ -35,7 +35,6 @@
 from typing import no_type_check
 
 from testslide import StrictMock, TestCase
-from pytcp import config
 from pytcp import stack
 from net_addr import Ip4Address, Ip4Host, Ip6Address, Ip6Host, MacAddress
 from pytcp.stack.arp_cache import ArpCache
@@ -133,7 +132,6 @@ def patch_config(self: TestCase, *, enable_log: bool = False) -> None:
     """
     for attribute, new_value in CONFIG_PATCHES.items():
         stack.__dict__[attribute] = new_value
-        config.__dict__[attribute] = new_value
 
 
 # Had to disable type checking in this function because it modifies variables

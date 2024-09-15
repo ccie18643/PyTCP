@@ -35,7 +35,6 @@
 
 from testslide import TestCase
 
-from pytcp import config
 from net_addr import Ip4Address, Ip4Host, Ip6Address, Ip6Host, MacAddress
 from pytcp.lib.packet import PacketRx
 from pytcp.lib.packet_stats import PacketStatsRx, PacketStatsTx
@@ -105,7 +104,6 @@ class TestPacketHandlerRx(TestCase):
         """
         for attribute, new_value in CONFIG_PATCHES.items():
             stack.__dict__[attribute] = new_value
-            config.__dict__[attribute] = new_value
 
     # Test name format:
     # 'test_name__protocol_tested__test_description__optional_condition'
