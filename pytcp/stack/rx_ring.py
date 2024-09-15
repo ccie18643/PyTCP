@@ -27,7 +27,7 @@
 """
 Module contains class supporting stack RX Ring operations.
 
-pytcp/subsystems/rx_ring.py
+pytcp/stack/rx_ring.py
 
 ver 3.0.2
 """
@@ -54,17 +54,23 @@ class RxRing:
     """
 
     _fd: int
+    _mtu: int
 
-    def __init__(self) -> None:
+    def __init__(self, *, fd: int, mtu: int) -> None:
         """
         Initialize access to RX file descriptor and the inbound queue.
         """
+
+        self._fd = fd
+        self._mtu = mtu
+
+        __debug__ and log("stack", f"Initializing RX Ring, fd={fd}, mtu={mtu}")
 
         self._rx_ring: list[PacketRx] = []
         self._packet_enqueued: Semaphore = threading.Semaphore(0)
         self._run_thread: bool = False
 
-    def start(self, *, fd: int) -> None:
+    def start(self) -> None:
         """
         Start RX Ring thread.
         """
@@ -72,7 +78,6 @@ class RxRing:
         __debug__ and log("stack", "Starting RX Ring")
 
         self._run_thread = True
-        self._fd = fd
         threading.Thread(target=self._thread__rx_ring__receive).start()
         time.sleep(0.1)
 

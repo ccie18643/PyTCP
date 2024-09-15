@@ -87,4 +87,5 @@ disable = """
     no-member,
     too-many-ancestors,
     redefined-outer-name,
+    global-statement,
 """

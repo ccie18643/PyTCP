@@ -65,6 +65,8 @@ class PacketHandlerIp6Tx(ABC):
 
         packet_stats_tx: PacketStatsTx
         ip6_host: list[Ip6Host]
+        _ip6_support: bool
+        _interface_mtu: int
 
         # pylint: disable=unused-argument
 
@@ -106,7 +108,7 @@ class PacketHandlerIp6Tx(ABC):
 
         # Check if IPv6 protocol support is enabled, if not then silently
         # drop the packet.
-        if not config.IP6__SUPPORT_ENABLED:
+        if not self._ip6_support:
             self.packet_stats_tx.ip6__no_proto_support__drop += 1
             return TxStatus.DROPED__IP6__NO_PROTOCOL_SUPPORT
 
@@ -139,7 +141,7 @@ class PacketHandlerIp6Tx(ABC):
 
         # Check if IP packet can be sent out without fragmentation,
         # if so send it out.
-        if len(ip6_packet_tx) <= config.INTERFACE__TAP__MTU:
+        if len(ip6_packet_tx) <= self._interface_mtu:
             self.packet_stats_tx.ip6__mtu_ok__send += 1
             __debug__ and log(
                 "ip6", f"{ip6_packet_tx.tracker} - {ip6_packet_tx}"

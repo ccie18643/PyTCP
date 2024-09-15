@@ -39,7 +39,6 @@ from abc import ABC
 from typing import TYPE_CHECKING
 
 from net_addr import Ip4Address, MacAddress
-from pytcp import config
 from pytcp.lib.logger import log
 from pytcp.lib.tracker import Tracker
 from pytcp.lib.tx_status import TxStatus
@@ -58,6 +57,7 @@ class PacketHandlerArpTx(ABC):
 
         packet_stats_tx: PacketStatsTx
         mac_unicast: MacAddress
+        _ip4_support: bool
 
         # pylint: disable=unused-argument
 
@@ -94,7 +94,7 @@ class PacketHandlerArpTx(ABC):
 
         # Check if IPv4 protocol support is enabled, if not then silently
         # drop the packet.
-        if not config.IP4__SUPPORT_ENABLED:
+        if not self._ip4_support:
             self.packet_stats_tx.arp__no_proto_support__drop += 1
             return TxStatus.DROPED__ARP__NO_PROTOCOL_SUPPORT
 

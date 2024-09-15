@@ -62,6 +62,7 @@ class PacketHandlerIp6FragTx(ABC):
 
         packet_stats_tx: PacketStatsTx
         ip6_id: int
+        _interface_mtu: int
 
         # pylint: disable=unused-argument
 
@@ -89,9 +90,7 @@ class PacketHandlerIp6FragTx(ABC):
         payload = bytearray(bytes(ip6_packet_tx.payload))
 
         payload_mtu = (
-            config.INTERFACE__TAP__MTU
-            - IP6__HEADER__LEN
-            - IP6_EXT_FRAG__HEADER__LEN
+            self._interface_mtu - IP6__HEADER__LEN - IP6_EXT_FRAG__HEADER__LEN
         ) & 0b1111111111111000
         data_frags = [
             payload[_ : payload_mtu + _]

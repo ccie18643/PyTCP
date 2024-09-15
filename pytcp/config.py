@@ -39,16 +39,6 @@ from sys import version_info
 
 assert version_info >= (3, 12), "PyTCP requires Python version 3.12 or higher."
 
-# TAP interface MTU, describes how much payload Ethernet packet can carry.
-INTERFACE__TAP__MTU = 1500
-
-# TUN interface MTU..
-INTERFACE__TUN__MTU = 1500
-
-
-# Support for IPv6 and IPv4, at least one should be anabled.
-IP6__SUPPORT_ENABLED = True
-IP4__SUPPORT_ENABLED = True
 
 # Logger configuration - LOG__CHANNEL sets which subsystems of stack log to the
 # console, LOG__DEBUG adds info about class/method caller.
@@ -78,16 +68,6 @@ LOG__CHANNEL = {
 }
 LOG__DEBUG = False
 
-# Unicast MAC addresses assigned to stack, currently there is not any kind of
-# duplicate MAC detection performed. This can be overridden when stack object
-# is created.
-ETHERNET__MAC_ADDRESS = "02:00:00:77:77:77"
-
-# IPv6 address auto configuration is implemented using EUI64 addressing and
-# ICMPv6 Router Advertisement messages.
-IP6__LLA_AUTOCONFIG = True
-IP6__GUA_AUTOCONFIG = True
-
 # IPv6 default Hop Limit value.
 IP6__DEFAULT_HOP_LIMIT = 64
 
@@ -103,19 +83,6 @@ IP4__DEFAULT_TTL = 64
 # of handling every fragmented packet.
 IP4__FRAG_FLOW_TIMEOUT = 5
 IP6__FRAG_FLOW_TIMEOUT = 5
-
-# IPv4 DHCP based address configuration.
-IP4__HOST_DHCP = True
-
-# ARP cache configuration.
-ARP__CACHE__ENTRY_MAX_AGE = 3600
-ARP__CACHE__ENTRY_REFRESH_TIME = 300
-ARP__CACHE__UPDATE_FROM_DIRECT_REQUEST = True
-ARP__CACHE__UPDATE_FROM_GRATUITIOUS_REPLY = True
-
-# ICMPv6 ND cache configuration.
-ICMP6__ND__CACHE__ENTRY_MAX_AGE = 3600
-ICMP6__ND__CACHE__ENTRY_REFRESH_TIME = 300
 
 # TCP/UDP ephemeral port range to be used by outbound connections.
 EPHEMERAL_PORT_RANGE = range(32168, 60700, 2)

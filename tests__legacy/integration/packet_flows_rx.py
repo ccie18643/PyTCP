@@ -40,6 +40,7 @@ from net_addr import Ip4Address, Ip4Host, Ip6Address, Ip6Host, MacAddress
 from pytcp.lib.packet import PacketRx
 from pytcp.lib.packet_stats import PacketStatsRx, PacketStatsTx
 from pytcp.stack.packet_handler import PacketHandler
+from pytcp import stack
 
 
 # Ensure critical configuration settings are set properly for the testing
@@ -78,8 +79,10 @@ class TestPacketHandlerRx(TestCase):
 
         # Initialize packet handler and manually set all the variables that
         # normally would require network connectivity
-        self.packet_handler = PacketHandler()
-        self.packet_handler.mac_unicast = STACK_MAC_ADDRESS
+        self.packet_handler = PacketHandler(
+            mac_address=STACK_MAC_ADDRESS,
+            interface_mtu=1500,
+        )
         self.packet_handler.mac_multicast = [
             STACK_IP6_HOST.address.solicited_node_multicast.multicast_mac
         ]
@@ -91,6 +94,10 @@ class TestPacketHandlerRx(TestCase):
         ]
 
         self.packet_tx = memoryview(bytearray(2048))
+
+        stack.mock__init(
+            mock__packet_handler=self.packet_handler,
+        )
 
     def _patch_config(self) -> None:
         """

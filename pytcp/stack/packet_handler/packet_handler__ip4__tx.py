@@ -64,6 +64,8 @@ class PacketHandlerIp4Tx(ABC):
         ip4_host: list[Ip4Host]
         ip4_multicast: list[Ip4Address]
         ip4_id: int
+        _ip4_support: bool
+        _interface_mtu: int
 
         # pylint: disable=unused-argument
 
@@ -101,7 +103,7 @@ class PacketHandlerIp4Tx(ABC):
 
         # Check if IPv4 protocol support is enabled, if not then silently drop
         # the packet
-        if not config.IP4__SUPPORT_ENABLED:
+        if not self._ip4_support:
             self.packet_stats_tx.ip4__no_proto_support__drop += 1
             return TxStatus.DROPED__IP4__NO_PROTOCOL_SUPPORT
 
@@ -133,7 +135,7 @@ class PacketHandlerIp4Tx(ABC):
         )
 
         # Send packet out if it's size doesn't exceed mtu
-        if len(ip4_packet_tx) <= config.INTERFACE__TAP__MTU:
+        if len(ip4_packet_tx) <= self._interface_mtu:
             self.packet_stats_tx.ip4__mtu_ok__send += 1
             __debug__ and log(
                 "ip4", f"{ip4_packet_tx.tracker} - {ip4_packet_tx}"
@@ -158,7 +160,7 @@ class PacketHandlerIp4Tx(ABC):
         payload = bytearray(bytes(ip4_packet_tx.payload))
 
         payload_mtu = (
-            config.INTERFACE__TAP__MTU - ip4_packet_tx.hlen
+            self._interface_mtu - ip4_packet_tx.hlen
         ) & 0b1111111111111000
         payload_frags = [
             payload[_ : payload_mtu + _]

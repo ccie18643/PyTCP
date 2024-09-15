@@ -27,7 +27,7 @@
 """
 Module contains class supporting stack TX Ring operations.
 
-pytcp/subsystems/tx_ring.py
+pytcp/stack/tx_ring.py
 
 ver 3.0.2
 """
@@ -59,24 +59,27 @@ class TxRing:
     _fd: int
     _mtu: int
 
-    def __init__(self) -> None:
+    def __init__(self, *, fd: int, mtu: int) -> None:
         """
         Initialize access to TX file descriptor and the outbound queue.
         """
+
+        self._fd = fd
+        self._mtu = mtu
+
+        __debug__ and log("stack", f"Initializing TX Ring, fd={fd}, mtu={mtu}")
 
         self._tx_ring: list[EthernetAssembler | Ethernet8023Assembler] = []
         self._packet_enqueued: Semaphore = threading.Semaphore(0)
         self._run_thread: bool = False
 
-    def start(self, *, fd: int, mtu: int) -> None:
+    def start(self) -> None:
         """
         Start TX Ring thread.
         """
 
         __debug__ and log("stack", "Starting TX Ring")
 
-        self._fd = fd
-        self._mtu = mtu
         self._run_thread = True
         threading.Thread(target=self._thread__tx_ring__transmit).start()
         time.sleep(0.1)

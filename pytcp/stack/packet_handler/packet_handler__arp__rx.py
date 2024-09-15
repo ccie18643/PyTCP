@@ -38,7 +38,7 @@ from __future__ import annotations
 from abc import ABC
 from typing import TYPE_CHECKING
 
-from pytcp import config, stack
+from pytcp import stack
 from pytcp.lib.errors import PacketValidationError
 from pytcp.lib.logger import log
 from pytcp.protocols.arp.arp__header import ArpOperation
@@ -148,7 +148,7 @@ class PacketHandlerArpRx(ABC):
 
             # Update ARP cache with the mapping learned from the received
             # ARP request that was destined to this stack.
-            if config.ARP__CACHE__UPDATE_FROM_DIRECT_REQUEST:
+            if stack.ARP__CACHE__UPDATE_FROM_DIRECT_REQUEST:
                 self.packet_stats_rx.arp__op_request__update_arp_cache += 1
                 __debug__ and log(
                     "arp",
@@ -211,7 +211,7 @@ class PacketHandlerArpRx(ABC):
         if (
             packet_rx.ethernet.dst.is_broadcast
             and packet_rx.arp.spa == packet_rx.arp.tpa
-            and config.ARP__CACHE__UPDATE_FROM_GRATUITIOUS_REPLY
+            and stack.ARP__CACHE__UPDATE_FROM_GRATUITIOUS_REPLY
         ):
             self.packet_stats_rx.arp__op_reply__update_arp_cache_gratuitous += 1
             __debug__ and log(

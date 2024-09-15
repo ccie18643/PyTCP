@@ -27,7 +27,7 @@
 """
 Module contains class supporting timer that can be used by other stack components.
 
-pytcp/subsystems/timer.py
+pytcp/stack/timer.py
 
 ver 3.0.2
 """
@@ -119,6 +119,8 @@ class Timer:
         Class constructor.
         """
 
+        __debug__ and log("stack", "Initializing Timer")
+
         self._tasks: list[TimerTask] = []
         self._timers: dict[str, int] = {}
         self._run_thread: bool = False
@@ -128,7 +130,7 @@ class Timer:
         Start timer thread.
         """
 
-        __debug__ and log("stack", "Starting timer thread")
+        __debug__ and log("stack", "Starting Timer")
 
         self._run_thread = True
         threading.Thread(target=self._thread__timer__run_tasks).start()
@@ -139,7 +141,7 @@ class Timer:
         Stop timer thread.
         """
 
-        __debug__ and log("stack", "Stopping timer thread")
+        __debug__ and log("stack", "Stopping Timer")
 
         self._run_thread = False
         time.sleep(0.1)

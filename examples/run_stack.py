@@ -50,7 +50,7 @@ from net_addr import (
     Ip6Host,
     MacAddress,
 )
-from pytcp import TcpIpStack, initialize_interface
+from pytcp import stack
 
 
 @click.command()
@@ -104,17 +104,14 @@ def cli(
     Start PyTCP stack and stop it when user presses Ctrl-C.
     """
 
-    fd, mtu = initialize_interface(interface)
-
     if ip6_host:
         ip6_host.gateway = ip6_gateway
 
     if ip4_host:
         ip4_host.gateway = ip4_gateway
 
-    stack = TcpIpStack(
-        fd=fd,
-        mtu=mtu,
+    stack.init(
+        *stack.initialize_interface(interface),
         mac_address=mac_address,
         ip6_host=ip6_host,
         ip4_host=ip4_host,

@@ -36,6 +36,7 @@ from typing import no_type_check
 
 from testslide import StrictMock, TestCase
 from pytcp import config
+from pytcp import stack
 from net_addr import Ip4Address, Ip4Host, Ip6Address, Ip6Host, MacAddress
 from pytcp.stack.arp_cache import ArpCache
 from pytcp.stack.nd_cache import NdCache
@@ -161,11 +162,11 @@ def setup_mock_packet_handler(self: TestCase) -> None:
     ).with_implementation(
         func=_mock_enqueue,
     )
-    self.patch_attribute(
-        target="pytcp.stack",
-        attribute="tx_ring",
-        new_value=mock_TxRing,
-    )
+    # self.patch_attribute(
+    #    target="pytcp.stack",
+    #    attribute="tx_ring",
+    #    new_value=mock_TxRing,
+    # )
 
     # Mock the ArpCache so we can get predictable responses
     mock_ArpCache = StrictMock(template=ArpCache)
@@ -187,11 +188,11 @@ def setup_mock_packet_handler(self: TestCase) -> None:
     ).for_call(
         ip4_address=self.mns.stack_ip4_gateway
     ).to_return_value(self.mns.stack_ip4_gateway_mac_address)
-    self.patch_attribute(
-        target="pytcp.stack",
-        attribute="arp_cache",
-        new_value=mock_ArpCache,
-    )
+    # self.patch_attribute(
+    #    target="pytcp.stack",
+    #    attribute="arp_cache",
+    #    new_value=mock_ArpCache,
+    # )
 
     # Mock the NdCache so we can get predictable responses
     mock_NdCache = StrictMock(template=NdCache)
@@ -219,15 +220,17 @@ def setup_mock_packet_handler(self: TestCase) -> None:
     ).for_call(
         ip6_address=self.mns.router_b_ip6_address
     ).to_return_value(None)
-    self.patch_attribute(
-        target="pytcp.stack",
-        attribute="nd_cache",
-        new_value=mock_NdCache,
-    )
+    # self.patch_attribute(
+    #    target="pytcp.stack",
+    #    attribute="nd_cache",
+    #    new_value=mock_NdCache,
+    # )
 
     # Prepare PacketHandler object to be used with the tests
-    self.packet_handler = PacketHandler()
-    self.packet_handler.mac_unicast = self.mns.stack_mac_address
+    self.packet_handler = PacketHandler(
+        mac_address=self.mns.stack_mac_address,
+        interface_mtu=1500,
+    )
     self.packet_handler.mac_multicast = [
         self.mns.stack_ip6_host.address.solicited_node_multicast.multicast_mac
     ]
@@ -241,3 +244,10 @@ def setup_mock_packet_handler(self: TestCase) -> None:
 
     # Initialize the list holding the frames "sent" by mock TxRing
     self.frames_tx = []
+
+    stack.mock__init(
+        mock__tx_ring=mock_TxRing,
+        mock__arp_cache=mock_ArpCache,
+        mock__nd_cache=mock_NdCache,
+        mock__packet_handler=self.packet_handler,
+    )

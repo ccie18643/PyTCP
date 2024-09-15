@@ -48,7 +48,6 @@ from net_addr import (
     Ip6Network,
     MacAddress,
 )
-from pytcp import config, stack
 from pytcp.lib.logger import log
 from pytcp.lib.packet_stats import PacketStatsRx, PacketStatsTx
 from pytcp.protocols.dhcp4__legacy.client import Dhcp4Client
@@ -107,10 +106,31 @@ class PacketHandler(
     Pick up and respond to incoming packets.
     """
 
-    def __init__(self) -> None:
+    def __init__(
+        self,
+        *,
+        mac_address: MacAddress,
+        interface_mtu: int,
+        ip4_support: bool = True,
+        ip4_host: Ip4Host | None = None,
+        ip4_dhcp: bool = True,
+        ip6_support: bool = True,
+        ip6_host: Ip6Host | None = None,
+        ip6_lla_autoconfig: bool = True,
+        ip6_gua_autoconfig: bool = True,
+    ) -> None:
         """
         Class constructor.
         """
+
+        self._ip4_support = ip4_support
+        self._ip6_support = ip6_support
+
+        self._interface_mtu = interface_mtu
+
+        self._ip4_dhcp = ip4_dhcp
+        self._ip6_lla_autoconfig = ip6_lla_autoconfig
+        self._ip6_gua_autoconfig = ip6_gua_autoconfig
 
         # Initialize data stores for packet statistics (used mainly in usnit
         # testing, but also available via cli).
@@ -124,7 +144,7 @@ class PacketHandler(
         # the unicast addresses, so the other ones keep it's SNM entry in the
         # multicast list. Its the simplest solution and imho perfectly valid
         # one in this case.
-        self.mac_unicast: MacAddress = MacAddress(config.ETHERNET__MAC_ADDRESS)
+        self.mac_unicast = mac_address
         self.mac_multicast: list[MacAddress] = []
         self.mac_broadcast: MacAddress = MacAddress(0xFFFFFFFFFFFF)
         self.ip6_host_candidate: list[Ip6Host] = []
@@ -159,6 +179,13 @@ class PacketHandler(
 
         # Used for IPv4 and IPv6 address configuration
         self.ip_configuration_in_progress: Semaphore = threading.Semaphore(0)
+
+        # Assigned IP addresses statically.
+        if ip4_host is not None:
+            self.ip4_host_candidate.append(ip4_host)
+
+        if ip6_host is not None:
+            self.ip6_host_candidate.append(ip6_host)
 
     @property
     def ip6_unicast(self) -> list[Ip6Address]:
@@ -237,7 +264,7 @@ class PacketHandler(
         __debug__ and log("stack", "Started the IPv4 address acquire thread")
 
         if not self.ip4_host_candidate:
-            if config.IP4__HOST_DHCP:
+            if self._ip4_dhcp:
                 if ip4_host := Dhcp4Client(self.mac_unicast).fetch():
                     self.ip4_host_candidate.append(ip4_host)
         self._create_stack_ip4_addressing()
@@ -253,8 +280,10 @@ class PacketHandler(
 
         __debug__ and log("stack", "Started packet handler")
 
+        from pytcp.stack import rx_ring
+
         while self._run_thread:
-            if (packet_rx := stack.rx_ring.dequeue()) is not None:
+            if (packet_rx := rx_ring.dequeue()) is not None:
                 if (
                     int.from_bytes(packet_rx.frame[12:14])
                     <= ETHERNET_802_3__PACKET__MAX_LEN
@@ -286,27 +315,6 @@ class PacketHandler(
         threading.Thread(
             target=self._thread__packet_handler__acquire_ip4_addresses
         ).start()
-
-    def _assign_mac_address(self, *, mac_unicast: MacAddress) -> None:
-        """
-        Assign MAC address information.
-        """
-
-        self.mac_unicast = mac_unicast
-
-    def _assign_ip6_address(self, *, ip6_host: Ip6Host) -> None:
-        """
-        Assign IPv6 address information.
-        """
-
-        self.ip6_host_candidate.append(ip6_host)
-
-    def _assign_ip4_address(self, *, ip4_host: Ip4Host) -> None:
-        """
-        Assign IPv4 address information.
-        """
-
-        self.ip4_host_candidate.append(ip4_host)
 
     def _perform_ip6_nd_dad(self, *, ip6_unicast_candidate: Ip6Address) -> bool:
         """
@@ -372,7 +380,7 @@ class PacketHandler(
                 _claim_ip6_address(ip6_host)
 
         # Configure Link Local address automatically
-        if config.IP6__LLA_AUTOCONFIG:
+        if self._ip6_lla_autoconfig:
             ip6_host = Ip6Host.from_eui64(
                 mac_address=self.mac_unicast,
                 ip6_network=Ip6Network("fe80::/64"),
@@ -388,7 +396,7 @@ class PacketHandler(
                 "<WARN>Unable to assign any IPv6 link local address, "
                 "disabling IPv6 protocol</>",
             )
-            config.IP6__SUPPORT_ENABLED = False
+            self._ip6_support = False
             return
 
         # Check if there are any statically configures GUA addresses
@@ -399,7 +407,7 @@ class PacketHandler(
         # Send out IPv6 Router Solicitation message and wait for response
         # in attempt to auto configure addresses based on
         # ICMPv6 Router Advertisement.
-        if config.IP6__GUA_AUTOCONFIG:
+        if self._ip6_gua_autoconfig:
             self._send_icmp6_nd_router_solicitation()
             self.icmp6_ra_event.acquire(timeout=1)
             for prefix, gateway in list(self.icmp6_ra_prefixes):
@@ -456,7 +464,7 @@ class PacketHandler(
                 "<WARN>Unable to assign any IPv4 address, disabling IPv4 "
                 "protocol</>",
             )
-            config.IP4__SUPPORT_ENABLED = False
+            self._ip4_support = False
             return
 
     def _assign_ip6_host(self, /, ip6_host: Ip6Host) -> None:
@@ -528,10 +536,8 @@ class PacketHandler(
         Log all the addresses stack will listen on
         """
 
-        for _ in (config.IP6__SUPPORT_ENABLED, config.IP4__SUPPORT_ENABLED):
-            stack.packet_handler.ip_configuration_in_progress.acquire(
-                timeout=15
-            )
+        for _ in (self._ip6_support, self._ip4_support):
+            self.ip_configuration_in_progress.acquire(timeout=15)
 
         if __debug__:
             log(
@@ -550,7 +556,7 @@ class PacketHandler(
                 f"{self.mac_broadcast}</>",
             )
 
-            if config.IP6__SUPPORT_ENABLED:
+            if self._ip6_support:
                 log(
                     "stack",
                     "<INFO>Stack listening on unicast IPv6 addresses: "
@@ -562,7 +568,7 @@ class PacketHandler(
                     f"{', '.join([str(ip6_multicast) for ip6_multicast in set(self.ip6_multicast)])}</>",
                 )
 
-            if config.IP4__SUPPORT_ENABLED:
+            if self._ip4_support:
                 log(
                     "stack",
                     "<INFO>Stack listening on unicast IPv4 addresses: "

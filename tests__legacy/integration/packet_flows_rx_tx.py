@@ -45,6 +45,7 @@ from pytcp.stack.arp_cache import ArpCache
 from pytcp.stack.nd_cache import NdCache
 from pytcp.stack.packet_handler import PacketHandler
 from pytcp.stack.tx_ring import TxRing
+from pytcp import stack
 
 
 # Ensure critical configuration settings are set properly for
@@ -93,11 +94,11 @@ class TestPacketHandlerRxTx(TestCase):
         ).for_call(ip4_address=LOCNET_IP4_ADDRESS).to_return_value(
             LOCNET_MAC_ADDRESS
         )
-        self.patch_attribute(
-            target="pytcp.stack",
-            attribute="arp_cache",
-            new_value=self.mock_ArpCache,
-        )
+        # self.patch_attribute(
+        #    target="pytcp.stack",
+        #    attribute="arp_cache",
+        #    new_value=self.mock_ArpCache,
+        # )
 
         mock_NdCache = StrictMock(template=NdCache)
         self.mock_callable(
@@ -113,11 +114,11 @@ class TestPacketHandlerRxTx(TestCase):
             ip6_address=LOCNET_IP6_ADDRESS,
             mac_address=LOCNET_MAC_ADDRESS,
         ).to_return_value(None)
-        self.patch_attribute(
-            target="pytcp.stack",
-            attribute="nd_cache",
-            new_value=mock_NdCache,
-        )
+        # self.patch_attribute(
+        #    target="pytcp.stack",
+        #    attribute="nd_cache",
+        #    new_value=mock_NdCache,
+        # )
 
         def dupa(packet_tx) -> None:
             self.packet_tx = bytes(packet_tx)
@@ -128,17 +129,19 @@ class TestPacketHandlerRxTx(TestCase):
             target=mock_TxRing,
             method="enqueue",
         ).with_implementation(dupa)
-        self.patch_attribute(
-            target="pytcp.stack",
-            attribute="tx_ring",
-            new_value=mock_TxRing,
-            type_validation=False,
-        )
+        # self.patch_attribute(
+        #    target="pytcp.stack",
+        #    attribute="tx_ring",
+        #    new_value=mock_TxRing,
+        #    type_validation=False,
+        # )
 
         # Initialize packet handler and manually set all the variables
         # that normally would require network connectivity.
-        self.packet_handler = PacketHandler()
-        self.packet_handler.mac_unicast = STACK_MAC_ADDRESS
+        self.packet_handler = PacketHandler(
+            mac_address=STACK_MAC_ADDRESS,
+            interface_mtu=1500,
+        )
         self.packet_handler.mac_multicast = [
             STACK_IP6_HOST.address.solicited_node_multicast.multicast_mac
         ]
@@ -150,6 +153,13 @@ class TestPacketHandlerRxTx(TestCase):
         ]
 
         self.packet_tx = memoryview(bytearray(2048))
+
+        stack.mock__init(
+            mock__tx_ring=mock_TxRing,
+            mock__arp_cache=self.mock_ArpCache,
+            mock__nd_cache=mock_NdCache,
+            mock__packet_handler=self.packet_handler,
+        )
 
     def _patch_config(self) -> None:
         """

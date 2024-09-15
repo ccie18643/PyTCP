@@ -25,9 +25,9 @@
 
 
 """
-Module contains class supporting ARP cache operations.
+Module contains class supporting ARP Cache operations.
 
-pytcp/protocols/arp/cache.py
+pytcp/stack/arp_cache.py
 
 ver 3.0.2
 """
@@ -39,13 +39,13 @@ import threading
 import time
 
 from net_addr import Ip4Address, MacAddress
-from pytcp import config, stack
+from pytcp import stack
 from pytcp.lib.logger import log
 
 
 class ArpCache:
     """
-    Support for ARP cache operations.
+    Support for ARP Cache operations.
     """
 
     class CacheEntry:
@@ -67,18 +67,20 @@ class ArpCache:
 
     def __init__(self) -> None:
         """
-        Class constructor.
+        Initialize ARP Cache.
         """
+
+        __debug__ and log("stack", "Initializing ARP Cache")
 
         self._arp_cache: dict[Ip4Address, ArpCache.CacheEntry] = {}
         self._run_thread: bool = False
 
     def start(self) -> None:
         """
-        Start ARP cache thread.
+        Start ARP Cache thread.
         """
 
-        __debug__ and log("stack", "Starting ARP cache")
+        __debug__ and log("stack", "Starting ARP Cache")
 
         self._run_thread = True
         threading.Thread(
@@ -88,20 +90,20 @@ class ArpCache:
 
     def stop(self) -> None:
         """
-        Stop ARP cache thread.
+        Stop ARP Cache thread.
         """
 
-        __debug__ and log("stack", "Stopping ARP cache")
+        __debug__ and log("stack", "Stopping ARP Cache")
 
         self._run_thread = False
         time.sleep(0.1)
 
     def _thread__arp_cache__maintain_entries(self) -> None:
         """
-        Thread responsible for maintaining ARP cache entries.
+        Thread responsible for maintaining ARP Cache entries.
         """
 
-        __debug__ and log("stack", "Started ARP cache")
+        __debug__ and log("stack", "Started ARP Cache")
 
         while self._run_thread:
             for ip4_address in list(self._arp_cache):
@@ -112,12 +114,12 @@ class ArpCache:
                 # If entry age is over maximum age then discard the entry
                 if (
                     time.time() - self._arp_cache[ip4_address].creation_time
-                    > config.ARP__CACHE__ENTRY_MAX_AGE
+                    > stack.ARP__CACHE__ENTRY_MAX_AGE
                 ):
                     mac_address = self._arp_cache.pop(ip4_address).mac_address
                     __debug__ and log(
                         "arp-c",
-                        f"Discarded expir ARP cache entry - {ip4_address} -> "
+                        f"Discarded expir ARP Cache entry - {ip4_address} -> "
                         f"{mac_address}",
                     )
 
@@ -126,14 +128,14 @@ class ArpCache:
                 # to refresh it.
                 elif (
                     time.time() - self._arp_cache[ip4_address].creation_time
-                    > config.ARP__CACHE__ENTRY_MAX_AGE
-                    - config.ARP__CACHE__ENTRY_REFRESH_TIME
+                    > stack.ARP__CACHE__ENTRY_MAX_AGE
+                    - stack.ARP__CACHE__ENTRY_REFRESH_TIME
                 ) and self._arp_cache[ip4_address].hit_count:
                     self._arp_cache[ip4_address].hit_count = 0
                     stack.packet_handler.send_arp_request(arp__tpa=ip4_address)
                     __debug__ and log(
                         "arp-c",
-                        "Trying to refresh expiring ARP cache entry for "
+                        "Trying to refresh expiring ARP Cache entry for "
                         f"{ip4_address} -> "
                         f"{self._arp_cache[ip4_address].mac_address}",
                     )
@@ -141,7 +143,7 @@ class ArpCache:
             # Put thread to sleep for a 10 milliseconds
             time.sleep(0.1)
 
-        __debug__ and log("stack", "Stopped ARP cache")
+        __debug__ and log("stack", "Stopped ARP Cache")
 
     def add_entry(
         self,
@@ -155,7 +157,7 @@ class ArpCache:
 
         __debug__ and log(
             "arp-c",
-            f"<INFO>Adding/refreshing ARP cache entry - {ip4_address} -> "
+            f"<INFO>Adding/refreshing ARP Cache entry - {ip4_address} -> "
             f"{mac_address}</>",
         )
 

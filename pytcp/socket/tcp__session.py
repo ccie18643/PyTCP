@@ -49,7 +49,7 @@ from collections.abc import Callable
 from enum import auto
 from typing import TYPE_CHECKING, Any
 
-from pytcp import config, stack
+from pytcp import stack
 from pytcp.lib.logger import log
 from pytcp.lib.name_enum import NameEnum
 
@@ -67,6 +67,8 @@ TIME_WAIT_DELAY = 30000  # 30s delay for the TIME_WAIT state, default is 30-120s
 DELAYED_ACK_DELAY = (
     100  # Delay between consecutive delayed ACK outbound packets
 )
+
+INTERFACE__TAP__MTU = 1500
 
 
 class TcpSessionError(Exception):
@@ -209,7 +211,7 @@ class TcpSession:
         self._rcv_una: int = 0
 
         # Maximum segment size
-        self._rcv_mss: int = config.INTERFACE__TAP__MTU - 40
+        self._rcv_mss: int = INTERFACE__TAP__MTU - 40
 
         # Window size
         self._rcv_wnd: int = 65535
@@ -883,7 +885,7 @@ class TcpSession:
                 )
                 # Initialize session parameters
                 self._snd_mss = min(
-                    packet_rx_md.tcp__mss, config.INTERFACE__TAP__MTU - 40
+                    packet_rx_md.tcp__mss, INTERFACE__TAP__MTU - 40
                 )
                 self._snd_wnd = (
                     packet_rx_md.tcp__win << self._snd_wsc
@@ -940,7 +942,7 @@ class TcpSession:
             ):
                 # Initialize session parameters
                 self._snd_mss = min(
-                    packet_rx_md.tcp__mss, config.INTERFACE__TAP__MTU - 40
+                    packet_rx_md.tcp__mss, INTERFACE__TAP__MTU - 40
                 )
                 self._snd_wnd = (
                     packet_rx_md.tcp__win << self._snd_wsc
