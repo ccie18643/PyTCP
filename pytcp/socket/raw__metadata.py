@@ -68,16 +68,16 @@ class RawMetadata:
         return [
             (
                 AddressFamily.from_ver(self.ip__ver),
-                SocketType.SOCK_RAW,
-                IpProto.IPPROTO_ICMP4,
+                SocketType.RAW,
+                IpProto.ICMP4,
                 self.ip__local_address.unspecified,
                 self.ip__remote_address.unspecified,
                 0,
             ),
             (
                 AddressFamily.from_ver(self.ip__ver),
-                SocketType.SOCK_RAW,
-                IpProto.IPPROTO_ICMP6,
+                SocketType.RAW,
+                IpProto.ICMP6,
                 self.ip__local_address.unspecified,
                 self.ip__remote_address.unspecified,
                 0,
