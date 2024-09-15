@@ -35,10 +35,6 @@ ver 3.0.2
 
 from __future__ import annotations
 
-from sys import version_info
-
-assert version_info >= (3, 12), "PyTCP requires Python version 3.12 or higher."
-
 
 # IPv6 default Hop Limit value.
 IP6__DEFAULT_HOP_LIMIT = 64

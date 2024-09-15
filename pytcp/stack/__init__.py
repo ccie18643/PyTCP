@@ -53,10 +53,17 @@ from .packet_handler import PacketHandler
 from .rx_ring import RxRing
 from .timer import Timer
 from .tx_ring import TxRing
+from sys import version_info
 
 if TYPE_CHECKING:
     from net_addr import Ip4Address
     from pytcp.socket.socket import Socket
+
+
+assert version_info >= (
+    3,
+    12,
+), "PyTCP stack requires Python version 3.12 or higher to run."
 
 
 # Interface configuration.
