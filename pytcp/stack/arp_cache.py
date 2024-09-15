@@ -35,9 +35,9 @@ ver 3.0.2
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
 import threading
 import time
+from dataclasses import dataclass, field
 
 from net_addr import Ip4Address, MacAddress
 from pytcp import stack

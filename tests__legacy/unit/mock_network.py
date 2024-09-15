@@ -132,6 +132,7 @@ def patch_config(self: TestCase, *, enable_log: bool = False) -> None:
     Patch critical config setting for all packet handler modules.
     """
     for attribute, new_value in CONFIG_PATCHES.items():
+        stack.__dict__[attribute] = new_value
         config.__dict__[attribute] = new_value
 
 

@@ -166,6 +166,7 @@ class TestPacketHandlerRxTx(TestCase):
         Patch critical config setting for all packet handler modules.
         """
         for attribute, new_value in CONFIG_PATCHES.items():
+            stack.__dict__[attribute] = new_value
             config.__dict__[attribute] = new_value
 
     # Test name format:

@@ -38,7 +38,7 @@ from __future__ import annotations
 import inspect
 import time
 
-from pytcp import config
+from pytcp import stack
 
 STYLES = {
     "</>": "\33[0m",
@@ -75,8 +75,8 @@ def log(
     Log message if channel and severity match configured values.
     """
 
-    if channel in config.LOG__CHANNEL:
-        if config.LOG__DEBUG:
+    if channel in stack.LOG__CHANNEL:
+        if stack.LOG__DEBUG:
             frame_info = inspect.stack()[inspect_depth]
             caller_class = frame_info.frame.f_locals["self"].__class__.__name__
             caller_method = frame_info.function

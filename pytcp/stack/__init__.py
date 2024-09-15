@@ -84,6 +84,34 @@ ARP__CACHE__UPDATE_FROM_GRATUITIOUS_REPLY = True
 ICMP6__ND__CACHE__ENTRY_MAX_AGE = 3600
 ICMP6__ND__CACHE__ENTRY_REFRESH_TIME = 300
 
+# Logger configuration - LOG__CHANNEL sets which subsystems of stack log to the
+# console, LOG__DEBUG adds info about class/method caller.
+# Following subsystems are supported:
+# stack, timer, rx-ring, tx-ring, arp-c, nd-c, ether, arp, ip4, ip6, icmp4,
+# icmp6, udp, tcp, socket, tcp-ss, service.
+LOG__CHANNEL = {
+    "stack",
+    #    "timer",
+    "rx-ring",
+    "tx-ring",
+    "arp-c",
+    "nd-c",
+    "ether",
+    "arp",
+    "ip4",
+    "ip6",
+    "icmp4",
+    "icmp6",
+    "udp",
+    "tcp",
+    "socket",
+    "tcp-ss",
+    "dhcp4",
+    "service",
+    "client",
+}
+LOG__DEBUG = False
+
 version_string = "ver 3.0.2"
 github_repository = "https://github.com/ccie18643/PyTCP"
 

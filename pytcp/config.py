@@ -40,34 +40,6 @@ from sys import version_info
 assert version_info >= (3, 12), "PyTCP requires Python version 3.12 or higher."
 
 
-# Logger configuration - LOG__CHANNEL sets which subsystems of stack log to the
-# console, LOG__DEBUG adds info about class/method caller.
-# Following subsystems are supported:
-# stack, timer, rx-ring, tx-ring, arp-c, nd-c, ether, arp, ip4, ip6, icmp4,
-# icmp6, udp, tcp, socket, tcp-ss, service.
-LOG__CHANNEL = {
-    "stack",
-    #    "timer",
-    "rx-ring",
-    "tx-ring",
-    "arp-c",
-    "nd-c",
-    "ether",
-    "arp",
-    "ip4",
-    "ip6",
-    "icmp4",
-    "icmp6",
-    "udp",
-    "tcp",
-    "socket",
-    "tcp-ss",
-    "dhcp4",
-    "service",
-    "client",
-}
-LOG__DEBUG = False
-
 # IPv6 default Hop Limit value.
 IP6__DEFAULT_HOP_LIMIT = 64
 
