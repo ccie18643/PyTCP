@@ -38,6 +38,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 
+from pytcp.protocols.enums import IpProto
 from pytcp.socket.socket import AddressFamily, SocketType
 
 if TYPE_CHECKING:
@@ -54,6 +55,7 @@ class RawMetadata:
     ip__ver: int
     ip__local_address: IpAddress
     ip__remote_address: IpAddress
+    ip__proto: IpProto
 
     raw__data: bytes = bytes()
 
@@ -70,15 +72,7 @@ class RawMetadata:
                 AddressFamily.from_ver(self.ip__ver),
                 SocketType.RAW,
                 self.ip__local_address.unspecified,
-                0,
-                self.ip__remote_address.unspecified,
-                0,
-            ),
-            (
-                AddressFamily.from_ver(self.ip__ver),
-                SocketType.RAW,
-                self.ip__local_address.unspecified,
-                0,
+                int(self.ip__proto),
                 self.ip__remote_address.unspecified,
                 0,
             ),

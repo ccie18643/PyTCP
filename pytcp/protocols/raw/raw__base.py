@@ -38,6 +38,7 @@ from __future__ import annotations
 from typing import override
 
 from pytcp.lib.proto import Proto
+from pytcp.protocols.enums import IpProto
 
 
 class Raw(Proto):
@@ -46,6 +47,7 @@ class Raw(Proto):
     """
 
     _payload: bytes
+    _ip_proto: IpProto
 
     @override
     def __len__(self) -> int:
@@ -86,3 +88,11 @@ class Raw(Proto):
         """
 
         return self._payload
+
+    @property
+    def ip_proto(self) -> IpProto:
+        """
+        Get the IP protocol number.
+        """
+
+        return self._ip_proto

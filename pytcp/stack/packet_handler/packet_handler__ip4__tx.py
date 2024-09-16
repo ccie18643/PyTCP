@@ -42,6 +42,7 @@ from net_addr import Ip4Address, MacAddress
 from pytcp.lib.logger import log
 from pytcp.lib.tx_status import TxStatus
 from pytcp.protocols.defaults import IP4__DEFAULT_TTL
+from pytcp.protocols.enums import IpProto
 from pytcp.protocols.ip4.ip4__assembler import Ip4Assembler, Ip4FragAssembler
 from pytcp.protocols.raw.raw__assembler import RawAssembler
 from pytcp.protocols.tcp.tcp__assembler import TcpAssembler
@@ -376,3 +377,24 @@ class PacketHandlerIp4Tx(ABC):
             return TxStatus.DROPED__IP4__DST_UNSPECIFIED
 
         return ip4__dst
+
+    def send_ip4_packet(
+        self,
+        *,
+        ip4__local_address: Ip4Address,
+        ip4__remote_address: Ip4Address,
+        ip4__proto: IpProto,
+        ip4__payload: bytes = bytes(),
+    ) -> TxStatus:
+        """
+        Interface method for RAW Socket -> Packet Assembler communication.
+        """
+
+        return self._phtx_ip4(
+            ip4__src=ip4__local_address,
+            ip4__dst=ip4__remote_address,
+            ip4__payload=RawAssembler(
+                raw__payload=ip4__payload,
+                ip_proto=ip4__proto,
+            ),
+        )

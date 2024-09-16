@@ -42,6 +42,7 @@ from net_addr import Ip6Address, MacAddress
 from pytcp.lib.logger import log
 from pytcp.lib.tx_status import TxStatus
 from pytcp.protocols.defaults import IP6__DEFAULT_HOP_LIMIT
+from pytcp.protocols.enums import IpProto
 from pytcp.protocols.icmp6.icmp6__base import Icmp6
 from pytcp.protocols.icmp6.message.mld2.icmp6_mld2_message__report import (
     Icmp6Mld2ReportMessage,
@@ -307,3 +308,24 @@ class PacketHandlerIp6Tx(ABC):
             return TxStatus.DROPED__IP6__DST_UNSPECIFIED
 
         return ip6__dst
+
+    def send_ip6_packet(
+        self,
+        *,
+        ip6__local_address: Ip6Address,
+        ip6__remote_address: Ip6Address,
+        ip6__next: IpProto,
+        ip6__payload: bytes = bytes(),
+    ) -> TxStatus:
+        """
+        Interface method for RAW Socket -> Packet Assembler communication.
+        """
+
+        return self._phtx_ip6(
+            ip6__src=ip6__local_address,
+            ip6__dst=ip6__remote_address,
+            ip6__payload=RawAssembler(
+                raw__payload=ip6__payload,
+                ip_proto=ip6__next,
+            ),
+        )

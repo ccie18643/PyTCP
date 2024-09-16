@@ -37,6 +37,7 @@ from __future__ import annotations
 
 import threading
 from typing import TYPE_CHECKING, Any, override
+from pytcp import stack
 
 from net_addr import (
     Ip4Address,
@@ -127,7 +128,117 @@ class RawSocket(Socket):
 
         return local_ip_address, remote_ip_address
 
-    def sendto(self, data: bytes, address: tuple[str, int]) -> int:
+    def bind(self, address: tuple[str, int]) -> None:
+        """
+        Bind the socket to local address.
+        """
+
+        # The 'bind' call will bind socket to specific / unspecified local IP
+        # address.
+
+        local_ip_address: IpAddress
+
+        match self._address_family:
+            case AddressFamily.INET6:
+                try:
+                    if (local_ip_address := Ip6Address(address[0])) not in set(
+                        stack.packet_handler.ip6_unicast
+                    ) | {Ip6Address()}:
+                        raise OSError(
+                            "[Errno 99] Cannot assign requested address - "
+                            "[Local IP address not owned by stack]"
+                        )
+                except Ip6AddressFormatError as error:
+                    raise gaierror(
+                        "[Errno -2] Name or service not known - "
+                        "[Malformed local IP address]"
+                    ) from error
+
+            case AddressFamily.INET4:
+                try:
+                    if (local_ip_address := Ip4Address(address[0])) not in set(
+                        stack.packet_handler.ip4_unicast
+                    ) | {Ip4Address()}:
+                        raise OSError(
+                            "[Errno 99] Cannot assign requested address - "
+                            "[Local IP address not owned by stack]"
+                        )
+                except Ip4AddressFormatError as error:
+                    raise gaierror(
+                        "[Errno -2] Name or service not known - "
+                        "[Malformed local IP address]"
+                    ) from error
+
+        stack.sockets.pop(self.socket_id, None)
+        self._local_ip_address = local_ip_address
+        stack.sockets[self.socket_id] = self
+
+        __debug__ and log("socket", f"<g>[{self}]</> - Bound")
+
+    def connect(self, address: tuple[str, int]) -> None:
+        """
+        Connect local socket to remote socket.
+        """
+
+        # The 'connect' call will bind socket to specific local IP address (will
+        # rebind if necessary) and specific remote IP address.
+
+        # Sanity check on remote port number (0 is a valid remote port in
+        # BSD socket implementation).
+        if (remote_port := address[1]) not in range(0, 65536):
+            raise OverflowError(
+                "connect(): port must be 0-65535. - [Port out of range]"
+            )
+
+        # Set local and remote ip addresses aproprietely
+        local_ip_address, remote_ip_address = self._get_ip_addresses(
+            remote_address=address,
+        )
+
+        # Re-register socket with new socket id
+        stack.sockets.pop(self.socket_id, None)
+        self._local_ip_address = local_ip_address
+        self._remote_ip_address = remote_ip_address
+        self._remote_port = remote_port
+        stack.sockets[self.socket_id] = self
+
+        __debug__ and log("socket", f"<g>[{self}]</> - Connected socket")
+
+    def send(self, data: bytes) -> int:
+        """
+        Send the data to connected remote host.
+        """
+
+        # The 'send' call requires 'connect' call to be run prior to it.
+        if self._remote_ip_address.is_unspecified:
+            raise OSError(
+                "[Errno 89] Destination address require - "
+                "[Socket has no destination address set]"
+            )
+
+        # TODO: Implement support for IP6 and IP4 instead UDP
+        tx_status = stack.packet_handler.send_udp_packet(
+            ip__local_address=self._local_ip_address,
+            ip__remote_address=self._remote_ip_address,
+            udp__local_port=self._local_port,
+            udp__remote_port=self._remote_port,
+            udp__payload=data,
+        )
+
+        sent_data_len = (
+            len(data)
+            if tx_status is TxStatus.PASSED__ETHERNET__TO_TX_RING
+            else 0
+        )
+
+        __debug__ and log(
+            "socket",
+            f"<g>[{self}]</> - <lr>Sent</> {sent_data_len} bytes of data",
+        )
+
+        return sent_data_len
+
+        def sendto(self, data: bytes, address: tuple[str, int]) -> int:
         """
         Send the data to remote host.
         """
@@ -157,6 +268,32 @@ class RawSocket(Socket):
         )
 
         return sent_data_len
+
+    def recv(
+        self, bufsize: int | None = None, timeout: float | None = None
+    ) -> bytes:
+        """
+        Read data from socket.
+        """
+
+        # TODO - Implement support for buffsize
+
+        if self._unreachable:
+            self._unreachable = False
+            raise ConnectionRefusedError(
+                "[Errno 111] Connection refused - "
+                "[Remote host sent ICMP Unreachable]"
+            )
+
+        if self._packet_rx_md_ready.acquire(timeout=timeout):
+            data_rx = self._packet_rx_md.pop(0).udp__data
+            __debug__ and log(
+                "socket",
+                f"<g>[{self}]</> - <lg>Received</> {len(data_rx)} "
+                "bytes of data",
+            )
+            return data_rx
+        raise ReceiveTimeout
 
     def recvfrom(
         self, bufsize: int | None = None, timeout: float | None = None

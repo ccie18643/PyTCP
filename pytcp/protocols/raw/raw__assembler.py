@@ -37,6 +37,7 @@ from __future__ import annotations
 
 from pytcp.lib.proto_assembler import ProtoAssembler
 from pytcp.lib.tracker import Tracker
+from pytcp.protocols.enums import IpProto
 from pytcp.protocols.raw.raw__base import Raw
 
 
@@ -51,6 +52,7 @@ class RawAssembler(Raw, ProtoAssembler):
         self,
         *,
         raw__payload: bytes = bytes(),
+        ip_proto: IpProto = IpProto.RAW,
         echo_tracker: Tracker | None = None,
     ) -> None:
         """
@@ -60,3 +62,4 @@ class RawAssembler(Raw, ProtoAssembler):
         self._tracker: Tracker = Tracker(prefix="TX", echo_tracker=echo_tracker)
 
         self._payload: bytes = raw__payload
+        self._ip_proto: IpProto = ip_proto

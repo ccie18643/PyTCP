@@ -172,6 +172,6 @@ class IpProto(ProtoEnumByte):
             return IpProto.ICMP6
 
         if isinstance(proto, Raw):
-            return IpProto.RAW
+            return proto.ip_proto
 
         raise ValueError(f"Unknown protocol: {type(proto)}")
