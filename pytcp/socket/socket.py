@@ -125,8 +125,6 @@ class Socket(ABC):
 
         return self.__str__()
 
-    # BSD socket API methods.
-
     @property
     def id(
         self,

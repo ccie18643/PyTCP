@@ -184,6 +184,10 @@ class TcpSocket(Socket):
 
         return local_ip_address, remote_ip_address
 
+    ###############################
+    ##  BSD socket API methods.  ##
+    ###############################
+
     def bind(self, address: tuple[str, int]) -> None:
         """
         Bind the socket to local address.
