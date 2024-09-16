@@ -118,38 +118,6 @@ class TcpSocket(Socket):
         __debug__ and log("socket", f"<g>[{self}]</> - Create socket")
 
     @property
-    def local_ip_address(self) -> IpAddress:
-        """
-        Get the '_local_ip_address' attribute.
-        """
-
-        return self._local_ip_address
-
-    @property
-    def remote_ip_address(self) -> IpAddress:
-        """
-        Get the '_remote_ip_address' attribute.
-        """
-
-        return self._remote_ip_address
-
-    @property
-    def local_port(self) -> int:
-        """
-        Get the '_local_port' attribute.
-        """
-
-        return self._local_port
-
-    @property
-    def remote_port(self) -> int:
-        """
-        Get the '_remote_port' attribute.
-        """
-
-        return self._remote_port
-
-    @property
     def state(self) -> FsmState:
         """
         Return FSM state of associated TCP session.
