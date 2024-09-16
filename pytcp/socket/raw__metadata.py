@@ -38,7 +38,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 
-from pytcp.socket.socket import AddressFamily, IpProto, SocketType
+from pytcp.socket.socket import AddressFamily, SocketType
 
 if TYPE_CHECKING:
     from net_addr import IpAddress
@@ -69,16 +69,16 @@ class RawMetadata:
             (
                 AddressFamily.from_ver(self.ip__ver),
                 SocketType.RAW,
-                IpProto.ICMP4,
                 self.ip__local_address.unspecified,
+                0,
                 self.ip__remote_address.unspecified,
                 0,
             ),
             (
                 AddressFamily.from_ver(self.ip__ver),
                 SocketType.RAW,
-                IpProto.ICMP6,
                 self.ip__local_address.unspecified,
+                0,
                 self.ip__remote_address.unspecified,
                 0,
             ),

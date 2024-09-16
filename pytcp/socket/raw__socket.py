@@ -44,11 +44,9 @@ from net_addr import (
     Ip6Address,
     Ip6AddressFormatError,
 )
-from pytcp.lib import stack
 from pytcp.lib.ip_helper import pick_local_ip_address
 from pytcp.lib.logger import log
 from pytcp.lib.tx_status import TxStatus
-from pytcp.socket.raw__metadata import RawMetadata
 from pytcp.socket.socket import (
     AddressFamily,
     IpProto,
@@ -60,7 +58,7 @@ from pytcp.socket.socket import (
 
 if TYPE_CHECKING:
     from net_addr import IpAddress
-    from pytcp.socket.udp__metadata import UdpMetadata
+    from pytcp.socket.raw__metadata import RawMetadata
 
 
 class RawSocket(Socket):
@@ -90,48 +88,10 @@ class RawSocket(Socket):
                 self._local_ip_address = Ip4Address()
                 self._remote_ip_address = Ip4Address()
 
+        self._local_port = int(ip_proto)
+        self._remote_port = 0
+
         __debug__ and log("socket", f"<g>[{self}]</> - Created socket")
-
-    @override
-    def __str__(self) -> str:
-        """
-        Get the UDP log string.
-        """
-
-        return (
-            f"{self._address_family}/{self._socket_type}/{self._ip_proto}/"
-            f"{self._local_ip_address}/{self._remote_ip_address}"
-        )
-
-    @property
-    def id(self) -> tuple[Any, ...]:
-        """
-        Get the socket ID.
-        """
-
-        return (
-            self._address_family,
-            self._socket_type,
-            self._ip_proto,
-            self._local_ip_address,
-            self._remote_ip_address,
-        )
-
-    @property
-    def local_ip_address(self) -> IpAddress:
-        """
-        Get the '_local_ip_address' attribute.
-        """
-
-        return self._local_ip_address
-
-    @property
-    def remote_ip_address(self) -> IpAddress:
-        """
-        Get the '_remote_ip_address' attribute.
-        """
-
-        return self._remote_ip_address
 
     def _get_ip_addresses(
         self,

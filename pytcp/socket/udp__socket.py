@@ -219,10 +219,10 @@ class UdpSocket(Socket):
             local_port = pick_local_port()
 
         # Assigning local port makes socket "bound"
-        stack.sockets.pop(self.id, None)
+        stack.sockets.pop(self.socket_id, None)
         self._local_ip_address = local_ip_address
         self._local_port = local_port
-        stack.sockets[self.id] = self
+        stack.sockets[self.socket_id] = self
 
         __debug__ and log("socket", f"<g>[{self}]</> - Bound")
 
@@ -252,12 +252,12 @@ class UdpSocket(Socket):
         )
 
         # Re-register socket with new socket id
-        stack.sockets.pop(self.id, None)
+        stack.sockets.pop(self.socket_id, None)
         self._local_ip_address = local_ip_address
         self._local_port = local_port
         self._remote_ip_address = remote_ip_address
         self._remote_port = remote_port
-        stack.sockets[self.id] = self
+        stack.sockets[self.socket_id] = self
 
         __debug__ and log("socket", f"<g>[{self}]</> - Connected socket")
 
@@ -318,9 +318,9 @@ class UdpSocket(Socket):
 
         # Assigning local port makes socket "bound" if not "bound" already
         if self._local_port not in range(1, 65536):
-            stack.sockets.pop(self.id, None)
+            stack.sockets.pop(self.socket_id, None)
             self._local_port = pick_local_port()
-            stack.sockets[self.id] = self
+            stack.sockets[self.socket_id] = self
 
         # Set local and remote ip addresses aproprietely
         local_ip_address, remote_ip_address = self._get_ip_addresses(
@@ -404,7 +404,7 @@ class UdpSocket(Socket):
         Close socket.
         """
 
-        stack.sockets.pop(self.id, None)
+        stack.sockets.pop(self.socket_id, None)
 
         __debug__ and log("socket", f"<g>[{self}]</> - Closed socket")
 

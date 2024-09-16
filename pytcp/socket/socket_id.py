@@ -25,9 +25,9 @@
 
 
 """
-Module contains interface class for the TCP Parser -> TCP Socket communication.
+Module contains class representing the Socket identificator.
 
-pytcp/socket/tcp__metadata.py
+pytcp/lib/socket.py
 
 ver 3.0.2
 """
@@ -38,76 +38,21 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
-from pytcp.socket.socket_id import SocketId
-
-from .socket import AddressFamily, SocketType
-
 if TYPE_CHECKING:
-    from net_addr import IpAddress
-    from pytcp.lib.tracker import Tracker
+    from net_addr import Address
+
+    from .socket import AddressFamily, SocketType
 
 
-@dataclass(frozen=True, kw_only=True)
-class TcpMetadata:
+@dataclass(frozen=True)
+class SocketId:
     """
-    Store the TCP metadata taken from the received packet.
+    Store the Socket identificator data.
     """
 
-    ip__ver: int
-    ip__local_address: IpAddress
-    ip__remote_address: IpAddress
-
-    tcp__local_port: int
-    tcp__remote_port: int
-    tcp__flag_syn: bool
-    tcp__flag_ack: bool
-    tcp__flag_fin: bool
-    tcp__flag_rst: bool
-    tcp__seq: int
-    tcp__ack: int
-    tcp__win: int
-    tcp__wscale: int
-    tcp__mss: int
-    tcp__data: memoryview
-
-    tracker: Tracker | None
-
-    @property
-    def socket_id(self) -> SocketId:
-        """
-        Get the exact match socket ID.
-        """
-
-        return SocketId(
-            AddressFamily.from_ver(self.ip__ver),
-            SocketType.STREAM,
-            self.ip__local_address,
-            self.tcp__local_port,
-            self.ip__remote_address,
-            self.tcp__remote_port,
-        )
-
-    @property
-    def listening_socket_ids(self) -> list[SocketId]:
-        """
-        Get list of the listening socket IDs that match the metadata.
-        """
-
-        return [
-            SocketId(
-                AddressFamily.from_ver(self.ip__ver),
-                SocketType.STREAM,
-                self.ip__local_address,
-                self.tcp__local_port,
-                self.ip__remote_address.unspecified,
-                0,
-            ),
-            SocketId(
-                AddressFamily.from_ver(self.ip__ver),
-                SocketType.STREAM,
-                self.ip__local_address.unspecified,
-                self.tcp__local_port,
-                self.ip__remote_address.unspecified,
-                0,
-            ),
-        ]
+    address_family: AddressFamily
+    socket_type: SocketType
+    local_address: Address
+    local_port: int
+    remote_address: Address
+    remote_port: int

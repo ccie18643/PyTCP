@@ -40,6 +40,7 @@ from typing import TYPE_CHECKING
 
 from pytcp.lib.name_enum import NameEnum
 from pytcp.protocols.enums import IpProto
+from pytcp.socket.socket_id import SocketId
 
 if TYPE_CHECKING:
     from net_addr import IpAddress
@@ -126,24 +127,43 @@ class Socket(ABC):
         return self.__str__()
 
     @property
-    def id(
-        self,
-    ) -> tuple[
-        AddressFamily, SocketType, IpProto, IpAddress, int, IpAddress, int
-    ]:
+    def socket_id(self) -> SocketId:
         """
         Get the socket ID.
         """
 
-        return (
+        return SocketId(
             self._address_family,
             self._socket_type,
-            self._ip_proto,
             self._local_ip_address,
             self._local_port,
             self._remote_ip_address,
             self._remote_port,
         )
+
+    @property
+    def address_family(self) -> AddressFamily:
+        """
+        Get the '_family' attribute.
+        """
+
+        return self._address_family
+
+    @property
+    def socket_type(self) -> SocketType:
+        """
+        Get the '_type' attribute.
+        """
+
+        return self._socket_type
+
+    @property
+    def ip_proto(self) -> IpProto:
+        """
+        Get the '_proto' attribute.
+        """
+
+        return self._ip_proto
 
     @property
     def local_ip_address(self) -> IpAddress:

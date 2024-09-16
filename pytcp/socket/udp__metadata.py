@@ -36,12 +36,13 @@ ver 3.0.2
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 from net_addr.ip6_address import Ip6Address
 
 from net_addr import Ip4Address
-from pytcp.socket.socket import AddressFamily, IpProto, SocketType
+from pytcp.socket.socket import AddressFamily, SocketType
+from pytcp.socket.socket_id import SocketId
 
 if TYPE_CHECKING:
     from net_addr import IpAddress
@@ -65,7 +66,7 @@ class UdpMetadata:
     tracker: Tracker | None = None
 
     @property
-    def socket_ids(self) -> list[tuple[Any, ...]]:
+    def socket_ids(self) -> list[SocketId]:
         """
         Get list of the listening socket IDs that match the metadata.
         """
@@ -73,10 +74,9 @@ class UdpMetadata:
         match self.ip__ver, self.udp__local_port, self.udp__remote_port:
             case 4, 68, 67:
                 return [
-                    (
+                    SocketId(
                         AddressFamily.INET4,
                         SocketType.DGRAM,
-                        IpProto.UDP,
                         Ip4Address(),
                         68,
                         Ip4Address("255.255.255.255"),
@@ -85,19 +85,17 @@ class UdpMetadata:
                 ]
             case 6, 546, 547:
                 return [
-                    (
+                    SocketId(
                         AddressFamily.INET6,
                         SocketType.DGRAM,
-                        IpProto.UDP,
                         Ip6Address(),
                         546,
                         Ip6Address("ff02::1:2"),
                         547,
                     ),  # ID for the DHCPv6 client operation.
-                    (
+                    SocketId(
                         AddressFamily.INET6,
                         SocketType.DGRAM,
-                        IpProto.UDP,
                         Ip6Address(),
                         546,
                         Ip6Address("ff02::1:3"),
@@ -106,28 +104,25 @@ class UdpMetadata:
                 ]
             case _:
                 return [
-                    (
+                    SocketId(
                         AddressFamily.from_ver(self.ip__ver),
                         SocketType.DGRAM,
-                        IpProto.UDP,
                         self.ip__local_address,
                         self.udp__local_port,
                         self.ip__remote_address,
                         self.udp__remote_port,
                     ),
-                    (
+                    SocketId(
                         AddressFamily.from_ver(self.ip__ver),
                         SocketType.DGRAM,
-                        IpProto.UDP,
                         self.ip__local_address,
                         self.udp__local_port,
                         self.ip__remote_address.unspecified,
                         0,
                     ),
-                    (
+                    SocketId(
                         AddressFamily.from_ver(self.ip__ver),
                         SocketType.DGRAM,
-                        IpProto.UDP,
                         self.ip__local_address.unspecified,
                         self.udp__local_port,
                         self.ip__remote_address.unspecified,

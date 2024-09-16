@@ -33,6 +33,7 @@ ver 3.0.2
 """
 
 
+from .address import Address
 from .click_types import (
     ClickTypeIp4Address,
     ClickTypeIp4Host,

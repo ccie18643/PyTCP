@@ -46,6 +46,7 @@ from net_addr.ip6_host import Ip6Host
 from net_addr.mac_address import MacAddress
 
 from pytcp.lib.logger import log
+from pytcp.socket.socket_id import SocketId
 
 from .arp_cache import ArpCache
 from .nd_cache import NdCache
@@ -143,7 +144,7 @@ packet_handler: PacketHandler
 # Stack shared data.
 stack_initialized: bool = False
 interface_mtu: int
-sockets: dict[tuple[Any, ...], Socket] = {}
+sockets: dict[SocketId, Socket] = {}
 arp_probe_unicast_conflict: set[Ip4Address] = set()
 
 

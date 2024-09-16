@@ -99,7 +99,7 @@ class TcpSocket(Socket):
             self._local_port = tcp_session.local_port
             self._remote_port = tcp_session.remote_port
             self._parent_socket = tcp_session.socket
-            stack.sockets[self.id] = self
+            stack.sockets[self.socket_id] = self
 
         # Fresh socket initialization
         else:
@@ -259,10 +259,10 @@ class TcpSocket(Socket):
             local_port = pick_local_port()
 
         # Assigning local port makes socket "bound"
-        stack.sockets.pop(self.id, None)
+        stack.sockets.pop(self.socket_id, None)
         self._local_ip_address = local_ip_address
         self._local_port = local_port
-        stack.sockets[self.id] = self
+        stack.sockets[self.socket_id] = self
 
         __debug__ and log("socket", f"<g>[{self}]</> - Bound socket")
 
@@ -292,12 +292,12 @@ class TcpSocket(Socket):
         )
 
         # Re-register socket with new socket id
-        stack.sockets.pop(self.id, None)
+        stack.sockets.pop(self.socket_id, None)
         self._local_ip_address = local_ip_address
         self._local_port = local_port
         self._remote_ip_address = remote_ip_address
         self._remote_port = remote_port
-        stack.sockets[self.id] = self
+        stack.sockets[self.socket_id] = self
 
         self._tcp_session = TcpSession(
             local_ip_address=self._local_ip_address,
@@ -346,7 +346,7 @@ class TcpSocket(Socket):
             "connections",
         )
 
-        stack.sockets[self.id] = self
+        stack.sockets[self.socket_id] = self
         self._tcp_session.listen()
 
     def accept(self) -> tuple[Socket, tuple[str, int]]:
