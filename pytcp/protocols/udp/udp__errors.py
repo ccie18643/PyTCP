@@ -35,7 +35,7 @@ ver 3.0.2
 
 from __future__ import annotations
 
-from pytcp.lib.errors import PacketIntegrityError, PacketSanityError
+from pytcp.protocols.errors import PacketIntegrityError, PacketSanityError
 
 
 class UdpIntegrityError(PacketIntegrityError):
@@ -43,7 +43,7 @@ class UdpIntegrityError(PacketIntegrityError):
     Exception raised when UDP packet integrity check fails.
     """
 
-    def __init__(self, message: str, /):
+    def __init__(self, message: str, /) -> None:
         super().__init__("[UDP] " + message)
 
 
@@ -52,5 +52,5 @@ class UdpSanityError(PacketSanityError):
     Exception raised when UDP packet sanity check fails.
     """
 
-    def __init__(self, message: str, /):
+    def __init__(self, message: str, /) -> None:
         super().__init__("[UDP] " + message)

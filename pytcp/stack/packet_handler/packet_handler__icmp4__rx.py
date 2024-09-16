@@ -41,9 +41,9 @@ from typing import TYPE_CHECKING, cast
 
 from net_addr import Ip4Address
 from pytcp import stack
-from pytcp.lib.errors import PacketValidationError
 from pytcp.lib.logger import log
 from pytcp.protocols.enums import IpProto
+from pytcp.protocols.errors import PacketValidationError
 from pytcp.protocols.icmp4.icmp4__parser import Icmp4Parser
 from pytcp.protocols.icmp4.message.icmp4_message import Icmp4Type
 from pytcp.protocols.icmp4.message.icmp4_message__destination_unreachable import (

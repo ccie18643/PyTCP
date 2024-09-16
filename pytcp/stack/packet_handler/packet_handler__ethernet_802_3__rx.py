@@ -37,8 +37,8 @@ from __future__ import annotations
 from abc import ABC
 from typing import TYPE_CHECKING
 
-from pytcp.lib.errors import PacketValidationError
 from pytcp.lib.logger import log
+from pytcp.protocols.errors import PacketValidationError
 from pytcp.protocols.ethernet_802_3.ethernet_802_3__parser import (
     Ethernet8023Parser,
 )

@@ -39,10 +39,10 @@ from abc import ABC
 from typing import TYPE_CHECKING
 
 from pytcp import stack
-from pytcp.lib.errors import PacketValidationError
 from pytcp.lib.logger import log
 from pytcp.protocols.arp.arp__header import ArpOperation
 from pytcp.protocols.arp.arp__parser import ArpParser
+from pytcp.protocols.errors import PacketValidationError
 
 
 class PacketHandlerArpRx(ABC):

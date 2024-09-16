@@ -41,9 +41,9 @@ from typing import TYPE_CHECKING, cast
 
 from net_addr import Ip6Address
 from pytcp import stack
-from pytcp.lib.errors import PacketValidationError
 from pytcp.lib.logger import log
 from pytcp.protocols.enums import IpProto
+from pytcp.protocols.errors import PacketValidationError
 from pytcp.protocols.icmp6.icmp6__parser import Icmp6Parser
 from pytcp.protocols.icmp6.message.icmp6_message import Icmp6Type
 from pytcp.protocols.icmp6.message.icmp6_message__destination_unreachable import (

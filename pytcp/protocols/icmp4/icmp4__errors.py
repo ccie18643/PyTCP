@@ -35,7 +35,7 @@ ver 3.0.2
 
 from __future__ import annotations
 
-from pytcp.lib.errors import PacketIntegrityError, PacketSanityError
+from pytcp.protocols.errors import PacketIntegrityError, PacketSanityError
 
 
 class Icmp4IntegrityError(PacketIntegrityError):
@@ -43,7 +43,7 @@ class Icmp4IntegrityError(PacketIntegrityError):
     The ICMPv4 packet integrity check failure.
     """
 
-    def __init__(self, message: str, /):
+    def __init__(self, message: str, /) -> None:
         super().__init__("[ICMPv4] " + message)
 
 
@@ -52,5 +52,5 @@ class Icmp4SanityError(PacketSanityError):
     The ICMPv4 packet sanity check failure.
     """
 
-    def __init__(self, message: str, /):
+    def __init__(self, message: str, /) -> None:
         super().__init__("[ICMPv4] " + message)

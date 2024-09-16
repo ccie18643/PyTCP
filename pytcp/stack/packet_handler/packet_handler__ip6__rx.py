@@ -38,10 +38,10 @@ from __future__ import annotations
 from abc import ABC
 from typing import TYPE_CHECKING
 
-from pytcp.lib.errors import PacketValidationError
 from pytcp.lib.logger import log
 from pytcp.lib.packet import PacketRx
 from pytcp.protocols.enums import IpProto
+from pytcp.protocols.errors import PacketValidationError
 from pytcp.protocols.ip6.ip6__parser import Ip6Parser
 
 
