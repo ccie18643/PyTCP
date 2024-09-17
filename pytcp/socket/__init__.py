@@ -76,6 +76,7 @@ def socket(
 
     from pytcp.socket.tcp__socket import TcpSocket
     from pytcp.socket.udp__socket import UdpSocket
+    from pytcp.socket.raw__socket import RawSocket
 
     match type, protocol:
         case SocketType.STREAM, None | IpProto.TCP:
@@ -87,8 +88,8 @@ def socket(
         case SocketType.DGRAM, IpProto.ICMP4 | IpProto.ICMP6:
             raise NotImplementedError
 
-        case SocketType.RAW, IpProto.ICMP4 | IpProto.ICMP6:
-            raise NotImplementedError
+        case SocketType.RAW, _:
+            return RawSocket(address_family=family, ip_proto=protocol)
 
         case _:
             raise ValueError("Invalid socket type.")
