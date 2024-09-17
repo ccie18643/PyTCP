@@ -50,6 +50,7 @@ AF_INET6 = AddressFamily.INET6
 
 SOCK_STREAM = SocketType.STREAM
 SOCK_DGRAM = SocketType.DGRAM
+SOCK_RAW = SocketType.RAW
 
 IPPROTO_IP = IpProto.IP4
 IPPROTO_IP4 = IpProto.IP4
