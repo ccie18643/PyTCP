@@ -32,12 +32,10 @@ pytcp/socket/raw__socket.py
 ver 3.0.2
 """
 
-'''
 from __future__ import annotations
 
 import threading
-from typing import TYPE_CHECKING, Any, override
-from pytcp import stack
+from typing import TYPE_CHECKING, cast
 
 from net_addr import (
     Ip4Address,
@@ -45,6 +43,7 @@ from net_addr import (
     Ip6Address,
     Ip6AddressFormatError,
 )
+from pytcp import stack
 from pytcp.lib.ip_helper import pick_local_ip_address
 from pytcp.lib.logger import log
 from pytcp.lib.tx_status import TxStatus
@@ -216,14 +215,29 @@ class RawSocket(Socket):
                 "[Socket has no destination address set]"
             )
 
-        # TODO: Implement support for IP6 and IP4 instead UDP
-        tx_status = stack.packet_handler.send_udp_packet(
-            ip__local_address=self._local_ip_address,
-            ip__remote_address=self._remote_ip_address,
-            udp__local_port=self._local_port,
-            udp__remote_port=self._remote_port,
-            udp__payload=data,
-        )
+        match self._address_family:
+            case AddressFamily.INET6:
+                tx_status = stack.packet_handler.send_ip6_packet(
+                    ip6__local_address=cast(Ip6Address, self._local_ip_address),
+                    ip6__remote_address=cast(
+                        Ip6Address, self._remote_ip_address
+                    ),
+                    ip6__next=self._ip_proto,
+                    ip6__payload=data,
+                )
+            case AddressFamily.INET4:
+                tx_status = stack.packet_handler.send_ip4_packet(
+                    ip4__local_address=cast(Ip4Address, self._local_ip_address),
+                    ip4__remote_address=cast(
+                        Ip4Address, self._remote_ip_address
+                    ),
+                    ip4__proto=self._ip_proto,
+                    ip4__payload=data,
+                )
+            case _:
+                raise ValueError(
+                    f"Invalid address family: {self._address_family}"
+                )
 
         sent_data_len = (
             len(data)
@@ -238,7 +252,7 @@ class RawSocket(Socket):
 
         return sent_data_len
 
-        def sendto(self, data: bytes, address: tuple[str, int]) -> int:
+    def sendto(self, data: bytes, address: tuple[str, int]) -> int:
         """
         Send the data to remote host.
         """
@@ -251,9 +265,21 @@ class RawSocket(Socket):
         match self._address_family:
             case AddressFamily.INET6:
                 tx_status = stack.packet_handler.send_ip6_packet(
-                    ip6__local_address=local_ip_address,
-                    ip6__remote_address=remote_ip_address,
+                    ip6__local_address=cast(Ip6Address, local_ip_address),
+                    ip6__remote_address=cast(Ip6Address, remote_ip_address),
                     ip6__next=self._ip_proto,
+                    ip6__payload=data,
+                )
+            case AddressFamily.INET4:
+                tx_status = stack.packet_handler.send_ip4_packet(
+                    ip4__local_address=cast(Ip4Address, local_ip_address),
+                    ip4__remote_address=cast(Ip4Address, remote_ip_address),
+                    ip4__proto=self._ip_proto,
+                    ip4__payload=data,
+                )
+            case _:
+                raise ValueError(
+                    f"Invalid address family: {self._address_family}"
                 )
 
         sent_data_len = (
@@ -278,21 +304,15 @@ class RawSocket(Socket):
 
         # TODO - Implement support for buffsize
 
-        if self._unreachable:
-            self._unreachable = False
-            raise ConnectionRefusedError(
-                "[Errno 111] Connection refused - "
-                "[Remote host sent ICMP Unreachable]"
-            )
-
         if self._packet_rx_md_ready.acquire(timeout=timeout):
-            data_rx = self._packet_rx_md.pop(0).udp__data
+            data_rx = self._packet_rx_md.pop(0).raw__data
             __debug__ and log(
                 "socket",
                 f"<g>[{self}]</> - <lg>Received</> {len(data_rx)} "
                 "bytes of data",
             )
             return data_rx
+
         raise ReceiveTimeout
 
     def recvfrom(
@@ -318,6 +338,7 @@ class RawSocket(Socket):
                     0,
                 ),
             )
+
         raise ReceiveTimeout
 
     def close(self) -> None:
@@ -325,7 +346,7 @@ class RawSocket(Socket):
         Close socket.
         """
 
-        stack.sockets.pop(self.id, None)
+        stack.sockets.pop(self.socket_id, None)
 
         __debug__ and log("socket", f"<g>[{self}]</> - Closed socket")
 
@@ -336,4 +357,3 @@ class RawSocket(Socket):
 
         self._packet_rx_md.append(packet_rx_md)
         self._packet_rx_md_ready.release()
-'''
