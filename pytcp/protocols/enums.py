@@ -90,7 +90,7 @@ class EtherType(ProtoEnumWord):
             return EtherType.ARP
 
         if isinstance(proto, Raw):
-            return EtherType.RAW
+            return proto.ether_type
 
         assert False, f"Unknown protocol: {type(proto)}"
 

@@ -38,7 +38,7 @@ from __future__ import annotations
 from typing import override
 
 from pytcp.lib.proto import Proto
-from pytcp.protocols.enums import IpProto
+from pytcp.protocols.enums import EtherType, IpProto
 
 
 class Raw(Proto):
@@ -47,6 +47,7 @@ class Raw(Proto):
     """
 
     _payload: bytes
+    _ether_type: EtherType
     _ip_proto: IpProto
 
     @override
@@ -88,6 +89,14 @@ class Raw(Proto):
         """
 
         return self._payload
+
+    @property
+    def ether_type(self) -> EtherType:
+        """
+        Get the Ethernet protocol number.
+        """
+
+        return self._ether_type
 
     @property
     def ip_proto(self) -> IpProto:
