@@ -38,7 +38,7 @@ from __future__ import annotations
 import struct
 from abc import ABC
 from time import time
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
 from pytcp import stack
 from pytcp.lib.inet_cksum import inet_cksum
@@ -48,6 +48,8 @@ from pytcp.protocols.enums import IpProto
 from pytcp.protocols.errors import PacketValidationError
 from pytcp.protocols.ip4.ip4__header import IP4__HEADER__LEN
 from pytcp.protocols.ip4.ip4__parser import Ip4Parser
+from pytcp.socket.raw__metadata import RawMetadata
+from pytcp.socket.raw__socket import RawSocket
 
 
 class PacketHandlerIp4Rx(ABC):
@@ -133,6 +135,29 @@ class PacketHandlerIp4Rx(ABC):
                 return
             packet_rx = defragmented_packet_rx
             self.packet_stats_rx.ip4__defrag += 1
+
+        # Create RawMetadata object and try to find matching RAW socket
+        packet_rx_md = RawMetadata(
+            ip__ver=packet_rx.ip.ver,
+            ip__local_address=packet_rx.ip.dst,
+            ip__remote_address=packet_rx.ip.src,
+            ip__proto=packet_rx.ip4.proto,
+            raw__data=bytes(
+                packet_rx.ip4.payload_bytes
+            ),  # memoryview: conversion for end-user interface
+            tracker=packet_rx.tracker,
+        )
+
+        for socket_id in packet_rx_md.socket_ids:
+            if socket := cast(RawSocket, stack.sockets.get(socket_id, None)):
+                self.packet_stats_rx.raw__socket_match += 1
+                __debug__ and log(
+                    "ip4",
+                    f"{packet_rx_md.tracker} - <INFO>Found matching listening "
+                    f"socket [{socket}]</>",
+                )
+                socket.process_raw_packet(packet_rx_md)
+                return
 
         match packet_rx.ip4.proto:
             case IpProto.ICMP4:

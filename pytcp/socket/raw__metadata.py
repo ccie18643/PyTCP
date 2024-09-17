@@ -36,10 +36,11 @@ ver 3.0.2
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 from pytcp.protocols.enums import IpProto
 from pytcp.socket.socket import AddressFamily, SocketType
+from pytcp.socket.socket_id import SocketId
 
 if TYPE_CHECKING:
     from net_addr import IpAddress
@@ -62,13 +63,13 @@ class RawMetadata:
     tracker: Tracker | None = None
 
     @property
-    def socket_ids(self) -> list[tuple[Any, ...]]:
+    def socket_ids(self) -> list[SocketId]:
         """
         Get list of the listening socket IDs that match the metadata.
         """
 
         return [
-            (
+            SocketId(
                 AddressFamily.from_ver(self.ip__ver),
                 SocketType.RAW,
                 self.ip__local_address.unspecified,

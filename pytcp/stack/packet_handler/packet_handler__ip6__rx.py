@@ -36,13 +36,16 @@ ver 3.0.2
 from __future__ import annotations
 
 from abc import ABC
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
+from pytcp import stack
 from pytcp.lib.logger import log
 from pytcp.lib.packet import PacketRx
 from pytcp.protocols.enums import IpProto
 from pytcp.protocols.errors import PacketValidationError
 from pytcp.protocols.ip6.ip6__parser import Ip6Parser
+from pytcp.socket.raw__metadata import RawMetadata
+from pytcp.socket.raw__socket import RawSocket
 
 
 class PacketHandlerIp6Rx(ABC):
@@ -104,6 +107,29 @@ class PacketHandlerIp6Rx(ABC):
 
         if packet_rx.ip6.dst in self.ip6_multicast:
             self.packet_stats_rx.ip6__dst_multicast += 1
+
+        # Create RawMetadata object and try to find matching RAW socket
+        packet_rx_md = RawMetadata(
+            ip__ver=packet_rx.ip.ver,
+            ip__local_address=packet_rx.ip.dst,
+            ip__remote_address=packet_rx.ip.src,
+            ip__proto=packet_rx.ip6.next,
+            raw__data=bytes(
+                packet_rx.ip6.payload_bytes
+            ),  # memoryview: conversion for end-user interface
+            tracker=packet_rx.tracker,
+        )
+
+        for socket_id in packet_rx_md.socket_ids:
+            if socket := cast(RawSocket, stack.sockets.get(socket_id, None)):
+                self.packet_stats_rx.raw__socket_match += 1
+                __debug__ and log(
+                    "ip6",
+                    f"{packet_rx_md.tracker} - <INFO>Found matching listening "
+                    f"socket [{socket}]</>",
+                )
+                socket.process_raw_packet(packet_rx_md)
+                return
 
         match packet_rx.ip6.next:
             case IpProto.IP6_FRAG:
