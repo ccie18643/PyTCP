@@ -87,6 +87,10 @@ class RawSocket(Socket):
             case AddressFamily.INET4:
                 self._local_ip_address = Ip4Address()
                 self._remote_ip_address = Ip4Address()
+            case _:
+                raise ValueError(
+                    f"Invalid address family: {self._address_family}"
+                )
 
         self._local_port = int(ip_proto)
         self._remote_port = 0
