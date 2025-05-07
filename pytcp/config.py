@@ -136,7 +136,7 @@ EPHEMERAL_PORT_RANGE = range(32168, 60700, 2)
 TAP_MTU = 1500
 
 # TCP session related settings
-LOCAL_TCP_MSS = 1460  # Maximum segment peer can send to us
+LOCAL_TCP_MSS = TAP_MTU - 40  # Maximum segment peer can send to us
 LOCAL_TCP_WIN = (
     65535  # Maximum amount of data peer can send to us without confirmation
 )
