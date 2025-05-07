@@ -219,7 +219,7 @@ class TcpSession:
         self._rcv_una: int = 0
 
         # Maximum segment size
-        self._rcv_mss: int = config.TAP_MTU - 40
+        self._rcv_mss: int = config.LOCAL_TCP_MSS
 
         # Window size
         self._rcv_wnd: int = 65535
@@ -889,7 +889,7 @@ class TcpSession:
                     tcp_session=self,
                 )
                 # Initialize session parameters
-                self._snd_mss = min(packet_rx_md.mss, config.TAP_MTU - 40)
+                self._snd_mss = min(packet_rx_md.mss, config.LOCAL_TCP_MSS)
                 self._snd_wnd = (
                     packet_rx_md.win * self._snd_wsc
                 )  # For SYN / SYN + ACK packets this is initialized with wscale=1
@@ -939,7 +939,7 @@ class TcpSession:
             # Packet sanity check
             if packet_rx_md.ack == self._snd_nxt and not packet_rx_md.data:
                 # Initialize session parameters
-                self._snd_mss = min(packet_rx_md.mss, config.TAP_MTU - 40)
+                self._snd_mss = min(packet_rx_md.mss, config.LOCAL_TCP_MSS)
                 self._snd_wnd = (
                     packet_rx_md.win * self._snd_wsc
                 )  # For SYN / SYN + ACK packets this is initialized with wscale=1
