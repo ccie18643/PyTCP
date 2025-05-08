@@ -45,19 +45,24 @@ if TYPE_CHECKING:
     from pytcp.lib.mac_address import MacAddress
 
 
-class IpAddressFormatError(Exception): ...
+class IpAddressFormatError(Exception):
+    pass
 
 
-class IpMaskFormatError(Exception): ...
+class IpMaskFormatError(Exception):
+    pass
 
 
-class IpNetworkFormatError(Exception): ...
+class IpNetworkFormatError(Exception):
+    pass
 
 
-class IpHostFormatError(Exception): ...
+class IpHostFormatError(Exception):
+    pass
 
 
-class IpHostGatewayError(Exception): ...
+class IpHostGatewayError(Exception):
+    pass
 
 
 class IpAddress(ABC):

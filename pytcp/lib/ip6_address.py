@@ -66,19 +66,24 @@ IP6_REGEX = (
 )
 
 
-class Ip6AddressFormatError(IpAddressFormatError): ...
+class Ip6AddressFormatError(IpAddressFormatError):
+    pass
 
 
-class Ip6MaskFormatError(IpMaskFormatError): ...
+class Ip6MaskFormatError(IpMaskFormatError):
+    pass
 
 
-class Ip6NetworkFormatError(IpNetworkFormatError): ...
+class Ip6NetworkFormatError(IpNetworkFormatError):
+    pass
 
 
-class Ip6HostFormatError(IpHostFormatError): ...
+class Ip6HostFormatError(IpHostFormatError):
+    pass
 
 
-class Ip6HostGatewayError(IpHostGatewayError): ...
+class Ip6HostGatewayError(IpHostGatewayError):
+    pass
 
 
 class Ip6Address(IpAddress):
