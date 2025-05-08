@@ -42,7 +42,7 @@ assert version_info >= (3, 9), "PyTCP requires Python version 3.9 or higher"
 # TAP interface name stack should bind itself to
 TAP_INTERFACE = b"tap7"
 
-# Support for IPv6 and IPv4, at least one should be anabled
+# Support for IPv6 and IPv4, at least one should be enabled
 IP6_SUPPORT = True
 IP4_SUPPORT = True
 
@@ -75,7 +75,7 @@ LOG_DEBUG = False
 
 # Packet integrity sanity check, if enabled it protects the protocol parsers
 # from being exposed to malformed or malicious packets that could cause them
-# to crash during packet parsing. It progessively check appropriate length
+# to crash during packet parsing. It progressively check appropriate length
 # fields and ensure they are set within sane boundaries. It also checks
 # packet's actual header/options/data lengths against above values and default
 # minimum/maximum lengths for given protocol. Also packet options (if any) are
@@ -110,8 +110,8 @@ IP6_DEFAULT_HOP = 64
 # IPv4 default TTL value
 IP4_DEFAULT_TTL = 64
 
-# IPv4 and IPv6 fragmnt flow expiration time, determines for how many seconds
-# fragment flow is considered valid. Fragemnt flows are being cleaned up prior
+# IPv4 and IPv6 fragment flow expiration time, determines for how many seconds
+# fragment flow is considered valid. Fragment flows are being cleaned up prior
 # of handling every fragmented packet.
 IP4_FRAG_FLOW_TIMEOUT = 5
 IP6_FRAG_FLOW_TIMEOUT = 5

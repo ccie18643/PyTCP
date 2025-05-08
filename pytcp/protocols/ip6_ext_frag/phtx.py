@@ -55,7 +55,7 @@ def _phtx_ip6_ext_frag(
     self: PacketHandler, *, ip6_packet_tx: Ip6Assembler
 ) -> TxStatus:
     """
-    Handle outbound IPv6 fagment extension header.
+    Handle outbound IPv6 fragment extension header.
     """
 
     self.packet_stats_tx.ip6_ext_frag__pre_assemble += 1

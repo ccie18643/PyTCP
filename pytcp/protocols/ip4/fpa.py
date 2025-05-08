@@ -83,10 +83,9 @@ class Ip4Assembler:
         id: int = 0,
         flag_df: bool = False,
         options: list[Ip4OptNop | Ip4OptEol] | None = None,
-        carried_packet: Icmp4Assembler
-        | TcpAssembler
-        | UdpAssembler
-        | RawAssembler = RawAssembler(),
+        carried_packet: (
+            Icmp4Assembler | TcpAssembler | UdpAssembler | RawAssembler
+        ) = RawAssembler(),
     ) -> None:
         """
         Class constructor.
@@ -103,9 +102,9 @@ class Ip4Assembler:
             IP4_PROTO_RAW,
         }
 
-        self._carried_packet: Icmp4Assembler | TcpAssembler | UdpAssembler | RawAssembler = (
-            carried_packet
-        )
+        self._carried_packet: (
+            Icmp4Assembler | TcpAssembler | UdpAssembler | RawAssembler
+        ) = carried_packet
         self._tracker: Tracker = self._carried_packet.tracker
         self._ver: int = 4
         self._dscp: int = dscp

@@ -25,7 +25,7 @@ I welcome any contributions and help from anyone interested in network programmi
 I still need to fix.
 
 Please feel free to check my two other related projects:
- - [RusTCP](http://github.com/ccie18643/RusTCP) - Attempt to rewrite some of PyTCP funcionality in Rust and use it to create IPv6/SRv6 lab router.
+ - [RusTCP](http://github.com/ccie18643/RusTCP) - Attempt to rewrite some of PyTCP functionality in Rust and use it to create IPv6/SRv6 lab router.
  - [SeaTCP](http://github.com/ccie18643/SeaTCP) - Attempt to create low latency stack using C and Assembly languages.
 
 ---
@@ -36,7 +36,7 @@ Please feel free to check my two other related projects:
 The PyTCP stack depends on the Linux TAP interface. The TAP interface is a virtual interface that,
 on the network end, can be 'plugged' into existing virtual network infrastructure via either Linux
 bridge or Open vSwitch. On the internal end, the TAP interface can be used like any other NIC by
-programatically sending and receiving packets to/from it.
+programmatically sending and receiving packets to/from it.
 
 If you wish to test the PyTCP stack in your local network, I'd suggest creating the following network
 setup that will allow you to connect both the Linux kernel (essentially your Linux OS) and the
@@ -48,27 +48,27 @@ PyTCP stack to your local network at the same time.
                                             |--(tap7) <---> [PyTCP TCP/IP stack]
 ```
 
-After the example program (either client or service) starts the stack, it can comunicate with it
+After the example program (either client or service) starts the stack, it can communicate with it
 via simplified BSD Sockets like API interface. There is also the possibility of sending packets
 directly by calling one of the ```_*_phtx()``` methods from ```PacketHandler``` class.
 
 ---
 
 
-### Clonning PyTCP from the GitHub repository
+### Cloning PyTCP from the GitHub repository
 
 In most cases, PyTCP should be cloned directly from the [GitHub repository](http://github.com/ccie18643/PyTCP),
 as this type of installation provides full development and testing environment.
 
 ```shell
-git clone http://github.com/ccie18643/PyTCP
+git clone https://github.com/ccie18643/PyTCP
 ```
 
 After cloning, we can run one of the included examples:
  - Go to the stack root directory (it is called 'PyTCP').
  - Run the ```sudo make bridge``` command to create the 'br0' bridge if needed.
  - Run the ```sudo make tap``` command to create the tap7 interface and assign it to the 'br0' bridge.
- - Run the ```make``` command to create the proper virtual environment for devlopment and testing.
+ - Run the ```make``` command to create the proper virtual environment for development and testing.
  - Run ```. venv/bin/activate``` command to activate the virtual environment.
  - Execute any example, e.g., ```example/run_stack.py```.
  - Hit Ctrl-C to stop it.

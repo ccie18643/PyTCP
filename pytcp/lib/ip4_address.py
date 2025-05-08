@@ -60,23 +60,23 @@ IP4_REGEX = (
 
 
 class Ip4AddressFormatError(IpAddressFormatError):
-    ...
+    pass
 
 
 class Ip4MaskFormatError(IpMaskFormatError):
-    ...
+    pass
 
 
 class Ip4NetworkFormatError(IpNetworkFormatError):
-    ...
+    pass
 
 
 class Ip4HostFormatError(IpHostFormatError):
-    ...
+    pass
 
 
 class Ip4HostGatewayError(IpHostGatewayError):
-    ...
+    pass
 
 
 class Ip4Address(IpAddress):
@@ -384,10 +384,12 @@ class Ip4Host(IpHost):
 
     def __init__(
         self,
-        host: Ip4Host
-        | tuple[Ip4Address, Ip4Network]
-        | tuple[Ip4Address, Ip4Mask]
-        | str,
+        host: (
+            Ip4Host
+            | tuple[Ip4Address, Ip4Network]
+            | tuple[Ip4Address, Ip4Mask]
+            | str
+        ),
     ) -> None:
         """
         Class constructor.

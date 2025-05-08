@@ -107,7 +107,7 @@ class Ip6ExtFragAssembler:
     @property
     def tracker(self) -> Tracker:
         """
-        Geter for the '_tracker' attribute.
+        Getter for the '_tracker' attribute.
         """
         return self._tracker
 

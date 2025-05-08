@@ -20,8 +20,25 @@ classifiers = [
     "Typing :: Typed",
 ]
 keywords = ["pytcp", "stack", "networking", "tcp", "ip", "ipv4", "ipv6", "arp", "ethernet", "icmp"]
-dependencies = []
 requires-python = ">=3.12"
+dependencies = []
+
+[dependency-groups]
+dev = [
+    "black>=25.1.0",
+    "build>=1.2.2.post1",
+    "click>=8.1.8",
+    "codespell>=2.4.1",
+    "flake8>=7.2.0",
+    "ipython>=9.2.0",
+    "isort>=6.0.1",
+    "mypy>=1.15.0",
+    "pylint>=3.3.7",
+    "pyre-check>=0.9.23",
+    "pyupgrade>=3.19.1",
+    "testslide>=2.7.1",
+    "twine>=6.1.0",
+]
 
 [project.urls]
 "Homepage" = "https://github.com/ccie18643/PyTCP"

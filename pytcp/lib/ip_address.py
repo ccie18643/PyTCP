@@ -46,23 +46,23 @@ if TYPE_CHECKING:
 
 
 class IpAddressFormatError(Exception):
-    ...
+    pass
 
 
 class IpMaskFormatError(Exception):
-    ...
+    pass
 
 
 class IpNetworkFormatError(Exception):
-    ...
+    pass
 
 
 class IpHostFormatError(Exception):
-    ...
+    pass
 
 
 class IpHostGatewayError(Exception):
-    ...
+    pass
 
 
 class IpAddress(ABC):

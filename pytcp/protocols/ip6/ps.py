@@ -25,7 +25,7 @@
 
 
 """
-Module contains packet structure information for the IPv6 protccol.
+Module contains packet structure information for the IPv6 protocol.
 
 pytcp/protocols/ip6/ps.py
 

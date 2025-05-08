@@ -183,9 +183,11 @@ class ArpCache:
             ether_dst=MacAddress(0xFFFFFFFFFFFF),
             arp_oper=ARP_OP_REQUEST,
             arp_sha=stack.packet_handler.mac_unicast,
-            arp_spa=stack.packet_handler.ip4_unicast[0]
-            if stack.packet_handler.ip4_unicast
-            else Ip4Address(0),
+            arp_spa=(
+                stack.packet_handler.ip4_unicast[0]
+                if stack.packet_handler.ip4_unicast
+                else Ip4Address(0)
+            ),
             arp_tha=MacAddress(0),
             arp_tpa=arp_tpa,
         )

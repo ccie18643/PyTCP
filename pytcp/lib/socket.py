@@ -347,39 +347,39 @@ class Socket(ABC):
 
         def process_udp_packet(self, packet_rx_md: UdpMetadata) -> None:
             """
-            The 'process_udp_packet()' method plceholder.
+            The 'process_udp_packet()' method placeholder.
             """
             raise NotImplementedError
 
         def process_tcp_packet(self, packet_rx_md: TcpMetadata) -> None:
             """
-            The 'process_tcp_packet()' method plceholder.
+            The 'process_tcp_packet()' method placeholder.
             """
             raise NotImplementedError
 
         def notify_unreachable(self) -> None:
             """
-            The 'notify_unreachable()' method plceholder.
+            The 'notify_unreachable()' method placeholder.
             """
             raise NotImplementedError
 
         @property
         def tcp_session(self) -> TcpSession | None:
             """
-            The 'tcp_session' property plceholder.
+            The 'tcp_session' property placeholder.
             """
             raise NotImplementedError
 
         @property
         def state(self) -> FsmState:
             """
-            The 'state' property plceholder.
+            The 'state' property placeholder.
             """
             raise NotImplementedError
 
         @property
         def parent_socket(self) -> Socket | None:
             """
-            The 'parent_socket' property plceholder.
+            The 'parent_socket' property placeholder.
             """
             raise NotImplementedError

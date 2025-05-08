@@ -87,7 +87,7 @@ class TcpDiscardService(TcpService):
                 )
                 connected_socket.send(b"***CLIENT CLOSED, SERVICE CLOSING***\n")
                 click.echo(
-                    "Service TCP Discard: Closng connection to "
+                    "Service TCP Discard: Closing connection to "
                     f"{connected_socket.remote_ip_address}, port {connected_socket.remote_port}."
                 )
                 connected_socket.close()
@@ -100,7 +100,7 @@ class TcpDiscardService(TcpService):
                 )
                 connected_socket.send(b"***CLIENT OPEN, SERVICE CLOSING***\n")
                 click.echo(
-                    "Service TCP Discard: Closng connection to "
+                    "Service TCP Discard: Closing connection to "
                     f"{connected_socket.remote_ip_address}, port {connected_socket.remote_port}."
                 )
                 connected_socket.close()

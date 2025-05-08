@@ -25,7 +25,7 @@
 
 
 """
-Module contains packet structure information for the UDP protccol.
+Module contains packet structure information for the UDP protocol.
 
 pytcp/protocols/udp/ps.py
 

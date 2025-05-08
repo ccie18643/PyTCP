@@ -41,7 +41,7 @@ import struct
 
 
 class MacIp4AddressFormatError(Exception):
-    ...
+    pass
 
 
 class MacAddress:
@@ -145,7 +145,7 @@ class MacAddress:
             not in range(1101088686080, 1101105463296)  # IPv4 multicast
             and self._address
             not in range(56294136348672, 56298431315968)  # IPv6 multicast
-            and self._address != 281474976710655  # broadcst
+            and self._address != 281474976710655  # broadcast
         )
 
     @property

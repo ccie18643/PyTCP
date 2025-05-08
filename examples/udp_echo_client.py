@@ -92,7 +92,7 @@ class UdpEchoClient:
         Stop the service thread.
         """
 
-        click.echo("Stopinging the UDP Echo client.")
+        click.echo("Stopping the UDP Echo client.")
         self._run_thread = False
         time.sleep(0.1)
 

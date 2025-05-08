@@ -97,7 +97,7 @@ class UdpParser:
     @property
     def dport(self) -> int:
         """
-        Read the 'Destianation port' field.
+        Read the 'Destination port' field.
         """
         if "_cache__dport" not in self.__dict__:
             self._cache__dport: int = struct.unpack("!H", self._frame[2:4])[0]

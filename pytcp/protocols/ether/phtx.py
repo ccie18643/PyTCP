@@ -68,12 +68,14 @@ def _phtx_ether(
     *,
     ether_src: MacAddress = MacAddress(0),
     ether_dst: MacAddress = MacAddress(0),
-    carried_packet: ArpAssembler
-    | Ip4Assembler
-    | Ip4FragAssembler
-    | Ip6Assembler
-    | RawAssembler
-    | None = None,
+    carried_packet: (
+        ArpAssembler
+        | Ip4Assembler
+        | Ip4FragAssembler
+        | Ip6Assembler
+        | RawAssembler
+        | None
+    ) = None,
 ) -> TxStatus:
     """
     Handle outbound Ethernet packets.

@@ -220,7 +220,7 @@ class TcpSocket(Socket):
         if (local_port := self._local_port) not in range(1, 65536):
             local_port = self._pick_local_port()
 
-        # Set local and remote ip addresses aproprietely
+        # Set local and remote ip addresses appropriately
         local_ip_address, remote_ip_address = self._set_ip_addresses(
             address, self._local_ip_address, local_port, remote_port
         )

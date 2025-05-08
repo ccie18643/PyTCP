@@ -714,14 +714,14 @@ class TcpSession:
                 self._tx_buffer_seq_mod -= 1
             __debug__ and log(
                 "tcp-ss",
-                f"[{self}] - Got retansmit timeout, sending segment "
+                f"[{self}] - Got retransmit timeout, sending segment "
                 f"{self._snd_nxt}, resetting snd_ewn to {self._snd_ewn}",
             )
             return
 
     def _retransmit_packet_request(self, packet_rx_md: TcpMetadata) -> None:
         """
-        Retransmit packet after rceiving request from peer.
+        Retransmit packet after receiving request from peer.
         """
         self._tx_retransmit_request_counter[packet_rx_md.ack] = (
             self._tx_retransmit_request_counter.get(packet_rx_md.ack, 0) + 1
@@ -883,9 +883,11 @@ class TcpSession:
                 self._remote_ip_address = packet_rx_md.remote_ip_address
                 self._remote_port = packet_rx_md.remote_port
                 self._socket = TcpSocket(
-                    AF_INET6
-                    if self._local_ip_address.version == 6
-                    else AF_INET4,
+                    (
+                        AF_INET6
+                        if self._local_ip_address.version == 6
+                        else AF_INET4
+                    ),
                     tcp_session=self,
                 )
                 # Initialize session parameters

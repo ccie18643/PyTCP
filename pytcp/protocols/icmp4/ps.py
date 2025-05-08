@@ -25,7 +25,7 @@
 
 
 """
-Module contains packet structure information for the ICMPv4 protccol.
+Module contains packet structure information for the ICMPv4 protocol.
 
 pytcp/protocols/icmp4/ps.py
 

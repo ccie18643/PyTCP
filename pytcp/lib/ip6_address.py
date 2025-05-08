@@ -67,23 +67,23 @@ IP6_REGEX = (
 
 
 class Ip6AddressFormatError(IpAddressFormatError):
-    ...
+    pass
 
 
 class Ip6MaskFormatError(IpMaskFormatError):
-    ...
+    pass
 
 
 class Ip6NetworkFormatError(IpNetworkFormatError):
-    ...
+    pass
 
 
 class Ip6HostFormatError(IpHostFormatError):
-    ...
+    pass
 
 
 class Ip6HostGatewayError(IpHostGatewayError):
-    ...
+    pass
 
 
 class Ip6Address(IpAddress):
@@ -385,10 +385,12 @@ class Ip6Host(IpHost):
 
     def __init__(
         self,
-        host: Ip6Host
-        | tuple[Ip6Address, Ip6Network]
-        | tuple[Ip6Address, Ip6Mask]
-        | str,
+        host: (
+            Ip6Host
+            | tuple[Ip6Address, Ip6Network]
+            | tuple[Ip6Address, Ip6Mask]
+            | str
+        ),
     ) -> None:
         """
         Class constructor.

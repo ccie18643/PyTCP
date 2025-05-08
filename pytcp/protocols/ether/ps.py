@@ -25,7 +25,7 @@
 
 
 """
-Module contains packet structure information for the Ethernet protccol.
+Module contains packet structure information for the Ethernet protocol.
 
 pytcp/protocols/ether/ps.py
 

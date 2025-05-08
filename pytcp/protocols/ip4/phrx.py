@@ -124,7 +124,7 @@ def _defragment_ip4_packet(
     Ip4Parser(packet_rx)
     __debug__ and log(
         "ip4",
-        f"{packet_rx.tracker} - Reasembled fragmented IPv4 packet, "
+        f"{packet_rx.tracker} - Reassembled fragmented IPv4 packet, "
         f"dlen {len(data)} bytes",
     )
     return packet_rx

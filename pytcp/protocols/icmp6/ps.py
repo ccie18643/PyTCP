@@ -25,7 +25,7 @@
 
 
 """
-Module contains packet structure information for the ICMPv6 protccol.
+Module contains packet structure information for the ICMPv6 protocol.
 
 pytcp/protocols/icmp6/ps.py
 

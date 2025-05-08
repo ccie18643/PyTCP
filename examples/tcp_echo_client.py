@@ -92,7 +92,7 @@ class TcpEchoClient:
         Stop the service thread.
         """
 
-        click.echo("Stopinging the TCP Echo client.")
+        click.echo("Stopping the TCP Echo client.")
         self._run_thread = False
         time.sleep(0.1)
 

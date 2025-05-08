@@ -78,7 +78,7 @@ class TimerTask:
     @property
     def remaining_delay(self) -> int:
         """
-        Geter for the '_remaining_delay' attribute.
+        Getter for the '_remaining_delay' attribute.
         """
         return self._remaining_delay
 

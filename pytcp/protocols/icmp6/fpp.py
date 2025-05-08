@@ -293,7 +293,7 @@ class Icmp6Parser:
     @property
     def ra_retrans_timer(self) -> int:
         """
-        Read the ND RA 'Retransmision timer' field.
+        Read the ND RA 'Retransmission timer' field.
         """
         if "_cache__ra_retrans_timer" not in self.__dict__:
             assert self.type == ICMP6_ND_ROUTER_ADVERTISEMENT
@@ -305,7 +305,7 @@ class Icmp6Parser:
     @property
     def ns_target_address(self) -> Ip6Address:
         """
-        Read the ND NS 'Target adress' field.
+        Read the ND NS 'Target address' field.
         """
         if "_cache__ns_target_address" not in self.__dict__:
             assert self.type == ICMP6_ND_NEIGHBOR_SOLICITATION
@@ -345,7 +345,7 @@ class Icmp6Parser:
     @property
     def na_target_address(self) -> Ip6Address:
         """
-        Read the ND NA 'Taret address' field.
+        Read the ND NA 'Target address' field.
         """
         if "_cache__na_target_address" not in self.__dict__:
             assert self.type == ICMP6_ND_NEIGHBOR_ADVERTISEMENT

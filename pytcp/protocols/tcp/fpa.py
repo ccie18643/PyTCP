@@ -86,15 +86,17 @@ class TcpAssembler:
         flag_fin: bool = False,
         win: int = 0,
         urp: int = 0,
-        options: list[
-            TcpOptMss
-            | TcpOptWscale
-            | TcpOptSackPerm
-            | TcpOptTimestamp
-            | TcpOptEol
-            | TcpOptNop
-        ]
-        | None = None,
+        options: (
+            list[
+                TcpOptMss
+                | TcpOptWscale
+                | TcpOptSackPerm
+                | TcpOptTimestamp
+                | TcpOptEol
+                | TcpOptNop
+            ]
+            | None
+        ) = None,
         data: bytes | None = None,
         echo_tracker: Tracker | None = None,
     ) -> None:
@@ -338,7 +340,7 @@ class TcpOptWscale:
 
     def __init__(self, wscale: int) -> None:
         """
-        Option construstor.
+        Option constructor.
         """
         assert 0 <= wscale <= 0xFF, f"{wscale=}"
         self._wscale = wscale
