@@ -24,7 +24,7 @@
 ############################################################################
 
 """
-Module contains packet structure information for the TCP protccol.
+Module contains packet structure information for the TCP protocol.
 
 pytcp/protocols/tcp/ps.py
 

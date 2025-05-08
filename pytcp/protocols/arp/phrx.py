@@ -18,7 +18,7 @@
 #  You should have received a copy of the GNU General Public License       #
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.  #
 #                                                                          #
-#  Author'w email: ccie18643@gmail.com                                     #
+#  Author's email: ccie18643@gmail.com                                     #
 #  Github repository: https://github.com/ccie18643/PyTCP                   #
 #                                                                          #
 ############################################################################

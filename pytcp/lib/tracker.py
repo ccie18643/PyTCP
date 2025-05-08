@@ -102,7 +102,7 @@ class Tracker:
     @property
     def timestamp(self) -> float:
         """
-        Geter for the '_timestamp' attribute.
+        Getter for the '_timestamp' attribute.
         """
         return self._timestamp
 

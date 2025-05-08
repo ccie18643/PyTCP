@@ -389,7 +389,7 @@ class TestIcmp4Assembler(TestCase):
         packet.assemble(frame)
         self.assertEqual(bytes(frame), b"\x00\x00,\xbe09\xd410123456789ABCDEF")
 
-    def test_icmp4_fpa__asssemble__unreachable_port(self) -> None:
+    def test_icmp4_fpa__assemble__unreachable_port(self) -> None:
         """
         Test the 'assemble()' method for the 'Unreachable Port' message.
         """

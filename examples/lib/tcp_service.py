@@ -80,7 +80,7 @@ class TcpService:
         Stop the service thread.
         """
 
-        click.echo(f"Stopinging the TCP {self._service_name} service.")
+        click.echo(f"Stopping the TCP {self._service_name} service.")
         self._run_thread = False
         time.sleep(0.1)
 

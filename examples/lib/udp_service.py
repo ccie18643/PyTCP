@@ -84,7 +84,7 @@ class UdpService:
         Stop the service thread.
         """
 
-        click.echo(f"Stopinging the UDP {self._service_name} service.")
+        click.echo(f"Stopping the UDP {self._service_name} service.")
         self._run_thread = False
         time.sleep(0.1)
 

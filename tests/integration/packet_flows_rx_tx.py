@@ -632,7 +632,7 @@ class TestPacketHandlerRxTx(TestCase):
                 ether__pre_parse=len(order),
                 ether__dst_unicast=len(order),
                 ip6__pre_parse=len(order)
-                + 1,  # For the IPv6 frag implementation packet once reasembled
+                + 1,  # For the IPv6 frag implementation packet once reassembled
                 ip6__dst_unicast=len(order)
                 + 1,  # is put again through the IPv6 parser for processing
                 ip6_ext_frag__pre_parse=len(order),

@@ -247,7 +247,7 @@ def _phtx_ip6(
         return result
     ip6_dst = result
 
-    # assemble IPv6 apcket
+    # assemble IPv6 packet
     ip6_packet_tx = Ip6Assembler(
         src=ip6_src, dst=ip6_dst, hop=ip6_hop, carried_packet=carried_packet
     )

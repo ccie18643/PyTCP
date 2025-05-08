@@ -176,7 +176,7 @@ class TestIp4Phtx(TestCase):
     ) -> None:
         """
         Test sending IPv4 packet to unicast address on local network,
-        limited broadcst source, able to replace.
+        limited broadcast source, able to replace.
         """
         tx_status = self.packet_handler._phtx_ip4(
             ip4_src=self.mns.ip4_limited_broadcast,
@@ -229,7 +229,7 @@ class TestIp4Phtx(TestCase):
     ) -> None:
         """
         Test sending IPv4 packet to unicast address on local network,
-        network broadcst source, able to replace.
+        network broadcast source, able to replace.
         """
         tx_status = self.packet_handler._phtx_ip4(
             ip4_src=self.mns.stack_ip4_host.network.broadcast,
@@ -261,7 +261,7 @@ class TestIp4Phtx(TestCase):
     ) -> None:
         """
         Test sending IPv4 packet to unicast address on local network,
-        uspecified source, able to replace.
+        unspecified source, able to replace.
         """
         tx_status = self.packet_handler._phtx_ip4(
             ip4_src=self.mns.ip4_unspecified,
@@ -293,7 +293,7 @@ class TestIp4Phtx(TestCase):
     ) -> None:
         """
         Test sending IPv4 packet to unicast address on local network,
-        uspecified source, able to replace with ip from subnet with gateway.
+        unspecified source, able to replace with ip from subnet with gateway.
         """
         tx_status = self.packet_handler._phtx_ip4(
             ip4_src=self.mns.ip4_unspecified,
@@ -325,7 +325,7 @@ class TestIp4Phtx(TestCase):
     ) -> None:
         """
         Test sending IPv4 packet to unicast address on local network,
-        uspecified source, not able to replace.
+        unspecified source, not able to replace.
         """
         self.mns.stack_ip4_host.gateway = None
         tx_status = self.packet_handler._phtx_ip4(

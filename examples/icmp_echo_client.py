@@ -86,7 +86,7 @@ class IcmpEchoClient:
         Stop the service thread.
         """
 
-        click.echo("Stopinging the ICMP Echo client.")
+        click.echo("Stopping the ICMP Echo client.")
         self._run_thread = False
         time.sleep(0.1)
 

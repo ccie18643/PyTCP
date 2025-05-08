@@ -36,7 +36,7 @@ Please feel free to check my two other related projects:
 The PyTCP stack depends on the Linux TAP interface. The TAP interface is a virtual interface that,
 on the network end, can be 'plugged' into existing virtual network infrastructure via either Linux
 bridge or Open vSwitch. On the internal end, the TAP interface can be used like any other NIC by
-programatically sending and receiving packets to/from it.
+programmatically sending and receiving packets to/from it.
 
 If you wish to test the PyTCP stack in your local network, I'd suggest creating the following network
 setup that will allow you to connect both the Linux kernel (essentially your Linux OS) and the
@@ -55,20 +55,20 @@ directly by calling one of the ```_*_phtx()``` methods from ```PacketHandler``` 
 ---
 
 
-### Clonning PyTCP from the GitHub repository
+### Cloning PyTCP from the GitHub repository
 
 In most cases, PyTCP should be cloned directly from the [GitHub repository](http://github.com/ccie18643/PyTCP),
 as this type of installation provides full development and testing environment.
 
 ```shell
-git clone http://github.com/ccie18643/PyTCP
+git clone https://github.com/ccie18643/PyTCP
 ```
 
 After cloning, we can run one of the included examples:
  - Go to the stack root directory (it is called 'PyTCP').
  - Run the ```sudo make bridge``` command to create the 'br0' bridge if needed.
  - Run the ```sudo make tap``` command to create the tap7 interface and assign it to the 'br0' bridge.
- - Run the ```make``` command to create the proper virtual environment for devlopment and testing.
+ - Run the ```make``` command to create the proper virtual environment for development and testing.
  - Run ```. venv/bin/activate``` command to activate the virtual environment.
  - Execute any example, e.g., ```example/run_stack.py```.
  - Hit Ctrl-C to stop it.

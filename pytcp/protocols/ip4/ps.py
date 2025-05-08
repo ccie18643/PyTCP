@@ -25,7 +25,7 @@
 
 
 """
-Module contains packet structure information for the IPv4 protccol.
+Module contains packet structure information for the IPv4 protocol.
 
 pytcp/protocols/ip4/ps.py
 

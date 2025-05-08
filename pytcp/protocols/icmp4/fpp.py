@@ -158,7 +158,7 @@ class Icmp4Parser:
     @property
     def un_data(self) -> bytes:
         """
-        Read the data carried by Uneachable message.
+        Read the data carried by Unreachable message.
         """
         if "_cache__un_data" not in self.__dict__:
             assert self.type == ICMP4_UNREACHABLE

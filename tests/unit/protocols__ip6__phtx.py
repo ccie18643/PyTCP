@@ -176,7 +176,7 @@ class TestIp6Phtx(TestCase):
     ) -> None:
         """
         Test sending IPv6 packet to unicast address on local network,
-        uspecified source, able to replace.
+        unspecified source, able to replace.
         """
         tx_status = self.packet_handler._phtx_ip6(
             ip6_src=self.mns.ip6_unspecified,
@@ -208,7 +208,7 @@ class TestIp6Phtx(TestCase):
     ) -> None:
         """
         Test sending IPv6 packet to unicast address on local network,
-        uspecified source, able to replace with ip from subnet with gateway.
+        unspecified source, able to replace with ip from subnet with gateway.
         """
         tx_status = self.packet_handler._phtx_ip6(
             ip6_src=self.mns.ip6_unspecified,
@@ -240,7 +240,7 @@ class TestIp6Phtx(TestCase):
     ) -> None:
         """
         Test sending IPv6 packet to unicast address on local network,
-        uspecified source, not able to replace.
+        unspecified source, not able to replace.
         """
         self.mns.stack_ip6_host.gateway = None
         tx_status = self.packet_handler._phtx_ip6(

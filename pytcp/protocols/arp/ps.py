@@ -25,7 +25,7 @@
 
 
 """
-Module contains packet structure information for the ARP protccol.
+Module contains packet structure information for the ARP protocol.
 
 pytcp/protocols/arp/ps.py
 

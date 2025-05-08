@@ -32,7 +32,7 @@
 
 """
 Module contains protocol support library for the DHCPv4 protocol.
-This library uses old (pre-FPP) format and needs to be revritten
+This library uses old (pre-FPP) format and needs to be rewritten
 at some point.
 
 pytcp/protocols/dhcp4/ps.py

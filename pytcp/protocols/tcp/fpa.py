@@ -340,7 +340,7 @@ class TcpOptWscale:
 
     def __init__(self, wscale: int) -> None:
         """
-        Option construstor.
+        Option constructor.
         """
         assert 0 <= wscale <= 0xFF, f"{wscale=}"
         self._wscale = wscale

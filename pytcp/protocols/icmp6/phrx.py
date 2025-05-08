@@ -139,13 +139,13 @@ def _phrx_icmp6(self: PacketHandler, packet_rx: PacketRx) -> None:
             ip6_src=packet_rx.icmp6.ns_target_address,
             ip6_dst=(
                 Ip6Address("ff02::1") if ip6_nd_dad else packet_rx.ip6.src
-            ),  # use ff02::1 destination addriess when
+            ),  # use ff02::1 destination address when
             # responding to DAD request
             ip6_hop=255,
             icmp6_type=ICMP6_ND_NEIGHBOR_ADVERTISEMENT,
             icmp6_na_flag_s=not ip6_nd_dad,  # no S flag when responding to
             # DAD request
-            icmp6_na_flag_o=ip6_nd_dad,  # O flag when respondidng to DAD
+            icmp6_na_flag_o=ip6_nd_dad,  # O flag when responding to DAD
             # request (this is not necessary but
             # Linux uses it)
             icmp6_na_target_address=packet_rx.icmp6.ns_target_address,
@@ -183,7 +183,7 @@ def _phrx_icmp6(self: PacketHandler, packet_rx: PacketRx) -> None:
 
         return
 
-    # ICMPv6 Router Solicitaion packet (this is not currently used by the stack)
+    # ICMPv6 Router Solicitation packet (this is not currently used by the stack)
     if packet_rx.icmp6.type == ICMP6_ND_ROUTER_SOLICITATION:
         self.packet_stats_rx.icmp6__nd_router_solicitation += 1
         __debug__ and log(

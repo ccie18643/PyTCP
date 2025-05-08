@@ -714,14 +714,14 @@ class TcpSession:
                 self._tx_buffer_seq_mod -= 1
             __debug__ and log(
                 "tcp-ss",
-                f"[{self}] - Got retansmit timeout, sending segment "
+                f"[{self}] - Got retransmit timeout, sending segment "
                 f"{self._snd_nxt}, resetting snd_ewn to {self._snd_ewn}",
             )
             return
 
     def _retransmit_packet_request(self, packet_rx_md: TcpMetadata) -> None:
         """
-        Retransmit packet after rceiving request from peer.
+        Retransmit packet after receiving request from peer.
         """
         self._tx_retransmit_request_counter[packet_rx_md.ack] = (
             self._tx_retransmit_request_counter.get(packet_rx_md.ack, 0) + 1

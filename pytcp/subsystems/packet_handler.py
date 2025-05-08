@@ -378,7 +378,7 @@ class PacketHandler:
                     f"<WARN>Unable to claim IPv6 address {ip6_host}</>",
                 )
 
-        # Configure Link Local address(es) staticaly
+        # Configure Link Local address(es) statically
         for ip6_host in list(self.ip6_host_candidate):
             if ip6_host.address.is_link_local:
                 self.ip6_host_candidate.remove(ip6_host)

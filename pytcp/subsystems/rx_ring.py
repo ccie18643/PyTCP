@@ -109,7 +109,7 @@ class RxRing:
 
     def dequeue(self) -> PacketRx | None:
         """
-        Dequeue inboutd frame from RX ring.
+        Dequeue inbound frame from RX ring.
         """
 
         # Timeout here is needed so this call doesn't block forever and we are
