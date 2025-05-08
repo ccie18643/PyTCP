@@ -104,10 +104,12 @@ class Icmp6Assembler:
         na_flag_s: bool | None = None,
         na_flag_o: bool | None = None,
         na_target_address: Ip6Address | None = None,
-        nd_options: list[Icmp6NdOptSLLA | Icmp6NdOptTLLA | Icmp6NdOptPI]
-        | None = None,
-        mlr2_multicast_address_record: list[Icmp6MulticastAddressRecord]
-        | None = None,
+        nd_options: (
+            list[Icmp6NdOptSLLA | Icmp6NdOptTLLA | Icmp6NdOptPI] | None
+        ) = None,
+        mlr2_multicast_address_record: (
+            list[Icmp6MulticastAddressRecord] | None
+        ) = None,
         echo_tracker: Tracker | None = None,
     ) -> None:
         """

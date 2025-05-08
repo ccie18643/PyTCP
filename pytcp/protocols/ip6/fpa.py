@@ -77,11 +77,13 @@ class Ip6Assembler:
         dscp: int = 0,
         ecn: int = 0,
         flow: int = 0,
-        carried_packet: Ip6ExtFragAssembler
-        | Icmp6Assembler
-        | TcpAssembler
-        | UdpAssembler
-        | RawAssembler = RawAssembler(),
+        carried_packet: (
+            Ip6ExtFragAssembler
+            | Icmp6Assembler
+            | TcpAssembler
+            | UdpAssembler
+            | RawAssembler
+        ) = RawAssembler(),
     ) -> None:
         """
         Class constructor.

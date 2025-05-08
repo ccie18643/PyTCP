@@ -64,11 +64,13 @@ def _validate_src_ip6_address(
     self: PacketHandler,
     ip6_src: Ip6Address,
     ip6_dst: Ip6Address,
-    carried_packet: Ip6ExtFragAssembler
-    | Icmp6Assembler
-    | TcpAssembler
-    | UdpAssembler
-    | RawAssembler,
+    carried_packet: (
+        Ip6ExtFragAssembler
+        | Icmp6Assembler
+        | TcpAssembler
+        | UdpAssembler
+        | RawAssembler
+    ),
 ) -> Ip6Address | TxStatus:
     """
     Make sure source ip address is valid, supplement with valid one
@@ -209,12 +211,14 @@ def _phtx_ip6(
     ip6_dst: Ip6Address,
     ip6_src: Ip6Address,
     ip6_hop: int = config.IP6_DEFAULT_HOP,
-    carried_packet: Ip6ExtFragAssembler
-    | Icmp6Assembler
-    | TcpAssembler
-    | UdpAssembler
-    | RawAssembler
-    | None = None,
+    carried_packet: (
+        Ip6ExtFragAssembler
+        | Icmp6Assembler
+        | TcpAssembler
+        | UdpAssembler
+        | RawAssembler
+        | None
+    ) = None,
 ) -> TxStatus:
     """Handle outbound IP packets"""
 

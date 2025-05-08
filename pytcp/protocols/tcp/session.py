@@ -883,9 +883,11 @@ class TcpSession:
                 self._remote_ip_address = packet_rx_md.remote_ip_address
                 self._remote_port = packet_rx_md.remote_port
                 self._socket = TcpSocket(
-                    AF_INET6
-                    if self._local_ip_address.version == 6
-                    else AF_INET4,
+                    (
+                        AF_INET6
+                        if self._local_ip_address.version == 6
+                        else AF_INET4
+                    ),
                     tcp_session=self,
                 )
                 # Initialize session parameters

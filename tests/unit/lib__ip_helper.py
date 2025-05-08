@@ -56,27 +56,27 @@ class TestIpHelper(TestCase):
 
         samples = [
             Sample(
-                b"\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0A\x0B\x0C\x0D\x0E\x0F"
+                b"\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0a\x0b\x0c\x0d\x0e\x0f"
                 * 80,
                 0,
                 0x2D2D,
             ),
-            Sample(b"\xFF" * 1500, 0, 0x0000),
+            Sample(b"\xff" * 1500, 0, 0x0000),
             Sample(b"\x00" * 1500, 0, 0xFFFF),
             Sample(
-                b"\xF7\x24\x09" * 100 + b"\x35\x67\x0F\x00" * 250, 0, 0xF1E5
+                b"\xf7\x24\x09" * 100 + b"\x35\x67\x0f\x00" * 250, 0, 0xF1E5
             ),
             Sample(b"\x07" * 9999, 0, 0xBEC5),
             Sample(
-                b"\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0A\x0B\x0C\x0D\x0E\x0F"
+                b"\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0a\x0b\x0c\x0d\x0e\x0f"
                 * 80,
                 0x03DF,
                 0x294E,
             ),
-            Sample(b"\xFF" * 1500, 0x0015, 0xFFEA),
+            Sample(b"\xff" * 1500, 0x0015, 0xFFEA),
             Sample(b"\x00" * 1500, 0xF3FF, 0x0C00),
             Sample(
-                b"\xF7\x24\x09" * 100 + b"\x35\x67\x0F\x00" * 250,
+                b"\xf7\x24\x09" * 100 + b"\x35\x67\x0f\x00" * 250,
                 0x7314,
                 0x7ED1,
             ),

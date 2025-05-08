@@ -85,10 +85,12 @@ def _phtx_icmp6(
     icmp6_na_flag_s: bool = False,
     icmp6_na_flag_o: bool = False,
     icmp6_na_target_address: Ip6Address | None = None,
-    icmp6_nd_options: list[Icmp6NdOptSLLA | Icmp6NdOptTLLA | Icmp6NdOptPI]
-    | None = None,
-    icmp6_mlr2_multicast_address_record: list[Icmp6MulticastAddressRecord]
-    | None = None,
+    icmp6_nd_options: (
+        list[Icmp6NdOptSLLA | Icmp6NdOptTLLA | Icmp6NdOptPI] | None
+    ) = None,
+    icmp6_mlr2_multicast_address_record: (
+        list[Icmp6MulticastAddressRecord] | None
+    ) = None,
     echo_tracker: Tracker | None = None,
 ) -> TxStatus:
     """
@@ -110,9 +112,11 @@ def _phtx_icmp6(
         na_flag_o=icmp6_na_flag_o,
         na_target_address=icmp6_na_target_address,
         nd_options=[] if icmp6_nd_options is None else icmp6_nd_options,
-        mlr2_multicast_address_record=[]
-        if icmp6_mlr2_multicast_address_record is None
-        else icmp6_mlr2_multicast_address_record,
+        mlr2_multicast_address_record=(
+            []
+            if icmp6_mlr2_multicast_address_record is None
+            else icmp6_mlr2_multicast_address_record
+        ),
         echo_tracker=echo_tracker,
     )
 

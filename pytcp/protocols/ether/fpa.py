@@ -66,11 +66,13 @@ class EtherAssembler:
         *,
         src: MacAddress = MacAddress(0),
         dst: MacAddress = MacAddress(0),
-        carried_packet: ArpAssembler
-        | Ip4Assembler
-        | Ip4FragAssembler
-        | Ip6Assembler
-        | RawAssembler = RawAssembler(),
+        carried_packet: (
+            ArpAssembler
+            | Ip4Assembler
+            | Ip4FragAssembler
+            | Ip6Assembler
+            | RawAssembler
+        ) = RawAssembler(),
     ) -> None:
         """
         Class constructor.

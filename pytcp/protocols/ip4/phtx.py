@@ -60,11 +60,13 @@ def _validate_src_ip4_address(
     self: PacketHandler,
     ip4_src: Ip4Address,
     ip4_dst: Ip4Address,
-    carried_packet: Icmp4Assembler
-    | TcpAssembler
-    | UdpAssembler
-    | Ip4FragAssembler
-    | RawAssembler,
+    carried_packet: (
+        Icmp4Assembler
+        | TcpAssembler
+        | UdpAssembler
+        | Ip4FragAssembler
+        | RawAssembler
+    ),
 ) -> Ip4Address | TxStatus:
     """
     Make sure source ip address is valid, supplement with valid one
@@ -233,11 +235,9 @@ def _phtx_ip4(
     ip4_dst: Ip4Address,
     ip4_src: Ip4Address,
     ip4_ttl: int = config.IP4_DEFAULT_TTL,
-    carried_packet: Icmp4Assembler
-    | TcpAssembler
-    | UdpAssembler
-    | RawAssembler
-    | None = None,
+    carried_packet: (
+        Icmp4Assembler | TcpAssembler | UdpAssembler | RawAssembler | None
+    ) = None,
 ) -> TxStatus:
     """Handle outbound IP packets"""
 

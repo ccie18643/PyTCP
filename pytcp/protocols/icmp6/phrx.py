@@ -137,9 +137,9 @@ def _phrx_icmp6(self: PacketHandler, packet_rx: PacketRx) -> None:
         )
         self._phtx_icmp6(
             ip6_src=packet_rx.icmp6.ns_target_address,
-            ip6_dst=Ip6Address("ff02::1")
-            if ip6_nd_dad
-            else packet_rx.ip6.src,  # use ff02::1 destination addriess when
+            ip6_dst=(
+                Ip6Address("ff02::1") if ip6_nd_dad else packet_rx.ip6.src
+            ),  # use ff02::1 destination addriess when
             # responding to DAD request
             ip6_hop=255,
             icmp6_type=ICMP6_ND_NEIGHBOR_ADVERTISEMENT,

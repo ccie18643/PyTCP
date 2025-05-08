@@ -40,8 +40,7 @@ import re
 import struct
 
 
-class MacIp4AddressFormatError(Exception):
-    ...
+class MacIp4AddressFormatError(Exception): ...
 
 
 class MacAddress:

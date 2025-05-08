@@ -529,9 +529,9 @@ class PacketHandler:
             if _ not in {Ip6Address("ff02::1")}
         }:
             self._phtx_icmp6(
-                ip6_src=self.ip6_unicast[0]
-                if self.ip6_unicast
-                else Ip6Address(0),
+                ip6_src=(
+                    self.ip6_unicast[0] if self.ip6_unicast else Ip6Address(0)
+                ),
                 ip6_dst=Ip6Address("ff02::16"),
                 ip6_hop=1,
                 icmp6_type=ICMP6_MLD2_REPORT,
@@ -721,10 +721,12 @@ class PacketHandler:
         na_flag_s: bool = False,
         na_flag_o: bool = False,
         na_target_address: Ip6Address | None = None,
-        nd_options: list[Icmp6NdOptSLLA | Icmp6NdOptTLLA | Icmp6NdOptPI]
-        | None = None,
-        mlr2_multicast_address_record: list[Icmp6MulticastAddressRecord]
-        | None = None,
+        nd_options: (
+            list[Icmp6NdOptSLLA | Icmp6NdOptTLLA | Icmp6NdOptPI] | None
+        ) = None,
+        mlr2_multicast_address_record: (
+            list[Icmp6MulticastAddressRecord] | None
+        ) = None,
     ) -> TxStatus:
         """
         Interface method for ICMPv4 Socket -> FPA communication.
@@ -745,7 +747,9 @@ class PacketHandler:
             icmp6_na_flag_o=na_flag_o,
             icmp6_na_target_address=na_target_address,
             icmp6_nd_options=[] if nd_options is None else nd_options,
-            icmp6_mlr2_multicast_address_record=[]
-            if mlr2_multicast_address_record is None
-            else mlr2_multicast_address_record,
+            icmp6_mlr2_multicast_address_record=(
+                []
+                if mlr2_multicast_address_record is None
+                else mlr2_multicast_address_record
+            ),
         )
