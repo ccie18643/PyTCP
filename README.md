@@ -25,7 +25,7 @@ I welcome any contributions and help from anyone interested in network programmi
 I still need to fix.
 
 Please feel free to check my two other related projects:
- - [RusTCP](http://github.com/ccie18643/RusTCP) - Attempt to rewrite some of PyTCP funcionality in Rust and use it to create IPv6/SRv6 lab router.
+ - [RusTCP](http://github.com/ccie18643/RusTCP) - Attempt to rewrite some of PyTCP functionality in Rust and use it to create IPv6/SRv6 lab router.
  - [SeaTCP](http://github.com/ccie18643/SeaTCP) - Attempt to create low latency stack using C and Assembly languages.
 
 ---
@@ -48,7 +48,7 @@ PyTCP stack to your local network at the same time.
                                             |--(tap7) <---> [PyTCP TCP/IP stack]
 ```
 
-After the example program (either client or service) starts the stack, it can comunicate with it
+After the example program (either client or service) starts the stack, it can communicate with it
 via simplified BSD Sockets like API interface. There is also the possibility of sending packets
 directly by calling one of the ```_*_phtx()``` methods from ```PacketHandler``` class.
 
