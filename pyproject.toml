@@ -4,14 +4,13 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "PyTCP"
-version = "2.7.8"
+version = "2.7.9"
 description = "TCP/IP stack written in Python."
 readme = "README.md"
 authors = [{ name = "Sebastian Majewski", email = "ccie18643@gmail.com" }]
-license = { file = "LICENSE" }
+license = "GPL-3.0-or-later"
 classifiers = [
     "Programming Language :: Python :: 3.12",
-    "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
     "Development Status :: 3 - Alpha",
     "Operating System :: POSIX :: Linux",
     "Natural Language :: English",
@@ -68,3 +67,7 @@ no_implicit_optional = true
 warn_return_any = true
 warn_unused_ignores = true
 show_error_codes = true
+
+[tool.setuptools.packages.find]
+include = ["pytcp"]
+

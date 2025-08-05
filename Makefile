@@ -1,4 +1,3 @@
-PYTHON_VERSION := 3.12
 VENV := venv
 ROOT_PATH:=$(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
 PYTCP_PATH := pytcp
@@ -9,9 +8,9 @@ TEST_FILES := $(shell find ${TESTS_PATH} -name '*.py')
 EXAMPLES_FILES := $(shell find ${EXAMPLES_PATH} -name '*.py')
 
 $(VENV)/bin/activate: requirements_dev.txt
-	@python$(PYTHON_VERSION) -m venv $(VENV)
+	@python -m venv $(VENV)
 	@echo "export PYTHONPATH=$(ROOT_PATH)" >> venv/bin/activate
-	@./$(VENV)/bin/python3 -m pip install --upgrade pip
+	@./$(VENV)/bin/python -m pip install --upgrade pip
 	@./$(VENV)/bin/pip install -r requirements_dev.txt
 
 venv: $(VENV)/bin/activate
