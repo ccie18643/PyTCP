@@ -209,16 +209,16 @@ stack.stop()
 #### Several ping packets and two monkeys were delivered via TCP over the IPv6 protocol.
 
 ![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/master/docs/images/malpi_00.png)
-![Sample PyTCP log output](http://pytcp.io/docs/images/malpi_01.png)
-![Sample PyTCP log output](http://pytcp.io/docs/images/malpi_02.png)
-![Sample PyTCP log output](http://pytcp.io/docs/images/malpi_03.png)
-![Sample PyTCP log output](http://pytcp.io/docs/images/malpi_04.png)
-![Sample PyTCP log output](http://pytcp.io/docs/images/malpi_05.png)
-![Sample PyTCP log output](http://pytcp.io/docs/images/malpi_06.png)
-![Sample PyTCP log output](http://pytcp.io/docs/images/malpi_07.png)
-![Sample PyTCP log output](http://pytcp.io/docs/images/malpi_08.png)
-![Sample PyTCP log output](http://pytcp.io/docs/images/malpi_09.png)
-![Sample PyTCP log output](http://pytcp.io/docs/images/malpi_10.png)
+![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/master/docs/images/malpi_01.png)
+![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/master/docs/images/malpi_02.png)
+![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/master/docs/images/malpi_03.png)
+![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/master/docs/images/malpi_04.png)
+![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/master/docs/images/malpi_05.png)
+![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/master/docs/images/malpi_06.png)
+![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/master/docs/images/malpi_07.png)
+![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/master/docs/images/malpi_08.png)
+![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/master/docs/images/malpi_09.png)
+![Sample PyTCP log output](https://github.com/ccie18643/PyTCP/blob/master/docs/images/malpi_10.png)
 
 <br>
 
