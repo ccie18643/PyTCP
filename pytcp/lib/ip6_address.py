@@ -378,7 +378,7 @@ class Ip6Network(IpNetwork):
         )
 
 
-class Ip6Host(IpHost):
+class Ip6Host(IpHost[Ip6Address]):
     """
     IPv6 host support class.
     """
