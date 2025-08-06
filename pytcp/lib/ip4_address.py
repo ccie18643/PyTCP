@@ -377,7 +377,7 @@ class Ip4Network(IpNetwork):
         return self.last
 
 
-class Ip4Host(IpHost):
+class Ip4Host(IpHost[Ip4Address]):
     """
     IPv4 host support class.
     """

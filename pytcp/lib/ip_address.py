@@ -37,12 +37,14 @@ ver 2.7
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Generic, TypeVar
 
 if TYPE_CHECKING:
     from pytcp.lib.ip4_address import Ip4Address
     from pytcp.lib.ip6_address import Ip6Address, Ip6Host
     from pytcp.lib.mac_address import MacAddress
+
+A = TypeVar("A", bound="IpAddress")
 
 
 class IpAddressFormatError(Exception):
@@ -422,7 +424,7 @@ class IpNetwork(ABC):
             raise NotImplementedError
 
 
-class IpHost(ABC):
+class IpHost(ABC, Generic[A]):
     """
     IP host support base class.
     """
@@ -498,7 +500,7 @@ class IpHost(ABC):
 
     @property
     @abstractmethod
-    def gateway(self) -> IpAddress | None:
+    def gateway(self) -> A | None:
         """
         The 'gateway' property getter placeholder.
         """
@@ -507,7 +509,7 @@ class IpHost(ABC):
     @abstractmethod
     def gateway(
         self,
-        address: IpAddress | None,
+        address: A | None,
     ) -> None:
         """
         The 'gateway' property setter placeholder.
