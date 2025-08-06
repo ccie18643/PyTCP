@@ -39,7 +39,7 @@ import fcntl
 import os
 import struct
 import sys
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 from net_addr.ip4_host import Ip4Host
 from net_addr.ip6_host import Ip6Host
