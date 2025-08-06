@@ -74,9 +74,9 @@ def socket(
     Return Socket class object.
     """
 
+    from pytcp.socket.raw__socket import RawSocket
     from pytcp.socket.tcp__socket import TcpSocket
     from pytcp.socket.udp__socket import UdpSocket
-    from pytcp.socket.raw__socket import RawSocket
 
     match type, protocol:
         case SocketType.STREAM, None | IpProto.TCP:

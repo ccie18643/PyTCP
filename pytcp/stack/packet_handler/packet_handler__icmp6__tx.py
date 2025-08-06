@@ -195,7 +195,7 @@ class PacketHandlerIcmp6Tx(ABC):
         Send out ICMPv6 Multicast Listener Report for given list of addresses.
         """
 
-        # Need to use set here to avoid re-using duplicate multicast entries
+        # Need to use set here to avoid reusing duplicate multicast entries
         # from stack_ip6_multicast list, also All Multicast Nodes address is
         # not being advertised as this is not necessary.
         if icmp6_mlr2_multicast_address_record := {

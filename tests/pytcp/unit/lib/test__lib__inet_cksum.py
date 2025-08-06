@@ -48,7 +48,7 @@ from pytcp.lib.inet_cksum import inet_cksum
             "_args": [],
             "_kwargs": {
                 "data": (
-                    b"\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0A\x0B\x0C\x0D\x0E\x0F"
+                    b"\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0a\x0b\x0c\x0d\x0e\x0f"
                     * 80
                 ),
                 "init": 0,
@@ -59,7 +59,7 @@ from pytcp.lib.inet_cksum import inet_cksum
             "_description": "Compute checksum.",
             "_args": [],
             "_kwargs": {
-                "data": b"\xFF" * 1500,
+                "data": b"\xff" * 1500,
                 "init": 0,
             },
             "_results": {"inet_cksum": 0x0000},
@@ -77,7 +77,7 @@ from pytcp.lib.inet_cksum import inet_cksum
             "_description": "Compute checksum.",
             "_args": [],
             "_kwargs": {
-                "data": b"\xF7\x24\x09" * 100 + b"\x35\x67\x0F\x00" * 250,
+                "data": b"\xf7\x24\x09" * 100 + b"\x35\x67\x0f\x00" * 250,
                 "init": 0,
             },
             "_results": {"inet_cksum": 0xF1E5},
@@ -87,7 +87,7 @@ from pytcp.lib.inet_cksum import inet_cksum
             "_args": [],
             "_kwargs": {
                 "data": (
-                    b"\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0A\x0B\x0C\x0D\x0E\x0F"
+                    b"\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0a\x0b\x0c\x0d\x0e\x0f"
                     * 80
                 ),
                 "init": 0x03DF,
@@ -98,7 +98,7 @@ from pytcp.lib.inet_cksum import inet_cksum
             "_description": "Compute checksum.",
             "_args": [],
             "_kwargs": {
-                "data": b"\xFF" * 1500,
+                "data": b"\xff" * 1500,
                 "init": 0x0015,
             },
             "_results": {"inet_cksum": 0xFFEA},
@@ -116,7 +116,7 @@ from pytcp.lib.inet_cksum import inet_cksum
             "_description": "Compute checksum.",
             "_args": [],
             "_kwargs": {
-                "data": b"\xF7\x24\x09" * 100 + b"\x35\x67\x0F\x00" * 250,
+                "data": b"\xf7\x24\x09" * 100 + b"\x35\x67\x0f\x00" * 250,
                 "init": 0x7314,
             },
             "_results": {"inet_cksum": 0x7ED1},
