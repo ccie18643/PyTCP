@@ -25,10 +25,13 @@
 
 
 """
-The example 'user space' client for ICMP echo. It actively sends messages
-to the ICMP Echo service.
+The example 'user space' client for ICMPv4/v6 Echo that directly calls the
+ICMPv4/ICMPv6 stack functions to send ICMP Echo messages. This method is
+used to demonstrate how to use the ICMP Echo service without relying on
+the socket interface, but for obvious reqsons it is not recommended
+for regular use as it doesn't provide any means of receiving responses.
 
-examples/icmp_echo_client.py
+examples/icmp_echo_client__direct.py
 
 ver 3.0.2
 """
@@ -36,14 +39,14 @@ ver 3.0.2
 
 from __future__ import annotations
 
-import os
-import socket as python_socket
-import struct
+import random
+import threading
 import time
+from datetime import datetime
+from typing import cast
 
 import click
 
-from examples.lib.client import Client
 from net_addr import (
     ClickTypeIp4Address,
     ClickTypeIp4Host,
@@ -58,22 +61,20 @@ from net_addr import (
     IpAddress,
     MacAddress,
 )
-from pytcp import socket, stack
+from pytcp import stack
+from pytcp.protocols.icmp4.message.icmp4_message__echo_request import (
+    Icmp4EchoRequestMessage,
+)
+from pytcp.protocols.icmp6.message.icmp6_message__echo_request import (
+    Icmp6EchoRequestMessage,
+)
+from pytcp.stack import GITHUB_REPO, PYTCP_VERSION
 
-ICMP4__ECHO_REQUEST__TYPE = 8
-ICMP4__ECHO_REQUEST__CODE = 0
 
-ICMP6_ECHO_REQUEST_TYPE = 128
-ICMP6_ECHO_REQUEST_CODE = 0
-
-
-class IcmpEchoClient(Client):
+class IcmpEchoClient:
     """
-    ICMP Echo client support class.
+    ICMPv4/v6 Echo client support class.
     """
-
-    _protocol_name = "ICMP"
-    _client_name = "Echo"
 
     def __init__(
         self,
@@ -81,8 +82,6 @@ class IcmpEchoClient(Client):
         local_ip_address: IpAddress,
         remote_ip_address: IpAddress,
         message_count: int = -1,
-        message_delay: int = 1,
-        message_size: int = 5,
     ) -> None:
         """
         Class constructor.
@@ -91,127 +90,84 @@ class IcmpEchoClient(Client):
         self._local_ip_address = local_ip_address
         self._remote_ip_address = remote_ip_address
         self._message_count = message_count
-        self._message_delay = message_delay
-        self._message_size = message_size
         self._run_thread = False
 
-    @staticmethod
-    def _checksum(data: bytes) -> int:
+    def start(self) -> None:
         """
-        Compute the Internet Checksum of the supplied data.
-        """
-
-        if len(data) % 2:
-            data += b"\x00"
-        res = sum(struct.unpack(f"!{len(data) // 2}H", data))
-        res = (res >> 16) + (res & 0xFFFF)
-        res += res >> 16
-        return int(~res & 0xFFFF)
-
-    @classmethod
-    def _create_icmp4_message(cls, identifier: int, sequence: int) -> bytes:
-        """
-        Create ICMPv4 Echo Request packet.
+        Start the service thread.
         """
 
-        def header(cksum: int = 0) -> bytes:
-            return struct.pack(
-                "!BBHHH",
-                ICMP4__ECHO_REQUEST__TYPE,
-                ICMP4__ECHO_REQUEST__CODE,
-                cksum,
-                identifier,
-                sequence,
-            )
+        click.echo("Starting the ICMP Echo client.")
+        self._run_thread = True
+        threading.Thread(target=self._thread__client).start()
+        time.sleep(0.1)
 
-        payload = struct.pack("!d", time.time())  # 8-byte timestamp
-        cksum = cls._checksum(header() + payload)
-
-        return header(cksum) + payload
-
-    @classmethod
-    def _create_icmp6_message(
-        cls, src_ip: str, dst_ip: str, identifier: int, sequence: int
-    ) -> bytes:
+    def stop(self) -> None:
         """
-        Create ICMPv6 Echo Request packet with manually computed checksum.
+        Stop the service thread.
         """
 
-        def header(cksum: int = 0) -> bytes:
-            return struct.pack(
-                "!BBHHH",
-                ICMP6_ECHO_REQUEST_TYPE,
-                ICMP6_ECHO_REQUEST_CODE,
-                cksum,
-                identifier,
-                sequence,
-            )
-
-        payload = struct.pack("!d", time.time())  # 8-byte timestamp
-        icmp_packet_wo_cksum = header(0) + payload
-
-        # Build pseudo-header for checksum
-        def inet6_aton(addr: str) -> bytes:
-            return bytes(python_socket.inet_pton(python_socket.AF_INET6, addr))
-
-        src = inet6_aton(src_ip)
-        dst = inet6_aton(dst_ip)
-        upper_layer_len = struct.pack("!I", len(icmp_packet_wo_cksum))
-        next_header = b"\x00" * 3 + struct.pack("!B", int(socket.IPPROTO_ICMP6))
-
-        pseudo_header = src + dst + upper_layer_len + next_header
-        checksum_input = pseudo_header + icmp_packet_wo_cksum
-
-        cksum = cls._checksum(checksum_input)
-
-        return header(cksum) + payload
+        click.echo("Stopinging the ICMP Echo client.")
+        self._run_thread = False
+        time.sleep(0.1)
 
     def _thread__client(self) -> None:
-        """
-        Client thread.
-        """
+        assert self._local_ip_address is not None
 
-        if client_socket := self._get_client_socket():
-            message_count = self._message_count
+        flow_id = random.randint(0, 65535)
 
-            while self._run_thread and message_count:
-                match (
-                    self._local_ip_address.version,
-                    self._remote_ip_address.version,
-                ):
-                    case 6, 6:
-                        icmp_message = self._create_icmp6_message(
-                            src_ip=str(self._local_ip_address),
-                            dst_ip=str(self._remote_ip_address),
-                            identifier=os.getpid() & 0xFFFF,
-                            sequence=self._message_count - message_count + 1,
-                        )
-                    case 4, 4:
-                        icmp_message = self._create_icmp4_message(
-                            identifier=os.getpid() & 0xFFFF,
-                            sequence=self._message_count - message_count + 1,
-                        )
-                    case _:
-                        raise ValueError("Invalid IP address versions.")
+        message_count = self._message_count
 
-                try:
-                    client_socket.send(icmp_message)
-                except OSError as error:
-                    click.echo(f"Client ICMP Echo: send() error - {error!r}.")
-                    break
-
-                click.echo(
-                    f"Client ICMP Echo: Sent {len(icmp_message)} bytes of data to "
-                    f"{self._remote_ip_address}."
-                )
-                time.sleep(self._message_delay)
-                message_count = min(message_count, message_count - 1)
-
-            client_socket.close()
-            click.echo(
-                "Client ICMP Echo: Closed connection to "
-                f"{self._remote_ip_address}.",
+        message_seq = 0
+        while self._run_thread and message_count:
+            message = bytes(
+                f"PyTCP {PYTCP_VERSION}, {GITHUB_REPO} - {str(datetime.now())}",
+                "utf-8",
             )
+
+            match self._local_ip_address.version, self._remote_ip_address.version:
+                case 4, 4:
+                    stack.packet_handler.send_icmp4_packet(
+                        ip4__local_address=cast(
+                            Ip4Address, self._local_ip_address
+                        ),
+                        ip4__remote_address=cast(
+                            Ip4Address, self._remote_ip_address
+                        ),
+                        icmp4__message=Icmp4EchoRequestMessage(
+                            id=flow_id,
+                            seq=message_seq,
+                            data=message,
+                        ),
+                    )
+                case 6, 6:
+                    stack.packet_handler.send_icmp6_packet(
+                        ip6__local_address=cast(
+                            Ip6Address, self._local_ip_address
+                        ),
+                        ip6__remote_address=cast(
+                            Ip6Address, self._remote_ip_address
+                        ),
+                        icmp6__message=Icmp6EchoRequestMessage(
+                            id=flow_id,
+                            seq=message_seq,
+                            data=message,
+                        ),
+                    )
+                case _:
+                    raise ValueError(
+                        "Unsupported IP version combination: "
+                        f"{self._local_ip_address.version=}, "
+                        f"{self._remote_ip_address.version=}"
+                    )
+
+            click.echo(
+                f"Client ICMP Echo: Sent ICMP Echo ({flow_id}/{message_seq}) "
+                f"to {self._remote_ip_address} - {str(message)}."
+            )
+            time.sleep(1)
+            message_seq += 1
+            message_count = min(message_count, message_count - 1)
 
 
 @click.command()
@@ -269,7 +225,7 @@ def cli(
 ) -> None:
     """
     Start PyTCP stack and stop it when user presses Ctrl-C.
-    Start ICMP Echo client.
+    Start Icmp Echo client.
     """
 
     if ip6_host:
@@ -298,7 +254,7 @@ def cli(
             )
         case _:
             raise ValueError(
-                f"Invalid remote IP address version: {remote_ip_address.version}"
+                f"Unsupported IP version: {remote_ip_address.version}"
             )
 
     try:
