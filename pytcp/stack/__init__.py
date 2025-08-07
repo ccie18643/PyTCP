@@ -232,14 +232,14 @@ def init(
     ip4_host: Ip4Host | None = (
         None
         if IP4_ADDRESS is None
-        else Ip4Host(IP4_ADDRESS, gateway=IP4_GATEWAY)  # type: ignore
+        else Ip4Host(IP4_ADDRESS, gateway=IP4_GATEWAY)
     ),
     ip4_dhcp: bool = True if IP4_ADDRESS is None else False,
     ip6_support: bool = True,
     ip6_host: Ip6Host | None = (
         None
         if IP6_ADDRESS is None
-        else Ip4Host(IP6_ADDRESS, gateway=IP6_GATEWAY)  # type: ignore
+        else Ip6Host(IP6_ADDRESS, gateway=IP6_GATEWAY)
     ),
     ip6_gua_autoconfig: bool = True if IP6_ADDRESS is None else False,
     ip6_lla_autoconfig: bool = True,

@@ -156,7 +156,7 @@ def pick_local_port() -> int:
     """
 
     available_ephemeral_ports = set(EPHEMERAL_PORT_RANGE) - {
-        int(_.split("/")[3]) for _ in stack.sockets.values()
+        socket.local_port for socket in stack.sockets.values()
     }
 
     if len(available_ephemeral_ports):

@@ -35,13 +35,15 @@ ver 3.0.2
 """
 
 
+from pytcp.socket.socket import (
+    ReceiveTimeout,  # pyright: ignore[reportUnusedImport]
+)
+from pytcp.socket.socket import gaierror  # pyright: ignore[reportUnusedImport]
 from pytcp.socket.socket import (  # noqa: F401
     AddressFamily,
     IpProto,
-    ReceiveTimeout,
     Socket,
     SocketType,
-    gaierror,
 )
 
 AF_INET = AddressFamily.INET4
@@ -78,17 +80,23 @@ def socket(
     from pytcp.socket.tcp__socket import TcpSocket
     from pytcp.socket.udp__socket import UdpSocket
 
-    match type, protocol:
-        case SocketType.STREAM, None | IpProto.TCP:
+    match family, type, protocol:
+        case _, SocketType.STREAM, None | IpProto.TCP:
             return TcpSocket(address_family=family)
 
-        case SocketType.DGRAM, None | IpProto.UDP:
+        case _, SocketType.DGRAM, None | IpProto.UDP:
             return UdpSocket(address_family=family)
 
-        case SocketType.DGRAM, IpProto.ICMP4 | IpProto.ICMP6:
+        case _, SocketType.DGRAM, IpProto.ICMP4 | IpProto.ICMP6:
             raise NotImplementedError
 
-        case SocketType.RAW, _:
+        case AddressFamily.INET4, SocketType.RAW, None:
+            return RawSocket(address_family=family, ip_proto=IpProto.IP4)
+
+        case AddressFamily.INET6, SocketType.RAW, None:
+            return RawSocket(address_family=family, ip_proto=IpProto.IP6)
+
+        case _, SocketType.RAW, _ if protocol is not None:
             return RawSocket(address_family=family, ip_proto=protocol)
 
         case _:
