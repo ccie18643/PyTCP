@@ -43,7 +43,16 @@ from typing import TYPE_CHECKING
 import click
 from net_addr.ip_address import IpAddress
 
-from pytcp.socket import AF_INET4, AF_INET6, SOCK_DGRAM, SOCK_STREAM, socket
+from pytcp.socket import (
+    AF_INET4,
+    AF_INET6,
+    IPPROTO_ICMP4,
+    IPPROTO_ICMP6,
+    SOCK_DGRAM,
+    SOCK_RAW,
+    SOCK_STREAM,
+    socket,
+)
 
 if TYPE_CHECKING:
     from pytcp.socket.socket import Socket
@@ -103,8 +112,20 @@ class Client(ABC):
                 client_socket = socket(family=AF_INET6, type=SOCK_DGRAM)
             case 4, 4, "UDP":
                 client_socket = socket(family=AF_INET4, type=SOCK_DGRAM)
+            case 6, 6, "ICMP":
+                client_socket = socket(
+                    family=AF_INET6, type=SOCK_RAW, protocol=IPPROTO_ICMP6
+                )
+                self._local_port = int(IPPROTO_ICMP6)
+                self._remote_port = 0
+            case 4, 4, "ICMP":
+                client_socket = socket(
+                    family=AF_INET4, type=SOCK_RAW, protocol=IPPROTO_ICMP4
+                )
+                self._local_port = int(IPPROTO_ICMP4)
+                self._remote_port = 0
             case _:
-                raise ValueError("Invalid IP version or protocol.")
+                raise ValueError("Invalid IP versions or protocol combination.")
 
         click.echo(
             f"Client {self._protocol_name} {self._client_name}: "
