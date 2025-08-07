@@ -126,6 +126,8 @@ class RawSocket(Socket):
                     "[Errno -2] Name or service not known - "
                     "[Malformed remote IP address]"
                 )
+        else:
+            local_ip_address = self._local_ip_address
 
         assert isinstance(local_ip_address, (Ip6Address, Ip4Address))
 
@@ -171,6 +173,10 @@ class RawSocket(Socket):
                         "[Errno -2] Name or service not known - "
                         "[Malformed local IP address]"
                     ) from error
+            case _:
+                raise ValueError(
+                    f"Invalid address family: {self._address_family}"
+                )
 
         stack.sockets.pop(self.socket_id, None)
         self._local_ip_address = local_ip_address
