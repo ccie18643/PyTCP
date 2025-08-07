@@ -162,11 +162,10 @@ class UdpEchoClient(Client):
     default=None,
     help="IPv4 gateway address to be assigned to the interface.",
 )
-@click.option(
-    "--remote-ip-address",
+@click.argument(
+    "remote_ip_address",
     type=ClickTypeIpAddress(),
     required=True,
-    help="Remote IP address of the UDP Echo server.",
 )
 def cli(
     *,

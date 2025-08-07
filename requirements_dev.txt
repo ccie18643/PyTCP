@@ -12,3 +12,4 @@ twine
 ipython
 pyupgrade
 parameterized
+types-click

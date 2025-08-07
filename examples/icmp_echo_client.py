@@ -204,11 +204,10 @@ class IcmpEchoClient:
     default=None,
     help="IPv4 gateway address to be assigned to the interface.",
 )
-@click.option(
-    "--remote-ip-address",
+@click.argument(
+    "remote_ip_address",
     type=ClickTypeIpAddress(),
     required=True,
-    help="Remote IP address to be pinged.",
 )
 def cli(
     *,
@@ -248,6 +247,10 @@ def cli(
             client = IcmpEchoClient(
                 local_ip_address=ip4_host.address if ip4_host else Ip4Address(),
                 remote_ip_address=remote_ip_address,
+            )
+        case _:
+            raise ValueError(
+                f"Unsupported IP version: {remote_ip_address.version}"
             )
 
     try:
