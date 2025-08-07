@@ -206,6 +206,10 @@ def cli(
                 local_ip_address=ip4_host.address if ip4_host else Ip4Address(),
                 remote_ip_address=remote_ip_address,
             )
+        case _:
+            raise ValueError(
+                f"Invalid remote IP address version: {remote_ip_address.version}"
+            )
 
     try:
         stack.start()
