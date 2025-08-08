@@ -57,6 +57,8 @@ from pytcp.protocols.icmp4.message.icmp4_message__echo_request import (
 )
 from pytcp.protocols.ip4.ip4__header import IP4__HEADER__LEN
 from pytcp.protocols.udp.udp__header import UDP__HEADER__LEN
+from pytcp.socket.raw__metadata import RawMetadata
+from pytcp.socket.raw__socket import RawSocket
 from pytcp.socket.udp__metadata import UdpMetadata
 from pytcp.socket.udp__socket import UdpSocket
 
@@ -129,6 +131,27 @@ class PacketHandlerIcmp4Rx(ABC):
             f"from {packet_rx.ip4.src}",
         )
         self.packet_stats_rx.icmp4__echo_reply += 1
+
+        # Create RawMetadata object and try to find matching RAW socket
+        packet_rx_md = RawMetadata(
+            ip__ver=packet_rx.ip.ver,
+            ip__local_address=packet_rx.ip.dst,
+            ip__remote_address=packet_rx.ip.src,
+            ip__proto=IpProto.ICMP4,
+            raw__data=bytes(packet_rx.icmp4.message),
+        )
+
+        for socket_id in packet_rx_md.socket_ids:
+            if socket := cast(RawSocket, stack.sockets.get(socket_id, None)):
+                self.packet_stats_rx.raw__socket_match += 1
+                __debug__ and log(
+                    "raw",
+                    f"{packet_rx_md.tracker} - <INFO>Found matching listening "
+                    f"socket [{socket}]</>",
+                )
+                socket.process_raw_packet(packet_rx_md)
+                return
+
         return
 
     def __phrx_icmp4__destination_unreachable(

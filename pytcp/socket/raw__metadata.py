@@ -72,9 +72,9 @@ class RawMetadata:
             SocketId(
                 AddressFamily.from_ver(self.ip__ver),
                 SocketType.RAW,
-                self.ip__local_address.unspecified,
+                self.ip__local_address,
                 int(self.ip__proto),
-                self.ip__remote_address.unspecified,
+                self.ip__remote_address,
                 0,
             ),
         ]

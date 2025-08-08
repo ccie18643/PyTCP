@@ -73,6 +73,8 @@ from pytcp.protocols.icmp6.message.nd.option.icmp6_nd_options import (
 )
 from pytcp.protocols.ip6.ip6__header import IP6__HEADER__LEN
 from pytcp.protocols.udp.udp__header import UDP__HEADER__LEN
+from pytcp.socket.raw__metadata import RawMetadata
+from pytcp.socket.raw__socket import RawSocket
 from pytcp.socket.udp__metadata import UdpMetadata
 from pytcp.socket.udp__socket import UdpSocket
 
@@ -271,6 +273,27 @@ class PacketHandlerIcmp6Rx(ABC):
             f"{packet_rx.tracker} - Received ICMPv6 Echo Reply packet "
             f"from {packet_rx.ip6.src}",
         )
+
+        # Create RawMetadata object and try to find matching RAW socket
+        packet_rx_md = RawMetadata(
+            ip__ver=packet_rx.ip.ver,
+            ip__local_address=packet_rx.ip.dst,
+            ip__remote_address=packet_rx.ip.src,
+            ip__proto=IpProto.ICMP4,
+            raw__data=bytes(packet_rx.icmp4.message),
+        )
+
+        for socket_id in packet_rx_md.socket_ids:
+            if socket := cast(RawSocket, stack.sockets.get(socket_id, None)):
+                self.packet_stats_rx.raw__socket_match += 1
+                __debug__ and log(
+                    "raw",
+                    f"{packet_rx_md.tracker} - <INFO>Found matching listening "
+                    f"socket [{socket}]</>",
+                )
+                socket.process_raw_packet(packet_rx_md)
+                return
+
         return
 
     def __phrx_icmp6__nd_router_solicitation(self, packet_rx: PacketRx) -> None:
