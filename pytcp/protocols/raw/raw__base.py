@@ -37,6 +37,7 @@ from __future__ import annotations
 
 from typing import override
 
+from pytcp.lib.inet_cksum import inet_cksum
 from pytcp.lib.proto import Proto
 from pytcp.protocols.enums import EtherType, IpProto
 
@@ -49,6 +50,8 @@ class Raw(Proto):
     _payload: bytes
     _ether_type: EtherType
     _ip_proto: IpProto
+
+    pshdr_sum: int = 0
 
     @override
     def __len__(self) -> int:
@@ -79,6 +82,39 @@ class Raw(Proto):
         """
         Get the Raw packet as bytes.
         """
+
+        # Automatically calculate checksum if IpProto is ICMPv6 packet and checksum is not set.
+        if (
+            self._ip_proto == IpProto.ICMP6
+            and self._payload[2:4] == b"\x00\x00"
+        ):
+            _payload = bytearray(self._payload)
+            _payload[2:4] = inet_cksum(_payload, self.pshdr_sum).to_bytes(2)
+            return bytes(_payload)
+
+        # Automatically calculate checksum if IpProto is ICMPv4 packet and checksum is not set.
+        if (
+            self._ip_proto == IpProto.ICMP4
+            and self._payload[2:4] == b"\x00\x00"
+        ):
+            _payload = bytearray(self._payload)
+            _payload[2:4] = inet_cksum(_payload).to_bytes(2)
+            return bytes(_payload)
+
+        # Automatically calculate checksum if IpProto is ICMPv4 or ICMPv6 packet and checksum is not set.
+        if self._ip_proto == IpProto.UDP and self._payload[6:8] == b"\x00\x00":
+            _payload = bytearray(self._payload)
+            _payload[6:8] = inet_cksum(_payload, self.pshdr_sum).to_bytes(2)
+            return bytes(_payload)
+
+        # Automatically calculate checksum if IpProto is TCP packet and checksum is not set.
+        if (
+            self._ip_proto == IpProto.TCP
+            and self._payload[16:18] == b"\x00\x00"
+        ):
+            _payload = bytearray(self._payload)
+            _payload[16:18] = inet_cksum(_payload, self.pshdr_sum).to_bytes(2)
+            return bytes(_payload)
 
         return self._payload
 

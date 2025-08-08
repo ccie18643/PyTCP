@@ -114,20 +114,38 @@ class IcmpEchoClient(Client):
         Create ICMPv4 Echo Request packet.
         """
 
-        def header(cksum: int = 0) -> bytes:
-            return struct.pack(
-                "!BBHHH",
-                ICMP4__ECHO_REQUEST__TYPE,
-                ICMP4__ECHO_REQUEST__CODE,
-                cksum,
-                identifier,
-                sequence,
-            )
+        header = struct.pack(
+            "!BBHHH",
+            ICMP4__ECHO_REQUEST__TYPE,
+            ICMP4__ECHO_REQUEST__CODE,
+            0,
+            identifier,
+            sequence,
+        )
 
-        payload = struct.pack("!d", time.time())  # 8-byte timestamp
-        cksum = cls._checksum(header() + payload)
+        payload = struct.pack("!d", time.time())
 
-        return header(cksum) + payload
+        return header + payload
+
+    @classmethod
+    def _create_icmp6_message(cls, identifier: int, sequence: int) -> bytes:
+        """
+        Create ICMPv6 Echo Request packet.
+        """
+
+        # Create the ICMPv6 header directly (without checksum)
+        header = struct.pack(
+            "!BBHHH",
+            ICMP6_ECHO_REQUEST_TYPE,
+            ICMP6_ECHO_REQUEST_CODE,
+            0,  # checksum (set to 0)
+            identifier,
+            sequence,
+        )
+
+        payload = struct.pack("!d", time.time())
+
+        return header + payload
 
     def _thread__client(self) -> None:
         """
@@ -142,6 +160,11 @@ class IcmpEchoClient(Client):
                     self._local_ip_address.version,
                     self._remote_ip_address.version,
                 ):
+                    case 6, 6:
+                        icmp_message = self._create_icmp6_message(
+                            identifier=os.getpid() & 0xFFFF,
+                            sequence=self._message_count - message_count + 1,
+                        )
                     case 4, 4:
                         icmp_message = self._create_icmp4_message(
                             identifier=os.getpid() & 0xFFFF,

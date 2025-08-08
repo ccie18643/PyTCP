@@ -43,11 +43,11 @@ from pytcp.protocols.icmp6.icmp6__assembler import Icmp6Assembler
 from pytcp.protocols.ip6.ip6__header import Ip6HeaderProperties
 from pytcp.protocols.tcp.tcp__assembler import TcpAssembler
 from pytcp.protocols.udp.udp__assembler import UdpAssembler
+from pytcp.protocols.raw.raw__assembler import RawAssembler
 
 if TYPE_CHECKING:
     from pytcp.protocols.ip6.ip6__header import Ip6Header
     from pytcp.protocols.ip6_frag.ip6_frag__assembler import Ip6FragAssembler
-    from pytcp.protocols.raw.raw__assembler import RawAssembler
 
     Ip6Payload: TypeAlias = (
         Ip6FragAssembler
@@ -105,7 +105,8 @@ class Ip6(Proto, Ip6HeaderProperties):
         """
 
         if isinstance(
-            self._payload, (TcpAssembler, UdpAssembler, Icmp6Assembler)
+            self._payload,
+            (TcpAssembler, UdpAssembler, Icmp6Assembler, RawAssembler),
         ):
             self._payload.pshdr_sum = self.pshdr_sum
 

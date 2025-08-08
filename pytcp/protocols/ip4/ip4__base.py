@@ -44,12 +44,12 @@ from pytcp.protocols.ip4.ip4__header import Ip4HeaderProperties
 from pytcp.protocols.ip4.options.ip4_options import Ip4OptionsProperties
 from pytcp.protocols.tcp.tcp__assembler import TcpAssembler
 from pytcp.protocols.udp.udp__assembler import UdpAssembler
+from pytcp.protocols.raw.raw__assembler import RawAssembler
 
 if TYPE_CHECKING:
     from pytcp.protocols.icmp4.icmp4__assembler import Icmp4Assembler
     from pytcp.protocols.ip4.ip4__header import Ip4Header
     from pytcp.protocols.ip4.options.ip4_options import Ip4Options
-    from pytcp.protocols.raw.raw__assembler import RawAssembler
 
     Ip4Payload: TypeAlias = (
         Icmp4Assembler | TcpAssembler | UdpAssembler | RawAssembler
@@ -112,7 +112,9 @@ class Ip4(Proto, Ip4HeaderProperties, Ip4OptionsProperties):
         )
         header_and_options[10:12] = inet_cksum(header_and_options).to_bytes(2)
 
-        if isinstance(self._payload, (TcpAssembler, UdpAssembler)):
+        if isinstance(
+            self._payload, (TcpAssembler, UdpAssembler, RawAssembler)
+        ):
             self._payload.pshdr_sum = self.pshdr_sum
 
         return bytes(header_and_options + bytes(self._payload))
