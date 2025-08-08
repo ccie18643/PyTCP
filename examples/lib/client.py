@@ -70,6 +70,7 @@ class Client(ABC):
     _remote_ip_address: IpAddress
     _remote_port: int
     _run_thread: bool
+    _client_socket: Socket | None
 
     def start(self) -> None:
         """
@@ -79,8 +80,12 @@ class Client(ABC):
         click.echo(
             f"Starting the {self._protocol_name} {self._client_name} service."
         )
+
+        self._client_socket = self._get_client_socket()
+
         self._run_thread = True
-        threading.Thread(target=self._thread__client).start()
+        threading.Thread(target=self._thread__client__receiver).start()
+        threading.Thread(target=self._thread__client__sender).start()
         time.sleep(0.1)
 
     def stop(self) -> None:
@@ -163,9 +168,17 @@ class Client(ABC):
         return client_socket
 
     @abstractmethod
-    def _thread__client(self) -> None:
+    def _thread__client__sender(self) -> None:
         """
-        Client thread.
+        Client thread used to send data.
+        """
+
+        raise NotImplementedError
+
+    @abstractmethod
+    def _thread__client__receiver(self) -> None:
+        """
+        Client thread used to send data.
         """
 
         raise NotImplementedError

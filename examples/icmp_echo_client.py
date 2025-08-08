@@ -138,7 +138,7 @@ class IcmpEchoClient(Client):
             "!BBHHH",
             ICMP6_ECHO_REQUEST_TYPE,
             ICMP6_ECHO_REQUEST_CODE,
-            0,  # checksum (set to 0)
+            0,
             identifier,
             sequence,
         )
@@ -147,12 +147,12 @@ class IcmpEchoClient(Client):
 
         return header + payload
 
-    def _thread__client(self) -> None:
+    def _thread__client__sender(self) -> None:
         """
-        Client thread.
+        Client thread used to send data.
         """
 
-        if client_socket := self._get_client_socket():
+        if self._client_socket:
             message_count = self._message_count
 
             while self._run_thread and message_count:
@@ -174,23 +174,38 @@ class IcmpEchoClient(Client):
                         raise ValueError("Invalid IP address versions.")
 
                 try:
-                    client_socket.send(icmp_message)
+                    self._client_socket.send(icmp_message)
                 except OSError as error:
                     click.echo(f"Client ICMP Echo: send() error - {error!r}.")
                     break
 
                 click.echo(
-                    f"Client ICMP Echo: Sent {len(icmp_message)} bytes of data to "
-                    f"{self._remote_ip_address}."
+                    f"Client ICMP Echo: Sent {len(icmp_message) - 8} bytes to "
+                    f"'{self._remote_ip_address}'."
                 )
                 time.sleep(self._message_delay)
                 message_count = min(message_count, message_count - 1)
 
-            client_socket.close()
+            self._client_socket.close()
             click.echo(
                 "Client ICMP Echo: Closed connection to "
-                f"{self._remote_ip_address}.",
+                f"'{self._remote_ip_address}'.",
             )
+
+    def _thread__client__receiver(self) -> None:
+        """
+        Client thread used to receive data.
+        """
+
+        if self._client_socket:
+            while self._run_thread:
+                data, _ = self._client_socket.recvfrom(1024)
+                if data:
+                    click.echo(
+                        f"Client ICMP Echo: Received {len(data) - 8} bytes from "
+                        f"'{self._remote_ip_address}'."
+                    )
+                time.sleep(1)
 
 
 @click.command()
