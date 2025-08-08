@@ -37,7 +37,6 @@ ver 3.0.2
 from __future__ import annotations
 
 import os
-import socket as python_socket
 import struct
 import time
 
@@ -58,7 +57,8 @@ from net_addr import (
     IpAddress,
     MacAddress,
 )
-from pytcp import socket, stack
+from pytcp import stack
+
 
 ICMP4__ECHO_REQUEST__TYPE = 8
 ICMP4__ECHO_REQUEST__CODE = 0
@@ -129,43 +129,6 @@ class IcmpEchoClient(Client):
 
         return header(cksum) + payload
 
-    @classmethod
-    def _create_icmp6_message(
-        cls, src_ip: str, dst_ip: str, identifier: int, sequence: int
-    ) -> bytes:
-        """
-        Create ICMPv6 Echo Request packet with manually computed checksum.
-        """
-
-        def header(cksum: int = 0) -> bytes:
-            return struct.pack(
-                "!BBHHH",
-                ICMP6_ECHO_REQUEST_TYPE,
-                ICMP6_ECHO_REQUEST_CODE,
-                cksum,
-                identifier,
-                sequence,
-            )
-
-        payload = struct.pack("!d", time.time())  # 8-byte timestamp
-        icmp_packet_wo_cksum = header(0) + payload
-
-        # Build pseudo-header for checksum
-        def inet6_aton(addr: str) -> bytes:
-            return bytes(python_socket.inet_pton(python_socket.AF_INET6, addr))
-
-        src = inet6_aton(src_ip)
-        dst = inet6_aton(dst_ip)
-        upper_layer_len = struct.pack("!I", len(icmp_packet_wo_cksum))
-        next_header = b"\x00" * 3 + struct.pack("!B", int(socket.IPPROTO_ICMP6))
-
-        pseudo_header = src + dst + upper_layer_len + next_header
-        checksum_input = pseudo_header + icmp_packet_wo_cksum
-
-        cksum = cls._checksum(checksum_input)
-
-        return header(cksum) + payload
-
     def _thread__client(self) -> None:
         """
         Client thread.
@@ -179,13 +142,6 @@ class IcmpEchoClient(Client):
                     self._local_ip_address.version,
                     self._remote_ip_address.version,
                 ):
-                    case 6, 6:
-                        icmp_message = self._create_icmp6_message(
-                            src_ip=str(self._local_ip_address),
-                            dst_ip=str(self._remote_ip_address),
-                            identifier=os.getpid() & 0xFFFF,
-                            sequence=self._message_count - message_count + 1,
-                        )
                     case 4, 4:
                         icmp_message = self._create_icmp4_message(
                             identifier=os.getpid() & 0xFFFF,
