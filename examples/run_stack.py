@@ -69,28 +69,28 @@ from pytcp import stack
     help="MAC address to be assigned to the stack interface.",
 )
 @click.option(
-    "--ip6-address",
+    "--stack-ip6-address",
     "stack__ip6_host",
     type=ClickTypeIp6Host(),
     default=None,
     help="IPv6 address/mask to be assigned to the stack interface.",
 )
 @click.option(
-    "--ip6-gateway",
+    "--stack-ip6-gateway",
     "stack__ip6_gateway",
     type=ClickTypeIp6Address(),
     default=None,
     help="IPv6 gateway address to be assigned to the stack interface.",
 )
 @click.option(
-    "--ip4-address",
+    "--stack-ip4-address",
     "stack__ip4_host",
     type=ClickTypeIp4Host(),
     default=None,
     help="IPv4 address/mask to be assigned to the stack interface.",
 )
 @click.option(
-    "--ip4-gateway",
+    "--stack-ip4-gateway",
     "stack__ip4_gateway",
     type=ClickTypeIp4Address(),
     default=None,
