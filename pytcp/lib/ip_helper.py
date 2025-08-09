@@ -42,8 +42,8 @@ from net_addr import (
     Ip4AddressFormatError,
     Ip6Address,
     Ip6AddressFormatError,
+    IpAddress,
 )
-from net_addr import IpAddress
 from pytcp import stack
 
 if TYPE_CHECKING:
@@ -94,10 +94,10 @@ def pick_local_ip_address(remote_ip_address: T) -> T:
     """
 
     if isinstance(remote_ip_address, Ip6Address):
-        return pick_local_ip6_address(remote_ip_address)
+        return cast(T, pick_local_ip6_address(remote_ip_address))
 
     if isinstance(remote_ip_address, Ip4Address):
-        return pick_local_ip4_address(remote_ip_address)
+        return cast(T, pick_local_ip4_address(remote_ip_address))
 
     raise TypeError(f"Unsupported IP address type: {type(remote_ip_address)}")
 
