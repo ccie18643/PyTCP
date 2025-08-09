@@ -55,73 +55,77 @@ from pytcp import stack
 
 @click.command()
 @click.option(
-    "--interface",
+    "--stack-interface",
+    "stack__interface",
     default="tap7",
     help="Name of the interface to be used by the stack.",
 )
 @click.option(
-    "--mac-address",
+    "--stack-mac-address",
+    "stack__mac_address",
     type=ClickTypeMacAddress(),
     default=None,
-    help="MAC address to be assigned to the interface.",
+    help="MAC address to be assigned to the stack interface.",
 )
 @click.option(
     "--ip6-address",
-    "ip6_host",
+    "stack__ip6_host",
     type=ClickTypeIp6Host(),
     default=None,
-    help="IPv6 address/mask to be assigned to the interface.",
+    help="IPv6 address/mask to be assigned to the stack interface.",
 )
 @click.option(
     "--ip6-gateway",
+    "stack__ip6_gateway",
     type=ClickTypeIp6Address(),
     default=None,
-    help="IPv6 gateway address to be assigned to the interface.",
+    help="IPv6 gateway address to be assigned to the stack interface.",
 )
 @click.option(
     "--ip4-address",
-    "ip4_host",
+    "stack__ip4_host",
     type=ClickTypeIp4Host(),
     default=None,
-    help="IPv4 address/mask to be assigned to the interface.",
+    help="IPv4 address/mask to be assigned to the stack interface.",
 )
 @click.option(
     "--ip4-gateway",
+    "stack__ip4_gateway",
     type=ClickTypeIp4Address(),
     default=None,
-    help="IPv4 gateway address to be assigned to the interface.",
+    help="IPv4 gateway address to be assigned to the stack interface.",
 )
 def cli(
     *,
-    interface: str,
-    mac_address: MacAddress | None,
-    ip6_host: Ip6Host | None,
-    ip6_gateway: Ip6Address | None,
-    ip4_host: Ip4Host | None,
-    ip4_gateway: Ip4Address | None,
+    stack__interface: str,
+    stack__mac_address: MacAddress | None,
+    stack__ip6_host: Ip6Host | None,
+    stack__ip6_gateway: Ip6Address | None,
+    stack__ip4_host: Ip4Host | None,
+    stack__ip4_gateway: Ip4Address | None,
 ) -> None:
     """
     Start PyTCP stack and stop it when user presses Ctrl-C.
     """
 
-    if ip6_host:
-        ip6_host.gateway = ip6_gateway
+    if stack__ip6_host:
+        stack__ip6_host.gateway = stack__ip6_gateway
 
-    if ip4_host:
-        ip4_host.gateway = ip4_gateway
+    if stack__ip4_host:
+        stack__ip4_host.gateway = stack__ip4_gateway
 
     stack.init(
-        *stack.initialize_interface(interface),
-        mac_address=mac_address,
-        ip6_host=ip6_host,
-        ip4_host=ip4_host,
+        *stack.initialize_interface(stack__interface),
+        mac_address=stack__mac_address,
+        ip6_host=stack__ip6_host,
+        ip4_host=stack__ip4_host,
     )
 
-    try:
-        stack.start()
-        while True:
-            time.sleep(60)
+    stack.start()
 
+    try:
+        while True:
+            time.sleep(1)
     except KeyboardInterrupt:
         stack.stop()
 

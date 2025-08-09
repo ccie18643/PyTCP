@@ -223,35 +223,35 @@ class IcmpEchoClient(Client):
     "stack__mac_address",
     type=ClickTypeMacAddress(),
     default=None,
-    help="MAC address to be assigned to the interface.",
+    help="MAC address to be assigned to the stack interface.",
 )
 @click.option(
     "--stack-ip6-address",
     "stack__ip6_host",
     type=ClickTypeIp6Host(),
     default=None,
-    help="IPv6 address/mask to be assigned to the interface.",
+    help="IPv6 address/mask to be assigned to the stack interface.",
 )
 @click.option(
     "--stack-ip6-gateway",
     "stack__ip6_gateway",
     type=ClickTypeIp6Address(),
     default=None,
-    help="IPv6 gateway address to be assigned to the interface.",
+    help="IPv6 gateway address to be assigned to the stack interface.",
 )
 @click.option(
     "--stack-ip4-address",
     "stack__ip4_host",
     type=ClickTypeIp4Host(),
     default=None,
-    help="IPv4 address/mask to be assigned to the interface.",
+    help="IPv4 address/mask to be assigned to the stack interface.",
 )
 @click.option(
     "--stack-ip4-gateway",
     "stack__ip4_gateway",
     type=ClickTypeIp4Address(),
     default=None,
-    help="IPv4 gateway address to be assigned to the interface.",
+    help="IPv4 gateway address to be assigned to the stack interface.",
 )
 @click.argument(
     "remote_ip_address",
