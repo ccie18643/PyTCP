@@ -35,7 +35,7 @@ ver 3.0.2
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING, TypeVar, cast
 
 from net_addr import (
     Ip4Address,
@@ -43,11 +43,13 @@ from net_addr import (
     Ip6Address,
     Ip6AddressFormatError,
 )
+from net_addr import IpAddress
 from pytcp import stack
 
 if TYPE_CHECKING:
-    from net_addr import IpAddress
     from pytcp.socket.socket import AddressFamily, SocketType
+
+T = TypeVar("T", bound=IpAddress)
 
 
 EPHEMERAL_PORT_RANGE = range(32168, 60700, 2)
@@ -85,20 +87,19 @@ def str_to_ip(
             return None
 
 
-def pick_local_ip_address(
-    remote_ip_address: IpAddress,
-) -> Ip6Address | Ip4Address:
+def pick_local_ip_address(remote_ip_address: T) -> T:
     """
     Pick appropriate source IP address based on provided
     destination IP address.
     """
 
-    assert isinstance(remote_ip_address, (Ip6Address, Ip4Address))
-
     if isinstance(remote_ip_address, Ip6Address):
         return pick_local_ip6_address(remote_ip_address)
 
-    return pick_local_ip4_address(remote_ip_address)
+    if isinstance(remote_ip_address, Ip4Address):
+        return pick_local_ip4_address(remote_ip_address)
+
+    raise TypeError(f"Unsupported IP address type: {type(remote_ip_address)}")
 
 
 def pick_local_ip6_address(
