@@ -58,7 +58,7 @@ from net_addr import (
     IpAddress,
     MacAddress,
 )
-from pytcp import stack
+from pytcp import socket, stack
 
 ICMP4__ECHO_REQUEST__TYPE = 8
 ICMP4__ECHO_REQUEST__CODE = 0
@@ -139,6 +139,8 @@ class IcmpEchoClient(Client):
         Client thread used to send data.
         """
 
+        click.echo("Client ICMP Echo: Started sender thread.")
+
         identifier = os.getpid() & 0xFFFF
 
         if self._client_socket:
@@ -181,6 +183,8 @@ class IcmpEchoClient(Client):
                 f"'{self._remote_ip_address}'.",
             )
 
+            click.echo("Client ICMP Echo: Stopped sender thread.")
+
     @override
     def _thread__client__receiver(self) -> None:
         """
@@ -188,13 +192,23 @@ class IcmpEchoClient(Client):
         """
 
         if self._client_socket:
+            click.echo("Client ICMP Echo: Started receiver thread.")
+
             while self._run_thread:
-                data, _ = self._client_socket.recvfrom(1024)
-                if data:
-                    click.echo(
-                        f"Client ICMP Echo: Received {len(data) - 8} bytes from "
-                        f"'{self._remote_ip_address}'."
+                try:
+                    data, _ = self._client_socket.recvfrom(
+                        bufsize=1024,
+                        timeout=1,
                     )
+                    if data:
+                        click.echo(
+                            f"Client ICMP Echo: Received {len(data) - 8} bytes from "
+                            f"'{self._remote_ip_address}'."
+                        )
+                except socket.ReceiveTimeout:
+                    pass
+
+            click.echo("Client ICMP Echo: Stopped receiver thread.")
 
 
 @click.command()
