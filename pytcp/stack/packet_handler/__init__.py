@@ -48,6 +48,7 @@ from net_addr import (
     Ip6Network,
     MacAddress,
 )
+from pytcp.lib.ip_frag import IpFragData, IpFragFlowId
 from pytcp.lib.logger import log
 from pytcp.lib.packet_stats import PacketStatsRx, PacketStatsTx
 from pytcp.protocols.dhcp4__legacy.client import Dhcp4Client
@@ -171,8 +172,8 @@ class PacketHandler(
         self.ip6_id: int = 0
 
         # Used to defragment IPv4 and IPv6 packets
-        self.ip4_frag_flows: dict[tuple[Ip4Address, Ip4Address, int], dict] = {}
-        self.ip6_frag_flows: dict[tuple[Ip6Address, Ip6Address, int], dict] = {}
+        self.ip4_frag_flows: dict[IpFragFlowId, IpFragData] = {}
+        self.ip6_frag_flows: dict[IpFragFlowId, IpFragData] = {}
 
         # Thread control
         self._run_thread: bool = False

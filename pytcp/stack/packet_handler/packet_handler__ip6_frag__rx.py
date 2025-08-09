@@ -41,6 +41,7 @@ from time import time
 from typing import TYPE_CHECKING
 
 from pytcp import stack
+from pytcp.lib.ip_frag import IpFragData, IpFragFlowId
 from pytcp.lib.logger import log
 from pytcp.lib.packet import PacketRx
 from pytcp.protocols.ip6_frag.ip6_frag__parser import Ip6FragParser
@@ -56,7 +57,7 @@ class PacketHandlerIp6FragRx(ABC):
         from pytcp.lib.packet_stats import PacketStatsRx
 
         packet_stats_rx: PacketStatsRx
-        ip6_frag_flows: dict[tuple[Ip6Address, Ip6Address, int], dict]
+        ip6_frag_flows: dict[IpFragFlowId, IpFragData]
 
         # pylint: disable=unused-argument
 
@@ -96,7 +97,7 @@ class PacketHandlerIp6FragRx(ABC):
         self.ip6_frag_flows = {
             flow: self.ip6_frag_flows[flow]
             for flow in self.ip6_frag_flows
-            if self.ip6_frag_flows[flow]["timestamp"] - time()
+            if self.ip6_frag_flows[flow].timestamp - time()
             < stack.IP6__FRAG_FLOW_TIMEOUT
         }
 
@@ -108,49 +109,47 @@ class PacketHandlerIp6FragRx(ABC):
             f"{'' if packet_rx.ip6_frag.flag_mf else ', last'}",
         )
 
-        flow_id = (
-            packet_rx.ip6.src,
-            packet_rx.ip6.dst,
-            packet_rx.ip6_frag.id,
+        flow_id = IpFragFlowId(
+            src=packet_rx.ip6.src,
+            dst=packet_rx.ip6.dst,
+            id=packet_rx.ip6_frag.id,
         )
 
         # Update flow db
         if flow_id in self.ip6_frag_flows:
-            self.ip6_frag_flows[flow_id]["payload"][
+            self.ip6_frag_flows[flow_id].payload[
                 packet_rx.ip6_frag.offset
             ] = packet_rx.ip6_frag.payload_bytes
         else:
-            self.ip6_frag_flows[flow_id] = {
-                "header": packet_rx.ip6.header_bytes,
-                "timestamp": time(),
-                "last": False,
-                "payload": {
+            self.ip6_frag_flows[flow_id] = IpFragData(
+                header=packet_rx.ip6.header_bytes,
+                payload={
                     packet_rx.ip6_frag.offset: packet_rx.ip6_frag.payload_bytes
                 },
-            }
+            )
         if not packet_rx.ip6_frag.flag_mf:
-            self.ip6_frag_flows[flow_id]["last"] = True
+            self.ip6_frag_flows[flow_id].last = True
 
         # Test if we received all fragments
-        if not self.ip6_frag_flows[flow_id]["last"]:
+        if not self.ip6_frag_flows[flow_id].last:
             return None
         payload_len = 0
-        for offset in sorted(self.ip6_frag_flows[flow_id]["payload"]):
+        for offset in sorted(self.ip6_frag_flows[flow_id].payload):
             if offset > payload_len:
                 return None
             payload_len = offset + len(
-                self.ip6_frag_flows[flow_id]["payload"][offset]
+                self.ip6_frag_flows[flow_id].payload[offset]
             )
 
         # Defragment packet
-        header = bytearray(self.ip6_frag_flows[flow_id]["header"])
+        header = bytearray(self.ip6_frag_flows[flow_id].header)
         payload = bytearray(payload_len)
-        for offset in sorted(self.ip6_frag_flows[flow_id]["payload"]):
+        for offset in sorted(self.ip6_frag_flows[flow_id].payload):
             struct.pack_into(
-                f"{len(self.ip6_frag_flows[flow_id]['payload'][offset])}s",
+                f"{len(self.ip6_frag_flows[flow_id].payload[offset])}s",
                 payload,
                 offset,
-                self.ip6_frag_flows[flow_id]["payload"][offset],
+                self.ip6_frag_flows[flow_id].payload[offset],
             )
         del self.ip6_frag_flows[flow_id]
         struct.pack_into("!H", header, 4, len(payload))
