@@ -49,6 +49,7 @@ from collections.abc import Callable
 from enum import auto
 from typing import TYPE_CHECKING, Any
 
+from net_addr import Ip4Address, Ip6Address
 from pytcp import stack
 from pytcp.lib.logger import log
 from pytcp.lib.name_enum import NameEnum
@@ -56,7 +57,6 @@ from pytcp.lib.name_enum import NameEnum
 if TYPE_CHECKING:
     from threading import Lock, RLock, Semaphore
 
-    from net_addr import IpAddress
     from pytcp.socket.tcp__metadata import TcpMetadata
     from pytcp.socket.tcp__socket import TcpSocket
 
@@ -162,9 +162,9 @@ class TcpSession:
 
     def __init__(
         self,
-        local_ip_address: IpAddress,
+        local_ip_address: Ip6Address | Ip4Address,
         local_port: int,
-        remote_ip_address: IpAddress,
+        remote_ip_address: Ip6Address | Ip4Address,
         remote_port: int,
         socket: TcpSocket,
     ) -> None:
@@ -176,9 +176,9 @@ class TcpSession:
         # Parameters derived from the socket
         ###
 
-        self._local_ip_address: IpAddress = local_ip_address
+        self._local_ip_address: Ip6Address | Ip4Address = local_ip_address
         self._local_port: int = local_port
-        self._remote_ip_address: IpAddress = remote_ip_address
+        self._remote_ip_address: Ip6Address | Ip4Address = remote_ip_address
         self._remote_port: int = remote_port
 
         # Keeps track of the socket that owns this session for
@@ -311,17 +311,19 @@ class TcpSession:
         )
 
     @property
-    def local_ip_address(self) -> IpAddress:
+    def local_ip_address(self) -> Ip6Address | Ip4Address:
         """
         Getter for the '_local_ip_address' attribute.
         """
+
         return self._local_ip_address
 
     @property
-    def remote_ip_address(self) -> IpAddress:
+    def remote_ip_address(self) -> Ip6Address | Ip4Address:
         """
         Getter for the '_remote_ip_address' attribute.
         """
+
         return self._remote_ip_address
 
     @property

@@ -62,7 +62,6 @@ from pytcp.socket.socket import (
 )
 
 if TYPE_CHECKING:
-    from net_addr import IpAddress
     from pytcp.socket.udp__metadata import UdpMetadata
 
 
@@ -100,7 +99,7 @@ class UdpSocket(Socket):
         self,
         *,
         remote_address: tuple[str, int],
-    ) -> tuple[Ip6Address | Ip4Address, Ip6Address | Ip4Address]:
+    ) -> tuple[Ip6Address, Ip6Address] | tuple[Ip4Address, Ip4Address]:
         """
         Validate the remote address and pick appropriate local IP
         address as needed.
@@ -121,8 +120,11 @@ class UdpSocket(Socket):
         if remote_ip_address.is_unspecified:
             self._unreachable = True
 
-        if self._local_ip_address.is_unspecified:
+        local_ip_address = self._local_ip_address
+
+        if local_ip_address.is_unspecified:
             local_ip_address = pick_local_ip_address(remote_ip_address)
+
             if local_ip_address.is_unspecified and not (
                 (
                     self._address_family == AddressFamily.INET4
@@ -140,9 +142,7 @@ class UdpSocket(Socket):
                     "[Malformed remote IP address]"
                 )
 
-        assert isinstance(local_ip_address, (Ip6Address, Ip4Address))
-
-        return local_ip_address, remote_ip_address
+        return (local_ip_address, remote_ip_address)  # type: ignore[return-value]
 
     ###############################
     ##  BSD socket API methods.  ##
@@ -164,7 +164,7 @@ class UdpSocket(Socket):
                 "[Socket bound to specific port already]"
             )
 
-        local_ip_address: IpAddress
+        local_ip_address: Ip4Address | Ip6Address
 
         match self._address_family:
             case AddressFamily.INET6:

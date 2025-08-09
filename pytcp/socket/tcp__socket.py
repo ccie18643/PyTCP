@@ -148,7 +148,7 @@ class TcpSocket(Socket):
         self,
         *,
         remote_address: tuple[str, int],
-    ) -> tuple[Ip6Address | Ip4Address, Ip6Address | Ip4Address]:
+    ) -> tuple[Ip6Address, Ip6Address] | tuple[Ip4Address, Ip4Address]:
         """
         Validate the remote address and pick appropriate local IP
         address as needed.
@@ -172,17 +172,18 @@ class TcpSocket(Socket):
                 "[Unspecified remote IP address]"
             )
 
-        if self._local_ip_address.is_unspecified:
+        local_ip_address = self._local_ip_address
+
+        if local_ip_address.is_unspecified:
             local_ip_address = pick_local_ip_address(remote_ip_address)
+
             if local_ip_address.is_unspecified:
                 raise gaierror(
                     "[Errno -2] Name or service not known - "
                     "[Malformed remote IP address]"
                 )
 
-        assert isinstance(local_ip_address, (Ip6Address, Ip4Address))
-
-        return local_ip_address, remote_ip_address
+        return local_ip_address, remote_ip_address  # type: ignore[return-value]
 
     ###############################
     ##  BSD socket API methods.  ##

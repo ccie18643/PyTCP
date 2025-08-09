@@ -38,6 +38,7 @@ from __future__ import annotations
 from abc import ABC
 from typing import TYPE_CHECKING
 
+from net_addr import Ip4Address, Ip6Address
 from pytcp.lib.name_enum import NameEnum
 from pytcp.protocols.enums import IpProto
 from pytcp.socket.socket_id import SocketId
@@ -63,7 +64,6 @@ class AddressFamily(NameEnum):
     Address family identifier.
     """
 
-    UNSPECIFIED = 0
     INET4 = 1
     INET6 = 2
 
@@ -79,7 +79,7 @@ class AddressFamily(NameEnum):
             case 6:
                 return AddressFamily.INET6
             case _:
-                return AddressFamily.UNSPECIFIED
+                raise ValueError(f"Invalid IP version: {ver}. Expected 4 or 6.")
 
 
 class SocketType(NameEnum):
@@ -87,7 +87,6 @@ class SocketType(NameEnum):
     Socket type identifier.
     """
 
-    UNSPECIFIED = 0
     STREAM = 1
     DGRAM = 2
     RAW = 3
@@ -103,8 +102,8 @@ class Socket(ABC):
     _address_family: AddressFamily
     _socket_type: SocketType
     _ip_proto: IpProto
-    _local_ip_address: IpAddress
-    _remote_ip_address: IpAddress
+    _local_ip_address: Ip4Address | Ip6Address
+    _remote_ip_address: Ip4Address | Ip6Address
     _local_port: int
     _remote_port: int
 

@@ -57,7 +57,6 @@ from pytcp.socket.socket import (
 )
 
 if TYPE_CHECKING:
-    from net_addr import IpAddress
     from pytcp.socket.raw__metadata import RawMetadata
 
 
@@ -87,10 +86,6 @@ class RawSocket(Socket):
             case AddressFamily.INET4:
                 self._local_ip_address = Ip4Address()
                 self._remote_ip_address = Ip4Address()
-            case _:
-                raise ValueError(
-                    f"Invalid address family: {self._address_family}"
-                )
 
         self._local_port = int(ip_proto)
         self._remote_port = 0
@@ -101,7 +96,7 @@ class RawSocket(Socket):
         self,
         *,
         remote_address: tuple[str, int],
-    ) -> tuple[Ip6Address | Ip4Address, Ip6Address | Ip4Address]:
+    ) -> tuple[Ip6Address, Ip6Address] | tuple[Ip4Address, Ip4Address]:
         """
         Validate the remote address and pick appropriate local IP
         address as needed.
@@ -129,9 +124,7 @@ class RawSocket(Socket):
         else:
             local_ip_address = self._local_ip_address
 
-        assert isinstance(local_ip_address, (Ip6Address, Ip4Address))
-
-        return local_ip_address, remote_ip_address
+        return local_ip_address, remote_ip_address  # type: ignore[return-value]
 
     def bind(self, address: tuple[str, int]) -> None:
         """
@@ -141,7 +134,7 @@ class RawSocket(Socket):
         # The 'bind' call will bind socket to specific / unspecified local IP
         # address.
 
-        local_ip_address: IpAddress
+        local_ip_address: Ip6Address | Ip4Address
 
         match self._address_family:
             case AddressFamily.INET6:
@@ -173,10 +166,6 @@ class RawSocket(Socket):
                         "[Errno -2] Name or service not known - "
                         "[Malformed local IP address]"
                     ) from error
-            case _:
-                raise ValueError(
-                    f"Invalid address family: {self._address_family}"
-                )
 
         stack.sockets.pop(self.socket_id, None)
         self._local_ip_address = local_ip_address
@@ -244,10 +233,6 @@ class RawSocket(Socket):
                     ip4__proto=self._ip_proto,
                     ip4__payload=data,
                 )
-            case _:
-                raise ValueError(
-                    f"Invalid address family: {self._address_family}"
-                )
 
         sent_data_len = (
             len(data)
@@ -286,10 +271,6 @@ class RawSocket(Socket):
                     ip4__remote_address=cast(Ip4Address, remote_ip_address),
                     ip4__proto=self._ip_proto,
                     ip4__payload=data,
-                )
-            case _:
-                raise ValueError(
-                    f"Invalid address family: {self._address_family}"
                 )
 
         sent_data_len = (

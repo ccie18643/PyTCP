@@ -38,12 +38,12 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
+from net_addr import Ip4Address, Ip6Address
 from pytcp.socket.socket_id import SocketId
 
 from .socket import AddressFamily, SocketType
 
 if TYPE_CHECKING:
-    from net_addr import IpAddress
     from pytcp.lib.tracker import Tracker
 
 
@@ -54,8 +54,8 @@ class TcpMetadata:
     """
 
     ip__ver: int
-    ip__local_address: IpAddress
-    ip__remote_address: IpAddress
+    ip__local_address: Ip6Address | Ip4Address
+    ip__remote_address: Ip6Address | Ip4Address
 
     tcp__local_port: int
     tcp__remote_port: int
