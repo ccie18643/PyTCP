@@ -35,7 +35,6 @@ ver 3.0.2
 
 from __future__ import annotations
 
-import time
 from typing import TYPE_CHECKING, override
 
 import click
@@ -106,41 +105,59 @@ class UdpEchoService(UdpService):
 
 @click.command()
 @click.option(
-    "--interface",
+    "--stack-interface",
+    "stack__interface",
     default="tap7",
     help="Name of the interface to be used by the stack.",
 )
 @click.option(
-    "--mac-address",
+    "--stack-mac-address",
+    "stack__mac_address",
     type=ClickTypeMacAddress(),
     default=None,
     help="MAC address to be assigned to the interface.",
 )
 @click.option(
-    "--ip6-address",
-    "ip6_host",
+    "--stack-ip6-address",
+    "stack__ip6_host",
     type=ClickTypeIp6Host(),
     default=None,
     help="IPv6 address/mask to be assigned to the interface.",
 )
 @click.option(
-    "--ip6-gateway",
+    "--stack-ip6-gateway",
+    "stack__ip6_gateway",
     type=ClickTypeIp6Address(),
     default=None,
     help="IPv6 gateway address to be assigned to the interface.",
 )
 @click.option(
-    "--ip4-address",
-    "ip4_host",
+    "--stack-ip4-address",
+    "stack__ip4_host",
     type=ClickTypeIp4Host(),
     default=None,
     help="IPv4 address/mask to be assigned to the interface.",
 )
 @click.option(
-    "--ip4-gateway",
+    "--stack-ip4-gateway",
+    "stack__ip4_gateway",
     type=ClickTypeIp4Address(),
     default=None,
     help="IPv4 gateway address to be assigned to the interface.",
+)
+@click.option(
+    "--stack-no-ip6",
+    "stack__ip6_support",
+    is_flag=True,
+    default=True,
+    help="Do not listen on IPv6 address.",
+)
+@click.option(
+    "--stack-no-ip4",
+    "stack__ip4_support",
+    is_flag=True,
+    default=True,
+    help="Do not listen on IPv4 address.",
 )
 @click.option(
     "--local-port",
@@ -150,12 +167,14 @@ class UdpEchoService(UdpService):
 )
 def cli(
     *,
-    interface: str,
-    mac_address: MacAddress | None,
-    ip6_host: Ip6Host | None,
-    ip6_gateway: Ip6Address | None,
-    ip4_host: Ip4Host | None,
-    ip4_gateway: Ip4Address | None,
+    stack__interface: str,
+    stack__mac_address: MacAddress | None,
+    stack__ip6_host: Ip6Host | None,
+    stack__ip6_gateway: Ip6Address | None,
+    stack__ip4_host: Ip4Host | None,
+    stack__ip4_gateway: Ip4Address | None,
+    stack__ip6_support: bool,
+    stack__ip4_support: bool,
     local_port: int,
 ) -> None:
     """
@@ -163,39 +182,53 @@ def cli(
     Start TCP Echo service.
     """
 
-    if ip6_host:
-        ip6_host.gateway = ip6_gateway
+    if stack__ip6_host:
+        stack__ip6_host.gateway = stack__ip6_gateway
 
-    if ip4_host:
-        ip4_host.gateway = ip4_gateway
+    if stack__ip4_host:
+        stack__ip4_host.gateway = stack__ip4_gateway
 
     stack.init(
-        *stack.initialize_interface(interface),
-        mac_address=mac_address,
-        ip6_host=ip6_host,
-        ip4_host=ip4_host,
+        *stack.initialize_interface(stack__interface),
+        mac_address=stack__mac_address,
+        ip6_host=stack__ip6_host,
+        ip4_host=stack__ip4_host,
+        ip6_support=stack__ip6_support,
+        ip4_support=stack__ip4_support,
     )
 
-    service_ip4 = UdpEchoService(
-        local_ip_address=ip4_host.address if ip4_host else Ip4Address(),
-        local_port=local_port,
-    )
+    stack.start()
 
-    service_ip6 = UdpEchoService(
-        local_ip_address=ip6_host.address if ip6_host else Ip6Address(),
-        local_port=local_port,
-    )
+    service__ip6: UdpEchoService | None = None
+    service__ip4: UdpEchoService | None = None
+
+    if stack__ip6_support:
+        service__ip6 = UdpEchoService(
+            local_ip_address=(
+                stack__ip6_host.address if stack__ip6_host else Ip6Address()
+            ),
+            local_port=local_port,
+        )
+        service__ip6.start()
+
+    if stack__ip4_support:
+        service__ip4 = UdpEchoService(
+            local_ip_address=(
+                stack__ip4_host.address if stack__ip4_host else Ip4Address()
+            ),
+            local_port=local_port,
+        )
+        service__ip4.start()
 
     try:
-        stack.start()
-        service_ip4.start()
-        service_ip6.start()
-        while True:
-            time.sleep(60)
+        next
+    finally:
+        if service__ip6:
+            service__ip6.stop()
 
-    except KeyboardInterrupt:
-        service_ip4.stop()
-        service_ip6.stop()
+        if service__ip4:
+            service__ip4.stop()
+
         stack.stop()
 
 

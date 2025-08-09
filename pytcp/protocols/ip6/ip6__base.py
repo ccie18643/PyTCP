@@ -41,9 +41,9 @@ from typing import TYPE_CHECKING, TypeAlias, override
 from pytcp.lib.proto import Proto
 from pytcp.protocols.icmp6.icmp6__assembler import Icmp6Assembler
 from pytcp.protocols.ip6.ip6__header import Ip6HeaderProperties
+from pytcp.protocols.raw.raw__assembler import RawAssembler
 from pytcp.protocols.tcp.tcp__assembler import TcpAssembler
 from pytcp.protocols.udp.udp__assembler import UdpAssembler
-from pytcp.protocols.raw.raw__assembler import RawAssembler
 
 if TYPE_CHECKING:
     from pytcp.protocols.ip6.ip6__header import Ip6Header

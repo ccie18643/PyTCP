@@ -39,6 +39,7 @@ from __future__ import annotations
 import os
 import struct
 import time
+from typing import override
 
 import click
 
@@ -58,7 +59,6 @@ from net_addr import (
     MacAddress,
 )
 from pytcp import stack
-
 
 ICMP4__ECHO_REQUEST__TYPE = 8
 ICMP4__ECHO_REQUEST__CODE = 0
@@ -133,6 +133,7 @@ class IcmpEchoClient(Client):
 
         return header + payload
 
+    @override
     def _thread__client__sender(self) -> None:
         """
         Client thread used to send data.
@@ -180,6 +181,7 @@ class IcmpEchoClient(Client):
                 f"'{self._remote_ip_address}'.",
             )
 
+    @override
     def _thread__client__receiver(self) -> None:
         """
         Client thread used to receive data.

@@ -42,9 +42,9 @@ from pytcp.lib.inet_cksum import inet_cksum
 from pytcp.lib.proto import Proto
 from pytcp.protocols.ip4.ip4__header import Ip4HeaderProperties
 from pytcp.protocols.ip4.options.ip4_options import Ip4OptionsProperties
+from pytcp.protocols.raw.raw__assembler import RawAssembler
 from pytcp.protocols.tcp.tcp__assembler import TcpAssembler
 from pytcp.protocols.udp.udp__assembler import UdpAssembler
-from pytcp.protocols.raw.raw__assembler import RawAssembler
 
 if TYPE_CHECKING:
     from pytcp.protocols.icmp4.icmp4__assembler import Icmp4Assembler
