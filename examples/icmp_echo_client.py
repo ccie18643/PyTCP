@@ -95,19 +95,6 @@ class IcmpEchoClient(Client):
         self._message_size = message_size
         self._run_thread = False
 
-    @staticmethod
-    def _checksum(data: bytes) -> int:
-        """
-        Compute the Internet Checksum of the supplied data.
-        """
-
-        if len(data) % 2:
-            data += b"\x00"
-        res = sum(struct.unpack(f"!{len(data) // 2}H", data))
-        res = (res >> 16) + (res & 0xFFFF)
-        res += res >> 16
-        return int(~res & 0xFFFF)
-
     @classmethod
     def _create_icmp4_message(cls, identifier: int, sequence: int) -> bytes:
         """
@@ -133,7 +120,6 @@ class IcmpEchoClient(Client):
         Create ICMPv6 Echo Request packet.
         """
 
-        # Create the ICMPv6 header directly (without checksum)
         header = struct.pack(
             "!BBHHH",
             ICMP6_ECHO_REQUEST_TYPE,
@@ -152,6 +138,8 @@ class IcmpEchoClient(Client):
         Client thread used to send data.
         """
 
+        identifier = os.getpid() & 0xFFFF
+
         if self._client_socket:
             message_count = self._message_count
 
@@ -162,12 +150,12 @@ class IcmpEchoClient(Client):
                 ):
                     case 6, 6:
                         icmp_message = self._create_icmp6_message(
-                            identifier=os.getpid() & 0xFFFF,
+                            identifier=identifier,
                             sequence=self._message_count - message_count + 1,
                         )
                     case 4, 4:
                         icmp_message = self._create_icmp4_message(
-                            identifier=os.getpid() & 0xFFFF,
+                            identifier=identifier,
                             sequence=self._message_count - message_count + 1,
                         )
                     case _:
@@ -205,43 +193,46 @@ class IcmpEchoClient(Client):
                         f"Client ICMP Echo: Received {len(data) - 8} bytes from "
                         f"'{self._remote_ip_address}'."
                     )
-                time.sleep(1)
 
 
 @click.command()
 @click.option(
-    "--interface",
+    "--stack-interface",
+    "stack__interface",
     default="tap7",
     help="Name of the interface to be used by the stack.",
 )
 @click.option(
-    "--mac-address",
+    "--stack-mac-address",
+    "stack__mac_address",
     type=ClickTypeMacAddress(),
     default=None,
     help="MAC address to be assigned to the interface.",
 )
 @click.option(
-    "--ip6-address",
-    "ip6_host",
+    "--stack-ip6-address",
+    "stack__ip6_host",
     type=ClickTypeIp6Host(),
     default=None,
     help="IPv6 address/mask to be assigned to the interface.",
 )
 @click.option(
-    "--ip6-gateway",
+    "--stack-ip6-gateway",
+    "stack__ip6_gateway",
     type=ClickTypeIp6Address(),
     default=None,
     help="IPv6 gateway address to be assigned to the interface.",
 )
 @click.option(
-    "--ip4-address",
-    "ip4_host",
+    "--stack-ip4-address",
+    "stack__ip4_host",
     type=ClickTypeIp4Host(),
     default=None,
     help="IPv4 address/mask to be assigned to the interface.",
 )
 @click.option(
-    "--ip4-gateway",
+    "--stack-ip4-gateway",
+    "stack__ip4_gateway",
     type=ClickTypeIp4Address(),
     default=None,
     help="IPv4 gateway address to be assigned to the interface.",
@@ -253,12 +244,12 @@ class IcmpEchoClient(Client):
 )
 def cli(
     *,
-    interface: str,
-    mac_address: MacAddress | None,
-    ip6_host: Ip6Host | None,
-    ip6_gateway: Ip6Address | None,
-    ip4_host: Ip4Host | None,
-    ip4_gateway: Ip4Address | None,
+    stack__interface: str,
+    stack__mac_address: MacAddress | None,
+    stack__ip6_host: Ip6Host | None,
+    stack__ip6_gateway: Ip6Address | None,
+    stack__ip4_host: Ip4Host | None,
+    stack__ip4_gateway: Ip4Address | None,
     remote_ip_address: IpAddress,
 ) -> None:
     """
@@ -266,28 +257,32 @@ def cli(
     Start ICMP Echo client.
     """
 
-    if ip6_host:
-        ip6_host.gateway = ip6_gateway
+    if stack__ip6_host:
+        stack__ip6_host.gateway = stack__ip6_gateway
 
-    if ip4_host:
-        ip4_host.gateway = ip4_gateway
+    if stack__ip4_host:
+        stack__ip4_host.gateway = stack__ip4_gateway
 
     stack.init(
-        *stack.initialize_interface(interface),
-        mac_address=mac_address,
-        ip6_host=ip6_host,
-        ip4_host=ip4_host,
+        *stack.initialize_interface(stack__interface),
+        mac_address=stack__mac_address,
+        ip6_host=stack__ip6_host,
+        ip4_host=stack__ip4_host,
     )
 
     match remote_ip_address.version:
         case 6:
             client = IcmpEchoClient(
-                local_ip_address=ip6_host.address if ip6_host else Ip6Address(),
+                local_ip_address=(
+                    stack__ip6_host.address if stack__ip6_host else Ip6Address()
+                ),
                 remote_ip_address=remote_ip_address,
             )
         case 4:
             client = IcmpEchoClient(
-                local_ip_address=ip4_host.address if ip4_host else Ip4Address(),
+                local_ip_address=(
+                    stack__ip4_host.address if stack__ip4_host else Ip4Address()
+                ),
                 remote_ip_address=remote_ip_address,
             )
         case _:
