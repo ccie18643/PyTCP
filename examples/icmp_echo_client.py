@@ -310,7 +310,7 @@ def cli(
         stack.start()
         client.start()
         while True:
-            time.sleep(60)
+            time.sleep(1)
 
     except KeyboardInterrupt:
         client.stop()
