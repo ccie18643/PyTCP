@@ -38,6 +38,7 @@ import time
 
 import click
 
+from examples.lib.subsystem import Subsystem
 from net_addr import (
     ClickTypeIp4Address,
     ClickTypeIp4Host,
@@ -103,6 +104,7 @@ def cli(
     stack__ip6_gateway: Ip6Address | None,
     stack__ip4_host: Ip4Host | None,
     stack__ip4_gateway: Ip4Address | None,
+    subsystem: Subsystem | None = None,
 ) -> None:
     """
     Start PyTCP stack and stop it when user presses Ctrl-C.
@@ -121,12 +123,17 @@ def cli(
         ip4_host=stack__ip4_host,
     )
 
-    stack.start()
-
     try:
+        stack.start()
+        if subsystem is not None:
+            subsystem.start()
+
         while True:
             time.sleep(1)
+
     except KeyboardInterrupt:
+        if subsystem is not None:
+            subsystem.stop()
         stack.stop()
 
 

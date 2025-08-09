@@ -37,19 +37,20 @@ from __future__ import annotations
 
 import threading
 import time
-from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING
+from abc import abstractmethod
+from typing import TYPE_CHECKING, override
 
 import click
 from net_addr.ip_address import IpAddress
 
+from examples.lib.subsystem import Subsystem
 from pytcp.socket import AF_INET4, AF_INET6, SOCK_DGRAM, SOCK_STREAM, socket
 
 if TYPE_CHECKING:
     from pytcp.socket.socket import Socket
 
 
-class Service(ABC):
+class Service(Subsystem):
     """
     Generic service support class.
     """
@@ -60,6 +61,7 @@ class Service(ABC):
     _local_port: int
     _run_thread: bool
 
+    @override
     def start(self) -> None:
         """
         Start the service thread.
@@ -72,6 +74,7 @@ class Service(ABC):
         threading.Thread(target=self._thread__service).start()
         time.sleep(0.1)
 
+    @override
     def stop(self) -> None:
         """
         Stop the service thread.

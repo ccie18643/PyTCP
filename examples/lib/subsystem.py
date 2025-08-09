@@ -1,0 +1,60 @@
+#!/usr/bin/env python3
+
+################################################################################
+##                                                                            ##
+##   PyTCP - Python TCP/IP stack                                              ##
+##   Copyright (C) 2020-present Sebastian Majewski                            ##
+##                                                                            ##
+##   This program is free software: you can redistribute it and/or modify     ##
+##   it under the terms of the GNU General Public License as published by     ##
+##   the Free Software Foundation, either version 3 of the License, or        ##
+##   (at your option) any later version.                                      ##
+##                                                                            ##
+##   This program is distributed in the hope that it will be useful,          ##
+##   but WITHOUT ANY WARRANTY; without even the implied warranty of           ##
+##   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the             ##
+##   GNU General Public License for more details.                             ##
+##                                                                            ##
+##   You should have received a copy of the GNU General Public License        ##
+##   along with this program. If not, see <https://www.gnu.org/licenses/>.    ##
+##                                                                            ##
+##   Author's email: ccie18643@gmail.com                                      ##
+##   Github repository: https://github.com/ccie18643/PyTCP                    ##
+##                                                                            ##
+################################################################################
+
+
+"""
+The base class for servers and clients used in examples.
+
+examples/lib/subsystem.py
+
+ver 3.0.2
+"""
+
+
+from __future__ import annotations
+
+from abc import ABC, abstractmethod
+
+
+class Subsystem(ABC):
+    """
+    Base class for 'user space' services like clients and servers.
+    """
+
+    @abstractmethod
+    def start(self) -> None:
+        """
+        Start the subsystem.
+        """
+
+        raise NotImplementedError
+
+    @abstractmethod
+    def stop(self) -> None:
+        """
+        Stop the subsystem.
+        """
+
+        raise NotImplementedError
