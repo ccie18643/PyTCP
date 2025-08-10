@@ -37,6 +37,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, TypeVar, cast
 
+from net_addr.ip_address import IpVersion
+
 from net_addr import (
     Ip4Address,
     Ip4AddressFormatError,
@@ -57,7 +59,7 @@ EPHEMERAL_PORT_RANGE = range(32168, 60700, 2)
 
 def ip_version(
     ip_address: str,
-) -> int | None:
+) -> IpVersion | None:
     """
     Return version of IP address string.
     """

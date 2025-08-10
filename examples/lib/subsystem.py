@@ -36,12 +36,20 @@ ver 3.0.2
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from net_addr.ip4_address import Ip4Address
+    from net_addr.ip6_address import Ip6Address
 
 
 class Subsystem(ABC):
     """
     Base class for 'user space' services like clients and servers.
     """
+
+    stack_ip4_address: Ip4Address
+    stack_ip6_address: Ip6Address
 
     @abstractmethod
     def start(self) -> None:

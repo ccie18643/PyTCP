@@ -126,6 +126,12 @@ def cli(
     try:
         stack.start()
         if subsystem is not None:
+            subsystem.stack_ip4_address = (
+                stack__ip4_host.address if stack__ip4_host else Ip4Address()
+            )
+            subsystem.stack_ip6_address = (
+                stack__ip6_host.address if stack__ip6_host else Ip6Address()
+            )
             subsystem.start()
 
         while True:
@@ -138,4 +144,4 @@ def cli(
 
 
 if __name__ == "__main__":
-    cli()  # pylint: disable = missing-kwoa
+    cli.main()

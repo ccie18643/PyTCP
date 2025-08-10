@@ -39,6 +39,7 @@ import re
 from typing import override
 
 from net_addr.ip6_address import IP6__ADDRESS_LEN
+from net_addr.ip_address import IpVersion
 
 from .errors import Ip6MaskFormatError
 from .ip_mask import IpMask
@@ -49,7 +50,7 @@ class Ip6Mask(IpMask):
     IPv6 network mask support class.
     """
 
-    _version: int = 6
+    _version: IpVersion = IpVersion.IP6
 
     def __init__(
         self,

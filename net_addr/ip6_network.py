@@ -37,6 +37,8 @@ from __future__ import annotations
 
 from typing import override
 
+from net_addr.ip_address import IpVersion
+
 from .errors import (
     Ip6AddressFormatError,
     Ip6MaskFormatError,
@@ -52,7 +54,7 @@ class Ip6Network(IpNetwork[Ip6Address, Ip6Mask]):
     IPv6 network support class.
     """
 
-    _version: int = 6
+    _version: IpVersion = IpVersion.IP6
 
     def __init__(
         self,

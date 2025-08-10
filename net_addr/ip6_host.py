@@ -39,6 +39,7 @@ import time
 from enum import auto
 from typing import override
 
+from net_addr.ip_address import IpVersion
 from net_addr.mac_address import MacAddress
 
 from .errors import (
@@ -70,7 +71,7 @@ class Ip6Host(IpHost[Ip6Address, Ip6Network, Ip6HostOrigin]):
     IPv6 host support class.
     """
 
-    _version: int = 6
+    _version: IpVersion = IpVersion.IP6
     _gateway: Ip6Address | None = None
     _origin: Ip6HostOrigin
     _expiration_time: int

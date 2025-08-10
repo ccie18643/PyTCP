@@ -38,7 +38,7 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING, Generic, TypeVar
 
-from .ip_address import IpAddress
+from .ip_address import IpAddress, IpVersion
 from .ip_host import IpHost
 
 if TYPE_CHECKING:
@@ -56,7 +56,7 @@ class IpNetwork(ABC, Generic[A, M]):
 
     _address: A
     _mask: M
-    _version: int
+    _version: IpVersion
 
     def __str__(self) -> str:
         """
@@ -108,7 +108,7 @@ class IpNetwork(ABC, Generic[A, M]):
         return False
 
     @property
-    def version(self) -> int:
+    def version(self) -> IpVersion:
         """
         Getter the IP network version.
         """
@@ -121,7 +121,7 @@ class IpNetwork(ABC, Generic[A, M]):
         Check if the IP network version is 6.
         """
 
-        return self._version == 6
+        return self._version == IpVersion.IP6
 
     @property
     def is_ip4(self) -> bool:
@@ -129,7 +129,7 @@ class IpNetwork(ABC, Generic[A, M]):
         Check if the IP network version is 4.
         """
 
-        return self._version == 4
+        return self._version == IpVersion.IP4
 
     @property
     def address(self) -> A:

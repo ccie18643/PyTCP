@@ -39,26 +39,19 @@ from __future__ import annotations
 import os
 import struct
 import time
-from typing import override
+from typing import Any, override
 
 import click
+from net_addr import Ip4Address
+from net_addr import Ip6Address
+from net_addr import IpVersion
 
 from examples.lib.client import Client
 from net_addr import (
-    ClickTypeIp4Address,
-    ClickTypeIp4Host,
-    ClickTypeIp6Address,
-    ClickTypeIp6Host,
     ClickTypeIpAddress,
-    ClickTypeMacAddress,
-    Ip4Address,
-    Ip4Host,
-    Ip6Address,
-    Ip6Host,
-    IpAddress,
-    MacAddress,
 )
-from pytcp import socket, stack
+from pytcp import socket
+from run_stack import cli as stack_cli
 
 ICMP4__ECHO_REQUEST__TYPE = 8
 ICMP4__ECHO_REQUEST__CODE = 0
@@ -78,8 +71,7 @@ class IcmpEchoClient(Client):
     def __init__(
         self,
         *,
-        local_ip_address: IpAddress,
-        remote_ip_address: IpAddress,
+        remote_ip_address: Ip6Address | Ip4Address,
         message_count: int = -1,
         message_delay: int = 1,
         message_size: int = 5,
@@ -88,7 +80,6 @@ class IcmpEchoClient(Client):
         Class constructor.
         """
 
-        self._local_ip_address = local_ip_address
         self._remote_ip_address = remote_ip_address
         self._message_count = message_count
         self._message_delay = message_delay
@@ -147,22 +138,17 @@ class IcmpEchoClient(Client):
             message_count = self._message_count
 
             while self._run_thread and message_count:
-                match (
-                    self._local_ip_address.version,
-                    self._remote_ip_address.version,
-                ):
-                    case 6, 6:
+                match self._remote_ip_address.version:
+                    case IpVersion.IP6:
                         icmp_message = self._create_icmp6_message(
                             identifier=identifier,
                             sequence=self._message_count - message_count + 1,
                         )
-                    case 4, 4:
+                    case IpVersion.IP4:
                         icmp_message = self._create_icmp4_message(
                             identifier=identifier,
                             sequence=self._message_count - message_count + 1,
                         )
-                    case _:
-                        raise ValueError("Invalid IP address versions.")
 
                 try:
                     self._client_socket.send(icmp_message)
@@ -212,110 +198,31 @@ class IcmpEchoClient(Client):
 
 
 @click.command()
-@click.option(
-    "--stack-interface",
-    "stack__interface",
-    default="tap7",
-    help="Name of the interface to be used by the stack.",
-)
-@click.option(
-    "--stack-mac-address",
-    "stack__mac_address",
-    type=ClickTypeMacAddress(),
-    default=None,
-    help="MAC address to be assigned to the stack interface.",
-)
-@click.option(
-    "--stack-ip6-address",
-    "stack__ip6_host",
-    type=ClickTypeIp6Host(),
-    default=None,
-    help="IPv6 address/mask to be assigned to the stack interface.",
-)
-@click.option(
-    "--stack-ip6-gateway",
-    "stack__ip6_gateway",
-    type=ClickTypeIp6Address(),
-    default=None,
-    help="IPv6 gateway address to be assigned to the stack interface.",
-)
-@click.option(
-    "--stack-ip4-address",
-    "stack__ip4_host",
-    type=ClickTypeIp4Host(),
-    default=None,
-    help="IPv4 address/mask to be assigned to the stack interface.",
-)
-@click.option(
-    "--stack-ip4-gateway",
-    "stack__ip4_gateway",
-    type=ClickTypeIp4Address(),
-    default=None,
-    help="IPv4 gateway address to be assigned to the stack interface.",
-)
 @click.argument(
     "remote_ip_address",
     type=ClickTypeIpAddress(),
     required=True,
 )
+@click.pass_context
 def cli(
+    ctx: click.Context,
     *,
-    stack__interface: str,
-    stack__mac_address: MacAddress | None,
-    stack__ip6_host: Ip6Host | None,
-    stack__ip6_gateway: Ip6Address | None,
-    stack__ip4_host: Ip4Host | None,
-    stack__ip4_gateway: Ip4Address | None,
-    remote_ip_address: IpAddress,
+    remote_ip_address: Ip6Address | Ip4Address,
+    **kwargs: dict[str, Any],
 ) -> None:
     """
     Start PyTCP stack and stop it when user presses Ctrl-C.
     Start ICMP Echo client.
     """
 
-    if stack__ip6_host:
-        stack__ip6_host.gateway = stack__ip6_gateway
-
-    if stack__ip4_host:
-        stack__ip4_host.gateway = stack__ip4_gateway
-
-    stack.init(
-        *stack.initialize_interface(stack__interface),
-        mac_address=stack__mac_address,
-        ip6_host=stack__ip6_host,
-        ip4_host=stack__ip4_host,
-    )
-
     match remote_ip_address.version:
-        case 6:
-            client = IcmpEchoClient(
-                local_ip_address=(
-                    stack__ip6_host.address if stack__ip6_host else Ip6Address()
-                ),
-                remote_ip_address=remote_ip_address,
-            )
-        case 4:
-            client = IcmpEchoClient(
-                local_ip_address=(
-                    stack__ip4_host.address if stack__ip4_host else Ip4Address()
-                ),
-                remote_ip_address=remote_ip_address,
-            )
-        case _:
-            raise ValueError(
-                f"Invalid remote IP address version: {remote_ip_address.version}"
-            )
+        case IpVersion.IP6:
+            client = IcmpEchoClient(remote_ip_address=remote_ip_address)
+        case IpVersion.IP4:
+            client = IcmpEchoClient(remote_ip_address=remote_ip_address)
 
-    try:
-        stack.start()
-        client.start()
-        while True:
-            time.sleep(1)
-
-    except KeyboardInterrupt:
-        client.stop()
-        stack.stop()
+    ctx.invoke(stack_cli, subsystem=client, **kwargs)
 
 
 if __name__ == "__main__":
-    cli()  # pylint: disable = missing-kwoa
+    cli.main()

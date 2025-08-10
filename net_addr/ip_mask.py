@@ -37,6 +37,8 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 
+from net_addr.ip_address import IpVersion
+
 
 class IpMask(ABC):
     """
@@ -44,7 +46,7 @@ class IpMask(ABC):
     """
 
     _mask: int
-    _version: int
+    _version: IpVersion
 
     def __len__(self) -> int:
         """
@@ -109,7 +111,7 @@ class IpMask(ABC):
             return True
 
     @property
-    def version(self) -> int:
+    def version(self) -> IpVersion:
         """
         Get the IP mask version.
         """
@@ -122,7 +124,7 @@ class IpMask(ABC):
         Check if the IP mask version is 6.
         """
 
-        return self._version == 6
+        return self._version == IpVersion.IP6
 
     @property
     def is_ip4(self) -> bool:
@@ -130,4 +132,4 @@ class IpMask(ABC):
         Check if the IP mask version is 4.
         """
 
-        return self._version == 4
+        return self._version == IpVersion.IP4

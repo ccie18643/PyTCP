@@ -40,7 +40,7 @@ import socket
 from typing import override
 
 from .errors import Ip6AddressFormatError
-from .ip_address import IpAddress
+from .ip_address import IpAddress, IpVersion
 from .mac_address import MacAddress
 
 IP6__ADDRESS_LEN = 16
@@ -63,7 +63,7 @@ class Ip6Address(IpAddress):
     IPv6 address support class.
     """
 
-    _version: int = 6
+    _version: IpVersion = IpVersion.IP6
 
     def __init__(
         self,

@@ -41,7 +41,9 @@ from abc import abstractmethod
 from typing import TYPE_CHECKING, override
 
 import click
-from net_addr.ip_address import IpAddress
+from net_addr.ip4_address import Ip4Address
+from net_addr.ip6_address import Ip6Address
+from net_addr.ip_address import IpVersion
 
 from examples.lib.subsystem import Subsystem
 from pytcp.socket import (
@@ -66,9 +68,9 @@ class Client(Subsystem):
 
     _protocol_name: str
     _client_name: str
-    _local_ip_address: IpAddress
+    _local_ip_address: Ip4Address | Ip6Address
     _local_port: int
-    _remote_ip_address: IpAddress
+    _remote_ip_address: Ip4Address | Ip6Address
     _remote_port: int
     _run_thread: bool
     _client_socket: Socket | None
@@ -82,6 +84,12 @@ class Client(Subsystem):
         click.echo(
             f"Starting the {self._protocol_name} {self._client_name} service."
         )
+
+        if isinstance(self._remote_ip_address, Ip4Address):
+            self._local_ip_address = self.stack_ip4_address
+
+        if isinstance(self._remote_ip_address, Ip6Address):
+            self._local_ip_address = self.stack_ip6_address
 
         self._client_socket = self._get_client_socket()
 
@@ -108,25 +116,24 @@ class Client(Subsystem):
         """
 
         match (
-            self._local_ip_address.version,
             self._remote_ip_address.version,
             self._protocol_name,
         ):
-            case 6, 6, "TCP":
+            case IpVersion.IP6, "TCP":
                 client_socket = socket(family=AF_INET6, type=SOCK_STREAM)
-            case 4, 4, "TCP":
+            case IpVersion.IP4, "TCP":
                 client_socket = socket(family=AF_INET4, type=SOCK_STREAM)
-            case 6, 6, "UDP":
+            case IpVersion.IP6, "UDP":
                 client_socket = socket(family=AF_INET6, type=SOCK_DGRAM)
-            case 4, 4, "UDP":
+            case IpVersion.IP4, "UDP":
                 client_socket = socket(family=AF_INET4, type=SOCK_DGRAM)
-            case 6, 6, "ICMP":
+            case IpVersion.IP6, "ICMP":
                 client_socket = socket(
                     family=AF_INET6, type=SOCK_RAW, protocol=IPPROTO_ICMP6
                 )
                 self._local_port = int(IPPROTO_ICMP6)
                 self._remote_port = 0
-            case 4, 4, "ICMP":
+            case IpVersion.IP4, "ICMP":
                 client_socket = socket(
                     family=AF_INET4, type=SOCK_RAW, protocol=IPPROTO_ICMP4
                 )

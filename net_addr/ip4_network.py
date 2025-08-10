@@ -37,6 +37,8 @@ from __future__ import annotations
 
 from typing import override
 
+from net_addr.ip_address import IpVersion
+
 from .errors import (
     Ip4AddressFormatError,
     Ip4MaskFormatError,
@@ -52,7 +54,7 @@ class Ip4Network(IpNetwork[Ip4Address, Ip4Mask]):
     IPv4 network support class.
     """
 
-    _version = 4
+    _version = IpVersion.IP4
 
     def __init__(
         self,

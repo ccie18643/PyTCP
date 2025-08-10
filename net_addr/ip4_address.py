@@ -40,7 +40,7 @@ import socket
 from typing import override
 
 from .errors import Ip4AddressFormatError
-from .ip_address import IpAddress
+from .ip_address import IpAddress, IpVersion
 from .mac_address import MacAddress
 
 IP4__ADDRESS_LEN = 4
@@ -56,7 +56,7 @@ class Ip4Address(IpAddress):
     IPv4 address support class.
     """
 
-    _version: int = 4
+    _version: IpVersion = IpVersion.IP4
 
     def __init__(
         self,

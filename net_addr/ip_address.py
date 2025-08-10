@@ -36,6 +36,7 @@ ver 3.0.2
 from __future__ import annotations
 
 from abc import abstractmethod
+from enum import Enum
 from typing import TYPE_CHECKING
 
 from .address import Address
@@ -44,15 +45,24 @@ if TYPE_CHECKING:
     from .mac_address import MacAddress
 
 
+class IpVersion(Enum):
+    """
+    Enum for IP protocol version.
+    """
+
+    IP4 = 4
+    IP6 = 6
+
+
 class IpAddress(Address):
     """
     IP address support base class.
     """
 
-    _version: int
+    _version: IpVersion
 
     @property
-    def version(self) -> int:
+    def version(self) -> IpVersion:
         """
         Get the IP address version.
         """
@@ -74,7 +84,7 @@ class IpAddress(Address):
         Check if the IP address version is 6.
         """
 
-        return self._version == 6
+        return self._version == IpVersion.IP6
 
     @property
     def is_ip4(self) -> bool:
@@ -82,7 +92,7 @@ class IpAddress(Address):
         Check if the IP address version is 4.
         """
 
-        return self._version == 4
+        return self._version == IpVersion.IP4
 
     @property
     def is_unicast(self) -> bool:

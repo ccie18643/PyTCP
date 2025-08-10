@@ -39,6 +39,8 @@ import time
 from enum import auto
 from typing import override
 
+from net_addr.ip_address import IpVersion
+
 from .errors import (
     Ip4AddressFormatError,
     Ip4HostFormatError,
@@ -67,7 +69,7 @@ class Ip4Host(IpHost[Ip4Address, Ip4Network, Ip4HostOrigin]):
     IPv4 host support class.
     """
 
-    _version: int = 4
+    _version: IpVersion = IpVersion.IP4
     _primary: bool
     _gateway: Ip4Address | None
     _origin: Ip4HostOrigin

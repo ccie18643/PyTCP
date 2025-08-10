@@ -74,5 +74,5 @@ from .ip6_address import IP6__ADDRESS_LEN, Ip6Address
 from .ip6_host import Ip6Host, Ip6HostOrigin
 from .ip6_mask import Ip6Mask
 from .ip6_network import Ip6Network
-from .ip_address import IpAddress
+from .ip_address import IpAddress, IpVersion
 from .mac_address import MacAddress

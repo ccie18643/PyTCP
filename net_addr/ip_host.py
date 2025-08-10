@@ -39,6 +39,8 @@ from abc import ABC, abstractmethod
 from enum import Enum
 from typing import TYPE_CHECKING, Generic, TypeVar
 
+from net_addr.ip_address import IpVersion
+
 if TYPE_CHECKING:
     from .ip_address import IpAddress
     from .ip_network import IpNetwork
@@ -62,7 +64,7 @@ class IpHost(ABC, Generic[A, N, O]):
 
     _address: A
     _network: N
-    _version: int
+    _version: IpVersion
     _gateway: A | None
     _origin: O
     _expiration_time: int
@@ -104,7 +106,7 @@ class IpHost(ABC, Generic[A, N, O]):
         raise NotImplementedError
 
     @property
-    def version(self) -> int:
+    def version(self) -> IpVersion:
         """
         Get the IP host address version.
         """
@@ -117,7 +119,7 @@ class IpHost(ABC, Generic[A, N, O]):
         Check if the IP host address version is 6.
         """
 
-        return self._version == 6
+        return self._version == IpVersion.IP6
 
     @property
     def is_ip4(self) -> bool:
@@ -125,7 +127,7 @@ class IpHost(ABC, Generic[A, N, O]):
         Check if the IP host address version is 4.
         """
 
-        return self._version == 4
+        return self._version == IpVersion.IP4
 
     @property
     def address(self) -> A:

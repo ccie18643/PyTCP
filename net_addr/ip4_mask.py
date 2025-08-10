@@ -39,6 +39,8 @@ import re
 import socket
 from typing import override
 
+from net_addr.ip_address import IpVersion
+
 from .errors import Ip4MaskFormatError
 from .ip4_address import IP4__ADDRESS_LEN, IP4__REGEX
 from .ip_mask import IpMask
@@ -49,7 +51,7 @@ class Ip4Mask(IpMask):
     IPv4 mask support class.
     """
 
-    _version: int = 4
+    _version: IpVersion = IpVersion.IP4
 
     def __init__(
         self,
