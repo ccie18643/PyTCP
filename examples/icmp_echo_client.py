@@ -56,7 +56,6 @@ from run_stack import cli as stack_cli
 
 ICMP4__ECHO_REQUEST__TYPE = 8
 ICMP4__ECHO_REQUEST__CODE = 0
-
 ICMP6_ECHO_REQUEST_TYPE = 128
 ICMP6_ECHO_REQUEST_CODE = 0
 
@@ -209,21 +208,20 @@ def cli(
     ctx: click.Context,
     *,
     remote_ip_address: Ip6Address | Ip4Address,
-    **kwargs: dict[str, Any],
+    **kwargs: Any,
 ) -> None:
     """
-    Start PyTCP stack and stop it when user presses Ctrl-C.
     Start ICMP Echo client.
     """
 
-    match remote_ip_address.version:
-        case IpVersion.IP6:
-            client = IcmpEchoClient(remote_ip_address=remote_ip_address)
-        case IpVersion.IP4:
-            client = IcmpEchoClient(remote_ip_address=remote_ip_address)
-
-    ctx.invoke(stack_cli, subsystem=client, **kwargs)
+    ctx.invoke(
+        stack_cli,
+        subsystem=IcmpEchoClient(remote_ip_address=remote_ip_address),
+        **kwargs,
+    )
 
 
 if __name__ == "__main__":
+    cli.help = (cli.help or "").rstrip() + (stack_cli.help or "")
+    cli.params += stack_cli.params
     cli.main()
