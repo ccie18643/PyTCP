@@ -37,7 +37,7 @@ ver 3.0.2
 from __future__ import annotations
 
 import time
-from typing import Any
+from typing import Any, override
 
 import click
 
@@ -49,6 +49,7 @@ from net_addr import (
     Ip4Address,
     Ip6Address,
 )
+from pytcp.socket.socket import ReceiveTimeout
 
 
 class UdpEchoClient(Client):
@@ -81,6 +82,7 @@ class UdpEchoClient(Client):
         self._message_size = message_size
         self._run_thread = False
 
+    @override
     def _thread__client__sender(self) -> None:
         """
         Client thread used to send data.
@@ -111,6 +113,29 @@ class UdpEchoClient(Client):
 
             self._run_thread = False
             self._log("Stopped the sender thread.")
+
+    @override
+    def _thread__client__receiver(self) -> None:
+        """
+        Client thread used to receive data.
+        """
+
+        if self._client_socket:
+            self._log("Started the receiver thread.")
+
+            while self._run_thread:
+                try:
+                    if message_payload := self._client_socket.recv(
+                        bufsize=1024,
+                        timeout=1,
+                    ):
+                        self._log(
+                            f"Received {len(message_payload)} bytes from '{self._remote_ip_address}'."
+                        )
+                except ReceiveTimeout:
+                    pass
+
+            self._log("Stopped the receiver thread.")
 
 
 @click.command()
