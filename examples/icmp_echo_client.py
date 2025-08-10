@@ -42,16 +42,17 @@ import time
 from typing import Any, override
 
 import click
-from net_addr import Ip4Address
-from net_addr import Ip6Address
-from net_addr import IpVersion
 
 from examples.lib.client import Client
 from net_addr import (
     ClickTypeIpAddress,
+    Ip4Address,
+    Ip6Address,
+    IpVersion,
 )
 from pytcp import socket
 from run_stack import cli as stack_cli
+
 
 ICMP4__ECHO_REQUEST__TYPE = 8
 ICMP4__ECHO_REQUEST__CODE = 0

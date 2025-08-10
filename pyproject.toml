@@ -87,6 +87,7 @@ disable = """
     too-many-ancestors,
     redefined-outer-name,
     global-statement,
+    wrong-import-order,
 """
 
 [tool.setuptools.packages.find]
