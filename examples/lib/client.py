@@ -40,7 +40,6 @@ import time
 from abc import abstractmethod
 from typing import TYPE_CHECKING, override
 
-import click
 from net_addr.ip4_address import Ip4Address
 from net_addr.ip6_address import Ip6Address
 from net_addr.ip_address import IpVersion
@@ -55,7 +54,6 @@ from pytcp.socket import (
     SOCK_RAW,
     SOCK_STREAM,
     socket,
-    ReceiveTimeout,
 )
 
 if TYPE_CHECKING:
@@ -68,7 +66,7 @@ class Client(Subsystem):
     """
 
     _protocol_name: str
-    _client_name: str
+    _subsystem_name: str
     _local_ip_address: Ip4Address | Ip6Address
     _local_port: int
     _remote_ip_address: Ip4Address | Ip6Address
@@ -79,12 +77,10 @@ class Client(Subsystem):
     @override
     def start(self) -> None:
         """
-        Start the service thread.
+        Start the client thread.
         """
 
-        click.echo(
-            f"Starting the {self._protocol_name} {self._client_name} service."
-        )
+        self._log("Starting the client.")
 
         if isinstance(self._remote_ip_address, Ip4Address):
             self._local_ip_address = self.stack_ip4_address
@@ -105,9 +101,7 @@ class Client(Subsystem):
         Stop the service thread.
         """
 
-        click.echo(
-            f"Stopping the {self._protocol_name} {self._client_name} service."
-        )
+        self._log("Stopping the client.")
         self._run_thread = False
         time.sleep(0.1)
 
@@ -143,21 +137,17 @@ class Client(Subsystem):
             case _:
                 raise ValueError("Invalid IP versions or protocol combination.")
 
-        click.echo(
-            f"Client {self._protocol_name} {self._client_name}: "
-            f"Created socket [{client_socket}]."
-        )
+        self._log(f"Created socket [{client_socket}].")
 
         try:
             client_socket.bind((str(self._local_ip_address), self._local_port))
-            click.echo(
-                f"Client {self._protocol_name} {self._client_name}: Bound socket "
-                f"to {self._local_ip_address}, port {self._local_port}."
+            self._log(
+                f"Bound socket to {self._local_ip_address}, port {self._local_port}."
             )
         except OSError as error:
-            click.echo(
-                f"Client {self._protocol_name} {self._client_name}: Unable to bind socket "
-                f"to {self._local_ip_address}, port {self._local_port} - {error!r}.",
+            self._log(
+                f"Unable to bind socket to {self._local_ip_address}, port {self._local_port}. "
+                f"Error: {error!r}.",
             )
             return None
 
@@ -165,14 +155,13 @@ class Client(Subsystem):
             client_socket.connect(
                 (str(self._remote_ip_address), self._remote_port)
             )
-            click.echo(
-                f"Client {self._protocol_name} {self._client_name}: Connection opened "
-                f"to {self._remote_ip_address}, port {self._remote_port}."
+            self._log(
+                f"Connection opened to {self._remote_ip_address}, port {self._remote_port}."
             )
         except OSError as error:
-            click.echo(
-                f"Client {self._protocol_name} {self._client_name}: Connection to "
-                f"{self._remote_ip_address}, port {self._remote_port} failed - {error!r}."
+            self._log(
+                f"Connection to {self._remote_ip_address}, port {self._remote_port} failed. "
+                f"Error: {error!r}."
             )
             return None
 
@@ -186,30 +175,10 @@ class Client(Subsystem):
 
         raise NotImplementedError
 
+    @abstractmethod
     def _thread__client__receiver(self) -> None:
         """
         Client thread used to receive data.
         """
 
-        if self._client_socket:
-            click.echo(
-                f"Client {self._protocol_name} {self._client_name}: Started receiver thread."
-            )
-
-            while self._run_thread:
-                try:
-                    data, _ = self._client_socket.recvfrom(
-                        bufsize=1024,
-                        timeout=1,
-                    )
-                    if data:
-                        click.echo(
-                            f"Client {self._protocol_name} {self._client_name}: Received {len(data) - 8} bytes from "
-                            f"'{self._remote_ip_address}'."
-                        )
-                except ReceiveTimeout:
-                    pass
-
-            click.echo(
-                f"Client {self._protocol_name} {self._client_name}: Stopped receiver thread."
-            )
+        raise NotImplementedError

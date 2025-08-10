@@ -25,9 +25,9 @@
 
 
 """
-The base class for servers and clients used in examples.
+Module contains simple payload generators.
 
-examples/lib/subsystem.py
+examples/lib/payload.py
 
 ver 3.0.2
 """
@@ -35,59 +35,13 @@ ver 3.0.2
 
 from __future__ import annotations
 
-from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING
 
-import click
-
-if TYPE_CHECKING:
-    from net_addr.ip4_address import Ip4Address
-    from net_addr.ip6_address import Ip6Address
-
-
-class Subsystem(ABC):
+def payload(*, pattern: bytes = b"1234567890", length: int = 64) -> bytes:
     """
-    Base class for 'user space' services like clients and servers.
+    Generate a payload of specified length using the given pattern.
     """
 
-    stack_ip4_address: Ip4Address
-    stack_ip6_address: Ip6Address
+    if length <= 0:
+        return b""
 
-    _subsystem_name: str
-    _run_thread: bool
-
-    @abstractmethod
-    def start(self) -> None:
-        """
-        Start the subsystem.
-        """
-
-        raise NotImplementedError
-
-    @abstractmethod
-    def stop(self) -> None:
-        """
-        Stop the subsystem.
-        """
-
-        raise NotImplementedError
-
-    @property
-    def is_alive(self) -> bool:
-        """
-        Check if the service thread is alive.
-        """
-
-        return self._run_thread
-
-    def _log(self, message: str) -> None:
-        """
-        Log a message.
-        """
-
-        click.secho(
-            f"{self._subsystem_name} - {message}",
-            bg="bright_blue",
-            fg="bright_yellow",
-            bold=True,
-        )
+    return (pattern * (length // len(pattern) + 1))[:length]

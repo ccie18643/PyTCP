@@ -25,10 +25,10 @@
 
 
 """
-The example 'user space' client for ICMP echo. It actively sends messages
-to the ICMP Echo service.
+The example 'user space' client for UDP Echo protocol. It actively sends the UDP
+packets to the remote IP address/port and waits for responses.
 
-examples/icmp_echo_client.py
+examples/client__udp_echo.py
 
 ver 3.0.2
 """
@@ -36,41 +36,35 @@ ver 3.0.2
 
 from __future__ import annotations
 
-import os
-import struct
 import time
-from typing import Any, override
+from typing import Any
 
 import click
 
 from examples.lib.client import Client
+from examples.lib.payload import payload
+from examples.stack import cli as stack_cli
 from net_addr import (
     ClickTypeIpAddress,
     Ip4Address,
     Ip6Address,
-    IpVersion,
 )
-from run_stack import cli as stack_cli
 
 
-ICMP4__ECHO_REQUEST__TYPE = 8
-ICMP4__ECHO_REQUEST__CODE = 0
-ICMP6_ECHO_REQUEST_TYPE = 128
-ICMP6_ECHO_REQUEST_CODE = 0
-
-
-class IcmpEchoClient(Client):
+class UdpEchoClient(Client):
     """
-    ICMP Echo client support class.
+    UDP Echo client support class.
     """
 
-    _protocol_name = "ICMP"
-    _client_name = "Echo"
+    _protocol_name = "UDP"
+    _subsystem_name = f"{_protocol_name} Echo Client"
 
     def __init__(
         self,
         *,
         remote_ip_address: Ip6Address | Ip4Address,
+        local_port: int = 0,
+        remote_port: int = 7,
         message_count: int = -1,
         message_delay: int = 1,
         message_size: int = 5,
@@ -80,108 +74,93 @@ class IcmpEchoClient(Client):
         """
 
         self._remote_ip_address = remote_ip_address
+        self._local_port = local_port
+        self._remote_port = remote_port
         self._message_count = message_count
         self._message_delay = message_delay
         self._message_size = message_size
         self._run_thread = False
 
-    @classmethod
-    def _create_icmp4_message(cls, identifier: int, sequence: int) -> bytes:
-        """
-        Create ICMPv4 Echo Request packet.
-        """
-
-        header = struct.pack(
-            "!BBHHH",
-            ICMP4__ECHO_REQUEST__TYPE,
-            ICMP4__ECHO_REQUEST__CODE,
-            0,
-            identifier,
-            sequence,
-        )
-
-        payload = struct.pack("!d", time.time())
-
-        return header + payload
-
-    @classmethod
-    def _create_icmp6_message(cls, identifier: int, sequence: int) -> bytes:
-        """
-        Create ICMPv6 Echo Request packet.
-        """
-
-        header = struct.pack(
-            "!BBHHH",
-            ICMP6_ECHO_REQUEST_TYPE,
-            ICMP6_ECHO_REQUEST_CODE,
-            0,
-            identifier,
-            sequence,
-        )
-
-        payload = struct.pack("!d", time.time())
-
-        return header + payload
-
-    @override
     def _thread__client__sender(self) -> None:
         """
         Client thread used to send data.
         """
 
-        click.echo("Client ICMP Echo: Started sender thread.")
-
-        identifier = os.getpid() & 0xFFFF
-
-        if self._client_socket:
+        if client_socket := self._get_client_socket():
+            message_payload = payload(length=self._message_size)
             message_count = self._message_count
 
             while self._run_thread and message_count:
-                match self._remote_ip_address.version:
-                    case IpVersion.IP6:
-                        icmp_message = self._create_icmp6_message(
-                            identifier=identifier,
-                            sequence=self._message_count - message_count + 1,
-                        )
-                    case IpVersion.IP4:
-                        icmp_message = self._create_icmp4_message(
-                            identifier=identifier,
-                            sequence=self._message_count - message_count + 1,
-                        )
-
                 try:
-                    self._client_socket.send(icmp_message)
+                    client_socket.send(message_payload)
                 except OSError as error:
-                    click.echo(f"Client ICMP Echo: send() error - {error!r}.")
+                    self._log(f"The 'send()' method failed. Error: {error!r}.")
                     break
 
-                click.echo(
-                    f"Client ICMP Echo: Sent {len(icmp_message) - 8} bytes to "
-                    f"'{self._remote_ip_address}'."
+                self._log(
+                    f"Sent {len(message_payload)} bytes of data to "
+                    f"{self._remote_ip_address}, port {self._remote_port}."
                 )
-                time.sleep(self._message_delay)
                 message_count = min(message_count, message_count - 1)
+                time.sleep(self._message_delay)
 
-            self._client_socket.close()
-            click.echo(
-                "Client ICMP Echo: Closed connection to "
-                f"'{self._remote_ip_address}'.",
+            client_socket.close()
+            self._log(
+                f"Closed the connection to {self._remote_ip_address}, port {self._remote_port}."
             )
 
-            click.echo("Client ICMP Echo: Stopped sender thread.")
+            self._run_thread = False
+            self._log("Stopped the sender thread.")
 
 
 @click.command()
+@click.option(
+    "--count",
+    "-c",
+    "message_count",
+    type=click.IntRange(-1),
+    default=-1,
+    help="Number of messages to send. -1 means infinite.",
+    show_default=True,
+)
+@click.option(
+    "--delay",
+    "-d",
+    "message_delay",
+    type=click.IntRange(0),
+    default=1,
+    help="Delay between messages in seconds.",
+    show_default=True,
+)
+@click.option(
+    "--size",
+    "-s",
+    "message_size",
+    type=click.IntRange(0),
+    default=64,
+    help="Size of the payload in bytes.",
+    show_default=True,
+)
 @click.argument(
     "remote_ip_address",
     type=ClickTypeIpAddress(),
     required=True,
 )
+@click.argument(
+    "remote_port",
+    type=click.IntRange(1, 65535),
+    default=7,
+    required=False,
+)
 @click.pass_context
 def cli(
     ctx: click.Context,
     *,
+    message_count: int,
+    message_delay: int,
+    message_size: int,
     remote_ip_address: Ip6Address | Ip4Address,
+    remote_port: int,
     **kwargs: Any,
 ) -> None:
     """
@@ -190,7 +169,13 @@ def cli(
 
     ctx.invoke(
         stack_cli,
-        subsystem=IcmpEchoClient(remote_ip_address=remote_ip_address),
+        subsystem=UdpEchoClient(
+            remote_ip_address=remote_ip_address,
+            remote_port=remote_port,
+            message_count=message_count,
+            message_delay=message_delay,
+            message_size=message_size,
+        ),
         **kwargs,
     )
 
