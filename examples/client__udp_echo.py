@@ -88,7 +88,7 @@ class UdpEchoClient(Client):
         Client thread used to send data.
         """
 
-        if client_socket := self._get_client_socket():
+        if client_socket := self._client_socket:
             message_payload = payload(length=self._message_size)
             message_count = self._message_count
 
