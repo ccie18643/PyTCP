@@ -50,7 +50,6 @@ from net_addr import (
     Ip6Address,
     IpVersion,
 )
-from pytcp import socket
 from run_stack import cli as stack_cli
 
 
@@ -170,31 +169,6 @@ class IcmpEchoClient(Client):
             )
 
             click.echo("Client ICMP Echo: Stopped sender thread.")
-
-    @override
-    def _thread__client__receiver(self) -> None:
-        """
-        Client thread used to receive data.
-        """
-
-        if self._client_socket:
-            click.echo("Client ICMP Echo: Started receiver thread.")
-
-            while self._run_thread:
-                try:
-                    data, _ = self._client_socket.recvfrom(
-                        bufsize=1024,
-                        timeout=1,
-                    )
-                    if data:
-                        click.echo(
-                            f"Client ICMP Echo: Received {len(data) - 8} bytes from "
-                            f"'{self._remote_ip_address}'."
-                        )
-                except socket.ReceiveTimeout:
-                    pass
-
-            click.echo("Client ICMP Echo: Stopped receiver thread.")
 
 
 @click.command()

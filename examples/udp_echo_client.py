@@ -35,27 +35,16 @@ ver 3.0.2
 
 
 from __future__ import annotations
-
 import time
-
+from typing import Any
 import click
-
 from examples.lib.client import Client
 from net_addr import (
-    ClickTypeIp4Address,
-    ClickTypeIp4Host,
-    ClickTypeIp6Address,
-    ClickTypeIp6Host,
     ClickTypeIpAddress,
-    ClickTypeMacAddress,
     Ip4Address,
-    Ip4Host,
     Ip6Address,
-    Ip6Host,
-    IpAddress,
-    MacAddress,
 )
-from pytcp import stack
+from run_stack import cli as stack_cli
 
 
 class UdpEchoClient(Client):
@@ -69,8 +58,7 @@ class UdpEchoClient(Client):
     def __init__(
         self,
         *,
-        local_ip_address: IpAddress,
-        remote_ip_address: IpAddress,
+        remote_ip_address: Ip6Address | Ip4Address,
         local_port: int = 0,
         remote_port: int = 7,
         message_count: int = -1,
@@ -81,7 +69,6 @@ class UdpEchoClient(Client):
         Class constructor.
         """
 
-        self._local_ip_address = local_ip_address
         self._remote_ip_address = remote_ip_address
         self._local_port = local_port
         self._remote_port = remote_port
@@ -90,9 +77,9 @@ class UdpEchoClient(Client):
         self._message_size = message_size
         self._run_thread = False
 
-    def _thread__client(self) -> None:
+    def _thread__client__sender(self) -> None:
         """
-        Client thread.
+        Client thread used to send data.
         """
 
         if client_socket := self._get_client_socket():
@@ -125,102 +112,38 @@ class UdpEchoClient(Client):
 
 
 @click.command()
-@click.option(
-    "--interface",
-    default="tap7",
-    help="Name of the interface to be used by the stack.",
-)
-@click.option(
-    "--mac-address",
-    type=ClickTypeMacAddress(),
-    default=None,
-    help="MAC address to be assigned to the interface.",
-)
-@click.option(
-    "--ip6-address",
-    "ip6_host",
-    type=ClickTypeIp6Host(),
-    default=None,
-    help="IPv6 address/mask to be assigned to the interface.",
-)
-@click.option(
-    "--ip6-gateway",
-    type=ClickTypeIp6Address(),
-    default=None,
-    help="IPv6 gateway address to be assigned to the interface.",
-)
-@click.option(
-    "--ip4-address",
-    "ip4_host",
-    type=ClickTypeIp4Host(),
-    default=None,
-    help="IPv4 address/mask to be assigned to the interface.",
-)
-@click.option(
-    "--ip4-gateway",
-    type=ClickTypeIp4Address(),
-    default=None,
-    help="IPv4 gateway address to be assigned to the interface.",
-)
 @click.argument(
     "remote_ip_address",
     type=ClickTypeIpAddress(),
     required=True,
 )
+@click.argument(
+    "remote_port",
+    type=click.IntRange(1, 65535),
+    default=7,
+)
+@click.pass_context
 def cli(
+    ctx: click.Context,
     *,
-    interface: str,
-    mac_address: MacAddress | None,
-    ip6_host: Ip6Host | None,
-    ip6_gateway: Ip6Address | None,
-    ip4_host: Ip4Host | None,
-    ip4_gateway: Ip4Address | None,
-    remote_ip_address: IpAddress,
+    remote_ip_address: Ip6Address | Ip4Address,
+    remote_port: int,
+    **kwargs: Any,
 ) -> None:
     """
-    Start PyTCP stack and stop it when user presses Ctrl-C.
     Start UDP Echo client.
     """
 
-    if ip6_host:
-        ip6_host.gateway = ip6_gateway
-
-    if ip4_host:
-        ip4_host.gateway = ip4_gateway
-
-    stack.init(
-        *stack.initialize_interface(interface),
-        mac_address=mac_address,
-        ip6_host=ip6_host,
-        ip4_host=ip4_host,
+    ctx.invoke(
+        stack_cli,
+        subsystem=UdpEchoClient(
+            remote_ip_address=remote_ip_address, remote_port=remote_port
+        ),
+        **kwargs,
     )
-
-    match remote_ip_address.version:
-        case 6:
-            client = UdpEchoClient(
-                local_ip_address=ip6_host.address if ip6_host else Ip6Address(),
-                remote_ip_address=remote_ip_address,
-            )
-        case 4:
-            client = UdpEchoClient(
-                local_ip_address=ip4_host.address if ip4_host else Ip4Address(),
-                remote_ip_address=remote_ip_address,
-            )
-        case _:
-            raise ValueError(
-                f"Invalid remote IP address version: {remote_ip_address.version}"
-            )
-
-    try:
-        stack.start()
-        client.start()
-        while True:
-            time.sleep(60)
-
-    except KeyboardInterrupt:
-        client.stop()
-        stack.stop()
 
 
 if __name__ == "__main__":
-    cli()  # pylint: disable = missing-kwoa
+    cli.help = (cli.help or "").rstrip() + (stack_cli.help or "")
+    cli.params += stack_cli.params
+    cli.main()

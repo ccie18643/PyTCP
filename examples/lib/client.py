@@ -55,6 +55,7 @@ from pytcp.socket import (
     SOCK_RAW,
     SOCK_STREAM,
     socket,
+    ReceiveTimeout,
 )
 
 if TYPE_CHECKING:
@@ -185,10 +186,30 @@ class Client(Subsystem):
 
         raise NotImplementedError
 
-    @abstractmethod
     def _thread__client__receiver(self) -> None:
         """
-        Client thread used to send data.
+        Client thread used to receive data.
         """
 
-        raise NotImplementedError
+        if self._client_socket:
+            click.echo(
+                f"Client {self._protocol_name} {self._client_name}: Started receiver thread."
+            )
+
+            while self._run_thread:
+                try:
+                    data, _ = self._client_socket.recvfrom(
+                        bufsize=1024,
+                        timeout=1,
+                    )
+                    if data:
+                        click.echo(
+                            f"Client {self._protocol_name} {self._client_name}: Received {len(data) - 8} bytes from "
+                            f"'{self._remote_ip_address}'."
+                        )
+                except ReceiveTimeout:
+                    pass
+
+            click.echo(
+                f"Client {self._protocol_name} {self._client_name}: Stopped receiver thread."
+            )
