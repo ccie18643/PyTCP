@@ -281,7 +281,7 @@ class RawSocket(Socket):
 
         __debug__ and log(
             "socket",
-            f"<g>[{self}]</> - Sent {sent_data_len} bytes of data",
+            f"<B><lr>[{self}]</> - Sent {sent_data_len} bytes of data",
         )
 
         return sent_data_len

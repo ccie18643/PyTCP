@@ -189,11 +189,10 @@ class IcmpEchoClient(Client):
 
             while self._run_thread:
                 try:
-                    data, _ = self._client_socket.recvfrom(
+                    if data := self._client_socket.recv(
                         bufsize=1024,
                         timeout=1,
-                    )
-                    if data:
+                    ):
                         identifier, sequence, payload = (
                             self._parse_icmp_echo_reply_message(data=data)
                         )

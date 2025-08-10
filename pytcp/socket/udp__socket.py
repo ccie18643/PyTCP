@@ -296,7 +296,7 @@ class UdpSocket(Socket):
 
         __debug__ and log(
             "socket",
-            f"<g>[{self}]</> - <lr>Sent</> {sent_data_len} bytes of data",
+            f"<B><lr>[{self}]</> - Sent {sent_data_len} bytes of data",
         )
 
         return sent_data_len
@@ -343,7 +343,7 @@ class UdpSocket(Socket):
 
         __debug__ and log(
             "socket",
-            f"<g>[{self}]</> - <lr>Sent</> {sent_data_len} bytes of data",
+            f"<B><lr>[{self}]</> - Sent {sent_data_len} bytes of data",
         )
 
         return sent_data_len
@@ -368,8 +368,7 @@ class UdpSocket(Socket):
             data_rx = self._packet_rx_md.pop(0).udp__data
             __debug__ and log(
                 "socket",
-                f"<g>[{self}]</> - <lg>Received</> {len(data_rx)} "
-                "bytes of data",
+                f"<B><g>[{self}]</> - Received {len(data_rx)} " "bytes of data",
             )
             return data_rx
         raise ReceiveTimeout
@@ -387,7 +386,7 @@ class UdpSocket(Socket):
             packet_rx_md = self._packet_rx_md.pop(0)
             __debug__ and log(
                 "socket",
-                f"<g>[{self}]</> - <lg>Received</> "
+                f"<B><g>[{self}]</> - <lg>Received</> "
                 f"{len(packet_rx_md.udp__data)} bytes of data",
             )
             return (
