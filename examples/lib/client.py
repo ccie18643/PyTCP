@@ -36,7 +36,6 @@ ver 3.0.2
 from __future__ import annotations
 
 import threading
-import time
 from abc import abstractmethod
 from typing import TYPE_CHECKING, override
 
@@ -74,25 +73,24 @@ class Client(Subsystem):
     _run_thread: bool
     _client_socket: Socket | None
 
-    __thread__client__receiver: threading.Thread
-    __thread__client__sender: threading.Thread
-    _stop_event__client__receiver: threading.Event
-    _stop_event__client__sender: threading.Event
+    _thread__receiver: threading.Thread
+    _thread__sender: threading.Thread
+    _event__stop_receiver: threading.Event
+    _event__stop_sender: threading.Event
 
     def __init__(self) -> None:
         """
         Initialize the client.
         """
 
-        self.__thread__client__receiver = threading.Thread(
-            target=self._thread__client__receiver
+        self._thread__receiver = threading.Thread(
+            target=self._thread_target__receiver
         )
-        self.__thread__client__sender = threading.Thread(
-            target=self._thread__client__sender
+        self._thread__sender = threading.Thread(
+            target=self._thread_target__sender
         )
-
-        self._stop_event__client__receiver = threading.Event()
-        self._stop_event__client__sender = threading.Event()
+        self._event__stop_receiver = threading.Event()
+        self._event__stop_sender = threading.Event()
 
     @override
     def start(self) -> None:
@@ -110,15 +108,13 @@ class Client(Subsystem):
 
         self._client_socket = self._get_client_socket()
 
-        self._stop_event__client__receiver.clear()
-        self._stop_event__client__sender.clear()
+        self._event__stop_receiver.clear()
+        self._event__stop_sender.clear()
 
-        self.__thread__client__receiver.start()
-        self.__thread__client__sender.start()
+        self._thread__receiver.start()
+        self._thread__sender.start()
 
         self._is_alive = True
-
-        time.sleep(0.1)
 
     @override
     def stop(self) -> None:
@@ -128,12 +124,8 @@ class Client(Subsystem):
 
         self._log("Stopping the client.")
 
-        self._stop_event__client__receiver.set()
-        self._stop_event__client__sender.set()
-
-        self._is_alive = False
-
-        time.sleep(0.1)
+        self._event__stop_receiver.set()
+        self._event__stop_sender.set()
 
     def _get_client_socket(self) -> Socket | None:
         """
@@ -198,17 +190,17 @@ class Client(Subsystem):
         return client_socket
 
     @abstractmethod
-    def _thread__client__sender(self) -> None:
+    def _thread_target__sender(self) -> None:
         """
-        Client thread used to send data.
+        Thread used to send data.
         """
 
         raise NotImplementedError
 
     @abstractmethod
-    def _thread__client__receiver(self) -> None:
+    def _thread_target__receiver(self) -> None:
         """
-        Client thread used to receive data.
+        Thread used to receive data.
         """
 
         raise NotImplementedError

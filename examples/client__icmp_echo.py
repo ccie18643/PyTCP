@@ -70,8 +70,8 @@ class IcmpEchoClient(Client):
     _protocol_name = "ICMP"
     _subsystem_name = f"{_protocol_name} Echo Client"
 
-    _stop_event__client__receiver: threading.Event
-    _stop_event__client__sender: threading.Event
+    _stop_event__receiver: threading.Event
+    _stop_event__sender: threading.Event
 
     def __init__(
         self,
@@ -140,9 +140,9 @@ class IcmpEchoClient(Client):
         return header + payload(length=message_size)
 
     @override
-    def _thread__client__sender(self) -> None:
+    def _thread_target__sender(self) -> None:
         """
-        Client thread used to send data.
+        Thread used to send data.
         """
 
         self._log("Started the sender thread.")
@@ -152,9 +152,7 @@ class IcmpEchoClient(Client):
         if self._client_socket:
             message_count = self._message_count
 
-            while (
-                not self._stop_event__client__sender.is_set() and message_count
-            ):
+            while not self._event__stop_sender.is_set() and message_count:
                 icmp_message = self._assemble_icmp_echo_request_message(
                     ip_version=self._remote_ip_address.version,
                     identifier=identifier,
@@ -175,9 +173,7 @@ class IcmpEchoClient(Client):
                 )
                 message_count = min(message_count, message_count - 1)
 
-                if self._stop_event__client__sender.wait(
-                    timeout=self._message_delay
-                ):
+                if self._event__stop_sender.wait(timeout=self._message_delay):
                     break
 
             self._client_socket.close()
@@ -185,19 +181,19 @@ class IcmpEchoClient(Client):
                 f"Closed the connection to '{self._remote_ip_address}'.",
             )
 
-            self._run_thread = False
+            self._is_alive = False
             self._log("Stopped the sender thread.")
 
     @override
-    def _thread__client__receiver(self) -> None:
+    def _thread_target__receiver(self) -> None:
         """
-        Client thread used to receive data.
+        Thread used to receive data.
         """
 
         if self._client_socket:
             self._log("Started the receiver thread.")
 
-            while not self._stop_event__client__receiver.is_set():
+            while not self._event__stop_receiver.is_set():
                 try:
                     if data := self._client_socket.recv(
                         bufsize=1024,
@@ -213,6 +209,7 @@ class IcmpEchoClient(Client):
                 except ReceiveTimeout:
                     pass
 
+            self._is_alive = False
             self._log("Stopped the receiver thread.")
 
 
