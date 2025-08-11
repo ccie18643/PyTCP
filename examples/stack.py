@@ -134,7 +134,7 @@ def cli(
             )
             subsystem.start()
 
-        while subsystem.is_alive if subsystem else True:
+        while subsystem.is_alive() if subsystem else True:
             time.sleep(1)
 
     except KeyboardInterrupt:

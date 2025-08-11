@@ -114,8 +114,6 @@ class Client(Subsystem):
         self._thread__receiver.start()
         self._thread__sender.start()
 
-        self._is_alive = True
-
     @override
     def stop(self) -> None:
         """
@@ -188,6 +186,17 @@ class Client(Subsystem):
             return None
 
         return client_socket
+
+    @override
+    def is_alive(self) -> bool:
+        """
+        Check if the service thread is alive.
+        """
+
+        return (
+            self._thread__receiver.is_alive()
+            and self._thread__sender.is_alive()
+        )
 
     @abstractmethod
     def _thread_target__sender(self) -> None:
