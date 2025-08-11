@@ -75,8 +75,7 @@ class Client(Subsystem):
 
     _thread__receiver: threading.Thread
     _thread__sender: threading.Thread
-    _event__stop_receiver: threading.Event
-    _event__stop_sender: threading.Event
+    _event__stop_subsystem: threading.Event
 
     def __init__(self) -> None:
         """
@@ -89,8 +88,7 @@ class Client(Subsystem):
         self._thread__sender = threading.Thread(
             target=self._thread_target__sender
         )
-        self._event__stop_receiver = threading.Event()
-        self._event__stop_sender = threading.Event()
+        self._event__stop_subsystem = threading.Event()
 
     @override
     def start(self) -> None:
@@ -108,8 +106,7 @@ class Client(Subsystem):
 
         self._client_socket = self._get_client_socket()
 
-        self._event__stop_receiver.clear()
-        self._event__stop_sender.clear()
+        self._event__stop_subsystem.clear()
 
         self._thread__receiver.start()
         self._thread__sender.start()
@@ -122,8 +119,7 @@ class Client(Subsystem):
 
         self._log("Stopping the client.")
 
-        self._event__stop_receiver.set()
-        self._event__stop_sender.set()
+        self._event__stop_subsystem.set()
 
     def _get_client_socket(self) -> Socket | None:
         """
@@ -193,10 +189,7 @@ class Client(Subsystem):
         Check if the service thread is alive.
         """
 
-        return (
-            self._thread__receiver.is_alive()
-            and self._thread__sender.is_alive()
-        )
+        return self._event__stop_subsystem.is_set() is False
 
     @abstractmethod
     def _thread_target__sender(self) -> None:
