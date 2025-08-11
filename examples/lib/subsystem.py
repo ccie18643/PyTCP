@@ -54,7 +54,7 @@ class Subsystem(ABC):
     stack_ip6_address: Ip6Address
 
     _subsystem_name: str
-    _run_thread: bool
+    _is_alive: bool
 
     @abstractmethod
     def start(self) -> None:
@@ -78,7 +78,7 @@ class Subsystem(ABC):
         Check if the service thread is alive.
         """
 
-        return self._run_thread
+        return self._is_alive
 
     def _log(self, message: str) -> None:
         """

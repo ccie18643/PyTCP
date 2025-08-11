@@ -40,7 +40,7 @@ from __future__ import annotations
 
 import os
 import struct
-import time
+import threading
 from typing import Any, override
 
 import click
@@ -70,6 +70,9 @@ class IcmpEchoClient(Client):
     _protocol_name = "ICMP"
     _subsystem_name = f"{_protocol_name} Echo Client"
 
+    _stop_event__client__receiver: threading.Event
+    _stop_event__client__sender: threading.Event
+
     def __init__(
         self,
         *,
@@ -82,11 +85,12 @@ class IcmpEchoClient(Client):
         Class constructor.
         """
 
+        super().__init__()
+
         self._remote_ip_address = remote_ip_address
         self._message_count = message_count
         self._message_delay = message_delay
         self._message_size = message_size
-        self._run_thread = False
 
     @staticmethod
     def _parse_icmp_echo_reply_message(
@@ -148,7 +152,9 @@ class IcmpEchoClient(Client):
         if self._client_socket:
             message_count = self._message_count
 
-            while self._run_thread and message_count:
+            while (
+                not self._stop_event__client__sender.is_set() and message_count
+            ):
                 icmp_message = self._assemble_icmp_echo_request_message(
                     ip_version=self._remote_ip_address.version,
                     identifier=identifier,
@@ -168,7 +174,11 @@ class IcmpEchoClient(Client):
                     f"seq {self._message_count - message_count + 1}."
                 )
                 message_count = min(message_count, message_count - 1)
-                time.sleep(self._message_delay)
+
+                if self._stop_event__client__sender.wait(
+                    timeout=self._message_delay
+                ):
+                    break
 
             self._client_socket.close()
             self._log(
@@ -187,7 +197,7 @@ class IcmpEchoClient(Client):
         if self._client_socket:
             self._log("Started the receiver thread.")
 
-            while self._run_thread:
+            while not self._stop_event__client__receiver.is_set():
                 try:
                     if data := self._client_socket.recv(
                         bufsize=1024,

@@ -74,6 +74,26 @@ class Client(Subsystem):
     _run_thread: bool
     _client_socket: Socket | None
 
+    __thread__client__receiver: threading.Thread
+    __thread__client__sender: threading.Thread
+    _stop_event__client__receiver: threading.Event
+    _stop_event__client__sender: threading.Event
+
+    def __init__(self) -> None:
+        """
+        Initialize the client.
+        """
+
+        self.__thread__client__receiver = threading.Thread(
+            target=self._thread__client__receiver
+        )
+        self.__thread__client__sender = threading.Thread(
+            target=self._thread__client__sender
+        )
+
+        self._stop_event__client__receiver = threading.Event()
+        self._stop_event__client__sender = threading.Event()
+
     @override
     def start(self) -> None:
         """
@@ -90,9 +110,14 @@ class Client(Subsystem):
 
         self._client_socket = self._get_client_socket()
 
-        self._run_thread = True
-        threading.Thread(target=self._thread__client__receiver).start()
-        threading.Thread(target=self._thread__client__sender).start()
+        self._stop_event__client__receiver.clear()
+        self._stop_event__client__sender.clear()
+
+        self.__thread__client__receiver.start()
+        self.__thread__client__sender.start()
+
+        self._is_alive = True
+
         time.sleep(0.1)
 
     @override
@@ -102,7 +127,12 @@ class Client(Subsystem):
         """
 
         self._log("Stopping the client.")
-        self._run_thread = False
+
+        self._stop_event__client__receiver.set()
+        self._stop_event__client__sender.set()
+
+        self._is_alive = False
+
         time.sleep(0.1)
 
     def _get_client_socket(self) -> Socket | None:
