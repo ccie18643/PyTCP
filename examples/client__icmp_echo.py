@@ -70,8 +70,7 @@ class IcmpEchoClient(Client):
     _protocol_name = "ICMP"
     _subsystem_name = f"{_protocol_name} Echo Client"
 
-    _stop_event__receiver: threading.Event
-    _stop_event__sender: threading.Event
+    _event__stop_subsystem: threading.Event
 
     def __init__(
         self,

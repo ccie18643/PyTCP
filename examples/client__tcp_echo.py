@@ -36,7 +36,7 @@ ver 3.0.2
 
 from __future__ import annotations
 
-import time
+import threading
 from typing import Any, override
 import click
 
@@ -53,11 +53,13 @@ from pytcp.socket.socket import ReceiveTimeout
 
 class TcpEchoClient(Client):
     """
-    TCP Echo client support class.
+    UDP Echo client support class.
     """
 
     _protocol_name = "TCP"
     _subsystem_name = f"{_protocol_name} Echo Client"
+
+    _event__stop_subsystem: threading.Event
 
     def __init__(
         self,
@@ -73,16 +75,17 @@ class TcpEchoClient(Client):
         Class constructor.
         """
 
+        super().__init__()
+
         self._remote_ip_address = remote_ip_address
         self._local_port = local_port
         self._remote_port = remote_port
         self._message_count = message_count
         self._message_delay = message_delay
         self._message_size = message_size
-        self._run_thread = False
 
     @override
-    def _thread__client__sender(self) -> None:
+    def _thread_target__sender(self) -> None:
         """
         Client thread used to send data.
         """
@@ -91,7 +94,7 @@ class TcpEchoClient(Client):
             message_payload = payload(length=self._message_size)
             message_count = self._message_count
 
-            while self._run_thread and message_count:
+            while not self._event__stop_subsystem.is_set() and message_count:
                 try:
                     client_socket.send(message_payload)
                 except OSError as error:
@@ -103,18 +106,22 @@ class TcpEchoClient(Client):
                     f"{self._remote_ip_address}, port {self._remote_port}."
                 )
                 message_count = min(message_count, message_count - 1)
-                time.sleep(self._message_delay)
+
+                if self._event__stop_subsystem.wait(
+                    timeout=self._message_delay
+                ):
+                    break
 
             client_socket.close()
             self._log(
                 f"Closed the connection to {self._remote_ip_address}, port {self._remote_port}."
             )
 
-            self._run_thread = False
+            self._event__stop_subsystem.set()
             self._log("Stopped the sender thread.")
 
     @override
-    def _thread__client__receiver(self) -> None:
+    def _thread_target__receiver(self) -> None:
         """
         Client thread used to receive data.
         """
@@ -122,7 +129,7 @@ class TcpEchoClient(Client):
         if self._client_socket:
             self._log("Started the receiver thread.")
 
-            while self._run_thread:
+            while not self._event__stop_subsystem.is_set():
                 try:
                     if message_payload := self._client_socket.recv(
                         bufsize=1024,
