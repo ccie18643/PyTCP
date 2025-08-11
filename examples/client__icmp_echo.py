@@ -213,8 +213,7 @@ class IcmpEchoClient(Client):
     "message_count",
     type=click.IntRange(-1),
     default=-1,
-    help="Number of messages to send. -1 means infinite.",
-    show_default=True,
+    help="Number of messages to send.",
 )
 @click.option(
     "--delay",

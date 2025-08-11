@@ -36,27 +36,19 @@ ver 3.0.2
 
 from __future__ import annotations
 
-import threading
 import time
-
+from typing import Any, override
 import click
 
+from examples.stack import cli as stack_cli
+from examples.lib.payload import payload
 from examples.lib.client import Client
 from net_addr import (
-    ClickTypeIp4Address,
-    ClickTypeIp4Host,
-    ClickTypeIp6Address,
-    ClickTypeIp6Host,
     ClickTypeIpAddress,
-    ClickTypeMacAddress,
     Ip4Address,
-    Ip4Host,
     Ip6Address,
-    Ip6Host,
-    IpAddress,
-    MacAddress,
 )
-from pytcp import stack
+from pytcp.socket.socket import ReceiveTimeout
 
 
 class TcpEchoClient(Client):
@@ -65,13 +57,12 @@ class TcpEchoClient(Client):
     """
 
     _protocol_name = "TCP"
-    _client_name = "Echo"
+    _subsystem_name = f"{_protocol_name} Echo Client"
 
     def __init__(
         self,
         *,
-        local_ip_address: IpAddress,
-        remote_ip_address: IpAddress,
+        remote_ip_address: Ip6Address | Ip4Address,
         local_port: int = 0,
         remote_port: int = 7,
         message_count: int = -1,
@@ -82,7 +73,6 @@ class TcpEchoClient(Client):
         Class constructor.
         """
 
-        self._local_ip_address = local_ip_address
         self._remote_ip_address = remote_ip_address
         self._local_port = local_port
         self._remote_port = remote_port
@@ -91,155 +81,129 @@ class TcpEchoClient(Client):
         self._message_size = message_size
         self._run_thread = False
 
-    def start(self) -> None:
+    @override
+    def _thread__client__sender(self) -> None:
         """
-        Start the service thread.
-        """
-
-        click.echo("Starting the TCP Echo client.")
-        self._run_thread = True
-        threading.Thread(target=self._thread__client).start()
-        time.sleep(0.1)
-
-    def stop(self) -> None:
-        """
-        Stop the service thread.
+        Client thread used to send data.
         """
 
-        click.echo("Stopinging the TCP Echo client.")
-        self._run_thread = False
-        time.sleep(0.1)
-
-    def _thread__client(self) -> None:
-        """
-        Client thread.
-        """
-
-        if client_socket := self._get_client_socket():
+        if client_socket := self._client_socket:
+            message_payload = payload(length=self._message_size)
             message_count = self._message_count
-            while message_count:
-                message = "[------START------] "
-                for i in range(self._message_size - 2):
-                    message += f"[------{i + 1:05}------] "
-                message += "[-------END-------]\n"
 
+            while self._run_thread and message_count:
                 try:
-                    client_socket.send(bytes(message, "utf-8"))
+                    client_socket.send(message_payload)
                 except OSError as error:
-                    click.echo(f"Client TCP Echo: send() error - {error!r}.")
+                    self._log(f"The 'send()' method failed. Error: {error!r}.")
                     break
 
-                click.echo(
-                    f"Client TCP Echo: Sent {len(message)} bytes of data to "
+                self._log(
+                    f"Sent {len(message_payload)} bytes of data to "
                     f"{self._remote_ip_address}, port {self._remote_port}."
                 )
-                time.sleep(self._message_delay)
                 message_count = min(message_count, message_count - 1)
+                time.sleep(self._message_delay)
 
             client_socket.close()
-            click.echo(
-                "Client TCP Echo: Closed connection to "
-                f"{self._remote_ip_address}, port {self._remote_port}."
+            self._log(
+                f"Closed the connection to {self._remote_ip_address}, port {self._remote_port}."
             )
+
+            self._run_thread = False
+            self._log("Stopped the sender thread.")
+
+    @override
+    def _thread__client__receiver(self) -> None:
+        """
+        Client thread used to receive data.
+        """
+
+        if self._client_socket:
+            self._log("Started the receiver thread.")
+
+            while self._run_thread:
+                try:
+                    if message_payload := self._client_socket.recv(
+                        bufsize=1024,
+                        timeout=1,
+                    ):
+                        self._log(
+                            f"Received {len(message_payload)} bytes from '{self._remote_ip_address}'."
+                        )
+                except ReceiveTimeout:
+                    pass
+
+            self._log("Stopped the receiver thread.")
 
 
 @click.command()
 @click.option(
-    "--interface",
-    default="tap7",
-    help="Name of the interface to be used by the stack.",
+    "--count",
+    "-c",
+    "message_count",
+    type=click.IntRange(-1),
+    default=-1,
+    help="Number of messages to send.",
 )
 @click.option(
-    "--mac-address",
-    type=ClickTypeMacAddress(),
-    default=None,
-    help="MAC address to be assigned to the interface.",
+    "--delay",
+    "-d",
+    "message_delay",
+    type=click.IntRange(0),
+    default=1,
+    help="Delay between messages in seconds.",
+    show_default=True,
 )
 @click.option(
-    "--ip6-address",
-    "ip6_host",
-    type=ClickTypeIp6Host(),
-    default=None,
-    help="IPv6 address/mask to be assigned to the interface.",
-)
-@click.option(
-    "--ip6-gateway",
-    type=ClickTypeIp6Address(),
-    default=None,
-    help="IPv6 gateway address to be assigned to the interface.",
-)
-@click.option(
-    "--ip4-address",
-    "ip4_host",
-    type=ClickTypeIp4Host(),
-    default=None,
-    help="IPv4 address/mask to be assigned to the interface.",
-)
-@click.option(
-    "--ip4-gateway",
-    type=ClickTypeIp4Address(),
-    default=None,
-    help="IPv4 gateway address to be assigned to the interface.",
+    "--size",
+    "-s",
+    "message_size",
+    type=click.IntRange(0),
+    default=64,
+    help="Size of the payload in bytes.",
+    show_default=True,
 )
 @click.argument(
     "remote_ip_address",
     type=ClickTypeIpAddress(),
     required=True,
 )
+@click.argument(
+    "remote_port",
+    type=click.IntRange(1, 65535),
+    default=7,
+    required=False,
+)
+@click.pass_context
 def cli(
+    ctx: click.Context,
     *,
-    interface: str,
-    mac_address: MacAddress | None,
-    ip6_host: Ip6Host | None,
-    ip6_gateway: Ip6Address | None,
-    ip4_host: Ip4Host | None,
-    ip4_gateway: Ip4Address | None,
-    remote_ip_address: IpAddress,
+    message_count: int,
+    message_delay: int,
+    message_size: int,
+    remote_ip_address: Ip6Address | Ip4Address,
+    remote_port: int,
+    **kwargs: Any,
 ) -> None:
     """
-    Start PyTCP stack and stop it when user presses Ctrl-C.
-    Start TCP Echo client.
+    Start ICMP Echo client.
     """
 
-    if ip6_host:
-        ip6_host.gateway = ip6_gateway
-
-    if ip4_host:
-        ip4_host.gateway = ip4_gateway
-
-    stack.init(
-        *stack.initialize_interface(interface),
-        mac_address=mac_address,
-        ip6_host=ip6_host,
-        ip4_host=ip4_host,
+    ctx.invoke(
+        stack_cli,
+        subsystem=TcpEchoClient(
+            remote_ip_address=remote_ip_address,
+            remote_port=remote_port,
+            message_count=message_count,
+            message_delay=message_delay,
+            message_size=message_size,
+        ),
+        **kwargs,
     )
-
-    match remote_ip_address.version:
-        case 6:
-            client = TcpEchoClient(
-                local_ip_address=ip6_host.address if ip6_host else Ip6Address(),
-                remote_ip_address=remote_ip_address,
-            )
-        case 4:
-            client = TcpEchoClient(
-                local_ip_address=ip4_host.address if ip4_host else Ip4Address(),
-                remote_ip_address=remote_ip_address,
-            )
-        case _:
-            raise ValueError(
-                f"Unsupported IP address version: {remote_ip_address.version!r}."
-            )
-
-    try:
-        stack.start()
-        client.start()
-        while True:
-            time.sleep(60)
-
-    except KeyboardInterrupt:
-        client.stop()
-        stack.stop()
 
 
 if __name__ == "__main__":
-    cli()  # pylint: disable = missing-kwoa
+    cli.help = (cli.help or "").rstrip() + (stack_cli.help or "")
+    cli.params += stack_cli.params
+    cli.main()
