@@ -38,7 +38,6 @@ from __future__ import annotations
 import os
 import queue
 import select
-import threading
 from typing import override
 
 from pytcp.lib.subsystem import Subsystem
@@ -58,7 +57,6 @@ class RxRing(Subsystem):
     _queuse_max_size: int
 
     _rx_ring: queue.Queue[PacketRx]
-    _event__stop_subsystem: threading.Event
 
     def __init__(
         self, *, fd: int, mtu: int, queue_max_size: int = 1000
@@ -71,43 +69,29 @@ class RxRing(Subsystem):
         self._mtu = mtu
         self._queue_max_size = queue_max_size
 
-        self._rx_ring = queue.Queue(maxsize=queue_max_size)
-
         super().__init__(
             info=f"fd={fd}, mtu={mtu}, queue_max_size={queue_max_size}"
         )
 
+        self._rx_ring = queue.Queue(maxsize=queue_max_size)
+
     @override
-    def _start(self) -> None:
+    def _subsystem_loop(self) -> None:
         """
-        Start RX Ring thread.
-        """
-
-        threading.Thread(target=self._thread__rx_ring__receive).start()
-
-    def _thread__rx_ring__receive(self) -> None:
-        """
-        Thread responsible for receiving and enqueuing incoming packets.
+        Receive and enqueue the incoming packets.
         """
 
-        __debug__ and log("stack", "Started RX Ring")
+        read_ready, _, _ = select.select([self._fd], [], [], 0.1)
+        if not read_ready:
+            return
 
-        while not self._event__stop_subsystem.is_set():
-            # Need to use select here so the we are not blocking on the read
-            # call and can exit the thread gracefully
-            read_ready, _, _ = select.select([self._fd], [], [], 0.1)
-            if not read_ready:
-                continue
-
-            packet_rx = PacketRx(os.read(self._fd, 2048))
-            __debug__ and log(
-                "rx-ring",
-                f"<B><lg>[RX]</> {packet_rx.tracker} - received frame, "
-                f"{len(packet_rx.frame)} bytes",
-            )
-            self._rx_ring.put(packet_rx)
-
-        __debug__ and log("stack", "Stopped RX Ring")
+        packet_rx = PacketRx(os.read(self._fd, 2048))
+        __debug__ and log(
+            "rx-ring",
+            f"<B><lg>[RX]</> {packet_rx.tracker} - received frame, "
+            f"{len(packet_rx.frame)} bytes",
+        )
+        self._rx_ring.put(packet_rx)
 
     def dequeue(self) -> PacketRx | None:
         """
@@ -115,6 +99,6 @@ class RxRing(Subsystem):
         """
 
         try:
-            return self._rx_ring.get(block=False)
+            return self._rx_ring.get(block=True, timeout=0.1)
         except queue.Empty:
             return None

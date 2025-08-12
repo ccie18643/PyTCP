@@ -37,7 +37,6 @@ from __future__ import annotations
 
 import os
 import queue
-import threading
 from typing import TYPE_CHECKING, override
 
 from pytcp.lib.logger import log
@@ -62,7 +61,6 @@ class TxRing(Subsystem):
     _queue_max_size: int
 
     _tx_ring: queue.Queue[EthernetAssembler | Ethernet8023Assembler]
-    _event__stop_subsystem: threading.Event
 
     def __init__(
         self, *, fd: int, mtu: int, queue_max_size: int = 1000
@@ -75,60 +73,47 @@ class TxRing(Subsystem):
         self._mtu = mtu
         self._queue_max_size = queue_max_size
 
-        self._tx_ring = queue.Queue(maxsize=queue_max_size)
-
         super().__init__(
             info=f"fd={fd}, mtu={mtu}, queue_max_size={queue_max_size}"
         )
 
+        self._tx_ring = queue.Queue(maxsize=queue_max_size)
+
     @override
-    def _start(self) -> None:
+    def _subsystem_loop(self) -> None:
         """
-        Start the subsystem components.
-        """
-
-        threading.Thread(target=self._thread__tx_ring__transmit).start()
-
-    def _thread__tx_ring__transmit(self) -> None:
-        """
-        Dequeue packet from TX Ring and send it out.
+        Dequeue packets from TX Ring and put them on the wire.
         """
 
-        __debug__ and log("stack", "Started TX Ring")
+        try:
+            packet_tx = self._tx_ring.get(block=True, timeout=0.1)
+        except queue.Empty:
+            return
 
-        while not self._event__stop_subsystem.is_set():
-            try:
-                packet_tx = self._tx_ring.get(block=True, timeout=0.1)
-            except queue.Empty:
-                continue
-
-            if (packet_tx_len := len(packet_tx)) > self._mtu + 14:
-                __debug__ and log(
-                    "tx-ring",
-                    f"{packet_tx.tracker} - Unable to send frame, frame"
-                    f"len ({packet_tx_len}) > mtu ({self._mtu + 14})",
-                )
-                continue
-
-            try:
-                os.write(self._fd, bytes(packet_tx))
-
-            except OSError as error:
-                __debug__ and log(
-                    "tx-ring",
-                    f"{packet_tx.tracker} - <CRIT>Unable to send frame, "
-                    f"OSError: {error}</>",
-                )
-                continue
-
+        if (packet_tx_len := len(packet_tx)) > self._mtu + 14:
             __debug__ and log(
                 "tx-ring",
-                f"<B><lr>[TX]</> {packet_tx.tracker}<y>"
-                f"{packet_tx.tracker.latency}</> - sent frame, "
-                f"{len(packet_tx)} bytes",
+                f"{packet_tx.tracker} - Unable to send frame, frame"
+                f"len ({packet_tx_len}) > mtu ({self._mtu + 14})",
             )
+            return
 
-        __debug__ and log("stack", "Stopped TX Ring")
+        try:
+            os.write(self._fd, bytes(packet_tx))
+        except OSError as error:
+            __debug__ and log(
+                "tx-ring",
+                f"{packet_tx.tracker} - <CRIT>Unable to send frame, "
+                f"OSError: {error}</>",
+            )
+            return
+
+        __debug__ and log(
+            "tx-ring",
+            f"<B><lr>[TX]</> {packet_tx.tracker}<y>"
+            f"{packet_tx.tracker.latency}</> - sent frame, "
+            f"{len(packet_tx)} bytes",
+        )
 
     def enqueue(
         self, packet_tx: EthernetAssembler | Ethernet8023Assembler

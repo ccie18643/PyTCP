@@ -38,7 +38,7 @@ from __future__ import annotations
 import random
 import threading
 import time
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, override
 
 from net_addr import (
     Ip4Address,
@@ -51,6 +51,7 @@ from net_addr import (
 from pytcp.lib.ip_frag import IpFragData, IpFragFlowId
 from pytcp.lib.logger import log
 from pytcp.lib.packet_stats import PacketStatsRx, PacketStatsTx
+from pytcp.lib.subsystem import Subsystem
 from pytcp.protocols.dhcp4__legacy.client import Dhcp4Client
 from pytcp.protocols.ethernet_802_3.ethernet_802_3__header import (
     ETHERNET_802_3__PACKET__MAX_LEN,
@@ -82,6 +83,7 @@ if TYPE_CHECKING:
 
 
 class PacketHandler(
+    Subsystem,
     PacketHandlerArpRx,
     PacketHandlerArpTx,
     PacketHandlerEthernetRx,
@@ -106,6 +108,10 @@ class PacketHandler(
     """
     Pick up and respond to incoming packets.
     """
+
+    _subsystem_name = "Packet Handler"
+
+    _event__stop_subsystem: threading.Event
 
     def __init__(
         self,
@@ -132,6 +138,8 @@ class PacketHandler(
         self._ip4_dhcp = ip4_dhcp
         self._ip6_lla_autoconfig = ip6_lla_autoconfig
         self._ip6_gua_autoconfig = ip6_gua_autoconfig
+
+        super().__init__()
 
         # Initialize data stores for packet statistics (used mainly in usnit
         # testing, but also available via cli).
@@ -175,9 +183,6 @@ class PacketHandler(
         self.ip4_frag_flows: dict[IpFragFlowId, IpFragData] = {}
         self.ip6_frag_flows: dict[IpFragFlowId, IpFragData] = {}
 
-        # Thread control
-        self._run_thread: bool = False
-
         # Used for IPv4 and IPv6 address configuration
         self.ip_configuration_in_progress: Semaphore = threading.Semaphore(0)
 
@@ -217,31 +222,16 @@ class PacketHandler(
 
         return ip4_broadcast
 
-    def start(self) -> None:
+    @override
+    def _start(self) -> None:
         """
-        Start packet handler thread.
+        Perform additional actions after starting the subsystem thread.
         """
-
-        __debug__ and log("stack", "Starting packet handler")
-
-        self._run_thread = True
-        threading.Thread(target=self._thread__packet_handler__receive).start()
-        time.sleep(0.1)
 
         self._acquire_ip4_addresses()
         self._acquire_ip6_addresses()
 
         self._log_stack_address_info()
-
-    def stop(self) -> None:
-        """
-        Stop packet handler thread.
-        """
-
-        __debug__ and log("stack", "Stopping packet handler")
-
-        self._run_thread = False
-        time.sleep(0.1)
 
     def _thread__packet_handler__acquire_ip6_addresses(self) -> None:
         """
@@ -274,26 +264,22 @@ class PacketHandler(
 
         __debug__ and log("stack", "Finished the IPv4 address acquire thread")
 
-    def _thread__packet_handler__receive(self) -> None:
+    @override
+    def _subsystem_loop(self) -> None:
         """
-        Thread picks up incoming packets from RX ring and processes them.
+        Pick up incoming packets from RX Ring and processes them.
         """
-
-        __debug__ and log("stack", "Started packet handler")
 
         from pytcp.stack import rx_ring
 
-        while self._run_thread:
-            if (packet_rx := rx_ring.dequeue()) is not None:
-                if (
-                    int.from_bytes(packet_rx.frame[12:14])
-                    <= ETHERNET_802_3__PACKET__MAX_LEN
-                ):
-                    self._phrx_ethernet_802_3(packet_rx)
-                else:
-                    self._phrx_ethernet(packet_rx)
-
-        __debug__ and log("stack", "Stopped packet handler")
+        if (packet_rx := rx_ring.dequeue()) is not None:
+            if (
+                int.from_bytes(packet_rx.frame[12:14])
+                <= ETHERNET_802_3__PACKET__MAX_LEN
+            ):
+                self._phrx_ethernet_802_3(packet_rx)
+            else:
+                self._phrx_ethernet(packet_rx)
 
     def _acquire_ip6_addresses(self) -> None:
         """
@@ -303,7 +289,8 @@ class PacketHandler(
         __debug__ and log("stack", "Starting the IPv6 address acquire thread")
 
         threading.Thread(
-            target=self._thread__packet_handler__acquire_ip6_addresses
+            target=self._thread__packet_handler__acquire_ip6_addresses,
+            daemon=True,
         ).start()
 
     def _acquire_ip4_addresses(self) -> None:
@@ -314,7 +301,8 @@ class PacketHandler(
         __debug__ and log("stack", "Starting the IPv4 address acquire thread")
 
         threading.Thread(
-            target=self._thread__packet_handler__acquire_ip4_addresses
+            target=self._thread__packet_handler__acquire_ip4_addresses,
+            daemon=True,
         ).start()
 
     def _perform_ip6_nd_dad(self, *, ip6_unicast_candidate: Ip6Address) -> bool:

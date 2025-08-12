@@ -56,9 +56,8 @@ class Subsystem(ABC):
         __debug__ and log(
             "stack",
             (
-                f"Initializing {self._subsystem_name}" f" [{info}]"
-                if info
-                else ""
+                f"Initializing {self._subsystem_name}"
+                + (f" [{info}]" if info else "")
             ),
         )
 
@@ -72,7 +71,7 @@ class Subsystem(ABC):
         __debug__ and log("stack", f"Starting {self._subsystem_name}")
 
         self._event__stop_subsystem.clear()
-
+        threading.Thread(target=self._thread__subsystem).start()
         self._start()
 
     def stop(self) -> None:
@@ -83,18 +82,34 @@ class Subsystem(ABC):
         __debug__ and log("stack", f"Stopping {self._subsystem_name}")
 
         self._event__stop_subsystem.set()
-
         self._stop()
 
-    @abstractmethod
     def _start(self) -> None:
         """
-        Start the subsystem componenets.
+        Perform additional actions after starting the subsystem thread.
         """
-
-        raise NotImplementedError
 
     def _stop(self) -> None:
         """
-        Stop the subsystem components.
+        Perform additional actions after stopping the subsystem thread.
         """
+
+    def _thread__subsystem(self) -> None:
+        """
+        Thread responsible for operating the subsystem..
+        """
+
+        __debug__ and log("stack", f"Started {self._subsystem_name}")
+
+        while not self._event__stop_subsystem.is_set():
+            self._subsystem_loop()
+
+        __debug__ and log("stack", f"Stopped {self._subsystem_name}")
+
+    @abstractmethod
+    def _subsystem_loop(self) -> None:
+        """
+        Execute the subsystem logic in a loop.
+        """
+
+        raise NotImplementedError
