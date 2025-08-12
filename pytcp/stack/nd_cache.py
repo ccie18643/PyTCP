@@ -38,10 +38,12 @@ from __future__ import annotations
 import threading
 import time
 from dataclasses import dataclass, field
+from typing import override
 
 from net_addr import Ip6Address, MacAddress
 from pytcp import stack
 from pytcp.lib.logger import log
+from pytcp.lib.subsystem import Subsystem
 
 
 @dataclass
@@ -59,23 +61,24 @@ class CacheEntry:
     hit_count: int = 0
 
 
-class NdCache:
+class NdCache(Subsystem):
     """
     Support for ICMPv6 ND Cache operations.
     """
 
+    _subsystem_name = "ICMPv6 ND Cache"
+
     _nd_cache: dict[Ip6Address, CacheEntry]
-    _run_thread: bool
+    _event__stop_subsystem: threading.Event
 
     def __init__(self) -> None:
         """
         Initialize IPv6 ND Cache.
         """
 
-        __debug__ and log("stack", "Initializing IPv6 ND Cache")
+        super().__init__()
 
         self._nd_cache = {}
-        self._run_thread = False
 
     def __repr__(self) -> str:
         """
@@ -84,77 +87,50 @@ class NdCache:
 
         return repr(self._nd_cache)
 
-    def start(self) -> None:
+    @override
+    def _subsystem_loop(self) -> None:
         """
-        Start ND Cache thread.
-        """
-
-        __debug__ and log("stack", "Starting IPv6 ND Cache")
-
-        self._run_thread = True
-        threading.Thread(
-            target=self._thread__nd_cache__maintain_entries
-        ).start()
-        time.sleep(0.1)
-
-    def stop(self) -> None:
-        """
-        Stop IPv6 ND Cache thread.
+        Maintain IPv6 ND Cache entries.
         """
 
-        __debug__ and log("stack", "Stopping IPv6 ND Cache")
+        for ip6_address in list(self._nd_cache):
+            # Skip permanent entries
+            if self._nd_cache[ip6_address].permanent:
+                continue
 
-        self._run_thread = False
-        time.sleep(0.1)
+            # If entry age is over maximum age then discard the entry
+            if (
+                int(time.time()) - self._nd_cache[ip6_address].create_time
+                > stack.ICMP6__ND__CACHE__ENTRY_MAX_AGE
+            ):
+                mac_address = self._nd_cache.pop(ip6_address).mac_address
+                __debug__ and log(
+                    "nd-c",
+                    "Discarded expir ICMPv6 ND Cache entry - "
+                    f"{ip6_address} -> {mac_address}",
+                )
 
-    def _thread__nd_cache__maintain_entries(self) -> None:
-        """
-        Method responsible for maintaining IPv6 ND Cache entries.
-        """
+            # If entry age is close to maximum age but the entry has been
+            # used since last refresh then send out request in attempt
+            # to refresh it.
+            elif (
+                int(time.time()) - self._nd_cache[ip6_address].create_time
+                > stack.ICMP6__ND__CACHE__ENTRY_MAX_AGE
+                - stack.ICMP6__ND__CACHE__ENTRY_REFRESH_TIME
+            ) and self._nd_cache[ip6_address].hit_count:
+                self._nd_cache[ip6_address].hit_count = 0
+                stack.packet_handler.send_icmp6_neighbor_solicitation(
+                    icmp6_ns_target_address=ip6_address
+                )
+                __debug__ and log(
+                    "nd-c",
+                    f"Trying to refresh expiring ICMPv6 ND Cache entry for "
+                    f"{ip6_address} -> "
+                    f"{self._nd_cache[ip6_address].mac_address}",
+                )
 
-        __debug__ and log("stack", "Started IPv6 ND Cache")
-
-        while self._run_thread:
-            for ip6_address in list(self._nd_cache):
-                # Skip permanent entries
-                if self._nd_cache[ip6_address].permanent:
-                    continue
-
-                # If entry age is over maximum age then discard the entry
-                if (
-                    int(time.time()) - self._nd_cache[ip6_address].create_time
-                    > stack.ICMP6__ND__CACHE__ENTRY_MAX_AGE
-                ):
-                    mac_address = self._nd_cache.pop(ip6_address).mac_address
-                    __debug__ and log(
-                        "nd-c",
-                        "Discarded expir ICMPv6 ND Cache entry - "
-                        f"{ip6_address} -> {mac_address}",
-                    )
-
-                # If entry age is close to maximum age but the entry has been
-                # used since last refresh then send out request in attempt
-                # to refresh it.
-                elif (
-                    int(time.time()) - self._nd_cache[ip6_address].create_time
-                    > stack.ICMP6__ND__CACHE__ENTRY_MAX_AGE
-                    - stack.ICMP6__ND__CACHE__ENTRY_REFRESH_TIME
-                ) and self._nd_cache[ip6_address].hit_count:
-                    self._nd_cache[ip6_address].hit_count = 0
-                    stack.packet_handler.send_icmp6_neighbor_solicitation(
-                        icmp6_ns_target_address=ip6_address
-                    )
-                    __debug__ and log(
-                        "nd-c",
-                        f"Trying to refresh expiring ICMPv6 ND Cache entry for "
-                        f"{ip6_address} -> "
-                        f"{self._nd_cache[ip6_address].mac_address}",
-                    )
-
-            # Put thread to sleep for a 10 milliseconds
-            time.sleep(0.1)
-
-        __debug__ and log("stack", "Stopped IPv6 ND Cache")
+        # Put thread to sleep for a 100 milliseconds
+        self._event__stop_subsystem.wait(0.1)
 
     def add_entry(
         self,

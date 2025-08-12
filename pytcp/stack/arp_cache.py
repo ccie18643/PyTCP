@@ -29,7 +29,7 @@ Module contains class supporting ARP Cache operations.
 
 pytcp/stack/arp_cache.py
 
-ver 3.0.2
+ver 3.0.3
 """
 
 
@@ -38,10 +38,12 @@ from __future__ import annotations
 import threading
 import time
 from dataclasses import dataclass, field
+from typing import override
 
 from net_addr import Ip4Address, MacAddress
 from pytcp import stack
 from pytcp.lib.logger import log
+from pytcp.lib.subsystem import Subsystem
 
 
 @dataclass
@@ -59,23 +61,24 @@ class CacheEntry:
     hit_count: int = 0
 
 
-class ArpCache:
+class ArpCache(Subsystem):
     """
     Support for ARP Cache operations.
     """
 
+    _subsystem_name = "ARP Cache"
+
     _arp_cache: dict[Ip4Address, CacheEntry]
-    _run_thread: bool
+    _event__stop_subsystem: threading.Event
 
     def __init__(self) -> None:
         """
         Initialize ARP Cache.
         """
 
-        __debug__ and log("stack", "Initializing ARP Cache")
+        super().__init__()
 
         self._arp_cache = {}
-        self._run_thread = False
 
     def __repr__(self) -> str:
         """
@@ -84,75 +87,48 @@ class ArpCache:
 
         return repr(self._arp_cache)
 
-    def start(self) -> None:
+    @override
+    def _subsystem_loop(self) -> None:
         """
-        Start ARP Cache thread.
-        """
-
-        __debug__ and log("stack", "Starting ARP Cache")
-
-        self._run_thread = True
-        threading.Thread(
-            target=self._thread__arp_cache__maintain_entries
-        ).start()
-        time.sleep(0.1)
-
-    def stop(self) -> None:
-        """
-        Stop ARP Cache thread.
+        Maintain the ARP Cache entries.
         """
 
-        __debug__ and log("stack", "Stopping ARP Cache")
+        for ip4_address in list(self._arp_cache):
+            # Skip permanent entries
+            if self._arp_cache[ip4_address].permanent:
+                continue
 
-        self._run_thread = False
-        time.sleep(0.1)
+            # If entry age is over maximum age then discard the entry
+            if (
+                int(time.time()) - self._arp_cache[ip4_address].create_time
+                > stack.ARP__CACHE__ENTRY_MAX_AGE
+            ):
+                mac_address = self._arp_cache.pop(ip4_address).mac_address
+                __debug__ and log(
+                    "arp-c",
+                    f"Discarded expir ARP Cache entry - {ip4_address} -> "
+                    f"{mac_address}",
+                )
 
-    def _thread__arp_cache__maintain_entries(self) -> None:
-        """
-        Thread responsible for maintaining ARP Cache entries.
-        """
+            # If entry age is close to maximum age but the entry has been
+            # used since last refresh then send out request in attempt
+            # to refresh it.
+            elif (
+                int(time.time()) - self._arp_cache[ip4_address].create_time
+                > stack.ARP__CACHE__ENTRY_MAX_AGE
+                - stack.ARP__CACHE__ENTRY_REFRESH_TIME
+            ) and self._arp_cache[ip4_address].hit_count:
+                self._arp_cache[ip4_address].hit_count = 0
+                stack.packet_handler.send_arp_request(arp__tpa=ip4_address)
+                __debug__ and log(
+                    "arp-c",
+                    "Trying to refresh expiring ARP Cache entry for "
+                    f"{ip4_address} -> "
+                    f"{self._arp_cache[ip4_address].mac_address}",
+                )
 
-        __debug__ and log("stack", "Started ARP Cache")
-
-        while self._run_thread:
-            for ip4_address in list(self._arp_cache):
-                # Skip permanent entries
-                if self._arp_cache[ip4_address].permanent:
-                    continue
-
-                # If entry age is over maximum age then discard the entry
-                if (
-                    int(time.time()) - self._arp_cache[ip4_address].create_time
-                    > stack.ARP__CACHE__ENTRY_MAX_AGE
-                ):
-                    mac_address = self._arp_cache.pop(ip4_address).mac_address
-                    __debug__ and log(
-                        "arp-c",
-                        f"Discarded expir ARP Cache entry - {ip4_address} -> "
-                        f"{mac_address}",
-                    )
-
-                # If entry age is close to maximum age but the entry has been
-                # used since last refresh then send out request in attempt
-                # to refresh it.
-                elif (
-                    int(time.time()) - self._arp_cache[ip4_address].create_time
-                    > stack.ARP__CACHE__ENTRY_MAX_AGE
-                    - stack.ARP__CACHE__ENTRY_REFRESH_TIME
-                ) and self._arp_cache[ip4_address].hit_count:
-                    self._arp_cache[ip4_address].hit_count = 0
-                    stack.packet_handler.send_arp_request(arp__tpa=ip4_address)
-                    __debug__ and log(
-                        "arp-c",
-                        "Trying to refresh expiring ARP Cache entry for "
-                        f"{ip4_address} -> "
-                        f"{self._arp_cache[ip4_address].mac_address}",
-                    )
-
-            # Put thread to sleep for a 10 milliseconds
-            time.sleep(0.1)
-
-        __debug__ and log("stack", "Stopped ARP Cache")
+        # Put thread to sleep for a 100 milliseconds
+        self._event__stop_subsystem.wait(0.1)
 
     def add_entry(
         self,
