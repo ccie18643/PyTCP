@@ -25,9 +25,9 @@
 
 
 """
-Module contains class supporting stack RX Ring operations.
+The base class for all of the subsystems used by stack.
 
-pytcp/stack/rx_ring.py
+pytcp/lib/subsystem.py
 
 ver 3.0.3
 """
@@ -35,86 +35,66 @@ ver 3.0.3
 
 from __future__ import annotations
 
-import os
-import queue
-import select
-import threading
-from typing import override
-
-from pytcp.lib.subsystem import Subsystem
 from pytcp.lib.logger import log
-from pytcp.lib.packet import PacketRx
+from abc import ABC, abstractmethod
+import threading
 
 
-class RxRing(Subsystem):
+class Subsystem(ABC):
     """
-    Support for receiving packets from the network.
+    Base class for 'user space' services like clients and servers.
     """
 
-    _subsystem_name = "RX Ring"
-
-    _fd: int
-    _mtu: int
-    _queuse_max_size: int
-
-    _rx_ring: queue.Queue[PacketRx]
+    _subsystem_name: str
     _event__stop_subsystem: threading.Event
 
-    def __init__(
-        self, *, fd: int, mtu: int, queue_max_size: int = 1000
-    ) -> None:
+    def __init__(self, *, info: str | None = None) -> None:
         """
-        Initialize access to RX file descriptor and the inbound queue.
+        Initialize the subsystem.
         """
 
-        self._fd = fd
-        self._mtu = mtu
-        self._queue_max_size = queue_max_size
-
-        self._rx_ring = queue.Queue(maxsize=queue_max_size)
-
-        super().__init__(
-            info=f"fd={fd}, mtu={mtu}, queue_max_size={queue_max_size}"
+        __debug__ and log(
+            "stack",
+            (
+                f"Initializing {self._subsystem_name}" f" [{info}]"
+                if info
+                else ""
+            ),
         )
 
-    @override
+        self._event__stop_subsystem = threading.Event()
+
+    def start(self) -> None:
+        """
+        Start the subsystem.
+        """
+
+        __debug__ and log("stack", f"Starting {self._subsystem_name}")
+
+        self._event__stop_subsystem.clear()
+
+        self._start()
+
+    def stop(self) -> None:
+        """
+        Stop the subsystem.
+        """
+
+        __debug__ and log("stack", f"Stopping {self._subsystem_name}")
+
+        self._event__stop_subsystem.set()
+
+        self._stop()
+
+    @abstractmethod
     def _start(self) -> None:
         """
-        Start RX Ring thread.
+        Start the subsystem componenets.
         """
 
-        threading.Thread(target=self._thread__rx_ring__receive).start()
+        raise NotImplementedError
 
-    def _thread__rx_ring__receive(self) -> None:
+    def _stop(self) -> None:
         """
-        Thread responsible for receiving and enqueuing incoming packets.
+        Stop the subsystem components.
         """
-
-        __debug__ and log("stack", "Started RX Ring")
-
-        while not self._event__stop_subsystem.is_set():
-            # Need to use select here so the we are not blocking on the read
-            # call and can exit the thread gracefully
-            read_ready, _, _ = select.select([self._fd], [], [], 0.1)
-            if not read_ready:
-                continue
-
-            packet_rx = PacketRx(os.read(self._fd, 2048))
-            __debug__ and log(
-                "rx-ring",
-                f"<B><lg>[RX]</> {packet_rx.tracker} - received frame, "
-                f"{len(packet_rx.frame)} bytes",
-            )
-            self._rx_ring.put(packet_rx)
-
-        __debug__ and log("stack", "Stopped RX Ring")
-
-    def dequeue(self) -> PacketRx | None:
-        """
-        Dequeue inbound frame from RX Ring.
-        """
-
-        try:
-            return self._rx_ring.get(block=False)
-        except queue.Empty:
-            return None

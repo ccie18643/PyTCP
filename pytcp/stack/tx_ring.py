@@ -38,31 +38,31 @@ from __future__ import annotations
 import os
 import queue
 import threading
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, override
 
 from pytcp.lib.logger import log
+from pytcp.lib.subsystem import Subsystem
 from pytcp.protocols.ethernet.ethernet__assembler import EthernetAssembler
 
 if TYPE_CHECKING:
-    from threading import Semaphore
-
     from pytcp.protocols.ethernet_802_3.ethernet_802_3__assembler import (
         Ethernet8023Assembler,
     )
 
 
-class TxRing:
+class TxRing(Subsystem):
     """
     Support for sending packets to the network.
     """
+
+    _subsystem_name = "TX Ring"
 
     _fd: int
     _mtu: int
     _queue_max_size: int
 
     _tx_ring: queue.Queue[EthernetAssembler | Ethernet8023Assembler]
-    _event__stop_thread: threading.Event
-    _packet_enqueued: Semaphore
+    _event__stop_subsystem: threading.Event
 
     def __init__(
         self, *, fd: int, mtu: int, queue_max_size: int = 1000
@@ -75,33 +75,19 @@ class TxRing:
         self._mtu = mtu
         self._queue_max_size = queue_max_size
 
-        __debug__ and log(
-            "stack",
-            f"Initializing TX Ring, fd={fd}, mtu={mtu}, "
-            f"queue_max_size={queue_max_size}",
+        self._tx_ring = queue.Queue(maxsize=queue_max_size)
+
+        super().__init__(
+            info=f"fd={fd}, mtu={mtu}, queue_max_size={queue_max_size}"
         )
 
-        self._tx_ring = queue.Queue(maxsize=queue_max_size)
-        self._event__stop_thread = threading.Event()
-
-    def start(self) -> None:
+    @override
+    def _start(self) -> None:
         """
-        Start TX Ring thread.
+        Start the subsystem components.
         """
 
-        __debug__ and log("stack", "Starting TX Ring")
-
-        self._event__stop_thread.clear()
         threading.Thread(target=self._thread__tx_ring__transmit).start()
-
-    def stop(self) -> None:
-        """
-        Stop TX Ring thread.
-        """
-
-        __debug__ and log("stack", "Stopping TX Ring")
-
-        self._event__stop_thread.set()
 
     def _thread__tx_ring__transmit(self) -> None:
         """
@@ -110,9 +96,9 @@ class TxRing:
 
         __debug__ and log("stack", "Started TX Ring")
 
-        while not self._event__stop_thread.is_set():
+        while not self._event__stop_subsystem.is_set():
             try:
-                packet_tx = self._tx_ring.get(block=True, timeout=1)
+                packet_tx = self._tx_ring.get(block=True, timeout=0.1)
             except queue.Empty:
                 continue
 

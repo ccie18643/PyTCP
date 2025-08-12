@@ -151,7 +151,7 @@ class Timer:
         Thread responsible for executing register methods on every timer tick.
         """
 
-        __debug__ and log("stack", "Started timer thread")
+        __debug__ and log("stack", "Started Timer")
 
         while self._run_thread:
             time.sleep(0.001)
@@ -170,7 +170,7 @@ class Timer:
             # Cleanup expired methods
             self._tasks = [_ for _ in self._tasks if _.remaining_delay]
 
-        __debug__ and log("stack", "Stopped timer thread")
+        __debug__ and log("stack", "Stopped Timer")
 
     def register_method(
         self,
