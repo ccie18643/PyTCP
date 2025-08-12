@@ -37,7 +37,7 @@ from __future__ import annotations
 
 import os
 import queue
-import select
+import selectors
 from typing import override
 
 from pytcp.lib.logger import log
@@ -57,6 +57,7 @@ class RxRing(Subsystem):
     _queuse_max_size: int
 
     _rx_ring: queue.Queue[PacketRx]
+    _selector: selectors.DefaultSelector
 
     def __init__(
         self, *, fd: int, mtu: int, queue_max_size: int = 1000
@@ -74,6 +75,8 @@ class RxRing(Subsystem):
         )
 
         self._rx_ring = queue.Queue(maxsize=queue_max_size)
+        self._selector = selectors.DefaultSelector()
+        self._selector.register(self._fd, selectors.EVENT_READ)
 
     @override
     def _subsystem_loop(self) -> None:
@@ -81,8 +84,7 @@ class RxRing(Subsystem):
         Receive and enqueue the incoming packets.
         """
 
-        read_ready, _, _ = select.select([self._fd], [], [], 0.1)
-        if not read_ready:
+        if not self._selector.select(timeout=0.1):
             return
 
         packet_rx = PacketRx(os.read(self._fd, 2048))
