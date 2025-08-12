@@ -29,15 +29,15 @@ Module contains class supporting stack TX Ring operations.
 
 pytcp/stack/tx_ring.py
 
-ver 3.0.2
+ver 3.0.3
 """
 
 
 from __future__ import annotations
 
 import os
+import queue
 import threading
-import time
 from typing import TYPE_CHECKING
 
 from pytcp.lib.logger import log
@@ -58,20 +58,31 @@ class TxRing:
 
     _fd: int
     _mtu: int
+    _queue_max_size: int
 
-    def __init__(self, *, fd: int, mtu: int) -> None:
+    _tx_ring: queue.Queue[EthernetAssembler | Ethernet8023Assembler]
+    _event__stop_thread: threading.Event
+    _packet_enqueued: Semaphore
+
+    def __init__(
+        self, *, fd: int, mtu: int, queue_max_size: int = 1000
+    ) -> None:
         """
         Initialize access to TX file descriptor and the outbound queue.
         """
 
         self._fd = fd
         self._mtu = mtu
+        self._queue_max_size = queue_max_size
 
-        __debug__ and log("stack", f"Initializing TX Ring, fd={fd}, mtu={mtu}")
+        __debug__ and log(
+            "stack",
+            f"Initializing TX Ring, fd={fd}, mtu={mtu}, "
+            f"queue_max_size={queue_max_size}",
+        )
 
-        self._tx_ring: list[EthernetAssembler | Ethernet8023Assembler] = []
-        self._packet_enqueued: Semaphore = threading.Semaphore(0)
-        self._run_thread: bool = False
+        self._tx_ring = queue.Queue(maxsize=queue_max_size)
+        self._event__stop_thread = threading.Event()
 
     def start(self) -> None:
         """
@@ -80,9 +91,8 @@ class TxRing:
 
         __debug__ and log("stack", "Starting TX Ring")
 
-        self._run_thread = True
+        self._event__stop_thread.clear()
         threading.Thread(target=self._thread__tx_ring__transmit).start()
-        time.sleep(0.1)
 
     def stop(self) -> None:
         """
@@ -91,8 +101,7 @@ class TxRing:
 
         __debug__ and log("stack", "Stopping TX Ring")
 
-        self._run_thread = False
-        time.sleep(0.1)
+        self._event__stop_thread.set()
 
     def _thread__tx_ring__transmit(self) -> None:
         """
@@ -101,14 +110,11 @@ class TxRing:
 
         __debug__ and log("stack", "Started TX Ring")
 
-        while self._run_thread:
-            # Timeout here is needed so the call doesn't block forever and
-            # we are able to end the thread gracefully
-            self._packet_enqueued.acquire(timeout=0.1)
-            if not self._tx_ring:
+        while not self._event__stop_thread.is_set():
+            try:
+                packet_tx = self._tx_ring.get(block=True, timeout=1)
+            except queue.Empty:
                 continue
-
-            packet_tx = self._tx_ring.pop(0)
 
             if (packet_tx_len := len(packet_tx)) > self._mtu + 14:
                 __debug__ and log(
@@ -145,11 +151,15 @@ class TxRing:
         Enqueue outbound packet into TX Ring.
         """
 
-        self._tx_ring.append(packet_tx)
+        try:
+            self._tx_ring.put(item=packet_tx, block=False)
+        except queue.Full:
+            __debug__ and log(
+                "tx-ring",
+                f"{packet_tx.tracker} - TX Queue is full, dropping packet",
+            )
 
         __debug__ and log(
             "tx-ring",
-            f"{packet_tx.tracker} - TX Queue len: {len(self._tx_ring)}",
+            f"{packet_tx.tracker} - TX Queue len: {self._tx_ring.qsize()}",
         )
-
-        self._packet_enqueued.release()
