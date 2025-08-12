@@ -69,6 +69,7 @@ class ArpCache(Subsystem):
     _subsystem_name = "ARP Cache"
 
     _arp_cache: dict[Ip4Address, CacheEntry]
+
     _event__stop_subsystem: threading.Event
 
     def __init__(self) -> None:

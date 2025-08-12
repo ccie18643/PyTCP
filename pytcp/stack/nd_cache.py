@@ -69,6 +69,7 @@ class NdCache(Subsystem):
     _subsystem_name = "ICMPv6 ND Cache"
 
     _nd_cache: dict[Ip6Address, CacheEntry]
+
     _event__stop_subsystem: threading.Event
 
     def __init__(self) -> None:

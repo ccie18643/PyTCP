@@ -50,6 +50,7 @@ from enum import auto
 from typing import TYPE_CHECKING, Any
 
 from net_addr import Ip4Address, Ip6Address
+from net_addr.ip_address import IpVersion
 from pytcp import stack
 from pytcp.lib.logger import log
 from pytcp.lib.name_enum import NameEnum
@@ -524,7 +525,9 @@ class TcpSession:
 
         # If in ESTABLISHED state then reset ACK delay timer.
         if self._state is FsmState.ESTABLISHED:
-            stack.timer.register_timer(f"{self}-delayed_ack", DELAYED_ACK_DELAY)
+            stack.timer.register_timer(
+                name=f"{self}-delayed_ack", timeout=DELAYED_ACK_DELAY
+            )
 
         # If packet contains data then Initialize / adjust packet's retransmit
         # counter and timer.
@@ -533,8 +536,8 @@ class TcpSession:
                 self._tx_retransmit_timeout_counter.get(seq, -1) + 1
             )
             stack.timer.register_timer(
-                f"{self}-retransmit_seq-{seq}",
-                PACKET_RETRANSMIT_TIMEOUT
+                name=f"{self}-retransmit_seq-{seq}",
+                timeout=PACKET_RETRANSMIT_TIMEOUT
                 * (1 << self._tx_retransmit_timeout_counter[seq]),
             )
 
@@ -643,7 +646,9 @@ class TcpSession:
             return
 
     def _delayed_ack(self) -> None:
-        """Run Delayed ACK mechanism"""
+        """
+        Run Delayed ACK mechanism.
+        """
 
         if stack.timer.is_expired(f"{self}-delayed_ack"):
             if self._rcv_nxt > self._rcv_una:
@@ -652,10 +657,14 @@ class TcpSession:
                     "tcp-ss",
                     f"[{self}] - Sent out delayed ACK ({self._rcv_nxt})",
                 )
-            stack.timer.register_timer(f"{self}-delayed_ack", DELAYED_ACK_DELAY)
+            stack.timer.register_timer(
+                name=f"{self}-delayed_ack", timeout=DELAYED_ACK_DELAY
+            )
 
     def _retransmit_packet_timeout(self) -> None:
-        """Retransmit packet after expired timeout"""
+        """
+        Retransmit packet after expired timeout.
+        """
 
         if (
             self._snd_una in self._tx_retransmit_timeout_counter
@@ -878,7 +887,7 @@ class TcpSession:
                 self._socket = TcpSocket(
                     address_family=(
                         AddressFamily.INET6
-                        if self._local_ip_address.version == 6
+                        if self._local_ip_address.version == IpVersion.IP6
                         else AddressFamily.INET4
                     ),
                     tcp_session=self,
@@ -1304,7 +1313,7 @@ class TcpSession:
                     self._change_state(FsmState.TIME_WAIT)
                     # Initialize TIME_WAIT delay
                     stack.timer.register_timer(
-                        f"{self}-time_wait", TIME_WAIT_DELAY
+                        name=f"{self}-time_wait", timeout=TIME_WAIT_DELAY
                     )
                 else:
                     # Change state to CLOSING
@@ -1384,7 +1393,9 @@ class TcpSession:
                 # Change state to TIME_WAIT
                 self._change_state(FsmState.TIME_WAIT)
                 # Initialize TIME_WAIT delay
-                stack.timer.register_timer(f"{self}-time_wait", TIME_WAIT_DELAY)
+                stack.timer.register_timer(
+                    name=f"{self}-time_wait", timeout=TIME_WAIT_DELAY
+                )
                 return
 
         # Got RST + ACK packet -> Change state to CLOSED
@@ -1434,7 +1445,9 @@ class TcpSession:
                 self._snd_una = packet_rx_md.tcp__ack
                 self._change_state(FsmState.TIME_WAIT)
                 # Initialize TIME_WAIT delay
-                stack.timer.register_timer(f"{self}-time_wait", TIME_WAIT_DELAY)
+                stack.timer.register_timer(
+                    name=f"{self}-time_wait", timeout=TIME_WAIT_DELAY
+                )
                 return
 
         # Got RST + ACK packet -> Change state to CLOSED
