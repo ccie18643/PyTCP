@@ -40,9 +40,9 @@ import queue
 import select
 from typing import override
 
-from pytcp.lib.subsystem import Subsystem
 from pytcp.lib.logger import log
 from pytcp.lib.packet import PacketRx
+from pytcp.lib.subsystem import Subsystem
 
 
 class RxRing(Subsystem):

@@ -35,9 +35,10 @@ ver 3.0.3
 
 from __future__ import annotations
 
-from pytcp.lib.logger import log
-from abc import ABC, abstractmethod
 import threading
+from abc import ABC, abstractmethod
+
+from pytcp.lib.logger import log
 
 
 class Subsystem(ABC):
