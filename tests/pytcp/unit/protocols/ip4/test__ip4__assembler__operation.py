@@ -34,6 +34,7 @@ ver 3.0.2
 
 from typing import Any
 
+from net_addr.ip_address import IpVersion
 from parameterized import parameterized_class  # type: ignore
 from testslide import TestCase
 
@@ -78,7 +79,7 @@ from pytcp.protocols.raw.raw__assembler import RawAssembler
                     b"\x45\xff\x00\x14\xff\xff\x40\x00\xff\xff\xd9\x23\x0a\x14\x1e\x28"
                     b"\x32\x3c\x46\x50"
                 ),
-                "ver": 4,
+                "ver": IpVersion.IP4,
                 "hlen": 20,
                 "dscp": 63,
                 "ecn": 3,
@@ -141,7 +142,7 @@ from pytcp.protocols.raw.raw__assembler import RawAssembler
                     b"\x05\x06\x07\x08\x30\x31\x32\x33\x34\x35\x36\x37\x38\x39\x41\x42"
                     b"\x43\x44\x45\x46"
                 ),
-                "ver": 4,
+                "ver": IpVersion.IP4,
                 "hlen": 20,
                 "dscp": 17,
                 "ecn": 2,
@@ -221,7 +222,7 @@ from pytcp.protocols.raw.raw__assembler import RawAssembler
                     b"\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01"
                     + b"X" * 65475
                 ),
-                "ver": 4,
+                "ver": IpVersion.IP4,
                 "hlen": 60,
                 "dscp": 8,
                 "ecn": 0,
@@ -548,7 +549,7 @@ class TestIp4AssemblerOperation(TestCase):
                     b"\x08\x07\x06\x05\x30\x31\x32\x33\x34\x35\x36\x37\x38\x39\x41\x42"
                     b"\x43\x44\x45\x46"
                 ),
-                "ver": 4,
+                "ver": IpVersion.IP4,
                 "hlen": 20,
                 "dscp": 10,
                 "ecn": 1,
@@ -615,7 +616,7 @@ class TestIp4AssemblerOperation(TestCase):
                     b"\x45\x46\x05\xce\x30\x39\x20\x00\xff\xff\x54\x9e\x01\x02\x03\x04"
                     b"\x05\x06\x07\x08" + b"X" * 1466
                 ),
-                "ver": 4,
+                "ver": IpVersion.IP4,
                 "hlen": 20,
                 "dscp": 17,
                 "ecn": 2,

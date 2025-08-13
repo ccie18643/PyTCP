@@ -39,6 +39,8 @@ import struct
 from abc import ABC
 from typing import TYPE_CHECKING, cast
 
+from net_addr.ip_address import IpVersion
+
 from net_addr import Ip6Address
 from pytcp import stack
 from pytcp.lib.logger import log
@@ -189,7 +191,7 @@ class PacketHandlerIcmp6Rx(ABC):
             # Create UdpMetadata object and try to find matching UDP socket
             udp_offset = IP6__HEADER__LEN
             packet = UdpMetadata(
-                ip__ver=6,
+                ip__ver=IpVersion.IP6,
                 ip__local_address=Ip6Address(frame[8:24]),
                 ip__remote_address=Ip6Address(frame[24:40]),
                 udp__local_port=struct.unpack(

@@ -40,7 +40,6 @@ from abc import ABC, abstractmethod
 
 from pytcp.lib.logger import log
 
-
 SUBSYSTEM_SLEEP_TIME__SEC = 0.1
 
 

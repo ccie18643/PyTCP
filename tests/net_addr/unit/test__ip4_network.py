@@ -35,6 +35,7 @@ ver 3.0.2
 
 from typing import Any
 
+from net_addr.ip_address import IpVersion
 from parameterized import parameterized_class  # type: ignore
 from testslide import TestCase
 
@@ -51,7 +52,7 @@ from net_addr import Ip4Address, Ip4Mask, Ip4Network, Ip4NetworkFormatError
                 "__str__": "0.0.0.0/0",
                 "__repr__": "Ip4Network('0.0.0.0/0')",
                 "__hash__": hash("Ip4Network('0.0.0.0/0')"),
-                "version": 4,
+                "version": IpVersion.IP4,
                 "is_ip6": False,
                 "is_ip4": True,
                 "address": Ip4Address(),
@@ -68,7 +69,7 @@ from net_addr import Ip4Address, Ip4Mask, Ip4Network, Ip4NetworkFormatError
                 "__str__": "192.168.1.0/24",
                 "__repr__": "Ip4Network('192.168.1.0/24')",
                 "__hash__": hash("Ip4Network('192.168.1.0/24')"),
-                "version": 4,
+                "version": IpVersion.IP4,
                 "is_ip6": False,
                 "is_ip4": True,
                 "address": Ip4Address("192.168.1.0"),
@@ -85,7 +86,7 @@ from net_addr import Ip4Address, Ip4Mask, Ip4Network, Ip4NetworkFormatError
                 "__str__": "192.168.1.0/24",
                 "__repr__": "Ip4Network('192.168.1.0/24')",
                 "__hash__": hash("Ip4Network('192.168.1.0/24')"),
-                "version": 4,
+                "version": IpVersion.IP4,
                 "is_ip6": False,
                 "is_ip4": True,
                 "address": Ip4Address("192.168.1.0"),
@@ -102,7 +103,7 @@ from net_addr import Ip4Address, Ip4Mask, Ip4Network, Ip4NetworkFormatError
                 "__str__": "192.168.1.0/24",
                 "__repr__": "Ip4Network('192.168.1.0/24')",
                 "__hash__": hash("Ip4Network('192.168.1.0/24')"),
-                "version": 4,
+                "version": IpVersion.IP4,
                 "is_ip6": False,
                 "is_ip4": True,
                 "address": Ip4Address("192.168.1.0"),
@@ -119,7 +120,7 @@ from net_addr import Ip4Address, Ip4Mask, Ip4Network, Ip4NetworkFormatError
                 "__str__": "192.168.1.0/24",
                 "__repr__": "Ip4Network('192.168.1.0/24')",
                 "__hash__": hash("Ip4Network('192.168.1.0/24')"),
-                "version": 4,
+                "version": IpVersion.IP4,
                 "is_ip6": False,
                 "is_ip4": True,
                 "address": Ip4Address("192.168.1.0"),
@@ -136,7 +137,7 @@ from net_addr import Ip4Address, Ip4Mask, Ip4Network, Ip4NetworkFormatError
                 "__str__": "10.0.0.0/8",
                 "__repr__": "Ip4Network('10.0.0.0/8')",
                 "__hash__": hash("Ip4Network('10.0.0.0/8')"),
-                "version": 4,
+                "version": IpVersion.IP4,
                 "is_ip6": False,
                 "is_ip4": True,
                 "address": Ip4Address("10.0.0.0"),
@@ -153,7 +154,7 @@ from net_addr import Ip4Address, Ip4Mask, Ip4Network, Ip4NetworkFormatError
                 "__str__": "172.16.16.0/20",
                 "__repr__": "Ip4Network('172.16.16.0/20')",
                 "__hash__": hash("Ip4Network('172.16.16.0/20')"),
-                "version": 4,
+                "version": IpVersion.IP4,
                 "is_ip6": False,
                 "is_ip4": True,
                 "address": Ip4Address("172.16.16.0"),
@@ -170,7 +171,7 @@ from net_addr import Ip4Address, Ip4Mask, Ip4Network, Ip4NetworkFormatError
                 "__str__": "172.16.10.70/31",
                 "__repr__": "Ip4Network('172.16.10.70/31')",
                 "__hash__": hash("Ip4Network('172.16.10.70/31')"),
-                "version": 4,
+                "version": IpVersion.IP4,
                 "is_ip6": False,
                 "is_ip4": True,
                 "address": Ip4Address("172.16.10.70"),
@@ -187,7 +188,7 @@ from net_addr import Ip4Address, Ip4Mask, Ip4Network, Ip4NetworkFormatError
                 "__str__": "127.0.0.1/32",
                 "__repr__": "Ip4Network('127.0.0.1/32')",
                 "__hash__": hash("Ip4Network('127.0.0.1/32')"),
-                "version": 4,
+                "version": IpVersion.IP4,
                 "is_ip6": False,
                 "is_ip4": True,
                 "address": Ip4Address("127.0.0.1"),

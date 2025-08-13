@@ -53,6 +53,13 @@ class IpVersion(Enum):
     IP4 = 4
     IP6 = 6
 
+    def __int__(self) -> int:
+        """
+        Convert the IP version to an integer.
+        """
+
+        return self.value
+
 
 class IpAddress(Address):
     """

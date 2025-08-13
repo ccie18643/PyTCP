@@ -61,7 +61,7 @@ class PacketHandlerIp6FragRx(ABC):
 
         # pylint: disable=unused-argument
 
-        def _phrx_ip6(self, packet_rx: PacketRx) -> None: ...
+        def _phrx_ip6(self, packet_rx: PacketRx, /) -> None: ...
 
     def _phrx_ip6_frag(self, packet_rx: PacketRx, /) -> None:
         """

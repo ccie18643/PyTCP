@@ -40,6 +40,8 @@ from abc import ABC
 from dataclasses import dataclass, field
 from typing import override
 
+from net_addr.ip_address import IpVersion
+
 from net_addr import Ip6Address
 from pytcp.lib.int_checks import (
     UINT_16__MAX,
@@ -87,10 +89,10 @@ class Ip6Header(ProtoStruct):
     The IPv6 packet header.
     """
 
-    ver: int = field(
+    ver: IpVersion = field(
         repr=False,
         init=False,
-        default=6,
+        default=IpVersion.IP6,
     )
     dscp: int
     ecn: int
@@ -155,7 +157,7 @@ class Ip6Header(ProtoStruct):
 
         return struct.pack(
             IP6__HEADER__STRUCT,
-            self.ver << 28 | self.dscp << 22 | self.ecn << 20 | self.flow,
+            int(self.ver) << 28 | self.dscp << 22 | self.ecn << 20 | self.flow,
             self.dlen,
             int(self.next),
             self.hop,
@@ -194,12 +196,12 @@ class Ip6HeaderProperties(ABC):
     _header: Ip6Header
 
     @property
-    def ver(self) -> int:
+    def ver(self) -> IpVersion:
         """
         Get the IPv6 header 'ver' field.
         """
 
-        return self._header.ver
+        return IpVersion(self._header.ver)
 
     @property
     def dscp(self) -> int:

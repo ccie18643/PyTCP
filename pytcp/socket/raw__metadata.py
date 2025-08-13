@@ -38,6 +38,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
+from net_addr.ip_address import IpVersion
+
 from pytcp.protocols.enums import IpProto
 from pytcp.socket.socket import AddressFamily, SocketType
 from pytcp.socket.socket_id import SocketId
@@ -53,7 +55,7 @@ class RawMetadata:
     Store the Raw metadata taken from the received packet.
     """
 
-    ip__ver: int
+    ip__ver: IpVersion
     ip__local_address: IpAddress
     ip__remote_address: IpAddress
     ip__proto: IpProto

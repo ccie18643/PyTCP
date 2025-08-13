@@ -36,6 +36,7 @@ ver 3.0.2
 import time
 from typing import Any
 
+from net_addr.ip_address import IpVersion
 from parameterized import parameterized_class  # type: ignore
 from testslide import TestCase
 
@@ -65,7 +66,7 @@ IP6_ADDRESS_EXPIRATION_TIME = int(time.time() + 3600)
                 "__str__": "2001:b:c:d:1:2:3:4/64",
                 "__repr__": "Ip6Host('2001:b:c:d:1:2:3:4/64')",
                 "__hash__": hash("Ip6Host('2001:b:c:d:1:2:3:4/64')"),
-                "version": 6,
+                "version": IpVersion.IP6,
                 "is_ip6": True,
                 "is_ip4": False,
                 "address": Ip6Address("2001:b:c:d:1:2:3:4"),
@@ -83,7 +84,7 @@ IP6_ADDRESS_EXPIRATION_TIME = int(time.time() + 3600)
                 "__str__": "2001:b:c:d:1:2:3:4/64",
                 "__repr__": "Ip6Host('2001:b:c:d:1:2:3:4/64')",
                 "__hash__": hash("Ip6Host('2001:b:c:d:1:2:3:4/64')"),
-                "version": 6,
+                "version": IpVersion.IP6,
                 "is_ip6": True,
                 "is_ip4": False,
                 "address": Ip6Address("2001:b:c:d:1:2:3:4"),
@@ -105,7 +106,7 @@ IP6_ADDRESS_EXPIRATION_TIME = int(time.time() + 3600)
                 "__str__": "2001:b:c:d:1:2:3:4/64",
                 "__repr__": "Ip6Host('2001:b:c:d:1:2:3:4/64')",
                 "__hash__": hash("Ip6Host('2001:b:c:d:1:2:3:4/64')"),
-                "version": 6,
+                "version": IpVersion.IP6,
                 "is_ip6": True,
                 "is_ip4": False,
                 "address": Ip6Address("2001:b:c:d:1:2:3:4"),
@@ -131,7 +132,7 @@ IP6_ADDRESS_EXPIRATION_TIME = int(time.time() + 3600)
                 "__str__": "2001:b:c:d:1:2:3:4/64",
                 "__repr__": "Ip6Host('2001:b:c:d:1:2:3:4/64')",
                 "__hash__": hash("Ip6Host('2001:b:c:d:1:2:3:4/64')"),
-                "version": 6,
+                "version": IpVersion.IP6,
                 "is_ip6": True,
                 "is_ip4": False,
                 "address": Ip6Address("2001:b:c:d:1:2:3:4"),

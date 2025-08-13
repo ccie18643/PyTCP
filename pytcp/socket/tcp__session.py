@@ -49,8 +49,9 @@ from collections.abc import Callable
 from enum import auto
 from typing import TYPE_CHECKING, Any
 
-from net_addr import Ip4Address, Ip6Address
 from net_addr.ip_address import IpVersion
+
+from net_addr import Ip4Address, Ip6Address
 from pytcp import stack
 from pytcp.lib.logger import log
 from pytcp.lib.name_enum import NameEnum

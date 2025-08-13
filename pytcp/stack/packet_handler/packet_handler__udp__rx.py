@@ -38,6 +38,8 @@ from __future__ import annotations
 from abc import ABC
 from typing import TYPE_CHECKING, cast
 
+from net_addr.ip_address import IpVersion
+
 from net_addr import Ip4Address
 from pytcp import stack
 from pytcp.lib.logger import log
@@ -191,7 +193,7 @@ class PacketHandlerUdpRx(ABC):
         )
 
         match packet_rx.ip.ver:
-            case 6:
+            case IpVersion.IP6:
                 self.packet_stats_rx.udp__no_socket_match__respond_icmp6_unreachable += (
                     1
                 )
@@ -204,7 +206,7 @@ class PacketHandlerUdpRx(ABC):
                     ),
                     echo_tracker=packet_rx.tracker,
                 )
-            case 4:
+            case IpVersion.IP4:
                 self.packet_stats_rx.udp__no_socket_match__respond_icmp4_unreachable += (
                     1
                 )

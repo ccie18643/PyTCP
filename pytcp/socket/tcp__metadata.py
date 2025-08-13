@@ -38,6 +38,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
+from net_addr.ip_address import IpVersion
+
 from net_addr import Ip4Address, Ip6Address
 from pytcp.socket.socket_id import SocketId
 
@@ -53,7 +55,7 @@ class TcpMetadata:
     Store the TCP metadata taken from the received packet.
     """
 
-    ip__ver: int
+    ip__ver: IpVersion
     ip__local_address: Ip6Address | Ip4Address
     ip__remote_address: Ip6Address | Ip4Address
 

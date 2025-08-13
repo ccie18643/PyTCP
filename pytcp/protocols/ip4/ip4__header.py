@@ -40,6 +40,8 @@ from abc import ABC
 from dataclasses import dataclass, field
 from typing import override
 
+from net_addr.ip_address import IpVersion
+
 from net_addr import Ip4Address
 from pytcp.lib.int_checks import (
     UINT_16__MAX,
@@ -82,10 +84,10 @@ class Ip4Header(ProtoStruct):
     The IPv4 packet header.
     """
 
-    ver: int = field(
+    ver: IpVersion = field(
         repr=False,
         init=False,
-        default=4,
+        default=IpVersion.IP4,
     )
     hlen: int
     dscp: int
@@ -179,7 +181,7 @@ class Ip4Header(ProtoStruct):
 
         return struct.pack(
             IP4__HEADER__STRUCT,
-            self.ver << 4 | self.hlen >> 2,
+            int(self.ver) << 4 | self.hlen >> 2,
             self.dscp << 2 | self.ecn,
             self.plen,
             self.id,
@@ -236,12 +238,12 @@ class Ip4HeaderProperties(ABC):
     _header: Ip4Header
 
     @property
-    def ver(self) -> int:
+    def ver(self) -> IpVersion:
         """
         Get the IPv4 header 'ver' field.
         """
 
-        return self._header.ver
+        return IpVersion(self._header.ver)
 
     @property
     def hlen(self) -> int:

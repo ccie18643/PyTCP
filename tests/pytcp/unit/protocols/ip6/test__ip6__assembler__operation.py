@@ -34,6 +34,7 @@ ver 3.0.2
 
 from typing import Any
 
+from net_addr.ip_address import IpVersion
 from parameterized import parameterized_class  # type: ignore
 from testslide import TestCase
 
@@ -80,7 +81,7 @@ from pytcp.protocols.raw.raw__assembler import RawAssembler
                     b"\x50\x05\x60\x06\x70\x07\x80\x08\xa0\x0a\xb0\x0b\xc0\x0c\xd0\x0d"
                     b"\xe0\x0e\xf0\x0f\x0a\x0a\x0b\x0b"
                 ),
-                "ver": 6,
+                "ver": IpVersion.IP6,
                 "dscp": 0,
                 "ecn": 0,
                 "flow": 0,
@@ -137,7 +138,7 @@ from pytcp.protocols.raw.raw__assembler import RawAssembler
                     b"\x44\x44\x33\x33\x22\x22\x11\x11\x30\x31\x32\x33\x34\x35\x36\x37"
                     b"\x38\x39\x41\x42\x43\x44\x45\x46"
                 ),
-                "ver": 6,
+                "ver": IpVersion.IP6,
                 "dscp": 38,
                 "ecn": 2,
                 "flow": 1048575,
@@ -193,7 +194,7 @@ from pytcp.protocols.raw.raw__assembler import RawAssembler
                     b"\x55\x55\x66\x66\x77\x77\x88\x88\x88\x88\x77\x77\x66\x66\x55\x55"
                     b"\x44\x44\x33\x33\x22\x22\x11\x11" + b"X" * 65495
                 ),
-                "ver": 6,
+                "ver": IpVersion.IP6,
                 "dscp": 63,
                 "ecn": 3,
                 "flow": 0,

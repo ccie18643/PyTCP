@@ -38,6 +38,8 @@ from __future__ import annotations
 from abc import ABC
 from typing import TYPE_CHECKING
 
+from net_addr.ip_address import IpVersion
+
 from net_addr import Ip4Address, Ip6Address
 from pytcp.lib.name_enum import NameEnum
 from pytcp.protocols.enums import IpProto
@@ -68,18 +70,16 @@ class AddressFamily(NameEnum):
     INET6 = 2
 
     @staticmethod
-    def from_ver(ver: int) -> AddressFamily:
+    def from_ver(ver: IpVersion) -> AddressFamily:
         """
         Get the address family from an IP version.
         """
 
         match ver:
-            case 4:
+            case IpVersion.IP4:
                 return AddressFamily.INET4
-            case 6:
+            case IpVersion.IP6:
                 return AddressFamily.INET6
-            case _:
-                raise ValueError(f"Invalid IP version: {ver}. Expected 4 or 6.")
 
 
 class SocketType(NameEnum):

@@ -39,6 +39,7 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 from net_addr.ip6_address import Ip6Address
+from net_addr.ip_address import IpVersion
 
 from net_addr import Ip4Address
 from pytcp.socket.socket import AddressFamily, SocketType
@@ -55,7 +56,7 @@ class UdpMetadata:
     Store the UDP metadata taken from the received packet.
     """
 
-    ip__ver: int
+    ip__ver: IpVersion
     ip__local_address: IpAddress
     ip__remote_address: IpAddress
 
@@ -72,7 +73,7 @@ class UdpMetadata:
         """
 
         match self.ip__ver, self.udp__local_port, self.udp__remote_port:
-            case 4, 68, 67:
+            case IpVersion.IP4, 68, 67:
                 return [
                     SocketId(
                         AddressFamily.INET4,
@@ -83,7 +84,7 @@ class UdpMetadata:
                         67,
                     ),  # ID for the DHCPv4 client operation.
                 ]
-            case 6, 546, 547:
+            case IpVersion.IP6, 546, 547:
                 return [
                     SocketId(
                         AddressFamily.INET6,

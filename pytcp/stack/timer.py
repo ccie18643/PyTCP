@@ -36,8 +36,8 @@ ver 3.0.3
 from __future__ import annotations
 
 import threading
-from collections.abc import Callable
 import time
+from collections.abc import Callable
 from typing import Any
 
 from pytcp.lib.logger import log

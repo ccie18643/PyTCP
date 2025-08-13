@@ -36,6 +36,7 @@ ver 3.0.2
 import time
 from typing import Any
 
+from net_addr.ip_address import IpVersion
 from parameterized import parameterized_class  # type: ignore
 from testslide import TestCase
 
@@ -65,7 +66,7 @@ IP4_ADDRESS_EXPIRATION_TIME = int(time.time() + 3600)
                 "__str__": "192.168.1.100/24",
                 "__repr__": "Ip4Host('192.168.1.100/24')",
                 "__hash__": hash("Ip4Host('192.168.1.100/24')"),
-                "version": 4,
+                "version": IpVersion.IP4,
                 "is_ip6": False,
                 "is_ip4": True,
                 "address": Ip4Address("192.168.1.100"),
@@ -83,7 +84,7 @@ IP4_ADDRESS_EXPIRATION_TIME = int(time.time() + 3600)
                 "__str__": "192.168.1.100/24",
                 "__repr__": "Ip4Host('192.168.1.100/24')",
                 "__hash__": hash("Ip4Host('192.168.1.100/24')"),
-                "version": 4,
+                "version": IpVersion.IP4,
                 "is_ip6": False,
                 "is_ip4": True,
                 "address": Ip4Address("192.168.1.100"),
@@ -104,7 +105,7 @@ IP4_ADDRESS_EXPIRATION_TIME = int(time.time() + 3600)
                 "__str__": "192.168.1.100/24",
                 "__repr__": "Ip4Host('192.168.1.100/24')",
                 "__hash__": hash("Ip4Host('192.168.1.100/24')"),
-                "version": 4,
+                "version": IpVersion.IP4,
                 "is_ip6": False,
                 "is_ip4": True,
                 "address": Ip4Address("192.168.1.100"),
@@ -127,7 +128,7 @@ IP4_ADDRESS_EXPIRATION_TIME = int(time.time() + 3600)
                 "__str__": "192.168.1.100/24",
                 "__repr__": "Ip4Host('192.168.1.100/24')",
                 "__hash__": hash("Ip4Host('192.168.1.100/24')"),
-                "version": 4,
+                "version": IpVersion.IP4,
                 "is_ip6": False,
                 "is_ip4": True,
                 "address": Ip4Address("192.168.1.100"),

@@ -35,6 +35,7 @@ ver 3.0.2
 
 from typing import Any
 
+from net_addr.ip_address import IpVersion
 from parameterized import parameterized_class  # type: ignore
 from testslide import TestCase
 
@@ -51,7 +52,7 @@ from net_addr import Ip6Address, Ip6Mask, Ip6Network, Ip6NetworkFormatError
                 "__str__": "::/0",
                 "__repr__": "Ip6Network('::/0')",
                 "__hash__": hash("Ip6Network('::/0')"),
-                "version": 6,
+                "version": IpVersion.IP6,
                 "is_ip6": True,
                 "is_ip4": False,
                 "address": Ip6Address(),
@@ -67,7 +68,7 @@ from net_addr import Ip6Address, Ip6Mask, Ip6Network, Ip6NetworkFormatError
                 "__str__": "::/0",
                 "__repr__": "Ip6Network('::/0')",
                 "__hash__": hash("Ip6Network('::/0')"),
-                "version": 6,
+                "version": IpVersion.IP6,
                 "is_ip6": True,
                 "is_ip4": False,
                 "address": Ip6Address(),
@@ -83,7 +84,7 @@ from net_addr import Ip6Address, Ip6Mask, Ip6Network, Ip6NetworkFormatError
                 "__str__": "2001::/96",
                 "__repr__": "Ip6Network('2001::/96')",
                 "__hash__": hash("Ip6Network('2001::/96')"),
-                "version": 6,
+                "version": IpVersion.IP6,
                 "is_ip6": True,
                 "is_ip4": False,
                 "address": Ip6Address(),
@@ -99,7 +100,7 @@ from net_addr import Ip6Address, Ip6Mask, Ip6Network, Ip6NetworkFormatError
                 "__str__": "2001:0:aaaa:bbbb::/64",
                 "__repr__": "Ip6Network('2001:0:aaaa:bbbb::/64')",
                 "__hash__": hash("Ip6Network('2001:0:aaaa:bbbb::/64')"),
-                "version": 6,
+                "version": IpVersion.IP6,
                 "is_ip6": True,
                 "is_ip4": False,
                 "address": Ip6Address(),
@@ -115,7 +116,7 @@ from net_addr import Ip6Address, Ip6Mask, Ip6Network, Ip6NetworkFormatError
                 "__str__": "2002::/32",
                 "__repr__": "Ip6Network('2002::/32')",
                 "__hash__": hash("Ip6Network('2002::/32')"),
-                "version": 6,
+                "version": IpVersion.IP6,
                 "is_ip6": True,
                 "is_ip4": False,
                 "address": Ip6Address(),
@@ -133,7 +134,7 @@ from net_addr import Ip6Address, Ip6Mask, Ip6Network, Ip6NetworkFormatError
                 "__hash__": hash(
                     "Ip6Network('ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff/128')"
                 ),
-                "version": 6,
+                "version": IpVersion.IP6,
                 "is_ip6": True,
                 "is_ip4": False,
                 "address": Ip6Address(),
