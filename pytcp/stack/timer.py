@@ -29,7 +29,7 @@ Module contains class supporting timer that can be used by other stack component
 
 pytcp/stack/timer.py
 
-ver 3.0.2
+ver 3.0.3
 """
 
 
@@ -153,14 +153,16 @@ class Timer(Subsystem):
             self._timers[name] -= 1
 
         # Cleanup expired timers
-        self._timers = {_: __ for _, __ in self._timers.items() if __}
+        self._timers = {
+            name: timeout for name, timeout in self._timers.items() if timeout
+        }
 
         # Tick registered methods
         for task in self._tasks:
             task.tick()
 
         # Cleanup expired methods
-        self._tasks = [_ for _ in self._tasks if _.remaining_delay]
+        self._tasks = [task for task in self._tasks if task.remaining_delay]
 
     def register_method(
         self,
@@ -176,6 +178,11 @@ class Timer(Subsystem):
         """
         Register method to be executed by timer.
         """
+
+        __debug__ and log(
+            "timer",
+            f"<r>Registering method: {method.__name__}, delay={delay}</>",
+        )
 
         self._tasks.append(
             TimerTask(
@@ -193,6 +200,10 @@ class Timer(Subsystem):
         """
         Register delay timer.
         """
+
+        __debug__ and log(
+            "timer", f"<r>Registering timer: {name}, timeout={timeout}</>"
+        )
 
         self._timers[name] = timeout
 
