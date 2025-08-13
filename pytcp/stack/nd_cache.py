@@ -43,7 +43,7 @@ from typing import override
 from net_addr import Ip6Address, MacAddress
 from pytcp import stack
 from pytcp.lib.logger import log
-from pytcp.lib.subsystem import Subsystem
+from pytcp.lib.subsystem import SUBSYSTEM_SLEEP_TIME__SEC, Subsystem
 
 
 @dataclass
@@ -131,7 +131,7 @@ class NdCache(Subsystem):
                 )
 
         # Put thread to sleep for a 100 milliseconds
-        self._event__stop_subsystem.wait(0.1)
+        self._event__stop_subsystem.wait(SUBSYSTEM_SLEEP_TIME__SEC)
 
     def add_entry(
         self,

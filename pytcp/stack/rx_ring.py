@@ -42,7 +42,7 @@ from typing import override
 
 from pytcp.lib.logger import log
 from pytcp.lib.packet import PacketRx
-from pytcp.lib.subsystem import Subsystem
+from pytcp.lib.subsystem import SUBSYSTEM_SLEEP_TIME__SEC, Subsystem
 
 
 class RxRing(Subsystem):
@@ -84,7 +84,7 @@ class RxRing(Subsystem):
         Receive and enqueue the incoming packets.
         """
 
-        if not self._selector.select(timeout=0.1):
+        if not self._selector.select(timeout=SUBSYSTEM_SLEEP_TIME__SEC):
             return
 
         packet_rx = PacketRx(os.read(self._fd, 2048))
@@ -101,6 +101,8 @@ class RxRing(Subsystem):
         """
 
         try:
-            return self._rx_ring.get(block=True, timeout=0.1)
+            return self._rx_ring.get(
+                block=True, timeout=SUBSYSTEM_SLEEP_TIME__SEC
+            )
         except queue.Empty:
             return None

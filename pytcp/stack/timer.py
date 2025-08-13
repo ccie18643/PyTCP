@@ -37,6 +37,7 @@ from __future__ import annotations
 
 import threading
 from collections.abc import Callable
+import time
 from typing import Any
 
 from pytcp.lib.logger import log
@@ -146,7 +147,8 @@ class Timer(Subsystem):
         Execute registered methods on every timer tick.
         """
 
-        self._event__stop_subsystem.wait(0.001)
+        # Timer has 1ms resolution
+        time.sleep(0.001)
 
         # Adjust registered timers
         for name in self._timers:
