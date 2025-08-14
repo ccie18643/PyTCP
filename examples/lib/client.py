@@ -45,14 +45,8 @@ from net_addr.ip_address import IpVersion
 
 from examples.lib.subsystem import Subsystem
 from pytcp.socket import (
-    AF_INET4,
-    AF_INET6,
     IPPROTO_ICMP4,
     IPPROTO_ICMP6,
-    SOCK_DGRAM,
-    SOCK_RAW,
-    SOCK_STREAM,
-    socket,
 )
 
 if TYPE_CHECKING:
@@ -66,19 +60,25 @@ class Client(Subsystem):
 
     _protocol_name: str
     _subsystem_name: str
-    _local_ip_address: Ip4Address | Ip6Address
+    _local_ip_address: Ip4Address | Ip6Address | None
     _local_port: int
     _remote_ip_address: Ip4Address | Ip6Address
     _remote_port: int
-    _run_thread: bool
     _client_socket: Socket | None
 
     _event__stop_subsystem: threading.Event
 
+    def __init__(self) -> None:
+        """
+        Initialize the client.
+        """
+
+        self._event__stop_subsystem = threading.Event()
+
     @override
     def start(self) -> None:
         """
-        Start the client thread.
+        Start the client.
         """
 
         self._log("Starting the client.")
@@ -88,9 +88,13 @@ class Client(Subsystem):
         if isinstance(self._remote_ip_address, Ip6Address):
             self._local_ip_address = self.stack_ip6_address
 
-        self._client_socket = self._get_client_socket()
+        try:
+            self._client_socket = self._get_client_socket()
+        except OSError:
+            self._event__stop_subsystem.set()
+            return
 
-        self._event__stop_subsystem = threading.Event()
+        self._event__stop_subsystem.clear()
 
         threading.Thread(target=self._thread__receiver).start()
         threading.Thread(target=self._thread__sender).start()
@@ -98,46 +102,30 @@ class Client(Subsystem):
     @override
     def stop(self) -> None:
         """
-        Stop the service thread.
+        Stop the client.
         """
 
         self._log("Stopping the client.")
 
         self._event__stop_subsystem.set()
 
-    def _get_client_socket(self) -> Socket | None:
+    def _get_client_socket(self) -> Socket:
         """
         Create and bind the client socket.
         """
 
-        match (
-            self._remote_ip_address.version,
-            self._protocol_name,
-        ):
-            case IpVersion.IP6, "TCP":
-                client_socket = socket(family=AF_INET6, type=SOCK_STREAM)
-            case IpVersion.IP4, "TCP":
-                client_socket = socket(family=AF_INET4, type=SOCK_STREAM)
-            case IpVersion.IP6, "UDP":
-                client_socket = socket(family=AF_INET6, type=SOCK_DGRAM)
-            case IpVersion.IP4, "UDP":
-                client_socket = socket(family=AF_INET4, type=SOCK_DGRAM)
-            case IpVersion.IP6, "ICMP":
-                client_socket = socket(
-                    family=AF_INET6, type=SOCK_RAW, protocol=IPPROTO_ICMP6
-                )
-                self._local_port = int(IPPROTO_ICMP6)
-                self._remote_port = 0
-            case IpVersion.IP4, "ICMP":
-                client_socket = socket(
-                    family=AF_INET4, type=SOCK_RAW, protocol=IPPROTO_ICMP4
-                )
-                self._local_port = int(IPPROTO_ICMP4)
-                self._remote_port = 0
-            case _:
-                raise ValueError("Invalid IP versions or protocol combination.")
+        client_socket = self._get_subsystem_socket(
+            ip_version=self._remote_ip_address.version,
+            protocol_name=self._protocol_name,
+        )
 
-        self._log(f"Created socket [{client_socket}].")
+        if self._protocol_name == "ICMP":
+            self._local_port = int(
+                IPPROTO_ICMP6
+                if self._remote_ip_address.version == IpVersion.IP6
+                else IPPROTO_ICMP4
+            )
+            self._remote_port = 0
 
         try:
             client_socket.bind((str(self._local_ip_address), self._local_port))
@@ -149,7 +137,7 @@ class Client(Subsystem):
                 f"Unable to bind socket to {self._local_ip_address}, port {self._local_port}. "
                 f"Error: {error!r}.",
             )
-            return None
+            raise error
 
         try:
             client_socket.connect(
@@ -163,14 +151,14 @@ class Client(Subsystem):
                 f"Connection to {self._remote_ip_address}, port {self._remote_port} failed. "
                 f"Error: {error!r}."
             )
-            return None
+            raise error
 
         return client_socket
 
     @override
     def is_alive(self) -> bool:
         """
-        Check if the service thread is alive.
+        Check if the client is alive.
         """
 
         return self._event__stop_subsystem.is_set() is False

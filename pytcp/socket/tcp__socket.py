@@ -350,7 +350,9 @@ class TcpSocket(Socket):
         stack.sockets[self.socket_id] = self
         self._tcp_session.listen()
 
-    def accept(self) -> tuple[Socket, tuple[str, int]]:
+    def accept(
+        self, *, timeout: float | None = None
+    ) -> tuple[Socket, tuple[str, int]] | None:
         """
         Wait for the established inbound connection, once available return
         it's socket.
@@ -360,7 +362,9 @@ class TcpSocket(Socket):
             "socket", f"<g>[{self}]</> - Waiting for inbound connection"
         )
 
-        self._event_tcp_session_established.acquire()
+        if not self._event_tcp_session_established.acquire(timeout=timeout):
+            return None
+
         socket = cast(TcpSocket, self._tcp_accept.pop(0))
 
         __debug__ and log(

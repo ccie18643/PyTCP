@@ -35,27 +35,19 @@ ver 3.0.2
 
 from __future__ import annotations
 
-import time
-from typing import TYPE_CHECKING, override
+import threading
+from typing import TYPE_CHECKING, Any, override
 
 import click
 
 from examples.lib.malpi import malpa, malpi, malpka
 from examples.lib.tcp_service import TcpService
+from examples.stack import cli as stack_cli
 from net_addr import (
-    ClickTypeIp4Address,
-    ClickTypeIp4Host,
-    ClickTypeIp6Address,
-    ClickTypeIp6Host,
-    ClickTypeMacAddress,
     Ip4Address,
-    Ip4Host,
     Ip6Address,
-    Ip6Host,
     IpAddress,
-    MacAddress,
 )
-from pytcp import stack
 
 if TYPE_CHECKING:
     from pytcp.socket.socket import Socket
@@ -66,14 +58,19 @@ class TcpEchoService(TcpService):
     TCP Echo service support class.
     """
 
+    _subsystem_name = f"{TcpService._protocol_name} Echo Service"
+
+    _event__stop_subsystem: threading.Event
+
     def __init__(self, *, local_ip_address: IpAddress, local_port: int):
         """
         Class constructor.
         """
 
-        self._service_name = "Echo"
         self._local_ip_address = local_ip_address
         self._local_port = local_port
+
+        super().__init__()
 
     @override
     def _service(self, *, socket: Socket) -> None:
@@ -83,46 +80,40 @@ class TcpEchoService(TcpService):
 
         remote_ip_address, remote_port = socket.getpeername()
 
-        click.echo(
-            f"Service TCP Echo: Sending first message to {remote_ip_address}, "
+        self._log(
+            f"Sending first message to {remote_ip_address}, "
             f"port {remote_port}."
         )
         socket.send(b"***CLIENT OPEN / SERVICE OPEN***\n")
 
-        while self._run_thread:
+        while not self._event__stop_subsystem.is_set():
             if not (message := socket.recv()):
-                click.echo(
-                    f"Service TCP Echo: Connection to {remote_ip_address}, "
-                    f"port {remote_port} has been closed by peer."
+                self._log(
+                    f"Connection to {remote_ip_address}, port {remote_port} has been closed by peer."
                 )
-                click.echo(
-                    "Service TCP Echo: Sending last message to "
-                    f"{remote_ip_address}, port {remote_port}."
+                self._log(
+                    f"Sending last message to {remote_ip_address}, port {remote_port}."
                 )
                 socket.send(b"***CLIENT CLOSED, SERVICE CLOSING***\n")
-                click.echo(
-                    "Service TCP Echo: Closing connection to "
-                    f"{remote_ip_address}, port {remote_port}."
+                self._log(
+                    f"Closing connection to {remote_ip_address}, port {remote_port}."
                 )
                 socket.close()
                 break
 
             if message.strip().lower() in {b"quit", b"close", b"bye", b"exit"}:
-                click.echo(
-                    "Service TCP Echo: Sending last message to "
-                    f"{remote_ip_address}, port {remote_port}."
+                self._log(
+                    f"Sending last message to {remote_ip_address}, port {remote_port}."
                 )
                 socket.send(b"***CLIENT OPEN, SERVICE CLOSING***\n")
-                click.echo(
-                    "Service TCP Echo: Closing connection to "
-                    f"{remote_ip_address}, port {remote_port}."
+                self._log(
+                    f"Closing connection to {remote_ip_address}, port {remote_port}."
                 )
                 socket.close()
                 continue
 
-            click.echo(
-                f"Service TCP Echo: Received {len(message)} bytes from "
-                f"{remote_ip_address}, port {remote_port}."
+            self._log(
+                f"Received {len(message)} bytes from {remote_ip_address}, port {remote_port}."
             )
 
             if b"malpka" in message.strip().lower():
@@ -135,106 +126,54 @@ class TcpEchoService(TcpService):
                 message = malpi
 
             if socket.send(message):
-                click.echo(
-                    f"Service TCP Echo: Echo'ed {len(message)} bytes back "
-                    f"to {remote_ip_address}, port {remote_port}."
+                self._log(
+                    f"Sent {len(message)} bytes back to {remote_ip_address}, port {remote_port}."
                 )
 
 
 @click.command()
-@click.option(
-    "--interface",
-    default="tap7",
-    help="Name of the interface to be used by the stack.",
-)
-@click.option(
-    "--mac-address",
-    type=ClickTypeMacAddress(),
-    default=None,
-    help="MAC address to be assigned to the interface.",
-)
-@click.option(
-    "--ip6-address",
-    "ip6_host",
-    type=ClickTypeIp6Host(),
-    default=None,
-    help="IPv6 address/mask to be assigned to the interface.",
-)
-@click.option(
-    "--ip6-gateway",
-    type=ClickTypeIp6Address(),
-    default=None,
-    help="IPv6 gateway address to be assigned to the interface.",
-)
-@click.option(
-    "--ip4-address",
-    "ip4_host",
-    type=ClickTypeIp4Host(),
-    default=None,
-    help="IPv4 address/mask to be assigned to the interface.",
-)
-@click.option(
-    "--ip4-gateway",
-    type=ClickTypeIp4Address(),
-    default=None,
-    help="IPv4 gateway address to be assigned to the interface.",
-)
 @click.option(
     "--local-port",
     default=7,
     type=int,
     help="Local port number to be used by the service.",
 )
+@click.pass_context
 def cli(
+    ctx: click.Context,
     *,
-    interface: str,
-    mac_address: MacAddress | None,
-    ip6_host: Ip6Host | None,
-    ip6_gateway: Ip6Address | None,
-    ip4_host: Ip4Host | None,
-    ip4_gateway: Ip4Address | None,
     local_port: int,
+    **kwargs: Any,
 ) -> None:
     """
-    Start PyTCP stack and stop it when user presses Ctrl-C.
-    Start TCP Echo service.
+    Start ICMP Echo service.
     """
 
-    if ip6_host:
-        ip6_host.gateway = ip6_gateway
-
-    if ip4_host:
-        ip4_host.gateway = ip4_gateway
-
-    stack.init(
-        *stack.initialize_interface(interface),
-        mac_address=mac_address,
-        ip6_host=ip6_host,
-        ip4_host=ip4_host,
+    ctx.invoke(
+        stack_cli,
+        subsystems=[
+            TcpEchoService(
+                local_ip_address=(
+                    kwargs["stack__ip6_host"].address
+                    if kwargs["stack__ip6_host"]
+                    else Ip6Address()
+                ),
+                local_port=local_port,
+            ),
+            TcpEchoService(
+                local_ip_address=(
+                    kwargs["stack__ip4_host"].address
+                    if kwargs["stack__ip4_host"]
+                    else Ip4Address()
+                ),
+                local_port=local_port,
+            ),
+        ],
+        **kwargs,
     )
-
-    service_ip4 = TcpEchoService(
-        local_ip_address=ip4_host.address if ip4_host else Ip4Address(),
-        local_port=local_port,
-    )
-
-    service_ip6 = TcpEchoService(
-        local_ip_address=ip6_host.address if ip6_host else Ip6Address(),
-        local_port=local_port,
-    )
-
-    try:
-        stack.start()
-        service_ip4.start()
-        service_ip6.start()
-        while True:
-            time.sleep(60)
-
-    except KeyboardInterrupt:
-        service_ip4.stop()
-        service_ip6.stop()
-        stack.stop()
 
 
 if __name__ == "__main__":
-    cli()  # pylint: disable = missing-kwoa
+    cli.help = (cli.help or "").rstrip() + (stack_cli.help or "")
+    cli.params += stack_cli.params
+    cli.main()

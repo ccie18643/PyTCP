@@ -84,12 +84,12 @@ class IcmpEchoClient(Client):
         Class constructor.
         """
 
-        super().__init__()
-
         self._remote_ip_address = remote_ip_address
         self._message_count = message_count
         self._message_delay = message_delay
         self._message_size = message_size
+
+        super().__init__()
 
     @staticmethod
     def _parse_icmp_echo_reply_message(
@@ -198,7 +198,6 @@ class IcmpEchoClient(Client):
             while not self._event__stop_subsystem.is_set():
                 try:
                     if data := self._client_socket.recv(
-                        bufsize=1024,
                         timeout=1,
                     ):
                         identifier, sequence, payload = (
@@ -262,12 +261,14 @@ def cli(
 
     ctx.invoke(
         stack_cli,
-        subsystem=IcmpEchoClient(
-            remote_ip_address=remote_ip_address,
-            message_count=message_count,
-            message_delay=message_delay,
-            message_size=message_size,
-        ),
+        subsystems=[
+            IcmpEchoClient(
+                remote_ip_address=remote_ip_address,
+                message_count=message_count,
+                message_delay=message_delay,
+                message_size=message_size,
+            ),
+        ],
         **kwargs,
     )
 

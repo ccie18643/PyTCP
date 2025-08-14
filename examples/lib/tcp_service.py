@@ -29,7 +29,7 @@ The 'user space' TCP generic service class used in examples.
 
 examples/lib/tcp_service.py
 
-ver 3.0.2
+ver 3.0.3
 """
 
 
@@ -37,8 +37,6 @@ from __future__ import annotations
 
 import threading
 from typing import TYPE_CHECKING, override
-
-import click
 
 from examples.lib.service import Service
 
@@ -53,6 +51,8 @@ class TcpService(Service):
 
     _protocol_name = "TCP"
 
+    _event__stop_subsystem: threading.Event
+
     @override
     def _thread__service(self) -> None:
         """
@@ -61,17 +61,13 @@ class TcpService(Service):
 
         if listening_socket := self._get_service_socket():
             listening_socket.listen()
-            click.echo(
-                f"Service {self._protocol_name} {self._service_name}: Socket "
-                "set to listening mode."
-            )
-            while True:
-                connected_socket, _ = listening_socket.accept()
-                remote_ip_address, remote_port = connected_socket.getpeername()
-                click.echo(
-                    f"Service {self._protocol_name} {self._service_name}: Inbound "
-                    f"connection received from {remote_ip_address}, "
-                    f"port {remote_port}."
+            self._log("Socket set to listening mode.")
+            while not self._event__stop_subsystem.is_set():
+                if (result := listening_socket.accept(timeout=1)) is None:
+                    continue
+                connected_socket, (remote_ip_address, remote_port) = result
+                self._log(
+                    f"Inbound connection received from {remote_ip_address}, port {remote_port}."
                 )
                 threading.Thread(
                     target=self._thread__service__connection_handler,

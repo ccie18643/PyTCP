@@ -29,7 +29,7 @@ Module contains simple payload generators.
 
 examples/lib/payload.py
 
-ver 3.0.2
+ver 3.0.3
 """
 
 

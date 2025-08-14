@@ -30,7 +30,7 @@ ping packets.
 
 examples/run_stack.py
 
-ver 3.0.2
+ver 3.0.3
 """
 
 
@@ -69,6 +69,13 @@ from pytcp import stack
     help="MAC address to be assigned to the stack interface.",
 )
 @click.option(
+    "--stack-no-ip6",
+    "stack__ip6_support",
+    is_flag=True,
+    default=True,
+    help="Do not enable stack IPv6 support.",
+)
+@click.option(
     "--stack-ip6-address",
     "stack__ip6_host",
     type=ClickTypeIp6Host(),
@@ -81,6 +88,13 @@ from pytcp import stack
     type=ClickTypeIp6Address(),
     default=None,
     help="IPv6 gateway address to be assigned to the stack interface.",
+)
+@click.option(
+    "--stack-no-ip4",
+    "stack__ip4_support",
+    is_flag=True,
+    default=True,
+    help="Do not enable stack IPv4 support.",
 )
 @click.option(
     "--stack-ip4-address",
@@ -100,49 +114,61 @@ def cli(
     *,
     stack__interface: str,
     stack__mac_address: MacAddress | None,
+    stack__ip6_support: bool,
     stack__ip6_host: Ip6Host | None,
     stack__ip6_gateway: Ip6Address | None,
+    stack__ip4_support: bool,
     stack__ip4_host: Ip4Host | None,
     stack__ip4_gateway: Ip4Address | None,
-    subsystem: Subsystem | None = None,
+    subsystems: list[Subsystem] | None = None,
 ) -> None:
     """
     Start PyTCP stack and stop it when user presses Ctrl-C.
     """
 
-    if stack__ip6_host:
+    if subsystems is None:
+        subsystems = []
+
+    if stack__ip6_support and stack__ip6_host:
         stack__ip6_host.gateway = stack__ip6_gateway
 
-    if stack__ip4_host:
+    if stack__ip4_support and stack__ip4_host:
         stack__ip4_host.gateway = stack__ip4_gateway
 
     stack.init(
         *stack.initialize_interface(stack__interface),
         mac_address=stack__mac_address,
+        ip6_support=stack__ip6_support,
         ip6_host=stack__ip6_host,
+        ip4_support=stack__ip4_support,
         ip4_host=stack__ip4_host,
     )
 
     try:
         stack.start()
-        if subsystem is not None:
-            subsystem.stack_ip4_address = (
-                stack__ip4_host.address if stack__ip4_host else Ip4Address()
-            )
-            subsystem.stack_ip6_address = (
-                stack__ip6_host.address if stack__ip6_host else Ip6Address()
-            )
+        for subsystem in subsystems:
+            if stack__ip6_support:
+                subsystem.stack_ip6_address = (
+                    stack__ip6_host.address if stack__ip6_host else Ip6Address()
+                )
+            if stack__ip4_support:
+                subsystem.stack_ip4_address = (
+                    stack__ip4_host.address if stack__ip4_host else Ip4Address()
+                )
             subsystem.start()
 
-        while subsystem.is_alive() if subsystem else True:
+        while any(
+            subsystem.is_alive() for subsystem in subsystems if subsystem
+        ):
             time.sleep(1)
 
     except KeyboardInterrupt:
         pass
 
     finally:
-        if subsystem is not None:
-            subsystem.stop()
+        for subsystem in subsystems:
+            if subsystem.is_alive():
+                subsystem.stop()
         stack.stop()
 
 

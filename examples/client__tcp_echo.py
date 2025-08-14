@@ -76,14 +76,14 @@ class TcpEchoClient(Client):
         Class constructor.
         """
 
-        super().__init__()
-
         self._remote_ip_address = remote_ip_address
         self._local_port = local_port
         self._remote_port = remote_port
         self._message_count = message_count
         self._message_delay = message_delay
         self._message_size = message_size
+
+        super().__init__()
 
     @override
     def _thread__sender(self) -> None:
@@ -133,7 +133,6 @@ class TcpEchoClient(Client):
             while not self._event__stop_subsystem.is_set():
                 try:
                     if message_payload := self._client_socket.recv(
-                        bufsize=1024,
                         timeout=1,
                     ):
                         self._log(
@@ -200,13 +199,15 @@ def cli(
 
     ctx.invoke(
         stack_cli,
-        subsystem=TcpEchoClient(
-            remote_ip_address=remote_ip_address,
-            remote_port=remote_port,
-            message_count=message_count,
-            message_delay=message_delay,
-            message_size=message_size,
-        ),
+        subsystems=[
+            TcpEchoClient(
+                remote_ip_address=remote_ip_address,
+                remote_port=remote_port,
+                message_count=message_count,
+                message_delay=message_delay,
+                message_size=message_size,
+            )
+        ],
         **kwargs,
     )
 

@@ -29,7 +29,7 @@ The 'user space' UDP generic service class used in examples.
 
 examples/lib/udp_service.py
 
-ver 3.0.2
+ver 3.0.3
 """
 
 

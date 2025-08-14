@@ -293,7 +293,9 @@ class Socket(ABC):
 
         raise NotImplementedError
 
-    def accept(self) -> tuple[Socket, tuple[str, int]]:
+    def accept(
+        self, *, timeout: float | None = None
+    ) -> tuple[Socket, tuple[str, int]] | None:
         """
         The 'accept()' socket API placeholder.
         """

@@ -29,7 +29,7 @@ The base class for servers and clients used in examples.
 
 examples/lib/subsystem.py
 
-ver 3.0.2
+ver 3.0.3
 """
 
 
@@ -39,6 +39,19 @@ from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING
 
 import click
+from net_addr.ip_address import IpVersion
+
+from pytcp.socket import (
+    AF_INET4,
+    AF_INET6,
+    IPPROTO_ICMP4,
+    IPPROTO_ICMP6,
+    SOCK_DGRAM,
+    SOCK_RAW,
+    SOCK_STREAM,
+    socket,
+)
+from pytcp.socket.socket import Socket
 
 if TYPE_CHECKING:
     from net_addr.ip4_address import Ip4Address
@@ -50,8 +63,8 @@ class Subsystem(ABC):
     Base class for 'user space' services like clients and servers.
     """
 
-    stack_ip4_address: Ip4Address
-    stack_ip6_address: Ip6Address
+    stack_ip4_address: Ip4Address | None = None
+    stack_ip6_address: Ip6Address | None = None
 
     _subsystem_name: str
 
@@ -74,7 +87,7 @@ class Subsystem(ABC):
     @abstractmethod
     def is_alive(self) -> bool:
         """
-        Check if the service thread is alive.
+        Check if the subsystem is alive.
         """
 
         raise NotImplementedError
@@ -90,3 +103,34 @@ class Subsystem(ABC):
             fg="bright_yellow",
             bold=True,
         )
+
+    def _get_subsystem_socket(
+        self, *, ip_version: IpVersion, protocol_name: str
+    ) -> Socket:
+        """
+        Create and bind the client socket.
+        """
+
+        match (ip_version, protocol_name):
+            case IpVersion.IP6, "TCP":
+                subsystem_socket = socket(family=AF_INET6, type=SOCK_STREAM)
+            case IpVersion.IP4, "TCP":
+                subsystem_socket = socket(family=AF_INET4, type=SOCK_STREAM)
+            case IpVersion.IP6, "UDP":
+                subsystem_socket = socket(family=AF_INET6, type=SOCK_DGRAM)
+            case IpVersion.IP4, "UDP":
+                subsystem_socket = socket(family=AF_INET4, type=SOCK_DGRAM)
+            case IpVersion.IP6, "ICMP":
+                subsystem_socket = socket(
+                    family=AF_INET6, type=SOCK_RAW, protocol=IPPROTO_ICMP6
+                )
+            case IpVersion.IP4, "ICMP":
+                subsystem_socket = socket(
+                    family=AF_INET4, type=SOCK_RAW, protocol=IPPROTO_ICMP4
+                )
+            case _:
+                raise ValueError("Invalid IP versions or protocol combination.")
+
+        self._log(f"Created socket [{subsystem_socket}].")
+
+        return subsystem_socket

@@ -29,22 +29,19 @@ The 'user space' generic service base class used in examples.
 
 examples/lib/service.py
 
-ver 3.0.2
+ver 3.0.3
 """
 
 
 from __future__ import annotations
 
 import threading
-import time
 from abc import abstractmethod
 from typing import TYPE_CHECKING, override
 
-import click
 from net_addr.ip_address import IpAddress
 
 from examples.lib.subsystem import Subsystem
-from pytcp.socket import AF_INET4, AF_INET6, SOCK_DGRAM, SOCK_STREAM, socket
 
 if TYPE_CHECKING:
     from pytcp.socket.socket import Socket
@@ -59,20 +56,27 @@ class Service(Subsystem):
     _service_name: str
     _local_ip_address: IpAddress
     _local_port: int
-    _run_thread: bool
+
+    _event__stop_subsystem: threading.Event
+
+    def __init__(self) -> None:
+        """
+        Initialize the service.
+        """
+
+        self._event__stop_subsystem = threading.Event()
 
     @override
     def start(self) -> None:
         """
-        Start the service thread.
+        Start the service.
         """
 
-        click.echo(
-            f"Starting the {self._protocol_name} {self._service_name} service."
-        )
-        self._run_thread = True
+        self._log("Starting the service.")
+
+        self._event__stop_subsystem.clear()
+
         threading.Thread(target=self._thread__service).start()
-        time.sleep(0.1)
 
     @override
     def stop(self) -> None:
@@ -80,42 +84,39 @@ class Service(Subsystem):
         Stop the service thread.
         """
 
-        click.echo(
-            f"Stopinging the {self._protocol_name} {self._service_name} service."
-        )
-        self._run_thread = False
-        time.sleep(0.1)
+        self._log("Stopping the service.")
+
+        self._event__stop_subsystem.set()
 
     def _get_service_socket(self) -> Socket | None:
         """
         Create and bind the service socket.
         """
 
-        match self._local_ip_address.version, self._protocol_name:
-            case 6, "TCP":
-                service_socket = socket(family=AF_INET6, type=SOCK_STREAM)
-            case 4, "TCP":
-                service_socket = socket(family=AF_INET4, type=SOCK_STREAM)
-            case 6, "UDP":
-                service_socket = socket(family=AF_INET6, type=SOCK_DGRAM)
-            case 4, "UDP":
-                service_socket = socket(family=AF_INET4, type=SOCK_DGRAM)
+        service_socket = self._get_subsystem_socket(
+            ip_version=self._local_ip_address.version,
+            protocol_name=self._protocol_name,
+        )
 
         try:
             service_socket.bind((str(self._local_ip_address), self._local_port))
-            click.echo(
-                f"Service {self._protocol_name} {self._service_name}: Socket created, "
-                f"bound to {self._local_ip_address}, port {self._local_port}."
+            self._log(
+                f"Socket created, bound to {self._local_ip_address}, port {self._local_port}."
             )
 
         except OSError as error:
-            click.echo(
-                f"Service {self._protocol_name} {self._service_name}: bind() call "
-                f"failed - {error!r}."
-            )
+            self._log(f"The bind() call failed - {error!r}.")
             return None
 
         return service_socket
+
+    @override
+    def is_alive(self) -> bool:
+        """
+        Check if the service is alive.
+        """
+
+        return self._event__stop_subsystem.is_set() is False
 
     @abstractmethod
     def _thread__service(self) -> None:
