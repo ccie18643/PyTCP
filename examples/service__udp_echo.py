@@ -29,7 +29,7 @@ The example 'user space' service UDP Echo (RFC 862).
 
 examples/udp_echo.py
 
-ver 3.0.2
+ver 3.0.3
 """
 
 

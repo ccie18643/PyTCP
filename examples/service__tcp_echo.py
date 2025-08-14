@@ -29,7 +29,7 @@ The example 'user space' service TCP Echo (RFC 862).
 
 examples/tcp_echo_service.py
 
-ver 3.0.2
+ver 3.0.3
 """
 
 
@@ -87,7 +87,12 @@ class TcpEchoService(TcpService):
         socket.send(b"***CLIENT OPEN / SERVICE OPEN***\n")
 
         while not self._event__stop_subsystem.is_set():
-            if not (message := socket.recv()):
+            try:
+                message = socket.recv(timeout=1)
+            except TimeoutError:
+                continue
+
+            if not message:
                 self._log(
                     f"Connection to {remote_ip_address}, port {remote_port} has been closed by peer."
                 )

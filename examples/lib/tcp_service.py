@@ -62,6 +62,7 @@ class TcpService(Service):
         if listening_socket := self._get_service_socket():
             listening_socket.listen()
             self._log("Socket set to listening mode.")
+
             while not self._event__stop_subsystem.is_set():
                 try:
                     connected_socket, (remote_ip_address, remote_port) = (
@@ -69,6 +70,7 @@ class TcpService(Service):
                     )
                 except TimeoutError:
                     continue
+
                 self._log(
                     f"Inbound connection received from {remote_ip_address}, port {remote_port}."
                 )
