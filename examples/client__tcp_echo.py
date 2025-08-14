@@ -49,7 +49,6 @@ from net_addr import (
     Ip4Address,
     Ip6Address,
 )
-from pytcp.socket.socket import ReceiveTimeout
 
 
 class TcpEchoClient(Client):
@@ -138,7 +137,7 @@ class TcpEchoClient(Client):
                         self._log(
                             f"Received {len(message_payload)} bytes from '{self._remote_ip_address}'."
                         )
-                except ReceiveTimeout:
+                except TimeoutError:
                     pass
 
             self._log("Stopped the receiver thread.")

@@ -54,7 +54,6 @@ from net_addr import (
     Ip6Address,
     IpVersion,
 )
-from pytcp.socket.socket import ReceiveTimeout
 
 ICMP4__ECHO_REQUEST__TYPE = 8
 ICMP4__ECHO_REQUEST__CODE = 0
@@ -207,7 +206,7 @@ class IcmpEchoClient(Client):
                             f"Received {len(payload)} bytes from '{self._remote_ip_address}', "
                             f"id {identifier}, seq {sequence}."
                         )
-                except ReceiveTimeout:
+                except TimeoutError:
                     pass
 
             self._log("Stopped the receiver thread.")

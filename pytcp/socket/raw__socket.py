@@ -50,7 +50,6 @@ from pytcp.lib.tx_status import TxStatus
 from pytcp.socket.socket import (
     AddressFamily,
     IpProto,
-    ReceiveTimeout,
     Socket,
     SocketType,
     gaierror,
@@ -303,7 +302,7 @@ class RawSocket(Socket):
             )
             return data_rx
 
-        raise ReceiveTimeout
+        raise TimeoutError("RAW Socket - Receive operation timed out.")
 
     def recvfrom(
         self, bufsize: int | None = None, timeout: float | None = None
@@ -329,7 +328,7 @@ class RawSocket(Socket):
                 ),
             )
 
-        raise ReceiveTimeout
+        raise TimeoutError("RAW Socket - Receive operation timed out.")
 
     def close(self) -> None:
         """

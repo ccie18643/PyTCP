@@ -35,9 +35,6 @@ ver 3.0.2
 """
 
 
-from pytcp.socket.socket import (
-    ReceiveTimeout,  # pyright: ignore[reportUnusedImport]
-)
 from pytcp.socket.socket import gaierror  # pyright: ignore[reportUnusedImport]
 from pytcp.socket.socket import (  # noqa: F401
     AddressFamily,

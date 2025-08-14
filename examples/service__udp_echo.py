@@ -39,16 +39,15 @@ import threading
 from typing import TYPE_CHECKING, Any, override
 
 import click
-from net_addr.ip6_address import Ip6Address
 
 from examples.lib.malpi import malpa, malpi, malpka
 from examples.lib.udp_service import UdpService
 from examples.stack import cli as stack_cli
 from net_addr import (
     Ip4Address,
+    Ip6Address,
     IpAddress,
 )
-from pytcp.socket.socket import ReceiveTimeout
 
 if TYPE_CHECKING:
     from pytcp.socket.socket import Socket
@@ -104,7 +103,7 @@ class UdpEchoService(UdpService):
                         f"{remote_address[0]}, port {remote_address[1]}."
                     )
 
-            except ReceiveTimeout:
+            except TimeoutError:
                 continue
 
 

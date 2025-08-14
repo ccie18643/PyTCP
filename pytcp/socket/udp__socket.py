@@ -55,7 +55,6 @@ from pytcp.lib.tx_status import TxStatus
 from pytcp.socket.socket import (
     AddressFamily,
     IpProto,
-    ReceiveTimeout,
     Socket,
     SocketType,
     gaierror,
@@ -371,7 +370,7 @@ class UdpSocket(Socket):
                 f"<B><g>[{self}]</> - Received {len(data_rx)} " "bytes of data",
             )
             return data_rx
-        raise ReceiveTimeout
+        raise TimeoutError("UDP Socket - Receive operation timed out.")
 
     def recvfrom(
         self, bufsize: int | None = None, timeout: float | None = None
@@ -396,7 +395,7 @@ class UdpSocket(Socket):
                     packet_rx_md.udp__remote_port,
                 ),
             )
-        raise ReceiveTimeout
+        raise TimeoutError("UDP Socket - Receive operation timed out.")
 
     def close(self) -> None:
         """

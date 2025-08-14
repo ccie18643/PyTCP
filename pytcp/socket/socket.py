@@ -55,12 +55,6 @@ class gaierror(OSError):
     """
 
 
-class ReceiveTimeout(Exception):
-    """
-    Timeout of receive operation.
-    """
-
-
 class AddressFamily(NameEnum):
     """
     Address family identifier.

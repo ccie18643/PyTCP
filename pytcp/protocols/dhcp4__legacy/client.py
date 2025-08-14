@@ -51,7 +51,7 @@ from pytcp.protocols.dhcp4__legacy.base import (
     DHCP4_OPT_SUBNET_MASK,
     Dhcp4Packet,
 )
-from pytcp.socket import AF_INET4, SOCK_DGRAM, ReceiveTimeout, socket
+from pytcp.socket import AF_INET4, SOCK_DGRAM, socket
 
 if TYPE_CHECKING:
     from net_addr import MacAddress
@@ -107,7 +107,7 @@ class Dhcp4Client:
         # Wait for DHCP Offer
         try:
             dhcp_packet_rx = Dhcp4Packet(client_socket.recv(timeout=5))
-        except ReceiveTimeout:
+        except TimeoutError:
             __debug__ and log(
                 "dhcp4", "Didn't receive DHCP Offer message - timeout"
             )
@@ -175,7 +175,7 @@ class Dhcp4Client:
         # Wait for DHCP Ack
         try:
             dhcp_packet_rx = Dhcp4Packet(client_socket.recv(timeout=5))
-        except ReceiveTimeout:
+        except TimeoutError:
             __debug__ and log(
                 "dhcp4", "Didn't receive DHCP ACK message - timeout"
             )
