@@ -30,7 +30,7 @@ TCP Echo service and sends messages.
 
 examples/tcp_echo_client.py
 
-ver 3.0.2
+ver 3.0.3
 """
 
 
@@ -86,7 +86,7 @@ class TcpEchoClient(Client):
         self._message_size = message_size
 
     @override
-    def _thread_target__sender(self) -> None:
+    def _thread__sender(self) -> None:
         """
         Client thread used to send data.
         """
@@ -122,7 +122,7 @@ class TcpEchoClient(Client):
             self._log("Stopped the sender thread.")
 
     @override
-    def _thread_target__receiver(self) -> None:
+    def _thread__receiver(self) -> None:
         """
         Client thread used to receive data.
         """

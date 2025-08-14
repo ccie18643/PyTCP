@@ -32,7 +32,7 @@ It is very basic implementation that essentially mimics operation of the UNIX
 
 examples/client__icmp_echo.py
 
-ver 3.0.2
+ver 3.0.3
 """
 
 
@@ -139,7 +139,7 @@ class IcmpEchoClient(Client):
         return header + payload(length=message_size)
 
     @override
-    def _thread_target__sender(self) -> None:
+    def _thread__sender(self) -> None:
         """
         Thread used to send data.
         """
@@ -187,7 +187,7 @@ class IcmpEchoClient(Client):
             self._log("Stopped the sender thread.")
 
     @override
-    def _thread_target__receiver(self) -> None:
+    def _thread__receiver(self) -> None:
         """
         Thread used to receive data.
         """

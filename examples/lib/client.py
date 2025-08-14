@@ -29,7 +29,7 @@ The 'user space' generic client base class used in examples.
 
 examples/lib/client.py
 
-ver 3.0.2
+ver 3.0.3
 """
 
 
@@ -73,22 +73,7 @@ class Client(Subsystem):
     _run_thread: bool
     _client_socket: Socket | None
 
-    _thread__receiver: threading.Thread
-    _thread__sender: threading.Thread
     _event__stop_subsystem: threading.Event
-
-    def __init__(self) -> None:
-        """
-        Initialize the client.
-        """
-
-        self._thread__receiver = threading.Thread(
-            target=self._thread_target__receiver
-        )
-        self._thread__sender = threading.Thread(
-            target=self._thread_target__sender
-        )
-        self._event__stop_subsystem = threading.Event()
 
     @override
     def start(self) -> None:
@@ -100,16 +85,15 @@ class Client(Subsystem):
 
         if isinstance(self._remote_ip_address, Ip4Address):
             self._local_ip_address = self.stack_ip4_address
-
         if isinstance(self._remote_ip_address, Ip6Address):
             self._local_ip_address = self.stack_ip6_address
 
         self._client_socket = self._get_client_socket()
 
-        self._event__stop_subsystem.clear()
+        self._event__stop_subsystem = threading.Event()
 
-        self._thread__receiver.start()
-        self._thread__sender.start()
+        threading.Thread(target=self._thread__receiver).start()
+        threading.Thread(target=self._thread__sender).start()
 
     @override
     def stop(self) -> None:
@@ -192,7 +176,7 @@ class Client(Subsystem):
         return self._event__stop_subsystem.is_set() is False
 
     @abstractmethod
-    def _thread_target__sender(self) -> None:
+    def _thread__sender(self) -> None:
         """
         Thread used to send data.
         """
@@ -200,7 +184,7 @@ class Client(Subsystem):
         raise NotImplementedError
 
     @abstractmethod
-    def _thread_target__receiver(self) -> None:
+    def _thread__receiver(self) -> None:
         """
         Thread used to receive data.
         """
