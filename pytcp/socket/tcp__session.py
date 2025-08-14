@@ -401,7 +401,7 @@ class TcpSession:
         ):
             raise TcpSessionError("Connection timeout")
 
-    def send(self, data: bytes) -> int:
+    def send(self, *, data: bytes) -> int:
         """
         The 'SEND' syscall.
         """
@@ -414,14 +414,19 @@ class TcpSession:
             "TCP session not in ESTABLISHED or CLOSE_WAIT state"
         )
 
-    def receive(self, byte_count: int | None = None) -> bytes:
+    def receive(
+        self, *, byte_count: int | None = None, timeout: float | None = None
+    ) -> bytes:
         """
         The 'RECEIVE' syscall.
         """
 
         # Wait till there is any data in the buffer (this will get bypassed
         # when FSM goes into CLOSE_WAIT or CLOSED).
-        self._event_rx_buffer.acquire()
+        if not self._event_rx_buffer.acquire(timeout=timeout):
+            raise TimeoutError(
+                "TCP session receive operation timed out while waiting for data."
+            )
 
         # If there is no data in RX buffer and remote end closed connection
         # then notify application by returning empty byte string.

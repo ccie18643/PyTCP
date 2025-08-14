@@ -352,7 +352,7 @@ class TcpSocket(Socket):
 
     def accept(
         self, *, timeout: float | None = None
-    ) -> tuple[Socket, tuple[str, int]] | None:
+    ) -> tuple[Socket, tuple[str, int]]:
         """
         Wait for the established inbound connection, once available return
         it's socket.
@@ -363,7 +363,7 @@ class TcpSocket(Socket):
         )
 
         if not self._event_tcp_session_established.acquire(timeout=timeout):
-            return None
+            raise TimeoutError("TCP Socket - Accept operation timed out.")
 
         socket = cast(TcpSocket, self._tcp_accept.pop(0))
 
@@ -388,7 +388,7 @@ class TcpSocket(Socket):
         assert self._tcp_session is not None
 
         try:
-            bytes_sent = self._tcp_session.send(data)
+            bytes_sent = self._tcp_session.send(data=data)
         except TcpSessionError as error:
             raise BrokenPipeError(
                 f"[Errno 32] Broken pipe - [{error}]"
@@ -407,23 +407,28 @@ class TcpSocket(Socket):
         Receive data from socket.
         """
 
-        # TODO - Consider implementing timeout
-
         assert self._tcp_session is not None
 
-        if data_rx := self._tcp_session.receive(bufsize):
-            __debug__ and log(
-                "socket",
-                f"<g>[{self}]</> - Received {len(data_rx)} bytes of data",
-            )
-        else:
-            __debug__ and log(
-                "socket",
-                f"<g>[{self}]</> - Received empty data byte string, remote "
-                "end closed connection",
-            )
+        try:
+            if data_rx := self._tcp_session.receive(
+                byte_count=bufsize, timeout=timeout
+            ):
+                __debug__ and log(
+                    "socket",
+                    f"<g>[{self}]</> - Received {len(data_rx)} bytes of data",
+                )
+            else:
+                __debug__ and log(
+                    "socket",
+                    f"<g>[{self}]</> - Received empty data byte string, remote "
+                    "end closed connection",
+                )
+            return data_rx
 
-        return data_rx
+        except TimeoutError as error:
+            raise TimeoutError(
+                "TCP Socket - Receive operation timed out."
+            ) from error
 
     def close(self) -> None:
         """

@@ -289,7 +289,7 @@ class Socket(ABC):
 
     def accept(
         self, *, timeout: float | None = None
-    ) -> tuple[Socket, tuple[str, int]] | None:
+    ) -> tuple[Socket, tuple[str, int]]:
         """
         The 'accept()' socket API placeholder.
         """
