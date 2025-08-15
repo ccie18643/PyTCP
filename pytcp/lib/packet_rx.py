@@ -24,10 +24,6 @@
 ################################################################################
 
 
-# pylint: disable=invalid-name
-# pylint: disable=too-many-instance-attributes
-# pylint: disable=too-few-public-methods
-
 """
 Module contains class representing packet.
 

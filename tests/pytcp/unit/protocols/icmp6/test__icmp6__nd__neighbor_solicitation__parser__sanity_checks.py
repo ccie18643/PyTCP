@@ -39,7 +39,7 @@ from typing import Any
 from parameterized import parameterized_class  # type: ignore
 
 from net_addr import Ip6Address
-from pytcp.lib.packet import PacketRx
+from pytcp.lib.packet_rx import PacketRx
 from pytcp.protocols.icmp6.icmp6__errors import Icmp6SanityError
 from pytcp.protocols.icmp6.icmp6__parser import Icmp6Parser
 from tests.pytcp.lib.testcase__packet_rx__ip6 import TestCasePacketRxIp6

@@ -37,7 +37,7 @@ from typing import Any, cast
 
 from parameterized import parameterized_class  # type: ignore
 
-from pytcp.lib.packet import PacketRx
+from pytcp.lib.packet_rx import PacketRx
 from pytcp.protocols.icmp4.icmp4__parser import Icmp4Parser
 from pytcp.protocols.icmp4.message.icmp4_message__echo_request import (
     Icmp4EchoRequestMessage,

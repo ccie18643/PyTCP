@@ -43,7 +43,7 @@ from pytcp.protocols.ip6.ip6__errors import Ip6IntegrityError, Ip6SanityError
 from pytcp.protocols.ip6.ip6__header import IP6__HEADER__LEN, Ip6Header
 
 if TYPE_CHECKING:
-    from pytcp.lib.packet import PacketRx
+    from pytcp.lib.packet_rx import PacketRx
 
 
 class Ip6Parser(Ip6, ProtoParser):

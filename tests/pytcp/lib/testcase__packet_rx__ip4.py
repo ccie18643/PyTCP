@@ -38,7 +38,7 @@ from typing import Any, cast
 from testslide import StrictMock, TestCase
 
 from net_addr import Ip4Address
-from pytcp.lib.packet import PacketRx
+from pytcp.lib.packet_rx import PacketRx
 from pytcp.protocols.ip4.ip4__parser import Ip4Parser
 
 

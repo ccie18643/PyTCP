@@ -74,7 +74,7 @@ from pytcp.protocols.icmp6.message.nd.icmp6_nd_message__router_solicitation impo
 )
 
 if TYPE_CHECKING:
-    from pytcp.lib.packet import PacketRx
+    from pytcp.lib.packet_rx import PacketRx
 
 
 class Icmp6Parser(Icmp6, ProtoParser):

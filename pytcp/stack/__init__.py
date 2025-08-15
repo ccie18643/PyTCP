@@ -135,6 +135,7 @@ LOG__CHANNEL = {
     "client",
 }
 LOG__DEBUG = False
+LOG__OUTPUT = sys.stderr
 
 # Stack subsystems.
 timer: Timer

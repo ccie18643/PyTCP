@@ -44,7 +44,7 @@ from pytcp import stack
 from pytcp.lib.inet_cksum import inet_cksum
 from pytcp.lib.ip_frag import IpFragData, IpFragFlowId
 from pytcp.lib.logger import log
-from pytcp.lib.packet import PacketRx
+from pytcp.lib.packet_rx import PacketRx
 from pytcp.protocols.enums import IpProto
 from pytcp.protocols.errors import PacketValidationError
 from pytcp.protocols.ip4.ip4__header import IP4__HEADER__LEN

@@ -38,7 +38,7 @@ from typing import Any
 from parameterized import parameterized_class  # type: ignore
 
 from net_addr import MacAddress
-from pytcp.lib.packet import PacketRx
+from pytcp.lib.packet_rx import PacketRx
 from pytcp.protocols.enums import EtherType
 from pytcp.protocols.ethernet.ethernet__header import EthernetHeader
 from pytcp.protocols.ethernet.ethernet__parser import EthernetParser

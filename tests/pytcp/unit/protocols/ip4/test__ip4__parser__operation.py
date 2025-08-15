@@ -37,7 +37,7 @@ from typing import Any
 from parameterized import parameterized_class  # type: ignore
 
 from net_addr import Ip4Address
-from pytcp.lib.packet import PacketRx
+from pytcp.lib.packet_rx import PacketRx
 from pytcp.protocols.enums import IpProto
 from pytcp.protocols.ip4.ip4__header import Ip4Header
 from pytcp.protocols.ip4.ip4__parser import Ip4Parser

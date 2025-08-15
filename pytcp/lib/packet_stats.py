@@ -23,18 +23,15 @@
 ##                                                                            ##
 ################################################################################
 
-# pylint: disable=too-many-instance-attributes
 
 """
-Module contains classes used to store packet statistics.
+Module contains classes used to store the packet processing statistics.
 
 pytcp/lib/packet_stats.py
 
-ver 3.0.2
+ver 3.0.3
 """
 
-
-from __future__ import annotations
 
 from dataclasses import dataclass
 
@@ -42,7 +39,7 @@ from dataclasses import dataclass
 @dataclass
 class PacketStatsRx:
     """
-    Data store for rx packet handler statistics.
+    Data store for the RX packet handler statistics.
     """
 
     ethernet__pre_parse: int = 0
@@ -140,7 +137,7 @@ class PacketStatsRx:
 @dataclass
 class PacketStatsTx:
     """
-    Data store for tx packet handler statistics.
+    Data store for the TX packet handler statistics.
     """
 
     ethernet__pre_assemble: int = 0

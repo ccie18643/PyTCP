@@ -54,7 +54,7 @@ from protocols.arp.base import (
     ArpProtocolLength,
     ArpProtocolType,
 )
-from pytcp.lib.packet import PacketRx
+from pytcp.lib.packet_rx import PacketRx
 from pytcp.protocols.arp.fpp import ArpIntegrityError, ArpParser, ArpSanityError
 
 

@@ -38,7 +38,7 @@ from typing import Any
 from parameterized import parameterized_class  # type: ignore
 
 from net_addr import Ip4Address, MacAddress
-from pytcp.lib.packet import PacketRx
+from pytcp.lib.packet_rx import PacketRx
 from pytcp.protocols.arp.arp__enums import ArpOperation
 from pytcp.protocols.arp.arp__header import ArpHeader
 from pytcp.protocols.arp.arp__parser import ArpParser

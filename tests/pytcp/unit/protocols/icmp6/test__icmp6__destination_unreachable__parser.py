@@ -37,7 +37,7 @@ from typing import Any, cast
 
 from parameterized import parameterized_class  # type: ignore
 
-from pytcp.lib.packet import PacketRx
+from pytcp.lib.packet_rx import PacketRx
 from pytcp.protocols.icmp6.icmp6__parser import Icmp6Parser
 from pytcp.protocols.icmp6.message.icmp6_message__destination_unreachable import (
     Icmp6DestinationUnreachableCode,

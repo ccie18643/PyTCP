@@ -37,7 +37,7 @@ from typing import Any
 
 from parameterized import parameterized_class  # type: ignore
 
-from pytcp.lib.packet import PacketRx
+from pytcp.lib.packet_rx import PacketRx
 from pytcp.protocols.ip6_frag.ip6_frag__errors import Ip6FragSanityError
 from pytcp.protocols.ip6_frag.ip6_frag__parser import Ip6FragParser
 from tests.pytcp.lib.testcase__packet_rx__ip6 import TestCasePacketRxIp6

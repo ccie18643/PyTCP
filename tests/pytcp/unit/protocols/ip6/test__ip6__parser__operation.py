@@ -38,7 +38,7 @@ from typing import Any
 from parameterized import parameterized_class  # type: ignore
 
 from net_addr import Ip6Address
-from pytcp.lib.packet import PacketRx
+from pytcp.lib.packet_rx import PacketRx
 from pytcp.protocols.enums import IpProto
 from pytcp.protocols.ip6.ip6__header import Ip6Header
 from pytcp.protocols.ip6.ip6__parser import Ip6Parser

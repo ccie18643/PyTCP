@@ -37,7 +37,7 @@ from typing import Any
 
 from testslide import TestCase
 
-from pytcp.lib.packet import PacketRx
+from pytcp.lib.packet_rx import PacketRx
 
 
 class TestCasePacketRx(TestCase):

@@ -49,7 +49,7 @@ from pytcp.protocols.ethernet_802_3.ethernet_802_3__header import (
 )
 
 if TYPE_CHECKING:
-    from pytcp.lib.packet import PacketRx
+    from pytcp.lib.packet_rx import PacketRx
 
 
 class Ethernet8023Parser(Ethernet8023, ProtoParser):

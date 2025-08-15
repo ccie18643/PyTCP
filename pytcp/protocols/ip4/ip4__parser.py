@@ -45,7 +45,7 @@ from pytcp.protocols.ip4.ip4__header import IP4__HEADER__LEN, Ip4Header
 from pytcp.protocols.ip4.options.ip4_options import Ip4Options
 
 if TYPE_CHECKING:
-    from pytcp.lib.packet import PacketRx
+    from pytcp.lib.packet_rx import PacketRx
 
 
 class Ip4Parser(Ip4, ProtoParser):

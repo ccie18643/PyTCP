@@ -37,7 +37,7 @@ from typing import Any
 
 from parameterized import parameterized_class  # type: ignore
 
-from pytcp.lib.packet import PacketRx
+from pytcp.lib.packet_rx import PacketRx
 from pytcp.protocols.ethernet_802_3.ethernet_802_3__errors import (
     Ethernet8023SanityError,
 )

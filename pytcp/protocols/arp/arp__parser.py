@@ -51,7 +51,7 @@ from pytcp.protocols.arp.arp__header import (
 from pytcp.protocols.enums import EtherType
 
 if TYPE_CHECKING:
-    from pytcp.lib.packet import PacketRx
+    from pytcp.lib.packet_rx import PacketRx
 
 
 class ArpParser(Arp, ProtoParser):

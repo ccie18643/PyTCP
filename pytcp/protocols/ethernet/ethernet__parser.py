@@ -49,7 +49,7 @@ from pytcp.protocols.ethernet.ethernet__header import (
 )
 
 if TYPE_CHECKING:
-    from pytcp.lib.packet import PacketRx
+    from pytcp.lib.packet_rx import PacketRx
 
 
 class EthernetParser(Ethernet, ProtoParser):

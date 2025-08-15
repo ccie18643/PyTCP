@@ -37,7 +37,7 @@ from typing import Any
 
 from parameterized import parameterized_class  # type: ignore
 
-from pytcp.lib.packet import PacketRx
+from pytcp.lib.packet_rx import PacketRx
 from pytcp.protocols.ip4.ip4__errors import Ip4IntegrityError
 from pytcp.protocols.ip4.ip4__parser import Ip4Parser
 from tests.pytcp.lib.testcase__packet_rx import TestCasePacketRx

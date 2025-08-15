@@ -25,20 +25,16 @@
 
 
 """
-Module contains methods supporting logging.
+Module contains methods supporting the stack logging.
 
 pytcp/lib/logger.py
 
-ver 3.0.2
+ver 3.0.3
 """
 
 
-from __future__ import annotations
-
 import inspect
 import time
-
-from pytcp import stack
 
 STYLES = {
     "</>": "\33[0m",
@@ -69,14 +65,18 @@ START_TIME = time.time()
 def log(
     channel: str,
     message: str,
+    /,
+    *,
     inspect_depth: int = 1,
 ) -> bool:
     """
-    Log message if channel and severity match configured values.
+    Log a message if the channel and severity match the configured values.
     """
 
-    if channel in stack.LOG__CHANNEL:
-        if stack.LOG__DEBUG:
+    from pytcp.stack import LOG__CHANNEL, LOG__DEBUG, LOG__OUTPUT
+
+    if channel in LOG__CHANNEL:
+        if LOG__DEBUG:
             frame_info = inspect.stack()[inspect_depth]
             caller_class = frame_info.frame.f_locals["self"].__class__.__name__
             caller_method = frame_info.function
@@ -95,7 +95,7 @@ def log(
         for key, value in STYLES.items():
             output = output.replace(key, value)
 
-        print(output)
+        print(output, file=LOG__OUTPUT)
 
         return True
 

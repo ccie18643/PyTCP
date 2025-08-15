@@ -37,7 +37,7 @@ from typing import Any
 
 from parameterized import parameterized_class  # type: ignore
 
-from pytcp.lib.packet import PacketRx
+from pytcp.lib.packet_rx import PacketRx
 from pytcp.protocols.tcp.options.tcp_option__nop import TcpOptionNop
 from pytcp.protocols.tcp.options.tcp_options import TcpOptions
 from pytcp.protocols.tcp.tcp__header import TcpHeader

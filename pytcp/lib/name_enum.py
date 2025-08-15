@@ -23,31 +23,28 @@
 ##                                                                            ##
 ################################################################################
 
-# pylint: disable=redefined-builtin
 
 """
 Module contains the NameEnum class.
 
 pytcp/lib/name_enum.py
 
-ver 3.0.2
+ver 3.0.3
 """
 
-
-from __future__ import annotations
 
 from enum import IntEnum
 
 
 class NameEnum(IntEnum):
     """
-    Enum with overloaded '__str__' method to print enum name
-    instead of its value.
+    Enum with the overloaded '__str__()' method to print the enum's
+    name instead of its value.
     """
 
     def __str__(self) -> str:
         """
-        Get the enum name as a string.
+        Get the enum's name as a string.
         """
 
         return str(self.name)

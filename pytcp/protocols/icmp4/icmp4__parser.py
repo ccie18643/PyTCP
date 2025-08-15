@@ -59,7 +59,7 @@ from pytcp.protocols.icmp4.message.icmp4_message__unknown import (
 )
 
 if TYPE_CHECKING:
-    from pytcp.lib.packet import PacketRx
+    from pytcp.lib.packet_rx import PacketRx
 
 
 class Icmp4Parser(Icmp4, ProtoParser):

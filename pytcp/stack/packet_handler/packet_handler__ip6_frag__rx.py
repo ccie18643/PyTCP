@@ -43,7 +43,7 @@ from typing import TYPE_CHECKING
 from pytcp import stack
 from pytcp.lib.ip_frag import IpFragData, IpFragFlowId
 from pytcp.lib.logger import log
-from pytcp.lib.packet import PacketRx
+from pytcp.lib.packet_rx import PacketRx
 from pytcp.protocols.ip6_frag.ip6_frag__parser import Ip6FragParser
 
 

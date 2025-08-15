@@ -40,7 +40,7 @@ from typing import TYPE_CHECKING, cast
 
 from pytcp import stack
 from pytcp.lib.logger import log
-from pytcp.lib.packet import PacketRx
+from pytcp.lib.packet_rx import PacketRx
 from pytcp.protocols.enums import IpProto
 from pytcp.protocols.errors import PacketValidationError
 from pytcp.protocols.ip6.ip6__parser import Ip6Parser

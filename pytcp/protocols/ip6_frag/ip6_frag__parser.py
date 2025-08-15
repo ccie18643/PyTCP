@@ -46,7 +46,7 @@ from pytcp.protocols.ip6_frag.ip6_frag__header import (
 )
 
 if TYPE_CHECKING:
-    from pytcp.lib.packet import PacketRx
+    from pytcp.lib.packet_rx import PacketRx
 
 
 class Ip6FragParser(Ip6Frag, ProtoParser):

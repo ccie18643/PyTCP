@@ -90,7 +90,7 @@ class PacketHandlerIcmp6Rx(ABC):
         from threading import Semaphore
 
         from net_addr import Ip6Network, MacAddress
-        from pytcp.lib.packet import PacketRx
+        from pytcp.lib.packet_rx import PacketRx
         from pytcp.lib.packet_stats import PacketStatsRx
         from pytcp.lib.tracker import Tracker
         from pytcp.lib.tx_status import TxStatus

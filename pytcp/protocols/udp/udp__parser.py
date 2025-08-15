@@ -44,7 +44,7 @@ from pytcp.protocols.udp.udp__errors import UdpIntegrityError, UdpSanityError
 from pytcp.protocols.udp.udp__header import UDP__HEADER__LEN, UdpHeader
 
 if TYPE_CHECKING:
-    from pytcp.lib.packet import PacketRx
+    from pytcp.lib.packet_rx import PacketRx
 
 
 class UdpParser(Udp, ProtoParser):
