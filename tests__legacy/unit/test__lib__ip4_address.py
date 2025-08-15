@@ -47,6 +47,7 @@ from net_addr import (
     Ip4NetworkFormatError,
     MacAddress,
 )
+from net_addr.ip_address import IpVersion
 
 
 class TestIp4Address(TestCase):
@@ -357,7 +358,7 @@ class TestIp4Address(TestCase):
         """
         Test the 'version' property.
         """
-        self.assertEqual(Ip4Address("192.168.9.1").version, 4)
+        self.assertEqual(Ip4Address("192.168.9.1").version, IpVersion.IP4)
 
     def test_is_invalid(self) -> None:
         """
@@ -593,7 +594,7 @@ class TestIp4Mask(TestCase):
         """
         Test the 'version' property.
         """
-        self.assertEqual(Ip4Mask("/0").version, 4)
+        self.assertEqual(Ip4Mask("/0").version, IpVersion.IP4)
 
 
 class TestIp4Network(TestCase):
@@ -724,7 +725,7 @@ class TestIp4Network(TestCase):
         """
         Test the 'version' property.
         """
-        self.assertEqual(Ip4Network("0.0.0.0/0").version, 4)
+        self.assertEqual(Ip4Network("0.0.0.0/0").version, IpVersion.IP4)
 
 
 class TestIp4Host(TestCase):
@@ -822,7 +823,7 @@ class TestIp4Host(TestCase):
         """
         Test the 'version' property getter.
         """
-        self.assertEqual(Ip4Host("0.0.0.0/0").version, 4)
+        self.assertEqual(Ip4Host("0.0.0.0/0").version, IpVersion.IP4)
 
     def test_address(self) -> None:
         """

@@ -47,6 +47,7 @@ from net_addr import (
     Ip6NetworkFormatError,
     MacAddress,
 )
+from net_addr.ip_address import IpVersion
 
 
 class TestIp6Address(TestCase):
@@ -247,7 +248,9 @@ class TestIp6Address(TestCase):
         """
         Test the 'version' property.
         """
-        self.assertEqual(Ip6Address("2001::1234:5678:90ab:cdef").version, 6)
+        self.assertEqual(
+            Ip6Address("2001::1234:5678:90ab:cdef").version, IpVersion.IP6
+        )
 
     def test_is_unspecified(self) -> None:
         """
@@ -462,7 +465,7 @@ class TestIp6Mask(TestCase):
         """
         Test the 'version' property.
         """
-        self.assertEqual(Ip6Mask("/0").version, 6)
+        self.assertEqual(Ip6Mask("/0").version, IpVersion.IP6)
 
 
 class TestIp6Network(TestCase):
@@ -594,7 +597,9 @@ class TestIp6Network(TestCase):
         )
 
     def test_version(self) -> None:
-        self.assertEqual(Ip6Network("1234:5678:90ab:cdef::/64").version, 6)
+        self.assertEqual(
+            Ip6Network("1234:5678:90ab:cdef::/64").version, IpVersion.IP6
+        )
 
 
 class TestIp6Host(TestCase):
@@ -722,7 +727,7 @@ class TestIp6Host(TestCase):
         """
         Test the 'version' property.
         """
-        self.assertEqual(Ip6Host("::/128").version, 6)
+        self.assertEqual(Ip6Host("::/128").version, IpVersion.IP6)
 
     def test__gateway_getter__success(self) -> None:
         """
