@@ -32,15 +32,15 @@ Before running any of the examples, please make sure to:
 ## Testing Examples Using 3rd Party Tools
 To test the example code with 3rd party tools (assuming you are connected with two terminals to the Linux machine pictured in the above diagram):
 
-**NOTE:** The ncat tool comes with the nmap package.
+**NOTE:** The 'ncat' tool comes with the 'nmap' package.
 
-ICMP Echo Client over IPv4
+### ICMP Echo Client over IPv4
  - In a terminal window, run: examples/client_icmp_echo.py <br0 IPv4 address>
 
-ICMP Echo Client over IPv6
+#### ICMP Echo Client over IPv6
  - In a terminal window, run: examples/client_icmp_echo.py <br0 IPv6 address>
 
-UDP Echo Client over IPv4
+##### UDP Echo Client over IPv4
  - In the first terminal window, run: ncat -ulk 7 -e /bin/cat
  - In the second termnial window, run: examples/client__udp_echo.py <br0 IPv4 address>
 
