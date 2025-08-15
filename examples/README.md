@@ -2,19 +2,21 @@
 
 The PyTCP stack depends on the Linux TAP interface. The TAP interface is a virtual interface that, on the network end, can be 'plugged' into existing virtual network infrastructure via either Linux bridge or Open vSwitch. On the internal end, the TAP interface can be used like any other NIC by programmatically sending and receiving packets to/from it.
 
+## The Suggested Network Topology
 
 If you wish to test the PyTCP stack in your local network, I'd suggest creating the following network setup that will allow you to connect both the Linux kernel (essentially your Linux OS) and the PyTCP stack(s) to your local network at the same time.
 
-[INTERNET] <---> [ROUTER] <---> (eth0)-[Linux bridge]-(br0) <---> [Linux kernel]
+```
+<INTERNET> <---> [ROUTER] <---> (eth0)-[Linux bridge]-(br0) <---> [Linux kernel]
                                             |
                                             |--(tap7) <---> [PyTCP stack 1]
                                             |
                                             |--(tap9) <---> [PyTCP stack 2]
-
+```
 
 Do NOT assign any IP addresses to interfaces tap7 & tap9. Stack will handle IP addressing on those interfaces.
 
-
+## How to Run Examples
 After the example program (either client or service) starts the stack, it will communicate with it via a simplified BSD Sockets-like API interface.
 
 Before running any of the examples, please make sure to:
@@ -27,7 +29,7 @@ Before running any of the examples, please make sure to:
  - Execute any example, e.g., 'examples/stack.py'.
  - Hit Ctrl-C to stop it.
 
-
+## Testing Examples Using 3rd Party Tools
 To test the example code with 3rd party tools (assuming you are connected with two terminals to the Linux machine pictured in the above diagram):
 [The ncat tool comes with the nmap package]
 
@@ -81,7 +83,7 @@ TCP Echo Service over IPv6
  - In the second terminal window, run: ncat <tap7 stack IPv6 address> 7
  - In the second terminal type a couple of words, press enter after each, and observe them echoed back by the Echo service.
 
-
+## Testing Examples Using Two Stacks Talking to Each Other
 To test the example code with two stack instances talking to each other (assuming you are connected with two terminals to the Linux machine pictured in the above diagram):
 
 ICMP Echo Service & Client over IPv4
