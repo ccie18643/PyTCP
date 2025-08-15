@@ -25,10 +25,11 @@
 
 
 """
-Run stack without any 'user space' services. Stack should only respond to
-ping packets.
+This module contains code that runs the stack without any 'user space' services.
+Stack should only respond to the ping packets. This example is also used as a
+base to run other examples provided as the subsystems.
 
-examples/run_stack.py
+examples/stack.py
 
 ver 3.0.3
 """
@@ -123,7 +124,8 @@ def cli(
     subsystems: list[Subsystem] | None = None,
 ) -> None:
     """
-    Start PyTCP stack and stop it when user presses Ctrl-C.
+    Start PyTCP stack and stop it when user presses Ctrl-C. Also
+    run the provided subsystems if any.
     """
 
     if subsystems is None:

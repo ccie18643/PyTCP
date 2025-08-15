@@ -25,16 +25,14 @@
 
 
 """
-The example 'user space' client for TCP echo. It actively connects to
-TCP Echo service and sends messages.
+This module contains the example 'user space' client for TCP echo. It actively
+connects to the TCP Echo service and sends messages.
 
-examples/tcp_echo_client.py
+examples/client__tcp_echo.py
 
 ver 3.0.3
 """
 
-
-from __future__ import annotations
 
 import threading
 from typing import Any, override

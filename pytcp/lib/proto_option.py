@@ -25,7 +25,7 @@
 
 
 """
-Module contains base class for all of the option classes.
+This module contains base class for all of the option classes.
 
 pytcp/lib/proto_option.py
 

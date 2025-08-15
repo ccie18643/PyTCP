@@ -29,11 +29,9 @@ This module contains protocols related defaults.
 
 pytcp/protocols/defaults.py
 
-ver 3.0.2
+ver 3.0.3
 """
 
-
-from __future__ import annotations
 
 IP4__DEFAULT_TTL = 64
 IP4__MIN_MTU = 576  # RFC 791

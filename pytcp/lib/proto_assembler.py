@@ -25,7 +25,7 @@
 
 
 """
-Module contains the base class for all of the protocol assembler classes.
+This module contains the base class for all of the protocol assembler classes.
 
 pytcp/lib/proto_assembler.py
 

@@ -25,7 +25,7 @@
 
 
 """
-The 'user space' generic service base class used in examples.
+This module contains the 'user space' generic service base class used in examples.
 
 examples/lib/service.py
 
@@ -49,7 +49,7 @@ if TYPE_CHECKING:
 
 class Service(Subsystem):
     """
-    Generic service support class.
+    Generic service class.
     """
 
     _protocol_name: str

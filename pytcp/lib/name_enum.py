@@ -25,7 +25,7 @@
 
 
 """
-Module contains the NameEnum class.
+This module contains the NameEnum class.
 
 pytcp/lib/name_enum.py
 

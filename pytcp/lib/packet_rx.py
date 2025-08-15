@@ -25,7 +25,7 @@
 
 
 """
-Module contains class representing the received packet.
+This module contains class representing the received packet.
 
 pytcp/lib/packet_rx.py
 

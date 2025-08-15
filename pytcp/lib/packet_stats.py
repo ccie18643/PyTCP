@@ -25,7 +25,7 @@
 
 
 """
-Module contains classes used to store the packet processing statistics.
+This module contains classes used to store the packet processing statistics.
 
 pytcp/lib/packet_stats.py
 

@@ -25,7 +25,7 @@
 
 
 """
-Module contains globals and checks for integers of various lengths used to
+This odule contains globals and checks for integers of various lengths used to
 validate protocol fields.
 
 pytcp/lib/int_checks.py

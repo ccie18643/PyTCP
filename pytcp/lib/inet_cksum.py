@@ -25,7 +25,7 @@
 
 
 """
-Module contains function used to compute the Internet Checksum used used by
+This module contains function used to compute the Internet Checksum used by
 the IPv4/ICMPv4/ICMPv6/UDP/TCP protocols.
 
 pytcp/lib/inet_cksum.py

@@ -25,7 +25,7 @@
 
 
 """
-Module contains definition of the TX status codes.
+This module contains definition of the TX status codes.
 
 pytcp/lib/tx_status.py
 

@@ -25,15 +25,12 @@
 
 
 """
-Module contains methods supporting errors.
+This module contains stack error classes.
 
 pytcp/lib/errors.py
 
-ver 3.0.2
+ver 3.0.3
 """
-
-
-from __future__ import annotations
 
 
 class PyTcpError(Exception):

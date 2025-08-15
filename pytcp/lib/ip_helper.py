@@ -25,7 +25,7 @@
 
 
 """
-Module contains helper functions for the IP related operations.
+This module contains helper functions for the IP related operations.
 
 pycp/lib/ip_helper.py
 

@@ -25,15 +25,13 @@
 
 
 """
-The 'user space' UDP generic service class used in examples.
+This module contains the 'user space' UDP generic service class used in examples.
 
 examples/lib/udp_service.py
 
 ver 3.0.3
 """
 
-
-from __future__ import annotations
 
 from typing import override
 
@@ -42,7 +40,7 @@ from examples.lib.service import Service
 
 class UdpService(Service):
     """
-    UDP service support class.
+    UDP service class.
     """
 
     _protocol_name = "UDP"
@@ -50,7 +48,7 @@ class UdpService(Service):
     @override
     def _thread__service(self) -> None:
         """
-        Service initialization.
+        Service thread.
         """
 
         if listening_socket := self._get_service_socket():

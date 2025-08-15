@@ -25,7 +25,7 @@
 
 
 """
-Module contains the base class for all of the protocol classes.
+This module contains the base class for all of the protocol classes.
 
 pytcp/lib/proto.py
 

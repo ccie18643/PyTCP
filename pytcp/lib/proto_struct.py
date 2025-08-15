@@ -25,7 +25,7 @@
 
 
 """
-Module contains base class for the protocol headers.
+This module contains base class for the protocol headers.
 
 pytcp/lib/proto_struct.py
 

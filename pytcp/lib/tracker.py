@@ -25,7 +25,7 @@
 
 
 """
-Module contains class used to generate serial number information
+This module contains class used to generate serial number information
 for new packets.
 
 pytcp/lib/tracker.py

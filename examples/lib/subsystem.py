@@ -25,7 +25,7 @@
 
 
 """
-The base class for servers and clients used in examples.
+This module contains the base class for servers and clients used in examples.
 
 examples/lib/subsystem.py
 
@@ -60,7 +60,7 @@ if TYPE_CHECKING:
 
 class Subsystem(ABC):
     """
-    Base class for 'user space' services like clients and servers.
+    Base class for 'user space' services and clients used in examples.
     """
 
     stack_ip4_address: Ip4Address | None = None
@@ -94,7 +94,7 @@ class Subsystem(ABC):
 
     def _log(self, message: str) -> None:
         """
-        Log a message.
+        Log a subsystem message.
         """
 
         click.secho(
@@ -108,7 +108,7 @@ class Subsystem(ABC):
         self, *, ip_version: IpVersion, protocol_name: str
     ) -> Socket:
         """
-        Create and bind the client socket.
+        Create and bind the subsystem socket.
         """
 
         match (ip_version, protocol_name):

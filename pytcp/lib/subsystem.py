@@ -25,7 +25,7 @@
 
 
 """
-The base class for all of the subsystems used by the stack.
+This module contains base class for all of the subsystems used by the stack.
 
 pytcp/lib/subsystem.py
 

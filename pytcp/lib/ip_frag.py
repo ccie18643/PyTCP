@@ -25,7 +25,7 @@
 
 
 """
-Module contains classes used in the IPv4/IPv6 packet fragmentation and reassembly
+This module contains classes used in the IPv4/IPv6 packet fragmentation and reassembly
 processes.
 
 pytcp/lib/ip_frag.py

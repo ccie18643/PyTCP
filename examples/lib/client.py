@@ -25,7 +25,8 @@
 
 
 """
-The 'user space' generic client base class used in examples.
+This module contains the 'user space' generic client base class used in
+the examples.
 
 examples/lib/client.py
 
@@ -55,7 +56,7 @@ if TYPE_CHECKING:
 
 class Client(Subsystem):
     """
-    Generic client support class.
+    Generic client class.
     """
 
     _protocol_name: str
@@ -111,7 +112,7 @@ class Client(Subsystem):
 
     def _get_client_socket(self) -> Socket:
         """
-        Create and bind the client socket.
+        Create and bind the client's socket.
         """
 
         client_socket = self._get_subsystem_socket(
@@ -166,7 +167,7 @@ class Client(Subsystem):
     @abstractmethod
     def _thread__sender(self) -> None:
         """
-        Thread used to send data.
+        Thread used to send data by the client.
         """
 
         raise NotImplementedError
@@ -174,7 +175,7 @@ class Client(Subsystem):
     @abstractmethod
     def _thread__receiver(self) -> None:
         """
-        Thread used to receive data.
+        Thread used to receive data by the client.
         """
 
         raise NotImplementedError

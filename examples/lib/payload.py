@@ -25,15 +25,12 @@
 
 
 """
-Module contains simple payload generators.
+This module contains simple payload generators used in the examples.
 
 examples/lib/payload.py
 
 ver 3.0.3
 """
-
-
-from __future__ import annotations
 
 
 def payload(*, pattern: bytes = b"1234567890", length: int = 64) -> bytes:

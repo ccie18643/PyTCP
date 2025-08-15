@@ -25,7 +25,7 @@
 
 
 """
-Module contains methods supporting the stack logging.
+This module contains methods supporting the stack logging.
 
 pytcp/lib/logger.py
 

@@ -25,9 +25,9 @@
 
 
 """
-The example 'user space' service TCP Echo (RFC 862).
+This module contains the example 'user space' service TCP Echo (RFC 862).
 
-examples/tcp_echo_service.py
+examples/service__tcp_echo.py
 
 ver 3.0.3
 """

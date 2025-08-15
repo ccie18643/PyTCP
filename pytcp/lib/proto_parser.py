@@ -25,7 +25,7 @@
 
 
 """
-Module contains base class for all of the protocol parser classes.
+This module contains base class for all of the protocol parser classes.
 
 pytcp/lib/proto_parser.py
 

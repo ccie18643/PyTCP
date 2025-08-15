@@ -25,18 +25,16 @@
 
 
 """
-The example 'user space' client for ICMP Echo protocol. It actively sends the
-ICMP Echo Request messages to the remote IP address and waits for responses.
-It is very basic implementation that essentially mimics operation of the UNIX
-'ping' utility.
+This module contains the example 'user space' client for ICMP Echo protocol.
+It actively sends the ICMP Echo Request messages to the remote IP address and
+waits for responses. It is very basic implementation that essentially mimics
+operation of the UNIX 'ping' utility.
 
 examples/client__icmp_echo.py
 
 ver 3.0.3
 """
 
-
-from __future__ import annotations
 
 import os
 import struct

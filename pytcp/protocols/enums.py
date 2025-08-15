@@ -29,7 +29,7 @@ This module contains protocols related enums.
 
 pytcp/protocols/enums.py
 
-ver 3.0.2
+ver 3.0.3
 """
 
 

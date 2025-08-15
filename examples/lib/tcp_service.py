@@ -25,7 +25,7 @@
 
 
 """
-The 'user space' TCP generic service class used in examples.
+This module contains the 'user space' TCP generic service class used in examples.
 
 examples/lib/tcp_service.py
 
@@ -46,7 +46,7 @@ if TYPE_CHECKING:
 
 class TcpService(Service):
     """
-    TCP service support class.
+    TCP service class.
     """
 
     _protocol_name = "TCP"

@@ -25,16 +25,15 @@
 
 
 """
-The example 'user space' client for UDP Echo protocol. It actively sends the UDP
-packets to the remote IP address/port and waits for responses.
+This module contains the example 'user space' client for UDP Echo protocol.
+It actively sends the UDP packets to the remote IP address/port and waits for
+the responses.
 
 examples/client__udp_echo.py
 
 ver 3.0.3
 """
 
-
-from __future__ import annotations
 
 import threading
 from typing import Any, override

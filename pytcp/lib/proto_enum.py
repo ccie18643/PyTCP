@@ -25,7 +25,7 @@
 
 
 """
-Module contains the ProtoEnum class.
+This module contains the ProtoEnum class.
 
 pytcp/lib/proto_enum.py
 
