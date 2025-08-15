@@ -95,11 +95,16 @@ pypi: dist
 	@./$(VENV)/bin/twine check dist/*
 	@./$(VENV)/bin/twine upload dist/*
 
-tap:
+tap7:
 	@ip tuntap add name tap7 mode tap
 	@ip link set dev tap7 up
 	@brctl addif br0 tap7
 	@echo 'Interface tap7 created and added to bridge br0.'
+tap9:
+	@ip tuntap add name tap9 mode tap
+	@ip link set dev tap9 up
+	@brctl addif br0 tap9
+	@echo 'Interface tap9 created and added to bridge br0.'
 
 tun:
 	@ip tuntap add name tun7 mode tun
@@ -107,4 +112,4 @@ tun:
 	@ip addr add 10.0.0.1/24 dev tun7
 	@echo 'Interface tun7 created and assigned 10.0.0.1/24 address.'
 
-.PHONY: all venv run clean lint bridge tap tun
+.PHONY: all venv run clean lint bridge tap7 tap9 tun

@@ -39,7 +39,7 @@ import fcntl
 import os
 import struct
 import sys
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from net_addr.ip4_host import Ip4Host
 from net_addr.ip6_host import Ip6Host
@@ -75,7 +75,7 @@ INTERFACE__TAP__MTU = 1500
 INTERFACE__TUN__MTU = 1500
 
 # Addresses configuration.
-MAC_ADDRESS = "02:00:00:77:77:77"
+MAC_ADDRESS: str = "02:00:00:{x}{x}:{x}{x}:{x}{x}"
 IP4_ADDRESS = None
 IP4_GATEWAY = None
 IP6_ADDRESS = None
@@ -148,10 +148,19 @@ sockets: dict[SocketId, Socket] = {}
 arp_probe_unicast_conflict: set[Ip4Address] = set()
 
 
-def initialize_interface(interface_name: str, /) -> tuple[int, int]:
+def initialize_interface(
+    *, interface_name: str, mac_address: MacAddress | None = None
+) -> dict[str, Any]:
     """
     Initialize the TAP/TUN interface.
     """
+
+    log("stack", f"Initializing interface: {interface_name}")
+
+    if mac_address is None:
+        mac_address = MacAddress(MAC_ADDRESS.format(x=interface_name[3:5]))
+
+    log("stack", f"Assigning MAC address: {mac_address}")
 
     TUNSETIFF = 0x400454CA
     IFF_TUN = 0x0001
@@ -186,7 +195,7 @@ def initialize_interface(interface_name: str, /) -> tuple[int, int]:
         ),
     )
 
-    return fd, mtu
+    return {"fd": fd, "mtu": mtu, "mac_address": mac_address}
 
 
 def mock__init(
@@ -224,10 +233,10 @@ def mock__init(
 
 
 def init(
+    *,
     fd: int,
     mtu: int = 1500,
-    *,
-    mac_address: MacAddress | None = None,
+    mac_address: MacAddress,
     ip4_support: bool = True,
     ip4_host: Ip4Host | None = (
         None
@@ -247,9 +256,6 @@ def init(
     """
     Initialize stack components.
     """
-
-    if mac_address is None:
-        mac_address = MacAddress(MAC_ADDRESS)
 
     global timer, rx_ring, tx_ring, arp_cache, nd_cache, packet_handler
     global interface_mtu, stack_initialized

@@ -136,8 +136,9 @@ def cli(
         stack__ip4_host.gateway = stack__ip4_gateway
 
     stack.init(
-        *stack.initialize_interface(stack__interface),
-        mac_address=stack__mac_address,
+        **stack.initialize_interface(
+            interface_name=stack__interface, mac_address=stack__mac_address
+        ),
         ip6_support=stack__ip6_support,
         ip6_host=stack__ip6_host,
         ip4_support=stack__ip4_support,
@@ -157,8 +158,9 @@ def cli(
                 )
             subsystem.start()
 
-        while any(
-            subsystem.is_alive() for subsystem in subsystems if subsystem
+        while (
+            any(subsystem.is_alive() for subsystem in subsystems if subsystem)
+            or not subsystems
         ):
             time.sleep(1)
 
