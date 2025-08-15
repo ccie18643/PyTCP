@@ -1,9 +1,11 @@
+# Quick Guide to the Provided Examples
+
 The PyTCP stack depends on the Linux TAP interface. The TAP interface is a virtual interface that, on the network end, can be 'plugged' into existing virtual network infrastructure via either Linux bridge or Open vSwitch. On the internal end, the TAP interface can be used like any other NIC by programmatically sending and receiving packets to/from it.
 
 
 If you wish to test the PyTCP stack in your local network, I'd suggest creating the following network setup that will allow you to connect both the Linux kernel (essentially your Linux OS) and the PyTCP stack(s) to your local network at the same time.
 
-<INTERNET> <---> [ROUTER] <---> (eth0)-[Linux bridge]-(br0) <---> [Linux kernel]
+[INTERNET] <---> [ROUTER] <---> (eth0)-[Linux bridge]-(br0) <---> [Linux kernel]
                                             |
                                             |--(tap7) <---> [PyTCP stack 1]
                                             |
