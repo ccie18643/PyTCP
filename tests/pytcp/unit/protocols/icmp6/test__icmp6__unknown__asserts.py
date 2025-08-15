@@ -166,7 +166,7 @@ class TestIcmp6UnknownParserAsserts(TestCase):
 
             _bytes = bytearray(b"\x00\x00\x00\x00\x00\x00\x00\x00")
             _bytes[0] = type
-            _bytes[2:4] = inet_cksum(_bytes).to_bytes(2)
+            _bytes[2:4] = inet_cksum(data=_bytes).to_bytes(2)
 
             with self.assertRaises(AssertionError) as error:
                 Icmp6UnknownMessage.from_bytes(bytes(_bytes))

@@ -80,7 +80,7 @@ class Icmp4(Proto):
         """
 
         _bytes = bytearray(bytes(self._message))
-        _bytes[2:4] = inet_cksum(_bytes).to_bytes(2)
+        _bytes[2:4] = inet_cksum(data=_bytes).to_bytes(2)
 
         return bytes(_bytes)
 

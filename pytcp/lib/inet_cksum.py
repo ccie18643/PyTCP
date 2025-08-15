@@ -29,7 +29,7 @@ Module contains function used to compute the Internet Checksum.
 
 pytcp/lib/inet_cksum.py
 
-ver 3.0.2
+ver 3.0.3
 """
 
 
@@ -39,11 +39,12 @@ import struct
 
 
 def inet_cksum(
+    *,
     data: bytes | bytearray | memoryview,
     init: int = 0,
 ) -> int:
     """
-    Compute Internet Checksum used by IPv4/ICMPv4/ICMPv6/UDP/TCP protocols.
+    Compute the Internet Checksum used by IPv4/ICMPv4/ICMPv6/UDP/TCP protocols.
     """
 
     if (dlen := len(data)) == 20:

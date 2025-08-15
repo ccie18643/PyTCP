@@ -110,7 +110,9 @@ class Ip4(Proto, Ip4HeaderProperties, Ip4OptionsProperties):
         header_and_options = bytearray(
             bytes(self._header) + bytes(self._options)
         )
-        header_and_options[10:12] = inet_cksum(header_and_options).to_bytes(2)
+        header_and_options[10:12] = inet_cksum(
+            data=header_and_options
+        ).to_bytes(2)
 
         if isinstance(
             self._payload, (TcpAssembler, UdpAssembler, RawAssembler)

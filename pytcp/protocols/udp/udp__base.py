@@ -90,7 +90,7 @@ class Udp(Proto, UdpHeaderProperties):
         """
 
         _bytes = bytearray(bytes(self._header) + self._payload)
-        _bytes[6:8] = inet_cksum(_bytes, self.pshdr_sum).to_bytes(2)
+        _bytes[6:8] = inet_cksum(data=_bytes, init=self.pshdr_sum).to_bytes(2)
 
         return bytes(_bytes)
 

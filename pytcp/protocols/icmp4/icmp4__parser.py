@@ -118,7 +118,7 @@ class Icmp4Parser(Icmp4, ProtoParser):
                     frame=self._frame, ip4__payload_len=self._ip4__payload_len
                 )
 
-        if inet_cksum(self._frame[: self._ip4__payload_len]):
+        if inet_cksum(data=self._frame[: self._ip4__payload_len]):
             raise Icmp4IntegrityError(
                 "The packet checksum must be valid.",
             )

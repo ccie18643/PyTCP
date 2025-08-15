@@ -93,7 +93,7 @@ class Ip4Parser(Ip4, ProtoParser):
                 "The wrong packet length (II).",
             )
 
-        if inet_cksum(self._frame[:hlen]):
+        if inet_cksum(data=self._frame[:hlen]):
             raise Ip4IntegrityError(
                 "The wrong packet checksum.",
             )

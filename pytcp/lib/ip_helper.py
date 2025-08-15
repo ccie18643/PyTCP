@@ -27,9 +27,9 @@
 """
 Module contains helper functions for IP related operations.
 
-pycp/misc/ip_helper.py
+pycp/lib/ip_helper.py
 
-ver 3.0.2
+ver 3.0.3
 """
 
 
@@ -61,7 +61,7 @@ def ip_version(
     ip_address: str,
 ) -> IpVersion | None:
     """
-    Return version of IP address string.
+    Return the version of the IP address string.
     """
 
     try:
@@ -77,7 +77,7 @@ def str_to_ip(
     ip_address: str,
 ) -> Ip6Address | Ip4Address | None:
     """
-    Convert string to appropriate version IP address.
+    Convert the string to the appropriate version of the IP address.
     """
 
     try:
@@ -91,8 +91,7 @@ def str_to_ip(
 
 def pick_local_ip_address(remote_ip_address: T) -> T:
     """
-    Pick appropriate source IP address based on provided
-    destination IP address.
+    Pick an appropriate source IP address based on the provided destination IP address.
     """
 
     if isinstance(remote_ip_address, Ip6Address):
@@ -108,23 +107,22 @@ def pick_local_ip6_address(
     remote_ip6_address: Ip6Address,
 ) -> Ip6Address:
     """
-    Pick appropriate source IPv6 address based on provided
-    destination IPv6 address.
+    Pick an appropriate source IPv6 address based on the provided destination IPv6 address.
     """
 
-    # If destination belongs to any of local networks
-    # pick source address from that network.
+    # If the destination belongs to any of the local networks,
+    # pick a source address from that network.
     for ip6_host in stack.packet_handler.ip6_host:
         if remote_ip6_address in ip6_host.network:
             return ip6_host.address
 
-    # If destination is external pick source from first
-    # network that has default gateway set.
+    # If the destination is an external address, pick the source address from the first
+    # network that has a default gateway set.
     for ip6_host in stack.packet_handler.ip6_host:
         if ip6_host.gateway:
             return ip6_host.address
 
-    # In case everything else fails return unspecified.
+    # In case everything else fails, return the unspecified address.
     return Ip6Address()
 
 
@@ -132,29 +130,28 @@ def pick_local_ip4_address(
     remote_ip4_address: Ip4Address,
 ) -> Ip4Address:
     """
-    Pick appropriate source IPv4 address based on provided
-    destination IPv4 address.
+    Pick an appropriate source IPv4 address based on the provided destination IPv4 address.
     """
 
-    # If destination belongs to any of local networks
-    # pick source address from that network.
+    # If the destination belongs to any of the local networks,
+    # pick a source address from that network.
     for ip4_host in stack.packet_handler.ip4_host:
         if remote_ip4_address in ip4_host.network:
             return ip4_host.address
 
-    # If destination is external pick source from first
-    # network that has default gateway set.
+    # If the destination is an external address, pick the source address from the first
+    # network that has a default gateway set.
     for ip4_host in stack.packet_handler.ip4_host:
         if ip4_host.gateway:
             return ip4_host.address
 
-    # In case everything else fails return unspecified.
+    # In case everything else fails, return the unspecified address.
     return Ip4Address()
 
 
 def pick_local_port() -> int:
     """
-    Pick ephemeral local port, making sure it is not already being used
+    Pick an ephemeral local port, making sure it is not already being used
     by any socket.
     """
 
@@ -179,7 +176,7 @@ def is_address_in_use(
     socket_type: SocketType,
 ) -> bool:
     """
-    Check if IP address / port combination is already in use.
+    Check if the IP address and port combination is already in use.
     """
 
     from pytcp.socket.tcp__socket import TcpSocket

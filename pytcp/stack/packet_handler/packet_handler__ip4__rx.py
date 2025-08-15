@@ -239,7 +239,7 @@ class PacketHandlerIp4Rx(ABC):
         header[0] = 0x45
         struct.pack_into("!H", header, 2, IP4__HEADER__LEN + len(payload))
         header[6] = header[7] = header[10] = header[11] = 0
-        struct.pack_into("!H", header, 10, inet_cksum(memoryview(header)))
+        struct.pack_into("!H", header, 10, inet_cksum(data=memoryview(header)))
         packet_rx = PacketRx(bytes(header) + payload)
         Ip4Parser(packet_rx)
         __debug__ and log(

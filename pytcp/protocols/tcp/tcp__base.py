@@ -122,7 +122,7 @@ class Tcp(Proto, TcpHeaderProperties, TcpOptionsProperties):
         _bytes = bytearray(
             bytes(self._header) + bytes(self._options) + self._payload
         )
-        _bytes[16:18] = inet_cksum(_bytes, self.pshdr_sum).to_bytes(2)
+        _bytes[16:18] = inet_cksum(data=_bytes, init=self.pshdr_sum).to_bytes(2)
 
         return bytes(_bytes)
 

@@ -25,11 +25,11 @@
 
 
 """
-Module contains class FragFlow used for IPv4/IPv6 packet fragmentation and reassembly.
+Module contains classes used for IPv4/IPv6 packet fragmentation and reassembly.
 
-pytcp/lib/frag_flow.py
+pytcp/lib/ip_frag.py
 
-ver 3.0.2
+ver 3.0.3
 """
 
 

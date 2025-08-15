@@ -89,7 +89,9 @@ class Raw(Proto):
             and self._payload[2:4] == b"\x00\x00"
         ):
             _payload = bytearray(self._payload)
-            _payload[2:4] = inet_cksum(_payload, self.pshdr_sum).to_bytes(2)
+            _payload[2:4] = inet_cksum(
+                data=_payload, init=self.pshdr_sum
+            ).to_bytes(2)
             return bytes(_payload)
 
         # Automatically calculate checksum if IpProto is ICMPv4 packet and checksum is not set.
@@ -98,7 +100,7 @@ class Raw(Proto):
             and self._payload[2:4] == b"\x00\x00"
         ):
             _payload = bytearray(self._payload)
-            _payload[2:4] = inet_cksum(_payload).to_bytes(2)
+            _payload[2:4] = inet_cksum(data=_payload).to_bytes(2)
             return bytes(_payload)
 
         return self._payload
