@@ -1,6 +1,6 @@
 # Quick Guide to the Provided Examples
 
-The PyTCP stack depends on the Linux TAP interface. The TAP interface is a virtual interface that, on the network end, can be 'plugged' into existing virtual network infrastructure via either Linux bridge or Open vSwitch. On the internal end, the TAP interface can be used like any other NIC by programmatically sending and receiving packets to/from it.
+<p>The PyTCP stack depends on the Linux TAP interface. The TAP interface is a virtual interface that, on the network end, can be 'plugged' into existing virtual network infrastructure via either Linux bridge or Open vSwitch. On the internal end, the TAP interface can be used like any other NIC by programmatically sending and receiving packets to/from it.</p>
 
 ## The Suggested Network Topology
 
@@ -14,7 +14,7 @@ If you wish to test the PyTCP stack in your local network, I'd suggest creating 
                                             |--(tap9) <---> [PyTCP stack 2]
 ```
 
-Do NOT assign any IP addresses to interfaces tap7 & tap9. Stack will handle IP addressing on those interfaces.
+* NOTE: Do NOT assign any IP addresses to interfaces tap7 & tap9. Stack will handle IP addressing on those interfaces.
 
 ## How to Run Examples
 After the example program (either client or service) starts the stack, it will communicate with it via a simplified BSD Sockets-like API interface.
@@ -31,7 +31,8 @@ Before running any of the examples, please make sure to:
 
 ## Testing Examples Using 3rd Party Tools
 To test the example code with 3rd party tools (assuming you are connected with two terminals to the Linux machine pictured in the above diagram):
-[The ncat tool comes with the nmap package]
+
+* NOTE: The ncat tool comes with the nmap package.
 
 ICMP Echo Client over IPv4
  - In a terminal window, run: examples/client_icmp_echo.py <br0 IPv4 address>
