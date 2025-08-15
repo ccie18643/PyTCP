@@ -25,15 +25,14 @@
 
 
 """
-Module contains globals and checks for various lengths of integers.
+Module contains globals and checks for integers of various lengths used to
+validate protocol fields.
 
 pytcp/lib/int_checks.py
 
 ver 3.0.3
 """
 
-
-from __future__ import annotations
 
 UINT_2__MIN = 0x00
 UINT_2__MAX = 0x03

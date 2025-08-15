@@ -105,6 +105,9 @@ IP6__FRAG_FLOW_TIMEOUT = 5
 # and should always be disabled).
 UDP__ECHO_NATIVE = False
 
+# Ephemeral port range, used for picking local ports for outbound connections.
+EPHEMERAL_PORT_RANGE = range(32168, 60700, 2)
+
 # Logger configuration - LOG__CHANNEL sets which subsystems of stack log to the
 # console, LOG__DEBUG adds info about class/method caller.
 # Following subsystems are supported:

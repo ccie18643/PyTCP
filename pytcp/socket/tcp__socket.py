@@ -175,7 +175,9 @@ class TcpSocket(Socket):
         local_ip_address = self._local_ip_address
 
         if local_ip_address.is_unspecified:
-            local_ip_address = pick_local_ip_address(remote_ip_address)
+            local_ip_address = pick_local_ip_address(
+                remote_ip_address=remote_ip_address
+            )
 
             if local_ip_address.is_unspecified:
                 raise gaierror(

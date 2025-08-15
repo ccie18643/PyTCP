@@ -25,7 +25,7 @@
 
 
 """
-Module contains helper functions for IP related operations.
+Module contains helper functions for the IP related operations.
 
 pycp/lib/ip_helper.py
 
@@ -37,31 +37,29 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, TypeVar, cast
 
-from net_addr.ip_address import IpVersion
-
 from net_addr import (
     Ip4Address,
     Ip4AddressFormatError,
     Ip6Address,
     Ip6AddressFormatError,
     IpAddress,
+    IpVersion,
 )
 from pytcp import stack
 
 if TYPE_CHECKING:
     from pytcp.socket.socket import AddressFamily, SocketType
 
+
 T = TypeVar("T", bound=IpAddress)
 
 
-EPHEMERAL_PORT_RANGE = range(32168, 60700, 2)
-
-
 def ip_version(
+    *,
     ip_address: str,
 ) -> IpVersion | None:
     """
-    Return the version of the IP address string.
+    Return version of the IP address string.
     """
 
     try:
@@ -73,11 +71,9 @@ def ip_version(
             return None
 
 
-def str_to_ip(
-    ip_address: str,
-) -> Ip6Address | Ip4Address | None:
+def str_to_ip(ip_address: str, /) -> Ip6Address | Ip4Address | None:
     """
-    Convert the string to the appropriate version of the IP address.
+    Convert string to the appropriate version of the IP address.
     """
 
     try:
@@ -89,21 +85,29 @@ def str_to_ip(
             return None
 
 
-def pick_local_ip_address(remote_ip_address: T) -> T:
+def pick_local_ip_address(*, remote_ip_address: T) -> T:
     """
     Pick an appropriate source IP address based on the provided destination IP address.
     """
 
-    if isinstance(remote_ip_address, Ip6Address):
-        return cast(T, pick_local_ip6_address(remote_ip_address))
+    match remote_ip_address.version:
+        case IpVersion.IP6:
+            assert isinstance(remote_ip_address, Ip6Address)
+            return cast(
+                T,
+                pick_local_ip6_address(remote_ip6_address=remote_ip_address),
+            )
 
-    if isinstance(remote_ip_address, Ip4Address):
-        return cast(T, pick_local_ip4_address(remote_ip_address))
-
-    raise TypeError(f"Unsupported IP address type: {type(remote_ip_address)}")
+        case IpVersion.IP4:
+            assert isinstance(remote_ip_address, Ip4Address)
+            return cast(
+                T,
+                pick_local_ip4_address(remote_ip4_address=remote_ip_address),
+            )
 
 
 def pick_local_ip6_address(
+    *,
     remote_ip6_address: Ip6Address,
 ) -> Ip6Address:
     """
@@ -127,6 +131,7 @@ def pick_local_ip6_address(
 
 
 def pick_local_ip4_address(
+    *,
     remote_ip4_address: Ip4Address,
 ) -> Ip4Address:
     """
@@ -151,11 +156,10 @@ def pick_local_ip4_address(
 
 def pick_local_port() -> int:
     """
-    Pick an ephemeral local port, making sure it is not already being used
-    by any socket.
+    Pick an ephemeral local port, ensuring no socket is already using it.
     """
 
-    available_ephemeral_ports = set(EPHEMERAL_PORT_RANGE) - {
+    available_ephemeral_ports = set(stack.EPHEMERAL_PORT_RANGE) - {
         socket.local_port for socket in stack.sockets.values()
     }
 
@@ -170,7 +174,7 @@ def pick_local_port() -> int:
 
 def is_address_in_use(
     *,
-    local_ip_address: IpAddress,
+    local_ip_address: Ip6Address | Ip4Address,
     local_port: int,
     address_family: AddressFamily,
     socket_type: SocketType,

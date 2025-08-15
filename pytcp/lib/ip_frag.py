@@ -25,15 +25,14 @@
 
 
 """
-Module contains classes used for IPv4/IPv6 packet fragmentation and reassembly.
+Module contains classes used in the IPv4/IPv6 packet fragmentation and reassembly
+processes.
 
 pytcp/lib/ip_frag.py
 
 ver 3.0.3
 """
 
-
-from __future__ import annotations
 
 import time
 from dataclasses import dataclass, field
@@ -44,7 +43,7 @@ from net_addr.ip_address import IpAddress
 @dataclass(kw_only=True, frozen=True)
 class IpFragFlowId:
     """
-    Class stores IPv4/IPv6 packet fragmentation flow ID.
+    Class stores the IPv4/IPv6 packet fragmentation flow ID.
     """
 
     src: IpAddress
@@ -55,7 +54,7 @@ class IpFragFlowId:
 @dataclass(kw_only=True)
 class IpFragData:
     """
-    Class stores IPv4/IPv6 packet fragmentation data.
+    Class stores the IPv4/IPv6 packet fragmentation data.
     """
 
     timestamp: float = field(default_factory=time.time, init=False)
