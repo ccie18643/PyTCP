@@ -25,15 +25,13 @@
 
 
 """
-Module contains the base class for all of the protocol classes.
+Module contains the base class for all of the protocol assembler classes.
 
-pytcp/lib/proto.py
+pytcp/lib/proto_assembler.py
 
-ver 3.0.2
+ver 3.0.3
 """
 
-
-from __future__ import annotations
 
 from pytcp.lib.proto import Proto
 from pytcp.lib.tracker import Tracker

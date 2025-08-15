@@ -23,15 +23,13 @@
 ##                                                                            ##
 ################################################################################
 
-# pylint: disable=too-few-public-methods
-
 
 """
-Module contains the base class for all of the option classes.
+Module contains base class for all of the option classes.
 
 pytcp/lib/proto_option.py
 
-ver 3.0.2
+ver 3.0.3
 """
 
 

@@ -25,15 +25,13 @@
 
 
 """
-Module contains the base class for all of the protocol parser classes.
+Module contains base class for all of the protocol parser classes.
 
 pytcp/lib/proto_parser.py
 
-ver 3.0.2
+ver 3.0.3
 """
 
-
-from __future__ import annotations
 
 from abc import abstractmethod
 
@@ -50,7 +48,7 @@ class ProtoParser(Proto):
     @abstractmethod
     def _validate_integrity(self) -> None:
         """
-        Validate the integrity of the incoming packet before parsing it.
+        Validate the integrity of the receivedg packet before parsing it.
         """
 
         raise NotImplementedError
@@ -66,7 +64,7 @@ class ProtoParser(Proto):
     @abstractmethod
     def _validate_sanity(self) -> None:
         """
-        Validate the sanity of the incoming packet after parsing it.
+        Validate the sanity of the received packet after parsing it.
         """
 
         raise NotImplementedError

@@ -25,15 +25,13 @@
 
 
 """
-Module contains class representing packet.
+Module contains class representing the received packet.
 
-pytcp/lib/packet.py
+pytcp/lib/packet_rx.py
 
-ver 3.0.2
+ver 3.0.3
 """
 
-
-from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
@@ -56,7 +54,7 @@ if TYPE_CHECKING:
 
 class PacketRx:
     """
-    Base packet RX class.
+    Class representing the received packet.
     """
 
     def __init__(self, frame: bytes, /) -> None:
@@ -82,7 +80,7 @@ class PacketRx:
 
     def __len__(self) -> int:
         """
-        Return length of raw frame.
+        Return length of the raw frame.
         """
 
         return len(self.frame)

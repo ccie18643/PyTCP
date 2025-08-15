@@ -30,7 +30,7 @@ for new packets.
 
 pytcp/lib/tracker.py
 
-ver 3.0.2
+ver 3.0.3
 """
 
 
@@ -84,7 +84,7 @@ class Tracker:
 
     def __str__(self) -> str:
         """
-        The '__str__()' dunder.
+        Get tracker as a string.
         """
 
         if self._echo_tracker:
@@ -93,7 +93,7 @@ class Tracker:
 
     def __repr__(self) -> str:
         """
-        The '__repr__()' dunder.
+        Get tracker as a string representation.
         """
 
         if self._echo_tracker is None:
@@ -107,7 +107,7 @@ class Tracker:
     @property
     def echo_tracker(self) -> Tracker | None:
         """
-        Geter for the '_echo_tracker' attribute.
+        Get the '_echo_tracker' attribute.
         """
 
         return self._echo_tracker
@@ -115,7 +115,7 @@ class Tracker:
     @property
     def timestamp(self) -> float:
         """
-        Geter for the '_timestamp' attribute.
+        Get the '_timestamp' attribute.
         """
 
         return self._timestamp
@@ -123,7 +123,7 @@ class Tracker:
     @property
     def latency(self) -> str:
         """
-        Latency between echo tracker timestamp and current timestamp.
+        Get the latency between echo tracker timestamp and the current timestamp.
         """
 
         if self._echo_tracker:

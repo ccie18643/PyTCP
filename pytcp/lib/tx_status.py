@@ -25,15 +25,13 @@
 
 
 """
-Module contains definition of TX status codes.
+Module contains definition of the TX status codes.
 
 pytcp/lib/tx_status.py
 
-ver 3.0.2
+ver 3.0.3
 """
 
-
-from __future__ import annotations
 
 from enum import Enum, auto
 
@@ -89,21 +87,21 @@ class TxStatus(Enum):
 
     def __str__(self) -> str:
         """
-        The '__str__()' dunder.
+        Get the enum as a string.
         """
 
         return str(self.name)
 
     def __eq__(self, other: object) -> bool:
         """
-        The '__eq__()' dunder.
+        Compare the enum with another object.
         """
 
         return repr(self) == repr(other)
 
     def __hash__(self) -> int:
         """
-        The '__hash__()' dunder.
+        Get the hash of the enum.
         """
 
         return hash(repr)

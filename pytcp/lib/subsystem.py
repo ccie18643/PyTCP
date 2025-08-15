@@ -25,7 +25,7 @@
 
 
 """
-The base class for all of the subsystems used by stack.
+The base class for all of the subsystems used by the stack.
 
 pytcp/lib/subsystem.py
 
@@ -33,19 +33,18 @@ ver 3.0.3
 """
 
 
-from __future__ import annotations
-
 import threading
 from abc import ABC, abstractmethod
 
 from pytcp.lib.logger import log
+
 
 SUBSYSTEM_SLEEP_TIME__SEC = 0.1
 
 
 class Subsystem(ABC):
     """
-    Base class for 'user space' services like clients and servers.
+    Base class for the 'user space' services and clients.
     """
 
     _subsystem_name: str
@@ -89,17 +88,17 @@ class Subsystem(ABC):
 
     def _start(self) -> None:
         """
-        Perform additional actions after starting the subsystem thread.
+        Perform additional actions after starting the subsystem.
         """
 
     def _stop(self) -> None:
         """
-        Perform additional actions after stopping the subsystem thread.
+        Perform additional actions after stopping the subsystem.
         """
 
     def _thread__subsystem(self) -> None:
         """
-        Thread responsible for operating the subsystem..
+        Thread responsible for executing the subsystem operations.
         """
 
         __debug__ and log("stack", f"Started {self._subsystem_name}")
@@ -112,7 +111,7 @@ class Subsystem(ABC):
     @abstractmethod
     def _subsystem_loop(self) -> None:
         """
-        Execute the subsystem logic in a loop.
+        Execute the subsystem operations in a loop.
         """
 
         raise NotImplementedError

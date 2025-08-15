@@ -29,11 +29,9 @@ Module contains the base class for all of the protocol classes.
 
 pytcp/lib/proto.py
 
-ver 3.0.2
+ver 3.0.3
 """
 
-
-from __future__ import annotations
 
 from abc import ABC, abstractmethod
 

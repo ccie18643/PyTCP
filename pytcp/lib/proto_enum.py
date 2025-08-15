@@ -23,22 +23,19 @@
 ##                                                                            ##
 ################################################################################
 
-# pylint: disable=redefined-builtin
 
 """
 Module contains the ProtoEnum class.
 
-pytcp/lib/enum.py
+pytcp/lib/proto_enum.py
 
-ver 3.0.2
+ver 3.0.3
 """
 
 
-from __future__ import annotations
-
 from typing import TYPE_CHECKING, Self
 
-from aenum import extend_enum  # type: ignore
+from aenum import extend_enum  # type: ignore[import-untyped]
 
 if TYPE_CHECKING:
     from enum import Enum
@@ -65,10 +62,7 @@ class ProtoEnum(Enum):
 
         return self.name.replace("_", " ").title()
 
-    def __contains__(
-        self,
-        value: object,
-    ) -> bool:
+    def __contains__(self, value: object, /) -> bool:
         """
         Check if the provided value is a valid core enum value.
         """
@@ -113,7 +107,7 @@ class ProtoEnum(Enum):
 
 class ProtoEnumByte(ProtoEnum):
     """
-    Static enum used to represent protocol values stored in 8 bits.
+    Static enum used to represent the protocol values stored in 8 bits.
     """
 
     def __bytes__(self) -> bytes:
@@ -134,7 +128,7 @@ class ProtoEnumByte(ProtoEnum):
 
 class ProtoEnumWord(ProtoEnum):
     """
-    Static enum used to represent protocol values stored in 16 bits.
+    Static enum used to represent the protocol values stored in 16 bits.
     """
 
     def __bytes__(self) -> bytes:

@@ -25,11 +25,11 @@
 
 
 """
-Module contains base class for protocol header.
+Module contains base class for the protocol headers.
 
 pytcp/lib/proto_struct.py
 
-ver 3.0.2
+ver 3.0.3
 """
 
 
@@ -42,13 +42,13 @@ from dataclasses import dataclass
 @dataclass(frozen=True, kw_only=True)
 class ProtoStruct(ABC):
     """
-    The packet elements structure base.
+    Base class for all protocol structures.
     """
 
     @abstractmethod
     def __post_init__(self) -> None:
         """
-        Validate the lacket header fields.
+        Validate the protocol structure fields.
         """
 
         raise NotImplementedError
@@ -56,7 +56,7 @@ class ProtoStruct(ABC):
     @abstractmethod
     def __len__(self) -> int:
         """
-        Get the packet header length.
+        Get the protocol structure length.
         """
 
         raise NotImplementedError
@@ -64,7 +64,7 @@ class ProtoStruct(ABC):
     @abstractmethod
     def __bytes__(self) -> bytes:
         """
-        Get the packet header as bytes.
+        Get the protocol structure as bytes.
         """
 
         raise NotImplementedError
@@ -73,7 +73,7 @@ class ProtoStruct(ABC):
     @abstractmethod
     def from_bytes(_bytes: bytes, /) -> ProtoStruct:
         """
-        Create an ICMPv4 message from bytes.
+        Create the protocol structure from bytes.
         """
 
         raise NotImplementedError
