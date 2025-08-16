@@ -318,17 +318,6 @@ class TestNetAddrIp6Network(TestCase):
                 ),
             },
         },
-        {
-            "_description": "Test the IPv6 network format: (Ip6Address, Ip6Address)",
-            "_args": [(Ip6Address(), Ip6Address())],
-            "_kwargs": {},
-            "_results": {
-                "error": Ip6NetworkFormatError,
-                "error_message": (
-                    "The IPv6 network format is invalid: (Ip6Address('::'), Ip6Address('::'))"
-                ),
-            },
-        },
     ]
 )
 class TestNetAddrIp6NetworkErrors(TestCase):

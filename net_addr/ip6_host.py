@@ -25,11 +25,11 @@
 
 
 """
-Module contains IPv6 host support class.
+This module contains IPv6 host support class.
 
 net_addr/ip6_host.py
 
-ver 3.0.2
+ver 3.0.3
 """
 
 
@@ -59,8 +59,10 @@ class Ip6Host(IpHost[Ip6Address, Ip6Network, Ip6HostOrigin]):
     IPv6 host support class.
     """
 
+    __slots__ = ()
+
     _version: IpVersion = IpVersion.IP6
-    _gateway: Ip6Address | None = None
+    _gateway: Ip6Address | None
     _origin: Ip6HostOrigin
     _expiration_time: int
 
@@ -92,22 +94,15 @@ class Ip6Host(IpHost[Ip6Address, Ip6Network, Ip6HostOrigin]):
             assert self._expiration_time == 0
 
         if isinstance(host, tuple):
-            if len(host) == 2:
-                if isinstance(host[0], Ip6Address) and isinstance(
-                    host[1], Ip6Network
-                ):
-                    self._address = host[0]
-                    self._network = host[1]
-                    if self._address not in self._network:
-                        raise Ip6HostSanityError(host)
-                    self._validate_gateway(gateway)
-                    return
-                if isinstance(host[0], Ip6Address) and isinstance(
-                    host[1], Ip6Mask
-                ):
-                    self._address = host[0]
-                    self._network = Ip6Network((host[0], host[1]))
-                    return
+            self._address = host[0]
+            if isinstance(host[1], Ip6Network):
+                self._network = host[1]
+            else:
+                self._network = Ip6Network((host[0], host[1]))
+            if self._address not in self._network:
+                raise Ip6HostSanityError(host)
+            self._validate_gateway(gateway)
+            return
 
         if isinstance(host, str):
             try:

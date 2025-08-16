@@ -47,9 +47,15 @@ class IpNetwork[A: (Ip6Address, Ip4Address), M: (Ip6Mask, Ip4Mask)](ABC):
     IP network support base class.
     """
 
+    __slots__ = (
+        "_version",
+        "_address",
+        "_mask",
+    )
+
+    _version: IpVersion
     _address: A
     _mask: M
-    _version: IpVersion
 
     def __str__(self) -> str:
         """
@@ -70,7 +76,11 @@ class IpNetwork[A: (Ip6Address, Ip4Address), M: (Ip6Mask, Ip4Mask)](ABC):
         Compare IP network with another object.
         """
 
-        return repr(self) == repr(other)
+        return other is self or (
+            isinstance(other, type(self))
+            and self._address == other._address
+            and self._mask == other._mask
+        )
 
     def __hash__(self) -> int:
         """

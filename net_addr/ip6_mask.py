@@ -25,11 +25,11 @@
 
 
 """
-Module contains IPv6 mask support class.
+This module contains IPv6 mask support class.
 
 net_addr/ip6_mask.py
 
-ver 3.0.2
+ver 3.0.3
 """
 
 
@@ -38,10 +38,9 @@ from __future__ import annotations
 import re
 from typing import override
 
-from net_addr.ip6_address import IP6__ADDRESS_LEN
-from net_addr.ip_address import IpVersion
-
 from .errors import Ip6MaskFormatError
+from .ip6_address import IP6__ADDRESS_LEN
+from .ip_address import IpVersion
 from .ip_mask import IpMask
 
 
@@ -49,6 +48,8 @@ class Ip6Mask(IpMask):
     """
     IPv6 network mask support class.
     """
+
+    __slots__ = ()
 
     _version: IpVersion = IpVersion.IP6
 

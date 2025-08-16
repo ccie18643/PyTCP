@@ -55,9 +55,18 @@ class IpHost[
     IP host support base class.
     """
 
+    __slots__ = (
+        "_version",
+        "_address",
+        "_network",
+        "_gateway",
+        "_origin",
+        "_expiration_time",
+    )
+
+    _version: IpVersion
     _address: A
     _network: N
-    _version: IpVersion
     _gateway: A | None
     _origin: O
     _expiration_time: int
@@ -81,7 +90,11 @@ class IpHost[
         Compare the IP host address with another object.
         """
 
-        return repr(self) == repr(other)
+        return other is self or (
+            isinstance(other, type(self))
+            and self._address == other._address
+            and self._network.mask == other._network.mask
+        )
 
     def __hash__(self) -> int:
         """

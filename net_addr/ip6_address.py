@@ -63,6 +63,8 @@ class Ip6Address(IpAddress):
     IPv6 address support class.
     """
 
+    __slots__ = ()
+
     _version: IpVersion = IpVersion.IP6
 
     def __init__(

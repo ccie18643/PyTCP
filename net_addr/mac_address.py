@@ -25,11 +25,11 @@
 
 
 """
-Module contains Ethernet MAC address manipulation class.
+This module contains Ethernet MAC address manipulation class.
 
 net_addr/mac_address.py
 
-ver 3.0.2
+ver 3.0.3
 """
 
 
@@ -48,7 +48,7 @@ class MacAddress(Address):
     Ethernet MAC address support class.
     """
 
-    _address: int
+    __slots__ = ()
 
     def __init__(
         self,

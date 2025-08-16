@@ -50,6 +50,8 @@ class IpAddress(Address):
     IP address support base class.
     """
 
+    __slots__ = ("_version",)
+
     _version: IpVersion
 
     @property

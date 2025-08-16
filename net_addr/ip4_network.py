@@ -25,19 +25,17 @@
 
 
 """
-Module contains IPv4 network support class.
+This module contains IPv4 network support class.
 
 net_addr/ip4_network.py
 
-ver 3.0.2
+ver 3.0.3
 """
 
 
 from __future__ import annotations
 
 from typing import override
-
-from net_addr.ip_address import IpVersion
 
 from .errors import (
     Ip4AddressFormatError,
@@ -46,6 +44,7 @@ from .errors import (
 )
 from .ip4_address import Ip4Address
 from .ip4_mask import Ip4Mask
+from .ip_address import IpVersion
 from .ip_network import IpNetwork
 
 
@@ -53,6 +52,8 @@ class Ip4Network(IpNetwork[Ip4Address, Ip4Mask]):
     """
     IPv4 network support class.
     """
+
+    __slots__ = ()
 
     _version = IpVersion.IP4
 
@@ -71,15 +72,9 @@ class Ip4Network(IpNetwork[Ip4Address, Ip4Mask]):
             return
 
         if isinstance(network, tuple):
-            if len(network) == 2:
-                if isinstance(network[0], Ip4Address) and isinstance(
-                    network[1], Ip4Mask
-                ):
-                    self._mask = network[1]
-                    self._address = Ip4Address(
-                        int(network[0]) & int(network[1])
-                    )
-                    return
+            self._mask = network[1]
+            self._address = Ip4Address(int(network[0]) & int(network[1]))
+            return
 
         if isinstance(network, str):
             try:

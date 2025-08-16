@@ -25,11 +25,11 @@
 
 
 """
-Module contains IPv4 host support class.
+This module contains IPv4 host support class.
 
 net_addr/ip4_host.py
 
-ver 3.0.2
+ver 3.0.3
 """
 
 
@@ -58,11 +58,13 @@ class Ip4Host(IpHost[Ip4Address, Ip4Network, Ip4HostOrigin]):
     IPv4 host support class.
     """
 
+    __slots__ = ("_primary",)
+
     _version: IpVersion = IpVersion.IP4
     _primary: bool
     _gateway: Ip4Address | None
     _origin: Ip4HostOrigin
-    _expiration_time: int = 0
+    _expiration_time: int
 
     def __init__(
         self,
@@ -92,23 +94,15 @@ class Ip4Host(IpHost[Ip4Address, Ip4Network, Ip4HostOrigin]):
             assert self._expiration_time == 0
 
         if isinstance(host, tuple):
-            if len(host) == 2:
-                if isinstance(host[0], Ip4Address) and isinstance(
-                    host[1], Ip4Network
-                ):
-                    self._address = host[0]
-                    self._network = host[1]
-                    if self._address not in self._network:
-                        raise Ip4HostSanityError(host)
-                    self._validate_gateway(gateway)
-                    return
-                if isinstance(host[0], Ip4Address) and isinstance(
-                    host[1], Ip4Mask
-                ):
-                    self._address = host[0]
-                    self._network = Ip4Network((host[0], host[1]))
-                    self._validate_gateway(gateway)
-                    return
+            self._address = host[0]
+            if isinstance(host[1], Ip4Network):
+                self._network = host[1]
+            else:
+                self._network = Ip4Network((host[0], host[1]))
+            if self._address not in self._network:
+                raise Ip4HostSanityError(host)
+            self._validate_gateway(gateway)
+            return
 
         if isinstance(host, str):
             try:

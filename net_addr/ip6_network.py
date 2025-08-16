@@ -25,11 +25,11 @@
 
 
 """
-Module contains IPv6 network support class.
+This module contains IPv6 network support class.
 
 net_addr/ip6_network.py
 
-ver 3.0.2
+ver 3.0.3
 """
 
 
@@ -54,6 +54,8 @@ class Ip6Network(IpNetwork[Ip6Address, Ip6Mask]):
     IPv6 network support class.
     """
 
+    __slots__ = ()
+
     _version: IpVersion = IpVersion.IP6
 
     def __init__(
@@ -71,15 +73,9 @@ class Ip6Network(IpNetwork[Ip6Address, Ip6Mask]):
             return
 
         if isinstance(network, tuple):
-            if len(network) == 2:
-                if isinstance(network[0], Ip6Address) and isinstance(
-                    network[1], Ip6Mask
-                ):
-                    self._mask = network[1]
-                    self._address = Ip6Address(
-                        int(network[0]) & int(network[1])
-                    )
-                    return
+            self._mask = network[1]
+            self._address = Ip6Address(int(network[0]) & int(network[1]))
+            return
 
         if isinstance(network, str):
             try:

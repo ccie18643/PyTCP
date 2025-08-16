@@ -35,13 +35,15 @@ ver 3.0.3
 
 from abc import ABC, abstractmethod
 
-from net_addr.ip_address import IpVersion
+from .ip_address import IpVersion
 
 
 class IpMask(ABC):
     """
     IP mask support base class.
     """
+
+    __slots__ = ("_mask", "_version")
 
     _mask: int
     _version: IpVersion
@@ -86,7 +88,9 @@ class IpMask(ABC):
         Compare the IP mask with another object.
         """
 
-        return repr(self) == repr(other)
+        return other is self or (
+            isinstance(other, type(self)) and self._mask == other._mask
+        )
 
     def __hash__(self) -> int:
         """

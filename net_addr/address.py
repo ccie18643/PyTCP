@@ -43,6 +43,8 @@ class Address(ABC):
     Network address support base class.
     """
 
+    __slots__ = ("_address",)
+
     _address: int
 
     @abstractmethod
@@ -80,7 +82,11 @@ class Address(ABC):
         Compare the network address with another object.
         """
 
-        return repr(self) == repr(other)
+        return (
+            other is self
+            or isinstance(other, type(self))
+            and self._address == other._address
+        )
 
     def __hash__(self) -> int:
         """
