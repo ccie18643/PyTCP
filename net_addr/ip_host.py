@@ -37,13 +37,13 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 
-from .ip4_address import Ip4Address
-from .ip4_host_origin import Ip4HostOrigin
-from .ip4_network import Ip4Network
-from .ip6_address import Ip6Address
-from .ip6_host_origin import Ip6HostOrigin
-from .ip6_network import Ip6Network
-from .ip_address import IpVersion
+from net_addr.ip4_address import Ip4Address
+from net_addr.ip4_host_origin import Ip4HostOrigin
+from net_addr.ip4_network import Ip4Network
+from net_addr.ip6_address import Ip6Address
+from net_addr.ip6_host_origin import Ip6HostOrigin
+from net_addr.ip6_network import Ip6Network
+from net_addr.ip_address import IpVersion
 
 
 class IpHost[

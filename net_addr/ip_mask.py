@@ -35,7 +35,7 @@ ver 3.0.3
 
 from abc import ABC, abstractmethod
 
-from .ip_address import IpVersion
+from net_addr.ip_address import IpVersion
 
 
 class IpMask(ABC):

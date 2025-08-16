@@ -37,15 +37,15 @@ from __future__ import annotations
 
 from typing import override
 
-from .errors import (
+from net_addr.errors import (
     Ip4AddressFormatError,
     Ip4MaskFormatError,
     Ip4NetworkFormatError,
 )
-from .ip4_address import Ip4Address
-from .ip4_mask import Ip4Mask
-from .ip_address import IpVersion
-from .ip_network import IpNetwork
+from net_addr.ip4_address import Ip4Address
+from net_addr.ip4_mask import Ip4Mask
+from net_addr.ip_address import IpVersion
+from net_addr.ip_network import IpNetwork
 
 
 class Ip4Network(IpNetwork[Ip4Address, Ip4Mask]):

@@ -37,16 +37,15 @@ from __future__ import annotations
 
 from typing import override
 
-from net_addr.ip_address import IpVersion
-
-from .errors import (
+from net_addr.errors import (
     Ip6AddressFormatError,
     Ip6MaskFormatError,
     Ip6NetworkFormatError,
 )
-from .ip6_address import Ip6Address
-from .ip6_mask import Ip6Mask
-from .ip_network import IpNetwork
+from net_addr.ip6_address import Ip6Address
+from net_addr.ip6_mask import Ip6Mask
+from net_addr.ip_address import IpVersion
+from net_addr.ip_network import IpNetwork
 
 
 class Ip6Network(IpNetwork[Ip6Address, Ip6Mask]):

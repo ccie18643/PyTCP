@@ -39,10 +39,10 @@ import re
 import socket
 from typing import override
 
-from .errors import Ip4MaskFormatError
-from .ip4_address import IP4__ADDRESS_LEN, IP4__REGEX
-from .ip_address import IpVersion
-from .ip_mask import IpMask
+from net_addr.errors import Ip4MaskFormatError
+from net_addr.ip4_address import IP4__ADDRESS_LEN, IP4__REGEX
+from net_addr.ip_address import IpVersion
+from net_addr.ip_mask import IpMask
 
 
 class Ip4Mask(IpMask):

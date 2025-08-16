@@ -35,7 +35,7 @@ ver 3.0.3
 
 from enum import auto
 
-from .ip_host_origin import IpHostOrigin
+from net_addr.ip_host_origin import IpHostOrigin
 
 
 class Ip6HostOrigin(IpHostOrigin):

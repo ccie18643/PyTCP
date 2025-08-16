@@ -38,19 +38,19 @@ from __future__ import annotations
 import time
 from typing import override
 
-from .errors import (
+from net_addr.errors import (
     Ip4AddressFormatError,
     Ip4HostFormatError,
     Ip4HostGatewayError,
     Ip4HostSanityError,
     Ip4MaskFormatError,
 )
-from .ip4_address import Ip4Address
-from .ip4_host_origin import Ip4HostOrigin
-from .ip4_mask import Ip4Mask
-from .ip4_network import Ip4Network
-from .ip_address import IpVersion
-from .ip_host import IpHost
+from net_addr.ip4_address import Ip4Address
+from net_addr.ip4_host_origin import Ip4HostOrigin
+from net_addr.ip4_mask import Ip4Mask
+from net_addr.ip4_network import Ip4Network
+from net_addr.ip_address import IpVersion
+from net_addr.ip_host import IpHost
 
 
 class Ip4Host(IpHost[Ip4Address, Ip4Network, Ip4HostOrigin]):

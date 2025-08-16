@@ -38,20 +38,20 @@ from __future__ import annotations
 import time
 from typing import override
 
-from .errors import (
+from net_addr.errors import (
     Ip6AddressFormatError,
     Ip6HostFormatError,
     Ip6HostGatewayError,
     Ip6HostSanityError,
     Ip6MaskFormatError,
 )
-from .ip6_address import Ip6Address
-from .ip6_host_origin import Ip6HostOrigin
-from .ip6_mask import Ip6Mask
-from .ip6_network import Ip6Network
-from .ip_address import IpVersion
-from .ip_host import IpHost
-from .mac_address import MacAddress
+from net_addr.ip6_address import Ip6Address
+from net_addr.ip6_host_origin import Ip6HostOrigin
+from net_addr.ip6_mask import Ip6Mask
+from net_addr.ip6_network import Ip6Network
+from net_addr.ip_address import IpVersion
+from net_addr.ip_host import IpHost
+from net_addr.mac_address import MacAddress
 
 
 class Ip6Host(IpHost[Ip6Address, Ip6Network, Ip6HostOrigin]):

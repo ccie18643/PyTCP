@@ -39,9 +39,9 @@ import re
 import socket
 from typing import override
 
-from .errors import Ip4AddressFormatError
-from .ip_address import IpAddress, IpVersion
-from .mac_address import MacAddress
+from net_addr.errors import Ip4AddressFormatError
+from net_addr.ip_address import IpAddress, IpVersion
+from net_addr.mac_address import MacAddress
 
 IP4__ADDRESS_LEN = 4
 IP4__MASK = 0xFF_FF_FF_FF

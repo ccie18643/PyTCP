@@ -38,8 +38,8 @@ from __future__ import annotations
 from abc import abstractmethod
 from typing import TYPE_CHECKING
 
-from .address import Address
-from .ip_version import IpVersion
+from net_addr.address import Address
+from net_addr.ip_version import IpVersion
 
 if TYPE_CHECKING:
     from .mac_address import MacAddress

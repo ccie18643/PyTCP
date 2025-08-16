@@ -39,8 +39,7 @@ import re
 from typing import override
 
 from net_addr.address import Address
-
-from .errors import MacAddressFormatError
+from net_addr.errors import MacAddressFormatError
 
 
 class MacAddress(Address):

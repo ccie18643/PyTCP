@@ -38,10 +38,10 @@ from __future__ import annotations
 import re
 from typing import override
 
-from .errors import Ip6MaskFormatError
-from .ip6_address import IP6__ADDRESS_LEN
-from .ip_address import IpVersion
-from .ip_mask import IpMask
+from net_addr.errors import Ip6MaskFormatError
+from net_addr.ip6_address import IP6__ADDRESS_LEN
+from net_addr.ip_address import IpVersion
+from net_addr.ip_mask import IpMask
 
 
 class Ip6Mask(IpMask):

@@ -37,15 +37,14 @@ ver 3.0.3
 
 from click import ParamType
 from click.core import Context, Parameter
-
-from .errors import NetAddrError
-from .ip4_address import Ip4Address
-from .ip4_host import Ip4Host
-from .ip4_network import Ip4Network
-from .ip6_address import Ip6Address
-from .ip6_host import Ip6Host
-from .ip6_network import Ip6Network
-from .mac_address import MacAddress
+from net_addr.errors import NetAddrError
+from net_addr.ip4_address import Ip4Address
+from net_addr.ip4_host import Ip4Host
+from net_addr.ip4_network import Ip4Network
+from net_addr.ip6_address import Ip6Address
+from net_addr.ip6_host import Ip6Host
+from net_addr.ip6_network import Ip6Network
+from net_addr.mac_address import MacAddress
 
 
 class ClickTypeMacAddress(ParamType):

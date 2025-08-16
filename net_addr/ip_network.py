@@ -35,11 +35,11 @@ ver 3.0.3
 
 from abc import ABC, abstractmethod
 
-from .ip4_address import Ip4Address
-from .ip4_mask import Ip4Mask
-from .ip6_address import Ip6Address
-from .ip6_mask import Ip6Mask
-from .ip_address import IpAddress, IpVersion
+from net_addr.ip4_address import Ip4Address
+from net_addr.ip4_mask import Ip4Mask
+from net_addr.ip6_address import Ip6Address
+from net_addr.ip6_mask import Ip6Mask
+from net_addr.ip_address import IpAddress, IpVersion
 
 
 class IpNetwork[A: (Ip6Address, Ip4Address), M: (Ip6Mask, Ip4Mask)](ABC):
