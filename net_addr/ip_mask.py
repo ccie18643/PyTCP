@@ -25,15 +25,13 @@
 
 
 """
-Module contains IP mask base class.
+This module contains IP mask base class.
 
 net_addr/ip_mask.py
 
-ver 3.0.2
+ver 3.0.3
 """
 
-
-from __future__ import annotations
 
 from abc import ABC, abstractmethod
 

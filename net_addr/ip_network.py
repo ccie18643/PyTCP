@@ -25,31 +25,24 @@
 
 
 """
-Module contains IP network base class.
+This module contains IP network base class.
 
 net_addr/ip_network.py
 
-ver 3.0.2
+ver 3.0.3
 """
 
 
-from __future__ import annotations
-
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Generic, TypeVar
 
+from .ip4_address import Ip4Address
+from .ip4_mask import Ip4Mask
+from .ip6_address import Ip6Address
+from .ip6_mask import Ip6Mask
 from .ip_address import IpAddress, IpVersion
-from .ip_mask import IpMask
-
-if TYPE_CHECKING:
-    from .ip_host import IpHost
 
 
-A = TypeVar("A", bound=IpAddress)
-M = TypeVar("M", bound=IpMask)
-
-
-class IpNetwork(ABC, Generic[A, M]):
+class IpNetwork[A: (Ip6Address, Ip4Address), M: (Ip6Mask, Ip4Mask)](ABC):
     """
     IP network support base class.
     """
@@ -72,7 +65,7 @@ class IpNetwork(ABC, Generic[A, M]):
 
         return f"{self.__class__.__name__}('{str(self)}')"
 
-    def __eq__(self, other: object) -> bool:
+    def __eq__(self, other: object, /) -> bool:
         """
         Compare IP network with another object.
         """
@@ -86,24 +79,23 @@ class IpNetwork(ABC, Generic[A, M]):
 
         return hash(repr(self))
 
-    def __contains__(self, other: object) -> bool:
+    def __contains__(self, other: object, /) -> bool:
         """
         Check if the IP network contains the IP address or host.
         """
 
-        if isinstance(other, IpAddress):
-            return (
-                isinstance(other, IpAddress)
-                and self._version == other.version
-                and int(self.address) <= int(other) <= int(self.last)
-            )
+        from .ip4_host import Ip4Host
+        from .ip6_host import Ip6Host
 
-        if isinstance(other, IpHost):
-            return (
-                isinstance(other, IpHost)
-                and self._version == other.version
-                and int(self.address) <= int(other.address) <= int(self.last)
-            )
+        if isinstance(other, (Ip6Address, Ip4Address)):
+            return self._version == other.version and int(self.address) <= int(
+                other
+            ) <= int(self.last)
+
+        if isinstance(other, (Ip4Host, Ip6Host)):
+            return self._version == other.version and int(self.address) <= int(
+                other.address
+            ) <= int(self.last)
 
         return False
 

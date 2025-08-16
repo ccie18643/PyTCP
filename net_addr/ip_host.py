@@ -37,10 +37,12 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from enum import Enum
-from typing import Generic, TypeVar
 
-from net_addr.ip_address import IpAddress, IpVersion
-from net_addr.ip_network import IpNetwork
+from .ip4_address import Ip4Address
+from .ip4_network import Ip4Network
+from .ip6_address import Ip6Address
+from .ip6_network import Ip6Network
+from .ip_address import IpVersion
 
 
 class IpHostOrigin(Enum):
@@ -49,12 +51,7 @@ class IpHostOrigin(Enum):
     """
 
 
-A = TypeVar("A", bound=IpAddress)
-N = TypeVar("N", bound=IpNetwork)
-O = TypeVar("O", bound=IpHostOrigin)
-
-
-class IpHost(ABC, Generic[A, N, O]):
+class IpHost[A: (Ip6Address, Ip4Address), N: (Ip6Network, Ip4Network), O](ABC):
     """
     IP host support base class.
     """
@@ -97,7 +94,7 @@ class IpHost(ABC, Generic[A, N, O]):
     @abstractmethod
     def _validate_gateway(self, address: A | None, /) -> None:
         """
-        Validate the IPv4 host address gateway.
+        Validate the IP host address gateway.
         """
 
         raise NotImplementedError
