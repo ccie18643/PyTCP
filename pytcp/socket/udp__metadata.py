@@ -38,9 +38,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
-from net_addr.ip_address import IpVersion
-
-from net_addr import Ip4Address, Ip6Address
+from net_addr import Ip4Address, Ip6Address, IpVersion
 from pytcp.socket.socket import AddressFamily, SocketType
 from pytcp.socket.socket_id import SocketId
 
@@ -48,7 +46,7 @@ if TYPE_CHECKING:
     from pytcp.lib.tracker import Tracker
 
 
-@dataclass(frozen=True, kw_only=True)
+@dataclass(frozen=True, kw_only=True, slots=True)
 class UdpMetadata:
     """
     Store the UDP metadata taken from the received packet.

@@ -25,12 +25,13 @@
 
 
 """
-Module contains BSD like Raw socket interface for the stack.
+This module contains BSD like Raw socket interface for the stack.
 
 pytcp/socket/raw__socket.py
 
-ver 3.0.2
+ver 3.0.3
 """
+
 
 from __future__ import annotations
 

@@ -25,11 +25,11 @@
 
 
 """
-Module contains class supporting ICMPv6 Neighbor Discovery cache operations.
+This module contains class supporting ICMPv6 Neighbor Discovery cache operations.
 
 pycp/stack/nd_cache.py
 
-ver 3.0.2
+ver 3.0.3
 """
 
 
@@ -38,15 +38,17 @@ from __future__ import annotations
 import threading
 import time
 from dataclasses import dataclass, field
-from typing import override
+from typing import TYPE_CHECKING, override
 
-from net_addr import Ip6Address, MacAddress
 from pytcp import stack
 from pytcp.lib.logger import log
 from pytcp.lib.subsystem import SUBSYSTEM_SLEEP_TIME__SEC, Subsystem
 
+if TYPE_CHECKING:
+    from net_addr import Ip6Address, MacAddress
 
-@dataclass
+
+@dataclass(frozen=True, kw_only=True, slots=True)
 class CacheEntry:
     """
     Container class for cache entries.
@@ -58,7 +60,21 @@ class CacheEntry:
         init=False,
         default_factory=lambda: int(time.time()),
     )
-    hit_count: int = 0
+    hit_count: int = field(init=False, default=0)
+
+    def hit_count__increment(self) -> None:
+        """
+        Increment hit count.
+        """
+
+        object.__setattr__(self, "hit_count", self.hit_count + 1)
+
+    def hit_count__reset(self) -> None:
+        """
+        Reset hit count.
+        """
+
+        object.__setattr__(self, "hit_count", 0)
 
 
 class NdCache(Subsystem):
@@ -95,11 +111,11 @@ class NdCache(Subsystem):
         """
 
         for ip6_address in list(self._nd_cache):
-            # Skip permanent entries
+            # Skip permanent entries.
             if self._nd_cache[ip6_address].permanent:
                 continue
 
-            # If entry age is over maximum age then discard the entry
+            # If entry age is over maximum age then discard the entry.
             if (
                 int(time.time()) - self._nd_cache[ip6_address].create_time
                 > stack.ICMP6__ND__CACHE__ENTRY_MAX_AGE
@@ -119,7 +135,7 @@ class NdCache(Subsystem):
                 > stack.ICMP6__ND__CACHE__ENTRY_MAX_AGE
                 - stack.ICMP6__ND__CACHE__ENTRY_REFRESH_TIME
             ) and self._nd_cache[ip6_address].hit_count:
-                self._nd_cache[ip6_address].hit_count = 0
+                self._nd_cache[ip6_address].hit_count__reset()
                 stack.packet_handler.send_icmp6_neighbor_solicitation(
                     icmp6_ns_target_address=ip6_address
                 )
@@ -130,7 +146,7 @@ class NdCache(Subsystem):
                     f"{self._nd_cache[ip6_address].mac_address}",
                 )
 
-        # Put thread to sleep for a 100 milliseconds
+        # Put thread to sleep for a 100 milliseconds.
         self._event__stop_subsystem.wait(SUBSYSTEM_SLEEP_TIME__SEC)
 
     def add_entry(
@@ -149,7 +165,7 @@ class NdCache(Subsystem):
             f"{ip6_address} -> {mac_address}</>",
         )
 
-        self._nd_cache[ip6_address] = CacheEntry(mac_address)
+        self._nd_cache[ip6_address] = CacheEntry(mac_address=mac_address)
 
     def find_entry(self, *, ip6_address: Ip6Address) -> MacAddress | None:
         """
@@ -157,7 +173,7 @@ class NdCache(Subsystem):
         """
 
         if nd_entry := self._nd_cache.get(ip6_address, None):
-            nd_entry.hit_count += 1
+            nd_entry.hit_count__increment()
             __debug__ and log(
                 "nd-c",
                 f"Found {ip6_address} -> {nd_entry.mac_address} entry, "

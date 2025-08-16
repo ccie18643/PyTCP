@@ -25,7 +25,7 @@
 
 
 """
-Module contains class supporting ARP Cache operations.
+This module contains class supporting ARP Cache operations.
 
 pytcp/stack/arp_cache.py
 
@@ -38,15 +38,17 @@ from __future__ import annotations
 import threading
 import time
 from dataclasses import dataclass, field
-from typing import override
+from typing import TYPE_CHECKING, override
 
-from net_addr import Ip4Address, MacAddress
 from pytcp import stack
 from pytcp.lib.logger import log
 from pytcp.lib.subsystem import SUBSYSTEM_SLEEP_TIME__SEC, Subsystem
 
+if TYPE_CHECKING:
+    from net_addr import Ip4Address, MacAddress
 
-@dataclass
+
+@dataclass(frozen=True, kw_only=True, slots=True)
 class CacheEntry:
     """
     Container class for cache entries.
@@ -58,7 +60,21 @@ class CacheEntry:
         init=False,
         default_factory=lambda: int(time.time()),
     )
-    hit_count: int = 0
+    hit_count: int = field(init=False, default=0)
+
+    def hit_count__increment(self) -> None:
+        """
+        Increment hit count.
+        """
+
+        object.__setattr__(self, "hit_count", self.hit_count + 1)
+
+    def hit_count__reset(self) -> None:
+        """
+        Reset hit count.
+        """
+
+        object.__setattr__(self, "hit_count", 0)
 
 
 class ArpCache(Subsystem):
@@ -95,11 +111,11 @@ class ArpCache(Subsystem):
         """
 
         for ip4_address in list(self._arp_cache):
-            # Skip permanent entries
+            # Skip permanent entries.
             if self._arp_cache[ip4_address].permanent:
                 continue
 
-            # If entry age is over maximum age then discard the entry
+            # If entry age is over maximum age then discard the entry.
             if (
                 int(time.time()) - self._arp_cache[ip4_address].create_time
                 > stack.ARP__CACHE__ENTRY_MAX_AGE
@@ -119,7 +135,7 @@ class ArpCache(Subsystem):
                 > stack.ARP__CACHE__ENTRY_MAX_AGE
                 - stack.ARP__CACHE__ENTRY_REFRESH_TIME
             ) and self._arp_cache[ip4_address].hit_count:
-                self._arp_cache[ip4_address].hit_count = 0
+                self._arp_cache[ip4_address].hit_count__reset()
                 stack.packet_handler.send_arp_request(arp__tpa=ip4_address)
                 __debug__ and log(
                     "arp-c",
@@ -128,7 +144,7 @@ class ArpCache(Subsystem):
                     f"{self._arp_cache[ip4_address].mac_address}",
                 )
 
-        # Put thread to sleep for a 100 milliseconds
+        # Put thread to sleep for a 100 milliseconds.
         self._event__stop_subsystem.wait(SUBSYSTEM_SLEEP_TIME__SEC)
 
     def add_entry(
@@ -147,7 +163,7 @@ class ArpCache(Subsystem):
             f"{mac_address}</>",
         )
 
-        self._arp_cache[ip4_address] = CacheEntry(mac_address)
+        self._arp_cache[ip4_address] = CacheEntry(mac_address=mac_address)
 
     def find_entry(self, *, ip4_address: Ip4Address) -> MacAddress | None:
         """
@@ -155,7 +171,7 @@ class ArpCache(Subsystem):
         """
 
         if arp_entry := self._arp_cache.get(ip4_address, None):
-            arp_entry.hit_count += 1
+            arp_entry.hit_count__increment()
             __debug__ and log(
                 "arp-c",
                 f"Found {ip4_address} -> {arp_entry.mac_address} entry, "
