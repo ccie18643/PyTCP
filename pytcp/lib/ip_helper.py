@@ -35,23 +35,21 @@ ver 3.0.3
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, TypeVar, cast
+from typing import TYPE_CHECKING, cast
+
+from net_addr.ip_address import IpAddress
 
 from net_addr import (
     Ip4Address,
     Ip4AddressFormatError,
     Ip6Address,
     Ip6AddressFormatError,
-    IpAddress,
     IpVersion,
 )
 from pytcp import stack
 
 if TYPE_CHECKING:
     from pytcp.socket.socket import AddressFamily, SocketType
-
-
-T = TypeVar("T", bound=IpAddress)
 
 
 def ip_version(
@@ -85,7 +83,7 @@ def str_to_ip(ip_address: str, /) -> Ip6Address | Ip4Address | None:
             return None
 
 
-def pick_local_ip_address(*, remote_ip_address: T) -> T:
+def pick_local_ip_address[T: IpAddress](*, remote_ip_address: T) -> T:
     """
     Pick an appropriate source IP address based on the provided destination IP address.
     """
