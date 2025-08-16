@@ -47,7 +47,7 @@ if TYPE_CHECKING:
     from pytcp.protocols.enums import IpProto
 
 
-@dataclass(frozen=True, kw_only=True)
+@dataclass(frozen=True, kw_only=True, slots=True)
 class RawMetadata:
     """
     Store the Raw metadata taken from the received packet.

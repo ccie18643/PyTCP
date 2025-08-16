@@ -25,11 +25,11 @@
 
 
 """
-Module contains interface class for the UDP Parser -> UDP Socket communication.
+This module contains interface class for the UDP Parser -> UDP Socket communication.
 
 pytcp/socket/udp__metadata.py
 
-ver 3.0.2
+ver 3.0.3
 """
 
 
@@ -38,15 +38,13 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
-from net_addr.ip6_address import Ip6Address
 from net_addr.ip_address import IpVersion
 
-from net_addr import Ip4Address
+from net_addr import Ip4Address, Ip6Address
 from pytcp.socket.socket import AddressFamily, SocketType
 from pytcp.socket.socket_id import SocketId
 
 if TYPE_CHECKING:
-    from net_addr import IpAddress
     from pytcp.lib.tracker import Tracker
 
 
@@ -57,8 +55,8 @@ class UdpMetadata:
     """
 
     ip__ver: IpVersion
-    ip__local_address: IpAddress
-    ip__remote_address: IpAddress
+    ip__local_address: Ip6Address | Ip4Address
+    ip__remote_address: Ip6Address | Ip4Address
 
     udp__local_port: int
     udp__remote_port: int

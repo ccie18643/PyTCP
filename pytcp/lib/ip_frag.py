@@ -34,10 +34,14 @@ ver 3.0.3
 """
 
 
+from __future__ import annotations
+
 import time
 from dataclasses import dataclass, field
+from typing import TYPE_CHECKING
 
-from net_addr.ip_address import IpAddress
+if TYPE_CHECKING:
+    from net_addr import Ip4Address, Ip6Address
 
 
 @dataclass(kw_only=True, frozen=True, slots=True)
@@ -46,8 +50,8 @@ class IpFragFlowId:
     Class stores the IPv4/IPv6 packet fragmentation flow ID.
     """
 
-    src: IpAddress
-    dst: IpAddress
+    src: Ip6Address | Ip4Address
+    dst: Ip6Address | Ip4Address
     id: int
 
 
