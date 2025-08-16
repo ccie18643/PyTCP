@@ -36,10 +36,7 @@ ver 3.0.2
 from __future__ import annotations
 
 import time
-from enum import auto
 from typing import override
-
-from net_addr.ip_address import IpVersion
 
 from .errors import (
     Ip4AddressFormatError,
@@ -49,19 +46,11 @@ from .errors import (
     Ip4MaskFormatError,
 )
 from .ip4_address import Ip4Address
+from .ip4_host_origin import Ip4HostOrigin
 from .ip4_mask import Ip4Mask
 from .ip4_network import Ip4Network
-from .ip_host import IpHost, IpHostOrigin
-
-
-class Ip4HostOrigin(IpHostOrigin):
-    """
-    IPv4 address origin enumeration.
-    """
-
-    STATIC = auto()
-    DHCP = auto()
-    UNKNOWN = auto()
+from .ip_address import IpVersion
+from .ip_host import IpHost
 
 
 class Ip4Host(IpHost[Ip4Address, Ip4Network, Ip4HostOrigin]):

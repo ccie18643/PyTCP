@@ -36,22 +36,21 @@ ver 3.0.3
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from enum import Enum
 
 from .ip4_address import Ip4Address
+from .ip4_host_origin import Ip4HostOrigin
 from .ip4_network import Ip4Network
 from .ip6_address import Ip6Address
+from .ip6_host_origin import Ip6HostOrigin
 from .ip6_network import Ip6Network
 from .ip_address import IpVersion
 
 
-class IpHostOrigin(Enum):
-    """
-    IP host address origin enumeration.
-    """
-
-
-class IpHost[A: (Ip6Address, Ip4Address), N: (Ip6Network, Ip4Network), O](ABC):
+class IpHost[
+    A: (Ip6Address, Ip4Address),
+    N: (Ip6Network, Ip4Network),
+    O: (Ip6HostOrigin, Ip4HostOrigin),
+](ABC):
     """
     IP host support base class.
     """

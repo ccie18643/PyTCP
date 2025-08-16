@@ -36,11 +36,7 @@ ver 3.0.2
 from __future__ import annotations
 
 import time
-from enum import auto
 from typing import override
-
-from net_addr.ip_address import IpVersion
-from net_addr.mac_address import MacAddress
 
 from .errors import (
     Ip6AddressFormatError,
@@ -50,20 +46,12 @@ from .errors import (
     Ip6MaskFormatError,
 )
 from .ip6_address import Ip6Address
+from .ip6_host_origin import Ip6HostOrigin
 from .ip6_mask import Ip6Mask
 from .ip6_network import Ip6Network
-from .ip_host import IpHost, IpHostOrigin
-
-
-class Ip6HostOrigin(IpHostOrigin):
-    """
-    IPv4 address origin enumeration.
-    """
-
-    STATIC = auto()
-    AUTOCONFIG = auto()
-    DHCP = auto()
-    UNKNOWN = auto()
+from .ip_address import IpVersion
+from .ip_host import IpHost
+from .mac_address import MacAddress
 
 
 class Ip6Host(IpHost[Ip6Address, Ip6Network, Ip6HostOrigin]):

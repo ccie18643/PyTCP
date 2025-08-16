@@ -36,29 +36,13 @@ ver 3.0.3
 from __future__ import annotations
 
 from abc import abstractmethod
-from enum import Enum
 from typing import TYPE_CHECKING
 
 from .address import Address
+from .ip_version import IpVersion
 
 if TYPE_CHECKING:
     from .mac_address import MacAddress
-
-
-class IpVersion(Enum):
-    """
-    Enum for IP protocol version.
-    """
-
-    IP4 = 4
-    IP6 = 6
-
-    def __int__(self) -> int:
-        """
-        Convert the IP version to an integer.
-        """
-
-        return self.value
 
 
 class IpAddress(Address):

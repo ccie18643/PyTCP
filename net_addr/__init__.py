@@ -67,14 +67,17 @@ from .errors import (
     MacAddressFormatError,
 )
 from .ip4_address import IP4__ADDRESS_LEN, Ip4Address
-from .ip4_host import Ip4Host, Ip4HostOrigin
+from .ip4_host import Ip4Host
+from .ip4_host_origin import Ip4HostOrigin
 from .ip4_mask import Ip4Mask
 from .ip4_network import Ip4Network
 from .ip6_address import IP6__ADDRESS_LEN, Ip6Address
-from .ip6_host import Ip6Host, Ip6HostOrigin
+from .ip6_host import Ip6Host
+from .ip6_host_origin import Ip6HostOrigin
 from .ip6_mask import Ip6Mask
 from .ip6_network import Ip6Network
-from .ip_address import IpAddress, IpVersion
+from .ip_address import IpAddress
+from .ip_version import IpVersion
 from .mac_address import MacAddress
 
 __all__ = [
