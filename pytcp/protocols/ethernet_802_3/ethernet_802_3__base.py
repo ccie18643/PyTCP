@@ -35,7 +35,7 @@ ver 3.0.2
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, TypeAlias, override
+from typing import TYPE_CHECKING, override
 
 from pytcp.lib.proto import Proto
 from pytcp.protocols.ethernet_802_3.ethernet_802_3__header import (
@@ -48,7 +48,7 @@ if TYPE_CHECKING:
     )
     from pytcp.protocols.raw.raw__assembler import RawAssembler
 
-    Ethernet8023Payload: TypeAlias = RawAssembler
+    type Ethernet8023Payload = RawAssembler
 
 
 class Ethernet8023(Proto, EthernetHeader8023Properties):

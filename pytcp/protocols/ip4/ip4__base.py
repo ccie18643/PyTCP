@@ -36,7 +36,7 @@ ver 3.0.2
 from __future__ import annotations
 
 import struct
-from typing import TYPE_CHECKING, TypeAlias, override
+from typing import TYPE_CHECKING, override
 
 from pytcp.lib.inet_cksum import inet_cksum
 from pytcp.lib.proto import Proto
@@ -51,7 +51,7 @@ if TYPE_CHECKING:
     from pytcp.protocols.ip4.ip4__header import Ip4Header
     from pytcp.protocols.ip4.options.ip4_options import Ip4Options
 
-    Ip4Payload: TypeAlias = (
+    type Ip4Payload = (
         Icmp4Assembler | TcpAssembler | UdpAssembler | RawAssembler
     )
 

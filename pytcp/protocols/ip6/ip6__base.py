@@ -36,7 +36,7 @@ ver 3.0.2
 from __future__ import annotations
 
 import struct
-from typing import TYPE_CHECKING, TypeAlias, override
+from typing import TYPE_CHECKING, override
 
 from pytcp.lib.proto import Proto
 from pytcp.protocols.icmp6.icmp6__assembler import Icmp6Assembler
@@ -49,7 +49,7 @@ if TYPE_CHECKING:
     from pytcp.protocols.ip6.ip6__header import Ip6Header
     from pytcp.protocols.ip6_frag.ip6_frag__assembler import Ip6FragAssembler
 
-    Ip6Payload: TypeAlias = (
+    type Ip6Payload = (
         Ip6FragAssembler
         | Icmp6Assembler
         | TcpAssembler

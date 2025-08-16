@@ -35,7 +35,7 @@ ver 3.0.2
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, TypeAlias, override
+from typing import TYPE_CHECKING, override
 
 from pytcp.lib.proto import Proto
 from pytcp.protocols.ethernet.ethernet__header import EthernetHeaderProperties
@@ -50,7 +50,7 @@ if TYPE_CHECKING:
     from pytcp.protocols.ip6.ip6__assembler import Ip6Assembler
     from pytcp.protocols.raw.raw__assembler import RawAssembler
 
-    EthernetPayload: TypeAlias = (
+    type EthernetPayload = (
         ArpAssembler
         | Ip4Assembler
         | Ip4FragAssembler
