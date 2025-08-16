@@ -76,57 +76,57 @@ class UdpMetadata:
             case IpVersion.IP4, 68, 67:
                 return [
                     SocketId(
-                        AddressFamily.INET4,
-                        SocketType.DGRAM,
-                        Ip4Address(),
-                        68,
-                        Ip4Address("255.255.255.255"),
-                        67,
+                        address_family=AddressFamily.INET4,
+                        socket_type=SocketType.DGRAM,
+                        local_address=Ip4Address(),
+                        local_port=68,
+                        remote_address=Ip4Address("255.255.255.255"),
+                        remote_port=67,
                     ),  # ID for the DHCPv4 client operation.
                 ]
             case IpVersion.IP6, 546, 547:
                 return [
                     SocketId(
-                        AddressFamily.INET6,
-                        SocketType.DGRAM,
-                        Ip6Address(),
-                        546,
-                        Ip6Address("ff02::1:2"),
-                        547,
+                        address_family=AddressFamily.INET6,
+                        socket_type=SocketType.DGRAM,
+                        local_address=Ip6Address(),
+                        local_port=546,
+                        remote_address=Ip6Address("ff02::1:2"),
+                        remote_port=547,
                     ),  # ID for the DHCPv6 client operation.
                     SocketId(
-                        AddressFamily.INET6,
-                        SocketType.DGRAM,
-                        Ip6Address(),
-                        546,
-                        Ip6Address("ff02::1:3"),
-                        547,
+                        address_family=AddressFamily.INET6,
+                        socket_type=SocketType.DGRAM,
+                        local_address=Ip6Address(),
+                        local_port=546,
+                        remote_address=Ip6Address("ff02::1:3"),
+                        remote_port=547,
                     ),  # ID for the DHCPv6 client operation.
                 ]
             case _:
                 return [
                     SocketId(
-                        AddressFamily.from_ver(self.ip__ver),
-                        SocketType.DGRAM,
-                        self.ip__local_address,
-                        self.udp__local_port,
-                        self.ip__remote_address,
-                        self.udp__remote_port,
+                        address_family=AddressFamily.from_ver(self.ip__ver),
+                        socket_type=SocketType.DGRAM,
+                        local_address=self.ip__local_address,
+                        local_port=self.udp__local_port,
+                        remote_address=self.ip__remote_address,
+                        remote_port=self.udp__remote_port,
                     ),
                     SocketId(
-                        AddressFamily.from_ver(self.ip__ver),
-                        SocketType.DGRAM,
-                        self.ip__local_address,
-                        self.udp__local_port,
-                        self.ip__remote_address.unspecified,
-                        0,
+                        address_family=AddressFamily.from_ver(self.ip__ver),
+                        socket_type=SocketType.DGRAM,
+                        local_address=self.ip__local_address,
+                        local_port=self.udp__local_port,
+                        remote_address=self.ip__remote_address.unspecified,
+                        remote_port=0,
                     ),
                     SocketId(
-                        AddressFamily.from_ver(self.ip__ver),
-                        SocketType.DGRAM,
-                        self.ip__local_address.unspecified,
-                        self.udp__local_port,
-                        self.ip__remote_address.unspecified,
-                        0,
+                        address_family=AddressFamily.from_ver(self.ip__ver),
+                        socket_type=SocketType.DGRAM,
+                        local_address=self.ip__local_address.unspecified,
+                        local_port=self.udp__local_port,
+                        remote_address=self.ip__remote_address.unspecified,
+                        remote_port=0,
                     ),
                 ]

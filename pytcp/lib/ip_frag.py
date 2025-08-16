@@ -40,7 +40,7 @@ from dataclasses import dataclass, field
 from net_addr.ip_address import IpAddress
 
 
-@dataclass(kw_only=True, frozen=True)
+@dataclass(kw_only=True, frozen=True, slots=True)
 class IpFragFlowId:
     """
     Class stores the IPv4/IPv6 packet fragmentation flow ID.
@@ -51,7 +51,7 @@ class IpFragFlowId:
     id: int
 
 
-@dataclass(kw_only=True)
+@dataclass(kw_only=True, frozen=True, slots=True)
 class IpFragData:
     """
     Class stores the IPv4/IPv6 packet fragmentation data.
@@ -61,3 +61,10 @@ class IpFragData:
     header: bytes
     last: bool = field(default=False, init=False)
     payload: dict[int, bytes]
+
+    def received_last_frag(self) -> None:
+        """
+        Set the last fragment flag.
+        """
+
+        object.__setattr__(self, "last", True)

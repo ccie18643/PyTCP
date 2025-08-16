@@ -23,20 +23,18 @@
 ##                                                                            ##
 ################################################################################
 
-# pylint: disable=unused-import
-
 
 """
-Module contains the PyTCP socket class.
+This package contains the PyTCP socket interface.
 
 pytcp/socket/__init__.py
 
-ver 3.0.2
+ver 3.0.3
 """
 
 
 from pytcp.socket.socket import gaierror  # pyright: ignore[reportUnusedImport]
-from pytcp.socket.socket import (  # noqa: F401
+from pytcp.socket.socket import (
     AddressFamily,
     IpProto,
     Socket,
@@ -93,7 +91,9 @@ def socket(
         case AddressFamily.INET6, SocketType.RAW, None:
             return RawSocket(address_family=family, ip_proto=IpProto.IP6)
 
-        case _, SocketType.RAW, _ if protocol is not None:
+        case _, SocketType.RAW, _ if (
+            protocol is not None
+        ):  # pyright: ignore[reportUnnecessaryComparison]
             return RawSocket(address_family=family, ip_proto=protocol)
 
         case _:

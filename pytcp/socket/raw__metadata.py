@@ -25,11 +25,11 @@
 
 
 """
-Module contains interface class for the IP Parsers -> Raw Socket communication.
+This module contains interface class for the IP Parser -> Raw Socket communication.
 
 pytcp/socket/raw__metadata.py
 
-ver 3.0.2
+ver 3.0.3
 """
 
 
@@ -38,15 +38,13 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
-from net_addr.ip_address import IpVersion
-
-from pytcp.protocols.enums import IpProto
 from pytcp.socket.socket import AddressFamily, SocketType
 from pytcp.socket.socket_id import SocketId
 
 if TYPE_CHECKING:
-    from net_addr import IpAddress
+    from net_addr import Ip4Address, Ip6Address, IpVersion
     from pytcp.lib.tracker import Tracker
+    from pytcp.protocols.enums import IpProto
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -56,8 +54,8 @@ class RawMetadata:
     """
 
     ip__ver: IpVersion
-    ip__local_address: IpAddress
-    ip__remote_address: IpAddress
+    ip__local_address: Ip6Address | Ip4Address
+    ip__remote_address: Ip6Address | Ip4Address
     ip__proto: IpProto
 
     raw__data: bytes = bytes()
@@ -72,11 +70,11 @@ class RawMetadata:
 
         return [
             SocketId(
-                AddressFamily.from_ver(self.ip__ver),
-                SocketType.RAW,
-                self.ip__local_address,
-                int(self.ip__proto),
-                self.ip__remote_address,
-                0,
+                address_family=AddressFamily.from_ver(self.ip__ver),
+                socket_type=SocketType.RAW,
+                local_address=self.ip__local_address,
+                local_port=int(self.ip__proto),
+                remote_address=self.ip__remote_address,
+                remote_port=0,
             ),
         ]

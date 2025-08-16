@@ -128,7 +128,7 @@ class PacketHandlerIp6FragRx(ABC):
                 },
             )
         if not packet_rx.ip6_frag.flag_mf:
-            self.ip6_frag_flows[flow_id].last = True
+            self.ip6_frag_flows[flow_id].received_last_frag()
 
         # Test if we received all fragments
         if not self.ip6_frag_flows[flow_id].last:

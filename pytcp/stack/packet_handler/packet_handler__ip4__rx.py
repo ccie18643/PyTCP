@@ -212,7 +212,7 @@ class PacketHandlerIp4Rx(ABC):
                 payload={packet_rx.ip4.offset: packet_rx.ip4.payload_bytes},
             )
         if not packet_rx.ip4.flag_mf:
-            self.ip4_frag_flows[flow_id].last = True
+            self.ip4_frag_flows[flow_id].received_last_frag()
 
         # Test if we received all fragments
         if not self.ip4_frag_flows[flow_id].last:

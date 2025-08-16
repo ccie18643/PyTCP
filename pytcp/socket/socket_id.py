@@ -25,11 +25,11 @@
 
 
 """
-Module contains class representing the Socket identificator.
+This module contains class representing the Socket identificator.
 
-pytcp/lib/socket.py
+pytcp/lib/socket_id.py
 
-ver 3.0.2
+ver 3.0.3
 """
 
 
@@ -44,7 +44,7 @@ if TYPE_CHECKING:
     from .socket import AddressFamily, SocketType
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, kw_only=True, slots=True)
 class SocketId:
     """
     Store the Socket identificator data.

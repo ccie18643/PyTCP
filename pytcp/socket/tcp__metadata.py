@@ -81,12 +81,12 @@ class TcpMetadata:
         """
 
         return SocketId(
-            AddressFamily.from_ver(self.ip__ver),
-            SocketType.STREAM,
-            self.ip__local_address,
-            self.tcp__local_port,
-            self.ip__remote_address,
-            self.tcp__remote_port,
+            address_family=AddressFamily.from_ver(self.ip__ver),
+            socket_type=SocketType.STREAM,
+            local_address=self.ip__local_address,
+            local_port=self.tcp__local_port,
+            remote_address=self.ip__remote_address,
+            remote_port=self.tcp__remote_port,
         )
 
     @property
@@ -97,19 +97,19 @@ class TcpMetadata:
 
         return [
             SocketId(
-                AddressFamily.from_ver(self.ip__ver),
-                SocketType.STREAM,
-                self.ip__local_address,
-                self.tcp__local_port,
-                self.ip__remote_address.unspecified,
-                0,
+                address_family=AddressFamily.from_ver(self.ip__ver),
+                socket_type=SocketType.STREAM,
+                local_address=self.ip__local_address,
+                local_port=self.tcp__local_port,
+                remote_address=self.ip__remote_address.unspecified,
+                remote_port=0,
             ),
             SocketId(
-                AddressFamily.from_ver(self.ip__ver),
-                SocketType.STREAM,
-                self.ip__local_address.unspecified,
-                self.tcp__local_port,
-                self.ip__remote_address.unspecified,
-                0,
+                address_family=AddressFamily.from_ver(self.ip__ver),
+                socket_type=SocketType.STREAM,
+                local_address=self.ip__local_address.unspecified,
+                local_port=self.tcp__local_port,
+                remote_address=self.ip__remote_address.unspecified,
+                remote_port=0,
             ),
         ]

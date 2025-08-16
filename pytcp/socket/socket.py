@@ -126,12 +126,12 @@ class Socket(ABC):
         """
 
         return SocketId(
-            self._address_family,
-            self._socket_type,
-            self._local_ip_address,
-            self._local_port,
-            self._remote_ip_address,
-            self._remote_port,
+            address_family=self._address_family,
+            socket_type=self._socket_type,
+            local_address=self._local_ip_address,
+            local_port=self._local_port,
+            remote_address=self._remote_ip_address,
+            remote_port=self._remote_port,
         )
 
     @property
