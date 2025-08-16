@@ -23,36 +23,34 @@
 ##                                                                            ##
 ################################################################################
 
-
 # pylint: disable=inconsistent-return-statements
 
 
 """
-Module contains Click types classes.
+This module contains Click type classes related to network addresses.
 
 net_addr/click_types.py
 
-ver 3.0.2
+ver 3.0.3
 """
 
 
-from __future__ import annotations
-
 from click import ParamType
 from click.core import Context, Parameter
-from net_addr.errors import NetAddrError
-from net_addr.ip4_address import Ip4Address
-from net_addr.ip4_host import Ip4Host
-from net_addr.ip4_network import Ip4Network
-from net_addr.ip6_address import Ip6Address
-from net_addr.ip6_host import Ip6Host
-from net_addr.ip6_network import Ip6Network
-from net_addr.mac_address import MacAddress
+
+from .errors import NetAddrError
+from .ip4_address import Ip4Address
+from .ip4_host import Ip4Host
+from .ip4_network import Ip4Network
+from .ip6_address import Ip6Address
+from .ip6_host import Ip6Host
+from .ip6_network import Ip6Network
+from .mac_address import MacAddress
 
 
 class ClickTypeMacAddress(ParamType):
     """
-    Custom Click type for handling MAC address argument.
+    Custom Click type for handling the MAC address argument.
     """
 
     name = "xx:xx:xx:xx:xx:xx"

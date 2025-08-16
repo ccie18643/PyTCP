@@ -25,11 +25,11 @@
 
 
 """
-Module contains network address base class.
+This module contains network address base class.
 
 net_addr/address.py
 
-ver 3.0.2
+ver 3.0.3
 """
 
 

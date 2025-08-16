@@ -25,11 +25,11 @@
 
 
 """
-Module contains IP host base class.
+This module contains IP host base class.
 
 net_addr/ip_host.py
 
-ver 3.0.2
+ver 3.0.3
 """
 
 
@@ -37,13 +37,10 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from enum import Enum
-from typing import TYPE_CHECKING, Generic, TypeVar
+from typing import Generic, TypeVar
 
-from net_addr.ip_address import IpVersion
-
-if TYPE_CHECKING:
-    from .ip_address import IpAddress
-    from .ip_network import IpNetwork
+from net_addr.ip_address import IpAddress, IpVersion
+from net_addr.ip_network import IpNetwork
 
 
 class IpHostOrigin(Enum):
@@ -52,9 +49,9 @@ class IpHostOrigin(Enum):
     """
 
 
-A = TypeVar("A", bound="IpAddress")
-N = TypeVar("N", bound="IpNetwork")
-O = TypeVar("O", bound="IpHostOrigin")
+A = TypeVar("A", bound=IpAddress)
+N = TypeVar("N", bound=IpNetwork)
+O = TypeVar("O", bound=IpHostOrigin)
 
 
 class IpHost(ABC, Generic[A, N, O]):

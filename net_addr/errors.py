@@ -25,15 +25,13 @@
 
 
 """
-Module contains error classes for the NetAddr library.
+This module contains error classes for the NetAddr library.
 
 net_addr/errors.py
 
-ver 3.0.2
+ver 3.0.3
 """
 
-
-from __future__ import annotations
 
 from typing import Any
 
@@ -186,7 +184,7 @@ class Ip6HostGatewayError(IpHostGatewayError):
         super().__init__(f"The IPv6 host gateway is invalid: {message!r}")
 
 
-class MacAddressFormatError(Exception):
+class MacAddressFormatError(NetAddrError):
     """
     Exception raised when MAC address format is invalid.
     """

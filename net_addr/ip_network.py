@@ -39,14 +39,14 @@ from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING, Generic, TypeVar
 
 from .ip_address import IpAddress, IpVersion
-from .ip_host import IpHost
+from .ip_mask import IpMask
 
 if TYPE_CHECKING:
-    from .ip_mask import IpMask
+    from .ip_host import IpHost
 
 
-A = TypeVar("A", bound="IpAddress")
-M = TypeVar("M", bound="IpMask")
+A = TypeVar("A", bound=IpAddress)
+M = TypeVar("M", bound=IpMask)
 
 
 class IpNetwork(ABC, Generic[A, M]):

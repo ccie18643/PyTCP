@@ -69,13 +69,6 @@ class Client(Subsystem):
 
     _event__stop_subsystem: threading.Event
 
-    def __init__(self) -> None:
-        """
-        Initialize the client.
-        """
-
-        self._event__stop_subsystem = threading.Event()
-
     @override
     def start(self) -> None:
         """
@@ -155,14 +148,6 @@ class Client(Subsystem):
             raise error
 
         return client_socket
-
-    @override
-    def is_alive(self) -> bool:
-        """
-        Check if the client is alive.
-        """
-
-        return self._event__stop_subsystem.is_set() is False
 
     @abstractmethod
     def _thread__sender(self) -> None:

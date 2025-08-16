@@ -35,6 +35,7 @@ ver 3.0.3
 
 from __future__ import annotations
 
+import threading
 from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING
 
@@ -68,6 +69,15 @@ class Subsystem(ABC):
 
     _subsystem_name: str
 
+    _event__stop_subsystem: threading.Event
+
+    def __init__(self) -> None:
+        """
+        Initialize the subsystem.
+        """
+
+        self._event__stop_subsystem = threading.Event()
+
     @abstractmethod
     def start(self) -> None:
         """
@@ -84,13 +94,13 @@ class Subsystem(ABC):
 
         raise NotImplementedError
 
-    @abstractmethod
+    @property
     def is_alive(self) -> bool:
         """
         Check if the subsystem is alive.
         """
 
-        raise NotImplementedError
+        return self._event__stop_subsystem.is_set() is False
 
     def _log(self, message: str) -> None:
         """

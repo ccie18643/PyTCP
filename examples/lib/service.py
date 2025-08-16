@@ -59,13 +59,6 @@ class Service(Subsystem):
 
     _event__stop_subsystem: threading.Event
 
-    def __init__(self) -> None:
-        """
-        Initialize the service.
-        """
-
-        self._event__stop_subsystem = threading.Event()
-
     @override
     def start(self) -> None:
         """
@@ -109,14 +102,6 @@ class Service(Subsystem):
             return None
 
         return service_socket
-
-    @override
-    def is_alive(self) -> bool:
-        """
-        Check if the service is alive.
-        """
-
-        return self._event__stop_subsystem.is_set() is False
 
     @abstractmethod
     def _thread__service(self) -> None:

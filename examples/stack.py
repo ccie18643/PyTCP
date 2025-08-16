@@ -161,7 +161,7 @@ def cli(
             subsystem.start()
 
         while (
-            any(subsystem.is_alive() for subsystem in subsystems if subsystem)
+            any(subsystem.is_alive for subsystem in subsystems if subsystem)
             or not subsystems
         ):
             time.sleep(1)
@@ -171,7 +171,7 @@ def cli(
 
     finally:
         for subsystem in subsystems:
-            if subsystem.is_alive():
+            if subsystem.is_alive:
                 subsystem.stop()
         stack.stop()
 
