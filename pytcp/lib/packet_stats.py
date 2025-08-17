@@ -36,7 +36,7 @@ ver 3.0.3
 from dataclasses import dataclass
 
 
-@dataclass
+@dataclass(slots=True)
 class PacketStatsRx:
     """
     Data store for the RX packet handler statistics.
@@ -134,7 +134,7 @@ class PacketStatsRx:
     raw__socket_match: int = 0
 
 
-@dataclass
+@dataclass(slots=True)
 class PacketStatsTx:
     """
     Data store for the TX packet handler statistics.

@@ -117,7 +117,7 @@ class Icmp4DestinationUnreachableCode(Icmp4Code):
                 return super().__str__()
 
 
-@dataclass(frozen=True, kw_only=True)
+@dataclass(frozen=True, kw_only=True, slots=True)
 class Icmp4DestinationUnreachableMessage(Icmp4Message):
     """
     The ICMPv4 Destination Unreachable message support.

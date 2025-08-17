@@ -72,7 +72,7 @@ ICMP6__ND__OPTION__PI__LEN = 32
 ICMP6__ND__OPTION__PI__STRUCT = "! BB BB L L L 16s"
 
 
-@dataclass(frozen=True, kw_only=True)
+@dataclass(frozen=True, kw_only=True, slots=True)
 class NdPrefixInfo:
     """
     Neighbor Discovery Prefix Information.
@@ -86,7 +86,7 @@ class NdPrefixInfo:
     prefix: Ip6Network
 
 
-@dataclass(frozen=True, kw_only=True)
+@dataclass(frozen=True, kw_only=True, slots=True)
 class Icmp6NdOptionPi(Icmp6NdOption):
     """
     The ICMPv6 ND Pi option support.

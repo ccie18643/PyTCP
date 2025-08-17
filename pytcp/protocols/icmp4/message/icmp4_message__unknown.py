@@ -49,7 +49,7 @@ from pytcp.protocols.icmp4.message.icmp4_message import (
 )
 
 
-@dataclass(frozen=True, kw_only=True)
+@dataclass(frozen=True, kw_only=True, slots=True)
 class Icmp4UnknownMessage(Icmp4Message):
     """
     The ICMPv4 unknown message support.

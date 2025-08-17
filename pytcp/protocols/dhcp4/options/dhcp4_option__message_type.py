@@ -58,7 +58,7 @@ DHCP4__OPTION__MESSAGE_TYPE__LEN = 3
 DHCP4__OPTION__MESSAGE_TYPE__STRUCT = "! BB B"
 
 
-@dataclass(frozen=True, kw_only=False)
+@dataclass(frozen=True, kw_only=False, slots=True)
 class Dhcp4OptionMessageType(Dhcp4Option):
     """
     The DHCPv4 Message Type option support class.

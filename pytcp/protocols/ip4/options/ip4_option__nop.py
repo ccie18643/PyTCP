@@ -51,7 +51,7 @@ IP4__OPTION__NOP__LEN = 1
 IP4__OPTION__NOP__STRUCT = "! B"
 
 
-@dataclass(frozen=True, kw_only=False)
+@dataclass(frozen=True, kw_only=False, slots=True)
 class Ip4OptionNop(Ip4Option):
     """
     The IPv4 Nop (No Operation) option support class.

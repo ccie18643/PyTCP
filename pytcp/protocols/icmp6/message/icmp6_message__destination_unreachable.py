@@ -90,7 +90,7 @@ class Icmp6DestinationUnreachableCode(Icmp6Code):
     SOURCE_ROUTING_HEADER = 7
 
 
-@dataclass(frozen=True, kw_only=True)
+@dataclass(frozen=True, kw_only=True, slots=True)
 class Icmp6DestinationUnreachableMessage(Icmp6Message):
     """
     The ICMPv6 Destination Unreachable message base.

@@ -77,7 +77,7 @@ class Icmp6Code(ProtoEnumByte):
     """
 
 
-@dataclass(frozen=True, kw_only=True)
+@dataclass(frozen=True, kw_only=True, slots=True)
 class Icmp6Message(ProtoStruct):
     """
     The ICMPv6 message base.

@@ -54,7 +54,7 @@ DHCP4__OPTION__PAD__LEN = 1
 DHCP4__OPTION__PAD__STRUCT = "! B"
 
 
-@dataclass(frozen=True, kw_only=True)
+@dataclass(frozen=True, kw_only=True, slots=True)
 class Dhcp4OptionPad(Dhcp4Option):
     """
     The DHCPv4 Pad option support.

@@ -45,7 +45,7 @@ from pytcp.protocols.icmp6.message.nd.option.icmp6_nd_options import (
 )
 
 
-@dataclass(frozen=True, kw_only=True)
+@dataclass(frozen=True, kw_only=True, slots=True)
 class Icmp6NdMessage(Icmp6Message):
     """
     The ICMPv6 ND (Neighbor Discovery) message base.

@@ -57,7 +57,7 @@ class TcpOptionType(ProtoOptionType):
     TIMESTAMPS = 8
 
 
-@dataclass(frozen=True, kw_only=True)
+@dataclass(frozen=True, kw_only=True, slots=True)
 class TcpOption(ProtoOption):
     """
     The TCP option support class.

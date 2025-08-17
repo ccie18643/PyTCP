@@ -78,7 +78,7 @@ IP4__HEADER__STRUCT = "! BBH HH BBH L L"
 IP4__PAYLOAD__MAX_LEN = UINT_16__MAX - IP4__HEADER__LEN
 
 
-@dataclass(frozen=True, kw_only=True)
+@dataclass(frozen=True, kw_only=True, slots=True)
 class Ip4Header(ProtoStruct):
     """
     The IPv4 packet header.

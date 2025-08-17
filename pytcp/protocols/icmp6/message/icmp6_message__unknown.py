@@ -52,7 +52,7 @@ if TYPE_CHECKING:
     from net_addr import Ip6Address
 
 
-@dataclass(frozen=True, kw_only=True)
+@dataclass(frozen=True, kw_only=True, slots=True)
 class Icmp6UnknownMessage(Icmp6Message):
     """
     The ICMPv6 unknown message support.

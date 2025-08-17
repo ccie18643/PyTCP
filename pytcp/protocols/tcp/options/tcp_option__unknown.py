@@ -49,7 +49,7 @@ from pytcp.protocols.tcp.options.tcp_option import (
 from pytcp.protocols.tcp.tcp__errors import TcpIntegrityError
 
 
-@dataclass(frozen=True, kw_only=True)
+@dataclass(frozen=True, kw_only=True, slots=True)
 class TcpOptionUnknown(TcpOption):
     """
     The TCP unknown option support class.

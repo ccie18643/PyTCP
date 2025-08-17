@@ -73,7 +73,7 @@ ARP__HEADER__LEN = 28
 ARP__HEADER__STRUCT = "! HH BBH 6s L 6s L"
 
 
-@dataclass(frozen=True, kw_only=True)
+@dataclass(frozen=True, kw_only=True, slots=True)
 class ArpHeader(ProtoStruct):
     """
     The ARP packet header.

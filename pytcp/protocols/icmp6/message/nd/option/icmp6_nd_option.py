@@ -53,7 +53,7 @@ class Icmp6NdOptionType(ProtoOptionType):
     PI = 3
 
 
-@dataclass(frozen=True, kw_only=True)
+@dataclass(frozen=True, kw_only=True, slots=True)
 class Icmp6NdOption(ProtoOption):
     """
     ICMPv6 ND option.

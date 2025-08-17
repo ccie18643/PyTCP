@@ -94,7 +94,7 @@ class Icmp6NdOptions(ProtoOptions):
         Get the value of the ICMPv6 ND Pi option if present.
         """
 
-        prefix_info_list = []
+        prefix_info_list: list[NdPrefixInfo] = []
 
         for option in self._options:
             if isinstance(option, Icmp6NdOptionPi):

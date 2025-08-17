@@ -55,7 +55,7 @@ UDP__HEADER__LEN = 8
 UDP__HEADER__STRUCT = "! HH HH"
 
 
-@dataclass(frozen=True, kw_only=True)
+@dataclass(frozen=True, kw_only=True, slots=True)
 class UdpHeader(ProtoStruct):
     """
     The UDP packet header.

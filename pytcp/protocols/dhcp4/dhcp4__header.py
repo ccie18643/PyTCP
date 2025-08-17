@@ -138,7 +138,7 @@ DHCP4__HEADER__SNAME__MAX_LEN = 64
 DHCP4__HEADER__FILE__MAX_LEN = 128
 
 
-@dataclass(frozen=True, kw_only=True)
+@dataclass(frozen=True, kw_only=True, slots=True)
 class Dhcp4Header(ProtoStruct):
     """
     The DHCPv4 header.

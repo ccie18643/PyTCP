@@ -57,7 +57,7 @@ TCP__OPTION__SACKPERM__LEN = 2
 TCP__OPTION__SACKPERM__STRUCT = "! BB"
 
 
-@dataclass(frozen=True, kw_only=False)
+@dataclass(frozen=True, kw_only=False, slots=True)
 class TcpOptionSackperm(TcpOption):
     """
     The TCP Sackperm (SACK Permitted) option support class.

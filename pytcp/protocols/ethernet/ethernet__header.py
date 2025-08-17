@@ -61,7 +61,7 @@ ETHERNET__HEADER__LEN = 14
 ETHERNET__HEADER__STRUCT = "! 6s 6s H"
 
 
-@dataclass(frozen=True, kw_only=True)
+@dataclass(frozen=True, kw_only=True, slots=True)
 class EthernetHeader(ProtoStruct):
     """
     The Ethernet header.

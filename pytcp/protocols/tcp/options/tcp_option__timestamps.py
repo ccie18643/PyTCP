@@ -62,7 +62,7 @@ TCP__OPTION__TIMESTAMPS__LEN = 10
 TCP__OPTION__TIMESTAMPS__STRUCT = "! BB LL"
 
 
-@dataclass
+@dataclass(frozen=True, kw_only=False, slots=True)
 class TcpTimestamps:
     """
     The TCP Timestamps option values.
@@ -72,7 +72,7 @@ class TcpTimestamps:
     tsecr: int
 
 
-@dataclass(frozen=True, kw_only=True)
+@dataclass(frozen=True, kw_only=True, slots=True)
 class TcpOptionTimestamps(TcpOption):
     """
     The TCP Timestamps option support class.

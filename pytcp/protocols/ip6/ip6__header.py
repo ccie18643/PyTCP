@@ -83,7 +83,7 @@ IP6__HEADER__STRUCT = "! L HBB 16s 16s"
 IP6__PAYLOAD__MAX_LEN = UINT_16__MAX
 
 
-@dataclass(frozen=True, kw_only=True)
+@dataclass(frozen=True, kw_only=True, slots=True)
 class Ip6Header(ProtoStruct):
     """
     The IPv6 packet header.

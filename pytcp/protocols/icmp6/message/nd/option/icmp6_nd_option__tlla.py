@@ -59,7 +59,7 @@ ICMP6__ND__OPTION__TLLA__LEN = 8
 ICMP6__ND__OPTION__TLLA__STRUCT = "! BB 6s"
 
 
-@dataclass(frozen=True, kw_only=False)
+@dataclass(frozen=True, kw_only=False, slots=True)
 class Icmp6NdOptionTlla(Icmp6NdOption):
     """
     The ICMPv6 ND Tlla option support.

@@ -75,7 +75,7 @@ class Icmp6EchoReplyCode(Icmp6Code):
     DEFAULT = 0
 
 
-@dataclass(frozen=True, kw_only=True)
+@dataclass(frozen=True, kw_only=True, slots=True)
 class Icmp6EchoReplyMessage(Icmp6Message):
     """
     The ICMPv6 Echo Reply message.

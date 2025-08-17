@@ -49,7 +49,7 @@ from pytcp.protocols.ip4.options.ip4_option import (
 )
 
 
-@dataclass(frozen=True, kw_only=True)
+@dataclass(frozen=True, kw_only=True, slots=True)
 class Ip4OptionUnknown(Ip4Option):
     """
     The IPv4 unknown option support class.

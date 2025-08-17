@@ -70,7 +70,7 @@ TCP__HEADER__LEN = 20
 TCP__HEADER__STRUCT = "! HH L L HH HH"
 
 
-@dataclass(frozen=True, kw_only=True)
+@dataclass(frozen=True, kw_only=True, slots=True)
 class TcpHeader(ProtoStruct):
     """
     The TCP packet header.

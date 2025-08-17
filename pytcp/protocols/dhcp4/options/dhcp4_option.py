@@ -53,7 +53,7 @@ class Dhcp4OptionType(ProtoOptionType):
     END = 255
 
 
-@dataclass(frozen=True, kw_only=True)
+@dataclass(frozen=True, kw_only=True, slots=True)
 class Dhcp4Option(ProtoOption):
     """
     The DHCPv4 option support class.

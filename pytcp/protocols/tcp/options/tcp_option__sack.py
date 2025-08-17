@@ -70,7 +70,7 @@ TCP__OPTION__SACK__BLOCK_STRUCT = "! LL"
 TCP__OPTION__SACK__MAX_BLOCK_NUM = 4
 
 
-@dataclass(frozen=True, kw_only=False)
+@dataclass(frozen=True, kw_only=False, slots=True)
 class TcpSackBlock:
     """
     The TCP Sack block support class.
@@ -105,7 +105,7 @@ class TcpSackBlock:
         return f"{self.left}-{self.right}"
 
 
-@dataclass(frozen=True, kw_only=False)
+@dataclass(frozen=True, kw_only=False, slots=True)
 class TcpOptionSack(TcpOption):
     """
     The TCP Sack option support class.

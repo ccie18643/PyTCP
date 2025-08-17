@@ -39,7 +39,7 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 
 
-@dataclass(frozen=True, kw_only=True)
+@dataclass(frozen=True, kw_only=True, slots=True)
 class ProtoStruct(ABC):
     """
     Base class for all protocol structures.

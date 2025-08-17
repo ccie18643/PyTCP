@@ -67,7 +67,7 @@ class Icmp4Code(ProtoEnumByte):
     """
 
 
-@dataclass(frozen=True, kw_only=True)
+@dataclass(frozen=True, kw_only=True, slots=True)
 class Icmp4Message(ProtoStruct):
     """
     The ICMPv4 message base.

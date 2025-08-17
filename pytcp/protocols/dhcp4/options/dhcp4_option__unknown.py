@@ -49,7 +49,7 @@ from pytcp.protocols.dhcp4.options.dhcp4_option import (
 )
 
 
-@dataclass(frozen=True, kw_only=True)
+@dataclass(frozen=True, kw_only=True, slots=True)
 class Dhcp4OptionUnknown(Dhcp4Option):
     """
     The DHCPv4 unknown option support class.

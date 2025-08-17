@@ -49,7 +49,7 @@ from pytcp.protocols.icmp6.message.nd.option.icmp6_nd_option import (
 )
 
 
-@dataclass(frozen=True, kw_only=True)
+@dataclass(frozen=True, kw_only=True, slots=True)
 class Icmp6NdOptionUnknown(Icmp6NdOption):
     """
     The ICMPv6 ND unknown option support class.

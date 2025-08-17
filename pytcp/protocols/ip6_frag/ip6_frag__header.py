@@ -57,7 +57,7 @@ IP6_EXT_FRAG__HEADER__LEN = 8
 IP6_EXT_FRAG__HEADER__STRUCT = "! BBH L"
 
 
-@dataclass(frozen=True, kw_only=True)
+@dataclass(frozen=True, kw_only=True, slots=True)
 class Ip6FragHeader(ProtoStruct):
     """
     The IPv6 Frag header.

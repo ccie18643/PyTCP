@@ -54,7 +54,7 @@ DHCP4__OPTION__END__LEN = 1
 DHCP4__OPTION__END__STRUCT = "! B"
 
 
-@dataclass(frozen=True, kw_only=True)
+@dataclass(frozen=True, kw_only=True, slots=True)
 class Dhcp4OptionEnd(Dhcp4Option):
     """
     The DHCPv4 End option support.

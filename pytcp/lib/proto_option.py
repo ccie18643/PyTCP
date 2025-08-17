@@ -49,7 +49,7 @@ class ProtoOptionType(ProtoEnumByte):
     """
 
 
-@dataclass(frozen=True, kw_only=True)
+@dataclass(frozen=True, kw_only=True, slots=True)
 class ProtoOption(ProtoStruct):
     """
     Base class for all of the protocol option classes.

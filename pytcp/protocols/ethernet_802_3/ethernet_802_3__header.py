@@ -65,7 +65,7 @@ ETHERNET_802_3__PAYLOAD__MAX_LEN = (
 )
 
 
-@dataclass(frozen=True, kw_only=True)
+@dataclass(frozen=True, kw_only=True, slots=True)
 class Ethernet8023Header(ProtoStruct):
     """
     The Ethernet 802.3 packet header.

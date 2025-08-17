@@ -52,7 +52,7 @@ class Ip4OptionType(ProtoOptionType):
     NOP = 1
 
 
-@dataclass(frozen=True, kw_only=True)
+@dataclass(frozen=True, kw_only=True, slots=True)
 class Ip4Option(ProtoOption):
     """
     The IPv4 option support class.

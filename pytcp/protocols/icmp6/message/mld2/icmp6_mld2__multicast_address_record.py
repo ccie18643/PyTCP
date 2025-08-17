@@ -110,7 +110,7 @@ class Icmp6Mld2MulticastAddressRecordType(ProtoEnumByte):
     BLOCK_OLD_SOURCES = 6
 
 
-@dataclass(frozen=True, kw_only=True)
+@dataclass(frozen=True, kw_only=True, slots=True)
 class Icmp6Mld2MulticastAddressRecord(ProtoStruct):
     """
     The ICMPv6 MLDv2 Multicast Address Record support.

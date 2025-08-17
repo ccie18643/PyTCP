@@ -97,7 +97,7 @@ class Icmp6Mld2ReportCode(Icmp6Code):
     DEFAULT = 0
 
 
-@dataclass(frozen=True, kw_only=True)
+@dataclass(frozen=True, kw_only=True, slots=True)
 class Icmp6Mld2ReportMessage(Icmp6Message):
     """
     The ICMPv6 MLDv2 Report message.

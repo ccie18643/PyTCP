@@ -79,7 +79,7 @@ class Icmp6NdRouterSolicitationCode(Icmp6Code):
     DEFAULT = 0
 
 
-@dataclass(frozen=True, kw_only=True)
+@dataclass(frozen=True, kw_only=True, slots=True)
 class Icmp6NdRouterSolicitationMessage(Icmp6NdMessage):
     """
     The ICMPv6 ND Router Solicitation message.

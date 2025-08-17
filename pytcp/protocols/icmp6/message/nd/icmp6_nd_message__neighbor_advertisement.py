@@ -83,7 +83,7 @@ class Icmp6NdNeighborAdvertisementCode(Icmp6Code):
     DEFAULT = 0
 
 
-@dataclass(frozen=True, kw_only=True)
+@dataclass(frozen=True, kw_only=True, slots=True)
 class Icmp6NdNeighborAdvertisementMessage(Icmp6NdMessage):
     """
     The ICMPv6 ND Neighbor Advertisement message class.

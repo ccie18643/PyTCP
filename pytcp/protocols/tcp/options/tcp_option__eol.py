@@ -51,7 +51,7 @@ TCP__OPTION__EOL__LEN = 1
 TCP__OPTION__EOL__STRUCT = "! B"
 
 
-@dataclass(frozen=True, kw_only=False)
+@dataclass(frozen=True, kw_only=False, slots=True)
 class TcpOptionEol(TcpOption):
     """
     The TCP Eol (End of Option List) option support.
