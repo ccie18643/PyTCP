@@ -25,11 +25,11 @@
 
 
 """
-Module contains BSD like socket interface for the stack.
+This module contains BSD like socket interface for the stack.
 
 pytcp/lib/socket.py
 
-ver 3.0.2
+ver 3.0.3
 """
 
 

@@ -37,13 +37,12 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, cast
 
-from net_addr.ip_address import IpAddress
-
 from net_addr import (
     Ip4Address,
     Ip4AddressFormatError,
     Ip6Address,
     Ip6AddressFormatError,
+    IpAddress,
     IpVersion,
 )
 from pytcp import stack

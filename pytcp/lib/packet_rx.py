@@ -36,20 +36,20 @@ ver 3.0.3
 from typing import TYPE_CHECKING
 
 from pytcp.lib.tracker import Tracker
-from pytcp.protocols.arp.arp__parser import ArpParser
-from pytcp.protocols.ethernet.ethernet__parser import EthernetParser
-from pytcp.protocols.ip4.ip4__parser import Ip4Parser
-from pytcp.protocols.ip6.ip6__parser import Ip6Parser
-from pytcp.protocols.tcp.tcp__parser import TcpParser
-from pytcp.protocols.udp.udp__parser import UdpParser
 
 if TYPE_CHECKING:
+    from pytcp.protocols.arp.arp__parser import ArpParser
+    from pytcp.protocols.ethernet.ethernet__parser import EthernetParser
     from pytcp.protocols.ethernet_802_3.ethernet_802_3__parser import (
         Ethernet8023Parser,
     )
     from pytcp.protocols.icmp4.icmp4__parser import Icmp4Parser
     from pytcp.protocols.icmp6.icmp6__parser import Icmp6Parser
+    from pytcp.protocols.ip4.ip4__parser import Ip4Parser
+    from pytcp.protocols.ip6.ip6__parser import Ip6Parser
     from pytcp.protocols.ip6_frag.ip6_frag__parser import Ip6FragParser
+    from pytcp.protocols.tcp.tcp__parser import TcpParser
+    from pytcp.protocols.udp.udp__parser import UdpParser
 
 
 class PacketRx:

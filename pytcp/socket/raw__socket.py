@@ -50,7 +50,6 @@ from pytcp.lib.logger import log
 from pytcp.lib.tx_status import TxStatus
 from pytcp.socket.socket import (
     AddressFamily,
-    IpProto,
     Socket,
     SocketType,
     gaierror,
@@ -58,6 +57,7 @@ from pytcp.socket.socket import (
 
 if TYPE_CHECKING:
     from pytcp.socket.raw__metadata import RawMetadata
+    from pytcp.socket.socket import IpProto
 
 
 class RawSocket(Socket):
