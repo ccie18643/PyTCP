@@ -217,6 +217,14 @@ class PacketHandler(
         return [ip6_host.address for ip6_host in self._ip6_host]
 
     @property
+    def ip6_host(self) -> list[Ip6Host]:
+        """
+        Get the list of stack's IPv4 host addresses.
+        """
+
+        return self._ip6_host
+
+    @property
     def ip4_unicast(self) -> list[Ip4Address]:
         """
         Get the list of stack's IPv4 unicast addresses.
