@@ -75,7 +75,7 @@ class PacketHandlerIcmp4Rx(ABC):
         from pytcp.lib.tx_status import TxStatus
         from pytcp.protocols.icmp4.icmp4__base import Icmp4Message
 
-        packet_stats_rx: PacketStatsRx
+        _packet_stats_rx: PacketStatsRx
 
         # pylint: disable=unused-argument
 
@@ -93,7 +93,7 @@ class PacketHandlerIcmp4Rx(ABC):
         Handle inbound ICMPv4 packets.
         """
 
-        self.packet_stats_rx.inc("icmp4__pre_parse")
+        self._packet_stats_rx.inc("icmp4__pre_parse")
 
         try:
             Icmp4Parser(packet_rx)
@@ -103,7 +103,7 @@ class PacketHandlerIcmp4Rx(ABC):
                 "icmp4",
                 f"{packet_rx.tracker} - <CRIT>{error}</>",
             )
-            self.packet_stats_rx.inc("icmp4__failed_parse__drop")
+            self._packet_stats_rx.inc("icmp4__failed_parse__drop")
             return
 
         __debug__ and log("icmp4", f"{packet_rx.tracker} - {packet_rx.icmp4}")
@@ -130,7 +130,7 @@ class PacketHandlerIcmp4Rx(ABC):
             f"{packet_rx.tracker} - Received ICMPv4 Echo Reply packet "
             f"from {packet_rx.ip4.src}",
         )
-        self.packet_stats_rx.inc("icmp4__echo_reply")
+        self._packet_stats_rx.inc("icmp4__echo_reply")
 
         # Create RawMetadata object and try to find matching RAW socket
         packet_rx_md = RawMetadata(
@@ -143,7 +143,7 @@ class PacketHandlerIcmp4Rx(ABC):
 
         for socket_id in packet_rx_md.socket_ids:
             if socket := cast(RawSocket, stack.sockets.get(socket_id, None)):
-                self.packet_stats_rx.inc("raw__socket_match")
+                self._packet_stats_rx.inc("raw__socket_match")
                 __debug__ and log(
                     "raw",
                     f"{packet_rx_md.tracker} - <INFO>Found matching listening "
@@ -172,7 +172,7 @@ class PacketHandlerIcmp4Rx(ABC):
             f"{packet_rx.tracker} - Received ICMPv4 Destination Unreachable packet "
             f"from {packet_rx.ip4.src}, will try to match UDP socket",
         )
-        self.packet_stats_rx.inc("icmp4__destination_unreachable")
+        self._packet_stats_rx.inc("icmp4__destination_unreachable")
 
         # Quick and dirty way to validate received data and pull useful
         # information from it.
@@ -236,7 +236,7 @@ class PacketHandlerIcmp4Rx(ABC):
             f"{packet_rx.tracker} - <INFO>Received ICMPv4 Echo Request "
             f"packet from {packet_rx.ip4.src}, sending reply</>",
         )
-        self.packet_stats_rx.inc("icmp4__echo_request__respond_echo_reply")
+        self._packet_stats_rx.inc("icmp4__echo_request__respond_echo_reply")
 
         self._phtx_icmp4(
             ip4__src=packet_rx.ip4.dst,
@@ -259,4 +259,4 @@ class PacketHandlerIcmp4Rx(ABC):
             f"{packet_rx.tracker} - Received unknown ICMPv4 packet "
             f"from {packet_rx.ip4.src}",
         )
-        self.packet_stats_rx.inc("icmp4__unknown")
+        self._packet_stats_rx.inc("icmp4__unknown")

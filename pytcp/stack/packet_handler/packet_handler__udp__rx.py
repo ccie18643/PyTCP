@@ -71,7 +71,7 @@ class PacketHandlerUdpRx(ABC):
         from pytcp.lib.tx_status import TxStatus
         from pytcp.protocols.icmp6.icmp6__base import Icmp6Message
 
-        packet_stats_rx: PacketStatsRx
+        _packet_stats_rx: PacketStatsRx
 
         # pylint: disable=unused-argument
 
@@ -110,13 +110,13 @@ class PacketHandlerUdpRx(ABC):
         Handle inbound UDP packets.
         """
 
-        self.packet_stats_rx.inc("udp__pre_parse")
+        self._packet_stats_rx.inc("udp__pre_parse")
 
         try:
             UdpParser(packet_rx)
 
         except PacketValidationError as error:
-            self.packet_stats_rx.inc("udp__failed_parse__drop")
+            self._packet_stats_rx.inc("udp__failed_parse__drop")
             __debug__ and log(
                 "udp",
                 f"{packet_rx.tracker} - <CRIT>{error}</>",
@@ -144,7 +144,7 @@ class PacketHandlerUdpRx(ABC):
 
         for socket_id in packet_rx_md.socket_ids:
             if socket := cast(UdpSocket, stack.sockets.get(socket_id, None)):
-                self.packet_stats_rx.inc("udp__socket_match")
+                self._packet_stats_rx.inc("udp__socket_match")
                 __debug__ and log(
                     "udp",
                     f"{packet_rx_md.tracker} - <INFO>Found matching listening "
@@ -155,7 +155,7 @@ class PacketHandlerUdpRx(ABC):
 
         # Silently drop packet if it's source address is unspecified.
         if packet_rx.ip.src.is_unspecified:
-            self.packet_stats_rx.inc("udp__ip_source_unspecified")
+            self._packet_stats_rx.inc("udp__ip_source_unspecified")
             __debug__ and log(
                 "udp",
                 f"{packet_rx_md.tracker} - Received UDP packet from "
@@ -167,7 +167,7 @@ class PacketHandlerUdpRx(ABC):
         # Handle the UDP Echo operation in case its enabled
         # (used for packet flow unit testing only).
         if stack.UDP__ECHO_NATIVE and packet_rx.udp.dport == 7:
-            self.packet_stats_rx.inc("udp__echo_native__respond_udp")
+            self._packet_stats_rx.inc("udp__echo_native__respond_udp")
             __debug__ and log(
                 "udp",
                 f"{packet_rx_md.tracker} - <INFO>Performing native "
@@ -194,7 +194,7 @@ class PacketHandlerUdpRx(ABC):
 
         match packet_rx.ip.ver:
             case IpVersion.IP6:
-                self.packet_stats_rx.inc(
+                self._packet_stats_rx.inc(
                     "udp__no_socket_match__respond_icmp6_unreachable"
                 )
                 self._phtx_icmp6(
@@ -207,7 +207,7 @@ class PacketHandlerUdpRx(ABC):
                     echo_tracker=packet_rx.tracker,
                 )
             case IpVersion.IP4:
-                self.packet_stats_rx.inc(
+                self._packet_stats_rx.inc(
                     "udp__no_socket_match__respond_icmp4_unreachable"
                 )
                 self._phtx_icmp4(

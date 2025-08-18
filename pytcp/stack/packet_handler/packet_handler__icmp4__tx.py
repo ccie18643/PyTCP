@@ -60,7 +60,7 @@ class PacketHandlerIcmp4Tx(ABC):
         from pytcp.protocols.ip4.ip4__base import Ip4Payload
         from pytcp.protocols.raw.raw__assembler import RawAssembler
 
-        packet_stats_tx: PacketStatsTx
+        _packet_stats_tx: PacketStatsTx
 
         # pylint: disable=unused-argument
 
@@ -85,7 +85,7 @@ class PacketHandlerIcmp4Tx(ABC):
         Handle outbound ICMPv4 packets.
         """
 
-        self.packet_stats_tx.inc("icmp4__pre_assemble")
+        self._packet_stats_tx.inc("icmp4__pre_assemble")
 
         icmp4_packet_tx = Icmp4Assembler(
             icmp4__message=icmp4__message,
@@ -98,16 +98,16 @@ class PacketHandlerIcmp4Tx(ABC):
 
         match icmp4__message.type, icmp4__message.code:
             case Icmp4Type.ECHO_REPLY, _:
-                self.packet_stats_tx.inc("icmp4__echo_reply__send")
+                self._packet_stats_tx.inc("icmp4__echo_reply__send")
             case (
                 Icmp4Type.DESTINATION_UNREACHABLE,
                 Icmp4DestinationUnreachableCode.PORT,
             ):
-                self.packet_stats_tx.inc(
+                self._packet_stats_tx.inc(
                     "icmp4__destination_unreachable__port__send"
                 )
             case Icmp4Type.ECHO_REQUEST, _:
-                self.packet_stats_tx.inc("icmp4__echo_request__send")
+                self._packet_stats_tx.inc("icmp4__echo_request__send")
             case _:
                 raise ValueError(
                     f"Unsupported ICMPv4 message type {icmp4__message.type}, "

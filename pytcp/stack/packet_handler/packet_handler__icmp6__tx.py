@@ -79,7 +79,7 @@ class PacketHandlerIcmp6Tx(ABC):
         from pytcp.protocols.ip6.ip6__base import Ip6Payload
         from pytcp.protocols.raw.raw__assembler import RawAssembler
 
-        packet_stats_tx: PacketStatsTx
+        _packet_stats_tx: PacketStatsTx
         _mac_unicast: MacAddress
         ip6_multicast: list[Ip6Address]
         ip6_host: list[Ip6Host]
@@ -113,7 +113,7 @@ class PacketHandlerIcmp6Tx(ABC):
         Handle outbound ICMPv6 packets.
         """
 
-        self.packet_stats_tx.inc("icmp6__pre_assemble")
+        self._packet_stats_tx.inc("icmp6__pre_assemble")
 
         icmp6_packet_tx = Icmp6Assembler(
             icmp6__message=icmp6__message,
@@ -126,32 +126,34 @@ class PacketHandlerIcmp6Tx(ABC):
 
         match icmp6__message.type, icmp6__message.code:
             case Icmp6Type.ECHO_REPLY, _:
-                self.packet_stats_tx.inc("icmp6__echo_reply__send")
+                self._packet_stats_tx.inc("icmp6__echo_reply__send")
             case Icmp6Type.ECHO_REQUEST, _:
-                self.packet_stats_tx.inc("icmp6__echo_request__send")
+                self._packet_stats_tx.inc("icmp6__echo_request__send")
             case (
                 Icmp6Type.DESTINATION_UNREACHABLE,
                 Icmp6DestinationUnreachableCode.PORT,
             ):
-                self.packet_stats_tx.inc(
+                self._packet_stats_tx.inc(
                     "icmp6__destination_unreachable__port__send"
                 )
             case Icmp6Type.ND__ROUTER_SOLICITATION, _:
-                self.packet_stats_tx.inc("icmp6__nd__router_solicitation__send")
+                self._packet_stats_tx.inc(
+                    "icmp6__nd__router_solicitation__send"
+                )
             case Icmp6Type.ND__ROUTER_ADVERTISEMENT, _:
-                self.packet_stats_tx.inc(
+                self._packet_stats_tx.inc(
                     "icmp6__nd__router_advertisement__send"
                 )
             case Icmp6Type.ND__NEIGHBOR_SOLICITATION, _:
-                self.packet_stats_tx.inc(
+                self._packet_stats_tx.inc(
                     "icmp6__nd__neighbor_solicitation__send"
                 )
             case Icmp6Type.ND__NEIGHBOR_ADVERTISEMENT, _:
-                self.packet_stats_tx.inc(
+                self._packet_stats_tx.inc(
                     "icmp6__nd__neighbor_advertisement__send"
                 )
             case Icmp6Type.MLD2__REPORT, _:
-                self.packet_stats_tx.inc("icmp6__mld2__report__send")
+                self._packet_stats_tx.inc("icmp6__mld2__report__send")
             case _:
                 raise ValueError(
                     f"Unsupported ICMPv6 type {icmp6__message.type}, "

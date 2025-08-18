@@ -54,7 +54,7 @@ class PacketHandlerEthernet8023Rx(ABC):
         from pytcp.lib.packet_rx import PacketRx
         from pytcp.lib.packet_stats import PacketStatsRx
 
-        packet_stats_rx: PacketStatsRx
+        _packet_stats_rx: PacketStatsRx
         _mac_unicast: MacAddress
         mac_multicast: list[MacAddress]
         mac_broadcast: MacAddress
@@ -70,13 +70,13 @@ class PacketHandlerEthernet8023Rx(ABC):
         Handle inbound Ethernet 802.3 packets.
         """
 
-        self.packet_stats_rx.inc("ethernet_802_3__pre_parse")
+        self._packet_stats_rx.inc("ethernet_802_3__pre_parse")
 
         try:
             Ethernet8023Parser(packet_rx)
 
         except PacketValidationError as error:
-            self.packet_stats_rx.inc("ethernet_802_3__failed_parse__drop")
+            self._packet_stats_rx.inc("ethernet_802_3__failed_parse__drop")
             __debug__ and log(
                 "ether",
                 f"{packet_rx.tracker} - <CRIT>{error}</>",
@@ -93,7 +93,7 @@ class PacketHandlerEthernet8023Rx(ABC):
             *self.mac_multicast,
             self.mac_broadcast,
         }:
-            self.packet_stats_rx.inc("ethernet_802_3__dst_unknown__drop")
+            self._packet_stats_rx.inc("ethernet_802_3__dst_unknown__drop")
             __debug__ and log(
                 "ether",
                 f"{packet_rx.tracker} - Ethernet 802.3 packet not destined for this "
@@ -102,10 +102,10 @@ class PacketHandlerEthernet8023Rx(ABC):
             return
 
         if packet_rx.ethernet_802_3.dst == self._mac_unicast:
-            self.packet_stats_rx.inc("ethernet__dst_unicast")
+            self._packet_stats_rx.inc("ethernet__dst_unicast")
 
         if packet_rx.ethernet_802_3.dst in self.mac_multicast:
-            self.packet_stats_rx.inc("ethernet__dst_multicast")
+            self._packet_stats_rx.inc("ethernet__dst_multicast")
 
         if packet_rx.ethernet_802_3.dst == self.mac_broadcast:
-            self.packet_stats_rx.inc("ethernet__dst_broadcast")
+            self._packet_stats_rx.inc("ethernet__dst_broadcast")

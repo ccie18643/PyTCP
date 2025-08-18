@@ -62,7 +62,7 @@ class PacketHandlerIp4Rx(ABC):
         from net_addr import Ip4Address
         from pytcp.lib.packet_stats import PacketStatsRx
 
-        packet_stats_rx: PacketStatsRx
+        _packet_stats_rx: PacketStatsRx
         ip4_multicast: list[Ip4Address]
         ip4_frag_flows: dict[IpFragFlowId, IpFragData]
 
@@ -85,13 +85,13 @@ class PacketHandlerIp4Rx(ABC):
         Handle inbound IPv4 packets.
         """
 
-        self.packet_stats_rx.inc("ip4__pre_parse")
+        self._packet_stats_rx.inc("ip4__pre_parse")
 
         try:
             Ip4Parser(packet_rx)
 
         except PacketValidationError as error:
-            self.packet_stats_rx.inc("ip4__failed_parse__drop")
+            self._packet_stats_rx.inc("ip4__failed_parse__drop")
             __debug__ and log(
                 "ip4",
                 f"{packet_rx.tracker} - <CRIT>{error}</>",
@@ -108,7 +108,7 @@ class PacketHandlerIp4Rx(ABC):
             *self.ip4_multicast,
             *self.ip4_broadcast,
         }:
-            self.packet_stats_rx.inc("ip4__dst_unknown__drop")
+            self._packet_stats_rx.inc("ip4__dst_unknown__drop")
             __debug__ and log(
                 "ip4",
                 f"{packet_rx.tracker} - IP packet not destined for this stack, "
@@ -117,17 +117,17 @@ class PacketHandlerIp4Rx(ABC):
             return
 
         if packet_rx.ip4.dst in self.ip4_unicast:
-            self.packet_stats_rx.inc("ip4__dst_unicast")
+            self._packet_stats_rx.inc("ip4__dst_unicast")
 
         if packet_rx.ip4.dst in self.ip4_multicast:
-            self.packet_stats_rx.inc("ip4__dst_multicast")
+            self._packet_stats_rx.inc("ip4__dst_multicast")
 
         if packet_rx.ip4.dst in self.ip4_broadcast:
-            self.packet_stats_rx.inc("ip4__dst_broadcast")
+            self._packet_stats_rx.inc("ip4__dst_broadcast")
 
         # Check if packet is a fragment and if so process it accordingly.
         if packet_rx.ip4.offset != 0 or packet_rx.ip4.flag_mf:
-            self.packet_stats_rx.inc("ip4__frag")
+            self._packet_stats_rx.inc("ip4__frag")
             if not (
                 defragmented_packet_rx := self.__defragment_ip4_packet(
                     packet_rx
@@ -135,7 +135,7 @@ class PacketHandlerIp4Rx(ABC):
             ):
                 return
             packet_rx = defragmented_packet_rx
-            self.packet_stats_rx.inc("ip4__defrag")
+            self._packet_stats_rx.inc("ip4__defrag")
 
         # Create RawMetadata object and try to find matching RAW socket.
         packet_rx_md = RawMetadata(
@@ -151,7 +151,7 @@ class PacketHandlerIp4Rx(ABC):
 
         for socket_id in packet_rx_md.socket_ids:
             if socket := cast(RawSocket, stack.sockets.get(socket_id, None)):
-                self.packet_stats_rx.inc("raw__socket_match")
+                self._packet_stats_rx.inc("raw__socket_match")
                 __debug__ and log(
                     "ip4",
                     f"{packet_rx_md.tracker} - <INFO>Found matching listening "
@@ -168,7 +168,7 @@ class PacketHandlerIp4Rx(ABC):
             case IpProto.TCP:
                 self._phrx_tcp(packet_rx)
             case _:
-                self.packet_stats_rx.inc("ip4__no_proto_support__drop")
+                self._packet_stats_rx.inc("ip4__no_proto_support__drop")
                 __debug__ and log(
                     "ip4",
                     f"{packet_rx.tracker} - Unsupported protocol "

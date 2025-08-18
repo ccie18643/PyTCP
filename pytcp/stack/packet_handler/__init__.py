@@ -142,8 +142,8 @@ class PacketHandler(
         super().__init__()
 
         # Initialize data stores for packet statistics used in unit testing.
-        self.packet_stats_rx = PacketStatsRx()
-        self.packet_stats_tx = PacketStatsTx()
+        self._packet_stats_rx = PacketStatsRx()
+        self._packet_stats_tx = PacketStatsTx()
 
         # MAC and IPv6 Multicast lists hold duplicate entries by design. This
         # is to accommodate IPv6 Solicited Node Multicast mechanism where
@@ -191,6 +191,22 @@ class PacketHandler(
 
         if ip6_host is not None:
             self.ip6_host_candidate.append(ip6_host)
+
+    @property
+    def packet_stats_rx(self) -> PacketStatsRx:
+        """
+        Get the packet statistics for received packets.
+        """
+
+        return self._packet_stats_rx
+
+    @property
+    def packet_stats_tx(self) -> PacketStatsTx:
+        """
+        Get the packet statistics for transmitted packets.
+        """
+
+        return self._packet_stats_tx
 
     @property
     def mac_unicast(self) -> MacAddress:

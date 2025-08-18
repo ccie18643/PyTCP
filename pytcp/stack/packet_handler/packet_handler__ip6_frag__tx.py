@@ -60,7 +60,7 @@ class PacketHandlerIp6FragTx(ABC):
         from pytcp.protocols.ip6.ip6__assembler import Ip6Assembler, Ip6Payload
         from pytcp.protocols.raw.raw__assembler import RawAssembler
 
-        packet_stats_tx: PacketStatsTx
+        _packet_stats_tx: PacketStatsTx
         ip6_id: int
         _interface_mtu: int
 
@@ -80,7 +80,7 @@ class PacketHandlerIp6FragTx(ABC):
         Handle outbound IPv6 fagment extension header.
         """
 
-        self.packet_stats_tx.inc("ip6_frag__pre_assemble")
+        self._packet_stats_tx.inc("ip6_frag__pre_assemble")
 
         if isinstance(
             ip6_packet_tx.payload, (TcpAssembler, UdpAssembler, Icmp6Assembler)
@@ -109,7 +109,7 @@ class PacketHandlerIp6FragTx(ABC):
             )
             __debug__ and log("ip6", f"{ip6_frag_tx.tracker} - {ip6_frag_tx}")
             offset += len(data_frag)
-            self.packet_stats_tx.inc("ip6_frag__send")
+            self._packet_stats_tx.inc("ip6_frag__send")
             ip6_tx_status.add(
                 self._phtx_ip6(
                     ip6__src=ip6_packet_tx.src,

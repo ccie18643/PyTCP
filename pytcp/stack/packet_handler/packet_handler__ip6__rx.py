@@ -57,7 +57,7 @@ class PacketHandlerIp6Rx(ABC):
         from net_addr import Ip6Address
         from pytcp.lib.packet_stats import PacketStatsRx
 
-        packet_stats_rx: PacketStatsRx
+        _packet_stats_rx: PacketStatsRx
 
         # pylint: disable=unused-argument
 
@@ -79,13 +79,13 @@ class PacketHandlerIp6Rx(ABC):
         Handle inbound IPv6 packets.
         """
 
-        self.packet_stats_rx.inc("ip6__pre_parse")
+        self._packet_stats_rx.inc("ip6__pre_parse")
 
         try:
             Ip6Parser(packet_rx)
 
         except PacketValidationError as error:
-            self.packet_stats_rx.inc("ip6__failed_parse__drop")
+            self._packet_stats_rx.inc("ip6__failed_parse__drop")
             __debug__ and log("ip6", f"{packet_rx.tracker} - <rb>{error}</>")
             return
 
@@ -94,7 +94,7 @@ class PacketHandlerIp6Rx(ABC):
         # Check if received packet has been sent to us directly or by unicast
         # or multicast.
         if packet_rx.ip6.dst not in {*self.ip6_unicast, *self.ip6_multicast}:
-            self.packet_stats_rx.inc("ip6__dst_unknown__drop")
+            self._packet_stats_rx.inc("ip6__dst_unknown__drop")
             __debug__ and log(
                 "ip6",
                 f"{packet_rx.tracker} - IP packet not destined for this stack, "
@@ -103,10 +103,10 @@ class PacketHandlerIp6Rx(ABC):
             return
 
         if packet_rx.ip6.dst in self.ip6_unicast:
-            self.packet_stats_rx.inc("ip6__dst_unicast")
+            self._packet_stats_rx.inc("ip6__dst_unicast")
 
         if packet_rx.ip6.dst in self.ip6_multicast:
-            self.packet_stats_rx.inc("ip6__dst_multicast")
+            self._packet_stats_rx.inc("ip6__dst_multicast")
 
         # Create RawMetadata object and try to find matching RAW socket.
         packet_rx_md = RawMetadata(
@@ -122,7 +122,7 @@ class PacketHandlerIp6Rx(ABC):
 
         for socket_id in packet_rx_md.socket_ids:
             if socket := cast(RawSocket, stack.sockets.get(socket_id, None)):
-                self.packet_stats_rx.inc("raw__socket_match")
+                self._packet_stats_rx.inc("raw__socket_match")
                 __debug__ and log(
                     "ip6",
                     f"{packet_rx_md.tracker} - <INFO>Found matching listening "
@@ -141,7 +141,7 @@ class PacketHandlerIp6Rx(ABC):
             case IpProto.TCP:
                 self._phrx_tcp(packet_rx)
             case _:
-                self.packet_stats_rx.inc("ip6__no_proto_support__drop")
+                self._packet_stats_rx.inc("ip6__no_proto_support__drop")
                 __debug__ and log(
                     "ip6",
                     f"{packet_rx.tracker} - Unsupported protocol "

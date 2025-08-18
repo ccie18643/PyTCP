@@ -55,7 +55,7 @@ class PacketHandlerArpTx(ABC):
         from pytcp.lib.packet_stats import PacketStatsTx
         from pytcp.protocols.ethernet.ethernet__base import EthernetPayload
 
-        packet_stats_tx: PacketStatsTx
+        _packet_stats_tx: PacketStatsTx
         _mac_unicast: MacAddress
         _ip4_support: bool
 
@@ -90,19 +90,19 @@ class PacketHandlerArpTx(ABC):
         Handle outbound ARP packets.
         """
 
-        self.packet_stats_tx.inc("arp__pre_assemble")
+        self._packet_stats_tx.inc("arp__pre_assemble")
 
         # Check if IPv4 protocol support is enabled, if not then silently
         # drop the packet.
         if not self._ip4_support:
-            self.packet_stats_tx.inc("arp__no_proto_support__drop")
+            self._packet_stats_tx.inc("arp__no_proto_support__drop")
             return TxStatus.DROPED__ARP__NO_PROTOCOL_SUPPORT
 
         match arp__oper:
             case ArpOperation.REQUEST:
-                self.packet_stats_tx.inc("arp__op_request__send")
+                self._packet_stats_tx.inc("arp__op_request__send")
             case ArpOperation.REPLY:
-                self.packet_stats_tx.inc("arp__op_reply__send")
+                self._packet_stats_tx.inc("arp__op_reply__send")
             case _:
                 raise ValueError(f"Invalid ARP operation: {arp__oper}")
 

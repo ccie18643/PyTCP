@@ -66,7 +66,7 @@ class PacketHandlerUdpTx(ABC):
         )
         from pytcp.protocols.raw.raw__assembler import RawAssembler
 
-        packet_stats_tx: PacketStatsTx
+        _packet_stats_tx: PacketStatsTx
 
         # pylint: disable=unused-argument
 
@@ -102,7 +102,7 @@ class PacketHandlerUdpTx(ABC):
         Handle outbound UDP packets.
         """
 
-        self.packet_stats_tx.inc("udp__pre_assemble")
+        self._packet_stats_tx.inc("udp__pre_assemble")
 
         udp_packet_tx = UdpAssembler(
             udp__sport=udp__sport,
@@ -115,14 +115,14 @@ class PacketHandlerUdpTx(ABC):
 
         match ip__src.is_ip6, ip__dst.is_ip6, ip__src.is_ip4, ip__dst.is_ip4:
             case True, True, False, False:
-                self.packet_stats_tx.inc("udp__send")
+                self._packet_stats_tx.inc("udp__send")
                 return self._phtx_ip6(
                     ip6__src=cast(Ip6Address, ip__src),
                     ip6__dst=cast(Ip6Address, ip__dst),
                     ip6__payload=udp_packet_tx,
                 )
             case False, False, True, True:
-                self.packet_stats_tx.inc("udp__send")
+                self._packet_stats_tx.inc("udp__send")
                 return self._phtx_ip4(
                     ip4__src=cast(Ip4Address, ip__src),
                     ip4__dst=cast(Ip4Address, ip__dst),

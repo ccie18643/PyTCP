@@ -56,7 +56,7 @@ class PacketHandlerIp6FragRx(ABC):
         from net_addr import Ip6Address
         from pytcp.lib.packet_stats import PacketStatsRx
 
-        packet_stats_rx: PacketStatsRx
+        _packet_stats_rx: PacketStatsRx
         ip6_frag_flows: dict[IpFragFlowId, IpFragData]
 
         # pylint: disable=unused-argument
@@ -68,12 +68,12 @@ class PacketHandlerIp6FragRx(ABC):
         Handle inbound IPv6 fragment extension header.
         """
 
-        self.packet_stats_rx.inc("ip6_frag__pre_parse")
+        self._packet_stats_rx.inc("ip6_frag__pre_parse")
 
         Ip6FragParser(packet_rx)
 
         if packet_rx.parse_failed:
-            self.packet_stats_rx.inc("ip6_frag__failed_parse")
+            self._packet_stats_rx.inc("ip6_frag__failed_parse")
             __debug__ and log(
                 "ip6",
                 f"{packet_rx.tracker} - <CRIT>{packet_rx.parse_failed}</>",
@@ -83,7 +83,7 @@ class PacketHandlerIp6FragRx(ABC):
         __debug__ and log("ip6", f"{packet_rx.tracker} - {packet_rx.ip6_frag}")
 
         if defragmented_packet_rx := self.__defragment_ip6_packet(packet_rx):
-            self.packet_stats_rx.inc("ip6_frag__defrag")
+            self._packet_stats_rx.inc("ip6_frag__defrag")
             self._phrx_ip6(
                 defragmented_packet_rx,
             )
