@@ -230,7 +230,7 @@ def setup_mock_packet_handler(self: TestCase) -> None:
         mac_address=self.mns.stack_mac_address,
         interface_mtu=1500,
     )
-    self.packet_handler.mac_multicast = [
+    self.packet_handler._mac_multicast = [
         self.mns.stack_ip6_host.address.solicited_node_multicast.multicast_mac
     ]
     self.packet_handler.ip4_host = [self.mns.stack_ip4_host]

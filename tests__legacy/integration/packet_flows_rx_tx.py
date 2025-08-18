@@ -141,7 +141,7 @@ class TestPacketHandlerRxTx(TestCase):
             mac_address=STACK_MAC_ADDRESS,
             interface_mtu=1500,
         )
-        self.packet_handler.mac_multicast = [
+        self.packet_handler._mac_multicast = [
             STACK_IP6_HOST.address.solicited_node_multicast.multicast_mac
         ]
         self.packet_handler.ip4_host = [STACK_IP4_HOST]

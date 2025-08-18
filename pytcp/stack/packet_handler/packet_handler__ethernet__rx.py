@@ -56,8 +56,8 @@ class PacketHandlerEthernetRx(ABC):
 
         _packet_stats_rx: PacketStatsRx
         _mac_unicast: MacAddress
-        mac_multicast: list[MacAddress]
-        mac_broadcast: MacAddress
+        _mac_multicast: list[MacAddress]
+        _mac_broadcast: MacAddress
 
         _ip4_support: bool
         _ip6_support: bool
@@ -93,8 +93,8 @@ class PacketHandlerEthernetRx(ABC):
         # Check if received packet matches any of stack MAC addresses.
         if packet_rx.ethernet.dst not in {
             self._mac_unicast,
-            *self.mac_multicast,
-            self.mac_broadcast,
+            *self._mac_multicast,
+            self._mac_broadcast,
         }:
             self._packet_stats_rx.inc("ethernet__dst_unknown__drop")
             __debug__ and log(
@@ -107,10 +107,10 @@ class PacketHandlerEthernetRx(ABC):
         if packet_rx.ethernet.dst == self._mac_unicast:
             self._packet_stats_rx.inc("ethernet__dst_unicast")
 
-        if packet_rx.ethernet.dst in self.mac_multicast:
+        if packet_rx.ethernet.dst in self._mac_multicast:
             self._packet_stats_rx.inc("ethernet__dst_multicast")
 
-        if packet_rx.ethernet.dst == self.mac_broadcast:
+        if packet_rx.ethernet.dst == self._mac_broadcast:
             self._packet_stats_rx.inc("ethernet__dst_broadcast")
 
         match packet_rx.ethernet.type:

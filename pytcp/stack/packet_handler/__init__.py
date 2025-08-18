@@ -153,8 +153,8 @@ class PacketHandler(
         # multicast list. Its the simplest solution and imho perfectly valid
         # one in this case.
         self._mac_unicast = mac_address
-        self.mac_multicast: list[MacAddress] = []
-        self.mac_broadcast: MacAddress = MacAddress(0xFFFFFFFFFFFF)
+        self._mac_multicast: list[MacAddress] = []
+        self._mac_broadcast: MacAddress = MacAddress(0xFFFFFFFFFFFF)
         self.ip6_host_candidate: list[Ip6Host] = []
         self.ip6_host: list[Ip6Host] = []
         self.ip6_multicast: list[Ip6Address] = []
@@ -217,9 +217,25 @@ class PacketHandler(
         return self._mac_unicast
 
     @property
+    def mac_multicast(self) -> list[MacAddress]:
+        """
+        Get list of stack's multicast MAC addresses.
+        """
+
+        return self._mac_multicast
+
+    @property
+    def mac_broadcast(self) -> MacAddress:
+        """
+        Get the stack's broadcast MAC address.
+        """
+
+        return self._mac_broadcast
+
+    @property
     def ip6_unicast(self) -> list[Ip6Address]:
         """
-        Return list of stack's IPv6 unicast addresses.
+        Get the list of stack's IPv6 unicast addresses.
         """
 
         return [ip4_host.address for ip4_host in self.ip6_host]
@@ -227,7 +243,7 @@ class PacketHandler(
     @property
     def ip4_unicast(self) -> list[Ip4Address]:
         """
-        Return list of stack's IPv4 unicast addresses.
+        Get the list of stack's IPv4 unicast addresses.
         """
 
         return [ip4_host.address for ip4_host in self.ip4_host]
@@ -235,7 +251,7 @@ class PacketHandler(
     @property
     def ip4_broadcast(self) -> list[Ip4Address]:
         """
-        Return list of stack's IPv4 broadcast addresses.
+        Get the list of stack's IPv4 broadcast addresses.
         """
 
         ip4_broadcast = [

@@ -56,8 +56,8 @@ class PacketHandlerEthernet8023Rx(ABC):
 
         _packet_stats_rx: PacketStatsRx
         _mac_unicast: MacAddress
-        mac_multicast: list[MacAddress]
-        mac_broadcast: MacAddress
+        _mac_multicast: list[MacAddress]
+        _mac_broadcast: MacAddress
 
         # pylint: disable=unused-argument
 
@@ -90,8 +90,8 @@ class PacketHandlerEthernet8023Rx(ABC):
         # Check if received packet matches any of stack MAC addresses.
         if packet_rx.ethernet_802_3.dst not in {
             self._mac_unicast,
-            *self.mac_multicast,
-            self.mac_broadcast,
+            *self._mac_multicast,
+            self._mac_broadcast,
         }:
             self._packet_stats_rx.inc("ethernet_802_3__dst_unknown__drop")
             __debug__ and log(
@@ -104,8 +104,8 @@ class PacketHandlerEthernet8023Rx(ABC):
         if packet_rx.ethernet_802_3.dst == self._mac_unicast:
             self._packet_stats_rx.inc("ethernet__dst_unicast")
 
-        if packet_rx.ethernet_802_3.dst in self.mac_multicast:
+        if packet_rx.ethernet_802_3.dst in self._mac_multicast:
             self._packet_stats_rx.inc("ethernet__dst_multicast")
 
-        if packet_rx.ethernet_802_3.dst == self.mac_broadcast:
+        if packet_rx.ethernet_802_3.dst == self._mac_broadcast:
             self._packet_stats_rx.inc("ethernet__dst_broadcast")
