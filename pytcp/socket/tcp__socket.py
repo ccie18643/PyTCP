@@ -25,11 +25,11 @@
 
 
 """
-Module contains BSD like TCP socket interface for the stack.
+This module contains BSD like TCP socket interface for the stack.
 
 pytcp/socket/tcp__socket.py
 
-ver 3.0.2
+ver 3.0.3
 """
 
 
@@ -63,7 +63,6 @@ from pytcp.socket.tcp__session import FsmState, TcpSession, TcpSessionError
 if TYPE_CHECKING:
     from threading import Semaphore
 
-    from net_addr import IpAddress
     from pytcp.socket.tcp__metadata import TcpMetadata
 
 
@@ -91,7 +90,7 @@ class TcpSocket(Socket):
         self._tcp_session: TcpSession | None
 
         # Create established socket based on established TCP session, called by
-        # listening sockets only
+        # listening sockets only.
         if tcp_session:
             self._tcp_session = tcp_session
             self._local_ip_address = tcp_session.local_ip_address
@@ -101,7 +100,7 @@ class TcpSocket(Socket):
             self._parent_socket = tcp_session.socket
             stack.sockets[self.socket_id] = self
 
-        # Fresh socket initialization
+        # Fresh socket initialization.
         else:
             match self._address_family:
                 case AddressFamily.INET6:
@@ -200,14 +199,14 @@ class TcpSocket(Socket):
         # address and specific local port in case provided port equals zero
         # port value will be picked automatically.
 
-        # Check if "bound" already
+        # Check if "bound" already.
         if self._local_port in range(1, 65536):
             raise OSError(
                 "[Errno 22] Invalid argument - "
                 "[Socket bound to specific port already]"
             )
 
-        local_ip_address: IpAddress
+        local_ip_address: Ip6Address | Ip4Address
 
         match self._address_family:
             case AddressFamily.INET6:
@@ -261,7 +260,7 @@ class TcpSocket(Socket):
         else:
             local_port = pick_local_port()
 
-        # Assigning local port makes socket "bound"
+        # Assigning local port makes socket "bound".
         stack.sockets.pop(self.socket_id, None)
         self._local_ip_address = local_ip_address
         self._local_port = local_port
@@ -285,16 +284,16 @@ class TcpSocket(Socket):
                 "connect(): port must be 0-65535. - [Port out of range]"
             )
 
-        # Assigning local port makes socket "bound" if not "bound" already
+        # Assigning local port makes socket "bound" if not "bound" already.
         if (local_port := self._local_port) not in range(1, 65536):
             local_port = pick_local_port()
 
-        # Set local and remote ip addresses aproprietely
+        # Set local and remote ip addresses aproprietely.
         local_ip_address, remote_ip_address = self._get_ip_addresses(
             remote_address=address,
         )
 
-        # Re-register socket with new socket id
+        # Re-register socket with new socket id.
         stack.sockets.pop(self.socket_id, None)
         self._local_ip_address = local_ip_address
         self._local_port = local_port

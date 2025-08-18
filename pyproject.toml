@@ -74,7 +74,10 @@ disable = """
     too-many-arguments,
     too-many-locals,
     too-many-branches,
+    too-many-lines,
     too-many-boolean-expressions,
+    too-many-positional-arguments,
+    too-many-return-statements,
     too-few-public-methods,
     import-outside-toplevel,
     fixme,
@@ -88,6 +91,7 @@ disable = """
     redefined-outer-name,
     global-statement,
     wrong-import-order,
+    consider-using-with,
 """
 
 [tool.setuptools.packages.find]

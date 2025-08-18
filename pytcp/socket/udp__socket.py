@@ -25,11 +25,11 @@
 
 
 """
-Module contains BSD like UDP socket interface for the stack.
+This module contains BSD like UDP socket interface for the stack.
 
 pytcp/socket/udp__socket.py
 
-ver 3.0.2
+ver 3.0.3
 """
 
 
@@ -158,7 +158,7 @@ class UdpSocket(Socket):
         # address and specific local port in case provided port equals zero
         # port value will be picked automatically.
 
-        # Check if "bound" already
+        # Check if "bound" already.
         if self._local_port in range(1, 65536):
             raise OSError(
                 "[Errno 22] Invalid argument - "
@@ -198,13 +198,13 @@ class UdpSocket(Socket):
                         "[Malformed local IP address]"
                     ) from error
 
-        # Sanity check on local port number
+        # Sanity check on local port number.
         if address[1] not in range(0, 65536):
             raise OverflowError(
                 "bind(): port must be 0-65535. - [Port out of range]"
             )
 
-        # Confirm or pick local port number
+        # Confirm or pick local port number.
         if (local_port := address[1]) > 0:
             if is_address_in_use(
                 local_ip_address=local_ip_address,
@@ -219,7 +219,7 @@ class UdpSocket(Socket):
         else:
             local_port = pick_local_port()
 
-        # Assigning local port makes socket "bound"
+        # Assigning local port makes socket "bound".
         stack.sockets.pop(self.socket_id, None)
         self._local_ip_address = local_ip_address
         self._local_port = local_port
@@ -243,16 +243,16 @@ class UdpSocket(Socket):
                 "connect(): port must be 0-65535. - [Port out of range]"
             )
 
-        # Assigning local port makes socket "bound" if not "bound" already
+        # Assigning local port makes socket "bound" if not "bound" already.
         if (local_port := self._local_port) not in range(1, 65536):
             local_port = pick_local_port()
 
-        # Set local and remote ip addresses aproprietely
+        # Set local and remote ip addresses appropriately.
         local_ip_address, remote_ip_address = self._get_ip_addresses(
             remote_address=address,
         )
 
-        # Re-register socket with new socket id
+        # Re-register socket with new socket id.
         stack.sockets.pop(self.socket_id, None)
         self._local_ip_address = local_ip_address
         self._local_port = local_port
@@ -317,13 +317,13 @@ class UdpSocket(Socket):
                 "sendto(): port must be 0-65535. - [Port out of range]"
             )
 
-        # Assigning local port makes socket "bound" if not "bound" already
+        # Assigning local port makes socket "bound" if not "bound" already.
         if self._local_port not in range(1, 65536):
             stack.sockets.pop(self.socket_id, None)
             self._local_port = pick_local_port()
             stack.sockets[self.socket_id] = self
 
-        # Set local and remote ip addresses aproprietely
+        # Set local and remote ip addresses aproprietely.
         local_ip_address, remote_ip_address = self._get_ip_addresses(
             remote_address=address,
         )
@@ -356,7 +356,7 @@ class UdpSocket(Socket):
         Read data from socket.
         """
 
-        # TODO - Implement support for buffsize
+        # TODO - Implement support for buffsize.
 
         if self._unreachable:
             self._unreachable = False
@@ -381,7 +381,7 @@ class UdpSocket(Socket):
         Read data from socket.
         """
 
-        # TODO - Implement support for buffsize
+        # TODO - Implement support for buffsize.
 
         if self._packet_rx_md_ready.acquire(timeout=timeout):
             packet_rx_md = self._packet_rx_md.pop(0)
