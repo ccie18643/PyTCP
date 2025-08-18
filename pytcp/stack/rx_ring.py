@@ -25,7 +25,7 @@
 
 
 """
-Module contains class supporting stack RX Ring operations.
+This module contains class supporting stack RX Ring operations.
 
 pytcp/stack/rx_ring.py
 

@@ -25,7 +25,7 @@
 
 
 """
-Module contains class supporting stack TX Ring operations.
+This module contains class supporting stack TX Ring operations.
 
 pytcp/stack/tx_ring.py
 
@@ -41,12 +41,12 @@ from typing import TYPE_CHECKING, override
 
 from pytcp.lib.logger import log
 from pytcp.lib.subsystem import SUBSYSTEM_SLEEP_TIME__SEC, Subsystem
-from pytcp.protocols.ethernet.ethernet__assembler import EthernetAssembler
 
 if TYPE_CHECKING:
     from pytcp.protocols.ethernet_802_3.ethernet_802_3__assembler import (
         Ethernet8023Assembler,
     )
+    from pytcp.protocols.ethernet.ethernet__assembler import EthernetAssembler
 
 
 class TxRing(Subsystem):

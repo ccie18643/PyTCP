@@ -10,7 +10,7 @@ readme = "README.md"
 authors = [{ name = "Sebastian Majewski", email = "ccie18643@gmail.com" }]
 license = "GPL-3.0-or-later"
 classifiers = [
-    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.12",
     "Development Status :: 3 - Alpha",
     "Operating System :: POSIX :: Linux",
     "Natural Language :: English",
@@ -31,7 +31,7 @@ keywords = [
     "icmp",
 ]
 dependencies = []
-requires-python = ">=3.13"
+requires-python = ">=3.12"
 
 [project.urls]
 "Homepage" = "https://github.com/ccie18643/PyTCP"
@@ -51,7 +51,7 @@ quiet-level = 2
 ignore-words-list = "ect, ether, nd, tha, assertIn, sourc"
 
 [tool.mypy]
-python_version = "3.13"
+python_version = "3.12"
 check_untyped_defs = true
 disallow_untyped_defs = true
 disallow_any_unimported = true

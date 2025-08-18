@@ -25,11 +25,11 @@
 
 
 """
-Module holds references to the stack components and global structures.
+This package contains the stack components and global structures.
 
 pytcp/stack/__init__.py
 
-ver 3.0.2
+ver 3.0.3
 """
 
 
@@ -41,19 +41,15 @@ import struct
 import sys
 from typing import TYPE_CHECKING, Any
 
-from net_addr.ip4_host import Ip4Host
-from net_addr.ip6_host import Ip6Host
-from net_addr.mac_address import MacAddress
-
+from net_addr import Ip4Host, Ip6Host, MacAddress
 from pytcp.lib.logger import log
 from pytcp.socket.socket_id import SocketId
-
-from .arp_cache import ArpCache
-from .nd_cache import NdCache
-from .packet_handler import PacketHandler
-from .rx_ring import RxRing
-from .timer import Timer
-from .tx_ring import TxRing
+from pytcp.stack.arp_cache import ArpCache
+from pytcp.stack.nd_cache import NdCache
+from pytcp.stack.packet_handler import PacketHandler
+from pytcp.stack.rx_ring import RxRing
+from pytcp.stack.timer import Timer
+from pytcp.stack.tx_ring import TxRing
 
 if TYPE_CHECKING:
     from net_addr import Ip4Address
@@ -67,7 +63,7 @@ assert sys.version_info >= (
 
 
 # PyTCP code metadata.
-PYTCP_VERSION = "ver 3.0.2"
+PYTCP_VERSION = "ver 3.0.3"
 GITHUB_REPO = "https://github.com/ccie18643/PyTCP"
 
 # Interface configuration.

@@ -25,7 +25,7 @@
 
 
 """
-Module contains class supporting timer that can be used by other stack components.
+This module contains class supporting timer that is used by other stack components.
 
 pytcp/stack/timer.py
 
@@ -37,8 +37,7 @@ from __future__ import annotations
 
 import threading
 import time
-from collections.abc import Callable
-from typing import Any
+from typing import Any, Callable
 
 from pytcp.lib.logger import log
 from pytcp.lib.subsystem import Subsystem
