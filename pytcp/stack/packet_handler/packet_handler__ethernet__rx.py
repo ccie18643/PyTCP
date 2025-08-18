@@ -25,11 +25,11 @@
 
 
 """
-Module contains packet handler for the inbound Ethernet II packets.
+The module contains packet handler for the inbound Ethernet II packets.
 
 pytcp/subsystems/packet_handler/packet_handler__ethernet__rx.py
 
-ver 3.0.2
+ver 3.0.3
 """
 
 
@@ -90,7 +90,7 @@ class PacketHandlerEthernetRx(ABC):
             "ether", f"{packet_rx.tracker} - {packet_rx.ethernet}"
         )
 
-        # Check if received packet matches any of stack MAC addresses
+        # Check if received packet matches any of stack MAC addresses.
         if packet_rx.ethernet.dst not in {
             self.mac_unicast,
             *self.mac_multicast,

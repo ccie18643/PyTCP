@@ -25,11 +25,11 @@
 
 
 """
-Module contains packet handler class for inbound and outbound packets.
+This package contains packet handler class for inbound and outbound packets.
 
 pytcp/subsystems/packet_handler/__init__.py
 
-ver 3.0.2
+ver 3.0.3
 """
 
 
@@ -163,27 +163,27 @@ class PacketHandler(
         self.ip4_host: list[Ip4Host] = []
         self.ip4_multicast: list[Ip4Address] = []
 
-        # Used for the ARP DAD process
+        # Used for the ARP DAD process.
         self.arp_probe_unicast_conflict: set[Ip4Address] = set()
 
-        # Used for the ICMPv6 ND DAD process
+        # Used for the ICMPv6 ND DAD process.
         self.ip6_unicast_candidate: Ip6Address | None = None
         self.icmp6_nd_dad_event: Semaphore = threading.Semaphore(0)
         self.icmp6_nd_dad_tlla: MacAddress | None = None
 
-        # Used for the IcMPv6 ND RA address auto configuration
+        # Used for the IcMPv6 ND RA address auto configuration.
         self.icmp6_ra_prefixes: list[tuple[Ip6Network, Ip6Address]] = []
         self.icmp6_ra_event: Semaphore = threading.Semaphore(0)
 
-        # Used to keep IPv4 and IPv6 packet ID last value
+        # Used to keep IPv4 and IPv6 packet ID last value.
         self.ip4_id: int = 0
         self.ip6_id: int = 0
 
-        # Used to defragment IPv4 and IPv6 packets
+        # Used to defragment IPv4 and IPv6 packets.
         self.ip4_frag_flows: dict[IpFragFlowId, IpFragData] = {}
         self.ip6_frag_flows: dict[IpFragFlowId, IpFragData] = {}
 
-        # Used for IPv4 and IPv6 address configuration
+        # Used for IPv4 and IPv6 address configuration.
         self.ip_configuration_in_progress: Semaphore = threading.Semaphore(0)
 
         # Assigned IP addresses statically.
@@ -362,13 +362,13 @@ class PacketHandler(
                     f"<WARN>Unable to claim IPv6 address {ip6_host}</>",
                 )
 
-        # Configure Link Local address(es) staticaly
+        # Configure Link Local address(es) staticaly.
         for ip6_host in list(self.ip6_host_candidate):
             if ip6_host.address.is_link_local:
                 self.ip6_host_candidate.remove(ip6_host)
                 _claim_ip6_address(ip6_host)
 
-        # Configure Link Local address automatically
+        # Configure Link Local address automatically.
         if self._ip6_lla_autoconfig:
             ip6_host = Ip6Host.from_eui64(
                 mac_address=self.mac_unicast,
@@ -378,7 +378,7 @@ class PacketHandler(
             _claim_ip6_address(ip6_host)
 
         # If we don't have any link local address set disable
-        # IPv6 protocol operations
+        # IPv6 protocol operations.
         if not self.ip6_host:
             __debug__ and log(
                 "stack",
@@ -388,7 +388,7 @@ class PacketHandler(
             self._ip6_support = False
             return
 
-        # Check if there are any statically configures GUA addresses
+        # Check if there are any statically configures GUA addresses.
         for ip6_host in list(self.ip6_host_candidate):
             self.ip6_host_candidate.remove(ip6_host)
             _claim_ip6_address(ip6_host)
@@ -418,7 +418,7 @@ class PacketHandler(
         should listen on.
         """
 
-        # Perform Duplicate Address Detection
+        # Perform Duplicate Address Detection.
         for _ in range(3):
             for ip4_unicast in [_.address for _ in self.ip4_host_candidate]:
                 if ip4_unicast not in self.arp_probe_unicast_conflict:
@@ -434,7 +434,7 @@ class PacketHandler(
             )
 
         # Create list containing only IPv4 addresses that were
-        # confirmed free to claim
+        # confirmed free to claim.
         for ip4_host in list(self.ip4_host_candidate):
             self.ip4_host_candidate.remove(ip4_host)
             if ip4_host.address not in self.arp_probe_unicast_conflict:
@@ -446,7 +446,7 @@ class PacketHandler(
                 )
 
         # If don't have any IPv4 address assigned disable IPv4 protocol
-        # operations
+        # operations.
         if not self.ip4_host:
             __debug__ and log(
                 "stack",

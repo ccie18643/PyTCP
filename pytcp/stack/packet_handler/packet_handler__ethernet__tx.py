@@ -25,11 +25,11 @@
 
 
 """
-Module contains packet handler for the outbound Ethernet II packets.
+The module contains packet handler for the outbound Ethernet II packets.
 
 pytcp/subsystems/packet_handler/packet_handler__ethernet__tx.py
 
-ver 3.0.2
+ver 3.0.3
 """
 
 
@@ -82,7 +82,7 @@ class PacketHandlerEthernetTx(ABC):
             ethernet__payload=ethernet__payload,
         )
 
-        # Check if packet contains valid source address, fill it out if needed
+        # Check if packet contains valid source address, fill it out if needed.
         if ethernet_packet_tx.src.is_unspecified:
             self.packet_stats_tx.ethernet__src_unspec__fill += 1
             ethernet_packet_tx.src = self.mac_unicast
@@ -99,7 +99,7 @@ class PacketHandlerEthernetTx(ABC):
                 f"{ethernet_packet_tx.src}",
             )
 
-        # Send out packet if it contains valid destination MAC address
+        # Send out packet if it contains valid destination MAC address.
         if not ethernet_packet_tx.dst.is_unspecified:
             self.packet_stats_tx.ethernet__dst_spec__send += 1
             __debug__ and log(
@@ -110,14 +110,14 @@ class PacketHandlerEthernetTx(ABC):
             self.__send_out_packet(ethernet_packet_tx)
             return TxStatus.PASSED__ETHERNET__TO_TX_RING
 
-        # Check if we can obtain destination MAC based on IPv6 header data
+        # Check if we can obtain destination MAC based on IPv6 header data.
         if isinstance(ethernet_packet_tx.payload, Ip6Assembler):
             self.packet_stats_tx.ethernet__dst_unspec__ip6_lookup += 1
 
             ip6_src = ethernet_packet_tx.payload.src
             ip6_dst = ethernet_packet_tx.payload.dst
 
-            # Send packet out if its destined to multicast IPv6 address
+            # Send packet out if its destined to multicast IPv6 address.
             if ip6_dst.is_multicast:
                 self.packet_stats_tx.ethernet__dst_unspec__ip6_lookup__multicast__send += (
                     1
@@ -133,7 +133,7 @@ class PacketHandlerEthernetTx(ABC):
 
             # Send out packet if is destined to external network (in relation to
             # its source address) and we are able to obtain MAC of default gateway
-            # from ND cache
+            # from ND cache.
             for ip6_host in self.ip6_host:
                 if (
                     ip6_host.address == ip6_src
@@ -171,7 +171,7 @@ class PacketHandlerEthernetTx(ABC):
                     return TxStatus.DROPED__ETHERNET__DST_GATEWAY_ND_CACHE_FAIL
 
             # Send out packet if we are able to obtain destination MAC
-            # from ICMPv6 ND cache
+            # from ICMPv6 ND cache.
             if mac_address := stack.nd_cache.find_entry(
                 ip6_address=ip6_dst,
             ):
@@ -197,7 +197,7 @@ class PacketHandlerEthernetTx(ABC):
                 )
                 return TxStatus.DROPED__ETHERNET__DST_ND_CACHE_FAIL
 
-        # Check if we can obtain destination MAC based on IPv4 header data
+        # Check if we can obtain destination MAC based on IPv4 header data.
         if isinstance(
             ethernet_packet_tx.payload, (Ip4Assembler, Ip4FragAssembler)
         ):
@@ -206,7 +206,7 @@ class PacketHandlerEthernetTx(ABC):
             ip4_src = ethernet_packet_tx.payload.src
             ip4_dst = ethernet_packet_tx.payload.dst
 
-            # Send packet out if its destined to multicast IPv4 address
+            # Send packet out if its destined to multicast IPv4 address.
             if ip4_dst.is_multicast:
                 self.packet_stats_tx.ethernet__dst_unspec__ip4_lookup__multicast__send += (
                     1
@@ -220,7 +220,7 @@ class PacketHandlerEthernetTx(ABC):
                 self.__send_out_packet(ethernet_packet_tx)
                 return TxStatus.PASSED__ETHERNET__TO_TX_RING
 
-            # Send out packet if its destinied to limited broadcast addresses
+            # Send out packet if its destinied to limited broadcast addresses.
             if ip4_dst.is_limited_broadcast:
                 self.packet_stats_tx.ethernet__dst_unspec__ip4_lookup__limited_broadcast__send += (
                     1
@@ -235,7 +235,7 @@ class PacketHandlerEthernetTx(ABC):
                 return TxStatus.PASSED__ETHERNET__TO_TX_RING
 
             # Send out packet if its destinied to network broadcast or network
-            # addresses (in relation to its source address)
+            # addresses (in relation to its source address).
             for ip4_host in self.ip4_host:
                 if ip4_host.address == ip4_src:
                     if ip4_dst in {
@@ -256,7 +256,7 @@ class PacketHandlerEthernetTx(ABC):
 
             # Send out packet if is destined to external network (in relation to
             # its source address) and we are able to obtain MAC of default gateway
-            # from ARP cache
+            # from ARP cache.
             for ip4_host in self.ip4_host:
                 if (
                     ip4_host.address == ip4_src
@@ -294,7 +294,7 @@ class PacketHandlerEthernetTx(ABC):
                     return TxStatus.DROPED__ETHERNET__DST_GATEWAY_ARP_CACHE_FAIL
 
             # Send out packet if we are able to obtain destination MAC from
-            # ARP cache, drop otherwise
+            # ARP cache, drop otherwise.
             if mac_address := stack.arp_cache.find_entry(
                 ip4_address=ip4_dst,
             ):
@@ -320,7 +320,7 @@ class PacketHandlerEthernetTx(ABC):
                 )
                 return TxStatus.DROPED__ETHERNET__DST_ARP_CACHE_FAIL
 
-        # Drop packet in case we are not able to obtain valid destination MAC address
+        # Drop packet in case we are not able to obtain valid destination MAC address.
         self.packet_stats_tx.ethernet__dst_unspec__drop += 1
         __debug__ and log(
             "ether",

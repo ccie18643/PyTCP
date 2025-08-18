@@ -37,7 +37,27 @@ from dataclasses import dataclass
 
 
 @dataclass(slots=True)
-class PacketStatsRx:
+class PacketStats:
+    """
+    Base class for packet statistics data store.
+    """
+
+    def inc(self, field: str, value: int = 1, /) -> None:
+        """
+        Increment the specified field by the given value.
+        """
+
+        if hasattr(self, field):
+            current_value = getattr(self, field)
+            setattr(self, field, current_value + value)
+        else:
+            raise AttributeError(
+                f"Field '{field}' does not exist in {self.__class__.__name__}."
+            )
+
+
+@dataclass(slots=True)
+class PacketStatsRx(PacketStats):
     """
     Data store for the RX packet handler statistics.
     """
@@ -135,7 +155,7 @@ class PacketStatsRx:
 
 
 @dataclass(slots=True)
-class PacketStatsTx:
+class PacketStatsTx(PacketStats):
     """
     Data store for the TX packet handler statistics.
     """

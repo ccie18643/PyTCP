@@ -43,10 +43,10 @@ from pytcp.lib.logger import log
 from pytcp.lib.subsystem import SUBSYSTEM_SLEEP_TIME__SEC, Subsystem
 
 if TYPE_CHECKING:
+    from pytcp.protocols.ethernet.ethernet__assembler import EthernetAssembler
     from pytcp.protocols.ethernet_802_3.ethernet_802_3__assembler import (
         Ethernet8023Assembler,
     )
-    from pytcp.protocols.ethernet.ethernet__assembler import EthernetAssembler
 
 
 class TxRing(Subsystem):

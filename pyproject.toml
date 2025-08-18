@@ -77,6 +77,7 @@ disable = """
     too-many-lines,
     too-many-boolean-expressions,
     too-many-positional-arguments,
+    too-many-statements,
     too-many-return-statements,
     too-few-public-methods,
     import-outside-toplevel,
