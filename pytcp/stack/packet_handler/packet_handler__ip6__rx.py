@@ -58,6 +58,7 @@ class PacketHandlerIp6Rx(ABC):
         from pytcp.lib.packet_stats import PacketStatsRx
 
         _packet_stats_rx: PacketStatsRx
+        _ip6_multicast: list[Ip6Address]
 
         # pylint: disable=unused-argument
 
@@ -70,9 +71,6 @@ class PacketHandlerIp6Rx(ABC):
 
         @property
         def ip6_unicast(self) -> list[Ip6Address]: ...
-
-        @property
-        def ip6_multicast(self) -> list[Ip6Address]: ...
 
     def _phrx_ip6(self, packet_rx: PacketRx, /) -> None:
         """
@@ -93,7 +91,7 @@ class PacketHandlerIp6Rx(ABC):
 
         # Check if received packet has been sent to us directly or by unicast
         # or multicast.
-        if packet_rx.ip6.dst not in {*self.ip6_unicast, *self.ip6_multicast}:
+        if packet_rx.ip6.dst not in {*self.ip6_unicast, *self._ip6_multicast}:
             self._packet_stats_rx.inc("ip6__dst_unknown__drop")
             __debug__ and log(
                 "ip6",
@@ -105,7 +103,7 @@ class PacketHandlerIp6Rx(ABC):
         if packet_rx.ip6.dst in self.ip6_unicast:
             self._packet_stats_rx.inc("ip6__dst_unicast")
 
-        if packet_rx.ip6.dst in self.ip6_multicast:
+        if packet_rx.ip6.dst in self._ip6_multicast:
             self._packet_stats_rx.inc("ip6__dst_multicast")
 
         # Create RawMetadata object and try to find matching RAW socket.

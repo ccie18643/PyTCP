@@ -66,6 +66,7 @@ class PacketHandlerIp6Tx(ABC):
 
         _packet_stats_tx: PacketStatsTx
         _ip6_host: list[Ip6Host]
+        _ip6_multicast: list[Ip6Address]
         _ip6_support: bool
         _interface_mtu: int
 
@@ -87,9 +88,6 @@ class PacketHandlerIp6Tx(ABC):
 
         @property
         def ip6_unicast(self) -> list[Ip6Address]: ...
-
-        @property
-        def ip6_multicast(self) -> list[Ip6Address]: ...
 
     def _phtx_ip6(
         self,
@@ -180,7 +178,7 @@ class PacketHandlerIp6Tx(ABC):
         # or its unspecified.
         if ip6__src not in {
             *self.ip6_unicast,
-            *self.ip6_multicast,
+            *self._ip6_multicast,
             Ip6Address(),
         }:
             self._packet_stats_tx.inc("ip6__src_not_owned__drop")
@@ -193,7 +191,7 @@ class PacketHandlerIp6Tx(ABC):
 
         # If packet is a response to multicast then replace source address with link
         # local address of the stack.
-        if ip6__src in self.ip6_multicast:
+        if ip6__src in self._ip6_multicast:
             if self.ip6_unicast:
                 self._packet_stats_tx.inc("ip6__src_multicast__replace")
                 ip6__src = self.ip6_unicast[0]

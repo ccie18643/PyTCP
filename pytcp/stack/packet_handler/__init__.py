@@ -187,7 +187,7 @@ class PacketHandler(
 
         # Assigned IP addresses statically.
         if ip4_host is not None:
-            self.ip4_host_candidate.append(ip4_host)
+            self._ip4_host_candidate.append(ip4_host)
 
         if ip6_host is not None:
             self._ip6_host_candidate.append(ip6_host)
@@ -209,30 +209,6 @@ class PacketHandler(
         return self._packet_stats_tx
 
     @property
-    def mac_unicast(self) -> MacAddress:
-        """
-        Get the stack's unicast MAC address.
-        """
-
-        return self._mac_unicast
-
-    @property
-    def mac_multicast(self) -> list[MacAddress]:
-        """
-        Get list of stack's multicast MAC addresses.
-        """
-
-        return self._mac_multicast
-
-    @property
-    def mac_broadcast(self) -> MacAddress:
-        """
-        Get the stack's broadcast MAC address.
-        """
-
-        return self._mac_broadcast
-
-    @property
     def ip6_unicast(self) -> list[Ip6Address]:
         """
         Get the list of stack's IPv6 unicast addresses.
@@ -241,36 +217,12 @@ class PacketHandler(
         return [ip6_host.address for ip6_host in self._ip6_host]
 
     @property
-    def ip6_host_candidate(self) -> list[Ip6Host]:
-        """
-        Get the list of stack's IPv6 host candidates.
-        """
-
-        return self._ip6_host_candidate
-
-    @property
-    def ip6_host(self) -> list[Ip6Host]:
-        """
-        Get the list of stack's IPv6 hosts.
-        """
-
-        return self._ip6_host
-
-    @property
-    def ip6_multicast(self) -> list[Ip6Address]:
-        """
-        Get the list of stack's IPv6 multicast addresses.
-        """
-
-        return self._ip6_multicast
-
-    @property
     def ip4_unicast(self) -> list[Ip4Address]:
         """
         Get the list of stack's IPv4 unicast addresses.
         """
 
-        return [ip4_host.address for ip4_host in self.ip4_host]
+        return [ip4_host.address for ip4_host in self._ip4_host]
 
     @property
     def ip4_broadcast(self) -> list[Ip4Address]:
@@ -279,51 +231,19 @@ class PacketHandler(
         """
 
         ip4_broadcast = [
-            ip4_host.network.broadcast for ip4_host in self.ip4_host
+            ip4_host.network.broadcast for ip4_host in self._ip4_host
         ]
         ip4_broadcast.append(Ip4Address(0xFFFFFFFF))
 
         return ip4_broadcast
 
     @property
-    def ip4_id(self) -> int:
-        """
-        Get the last used IPv4 packet ID.
-        """
-
-        return self._ip4_id
-
-    @property
-    def ip6_id(self) -> int:
-        """
-        Get the last used IPv6 packet ID.
-        """
-
-        return self._ip6_id
-
-    @property
-    def ip4_host_candidate(self) -> list[Ip4Host]:
-        """
-        Get the list of stack's IPv4 host candidates.
-        """
-
-        return self._ip4_host_candidate
-
-    @property
     def ip4_host(self) -> list[Ip4Host]:
         """
-        Get the list of stack's IPv4 hosts.
+        Get the list of stack's IPv4 host addresses.
         """
 
         return self._ip4_host
-
-    @property
-    def ip4_multicast(self) -> list[Ip4Address]:
-        """
-        Get the list of stack's IPv4 multicast addresses.
-        """
-
-        return self._ip4_multicast
 
     @override
     def _start(self) -> None:
@@ -357,10 +277,10 @@ class PacketHandler(
 
         __debug__ and log("stack", "Started the IPv4 address acquire thread")
 
-        if not self.ip4_host_candidate:
+        if not self._ip4_host_candidate:
             if self._ip4_dhcp:
                 if ip4_host := Dhcp4Client(self._mac_unicast).fetch():
-                    self.ip4_host_candidate.append(ip4_host)
+                    self._ip4_host_candidate.append(ip4_host)
         self._create_stack_ip4_addressing()
 
         self.ip_configuration_in_progress.release()
@@ -523,7 +443,7 @@ class PacketHandler(
 
         # Perform Duplicate Address Detection.
         for _ in range(3):
-            for ip4_unicast in [_.address for _ in self.ip4_host_candidate]:
+            for ip4_unicast in [_.address for _ in self._ip4_host_candidate]:
                 if ip4_unicast not in self.arp_probe_unicast_conflict:
                     self._send_arp_probe(ip4_unicast=ip4_unicast)
                     __debug__ and log(
@@ -538,10 +458,10 @@ class PacketHandler(
 
         # Create list containing only IPv4 addresses that were
         # confirmed free to claim.
-        for ip4_host in list(self.ip4_host_candidate):
-            self.ip4_host_candidate.remove(ip4_host)
+        for ip4_host in list(self._ip4_host_candidate):
+            self._ip4_host_candidate.remove(ip4_host)
             if ip4_host.address not in self.arp_probe_unicast_conflict:
-                self.ip4_host.append(ip4_host)
+                self._ip4_host.append(ip4_host)
                 self._send_arp_announcement(ip4_unicast=ip4_host.address)
                 __debug__ and log(
                     "stack",
@@ -550,7 +470,7 @@ class PacketHandler(
 
         # If don't have any IPv4 address assigned disable IPv4 protocol
         # operations.
-        if not self.ip4_host:
+        if not self._ip4_host:
             __debug__ and log(
                 "stack",
                 "<WARN>Unable to assign any IPv4 address, disabling IPv4 "
@@ -610,7 +530,7 @@ class PacketHandler(
         Assign MAC multicast address to the list stack listens on.
         """
 
-        self.mac_multicast.append(mac_multicast)
+        self._mac_multicast.append(mac_multicast)
 
         __debug__ and log("stack", f"Assigned MAC multicast {mac_multicast}")
 
@@ -619,7 +539,7 @@ class PacketHandler(
         Remove MAC multicast address from the list stack listens on.
         """
 
-        self.mac_multicast.remove(mac_multicast)
+        self._mac_multicast.remove(mac_multicast)
 
         __debug__ and log("stack", f"Removed MAC multicast {mac_multicast}")
 
@@ -640,12 +560,12 @@ class PacketHandler(
             log(
                 "stack",
                 "<INFO>Stack listening on multicast MAC addresses: "
-                f"{', '.join([str(mac_multicast) for mac_multicast in set(self.mac_multicast)])}</>",
+                f"{', '.join([str(mac_multicast) for mac_multicast in set(self._mac_multicast)])}</>",
             )
             log(
                 "stack",
                 "<INFO>Stack listening on broadcast MAC address: "
-                f"{self.mac_broadcast}</>",
+                f"{self._mac_broadcast}</>",
             )
 
             if self._ip6_support:
@@ -669,7 +589,7 @@ class PacketHandler(
                 log(
                     "stack",
                     "<INFO>Stack listening on multicast IPv4 addresses: "
-                    f"{', '.join([str(ip4_multicast) for ip4_multicast in self.ip4_multicast])}</>",
+                    f"{', '.join([str(ip4_multicast) for ip4_multicast in self._ip4_multicast])}</>",
                 )
                 log(
                     "stack",
