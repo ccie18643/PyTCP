@@ -1639,7 +1639,6 @@ class TcpSession:
         # Got timer event -> Run TIME_WAIT delay.
         if timer and stack.timer.is_expired(f"{self}-time_wait"):
             self._change_state(FsmState.CLOSED)
-            return
 
     def tcp_fsm(
         self,
