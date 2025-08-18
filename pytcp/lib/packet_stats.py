@@ -42,14 +42,14 @@ class PacketStats:
     Base class for packet statistics data store.
     """
 
-    def inc(self, field: str, value: int = 1, /) -> None:
+    def inc(self, field: str, /) -> None:
         """
         Increment the specified field by the given value.
         """
 
         assert hasattr(self, field)
 
-        object.__setattr__(self, field, getattr(self, field) + value)
+        object.__setattr__(self, field, getattr(self, field) + 1)
 
 
 @dataclass(frozen=True, slots=True)
