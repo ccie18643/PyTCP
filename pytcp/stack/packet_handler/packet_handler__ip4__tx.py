@@ -62,9 +62,9 @@ class PacketHandlerIp4Tx(ABC):
         from pytcp.protocols.ip4.ip4__base import Ip4Payload
 
         _packet_stats_tx: PacketStatsTx
-        ip4_host: list[Ip4Host]
-        ip4_multicast: list[Ip4Address]
-        ip4_id: int
+        _ip4_host: list[Ip4Host]
+        _ip4_multicast: list[Ip4Address]
+        _ip4_id: int
         _ip4_support: bool
         _interface_mtu: int
 
@@ -168,7 +168,7 @@ class PacketHandlerIp4Tx(ABC):
             for _ in range(0, len(payload), payload_mtu)
         ]
         offset = 0
-        self.ip4_id += 1
+        self._ip4_id += 1
         ethernet_tx_status: set[TxStatus] = set()
         for payload_frag in payload_frags:
             ip4_frag_tx = Ip4FragAssembler(
@@ -178,7 +178,7 @@ class PacketHandlerIp4Tx(ABC):
                 ip4_frag__payload=payload_frag,
                 ip4_frag__offset=offset,
                 ip4_frag__flag_mf=payload_frag is not payload_frags[-1],
-                ip4_frag__id=self.ip4_id,
+                ip4_frag__id=self._ip4_id,
                 ip4_frag__proto=ip4_packet_tx.proto,
             )
             __debug__ and log("ip4", f"{ip4_frag_tx.tracker} - {ip4_frag_tx}")
@@ -223,7 +223,7 @@ class PacketHandlerIp4Tx(ABC):
         # zeros (for DHCP client communication).
         if ip4__src not in {
             *self.ip4_unicast,
-            *self.ip4_multicast,
+            *self._ip4_multicast,
             *self.ip4_broadcast,
             Ip4Address(),
         }:
@@ -237,7 +237,7 @@ class PacketHandlerIp4Tx(ABC):
 
         # If packet is a response to multicast then replace source address with
         # primary address of the stack.
-        if ip4__src in self.ip4_multicast:
+        if ip4__src in self._ip4_multicast:
             if self.ip4_unicast:
                 self._packet_stats_tx.inc("ip4__src_multicast__replace")
                 ip4__src = self.ip4_unicast[0]
@@ -281,7 +281,7 @@ class PacketHandlerIp4Tx(ABC):
         if ip4__src in self.ip4_broadcast:
             ip4_src_list = [
                 ip4_host.address
-                for ip4_host in self.ip4_host
+                for ip4_host in self._ip4_host
                 if ip4_host.network.broadcast == ip4__src
             ]
             if ip4_src_list:
@@ -297,7 +297,7 @@ class PacketHandlerIp4Tx(ABC):
         # If source is unspecified and destination belongs to any of local networks
         # then pick source address from that network.
         if ip4__src.is_unspecified:
-            for ip4_host in self.ip4_host:
+            for ip4_host in self._ip4_host:
                 if ip4__dst in ip4_host.network:
                     self._packet_stats_tx.inc(
                         "ip4__src_network_unspecified__replace_local"
@@ -314,7 +314,7 @@ class PacketHandlerIp4Tx(ABC):
         # If source is unspecified and destination is external pick source from
         # first network that has default gateway set.
         if ip4__src.is_unspecified:
-            for ip4_host in self.ip4_host:
+            for ip4_host in self._ip4_host:
                 if ip4_host.gateway:
                     self._packet_stats_tx.inc(
                         "ip4__src_network_unspecified__replace_external"

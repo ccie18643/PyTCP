@@ -61,7 +61,7 @@ class PacketHandlerIp6FragTx(ABC):
         from pytcp.protocols.raw.raw__assembler import RawAssembler
 
         _packet_stats_tx: PacketStatsTx
-        ip6_id: int
+        _ip6_id: int
         _interface_mtu: int
 
         # pylint: disable=unused-argument
@@ -97,14 +97,14 @@ class PacketHandlerIp6FragTx(ABC):
             for _ in range(0, len(payload), payload_mtu)
         ]
         offset = 0
-        self.ip6_id += 1
+        self._ip6_id += 1
         ip6_tx_status: set[TxStatus] = set()
         for data_frag in data_frags:
             ip6_frag_tx = Ip6FragAssembler(
                 ip6_frag__next=ip6_packet_tx.next,
                 ip6_frag__offset=offset,
                 ip6_frag__flag_mf=data_frag is not data_frags[-1],
-                ip6_frag__id=self.ip6_id,
+                ip6_frag__id=self._ip6_id,
                 ip6_frag__payload=data_frag,
             )
             __debug__ and log("ip6", f"{ip6_frag_tx.tracker} - {ip6_frag_tx}")

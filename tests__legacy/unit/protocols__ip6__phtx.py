@@ -156,7 +156,7 @@ class TestIp6Phtx(TestCase):
         Test sending IPv6 packet to unicast address on local network,
         multicast source, not able to replace.
         """
-        self.packet_handler.ip6_host = []
+        self.packet_handler._ip6_host = []
 
         tx_status = self.packet_handler._phtx_ip6(
             ip6__src=self.mns.ip6_multicast_all_nodes,

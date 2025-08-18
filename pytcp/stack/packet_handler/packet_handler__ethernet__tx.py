@@ -60,8 +60,8 @@ class PacketHandlerEthernetTx(ABC):
 
         _packet_stats_tx: PacketStatsTx
         _mac_unicast: MacAddress
-        ip6_host: list[Ip6Host]
-        ip4_host: list[Ip4Host]
+        _ip6_host: list[Ip6Host]
+        _ip4_host: list[Ip4Host]
 
     def _phtx_ethernet(
         self,
@@ -134,7 +134,7 @@ class PacketHandlerEthernetTx(ABC):
             # Send out packet if is destined to external network (in relation to
             # its source address) and we are able to obtain MAC of default gateway
             # from ND cache.
-            for ip6_host in self.ip6_host:
+            for ip6_host in self._ip6_host:
                 if (
                     ip6_host.address == ip6_src
                     and ip6_dst not in ip6_host.network
@@ -236,7 +236,7 @@ class PacketHandlerEthernetTx(ABC):
 
             # Send out packet if its destinied to network broadcast or network
             # addresses (in relation to its source address).
-            for ip4_host in self.ip4_host:
+            for ip4_host in self._ip4_host:
                 if ip4_host.address == ip4_src:
                     if ip4_dst in {
                         ip4_host.network.address,
@@ -257,7 +257,7 @@ class PacketHandlerEthernetTx(ABC):
             # Send out packet if is destined to external network (in relation to
             # its source address) and we are able to obtain MAC of default gateway
             # from ARP cache.
-            for ip4_host in self.ip4_host:
+            for ip4_host in self._ip4_host:
                 if (
                     ip4_host.address == ip4_src
                     and ip4_dst not in ip4_host.network

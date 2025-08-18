@@ -113,13 +113,13 @@ def pick_local_ip6_address(
 
     # If the destination belongs to any of the local networks,
     # pick a source address from that network.
-    for ip6_host in stack.packet_handler.ip6_host:
+    for ip6_host in stack.packet_handler._ip6_host:
         if remote_ip6_address in ip6_host.network:
             return ip6_host.address
 
     # If the destination is an external address, pick the source address from the first
     # network that has a default gateway set.
-    for ip6_host in stack.packet_handler.ip6_host:
+    for ip6_host in stack.packet_handler._ip6_host:
         if ip6_host.gateway:
             return ip6_host.address
 

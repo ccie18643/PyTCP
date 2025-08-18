@@ -156,7 +156,7 @@ class TestIp4Phtx(TestCase):
         Test sending IPv4 packet to unicast address on local network,
         multicast source, not able to replace.
         """
-        self.packet_handler.ip4_host = []
+        self.packet_handler._ip4_host = []
 
         tx_status = self.packet_handler._phtx_ip4(
             ip4__src=self.mns.ip4_multicast_all_nodes,
@@ -210,7 +210,7 @@ class TestIp4Phtx(TestCase):
         Test sending IPv4 packet to unicast address on local network,
         limited broadcast source, not able to replace.
         """
-        self.packet_handler.ip4_host = []
+        self.packet_handler._ip4_host = []
         tx_status = self.packet_handler._phtx_ip4(
             ip4__src=self.mns.ip4_limited_broadcast,
             ip4__dst=self.mns.host_a_ip4_address,

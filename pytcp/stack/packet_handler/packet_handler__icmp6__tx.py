@@ -81,8 +81,8 @@ class PacketHandlerIcmp6Tx(ABC):
 
         _packet_stats_tx: PacketStatsTx
         _mac_unicast: MacAddress
-        ip6_multicast: list[Ip6Address]
-        ip6_host: list[Ip6Host]
+        _ip6_multicast: list[Ip6Address]
+        _ip6_host: list[Ip6Host]
 
         # pylint: disable=unused-argument
 
@@ -209,7 +209,7 @@ class PacketHandlerIcmp6Tx(ABC):
                 type=Icmp6Mld2MulticastAddressRecordType.CHANGE_TO_EXCLUDE,
                 multicast_address=multicast_address,
             )
-            for multicast_address in self.ip6_multicast
+            for multicast_address in self._ip6_multicast
             if multicast_address not in {Ip6Address("ff02::1")}
         }:
             tx_status = self._phtx_icmp6(
@@ -270,7 +270,7 @@ class PacketHandlerIcmp6Tx(ABC):
 
         # Pick appropriate source address
         ip6__src = Ip6Address()
-        for ip6_host in self.ip6_host:
+        for ip6_host in self._ip6_host:
             if icmp6_ns_target_address in ip6_host.network:
                 ip6__src = ip6_host.address
 

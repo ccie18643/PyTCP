@@ -59,7 +59,7 @@ class PacketHandlerArpRx(ABC):
 
         _mac_unicast: MacAddress
         _packet_stats_rx: PacketStatsRx
-        ip4_host_candidate: list[Ip4Host]
+        _ip4_host_candidate: list[Ip4Host]
 
         # pylint: disable=unused-argument
 
@@ -178,7 +178,7 @@ class PacketHandlerArpRx(ABC):
         if packet_rx.ethernet.dst == self._mac_unicast:
             if (
                 packet_rx.arp.spa
-                in [_.address for _ in self.ip4_host_candidate]
+                in [_.address for _ in self._ip4_host_candidate]
                 and packet_rx.arp.tha == self._mac_unicast
                 and packet_rx.arp.tpa.is_unspecified
             ):

@@ -144,9 +144,9 @@ class TestPacketHandlerRxTx(TestCase):
         self.packet_handler._mac_multicast = [
             STACK_IP6_HOST.address.solicited_node_multicast.multicast_mac
         ]
-        self.packet_handler.ip4_host = [STACK_IP4_HOST]
-        self.packet_handler.ip6_host = [STACK_IP6_HOST]
-        self.packet_handler.ip6_multicast = [
+        self.packet_handler._ip4_host = [STACK_IP4_HOST]
+        self.packet_handler._ip6_host = [STACK_IP6_HOST]
+        self.packet_handler._ip6_multicast = [
             Ip6Address("ff02::1"),
             STACK_IP6_HOST.address.solicited_node_multicast,
         ]

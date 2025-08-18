@@ -65,7 +65,7 @@ class PacketHandlerIp6Tx(ABC):
         from pytcp.protocols.ip6.ip6__base import Ip6Payload
 
         _packet_stats_tx: PacketStatsTx
-        ip6_host: list[Ip6Host]
+        _ip6_host: list[Ip6Host]
         _ip6_support: bool
         _interface_mtu: int
 
@@ -214,7 +214,7 @@ class PacketHandlerIp6Tx(ABC):
         # If source is unspecified and destination belongs to any of local networks
         # then pick source address from that network.
         if ip6__src.is_unspecified:
-            for ip6_host in self.ip6_host:
+            for ip6_host in self._ip6_host:
                 if ip6__dst in ip6_host.network:
                     self._packet_stats_tx.inc(
                         "ip6__src_network_unspecified__replace_local"
@@ -231,7 +231,7 @@ class PacketHandlerIp6Tx(ABC):
         # If source is unspecified and destination is external pick source from
         # first network that has default gateway set.
         if ip6__src.is_unspecified:
-            for ip6_host in self.ip6_host:
+            for ip6_host in self._ip6_host:
                 if ip6_host.gateway:
                     self._packet_stats_tx.inc(
                         "ip6__src_network_unspecified__replace_external"

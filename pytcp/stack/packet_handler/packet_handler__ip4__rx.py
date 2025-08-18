@@ -63,7 +63,7 @@ class PacketHandlerIp4Rx(ABC):
         from pytcp.lib.packet_stats import PacketStatsRx
 
         _packet_stats_rx: PacketStatsRx
-        ip4_multicast: list[Ip4Address]
+        _ip4_multicast: list[Ip4Address]
         ip4_frag_flows: dict[IpFragFlowId, IpFragData]
 
         # pylint: disable=unused-argument
@@ -105,7 +105,7 @@ class PacketHandlerIp4Rx(ABC):
         # is configured (for DHCP client).
         if self.ip4_unicast and packet_rx.ip4.dst not in {
             *self.ip4_unicast,
-            *self.ip4_multicast,
+            *self._ip4_multicast,
             *self.ip4_broadcast,
         }:
             self._packet_stats_rx.inc("ip4__dst_unknown__drop")
@@ -119,7 +119,7 @@ class PacketHandlerIp4Rx(ABC):
         if packet_rx.ip4.dst in self.ip4_unicast:
             self._packet_stats_rx.inc("ip4__dst_unicast")
 
-        if packet_rx.ip4.dst in self.ip4_multicast:
+        if packet_rx.ip4.dst in self._ip4_multicast:
             self._packet_stats_rx.inc("ip4__dst_multicast")
 
         if packet_rx.ip4.dst in self.ip4_broadcast:

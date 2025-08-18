@@ -155,12 +155,12 @@ class PacketHandler(
         self._mac_unicast = mac_address
         self._mac_multicast: list[MacAddress] = []
         self._mac_broadcast: MacAddress = MacAddress(0xFFFFFFFFFFFF)
-        self.ip6_host_candidate: list[Ip6Host] = []
-        self.ip6_host: list[Ip6Host] = []
-        self.ip6_multicast: list[Ip6Address] = []
-        self.ip4_host_candidate: list[Ip4Host] = []
-        self.ip4_host: list[Ip4Host] = []
-        self.ip4_multicast: list[Ip4Address] = []
+        self._ip6_host_candidate: list[Ip6Host] = []
+        self._ip6_host: list[Ip6Host] = []
+        self._ip6_multicast: list[Ip6Address] = []
+        self._ip4_host_candidate: list[Ip4Host] = []
+        self._ip4_host: list[Ip4Host] = []
+        self._ip4_multicast: list[Ip4Address] = []
 
         # Used for the ARP DAD process.
         self.arp_probe_unicast_conflict: set[Ip4Address] = set()
@@ -175,8 +175,8 @@ class PacketHandler(
         self.icmp6_ra_event: Semaphore = threading.Semaphore(0)
 
         # Used to keep IPv4 and IPv6 packet ID last value.
-        self.ip4_id: int = 0
-        self.ip6_id: int = 0
+        self._ip4_id: int = 0
+        self._ip6_id: int = 0
 
         # Used to defragment IPv4 and IPv6 packets.
         self.ip4_frag_flows: dict[IpFragFlowId, IpFragData] = {}
@@ -190,7 +190,7 @@ class PacketHandler(
             self.ip4_host_candidate.append(ip4_host)
 
         if ip6_host is not None:
-            self.ip6_host_candidate.append(ip6_host)
+            self._ip6_host_candidate.append(ip6_host)
 
     @property
     def packet_stats_rx(self) -> PacketStatsRx:
@@ -238,7 +238,31 @@ class PacketHandler(
         Get the list of stack's IPv6 unicast addresses.
         """
 
-        return [ip4_host.address for ip4_host in self.ip6_host]
+        return [ip6_host.address for ip6_host in self._ip6_host]
+
+    @property
+    def ip6_host_candidate(self) -> list[Ip6Host]:
+        """
+        Get the list of stack's IPv6 host candidates.
+        """
+
+        return self._ip6_host_candidate
+
+    @property
+    def ip6_host(self) -> list[Ip6Host]:
+        """
+        Get the list of stack's IPv6 hosts.
+        """
+
+        return self._ip6_host
+
+    @property
+    def ip6_multicast(self) -> list[Ip6Address]:
+        """
+        Get the list of stack's IPv6 multicast addresses.
+        """
+
+        return self._ip6_multicast
 
     @property
     def ip4_unicast(self) -> list[Ip4Address]:
@@ -260,6 +284,46 @@ class PacketHandler(
         ip4_broadcast.append(Ip4Address(0xFFFFFFFF))
 
         return ip4_broadcast
+
+    @property
+    def ip4_id(self) -> int:
+        """
+        Get the last used IPv4 packet ID.
+        """
+
+        return self._ip4_id
+
+    @property
+    def ip6_id(self) -> int:
+        """
+        Get the last used IPv6 packet ID.
+        """
+
+        return self._ip6_id
+
+    @property
+    def ip4_host_candidate(self) -> list[Ip4Host]:
+        """
+        Get the list of stack's IPv4 host candidates.
+        """
+
+        return self._ip4_host_candidate
+
+    @property
+    def ip4_host(self) -> list[Ip4Host]:
+        """
+        Get the list of stack's IPv4 hosts.
+        """
+
+        return self._ip4_host
+
+    @property
+    def ip4_multicast(self) -> list[Ip4Address]:
+        """
+        Get the list of stack's IPv4 multicast addresses.
+        """
+
+        return self._ip4_multicast
 
     @override
     def _start(self) -> None:
@@ -402,9 +466,9 @@ class PacketHandler(
                 )
 
         # Configure Link Local address(es) staticaly.
-        for ip6_host in list(self.ip6_host_candidate):
+        for ip6_host in list(self._ip6_host_candidate):
             if ip6_host.address.is_link_local:
-                self.ip6_host_candidate.remove(ip6_host)
+                self._ip6_host_candidate.remove(ip6_host)
                 _claim_ip6_address(ip6_host)
 
         # Configure Link Local address automatically.
@@ -418,7 +482,7 @@ class PacketHandler(
 
         # If we don't have any link local address set disable
         # IPv6 protocol operations.
-        if not self.ip6_host:
+        if not self._ip6_host:
             __debug__ and log(
                 "stack",
                 "<WARN>Unable to assign any IPv6 link local address, "
@@ -428,8 +492,8 @@ class PacketHandler(
             return
 
         # Check if there are any statically configures GUA addresses.
-        for ip6_host in list(self.ip6_host_candidate):
-            self.ip6_host_candidate.remove(ip6_host)
+        for ip6_host in list(self._ip6_host_candidate):
+            self._ip6_host_candidate.remove(ip6_host)
             _claim_ip6_address(ip6_host)
 
         # Send out IPv6 Router Solicitation message and wait for response
@@ -500,7 +564,7 @@ class PacketHandler(
         Assign IPv6 host unicast  address to the list stack listens on.
         """
 
-        self.ip6_host.append(ip6_host)
+        self._ip6_host.append(ip6_host)
 
         __debug__ and log("stack", f"Assigned IPv6 unicast address {ip6_host}")
 
@@ -511,7 +575,7 @@ class PacketHandler(
         Remove IPv6 host unicast address from the list stack listens on.
         """
 
-        self.ip6_host.remove(ip6_host)
+        self._ip6_host.remove(ip6_host)
 
         __debug__ and log("stack", f"Removed IPv6 unicast address {ip6_host}")
 
@@ -522,7 +586,7 @@ class PacketHandler(
         Assign IPv6 multicast address to the list stack listens on.
         """
 
-        self.ip6_multicast.append(ip6_multicast)
+        self._ip6_multicast.append(ip6_multicast)
 
         __debug__ and log("stack", f"Assigned IPv6 multicast {ip6_multicast}")
 
@@ -535,7 +599,7 @@ class PacketHandler(
         Remove IPv6 multicast address from the list stack listens on.
         """
 
-        self.ip6_multicast.remove(ip6_multicast)
+        self._ip6_multicast.remove(ip6_multicast)
 
         __debug__ and log("stack", f"Removed IPv6 multicast {ip6_multicast}")
 
@@ -593,7 +657,7 @@ class PacketHandler(
                 log(
                     "stack",
                     "<INFO>Stack listening on multicast IPv6 addresses: "
-                    f"{', '.join([str(ip6_multicast) for ip6_multicast in set(self.ip6_multicast)])}</>",
+                    f"{', '.join([str(ip6_multicast) for ip6_multicast in set(self._ip6_multicast)])}</>",
                 )
 
             if self._ip4_support:
