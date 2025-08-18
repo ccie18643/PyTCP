@@ -141,8 +141,7 @@ class PacketHandler(
 
         super().__init__()
 
-        # Initialize data stores for packet statistics (used mainly in usnit
-        # testing, but also available via cli).
+        # Initialize data stores for packet statistics used in unit testing.
         self.packet_stats_rx = PacketStatsRx()
         self.packet_stats_tx = PacketStatsTx()
 
