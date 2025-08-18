@@ -163,27 +163,27 @@ class PacketHandler(
         self._ip4_multicast: list[Ip4Address] = []
 
         # Used for the ARP DAD process.
-        self.arp_probe_unicast_conflict: set[Ip4Address] = set()
+        self._arp_probe_unicast_conflict: set[Ip4Address] = set()
 
         # Used for the ICMPv6 ND DAD process.
-        self.ip6_unicast_candidate: Ip6Address | None = None
-        self.icmp6_nd_dad_event: Semaphore = threading.Semaphore(0)
-        self.icmp6_nd_dad_tlla: MacAddress | None = None
+        self._ip6_unicast_candidate: Ip6Address | None = None
+        self._icmp6_nd_dad_event: Semaphore = threading.Semaphore(0)
+        self._icmp6_nd_dad_tlla: MacAddress | None = None
 
-        # Used for the IcMPv6 ND RA address auto configuration.
-        self.icmp6_ra_prefixes: list[tuple[Ip6Network, Ip6Address]] = []
-        self.icmp6_ra_event: Semaphore = threading.Semaphore(0)
+        # Used for the ICMPv6 ND RA address auto configuration.
+        self._icmp6_ra_prefixes: list[tuple[Ip6Network, Ip6Address]] = []
+        self._icmp6_ra_event: Semaphore = threading.Semaphore(0)
 
         # Used to keep IPv4 and IPv6 packet ID last value.
         self._ip4_id: int = 0
         self._ip6_id: int = 0
 
         # Used to defragment IPv4 and IPv6 packets.
-        self.ip4_frag_flows: dict[IpFragFlowId, IpFragData] = {}
-        self.ip6_frag_flows: dict[IpFragFlowId, IpFragData] = {}
+        self._ip4_frag_flows: dict[IpFragFlowId, IpFragData] = {}
+        self._ip6_frag_flows: dict[IpFragFlowId, IpFragData] = {}
 
         # Used for IPv4 and IPv6 address configuration.
-        self.ip_configuration_in_progress: Semaphore = threading.Semaphore(0)
+        self._ip_configuration_in_progress: Semaphore = threading.Semaphore(0)
 
         # Assigned IP addresses statically.
         if ip4_host is not None:
@@ -266,7 +266,7 @@ class PacketHandler(
         self._assign_ip6_multicast(Ip6Address("ff02::1"))
         self._create_stack_ip6_addressing()
 
-        self.ip_configuration_in_progress.release()
+        self._ip_configuration_in_progress.release()
 
         __debug__ and log("stack", "Finished the IPv6 address acquire thread")
 
@@ -283,7 +283,7 @@ class PacketHandler(
                     self._ip4_host_candidate.append(ip4_host)
         self._create_stack_ip4_addressing()
 
-        self.ip_configuration_in_progress.release()
+        self._ip_configuration_in_progress.release()
 
         __debug__ and log("stack", "Finished the IPv4 address acquire thread")
 
@@ -338,7 +338,7 @@ class PacketHandler(
             f"ICMPv6 ND DAD - Starting process for {ip6_unicast_candidate}",
         )
 
-        self.ip6_unicast_candidate = ip6_unicast_candidate
+        self._ip6_unicast_candidate = ip6_unicast_candidate
 
         self._assign_ip6_multicast(
             ip6_multicast=ip6_unicast_candidate.solicited_node_multicast
@@ -346,12 +346,12 @@ class PacketHandler(
         self._send_icmp6_nd_dad_message(
             ip6_unicast_candidate=ip6_unicast_candidate
         )
-        if event := self.icmp6_nd_dad_event.acquire(timeout=1):
+        if event := self._icmp6_nd_dad_event.acquire(timeout=1):
             __debug__ and log(
                 "stack",
                 "<WARN>ICMPv6 ND DAD - Duplicate IPv6 address detected, "
                 f"{ip6_unicast_candidate} advertised by "
-                f"{self.icmp6_nd_dad_tlla}</>",
+                f"{self._icmp6_nd_dad_tlla}</>",
             )
         else:
             __debug__ and log(
@@ -359,7 +359,7 @@ class PacketHandler(
                 "ICMPv6 ND DAD - No duplicate address detected for "
                 f"{ip6_unicast_candidate}",
             )
-        self.ip6_unicast_candidate = None
+        self._ip6_unicast_candidate = None
         self._remove_ip6_multicast(
             ip6_unicast_candidate.solicited_node_multicast
         )
@@ -421,8 +421,8 @@ class PacketHandler(
         # ICMPv6 Router Advertisement.
         if self._ip6_gua_autoconfig:
             self._send_icmp6_nd_router_solicitation()
-            self.icmp6_ra_event.acquire(timeout=1)
-            for prefix, gateway in list(self.icmp6_ra_prefixes):
+            self._icmp6_ra_event.acquire(timeout=1)
+            for prefix, gateway in list(self._icmp6_ra_prefixes):
                 __debug__ and log(
                     "stack",
                     f"Attempting IPv6 address auto configuration for RA "
@@ -444,13 +444,13 @@ class PacketHandler(
         # Perform Duplicate Address Detection.
         for _ in range(3):
             for ip4_unicast in [_.address for _ in self._ip4_host_candidate]:
-                if ip4_unicast not in self.arp_probe_unicast_conflict:
+                if ip4_unicast not in self._arp_probe_unicast_conflict:
                     self._send_arp_probe(ip4_unicast=ip4_unicast)
                     __debug__ and log(
                         "stack", f"Sent out ARP Probe for {ip4_unicast}"
                     )
             time.sleep(random.uniform(1, 2))
-        for ip4_unicast in self.arp_probe_unicast_conflict:
+        for ip4_unicast in self._arp_probe_unicast_conflict:
             __debug__ and log(
                 "stack",
                 f"<WARN>Unable to claim IPv4 address {ip4_unicast}</>",
@@ -460,7 +460,7 @@ class PacketHandler(
         # confirmed free to claim.
         for ip4_host in list(self._ip4_host_candidate):
             self._ip4_host_candidate.remove(ip4_host)
-            if ip4_host.address not in self.arp_probe_unicast_conflict:
+            if ip4_host.address not in self._arp_probe_unicast_conflict:
                 self._ip4_host.append(ip4_host)
                 self._send_arp_announcement(ip4_unicast=ip4_host.address)
                 __debug__ and log(
@@ -549,7 +549,7 @@ class PacketHandler(
         """
 
         for _ in (self._ip6_support, self._ip4_support):
-            self.ip_configuration_in_progress.acquire(timeout=15)
+            self._ip_configuration_in_progress.acquire(timeout=15)
 
         if __debug__:
             log(
