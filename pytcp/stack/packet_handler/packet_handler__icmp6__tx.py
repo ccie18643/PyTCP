@@ -25,11 +25,11 @@
 
 
 """
-Module contains packet handler for the outbound ICMPv6 packets.
+This module contains packet handler for the outbound ICMPv6 packets.
 
 pytcp/subsystems/packet_handler/packet_handler__icmp6__tx.py
 
-ver 3.0.2
+ver 3.0.3
 """
 
 
@@ -113,7 +113,7 @@ class PacketHandlerIcmp6Tx(ABC):
         Handle outbound ICMPv6 packets.
         """
 
-        self.packet_stats_tx.icmp6__pre_assemble += 1
+        self.packet_stats_tx.inc("icmp6__pre_assemble")
 
         icmp6_packet_tx = Icmp6Assembler(
             icmp6__message=icmp6__message,
@@ -126,25 +126,29 @@ class PacketHandlerIcmp6Tx(ABC):
 
         match icmp6__message.type, icmp6__message.code:
             case Icmp6Type.ECHO_REPLY, _:
-                self.packet_stats_tx.icmp6__echo_reply__send += 1
+                self.packet_stats_tx.inc("icmp6__echo_reply__send")
             case Icmp6Type.ECHO_REQUEST, _:
-                self.packet_stats_tx.icmp6__echo_request__send += 1
+                self.packet_stats_tx.inc("icmp6__echo_request__send")
             case (
                 Icmp6Type.DESTINATION_UNREACHABLE,
                 Icmp6DestinationUnreachableCode.PORT,
             ):
-                self.packet_stats_tx.icmp6__destination_unreachable__port__send += (
-                    1
+                self.packet_stats_tx.inc(
+                    "icmp6__destination_unreachable__port__send"
                 )
             case Icmp6Type.ND__ROUTER_SOLICITATION, _:
-                self.packet_stats_tx.icmp6__nd__router_solicitation__send += 1
+                self.packet_stats_tx.inc("icmp6__nd__router_solicitation__send")
             case Icmp6Type.ND__ROUTER_ADVERTISEMENT, _:
-                self.packet_stats_tx.icmp6__nd__router_advertisement__send += 1
+                self.packet_stats_tx.inc(
+                    "icmp6__nd__router_advertisement__send"
+                )
             case Icmp6Type.ND__NEIGHBOR_SOLICITATION, _:
-                self.packet_stats_tx.icmp6__nd__neighbor_solicitation__send += 1
+                self.packet_stats_tx.inc(
+                    "icmp6__nd__neighbor_solicitation__send"
+                )
             case Icmp6Type.ND__NEIGHBOR_ADVERTISEMENT, _:
-                self.packet_stats_tx.icmp6__nd__neighbor_advertisement__send += (
-                    1
+                self.packet_stats_tx.inc(
+                    "icmp6__nd__neighbor_advertisement__send"
                 )
             case Icmp6Type.MLD2__REPORT, _:
                 self.packet_stats_tx.icmp6__mld2__report__send += 1

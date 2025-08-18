@@ -90,19 +90,19 @@ class PacketHandlerArpTx(ABC):
         Handle outbound ARP packets.
         """
 
-        self.packet_stats_tx.arp__pre_assemble += 1
+        self.packet_stats_tx.inc("arp__pre_assemble")
 
         # Check if IPv4 protocol support is enabled, if not then silently
         # drop the packet.
         if not self._ip4_support:
-            self.packet_stats_tx.arp__no_proto_support__drop += 1
+            self.packet_stats_tx.inc("arp__no_proto_support__drop")
             return TxStatus.DROPED__ARP__NO_PROTOCOL_SUPPORT
 
         match arp__oper:
             case ArpOperation.REQUEST:
-                self.packet_stats_tx.arp__op_request__send += 1
+                self.packet_stats_tx.inc("arp__op_request__send")
             case ArpOperation.REPLY:
-                self.packet_stats_tx.arp__op_reply__send += 1
+                self.packet_stats_tx.inc("arp__op_reply__send")
             case _:
                 raise ValueError(f"Invalid ARP operation: {arp__oper}")
 

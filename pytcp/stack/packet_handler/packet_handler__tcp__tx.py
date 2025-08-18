@@ -25,11 +25,11 @@
 
 
 """
-Module contains packet handler for the outbound TCP packets.
+This module contains packet handler for the outbound TCP packets.
 
 pytcp/subsystems/packet_handler/packet_handler__tcp__tx.py
 
-ver 3.0.2
+ver 3.0.3
 """
 
 
@@ -121,7 +121,7 @@ class PacketHandlerTcpTx(ABC):
         Handle outbound TCP packets.
         """
 
-        self.packet_stats_tx.tcp__pre_assemble += 1
+        self.packet_stats_tx.inc("tcp__pre_assemble")
 
         # TODO: This code does not seem to be correct,
         # need to ba able to stack options.
@@ -129,12 +129,12 @@ class PacketHandlerTcpTx(ABC):
         options = TcpOptions()
 
         if tcp__mss:
-            self.packet_stats_tx.tcp__opt_mss += 1
+            self.packet_stats_tx.inc("tcp__opt_mss")
             options = TcpOptions(TcpOptionMss(mss=tcp__mss))
 
         if tcp__wscale:
-            self.packet_stats_tx.tcp__opt_nop += 1
-            self.packet_stats_tx.tcp__opt_wscale += 1
+            self.packet_stats_tx.inc("tcp__opt_nop")
+            self.packet_stats_tx.inc("tcp__opt_wscale")
             options = TcpOptions(
                 TcpOptionNop(),
                 TcpOptionWscale(wscale=tcp__wscale),
@@ -162,44 +162,44 @@ class PacketHandlerTcpTx(ABC):
         )
 
         if tcp__flag_ns:
-            self.packet_stats_tx.tcp__flag_ns += 1
+            self.packet_stats_tx.inc("tcp__flag_ns")
 
         if tcp__flag_cwr:
-            self.packet_stats_tx.tcp__flag_cwr += 1
+            self.packet_stats_tx.inc("tcp__flag_cwr")
 
         if tcp__flag_ece:
-            self.packet_stats_tx.tcp__flag_ece += 1
+            self.packet_stats_tx.inc("tcp__flag_ece")
 
         if tcp__flag_urg:
-            self.packet_stats_tx.tcp__flag_urg += 1
+            self.packet_stats_tx.inc("tcp__flag_urg")
 
         if tcp__flag_ack:
-            self.packet_stats_tx.tcp__flag_ack += 1
+            self.packet_stats_tx.inc("tcp__flag_ack")
 
         if tcp__flag_psh:
-            self.packet_stats_tx.tcp__flag_psh += 1
+            self.packet_stats_tx.inc("tcp__flag_psh")
 
         if tcp__flag_rst:
-            self.packet_stats_tx.tcp__flag_rst += 1
+            self.packet_stats_tx.inc("tcp__flag_rst")
 
         if tcp__flag_syn:
-            self.packet_stats_tx.tcp__flag_syn += 1
+            self.packet_stats_tx.inc("tcp__flag_syn")
 
         if tcp__flag_fin:
-            self.packet_stats_tx.tcp__flag_fin += 1
+            self.packet_stats_tx.inc("tcp__flag_fin")
 
         __debug__ and log("tcp", f"{tcp_packet_tx.tracker} - {tcp_packet_tx}")
 
         match ip__src.is_ip6, ip__dst.is_ip6, ip__src.is_ip4, ip__dst.is_ip4:
             case True, True, False, False:
-                self.packet_stats_tx.tcp__send += 1
+                self.packet_stats_tx.inc("tcp__send")
                 return self._phtx_ip6(
                     ip6__src=cast(Ip6Address, ip__src),
                     ip6__dst=cast(Ip6Address, ip__dst),
                     ip6__payload=tcp_packet_tx,
                 )
             case False, False, True, True:
-                self.packet_stats_tx.tcp__send += 1
+                self.packet_stats_tx.inc("tcp__send")
                 return self._phtx_ip4(
                     ip4__src=cast(Ip4Address, ip__src),
                     ip4__dst=cast(Ip4Address, ip__dst),

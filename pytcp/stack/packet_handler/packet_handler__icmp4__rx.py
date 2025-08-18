@@ -25,11 +25,11 @@
 
 
 """
-Module contains packet handler for the inbound ICMPv4 packets.
+This module contains packet handler for the inbound ICMPv4 packets.
 
 pytcp/subsystems/packet_handler/packet_handler__icmp4__rx.py
 
-ver 3.0.2
+ver 3.0.3
 """
 
 
@@ -39,7 +39,7 @@ import struct
 from abc import ABC
 from typing import TYPE_CHECKING, cast
 
-from net_addr import Ip4Address
+from net_addr import Ip4Address, IpVersion
 from pytcp import stack
 from pytcp.lib.logger import log
 from pytcp.protocols.enums import IpProto
@@ -93,7 +93,7 @@ class PacketHandlerIcmp4Rx(ABC):
         Handle inbound ICMPv4 packets.
         """
 
-        self.packet_stats_rx.icmp4__pre_parse += 1
+        self.packet_stats_rx.inc("icmp4__pre_parse")
 
         try:
             Icmp4Parser(packet_rx)
@@ -103,7 +103,7 @@ class PacketHandlerIcmp4Rx(ABC):
                 "icmp4",
                 f"{packet_rx.tracker} - <CRIT>{error}</>",
             )
-            self.packet_stats_rx.icmp4__failed_parse__drop += 1
+            self.packet_stats_rx.inc("icmp4__failed_parse__drop")
             return
 
         __debug__ and log("icmp4", f"{packet_rx.tracker} - {packet_rx.icmp4}")
@@ -130,7 +130,7 @@ class PacketHandlerIcmp4Rx(ABC):
             f"{packet_rx.tracker} - Received ICMPv4 Echo Reply packet "
             f"from {packet_rx.ip4.src}",
         )
-        self.packet_stats_rx.icmp4__echo_reply += 1
+        self.packet_stats_rx.inc("icmp4__echo_reply")
 
         # Create RawMetadata object and try to find matching RAW socket
         packet_rx_md = RawMetadata(
@@ -143,7 +143,7 @@ class PacketHandlerIcmp4Rx(ABC):
 
         for socket_id in packet_rx_md.socket_ids:
             if socket := cast(RawSocket, stack.sockets.get(socket_id, None)):
-                self.packet_stats_rx.raw__socket_match += 1
+                self.packet_stats_rx.inc("raw__socket_match")
                 __debug__ and log(
                     "raw",
                     f"{packet_rx_md.tracker} - <INFO>Found matching listening "
@@ -172,7 +172,7 @@ class PacketHandlerIcmp4Rx(ABC):
             f"{packet_rx.tracker} - Received ICMPv4 Destination Unreachable packet "
             f"from {packet_rx.ip4.src}, will try to match UDP socket",
         )
-        self.packet_stats_rx.icmp4__destination_unreachable += 1
+        self.packet_stats_rx.inc("icmp4__destination_unreachable")
 
         # Quick and dirty way to validate received data and pull useful
         # information from it.
@@ -187,7 +187,7 @@ class PacketHandlerIcmp4Rx(ABC):
             # Create UdpMetadata object and try to find matching UDP socket.
             udp_offset = (frame[0] & 0b00001111) << 2
             packet = UdpMetadata(
-                ip__ver=4,
+                ip__ver=IpVersion.IP4,
                 ip__local_address=Ip4Address(frame[12:16]),
                 ip__remote_address=Ip4Address(frame[16:20]),
                 udp__local_port=struct.unpack(
@@ -236,7 +236,7 @@ class PacketHandlerIcmp4Rx(ABC):
             f"{packet_rx.tracker} - <INFO>Received ICMPv4 Echo Request "
             f"packet from {packet_rx.ip4.src}, sending reply</>",
         )
-        self.packet_stats_rx.icmp4__echo_request__respond_echo_reply += 1
+        self.packet_stats_rx.inc("icmp4__echo_request__respond_echo_reply")
 
         self._phtx_icmp4(
             ip4__src=packet_rx.ip4.dst,
@@ -259,5 +259,4 @@ class PacketHandlerIcmp4Rx(ABC):
             f"{packet_rx.tracker} - Received unknown ICMPv4 packet "
             f"from {packet_rx.ip4.src}",
         )
-        self.packet_stats_rx.icmp4__unknown += 1
-        return
+        self.packet_stats_rx.inc("icmp4__unknown")

@@ -25,11 +25,11 @@
 
 
 """
-Module contains packet handler for the inbound TCP packets.
+This module contains packet handler for the inbound TCP packets.
 
 pytcp/subsystems/packet_handler/packet_handler__tcp__rx.py
 
-ver 3.0.2
+ver 3.0.3
 """
 
 
@@ -93,13 +93,13 @@ class PacketHandlerTcpRx(ABC):
         Handle inbound TCP packets.
         """
 
-        self.packet_stats_rx.tcp__pre_parse += 1
+        self.packet_stats_rx.inc("tcp__pre_parse")
 
         try:
             TcpParser(packet_rx)
 
         except PacketValidationError as error:
-            self.packet_stats_rx.tcp__failed_parse__drop += 1
+            self.packet_stats_rx.inc("tcp__failed_parse__drop")
             __debug__ and log(
                 "tcp",
                 f"{packet_rx.tracker} - <CRIT>{error}</>",
@@ -110,9 +110,9 @@ class PacketHandlerTcpRx(ABC):
 
         assert isinstance(
             packet_rx.tcp.payload, memoryview
-        )  # memoryview: data type check point
+        )  # memoryview: data type check point.
 
-        # Create TcpMetadata object for further processing by TCP FSM
+        # Create TcpMetadata object for further processing by TCP FSM.
         packet_rx_md = TcpMetadata(
             ip__ver=packet_rx.ip.ver,
             ip__local_address=packet_rx.ip.dst,
@@ -136,8 +136,8 @@ class PacketHandlerTcpRx(ABC):
         if tcp_socket := cast(
             TcpSocket, stack.sockets.get(packet_rx_md.socket_id, None)
         ):
-            self.packet_stats_rx.tcp__socket_match_active__forward_to_socket += (
-                1
+            self.packet_stats_rx.inc(
+                "tcp__socket_match_active__forward_to_socket"
             )
             __debug__ and log(
                 "tcp",
@@ -163,8 +163,8 @@ class PacketHandlerTcpRx(ABC):
                     TcpSocket,
                     stack.sockets.get(tcp_listening_socket_pattern, None),
                 ):
-                    self.packet_stats_rx.tcp__socket_match_listening__forward_to_socket += (
-                        1
+                    self.packet_stats_rx.inc(
+                        "tcp__socket_match_listening__forward_to_socket"
                     )
                     __debug__ and log(
                         "tcp",
@@ -177,7 +177,7 @@ class PacketHandlerTcpRx(ABC):
         # In case packet doesn't match any active or listening socket
         # and it carries RST flag then drop it silently.
         if packet_rx_md.tcp__flag_rst:
-            self.packet_stats_rx.tcp__no_socket_match__rst__drop += 1
+            self.packet_stats_rx.inc("tcp__no_socket_match__rst__drop")
             __debug__ and log(
                 "tcp",
                 f"{packet_rx.tracker} - TCP RST packet from {packet_rx.ip.src} to "
@@ -187,7 +187,7 @@ class PacketHandlerTcpRx(ABC):
 
         # In case packet doesn't match any session send RST packet
         # in response to it.
-        self.packet_stats_rx.tcp__no_socket_match__respond_rst += 1
+        self.packet_stats_rx.inc("tcp__no_socket_match__respond_rst")
         __debug__ and log(
             "tcp",
             f"{packet_rx.tracker} - TCP packet from {packet_rx.ip.src} to "
@@ -208,5 +208,3 @@ class PacketHandlerTcpRx(ABC):
             tcp__flag_ack=True,
             echo_tracker=packet_rx.tracker,
         )
-
-        return

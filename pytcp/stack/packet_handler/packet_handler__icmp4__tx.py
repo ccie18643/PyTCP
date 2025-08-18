@@ -25,11 +25,11 @@
 
 
 """
-Module contains packet handler for the outbound ICMPv4 packets
+This module contains packet handler for the outbound ICMPv4 packets
 
 pytcp/subsystems/packet_handler/packet_handler__icmp4__tx.py
 
-ver 3.0.2
+ver 3.0.3
 """
 
 
@@ -85,7 +85,7 @@ class PacketHandlerIcmp4Tx(ABC):
         Handle outbound ICMPv4 packets.
         """
 
-        self.packet_stats_tx.icmp4__pre_assemble += 1
+        self.packet_stats_tx.inc("icmp4__pre_assemble")
 
         icmp4_packet_tx = Icmp4Assembler(
             icmp4__message=icmp4__message,
@@ -98,16 +98,16 @@ class PacketHandlerIcmp4Tx(ABC):
 
         match icmp4__message.type, icmp4__message.code:
             case Icmp4Type.ECHO_REPLY, _:
-                self.packet_stats_tx.icmp4__echo_reply__send += 1
+                self.packet_stats_tx.inc("icmp4__echo_reply__send")
             case (
                 Icmp4Type.DESTINATION_UNREACHABLE,
                 Icmp4DestinationUnreachableCode.PORT,
             ):
-                self.packet_stats_tx.icmp4__destination_unreachable__port__send += (
-                    1
+                self.packet_stats_tx.inc(
+                    "icmp4__destination_unreachable__port__send"
                 )
             case Icmp4Type.ECHO_REQUEST, _:
-                self.packet_stats_tx.icmp4__echo_request__send += 1
+                self.packet_stats_tx.inc("icmp4__echo_request__send")
             case _:
                 raise ValueError(
                     f"Unsupported ICMPv4 message type {icmp4__message.type}, "

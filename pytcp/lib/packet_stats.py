@@ -47,13 +47,9 @@ class PacketStats:
         Increment the specified field by the given value.
         """
 
-        if hasattr(self, field):
-            current_value = getattr(self, field)
-            setattr(self, field, current_value + value)
-        else:
-            raise AttributeError(
-                f"Field '{field}' does not exist in {self.__class__.__name__}."
-            )
+        assert hasattr(self, field)
+
+        setattr(self, field, getattr(self, field) + value)
 
 
 @dataclass(slots=True)

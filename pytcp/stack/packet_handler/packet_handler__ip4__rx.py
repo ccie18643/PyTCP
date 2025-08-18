@@ -25,11 +25,11 @@
 
 
 """
-Module contains packet handler for the inbound IPv4 packets.
+This module contains packet handler for the inbound IPv4 packets.
 
 pytcp/subsystems/packet_handler/packet_handler__ip4__rx.py
 
-ver 3.0.2
+ver 3.0.3
 """
 
 
@@ -85,13 +85,13 @@ class PacketHandlerIp4Rx(ABC):
         Handle inbound IPv4 packets.
         """
 
-        self.packet_stats_rx.ip4__pre_parse += 1
+        self.packet_stats_rx.inc("ip4__pre_parse")
 
         try:
             Ip4Parser(packet_rx)
 
         except PacketValidationError as error:
-            self.packet_stats_rx.ip4__failed_parse__drop += 1
+            self.packet_stats_rx.inc("ip4__failed_parse__drop")
             __debug__ and log(
                 "ip4",
                 f"{packet_rx.tracker} - <CRIT>{error}</>",
@@ -108,7 +108,7 @@ class PacketHandlerIp4Rx(ABC):
             *self.ip4_multicast,
             *self.ip4_broadcast,
         }:
-            self.packet_stats_rx.ip4__dst_unknown__drop += 1
+            self.packet_stats_rx.inc("ip4__dst_unknown__drop")
             __debug__ and log(
                 "ip4",
                 f"{packet_rx.tracker} - IP packet not destined for this stack, "
@@ -117,17 +117,17 @@ class PacketHandlerIp4Rx(ABC):
             return
 
         if packet_rx.ip4.dst in self.ip4_unicast:
-            self.packet_stats_rx.ip4__dst_unicast += 1
+            self.packet_stats_rx.inc("ip4__dst_unicast")
 
         if packet_rx.ip4.dst in self.ip4_multicast:
-            self.packet_stats_rx.ip4__dst_multicast += 1
+            self.packet_stats_rx.inc("ip4__dst_multicast")
 
         if packet_rx.ip4.dst in self.ip4_broadcast:
-            self.packet_stats_rx.ip4__dst_broadcast += 1
+            self.packet_stats_rx.inc("ip4__dst_broadcast")
 
-        # Check if packet is a fragment and if so process it accordingly
+        # Check if packet is a fragment and if so process it accordingly.
         if packet_rx.ip4.offset != 0 or packet_rx.ip4.flag_mf:
-            self.packet_stats_rx.ip4__frag += 1
+            self.packet_stats_rx.inc("ip4__frag")
             if not (
                 defragmented_packet_rx := self.__defragment_ip4_packet(
                     packet_rx
@@ -135,9 +135,9 @@ class PacketHandlerIp4Rx(ABC):
             ):
                 return
             packet_rx = defragmented_packet_rx
-            self.packet_stats_rx.ip4__defrag += 1
+            self.packet_stats_rx.inc("ip4__defrag")
 
-        # Create RawMetadata object and try to find matching RAW socket
+        # Create RawMetadata object and try to find matching RAW socket.
         packet_rx_md = RawMetadata(
             ip__ver=packet_rx.ip.ver,
             ip__local_address=packet_rx.ip.dst,
@@ -145,13 +145,13 @@ class PacketHandlerIp4Rx(ABC):
             ip__proto=packet_rx.ip4.proto,
             raw__data=bytes(
                 packet_rx.ip4.payload_bytes
-            ),  # memoryview: conversion for end-user interface
+            ),  # memoryview: conversion for end-user interface.
             tracker=packet_rx.tracker,
         )
 
         for socket_id in packet_rx_md.socket_ids:
             if socket := cast(RawSocket, stack.sockets.get(socket_id, None)):
-                self.packet_stats_rx.raw__socket_match += 1
+                self.packet_stats_rx.inc("raw__socket_match")
                 __debug__ and log(
                     "ip4",
                     f"{packet_rx_md.tracker} - <INFO>Found matching listening "
@@ -168,7 +168,7 @@ class PacketHandlerIp4Rx(ABC):
             case IpProto.TCP:
                 self._phrx_tcp(packet_rx)
             case _:
-                self.packet_stats_rx.ip4__no_proto_support__drop += 1
+                self.packet_stats_rx.inc("ip4__no_proto_support__drop")
                 __debug__ and log(
                     "ip4",
                     f"{packet_rx.tracker} - Unsupported protocol "
@@ -180,7 +180,7 @@ class PacketHandlerIp4Rx(ABC):
         Defragment IPv4 packet.
         """
 
-        # Cleanup expired flows
+        # Cleanup expired flows.
         self.ip4_frag_flows = {
             flow: self.ip4_frag_flows[flow]
             for flow in self.ip4_frag_flows
@@ -201,7 +201,7 @@ class PacketHandlerIp4Rx(ABC):
             id=packet_rx.ip4.id,
         )
 
-        # Update flow db
+        # Update flow db.
         if flow_id in self.ip4_frag_flows:
             self.ip4_frag_flows[flow_id].payload[
                 packet_rx.ip4.offset
@@ -214,7 +214,7 @@ class PacketHandlerIp4Rx(ABC):
         if not packet_rx.ip4.flag_mf:
             self.ip4_frag_flows[flow_id].received_last_frag()
 
-        # Test if we received all fragments
+        # Test if we received all fragments.
         if not self.ip4_frag_flows[flow_id].last:
             return None
         payload_len = 0
@@ -225,7 +225,7 @@ class PacketHandlerIp4Rx(ABC):
                 self.ip4_frag_flows[flow_id].payload[offset]
             )
 
-        # Defragment packet
+        # Defragment packet.
         header = bytearray(self.ip4_frag_flows[flow_id].header)
         payload = bytearray(payload_len)
         for offset in sorted(self.ip4_frag_flows[flow_id].payload):

@@ -25,11 +25,11 @@
 
 
 """
-Module contains packet handler for the outbound IPv6 fragment extension header.
+This module contains packet handler for the outbound IPv6 fragment extension header.
 
 pytcp/subsystems/packet_handler/packet_handler__ip6_frag__tx.py
 
-ver 3.0.2
+ver 3.0.3
 """
 
 
@@ -80,7 +80,7 @@ class PacketHandlerIp6FragTx(ABC):
         Handle outbound IPv6 fagment extension header.
         """
 
-        self.packet_stats_tx.ip6_frag__pre_assemble += 1
+        self.packet_stats_tx.inc("ip6_frag__pre_assemble")
 
         if isinstance(
             ip6_packet_tx.payload, (TcpAssembler, UdpAssembler, Icmp6Assembler)
@@ -109,7 +109,7 @@ class PacketHandlerIp6FragTx(ABC):
             )
             __debug__ and log("ip6", f"{ip6_frag_tx.tracker} - {ip6_frag_tx}")
             offset += len(data_frag)
-            self.packet_stats_tx.ip6_frag__send += 1
+            self.packet_stats_tx.inc("ip6_frag__send")
             ip6_tx_status.add(
                 self._phtx_ip6(
                     ip6__src=ip6_packet_tx.src,
@@ -118,7 +118,7 @@ class PacketHandlerIp6FragTx(ABC):
                 )
             )
 
-        # Return the most severe code
+        # Return the most severe code.
         for tx_status in [
             TxStatus.DROPED__ETHERNET__DST_RESOLUTION_FAIL,
             TxStatus.DROPED__ETHERNET__DST_NO_GATEWAY_IP6,

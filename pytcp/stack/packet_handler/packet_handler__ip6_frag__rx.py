@@ -25,11 +25,11 @@
 
 
 """
-Module contains packet handler for inbound the IPv6 fragment extension header.
+This module contains packet handler for inbound the IPv6 fragment extension header.
 
 pytcp/subsystems/packet_handler/packet_handler__ip6_frag__rx.py
 
-ver 3.0.2
+ver 3.0.3
 """
 
 
@@ -68,12 +68,12 @@ class PacketHandlerIp6FragRx(ABC):
         Handle inbound IPv6 fragment extension header.
         """
 
-        self.packet_stats_rx.ip6_frag__pre_parse += 1
+        self.packet_stats_rx.inc("ip6_frag__pre_parse")
 
         Ip6FragParser(packet_rx)
 
         if packet_rx.parse_failed:
-            self.packet_stats_rx.ip6_frag__failed_parse += 1
+            self.packet_stats_rx.inc("ip6_frag__failed_parse")
             __debug__ and log(
                 "ip6",
                 f"{packet_rx.tracker} - <CRIT>{packet_rx.parse_failed}</>",
@@ -83,7 +83,7 @@ class PacketHandlerIp6FragRx(ABC):
         __debug__ and log("ip6", f"{packet_rx.tracker} - {packet_rx.ip6_frag}")
 
         if defragmented_packet_rx := self.__defragment_ip6_packet(packet_rx):
-            self.packet_stats_rx.ip6_frag__defrag += 1
+            self.packet_stats_rx.inc("ip6_frag__defrag")
             self._phrx_ip6(
                 defragmented_packet_rx,
             )
@@ -115,7 +115,7 @@ class PacketHandlerIp6FragRx(ABC):
             id=packet_rx.ip6_frag.id,
         )
 
-        # Update flow db
+        # Update flow db.
         if flow_id in self.ip6_frag_flows:
             self.ip6_frag_flows[flow_id].payload[
                 packet_rx.ip6_frag.offset
@@ -130,7 +130,7 @@ class PacketHandlerIp6FragRx(ABC):
         if not packet_rx.ip6_frag.flag_mf:
             self.ip6_frag_flows[flow_id].received_last_frag()
 
-        # Test if we received all fragments
+        # Test if we received all fragments.
         if not self.ip6_frag_flows[flow_id].last:
             return None
         payload_len = 0
@@ -141,7 +141,7 @@ class PacketHandlerIp6FragRx(ABC):
                 self.ip6_frag_flows[flow_id].payload[offset]
             )
 
-        # Defragment packet
+        # Defragment packet.
         header = bytearray(self.ip6_frag_flows[flow_id].header)
         payload = bytearray(payload_len)
         for offset in sorted(self.ip6_frag_flows[flow_id].payload):

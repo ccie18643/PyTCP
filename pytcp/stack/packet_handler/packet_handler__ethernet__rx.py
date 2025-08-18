@@ -25,7 +25,7 @@
 
 
 """
-The module contains packet handler for the inbound Ethernet II packets.
+This module contains packet handler for the inbound Ethernet II packets.
 
 pytcp/subsystems/packet_handler/packet_handler__ethernet__rx.py
 
@@ -73,13 +73,13 @@ class PacketHandlerEthernetRx(ABC):
         Handle inbound Ethernet packets.
         """
 
-        self.packet_stats_rx.ethernet__pre_parse += 1
+        self.packet_stats_rx.inc("ethernet__pre_parse")
 
         try:
             EthernetParser(packet_rx)
 
         except PacketValidationError as error:
-            self.packet_stats_rx.ethernet__failed_parse__drop += 1
+            self.packet_stats_rx.inc("ethernet__failed_parse__drop")
             __debug__ and log(
                 "ether",
                 f"{packet_rx.tracker} - <CRIT>{error}</>",
@@ -96,7 +96,7 @@ class PacketHandlerEthernetRx(ABC):
             *self.mac_multicast,
             self.mac_broadcast,
         }:
-            self.packet_stats_rx.ethernet__dst_unknown__drop += 1
+            self.packet_stats_rx.inc("ethernet__dst_unknown__drop")
             __debug__ and log(
                 "ether",
                 f"{packet_rx.tracker} - Ethernet packet not destined for this "
@@ -105,13 +105,13 @@ class PacketHandlerEthernetRx(ABC):
             return
 
         if packet_rx.ethernet.dst == self.mac_unicast:
-            self.packet_stats_rx.ethernet__dst_unicast += 1
+            self.packet_stats_rx.inc("ethernet__dst_unicast")
 
         if packet_rx.ethernet.dst in self.mac_multicast:
-            self.packet_stats_rx.ethernet__dst_multicast += 1
+            self.packet_stats_rx.inc("ethernet__dst_multicast")
 
         if packet_rx.ethernet.dst == self.mac_broadcast:
-            self.packet_stats_rx.ethernet__dst_broadcast += 1
+            self.packet_stats_rx.inc("ethernet__dst_broadcast")
 
         match packet_rx.ethernet.type:
             case EtherType.ARP if self._ip4_support:
@@ -121,7 +121,7 @@ class PacketHandlerEthernetRx(ABC):
             case EtherType.IP6 if self._ip6_support:
                 self._phrx_ip6(packet_rx)
             case _:
-                self.packet_stats_rx.ethernet__no_proto_support__drop += 1
+                self.packet_stats_rx.inc("ethernet__no_proto_support__drop")
                 __debug__ and log(
                     "ether",
                     f"{packet_rx.tracker} - Unsupported protocol "

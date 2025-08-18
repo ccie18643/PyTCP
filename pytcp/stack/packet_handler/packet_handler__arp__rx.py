@@ -86,13 +86,13 @@ class PacketHandlerArpRx(ABC):
         Handle inbound ARP packets.
         """
 
-        self.packet_stats_rx.arp__pre_parse += 1
+        self.packet_stats_rx.inc("arp__pre_parse")
 
         try:
             ArpParser(packet_rx)
 
         except PacketValidationError as error:
-            self.packet_stats_rx.arp__failed_parse__drop += 1
+            self.packet_stats_rx.inc("arp__failed_parse__drop")
             __debug__ and log(
                 "arp",
                 f"{packet_rx.tracker} - <CRIT>{error}</>",
@@ -107,7 +107,7 @@ class PacketHandlerArpRx(ABC):
             case ArpOperation.REPLY:
                 self.__phrx_arp__reply(packet_rx)
             case _:
-                self.packet_stats_rx.arp__op_unknown__drop += 1
+                self.packet_stats_rx.inc("arp__op_unknown__drop")
                 __debug__ and log(
                     "ether",
                     f"{packet_rx.tracker} - Unsupported operation "
@@ -119,11 +119,11 @@ class PacketHandlerArpRx(ABC):
         Handle inbound ARP request packets.
         """
 
-        self.packet_stats_rx.arp__op_request += 1
+        self.packet_stats_rx.inc("arp__op_request")
         # Check if request contains our IP address in SPA field,
         # this indicates IP address conflict.
         if packet_rx.arp.spa in self.ip4_unicast:
-            self.packet_stats_rx.arp__op_request__ip_conflict += 1
+            self.packet_stats_rx.inc("arp__op_request__ip_conflict")
             __debug__ and log(
                 "arp",
                 f"{packet_rx.tracker} - <WARN>IP ({packet_rx.arp.spa}) "
@@ -134,7 +134,7 @@ class PacketHandlerArpRx(ABC):
         # Check if the request is for one of our IP addresses,
         # if so the craft ARP reply packet and send it out.
         if packet_rx.arp.tpa in self.ip4_unicast:
-            self.packet_stats_rx.arp__op_request__tpa_stack__respond += 1
+            self.packet_stats_rx.inc("arp__op_request__tpa_stack__respond")
             self._phtx_arp(
                 ethernet__src=self.mac_unicast,
                 ethernet__dst=packet_rx.arp.sha,
@@ -149,7 +149,7 @@ class PacketHandlerArpRx(ABC):
             # Update ARP cache with the mapping learned from the received
             # ARP request that was destined to this stack.
             if stack.ARP__CACHE__UPDATE_FROM_DIRECT_REQUEST:
-                self.packet_stats_rx.arp__op_request__update_arp_cache += 1
+                self.packet_stats_rx.inc("arp__op_request__update_arp_cache")
                 __debug__ and log(
                     "arp",
                     f"{packet_rx.tracker} - <INFO>Adding/refreshing "
@@ -164,7 +164,7 @@ class PacketHandlerArpRx(ABC):
 
         else:
             # Drop packet if TPA does not match one of our IP addresses.
-            self.packet_stats_rx.arp__op_request__tpa_unknown__drop += 1
+            self.packet_stats_rx.inc("arp__op_request__tpa_unknown__drop")
             return
 
     def __phrx_arp__reply(self, packet_rx: PacketRx) -> None:
@@ -172,7 +172,7 @@ class PacketHandlerArpRx(ABC):
         Handle inbound ARP reply packets.
         """
 
-        self.packet_stats_rx.arp__op_reply += 1
+        self.packet_stats_rx.inc("arp__op_reply")
         # Check for ARP reply that is response to our ARP probe, this indicates
         # the IP address we trying to claim is in use.
         if packet_rx.ethernet.dst == self.mac_unicast:
@@ -182,7 +182,7 @@ class PacketHandlerArpRx(ABC):
                 and packet_rx.arp.tha == self.mac_unicast
                 and packet_rx.arp.tpa.is_unspecified
             ):
-                self.packet_stats_rx.arp__op_reply__ip_conflict += 1
+                self.packet_stats_rx.inc("arp__op_reply__ip_conflict")
                 __debug__ and log(
                     "arp",
                     f"{packet_rx.tracker} - <WARN>ARP Probe detected "
@@ -194,7 +194,7 @@ class PacketHandlerArpRx(ABC):
 
         # Update ARP cache with mapping received as direct ARP reply.
         if packet_rx.ethernet.dst == self.mac_unicast:
-            self.packet_stats_rx.arp__op_reply__update_arp_cache += 1
+            self.packet_stats_rx.inc("arp__op_reply__update_arp_cache")
             __debug__ and log(
                 "arp",
                 f"{packet_rx.tracker} - Adding/refreshing ARP cache entry "
@@ -213,7 +213,9 @@ class PacketHandlerArpRx(ABC):
             and packet_rx.arp.spa == packet_rx.arp.tpa
             and stack.ARP__CACHE__UPDATE_FROM_GRATUITIOUS_REPLY
         ):
-            self.packet_stats_rx.arp__op_reply__update_arp_cache_gratuitous += 1
+            self.packet_stats_rx.inc(
+                "arp__op_reply__update_arp_cache_gratuitous"
+            )
             __debug__ and log(
                 "arp",
                 f"{packet_rx.tracker} - Adding/refreshing ARP cache entry "
