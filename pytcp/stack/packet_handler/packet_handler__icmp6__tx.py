@@ -80,7 +80,7 @@ class PacketHandlerIcmp6Tx(ABC):
         from pytcp.protocols.raw.raw__assembler import RawAssembler
 
         packet_stats_tx: PacketStatsTx
-        mac_unicast: MacAddress
+        _mac_unicast: MacAddress
         ip6_multicast: list[Ip6Address]
         ip6_host: list[Ip6Host]
 
@@ -246,7 +246,7 @@ class PacketHandlerIcmp6Tx(ABC):
             ip6__hop=255,
             icmp6__message=Icmp6NdRouterSolicitationMessage(
                 options=Icmp6NdOptions(
-                    Icmp6NdOptionSlla(slla=self.mac_unicast),
+                    Icmp6NdOptionSlla(slla=self._mac_unicast),
                 ),
             ),
         )
@@ -280,7 +280,7 @@ class PacketHandlerIcmp6Tx(ABC):
             icmp6__message=Icmp6NdNeighborSolicitationMessage(
                 target_address=icmp6_ns_target_address,
                 options=Icmp6NdOptions(
-                    Icmp6NdOptionSlla(slla=self.mac_unicast)
+                    Icmp6NdOptionSlla(slla=self._mac_unicast)
                 ),
             ),
         )

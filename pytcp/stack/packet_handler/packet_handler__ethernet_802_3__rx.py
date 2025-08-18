@@ -55,7 +55,7 @@ class PacketHandlerEthernet8023Rx(ABC):
         from pytcp.lib.packet_stats import PacketStatsRx
 
         packet_stats_rx: PacketStatsRx
-        mac_unicast: MacAddress
+        _mac_unicast: MacAddress
         mac_multicast: list[MacAddress]
         mac_broadcast: MacAddress
 
@@ -89,7 +89,7 @@ class PacketHandlerEthernet8023Rx(ABC):
 
         # Check if received packet matches any of stack MAC addresses.
         if packet_rx.ethernet_802_3.dst not in {
-            self.mac_unicast,
+            self._mac_unicast,
             *self.mac_multicast,
             self.mac_broadcast,
         }:
@@ -101,7 +101,7 @@ class PacketHandlerEthernet8023Rx(ABC):
             )
             return
 
-        if packet_rx.ethernet_802_3.dst == self.mac_unicast:
+        if packet_rx.ethernet_802_3.dst == self._mac_unicast:
             self.packet_stats_rx.inc("ethernet__dst_unicast")
 
         if packet_rx.ethernet_802_3.dst in self.mac_multicast:

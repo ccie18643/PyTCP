@@ -56,7 +56,7 @@ class PacketHandlerArpTx(ABC):
         from pytcp.protocols.ethernet.ethernet__base import EthernetPayload
 
         packet_stats_tx: PacketStatsTx
-        mac_unicast: MacAddress
+        _mac_unicast: MacAddress
         _ip4_support: bool
 
         # pylint: disable=unused-argument
@@ -129,10 +129,10 @@ class PacketHandlerArpTx(ABC):
         """
 
         tx_status = self._phtx_arp(
-            ethernet__src=self.mac_unicast,
+            ethernet__src=self._mac_unicast,
             ethernet__dst=MacAddress(0xFFFFFFFFFFFF),
             arp__oper=ArpOperation.REQUEST,
-            arp__sha=self.mac_unicast,
+            arp__sha=self._mac_unicast,
             arp__spa=ip4_unicast,
             arp__tha=MacAddress(),
             arp__tpa=ip4_unicast,
@@ -156,10 +156,10 @@ class PacketHandlerArpTx(ABC):
         """
 
         tx_status = self._phtx_arp(
-            ethernet__src=self.mac_unicast,
+            ethernet__src=self._mac_unicast,
             ethernet__dst=MacAddress(0xFFFFFFFFFFFF),
             arp__oper=ArpOperation.REPLY,
-            arp__sha=self.mac_unicast,
+            arp__sha=self._mac_unicast,
             arp__spa=ip4_unicast,
             arp__tha=MacAddress(),
             arp__tpa=ip4_unicast,
@@ -183,10 +183,10 @@ class PacketHandlerArpTx(ABC):
         """
 
         tx_status = self._phtx_arp(
-            ethernet__src=self.mac_unicast,
+            ethernet__src=self._mac_unicast,
             ethernet__dst=MacAddress(0xFFFFFFFFFFFF),
             arp__oper=ArpOperation.REQUEST,
-            arp__sha=self.mac_unicast,
+            arp__sha=self._mac_unicast,
             arp__spa=Ip4Address(),
             arp__tha=MacAddress(),
             arp__tpa=ip4_unicast,
@@ -210,10 +210,10 @@ class PacketHandlerArpTx(ABC):
         """
 
         tx_status = self._phtx_arp(
-            ethernet__src=self.mac_unicast,
+            ethernet__src=self._mac_unicast,
             ethernet__dst=MacAddress(0xFFFFFFFFFFFF),
             arp__oper=ArpOperation.REQUEST,
-            arp__sha=self.mac_unicast,
+            arp__sha=self._mac_unicast,
             arp__spa=(
                 self.ip4_unicast[0] if self.ip4_unicast else Ip4Address()
             ),

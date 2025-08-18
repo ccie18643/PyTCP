@@ -61,7 +61,7 @@ class PacketHandlerEthernet8023Tx(ABC):
         )
 
         packet_stats_tx: PacketStatsTx
-        mac_unicast: MacAddress
+        _mac_unicast: MacAddress
 
     def _phtx_ethernet_802_3(
         self,
@@ -85,7 +85,7 @@ class PacketHandlerEthernet8023Tx(ABC):
         # Check if packet contains valid source address, fill it out if needed.
         if ethernet_802_3_packet_tx.src.is_unspecified:
             self.packet_stats_tx.inc("ethernet__src_unspec__fill")
-            ethernet_802_3_packet_tx.src = self.mac_unicast
+            ethernet_802_3_packet_tx.src = self._mac_unicast
             __debug__ and log(
                 "ether",
                 f"{ethernet_802_3_packet_tx.tracker} - Set source to stack MAC "

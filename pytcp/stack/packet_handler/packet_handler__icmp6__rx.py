@@ -101,7 +101,7 @@ class PacketHandlerIcmp6Rx(ABC):
         icmp6_ra_prefixes: list[tuple[Ip6Network, Ip6Address]]
         icmp6_nd_dad_event: Semaphore
         icmp6_nd_dad_tlla: MacAddress | None
-        mac_unicast: MacAddress
+        _mac_unicast: MacAddress
         ip6_unicast_candidate: Ip6Address | None
 
         # pylint: disable=unused-argument
@@ -404,7 +404,7 @@ class PacketHandlerIcmp6Rx(ABC):
                 flag_o=ip6_nd_dad,  # The O flag when responding to DAD request (not necessary but Linux uses it).
                 target_address=packet_rx.icmp6.message.target_address,
                 options=Icmp6NdOptions(
-                    Icmp6NdOptionTlla(tlla=self.mac_unicast),
+                    Icmp6NdOptionTlla(tlla=self._mac_unicast),
                 ),
             ),
             echo_tracker=packet_rx.tracker,

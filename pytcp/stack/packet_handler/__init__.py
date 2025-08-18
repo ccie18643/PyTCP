@@ -152,7 +152,7 @@ class PacketHandler(
         # the unicast addresses, so the other ones keep it's SNM entry in the
         # multicast list. Its the simplest solution and imho perfectly valid
         # one in this case.
-        self.mac_unicast = mac_address
+        self._mac_unicast = mac_address
         self.mac_multicast: list[MacAddress] = []
         self.mac_broadcast: MacAddress = MacAddress(0xFFFFFFFFFFFF)
         self.ip6_host_candidate: list[Ip6Host] = []
@@ -191,6 +191,14 @@ class PacketHandler(
 
         if ip6_host is not None:
             self.ip6_host_candidate.append(ip6_host)
+
+    @property
+    def mac_unicast(self) -> MacAddress:
+        """
+        Get the stack's unicast MAC address.
+        """
+
+        return self._mac_unicast
 
     @property
     def ip6_unicast(self) -> list[Ip6Address]:
@@ -255,7 +263,7 @@ class PacketHandler(
 
         if not self.ip4_host_candidate:
             if self._ip4_dhcp:
-                if ip4_host := Dhcp4Client(self.mac_unicast).fetch():
+                if ip4_host := Dhcp4Client(self._mac_unicast).fetch():
                     self.ip4_host_candidate.append(ip4_host)
         self._create_stack_ip4_addressing()
 
@@ -370,7 +378,7 @@ class PacketHandler(
         # Configure Link Local address automatically.
         if self._ip6_lla_autoconfig:
             ip6_host = Ip6Host.from_eui64(
-                mac_address=self.mac_unicast,
+                mac_address=self._mac_unicast,
                 ip6_network=Ip6Network("fe80::/64"),
             )
             ip6_host.gateway = None
@@ -405,7 +413,7 @@ class PacketHandler(
                     f"prefix {prefix}",
                 )
                 ip6_address = Ip6Host.from_eui64(
-                    mac_address=self.mac_unicast,
+                    mac_address=self._mac_unicast,
                     ip6_network=prefix,
                 )
                 ip6_address.gateway = gateway
@@ -531,7 +539,7 @@ class PacketHandler(
             log(
                 "stack",
                 "<INFO>Stack listening on unicast MAC address: "
-                f"{self.mac_unicast}</>",
+                f"{self._mac_unicast}</>",
             )
             log(
                 "stack",

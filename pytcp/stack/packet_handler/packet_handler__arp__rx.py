@@ -57,7 +57,7 @@ class PacketHandlerArpRx(ABC):
         from pytcp.lib.tracker import Tracker
         from pytcp.lib.tx_status import TxStatus
 
-        mac_unicast: MacAddress
+        _mac_unicast: MacAddress
         packet_stats_rx: PacketStatsRx
         ip4_host_candidate: list[Ip4Host]
 
@@ -136,10 +136,10 @@ class PacketHandlerArpRx(ABC):
         if packet_rx.arp.tpa in self.ip4_unicast:
             self.packet_stats_rx.inc("arp__op_request__tpa_stack__respond")
             self._phtx_arp(
-                ethernet__src=self.mac_unicast,
+                ethernet__src=self._mac_unicast,
                 ethernet__dst=packet_rx.arp.sha,
                 arp__oper=ArpOperation.REPLY,
-                arp__sha=self.mac_unicast,
+                arp__sha=self._mac_unicast,
                 arp__spa=packet_rx.arp.tpa,
                 arp__tha=packet_rx.arp.sha,
                 arp__tpa=packet_rx.arp.spa,
@@ -175,11 +175,11 @@ class PacketHandlerArpRx(ABC):
         self.packet_stats_rx.inc("arp__op_reply")
         # Check for ARP reply that is response to our ARP probe, this indicates
         # the IP address we trying to claim is in use.
-        if packet_rx.ethernet.dst == self.mac_unicast:
+        if packet_rx.ethernet.dst == self._mac_unicast:
             if (
                 packet_rx.arp.spa
                 in [_.address for _ in self.ip4_host_candidate]
-                and packet_rx.arp.tha == self.mac_unicast
+                and packet_rx.arp.tha == self._mac_unicast
                 and packet_rx.arp.tpa.is_unspecified
             ):
                 self.packet_stats_rx.inc("arp__op_reply__ip_conflict")
@@ -193,7 +193,7 @@ class PacketHandlerArpRx(ABC):
                 return
 
         # Update ARP cache with mapping received as direct ARP reply.
-        if packet_rx.ethernet.dst == self.mac_unicast:
+        if packet_rx.ethernet.dst == self._mac_unicast:
             self.packet_stats_rx.inc("arp__op_reply__update_arp_cache")
             __debug__ and log(
                 "arp",

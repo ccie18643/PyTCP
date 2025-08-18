@@ -59,7 +59,7 @@ class PacketHandlerEthernetTx(ABC):
         from pytcp.protocols.ethernet.ethernet__base import EthernetPayload
 
         packet_stats_tx: PacketStatsTx
-        mac_unicast: MacAddress
+        _mac_unicast: MacAddress
         ip6_host: list[Ip6Host]
         ip4_host: list[Ip4Host]
 
@@ -85,7 +85,7 @@ class PacketHandlerEthernetTx(ABC):
         # Check if packet contains valid source address, fill it out if needed.
         if ethernet_packet_tx.src.is_unspecified:
             self.packet_stats_tx.inc("ethernet__src_unspec__fill")
-            ethernet_packet_tx.src = self.mac_unicast
+            ethernet_packet_tx.src = self._mac_unicast
             __debug__ and log(
                 "ether",
                 f"{ethernet_packet_tx.tracker} - Set source to stack MAC "
