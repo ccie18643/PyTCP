@@ -151,7 +151,7 @@ class PacketHandlerIcmp6Tx(ABC):
                     "icmp6__nd__neighbor_advertisement__send"
                 )
             case Icmp6Type.MLD2__REPORT, _:
-                self.packet_stats_tx.icmp6__mld2__report__send += 1
+                self.packet_stats_tx.inc("icmp6__mld2__report__send")
             case _:
                 raise ValueError(
                     f"Unsupported ICMPv6 type {icmp6__message.type}, "

@@ -74,7 +74,7 @@ class PacketHandlerEthernetTx(ABC):
         Handle outbound Ethernet packets.
         """
 
-        self.packet_stats_tx.ethernet__pre_assemble += 1
+        self.packet_stats_tx.inc("ethernet__pre_assemble")
 
         ethernet_packet_tx = EthernetAssembler(
             ethernet__src=ethernet__src,
@@ -84,7 +84,7 @@ class PacketHandlerEthernetTx(ABC):
 
         # Check if packet contains valid source address, fill it out if needed.
         if ethernet_packet_tx.src.is_unspecified:
-            self.packet_stats_tx.ethernet__src_unspec__fill += 1
+            self.packet_stats_tx.inc("ethernet__src_unspec__fill")
             ethernet_packet_tx.src = self.mac_unicast
             __debug__ and log(
                 "ether",
@@ -92,7 +92,7 @@ class PacketHandlerEthernetTx(ABC):
                 f"{ethernet_packet_tx.src}",
             )
         else:
-            self.packet_stats_tx.ethernet__src_spec += 1
+            self.packet_stats_tx.inc("ethernet__src_spec")
             __debug__ and log(
                 "ether",
                 f"{ethernet_packet_tx.tracker} - Source MAC specified to "
@@ -101,7 +101,7 @@ class PacketHandlerEthernetTx(ABC):
 
         # Send out packet if it contains valid destination MAC address.
         if not ethernet_packet_tx.dst.is_unspecified:
-            self.packet_stats_tx.ethernet__dst_spec__send += 1
+            self.packet_stats_tx.inc("ethernet__dst_spec__send")
             __debug__ and log(
                 "ether",
                 f"{ethernet_packet_tx.tracker} - Contains valid destination "
@@ -112,7 +112,7 @@ class PacketHandlerEthernetTx(ABC):
 
         # Check if we can obtain destination MAC based on IPv6 header data.
         if isinstance(ethernet_packet_tx.payload, Ip6Assembler):
-            self.packet_stats_tx.ethernet__dst_unspec__ip6_lookup += 1
+            self.packet_stats_tx.inc("ethernet__dst_unspec__ip6_lookup")
 
             ip6_src = ethernet_packet_tx.payload.src
             ip6_dst = ethernet_packet_tx.payload.dst
@@ -263,8 +263,8 @@ class PacketHandlerEthernetTx(ABC):
                     and ip4_dst not in ip4_host.network
                 ):
                     if ip4_host.gateway is None:
-                        self.packet_stats_tx.ethernet__dst_unspec__ip4_lookup__extnet__no_gw__drop += (
-                            1
+                        self.packet_stats_tx.inc(
+                            "ethernet__dst_unspec__ip4_lookup__extnet__no_gw__drop"
                         )
                         __debug__ and log(
                             "ether",

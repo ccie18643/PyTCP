@@ -36,7 +36,7 @@ ver 3.0.3
 from dataclasses import dataclass
 
 
-@dataclass(slots=True)
+@dataclass(frozen=True, slots=True)
 class PacketStats:
     """
     Base class for packet statistics data store.
@@ -49,10 +49,10 @@ class PacketStats:
 
         assert hasattr(self, field)
 
-        setattr(self, field, getattr(self, field) + value)
+        object.__setattr__(self, field, getattr(self, field) + value)
 
 
-@dataclass(slots=True)
+@dataclass(frozen=True, slots=True)
 class PacketStatsRx(PacketStats):
     """
     Data store for the RX packet handler statistics.
@@ -150,7 +150,7 @@ class PacketStatsRx(PacketStats):
     raw__socket_match: int = 0
 
 
-@dataclass(slots=True)
+@dataclass(frozen=True, slots=True)
 class PacketStatsTx(PacketStats):
     """
     Data store for the TX packet handler statistics.
