@@ -70,7 +70,7 @@ class PacketHandlerIp6Rx(ABC):
         # pylint: disable=missing-function-docstring
 
         @property
-        def ip6_unicast(self) -> list[Ip6Address]: ...
+        def _ip6_unicast(self) -> list[Ip6Address]: ...
 
     def _phrx_ip6(self, packet_rx: PacketRx, /) -> None:
         """
@@ -91,7 +91,7 @@ class PacketHandlerIp6Rx(ABC):
 
         # Check if received packet has been sent to us directly or by unicast
         # or multicast.
-        if packet_rx.ip6.dst not in {*self.ip6_unicast, *self._ip6_multicast}:
+        if packet_rx.ip6.dst not in {*self._ip6_unicast, *self._ip6_multicast}:
             self._packet_stats_rx.inc("ip6__dst_unknown__drop")
             __debug__ and log(
                 "ip6",
@@ -100,7 +100,7 @@ class PacketHandlerIp6Rx(ABC):
             )
             return
 
-        if packet_rx.ip6.dst in self.ip6_unicast:
+        if packet_rx.ip6.dst in self._ip6_unicast:
             self._packet_stats_rx.inc("ip6__dst_unicast")
 
         if packet_rx.ip6.dst in self._ip6_multicast:

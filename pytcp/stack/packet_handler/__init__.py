@@ -193,6 +193,39 @@ class PacketHandler(
             self._ip6_host_candidate.append(ip6_host)
 
     @property
+    def _ip6_unicast(self) -> list[Ip6Address]:
+        """
+        Get the list of stack's IPv6 unicast addresses.
+        """
+
+        return [ip6_host.address for ip6_host in self._ip6_host]
+
+    @property
+    def _ip4_unicast(self) -> list[Ip4Address]:
+        """
+        Get the list of stack's IPv4 unicast addresses.
+        """
+
+        return [ip4_host.address for ip4_host in self._ip4_host]
+
+    @property
+    def _ip4_broadcast(self) -> list[Ip4Address]:
+        """
+        Get the list of stack's IPv4 broadcast addresses.
+        """
+
+        ip4_broadcast = [
+            ip4_host.network.broadcast for ip4_host in self._ip4_host
+        ]
+        ip4_broadcast.append(Ip4Address(0xFFFFFFFF))
+
+        return ip4_broadcast
+
+    ###
+    # Public interface.
+    ###
+
+    @property
     def packet_stats_rx(self) -> PacketStatsRx:
         """
         Get the packet statistics for received packets.
@@ -209,14 +242,6 @@ class PacketHandler(
         return self._packet_stats_tx
 
     @property
-    def ip6_unicast(self) -> list[Ip6Address]:
-        """
-        Get the list of stack's IPv6 unicast addresses.
-        """
-
-        return [ip6_host.address for ip6_host in self._ip6_host]
-
-    @property
     def ip6_host(self) -> list[Ip6Host]:
         """
         Get the list of stack's IPv4 host addresses.
@@ -225,25 +250,12 @@ class PacketHandler(
         return self._ip6_host
 
     @property
-    def ip4_unicast(self) -> list[Ip4Address]:
+    def ip6_unicast(self) -> list[Ip6Address]:
         """
-        Get the list of stack's IPv4 unicast addresses.
-        """
-
-        return [ip4_host.address for ip4_host in self._ip4_host]
-
-    @property
-    def ip4_broadcast(self) -> list[Ip4Address]:
-        """
-        Get the list of stack's IPv4 broadcast addresses.
+        Get the list of stack's IPv6 unicast addresses.
         """
 
-        ip4_broadcast = [
-            ip4_host.network.broadcast for ip4_host in self._ip4_host
-        ]
-        ip4_broadcast.append(Ip4Address(0xFFFFFFFF))
-
-        return ip4_broadcast
+        return self._ip6_unicast
 
     @property
     def ip4_host(self) -> list[Ip4Host]:
@@ -252,6 +264,14 @@ class PacketHandler(
         """
 
         return self._ip4_host
+
+    @property
+    def ip4_unicast(self) -> list[Ip4Address]:
+        """
+        Get the list of stack's IPv4 unicast addresses.
+        """
+
+        return self._ip4_unicast
 
     @override
     def _start(self) -> None:
@@ -592,7 +612,7 @@ class PacketHandler(
                 log(
                     "stack",
                     "<INFO>Stack listening on unicast IPv4 addresses: "
-                    f"{', '.join([str(ip4_unicast) for ip4_unicast in self.ip4_unicast])}</>",
+                    f"{', '.join([str(ip4_unicast) for ip4_unicast in self._ip4_unicast])}</>",
                 )
                 log(
                     "stack",
@@ -602,5 +622,5 @@ class PacketHandler(
                 log(
                     "stack",
                     "<INFO>Stack listening on broadcast IPv4 addresses: "
-                    f"{', '.join([str(ip4_broadcast) for ip4_broadcast in self.ip4_broadcast])}</>",
+                    f"{', '.join([str(ip4_broadcast) for ip4_broadcast in self._ip4_broadcast])}</>",
                 )

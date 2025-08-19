@@ -81,10 +81,10 @@ class PacketHandlerIp4Tx(ABC):
         # pylint: disable=missing-function-docstring
 
         @property
-        def ip4_unicast(self) -> list[Ip4Address]: ...
+        def _ip4_unicast(self) -> list[Ip4Address]: ...
 
         @property
-        def ip4_broadcast(self) -> list[Ip4Address]: ...
+        def _ip4_broadcast(self) -> list[Ip4Address]: ...
 
     def _phtx_ip4(
         self,
@@ -222,9 +222,9 @@ class PacketHandlerIp4Tx(ABC):
         # Check if the the source IP address belongs to this stack or is set to all
         # zeros (for DHCP client communication).
         if ip4__src not in {
-            *self.ip4_unicast,
+            *self._ip4_unicast,
             *self._ip4_multicast,
-            *self.ip4_broadcast,
+            *self._ip4_broadcast,
             Ip4Address(),
         }:
             self._packet_stats_tx.inc("ip4__src_not_owned__drop")
@@ -238,9 +238,9 @@ class PacketHandlerIp4Tx(ABC):
         # If packet is a response to multicast then replace source address with
         # primary address of the stack.
         if ip4__src in self._ip4_multicast:
-            if self.ip4_unicast:
+            if self._ip4_unicast:
                 self._packet_stats_tx.inc("ip4__src_multicast__replace")
-                ip4__src = self.ip4_unicast[0]
+                ip4__src = self._ip4_unicast[0]
                 __debug__ and log(
                     "ip4",
                     f"{tracker} - Packet is response to multicast, replaced "
@@ -258,9 +258,9 @@ class PacketHandlerIp4Tx(ABC):
         # If packet is a response to limited broadcast then replace source address
         # with primary address of the stack.
         if ip4__src.is_limited_broadcast:
-            if self.ip4_unicast:
+            if self._ip4_unicast:
                 self._packet_stats_tx.inc("ip4__src_limited_broadcast__replace")
-                ip4__src = self.ip4_unicast[0]
+                ip4__src = self._ip4_unicast[0]
                 __debug__ and log(
                     "ip4",
                     f"{tracker} - Packet is response to limited broadcast, "
@@ -278,7 +278,7 @@ class PacketHandlerIp4Tx(ABC):
 
         # If packet is a response to network broadcast then replace source address
         # with first stack address that belongs to appropriate subnet.
-        if ip4__src in self.ip4_broadcast:
+        if ip4__src in self._ip4_broadcast:
             ip4_src_list = [
                 ip4_host.address
                 for ip4_host in self._ip4_host

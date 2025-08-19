@@ -75,10 +75,10 @@ class PacketHandlerIp4Rx(ABC):
         # pylint: disable=missing-function-docstring
 
         @property
-        def ip4_unicast(self) -> list[Ip4Address]: ...
+        def _ip4_unicast(self) -> list[Ip4Address]: ...
 
         @property
-        def ip4_broadcast(self) -> list[Ip4Address]: ...
+        def _ip4_broadcast(self) -> list[Ip4Address]: ...
 
     def _phrx_ip4(self, packet_rx: PacketRx, /) -> None:
         """
@@ -103,10 +103,10 @@ class PacketHandlerIp4Rx(ABC):
         # Check if received packet has been sent to us directly or by
         # unicast/broadcast, allow any destination if no unicast address
         # is configured (for DHCP client).
-        if self.ip4_unicast and packet_rx.ip4.dst not in {
-            *self.ip4_unicast,
+        if self._ip4_unicast and packet_rx.ip4.dst not in {
+            *self._ip4_unicast,
             *self._ip4_multicast,
-            *self.ip4_broadcast,
+            *self._ip4_broadcast,
         }:
             self._packet_stats_rx.inc("ip4__dst_unknown__drop")
             __debug__ and log(
@@ -116,13 +116,13 @@ class PacketHandlerIp4Rx(ABC):
             )
             return
 
-        if packet_rx.ip4.dst in self.ip4_unicast:
+        if packet_rx.ip4.dst in self._ip4_unicast:
             self._packet_stats_rx.inc("ip4__dst_unicast")
 
         if packet_rx.ip4.dst in self._ip4_multicast:
             self._packet_stats_rx.inc("ip4__dst_multicast")
 
-        if packet_rx.ip4.dst in self.ip4_broadcast:
+        if packet_rx.ip4.dst in self._ip4_broadcast:
             self._packet_stats_rx.inc("ip4__dst_broadcast")
 
         # Check if packet is a fragment and if so process it accordingly.

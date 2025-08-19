@@ -87,7 +87,7 @@ class PacketHandlerIp6Tx(ABC):
         # pylint: disable=missing-function-docstring
 
         @property
-        def ip6_unicast(self) -> list[Ip6Address]: ...
+        def _ip6_unicast(self) -> list[Ip6Address]: ...
 
     def _phtx_ip6(
         self,
@@ -177,7 +177,7 @@ class PacketHandlerIp6Tx(ABC):
         # Check if the the source IP address belongs to this stack
         # or its unspecified.
         if ip6__src not in {
-            *self.ip6_unicast,
+            *self._ip6_unicast,
             *self._ip6_multicast,
             Ip6Address(),
         }:
@@ -192,9 +192,9 @@ class PacketHandlerIp6Tx(ABC):
         # If packet is a response to multicast then replace source address with link
         # local address of the stack.
         if ip6__src in self._ip6_multicast:
-            if self.ip6_unicast:
+            if self._ip6_unicast:
                 self._packet_stats_tx.inc("ip6__src_multicast__replace")
-                ip6__src = self.ip6_unicast[0]
+                ip6__src = self._ip6_unicast[0]
                 __debug__ and log(
                     "ip6",
                     f"{tracker} - Packet is response to multicast, replaced "

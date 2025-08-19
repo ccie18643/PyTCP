@@ -72,7 +72,7 @@ class PacketHandlerArpTx(ABC):
         # pylint: disable=missing-function-docstring
 
         @property
-        def ip4_unicast(self) -> list[Ip4Address]: ...
+        def _ip4_unicast(self) -> list[Ip4Address]: ...
 
     def _phtx_arp(
         self,
@@ -215,7 +215,7 @@ class PacketHandlerArpTx(ABC):
             arp__oper=ArpOperation.REQUEST,
             arp__sha=self._mac_unicast,
             arp__spa=(
-                self.ip4_unicast[0] if self.ip4_unicast else Ip4Address()
+                self._ip4_unicast[0] if self._ip4_unicast else Ip4Address()
             ),
             arp__tha=MacAddress(),
             arp__tpa=arp__tpa,

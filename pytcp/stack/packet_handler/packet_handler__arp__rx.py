@@ -79,7 +79,7 @@ class PacketHandlerArpRx(ABC):
         # pylint: disable=missing-function-docstring
 
         @property
-        def ip4_unicast(self) -> list[Ip4Address]: ...
+        def _ip4_unicast(self) -> list[Ip4Address]: ...
 
     def _phrx_arp(self, packet_rx: PacketRx, /) -> None:
         """
@@ -122,7 +122,7 @@ class PacketHandlerArpRx(ABC):
         self._packet_stats_rx.inc("arp__op_request")
         # Check if request contains our IP address in SPA field,
         # this indicates IP address conflict.
-        if packet_rx.arp.spa in self.ip4_unicast:
+        if packet_rx.arp.spa in self._ip4_unicast:
             self._packet_stats_rx.inc("arp__op_request__ip_conflict")
             __debug__ and log(
                 "arp",
@@ -133,7 +133,7 @@ class PacketHandlerArpRx(ABC):
 
         # Check if the request is for one of our IP addresses,
         # if so the craft ARP reply packet and send it out.
-        if packet_rx.arp.tpa in self.ip4_unicast:
+        if packet_rx.arp.tpa in self._ip4_unicast:
             self._packet_stats_rx.inc("arp__op_request__tpa_stack__respond")
             self._phtx_arp(
                 ethernet__src=self._mac_unicast,
@@ -162,10 +162,8 @@ class PacketHandlerArpRx(ABC):
                 )
             return
 
-        else:
-            # Drop packet if TPA does not match one of our IP addresses.
-            self._packet_stats_rx.inc("arp__op_request__tpa_unknown__drop")
-            return
+        # Drop packet if TPA does not match one of the stack's IP addresses.
+        self._packet_stats_rx.inc("arp__op_request__tpa_unknown__drop")
 
     def __phrx_arp__reply(self, packet_rx: PacketRx) -> None:
         """
