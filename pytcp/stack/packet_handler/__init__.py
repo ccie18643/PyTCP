@@ -106,7 +106,7 @@ class PacketHandlerL2(
     PacketHandlerUdpTx,
 ):
     """
-    Pick up and respond to incoming packets.
+    Pick up and respond to incoming packets on Layer 2 (TAP) interface.
     """
 
     _subsystem_name = "Packet Handler"
@@ -182,14 +182,14 @@ class PacketHandlerL2(
         # multicast list. Its the simplest solution and imho perfectly valid
         # one in this case.
         self._mac_unicast = mac_address
-        self._mac_multicast: list[MacAddress] = []
-        self._mac_broadcast: MacAddress = MacAddress(0xFFFFFFFFFFFF)
-        self._ip6_host_candidate: list[Ip6Host] = []
-        self._ip6_host: list[Ip6Host] = []
-        self._ip6_multicast: list[Ip6Address] = []
-        self._ip4_host_candidate: list[Ip4Host] = []
-        self._ip4_host: list[Ip4Host] = []
-        self._ip4_multicast: list[Ip4Address] = []
+        self._mac_multicast = []
+        self._mac_broadcast = MacAddress(0xFFFFFFFFFFFF)
+        self._ip6_host_candidate = []
+        self._ip6_host = []
+        self._ip6_multicast = []
+        self._ip4_host_candidate = []
+        self._ip4_host = []
+        self._ip4_multicast = []
 
         # Used for the ARP DAD process.
         self._arp_probe_unicast_conflict: set[Ip4Address] = set()
@@ -659,4 +659,191 @@ class PacketHandlerL2(
                     "stack",
                     "<INFO>Stack listening on broadcast IPv4 addresses: "
                     f"{', '.join([str(ip4_broadcast) for ip4_broadcast in self._ip4_broadcast])}</>",
+                )
+
+
+class PacketHandlerL3(
+    Subsystem,
+    PacketHandlerIcmp6Rx,
+    PacketHandlerIcmp6Tx,
+    PacketHandlerIcmp4Rx,
+    PacketHandlerIcmp4Tx,
+    PacketHandlerIp4Rx,
+    PacketHandlerIp4Tx,
+    PacketHandlerIp6Rx,
+    PacketHandlerIp6Tx,
+    PacketHandlerIp6FragRx,
+    PacketHandlerIp6FragTx,
+    PacketHandlerTcpRx,
+    PacketHandlerTcpTx,
+    PacketHandlerUdpRx,
+    PacketHandlerUdpTx,
+):
+    """
+    Pick up and respond to incoming packets on Layer 3 (TUN) interface.
+    """
+
+    _subsystem_name = "Packet Handler"
+
+    _event__stop_subsystem: threading.Event
+
+    _ip4_support: bool
+    _ip6_support: bool
+    _interface_mtu: int
+    _packet_stats_rx: PacketStatsRx
+    _packet_stats_tx: PacketStatsTx
+    _ip6_host: list[Ip6Host]
+    _ip4_host: list[Ip4Host]
+    _ip4_id: int
+    _ip6_id: int
+    _ip4_frag_flows: dict[IpFragFlowId, IpFragData]
+    _ip6_frag_flows: dict[IpFragFlowId, IpFragData]
+
+    def __init__(
+        self,
+        *,
+        interface_mtu: int,
+        ip4_support: bool = True,
+        ip4_host: Ip4Host | None = None,
+        ip6_support: bool = True,
+        ip6_host: Ip6Host | None = None,
+    ) -> None:
+        """
+        Class constructor.
+        """
+
+        # Initialize IPv6 addressing.
+        self._ip6_support = ip6_support
+        if ip6_support:
+            assert ip6_host is not None
+            self._ip6_host = [ip6_host]
+
+        # Initialize IPv4 addressing.
+        self._ip4_support = ip4_support
+        if ip4_support:
+            assert ip4_host is not None
+            self._ip4_host = [ip4_host]
+
+        # Initialize interface MTU.
+        self._interface_mtu = interface_mtu
+
+        super().__init__()
+
+        # Initialize data stores for packet statistics used in unit testing.
+        self._packet_stats_rx = PacketStatsRx()
+        self._packet_stats_tx = PacketStatsTx()
+
+        # Used to keep IPv4 and IPv6 packet ID last value.
+        self._ip4_id: int = 0
+        self._ip6_id: int = 0
+
+        # Used to defragment IPv4 and IPv6 packets.
+        self._ip4_frag_flows: dict[IpFragFlowId, IpFragData] = {}
+        self._ip6_frag_flows: dict[IpFragFlowId, IpFragData] = {}
+
+    @property
+    def _ip6_unicast(self) -> list[Ip6Address]:
+        """
+        Get the list of stack's IPv6 unicast addresses.
+        """
+
+        return [ip6_host.address for ip6_host in self._ip6_host]
+
+    @property
+    def _ip4_unicast(self) -> list[Ip4Address]:
+        """
+        Get the list of stack's IPv4 unicast addresses.
+        """
+
+        return [ip4_host.address for ip4_host in self._ip4_host]
+
+    ###
+    # Public interface.
+    ###
+
+    @property
+    def packet_stats_rx(self) -> PacketStatsRx:
+        """
+        Get the packet statistics for received packets.
+        """
+
+        return self._packet_stats_rx
+
+    @property
+    def packet_stats_tx(self) -> PacketStatsTx:
+        """
+        Get the packet statistics for transmitted packets.
+        """
+
+        return self._packet_stats_tx
+
+    @property
+    def ip6_host(self) -> list[Ip6Host]:
+        """
+        Get the list of stack's IPv4 host addresses.
+        """
+
+        return self._ip6_host
+
+    @property
+    def ip6_unicast(self) -> list[Ip6Address]:
+        """
+        Get the list of stack's IPv6 unicast addresses.
+        """
+
+        return self._ip6_unicast
+
+    @property
+    def ip4_host(self) -> list[Ip4Host]:
+        """
+        Get the list of stack's IPv4 host addresses.
+        """
+
+        return self._ip4_host
+
+    @property
+    def ip4_unicast(self) -> list[Ip4Address]:
+        """
+        Get the list of stack's IPv4 unicast addresses.
+        """
+
+        return self._ip4_unicast
+
+    @override
+    def _start(self) -> None:
+        """
+        Perform additional actions after starting the subsystem thread.
+        """
+
+        self._log_stack_address_info()
+
+    @override
+    def _subsystem_loop(self) -> None:
+        """
+        Pick up incoming packets from RX Ring and processes them.
+        """
+
+        from pytcp.stack import rx_ring
+
+        if (packet_rx := rx_ring.dequeue()) is not None:
+            print("Received packet, len:", len(packet_rx.frame) - 4)
+
+    def _log_stack_address_info(self) -> None:
+        """
+        Log all the addresses stack will listen on
+        """
+
+        if __debug__:
+            if self._ip6_support:
+                log(
+                    "stack",
+                    "<INFO>Stack listening on unicast IPv6 addresses: "
+                    f"{', '.join([str(ip6_unicast) for ip6_unicast in self.ip6_unicast])}</>",
+                )
+
+            if self._ip4_support:
+                log(
+                    "stack",
+                    "<INFO>Stack listening on unicast IPv4 addresses: "
+                    f"{', '.join([str(ip4_unicast) for ip4_unicast in self._ip4_unicast])}</>",
                 )

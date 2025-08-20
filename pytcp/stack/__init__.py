@@ -47,7 +47,7 @@ from pytcp.lib.logger import log
 from pytcp.socket.socket_id import SocketId
 from pytcp.stack.arp_cache import ArpCache
 from pytcp.stack.nd_cache import NdCache
-from pytcp.stack.packet_handler import PacketHandlerL2
+from pytcp.stack.packet_handler import PacketHandlerL2, PacketHandlerL3
 from pytcp.stack.rx_ring import RxRing
 from pytcp.stack.timer import Timer
 from pytcp.stack.tx_ring import TxRing
@@ -62,6 +62,12 @@ assert sys.version_info >= (
     12,
 ), "PyTCP stack requires Python version 3.12 or higher to run."
 
+
+# Constants for TUN/TAP interface.
+TUNSETIFF = 0x400454CA
+IFF_TUN = 0x0001
+IFF_TAP = 0x0002
+IFF_NO_PI = 0x1000
 
 # PyTCP code metadata.
 PYTCP_VERSION = "ver 3.0.3"
@@ -162,33 +168,15 @@ def initialize_interface__tap(
     *, interface_name: str, mac_address: MacAddress | None = None
 ) -> dict[str, Any]:
     """
-    Initialize the TAP/TUN interface.
+    Initialize the TAP interface.
     """
 
-    log("stack", f"Initializing interface: {interface_name}")
+    log("stack", f"Initializing TAP interface: {interface_name}")
 
     if mac_address is None:
         mac_address = MacAddress(MAC_ADDRESS.format(x=interface_name[3:5]))
 
     log("stack", f"Assigning MAC address: {mac_address}")
-
-    TUNSETIFF = 0x400454CA
-    IFF_TUN = 0x0001
-    IFF_TAP = 0x0002
-    IFF_NO_PI = 0x1000
-
-    match interface_name[0:3].lower():
-        case "tap":
-            interface_type = IFF_TAP
-            mtu = INTERFACE__TAP__MTU
-        case "tun":
-            interface_type = IFF_TUN
-            mtu = INTERFACE__TUN__MTU
-        case _:
-            raise ValueError(
-                "Interface name must start with 'tap' or 'tun'"
-                f"Got: {interface_name!r}"
-            )
 
     try:
         fd = os.open("/dev/net/tun", os.O_RDWR)
@@ -200,16 +188,41 @@ def initialize_interface__tap(
     fcntl.ioctl(
         fd,
         TUNSETIFF,
-        struct.pack(
-            "16sH", interface_name.encode(), interface_type | IFF_NO_PI
-        ),
+        struct.pack("16sH", interface_name.encode(), IFF_TAP | IFF_NO_PI),
     )
 
     return {
         "fd": fd,
         "layer": InterfaceLayer.L2,
-        "mtu": mtu,
+        "mtu": INTERFACE__TAP__MTU,
         "mac_address": mac_address,
+    }
+
+
+def initialize_interface__tun(*, interface_name: str) -> dict[str, Any]:
+    """
+    Initialize the TUN interface.
+    """
+
+    log("stack", f"Initializing TUN interface: {interface_name}")
+
+    try:
+        fd = os.open("/dev/net/tun", os.O_RDWR)
+
+    except FileNotFoundError:
+        log("stack", "<CRIT>Unable to access '/dev/net/tun' device</>")
+        sys.exit(-1)
+
+    fcntl.ioctl(
+        fd,
+        TUNSETIFF,
+        struct.pack("16sH", interface_name.encode(), IFF_TUN),
+    )
+
+    return {
+        "fd": fd,
+        "layer": InterfaceLayer.L3,
+        "mtu": INTERFACE__TUN__MTU,
     }
 
 
@@ -252,7 +265,7 @@ def init(
     fd: int,
     layer: InterfaceLayer,
     mtu: int = 1500,
-    mac_address: MacAddress,
+    mac_address: MacAddress | None = None,
     ip4_support: bool = True,
     ip4_host: Ip4Host | None = (
         None
@@ -290,6 +303,9 @@ def init(
 
     match layer:
         case InterfaceLayer.L2:
+            assert (
+                mac_address is not None
+            ), "MAC address must be provided for Layer 2 (TAP) interface."
             packet_handler = PacketHandlerL2(
                 mac_address=mac_address,
                 interface_mtu=mtu,
@@ -302,8 +318,15 @@ def init(
                 ip6_lla_autoconfig=ip6_lla_autoconfig,
             )
         case InterfaceLayer.L3:
-            raise NotImplementedError(
-                "Layer 3 (TUN) interface support is not implemented yet."
+            assert (
+                mac_address is None
+            ), "MAC address must NOT be provided for Layer 3 (TUN) interface."
+            packet_handler = PacketHandlerL3(
+                interface_mtu=mtu,
+                ip4_support=ip4_support,
+                ip4_host=ip4_host,
+                ip6_support=ip6_support,
+                ip6_host=ip6_host,
             )
 
     interface_mtu = mtu

@@ -111,7 +111,9 @@ from pytcp import stack
     default=None,
     help="IPv4 gateway address to be assigned to the stack interface.",
 )
+@click.pass_context
 def cli(
+    ctx: click.Context,
     *,
     stack__interface: str,
     stack__mac_address: MacAddress | None,
@@ -128,6 +130,35 @@ def cli(
     run the provided subsystems if any.
     """
 
+    match stack__interface[:3]:
+        case "tap":
+            interface_args = stack.initialize_interface__tap(
+                interface_name=stack__interface, mac_address=stack__mac_address
+            )
+        case "tun":
+            if stack__ip4_support and not stack__ip4_host:
+                click.secho(
+                    "IPv4 host address must be provided for TUN interface when IPv4 support is enabled.",
+                    fg="red",
+                )
+                ctx.exit(1)
+            if stack__ip6_support and not stack__ip6_host:
+                click.secho(
+                    "IPv6 host address must be provided for TUN interface when IPv6 support is enabled.",
+                    fg="red",
+                )
+                ctx.exit(1)
+            interface_args = stack.initialize_interface__tun(
+                interface_name=stack__interface,
+            )
+        case _:
+            click.secho(
+                f"Invalid interface type '{stack__interface[:3]}'. "
+                "Only 'tap' and 'tun' interfaces are supported.",
+                fg="red",
+            )
+            ctx.exit(1)
+
     if subsystems is None:
         subsystems = []
 
@@ -138,9 +169,7 @@ def cli(
         stack__ip4_host.gateway = stack__ip4_gateway
 
     stack.init(
-        **stack.initialize_interface__tap(
-            interface_name=stack__interface, mac_address=stack__mac_address
-        ),
+        **interface_args,
         ip6_support=stack__ip6_support,
         ip6_host=stack__ip6_host,
         ip4_support=stack__ip4_support,
