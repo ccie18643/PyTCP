@@ -158,7 +158,7 @@ class InterfaceLayer(Enum):
     L3 = auto()  # Layer 3 (TUN)
 
 
-def initialize_interface(
+def initialize_interface__tap(
     *, interface_name: str, mac_address: MacAddress | None = None
 ) -> dict[str, Any]:
     """

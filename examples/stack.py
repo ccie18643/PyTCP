@@ -138,7 +138,7 @@ def cli(
         stack__ip4_host.gateway = stack__ip4_gateway
 
     stack.init(
-        **stack.initialize_interface(
+        **stack.initialize_interface__tap(
             interface_name=stack__interface, mac_address=stack__mac_address
         ),
         ip6_support=stack__ip6_support,
