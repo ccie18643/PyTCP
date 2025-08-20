@@ -42,7 +42,7 @@ from pytcp.lib.packet_rx import PacketRx
 from pytcp.lib.packet_stats import PacketStatsRx, PacketStatsTx
 from pytcp.stack.arp_cache import ArpCache
 from pytcp.stack.nd_cache import NdCache
-from pytcp.stack.packet_handler import PacketHandler
+from pytcp.stack.packet_handler import PacketHandlerL2
 from pytcp.stack.tx_ring import TxRing
 from pytcp import stack
 
@@ -137,7 +137,7 @@ class TestPacketHandlerRxTx(TestCase):
 
         # Initialize packet handler and manually set all the variables
         # that normally would require network connectivity.
-        self.packet_handler = PacketHandler(
+        self.packet_handler = PacketHandlerL2(
             mac_address=STACK_MAC_ADDRESS,
             interface_mtu=1500,
         )

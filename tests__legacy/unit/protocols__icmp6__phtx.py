@@ -60,7 +60,6 @@ from pytcp.protocols.icmp6.message.nd.option.icmp6_nd_options import (
     Icmp6NdOptions,
     Icmp6NdOptionSlla,
 )
-from pytcp.stack.packet_handler import PacketHandler
 
 TEST_FRAME_DIR = "tests__legacy/unit/test_frames/icmp6_phtx/"
 
@@ -79,7 +78,6 @@ class TestIcmp6Phtx(TestCase):
         patch_config(self)
         setup_mock_packet_handler(self)
         self.frame_tx: bytearray
-        self.packet_handler: PacketHandler
 
     # Test name format: 'test_name__test_description__optional_condition'
 

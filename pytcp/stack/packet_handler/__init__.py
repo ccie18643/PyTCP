@@ -82,7 +82,7 @@ if TYPE_CHECKING:
     from threading import Semaphore
 
 
-class PacketHandler(
+class PacketHandlerL2(
     Subsystem,
     PacketHandlerArpRx,
     PacketHandlerArpTx,

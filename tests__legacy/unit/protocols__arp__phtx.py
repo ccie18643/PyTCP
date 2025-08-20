@@ -42,7 +42,6 @@ from testslide import TestCase
 from pytcp.lib.packet_stats import PacketStatsTx
 from pytcp.lib.tx_status import TxStatus
 from pytcp.protocols.arp.arp__header import ArpOperation
-from pytcp.stack.packet_handler import PacketHandler
 
 
 class TestArpPhtx(TestCase):
@@ -51,7 +50,6 @@ class TestArpPhtx(TestCase):
     """
 
     frame_tx: bytearray
-    packet_handler: PacketHandler
 
     def setUp(self) -> None:
         """
@@ -71,9 +69,9 @@ class TestArpPhtx(TestCase):
         """
 
         expected_frame_tx = (
-            b"\xFF\xFF\xFF\xFF\xFF\xFF\x02\x00\x00\x00\x00\x07\x08\x06\x00\x01"
-            b"\x08\x00\x06\x04\x00\x01\x02\x00\x00\x00\x00\x07\x0A\x00\x01\x07"
-            b"\x00\x00\x00\x00\x00\x00\x0A\x00\x01\x5B"
+            b"\xff\xff\xff\xff\xff\xff\x02\x00\x00\x00\x00\x07\x08\x06\x00\x01"
+            b"\x08\x00\x06\x04\x00\x01\x02\x00\x00\x00\x00\x07\x0a\x00\x01\x07"
+            b"\x00\x00\x00\x00\x00\x00\x0a\x00\x01\x5b"
         )
 
         tx_status = self.packet_handler._phtx_arp(
@@ -108,8 +106,8 @@ class TestArpPhtx(TestCase):
 
         expected_frame_tx = (
             b"\x02\x00\x00\x00\x00\x91\x02\x00\x00\x00\x00\x07\x08\x06\x00\x01"
-            b"\x08\x00\x06\x04\x00\x02\x02\x00\x00\x00\x00\x07\x0A\x00\x01\x07"
-            b"\x02\x00\x00\x00\x00\x91\x0A\x00\x01\x5B"
+            b"\x08\x00\x06\x04\x00\x02\x02\x00\x00\x00\x00\x07\x0a\x00\x01\x07"
+            b"\x02\x00\x00\x00\x00\x91\x0a\x00\x01\x5b"
         )
 
         tx_status = self.packet_handler._phtx_arp(

@@ -39,7 +39,7 @@ from pytcp import stack
 from net_addr import Ip4Address, Ip4Host, Ip6Address, Ip6Host, MacAddress
 from pytcp.stack.arp_cache import ArpCache
 from pytcp.stack.nd_cache import NdCache
-from pytcp.stack.packet_handler import PacketHandler
+from pytcp.stack.packet_handler import PacketHandlerL2
 from pytcp.stack.tx_ring import TxRing
 
 # # #  IPv4
@@ -226,7 +226,7 @@ def setup_mock_packet_handler(self: TestCase) -> None:
     # )
 
     # Prepare PacketHandler object to be used with the tests
-    self.packet_handler = PacketHandler(
+    self.packet_handler = PacketHandlerL2(
         mac_address=self.mns.stack_mac_address,
         interface_mtu=1500,
     )

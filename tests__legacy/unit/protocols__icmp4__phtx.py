@@ -51,7 +51,6 @@ from pytcp.protocols.icmp4.message.icmp4_message__echo_reply import (
 from pytcp.protocols.icmp4.message.icmp4_message__echo_request import (
     Icmp4EchoRequestMessage,
 )
-from pytcp.stack.packet_handler import PacketHandler
 
 TEST_FRAME_DIR = "tests__legacy/unit/test_frames/icmp4_phtx/"
 
@@ -70,7 +69,6 @@ class TestIcmp4Phtx(TestCase):
         patch_config(self)
         setup_mock_packet_handler(self)
         self.frame_tx: bytearray
-        self.packet_handler: PacketHandler
 
     # Test name format: 'test_name__test_description__optional_condition'
 

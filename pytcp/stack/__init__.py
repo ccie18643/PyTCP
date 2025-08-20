@@ -39,6 +39,7 @@ import fcntl
 import os
 import struct
 import sys
+from enum import Enum, auto
 from typing import TYPE_CHECKING, Any
 
 from net_addr import Ip4Host, Ip6Host, MacAddress
@@ -46,7 +47,7 @@ from pytcp.lib.logger import log
 from pytcp.socket.socket_id import SocketId
 from pytcp.stack.arp_cache import ArpCache
 from pytcp.stack.nd_cache import NdCache
-from pytcp.stack.packet_handler import PacketHandler
+from pytcp.stack.packet_handler import PacketHandlerL2
 from pytcp.stack.rx_ring import RxRing
 from pytcp.stack.timer import Timer
 from pytcp.stack.tx_ring import TxRing
@@ -139,13 +140,22 @@ rx_ring: RxRing
 tx_ring: TxRing
 arp_cache: ArpCache
 nd_cache: NdCache
-packet_handler: PacketHandler
+packet_handler: PacketHandlerL2
 
 # Stack shared data.
 stack_initialized: bool = False
 interface_mtu: int
 sockets: dict[SocketId, Socket] = {}
 arp_probe_unicast_conflict: set[Ip4Address] = set()
+
+
+class InterfaceLayer(Enum):
+    """
+    Enum representing the interface layer type.
+    """
+
+    L2 = auto()  # Layer 2 (TAP)
+    L3 = auto()  # Layer 3 (TUN)
 
 
 def initialize_interface(
@@ -195,7 +205,12 @@ def initialize_interface(
         ),
     )
 
-    return {"fd": fd, "mtu": mtu, "mac_address": mac_address}
+    return {
+        "fd": fd,
+        "layer": InterfaceLayer.L2,
+        "mtu": mtu,
+        "mac_address": mac_address,
+    }
 
 
 def mock__init(
@@ -205,7 +220,7 @@ def mock__init(
     mock__rx_ring: RxRing | None = None,
     mock__arp_cache: ArpCache | None = None,
     mock__nd_cache: NdCache | None = None,
-    mock__packet_handler: PacketHandler | None = None,
+    mock__packet_handler: PacketHandlerL2 | None = None,
 ) -> None:
     """
     Initialize stack components for unit testing.
@@ -235,6 +250,7 @@ def mock__init(
 def init(
     *,
     fd: int,
+    layer: InterfaceLayer,
     mtu: int = 1500,
     mac_address: MacAddress,
     ip4_support: bool = True,
@@ -271,17 +287,24 @@ def init(
     )
     arp_cache = ArpCache()
     nd_cache = NdCache()
-    packet_handler = PacketHandler(
-        mac_address=mac_address,
-        interface_mtu=mtu,
-        ip4_support=ip4_support,
-        ip4_host=ip4_host,
-        ip4_dhcp=ip4_dhcp,
-        ip6_support=ip6_support,
-        ip6_host=ip6_host,
-        ip6_gua_autoconfig=ip6_gua_autoconfig,
-        ip6_lla_autoconfig=ip6_lla_autoconfig,
-    )
+
+    match layer:
+        case InterfaceLayer.L2:
+            packet_handler = PacketHandlerL2(
+                mac_address=mac_address,
+                interface_mtu=mtu,
+                ip4_support=ip4_support,
+                ip4_host=ip4_host,
+                ip4_dhcp=ip4_dhcp,
+                ip6_support=ip6_support,
+                ip6_host=ip6_host,
+                ip6_gua_autoconfig=ip6_gua_autoconfig,
+                ip6_lla_autoconfig=ip6_lla_autoconfig,
+            )
+        case InterfaceLayer.L3:
+            raise NotImplementedError(
+                "Layer 3 (TUN) interface support is not implemented yet."
+            )
 
     interface_mtu = mtu
     stack_initialized = True
