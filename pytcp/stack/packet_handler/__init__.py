@@ -99,13 +99,28 @@ class PacketHandler(Subsystem, ABC):
     _ip6_id: int
     _ip4_frag_flows: dict[IpFragFlowId, IpFragData]
     _ip6_frag_flows: dict[IpFragFlowId, IpFragData]
+    _ip4_support: bool
+    _ip6_support: bool
 
-    def __init__(self) -> None:
+    def __init__(
+        self,
+        *,
+        interface_mtu: int,
+        ip6_support: bool,
+        ip4_support: bool,
+    ) -> None:
         """
         Class constructor.
         """
 
         super().__init__()
+
+        # Initialize the interface mtu.
+        self._interface_mtu = interface_mtu
+
+        # Initialize support for IPv6 and IPv4 protocols.
+        self._ip6_support = ip6_support
+        self._ip4_support = ip4_support
 
         # Initialize data stores for packet statistics used in unit testing.
         self._packet_stats_rx = PacketStatsRx()
@@ -151,10 +166,12 @@ class PacketHandlerL2(
     _packet_stats_tx: PacketStatsTx
     _ip4_id: int
     _ip6_id: int
-
+    _ip4_frag_flows: dict[IpFragFlowId, IpFragData]
+    _ip6_frag_flows: dict[IpFragFlowId, IpFragData]
     _ip4_support: bool
     _ip6_support: bool
     _interface_mtu: int
+
     _ip4_dhcp: bool
     _ip6_lla_autoconfig: bool
     _ip6_gua_autoconfig: bool
@@ -192,16 +209,15 @@ class PacketHandlerL2(
         Class constructor.
         """
 
-        self._ip4_support = ip4_support
-        self._ip6_support = ip6_support
-
-        self._interface_mtu = interface_mtu
+        super().__init__(
+            interface_mtu=interface_mtu,
+            ip6_support=ip6_support,
+            ip4_support=ip4_support,
+        )
 
         self._ip4_dhcp = ip4_dhcp
         self._ip6_lla_autoconfig = ip6_lla_autoconfig
         self._ip6_gua_autoconfig = ip6_gua_autoconfig
-
-        super().__init__()
 
         # MAC and IPv6 Multicast lists hold duplicate entries by design. This
         # is to accommodate IPv6 Solicited Node Multicast mechanism where
@@ -708,15 +724,15 @@ class PacketHandlerL3(
     _packet_stats_tx: PacketStatsTx
     _ip4_id: int
     _ip6_id: int
-
+    _ip4_frag_flows: dict[IpFragFlowId, IpFragData]
+    _ip6_frag_flows: dict[IpFragFlowId, IpFragData]
     _ip4_support: bool
     _ip6_support: bool
     _interface_mtu: int
+
     _ip6_host: list[Ip6Host]
     _ip4_host: list[Ip4Host]
     _ip4_multicast: list[Ip4Address]
-    _ip4_frag_flows: dict[IpFragFlowId, IpFragData]
-    _ip6_frag_flows: dict[IpFragFlowId, IpFragData]
 
     def __init__(
         self,
@@ -731,23 +747,22 @@ class PacketHandlerL3(
         Class constructor.
         """
 
+        super().__init__(
+            interface_mtu=interface_mtu,
+            ip6_support=ip6_support,
+            ip4_support=ip4_support,
+        )
+
         # Initialize IPv6 addressing.
-        self._ip6_support = ip6_support
-        if ip6_support:
+        if self._ip6_support:
             assert ip6_host is not None
             self._ip6_host = [ip6_host]
 
         # Initialize IPv4 addressing.
-        self._ip4_support = ip4_support
-        if ip4_support:
+        if self._ip4_support:
             assert ip4_host is not None
             self._ip4_host = [ip4_host]
             self._ip4_multicast = []
-
-        # Initialize interface MTU.
-        self._interface_mtu = interface_mtu
-
-        super().__init__()
 
     @property
     def _ip6_unicast(self) -> list[Ip6Address]:
