@@ -97,15 +97,15 @@ pypi: dist
 
 tun3:
 	@ip tuntap add name tun3 mode tun
-	@ip addr add 10.0.1.1/32 peer 10.0.1.2 dev tun3
+	@ip addr add 172.16.1.1/24 dev tun3
 	@ip link set dev tun3 up
-	@echo 'Interface tun3 created and assigned 10.0.1.1 <-> 10.0.1.2 addresses.'
+	@echo 'Interface tun3 created and assigned 172.16.1.1/24 addresses.'
 
 tun5:
 	@ip tuntap add name tun5 mode tun
-	@ip addr add 10.0.2.1/32 peer 10.0.2.2 dev tun5
+	@ip addr add 172.16.2.1/24 dev tun5
 	@ip link set dev tun5 up
-	@echo 'Interface tun5 created and assigned 10.0.2.1 <-> 10.0.2.2 addresses.'
+	@echo 'Interface tun5 created and assigned 172.16.2.1/24 addresses.'
 
 tap7:
 	@ip tuntap add name tap7 mode tap

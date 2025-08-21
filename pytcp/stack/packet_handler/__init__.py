@@ -36,6 +36,8 @@ ver 3.0.3
 from __future__ import annotations
 
 import random
+from socket import socket
+import struct
 import threading
 import time
 from typing import TYPE_CHECKING, override
@@ -53,6 +55,7 @@ from pytcp.lib.logger import log
 from pytcp.lib.packet_stats import PacketStatsRx, PacketStatsTx
 from pytcp.lib.subsystem import Subsystem
 from pytcp.protocols.dhcp4__legacy.client import Dhcp4Client
+from pytcp.protocols.enums import EtherType
 from pytcp.protocols.ethernet_802_3.ethernet_802_3__header import (
     ETHERNET_802_3__PACKET__MAX_LEN,
 )
@@ -694,6 +697,7 @@ class PacketHandlerL3(
     _packet_stats_tx: PacketStatsTx
     _ip6_host: list[Ip6Host]
     _ip4_host: list[Ip4Host]
+    _ip4_multicast: list[Ip4Address]
     _ip4_id: int
     _ip6_id: int
     _ip4_frag_flows: dict[IpFragFlowId, IpFragData]
@@ -723,6 +727,7 @@ class PacketHandlerL3(
         if ip4_support:
             assert ip4_host is not None
             self._ip4_host = [ip4_host]
+            self._ip4_multicast = []
 
         # Initialize interface MTU.
         self._interface_mtu = interface_mtu
@@ -756,6 +761,19 @@ class PacketHandlerL3(
         """
 
         return [ip4_host.address for ip4_host in self._ip4_host]
+
+    @property
+    def _ip4_broadcast(self) -> list[Ip4Address]:
+        """
+        Get the list of stack's IPv4 broadcast addresses.
+        """
+
+        ip4_broadcast = [
+            ip4_host.network.broadcast for ip4_host in self._ip4_host
+        ]
+        ip4_broadcast.append(Ip4Address(0xFFFFFFFF))
+
+        return ip4_broadcast
 
     ###
     # Public interface.
@@ -826,7 +844,21 @@ class PacketHandlerL3(
         from pytcp.stack import rx_ring
 
         if (packet_rx := rx_ring.dequeue()) is not None:
-            print("Received packet, len:", len(packet_rx.frame) - 4)
+            match EtherType.from_bytes(packet_rx.frame[2:4]):
+                case EtherType.IP6:
+                    if self._ip6_support:
+                        packet_rx.frame = packet_rx.frame[4:]
+                        self._phrx_ip6(packet_rx)
+                case EtherType.IP4:
+                    if self._ip4_support:
+                        packet_rx.frame = packet_rx.frame[4:]
+                        self._phrx_ip4(packet_rx)
+                case _:
+                    __debug__ and log(
+                        "stack",
+                        f"<WARN>Unknown EtherType 0x{packet_rx.frame[2:4].hex()} "
+                        "received, dropping packet</>",
+                    )
 
     def _log_stack_address_info(self) -> None:
         """
