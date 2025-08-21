@@ -146,7 +146,7 @@ rx_ring: RxRing
 tx_ring: TxRing
 arp_cache: ArpCache
 nd_cache: NdCache
-packet_handler: PacketHandlerL2
+packet_handler: PacketHandlerL2 | PacketHandlerL3
 
 # Stack shared data.
 stack_initialized: bool = False
@@ -298,7 +298,6 @@ def init(
         fd=fd,
         mtu=mtu,
     )
-    arp_cache = ArpCache()
     nd_cache = NdCache()
 
     match layer:
@@ -306,6 +305,7 @@ def init(
             assert (
                 mac_address is not None
             ), "MAC address must be provided for Layer 2 (TAP) interface."
+            arp_cache = ArpCache()
             packet_handler = PacketHandlerL2(
                 mac_address=mac_address,
                 interface_mtu=mtu,

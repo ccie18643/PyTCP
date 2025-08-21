@@ -36,10 +36,9 @@ ver 3.0.3
 from __future__ import annotations
 
 import random
-from socket import socket
-import struct
 import threading
 import time
+from abc import ABC
 from typing import TYPE_CHECKING, override
 
 from net_addr import (
@@ -85,8 +84,44 @@ if TYPE_CHECKING:
     from threading import Semaphore
 
 
+class PacketHandler(Subsystem, ABC):
+    """
+    Base class for packet handlers.
+    """
+
+    _subsystem_name = "Packet Handler"
+
+    _event__stop_subsystem: threading.Event
+
+    _packet_stats_rx: PacketStatsRx
+    _packet_stats_tx: PacketStatsTx
+    _ip4_id: int
+    _ip6_id: int
+    _ip4_frag_flows: dict[IpFragFlowId, IpFragData]
+    _ip6_frag_flows: dict[IpFragFlowId, IpFragData]
+
+    def __init__(self) -> None:
+        """
+        Class constructor.
+        """
+
+        super().__init__()
+
+        # Initialize data stores for packet statistics used in unit testing.
+        self._packet_stats_rx = PacketStatsRx()
+        self._packet_stats_tx = PacketStatsTx()
+
+        # Used to keep IPv4 and IPv6 packet ID last value.
+        self._ip4_id: int = 0
+        self._ip6_id: int = 0
+
+        # Used to defragment IPv4 and IPv6 packets.
+        self._ip4_frag_flows = {}
+        self._ip6_frag_flows = {}
+
+
 class PacketHandlerL2(
-    Subsystem,
+    PacketHandler,
     PacketHandlerArpRx,
     PacketHandlerArpTx,
     PacketHandlerEthernetRx,
@@ -112,9 +147,10 @@ class PacketHandlerL2(
     Pick up and respond to incoming packets on Layer 2 (TAP) interface.
     """
 
-    _subsystem_name = "Packet Handler"
-
-    _event__stop_subsystem: threading.Event
+    _packet_stats_rx: PacketStatsRx
+    _packet_stats_tx: PacketStatsTx
+    _ip4_id: int
+    _ip6_id: int
 
     _ip4_support: bool
     _ip6_support: bool
@@ -122,8 +158,6 @@ class PacketHandlerL2(
     _ip4_dhcp: bool
     _ip6_lla_autoconfig: bool
     _ip6_gua_autoconfig: bool
-    _packet_stats_rx: PacketStatsRx
-    _packet_stats_tx: PacketStatsTx
     _mac_unicast: MacAddress
     _mac_multicast: list[MacAddress]
     _mac_broadcast: MacAddress
@@ -139,10 +173,6 @@ class PacketHandlerL2(
     _icmp6_nd_dad_tlla: MacAddress | None
     _icmp6_ra_prefixes: list[tuple[Ip6Network, Ip6Address]]
     _icmp6_ra_event: Semaphore
-    _ip4_id: int
-    _ip6_id: int
-    _ip4_frag_flows: dict[IpFragFlowId, IpFragData]
-    _ip6_frag_flows: dict[IpFragFlowId, IpFragData]
     _ip_configuration_in_progress: Semaphore
 
     def __init__(
@@ -173,10 +203,6 @@ class PacketHandlerL2(
 
         super().__init__()
 
-        # Initialize data stores for packet statistics used in unit testing.
-        self._packet_stats_rx = PacketStatsRx()
-        self._packet_stats_tx = PacketStatsTx()
-
         # MAC and IPv6 Multicast lists hold duplicate entries by design. This
         # is to accommodate IPv6 Solicited Node Multicast mechanism where
         # multiple IPv6 unicast addresses can be tied to the same SNM address
@@ -205,14 +231,6 @@ class PacketHandlerL2(
         # Used for the ICMPv6 ND RA address auto configuration.
         self._icmp6_ra_prefixes: list[tuple[Ip6Network, Ip6Address]] = []
         self._icmp6_ra_event: Semaphore = threading.Semaphore(0)
-
-        # Used to keep IPv4 and IPv6 packet ID last value.
-        self._ip4_id: int = 0
-        self._ip6_id: int = 0
-
-        # Used to defragment IPv4 and IPv6 packets.
-        self._ip4_frag_flows: dict[IpFragFlowId, IpFragData] = {}
-        self._ip6_frag_flows: dict[IpFragFlowId, IpFragData] = {}
 
         # Used for IPv4 and IPv6 address configuration.
         self._ip_configuration_in_progress: Semaphore = threading.Semaphore(0)
@@ -666,7 +684,7 @@ class PacketHandlerL2(
 
 
 class PacketHandlerL3(
-    Subsystem,
+    PacketHandler,
     PacketHandlerIcmp6Rx,
     PacketHandlerIcmp6Tx,
     PacketHandlerIcmp4Rx,
@@ -686,20 +704,17 @@ class PacketHandlerL3(
     Pick up and respond to incoming packets on Layer 3 (TUN) interface.
     """
 
-    _subsystem_name = "Packet Handler"
-
-    _event__stop_subsystem: threading.Event
+    _packet_stats_rx: PacketStatsRx
+    _packet_stats_tx: PacketStatsTx
+    _ip4_id: int
+    _ip6_id: int
 
     _ip4_support: bool
     _ip6_support: bool
     _interface_mtu: int
-    _packet_stats_rx: PacketStatsRx
-    _packet_stats_tx: PacketStatsTx
     _ip6_host: list[Ip6Host]
     _ip4_host: list[Ip4Host]
     _ip4_multicast: list[Ip4Address]
-    _ip4_id: int
-    _ip6_id: int
     _ip4_frag_flows: dict[IpFragFlowId, IpFragData]
     _ip6_frag_flows: dict[IpFragFlowId, IpFragData]
 
@@ -733,18 +748,6 @@ class PacketHandlerL3(
         self._interface_mtu = interface_mtu
 
         super().__init__()
-
-        # Initialize data stores for packet statistics used in unit testing.
-        self._packet_stats_rx = PacketStatsRx()
-        self._packet_stats_tx = PacketStatsTx()
-
-        # Used to keep IPv4 and IPv6 packet ID last value.
-        self._ip4_id: int = 0
-        self._ip6_id: int = 0
-
-        # Used to defragment IPv4 and IPv6 packets.
-        self._ip4_frag_flows: dict[IpFragFlowId, IpFragData] = {}
-        self._ip6_frag_flows: dict[IpFragFlowId, IpFragData] = {}
 
     @property
     def _ip6_unicast(self) -> list[Ip6Address]:

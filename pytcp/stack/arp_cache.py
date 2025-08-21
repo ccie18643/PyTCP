@@ -136,6 +136,7 @@ class ArpCache(Subsystem):
                 - stack.ARP__CACHE__ENTRY_REFRESH_TIME
             ) and self._arp_cache[ip4_address].hit_count:
                 self._arp_cache[ip4_address].hit_count__reset()
+                assert isinstance(stack.packet_handler, stack.PacketHandlerL2)
                 stack.packet_handler.send_arp_request(arp__tpa=ip4_address)
                 __debug__ and log(
                     "arp-c",
@@ -184,5 +185,6 @@ class ArpCache(Subsystem):
             "arp-c",
             f"Unable to find entry for {ip4_address}, sending ARP request",
         )
+        assert isinstance(stack.packet_handler, stack.PacketHandlerL2)
         stack.packet_handler.send_arp_request(arp__tpa=ip4_address)
         return None
