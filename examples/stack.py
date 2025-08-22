@@ -136,17 +136,20 @@ def cli(
                 interface_name=stack__interface, mac_address=stack__mac_address
             )
         case "tun":
+            addressing_issue = False
             if stack__ip4_support and not stack__ip4_host:
                 click.secho(
                     "IPv4 host address must be provided for TUN interface when IPv4 support is enabled.",
                     fg="red",
                 )
-                ctx.exit(1)
+                addressing_issue = True
             if stack__ip6_support and not stack__ip6_host:
                 click.secho(
                     "IPv6 host address must be provided for TUN interface when IPv6 support is enabled.",
                     fg="red",
                 )
+                addressing_issue = True
+            if addressing_issue:
                 ctx.exit(1)
             interface_args = stack.initialize_interface__tun(
                 interface_name=stack__interface,
