@@ -41,7 +41,6 @@ from typing import TYPE_CHECKING, override
 
 from pytcp.lib.logger import log
 from pytcp.lib.subsystem import SUBSYSTEM_SLEEP_TIME__SEC, Subsystem
-
 from pytcp.protocols.ip4.ip4__assembler import Ip4Assembler, Ip4FragAssembler
 from pytcp.protocols.ip6.ip6__assembler import Ip6Assembler
 
