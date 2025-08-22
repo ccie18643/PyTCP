@@ -98,14 +98,18 @@ pypi: dist
 tun3:
 	@ip tuntap add name tun3 mode tun
 	@ip addr add 172.16.1.1/24 dev tun3
+	@ip -6 addr add 2001:db8:1::1/64 dev tun3
+	@ip -6 addr add fe80::1/64 dev tun3
 	@ip link set dev tun3 up
-	@echo 'Interface tun3 created and assigned 172.16.1.1/24 addresses.'
+	@echo 'Interface tun3 created and assigned 2001:db8:1::1/64 and 172.16.1.1/24 addresses.'
 
 tun5:
 	@ip tuntap add name tun5 mode tun
 	@ip addr add 172.16.2.1/24 dev tun5
+	@ip -6 addr add 2001:db8:2::1/64 dev tun5
+	@ip -6 addr add fe80::1/64 dev tun5
 	@ip link set dev tun5 up
-	@echo 'Interface tun5 created and assigned 172.16.2.1/24 addresses.'
+	@echo 'Interface tun5 created and assigned 2001:db8:2::1/64 and 172.16.2.1/24 addresses.'
 
 tap7:
 	@ip tuntap add name tap7 mode tap
