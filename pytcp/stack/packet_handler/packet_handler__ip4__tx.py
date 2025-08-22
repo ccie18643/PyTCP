@@ -39,6 +39,7 @@ from abc import ABC
 from typing import TYPE_CHECKING
 
 from net_addr import Ip4Address, MacAddress
+from pytcp import stack
 from pytcp.lib.interface_layer import InterfaceLayer
 from pytcp.lib.logger import log
 from pytcp.lib.tx_status import TxStatus
@@ -151,6 +152,7 @@ class PacketHandlerIp4Tx(ABC):
                         ethernet__payload=ip4_packet_tx,
                     )
                 case InterfaceLayer.L3:
+                    self.__send_out_packet(ip4_packet_tx)
                     return TxStatus.PASSED__IP4__TO_TX_RING
 
         # Fragment packet and send out.
@@ -201,6 +203,7 @@ class PacketHandlerIp4Tx(ABC):
                         )
                     )
                 case InterfaceLayer.L3:
+                    self.__send_out_packet(ip4_frag_tx)
                     tx_status = TxStatus.PASSED__IP4__TO_TX_RING
 
         # Return the most severe code.
@@ -410,3 +413,9 @@ class PacketHandlerIp4Tx(ABC):
                 ip_proto=ip4__proto,
             ),
         )
+
+    @staticmethod
+    def __send_out_packet(
+        ip4_packet_tx: Ip4Assembler | Ip4FragAssembler,
+    ) -> None:
+        stack.tx_ring.enqueue(ip4_packet_tx)

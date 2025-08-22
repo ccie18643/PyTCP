@@ -186,16 +186,16 @@ class PacketHandlerEthernetTx(ABC):
                 )
                 self.__send_out_packet(ethernet_packet_tx)
                 return TxStatus.PASSED__ETHERNET__TO_TX_RING
-            else:
-                self._packet_stats_tx.inc(
-                    "ethernet__dst_unspec__ip6_lookup__locnet__nd_cache_miss__drop"
-                )
-                __debug__ and log(
-                    "ether",
-                    f"{ethernet_packet_tx.tracker} - <WARN>No valid destination "
-                    f"MAC could be obtained from ND cache, dropping</>",
-                )
-                return TxStatus.DROPED__ETHERNET__DST_ND_CACHE_FAIL
+
+            self._packet_stats_tx.inc(
+                "ethernet__dst_unspec__ip6_lookup__locnet__nd_cache_miss__drop"
+            )
+            __debug__ and log(
+                "ether",
+                f"{ethernet_packet_tx.tracker} - <WARN>No valid destination "
+                f"MAC could be obtained from ND cache, dropping</>",
+            )
+            return TxStatus.DROPED__ETHERNET__DST_ND_CACHE_FAIL
 
         # Check if we can obtain destination MAC based on IPv4 header data.
         if isinstance(
@@ -309,16 +309,16 @@ class PacketHandlerEthernetTx(ABC):
                 )
                 self.__send_out_packet(ethernet_packet_tx)
                 return TxStatus.PASSED__ETHERNET__TO_TX_RING
-            else:
-                self._packet_stats_tx.inc(
-                    "ethernet__dst_unspec__ip4_lookup__locnet__arp_cache_miss__drop"
-                )
-                __debug__ and log(
-                    "ether",
-                    f"{ethernet_packet_tx.tracker} - <WARN>No valid destination "
-                    "MAC could be obtained from ARP cache, dropping</>",
-                )
-                return TxStatus.DROPED__ETHERNET__DST_ARP_CACHE_FAIL
+
+            self._packet_stats_tx.inc(
+                "ethernet__dst_unspec__ip4_lookup__locnet__arp_cache_miss__drop"
+            )
+            __debug__ and log(
+                "ether",
+                f"{ethernet_packet_tx.tracker} - <WARN>No valid destination "
+                "MAC could be obtained from ARP cache, dropping</>",
+            )
+            return TxStatus.DROPED__ETHERNET__DST_ARP_CACHE_FAIL
 
         # Drop packet in case we are not able to obtain valid destination MAC address.
         self._packet_stats_tx.inc("ethernet__dst_unspec__drop")

@@ -42,6 +42,9 @@ from typing import TYPE_CHECKING, override
 from pytcp.lib.logger import log
 from pytcp.lib.subsystem import SUBSYSTEM_SLEEP_TIME__SEC, Subsystem
 
+from pytcp.protocols.ip4.ip4__assembler import Ip4Assembler, Ip4FragAssembler
+from pytcp.protocols.ip6.ip6__assembler import Ip6Assembler
+
 if TYPE_CHECKING:
     from pytcp.protocols.ethernet.ethernet__assembler import EthernetAssembler
     from pytcp.protocols.ethernet_802_3.ethernet_802_3__assembler import (
@@ -60,7 +63,13 @@ class TxRing(Subsystem):
     _mtu: int
     _queue_max_size: int
 
-    _tx_ring: queue.Queue[EthernetAssembler | Ethernet8023Assembler]
+    _tx_ring: queue.Queue[
+        EthernetAssembler
+        | Ethernet8023Assembler
+        | Ip6Assembler
+        | Ip4Assembler
+        | Ip4FragAssembler
+    ]
 
     def __init__(
         self, *, fd: int, mtu: int, queue_max_size: int = 1000
@@ -100,8 +109,16 @@ class TxRing(Subsystem):
             )
             return
 
+        # Prepare payload for sending. Add PI header for L3 interface if needed.
+        elif isinstance(packet_tx, Ip6Assembler):
+            payload = b"\x00\x00\x86\xdd" + bytes(packet_tx)
+        elif isinstance(packet_tx, (Ip4Assembler, Ip4FragAssembler)):
+            payload = b"\x00\x00\x08\x00" + bytes(packet_tx)
+        else:
+            payload = bytes(packet_tx)
+
         try:
-            os.write(self._fd, bytes(packet_tx))
+            os.write(self._fd, payload)
         except OSError as error:
             __debug__ and log(
                 "tx-ring",
@@ -118,7 +135,14 @@ class TxRing(Subsystem):
         )
 
     def enqueue(
-        self, packet_tx: EthernetAssembler | Ethernet8023Assembler
+        self,
+        packet_tx: (
+            EthernetAssembler
+            | Ethernet8023Assembler
+            | Ip6Assembler
+            | Ip4Assembler
+            | Ip4FragAssembler
+        ),
     ) -> None:
         """
         Enqueue outbound packet into TX Ring.
