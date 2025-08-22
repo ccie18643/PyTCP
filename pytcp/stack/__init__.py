@@ -39,10 +39,10 @@ import fcntl
 import os
 import struct
 import sys
-from enum import Enum, auto
 from typing import TYPE_CHECKING, Any
 
 from net_addr import Ip4Host, Ip6Host, MacAddress
+from pytcp.lib.interface_layer import InterfaceLayer
 from pytcp.lib.logger import log
 from pytcp.socket.socket_id import SocketId
 from pytcp.stack.arp_cache import ArpCache
@@ -153,15 +153,6 @@ stack_initialized: bool = False
 interface_mtu: int
 sockets: dict[SocketId, Socket] = {}
 arp_probe_unicast_conflict: set[Ip4Address] = set()
-
-
-class InterfaceLayer(Enum):
-    """
-    Enum representing the interface layer type.
-    """
-
-    L2 = auto()  # Layer 2 (TAP)
-    L3 = auto()  # Layer 3 (TUN)
 
 
 def initialize_interface__tap(
@@ -343,7 +334,8 @@ def start() -> None:
     ), "Stack not initialized. Call 'stack.init()' first."
 
     timer.start()
-    arp_cache.start()
+    if hasattr(packet_handler, "arp_cache"):
+        arp_cache.start()
     nd_cache.start()
     tx_ring.start()
     rx_ring.start()
@@ -362,6 +354,7 @@ def stop() -> None:
     packet_handler.stop()
     rx_ring.stop()
     tx_ring.stop()
-    arp_cache.stop()
+    if hasattr(packet_handler, "arp_cache"):
+        arp_cache.stop()
     nd_cache.stop()
     timer.stop()

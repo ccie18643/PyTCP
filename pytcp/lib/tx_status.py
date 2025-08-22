@@ -57,6 +57,8 @@ class TxStatus(Enum):
 
     DROPED__ARP__NO_PROTOCOL_SUPPORT = auto()
 
+    PASSED__IP4__TO_TX_RING = auto()
+
     DROPED__IP4__NO_PROTOCOL_SUPPORT = auto()
     DROPED__IP4__SRC_NOT_OWNED = auto()
     DROPED__IP4__SRC_MULTICAST = auto()
@@ -65,6 +67,8 @@ class TxStatus(Enum):
     DROPED__IP4__SRC_UNSPECIFIED = auto()
     DROPED__IP4__DST_UNSPECIFIED = auto()
     DROPED__IP4__UNKNOWN = auto()
+
+    PASSED__IP6__TO_TX_RING = auto()
 
     DROPED__IP6__NO_PROTOCOL_SUPPORT = auto()
     DROPED__IP6__SRC_NOT_OWNED = auto()

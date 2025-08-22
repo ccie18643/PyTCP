@@ -39,6 +39,7 @@ from abc import ABC
 from typing import TYPE_CHECKING
 
 from net_addr import Ip4Address, MacAddress
+from pytcp.lib.interface_layer import InterfaceLayer
 from pytcp.lib.logger import log
 from pytcp.lib.tx_status import TxStatus
 from pytcp.protocols.defaults import IP4__DEFAULT_TTL
@@ -61,6 +62,7 @@ class PacketHandlerIp4Tx(ABC):
         from pytcp.protocols.ethernet.ethernet__base import EthernetPayload
         from pytcp.protocols.ip4.ip4__base import Ip4Payload
 
+        _interface_layer: InterfaceLayer
         _packet_stats_tx: PacketStatsTx
         _ip4_host: list[Ip4Host]
         _ip4_multicast: list[Ip4Address]
@@ -141,11 +143,15 @@ class PacketHandlerIp4Tx(ABC):
             __debug__ and log(
                 "ip4", f"{ip4_packet_tx.tracker} - {ip4_packet_tx}"
             )
-            return self._phtx_ethernet(
-                ethernet__src=MacAddress(),
-                ethernet__dst=MacAddress(),
-                ethernet__payload=ip4_packet_tx,
-            )
+            match self._interface_layer:
+                case InterfaceLayer.L2:
+                    return self._phtx_ethernet(
+                        ethernet__src=MacAddress(),
+                        ethernet__dst=MacAddress(),
+                        ethernet__payload=ip4_packet_tx,
+                    )
+                case InterfaceLayer.L3:
+                    return TxStatus.PASSED__IP4__TO_TX_RING
 
         # Fragment packet and send out.
         self._packet_stats_tx.inc("ip4__mtu_exceed__frag")
@@ -169,7 +175,7 @@ class PacketHandlerIp4Tx(ABC):
         ]
         offset = 0
         self._ip4_id += 1
-        ethernet_tx_status: set[TxStatus] = set()
+        outbound_tx_status: set[TxStatus] = set()
         for payload_frag in payload_frags:
             ip4_frag_tx = Ip4FragAssembler(
                 ip4_frag__src=ip4__src,
@@ -184,13 +190,18 @@ class PacketHandlerIp4Tx(ABC):
             __debug__ and log("ip4", f"{ip4_frag_tx.tracker} - {ip4_frag_tx}")
             offset += len(payload_frag)
             self._packet_stats_tx.inc("ip4__mtu_exceed__frag__send")
-            ethernet_tx_status.add(
-                self._phtx_ethernet(
-                    ethernet__src=MacAddress(),
-                    ethernet__dst=MacAddress(),
-                    ethernet__payload=ip4_frag_tx,
-                )
-            )
+
+            match self._interface_layer:
+                case InterfaceLayer.L2:
+                    outbound_tx_status.add(
+                        self._phtx_ethernet(
+                            ethernet__src=MacAddress(),
+                            ethernet__dst=MacAddress(),
+                            ethernet__payload=ip4_frag_tx,
+                        )
+                    )
+                case InterfaceLayer.L3:
+                    tx_status = TxStatus.PASSED__IP4__TO_TX_RING
 
         # Return the most severe code.
         for tx_status in [
@@ -199,8 +210,9 @@ class PacketHandlerIp4Tx(ABC):
             TxStatus.DROPED__ETHERNET__DST_ARP_CACHE_FAIL,
             TxStatus.DROPED__ETHERNET__DST_GATEWAY_ARP_CACHE_FAIL,
             TxStatus.PASSED__ETHERNET__TO_TX_RING,
+            TxStatus.PASSED__IP4__TO_TX_RING,
         ]:
-            if tx_status in ethernet_tx_status:
+            if tx_status in outbound_tx_status:
                 return tx_status
 
         return TxStatus.DROPED__IP4__UNKNOWN

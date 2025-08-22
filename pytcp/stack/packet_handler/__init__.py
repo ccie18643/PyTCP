@@ -49,6 +49,7 @@ from net_addr import (
     Ip6Network,
     MacAddress,
 )
+from pytcp.lib.interface_layer import InterfaceLayer
 from pytcp.lib.ip_frag import IpFragData, IpFragFlowId
 from pytcp.lib.logger import log
 from pytcp.lib.packet_stats import PacketStatsRx, PacketStatsTx
@@ -161,6 +162,8 @@ class PacketHandlerL2(
     """
     Pick up and respond to incoming packets on Layer 2 (TAP) interface.
     """
+
+    _interface_layer = InterfaceLayer.L2
 
     _packet_stats_rx: PacketStatsRx
     _packet_stats_tx: PacketStatsTx
@@ -719,6 +722,8 @@ class PacketHandlerL3(
     """
     Pick up and respond to incoming packets on Layer 3 (TUN) interface.
     """
+
+    _interface_layer = InterfaceLayer.L3
 
     _packet_stats_rx: PacketStatsRx
     _packet_stats_tx: PacketStatsTx
