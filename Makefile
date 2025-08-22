@@ -105,7 +105,7 @@ tun3:
 tun5:
 	@ip tuntap add name tun5 mode tun
 	@ip addr add 172.16.2.1/24 dev tun5
-	@ip -6 addr add 2001:db8:2::1/64 peer 2001:db8:2::2 dev tun5
+	@ip -6 addr add 2001:db8:2::1/64 dev tun5
 	@ip link set dev tun5 up
 	@echo 'Interface tun5 created and assigned 2001:db8:2::1/64 and 172.16.2.1/24 addresses.'
 
@@ -121,5 +121,12 @@ tap9:
 	@brctl addif br0 tap9
 	@echo 'Interface tap9 created and added to bridge br0.'
 
+add_interfaces: tun3 tun5 tap7 tap9
+
+remove_interfaces:
+	@ip tuntap del name tun3 mode tun
+	@ip tuntap del name tun5 mode tun
+	@ip tuntap del name tap7 mode tap
+	@ip tuntap del name tap9 mode tap
 
 .PHONY: all venv run clean lint bridge tun3 tun5 tap7 tap9
