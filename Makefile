@@ -124,4 +124,4 @@ tap9:
 	@echo 'Interface tap9 created and added to bridge br0.'
 
 
-.PHONY: all venv run clean lint bridge tap7 tap9 tun
+.PHONY: all venv run clean lint bridge tun3 tun5 tap7 tap9
