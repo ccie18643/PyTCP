@@ -342,6 +342,10 @@ class PacketHandlerL2(
 
         return self._ip4_unicast
 
+    ###
+    # Internal methods.
+    ###
+
     @override
     def _start(self) -> None:
         """
@@ -736,6 +740,7 @@ class PacketHandlerL3(
     _interface_mtu: int
 
     _ip6_host: list[Ip6Host]
+    _ip6_multicast: list[Ip6Address]
     _ip4_host: list[Ip4Host]
     _ip4_multicast: list[Ip4Address]
 
@@ -762,6 +767,7 @@ class PacketHandlerL3(
         if self._ip6_support:
             assert ip6_host is not None
             self._ip6_host = [ip6_host]
+            self._ip6_multicast = []
 
         # Initialize IPv4 addressing.
         if self._ip4_support:
@@ -849,6 +855,10 @@ class PacketHandlerL3(
         """
 
         return self._ip4_unicast
+
+    ###
+    # Internal methods.
+    ###
 
     @override
     def _start(self) -> None:

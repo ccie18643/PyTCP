@@ -93,7 +93,14 @@ class RxRing(Subsystem):
             f"<B><lg>[RX]</> {packet_rx.tracker} - received frame, "
             f"{len(packet_rx.frame)} bytes",
         )
-        self._rx_ring.put(packet_rx)
+
+        try:
+            self._rx_ring.put(item=packet_rx, block=False)
+        except queue.Full:
+            __debug__ and log(
+                "rx-ring",
+                f"{packet_rx.tracker} - RX Queue is full, dropping packet",
+            )
 
     def dequeue(self) -> PacketRx | None:
         """

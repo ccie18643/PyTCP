@@ -39,6 +39,8 @@ from abc import ABC
 from typing import TYPE_CHECKING
 
 from net_addr import Ip6Address, MacAddress
+from pytcp import stack
+from pytcp.lib.interface_layer import InterfaceLayer
 from pytcp.lib.logger import log
 from pytcp.lib.tx_status import TxStatus
 from pytcp.protocols.defaults import IP6__DEFAULT_HOP_LIMIT
@@ -64,6 +66,7 @@ class PacketHandlerIp6Tx(ABC):
         from pytcp.protocols.ethernet.ethernet__base import EthernetPayload
         from pytcp.protocols.ip6.ip6__base import Ip6Payload
 
+        _interface_layer: InterfaceLayer
         _packet_stats_tx: PacketStatsTx
         _ip6_host: list[Ip6Host]
         _ip6_multicast: list[Ip6Address]
@@ -145,11 +148,16 @@ class PacketHandlerIp6Tx(ABC):
             __debug__ and log(
                 "ip6", f"{ip6_packet_tx.tracker} - {ip6_packet_tx}"
             )
-            return self._phtx_ethernet(
-                ethernet__src=MacAddress(),
-                ethernet__dst=MacAddress(),
-                ethernet__payload=ip6_packet_tx,
-            )
+            match self._interface_layer:
+                case InterfaceLayer.L2:
+                    return self._phtx_ethernet(
+                        ethernet__src=MacAddress(),
+                        ethernet__dst=MacAddress(),
+                        ethernet__payload=ip6_packet_tx,
+                    )
+                case InterfaceLayer.L3:
+                    self.__send_out_packet(ip6_packet_tx=ip6_packet_tx)
+                    return TxStatus.PASSED__IP6__TO_TX_RING
 
         # Fragment packet and send out.
         self._packet_stats_tx.inc("ip6__mtu_exceed__frag")
@@ -327,3 +335,7 @@ class PacketHandlerIp6Tx(ABC):
                 ip_proto=ip6__next,
             ),
         )
+
+    @staticmethod
+    def __send_out_packet(ip6_packet_tx: Ip6Assembler) -> None:
+        stack.tx_ring.enqueue(ip6_packet_tx)
