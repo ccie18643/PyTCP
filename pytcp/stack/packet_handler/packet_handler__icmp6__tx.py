@@ -184,7 +184,10 @@ class PacketHandlerIcmp6Tx(ABC):
             ),
         )
 
-        if tx_status == TxStatus.PASSED__ETHERNET__TO_TX_RING:
+        if tx_status in {
+            TxStatus.PASSED__ETHERNET__TO_TX_RING,
+            TxStatus.PASSED__IP6__TO_TX_RING,
+        }:
             __debug__ and log(
                 "stack",
                 f"Sent out ICMPv6 ND DAD message for {ip6_unicast_candidate}",
@@ -223,7 +226,10 @@ class PacketHandlerIcmp6Tx(ABC):
                 ),
             )
 
-            if tx_status == TxStatus.PASSED__ETHERNET__TO_TX_RING:
+            if tx_status in {
+                TxStatus.PASSED__ETHERNET__TO_TX_RING,
+                TxStatus.PASSED__IP6__TO_TX_RING,
+            }:
                 __debug__ and log(
                     "stack",
                     "Sent out ICMPv6 Multicast Listener Report message for "
@@ -253,7 +259,10 @@ class PacketHandlerIcmp6Tx(ABC):
             ),
         )
 
-        if tx_status == TxStatus.PASSED__ETHERNET__TO_TX_RING:
+        if tx_status in {
+            TxStatus.PASSED__ETHERNET__TO_TX_RING,
+            TxStatus.PASSED__IP6__TO_TX_RING,
+        }:
             __debug__ and log("stack", "Sent out ICMPv6 ND Router Solicitation")
         else:
             __debug__ and log(
@@ -287,7 +296,10 @@ class PacketHandlerIcmp6Tx(ABC):
             ),
         )
 
-        if tx_status == TxStatus.PASSED__ETHERNET__TO_TX_RING:
+        if tx_status in {
+            TxStatus.PASSED__ETHERNET__TO_TX_RING,
+            TxStatus.PASSED__IP6__TO_TX_RING,
+        }:
             __debug__ and log(
                 "stack", "Sent out ICMPv6 ND Neighbor Solicitation"
             )
