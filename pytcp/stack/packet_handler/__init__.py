@@ -96,12 +96,17 @@ class PacketHandler(Subsystem, ABC):
 
     _packet_stats_rx: PacketStatsRx
     _packet_stats_tx: PacketStatsTx
-    _ip4_id: int
-    _ip6_id: int
-    _ip4_frag_flows: dict[IpFragFlowId, IpFragData]
-    _ip6_frag_flows: dict[IpFragFlowId, IpFragData]
-    _ip4_support: bool
+    _interface_mtu: int
     _ip6_support: bool
+    _ip4_support: bool
+    _ip6_host: list[Ip6Host]
+    _ip4_host: list[Ip4Host]
+    _ip6_multicast: list[Ip6Address]
+    _ip4_multicast: list[Ip4Address]
+    _ip6_id: int
+    _ip4_id: int
+    _ip6_frag_flows: dict[IpFragFlowId, IpFragData]
+    _ip4_frag_flows: dict[IpFragFlowId, IpFragData]
 
     def __init__(
         self,
@@ -116,6 +121,10 @@ class PacketHandler(Subsystem, ABC):
 
         super().__init__()
 
+        # Initialize data stores for packet statistics used in unit testing.
+        self._packet_stats_rx = PacketStatsRx()
+        self._packet_stats_tx = PacketStatsTx()
+
         # Initialize the interface mtu.
         self._interface_mtu = interface_mtu
 
@@ -123,9 +132,13 @@ class PacketHandler(Subsystem, ABC):
         self._ip6_support = ip6_support
         self._ip4_support = ip4_support
 
-        # Initialize data stores for packet statistics used in unit testing.
-        self._packet_stats_rx = PacketStatsRx()
-        self._packet_stats_tx = PacketStatsTx()
+        # Used to keep track of IPv6 and IPv4 unicast addresses.
+        self._ip6_host = []
+        self._ip4_host = []
+
+        # Used to keep track of IPv6 and IPv4 multicast addresses.
+        self._ip6_multicast = []
+        self._ip4_multicast = []
 
         # Used to keep IPv4 and IPv6 packet ID last value.
         self._ip4_id: int = 0
@@ -134,132 +147,6 @@ class PacketHandler(Subsystem, ABC):
         # Used to defragment IPv4 and IPv6 packets.
         self._ip4_frag_flows = {}
         self._ip6_frag_flows = {}
-
-
-class PacketHandlerL2(
-    PacketHandler,
-    PacketHandlerArpRx,
-    PacketHandlerArpTx,
-    PacketHandlerEthernetRx,
-    PacketHandlerEthernetTx,
-    PacketHandlerEthernet8023Rx,
-    PacketHandlerEthernet8023Tx,
-    PacketHandlerIcmp6Rx,
-    PacketHandlerIcmp6Tx,
-    PacketHandlerIcmp4Rx,
-    PacketHandlerIcmp4Tx,
-    PacketHandlerIp4Rx,
-    PacketHandlerIp4Tx,
-    PacketHandlerIp6Rx,
-    PacketHandlerIp6Tx,
-    PacketHandlerIp6FragRx,
-    PacketHandlerIp6FragTx,
-    PacketHandlerTcpRx,
-    PacketHandlerTcpTx,
-    PacketHandlerUdpRx,
-    PacketHandlerUdpTx,
-):
-    """
-    Pick up and respond to incoming packets on Layer 2 (TAP) interface.
-    """
-
-    _interface_layer = InterfaceLayer.L2
-
-    _packet_stats_rx: PacketStatsRx
-    _packet_stats_tx: PacketStatsTx
-    _ip4_id: int
-    _ip6_id: int
-    _ip4_frag_flows: dict[IpFragFlowId, IpFragData]
-    _ip6_frag_flows: dict[IpFragFlowId, IpFragData]
-    _ip4_support: bool
-    _ip6_support: bool
-    _interface_mtu: int
-
-    _ip4_dhcp: bool
-    _ip6_lla_autoconfig: bool
-    _ip6_gua_autoconfig: bool
-    _mac_unicast: MacAddress
-    _mac_multicast: list[MacAddress]
-    _mac_broadcast: MacAddress
-    _ip6_host_candidate: list[Ip6Host]
-    _ip6_host: list[Ip6Host]
-    _ip6_multicast: list[Ip6Address]
-    _ip4_host_candidate: list[Ip4Host]
-    _ip4_host: list[Ip4Host]
-    _ip4_multicast: list[Ip4Address]
-    _arp_probe_unicast_conflict: set[Ip4Address]
-    _ip6_unicast_candidate: Ip6Address | None
-    _icmp6_nd_dad_event: Semaphore
-    _icmp6_nd_dad_tlla: MacAddress | None
-    _icmp6_ra_prefixes: list[tuple[Ip6Network, Ip6Address]]
-    _icmp6_ra_event: Semaphore
-    _ip_configuration_in_progress: Semaphore
-
-    def __init__(
-        self,
-        *,
-        mac_address: MacAddress,
-        interface_mtu: int,
-        ip4_support: bool = True,
-        ip4_host: Ip4Host | None = None,
-        ip4_dhcp: bool = True,
-        ip6_support: bool = True,
-        ip6_host: Ip6Host | None = None,
-        ip6_lla_autoconfig: bool = True,
-        ip6_gua_autoconfig: bool = True,
-    ) -> None:
-        """
-        Class constructor.
-        """
-
-        super().__init__(
-            interface_mtu=interface_mtu,
-            ip6_support=ip6_support,
-            ip4_support=ip4_support,
-        )
-
-        self._ip4_dhcp = ip4_dhcp
-        self._ip6_lla_autoconfig = ip6_lla_autoconfig
-        self._ip6_gua_autoconfig = ip6_gua_autoconfig
-
-        # MAC and IPv6 Multicast lists hold duplicate entries by design. This
-        # is to accommodate IPv6 Solicited Node Multicast mechanism where
-        # multiple IPv6 unicast addresses can be tied to the same SNM address
-        # (and the same multicast MAC). This is important when removing one of
-        # the unicast addresses, so the other ones keep it's SNM entry in the
-        # multicast list. Its the simplest solution and imho perfectly valid
-        # one in this case.
-        self._mac_unicast = mac_address
-        self._mac_multicast = []
-        self._mac_broadcast = MacAddress(0xFFFFFFFFFFFF)
-        self._ip6_host_candidate = []
-        self._ip6_host = []
-        self._ip6_multicast = []
-        self._ip4_host_candidate = []
-        self._ip4_host = []
-        self._ip4_multicast = []
-
-        # Used for the ARP DAD process.
-        self._arp_probe_unicast_conflict: set[Ip4Address] = set()
-
-        # Used for the ICMPv6 ND DAD process.
-        self._ip6_unicast_candidate: Ip6Address | None = None
-        self._icmp6_nd_dad_event: Semaphore = threading.Semaphore(0)
-        self._icmp6_nd_dad_tlla: MacAddress | None = None
-
-        # Used for the ICMPv6 ND RA address auto configuration.
-        self._icmp6_ra_prefixes: list[tuple[Ip6Network, Ip6Address]] = []
-        self._icmp6_ra_event: Semaphore = threading.Semaphore(0)
-
-        # Used for IPv4 and IPv6 address configuration.
-        self._ip_configuration_in_progress: Semaphore = threading.Semaphore(0)
-
-        # Assigned IP addresses statically.
-        if ip4_host is not None:
-            self._ip4_host_candidate.append(ip4_host)
-
-        if ip6_host is not None:
-            self._ip6_host_candidate.append(ip6_host)
 
     @property
     def _ip6_unicast(self) -> list[Ip6Address]:
@@ -341,6 +228,136 @@ class PacketHandlerL2(
         """
 
         return self._ip4_unicast
+
+    @property
+    def ip4_broadcast(self) -> list[Ip4Address]:
+        """
+        Get the list of stack's IPv4 broadcast addresses.
+        """
+
+        return self._ip4_broadcast
+
+
+class PacketHandlerL2(
+    PacketHandler,
+    PacketHandlerArpRx,
+    PacketHandlerArpTx,
+    PacketHandlerEthernetRx,
+    PacketHandlerEthernetTx,
+    PacketHandlerEthernet8023Rx,
+    PacketHandlerEthernet8023Tx,
+    PacketHandlerIcmp6Rx,
+    PacketHandlerIcmp6Tx,
+    PacketHandlerIcmp4Rx,
+    PacketHandlerIcmp4Tx,
+    PacketHandlerIp4Rx,
+    PacketHandlerIp4Tx,
+    PacketHandlerIp6Rx,
+    PacketHandlerIp6Tx,
+    PacketHandlerIp6FragRx,
+    PacketHandlerIp6FragTx,
+    PacketHandlerTcpRx,
+    PacketHandlerTcpTx,
+    PacketHandlerUdpRx,
+    PacketHandlerUdpTx,
+):
+    """
+    Pick up and respond to incoming packets on Layer 2 (TAP) interface.
+    """
+
+    _interface_layer = InterfaceLayer.L2
+
+    _packet_stats_rx: PacketStatsRx
+    _packet_stats_tx: PacketStatsTx
+    _interface_mtu: int
+    _ip6_support: bool
+    _ip4_support: bool
+    _ip6_host: list[Ip6Host]
+    _ip4_host: list[Ip4Host]
+    _ip6_multicast: list[Ip6Address]
+    _ip4_multicast: list[Ip4Address]
+    _ip6_id: int
+    _ip4_id: int
+    _ip6_frag_flows: dict[IpFragFlowId, IpFragData]
+    _ip4_frag_flows: dict[IpFragFlowId, IpFragData]
+
+    _ip4_dhcp: bool
+    _ip6_lla_autoconfig: bool
+    _ip6_gua_autoconfig: bool
+    _mac_unicast: MacAddress
+    _mac_multicast: list[MacAddress]
+    _mac_broadcast: MacAddress
+    _ip6_host_candidate: list[Ip6Host]
+    _ip4_host_candidate: list[Ip4Host]
+    _arp_probe_unicast_conflict: set[Ip4Address]
+    _ip6_unicast_candidate: Ip6Address | None
+    _icmp6_nd_dad_event: Semaphore
+    _icmp6_nd_dad_tlla: MacAddress | None
+    _icmp6_ra_prefixes: list[tuple[Ip6Network, Ip6Address]]
+    _icmp6_ra_event: Semaphore
+    _ip_configuration_in_progress: Semaphore
+
+    def __init__(
+        self,
+        *,
+        mac_address: MacAddress,
+        interface_mtu: int,
+        ip4_support: bool = True,
+        ip4_host: Ip4Host | None = None,
+        ip4_dhcp: bool = True,
+        ip6_support: bool = True,
+        ip6_host: Ip6Host | None = None,
+        ip6_lla_autoconfig: bool = True,
+        ip6_gua_autoconfig: bool = True,
+    ) -> None:
+        """
+        Class constructor.
+        """
+
+        super().__init__(
+            interface_mtu=interface_mtu,
+            ip6_support=ip6_support,
+            ip4_support=ip4_support,
+        )
+
+        self._ip4_dhcp = ip4_dhcp
+        self._ip6_lla_autoconfig = ip6_lla_autoconfig
+        self._ip6_gua_autoconfig = ip6_gua_autoconfig
+
+        # MAC and IPv6 Multicast lists hold duplicate entries by design. This
+        # is to accommodate IPv6 Solicited Node Multicast mechanism where
+        # multiple IPv6 unicast addresses can be tied to the same SNM address
+        # (and the same multicast MAC). This is important when removing one of
+        # the unicast addresses, so the other ones keep it's SNM entry in the
+        # multicast list. Its the simplest solution and imho perfectly valid
+        # one in this case.
+        self._mac_unicast = mac_address
+        self._mac_multicast = []
+        self._mac_broadcast = MacAddress(0xFFFFFFFFFFFF)
+        self._ip6_host_candidate = []
+        self._ip4_host_candidate = []
+
+        # Used for the ARP DAD process.
+        self._arp_probe_unicast_conflict: set[Ip4Address] = set()
+
+        # Used for the ICMPv6 ND DAD process.
+        self._ip6_unicast_candidate: Ip6Address | None = None
+        self._icmp6_nd_dad_event: Semaphore = threading.Semaphore(0)
+        self._icmp6_nd_dad_tlla: MacAddress | None = None
+
+        # Used for the ICMPv6 ND RA address auto configuration.
+        self._icmp6_ra_prefixes: list[tuple[Ip6Network, Ip6Address]] = []
+        self._icmp6_ra_event: Semaphore = threading.Semaphore(0)
+
+        # Used for IPv4 and IPv6 address configuration.
+        self._ip_configuration_in_progress: Semaphore = threading.Semaphore(0)
+
+        # Assigned IP addresses statically.
+        if ip4_host is not None:
+            self._ip4_host_candidate.append(ip4_host)
+
+        if ip6_host is not None:
+            self._ip6_host_candidate.append(ip6_host)
 
     ###
     # Internal methods.
@@ -731,18 +748,17 @@ class PacketHandlerL3(
 
     _packet_stats_rx: PacketStatsRx
     _packet_stats_tx: PacketStatsTx
-    _ip4_id: int
-    _ip6_id: int
-    _ip4_frag_flows: dict[IpFragFlowId, IpFragData]
-    _ip6_frag_flows: dict[IpFragFlowId, IpFragData]
-    _ip4_support: bool
-    _ip6_support: bool
     _interface_mtu: int
-
+    _ip6_support: bool
+    _ip4_support: bool
     _ip6_host: list[Ip6Host]
-    _ip6_multicast: list[Ip6Address]
     _ip4_host: list[Ip4Host]
+    _ip6_multicast: list[Ip6Address]
     _ip4_multicast: list[Ip4Address]
+    _ip6_id: int
+    _ip4_id: int
+    _ip6_frag_flows: dict[IpFragFlowId, IpFragData]
+    _ip4_frag_flows: dict[IpFragFlowId, IpFragData]
 
     def __init__(
         self,
@@ -766,95 +782,12 @@ class PacketHandlerL3(
         # Initialize IPv6 addressing.
         if self._ip6_support:
             assert ip6_host is not None
-            self._ip6_host = [ip6_host]
-            self._ip6_multicast = []
+            self._ip6_host.append(ip6_host)
 
         # Initialize IPv4 addressing.
         if self._ip4_support:
             assert ip4_host is not None
-            self._ip4_host = [ip4_host]
-            self._ip4_multicast = []
-
-    @property
-    def _ip6_unicast(self) -> list[Ip6Address]:
-        """
-        Get the list of stack's IPv6 unicast addresses.
-        """
-
-        return [ip6_host.address for ip6_host in self._ip6_host]
-
-    @property
-    def _ip4_unicast(self) -> list[Ip4Address]:
-        """
-        Get the list of stack's IPv4 unicast addresses.
-        """
-
-        return [ip4_host.address for ip4_host in self._ip4_host]
-
-    @property
-    def _ip4_broadcast(self) -> list[Ip4Address]:
-        """
-        Get the list of stack's IPv4 broadcast addresses.
-        """
-
-        ip4_broadcast = [
-            ip4_host.network.broadcast for ip4_host in self._ip4_host
-        ]
-        ip4_broadcast.append(Ip4Address(0xFFFFFFFF))
-
-        return ip4_broadcast
-
-    ###
-    # Public interface.
-    ###
-
-    @property
-    def packet_stats_rx(self) -> PacketStatsRx:
-        """
-        Get the packet statistics for received packets.
-        """
-
-        return self._packet_stats_rx
-
-    @property
-    def packet_stats_tx(self) -> PacketStatsTx:
-        """
-        Get the packet statistics for transmitted packets.
-        """
-
-        return self._packet_stats_tx
-
-    @property
-    def ip6_host(self) -> list[Ip6Host]:
-        """
-        Get the list of stack's IPv4 host addresses.
-        """
-
-        return self._ip6_host
-
-    @property
-    def ip6_unicast(self) -> list[Ip6Address]:
-        """
-        Get the list of stack's IPv6 unicast addresses.
-        """
-
-        return self._ip6_unicast
-
-    @property
-    def ip4_host(self) -> list[Ip4Host]:
-        """
-        Get the list of stack's IPv4 host addresses.
-        """
-
-        return self._ip4_host
-
-    @property
-    def ip4_unicast(self) -> list[Ip4Address]:
-        """
-        Get the list of stack's IPv4 unicast addresses.
-        """
-
-        return self._ip4_unicast
+            self._ip4_host.append(ip4_host)
 
     ###
     # Internal methods.
