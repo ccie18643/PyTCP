@@ -25,19 +25,17 @@
 
 
 """
-Module contains IPv6 address support class.
+This module contains IPv6 address support class.
 
 net_addr/ip6_address.py
 
-ver 3.0.2
+ver 3.0.3
 """
 
 
-from __future__ import annotations
-
 import re
 import socket
-from typing import override
+from typing import Self, override
 
 from net_addr.errors import Ip6AddressFormatError
 from net_addr.ip_address import IpAddress, IpVersion
@@ -70,7 +68,7 @@ class Ip6Address(IpAddress):
     def __init__(
         self,
         address: (
-            Ip6Address | str | bytes | bytearray | memoryview | int | None
+            Self | str | bytes | bytearray | memoryview | int | None
         ) = None,
         /,
     ) -> None:
@@ -141,7 +139,7 @@ class Ip6Address(IpAddress):
         )
 
     @property
-    def solicited_node_multicast(self) -> Ip6Address:
+    def solicited_node_multicast(self) -> Self:
         """
         Create IPv6 solicited node multicast address.
         """
@@ -151,9 +149,11 @@ class Ip6Address(IpAddress):
             f"to get a solicited node multicast address. Got: {self}"
         )
 
-        return Ip6Address(
+        cls = type(self)
+
+        return cls(
             self._address & 0x0000_0000_0000_0000_0000_0000_00FF_FFFF
-            | int(Ip6Address("ff02::1:ff00:0"))
+            | int(cls("ff02::1:ff00:0"))
         )
 
     @property

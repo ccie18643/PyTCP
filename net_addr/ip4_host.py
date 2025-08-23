@@ -33,10 +33,8 @@ ver 3.0.3
 """
 
 
-from __future__ import annotations
-
 import time
-from typing import override
+from typing import Self, override
 
 from net_addr.errors import (
     Ip4AddressFormatError,
@@ -69,7 +67,7 @@ class Ip4Host(IpHost[Ip4Address, Ip4Network, Ip4HostOrigin]):
     def __init__(
         self,
         host: (
-            Ip4Host
+            Self
             | tuple[Ip4Address, Ip4Network]
             | tuple[Ip4Address, Ip4Mask]
             | str

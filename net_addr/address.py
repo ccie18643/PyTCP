@@ -33,9 +33,8 @@ ver 3.0.3
 """
 
 
-from __future__ import annotations
-
 from abc import ABC, abstractmethod
+from typing import Self
 
 
 class Address(ABC):
@@ -60,7 +59,7 @@ class Address(ABC):
         Get the network address representation string.
         """
 
-        return f"{self.__class__.__name__}('{str(self)}')"
+        return f"{type(self).__name__}('{str(self)}')"
 
     def __int__(self) -> int:
         """
@@ -96,7 +95,7 @@ class Address(ABC):
         return hash(repr(self))
 
     @property
-    def unspecified(self) -> Address:
+    def unspecified(self) -> Self:
         """
         Get the unspecified network address.
         """

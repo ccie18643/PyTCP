@@ -33,11 +33,9 @@ ver 3.0.2
 """
 
 
-from __future__ import annotations
-
 import re
 import socket
-from typing import override
+from typing import Self, override
 
 from net_addr.errors import Ip4AddressFormatError
 from net_addr.ip_address import IpAddress, IpVersion
@@ -63,7 +61,7 @@ class Ip4Address(IpAddress):
     def __init__(
         self,
         address: (
-            Ip4Address | str | bytes | bytearray | memoryview | int | None
+            Self | str | bytes | bytearray | memoryview | int | None
         ) = None,
         /,
     ) -> None:

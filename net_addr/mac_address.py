@@ -33,10 +33,8 @@ ver 3.0.3
 """
 
 
-from __future__ import annotations
-
 import re
-from typing import override
+from typing import Self, override
 
 from net_addr.address import Address
 from net_addr.errors import MacAddressFormatError
@@ -52,7 +50,7 @@ class MacAddress(Address):
     def __init__(
         self,
         address: (
-            MacAddress | str | bytes | bytearray | memoryview | int | None
+            Self | str | bytes | bytearray | memoryview | int | None
         ) = None,
         /,
     ) -> None:

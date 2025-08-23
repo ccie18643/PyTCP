@@ -33,10 +33,8 @@ ver 3.0.3
 """
 
 
-from __future__ import annotations
-
 import re
-from typing import override
+from typing import Self, override
 
 from net_addr.errors import Ip6MaskFormatError
 from net_addr.ip6_address import IP6__ADDRESS_LEN
@@ -56,9 +54,7 @@ class Ip6Mask(IpMask):
     def __init__(
         self,
         /,
-        mask: (
-            Ip6Mask | str | bytes | bytearray | memoryview | int | None
-        ) = None,
+        mask: Self | str | bytes | bytearray | memoryview | int | None = None,
     ) -> None:
         """
         Create a new IPv6 mask object.

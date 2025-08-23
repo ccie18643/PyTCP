@@ -33,16 +33,11 @@ ver 3.0.3
 """
 
 
-from __future__ import annotations
-
 from abc import abstractmethod
-from typing import TYPE_CHECKING
 
 from net_addr.address import Address
 from net_addr.ip_version import IpVersion
-
-if TYPE_CHECKING:
-    from .mac_address import MacAddress
+from net_addr.mac_address import MacAddress
 
 
 class IpAddress(Address):

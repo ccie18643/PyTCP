@@ -33,10 +33,8 @@ ver 3.0.3
 """
 
 
-from __future__ import annotations
-
 import time
-from typing import override
+from typing import Self, override
 
 from net_addr.errors import (
     Ip6AddressFormatError,
@@ -69,7 +67,7 @@ class Ip6Host(IpHost[Ip6Address, Ip6Network, Ip6HostOrigin]):
     def __init__(
         self,
         host: (
-            Ip6Host
+            Self
             | tuple[Ip6Address, Ip6Network]
             | tuple[Ip6Address, Ip6Mask]
             | str
@@ -146,10 +144,10 @@ class Ip6Host(IpHost[Ip6Address, Ip6Network, Ip6HostOrigin]):
         ):
             raise Ip6HostGatewayError(address)
 
-    @staticmethod
+    @classmethod
     def from_eui64(
-        *, mac_address: MacAddress, ip6_network: Ip6Network
-    ) -> Ip6Host:
+        cls, *, mac_address: MacAddress, ip6_network: Ip6Network
+    ) -> Self:
         """
         Create IPv6 EUI64 host address.
         """
@@ -165,7 +163,7 @@ class Ip6Host(IpHost[Ip6Address, Ip6Network, Ip6HostOrigin]):
             | 0xFFFE000000
         ) ^ 0x0200000000000000
 
-        return Ip6Host(
+        return cls(
             (
                 Ip6Address(int(ip6_network.address) | interface_id),
                 Ip6Mask("/64"),

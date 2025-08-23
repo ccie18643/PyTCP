@@ -25,7 +25,7 @@
 
 
 """
-Module contains IPv6 host origin enum.
+This module contains IPv6 host origin enum.
 
 net_addr/ip6_host_origin.py
 

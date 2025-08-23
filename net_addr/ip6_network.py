@@ -33,9 +33,7 @@ ver 3.0.3
 """
 
 
-from __future__ import annotations
-
-from typing import override
+from typing import Self, override
 
 from net_addr.errors import (
     Ip6AddressFormatError,
@@ -59,7 +57,7 @@ class Ip6Network(IpNetwork[Ip6Address, Ip6Mask]):
 
     def __init__(
         self,
-        network: Ip6Network | tuple[Ip6Address, Ip6Mask] | str | None = None,
+        network: Self | tuple[Ip6Address, Ip6Mask] | str | None = None,
         /,
     ) -> None:
         """

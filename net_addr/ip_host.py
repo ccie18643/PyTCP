@@ -33,8 +33,6 @@ ver 3.0.3
 """
 
 
-from __future__ import annotations
-
 from abc import ABC, abstractmethod
 
 from net_addr.ip4_address import Ip4Address

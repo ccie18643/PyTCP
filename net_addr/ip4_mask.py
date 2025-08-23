@@ -33,11 +33,9 @@ ver 3.0.3
 """
 
 
-from __future__ import annotations
-
 import re
 import socket
-from typing import override
+from typing import Self, override
 
 from net_addr.errors import Ip4MaskFormatError
 from net_addr.ip4_address import IP4__ADDRESS_LEN, IP4__REGEX
@@ -56,9 +54,7 @@ class Ip4Mask(IpMask):
 
     def __init__(
         self,
-        mask: (
-            Ip4Mask | str | bytes | bytearray | memoryview | int | None
-        ) = None,
+        mask: Self | str | bytes | bytearray | memoryview | int | None = None,
         /,
     ) -> None:
         """
