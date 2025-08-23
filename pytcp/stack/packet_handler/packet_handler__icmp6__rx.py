@@ -97,12 +97,12 @@ class PacketHandlerIcmp6Rx(ABC):
         from pytcp.protocols.icmp6.icmp6__base import Icmp6Message
 
         _packet_stats_rx: PacketStatsRx
-        _icmp6_ra_event: Semaphore
-        _icmp6_ra_prefixes: list[tuple[Ip6Network, Ip6Address]]
-        _icmp6_nd_dad_event: Semaphore
-        _icmp6_nd_dad_tlla: MacAddress | None
         _mac_unicast: MacAddress
-        _ip6_unicast_candidate: Ip6Address | None
+        _icmp6_nd_dad__ip6_unicast_candidate: Ip6Address | None
+        _icmp6_nd_dad__event: Semaphore
+        _icmp6_nd_dad__tlla: MacAddress | None
+        _icmp6_ra__event: Semaphore
+        _icmp6_ra__prefixes: list[tuple[Ip6Network, Ip6Address]]
 
         # pylint: disable=unused-argument
 
@@ -328,11 +328,11 @@ class PacketHandlerIcmp6Rx(ABC):
             f"packet from {packet_rx.ip6.src}",
         )
         # Make note of prefixes that can be used for address autoconfiguration.
-        self._icmp6_ra_prefixes = [
+        self._icmp6_ra__prefixes = [
             (option.prefix, packet_rx.ip6.src)
             for option in packet_rx.icmp6.message.option_pi
         ]
-        self._icmp6_ra_event.release()
+        self._icmp6_ra__event.release()
 
     def __phrx_icmp6__nd_neighbor_solicitation(
         self, packet_rx: PacketRx
@@ -433,13 +433,13 @@ class PacketHandlerIcmp6Rx(ABC):
         # Run ND Duplicate Address Detection check.
         if (
             packet_rx.icmp6.message.target_address
-            == self._ip6_unicast_candidate
+            == self._icmp6_nd_dad__ip6_unicast_candidate
         ):
             self._packet_stats_rx.inc(
                 "icmp6__nd_neighbor_advertisement__run_dad"
             )
-            self._icmp6_nd_dad_tlla = packet_rx.icmp6.message.option_tlla
-            self._icmp6_nd_dad_event.release()
+            self._icmp6_nd_dad__tlla = packet_rx.icmp6.message.option_tlla
+            self._icmp6_nd_dad__event.release()
             return
 
         # Update ICMPv6 ND cache.

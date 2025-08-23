@@ -117,6 +117,8 @@ class PacketHandler(Subsystem, ABC):
         interface_mtu: int,
         ip6_support: bool,
         ip4_support: bool,
+        ip6_host: Ip6Host | None = None,
+        ip4_host: Ip4Host | None = None,
     ) -> None:
         """
         Class constructor.
@@ -157,6 +159,13 @@ class PacketHandler(Subsystem, ABC):
 
         # Used for IPv4 and IPv6 address configuration.
         self._ip_configuration_in_progress: Semaphore = threading.Semaphore(0)
+
+        # Assign IP addresses statically.
+        if ip6_host is not None:
+            self._ip6_host_candidate.append(ip6_host)
+
+        if ip4_host is not None:
+            self._ip4_host_candidate.append(ip4_host)
 
     @property
     def _ip6_unicast(self) -> list[Ip6Address]:
@@ -456,12 +465,12 @@ class PacketHandlerL2(
     _mac_unicast: MacAddress
     _mac_multicast: list[MacAddress]
     _mac_broadcast: MacAddress
-    _arp_probe_unicast_conflict: set[Ip4Address]
-    _ip6_unicast_candidate: Ip6Address | None
-    _icmp6_nd_dad_event: Semaphore
-    _icmp6_nd_dad_tlla: MacAddress | None
-    _icmp6_ra_prefixes: list[tuple[Ip6Network, Ip6Address]]
-    _icmp6_ra_event: Semaphore
+    _arp_probe__unicast_conflict: set[Ip4Address]
+    _icmp6_nd_dad__ip6_unicast_candidate: Ip6Address | None
+    _icmp6_nd_dad__event: Semaphore
+    _icmp6_nd_dad__tlla: MacAddress | None
+    _icmp6_ra__prefixes: list[tuple[Ip6Network, Ip6Address]]
+    _icmp6_ra__event: Semaphore
 
     def __init__(
         self,
@@ -484,6 +493,8 @@ class PacketHandlerL2(
             interface_mtu=interface_mtu,
             ip6_support=ip6_support,
             ip4_support=ip4_support,
+            ip6_host=ip6_host,
+            ip4_host=ip4_host,
         )
 
         self._ip4_dhcp = ip4_dhcp
@@ -502,27 +513,16 @@ class PacketHandlerL2(
         self._mac_broadcast = MacAddress(0xFFFFFFFFFFFF)
 
         # Used for the ARP DAD process.
-        self._arp_probe_unicast_conflict: set[Ip4Address] = set()
+        self._arp_probe__unicast_conflict: set[Ip4Address] = set()
 
         # Used for the ICMPv6 ND DAD process.
-        self._ip6_unicast_candidate: Ip6Address | None = None
-        self._icmp6_nd_dad_event: Semaphore = threading.Semaphore(0)
-        self._icmp6_nd_dad_tlla: MacAddress | None = None
+        self._icmp6_nd_dad__ip6_unicast_candidate: Ip6Address | None = None
+        self._icmp6_nd_dad__event: Semaphore = threading.Semaphore(0)
+        self._icmp6_nd_dad__tlla: MacAddress | None = None
 
         # Used for the ICMPv6 ND RA address auto configuration.
-        self._icmp6_ra_prefixes: list[tuple[Ip6Network, Ip6Address]] = []
-        self._icmp6_ra_event: Semaphore = threading.Semaphore(0)
-
-        # Assigned IP addresses statically.
-        if ip6_host is not None:
-            self._ip6_host_candidate.append(ip6_host)
-
-        if ip4_host is not None:
-            self._ip4_host_candidate.append(ip4_host)
-
-    ###
-    # Internal methods.
-    ###
+        self._icmp6_ra__prefixes: list[tuple[Ip6Network, Ip6Address]] = []
+        self._icmp6_ra__event: Semaphore = threading.Semaphore(0)
 
     @override
     def _subsystem_loop(self) -> None:
@@ -551,7 +551,7 @@ class PacketHandlerL2(
             f"ICMPv6 ND DAD - Starting process for {ip6_unicast_candidate}",
         )
 
-        self._ip6_unicast_candidate = ip6_unicast_candidate
+        self._icmp6_nd_dad__ip6_unicast_candidate = ip6_unicast_candidate
 
         self._assign_ip6_multicast(
             ip6_multicast=ip6_unicast_candidate.solicited_node_multicast
@@ -560,12 +560,12 @@ class PacketHandlerL2(
             ip6_unicast_candidate=ip6_unicast_candidate
         )
 
-        if event := self._icmp6_nd_dad_event.acquire(timeout=1):
+        if event := self._icmp6_nd_dad__event.acquire(timeout=1):
             __debug__ and log(
                 "stack",
                 "<WARN>ICMPv6 ND DAD - Duplicate IPv6 address detected, "
                 f"{ip6_unicast_candidate} advertised by "
-                f"{self._icmp6_nd_dad_tlla}</>",
+                f"{self._icmp6_nd_dad__tlla}</>",
             )
         else:
             __debug__ and log(
@@ -574,7 +574,7 @@ class PacketHandlerL2(
                 f"{ip6_unicast_candidate}",
             )
 
-        self._ip6_unicast_candidate = None
+        self._icmp6_nd_dad__ip6_unicast_candidate = None
         self._remove_ip6_multicast(
             ip6_unicast_candidate.solicited_node_multicast
         )
@@ -640,8 +640,8 @@ class PacketHandlerL2(
         # ICMPv6 Router Advertisement.
         if self._ip6_gua_autoconfig:
             self._send_icmp6_nd_router_solicitation()
-            self._icmp6_ra_event.acquire(timeout=1)
-            for prefix, gateway in list(self._icmp6_ra_prefixes):
+            self._icmp6_ra__event.acquire(timeout=1)
+            for prefix, gateway in list(self._icmp6_ra__prefixes):
                 __debug__ and log(
                     "stack",
                     f"Attempting IPv6 address auto configuration for RA "
@@ -674,14 +674,14 @@ class PacketHandlerL2(
                 ip4_host_candidate.address
                 for ip4_host_candidate in self._ip4_host_candidate
             ]:
-                if ip4_unicast not in self._arp_probe_unicast_conflict:
+                if ip4_unicast not in self._arp_probe__unicast_conflict:
                     self._send_arp_probe(ip4_unicast=ip4_unicast)
                     __debug__ and log(
                         "stack", f"Sent out ARP Probe for {ip4_unicast}"
                     )
             time.sleep(random.uniform(1, 2))
 
-        for ip4_unicast in self._arp_probe_unicast_conflict:
+        for ip4_unicast in self._arp_probe__unicast_conflict:
             __debug__ and log(
                 "stack",
                 f"<WARN>Unable to claim IPv4 address {ip4_unicast}</>",
@@ -691,7 +691,7 @@ class PacketHandlerL2(
         # confirmed free to claim.
         for ip4_host in list(self._ip4_host_candidate):
             self._ip4_host_candidate.remove(ip4_host)
-            if ip4_host.address not in self._arp_probe_unicast_conflict:
+            if ip4_host.address not in self._arp_probe__unicast_conflict:
                 self._ip4_host.append(ip4_host)
                 self._send_arp_announcement(ip4_unicast=ip4_host.address)
                 __debug__ and log(
@@ -805,32 +805,6 @@ class PacketHandlerL3(
     """
 
     _interface_layer = InterfaceLayer.L3
-
-    def __init__(
-        self,
-        *,
-        interface_mtu: int,
-        ip4_support: bool = True,
-        ip4_host: Ip4Host | None = None,
-        ip6_support: bool = True,
-        ip6_host: Ip6Host | None = None,
-    ) -> None:
-        """
-        Class constructor.
-        """
-
-        super().__init__(
-            interface_mtu=interface_mtu,
-            ip6_support=ip6_support,
-            ip4_support=ip4_support,
-        )
-
-        # Assigned IP addresses statically.
-        if ip6_host is not None:
-            self._ip6_host_candidate.append(ip6_host)
-
-        if ip4_host is not None:
-            self._ip4_host_candidate.append(ip4_host)
 
     @override
     def _subsystem_loop(self) -> None:
