@@ -38,7 +38,7 @@ from __future__ import annotations
 import random
 import threading
 import time
-from abc import ABC
+from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING, override
 
 from net_addr import (
@@ -176,6 +176,62 @@ class PacketHandler(Subsystem, ABC):
         ip4_broadcast.append(Ip4Address(0xFFFFFFFF))
 
         return ip4_broadcast
+
+    def _assign_ip6_host(self, /, ip6_host: Ip6Host) -> None:
+        """
+        Assign IPv6 host unicast  address to the list stack listens on.
+        """
+
+        self._ip6_host.append(ip6_host)
+
+        __debug__ and log("stack", f"Assigned IPv6 unicast address {ip6_host}")
+
+        self._assign_ip6_multicast(ip6_host.address.solicited_node_multicast)
+
+    def _remove_ip6_host(self, /, ip6_host: Ip6Host) -> None:
+        """
+        Remove IPv6 host unicast address from the list stack listens on.
+        """
+
+        self._ip6_host.remove(ip6_host)
+
+        __debug__ and log("stack", f"Removed IPv6 unicast address {ip6_host}")
+
+        self._remove_ip6_multicast(ip6_host.address.solicited_node_multicast)
+
+    @abstractmethod
+    def _assign_ip6_multicast(self, /, ip6_multicast: Ip6Address) -> None:
+        """
+        Assign IPv6 multicast address to the list stack listens on.
+        """
+
+        raise NotImplementedError
+
+    @abstractmethod
+    def _remove_ip6_multicast(self, /, ip6_multicast: Ip6Address) -> None:
+        """
+        Remove IPv6 multicast address from the list stack listens on.
+        """
+
+        raise NotImplementedError
+
+    def _assign_ip4_host(self, /, ip4_host: Ip4Host) -> None:
+        """
+        Assign IPv6 host unicast  address to the list stack listens on.
+        """
+
+        self._ip4_host.append(ip4_host)
+
+        __debug__ and log("stack", f"Assigned IPv4 unicast address {ip4_host}")
+
+    def _remove_ip4_host(self, /, ip4_host: Ip4Host) -> None:
+        """
+        Remove IPv4 host unicast address from the list stack listens on.
+        """
+
+        self._ip4_host.remove(ip4_host)
+
+        __debug__ and log("stack", f"Removed IPv4 unicast address {ip4_host}")
 
     ###
     # Public interface.
@@ -604,28 +660,7 @@ class PacketHandlerL2(
             self._ip4_support = False
             return
 
-    def _assign_ip6_host(self, /, ip6_host: Ip6Host) -> None:
-        """
-        Assign IPv6 host unicast  address to the list stack listens on.
-        """
-
-        self._ip6_host.append(ip6_host)
-
-        __debug__ and log("stack", f"Assigned IPv6 unicast address {ip6_host}")
-
-        self._assign_ip6_multicast(ip6_host.address.solicited_node_multicast)
-
-    def _remove_ip6_host(self, /, ip6_host: Ip6Host) -> None:
-        """
-        Remove IPv6 host unicast address from the list stack listens on.
-        """
-
-        self._ip6_host.remove(ip6_host)
-
-        __debug__ and log("stack", f"Removed IPv6 unicast address {ip6_host}")
-
-        self._remove_ip6_multicast(ip6_host.address.solicited_node_multicast)
-
+    @override
     def _assign_ip6_multicast(self, /, ip6_multicast: Ip6Address) -> None:
         """
         Assign IPv6 multicast address to the list stack listens on.
@@ -639,6 +674,7 @@ class PacketHandlerL2(
 
         self._send_icmp6_multicast_listener_report()
 
+    @override
     def _remove_ip6_multicast(self, /, ip6_multicast: Ip6Address) -> None:
         """
         Remove IPv6 multicast address from the list stack listens on.
@@ -782,16 +818,12 @@ class PacketHandlerL3(
         # Initialize IPv6 addressing.
         if self._ip6_support:
             assert ip6_host is not None
-            self._ip6_host.append(ip6_host)
+            self._assign_ip6_host(ip6_host)
 
         # Initialize IPv4 addressing.
         if self._ip4_support:
             assert ip4_host is not None
-            self._ip4_host.append(ip4_host)
-
-    ###
-    # Internal methods.
-    ###
+            self._assign_ip4_host(ip4_host)
 
     @override
     def _start(self) -> None:
@@ -825,6 +857,28 @@ class PacketHandlerL3(
                         f"<WARN>Unknown EtherType 0x{packet_rx.frame[2:4].hex()} "
                         "received, dropping packet</>",
                     )
+
+    @override
+    def _assign_ip6_multicast(self, /, ip6_multicast: Ip6Address) -> None:
+        """
+        Assign IPv6 multicast address to the list stack listens on.
+        """
+
+        self._ip6_multicast.append(ip6_multicast)
+
+        __debug__ and log("stack", f"Assigned IPv6 multicast {ip6_multicast}")
+
+        self._send_icmp6_multicast_listener_report()
+
+    @override
+    def _remove_ip6_multicast(self, /, ip6_multicast: Ip6Address) -> None:
+        """
+        Remove IPv6 multicast address from the list stack listens on.
+        """
+
+        self._ip6_multicast.remove(ip6_multicast)
+
+        __debug__ and log("stack", f"Removed IPv6 multicast {ip6_multicast}")
 
     def _log_stack_address_info(self) -> None:
         """
