@@ -25,11 +25,11 @@
 
 
 """
-Module contains the DHCPv4 packet options class.
+This module contains the DHCPv4 packet options class.
 
 pytcp/protocols/dhcp4/options/dhcp4_options.py
 
-ver 3.0.2
+ver 3.0.3
 """
 
 

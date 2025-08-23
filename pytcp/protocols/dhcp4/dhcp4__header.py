@@ -29,7 +29,7 @@ This module contains the DHCPv4 header class.
 
 pytcp/protocols/dhcp4/dhcp4__header.py
 
-ver 3.0.2
+ver 3.0.3
 """
 
 

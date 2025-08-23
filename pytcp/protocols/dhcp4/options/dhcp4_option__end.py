@@ -25,11 +25,11 @@
 
 
 """
-Module contains the DHCPv4 End option support code.
+This module contains the DHCPv4 End option support code.
 
 pytcp/protocols/dhcp4/options/dhcp4_option__end.py
 
-ver 3.0.2
+ver 3.0.3
 """
 
 

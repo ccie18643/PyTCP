@@ -25,11 +25,11 @@
 
 
 """
-Module contains the DHCPv4 Message Type option support code.
+This module contains the DHCPv4 Message Type option support code.
 
 pytcp/protocols/dhcp4/options/dhcp4_option__message_type.py
 
-ver 3.0.2
+ver 3.0.3
 """
 
 

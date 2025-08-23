@@ -25,15 +25,13 @@
 
 
 """
-Module contains the DHCPv4 option base class.
+This module contains the DHCPv4 option base class.
 
 pytcp/protocols/tcp/options/dhcp_option.py
 
-ver 3.0.2
+ver 3.0.3
 """
 
-
-from __future__ import annotations
 
 from dataclasses import dataclass
 

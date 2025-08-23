@@ -25,11 +25,11 @@
 
 
 """
-Module contains the DHCPv4 Pad option support code.
+This module contains the DHCPv4 Pad option support code.
 
 pytcp/protocols/dhcp4/options/dhcp4_option__pad.py
 
-ver 3.0.2
+ver 3.0.3
 """
 
 

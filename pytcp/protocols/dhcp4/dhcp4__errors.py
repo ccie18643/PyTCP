@@ -29,11 +29,9 @@ This module contains the DHCPv4 protocol error classes.
 
 pytcp/protocols/dhcp4/dhcp4__errors.py
 
-ver 3.0.2
+ver 3.0.3
 """
 
-
-from __future__ import annotations
 
 from pytcp.protocols.errors import PacketIntegrityError, PacketSanityError
 

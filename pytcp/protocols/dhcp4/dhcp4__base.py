@@ -29,11 +29,9 @@ This module contains the DHCPv4 protccol base class.
 
 pytcp/protocols/dhcp4/dhcp4__base.py
 
-ver 3.0.2
+ver 3.0.3
 """
 
-
-from __future__ import annotations
 
 from pytcp.lib.proto import Proto
 from pytcp.protocols.dhcp4.dhcp4__header import Dhcp4HeaderProperties

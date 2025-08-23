@@ -25,11 +25,11 @@
 
 
 """
-Module contains the unknown DHCPv4 option support code.
+This module contains the unknown DHCPv4 option support code.
 
 pytcp/protocols/dhcp4/options/dhcp4_option__unknown.py
 
-ver 3.0.2
+ver 3.0.3
 """
 
 
