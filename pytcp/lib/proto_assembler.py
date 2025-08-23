@@ -33,14 +33,8 @@ ver 3.0.3
 """
 
 
-from __future__ import annotations
-
-from typing import TYPE_CHECKING
-
 from pytcp.lib.proto import Proto
-
-if TYPE_CHECKING:
-    from pytcp.lib.tracker import Tracker
+from pytcp.lib.tracker import Tracker
 
 
 class ProtoAssembler(Proto):
