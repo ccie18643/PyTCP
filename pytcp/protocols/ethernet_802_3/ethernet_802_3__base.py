@@ -29,35 +29,33 @@ This module contains the Ethernet 802.3 protocol base class.
 
 pytcp/protocols/ethernet_802_3/ethernet_802_3__base.py
 
-ver 3.0.2
+ver 3.0.3
 """
 
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, override
+from typing import override
 
 from pytcp.lib.proto import Proto
 from pytcp.protocols.ethernet_802_3.ethernet_802_3__header import (
+    Ethernet8023Header,
     EthernetHeader8023Properties,
 )
+from pytcp.protocols.raw.raw__assembler import RawAssembler
 
-if TYPE_CHECKING:
-    from pytcp.protocols.ethernet_802_3.ethernet_802_3__header import (
-        Ethernet8023Header,
-    )
-    from pytcp.protocols.raw.raw__assembler import RawAssembler
-
-    type Ethernet8023Payload = RawAssembler
+type Ethernet8023Payload = RawAssembler
 
 
-class Ethernet8023(Proto, EthernetHeader8023Properties):
+class Ethernet8023[P: (RawAssembler, memoryview)](
+    Proto, EthernetHeader8023Properties
+):
     """
     The Ethernet 802.3 protocol base.
     """
 
     _header: Ethernet8023Header
-    _payload: Ethernet8023Payload | memoryview
+    _payload: P
 
     @override
     def __len__(self) -> int:

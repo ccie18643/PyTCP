@@ -25,19 +25,17 @@
 
 
 """
-Module contains the unknown ICMPv6 option support code.
+This module contains the unknown ICMPv6 option support code.
 
 pytcp/protocols/icmp6/options/icmp6_nd_option__unknown.py
 
-ver 3.0.2
+ver 3.0.3
 """
 
 
-from __future__ import annotations
-
 import struct
 from dataclasses import dataclass, field
-from typing import override
+from typing import Self, override
 
 from pytcp.lib.int_checks import is_8_byte_alligned, is_uint8
 from pytcp.protocols.icmp6.icmp6__errors import Icmp6IntegrityError
@@ -134,8 +132,8 @@ class Icmp6NdOptionUnknown(Icmp6NdOption):
             )
 
     @override
-    @staticmethod
-    def from_bytes(_bytes: bytes, /) -> Icmp6NdOptionUnknown:
+    @classmethod
+    def from_bytes(cls, _bytes: bytes, /) -> Self:
         """
         Initialize the unknown ICMPv6 option from bytes.
         """
@@ -154,7 +152,7 @@ class Icmp6NdOptionUnknown(Icmp6NdOption):
 
         Icmp6NdOptionUnknown._validate_integrity(_bytes)
 
-        return Icmp6NdOptionUnknown(
+        return cls(
             type=Icmp6NdOptionType(_bytes[0]),
             len=_bytes[1] << 3,
             data=_bytes[ICMP6__ND__OPTION__LEN : _bytes[1] << 3],

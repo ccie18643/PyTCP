@@ -29,15 +29,13 @@ This module contains the ICMPv6 MLDv2 Multicast Address Record support class.
 
 pytcp/protocols/icmp6/icmp6_mld2__multicast_address_record.py
 
-ver 3.0.2
+ver 3.0.3
 """
 
 
-from __future__ import annotations
-
 import struct
 from dataclasses import dataclass, field
-from typing import override
+from typing import Self, override
 
 from net_addr import IP6__ADDRESS_LEN, Ip6Address
 from pytcp.lib.int_checks import is_4_byte_alligned
@@ -120,7 +118,7 @@ class Icmp6Mld2MulticastAddressRecord(ProtoStruct):
     # The 'aux_data_len' field is available as a property.
     # The 'number_of_sources' field is available as a property.
     multicast_address: Ip6Address
-    source_addresses: list[Ip6Address] = field(default_factory=list)
+    source_addresses: list[Ip6Address] = field(default_factory=list[Ip6Address])
     aux_data: bytes = bytes()
 
     @override
@@ -196,6 +194,7 @@ class Icmp6Mld2MulticastAddressRecord(ProtoStruct):
             + self.aux_data
         )
 
+    @override
     def __hash__(self) -> int:
         """
         Get the ICMPv6 MLDv2 Multicast Address Record hash.
@@ -226,8 +225,9 @@ class Icmp6Mld2MulticastAddressRecord(ProtoStruct):
 
         return len(self.aux_data)
 
-    @staticmethod
-    def from_bytes(_bytes: bytes, /) -> Icmp6Mld2MulticastAddressRecord:
+    @override
+    @classmethod
+    def from_bytes(cls, _bytes: bytes, /) -> Self:
         """
         Initialize the ICMPv6 MLDv2 Multicast Address Record from bytes.
         """
@@ -259,7 +259,7 @@ class Icmp6Mld2MulticastAddressRecord(ProtoStruct):
             aux_data_offset : aux_data_offset + (aux_data_len << 2)
         ]
 
-        return Icmp6Mld2MulticastAddressRecord(
+        return cls(
             type=Icmp6Mld2MulticastAddressRecordType.from_int(type),
             multicast_address=Ip6Address(multicast_address),
             source_addresses=source_addresses,

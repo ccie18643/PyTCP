@@ -29,26 +29,19 @@ This module contains the Ethernet II packet assembler class.
 
 pytcp/protocols/ethernet/ethernet__assembler.py
 
-ver 3.0.2
+ver 3.0.3
 """
 
-
-from __future__ import annotations
-
-from typing import TYPE_CHECKING
 
 from net_addr import MacAddress
 from pytcp.lib.proto_assembler import ProtoAssembler
 from pytcp.protocols.enums import EtherType
-from pytcp.protocols.ethernet.ethernet__base import Ethernet
+from pytcp.protocols.ethernet.ethernet__base import Ethernet, EthernetPayload
 from pytcp.protocols.ethernet.ethernet__header import EthernetHeader
 from pytcp.protocols.raw.raw__assembler import RawAssembler
 
-if TYPE_CHECKING:
-    from pytcp.protocols.ethernet.ethernet__base import EthernetPayload
 
-
-class EthernetAssembler(Ethernet, ProtoAssembler):
+class EthernetAssembler(Ethernet[EthernetPayload], ProtoAssembler):
     """
     The Ethernet packet assembler.
     """

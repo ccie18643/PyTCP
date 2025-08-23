@@ -29,28 +29,21 @@ This module contains the IPv6 packet assembler.
 
 pytcp/protocols/ip6/ip6__assembler.py
 
-ver 3.0.2
+ver 3.0.3
 """
 
 
-from __future__ import annotations
-
-from typing import TYPE_CHECKING
-
 from net_addr import Ip6Address
 from pytcp.lib.proto_assembler import ProtoAssembler
+from pytcp.lib.tracker import Tracker
 from pytcp.protocols.defaults import IP6__DEFAULT_HOP_LIMIT
 from pytcp.protocols.enums import IpProto
-from pytcp.protocols.ip6.ip6__base import Ip6
+from pytcp.protocols.ip6.ip6__base import Ip6, Ip6Payload
 from pytcp.protocols.ip6.ip6__header import Ip6Header
 from pytcp.protocols.raw.raw__assembler import RawAssembler
 
-if TYPE_CHECKING:
-    from pytcp.lib.tracker import Tracker
-    from pytcp.protocols.ip6.ip6__base import Ip6Payload
 
-
-class Ip6Assembler(Ip6, ProtoAssembler):
+class Ip6Assembler(Ip6[Ip6Payload], ProtoAssembler):
     """
     The IPv6 packet assembler.
     """

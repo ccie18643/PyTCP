@@ -25,19 +25,17 @@
 
 
 """
-Module contains the ICMPv4 Destination Unreachable message support class.
+This module contains the ICMPv4 Destination Unreachable message support class.
 
 pytcp/protocols/icmp4/message/icmp4_message__destination_unreachable.py
 
-ver 3.0.2
+ver 3.0.3
 """
 
 
-from __future__ import annotations
-
 import struct
 from dataclasses import dataclass, field
-from typing import override
+from typing import Self, override
 
 from pytcp.lib.int_checks import is_uint16
 from pytcp.protocols.defaults import IP4__MIN_MTU
@@ -261,8 +259,8 @@ class Icmp4DestinationUnreachableMessage(Icmp4Message):
             )
 
     @override
-    @staticmethod
-    def from_bytes(_bytes: bytes, /) -> Icmp4DestinationUnreachableMessage:
+    @classmethod
+    def from_bytes(cls, _bytes: bytes, /) -> Self:
         """
         Initialize the ICMPv4 Destination Unreachable message from bytes.
         """
@@ -284,7 +282,7 @@ class Icmp4DestinationUnreachableMessage(Icmp4Message):
             valid_type := Icmp4Type.DESTINATION_UNREACHABLE
         ), f"The 'type' field must be {valid_type!r}. Got: {received_type!r}"
 
-        return Icmp4DestinationUnreachableMessage(
+        return cls(
             code=Icmp4DestinationUnreachableCode.from_int(code),
             cksum=cksum,
             mtu=mtu,

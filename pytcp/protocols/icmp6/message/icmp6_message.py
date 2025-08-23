@@ -25,26 +25,20 @@
 
 
 """
-Module contains the ICMPv6 message base class.
+This module contains the ICMPv6 message base class.
 
 pytcp/protocols/icmp6/message/icmp6_message.py
 
-ver 3.0.2
+ver 3.0.3
 """
 
 
-from __future__ import annotations
-
 from abc import abstractmethod
 from dataclasses import dataclass
-from typing import TYPE_CHECKING
 
+from net_addr import Ip6Address
 from pytcp.lib.proto_enum import ProtoEnumByte
 from pytcp.lib.proto_struct import ProtoStruct
-
-if TYPE_CHECKING:
-    from net_addr import Ip6Address
-
 
 # ICMPv6 message header [RFC 4443].
 

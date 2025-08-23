@@ -25,19 +25,17 @@
 
 
 """
-Module contains the TCP Mss (Maximum Segment Size) option support code.
+This module contains the TCP Mss (Maximum Segment Size) option support code.
 
 pytcp/protocols/tcp/options/tcp_option__mss.py
 
-ver 3.0.2
+ver 3.0.3
 """
 
 
-from __future__ import annotations
-
 import struct
 from dataclasses import dataclass, field
-from typing import override
+from typing import Self, override
 
 from pytcp.lib.int_checks import is_uint16
 from pytcp.protocols.tcp.options.tcp_option import (
@@ -52,7 +50,6 @@ from pytcp.protocols.tcp.tcp__errors import TcpIntegrityError
 # +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 # |    Type = 1   |   Length = 1  |             Value             |
 # +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-
 
 TCP__OPTION__MSS__LEN = 4
 TCP__OPTION__MSS__STRUCT = "! BB H"
@@ -128,8 +125,8 @@ class TcpOptionMss(TcpOption):
             )
 
     @override
-    @staticmethod
-    def from_bytes(_bytes: bytes, /) -> TcpOptionMss:
+    @classmethod
+    def from_bytes(cls, _bytes: bytes, /) -> Self:
         """
         Initialize the TCP Mss option from bytes.
         """
@@ -144,6 +141,6 @@ class TcpOptionMss(TcpOption):
             f"Got: {TcpOptionType.from_int(value)!r}"
         )
 
-        TcpOptionMss._validate_integrity(_bytes)
+        cls._validate_integrity(_bytes)
 
-        return TcpOptionMss(mss=int.from_bytes(_bytes[2:4]))
+        return cls(mss=int.from_bytes(_bytes[2:4]))

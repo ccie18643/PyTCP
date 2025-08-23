@@ -33,10 +33,9 @@ ver 3.0.3
 """
 
 
-from __future__ import annotations
-
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
+from typing import Self
 
 
 @dataclass(frozen=True, kw_only=True, slots=True)
@@ -69,9 +68,9 @@ class ProtoStruct(ABC):
 
         raise NotImplementedError
 
-    @staticmethod
+    @classmethod
     @abstractmethod
-    def from_bytes(_bytes: bytes, /) -> ProtoStruct:
+    def from_bytes(cls, _bytes: bytes, /) -> Self:
         """
         Create the protocol structure from bytes.
         """

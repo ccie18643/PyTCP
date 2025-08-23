@@ -25,19 +25,17 @@
 
 
 """
-Module contains the TCP Sack (Selective ACK) option support code.
+This module contains the TCP Sack (Selective ACK) option support code.
 
 pytcp/protocols/tcp/options/tcp_option__sack.py
 
-ver 3.0.2
+ver 3.0.3
 """
 
 
-from __future__ import annotations
-
 import struct
 from dataclasses import dataclass, field
-from typing import override
+from typing import Self, override
 
 from pytcp.protocols.tcp.options.tcp_option import (
     TCP__OPTION__LEN,
@@ -61,7 +59,6 @@ from pytcp.protocols.tcp.tcp__errors import TcpIntegrityError
 # +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 # |                   Right Edge of nth Block                     |
 # +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-
 
 TCP__OPTION__SACK__LEN = 2
 TCP__OPTION__SACK__STRUCT = "! BB"
@@ -185,8 +182,8 @@ class TcpOptionSack(TcpOption):
             )
 
     @override
-    @staticmethod
-    def from_bytes(_bytes: bytes, /) -> TcpOptionSack:
+    @classmethod
+    def from_bytes(cls, _bytes: bytes, /) -> Self:
         """
         Initialize the TCP Sack option from bytes.
         """
@@ -201,9 +198,9 @@ class TcpOptionSack(TcpOption):
             f"Got: {TcpOptionType.from_int(value)!r}"
         )
 
-        TcpOptionSack._validate_integrity(_bytes)
+        cls._validate_integrity(_bytes)
 
-        return TcpOptionSack(
+        return cls(
             blocks=[
                 TcpSackBlock(
                     left=int.from_bytes(

@@ -33,15 +33,10 @@ ver 3.0.3
 """
 
 
-from __future__ import annotations
-
-from typing import TYPE_CHECKING, override
+from typing import override
 
 from pytcp.lib.proto import Proto
-from pytcp.protocols.arp.arp__header import ArpHeaderProperties
-
-if TYPE_CHECKING:
-    from pytcp.protocols.arp.arp__header import ArpHeader
+from pytcp.protocols.arp.arp__header import ArpHeader, ArpHeaderProperties
 
 
 class Arp(Proto, ArpHeaderProperties):

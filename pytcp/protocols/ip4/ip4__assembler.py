@@ -29,13 +29,9 @@ This module contain the IPv4 protocol assembler classes.
 
 pytcp/protocols/ip4/ip4__assembler.py
 
-ver 3.0.2
+ver 3.0.3
 """
 
-
-from __future__ import annotations
-
-from typing import TYPE_CHECKING
 
 from net_addr import Ip4Address
 from pytcp.lib.int_checks import is_4_byte_alligned
@@ -43,7 +39,7 @@ from pytcp.lib.proto_assembler import ProtoAssembler
 from pytcp.lib.tracker import Tracker
 from pytcp.protocols.defaults import IP4__DEFAULT_TTL
 from pytcp.protocols.enums import IpProto
-from pytcp.protocols.ip4.ip4__base import Ip4
+from pytcp.protocols.ip4.ip4__base import Ip4, Ip4Payload
 from pytcp.protocols.ip4.ip4__header import IP4__HEADER__LEN, Ip4Header
 from pytcp.protocols.ip4.options.ip4_option__eol import Ip4OptionEol
 from pytcp.protocols.ip4.options.ip4_options import (
@@ -52,11 +48,8 @@ from pytcp.protocols.ip4.options.ip4_options import (
 )
 from pytcp.protocols.raw.raw__assembler import RawAssembler
 
-if TYPE_CHECKING:
-    from pytcp.protocols.ip4.ip4__base import Ip4Payload
 
-
-class Ip4Assembler(Ip4, ProtoAssembler):
+class Ip4Assembler(Ip4[Ip4Payload], ProtoAssembler):
     """
     The IPv4 packet assembler.
     """
@@ -124,7 +117,7 @@ class Ip4Assembler(Ip4, ProtoAssembler):
         return self._payload
 
 
-class Ip4FragAssembler(Ip4, ProtoAssembler):
+class Ip4FragAssembler(Ip4[bytes], ProtoAssembler):
     """
     The IPv4 (Frag) packet assembler.
     """

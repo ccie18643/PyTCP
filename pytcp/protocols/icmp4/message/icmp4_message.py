@@ -25,15 +25,13 @@
 
 
 """
-Module contains the ICMPv4 message base class.
+This module contains the ICMPv4 message base class.
 
 pytcp/protocols/icmp4/message/icmp4_message.py
 
-ver 3.0.2
+ver 3.0.3
 """
 
-
-from __future__ import annotations
 
 from abc import abstractmethod
 from dataclasses import dataclass

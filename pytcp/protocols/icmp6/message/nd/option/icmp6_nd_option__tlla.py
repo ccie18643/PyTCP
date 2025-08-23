@@ -25,19 +25,17 @@
 
 
 """
-Module contains the ICMPv6 Tlla (Target Link Layer Address) option support code.
+This module contains the ICMPv6 Tlla (Target Link Layer Address) option support code.
 
 pytcp/protocols/icmp6/message/nd/option/icmp6_nd_option__tlla.py
 
-ver 3.0.2
+ver 3.0.3
 """
 
 
-from __future__ import annotations
-
 import struct
 from dataclasses import dataclass, field
-from typing import override
+from typing import Self, override
 
 from net_addr import MacAddress
 from pytcp.protocols.icmp6.icmp6__errors import Icmp6IntegrityError
@@ -128,8 +126,8 @@ class Icmp6NdOptionTlla(Icmp6NdOption):
             )
 
     @override
-    @staticmethod
-    def from_bytes(_bytes: bytes, /) -> Icmp6NdOptionTlla:
+    @classmethod
+    def from_bytes(cls, _bytes: bytes, /) -> Self:
         """
         Initialize the ICMPv6 ND Tlla option from bytes.
         """
@@ -146,4 +144,4 @@ class Icmp6NdOptionTlla(Icmp6NdOption):
 
         Icmp6NdOptionTlla._validate_integrity(_bytes)
 
-        return Icmp6NdOptionTlla(tlla=MacAddress(_bytes[2:8]))
+        return cls(tlla=MacAddress(_bytes[2:8]))

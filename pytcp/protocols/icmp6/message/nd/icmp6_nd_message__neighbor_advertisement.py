@@ -25,19 +25,17 @@
 
 
 """
-Module contains the ICMPv6 ND Neighbor Advertisement message support class.
+Thisodule contains the ICMPv6 ND Neighbor Advertisement message support class.
 
 pytcp/protocols/icmp6/message/nd/icmp6_nd_message__neighbor_advertisement.py
 
-ver 3.0.2
+ver 3.0.3
 """
 
 
-from __future__ import annotations
-
 import struct
 from dataclasses import dataclass, field
-from typing import override
+from typing import Self, override
 
 from net_addr import Ip6Address
 from pytcp.lib.int_checks import is_uint16
@@ -248,8 +246,8 @@ class Icmp6NdNeighborAdvertisementMessage(Icmp6NdMessage):
         )
 
     @override
-    @staticmethod
-    def from_bytes(_bytes: bytes, /) -> Icmp6NdNeighborAdvertisementMessage:
+    @classmethod
+    def from_bytes(cls, _bytes: bytes, /) -> Self:
         """
         Initialize the ICMPv6 ND Neighbor Advertisement message from bytes.
         """
@@ -266,7 +264,7 @@ class Icmp6NdNeighborAdvertisementMessage(Icmp6NdMessage):
             f"Got: {received_type!r}"
         )
 
-        return Icmp6NdNeighborAdvertisementMessage(
+        return cls(
             code=Icmp6NdNeighborAdvertisementCode(code),
             cksum=cksum,
             flag_r=bool(flags & 0b10000000_00000000_00000000_00000000),

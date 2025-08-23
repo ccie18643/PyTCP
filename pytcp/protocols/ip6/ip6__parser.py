@@ -29,24 +29,20 @@ This module contains the IPv6 packet parser.
 
 pytcp/protocols/ip6/ip6__parser.py
 
-ver 3.0.2
+ver 3.0.3
 """
 
 
-from __future__ import annotations
+from typing import override
 
-from typing import TYPE_CHECKING, override
-
+from pytcp.lib.packet_rx import PacketRx
 from pytcp.lib.proto_parser import ProtoParser
 from pytcp.protocols.ip6.ip6__base import Ip6
 from pytcp.protocols.ip6.ip6__errors import Ip6IntegrityError, Ip6SanityError
 from pytcp.protocols.ip6.ip6__header import IP6__HEADER__LEN, Ip6Header
 
-if TYPE_CHECKING:
-    from pytcp.lib.packet_rx import PacketRx
 
-
-class Ip6Parser(Ip6, ProtoParser):
+class Ip6Parser(Ip6[memoryview], ProtoParser):
     """
     The IPv6 packet parser
     """

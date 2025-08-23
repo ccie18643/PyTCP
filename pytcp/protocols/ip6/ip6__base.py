@@ -29,42 +29,37 @@ This module contains the IPv6 packet base class.
 
 pytcp/protocols/ip6/ip6__base.py
 
-ver 3.0.2
+ver 3.0.3
 """
 
 
-from __future__ import annotations
-
 import struct
-from typing import TYPE_CHECKING, override
+from typing import override
 
 from pytcp.lib.proto import Proto
 from pytcp.protocols.icmp6.icmp6__assembler import Icmp6Assembler
-from pytcp.protocols.ip6.ip6__header import Ip6HeaderProperties
+from pytcp.protocols.ip6.ip6__header import Ip6Header, Ip6HeaderProperties
+from pytcp.protocols.ip6_frag.ip6_frag__assembler import Ip6FragAssembler
 from pytcp.protocols.raw.raw__assembler import RawAssembler
 from pytcp.protocols.tcp.tcp__assembler import TcpAssembler
 from pytcp.protocols.udp.udp__assembler import UdpAssembler
 
-if TYPE_CHECKING:
-    from pytcp.protocols.ip6.ip6__header import Ip6Header
-    from pytcp.protocols.ip6_frag.ip6_frag__assembler import Ip6FragAssembler
-
-    type Ip6Payload = (
-        Ip6FragAssembler
-        | Icmp6Assembler
-        | TcpAssembler
-        | UdpAssembler
-        | RawAssembler
-    )
+type Ip6Payload = (
+    Ip6FragAssembler
+    | Icmp6Assembler
+    | TcpAssembler
+    | UdpAssembler
+    | RawAssembler
+)
 
 
-class Ip6(Proto, Ip6HeaderProperties):
+class Ip6[P: (Ip6Payload, memoryview)](Proto, Ip6HeaderProperties):
     """
     The IPv6 protocol base.
     """
 
     _header: Ip6Header
-    _payload: Ip6Payload | memoryview
+    _payload: P
 
     @override
     def __len__(self) -> int:

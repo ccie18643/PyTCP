@@ -25,20 +25,18 @@
 
 
 """
-Module contains the UDP packet header class.
+This module contains the UDP packet header class.
 
 pytcp/protocols/udp/udp__header.py
 
-ver 3.0.2
+ver 3.0.3
 """
 
-
-from __future__ import annotations
 
 import struct
 from abc import ABC
 from dataclasses import dataclass
-from typing import override
+from typing import Self, override
 
 from pytcp.lib.int_checks import is_uint16
 from pytcp.lib.proto_struct import ProtoStruct
@@ -115,8 +113,8 @@ class UdpHeader(ProtoStruct):
         )
 
     @override
-    @staticmethod
-    def from_bytes(_bytes: bytes, /) -> UdpHeader:
+    @classmethod
+    def from_bytes(cls, _bytes: bytes, /) -> Self:
         """
         Initialize UDP header from bytes.
         """
@@ -125,7 +123,7 @@ class UdpHeader(ProtoStruct):
             UDP__HEADER__STRUCT, _bytes[:UDP__HEADER__LEN]
         )
 
-        return UdpHeader(
+        return cls(
             sport=sport,
             dport=dport,
             plen=plen,

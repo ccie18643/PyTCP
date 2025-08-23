@@ -25,29 +25,25 @@
 
 
 """
-Module contains the UDP packet parser class.
+This module contains the UDP packet parser class.
 
 protocols/udp/udp__parser.py
 
-ver 3.0.2
+ver 3.0.3
 """
 
 
-from __future__ import annotations
-
-from typing import TYPE_CHECKING, override
+from typing import override
 
 from pytcp.lib.inet_cksum import inet_cksum
+from pytcp.lib.packet_rx import PacketRx
 from pytcp.lib.proto_parser import ProtoParser
 from pytcp.protocols.udp.udp__base import Udp
 from pytcp.protocols.udp.udp__errors import UdpIntegrityError, UdpSanityError
 from pytcp.protocols.udp.udp__header import UDP__HEADER__LEN, UdpHeader
 
-if TYPE_CHECKING:
-    from pytcp.lib.packet_rx import PacketRx
 
-
-class UdpParser(Udp, ProtoParser):
+class UdpParser(Udp[memoryview], ProtoParser):
     """
     The UDP packet parser.
     """

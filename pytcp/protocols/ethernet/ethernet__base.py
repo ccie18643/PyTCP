@@ -29,43 +29,39 @@ This module contains the Ethernet II protccol base class.
 
 pytcp/protocols/ethernet/ethernet__base.py
 
-ver 3.0.2
+ver 3.0.3
 """
 
 
-from __future__ import annotations
-
-from typing import TYPE_CHECKING, override
+from typing import override
 
 from pytcp.lib.proto import Proto
-from pytcp.protocols.ethernet.ethernet__header import EthernetHeaderProperties
+from pytcp.protocols.arp.arp__assembler import ArpAssembler
+from pytcp.protocols.ethernet.ethernet__header import (
+    EthernetHeader,
+    EthernetHeaderProperties,
+)
+from pytcp.protocols.ip4.ip4__assembler import (
+    Ip4Assembler,
+    Ip4FragAssembler,
+)
+from pytcp.protocols.ip6.ip6__assembler import Ip6Assembler
+from pytcp.protocols.raw.raw__assembler import RawAssembler
 
-if TYPE_CHECKING:
-    from pytcp.protocols.arp.arp__assembler import ArpAssembler
-    from pytcp.protocols.ethernet.ethernet__header import EthernetHeader
-    from pytcp.protocols.ip4.ip4__assembler import (
-        Ip4Assembler,
-        Ip4FragAssembler,
-    )
-    from pytcp.protocols.ip6.ip6__assembler import Ip6Assembler
-    from pytcp.protocols.raw.raw__assembler import RawAssembler
-
-    type EthernetPayload = (
-        ArpAssembler
-        | Ip4Assembler
-        | Ip4FragAssembler
-        | Ip6Assembler
-        | RawAssembler
-    )
+type EthernetPayload = (
+    ArpAssembler | Ip4Assembler | Ip4FragAssembler | Ip6Assembler | RawAssembler
+)
 
 
-class Ethernet(Proto, EthernetHeaderProperties):
+class Ethernet[P: (EthernetPayload, memoryview)](
+    Proto, EthernetHeaderProperties
+):
     """
     The Ethernet protocol base class.
     """
 
     _header: EthernetHeader
-    _payload: EthernetPayload | memoryview
+    _payload: P
 
     @override
     def __len__(self) -> int:

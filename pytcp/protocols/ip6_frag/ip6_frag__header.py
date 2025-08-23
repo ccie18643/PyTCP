@@ -29,16 +29,14 @@ This module contains the IPv6 Frag header class.
 
 pytcp/protocols/ip6_frag/ip6_frag__header.py
 
-ver 3.0.2
+ver 3.0.3
 """
 
-
-from __future__ import annotations
 
 import struct
 from abc import ABC
 from dataclasses import dataclass
-from typing import override
+from typing import Self, override
 
 from pytcp.lib.int_checks import is_8_byte_alligned, is_uint13, is_uint32
 from pytcp.lib.proto_struct import ProtoStruct
@@ -117,8 +115,8 @@ class Ip6FragHeader(ProtoStruct):
         )
 
     @override
-    @staticmethod
-    def from_bytes(_bytes: bytes, /) -> Ip6FragHeader:
+    @classmethod
+    def from_bytes(cls, _bytes: bytes, /) -> Self:
         """
         Initialize the IPv6 Frag header from bytes.
         """
@@ -127,7 +125,7 @@ class Ip6FragHeader(ProtoStruct):
             IP6_EXT_FRAG__HEADER__STRUCT, _bytes[:IP6_EXT_FRAG__HEADER__LEN]
         )
 
-        return Ip6FragHeader(
+        return cls(
             next=IpProto.from_int(next),
             offset=offset__flag_mf & 0b11111111_11111000,
             flag_mf=bool(offset__flag_mf & 0b00000000_00000001),

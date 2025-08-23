@@ -25,20 +25,19 @@
 
 
 """
-Module contains the ICMPv6 unknown message support class.
+This module contains the ICMPv6 unknown message support class.
 
 pytcp/protocols/icmp6/message/icmp6_message__unknown.py
 
-ver 3.0.2
+ver 3.0.3
 """
 
 
-from __future__ import annotations
-
 import struct
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, override
+from typing import Self, override
 
+from net_addr import Ip6Address
 from pytcp.lib.int_checks import is_uint16
 from pytcp.protocols.icmp6.message.icmp6_message import (
     ICMP6__HEADER__LEN,
@@ -47,9 +46,6 @@ from pytcp.protocols.icmp6.message.icmp6_message import (
     Icmp6Message,
     Icmp6Type,
 )
-
-if TYPE_CHECKING:
-    from net_addr import Ip6Address
 
 
 @dataclass(frozen=True, kw_only=True, slots=True)
@@ -145,8 +141,8 @@ class Icmp6UnknownMessage(Icmp6Message):
         # Currently no integrity checks are implemented.
 
     @override
-    @staticmethod
-    def from_bytes(_bytes: bytes, /) -> Icmp6UnknownMessage:
+    @classmethod
+    def from_bytes(cls, _bytes: bytes, /) -> Self:
         """
         Initialize the ICMPv6 unknown message from bytes.
         """
@@ -160,7 +156,7 @@ class Icmp6UnknownMessage(Icmp6Message):
             f"Got: {Icmp6Type.from_int(received_type)!r}"
         )
 
-        return Icmp6UnknownMessage(
+        return cls(
             type=Icmp6Type.from_int(type),
             code=Icmp6Code.from_int(code),
             cksum=cksum,

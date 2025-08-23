@@ -25,30 +25,26 @@
 
 
 """
-Module contains the TCP packet parser class.
+This module contains the TCP packet parser class.
 
 pytcp/protocols/tcp/tcp__parser.py
 
-ver 3.0.2
+ver 3.0.3
 """
 
 
-from __future__ import annotations
-
-from typing import TYPE_CHECKING, override
+from typing import override
 
 from pytcp.lib.inet_cksum import inet_cksum
+from pytcp.lib.packet_rx import PacketRx
 from pytcp.lib.proto_parser import ProtoParser
 from pytcp.protocols.tcp.options.tcp_options import TcpOptions
 from pytcp.protocols.tcp.tcp__base import Tcp
 from pytcp.protocols.tcp.tcp__errors import TcpIntegrityError, TcpSanityError
 from pytcp.protocols.tcp.tcp__header import TCP__HEADER__LEN, TcpHeader
 
-if TYPE_CHECKING:
-    from pytcp.lib.packet_rx import PacketRx
 
-
-class TcpParser(Tcp, ProtoParser):
+class TcpParser(Tcp[memoryview], ProtoParser):
     """
     The TCP packet parser.
     """

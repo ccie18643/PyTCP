@@ -29,14 +29,13 @@ This module contains the Ethernet II packet parser class.
 
 pytcp/protocols/ethernet/ethernet__parser.py
 
-ver 3.0.2
+ver 3.0.3
 """
 
 
-from __future__ import annotations
+from typing import override
 
-from typing import TYPE_CHECKING, override
-
+from pytcp.lib.packet_rx import PacketRx
 from pytcp.lib.proto_parser import ProtoParser
 from pytcp.protocols.ethernet.ethernet__base import Ethernet
 from pytcp.protocols.ethernet.ethernet__errors import (
@@ -48,11 +47,8 @@ from pytcp.protocols.ethernet.ethernet__header import (
     EthernetHeader,
 )
 
-if TYPE_CHECKING:
-    from pytcp.lib.packet_rx import PacketRx
 
-
-class EthernetParser(Ethernet, ProtoParser):
+class EthernetParser(Ethernet[memoryview], ProtoParser):
     """
     The Ethernet packet parser.
     """

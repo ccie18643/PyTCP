@@ -29,11 +29,9 @@ This module contains the Ethernet 802.3 protocol error classes.
 
 pytcp/protocols/ethernet_802_3/ethernet_802_3__errors.py
 
-ver 3.0.2
+ver 3.0.3
 """
 
-
-from __future__ import annotations
 
 from pytcp.protocols.errors import PacketIntegrityError, PacketSanityError
 

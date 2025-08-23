@@ -29,13 +29,11 @@ This module contains the IPv6 Frag base class.
 
 pytcp/protocols/ip6_frag/ip6_frag__base.py
 
-ver 3.0.2
+ver 3.0.3
 """
 
 
-from __future__ import annotations
-
-from typing import TYPE_CHECKING, override
+from typing import override
 
 from pytcp.lib.proto import Proto
 from pytcp.protocols.ip6_frag.ip6_frag__header import (
@@ -43,24 +41,14 @@ from pytcp.protocols.ip6_frag.ip6_frag__header import (
     Ip6FragHeaderProperties,
 )
 
-if TYPE_CHECKING:
-    from pytcp.protocols.icmp6.icmp6__assembler import Icmp6Assembler
-    from pytcp.protocols.raw.raw__assembler import RawAssembler
-    from pytcp.protocols.tcp.tcp__assembler import TcpAssembler
-    from pytcp.protocols.udp.udp__assembler import UdpAssembler
 
-    type Ip6FragPayload = (
-        Icmp6Assembler | TcpAssembler | UdpAssembler | RawAssembler
-    )
-
-
-class Ip6Frag(Proto, Ip6FragHeaderProperties):
+class Ip6Frag[P: (memoryview, bytes)](Proto, Ip6FragHeaderProperties):
     """
     The IPv6 Frag base.
     """
 
     _header: Ip6FragHeader
-    _payload: memoryview | bytes
+    _payload: P
 
     pshdr_sum: int = 0
 

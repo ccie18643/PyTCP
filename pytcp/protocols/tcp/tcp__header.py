@@ -29,16 +29,14 @@ This module contains the TCP packet header class.
 
 pytcp/protocols/tcp/tcp__header.py
 
-ver 3.0.2
+ver 3.0.3
 """
 
-
-from __future__ import annotations
 
 import struct
 from abc import ABC
 from dataclasses import dataclass
-from typing import override
+from typing import Self, override
 
 from pytcp.lib.int_checks import (
     is_4_byte_alligned,
@@ -208,8 +206,8 @@ class TcpHeader(ProtoStruct):
         )
 
     @override
-    @staticmethod
-    def from_bytes(_bytes: bytes, /) -> TcpHeader:
+    @classmethod
+    def from_bytes(cls, _bytes: bytes, /) -> Self:
         """
         Initialize the TCP header from bytes.
         """
@@ -218,7 +216,7 @@ class TcpHeader(ProtoStruct):
             TCP__HEADER__STRUCT, _bytes[:TCP__HEADER__LEN]
         )
 
-        return TcpHeader(
+        return cls(
             sport=sport,
             dport=dport,
             seq=seq,

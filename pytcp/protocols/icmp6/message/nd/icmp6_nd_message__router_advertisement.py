@@ -25,20 +25,19 @@
 
 
 """
-Module contains ICMPv6 ND Router Advertisement message support class.
+This module contains ICMPv6 ND Router Advertisement message support class.
 
 pytcp/protocols/icmp6/message/nd/icmp6_nd_message__router_advertisement.py
 
-ver 3.0.2
+ver 3.0.3
 """
 
 
-from __future__ import annotations
-
 import struct
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, override
+from typing import Self, override
 
+from net_addr import Ip6Address
 from pytcp.lib.int_checks import is_uint8, is_uint16, is_uint32
 from pytcp.protocols.icmp6.icmp6__errors import (
     Icmp6IntegrityError,
@@ -49,10 +48,6 @@ from pytcp.protocols.icmp6.message.nd.icmp6_nd_message import Icmp6NdMessage
 from pytcp.protocols.icmp6.message.nd.option.icmp6_nd_options import (
     Icmp6NdOptions,
 )
-
-if TYPE_CHECKING:
-    from net_addr import Ip6Address
-
 
 # The ICMPv6 ND Router Advertisement message (134/0) [RFC4861].
 
@@ -69,7 +64,6 @@ if TYPE_CHECKING:
 # ~                            Options                            ~
 # ~                                                               ~
 # +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-
 
 ICMP6__ND__ROUTER_ADVERTISEMENT__LEN = 16
 ICMP6__ND__ROUTER_ADVERTISEMENT__STRUCT = "! BBH BBH L L"
@@ -252,8 +246,8 @@ class Icmp6NdRouterAdvertisementMessage(Icmp6NdMessage):
         )
 
     @override
-    @staticmethod
-    def from_bytes(_bytes: bytes, /) -> Icmp6NdRouterAdvertisementMessage:
+    @classmethod
+    def from_bytes(cls, _bytes: bytes, /) -> Self:
         """
         Initialize the ICMPv6 ND Router Advertisement message from bytes.
         """
@@ -279,7 +273,7 @@ class Icmp6NdRouterAdvertisementMessage(Icmp6NdMessage):
             f"Got: {received_type!r}"
         )
 
-        return Icmp6NdRouterAdvertisementMessage(
+        return cls(
             code=Icmp6NdRouterAdvertisementCode(code),
             cksum=cksum,
             hop=hop,

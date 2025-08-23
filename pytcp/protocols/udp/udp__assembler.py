@@ -25,15 +25,13 @@
 
 
 """
-Module contains the UDP packet assembler class.
+This module contains the UDP packet assembler class.
 
 pytcp/protocols/udp/udp__assembler.py
 
-ver 3.0.2
+ver 3.0.3
 """
 
-
-from __future__ import annotations
 
 from pytcp.lib.proto_assembler import ProtoAssembler
 from pytcp.lib.tracker import Tracker
@@ -41,7 +39,7 @@ from pytcp.protocols.udp.udp__base import Udp
 from pytcp.protocols.udp.udp__header import UDP__HEADER__LEN, UdpHeader
 
 
-class UdpAssembler(Udp, ProtoAssembler):
+class UdpAssembler(Udp[bytes], ProtoAssembler):
     """
     The UDP packet assembler.
     """

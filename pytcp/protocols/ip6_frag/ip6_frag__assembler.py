@@ -29,11 +29,9 @@ This module contains the IPv6 Frag packet assembler.
 
 pytcp/protocols/ip6_frag/ip6_frag__assembler.py
 
-ver 3.0.2
+ver 3.0.3
 """
 
-
-from __future__ import annotations
 
 from pytcp.lib.proto_assembler import ProtoAssembler
 from pytcp.lib.tracker import Tracker
@@ -42,7 +40,7 @@ from pytcp.protocols.ip6_frag.ip6_frag__base import Ip6Frag
 from pytcp.protocols.ip6_frag.ip6_frag__header import Ip6FragHeader
 
 
-class Ip6FragAssembler(Ip6Frag, ProtoAssembler):
+class Ip6FragAssembler(Ip6Frag[bytes], ProtoAssembler):
     """
     The IPv6 Frag packet assembler.
     """

@@ -33,10 +33,9 @@ ver 3.0.2
 """
 
 
-from __future__ import annotations
+from typing import override
 
-from typing import TYPE_CHECKING, override
-
+from pytcp.lib.packet_rx import PacketRx
 from pytcp.lib.proto_parser import ProtoParser
 from pytcp.protocols.ip6_frag.ip6_frag__base import Ip6Frag
 from pytcp.protocols.ip6_frag.ip6_frag__errors import Ip6FragIntegrityError
@@ -45,11 +44,8 @@ from pytcp.protocols.ip6_frag.ip6_frag__header import (
     Ip6FragHeader,
 )
 
-if TYPE_CHECKING:
-    from pytcp.lib.packet_rx import PacketRx
 
-
-class Ip6FragParser(Ip6Frag, ProtoParser):
+class Ip6FragParser(Ip6Frag[memoryview], ProtoParser):
     """
     IPv6 Frag packet parser.
     """

@@ -29,16 +29,14 @@ This module contains the Ethernet 802.3 header class.
 
 pytcp/protocols/ethernet_802_3/ethernet_802_3__header.py
 
-ver 3.0.2
+ver 3.0.3
 """
 
-
-from __future__ import annotations
 
 import struct
 from abc import ABC
 from dataclasses import dataclass
-from typing import override
+from typing import Self, override
 
 from net_addr import MacAddress
 from pytcp.lib.int_checks import is_uint16
@@ -119,8 +117,8 @@ class Ethernet8023Header(ProtoStruct):
         )
 
     @override
-    @staticmethod
-    def from_bytes(_bytes: bytes, /) -> Ethernet8023Header:
+    @classmethod
+    def from_bytes(cls, _bytes: bytes, /) -> Self:
         """
         Initialize the Ethernet 802.3 header from bytes.
         """
@@ -129,7 +127,7 @@ class Ethernet8023Header(ProtoStruct):
             ETHERNET_802_3__HEADER__STRUCT, _bytes[:ETHERNET_802_3__HEADER__LEN]
         )
 
-        return Ethernet8023Header(
+        return cls(
             dst=MacAddress(dst),
             src=MacAddress(src),
             dlen=dlen,

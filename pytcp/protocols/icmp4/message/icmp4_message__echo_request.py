@@ -25,19 +25,17 @@
 
 
 """
-Module contains the ICMPv4 Echo Request message support class.
+This module contains the ICMPv4 Echo Request message support class.
 
 pytcp/protocols/icmp4/message/icmp4_message__echo_request.py
 
-ver 3.0.2
+ver 3.0.3
 """
 
 
-from __future__ import annotations
-
 import struct
 from dataclasses import dataclass, field
-from typing import override
+from typing import Self, override
 
 from pytcp.lib.int_checks import is_uint16
 from pytcp.protocols.icmp4.icmp4__errors import Icmp4IntegrityError
@@ -184,8 +182,8 @@ class Icmp4EchoRequestMessage(Icmp4Message):
             )
 
     @override
-    @staticmethod
-    def from_bytes(_bytes: bytes, /) -> Icmp4EchoRequestMessage:
+    @classmethod
+    def from_bytes(cls, _bytes: bytes, /) -> Self:
         """
         Initialize the ICMPv4 Echo Request message from bytes.
         """
@@ -198,7 +196,7 @@ class Icmp4EchoRequestMessage(Icmp4Message):
             valid_type := Icmp4Type.ECHO_REQUEST
         ), f"The 'type' field must be {valid_type!r}. Got: {received_type!r}"
 
-        return Icmp4EchoRequestMessage(
+        return cls(
             code=Icmp4EchoRequestCode.from_int(code),
             cksum=cksum,
             id=id,

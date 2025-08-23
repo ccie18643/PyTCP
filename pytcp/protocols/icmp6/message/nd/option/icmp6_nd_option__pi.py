@@ -25,19 +25,17 @@
 
 
 """
-Module contains the ICMPv6 Pi (Prefix Information) option support code.
+This module contains the ICMPv6 Pi (Prefix Information) option support code.
 
 pytcp/protocols/icmp6/message/nd/option/icmp6_nd_option__pi.py
 
-ver 3.0.2
+ver 3.0.3
 """
 
 
-from __future__ import annotations
-
 import struct
 from dataclasses import dataclass, field
-from typing import override
+from typing import Self, override
 
 from net_addr import Ip6Address, Ip6Mask, Ip6Network
 from pytcp.lib.int_checks import is_uint32
@@ -201,8 +199,8 @@ class Icmp6NdOptionPi(Icmp6NdOption):
             )
 
     @override
-    @staticmethod
-    def from_bytes(_bytes: bytes, /) -> Icmp6NdOptionPi:
+    @classmethod
+    def from_bytes(cls, _bytes: bytes, /) -> Self:
         """
         Initialize the ICMPv6 ND Pi option from bytes.
         """
@@ -232,7 +230,7 @@ class Icmp6NdOptionPi(Icmp6NdOption):
             ICMP6__ND__OPTION__PI__STRUCT, _bytes[:ICMP6__ND__OPTION__PI__LEN]
         )
 
-        return Icmp6NdOptionPi(
+        return cls(
             flag_l=bool(flags & 0b10000000),
             flag_a=bool(flags & 0b01000000),
             flag_r=bool(flags & 0b00100000),

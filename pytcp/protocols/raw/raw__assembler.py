@@ -29,11 +29,9 @@ This module contains the Raw protocol base class.
 
 pytcp/protocols/raw/raw__assembler.py
 
-ver 3.0.2
+ver 3.0.3
 """
 
-
-from __future__ import annotations
 
 from pytcp.lib.proto_assembler import ProtoAssembler
 from pytcp.lib.tracker import Tracker
@@ -41,7 +39,7 @@ from pytcp.protocols.enums import EtherType, IpProto
 from pytcp.protocols.raw.raw__base import Raw
 
 
-class RawAssembler(Raw, ProtoAssembler):
+class RawAssembler(Raw[bytes], ProtoAssembler):
     """
     The Raw protocol assembler.
     """

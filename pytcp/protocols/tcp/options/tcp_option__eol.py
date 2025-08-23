@@ -25,18 +25,16 @@
 
 
 """
-Module contains the TCP Eol (End of Option List) option support code.
+This module contains the TCP Eol (End of Option List) option support code.
 
 pytcp/protocols/tcp/options/tcp_option__eol.py
 
-ver 3.0.2
+ver 3.0.3
 """
 
 
-from __future__ import annotations
-
 from dataclasses import dataclass, field
-from typing import override
+from typing import Self, override
 
 from pytcp.protocols.tcp.options.tcp_option import TcpOption, TcpOptionType
 
@@ -45,7 +43,6 @@ from pytcp.protocols.tcp.options.tcp_option import TcpOption, TcpOptionType
 # +-+-+-+-+-+-+-+-+
 # |    Type = 0   |
 # +-+-+-+-+-+-+-+-+
-
 
 TCP__OPTION__EOL__LEN = 1
 TCP__OPTION__EOL__STRUCT = "! B"
@@ -91,8 +88,8 @@ class TcpOptionEol(TcpOption):
         return bytes(self.type)
 
     @override
-    @staticmethod
-    def from_bytes(_bytes: bytes, /) -> TcpOptionEol:
+    @classmethod
+    def from_bytes(cls, _bytes: bytes, /) -> Self:
         """
         Initialize the TCP Eol option from bytes.
         """
@@ -107,4 +104,4 @@ class TcpOptionEol(TcpOption):
             f"Got: {TcpOptionType.from_int(value)!r}"
         )
 
-        return TcpOptionEol()
+        return cls()

@@ -25,17 +25,15 @@
 
 
 """
-Module contains ICMPv6 Neighbor Discovery option support classes.
+This module contains ICMPv6 Neighbor Discovery option support classes.
 
 pytcp/protocols/icmp6/message/nd/option/icmp6_nd_options.py
 
-ver 3.0.2
+ver 3.0.3
 """
 
 
-from __future__ import annotations
-
-from typing import override
+from typing import Self, override
 
 from net_addr import MacAddress
 from pytcp.lib.proto_option import ProtoOptions
@@ -138,8 +136,8 @@ class Icmp6NdOptions(ProtoOptions):
                 )
 
     @override
-    @staticmethod
-    def from_bytes(bytes: bytes, /) -> Icmp6NdOptions:
+    @classmethod
+    def from_bytes(cls, bytes: bytes, /) -> Self:
         """
         Read the ICMPv6 ND options from bytes.
         """
@@ -162,4 +160,4 @@ class Icmp6NdOptions(ProtoOptions):
 
             offset += options[-1].len
 
-        return Icmp6NdOptions(*options)
+        return cls(*options)

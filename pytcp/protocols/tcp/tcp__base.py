@@ -29,11 +29,9 @@ This module contains the TCP protccol base class.
 
 pytcp/protocols/tcp/tpc__base.py
 
-ver 3.0.2
+ver 3.0.3
 """
 
-
-from __future__ import annotations
 
 from typing import override
 
@@ -46,14 +44,16 @@ from pytcp.protocols.tcp.options.tcp_options import (
 from pytcp.protocols.tcp.tcp__header import TcpHeader, TcpHeaderProperties
 
 
-class Tcp(Proto, TcpHeaderProperties, TcpOptionsProperties):
+class Tcp[P: (memoryview, bytes)](
+    Proto, TcpHeaderProperties, TcpOptionsProperties
+):
     """
     The TCP protocol base.
     """
 
     _header: TcpHeader
     _options: TcpOptions
-    _payload: memoryview | bytes
+    _payload: P
 
     pshdr_sum: int = 0
 

@@ -25,15 +25,13 @@
 
 
 """
-Module contains the ICMPv4 protocol base class.
+This module contains the ICMPv4 protocol base class.
 
 pytcp/protocols/icmp4/icmp4__base.py
 
-ver 3.0.2
+ver 3.0.3
 """
 
-
-from __future__ import annotations
 
 from typing import override
 

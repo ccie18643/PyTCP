@@ -25,19 +25,18 @@
 
 
 """
-Module contains the ICMPv4 packet parser.
+This module contains the ICMPv4 packet parser.
 
 pytcp/protocols/icmp4/icmp4__parser.py
 
-ver 3.0.2
+ver 3.0.3
 """
 
 
-from __future__ import annotations
-
-from typing import TYPE_CHECKING, override
+from typing import override
 
 from pytcp.lib.inet_cksum import inet_cksum
+from pytcp.lib.packet_rx import PacketRx
 from pytcp.lib.proto_parser import ProtoParser
 from pytcp.protocols.icmp4.icmp4__base import Icmp4
 from pytcp.protocols.icmp4.icmp4__errors import Icmp4IntegrityError
@@ -57,9 +56,6 @@ from pytcp.protocols.icmp4.message.icmp4_message__echo_request import (
 from pytcp.protocols.icmp4.message.icmp4_message__unknown import (
     Icmp4UnknownMessage,
 )
-
-if TYPE_CHECKING:
-    from pytcp.lib.packet_rx import PacketRx
 
 
 class Icmp4Parser(Icmp4, ProtoParser):

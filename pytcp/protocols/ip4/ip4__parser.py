@@ -29,26 +29,22 @@ This module contains the IPv4 protocol parser.
 
 pytcp/protocols/ip4/ip4__parser.py
 
-ver 3.0.2
+ver 3.0.3
 """
 
 
-from __future__ import annotations
-
-from typing import TYPE_CHECKING, override
+from typing import override
 
 from pytcp.lib.inet_cksum import inet_cksum
+from pytcp.lib.packet_rx import PacketRx
 from pytcp.lib.proto_parser import ProtoParser
 from pytcp.protocols.ip4.ip4__base import Ip4
 from pytcp.protocols.ip4.ip4__errors import Ip4IntegrityError, Ip4SanityError
 from pytcp.protocols.ip4.ip4__header import IP4__HEADER__LEN, Ip4Header
 from pytcp.protocols.ip4.options.ip4_options import Ip4Options
 
-if TYPE_CHECKING:
-    from pytcp.lib.packet_rx import PacketRx
 
-
-class Ip4Parser(Ip4, ProtoParser):
+class Ip4Parser(Ip4[memoryview], ProtoParser):
     """
     The IPv4 packet parser.
     """

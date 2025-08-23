@@ -25,20 +25,19 @@
 
 
 """
-Module contains the ICMPv6 Echo Reply message support class.
+This module contains the ICMPv6 Echo Request message support class.
 
 pytcp/protocols/icmp6/message/icmp6_message__echo_request.py
 
-ver 3.0.2
+ver 3.0.3
 """
 
 
-from __future__ import annotations
-
 import struct
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, override
+from typing import Self, override
 
+from net_addr import Ip6Address
 from pytcp.lib.int_checks import is_uint16
 from pytcp.protocols.icmp6.icmp6__errors import Icmp6IntegrityError
 from pytcp.protocols.icmp6.message.icmp6_message import (
@@ -47,10 +46,6 @@ from pytcp.protocols.icmp6.message.icmp6_message import (
     Icmp6Type,
 )
 from pytcp.protocols.ip6.ip6__header import IP6__PAYLOAD__MAX_LEN
-
-if TYPE_CHECKING:
-    from net_addr import Ip6Address
-
 
 # The 'Echo Request' message (128/0) [RFC4443].
 
@@ -193,8 +188,8 @@ class Icmp6EchoRequestMessage(Icmp6Message):
             )
 
     @override
-    @staticmethod
-    def from_bytes(_bytes: bytes, /) -> Icmp6EchoRequestMessage:
+    @classmethod
+    def from_bytes(cls, _bytes: bytes, /) -> Self:
         """
         Initialize the ICMPv6 Echo Request message from bytes.
         """
@@ -210,7 +205,7 @@ class Icmp6EchoRequestMessage(Icmp6Message):
             f"Got: {received_type!r}"
         )
 
-        return Icmp6EchoRequestMessage(
+        return cls(
             code=Icmp6EchoRequestCode.from_int(code),
             cksum=cksum,
             id=id,

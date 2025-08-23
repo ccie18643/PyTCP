@@ -25,15 +25,13 @@
 
 
 """
-Module contains the ICMPv4 packet assembler.
+This module contains the ICMPv4 packet assembler.
 
 pytcp/protocols/icmp4/icmp4__assembler.py
 
-ver 3.0.2
+ver 3.0.3
 """
 
-
-from __future__ import annotations
 
 from pytcp.lib.proto_assembler import ProtoAssembler
 from pytcp.lib.tracker import Tracker

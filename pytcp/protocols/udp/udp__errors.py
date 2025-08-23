@@ -25,15 +25,13 @@
 
 
 """
-Module contains the UDP protocol error classes.
+This module contains the UDP protocol error classes.
 
 protocols/udp/udp__errors.py
 
-ver 3.0.2
+ver 3.0.3
 """
 
-
-from __future__ import annotations
 
 from pytcp.protocols.errors import PacketIntegrityError, PacketSanityError
 

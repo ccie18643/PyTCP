@@ -29,14 +29,13 @@ This module contains the Ethernet 802.3 packet parser class.
 
 pytcp/protocols/ethernet_802_3/ethernet_802_3__parser.py
 
-ver 3.0.2
+ver 3.0.3
 """
 
 
-from __future__ import annotations
+from typing import override
 
-from typing import TYPE_CHECKING, override
-
+from pytcp.lib.packet_rx import PacketRx
 from pytcp.lib.proto_parser import ProtoParser
 from pytcp.protocols.ethernet_802_3.ethernet_802_3__base import Ethernet8023
 from pytcp.protocols.ethernet_802_3.ethernet_802_3__errors import (
@@ -48,11 +47,8 @@ from pytcp.protocols.ethernet_802_3.ethernet_802_3__header import (
     Ethernet8023Header,
 )
 
-if TYPE_CHECKING:
-    from pytcp.lib.packet_rx import PacketRx
 
-
-class Ethernet8023Parser(Ethernet8023, ProtoParser):
+class Ethernet8023Parser(Ethernet8023[memoryview], ProtoParser):
     """
     The Ethernet 802.3 packet parser.
     """

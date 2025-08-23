@@ -25,19 +25,17 @@
 
 
 """
-Module contains the ICMPv4 unknown message support class.
+This module contains the ICMPv4 unknown message support class.
 
 pytcp/protocols/icmp4/message/icmp4_message__unknown.py
 
-ver 3.0.2
+ver 3.0.3
 """
 
 
-from __future__ import annotations
-
 import struct
 from dataclasses import dataclass
-from typing import override
+from typing import Self, override
 
 from pytcp.lib.int_checks import is_uint16
 from pytcp.protocols.icmp4.message.icmp4_message import (
@@ -138,8 +136,8 @@ class Icmp4UnknownMessage(Icmp4Message):
         # Currently no integrity checks are implemented.
 
     @override
-    @staticmethod
-    def from_bytes(_bytes: bytes, /) -> Icmp4UnknownMessage:
+    @classmethod
+    def from_bytes(cls, _bytes: bytes, /) -> Self:
         """
         Initialize the ICMPv4 unknown message from bytes.
         """
@@ -152,7 +150,8 @@ class Icmp4UnknownMessage(Icmp4Message):
             "The 'type' field must not be known. "
             f"Got: {Icmp4Type.from_int(received_type)!r}"
         )
-        return Icmp4UnknownMessage(
+
+        return cls(
             type=Icmp4Type.from_int(type),
             code=Icmp4Code.from_int(code),
             cksum=cksum,

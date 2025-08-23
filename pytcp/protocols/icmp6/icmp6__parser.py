@@ -25,19 +25,18 @@
 
 
 """
-Module contains the ICMPv6 packet parser.
+This module contains the ICMPv6 packet parser.
 
 pytcp/protocols/icmp6/icmp6__parser.py
 
-ver 3.0.2
+ver 3.0.3
 """
 
 
-from __future__ import annotations
-
-from typing import TYPE_CHECKING, override
+from typing import override
 
 from pytcp.lib.inet_cksum import inet_cksum
+from pytcp.lib.packet_rx import PacketRx
 from pytcp.lib.proto_parser import ProtoParser
 from pytcp.protocols.icmp6.icmp6__base import Icmp6
 from pytcp.protocols.icmp6.icmp6__errors import Icmp6IntegrityError
@@ -72,9 +71,6 @@ from pytcp.protocols.icmp6.message.nd.icmp6_nd_message__router_advertisement imp
 from pytcp.protocols.icmp6.message.nd.icmp6_nd_message__router_solicitation import (
     Icmp6NdRouterSolicitationMessage,
 )
-
-if TYPE_CHECKING:
-    from pytcp.lib.packet_rx import PacketRx
 
 
 class Icmp6Parser(Icmp6, ProtoParser):

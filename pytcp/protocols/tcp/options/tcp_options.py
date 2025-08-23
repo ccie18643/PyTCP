@@ -25,18 +25,16 @@
 
 
 """
-Module contains the TCP packet options class.
+This module contains the TCP packet options class.
 
 pytcp/protocols/tcp/options/tcp_options.py
 
-ver 3.0.2
+ver 3.0.3
 """
 
 
-from __future__ import annotations
-
 from abc import ABC
-from typing import override
+from typing import Self, override
 
 from pytcp.lib.proto_option import ProtoOptions
 from pytcp.protocols.defaults import TCP__MIN_MSS
@@ -163,8 +161,8 @@ class TcpOptions(ProtoOptions):
                 )
 
     @override
-    @staticmethod
-    def from_bytes(_bytes: bytes, /) -> TcpOptions:
+    @classmethod
+    def from_bytes(cls, _bytes: bytes, /) -> Self:
         """
         Read the TCP options from bytes.
         """
@@ -198,7 +196,7 @@ class TcpOptions(ProtoOptions):
 
             offset += options[-1].len
 
-        return TcpOptions(*options)
+        return cls(*options)
 
 
 class TcpOptionsProperties(ABC):

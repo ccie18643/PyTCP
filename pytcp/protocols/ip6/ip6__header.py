@@ -29,20 +29,16 @@ This module contains the IPv6 packet header.
 
 pytcp/protocols/ip6/ip6__header.py
 
-ver 3.0.2
+ver 3.0.3
 """
 
-
-from __future__ import annotations
 
 import struct
 from abc import ABC
 from dataclasses import dataclass, field
-from typing import override
+from typing import Self, override
 
-from net_addr.ip_address import IpVersion
-
-from net_addr import Ip6Address
+from net_addr import Ip6Address, IpVersion
 from pytcp.lib.int_checks import (
     UINT_16__MAX,
     is_uint2,
@@ -166,8 +162,8 @@ class Ip6Header(ProtoStruct):
         )
 
     @override
-    @staticmethod
-    def from_bytes(_bytes: bytes, /) -> Ip6Header:
+    @classmethod
+    def from_bytes(cls, _bytes: bytes, /) -> Self:
         """
         Initialize the IPv6 header from bytes.
         """
@@ -176,7 +172,7 @@ class Ip6Header(ProtoStruct):
             IP6__HEADER__STRUCT, _bytes[:IP6__HEADER__LEN]
         )
 
-        return Ip6Header(
+        return cls(
             dscp=(ver__dscp__ecn__flow >> 22) & 0b00111111,
             ecn=(ver__dscp__ecn__flow >> 20) & 0b00000011,
             flow=ver__dscp__ecn__flow & 0b00000000_00001111_11111111_11111111,

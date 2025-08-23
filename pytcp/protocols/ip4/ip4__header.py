@@ -29,20 +29,16 @@ This module contains the IPv4 packet header class.
 
 pytcp/protocols/ip4/ip4__header.py
 
-ver 3.0.2
+ver 3.0.3
 """
 
-
-from __future__ import annotations
 
 import struct
 from abc import ABC
 from dataclasses import dataclass, field
-from typing import override
+from typing import Self, override
 
-from net_addr.ip_address import IpVersion
-
-from net_addr import Ip4Address
+from net_addr import Ip4Address, IpVersion
 from pytcp.lib.int_checks import (
     UINT_16__MAX,
     is_8_byte_alligned,
@@ -194,8 +190,8 @@ class Ip4Header(ProtoStruct):
         )
 
     @override
-    @staticmethod
-    def from_bytes(_bytes: bytes, /) -> Ip4Header:
+    @classmethod
+    def from_bytes(cls, _bytes: bytes, /) -> Self:
         """
         Initialize the IPv4 header from bytes.
         """
@@ -213,7 +209,7 @@ class Ip4Header(ProtoStruct):
             dst,
         ) = struct.unpack(IP4__HEADER__STRUCT, _bytes[:IP4__HEADER__LEN])
 
-        return Ip4Header(
+        return cls(
             hlen=(ver__hlen & 0b00001111) << 2,
             dscp=dscp__ecn >> 2,
             ecn=dscp__ecn & 0b00000011,

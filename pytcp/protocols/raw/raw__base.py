@@ -29,11 +29,9 @@ This module contains the Raw protocol base class.
 
 pytcp/protocols/raw/raw__base.py
 
-ver 3.0.2
+ver 3.0.3
 """
 
-
-from __future__ import annotations
 
 from typing import override
 
@@ -42,12 +40,13 @@ from pytcp.lib.proto import Proto
 from pytcp.protocols.enums import EtherType, IpProto
 
 
-class Raw(Proto):
+class Raw[P: bytes](Proto):
     """
     The Raw protocol base.
     """
 
-    _payload: bytes
+    _payload: P
+
     _ether_type: EtherType
     _ip_proto: IpProto
 

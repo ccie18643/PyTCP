@@ -25,18 +25,16 @@
 
 
 """
-Module contains TCP Nop (No Operation) option support code.
+This module contains TCP Nop (No Operation) option support code.
 
 pytcp/protocols/tcp/options/tcp_option__nop.py
 
-ver 3.0.2
+ver 3.0.3
 """
 
 
-from __future__ import annotations
-
 from dataclasses import dataclass, field
-from typing import override
+from typing import Self, override
 
 from pytcp.protocols.tcp.options.tcp_option import TcpOption, TcpOptionType
 
@@ -45,7 +43,6 @@ from pytcp.protocols.tcp.options.tcp_option import TcpOption, TcpOptionType
 # +-+-+-+-+-+-+-+-+
 # |    Type = 1   |
 # +-+-+-+-+-+-+-+-+
-
 
 TCP__OPTION__NOP__LEN = 1
 TCP__OPTION__NOP__STRUCT = "! B"
@@ -91,8 +88,8 @@ class TcpOptionNop(TcpOption):
         return bytes(self.type)
 
     @override
-    @staticmethod
-    def from_bytes(_bytes: bytes, /) -> TcpOptionNop:
+    @classmethod
+    def from_bytes(cls, _bytes: bytes, /) -> Self:
         """
         Initialize the TCP Nop option from bytes.
         """
@@ -107,4 +104,4 @@ class TcpOptionNop(TcpOption):
             f"Got: {TcpOptionType.from_int(value)!r}"
         )
 
-        return TcpOptionNop()
+        return cls()

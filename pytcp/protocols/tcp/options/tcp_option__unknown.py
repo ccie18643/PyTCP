@@ -25,19 +25,17 @@
 
 
 """
-Module contains the unknown TCP option support code.
+This module contains the unknown TCP option support code.
 
 pytcp/protocols/tcp/options/tcp_option__unknown.py
 
-ver 3.0.2
+ver 3.0.3
 """
 
 
-from __future__ import annotations
-
 import struct
 from dataclasses import dataclass, field
-from typing import override
+from typing import Self, override
 
 from pytcp.lib.int_checks import is_uint8
 from pytcp.protocols.tcp.options.tcp_option import (
@@ -130,8 +128,8 @@ class TcpOptionUnknown(TcpOption):
             )
 
     @override
-    @staticmethod
-    def from_bytes(_bytes: bytes, /) -> TcpOptionUnknown:
+    @classmethod
+    def from_bytes(cls, _bytes: bytes, /) -> Self:
         """
         Initialize the unknown TCP option from bytes.
         """
@@ -146,9 +144,9 @@ class TcpOptionUnknown(TcpOption):
             f"Got: {TcpOptionType.from_int(value)!r}"
         )
 
-        TcpOptionUnknown._validate_integrity(_bytes)
+        cls._validate_integrity(_bytes)
 
-        return TcpOptionUnknown(
+        return cls(
             type=TcpOptionType(_bytes[0]),
             len=_bytes[1],
             data=_bytes[TCP__OPTION__LEN : _bytes[1]],

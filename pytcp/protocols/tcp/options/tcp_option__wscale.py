@@ -25,19 +25,17 @@
 
 
 """
-Module contains TCP Wscale (Window Scale) option support code.
+This module contains TCP Wscale (Window Scale) option support code.
 
 pytcp/protocols/tcp/options/tcp_option__wscale.py
 
-ver 3.0.2
+ver 3.0.3
 """
 
 
-from __future__ import annotations
-
 import struct
 from dataclasses import dataclass, field
-from typing import override
+from typing import Self, override
 
 from pytcp.lib.int_checks import is_uint8
 from pytcp.protocols.tcp.options.tcp_option import (
@@ -52,7 +50,6 @@ from pytcp.protocols.tcp.tcp__errors import TcpIntegrityError
 # +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 # |    Type = 3   |   Length = 3  |     Value     |
 # +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-
 
 TCP__OPTION__WSCALE__LEN = 3
 TCP__OPTION__WSCALE__STRUCT = "! BB B"
@@ -132,8 +129,8 @@ class TcpOptionWscale(TcpOption):
             )
 
     @override
-    @staticmethod
-    def from_bytes(_bytes: bytes, /) -> TcpOptionWscale:
+    @classmethod
+    def from_bytes(cls, _bytes: bytes, /) -> Self:
         """
         Initialize the TCP Wscale option from bytes.
         """
@@ -148,10 +145,10 @@ class TcpOptionWscale(TcpOption):
             f"Got: {TcpOptionType.from_int(value)!r}"
         )
 
-        TcpOptionWscale._validate_integrity(_bytes)
+        cls._validate_integrity(_bytes)
 
         # Correct the received Wscale option value to maximum allowed
         # if it exceeds the limit.
         wscale = min(_bytes[2], TCP__OPTION__WSCALE__MAX_VALUE)
 
-        return TcpOptionWscale(wscale=wscale)
+        return cls(wscale=wscale)

@@ -25,15 +25,13 @@
 
 
 """
-Module contains the ICMPv6 ND (Neighbor Discovery) messages support class.
+This module contains the ICMPv6 ND (Neighbor Discovery) messages support class.
 
 pytcp/protocols/icmp6/message/nd/icmp6_nd_message.py
 
-ver 3.0.2
+ver 3.0.3
 """
 
-
-from __future__ import annotations
 
 from dataclasses import dataclass
 

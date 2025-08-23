@@ -25,15 +25,13 @@
 
 
 """
-Module contains the UDP protocol base class.
+This module contains the UDP protocol base class.
 
 pytcp/protocols/udp/udp__base.py
 
-ver 3.0.2
+ver 3.0.3
 """
 
-
-from __future__ import annotations
 
 from typing import override
 
@@ -42,13 +40,13 @@ from pytcp.lib.proto import Proto
 from pytcp.protocols.udp.udp__header import UdpHeader, UdpHeaderProperties
 
 
-class Udp(Proto, UdpHeaderProperties):
+class Udp[P: (memoryview, bytes)](Proto, UdpHeaderProperties):
     """
     The UDP protocol base.
     """
 
     _header: UdpHeader
-    _payload: memoryview | bytes
+    _payload: P
 
     pshdr_sum: int = 0
 

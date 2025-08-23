@@ -25,20 +25,19 @@
 
 
 """
-Module contains the ICMPv6 Destination Unreachable message support class.
+This odule contains the ICMPv6 Destination Unreachable message support class.
 
 pytcp/protocols/icmp6/message/icmp6_message__destination_unreachable.py
 
-ver 3.0.2
+ver 3.0.3
 """
 
 
-from __future__ import annotations
-
 import struct
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, override
+from typing import Self, override
 
+from net_addr import Ip6Address
 from pytcp.lib.int_checks import is_uint16
 from pytcp.protocols.defaults import IP6__MIN_MTU
 from pytcp.protocols.icmp6.icmp6__errors import Icmp6IntegrityError
@@ -52,10 +51,6 @@ from pytcp.protocols.ip6.ip6__header import (
     IP6__PAYLOAD__MAX_LEN,
 )
 
-if TYPE_CHECKING:
-    from net_addr import Ip6Address
-
-
 # The ICMPv6 Destination Unreachable message (1/0-6) [RFC4443].
 
 # +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
@@ -65,7 +60,6 @@ if TYPE_CHECKING:
 # +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 # ~                             Data                              ~
 # +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-
 
 ICMP6__DESTINATION_UNREACHABLE__LEN = 8
 ICMP6__DESTINATION_UNREACHABLE__STRUCT = "! BBH L"
@@ -206,8 +200,8 @@ class Icmp6DestinationUnreachableMessage(Icmp6Message):
             )
 
     @override
-    @staticmethod
-    def from_bytes(_bytes: bytes, /) -> Icmp6DestinationUnreachableMessage:
+    @classmethod
+    def from_bytes(cls, _bytes: bytes, /) -> Self:
         """
         Initialize the ICMPv6 Destination Unreachable message from bytes.
         """
@@ -224,7 +218,7 @@ class Icmp6DestinationUnreachableMessage(Icmp6Message):
             f"Got: {received_type!r}"
         )
 
-        return Icmp6DestinationUnreachableMessage(
+        return cls(
             code=Icmp6DestinationUnreachableCode.from_int(code),
             cksum=cksum,
             data=_bytes[ICMP6__DESTINATION_UNREACHABLE__LEN:],

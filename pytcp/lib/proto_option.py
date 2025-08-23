@@ -33,11 +33,9 @@ ver 3.0.3
 """
 
 
-from __future__ import annotations
-
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Iterable
+from typing import Iterable, Self
 
 from pytcp.lib.proto_enum import ProtoEnumByte
 from pytcp.lib.proto_struct import ProtoStruct
@@ -153,9 +151,9 @@ class ProtoOptions(ABC):
 
         return self._options.index(option)
 
-    @staticmethod
+    @classmethod
     @abstractmethod
-    def from_bytes(_bytes: bytes, /) -> ProtoOptions:
+    def from_bytes(cls, _bytes: bytes, /) -> Self:
         """
         Extract the options from the provided bytes.
         """

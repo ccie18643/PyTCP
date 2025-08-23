@@ -29,11 +29,9 @@ This module contains the Ethernet II protocol error classes.
 
 pytcp/protocols/ethernet/ethernet__errors.py
 
-ver 3.0.2
+ver 3.0.3
 """
 
-
-from __future__ import annotations
 
 from pytcp.protocols.errors import PacketIntegrityError, PacketSanityError
 

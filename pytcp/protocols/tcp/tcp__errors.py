@@ -29,11 +29,9 @@ This module contains the TCP protocol error classes.
 
 pytcp/protocols/tcp/tcp__errors.py
 
-ver 3.0.2
+ver 3.0.3
 """
 
-
-from __future__ import annotations
 
 from pytcp.protocols.errors import PacketIntegrityError, PacketSanityError
 

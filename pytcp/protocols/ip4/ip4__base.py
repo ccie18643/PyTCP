@@ -29,41 +29,38 @@ This module contains the IPv4 protccol base class.
 
 pytcp/protocols/ip4/ip4__base.py
 
-ver 3.0.2
+ver 3.0.3
 """
 
 
-from __future__ import annotations
-
 import struct
-from typing import TYPE_CHECKING, override
+from typing import override
 
 from pytcp.lib.inet_cksum import inet_cksum
 from pytcp.lib.proto import Proto
-from pytcp.protocols.ip4.ip4__header import Ip4HeaderProperties
-from pytcp.protocols.ip4.options.ip4_options import Ip4OptionsProperties
+from pytcp.protocols.icmp4.icmp4__assembler import Icmp4Assembler
+from pytcp.protocols.ip4.ip4__header import Ip4Header, Ip4HeaderProperties
+from pytcp.protocols.ip4.options.ip4_options import (
+    Ip4Options,
+    Ip4OptionsProperties,
+)
 from pytcp.protocols.raw.raw__assembler import RawAssembler
 from pytcp.protocols.tcp.tcp__assembler import TcpAssembler
 from pytcp.protocols.udp.udp__assembler import UdpAssembler
 
-if TYPE_CHECKING:
-    from pytcp.protocols.icmp4.icmp4__assembler import Icmp4Assembler
-    from pytcp.protocols.ip4.ip4__header import Ip4Header
-    from pytcp.protocols.ip4.options.ip4_options import Ip4Options
-
-    type Ip4Payload = (
-        Icmp4Assembler | TcpAssembler | UdpAssembler | RawAssembler
-    )
+type Ip4Payload = (Icmp4Assembler | TcpAssembler | UdpAssembler | RawAssembler)
 
 
-class Ip4(Proto, Ip4HeaderProperties, Ip4OptionsProperties):
+class Ip4[P: (Ip4Payload, memoryview, bytes)](
+    Proto, Ip4HeaderProperties, Ip4OptionsProperties
+):
     """
     The IPv4 protocol base.
     """
 
     _header: Ip4Header
     _options: Ip4Options
-    _payload: Ip4Payload | memoryview | bytes
+    _payload: P
 
     @override
     def __len__(self) -> int:

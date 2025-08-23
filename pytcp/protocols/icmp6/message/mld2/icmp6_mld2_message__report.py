@@ -25,21 +25,19 @@
 
 
 """
-Module contains the ICMPv6 MLDv2 Report message support class.
+This module contains the ICMPv6 MLDv2 Report message support class.
 
 pytcp/protocols/icmp6/message/mld2/icmp6_mld2_message__report.py
 
-ver 3.0.2
+ver 3.0.3
 """
 
 
-from __future__ import annotations
-
 import struct
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, override
+from typing import Self, override
 
-from net_addr import IP6__ADDRESS_LEN
+from net_addr import IP6__ADDRESS_LEN, Ip6Address
 from pytcp.lib.int_checks import is_uint16
 from pytcp.protocols.icmp6.icmp6__errors import (
     Icmp6IntegrityError,
@@ -55,10 +53,6 @@ from pytcp.protocols.icmp6.message.mld2.icmp6_mld2__multicast_address_record imp
     Icmp6Mld2MulticastAddressRecord,
 )
 from pytcp.protocols.ip6.ip6__header import IP6__PAYLOAD__MAX_LEN
-
-if TYPE_CHECKING:
-    from net_addr import Ip6Address
-
 
 # The ICMPv6 MLDv2 Report message (143/0) [RFC3810].
 
@@ -237,8 +231,8 @@ class Icmp6Mld2ReportMessage(Icmp6Message):
             )
 
     @override
-    @staticmethod
-    def from_bytes(_bytes: bytes, /) -> Icmp6Mld2ReportMessage:
+    @classmethod
+    def from_bytes(cls, _bytes: bytes, /) -> Self:
         """
         Initialize the ICMPv6 MLDv2 Report message from bytes.
         """
@@ -261,7 +255,7 @@ class Icmp6Mld2ReportMessage(Icmp6Message):
             record_bytes = record_bytes[len(record) :]
             records.append(record)
 
-        return Icmp6Mld2ReportMessage(
+        return cls(
             code=Icmp6Mld2ReportCode.from_int(code),
             cksum=cksum,
             records=records,

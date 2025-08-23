@@ -29,11 +29,9 @@ This module contains the TCP packet assembler class.
 
 pytcp/protocols/tcp/tcp__assembler.py
 
-ver 3.0.2
+ver 3.0.3
 """
 
-
-from __future__ import annotations
 
 from pytcp.lib.int_checks import is_4_byte_alligned
 from pytcp.lib.proto_assembler import ProtoAssembler
@@ -47,7 +45,7 @@ from pytcp.protocols.tcp.tcp__base import Tcp
 from pytcp.protocols.tcp.tcp__header import TCP__HEADER__LEN, TcpHeader
 
 
-class TcpAssembler(Tcp, ProtoAssembler):
+class TcpAssembler(Tcp[bytes], ProtoAssembler):
     """
     The TCP packet base.
     """

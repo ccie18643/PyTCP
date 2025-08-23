@@ -29,16 +29,14 @@ This module contains the Ethernet II packet header class.
 
 pytcp/protocols/ethernet/ethernet__header.py
 
-ver 3.0.2
+ver 3.0.3
 """
 
-
-from __future__ import annotations
 
 import struct
 from abc import ABC
 from dataclasses import dataclass
-from typing import override
+from typing import Self, override
 
 from net_addr import MacAddress
 from pytcp.lib.proto_struct import ProtoStruct
@@ -111,8 +109,8 @@ class EthernetHeader(ProtoStruct):
         )
 
     @override
-    @staticmethod
-    def from_bytes(_bytes: bytes, /) -> EthernetHeader:
+    @classmethod
+    def from_bytes(cls, _bytes: bytes, /) -> Self:
         """
         Initialize the Ethernet header from bytes.
         """
@@ -121,7 +119,7 @@ class EthernetHeader(ProtoStruct):
             ETHERNET__HEADER__STRUCT, _bytes[:ETHERNET__HEADER__LEN]
         )
 
-        return EthernetHeader(
+        return cls(
             dst=MacAddress(dst),
             src=MacAddress(src),
             type=EtherType.from_int(type),

@@ -25,19 +25,17 @@
 
 
 """
-Module contains the TCP Sackperm (SACK Permitted) option support code.
+This odule contains the TCP Sackperm (SACK Permitted) option support code.
 
 pytcp/protocols/tcp/options/tcp_option__sackperm.py
 
-ver 3.0.2
+ver 3.0.3
 """
 
 
-from __future__ import annotations
-
 import struct
 from dataclasses import dataclass, field
-from typing import override
+from typing import Self, override
 
 from pytcp.protocols.tcp.options.tcp_option import (
     TCP__OPTION__LEN,
@@ -51,7 +49,6 @@ from pytcp.protocols.tcp.tcp__errors import TcpIntegrityError
 # +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 # |    Type = 4   |   Length = 2  |
 # +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-
 
 TCP__OPTION__SACKPERM__LEN = 2
 TCP__OPTION__SACKPERM__STRUCT = "! BB"
@@ -118,8 +115,8 @@ class TcpOptionSackperm(TcpOption):
         # being handled assert.
 
     @override
-    @staticmethod
-    def from_bytes(_bytes: bytes, /) -> TcpOptionSackperm:
+    @classmethod
+    def from_bytes(cls, _bytes: bytes, /) -> Self:
         """
         Initialize the TCP Sackperm option from bytes.
         """
@@ -134,6 +131,6 @@ class TcpOptionSackperm(TcpOption):
             f"Got: {TcpOptionType.from_int(value)!r}"
         )
 
-        TcpOptionSackperm._validate_integrity(_bytes)
+        cls._validate_integrity(_bytes)
 
-        return TcpOptionSackperm()
+        return cls()

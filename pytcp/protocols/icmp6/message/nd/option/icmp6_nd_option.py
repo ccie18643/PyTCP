@@ -25,15 +25,13 @@
 
 
 """
-Module contains the ICMPv6 ND option support code.
+This module contains the ICMPv6 ND option support code.
 
 pytcp/protocols/icmp6/message/nd/option/icmp6_nd_option.py
 
-ver 3.0.2
+ver 3.0.3
 """
 
-
-from __future__ import annotations
 
 from dataclasses import dataclass
 

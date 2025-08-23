@@ -29,11 +29,9 @@ This module contains the IPv6 protocol error classes.
 
 pytcp/protocols/ip6/ip6__errors.py
 
-ver 3.0.2
+ver 3.0.3
 """
 
-
-from __future__ import annotations
 
 from pytcp.protocols.errors import PacketIntegrityError, PacketSanityError
 

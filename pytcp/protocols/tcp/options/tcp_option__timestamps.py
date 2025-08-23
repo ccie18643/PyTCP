@@ -25,19 +25,17 @@
 
 
 """
-Module contains the TCP Timestamps option support code.
+This odule contains the TCP Timestamps option support code.
 
 pytcp/protocols/tcp/options/tcp_option__timestamps.py
 
-ver 3.0.2
+ver 3.0.3
 """
 
 
-from __future__ import annotations
-
 import struct
 from dataclasses import dataclass, field
-from typing import override
+from typing import Self, override
 
 from pytcp.lib.int_checks import is_uint32
 from pytcp.protocols.tcp.options.tcp_option import (
@@ -56,7 +54,6 @@ from pytcp.protocols.tcp.tcp__errors import TcpIntegrityError
 # +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 # |                             Tsecr                             |
 # +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-
 
 TCP__OPTION__TIMESTAMPS__LEN = 10
 TCP__OPTION__TIMESTAMPS__STRUCT = "! BB LL"
@@ -149,8 +146,8 @@ class TcpOptionTimestamps(TcpOption):
             )
 
     @override
-    @staticmethod
-    def from_bytes(_bytes: bytes, /) -> TcpOptionTimestamps:
+    @classmethod
+    def from_bytes(cls, _bytes: bytes, /) -> Self:
         """
         Initialize the TCP Timestamps option from bytes.
         """
@@ -165,13 +162,13 @@ class TcpOptionTimestamps(TcpOption):
             f"Got: {TcpOptionType.from_int(value)!r}"
         )
 
-        TcpOptionTimestamps._validate_integrity(_bytes)
+        cls._validate_integrity(_bytes)
 
         _, _, tsval, tsecr = struct.unpack_from(
             TCP__OPTION__TIMESTAMPS__STRUCT, _bytes
         )
 
-        return TcpOptionTimestamps(
+        return cls(
             tsval=tsval,
             tsecr=tsecr,
         )

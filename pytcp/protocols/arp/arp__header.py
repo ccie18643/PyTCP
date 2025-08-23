@@ -33,12 +33,10 @@ ver 3.0.3
 """
 
 
-from __future__ import annotations
-
 import struct
 from abc import ABC
 from dataclasses import dataclass, field
-from typing import override
+from typing import Self, override
 
 from net_addr import Ip4Address, MacAddress
 from pytcp.lib.proto_struct import ProtoStruct
@@ -159,8 +157,8 @@ class ArpHeader(ProtoStruct):
         )
 
     @override
-    @staticmethod
-    def from_bytes(_bytes: bytes, /) -> ArpHeader:
+    @classmethod
+    def from_bytes(cls, _bytes: bytes, /) -> Self:
         """
         Initialize the ARP header from bytes.
         """
@@ -169,7 +167,7 @@ class ArpHeader(ProtoStruct):
             ARP__HEADER__STRUCT, _bytes[:ARP__HEADER__LEN]
         )
 
-        return ArpHeader(
+        return cls(
             oper=ArpOperation.from_int(oper),
             sha=MacAddress(sha),
             spa=Ip4Address(spa),

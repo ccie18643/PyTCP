@@ -25,15 +25,13 @@
 
 
 """
-Module contains the ICMPv4 protocol error classes.
+This module contains the ICMPv4 protocol error classes.
 
 pytcp/protocols/icmp4/icmp4__errors.py
 
-ver 3.0.2
+ver 3.0.3
 """
 
-
-from __future__ import annotations
 
 from pytcp.protocols.errors import PacketIntegrityError, PacketSanityError
 

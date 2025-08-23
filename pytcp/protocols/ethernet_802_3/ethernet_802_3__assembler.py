@@ -29,29 +29,23 @@ This module contains the Ethernet 802.3 packet assembler class.
 
 pytcp/protocols/ethernet_802_3/ethernet_802_3__assembler.py
 
-ver 3.0.2
+ver 3.0.3
 """
 
 
-from __future__ import annotations
-
-from typing import TYPE_CHECKING
-
 from net_addr import MacAddress
 from pytcp.lib.proto_assembler import ProtoAssembler
-from pytcp.protocols.ethernet_802_3.ethernet_802_3__base import Ethernet8023
+from pytcp.protocols.ethernet_802_3.ethernet_802_3__base import (
+    Ethernet8023,
+    Ethernet8023Payload,
+)
 from pytcp.protocols.ethernet_802_3.ethernet_802_3__header import (
     Ethernet8023Header,
 )
 from pytcp.protocols.raw.raw__assembler import RawAssembler
 
-if TYPE_CHECKING:
-    from pytcp.protocols.ethernet_802_3.ethernet_802_3__base import (
-        Ethernet8023Payload,
-    )
 
-
-class Ethernet8023Assembler(Ethernet8023, ProtoAssembler):
+class Ethernet8023Assembler(Ethernet8023[Ethernet8023Payload], ProtoAssembler):
     """
     The Ethernet 802.3 packet assembler.
     """

@@ -25,19 +25,17 @@
 
 
 """
-Module contains the ICMPv6 ND Neighbor Solicitation message support class.
+This module contains the ICMPv6 ND Neighbor Solicitation message support class.
 
 pytcp/protocols/icmp6/message/nd/icmp6_nd_message__neighbor_solicitation.py
 
-ver 3.0.2
+ver 3.0.3
 """
 
 
-from __future__ import annotations
-
 import struct
 from dataclasses import dataclass, field
-from typing import override
+from typing import Self, override
 
 from net_addr import Ip6Address
 from pytcp.lib.int_checks import is_uint16
@@ -239,8 +237,8 @@ class Icmp6NdNeighborSolicitationMessage(Icmp6NdMessage):
         )
 
     @override
-    @staticmethod
-    def from_bytes(_bytes: bytes, /) -> Icmp6NdNeighborSolicitationMessage:
+    @classmethod
+    def from_bytes(cls, _bytes: bytes, /) -> Self:
         """
         Initialize the ICMPv6 ND Neighbor Solicitation message from bytes.
         """
@@ -257,7 +255,7 @@ class Icmp6NdNeighborSolicitationMessage(Icmp6NdMessage):
             f"Got: {received_type!r}"
         )
 
-        return Icmp6NdNeighborSolicitationMessage(
+        return cls(
             code=Icmp6NdNeighborSolicitationCode(code),
             cksum=cksum,
             target_address=Ip6Address(target_address),
