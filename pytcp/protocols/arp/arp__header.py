@@ -29,7 +29,7 @@ This module contains the ARP packet header class.
 
 pytcp/protocols/arp/arp__header.py
 
-ver 3.0.2
+ver 3.0.3
 """
 
 

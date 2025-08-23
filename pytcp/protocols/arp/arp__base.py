@@ -29,7 +29,7 @@ This module contains the ARP protccol base class.
 
 pytcp/protocols/arp/arp__base.py
 
-ver 3.0.2
+ver 3.0.3
 """
 
 

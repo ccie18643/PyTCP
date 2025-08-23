@@ -29,11 +29,9 @@ This module contains the ARP packet assembler class.
 
 pytcp/protocols/arp/arp__assembler.py
 
-ver 3.0.2
+ver 3.0.3
 """
 
-
-from __future__ import annotations
 
 from net_addr import Ip4Address, MacAddress
 from pytcp.lib.proto_assembler import ProtoAssembler

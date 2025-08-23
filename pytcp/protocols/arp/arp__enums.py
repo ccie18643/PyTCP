@@ -29,11 +29,9 @@ This module contains the ARP protocol enum classes.
 
 pytcp/protocols/arp/arp__enums.py
 
-ver 3.0.2
+ver 3.0.3
 """
 
-
-from __future__ import annotations
 
 from pytcp.lib.proto_enum import ProtoEnumWord
 
