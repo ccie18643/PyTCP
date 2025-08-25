@@ -81,7 +81,7 @@ class IpHost[
         Get the IP host address string representation.
         """
 
-        return f"{self.__class__.__name__}('{str(self)}')"
+        return f"{type(self).__name__}('{str(self)}')"
 
     def __eq__(self, other: object) -> bool:
         """
@@ -152,7 +152,7 @@ class IpHost[
     @property
     def origin(self) -> O:
         """
-        Get the IPv4 host address '_origin' attribute.
+        Get the IP host address '_origin' attribute.
         """
 
         return self._origin
@@ -160,7 +160,7 @@ class IpHost[
     @origin.setter
     def origin(self, origin: O, /) -> None:
         """
-        Set the IPv4 host address '_origin' attribute.
+        Set the IP host address '_origin' attribute.
         """
 
         self._origin = origin
@@ -168,7 +168,7 @@ class IpHost[
     @property
     def expiration_time(self) -> int:
         """
-        Get the IPv4 host address '_expiration_time' attribute.
+        Get the IP host address '_expiration_time' attribute.
         """
 
         return self._expiration_time
@@ -176,7 +176,7 @@ class IpHost[
     @expiration_time.setter
     def expiration_time(self, time: int, /) -> None:
         """
-        Set the IPv4 host address '_expiration_time' attribute.
+        Set the IP host address '_expiration_time' attribute.
         """
 
         self._expiration_time = time
@@ -184,7 +184,7 @@ class IpHost[
     @property
     def gateway(self) -> A | None:
         """
-        Get the IPv4 host address '_gateway' attribute.
+        Get the IP host address '_gateway' attribute.
         """
 
         return self._gateway

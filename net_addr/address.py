@@ -100,7 +100,7 @@ class Address(ABC):
         Get the unspecified network address.
         """
 
-        return self.__class__()
+        return type(self)()
 
     @property
     def is_unspecified(self) -> bool:
