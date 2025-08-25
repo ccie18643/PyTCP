@@ -42,7 +42,7 @@ class Address(ABC):
     Network address support base class.
     """
 
-    __slots__ = ("_address",)
+    __slots__ = ()
 
     _address: int
 

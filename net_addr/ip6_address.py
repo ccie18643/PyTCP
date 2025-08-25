@@ -62,7 +62,7 @@ class Ip6Address(IpAddress):
     IPv6 address support class.
     """
 
-    __slots__ = ()
+    __slots__ = ("_address",)
 
     _version: IpVersion = IpVersion.IP6
 
