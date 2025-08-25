@@ -63,13 +63,6 @@ class IpNetwork[A: (Ip6Address, Ip4Address), M: (Ip6Mask, Ip4Mask)](Ip, ABC):
 
         return str(self._address) + "/" + str(len(self._mask))
 
-    def __repr__(self) -> str:
-        """
-        Get the IP network representation string.
-        """
-
-        return f"{self.__class__.__name__}('{str(self)}')"
-
     def __eq__(self, other: object, /) -> bool:
         """
         Compare IP network with another object.

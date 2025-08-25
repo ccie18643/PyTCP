@@ -56,13 +56,6 @@ class Address(Ip, ABC):
 
         raise NotImplementedError
 
-    def __repr__(self) -> str:
-        """
-        Get the network address representation string.
-        """
-
-        return f"{type(self).__name__}('{str(self)}')"
-
     def __int__(self) -> int:
         """
         Get the network address as integer.

@@ -644,7 +644,7 @@ class TestNetAddrIp6Mask(TestCase):
             "_results": {
                 "error": Ip6MaskFormatError,
                 "error_message": (
-                    "The IPv6 mask format is invalid: Ip4Mask('0.0.0.0')"
+                    "The IPv6 mask format is invalid: Ip4Mask('/0')"
                 ),
             },
         },

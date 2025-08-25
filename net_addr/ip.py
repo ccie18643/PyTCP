@@ -50,7 +50,7 @@ class Ip(ABC):
     @property
     def version(self) -> IpVersion:
         """
-        Get the IP version.
+        Get the IP object version.
         """
 
         return self._version
@@ -58,7 +58,7 @@ class Ip(ABC):
     @property
     def is_ip6(self) -> bool:
         """
-        Check if the IP address version is 6.
+        Check if the IP object version is 6.
         """
 
         return self._version == IpVersion.IP6
@@ -66,7 +66,14 @@ class Ip(ABC):
     @property
     def is_ip4(self) -> bool:
         """
-        Check if the IP address version is 4.
+        Check if the IP object version is 4.
         """
 
         return self._version == IpVersion.IP4
+
+    def __repr__(self) -> str:
+        """
+        Get the IP object representation string.
+        """
+
+        return f"{type(self).__name__}('{str(self)}')"

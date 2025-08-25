@@ -89,14 +89,6 @@ class Ip6Mask(IpMask):
         raise Ip6MaskFormatError(mask)
 
     @override
-    def __repr__(self) -> str:
-        """
-        Get the IPv6 mask string representation.
-        """
-
-        return f"{self.__class__.__name__}('/{len(self)}')"
-
-    @override
     def __bytes__(self) -> bytes:
         """
         Get the IPv6 mask as bytes.

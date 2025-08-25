@@ -74,13 +74,6 @@ class IpHost[
 
         return str(self._address) + "/" + str(len(self._network.mask))
 
-    def __repr__(self) -> str:
-        """
-        Get the IP host address string representation.
-        """
-
-        return f"{type(self).__name__}('{str(self)}')"
-
     def __eq__(self, other: object) -> bool:
         """
         Compare the IP host address with another object.

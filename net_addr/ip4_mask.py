@@ -98,14 +98,6 @@ class Ip4Mask(IpMask):
         raise Ip4MaskFormatError(mask)
 
     @override
-    def __repr__(self) -> str:
-        """
-        Get the IPv4 mask string representation.
-        """
-
-        return f"{self.__class__.__name__}('{socket.inet_ntoa(bytes(self))}')"
-
-    @override
     def __bytes__(self) -> bytes:
         """
         Get the IPv4 mask as bytes.

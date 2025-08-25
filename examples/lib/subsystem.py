@@ -40,8 +40,8 @@ from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING
 
 import click
-from net_addr.ip_address import IpVersion
 
+from net_addr import IpVersion
 from pytcp.socket import (
     AF_INET4,
     AF_INET6,
@@ -55,8 +55,7 @@ from pytcp.socket import (
 from pytcp.socket.socket import Socket
 
 if TYPE_CHECKING:
-    from net_addr.ip4_address import Ip4Address
-    from net_addr.ip6_address import Ip6Address
+    from net_addr import Ip4Address, Ip6Address
 
 
 class Subsystem(ABC):
