@@ -36,10 +36,8 @@ ver 3.0.3
 from abc import ABC, abstractmethod
 from typing import Self
 
-from net_addr.ip import Ip
 
-
-class Address(Ip, ABC):
+class Address(ABC):
     """
     Network address support base class.
     """
@@ -55,6 +53,13 @@ class Address(Ip, ABC):
         """
 
         raise NotImplementedError
+
+    def __repr__(self) -> str:
+        """
+        Get the network address representation string.
+        """
+
+        return f"{type(self).__name__}('{str(self)}')"
 
     def __int__(self) -> int:
         """

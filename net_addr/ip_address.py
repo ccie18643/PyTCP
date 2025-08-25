@@ -33,13 +33,14 @@ ver 3.0.3
 """
 
 
-from abc import abstractmethod
+from abc import ABC, abstractmethod
 
 from net_addr.address import Address
+from net_addr.ip import Ip
 from net_addr.mac_address import MacAddress
 
 
-class IpAddress(Address):
+class IpAddress(Address, Ip, ABC):
     """
     IP address support base class.
     """

@@ -43,7 +43,7 @@ class Ip(ABC):
     IP support base class.
     """
 
-    __slots__ = ("_version",)
+    __slots__ = ()
 
     _version: IpVersion
 
