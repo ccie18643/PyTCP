@@ -55,7 +55,7 @@ class Ip4Address(IpAddress):
     IPv4 address support class.
     """
 
-    __slots__ = ("_address",)
+    __slots__ = ()
 
     _version: IpVersion = IpVersion.IP4
 

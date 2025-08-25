@@ -45,7 +45,7 @@ class MacAddress(Address):
     Ethernet MAC address support class.
     """
 
-    __slots__ = ("_address",)
+    __slots__ = ()
 
     def __init__(
         self,
