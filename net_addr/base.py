@@ -25,79 +25,50 @@
 
 
 """
-This module contains IP mask base class.
+This module contains the base class for all NetAddr objects.
 
-net_addr/ip_mask.py
+net_addr/net_addr.py
 
 ver 3.0.3
 """
 
 
 from abc import ABC, abstractmethod
-from typing import override
-
-from net_addr.base import Base
-from net_addr.ip import Ip
 
 
-class IpMask(Base, Ip, ABC):
+class Base(ABC):
     """
-    IP mask support base class.
+    NetAddr base class.
     """
 
-    __slots__ = ("_mask",)
-
-    _mask: int
-
-    def __len__(self) -> int:
-        """
-        Get the IP mask bit-length.
-        """
-
-        return f"{self._mask:b}".count("1")
-
-    @override
-    def __str__(self) -> str:
-        """
-        Get the IP mask log string.
-        """
-
-        return f"/{len(self)}"
+    __slots__ = ()
 
     @abstractmethod
-    def __bytes__(self) -> bytes:
+    def __str__(self) -> str:
         """
-        Get the IP mask as bytes.
-        """
-
-    def __int__(self) -> int:
-        """
-        Get the IP mask as integer.
+        Get the network object string representation.
         """
 
-        return self._mask
+        raise NotImplementedError
 
-    @override
+    def __repr__(self) -> str:
+        """
+        Get the network object representation string.
+        """
+
+        return f"{type(self).__name__}('{str(self)}')"
+
+    @abstractmethod
     def __eq__(self, other: object, /) -> bool:
         """
-        Compare the IP mask with another object.
+        Check if two network objects are equal.
         """
 
-        return other is self or (
-            isinstance(other, type(self)) and self._mask == other._mask
-        )
+        raise NotImplementedError
 
-    __hash__ = Base.__hash__
-
-    def _validate_bits(self, /, bytes_len: int) -> bool:
+    def __hash__(self) -> int:
         """
-        Validate that mask is made of consecutive bits.
+        Get the network object hash value.
         """
 
-        bit_mask = f"{self._mask:0{bytes_len}b}"
-
-        try:
-            return not bit_mask[bit_mask.index("0") :].count("1")
-
-        except ValueError:
-            return True
+        return hash(repr(self))

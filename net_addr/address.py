@@ -34,10 +34,12 @@ ver 3.0.3
 
 
 from abc import ABC, abstractmethod
-from typing import Self
+from typing import Self, override
+
+from net_addr.base import Base
 
 
-class Address(ABC):
+class Address(Base, ABC):
     """
     Network address support base class.
     """
@@ -45,21 +47,6 @@ class Address(ABC):
     __slots__ = ("_address",)
 
     _address: int
-
-    @abstractmethod
-    def __str__(self) -> str:
-        """
-        Get the network address string representation.
-        """
-
-        raise NotImplementedError
-
-    def __repr__(self) -> str:
-        """
-        Get the network address representation string.
-        """
-
-        return f"{type(self).__name__}('{str(self)}')"
 
     def __int__(self) -> int:
         """
@@ -76,7 +63,8 @@ class Address(ABC):
 
         raise NotImplementedError
 
-    def __eq__(self, other: object) -> bool:
+    @override
+    def __eq__(self, other: object, /) -> bool:
         """
         Compare the network address with another object.
         """
@@ -87,12 +75,7 @@ class Address(ABC):
             and self._address == other._address
         )
 
-    def __hash__(self) -> int:
-        """
-        Get the network address hash.
-        """
-
-        return hash(repr(self))
+    __hash__ = Base.__hash__
 
     @property
     def unspecified(self) -> Self:

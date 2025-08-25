@@ -34,7 +34,9 @@ ver 3.0.3
 
 
 from abc import ABC, abstractmethod
+from typing import override
 
+from net_addr.base import Base
 from net_addr.ip import Ip
 from net_addr.ip4_address import Ip4Address
 from net_addr.ip4_host_origin import Ip4HostOrigin
@@ -48,7 +50,7 @@ class IpHost[
     A: (Ip6Address, Ip4Address),
     N: (Ip6Network, Ip4Network),
     O: (Ip6HostOrigin, Ip4HostOrigin),
-](Ip, ABC):
+](Base, Ip, ABC):
     """
     IP host support base class.
     """
@@ -67,6 +69,7 @@ class IpHost[
     _origin: O
     _expiration_time: int
 
+    @override
     def __str__(self) -> str:
         """
         Get the IP host address log string.
@@ -74,6 +77,7 @@ class IpHost[
 
         return str(self._address) + "/" + str(len(self._network.mask))
 
+    @override
     def __eq__(self, other: object) -> bool:
         """
         Compare the IP host address with another object.
@@ -82,15 +86,10 @@ class IpHost[
         return other is self or (
             isinstance(other, type(self))
             and self._address == other._address
-            and self._network.mask == other._network.mask
+            and self._network == other._network
         )
 
-    def __hash__(self) -> int:
-        """
-        Get the IP host address hash.
-        """
-
-        return hash(repr(self))
+    __hash__ = Base.__hash__
 
     @abstractmethod
     def _validate_gateway(self, address: A | None, /) -> None:

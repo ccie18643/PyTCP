@@ -34,7 +34,9 @@ ver 3.0.3
 
 
 from abc import ABC, abstractmethod
+from typing import override
 
+from net_addr.base import Base
 from net_addr.ip import Ip
 from net_addr.ip4_address import Ip4Address
 from net_addr.ip4_mask import Ip4Mask
@@ -43,7 +45,9 @@ from net_addr.ip6_mask import Ip6Mask
 from net_addr.ip_address import IpAddress
 
 
-class IpNetwork[A: (Ip6Address, Ip4Address), M: (Ip6Mask, Ip4Mask)](Ip, ABC):
+class IpNetwork[A: (Ip6Address, Ip4Address), M: (Ip6Mask, Ip4Mask)](
+    Base, Ip, ABC
+):
     """
     IP network support base class.
     """
@@ -56,6 +60,7 @@ class IpNetwork[A: (Ip6Address, Ip4Address), M: (Ip6Mask, Ip4Mask)](Ip, ABC):
     _address: A
     _mask: M
 
+    @override
     def __str__(self) -> str:
         """
         Get the IP network log string.
@@ -63,6 +68,7 @@ class IpNetwork[A: (Ip6Address, Ip4Address), M: (Ip6Mask, Ip4Mask)](Ip, ABC):
 
         return str(self._address) + "/" + str(len(self._mask))
 
+    @override
     def __eq__(self, other: object, /) -> bool:
         """
         Compare IP network with another object.
@@ -74,12 +80,7 @@ class IpNetwork[A: (Ip6Address, Ip4Address), M: (Ip6Mask, Ip4Mask)](Ip, ABC):
             and self._mask == other._mask
         )
 
-    def __hash__(self) -> int:
-        """
-        Get the IP network hash.
-        """
-
-        return hash(repr(self))
+    __hash__ = Base.__hash__
 
     def __contains__(self, other: object, /) -> bool:
         """

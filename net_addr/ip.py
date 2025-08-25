@@ -70,10 +70,3 @@ class Ip(ABC):
         """
 
         return self._version == IpVersion.IP4
-
-    def __repr__(self) -> str:
-        """
-        Get the IP object representation string.
-        """
-
-        return f"{type(self).__name__}('{str(self)}')"
