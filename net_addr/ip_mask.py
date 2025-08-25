@@ -35,18 +35,17 @@ ver 3.0.3
 
 from abc import ABC, abstractmethod
 
-from net_addr.ip_address import IpVersion
+from net_addr.ip import Ip
 
 
-class IpMask(ABC):
+class IpMask(Ip, ABC):
     """
     IP mask support base class.
     """
 
-    __slots__ = ("_mask", "_version")
+    __slots__ = ("_mask",)
 
     _mask: int
-    _version: IpVersion
 
     def __len__(self) -> int:
         """
@@ -111,27 +110,3 @@ class IpMask(ABC):
 
         except ValueError:
             return True
-
-    @property
-    def version(self) -> IpVersion:
-        """
-        Get the IP mask version.
-        """
-
-        return self._version
-
-    @property
-    def is_ip6(self) -> bool:
-        """
-        Check if the IP mask version is 6.
-        """
-
-        return self._version == IpVersion.IP6
-
-    @property
-    def is_ip4(self) -> bool:
-        """
-        Check if the IP mask version is 4.
-        """
-
-        return self._version == IpVersion.IP4

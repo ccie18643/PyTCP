@@ -35,26 +35,25 @@ ver 3.0.3
 
 from abc import ABC, abstractmethod
 
+from net_addr.ip import Ip
 from net_addr.ip4_address import Ip4Address
 from net_addr.ip4_host_origin import Ip4HostOrigin
 from net_addr.ip4_network import Ip4Network
 from net_addr.ip6_address import Ip6Address
 from net_addr.ip6_host_origin import Ip6HostOrigin
 from net_addr.ip6_network import Ip6Network
-from net_addr.ip_address import IpVersion
 
 
 class IpHost[
     A: (Ip6Address, Ip4Address),
     N: (Ip6Network, Ip4Network),
     O: (Ip6HostOrigin, Ip4HostOrigin),
-](ABC):
+](Ip, ABC):
     """
     IP host support base class.
     """
 
     __slots__ = (
-        "_version",
         "_address",
         "_network",
         "_gateway",
@@ -62,7 +61,6 @@ class IpHost[
         "_expiration_time",
     )
 
-    _version: IpVersion
     _address: A
     _network: N
     _gateway: A | None
@@ -108,30 +106,6 @@ class IpHost[
         """
 
         raise NotImplementedError
-
-    @property
-    def version(self) -> IpVersion:
-        """
-        Get the IP host address version.
-        """
-
-        return self._version
-
-    @property
-    def is_ip6(self) -> bool:
-        """
-        Check if the IP host address version is 6.
-        """
-
-        return self._version == IpVersion.IP6
-
-    @property
-    def is_ip4(self) -> bool:
-        """
-        Check if the IP host address version is 4.
-        """
-
-        return self._version == IpVersion.IP4
 
     @property
     def address(self) -> A:

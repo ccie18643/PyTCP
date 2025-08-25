@@ -34,11 +34,10 @@ ver 3.0.2
 
 from typing import Any
 
-from net_addr.ip_address import IpVersion
 from parameterized import parameterized_class  # type: ignore
 from testslide import TestCase
 
-from net_addr import Ip4Address
+from net_addr import Ip4Address, IpVersion
 from pytcp.protocols.enums import IpProto
 from pytcp.protocols.ip4.ip4__assembler import Ip4Assembler, Ip4FragAssembler
 from pytcp.protocols.ip4.ip4__header import Ip4Header

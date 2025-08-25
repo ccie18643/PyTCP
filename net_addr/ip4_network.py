@@ -42,8 +42,8 @@ from net_addr.errors import (
 )
 from net_addr.ip4_address import Ip4Address
 from net_addr.ip4_mask import Ip4Mask
-from net_addr.ip_address import IpVersion
 from net_addr.ip_network import IpNetwork
+from net_addr.ip_version import IpVersion
 
 
 class Ip4Network(IpNetwork[Ip4Address, Ip4Mask]):

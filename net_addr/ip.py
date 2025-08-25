@@ -25,92 +25,48 @@
 
 
 """
-This module contains IP address base class.
+This module contains IP base class.
 
-net_addr/ip_address.py
+net_addr/ip.py
 
 ver 3.0.3
 """
 
 
-from abc import abstractmethod
+from abc import ABC
 
-from net_addr.address import Address
-from net_addr.mac_address import MacAddress
+from net_addr.ip_version import IpVersion
 
 
-class IpAddress(Address):
+class Ip(ABC):
     """
-    IP address support base class.
+    IP support base class.
     """
 
-    __slots__ = ()
+    __slots__ = ("_version",)
+
+    _version: IpVersion
 
     @property
-    @abstractmethod
-    def multicast_mac(self) -> MacAddress:
+    def version(self) -> IpVersion:
         """
-        The 'multicast_mac' property placeholder.
-        """
-
-        raise NotImplementedError
-
-    @property
-    def is_unicast(self) -> bool:
-        """
-        Check if the IP address is an unicast address.
+        Get the IP version.
         """
 
-        return any(
-            (
-                self.is_global,
-                self.is_private,
-                self.is_link_local,
-                self.is_loopback,
-            )
-        )
+        return self._version
 
     @property
-    @abstractmethod
-    def is_loopback(self) -> bool:
+    def is_ip6(self) -> bool:
         """
-        Check if IP address is a loopback address.
-        """
-
-        raise NotImplementedError
-
-    @property
-    @abstractmethod
-    def is_global(self) -> bool:
-        """
-        Check if IP address is a global address.
+        Check if the IP address version is 6.
         """
 
-        raise NotImplementedError
+        return self._version == IpVersion.IP6
 
     @property
-    @abstractmethod
-    def is_private(self) -> bool:
+    def is_ip4(self) -> bool:
         """
-        Check if IP address is a private address.
-        """
-
-        raise NotImplementedError
-
-    @property
-    @abstractmethod
-    def is_link_local(self) -> bool:
-        """
-        Check if IP address is a link local address.
+        Check if the IP address version is 4.
         """
 
-        raise NotImplementedError
-
-    @property
-    @abstractmethod
-    def is_multicast(self) -> bool:
-        """
-        Check if IP address is a multicast address.
-        """
-
-        raise NotImplementedError
+        return self._version == IpVersion.IP4

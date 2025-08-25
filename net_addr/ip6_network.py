@@ -42,8 +42,8 @@ from net_addr.errors import (
 )
 from net_addr.ip6_address import Ip6Address
 from net_addr.ip6_mask import Ip6Mask
-from net_addr.ip_address import IpVersion
 from net_addr.ip_network import IpNetwork
+from net_addr.ip_version import IpVersion
 
 
 class Ip6Network(IpNetwork[Ip6Address, Ip6Mask]):

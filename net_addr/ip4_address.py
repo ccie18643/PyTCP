@@ -38,7 +38,8 @@ import socket
 from typing import Self, override
 
 from net_addr.errors import Ip4AddressFormatError
-from net_addr.ip_address import IpAddress, IpVersion
+from net_addr.ip_address import IpAddress
+from net_addr.ip_version import IpVersion
 from net_addr.mac_address import MacAddress
 
 IP4__ADDRESS_LEN = 4

@@ -47,8 +47,8 @@ from net_addr.ip4_address import Ip4Address
 from net_addr.ip4_host_origin import Ip4HostOrigin
 from net_addr.ip4_mask import Ip4Mask
 from net_addr.ip4_network import Ip4Network
-from net_addr.ip_address import IpVersion
 from net_addr.ip_host import IpHost
+from net_addr.ip_version import IpVersion
 
 
 class Ip4Host(IpHost[Ip4Address, Ip4Network, Ip4HostOrigin]):

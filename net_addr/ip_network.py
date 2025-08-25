@@ -35,25 +35,24 @@ ver 3.0.3
 
 from abc import ABC, abstractmethod
 
+from net_addr.ip import Ip
 from net_addr.ip4_address import Ip4Address
 from net_addr.ip4_mask import Ip4Mask
 from net_addr.ip6_address import Ip6Address
 from net_addr.ip6_mask import Ip6Mask
-from net_addr.ip_address import IpAddress, IpVersion
+from net_addr.ip_address import IpAddress
 
 
-class IpNetwork[A: (Ip6Address, Ip4Address), M: (Ip6Mask, Ip4Mask)](ABC):
+class IpNetwork[A: (Ip6Address, Ip4Address), M: (Ip6Mask, Ip4Mask)](Ip, ABC):
     """
     IP network support base class.
     """
 
     __slots__ = (
-        "_version",
         "_address",
         "_mask",
     )
 
-    _version: IpVersion
     _address: A
     _mask: M
 
@@ -108,30 +107,6 @@ class IpNetwork[A: (Ip6Address, Ip4Address), M: (Ip6Mask, Ip4Mask)](ABC):
             ) <= int(self.last)
 
         return False
-
-    @property
-    def version(self) -> IpVersion:
-        """
-        Getter the IP network version.
-        """
-
-        return self._version
-
-    @property
-    def is_ip6(self) -> bool:
-        """
-        Check if the IP network version is 6.
-        """
-
-        return self._version == IpVersion.IP6
-
-    @property
-    def is_ip4(self) -> bool:
-        """
-        Check if the IP network version is 4.
-        """
-
-        return self._version == IpVersion.IP4
 
     @property
     def address(self) -> A:

@@ -36,8 +36,10 @@ ver 3.0.3
 from abc import ABC, abstractmethod
 from typing import Self
 
+from net_addr.ip import Ip
 
-class Address(ABC):
+
+class Address(Ip, ABC):
     """
     Network address support base class.
     """

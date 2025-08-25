@@ -47,7 +47,7 @@ from net_addr import (
     Ip6NetworkFormatError,
     MacAddress,
 )
-from net_addr.ip_address import IpVersion
+from net_addr import IpVersion
 
 
 class TestIp6Address(TestCase):

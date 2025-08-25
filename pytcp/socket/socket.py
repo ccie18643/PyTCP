@@ -38,9 +38,7 @@ from __future__ import annotations
 from abc import ABC
 from typing import TYPE_CHECKING
 
-from net_addr.ip_address import IpVersion
-
-from net_addr import Ip4Address, Ip6Address
+from net_addr import Ip4Address, Ip6Address, IpVersion
 from pytcp.lib.name_enum import NameEnum
 from pytcp.protocols.enums import IpProto
 from pytcp.socket.socket_id import SocketId

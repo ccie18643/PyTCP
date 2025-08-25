@@ -47,8 +47,8 @@ from net_addr.ip6_address import Ip6Address
 from net_addr.ip6_host_origin import Ip6HostOrigin
 from net_addr.ip6_mask import Ip6Mask
 from net_addr.ip6_network import Ip6Network
-from net_addr.ip_address import IpVersion
 from net_addr.ip_host import IpHost
+from net_addr.ip_version import IpVersion
 from net_addr.mac_address import MacAddress
 
 

@@ -39,9 +39,7 @@ import struct
 from abc import ABC
 from typing import TYPE_CHECKING, cast
 
-from net_addr.ip_address import IpVersion
-
-from net_addr import Ip6Address
+from net_addr import Ip6Address, IpVersion
 from pytcp import stack
 from pytcp.lib.logger import log
 from pytcp.protocols.enums import IpProto

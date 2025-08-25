@@ -38,9 +38,7 @@ from __future__ import annotations
 from abc import ABC
 from typing import TYPE_CHECKING, cast
 
-from net_addr.ip_address import IpVersion
-
-from net_addr import Ip4Address
+from net_addr import Ip4Address, IpVersion
 from pytcp import stack
 from pytcp.lib.logger import log
 from pytcp.lib.packet_rx import PacketRx

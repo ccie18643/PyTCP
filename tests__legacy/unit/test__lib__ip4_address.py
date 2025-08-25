@@ -47,7 +47,7 @@ from net_addr import (
     Ip4NetworkFormatError,
     MacAddress,
 )
-from net_addr.ip_address import IpVersion
+from net_addr import IpVersion
 
 
 class TestIp4Address(TestCase):

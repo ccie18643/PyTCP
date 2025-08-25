@@ -34,11 +34,10 @@ ver 3.0.2
 
 from typing import Any
 
-from net_addr.ip_address import IpVersion
 from parameterized import parameterized_class  # type: ignore
 from testslide import TestCase
 
-from net_addr import Ip6Address
+from net_addr import Ip6Address, IpVersion
 from pytcp.protocols.enums import IpProto
 from pytcp.protocols.ip6.ip6__assembler import Ip6Assembler
 from pytcp.protocols.ip6.ip6__header import Ip6Header

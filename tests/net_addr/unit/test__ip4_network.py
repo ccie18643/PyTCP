@@ -35,11 +35,16 @@ ver 3.0.2
 
 from typing import Any
 
-from net_addr.ip_address import IpVersion
 from parameterized import parameterized_class  # type: ignore
 from testslide import TestCase
 
-from net_addr import Ip4Address, Ip4Mask, Ip4Network, Ip4NetworkFormatError
+from net_addr import (
+    Ip4Address,
+    Ip4Mask,
+    Ip4Network,
+    Ip4NetworkFormatError,
+    IpVersion,
+)
 
 
 @parameterized_class(
