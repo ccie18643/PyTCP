@@ -56,7 +56,7 @@ class Ip4Host(IpHost[Ip4Address, Ip4Network, Ip4HostOrigin]):
     IPv4 host support class.
     """
 
-    __slots__ = ("_primary",)
+    __slots__ = ()
 
     _version: IpVersion = IpVersion.IP4
     _primary: bool
