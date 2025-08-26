@@ -46,7 +46,7 @@ class Base(ABC):
     @abstractmethod
     def __str__(self) -> str:
         """
-        Get the network object string representation.
+        Get the network object log string.
         """
 
         raise NotImplementedError
