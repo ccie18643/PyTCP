@@ -33,9 +33,7 @@ ver 3.0.3
 """
 
 
-from __future__ import annotations
-
-from typing import TYPE_CHECKING, cast
+from typing import cast
 
 from net_addr import (
     Ip4Address,
@@ -47,9 +45,7 @@ from net_addr import (
 )
 
 from pytcp import stack
-
-if TYPE_CHECKING:
-    from pytcp.socket.socket import AddressFamily, SocketType
+from pytcp.socket.socket import AddressFamily, SocketType
 
 
 def ip_version(

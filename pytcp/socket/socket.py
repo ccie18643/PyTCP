@@ -36,16 +36,12 @@ ver 3.0.3
 from __future__ import annotations
 
 from abc import ABC
-from typing import TYPE_CHECKING
 
 from net_addr import Ip4Address, Ip6Address, IpVersion
 from net_proto.lib.enums import IpProto
 
 from pytcp.lib.name_enum import NameEnum
 from pytcp.socket.socket_id import SocketId
-
-if TYPE_CHECKING:
-    from net_addr import IpAddress
 
 
 class gaierror(OSError):
@@ -158,7 +154,7 @@ class Socket(ABC):
         return self._ip_proto
 
     @property
-    def local_ip_address(self) -> IpAddress:
+    def local_ip_address(self) -> Ip6Address | Ip4Address:
         """
         Get the '_local_ip_address' attribute.
         """
@@ -166,7 +162,7 @@ class Socket(ABC):
         return self._local_ip_address
 
     @property
-    def remote_ip_address(self) -> IpAddress:
+    def remote_ip_address(self) -> Ip6Address | Ip4Address:
         """
         Get the '_remote_ip_address' attribute.
         """
