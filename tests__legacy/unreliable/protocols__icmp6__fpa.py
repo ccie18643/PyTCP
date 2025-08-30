@@ -34,7 +34,7 @@
 from testslide import TestCase
 
 from net_addr import Ip6Address, Ip6Network, MacAddress
-from pytcp.lib.tracker import Tracker
+from net_proto.lib.tracker import Tracker
 from pytcp.protocols.icmp4.icmp4__assembler import (
     Icmp4EchoReplyMessageAssembler,
 )

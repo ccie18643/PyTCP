@@ -55,19 +55,19 @@ To test the example code with 3rd party tools (assuming you are connected with t
 
 #### UDP Echo Client over IPv4 (to Linux host)
  - In the first terminal window, run: ncat -ulk 7 -e /bin/cat
- - In the second termnial window, run: examples/client__udp_echo.py --stack-interface tap7 <br0 IPv4 address>
+ - In the second terminal window, run: examples/client__udp_echo.py --stack-interface tap7 <br0 IPv4 address>
 
 #### UDP Echo Client over IPv6 (to Linux host)
  - In the first terminal window, run: ncat -ulk 7 -e /bin/cat
- - in second termnial window run: examples/client__udp_echo.py --stack-interface tap7 <br0 IPv6 address>
+ - in second terminal window run: examples/client__udp_echo.py --stack-interface tap7 <br0 IPv6 address>
 
 #### TCP Echo Client over IPv4 (to Linux host)
  - In the first terminal window, run: ncat -lk 7 -e /bin/cat
- - In the second termnial window, run: examples/client__tcp_echo.py --stack-interface tap7 <br0 IPv4 address>
+ - In the second terminal window, run: examples/client__tcp_echo.py --stack-interface tap7 <br0 IPv4 address>
 
 #### TCP Echo Client over IPv6 (to Linux host)
  - In the first terminal window, run: ncat -lk 7 -e /bin/cat
- - In second termnial window, run: examples/client__tcp_echo.py --stack-interface tap7 <br0 IPv6 address>
+ - In second terminal window, run: examples/client__tcp_echo.py --stack-interface tap7 <br0 IPv6 address>
 
 #### ICMP Echo Service over IPv4 (from Linux host)
  - In the first terminal window, run: examples/stack.py --stack-interface tap7
@@ -110,19 +110,19 @@ To test the example code with two stack instances talking to each other (assumin
 
 #### UDP Echo Service & Client over IPv4
  - In the first terminal window, run: examples/service__udp_echo.py --stack-interface tap7
- - In the second termnial window, run: examples/client__udp_echo.py --stack-interface tap9 <tap7 stack IPv4 address>
+ - In the second terminal window, run: examples/client__udp_echo.py --stack-interface tap9 <tap7 stack IPv4 address>
 
 #### UDP Echo Service & Client over IPv6
  - In the first terminal window, run: examples/service__udp_echo.py --stack-interface tap7
- - In the second termnial window, run: examples/client__udp_echo.py --stack-interface tap9 <tap7 stack IPv6 address>
+ - In the second terminal window, run: examples/client__udp_echo.py --stack-interface tap9 <tap7 stack IPv6 address>
 
 #### TCP Echo Service & Client over IPv4
  - In the first terminal window, run: examples/service__tcp_echo.py --stack-interface tap7
- - In the second termnial window, run: examples/client__tcp_echo.py --stack-interface tap9 <tap7 stack IPv4 address>
+ - In the second terminal window, run: examples/client__tcp_echo.py --stack-interface tap9 <tap7 stack IPv4 address>
 
 #### TCP Echo Service & Client over IPv6
  - In the first terminal window, run: examples/service__tcp_echo.py --stack-interface tap7
- - In the second termnial window, run: examples/client__udp_echo.py --stack-interface tap9 <tap7 stack IPv6 address>
+ - In the second terminal window, run: examples/client__udp_echo.py --stack-interface tap9 <tap7 stack IPv6 address>
 
 
 

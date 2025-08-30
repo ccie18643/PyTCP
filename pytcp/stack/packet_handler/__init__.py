@@ -49,16 +49,14 @@ from net_addr import (
     Ip6Network,
     MacAddress,
 )
+from net_proto import ETHERNET_802_3__PACKET__MAX_LEN, EtherType
+
+from pytcp.lib.dhcp4__legacy.client import Dhcp4Client
 from pytcp.lib.interface_layer import InterfaceLayer
 from pytcp.lib.ip_frag import IpFragData, IpFragFlowId
 from pytcp.lib.logger import log
 from pytcp.lib.packet_stats import PacketStatsRx, PacketStatsTx
 from pytcp.lib.subsystem import Subsystem
-from pytcp.protocols.dhcp4__legacy.client import Dhcp4Client
-from pytcp.protocols.enums import EtherType
-from pytcp.protocols.ethernet_802_3.ethernet_802_3__header import (
-    ETHERNET_802_3__PACKET__MAX_LEN,
-)
 
 from .packet_handler__arp__rx import PacketHandlerArpRx
 from .packet_handler__arp__tx import PacketHandlerArpTx

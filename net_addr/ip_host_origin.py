@@ -29,7 +29,7 @@ This module contains IP host origin base enum.
 
 net_addr/ip_host_origin.py
 
-ver 3.0.3
+ver 3.0.4
 """
 
 

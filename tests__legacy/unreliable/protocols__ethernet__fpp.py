@@ -41,7 +41,7 @@ from testslide import TestCase
 
 from net_addr import MacAddress
 from protocols.ethernet.base import ETHERNET_HEADER_LEN, EtherType
-from pytcp.lib.packet_rx import PacketRx
+from pytcp.protocols.packet_rx import PacketRx
 from pytcp.protocols.ethernet.fpp import EthernetIntegrityError, EthernetParser
 
 

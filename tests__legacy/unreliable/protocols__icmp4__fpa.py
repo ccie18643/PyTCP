@@ -42,7 +42,7 @@ from tests.unit.protocols__icmp4__ps import (
 )
 from testslide import StrictMock, TestCase
 
-from pytcp.lib.tracker import Tracker
+from net_proto.lib.tracker import Tracker
 from pytcp.protocols.icmp4.icmp4__assembler import (
     Icmp4Assembler,
     Icmp4EchoReplyMessageAssembler,

@@ -40,9 +40,7 @@ import threading
 from abc import abstractmethod
 from typing import TYPE_CHECKING, override
 
-from net_addr.ip4_address import Ip4Address
-from net_addr.ip6_address import Ip6Address
-from net_addr.ip_address import IpVersion
+from net_addr import Ip4Address, Ip6Address, IpVersion
 
 from examples.lib.subsystem import Subsystem
 from pytcp.socket import (

@@ -29,7 +29,7 @@ This module contains network address base class.
 
 net_addr/address.py
 
-ver 3.0.3
+ver 3.0.4
 """
 
 

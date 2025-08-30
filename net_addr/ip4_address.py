@@ -29,7 +29,7 @@ Module contains IPv4 address support class.
 
 net_addr/ip4_address.py
 
-ver 3.0.2
+ver 3.0.4
 """
 
 

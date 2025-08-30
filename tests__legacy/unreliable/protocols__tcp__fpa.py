@@ -33,7 +33,7 @@
 
 from testslide import TestCase
 
-from pytcp.lib.tracker import Tracker
+from net_proto.lib.tracker import Tracker
 from pytcp.protocols.ip4.ip4__base import IP4_PROTO_TCP
 from pytcp.protocols.ip6.ip6__base import IP6_NEXT_TCP
 from pytcp.protocols.tcp.tcp__assembler import (

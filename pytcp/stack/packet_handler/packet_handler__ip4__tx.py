@@ -33,22 +33,26 @@ ver 3.0.3
 """
 
 
-from __future__ import annotations
-
 from abc import ABC
 from typing import TYPE_CHECKING
 
 from net_addr import Ip4Address, MacAddress
+from net_proto import (
+    IP4__DEFAULT_TTL,
+    Ip4Assembler,
+    Ip4FragAssembler,
+    Ip4Payload,
+    IpProto,
+    RawAssembler,
+    TcpAssembler,
+    Tracker,
+    UdpAssembler,
+)
+
 from pytcp import stack
 from pytcp.lib.interface_layer import InterfaceLayer
 from pytcp.lib.logger import log
 from pytcp.lib.tx_status import TxStatus
-from pytcp.protocols.defaults import IP4__DEFAULT_TTL
-from pytcp.protocols.enums import IpProto
-from pytcp.protocols.ip4.ip4__assembler import Ip4Assembler, Ip4FragAssembler
-from pytcp.protocols.raw.raw__assembler import RawAssembler
-from pytcp.protocols.tcp.tcp__assembler import TcpAssembler
-from pytcp.protocols.udp.udp__assembler import UdpAssembler
 
 
 class PacketHandlerIp4Tx(ABC):
@@ -58,10 +62,9 @@ class PacketHandlerIp4Tx(ABC):
 
     if TYPE_CHECKING:
         from net_addr import Ip4Host
+        from net_proto import EthernetPayload
+
         from pytcp.lib.packet_stats import PacketStatsTx
-        from pytcp.lib.tracker import Tracker
-        from pytcp.protocols.ethernet.ethernet__base import EthernetPayload
-        from pytcp.protocols.ip4.ip4__base import Ip4Payload
 
         _interface_layer: InterfaceLayer
         _packet_stats_tx: PacketStatsTx

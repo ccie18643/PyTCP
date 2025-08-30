@@ -29,7 +29,7 @@ This module contains IP base class.
 
 net_addr/ip.py
 
-ver 3.0.3
+ver 3.0.4
 """
 
 

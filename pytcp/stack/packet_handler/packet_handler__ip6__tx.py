@@ -39,19 +39,20 @@ from abc import ABC
 from typing import TYPE_CHECKING
 
 from net_addr import Ip6Address, MacAddress
+from net_proto import (
+    IP6__DEFAULT_HOP_LIMIT,
+    Icmp6,
+    Icmp6Mld2ReportMessage,
+    Icmp6NdMessage,
+    Ip6Assembler,
+    IpProto,
+    RawAssembler,
+)
+
 from pytcp import stack
 from pytcp.lib.interface_layer import InterfaceLayer
 from pytcp.lib.logger import log
 from pytcp.lib.tx_status import TxStatus
-from pytcp.protocols.defaults import IP6__DEFAULT_HOP_LIMIT
-from pytcp.protocols.enums import IpProto
-from pytcp.protocols.icmp6.icmp6__base import Icmp6
-from pytcp.protocols.icmp6.message.mld2.icmp6_mld2_message__report import (
-    Icmp6Mld2ReportMessage,
-)
-from pytcp.protocols.icmp6.message.nd.icmp6_nd_message import Icmp6NdMessage
-from pytcp.protocols.ip6.ip6__assembler import Ip6Assembler
-from pytcp.protocols.raw.raw__assembler import RawAssembler
 
 
 class PacketHandlerIp6Tx(ABC):
@@ -61,10 +62,9 @@ class PacketHandlerIp6Tx(ABC):
 
     if TYPE_CHECKING:
         from net_addr import Ip6Host
+        from net_proto import EthernetPayload, Ip6Payload, Tracker
+
         from pytcp.lib.packet_stats import PacketStatsTx
-        from pytcp.lib.tracker import Tracker
-        from pytcp.protocols.ethernet.ethernet__base import EthernetPayload
-        from pytcp.protocols.ip6.ip6__base import Ip6Payload
 
         _interface_layer: InterfaceLayer
         _packet_stats_tx: PacketStatsTx

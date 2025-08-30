@@ -41,14 +41,14 @@ from testslide import TestCase
 
 from pytcp.lib.packet_stats import PacketStatsTx
 from pytcp.lib.tx_status import TxStatus
-from pytcp.protocols.icmp4.message.icmp4_message__destination_unreachable import (
+from net_proto import (
     Icmp4DestinationUnreachableCode,
     Icmp4DestinationUnreachableMessage,
 )
-from pytcp.protocols.icmp4.message.icmp4_message__echo_reply import (
+from net_proto import (
     Icmp4EchoReplyMessage,
 )
-from pytcp.protocols.icmp4.message.icmp4_message__echo_request import (
+from net_proto import (
     Icmp4EchoRequestMessage,
 )
 

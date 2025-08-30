@@ -45,6 +45,7 @@ from net_addr import (
     IpAddress,
     IpVersion,
 )
+
 from pytcp import stack
 
 if TYPE_CHECKING:

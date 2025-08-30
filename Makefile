@@ -2,11 +2,11 @@ VENV := venv
 ROOT_PATH:=$(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
 PYTCP_PATH := pytcp
 NET_ADDR_PATH := net_addr
-TESTS_PATH := tests
+NET_PROTO_PATH := net_proto
 EXAMPLES_PATH := examples
 PYTCP_FILES := $(shell find ${PYTCP_PATH} -name '*.py')
 NET_ADDR_FILES := $(shell find ${NET_ADDR_PATH} -name '*.py')
-TEST_FILES := $(shell find ${TESTS_PATH} -name '*.py')
+NET_PROTO_FILES := $(shell find ${NET_PROTO_PATH} -name '*.py')
 EXAMPLES_FILES := $(shell find ${EXAMPLES_PATH} -name '*.py')
 
 $(VENV)/bin/activate: requirements.txt requirements_dev.txt
@@ -34,27 +34,27 @@ lint: venv
 	@echo '<<< CODESPELL'
 	@./$(VENV)/bin/codespell --write-changes ${PYTCP_FILES}
 	@./$(VENV)/bin/codespell --write-changes ${NET_ADDR_FILES}
-	@./$(VENV)/bin/codespell --write-changes ${TEST_FILES}
+	@./$(VENV)/bin/codespell --write-changes ${NET_PROTO_FILES}
 	@./$(VENV)/bin/codespell --write-changes ${EXAMPLES_FILES}
 	@echo '<<< ISORT'
 	@./$(VENV)/bin/isort ${PYTCP_FILES}
 	@./$(VENV)/bin/isort ${NET_ADDR_FILES}
-	@./$(VENV)/bin/isort ${TEST_FILES}
+	@./$(VENV)/bin/isort ${NET_PROTO_FILES}
 	@./$(VENV)/bin/isort ${EXAMPLES_FILES}
 	@echo '<<< BLACK'
 	@./$(VENV)/bin/black ${PYTCP_FILES}
 	@./$(VENV)/bin/black ${NET_ADDR_FILES}
-	@./$(VENV)/bin/black ${TEST_FILES}
+	@./$(VENV)/bin/black ${NET_PROTO_FILES}
 	@./$(VENV)/bin/black ${EXAMPLES_FILES}
 	@echo '<<< FLAKE8'
 	@./$(VENV)/bin/flake8 ${PYTCP_FILES}
 	@./$(VENV)/bin/flake8 ${NET_ADDR_FILES}
-	@./$(VENV)/bin/flake8 ${TEST_FILES}
+	@./$(VENV)/bin/flake8 ${NET_PROTO_FILES}
 	@./$(VENV)/bin/flake8 ${EXAMPLES_FILES}
 	@echo '<<< MYPY'
 	@PYTHONPATH=$(ROOT_PATH) ./$(VENV)/bin/mypy -p ${PYTCP_PATH}
 	@PYTHONPATH=$(ROOT_PATH) ./$(VENV)/bin/mypy -p ${NET_ADDR_PATH}
-	@PYTHONPATH=$(ROOT_PATH) ./$(VENV)/bin/mypy -p ${TESTS_PATH}
+	@PYTHONPATH=$(ROOT_PATH) ./$(VENV)/bin/mypy -p ${NET_PROTO_PATH}
 	@PYTHONPATH=$(ROOT_PATH) ./$(VENV)/bin/mypy -p ${EXAMPLES_PATH}
 
 test_legacy_unit: venv
@@ -67,18 +67,19 @@ test_legacy_integration: venv
 
 test_legacy: test_legacy_unit test_legacy_integration
 
-test_unit: venv
-	@echo '<<< TESTSLIDE UNIT'
-	@./$(VENV)/bin/testslide $(shell find 'tests/pytcp/unit' -name '*.py')
-	@./$(VENV)/bin/testslide $(shell find 'tests/net_addr/unit' -name '*.py')
+test__net_addr__unit: venv
+	@echo '<<< TESTSLIDE NET_ADDR UNIT'
+	@./$(VENV)/bin/testslide $(shell find 'net_addr/tests/unit' -name '*.py')
 
-test_integration: venv
-	@echo '<<< TESTSLIDE INTEGRATION'
-	@./$(VENV)/bin/testslide $(shell find 'tests/pytcp/integration' -name '*.py')
+test__net_proto__unit: venv
+	@echo '<<< TESTSLIDE NET_PROTO UNIT'
+	@./$(VENV)/bin/testslide $(shell find 'net_proto/tests/unit' -name '*.py')
 
-test: test_unit test_integration
+test_unit: venv test__net_addr__unit test__net_proto__unit
 
-validate: lint test_unit test_legacy
+test: test_unit test_legacy
+
+validate: lint test
 
 bridge:
 	@brctl addbr br0

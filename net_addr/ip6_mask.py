@@ -29,7 +29,7 @@ This module contains IPv6 mask support class.
 
 net_addr/ip6_mask.py
 
-ver 3.0.3
+ver 3.0.4
 """
 
 

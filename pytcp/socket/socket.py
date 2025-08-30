@@ -39,8 +39,9 @@ from abc import ABC
 from typing import TYPE_CHECKING
 
 from net_addr import Ip4Address, Ip6Address, IpVersion
+from net_proto.lib.enums import IpProto
+
 from pytcp.lib.name_enum import NameEnum
-from pytcp.protocols.enums import IpProto
 from pytcp.socket.socket_id import SocketId
 
 if TYPE_CHECKING:

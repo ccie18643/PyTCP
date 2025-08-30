@@ -29,7 +29,7 @@ This module contains the base class for all NetAddr objects.
 
 net_addr/net_addr.py
 
-ver 3.0.3
+ver 3.0.4
 """
 
 

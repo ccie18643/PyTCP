@@ -29,43 +29,31 @@ This module contains packet handler for the outbound ICMPv6 packets.
 
 pytcp/subsystems/packet_handler/packet_handler__icmp6__tx.py
 
-ver 3.0.3
+ver 3.0.4
 """
 
-
-from __future__ import annotations
 
 from abc import ABC
 from typing import TYPE_CHECKING
 
 from net_addr import Ip6Address, Ip6Host, MacAddress
-from pytcp.lib.logger import log
-from pytcp.lib.tracker import Tracker
-from pytcp.lib.tx_status import TxStatus
-from pytcp.protocols.icmp6.icmp6__assembler import Icmp6Assembler
-from pytcp.protocols.icmp6.message.icmp6_message import Icmp6Message, Icmp6Type
-from pytcp.protocols.icmp6.message.icmp6_message__destination_unreachable import (
+from net_proto import (
+    Icmp6Assembler,
     Icmp6DestinationUnreachableCode,
-)
-from pytcp.protocols.icmp6.message.mld2.icmp6_mld2__multicast_address_record import (
+    Icmp6Message,
     Icmp6Mld2MulticastAddressRecord,
     Icmp6Mld2MulticastAddressRecordType,
-)
-from pytcp.protocols.icmp6.message.mld2.icmp6_mld2_message__report import (
     Icmp6Mld2ReportMessage,
-)
-from pytcp.protocols.icmp6.message.nd.icmp6_nd_message__neighbor_solicitation import (
     Icmp6NdNeighborSolicitationMessage,
-)
-from pytcp.protocols.icmp6.message.nd.icmp6_nd_message__router_solicitation import (
-    Icmp6NdRouterSolicitationMessage,
-)
-from pytcp.protocols.icmp6.message.nd.option.icmp6_nd_option__slla import (
-    Icmp6NdOptionSlla,
-)
-from pytcp.protocols.icmp6.message.nd.option.icmp6_nd_options import (
     Icmp6NdOptions,
+    Icmp6NdOptionSlla,
+    Icmp6NdRouterSolicitationMessage,
+    Icmp6Type,
+    Tracker,
 )
+
+from pytcp.lib.logger import log
+from pytcp.lib.tx_status import TxStatus
 
 
 class PacketHandlerIcmp6Tx(ABC):
@@ -74,10 +62,9 @@ class PacketHandlerIcmp6Tx(ABC):
     """
 
     if TYPE_CHECKING:
+        from net_proto import IP6__DEFAULT_HOP_LIMIT, Ip6Payload, RawAssembler
+
         from pytcp.lib.packet_stats import PacketStatsTx
-        from pytcp.protocols.defaults import IP6__DEFAULT_HOP_LIMIT
-        from pytcp.protocols.ip6.ip6__base import Ip6Payload
-        from pytcp.protocols.raw.raw__assembler import RawAssembler
 
         _packet_stats_tx: PacketStatsTx
         _mac_unicast: MacAddress

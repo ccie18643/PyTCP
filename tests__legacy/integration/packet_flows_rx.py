@@ -36,7 +36,7 @@
 from testslide import TestCase
 
 from net_addr import Ip4Address, Ip4Host, Ip6Address, Ip6Host, MacAddress
-from pytcp.lib.packet_rx import PacketRx
+from net_proto import PacketRx
 from pytcp.lib.packet_stats import PacketStatsRx, PacketStatsTx
 from pytcp.stack.packet_handler import PacketHandlerL2
 from pytcp import stack

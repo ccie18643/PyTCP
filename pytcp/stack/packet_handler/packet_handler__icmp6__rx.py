@@ -29,50 +29,36 @@ This module contains packet handler for the inbound ICMPv6 packets.
 
 pytcp/subsystems/packet_handler/packet_handler__icmp6__rx.py
 
-ver 3.0.3
+ver 3.0.4
 """
 
-
-from __future__ import annotations
 
 import struct
 from abc import ABC
 from typing import TYPE_CHECKING, cast
 
 from net_addr import Ip6Address, IpVersion
-from pytcp import stack
-from pytcp.lib.logger import log
-from pytcp.protocols.enums import IpProto
-from pytcp.protocols.errors import PacketValidationError
-from pytcp.protocols.icmp6.icmp6__parser import Icmp6Parser
-from pytcp.protocols.icmp6.message.icmp6_message import Icmp6Type
-from pytcp.protocols.icmp6.message.icmp6_message__destination_unreachable import (
+from net_proto import (
+    IP6__HEADER__LEN,
+    UDP__HEADER__LEN,
     Icmp6DestinationUnreachableMessage,
-)
-from pytcp.protocols.icmp6.message.icmp6_message__echo_reply import (
     Icmp6EchoReplyMessage,
-)
-from pytcp.protocols.icmp6.message.icmp6_message__echo_request import (
     Icmp6EchoRequestMessage,
-)
-from pytcp.protocols.icmp6.message.nd.icmp6_nd_message__neighbor_advertisement import (
     Icmp6NdNeighborAdvertisementMessage,
-)
-from pytcp.protocols.icmp6.message.nd.icmp6_nd_message__neighbor_solicitation import (
     Icmp6NdNeighborSolicitationMessage,
-)
-from pytcp.protocols.icmp6.message.nd.icmp6_nd_message__router_advertisement import (
-    Icmp6NdRouterAdvertisementMessage,
-)
-from pytcp.protocols.icmp6.message.nd.icmp6_nd_message__router_solicitation import (
-    Icmp6NdRouterSolicitationMessage,
-)
-from pytcp.protocols.icmp6.message.nd.option.icmp6_nd_options import (
     Icmp6NdOptions,
     Icmp6NdOptionTlla,
+    Icmp6NdRouterAdvertisementMessage,
+    Icmp6NdRouterSolicitationMessage,
+    Icmp6Parser,
+    Icmp6Type,
+    IpProto,
+    PacketRx,
+    PacketValidationError,
 )
-from pytcp.protocols.ip6.ip6__header import IP6__HEADER__LEN
-from pytcp.protocols.udp.udp__header import UDP__HEADER__LEN
+
+from pytcp import stack
+from pytcp.lib.logger import log
 from pytcp.socket.raw__metadata import RawMetadata
 from pytcp.socket.raw__socket import RawSocket
 from pytcp.socket.udp__metadata import UdpMetadata
@@ -88,11 +74,10 @@ class PacketHandlerIcmp6Rx(ABC):
         from threading import Semaphore
 
         from net_addr import Ip6Network, MacAddress
-        from pytcp.lib.packet_rx import PacketRx
+        from net_proto import Icmp6Message, Tracker
+
         from pytcp.lib.packet_stats import PacketStatsRx
-        from pytcp.lib.tracker import Tracker
         from pytcp.lib.tx_status import TxStatus
-        from pytcp.protocols.icmp6.icmp6__base import Icmp6Message
 
         _packet_stats_rx: PacketStatsRx
         _mac_unicast: MacAddress

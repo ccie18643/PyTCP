@@ -43,8 +43,8 @@ from pytcp.socket.socket_id import SocketId
 
 if TYPE_CHECKING:
     from net_addr import Ip4Address, Ip6Address, IpVersion
-    from pytcp.lib.tracker import Tracker
-    from pytcp.protocols.enums import IpProto
+    from net_proto.lib.enums import IpProto
+    from net_proto.lib.tracker import Tracker
 
 
 @dataclass(frozen=True, kw_only=True, slots=True)

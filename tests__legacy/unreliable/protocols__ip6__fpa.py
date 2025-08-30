@@ -36,7 +36,7 @@ from testslide import StrictMock, TestCase
 from net_addr import Ip6Address
 from protocols.ethernet.base import EtherType
 from pytcp.config import IP6__DEFAULT_HOP_LIMIT
-from pytcp.lib.tracker import Tracker
+from net_proto.lib.tracker import Tracker
 from pytcp.protocols.ip6.ip6__assembler import Ip6Assembler
 from pytcp.protocols.ip6.ip6__base import IP6_HEADER_LEN, IP6_NEXT_RAW
 from pytcp.protocols.raw.raw__assembler import RawAssembler

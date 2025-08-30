@@ -29,21 +29,17 @@ This module contains packet handler for the inbound IPv6 packets.
 
 pytcp/subsystems/packet_handler/packet_handler__ip6__rx.py
 
-ver 3.0.3
+ver 3.0.4
 """
 
-
-from __future__ import annotations
 
 from abc import ABC
 from typing import TYPE_CHECKING, cast
 
+from net_proto import Ip6Parser, IpProto, PacketRx, PacketValidationError
+
 from pytcp import stack
 from pytcp.lib.logger import log
-from pytcp.lib.packet_rx import PacketRx
-from pytcp.protocols.enums import IpProto
-from pytcp.protocols.errors import PacketValidationError
-from pytcp.protocols.ip6.ip6__parser import Ip6Parser
 from pytcp.socket.raw__metadata import RawMetadata
 from pytcp.socket.raw__socket import RawSocket
 
@@ -55,6 +51,7 @@ class PacketHandlerIp6Rx(ABC):
 
     if TYPE_CHECKING:
         from net_addr import Ip6Address
+
         from pytcp.lib.packet_stats import PacketStatsRx
 
         _packet_stats_rx: PacketStatsRx

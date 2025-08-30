@@ -29,19 +29,16 @@ This module contains packet handler for the inbound Ethernet II packets.
 
 pytcp/subsystems/packet_handler/packet_handler__ethernet__rx.py
 
-ver 3.0.3
+ver 3.0.4
 """
 
-
-from __future__ import annotations
 
 from abc import ABC
 from typing import TYPE_CHECKING
 
+from net_proto import EthernetParser, EtherType, PacketRx, PacketValidationError
+
 from pytcp.lib.logger import log
-from pytcp.protocols.errors import PacketValidationError
-from pytcp.protocols.ethernet.ethernet__header import EtherType
-from pytcp.protocols.ethernet.ethernet__parser import EthernetParser
 
 
 class PacketHandlerEthernetRx(ABC):
@@ -51,7 +48,7 @@ class PacketHandlerEthernetRx(ABC):
 
     if TYPE_CHECKING:
         from net_addr import MacAddress
-        from pytcp.lib.packet_rx import PacketRx
+
         from pytcp.lib.packet_stats import PacketStatsRx
 
         _packet_stats_rx: PacketStatsRx

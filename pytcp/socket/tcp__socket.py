@@ -44,6 +44,7 @@ from net_addr import (
     Ip6Address,
     Ip6AddressFormatError,
 )
+
 from pytcp import stack
 from pytcp.lib.ip_helper import (
     is_address_in_use,

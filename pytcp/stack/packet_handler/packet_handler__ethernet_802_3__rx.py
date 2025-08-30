@@ -32,16 +32,13 @@ pytcp/subsystems/packet_handler/packet_handler__ethernet_802_3__rx.py
 ver 3.0.3
 """
 
-from __future__ import annotations
 
 from abc import ABC
 from typing import TYPE_CHECKING
 
+from net_proto import Ethernet8023Parser, PacketRx, PacketValidationError
+
 from pytcp.lib.logger import log
-from pytcp.protocols.errors import PacketValidationError
-from pytcp.protocols.ethernet_802_3.ethernet_802_3__parser import (
-    Ethernet8023Parser,
-)
 
 
 class PacketHandlerEthernet8023Rx(ABC):
@@ -51,7 +48,7 @@ class PacketHandlerEthernet8023Rx(ABC):
 
     if TYPE_CHECKING:
         from net_addr import MacAddress
-        from pytcp.lib.packet_rx import PacketRx
+
         from pytcp.lib.packet_stats import PacketStatsRx
 
         _packet_stats_rx: PacketStatsRx

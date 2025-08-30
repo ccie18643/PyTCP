@@ -29,23 +29,25 @@ This module contains packet handler for the outbound IPv6 fragment extension hea
 
 pytcp/subsystems/packet_handler/packet_handler__ip6_frag__tx.py
 
-ver 3.0.3
+ver 3.0.4
 """
 
-
-from __future__ import annotations
 
 from abc import ABC
 from typing import TYPE_CHECKING
 
+from net_proto import (
+    IP6__HEADER__LEN,
+    IP6_FRAG__HEADER__LEN,
+    Icmp6Assembler,
+    Ip6Assembler,
+    Ip6FragAssembler,
+    TcpAssembler,
+    UdpAssembler,
+)
+
 from pytcp.lib.logger import log
 from pytcp.lib.tx_status import TxStatus
-from pytcp.protocols.icmp6.icmp6__assembler import Icmp6Assembler
-from pytcp.protocols.ip6.ip6__header import IP6__HEADER__LEN
-from pytcp.protocols.ip6_frag.ip6_frag__assembler import Ip6FragAssembler
-from pytcp.protocols.ip6_frag.ip6_frag__header import IP6_EXT_FRAG__HEADER__LEN
-from pytcp.protocols.tcp.tcp__assembler import TcpAssembler
-from pytcp.protocols.udp.udp__assembler import UdpAssembler
 
 
 class PacketHandlerIp6FragTx(ABC):
@@ -55,10 +57,13 @@ class PacketHandlerIp6FragTx(ABC):
 
     if TYPE_CHECKING:
         from net_addr import Ip6Address
+        from net_proto import (
+            IP6__DEFAULT_HOP_LIMIT,
+            Ip6Payload,
+            RawAssembler,
+        )
+
         from pytcp.lib.packet_stats import PacketStatsTx
-        from pytcp.protocols.defaults import IP6__DEFAULT_HOP_LIMIT
-        from pytcp.protocols.ip6.ip6__assembler import Ip6Assembler, Ip6Payload
-        from pytcp.protocols.raw.raw__assembler import RawAssembler
 
         _packet_stats_tx: PacketStatsTx
         _ip6_id: int
@@ -90,7 +95,7 @@ class PacketHandlerIp6FragTx(ABC):
         payload = bytearray(bytes(ip6_packet_tx.payload))
 
         payload_mtu = (
-            self._interface_mtu - IP6__HEADER__LEN - IP6_EXT_FRAG__HEADER__LEN
+            self._interface_mtu - IP6__HEADER__LEN - IP6_FRAG__HEADER__LEN
         ) & 0b1111111111111000
         data_frags = [
             payload[_ : payload_mtu + _]

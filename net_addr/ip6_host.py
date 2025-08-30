@@ -29,7 +29,7 @@ This module contains IPv6 host support class.
 
 net_addr/ip6_host.py
 
-ver 3.0.3
+ver 3.0.4
 """
 
 

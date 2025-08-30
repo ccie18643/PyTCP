@@ -33,20 +33,21 @@ ver 3.0.3
 """
 
 
-from __future__ import annotations
-
 from abc import ABC
 from typing import TYPE_CHECKING, cast
 
 from net_addr import Ip4Address, Ip6Address
+from net_proto import (
+    TcpAssembler,
+    TcpOptionMss,
+    TcpOptionNop,
+    TcpOptions,
+    TcpOptionWscale,
+    Tracker,
+)
+
 from pytcp.lib.logger import log
-from pytcp.lib.tracker import Tracker
 from pytcp.lib.tx_status import TxStatus
-from pytcp.protocols.tcp.options.tcp_option__mss import TcpOptionMss
-from pytcp.protocols.tcp.options.tcp_option__nop import TcpOptionNop
-from pytcp.protocols.tcp.options.tcp_option__wscale import TcpOptionWscale
-from pytcp.protocols.tcp.options.tcp_options import TcpOptions
-from pytcp.protocols.tcp.tcp__assembler import TcpAssembler
 
 
 class PacketHandlerTcpTx(ABC):
@@ -56,19 +57,18 @@ class PacketHandlerTcpTx(ABC):
 
     if TYPE_CHECKING:
         from net_addr import IpAddress
-        from pytcp.lib.packet_stats import PacketStatsTx
-        from pytcp.protocols.defaults import (
+        from net_proto import (
             IP4__DEFAULT_TTL,
             IP6__DEFAULT_HOP_LIMIT,
-        )
-        from pytcp.protocols.icmp4.icmp4__assembler import Icmp4Assembler
-        from pytcp.protocols.icmp6.icmp6__assembler import Icmp6Assembler
-        from pytcp.protocols.ip4.ip4__assembler import Ip4Payload
-        from pytcp.protocols.ip6.ip6__assembler import Ip6Payload
-        from pytcp.protocols.ip6_frag.ip6_frag__assembler import (
+            Icmp4Assembler,
+            Icmp6Assembler,
+            Ip4Payload,
             Ip6FragAssembler,
+            Ip6Payload,
+            RawAssembler,
         )
-        from pytcp.protocols.raw.raw__assembler import RawAssembler
+
+        from pytcp.lib.packet_stats import PacketStatsTx
 
         _packet_stats_tx: PacketStatsTx
 
@@ -95,8 +95,8 @@ class PacketHandlerTcpTx(ABC):
     def _phtx_tcp(
         self,
         *,
-        ip__src: IpAddress,
-        ip__dst: IpAddress,
+        ip__src: Ip6Address | Ip4Address,
+        ip__dst: Ip6Address | Ip4Address,
         tcp__sport: int,
         tcp__dport: int,
         tcp__seq: int = 0,
@@ -213,8 +213,8 @@ class PacketHandlerTcpTx(ABC):
     def send_tcp_packet(
         self,
         *,
-        ip__local_address: IpAddress,
-        ip__remote_address: IpAddress,
+        ip__local_address: Ip6Address | Ip4Address,
+        ip__remote_address: Ip6Address | Ip4Address,
         tcp__local_port: int,
         tcp__remote_port: int,
         tcp__flag_syn: bool = False,

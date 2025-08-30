@@ -29,23 +29,24 @@ This module contains packet handler for the outbound ICMPv4 packets
 
 pytcp/subsystems/packet_handler/packet_handler__icmp4__tx.py
 
-ver 3.0.3
+ver 3.0.4
 """
 
-
-from __future__ import annotations
 
 from abc import ABC
 from typing import TYPE_CHECKING
 
-from pytcp.lib.logger import log
-from pytcp.lib.tracker import Tracker
-from pytcp.lib.tx_status import TxStatus
-from pytcp.protocols.icmp4.icmp4__assembler import Icmp4Assembler
-from pytcp.protocols.icmp4.message.icmp4_message import Icmp4Message, Icmp4Type
-from pytcp.protocols.icmp4.message.icmp4_message__destination_unreachable import (
+from net_addr import Ip4Address
+from net_proto import (
+    Icmp4Assembler,
     Icmp4DestinationUnreachableCode,
+    Icmp4Message,
+    Icmp4Type,
+    Tracker,
 )
+
+from pytcp.lib.logger import log
+from pytcp.lib.tx_status import TxStatus
 
 
 class PacketHandlerIcmp4Tx(ABC):
@@ -54,11 +55,9 @@ class PacketHandlerIcmp4Tx(ABC):
     """
 
     if TYPE_CHECKING:
-        from net_addr import Ip4Address
+        from net_proto import IP4__DEFAULT_TTL, Ip4Payload, RawAssembler
+
         from pytcp.lib.packet_stats import PacketStatsTx
-        from pytcp.protocols.defaults import IP4__DEFAULT_TTL
-        from pytcp.protocols.ip4.ip4__base import Ip4Payload
-        from pytcp.protocols.raw.raw__assembler import RawAssembler
 
         _packet_stats_tx: PacketStatsTx
 

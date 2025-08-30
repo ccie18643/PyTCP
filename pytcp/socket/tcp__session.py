@@ -44,6 +44,7 @@ from enum import auto
 from typing import TYPE_CHECKING, Any
 
 from net_addr import Ip4Address, Ip6Address, IpVersion
+
 from pytcp import stack
 from pytcp.lib.logger import log
 from pytcp.lib.name_enum import NameEnum

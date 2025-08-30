@@ -40,8 +40,8 @@ from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING
 
 import click
-
 from net_addr import IpVersion
+
 from pytcp.socket import (
     AF_INET4,
     AF_INET6,

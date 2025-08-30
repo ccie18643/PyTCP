@@ -39,11 +39,12 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 from net_addr import Ip4Address, Ip6Address, IpVersion
+
 from pytcp.socket.socket import AddressFamily, SocketType
 from pytcp.socket.socket_id import SocketId
 
 if TYPE_CHECKING:
-    from pytcp.lib.tracker import Tracker
+    from net_proto.lib.tracker import Tracker
 
 
 @dataclass(frozen=True, kw_only=True, slots=True)

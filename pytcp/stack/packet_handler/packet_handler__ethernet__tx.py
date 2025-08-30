@@ -39,13 +39,17 @@ from abc import ABC
 from typing import TYPE_CHECKING
 
 from net_addr import MacAddress
+from net_proto import (
+    EthernetAssembler,
+    Ip4Assembler,
+    Ip4FragAssembler,
+    Ip6Assembler,
+    RawAssembler,
+)
+
 from pytcp import stack
 from pytcp.lib.logger import log
 from pytcp.lib.tx_status import TxStatus
-from pytcp.protocols.ethernet.ethernet__assembler import EthernetAssembler
-from pytcp.protocols.ip4.ip4__assembler import Ip4Assembler, Ip4FragAssembler
-from pytcp.protocols.ip6.ip6__assembler import Ip6Assembler
-from pytcp.protocols.raw.raw__assembler import RawAssembler
 
 
 class PacketHandlerEthernetTx(ABC):
@@ -55,8 +59,9 @@ class PacketHandlerEthernetTx(ABC):
 
     if TYPE_CHECKING:
         from net_addr import Ip4Host, Ip6Host
+        from net_proto import EthernetPayload
+
         from pytcp.lib.packet_stats import PacketStatsTx
-        from pytcp.protocols.ethernet.ethernet__base import EthernetPayload
 
         _packet_stats_tx: PacketStatsTx
         _mac_unicast: MacAddress

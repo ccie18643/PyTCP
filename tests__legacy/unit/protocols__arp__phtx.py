@@ -41,7 +41,7 @@ from testslide import TestCase
 
 from pytcp.lib.packet_stats import PacketStatsTx
 from pytcp.lib.tx_status import TxStatus
-from pytcp.protocols.arp.arp__header import ArpOperation
+from net_proto import ArpOperation
 
 
 class TestArpPhtx(TestCase):

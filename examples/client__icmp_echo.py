@@ -42,16 +42,16 @@ import threading
 from typing import Any, override
 
 import click
-
-from examples.lib.client import Client
-from examples.lib.payload import payload
-from examples.stack import cli as stack_cli
 from net_addr import (
     ClickTypeIpAddress,
     Ip4Address,
     Ip6Address,
     IpVersion,
 )
+
+from examples.lib.client import Client
+from examples.lib.payload import payload
+from examples.stack import cli as stack_cli
 
 ICMP4__ECHO_REQUEST__TYPE = 8
 ICMP4__ECHO_REQUEST__CODE = 0

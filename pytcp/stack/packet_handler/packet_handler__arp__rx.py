@@ -29,20 +29,17 @@ This module contains packet handler for the inbound ARP packets.
 
 pytcp/subsystems/packet_handler/packet_handler__arp__rx.py
 
-ver 3.0.3
+ver 3.0.4
 """
 
-
-from __future__ import annotations
 
 from abc import ABC
 from typing import TYPE_CHECKING
 
+from net_proto import ArpOperation, ArpParser, PacketRx, PacketValidationError
+
 from pytcp import stack
 from pytcp.lib.logger import log
-from pytcp.protocols.arp.arp__header import ArpOperation
-from pytcp.protocols.arp.arp__parser import ArpParser
-from pytcp.protocols.errors import PacketValidationError
 
 
 class PacketHandlerArpRx(ABC):
@@ -52,9 +49,9 @@ class PacketHandlerArpRx(ABC):
 
     if TYPE_CHECKING:
         from net_addr import Ip4Address, Ip4Host, MacAddress
-        from pytcp.lib.packet_rx import PacketRx
+        from net_proto import Tracker
+
         from pytcp.lib.packet_stats import PacketStatsRx
-        from pytcp.lib.tracker import Tracker
         from pytcp.lib.tx_status import TxStatus
 
         _mac_unicast: MacAddress

@@ -29,34 +29,30 @@ This module contains packet handler for the inbound ICMPv4 packets.
 
 pytcp/subsystems/packet_handler/packet_handler__icmp4__rx.py
 
-ver 3.0.3
+ver 3.0.4
 """
 
-
-from __future__ import annotations
 
 import struct
 from abc import ABC
 from typing import TYPE_CHECKING, cast
 
 from net_addr import Ip4Address, IpVersion
+from net_proto import (
+    IP4__HEADER__LEN,
+    UDP__HEADER__LEN,
+    Icmp4DestinationUnreachableMessage,
+    Icmp4EchoReplyMessage,
+    Icmp4EchoRequestMessage,
+    Icmp4Parser,
+    Icmp4Type,
+    IpProto,
+    PacketRx,
+    PacketValidationError,
+)
+
 from pytcp import stack
 from pytcp.lib.logger import log
-from pytcp.protocols.enums import IpProto
-from pytcp.protocols.errors import PacketValidationError
-from pytcp.protocols.icmp4.icmp4__parser import Icmp4Parser
-from pytcp.protocols.icmp4.message.icmp4_message import Icmp4Type
-from pytcp.protocols.icmp4.message.icmp4_message__destination_unreachable import (
-    Icmp4DestinationUnreachableMessage,
-)
-from pytcp.protocols.icmp4.message.icmp4_message__echo_reply import (
-    Icmp4EchoReplyMessage,
-)
-from pytcp.protocols.icmp4.message.icmp4_message__echo_request import (
-    Icmp4EchoRequestMessage,
-)
-from pytcp.protocols.ip4.ip4__header import IP4__HEADER__LEN
-from pytcp.protocols.udp.udp__header import UDP__HEADER__LEN
 from pytcp.socket.raw__metadata import RawMetadata
 from pytcp.socket.raw__socket import RawSocket
 from pytcp.socket.udp__metadata import UdpMetadata
@@ -69,11 +65,10 @@ class PacketHandlerIcmp4Rx(ABC):
     """
 
     if TYPE_CHECKING:
-        from pytcp.lib.packet_rx import PacketRx
+        from net_proto import Icmp4Message, Tracker
+
         from pytcp.lib.packet_stats import PacketStatsRx
-        from pytcp.lib.tracker import Tracker
         from pytcp.lib.tx_status import TxStatus
-        from pytcp.protocols.icmp4.icmp4__base import Icmp4Message
 
         _packet_stats_rx: PacketStatsRx
 

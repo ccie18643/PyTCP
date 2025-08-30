@@ -43,20 +43,20 @@ from testslide import TestCase
 
 from pytcp.lib.packet_stats import PacketStatsTx
 from pytcp.lib.tx_status import TxStatus
-from pytcp.protocols.icmp6.message.icmp6_message__destination_unreachable import (
+from net_proto import (
     Icmp6DestinationUnreachableCode,
     Icmp6DestinationUnreachableMessage,
 )
-from pytcp.protocols.icmp6.message.icmp6_message__echo_reply import (
+from net_proto import (
     Icmp6EchoReplyMessage,
 )
-from pytcp.protocols.icmp6.message.icmp6_message__echo_request import (
+from net_proto import (
     Icmp6EchoRequestMessage,
 )
-from pytcp.protocols.icmp6.message.nd.icmp6_nd_message__router_solicitation import (
+from net_proto import (
     Icmp6NdRouterSolicitationMessage,
 )
-from pytcp.protocols.icmp6.message.nd.option.icmp6_nd_options import (
+from net_proto import (
     Icmp6NdOptions,
     Icmp6NdOptionSlla,
 )

@@ -29,7 +29,7 @@ This module contains IP version enum.
 
 net_addr/ip_version.py
 
-ver 3.0.3
+ver 3.0.4
 """
 
 

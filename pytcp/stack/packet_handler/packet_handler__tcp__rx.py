@@ -29,20 +29,17 @@ This module contains packet handler for the inbound TCP packets.
 
 pytcp/subsystems/packet_handler/packet_handler__tcp__rx.py
 
-ver 3.0.3
+ver 3.0.4
 """
 
-
-from __future__ import annotations
 
 from abc import ABC
 from typing import TYPE_CHECKING, cast
 
+from net_proto import PacketRx, PacketValidationError, TcpParser
+
 from pytcp import stack
 from pytcp.lib.logger import log
-from pytcp.lib.packet_rx import PacketRx
-from pytcp.protocols.errors import PacketValidationError
-from pytcp.protocols.tcp.tcp__parser import TcpParser
 from pytcp.socket.tcp__metadata import TcpMetadata
 from pytcp.socket.tcp__socket import TcpSocket
 
@@ -54,8 +51,9 @@ class PacketHandlerTcpRx(ABC):
 
     if TYPE_CHECKING:
         from net_addr import IpAddress
+        from net_proto import Tracker
+
         from pytcp.lib.packet_stats import PacketStatsRx
-        from pytcp.lib.tracker import Tracker
         from pytcp.lib.tx_status import TxStatus
 
         _packet_stats_rx: PacketStatsRx

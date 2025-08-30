@@ -29,7 +29,7 @@ This module contains IP host base class.
 
 net_addr/ip_host.py
 
-ver 3.0.3
+ver 3.0.4
 """
 
 

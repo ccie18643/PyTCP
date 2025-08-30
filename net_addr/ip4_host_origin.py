@@ -29,7 +29,7 @@ Module contains IPv4 host origin enum.
 
 net_addr/ip4_host_origin.py
 
-ver 3.0.3
+ver 3.0.4
 """
 
 

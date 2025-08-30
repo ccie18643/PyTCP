@@ -29,7 +29,7 @@ This module contains IPv6 host origin enum.
 
 net_addr/ip6_host_origin.py
 
-ver 3.0.3
+ver 3.0.4
 """
 
 

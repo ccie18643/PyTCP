@@ -33,26 +33,23 @@ ver 3.0.3
 """
 
 
-from __future__ import annotations
-
 from abc import ABC
 from typing import TYPE_CHECKING, cast
 
 from net_addr import Ip4Address, IpVersion
-from pytcp import stack
-from pytcp.lib.logger import log
-from pytcp.lib.packet_rx import PacketRx
-from pytcp.protocols.errors import PacketValidationError
-from pytcp.protocols.icmp4.icmp4__base import Icmp4Message
-from pytcp.protocols.icmp4.message.icmp4_message__destination_unreachable import (
+from net_proto import (
     Icmp4DestinationUnreachableCode,
     Icmp4DestinationUnreachableMessage,
-)
-from pytcp.protocols.icmp6.message.icmp6_message__destination_unreachable import (
+    Icmp4Message,
     Icmp6DestinationUnreachableCode,
     Icmp6DestinationUnreachableMessage,
+    PacketRx,
+    PacketValidationError,
+    UdpParser,
 )
-from pytcp.protocols.udp.udp__parser import UdpParser
+
+from pytcp import stack
+from pytcp.lib.logger import log
 from pytcp.socket.udp__metadata import UdpMetadata
 from pytcp.socket.udp__socket import UdpSocket
 
@@ -64,10 +61,10 @@ class PacketHandlerUdpRx(ABC):
 
     if TYPE_CHECKING:
         from net_addr import Ip6Address, IpAddress
+        from net_proto import Icmp6Message, Tracker
+
         from pytcp.lib.packet_stats import PacketStatsRx
-        from pytcp.lib.tracker import Tracker
         from pytcp.lib.tx_status import TxStatus
-        from pytcp.protocols.icmp6.icmp6__base import Icmp6Message
 
         _packet_stats_rx: PacketStatsRx
 
@@ -76,8 +73,8 @@ class PacketHandlerUdpRx(ABC):
         def _phtx_udp(
             self,
             *,
-            ip__src: IpAddress,
-            ip__dst: IpAddress,
+            ip__src: Ip6Address | Ip4Address,
+            ip__dst: Ip6Address | Ip4Address,
             udp__sport: int,
             udp__dport: int,
             udp__payload: bytes = bytes(),

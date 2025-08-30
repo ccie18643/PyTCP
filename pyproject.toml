@@ -96,5 +96,5 @@ disable = """
 """
 
 [tool.setuptools.packages.find]
-include = ["pytcp", "net_addr"]
+include = ["pytcp", "net_addr", "net_proto"]
 

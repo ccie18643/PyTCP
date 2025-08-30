@@ -29,26 +29,27 @@ This module contains packet handler for the inbound IPv4 packets.
 
 pytcp/subsystems/packet_handler/packet_handler__ip4__rx.py
 
-ver 3.0.3
+ver 3.0.4
 """
 
-
-from __future__ import annotations
 
 import struct
 from abc import ABC
 from time import time
 from typing import TYPE_CHECKING, cast
 
+from net_proto import (
+    IP4__HEADER__LEN,
+    Ip4Parser,
+    IpProto,
+    PacketRx,
+    PacketValidationError,
+    inet_cksum,
+)
+
 from pytcp import stack
-from pytcp.lib.inet_cksum import inet_cksum
 from pytcp.lib.ip_frag import IpFragData, IpFragFlowId
 from pytcp.lib.logger import log
-from pytcp.lib.packet_rx import PacketRx
-from pytcp.protocols.enums import IpProto
-from pytcp.protocols.errors import PacketValidationError
-from pytcp.protocols.ip4.ip4__header import IP4__HEADER__LEN
-from pytcp.protocols.ip4.ip4__parser import Ip4Parser
 from pytcp.socket.raw__metadata import RawMetadata
 from pytcp.socket.raw__socket import RawSocket
 
@@ -60,6 +61,7 @@ class PacketHandlerIp4Rx(ABC):
 
     if TYPE_CHECKING:
         from net_addr import Ip4Address
+
         from pytcp.lib.packet_stats import PacketStatsRx
 
         _packet_stats_rx: PacketStatsRx

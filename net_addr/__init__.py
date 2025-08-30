@@ -29,7 +29,7 @@ This package contains classes used to represent network addresses.
 
 net_addr/__init__.py
 
-ver 3.0.3
+ver 3.0.4
 """
 
 
