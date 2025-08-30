@@ -33,18 +33,14 @@ ver 3.0.3
 """
 
 
-from __future__ import annotations
-
 import threading
 from abc import abstractmethod
-from typing import TYPE_CHECKING, override
+from typing import override
 
 from net_addr.ip_address import IpAddress
 
 from examples.lib.subsystem import Subsystem
-
-if TYPE_CHECKING:
-    from pytcp.socket.socket import Socket
+from pytcp.socket.socket import Socket
 
 
 class Service(Subsystem):

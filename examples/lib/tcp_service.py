@@ -33,15 +33,11 @@ ver 3.0.3
 """
 
 
-from __future__ import annotations
-
 import threading
-from typing import TYPE_CHECKING, override
+from typing import override
 
 from examples.lib.service import Service
-
-if TYPE_CHECKING:
-    from pytcp.socket.socket import Socket
+from pytcp.socket.socket import Socket
 
 
 class TcpService(Service):

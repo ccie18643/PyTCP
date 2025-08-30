@@ -33,14 +33,11 @@ ver 3.0.3
 """
 
 
-from __future__ import annotations
-
 import threading
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING
 
 import click
-from net_addr import IpVersion
+from net_addr import Ip4Address, Ip6Address, IpVersion
 
 from pytcp.socket import (
     AF_INET4,
@@ -53,9 +50,6 @@ from pytcp.socket import (
     socket,
 )
 from pytcp.socket.socket import Socket
-
-if TYPE_CHECKING:
-    from net_addr import Ip4Address, Ip6Address
 
 
 class Subsystem(ABC):

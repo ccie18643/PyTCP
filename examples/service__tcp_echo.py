@@ -33,10 +33,8 @@ ver 3.0.3
 """
 
 
-from __future__ import annotations
-
 import threading
-from typing import TYPE_CHECKING, Any, override
+from typing import Any, override
 
 import click
 from net_addr import (
@@ -48,9 +46,7 @@ from net_addr import (
 from examples.lib.malpi import malpa, malpi, malpka
 from examples.lib.tcp_service import TcpService
 from examples.stack import cli as stack_cli
-
-if TYPE_CHECKING:
-    from pytcp.socket.socket import Socket
+from pytcp.socket.socket import Socket
 
 
 class TcpEchoService(TcpService):

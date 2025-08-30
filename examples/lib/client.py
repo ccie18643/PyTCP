@@ -34,11 +34,9 @@ ver 3.0.3
 """
 
 
-from __future__ import annotations
-
 import threading
 from abc import abstractmethod
-from typing import TYPE_CHECKING, override
+from typing import override
 
 from net_addr import Ip4Address, Ip6Address, IpVersion
 
@@ -47,9 +45,7 @@ from pytcp.socket import (
     IPPROTO_ICMP4,
     IPPROTO_ICMP6,
 )
-
-if TYPE_CHECKING:
-    from pytcp.socket.socket import Socket
+from pytcp.socket.socket import Socket
 
 
 class Client(Subsystem):
