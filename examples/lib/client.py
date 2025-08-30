@@ -44,8 +44,8 @@ from examples.lib.subsystem import Subsystem
 from pytcp.socket import (
     IPPROTO_ICMP4,
     IPPROTO_ICMP6,
+    Socket,
 )
-from pytcp.socket.socket import Socket
 
 
 class Client(Subsystem):

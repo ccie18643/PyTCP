@@ -46,7 +46,7 @@ from net_addr import (
 from examples.lib.malpi import malpa, malpi, malpka
 from examples.lib.tcp_service import TcpService
 from examples.stack import cli as stack_cli
-from pytcp.socket.socket import Socket
+from pytcp.socket import Socket
 
 
 class TcpEchoService(TcpService):

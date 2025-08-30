@@ -47,9 +47,9 @@ from pytcp.socket import (
     SOCK_DGRAM,
     SOCK_RAW,
     SOCK_STREAM,
+    Socket,
     socket,
 )
-from pytcp.socket.socket import Socket
 
 
 class Subsystem(ABC):
