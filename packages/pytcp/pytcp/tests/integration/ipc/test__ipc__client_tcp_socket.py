@@ -35,6 +35,7 @@ pytcp/tests/integration/ipc/test__ipc__client_tcp_socket.py
 ver 3.0.8
 """
 
+import errno
 from typing import cast
 
 from pytcp.client import ClientTcpSocket
@@ -109,8 +110,8 @@ class TestIpcClientTcpSocket(IpcControlTestCase):
     def test__client_socket__close_releases_daemon_handle(self) -> None:
         """
         Ensure closing the client socket releases the daemon handle, so a
-        later call over the stale handle surfaces the daemon's faithfully
-        reconstructed 'unknown handle' KeyError.
+        later call over the stale handle surfaces OSError(EBADF) — the
+        same error the stdlib reports for a call on a closed descriptor.
 
         Reference: PyTCP test infrastructure (no RFC clause).
         """
@@ -120,5 +121,11 @@ class TestIpcClientTcpSocket(IpcControlTestCase):
 
         sock.close()
 
-        with self.assertRaises(KeyError):
+        with self.assertRaises(OSError) as raised:
             sock.getsockname()
+
+        self.assertEqual(
+            raised.exception.errno,
+            errno.EBADF,
+            msg="A call over a released daemon handle must surface OSError(EBADF), as for a closed fd.",
+        )

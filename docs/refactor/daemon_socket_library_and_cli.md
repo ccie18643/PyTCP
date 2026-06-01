@@ -76,7 +76,7 @@ clean backpressure design is, and the honest limits of "100% asyncio /
 | A0    | Rename `pytcp.socket` → `pytcp.runtime.socket` (mechanical) | **done** |
 | A1    | Multiplexed IPC client (`MuxIpcClient`)                     | **done** |
 | A2    | Faithful error wire format + client reconstruction         | **done** |
-| A4    | The `pytcp.socket` synchronous drop-in module              | **core + makefile + dup/detach + UDP proof done; EBADF pending** |
+| A4    | The `pytcp.socket` synchronous drop-in module              | **done** |
 | A5    | DNS resolved through the daemon                             | —      |
 | P1    | Proof point — real stdlib program over the daemon          | —      |
 | A3.0  | Feasibility: TcpSocket tx-writable signal + bridge pump (read-only) | **done** |
@@ -301,6 +301,18 @@ allowlist + client mirror.
   `sendto` reaches the wire addressed to the peer. No production change —
   the factory + `sendto`/`recvfrom` already existed; this is the proof.
   2 integration tests. lint clean, 12564 passing.
+- **2026-06-01** — A4.4 (EBADF faithfulness) complete, **closing A4**:
+  `SocketSession._invoke` now raises `OSError(errno.EBADF, "Bad file
+  descriptor")` for an unknown handle instead of `KeyError`, so a call
+  over a released daemon handle reconstructs client-side as
+  `OSError(EBADF)` — the same error the stdlib reports for a call on a
+  closed descriptor (the A2 error wire already carries the errno). The
+  `test__ipc__client_tcp_socket` close test now asserts `OSError(EBADF)`;
+  the generic-builtin-`KeyError`-reconstruction unit test keeps its
+  coverage but drops the now-stale "Unknown socket handle" example
+  string. lint clean, 12564 passing. **A4 (the synchronous drop-in) is
+  complete**: factory + `Socket` wrapper + makefile + dup/detach + faithful
+  errors, proven end to end for TCP and UDP through `pytcp.socket`.
 
 ## 7. Design discussion — readiness, the "trick", and compat limits
 

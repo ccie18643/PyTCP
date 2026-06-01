@@ -169,7 +169,7 @@ class TestSocketErrorWire(TestCase):
         Reference: PyTCP test infrastructure (no RFC clause).
         """
 
-        body = encode_exception(KeyError("Unknown socket handle 0."))
+        body = encode_exception(KeyError("missing registry key"))
 
         with self.assertRaises(KeyError):
             raise_socket_error(body)

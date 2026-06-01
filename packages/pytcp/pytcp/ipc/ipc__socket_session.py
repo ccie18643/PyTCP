@@ -49,6 +49,7 @@ pytcp/ipc/ipc__socket_session.py
 ver 3.0.8
 """
 
+import errno
 import socket
 import threading
 from typing import Any
@@ -274,7 +275,10 @@ class SocketSession:
 
         daemon_socket = self._sockets.get(request.handle) if request.handle is not None else None
         if daemon_socket is None:
-            raise KeyError(f"Unknown socket handle {request.handle!r}.")
+            # An unknown handle is the daemon-side analogue of operating on
+            # a closed descriptor; surface it as the stdlib's EBADF so the
+            # reconstructed client error is OSError(EBADF), not KeyError.
+            raise OSError(errno.EBADF, "Bad file descriptor")
 
         if isinstance(daemon_socket, _DaemonPacketSocket):
             return self._invoke_packet(daemon_socket, request)
