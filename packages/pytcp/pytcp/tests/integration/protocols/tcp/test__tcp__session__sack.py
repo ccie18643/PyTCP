@@ -51,8 +51,8 @@ from pytcp import stack
 from pytcp.protocols.tcp.session import TcpSession
 from pytcp.protocols.tcp.tcp__enums import FsmState, SysCall
 from pytcp.protocols.tcp.tcp__loss_recovery import pipe
-from pytcp.socket import AddressFamily
-from pytcp.socket.tcp__socket import TcpSocket
+from pytcp.runtime.socket import AddressFamily
+from pytcp.runtime.socket.tcp__socket import TcpSocket
 from pytcp.tests.lib.network_testcase import (
     HOST_A__IP4_ADDRESS,
     STACK__IP4_HOST,

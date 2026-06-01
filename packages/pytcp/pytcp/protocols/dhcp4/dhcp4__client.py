@@ -95,8 +95,7 @@ from pytcp.protocols.dhcp4.dhcp4__lease_cache import (
 from pytcp.protocols.dhcp4.dhcp4__uid import build_client_id
 from pytcp.protocols.ip4.acd.ip4_acd import Ip4Acd
 from pytcp.runtime.fib import Route, RouteProtocol
-from pytcp.runtime.subsystem import Subsystem
-from pytcp.socket import (
+from pytcp.runtime.socket import (
     AF_INET4,
     SO_BINDTODEVICE,
     SO_BROADCAST,
@@ -105,6 +104,7 @@ from pytcp.socket import (
     AddressFamily,
     socket,
 )
+from pytcp.runtime.subsystem import Subsystem
 
 # 'secs' is a 16-bit field in the DHCP header; cap the elapsed-
 # since-acquisition seconds at UINT16_MAX so a long-lived restart

@@ -51,8 +51,8 @@ from pytcp.protocols.icmp.icmp__error_emitter import try_emit_icmp_error
 from pytcp.protocols.icmp.icmp__inbound_classifier import classify_inbound
 from pytcp.protocols.ip.ip_frag import IpFragFlowId
 from pytcp.protocols.ip.ip_frag_table import IpFragAddOutcome
-from pytcp.socket.raw__metadata import RawMetadata
-from pytcp.socket.raw__socket import RawSocket
+from pytcp.runtime.socket.raw__metadata import RawMetadata
+from pytcp.runtime.socket.raw__socket import RawSocket
 from pytcp.stack import sysctl_iface
 
 if TYPE_CHECKING:

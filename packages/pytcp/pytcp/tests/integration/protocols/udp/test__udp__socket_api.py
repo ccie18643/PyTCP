@@ -54,7 +54,7 @@ from net_proto import (
     Ip4Assembler,
     UdpAssembler,
 )
-from pytcp.socket import (
+from pytcp.runtime.socket import (
     IP_MTU,
     IP_TOS,
     IP_TTL,
@@ -685,7 +685,7 @@ class TestUdpSocketApiIpRecverr(UdpTestCase):
         Reference: Linux 'ip(7)' (IP_RECVERR cmsg wire shape).
         """
 
-        from pytcp.socket import IP_RECVERR, IPPROTO_IP, MSG_ERRQUEUE
+        from pytcp.runtime.socket import IP_RECVERR, IPPROTO_IP, MSG_ERRQUEUE
 
         self._socket.setsockopt(IPPROTO_IP, IP_RECVERR, 1)
 
@@ -766,7 +766,7 @@ class TestUdpSocketApiIpRecverr(UdpTestCase):
         the error-queue surface).
         """
 
-        from pytcp.socket import MSG_ERRQUEUE
+        from pytcp.runtime.socket import MSG_ERRQUEUE
 
         self._socket.sendto(b"probe", (str(HOST_A__IP4_ADDRESS), _REMOTE_PORT))
         embedded_ip4_and_udp = self._frames_tx[-1][14:]

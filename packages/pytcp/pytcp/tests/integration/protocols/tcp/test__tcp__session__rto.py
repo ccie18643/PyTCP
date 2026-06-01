@@ -95,8 +95,8 @@ from pytcp.protocols.tcp.tcp__rto import (
     initial_state,
     update,
 )
-from pytcp.socket import AddressFamily
-from pytcp.socket.tcp__socket import TcpSocket
+from pytcp.runtime.socket import AddressFamily
+from pytcp.runtime.socket.tcp__socket import TcpSocket
 from pytcp.tests.lib.network_testcase import (
     HOST_A__IP4_ADDRESS,
     STACK__IP4_HOST,
@@ -1090,8 +1090,8 @@ class TestTcpRtoSynFloor(TcpTestCase):
         # The original listening session has been mutated into
         # the child bound to peer's 4-tuple. Resolve it via the
         # child socket id.
-        from pytcp.socket import SocketType
-        from pytcp.socket.socket_id import SocketId
+        from pytcp.runtime.socket import SocketType
+        from pytcp.runtime.socket.socket_id import SocketId
 
         child_socket_id = SocketId(
             address_family=AddressFamily.INET4,
@@ -1180,8 +1180,8 @@ class TestTcpRtoSynFloor(TcpTestCase):
         self._drive_rx(frame=peer_syn)
         self._advance(ms=1)
 
-        from pytcp.socket import SocketType
-        from pytcp.socket.socket_id import SocketId
+        from pytcp.runtime.socket import SocketType
+        from pytcp.runtime.socket.socket_id import SocketId
 
         child_socket_id = SocketId(
             address_family=AddressFamily.INET4,

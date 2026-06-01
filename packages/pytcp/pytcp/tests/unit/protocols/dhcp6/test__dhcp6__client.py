@@ -43,7 +43,7 @@ from pytcp.protocols.dhcp6.dhcp6__client import (
     Dhcp6StatelessConfig,
 )
 from pytcp.protocols.dhcp6.dhcp6__uid import get_client_duid
-from pytcp.socket import SO_BINDTODEVICE, SOL_SOCKET
+from pytcp.runtime.socket import SO_BINDTODEVICE, SOL_SOCKET
 from pytcp.stack import sysctl
 from pytcp.stack.address import AddressApi
 from pytcp.tests.lib.dhcp6_mock_server import Dhcp6MockServer, autospec_dhcp6_socket

@@ -40,7 +40,7 @@ from typing import cast
 from net_addr import Ip4Address, Ip4Network, Ip6Address, Ip6Network
 from pytcp.client.client__base import _ClientApiProxy
 from pytcp.runtime.fib import Route, RouteProtocol
-from pytcp.socket import AddressFamily
+from pytcp.runtime.socket import AddressFamily
 
 type _AnyRoute = Route[Ip4Address, Ip4Network] | Route[Ip6Address, Ip6Network]
 

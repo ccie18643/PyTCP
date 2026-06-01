@@ -35,7 +35,7 @@ ver 3.0.8
 from net_addr import Ip6Address, Ip6Network, MacAddress
 from pytcp import stack
 from pytcp.runtime.fib import Route, RouteProtocol
-from pytcp.socket import AddressFamily
+from pytcp.runtime.socket import AddressFamily
 from pytcp.tests.lib.nd_testcase import NdTestCase
 from pytcp.tests.lib.network_testcase import STACK__IP6_HOST, STACK__MAC_ADDRESS
 

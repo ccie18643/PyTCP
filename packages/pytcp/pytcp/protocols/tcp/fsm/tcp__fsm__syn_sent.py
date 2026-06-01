@@ -47,7 +47,7 @@ from pytcp.protocols.tcp.tcp__seq import add32, le32, lt32
 if TYPE_CHECKING:
     from pytcp.protocols.tcp.session import TcpSession
     from pytcp.protocols.tcp.tcp__icmp_metadata import IcmpMetadata
-    from pytcp.socket.tcp__metadata import TcpMetadata
+    from pytcp.runtime.socket.tcp__metadata import TcpMetadata
 
 
 # RFC 5927 §5.2 hard-error code set: ICMPv4 Type 3 codes

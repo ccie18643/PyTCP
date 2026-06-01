@@ -41,7 +41,7 @@ from pytcp import stack
 from pytcp.lib.neighbor import NudState
 from pytcp.protocols.arp.arp__cache import ArpCache
 from pytcp.protocols.icmp6.nd.nd__cache import NdCache
-from pytcp.socket import AddressFamily
+from pytcp.runtime.socket import AddressFamily
 from pytcp.stack.neighbor import NeighborSnapshot
 from pytcp.tests.lib.ipc_control_testcase import IpcControlTestCase
 

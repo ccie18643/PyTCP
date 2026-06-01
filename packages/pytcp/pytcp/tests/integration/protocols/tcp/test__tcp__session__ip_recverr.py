@@ -75,7 +75,7 @@ from net_proto.lib.packet_rx import PacketRx
 from pytcp import stack
 from pytcp.protocols.tcp.session import TcpSession
 from pytcp.protocols.tcp.tcp__enums import FsmState, SysCall
-from pytcp.socket import (
+from pytcp.runtime.socket import (
     IP_RECVERR,
     IPPROTO_IP,
     IPPROTO_IPV6,
@@ -83,8 +83,8 @@ from pytcp.socket import (
     MSG_ERRQUEUE,
     AddressFamily,
 )
-from pytcp.socket.error_queue import ERROR_QUEUE__MAX_LEN, SoEeOrigin
-from pytcp.socket.tcp__socket import TcpSocket
+from pytcp.runtime.socket.error_queue import ERROR_QUEUE__MAX_LEN, SoEeOrigin
+from pytcp.runtime.socket.tcp__socket import TcpSocket
 from pytcp.tests.lib.network_testcase import (
     HOST_A__IP4_ADDRESS,
     HOST_A__IP6_ADDRESS,

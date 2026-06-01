@@ -41,8 +41,8 @@ ver 3.0.8
 
 from net_addr import Ip4Address
 from pytcp.protocols.tcp.tcp__enums import ConnError, FsmState, SysCall
-from pytcp.socket import AddressFamily
-from pytcp.socket.tcp__socket import TcpSocket
+from pytcp.runtime.socket import AddressFamily
+from pytcp.runtime.socket.tcp__socket import TcpSocket
 from pytcp.tests.lib.network_testcase import (
     HOST_A__IP4_ADDRESS,
     STACK__IP4_HOST,

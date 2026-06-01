@@ -65,12 +65,12 @@ from pytcp.ipc.ipc__socket_rpc import (
     encode_socket_error,
     encode_socket_ok,
 )
-from pytcp.socket import AddressFamily, SocketType
-from pytcp.socket import socket as pytcp_socket
-from pytcp.socket.packet__socket import PacketSocket
-from pytcp.socket.raw__socket import RawSocket
-from pytcp.socket.tcp__socket import TcpSocket
-from pytcp.socket.udp__socket import UdpSocket
+from pytcp.runtime.socket import AddressFamily, SocketType
+from pytcp.runtime.socket import socket as pytcp_socket
+from pytcp.runtime.socket.packet__socket import PacketSocket
+from pytcp.runtime.socket.raw__socket import RawSocket
+from pytcp.runtime.socket.tcp__socket import TcpSocket
+from pytcp.runtime.socket.udp__socket import UdpSocket
 
 # The socket methods a client may invoke over SOCKET_CALL.
 _ALLOWED_METHODS: frozenset[str] = frozenset(

@@ -48,12 +48,12 @@ ver 3.0.8
 import errno
 
 from net_addr import Ip4Address
-from pytcp.socket import (
+from pytcp.runtime.socket import (
     SO_BROADCAST,
     SOL_SOCKET,
     AddressFamily,
 )
-from pytcp.socket.udp__socket import UdpSocket
+from pytcp.runtime.socket.udp__socket import UdpSocket
 from pytcp.tests.lib.network_testcase import (
     STACK__IP4_HOST,
     NetworkTestCase,

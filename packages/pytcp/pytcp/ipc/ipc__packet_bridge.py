@@ -46,7 +46,7 @@ from typing import Protocol
 
 from pytcp.ipc.ipc__errors import IpcFrameError
 from pytcp.ipc.ipc__packet_frame import decode_packet, encode_packet
-from pytcp.socket.sockaddr_ll import SockAddrLl
+from pytcp.runtime.socket.sockaddr_ll import SockAddrLl
 
 IPC__PACKET_BRIDGE__POLL_TIMEOUT__SEC: float = 0.2
 IPC__PACKET_BRIDGE__CHUNK_SIZE: int = 65600

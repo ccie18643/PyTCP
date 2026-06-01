@@ -37,7 +37,7 @@ from typing import override
 
 from examples.lib.subsystem import Subsystem
 from net_addr import Ip4Address, Ip6Address, IpVersion
-from pytcp.socket import (
+from pytcp.runtime.socket import (
     IPPROTO_ICMP4,
     IPPROTO_ICMP6,
     socket,

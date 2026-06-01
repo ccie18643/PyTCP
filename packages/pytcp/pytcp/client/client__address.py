@@ -40,7 +40,7 @@ from typing import cast
 
 from net_addr import Ip4Address, Ip4IfAddr, Ip6Address, Ip6IfAddr
 from pytcp.client.client__base import _DeviceScopedProxy
-from pytcp.socket import AddressFamily
+from pytcp.runtime.socket import AddressFamily
 
 type _AnyIfAddr = Ip4IfAddr | Ip6IfAddr
 

@@ -64,14 +64,14 @@ from net_proto import (
 from pytcp.lib.logger import log
 from pytcp.protocols.dhcp6 import dhcp6__constants
 from pytcp.protocols.dhcp6.dhcp6__uid import get_client_duid, get_iaid
-from pytcp.runtime.subsystem import SUBSYSTEM_SLEEP_TIME__SEC, Subsystem
-from pytcp.socket import (
+from pytcp.runtime.socket import (
     AF_INET6,
     SO_BINDTODEVICE,
     SOCK_DGRAM,
     SOL_SOCKET,
     socket,
 )
+from pytcp.runtime.subsystem import SUBSYSTEM_SLEEP_TIME__SEC, Subsystem
 
 if TYPE_CHECKING:
     from pytcp.stack.address import AddressApi

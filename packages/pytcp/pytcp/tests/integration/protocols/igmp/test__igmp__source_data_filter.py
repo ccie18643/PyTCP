@@ -37,7 +37,7 @@ from typing import override
 
 from net_addr import Ip4Address, MacAddress
 from net_proto import EthernetAssembler, Ip4Assembler, UdpAssembler
-from pytcp.socket import (
+from pytcp.runtime.socket import (
     IP_ADD_MEMBERSHIP,
     IP_ADD_SOURCE_MEMBERSHIP,
     IP_BLOCK_SOURCE,

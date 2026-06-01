@@ -43,7 +43,7 @@ from pytcp.protocols.tcp.tcp__seq import add32, gt32
 
 if TYPE_CHECKING:
     from pytcp.protocols.tcp.session import TcpSession
-    from pytcp.socket.tcp__metadata import TcpMetadata
+    from pytcp.runtime.socket.tcp__metadata import TcpMetadata
 
 
 def fsm__time_wait__timer(session: TcpSession) -> None:

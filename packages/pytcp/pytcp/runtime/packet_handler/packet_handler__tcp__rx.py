@@ -36,9 +36,9 @@ from net_addr import IpVersion
 from net_proto import PacketRx, PacketValidationError, TcpParser
 from pytcp import stack
 from pytcp.lib.logger import log
-from pytcp.socket import AddressFamily
-from pytcp.socket.tcp__metadata import TcpMetadata
-from pytcp.socket.tcp__socket import TcpSocket
+from pytcp.runtime.socket import AddressFamily
+from pytcp.runtime.socket.tcp__metadata import TcpMetadata
+from pytcp.runtime.socket.tcp__socket import TcpSocket
 
 if TYPE_CHECKING:
     from pytcp.runtime.packet_handler import PacketHandler

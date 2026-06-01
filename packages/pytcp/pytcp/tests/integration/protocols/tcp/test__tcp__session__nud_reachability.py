@@ -46,7 +46,7 @@ ver 3.0.8
 """
 
 from net_addr import Ip4Address, Ip6Address
-from pytcp.socket import AddressFamily
+from pytcp.runtime.socket import AddressFamily
 from pytcp.tests.lib.network_testcase import (
     HOST_A__IP4_ADDRESS,
     HOST_A__IP6_ADDRESS,

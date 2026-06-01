@@ -40,7 +40,7 @@ from unittest.mock import MagicMock, patch
 from net_addr import Ip4Address, Ip4IfAddr, Ip6Address, Ip6IfAddr
 from pytcp import stack
 from pytcp.runtime.interface_table import InterfaceTable
-from pytcp.socket import AddressFamily
+from pytcp.runtime.socket import AddressFamily
 from pytcp.stack.address import (
     AddressApi,
 )

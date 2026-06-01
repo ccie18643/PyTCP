@@ -42,7 +42,7 @@ from typing import override
 
 from net_addr import Ip4Address, Ip4Network
 from pytcp import stack
-from pytcp.socket import AddressFamily
+from pytcp.runtime.socket import AddressFamily
 from pytcp.tests.lib.udp_testcase import UdpTestCase
 
 # Off-link destination with no covering route once the fixture default

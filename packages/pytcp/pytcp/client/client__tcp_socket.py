@@ -44,7 +44,7 @@ from typing import Self
 from net_proto.lib.enums import IpProto
 from pytcp.ipc.ipc__client import IpcClient
 from pytcp.ipc.ipc__socket_rpc import accept_socket, open_socket, socket_call
-from pytcp.socket import AddressFamily, SocketType
+from pytcp.runtime.socket import AddressFamily, SocketType
 
 # Default accept-queue depth when 'listen' is called without an explicit
 # backlog (mirrors the daemon-side 'TCP__DEFAULT_BACKLOG').

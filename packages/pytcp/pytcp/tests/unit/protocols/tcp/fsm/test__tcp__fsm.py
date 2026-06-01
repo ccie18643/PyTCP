@@ -41,8 +41,8 @@ from net_addr import Ip4Address, IpVersion
 from pytcp import stack
 from pytcp.protocols.tcp.session import TcpSession
 from pytcp.protocols.tcp.tcp__enums import FsmState, SysCall
-from pytcp.socket.socket_table import SocketTable
-from pytcp.socket.tcp__metadata import TcpMetadata
+from pytcp.runtime.socket.socket_table import SocketTable
+from pytcp.runtime.socket.tcp__metadata import TcpMetadata
 
 _ORIGINAL_LOG_CHANNEL: set[str] = stack.LOG__CHANNEL
 

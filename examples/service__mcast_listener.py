@@ -43,7 +43,7 @@ import click
 from examples.lib.udp_service import UdpService
 from examples.stack import cli as stack_cli
 from net_addr import Ip4Address, NetAddrError
-from pytcp.socket import (
+from pytcp.runtime.socket import (
     IP_ADD_MEMBERSHIP,
     IP_DROP_MEMBERSHIP,
     IPPROTO_IP,

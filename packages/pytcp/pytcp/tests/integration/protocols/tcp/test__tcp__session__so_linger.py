@@ -43,8 +43,8 @@ from unittest.mock import patch
 
 from net_addr import Ip4Address
 from pytcp.protocols.tcp.tcp__enums import FsmState
-from pytcp.socket import SO_LINGER, SOL_SOCKET
-from pytcp.socket.tcp__socket import TcpSocket
+from pytcp.runtime.socket import SO_LINGER, SOL_SOCKET
+from pytcp.runtime.socket.tcp__socket import TcpSocket
 from pytcp.tests.lib.network_testcase import (
     HOST_A__IP4_ADDRESS,
     STACK__IP4_HOST,
@@ -213,7 +213,7 @@ class TestTcpSoLinger(TcpTestCase):
             return clock["t"]
 
         before = len(self._frames_tx)
-        with patch("pytcp.socket.tcp__socket.time.monotonic", side_effect=_leaping_monotonic):
+        with patch("pytcp.runtime.socket.tcp__socket.time.monotonic", side_effect=_leaping_monotonic):
             sock.close()  # MUST return at the (already-elapsed) deadline.
         self._advance(ms=1)
         self._advance(ms=1)

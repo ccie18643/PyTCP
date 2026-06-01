@@ -34,7 +34,7 @@ import threading
 from typing import override
 
 from examples.lib.service import Service
-from pytcp.socket import socket
+from pytcp.runtime.socket import socket
 
 
 class TcpService(Service):

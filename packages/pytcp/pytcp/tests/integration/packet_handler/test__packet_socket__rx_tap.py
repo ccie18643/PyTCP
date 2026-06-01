@@ -38,7 +38,7 @@ from unittest.mock import patch
 from net_addr import MacAddress
 from net_proto import ArpAssembler, ArpOperation, EthernetAssembler, EtherType
 from net_proto.lib.packet_rx import PacketRx
-from pytcp.socket import (
+from pytcp.runtime.socket import (
     ETH_P_ALL,
     ETH_P_ARP,
     ETH_P_IP,
@@ -47,7 +47,7 @@ from pytcp.socket import (
     PacketType,
     socket,
 )
-from pytcp.socket.packet__socket import PacketSocket
+from pytcp.runtime.socket.packet__socket import PacketSocket
 from pytcp.tests.lib.network_testcase import (
     HOST_A__IP4_ADDRESS,
     HOST_A__MAC_ADDRESS,
@@ -100,7 +100,7 @@ class TestPacketSocketRxTap(NetworkTestCase):
         """
 
         super().setUp()
-        self.enterContext(patch("pytcp.socket.packet__socket.log"))
+        self.enterContext(patch("pytcp.runtime.socket.packet__socket.log"))
 
     def _packet_socket(self, *, protocol: EtherType | int) -> PacketSocket:
         """

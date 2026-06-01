@@ -41,7 +41,7 @@ from typing import TYPE_CHECKING
 
 from net_addr import Ip4Address, Ip4IfAddr, Ip6Address, Ip6IfAddr
 from pytcp.lib.logger import log
-from pytcp.socket import AddressFamily
+from pytcp.runtime.socket import AddressFamily
 
 if TYPE_CHECKING:
     from pytcp.runtime.packet_handler import PacketHandlerL2, PacketHandlerL3

@@ -40,7 +40,7 @@ from examples.lib.service import Service
 from examples.lib.tcp_service import TcpService
 from examples.lib.udp_service import UdpService
 from net_addr import Ip4Address, Ip4IfAddr, Ip6Address, Ip6IfAddr
-from pytcp.socket import socket
+from pytcp.runtime.socket import socket
 
 
 class _StubService(Service):

@@ -47,8 +47,8 @@ from net_proto import (
 )
 from net_proto.lib.enums import IpProto
 from pytcp import stack
-from pytcp.socket import AddressFamily, SocketType
-from pytcp.socket.udp__socket import UdpSocket
+from pytcp.runtime.socket import AddressFamily, SocketType
+from pytcp.runtime.socket.udp__socket import UdpSocket
 from pytcp.tests.lib.icmp_testcase import IcmpTestCase
 from pytcp.tests.lib.network_testcase import (
     HOST_A__IP4_ADDRESS,

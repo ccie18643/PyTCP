@@ -53,7 +53,7 @@ from pytcp.client.client__sysctl import ClientSysctl
 from pytcp.client.client__tcp_socket import ClientTcpSocket
 from pytcp.ipc.ipc__client import IpcClient
 from pytcp.ipc.ipc__errors import IpcConnectionError
-from pytcp.socket import ETH_P_ALL, AddressFamily, SocketType
+from pytcp.runtime.socket import ETH_P_ALL, AddressFamily, SocketType
 
 IPC__CLIENT__READINESS_POLL__SEC: float = 0.05
 

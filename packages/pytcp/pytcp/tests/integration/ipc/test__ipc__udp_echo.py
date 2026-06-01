@@ -52,7 +52,7 @@ from net_proto.protocols.udp.udp__assembler import UdpAssembler
 from pytcp import stack
 from pytcp.client import ClientStack, ClientUdpSocket, connect
 from pytcp.ipc.ipc__server import IpcServer
-from pytcp.socket import IP_RECVTOS, IP_TOS, IPPROTO_IP, AddressFamily, SocketType
+from pytcp.runtime.socket import IP_RECVTOS, IP_TOS, IPPROTO_IP, AddressFamily, SocketType
 from pytcp.tests.lib.network_testcase import (
     HOST_A__IP4_ADDRESS,
     HOST_A__MAC_ADDRESS,

@@ -36,7 +36,7 @@ from typing import override
 
 from net_addr import Ip4Address, MacAddress
 from pytcp import stack
-from pytcp.socket import (
+from pytcp.runtime.socket import (
     AF_INET,
     IP_ADD_MEMBERSHIP,
     IP_DROP_MEMBERSHIP,

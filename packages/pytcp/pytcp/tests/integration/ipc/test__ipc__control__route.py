@@ -33,7 +33,7 @@ ver 3.0.8
 from net_addr import Ip4Address, Ip4Network
 from pytcp import stack
 from pytcp.runtime.fib import Route, RouteProtocol
-from pytcp.socket import AddressFamily
+from pytcp.runtime.socket import AddressFamily
 from pytcp.tests.lib.ipc_control_testcase import IpcControlTestCase
 
 

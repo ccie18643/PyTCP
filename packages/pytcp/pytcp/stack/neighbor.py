@@ -41,7 +41,7 @@ from typing import TYPE_CHECKING, cast
 from net_addr import Ip4Address, Ip6Address, MacAddress
 from pytcp.lib.logger import log
 from pytcp.lib.neighbor import NudState
-from pytcp.socket import AddressFamily
+from pytcp.runtime.socket import AddressFamily
 
 if TYPE_CHECKING:
     from pytcp.protocols.arp.arp__cache import ArpCache

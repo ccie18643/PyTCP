@@ -37,9 +37,9 @@ from net_proto import EthernetParser, PacketRx, PacketValidationError
 from net_proto.lib.buffer import Buffer
 from pytcp import stack
 from pytcp.lib.logger import log
-from pytcp.socket import PacketType
-from pytcp.socket.packet__metadata import PacketMetadata
-from pytcp.socket.sockaddr_ll import SockAddrLl
+from pytcp.runtime.socket import PacketType
+from pytcp.runtime.socket.packet__metadata import PacketMetadata
+from pytcp.runtime.socket.sockaddr_ll import SockAddrLl
 
 if TYPE_CHECKING:
     from pytcp.runtime.packet_handler import PacketHandlerL2

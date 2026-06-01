@@ -347,8 +347,8 @@ class TestPacketHandlerTcpRxDualStack(_TcpRxTestBase):
         """
 
         from net_addr import Ip6Address
-        from pytcp.socket import AddressFamily, SocketType
-        from pytcp.socket.socket_id import SocketId
+        from pytcp.runtime.socket import AddressFamily, SocketType
+        from pytcp.runtime.socket.socket_id import SocketId
 
         key = SocketId(
             address_family=AddressFamily.INET6,

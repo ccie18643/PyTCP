@@ -39,7 +39,7 @@ from net_addr import Ip4Address, Ip4IfAddr, Ip4Network, Ip6Network, MacAddress
 from pytcp import stack
 from pytcp.lib.tx_status import TxStatus
 from pytcp.runtime.fib import Route, RouteProtocol
-from pytcp.socket import AddressFamily
+from pytcp.runtime.socket import AddressFamily
 from pytcp.tests.lib.network_testcase import (
     HOST_A__IP4_ADDRESS,
     HOST_A__MAC_ADDRESS,

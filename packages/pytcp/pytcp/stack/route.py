@@ -42,7 +42,7 @@ from typing import cast
 from net_addr import Ip4Address, Ip4Network, Ip6Address, Ip6Network
 from pytcp.lib.logger import log
 from pytcp.runtime.fib import Route, RouteProtocol, RouteTable
-from pytcp.socket import AddressFamily
+from pytcp.runtime.socket import AddressFamily
 
 # The IPv4 / IPv6 default-route destinations (Linux 'default'
 # in 'ip route'). Protocol-invariant — these are the

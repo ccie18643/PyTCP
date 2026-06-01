@@ -44,7 +44,7 @@ from pytcp.protocols.arp.arp__cache import ArpCache
 from pytcp.protocols.icmp6.nd.nd__cache import NdCache
 from pytcp.runtime.interface_table import InterfaceTable
 from pytcp.runtime.packet_handler import PacketHandlerL2
-from pytcp.socket import AddressFamily
+from pytcp.runtime.socket import AddressFamily
 from pytcp.stack.neighbor import NeighborApi, NeighborSnapshot
 
 _ARP_IP = Ip4Address("10.0.1.50")

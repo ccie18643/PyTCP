@@ -31,7 +31,7 @@ ver 3.0.8
 """
 
 from pytcp import stack
-from pytcp.socket import AddressFamily
+from pytcp.runtime.socket import AddressFamily
 from pytcp.tests.lib.ipc_control_testcase import IpcControlTestCase
 
 

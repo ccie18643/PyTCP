@@ -48,8 +48,8 @@ from pytcp import stack
 from pytcp.lib.logger import log
 from pytcp.protocols.icmp.icmp__error_emitter import try_emit_icmp_error
 from pytcp.protocols.icmp.icmp__inbound_classifier import classify_inbound
-from pytcp.socket.udp__metadata import UdpMetadata
-from pytcp.socket.udp__socket import UdpSocket
+from pytcp.runtime.socket.udp__metadata import UdpMetadata
+from pytcp.runtime.socket.udp__socket import UdpSocket
 
 if TYPE_CHECKING:
     from pytcp.runtime.packet_handler import PacketHandler

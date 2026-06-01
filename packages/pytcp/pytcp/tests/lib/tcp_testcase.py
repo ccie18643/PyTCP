@@ -53,9 +53,9 @@ from pytcp.protocols.icmp.icmp__error_emitter import IcmpErrorRateLimiter
 from pytcp.protocols.tcp.session import TcpSession
 from pytcp.protocols.tcp.tcp__enums import CcMode, FsmState, SysCall
 from pytcp.protocols.tcp.tcp__stack import TcpStack
+from pytcp.runtime.socket import AddressFamily
+from pytcp.runtime.socket.tcp__socket import TcpSocket
 from pytcp.runtime.timer import Timer
-from pytcp.socket import AddressFamily
-from pytcp.socket.tcp__socket import TcpSocket
 from pytcp.tests.lib.fake_timer import FakeTimer
 from pytcp.tests.lib.network_testcase import (
     HOST_A__IP4_ADDRESS,

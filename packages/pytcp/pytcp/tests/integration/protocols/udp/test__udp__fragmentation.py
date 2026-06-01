@@ -34,7 +34,7 @@ ver 3.0.8
 from typing import override
 
 from net_addr import Ip4Address
-from pytcp.socket import (
+from pytcp.runtime.socket import (
     IP_TOS,
     IPPROTO_IP,
     IPPROTO_IPV6,

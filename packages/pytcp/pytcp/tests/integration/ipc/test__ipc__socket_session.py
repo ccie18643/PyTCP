@@ -42,7 +42,7 @@ from pytcp.ipc.ipc__client import IpcClient
 from pytcp.ipc.ipc__enums import IpcMessageKind, IpcOp
 from pytcp.ipc.ipc__message import IpcMessage
 from pytcp.ipc.ipc__socket_rpc import decode_socket_value, encode_socket_request
-from pytcp.socket import SO_KEEPALIVE, SOL_SOCKET, AddressFamily, SocketType
+from pytcp.runtime.socket import SO_KEEPALIVE, SOL_SOCKET, AddressFamily, SocketType
 from pytcp.tests.lib.ipc_control_testcase import IpcControlTestCase
 
 

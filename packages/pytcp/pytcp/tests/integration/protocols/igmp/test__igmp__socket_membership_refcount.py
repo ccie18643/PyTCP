@@ -47,7 +47,7 @@ from net_proto.protocols.igmp.message.igmp__v3_group_record import (
     IgmpV3RecordType,
 )
 from pytcp import stack
-from pytcp.socket import (
+from pytcp.runtime.socket import (
     AF_INET,
     IP_ADD_MEMBERSHIP,
     IP_DROP_MEMBERSHIP,

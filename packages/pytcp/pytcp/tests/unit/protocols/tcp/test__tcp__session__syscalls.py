@@ -39,7 +39,7 @@ from net_addr import Ip4Address
 from pytcp.protocols.tcp.session import TcpSession
 from pytcp.protocols.tcp.tcp__enums import ConnError, FsmState, SysCall
 from pytcp.protocols.tcp.tcp__errors import TcpSessionError
-from pytcp.socket.socket_table import SocketTable
+from pytcp.runtime.socket.socket_table import SocketTable
 
 
 class _TcpSessionSyscallFixture(TestCase):

@@ -53,7 +53,7 @@ import click
 from examples.lib.payload import payload
 from net_addr import ClickTypeIpAddress, Ip4Address, Ip6Address
 from pytcp.client import ClientTcpSocket, connect
-from pytcp.socket import AddressFamily, SocketType
+from pytcp.runtime.socket import AddressFamily, SocketType
 
 
 @click.command()

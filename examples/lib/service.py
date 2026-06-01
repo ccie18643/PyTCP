@@ -37,7 +37,7 @@ from typing import override
 
 from examples.lib.subsystem import Subsystem
 from net_addr import Ip4Address, Ip4IfAddr, Ip6Address, Ip6IfAddr, IpAddress
-from pytcp.socket import socket
+from pytcp.runtime.socket import socket
 
 # Delay between failed service-socket bind attempts. A static
 # local address is not owned by the stack until RFC 5227 ACD (or

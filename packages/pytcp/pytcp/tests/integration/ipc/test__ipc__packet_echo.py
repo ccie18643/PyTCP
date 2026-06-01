@@ -52,8 +52,8 @@ from net_proto.lib.packet_rx import PacketRx
 from pytcp import stack
 from pytcp.client import ClientPacketSocket, ClientStack, connect
 from pytcp.ipc.ipc__server import IpcServer
-from pytcp.socket import ETH_P_ALL, AddressFamily, SocketType
-from pytcp.socket.sockaddr_ll import SockAddrLl
+from pytcp.runtime.socket import ETH_P_ALL, AddressFamily, SocketType
+from pytcp.runtime.socket.sockaddr_ll import SockAddrLl
 from pytcp.tests.lib.network_testcase import (
     HOST_A__IP4_ADDRESS,
     HOST_A__MAC_ADDRESS,

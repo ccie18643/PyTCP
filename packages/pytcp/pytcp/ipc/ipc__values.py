@@ -71,7 +71,7 @@ from pytcp.ipc.ipc__errors import IpcValueError
 from pytcp.lib.interface_layer import InterfaceLayer
 from pytcp.lib.neighbor import NudState
 from pytcp.runtime.fib import Route, RouteProtocol, RouteScope
-from pytcp.socket import (
+from pytcp.runtime.socket import (
     AddressFamily,
     IpOption,
     IpV6Option,
@@ -82,7 +82,7 @@ from pytcp.socket import (
     SolLevel,
     SolSocketOption,
 )
-from pytcp.socket.sockaddr_ll import SockAddrLl
+from pytcp.runtime.socket.sockaddr_ll import SockAddrLl
 from pytcp.stack.link import LinkFlag, LinkStats
 from pytcp.stack.neighbor import NeighborSnapshot
 

@@ -66,8 +66,8 @@ from pytcp.protocols.ip6.ip6__ext_hdr_limits import (
     Ip6ExtHdrCapViolation,
     check_ext_hdr_option_caps,
 )
-from pytcp.socket.raw__metadata import RawMetadata
-from pytcp.socket.raw__socket import RawSocket
+from pytcp.runtime.socket.raw__metadata import RawMetadata
+from pytcp.runtime.socket.raw__socket import RawSocket
 
 if TYPE_CHECKING:
     from pytcp.runtime.packet_handler import PacketHandler

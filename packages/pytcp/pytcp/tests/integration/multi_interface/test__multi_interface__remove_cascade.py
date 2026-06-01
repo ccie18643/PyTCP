@@ -48,9 +48,9 @@ from pytcp import stack
 from pytcp.protocols.tcp.session import TcpSession
 from pytcp.protocols.tcp.tcp__enums import SysCall
 from pytcp.runtime.fib import Route
-from pytcp.socket import AddressFamily, SocketType
-from pytcp.socket import socket as SocketBase
-from pytcp.socket.socket_id import SocketId
+from pytcp.runtime.socket import AddressFamily, SocketType
+from pytcp.runtime.socket import socket as SocketBase
+from pytcp.runtime.socket.socket_id import SocketId
 from pytcp.tests.lib.icmp_testcase import IcmpTestCase
 from pytcp.tests.lib.network_testcase import STACK__IP4_HOST
 

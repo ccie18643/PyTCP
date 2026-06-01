@@ -48,7 +48,7 @@ from pytcp.ipc.ipc__client import IpcClient
 from pytcp.ipc.ipc__dgram_bridge import IPC__DGRAM_BRIDGE__CHUNK_SIZE
 from pytcp.ipc.ipc__dgram_frame import decode_dgram, encode_dgram
 from pytcp.ipc.ipc__socket_rpc import open_socket, socket_call
-from pytcp.socket import AddressFamily, SocketType
+from pytcp.runtime.socket import AddressFamily, SocketType
 
 # Default receive bound — the maximum UDP payload, so 'recvfrom' without
 # an explicit bufsize never truncates a legal datagram.

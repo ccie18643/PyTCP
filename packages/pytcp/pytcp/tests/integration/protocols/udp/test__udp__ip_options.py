@@ -57,7 +57,7 @@ from net_proto import (
     UdpAssembler,
 )
 from net_proto.lib.packet_rx import PacketRx
-from pytcp.socket import (
+from pytcp.runtime.socket import (
     IP_OPTIONS,
     IP_RECVOPTS,
     IP_RECVTOS,

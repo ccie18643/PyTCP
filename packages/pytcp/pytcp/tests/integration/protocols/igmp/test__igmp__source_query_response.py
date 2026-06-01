@@ -50,7 +50,7 @@ from net_proto.protocols.igmp.message.igmp__message__v3_report import (
 from net_proto.protocols.ip4.ip4__assembler import Ip4Assembler
 from net_proto.protocols.raw.raw__assembler import RawAssembler
 from pytcp import stack
-from pytcp.socket import (
+from pytcp.runtime.socket import (
     AF_INET,
     IP_ADD_MEMBERSHIP,
     IP_ADD_SOURCE_MEMBERSHIP,

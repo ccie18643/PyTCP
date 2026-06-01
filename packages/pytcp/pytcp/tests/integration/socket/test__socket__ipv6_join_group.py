@@ -47,13 +47,13 @@ import struct
 import sys
 
 from net_addr import Ip6Address
-from pytcp.socket import (
+from pytcp.runtime.socket import (
     IPPROTO_IPV6,
     IPV6_JOIN_GROUP,
     IPV6_LEAVE_GROUP,
     AddressFamily,
 )
-from pytcp.socket.udp__socket import UdpSocket
+from pytcp.runtime.socket.udp__socket import UdpSocket
 from pytcp.tests.lib.network_testcase import NetworkTestCase
 
 

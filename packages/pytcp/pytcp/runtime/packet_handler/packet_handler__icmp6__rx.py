@@ -67,14 +67,14 @@ from pytcp.lib.logger import log
 from pytcp.protocols.icmp6.icmp6__echo_gate import should_emit_echo_reply
 from pytcp.protocols.icmp.icmp__error_demux import EmbeddedL4, parse_embedded_l4
 from pytcp.protocols.tcp.tcp__icmp_metadata import IcmpCategory, IcmpMetadata
-from pytcp.socket import AddressFamily, SocketType
-from pytcp.socket.error_queue import SoEeOrigin
-from pytcp.socket.raw__metadata import RawMetadata
-from pytcp.socket.raw__socket import RawSocket
-from pytcp.socket.socket_id import SocketId
-from pytcp.socket.tcp__socket import TcpSocket
-from pytcp.socket.udp__metadata import UdpMetadata
-from pytcp.socket.udp__socket import UdpSocket
+from pytcp.runtime.socket import AddressFamily, SocketType
+from pytcp.runtime.socket.error_queue import SoEeOrigin
+from pytcp.runtime.socket.raw__metadata import RawMetadata
+from pytcp.runtime.socket.raw__socket import RawSocket
+from pytcp.runtime.socket.socket_id import SocketId
+from pytcp.runtime.socket.tcp__socket import TcpSocket
+from pytcp.runtime.socket.udp__metadata import UdpMetadata
+from pytcp.runtime.socket.udp__socket import UdpSocket
 from pytcp.stack import sysctl_iface
 
 if TYPE_CHECKING:

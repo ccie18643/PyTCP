@@ -50,13 +50,13 @@ from typing import override
 
 from net_addr import Ip4Address
 from pytcp.protocols.tcp.tcp__enums import FsmState
-from pytcp.socket import IPPROTO_TCP, TCP_INFO, AddressFamily
-from pytcp.socket.tcp__info import (
+from pytcp.runtime.socket import IPPROTO_TCP, TCP_INFO, AddressFamily
+from pytcp.runtime.socket.tcp__info import (
     TCP_INFO__STRUCT,
     TcpInfoOption,
     TcpInfoState,
 )
-from pytcp.socket.tcp__socket import TcpSocket
+from pytcp.runtime.socket.tcp__socket import TcpSocket
 from pytcp.tests.lib.network_testcase import (
     HOST_A__IP4_ADDRESS,
     STACK__IP4_HOST,
@@ -321,7 +321,7 @@ class TestTcpSocketGetsockoptTcpInfo(TcpTestCase):
         Reference: Linux include/uapi/linux/tcp.h enum tcp_states (1..11).
         """
 
-        from pytcp.socket.tcp__info import _FSM_TO_TCP_INFO_STATE
+        from pytcp.runtime.socket.tcp__info import _FSM_TO_TCP_INFO_STATE
 
         # Coverage — every FsmState member must have a mapping.
         for fsm_state in FsmState:
@@ -373,7 +373,7 @@ class TestTcpSocketGetsockoptTcpInfo(TcpTestCase):
 
         from enum import IntEnum, IntFlag
 
-        from pytcp.socket.tcp__info import _FSM_TO_TCP_INFO_STATE
+        from pytcp.runtime.socket.tcp__info import _FSM_TO_TCP_INFO_STATE
 
         self.assertTrue(
             issubclass(TcpInfoState, IntEnum),

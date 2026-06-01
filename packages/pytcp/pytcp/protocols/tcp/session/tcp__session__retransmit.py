@@ -71,7 +71,7 @@ from pytcp.protocols.tcp.tcp__seq import gt32, le32, lt32, sub32
 
 if TYPE_CHECKING:
     from pytcp.protocols.tcp.session import TcpSession
-    from pytcp.socket.tcp__metadata import TcpMetadata
+    from pytcp.runtime.socket.tcp__metadata import TcpMetadata
 
 
 class TcpRetransmitter:

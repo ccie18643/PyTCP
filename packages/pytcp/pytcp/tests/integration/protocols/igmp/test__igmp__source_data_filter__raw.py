@@ -42,7 +42,7 @@ from net_proto import EthernetAssembler, Ip4Assembler, IpProto
 from net_proto.lib.packet_rx import PacketRx
 from net_proto.protocols.raw.raw__assembler import RawAssembler
 from pytcp import stack
-from pytcp.socket import (
+from pytcp.runtime.socket import (
     IP_ADD_MEMBERSHIP,
     IP_ADD_SOURCE_MEMBERSHIP,
     IP_BLOCK_SOURCE,
@@ -50,7 +50,7 @@ from pytcp.socket import (
     AddressFamily,
     SocketType,
 )
-from pytcp.socket.raw__socket import RawSocket
+from pytcp.runtime.socket.raw__socket import RawSocket
 from pytcp.tests.lib.udp_testcase import HOST_A__IP4_ADDRESS, UdpTestCase
 
 _GROUP = Ip4Address("239.1.1.1")

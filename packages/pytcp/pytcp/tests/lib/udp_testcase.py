@@ -48,8 +48,8 @@ from net_proto.protocols.ip6.ip6__parser import Ip6Parser
 from net_proto.protocols.udp.udp__parser import UdpParser
 from pytcp import stack
 from pytcp.protocols.icmp.icmp__error_emitter import IcmpErrorRateLimiter
-from pytcp.socket import AddressFamily, SocketType
-from pytcp.socket.udp__socket import UdpSocket
+from pytcp.runtime.socket import AddressFamily, SocketType
+from pytcp.runtime.socket.udp__socket import UdpSocket
 from pytcp.tests.lib.network_testcase import (
     HOST_A__IP4_ADDRESS,
     HOST_A__IP6_ADDRESS,

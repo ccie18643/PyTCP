@@ -56,7 +56,7 @@ from net_proto import (
     Ip6Assembler,
     UdpAssembler,
 )
-from pytcp.socket import (
+from pytcp.runtime.socket import (
     SOL_UDP,
     UDP_NO_CHECK6_RX,
     UDP_NO_CHECK6_TX,

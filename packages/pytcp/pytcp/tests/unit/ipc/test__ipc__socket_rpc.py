@@ -42,7 +42,7 @@ from pytcp.ipc.ipc__socket_rpc import (
     encode_socket_request,
     raise_socket_error,
 )
-from pytcp.socket import AddressFamily
+from pytcp.runtime.socket import AddressFamily
 
 
 class TestIpcSocketRpc(TestCase):

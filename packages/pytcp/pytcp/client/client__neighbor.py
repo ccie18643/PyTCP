@@ -38,7 +38,7 @@ from typing import cast
 
 from net_addr import Ip4Address, Ip6Address, MacAddress
 from pytcp.client.client__base import _DeviceScopedProxy
-from pytcp.socket import AddressFamily
+from pytcp.runtime.socket import AddressFamily
 from pytcp.stack.neighbor import NeighborSnapshot
 
 

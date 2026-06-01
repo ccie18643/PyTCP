@@ -102,10 +102,10 @@ from pytcp.protocols.ip4.acd.ip4_acd import Ip4Acd
 from pytcp.protocols.ip.ip_frag_table import IpFragTable
 from pytcp.runtime.fib import RouteProtocol
 from pytcp.runtime.rx_ring import RxRing
+from pytcp.runtime.socket import AddressFamily
 from pytcp.runtime.subsystem import Subsystem
 from pytcp.runtime.timer import TimerHandle
 from pytcp.runtime.tx_ring import TxRing
-from pytcp.socket import AddressFamily
 from pytcp.stack import sysctl_iface
 from pytcp.stack.membership import IP4__MULTICAST__ALL_SYSTEMS
 

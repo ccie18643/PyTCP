@@ -40,10 +40,10 @@ from net_addr import Ip4Address, MacAddress
 from net_proto import ArpAssembler, ArpOperation, EthernetAssembler
 from pytcp.protocols.arp import arp__constants
 from pytcp.protocols.ip4.acd.ip4_acd import Ip4Acd
-from pytcp.socket import ETH_P_ARP, SOCK_RAW, AddressFamily, socket
-from pytcp.socket.packet__metadata import PacketMetadata
-from pytcp.socket.packet__socket import PacketSocket
-from pytcp.socket.sockaddr_ll import SockAddrLl
+from pytcp.runtime.socket import ETH_P_ARP, SOCK_RAW, AddressFamily, socket
+from pytcp.runtime.socket.packet__metadata import PacketMetadata
+from pytcp.runtime.socket.packet__socket import PacketSocket
+from pytcp.runtime.socket.sockaddr_ll import SockAddrLl
 from pytcp.tests.lib.network_testcase import STACK__MAC_ADDRESS, NetworkTestCase
 
 _CANDIDATE = Ip4Address("10.0.1.50")
@@ -84,7 +84,7 @@ class TestIp4AcdEngine(NetworkTestCase):
         """
 
         super().setUp()
-        self.enterContext(patch("pytcp.socket.packet__socket.log"))
+        self.enterContext(patch("pytcp.runtime.socket.packet__socket.log"))
         self.enterContext(patch("pytcp.protocols.ip4.acd.ip4_acd.random.uniform", return_value=0.0))
         self.enterContext(patch.object(arp__constants, "ARP__ANNOUNCE_WAIT", 0))
         self.enterContext(patch.object(arp__constants, "ARP__ANNOUNCE_INTERVAL", 0))

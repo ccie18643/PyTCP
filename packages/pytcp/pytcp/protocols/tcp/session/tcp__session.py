@@ -92,8 +92,8 @@ from pytcp.stack import sysctl_iface
 if TYPE_CHECKING:
     from threading import Event, Lock, RLock, Semaphore
 
-    from pytcp.socket.tcp__metadata import TcpMetadata
-    from pytcp.socket.tcp__socket import TcpSocket
+    from pytcp.runtime.socket.tcp__metadata import TcpMetadata
+    from pytcp.runtime.socket.tcp__socket import TcpSocket
 
 
 # Name of the per-session 'tx_pump' FSM-pump logical timer
@@ -985,7 +985,7 @@ class TcpSession:
         BSD 'shutdown(how)' half-close per RFC 9293 §3.9.1
         + POSIX shutdown semantics.
 
-        'how' values (matching pytcp.socket.SHUT_*):
+        'how' values (matching pytcp.runtime.socket.SHUT_*):
             SHUT_RD   (0): no further reads. Inbound data is
                            silently discarded; recv() returns 0
                            after the buffer drains.

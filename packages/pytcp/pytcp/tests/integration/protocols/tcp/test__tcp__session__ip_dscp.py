@@ -41,14 +41,14 @@ from typing import cast
 
 from net_addr import Ip4Address, Ip6Address
 from pytcp.protocols.tcp.tcp__enums import FsmState, SysCall
-from pytcp.socket import (
+from pytcp.runtime.socket import (
     IP_TOS,
     IPPROTO_IP,
     IPPROTO_IPV6,
     IPV6_TCLASS,
     AddressFamily,
 )
-from pytcp.socket.tcp__socket import TcpSocket
+from pytcp.runtime.socket.tcp__socket import TcpSocket
 from pytcp.tests.lib.tcp_segment_factory import build_tcp4, build_tcp6
 from pytcp.tests.lib.tcp_testcase import TcpTestCase
 

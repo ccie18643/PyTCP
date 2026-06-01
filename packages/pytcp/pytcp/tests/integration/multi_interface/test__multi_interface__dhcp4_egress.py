@@ -47,7 +47,7 @@ from net_proto.protocols.dhcp4.options.dhcp4__option__message_type import (
     Dhcp4OptionMessageType,
 )
 from net_proto.protocols.dhcp4.options.dhcp4__options import Dhcp4Options
-from pytcp.socket import AF_INET4, SO_BINDTODEVICE, SO_BROADCAST, SOCK_DGRAM, SOL_SOCKET, socket
+from pytcp.runtime.socket import AF_INET4, SO_BINDTODEVICE, SO_BROADCAST, SOCK_DGRAM, SOL_SOCKET, socket
 from pytcp.tests.lib.icmp_testcase import IcmpTestCase
 
 # Second interface — a distinct subnet from the harness boot interface
@@ -105,7 +105,7 @@ class TestMultiInterfaceDhcp4BroadcastEgress(IcmpTestCase, TestCase):
 
         # Silence the UDP socket's construct / close log lines so the
         # cleanup-time 'Closed socket' does not leak to stdout.
-        self.enterContext(patch("pytcp.socket.udp__socket.log"))
+        self.enterContext(patch("pytcp.runtime.socket.udp__socket.log"))
 
         self._iface2 = self._add_interface(
             mac_address=IFACE2__MAC_ADDRESS,

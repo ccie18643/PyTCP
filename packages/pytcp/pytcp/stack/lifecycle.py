@@ -63,9 +63,9 @@ from pytcp.runtime.fib import RouteTable
 from pytcp.runtime.interface_table import InterfaceTable
 from pytcp.runtime.packet_handler import PacketHandlerL2, PacketHandlerL3
 from pytcp.runtime.rx_ring import RxRing
+from pytcp.runtime.socket import AddressFamily
 from pytcp.runtime.timer import Timer
 from pytcp.runtime.tx_ring import TxRing
-from pytcp.socket import AddressFamily
 from pytcp.stack.address import AddressApi
 from pytcp.stack.link import LinkApi
 from pytcp.stack.membership import MembershipApi

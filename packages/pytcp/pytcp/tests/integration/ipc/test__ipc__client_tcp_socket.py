@@ -39,7 +39,7 @@ from typing import cast
 
 from pytcp.client import ClientTcpSocket
 from pytcp.ipc.ipc__errors import IpcRemoteError
-from pytcp.socket import SO_KEEPALIVE, SOL_SOCKET, AddressFamily, SocketType
+from pytcp.runtime.socket import SO_KEEPALIVE, SOL_SOCKET, AddressFamily, SocketType
 from pytcp.tests.lib.ipc_control_testcase import IpcControlTestCase
 
 

@@ -54,7 +54,7 @@ from pytcp.ipc.ipc__client import IpcClient
 from pytcp.ipc.ipc__enums import IpcMessageKind, IpcOp
 from pytcp.ipc.ipc__errors import IpcConnectionError, IpcRemoteError
 from pytcp.ipc.ipc__values import decode_value, encode_value
-from pytcp.socket import AddressFamily, SocketType
+from pytcp.runtime.socket import AddressFamily, SocketType
 
 
 @dataclass(frozen=True, kw_only=True, slots=True)

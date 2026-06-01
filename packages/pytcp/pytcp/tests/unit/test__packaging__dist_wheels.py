@@ -245,7 +245,7 @@ class TestPackagingPytcpWheel(TestCase):
             "pytcp/runtime/packet_handler/",
             "pytcp/protocols/tcp/",
             "pytcp/protocols/ip6/",
-            "pytcp/socket/",
+            "pytcp/runtime/socket/",
             "pytcp/stack/",
             "pytcp/lib/",
         ):

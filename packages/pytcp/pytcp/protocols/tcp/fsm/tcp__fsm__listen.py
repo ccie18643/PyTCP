@@ -46,7 +46,7 @@ from pytcp.protocols.tcp.tcp__seq import add32
 if TYPE_CHECKING:
     from pytcp.protocols.tcp.session import TcpSession
     from pytcp.protocols.tcp.tcp__icmp_metadata import IcmpMetadata
-    from pytcp.socket.tcp__metadata import TcpMetadata
+    from pytcp.runtime.socket.tcp__metadata import TcpMetadata
 
 
 def fsm__listen__icmp(session: TcpSession, metadata: IcmpMetadata) -> None:
@@ -83,8 +83,8 @@ def fsm__listen__packet(session: TcpSession, packet_rx_md: TcpMetadata) -> None:
     """
 
     from pytcp.protocols.tcp.session import TcpSession
-    from pytcp.socket import AddressFamily
-    from pytcp.socket.tcp__socket import TcpSocket
+    from pytcp.runtime.socket import AddressFamily
+    from pytcp.runtime.socket.tcp__socket import TcpSocket
 
     # Got SYN packet -> Send SYN + ACK packet / change state to SYN_RCVD.
     if all({packet_rx_md.tcp__flag_syn}) and not any(

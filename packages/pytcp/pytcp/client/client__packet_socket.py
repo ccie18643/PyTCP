@@ -45,8 +45,8 @@ from pytcp.ipc.ipc__client import IpcClient
 from pytcp.ipc.ipc__packet_bridge import IPC__PACKET_BRIDGE__CHUNK_SIZE
 from pytcp.ipc.ipc__packet_frame import decode_packet, encode_packet
 from pytcp.ipc.ipc__socket_rpc import open_socket, socket_call
-from pytcp.socket import ETH_P_ALL, AddressFamily, SocketType
-from pytcp.socket.sockaddr_ll import SockAddrLl
+from pytcp.runtime.socket import ETH_P_ALL, AddressFamily, SocketType
+from pytcp.runtime.socket.sockaddr_ll import SockAddrLl
 
 
 class ClientPacketSocket:

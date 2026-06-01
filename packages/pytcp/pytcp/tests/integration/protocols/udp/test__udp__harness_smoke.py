@@ -44,7 +44,7 @@ from net_proto import (
     UdpAssembler,
 )
 from pytcp import stack
-from pytcp.socket import AddressFamily
+from pytcp.runtime.socket import AddressFamily
 from pytcp.tests.lib.network_testcase import (
     HOST_A__IP4_ADDRESS,
     HOST_A__MAC_ADDRESS,

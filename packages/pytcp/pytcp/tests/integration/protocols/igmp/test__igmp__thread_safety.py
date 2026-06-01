@@ -48,7 +48,7 @@ from pytcp.lib.ip4_multicast_filter import (
     Ip4MulticastFilter,
     Ip4MulticastFilterMode,
 )
-from pytcp.socket import (
+from pytcp.runtime.socket import (
     AF_INET,
     IP_ADD_SOURCE_MEMBERSHIP,
     IPPROTO_IP,

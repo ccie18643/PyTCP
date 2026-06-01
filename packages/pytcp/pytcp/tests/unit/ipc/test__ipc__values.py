@@ -51,7 +51,7 @@ from pytcp.ipc.ipc__values import decode_value, encode_value
 from pytcp.lib.interface_layer import InterfaceLayer
 from pytcp.lib.neighbor import NudState
 from pytcp.runtime.fib import Route, RouteProtocol, RouteScope
-from pytcp.socket import (
+from pytcp.runtime.socket import (
     IP_TTL,
     IPPROTO_TCP,
     IPV6_UNICAST_HOPS,
@@ -62,7 +62,7 @@ from pytcp.socket import (
     PacketType,
     SocketType,
 )
-from pytcp.socket.sockaddr_ll import SockAddrLl
+from pytcp.runtime.socket.sockaddr_ll import SockAddrLl
 from pytcp.stack.link import LinkFlag, LinkStats
 from pytcp.stack.neighbor import NeighborSnapshot
 

@@ -56,7 +56,7 @@ from net_proto.protocols.raw.raw__assembler import RawAssembler
 from pytcp import stack
 from pytcp.client import ClientRawSocket, ClientStack, connect
 from pytcp.ipc.ipc__server import IpcServer
-from pytcp.socket import AddressFamily, SocketType
+from pytcp.runtime.socket import AddressFamily, SocketType
 from pytcp.tests.lib.network_testcase import (
     HOST_A__IP4_ADDRESS,
     HOST_A__MAC_ADDRESS,

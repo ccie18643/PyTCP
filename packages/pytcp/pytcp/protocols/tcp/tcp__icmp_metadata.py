@@ -26,7 +26,7 @@
 This module contains the interface dataclass for the ICMPv4 / ICMPv6
 RX path -> TCP FSM dispatch communication. Naming follows the
 existing 'UdpMetadata' / 'RawMetadata' convention
-('pytcp/socket/udp__metadata.py', 'pytcp/socket/raw__metadata.py'):
+('pytcp/runtime/socket/udp__metadata.py', 'pytcp/runtime/socket/raw__metadata.py'):
 the dataclass that flows from the packet handler to the upper-layer
 consumer is suffixed 'Metadata'. Here the consumer is the TCP FSM,
 so the file lives next to the FSM under 'pytcp/protocols/tcp/'.

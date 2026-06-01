@@ -51,9 +51,9 @@ from pytcp.protocols.tcp.tcp__stack import TcpStack
 from pytcp.runtime.fib import Route, RouteProtocol, RouteScope
 from pytcp.runtime.interface_table import InterfaceTable
 from pytcp.runtime.packet_handler import PacketHandlerL2, PacketHandlerL3
+from pytcp.runtime.socket.packet__socket_table import PacketSocketTable
+from pytcp.runtime.socket.socket_table import SocketTable
 from pytcp.runtime.timer import Timer
-from pytcp.socket.packet__socket_table import PacketSocketTable
-from pytcp.socket.socket_table import SocketTable
 from pytcp.stack.address import AddressApi
 from pytcp.stack.link import LinkApi
 from pytcp.stack.membership import MembershipApi
@@ -134,7 +134,7 @@ IP6__FLOW_SECRET: bytes = secrets.token_bytes(16)
 TCP__FASTOPEN_SECRET: bytes = secrets.token_bytes(16)
 
 # RFC 6056 §3.3.3 Algorithm 3 port-selection secret. Used
-# by 'pytcp.socket.socket__bind_helpers.pick_local_port_for' to compute
+# by 'pytcp.runtime.socket.socket__bind_helpers.pick_local_port_for' to compute
 # a per-(local_ip, remote_ip, remote_port) BLAKE2s-keyed
 # offset into the ephemeral port range so the source port
 # for a TCP connect() is unpredictable to an off-path

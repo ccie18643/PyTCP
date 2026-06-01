@@ -53,8 +53,8 @@ from net_proto import (
 from net_proto.lib.buffer import Buffer
 from pytcp.lib.logger import log
 from pytcp.protocols.arp import arp__constants
-from pytcp.socket import ETH_P_ARP, SOCK_RAW, AddressFamily, socket
-from pytcp.socket.sockaddr_ll import SockAddrLl
+from pytcp.runtime.socket import ETH_P_ARP, SOCK_RAW, AddressFamily, socket
+from pytcp.runtime.socket.sockaddr_ll import SockAddrLl
 
 # Inter-poll tick for the conflict watcher: how often the probe loop
 # re-checks the ARP socket while waiting out a timing window. Small

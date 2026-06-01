@@ -42,7 +42,7 @@ from examples.lib.service import build_echo_services
 from examples.lib.tcp_service import TcpService
 from examples.stack import cli as stack_cli
 from net_addr import IpAddress
-from pytcp.socket import socket
+from pytcp.runtime.socket import socket
 
 
 class TcpEchoService(TcpService):

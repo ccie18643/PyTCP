@@ -42,8 +42,8 @@ from pytcp.protocols.dhcp4.dhcp4__client import Dhcp4Client, Dhcp4Lease, Dhcp4St
 from pytcp.protocols.dhcp4.dhcp4__uid import build_client_id
 from pytcp.protocols.ip4.acd.ip4_acd import AcdResult, Ip4Acd
 from pytcp.runtime.fib import Route, RouteProtocol
+from pytcp.runtime.socket import AddressFamily
 from pytcp.runtime.subsystem import Subsystem
-from pytcp.socket import AddressFamily
 from pytcp.stack import sysctl
 from pytcp.stack.route import RouteApi
 from pytcp.tests.lib.dhcp4_mock_server import (

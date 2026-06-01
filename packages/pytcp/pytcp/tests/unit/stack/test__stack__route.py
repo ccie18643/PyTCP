@@ -36,7 +36,7 @@ from unittest import TestCase
 
 from net_addr import Ip4Address, Ip4Network, Ip6Address, Ip6Network
 from pytcp.runtime.fib import Route, RouteProtocol, RouteTable
-from pytcp.socket import AddressFamily
+from pytcp.runtime.socket import AddressFamily
 from pytcp.stack.route import RouteApi, install_boot_default_routes
 
 

@@ -485,7 +485,7 @@ class Dhcp6MockServer:
 def autospec_dhcp6_socket() -> MagicMock:
     """
     Build a 'create_autospec'-d, 'spec_set'-locked stand-in for
-    'pytcp.socket.socket'. The returned mock is callable (mirroring
+    'pytcp.runtime.socket.socket'. The returned mock is callable (mirroring
     the socket factory) and yields an instance-shape autospec on each
     call. Wire 'Dhcp6MockServer.wire(mock_socket)' into the
     returned-value instance.
@@ -494,7 +494,7 @@ def autospec_dhcp6_socket() -> MagicMock:
     DHCP6-client test uses the same locked-down mock surface.
     """
 
-    from pytcp.socket import socket as _pytcp_socket
+    from pytcp.runtime.socket import socket as _pytcp_socket
 
     factory: MagicMock = cast(MagicMock, create_autospec(_pytcp_socket, spec_set=True))
     instance: MagicMock = cast(MagicMock, create_autospec(_pytcp_socket, spec_set=True, instance=True))

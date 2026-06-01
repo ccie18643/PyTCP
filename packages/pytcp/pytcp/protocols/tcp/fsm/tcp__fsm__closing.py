@@ -43,7 +43,7 @@ from pytcp.protocols.tcp.tcp__seq import ge32, gt32, in_range32
 
 if TYPE_CHECKING:
     from pytcp.protocols.tcp.session import TcpSession
-    from pytcp.socket.tcp__metadata import TcpMetadata
+    from pytcp.runtime.socket.tcp__metadata import TcpMetadata
 
 
 def fsm__closing__packet(session: TcpSession, packet_rx_md: TcpMetadata) -> None:
