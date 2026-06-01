@@ -51,14 +51,23 @@ import tempfile
 import threading
 import time
 from typing import override
+from unittest.mock import create_autospec
 
 import pytcp.socket as pytcp_socket
+from net_addr import Ip4Address, Ip6Address
+from net_proto.protocols.dns.dns__enums import DnsRecordType
 from pytcp import stack
 from pytcp.ipc.ipc__server import IpcServer
+from pytcp.protocols.dns.dns__resolver import DnsResolver
 from pytcp.socket.socket__dropin import Socket, _reset_default_stack
+from pytcp.stack.resolver import ResolverApi
 from pytcp.tests.lib.network_testcase import HOST_A__IP4_ADDRESS, STACK__IP4_HOST
 from pytcp.tests.lib.tcp_segment_factory import build_tcp4
-from pytcp.tests.lib.tcp_testcase import TcpTestCase
+from pytcp.tests.lib.tcp_testcase import TcpProbe, TcpTestCase
+
+_RESOLVE_TABLE: dict[tuple[str, DnsRecordType], list[Ip4Address | Ip6Address]] = {
+    ("echo.example", DnsRecordType.A): [HOST_A__IP4_ADDRESS],
+}
 
 _LOCAL_PORT: int = 50001
 _REMOTE_PORT: int = 80
@@ -121,6 +130,12 @@ class TestSocketDropinEcho(TcpTestCase):
         _reset_default_stack()
         self.addCleanup(self._restore_env)
         self.addCleanup(_reset_default_stack)
+
+        # Replace the daemon's resolver with a table-driven fake so the
+        # hostname resolution paths resolve without a live upstream.
+        resolver = create_autospec(DnsResolver, spec_set=True)
+        resolver.resolve.side_effect = lambda host, record_type: _RESOLVE_TABLE.get((host, record_type), [])
+        stack.resolver = ResolverApi(resolver=resolver)
 
     def _restore_env(self) -> None:
         """
@@ -589,4 +604,124 @@ class TestSocketDropinEcho(TcpTestCase):
             (result.get("status"), result.get("body")),
             (200, b"hello"),
             msg="http.client must parse the driven 200 response read over the drop-in socket.",
+        )
+
+    def _wait_for_any_syn(self, *, dport: int) -> TcpProbe:
+        """
+        Block until a SYN (no ACK) is emitted to 'dport' from any local
+        port, nudging the virtual clock; return the SYN's TX probe.
+        """
+
+        deadline = time.monotonic() + _DEADLINE__SEC
+        while time.monotonic() < deadline:
+            for frame in list(self._frames_tx):
+                probe = self._parse_tx(frame)
+                if probe.dport == dport and "SYN" in probe.flags and "ACK" not in probe.flags:
+                    return probe
+            self._advance(ms=1)
+            time.sleep(0.005)
+        raise AssertionError(f"No SYN to port {dport} was emitted.")
+
+    def test__socket_dropin__getaddrinfo_via_daemon_resolver(self) -> None:
+        """
+        Ensure 'pytcp.socket.getaddrinfo' resolves a host name through the
+        daemon resolver, returning the stdlib-shaped 5-tuple.
+
+        Reference: RFC 9293 §3.9 (User/TCP interface).
+        """
+
+        self.assertEqual(
+            pytcp_socket.getaddrinfo(
+                "echo.example",
+                _REMOTE_PORT,
+                family=pytcp_socket.AF_INET,
+                type=pytcp_socket.SOCK_STREAM,
+            ),
+            [(pytcp_socket.AF_INET, pytcp_socket.SOCK_STREAM, 0, "", (str(HOST_A__IP4_ADDRESS), _REMOTE_PORT))],
+            msg="pytcp.socket.getaddrinfo must resolve through the daemon and return the 5-tuple.",
+        )
+
+    def test__socket_dropin__gethostbyname_via_daemon_resolver(self) -> None:
+        """
+        Ensure 'pytcp.socket.gethostbyname' resolves a host name to its
+        IPv4 address string through the daemon resolver.
+
+        Reference: RFC 9293 §3.9 (User/TCP interface).
+        """
+
+        self.assertEqual(
+            pytcp_socket.gethostbyname("echo.example"),
+            str(HOST_A__IP4_ADDRESS),
+            msg="pytcp.socket.gethostbyname must resolve a host name through the daemon.",
+        )
+
+    def test__socket_dropin__create_connection_by_hostname(self) -> None:
+        """
+        Ensure 'pytcp.socket.create_connection' resolves a host name via
+        the daemon, opens a socket, completes the handshake, and exchanges
+        data — the full stdlib connect path P1 bypassed.
+
+        Reference: RFC 9293 §3.5 (Connection establishment).
+        """
+
+        self._force_iss(_ISS)
+
+        result: dict[str, object] = {}
+
+        def run_connect() -> None:
+            try:
+                result["sock"] = pytcp_socket.create_connection(("echo.example", _REMOTE_PORT))
+            except Exception as error:  # surface to the test thread
+                result["error"] = error
+
+        connect_thread = threading.Thread(target=run_connect, name="dropin-create-conn")
+        connect_thread.start()
+        self.addCleanup(connect_thread.join)
+
+        syn = self._wait_for_any_syn(dport=_REMOTE_PORT)
+        local_port = syn.sport
+        local_iss = syn.seq
+
+        self._drive_rx(
+            frame=build_tcp4(
+                src_ip=HOST_A__IP4_ADDRESS,
+                dst_ip=STACK__IP4_HOST.address,
+                sport=_REMOTE_PORT,
+                dport=local_port,
+                seq=_PEER_ISS,
+                ack=local_iss + 1,
+                flags=("SYN", "ACK"),
+                win=_PEER_WIN,
+            )
+        )
+        connect_thread.join(timeout=_DEADLINE__SEC)
+
+        self.assertNotIn(
+            "error",
+            result,
+            msg=f"create_connection by hostname raised: {result.get('error')!r}",
+        )
+        sock = result["sock"]
+        assert isinstance(sock, Socket)
+        self.addCleanup(sock.close)
+        sock.settimeout(_DEADLINE__SEC)
+
+        self._drive_rx(
+            frame=build_tcp4(
+                src_ip=HOST_A__IP4_ADDRESS,
+                dst_ip=STACK__IP4_HOST.address,
+                sport=_REMOTE_PORT,
+                dport=local_port,
+                seq=_PEER_ISS + 1,
+                ack=local_iss + 1,
+                flags=("ACK",),
+                win=_PEER_WIN,
+                payload=b"resolved",
+            )
+        )
+
+        self.assertEqual(
+            sock.recv(64),
+            b"resolved",
+            msg="A socket from create_connection(hostname) must exchange data over the resolved connection.",
         )

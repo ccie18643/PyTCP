@@ -77,7 +77,7 @@ clean backpressure design is, and the honest limits of "100% asyncio /
 | A1    | Multiplexed IPC client (`MuxIpcClient`)                     | **done** |
 | A2    | Faithful error wire format + client reconstruction         | **done** |
 | A4    | The `pytcp.socket` synchronous drop-in module              | **done** |
-| A5    | DNS resolved through the daemon                             | **in progress (A5.1-A5.4: codec + resolver + control op done)** |
+| A5    | DNS resolved through the daemon                             | **done** |
 | P1    | Proof point — real stdlib program over the daemon          | **done (http.client, IP-literal)** |
 | A3.0  | Feasibility: TcpSocket tx-writable signal + bridge pump (read-only) | **done** |
 | A3.1  | Prototype the writable-on-connect edge (throwaway)         | —      |
@@ -394,6 +394,21 @@ allowlist + client mirror.
   IP-literal bypass). lint clean, 12620 passing. Next (A5.5): wire
   `pytcp.socket.getaddrinfo`/`gethostbyname` to the daemon resolver +
   `create_connection`, so `http.client` connects by hostname.
+- **2026-06-01** — A5.5 (socket-layer wiring) complete, **closing A5**:
+  `pytcp.socket` now overrides `getaddrinfo` / `gethostbyname` (sourced
+  from `socket__dropin`, delegating to `_get_default_stack().resolver`)
+  instead of re-exporting the stdlib host-OS versions, and adds
+  `create_connection` (resolve via the daemon, then try each candidate
+  until one connects) + the `_GLOBAL_DEFAULT_TIMEOUT` sentinel for
+  http.client compatibility. 3 integration tests added to the dropin
+  suite (the class now injects a table-driven fake daemon resolver):
+  `getaddrinfo` / `gethostbyname` through the daemon, and the **capstone**
+  — `create_connection(("echo.example", port))` resolves the hostname via
+  the daemon, opens a drop-in socket, completes the handshake on an
+  ephemeral local port, and exchanges data. This is the full stdlib
+  connect path P1 bypassed. lint clean, 12623 passing. **A5 done — DNS is
+  resolved through the daemon end to end, and the synchronous drop-in now
+  supports name-based connect.**
 
 ## 7. Design discussion — readiness, the "trick", and compat limits
 

@@ -686,3 +686,81 @@ def socket(
         type=socket_type,
         proto=proto,
     )
+
+
+type _SockAddr = tuple[str, int] | tuple[str, int, int, int]
+type _AddrInfo = tuple[AddressFamily, SocketType, int, str, _SockAddr]
+
+
+class _GlobalDefaultTimeout:
+    """
+    Sentinel for the stdlib 'create_connection' default-timeout argument.
+    """
+
+
+# Mirrors 'socket._GLOBAL_DEFAULT_TIMEOUT' — the value 'create_connection'
+# treats as "leave the socket's own timeout untouched". Re-exported so a
+# consumer that reads 'socket._GLOBAL_DEFAULT_TIMEOUT' (e.g. http.client)
+# sees the same sentinel.
+_GLOBAL_DEFAULT_TIMEOUT: _GlobalDefaultTimeout = _GlobalDefaultTimeout()
+
+
+def gethostbyname(hostname: str, /) -> str:
+    """
+    Resolve 'hostname' to an IPv4 address string through the daemon
+    resolver, mirroring stdlib 'socket.gethostbyname'.
+    """
+
+    return _get_default_stack().resolver.gethostbyname(hostname)
+
+
+def getaddrinfo(
+    host: str,
+    port: int | None = None,
+    family: int = 0,
+    type: int = 0,
+    proto: int = 0,
+    flags: int = 0,
+) -> list[_AddrInfo]:
+    """
+    Resolve 'host' / 'port' into stdlib-shaped address-info 5-tuples
+    through the daemon resolver, mirroring stdlib 'socket.getaddrinfo'.
+    """
+
+    return _get_default_stack().resolver.getaddrinfo(host, port, family, type, proto, flags)
+
+
+def create_connection(
+    address: tuple[str, int],
+    timeout: float | None | _GlobalDefaultTimeout = _GLOBAL_DEFAULT_TIMEOUT,
+    source_address: tuple[str, int] | None = None,
+) -> Socket:
+    """
+    Open a TCP connection to 'address', mirroring stdlib
+    'socket.create_connection' (resolve via the daemon, then try each
+    candidate address until one connects).
+    """
+
+    host, port = address
+    errors: list[OSError] = []
+
+    for family, socket_type, candidate_proto, _canonname, sockaddr in getaddrinfo(
+        host, port, 0, int(SocketType.STREAM)
+    ):
+        sock: Socket | None = None
+        try:
+            sock = socket(family, socket_type, candidate_proto)
+            if not isinstance(timeout, _GlobalDefaultTimeout) and timeout is not None:
+                sock.settimeout(timeout)
+            if source_address is not None:
+                sock.bind(source_address)
+            sock.connect((sockaddr[0], sockaddr[1]))
+            return sock
+        except OSError as error:
+            errors.append(error)
+            if sock is not None:
+                sock.close()
+
+    if errors:
+        raise errors[-1]
+    raise OSError("getaddrinfo returned an empty list")
