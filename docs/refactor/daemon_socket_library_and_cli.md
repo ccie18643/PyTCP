@@ -76,7 +76,7 @@ clean backpressure design is, and the honest limits of "100% asyncio /
 | A0    | Rename `pytcp.socket` → `pytcp.runtime.socket` (mechanical) | **done** |
 | A1    | Multiplexed IPC client (`MuxIpcClient`)                     | **done** |
 | A2    | Faithful error wire format + client reconstruction         | **done** |
-| A4    | The `pytcp.socket` synchronous drop-in module              | **core + makefile + dup/detach done; UDP proof, EBADF pending** |
+| A4    | The `pytcp.socket` synchronous drop-in module              | **core + makefile + dup/detach + UDP proof done; EBADF pending** |
 | A5    | DNS resolved through the daemon                             | —      |
 | P1    | Proof point — real stdlib program over the daemon          | —      |
 | A3.0  | Feasibility: TcpSocket tx-writable signal + bridge pump (read-only) | **done** |
@@ -290,6 +290,17 @@ allowlist + client mirror.
   and survives the other's close; a duplicate's control op fails; a
   detached fd, salvaged into a stdlib socket, still receives peer data. 3
   integration tests. lint clean, 12562 passing.
+- **2026-06-01** — A4.3 (UDP proof) complete: a new
+  `test__ipc__socket_dropin_udp.py` (over `UdpTestCase` + a live
+  `IpcServer` + the `$PYTCP_DAEMON_SOCKET` singleton wiring) drives a
+  datagram round trip entirely through `pytcp.socket` — the SOCK_DGRAM
+  factory + the wrapper's `recvfrom` / `sendto`. Proves the datagram data
+  plane (control RPC + SCM_RIGHTS data channel + datagram bridge + per-
+  datagram address framing) end to end through the drop-in: a peer
+  datagram is delivered with its sender address via `recvfrom`, and a
+  `sendto` reaches the wire addressed to the peer. No production change —
+  the factory + `sendto`/`recvfrom` already existed; this is the proof.
+  2 integration tests. lint clean, 12564 passing.
 
 ## 7. Design discussion — readiness, the "trick", and compat limits
 
