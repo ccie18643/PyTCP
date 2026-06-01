@@ -30,7 +30,7 @@ keywords = [
     "ethernet",
     "icmp",
 ]
-dependencies = ["PyTCP-net_addr==3.0.7", "PyTCP-net_proto==3.0.7"]
+dependencies = ["PyTCP-net_addr==3.0.8", "PyTCP-net_proto==3.0.8"]
 requires-python = ">=3.14"
 dynamic = ["version"]
 

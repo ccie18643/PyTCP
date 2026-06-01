@@ -34,7 +34,7 @@ fixture topology.
 
 pytcp/tests/lib/ethernet_testcase.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from net_addr import MacAddress

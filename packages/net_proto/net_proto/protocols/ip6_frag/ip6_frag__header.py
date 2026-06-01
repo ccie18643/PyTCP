@@ -27,7 +27,7 @@ This module contains the IPv6 Frag header.
 
 net_proto/protocols/ip6_frag/ip6_frag__header.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 import struct

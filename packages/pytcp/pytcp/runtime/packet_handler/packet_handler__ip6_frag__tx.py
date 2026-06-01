@@ -27,7 +27,7 @@ This module contains packet handler for the outbound IPv6 fragment extension hea
 
 pytcp/runtime/packet_handler/packet_handler__ip6_frag__tx.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 import secrets

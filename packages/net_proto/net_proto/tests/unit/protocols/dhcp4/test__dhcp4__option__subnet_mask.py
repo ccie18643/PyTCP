@@ -27,7 +27,7 @@ Module contains tests for the DHCPv4 Subnet Mask option code.
 
 net_proto/tests/unit/protocols/dhcp4/test__dhcp4__option__subnet_mask.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from dataclasses import FrozenInstanceError

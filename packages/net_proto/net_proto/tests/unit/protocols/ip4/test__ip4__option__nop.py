@@ -27,7 +27,7 @@ Module contains tests for the IPv4 Nop (No Operation) option code.
 
 net_proto/tests/unit/protocols/ip4/test__ip4__option__nop.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from typing import Any

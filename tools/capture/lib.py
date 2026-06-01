@@ -29,7 +29,7 @@ host-side IPv6 peer helper used by every scenario command.
 
 tools/capture/lib.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 import os

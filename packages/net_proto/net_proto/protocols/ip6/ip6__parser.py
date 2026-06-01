@@ -27,7 +27,7 @@ This module contains the IPv6 packet parser.
 
 net_proto/protocols/ip6/ip6__parser.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from typing import override

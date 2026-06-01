@@ -27,7 +27,7 @@ This module contains the ICMPv6 Parameter Problem message support class.
 
 net_proto/protocols/icmp6/message/icmp6__message__parameter_problem.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 import struct

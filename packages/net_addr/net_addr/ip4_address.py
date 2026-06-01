@@ -27,7 +27,7 @@ This module contains IPv4 address support class.
 
 net_addr/ip4_address.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 import socket

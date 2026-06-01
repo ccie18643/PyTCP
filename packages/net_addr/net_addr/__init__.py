@@ -27,7 +27,7 @@ This package contains classes used to represent network addresses.
 
 net_addr/__init__.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from typing import TYPE_CHECKING
@@ -156,7 +156,7 @@ def __dir__() -> list[str]:
     return sorted(__all__)
 
 
-__version__: str = "3.0.7"
+__version__: str = "3.0.8"
 
 __all__ = [
     "ClickTypeIfAddr",

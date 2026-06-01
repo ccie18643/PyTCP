@@ -27,7 +27,7 @@ This module contains network address base class.
 
 net_addr/address.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from abc import ABC, abstractmethod

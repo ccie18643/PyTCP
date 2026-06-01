@@ -27,7 +27,7 @@ Module contains tests for the IPv6 Frag protocol packet parsing functionality.
 
 net_proto/tests/unit/protocols/ip6_frag/test__ip6_frag__parser__operation.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from types import SimpleNamespace

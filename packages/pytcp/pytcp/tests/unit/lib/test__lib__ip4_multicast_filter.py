@@ -28,7 +28,7 @@ value type and the RFC 3376 §3.2 per-interface state merge.
 
 pytcp/tests/unit/lib/test__lib__ip4_multicast_filter.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from unittest import TestCase

@@ -27,7 +27,7 @@ This module contains unit tests for the 'Ip6FragRxHandler' sub-handler.
 
 pytcp/tests/unit/runtime/packet_handler/test__runtime__packet_handler__ip6_frag__rx.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from typing import TYPE_CHECKING, cast

@@ -27,7 +27,7 @@ Module contains tests for the unknown DHCPv6 option code.
 
 net_proto/tests/unit/protocols/dhcp6/test__dhcp6__option__unknown.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from dataclasses import FrozenInstanceError

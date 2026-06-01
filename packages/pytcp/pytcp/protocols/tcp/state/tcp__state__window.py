@@ -30,7 +30,7 @@ receive-side (our MSS, our WSCALE, our advertised-window cap).
 
 pytcp/protocols/tcp/state/tcp__state__window.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from dataclasses import dataclass

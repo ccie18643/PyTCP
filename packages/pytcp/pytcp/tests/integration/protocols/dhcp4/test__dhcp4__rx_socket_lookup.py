@@ -49,7 +49,7 @@ socket layer wholesale.
 
 pytcp/tests/integration/protocols/dhcp4/test__dhcp4__rx_socket_lookup.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from unittest import TestCase

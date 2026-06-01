@@ -27,7 +27,7 @@ This module contains tests for the IPv6 Dest Opts packet assembler operation.
 
 net_proto/tests/unit/protocols/ip6_dest_opts/test__ip6_dest_opts__assembler__operation.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from unittest import TestCase

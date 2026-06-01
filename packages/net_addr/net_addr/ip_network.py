@@ -27,7 +27,7 @@ This module contains IP network base class.
 
 net_addr/ip_network.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from abc import ABC, abstractmethod

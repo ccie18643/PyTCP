@@ -31,7 +31,7 @@ set), or broadcast (all-ones) MAC address.
 
 net_proto/tests/unit/protocols/ethernet_802_3/test__ethernet_802_3__parser__sanity_checks.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from typing import Any

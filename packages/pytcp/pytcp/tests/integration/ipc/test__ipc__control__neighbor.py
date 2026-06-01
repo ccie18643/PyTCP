@@ -31,7 +31,7 @@ API reads and writes them, and the mocks have no real entry store.
 
 pytcp/tests/integration/ipc/test__ipc__control__neighbor.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from typing import override

@@ -27,7 +27,7 @@ This module contains tests for the NetProto package Tracker class.
 
 net_proto/tests/unit/lib/test__lib__tracker.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 import itertools

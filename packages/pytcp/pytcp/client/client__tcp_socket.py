@@ -35,7 +35,7 @@ the SOCKET_CALL op keyed by the daemon-assigned handle.
 
 pytcp/client/client__tcp_socket.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 import socket

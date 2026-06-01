@@ -27,7 +27,7 @@ This module contains the 'user space' generic service base class used in example
 
 examples/lib/service.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 import threading

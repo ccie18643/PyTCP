@@ -42,7 +42,7 @@ neighbour cache is the mirror.
 
 pytcp/tests/integration/protocols/tcp/test__tcp__session__nud_reachability.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from net_addr import Ip4Address, Ip6Address

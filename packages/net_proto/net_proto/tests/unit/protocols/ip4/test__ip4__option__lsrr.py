@@ -28,7 +28,7 @@ option code.
 
 net_proto/tests/unit/protocols/ip4/test__ip4__option__lsrr.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from typing import Any

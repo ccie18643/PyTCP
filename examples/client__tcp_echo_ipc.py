@@ -42,7 +42,7 @@ then run this client against a remote echo server:
 
 examples/client__tcp_echo_ipc.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 import time

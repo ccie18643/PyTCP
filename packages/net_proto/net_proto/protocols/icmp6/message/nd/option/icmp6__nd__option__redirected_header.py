@@ -27,7 +27,7 @@ This module contains the ICMPv6 ND Redirected Header option support code.
 
 net_proto/protocols/icmp6/message/nd/option/icmp6__nd__option__redirected_header.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 import struct

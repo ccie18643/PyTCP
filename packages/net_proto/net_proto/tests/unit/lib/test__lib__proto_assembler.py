@@ -27,7 +27,7 @@ This module contains tests for the NetProto ProtoAssembler base class.
 
 net_proto/tests/unit/lib/test__lib__proto_assembler.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 import itertools

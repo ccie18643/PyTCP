@@ -39,7 +39,7 @@ exercise the rate-limit / queue logic in isolation.
 
 pytcp/tests/integration/protocols/arp/test__arp__resolution_flow.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from net_addr import Ip4Address, MacAddress

@@ -29,7 +29,7 @@ RFC 5227 probe / announce timing.
 
 pytcp/protocols/arp/arp__constants.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 # RFC 5227 §1.1 / §2.4(c) defensive-ARP rate-limit. After

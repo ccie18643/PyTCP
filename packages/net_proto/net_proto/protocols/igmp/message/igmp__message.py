@@ -27,7 +27,7 @@ This module contains the IGMP message base class.
 
 net_proto/protocols/igmp/message/igmp__message.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from abc import abstractmethod

@@ -28,7 +28,7 @@ IPv6 LLA/SLAAC DAD, MLDv2, RS/RA, and RFC 5227 IPv4 ACD.
 
 tools/capture/scenarios/boot.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 import time

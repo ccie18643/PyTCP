@@ -29,7 +29,7 @@ querier role is Phase-2 router work).
 
 net_proto/protocols/igmp/message/igmp__message__query.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 import struct

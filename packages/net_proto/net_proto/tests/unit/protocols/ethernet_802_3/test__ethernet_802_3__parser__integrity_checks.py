@@ -37,7 +37,7 @@ proceeds.
 
 net_proto/tests/unit/protocols/ethernet_802_3/test__ethernet_802_3__parser__integrity_checks.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from typing import Any

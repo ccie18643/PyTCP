@@ -40,7 +40,7 @@ introspection (Phase 3), and mutation via 'set_mtu' /
 
 pytcp/stack/link.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from dataclasses import dataclass, fields

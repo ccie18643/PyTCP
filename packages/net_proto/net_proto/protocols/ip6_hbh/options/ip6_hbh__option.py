@@ -27,7 +27,7 @@ This module contains the IPv6 Hop-by-Hop Options option base class.
 
 net_proto/protocols/ip6_hbh/options/ip6_hbh__option.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from dataclasses import dataclass

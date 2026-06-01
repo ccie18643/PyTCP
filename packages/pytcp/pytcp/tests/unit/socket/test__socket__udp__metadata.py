@@ -28,7 +28,7 @@ packet context from the UDP parser to a 'UdpSocket'.
 
 pytcp/tests/unit/socket/test__socket__udp__metadata.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from dataclasses import FrozenInstanceError

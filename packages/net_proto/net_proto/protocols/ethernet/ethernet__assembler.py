@@ -27,7 +27,7 @@ This module contains the Ethernet II packet assembler class.
 
 net_proto/protocols/ethernet/ethernet__assembler.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from typing import override

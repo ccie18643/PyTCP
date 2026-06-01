@@ -27,7 +27,7 @@ This module contains the ICMPv6 ND Neighbor Advertisement message support class.
 
 net_proto/protocols/icmp6/message/nd/icmp6__nd__message__neighbor_advertisement.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 import struct

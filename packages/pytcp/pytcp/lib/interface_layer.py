@@ -27,7 +27,7 @@ This module contains the enum representing the interface layer.
 
 pytcp/lib/interface_layer.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from enum import Enum, auto

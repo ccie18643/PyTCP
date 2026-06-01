@@ -27,7 +27,7 @@ Module contains tests for the DHCPv6 Status Code option.
 
 net_proto/tests/unit/protocols/dhcp6/test__dhcp6__option__status_code.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from dataclasses import FrozenInstanceError

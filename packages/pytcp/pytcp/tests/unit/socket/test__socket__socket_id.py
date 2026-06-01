@@ -27,7 +27,7 @@ This module contains tests for the 'SocketId' identifier dataclass.
 
 pytcp/tests/unit/socket/test__socket__socket_id.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from dataclasses import FrozenInstanceError

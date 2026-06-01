@@ -28,7 +28,7 @@ monkeys echoed over IPv4 UDP (the reply is IPv4-fragmented).
 
 tools/capture/scenarios/ip4_udp_monkeys.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 import time

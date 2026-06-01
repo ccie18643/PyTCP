@@ -33,7 +33,7 @@ logs surface the unknown codepoint.
 
 net_proto/protocols/dhcp6/options/dhcp6__option__unknown.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 import struct

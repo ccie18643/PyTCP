@@ -29,7 +29,7 @@ every bound packet socket, parallel to normal IP / ARP delivery.
 
 pytcp/tests/integration/packet_handler/test__packet_socket__rx_tap.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from typing import override

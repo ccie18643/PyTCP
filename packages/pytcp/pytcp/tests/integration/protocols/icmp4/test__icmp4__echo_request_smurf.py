@@ -33,7 +33,7 @@ broadcast or multicast destination IP address must NOT be answered.
 
 pytcp/tests/integration/protocols/icmp4/test__icmp4__echo_request_smurf.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from unittest import TestCase

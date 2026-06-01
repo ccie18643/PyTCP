@@ -27,7 +27,7 @@ This module contains packet handler for the inbound UDP packets.
 
 pytcp/runtime/packet_handler/packet_handler__udp__rx.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 import time

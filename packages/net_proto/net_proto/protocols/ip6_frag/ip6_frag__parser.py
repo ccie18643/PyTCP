@@ -27,7 +27,7 @@ This module contains the IPv6 Frag packet parser class.
 
 net_proto/protocols/ip6_frag/ip6_frag__parser.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from typing import override

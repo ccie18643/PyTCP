@@ -27,7 +27,7 @@ This module contains unit tests for the 'DispatchRegistry' RX dispatch table.
 
 pytcp/tests/unit/runtime/packet_handler/test__runtime__packet_handler__dispatch.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from unittest import TestCase

@@ -33,7 +33,7 @@ closed-port Port-Unreachable emitter.
 
 pytcp/tests/integration/protocols/icmp4/test__icmp4__error_gates.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from typing import Any

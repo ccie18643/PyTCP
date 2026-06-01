@@ -27,7 +27,7 @@ This module contains the TCP packet options class.
 
 net_proto/protocols/tcp/options/tcp__options.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from abc import ABC

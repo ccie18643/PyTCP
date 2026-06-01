@@ -31,7 +31,7 @@ BLOCK_OLD_SOURCES / "leaving the group" state-change record.
 
 net_proto/protocols/icmp6/message/mld1/icmp6__mld1__message__done.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 import struct

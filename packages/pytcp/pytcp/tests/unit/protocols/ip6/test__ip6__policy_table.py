@@ -28,7 +28,7 @@ policy-table helpers.
 
 pytcp/tests/unit/protocols/ip6/test__ip6__policy_table.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from unittest import TestCase

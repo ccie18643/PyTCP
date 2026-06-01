@@ -34,7 +34,7 @@ the 'IcmpTestCase' harness.
 
 pytcp/tests/integration/protocols/icmp6/test__icmp6__rx.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from typing import Any

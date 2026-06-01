@@ -29,7 +29,7 @@ This module contains the example 'user space' service TCP Echo (RFC 862).
 
 examples/service__tcp_echo.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 import threading

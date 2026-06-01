@@ -31,7 +31,7 @@ commands).
 
 net_proto/protocols/llc/llc__enums.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from typing import override

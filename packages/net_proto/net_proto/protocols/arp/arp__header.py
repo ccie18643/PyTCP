@@ -27,7 +27,7 @@ This module contains the ARP packet header class.
 
 net_proto/protocols/arp/arp__header.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 import struct

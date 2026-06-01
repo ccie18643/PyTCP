@@ -27,7 +27,7 @@ This module contains the IPv6 Routing Header.
 
 net_proto/protocols/ip6_routing/ip6_routing__header.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 import struct

@@ -49,7 +49,7 @@ consumer knows to byte-swap.
 
 pytcp/socket/tcp__info.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 import struct

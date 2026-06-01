@@ -27,7 +27,7 @@ This module contains the IPv6 Destination Options header.
 
 net_proto/protocols/ip6_dest_opts/ip6_dest_opts__header.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 import struct

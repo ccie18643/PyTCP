@@ -27,7 +27,7 @@ This module contains tests for the NetAddr package MAC address support class.
 
 net_addr/tests/unit/test__mac_address.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from typing import Any

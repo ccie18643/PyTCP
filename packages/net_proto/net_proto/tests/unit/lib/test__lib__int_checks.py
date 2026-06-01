@@ -27,7 +27,7 @@ This module contains tests for integer range checks and alignment helpers.
 
 net_proto/tests/unit/lib/test__lib__int_checks.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from typing import Any, Callable

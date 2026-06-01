@@ -36,7 +36,7 @@ family / type / ethertype / ifindex; RX (a per-interface tap) and TX
 
 pytcp/socket/packet__socket.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 import errno

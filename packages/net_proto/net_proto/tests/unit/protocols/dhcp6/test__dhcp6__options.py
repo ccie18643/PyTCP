@@ -27,7 +27,7 @@ Module contains tests for the DHCPv6 packet options container.
 
 net_proto/tests/unit/protocols/dhcp6/test__dhcp6__options.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from unittest import TestCase

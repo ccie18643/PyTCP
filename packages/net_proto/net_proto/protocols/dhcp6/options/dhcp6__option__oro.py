@@ -27,7 +27,7 @@ This module contains the DHCPv6 Option Request option support code.
 
 net_proto/protocols/dhcp6/options/dhcp6__option__oro.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 import struct

@@ -31,7 +31,7 @@ This module contains integration tests for the Packet Handler Ethernet RX operat
 
 pytcp/tests/integration/protocols/ethernet/test__ethernet__rx.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from parameterized import parameterized_class  # type: ignore[import-untyped]

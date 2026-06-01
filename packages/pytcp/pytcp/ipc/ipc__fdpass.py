@@ -36,7 +36,7 @@ independent of the payload length.
 
 pytcp/ipc/ipc__fdpass.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 import array

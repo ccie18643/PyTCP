@@ -48,7 +48,7 @@ growth) live in 'pytcp/protocols/tcp/tcp__session.py'.
 
 pytcp/protocols/tcp/tcp__hystart.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from dataclasses import dataclass

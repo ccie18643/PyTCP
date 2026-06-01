@@ -27,7 +27,7 @@ This module contains the class representing the Socket identifier.
 
 pytcp/socket/socket_id.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from __future__ import annotations

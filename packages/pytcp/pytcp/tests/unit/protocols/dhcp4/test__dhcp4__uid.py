@@ -28,7 +28,7 @@ Identifier helpers in 'pytcp/protocols/dhcp4/dhcp4__uid.py'.
 
 pytcp/tests/unit/protocols/dhcp4/test__dhcp4__uid.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from typing import override

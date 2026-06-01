@@ -44,7 +44,7 @@ collaborator-seam invariants the refactor itself introduced.
 
 packages/pytcp/pytcp/tests/integration/protocols/tcp/test__tcp__session__retransmitter.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from typing import override

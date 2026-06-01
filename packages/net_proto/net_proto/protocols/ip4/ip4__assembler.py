@@ -27,7 +27,7 @@ This module contains the IPv4 protocol assembler classes.
 
 net_proto/protocols/ip4/ip4__assembler.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from typing import override

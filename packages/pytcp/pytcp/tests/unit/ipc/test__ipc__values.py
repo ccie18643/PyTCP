@@ -27,7 +27,7 @@ Tests for the IPC control-plane tagged value codec.
 
 pytcp/tests/unit/ipc/test__ipc__values.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 import json

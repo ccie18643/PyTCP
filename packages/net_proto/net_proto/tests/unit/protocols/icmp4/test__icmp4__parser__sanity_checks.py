@@ -27,7 +27,7 @@ This module contains tests for the ICMPv4 packet parser sanity checks.
 
 net_proto/tests/unit/protocols/icmp4/test__icmp4__parser__sanity_checks.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from types import SimpleNamespace

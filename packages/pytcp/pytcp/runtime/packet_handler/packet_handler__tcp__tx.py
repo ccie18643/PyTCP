@@ -27,7 +27,7 @@ This module contains packet handler for the outbound TCP packets.
 
 pytcp/runtime/packet_handler/packet_handler__tcp__tx.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from typing import TYPE_CHECKING, cast

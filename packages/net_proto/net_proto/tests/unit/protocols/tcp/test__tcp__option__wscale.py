@@ -27,7 +27,7 @@ Module contains tests for the TCP Wscale (Window Scale) option code.
 
 net_proto/tests/unit/protocols/tcp/test__tcp__option__wscale.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from typing import Any

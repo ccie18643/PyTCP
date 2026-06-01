@@ -30,7 +30,7 @@ connects to the TCP Echo service and sends messages.
 
 examples/client__tcp_echo.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 import threading

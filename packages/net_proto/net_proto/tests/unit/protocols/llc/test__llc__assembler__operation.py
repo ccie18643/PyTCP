@@ -28,7 +28,7 @@ assembler.
 
 net_proto/tests/unit/protocols/llc/test__llc__assembler__operation.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from typing import Any

@@ -27,7 +27,7 @@ This module contains the IGMPv3 Membership Report message support class.
 
 net_proto/protocols/igmp/message/igmp__message__v3_report.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 import struct

@@ -27,7 +27,7 @@ This module contains the TCP packet parser.
 
 net_proto/protocols/tcp/tcp__parser.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from typing import override

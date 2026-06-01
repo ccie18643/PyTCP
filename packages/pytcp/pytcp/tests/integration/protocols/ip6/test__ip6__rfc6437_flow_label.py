@@ -39,7 +39,7 @@ methods.
 
 pytcp/tests/integration/protocols/ip6/test__ip6__rfc6437_flow_label.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from typing import override

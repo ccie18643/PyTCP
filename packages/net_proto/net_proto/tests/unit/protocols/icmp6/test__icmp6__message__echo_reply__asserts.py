@@ -28,7 +28,7 @@ argument asserts.
 
 net_proto/tests/unit/protocols/icmp6/test__icmp6__message__echo_reply__asserts.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from typing import Any

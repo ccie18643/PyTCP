@@ -38,7 +38,7 @@ field rather than 4 opaque octets.
 
 pytcp/protocols/dhcp6/dhcp6__uid.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from net_addr import MacAddress

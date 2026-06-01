@@ -31,7 +31,7 @@ This module contains integration tests for the UDP RX packet-handler path.
 
 pytcp/tests/integration/protocols/udp/test__udp__rx.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from parameterized import parameterized_class  # type: ignore[import-untyped]

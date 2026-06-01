@@ -27,7 +27,7 @@ This module contains tests for the IGMPv3 Group Record assembler.
 
 net_proto/tests/unit/protocols/igmp/test__igmp__v3_group_record__assembler.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from typing import Any

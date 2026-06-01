@@ -38,7 +38,7 @@ the 'stack.current_pmtu' read-only accessor introduced by Phase
 
 pytcp/tests/unit/lib/test__lib__pmtu_state.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from typing import Any, override

@@ -33,7 +33,7 @@ These pass on the current periodic code (characterization pins).
 
 pytcp/tests/integration/protocols/tcp/test__tcp__session__fsm_pump.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from net_addr import Ip4Address

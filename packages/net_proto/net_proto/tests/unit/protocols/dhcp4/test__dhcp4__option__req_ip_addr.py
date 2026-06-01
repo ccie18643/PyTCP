@@ -27,7 +27,7 @@ Module contains tests for the DHCPv4 Requested IP Address option code.
 
 net_proto/tests/unit/protocols/dhcp4/test__dhcp4__option__req_ip_addr.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from dataclasses import FrozenInstanceError

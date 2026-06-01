@@ -46,7 +46,7 @@ boot-time / RX-driven claim path.
 
 pytcp/tests/integration/protocols/icmp6/nd/test__icmp6__nd__rfc8981_temp.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 import time

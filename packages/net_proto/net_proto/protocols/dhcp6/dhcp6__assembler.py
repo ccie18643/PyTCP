@@ -27,7 +27,7 @@ This module contains the DHCPv6 packet assembler class.
 
 net_proto/protocols/dhcp6/dhcp6__assembler.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from typing import override

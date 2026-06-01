@@ -27,7 +27,7 @@ This module contains test monkeys used on various occasions in the examples.
 
 examples/lib/malpi.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 malpka: bytes = (

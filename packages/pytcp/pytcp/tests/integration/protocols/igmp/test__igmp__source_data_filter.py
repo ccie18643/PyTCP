@@ -30,7 +30,7 @@ source filter admits the datagram's source address.
 
 pytcp/tests/integration/protocols/igmp/test__igmp__source_data_filter.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from typing import override

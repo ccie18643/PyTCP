@@ -27,7 +27,7 @@ This module contains IPv4 interface address support class.
 
 net_addr/ip4_ifaddr.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from typing import ClassVar, Self, final

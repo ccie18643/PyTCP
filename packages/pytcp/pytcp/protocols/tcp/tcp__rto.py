@@ -54,7 +54,7 @@ to skip samples from retransmitted segments (§3), and uses the
 
 pytcp/protocols/tcp/tcp__rto.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from dataclasses import dataclass

@@ -27,7 +27,7 @@ This module contains the DHCPv4 IP Address Lease Time option support code.
 
 net_proto/protocols/dhcp4/options/dhcp4__option__lease_time.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 import struct

@@ -27,7 +27,7 @@ This module contains tests for the Ethernet II header fields and asserts.
 
 net_proto/tests/unit/protocols/ethernet/test__ethernet__header__asserts.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from dataclasses import FrozenInstanceError

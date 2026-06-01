@@ -51,7 +51,7 @@ Extends 'NetworkTestCase' with ARP-aware helpers:
 
 pytcp/tests/lib/arp_testcase.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from typing import cast

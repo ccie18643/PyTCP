@@ -27,7 +27,7 @@ Module contains operation tests for the DHCPv6 packet assembler.
 
 net_proto/tests/unit/protocols/dhcp6/test__dhcp6__assembler__operation.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from unittest import TestCase

@@ -30,7 +30,7 @@ with LSRR/SSRR reversed (RFC 1122 §3.2.2.6).
 
 pytcp/tests/integration/protocols/icmp4/test__icmp4__echo_options.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from net_addr import Ip4Address, MacAddress

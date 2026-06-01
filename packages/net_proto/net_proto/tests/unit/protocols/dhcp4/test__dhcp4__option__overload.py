@@ -28,7 +28,7 @@ Module contains tests for the DHCPv4 Option Overload option
 
 net_proto/tests/unit/protocols/dhcp4/test__dhcp4__option__overload.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from typing import Any

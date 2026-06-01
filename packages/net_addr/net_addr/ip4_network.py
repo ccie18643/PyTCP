@@ -27,7 +27,7 @@ This module contains IPv4 network support class.
 
 net_addr/ip4_network.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from collections.abc import Iterator

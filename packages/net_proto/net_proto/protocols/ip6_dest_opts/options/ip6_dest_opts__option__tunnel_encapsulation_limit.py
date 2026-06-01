@@ -28,7 +28,7 @@ option support code.
 
 net_proto/protocols/ip6_dest_opts/options/ip6_dest_opts__option__tunnel_encapsulation_limit.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 import struct

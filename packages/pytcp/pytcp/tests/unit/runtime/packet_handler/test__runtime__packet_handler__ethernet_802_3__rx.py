@@ -27,7 +27,7 @@ This module contains unit tests for the 'Ethernet8023RxHandler' sub-handler.
 
 pytcp/tests/unit/runtime/packet_handler/test__runtime__packet_handler__ethernet_802_3__rx.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from typing import TYPE_CHECKING, Any, cast

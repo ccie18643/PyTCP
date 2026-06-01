@@ -40,7 +40,7 @@ while the main thread drives the wire.
 
 examples/tests/integration/ipc/test__client_tcp_echo_ipc.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 import os

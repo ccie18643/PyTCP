@@ -28,7 +28,7 @@ helpers.
 
 pytcp/tests/unit/protocols/ip6/test__ip6__source_selection.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from typing import Any

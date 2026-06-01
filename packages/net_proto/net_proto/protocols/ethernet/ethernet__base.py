@@ -27,7 +27,7 @@ This module contains the Ethernet II protocol base class.
 
 net_proto/protocols/ethernet/ethernet__base.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from typing import override

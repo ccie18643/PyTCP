@@ -34,7 +34,7 @@ for reference; this file is the canonical migration target.
 
 pytcp/tests/integration/protocols/arp/test__arp__rx.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from parameterized import parameterized_class  # type: ignore[import-untyped]

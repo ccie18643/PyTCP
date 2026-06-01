@@ -27,7 +27,7 @@ Tests for the IPC SCM_RIGHTS file-descriptor-passing primitive.
 
 pytcp/tests/unit/ipc/test__ipc__fdpass.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 import os

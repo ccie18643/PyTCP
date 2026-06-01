@@ -27,7 +27,7 @@ This module contains tests for the IGMP protocol error classes.
 
 net_proto/tests/unit/protocols/igmp/test__igmp__errors.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from unittest import TestCase

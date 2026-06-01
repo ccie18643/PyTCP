@@ -29,7 +29,7 @@ ICMPv4 / ICMPv6 RX path into the TCP FSM dispatch.
 
 pytcp/tests/unit/protocols/tcp/test__tcp__icmp_metadata.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from dataclasses import FrozenInstanceError

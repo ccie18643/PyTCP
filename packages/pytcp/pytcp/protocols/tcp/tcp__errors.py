@@ -27,7 +27,7 @@ This module contains the TCP session runtime exception classes.
 
 pytcp/protocols/tcp/tcp__errors.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 

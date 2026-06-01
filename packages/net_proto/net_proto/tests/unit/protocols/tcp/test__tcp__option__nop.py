@@ -27,7 +27,7 @@ Module contains tests for the TCP Nop (No Operation) option code.
 
 net_proto/tests/unit/protocols/tcp/test__tcp__option__nop.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from typing import Any

@@ -27,7 +27,7 @@ This module contains the 'user space' UDP generic service class used in examples
 
 examples/lib/udp_service.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from typing import override

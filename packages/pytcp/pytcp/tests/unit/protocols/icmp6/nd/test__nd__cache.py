@@ -35,7 +35,7 @@ depend on.
 
 pytcp/tests/unit/protocols/icmp6/nd/test__nd__cache.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from unittest import TestCase

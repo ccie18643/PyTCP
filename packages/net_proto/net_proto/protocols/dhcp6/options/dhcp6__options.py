@@ -27,7 +27,7 @@ This module contains the DHCPv6 packet options class.
 
 net_proto/protocols/dhcp6/options/dhcp6__options.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from abc import ABC

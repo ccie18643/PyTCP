@@ -55,7 +55,7 @@ membership check.
 
 pytcp/lib/dad_slot_registry.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 import threading

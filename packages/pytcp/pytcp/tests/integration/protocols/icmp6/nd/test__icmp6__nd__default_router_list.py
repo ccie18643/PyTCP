@@ -37,7 +37,7 @@ behind 'icmp6.accept_ra_defrtr' (mirroring Linux
 
 pytcp/tests/integration/protocols/icmp6/nd/test__icmp6__nd__default_router_list.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 import time

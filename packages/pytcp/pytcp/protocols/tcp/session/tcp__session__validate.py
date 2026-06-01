@@ -49,7 +49,7 @@ and ICMP RX handlers continue to call
 
 packages/pytcp/pytcp/protocols/tcp/session/tcp__session__validate.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 import time

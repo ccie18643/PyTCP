@@ -38,7 +38,7 @@ dropped — UDP is best-effort — and the pumps keep running.
 
 pytcp/ipc/ipc__dgram_bridge.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 import socket

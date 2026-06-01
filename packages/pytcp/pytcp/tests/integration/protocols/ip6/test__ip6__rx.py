@@ -31,7 +31,7 @@ This module contains integration tests for the IPv6 RX packet-handler path.
 
 pytcp/tests/integration/protocols/ip6/test__ip6__rx.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from parameterized import parameterized_class  # type: ignore[import-untyped]

@@ -38,7 +38,7 @@ its 6 wire bytes, so the link-layer address survives as typed values.
 
 pytcp/ipc/ipc__packet_frame.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from net_addr import MacAddress

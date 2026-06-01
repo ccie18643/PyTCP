@@ -35,7 +35,7 @@ RX-stat bumps observable on the packet handler.
 
 pytcp/tests/integration/protocols/icmp4/test__icmp4__pmtud.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from net_proto import (

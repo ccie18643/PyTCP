@@ -38,7 +38,7 @@ handshake, so both directions run inline on the main thread.
 
 pytcp/tests/integration/ipc/test__ipc__udp_echo.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 import os

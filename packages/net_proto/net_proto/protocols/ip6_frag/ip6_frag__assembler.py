@@ -27,7 +27,7 @@ This module contains the IPv6 Frag packet assembler.
 
 net_proto/protocols/ip6_frag/ip6_frag__assembler.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from typing import override

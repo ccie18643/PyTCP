@@ -43,7 +43,7 @@ Reference RFCs:
 
 pytcp/tests/unit/protocols/tcp/test__tcp__rto.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from unittest import TestCase

@@ -31,7 +31,7 @@ wrapped in '_StackSocketStub', which adapts a plain socket to the
 
 pytcp/tests/unit/ipc/test__ipc__socket_bridge.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 import socket

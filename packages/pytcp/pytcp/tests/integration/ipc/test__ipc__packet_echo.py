@@ -38,7 +38,7 @@ framing) against the live stack.
 
 pytcp/tests/integration/ipc/test__ipc__packet_echo.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 import os

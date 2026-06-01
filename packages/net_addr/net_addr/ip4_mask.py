@@ -27,7 +27,7 @@ This module contains IPv4 mask support class.
 
 net_addr/ip4_mask.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 import re

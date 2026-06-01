@@ -29,7 +29,7 @@ ARP / ND caches.
 
 pytcp/tests/unit/stack/test__stack__neighbor.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from types import SimpleNamespace

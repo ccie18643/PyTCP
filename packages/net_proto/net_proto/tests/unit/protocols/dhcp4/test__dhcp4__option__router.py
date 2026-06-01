@@ -27,7 +27,7 @@ Module contains tests for the DHCPv4 Router option code.
 
 net_proto/tests/unit/protocols/dhcp4/test__dhcp4__option__router.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from dataclasses import FrozenInstanceError

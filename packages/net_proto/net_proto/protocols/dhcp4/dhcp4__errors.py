@@ -27,7 +27,7 @@ This module contains the DHCPv4 protocol error classes.
 
 net_proto/protocols/dhcp4/dhcp4__errors.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from typing import override

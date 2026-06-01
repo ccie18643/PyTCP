@@ -27,7 +27,7 @@ Module contains tests for the ICMPv4 Echo Request message parser integrity check
 
 net_proto/tests/unit/protocols/icmp4/test__icmp4__message__echo_request__parser__integrity_checks.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from types import SimpleNamespace

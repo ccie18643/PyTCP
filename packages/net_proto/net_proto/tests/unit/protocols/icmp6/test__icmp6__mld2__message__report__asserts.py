@@ -28,7 +28,7 @@ Module contains tests for the ICMPv6 MLDv2 Report message assembler
 
 net_proto/tests/unit/protocols/icmp6/test__icmp6__mld2__message__report__asserts.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from typing import Any

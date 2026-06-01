@@ -28,7 +28,7 @@ Access Protocol) header dataclass.
 
 net_proto/tests/unit/protocols/snap/test__snap__header__asserts.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from typing import Any

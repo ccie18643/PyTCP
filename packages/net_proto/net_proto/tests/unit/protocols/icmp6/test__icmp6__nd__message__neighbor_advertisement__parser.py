@@ -27,7 +27,7 @@ Module contains tests for the ICMPv6 ND Neighbor Advertisement message parser.
 
 net_proto/tests/unit/protocols/icmp6/test__icmp6__nd__message__neighbor_advertisement__parser.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from types import SimpleNamespace

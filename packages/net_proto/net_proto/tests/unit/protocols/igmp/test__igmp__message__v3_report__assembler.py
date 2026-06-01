@@ -27,7 +27,7 @@ This module contains tests for the IGMPv3 Membership Report assembler.
 
 net_proto/tests/unit/protocols/igmp/test__igmp__message__v3_report__assembler.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from typing import Any

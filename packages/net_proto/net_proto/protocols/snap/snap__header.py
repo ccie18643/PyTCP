@@ -35,7 +35,7 @@ VTP / DTP under Cisco's OUI 0x00000C).
 
 net_proto/protocols/snap/snap__header.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 import struct

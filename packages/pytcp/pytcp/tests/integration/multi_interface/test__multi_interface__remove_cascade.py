@@ -36,7 +36,7 @@ while the boot interface and everything bound to it is left untouched.
 
 pytcp/tests/integration/multi_interface/test__multi_interface__remove_cascade.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from typing import cast

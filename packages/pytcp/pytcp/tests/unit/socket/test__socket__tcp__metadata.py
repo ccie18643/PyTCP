@@ -28,7 +28,7 @@ packet context from the TCP parser to a 'TcpSocket' / 'TcpSession'.
 
 pytcp/tests/unit/socket/test__socket__tcp__metadata.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from dataclasses import FrozenInstanceError

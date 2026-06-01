@@ -27,7 +27,7 @@ This module contains the ARP packet assembler class.
 
 net_proto/protocols/arp/arp__assembler.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from typing import override

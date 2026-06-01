@@ -29,7 +29,7 @@ fragments and replies (itself fragmenting the reply).
 
 tools/capture/scenarios/ip4_icmp_frag_rx.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 import time

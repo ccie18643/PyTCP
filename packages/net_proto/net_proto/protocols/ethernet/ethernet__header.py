@@ -27,7 +27,7 @@ This module contains the Ethernet II packet header class.
 
 net_proto/protocols/ethernet/ethernet__header.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 import struct

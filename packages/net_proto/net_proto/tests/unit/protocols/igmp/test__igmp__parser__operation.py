@@ -27,7 +27,7 @@ This module contains operation tests for the IGMP packet parser.
 
 net_proto/tests/unit/protocols/igmp/test__igmp__parser__operation.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from types import SimpleNamespace

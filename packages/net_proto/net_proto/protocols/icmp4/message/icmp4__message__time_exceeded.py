@@ -27,7 +27,7 @@ This module contains the ICMPv4 Time Exceeded message support class.
 
 net_proto/protocols/icmp4/message/icmp4__message__time_exceeded.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 import struct

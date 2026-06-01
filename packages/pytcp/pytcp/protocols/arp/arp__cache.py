@@ -35,7 +35,7 @@ ring dispatch with destination-MAC rewrite for flushes.
 
 pytcp/protocols/arp/arp__cache.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from typing import TYPE_CHECKING, override

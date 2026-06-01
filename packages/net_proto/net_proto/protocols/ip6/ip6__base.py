@@ -27,7 +27,7 @@ This module contains the IPv6 protocol base class.
 
 net_proto/protocols/ip6/ip6__base.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 import struct

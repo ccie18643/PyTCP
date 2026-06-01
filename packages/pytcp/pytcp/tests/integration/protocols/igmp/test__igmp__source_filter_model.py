@@ -31,7 +31,7 @@ leave edge with the same observable state-change Reports as before.
 
 pytcp/tests/integration/protocols/igmp/test__igmp__source_filter_model.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from types import SimpleNamespace

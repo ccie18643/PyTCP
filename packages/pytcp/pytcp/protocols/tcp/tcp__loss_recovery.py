@@ -30,7 +30,7 @@ SACK-aware fast retransmit decisions on top of the
 
 pytcp/protocols/tcp/tcp__loss_recovery.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from net_proto.lib.int_checks import is_uint32

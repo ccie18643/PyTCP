@@ -37,7 +37,7 @@ hop=255 default.
 
 pytcp/tests/integration/protocols/icmp6/nd/test__icmp6__nd__harness_smoke.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from net_addr import Ip6Address, Ip6Network, MacAddress

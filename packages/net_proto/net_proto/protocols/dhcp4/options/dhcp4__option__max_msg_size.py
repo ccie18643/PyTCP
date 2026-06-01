@@ -28,7 +28,7 @@ support code (RFC 2132 §9.10).
 
 net_proto/protocols/dhcp4/options/dhcp4__option__max_msg_size.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 import struct

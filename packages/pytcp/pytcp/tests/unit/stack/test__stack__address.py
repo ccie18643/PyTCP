@@ -28,7 +28,7 @@ This module contains tests for the address-control API
 
 pytcp/tests/unit/stack/test__stack__address.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 import threading

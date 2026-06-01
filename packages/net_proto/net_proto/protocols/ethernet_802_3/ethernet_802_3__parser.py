@@ -27,7 +27,7 @@ This module contains the Ethernet 802.3 packet parser class.
 
 net_proto/protocols/ethernet_802_3/ethernet_802_3__parser.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from typing import override

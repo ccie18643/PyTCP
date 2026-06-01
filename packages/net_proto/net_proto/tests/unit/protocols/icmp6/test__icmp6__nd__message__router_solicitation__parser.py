@@ -27,7 +27,7 @@ Module contains tests for the ICMPv6 ND Router Solicitation message parser.
 
 net_proto/tests/unit/protocols/icmp6/test__icmp6__nd__message__router_solicitation__parser.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from types import SimpleNamespace

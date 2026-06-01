@@ -43,7 +43,7 @@ came from somewhere other than RA SLAAC, e.g. static config).
 
 pytcp/tests/integration/protocols/icmp6/nd/test__icmp6__nd__multi_prefix_router.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from net_addr import Ip6Address, MacAddress

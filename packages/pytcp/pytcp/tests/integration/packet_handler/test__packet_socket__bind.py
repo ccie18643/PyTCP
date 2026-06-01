@@ -29,7 +29,7 @@ frames the RX tap delivers to it.
 
 pytcp/tests/integration/packet_handler/test__packet_socket__bind.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from typing import override

@@ -29,7 +29,7 @@ behavior lives in the 'test__tcp__session__*.py' files.
 
 pytcp/tests/unit/socket/test__socket__tcp__socket.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 import errno

@@ -27,7 +27,7 @@ This module contains the DHCPv4 Pad option support code.
 
 net_proto/protocols/dhcp4/options/dhcp4__option__pad.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from dataclasses import dataclass, field

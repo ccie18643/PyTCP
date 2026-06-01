@@ -33,7 +33,7 @@ larger MLDv2 Query (>= 28 octets) by its fixed 24-octet length
 
 net_proto/protocols/icmp6/message/mld1/icmp6__mld1__message__query.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 import struct

@@ -36,7 +36,7 @@ call over an 'IpcClient' and returns the decoded value (or raises
 
 pytcp/ipc/ipc__rpc.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 import json

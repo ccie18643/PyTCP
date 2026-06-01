@@ -27,7 +27,7 @@ This module contains the classes used in the IPv4/IPv6 packet fragmentation and 
 
 pytcp/protocols/ip/ip_frag.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 import time
