@@ -62,7 +62,7 @@ from pytcp.ipc.ipc__socket_bridge import SocketBridge
 from pytcp.ipc.ipc__socket_rpc import (
     SocketRequest,
     decode_socket_request,
-    encode_socket_error,
+    encode_exception,
     encode_socket_ok,
 )
 from pytcp.runtime.socket import AddressFamily, SocketType
@@ -230,7 +230,7 @@ class SocketSession:
                     kind=IpcMessageKind.RESPONSE_ERROR,
                     op=request.op,
                     req_id=request.req_id,
-                    body=encode_socket_error(error_type=type(error).__name__, message=str(error)),
+                    body=encode_exception(error),
                 ),
                 None,
             )

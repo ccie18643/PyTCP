@@ -38,7 +38,6 @@ ver 3.0.8
 from typing import cast
 
 from pytcp.client import ClientTcpSocket
-from pytcp.ipc.ipc__errors import IpcRemoteError
 from pytcp.runtime.socket import SO_KEEPALIVE, SOL_SOCKET, AddressFamily, SocketType
 from pytcp.tests.lib.ipc_control_testcase import IpcControlTestCase
 
@@ -110,7 +109,8 @@ class TestIpcClientTcpSocket(IpcControlTestCase):
     def test__client_socket__close_releases_daemon_handle(self) -> None:
         """
         Ensure closing the client socket releases the daemon handle, so a
-        later control call over it surfaces a remote error.
+        later call over the stale handle surfaces the daemon's faithfully
+        reconstructed 'unknown handle' KeyError.
 
         Reference: PyTCP test infrastructure (no RFC clause).
         """
@@ -120,5 +120,5 @@ class TestIpcClientTcpSocket(IpcControlTestCase):
 
         sock.close()
 
-        with self.assertRaises(IpcRemoteError):
+        with self.assertRaises(KeyError):
             sock.getsockname()

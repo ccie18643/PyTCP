@@ -64,7 +64,7 @@ proof point), then the CLI toolset.
 |-------|-------------------------------------------------------------|--------|
 | A0    | Rename `pytcp.socket` → `pytcp.runtime.socket` (mechanical) | **done** |
 | A1    | Multiplexed IPC client (`MuxIpcClient`)                     | **done** |
-| A2    | Faithful error wire format + client reconstruction         | —      |
+| A2    | Faithful error wire format + client reconstruction         | **done** |
 | A3    | Non-blocking connect/accept daemon-side readiness ⚠         | —      |
 | A4    | The `pytcp.socket` drop-in module                          | —      |
 | A5    | DNS resolved through the daemon                             | —      |
@@ -90,11 +90,19 @@ one background reader thread routing `(message, fd)` by `req_id`. API:
 pending → per-socket `OSError`, never a hang.
 
 **A2 — error wire format.** Extend `encode_socket_error` to carry
-`{error, module, errno, args, message, strerror}`; new
-`pytcp/client/client__errors.py::raise_remote_error` rebuilds
+`{error, message, module, errno, args, strerror}` + add
+`encode_exception` (the daemon-side capture: `getattr` errno/strerror on
+`OSError`, tagged-encode `args`); `raise_remote_error` rebuilds
 `OSError(errno, strerror)` (Python auto-selects the errno subclass),
-`gaierror`/`herror`, non-OSError builtins, else `IpcRemoteError`. Decoder
-tolerates the old `{error_type, message}` shape.
+`socket.gaierror`/`herror` by name, non-OSError builtin `Exception`
+subclasses from args, else `IpcRemoteError`. Decoder tolerates the old
+`{error, message}`-only shape (→ `IpcRemoteError` fallback).
+**Placement deviation from the plan:** `raise_remote_error` lives at
+`pytcp/ipc/ipc__remote_error.py`, NOT `pytcp/client/client__errors.py` —
+the socket-plane RPC helpers (`ipc__socket_rpc`) call it, and
+`pytcp.client` already depends on `pytcp.ipc`, so a `client/` placement
+would invert into an import cycle. It stays codec-core-clean
+(`decode_value` + `IpcRemoteError` + stdlib only).
 
 **A3 — non-blocking readiness (HIGHEST RISK).** The client data fd is an
 AF_UNIX socketpair end (always writable), so "writable == connected" does
@@ -191,3 +199,14 @@ allowlist + client mirror.
   `cancel` / `close`, fd-ownership handled on every path (deliver /
   timeout-race / cancel / fail-all). 9 unit tests over a fake-daemon
   AF_UNIX listener. lint clean, 12543 passing.
+- **2026-05-31** — A2 complete: faithful error wire format. Extended
+  `encode_socket_error` + new `encode_exception` (daemon capture) +
+  `ipc/ipc__remote_error.py::raise_remote_error` (errno→OSError subclass,
+  gaierror/herror by name, builtin Exception subclasses from args, else
+  IpcRemoteError fallback). Socket-plane `raise_socket_error` routes
+  through it; control plane keeps `IpcRemoteError`. `raise_remote_error`
+  placed in `ipc/` (not `client/`) to avoid the client→ipc cycle. Close
+  test updated (now surfaces the faithfully-reconstructed daemon
+  `KeyError`). 7 new unit tests. lint clean, 12550 passing. Follow-up
+  (A4): the daemon's unknown-handle `KeyError` is itself a candidate for
+  EBADF translation so the drop-in matches stdlib on a closed socket.
