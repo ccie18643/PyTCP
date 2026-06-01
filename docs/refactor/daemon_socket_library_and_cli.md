@@ -77,7 +77,7 @@ clean backpressure design is, and the honest limits of "100% asyncio /
 | A1    | Multiplexed IPC client (`MuxIpcClient`)                     | **done** |
 | A2    | Faithful error wire format + client reconstruction         | **done** |
 | A4    | The `pytcp.socket` synchronous drop-in module              | **done** |
-| A5    | DNS resolved through the daemon                             | **in progress (A5.1-A5.2 net_proto codec done)** |
+| A5    | DNS resolved through the daemon                             | **in progress (A5.1-A5.3: codec + resolver done)** |
 | P1    | Proof point — real stdlib program over the daemon          | **done (http.client, IP-literal)** |
 | A3.0  | Feasibility: TcpSocket tx-writable signal + bridge pump (read-only) | **done** |
 | A3.1  | Prototype the writable-on-connect edge (throwaway)         | —      |
@@ -361,6 +361,22 @@ allowlist + client mirror.
   to the right address. lint clean, 12605 passing. Next (A5.3): the
   daemon-side resolver (in-process `pytcp.runtime.socket` UDP client to an
   upstream, retry + timeout + TTL cache).
+- **2026-06-01** — A5.3 (daemon resolver) complete: new
+  `pytcp/protocols/dns/dns__resolver.py` — `DnsResolver` answers A / AAAA
+  lookups by sending a recursive query to a configured upstream over an
+  in-stack UDP socket, matching the response by transaction id, extracting
+  the addresses, and caching them for the answer TTL (a lock-guarded
+  `dict` per the free-threading north star). Retries on timeout / id
+  mismatch / non-NOERROR; raises `DnsResolverError(name_error=True)` on
+  NXDOMAIN. The UDP socket (`ResolverSocket` protocol — the in-stack
+  `UdpSocket` subset: `sendto` + `recvfrom(bufsize, timeout)` + `close`)
+  and the 16-bit transaction-id source are injected, so the resolver is
+  unit-tested with a state-driven fake socket factory and a pinned id; the
+  default factory opens a real `pytcp.runtime.socket` datagram socket. 6
+  unit tests (resolve A, cache-within-TTL, re-query after expiry,
+  id-mismatch retry, timeout exhaustion, NXDOMAIN name error). lint clean,
+  12611 passing. Next (A5.4): the `resolve` control op + client
+  `getaddrinfo` / `gethostbyname` + `ClientStack.resolver` binding.
 
 ## 7. Design discussion — readiness, the "trick", and compat limits
 
