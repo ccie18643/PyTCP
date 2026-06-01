@@ -77,7 +77,7 @@ clean backpressure design is, and the honest limits of "100% asyncio /
 | A1    | Multiplexed IPC client (`MuxIpcClient`)                     | **done** |
 | A2    | Faithful error wire format + client reconstruction         | **done** |
 | A4    | The `pytcp.socket` synchronous drop-in module              | **done** |
-| A5    | DNS resolved through the daemon                             | **in progress (A5.1 codec core done)** |
+| A5    | DNS resolved through the daemon                             | **in progress (A5.1-A5.2 net_proto codec done)** |
 | P1    | Proof point — real stdlib program over the daemon          | **done (http.client, IP-literal)** |
 | A3.0  | Feasibility: TcpSocket tx-writable signal + bridge pump (read-only) | **done** |
 | A3.1  | Prototype the writable-on-connect edge (throwaway)         | —      |
@@ -342,6 +342,25 @@ allowlist + client mirror.
   round-trip; 11 header: accepted + buffer round trip + a 9-case rejection
   matrix). lint clean, 12590 passing. Next (A5.2): question / RR
   dataclasses + parser + assembler (full query build / response parse).
+- **2026-06-01** — A5.2 (DNS message codec) complete: `dns__question`
+  (`DnsQuestion`), `dns__resource_record` (`DnsResourceRecord` with an
+  `address` property extracting the A / AAAA `Ip4Address`/`Ip6Address`),
+  `dns__base` (the `Dns` Proto base over header + questions + answers,
+  serializing the uncompressed canonical form), `dns__parser` (`DnsParser`
+  — three-phase: integrity = 12-octet floor, parse = header + qd/an
+  questions/answers + walk-and-discard authority/additional, sanity = no
+  trailing octets; variable-section integrity raised by
+  `decode_name`/`from_frame` per the net_proto §7 from_buffer-can-raise
+  pattern), and `dns__assembler` (`DnsAssembler` — builds a standard
+  recursive query, `assemble()` NotImplemented as an L7 protocol).
+  Exported from `net_proto/__init__.py`. 15 unit tests (assembler:
+  query bytes / RD-clear / AAAA / empty-reject; parser: A + AAAA response
+  with compressed answer names, address extraction, 4-case integrity
+  matrix + boundary, trailing-octet sanity). Verified end to end: a built
+  query's bytes are exact and a crafted compressed A/AAAA response parses
+  to the right address. lint clean, 12605 passing. Next (A5.3): the
+  daemon-side resolver (in-process `pytcp.runtime.socket` UDP client to an
+  upstream, retry + timeout + TTL cache).
 
 ## 7. Design discussion — readiness, the "trick", and compat limits
 

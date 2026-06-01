@@ -197,6 +197,28 @@ from net_proto.protocols.dhcp6.options.dhcp6__option__unknown import (
     Dhcp6OptionUnknown,
 )
 from net_proto.protocols.dhcp6.options.dhcp6__options import Dhcp6Options
+from net_proto.protocols.dns.dns__assembler import DnsAssembler
+from net_proto.protocols.dns.dns__enums import (
+    DnsOpcode,
+    DnsRecordClass,
+    DnsRecordType,
+    DnsResponseCode,
+)
+from net_proto.protocols.dns.dns__errors import (
+    DnsIntegrityError,
+    DnsSanityError,
+)
+from net_proto.protocols.dns.dns__header import (
+    DNS__HEADER__LEN,
+    DnsHeader,
+)
+from net_proto.protocols.dns.dns__name import (
+    decode_name,
+    encode_name,
+)
+from net_proto.protocols.dns.dns__parser import DnsParser
+from net_proto.protocols.dns.dns__question import DnsQuestion
+from net_proto.protocols.dns.dns__resource_record import DnsResourceRecord
 from net_proto.protocols.ethernet.ethernet__assembler import EthernetAssembler
 from net_proto.protocols.ethernet.ethernet__base import EthernetPayload
 from net_proto.protocols.ethernet.ethernet__errors import (
@@ -703,6 +725,20 @@ __all__ = [
     "Dhcp6Parser",
     "Dhcp6SanityError",
     "Dhcp6StatusCode",
+    "DNS__HEADER__LEN",
+    "DnsAssembler",
+    "DnsHeader",
+    "DnsIntegrityError",
+    "DnsOpcode",
+    "DnsParser",
+    "DnsQuestion",
+    "DnsRecordClass",
+    "DnsRecordType",
+    "DnsResourceRecord",
+    "DnsResponseCode",
+    "DnsSanityError",
+    "decode_name",
+    "encode_name",
     "ETHERNET_802_3__HEADER__LEN",
     "ETHERNET_802_3__PACKET__MAX_LEN",
     "ETHERNET_802_3__PAYLOAD__MAX_LEN",
