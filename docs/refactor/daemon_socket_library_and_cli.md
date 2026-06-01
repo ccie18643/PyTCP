@@ -62,7 +62,7 @@ proof point), then the CLI toolset.
 
 | Phase | Title                                                       | Status |
 |-------|-------------------------------------------------------------|--------|
-| A0    | Rename `pytcp.socket` → `pytcp.runtime.socket` (mechanical) | —      |
+| A0    | Rename `pytcp.socket` → `pytcp.runtime.socket` (mechanical) | **done** |
 | A1    | Multiplexed IPC client (`MuxIpcClient`)                     | —      |
 | A2    | Faithful error wire format + client reconstruction         | —      |
 | A3    | Non-blocking connect/accept daemon-side readiness ⚠         | —      |
@@ -180,3 +180,7 @@ allowlist + client mirror.
 
 - **2026-05-31** — Phase 0 complete (3.0.7 released/frozen, 3.0.8 opened).
   Ledger created. Track A starting.
+- **2026-05-31** — A0 complete (commit `c23677df`): `pytcp.socket` →
+  `pytcp.runtime.socket` mechanical rename, 178 files, 34 renames; unit
+  tests relocated to `tests/unit/runtime/socket/`; lint clean, 12534
+  passing. `pytcp.socket` name now free for the A4 drop-in.
