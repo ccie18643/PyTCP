@@ -30,8 +30,7 @@ pytcp/__init__.py
 ver 3.0.8
 """
 
-from pytcp import stack
-from pytcp.runtime import socket
+from pytcp import socket, stack
 
 __version__: str = "3.0.8"
 

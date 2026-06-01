@@ -76,7 +76,7 @@ clean backpressure design is, and the honest limits of "100% asyncio /
 | A0    | Rename `pytcp.socket` → `pytcp.runtime.socket` (mechanical) | **done** |
 | A1    | Multiplexed IPC client (`MuxIpcClient`)                     | **done** |
 | A2    | Faithful error wire format + client reconstruction         | **done** |
-| A4    | The `pytcp.socket` synchronous drop-in module              | —      |
+| A4    | The `pytcp.socket` synchronous drop-in module              | **done (core)** |
 | A5    | DNS resolved through the daemon                             | —      |
 | P1    | Proof point — real stdlib program over the daemon          | —      |
 | A3.0  | Feasibility: TcpSocket tx-writable signal + bridge pump (read-only) | **done** |
@@ -242,6 +242,25 @@ allowlist + client mirror.
   synchronous drop-in (A4 + A5 + proof point P1) now lands before the
   non-blocking / asyncio readiness work (A3.1–A3.4 + P2). Design
   discussion captured in §7. Findings recorded in the A3.0 box above.
+- **2026-06-01** — A4 core complete: `pytcp/socket/` drop-in package —
+  `socket__dropin.py` (`Socket` wrapper + `socket()` factory + lazy
+  `$PYTCP_DAEMON_SOCKET` `ClientStack` singleton + `_reset_default_stack`
+  test hook) + `__init__.py` re-exporting the ~90-name stdlib constant /
+  enum / error / DNS-helper surface (no `__all__` on the source, so an
+  explicit list) with `error=OSError` / `timeout=TimeoutError` /
+  `has_ipv6`. `pytcp/__init__.py` flipped back to `from pytcp import
+  socket, stack` (the real drop-in subpackage replaces the A0 runtime
+  alias). The drop-in imports `pytcp.client` **lazily** (TYPE_CHECKING +
+  string-`cast` + in-function import) to dodge the genuine
+  import-pytcp-time `ipc → neighbor ↔ stack` cycle the eager import
+  exposed. Covers SOCK_STREAM + SOCK_DGRAM blocking; `Socket` adds
+  `sendall` / `recv_into` / `gettimeout` / `getblocking` / context-manager
+  / `family`/`type`/`proto`. Proof point: a full blocking TCP echo
+  (`recv` + `sendall`) driven entirely through `pytcp.socket` over the
+  live daemon. 4 unit + 3 integration tests. lint clean, 12557 passing.
+  Deferred to a follow-on increment: `makefile` / `dup` / `detach`,
+  RAW/AF_PACKET in the factory, a UDP-echo proof, and the
+  daemon-unknown-handle `KeyError`→`EBADF` faithfulness fix.
 
 ## 7. Design discussion — readiness, the "trick", and compat limits
 
