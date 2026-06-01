@@ -36,6 +36,7 @@ dynamic = ["version"]
 
 [project.scripts]
 pytcpd = "pytcp.daemon.__main__:main"
+pytcp = "pytcp.cli.__main__:main"
 
 [project.urls]
 "Homepage" = "https://github.com/ccie18643/PyTCP"

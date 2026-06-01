@@ -168,7 +168,7 @@ consumed by the A4 module.
 | Phase | Title                                            | Status |
 |-------|--------------------------------------------------|--------|
 | B1    | Socket-list introspection API (`stack.ss`)       | **done** |
-| B2    | The unified `pytcp` argparse multitool           | —      |
+| B2    | The unified `pytcp` argparse multitool           | **core (ss / route / sysctl / daemon start) done; neigh/addr/daemon-stop pending** |
 
 **B1 — `stack.ss`.** `pytcp/stack/socket_introspect.py` — `SocketSnapshot`
 (frozen, copy-by-value) + `SocketIntrospectApi.list_sockets(*, family,
@@ -426,6 +426,22 @@ allowlist + client mirror.
   state, UDP with no state, listening-only filter). lint clean, 12631
   passing. Next (B2): the `pytcp` argparse multitool (`daemon`/`ss`/`link`/
   `addr`/`route`/`neigh`/`sysctl`) + pure golden-tested formatters.
+
+- **2026-06-01** — B2 (the `pytcp` CLI multitool) core complete in two
+  commits. **B2a (formatters):** `pytcp/cli/cli__format.py` — pure,
+  daemon-free `format_socket_table` (`ss -tuln`), `format_neighbor_table`
+  (`ip neighbor show`), `format_route_table` (`ip route show`),
+  `format_sysctl` (`key = value`); 4 golden tests pin the exact rendered
+  output. **B2b (dispatcher):** `pytcp/cli/__main__.py` — the argparse
+  multitool with `ss` (`-t`/`-u`/`-l`/`-4`/`-6`), `route`, `sysctl`
+  (read / `key=value` set / list-all), and `daemon start`; each
+  observation subcommand opens a short-lived `ClientStack`, calls the API,
+  and renders via the formatters. Added `pytcp = "pytcp.cli.__main__:main"`
+  to `[project.scripts]` (verified the console entry point runs). 3
+  integration tests run `main()` against the live IPC server (ss lists a
+  listening socket, route matches the formatter, sysctl lists entries).
+  lint clean, 12638 passing. Deferred to a B2 follow-up: `neigh` / `addr`
+  / `link` subcommands and `daemon stop` (pidfile + SIGTERM).
 
 ## 7. Design discussion — readiness, the "trick", and compat limits
 
