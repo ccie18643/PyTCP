@@ -58,6 +58,7 @@ from pytcp.stack.address import AddressApi
 from pytcp.stack.link import LinkApi
 from pytcp.stack.membership import MembershipApi
 from pytcp.stack.neighbor import NeighborApi
+from pytcp.stack.resolver import ResolverApi
 from pytcp.stack.route import RouteApi
 
 if TYPE_CHECKING:
@@ -437,6 +438,15 @@ neighbor: NeighborApi
 # 'mock__init()' alongside 'address' / 'link' / 'neighbor'; same
 # reconstruct-per-test lifecycle, so it needs no snapshot/restore.
 membership: MembershipApi
+# Default upstream DNS server for the stub resolver. Phase B2 (the
+# 'pytcp daemon --dns-server' CLI arg) overrides this at 'init()'.
+STACK__DNS_SERVER: Ip4Address = Ip4Address("9.9.9.9")
+# Resolver API — DNS resolution control surface (the Linux
+# 'getaddrinfo' analogue) over the daemon-side 'DnsResolver'.
+# Constructed by 'init()' / 'mock__init()' alongside 'address' /
+# 'link' / 'neighbor' / 'membership'; same reconstruct-per-test
+# lifecycle, so it needs no snapshot/restore.
+resolver: ResolverApi
 # Host-mode routing table (FIB) — Phase 1 of
 # 'docs/refactor/routing_table_host_mode.md'. One per address
 # family. Reconstructed fresh by 'init()' / 'mock__init()'

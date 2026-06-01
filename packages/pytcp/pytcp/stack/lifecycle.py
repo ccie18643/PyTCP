@@ -57,6 +57,7 @@ from pytcp.lib.packet_stats import LinkStatsCounters, PacketStatsRx, PacketStats
 from pytcp.protocols.arp.arp__cache import ArpCache
 from pytcp.protocols.dhcp4.dhcp4__client import Dhcp4Client
 from pytcp.protocols.dhcp6.dhcp6__client import Dhcp6Client
+from pytcp.protocols.dns.dns__resolver import DnsResolver
 from pytcp.protocols.icmp6.nd.nd__cache import NdCache
 from pytcp.protocols.ip4.acd.ip4_acd import Ip4Acd
 from pytcp.runtime.fib import RouteTable
@@ -70,6 +71,7 @@ from pytcp.stack.address import AddressApi
 from pytcp.stack.link import LinkApi
 from pytcp.stack.membership import MembershipApi
 from pytcp.stack.neighbor import NeighborApi
+from pytcp.stack.resolver import ResolverApi
 from pytcp.stack.route import RouteApi, install_boot_default_routes
 
 
@@ -167,6 +169,13 @@ def mock__init(
     # isolation without bespoke harness wiring.
     if mock__packet_handler is not None:
         _stack.membership = MembershipApi(packet_handler=mock__packet_handler)
+
+    # Resolver API — DNS resolution control surface. Created
+    # unconditionally (it needs no packet handler, only an upstream
+    # server) and rebuilt every 'mock__init', so it needs no
+    # snapshot/restore; tests exercising resolution inject a fake
+    # resolver into 'stack.resolver'.
+    _stack.resolver = ResolverApi(resolver=DnsResolver(server=_stack.STACK__DNS_SERVER))
 
     # Host-mode routing table — Phase 1. Rebuild the two FIBs
     # fresh every 'mock__init' (i.e. every harness 'setUp') so
@@ -596,6 +605,7 @@ def init(
     _stack.link = LinkApi()
     _stack.neighbor = NeighborApi()
     _stack.membership = MembershipApi()
+    _stack.resolver = ResolverApi(resolver=DnsResolver(server=_stack.STACK__DNS_SERVER))
 
     # Host-mode routing table — Phase 3 of
     # 'docs/refactor/routing_table_host_mode.md'. Build the two FIBs and
