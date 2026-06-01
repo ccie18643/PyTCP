@@ -31,13 +31,13 @@ PyTCP daemon (a process-wide lazy 'ClientStack' connection resolved from
 a real, selectable descriptor. 'Socket' presents the Berkeley-sockets
 method surface, delegating data/control calls to the underlying client
 shim and adding the stdlib conveniences the shims do not carry
-('sendall', 'recv_into', 'gettimeout', 'getblocking', the context-manager
-protocol, the 'family'/'type'/'proto' properties). It backs the
-'pytcp.socket' package, which re-exports it together with the stdlib
-constant / error / helper surface so 'import pytcp.socket as socket' is a
-one-line stand-in for stdlib 'socket'. This increment covers SOCK_STREAM
-and SOCK_DGRAM; non-blocking-readiness, RAW/AF_PACKET, and 'makefile' /
-'dup' land in later increments.
+('sendall', 'recv_into', 'gettimeout', 'getblocking', 'makefile', the
+context-manager protocol, the 'family'/'type'/'proto' properties). It
+backs the 'pytcp.socket' package, which re-exports it together with the
+stdlib constant / error / helper surface so 'import pytcp.socket as
+socket' is a one-line stand-in for stdlib 'socket'. This increment covers
+SOCK_STREAM and SOCK_DGRAM; non-blocking-readiness, RAW/AF_PACKET, and
+'dup' / 'detach' land in later increments.
 
 'pytcp.client' is imported lazily (and under TYPE_CHECKING for
 annotations) because 'pytcp.socket' is re-exported from the top-level
@@ -54,6 +54,7 @@ ver 3.0.8
 
 import builtins
 import errno
+import io
 import os
 import threading
 from types import TracebackType
@@ -63,6 +64,10 @@ from net_proto.lib.enums import IpProto
 from pytcp.runtime.socket import AddressFamily, SocketType
 
 if TYPE_CHECKING:
+    from io import _WrappedBuffer
+
+    from _typeshed import ReadableBuffer, WriteableBuffer
+
     from pytcp.client import ClientStack, ClientTcpSocket, ClientUdpSocket
 
 # stdlib-socket exception aliases.
@@ -109,6 +114,107 @@ def _reset_default_stack() -> None:
             _default_stack = None
 
 
+class _SocketIO(io.RawIOBase):
+    """
+    A raw byte stream over a daemon-backed 'Socket' (makefile backing).
+    """
+
+    def __init__(self, sock: Socket, mode: str, /) -> None:
+        """
+        Wrap a 'Socket' as a raw I/O stream in the given makefile mode.
+        """
+
+        super().__init__()
+        self._sock: Socket | None = sock
+        self._reading = "r" in mode
+        self._writing = "w" in mode
+        self._timeout_occurred: bool = False
+
+    def _require_sock(self) -> Socket:
+        """
+        Return the wrapped socket, or raise if the stream is closed.
+        """
+
+        if self._sock is None:
+            raise ValueError("I/O operation on closed socket.")
+        return self._sock
+
+    @override
+    def readable(self) -> bool:
+        """
+        Get whether the stream is open for reading.
+        """
+
+        return self._reading
+
+    @override
+    def writable(self) -> bool:
+        """
+        Get whether the stream is open for writing.
+        """
+
+        return self._writing
+
+    @override
+    def fileno(self) -> int:
+        """
+        Get the underlying data-channel file descriptor.
+        """
+
+        return self._require_sock().fileno()
+
+    @override
+    def readinto(self, buffer: WriteableBuffer, /) -> int | None:
+        """
+        Read available bytes into 'buffer', returning the count (None when
+        a non-blocking read would block, 0 at end of stream).
+        """
+
+        if not self._reading:
+            raise OSError(errno.EBADF, "the stream is not open for reading.")
+        sock = self._require_sock()
+        try:
+            return sock.recv_into(memoryview(buffer))
+        except TimeoutError:
+            self._timeout_occurred = True
+            raise
+        except OSError as receive_error:
+            if receive_error.errno in (errno.EAGAIN, errno.EWOULDBLOCK):
+                return None
+            raise
+
+    @override
+    def write(self, buffer: ReadableBuffer, /) -> int | None:
+        """
+        Write 'buffer' to the stream, returning the count accepted (None
+        when a non-blocking write would block).
+        """
+
+        if not self._writing:
+            raise OSError(errno.EBADF, "the stream is not open for writing.")
+        sock = self._require_sock()
+        try:
+            return sock.send(bytes(buffer))
+        except OSError as send_error:
+            if send_error.errno in (errno.EAGAIN, errno.EWOULDBLOCK):
+                return None
+            raise
+
+    @override
+    def close(self) -> None:
+        """
+        Close the stream and drop its reference on the wrapped socket.
+        """
+
+        if self.closed:
+            return
+        super().close()
+        sock = self._sock
+        self._sock = None
+        if sock is not None:
+            sock._decref_socketio()
+
+
 class Socket:
     """
     A stdlib-shaped socket backed by a PyTCP daemon socket handle.
@@ -132,6 +238,9 @@ class Socket:
         self._type = type
         self._proto = proto
         self._timeout: float | None = None
+        self._io_refs: int = 0
+        self._closed: bool = False
+        self._real_closed: bool = False
 
     @property
     def family(self) -> AddressFamily:
@@ -317,12 +426,89 @@ class Socket:
 
         return self._sock.getpeername()
 
+    def makefile(
+        self,
+        mode: str = "r",
+        buffering: int | None = None,
+        *,
+        encoding: str | None = None,
+        errors: str | None = None,
+        newline: str | None = None,
+    ) -> io.BufferedReader | io.BufferedWriter | io.BufferedRWPair | io.TextIOWrapper | _SocketIO:
+        """
+        Return a file object over the socket, mirroring stdlib makefile.
+
+        The returned stream shares the socket's data channel; the daemon
+        handle is held open until both the socket and every stream made
+        from it are closed (the stdlib shared-fd ownership contract).
+        """
+
+        if not set(mode) <= {"r", "w", "b"}:
+            raise ValueError(f"invalid mode {mode!r} (only r, w, b allowed)")
+
+        writing = "w" in mode
+        reading = "r" in mode or not writing
+        binary = "b" in mode
+        raw_mode = ("r" if reading else "") + ("w" if writing else "")
+
+        raw = _SocketIO(self, raw_mode)
+        self._io_refs += 1
+
+        effective_buffering = io.DEFAULT_BUFFER_SIZE if buffering is None or buffering < 0 else buffering
+        if effective_buffering == 0:
+            if not binary:
+                raise ValueError("unbuffered streams must be binary")
+            return raw
+
+        buffer: io.BufferedReader | io.BufferedWriter | io.BufferedRWPair
+        if reading and writing:
+            buffer = io.BufferedRWPair(raw, raw, effective_buffering)
+        elif reading:
+            buffer = io.BufferedReader(raw, effective_buffering)
+        else:
+            buffer = io.BufferedWriter(raw, effective_buffering)
+
+        if binary:
+            return buffer
+        # 'buffer' is a read-only / write-only / read-write buffered stream;
+        # 'TextIOWrapper' only exercises the half matching the text mode, so
+        # the wrap is sound even though the static '_WrappedBuffer' protocol
+        # demands both 'read' and 'write'.
+        return io.TextIOWrapper(cast("_WrappedBuffer", buffer), encoding, errors, newline)
+
     def close(self) -> None:
         """
         Close the socket and release the daemon handle.
+
+        If outstanding 'makefile' streams still reference the data
+        channel, the underlying handle is held open until the last of them
+        closes — mirroring the stdlib socket / makefile shared-fd
+        ownership.
         """
 
+        self._closed = True
+        if self._io_refs <= 0:
+            self._real_close()
+
+    def _real_close(self) -> None:
+        """
+        Release the daemon handle and data channel exactly once.
+        """
+
+        if self._real_closed:
+            return
+        self._real_closed = True
         self._sock.close()
+
+    def _decref_socketio(self) -> None:
+        """
+        Drop one 'makefile' stream's reference, closing once none remain.
+        """
+
+        if self._io_refs > 0:
+            self._io_refs -= 1
+        if self._closed and self._io_refs <= 0:
+            self._real_close()
 
     def __enter__(self) -> Self:
         """

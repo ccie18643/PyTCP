@@ -76,7 +76,7 @@ clean backpressure design is, and the honest limits of "100% asyncio /
 | A0    | Rename `pytcp.socket` → `pytcp.runtime.socket` (mechanical) | **done** |
 | A1    | Multiplexed IPC client (`MuxIpcClient`)                     | **done** |
 | A2    | Faithful error wire format + client reconstruction         | **done** |
-| A4    | The `pytcp.socket` synchronous drop-in module              | **done (core)** |
+| A4    | The `pytcp.socket` synchronous drop-in module              | **core + makefile done; dup/detach, UDP proof, EBADF pending** |
 | A5    | DNS resolved through the daemon                             | —      |
 | P1    | Proof point — real stdlib program over the daemon          | —      |
 | A3.0  | Feasibility: TcpSocket tx-writable signal + bridge pump (read-only) | **done** |
@@ -261,6 +261,20 @@ allowlist + client mirror.
   Deferred to a follow-on increment: `makefile` / `dup` / `detach`,
   RAW/AF_PACKET in the factory, a UDP-echo proof, and the
   daemon-unknown-handle `KeyError`→`EBADF` faithfulness fix.
+- **2026-06-01** — A4.1 (makefile) complete: `Socket.makefile(mode,
+  buffering, *, encoding, errors, newline)` mirroring stdlib — a
+  `_SocketIO(io.RawIOBase)` over the wrapper's `recv_into` / `send`,
+  wrapped in `BufferedReader` / `BufferedWriter` / `BufferedRWPair` /
+  `TextIOWrapper` per mode. `Socket.close()` is now io-ref-aware
+  (`_io_refs` / `_closed` / `_real_closed` + `_decref_socketio`): the
+  daemon handle + data channel are held open until both the socket and
+  every `makefile` stream made from it close — the stdlib shared-fd
+  ownership contract. The `TextIOWrapper(buffer)` wrap needs one §17
+  string-`cast` to `_WrappedBuffer` (typeshed's protocol demands both
+  `read` and `write`; the runtime wrap only exercises the matching half).
+  This is the gating piece for stdlib `http.client`. 2 integration tests
+  (buffered-reader line read + buffered-writer to the wire). lint clean,
+  12559 passing.
 
 ## 7. Design discussion — readiness, the "trick", and compat limits
 

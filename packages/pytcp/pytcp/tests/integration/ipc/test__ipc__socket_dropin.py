@@ -40,6 +40,7 @@ pytcp/tests/integration/ipc/test__ipc__socket_dropin.py
 ver 3.0.8
 """
 
+import io
 import os
 import tempfile
 import threading
@@ -278,4 +279,82 @@ class TestSocketDropinEcho(TcpTestCase):
             seen_payload,
             b"pong",
             msg="Data written via the drop-in sendall() must reach the wire as a TCP data segment.",
+        )
+
+    def test__socket_dropin__makefile_read_delivers_peer_line(self) -> None:
+        """
+        Ensure a buffered reader returned by makefile('rb') reads a line
+        of peer data delivered over the drop-in's data channel — the path
+        stdlib 'http.client' takes to read a response.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        sock = pytcp_socket.socket(pytcp_socket.AF_INET, pytcp_socket.SOCK_STREAM)
+        self.addCleanup(sock.close)
+        sock.settimeout(_DEADLINE__SEC)
+
+        self._drive_handshake(sock)
+        self._drive_rx(
+            frame=build_tcp4(
+                src_ip=HOST_A__IP4_ADDRESS,
+                dst_ip=STACK__IP4_HOST.address,
+                sport=_REMOTE_PORT,
+                dport=_LOCAL_PORT,
+                seq=_PEER_ISS + 1,
+                ack=_ISS + 1,
+                flags=("ACK",),
+                win=_PEER_WIN,
+                payload=b"HTTP/1.0 200 OK\r\n",
+            )
+        )
+
+        reader = sock.makefile("rb")
+        self.addCleanup(reader.close)
+        assert isinstance(reader, io.BufferedReader)
+
+        self.assertEqual(
+            reader.readline(),
+            b"HTTP/1.0 200 OK\r\n",
+            msg="A makefile('rb') reader must read a line of peer data over the data channel.",
+        )
+
+    def test__socket_dropin__makefile_write_reaches_the_wire(self) -> None:
+        """
+        Ensure data written through a makefile('wb') buffered writer is
+        carried by the stack onto the wire — the path stdlib 'http.client'
+        takes to send a request.
+
+        Reference: RFC 9293 §3.10 (SEND call — user data to the network).
+        """
+
+        sock = pytcp_socket.socket(pytcp_socket.AF_INET, pytcp_socket.SOCK_STREAM)
+        self.addCleanup(sock.close)
+        sock.settimeout(_DEADLINE__SEC)
+
+        self._drive_handshake(sock)
+
+        writer = sock.makefile("wb")
+        self.addCleanup(writer.close)
+        assert isinstance(writer, io.BufferedWriter)
+        writer.write(b"GET / HTTP/1.0\r\n\r\n")
+        writer.flush()
+
+        deadline = time.monotonic() + _DEADLINE__SEC
+        seen_payload = b""
+        while time.monotonic() < deadline:
+            seen_payload = b"".join(
+                bytes(probe.payload)
+                for probe in (self._parse_tx(frame) for frame in list(self._frames_tx))
+                if probe.sport == _LOCAL_PORT and probe.payload
+            )
+            if seen_payload == b"GET / HTTP/1.0\r\n\r\n":
+                break
+            self._advance(ms=10)
+            time.sleep(0.01)
+
+        self.assertEqual(
+            seen_payload,
+            b"GET / HTTP/1.0\r\n\r\n",
+            msg="Data written via a makefile('wb') writer must reach the wire as TCP data.",
         )
