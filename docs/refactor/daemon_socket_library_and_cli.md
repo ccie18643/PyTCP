@@ -76,7 +76,7 @@ clean backpressure design is, and the honest limits of "100% asyncio /
 | A0    | Rename `pytcp.socket` → `pytcp.runtime.socket` (mechanical) | **done** |
 | A1    | Multiplexed IPC client (`MuxIpcClient`)                     | **done** |
 | A2    | Faithful error wire format + client reconstruction         | **done** |
-| A4    | The `pytcp.socket` synchronous drop-in module              | **core + makefile done; dup/detach, UDP proof, EBADF pending** |
+| A4    | The `pytcp.socket` synchronous drop-in module              | **core + makefile + dup/detach done; UDP proof, EBADF pending** |
 | A5    | DNS resolved through the daemon                             | —      |
 | P1    | Proof point — real stdlib program over the daemon          | —      |
 | A3.0  | Feasibility: TcpSocket tx-writable signal + bridge pump (read-only) | **done** |
@@ -275,6 +275,21 @@ allowlist + client mirror.
   This is the gating piece for stdlib `http.client`. 2 integration tests
   (buffered-reader line read + buffered-writer to the wire). lint clean,
   12559 passing.
+- **2026-06-01** — A4.2 (dup/detach) complete: `Socket.dup()` duplicates
+  the data channel via `os.dup` into a `_DupDataChannel`-backed `Socket`
+  (stream only) — a `dup(2)` of the socketpair end reaches the same
+  daemon socket, so the byte stream is shared, but the duplicate carries
+  no daemon control handle, so a new `_control_sock()` guard raises
+  `OSError(EOPNOTSUPP)` for any control op on it (all control methods now
+  route through `_control_sock()`). `Socket.detach()` returns the live
+  data-channel fd and neutralizes the wrapper (`close` releases nothing,
+  `fileno` → -1); the daemon handle is left to be reaped on disconnect.
+  Both client shims (`ClientTcpSocket`, `_ClientDatagramBase`) gain a
+  `detach()` that detaches their `_data_socket` fd. The ownership split is
+  pinned by tests: a duplicate reads peer data off the shared connection
+  and survives the other's close; a duplicate's control op fails; a
+  detached fd, salvaged into a stdlib socket, still receives peer data. 3
+  integration tests. lint clean, 12562 passing.
 
 ## 7. Design discussion — readiness, the "trick", and compat limits
 

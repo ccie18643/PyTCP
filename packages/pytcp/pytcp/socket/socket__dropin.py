@@ -31,13 +31,13 @@ PyTCP daemon (a process-wide lazy 'ClientStack' connection resolved from
 a real, selectable descriptor. 'Socket' presents the Berkeley-sockets
 method surface, delegating data/control calls to the underlying client
 shim and adding the stdlib conveniences the shims do not carry
-('sendall', 'recv_into', 'gettimeout', 'getblocking', 'makefile', the
-context-manager protocol, the 'family'/'type'/'proto' properties). It
-backs the 'pytcp.socket' package, which re-exports it together with the
-stdlib constant / error / helper surface so 'import pytcp.socket as
-socket' is a one-line stand-in for stdlib 'socket'. This increment covers
-SOCK_STREAM and SOCK_DGRAM; non-blocking-readiness, RAW/AF_PACKET, and
-'dup' / 'detach' land in later increments.
+('sendall', 'recv_into', 'gettimeout', 'getblocking', 'makefile', 'dup',
+'detach', the context-manager protocol, the 'family'/'type'/'proto'
+properties). It backs the 'pytcp.socket' package, which re-exports it
+together with the stdlib constant / error / helper surface so 'import
+pytcp.socket as socket' is a one-line stand-in for stdlib 'socket'. This
+increment covers SOCK_STREAM and SOCK_DGRAM; non-blocking-readiness and
+RAW/AF_PACKET land in later increments.
 
 'pytcp.client' is imported lazily (and under TYPE_CHECKING for
 annotations) because 'pytcp.socket' is re-exported from the top-level
@@ -56,6 +56,7 @@ import builtins
 import errno
 import io
 import os
+import socket as _stdlib_socket
 import threading
 from types import TracebackType
 from typing import TYPE_CHECKING, Self, cast, override
@@ -215,6 +216,73 @@ class _SocketIO(io.RawIOBase):
             sock._decref_socketio()
 
 
+class _DupDataChannel:
+    """
+    A data-only endpoint over a duplicated data-channel descriptor.
+
+    Wrapped in a 'Socket' and returned by 'Socket.dup()': a 'dup(2)' of
+    the socketpair end reaches the same daemon-side socket, so the byte
+    stream is shared, but the duplicate carries no daemon control handle —
+    its control operations are unavailable.
+    """
+
+    def __init__(self, data_socket: _stdlib_socket.socket, /) -> None:
+        """
+        Adopt an already-duplicated data-channel descriptor.
+        """
+
+        self._data_socket = data_socket
+
+    def fileno(self) -> int:
+        """
+        Get the duplicated data-channel file descriptor.
+        """
+
+        return self._data_socket.fileno()
+
+    def settimeout(self, timeout: float | None, /) -> None:
+        """
+        Set the data-channel timeout (seconds, or None for blocking).
+        """
+
+        self._data_socket.settimeout(timeout)
+
+    def setblocking(self, flag: bool, /) -> None:
+        """
+        Set the data channel blocking or non-blocking.
+        """
+
+        self._data_socket.setblocking(flag)
+
+    def send(self, data: bytes) -> int:
+        """
+        Send 'data' over the shared data channel.
+        """
+
+        return self._data_socket.send(data)
+
+    def recv(self, bufsize: int) -> bytes:
+        """
+        Receive up to 'bufsize' bytes from the shared data channel.
+        """
+
+        return self._data_socket.recv(bufsize)
+
+    def detach(self) -> int:
+        """
+        Detach and return the duplicated data-channel descriptor.
+        """
+
+        return self._data_socket.detach()
+
+    def close(self) -> None:
+        """
+        Close the duplicated data-channel descriptor only.
+        """
+
+        self._data_socket.close()
+
+
 class Socket:
     """
     A stdlib-shaped socket backed by a PyTCP daemon socket handle.
@@ -222,7 +290,7 @@ class Socket:
 
     def __init__(
         self,
-        underlying: ClientTcpSocket | ClientUdpSocket,
+        underlying: ClientTcpSocket | ClientUdpSocket | _DupDataChannel,
         /,
         *,
         family: AddressFamily,
@@ -230,7 +298,8 @@ class Socket:
         proto: int,
     ) -> None:
         """
-        Wrap a daemon-backed client socket shim.
+        Wrap a daemon-backed client socket shim (or, for a duplicate, a
+        data-only channel with no daemon control handle).
         """
 
         self._sock = underlying
@@ -241,6 +310,17 @@ class Socket:
         self._io_refs: int = 0
         self._closed: bool = False
         self._real_closed: bool = False
+        self._data_only = isinstance(underlying, _DupDataChannel)
+
+    def _control_sock(self) -> ClientTcpSocket | ClientUdpSocket:
+        """
+        Return the underlying control-capable client shim, or raise if the
+        socket is a data-only duplicate.
+        """
+
+        if self._data_only:
+            raise OSError(errno.EOPNOTSUPP, "control operations are not available on a duplicated socket.")
+        return cast("ClientTcpSocket | ClientUdpSocket", self._sock)
 
     @property
     def family(self) -> AddressFamily:
@@ -308,14 +388,14 @@ class Socket:
         Bind the socket to a local address.
         """
 
-        self._sock.bind(address)
+        self._control_sock().bind(address)
 
     def connect(self, address: tuple[str, int], /) -> None:
         """
         Connect the socket to a remote address.
         """
 
-        self._sock.connect(address)
+        self._control_sock().connect(address)
 
     def listen(self, backlog: int = 128, /) -> None:
         """
@@ -324,7 +404,7 @@ class Socket:
 
         if self._type is not SocketType.STREAM:
             raise OSError(errno.EOPNOTSUPP, "listen() is only supported on a stream socket.")
-        cast("ClientTcpSocket", self._sock).listen(backlog=backlog)
+        cast("ClientTcpSocket", self._control_sock()).listen(backlog=backlog)
 
     def accept(self) -> tuple["Socket", tuple[str, int]]:
         """
@@ -333,7 +413,7 @@ class Socket:
 
         if self._type is not SocketType.STREAM:
             raise OSError(errno.EOPNOTSUPP, "accept() is only supported on a stream socket.")
-        child, peer = cast("ClientTcpSocket", self._sock).accept()
+        child, peer = cast("ClientTcpSocket", self._control_sock()).accept()
         return Socket(child, family=self._family, type=self._type, proto=self._proto), peer
 
     def send(self, data: bytes, /) -> int:
@@ -359,7 +439,7 @@ class Socket:
 
         if self._type is not SocketType.DGRAM:
             raise OSError(errno.EOPNOTSUPP, "sendto() is only supported on a datagram socket.")
-        return cast("ClientUdpSocket", self._sock).sendto(data, address)
+        return cast("ClientUdpSocket", self._control_sock()).sendto(data, address)
 
     def recv(self, bufsize: int, /) -> bytes:
         """
@@ -387,21 +467,21 @@ class Socket:
 
         if self._type is not SocketType.DGRAM:
             raise OSError(errno.EOPNOTSUPP, "recvfrom() is only supported on a datagram socket.")
-        return cast("ClientUdpSocket", self._sock).recvfrom(bufsize)
+        return cast("ClientUdpSocket", self._control_sock()).recvfrom(bufsize)
 
     def setsockopt(self, level: int | IpProto, optname: int, value: int | bytes, /) -> None:
         """
         Set a socket option on the daemon socket.
         """
 
-        self._sock.setsockopt(level, optname, value)
+        self._control_sock().setsockopt(level, optname, value)
 
     def getsockopt(self, level: int | IpProto, optname: int, /) -> int | bytes:
         """
         Get a socket option from the daemon socket.
         """
 
-        return self._sock.getsockopt(level, optname)
+        return self._control_sock().getsockopt(level, optname)
 
     def shutdown(self, how: int, /) -> None:
         """
@@ -410,21 +490,57 @@ class Socket:
 
         if self._type is not SocketType.STREAM:
             raise OSError(errno.EOPNOTSUPP, "shutdown() is only supported on a stream socket.")
-        cast("ClientTcpSocket", self._sock).shutdown(how)
+        cast("ClientTcpSocket", self._control_sock()).shutdown(how)
 
     def getsockname(self) -> tuple[str, int]:
         """
         Get the socket's local address.
         """
 
-        return self._sock.getsockname()
+        return self._control_sock().getsockname()
 
     def getpeername(self) -> tuple[str, int]:
         """
         Get the socket's remote address.
         """
 
-        return self._sock.getpeername()
+        return self._control_sock().getpeername()
+
+    def dup(self) -> "Socket":
+        """
+        Duplicate the socket's data channel into an independent socket.
+
+        Mirrors stdlib 'dup': a 'dup(2)' of the data-channel descriptor
+        reaches the same daemon-side connection, so the byte stream is
+        shared, but the duplicate carries no daemon control handle of its
+        own — its control operations are unavailable. Closing either
+        socket leaves the other's data channel intact. Supported on stream
+        sockets.
+        """
+
+        if self._type is not SocketType.STREAM:
+            raise OSError(errno.EOPNOTSUPP, "dup() is only supported on a stream socket.")
+        data_socket = _stdlib_socket.socket(
+            _stdlib_socket.AF_UNIX,
+            _stdlib_socket.SOCK_STREAM,
+            fileno=os.dup(self.fileno()),
+        )
+        return Socket(_DupDataChannel(data_socket), family=self._family, type=self._type, proto=self._proto)
+
+    def detach(self) -> int:
+        """
+        Detach and return the live data-channel descriptor.
+
+        Mirrors stdlib 'detach': the caller takes ownership of the
+        descriptor and the wrapper becomes inert — a later 'close'
+        releases nothing and 'fileno' reports -1. The daemon handle is
+        left to be reaped when the connection to the daemon is closed.
+        """
+
+        descriptor = self._sock.detach()
+        self._closed = True
+        self._real_closed = True
+        return descriptor
 
     def makefile(
         self,

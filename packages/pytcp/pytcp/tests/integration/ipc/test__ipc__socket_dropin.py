@@ -40,8 +40,10 @@ pytcp/tests/integration/ipc/test__ipc__socket_dropin.py
 ver 3.0.8
 """
 
+import errno
 import io
 import os
+import socket
 import tempfile
 import threading
 import time
@@ -357,4 +359,142 @@ class TestSocketDropinEcho(TcpTestCase):
             seen_payload,
             b"GET / HTTP/1.0\r\n\r\n",
             msg="Data written via a makefile('wb') writer must reach the wire as TCP data.",
+        )
+
+    def test__socket_dropin__dup_shares_connection_and_is_independent(self) -> None:
+        """
+        Ensure dup() yields an independent descriptor on the same daemon
+        connection: peer data is readable on the duplicate, and closing
+        the duplicate leaves the original's data channel intact.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        sock = pytcp_socket.socket(pytcp_socket.AF_INET, pytcp_socket.SOCK_STREAM)
+        self.addCleanup(sock.close)
+        sock.settimeout(_DEADLINE__SEC)
+        self._drive_handshake(sock)
+
+        duplicate = sock.dup()
+        self.addCleanup(duplicate.close)
+        duplicate.settimeout(_DEADLINE__SEC)
+
+        self.assertNotEqual(
+            duplicate.fileno(),
+            sock.fileno(),
+            msg="dup() must return a descriptor independent of the original.",
+        )
+
+        self._drive_rx(
+            frame=build_tcp4(
+                src_ip=HOST_A__IP4_ADDRESS,
+                dst_ip=STACK__IP4_HOST.address,
+                sport=_REMOTE_PORT,
+                dport=_LOCAL_PORT,
+                seq=_PEER_ISS + 1,
+                ack=_ISS + 1,
+                flags=("ACK",),
+                win=_PEER_WIN,
+                payload=b"alpha",
+            )
+        )
+        self.assertEqual(
+            duplicate.recv(64),
+            b"alpha",
+            msg="The duplicate must read peer data off the shared daemon connection.",
+        )
+
+        duplicate.close()
+        self._drive_rx(
+            frame=build_tcp4(
+                src_ip=HOST_A__IP4_ADDRESS,
+                dst_ip=STACK__IP4_HOST.address,
+                sport=_REMOTE_PORT,
+                dport=_LOCAL_PORT,
+                seq=_PEER_ISS + 1 + len(b"alpha"),
+                ack=_ISS + 1,
+                flags=("ACK",),
+                win=_PEER_WIN,
+                payload=b"beta",
+            )
+        )
+        self.assertEqual(
+            sock.recv(64),
+            b"beta",
+            msg="Closing the duplicate must leave the original's data channel usable.",
+        )
+
+    def test__socket_dropin__dup_has_no_control_handle(self) -> None:
+        """
+        Ensure a duplicated socket carries no daemon control handle, so a
+        control operation on it fails rather than acting on the
+        connection.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        sock = pytcp_socket.socket(pytcp_socket.AF_INET, pytcp_socket.SOCK_STREAM)
+        self.addCleanup(sock.close)
+        sock.settimeout(_DEADLINE__SEC)
+        self._drive_handshake(sock)
+
+        duplicate = sock.dup()
+        self.addCleanup(duplicate.close)
+
+        with self.assertRaises(OSError) as raised:
+            duplicate.bind(("0.0.0.0", 50002))
+
+        self.assertEqual(
+            raised.exception.errno,
+            errno.EOPNOTSUPP,
+            msg="A control call on a duplicated socket must fail with EOPNOTSUPP.",
+        )
+
+    def test__socket_dropin__detach_yields_a_live_descriptor(self) -> None:
+        """
+        Ensure detach() returns the live data-channel descriptor and
+        neutralizes the wrapper: peer data is readable on the salvaged
+        descriptor and the wrapper reports a closed (-1) descriptor.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        sock = pytcp_socket.socket(pytcp_socket.AF_INET, pytcp_socket.SOCK_STREAM)
+        self.addCleanup(sock.close)
+        sock.settimeout(_DEADLINE__SEC)
+        self._drive_handshake(sock)
+
+        detached_fd = sock.detach()
+        self.assertGreaterEqual(
+            detached_fd,
+            0,
+            msg="detach() must return the live data-channel descriptor.",
+        )
+        self.assertEqual(
+            sock.fileno(),
+            -1,
+            msg="A detached wrapper must report a closed (-1) descriptor.",
+        )
+
+        salvaged = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM, fileno=detached_fd)
+        self.addCleanup(salvaged.close)
+        salvaged.settimeout(_DEADLINE__SEC)
+
+        self._drive_rx(
+            frame=build_tcp4(
+                src_ip=HOST_A__IP4_ADDRESS,
+                dst_ip=STACK__IP4_HOST.address,
+                sport=_REMOTE_PORT,
+                dport=_LOCAL_PORT,
+                seq=_PEER_ISS + 1,
+                ack=_ISS + 1,
+                flags=("ACK",),
+                win=_PEER_WIN,
+                payload=b"gamma",
+            )
+        )
+        self.assertEqual(
+            salvaged.recv(64),
+            b"gamma",
+            msg="The descriptor returned by detach() must still receive peer data.",
         )

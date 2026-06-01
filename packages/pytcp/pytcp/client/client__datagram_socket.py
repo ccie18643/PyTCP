@@ -209,6 +209,18 @@ class _ClientDatagramBase:
         result: tuple[str, int] = socket_call(self._client, method="getpeername", handle=self._handle, args={})
         return result
 
+    def detach(self) -> int:
+        """
+        Detach and return the data-channel descriptor.
+
+        The caller takes ownership of the descriptor; the shim's data
+        socket no longer holds it. The daemon handle is left in place (to
+        be reaped when the client disconnects), so the descriptor stays
+        connected to the daemon-side socket.
+        """
+
+        return self._data_socket.detach()
+
     def close(self) -> None:
         """
         Close the daemon socket and the local data-channel descriptor.
