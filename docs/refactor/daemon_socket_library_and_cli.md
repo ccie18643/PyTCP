@@ -167,7 +167,7 @@ consumed by the A4 module.
 
 | Phase | Title                                            | Status |
 |-------|--------------------------------------------------|--------|
-| B1    | Socket-list introspection API (`stack.ss`)       | —      |
+| B1    | Socket-list introspection API (`stack.ss`)       | **done** |
 | B2    | The unified `pytcp` argparse multitool           | —      |
 
 **B1 — `stack.ss`.** `pytcp/stack/socket_introspect.py` — `SocketSnapshot`
@@ -409,6 +409,23 @@ allowlist + client mirror.
   connect path P1 bypassed. lint clean, 12623 passing. **A5 done — DNS is
   resolved through the daemon end to end, and the synchronous drop-in now
   supports name-based connect.**
+
+- **2026-06-01** — B1 (socket introspection) complete in two commits.
+  **B1a (stack side):** `pytcp/stack/socket_introspect.py` — `SocketSnapshot`
+  (frozen, copy-by-value) + `build_socket_snapshots` (pure, stack-free
+  filter/sort core reading each socket through an `IntrospectableSocket`
+  protocol, duck-typing the TCP-only state/queues) + `SocketIntrospectApi.
+  list_sockets` over the live `stack.sockets`; `ss: SocketIntrospectApi`
+  singleton wired in lifecycle. 5 unit tests over socket doubles.
+  **B1b (IPC + client):** registered `SocketSnapshot` in
+  `ipc__values._DATACLASS_TYPES` and `FsmState` in `_ENUM_TYPES`;
+  `socket_introspect -> {list_sockets}` in the control allowlist + dispatch;
+  `pytcp/client/client__socket_introspect.py` `ClientSocketIntrospect` bound
+  as `ClientStack.ss`. 3 integration tests open real daemon sockets via
+  `ClientStack.socket()` and list them over IPC (listening TCP with LISTEN
+  state, UDP with no state, listening-only filter). lint clean, 12631
+  passing. Next (B2): the `pytcp` argparse multitool (`daemon`/`ss`/`link`/
+  `addr`/`route`/`neigh`/`sysctl`) + pure golden-tested formatters.
 
 ## 7. Design discussion — readiness, the "trick", and compat limits
 

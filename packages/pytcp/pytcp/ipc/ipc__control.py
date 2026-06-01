@@ -84,6 +84,7 @@ _ALLOWED_METHODS: dict[str, frozenset[str]] = {
     "neighbor": frozenset({"add", "remove", "flush", "list_neighbors"}),
     "membership": frozenset({"join", "leave", "list_memberships"}),
     "resolver": frozenset({"resolve"}),
+    "socket_introspect": frozenset({"list_sockets"}),
 }
 
 
@@ -111,6 +112,8 @@ def _resolve_api(name: str, /) -> Any:
             return stack.membership
         case "resolver":
             return stack.resolver
+        case "socket_introspect":
+            return stack.ss
 
     raise KeyError(f"Unknown control API {name!r}.")
 

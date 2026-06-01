@@ -70,6 +70,7 @@ from net_proto.lib.enums import EtherType, IpProto
 from pytcp.ipc.ipc__errors import IpcValueError
 from pytcp.lib.interface_layer import InterfaceLayer
 from pytcp.lib.neighbor import NudState
+from pytcp.protocols.tcp.tcp__enums import FsmState
 from pytcp.runtime.fib import Route, RouteProtocol, RouteScope
 from pytcp.runtime.socket import (
     AddressFamily,
@@ -85,6 +86,7 @@ from pytcp.runtime.socket import (
 from pytcp.runtime.socket.sockaddr_ll import SockAddrLl
 from pytcp.stack.link import LinkFlag, LinkStats
 from pytcp.stack.neighbor import NeighborSnapshot
+from pytcp.stack.socket_introspect import SocketSnapshot
 
 _TAG_KEY: str = "__t__"
 _VAL_KEY: str = "v"
@@ -126,6 +128,7 @@ _ENUM_TYPES: tuple[type[Enum], ...] = (
     IpOption,
     IpV6Option,
     MsgFlag,
+    FsmState,
 )
 _ENUM_TYPE_BY_TAG: dict[str, type[Enum]] = {t.__name__: t for t in _ENUM_TYPES}
 
@@ -136,6 +139,7 @@ _DATACLASS_TYPES: tuple[type[Any], ...] = (
     NeighborSnapshot,
     LinkStats,
     SockAddrLl,
+    SocketSnapshot,
 )
 _DATACLASS_TYPE_BY_TAG: dict[str, type[Any]] = {t.__name__: t for t in _DATACLASS_TYPES}
 
