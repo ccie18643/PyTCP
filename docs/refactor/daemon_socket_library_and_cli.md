@@ -77,7 +77,7 @@ clean backpressure design is, and the honest limits of "100% asyncio /
 | A1    | Multiplexed IPC client (`MuxIpcClient`)                     | **done** |
 | A2    | Faithful error wire format + client reconstruction         | **done** |
 | A4    | The `pytcp.socket` synchronous drop-in module              | **done** |
-| A5    | DNS resolved through the daemon                             | —      |
+| A5    | DNS resolved through the daemon                             | **in progress (A5.1 codec core done)** |
 | P1    | Proof point — real stdlib program over the daemon          | **done (http.client, IP-literal)** |
 | A3.0  | Feasibility: TcpSocket tx-writable signal + bridge pump (read-only) | **done** |
 | A3.1  | Prototype the writable-on-connect edge (throwaway)         | —      |
@@ -328,6 +328,20 @@ allowlist + client mirror.
   1 integration test, added to `test__ipc__socket_dropin.py`. lint clean,
   12565 passing. **The synchronous drop-in is proven against real stdlib
   protocol code.**
+- **2026-06-01** — A5.1 (DNS codec core) started: new
+  `net_proto/protocols/dns/` package — `dns__errors` (Integrity/Sanity),
+  `dns__enums` (`DnsOpcode` / `DnsResponseCode` / `DnsRecordType` A=1
+  AAAA=28 / `DnsRecordClass` IN=1), `dns__header` (the 12-octet RFC 1035
+  §4.1.1 `DnsHeader` ProtoStruct + properties mixin, flag-word pack /
+  unpack with tolerant `from_int`), and `dns__name` — the RFC 1035 §4.1.4
+  domain-name codec: `encode_name` (uncompressed wire form, label/name
+  length asserts) + `decode_name` (compression-pointer following with a
+  `seen`-offset cycle guard, reserved-bits / truncation / over-255
+  rejection raising `DnsIntegrityError`). 25 unit tests (14 name codec:
+  encode/decode/nested-pointer/loop-guard/truncation/reserved-bits/
+  round-trip; 11 header: accepted + buffer round trip + a 9-case rejection
+  matrix). lint clean, 12590 passing. Next (A5.2): question / RR
+  dataclasses + parser + assembler (full query build / response parse).
 
 ## 7. Design discussion — readiness, the "trick", and compat limits
 
