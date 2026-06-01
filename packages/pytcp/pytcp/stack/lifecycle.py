@@ -73,6 +73,7 @@ from pytcp.stack.membership import MembershipApi
 from pytcp.stack.neighbor import NeighborApi
 from pytcp.stack.resolver import ResolverApi
 from pytcp.stack.route import RouteApi, install_boot_default_routes
+from pytcp.stack.socket_introspect import SocketIntrospectApi
 
 
 def mock__init(
@@ -176,6 +177,10 @@ def mock__init(
     # snapshot/restore; tests exercising resolution inject a fake
     # resolver into 'stack.resolver'.
     _stack.resolver = ResolverApi(resolver=DnsResolver(server=_stack.STACK__DNS_SERVER))
+
+    # Socket introspection API — stateless, reads the global socket table
+    # at call time; rebuilt every 'mock__init'.
+    _stack.ss = SocketIntrospectApi()
 
     # Host-mode routing table — Phase 1. Rebuild the two FIBs
     # fresh every 'mock__init' (i.e. every harness 'setUp') so

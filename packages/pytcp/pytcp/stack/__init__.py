@@ -60,6 +60,7 @@ from pytcp.stack.membership import MembershipApi
 from pytcp.stack.neighbor import NeighborApi
 from pytcp.stack.resolver import ResolverApi
 from pytcp.stack.route import RouteApi
+from pytcp.stack.socket_introspect import SocketIntrospectApi
 
 if TYPE_CHECKING:
     from net_addr import Ip4IfAddr, Ip4Network, Ip6IfAddr, Ip6Network
@@ -447,6 +448,11 @@ STACK__DNS_SERVER: Ip4Address = Ip4Address("9.9.9.9")
 # 'link' / 'neighbor' / 'membership'; same reconstruct-per-test
 # lifecycle, so it needs no snapshot/restore.
 resolver: ResolverApi
+# Socket introspection API — read-only socket-list observation
+# surface (the Linux 'ss' analogue) over the open-socket table.
+# Constructed by 'init()' / 'mock__init()'; stateless (it reads the
+# global socket table at call time), so it needs no snapshot/restore.
+ss: SocketIntrospectApi
 # Host-mode routing table (FIB) — Phase 1 of
 # 'docs/refactor/routing_table_host_mode.md'. One per address
 # family. Reconstructed fresh by 'init()' / 'mock__init()'
