@@ -48,6 +48,7 @@ from pytcp.client.client__link import ClientLink
 from pytcp.client.client__membership import ClientMembership
 from pytcp.client.client__neighbor import ClientNeighbor
 from pytcp.client.client__packet_socket import ClientPacketSocket
+from pytcp.client.client__resolver import ClientResolver
 from pytcp.client.client__route import ClientRoute
 from pytcp.client.client__sysctl import ClientSysctl
 from pytcp.client.client__tcp_socket import ClientTcpSocket
@@ -75,6 +76,7 @@ class ClientStack:
         self.address = ClientAddress(self._client)
         self.neighbor = ClientNeighbor(self._client)
         self.membership = ClientMembership(self._client)
+        self.resolver = ClientResolver(self._client)
 
     def socket(
         self,

@@ -77,7 +77,7 @@ clean backpressure design is, and the honest limits of "100% asyncio /
 | A1    | Multiplexed IPC client (`MuxIpcClient`)                     | **done** |
 | A2    | Faithful error wire format + client reconstruction         | **done** |
 | A4    | The `pytcp.socket` synchronous drop-in module              | **done** |
-| A5    | DNS resolved through the daemon                             | **in progress (A5.1-A5.3: codec + resolver done)** |
+| A5    | DNS resolved through the daemon                             | **in progress (A5.1-A5.4: codec + resolver + control op done)** |
 | P1    | Proof point — real stdlib program over the daemon          | **done (http.client, IP-literal)** |
 | A3.0  | Feasibility: TcpSocket tx-writable signal + bridge pump (read-only) | **done** |
 | A3.1  | Prototype the writable-on-connect edge (throwaway)         | —      |
@@ -377,6 +377,23 @@ allowlist + client mirror.
   id-mismatch retry, timeout exhaustion, NXDOMAIN name error). lint clean,
   12611 passing. Next (A5.4): the `resolve` control op + client
   `getaddrinfo` / `gethostbyname` + `ClientStack.resolver` binding.
+- **2026-06-01** — A5.4 (resolve control op + client shims) complete in
+  two commits. **A5.4a (daemon side):** `pytcp/stack/resolver.py`
+  `ResolverApi` (the getaddrinfo analogue — `resolve(*, host, family)`
+  over the `DnsResolver`, querying A and/or AAAA, returning a tuple of
+  natively-IPC-encodable `Ip4Address`/`Ip6Address`); a `resolver:
+  ResolverApi` singleton + `STACK__DNS_SERVER` default (Quad9) wired in
+  `lifecycle.py` `mock__init` + `init`; `ipc__control.py` `resolver ->
+  {resolve}` allowlist + dispatch. 5 unit tests. **A5.4b (client side):**
+  `pytcp/client/client__resolver.py` `ClientResolver` — `resolve` mirror
+  plus stdlib-shaped `gethostbyname` (first IPv4 string) and `getaddrinfo`
+  (list of 5-tuples) with an IP-literal fast path and faithful
+  `socket.gaierror` translation of control failures; bound as
+  `ClientStack.resolver`. 4 integration tests over a live IPC server with
+  a fake-backed daemon resolver (resolve, gethostbyname, getaddrinfo,
+  IP-literal bypass). lint clean, 12620 passing. Next (A5.5): wire
+  `pytcp.socket.getaddrinfo`/`gethostbyname` to the daemon resolver +
+  `create_connection`, so `http.client` connects by hostname.
 
 ## 7. Design discussion — readiness, the "trick", and compat limits
 
