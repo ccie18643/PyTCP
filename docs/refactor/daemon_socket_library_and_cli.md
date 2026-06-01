@@ -60,14 +60,42 @@ proof point), then the CLI toolset.
 
 ### Track A — the 1:1 socket library
 
+**Reordered 2026-06-01 (decided with the user): the synchronous drop-in
+lands first.** Blocking programs (`http.client` / `socketserver` / most
+CLI network tools) need *none* of the non-blocking readiness machinery —
+a blocking connect just blocks in the daemon RPC. So A4 (sync) + A5 (DNS)
+ship first behind a real stdlib-program proof point, then the
+non-blocking / asyncio readiness work (A3, now decomposed A3.0–A3.4)
+layers on top and upgrades the drop-in to the mux client. The discussion
+that drove this — why the writable-on-connect "filler" is a trick, what a
+clean backpressure design is, and the honest limits of "100% asyncio /
+100% sync compat" — is captured in §7.
+
 | Phase | Title                                                       | Status |
 |-------|-------------------------------------------------------------|--------|
 | A0    | Rename `pytcp.socket` → `pytcp.runtime.socket` (mechanical) | **done** |
 | A1    | Multiplexed IPC client (`MuxIpcClient`)                     | **done** |
 | A2    | Faithful error wire format + client reconstruction         | **done** |
-| A3    | Non-blocking connect/accept daemon-side readiness ⚠         | —      |
-| A4    | The `pytcp.socket` drop-in module                          | —      |
+| A4    | The `pytcp.socket` synchronous drop-in module              | —      |
 | A5    | DNS resolved through the daemon                             | —      |
+| P1    | Proof point — real stdlib program over the daemon          | —      |
+| A3.0  | Feasibility: TcpSocket tx-writable signal + bridge pump (read-only) | **done** |
+| A3.1  | Prototype the writable-on-connect edge (throwaway)         | —      |
+| A3.2  | Backpressure bridge (honest data-phase writability)        | —      |
+| A3.3  | Non-blocking connect (connect-as-window-0 + SO_ERROR)      | —      |
+| A3.4  | Non-blocking accept (listener readiness + accept_take)     | —      |
+| P2    | Proof point — real asyncio TCP client+server over the daemon | —    |
+
+**A3.0 findings (read-only, 2026-06-01):** the existing `SocketBridge`
+*already* does data-phase backpressure — its TX pump stops draining the
+client's send buffer while `_send_all` is stuck feeding the stack socket,
+so the client end goes non-writable when the TCP window closes (its own
+docstring says so). So A3.2 is largely already true; the only hardening
+candidate is a possible busy-loop in `_send_all` when `TcpSocket.send`
+returns 0. The genuinely new work is confined to the connect-start edge
+(A3.3, where there is no data yet to carry backpressure) and accept
+readiness (A3.4) — neither of which blocking programs touch. This is the
+fact base that justified landing the synchronous drop-in first.
 
 **A0 — rename.** Move `packages/pytcp/pytcp/socket/` →
 `packages/pytcp/pytcp/runtime/socket/`; rewrite every `pytcp.socket`
@@ -210,3 +238,63 @@ allowlist + client mirror.
   `KeyError`). 7 new unit tests. lint clean, 12550 passing. Follow-up
   (A4): the daemon's unknown-handle `KeyError` is itself a candidate for
   EBADF translation so the drop-in matches stdlib on a closed socket.
+- **2026-06-01** — A3.0 feasibility (read-only) + Track A **reordered**:
+  synchronous drop-in (A4 + A5 + proof point P1) now lands before the
+  non-blocking / asyncio readiness work (A3.1–A3.4 + P2). Design
+  discussion captured in §7. Findings recorded in the A3.0 box above.
+
+## 7. Design discussion — readiness, the "trick", and compat limits
+
+Captured from the 2026-06-01 discussion so the rationale is durable.
+
+**Why writable-on-connect needs a "trick".** A real kernel socket *is*
+the connection, so `select`-for-writable flips the instant the handshake
+completes. In the daemon model the client's data fd is one end of an
+AF_UNIX socketpair — **always writable the moment it exists**, so a
+non-blocking `connect` + `select([],[fd],[])` would return writable
+before anything happened. The plan's mechanism fills the client's send
+buffer with sentinel filler (so the fd reads *not*-writable), runs the
+real connect on a daemon worker thread, and drains the filler on success
+so the fd flips writable. It is a "trick" because it manufactures
+artificial backpressure and releases it to *simulate* the kernel's
+writable-on-connect edge — indirect, `SO_SNDBUF`-accounting-dependent,
+and fragile (the bridge must strip exactly the filler before real data).
+
+**The irreducible truth.** PyTCP sockets are userspace objects, not
+kernel fds, so *no* fd has kernel-native readiness equal to a PyTCP
+connection's state — something in the daemon must actively drive a passed
+fd's readiness. Every userspace-stack-as-a-server (gVisor sentry,
+libslirp) does the same. "No driven readiness at all" is not achievable.
+
+**The clean reframe.** Done with proper flow control, the socketpair
+bridge gives honest readiness with no fake bytes: readable = real
+inbound data; writable = the daemon is willing to drain the client's send
+buffer = the real `TcpSocket` can accept more (gate client→daemon
+pumping on the stack socket's send-window). The data-phase already works
+this way (A3.0 finding). The genuinely awkward case is only the
+*connect-start* edge — there is no data yet to carry backpressure, so an
+empty buffer reads writable. Modeled honestly this is "the send window is
+zero until connected", realized by a *bounded* buffer occupation (small
+`SO_SNDBUF` + write-until-EAGAIN prime, drained on connect-success) —
+the same flow-control state, not a separate hack. Accept readiness is
+clean (listener readable = a child is queued).
+
+**Honest compatibility limits.** Neither "100% asyncio" nor "100% of
+every synchronous socket program" is a claim worth making — the surface
+includes TLS, datagram endpoints, `sendfile`, `sendmsg`/`recvmsg` cmsg,
+every `setsockopt` *honored* (not merely accepted), errno-exactness, and
+irreducible userspace-stack gaps (options with no faithful TAP/TUN
+meaning). The measurable bar is **CPython's `Lib/test/test_socket.py`**
+(Arch pkg `python-tests`) — but it assumes the kernel, tests much that is
+out of scope, and its in-process client/server harness fights the daemon
+boundary, so realistically a *relevant subset* (INET/INET6 TCP+UDP
+client/server + timeouts + common options) is the honest yardstick, not a
+turnkey gate. Deliverables are therefore framed as **proof points**
+(real stdlib program over the daemon = P1; real asyncio client+server =
+P2), with TLS / datagram / long-tail tracked as explicit follow-ups.
+
+**Why synchronous first.** Blocking programs use *none* of the readiness
+machinery — a blocking connect just blocks in the daemon RPC. So A4(sync)
++ A5 deliver a provable "real programs run over pytcp" milestone (P1)
+with zero A3 risk on the critical path; the non-blocking / asyncio
+readiness (A3.1–A3.4, P2) layers on top afterward.
