@@ -63,7 +63,7 @@ proof point), then the CLI toolset.
 | Phase | Title                                                       | Status |
 |-------|-------------------------------------------------------------|--------|
 | A0    | Rename `pytcp.socket` → `pytcp.runtime.socket` (mechanical) | **done** |
-| A1    | Multiplexed IPC client (`MuxIpcClient`)                     | —      |
+| A1    | Multiplexed IPC client (`MuxIpcClient`)                     | **done** |
 | A2    | Faithful error wire format + client reconstruction         | —      |
 | A3    | Non-blocking connect/accept daemon-side readiness ⚠         | —      |
 | A4    | The `pytcp.socket` drop-in module                          | —      |
@@ -184,3 +184,10 @@ allowlist + client mirror.
   `pytcp.runtime.socket` mechanical rename, 178 files, 34 renames; unit
   tests relocated to `tests/unit/runtime/socket/`; lint clean, 12534
   passing. `pytcp.socket` name now free for the A4 drop-in.
+- **2026-05-31** — A1 complete: `pytcp/ipc/ipc__mux_client.py`
+  (`MuxIpcClient` + `PendingCall`) — one AF_UNIX socket, write-lock +
+  monotonic req_id allocator + pending registry + background reader
+  routing `(message, fd)` by req_id; `call` / `call_async` / `wait` /
+  `cancel` / `close`, fd-ownership handled on every path (deliver /
+  timeout-race / cancel / fail-all). 9 unit tests over a fake-daemon
+  AF_UNIX listener. lint clean, 12543 passing.
