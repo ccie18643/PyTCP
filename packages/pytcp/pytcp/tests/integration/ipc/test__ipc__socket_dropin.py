@@ -26,14 +26,16 @@
 
 
 """
-End-to-end proof point for the daemon-backed stdlib-socket drop-in.
+End-to-end proof points for the daemon-backed stdlib-socket drop-in.
 
-A blocking TCP echo driven entirely through 'pytcp.socket' — the
+Blocking TCP exchanges driven entirely through 'pytcp.socket' — the
 stdlib-shaped 'socket()' factory, resolved against the daemon via the
 '$PYTCP_DAEMON_SOCKET' singleton, with data exchanged over the wrapper's
-'recv' / 'sendall'. Proves the drop-in delegates correctly to the
-underlying client shim over the live control RPC + SCM_RIGHTS data
-channel + bridge pump, using only stdlib-shaped calls and constants.
+'recv' / 'sendall' / 'makefile' / 'dup' / 'detach'. The capstone runs a
+real stdlib 'http.client' GET round trip over a drop-in socket. Proves
+the drop-in delegates correctly to the underlying client shim over the
+live control RPC + SCM_RIGHTS data channel + bridge pump, using only
+stdlib-shaped calls and constants.
 
 pytcp/tests/integration/ipc/test__ipc__socket_dropin.py
 
@@ -41,6 +43,7 @@ ver 3.0.8
 """
 
 import errno
+import http.client
 import io
 import os
 import socket
@@ -497,4 +500,93 @@ class TestSocketDropinEcho(TcpTestCase):
             salvaged.recv(64),
             b"gamma",
             msg="The descriptor returned by detach() must still receive peer data.",
+        )
+
+    def _wait_for_request(self, marker: bytes) -> int:
+        """
+        Block until the HTTP request has fully reached the wire (its
+        in-order data bytes start with 'marker' and end the header block),
+        nudging the virtual clock; return the total request length so the
+        peer can acknowledge it.
+        """
+
+        deadline = time.monotonic() + _DEADLINE__SEC
+        segments: dict[int, bytes] = {}
+        while time.monotonic() < deadline:
+            for frame in list(self._frames_tx):
+                probe = self._parse_tx(frame)
+                if probe.sport == _LOCAL_PORT and probe.payload:
+                    segments[probe.seq] = bytes(probe.payload)
+            request = b"".join(segments[seq] for seq in sorted(segments))
+            if request.startswith(marker) and b"\r\n\r\n" in request:
+                return len(request)
+            self._advance(ms=5)
+            time.sleep(0.01)
+        raise AssertionError("The HTTP request never reached the wire.")
+
+    def test__socket_dropin__http_client_get_round_trip(self) -> None:
+        """
+        Ensure a real stdlib 'http.client.HTTPConnection' completes a GET
+        request / response over a drop-in socket — exercising http.client's
+        request serialization, 'sendall', and 'makefile'-based response
+        parsing against the daemon-backed data channel.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        sock = pytcp_socket.socket(pytcp_socket.AF_INET, pytcp_socket.SOCK_STREAM)
+        self.addCleanup(sock.close)
+        sock.settimeout(_DEADLINE__SEC)
+        self._drive_handshake(sock)
+
+        connection = http.client.HTTPConnection(str(HOST_A__IP4_ADDRESS), _REMOTE_PORT)
+        connection.sock = sock  # pre-connected drop-in socket
+        self.addCleanup(connection.close)
+
+        result: dict[str, object] = {}
+
+        def run_get() -> None:
+            try:
+                connection.request("GET", "/")
+                response = connection.getresponse()
+                result["status"] = response.status
+                result["body"] = response.read()
+            except Exception as error:  # noqa: BLE001  # surface to the test thread
+                result["error"] = error
+
+        get_thread = threading.Thread(target=run_get, name="http-get")
+        get_thread.start()
+        self.addCleanup(get_thread.join)
+
+        request_len = self._wait_for_request(b"GET / HTTP/1.1")
+
+        http_response = b"HTTP/1.1 200 OK\r\n" b"Content-Length: 5\r\n" b"Connection: close\r\n" b"\r\n" b"hello"
+        self._drive_rx(
+            frame=build_tcp4(
+                src_ip=HOST_A__IP4_ADDRESS,
+                dst_ip=STACK__IP4_HOST.address,
+                sport=_REMOTE_PORT,
+                dport=_LOCAL_PORT,
+                seq=_PEER_ISS + 1,
+                ack=_ISS + 1 + request_len,
+                flags=("ACK",),
+                win=_PEER_WIN,
+                payload=http_response,
+            )
+        )
+
+        get_thread.join(timeout=_DEADLINE__SEC)
+        self.assertFalse(
+            get_thread.is_alive(),
+            msg="The http.client GET must complete once the 200 response is driven.",
+        )
+        self.assertNotIn(
+            "error",
+            result,
+            msg=f"http.client GET raised over the drop-in socket: {result.get('error')!r}",
+        )
+        self.assertEqual(
+            (result.get("status"), result.get("body")),
+            (200, b"hello"),
+            msg="http.client must parse the driven 200 response read over the drop-in socket.",
         )

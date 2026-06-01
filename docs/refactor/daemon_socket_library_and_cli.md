@@ -78,7 +78,7 @@ clean backpressure design is, and the honest limits of "100% asyncio /
 | A2    | Faithful error wire format + client reconstruction         | **done** |
 | A4    | The `pytcp.socket` synchronous drop-in module              | **done** |
 | A5    | DNS resolved through the daemon                             | —      |
-| P1    | Proof point — real stdlib program over the daemon          | —      |
+| P1    | Proof point — real stdlib program over the daemon          | **done (http.client, IP-literal)** |
 | A3.0  | Feasibility: TcpSocket tx-writable signal + bridge pump (read-only) | **done** |
 | A3.1  | Prototype the writable-on-connect edge (throwaway)         | —      |
 | A3.2  | Backpressure bridge (honest data-phase writability)        | —      |
@@ -313,6 +313,21 @@ allowlist + client mirror.
   string. lint clean, 12564 passing. **A4 (the synchronous drop-in) is
   complete**: factory + `Socket` wrapper + makefile + dup/detach + faithful
   errors, proven end to end for TCP and UDP through `pytcp.socket`.
+- **2026-06-01** — P1 (synchronous milestone) **done**: a real stdlib
+  `http.client.HTTPConnection` completes a GET request / response over a
+  drop-in socket, driven on a background thread while the test plays the
+  HTTP server on the wire. It exercises http.client's actual request
+  serialization (`sendall`), response parsing, and `makefile("rb")` body
+  read against the daemon-backed data channel — proving real off-the-shelf
+  stdlib protocol code runs unmodified over `pytcp.socket`. The socket is
+  opened via `pytcp.socket.socket()` and driven to ESTABLISHED through the
+  drop-in's blocking `connect`; the connection is assigned to the
+  `HTTPConnection`, so the full create_connection/getaddrinfo plumbing is
+  the only thing bypassed (an IP-literal `create_connection` is trivially
+  addable; name-based resolution awaits A5's getaddrinfo-through-daemon).
+  1 integration test, added to `test__ipc__socket_dropin.py`. lint clean,
+  12565 passing. **The synchronous drop-in is proven against real stdlib
+  protocol code.**
 
 ## 7. Design discussion — readiness, the "trick", and compat limits
 
