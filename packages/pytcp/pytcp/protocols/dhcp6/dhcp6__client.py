@@ -91,6 +91,13 @@ _DHCP6__LIFETIME_INFINITY = 0xFFFFFFFF
 # systemd-networkd, which assign DHCPv6 addresses as /128).
 _DHCP6__LEASE_PREFIX_LEN = 128
 
+# When the exchange runs on the subsystem worker thread, each blocking
+# recv is capped to this slice so a stack stop() is observed within one
+# slice rather than after the full (up to multi-second) §15
+# retransmission window; a sync-mode caller waits the whole window in one
+# recv. Matches the canonical subsystem poll cadence.
+_DHCP6__STOP_POLL_INTERVAL_S = SUBSYSTEM_SLEEP_TIME__SEC
+
 
 @dataclass(frozen=True, kw_only=True, slots=True)
 class Dhcp6StatelessConfig:
@@ -317,6 +324,16 @@ class Dhcp6Client(Subsystem):
         if self._address_api is not None:
             self._address_api.remove(address=lease.address)
         self._lease = None
+
+    def _on_worker_thread(self) -> bool:
+        """
+        Whether the current call is running on the subsystem worker
+        thread. The stop-responsive recv slicing engages only here; a
+        sync-mode caller (CLI / tests calling 'acquire_lease' /
+        'fetch_other_config' inline) keeps the single-recv-per-window wait.
+        """
+
+        return self._thread is not None and threading.current_thread() is self._thread
 
     # --- message builders ---
 
@@ -574,19 +591,22 @@ class Dhcp6Client(Subsystem):
 
     # --- stateful exchange ---
 
-    @staticmethod
-    def _delay_first_solicit() -> None:
+    def _delay_first_solicit(self) -> None:
         """
         Delay the first SOLICIT by a random interval drawn uniformly from
         [0, SOL_MAX_DELAY] (RFC 8415 §18.2.1) to desynchronise a fleet of
         hosts that boot — or observe the Managed RA flag — at the same
         instant. A drawn delay of 0 (the 'dhcp6.sol_max_delay_ms = 0'
         operator override, or simply the random draw) transmits immediately.
+
+        The wait is on the subsystem stop event so a stack stop() during
+        the start-up jitter cuts the delay short instead of blocking
+        teardown.
         """
 
         delay_s = random.uniform(0.0, dhcp6__constants.DHCP6__SOL_MAX_DELAY_MS) / 1000.0
         if delay_s > 0:
-            time.sleep(delay_s)
+            self._event__stop_subsystem.wait(timeout=delay_s)
 
     def acquire_lease(self) -> Dhcp6Lease | None:
         """
@@ -746,6 +766,8 @@ class Dhcp6Client(Subsystem):
         # No response in the first window — apply the §15 retransmission,
         # terminating on the first valid ADVERTISE (or Rapid Commit REPLY).
         for _ in range(1, max_attempts):
+            if self._event__stop_subsystem.is_set():
+                return None, []
             rand = random.uniform(-rand_factor, rand_factor)
             rt_ms = 2 * rt_ms + rand * rt_ms
             if rt_ms > mrt_ms:
@@ -789,6 +811,8 @@ class Dhcp6Client(Subsystem):
 
         collected: list[Dhcp6Parser] = []
         while True:
+            if self._event__stop_subsystem.is_set():
+                return None, collected
             remaining = deadline - time.monotonic()
             if remaining <= 0:
                 return None, collected
@@ -1222,6 +1246,10 @@ class Dhcp6Client(Subsystem):
         rt_ms = 0.0
         attempt = 0
         while True:
+            # Abort the retransmission promptly when the stack is stopping
+            # rather than burning the whole attempt budget on teardown.
+            if self._event__stop_subsystem.is_set():
+                return None
             if mrd_deadline is not None and time.monotonic() >= mrd_deadline:
                 return None
 
@@ -1273,18 +1301,29 @@ class Dhcp6Client(Subsystem):
         """
 
         deadline = time.monotonic() + timeout_s
-        remaining = timeout_s
-        first_iter = True
+        # On the subsystem worker thread, cap each blocking recv to a
+        # short poll slice and bail on the stop event so a stack stop() is
+        # observed within one slice rather than after the full (up to
+        # multi-second) retransmission window; a sync-mode caller waits the
+        # whole window in a single recv so a server reply is awaited in one
+        # wait (and so the unit-test mock socket is driven one-recv-per-
+        # window).
+        on_worker = self._on_worker_thread()
         while True:
-            if not first_iter:
-                remaining = deadline - time.monotonic()
-                if remaining <= 0:
-                    return None
-            first_iter = False
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                return None
+            if on_worker and self._event__stop_subsystem.is_set():
+                return None
+            recv_timeout = min(remaining, _DHCP6__STOP_POLL_INTERVAL_S) if on_worker else remaining
 
             try:
-                packet = Dhcp6Parser(client_socket.recv__mv(timeout=remaining))
+                packet = Dhcp6Parser(client_socket.recv__mv(timeout=recv_timeout))
             except TimeoutError:
+                if on_worker:
+                    # Slice expired with no reply — re-check the window /
+                    # stop event and keep waiting until the deadline.
+                    continue
                 return None
             except Dhcp6IntegrityError, Dhcp6SanityError:
                 __debug__ and log("dhcp6", "<WARN>Dropping malformed inbound DHCPv6 frame; continuing wait window</>")
