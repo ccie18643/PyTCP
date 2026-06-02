@@ -361,6 +361,7 @@ class UdpSocket(socket):
                 socket_type=self._socket_type,
                 dual_stack=(self._address_family is AddressFamily.INET6 and not self._ipv6_v6only),
                 reuseport=self._so_reuseport,
+                bound_ifindex=self._egress_ifindex,
             ):
                 raise OSError(
                     errno.EADDRINUSE,

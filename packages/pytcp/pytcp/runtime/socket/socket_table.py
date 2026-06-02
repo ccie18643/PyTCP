@@ -143,6 +143,37 @@ class SocketTable:
             self._rr_cursor[socket_id] = (index + 1) % len(cohort)
             return cohort[index % len(cohort)]
 
+    def get_for_ingress(self, socket_id: SocketId, *, ifindex: int, default: socket | None = None) -> socket | None:
+        """
+        Return one socket from the cohort under 'socket_id' eligible to
+        receive a datagram that arrived on interface 'ifindex', or
+        'default' when none is eligible.
+
+        A socket pinned to an interface via SO_BINDTODEVICE only receives
+        datagrams arriving on that interface; an unpinned socket
+        ('_egress_ifindex is None') receives from any interface (Linux
+        'sk_bound_dev_if' RX semantics). This keeps two sockets that share
+        a port across a multi-homed host — e.g. a per-interface DHCP client
+        on 0.0.0.0:68 — from cross-delivering each other's replies. Among
+        the eligible members a multi-member (SO_REUSEPORT) cohort
+        round-robins; a single eligible member is returned directly.
+        """
+
+        with self._lock:
+            cohort = self._sockets.get(socket_id)
+            if not cohort:
+                return default
+            eligible = [
+                member for member in cohort if member._egress_ifindex is None or member._egress_ifindex == ifindex
+            ]
+            if not eligible:
+                return default
+            if len(eligible) == 1:
+                return eligible[0]
+            index = self._rr_cursor.get(socket_id, 0)
+            self._rr_cursor[socket_id] = (index + 1) % len(eligible)
+            return eligible[index % len(eligible)]
+
     def pop(self, socket_id: SocketId, default: socket | None = None) -> socket | None:
         """
         Remove the entire cohort under 'socket_id' and return its last

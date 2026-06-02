@@ -240,6 +240,7 @@ def is_address_in_use(
     socket_type: SocketType,
     dual_stack: bool = False,
     reuseport: bool = False,
+    bound_ifindex: int | None = None,
 ) -> bool:
     """
     Check if the (family, type, IP, port) combination is already in use.
@@ -301,6 +302,18 @@ def is_address_in_use(
             )
 
         if not overlaps:
+            continue
+
+        # SO_BINDTODEVICE: two sockets bound to the same (ip, port) but
+        # pinned to DIFFERENT interfaces do not conflict — each only
+        # serves traffic on its own device (Linux
+        # net/ipv4/inet_connection_sock.c 'inet_bind_conflict' honors
+        # 'sk_bound_dev_if'). This lets a per-interface DHCP client bind
+        # 0.0.0.0:68 on every NIC of a multi-homed host. A device-bound
+        # socket and an unbound one (which spans every interface) still
+        # conflict, so the skip requires BOTH sides to be pinned.
+        opened_ifindex = getattr(opened_socket, "_egress_ifindex", None)
+        if bound_ifindex is not None and opened_ifindex is not None and bound_ifindex != opened_ifindex:
             continue
 
         # SO_REUSEPORT cohort: an overlap is permitted only when BOTH

@@ -31,6 +31,7 @@ ver 3.0.8
 """
 
 import threading
+from types import SimpleNamespace
 from typing import cast
 from unittest import TestCase
 from unittest.mock import create_autospec
@@ -61,6 +62,18 @@ def _make_socket(socket_id: SocketId | None = None) -> socket:
     if socket_id is not None:
         sock.socket_id = socket_id
     return cast(socket, sock)
+
+
+def _make_bound_socket(socket_id: SocketId, *, egress_ifindex: int | None) -> socket:
+    """
+    Build a stand-in socket carrying a 'socket_id' and the
+    SO_BINDTODEVICE-resolved '_egress_ifindex' (None when unbound) for the
+    ingress-demux tests. A 'SimpleNamespace' stand-in is used because
+    '_egress_ifindex' is an instance-only attribute an autospec cannot
+    stamp under 'spec_set'.
+    """
+
+    return cast(socket, SimpleNamespace(socket_id=socket_id, _egress_ifindex=egress_ifindex))
 
 
 class TestSocketTableBasic(TestCase):
@@ -431,3 +444,91 @@ class TestSocketTableConcurrency(TestCase):
                 socks[sid],
                 msg="A surviving entry must map its id to the registered socket.",
             )
+
+
+class TestSocketTableIngressDemux(TestCase):
+    """
+    The 'SocketTable.get_for_ingress' SO_BINDTODEVICE RX-demux tests.
+    """
+
+    def test__socket_table__ingress_delivers_to_device_bound_member(self) -> None:
+        """
+        Ensure a datagram arriving on an interface is delivered to the
+        cohort member pinned to that interface via SO_BINDTODEVICE, not a
+        sibling pinned to a different interface — the multi-homed
+        port-sharing case (two DHCP clients on 0.0.0.0:68).
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        table = SocketTable()
+        sid = _make_socket_id("dhcp")
+        sock_if1 = _make_bound_socket(sid, egress_ifindex=1)
+        sock_if2 = _make_bound_socket(sid, egress_ifindex=2)
+        table.register(sock_if1)
+        table.register(sock_if2)
+
+        self.assertIs(
+            table.get_for_ingress(sid, ifindex=1),
+            sock_if1,
+            msg="A datagram on interface 1 must reach the socket bound to interface 1.",
+        )
+        self.assertIs(
+            table.get_for_ingress(sid, ifindex=2),
+            sock_if2,
+            msg="A datagram on interface 2 must reach the socket bound to interface 2.",
+        )
+
+    def test__socket_table__ingress_no_eligible_member_returns_default(self) -> None:
+        """
+        Ensure a datagram arriving on an interface with no cohort member
+        bound to it (and no unbound member) returns the default rather than
+        cross-delivering to a member bound to a different interface.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        table = SocketTable()
+        sid = _make_socket_id("dhcp")
+        table.register(_make_bound_socket(sid, egress_ifindex=1))
+
+        self.assertIsNone(
+            table.get_for_ingress(sid, ifindex=2, default=None),
+            msg="A datagram on an interface with no device-matching member must not cross-deliver.",
+        )
+
+    def test__socket_table__ingress_unbound_member_receives_from_any_interface(self) -> None:
+        """
+        Ensure an unbound (no SO_BINDTODEVICE) cohort member is eligible to
+        receive a datagram arriving on any interface.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        table = SocketTable()
+        sid = _make_socket_id("any")
+        unbound = _make_bound_socket(sid, egress_ifindex=None)
+        table.register(unbound)
+
+        self.assertIs(
+            table.get_for_ingress(sid, ifindex=7),
+            unbound,
+            msg="An unbound socket must receive datagrams from any interface.",
+        )
+
+    def test__socket_table__ingress_missing_cohort_returns_default(self) -> None:
+        """
+        Ensure an ingress lookup for an unregistered socket_id returns the
+        supplied default.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        table = SocketTable()
+        sentinel = _make_bound_socket(_make_socket_id("x"), egress_ifindex=None)
+
+        self.assertIs(
+            table.get_for_ingress(_make_socket_id("missing"), ifindex=1, default=sentinel),
+            sentinel,
+            msg="A missing cohort must return the default.",
+        )

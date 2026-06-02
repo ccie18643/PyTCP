@@ -50,6 +50,7 @@ from pytcp import stack
 from pytcp.lib.packet_stats import PacketStatsRx
 from pytcp.lib.tx_status import TxStatus
 from pytcp.runtime.packet_handler.packet_handler__udp__rx import UdpRxHandler
+from pytcp.runtime.socket.socket_table import SocketTable
 
 if TYPE_CHECKING:
     from pytcp.runtime.packet_handler import PacketHandlerL2, PacketHandlerL3
@@ -110,6 +111,7 @@ class _StubInterface:
 
     def __init__(self) -> None:
         self._packet_stats_rx = PacketStatsRx()
+        self._ifindex = 1
         self.udp_tx_calls: list[dict[str, object]] = []
         self.icmp4_tx_calls: list[dict[str, object]] = []
         self.icmp6_tx_calls: list[dict[str, object]] = []
@@ -173,7 +175,7 @@ class _UdpRxTestBase(TestCase):
     def setUp(self) -> None:
         self._if = _StubInterface()
         self._udp_rx = UdpRxHandler(interface=cast("PacketHandlerL2 | PacketHandlerL3", self._if))
-        self._sockets_patch = patch.object(stack, "sockets", dict[object, object]())
+        self._sockets_patch = patch.object(stack, "sockets", SocketTable())
         self._sockets_patch.start()
 
     def tearDown(self) -> None:
@@ -239,8 +241,12 @@ class TestPacketHandlerUdpRxDispatch(_UdpRxTestBase):
             def get(self, key: object, default: object = None) -> object:
                 return fake_socket
 
+            def get_for_ingress(self, key: object, *, ifindex: int, default: object = None) -> object:
+                del ifindex
+                return fake_socket
+
         self._sockets_patch.stop()
-        self._sockets_patch = patch.object(stack, "sockets", _MatchAllDict())
+        self._sockets_patch = patch.object(stack, "sockets", cast(SocketTable, _MatchAllDict()))
         self._sockets_patch.start()
 
         packet_rx = _packet_rx_from_ip4_udp(payload=b"hello")

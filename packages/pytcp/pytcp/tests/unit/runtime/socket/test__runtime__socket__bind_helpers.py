@@ -1203,3 +1203,98 @@ class TestIsAddressInUse(TestCase):
             result,
             msg="A plain bind must conflict with an existing SO_REUSEPORT socket.",
         )
+
+
+def _open_socket(*, port: int, ifindex: int | None) -> SimpleNamespace:
+    """
+    Build a stand-in already-open UDP/IPv4 socket bound to 0.0.0.0:'port'
+    and pinned to '_egress_ifindex' (None when unbound) for the
+    'is_address_in_use' SO_BINDTODEVICE tests.
+    """
+
+    return SimpleNamespace(
+        type=SocketType.DGRAM,
+        local_port=port,
+        family=AddressFamily.INET4,
+        local_ip_address=Ip4Address(),
+        _so_reuseport=False,
+        _ipv6_v6only=True,
+        _egress_ifindex=ifindex,
+    )
+
+
+class TestIsAddressInUseBindToDevice(TestCase):
+    """
+    The 'is_address_in_use' SO_BINDTODEVICE device-awareness tests.
+    """
+
+    def _in_use(self, *, sockets: dict[str, SimpleNamespace], bound_ifindex: int | None) -> bool:
+        """
+        Run 'is_address_in_use' for a 0.0.0.0:68 UDP/IPv4 bind against a
+        patched 'stack.sockets', returning whether it reports a conflict.
+        """
+
+        with patch("pytcp.runtime.socket.socket__bind_helpers.stack.sockets", sockets):
+            return is_address_in_use(
+                local_ip_address=Ip4Address(),
+                local_port=68,
+                address_family=AddressFamily.INET4,
+                socket_type=SocketType.DGRAM,
+                bound_ifindex=bound_ifindex,
+            )
+
+    def test__is_address_in_use__same_port_different_device_no_conflict(self) -> None:
+        """
+        Ensure two sockets bound to the same (0.0.0.0, 68) but pinned to
+        different interfaces via SO_BINDTODEVICE do not conflict — each
+        only sees traffic on its own device (two DHCP clients on a
+        multi-homed host).
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        self.assertFalse(
+            self._in_use(sockets={"s1": _open_socket(port=68, ifindex=1)}, bound_ifindex=2),
+            msg="Sockets on the same port but different interfaces must not conflict.",
+        )
+
+    def test__is_address_in_use__same_port_same_device_conflicts(self) -> None:
+        """
+        Ensure two sockets bound to the same (0.0.0.0, 68) on the SAME
+        interface still conflict.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        self.assertTrue(
+            self._in_use(sockets={"s1": _open_socket(port=68, ifindex=1)}, bound_ifindex=1),
+            msg="Sockets on the same port and the same interface must conflict.",
+        )
+
+    def test__is_address_in_use__unbound_binder_conflicts_with_device_bound(self) -> None:
+        """
+        Ensure an unbound binding socket conflicts with a device-bound open
+        socket on the same port — the unbound socket spans every interface,
+        including the bound one.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        self.assertTrue(
+            self._in_use(sockets={"s1": _open_socket(port=68, ifindex=1)}, bound_ifindex=None),
+            msg="An unbound binder must conflict with a device-bound open socket on the same port.",
+        )
+
+    def test__is_address_in_use__device_bound_binder_conflicts_with_unbound(self) -> None:
+        """
+        Ensure a device-bound binding socket conflicts with an unbound open
+        socket on the same port — the unbound open socket already spans
+        every interface.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        self.assertTrue(
+            self._in_use(sockets={"s1": _open_socket(port=68, ifindex=None)}, bound_ifindex=1),
+            msg="A device-bound binder must conflict with an unbound open socket on the same port.",
+        )

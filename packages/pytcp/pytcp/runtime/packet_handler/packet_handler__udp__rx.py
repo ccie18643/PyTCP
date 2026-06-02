@@ -94,7 +94,7 @@ class UdpRxHandler:
             udp__remote_port=raw_sport,
         )
         for socket_id in candidate_md.socket_ids:
-            socket = cast(UdpSocket, stack.sockets.get(socket_id, None))
+            socket = cast(UdpSocket, stack.sockets.get_for_ingress(socket_id, ifindex=self._if._ifindex, default=None))
             if socket is not None and socket._udp_no_check6_rx:
                 UdpParser(packet_rx, accept_zero_cksum_ip6=True)
                 return True
@@ -187,7 +187,9 @@ class UdpRxHandler:
         )
 
         for socket_id in packet_rx_md.socket_ids:
-            if socket := cast(UdpSocket, stack.sockets.get(socket_id, None)):
+            if socket := cast(
+                UdpSocket, stack.sockets.get_for_ingress(socket_id, ifindex=self._if._ifindex, default=None)
+            ):
                 # RFC 3376 §3.1 / Linux 'ip_mc_sf_allow' data-plane
                 # source filter: an IPv4 multicast datagram is delivered
                 # to a socket only if the socket's source filter for this
