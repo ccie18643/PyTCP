@@ -475,6 +475,18 @@ allowlist + client mirror.
   SO_ERROR) and accept readiness (A3.4) — remains. lint clean, 12649
   passing.
 
+- **2026-06-02** — B2 follow-up: `pytcp daemon status`. Reports whether
+  the daemon is running (pidfile present + the recorded pid alive via a
+  null-signal probe) and, when the control socket is reachable, a summary
+  of the stack's interface addressing state (`format_addr`) plus the route
+  and socket counts — so an operator can see what the stack autoconfigured
+  to. Exit 0 when running, 3 (LSB "program is not running") when not; a
+  running-but-unreachable control socket still reports the pid and exits 0.
+  Factored the pidfile read out of `daemon stop` into a shared
+  `_read_pidfile` helper. 3 unit tests (no-pidfile, stale-pidfile,
+  running-but-unreachable) + 1 integration test (running + reachable
+  renders the stack summary against the live IPC server). lint clean.
+
 ## 7. Design discussion — readiness, the "trick", and compat limits
 
 Captured from the 2026-06-01 discussion so the rationale is durable.

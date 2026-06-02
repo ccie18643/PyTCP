@@ -128,6 +128,98 @@ class TestCliDaemonStop(TestCase):
         self.assertEqual(exit_code, 1, msg="daemon stop must report failure when no pidfile exists.")
 
 
+class TestCliDaemonStatus(TestCase):
+    """
+    The 'pytcp daemon status' reporting tests.
+    """
+
+    @override
+    def setUp(self) -> None:
+        """
+        Create a temp directory for pidfiles, removed on cleanup.
+        """
+
+        self._tmp_dir = tempfile.mkdtemp(prefix="pytcp-cli-status-")
+        self.addCleanup(self._cleanup)
+
+    def _cleanup(self) -> None:
+        """
+        Remove the temp directory and any pidfile left in it.
+        """
+
+        for name in os.listdir(self._tmp_dir):
+            os.unlink(os.path.join(self._tmp_dir, name))
+        os.rmdir(self._tmp_dir)
+
+    def _pidfile(self, *, pid: int | None) -> str:
+        """
+        Return a pidfile path, optionally pre-written with 'pid'.
+        """
+
+        path = os.path.join(self._tmp_dir, "pytcp.pid")
+        if pid is not None:
+            with open(path, "w", encoding="ascii") as handle:
+                handle.write(f"{pid}\n")
+        return path
+
+    def _run_status(self, pidfile_path: str, /) -> tuple[int, str]:
+        """
+        Run 'daemon status' against a pidfile, capturing its stdout.
+        """
+
+        buffer = io.StringIO()
+        with contextlib.redirect_stdout(buffer):
+            exit_code = main(["daemon", "status", "--pidfile", pidfile_path, "--ipc-socket", "/nonexistent.sock"])
+        return exit_code, buffer.getvalue()
+
+    def test__daemon_status__no_pidfile_reports_not_running(self) -> None:
+        """
+        Ensure 'daemon status' reports the daemon is not running and exits
+        3 (LSB "program is not running") when no pidfile is present.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        exit_code, output = self._run_status(os.path.join(self._tmp_dir, "missing.pid"))
+
+        self.assertEqual(exit_code, 3, msg="daemon status must exit 3 when the daemon is not running.")
+        self.assertIn("not running", output, msg="daemon status must report the daemon is not running.")
+
+    def test__daemon_status__stale_pidfile_reports_not_running(self) -> None:
+        """
+        Ensure 'daemon status' reports not-running and exits 3 when the
+        pidfile names a process that no longer exists.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        self.enterContext(patch("pytcp.cli.__main__.os.kill", autospec=True, side_effect=ProcessLookupError))
+
+        exit_code, output = self._run_status(self._pidfile(pid=4242))
+
+        self.assertEqual(exit_code, 3, msg="daemon status must exit 3 for a stale pidfile.")
+        self.assertIn("not running", output, msg="daemon status must report a stale pidfile as not running.")
+
+    def test__daemon_status__running_but_unreachable_reports_pid(self) -> None:
+        """
+        Ensure 'daemon status' reports the daemon is running (with its pid)
+        and exits 0 even when the control socket cannot be reached.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        self.enterContext(patch("pytcp.cli.__main__.os.kill", autospec=True))
+        self.enterContext(
+            patch("pytcp.cli.__main__.connect", autospec=True, side_effect=OSError("connection refused")),
+        )
+
+        exit_code, output = self._run_status(self._pidfile(pid=4242))
+
+        self.assertEqual(exit_code, 0, msg="daemon status must exit 0 when the daemon process is alive.")
+        self.assertIn("running (pid 4242)", output, msg="daemon status must report the running pid.")
+        self.assertIn("unreachable", output, msg="daemon status must note an unreachable control socket.")
+
+
 class TestRemovePidfile(TestCase):
     """
     The daemon pidfile-removal helper tests.

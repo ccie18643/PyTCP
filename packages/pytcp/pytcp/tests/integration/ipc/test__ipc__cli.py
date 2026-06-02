@@ -37,6 +37,8 @@ ver 3.0.8
 
 import contextlib
 import io
+import os
+import tempfile
 from typing import cast, override
 
 from net_addr import Ip4Address, MacAddress
@@ -179,6 +181,39 @@ class TestIpcCli(IpcControlTestCase):
             "inet ",
             output,
             msg="The addr output must include at least one assigned IPv4 address.",
+        )
+
+    def test__cli__daemon_status_running_shows_stack(self) -> None:
+        """
+        Ensure 'pytcp daemon status' against a live, reachable daemon
+        reports the running pid, the control socket, and a summary of the
+        stack's interface addressing state.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        tmp_dir = self.enterContext(tempfile.TemporaryDirectory())
+        pidfile = os.path.join(tmp_dir, "pytcp.pid")
+        with open(pidfile, "w", encoding="ascii") as handle:
+            handle.write(f"{os.getpid()}\n")
+
+        buffer = io.StringIO()
+        with contextlib.redirect_stdout(buffer):
+            exit_code = main(
+                ["daemon", "status", "--ipc-socket", self._socket_path, "--pidfile", pidfile],
+            )
+        output = buffer.getvalue()
+
+        self.assertEqual(exit_code, 0, msg="daemon status must exit 0 for a running, reachable daemon.")
+        self.assertIn(
+            f"running (pid {os.getpid()})",
+            output,
+            msg="daemon status must report the running pid.",
+        )
+        self.assertIn(
+            "link/ether",
+            output,
+            msg="daemon status must render the stack's interface addressing summary.",
         )
 
     def test__cli__link_shows_interface_without_addresses(self) -> None:

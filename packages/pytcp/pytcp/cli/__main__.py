@@ -234,7 +234,43 @@ def build_parser() -> argparse.ArgumentParser:
     parser_stop = daemon_subparsers.add_parser("stop", help="Stop the daemon via its pidfile.")
     parser_stop.add_argument("--pidfile", default=default_pidfile_path(), help="Pidfile path to signal.")
 
+    parser_status = daemon_subparsers.add_parser(
+        "status",
+        help="Show whether the daemon is running and the stack's state (exit 0 running, 3 not running).",
+    )
+    parser_status.add_argument("--ipc-socket", default=default_socket_path(), help="AF_UNIX control-socket path.")
+    parser_status.add_argument("--pidfile", default=default_pidfile_path(), help="Pidfile path to read.")
+
     return parser
+
+
+def _read_pidfile(pidfile_path: str, /) -> int | None:
+    """
+    Read the recorded pid from the pidfile, or None when the pidfile is
+    absent or does not contain an integer.
+    """
+
+    try:
+        with open(pidfile_path, encoding="ascii") as handle:
+            return int(handle.read().strip())
+    except FileNotFoundError, ValueError:
+        return None
+
+
+def _process_alive(pid: int, /) -> bool:
+    """
+    Whether a process with the given pid currently exists, probed with the
+    null signal (which checks for the process without sending anything).
+    """
+
+    try:
+        os.kill(pid, 0)
+    except ProcessLookupError:
+        return False
+    except PermissionError:
+        # The process exists but is owned by another user.
+        return True
+    return True
 
 
 def _stop_daemon(pidfile_path: str, /) -> int:
@@ -243,10 +279,8 @@ def _stop_daemon(pidfile_path: str, /) -> int:
     pidfile if the process is gone.
     """
 
-    try:
-        with open(pidfile_path, encoding="ascii") as handle:
-            pid = int(handle.read().strip())
-    except FileNotFoundError, ValueError:
+    pid = _read_pidfile(pidfile_path)
+    if pid is None:
         print("PyTCP daemon is not running (no pidfile).", file=sys.stderr)
         return 1
 
@@ -258,6 +292,45 @@ def _stop_daemon(pidfile_path: str, /) -> int:
         return 1
 
     print(f"Sent SIGTERM to PyTCP daemon (pid {pid}).")
+    return 0
+
+
+def _daemon_status(*, pidfile_path: str, socket_path: str) -> int:
+    """
+    Report whether the daemon is running and, when its control socket is
+    reachable, a summary of the stack's interface addressing state plus the
+    route and socket counts. Exits 0 when the daemon is running, 3 (the LSB
+    "program is not running" convention) when it is not.
+    """
+
+    pid = _read_pidfile(pidfile_path)
+    if pid is None:
+        print("PyTCP daemon is not running (no pidfile).")
+        return 3
+    if not _process_alive(pid):
+        print(f"PyTCP daemon is not running (stale pidfile, pid {pid}).")
+        return 3
+
+    print(f"PyTCP daemon is running (pid {pid}).")
+    print(f"  Control socket: {socket_path}")
+
+    try:
+        client = connect(socket_path=socket_path)
+    except OSError as error:
+        print(f"  Control socket unreachable: {error}")
+        return 0
+
+    try:
+        views = _interface_views(client)
+        if views:
+            print()
+            print(format_addr(views))
+        routes = client.route.list_routes()
+        sockets = client.ss.list_sockets(family=None, socket_type=None, listening_only=False)
+        print()
+        print(f"Routes: {len(routes)}   Sockets: {len(sockets)}")
+    finally:
+        client.close()
     return 0
 
 
@@ -277,6 +350,9 @@ def _run_daemon_command(args: argparse.Namespace, /) -> int:
 
     if args.daemon_command == "stop":
         return _stop_daemon(args.pidfile)
+
+    if args.daemon_command == "status":
+        return _daemon_status(pidfile_path=args.pidfile, socket_path=args.ipc_socket)
 
     raise AssertionError(f"Unhandled daemon command {args.daemon_command!r}.")
 
