@@ -84,6 +84,7 @@ from pytcp.runtime.socket import (
     SolSocketOption,
 )
 from pytcp.runtime.socket.sockaddr_ll import SockAddrLl
+from pytcp.stack.activity_introspect import InterfaceActivity
 from pytcp.stack.link import LinkFlag, LinkStats
 from pytcp.stack.neighbor import NeighborSnapshot
 from pytcp.stack.socket_introspect import SocketSnapshot
@@ -140,6 +141,7 @@ _DATACLASS_TYPES: tuple[type[Any], ...] = (
     LinkStats,
     SockAddrLl,
     SocketSnapshot,
+    InterfaceActivity,
 )
 _DATACLASS_TYPE_BY_TAG: dict[str, type[Any]] = {t.__name__: t for t in _DATACLASS_TYPES}
 

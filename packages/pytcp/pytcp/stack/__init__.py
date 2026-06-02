@@ -54,6 +54,7 @@ from pytcp.runtime.packet_handler import PacketHandlerL2, PacketHandlerL3
 from pytcp.runtime.socket.packet__socket_table import PacketSocketTable
 from pytcp.runtime.socket.socket_table import SocketTable
 from pytcp.runtime.timer import Timer
+from pytcp.stack.activity_introspect import ActivityIntrospectApi
 from pytcp.stack.address import AddressApi
 from pytcp.stack.link import LinkApi
 from pytcp.stack.membership import MembershipApi
@@ -453,6 +454,12 @@ resolver: ResolverApi
 # Constructed by 'init()' / 'mock__init()'; stateless (it reads the
 # global socket table at call time), so it needs no snapshot/restore.
 ss: SocketIntrospectApi
+# Per-interface activity introspection API — read-only "what is the
+# stack doing right now" surface (DHCPv4 FSM state, DAD-in-progress IPv6
+# addresses). Constructed by 'init()' / 'mock__init()'; stateless (it
+# reads the live interface table at call time), so it needs no
+# snapshot/restore.
+activity: ActivityIntrospectApi
 # Host-mode routing table (FIB) — Phase 1 of
 # 'docs/refactor/routing_table_host_mode.md'. One per address
 # family. Reconstructed fresh by 'init()' / 'mock__init()'

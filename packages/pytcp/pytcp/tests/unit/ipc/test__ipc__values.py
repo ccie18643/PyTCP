@@ -63,6 +63,7 @@ from pytcp.runtime.socket import (
     SocketType,
 )
 from pytcp.runtime.socket.sockaddr_ll import SockAddrLl
+from pytcp.stack.activity_introspect import InterfaceActivity
 from pytcp.stack.link import LinkFlag, LinkStats
 from pytcp.stack.neighbor import NeighborSnapshot
 
@@ -369,6 +370,31 @@ class TestIpcValuesRoundTrip(TestCase):
             value,
             msg="Encoded values must survive a JSON serialise/parse cycle.",
         )
+
+    def test__ipc__values__interface_activity_snapshot(self) -> None:
+        """
+        Ensure an InterfaceActivity round-trips field-by-field, including
+        the tuple-of-Ip6Address tentative-address field in both its
+        populated and empty forms.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        for activity in [
+            InterfaceActivity(
+                ifindex=2,
+                name="tap9",
+                dhcp4_state="SELECTING",
+                tentative_ip6=(Ip6Address("2603:808c::5"), Ip6Address("fe80::1")),
+            ),
+            InterfaceActivity(ifindex=3, name="tun3", dhcp4_state=None, tentative_ip6=()),
+        ]:
+            with self.subTest(activity=activity):
+                self.assertEqual(
+                    decode_value(encode_value(activity)),
+                    activity,
+                    msg=f"InterfaceActivity {activity!r} must round-trip.",
+                )
 
 
 class TestIpcValuesErrors(TestCase):

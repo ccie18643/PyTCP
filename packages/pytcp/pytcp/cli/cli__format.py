@@ -49,6 +49,7 @@ from net_addr import (
 )
 from pytcp.runtime.fib import Route
 from pytcp.runtime.socket import SocketType
+from pytcp.stack.activity_introspect import InterfaceActivity
 from pytcp.stack.neighbor import NeighborSnapshot
 from pytcp.stack.socket_introspect import SocketSnapshot
 
@@ -198,3 +199,27 @@ def format_addr(views: Iterable[InterfaceView], /) -> str:
     """
 
     return "\n".join(line for view in views for line in _interface_lines(view, with_addresses=True))
+
+
+def format_activity(activities: Iterable[InterfaceActivity]) -> str:
+    """
+    Render the per-interface ongoing-autoconfig 'Activity:' section for
+    'pytcp daemon status' — the DHCPv4 FSM state and any DAD-in-progress
+    IPv6 addresses. Interfaces with no DHCPv4 client and no tentative
+    address are omitted; an empty string is returned when nothing is
+    active, so the caller can skip the section entirely.
+    """
+
+    lines: list[str] = []
+    for activity in activities:
+        parts: list[str] = []
+        if activity.dhcp4_state is not None:
+            parts.append(f"dhcp4 {activity.dhcp4_state}")
+        if activity.tentative_ip6:
+            parts.append("tentative " + ", ".join(str(address) for address in activity.tentative_ip6))
+        if parts:
+            lines.append(f"  {activity.name}: {'; '.join(parts)}")
+
+    if not lines:
+        return ""
+    return "Activity:\n" + "\n".join(lines)

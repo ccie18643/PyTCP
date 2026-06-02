@@ -45,6 +45,7 @@ from collections.abc import Callable
 
 from pytcp.cli.cli__format import (
     InterfaceView,
+    format_activity,
     format_addr,
     format_link,
     format_neighbor_table,
@@ -338,6 +339,14 @@ def _daemon_status(*, pidfile_path: str, socket_path: str) -> int:
                 print(format_addr(views))
         except IpcRemoteError as error:
             print(f"  Interface summary unavailable: {error}")
+
+        try:
+            activity_text = format_activity(client.activity.list_activity())
+            if activity_text:
+                print()
+                print(activity_text)
+        except IpcRemoteError as error:
+            print(f"  Activity summary unavailable: {error}")
 
         try:
             routes = client.route.list_routes()

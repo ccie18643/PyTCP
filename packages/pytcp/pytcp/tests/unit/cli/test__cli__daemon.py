@@ -67,10 +67,18 @@ class _StubMissingOpStack:
                 message="module 'pytcp.stack' has no attribute 'ss'",
             )
 
+    class _Activity:
+        def list_activity(self) -> list[object]:
+            raise IpcRemoteError(
+                error_type="AttributeError",
+                message="module 'pytcp.stack' has no attribute 'activity'",
+            )
+
     def __init__(self) -> None:
         self.link = self._Link()
         self.route = self._Route()
         self.ss = self._Ss()
+        self.activity = self._Activity()
         self.closed = False
 
     def close(self) -> None:

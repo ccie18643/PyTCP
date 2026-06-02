@@ -67,6 +67,7 @@ from pytcp.runtime.rx_ring import RxRing
 from pytcp.runtime.socket import AddressFamily
 from pytcp.runtime.timer import Timer
 from pytcp.runtime.tx_ring import TxRing
+from pytcp.stack.activity_introspect import ActivityIntrospectApi
 from pytcp.stack.address import AddressApi
 from pytcp.stack.link import LinkApi
 from pytcp.stack.membership import MembershipApi
@@ -181,6 +182,7 @@ def mock__init(
     # Socket introspection API — stateless, reads the global socket table
     # at call time; rebuilt every 'mock__init'.
     _stack.ss = SocketIntrospectApi()
+    _stack.activity = ActivityIntrospectApi()
 
     # Host-mode routing table — Phase 1. Rebuild the two FIBs
     # fresh every 'mock__init' (i.e. every harness 'setUp') so
@@ -612,6 +614,7 @@ def init(
     _stack.membership = MembershipApi()
     _stack.resolver = ResolverApi(resolver=DnsResolver(server=_stack.STACK__DNS_SERVER))
     _stack.ss = SocketIntrospectApi()
+    _stack.activity = ActivityIntrospectApi()
 
     # Host-mode routing table — Phase 3 of
     # 'docs/refactor/routing_table_host_mode.md'. Build the two FIBs and

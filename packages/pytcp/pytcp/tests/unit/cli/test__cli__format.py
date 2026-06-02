@@ -32,9 +32,10 @@ ver 3.0.8
 
 from unittest import TestCase
 
-from net_addr import Ip4Address, Ip4IfAddr, Ip4Network, Ip6IfAddr, MacAddress
+from net_addr import Ip4Address, Ip4IfAddr, Ip4Network, Ip6Address, Ip6IfAddr, MacAddress
 from pytcp.cli.cli__format import (
     InterfaceView,
+    format_activity,
     format_addr,
     format_link,
     format_neighbor_table,
@@ -46,6 +47,7 @@ from pytcp.lib.neighbor import NudState
 from pytcp.protocols.tcp.tcp__enums import FsmState
 from pytcp.runtime.fib import Route, RouteProtocol, RouteScope
 from pytcp.runtime.socket import AddressFamily, SocketType
+from pytcp.stack.activity_introspect import InterfaceActivity
 from pytcp.stack.neighbor import NeighborSnapshot
 from pytcp.stack.socket_introspect import SocketSnapshot
 
@@ -230,4 +232,49 @@ class TestCliFormatInterfaces(TestCase):
             format_link([self._VIEW]),
             "1: tap7: <BROADCAST,MULTICAST,UP> mtu 1500\n    link/ether 02:00:00:00:00:07",
             msg="The link formatter must render the interface without addresses.",
+        )
+
+
+class TestCliFormatActivity(TestCase):
+    """
+    The 'format_activity' tests.
+    """
+
+    def test__format_activity(self) -> None:
+        """
+        Ensure format_activity renders each active interface's DHCPv4 state
+        and DAD-in-progress addresses, skipping interfaces with no activity.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        activities = (
+            InterfaceActivity(ifindex=1, name="tap7", dhcp4_state="BOUND", tentative_ip6=()),
+            InterfaceActivity(
+                ifindex=2,
+                name="tap9",
+                dhcp4_state="SELECTING",
+                tentative_ip6=(Ip6Address("2603:808c::5"),),
+            ),
+            InterfaceActivity(ifindex=3, name="tun3", dhcp4_state=None, tentative_ip6=()),
+        )
+
+        self.assertEqual(
+            format_activity(activities),
+            "Activity:\n  tap7: dhcp4 BOUND\n  tap9: dhcp4 SELECTING; tentative 2603:808c::5",
+            msg="format_activity must render dhcp4 state + tentative addresses and skip idle interfaces.",
+        )
+
+    def test__format_activity__empty_when_idle(self) -> None:
+        """
+        Ensure format_activity returns an empty string when no interface has
+        ongoing activity, so the status section is skipped entirely.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        self.assertEqual(
+            format_activity((InterfaceActivity(ifindex=3, name="tun3", dhcp4_state=None, tentative_ip6=()),)),
+            "",
+            msg="format_activity must return '' when nothing is active.",
         )

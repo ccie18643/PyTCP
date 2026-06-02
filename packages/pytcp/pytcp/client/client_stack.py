@@ -42,6 +42,7 @@ from types import TracebackType
 from typing import Self
 
 from net_proto.lib.enums import EtherType, IpProto
+from pytcp.client.client__activity_introspect import ClientActivityIntrospect
 from pytcp.client.client__address import ClientAddress
 from pytcp.client.client__datagram_socket import ClientRawSocket, ClientUdpSocket
 from pytcp.client.client__link import ClientLink
@@ -79,6 +80,7 @@ class ClientStack:
         self.membership = ClientMembership(self._client)
         self.resolver = ClientResolver(self._client)
         self.ss = ClientSocketIntrospect(self._client)
+        self.activity = ClientActivityIntrospect(self._client)
 
     def socket(
         self,
