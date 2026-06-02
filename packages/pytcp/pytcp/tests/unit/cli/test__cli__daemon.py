@@ -37,7 +37,7 @@ import signal
 import tempfile
 from typing import override
 from unittest import TestCase
-from unittest.mock import patch
+from unittest.mock import ANY, patch
 
 from pytcp.cli.__main__ import main
 from pytcp.daemon.daemon import remove_pidfile
@@ -273,6 +273,62 @@ class TestCliDaemonStatus(TestCase):
         self.assertEqual(exit_code, 0, msg="daemon status must exit 0 when a control op is unavailable.")
         self.assertIn("running (pid 4242)", output, msg="daemon status must report the running pid.")
         self.assertIn("unavailable", output, msg="daemon status must note the unavailable summary section.")
+
+
+class TestCliDaemonStart(TestCase):
+    """
+    The 'pytcp daemon start' interface-argument tests.
+    """
+
+    def test__daemon_start__binds_multiple_interfaces(self) -> None:
+        """
+        Ensure 'pytcp daemon start --interface tap7 --interface tap9'
+        threads both interface names through to 'run_daemon' so the daemon
+        binds a multi-homed host.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        with patch("pytcp.cli.__main__.run_daemon", autospec=True) as run_daemon:
+            main(
+                [
+                    "daemon",
+                    "start",
+                    "--interface",
+                    "tap7",
+                    "--interface",
+                    "tap9",
+                    "--ipc-socket",
+                    "/tmp/x.sock",
+                    "--pidfile",
+                    "/tmp/x.pid",
+                ]
+            )
+
+        run_daemon.assert_called_once_with(
+            socket_path="/tmp/x.sock",
+            interfaces=["tap7", "tap9"],
+            pidfile_path="/tmp/x.pid",
+            on_ready=ANY,
+        )
+
+    def test__daemon_start__defaults_to_single_tap7(self) -> None:
+        """
+        Ensure 'pytcp daemon start' with no --interface defaults to a
+        single 'tap7' interface.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        with patch("pytcp.cli.__main__.run_daemon", autospec=True) as run_daemon:
+            main(["daemon", "start", "--ipc-socket", "/tmp/x.sock", "--pidfile", "/tmp/x.pid"])
+
+        run_daemon.assert_called_once_with(
+            socket_path="/tmp/x.sock",
+            interfaces=["tap7"],
+            pidfile_path="/tmp/x.pid",
+            on_ready=ANY,
+        )
 
 
 class TestRemovePidfile(TestCase):

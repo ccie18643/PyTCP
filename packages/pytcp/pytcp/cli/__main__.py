@@ -230,7 +230,13 @@ def build_parser() -> argparse.ArgumentParser:
     daemon_subparsers = parser_daemon.add_subparsers(dest="daemon_command", required=True)
     parser_start = daemon_subparsers.add_parser("start", help="Start the daemon in the foreground.")
     parser_start.add_argument("--ipc-socket", default=default_socket_path(), help="AF_UNIX control-socket path.")
-    parser_start.add_argument("--interface", default="tap7", help="TAP/TUN interface to bind to.")
+    parser_start.add_argument(
+        "-i",
+        "--interface",
+        action="append",
+        metavar="INTERFACE",
+        help="TAP/TUN interface to bind to; repeat for a multi-homed host (default: tap7).",
+    )
     parser_start.add_argument("--pidfile", default=default_pidfile_path(), help="Pidfile path for 'daemon stop'.")
     parser_stop = daemon_subparsers.add_parser("stop", help="Stop the daemon via its pidfile.")
     parser_stop.add_argument("--pidfile", default=default_pidfile_path(), help="Pidfile path to signal.")
@@ -353,7 +359,7 @@ def _run_daemon_command(args: argparse.Namespace, /) -> int:
     if args.daemon_command == "start":
         run_daemon(
             socket_path=args.ipc_socket,
-            interface_name=args.interface,
+            interfaces=args.interface or ["tap7"],
             pidfile_path=args.pidfile,
             on_ready=lambda path: print(f"PyTCP daemon listening on {path}", flush=True),
         )

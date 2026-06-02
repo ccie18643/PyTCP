@@ -83,19 +83,18 @@ class TestDaemonCli(TestCase):
 
     def test__build_parser__defaults_and_flags(self) -> None:
         """
-        Ensure the parser applies the documented defaults (interface
-        'tap7', IPv4/IPv6 enabled) and honours the disable flags and
-        typed address arguments.
+        Ensure the parser collects repeated -i/--interface into a list and
+        honours the IPv4/IPv6 disable flags and typed address arguments.
 
         Reference: PyTCP test infrastructure (no RFC clause).
         """
 
-        args = build_parser().parse_args(["--no-ip6", "--ip4-address", "10.0.1.7/24"])
+        args = build_parser().parse_args(["-i", "tap7", "-i", "tap9", "--no-ip6", "--ip4-address", "10.0.1.7/24"])
 
         self.assertEqual(
             (args.interface, args.ip6_support, args.ip4_support, str(args.ip4_address)),
-            ("tap7", False, True, "10.0.1.7/24"),
-            msg="The daemon parser must apply defaults and honour --no-ip6 / --ip4-address.",
+            (["tap7", "tap9"], False, True, "10.0.1.7/24"),
+            msg="The daemon parser must collect repeated -i/--interface and honour --no-ip6 / --ip4-address.",
         )
 
     def test__main__threads_parsed_args_to_run_daemon(self) -> None:
@@ -112,7 +111,7 @@ class TestDaemonCli(TestCase):
 
         run_daemon.assert_called_once_with(
             socket_path="/tmp/x.sock",
-            interface_name="tap9",
+            interfaces=["tap9"],
             mac_address=None,
             ip4_support=False,
             ip4_host=None,
@@ -149,7 +148,7 @@ class TestRunDaemonPidfile(TestCase):
         self.enterContext(patch("pytcp.daemon.daemon.signal.signal"))
         self.enterContext(patch("pytcp.daemon.daemon.threading.Event", autospec=True))
 
-        run_daemon(socket_path=os.path.join(tmp_dir, "s.sock"), interface_name="tap7", pidfile_path=pidfile)
+        run_daemon(socket_path=os.path.join(tmp_dir, "s.sock"), interfaces=["tap7"], pidfile_path=pidfile)
 
         self.assertTrue(
             observed.get("pidfile_at_start", False),
@@ -175,6 +174,6 @@ class TestRunDaemonPidfile(TestCase):
         self.enterContext(patch("pytcp.daemon.daemon.signal.signal"))
         self.enterContext(patch("pytcp.daemon.daemon.threading.Event", autospec=True))
 
-        run_daemon(socket_path=os.path.join(tmp_dir, "s.sock"), interface_name="tap7")
+        run_daemon(socket_path=os.path.join(tmp_dir, "s.sock"), interfaces=["tap7"])
 
         stack.start.assert_called_once_with(wait_for_dhcp_bind=False)

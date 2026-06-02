@@ -94,9 +94,11 @@ def build_parser() -> argparse.ArgumentParser:
         help="AF_UNIX control-socket path (default: $XDG_RUNTIME_DIR/pytcp.sock).",
     )
     parser.add_argument(
+        "-i",
         "--interface",
-        default="tap7",
-        help="TAP/TUN interface to bind the stack to (default: tap7).",
+        action="append",
+        metavar="INTERFACE",
+        help="TAP/TUN interface to bind the stack to; repeat for a multi-homed host (default: tap7).",
     )
     parser.add_argument(
         "--mac-address",
@@ -140,7 +142,7 @@ def main(argv: list[str] | None = None) -> None:
 
     run_daemon(
         socket_path=args.ipc_socket,
-        interface_name=args.interface,
+        interfaces=args.interface or ["tap7"],
         mac_address=args.mac_address,
         ip4_support=args.ip4_support,
         ip4_host=args.ip4_address,

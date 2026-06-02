@@ -116,7 +116,7 @@ def _resolve_interface(interface_name: str, *, mac_address: MacAddress | None) -
 def run_daemon(
     *,
     socket_path: str,
-    interface_name: str = "tap7",
+    interfaces: list[str],
     mac_address: MacAddress | None = None,
     ip4_support: bool = True,
     ip4_host: Ip4IfAddr | None = None,
@@ -126,14 +126,19 @@ def run_daemon(
     pidfile_path: str | None = None,
 ) -> None:
     """
-    Run the PyTCP daemon: boot the stack on one interface, serve the
-    AF_UNIX control socket, and block until SIGINT / SIGTERM.
+    Run the PyTCP daemon: boot the stack on one or more interfaces, serve
+    the AF_UNIX control socket, and block until SIGINT / SIGTERM.
 
-    With no explicit host address a NIC autoconfigures (DHCPv4 for IPv4,
-    SLAAC for IPv6). 'on_ready', if given, is called with 'socket_path'
-    once the control server is listening. When 'pidfile_path' is given the
-    process id is written there for the lifetime of the daemon (removed on
-    exit) so 'pytcp daemon stop' can signal it.
+    With a single interface the explicit MAC / host-address arguments
+    apply; each NIC otherwise autoconfigures (DHCPv4 for IPv4, SLAAC for
+    IPv6). With several interfaces the per-interface static arguments are
+    ignored — every NIC autoconfigures and a per-interface address is set
+    at runtime through the Address API.
+
+    'on_ready', if given, is called with 'socket_path' once the control
+    server is listening. When 'pidfile_path' is given the process id is
+    written there for the lifetime of the daemon (removed on exit) so
+    'pytcp daemon stop' can signal it.
     """
 
     stop = threading.Event()
@@ -155,16 +160,24 @@ def run_daemon(
     stack_started = False
     try:
         stack.init()
-        interface_args = _resolve_interface(interface_name, mac_address=mac_address)
-        stack.add_interface(
-            **interface_args,
-            ip4_support=ip4_support,
-            ip4_host=ip4_host,
-            ip4_dhcp=ip4_support and ip4_host is None,
-            ip6_support=ip6_support,
-            ip6_host=ip6_host,
-            ip6_gua_autoconfig=ip6_support and ip6_host is None,
-        )
+        # Per-interface static MAC / host arguments only apply to a
+        # single-NIC daemon; with several interfaces every NIC
+        # autoconfigures (a shared static address / MAC across NICs would
+        # collide).
+        single = len(interfaces) == 1
+        for interface_name in interfaces:
+            interface_args = _resolve_interface(interface_name, mac_address=mac_address if single else None)
+            iface_ip4_host = ip4_host if single else None
+            iface_ip6_host = ip6_host if single else None
+            stack.add_interface(
+                **interface_args,
+                ip4_support=ip4_support,
+                ip4_host=iface_ip4_host,
+                ip4_dhcp=ip4_support and iface_ip4_host is None,
+                ip6_support=ip6_support,
+                ip6_host=iface_ip6_host,
+                ip6_gua_autoconfig=ip6_support and iface_ip6_host is None,
+            )
         # Do not block the daemon's bring-up on the DHCPv4 lease: start the
         # lifecycle and let the lease land in the background so the control
         # socket is reachable immediately (clients poll the address state).
