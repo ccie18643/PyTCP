@@ -41,8 +41,7 @@ import argparse
 import os
 import signal
 import sys
-from collections.abc import Callable
-from typing import override
+from typing import cast, override
 
 from net_addr import Ip4Address, Ip4Network, Ip6Address, Ip6Network, NetAddrError
 from pytcp import __version__
@@ -268,17 +267,12 @@ def _route_del(client: ClientStack, args: argparse.Namespace, /) -> str:
     return ""
 
 
-def _cmd_route(client: ClientStack, args: argparse.Namespace, /) -> str:
+def _cmd_route_list(client: ClientStack, args: argparse.Namespace, /) -> str:
     """
-    Show or modify the routing table for the 'route' subcommand. The
-    listing renders Linux-style (IPv4 by default, IPv6 with '-6' / '-A
-    inet6'); 'route add' / 'route del' modify the daemon's FIB.
+    Render the routing table for a bare 'route' (no add / del). Lists
+    Linux-style: IPv4 by default, IPv6 with '-6' / '-A inet6', the empty
+    routing cache with '-C'.
     """
-
-    if args.route_command == "add":
-        return _route_add(client, args)
-    if args.route_command == "del":
-        return _route_del(client, args)
 
     if args.inet6 or args.family == "inet6":
         family = AddressFamily.INET6
@@ -364,16 +358,6 @@ def _cmd_link(client: ClientStack, args: argparse.Namespace, /) -> str:
     return format_link(_interface_views(client))
 
 
-_COMMANDS: dict[str, Callable[[ClientStack, argparse.Namespace], str]] = {
-    "ss": _cmd_ss,
-    "route": _cmd_route,
-    "sysctl": _cmd_sysctl,
-    "neigh": _cmd_neigh,
-    "addr": _cmd_addr,
-    "link": _cmd_link,
-}
-
-
 _BANNER = "PyTCP - Python TCP/IP Stack"
 
 
@@ -408,6 +392,10 @@ def build_parser() -> argparse.ArgumentParser:
         help="AF_UNIX control-socket path (default: $XDG_RUNTIME_DIR/pytcp.sock).",
     )
 
+    # Observation commands talk to the daemon and so run through the
+    # shared connect path; the 'stack' lifecycle commands override this.
+    parser.set_defaults(needs_client=True)
+
     subparsers = parser.add_subparsers(dest="command", required=True, title="commands", metavar="<command>")
 
     parser_ss = subparsers.add_parser("ss", help="Show socket statistics.")
@@ -416,6 +404,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser_ss.add_argument("-l", "--listening", action="store_true", help="Show only listening sockets.")
     parser_ss.add_argument("-4", "--ipv4", action="store_true", help="Show only IPv4 sockets.")
     parser_ss.add_argument("-6", "--ipv6", action="store_true", help="Show only IPv6 sockets.")
+    parser_ss.set_defaults(func=_cmd_ss)
 
     parser_route = subparsers.add_parser("route", help="Show or modify the routing table.")
     parser_route.add_argument(
@@ -444,6 +433,8 @@ def build_parser() -> argparse.ArgumentParser:
         action="version",
         version=f"pytcp route (PyTCP {__version__})",
     )
+    # A bare 'route' (no add / del subcommand) lists the table.
+    parser_route.set_defaults(func=_cmd_route_list)
     route_subparsers = parser_route.add_subparsers(dest="route_command", title="commands", metavar="<command>")
     for verb, verb_help in (("add", "Add a route."), ("del", "Delete a route.")):
         parser_verb = route_subparsers.add_parser(verb, help=verb_help)
@@ -461,10 +452,14 @@ def build_parser() -> argparse.ArgumentParser:
         if verb == "add":
             parser_verb.add_argument("-i", "--dev", metavar="IFACE", help="Egress interface name.")
             parser_verb.add_argument("--metric", type=int, default=0, help="Route metric (default 0).")
+        parser_verb.set_defaults(func=_route_add if verb == "add" else _route_del)
 
-    subparsers.add_parser("neigh", help="Show the neighbour caches.")
-    subparsers.add_parser("addr", help="Show interfaces with their addresses.")
-    subparsers.add_parser("link", help="Show interfaces.")
+    parser_neigh = subparsers.add_parser("neigh", help="Show the neighbour caches.")
+    parser_neigh.set_defaults(func=_cmd_neigh)
+    parser_addr = subparsers.add_parser("addr", help="Show interfaces with their addresses.")
+    parser_addr.set_defaults(func=_cmd_addr)
+    parser_link = subparsers.add_parser("link", help="Show interfaces.")
+    parser_link.set_defaults(func=_cmd_link)
 
     parser_sysctl = subparsers.add_parser("sysctl", help="Read or write sysctl values.")
     parser_sysctl.add_argument(
@@ -473,6 +468,7 @@ def build_parser() -> argparse.ArgumentParser:
         default=None,
         help="A sysctl key to read, 'key=value' to set, or omit to list all.",
     )
+    parser_sysctl.set_defaults(func=_cmd_sysctl)
 
     parser_stack = subparsers.add_parser("stack", help="Manage the PyTCP stack daemon.")
     stack_subparsers = parser_stack.add_subparsers(
@@ -487,14 +483,17 @@ def build_parser() -> argparse.ArgumentParser:
         help="TAP/TUN interface to bind to; repeat for a multi-homed host (default: tap7).",
     )
     parser_start.add_argument("--pidfile", default=default_pidfile_path(), help="Pidfile path for 'stack stop'.")
+    parser_start.set_defaults(func=_cmd_stack_start, needs_client=False)
     parser_stop = stack_subparsers.add_parser("stop", help="Stop the stack daemon via its pidfile.")
     parser_stop.add_argument("--pidfile", default=default_pidfile_path(), help="Pidfile path to signal.")
+    parser_stop.set_defaults(func=_cmd_stack_stop, needs_client=False)
 
     parser_status = stack_subparsers.add_parser(
         "status",
         help="Show whether the stack daemon is running and its state (exit 0 running, 3 not running).",
     )
     parser_status.add_argument("--pidfile", default=default_pidfile_path(), help="Pidfile path to read.")
+    parser_status.set_defaults(func=_cmd_stack_status, needs_client=False)
 
     return parser
 
@@ -607,45 +606,48 @@ def _stack_status(*, pidfile_path: str, socket_path: str) -> int:
     return 0
 
 
-def _run_stack_command(args: argparse.Namespace, /) -> int:
+def _cmd_stack_start(args: argparse.Namespace, /) -> int:
     """
-    Dispatch the 'stack' subcommand.
-    """
-
-    if args.stack_command == "start":
-        run_daemon(
-            socket_path=args.ipc_socket,
-            interfaces=args.interface or ["tap7"],
-            pidfile_path=args.pidfile,
-            on_ready=lambda path: print(f"PyTCP stack listening on {path}", flush=True),
-        )
-        return 0
-
-    if args.stack_command == "stop":
-        return _stop_stack(args.pidfile)
-
-    if args.stack_command == "status":
-        return _stack_status(pidfile_path=args.pidfile, socket_path=args.ipc_socket)
-
-    raise AssertionError(f"Unhandled stack command {args.stack_command!r}.")
-
-
-def main(argv: list[str] | None = None) -> int:
-    """
-    Parse the command line and run the requested subcommand.
+    Run the 'stack start' command — launch the stack daemon in the
+    foreground.
     """
 
-    args = build_parser().parse_args(argv)
+    run_daemon(
+        socket_path=args.ipc_socket,
+        interfaces=args.interface or ["tap7"],
+        pidfile_path=args.pidfile,
+        on_ready=lambda path: print(f"PyTCP stack listening on {path}", flush=True),
+    )
+    return 0
 
-    if args.command == "stack":
-        return _run_stack_command(args)
+
+def _cmd_stack_stop(args: argparse.Namespace, /) -> int:
+    """
+    Run the 'stack stop' command — signal the daemon via its pidfile.
+    """
+
+    return _stop_stack(args.pidfile)
+
+
+def _cmd_stack_status(args: argparse.Namespace, /) -> int:
+    """
+    Run the 'stack status' command — report whether the daemon runs.
+    """
+
+    return _stack_status(pidfile_path=args.pidfile, socket_path=args.ipc_socket)
+
+
+def _run_with_client(args: argparse.Namespace, /) -> int:
+    """
+    Connect to the daemon, run the selected 'args.func' handler against
+    the live 'ClientStack', and print its rendered output. Reports an
+    unreachable daemon cleanly (exit 1) rather than letting the connect
+    traceback escape.
+    """
 
     try:
         client = connect(socket_path=args.ipc_socket)
     except OSError as error:
-        # The daemon is not up yet (socket missing) or not accepting
-        # connections (refused) — report it cleanly instead of letting
-        # the connect traceback escape to the operator.
         reason = error.strerror or str(error)
         print(
             f"pytcp: cannot reach the PyTCP stack daemon at {args.ipc_socket!r}: {reason}. "
@@ -655,13 +657,29 @@ def main(argv: list[str] | None = None) -> int:
         return 1
 
     try:
-        output = _COMMANDS[args.command](client, args)
+        output = args.func(client, args)
     finally:
         client.close()
 
     if output:
         print(output)
     return 0
+
+
+def main(argv: list[str] | None = None) -> int:
+    """
+    Parse the command line and run the selected subcommand. Each leaf
+    subparser binds its handler via 'set_defaults(func=...)'; commands
+    that talk to the daemon carry 'needs_client=True' and run through
+    '_run_with_client', the rest ('stack' lifecycle) call their handler
+    directly.
+    """
+
+    args = build_parser().parse_args(argv)
+
+    if args.needs_client:
+        return _run_with_client(args)
+    return cast(int, args.func(args))
 
 
 if __name__ == "__main__":
