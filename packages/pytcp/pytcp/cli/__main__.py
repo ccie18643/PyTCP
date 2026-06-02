@@ -101,13 +101,23 @@ def _cmd_ss(client: ClientStack, args: argparse.Namespace, /) -> str:
     )
 
 
+def _interface_names(client: ClientStack, /) -> dict[int, str]:
+    """
+    Map each interface's ifindex to its name for the 'dev' column.
+    """
+
+    return {
+        ifindex: (client.link.interface(ifindex).name or f"if{ifindex}") for ifindex in client.link.list_interfaces()
+    }
+
+
 def _cmd_route(client: ClientStack, args: argparse.Namespace, /) -> str:
     """
     Render the routing table for the 'route' subcommand.
     """
 
     _ = args
-    return format_route_table(client.route.list_routes())
+    return format_route_table(client.route.list_routes(), interface_names=_interface_names(client))
 
 
 def _cmd_sysctl(client: ClientStack, args: argparse.Namespace, /) -> str:

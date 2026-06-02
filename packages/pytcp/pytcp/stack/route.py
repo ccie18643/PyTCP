@@ -41,7 +41,7 @@ from typing import cast
 
 from net_addr import Ip4Address, Ip4Network, Ip6Address, Ip6Network
 from pytcp.lib.logger import log
-from pytcp.runtime.fib import Route, RouteProtocol, RouteTable
+from pytcp.runtime.fib import Route, RouteProtocol, RouteScope, RouteTable
 from pytcp.runtime.socket import AddressFamily
 
 # The IPv4 / IPv6 default-route destinations (Linux 'default'
@@ -145,9 +145,57 @@ class RouteApi:
         routes: list[Route[Ip4Address, Ip4Network] | Route[Ip6Address, Ip6Network]] = []
         if family in (None, AddressFamily.INET4):
             routes.extend(self._ip4_fib.snapshot())
+            routes.extend(self._connected_routes_ip4())
         if family in (None, AddressFamily.INET6):
             routes.extend(self._ip6_fib.snapshot())
+            routes.extend(self._connected_routes_ip6())
         return tuple(routes)
+
+    @staticmethod
+    def _connected_routes_ip4() -> list[Route[Ip4Address, Ip4Network]]:
+        """
+        Synthesize the on-link IPv4 connected routes from each interface's
+        assigned addresses — the 'proto kernel scope link' routes Linux
+        auto-installs per address (one per (address, interface)), so the
+        introspected table shows the on-link subnets the lookup path
+        derives from the address list rather than from the FIB.
+        """
+
+        import pytcp.stack as _stack
+
+        return [
+            Route[Ip4Address, Ip4Network](
+                destination=ifaddr.network,
+                prefsrc=ifaddr.address,
+                scope=RouteScope.LINK,
+                protocol=RouteProtocol.KERNEL,
+                oif=ifindex,
+            )
+            for ifindex, handler in _stack.interfaces.items()
+            for ifaddr in handler._ip4_ifaddr
+        ]
+
+    @staticmethod
+    def _connected_routes_ip6() -> list[Route[Ip6Address, Ip6Network]]:
+        """
+        Synthesize the on-link IPv6 connected routes from each interface's
+        assigned addresses (link-local and global) — the IPv6 counterpart
+        of '_connected_routes_ip4'.
+        """
+
+        import pytcp.stack as _stack
+
+        return [
+            Route[Ip6Address, Ip6Network](
+                destination=ifaddr.network,
+                prefsrc=ifaddr.address,
+                scope=RouteScope.LINK,
+                protocol=RouteProtocol.KERNEL,
+                oif=ifindex,
+            )
+            for ifindex, handler in _stack.interfaces.items()
+            for ifaddr in handler._ip6_ifaddr
+        ]
 
     def add_route(
         self,

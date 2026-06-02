@@ -165,8 +165,32 @@ class TestCliFormatRoutes(TestCase):
         self.assertEqual(
             format_route_table(routes),
             "default via 10.0.1.1 dev if1 scope universe proto static\n"
-            "10.0.1.0/24 dev if1 scope link proto kernel src 10.0.1.7",
-            msg="The route table must render in the ip route show layout.",
+            "10.0.1.0/24 dev if1 scope link proto pytcp src 10.0.1.7",
+            msg="The route table must render in the ip route show layout (connected route proto 'pytcp').",
+        )
+
+    def test__format_route_table__renders_interface_names(self) -> None:
+        """
+        Ensure 'dev' renders the interface name when an ifindex-to-name map
+        is supplied, instead of the raw 'ifN' form.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        routes = (
+            Route(
+                destination=Ip4Network("192.168.1.0/24"),
+                scope=RouteScope.LINK,
+                protocol=RouteProtocol.KERNEL,
+                prefsrc=Ip4Address("192.168.1.151"),
+                oif=2,
+            ),
+        )
+
+        self.assertEqual(
+            format_route_table(routes, interface_names={2: "tap9"}),
+            "192.168.1.0/24 dev tap9 scope link proto pytcp src 192.168.1.151",
+            msg="The route's egress interface must render as the interface name when the map is supplied.",
         )
 
 

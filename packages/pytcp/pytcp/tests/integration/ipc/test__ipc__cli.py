@@ -115,7 +115,12 @@ class TestIpcCli(IpcControlTestCase):
         Reference: PyTCP test infrastructure (no RFC clause).
         """
 
-        expected = format_route_table(self._connect().route.list_routes())
+        client = self._connect()
+        names = {
+            ifindex: (client.link.interface(ifindex).name or f"if{ifindex}")
+            for ifindex in client.link.list_interfaces()
+        }
+        expected = format_route_table(client.route.list_routes(), interface_names=names)
 
         output = self._run("route")
 

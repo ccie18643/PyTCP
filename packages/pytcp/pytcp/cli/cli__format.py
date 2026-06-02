@@ -47,7 +47,7 @@ from net_addr import (
     Ip6Network,
     MacAddress,
 )
-from pytcp.runtime.fib import Route
+from pytcp.runtime.fib import Route, RouteProtocol
 from pytcp.runtime.socket import SocketType
 from pytcp.stack.activity_introspect import InterfaceActivity
 from pytcp.stack.neighbor import NeighborSnapshot
@@ -138,11 +138,17 @@ def format_neighbor_table(snapshots: Iterable[NeighborSnapshot], /) -> str:
     return "\n".join(lines)
 
 
-def format_route_table(routes: Iterable[_AnyRoute], /) -> str:
+def format_route_table(routes: Iterable[_AnyRoute], /, *, interface_names: Mapping[int, str] | None = None) -> str:
     """
-    Render routes in the 'ip route show' line layout.
+    Render routes in the 'ip route show' line layout. 'interface_names'
+    maps an egress ifindex to its interface name so 'dev' shows the name
+    ('dev tap7') rather than the raw index ('dev if1'); without it the
+    raw 'ifN' form is used. The 'proto kernel' protocol of the
+    auto-synthesized on-link connected routes renders as 'pytcp' — PyTCP
+    is the kernel that installed them.
     """
 
+    names = interface_names or {}
     lines = []
     for route in routes:
         destination = "default" if str(route.destination) in _DEFAULT_DESTINATIONS else str(route.destination)
@@ -150,9 +156,10 @@ def format_route_table(routes: Iterable[_AnyRoute], /) -> str:
         if route.gateway is not None:
             parts += ["via", str(route.gateway)]
         if route.oif is not None:
-            parts += ["dev", f"if{route.oif}"]
+            parts += ["dev", names.get(route.oif, f"if{route.oif}")]
         parts += ["scope", route.scope.name.lower()]
-        parts += ["proto", route.protocol.name.lower()]
+        proto = "pytcp" if route.protocol is RouteProtocol.KERNEL else route.protocol.name.lower()
+        parts += ["proto", proto]
         if route.prefsrc is not None:
             parts += ["src", str(route.prefsrc)]
         if route.metric:
