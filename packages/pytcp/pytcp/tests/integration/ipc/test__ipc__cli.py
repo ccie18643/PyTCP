@@ -152,6 +152,149 @@ class TestIpcCli(IpcControlTestCase):
             msg="'route -C' must render the empty routing-cache header, not the FIB.",
         )
 
+    def _run_route(self, *spec: str) -> str:
+        """
+        Run 'pytcp route ... <spec>' with '--ipc-socket' placed before the
+        spec — net-tools 'route add' / 'route del' use argparse REMAINDER,
+        so connection options must precede the verb.
+        """
+
+        buffer = io.StringIO()
+        with contextlib.redirect_stdout(buffer):
+            exit_code = main(["route", "--ipc-socket", self._socket_path, *spec])
+        self.assertEqual(exit_code, 0, msg="The route command must exit successfully.")
+        return buffer.getvalue()
+
+    def test__cli__route_add_then_list_shows_route(self) -> None:
+        """
+        Ensure 'pytcp route add -net N/M gw G dev IF' installs the route
+        into the daemon's FIB and a subsequent 'pytcp route' lists it
+        with its gateway and egress interface.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        client = self._connect()
+        dev = client.link.interface(self._ifindex).name or f"if{self._ifindex}"
+
+        self._run_route("add", "-net", "10.9.0.0/24", "gw", "10.0.1.254", "dev", dev)
+
+        output = self._run("route", "-n")
+
+        self.assertIn(
+            "10.9.0.0",
+            output,
+            msg="The added route's destination must appear in the listing.",
+        )
+        self.assertIn(
+            "10.0.1.254",
+            output,
+            msg="The added route's gateway must appear in the listing.",
+        )
+
+    def test__cli__route_del_removes_route(self) -> None:
+        """
+        Ensure 'pytcp route del -net N/M' removes a previously added route
+        from the daemon's FIB.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        self._run_route("add", "-net", "10.9.0.0/24", "gw", "10.0.1.254")
+        self.assertIn("10.9.0.0", self._run("route", "-n"), msg="Route must be present after add.")
+
+        self._run_route("del", "-net", "10.9.0.0/24")
+
+        self.assertNotIn(
+            "10.9.0.0",
+            self._run("route", "-n"),
+            msg="The deleted route must no longer appear in the listing.",
+        )
+
+    def test__cli__route_add_default_via_gateway(self) -> None:
+        """
+        Ensure 'pytcp route add default gw G' installs the IPv4 default
+        route and 'pytcp route' lists it as the default via that gateway.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        self._run_route("add", "default", "gw", "10.0.1.9")
+
+        output = self._run("route", "-n")
+
+        self.assertIn(
+            "0.0.0.0         10.0.1.9",
+            output,
+            msg="The default route must be listed via the supplied gateway.",
+        )
+
+    def test__cli__route_add_ipv6(self) -> None:
+        """
+        Ensure 'pytcp route -6 add P/L gw G' installs an IPv6 route and
+        'pytcp route -6' lists it.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        self._run_route("-6", "add", "2001:db8:9::/64", "gw", "fe80::9")
+
+        output = self._run("route", "-6")
+
+        self.assertIn(
+            "2001:db8:9::/64",
+            output,
+            msg="The added IPv6 route's prefix must appear in the IPv6 listing.",
+        )
+
+    def test__cli__route_modify_rejects_unknown_command(self) -> None:
+        """
+        Ensure 'pytcp route bogus' exits with an error rather than silently
+        listing or crashing.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        with self.assertRaises(SystemExit) as raised:
+            with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
+                main(["route", "--ipc-socket", self._socket_path, "bogus"])
+
+        self.assertNotEqual(
+            raised.exception.code,
+            0,
+            msg="An unknown route command must exit non-zero.",
+        )
+
+    def _assert_route_modify_errors(self, *spec: str) -> None:
+        """
+        Assert that 'pytcp route <spec>' exits non-zero (a malformed
+        route specification).
+        """
+
+        with self.assertRaises(SystemExit) as raised:
+            with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
+                main(["route", "--ipc-socket", self._socket_path, *spec])
+        self.assertNotEqual(raised.exception.code, 0, msg="A malformed route spec must exit non-zero.")
+
+    def test__cli__route_add_missing_gateway_value_errors(self) -> None:
+        """
+        Ensure a keyword with no following value (e.g. 'gw' at the end of
+        the spec) is reported as an error.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        self._assert_route_modify_errors("add", "-net", "10.9.0.0/24", "gw")
+
+    def test__cli__route_add_missing_target_errors(self) -> None:
+        """
+        Ensure 'route add' with no target network is reported as an error.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        self._assert_route_modify_errors("add")
+
     def test__cli__sysctl_lists_entries(self) -> None:
         """
         Ensure 'pytcp sysctl' with no key lists the tunables as 'key =

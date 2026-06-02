@@ -42,7 +42,9 @@ import os
 import signal
 import sys
 from collections.abc import Callable
+from dataclasses import dataclass
 
+from net_addr import Ip4Address, Ip4Mask, Ip4Network, Ip6Address, Ip6Network, NetAddrError
 from pytcp import __version__
 from pytcp.cli.cli__format import (
     InterfaceView,
@@ -63,6 +65,7 @@ from pytcp.daemon.daemon import (
     run_daemon,
 )
 from pytcp.ipc.ipc__errors import IpcRemoteError
+from pytcp.runtime.fib import Route, RouteProtocol, RouteScope
 from pytcp.runtime.socket import AddressFamily, SocketType
 from pytcp.stack.neighbor import NeighborSnapshot
 
@@ -113,16 +116,221 @@ def _interface_names(client: ClientStack, /) -> dict[int, str]:
     }
 
 
+@dataclass(frozen=True, kw_only=True, slots=True)
+class _RouteSpec:
+    """
+    A parsed net-tools 'route add' / 'route del' specification.
+    """
+
+    target: str | None
+    netmask: str | None
+    gateway: str | None
+    dev: str | None
+    metric: int
+    is_host: bool
+    is_default: bool
+
+
+def _parse_route_spec(tokens: list[str], /) -> _RouteSpec:
+    """
+    Parse the net-tools 'route add' / 'route del' argument grammar into a
+    '_RouteSpec' — the 'default' keyword, the '-net' / '-host' TARGET (or
+    a bare TARGET), and the 'netmask' / 'gw' / 'dev' / 'metric'
+    keyword-and-value tokens.
+    """
+
+    target = netmask = gateway = dev = None
+    metric = 0
+    is_host = is_default = False
+
+    def _value(next_index: int, keyword: str) -> str:
+        if next_index >= len(tokens):
+            raise SystemExit(f"pytcp route: {keyword!r} requires a value.")
+        return tokens[next_index]
+
+    index = 0
+    while index < len(tokens):
+        token = tokens[index]
+        if token == "default":
+            is_default = True
+        elif token in ("-net", "-host"):
+            index += 1
+            target = _value(index, token)
+            is_host = token == "-host"
+        elif token == "netmask":
+            index += 1
+            netmask = _value(index, "netmask")
+        elif token == "gw":
+            index += 1
+            gateway = _value(index, "gw")
+        elif token == "dev":
+            index += 1
+            dev = _value(index, "dev")
+        elif token == "metric":
+            index += 1
+            try:
+                metric = int(_value(index, "metric"))
+            except ValueError:
+                raise SystemExit("pytcp route: 'metric' must be an integer.") from None
+        elif not token.startswith("-"):
+            target = token
+        else:
+            raise SystemExit(f"pytcp route: unrecognized token {token!r}.")
+        index += 1
+
+    return _RouteSpec(
+        target=target,
+        netmask=netmask,
+        gateway=gateway,
+        dev=dev,
+        metric=metric,
+        is_host=is_host,
+        is_default=is_default,
+    )
+
+
+def _route_dev_oif(client: ClientStack, dev: str | None, /) -> int | None:
+    """
+    Resolve a 'dev' interface name to its index for a route's egress
+    interface, or 'None' when no 'dev' was given. Errors on an unknown
+    interface name.
+    """
+
+    if dev is None:
+        return None
+    for ifindex in client.link.list_interfaces():
+        if (client.link.interface(ifindex).name or f"if{ifindex}") == dev:
+            return ifindex
+    raise SystemExit(f"pytcp route: unknown interface {dev!r}.")
+
+
+def _route_ip4_destination(spec: _RouteSpec, /) -> Ip4Network:
+    """
+    Build the IPv4 destination network from a '_RouteSpec' target — a
+    CIDR target, an explicit '-host', or a target paired with a 'netmask'.
+    """
+
+    if spec.target is None:
+        raise SystemExit("pytcp route: a target network or '-host' is required.")
+    if "/" in spec.target:
+        return Ip4Network(spec.target)
+    if spec.is_host:
+        return Ip4Network(f"{spec.target}/32")
+    if spec.netmask is not None:
+        return Ip4Network((Ip4Address(spec.target), Ip4Mask(spec.netmask)))
+    raise SystemExit("pytcp route: an IPv4 route needs a 'netmask', a '/prefix', or '-host'.")
+
+
+def _route_ip6_destination(spec: _RouteSpec, /) -> Ip6Network:
+    """
+    Build the IPv6 destination prefix from a '_RouteSpec' target — a
+    '/prefix' target or an explicit '-host'.
+    """
+
+    if spec.target is None:
+        raise SystemExit("pytcp route: a target prefix or '-host' is required.")
+    if spec.is_host:
+        return Ip6Network(f"{spec.target.split('/')[0]}/128")
+    if "/" in spec.target:
+        return Ip6Network(spec.target)
+    raise SystemExit("pytcp route: an IPv6 route needs a '/prefix' (or '-host').")
+
+
+def _route_modify_ip4(client: ClientStack, *, verb: str, spec: _RouteSpec, oif: int | None) -> None:
+    """
+    Apply an IPv4 'route add' / 'route del' against the daemon's FIB.
+    """
+
+    gateway = Ip4Address(spec.gateway) if spec.gateway is not None else None
+    if verb == "del":
+        if spec.is_default:
+            client.route.remove_default(family=AddressFamily.INET4)
+        else:
+            client.route.remove_route(destination=_route_ip4_destination(spec), gateway=gateway)
+        return
+    if spec.is_default:
+        if gateway is None:
+            raise SystemExit("pytcp route: 'add default' requires 'gw'.")
+        client.route.replace_default(gateway=gateway, protocol=RouteProtocol.STATIC, oif=oif)
+        return
+    scope = RouteScope.UNIVERSE if gateway is not None else RouteScope.LINK
+    client.route.add_route(
+        route=Route(
+            destination=_route_ip4_destination(spec),
+            gateway=gateway,
+            oif=oif,
+            metric=spec.metric,
+            scope=scope,
+            protocol=RouteProtocol.STATIC,
+        )
+    )
+
+
+def _route_modify_ip6(client: ClientStack, *, verb: str, spec: _RouteSpec, oif: int | None) -> None:
+    """
+    Apply an IPv6 'route add' / 'route del' against the daemon's FIB.
+    """
+
+    gateway = Ip6Address(spec.gateway) if spec.gateway is not None else None
+    if verb == "del":
+        if spec.is_default:
+            client.route.remove_default(family=AddressFamily.INET6)
+        else:
+            client.route.remove_route(destination=_route_ip6_destination(spec), gateway=gateway)
+        return
+    if spec.is_default:
+        if gateway is None:
+            raise SystemExit("pytcp route: 'add default' requires 'gw'.")
+        client.route.replace_default(gateway=gateway, protocol=RouteProtocol.STATIC, oif=oif)
+        return
+    scope = RouteScope.UNIVERSE if gateway is not None else RouteScope.LINK
+    client.route.add_route(
+        route=Route(
+            destination=_route_ip6_destination(spec),
+            gateway=gateway,
+            oif=oif,
+            metric=spec.metric,
+            scope=scope,
+            protocol=RouteProtocol.STATIC,
+        )
+    )
+
+
+def _cmd_route_modify(client: ClientStack, *, verb: str, tokens: list[str], family: AddressFamily) -> str:
+    """
+    Run a 'route add' / 'route del' against the daemon's FIB. Returns an
+    empty string — net-tools 'route' prints nothing on a successful
+    modification.
+    """
+
+    spec = _parse_route_spec(tokens)
+    oif = _route_dev_oif(client, spec.dev)
+    try:
+        if family is AddressFamily.INET6:
+            _route_modify_ip6(client, verb=verb, spec=spec, oif=oif)
+        else:
+            _route_modify_ip4(client, verb=verb, spec=spec, oif=oif)
+    except NetAddrError as error:
+        raise SystemExit(f"pytcp route: {error}") from error
+    return ""
+
+
 def _cmd_route(client: ClientStack, args: argparse.Namespace, /) -> str:
     """
     Render the routing table for the 'route' subcommand. Mirrors
-    net-tools 'route': IPv4 by default, IPv6 with '-6' / '-A inet6'.
+    net-tools 'route': IPv4 by default, IPv6 with '-6' / '-A inet6';
+    'route add' / 'route del' modify the daemon's FIB.
     """
 
     if args.inet6 or args.family == "inet6":
         family = AddressFamily.INET6
     else:
         family = AddressFamily.INET4
+    if args.spec:
+        verb, *tokens = args.spec
+        if verb not in ("add", "del"):
+            raise SystemExit(f"pytcp route: unknown command {verb!r} (expected 'add' or 'del').")
+        return _cmd_route_modify(client, verb=verb, tokens=tokens, family=family)
     if args.cache:
         # net-tools 'route -C' shows the routing cache, not the FIB; PyTCP
         # keeps no cache, so this is the empty-cache header (like Linux).
@@ -284,6 +492,12 @@ def build_parser() -> argparse.ArgumentParser:
         "--version",
         action="version",
         version=f"pytcp route (PyTCP {__version__})",
+    )
+    parser_route.add_argument(
+        "spec",
+        nargs=argparse.REMAINDER,
+        help="'add' / 'del' plus a net-tools route spec "
+        "(e.g. 'add -net 10.9.0.0/24 gw 10.0.1.254 dev tap7', 'del default').",
     )
     subparsers.add_parser("neigh", parents=[common], help="Show the neighbour caches.")
     subparsers.add_parser("addr", parents=[common], help="Show interfaces with their addresses.")
