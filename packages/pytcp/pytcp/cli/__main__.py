@@ -38,6 +38,9 @@ ver 3.0.8
 """
 
 import argparse
+import os
+import signal
+import sys
 from collections.abc import Callable
 
 from pytcp.cli.cli__format import (
@@ -50,7 +53,12 @@ from pytcp.cli.cli__format import (
     format_sysctl,
 )
 from pytcp.client import ClientStack, connect
-from pytcp.daemon.daemon import default_socket_path, run_daemon
+from pytcp.daemon.daemon import (
+    default_pidfile_path,
+    default_socket_path,
+    remove_pidfile,
+    run_daemon,
+)
 from pytcp.runtime.socket import AddressFamily, SocketType
 from pytcp.stack.neighbor import NeighborSnapshot
 
@@ -222,8 +230,35 @@ def build_parser() -> argparse.ArgumentParser:
     parser_start = daemon_subparsers.add_parser("start", help="Start the daemon in the foreground.")
     parser_start.add_argument("--ipc-socket", default=default_socket_path(), help="AF_UNIX control-socket path.")
     parser_start.add_argument("--interface", default="tap7", help="TAP/TUN interface to bind to.")
+    parser_start.add_argument("--pidfile", default=default_pidfile_path(), help="Pidfile path for 'daemon stop'.")
+    parser_stop = daemon_subparsers.add_parser("stop", help="Stop the daemon via its pidfile.")
+    parser_stop.add_argument("--pidfile", default=default_pidfile_path(), help="Pidfile path to signal.")
 
     return parser
+
+
+def _stop_daemon(pidfile_path: str, /) -> int:
+    """
+    Signal a running daemon to stop via its pidfile, cleaning up a stale
+    pidfile if the process is gone.
+    """
+
+    try:
+        with open(pidfile_path, encoding="ascii") as handle:
+            pid = int(handle.read().strip())
+    except FileNotFoundError, ValueError:
+        print("PyTCP daemon is not running (no pidfile).", file=sys.stderr)
+        return 1
+
+    try:
+        os.kill(pid, signal.SIGTERM)
+    except ProcessLookupError:
+        remove_pidfile(pidfile_path)
+        print(f"PyTCP daemon (pid {pid}) is not running; removed stale pidfile.", file=sys.stderr)
+        return 1
+
+    print(f"Sent SIGTERM to PyTCP daemon (pid {pid}).")
+    return 0
 
 
 def _run_daemon_command(args: argparse.Namespace, /) -> int:
@@ -235,9 +270,13 @@ def _run_daemon_command(args: argparse.Namespace, /) -> int:
         run_daemon(
             socket_path=args.ipc_socket,
             interface_name=args.interface,
+            pidfile_path=args.pidfile,
             on_ready=lambda path: print(f"PyTCP daemon listening on {path}", flush=True),
         )
         return 0
+
+    if args.daemon_command == "stop":
+        return _stop_daemon(args.pidfile)
 
     raise AssertionError(f"Unhandled daemon command {args.daemon_command!r}.")
 

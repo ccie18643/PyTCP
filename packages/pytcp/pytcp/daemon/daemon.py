@@ -51,6 +51,7 @@ from pytcp import stack
 from pytcp.ipc.ipc__server import IpcServer
 
 IPC__DAEMON__SOCKET_NAME: str = "pytcp.sock"
+IPC__DAEMON__PIDFILE_NAME: str = "pytcp.pid"
 
 
 def default_socket_path() -> str:
@@ -64,6 +65,37 @@ def default_socket_path() -> str:
     runtime_dir = os.environ.get("XDG_RUNTIME_DIR")
     base = runtime_dir if runtime_dir else tempfile.gettempdir()
     return os.path.join(base, IPC__DAEMON__SOCKET_NAME)
+
+
+def default_pidfile_path() -> str:
+    """
+    Return the canonical daemon pidfile path — '$XDG_RUNTIME_DIR/pytcp.pid'
+    when the runtime dir is set, else the system temp dir.
+    """
+
+    runtime_dir = os.environ.get("XDG_RUNTIME_DIR")
+    base = runtime_dir if runtime_dir else tempfile.gettempdir()
+    return os.path.join(base, IPC__DAEMON__PIDFILE_NAME)
+
+
+def _write_pidfile(pidfile_path: str, /) -> None:
+    """
+    Write the current process id to the pidfile.
+    """
+
+    with open(pidfile_path, "w", encoding="ascii") as handle:
+        handle.write(f"{os.getpid()}\n")
+
+
+def remove_pidfile(pidfile_path: str, /) -> None:
+    """
+    Remove the pidfile, tolerating its absence.
+    """
+
+    try:
+        os.unlink(pidfile_path)
+    except FileNotFoundError:
+        pass
 
 
 def _resolve_interface(interface_name: str, *, mac_address: MacAddress | None) -> dict[str, Any]:
@@ -91,6 +123,7 @@ def run_daemon(
     ip6_support: bool = True,
     ip6_host: Ip6IfAddr | None = None,
     on_ready: Callable[[str], None] | None = None,
+    pidfile_path: str | None = None,
 ) -> None:
     """
     Run the PyTCP daemon: boot the stack on one interface, serve the
@@ -98,7 +131,9 @@ def run_daemon(
 
     With no explicit host address a NIC autoconfigures (DHCPv4 for IPv4,
     SLAAC for IPv6). 'on_ready', if given, is called with 'socket_path'
-    once the control server is listening.
+    once the control server is listening. When 'pidfile_path' is given the
+    process id is written there for the lifetime of the daemon (removed on
+    exit) so 'pytcp daemon stop' can signal it.
     """
 
     stack.init()
@@ -128,8 +163,13 @@ def run_daemon(
     signal.signal(signal.SIGINT, _on_signal)
     signal.signal(signal.SIGTERM, _on_signal)
 
+    if pidfile_path is not None:
+        _write_pidfile(pidfile_path)
+
     try:
         stop.wait()
     finally:
+        if pidfile_path is not None:
+            remove_pidfile(pidfile_path)
         server.stop()
         stack.stop()

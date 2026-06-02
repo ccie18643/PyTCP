@@ -168,7 +168,7 @@ consumed by the A4 module.
 | Phase | Title                                            | Status |
 |-------|--------------------------------------------------|--------|
 | B1    | Socket-list introspection API (`stack.ss`)       | **done** |
-| B2    | The unified `pytcp` argparse multitool           | **core (ss / route / sysctl / daemon start) done; neigh/addr/daemon-stop pending** |
+| B2    | The unified `pytcp` argparse multitool           | **done** |
 
 **B1 — `stack.ss`.** `pytcp/stack/socket_introspect.py` — `SocketSnapshot`
 (frozen, copy-by-value) + `SocketIntrospectApi.list_sockets(*, family,
@@ -442,6 +442,20 @@ allowlist + client mirror.
   listening socket, route matches the formatter, sysctl lists entries).
   lint clean, 12638 passing. Deferred to a B2 follow-up: `neigh` / `addr`
   / `link` subcommands and `daemon stop` (pidfile + SIGTERM).
+- **2026-06-01** — B2 follow-up complete, **closing B2 / Track B**.
+  **B2c (neigh / addr / link):** `cli__format.InterfaceView` + `format_addr`
+  (`ip addr show`) / `format_link` (`ip link show`); `pytcp neigh`
+  aggregates `list_neighbors` across interfaces, `pytcp addr` / `pytcp
+  link` render per-interface link + address views. 2 golden + 3
+  integration tests (the integration test installs real ARP/ND caches —
+  the harness mocks them). **B2d (daemon stop):** `run_daemon` gains a
+  `pidfile_path` (written on start, removed on exit) + `default_pidfile_
+  path()` / `remove_pidfile()`; `pytcp daemon stop` reads the pidfile and
+  sends SIGTERM, cleaning up a stale pidfile when the process is gone. 4
+  unit tests (SIGTERM sent, stale-pidfile removal, no-pidfile, helper
+  round-trip). lint clean, 12647 passing. **Track B is complete**: `pytcp`
+  is a full operator multitool (`ss` / `route` / `sysctl` / `neigh` /
+  `addr` / `link` / `daemon start` / `daemon stop`).
 
 ## 7. Design discussion — readiness, the "trick", and compat limits
 
