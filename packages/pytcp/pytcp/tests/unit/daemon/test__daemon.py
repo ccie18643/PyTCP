@@ -143,7 +143,7 @@ class TestRunDaemonPidfile(TestCase):
 
         stack = self.enterContext(patch("pytcp.daemon.daemon.stack"))
         stack.initialize_interface__tap.return_value = {}
-        stack.start.side_effect = lambda: observed.__setitem__("pidfile_at_start", os.path.exists(pidfile))
+        stack.start.side_effect = lambda **_kwargs: observed.__setitem__("pidfile_at_start", os.path.exists(pidfile))
 
         self.enterContext(patch("pytcp.daemon.daemon.IpcServer", autospec=True))
         self.enterContext(patch("pytcp.daemon.daemon.signal.signal"))
@@ -156,3 +156,25 @@ class TestRunDaemonPidfile(TestCase):
             msg="The pidfile must exist before stack.start() blocks on the DHCPv4 boot-wait.",
         )
         self.assertFalse(os.path.exists(pidfile), msg="The pidfile must be removed on daemon exit.")
+
+    def test__run_daemon__starts_stack_without_blocking_on_dhcp_bind(self) -> None:
+        """
+        Ensure 'run_daemon' starts the stack with 'wait_for_dhcp_bind=False'
+        so the control socket comes up immediately instead of after the
+        (up to 30 s) DHCPv4 boot-wait, leaving the lease to land in the
+        background.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        tmp_dir = self.enterContext(tempfile.TemporaryDirectory())
+
+        stack = self.enterContext(patch("pytcp.daemon.daemon.stack"))
+        stack.initialize_interface__tap.return_value = {}
+        self.enterContext(patch("pytcp.daemon.daemon.IpcServer", autospec=True))
+        self.enterContext(patch("pytcp.daemon.daemon.signal.signal"))
+        self.enterContext(patch("pytcp.daemon.daemon.threading.Event", autospec=True))
+
+        run_daemon(socket_path=os.path.join(tmp_dir, "s.sock"), interface_name="tap7")
+
+        stack.start.assert_called_once_with(wait_for_dhcp_bind=False)

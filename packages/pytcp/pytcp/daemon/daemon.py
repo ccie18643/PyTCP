@@ -165,7 +165,10 @@ def run_daemon(
             ip6_host=ip6_host,
             ip6_gua_autoconfig=ip6_support and ip6_host is None,
         )
-        stack.start()
+        # Do not block the daemon's bring-up on the DHCPv4 lease: start the
+        # lifecycle and let the lease land in the background so the control
+        # socket is reachable immediately (clients poll the address state).
+        stack.start(wait_for_dhcp_bind=False)
         stack_started = True
 
         server = IpcServer(socket_path=socket_path)

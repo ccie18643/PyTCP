@@ -579,6 +579,80 @@ class TestStackMockInit(TestCase):
         )
 
 
+class TestStackStartDhcpBootWait(TestCase):
+    """
+    The 'stack.start(wait_for_dhcp_bind=...)' DHCPv4 boot-wait tests.
+    """
+
+    def setUp(self) -> None:
+        """
+        Snapshot the module-level state, install a mocked timer and a
+        single L2 interface whose DHCPv4 client is an autospec'd mock, and
+        patch '_start_interface' so no real subsystem threads spawn.
+        """
+
+        self.enterContext(patch("pytcp.stack.log"))
+        self.enterContext(patch("pytcp.runtime.subsystem.log"))
+        self.enterContext(patch.object(lifecycle, "_start_interface"))
+
+        self._saved = {
+            name: getattr(stack, name, None)
+            for name in ("stack_initialized", "stack_running", "timer", "interfaces", "link_local")
+        }
+
+        stack.timer = MagicMock()
+        stack.link_local = None
+        handler = MagicMock(spec=PacketHandlerL2)
+        handler._ifindex = 1
+        handler._dhcp4_client = create_autospec(Dhcp4Client, spec_set=True)
+        self._dhcp4_client = handler._dhcp4_client
+        interfaces = InterfaceTable(first_ifindex=stack.STACK__DEFAULT_IFINDEX)
+        interfaces[1] = handler
+        stack.interfaces = interfaces
+        stack.stack_initialized = True
+        stack.stack_running = False
+
+    def tearDown(self) -> None:
+        """
+        Restore the snapshotted module-level state.
+        """
+
+        for name, value in self._saved.items():
+            if value is not None:
+                setattr(stack, name, value)
+
+    def test__start__daemon_mode_does_not_block_on_dhcp_bind(self) -> None:
+        """
+        Ensure 'stack.start(wait_for_dhcp_bind=False)' starts the DHCPv4
+        client without blocking for the BOUND boot-wait, so a daemon's
+        control plane comes up immediately while the lease lands in the
+        background.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        stack.start(wait_for_dhcp_bind=False)
+
+        self._dhcp4_client.start.assert_called_once_with()
+        self._dhcp4_client.start_and_wait_for_bind.assert_not_called()
+
+    def test__start__default_waits_for_dhcp_bind(self) -> None:
+        """
+        Ensure the default 'stack.start()' blocks for the DHCPv4 boot-wait
+        via 'start_and_wait_for_bind', preserving the in-process
+        boot-blocking semantics for non-daemon callers.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        self._dhcp4_client.start_and_wait_for_bind.return_value = True
+
+        stack.start()
+
+        self._dhcp4_client.start_and_wait_for_bind.assert_called_once()
+        self._dhcp4_client.start.assert_not_called()
+
+
 class TestStackStopOrdering(TestCase):
     """
     The 'stack.stop()' subsystem teardown-order tests.

@@ -709,9 +709,16 @@ def _stop_interface(iface: PacketHandlerL2 | PacketHandlerL3, /) -> None:
     iface._nd_cache.stop()
 
 
-def start() -> None:
+def start(*, wait_for_dhcp_bind: bool = True) -> None:
     """
     Start stack components.
+
+    'wait_for_dhcp_bind' (default True) preserves the in-process boot
+    semantics: 'start()' blocks up to 'dhcp.boot_wait_ms' for the DHCPv4
+    FSM to reach BOUND so a synchronous consumer has an IPv4 address in
+    hand when it returns. A daemon passes False — the DHCPv4 lifecycle is
+    started but not waited on, so the control plane comes up immediately
+    and the lease lands in the background (clients poll the address state).
     """
 
     import pytcp.stack as _stack
@@ -736,16 +743,21 @@ def start() -> None:
         _stack.link_local.start()
 
     # Phase 4 commit B — DHCPv4 lifecycle. Start AFTER the packet
-    # handler so the TX/RX/socket plumbing is live; block up to
-    # 'dhcp.boot_wait_ms' for the FSM to reach BOUND. On timeout
-    # the lifecycle keeps trying in the background; boot proceeds
-    # without IPv4 for now.
+    # handler so the TX/RX/socket plumbing is live. By default block up to
+    # 'dhcp.boot_wait_ms' for the FSM to reach BOUND (on timeout the
+    # lifecycle keeps trying in the background; boot proceeds without IPv4
+    # for now). A daemon ('wait_for_dhcp_bind=False') starts the lifecycle
+    # but does not block — its control plane must come up immediately.
     dhcp4_clients = [
         handler._dhcp4_client
         for handler in _stack.interfaces.values()
         if isinstance(handler, PacketHandlerL2) and handler._dhcp4_client is not None
     ]
-    if dhcp4_clients:
+    if dhcp4_clients and not wait_for_dhcp_bind:
+        for dhcp4_client in dhcp4_clients:
+            dhcp4_client.start()
+        __debug__ and log("stack", "DHCPv4 lifecycle started; not blocking boot on the lease")
+    elif dhcp4_clients:
         from pytcp.protocols.dhcp4 import dhcp4__constants
 
         boot_wait_s = dhcp4__constants.DHCP4__BOOT_WAIT_MS / 1000.0
