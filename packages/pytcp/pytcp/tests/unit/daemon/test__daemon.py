@@ -36,7 +36,7 @@ from unittest import TestCase
 from unittest.mock import ANY, patch
 
 from pytcp.daemon.__main__ import build_parser, main
-from pytcp.daemon.daemon import default_socket_path
+from pytcp.daemon.daemon import default_socket_path, run_daemon
 
 
 class TestDaemonSocketPath(TestCase):
@@ -120,3 +120,39 @@ class TestDaemonCli(TestCase):
             ip6_host=None,
             on_ready=ANY,
         )
+
+
+class TestRunDaemonPidfile(TestCase):
+    """
+    The 'run_daemon' pidfile-ordering tests.
+    """
+
+    def test__run_daemon__writes_pidfile_before_blocking_stack_start(self) -> None:
+        """
+        Ensure the pidfile is written before 'stack.start()' so 'pytcp
+        daemon stop' can find the process during the (up to 30 s) DHCPv4
+        boot-wait that 'stack.start()' blocks on, rather than only after it
+        completes.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        tmp_dir = self.enterContext(tempfile.TemporaryDirectory())
+        pidfile = os.path.join(tmp_dir, "pytcp.pid")
+        observed: dict[str, bool] = {}
+
+        stack = self.enterContext(patch("pytcp.daemon.daemon.stack"))
+        stack.initialize_interface__tap.return_value = {}
+        stack.start.side_effect = lambda: observed.__setitem__("pidfile_at_start", os.path.exists(pidfile))
+
+        self.enterContext(patch("pytcp.daemon.daemon.IpcServer", autospec=True))
+        self.enterContext(patch("pytcp.daemon.daemon.signal.signal"))
+        self.enterContext(patch("pytcp.daemon.daemon.threading.Event", autospec=True))
+
+        run_daemon(socket_path=os.path.join(tmp_dir, "s.sock"), interface_name="tap7", pidfile_path=pidfile)
+
+        self.assertTrue(
+            observed.get("pidfile_at_start", False),
+            msg="The pidfile must exist before stack.start() blocks on the DHCPv4 boot-wait.",
+        )
+        self.assertFalse(os.path.exists(pidfile), msg="The pidfile must be removed on daemon exit.")

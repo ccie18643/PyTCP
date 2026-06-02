@@ -136,25 +136,6 @@ def run_daemon(
     exit) so 'pytcp daemon stop' can signal it.
     """
 
-    stack.init()
-    interface_args = _resolve_interface(interface_name, mac_address=mac_address)
-    stack.add_interface(
-        **interface_args,
-        ip4_support=ip4_support,
-        ip4_host=ip4_host,
-        ip4_dhcp=ip4_support and ip4_host is None,
-        ip6_support=ip6_support,
-        ip6_host=ip6_host,
-        ip6_gua_autoconfig=ip6_support and ip6_host is None,
-    )
-    stack.start()
-
-    server = IpcServer(socket_path=socket_path)
-    server.start()
-
-    if on_ready is not None:
-        on_ready(socket_path)
-
     stop = threading.Event()
 
     def _on_signal(_signum: int, _frame: object) -> None:
@@ -163,13 +144,41 @@ def run_daemon(
     signal.signal(signal.SIGINT, _on_signal)
     signal.signal(signal.SIGTERM, _on_signal)
 
+    # Write the pidfile up front — before 'stack.start()', which blocks
+    # for up to DHCP4__BOOT_WAIT_MS (30 s) waiting for the DHCPv4 lease —
+    # so 'pytcp daemon stop' can signal the process the instant it exists,
+    # not only once autoconfiguration finishes. Removed in the finally.
     if pidfile_path is not None:
         _write_pidfile(pidfile_path)
 
+    server: IpcServer | None = None
+    stack_started = False
     try:
+        stack.init()
+        interface_args = _resolve_interface(interface_name, mac_address=mac_address)
+        stack.add_interface(
+            **interface_args,
+            ip4_support=ip4_support,
+            ip4_host=ip4_host,
+            ip4_dhcp=ip4_support and ip4_host is None,
+            ip6_support=ip6_support,
+            ip6_host=ip6_host,
+            ip6_gua_autoconfig=ip6_support and ip6_host is None,
+        )
+        stack.start()
+        stack_started = True
+
+        server = IpcServer(socket_path=socket_path)
+        server.start()
+
+        if on_ready is not None:
+            on_ready(socket_path)
+
         stop.wait()
     finally:
+        if server is not None:
+            server.stop()
+        if stack_started:
+            stack.stop()
         if pidfile_path is not None:
             remove_pidfile(pidfile_path)
-        server.stop()
-        stack.stop()
