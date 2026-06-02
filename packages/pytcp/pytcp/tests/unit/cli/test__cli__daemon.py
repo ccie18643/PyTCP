@@ -392,3 +392,27 @@ class TestCliUnreachableDaemon(TestCase):
             stderr.getvalue().lower(),
             msg="The diagnostic must mention the daemon so the operator knows what failed.",
         )
+
+
+class TestCliRouteModifyHelp(TestCase):
+    """
+    The 'route add' / 'route del' help tests.
+    """
+
+    def test__route_modify_help__prints_usage_without_a_daemon(self) -> None:
+        """
+        Ensure 'pytcp route add --help' prints the route add/del usage and
+        exits 0 without contacting the daemon (so help works whether or
+        not a daemon is running).
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        stdout = io.StringIO()
+        with contextlib.redirect_stdout(stdout):
+            exit_code = main(["route", "add", "--help"])
+
+        self.assertEqual(exit_code, 0, msg="route add --help must exit 0.")
+        output = stdout.getvalue()
+        self.assertIn("route add", output, msg="The help must describe 'route add'.")
+        self.assertIn("route del", output, msg="The help must describe 'route del'.")

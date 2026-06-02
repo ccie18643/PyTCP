@@ -296,6 +296,40 @@ def _route_modify_ip6(client: ClientStack, *, verb: str, spec: _RouteSpec, oif: 
     )
 
 
+_ROUTE_MODIFY_HELP = """\
+Usage: pytcp route [-4 | -6 | -A inet6] {add | del} <spec>
+
+Modify the routing table (net-tools 'route add' / 'route del'). Connection
+options (e.g. --ipc-socket) must precede the verb:
+    pytcp route --ipc-socket PATH add ...
+
+add:
+    route add -net DEST[/PREFIX] [netmask MASK] [gw GATEWAY] [dev IFACE] [metric N]
+    route add -host HOST gw GATEWAY [dev IFACE]
+    route add default gw GATEWAY [dev IFACE]
+    route -6 add PREFIX/LEN gw GATEWAY [dev IFACE]
+
+del:
+    route del -net DEST[/PREFIX] [gw GATEWAY]
+    route del default
+    route -6 del PREFIX/LEN
+
+Examples:
+    pytcp route add -net 10.9.0.0/24 gw 10.0.1.254 dev tap7
+    pytcp route add default gw 192.168.1.1
+    pytcp route del -net 10.9.0.0/24\
+"""
+
+
+def _route_help_requested(spec: list[str], /) -> bool:
+    """
+    Report whether a 'route' spec asks for help ('-h' / '--help' anywhere
+    after the verb), so the usage can be served before connecting.
+    """
+
+    return bool(spec) and ("-h" in spec or "--help" in spec)
+
+
 def _cmd_route_modify(client: ClientStack, *, verb: str, tokens: list[str], family: AddressFamily) -> str:
     """
     Run a 'route add' / 'route del' against the daemon's FIB. Returns an
@@ -676,6 +710,12 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.command == "daemon":
         return _run_daemon_command(args)
+
+    # 'route add|del --help' must serve usage without contacting the
+    # daemon — the REMAINDER spec swallows '--help', so handle it here.
+    if args.command == "route" and _route_help_requested(args.spec):
+        print(_ROUTE_MODIFY_HELP)
+        return 0
 
     try:
         client = connect(socket_path=args.ipc_socket)
