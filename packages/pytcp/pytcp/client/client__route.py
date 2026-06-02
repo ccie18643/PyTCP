@@ -78,12 +78,20 @@ class ClientRoute(_ClientApiProxy):
 
         return cast(int, self._call("remove_route", {"destination": destination, "gateway": gateway}))
 
-    def replace_default(self, *, gateway: Ip4Address | Ip6Address, protocol: RouteProtocol) -> None:
+    def replace_default(
+        self,
+        *,
+        gateway: Ip4Address | Ip6Address,
+        protocol: RouteProtocol,
+        oif: int | None = None,
+    ) -> None:
         """
         Replace the default route for the gateway's address family.
+        'oif' is the egress interface index the gateway is reachable
+        on (rendered as the default's 'dev'); 'None' leaves it unset.
         """
 
-        self._call("replace_default", {"gateway": gateway, "protocol": protocol})
+        self._call("replace_default", {"gateway": gateway, "protocol": protocol, "oif": oif})
 
     def remove_default(self, *, family: AddressFamily) -> int:
         """

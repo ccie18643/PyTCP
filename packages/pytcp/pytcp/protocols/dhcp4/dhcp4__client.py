@@ -222,6 +222,7 @@ class Dhcp4Client(Subsystem):
         address_api: "AddressApi | None" = None,
         route_api: "RouteApi | None" = None,
         interface_name: str | None = None,
+        ifindex: int | None = None,
     ) -> None:
         """
         Initialize the DHCPv4 client.
@@ -262,6 +263,11 @@ class Dhcp4Client(Subsystem):
         # limited-broadcast (255.255.255.255) DISCOVER / REQUEST egress
         # is unambiguous on a multi-homed host (Linux dhclient model).
         self._interface_name = interface_name
+        # Egress interface index this client leases on; stamped as the
+        # 'oif' of the DHCP-installed default route so 'ip route'-style
+        # introspection renders the default's 'dev'. None outside the
+        # daemon multi-interface path (sync 'fetch()' / unit tests).
+        self._ifindex = ifindex
         # Set at the top of '_do_init_to_bound'; reused by every
         # outbound TX in this acquisition cycle to populate the
         # DHCP header 'secs' field per RFC 1542 §3.2.
@@ -449,7 +455,7 @@ class Dhcp4Client(Subsystem):
                     # index in the FIB.
                     continue
                 if destination == Ip4Network("0.0.0.0/0"):
-                    self._route_api.replace_default(gateway=router, protocol=RouteProtocol.DHCP)
+                    self._route_api.replace_default(gateway=router, protocol=RouteProtocol.DHCP, oif=self._ifindex)
                     continue
                 self._route_api.add_route(
                     route=Route(destination=destination, gateway=router, protocol=RouteProtocol.DHCP),
@@ -457,7 +463,7 @@ class Dhcp4Client(Subsystem):
             return
 
         if lease.gateway is not None:
-            self._route_api.replace_default(gateway=lease.gateway, protocol=RouteProtocol.DHCP)
+            self._route_api.replace_default(gateway=lease.gateway, protocol=RouteProtocol.DHCP, oif=self._ifindex)
 
     def _remove_lease_routes(self, lease: Dhcp4Lease, /) -> None:
         """

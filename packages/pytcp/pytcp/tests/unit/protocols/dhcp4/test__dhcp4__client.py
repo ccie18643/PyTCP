@@ -1864,6 +1864,7 @@ class TestDhcp4ClientDaemonModeBindWiring(_Dhcp4ClientFixture):
         mock_route_api.replace_default.assert_called_once_with(
             gateway=Ip4Address("10.0.0.1"),
             protocol=RouteProtocol.DHCP,
+            oif=None,
         )
 
     def test__dhcp4_client__bound_transition_no_router_skips_route_install(self) -> None:
@@ -3668,6 +3669,7 @@ class TestDhcp4ClientClasslessStaticRoutes(TestCase):
         self._route_api.replace_default.assert_called_once_with(
             gateway=Ip4Address("10.0.21.1"),
             protocol=RouteProtocol.DHCP,
+            oif=None,
         )
         self._route_api.add_route.assert_called_once_with(
             route=Route(
@@ -3675,6 +3677,26 @@ class TestDhcp4ClientClasslessStaticRoutes(TestCase):
                 gateway=Ip4Address("10.0.21.2"),
                 protocol=RouteProtocol.DHCP,
             ),
+        )
+
+    def test__dhcp4_client__stamps_ifindex_as_default_route_oif(self) -> None:
+        """
+        Ensure a client constructed with an interface index stamps that
+        index as the egress interface ('oif') of the DHCP-installed
+        default route, so 'ip route'-style introspection renders the
+        default's 'dev'.
+
+        Reference: RFC 2131 §3.1 (DHCP-supplied default gateway).
+        """
+
+        client = Dhcp4Client(mac_address=_DEFAULT_MAC, route_api=self._route_api, ifindex=7)
+
+        client._install_lease_routes(self._lease(gateway=Ip4Address("10.0.21.254"), classless_static_routes=None))
+
+        self._route_api.replace_default.assert_called_once_with(
+            gateway=Ip4Address("10.0.21.254"),
+            protocol=RouteProtocol.DHCP,
+            oif=7,
         )
 
     def test__dhcp4_client__skips_onlink_classless_route(self) -> None:
@@ -3711,6 +3733,7 @@ class TestDhcp4ClientClasslessStaticRoutes(TestCase):
         self._route_api.replace_default.assert_called_once_with(
             gateway=Ip4Address("10.0.21.254"),
             protocol=RouteProtocol.DHCP,
+            oif=None,
         )
         self._route_api.add_route.assert_not_called()
 

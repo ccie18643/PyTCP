@@ -1127,7 +1127,7 @@ class PacketHandler(Subsystem, ABC):
                 ]
             self._packet_stats_rx.icmp6__nd_router_advertisement__update_router += 1
             if route_api is not None:
-                route_api.replace_default(gateway=address, protocol=RouteProtocol.RA)
+                route_api.replace_default(gateway=address, protocol=RouteProtocol.RA, oif=self._ifindex)
             return
 
         if existing is not None:

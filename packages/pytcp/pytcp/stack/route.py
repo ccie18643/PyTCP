@@ -234,12 +234,23 @@ class RouteApi:
             return self._ip6_fib.remove(destination=destination, gateway=cast("Ip6Address | None", gateway))
         return self._ip4_fib.remove(destination=destination, gateway=cast("Ip4Address | None", gateway))
 
-    def replace_default(self, *, gateway: Ip4Address | Ip6Address, protocol: RouteProtocol) -> None:
+    def replace_default(
+        self,
+        *,
+        gateway: Ip4Address | Ip6Address,
+        protocol: RouteProtocol,
+        oif: int | None = None,
+    ) -> None:
         """
         Atomically replace the default route for the gateway's
         family: remove any existing default, then install a single
         new one via 'gateway' with the given 'protocol'. Linux 'ip
-        route replace default via ...' equivalent.
+        route replace default via ...' equivalent. 'oif' is the
+        egress interface index the gateway is reachable on (the
+        DHCP-leasing / RA-receiving interface); it is stamped onto
+        the installed route so 'ip route'-style introspection can
+        render the default's 'dev'. 'None' leaves it unset (the
+        external-consumer / unknown-interface case).
 
         Remove-then-add (not the add-before-remove ordering of
         'AddressApi.replace'): two same-prefix default routes would
@@ -256,6 +267,7 @@ class RouteApi:
                     destination=DEFAULT_IP6_NETWORK,
                     gateway=gateway,
                     protocol=protocol,
+                    oif=oif,
                 )
             )
             __debug__ and log("stack", f"<lg>Route API</>: IPv6 default via {gateway} ({protocol!r})")
@@ -266,6 +278,7 @@ class RouteApi:
                 destination=DEFAULT_IP4_NETWORK,
                 gateway=gateway,
                 protocol=protocol,
+                oif=oif,
             )
         )
         __debug__ and log("stack", f"<lg>Route API</>: IPv4 default via {gateway} ({protocol!r})")

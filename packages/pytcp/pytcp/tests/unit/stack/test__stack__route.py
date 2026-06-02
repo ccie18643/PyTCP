@@ -412,6 +412,55 @@ class TestRouteApiMutation(TestCase):
             msg="replace_default must leave exactly the new default route.",
         )
 
+    def test__stack__route__replace_default_records_oif(self) -> None:
+        """
+        Ensure 'replace_default' stamps the supplied egress interface
+        index onto the installed default route, so 'ip route'-style
+        introspection can render the default's 'dev'.
+
+        Reference: RFC 1122 §3.3.1 (default route / next-hop selection).
+        """
+
+        self._route_api.replace_default(
+            gateway=Ip4Address("10.0.1.1"),
+            protocol=RouteProtocol.DHCP,
+            oif=2,
+        )
+
+        self.assertEqual(
+            self._route_api.list_routes(family=AddressFamily.INET4),
+            (
+                Route(
+                    destination=Ip4Network("0.0.0.0/0"),
+                    gateway=Ip4Address("10.0.1.1"),
+                    protocol=RouteProtocol.DHCP,
+                    oif=2,
+                ),
+            ),
+            msg="replace_default must stamp the egress ifindex onto the default route.",
+        )
+
+    def test__stack__route__replace_default_oif_defaults_to_none(self) -> None:
+        """
+        Ensure 'replace_default' leaves the default route's egress
+        interface unset when no 'oif' is supplied, preserving the
+        gateway-only default-route shape.
+
+        Reference: RFC 1122 §3.3.1 (default route / next-hop selection).
+        """
+
+        self._route_api.replace_default(
+            gateway=Ip4Address("10.0.1.1"),
+            protocol=RouteProtocol.DHCP,
+        )
+
+        (default,) = self._route_api.list_routes(family=AddressFamily.INET4)
+
+        self.assertIsNone(
+            default.oif,
+            msg="replace_default must leave oif unset when none is supplied.",
+        )
+
     def test__stack__route__remove_default_clears_default_route(self) -> None:
         """
         Ensure 'remove_default' / 'remove_default' delete

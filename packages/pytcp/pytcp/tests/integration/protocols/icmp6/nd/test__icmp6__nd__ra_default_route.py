@@ -87,9 +87,10 @@ class TestIcmp6Nd__RaDefaultRoute(NdTestCase):
                     destination=Ip6Network("::/0"),
                     gateway=ROUTER__LINK_LOCAL,
                     protocol=RouteProtocol.RA,
+                    oif=self._packet_handler._ifindex,
                 ),
             ),
-            msg="A non-zero-lifetime RA must install one protocol=RA default route.",
+            msg="A non-zero-lifetime RA must install one protocol=RA default route via the RA-receiving interface.",
         )
 
     def test__icmp6__nd__ra_zero_lifetime_withdraws_default_route(self) -> None:

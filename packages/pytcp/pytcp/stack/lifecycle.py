@@ -382,6 +382,7 @@ def add_interface(
             address_api=address_view,
             route_api=_stack.route,
             interface_name=interface_name,
+            ifindex=ifindex,
         )
         packet_handler._dhcp4_client._log_interface = interface_name
         # N=1 back-compat: 'stack.dhcp4_client' aliases the FIRST (boot)
