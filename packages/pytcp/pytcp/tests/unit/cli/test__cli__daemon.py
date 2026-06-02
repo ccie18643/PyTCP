@@ -361,3 +361,34 @@ class TestRemovePidfile(TestCase):
             self.assertFalse(os.path.exists(path), msg="remove_pidfile must delete the pidfile.")
 
             remove_pidfile(path)  # second removal must not raise
+
+
+class TestCliUnreachableDaemon(TestCase):
+    """
+    The observation-subcommand unreachable-daemon graceful-failure tests.
+    """
+
+    def test__observation_command__unreachable_daemon_reports_cleanly(self) -> None:
+        """
+        Ensure an observation subcommand pointed at a non-existent daemon
+        control socket prints a clean diagnostic and exits non-zero,
+        rather than crashing with an unhandled connect traceback.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        missing = os.path.join(tempfile.gettempdir(), "pytcp-nonexistent-socket-918273.sock")
+        stderr = io.StringIO()
+        with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(stderr):
+            exit_code = main(["route", "--ipc-socket", missing])
+
+        self.assertEqual(
+            exit_code,
+            1,
+            msg="An unreachable daemon must exit 1, not raise.",
+        )
+        self.assertIn(
+            "daemon",
+            stderr.getvalue().lower(),
+            msg="The diagnostic must mention the daemon so the operator knows what failed.",
+        )

@@ -403,7 +403,20 @@ def main(argv: list[str] | None = None) -> int:
     if args.command == "daemon":
         return _run_daemon_command(args)
 
-    client = connect(socket_path=args.ipc_socket)
+    try:
+        client = connect(socket_path=args.ipc_socket)
+    except OSError as error:
+        # The daemon is not up yet (socket missing) or not accepting
+        # connections (refused) — report it cleanly instead of letting
+        # the connect traceback escape to the operator.
+        reason = error.strerror or str(error)
+        print(
+            f"pytcp: cannot reach the PyTCP daemon at {args.ipc_socket!r}: {reason}. "
+            f"Is the daemon running? Start it with 'pytcp daemon start'.",
+            file=sys.stderr,
+        )
+        return 1
+
     try:
         output = _COMMANDS[args.command](client, args)
     finally:
