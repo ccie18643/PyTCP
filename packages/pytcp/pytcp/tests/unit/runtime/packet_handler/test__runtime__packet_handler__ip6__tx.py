@@ -287,6 +287,34 @@ class TestPacketHandlerIp6TxValidation(TestCase):
 
         self.assertEqual(self._if._packet_stats_tx.ip6__src_network_unspecified__replace_external, 1)
 
+    def test__stack__packet_handler__ip6__tx__src_unspec_multicast_dst_replaced(self) -> None:
+        """
+        Ensure an unspecified src to a multicast destination is filled in
+        via RFC 6724 source selection — a DHCPv6 SOLICIT to ff02::1:2 takes
+        the link-local source — rather than being dropped as malformed.
+
+        Reference: RFC 6724 §4 (source selection applies to multicast destinations).
+        """
+
+        handler, iface = _make_ip6_tx(ip6_hosts=[Ip6IfAddr("fe80::7/64")])
+
+        status = handler._phtx_ip6(
+            ip6__src=Ip6Address(),
+            ip6__dst=Ip6Address("ff02::1:2"),
+            ip6__payload=RawAssembler(),
+        )
+
+        self.assertNotEqual(
+            status,
+            TxStatus.DROPPED__IP6__SRC_UNSPECIFIED,
+            msg="A multicast destination with an unspecified source must not be dropped.",
+        )
+        self.assertEqual(
+            iface._packet_stats_tx.ip6__src_unspecified__replace_multicast,
+            1,
+            msg="The link-local source must be selected for a link-local multicast destination.",
+        )
+
     def test__stack__packet_handler__ip6__tx__src_unspec_no_replacement_drops(self) -> None:
         """
         Ensure an unspecified src with no replacement candidate drops.

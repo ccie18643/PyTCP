@@ -264,15 +264,9 @@ class Ip6TxHandler:
 
         # If source is unspecified and destination is unicast,
         # run RFC 6724 default source-address selection across
-        # the owned candidate set. Multicast destinations with
-        # src=:: are intentionally not handled here — the
-        # DAD-probe and MLDv2-report branches above carry the
-        # only legitimate src=:: multicast forms, and any other
-        # multicast packet with src=:: is treated as malformed
-        # and falls through to the drop branch below. The
-        # local/external split is preserved at the stat-counter
-        # level for backwards compatibility with existing
-        # observability dashboards.
+        # the owned candidate set. The local/external split is
+        # preserved at the stat-counter level for backwards
+        # compatibility with existing observability dashboards.
         if ip6__src.is_unspecified and ip6__dst.is_unicast:
             selected = self._select_ip6_source(ip6__dst=ip6__dst)
             if selected is not None:
@@ -284,6 +278,28 @@ class Ip6TxHandler:
                     "ip6",
                     f"{tracker} - Packet source is unspecified, RFC 6724 "
                     f"selector picked source IPv6 address {selected}",
+                )
+                return selected
+
+        # RFC 6724 source selection ALSO applies to a multicast
+        # destination (a DHCPv6 SOLICIT to ff02::1:2, an app sending to
+        # a group from an unbound socket): fill in a source of adequate
+        # scope from the owned set — the link-local for a link-local-
+        # scoped group — matching Linux, which selects a source for a
+        # multicast send. The DAD-probe (RFC 4861 §4.3) and MLDv2-report
+        # branches above already returned the only two src=:: multicast
+        # forms that MUST stay unspecified, so a packet reaching here
+        # legitimately wants a real source; '_select_ip6_source' returns
+        # None (-> drop below) when no owned address has adequate scope.
+        if ip6__src.is_unspecified and ip6__dst.is_multicast:
+            selected = self._select_ip6_source(ip6__dst=ip6__dst)
+            if selected is not None:
+                self._if._packet_stats_tx.ip6__src_unspecified__replace_multicast += 1
+                __debug__ and log(
+                    "ip6",
+                    f"{tracker} - Packet source is unspecified, RFC 6724 "
+                    f"selector picked source IPv6 address {selected} for "
+                    f"multicast destination {ip6__dst}",
                 )
                 return selected
 

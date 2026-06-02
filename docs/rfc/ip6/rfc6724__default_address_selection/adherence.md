@@ -41,9 +41,16 @@ sysctl-driven override of the default table; the framework
 is shaped so that swap-out is a one-symbol change in the
 selector.
 
-The DAD probe (NS with src=:: and no SLLA) and MLDv2 report
-(src=::) short-circuit the selector — they MUST keep
-`src=::` regardless of the candidate set.
+The selector is invoked for both unicast and multicast
+destinations with an unspecified source — a DHCPv6 SOLICIT to
+the link-local-scoped `ff02::1:2` takes the link-local source,
+matching Linux, which selects a source for a multicast send.
+(Earlier the TX path gated selection on a unicast destination
+and dropped every other src=:: multicast packet as malformed;
+the gate now admits multicast and lets the §5 rule-2 scope
+guard decide.) The DAD probe (NS with src=:: and no SLLA) and
+MLDv2 report (src=::) short-circuit the selector ahead of this
+— they MUST keep `src=::` regardless of the candidate set.
 
 Per-RFC mechanism inventory:
 
@@ -102,6 +109,11 @@ Per-RFC mechanism inventory:
   - `TestRfc6724Rule7TempDisabled` — `use_tempaddr=0` keeps
     rule 7 a no-op even if a temp address slips into the
     candidate set
+- `packages/pytcp/pytcp/tests/unit/runtime/packet_handler/test__runtime__packet_handler__ip6__tx.py`
+  - `TestPacketHandlerIp6TxValidation.test__stack__packet_handler__ip6__tx__src_unspec_multicast_dst_replaced`
+    — the TX path runs §5 selection for a multicast
+    destination (link-local source filled in for `ff02::1:2`)
+    rather than dropping it
 - `packages/pytcp/pytcp/tests/unit/lib/test__lib__ip6_policy_table.py`
   - `TestIp6PolicyTableLookup` — RFC §10.3 (precedence, label)
     pairs for ::1, 6to4, Teredo, ULA, deprecated site-local,

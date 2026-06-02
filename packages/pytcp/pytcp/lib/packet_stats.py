@@ -374,6 +374,7 @@ class PacketStatsTx(PacketStats):
     ip6__src_multicast__drop: int = 0
     ip6__src_network_unspecified__replace_local: int = 0
     ip6__src_network_unspecified__replace_external: int = 0
+    ip6__src_unspecified__replace_multicast: int = 0
     ip6__src_unspecified__send: int = 0
     ip6__src_unspecified__drop: int = 0
     ip6__src_scope_mismatch__drop: int = 0
