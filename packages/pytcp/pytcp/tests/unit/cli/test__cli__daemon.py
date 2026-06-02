@@ -41,6 +41,40 @@ from unittest.mock import patch
 
 from pytcp.cli.__main__ import main
 from pytcp.daemon.daemon import remove_pidfile
+from pytcp.ipc.ipc__errors import IpcRemoteError
+
+
+class _StubMissingOpStack:
+    """
+    A 'ClientStack' stand-in whose socket-introspection op is unavailable
+    — modelling a daemon running an older build that does not expose
+    'stack.ss'. Used to exercise the 'daemon status' graceful-degradation
+    path without a live daemon.
+    """
+
+    class _Link:
+        def list_interfaces(self) -> list[int]:
+            return []
+
+    class _Route:
+        def list_routes(self) -> list[object]:
+            return []
+
+    class _Ss:
+        def list_sockets(self, **_kwargs: object) -> list[object]:
+            raise IpcRemoteError(
+                error_type="AttributeError",
+                message="module 'pytcp.stack' has no attribute 'ss'",
+            )
+
+    def __init__(self) -> None:
+        self.link = self._Link()
+        self.route = self._Route()
+        self.ss = self._Ss()
+        self.closed = False
+
+    def close(self) -> None:
+        self.closed = True
 
 
 class TestCliDaemonStop(TestCase):
@@ -218,6 +252,27 @@ class TestCliDaemonStatus(TestCase):
         self.assertEqual(exit_code, 0, msg="daemon status must exit 0 when the daemon process is alive.")
         self.assertIn("running (pid 4242)", output, msg="daemon status must report the running pid.")
         self.assertIn("unreachable", output, msg="daemon status must note an unreachable control socket.")
+
+    def test__daemon_status__running_degrades_on_missing_control_op(self) -> None:
+        """
+        Ensure 'daemon status' degrades a summary section to a note (and
+        still exits 0) when the daemon lacks a control op — an older build
+        that does not expose 'stack.ss' — rather than aborting with a
+        traceback.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        self.enterContext(patch("pytcp.cli.__main__.os.kill", autospec=True))
+        self.enterContext(
+            patch("pytcp.cli.__main__.connect", autospec=True, return_value=_StubMissingOpStack()),
+        )
+
+        exit_code, output = self._run_status(self._pidfile(pid=4242))
+
+        self.assertEqual(exit_code, 0, msg="daemon status must exit 0 when a control op is unavailable.")
+        self.assertIn("running (pid 4242)", output, msg="daemon status must report the running pid.")
+        self.assertIn("unavailable", output, msg="daemon status must note the unavailable summary section.")
 
 
 class TestRemovePidfile(TestCase):

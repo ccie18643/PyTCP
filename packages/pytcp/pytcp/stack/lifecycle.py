@@ -611,6 +611,7 @@ def init(
     _stack.neighbor = NeighborApi()
     _stack.membership = MembershipApi()
     _stack.resolver = ResolverApi(resolver=DnsResolver(server=_stack.STACK__DNS_SERVER))
+    _stack.ss = SocketIntrospectApi()
 
     # Host-mode routing table — Phase 3 of
     # 'docs/refactor/routing_table_host_mode.md'. Build the two FIBs and

@@ -1057,6 +1057,124 @@ class TestStackInitArpCacheConfig(TestCase):
         )
 
 
+class TestStackInitControlApis(TestCase):
+    """
+    The 'stack.init()' control-API singleton-wiring tests.
+
+    'mock__init' (the test path) and the real 'init()' must wire the same
+    control-API singletons; a singleton wired only in 'mock__init' works
+    in every integration test but raises 'AttributeError' against a live
+    daemon when the matching control op resolves 'stack.<api>'.
+    """
+
+    def setUp(self) -> None:
+        """
+        Snapshot the singletons 'init()' rebinds, then clear the
+        control-API attributes under test so the assertion verifies that
+        'init()' itself re-binds them (not a value leaked from a prior
+        test's 'mock__init' / 'init'). Silence the subsystem-init logs.
+        """
+
+        log_patch = patch("pytcp.stack.log")
+        log_patch.start()
+        self.addCleanup(log_patch.stop)
+        subsystem_log_patch = patch("pytcp.runtime.subsystem.log")
+        subsystem_log_patch.start()
+        self.addCleanup(subsystem_log_patch.stop)
+
+        self._sentinel = object()
+        self._snapshot = {
+            name: getattr(stack, name, self._sentinel) for name in ("timer", "stack_initialized", "ss", "resolver")
+        }
+        for name in ("ss", "resolver"):
+            if hasattr(stack, name):
+                delattr(stack, name)
+
+    def tearDown(self) -> None:
+        """
+        Restore the snapshotted singletons.
+        """
+
+        for name, value in self._snapshot.items():
+            if value is self._sentinel:
+                if hasattr(stack, name):
+                    delattr(stack, name)
+            else:
+                setattr(stack, name, value)
+
+    def _init_l2(self) -> None:
+        """
+        Run 'stack.init()' on the L2 path with the rings / handler / caches
+        patched out so the control-API wiring is exercised in isolation.
+        """
+
+        with (
+            patch.object(stack.lifecycle, "TxRing"),
+            patch.object(stack.lifecycle, "RxRing"),
+            patch.object(stack.lifecycle, "PacketHandlerL2"),
+            patch.object(stack.lifecycle, "ArpCache"),
+            patch.object(stack.lifecycle, "NdCache"),
+        ):
+            stack.init(
+                fd=-1,
+                layer=InterfaceLayer.L2,
+                mtu=1500,
+                mac_address=MacAddress("02:00:00:00:00:01"),
+                ip4_support=False,
+                ip4_host=None,
+                ip4_dhcp=False,
+                ip6_support=False,
+                ip6_host=None,
+                ip6_gua_autoconfig=False,
+                ip6_lla_autoconfig=False,
+            )
+
+    def test__stack__init_wires_socket_introspect_api(self) -> None:
+        """
+        Ensure 'stack.init()' binds the socket-introspection API at
+        'stack.ss' — the singleton the 'list_sockets' control op (and
+        'pytcp ss' / 'pytcp daemon status') resolves on a live daemon.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        from pytcp.stack.socket_introspect import SocketIntrospectApi
+
+        self._init_l2()
+
+        self.assertTrue(
+            hasattr(stack, "ss"),
+            msg="stack.init() must bind stack.ss so the list_sockets control op resolves on a live daemon.",
+        )
+        self.assertIsInstance(
+            stack.ss,
+            SocketIntrospectApi,
+            msg="stack.ss must be a SocketIntrospectApi after stack.init().",
+        )
+
+    def test__stack__init_wires_resolver_api(self) -> None:
+        """
+        Ensure 'stack.init()' binds the DNS resolver API at
+        'stack.resolver' — the 'resolve' control op singleton.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        from pytcp.stack.resolver import ResolverApi
+
+        self._init_l2()
+
+        self.assertTrue(
+            hasattr(stack, "resolver"),
+            msg="stack.init() must bind stack.resolver so the resolve control op resolves on a live daemon.",
+        )
+        self.assertIsInstance(
+            stack.resolver,
+            ResolverApi,
+            msg="stack.resolver must be a ResolverApi after stack.init().",
+        )
+
+
 class TestStackPythonVersionGuard(TestCase):
     """
     The Python-version-guard tests at module import time.

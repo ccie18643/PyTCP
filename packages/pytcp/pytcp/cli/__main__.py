@@ -59,6 +59,7 @@ from pytcp.daemon.daemon import (
     remove_pidfile,
     run_daemon,
 )
+from pytcp.ipc.ipc__errors import IpcRemoteError
 from pytcp.runtime.socket import AddressFamily, SocketType
 from pytcp.stack.neighbor import NeighborSnapshot
 
@@ -320,15 +321,25 @@ def _daemon_status(*, pidfile_path: str, socket_path: str) -> int:
         print(f"  Control socket unreachable: {error}")
         return 0
 
+    # The stack summary is best-effort: a daemon running an older build may
+    # not expose every control op (e.g. 'list_sockets'), so each section
+    # degrades to a note rather than aborting the whole status report.
     try:
-        views = _interface_views(client)
-        if views:
+        try:
+            views = _interface_views(client)
+            if views:
+                print()
+                print(format_addr(views))
+        except IpcRemoteError as error:
+            print(f"  Interface summary unavailable: {error}")
+
+        try:
+            routes = client.route.list_routes()
+            sockets = client.ss.list_sockets(family=None, socket_type=None, listening_only=False)
             print()
-            print(format_addr(views))
-        routes = client.route.list_routes()
-        sockets = client.ss.list_sockets(family=None, socket_type=None, listening_only=False)
-        print()
-        print(f"Routes: {len(routes)}   Sockets: {len(sockets)}")
+            print(f"Routes: {len(routes)}   Sockets: {len(sockets)}")
+        except IpcRemoteError as error:
+            print(f"  Route / socket summary unavailable: {error}")
     finally:
         client.close()
     return 0
