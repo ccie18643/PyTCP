@@ -32,7 +32,7 @@ ver 3.0.8
 
 from unittest import TestCase
 
-from net_addr import Ip4Address, Ip4IfAddr, Ip4Network, Ip6Address, Ip6IfAddr, MacAddress
+from net_addr import Ip4Address, Ip4IfAddr, Ip4Network, Ip6Address, Ip6IfAddr, Ip6Network, MacAddress
 from pytcp.cli.cli__format import (
     InterfaceView,
     format_activity,
@@ -45,7 +45,7 @@ from pytcp.cli.cli__format import (
 )
 from pytcp.lib.neighbor import NudState
 from pytcp.protocols.tcp.tcp__enums import FsmState
-from pytcp.runtime.fib import Route, RouteProtocol, RouteScope
+from pytcp.runtime.fib import Route
 from pytcp.runtime.socket import AddressFamily, SocketType
 from pytcp.stack.activity_introspect import InterfaceActivity
 from pytcp.stack.neighbor import NeighborSnapshot
@@ -134,63 +134,76 @@ class TestCliFormatNeighbors(TestCase):
 
 class TestCliFormatRoutes(TestCase):
     """
-    The 'ip route' route-table formatter golden tests.
+    The net-tools 'route' route-table formatter golden tests.
     """
 
-    def test__format_route_table(self) -> None:
+    _IP4_ROUTES = (
+        Route(destination=Ip4Network("0.0.0.0/0"), gateway=Ip4Address("10.0.1.1"), oif=1),
+        Route(destination=Ip4Network("10.0.1.0/24"), prefsrc=Ip4Address("10.0.1.7"), oif=1),
+    )
+
+    def test__format_route_table__ipv4(self) -> None:
         """
-        Ensure routes render in the 'ip route show' line layout, with the
-        default route collapsed to 'default'.
+        Ensure the IPv4 routing table renders in the net-tools 'route'
+        layout: the 'PyTCP IP routing table' header, the Destination /
+        Gateway / Genmask / Flags / Metric / Ref / Use / Iface columns,
+        the default route collapsed to 'default', a connected route's
+        gateway shown as 0.0.0.0, and the egress interface name.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        self.assertEqual(
+            format_route_table(self._IP4_ROUTES, family=AddressFamily.INET4, interface_names={1: "tap7"}),
+            "PyTCP IP routing table\n"
+            "Destination     Gateway         Genmask         Flags Metric Ref    Use Iface\n"
+            "default         10.0.1.1        0.0.0.0         UG    0      0        0 tap7\n"
+            "10.0.1.0        0.0.0.0         255.255.255.0   U     0      0        0 tap7",
+            msg="The IPv4 route table must render in the net-tools 'route' layout.",
+        )
+
+    def test__format_route_table__ipv4_numeric(self) -> None:
+        """
+        Ensure 'numeric' renders the default route's destination as
+        0.0.0.0 (net-tools 'route -n'), and a route with no egress
+        interface name falls back to the raw 'ifN' form.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        self.assertEqual(
+            format_route_table(self._IP4_ROUTES, family=AddressFamily.INET4, numeric=True),
+            "PyTCP IP routing table\n"
+            "Destination     Gateway         Genmask         Flags Metric Ref    Use Iface\n"
+            "0.0.0.0         10.0.1.1        0.0.0.0         UG    0      0        0 if1\n"
+            "10.0.1.0        0.0.0.0         255.255.255.0   U     0      0        0 if1",
+            msg="numeric must render the default destination as 0.0.0.0 (route -n).",
+        )
+
+    def test__format_route_table__ipv6(self) -> None:
+        """
+        Ensure the IPv6 routing table renders in the net-tools 'route -6'
+        layout: the 'PyTCP IPv6 routing table' header, the Destination /
+        Next Hop / Flag / Met / Ref / Use / If columns, the unspecified
+        address bracketed as '[::]', and the egress interface name.
 
         Reference: PyTCP test infrastructure (no RFC clause).
         """
 
         routes = (
+            Route(destination=Ip6Network("::/0"), gateway=Ip6Address("fe80::1"), oif=2),
             Route(
-                destination=Ip4Network("0.0.0.0/0"),
-                gateway=Ip4Address("10.0.1.1"),
-                scope=RouteScope.UNIVERSE,
-                protocol=RouteProtocol.STATIC,
-                oif=1,
-            ),
-            Route(
-                destination=Ip4Network("10.0.1.0/24"),
-                scope=RouteScope.LINK,
-                protocol=RouteProtocol.KERNEL,
-                prefsrc=Ip4Address("10.0.1.7"),
-                oif=1,
+                destination=Ip6Network("2603:808c:2800:4301::/64"), prefsrc=Ip6Address("2603:808c:2800:4301::5"), oif=2
             ),
         )
 
         self.assertEqual(
-            format_route_table(routes),
-            "default via 10.0.1.1 dev if1 scope universe proto static\n"
-            "10.0.1.0/24 dev if1 scope link proto pytcp src 10.0.1.7",
-            msg="The route table must render in the ip route show layout (connected route proto 'pytcp').",
-        )
-
-    def test__format_route_table__renders_interface_names(self) -> None:
-        """
-        Ensure 'dev' renders the interface name when an ifindex-to-name map
-        is supplied, instead of the raw 'ifN' form.
-
-        Reference: PyTCP test infrastructure (no RFC clause).
-        """
-
-        routes = (
-            Route(
-                destination=Ip4Network("192.168.1.0/24"),
-                scope=RouteScope.LINK,
-                protocol=RouteProtocol.KERNEL,
-                prefsrc=Ip4Address("192.168.1.151"),
-                oif=2,
-            ),
-        )
-
-        self.assertEqual(
-            format_route_table(routes, interface_names={2: "tap9"}),
-            "192.168.1.0/24 dev tap9 scope link proto pytcp src 192.168.1.151",
-            msg="The route's egress interface must render as the interface name when the map is supplied.",
+            format_route_table(routes, family=AddressFamily.INET6, interface_names={2: "tap9"}),
+            "PyTCP IPv6 routing table\n"
+            "Destination                    Next Hop                   Flag Met Ref  Use If\n"
+            "[::]/0                         fe80::1                    UG      0     0       0 tap9\n"
+            "2603:808c:2800:4301::/64       [::]                       U       0     0       0 tap9",
+            msg="The IPv6 route table must render in the net-tools 'route -6' layout.",
         )
 
 

@@ -109,8 +109,9 @@ class TestIpcCli(IpcControlTestCase):
 
     def test__cli__route_matches_formatter(self) -> None:
         """
-        Ensure 'pytcp route' renders the daemon's routing table identically
-        to the route formatter applied to the live route list.
+        Ensure 'pytcp route' renders the daemon's IPv4 routing table
+        identically to the net-tools route formatter applied to the live
+        IPv4 route list (the default, IPv4-only invocation).
 
         Reference: PyTCP test infrastructure (no RFC clause).
         """
@@ -120,7 +121,11 @@ class TestIpcCli(IpcControlTestCase):
             ifindex: (client.link.interface(ifindex).name or f"if{ifindex}")
             for ifindex in client.link.list_interfaces()
         }
-        expected = format_route_table(client.route.list_routes(), interface_names=names)
+        expected = format_route_table(
+            client.route.list_routes(family=AddressFamily.INET4),
+            family=AddressFamily.INET4,
+            interface_names=names,
+        )
 
         output = self._run("route")
 

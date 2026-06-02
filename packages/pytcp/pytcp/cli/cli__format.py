@@ -47,8 +47,8 @@ from net_addr import (
     Ip6Network,
     MacAddress,
 )
-from pytcp.runtime.fib import Route, RouteProtocol
-from pytcp.runtime.socket import SocketType
+from pytcp.runtime.fib import Route
+from pytcp.runtime.socket import AddressFamily, SocketType
 from pytcp.stack.activity_introspect import InterfaceActivity
 from pytcp.stack.neighbor import NeighborSnapshot
 from pytcp.stack.socket_introspect import SocketSnapshot
@@ -77,9 +77,6 @@ _NETID_BY_TYPE: dict[SocketType, str] = {
     SocketType.DGRAM: "udp",
     SocketType.RAW: "raw",
 }
-
-# The default-route destinations, rendered as 'default' by 'ip route'.
-_DEFAULT_DESTINATIONS: frozenset[str] = frozenset({"0.0.0.0/0", "::/0"})
 
 
 def _format_table(headers: Sequence[str], rows: Sequence[Sequence[str]], /) -> str:
@@ -138,35 +135,108 @@ def format_neighbor_table(snapshots: Iterable[NeighborSnapshot], /) -> str:
     return "\n".join(lines)
 
 
-def format_route_table(routes: Iterable[_AnyRoute], /, *, interface_names: Mapping[int, str] | None = None) -> str:
+def _route_iface(oif: int | None, names: Mapping[int, str], /) -> str:
     """
-    Render routes in the 'ip route show' line layout. 'interface_names'
-    maps an egress ifindex to its interface name so 'dev' shows the name
-    ('dev tap7') rather than the raw index ('dev if1'); without it the
-    raw 'ifN' form is used. The 'proto kernel' protocol of the
-    auto-synthesized on-link connected routes renders as 'pytcp' — PyTCP
-    is the kernel that installed them.
+    Render a route's egress interface for the 'Iface' / 'If' column —
+    the interface name when known, the raw 'ifN' form when the name map
+    lacks it, and net-tools' '*' when the route has no egress interface.
+    """
+
+    if oif is None:
+        return "*"
+    return names.get(oif, f"if{oif}")
+
+
+def _route_flags(route: _AnyRoute, /, *, host_prefixlen: int) -> str:
+    """
+    Render a route's net-tools flag string: 'U' (up — every listed
+    route), '+G' when it has a gateway, '+H' when it is a host route.
+    """
+
+    flags = "U"
+    if route.gateway is not None:
+        flags += "G"
+    if route.destination.prefixlen == host_prefixlen:
+        flags += "H"
+    return flags
+
+
+def _format_route_table_ip4(routes: Iterable[_AnyRoute], /, *, names: Mapping[int, str], numeric: bool) -> str:
+    """
+    Render the IPv4 routing table in the net-tools 'route' layout.
+    """
+
+    lines = [
+        "PyTCP IP routing table",
+        "Destination     Gateway         Genmask         Flags Metric Ref    Use Iface",
+    ]
+    for route in routes:
+        network = route.destination
+        if network.prefixlen == 0:
+            destination = "0.0.0.0" if numeric else "default"
+        else:
+            destination = str(network.address)
+        gateway = str(route.gateway) if route.gateway is not None else "0.0.0.0"
+        # 'Ip4Mask.__str__' is the '/N' prefix form; net-tools' Genmask
+        # column is the dotted-decimal netmask, so render the mask's
+        # integer value through an Ip4Address.
+        genmask = str(Ip4Address(int(network.mask)))
+        flags = _route_flags(route, host_prefixlen=32)
+        ref = use = 0
+        lines.append(
+            f"{destination:<16}{gateway:<16}{genmask:<16}"
+            f"{flags:<6}{route.metric:<6} {ref:<2} {use:>7} {_route_iface(route.oif, names)}"
+        )
+
+    return "\n".join(lines)
+
+
+def _format_route_table_ip6(routes: Iterable[_AnyRoute], /, *, names: Mapping[int, str]) -> str:
+    """
+    Render the IPv6 routing table in the net-tools 'route -6' layout.
+    """
+
+    lines = [
+        "PyTCP IPv6 routing table",
+        "Destination                    Next Hop                   Flag Met Ref  Use If",
+    ]
+    for route in routes:
+        network = route.destination
+        address = str(network.address)
+        destination = f"{'[::]' if address == '::' else address}/{network.prefixlen}"
+        nexthop = str(route.gateway) if route.gateway is not None else "[::]"
+        flag = _route_flags(route, host_prefixlen=128)
+        ref = use = 0
+        lines.append(
+            f"{destination:<30} {nexthop:<26} {flag:<4} "
+            f"{route.metric:>4} {ref:>5} {use:>7} {_route_iface(route.oif, names)}"
+        )
+
+    return "\n".join(lines)
+
+
+def format_route_table(
+    routes: Iterable[_AnyRoute],
+    /,
+    *,
+    family: AddressFamily,
+    numeric: bool = False,
+    interface_names: Mapping[int, str] | None = None,
+) -> str:
+    """
+    Render routes in the net-tools 'route' table layout, one address
+    family at a time — the 'route' (IPv4) / 'route -6' (IPv6) output.
+    'numeric' mirrors 'route -n': the IPv4 default route's destination
+    renders as '0.0.0.0' rather than 'default'. 'interface_names' maps
+    an egress ifindex to its interface name for the 'Iface' / 'If'
+    column; a route with no egress interface renders '*'. The header
+    says 'PyTCP' where net-tools says 'Kernel' — PyTCP is the kernel.
     """
 
     names = interface_names or {}
-    lines = []
-    for route in routes:
-        destination = "default" if str(route.destination) in _DEFAULT_DESTINATIONS else str(route.destination)
-        parts = [destination]
-        if route.gateway is not None:
-            parts += ["via", str(route.gateway)]
-        if route.oif is not None:
-            parts += ["dev", names.get(route.oif, f"if{route.oif}")]
-        parts += ["scope", route.scope.name.lower()]
-        proto = "pytcp" if route.protocol is RouteProtocol.KERNEL else route.protocol.name.lower()
-        parts += ["proto", proto]
-        if route.prefsrc is not None:
-            parts += ["src", str(route.prefsrc)]
-        if route.metric:
-            parts += ["metric", str(route.metric)]
-        lines.append(" ".join(parts))
-
-    return "\n".join(lines)
+    if family is AddressFamily.INET6:
+        return _format_route_table_ip6(routes, names=names)
+    return _format_route_table_ip4(routes, names=names, numeric=numeric)
 
 
 def format_sysctl(items: Mapping[str, object], /) -> str:

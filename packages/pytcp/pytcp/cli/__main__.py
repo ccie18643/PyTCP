@@ -43,6 +43,7 @@ import signal
 import sys
 from collections.abc import Callable
 
+from pytcp import __version__
 from pytcp.cli.cli__format import (
     InterfaceView,
     format_activity,
@@ -113,11 +114,20 @@ def _interface_names(client: ClientStack, /) -> dict[int, str]:
 
 def _cmd_route(client: ClientStack, args: argparse.Namespace, /) -> str:
     """
-    Render the routing table for the 'route' subcommand.
+    Render the routing table for the 'route' subcommand. Mirrors
+    net-tools 'route': IPv4 by default, IPv6 with '-6' / '-A inet6'.
     """
 
-    _ = args
-    return format_route_table(client.route.list_routes(), interface_names=_interface_names(client))
+    if args.inet6 or args.family == "inet6":
+        family = AddressFamily.INET6
+    else:
+        family = AddressFamily.INET4
+    return format_route_table(
+        client.route.list_routes(family=family),
+        family=family,
+        numeric=args.numeric,
+        interface_names=_interface_names(client),
+    )
 
 
 def _cmd_sysctl(client: ClientStack, args: argparse.Namespace, /) -> str:
@@ -224,7 +234,52 @@ def build_parser() -> argparse.ArgumentParser:
     parser_ss.add_argument("-4", "--ipv4", action="store_true", help="Show only IPv4 sockets.")
     parser_ss.add_argument("-6", "--ipv6", action="store_true", help="Show only IPv6 sockets.")
 
-    subparsers.add_parser("route", parents=[common], help="Show the routing table.")
+    parser_route = subparsers.add_parser("route", parents=[common], help="Show the routing table (net-tools 'route').")
+    parser_route.add_argument(
+        "-n",
+        "--numeric",
+        action="store_true",
+        help="Show numeric addresses (render the default route's destination as 0.0.0.0).",
+    )
+    parser_route.add_argument(
+        "-e",
+        "--extend",
+        action="count",
+        default=0,
+        help="Display more information (accepted for net-tools compatibility).",
+    )
+    parser_route.add_argument("-4", dest="inet", action="store_true", help="Show the IPv4 routing table (default).")
+    parser_route.add_argument("-6", dest="inet6", action="store_true", help="Show the IPv6 routing table.")
+    parser_route.add_argument(
+        "-A",
+        dest="family",
+        choices=("inet", "inet6"),
+        help="Address family to display (inet | inet6).",
+    )
+    parser_route.add_argument(
+        "-F",
+        "--fib",
+        action="store_true",
+        help="Display the Forwarding Information Base (the default; accepted for net-tools compatibility).",
+    )
+    parser_route.add_argument(
+        "-C",
+        "--cache",
+        action="store_true",
+        help="Display the routing cache (accepted for net-tools compatibility; PyTCP keeps no route cache).",
+    )
+    parser_route.add_argument(
+        "-v",
+        "--verbose",
+        action="store_true",
+        help="Be verbose (accepted for net-tools compatibility).",
+    )
+    parser_route.add_argument(
+        "-V",
+        "--version",
+        action="version",
+        version=f"pytcp route (PyTCP {__version__})",
+    )
     subparsers.add_parser("neigh", parents=[common], help="Show the neighbour caches.")
     subparsers.add_parser("addr", parents=[common], help="Show interfaces with their addresses.")
     subparsers.add_parser("link", parents=[common], help="Show interfaces.")
