@@ -397,6 +397,18 @@ class Socket:
 
         self._control_sock().connect(address)
 
+    def connect_ex(self, address: tuple[str, int], /) -> int:
+        """
+        Connect like 'connect', but return the error number instead of
+        raising (0 on success), mirroring stdlib 'connect_ex'.
+        """
+
+        try:
+            self.connect(address)
+        except OSError as error:
+            return error.errno if error.errno is not None else errno.EINVAL
+        return 0
+
     def listen(self, backlog: int = 128, /) -> None:
         """
         Mark a stream socket as accepting connections.

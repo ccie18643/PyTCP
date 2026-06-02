@@ -80,8 +80,8 @@ clean backpressure design is, and the honest limits of "100% asyncio /
 | A5    | DNS resolved through the daemon                             | **done** |
 | P1    | Proof point — real stdlib program over the daemon          | **done (http.client, IP-literal)** |
 | A3.0  | Feasibility: TcpSocket tx-writable signal + bridge pump (read-only) | **done** |
-| A3.1  | Prototype the writable-on-connect edge (throwaway)         | —      |
-| A3.2  | Backpressure bridge (honest data-phase writability)        | —      |
+| A3.1  | Prototype the writable-on-connect edge (throwaway)         | **done (validated)** |
+| A3.2  | Backpressure bridge + non-blocking data-phase readiness baseline | **done** |
 | A3.3  | Non-blocking connect (connect-as-window-0 + SO_ERROR)      | —      |
 | A3.4  | Non-blocking accept (listener readiness + accept_take)     | —      |
 | P2    | Proof point — real asyncio TCP client+server over the daemon | —    |
@@ -456,6 +456,24 @@ allowlist + client mirror.
   round-trip). lint clean, 12647 passing. **Track B is complete**: `pytcp`
   is a full operator multitool (`ss` / `route` / `sysctl` / `neigh` /
   `addr` / `link` / `daemon start` / `daemon stop`).
+
+- **2026-06-01** — A3.1 / A3.2 (non-blocking readiness baseline). **A3.1
+  prototype validated:** filling a socketpair end's `SO_SNDBUF` with
+  filler makes it read *not*-writable via `select`, and draining the far
+  end flips it writable — the connect-edge mechanism A3.3 will use is
+  feasible on this platform. **A3.2 baseline:** the established-socket
+  readiness foundation already works through the drop-in with zero
+  production change — the data fd is a real kernel socketpair end, so
+  `setblocking(False)` makes `recv` raise `BlockingIOError`, `select`
+  reports not-readable with no data and readable once a peer segment
+  arrives, and the bridge backpressure gives honest data-phase
+  writability. Pinned by an integration test (non-blocking recv EAGAIN +
+  select read-readiness on driven data). Added `Socket.connect_ex`
+  (returns the errno instead of raising; 0 on success), tested via a
+  driven handshake. The genuinely new daemon-side work — non-blocking
+  connect (A3.3, EINPROGRESS + worker thread + filler drain on success +
+  SO_ERROR) and accept readiness (A3.4) — remains. lint clean, 12649
+  passing.
 
 ## 7. Design discussion — readiness, the "trick", and compat limits
 

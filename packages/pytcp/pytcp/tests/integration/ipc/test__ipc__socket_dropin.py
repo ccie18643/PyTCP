@@ -46,6 +46,7 @@ import errno
 import http.client
 import io
 import os
+import select
 import socket
 import tempfile
 import threading
@@ -604,6 +605,105 @@ class TestSocketDropinEcho(TcpTestCase):
             (result.get("status"), result.get("body")),
             (200, b"hello"),
             msg="http.client must parse the driven 200 response read over the drop-in socket.",
+        )
+
+    def test__socket_dropin__nonblocking_recv_and_select_readiness(self) -> None:
+        """
+        Ensure an established non-blocking drop-in socket raises
+        BlockingIOError on an empty recv and becomes select-readable once
+        peer data arrives — the asyncio readiness foundation on the real
+        data-channel descriptor.
+
+        Reference: RFC 9293 §3.10 (Segment arrives — data delivery).
+        """
+
+        sock = pytcp_socket.socket(pytcp_socket.AF_INET, pytcp_socket.SOCK_STREAM)
+        self.addCleanup(sock.close)
+        sock.settimeout(_DEADLINE__SEC)
+        self._drive_handshake(sock)
+
+        sock.setblocking(False)
+
+        with self.assertRaises(BlockingIOError):
+            sock.recv(64)
+        self.assertEqual(
+            select.select([sock], [], [], 0)[0],
+            [],
+            msg="An established socket with no inbound data must not be select-readable.",
+        )
+
+        self._drive_rx(
+            frame=build_tcp4(
+                src_ip=HOST_A__IP4_ADDRESS,
+                dst_ip=STACK__IP4_HOST.address,
+                sport=_REMOTE_PORT,
+                dport=_LOCAL_PORT,
+                seq=_PEER_ISS + 1,
+                ack=_ISS + 1,
+                flags=("ACK",),
+                win=_PEER_WIN,
+                payload=b"async",
+            )
+        )
+
+        deadline = time.monotonic() + _DEADLINE__SEC
+        while time.monotonic() < deadline and not select.select([sock], [], [], 0)[0]:
+            self._advance(ms=10)
+            time.sleep(0.01)
+
+        self.assertEqual(
+            select.select([sock], [], [], _DEADLINE__SEC)[0],
+            [sock],
+            msg="The socket must become select-readable once peer data arrives.",
+        )
+        self.assertEqual(
+            sock.recv(64),
+            b"async",
+            msg="A non-blocking recv must return the peer data once readable.",
+        )
+
+    def test__socket_dropin__connect_ex_returns_zero_on_success(self) -> None:
+        """
+        Ensure connect_ex returns 0 once the handshake completes, mirroring
+        stdlib connect_ex's error-number return.
+
+        Reference: RFC 9293 §3.5 (Connection establishment).
+        """
+
+        sock = pytcp_socket.socket(pytcp_socket.AF_INET, pytcp_socket.SOCK_STREAM)
+        self.addCleanup(sock.close)
+        sock.settimeout(_DEADLINE__SEC)
+        self._force_iss(_ISS)
+        sock.bind(("0.0.0.0", _LOCAL_PORT))
+
+        result: dict[str, object] = {}
+
+        def run_connect_ex() -> None:
+            result["rc"] = sock.connect_ex((str(HOST_A__IP4_ADDRESS), _REMOTE_PORT))
+
+        connect_thread = threading.Thread(target=run_connect_ex, name="dropin-connect-ex")
+        connect_thread.start()
+        self.addCleanup(connect_thread.join)
+
+        self._wait_for_local_syn()
+        self._drive_rx(
+            frame=build_tcp4(
+                src_ip=HOST_A__IP4_ADDRESS,
+                dst_ip=STACK__IP4_HOST.address,
+                sport=_REMOTE_PORT,
+                dport=_LOCAL_PORT,
+                seq=_PEER_ISS,
+                ack=_ISS + 1,
+                flags=("SYN", "ACK"),
+                win=_PEER_WIN,
+            )
+        )
+        connect_thread.join(timeout=_DEADLINE__SEC)
+
+        self.assertEqual(
+            result.get("rc"),
+            0,
+            msg="connect_ex must return 0 once the handshake completes.",
         )
 
     def _wait_for_any_syn(self, *, dport: int) -> TcpProbe:
