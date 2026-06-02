@@ -29,7 +29,7 @@ This module contains code that runs the stack without any 'user space' services.
 Stack should only respond to the ping packets. This example is also used as a
 base to run other examples provided as the subsystems.
 
-examples/stack.py
+examples_legacy/stack.py
 
 ver 3.0.8
 """
@@ -40,8 +40,8 @@ from types import FrameType
 from typing import Any
 
 import click
+from examples_legacy.lib.subsystem import Subsystem
 
-from examples.lib.subsystem import Subsystem
 from net_addr import (
     ClickTypeIp4Address,
     ClickTypeIp4IfAddr,
@@ -363,7 +363,7 @@ def cli(
         # 'remove_interface', which runs the teardown cascade (abort bound
         # sessions, drop addresses, flush neighbour caches, purge egress
         # routes, stop the interface threads). Try it with:
-        #   kill -USR1 $(pgrep -f 'examples/stack.py')
+        #   kill -USR1 $(pgrep -f 'examples_legacy/stack.py')
         _remove_requested = [False]
 
         def _on_sigusr1(_signum: int, _frame: FrameType | None) -> None:

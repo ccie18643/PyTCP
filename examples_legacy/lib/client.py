@@ -26,7 +26,7 @@
 This module contains the 'user space' generic client base class used in
 the examples.
 
-examples/lib/client.py
+examples_legacy/lib/client.py
 
 ver 3.0.8
 """
@@ -35,7 +35,8 @@ import threading
 from abc import abstractmethod
 from typing import override
 
-from examples.lib.subsystem import Subsystem
+from examples_legacy.lib.subsystem import Subsystem
+
 from net_addr import Ip4Address, Ip6Address, IpVersion
 from pytcp.runtime.socket import (
     IPPROTO_ICMP4,

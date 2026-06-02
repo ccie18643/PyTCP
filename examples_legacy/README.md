@@ -19,7 +19,7 @@ Before running any of the examples, please make sure to:
  - Run the 'sudo make tun5' command to create the tun5 interface and assign IP addressing.
  - Run the 'make' command to create the proper virtual environment.
  - Run the '. venv/bin/activate' command to start the stack virtual environment.
- - Execute any example, e.g., 'examples/stack.py'.
+ - Execute any example, e.g., 'examples_legacy/stack.py'.
  - Hit Ctrl-C to stop it.
 
 ## The Suggested Network Topology for the TAP Interface
@@ -42,94 +42,94 @@ To test the example code with 3rd party tools (assuming you are connected with t
 **NOTE:** The 'ncat' tool comes with the 'nmap' package.
 
 #### ICMP Echo Client over IPv4 (to Linux host)
- - In a terminal window, run: examples/client_icmp_echo.py --stack-interface tap7 <br0 IPv4 address>
+ - In a terminal window, run: examples_legacy/client_icmp_echo.py --stack-interface tap7 <br0 IPv4 address>
 
 #### ICMP Echo Client over IPv4 (to Internet host)
- - In a terminal window, run: examples/client_icmp_echo.py --stack-interface tap7 1.1.1.1
+ - In a terminal window, run: examples_legacy/client_icmp_echo.py --stack-interface tap7 1.1.1.1
 
 #### ICMP Echo Client over IPv6 (to Linux host)
- - In a terminal window, run: examples/client_icmp_echo.py --stack-interface tap7 <br0 IPv6 address>
+ - In a terminal window, run: examples_legacy/client_icmp_echo.py --stack-interface tap7 <br0 IPv6 address>
 
 #### ICMP Echo Client over IPv6 (to Internet host)
- - In a terminal window, run: examples/client_icmp_echo.py --stack-interface tap7 2600::
+ - In a terminal window, run: examples_legacy/client_icmp_echo.py --stack-interface tap7 2600::
 
 #### UDP Echo Client over IPv4 (to Linux host)
  - In the first terminal window, run: ncat -ulk 7 -e /bin/cat
- - In the second terminal window, run: examples/client__udp_echo.py --stack-interface tap7 <br0 IPv4 address>
+ - In the second terminal window, run: examples_legacy/client__udp_echo.py --stack-interface tap7 <br0 IPv4 address>
 
 #### UDP Echo Client over IPv6 (to Linux host)
  - In the first terminal window, run: ncat -ulk 7 -e /bin/cat
- - in second terminal window run: examples/client__udp_echo.py --stack-interface tap7 <br0 IPv6 address>
+ - in second terminal window run: examples_legacy/client__udp_echo.py --stack-interface tap7 <br0 IPv6 address>
 
 #### TCP Echo Client over IPv4 (to Linux host)
  - In the first terminal window, run: ncat -lk 7 -e /bin/cat
- - In the second terminal window, run: examples/client__tcp_echo.py --stack-interface tap7 <br0 IPv4 address>
+ - In the second terminal window, run: examples_legacy/client__tcp_echo.py --stack-interface tap7 <br0 IPv4 address>
 
 #### TCP Echo Client over IPv6 (to Linux host)
  - In the first terminal window, run: ncat -lk 7 -e /bin/cat
- - In second terminal window, run: examples/client__tcp_echo.py --stack-interface tap7 <br0 IPv6 address>
+ - In second terminal window, run: examples_legacy/client__tcp_echo.py --stack-interface tap7 <br0 IPv6 address>
 
 #### ICMP Echo Service over IPv4 (from Linux host)
- - In the first terminal window, run: examples/stack.py --stack-interface tap7
+ - In the first terminal window, run: examples_legacy/stack.py --stack-interface tap7
  - In the second terminal window, run: ping <tap7 stack IPv4 address> 
 
 #### ICMP Echo Service over IPv6 (from Linux host)
- - In the first terminal window, run: examples/stack.py --stack-interface tap7
+ - In the first terminal window, run: examples_legacy/stack.py --stack-interface tap7
  - In the second terminal window, run: ping <tap7 stack IPv6 address>
 
 #### UDP Echo Service over IPv4 (from Linux host)
- - In the first terminal window, run: examples/service__udp_echo.py --stack-interface tap7
+ - In the first terminal window, run: examples_legacy/service__udp_echo.py --stack-interface tap7
  - In the second terminal window, run: ncat -u <tap7 stack IPv4 address> 7
  - In the second terminal type a couple of words, press enter after each, and observe them echoed back by the Echo service.
 
 #### UDP Echo Service over IPv6 (from Linux host)
- - In the first terminal window, run: examples/service__udp_echo.py --stack-interface tap7
+ - In the first terminal window, run: examples_legacy/service__udp_echo.py --stack-interface tap7
  - In the second terminal window, run: ncat -u <tap7 stack IPv6 address> 7
  - In the second terminal type a couple of words, press enter after each, and observe them echoed back by the Echo service.
 
 #### TCP Echo Service over IPv4 (from Linux host)
- - In the first terminal window, run: examples/service__tcp_echo.py --stack-interface tap7
+ - In the first terminal window, run: examples_legacy/service__tcp_echo.py --stack-interface tap7
  - In the second terminal window, run: ncat <tap7 stack IPv4 address> 7
  - In the second terminal type a couple of words, press enter after each, and observe them echoed back by the Echo service.
 
 #### TCP Echo Service over IPv6 (from Linux host)
- - In the first terminal window, run: examples/service__tcp_echo.py --stack-interface tap7
+ - In the first terminal window, run: examples_legacy/service__tcp_echo.py --stack-interface tap7
  - In the second terminal window, run: ncat <tap7 stack IPv6 address> 7
  - In the second terminal type a couple of words, press enter after each, and observe them echoed back by the Echo service.
 
 #### IPv4 Multicast Listener / IGMP (from Linux host)
- - In the first terminal window, run: examples/service__mcast_listener.py --stack-interface tap7 --group 239.1.1.1
+ - In the first terminal window, run: examples_legacy/service__mcast_listener.py --stack-interface tap7 --group 239.1.1.1
  - On join the stack emits an IGMP membership Report (visible by piping the output through grep IGMP, or with tcpdump -i tap7 igmp on the host).
  - In the second terminal window, send a datagram to the group, e.g.: ncat -u 239.1.1.1 5007  (type a word and press enter), or use a tool such as iperf/socat multicast.
  - Observe the listener log the received datagram; stopping the stack (Ctrl-C) emits the IGMP Leave.
- - To also make the group answer ping, add --pingable: examples/service__mcast_listener.py --stack-interface tap7 --group 239.1.1.1 --pingable — then ping 239.1.1.1 gets a reply from the stack's unicast address. Without --pingable (the default) the stack ignores multicast/broadcast pings (Smurf mitigation); the flag clears the icmp4.echo_ignore_broadcasts sysctl for the life of the service and restores it on exit.
+ - To also make the group answer ping, add --pingable: examples_legacy/service__mcast_listener.py --stack-interface tap7 --group 239.1.1.1 --pingable — then ping 239.1.1.1 gets a reply from the stack's unicast address. Without --pingable (the default) the stack ignores multicast/broadcast pings (Smurf mitigation); the flag clears the icmp4.echo_ignore_broadcasts sysctl for the life of the service and restores it on exit.
 
 ## Testing Examples Using Two Stacks Talking to Each Other
 To test the example code with two stack instances talking to each other (assuming you are connected with two terminals to the Linux machine pictured in the above diagram):
 
 #### ICMP Echo Service & Client over IPv4
- - In the first terminal window, run: examples/stack.py --stack-interface tap7
- - In the second terminal window, run: examples/client__icmp_echo.py --stack-interface tap9 <tap7 stack IPv4 address>
+ - In the first terminal window, run: examples_legacy/stack.py --stack-interface tap7
+ - In the second terminal window, run: examples_legacy/client__icmp_echo.py --stack-interface tap9 <tap7 stack IPv4 address>
 
 #### ICMP Echo Service & Client over IPv6
- - In the first terminal window, run: examples/stack.py --stack-interface tap7
- - In the second terminal window, run: examples/client__icmp_echo.py --stack-interface tap9 <tap7 stack IPv6 address>
+ - In the first terminal window, run: examples_legacy/stack.py --stack-interface tap7
+ - In the second terminal window, run: examples_legacy/client__icmp_echo.py --stack-interface tap9 <tap7 stack IPv6 address>
 
 #### UDP Echo Service & Client over IPv4
- - In the first terminal window, run: examples/service__udp_echo.py --stack-interface tap7
- - In the second terminal window, run: examples/client__udp_echo.py --stack-interface tap9 <tap7 stack IPv4 address>
+ - In the first terminal window, run: examples_legacy/service__udp_echo.py --stack-interface tap7
+ - In the second terminal window, run: examples_legacy/client__udp_echo.py --stack-interface tap9 <tap7 stack IPv4 address>
 
 #### UDP Echo Service & Client over IPv6
- - In the first terminal window, run: examples/service__udp_echo.py --stack-interface tap7
- - In the second terminal window, run: examples/client__udp_echo.py --stack-interface tap9 <tap7 stack IPv6 address>
+ - In the first terminal window, run: examples_legacy/service__udp_echo.py --stack-interface tap7
+ - In the second terminal window, run: examples_legacy/client__udp_echo.py --stack-interface tap9 <tap7 stack IPv6 address>
 
 #### TCP Echo Service & Client over IPv4
- - In the first terminal window, run: examples/service__tcp_echo.py --stack-interface tap7
- - In the second terminal window, run: examples/client__tcp_echo.py --stack-interface tap9 <tap7 stack IPv4 address>
+ - In the first terminal window, run: examples_legacy/service__tcp_echo.py --stack-interface tap7
+ - In the second terminal window, run: examples_legacy/client__tcp_echo.py --stack-interface tap9 <tap7 stack IPv4 address>
 
 #### TCP Echo Service & Client over IPv6
- - In the first terminal window, run: examples/service__tcp_echo.py --stack-interface tap7
- - In the second terminal window, run: examples/client__udp_echo.py --stack-interface tap9 <tap7 stack IPv6 address>
+ - In the first terminal window, run: examples_legacy/service__tcp_echo.py --stack-interface tap7
+ - In the second terminal window, run: examples_legacy/client__udp_echo.py --stack-interface tap9 <tap7 stack IPv6 address>
 
 
 

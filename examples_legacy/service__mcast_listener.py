@@ -29,7 +29,7 @@ This module contains the example 'user space' IPv4 multicast listener
 service — it joins an IPv4 multicast group (driving IGMP: a state-change
 Report on join, a Leave on stop) and logs datagrams received on it.
 
-examples/service__mcast_listener.py
+examples_legacy/service__mcast_listener.py
 
 ver 3.0.8
 """
@@ -39,9 +39,9 @@ import threading
 from typing import Any, override
 
 import click
+from examples_legacy.lib.udp_service import UdpService
+from examples_legacy.stack import cli as stack_cli
 
-from examples.lib.udp_service import UdpService
-from examples.stack import cli as stack_cli
 from net_addr import Ip4Address, NetAddrError
 from pytcp.runtime.socket import (
     IP_ADD_MEMBERSHIP,

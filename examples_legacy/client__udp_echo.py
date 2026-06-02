@@ -25,10 +25,11 @@
 
 
 """
-This module contains the example 'user space' client for TCP echo. It actively
-connects to the TCP Echo service and sends messages.
+This module contains the example 'user space' client for UDP Echo protocol.
+It actively sends the UDP packets to the remote IP address/port and waits for
+the responses.
 
-examples/client__tcp_echo.py
+examples_legacy/client__udp_echo.py
 
 ver 3.0.8
 """
@@ -37,10 +38,10 @@ import threading
 from typing import Any, override
 
 import click
+from examples_legacy.lib.client import Client
+from examples_legacy.lib.payload import payload
+from examples_legacy.stack import cli as stack_cli
 
-from examples.lib.client import Client
-from examples.lib.payload import payload
-from examples.stack import cli as stack_cli
 from net_addr import (
     ClickTypeIpAddress,
     Ip4Address,
@@ -48,12 +49,12 @@ from net_addr import (
 )
 
 
-class TcpEchoClient(Client):
+class UdpEchoClient(Client):
     """
     UDP Echo client support class.
     """
 
-    _protocol_name = "TCP"
+    _protocol_name = "UDP"
     _subsystem_name = f"{_protocol_name} Echo Client"
 
     _event__stop_subsystem: threading.Event
@@ -188,13 +189,13 @@ def cli(
     **kwargs: Any,
 ) -> None:
     """
-    Start TCP Echo client.
+    Start UDP Echo client.
     """
 
     ctx.invoke(
         stack_cli,
         subsystems=[
-            TcpEchoClient(
+            UdpEchoClient(
                 remote_ip_address=remote_ip_address,
                 remote_port=remote_port,
                 message_count=message_count,

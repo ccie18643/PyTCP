@@ -29,7 +29,7 @@
 """
 End-to-end test for the out-of-process TCP echo example client.
 
-Runs 'examples/client__tcp_echo_ipc.py' (which uses 'pytcp.client' and
+Runs 'examples_legacy/client__tcp_echo_ipc.py' (which uses 'pytcp.client' and
 never boots the stack) against a live daemon, driving the connect
 handshake and the echo round trip on the TAP wire — the Phase-5
 user-visible payoff: a socket example that is a separate-process client
@@ -38,7 +38,7 @@ of the stack.
 The example's CLI blocks (connect, then recv) on a background thread
 while the main thread drives the wire.
 
-examples/tests/integration/ipc/test__client_tcp_echo_ipc.py
+examples_legacy/tests/integration/ipc/test__client_tcp_echo_ipc.py
 
 ver 3.0.8
 """
@@ -50,9 +50,9 @@ import time
 from typing import override
 
 from click.testing import CliRunner, Result
+from examples_legacy.client__tcp_echo_ipc import cli
+from examples_legacy.lib.payload import payload
 
-from examples.client__tcp_echo_ipc import cli
-from examples.lib.payload import payload
 from pytcp import stack
 from pytcp.ipc.ipc__server import IpcServer
 from pytcp.tests.lib.network_testcase import HOST_A__IP4_ADDRESS, STACK__IP4_HOST

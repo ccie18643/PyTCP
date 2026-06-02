@@ -162,7 +162,7 @@ After cloning, we can run one of the included examples:
  - Run the ```sudo make tap7``` command to create the tap7 interface and assign it to the 'br0' bridge.
  - Run the ```make venv``` command to create the virtual environment for development and testing.
  - Run ```. venv/bin/activate``` command to activate the virtual environment.
- - Execute any example, e.g., ```python -m examples.stack``` (see the ```examples/``` directory; pass ```--help``` for options).
+ - Execute any example, e.g., ```python -m examples_legacy.stack``` (see the ```examples_legacy/``` directory; pass ```--help``` for options).
  - Hit Ctrl-C to stop it.
 
 Stack parameters are configured per run via the ```stack.init(...)``` keyword arguments and the runtime sysctl registry (see ```pytcp/stack/```), not a static config file.
@@ -195,8 +195,8 @@ threads; after ```start()``` control returns to your code.
 
 For a complete, runnable reference — opening the TAP/TUN file descriptor,
 calling ```stack.init(...)```, and driving the stack — see
-[```examples/stack.py```](examples/stack.py) and the other programs in the
-[```examples/```](examples/) directory.
+[```examples_legacy/stack.py```](examples_legacy/stack.py) and the other programs in the
+[```examples_legacy/```](examples_legacy/) directory.
 
 ---
 
@@ -247,7 +247,7 @@ script after install); it defaults the socket to `$XDG_RUNTIME_DIR/pytcp.sock`:
 sudo make bridge && sudo make tap7 && make venv
 sudo PYTHONPATH=. venv/bin/python -m pytcp.daemon --ipc-socket /tmp/pytcp.sock
 # or, with the example runner (adds stats / multi-interface / SIGUSR1):
-make daemon            # examples/stack.py --ipc-socket /tmp/pytcp.sock
+make daemon            # examples_legacy/stack.py --ipc-socket /tmp/pytcp.sock
 ```
 
 Then, from any other process, open a TCP socket *through the daemon* and
@@ -266,10 +266,10 @@ with connect(socket_path="/tmp/pytcp.sock") as client:
     sock.close()
 ```
 
-The bundled [`examples/client__tcp_echo_ipc.py`](examples/client__tcp_echo_ipc.py)
+The bundled [`examples_legacy/client__tcp_echo_ipc.py`](examples_legacy/client__tcp_echo_ipc.py)
 is exactly this — an out-of-process echo client — alongside the
 in-process subsystem form in
-[`examples/client__tcp_echo.py`](examples/client__tcp_echo.py). The same
+[`examples_legacy/client__tcp_echo.py`](examples_legacy/client__tcp_echo.py). The same
 `client.socket(...)` factory returns UDP / raw / AF_PACKET sockets, and
 `client.sysctl` / `.route` / `.link` / `.address` / `.neighbor` /
 `.membership` mirror the in-process control APIs across the boundary.
@@ -415,7 +415,7 @@ sudo PYTHONPATH=. venv/bin/python -m tools.capture ip4-tcp-monkeys
 ```
 
 PyTCP ships a matching TCP echo client and service
-(`examples/client__tcp_echo.py` / `examples/service__tcp_echo.py`).
+(`examples_legacy/client__tcp_echo.py` / `examples_legacy/service__tcp_echo.py`).
 As a quick end-to-end check the client streams two ASCII-art
 "monkeys" as the payload and the service echoes them back over the
 TCP connection — the original "two monkeys delivered via TCP" demo,

@@ -25,7 +25,7 @@
 """
 This module contains the base class for servers and clients used in examples.
 
-examples/lib/subsystem.py
+examples_legacy/lib/subsystem.py
 
 ver 3.0.8
 """

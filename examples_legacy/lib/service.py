@@ -25,7 +25,7 @@
 """
 This module contains the 'user space' generic service base class used in examples.
 
-examples/lib/service.py
+examples_legacy/lib/service.py
 
 ver 3.0.8
 """
@@ -35,7 +35,8 @@ from abc import abstractmethod
 from collections.abc import Callable
 from typing import override
 
-from examples.lib.subsystem import Subsystem
+from examples_legacy.lib.subsystem import Subsystem
+
 from net_addr import Ip4Address, Ip4IfAddr, Ip6Address, Ip6IfAddr, IpAddress
 from pytcp.runtime.socket import socket
 

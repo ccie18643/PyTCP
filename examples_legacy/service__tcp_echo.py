@@ -27,7 +27,7 @@
 """
 This module contains the example 'user space' service TCP Echo (RFC 862).
 
-examples/service__tcp_echo.py
+examples_legacy/service__tcp_echo.py
 
 ver 3.0.8
 """
@@ -36,11 +36,11 @@ import threading
 from typing import Any, override
 
 import click
+from examples_legacy.lib.malpi import malpa, malpi, malpka
+from examples_legacy.lib.service import build_echo_services
+from examples_legacy.lib.tcp_service import TcpService
+from examples_legacy.stack import cli as stack_cli
 
-from examples.lib.malpi import malpa, malpi, malpka
-from examples.lib.service import build_echo_services
-from examples.lib.tcp_service import TcpService
-from examples.stack import cli as stack_cli
 from net_addr import IpAddress
 from pytcp.runtime.socket import socket
 

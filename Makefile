@@ -3,7 +3,7 @@ ROOT_PATH:=$(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
 PYTCP_PATH := packages/pytcp/pytcp
 NET_ADDR_PATH := packages/net_addr/net_addr
 NET_PROTO_PATH := packages/net_proto/net_proto
-EXAMPLES_PATH := examples
+EXAMPLES_PATH := examples_legacy
 PYTCP_FILES := $(shell find ${PYTCP_PATH} -name '*.py')
 NET_ADDR_FILES := $(shell find ${NET_ADDR_PATH} -name '*.py')
 NET_PROTO_FILES := $(shell find ${NET_PROTO_PATH} -name '*.py')
@@ -17,7 +17,7 @@ LINT_FILES := $(PYTCP_FILES) $(NET_ADDR_FILES) $(NET_PROTO_FILES) $(EXAMPLES_FIL
 # mypy '-p' takes import names, not paths. net_addr now lives at
 # packages/net_addr/net_addr (resolved via its editable install in
 # the 'venv' target), so its name is decoupled from its path here.
-MYPY_PACKAGES := pytcp net_addr net_proto examples
+MYPY_PACKAGES := pytcp net_addr net_proto examples_legacy
 
 # If any recipe fails, delete its target file. Without this a
 # failed (or interrupted) 'venv' build leaves a half-populated
@@ -49,30 +49,30 @@ $(VENV)/bin/activate: requirements.txt requirements_dev.txt
 venv: $(VENV)/bin/activate
 
 run: venv
-	@PYTHONPATH=$(ROOT_PATH) ./$(VENV)/bin/python3 examples/stack.py
+	@PYTHONPATH=$(ROOT_PATH) ./$(VENV)/bin/python3 examples_legacy/stack.py
 
 # Run as a daemon: the stack plus its AF_UNIX control socket, so
-# out-of-process 'pytcp.client' consumers (e.g. examples/client__*_ipc.py)
+# out-of-process 'pytcp.client' consumers (e.g. examples_legacy/client__*_ipc.py)
 # can open sockets and drive the control APIs against this running stack.
 # Needs the bridge + TAP first ('sudo make bridge && sudo make tap7').
 daemon: venv
-	@PYTHONPATH=$(ROOT_PATH) ./$(VENV)/bin/python3 examples/stack.py --ipc-socket /tmp/pytcp.sock
+	@PYTHONPATH=$(ROOT_PATH) ./$(VENV)/bin/python3 examples_legacy/stack.py --ipc-socket /tmp/pytcp.sock
 
 # Bind the stack to two TAP interfaces at once (multi-homed host). Needs
 # the bridge + both taps up first: 'sudo make bridge tap7 tap9'. Each NIC
 # autoconfigures (DHCPv4 / SLAAC).
 run_multi: venv
-	@PYTHONPATH=$(ROOT_PATH) ./$(VENV)/bin/python3 examples/stack.py --stack-interface tap7 --stack-interface tap9
+	@PYTHONPATH=$(ROOT_PATH) ./$(VENV)/bin/python3 examples_legacy/stack.py --stack-interface tap7 --stack-interface tap9
 
 # Run the stack on a point-to-point TUN interface (no bridge). Needs the
 # matching tun device first ('sudo make tun3' / 'sudo make tun5'); each is
 # created pre-addressed on the host side, so the stack takes the .2 host
 # in the same subnet.
 run_tun: venv
-	@PYTHONPATH=$(ROOT_PATH) ./$(VENV)/bin/python3 examples/stack.py --stack-interface tun3 --stack-ip4-address 172.16.1.2/24 --stack-ip6-address 2001:db8:1::2/64
+	@PYTHONPATH=$(ROOT_PATH) ./$(VENV)/bin/python3 examples_legacy/stack.py --stack-interface tun3 --stack-ip4-address 172.16.1.2/24 --stack-ip6-address 2001:db8:1::2/64
 
 run_tun5: venv
-	@PYTHONPATH=$(ROOT_PATH) ./$(VENV)/bin/python3 examples/stack.py --stack-interface tun5 --stack-ip4-address 172.16.2.2/24 --stack-ip6-address 2001:db8:2::2/64
+	@PYTHONPATH=$(ROOT_PATH) ./$(VENV)/bin/python3 examples_legacy/stack.py --stack-interface tun5 --stack-ip4-address 172.16.2.2/24 --stack-ip6-address 2001:db8:2::2/64
 
 # Run an example-capture / e2e scenario. Needs root + the TAP/bridge
 # (sudo make bridge && sudo make tap7). Usage:
@@ -117,11 +117,11 @@ test__net_proto__unit: venv
 
 test__examples__unit: venv
 	@echo '<<< UNITTEST EXAMPLES UNIT'
-	@PYTHONPATH=$(ROOT_PATH) ./$(VENV)/bin/python tests_runner.py $(shell find 'examples/tests/unit' -name 'test__*.py')
+	@PYTHONPATH=$(ROOT_PATH) ./$(VENV)/bin/python tests_runner.py $(shell find 'examples_legacy/tests/unit' -name 'test__*.py')
 
 test: venv
 	@echo '<<< UNITTEST ALL'
-	@PYTHONPATH=$(ROOT_PATH) ./$(VENV)/bin/python tests_runner.py $(shell find 'packages/net_addr/net_addr/tests' 'packages/net_proto/net_proto/tests' 'packages/pytcp/pytcp/tests' 'examples/tests' -name 'test__*.py')
+	@PYTHONPATH=$(ROOT_PATH) ./$(VENV)/bin/python tests_runner.py $(shell find 'packages/net_addr/net_addr/tests' 'packages/net_proto/net_proto/tests' 'packages/pytcp/pytcp/tests' 'examples_legacy/tests' -name 'test__*.py')
 
 validate: lint test
 
@@ -160,7 +160,7 @@ benchmark: venv
 	@echo '  sudo hping3 --flood --icmp -d 1472 <stack-ip>'
 	@echo
 	@PYTCP_STATS_INTERVAL=5 PYTHONOPTIMIZE=1 PYTHONPATH=$(ROOT_PATH) \
-		./$(VENV)/bin/python3 examples/stack.py
+		./$(VENV)/bin/python3 examples_legacy/stack.py
 
 bridge:
 	@brctl addbr br0

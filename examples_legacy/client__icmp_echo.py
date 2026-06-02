@@ -25,36 +25,46 @@
 
 
 """
-This module contains the example 'user space' client for UDP Echo protocol.
-It actively sends the UDP packets to the remote IP address/port and waits for
-the responses.
+This module contains the example 'user space' client for ICMP Echo protocol.
+It actively sends the ICMP Echo Request messages to the remote IP address and
+waits for responses. It is very basic implementation that essentially mimics
+operation of the UNIX 'ping' utility.
 
-examples/client__udp_echo.py
+examples_legacy/client__icmp_echo.py
 
 ver 3.0.8
 """
 
+import os
+import struct
 import threading
 from typing import Any, override
 
 import click
+from examples_legacy.lib.client import Client
+from examples_legacy.lib.payload import payload
+from examples_legacy.stack import cli as stack_cli
 
-from examples.lib.client import Client
-from examples.lib.payload import payload
-from examples.stack import cli as stack_cli
 from net_addr import (
     ClickTypeIpAddress,
     Ip4Address,
     Ip6Address,
+    IpVersion,
 )
+from net_proto.lib.inet_cksum import inet_cksum
+
+ICMP4__ECHO_REQUEST__TYPE = 8
+ICMP4__ECHO_REQUEST__CODE = 0
+ICMP6_ECHO_REQUEST_TYPE = 128
+ICMP6_ECHO_REQUEST_CODE = 0
 
 
-class UdpEchoClient(Client):
+class IcmpEchoClient(Client):
     """
-    UDP Echo client support class.
+    ICMP Echo client support class.
     """
 
-    _protocol_name = "UDP"
+    _protocol_name = "ICMP"
     _subsystem_name = f"{_protocol_name} Echo Client"
 
     _event__stop_subsystem: threading.Event
@@ -63,45 +73,117 @@ class UdpEchoClient(Client):
         self,
         *,
         remote_ip_address: Ip6Address | Ip4Address,
-        local_port: int = 0,
-        remote_port: int = 7,
         message_count: int = -1,
         message_delay: int = 1,
-        message_size: int = 5,
+        message_size: int = 64,
     ) -> None:
         """
         Class constructor.
         """
 
         self._remote_ip_address = remote_ip_address
-        self._local_port = local_port
-        self._remote_port = remote_port
         self._message_count = message_count
         self._message_delay = message_delay
         self._message_size = message_size
 
         super().__init__()
 
+    @staticmethod
+    def _parse_icmp_echo_reply_message(*, data: bytes) -> tuple[int, int, bytes]:
+        """
+        Parse ICMP Echo Reply message.
+        """
+
+        if len(data) < 8:
+            raise ValueError(f"ICMP message too short ({len(data)} bytes).")
+
+        _, _, _, identifier, sequence = struct.unpack("!BBHHH", data[:8])
+        payload = data[8:]
+
+        return identifier, sequence, payload
+
+    @staticmethod
+    def _assemble_icmp_echo_request_message(
+        *,
+        ip_version: IpVersion,
+        identifier: int,
+        sequence: int,
+        message_size: int,
+    ) -> bytes:
+        """
+        Create ICMP Echo Request message.
+        """
+
+        match ip_version:
+            case IpVersion.IP6:
+                icmp_type = ICMP6_ECHO_REQUEST_TYPE
+                icmp_code = ICMP6_ECHO_REQUEST_CODE
+            case IpVersion.IP4:
+                icmp_type = ICMP4__ECHO_REQUEST__TYPE
+                icmp_code = ICMP4__ECHO_REQUEST__CODE
+
+        data = payload(length=message_size)
+
+        # For a SOCK_RAW socket the application owns the
+        # transport checksum — the stack carries the payload
+        # opaquely (matching Linux, where IPPROTO_ICMP raw does
+        # not auto-compute it). ICMPv4 has no pseudo-header, so
+        # compute the Internet Checksum over the (zero-cksum)
+        # header + payload here. ICMPv6's checksum additionally
+        # covers the IPv6 pseudo-header (src/dst/len/next-hdr),
+        # which is not known at this layer; that needs
+        # stack-side computation (IPV6_CHECKSUM semantics) and
+        # is left as 0 pending that separate work.
+        if ip_version is IpVersion.IP4:
+            cksum = inet_cksum(
+                struct.pack("!BBHHH", icmp_type, icmp_code, 0, identifier, sequence),
+                data,
+            )
+        else:
+            cksum = 0
+
+        header = struct.pack(
+            "!BBHHH",
+            icmp_type,
+            icmp_code,
+            cksum,
+            identifier,
+            sequence,
+        )
+
+        return header + data
+
     @override
     def _thread__sender(self) -> None:
         """
-        Client thread used to send data.
+        Thread used to send data.
         """
 
-        if client_socket := self._client_socket:
-            message_payload = payload(length=self._message_size)
+        self._log("Started the sender thread.")
+
+        identifier = os.getpid() & 0xFFFF
+
+        if self._client_socket:
             message_count = self._message_count
 
             while not self._event__stop_subsystem.is_set() and message_count:
+                icmp_message = self._assemble_icmp_echo_request_message(
+                    ip_version=self._remote_ip_address.version,
+                    identifier=identifier,
+                    sequence=self._message_count - message_count + 1,
+                    message_size=self._message_size,
+                )
+
                 try:
-                    client_socket.send(message_payload)
+                    self._client_socket.send(icmp_message)
                 except OSError as error:
                     self._log(f"The 'send()' method failed. Error: {error!r}.")
                     break
 
                 self._log(
-                    f"Sent {len(message_payload)} bytes of data to "
-                    f"{self._remote_ip_address}, port {self._remote_port}."
+                    f"Sent {len(icmp_message) - 8} bytes to '{self._remote_ip_address}', "
+                    f"id {identifier}, "
+                    f"seq {self._message_count - message_count + 1}."
                 )
                 # A negative count (default -1) means "unlimited":
                 # it stays truthy under decrement so the loop runs
@@ -111,16 +193,19 @@ class UdpEchoClient(Client):
                 if self._event__stop_subsystem.wait(timeout=self._message_delay):
                     break
 
-            client_socket.close()
-            self._log(f"Closed the connection to {self._remote_ip_address}, port {self._remote_port}.")
+            self._client_socket.close()
+            self._log(
+                f"Closed the connection to '{self._remote_ip_address}'.",
+            )
 
             self._event__stop_subsystem.set()
+
             self._log("Stopped the sender thread.")
 
     @override
     def _thread__receiver(self) -> None:
         """
-        Client thread used to receive data.
+        Thread used to receive data.
         """
 
         if self._client_socket:
@@ -128,10 +213,14 @@ class UdpEchoClient(Client):
 
             while not self._event__stop_subsystem.is_set():
                 try:
-                    if message_payload := self._client_socket.recv(
+                    if data := self._client_socket.recv(
                         timeout=1,
                     ):
-                        self._log(f"Received {len(message_payload)} bytes from '{self._remote_ip_address}'.")
+                        identifier, sequence, payload = self._parse_icmp_echo_reply_message(data=data)
+                        self._log(
+                            f"Received {len(payload)} bytes from '{self._remote_ip_address}', "
+                            f"id {identifier}, seq {sequence}."
+                        )
                 except TimeoutError:
                     pass
 
@@ -170,12 +259,6 @@ class UdpEchoClient(Client):
     type=ClickTypeIpAddress(),
     required=True,
 )
-@click.argument(
-    "remote_port",
-    type=click.IntRange(1, 65535),
-    default=7,
-    required=False,
-)
 @click.pass_context
 def cli(
     ctx: click.Context,
@@ -185,23 +268,21 @@ def cli(
     message_delay: int,
     message_size: int,
     remote_ip_address: Ip6Address | Ip4Address,
-    remote_port: int,
     **kwargs: Any,
 ) -> None:
     """
-    Start UDP Echo client.
+    Start ICMP Echo client.
     """
 
     ctx.invoke(
         stack_cli,
         subsystems=[
-            UdpEchoClient(
+            IcmpEchoClient(
                 remote_ip_address=remote_ip_address,
-                remote_port=remote_port,
                 message_count=message_count,
                 message_delay=message_delay,
                 message_size=message_size,
-            )
+            ),
         ],
         **kwargs,
     )

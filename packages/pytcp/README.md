@@ -150,7 +150,7 @@ The same `client.socket(...)` factory returns UDP / raw / `AF_PACKET`
 sockets, and `client.sysctl` / `.route` / `.link` / `.address` /
 `.neighbor` / `.membership` mirror the in-process control APIs across
 the boundary. See
-[`examples/client__tcp_echo_ipc.py`](https://github.com/ccie18643/PyTCP/blob/master/examples/client__tcp_echo_ipc.py).
+[`examples_legacy/client__tcp_echo_ipc.py`](https://github.com/ccie18643/PyTCP/blob/master/examples_legacy/client__tcp_echo_ipc.py).
 
 ## Install
 
@@ -187,7 +187,7 @@ tuns can be attached to one running stack.
 
 PyTCP is consumed as a library through the `stack` lifecycle API and
 the `pytcp.socket` BSD-sockets API. See
-[`examples/`](https://github.com/ccie18643/PyTCP/tree/master/examples) — `examples/stack.py` is the complete
+[`examples_legacy/`](https://github.com/ccie18643/PyTCP/tree/master/examples_legacy) — `examples_legacy/stack.py` is the complete
 runnable reference (TAP/TUN open, `stack.init(...)`, multi-interface
 bind, runtime interface removal on SIGUSR1).
 

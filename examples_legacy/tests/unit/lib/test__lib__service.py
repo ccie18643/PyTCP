@@ -25,7 +25,7 @@
 """
 This module contains tests for the example 'Service' socket-acquire retry.
 
-examples/tests/unit/lib/test__lib__service.py
+examples_legacy/tests/unit/lib/test__lib__service.py
 
 ver 3.0.8
 """
@@ -35,10 +35,11 @@ from typing import override
 from unittest import TestCase
 from unittest.mock import create_autospec, patch
 
-from examples.lib import service as service_module
-from examples.lib.service import Service
-from examples.lib.tcp_service import TcpService
-from examples.lib.udp_service import UdpService
+from examples_legacy.lib import service as service_module
+from examples_legacy.lib.service import Service
+from examples_legacy.lib.tcp_service import TcpService
+from examples_legacy.lib.udp_service import UdpService
+
 from net_addr import Ip4Address, Ip4IfAddr, Ip6Address, Ip6IfAddr
 from pytcp.runtime.socket import socket
 

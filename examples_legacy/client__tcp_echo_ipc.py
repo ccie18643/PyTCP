@@ -34,13 +34,13 @@ daemon over its AF_UNIX control socket and opens a TCP socket through
 Start the daemon first (it owns the TAP interface):
 
     sudo make tap7 && sudo make bridge
-    make daemon            # examples/stack.py --ipc-socket /tmp/pytcp.sock
+    make daemon            # examples_legacy/stack.py --ipc-socket /tmp/pytcp.sock
 
 then run this client against a remote echo server:
 
     make client_tcp_echo_ipc REMOTE=10.0.1.1
 
-examples/client__tcp_echo_ipc.py
+examples_legacy/client__tcp_echo_ipc.py
 
 ver 3.0.8
 """
@@ -49,8 +49,8 @@ import time
 from typing import cast
 
 import click
+from examples_legacy.lib.payload import payload
 
-from examples.lib.payload import payload
 from net_addr import ClickTypeIpAddress, Ip4Address, Ip6Address
 from pytcp.client import ClientTcpSocket, connect
 from pytcp.runtime.socket import AddressFamily, SocketType

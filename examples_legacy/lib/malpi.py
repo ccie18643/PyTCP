@@ -25,7 +25,7 @@
 """
 This module contains test monkeys used on various occasions in the examples.
 
-examples/lib/malpi.py
+examples_legacy/lib/malpi.py
 
 ver 3.0.8
 """
