@@ -42,6 +42,7 @@ import os
 import signal
 import sys
 from collections.abc import Callable
+from typing import override
 
 from net_addr import Ip4Address, Ip4Network, Ip6Address, Ip6Network, NetAddrError
 from pytcp import __version__
@@ -373,12 +374,31 @@ _COMMANDS: dict[str, Callable[[ClientStack, argparse.Namespace], str]] = {
 }
 
 
+_BANNER = "PyTCP - Python TCP/IP Stack"
+
+
+class _PytcpArgumentParser(argparse.ArgumentParser):
+    """
+    An argument parser whose help leads with the bright-white PyTCP
+    banner, set off by a blank line before and after, ahead of the usage
+    line. Subparsers inherit this class (argparse defaults a subparser's
+    'parser_class' to its parent's type), so every help screen carries
+    the banner. The colour is emitted only to a TTY, so piped or captured
+    help stays plain text.
+    """
+
+    @override
+    def format_help(self) -> str:
+        banner = f"\033[1;97m{_BANNER}\033[0m" if sys.stdout.isatty() else _BANNER
+        return f"\n{banner}\n\n{super().format_help()}"
+
+
 def build_parser() -> argparse.ArgumentParser:
     """
     Build the 'pytcp' multitool argument parser.
     """
 
-    parser = argparse.ArgumentParser(
+    parser = _PytcpArgumentParser(
         prog="pytcp",
         description="Operator front-end to a running PyTCP stack daemon.",
     )
@@ -388,7 +408,7 @@ def build_parser() -> argparse.ArgumentParser:
         help="AF_UNIX control-socket path (default: $XDG_RUNTIME_DIR/pytcp.sock).",
     )
 
-    subparsers = parser.add_subparsers(dest="command", required=True)
+    subparsers = parser.add_subparsers(dest="command", required=True, title="commands", metavar="<command>")
 
     parser_ss = subparsers.add_parser("ss", help="Show socket statistics.")
     parser_ss.add_argument("-t", "--tcp", action="store_true", help="Show only TCP sockets.")
@@ -424,7 +444,7 @@ def build_parser() -> argparse.ArgumentParser:
         action="version",
         version=f"pytcp route (PyTCP {__version__})",
     )
-    route_subparsers = parser_route.add_subparsers(dest="route_command")
+    route_subparsers = parser_route.add_subparsers(dest="route_command", title="commands", metavar="<command>")
     for verb, verb_help in (("add", "Add a route."), ("del", "Delete a route.")):
         parser_verb = route_subparsers.add_parser(verb, help=verb_help)
         parser_verb.add_argument(
@@ -455,7 +475,9 @@ def build_parser() -> argparse.ArgumentParser:
     )
 
     parser_stack = subparsers.add_parser("stack", help="Manage the PyTCP stack daemon.")
-    stack_subparsers = parser_stack.add_subparsers(dest="stack_command", required=True)
+    stack_subparsers = parser_stack.add_subparsers(
+        dest="stack_command", required=True, title="commands", metavar="<command>"
+    )
     parser_start = stack_subparsers.add_parser("start", help="Start the stack daemon in the foreground.")
     parser_start.add_argument(
         "-i",

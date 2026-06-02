@@ -394,6 +394,52 @@ class TestCliUnreachableDaemon(TestCase):
         )
 
 
+class TestCliBanner(TestCase):
+    """
+    The CLI help-banner tests.
+    """
+
+    def test__help__leads_with_the_pytcp_banner(self) -> None:
+        """
+        Ensure 'pytcp --help' leads with the 'PyTCP - Python TCP/IP Stack'
+        banner, set off by a blank line before and after, ahead of the
+        usage line.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        stdout = io.StringIO()
+        with self.assertRaises(SystemExit):
+            with contextlib.redirect_stdout(stdout):
+                main(["--help"])
+
+        output = stdout.getvalue()
+        self.assertIn(
+            "\nPyTCP - Python TCP/IP Stack\n\nusage:",
+            output,
+            msg="The help must lead with the banner, blank-line-separated, before usage.",
+        )
+
+    def test__subcommand_help__also_leads_with_the_banner(self) -> None:
+        """
+        Ensure a subcommand's help ('pytcp route --help') also leads with
+        the banner, since every help screen should carry it.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        stdout = io.StringIO()
+        with self.assertRaises(SystemExit):
+            with contextlib.redirect_stdout(stdout):
+                main(["route", "--help"])
+
+        self.assertIn(
+            "PyTCP - Python TCP/IP Stack",
+            stdout.getvalue(),
+            msg="Every help screen must carry the banner.",
+        )
+
+
 class TestCliRouteModifyHelp(TestCase):
     """
     The 'route add' help tests.
