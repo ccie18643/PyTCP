@@ -135,6 +135,23 @@ class TestIpcCli(IpcControlTestCase):
             msg="The route output must match the formatter over the live route list.",
         )
 
+    def test__cli__route_cache_shows_empty_cache(self) -> None:
+        """
+        Ensure 'pytcp route -C' renders the net-tools routing-cache header
+        with an empty body, rather than the FIB — PyTCP keeps no route
+        cache.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        output = self._run("route", "-C")
+
+        self.assertEqual(
+            output.rstrip("\n"),
+            "PyTCP IP routing cache\n" "Source          Destination     Gateway         Flags Metric Ref    Use Iface",
+            msg="'route -C' must render the empty routing-cache header, not the FIB.",
+        )
+
     def test__cli__sysctl_lists_entries(self) -> None:
         """
         Ensure 'pytcp sysctl' with no key lists the tunables as 'key =

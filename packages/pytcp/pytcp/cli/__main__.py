@@ -50,6 +50,7 @@ from pytcp.cli.cli__format import (
     format_addr,
     format_link,
     format_neighbor_table,
+    format_route_cache,
     format_route_table,
     format_socket_table,
     format_sysctl,
@@ -122,6 +123,10 @@ def _cmd_route(client: ClientStack, args: argparse.Namespace, /) -> str:
         family = AddressFamily.INET6
     else:
         family = AddressFamily.INET4
+    if args.cache:
+        # net-tools 'route -C' shows the routing cache, not the FIB; PyTCP
+        # keeps no cache, so this is the empty-cache header (like Linux).
+        return format_route_cache(family=family)
     return format_route_table(
         client.route.list_routes(family=family),
         family=family,

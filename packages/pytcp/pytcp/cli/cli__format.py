@@ -239,6 +239,21 @@ def format_route_table(
     return _format_route_table_ip4(routes, names=names, numeric=numeric)
 
 
+def format_route_cache(*, family: AddressFamily) -> str:
+    """
+    Render the routing cache in the net-tools 'route -C' layout. PyTCP
+    keeps no route cache, so only the header is emitted (an empty body)
+    — matching modern Linux, where the route cache is likewise empty.
+    The header says 'PyTCP' where net-tools says 'Kernel'.
+    """
+
+    if family is AddressFamily.INET6:
+        return (
+            "PyTCP IPv6 routing cache\nDestination                    Next Hop                   Flag Met Ref  Use If"
+        )
+    return "PyTCP IP routing cache\nSource          Destination     Gateway         Flags Metric Ref    Use Iface"
+
+
 def format_sysctl(items: Mapping[str, object], /) -> str:
     """
     Render sysctl entries in the 'sysctl' 'key = value' line layout.
