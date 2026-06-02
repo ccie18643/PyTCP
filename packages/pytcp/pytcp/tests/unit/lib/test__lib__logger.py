@@ -396,3 +396,72 @@ class TestLoggerSignature(TestCase):
 
         with self.assertRaises(TypeError):
             log("stack", "msg", 1)  # type: ignore[misc]
+
+
+class TestLoggerInterfaceTag(TestCase):
+    """
+    The 'log()' per-interface tagging tests.
+    """
+
+    def tearDown(self) -> None:
+        """
+        Clear the thread-local interface tag so it cannot leak to a
+        sibling test running on the same thread.
+        """
+
+        from pytcp.lib.logger import set_log_interface
+
+        set_log_interface(None)
+
+    def test__logger__tags_message_with_bound_interface(self) -> None:
+        """
+        Ensure a message logged while an interface tag is bound to the
+        current thread carries that interface name, so a multi-homed trace
+        can be read per NIC.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        from pytcp.lib.logger import set_log_interface
+
+        stream = io.StringIO()
+        set_log_interface("tap9")
+
+        with (
+            patch("pytcp.stack.LOG__CHANNEL", {"ether"}),
+            patch("pytcp.stack.LOG__DEBUG", False),
+            patch("pytcp.stack.LOG__OUTPUT", stream),
+        ):
+            log("ether", "frame")
+
+        self.assertIn(
+            "tap9",
+            stream.getvalue(),
+            msg="A message logged with an interface bound must carry the interface name.",
+        )
+
+    def test__logger__no_interface_name_when_unbound(self) -> None:
+        """
+        Ensure a message logged with no interface bound (a shared thread —
+        timer / IPC / boot) carries no stray interface name.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        from pytcp.lib.logger import set_log_interface
+
+        stream = io.StringIO()
+        set_log_interface(None)
+
+        with (
+            patch("pytcp.stack.LOG__CHANNEL", {"stack"}),
+            patch("pytcp.stack.LOG__DEBUG", False),
+            patch("pytcp.stack.LOG__OUTPUT", stream),
+        ):
+            log("stack", "boot message")
+
+        self.assertNotIn(
+            "tap",
+            stream.getvalue(),
+            msg="A message logged with no interface bound must not carry an interface name.",
+        )

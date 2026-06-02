@@ -328,6 +328,17 @@ def add_interface(
             nd_cache._owner = packet_handler
             nd_cache._iface_name = interface_name
 
+    # Tag each per-interface subsystem's worker thread with the interface
+    # name, so every message it logs while processing this NIC's traffic
+    # carries the interface in the log's interface column.
+    if interface_name is not None:
+        rx_ring._log_interface = interface_name
+        tx_ring._log_interface = interface_name
+        nd_cache._log_interface = interface_name
+        packet_handler._log_interface = interface_name
+        if arp_cache is not None:
+            arp_cache._log_interface = interface_name
+
     # The table allocates the next ifindex (first_ifindex when empty,
     # else max+1) and stamps it onto the handler, atomically under its
     # lock so concurrent runtime adds cannot collide on an index.
@@ -372,6 +383,7 @@ def add_interface(
             route_api=_stack.route,
             interface_name=interface_name,
         )
+        packet_handler._dhcp4_client._log_interface = interface_name
         # N=1 back-compat: 'stack.dhcp4_client' aliases the FIRST (boot)
         # DHCPv4 interface's client for single-interface consumers; real
         # ownership is per-interface on the handler so a multi-homed host
@@ -406,6 +418,7 @@ def add_interface(
             interface_name=interface_name,
             address_api=dhcp6_address_view,
         )
+        packet_handler._dhcp6_client._log_interface = interface_name
         # N=1 back-compat alias, parallel to 'stack.dhcp4_client'.
         if _stack.dhcp6_client is None:
             _stack.dhcp6_client = packet_handler._dhcp6_client

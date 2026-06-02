@@ -33,7 +33,7 @@ ver 3.0.8
 import threading
 from abc import ABC, abstractmethod
 
-from pytcp.lib.logger import log
+from pytcp.lib.logger import log, set_log_interface
 
 SUBSYSTEM_SLEEP_TIME__SEC = 0.1
 
@@ -64,6 +64,11 @@ class Subsystem(ABC):
     _subsystem_name: str
     _event__stop_subsystem: threading.Event
     _thread: threading.Thread | None
+    # Interface name this subsystem belongs to, bound onto the worker
+    # thread's log context so every message it emits is interface-tagged.
+    # None for stack-wide subsystems (the timer) whose work is not tied to
+    # one interface.
+    _log_interface: str | None = None
 
     def __init__(self, *, info: str | None = None) -> None:
         """
@@ -139,6 +144,10 @@ class Subsystem(ABC):
         """
         Run the subsystem loop until the stop event is set.
         """
+
+        # Tag every message this worker thread emits with its interface so
+        # a multi-homed trace is readable per NIC.
+        set_log_interface(self._log_interface)
 
         __debug__ and log("stack", f"Started {self._subsystem_name}")
 
