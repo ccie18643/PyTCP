@@ -530,3 +530,89 @@ machinery — a blocking connect just blocks in the daemon RPC. So A4(sync)
 + A5 deliver a provable "real programs run over pytcp" milestone (P1)
 with zero A3 risk on the critical path; the non-blocking / asyncio
 readiness (A3.1–A3.4, P2) layers on top afterward.
+
+---
+
+## 8. Remaining work (deferred) — resume notes
+
+Everything through A3.2 is shipped + pushed (`origin/PyTCP_3_0_8`, 25
+commits, head `20d2f3ec`). What's left is the fragile non-blocking
+`connect`/`accept` edge + the asyncio proof. This section is the durable
+spec so the work can resume cold.
+
+### A3.3 — non-blocking connect (EINPROGRESS + worker + filler + SO_ERROR)
+
+The hardest, most fragile piece. Mechanism (the A3.1-validated filler
+trick; see §7 "the trick"):
+
+1. **New constant.** `SO_ERROR` is **missing** from
+   `pytcp.runtime.socket` — add it to the `SolSocketOption` IntEnum + a
+   bare `SO_ERROR = SolSocketOption.SO_ERROR` alias (Linux value 4), per
+   `enums.md` §2.2 stdlib-parity pattern. (`SOL_SOCKET`=1, `SO_SNDBUF`=7
+   already exist.)
+2. **Client prime (drop-in `Socket.connect`, non-blocking path =
+   `self._timeout == 0`).** Set a small `SO_SNDBUF` on the data fd, then
+   `send` filler until `BlockingIOError` (count `M` = bytes written so the
+   fd reads *not*-writable). Issue a **`connect_start`** RPC carrying
+   `{address, filler_len: M}` (a synchronous `socket_call` that the daemon
+   answers *immediately* — no need for the A1 mux client), then raise
+   `BlockingIOError(EINPROGRESS)`.
+3. **Daemon `connect_start`** (`ipc__socket_session.py`, add to
+   `_ALLOWED_METHODS`, stream-only): spawn a per-handle **connect worker
+   thread** and return `None` at once. `_DaemonSocket` gains
+   `_so_error: int | None`, `_connect_thread`, `start_connect_async`,
+   `take_so_error`.
+4. **Worker `_run_connect(address, filler_len)`:** `try
+   self._socket.connect(address)` (blocks until handshake/refuse) capturing
+   `errno` (0 on success); then **drain exactly `filler_len` bytes** from
+   the bridge's `data_end` (new `SocketBridge.prime_drain(n)` — read-and-
+   discard, bounded by a wall-clock deadline so a lying client can't spin)
+   to flip the client fd writable on *both* success and failure; set
+   `_so_error`; on success `start_bridge()` (the TX pump then forwards real
+   data *after* the filler the worker already consumed — no double-reader).
+5. **`getsockopt(SO_ERROR)` interception:** in the session `getsockopt`
+   case, when `level==SOL_SOCKET and optname==SO_ERROR` and a pending
+   `_so_error` exists, return-and-clear it (BSD read-once); else fall
+   through to the stack socket.
+6. **Client/drop-in:** `ClientTcpSocket.connect_start(address, filler_len)`;
+   `Socket.connect_ex` non-blocking path returns `EINPROGRESS` first then
+   reads `SO_ERROR`; `Socket.getsockopt(SO_ERROR)` returns the cached value.
+
+**Tests (integration, TcpTestCase):** non-blocking connect →
+`BlockingIOError(EINPROGRESS)`, `select([],[s],[],0)` *not* writable;
+drive SYN-ACK + advance → writable, `getsockopt(SO_ERROR)==0`; refused
+(drive RST) → writable, `SO_ERROR==ECONNREFUSED`.
+
+**Risk/notes:** `SO_SNDBUF` accounting is platform-dependent (validated on
+this box in the A3.1 prototype: prime 4096 → not-writable, drain 4096 →
+writable). The bridge MUST strip exactly the filler before real data.
+Watch races between worker, prime_drain, and the bridge pumps. Fallback if
+the filler trick proves too fragile: a two-fd readiness model (data fd +
+readiness eventfd) — needs `ipc__fdpass` generalised to an fd array; bigger
+change, flagged not-default.
+
+### A3.4 — non-blocking accept (listener readiness + accept_take)
+
+Listener fd must be **readable** when a child is queued. Daemon: on a
+non-blocking listener, a watcher polls `TcpSocket.accept`, builds the child
+socketpair+bridge, queues `(child_handle, peer, client_end)`, and writes a
+listener **eventfd** → listener fd readable. New `accept_take` socket
+method pops one queued child (fd via SCM_RIGHTS). Client non-blocking
+`accept`: not-readable → `BlockingIOError(EAGAIN)`; else `accept_take`.
+Blocking `accept` keeps the existing RPC. Tests:
+`test__ipc__nonblocking_accept.py`.
+
+### P2 — asyncio proof point
+
+A real `asyncio` TCP echo client+server over the daemon (the
+`sys.modules['socket'] = pytcp.socket` monkeypatch path + an event loop),
+once A3.3/A3.4 land. Honest bar = a *relevant subset* of CPython
+`Lib/test/test_socket.py` (INET/INET6 TCP+UDP client/server + timeouts +
+common options), not a turnkey gate (see §7).
+
+### Long-tail follow-ups (tracked, out of A3 scope)
+
+TLS over the drop-in; datagram-endpoint asyncio; `sendmsg`/`recvmsg` cmsg
+on the drop-in `Socket`; every `setsockopt` *honored* (not merely
+accepted); errno-exactness sweep; B2 polish (`pytcp addr` JSON/`-j`,
+column alignment parity with real `ip`/`ss`).
