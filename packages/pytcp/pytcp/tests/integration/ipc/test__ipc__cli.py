@@ -72,12 +72,13 @@ class TestIpcCli(IpcControlTestCase):
     def _run(self, *argv: str) -> str:
         """
         Run the CLI with the given args against the harness server,
-        returning the captured stdout.
+        returning the captured stdout. '--ipc-socket' is a top-level
+        option, so it precedes the subcommand.
         """
 
         buffer = io.StringIO()
         with contextlib.redirect_stdout(buffer):
-            exit_code = main([*argv, "--ipc-socket", self._socket_path])
+            exit_code = main(["--ipc-socket", self._socket_path, *argv])
         self.assertEqual(exit_code, 0, msg="The CLI command must exit successfully.")
         return buffer.getvalue()
 
@@ -152,22 +153,9 @@ class TestIpcCli(IpcControlTestCase):
             msg="'route -C' must render the empty routing-cache header, not the FIB.",
         )
 
-    def _run_route(self, *spec: str) -> str:
-        """
-        Run 'pytcp route ... <spec>' with '--ipc-socket' placed before the
-        spec — net-tools 'route add' / 'route del' use argparse REMAINDER,
-        so connection options must precede the verb.
-        """
-
-        buffer = io.StringIO()
-        with contextlib.redirect_stdout(buffer):
-            exit_code = main(["route", "--ipc-socket", self._socket_path, *spec])
-        self.assertEqual(exit_code, 0, msg="The route command must exit successfully.")
-        return buffer.getvalue()
-
     def test__cli__route_add_then_list_shows_route(self) -> None:
         """
-        Ensure 'pytcp route add -net N/M gw G dev IF' installs the route
+        Ensure 'pytcp route add DEST --via G --dev IF' installs the route
         into the daemon's FIB and a subsequent 'pytcp route' lists it
         with its gateway and egress interface.
 
@@ -177,7 +165,7 @@ class TestIpcCli(IpcControlTestCase):
         client = self._connect()
         dev = client.link.interface(self._ifindex).name or f"if{self._ifindex}"
 
-        self._run_route("add", "-net", "10.9.0.0/24", "gw", "10.0.1.254", "dev", dev)
+        self._run("route", "add", "10.9.0.0/24", "--via", "10.0.1.254", "--dev", dev)
 
         output = self._run("route", "-n")
 
@@ -194,16 +182,16 @@ class TestIpcCli(IpcControlTestCase):
 
     def test__cli__route_del_removes_route(self) -> None:
         """
-        Ensure 'pytcp route del -net N/M' removes a previously added route
-        from the daemon's FIB.
+        Ensure 'pytcp route del DEST' removes a previously added route from
+        the daemon's FIB.
 
         Reference: PyTCP test infrastructure (no RFC clause).
         """
 
-        self._run_route("add", "-net", "10.9.0.0/24", "gw", "10.0.1.254")
+        self._run("route", "add", "10.9.0.0/24", "--via", "10.0.1.254")
         self.assertIn("10.9.0.0", self._run("route", "-n"), msg="Route must be present after add.")
 
-        self._run_route("del", "-net", "10.9.0.0/24")
+        self._run("route", "del", "10.9.0.0/24")
 
         self.assertNotIn(
             "10.9.0.0",
@@ -211,15 +199,33 @@ class TestIpcCli(IpcControlTestCase):
             msg="The deleted route must no longer appear in the listing.",
         )
 
+    def test__cli__route_add_host_route(self) -> None:
+        """
+        Ensure 'pytcp route add HOST --via G' (a bare address with no
+        prefix) installs a /32 host route.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        self._run("route", "add", "10.0.0.5", "--via", "10.0.1.1")
+
+        output = self._run("route", "-n")
+
+        self.assertIn(
+            "10.0.0.5        10.0.1.1        255.255.255.255 UGH",
+            output,
+            msg="A bare host address must install a /32 host route (UGH flags).",
+        )
+
     def test__cli__route_add_default_via_gateway(self) -> None:
         """
-        Ensure 'pytcp route add default gw G' installs the IPv4 default
+        Ensure 'pytcp route add default --via G' installs the IPv4 default
         route and 'pytcp route' lists it as the default via that gateway.
 
         Reference: PyTCP test infrastructure (no RFC clause).
         """
 
-        self._run_route("add", "default", "gw", "10.0.1.9")
+        self._run("route", "add", "default", "--via", "10.0.1.9")
 
         output = self._run("route", "-n")
 
@@ -229,15 +235,16 @@ class TestIpcCli(IpcControlTestCase):
             msg="The default route must be listed via the supplied gateway.",
         )
 
-    def test__cli__route_add_ipv6(self) -> None:
+    def test__cli__route_add_ipv6_family_inferred_from_dest(self) -> None:
         """
-        Ensure 'pytcp route -6 add P/L gw G' installs an IPv6 route and
-        'pytcp route -6' lists it.
+        Ensure 'pytcp route add P/L --via G' installs an IPv6 route with no
+        explicit family flag — the family is inferred from the IPv6
+        destination — and 'pytcp route -6' lists it.
 
         Reference: PyTCP test infrastructure (no RFC clause).
         """
 
-        self._run_route("-6", "add", "2001:db8:9::/64", "gw", "fe80::9")
+        self._run("route", "add", "2001:db8:9::/64", "--via", "fe80::9")
 
         output = self._run("route", "-6")
 
@@ -247,53 +254,40 @@ class TestIpcCli(IpcControlTestCase):
             msg="The added IPv6 route's prefix must appear in the IPv6 listing.",
         )
 
-    def test__cli__route_modify_rejects_unknown_command(self) -> None:
+    def test__cli__route_add_default_without_gateway_errors(self) -> None:
         """
-        Ensure 'pytcp route bogus' exits with an error rather than silently
-        listing or crashing.
+        Ensure 'pytcp route add default' with no '--via' is reported as an
+        error rather than installing a gateway-less default.
 
         Reference: PyTCP test infrastructure (no RFC clause).
         """
 
         with self.assertRaises(SystemExit) as raised:
             with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
-                main(["route", "--ipc-socket", self._socket_path, "bogus"])
+                main(["--ipc-socket", self._socket_path, "route", "add", "default"])
 
         self.assertNotEqual(
             raised.exception.code,
             0,
-            msg="An unknown route command must exit non-zero.",
+            msg="'add default' without --via must exit non-zero.",
         )
 
-    def _assert_route_modify_errors(self, *spec: str) -> None:
+    def test__cli__route_add_bad_destination_errors(self) -> None:
         """
-        Assert that 'pytcp route <spec>' exits non-zero (a malformed
-        route specification).
+        Ensure a malformed destination is reported as an error.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
         """
 
         with self.assertRaises(SystemExit) as raised:
             with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
-                main(["route", "--ipc-socket", self._socket_path, *spec])
-        self.assertNotEqual(raised.exception.code, 0, msg="A malformed route spec must exit non-zero.")
+                main(["--ipc-socket", self._socket_path, "route", "add", "not-an-address", "--via", "10.0.1.1"])
 
-    def test__cli__route_add_missing_gateway_value_errors(self) -> None:
-        """
-        Ensure a keyword with no following value (e.g. 'gw' at the end of
-        the spec) is reported as an error.
-
-        Reference: PyTCP test infrastructure (no RFC clause).
-        """
-
-        self._assert_route_modify_errors("add", "-net", "10.9.0.0/24", "gw")
-
-    def test__cli__route_add_missing_target_errors(self) -> None:
-        """
-        Ensure 'route add' with no target network is reported as an error.
-
-        Reference: PyTCP test infrastructure (no RFC clause).
-        """
-
-        self._assert_route_modify_errors("add")
+        self.assertNotEqual(
+            raised.exception.code,
+            0,
+            msg="A malformed destination must exit non-zero.",
+        )
 
     def test__cli__sysctl_lists_entries(self) -> None:
         """
@@ -353,9 +347,9 @@ class TestIpcCli(IpcControlTestCase):
             msg="The addr output must include at least one assigned IPv4 address.",
         )
 
-    def test__cli__daemon_status_running_shows_stack(self) -> None:
+    def test__cli__stack_status_running_shows_stack(self) -> None:
         """
-        Ensure 'pytcp daemon status' against a live, reachable daemon
+        Ensure 'pytcp stack status' against a live, reachable daemon
         reports the running pid, the control socket, and a summary of the
         stack's interface addressing state.
 
@@ -370,20 +364,20 @@ class TestIpcCli(IpcControlTestCase):
         buffer = io.StringIO()
         with contextlib.redirect_stdout(buffer):
             exit_code = main(
-                ["daemon", "status", "--ipc-socket", self._socket_path, "--pidfile", pidfile],
+                ["--ipc-socket", self._socket_path, "stack", "status", "--pidfile", pidfile],
             )
         output = buffer.getvalue()
 
-        self.assertEqual(exit_code, 0, msg="daemon status must exit 0 for a running, reachable daemon.")
+        self.assertEqual(exit_code, 0, msg="stack status must exit 0 for a running, reachable daemon.")
         self.assertIn(
             f"running (pid {os.getpid()})",
             output,
-            msg="daemon status must report the running pid.",
+            msg="stack status must report the running pid.",
         )
         self.assertIn(
             "link/ether",
             output,
-            msg="daemon status must render the stack's interface addressing summary.",
+            msg="stack status must render the stack's interface addressing summary.",
         )
 
     def test__cli__link_shows_interface_without_addresses(self) -> None:

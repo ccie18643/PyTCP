@@ -23,9 +23,9 @@
 
 
 """
-This module contains tests for the 'pytcp daemon stop' pidfile handling.
+This module contains tests for the 'pytcp stack' subcommand (start / stop / status).
 
-pytcp/tests/unit/cli/test__cli__daemon.py
+pytcp/tests/unit/cli/test__cli__stack.py
 
 ver 3.0.8
 """
@@ -48,7 +48,7 @@ class _StubMissingOpStack:
     """
     A 'ClientStack' stand-in whose socket-introspection op is unavailable
     — modelling a daemon running an older build that does not expose
-    'stack.ss'. Used to exercise the 'daemon status' graceful-degradation
+    'stack.ss'. Used to exercise the 'stack status' graceful-degradation
     path without a live daemon.
     """
 
@@ -85,9 +85,9 @@ class _StubMissingOpStack:
         self.closed = True
 
 
-class TestCliDaemonStop(TestCase):
+class TestCliStackStop(TestCase):
     """
-    The 'pytcp daemon stop' pidfile-handling tests.
+    The 'pytcp stack stop' pidfile-handling tests.
     """
 
     @override
@@ -121,15 +121,15 @@ class TestCliDaemonStop(TestCase):
 
     def _run_stop(self, pidfile_path: str, /) -> int:
         """
-        Run 'daemon stop' against a pidfile, silencing its output.
+        Run 'stack stop' against a pidfile, silencing its output.
         """
 
         with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
-            return main(["daemon", "stop", "--pidfile", pidfile_path])
+            return main(["stack", "stop", "--pidfile", pidfile_path])
 
-    def test__daemon_stop__sends_sigterm_to_pid(self) -> None:
+    def test__stack_stop__sends_sigterm_to_pid(self) -> None:
         """
-        Ensure 'daemon stop' reads the pidfile and sends SIGTERM to the
+        Ensure 'stack stop' reads the pidfile and sends SIGTERM to the
         recorded process id.
 
         Reference: PyTCP test infrastructure (no RFC clause).
@@ -139,12 +139,12 @@ class TestCliDaemonStop(TestCase):
 
         exit_code = self._run_stop(self._pidfile(pid=4242))
 
-        self.assertEqual(exit_code, 0, msg="daemon stop must succeed when the daemon is running.")
+        self.assertEqual(exit_code, 0, msg="stack stop must succeed when the daemon is running.")
         kill.assert_called_once_with(4242, signal.SIGTERM)
 
-    def test__daemon_stop__removes_stale_pidfile(self) -> None:
+    def test__stack_stop__removes_stale_pidfile(self) -> None:
         """
-        Ensure 'daemon stop' removes a stale pidfile when the recorded
+        Ensure 'stack stop' removes a stale pidfile when the recorded
         process no longer exists.
 
         Reference: PyTCP test infrastructure (no RFC clause).
@@ -155,24 +155,24 @@ class TestCliDaemonStop(TestCase):
 
         exit_code = self._run_stop(pidfile)
 
-        self.assertEqual(exit_code, 1, msg="daemon stop must report failure for a stale pidfile.")
+        self.assertEqual(exit_code, 1, msg="stack stop must report failure for a stale pidfile.")
         self.assertFalse(os.path.exists(pidfile), msg="A stale pidfile must be removed.")
 
-    def test__daemon_stop__no_pidfile_reports_not_running(self) -> None:
+    def test__stack_stop__no_pidfile_reports_not_running(self) -> None:
         """
-        Ensure 'daemon stop' reports failure when no pidfile is present.
+        Ensure 'stack stop' reports failure when no pidfile is present.
 
         Reference: PyTCP test infrastructure (no RFC clause).
         """
 
         exit_code = self._run_stop(os.path.join(self._tmp_dir, "missing.pid"))
 
-        self.assertEqual(exit_code, 1, msg="daemon stop must report failure when no pidfile exists.")
+        self.assertEqual(exit_code, 1, msg="stack stop must report failure when no pidfile exists.")
 
 
-class TestCliDaemonStatus(TestCase):
+class TestCliStackStatus(TestCase):
     """
-    The 'pytcp daemon status' reporting tests.
+    The 'pytcp stack status' reporting tests.
     """
 
     @override
@@ -206,17 +206,17 @@ class TestCliDaemonStatus(TestCase):
 
     def _run_status(self, pidfile_path: str, /) -> tuple[int, str]:
         """
-        Run 'daemon status' against a pidfile, capturing its stdout.
+        Run 'stack status' against a pidfile, capturing its stdout.
         """
 
         buffer = io.StringIO()
         with contextlib.redirect_stdout(buffer):
-            exit_code = main(["daemon", "status", "--pidfile", pidfile_path, "--ipc-socket", "/nonexistent.sock"])
+            exit_code = main(["--ipc-socket", "/nonexistent.sock", "stack", "status", "--pidfile", pidfile_path])
         return exit_code, buffer.getvalue()
 
-    def test__daemon_status__no_pidfile_reports_not_running(self) -> None:
+    def test__stack_status__no_pidfile_reports_not_running(self) -> None:
         """
-        Ensure 'daemon status' reports the daemon is not running and exits
+        Ensure 'stack status' reports the daemon is not running and exits
         3 (LSB "program is not running") when no pidfile is present.
 
         Reference: PyTCP test infrastructure (no RFC clause).
@@ -224,12 +224,12 @@ class TestCliDaemonStatus(TestCase):
 
         exit_code, output = self._run_status(os.path.join(self._tmp_dir, "missing.pid"))
 
-        self.assertEqual(exit_code, 3, msg="daemon status must exit 3 when the daemon is not running.")
-        self.assertIn("not running", output, msg="daemon status must report the daemon is not running.")
+        self.assertEqual(exit_code, 3, msg="stack status must exit 3 when the daemon is not running.")
+        self.assertIn("not running", output, msg="stack status must report the daemon is not running.")
 
-    def test__daemon_status__stale_pidfile_reports_not_running(self) -> None:
+    def test__stack_status__stale_pidfile_reports_not_running(self) -> None:
         """
-        Ensure 'daemon status' reports not-running and exits 3 when the
+        Ensure 'stack status' reports not-running and exits 3 when the
         pidfile names a process that no longer exists.
 
         Reference: PyTCP test infrastructure (no RFC clause).
@@ -239,12 +239,12 @@ class TestCliDaemonStatus(TestCase):
 
         exit_code, output = self._run_status(self._pidfile(pid=4242))
 
-        self.assertEqual(exit_code, 3, msg="daemon status must exit 3 for a stale pidfile.")
-        self.assertIn("not running", output, msg="daemon status must report a stale pidfile as not running.")
+        self.assertEqual(exit_code, 3, msg="stack status must exit 3 for a stale pidfile.")
+        self.assertIn("not running", output, msg="stack status must report a stale pidfile as not running.")
 
-    def test__daemon_status__running_but_unreachable_reports_pid(self) -> None:
+    def test__stack_status__running_but_unreachable_reports_pid(self) -> None:
         """
-        Ensure 'daemon status' reports the daemon is running (with its pid)
+        Ensure 'stack status' reports the daemon is running (with its pid)
         and exits 0 even when the control socket cannot be reached.
 
         Reference: PyTCP test infrastructure (no RFC clause).
@@ -257,13 +257,13 @@ class TestCliDaemonStatus(TestCase):
 
         exit_code, output = self._run_status(self._pidfile(pid=4242))
 
-        self.assertEqual(exit_code, 0, msg="daemon status must exit 0 when the daemon process is alive.")
-        self.assertIn("running (pid 4242)", output, msg="daemon status must report the running pid.")
-        self.assertIn("unreachable", output, msg="daemon status must note an unreachable control socket.")
+        self.assertEqual(exit_code, 0, msg="stack status must exit 0 when the daemon process is alive.")
+        self.assertIn("running (pid 4242)", output, msg="stack status must report the running pid.")
+        self.assertIn("unreachable", output, msg="stack status must note an unreachable control socket.")
 
-    def test__daemon_status__running_degrades_on_missing_control_op(self) -> None:
+    def test__stack_status__running_degrades_on_missing_control_op(self) -> None:
         """
-        Ensure 'daemon status' degrades a summary section to a note (and
+        Ensure 'stack status' degrades a summary section to a note (and
         still exits 0) when the daemon lacks a control op — an older build
         that does not expose 'stack.ss' — rather than aborting with a
         traceback.
@@ -278,19 +278,19 @@ class TestCliDaemonStatus(TestCase):
 
         exit_code, output = self._run_status(self._pidfile(pid=4242))
 
-        self.assertEqual(exit_code, 0, msg="daemon status must exit 0 when a control op is unavailable.")
-        self.assertIn("running (pid 4242)", output, msg="daemon status must report the running pid.")
-        self.assertIn("unavailable", output, msg="daemon status must note the unavailable summary section.")
+        self.assertEqual(exit_code, 0, msg="stack status must exit 0 when a control op is unavailable.")
+        self.assertIn("running (pid 4242)", output, msg="stack status must report the running pid.")
+        self.assertIn("unavailable", output, msg="stack status must note the unavailable summary section.")
 
 
-class TestCliDaemonStart(TestCase):
+class TestCliStackStart(TestCase):
     """
-    The 'pytcp daemon start' interface-argument tests.
+    The 'pytcp stack start' interface-argument tests.
     """
 
-    def test__daemon_start__binds_multiple_interfaces(self) -> None:
+    def test__stack_start__binds_multiple_interfaces(self) -> None:
         """
-        Ensure 'pytcp daemon start --interface tap7 --interface tap9'
+        Ensure 'pytcp stack start --interface tap7 --interface tap9'
         threads both interface names through to 'run_daemon' so the daemon
         binds a multi-homed host.
 
@@ -300,14 +300,14 @@ class TestCliDaemonStart(TestCase):
         with patch("pytcp.cli.__main__.run_daemon", autospec=True) as run_daemon:
             main(
                 [
-                    "daemon",
+                    "--ipc-socket",
+                    "/tmp/x.sock",
+                    "stack",
                     "start",
                     "--interface",
                     "tap7",
                     "--interface",
                     "tap9",
-                    "--ipc-socket",
-                    "/tmp/x.sock",
                     "--pidfile",
                     "/tmp/x.pid",
                 ]
@@ -320,16 +320,16 @@ class TestCliDaemonStart(TestCase):
             on_ready=ANY,
         )
 
-    def test__daemon_start__defaults_to_single_tap7(self) -> None:
+    def test__stack_start__defaults_to_single_tap7(self) -> None:
         """
-        Ensure 'pytcp daemon start' with no --interface defaults to a
+        Ensure 'pytcp stack start' with no --interface defaults to a
         single 'tap7' interface.
 
         Reference: PyTCP test infrastructure (no RFC clause).
         """
 
         with patch("pytcp.cli.__main__.run_daemon", autospec=True) as run_daemon:
-            main(["daemon", "start", "--ipc-socket", "/tmp/x.sock", "--pidfile", "/tmp/x.pid"])
+            main(["--ipc-socket", "/tmp/x.sock", "stack", "start", "--pidfile", "/tmp/x.pid"])
 
         run_daemon.assert_called_once_with(
             socket_path="/tmp/x.sock",
@@ -341,7 +341,7 @@ class TestCliDaemonStart(TestCase):
 
 class TestRemovePidfile(TestCase):
     """
-    The daemon pidfile-removal helper tests.
+    The stack-daemon pidfile-removal helper tests.
     """
 
     def test__remove_pidfile__removes_and_tolerates_absence(self) -> None:
@@ -380,7 +380,7 @@ class TestCliUnreachableDaemon(TestCase):
         missing = os.path.join(tempfile.gettempdir(), "pytcp-nonexistent-socket-918273.sock")
         stderr = io.StringIO()
         with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(stderr):
-            exit_code = main(["route", "--ipc-socket", missing])
+            exit_code = main(["--ipc-socket", missing, "route"])
 
         self.assertEqual(
             exit_code,
@@ -396,23 +396,24 @@ class TestCliUnreachableDaemon(TestCase):
 
 class TestCliRouteModifyHelp(TestCase):
     """
-    The 'route add' / 'route del' help tests.
+    The 'route add' help tests.
     """
 
-    def test__route_modify_help__prints_usage_without_a_daemon(self) -> None:
+    def test__route_add_help__prints_usage_without_a_daemon(self) -> None:
         """
-        Ensure 'pytcp route add --help' prints the route add/del usage and
-        exits 0 without contacting the daemon (so help works whether or
-        not a daemon is running).
+        Ensure 'pytcp route add --help' serves the add subcommand usage
+        (argparse-native) and exits 0 without contacting the daemon, so
+        help works whether or not a daemon is running.
 
         Reference: PyTCP test infrastructure (no RFC clause).
         """
 
         stdout = io.StringIO()
-        with contextlib.redirect_stdout(stdout):
-            exit_code = main(["route", "add", "--help"])
+        with self.assertRaises(SystemExit) as raised:
+            with contextlib.redirect_stdout(stdout):
+                main(["route", "add", "--help"])
 
-        self.assertEqual(exit_code, 0, msg="route add --help must exit 0.")
+        self.assertEqual(raised.exception.code, 0, msg="route add --help must exit 0.")
         output = stdout.getvalue()
-        self.assertIn("route add", output, msg="The help must describe 'route add'.")
-        self.assertIn("route del", output, msg="The help must describe 'route del'.")
+        self.assertIn("DEST", output, msg="The add help must describe the DEST argument.")
+        self.assertIn("--via", output, msg="The add help must describe the --via option.")

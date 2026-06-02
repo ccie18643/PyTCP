@@ -25,12 +25,12 @@
 """
 This module contains the unified 'pytcp' CLI multitool.
 
-'pytcp' is the operator front-end to a running PyTCP daemon, mirroring the
-Linux network tools: 'pytcp ss' (sockets), 'pytcp route' (routing table),
-'pytcp sysctl' (tunables), and 'pytcp daemon start' (run the daemon). The
-observation subcommands open a short-lived control connection, call the
-matching 'ClientStack' API, and render the result through the pure
-formatters in 'cli__format'.
+'pytcp' is the operator front-end to a running PyTCP stack daemon: 'pytcp
+ss' (sockets), 'pytcp route' (show / add / del routes), 'pytcp sysctl'
+(tunables), 'pytcp addr' / 'link' / 'neigh', and 'pytcp stack start' (run
+the stack daemon). The observation subcommands open a short-lived control
+connection, call the matching 'ClientStack' API, and render the result
+through the pure formatters in 'cli__format'.
 
 pytcp/cli/__main__.py
 
@@ -42,9 +42,8 @@ import os
 import signal
 import sys
 from collections.abc import Callable
-from dataclasses import dataclass
 
-from net_addr import Ip4Address, Ip4Mask, Ip4Network, Ip6Address, Ip6Network, NetAddrError
+from net_addr import Ip4Address, Ip4Network, Ip6Address, Ip6Network, NetAddrError
 from pytcp import __version__
 from pytcp.cli.cli__format import (
     InterfaceView,
@@ -116,83 +115,10 @@ def _interface_names(client: ClientStack, /) -> dict[int, str]:
     }
 
 
-@dataclass(frozen=True, kw_only=True, slots=True)
-class _RouteSpec:
-    """
-    A parsed net-tools 'route add' / 'route del' specification.
-    """
-
-    target: str | None
-    netmask: str | None
-    gateway: str | None
-    dev: str | None
-    metric: int
-    is_host: bool
-    is_default: bool
-
-
-def _parse_route_spec(tokens: list[str], /) -> _RouteSpec:
-    """
-    Parse the net-tools 'route add' / 'route del' argument grammar into a
-    '_RouteSpec' — the 'default' keyword, the '-net' / '-host' TARGET (or
-    a bare TARGET), and the 'netmask' / 'gw' / 'dev' / 'metric'
-    keyword-and-value tokens.
-    """
-
-    target = netmask = gateway = dev = None
-    metric = 0
-    is_host = is_default = False
-
-    def _value(next_index: int, keyword: str) -> str:
-        if next_index >= len(tokens):
-            raise SystemExit(f"pytcp route: {keyword!r} requires a value.")
-        return tokens[next_index]
-
-    index = 0
-    while index < len(tokens):
-        token = tokens[index]
-        if token == "default":
-            is_default = True
-        elif token in ("-net", "-host"):
-            index += 1
-            target = _value(index, token)
-            is_host = token == "-host"
-        elif token == "netmask":
-            index += 1
-            netmask = _value(index, "netmask")
-        elif token == "gw":
-            index += 1
-            gateway = _value(index, "gw")
-        elif token == "dev":
-            index += 1
-            dev = _value(index, "dev")
-        elif token == "metric":
-            index += 1
-            try:
-                metric = int(_value(index, "metric"))
-            except ValueError:
-                raise SystemExit("pytcp route: 'metric' must be an integer.") from None
-        elif not token.startswith("-"):
-            target = token
-        else:
-            raise SystemExit(f"pytcp route: unrecognized token {token!r}.")
-        index += 1
-
-    return _RouteSpec(
-        target=target,
-        netmask=netmask,
-        gateway=gateway,
-        dev=dev,
-        metric=metric,
-        is_host=is_host,
-        is_default=is_default,
-    )
-
-
 def _route_dev_oif(client: ClientStack, dev: str | None, /) -> int | None:
     """
-    Resolve a 'dev' interface name to its index for a route's egress
-    interface, or 'None' when no 'dev' was given. Errors on an unknown
+    Resolve a '--dev' interface name to its index for a route's egress
+    interface, or 'None' when no '--dev' was given. Errors on an unknown
     interface name.
     """
 
@@ -204,146 +130,138 @@ def _route_dev_oif(client: ClientStack, dev: str | None, /) -> int | None:
     raise SystemExit(f"pytcp route: unknown interface {dev!r}.")
 
 
-def _route_ip4_destination(spec: _RouteSpec, /) -> Ip4Network:
+def _route_destination_is_ipv6(args: argparse.Namespace, /) -> bool:
     """
-    Build the IPv4 destination network from a '_RouteSpec' target — a
-    CIDR target, an explicit '-host', or a target paired with a 'netmask'.
-    """
-
-    if spec.target is None:
-        raise SystemExit("pytcp route: a target network or '-host' is required.")
-    if "/" in spec.target:
-        return Ip4Network(spec.target)
-    if spec.is_host:
-        return Ip4Network(f"{spec.target}/32")
-    if spec.netmask is not None:
-        return Ip4Network((Ip4Address(spec.target), Ip4Mask(spec.netmask)))
-    raise SystemExit("pytcp route: an IPv4 route needs a 'netmask', a '/prefix', or '-host'.")
-
-
-def _route_ip6_destination(spec: _RouteSpec, /) -> Ip6Network:
-    """
-    Build the IPv6 destination prefix from a '_RouteSpec' target — a
-    '/prefix' target or an explicit '-host'.
+    Whether a 'route add' / 'route del' targets IPv6 — inferred from the
+    destination (a ':' makes it IPv6), then from the '--via' gateway for a
+    'default' target, then from the '-6' / '-A inet6' family hint.
     """
 
-    if spec.target is None:
-        raise SystemExit("pytcp route: a target prefix or '-host' is required.")
-    if spec.is_host:
-        return Ip6Network(f"{spec.target.split('/')[0]}/128")
-    if "/" in spec.target:
-        return Ip6Network(spec.target)
-    raise SystemExit("pytcp route: an IPv6 route needs a '/prefix' (or '-host').")
+    if args.destination != "default":
+        return ":" in args.destination
+    if args.via is not None:
+        return ":" in args.via
+    return bool(args.inet6) or args.family == "inet6"
 
 
-def _route_modify_ip4(client: ClientStack, *, verb: str, spec: _RouteSpec, oif: int | None) -> None:
+def _ip4_network(destination: str, /) -> Ip4Network:
     """
-    Apply an IPv4 'route add' / 'route del' against the daemon's FIB.
+    Build an IPv4 network from a CIDR destination, or a host route (/32)
+    from a bare address.
     """
 
-    gateway = Ip4Address(spec.gateway) if spec.gateway is not None else None
-    if verb == "del":
-        if spec.is_default:
-            client.route.remove_default(family=AddressFamily.INET4)
-        else:
-            client.route.remove_route(destination=_route_ip4_destination(spec), gateway=gateway)
+    return Ip4Network(destination if "/" in destination else f"{destination}/32")
+
+
+def _ip6_network(destination: str, /) -> Ip6Network:
+    """
+    Build an IPv6 prefix from a CIDR destination, or a host route (/128)
+    from a bare address.
+    """
+
+    return Ip6Network(destination if "/" in destination else f"{destination}/128")
+
+
+def _route_add_ip4(client: ClientStack, args: argparse.Namespace, *, oif: int | None) -> None:
+    """
+    Apply an IPv4 'route add' against the daemon's FIB.
+    """
+
+    if args.destination == "default":
+        if args.via is None:
+            raise SystemExit("pytcp route: 'add default' requires a gateway (--via).")
+        client.route.replace_default(gateway=Ip4Address(args.via), protocol=RouteProtocol.STATIC, oif=oif)
         return
-    if spec.is_default:
-        if gateway is None:
-            raise SystemExit("pytcp route: 'add default' requires 'gw'.")
-        client.route.replace_default(gateway=gateway, protocol=RouteProtocol.STATIC, oif=oif)
-        return
+    gateway = Ip4Address(args.via) if args.via is not None else None
     scope = RouteScope.UNIVERSE if gateway is not None else RouteScope.LINK
     client.route.add_route(
         route=Route(
-            destination=_route_ip4_destination(spec),
+            destination=_ip4_network(args.destination),
             gateway=gateway,
             oif=oif,
-            metric=spec.metric,
+            metric=args.metric,
             scope=scope,
             protocol=RouteProtocol.STATIC,
         )
     )
 
 
-def _route_modify_ip6(client: ClientStack, *, verb: str, spec: _RouteSpec, oif: int | None) -> None:
+def _route_add_ip6(client: ClientStack, args: argparse.Namespace, *, oif: int | None) -> None:
     """
-    Apply an IPv6 'route add' / 'route del' against the daemon's FIB.
+    Apply an IPv6 'route add' against the daemon's FIB.
     """
 
-    gateway = Ip6Address(spec.gateway) if spec.gateway is not None else None
-    if verb == "del":
-        if spec.is_default:
-            client.route.remove_default(family=AddressFamily.INET6)
-        else:
-            client.route.remove_route(destination=_route_ip6_destination(spec), gateway=gateway)
+    if args.destination == "default":
+        if args.via is None:
+            raise SystemExit("pytcp route: 'add default' requires a gateway (--via).")
+        client.route.replace_default(gateway=Ip6Address(args.via), protocol=RouteProtocol.STATIC, oif=oif)
         return
-    if spec.is_default:
-        if gateway is None:
-            raise SystemExit("pytcp route: 'add default' requires 'gw'.")
-        client.route.replace_default(gateway=gateway, protocol=RouteProtocol.STATIC, oif=oif)
-        return
+    gateway = Ip6Address(args.via) if args.via is not None else None
     scope = RouteScope.UNIVERSE if gateway is not None else RouteScope.LINK
     client.route.add_route(
         route=Route(
-            destination=_route_ip6_destination(spec),
+            destination=_ip6_network(args.destination),
             gateway=gateway,
             oif=oif,
-            metric=spec.metric,
+            metric=args.metric,
             scope=scope,
             protocol=RouteProtocol.STATIC,
         )
     )
 
 
-_ROUTE_MODIFY_HELP = """\
-Usage: pytcp route [-4 | -6 | -A inet6] {add | del} <spec>
-
-Modify the routing table (net-tools 'route add' / 'route del'). Connection
-options (e.g. --ipc-socket) must precede the verb:
-    pytcp route --ipc-socket PATH add ...
-
-add:
-    route add -net DEST[/PREFIX] [netmask MASK] [gw GATEWAY] [dev IFACE] [metric N]
-    route add -host HOST gw GATEWAY [dev IFACE]
-    route add default gw GATEWAY [dev IFACE]
-    route -6 add PREFIX/LEN gw GATEWAY [dev IFACE]
-
-del:
-    route del -net DEST[/PREFIX] [gw GATEWAY]
-    route del default
-    route -6 del PREFIX/LEN
-
-Examples:
-    pytcp route add -net 10.9.0.0/24 gw 10.0.1.254 dev tap7
-    pytcp route add default gw 192.168.1.1
-    pytcp route del -net 10.9.0.0/24\
-"""
-
-
-def _route_help_requested(spec: list[str], /) -> bool:
+def _route_del_ip4(client: ClientStack, args: argparse.Namespace, /) -> None:
     """
-    Report whether a 'route' spec asks for help ('-h' / '--help' anywhere
-    after the verb), so the usage can be served before connecting.
+    Apply an IPv4 'route del' against the daemon's FIB.
     """
 
-    return bool(spec) and ("-h" in spec or "--help" in spec)
+    if args.destination == "default":
+        client.route.remove_default(family=AddressFamily.INET4)
+        return
+    gateway = Ip4Address(args.via) if args.via is not None else None
+    client.route.remove_route(destination=_ip4_network(args.destination), gateway=gateway)
 
 
-def _cmd_route_modify(client: ClientStack, *, verb: str, tokens: list[str], family: AddressFamily) -> str:
+def _route_del_ip6(client: ClientStack, args: argparse.Namespace, /) -> None:
     """
-    Run a 'route add' / 'route del' against the daemon's FIB. Returns an
-    empty string — net-tools 'route' prints nothing on a successful
-    modification.
+    Apply an IPv6 'route del' against the daemon's FIB.
     """
 
-    spec = _parse_route_spec(tokens)
-    oif = _route_dev_oif(client, spec.dev)
+    if args.destination == "default":
+        client.route.remove_default(family=AddressFamily.INET6)
+        return
+    gateway = Ip6Address(args.via) if args.via is not None else None
+    client.route.remove_route(destination=_ip6_network(args.destination), gateway=gateway)
+
+
+def _route_add(client: ClientStack, args: argparse.Namespace, /) -> str:
+    """
+    Run a 'route add' against the daemon's FIB; returns an empty string (a
+    successful modification prints nothing).
+    """
+
+    oif = _route_dev_oif(client, args.dev)
     try:
-        if family is AddressFamily.INET6:
-            _route_modify_ip6(client, verb=verb, spec=spec, oif=oif)
+        if _route_destination_is_ipv6(args):
+            _route_add_ip6(client, args, oif=oif)
         else:
-            _route_modify_ip4(client, verb=verb, spec=spec, oif=oif)
+            _route_add_ip4(client, args, oif=oif)
+    except NetAddrError as error:
+        raise SystemExit(f"pytcp route: {error}") from error
+    return ""
+
+
+def _route_del(client: ClientStack, args: argparse.Namespace, /) -> str:
+    """
+    Run a 'route del' against the daemon's FIB; returns an empty string (a
+    successful modification prints nothing).
+    """
+
+    try:
+        if _route_destination_is_ipv6(args):
+            _route_del_ip6(client, args)
+        else:
+            _route_del_ip4(client, args)
     except NetAddrError as error:
         raise SystemExit(f"pytcp route: {error}") from error
     return ""
@@ -351,20 +269,20 @@ def _cmd_route_modify(client: ClientStack, *, verb: str, tokens: list[str], fami
 
 def _cmd_route(client: ClientStack, args: argparse.Namespace, /) -> str:
     """
-    Render the routing table for the 'route' subcommand. Mirrors
-    net-tools 'route': IPv4 by default, IPv6 with '-6' / '-A inet6';
-    'route add' / 'route del' modify the daemon's FIB.
+    Show or modify the routing table for the 'route' subcommand. The
+    listing renders Linux-style (IPv4 by default, IPv6 with '-6' / '-A
+    inet6'); 'route add' / 'route del' modify the daemon's FIB.
     """
+
+    if args.route_command == "add":
+        return _route_add(client, args)
+    if args.route_command == "del":
+        return _route_del(client, args)
 
     if args.inet6 or args.family == "inet6":
         family = AddressFamily.INET6
     else:
         family = AddressFamily.INET4
-    if args.spec:
-        verb, *tokens = args.spec
-        if verb not in ("add", "del"):
-            raise SystemExit(f"pytcp route: unknown command {verb!r} (expected 'add' or 'del').")
-        return _cmd_route_modify(client, verb=verb, tokens=tokens, family=family)
     if args.cache:
         # net-tools 'route -C' shows the routing cache, not the FIB; PyTCP
         # keeps no cache, so this is the empty-cache header (like Linux).
@@ -462,11 +380,9 @@ def build_parser() -> argparse.ArgumentParser:
 
     parser = argparse.ArgumentParser(
         prog="pytcp",
-        description="Operator front-end to a running PyTCP daemon.",
+        description="Operator front-end to a running PyTCP stack daemon.",
     )
-
-    common = argparse.ArgumentParser(add_help=False)
-    common.add_argument(
+    parser.add_argument(
         "--ipc-socket",
         default=default_socket_path(),
         help="AF_UNIX control-socket path (default: $XDG_RUNTIME_DIR/pytcp.sock).",
@@ -474,26 +390,19 @@ def build_parser() -> argparse.ArgumentParser:
 
     subparsers = parser.add_subparsers(dest="command", required=True)
 
-    parser_ss = subparsers.add_parser("ss", parents=[common], help="Show socket statistics.")
+    parser_ss = subparsers.add_parser("ss", help="Show socket statistics.")
     parser_ss.add_argument("-t", "--tcp", action="store_true", help="Show only TCP sockets.")
     parser_ss.add_argument("-u", "--udp", action="store_true", help="Show only UDP sockets.")
     parser_ss.add_argument("-l", "--listening", action="store_true", help="Show only listening sockets.")
     parser_ss.add_argument("-4", "--ipv4", action="store_true", help="Show only IPv4 sockets.")
     parser_ss.add_argument("-6", "--ipv6", action="store_true", help="Show only IPv6 sockets.")
 
-    parser_route = subparsers.add_parser("route", parents=[common], help="Show the routing table (net-tools 'route').")
+    parser_route = subparsers.add_parser("route", help="Show or modify the routing table.")
     parser_route.add_argument(
         "-n",
         "--numeric",
         action="store_true",
         help="Show numeric addresses (render the default route's destination as 0.0.0.0).",
-    )
-    parser_route.add_argument(
-        "-e",
-        "--extend",
-        action="count",
-        default=0,
-        help="Display more information (accepted for net-tools compatibility).",
     )
     parser_route.add_argument("-4", dest="inet", action="store_true", help="Show the IPv4 routing table (default).")
     parser_route.add_argument("-6", dest="inet6", action="store_true", help="Show the IPv6 routing table.")
@@ -504,22 +413,10 @@ def build_parser() -> argparse.ArgumentParser:
         help="Address family to display (inet | inet6).",
     )
     parser_route.add_argument(
-        "-F",
-        "--fib",
-        action="store_true",
-        help="Display the Forwarding Information Base (the default; accepted for net-tools compatibility).",
-    )
-    parser_route.add_argument(
         "-C",
         "--cache",
         action="store_true",
-        help="Display the routing cache (accepted for net-tools compatibility; PyTCP keeps no route cache).",
-    )
-    parser_route.add_argument(
-        "-v",
-        "--verbose",
-        action="store_true",
-        help="Be verbose (accepted for net-tools compatibility).",
+        help="Show the routing cache (empty; PyTCP keeps no route cache).",
     )
     parser_route.add_argument(
         "-V",
@@ -527,17 +424,29 @@ def build_parser() -> argparse.ArgumentParser:
         action="version",
         version=f"pytcp route (PyTCP {__version__})",
     )
-    parser_route.add_argument(
-        "spec",
-        nargs=argparse.REMAINDER,
-        help="'add' / 'del' plus a net-tools route spec "
-        "(e.g. 'add -net 10.9.0.0/24 gw 10.0.1.254 dev tap7', 'del default').",
-    )
-    subparsers.add_parser("neigh", parents=[common], help="Show the neighbour caches.")
-    subparsers.add_parser("addr", parents=[common], help="Show interfaces with their addresses.")
-    subparsers.add_parser("link", parents=[common], help="Show interfaces.")
+    route_subparsers = parser_route.add_subparsers(dest="route_command")
+    for verb, verb_help in (("add", "Add a route."), ("del", "Delete a route.")):
+        parser_verb = route_subparsers.add_parser(verb, help=verb_help)
+        parser_verb.add_argument(
+            "destination",
+            metavar="DEST",
+            help="A CIDR ('10.9.0.0/24'), a host address ('10.0.0.5'), or 'default'.",
+        )
+        parser_verb.add_argument(
+            "-g",
+            "--via",
+            metavar="GATEWAY",
+            help="Next-hop gateway address." if verb == "add" else "Only act on the route via this gateway.",
+        )
+        if verb == "add":
+            parser_verb.add_argument("-i", "--dev", metavar="IFACE", help="Egress interface name.")
+            parser_verb.add_argument("--metric", type=int, default=0, help="Route metric (default 0).")
 
-    parser_sysctl = subparsers.add_parser("sysctl", parents=[common], help="Read or write sysctl values.")
+    subparsers.add_parser("neigh", help="Show the neighbour caches.")
+    subparsers.add_parser("addr", help="Show interfaces with their addresses.")
+    subparsers.add_parser("link", help="Show interfaces.")
+
+    parser_sysctl = subparsers.add_parser("sysctl", help="Read or write sysctl values.")
     parser_sysctl.add_argument(
         "key",
         nargs="?",
@@ -545,10 +454,9 @@ def build_parser() -> argparse.ArgumentParser:
         help="A sysctl key to read, 'key=value' to set, or omit to list all.",
     )
 
-    parser_daemon = subparsers.add_parser("daemon", help="Manage the PyTCP daemon.")
-    daemon_subparsers = parser_daemon.add_subparsers(dest="daemon_command", required=True)
-    parser_start = daemon_subparsers.add_parser("start", help="Start the daemon in the foreground.")
-    parser_start.add_argument("--ipc-socket", default=default_socket_path(), help="AF_UNIX control-socket path.")
+    parser_stack = subparsers.add_parser("stack", help="Manage the PyTCP stack daemon.")
+    stack_subparsers = parser_stack.add_subparsers(dest="stack_command", required=True)
+    parser_start = stack_subparsers.add_parser("start", help="Start the stack daemon in the foreground.")
     parser_start.add_argument(
         "-i",
         "--interface",
@@ -556,15 +464,14 @@ def build_parser() -> argparse.ArgumentParser:
         metavar="INTERFACE",
         help="TAP/TUN interface to bind to; repeat for a multi-homed host (default: tap7).",
     )
-    parser_start.add_argument("--pidfile", default=default_pidfile_path(), help="Pidfile path for 'daemon stop'.")
-    parser_stop = daemon_subparsers.add_parser("stop", help="Stop the daemon via its pidfile.")
+    parser_start.add_argument("--pidfile", default=default_pidfile_path(), help="Pidfile path for 'stack stop'.")
+    parser_stop = stack_subparsers.add_parser("stop", help="Stop the stack daemon via its pidfile.")
     parser_stop.add_argument("--pidfile", default=default_pidfile_path(), help="Pidfile path to signal.")
 
-    parser_status = daemon_subparsers.add_parser(
+    parser_status = stack_subparsers.add_parser(
         "status",
-        help="Show whether the daemon is running and the stack's state (exit 0 running, 3 not running).",
+        help="Show whether the stack daemon is running and its state (exit 0 running, 3 not running).",
     )
-    parser_status.add_argument("--ipc-socket", default=default_socket_path(), help="AF_UNIX control-socket path.")
     parser_status.add_argument("--pidfile", default=default_pidfile_path(), help="Pidfile path to read.")
 
     return parser
@@ -599,7 +506,7 @@ def _process_alive(pid: int, /) -> bool:
     return True
 
 
-def _stop_daemon(pidfile_path: str, /) -> int:
+def _stop_stack(pidfile_path: str, /) -> int:
     """
     Signal a running daemon to stop via its pidfile, cleaning up a stale
     pidfile if the process is gone.
@@ -607,21 +514,21 @@ def _stop_daemon(pidfile_path: str, /) -> int:
 
     pid = _read_pidfile(pidfile_path)
     if pid is None:
-        print("PyTCP daemon is not running (no pidfile).", file=sys.stderr)
+        print("PyTCP stack is not running (no pidfile).", file=sys.stderr)
         return 1
 
     try:
         os.kill(pid, signal.SIGTERM)
     except ProcessLookupError:
         remove_pidfile(pidfile_path)
-        print(f"PyTCP daemon (pid {pid}) is not running; removed stale pidfile.", file=sys.stderr)
+        print(f"PyTCP stack (pid {pid}) is not running; removed stale pidfile.", file=sys.stderr)
         return 1
 
-    print(f"Sent SIGTERM to PyTCP daemon (pid {pid}).")
+    print(f"Sent SIGTERM to PyTCP stack (pid {pid}).")
     return 0
 
 
-def _daemon_status(*, pidfile_path: str, socket_path: str) -> int:
+def _stack_status(*, pidfile_path: str, socket_path: str) -> int:
     """
     Report whether the daemon is running and, when its control socket is
     reachable, a summary of the stack's interface addressing state plus the
@@ -631,13 +538,13 @@ def _daemon_status(*, pidfile_path: str, socket_path: str) -> int:
 
     pid = _read_pidfile(pidfile_path)
     if pid is None:
-        print("PyTCP daemon is not running (no pidfile).")
+        print("PyTCP stack is not running (no pidfile).")
         return 3
     if not _process_alive(pid):
-        print(f"PyTCP daemon is not running (stale pidfile, pid {pid}).")
+        print(f"PyTCP stack is not running (stale pidfile, pid {pid}).")
         return 3
 
-    print(f"PyTCP daemon is running (pid {pid}).")
+    print(f"PyTCP stack is running (pid {pid}).")
     print(f"  Control socket: {socket_path}")
 
     try:
@@ -678,27 +585,27 @@ def _daemon_status(*, pidfile_path: str, socket_path: str) -> int:
     return 0
 
 
-def _run_daemon_command(args: argparse.Namespace, /) -> int:
+def _run_stack_command(args: argparse.Namespace, /) -> int:
     """
-    Dispatch the 'daemon' subcommand.
+    Dispatch the 'stack' subcommand.
     """
 
-    if args.daemon_command == "start":
+    if args.stack_command == "start":
         run_daemon(
             socket_path=args.ipc_socket,
             interfaces=args.interface or ["tap7"],
             pidfile_path=args.pidfile,
-            on_ready=lambda path: print(f"PyTCP daemon listening on {path}", flush=True),
+            on_ready=lambda path: print(f"PyTCP stack listening on {path}", flush=True),
         )
         return 0
 
-    if args.daemon_command == "stop":
-        return _stop_daemon(args.pidfile)
+    if args.stack_command == "stop":
+        return _stop_stack(args.pidfile)
 
-    if args.daemon_command == "status":
-        return _daemon_status(pidfile_path=args.pidfile, socket_path=args.ipc_socket)
+    if args.stack_command == "status":
+        return _stack_status(pidfile_path=args.pidfile, socket_path=args.ipc_socket)
 
-    raise AssertionError(f"Unhandled daemon command {args.daemon_command!r}.")
+    raise AssertionError(f"Unhandled stack command {args.stack_command!r}.")
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -708,14 +615,8 @@ def main(argv: list[str] | None = None) -> int:
 
     args = build_parser().parse_args(argv)
 
-    if args.command == "daemon":
-        return _run_daemon_command(args)
-
-    # 'route add|del --help' must serve usage without contacting the
-    # daemon — the REMAINDER spec swallows '--help', so handle it here.
-    if args.command == "route" and _route_help_requested(args.spec):
-        print(_ROUTE_MODIFY_HELP)
-        return 0
+    if args.command == "stack":
+        return _run_stack_command(args)
 
     try:
         client = connect(socket_path=args.ipc_socket)
@@ -725,8 +626,8 @@ def main(argv: list[str] | None = None) -> int:
         # the connect traceback escape to the operator.
         reason = error.strerror or str(error)
         print(
-            f"pytcp: cannot reach the PyTCP daemon at {args.ipc_socket!r}: {reason}. "
-            f"Is the daemon running? Start it with 'pytcp daemon start'.",
+            f"pytcp: cannot reach the PyTCP stack daemon at {args.ipc_socket!r}: {reason}. "
+            f"Is it running? Start it with 'pytcp stack start'.",
             file=sys.stderr,
         )
         return 1
