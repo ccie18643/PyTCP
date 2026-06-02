@@ -37,11 +37,14 @@ ver 3.0.8
 
 import contextlib
 import io
-from typing import cast
+from typing import cast, override
 
+from net_addr import Ip4Address, MacAddress
 from pytcp.cli.__main__ import main
 from pytcp.cli.cli__format import format_route_table
 from pytcp.client import ClientTcpSocket
+from pytcp.protocols.arp.arp__cache import ArpCache
+from pytcp.protocols.icmp6.nd.nd__cache import NdCache
 from pytcp.runtime.socket import AddressFamily, SocketType
 from pytcp.tests.lib.ipc_control_testcase import IpcControlTestCase
 
@@ -50,6 +53,19 @@ class TestIpcCli(IpcControlTestCase):
     """
     The 'pytcp' CLI multitool integration tests.
     """
+
+    @override
+    def setUp(self) -> None:
+        """
+        Stand up the IPC fixture, then replace the harness's mocked ARP /
+        ND caches with real (unstarted) caches so the 'neigh' subcommand
+        has a real entry store to read.
+        """
+
+        super().setUp()
+
+        self._packet_handler._arp_cache = ArpCache()
+        self._packet_handler._nd_cache = NdCache()
 
     def _run(self, *argv: str) -> str:
         """
@@ -121,4 +137,67 @@ class TestIpcCli(IpcControlTestCase):
             " = ",
             output,
             msg="The sysctl listing must render 'key = value' lines.",
+        )
+
+    def test__cli__neigh_lists_added_neighbor(self) -> None:
+        """
+        Ensure 'pytcp neigh' lists a neighbour added to the interface
+        cache.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        self._connect().neighbor.interface(self._ifindex).add(
+            ip=Ip4Address("10.0.1.50"),
+            mac=MacAddress("02:00:00:00:00:50"),
+        )
+
+        output = self._run("neigh")
+
+        self.assertIn(
+            "10.0.1.50 lladdr 02:00:00:00:00:50",
+            output,
+            msg="The neigh output must list the added neighbour with its link-layer address.",
+        )
+
+    def test__cli__addr_shows_interface_with_addresses(self) -> None:
+        """
+        Ensure 'pytcp addr' renders the interface header, its link-layer
+        address, and at least one assigned address.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        output = self._run("addr")
+
+        self.assertIn(
+            "link/ether",
+            output,
+            msg="The addr output must include the interface's link-layer address.",
+        )
+        self.assertIn(
+            "inet ",
+            output,
+            msg="The addr output must include at least one assigned IPv4 address.",
+        )
+
+    def test__cli__link_shows_interface_without_addresses(self) -> None:
+        """
+        Ensure 'pytcp link' renders the interface header and link-layer
+        address but no assigned addresses.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        output = self._run("link")
+
+        self.assertIn(
+            "link/ether",
+            output,
+            msg="The link output must include the interface's link-layer address.",
+        )
+        self.assertNotIn(
+            "inet ",
+            output,
+            msg="The link output must not include assigned addresses.",
         )

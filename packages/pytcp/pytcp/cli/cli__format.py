@@ -36,14 +36,39 @@ ver 3.0.8
 """
 
 from collections.abc import Iterable, Mapping, Sequence
+from dataclasses import dataclass
 
-from net_addr import Ip4Address, Ip4Network, Ip6Address, Ip6Network
+from net_addr import (
+    Ip4Address,
+    Ip4IfAddr,
+    Ip4Network,
+    Ip6Address,
+    Ip6IfAddr,
+    Ip6Network,
+    MacAddress,
+)
 from pytcp.runtime.fib import Route
 from pytcp.runtime.socket import SocketType
 from pytcp.stack.neighbor import NeighborSnapshot
 from pytcp.stack.socket_introspect import SocketSnapshot
 
 type _AnyRoute = Route[Ip4Address, Ip4Network] | Route[Ip6Address, Ip6Network]
+
+
+@dataclass(frozen=True, kw_only=True, slots=True)
+class InterfaceView:
+    """
+    A per-interface view for the 'addr' / 'link' formatters — the link
+    attributes plus the interface's assigned addresses.
+    """
+
+    ifindex: int
+    name: str
+    flags: tuple[str, ...]
+    mtu: int
+    mac_address: MacAddress | None
+    addresses: tuple[Ip4IfAddr | Ip6IfAddr, ...]
+
 
 # 'ss' Netid column values per socket type.
 _NETID_BY_TYPE: dict[SocketType, str] = {
@@ -142,3 +167,34 @@ def format_sysctl(items: Mapping[str, object], /) -> str:
     """
 
     return "\n".join(f"{key} = {value}" for key, value in items.items())
+
+
+def _interface_lines(view: InterfaceView, *, with_addresses: bool) -> list[str]:
+    """
+    Render one interface's 'ip link' / 'ip addr' lines.
+    """
+
+    lines = [f"{view.ifindex}: {view.name}: <{','.join(view.flags)}> mtu {view.mtu}"]
+    if view.mac_address is not None:
+        lines.append(f"    link/ether {view.mac_address}")
+    if with_addresses:
+        for address in view.addresses:
+            family = "inet" if isinstance(address, Ip4IfAddr) else "inet6"
+            lines.append(f"    {family} {address}")
+    return lines
+
+
+def format_link(views: Iterable[InterfaceView], /) -> str:
+    """
+    Render interfaces in the 'ip link show' layout (no addresses).
+    """
+
+    return "\n".join(line for view in views for line in _interface_lines(view, with_addresses=False))
+
+
+def format_addr(views: Iterable[InterfaceView], /) -> str:
+    """
+    Render interfaces with their addresses in the 'ip addr show' layout.
+    """
+
+    return "\n".join(line for view in views for line in _interface_lines(view, with_addresses=True))

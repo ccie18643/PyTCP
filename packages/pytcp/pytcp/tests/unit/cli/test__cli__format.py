@@ -32,8 +32,11 @@ ver 3.0.8
 
 from unittest import TestCase
 
-from net_addr import Ip4Address, Ip4Network, MacAddress
+from net_addr import Ip4Address, Ip4IfAddr, Ip4Network, Ip6IfAddr, MacAddress
 from pytcp.cli.cli__format import (
+    InterfaceView,
+    format_addr,
+    format_link,
     format_neighbor_table,
     format_route_table,
     format_socket_table,
@@ -181,4 +184,50 @@ class TestCliFormatSysctl(TestCase):
             format_sysctl({"arp.cache.max_age": 60, "tcp.default.nodelay": False}),
             "arp.cache.max_age = 60\ntcp.default.nodelay = False",
             msg="Sysctl entries must render as 'key = value' lines.",
+        )
+
+
+class TestCliFormatInterfaces(TestCase):
+    """
+    The 'ip addr' / 'ip link' interface formatter golden tests.
+    """
+
+    _VIEW = InterfaceView(
+        ifindex=1,
+        name="tap7",
+        flags=("BROADCAST", "MULTICAST", "UP"),
+        mtu=1500,
+        mac_address=MacAddress("02:00:00:00:00:07"),
+        addresses=(Ip4IfAddr("10.0.1.7/24"), Ip6IfAddr("2001:db8:0:1::7/64")),
+    )
+
+    def test__format_addr(self) -> None:
+        """
+        Ensure interfaces render with their addresses in the 'ip addr
+        show' layout.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        self.assertEqual(
+            format_addr([self._VIEW]),
+            "1: tap7: <BROADCAST,MULTICAST,UP> mtu 1500\n"
+            "    link/ether 02:00:00:00:00:07\n"
+            "    inet 10.0.1.7/24\n"
+            "    inet6 2001:db8:0:1::7/64",
+            msg="The addr formatter must render the interface with its inet / inet6 addresses.",
+        )
+
+    def test__format_link(self) -> None:
+        """
+        Ensure interfaces render without addresses in the 'ip link show'
+        layout.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        self.assertEqual(
+            format_link([self._VIEW]),
+            "1: tap7: <BROADCAST,MULTICAST,UP> mtu 1500\n    link/ether 02:00:00:00:00:07",
+            msg="The link formatter must render the interface without addresses.",
         )

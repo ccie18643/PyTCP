@@ -41,6 +41,10 @@ import argparse
 from collections.abc import Callable
 
 from pytcp.cli.cli__format import (
+    InterfaceView,
+    format_addr,
+    format_link,
+    format_neighbor_table,
     format_route_table,
     format_socket_table,
     format_sysctl,
@@ -48,6 +52,7 @@ from pytcp.cli.cli__format import (
 from pytcp.client import ClientStack, connect
 from pytcp.daemon.daemon import default_socket_path, run_daemon
 from pytcp.runtime.socket import AddressFamily, SocketType
+from pytcp.stack.neighbor import NeighborSnapshot
 
 
 def _parse_sysctl_value(text: str, /) -> bool | int | str:
@@ -109,10 +114,67 @@ def _cmd_sysctl(client: ClientStack, args: argparse.Namespace, /) -> str:
     return f"{args.key} = {client.sysctl.get(args.key)}"
 
 
+def _interface_views(client: ClientStack, /) -> list[InterfaceView]:
+    """
+    Gather a per-interface link + address view for every interface.
+    """
+
+    views = []
+    for ifindex in client.link.list_interfaces():
+        link = client.link.interface(ifindex)
+        flags = sorted(flag.name for flag in link.flags)
+        if link.is_running:
+            flags.append("UP")
+        views.append(
+            InterfaceView(
+                ifindex=ifindex,
+                name=link.name or "?",
+                flags=tuple(flags),
+                mtu=link.mtu,
+                mac_address=link.mac_address,
+                addresses=client.address.interface(ifindex).list_ifaddrs(),
+            )
+        )
+    return views
+
+
+def _cmd_neigh(client: ClientStack, args: argparse.Namespace, /) -> str:
+    """
+    Render the neighbour caches across interfaces for the 'neigh' subcommand.
+    """
+
+    _ = args
+    snapshots: list[NeighborSnapshot] = []
+    for ifindex in client.link.list_interfaces():
+        snapshots.extend(client.neighbor.interface(ifindex).list_neighbors())
+    return format_neighbor_table(snapshots)
+
+
+def _cmd_addr(client: ClientStack, args: argparse.Namespace, /) -> str:
+    """
+    Render interfaces with their addresses for the 'addr' subcommand.
+    """
+
+    _ = args
+    return format_addr(_interface_views(client))
+
+
+def _cmd_link(client: ClientStack, args: argparse.Namespace, /) -> str:
+    """
+    Render interfaces without addresses for the 'link' subcommand.
+    """
+
+    _ = args
+    return format_link(_interface_views(client))
+
+
 _COMMANDS: dict[str, Callable[[ClientStack, argparse.Namespace], str]] = {
     "ss": _cmd_ss,
     "route": _cmd_route,
     "sysctl": _cmd_sysctl,
+    "neigh": _cmd_neigh,
+    "addr": _cmd_addr,
+    "link": _cmd_link,
 }
 
 
@@ -143,6 +205,9 @@ def build_parser() -> argparse.ArgumentParser:
     parser_ss.add_argument("-6", "--ipv6", action="store_true", help="Show only IPv6 sockets.")
 
     subparsers.add_parser("route", parents=[common], help="Show the routing table.")
+    subparsers.add_parser("neigh", parents=[common], help="Show the neighbour caches.")
+    subparsers.add_parser("addr", parents=[common], help="Show interfaces with their addresses.")
+    subparsers.add_parser("link", parents=[common], help="Show interfaces.")
 
     parser_sysctl = subparsers.add_parser("sysctl", parents=[common], help="Read or write sysctl values.")
     parser_sysctl.add_argument(
