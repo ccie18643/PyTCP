@@ -158,25 +158,6 @@ class TestIpcCli(IpcControlTestCase):
         self.assertIn("IPv6", only_ipv6, msg="'route -6' must show the IPv6 section.")
         self.assertNotIn("IPv4", only_ipv6, msg="'route -6' must not show the IPv4 section.")
 
-    def test__cli__route_cache_shows_empty_cache(self) -> None:
-        """
-        Ensure 'pytcp route -C' renders the 'PyTCP Routing Cache' header
-        with both families' empty column headers, rather than the FIB —
-        PyTCP keeps no route cache.
-
-        Reference: PyTCP test infrastructure (no RFC clause).
-        """
-
-        output = self._run("route", "-C")
-
-        self.assertIn("PyTCP Routing Cache", output, msg="'route -C' must render the overall cache header.")
-        self.assertIn(
-            "Source          Destination     Gateway", output, msg="'route -C' must render the IPv4 cache columns."
-        )
-        self.assertIn("IPv4", output, msg="'route -C' must show the IPv4 section.")
-        self.assertIn("IPv6", output, msg="A bare 'route -C' must also show the IPv6 section.")
-        self.assertNotIn("UG", output, msg="'route -C' must not render FIB routes (the cache is empty).")
-
     def test__cli__route_add_then_list_shows_route(self) -> None:
         """
         Ensure 'pytcp route add DEST --via G --dev IF' installs the route

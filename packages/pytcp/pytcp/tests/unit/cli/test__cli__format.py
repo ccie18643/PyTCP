@@ -39,7 +39,6 @@ from pytcp.cli.cli__format import (
     format_addr,
     format_link,
     format_neighbor_table,
-    format_route_cache,
     format_route_table,
     format_socket_table,
     format_sysctl,
@@ -202,42 +201,6 @@ class TestCliFormatRoutes(TestCase):
             "default                        fe80::1                    UG         0   0     0 tap9\n"
             "2603:808c:2800:4301::/64       ::                         U          0   0     0 tap9",
             msg="The IPv6 route table must render in the net-tools 'route -6' layout.",
-        )
-
-
-class TestCliFormatRouteCache(TestCase):
-    """
-    The net-tools 'route -C' routing-cache formatter golden tests.
-    """
-
-    def test__format_route_cache__ipv4(self) -> None:
-        """
-        Ensure the IPv4 routing cache renders in the net-tools 'route -C'
-        layout — the Source /
-        Destination / Gateway / ... columns — with an empty body, since
-        PyTCP keeps no route cache (matching modern Linux).
-
-        Reference: PyTCP test infrastructure (no RFC clause).
-        """
-
-        self.assertEqual(
-            format_route_cache(family=AddressFamily.INET4),
-            "Source          Destination     Gateway         Flags Metric Ref    Use Iface",
-            msg="The IPv4 route cache must render the net-tools 'route -C' header with an empty body.",
-        )
-
-    def test__format_route_cache__ipv6(self) -> None:
-        """
-        Ensure the IPv6 routing cache renders the net-tools 'route -C -6'
-        column header with an empty body.
-
-        Reference: PyTCP test infrastructure (no RFC clause).
-        """
-
-        self.assertEqual(
-            format_route_cache(family=AddressFamily.INET6),
-            "Destination                    Next Hop                   Flag Met Ref  Use If",
-            msg="The IPv6 route cache must render the net-tools 'route -C -6' header with an empty body.",
         )
 
 

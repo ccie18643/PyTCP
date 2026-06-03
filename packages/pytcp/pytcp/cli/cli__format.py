@@ -224,19 +224,6 @@ def format_route_table(
     return "\n".join(lines)
 
 
-def format_route_cache(*, family: AddressFamily) -> str:
-    """
-    Render the routing-cache column header in the net-tools 'route -C'
-    layout. PyTCP keeps no route cache, so only the column header is
-    emitted (an empty body) — matching modern Linux, where the route
-    cache is likewise empty. The caller supplies the section chrome.
-    """
-
-    if family is AddressFamily.INET6:
-        return "Destination                    Next Hop                   Flag Met Ref  Use If"
-    return "Source          Destination     Gateway         Flags Metric Ref    Use Iface"
-
-
 def format_sysctl(items: Mapping[str, object], /) -> str:
     """
     Render sysctl entries in the 'sysctl' 'key = value' line layout.

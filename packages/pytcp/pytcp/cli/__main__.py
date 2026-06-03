@@ -52,7 +52,6 @@ from pytcp.cli.cli__format import (
     format_addr,
     format_link,
     format_neighbor_table,
-    format_route_cache,
     format_route_table,
     format_socket_table,
     format_sysctl,
@@ -272,8 +271,7 @@ def _cmd_route_list(client: ClientStack, args: argparse.Namespace, /) -> str:
     """
     Render the routing table for a bare 'route' (no add / del). With no
     family flag both the IPv4 and IPv6 tables are shown; '-4' / '-6' /
-    '-A' narrow to one. '-C' shows the empty routing cache instead of the
-    FIB.
+    '-A' narrow to one.
     """
 
     families: tuple[AddressFamily, ...]
@@ -284,21 +282,16 @@ def _cmd_route_list(client: ClientStack, args: argparse.Namespace, /) -> str:
     else:
         families = (AddressFamily.INET4, AddressFamily.INET6)
 
-    # net-tools 'route -C' shows the routing cache, not the FIB; PyTCP
-    # keeps no cache, so the cache body is just the (empty) column header.
-    names: dict[int, str] = {} if args.cache else _interface_names(client)
-    sections = [_hl("PyTCP Routing Cache" if args.cache else "PyTCP Routing Table")]
+    names = _interface_names(client)
+    sections = [_hl("PyTCP Routing Table")]
     for family in families:
         label = "IPv4" if family is AddressFamily.INET4 else "IPv6"
-        if args.cache:
-            body = format_route_cache(family=family)
-        else:
-            body = format_route_table(
-                client.route.list_routes(family=family),
-                family=family,
-                numeric=args.numeric,
-                interface_names=names,
-            )
+        body = format_route_table(
+            client.route.list_routes(family=family),
+            family=family,
+            numeric=args.numeric,
+            interface_names=names,
+        )
         # The body is 'column-header\n<rows>'; highlight the label and the
         # column header, leave the rows in the terminal default colour.
         column_header, _, rows = body.partition("\n")
@@ -496,12 +489,6 @@ def build_parser() -> argparse.ArgumentParser:
         dest="family",
         choices=("inet", "inet6"),
         help="Address family to display (inet | inet6).",
-    )
-    parser_route.add_argument(
-        "-C",
-        "--cache",
-        action="store_true",
-        help="Show the routing cache (empty; PyTCP keeps no route cache).",
     )
     parser_route.add_argument(
         "-V",
