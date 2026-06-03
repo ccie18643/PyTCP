@@ -106,29 +106,39 @@ class TestCliFormatNeighbors(TestCase):
 
     def test__format_neighbor_table(self) -> None:
         """
-        Ensure neighbour entries render in the 'ip neighbor show' line
-        layout, with and without a link-layer address.
+        Ensure neighbour entries render in the route-style table layout —
+        the Address / Link-Layer Address / State / Device columns, with
+        the Device naming the interface each entry was learned on, and an
+        empty link-layer column for an unresolved entry.
 
         Reference: PyTCP test infrastructure (no RFC clause).
         """
 
-        snapshots = (
-            NeighborSnapshot(
-                address=Ip4Address("10.0.1.91"),
-                mac_address=MacAddress("02:00:00:00:00:91"),
-                state=NudState.REACHABLE,
+        entries = (
+            (
+                NeighborSnapshot(
+                    address=Ip4Address("10.0.1.91"),
+                    mac_address=MacAddress("02:00:00:00:00:91"),
+                    state=NudState.REACHABLE,
+                ),
+                "tap7",
             ),
-            NeighborSnapshot(
-                address=Ip4Address("10.0.1.92"),
-                mac_address=None,
-                state=NudState.INCOMPLETE,
+            (
+                NeighborSnapshot(
+                    address=Ip4Address("10.0.1.92"),
+                    mac_address=None,
+                    state=NudState.INCOMPLETE,
+                ),
+                "tap7",
             ),
         )
 
         self.assertEqual(
-            format_neighbor_table(snapshots),
-            "10.0.1.91 lladdr 02:00:00:00:00:91 REACHABLE\n10.0.1.92 INCOMPLETE",
-            msg="The neighbour table must render in the ip neighbor show layout.",
+            format_neighbor_table(entries),
+            "Address                        Link-Layer Address  State       Device\n"
+            "10.0.1.91                      02:00:00:00:00:91   REACHABLE   tap7\n"
+            "10.0.1.92                                          INCOMPLETE  tap7",
+            msg="The neighbour table must render in the route-style column layout.",
         )
 
 

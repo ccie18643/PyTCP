@@ -66,7 +66,6 @@ from pytcp.daemon.daemon import (
 from pytcp.ipc.ipc__errors import IpcRemoteError
 from pytcp.runtime.fib import Route, RouteProtocol, RouteScope
 from pytcp.runtime.socket import AddressFamily, SocketType
-from pytcp.stack.neighbor import NeighborSnapshot
 
 
 def _parse_sysctl_value(text: str, /) -> bool | int | str:
@@ -340,14 +339,29 @@ def _interface_views(client: ClientStack, /) -> list[InterfaceView]:
 
 def _cmd_neighbor(client: ClientStack, args: argparse.Namespace, /) -> str:
     """
-    Render the neighbour caches across interfaces for the 'neighbor' subcommand.
+    Render the neighbour caches for the 'neighbor' subcommand — an overall
+    'PyTCP Neighbor Table' header with per-family 'IPv4' / 'IPv6'
+    sections, the same shape as 'route'. Each entry carries the interface
+    it was learned on as its 'Device'.
     """
 
     _ = args
-    snapshots: list[NeighborSnapshot] = []
-    for ifindex in client.link.list_interfaces():
-        snapshots.extend(client.neighbor.interface(ifindex).list_neighbors())
-    return format_neighbor_table(snapshots)
+    names = _interface_names(client)
+    sections = [_hl("PyTCP Neighbor Table")]
+    for family in (AddressFamily.INET4, AddressFamily.INET6):
+        label = "IPv4" if family is AddressFamily.INET4 else "IPv6"
+        entries = [
+            (snapshot, names[ifindex])
+            for ifindex in client.link.list_interfaces()
+            for snapshot in client.neighbor.interface(ifindex).list_neighbors(family=family)
+        ]
+        # The body is 'column-header\n<rows>'; highlight the label and the
+        # column header, leave the rows in the terminal default colour.
+        column_header, _, rows = format_neighbor_table(entries).partition("\n")
+        section = f"{_hl(label)}\n{_hl(column_header)}"
+        sections.append(f"{section}\n{rows}" if rows else section)
+
+    return "\n\n".join(sections)
 
 
 def _cmd_addr(client: ClientStack, args: argparse.Namespace, /) -> str:

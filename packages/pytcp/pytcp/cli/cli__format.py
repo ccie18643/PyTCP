@@ -120,17 +120,36 @@ def format_socket_table(snapshots: Iterable[SocketSnapshot], /) -> str:
     return _format_table(headers, rows)
 
 
-def format_neighbor_table(snapshots: Iterable[NeighborSnapshot], /) -> str:
+# Neighbour-table row + column header, in the same table style as the
+# route table. Each entry is a '(snapshot, device)' pair — the device is
+# the interface the entry was learned on (the snapshot does not carry it).
+_NEIGHBOR_TABLE__ROW = "{address:<30} {lladdr:<19} {state:<11} {device}"
+_NEIGHBOR_TABLE__HEADER = _NEIGHBOR_TABLE__ROW.format(
+    address="Address",
+    lladdr="Link-Layer Address",
+    state="State",
+    device="Device",
+)
+
+
+def format_neighbor_table(entries: Iterable[tuple[NeighborSnapshot, str]], /) -> str:
     """
-    Render neighbour-cache entries in the 'ip neighbor show' line layout.
+    Render neighbour-cache entries (column header + rows) in the same
+    layout as the route table: 'Address', 'Link-Layer Address', 'State',
+    'Device'. Each entry pairs a snapshot with the interface it was
+    learned on. The caller supplies the section chrome.
     """
 
-    lines = []
-    for snapshot in snapshots:
-        if snapshot.mac_address is not None:
-            lines.append(f"{snapshot.address} lladdr {snapshot.mac_address} {snapshot.state}")
-        else:
-            lines.append(f"{snapshot.address} {snapshot.state}")
+    lines = [_NEIGHBOR_TABLE__HEADER]
+    for snapshot, device in entries:
+        lines.append(
+            _NEIGHBOR_TABLE__ROW.format(
+                address=str(snapshot.address),
+                lladdr=str(snapshot.mac_address) if snapshot.mac_address is not None else "",
+                state=str(snapshot.state),
+                device=device,
+            )
+        )
 
     return "\n".join(lines)
 

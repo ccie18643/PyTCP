@@ -339,12 +339,16 @@ class TestIpcCli(IpcControlTestCase):
         )
 
         output = self._run("neighbor")
+        dev = self._connect().link.interface(self._ifindex).name or f"if{self._ifindex}"
 
+        self.assertIn("PyTCP Neighbor Table", output, msg="The neighbor output must show the overall header.")
+        self.assertIn("10.0.1.50", output, msg="The neighbor output must list the added neighbour's address.")
         self.assertIn(
-            "10.0.1.50 lladdr 02:00:00:00:00:50",
+            "02:00:00:00:00:50",
             output,
-            msg="The neighbor output must list the added neighbour with its link-layer address.",
+            msg="The neighbor output must list the added neighbour's link-layer address.",
         )
+        self.assertIn(dev, output, msg="The neighbor output must show the entry's Device (interface).")
 
     def test__cli__addr_shows_interface_with_addresses(self) -> None:
         """
