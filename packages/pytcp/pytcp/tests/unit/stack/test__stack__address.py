@@ -487,6 +487,50 @@ class TestAddressApiIp6(TestCase):
             msg="A DAD-checked add must not install the address directly (the claim worker does on success).",
         )
 
+    def test__address_api__add_ip6_with_dad_flag_delegates_to_dad_claim(self) -> None:
+        """
+        Ensure 'add(dad=True)' (the operator DAD-checked install) runs DAD
+        via the claim engine with a default conflict handler, instead of
+        installing the address directly.
+
+        Reference: RFC 4862 §5.4 (Duplicate Address Detection).
+        """
+
+        host = Ip6IfAddr("2001:db8::5/128")
+
+        self._api.add(ifaddr=host, dad=True)
+
+        self.assertEqual(
+            len(self._packet_handler.dad_claims), 1, msg="add(dad=True) must delegate to the claim engine."
+        )
+        claimed_host, on_conflict = self._packet_handler.dad_claims[0]
+        self.assertEqual(claimed_host, host, msg="The claimed host must be the supplied address.")
+        self.assertIsNotNone(on_conflict, msg="add(dad=True) must supply a default DAD-conflict handler.")
+        self.assertEqual(
+            self._packet_handler._ip6_ifaddr,
+            [],
+            msg="A DAD-checked add must not install the address directly.",
+        )
+
+    def test__address_api__add_ip4_ignores_dad_flag(self) -> None:
+        """
+        Ensure 'add(dad=True)' for an IPv4 host installs directly — IPv4
+        has no DAD (RFC 5227 ACD is the per-protocol engine's concern).
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        host = Ip4IfAddr("10.0.0.5/24")
+
+        self._api.add(ifaddr=host, dad=True)
+
+        self.assertEqual(
+            self._packet_handler._ip4_ifaddr,
+            [host],
+            msg="An IPv4 add must install directly regardless of the dad flag.",
+        )
+        self.assertEqual(self._packet_handler.dad_claims, [], msg="An IPv4 add must not run DAD.")
+
     def test__address_api__add_ip6_atomically_rebinds_list(self) -> None:
         """
         Ensure 'add' with an Ip6IfAddr rebinds '_ip6_ifaddr' to a

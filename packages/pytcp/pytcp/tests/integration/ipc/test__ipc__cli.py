@@ -494,6 +494,36 @@ class TestIpcCli(IpcControlTestCase):
             msg="stack status must render the stack's interface addressing summary.",
         )
 
+    def test__cli__address_add_then_del_ipv4(self) -> None:
+        """
+        Ensure 'pytcp address add ADDR/PREFIX --dev IF' installs an IPv4
+        address through the Address API (so 'pytcp address' lists it) and
+        'pytcp address del' removes it.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        dev = self._connect().link.interface(self._ifindex).name or f"if{self._ifindex}"
+
+        self._run("address", "add", "10.0.1.80/24", "--dev", dev)
+        self.assertIn("10.0.1.80", self._run("address"), msg="The added IPv4 address must appear in 'address'.")
+
+        self._run("address", "del", "10.0.1.80", "--dev", dev)
+        self.assertNotIn("10.0.1.80", self._run("address"), msg="The deleted IPv4 address must be gone.")
+
+    def test__cli__address_add_bad_address_errors(self) -> None:
+        """
+        Ensure a malformed interface address is reported as an error.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        dev = self._connect().link.interface(self._ifindex).name or f"if{self._ifindex}"
+        with self.assertRaises(SystemExit) as raised:
+            with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
+                main(["--ipc-socket", self._socket_path, "address", "add", "not-an-address", "--dev", dev])
+        self.assertNotEqual(raised.exception.code, 0, msg="A malformed address must exit non-zero.")
+
     def test__cli__link_shows_interface_without_addresses(self) -> None:
         """
         Ensure 'pytcp link' renders the interface header and link-layer

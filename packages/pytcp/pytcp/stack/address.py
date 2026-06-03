@@ -47,6 +47,16 @@ if TYPE_CHECKING:
     from pytcp.runtime.packet_handler import PacketHandlerL2, PacketHandlerL3
 
 
+def _log_dad_conflict(address: Ip6Address, /) -> None:
+    """
+    The default DAD-conflict handler for an operator 'add(dad=True)' —
+    log that the IPv6 host failed Duplicate Address Detection and so was
+    not installed.
+    """
+
+    log("stack", f"<lg>Address API</>: IPv6 host {address} failed DAD (duplicate); not installed")
+
+
 class AddressApi:
     """
     The address-control surface — mirrors Linux RTNETLINK
@@ -124,6 +134,7 @@ class AddressApi:
         *,
         ifaddr: Ip4IfAddr | Ip6IfAddr,
         dad_conflict_callback: Callable[[Ip6Address], None] | None = None,
+        dad: bool = False,
     ) -> None:
         """
         Install 'ifaddr' on the stack's address list — Linux
@@ -139,14 +150,20 @@ class AddressApi:
         boot path's concern, the same way ARP ACD is the per-protocol
         engine's concern, not an address-plane verb.
 
-        A per-protocol engine that DOES want its IPv6 address vetted
-        by Duplicate Address Detection — the DHCPv6 client, mirroring
-        the kernel's tentative install of a DHCPv6-leased address —
-        passes a 'dad_conflict_callback'. The address is then claimed
-        through the ND DAD engine (installed by the claim worker only
-        once DAD passes); on a duplicate the callback is invoked with
-        the conflicting address so the engine can react (the DHCPv6
-        client DECLINEs it). Ignored for an IPv4 'ifaddr'.
+        Two opt-ins run an IPv6 address through Duplicate Address
+        Detection before it is installed, via the canonical ND DAD
+        engine (the claim worker installs the address only once DAD
+        passes; on a duplicate the conflict handler is invoked):
+
+        - 'dad_conflict_callback' — a per-protocol engine (the DHCPv6
+          client, mirroring the kernel's tentative install of a
+          DHCPv6-leased address) supplies its own handler so it can
+          react to a duplicate (DECLINE it).
+        - 'dad=True' — the operator path (Linux 'ip addr add' for
+          IPv6): DAD runs with a default handler that logs a duplicate.
+
+        Both are ignored for an IPv4 'ifaddr' (IPv4 has no DAD; RFC 5227
+        ACD is the per-protocol engine's concern).
         """
 
         handler = self._resolve_handler()
@@ -158,13 +175,16 @@ class AddressApi:
         # mid-append state) while the lock serializes this writer
         # against the RX / SLAAC / DAD writers. Mirrors 'remove' below.
         if isinstance(ifaddr, Ip6IfAddr):
-            if dad_conflict_callback is not None:
+            on_conflict = (
+                dad_conflict_callback if dad_conflict_callback is not None else (_log_dad_conflict if dad else None)
+            )
+            if on_conflict is not None:
                 # DAD-checked install: the claim worker runs DAD and,
                 # on success, performs the '_ip6_ifaddr' + solicited-node
                 # multicast assignment itself; on a duplicate it invokes
                 # the callback. Reuses the canonical ND DAD engine rather
                 # than duplicating DAD in the address plane.
-                handler._claim_ip6_address_async(ip6_host=ifaddr, on_conflict=dad_conflict_callback)
+                handler._claim_ip6_address_async(ip6_host=ifaddr, on_conflict=on_conflict)
                 __debug__ and log("stack", f"<lg>Address API</>: claiming IPv6 host {ifaddr} via DAD")
                 return
             with handler._lock__addr_config:

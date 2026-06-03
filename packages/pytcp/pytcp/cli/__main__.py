@@ -45,7 +45,16 @@ import sys
 from collections.abc import Callable
 from typing import Any, cast, override
 
-from net_addr import Ip4Address, Ip4Network, Ip6Address, Ip6Network, MacAddress, NetAddrError
+from net_addr import (
+    Ip4Address,
+    Ip4IfAddr,
+    Ip4Network,
+    Ip6Address,
+    Ip6IfAddr,
+    Ip6Network,
+    MacAddress,
+    NetAddrError,
+)
 from pytcp import __version__
 from pytcp.cli.cli__format import (
     InterfaceView,
@@ -439,11 +448,45 @@ def _cmd_neighbor_del(client: ClientStack, args: argparse.Namespace, /) -> str:
 
 def _cmd_address(client: ClientStack, args: argparse.Namespace, /) -> str:
     """
-    Render interfaces with their addresses for the 'address' subcommand.
+    Render interfaces with their addresses for a bare 'address'.
     """
 
     _ = args
     return format_addr(_interface_views(client))
+
+
+def _cmd_address_add(client: ClientStack, args: argparse.Namespace, /) -> str:
+    """
+    Add an interface address on '--dev' through the stack's Address API —
+    Linux 'ip addr add ADDR/PREFIX dev IF'. An IPv6 address is run
+    through Duplicate Address Detection ('dad=True') before it is
+    installed; an IPv4 address installs directly. Quiet on success.
+    """
+
+    ifindex = _resolve_interface(client, args.dev, command="address")
+    try:
+        ifaddr: Ip4IfAddr | Ip6IfAddr = Ip6IfAddr(args.ifaddr) if ":" in args.ifaddr else Ip4IfAddr(args.ifaddr)
+    except NetAddrError as error:
+        raise SystemExit(f"pytcp address: {error}") from error
+    client.address.interface(ifindex).add(ifaddr=ifaddr, dad=True)
+    return ""
+
+
+def _cmd_address_del(client: ClientStack, args: argparse.Namespace, /) -> str:
+    """
+    Remove an interface address on '--dev' through the stack's Address
+    API — Linux 'ip addr del ADDR dev IF'. The host part identifies the
+    address; the API aborts any TCP session bound to it (RFC 5227 §2.4).
+    Quiet on success.
+    """
+
+    ifindex = _resolve_interface(client, args.dev, command="address")
+    try:
+        address: Ip4Address | Ip6Address = Ip6Address(args.address) if ":" in args.address else Ip4Address(args.address)
+    except NetAddrError as error:
+        raise SystemExit(f"pytcp address: {error}") from error
+    client.address.interface(ifindex).remove(address=address)
+    return ""
 
 
 def _cmd_link(client: ClientStack, args: argparse.Namespace, /) -> str:
@@ -604,8 +647,19 @@ def build_parser() -> argparse.ArgumentParser:
     parser_neighbor_del.set_defaults(func=_cmd_neighbor_del)
     parser_neighbor_flush = neighbor_subparsers.add_parser("flush", help="Flush the neighbour caches.")
     parser_neighbor_flush.set_defaults(func=_cmd_neighbor_flush)
-    parser_address = subparsers.add_parser("address", help="Show interfaces with their addresses.")
+    parser_address = subparsers.add_parser("address", help="Show, add, or remove interface addresses.")
     parser_address.set_defaults(func=_cmd_address)
+    address_subparsers = parser_address.add_subparsers(dest="address_command", title="commands", metavar="<command>")
+    parser_address_add = address_subparsers.add_parser("add", help="Add an interface address.")
+    parser_address_add.add_argument(
+        "ifaddr", metavar="ADDRESS/PREFIX", help="The interface address in CIDR form (e.g. 10.0.1.50/24)."
+    )
+    parser_address_add.add_argument("-i", "--dev", required=True, metavar="IFACE", help="The interface.")
+    parser_address_add.set_defaults(func=_cmd_address_add)
+    parser_address_del = address_subparsers.add_parser("del", help="Remove an interface address.")
+    parser_address_del.add_argument("address", metavar="ADDRESS", help="The host address to remove (e.g. 10.0.1.50).")
+    parser_address_del.add_argument("-i", "--dev", required=True, metavar="IFACE", help="The interface.")
+    parser_address_del.set_defaults(func=_cmd_address_del)
     parser_link = subparsers.add_parser("link", help="Show interfaces.")
     parser_link.set_defaults(func=_cmd_link)
 

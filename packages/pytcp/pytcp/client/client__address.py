@@ -52,12 +52,15 @@ class ClientAddress(_DeviceScopedProxy):
 
     _api_name = "address"
 
-    def add(self, *, ifaddr: _AnyIfAddr) -> None:
+    def add(self, *, ifaddr: _AnyIfAddr, dad: bool = False) -> None:
         """
-        Assign an interface address to the bound interface.
+        Assign an interface address to the bound interface. 'dad=True'
+        runs an IPv6 address through Duplicate Address Detection before
+        it is installed (the operator 'ip addr add' path); ignored for
+        IPv4.
         """
 
-        self._call("add", {"ifaddr": ifaddr})
+        self._call("add", {"ifaddr": ifaddr, "dad": dad})
 
     def remove(self, *, address: Ip4Address | Ip6Address, abort_bound_sessions: bool = True) -> None:
         """
