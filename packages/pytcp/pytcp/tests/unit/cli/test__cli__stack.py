@@ -420,13 +420,17 @@ class TestCliBanner(TestCase):
             output,
             msg="The help must lead with the versioned banner, blank-line-separated, before usage.",
         )
+        self.assertTrue(
+            output.endswith("\n\n"),
+            msg="The help must end with a trailing blank line.",
+        )
 
-    def test__help__colours_only_the_banner(self) -> None:
+    def test__help__highlights_banner_and_section_headings(self) -> None:
         """
-        Ensure TTY help colours only the banner (bold bright-white) and
-        leaves the body uncoloured — argparse's own 3.14 help colour is
-        disabled, so the only ANSI in the output is the banner's open and
-        reset codes.
+        Ensure TTY help renders the banner and the section headings
+        ('usage:', 'options:', 'commands:') in bold bright-white, while
+        body content (command descriptions) stays the terminal default —
+        argparse's own 3.14 help colour is disabled.
 
         Reference: PyTCP test infrastructure (no RFC clause).
         """
@@ -435,11 +439,21 @@ class TestCliBanner(TestCase):
             fake_stdout.isatty.return_value = True
             help_text = build_parser().format_help()
 
-        self.assertIn("\033[1;97m", help_text, msg="The banner must be bold bright-white on a TTY.")
-        self.assertEqual(
-            help_text.count("\033["),
-            2,
-            msg="Only the banner may be coloured: exactly two ANSI codes (open + reset), none in the body.",
+        self.assertIn(
+            f"\033[1;97mPyTCP - Python TCP/IP Stack v{__version__}\033[0m",
+            help_text,
+            msg="The banner must be bold bright-white.",
+        )
+        for heading in ("usage:", "options:", "commands:"):
+            self.assertIn(
+                f"\033[1;97m{heading}\033[0m",
+                help_text,
+                msg=f"The {heading!r} heading must be bold bright-white.",
+            )
+        self.assertIn(
+            "    ss                  Show socket statistics.",
+            help_text,
+            msg="Body content must stay uncoloured (argparse colour disabled).",
         )
 
     def test__help__commands_section_has_no_metavar_line(self) -> None:

@@ -39,6 +39,7 @@ ver 3.0.8
 
 import argparse
 import os
+import re
 import signal
 import sys
 from typing import Any, cast, override
@@ -360,12 +361,26 @@ def _cmd_link(client: ClientStack, args: argparse.Namespace, /) -> str:
 
 _BANNER = f"PyTCP - Python TCP/IP Stack v{__version__}"
 
-# ANSI: bold bright-white banner. Only the banner is coloured — argparse's
-# own 3.14 help colourisation is disabled ('color=False' below), so the
-# body keeps the terminal's default colour. Emitted to a TTY only (see
-# '_PytcpArgumentParser.format_help').
-_ANSI__BANNER = "\033[1;97m"
+# ANSI: bold bright-white, used for the banner and the help section
+# headings. argparse's own 3.14 help colourisation is disabled
+# ('color=False' below), so body content keeps the terminal's default
+# colour. Emitted to a TTY only (see '_PytcpArgumentParser.format_help').
+_ANSI__HIGHLIGHT = "\033[1;97m"
 _ANSI__RESET = "\033[0m"
+
+# A section-heading line — 'usage:' (with text after it) or a standalone
+# 'options:' / 'commands:' / 'positional arguments:' line.
+_HEADING__RE = re.compile(r"^(usage:|[A-Za-z][\w ]*:$)", re.MULTILINE)
+
+
+def _highlight_help_headings(text: str, /) -> str:
+    """
+    Wrap the 'usage:' prefix and each standalone section heading
+    ('options:', 'commands:', ...) in bold bright-white, leaving the body
+    content untouched.
+    """
+
+    return _HEADING__RE.sub(lambda match: f"{_ANSI__HIGHLIGHT}{match.group(1)}{_ANSI__RESET}", text)
 
 
 class _PytcpHelpFormatter(argparse.HelpFormatter):
@@ -386,13 +401,14 @@ class _PytcpHelpFormatter(argparse.HelpFormatter):
 class _PytcpArgumentParser(argparse.ArgumentParser):
     """
     An argument parser whose help leads with the bold bright-white PyTCP
-    banner (with version), set off by a blank line before and after. Only
-    the banner is coloured: argparse's own 3.14 help colourisation is
-    turned off ('color=False'), so the body keeps the terminal default.
-    Subparsers inherit this class (argparse defaults a subparser's
-    'parser_class' to its parent's type) and its '_PytcpHelpFormatter',
-    so every help screen is consistent. The banner colour is emitted only
-    to a TTY, so piped or captured help stays plain text.
+    banner (with version), set off by a blank line before and after, and
+    renders the section headings ('usage:' / 'options:' / 'commands:') in
+    bold bright-white too. argparse's own 3.14 help colourisation is
+    turned off ('color=False'), so body content keeps the terminal
+    default. Subparsers inherit this class (argparse defaults a
+    subparser's 'parser_class' to its parent's type) and its
+    '_PytcpHelpFormatter', so every help screen is consistent. Colour is
+    emitted only to a TTY, so piped or captured help stays plain text.
     """
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
@@ -402,9 +418,13 @@ class _PytcpArgumentParser(argparse.ArgumentParser):
 
     @override
     def format_help(self) -> str:
+        # Set off with a blank line before the banner and a trailing blank
+        # line after the help.
         body = super().format_help()
-        banner = f"{_ANSI__BANNER}{_BANNER}{_ANSI__RESET}" if sys.stdout.isatty() else _BANNER
-        return f"\n{banner}\n\n{body}"
+        if not sys.stdout.isatty():
+            return f"\n{_BANNER}\n\n{body}\n"
+        banner = f"{_ANSI__HIGHLIGHT}{_BANNER}{_ANSI__RESET}"
+        return f"\n{banner}\n\n{_highlight_help_headings(body)}\n"
 
 
 def build_parser() -> argparse.ArgumentParser:
