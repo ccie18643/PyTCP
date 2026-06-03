@@ -289,7 +289,6 @@ def _cmd_route_list(client: ClientStack, args: argparse.Namespace, /) -> str:
         body = format_route_table(
             client.route.list_routes(family=family),
             family=family,
-            numeric=args.numeric,
             interface_names=names,
         )
         # The body is 'column-header\n<rows>'; highlight the label and the
@@ -477,12 +476,6 @@ def build_parser() -> argparse.ArgumentParser:
     parser_ss.set_defaults(func=_cmd_ss)
 
     parser_route = subparsers.add_parser("route", help="Show or modify the routing table.")
-    parser_route.add_argument(
-        "-n",
-        "--numeric",
-        action="store_true",
-        help="Show numeric addresses (render the default route's destination as 0.0.0.0).",
-    )
     parser_route.add_argument("-4", dest="inet", action="store_true", help="Show only the IPv4 routing table.")
     parser_route.add_argument("-6", dest="inet6", action="store_true", help="Show only the IPv6 routing table.")
     # A bare 'route' (no add / del subcommand) lists the table.

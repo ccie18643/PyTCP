@@ -146,9 +146,8 @@ class TestCliFormatRoutes(TestCase):
         """
         Ensure the IPv4 routing table renders in the net-tools 'route'
         unified layout: the Destination (CIDR) / Gateway / Flags / Metric /
-        Ref / Use / Iface columns, the default route collapsed to
-        'default', a connected route's gateway shown as 0.0.0.0, and the
-        egress interface name.
+        Ref / Use / Iface columns, the default route rendered as '0.0.0.0/0', a connected route's
+        gateway shown as 0.0.0.0, and the egress interface name.
 
         Reference: PyTCP test infrastructure (no RFC clause).
         """
@@ -156,26 +155,9 @@ class TestCliFormatRoutes(TestCase):
         self.assertEqual(
             format_route_table(self._IP4_ROUTES, family=AddressFamily.INET4, interface_names={1: "tap7"}),
             "Destination                    Gateway                    Flags Metric Ref   Use Iface\n"
-            "default                        10.0.1.1                   UG         0   0     0 tap7\n"
+            "0.0.0.0/0                      10.0.1.1                   UG         0   0     0 tap7\n"
             "10.0.1.0/24                    0.0.0.0                    U          0   0     0 tap7",
             msg="The IPv4 route table must render in the net-tools 'route' layout.",
-        )
-
-    def test__format_route_table__ipv4_numeric(self) -> None:
-        """
-        Ensure 'numeric' renders the default route's destination as the
-        all-addresses prefix '0.0.0.0/0', and a route with no egress
-        interface name falls back to the raw 'ifN' form.
-
-        Reference: PyTCP test infrastructure (no RFC clause).
-        """
-
-        self.assertEqual(
-            format_route_table(self._IP4_ROUTES, family=AddressFamily.INET4, numeric=True),
-            "Destination                    Gateway                    Flags Metric Ref   Use Iface\n"
-            "0.0.0.0/0                      10.0.1.1                   UG         0   0     0 if1\n"
-            "10.0.1.0/24                    0.0.0.0                    U          0   0     0 if1",
-            msg="numeric must render the default destination as 0.0.0.0 (route -n).",
         )
 
     def test__format_route_table__ipv6(self) -> None:
@@ -183,7 +165,7 @@ class TestCliFormatRoutes(TestCase):
         Ensure the IPv6 routing table renders in the net-tools 'route -6'
         unified layout: the Destination (CIDR) / Gateway / Flags / Metric /
         Ref / Use / Iface columns shared with IPv4, the default route
-        collapsed to 'default', and the egress interface name.
+        rendered as '::/0', and the egress interface name.
 
         Reference: PyTCP test infrastructure (no RFC clause).
         """
@@ -198,7 +180,7 @@ class TestCliFormatRoutes(TestCase):
         self.assertEqual(
             format_route_table(routes, family=AddressFamily.INET6, interface_names={2: "tap9"}),
             "Destination                    Gateway                    Flags Metric Ref   Use Iface\n"
-            "default                        fe80::1                    UG         0   0     0 tap9\n"
+            "::/0                           fe80::1                    UG         0   0     0 tap9\n"
             "2603:808c:2800:4301::/64       ::                         U          0   0     0 tap9",
             msg="The IPv6 route table must render in the net-tools 'route -6' layout.",
         )

@@ -181,15 +181,13 @@ def format_route_table(
     /,
     *,
     family: AddressFamily,
-    numeric: bool = False,
     interface_names: Mapping[int, str] | None = None,
 ) -> str:
     """
     Render a routing-table body (column header + rows) in a layout shared
     by both families: 'Destination' (CIDR — 'x.x.x.x/n' for IPv4,
-    'x::/n' for IPv6), 'Gateway', 'Flags', 'Metric', 'Ref', 'Use',
-    'Iface'. 'numeric' renders the default route's destination as the
-    all-addresses prefix ('0.0.0.0/0' / '::/0') rather than 'default'.
+    'x::/n' for IPv6, so the default route renders as '0.0.0.0/0' /
+    '::/0'), 'Gateway', 'Flags', 'Metric', 'Ref', 'Use', 'Iface'.
     'interface_names' maps an egress ifindex to its interface name; a
     route with no egress interface renders '*'. The caller supplies the
     section chrome.
@@ -199,19 +197,14 @@ def format_route_table(
     is_ip4 = family is AddressFamily.INET4
     host_prefixlen = 32 if is_ip4 else 128
     unspecified_gateway = "0.0.0.0" if is_ip4 else "::"
-    default_destination = "0.0.0.0/0" if is_ip4 else "::/0"
 
     lines = [_ROUTE_TABLE__HEADER]
     for route in routes:
         network = route.destination
-        if network.prefixlen == 0:
-            destination = default_destination if numeric else "default"
-        else:
-            destination = f"{network.address}/{network.prefixlen}"
         gateway = str(route.gateway) if route.gateway is not None else unspecified_gateway
         lines.append(
             _ROUTE_TABLE__ROW.format(
-                dst=destination,
+                dst=f"{network.address}/{network.prefixlen}",
                 gw=gateway,
                 flags=_route_flags(route, host_prefixlen=host_prefixlen),
                 metric=route.metric,

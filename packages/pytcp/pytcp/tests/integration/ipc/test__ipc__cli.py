@@ -172,7 +172,7 @@ class TestIpcCli(IpcControlTestCase):
 
         self._run("route", "add", "10.9.0.0/24", "--via", "10.0.1.254", "--dev", dev)
 
-        output = self._run("route", "-n")
+        output = self._run("route")
 
         self.assertIn(
             "10.9.0.0",
@@ -194,13 +194,13 @@ class TestIpcCli(IpcControlTestCase):
         """
 
         self._run("route", "add", "10.9.0.0/24", "--via", "10.0.1.254")
-        self.assertIn("10.9.0.0", self._run("route", "-n"), msg="Route must be present after add.")
+        self.assertIn("10.9.0.0", self._run("route"), msg="Route must be present after add.")
 
         self._run("route", "del", "10.9.0.0/24")
 
         self.assertNotIn(
             "10.9.0.0",
-            self._run("route", "-n"),
+            self._run("route"),
             msg="The deleted route must no longer appear in the listing.",
         )
 
@@ -214,7 +214,7 @@ class TestIpcCli(IpcControlTestCase):
 
         self._run("route", "add", "10.0.0.5", "--via", "10.0.1.1")
 
-        output = self._run("route", "-n")
+        output = self._run("route")
 
         self.assertIn(
             "10.0.0.5/32",
@@ -233,12 +233,12 @@ class TestIpcCli(IpcControlTestCase):
 
         self._run("route", "add", "default", "--via", "10.0.1.9")
 
-        output = self._run("route", "-n")
+        output = self._run("route")
 
         self.assertIn(
             "0.0.0.0/0",
             output,
-            msg="The numeric default route's destination must render as 0.0.0.0/0.",
+            msg="The default route's destination must render as the prefix 0.0.0.0/0.",
         )
         self.assertIn("10.0.1.9", output, msg="The default route must be listed via the supplied gateway.")
 
