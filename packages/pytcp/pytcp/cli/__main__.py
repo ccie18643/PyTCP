@@ -27,7 +27,7 @@ This module contains the unified 'pytcp' CLI multitool.
 
 'pytcp' is the operator front-end to a running PyTCP stack daemon: 'pytcp
 ss' (sockets), 'pytcp route' (show / add / del routes), 'pytcp sysctl'
-(tunables), 'pytcp addr' / 'link' / 'neigh', and 'pytcp stack start' (run
+(tunables), 'pytcp addr' / 'link' / 'neighbor', and 'pytcp stack start' (run
 the stack daemon). The observation subcommands open a short-lived control
 connection, call the matching 'ClientStack' API, and render the result
 through the pure formatters in 'cli__format'.
@@ -338,9 +338,9 @@ def _interface_views(client: ClientStack, /) -> list[InterfaceView]:
     return views
 
 
-def _cmd_neigh(client: ClientStack, args: argparse.Namespace, /) -> str:
+def _cmd_neighbor(client: ClientStack, args: argparse.Namespace, /) -> str:
     """
-    Render the neighbour caches across interfaces for the 'neigh' subcommand.
+    Render the neighbour caches across interfaces for the 'neighbor' subcommand.
     """
 
     _ = args
@@ -499,8 +499,8 @@ def build_parser() -> argparse.ArgumentParser:
             parser_verb.add_argument("--metric", type=int, default=0, help="Route metric (default 0).")
         parser_verb.set_defaults(func=_route_add if verb == "add" else _route_del)
 
-    parser_neigh = subparsers.add_parser("neigh", help="Show the neighbour caches.")
-    parser_neigh.set_defaults(func=_cmd_neigh)
+    parser_neighbor = subparsers.add_parser("neighbor", help="Show the neighbour caches.")
+    parser_neighbor.set_defaults(func=_cmd_neighbor)
     parser_addr = subparsers.add_parser("addr", help="Show interfaces with their addresses.")
     parser_addr.set_defaults(func=_cmd_addr)
     parser_link = subparsers.add_parser("link", help="Show interfaces.")

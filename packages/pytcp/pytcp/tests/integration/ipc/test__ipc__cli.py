@@ -60,8 +60,8 @@ class TestIpcCli(IpcControlTestCase):
     def setUp(self) -> None:
         """
         Stand up the IPC fixture, then replace the harness's mocked ARP /
-        ND caches with real (unstarted) caches so the 'neigh' subcommand
-        has a real entry store to read.
+        ND caches with real (unstarted) caches so the 'neighbor' subcommand
+        has a real entry store to read (the 'neighbor' subcommand).
         """
 
         super().setUp()
@@ -325,9 +325,9 @@ class TestIpcCli(IpcControlTestCase):
             msg="The sysctl listing must render 'key = value' lines.",
         )
 
-    def test__cli__neigh_lists_added_neighbor(self) -> None:
+    def test__cli__neighbor_lists_added_neighbor(self) -> None:
         """
-        Ensure 'pytcp neigh' lists a neighbour added to the interface
+        Ensure 'pytcp neighbor' lists a neighbour added to the interface
         cache.
 
         Reference: PyTCP test infrastructure (no RFC clause).
@@ -338,12 +338,12 @@ class TestIpcCli(IpcControlTestCase):
             mac=MacAddress("02:00:00:00:00:50"),
         )
 
-        output = self._run("neigh")
+        output = self._run("neighbor")
 
         self.assertIn(
             "10.0.1.50 lladdr 02:00:00:00:00:50",
             output,
-            msg="The neigh output must list the added neighbour with its link-layer address.",
+            msg="The neighbor output must list the added neighbour with its link-layer address.",
         )
 
     def test__cli__addr_shows_interface_with_addresses(self) -> None:
