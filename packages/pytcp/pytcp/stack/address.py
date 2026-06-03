@@ -134,7 +134,7 @@ class AddressApi:
         *,
         ifaddr: Ip4IfAddr | Ip6IfAddr,
         dad_conflict_callback: Callable[[Ip6Address], None] | None = None,
-        dad: bool = False,
+        dad: bool = True,
     ) -> None:
         """
         Install 'ifaddr' on the stack's address list — Linux
@@ -145,25 +145,27 @@ class AddressApi:
 
         An IPv6 host additionally joins its solicited-node multicast
         group (RFC 4291 §2.7.1; on L2 that also adds the derived
-        multicast MAC + an MLD report). By default this verb installs
-        the address directly — it does NOT run DAD; DAD is the SLAAC /
-        boot path's concern, the same way ARP ACD is the per-protocol
-        engine's concern, not an address-plane verb.
+        multicast MAC + an MLD report).
 
-        Two opt-ins run an IPv6 address through Duplicate Address
-        Detection before it is installed, via the canonical ND DAD
-        engine (the claim worker installs the address only once DAD
-        passes; on a duplicate the conflict handler is invoked):
+        An IPv6 address is run through Duplicate Address Detection
+        BEFORE it is installed (RFC 4862 §5.4 — every unicast address
+        must pass DAD before use, however obtained). The canonical ND
+        DAD engine claims it asynchronously and installs it only once
+        DAD passes (the address is 'tentative' until then, like the
+        kernel); on a duplicate a conflict handler is invoked:
 
-        - 'dad_conflict_callback' — a per-protocol engine (the DHCPv6
-          client, mirroring the kernel's tentative install of a
-          DHCPv6-leased address) supplies its own handler so it can
-          react to a duplicate (DECLINE it).
-        - 'dad=True' — the operator path (Linux 'ip addr add' for
-          IPv6): DAD runs with a default handler that logs a duplicate.
+        - by default a handler that logs the duplicate (the operator
+          'ip addr add' path);
+        - a per-protocol engine (the DHCPv6 client) instead supplies its
+          own 'dad_conflict_callback' so it can react — DECLINE the
+          lease.
 
-        Both are ignored for an IPv4 'ifaddr' (IPv4 has no DAD; RFC 5227
-        ACD is the per-protocol engine's concern).
+        Pass 'dad=False' to opt out and install directly (synchronously),
+        for a caller that has already vetted the address — e.g. 'replace'
+        renewing an address that passed DAD at first acquisition. DAD
+        never applies to an IPv4 'ifaddr' (IPv4 has no DAD; RFC 5227 ACD
+        is the per-protocol engine's concern), so the flag is ignored
+        there.
         """
 
         handler = self._resolve_handler()
@@ -262,9 +264,15 @@ class AddressApi:
         'abort_bound_sessions' once the new address is installed,
         matching the RFC 5227 §2.4-final SHOULD policy 'remove'
         already applies.
+
+        'dad=False' on the install: replace is the renew path (the new
+        address is typically the same one being re-leased, already DAD-
+        vetted at first acquisition), and its atomic add-before-remove
+        ordering requires a synchronous install — async DAD would defer
+        the new address past the old one's removal.
         """
 
-        self.add(ifaddr=new_ifaddr)
+        self.add(ifaddr=new_ifaddr, dad=False)
         self.remove(
             address=old_address,
             abort_bound_sessions=abort_bound_sessions,

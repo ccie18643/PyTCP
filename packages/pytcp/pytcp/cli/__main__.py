@@ -459,8 +459,9 @@ def _cmd_address_add(client: ClientStack, args: argparse.Namespace, /) -> str:
     """
     Add an interface address on '--dev' through the stack's Address API —
     Linux 'ip addr add ADDR/PREFIX dev IF'. An IPv6 address is run
-    through Duplicate Address Detection ('dad=True') before it is
-    installed; an IPv4 address installs directly. Quiet on success.
+    through Duplicate Address Detection before it is installed (the
+    Address API's default); an IPv4 address installs directly. Quiet on
+    success.
     """
 
     ifindex = _resolve_interface(client, args.dev, command="address")
@@ -468,7 +469,7 @@ def _cmd_address_add(client: ClientStack, args: argparse.Namespace, /) -> str:
         ifaddr: Ip4IfAddr | Ip6IfAddr = Ip6IfAddr(args.ifaddr) if ":" in args.ifaddr else Ip4IfAddr(args.ifaddr)
     except NetAddrError as error:
         raise SystemExit(f"pytcp address: {error}") from error
-    client.address.interface(ifindex).add(ifaddr=ifaddr, dad=True)
+    client.address.interface(ifindex).add(ifaddr=ifaddr)
     return ""
 
 

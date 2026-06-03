@@ -52,12 +52,12 @@ class ClientAddress(_DeviceScopedProxy):
 
     _api_name = "address"
 
-    def add(self, *, ifaddr: _AnyIfAddr, dad: bool = False) -> None:
+    def add(self, *, ifaddr: _AnyIfAddr, dad: bool = True) -> None:
         """
-        Assign an interface address to the bound interface. 'dad=True'
-        runs an IPv6 address through Duplicate Address Detection before
-        it is installed (the operator 'ip addr add' path); ignored for
-        IPv4.
+        Assign an interface address to the bound interface. An IPv6
+        address is run through Duplicate Address Detection before it is
+        installed (RFC 4862 §5.4); pass 'dad=False' to install directly.
+        Ignored for IPv4.
         """
 
         self._call("add", {"ifaddr": ifaddr, "dad": dad})

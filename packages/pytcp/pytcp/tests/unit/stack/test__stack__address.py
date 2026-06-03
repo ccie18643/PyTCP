@@ -426,33 +426,33 @@ class TestAddressApiIp6(TestCase):
         self._packet_handler = _FakePacketHandler()
         self._api = AddressApi(packet_handler=cast("PacketHandlerL2", self._packet_handler))
 
-    def test__address_api__add_ip6_appends_and_joins_solicited_node_multicast(self) -> None:
+    def test__address_api__add_ip6_with_dad_false_appends_and_joins_solicited_node_multicast(self) -> None:
         """
-        Ensure 'add' with an Ip6IfAddr installs it on '_ip6_ifaddr'
-        and joins the address's solicited-node multicast group,
-        leaving '_ip4_ifaddr' untouched.
+        Ensure 'add(dad=False)' with an Ip6IfAddr installs it directly on
+        '_ip6_ifaddr' and joins the address's solicited-node multicast
+        group, leaving '_ip4_ifaddr' untouched and running no DAD.
 
         Reference: RFC 4291 §2.7.1 (solicited-node multicast address).
         """
 
         host = Ip6IfAddr("2001:db8::5/64")
 
-        self._api.add(ifaddr=host)
+        self._api.add(ifaddr=host, dad=False)
 
         self.assertEqual(
             self._packet_handler._ip6_ifaddr,
             [host],
-            msg="add(Ip6IfAddr) must append the host to '_ip6_ifaddr'.",
+            msg="add(Ip6IfAddr, dad=False) must append the host to '_ip6_ifaddr'.",
         )
         self.assertEqual(
             self._packet_handler.dad_claims,
             [],
-            msg="add(Ip6IfAddr) without a callback must not run DAD.",
+            msg="add(Ip6IfAddr, dad=False) must not run DAD.",
         )
         self.assertEqual(
             self._packet_handler.joined_snm,
             [host.address.solicited_node_multicast],
-            msg="add(Ip6IfAddr) must join the host's solicited-node multicast group.",
+            msg="add(Ip6IfAddr, dad=False) must join the host's solicited-node multicast group.",
         )
         self.assertEqual(
             self._packet_handler._ip4_ifaddr,
@@ -487,54 +487,56 @@ class TestAddressApiIp6(TestCase):
             msg="A DAD-checked add must not install the address directly (the claim worker does on success).",
         )
 
-    def test__address_api__add_ip6_with_dad_flag_delegates_to_dad_claim(self) -> None:
+    def test__address_api__add_ip6_defaults_to_dad(self) -> None:
         """
-        Ensure 'add(dad=True)' (the operator DAD-checked install) runs DAD
-        via the claim engine with a default conflict handler, instead of
-        installing the address directly.
+        Ensure a bare IPv6 'add' (no flag) runs DAD by default via the
+        claim engine with a default conflict handler, instead of
+        installing the address directly — DAD is mandatory for every IPv6
+        unicast address.
 
-        Reference: RFC 4862 §5.4 (Duplicate Address Detection).
+        Reference: RFC 4862 §5.4 (Duplicate Address Detection — mandatory on all unicast addresses).
         """
 
         host = Ip6IfAddr("2001:db8::5/128")
 
-        self._api.add(ifaddr=host, dad=True)
+        self._api.add(ifaddr=host)
 
         self.assertEqual(
-            len(self._packet_handler.dad_claims), 1, msg="add(dad=True) must delegate to the claim engine."
+            len(self._packet_handler.dad_claims), 1, msg="A bare IPv6 add must delegate to the claim engine (DAD)."
         )
         claimed_host, on_conflict = self._packet_handler.dad_claims[0]
         self.assertEqual(claimed_host, host, msg="The claimed host must be the supplied address.")
-        self.assertIsNotNone(on_conflict, msg="add(dad=True) must supply a default DAD-conflict handler.")
+        self.assertIsNotNone(on_conflict, msg="A default IPv6 add must supply a default DAD-conflict handler.")
         self.assertEqual(
             self._packet_handler._ip6_ifaddr,
             [],
             msg="A DAD-checked add must not install the address directly.",
         )
 
-    def test__address_api__add_ip4_ignores_dad_flag(self) -> None:
+    def test__address_api__add_ip4_ignores_dad_default(self) -> None:
         """
-        Ensure 'add(dad=True)' for an IPv4 host installs directly — IPv4
-        has no DAD (RFC 5227 ACD is the per-protocol engine's concern).
+        Ensure a bare IPv4 'add' installs directly — IPv4 has no DAD (the
+        dad default never applies; RFC 5227 ACD is the per-protocol
+        engine's concern).
 
         Reference: PyTCP test infrastructure (no RFC clause).
         """
 
         host = Ip4IfAddr("10.0.0.5/24")
 
-        self._api.add(ifaddr=host, dad=True)
+        self._api.add(ifaddr=host)
 
         self.assertEqual(
             self._packet_handler._ip4_ifaddr,
             [host],
-            msg="An IPv4 add must install directly regardless of the dad flag.",
+            msg="An IPv4 add must install directly regardless of the dad default.",
         )
         self.assertEqual(self._packet_handler.dad_claims, [], msg="An IPv4 add must not run DAD.")
 
-    def test__address_api__add_ip6_atomically_rebinds_list(self) -> None:
+    def test__address_api__add_ip6_with_dad_false_atomically_rebinds_list(self) -> None:
         """
-        Ensure 'add' with an Ip6IfAddr rebinds '_ip6_ifaddr' to a
-        fresh list object rather than mutating in place, so the TX
+        Ensure a direct ('dad=False') IPv6 'add' rebinds '_ip6_ifaddr' to
+        a fresh list object rather than mutating in place, so the TX
         worker reading the list on another thread always sees a
         consistent snapshot.
 
@@ -543,7 +545,7 @@ class TestAddressApiIp6(TestCase):
 
         original_list = self._packet_handler._ip6_ifaddr
 
-        self._api.add(ifaddr=Ip6IfAddr("2001:db8::5/64"))
+        self._api.add(ifaddr=Ip6IfAddr("2001:db8::5/64"), dad=False)
 
         self.assertIsNot(
             self._packet_handler._ip6_ifaddr,
