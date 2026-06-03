@@ -108,11 +108,11 @@ class TestIpcCli(IpcControlTestCase):
             msg="The ss output must include the listening socket's local endpoint.",
         )
 
-    def test__cli__route_matches_formatter(self) -> None:
+    def test__cli__route_minus4_matches_formatter(self) -> None:
         """
-        Ensure 'pytcp route' renders the daemon's IPv4 routing table
+        Ensure 'pytcp route -4' renders the daemon's IPv4 routing table
         identically to the net-tools route formatter applied to the live
-        IPv4 route list (the default, IPv4-only invocation).
+        IPv4 route list.
 
         Reference: PyTCP test infrastructure (no RFC clause).
         """
@@ -128,30 +128,50 @@ class TestIpcCli(IpcControlTestCase):
             interface_names=names,
         )
 
-        output = self._run("route")
+        output = self._run("route", "-4")
 
         self.assertEqual(
             output.rstrip("\n"),
             expected,
-            msg="The route output must match the formatter over the live route list.",
+            msg="'route -4' output must match the formatter over the live IPv4 route list.",
         )
+
+    def test__cli__route_default_shows_both_families(self) -> None:
+        """
+        Ensure a bare 'pytcp route' (no family flag) shows both the IPv4
+        and the IPv6 routing tables, while '-4' / '-6' narrow to one.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        both = self._run("route")
+        self.assertIn("PyTCP IP routing table", both, msg="Bare 'route' must show the IPv4 table.")
+        self.assertIn("PyTCP IPv6 routing table", both, msg="Bare 'route' must show the IPv6 table.")
+
+        only_ipv4 = self._run("route", "-4")
+        self.assertIn("PyTCP IP routing table", only_ipv4, msg="'route -4' must show the IPv4 table.")
+        self.assertNotIn("IPv6 routing table", only_ipv4, msg="'route -4' must not show the IPv6 table.")
+
+        only_ipv6 = self._run("route", "-6")
+        self.assertIn("PyTCP IPv6 routing table", only_ipv6, msg="'route -6' must show the IPv6 table.")
+        self.assertNotIn("PyTCP IP routing table\n", only_ipv6, msg="'route -6' must not show the IPv4 table.")
 
     def test__cli__route_cache_shows_empty_cache(self) -> None:
         """
-        Ensure 'pytcp route -C' renders the net-tools routing-cache header
+        Ensure 'pytcp route -C' renders the net-tools routing-cache headers
         with an empty body, rather than the FIB — PyTCP keeps no route
-        cache.
+        cache. A bare '-C' shows both families' cache headers.
 
         Reference: PyTCP test infrastructure (no RFC clause).
         """
 
         output = self._run("route", "-C")
 
-        self.assertEqual(
-            output.rstrip("\n"),
-            "PyTCP IP routing cache\n" "Source          Destination     Gateway         Flags Metric Ref    Use Iface",
-            msg="'route -C' must render the empty routing-cache header, not the FIB.",
+        self.assertIn("PyTCP IP routing cache", output, msg="'route -C' must render the IPv4 routing-cache header.")
+        self.assertIn(
+            "PyTCP IPv6 routing cache", output, msg="A bare 'route -C' must also render the IPv6 routing-cache header."
         )
+        self.assertNotIn("UG", output, msg="'route -C' must not render FIB routes (the cache is empty).")
 
     def test__cli__route_add_then_list_shows_route(self) -> None:
         """

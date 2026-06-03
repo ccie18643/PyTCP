@@ -270,24 +270,34 @@ def _route_del(client: ClientStack, args: argparse.Namespace, /) -> str:
 
 def _cmd_route_list(client: ClientStack, args: argparse.Namespace, /) -> str:
     """
-    Render the routing table for a bare 'route' (no add / del). Lists
-    Linux-style: IPv4 by default, IPv6 with '-6' / '-A inet6', the empty
-    routing cache with '-C'.
+    Render the routing table for a bare 'route' (no add / del). With no
+    family flag both the IPv4 and IPv6 tables are shown; '-4' / '-6' /
+    '-A' narrow to one. '-C' shows the empty routing cache instead of the
+    FIB.
     """
 
+    families: tuple[AddressFamily, ...]
     if args.inet6 or args.family == "inet6":
-        family = AddressFamily.INET6
+        families = (AddressFamily.INET6,)
+    elif args.inet or args.family == "inet":
+        families = (AddressFamily.INET4,)
     else:
-        family = AddressFamily.INET4
+        families = (AddressFamily.INET4, AddressFamily.INET6)
+
     if args.cache:
         # net-tools 'route -C' shows the routing cache, not the FIB; PyTCP
-        # keeps no cache, so this is the empty-cache header (like Linux).
-        return format_route_cache(family=family)
-    return format_route_table(
-        client.route.list_routes(family=family),
-        family=family,
-        numeric=args.numeric,
-        interface_names=_interface_names(client),
+        # keeps no cache, so these are the empty-cache headers (like Linux).
+        return "\n\n".join(format_route_cache(family=family) for family in families)
+
+    names = _interface_names(client)
+    return "\n\n".join(
+        format_route_table(
+            client.route.list_routes(family=family),
+            family=family,
+            numeric=args.numeric,
+            interface_names=names,
+        )
+        for family in families
     )
 
 
