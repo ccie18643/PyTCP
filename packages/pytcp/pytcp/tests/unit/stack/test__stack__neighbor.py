@@ -129,6 +129,23 @@ class TestStackNeighborApi(TestCase):
             msg="A snapshot returned before a second add must not observe the later entry.",
         )
 
+    def test__neighbor__list_on_l3_interface_returns_empty(self) -> None:
+        """
+        Ensure 'list_neighbors' on an L3 interface (no ARP / ND cache, e.g.
+        a TUN device) returns an empty snapshot rather than asserting.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        l3_handler = cast(PacketHandlerL2, SimpleNamespace(_arp_cache=None, _nd_cache=None))
+        l3_api = NeighborApi(packet_handler=l3_handler)
+
+        self.assertEqual(
+            l3_api.list_neighbors(),
+            (),
+            msg="An L3 interface has no neighbour caches, so 'list_neighbors' must be empty, not raise.",
+        )
+
     def test__neighbor__remove_arp(self) -> None:
         """
         Ensure 'remove' deletes the matching ARP neighbour, keyed off the
