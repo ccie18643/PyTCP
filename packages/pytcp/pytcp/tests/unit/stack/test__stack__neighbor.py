@@ -146,6 +146,27 @@ class TestStackNeighborApi(TestCase):
             msg="An L3 interface has no neighbour caches, so 'list_neighbors' must be empty, not raise.",
         )
 
+    def test__neighbor__flush_on_l3_interface_is_noop(self) -> None:
+        """
+        Ensure 'flush' on an L3 interface (no ARP / ND cache, e.g. a TUN
+        device) is a no-op rather than asserting — there is nothing to
+        flush.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        l3_handler = cast(PacketHandlerL2, SimpleNamespace(_arp_cache=None, _nd_cache=None))
+        l3_api = NeighborApi(packet_handler=l3_handler)
+
+        l3_api.flush(family=AddressFamily.INET4)
+        l3_api.flush(family=AddressFamily.INET6)
+
+        self.assertEqual(
+            l3_api.list_neighbors(),
+            (),
+            msg="Flushing an L3 interface must not raise and leaves it with no neighbours.",
+        )
+
     def test__neighbor__remove_arp(self) -> None:
         """
         Ensure 'remove' deletes the matching ARP neighbour, keyed off the

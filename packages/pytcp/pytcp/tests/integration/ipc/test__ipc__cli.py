@@ -350,6 +350,40 @@ class TestIpcCli(IpcControlTestCase):
         )
         self.assertIn(dev, output, msg="The neighbor output must show the entry's Device (interface).")
 
+    def test__cli__neighbor_minus4_shows_only_ipv4(self) -> None:
+        """
+        Ensure 'pytcp neighbor -4' shows only the IPv4 (ARP) section.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        output = self._run("neighbor", "-4")
+
+        self.assertIn("IPv4", output, msg="'neighbor -4' must show the IPv4 section.")
+        self.assertNotIn("IPv6", output, msg="'neighbor -4' must not show the IPv6 section.")
+
+    def test__cli__neighbor_flush_clears_entries(self) -> None:
+        """
+        Ensure 'pytcp neighbor flush' drops the neighbour entries so a
+        subsequent 'pytcp neighbor' no longer lists them.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        self._connect().neighbor.interface(self._ifindex).add(
+            ip=Ip4Address("10.0.1.50"),
+            mac=MacAddress("02:00:00:00:00:50"),
+        )
+        self.assertIn("10.0.1.50", self._run("neighbor"), msg="The entry must be present before the flush.")
+
+        self.assertEqual(self._run("neighbor", "flush"), "", msg="'neighbor flush' must be quiet on success.")
+
+        self.assertNotIn(
+            "10.0.1.50",
+            self._run("neighbor"),
+            msg="The flushed entry must no longer appear in the listing.",
+        )
+
     def test__cli__addr_shows_interface_with_addresses(self) -> None:
         """
         Ensure 'pytcp addr' renders the interface header, its link-layer

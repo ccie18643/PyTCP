@@ -266,6 +266,19 @@ def _route_del(client: ClientStack, args: argparse.Namespace, /) -> str:
     return ""
 
 
+def _selected_families(args: argparse.Namespace, /) -> tuple[AddressFamily, ...]:
+    """
+    The address families a '-4' / '-6'-bearing command should act on:
+    just IPv6 with '-6', just IPv4 with '-4', both with neither.
+    """
+
+    if args.inet6:
+        return (AddressFamily.INET6,)
+    if args.inet:
+        return (AddressFamily.INET4,)
+    return (AddressFamily.INET4, AddressFamily.INET6)
+
+
 def _cmd_route_list(client: ClientStack, args: argparse.Namespace, /) -> str:
     """
     Render the routing table for a bare 'route' (no add / del). With no
@@ -273,17 +286,9 @@ def _cmd_route_list(client: ClientStack, args: argparse.Namespace, /) -> str:
     narrow to one.
     """
 
-    families: tuple[AddressFamily, ...]
-    if args.inet6:
-        families = (AddressFamily.INET6,)
-    elif args.inet:
-        families = (AddressFamily.INET4,)
-    else:
-        families = (AddressFamily.INET4, AddressFamily.INET6)
-
     names = _interface_names(client)
     sections = [_hl("PyTCP Routing Table")]
-    for family in families:
+    for family in _selected_families(args):
         label = "IPv4" if family is AddressFamily.INET4 else "IPv6"
         body = format_route_table(
             client.route.list_routes(family=family),
@@ -337,18 +342,17 @@ def _interface_views(client: ClientStack, /) -> list[InterfaceView]:
     return views
 
 
-def _cmd_neighbor(client: ClientStack, args: argparse.Namespace, /) -> str:
+def _cmd_neighbor_list(client: ClientStack, args: argparse.Namespace, /) -> str:
     """
-    Render the neighbour caches for the 'neighbor' subcommand — an overall
-    'PyTCP Neighbor Table' header with per-family 'IPv4' / 'IPv6'
-    sections, the same shape as 'route'. Each entry carries the interface
-    it was learned on as its 'Device'.
+    Render the neighbour caches for a bare 'neighbor' — an overall 'PyTCP
+    Neighbor Table' header with per-family 'IPv4' / 'IPv6' sections, the
+    same shape as 'route'. '-4' / '-6' narrow to one family. Each entry
+    carries the interface it was learned on as its 'Device'.
     """
 
-    _ = args
     names = _interface_names(client)
     sections = [_hl("PyTCP Neighbor Table")]
-    for family in (AddressFamily.INET4, AddressFamily.INET6):
+    for family in _selected_families(args):
         label = "IPv4" if family is AddressFamily.INET4 else "IPv6"
         entries = [
             (snapshot, names[ifindex])
@@ -362,6 +366,19 @@ def _cmd_neighbor(client: ClientStack, args: argparse.Namespace, /) -> str:
         sections.append(f"{section}\n{rows}" if rows else section)
 
     return "\n\n".join(sections)
+
+
+def _cmd_neighbor_flush(client: ClientStack, args: argparse.Namespace, /) -> str:
+    """
+    Flush the neighbour caches across every interface — Linux 'ip neighbor
+    flush'. '-4' / '-6' restrict the flush to one family. Quiet on
+    success (no output), like the route mutation verbs.
+    """
+
+    for family in _selected_families(args):
+        for ifindex in client.link.list_interfaces():
+            client.neighbor.interface(ifindex).flush(family=family)
+    return ""
 
 
 def _cmd_addr(client: ClientStack, args: argparse.Namespace, /) -> str:
@@ -513,8 +530,13 @@ def build_parser() -> argparse.ArgumentParser:
             parser_verb.add_argument("--metric", type=int, default=0, help="Route metric (default 0).")
         parser_verb.set_defaults(func=_route_add if verb == "add" else _route_del)
 
-    parser_neighbor = subparsers.add_parser("neighbor", help="Show the neighbour caches.")
-    parser_neighbor.set_defaults(func=_cmd_neighbor)
+    parser_neighbor = subparsers.add_parser("neighbor", help="Show or flush the neighbour caches.")
+    parser_neighbor.add_argument("-4", dest="inet", action="store_true", help="Only IPv4 (ARP) neighbours.")
+    parser_neighbor.add_argument("-6", dest="inet6", action="store_true", help="Only IPv6 (ND) neighbours.")
+    parser_neighbor.set_defaults(func=_cmd_neighbor_list)
+    neighbor_subparsers = parser_neighbor.add_subparsers(dest="neighbor_command", title="commands", metavar="<command>")
+    parser_neighbor_flush = neighbor_subparsers.add_parser("flush", help="Flush the neighbour caches.")
+    parser_neighbor_flush.set_defaults(func=_cmd_neighbor_flush)
     parser_addr = subparsers.add_parser("addr", help="Show interfaces with their addresses.")
     parser_addr.set_defaults(func=_cmd_addr)
     parser_link = subparsers.add_parser("link", help="Show interfaces.")

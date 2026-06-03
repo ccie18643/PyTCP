@@ -202,10 +202,13 @@ class NeighborApi:
     def flush(self, *, family: AddressFamily) -> None:
         """
         Drop every entry from the interface's ARP cache (family INET4)
-        or ND cache (family INET6) — Linux 'ip neighbor flush'.
+        or ND cache (family INET6) — Linux 'ip neighbor flush'. A no-op on
+        an L3 interface (a TUN device has no cache to flush).
         """
 
-        cache = self._arp_cache() if family is AddressFamily.INET4 else self._nd_cache()
+        cache = self._arp_cache_if_any() if family is AddressFamily.INET4 else self._nd_cache_if_any()
+        if cache is None:
+            return
         count = cache._flush()
         __debug__ and log("stack", f"<lg>Neighbor API</>: flushed {count} {family.name} neighbour(s)")
 
