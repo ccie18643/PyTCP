@@ -141,7 +141,7 @@ def _route_destination_is_ipv6(args: argparse.Namespace, /) -> bool:
         return ":" in args.destination
     if args.via is not None:
         return ":" in args.via
-    return bool(args.inet6) or args.family == "inet6"
+    return bool(args.inet6)
 
 
 def _ip4_network(destination: str, /) -> Ip4Network:
@@ -270,14 +270,14 @@ def _route_del(client: ClientStack, args: argparse.Namespace, /) -> str:
 def _cmd_route_list(client: ClientStack, args: argparse.Namespace, /) -> str:
     """
     Render the routing table for a bare 'route' (no add / del). With no
-    family flag both the IPv4 and IPv6 tables are shown; '-4' / '-6' /
-    '-A' narrow to one.
+    family flag both the IPv4 and IPv6 tables are shown; '-4' / '-6'
+    narrow to one.
     """
 
     families: tuple[AddressFamily, ...]
-    if args.inet6 or args.family == "inet6":
+    if args.inet6:
         families = (AddressFamily.INET6,)
-    elif args.inet or args.family == "inet":
+    elif args.inet:
         families = (AddressFamily.INET4,)
     else:
         families = (AddressFamily.INET4, AddressFamily.INET6)
@@ -460,6 +460,7 @@ def build_parser() -> argparse.ArgumentParser:
         default=default_socket_path(),
         help="AF_UNIX control-socket path (default: $XDG_RUNTIME_DIR/pytcp.sock).",
     )
+    parser.add_argument("-V", "--version", action="version", version=f"pytcp {__version__}")
 
     # Observation commands talk to the daemon and so run through the
     # shared connect path; the 'stack' lifecycle commands override this.
@@ -482,20 +483,8 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Show numeric addresses (render the default route's destination as 0.0.0.0).",
     )
-    parser_route.add_argument("-4", dest="inet", action="store_true", help="Show the IPv4 routing table (default).")
-    parser_route.add_argument("-6", dest="inet6", action="store_true", help="Show the IPv6 routing table.")
-    parser_route.add_argument(
-        "-A",
-        dest="family",
-        choices=("inet", "inet6"),
-        help="Address family to display (inet | inet6).",
-    )
-    parser_route.add_argument(
-        "-V",
-        "--version",
-        action="version",
-        version=f"pytcp route (PyTCP {__version__})",
-    )
+    parser_route.add_argument("-4", dest="inet", action="store_true", help="Show only the IPv4 routing table.")
+    parser_route.add_argument("-6", dest="inet6", action="store_true", help="Show only the IPv6 routing table.")
     # A bare 'route' (no add / del subcommand) lists the table.
     parser_route.set_defaults(func=_cmd_route_list)
     route_subparsers = parser_route.add_subparsers(dest="route_command", title="commands", metavar="<command>")

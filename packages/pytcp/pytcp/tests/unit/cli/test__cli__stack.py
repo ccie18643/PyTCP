@@ -425,6 +425,22 @@ class TestCliBanner(TestCase):
             msg="The help must end with a trailing blank line.",
         )
 
+    def test__version__prints_tool_version(self) -> None:
+        """
+        Ensure 'pytcp --version' prints the tool version and exits 0
+        (the version is a top-level option, not per-subcommand).
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        stdout = io.StringIO()
+        with self.assertRaises(SystemExit) as raised:
+            with contextlib.redirect_stdout(stdout):
+                main(["--version"])
+
+        self.assertEqual(raised.exception.code, 0, msg="--version must exit 0.")
+        self.assertIn(__version__, stdout.getvalue(), msg="--version must print the tool version.")
+
     def test__help__highlights_banner_and_section_headings(self) -> None:
         """
         Ensure TTY help renders the banner and the section headings
