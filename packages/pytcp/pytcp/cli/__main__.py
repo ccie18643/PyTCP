@@ -284,21 +284,28 @@ def _cmd_route_list(client: ClientStack, args: argparse.Namespace, /) -> str:
     else:
         families = (AddressFamily.INET4, AddressFamily.INET6)
 
-    if args.cache:
-        # net-tools 'route -C' shows the routing cache, not the FIB; PyTCP
-        # keeps no cache, so these are the empty-cache headers (like Linux).
-        return "\n\n".join(format_route_cache(family=family) for family in families)
+    # net-tools 'route -C' shows the routing cache, not the FIB; PyTCP
+    # keeps no cache, so the cache body is just the (empty) column header.
+    names: dict[int, str] = {} if args.cache else _interface_names(client)
+    sections = [_hl("PyTCP Routing Cache" if args.cache else "PyTCP Routing Table")]
+    for family in families:
+        label = "IPv4" if family is AddressFamily.INET4 else "IPv6"
+        if args.cache:
+            body = format_route_cache(family=family)
+        else:
+            body = format_route_table(
+                client.route.list_routes(family=family),
+                family=family,
+                numeric=args.numeric,
+                interface_names=names,
+            )
+        # The body is 'column-header\n<rows>'; highlight the label and the
+        # column header, leave the rows in the terminal default colour.
+        column_header, _, rows = body.partition("\n")
+        section = f"{_hl(label)}\n{_hl(column_header)}"
+        sections.append(f"{section}\n{rows}" if rows else section)
 
-    names = _interface_names(client)
-    return "\n\n".join(
-        format_route_table(
-            client.route.list_routes(family=family),
-            family=family,
-            numeric=args.numeric,
-            interface_names=names,
-        )
-        for family in families
-    )
+    return "\n\n".join(sections)
 
 
 def _cmd_sysctl(client: ClientStack, args: argparse.Namespace, /) -> str:
@@ -381,6 +388,15 @@ _ANSI__RESET = "\033[0m"
 # A section-heading line — 'usage:' (with text after it) or a standalone
 # 'options:' / 'commands:' / 'positional arguments:' line.
 _HEADING__RE = re.compile(r"^(usage:|[A-Za-z][\w ]*:$)", re.MULTILINE)
+
+
+def _hl(text: str, /) -> str:
+    """
+    Wrap a header line in bold bright-white on a TTY; leave it plain
+    otherwise (so piped / captured output stays uncoloured).
+    """
+
+    return f"{_ANSI__HIGHLIGHT}{text}{_ANSI__RESET}" if sys.stdout.isatty() else text
 
 
 def _highlight_help_headings(text: str, /) -> str:
@@ -722,7 +738,8 @@ def _run_with_client(args: argparse.Namespace, /) -> int:
         client.close()
 
     if output:
-        print(output)
+        # Set the output off with a blank line before and after.
+        print(f"\n{output}\n")
     return 0
 
 

@@ -161,58 +161,19 @@ def _route_flags(route: _AnyRoute, /, *, host_prefixlen: int) -> str:
     return flags
 
 
-def _format_route_table_ip4(routes: Iterable[_AnyRoute], /, *, names: Mapping[int, str], numeric: bool) -> str:
-    """
-    Render the IPv4 routing table in the net-tools 'route' layout.
-    """
-
-    lines = [
-        "PyTCP IP routing table",
-        "Destination     Gateway         Genmask         Flags Metric Ref    Use Iface",
-    ]
-    for route in routes:
-        network = route.destination
-        if network.prefixlen == 0:
-            destination = "0.0.0.0" if numeric else "default"
-        else:
-            destination = str(network.address)
-        gateway = str(route.gateway) if route.gateway is not None else "0.0.0.0"
-        # 'Ip4Mask.__str__' is the '/N' prefix form; net-tools' Genmask
-        # column is the dotted-decimal netmask, so render the mask's
-        # integer value through an Ip4Address.
-        genmask = str(Ip4Address(int(network.mask)))
-        flags = _route_flags(route, host_prefixlen=32)
-        ref = use = 0
-        lines.append(
-            f"{destination:<16}{gateway:<16}{genmask:<16}"
-            f"{flags:<6}{route.metric:<6} {ref:<2} {use:>7} {_route_iface(route.oif, names)}"
-        )
-
-    return "\n".join(lines)
-
-
-def _format_route_table_ip6(routes: Iterable[_AnyRoute], /, *, names: Mapping[int, str]) -> str:
-    """
-    Render the IPv6 routing table in the net-tools 'route -6' layout.
-    """
-
-    lines = [
-        "PyTCP IPv6 routing table",
-        "Destination                    Next Hop                   Flag Met Ref  Use If",
-    ]
-    for route in routes:
-        network = route.destination
-        address = str(network.address)
-        destination = f"{'[::]' if address == '::' else address}/{network.prefixlen}"
-        nexthop = str(route.gateway) if route.gateway is not None else "[::]"
-        flag = _route_flags(route, host_prefixlen=128)
-        ref = use = 0
-        lines.append(
-            f"{destination:<30} {nexthop:<26} {flag:<4} "
-            f"{route.metric:>4} {ref:>5} {use:>7} {_route_iface(route.oif, names)}"
-        )
-
-    return "\n".join(lines)
+# Unified route-table row + column header, shared by both families. The
+# destination is CIDR ('x.x.x.x/n' / 'x::/n'); the netmask is encoded in
+# the prefix length, so there is no separate Genmask column.
+_ROUTE_TABLE__ROW = "{dst:<30} {gw:<26} {flags:<5} {metric:>6} {ref:>3} {use:>5} {iface}"
+_ROUTE_TABLE__HEADER = _ROUTE_TABLE__ROW.format(
+    dst="Destination",
+    gw="Gateway",
+    flags="Flags",
+    metric="Metric",
+    ref="Ref",
+    use="Use",
+    iface="Iface",
+)
 
 
 def format_route_table(
@@ -224,34 +185,56 @@ def format_route_table(
     interface_names: Mapping[int, str] | None = None,
 ) -> str:
     """
-    Render routes in the net-tools 'route' table layout, one address
-    family at a time — the 'route' (IPv4) / 'route -6' (IPv6) output.
-    'numeric' mirrors 'route -n': the IPv4 default route's destination
-    renders as '0.0.0.0' rather than 'default'. 'interface_names' maps
-    an egress ifindex to its interface name for the 'Iface' / 'If'
-    column; a route with no egress interface renders '*'. The header
-    says 'PyTCP' where net-tools says 'Kernel' — PyTCP is the kernel.
+    Render a routing-table body (column header + rows) in a layout shared
+    by both families: 'Destination' (CIDR — 'x.x.x.x/n' for IPv4,
+    'x::/n' for IPv6), 'Gateway', 'Flags', 'Metric', 'Ref', 'Use',
+    'Iface'. 'numeric' renders the default route's destination as the
+    all-addresses prefix ('0.0.0.0/0' / '::/0') rather than 'default'.
+    'interface_names' maps an egress ifindex to its interface name; a
+    route with no egress interface renders '*'. The caller supplies the
+    section chrome.
     """
 
     names = interface_names or {}
-    if family is AddressFamily.INET6:
-        return _format_route_table_ip6(routes, names=names)
-    return _format_route_table_ip4(routes, names=names, numeric=numeric)
+    is_ip4 = family is AddressFamily.INET4
+    host_prefixlen = 32 if is_ip4 else 128
+    unspecified_gateway = "0.0.0.0" if is_ip4 else "::"
+    default_destination = "0.0.0.0/0" if is_ip4 else "::/0"
+
+    lines = [_ROUTE_TABLE__HEADER]
+    for route in routes:
+        network = route.destination
+        if network.prefixlen == 0:
+            destination = default_destination if numeric else "default"
+        else:
+            destination = f"{network.address}/{network.prefixlen}"
+        gateway = str(route.gateway) if route.gateway is not None else unspecified_gateway
+        lines.append(
+            _ROUTE_TABLE__ROW.format(
+                dst=destination,
+                gw=gateway,
+                flags=_route_flags(route, host_prefixlen=host_prefixlen),
+                metric=route.metric,
+                ref=0,
+                use=0,
+                iface=_route_iface(route.oif, names),
+            )
+        )
+
+    return "\n".join(lines)
 
 
 def format_route_cache(*, family: AddressFamily) -> str:
     """
-    Render the routing cache in the net-tools 'route -C' layout. PyTCP
-    keeps no route cache, so only the header is emitted (an empty body)
-    — matching modern Linux, where the route cache is likewise empty.
-    The header says 'PyTCP' where net-tools says 'Kernel'.
+    Render the routing-cache column header in the net-tools 'route -C'
+    layout. PyTCP keeps no route cache, so only the column header is
+    emitted (an empty body) — matching modern Linux, where the route
+    cache is likewise empty. The caller supplies the section chrome.
     """
 
     if family is AddressFamily.INET6:
-        return (
-            "PyTCP IPv6 routing cache\nDestination                    Next Hop                   Flag Met Ref  Use If"
-        )
-    return "PyTCP IP routing cache\nSource          Destination     Gateway         Flags Metric Ref    Use Iface"
+        return "Destination                    Next Hop                   Flag Met Ref  Use If"
+    return "Source          Destination     Gateway         Flags Metric Ref    Use Iface"
 
 
 def format_sysctl(items: Mapping[str, object], /) -> str:

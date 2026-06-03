@@ -130,47 +130,51 @@ class TestIpcCli(IpcControlTestCase):
 
         output = self._run("route", "-4")
 
-        self.assertEqual(
-            output.rstrip("\n"),
+        self.assertIn(
             expected,
-            msg="'route -4' output must match the formatter over the live IPv4 route list.",
+            output,
+            msg="'route -4' output must contain the formatter's IPv4 table body verbatim.",
         )
 
     def test__cli__route_default_shows_both_families(self) -> None:
         """
-        Ensure a bare 'pytcp route' (no family flag) shows both the IPv4
-        and the IPv6 routing tables, while '-4' / '-6' narrow to one.
+        Ensure a bare 'pytcp route' (no family flag) shows the single
+        'PyTCP Routing Table' header with both the IPv4 and IPv6 sections,
+        while '-4' / '-6' narrow to one section.
 
         Reference: PyTCP test infrastructure (no RFC clause).
         """
 
         both = self._run("route")
-        self.assertIn("PyTCP IP routing table", both, msg="Bare 'route' must show the IPv4 table.")
-        self.assertIn("PyTCP IPv6 routing table", both, msg="Bare 'route' must show the IPv6 table.")
+        self.assertIn("PyTCP Routing Table", both, msg="Bare 'route' must show the overall table header.")
+        self.assertIn("IPv4", both, msg="Bare 'route' must show the IPv4 section.")
+        self.assertIn("IPv6", both, msg="Bare 'route' must show the IPv6 section.")
 
         only_ipv4 = self._run("route", "-4")
-        self.assertIn("PyTCP IP routing table", only_ipv4, msg="'route -4' must show the IPv4 table.")
-        self.assertNotIn("IPv6 routing table", only_ipv4, msg="'route -4' must not show the IPv6 table.")
+        self.assertIn("IPv4", only_ipv4, msg="'route -4' must show the IPv4 section.")
+        self.assertNotIn("IPv6", only_ipv4, msg="'route -4' must not show the IPv6 section.")
 
         only_ipv6 = self._run("route", "-6")
-        self.assertIn("PyTCP IPv6 routing table", only_ipv6, msg="'route -6' must show the IPv6 table.")
-        self.assertNotIn("PyTCP IP routing table\n", only_ipv6, msg="'route -6' must not show the IPv4 table.")
+        self.assertIn("IPv6", only_ipv6, msg="'route -6' must show the IPv6 section.")
+        self.assertNotIn("IPv4", only_ipv6, msg="'route -6' must not show the IPv4 section.")
 
     def test__cli__route_cache_shows_empty_cache(self) -> None:
         """
-        Ensure 'pytcp route -C' renders the net-tools routing-cache headers
-        with an empty body, rather than the FIB — PyTCP keeps no route
-        cache. A bare '-C' shows both families' cache headers.
+        Ensure 'pytcp route -C' renders the 'PyTCP Routing Cache' header
+        with both families' empty column headers, rather than the FIB —
+        PyTCP keeps no route cache.
 
         Reference: PyTCP test infrastructure (no RFC clause).
         """
 
         output = self._run("route", "-C")
 
-        self.assertIn("PyTCP IP routing cache", output, msg="'route -C' must render the IPv4 routing-cache header.")
+        self.assertIn("PyTCP Routing Cache", output, msg="'route -C' must render the overall cache header.")
         self.assertIn(
-            "PyTCP IPv6 routing cache", output, msg="A bare 'route -C' must also render the IPv6 routing-cache header."
+            "Source          Destination     Gateway", output, msg="'route -C' must render the IPv4 cache columns."
         )
+        self.assertIn("IPv4", output, msg="'route -C' must show the IPv4 section.")
+        self.assertIn("IPv6", output, msg="A bare 'route -C' must also show the IPv6 section.")
         self.assertNotIn("UG", output, msg="'route -C' must not render FIB routes (the cache is empty).")
 
     def test__cli__route_add_then_list_shows_route(self) -> None:
@@ -232,10 +236,11 @@ class TestIpcCli(IpcControlTestCase):
         output = self._run("route", "-n")
 
         self.assertIn(
-            "10.0.0.5        10.0.1.1        255.255.255.255 UGH",
+            "10.0.0.5/32",
             output,
-            msg="A bare host address must install a /32 host route (UGH flags).",
+            msg="A bare host address must install a /32 host route (CIDR destination).",
         )
+        self.assertIn("UGH", output, msg="A gateway'd host route must carry the U, G and H flags.")
 
     def test__cli__route_add_default_via_gateway(self) -> None:
         """
@@ -250,10 +255,11 @@ class TestIpcCli(IpcControlTestCase):
         output = self._run("route", "-n")
 
         self.assertIn(
-            "0.0.0.0         10.0.1.9",
+            "0.0.0.0/0",
             output,
-            msg="The default route must be listed via the supplied gateway.",
+            msg="The numeric default route's destination must render as 0.0.0.0/0.",
         )
+        self.assertIn("10.0.1.9", output, msg="The default route must be listed via the supplied gateway.")
 
     def test__cli__route_add_ipv6_family_inferred_from_dest(self) -> None:
         """
@@ -308,6 +314,19 @@ class TestIpcCli(IpcControlTestCase):
             0,
             msg="A malformed destination must exit non-zero.",
         )
+
+    def test__cli__output_padded_with_blank_lines(self) -> None:
+        """
+        Ensure command output is set off with a blank line before and
+        after.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        output = self._run("route")
+
+        self.assertTrue(output.startswith("\n"), msg="Output must start with a blank line.")
+        self.assertTrue(output.endswith("\n\n"), msg="Output must end with a blank line.")
 
     def test__cli__sysctl_lists_entries(self) -> None:
         """
