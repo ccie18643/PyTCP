@@ -41,7 +41,7 @@ import argparse
 import os
 import signal
 import sys
-from typing import cast, override
+from typing import Any, cast, override
 
 from net_addr import Ip4Address, Ip4Network, Ip6Address, Ip6Network, NetAddrError
 from pytcp import __version__
@@ -358,23 +358,51 @@ def _cmd_link(client: ClientStack, args: argparse.Namespace, /) -> str:
     return format_link(_interface_views(client))
 
 
-_BANNER = "PyTCP - Python TCP/IP Stack"
+_BANNER = f"PyTCP - Python TCP/IP Stack v{__version__}"
+
+# ANSI: bold bright-green banner, bright-white help body. Emitted to a
+# TTY only (see '_PytcpArgumentParser.format_help').
+_ANSI__BANNER = "\033[1;92m"
+_ANSI__BODY = "\033[97m"
+_ANSI__RESET = "\033[0m"
+
+
+class _PytcpHelpFormatter(argparse.HelpFormatter):
+    """
+    Help formatter that drops the subparsers' redundant '<command>'
+    metavar header line, leaving the per-command entries listed directly
+    under the 'commands:' section.
+    """
+
+    @override
+    def _format_action(self, action: argparse.Action) -> str:
+        formatted = super()._format_action(action)
+        if action.nargs == argparse.PARSER:
+            formatted = "\n".join(formatted.split("\n")[1:])
+        return formatted
 
 
 class _PytcpArgumentParser(argparse.ArgumentParser):
     """
-    An argument parser whose help leads with the bright-white PyTCP
-    banner, set off by a blank line before and after, ahead of the usage
-    line. Subparsers inherit this class (argparse defaults a subparser's
-    'parser_class' to its parent's type), so every help screen carries
-    the banner. The colour is emitted only to a TTY, so piped or captured
+    An argument parser whose help leads with the bright-green PyTCP
+    banner (with version), set off by a blank line before and after, and
+    renders the body in bright white. Subparsers inherit this class
+    (argparse defaults a subparser's 'parser_class' to its parent's
+    type) and its '_PytcpHelpFormatter', so every help screen is
+    consistent. Colour is emitted only to a TTY, so piped or captured
     help stays plain text.
     """
 
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        kwargs.setdefault("formatter_class", _PytcpHelpFormatter)
+        super().__init__(*args, **kwargs)
+
     @override
     def format_help(self) -> str:
-        banner = f"\033[1;97m{_BANNER}\033[0m" if sys.stdout.isatty() else _BANNER
-        return f"\n{banner}\n\n{super().format_help()}"
+        body = super().format_help()
+        if not sys.stdout.isatty():
+            return f"\n{_BANNER}\n\n{body}"
+        return f"\n{_ANSI__BANNER}{_BANNER}{_ANSI__RESET}\n\n{_ANSI__BODY}{body}{_ANSI__RESET}"
 
 
 def build_parser() -> argparse.ArgumentParser:

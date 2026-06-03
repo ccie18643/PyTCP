@@ -39,6 +39,7 @@ from typing import override
 from unittest import TestCase
 from unittest.mock import ANY, patch
 
+from pytcp import __version__
 from pytcp.cli.__main__ import main
 from pytcp.daemon.daemon import remove_pidfile
 from pytcp.ipc.ipc__errors import IpcRemoteError
@@ -399,11 +400,11 @@ class TestCliBanner(TestCase):
     The CLI help-banner tests.
     """
 
-    def test__help__leads_with_the_pytcp_banner(self) -> None:
+    def test__help__leads_with_the_versioned_pytcp_banner(self) -> None:
         """
         Ensure 'pytcp --help' leads with the 'PyTCP - Python TCP/IP Stack'
-        banner, set off by a blank line before and after, ahead of the
-        usage line.
+        banner carrying the version, set off by a blank line before and
+        after, ahead of the usage line.
 
         Reference: PyTCP test infrastructure (no RFC clause).
         """
@@ -415,10 +416,27 @@ class TestCliBanner(TestCase):
 
         output = stdout.getvalue()
         self.assertIn(
-            "\nPyTCP - Python TCP/IP Stack\n\nusage:",
+            f"\nPyTCP - Python TCP/IP Stack v{__version__}\n\nusage:",
             output,
-            msg="The help must lead with the banner, blank-line-separated, before usage.",
+            msg="The help must lead with the versioned banner, blank-line-separated, before usage.",
         )
+
+    def test__help__commands_section_has_no_metavar_line(self) -> None:
+        """
+        Ensure the 'commands:' help section lists the commands directly,
+        without the redundant '<command>' metavar header line above them.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        stdout = io.StringIO()
+        with self.assertRaises(SystemExit):
+            with contextlib.redirect_stdout(stdout):
+                main(["--help"])
+
+        output = stdout.getvalue()
+        self.assertIn("commands:\n    ss ", output, msg="The commands section must list commands directly.")
+        self.assertNotIn("  <command>\n", output, msg="The redundant '<command>' header line must be gone.")
 
     def test__subcommand_help__also_leads_with_the_banner(self) -> None:
         """
