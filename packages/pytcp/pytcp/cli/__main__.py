@@ -360,10 +360,11 @@ def _cmd_link(client: ClientStack, args: argparse.Namespace, /) -> str:
 
 _BANNER = f"PyTCP - Python TCP/IP Stack v{__version__}"
 
-# ANSI: bold bright-green banner, bright-white help body. Emitted to a
-# TTY only (see '_PytcpArgumentParser.format_help').
+# ANSI: bold bright-green banner. Only the banner is coloured — the help
+# body keeps the terminal's default colour (bright white is reserved for
+# highlighting, should any be needed). Emitted to a TTY only (see
+# '_PytcpArgumentParser.format_help').
 _ANSI__BANNER = "\033[1;92m"
-_ANSI__BODY = "\033[97m"
 _ANSI__RESET = "\033[0m"
 
 
@@ -384,13 +385,13 @@ class _PytcpHelpFormatter(argparse.HelpFormatter):
 
 class _PytcpArgumentParser(argparse.ArgumentParser):
     """
-    An argument parser whose help leads with the bright-green PyTCP
-    banner (with version), set off by a blank line before and after, and
-    renders the body in bright white. Subparsers inherit this class
-    (argparse defaults a subparser's 'parser_class' to its parent's
-    type) and its '_PytcpHelpFormatter', so every help screen is
-    consistent. Colour is emitted only to a TTY, so piped or captured
-    help stays plain text.
+    An argument parser whose help leads with the bold bright-green PyTCP
+    banner (with version), set off by a blank line before and after. Only
+    the banner is coloured; the body keeps the terminal default.
+    Subparsers inherit this class (argparse defaults a subparser's
+    'parser_class' to its parent's type) and its '_PytcpHelpFormatter',
+    so every help screen is consistent. Colour is emitted only to a TTY,
+    so piped or captured help stays plain text.
     """
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
@@ -400,9 +401,8 @@ class _PytcpArgumentParser(argparse.ArgumentParser):
     @override
     def format_help(self) -> str:
         body = super().format_help()
-        if not sys.stdout.isatty():
-            return f"\n{_BANNER}\n\n{body}"
-        return f"\n{_ANSI__BANNER}{_BANNER}{_ANSI__RESET}\n\n{_ANSI__BODY}{body}{_ANSI__RESET}"
+        banner = f"{_ANSI__BANNER}{_BANNER}{_ANSI__RESET}" if sys.stdout.isatty() else _BANNER
+        return f"\n{banner}\n\n{body}"
 
 
 def build_parser() -> argparse.ArgumentParser:

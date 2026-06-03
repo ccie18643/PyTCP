@@ -40,7 +40,7 @@ from unittest import TestCase
 from unittest.mock import ANY, patch
 
 from pytcp import __version__
-from pytcp.cli.__main__ import main
+from pytcp.cli.__main__ import build_parser, main
 from pytcp.daemon.daemon import remove_pidfile
 from pytcp.ipc.ipc__errors import IpcRemoteError
 
@@ -420,6 +420,21 @@ class TestCliBanner(TestCase):
             output,
             msg="The help must lead with the versioned banner, blank-line-separated, before usage.",
         )
+
+    def test__help__colours_only_the_banner(self) -> None:
+        """
+        Ensure TTY help colours only the banner (bold bright-green) and
+        leaves the help body uncoloured — no bright-white body wrap.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        with patch("sys.stdout") as fake_stdout:
+            fake_stdout.isatty.return_value = True
+            help_text = build_parser().format_help()
+
+        self.assertIn("\033[1;92m", help_text, msg="The banner must be bold bright-green on a TTY.")
+        self.assertNotIn("\033[97m", help_text, msg="The body must not be wrapped in bright white.")
 
     def test__help__commands_section_has_no_metavar_line(self) -> None:
         """
