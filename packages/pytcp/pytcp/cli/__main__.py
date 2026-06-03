@@ -42,6 +42,7 @@ import os
 import re
 import signal
 import sys
+from collections.abc import Callable
 from typing import Any, cast, override
 
 from net_addr import Ip4Address, Ip4Network, Ip6Address, Ip6Network, MacAddress, NetAddrError
@@ -84,7 +85,10 @@ def _parse_sysctl_value(text: str, /) -> bool | int | str:
 
 def _cmd_ss(client: ClientStack, args: argparse.Namespace, /) -> str:
     """
-    Render the socket table for the 'ss' subcommand.
+    Render the socket table for the 'ss' subcommand — the 'route'-style
+    report with an overall header and per-family 'IPv4' / 'IPv6'
+    sections. '-t' / '-u' filter by socket type, '-l' to listening only,
+    '-4' / '-6' to one family.
     """
 
     socket_type: SocketType | None = None
@@ -93,14 +97,12 @@ def _cmd_ss(client: ClientStack, args: argparse.Namespace, /) -> str:
     elif args.udp and not args.tcp:
         socket_type = SocketType.DGRAM
 
-    family: AddressFamily | None = None
-    if args.ipv4 and not args.ipv6:
-        family = AddressFamily.INET4
-    elif args.ipv6 and not args.ipv4:
-        family = AddressFamily.INET6
-
-    return format_socket_table(
-        client.ss.list_sockets(family=family, socket_type=socket_type, listening_only=args.listening)
+    return _format_family_sections(
+        "PyTCP Socket Table",
+        _selected_families(args),
+        lambda family: format_socket_table(
+            client.ss.list_sockets(family=family, socket_type=socket_type, listening_only=args.listening)
+        ),
     )
 
 
@@ -285,6 +287,30 @@ def _selected_families(args: argparse.Namespace, /) -> tuple[AddressFamily, ...]
     return (AddressFamily.INET4, AddressFamily.INET6)
 
 
+def _format_family_sections(
+    title: str,
+    families: tuple[AddressFamily, ...],
+    render: Callable[[AddressFamily], str],
+    /,
+) -> str:
+    """
+    Assemble a 'route'-style report shared by 'route' / 'neighbor' / 'ss':
+    an overall bright-white 'title', then a bright-white 'IPv4' / 'IPv6'
+    label per family followed by that family's table body ('render'
+    returns 'column-header\\n<rows>'). The title, labels and column
+    headers are highlighted on a TTY; row content keeps the terminal
+    default.
+    """
+
+    sections = [_hl(title)]
+    for family in families:
+        label = "IPv4" if family is AddressFamily.INET4 else "IPv6"
+        column_header, _, rows = render(family).partition("\n")
+        section = f"{_hl(label)}\n{_hl(column_header)}"
+        sections.append(f"{section}\n{rows}" if rows else section)
+    return "\n\n".join(sections)
+
+
 def _cmd_route_list(client: ClientStack, args: argparse.Namespace, /) -> str:
     """
     Render the routing table for a bare 'route' (no add / del). With no
@@ -293,21 +319,13 @@ def _cmd_route_list(client: ClientStack, args: argparse.Namespace, /) -> str:
     """
 
     names = _interface_names(client)
-    sections = [_hl("PyTCP Routing Table")]
-    for family in _selected_families(args):
-        label = "IPv4" if family is AddressFamily.INET4 else "IPv6"
-        body = format_route_table(
-            client.route.list_routes(family=family),
-            family=family,
-            interface_names=names,
-        )
-        # The body is 'column-header\n<rows>'; highlight the label and the
-        # column header, leave the rows in the terminal default colour.
-        column_header, _, rows = body.partition("\n")
-        section = f"{_hl(label)}\n{_hl(column_header)}"
-        sections.append(f"{section}\n{rows}" if rows else section)
-
-    return "\n\n".join(sections)
+    return _format_family_sections(
+        "PyTCP Routing Table",
+        _selected_families(args),
+        lambda family: format_route_table(
+            client.route.list_routes(family=family), family=family, interface_names=names
+        ),
+    )
 
 
 def _cmd_sysctl(client: ClientStack, args: argparse.Namespace, /) -> str:
@@ -357,21 +375,16 @@ def _cmd_neighbor_list(client: ClientStack, args: argparse.Namespace, /) -> str:
     """
 
     names = _interface_names(client)
-    sections = [_hl("PyTCP Neighbor Table")]
-    for family in _selected_families(args):
-        label = "IPv4" if family is AddressFamily.INET4 else "IPv6"
+
+    def render(family: AddressFamily) -> str:
         entries = [
             (snapshot, names[ifindex])
             for ifindex in client.link.list_interfaces()
             for snapshot in client.neighbor.interface(ifindex).list_neighbors(family=family)
         ]
-        # The body is 'column-header\n<rows>'; highlight the label and the
-        # column header, leave the rows in the terminal default colour.
-        column_header, _, rows = format_neighbor_table(entries).partition("\n")
-        section = f"{_hl(label)}\n{_hl(column_header)}"
-        sections.append(f"{section}\n{rows}" if rows else section)
+        return format_neighbor_table(entries)
 
-    return "\n\n".join(sections)
+    return _format_family_sections("PyTCP Neighbor Table", _selected_families(args), render)
 
 
 def _cmd_neighbor_flush(client: ClientStack, args: argparse.Namespace, /) -> str:
@@ -545,8 +558,8 @@ def build_parser() -> argparse.ArgumentParser:
     parser_ss.add_argument("-t", "--tcp", action="store_true", help="Show only TCP sockets.")
     parser_ss.add_argument("-u", "--udp", action="store_true", help="Show only UDP sockets.")
     parser_ss.add_argument("-l", "--listening", action="store_true", help="Show only listening sockets.")
-    parser_ss.add_argument("-4", "--ipv4", action="store_true", help="Show only IPv4 sockets.")
-    parser_ss.add_argument("-6", "--ipv6", action="store_true", help="Show only IPv6 sockets.")
+    parser_ss.add_argument("-4", dest="inet", action="store_true", help="Show only IPv4 sockets.")
+    parser_ss.add_argument("-6", dest="inet6", action="store_true", help="Show only IPv6 sockets.")
     parser_ss.set_defaults(func=_cmd_ss)
 
     parser_route = subparsers.add_parser("route", help="Show or modify the routing table.")

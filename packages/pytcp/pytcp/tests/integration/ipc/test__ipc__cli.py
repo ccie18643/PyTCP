@@ -98,6 +98,12 @@ class TestIpcCli(IpcControlTestCase):
         output = self._run("ss", "-t", "-l")
 
         self.assertIn(
+            "PyTCP Socket Table",
+            output,
+            msg="The ss output must show the overall table header (route-style).",
+        )
+        self.assertIn("IPv4", output, msg="The ss output must show the IPv4 section.")
+        self.assertIn(
             "tcp",
             output,
             msg="The ss output must include the TCP netid for a listening socket.",
