@@ -440,25 +440,25 @@ class TestIpcCli(IpcControlTestCase):
             msg="The flushed entry must no longer appear in the listing.",
         )
 
-    def test__cli__addr_shows_interface_with_addresses(self) -> None:
+    def test__cli__address_shows_interface_with_addresses(self) -> None:
         """
-        Ensure 'pytcp addr' renders the interface header, its link-layer
+        Ensure 'pytcp address' renders the interface header, its link-layer
         address, and at least one assigned address.
 
         Reference: PyTCP test infrastructure (no RFC clause).
         """
 
-        output = self._run("addr")
+        output = self._run("address")
 
         self.assertIn(
             "link/ether",
             output,
-            msg="The addr output must include the interface's link-layer address.",
+            msg="The address output must include the interface's link-layer address.",
         )
         self.assertIn(
             "inet ",
             output,
-            msg="The addr output must include at least one assigned IPv4 address.",
+            msg="The address output must include at least one assigned IPv4 address.",
         )
 
     def test__cli__stack_status_running_shows_stack(self) -> None:
