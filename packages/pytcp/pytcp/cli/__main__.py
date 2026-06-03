@@ -360,11 +360,11 @@ def _cmd_link(client: ClientStack, args: argparse.Namespace, /) -> str:
 
 _BANNER = f"PyTCP - Python TCP/IP Stack v{__version__}"
 
-# ANSI: bold bright-green banner. Only the banner is coloured — the help
-# body keeps the terminal's default colour (bright white is reserved for
-# highlighting, should any be needed). Emitted to a TTY only (see
+# ANSI: bold bright-white banner. Only the banner is coloured — argparse's
+# own 3.14 help colourisation is disabled ('color=False' below), so the
+# body keeps the terminal's default colour. Emitted to a TTY only (see
 # '_PytcpArgumentParser.format_help').
-_ANSI__BANNER = "\033[1;92m"
+_ANSI__BANNER = "\033[1;97m"
 _ANSI__RESET = "\033[0m"
 
 
@@ -385,17 +385,19 @@ class _PytcpHelpFormatter(argparse.HelpFormatter):
 
 class _PytcpArgumentParser(argparse.ArgumentParser):
     """
-    An argument parser whose help leads with the bold bright-green PyTCP
+    An argument parser whose help leads with the bold bright-white PyTCP
     banner (with version), set off by a blank line before and after. Only
-    the banner is coloured; the body keeps the terminal default.
+    the banner is coloured: argparse's own 3.14 help colourisation is
+    turned off ('color=False'), so the body keeps the terminal default.
     Subparsers inherit this class (argparse defaults a subparser's
     'parser_class' to its parent's type) and its '_PytcpHelpFormatter',
-    so every help screen is consistent. Colour is emitted only to a TTY,
-    so piped or captured help stays plain text.
+    so every help screen is consistent. The banner colour is emitted only
+    to a TTY, so piped or captured help stays plain text.
     """
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         kwargs.setdefault("formatter_class", _PytcpHelpFormatter)
+        kwargs.setdefault("color", False)
         super().__init__(*args, **kwargs)
 
     @override

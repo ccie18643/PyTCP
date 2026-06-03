@@ -423,8 +423,10 @@ class TestCliBanner(TestCase):
 
     def test__help__colours_only_the_banner(self) -> None:
         """
-        Ensure TTY help colours only the banner (bold bright-green) and
-        leaves the help body uncoloured — no bright-white body wrap.
+        Ensure TTY help colours only the banner (bold bright-white) and
+        leaves the body uncoloured — argparse's own 3.14 help colour is
+        disabled, so the only ANSI in the output is the banner's open and
+        reset codes.
 
         Reference: PyTCP test infrastructure (no RFC clause).
         """
@@ -433,8 +435,12 @@ class TestCliBanner(TestCase):
             fake_stdout.isatty.return_value = True
             help_text = build_parser().format_help()
 
-        self.assertIn("\033[1;92m", help_text, msg="The banner must be bold bright-green on a TTY.")
-        self.assertNotIn("\033[97m", help_text, msg="The body must not be wrapped in bright white.")
+        self.assertIn("\033[1;97m", help_text, msg="The banner must be bold bright-white on a TTY.")
+        self.assertEqual(
+            help_text.count("\033["),
+            2,
+            msg="Only the banner may be coloured: exactly two ANSI codes (open + reset), none in the body.",
+        )
 
     def test__help__commands_section_has_no_metavar_line(self) -> None:
         """
