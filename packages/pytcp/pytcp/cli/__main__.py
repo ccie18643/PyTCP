@@ -44,7 +44,7 @@ import signal
 import sys
 from typing import Any, cast, override
 
-from net_addr import Ip4Address, Ip4Network, Ip6Address, Ip6Network, NetAddrError
+from net_addr import Ip4Address, Ip4Network, Ip6Address, Ip6Network, MacAddress, NetAddrError
 from pytcp import __version__
 from pytcp.cli.cli__format import (
     InterfaceView,
@@ -114,19 +114,25 @@ def _interface_names(client: ClientStack, /) -> dict[int, str]:
     }
 
 
-def _route_dev_oif(client: ClientStack, dev: str | None, /) -> int | None:
+def _resolve_interface(client: ClientStack, dev: str, /, *, command: str) -> int:
     """
-    Resolve a '--dev' interface name to its index for a route's egress
-    interface, or 'None' when no '--dev' was given. Errors on an unknown
-    interface name.
+    Resolve an interface name to its index, erroring (under the named
+    command) when no interface matches.
     """
 
-    if dev is None:
-        return None
     for ifindex in client.link.list_interfaces():
         if (client.link.interface(ifindex).name or f"if{ifindex}") == dev:
             return ifindex
-    raise SystemExit(f"pytcp route: unknown interface {dev!r}.")
+    raise SystemExit(f"pytcp {command}: unknown interface {dev!r}.")
+
+
+def _route_dev_oif(client: ClientStack, dev: str | None, /) -> int | None:
+    """
+    Resolve a route's '--dev' egress interface to its index, or 'None'
+    when no '--dev' was given. Errors on an unknown interface name.
+    """
+
+    return None if dev is None else _resolve_interface(client, dev, command="route")
 
 
 def _route_destination_is_ipv6(args: argparse.Namespace, /) -> bool:
@@ -381,6 +387,43 @@ def _cmd_neighbor_flush(client: ClientStack, args: argparse.Namespace, /) -> str
     return ""
 
 
+def _neighbor_ip(address: str, /) -> Ip4Address | Ip6Address:
+    """
+    Parse a neighbour's IP address, inferring the family from a ':'.
+    """
+
+    try:
+        return Ip6Address(address) if ":" in address else Ip4Address(address)
+    except NetAddrError as error:
+        raise SystemExit(f"pytcp neighbor: {error}") from error
+
+
+def _cmd_neighbor_add(client: ClientStack, args: argparse.Namespace, /) -> str:
+    """
+    Add a static neighbour entry on '--dev' — Linux 'ip neighbor add ADDR
+    lladdr MAC dev IF nud permanent'. Quiet on success.
+    """
+
+    ifindex = _resolve_interface(client, args.dev, command="neighbor")
+    try:
+        mac = MacAddress(args.lladdr)
+    except NetAddrError as error:
+        raise SystemExit(f"pytcp neighbor: {error}") from error
+    client.neighbor.interface(ifindex).add(ip=_neighbor_ip(args.address), mac=mac)
+    return ""
+
+
+def _cmd_neighbor_del(client: ClientStack, args: argparse.Namespace, /) -> str:
+    """
+    Delete a neighbour entry on '--dev' — Linux 'ip neighbor del ADDR dev
+    IF'. Quiet on success (a no-op when no entry matches).
+    """
+
+    ifindex = _resolve_interface(client, args.dev, command="neighbor")
+    client.neighbor.interface(ifindex).remove(ip=_neighbor_ip(args.address))
+    return ""
+
+
 def _cmd_addr(client: ClientStack, args: argparse.Namespace, /) -> str:
     """
     Render interfaces with their addresses for the 'addr' subcommand.
@@ -535,6 +578,17 @@ def build_parser() -> argparse.ArgumentParser:
     parser_neighbor.add_argument("-6", dest="inet6", action="store_true", help="Only IPv6 (ND) neighbours.")
     parser_neighbor.set_defaults(func=_cmd_neighbor_list)
     neighbor_subparsers = parser_neighbor.add_subparsers(dest="neighbor_command", title="commands", metavar="<command>")
+    parser_neighbor_add = neighbor_subparsers.add_parser("add", help="Add a static neighbour entry.")
+    parser_neighbor_add.add_argument("address", metavar="ADDRESS", help="The neighbour's IP address.")
+    parser_neighbor_add.add_argument(
+        "-l", "--lladdr", required=True, metavar="MAC", help="The link-layer (MAC) address."
+    )
+    parser_neighbor_add.add_argument("-i", "--dev", required=True, metavar="IFACE", help="The interface.")
+    parser_neighbor_add.set_defaults(func=_cmd_neighbor_add)
+    parser_neighbor_del = neighbor_subparsers.add_parser("del", help="Delete a neighbour entry.")
+    parser_neighbor_del.add_argument("address", metavar="ADDRESS", help="The neighbour's IP address.")
+    parser_neighbor_del.add_argument("-i", "--dev", required=True, metavar="IFACE", help="The interface.")
+    parser_neighbor_del.set_defaults(func=_cmd_neighbor_del)
     parser_neighbor_flush = neighbor_subparsers.add_parser("flush", help="Flush the neighbour caches.")
     parser_neighbor_flush.set_defaults(func=_cmd_neighbor_flush)
     parser_addr = subparsers.add_parser("addr", help="Show interfaces with their addresses.")

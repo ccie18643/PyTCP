@@ -61,7 +61,7 @@ class TestIpcCli(IpcControlTestCase):
         """
         Stand up the IPC fixture, then replace the harness's mocked ARP /
         ND caches with real (unstarted) caches so the 'neighbor' subcommand
-        has a real entry store to read (the 'neighbor' subcommand).
+        has a real entry store to read.
         """
 
         super().setUp()
@@ -361,6 +361,56 @@ class TestIpcCli(IpcControlTestCase):
 
         self.assertIn("IPv4", output, msg="'neighbor -4' must show the IPv4 section.")
         self.assertNotIn("IPv6", output, msg="'neighbor -4' must not show the IPv6 section.")
+
+    def test__cli__neighbor_add_then_del(self) -> None:
+        """
+        Ensure 'pytcp neighbor add ADDR --lladdr MAC --dev IF' installs a
+        static entry that 'pytcp neighbor' lists, and 'pytcp neighbor del'
+        removes it.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        dev = self._connect().link.interface(self._ifindex).name or f"if{self._ifindex}"
+
+        self._run("neighbor", "add", "10.0.1.60", "--lladdr", "02:00:00:00:00:60", "--dev", dev)
+
+        listing = self._run("neighbor")
+        self.assertIn("10.0.1.60", listing, msg="The added entry must appear in the listing.")
+        self.assertIn("02:00:00:00:00:60", listing, msg="The added entry's MAC must appear.")
+
+        self._run("neighbor", "del", "10.0.1.60", "--dev", dev)
+
+        self.assertNotIn(
+            "10.0.1.60",
+            self._run("neighbor"),
+            msg="The deleted entry must no longer appear.",
+        )
+
+    def test__cli__neighbor_add_bad_mac_errors(self) -> None:
+        """
+        Ensure a malformed link-layer address is reported as an error.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        dev = self._connect().link.interface(self._ifindex).name or f"if{self._ifindex}"
+        with self.assertRaises(SystemExit) as raised:
+            with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
+                main(
+                    [
+                        "--ipc-socket",
+                        self._socket_path,
+                        "neighbor",
+                        "add",
+                        "10.0.1.60",
+                        "--lladdr",
+                        "nope",
+                        "--dev",
+                        dev,
+                    ]
+                )
+        self.assertNotEqual(raised.exception.code, 0, msg="A bad MAC must exit non-zero.")
 
     def test__cli__neighbor_flush_clears_entries(self) -> None:
         """
