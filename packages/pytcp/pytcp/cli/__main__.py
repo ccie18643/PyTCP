@@ -339,9 +339,17 @@ def _cmd_route_list(client: ClientStack, args: argparse.Namespace, /) -> str:
 
 def _cmd_sysctl(client: ClientStack, args: argparse.Namespace, /) -> str:
     """
-    Read or write a sysctl value, or list all, for the 'sysctl' subcommand.
+    Read or write a sysctl value, describe a key, or list all, for the
+    'sysctl' subcommand. '--describe KEY' prints the knob's registered
+    one-line description (an interface-scope knob may be addressed by
+    its base or any slot-qualified form — the description is knob-level).
     """
 
+    if args.describe:
+        if args.key is None or "=" in args.key:
+            raise SystemExit("pytcp sysctl: '--describe' requires a key (not 'key=value').")
+        description = client.sysctl.describe(args.key)
+        return f"{args.key}: {description or '(no description)'}"
     if args.key is None:
         return format_sysctl(client.sysctl.snapshot())
     if "=" in args.key:
@@ -698,6 +706,12 @@ def build_parser() -> argparse.ArgumentParser:
         nargs="?",
         default=None,
         help="A sysctl key to read, 'key=value' to set, or omit to list all.",
+    )
+    parser_sysctl.add_argument(
+        "-d",
+        "--describe",
+        action="store_true",
+        help="Print the key's registered description instead of its value.",
     )
     parser_sysctl.set_defaults(func=_cmd_sysctl)
 

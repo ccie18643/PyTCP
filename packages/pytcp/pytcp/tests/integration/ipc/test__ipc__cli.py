@@ -331,6 +331,50 @@ class TestIpcCli(IpcControlTestCase):
             msg="The sysctl listing must render 'key = value' lines.",
         )
 
+    def test__cli__sysctl_describe_prints_description(self) -> None:
+        """
+        Ensure 'pytcp sysctl -d KEY' prints the knob's registered
+        description, addressable by its base key or a slot-qualified
+        per-interface form.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        expected = self._connect().sysctl.describe("arp.accept")
+        self.assertNotEqual(
+            expected,
+            "",
+            msg="The chosen knob must carry a description for this test to be meaningful.",
+        )
+
+        base = self._run("sysctl", "-d", "arp.accept")
+        self.assertIn(expected, base, msg="'sysctl -d' must print the knob's description.")
+        self.assertIn("arp.accept", base, msg="'sysctl -d' must echo the addressed key.")
+
+        slot = self._run("sysctl", "-d", "arp.default.accept")
+        self.assertIn(
+            expected,
+            slot,
+            msg="'sysctl -d' must accept a slot-qualified key for an interface-scope knob.",
+        )
+
+    def test__cli__sysctl_describe_without_key_errors(self) -> None:
+        """
+        Ensure 'pytcp sysctl -d' with no key is reported as an error and
+        exits non-zero rather than dumping every entry.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        with self.assertRaises(SystemExit) as raised:
+            with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
+                main(["--ipc-socket", self._socket_path, "sysctl", "-d"])
+        self.assertNotEqual(
+            raised.exception.code,
+            0,
+            msg="'sysctl -d' with no key must exit non-zero.",
+        )
+
     def test__cli__neighbor_lists_added_neighbor(self) -> None:
         """
         Ensure 'pytcp neighbor' lists a neighbour added to the interface
