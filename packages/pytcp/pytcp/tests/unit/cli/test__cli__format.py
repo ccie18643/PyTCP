@@ -203,7 +203,8 @@ class TestCliFormatSysctl(TestCase):
 
     def test__format_sysctl(self) -> None:
         """
-        Ensure sysctl entries render as 'key = value' lines.
+        Ensure flat (non-interface) sysctl entries render as
+        'key = value' lines.
 
         Reference: PyTCP test infrastructure (no RFC clause).
         """
@@ -211,7 +212,46 @@ class TestCliFormatSysctl(TestCase):
         self.assertEqual(
             format_sysctl({"arp.cache.max_age": 60, "tcp.default.nodelay": False}),
             "arp.cache.max_age = 60\ntcp.default.nodelay = False",
-            msg="Sysctl entries must render as 'key = value' lines.",
+            msg="Flat sysctl entries must render as 'key = value' lines.",
+        )
+
+    def test__format_sysctl__interface_scope_flattened(self) -> None:
+        """
+        Ensure an interface-scope knob's '{slot: value}' storage dict
+        flattens to fully-qualified '<namespace>.<slot>.<field>' scalar
+        lines — the 'default' template slot first, then each
+        per-interface slot in sorted order — mirroring Linux
+        'sysctl -a'.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        self.assertEqual(
+            format_sysctl({"arp.accept": {"default": 0, "tun3": 1, "tap7": 1}}),
+            "arp.default.accept = 0\narp.tap7.accept = 1\narp.tun3.accept = 1",
+            msg=(
+                "Interface-scope knobs must flatten to one "
+                "'<namespace>.<slot>.<field>' line per slot, 'default' first."
+            ),
+        )
+
+    def test__format_sysctl__mixed_flat_and_interface_scope(self) -> None:
+        """
+        Ensure flat and interface-scope entries coexist in one render,
+        each entry expanded in place so the dump order is preserved.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        self.assertEqual(
+            format_sysctl(
+                {
+                    "arp.accept": {"default": 0, "tap7": 1},
+                    "tcp.default.nodelay": False,
+                },
+            ),
+            "arp.default.accept = 0\narp.tap7.accept = 1\ntcp.default.nodelay = False",
+            msg="Mixed flat and interface-scope entries must each render in place.",
         )
 
 

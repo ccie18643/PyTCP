@@ -236,12 +236,39 @@ def format_route_table(
     return "\n".join(lines)
 
 
+def _flatten_iface_knob(base_key: str, storage: Mapping[str, object], /) -> list[str]:
+    """
+    Flatten an interface-scope knob's '{slot: value}' storage into
+    fully-qualified '<namespace>.<slot>.<field>' scalar lines — the
+    'default' template slot first, then each per-interface slot in
+    sorted order — mirroring the Linux 'sysctl -a' per-interface
+    layout.
+    """
+
+    prefix, _, field = base_key.rpartition(".")
+    slots = [slot for slot in ("default",) if slot in storage]
+    slots += sorted(slot for slot in storage if slot != "default")
+    return [f"{prefix}.{slot}.{field} = {storage[slot]}" for slot in slots]
+
+
 def format_sysctl(items: Mapping[str, object], /) -> str:
     """
     Render sysctl entries in the 'sysctl' 'key = value' line layout.
+
+    Interface-scope knobs arrive as a '{slot: value}' storage dict
+    keyed by the base '<namespace>.<field>' name; each is flattened to
+    one fully-qualified '<namespace>.<slot>.<field>' line per slot (see
+    '_flatten_iface_knob'). Each entry is expanded in place so the dump
+    order is preserved.
     """
 
-    return "\n".join(f"{key} = {value}" for key, value in items.items())
+    lines: list[str] = []
+    for key, value in items.items():
+        if isinstance(value, Mapping):
+            lines += _flatten_iface_knob(key, value)
+        else:
+            lines.append(f"{key} = {value}")
+    return "\n".join(lines)
 
 
 def _interface_lines(view: InterfaceView, *, with_addresses: bool) -> list[str]:
