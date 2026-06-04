@@ -30,7 +30,7 @@ lets many concurrent callers issue request/response calls over it. A
 background reader thread receives every response (capturing any
 SCM_RIGHTS descriptor) and routes it to the matching caller by 'req_id',
 so out-of-order replies, fd-bearing replies, and fire-and-forget
-('call_async') calls all work over one socket. It sits beside the simple
+('call_async') calls all work over one stdlib_socket. It sits beside the simple
 synchronous 'IpcClient' (which the coarse control-plane proxies keep) and
 is the basis for the daemon-backed socket drop-in's non-blocking calls.
 It is part of the extraction-ready codec core — net_proto + stdlib only,
@@ -43,7 +43,6 @@ ver 3.0.8
 """
 
 import os
-import socket
 import threading
 from dataclasses import dataclass, field
 from types import TracebackType
@@ -59,6 +58,7 @@ from pytcp.ipc.ipc__errors import IpcConnectionError, IpcError, IpcMessageError
 from pytcp.ipc.ipc__fdpass import recv_frame_with_fd
 from pytcp.ipc.ipc__frame import send_frame
 from pytcp.ipc.ipc__message import IpcMessage
+from pytcp.ipc.ipc__stdlib_socket import stdlib_socket
 
 
 class _DefaultTimeout:
@@ -86,7 +86,7 @@ class PendingCall:
 
 class MuxIpcClient:
     """
-    A multiplexed IPC client routing concurrent calls over one socket.
+    A multiplexed IPC client routing concurrent calls over one stdlib_socket.
     """
 
     def __init__(
@@ -106,7 +106,7 @@ class MuxIpcClient:
         self._pending: dict[int, PendingCall] = {}
         self._closed = False
 
-        self._socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+        self._socket = stdlib_socket.socket(stdlib_socket.AF_UNIX, stdlib_socket.SOCK_STREAM)
         self._socket.settimeout(timeout)
         try:
             self._socket.connect(socket_path)
@@ -217,7 +217,7 @@ class MuxIpcClient:
             self._closed = True
 
         try:
-            self._socket.shutdown(socket.SHUT_RDWR)
+            self._socket.shutdown(stdlib_socket.SHUT_RDWR)
         except OSError:
             pass
 

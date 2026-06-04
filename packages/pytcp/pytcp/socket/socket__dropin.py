@@ -56,12 +56,12 @@ import builtins
 import errno
 import io
 import os
-import socket as _stdlib_socket
 import threading
 from types import TracebackType
 from typing import TYPE_CHECKING, Self, cast, override
 
 from net_proto.lib.enums import IpProto
+from pytcp.ipc.ipc__stdlib_socket import stdlib_socket as _stdlib_socket
 from pytcp.runtime.socket import AddressFamily, SocketType
 
 if TYPE_CHECKING:

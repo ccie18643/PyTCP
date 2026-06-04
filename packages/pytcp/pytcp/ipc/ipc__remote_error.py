@@ -30,7 +30,7 @@ the remote exception's type name, module, errno, args, message, and
 strerror — back into a faithful local exception: an 'OSError' whose
 concrete subclass Python auto-selects from the errno (a refused connect
 becomes 'ConnectionRefusedError', a timeout 'TimeoutError', ...), a
-'socket.gaierror' / 'socket.herror' rebuilt by name, a non-OSError
+'stdlib_socket.gaierror' / 'stdlib_socket.herror' rebuilt by name, a non-OSError
 builtin exception rebuilt from its args, or — when nothing matches — the
 generic 'IpcRemoteError' boundary. It is the socket-plane analogue of
 the control plane's deliberately coarse 'IpcRemoteError' translation and
@@ -46,18 +46,18 @@ ver 3.0.8
 """
 
 import builtins
-import socket
 from typing import Any, NoReturn
 
 from pytcp.ipc.ipc__errors import IpcRemoteError
+from pytcp.ipc.ipc__stdlib_socket import stdlib_socket
 from pytcp.ipc.ipc__values import decode_value
 
-# socket.gaierror / socket.herror are OSError subclasses keyed by EAI /
+# stdlib_socket.gaierror / stdlib_socket.herror are OSError subclasses keyed by EAI /
 # h_errno codes that the errno->subclass map does not cover, so they are
 # rebuilt by name rather than through the errno branch.
 _SOCKET_ERROR_TYPES: dict[str, type[OSError]] = {
-    "gaierror": socket.gaierror,
-    "herror": socket.herror,
+    "gaierror": stdlib_socket.gaierror,
+    "herror": stdlib_socket.herror,
 }
 
 

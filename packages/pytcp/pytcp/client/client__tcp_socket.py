@@ -38,12 +38,12 @@ pytcp/client/client__tcp_socket.py
 ver 3.0.8
 """
 
-import socket
 from typing import Self
 
 from net_proto.lib.enums import IpProto
 from pytcp.ipc.ipc__client import IpcClient
 from pytcp.ipc.ipc__socket_rpc import accept_socket, open_socket, socket_call
+from pytcp.ipc.ipc__stdlib_socket import stdlib_socket
 from pytcp.runtime.socket import AddressFamily, SocketType
 
 # Default accept-queue depth when 'listen' is called without an explicit
@@ -65,7 +65,7 @@ class ClientTcpSocket:
         self._client = client
         handle, data_fd = open_socket(client, family=family, type_=SocketType.STREAM)
         self._handle = handle
-        self._data_socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM, fileno=data_fd)
+        self._data_socket = stdlib_socket.socket(stdlib_socket.AF_UNIX, stdlib_socket.SOCK_STREAM, fileno=data_fd)
 
     def fileno(self) -> int:
         """
@@ -149,12 +149,12 @@ class ClientTcpSocket:
         instance = cls.__new__(cls)
         instance._client = client
         instance._handle = handle
-        instance._data_socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM, fileno=data_fd)
+        instance._data_socket = stdlib_socket.socket(stdlib_socket.AF_UNIX, stdlib_socket.SOCK_STREAM, fileno=data_fd)
         return instance
 
     def setsockopt(self, level: int | IpProto, optname: int, value: int | bytes, /) -> None:
         """
-        Set a socket option on the daemon socket.
+        Set a socket option on the daemon stdlib_socket.
         """
 
         socket_call(
@@ -166,7 +166,7 @@ class ClientTcpSocket:
 
     def getsockopt(self, level: int | IpProto, optname: int, /) -> int | bytes:
         """
-        Get a socket option from the daemon socket.
+        Get a socket option from the daemon stdlib_socket.
         """
 
         result: int | bytes = socket_call(
@@ -207,7 +207,7 @@ class ClientTcpSocket:
         The caller takes ownership of the descriptor; the shim's data
         socket no longer holds it. The daemon handle is left in place (to
         be reaped when the client disconnects), so the descriptor stays
-        connected to the daemon-side socket.
+        connected to the daemon-side stdlib_socket.
         """
 
         return self._data_socket.detach()

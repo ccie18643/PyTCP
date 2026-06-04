@@ -48,10 +48,9 @@ pytcp/ipc/ipc__dgram_frame.py
 ver 3.0.8
 """
 
-import socket
-
 from net_proto.lib.buffer import Buffer
 from pytcp.ipc.ipc__errors import IpcFrameError
+from pytcp.ipc.ipc__stdlib_socket import stdlib_socket
 
 IPC__DGRAM__TAG_NONE: int = 0
 IPC__DGRAM__TAG_IP4: int = 4
@@ -85,10 +84,10 @@ def encode_dgram(
     else:
         host, port = address
         try:
-            packed = socket.inet_pton(socket.AF_INET, host)
+            packed = stdlib_socket.inet_pton(stdlib_socket.AF_INET, host)
             tag = IPC__DGRAM__TAG_IP4
         except OSError:
-            packed = socket.inet_pton(socket.AF_INET6, host)
+            packed = stdlib_socket.inet_pton(stdlib_socket.AF_INET6, host)
             tag = IPC__DGRAM__TAG_IP6
         prefix = bytes([tag]) + port.to_bytes(IPC__DGRAM__PORT_LEN, "big") + packed
 
@@ -124,9 +123,9 @@ def decode_dgram(blob: Buffer, /) -> tuple[tuple[str, int] | None, list[Cmsg], b
         offset = 1
     else:
         if tag == IPC__DGRAM__TAG_IP4:
-            family, ip_len = socket.AF_INET, IPC__DGRAM__IP4_LEN
+            family, ip_len = stdlib_socket.AF_INET, IPC__DGRAM__IP4_LEN
         elif tag == IPC__DGRAM__TAG_IP6:
-            family, ip_len = socket.AF_INET6, IPC__DGRAM__IP6_LEN
+            family, ip_len = stdlib_socket.AF_INET6, IPC__DGRAM__IP6_LEN
         else:
             raise IpcFrameError(f"Datagram frame has an unknown address-family tag {tag}.")
 
@@ -136,7 +135,7 @@ def decode_dgram(blob: Buffer, /) -> tuple[tuple[str, int] | None, list[Cmsg], b
         if len(data) < offset:
             raise IpcFrameError("Datagram frame is truncated before the end of its address.")
 
-        address = (socket.inet_ntop(family, data[ip_start:offset]), int.from_bytes(data[1:ip_start], "big"))
+        address = (stdlib_socket.inet_ntop(family, data[ip_start:offset]), int.from_bytes(data[1:ip_start], "big"))
 
     if len(data) < offset + IPC__DGRAM__NCMSG_LEN:
         raise IpcFrameError("Datagram frame is truncated before its cmsg count.")

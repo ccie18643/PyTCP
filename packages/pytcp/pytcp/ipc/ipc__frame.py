@@ -38,11 +38,11 @@ pytcp/ipc/ipc__frame.py
 ver 3.0.8
 """
 
-import socket
 import struct
 
 from net_proto.lib.buffer import Buffer
 from pytcp.ipc.ipc__errors import IpcFrameError
+from pytcp.ipc.ipc__stdlib_socket import stdlib_socket
 
 IPC__FRAME__LENGTH_PREFIX_STRUCT: str = "! I"
 IPC__FRAME__LENGTH_PREFIX_LEN: int = 4
@@ -64,17 +64,17 @@ def pack_frame(payload: Buffer, /) -> bytes:
     return struct.pack(IPC__FRAME__LENGTH_PREFIX_STRUCT, length) + bytes(payload)
 
 
-def send_frame(sock: socket.socket, payload: Buffer, /) -> None:
+def send_frame(sock: stdlib_socket.socket, payload: Buffer, /) -> None:
     """
-    Write a single length-prefixed frame to the stream socket.
+    Write a single length-prefixed frame to the stream stdlib_socket.
     """
 
     sock.sendall(pack_frame(payload))
 
 
-def recv_frame(sock: socket.socket, /) -> bytes | None:
+def recv_frame(sock: stdlib_socket.socket, /) -> bytes | None:
     """
-    Read a single length-prefixed frame from the stream socket.
+    Read a single length-prefixed frame from the stream stdlib_socket.
 
     Returns the payload bytes, or None when the peer closes the stream
     cleanly at a frame boundary (end of stream). Raises 'IpcFrameError'
@@ -109,7 +109,7 @@ def recv_frame(sock: socket.socket, /) -> bytes | None:
     return payload
 
 
-def recv_exactly(sock: socket.socket, count: int, /) -> bytes:
+def recv_exactly(sock: stdlib_socket.socket, count: int, /) -> bytes:
     """
     Read exactly 'count' bytes from the stream, looping over partial
     reads. Returns fewer than 'count' bytes only when the peer closes

@@ -48,9 +48,11 @@ import io
 import os
 import select
 import socket
+import sys
 import tempfile
 import threading
 import time
+from types import ModuleType
 from typing import override
 from unittest.mock import create_autospec
 
@@ -824,4 +826,132 @@ class TestSocketDropinEcho(TcpTestCase):
             sock.recv(64),
             b"resolved",
             msg="A socket from create_connection(hostname) must exchange data over the resolved connection.",
+        )
+
+    def _restore_sys_modules_socket(self, saved: ModuleType | None, /) -> None:
+        """
+        Restore (or remove) the real 'socket' entry in 'sys.modules' after
+        a drop-in swap so the process-wide module table never leaks.
+        """
+
+        if saved is None:
+            sys.modules.pop("socket", None)
+        else:
+            sys.modules["socket"] = saved
+
+    def _wait_for_request_on(self, marker: bytes, /, *, local_port: int) -> int:
+        """
+        Block until the consumer's request bytes (in-order, starting with
+        'marker') have reached the wire from 'local_port', nudging the
+        virtual clock; return the total request length so the peer can
+        acknowledge it.
+        """
+
+        deadline = time.monotonic() + _DEADLINE__SEC
+        segments: dict[int, bytes] = {}
+        while time.monotonic() < deadline:
+            for frame in list(self._frames_tx):
+                probe = self._parse_tx(frame)
+                if probe.sport == local_port and probe.payload:
+                    segments[probe.seq] = bytes(probe.payload)
+            request = b"".join(segments[seq] for seq in sorted(segments))
+            if request.startswith(marker):
+                return len(request)
+            self._advance(ms=5)
+            time.sleep(0.01)
+        raise AssertionError("The consumer request never reached the wire.")
+
+    def test__socket_dropin__sys_modules_swap_runs_unmodified_consumer(self) -> None:
+        """
+        Ensure swapping 'sys.modules["socket"]' for the drop-in lets an
+        unmodified stdlib-socket consumer — one that does its own 'import
+        socket' and 'socket.create_connection', with no PyTCP references —
+        complete a TCP request/response over the daemon. This is the
+        one-line drop-in claim proven end to end: a program written for
+        the stdlib runs against the PyTCP stack unchanged.
+
+        Reference: RFC 9293 §3.5 (Connection establishment).
+        Reference: RFC 9293 §3.10 (Data exchange).
+        """
+
+        self._force_iss(_ISS)
+
+        request = b"PING\r\n\r\n"
+        reply = b"PONG\r\n"
+        result: dict[str, object] = {}
+
+        def unmodified_consumer(host: str, port: int, /) -> None:
+            # Ordinary stdlib-socket client code — zero PyTCP imports. The
+            # function-local 'import socket' resolves from sys.modules at
+            # call time, so the swap below makes it bind the drop-in.
+            import socket  # pylint: disable=import-outside-toplevel
+
+            try:
+                connection = socket.create_connection((host, port))
+                try:
+                    connection.sendall(request)
+                    result["reply"] = connection.recv(64)
+                finally:
+                    connection.close()
+            except Exception as error:  # surface to the test thread
+                result["error"] = error
+
+        saved_socket_module = sys.modules.get("socket")
+        sys.modules["socket"] = pytcp_socket
+        self.addCleanup(self._restore_sys_modules_socket, saved_socket_module)
+
+        consumer_thread = threading.Thread(
+            target=unmodified_consumer,
+            args=("echo.example", _REMOTE_PORT),
+            name="dropin-unmodified-consumer",
+        )
+        consumer_thread.start()
+        self.addCleanup(consumer_thread.join)
+
+        # Drive the handshake for the daemon-assigned (auto-bound) port.
+        syn = self._wait_for_any_syn(dport=_REMOTE_PORT)
+        local_port, local_iss = syn.sport, syn.seq
+        self._drive_rx(
+            frame=build_tcp4(
+                src_ip=HOST_A__IP4_ADDRESS,
+                dst_ip=STACK__IP4_HOST.address,
+                sport=_REMOTE_PORT,
+                dport=local_port,
+                seq=_PEER_ISS,
+                ack=local_iss + 1,
+                flags=("SYN", "ACK"),
+                win=_PEER_WIN,
+            )
+        )
+
+        # Wait for the consumer's request, then drive the reply back.
+        request_len = self._wait_for_request_on(request, local_port=local_port)
+        self._drive_rx(
+            frame=build_tcp4(
+                src_ip=HOST_A__IP4_ADDRESS,
+                dst_ip=STACK__IP4_HOST.address,
+                sport=_REMOTE_PORT,
+                dport=local_port,
+                seq=_PEER_ISS + 1,
+                ack=local_iss + 1 + request_len,
+                flags=("ACK",),
+                win=_PEER_WIN,
+                payload=reply,
+            )
+        )
+
+        consumer_thread.join(timeout=_DEADLINE__SEC)
+        self.assertFalse(
+            consumer_thread.is_alive(),
+            msg="The unmodified consumer must complete once the reply is driven.",
+        )
+        self.assertNotIn(
+            "error",
+            result,
+            msg=f"The unmodified consumer raised over the swapped socket module: {result.get('error')!r}",
+        )
+        self.assertEqual(
+            result.get("reply"),
+            reply,
+            msg="The unmodified stdlib consumer must exchange data over the daemon via the sys.modules swap.",
         )

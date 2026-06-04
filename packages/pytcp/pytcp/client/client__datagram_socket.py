@@ -41,13 +41,12 @@ pytcp/client/client__datagram_socket.py
 ver 3.0.8
 """
 
-import socket
-
 from net_proto.lib.enums import IpProto
 from pytcp.ipc.ipc__client import IpcClient
 from pytcp.ipc.ipc__dgram_bridge import IPC__DGRAM_BRIDGE__CHUNK_SIZE
 from pytcp.ipc.ipc__dgram_frame import decode_dgram, encode_dgram
 from pytcp.ipc.ipc__socket_rpc import open_socket, socket_call
+from pytcp.ipc.ipc__stdlib_socket import stdlib_socket
 from pytcp.runtime.socket import AddressFamily, SocketType
 
 # Default receive bound — the maximum UDP payload, so 'recvfrom' without
@@ -70,7 +69,7 @@ class _ClientDatagramBase:
         self._client = client
         self._handle = handle
         self._family = family
-        self._data_socket = socket.socket(socket.AF_UNIX, socket.SOCK_DGRAM, fileno=data_fd)
+        self._data_socket = stdlib_socket.socket(stdlib_socket.AF_UNIX, stdlib_socket.SOCK_DGRAM, fileno=data_fd)
 
     def fileno(self) -> int:
         """
@@ -131,7 +130,7 @@ class _ClientDatagramBase:
     ) -> tuple[bytes, list[tuple[int, int, bytes]], int, tuple[str, int] | tuple[str, int, int, int]]:
         """
         Receive one datagram with its ancillary control messages and
-        sender address, mirroring stdlib 'socket.recvmsg'. The IPv6
+        sender address, mirroring stdlib 'stdlib_socket.recvmsg'. The IPv6
         address is a 4-tuple '(host, port, flowinfo, scope_id)' (flowinfo
         / scope_id are 0 — PyTCP does not track them per datagram).
         'ancbufsize' is advisory: the daemon already framed every cmsg the
@@ -170,7 +169,7 @@ class _ClientDatagramBase:
 
     def setsockopt(self, level: int | IpProto, optname: int, value: int | bytes, /) -> None:
         """
-        Set a socket option on the daemon socket.
+        Set a socket option on the daemon stdlib_socket.
         """
 
         socket_call(
@@ -182,7 +181,7 @@ class _ClientDatagramBase:
 
     def getsockopt(self, level: int | IpProto, optname: int, /) -> int | bytes:
         """
-        Get a socket option from the daemon socket.
+        Get a socket option from the daemon stdlib_socket.
         """
 
         result: int | bytes = socket_call(
@@ -216,7 +215,7 @@ class _ClientDatagramBase:
         The caller takes ownership of the descriptor; the shim's data
         socket no longer holds it. The daemon handle is left in place (to
         be reaped when the client disconnects), so the descriptor stays
-        connected to the daemon-side socket.
+        connected to the daemon-side stdlib_socket.
         """
 
         return self._data_socket.detach()
