@@ -492,11 +492,33 @@ def _cmd_address_del(client: ClientStack, args: argparse.Namespace, /) -> str:
 
 def _cmd_link(client: ClientStack, args: argparse.Namespace, /) -> str:
     """
-    Render interfaces without addresses for the 'link' subcommand.
+    Render interfaces without addresses for a bare 'link'.
     """
 
     _ = args
     return format_link(_interface_views(client))
+
+
+def _cmd_link_set(client: ClientStack, args: argparse.Namespace, /) -> str:
+    """
+    Set interface attributes on '--dev' — Linux 'ip link set dev IF [mtu
+    N] [address MAC]'. Setting the MAC requires the stack to be stopped
+    (the daemon rejects it otherwise). Quiet on success.
+    """
+
+    ifindex = _resolve_interface(client, args.dev, command="link")
+    if args.mtu is None and args.mac is None:
+        raise SystemExit("pytcp link: 'set' requires --mtu and/or --mac.")
+    link = client.link.interface(ifindex)
+    if args.mtu is not None:
+        link.set_mtu(mtu=args.mtu)
+    if args.mac is not None:
+        try:
+            mac = MacAddress(args.mac)
+        except NetAddrError as error:
+            raise SystemExit(f"pytcp link: {error}") from error
+        link.set_mac_address(mac_address=mac)
+    return ""
 
 
 _BANNER = f"PyTCP - Python TCP/IP Stack v{__version__}"
@@ -661,7 +683,13 @@ def build_parser() -> argparse.ArgumentParser:
     parser_address_del.add_argument("address", metavar="ADDRESS", help="The host address to remove (e.g. 10.0.1.50).")
     parser_address_del.add_argument("-i", "--dev", required=True, metavar="IFACE", help="The interface.")
     parser_address_del.set_defaults(func=_cmd_address_del)
-    parser_link = subparsers.add_parser("link", help="Show interfaces.")
+    parser_link = subparsers.add_parser("link", help="Show or configure interfaces.")
+    link_subparsers = parser_link.add_subparsers(dest="link_command", title="commands", metavar="<command>")
+    parser_link_set = link_subparsers.add_parser("set", help="Set interface attributes (Linux 'ip link set').")
+    parser_link_set.add_argument("-i", "--dev", required=True, metavar="IFACE", help="The interface.")
+    parser_link_set.add_argument("--mtu", type=int, metavar="BYTES", help="Set the interface MTU.")
+    parser_link_set.add_argument("--mac", metavar="MAC", help="Set the interface MAC address (stack must be stopped).")
+    parser_link_set.set_defaults(func=_cmd_link_set)
     parser_link.set_defaults(func=_cmd_link)
 
     parser_sysctl = subparsers.add_parser("sysctl", help="Read or write sysctl values.")
@@ -861,6 +889,12 @@ def _run_with_client(args: argparse.Namespace, /) -> int:
 
     try:
         output = args.func(client, args)
+    except IpcRemoteError as error:
+        # A control op the daemon rejected (bad argument, unmet
+        # precondition, etc.) — report it cleanly instead of letting the
+        # remote-error traceback escape.
+        print(f"pytcp: {error}", file=sys.stderr)
+        return 1
     finally:
         client.close()
 

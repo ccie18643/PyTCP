@@ -544,3 +544,48 @@ class TestIpcCli(IpcControlTestCase):
             output,
             msg="The link output must not include assigned addresses.",
         )
+
+    def test__cli__link_set_mtu(self) -> None:
+        """
+        Ensure 'pytcp link set --dev IF --mtu N' changes the interface MTU
+        and a subsequent 'pytcp link' shows the new value.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        dev = self._connect().link.interface(self._ifindex).name or f"if{self._ifindex}"
+
+        self._run("link", "set", "--dev", dev, "--mtu", "1400")
+
+        self.assertIn("mtu 1400", self._run("link"), msg="The MTU change must appear in 'link'.")
+
+    def test__cli__link_set_requires_an_attribute(self) -> None:
+        """
+        Ensure 'pytcp link set --dev IF' with no attribute is reported as
+        an error.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        dev = self._connect().link.interface(self._ifindex).name or f"if{self._ifindex}"
+        with self.assertRaises(SystemExit) as raised:
+            with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
+                main(["--ipc-socket", self._socket_path, "link", "set", "--dev", dev])
+        self.assertNotEqual(raised.exception.code, 0, msg="'link set' with no attribute must exit non-zero.")
+
+    def test__cli__link_set_invalid_mtu_reports_remote_error_cleanly(self) -> None:
+        """
+        Ensure a daemon-rejected control op (an MTU below the RFC 791
+        floor) is reported cleanly and exits non-zero, rather than letting
+        the remote-error traceback escape.
+
+        Reference: RFC 791 §3.2 (minimum MTU floor).
+        """
+
+        dev = self._connect().link.interface(self._ifindex).name or f"if{self._ifindex}"
+        stderr = io.StringIO()
+        with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(stderr):
+            exit_code = main(["--ipc-socket", self._socket_path, "link", "set", "--dev", dev, "--mtu", "10"])
+
+        self.assertEqual(exit_code, 1, msg="A rejected control op must exit 1, not raise.")
+        self.assertTrue(stderr.getvalue().startswith("pytcp:"), msg="The error must be a clean 'pytcp:' diagnostic.")
