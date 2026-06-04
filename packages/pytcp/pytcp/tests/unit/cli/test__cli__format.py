@@ -35,6 +35,7 @@ from unittest import TestCase
 from net_addr import Ip4Address, Ip4IfAddr, Ip4Network, Ip6Address, Ip6IfAddr, Ip6Network, MacAddress
 from pytcp.cli.cli__format import (
     InterfaceView,
+    flatten_sysctl,
     format_activity,
     format_addr,
     format_link,
@@ -252,6 +253,33 @@ class TestCliFormatSysctl(TestCase):
             ),
             "arp.default.accept = 0\narp.tap7.accept = 1\ntcp.default.nodelay = False",
             msg="Mixed flat and interface-scope entries must each render in place.",
+        )
+
+    def test__flatten_sysctl__expands_interface_scope_to_scalar_map(self) -> None:
+        """
+        Ensure 'flatten_sysctl' expands an interface-scope storage dict
+        into a '<namespace>.<slot>.<field>' -> value scalar map — the
+        'default' template slot first, then per-interface slots sorted —
+        and passes flat entries through unchanged. This is the map the
+        CLI uses to recognise a directly-readable leaf.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        self.assertEqual(
+            flatten_sysctl(
+                {
+                    "arp.accept": {"default": 0, "tun3": 1, "tap7": 1},
+                    "tcp.default.nodelay": False,
+                },
+            ),
+            {
+                "arp.default.accept": 0,
+                "arp.tap7.accept": 1,
+                "arp.tun3.accept": 1,
+                "tcp.default.nodelay": False,
+            },
+            msg="flatten_sysctl must expand interface-scope dicts and pass flat entries through.",
         )
 
 

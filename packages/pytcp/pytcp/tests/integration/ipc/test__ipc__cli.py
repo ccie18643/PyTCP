@@ -375,6 +375,76 @@ class TestIpcCli(IpcControlTestCase):
             msg="'sysctl -d' with no key must exit non-zero.",
         )
 
+    def test__cli__sysctl_prefix_lists_namespace_subtree(self) -> None:
+        """
+        Ensure 'pytcp sysctl <namespace>' lists only that namespace's
+        subtree and excludes unrelated namespaces.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        output = self._run("sysctl", "arp")
+
+        self.assertIn("arp.", output, msg="The 'arp' subtree must be listed.")
+        self.assertNotIn("icmp6", output, msg="An unrelated namespace must be excluded.")
+        self.assertNotIn("tcp.", output, msg="An unrelated namespace must be excluded.")
+
+    def test__cli__sysctl_interface_scope_base_lists_slots(self) -> None:
+        """
+        Ensure 'pytcp sysctl <interface-scope base key>' lists every
+        per-interface slot of that knob rather than erroring on the
+        unreadable base key.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        output = self._run("sysctl", "arp.accept")
+
+        self.assertIn(
+            "arp.default.accept = ",
+            output,
+            msg="An interface-scope base key must list its 'default' slot.",
+        )
+
+    def test__cli__sysctl_reads_single_flat_leaf(self) -> None:
+        """
+        Ensure 'pytcp sysctl <flat key>' reads exactly that key as a
+        single 'key = value' line, not the surrounding subtree.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        output = self._run("sysctl", "arp.probe_num")
+
+        self.assertIn(
+            "arp.probe_num = ",
+            output,
+            msg="A flat leaf must read as a single 'key = value' line.",
+        )
+        self.assertNotIn(
+            "arp.defend_interval",
+            output,
+            msg="A single-leaf read must not list the rest of the subtree.",
+        )
+
+    def test__cli__sysctl_unknown_key_errors(self) -> None:
+        """
+        Ensure 'pytcp sysctl <unknown>' that matches no registered key
+        exits non-zero with a clean diagnostic rather than listing every
+        entry.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        with self.assertRaises(SystemExit) as raised:
+            with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
+                main(["--ipc-socket", self._socket_path, "sysctl", "nope.nonexistent"])
+        self.assertNotEqual(
+            raised.exception.code,
+            0,
+            msg="An unknown sysctl key must exit non-zero.",
+        )
+
     def test__cli__neighbor_lists_added_neighbor(self) -> None:
         """
         Ensure 'pytcp neighbor' lists a neighbour added to the interface

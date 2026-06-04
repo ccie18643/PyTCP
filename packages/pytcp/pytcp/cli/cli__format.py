@@ -236,39 +236,39 @@ def format_route_table(
     return "\n".join(lines)
 
 
-def _flatten_iface_knob(base_key: str, storage: Mapping[str, object], /) -> list[str]:
+def flatten_sysctl(items: Mapping[str, object], /) -> dict[str, object]:
     """
-    Flatten an interface-scope knob's '{slot: value}' storage into
-    fully-qualified '<namespace>.<slot>.<field>' scalar lines — the
+    Expand interface-scope knobs into a flat scalar map. Such a knob
+    arrives as a '{slot: value}' storage dict keyed by the base
+    '<namespace>.<field>' name; it is expanded in place to one
+    '<namespace>.<slot>.<field>' -> value entry per slot — the
     'default' template slot first, then each per-interface slot in
     sorted order — mirroring the Linux 'sysctl -a' per-interface
-    layout.
+    layout. Flat entries pass through unchanged. Insertion order is
+    preserved so a dump keeps its registration order.
     """
 
-    prefix, _, field = base_key.rpartition(".")
-    slots = [slot for slot in ("default",) if slot in storage]
-    slots += sorted(slot for slot in storage if slot != "default")
-    return [f"{prefix}.{slot}.{field} = {storage[slot]}" for slot in slots]
+    result: dict[str, object] = {}
+    for key, value in items.items():
+        if isinstance(value, Mapping):
+            prefix, _, field = key.rpartition(".")
+            slots = [slot for slot in ("default",) if slot in value]
+            slots += sorted(slot for slot in value if slot != "default")
+            for slot in slots:
+                result[f"{prefix}.{slot}.{field}"] = value[slot]
+        else:
+            result[key] = value
+    return result
 
 
 def format_sysctl(items: Mapping[str, object], /) -> str:
     """
     Render sysctl entries in the 'sysctl' 'key = value' line layout.
-
-    Interface-scope knobs arrive as a '{slot: value}' storage dict
-    keyed by the base '<namespace>.<field>' name; each is flattened to
-    one fully-qualified '<namespace>.<slot>.<field>' line per slot (see
-    '_flatten_iface_knob'). Each entry is expanded in place so the dump
-    order is preserved.
+    Interface-scope knobs are flattened to one fully-qualified
+    '<namespace>.<slot>.<field>' line per slot (see 'flatten_sysctl').
     """
 
-    lines: list[str] = []
-    for key, value in items.items():
-        if isinstance(value, Mapping):
-            lines += _flatten_iface_knob(key, value)
-        else:
-            lines.append(f"{key} = {value}")
-    return "\n".join(lines)
+    return "\n".join(f"{key} = {value}" for key, value in flatten_sysctl(items).items())
 
 
 def _interface_lines(view: InterfaceView, *, with_addresses: bool) -> list[str]:

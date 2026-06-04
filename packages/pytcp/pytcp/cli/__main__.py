@@ -58,6 +58,7 @@ from net_addr import (
 from pytcp import __version__
 from pytcp.cli.cli__format import (
     InterfaceView,
+    flatten_sysctl,
     format_activity,
     format_addr,
     format_link,
@@ -356,7 +357,20 @@ def _cmd_sysctl(client: ClientStack, args: argparse.Namespace, /) -> str:
         key, _, value = args.key.partition("=")
         client.sysctl.set(key, _parse_sysctl_value(value))
         return ""
-    return f"{args.key} = {client.sysctl.get(args.key)}"
+
+    # A bare key reads like Linux 'sysctl': an exact readable leaf (a
+    # flat key or a slot-qualified interface-scope key) reads that one
+    # value; anything else is treated as a namespace prefix and lists
+    # the matching subtree (so an interface-scope base key lists its
+    # slots, and a namespace lists everything under it).
+    snapshot = client.sysctl.snapshot()
+    flattened = flatten_sysctl(snapshot)
+    if args.key in flattened:
+        return f"{args.key} = {flattened[args.key]}"
+    matches = {key: value for key, value in snapshot.items() if key == args.key or key.startswith(f"{args.key}.")}
+    if matches:
+        return format_sysctl(matches)
+    raise SystemExit(f"pytcp sysctl: no keys match {args.key!r}.")
 
 
 def _interface_views(client: ClientStack, /) -> list[InterfaceView]:
