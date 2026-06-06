@@ -92,7 +92,7 @@ class TestIpcCli(IpcControlTestCase):
 
         sock = cast(ClientTcpSocket, self._connect().socket(AddressFamily.INET4, SocketType.STREAM))
         self.addCleanup(sock.close)
-        sock.bind(("0.0.0.0", 40010))
+        sock.bind(("0.0.0.0", 18030))
         sock.listen(backlog=8)
 
         output = self._run("ss", "-t", "-l")
@@ -109,7 +109,7 @@ class TestIpcCli(IpcControlTestCase):
             msg="The ss output must include the TCP netid for a listening socket.",
         )
         self.assertIn(
-            "0.0.0.0:40010",
+            "0.0.0.0:18030",
             output,
             msg="The ss output must include the listening socket's local endpoint.",
         )

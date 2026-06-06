@@ -79,11 +79,11 @@ class TestIpcClientTcpSocket(IpcControlTestCase):
         sock = cast(ClientTcpSocket, client.socket(AddressFamily.INET4, SocketType.STREAM))
         self.addCleanup(sock.close)
 
-        sock.bind(("0.0.0.0", 40010))
+        sock.bind(("0.0.0.0", 18010))
 
         self.assertEqual(
             sock.getsockname(),
-            ("0.0.0.0", 40010),
+            ("0.0.0.0", 18010),
             msg="getsockname must reflect the address bound through the client shim.",
         )
 

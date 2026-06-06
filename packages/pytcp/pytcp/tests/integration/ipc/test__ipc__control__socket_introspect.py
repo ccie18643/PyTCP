@@ -60,13 +60,13 @@ class TestIpcControlSocketIntrospect(IpcControlTestCase):
         client = self._connect()
         sock = cast(ClientTcpSocket, client.socket(AddressFamily.INET4, SocketType.STREAM))
         self.addCleanup(sock.close)
-        sock.bind(("0.0.0.0", 40010))
+        sock.bind(("0.0.0.0", 18020))
         sock.listen(backlog=8)
 
         listeners = [
             snapshot
             for snapshot in client.ss.list_sockets(socket_type=SocketType.STREAM)
-            if snapshot.local_port == 40010
+            if snapshot.local_port == 18020
         ]
 
         self.assertEqual(
@@ -91,12 +91,12 @@ class TestIpcControlSocketIntrospect(IpcControlTestCase):
         client = self._connect()
         sock = cast(ClientUdpSocket, client.socket(AddressFamily.INET4, SocketType.DGRAM))
         self.addCleanup(sock.close)
-        sock.bind(("0.0.0.0", 40012))
+        sock.bind(("0.0.0.0", 18022))
 
         matches = [
             snapshot
             for snapshot in client.ss.list_sockets(socket_type=SocketType.DGRAM)
-            if snapshot.local_port == 40012
+            if snapshot.local_port == 18022
         ]
 
         self.assertEqual(
@@ -120,7 +120,7 @@ class TestIpcControlSocketIntrospect(IpcControlTestCase):
         client = self._connect()
         sock = cast(ClientTcpSocket, client.socket(AddressFamily.INET4, SocketType.STREAM))
         self.addCleanup(sock.close)
-        sock.bind(("0.0.0.0", 40011))
+        sock.bind(("0.0.0.0", 18021))
         sock.listen(backlog=8)
 
         listening_ports = {
@@ -130,7 +130,7 @@ class TestIpcControlSocketIntrospect(IpcControlTestCase):
         }
 
         self.assertIn(
-            40011,
+            18021,
             listening_ports,
             msg="The listening-only filter must include the listening TCP socket.",
         )
