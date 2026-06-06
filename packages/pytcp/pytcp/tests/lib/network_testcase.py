@@ -214,6 +214,7 @@ class NetworkTestCase(TestCase):
     _ip6_flow_label_generation_prior: int
     _interfaces_snapshot: dict[int, PacketHandlerL2 | PacketHandlerL3]
     _packet_sockets_prior: list[Any]
+    _sockets_prior: dict[Any, Any]
     _timer: FakeTimer
     _timer_prior: Timer | None
 
@@ -434,6 +435,15 @@ class NetworkTestCase(TestCase):
         self._packet_sockets_prior = stack.packet_sockets.snapshot()
         stack.packet_sockets.clear()
 
+        # Snapshot + clear the process-wide TCP/UDP socket table. It is a
+        # module-level singleton that 'mock__init' does NOT rebuild, so a
+        # socket a test binds (and any port it holds) would otherwise
+        # accumulate across the run and make a later explicit 'bind' to the
+        # same port fail — an order-dependent flake (§5.4
+        # module-state-on-touch).
+        self._sockets_prior = dict(stack.sockets)
+        stack.sockets.clear()
+
     def _add_interface(
         self,
         *,
@@ -536,6 +546,10 @@ class NetworkTestCase(TestCase):
         stack.packet_sockets.clear()
         for packet_sock in self._packet_sockets_prior:
             stack.packet_sockets.register(packet_sock)
+
+        # Restore the TCP/UDP socket table to its pre-test snapshot.
+        stack.sockets.clear()
+        stack.sockets.update(self._sockets_prior)
 
         stack.__dict__.update(self._stack__attr_snapshot)
 

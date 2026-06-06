@@ -463,7 +463,7 @@ class TestSocketDropinEcho(TcpTestCase):
         self.addCleanup(duplicate.close)
 
         with self.assertRaises(OSError) as raised:
-            duplicate.bind(("0.0.0.0", 50002))
+            duplicate.bind(("0.0.0.0", 18040))
 
         self.assertEqual(
             raised.exception.errno,
