@@ -151,40 +151,43 @@ class TestIpcRawEcho(UdpTestCase):
         sock.bind((str(STACK__IP4_HOST.address), 0))
         return sock
 
-    def _peer_datagram(self, *, payload: bytes) -> bytes:
-        """
-        Build an Ethernet/IPv4 raw datagram (next-header '_PROTO') from
-        the peer to the bound stack address.
-        """
-
-        return bytes(
-            EthernetAssembler(
-                ethernet__src=HOST_A__MAC_ADDRESS,
-                ethernet__dst=STACK__MAC_ADDRESS,
-                ethernet__payload=Ip4Assembler(
-                    ip4__src=HOST_A__IP4_ADDRESS,
-                    ip4__dst=STACK__IP4_HOST.address,
-                    ip4__payload=RawAssembler(raw__payload=payload, ip_proto=_PROTO),
-                ),
-            )
-        )
-
     def test__raw_echo__client_receives_peer_datagram(self) -> None:
         """
-        Ensure a raw IP datagram a peer sends on the wire is delivered to
-        the out-of-process client over its real fd, paired with the
-        sender's address.
+        Ensure an inbound IPv4 raw datagram is delivered to the
+        out-of-process client over its real fd as the full IPv4 packet
+        (header + payload), mirroring Linux 'SOCK_RAW' semantics, paired
+        with the sender's address.
 
         Reference: PyTCP test infrastructure (no RFC clause).
         """
 
         sock = self._bound_raw_socket()
-        self._drive_udp_rx(frame=self._peer_datagram(payload=b"rawin"))
+        ip4_packet = Ip4Assembler(
+            ip4__src=HOST_A__IP4_ADDRESS,
+            ip4__dst=STACK__IP4_HOST.address,
+            ip4__payload=RawAssembler(raw__payload=b"rawin", ip_proto=_PROTO),
+        )
+        self._drive_udp_rx(
+            frame=bytes(
+                EthernetAssembler(
+                    ethernet__src=HOST_A__MAC_ADDRESS,
+                    ethernet__dst=STACK__MAC_ADDRESS,
+                    ethernet__payload=ip4_packet,
+                )
+            )
+        )
+
+        data, address = sock.recvfrom()
 
         self.assertEqual(
-            sock.recvfrom(),
-            (b"rawin", (str(HOST_A__IP4_ADDRESS), 0)),
-            msg="The client must receive the raw IP payload and its sender address over its fd.",
+            data,
+            bytes(ip4_packet),
+            msg="An IPv4 raw socket must deliver the full IP packet (header + payload), Linux 'SOCK_RAW' style.",
+        )
+        self.assertEqual(
+            address,
+            (str(HOST_A__IP4_ADDRESS), 0),
+            msg="recvfrom must pair the datagram with the sender's address.",
         )
 
     def test__raw_echo__client_datagram_reaches_the_wire(self) -> None:
