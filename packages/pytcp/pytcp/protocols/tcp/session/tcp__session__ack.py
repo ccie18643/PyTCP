@@ -67,10 +67,10 @@ from pytcp.protocols.tcp.tcp__loss_recovery import pipe
 from pytcp.protocols.tcp.tcp__rack import tlp_process_ack
 from pytcp.protocols.tcp.tcp__rto import update
 from pytcp.protocols.tcp.tcp__seq import add32, ge32, gt32, le32, lt32
+from pytcp.runtime.socket.tcp__metadata import TcpMetadata
 
 if TYPE_CHECKING:
     from pytcp.protocols.tcp.session import TcpSession
-    from pytcp.runtime.socket.tcp__metadata import TcpMetadata
 
 
 class TcpAckProcessor:
@@ -92,7 +92,7 @@ class TcpAckProcessor:
     # delegator from 'fsm/' state handlers.
     # ------------------------------------------------------------------
 
-    def process_ack_packet(self, packet_rx_md: "TcpMetadata") -> None:
+    def process_ack_packet(self, packet_rx_md: TcpMetadata) -> None:
         """
         Process regular data/ACK packet.
         """
@@ -127,7 +127,7 @@ class TcpAckProcessor:
     # Private processor helpers — phases of 'process_ack_packet'.
     # ------------------------------------------------------------------
 
-    def _phase1_cum_ack_side_effects(self, packet_rx_md: "TcpMetadata") -> None:
+    def _phase1_cum_ack_side_effects(self, packet_rx_md: TcpMetadata) -> None:
         """
         Phase 1 of the inbound-ACK pipeline. Process the side-
         effects of a cum-ACK that advances SND.UNA: bytes_acked
@@ -480,7 +480,7 @@ class TcpAckProcessor:
                 f"K_ms={session._cc.cubic_K_ms}",
             )
 
-    def _phase3_harvest_rtt_samples(self, packet_rx_md: "TcpMetadata") -> None:
+    def _phase3_harvest_rtt_samples(self, packet_rx_md: TcpMetadata) -> None:
         """
         Phase 3 of the inbound-ACK pipeline. Harvest an RTT sample
         from the inbound ACK via either the RFC 7323 §4 TSecr path
@@ -563,7 +563,7 @@ class TcpAckProcessor:
                 )
             session._rtt.clear()
 
-    def _phase4_loss_detection_and_recovery_exit(self, packet_rx_md: "TcpMetadata") -> None:
+    def _phase4_loss_detection_and_recovery_exit(self, packet_rx_md: TcpMetadata) -> None:
         """
         Phase 4 of the inbound-ACK pipeline. Fold the inbound ACK
         + SACK info into the RACK reorder-window state, prune the
@@ -636,7 +636,7 @@ class TcpAckProcessor:
             # without DSACK.
             session._rack_tlp.decay_reo_wnd_persist()
 
-    def _phase5_consume_segment_and_postprocess(self, packet_rx_md: "TcpMetadata") -> None:
+    def _phase5_consume_segment_and_postprocess(self, packet_rx_md: TcpMetadata) -> None:
         """
         Phase 5 of the inbound-ACK pipeline. Consume the inbound
         segment's data + window field, fire the delayed-ACK side-

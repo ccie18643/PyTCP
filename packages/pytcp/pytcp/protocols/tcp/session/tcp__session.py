@@ -88,12 +88,12 @@ from pytcp.protocols.tcp.tcp__rack import RackSegment
 from pytcp.protocols.tcp.tcp__rto import RtoState, initial_state
 from pytcp.protocols.tcp.tcp__sack import SackScoreboard
 from pytcp.protocols.tcp.tcp__seq import Seq32, le32, lt32, sub32
+from pytcp.runtime.socket.tcp__metadata import TcpMetadata
 from pytcp.stack import sysctl_iface
 
 if TYPE_CHECKING:
     from threading import Event, Lock, RLock, Semaphore
 
-    from pytcp.runtime.socket.tcp__metadata import TcpMetadata
     from pytcp.runtime.socket.tcp__socket import TcpSocket
 
 

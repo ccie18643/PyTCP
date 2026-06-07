@@ -88,6 +88,8 @@ from pytcp.lib.packet_stats import (
     PacketStatsTx,
 )
 from pytcp.lib.tx_status import TxStatus
+from pytcp.protocols.dhcp4.dhcp4__client import Dhcp4Client
+from pytcp.protocols.dhcp6.dhcp6__client import Dhcp6Client
 from pytcp.protocols.icmp6.nd import nd__constants
 from pytcp.protocols.icmp6.nd.nd__router_state import (
     Icmp6DadState,
@@ -108,6 +110,7 @@ from pytcp.runtime.timer import TimerHandle
 from pytcp.runtime.tx_ring import TxRing
 from pytcp.stack import sysctl_iface
 from pytcp.stack.membership import IP4__MULTICAST__ALL_SYSTEMS
+from pytcp.stack.route import RouteApi
 
 from .dispatch import DispatchRegistry
 from .packet_handler__arp__rx import ArpRxHandler
@@ -137,10 +140,7 @@ if TYPE_CHECKING:
     from threading import Semaphore
 
     from pytcp.protocols.arp.arp__cache import ArpCache
-    from pytcp.protocols.dhcp4.dhcp4__client import Dhcp4Client
-    from pytcp.protocols.dhcp6.dhcp6__client import Dhcp6Client
     from pytcp.protocols.icmp6.nd.nd__cache import NdCache
-    from pytcp.stack.route import RouteApi
 
 
 # The RFC 3376 §5.1 "non-existent" reception state — a filter mode of
@@ -241,7 +241,7 @@ class PacketHandler(Subsystem, ABC):
     # shared ICMPv6 RX handler can reach it through 'self._if:
     # PacketHandler'; the lifecycle installs a real client only on an
     # L2 interface. 'None' = the RA M/O flags are parsed but not acted on.
-    _dhcp6_client: "Dhcp6Client | None" = None
+    _dhcp6_client: Dhcp6Client | None = None
 
     if TYPE_CHECKING:
         # '_phtx_ethernet' is provided by the L2-only
@@ -1322,7 +1322,7 @@ class PacketHandler(Subsystem, ABC):
         return getattr(self, "_dhcp4_client", None)
 
     @property
-    def dhcp6_client(self) -> "Dhcp6Client | None":
+    def dhcp6_client(self) -> Dhcp6Client | None:
         """
         Get the per-interface DHCPv6 client, or 'None' when no client is
         installed. Read surface for the stack-lifecycle start / stop
@@ -1354,7 +1354,7 @@ class PacketHandler(Subsystem, ABC):
         return self._tx_ring
 
     @property
-    def route_api(self) -> "RouteApi | None":
+    def route_api(self) -> RouteApi | None:
         """
         Get the injected routing-control API, or 'None' until injected.
         Read surface for the stack lifecycle; the '_route_api' attribute
@@ -1412,7 +1412,7 @@ class PacketHandler(Subsystem, ABC):
         self._arp_cache = arp_cache
         arp_cache.attach_owner(self, iface_name=None)
 
-    def attach_route_api(self, route_api: "RouteApi", /) -> None:
+    def attach_route_api(self, route_api: RouteApi, /) -> None:
         """
         Inject the routing-control API (global state shared across
         interfaces) — the stack lifecycle's construction-time wiring. The
@@ -1421,7 +1421,7 @@ class PacketHandler(Subsystem, ABC):
 
         self._route_api = route_api
 
-    def attach_dhcp6_client(self, client: "Dhcp6Client", /) -> None:
+    def attach_dhcp6_client(self, client: Dhcp6Client, /) -> None:
         """
         Bind this interface's DHCPv6 client (RFC 8415) — the stack
         lifecycle's construction-time wiring. RA-driven: the RA RX
@@ -2852,7 +2852,7 @@ class PacketHandlerL2(
     # 'stack.add_interface' when 'ip4_dhcp' is set. 'None' on interfaces
     # without DHCPv4 (static / TUN / IPv6-only). Each interface owns its
     # own client so a multi-homed host runs one DHCP lifecycle per NIC.
-    _dhcp4_client: "Dhcp4Client | None" = None
+    _dhcp4_client: Dhcp4Client | None = None
     _mac_unicast: MacAddress
     _mac_multicast: list[MacAddress]
     _mac_broadcast: MacAddress
@@ -3414,7 +3414,7 @@ class PacketHandlerL2(
         self._remove_ip6_host(ip6_host=ip6_host)
         return False
 
-    def attach_dhcp4_client(self, client: "Dhcp4Client", /) -> None:
+    def attach_dhcp4_client(self, client: Dhcp4Client, /) -> None:
         """
         Bind this L2 interface's DHCPv4 client (RFC 2131) — the stack
         lifecycle's construction-time wiring. L2-only: DHCPv4 depends on

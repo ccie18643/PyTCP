@@ -42,17 +42,15 @@ ver 3.0.8
 import errno
 import os
 import threading
-from typing import TYPE_CHECKING, cast, override
+from typing import cast, override
 
 from net_proto.lib.enums import EtherType
 from pytcp import stack
 from pytcp.lib.logger import log
+from pytcp.runtime.packet_handler import PacketHandlerL2
 from pytcp.runtime.socket import ETH_P_ALL, AddressFamily, SocketType, socket
 from pytcp.runtime.socket.packet__metadata import PacketMetadata
 from pytcp.runtime.socket.sockaddr_ll import SockAddrLl
-
-if TYPE_CHECKING:
-    from pytcp.runtime.packet_handler import PacketHandlerL2
 
 
 class PacketSocket(socket):
@@ -224,7 +222,7 @@ class PacketSocket(socket):
         self._ethertype = address.ethertype
         __debug__ and log("socket", f"<g>[{self}]</> - Bound")
 
-    def _egress_handler(self, ifindex: int, /) -> "PacketHandlerL2":
+    def _egress_handler(self, ifindex: int, /) -> PacketHandlerL2:
         """
         Resolve the L2 interface a frame egresses: the interface
         registered under 'ifindex', or — when 'ifindex' is 0 (an
@@ -249,7 +247,7 @@ class PacketSocket(socket):
                 raise OSError(errno.ENODEV, f"No interface registered under ifindex {ifindex}")
             handler = stack.interfaces[ifindex]
 
-        return cast("PacketHandlerL2", handler)
+        return cast(PacketHandlerL2, handler)
 
     @override
     def send(self, data: bytes) -> int:

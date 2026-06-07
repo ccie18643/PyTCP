@@ -35,14 +35,9 @@ import threading
 import time
 from dataclasses import dataclass
 from enum import Enum
-from typing import TYPE_CHECKING, Callable, override
+from typing import Callable, override
 
 from net_addr import Ip4Address, Ip4IfAddr, Ip4Network, MacAddress
-
-if TYPE_CHECKING:
-    from pytcp.stack.address import AddressApi
-    from pytcp.stack.route import RouteApi
-
 from net_proto.protocols.dhcp4.dhcp4__assembler import Dhcp4Assembler
 from net_proto.protocols.dhcp4.dhcp4__enums import (
     Dhcp4MessageType,
@@ -105,6 +100,8 @@ from pytcp.runtime.socket import (
     socket,
 )
 from pytcp.runtime.subsystem import Subsystem
+from pytcp.stack.address import AddressApi
+from pytcp.stack.route import RouteApi
 
 # 'secs' is a 16-bit field in the DHCP header; cap the elapsed-
 # since-acquisition seconds at UINT16_MAX so a long-lived restart
@@ -219,8 +216,8 @@ class Dhcp4Client(Subsystem):
         *,
         mac_address: MacAddress,
         acd: Ip4Acd | None = None,
-        address_api: "AddressApi | None" = None,
-        route_api: "RouteApi | None" = None,
+        address_api: AddressApi | None = None,
+        route_api: RouteApi | None = None,
         interface_name: str | None = None,
         ifindex: int | None = None,
     ) -> None:

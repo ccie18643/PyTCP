@@ -39,12 +39,12 @@ from net_proto.protocols.tcp.tcp__header import TCP__MIN_MSS
 from pytcp import stack
 from pytcp.lib.logger import log
 from pytcp.protocols.tcp.tcp__enums import FsmState, SysCall
+from pytcp.protocols.tcp.tcp__icmp_metadata import IcmpMetadata
 from pytcp.protocols.tcp.tcp__seq import add32
+from pytcp.runtime.socket.tcp__metadata import TcpMetadata
 
 if TYPE_CHECKING:
     from pytcp.protocols.tcp.session import TcpSession
-    from pytcp.protocols.tcp.tcp__icmp_metadata import IcmpMetadata
-    from pytcp.runtime.socket.tcp__metadata import TcpMetadata
 
 
 def fsm__listen__icmp(session: TcpSession, metadata: IcmpMetadata) -> None:

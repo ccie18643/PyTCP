@@ -38,10 +38,10 @@ from typing import TYPE_CHECKING
 from pytcp.lib.logger import log
 from pytcp.protocols.tcp.tcp__cwnd import initial_window
 from pytcp.protocols.tcp.tcp__enums import ConnError, FsmState, SysCall
+from pytcp.runtime.socket.tcp__metadata import TcpMetadata
 
 if TYPE_CHECKING:
     from pytcp.protocols.tcp.session import TcpSession
-    from pytcp.runtime.socket.tcp__metadata import TcpMetadata
 
 
 def fsm__syn_rcvd__timer(session: TcpSession) -> None:

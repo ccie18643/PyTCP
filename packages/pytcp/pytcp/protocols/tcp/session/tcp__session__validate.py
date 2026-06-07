@@ -63,10 +63,10 @@ from pytcp.protocols.tcp.tcp__iss import compute_iss
 from pytcp.protocols.tcp.tcp__rto import initial_state
 from pytcp.protocols.tcp.tcp__sack import SackScoreboard
 from pytcp.protocols.tcp.tcp__seq import add32, gt32, in_range32, le32, lt32
+from pytcp.runtime.socket.tcp__metadata import TcpMetadata
 
 if TYPE_CHECKING:
     from pytcp.protocols.tcp.session import TcpSession
-    from pytcp.runtime.socket.tcp__metadata import TcpMetadata
 
 
 class TcpSegmentValidator:
@@ -113,7 +113,7 @@ class TcpSegmentValidator:
             return session._snd_seq.una <= seq <= session._snd_seq.nxt
         return seq >= session._snd_seq.una or seq <= session._snd_seq.nxt
 
-    def check_segment_acceptability(self, packet_rx_md: "TcpMetadata") -> bool:
+    def check_segment_acceptability(self, packet_rx_md: TcpMetadata) -> bool:
         """
         Apply the RFC 9293 §3.10.7.4 step 1 receive-window
         acceptability check to an inbound segment. Return True
@@ -199,7 +199,7 @@ class TcpSegmentValidator:
         session._emit_challenge_ack()
         return False
 
-    def check_paws_and_update_ts_recent(self, packet_rx_md: "TcpMetadata") -> bool:
+    def check_paws_and_update_ts_recent(self, packet_rx_md: TcpMetadata) -> bool:
         """
         RFC 7323 §5 PAWS + §4.3 '_ts_recent' refresh as a
         single helper invoked at every inbound dispatch
@@ -303,7 +303,7 @@ class TcpSegmentValidator:
             session._ts.update(tsval=packet_rx_md.tcp__tsval, now_ms=stack.timer.now_ms)
         return True
 
-    def check_rst_acceptability(self, packet_rx_md: "TcpMetadata") -> bool:
+    def check_rst_acceptability(self, packet_rx_md: TcpMetadata) -> bool:
         """
         RFC 9293 §3.10.7.4 / RFC 5961 §3.2 three-way RST handling
         for synchronized states. Returns True when the inbound
@@ -347,7 +347,7 @@ class TcpSegmentValidator:
             session._emit_challenge_ack()
         return False
 
-    def reinit_for_rfc6191_reuse(self, packet_rx_md: "TcpMetadata") -> None:
+    def reinit_for_rfc6191_reuse(self, packet_rx_md: TcpMetadata) -> None:
         """
         RFC 6191 §3 TIME-WAIT 4-tuple reuse: re-initialise
         this session's runtime state in place so a fresh

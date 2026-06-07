@@ -33,13 +33,10 @@ ver 3.0.8
 """
 
 import threading
-from typing import TYPE_CHECKING
 
 from net_proto.lib.enums import EtherType
 from pytcp.runtime.socket import ETH_P_ALL
-
-if TYPE_CHECKING:
-    from pytcp.runtime.socket.packet__socket import PacketSocket
+from pytcp.runtime.socket.packet__socket import PacketSocket
 
 
 class PacketSocketTable:
@@ -68,7 +65,7 @@ class PacketSocketTable:
         self._lock = threading.Lock()
         self._sockets: list[PacketSocket] = []
 
-    def register(self, sock: "PacketSocket", /) -> None:
+    def register(self, sock: PacketSocket, /) -> None:
         """
         Add 'sock' to the registry (its capture filter becomes live).
         """
@@ -76,7 +73,7 @@ class PacketSocketTable:
         with self._lock:
             self._sockets.append(sock)
 
-    def unregister(self, sock: "PacketSocket", /) -> None:
+    def unregister(self, sock: PacketSocket, /) -> None:
         """
         Remove 'sock' from the registry; a no-op when it is absent.
         """
@@ -85,7 +82,7 @@ class PacketSocketTable:
             if sock in self._sockets:
                 self._sockets.remove(sock)
 
-    def matching(self, *, ifindex: int, ethertype: EtherType | int) -> list["PacketSocket"]:
+    def matching(self, *, ifindex: int, ethertype: EtherType | int) -> list[PacketSocket]:
         """
         Return every registered socket whose filter matches a frame of
         'ethertype' arriving on interface 'ifindex'. A socket matches
@@ -103,7 +100,7 @@ class PacketSocketTable:
                 if sock.ifindex in (0, ifindex) and int(sock.ethertype) in (ETH_P_ALL, target)
             ]
 
-    def snapshot(self) -> list["PacketSocket"]:
+    def snapshot(self) -> list[PacketSocket]:
         """
         Return a detached snapshot list of the registered sockets.
         """

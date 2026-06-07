@@ -37,19 +37,31 @@ import struct
 import sys
 import threading
 from enum import IntFlag
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
-from net_addr import Ip4Address, Ip6Address, MacAddress
+from net_addr import (
+    Ip4Address,
+    Ip4IfAddr,
+    Ip4Network,
+    Ip6Address,
+    Ip6IfAddr,
+    Ip6Network,
+    MacAddress,
+)
 from pytcp.lib.interface_layer import InterfaceLayer
 from pytcp.lib.logger import log
+from pytcp.lib.plpmtud import PmtuSearch
 from pytcp.protocols.dhcp4.dhcp4__client import Dhcp4Client
 from pytcp.protocols.dhcp6.dhcp6__client import Dhcp6Client
 from pytcp.protocols.icmp.icmp__error_emitter import IcmpErrorRateLimiter
+from pytcp.protocols.ip4.link_local.link_local__client import Ip4LinkLocal
 from pytcp.protocols.tcp.tcp__stack import TcpStack
-from pytcp.runtime.fib import Route, RouteProtocol, RouteScope
+from pytcp.runtime.fib import Route, RouteProtocol, RouteScope, RouteTable
 from pytcp.runtime.interface_table import InterfaceTable
 from pytcp.runtime.packet_handler import PacketHandlerL2, PacketHandlerL3
+from pytcp.runtime.socket import AddressFamily
 from pytcp.runtime.socket.packet__socket_table import PacketSocketTable
+from pytcp.runtime.socket.ping__socket import PingSocket
 from pytcp.runtime.socket.socket_table import SocketTable
 from pytcp.runtime.timer import Timer
 from pytcp.stack.activity_introspect import ActivityIntrospectApi
@@ -60,15 +72,6 @@ from pytcp.stack.neighbor import NeighborApi
 from pytcp.stack.resolver import ResolverApi
 from pytcp.stack.route import RouteApi
 from pytcp.stack.socket_introspect import SocketIntrospectApi
-
-if TYPE_CHECKING:
-    from net_addr import Ip4IfAddr, Ip4Network, Ip6IfAddr, Ip6Network
-    from pytcp.lib.plpmtud import PmtuSearch
-    from pytcp.protocols.ip4.link_local.link_local__client import Ip4LinkLocal
-    from pytcp.runtime.fib import RouteTable
-    from pytcp.runtime.socket import AddressFamily
-    from pytcp.runtime.socket.ping__socket import PingSocket
-
 
 assert sys.version_info >= (
     3,
@@ -497,7 +500,7 @@ dhcp6_client: Dhcp6Client | None = None
 # 1 lands the slot only — the subsystem is not yet instantiated
 # by 'init()'. The DHCP-fallback wiring lands in Phase 4 of the
 # RFC 3927 track (docs/refactor/rfc3927_link_local_autoconfig.md).
-link_local: "Ip4LinkLocal | None" = None
+link_local: Ip4LinkLocal | None = None
 
 # Stack shared data.
 stack_initialized: bool = False

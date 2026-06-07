@@ -33,8 +33,9 @@ ver 3.0.8
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
+from net_addr import IpAddress
+
 if TYPE_CHECKING:
-    from net_addr import IpAddress
     from pytcp.runtime.socket import AddressFamily, SocketType
 
 

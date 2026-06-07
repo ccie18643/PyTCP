@@ -82,10 +82,10 @@ from pytcp.runtime.socket.socket__bind_helpers import (
     pick_local_ip_address,
     pick_local_port,
 )
+from pytcp.runtime.socket.udp__metadata import UdpMetadata
 
 if TYPE_CHECKING:
     from pytcp.runtime.packet_handler import PacketHandlerL2, PacketHandlerL3
-    from pytcp.runtime.socket.udp__metadata import UdpMetadata
 
 
 class UdpSocket(socket):

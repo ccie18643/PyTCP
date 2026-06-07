@@ -89,11 +89,11 @@ from pytcp.protocols.tcp.fsm.tcp__fsm__time_wait import (
     fsm__time_wait__timer,
 )
 from pytcp.protocols.tcp.tcp__enums import FsmState, SysCall
+from pytcp.protocols.tcp.tcp__icmp_metadata import IcmpMetadata
+from pytcp.runtime.socket.tcp__metadata import TcpMetadata
 
 if TYPE_CHECKING:
     from pytcp.protocols.tcp.session import TcpSession
-    from pytcp.protocols.tcp.tcp__icmp_metadata import IcmpMetadata
-    from pytcp.runtime.socket.tcp__metadata import TcpMetadata
 
 
 def fsm__icmp__synchronized(session: TcpSession, metadata: IcmpMetadata) -> None:

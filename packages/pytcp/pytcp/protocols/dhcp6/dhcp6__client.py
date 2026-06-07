@@ -41,7 +41,7 @@ import threading
 import time
 from collections.abc import Callable
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, override
+from typing import override
 
 from net_addr import Ip6Address, Ip6IfAddr, MacAddress
 from net_proto import (
@@ -72,9 +72,7 @@ from pytcp.runtime.socket import (
     socket,
 )
 from pytcp.runtime.subsystem import SUBSYSTEM_SLEEP_TIME__SEC, Subsystem
-
-if TYPE_CHECKING:
-    from pytcp.stack.address import AddressApi
+from pytcp.stack.address import AddressApi
 
 # RFC 8415 §8 — the transaction-id is a 24-bit field.
 _DHCP6__XID_MAX = 0xFFFFFF
@@ -159,7 +157,7 @@ class Dhcp6Client(Subsystem):
         *,
         mac_address: MacAddress,
         interface_name: str | None = None,
-        address_api: "AddressApi | None" = None,
+        address_api: AddressApi | None = None,
     ) -> None:
         """
         Initialize the DHCPv6 client.
