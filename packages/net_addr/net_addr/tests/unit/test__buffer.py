@@ -25,7 +25,7 @@
 """
 This module contains tests for the 'Buffer' type alias.
 
-net_proto/tests/unit/lib/test__lib__buffer.py
+net_addr/tests/unit/test__buffer.py
 
 ver 3.0.8
 """
@@ -36,12 +36,12 @@ from unittest import TestCase
 from net_addr import Buffer
 
 
-class TestNetProtoLibBuffer(TestCase):
+class TestBuffer(TestCase):
     """
-    The NetProto Buffer type alias tests.
+    The Buffer type alias tests.
     """
 
-    def test__net_proto__lib__buffer__is_type_alias(self) -> None:
+    def test__buffer__is_type_alias(self) -> None:
         """
         Ensure the 'Buffer' is a PEP 695 type alias.
 
@@ -54,7 +54,7 @@ class TestNetProtoLibBuffer(TestCase):
             msg="'Buffer' must be defined as a PEP 695 type alias.",
         )
 
-    def test__net_proto__lib__buffer__name(self) -> None:
+    def test__buffer__name(self) -> None:
         """
         Ensure the 'Buffer' type alias exposes the expected name.
 
@@ -67,7 +67,7 @@ class TestNetProtoLibBuffer(TestCase):
             msg="'Buffer' alias must be named 'Buffer'.",
         )
 
-    def test__net_proto__lib__buffer__members(self) -> None:
+    def test__buffer__members(self) -> None:
         """
         Ensure the 'Buffer' type alias resolves to the bytes/bytearray/memoryview union.
 
@@ -80,7 +80,7 @@ class TestNetProtoLibBuffer(TestCase):
             msg="'Buffer' alias must cover bytes, bytearray and memoryview.",
         )
 
-    def test__net_proto__lib__buffer__accepts_bytes(self) -> None:
+    def test__buffer__accepts_bytes(self) -> None:
         """
         Ensure 'bytes' value satisfies the 'Buffer' type at runtime.
 
@@ -94,7 +94,7 @@ class TestNetProtoLibBuffer(TestCase):
             msg="'bytes' must be a valid Buffer value.",
         )
 
-    def test__net_proto__lib__buffer__accepts_bytearray(self) -> None:
+    def test__buffer__accepts_bytearray(self) -> None:
         """
         Ensure 'bytearray' value satisfies the 'Buffer' type at runtime.
 
@@ -108,7 +108,7 @@ class TestNetProtoLibBuffer(TestCase):
             msg="'bytearray' must be a valid Buffer value.",
         )
 
-    def test__net_proto__lib__buffer__accepts_memoryview(self) -> None:
+    def test__buffer__accepts_memoryview(self) -> None:
         """
         Ensure 'memoryview' value satisfies the 'Buffer' type at runtime.
 
@@ -122,7 +122,7 @@ class TestNetProtoLibBuffer(TestCase):
             msg="'memoryview' must be a valid Buffer value.",
         )
 
-    def test__net_proto__lib__buffer__rejects_foreign_type(self) -> None:
+    def test__buffer__rejects_foreign_type(self) -> None:
         """
         Ensure that foreign types like 'str' and 'int' are not part of the
         'Buffer' type alias.
