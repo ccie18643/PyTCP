@@ -95,7 +95,7 @@ class InterfaceTable:
 
         with self._lock:
             ifindex = self._first_ifindex if not self._interfaces else max(self._interfaces) + 1
-            handler._ifindex = ifindex
+            handler.set_ifindex(ifindex)
             self._interfaces[ifindex] = handler
             return ifindex
 

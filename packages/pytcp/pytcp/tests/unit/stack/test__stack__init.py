@@ -61,6 +61,41 @@ from pytcp.stack.neighbor import NeighborApi
 from pytcp.stack.route import RouteApi
 
 
+def _configure_handler_attach_side_effects(handler: MagicMock, /) -> None:
+    """
+    Wire the construction-time public mutators of a spec'd PacketHandlerL2
+    mock so the binding side effects 'mock__init' (and start/stop) drive
+    through 'attach_rings' / 'attach_caches' / 'attach_arp_cache' /
+    'set_ifindex' land on the mock's '_rx_ring' / '_tx_ring' / '_arp_cache'
+    / '_nd_cache' / '_ifindex' the storage-assertion tests inspect. Also
+    mirrors the public read accessors ('ifindex', 'rx_ring', 'tx_ring',
+    'arp_cache', 'nd_cache') the lifecycle start/stop paths consult onto
+    the same storage, so the recording mocks installed on the private
+    names are what those paths reach.
+    """
+
+    def _attach_rings(*, rx_ring: object = None, tx_ring: object = None) -> None:
+        if rx_ring is not None:
+            handler._rx_ring = handler.rx_ring = rx_ring
+        if tx_ring is not None:
+            handler._tx_ring = handler.tx_ring = tx_ring
+
+    def _attach_caches(*, arp_cache: object, nd_cache: object, iface_name: object = None) -> None:
+        handler._arp_cache = handler.arp_cache = arp_cache
+        handler._nd_cache = handler.nd_cache = nd_cache
+
+    def _attach_arp_cache(arp_cache: object, /) -> None:
+        handler._arp_cache = handler.arp_cache = arp_cache
+
+    def _set_ifindex(ifindex: int, /) -> None:
+        handler._ifindex = handler.ifindex = ifindex
+
+    handler.attach_rings.side_effect = _attach_rings
+    handler.attach_caches.side_effect = _attach_caches
+    handler.attach_arp_cache.side_effect = _attach_arp_cache
+    handler.set_ifindex.side_effect = _set_ifindex
+
+
 class TestStackModuleConstants(TestCase):
     """
     The 'pytcp.stack' module-level constant tests.
@@ -514,7 +549,8 @@ class TestStackMockInit(TestCase):
         fake_arp = MagicMock()
         fake_nd = MagicMock()
         fake_handler = MagicMock(spec=PacketHandlerL2)
-        fake_handler._ifindex = 1
+        fake_handler._ifindex = fake_handler.ifindex = 1
+        _configure_handler_attach_side_effects(fake_handler)
 
         stack.mock__init(
             mock__timer=fake_timer,
@@ -540,7 +576,8 @@ class TestStackMockInit(TestCase):
         """
 
         handler = MagicMock(spec=PacketHandlerL2)
-        handler._ifindex = 1
+        handler._ifindex = handler.ifindex = 1
+        _configure_handler_attach_side_effects(handler)
 
         stack.mock__init(mock__packet_handler=handler)
 
@@ -561,7 +598,8 @@ class TestStackMockInit(TestCase):
         """
 
         handler = MagicMock(spec=PacketHandlerL2)
-        handler._ifindex = 1
+        handler._ifindex = handler.ifindex = 1
+        _configure_handler_attach_side_effects(handler)
         stack.mock__init(mock__timer=MagicMock(), mock__packet_handler=handler)
 
         new_timer = MagicMock()
@@ -603,9 +641,11 @@ class TestStackStartDhcpBootWait(TestCase):
         stack.timer = MagicMock()
         stack.link_local = None
         handler = MagicMock(spec=PacketHandlerL2)
-        handler._ifindex = 1
-        handler._dhcp4_client = create_autospec(Dhcp4Client, spec_set=True)
-        self._dhcp4_client = handler._dhcp4_client
+        handler._ifindex = handler.ifindex = 1
+        # 'start()' reaches the DHCP clients via the public read accessors.
+        handler._dhcp4_client = handler.dhcp4_client = create_autospec(Dhcp4Client, spec_set=True)
+        handler._dhcp6_client = handler.dhcp6_client = None
+        self._dhcp4_client = handler.dhcp4_client
         interfaces = InterfaceTable(first_ifindex=stack.STACK__DEFAULT_IFINDEX)
         interfaces[1] = handler
         stack.interfaces = interfaces
@@ -679,18 +719,24 @@ class TestStackStopOrdering(TestCase):
             return m
 
         # 'start()' / 'stop()' iterate 'stack.interfaces' and reach each
-        # interface's rings + caches via the handler's injected '_rx_ring' /
-        # '_tx_ring' / '_arp_cache' / '_nd_cache' (the handler IS the
-        # interface). Wire those to the recording mocks and register the
-        # handler as the sole interface; the timer is the only remaining
-        # module-level subsystem 'stop()' touches.
+        # interface's rings + caches via the handler's public read
+        # accessors ('rx_ring' / 'tx_ring' / 'arp_cache' / 'nd_cache' —
+        # the handler IS the interface). Wire those to the recording
+        # mocks and register the handler as the sole interface; the timer
+        # is the only remaining module-level subsystem 'stop()' touches.
         stack.timer = _make_subsystem("timer")
         handler = _make_subsystem("packet_handler")
-        handler._ifindex = 1
-        handler._rx_ring = _make_subsystem("rx_ring")
-        handler._tx_ring = _make_subsystem("tx_ring")
-        handler._arp_cache = _make_subsystem("arp_cache")
-        handler._nd_cache = _make_subsystem("nd_cache")
+        handler._ifindex = handler.ifindex = 1
+        handler.rx_ring = _make_subsystem("rx_ring")
+        handler.tx_ring = _make_subsystem("tx_ring")
+        handler.arp_cache = _make_subsystem("arp_cache")
+        handler.nd_cache = _make_subsystem("nd_cache")
+        # 'start()' / 'stop()' also probe the DHCP clients; this stop-order
+        # test runs no DHCP, so a plain MagicMock 'handler' would auto-
+        # create truthy child mocks. Pin them None so the isinstance +
+        # not-None guards skip the DHCP branches.
+        handler.dhcp4_client = None
+        handler.dhcp6_client = None
         _interfaces = InterfaceTable(first_ifindex=stack.STACK__DEFAULT_IFINDEX)
         _interfaces[1] = handler
         stack.interfaces = _interfaces

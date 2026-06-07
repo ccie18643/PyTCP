@@ -106,6 +106,9 @@ class _FakePacketHandler:
             self.left_snm.append(host.address.solicited_node_multicast)
         return removed_hosts
 
+    def set_ifindex(self, ifindex: int, /) -> None:
+        self._ifindex = ifindex
+
     def claim_ip6_address_async(
         self,
         *,

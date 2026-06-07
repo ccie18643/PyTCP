@@ -93,6 +93,18 @@ class NdCache(NeighborCache[Ip6Address, EthernetAssembler]):
             flush_callback=self._flush_packet,
         )
 
+    def attach_owner(self, owner: "PacketHandlerL2 | PacketHandlerL3", /, *, iface_name: str | None) -> None:
+        """
+        Bind this cache to its owning interface handler (the
+        bidirectional cache <-> handler link) and record the interface
+        name for the 'neighbor.<ifname>.*' sysctl namespace. Called by
+        the stack lifecycle at construction time; the solicit / flush
+        callbacks route through 'owner'.
+        """
+
+        self._owner = owner
+        self._iface_name = iface_name
+
     # ------------------------------------------------------------
     # Public API — kw-only methods preserve the established ND
     # call-site convention. They delegate to the protected

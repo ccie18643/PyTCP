@@ -134,6 +134,9 @@ class _FakePacketHandlerL2:
     def set_mac_address(self, mac_address: MacAddress, /) -> None:
         self._mac_unicast = mac_address
 
+    def set_ifindex(self, ifindex: int, /) -> None:
+        self._ifindex = ifindex
+
 
 class _FakePacketHandlerL3:
     """

@@ -83,6 +83,16 @@ class Subsystem(ABC):
         self._event__stop_subsystem = threading.Event()
         self._thread = None
 
+    def set_log_interface(self, interface_name: str | None, /) -> None:
+        """
+        Bind this subsystem's worker-thread log context to 'interface_name'
+        so every message it emits is interface-tagged. Called by the
+        stack lifecycle at construction time before 'start()'; the value
+        is read once by the worker thread in '_thread__subsystem'.
+        """
+
+        self._log_interface = interface_name
+
     def start(self) -> None:
         """
         Start the subsystem.

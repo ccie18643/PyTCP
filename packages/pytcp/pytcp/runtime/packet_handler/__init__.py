@@ -1226,6 +1226,16 @@ class PacketHandler(Subsystem, ABC):
 
         return self._ifindex
 
+    def set_ifindex(self, ifindex: int, /) -> None:
+        """
+        Stamp the allocated per-interface index onto this handler — the
+        'InterfaceTable.add' construction-time wiring (the table owns
+        monotonic ifindex allocation under its lock and stamps the result
+        here).
+        """
+
+        self._ifindex = ifindex
+
     @property
     def mac_unicast(self) -> MacAddress | None:
         """
@@ -1310,6 +1320,116 @@ class PacketHandler(Subsystem, ABC):
         """
 
         return getattr(self, "_dhcp4_client", None)
+
+    @property
+    def dhcp6_client(self) -> "Dhcp6Client | None":
+        """
+        Get the per-interface DHCPv6 client, or 'None' when no client is
+        installed. Read surface for the stack-lifecycle start / stop
+        paths; the '_dhcp6_client' attribute stays the storage.
+        """
+
+        return self._dhcp6_client
+
+    @property
+    def rx_ring(self) -> RxRing | None:
+        """
+        Get the per-interface RX ring, or 'None' for a standalone
+        unit-test handler with no ring wired. Read surface for the
+        stack-lifecycle start / stop paths; the '_rx_ring' attribute
+        stays the storage.
+        """
+
+        return self._rx_ring
+
+    @property
+    def tx_ring(self) -> TxRing | None:
+        """
+        Get the per-interface TX ring, or 'None' for a standalone
+        unit-test handler with no ring wired. Read surface for the
+        stack-lifecycle start / stop paths; the '_tx_ring' attribute
+        stays the storage.
+        """
+
+        return self._tx_ring
+
+    @property
+    def route_api(self) -> "RouteApi | None":
+        """
+        Get the injected routing-control API, or 'None' until injected.
+        Read surface for the stack lifecycle; the '_route_api' attribute
+        stays the storage.
+        """
+
+        return self._route_api
+
+    def attach_rings(self, *, rx_ring: RxRing | None = None, tx_ring: TxRing | None = None) -> None:
+        """
+        Bind this interface's fd-bound RX / TX rings post-construction —
+        the 'stack.mock__init' test affordance uses this to install mock
+        rings independently (the real 'add_interface' path passes them as
+        constructor arguments). Only the supplied ring(s) are replaced; a
+        'None' argument leaves the existing binding untouched.
+        """
+
+        if rx_ring is not None:
+            self._rx_ring = rx_ring
+        if tx_ring is not None:
+            self._tx_ring = tx_ring
+
+    def attach_caches(self, *, arp_cache: "ArpCache | None", nd_cache: "NdCache", iface_name: str | None) -> None:
+        """
+        Bind this interface's neighbor caches and the reverse owner
+        back-reference (the bidirectional cache <-> handler link) — the
+        stack lifecycle's construction-time wiring. ARP is L2-only, so
+        'arp_cache' is 'None' on an L3 (TUN) handler; ND is used by both
+        layers. The 'iface_name' plumbs the interface name into each
+        cache's per-interface 'neighbor.<ifname>.*' sysctl resolution.
+        """
+
+        # 'self' is always a concrete L2 / L3 handler at runtime (the
+        # base 'PacketHandler' is abstract); the narrowing satisfies the
+        # caches' 'attach_owner' owner type.
+        assert isinstance(self, (PacketHandlerL2, PacketHandlerL3)), "Caches bind only to a concrete interface."
+        self._arp_cache = arp_cache
+        self._nd_cache = nd_cache
+        if arp_cache is not None:
+            # ARP is L2-only — a non-None ARP cache is only ever attached
+            # to an L2 (TAP) handler.
+            assert isinstance(self, PacketHandlerL2), "ARP cache may only bind to an L2 interface."
+            arp_cache.attach_owner(self, iface_name=iface_name)
+        nd_cache.attach_owner(self, iface_name=iface_name)
+
+    def attach_arp_cache(self, arp_cache: "ArpCache", /) -> None:
+        """
+        Bind this interface's ARP cache on its own (the 'stack.mock__init'
+        test affordance's narrow ARP-only path) and the reverse owner
+        back-reference. The production path uses 'attach_caches', which
+        binds both neighbor caches together. ARP is L2-only.
+        """
+
+        assert isinstance(self, PacketHandlerL2), "ARP cache may only bind to an L2 interface."
+        self._arp_cache = arp_cache
+        arp_cache.attach_owner(self, iface_name=None)
+
+    def attach_route_api(self, route_api: "RouteApi", /) -> None:
+        """
+        Inject the routing-control API (global state shared across
+        interfaces) — the stack lifecycle's construction-time wiring. The
+        RX RA path drives the default route through this.
+        """
+
+        self._route_api = route_api
+
+    def attach_dhcp6_client(self, client: "Dhcp6Client", /) -> None:
+        """
+        Bind this interface's DHCPv6 client (RFC 8415) — the stack
+        lifecycle's construction-time wiring. RA-driven: the RA RX
+        handler triggers it on an inbound RA's Managed / Other-config
+        flags.
+        """
+
+        self._dhcp6_client = client
 
     @property
     def dad_states(self) -> dict[Ip6Address, Icmp6DadState]:
@@ -3293,6 +3413,15 @@ class PacketHandlerL2(
         # '_perform_ip6_nd_dad'.
         self._remove_ip6_host(ip6_host=ip6_host)
         return False
+
+    def attach_dhcp4_client(self, client: "Dhcp4Client", /) -> None:
+        """
+        Bind this L2 interface's DHCPv4 client (RFC 2131) — the stack
+        lifecycle's construction-time wiring. L2-only: DHCPv4 depends on
+        Ethernet / ARP, so '_dhcp4_client' lives on this subclass.
+        """
+
+        self._dhcp4_client = client
 
     @override
     def claim_ip6_address_async(
