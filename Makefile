@@ -19,14 +19,21 @@ LINT_FILES := $(PYTCP_FILES) $(NET_ADDR_FILES) $(NET_PROTO_FILES) $(EXAMPLES_FIL
 # the 'venv' target), so its name is decoupled from its path here.
 MYPY_PACKAGES := pytcp net_addr net_proto examples_legacy
 
-# The protected-access gate (pylint W0212 only) runs over the three
-# packages' NON-TEST source — tests are exempt from the no-cross-class-
-# private-access rule (source_files.md §5.2). mypy does not flag
-# protected access at all, so this is the sole CI enforcement of that
-# boundary; deliberately split-class subpackages (protocols/tcp/fsm,
-# protocols/tcp/session, runtime/packet_handler) carry their own
-# file-level '# pylint: disable=protected-access', which this run honors.
-PROTECTED_ACCESS_FILES := $(shell find $(PYTCP_PATH) $(NET_ADDR_PATH) $(NET_PROTO_PATH) -name '*.py' -not -path '*/tests/*')
+# The pylint gate runs a small set of checks NOT covered by flake8 / mypy
+# over the three packages' NON-TEST source (tests are exempt — they reach
+# across the private boundary by design, source_files.md §5.2):
+#   protected-access        no cross-class '_private' reach-through (§5.2);
+#                           split-class subpackages (protocols/tcp/fsm,
+#                           protocols/tcp/session, runtime/packet_handler)
+#                           carry their own file-level disable, honored here
+#   raise-missing-from      mandatory exception chaining 'raise X from err'
+#                           (net_proto.md §9.2, python_features.md §10a)
+#   dangerous-default-value no mutable default args ('= []' / '= {}')
+#   cell-var-from-loop      closure-over-loop-variable bug
+#   useless-super-delegation / super-with-arguments  redundant super() forms
+# Everything else stays off — full pylint is not part of the gate.
+PYLINT_GATE_CHECKS := protected-access,raise-missing-from,dangerous-default-value,cell-var-from-loop,useless-super-delegation,super-with-arguments
+PYLINT_GATE_FILES := $(shell find $(PYTCP_PATH) $(NET_ADDR_PATH) $(NET_PROTO_PATH) -name '*.py' -not -path '*/tests/*')
 
 # If any recipe fails, delete its target file. Without this a
 # failed (or interrupted) 'venv' build leaves a half-populated
@@ -111,8 +118,8 @@ lint: venv
 	@echo '<<< MYPY'
 	@for pkg in $(MYPY_PACKAGES); do PYTHONPATH=$(ROOT_PATH) ./$(VENV)/bin/mypy -p $$pkg || exit 1; done
 	@PYTHONPATH=$(ROOT_PATH) ./$(VENV)/bin/mypy $(ROOT_FILES)
-	@echo '<<< PYLINT (protected-access)'
-	@PYTHONPATH=$(ROOT_PATH) ./$(VENV)/bin/pylint --disable=all --enable=protected-access --score=n $(PROTECTED_ACCESS_FILES)
+	@echo '<<< PYLINT (gate checks)'
+	@PYTHONPATH=$(ROOT_PATH) ./$(VENV)/bin/pylint --disable=all --enable=$(PYLINT_GATE_CHECKS) --score=n $(PYLINT_GATE_FILES)
 
 test__pytcp__integration: venv
 	@echo '<<< UNITTEST PYTCP INTEGRATION'
