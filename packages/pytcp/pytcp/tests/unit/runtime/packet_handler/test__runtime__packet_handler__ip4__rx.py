@@ -33,7 +33,7 @@ ver 3.0.8
 from collections.abc import Callable
 from typing import TYPE_CHECKING, cast
 from unittest import TestCase
-from unittest.mock import patch
+from unittest.mock import create_autospec, patch
 
 from net_addr import Ip4Address
 from net_proto import Ip4FragAssembler, Ip4Parser, IpProto
@@ -47,6 +47,7 @@ from pytcp.runtime.packet_handler.dispatch import DispatchRegistry
 from pytcp.runtime.packet_handler.packet_handler__ip4__rx import (
     Ip4RxHandler,
 )
+from pytcp.runtime.socket.raw__socket import RawSocket
 
 if TYPE_CHECKING:
     from pytcp.runtime.packet_handler import PacketHandlerL2, PacketHandlerL3
@@ -581,21 +582,24 @@ class TestPacketHandlerIp4RxRawSocketMatch(_Ip4RxTestBase):
     The RAW-socket fastpath tests.
     """
 
-    def test__stack__packet_handler__ip4__rx__raw_socket_match_short_circuits(self) -> None:
+    def test__stack__packet_handler__ip4__rx__raw_socket_match_copies_without_consuming(self) -> None:
         """
-        Ensure a matching RAW socket consumes the packet and prevents
-        upper-layer dispatch, incrementing 'raw__socket_match'.
+        Ensure a matching RAW socket receives a copy of the datagram and
+        increments 'raw__socket_match', while the packet still continues
+        to the normal transport handler — Linux 'raw_local_deliver' raw
+        delivery is a non-consuming copy, not a short-circuit.
 
-        Reference: RFC 791 (IPv4 RX dispatch — filter, demux, reassembly).
+        Reference: RFC 791 (IPv4 RX dispatch — RAW non-consuming copy).
         """
-
-        from unittest.mock import MagicMock
 
         # Build a frame and seed a sockets dict matched by IP proto.
         frame = _ip4_frame(proto=IpProto.UDP, payload=b"\x00" * 8)
 
         # Install a socket that matches any of the generated socket_ids.
-        fake_socket = MagicMock()
+        # The RX fastpath gates on 'isinstance(socket, RawSocket)', so the
+        # stub must be a RawSocket-spec'd autospec (its '__class__' passes
+        # isinstance) — a bare MagicMock is skipped and never matches.
+        fake_socket = create_autospec(RawSocket, spec_set=True, instance=True)
 
         # Replace stack.sockets with a dict-like that returns fake_socket
         # for any lookup. This guarantees the fastpath fires regardless
@@ -618,8 +622,8 @@ class TestPacketHandlerIp4RxRawSocketMatch(_Ip4RxTestBase):
         fake_socket.process_raw_packet.assert_called_once()
         self.assertEqual(
             self._if.dispatched,
-            [],
-            msg="Matched RAW socket must short-circuit before protocol dispatch.",
+            ["udp"],
+            msg="A matched RAW socket receives a copy but does not consume; the transport handler still dispatches.",
         )
 
 
