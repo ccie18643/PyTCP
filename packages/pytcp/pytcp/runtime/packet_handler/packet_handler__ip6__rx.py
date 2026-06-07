@@ -31,7 +31,7 @@ ver 3.0.8
 """
 
 import time as time_module
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING
 
 from net_proto import (
     Icmp6MessageParameterProblem,
@@ -182,21 +182,36 @@ class Ip6RxHandler:
             tracker=packet_rx.tracker,
         )
 
+        # Linux 'raw6_local_deliver': clone the datagram to EVERY matching
+        # RAW socket, then continue to the extension-header chain walker /
+        # transport handler — raw delivery is a copy that does NOT consume.
+        # 'raw_delivered' is the Linux 'raw' flag: it suppresses the
+        # unrecognized-next-header Parameter Problem in the walker only
+        # when no RAW socket received the datagram.
+        raw_delivered = False
+        delivered: set[int] = set()
         for socket_id in packet_rx_md.socket_ids:
-            if socket := cast(RawSocket, stack.sockets.get(socket_id, None)):
-                self._if._packet_stats_rx.raw__socket_match += 1
-                __debug__ and log(
-                    "ip6",
-                    f"{packet_rx_md.tracker} - <INFO>Found matching listening " f"socket [{socket}]</>",
-                )
-                socket.process_raw_packet(packet_rx_md)
-                return
+            socket = stack.sockets.get(socket_id, None)
+            if not isinstance(socket, RawSocket) or id(socket) in delivered:
+                continue
+            delivered.add(id(socket))
+            self._if._packet_stats_rx.raw__socket_match += 1
+            __debug__ and log(
+                "ip6",
+                f"{packet_rx_md.tracker} - <INFO>Found matching listening " f"socket [{socket}]</>",
+            )
+            socket.process_raw_packet(packet_rx_md)
+            raw_delivered = True
 
-        self._phrx_ip6__walk_chain(packet_rx)
+        self._phrx_ip6__walk_chain(packet_rx, raw_delivered=raw_delivered)
 
-    def _phrx_ip6__walk_chain(self, packet_rx: PacketRx, /) -> None:
+    def _phrx_ip6__walk_chain(self, packet_rx: PacketRx, /, *, raw_delivered: bool = False) -> None:
         """
         Walk the IPv6 extension-header chain in RFC 8200 §4.1 order.
+
+        'raw_delivered' is the Linux 'raw' flag — when a RAW socket
+        already received the datagram, the unrecognized-next-header
+        Parameter Problem at the chain terminator is suppressed.
 
         The walker advances 'packet_rx.frame' through HBH / Routing /
         Frag / DestOpts in turn, applying each header's parser, and
@@ -281,7 +296,8 @@ class Ip6RxHandler:
                 "ip6",
                 f"{packet_rx.tracker} - Unsupported protocol {current_next}, dropping.",
             )
-            self.__phrx_ip6__emit_parameter_problem_unrecognized_next_header(packet_rx, pointer=chain_offset)
+            if not raw_delivered:
+                self.__phrx_ip6__emit_parameter_problem_unrecognized_next_header(packet_rx, pointer=chain_offset)
 
     def _phrx_ip6_hbh(self, packet_rx: PacketRx, /, *, chain_offset: int) -> bool:
         """

@@ -96,6 +96,10 @@ class TestRawMulticastSourceDataFilter(UdpTestCase):
 
         super().setUp()
         self._sock = RawSocket(family=AddressFamily.INET4, type=SocketType.RAW, protocol=_PROTO)
+        # 'RawSocket.__init__' registers under the unspecified local
+        # address; drop that and re-register bound to the test group (a
+        # plain 'bind' rejects a multicast local address).
+        stack.sockets.unregister(self._sock)
         self._sock._local_ip_address = _GROUP
         stack.sockets[self._sock.socket_id] = self._sock
 

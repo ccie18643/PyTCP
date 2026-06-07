@@ -32,7 +32,7 @@ ver 3.0.8
 
 import struct
 import time as time_module
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING
 
 from net_proto import (
     Icmp4DestinationUnreachableCode,
@@ -214,32 +214,41 @@ class Ip4RxHandler:
             tracker=packet_rx.tracker,
         )
 
+        # Linux 'raw_local_deliver': clone the datagram to EVERY matching
+        # RAW socket, then continue to the normal transport handler — raw
+        # delivery is a copy that does NOT consume. 'raw_delivered' is the
+        # Linux 'raw' flag: it suppresses the Protocol Unreachable below
+        # only when no RAW socket received the datagram.
+        raw_delivered = False
+        delivered: set[int] = set()
         for socket_id in packet_rx_md.socket_ids:
-            if socket := cast(RawSocket, stack.sockets.get(socket_id, None)):
-                # RFC 3376 §3.1 data-plane source-delivery filter (Linux
-                # 'ip_mc_sf_allow' in raw_v4_input): a matched RAW socket
-                # whose source filter rejects the datagram's source does
-                # not receive it. The packet is dropped, not passed to the
-                # transport demux — a matched-but-filtered socket
-                # suppresses the Protocol-Unreachable the way Linux's
-                # 'delivered = 1' does.
-                if packet_rx.ip4.dst.is_multicast and not socket._ip4_multicast_source_admits(
-                    ifindex=self._if._ifindex, group=packet_rx.ip4.dst, source=packet_rx.ip4.src
-                ):
-                    self._if._packet_stats_rx.raw__multicast_source_filtered__drop += 1
-                    return
-                self._if._packet_stats_rx.raw__socket_match += 1
-                __debug__ and log(
-                    "ip4",
-                    f"{packet_rx_md.tracker} - <INFO>Found matching listening " f"socket [{socket}]</>",
-                )
-                socket.process_raw_packet(packet_rx_md)
-                return
+            socket = stack.sockets.get(socket_id, None)
+            if not isinstance(socket, RawSocket) or id(socket) in delivered:
+                continue
+            # RFC 3376 §3.1 data-plane source-delivery filter (Linux
+            # 'ip_mc_sf_allow' in raw_v4_input): a matched RAW socket whose
+            # source filter rejects the datagram's source is skipped — it
+            # does not receive the datagram, but delivery to other matching
+            # sockets and the transport handler still proceeds.
+            if packet_rx.ip4.dst.is_multicast and not socket._ip4_multicast_source_admits(
+                ifindex=self._if._ifindex, group=packet_rx.ip4.dst, source=packet_rx.ip4.src
+            ):
+                self._if._packet_stats_rx.raw__multicast_source_filtered__drop += 1
+                continue
+            delivered.add(id(socket))
+            self._if._packet_stats_rx.raw__socket_match += 1
+            __debug__ and log(
+                "ip4",
+                f"{packet_rx_md.tracker} - <INFO>Found matching listening " f"socket [{socket}]</>",
+            )
+            socket.process_raw_packet(packet_rx_md)
+            raw_delivered = True
 
         # IpProto -> transport-handler demux via the per-interface
         # dispatch registry (ICMPv4 / UDP / TCP). A registry miss is an
         # unsupported transport protocol — RFC 1122 §3.2.2.1 Protocol
-        # Unreachable.
+        # Unreachable, suppressed when a RAW socket already received the
+        # datagram (Linux 'raw' flag).
         handler = self._if._ip4_proto_registry.get(packet_rx.ip4.proto)
         if handler is None:
             self._if._packet_stats_rx.ip4__no_proto_support__drop += 1
@@ -247,7 +256,8 @@ class Ip4RxHandler:
                 "ip4",
                 f"{packet_rx.tracker} - Unsupported protocol " f"{packet_rx.ip4.proto}, dropping.",
             )
-            self.__phrx_ip4__emit_protocol_unreachable(packet_rx)
+            if not raw_delivered:
+                self.__phrx_ip4__emit_protocol_unreachable(packet_rx)
             return
         handler(packet_rx)
 

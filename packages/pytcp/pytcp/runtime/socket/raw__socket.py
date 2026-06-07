@@ -102,6 +102,13 @@ class RawSocket(socket):
         self._local_port = int(self._ip_proto)
         self._remote_port = 0
 
+        # Linux raw sockets receive their protocol's packets the moment
+        # they are created -- no 'bind' is required (bind only narrows the
+        # local/peer address). Register now with the unspecified local
+        # address (INADDR_ANY) so an unbound raw socket is a delivery
+        # candidate; 'bind' re-registers under the narrowed address.
+        stack.sockets.register(self)
+
         __debug__ and log("socket", f"<g>[{self}]</> - Created socket")
 
     def _get_ip_addresses(
