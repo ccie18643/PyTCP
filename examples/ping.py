@@ -28,20 +28,29 @@
 This module contains a ping (ICMP Echo) tool written against the standard
 'socket' API.
 
+By default it uses a raw ICMP socket (the classic 'ping' mechanism); the
+'-U' / '--unprivileged' flag switches to the Linux unprivileged ICMP
+datagram socket ('socket(AF_INET, SOCK_DGRAM, IPPROTO_ICMP)'), where the
+kernel owns the ICMP id, demuxes replies by it, hands back the ICMP
+message only (no IP header), and reports the reply TTL through an 'IP_TTL'
+control message.
+
 The body uses only the official BSD socket interface, so the same program
 runs on the Python standard-library stack or on a PyTCP daemon -- the only
 backend-specific line is the 'socket' import below. It defaults to PyTCP;
 change that one line to 'import socket' to run on the kernel stack.
 
-Stdlib mode needs root (CAP_NET_RAW) for the raw ICMP socket. PyTCP mode
-needs a running daemon (it owns the TAP interface), e.g.:
+Stdlib mode: the default raw socket needs root (CAP_NET_RAW); the '-U'
+datagram socket needs the destination within 'net.ipv4.ping_group_range'
+(default: no groups, so run as root or widen the range). PyTCP mode needs
+a running daemon (it owns the TAP interface), e.g.:
 
     sudo make tap7 && sudo make bridge
     pytcp stack start -i tap7
 
 Usage:
 
-    examples/ping.py [-c COUNT] [-i INTERVAL] [-W TIMEOUT] [-s SIZE] DESTINATION
+    examples/ping.py [-U] [-c COUNT] [-i INTERVAL] [-W TIMEOUT] [-s SIZE] DESTINATION
 
 IPv4 only.
 
@@ -82,7 +91,9 @@ def _checksum(data: bytes, /) -> int:
 def _build_echo_request(*, identifier: int, sequence: int, size: int) -> bytes:
     """
     Build an ICMP Echo Request: the 8-byte header followed by an 8-byte
-    send timestamp and a filler pattern up to 'size' payload bytes.
+    send timestamp and a filler pattern up to 'size' payload bytes. In
+    unprivileged mode the kernel overwrites the id, so passing 'identifier'
+    here is harmless in either mode.
     """
 
     payload = struct.pack(TIMESTAMP__STRUCT, time.monotonic()) + bytes(
@@ -93,10 +104,10 @@ def _build_echo_request(*, identifier: int, sequence: int, size: int) -> bytes:
     return header + payload
 
 
-def _parse_echo_reply(packet: bytes, /, *, identifier: int) -> tuple[int, int, float] | None:
+def _parse_raw_reply(packet: bytes, /, *, identifier: int) -> tuple[int, int, float] | None:
     """
-    Parse a received IPv4 datagram (IP header + ICMP, as both the kernel
-    and PyTCP deliver it on a raw socket). Return '(sequence, ttl,
+    Parse a received IPv4 datagram (IP header + ICMP, as a raw socket
+    delivers it on both the kernel and PyTCP). Return '(sequence, ttl,
     send_time)' when it is our Echo Reply, otherwise 'None'.
     """
 
@@ -114,6 +125,67 @@ def _parse_echo_reply(packet: bytes, /, *, identifier: int) -> tuple[int, int, f
     return sequence, ttl, send_time
 
 
+def _parse_icmp_reply(icmp: bytes, /) -> tuple[int, float] | None:
+    """
+    Parse the ICMP message an unprivileged ping socket delivers (no IP
+    header). Return '(sequence, send_time)' when it is an Echo Reply,
+    otherwise 'None'.
+    """
+
+    if len(icmp) < 8 + TIMESTAMP__LEN:
+        return None
+    icmp_type, _, _, _, sequence = struct.unpack(ICMP__HEADER__STRUCT, icmp[:8])
+    if icmp_type != ICMP__ECHO_REPLY:
+        return None
+    (send_time,) = struct.unpack(TIMESTAMP__STRUCT, icmp[8 : 8 + TIMESTAMP__LEN])
+    return sequence, send_time
+
+
+def _ttl_from_ancdata(ancdata: list[tuple[int, int, bytes]], /) -> int | None:
+    """
+    Extract the reply's TTL from an 'IP_TTL' control message, or 'None'
+    when none was delivered. The cmsg value is an int in host byte order;
+    its low byte carries the TTL (always <= 255).
+    """
+
+    for level, kind, data in ancdata:
+        if level == socket.IPPROTO_IP and kind == socket.IP_TTL and data:
+            return data[0]
+    return None
+
+
+def _recv_one_reply(
+    sock: socket.Socket,
+    /,
+    *,
+    unprivileged: bool,
+    identifier: int,
+    sequence: int,
+    timeout: float,
+) -> tuple[int | None, float] | None:
+    """
+    Wait up to 'timeout' seconds for our Echo Reply to 'sequence',
+    ignoring unrelated traffic. Return '(ttl, send_time)' on a match (ttl
+    is 'None' if the stack delivered no TTL), or 'None' on timeout.
+    """
+
+    deadline = time.monotonic() + timeout
+    while (remaining := deadline - time.monotonic()) > 0:
+        sock.settimeout(remaining)
+        try:
+            if unprivileged:
+                icmp, ancdata, _flags, _address = sock.recvmsg(2048, 256)
+                if (parsed := _parse_icmp_reply(icmp)) is not None and parsed[0] == sequence:
+                    return _ttl_from_ancdata(ancdata), parsed[1]
+            else:
+                packet, _ = sock.recvfrom(2048)
+                if (raw := _parse_raw_reply(packet, identifier=identifier)) is not None and raw[0] == sequence:
+                    return raw[1], raw[2]
+        except TimeoutError:
+            break
+    return None
+
+
 def main() -> None:
     """
     Send ICMP Echo Requests to a destination and report the replies, in
@@ -122,6 +194,12 @@ def main() -> None:
 
     parser = argparse.ArgumentParser(description="ICMP Echo (ping) over the official socket API.")
     parser.add_argument("destination", help="IPv4 address or hostname to ping.")
+    parser.add_argument(
+        "-U",
+        "--unprivileged",
+        action="store_true",
+        help="Use the unprivileged ICMP datagram ('ping') socket instead of a raw socket.",
+    )
     parser.add_argument(
         "-c", "--count", type=int, default=None, help="Stop after COUNT requests (default: until interrupted)."
     )
@@ -136,7 +214,11 @@ def main() -> None:
     address = socket.gethostbyname(args.destination)
     identifier = os.getpid() & 0xFFFF
 
-    sock = socket.socket(socket.AF_INET, socket.SOCK_RAW, socket.IPPROTO_ICMP)
+    if args.unprivileged:
+        sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_ICMP)
+        sock.setsockopt(socket.IPPROTO_IP, socket.IP_RECVTTL, 1)
+    else:
+        sock = socket.socket(socket.AF_INET, socket.SOCK_RAW, socket.IPPROTO_ICMP)
 
     transmitted = 0
     received = 0
@@ -150,30 +232,25 @@ def main() -> None:
             sock.sendto(_build_echo_request(identifier=identifier, sequence=sequence, size=args.size), (address, 0))
             transmitted += 1
 
-            # Read raw datagrams until our Echo Reply arrives or the
-            # per-reply timeout elapses, ignoring unrelated ICMP traffic.
-            reply: tuple[int, int, float] | None = None
-            deadline = time.monotonic() + args.timeout
-            while (remaining := deadline - time.monotonic()) > 0:
-                sock.settimeout(remaining)
-                try:
-                    packet, _ = sock.recvfrom(2048)
-                except TimeoutError:
-                    break
-                if (parsed := _parse_echo_reply(packet, identifier=identifier)) is not None:
-                    reply = parsed
-                    break
+            reply = _recv_one_reply(
+                sock,
+                unprivileged=args.unprivileged,
+                identifier=identifier,
+                sequence=sequence,
+                timeout=args.timeout,
+            )
 
             if reply is None:
                 print(f"Request timeout for icmp_seq {sequence}")
             else:
-                reply_sequence, ttl, send_time = reply
+                ttl, send_time = reply
                 round_trip_ms = (time.monotonic() - send_time) * 1000.0
                 received += 1
                 round_trips.append(round_trip_ms)
+                ttl_text = "?" if ttl is None else str(ttl)
                 print(
                     f"{args.size + 8} bytes from {address}: "
-                    f"icmp_seq={reply_sequence} ttl={ttl} time={round_trip_ms:.2f} ms"
+                    f"icmp_seq={sequence} ttl={ttl_text} time={round_trip_ms:.2f} ms"
                 )
 
             if args.count is None or sequence < args.count:
