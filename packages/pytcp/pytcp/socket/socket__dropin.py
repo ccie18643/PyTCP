@@ -69,7 +69,7 @@ if TYPE_CHECKING:
 
     from _typeshed import ReadableBuffer, WriteableBuffer
 
-    from pytcp.client import ClientStack, ClientTcpSocket, ClientUdpSocket
+    from pytcp.client import ClientRawSocket, ClientStack, ClientTcpSocket, ClientUdpSocket
 
 # stdlib-socket exception aliases.
 error = OSError
@@ -290,12 +290,12 @@ class Socket:
 
     def __init__(
         self,
-        underlying: ClientTcpSocket | ClientUdpSocket | _DupDataChannel,
+        underlying: ClientTcpSocket | ClientUdpSocket | ClientRawSocket | _DupDataChannel,
         /,
         *,
         family: AddressFamily,
         type: SocketType,
-        proto: int,
+        proto: int | IpProto,
     ) -> None:
         """
         Wrap a daemon-backed client socket shim (or, for a duplicate, a
@@ -305,14 +305,14 @@ class Socket:
         self._sock = underlying
         self._family = family
         self._type = type
-        self._proto = proto
+        self._proto = int(proto)
         self._timeout: float | None = None
         self._io_refs: int = 0
         self._closed: bool = False
         self._real_closed: bool = False
         self._data_only = isinstance(underlying, _DupDataChannel)
 
-    def _control_sock(self) -> ClientTcpSocket | ClientUdpSocket:
+    def _control_sock(self) -> ClientTcpSocket | ClientUdpSocket | ClientRawSocket:
         """
         Return the underlying control-capable client shim, or raise if the
         socket is a data-only duplicate.
@@ -320,7 +320,7 @@ class Socket:
 
         if self._data_only:
             raise OSError(errno.EOPNOTSUPP, "control operations are not available on a duplicated socket.")
-        return cast("ClientTcpSocket | ClientUdpSocket", self._sock)
+        return cast("ClientTcpSocket | ClientUdpSocket | ClientRawSocket", self._sock)
 
     @property
     def family(self) -> AddressFamily:
@@ -449,9 +449,9 @@ class Socket:
         Send a datagram to 'address', returning the number of bytes sent.
         """
 
-        if self._type is not SocketType.DGRAM:
-            raise OSError(errno.EOPNOTSUPP, "sendto() is only supported on a datagram socket.")
-        return cast("ClientUdpSocket", self._control_sock()).sendto(data, address)
+        if self._type not in (SocketType.DGRAM, SocketType.RAW):
+            raise OSError(errno.EOPNOTSUPP, "sendto() is only supported on a datagram or raw socket.")
+        return cast("ClientUdpSocket | ClientRawSocket", self._control_sock()).sendto(data, address)
 
     def recv(self, bufsize: int, /) -> bytes:
         """
@@ -477,9 +477,9 @@ class Socket:
         Receive a datagram, returning the data and the sender address.
         """
 
-        if self._type is not SocketType.DGRAM:
-            raise OSError(errno.EOPNOTSUPP, "recvfrom() is only supported on a datagram socket.")
-        return cast("ClientUdpSocket", self._control_sock()).recvfrom(bufsize)
+        if self._type not in (SocketType.DGRAM, SocketType.RAW):
+            raise OSError(errno.EOPNOTSUPP, "recvfrom() is only supported on a datagram or raw socket.")
+        return cast("ClientUdpSocket | ClientRawSocket", self._control_sock()).recvfrom(bufsize)
 
     def setsockopt(self, level: int | IpProto, optname: int, value: int | bytes, /) -> None:
         """
@@ -669,7 +669,7 @@ class Socket:
 def socket(
     family: int | AddressFamily = AddressFamily.INET4,
     type: int | SocketType = SocketType.STREAM,
-    proto: int = 0,
+    proto: int | IpProto = 0,
     fileno: int | None = None,
 ) -> Socket:
     """
@@ -685,15 +685,21 @@ def socket(
     address_family = AddressFamily(family)
     socket_type = SocketType(type)
 
-    if socket_type not in (SocketType.STREAM, SocketType.DGRAM):
+    if socket_type not in (SocketType.STREAM, SocketType.DGRAM, SocketType.RAW):
         raise NotImplementedError(
-            f"The daemon-backed drop-in currently supports SOCK_STREAM and SOCK_DGRAM; got {socket_type!r}.",
+            f"The daemon-backed drop-in supports SOCK_STREAM, SOCK_DGRAM and SOCK_RAW; got {socket_type!r}.",
         )
 
-    underlying = _get_default_stack().socket(address_family, socket_type)
+    # SOCK_RAW carries an IANA next-header in 'proto' (e.g. IPPROTO_ICMP);
+    # SOCK_STREAM / SOCK_DGRAM ignore it.
+    underlying = _get_default_stack().socket(
+        address_family,
+        socket_type,
+        proto if socket_type is SocketType.RAW else None,
+    )
 
     return Socket(
-        cast("ClientTcpSocket | ClientUdpSocket", underlying),
+        cast("ClientTcpSocket | ClientUdpSocket | ClientRawSocket", underlying),
         family=address_family,
         type=socket_type,
         proto=proto,
