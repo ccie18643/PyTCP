@@ -25,53 +25,65 @@
 
 
 """
-This module contains a ping (ICMP Echo) tool written against the standard
-'socket' API.
+This module contains a ping (ICMP Echo) tool for the PyTCP daemon, built
+on the daemon-backed 'pytcp.socket' drop-in, 'net_addr', and Click.
 
-The destination's IP version is auto-detected through 'getaddrinfo', so
-the same invocation pings an IPv4 or IPv6 address / hostname (ICMPv4 Echo
-8/0 or ICMPv6 Echo 128/129). Socket selection mirrors Linux 'ping': by
-default it uses the unprivileged ICMP datagram socket ('socket(AF_INET*,
-SOCK_DGRAM, IPPROTO_ICMP*)') and falls back to a raw socket if that is
-refused; '-e IDENTIFIER' forces a raw socket (a custom id needs SOCK_RAW,
-since the kernel owns the id on a ping socket). On the datagram socket the
-kernel owns the ICMP id, demuxes replies by it, hands back the ICMP
-message only (no IP header), and reports the reply TTL / Hop Limit through
-an 'IP_TTL' / 'IPV6_HOPLIMIT' control message.
+The destination may be an IPv4 / IPv6 address — classified directly via
+'net_addr' — or a hostname, resolved through the daemon's DNS resolver;
+the IP version drives ICMPv4 (Echo 8/0) vs ICMPv6 (Echo 128/129). Socket
+selection mirrors Linux 'ping': by default it uses the unprivileged ICMP
+datagram socket and falls back to a raw socket if that is refused;
+'-e IDENTIFIER' forces a raw socket (a custom id needs SOCK_RAW, since the
+kernel owns the id on a ping socket). On the datagram socket the kernel
+owns the ICMP id, demuxes replies by it, hands back the ICMP message only
+(no IP header), and reports the reply TTL / Hop Limit through an 'IP_TTL'
+/ 'IPV6_HOPLIMIT' control message.
 
-The body uses only the official BSD socket interface, so the same program
-runs on the Python standard-library stack or on a PyTCP daemon -- the only
-backend-specific line is the 'socket' import below. It defaults to PyTCP;
-change that one line to 'import socket' to run on the kernel stack.
-
-Stdlib mode: the default datagram socket needs the destination within
-'net.ipv4.ping_group_range' (else it falls back to raw, which needs root /
-CAP_NET_RAW). PyTCP mode needs a running daemon (it owns the TAP
-interface), e.g.:
+Needs a running daemon (it owns the TAP interface), e.g.:
 
     sudo make tap7 && sudo make bridge
     pytcp stack start -i tap7
-
-Usage:
-
-    examples/ping.py [-e ID] [-c COUNT] [-i INTERVAL] [-W TIMEOUT] [-s SIZE] DESTINATION
 
 examples/ping.py
 
 ver 3.0.8
 """
 
-import argparse
 import os
 import struct
 import time
-from typing import NamedTuple
+from typing import NamedTuple, override
 
-import pytcp.socket as socket  # PyTCP drop-in; change to 'import socket' for the kernel stack
+import click
+
+from net_addr import Ip4Address, Ip4AddressFormatError, Ip6Address, Ip6AddressFormatError
+from pytcp import socket
 
 ICMP__HEADER__STRUCT: str = "!BBHHH"
 TIMESTAMP__STRUCT: str = "!d"
 TIMESTAMP__LEN: int = 8
+
+BANNER: str = "PyTCP ping tool — ICMP Echo (ping) over the PyTCP daemon"
+
+
+class _BannerCommand(click.Command):
+    """
+    A Click command whose '--help' is framed by a leading blank line, a
+    bright-green banner, and a trailing blank line.
+    """
+
+    @override
+    def format_help(self, ctx: click.Context, formatter: click.HelpFormatter) -> None:
+        formatter.write("\n")
+        formatter.write(click.style(BANNER, fg="bright_green", bold=True))
+        formatter.write("\n\n")
+        super().format_help(ctx, formatter)
+
+    @override
+    def get_help(self, ctx: click.Context) -> str:
+        # Click rstrips trailing newlines from the help, so append one
+        # here for the trailing blank line ('echo' adds the final newline).
+        return super().get_help(ctx) + "\n"
 
 
 class _IcmpProfile(NamedTuple):
@@ -79,7 +91,7 @@ class _IcmpProfile(NamedTuple):
     The per-IP-version wire-format values that drive an ICMP Echo
     exchange. These are plain integers / booleans; the stack-specific
     socket-construction constants (family / proto / setsockopt level) stay
-    in 'main' so they keep their native 'pytcp' / stdlib types. The cmsg
+    in the command body so they keep their native 'pytcp' types. The cmsg
     level / type are stored as plain 'int' because the control message the
     stack delivers carries them as integers.
     """
@@ -259,43 +271,64 @@ def _open_icmp_socket(family: int, /, *, is_ipv6: bool, force_raw: bool) -> tupl
     return socket.socket(family, socket.SOCK_RAW, proto), False
 
 
-def main() -> None:
+def _resolve(destination: str, /) -> tuple[bool, str]:
     """
-    Send ICMP Echo Requests to a destination and report the replies, in
-    the style of the 'ping' utility.
+    Classify 'destination' and resolve it to '(is_ipv6, ip_address)'. An
+    IP literal is recognised directly via 'net_addr' (no DNS round trip);
+    anything else is treated as a hostname and resolved through
+    'getaddrinfo' (the daemon's DNS resolver).
     """
 
-    parser = argparse.ArgumentParser(description="ICMP Echo (ping) over the official socket API.")
-    parser.add_argument("destination", help="IPv4 / IPv6 address or hostname to ping.")
-    parser.add_argument(
-        "-e",
-        "--identifier",
-        type=int,
-        default=None,
-        metavar="IDENTIFIER",
-        help="ICMP identifier for the session; implies a raw (SOCK_RAW) socket (like 'ping -e').",
-    )
-    parser.add_argument(
-        "-c", "--count", type=int, default=None, help="Stop after COUNT requests (default: until interrupted)."
-    )
-    parser.add_argument("-i", "--interval", type=float, default=1.0, help="Seconds between requests (default: 1.0).")
-    parser.add_argument("-W", "--timeout", type=float, default=1.0, help="Seconds to wait per reply (default: 1.0).")
-    parser.add_argument("-s", "--size", type=int, default=56, help="Payload size in bytes, >= 8 (default: 56).")
-    args = parser.parse_args()
+    try:
+        return True, str(Ip6Address(destination))
+    except Ip6AddressFormatError:
+        pass
+    try:
+        return False, str(Ip4Address(destination))
+    except Ip4AddressFormatError:
+        pass
+    family, _type, _proto, _canon, sockaddr = socket.getaddrinfo(destination, None)[0]
+    return family == socket.AF_INET6, sockaddr[0]
 
-    if args.size < TIMESTAMP__LEN:
-        parser.error(f"--size must be at least {TIMESTAMP__LEN} (room for the send timestamp).")
 
-    # Auto-detect the IP version from the destination via 'getaddrinfo'.
-    family, _type, _proto, _canon, sockaddr = socket.getaddrinfo(args.destination, None)[0]
-    address = sockaddr[0]
-    is_ipv6 = family == socket.AF_INET6
+@click.command(cls=_BannerCommand, context_settings={"help_option_names": ["-h", "--help"]})
+@click.argument("destination")
+@click.option(
+    "-e",
+    "--identifier",
+    type=click.IntRange(0, 0xFFFF),
+    default=None,
+    metavar="ID",
+    help="ICMP identifier; implies a raw (SOCK_RAW) socket.",
+)
+@click.option("-c", "--count", type=click.IntRange(min=1), default=None, help="Stop after COUNT requests.")
+@click.option("-i", "--interval", type=float, default=1.0, show_default=True, help="Seconds between requests.")
+@click.option("-W", "--timeout", type=float, default=1.0, show_default=True, help="Seconds to wait per reply.")
+@click.option(
+    "-s",
+    "--size",
+    type=click.IntRange(min=TIMESTAMP__LEN),
+    default=56,
+    show_default=True,
+    help="Payload size in bytes.",
+)
+def ping(
+    destination: str, identifier: int | None, count: int | None, interval: float, timeout: float, size: int
+) -> None:
+    """
+    Send ICMP Echo Requests to DESTINATION (an IPv4 / IPv6 address or
+    hostname) and report the replies, in the style of the 'ping' utility.
+    """
+
+    is_ipv6, address = _resolve(destination)
     profile = _profile_for(is_ipv6)
 
     # A custom identifier (-e) requires a raw socket, since the kernel owns
     # the id on a SOCK_DGRAM ping socket (Linux 'ping -e' implies SOCK_RAW).
-    identifier = args.identifier if args.identifier is not None else (os.getpid() & 0xFFFF)
-    sock, is_dgram = _open_icmp_socket(family, is_ipv6=is_ipv6, force_raw=args.identifier is not None)
+    icmp_id = identifier if identifier is not None else (os.getpid() & 0xFFFF)
+    sock, is_dgram = _open_icmp_socket(
+        socket.AF_INET6 if is_ipv6 else socket.AF_INET, is_ipv6=is_ipv6, force_raw=identifier is not None
+    )
 
     # A v4 raw socket reads the TTL from the prepended IP header; every
     # other path (the ping socket, and a v6 raw socket — which carries no
@@ -303,7 +336,7 @@ def main() -> None:
     use_cmsg = is_dgram or is_ipv6
     # Raw sockets see all matching ICMP traffic, so filter replies by our
     # id; a ping socket is demuxed by the kernel, which owns the id.
-    match_identifier = None if is_dgram else identifier
+    match_identifier = None if is_dgram else icmp_id
 
     if use_cmsg:
         recv_ttl_level = socket.IPPROTO_IPV6 if is_ipv6 else socket.IPPROTO_IP
@@ -314,12 +347,12 @@ def main() -> None:
     received = 0
     round_trips: list[float] = []
 
-    print(f"PING {args.destination} ({address}): {args.size} data bytes")
+    click.echo(f"PING {destination} ({address}): {size} data bytes")
     try:
         sequence = 0
-        while args.count is None or sequence < args.count:
+        while count is None or sequence < count:
             sequence += 1
-            request = _build_echo_request(profile, identifier=identifier, sequence=sequence, size=args.size)
+            request = _build_echo_request(profile, identifier=icmp_id, sequence=sequence, size=size)
             sock.sendto(request, (address, 0))
             transmitted += 1
 
@@ -329,36 +362,38 @@ def main() -> None:
                 use_cmsg=use_cmsg,
                 match_identifier=match_identifier,
                 sequence=sequence,
-                timeout=args.timeout,
+                timeout=timeout,
             )
 
             if reply is None:
-                print(f"Request timeout for icmp_seq {sequence}")
+                click.secho(f"Request timeout for icmp_seq {sequence}", fg="yellow")
             else:
                 ttl, send_time = reply
                 round_trip_ms = (time.monotonic() - send_time) * 1000.0
                 received += 1
                 round_trips.append(round_trip_ms)
                 ttl_text = "?" if ttl is None else str(ttl)
-                print(
-                    f"{args.size + 8} bytes from {address}: "
-                    f"icmp_seq={sequence} ttl={ttl_text} time={round_trip_ms:.2f} ms"
+                click.echo(
+                    f"{size + 8} bytes from {address}: icmp_seq={sequence} ttl={ttl_text} time={round_trip_ms:.2f} ms"
                 )
 
-            if args.count is None or sequence < args.count:
-                time.sleep(args.interval)
+            if count is None or sequence < count:
+                time.sleep(interval)
     except KeyboardInterrupt:
-        print()
+        click.echo()
     finally:
         sock.close()
 
-    print(f"\n--- {args.destination} ping statistics ---")
     loss = 100.0 * (transmitted - received) / transmitted if transmitted else 0.0
-    print(f"{transmitted} packets transmitted, {received} received, {loss:.0f}% packet loss")
+    click.echo(f"\n--- {destination} ping statistics ---")
+    click.secho(
+        f"{transmitted} packets transmitted, {received} received, {loss:.0f}% packet loss",
+        fg="green" if loss == 0.0 else "red",
+    )
     if round_trips:
         average = sum(round_trips) / len(round_trips)
-        print(f"rtt min/avg/max = {min(round_trips):.2f}/{average:.2f}/{max(round_trips):.2f} ms")
+        click.echo(f"rtt min/avg/max = {min(round_trips):.2f}/{average:.2f}/{max(round_trips):.2f} ms")
 
 
 if __name__ == "__main__":
-    main()
+    ping()  # pylint: disable=no-value-for-parameter  # click injects the arguments
