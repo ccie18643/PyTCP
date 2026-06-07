@@ -678,7 +678,7 @@ class Dhcp4Client(Subsystem):
         *,
         lease: Dhcp4Lease,
         broadcast: bool,
-    ) -> "Dhcp4Lease | _NakRestart | None":
+    ) -> Dhcp4Lease | _NakRestart | None:
         """
         Open a one-shot socket, send one unicast (RENEW) or
         broadcast (REBIND) REQUEST, wait for an ACK / NAK / no
@@ -749,7 +749,7 @@ class Dhcp4Client(Subsystem):
 
     def _consume_renew_or_rebind_outcome(
         self,
-        outcome: "Dhcp4Lease | _NakRestart | None",
+        outcome: Dhcp4Lease | _NakRestart | None,
         /,
     ) -> None:
         """
@@ -1509,7 +1509,7 @@ class Dhcp4Client(Subsystem):
         xid: int,
         resend: "Callable[[], None]",  # noqa: F821 — typing alias defined below
         allow_nak: bool = False,
-    ) -> "Dhcp4Parser | _NakRestart | None":
+    ) -> Dhcp4Parser | _NakRestart | None:
         """
         Wait for an inbound DHCP message of 'expected_type' using the
         RFC 2131 §4.1 retransmission backoff. On each per-attempt
@@ -1560,7 +1560,7 @@ class Dhcp4Client(Subsystem):
         xid: int,
         timeout_s: float,
         allow_nak: bool,
-    ) -> "Dhcp4Parser | _NakRestart | None":
+    ) -> Dhcp4Parser | _NakRestart | None:
         """
         Wait up to 'timeout_s' seconds for a valid DHCP message,
         silently dropping bogus packets (malformed, wrong type, bad
