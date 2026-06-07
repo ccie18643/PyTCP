@@ -44,14 +44,12 @@ class Address(Base, ABC):
 
     __slots__ = ("_address",)
 
+    # The address value packed big-endian into a single integer — the
+    # sole per-instance slot. Every concrete leaf's '__init__' parses
+    # its accepted input forms (str / bytes / int / Self / None) down to
+    # this integer; all arithmetic, comparison, hashing, and wire
+    # serialisation read it back out.
     _address: int
-
-    # The address-family width in bytes, bound once per concrete
-    # leaf (class-level constant, same pattern as '_version').
-    # Hot paths ('_with_offset', '__format__', 'max_prefixlen')
-    # read this instead of 'len(memoryview(self))', which would
-    # allocate a fresh bytearray + memoryview on every call.
-    _address_len: ClassVar[int]
 
     # The concrete value type's free-message sanity error,
     # raised for operation-precondition / invalid-argument
@@ -76,6 +74,21 @@ class Address(Base, ABC):
 
         raise NotImplementedError
 
+    @property
+    @abstractmethod
+    def _address_len(self) -> int:
+        """
+        Get the address-family width in bytes.
+        """
+
+        # Each concrete leaf overrides this abstract property with a
+        # 'ClassVar[int]' constant, so the hot-path reads
+        # ('_with_offset', '__format__', 'max_prefixlen', '_validate')
+        # stay a plain class-attribute lookup rather than
+        # 'len(memoryview(self))', which would allocate a fresh
+        # bytearray + memoryview on every call.
+        raise NotImplementedError
+
     def __int__(self) -> int:
         """
         Get the network address as integer.
@@ -83,14 +96,15 @@ class Address(Base, ABC):
 
         return self._address
 
+    @abstractmethod
     def _format_alt(self, format_spec: str, /) -> str | None:
         """
         Render a type-specific textual format code, or None if
-        the code is not recognised by this address type. The
-        base type recognises none.
+        the code is not recognised by this address type. Every
+        concrete leaf implements it (the base declares no default).
         """
 
-        return None
+        raise NotImplementedError
 
     @override
     def __format__(self, format_spec: str, /) -> str:
