@@ -119,6 +119,47 @@ class TestPickLocalIp6Address(TestCase):
             msg="An off-link remote with a default route must use the first host's address.",
         )
 
+    def test__ip_helper__pick_local_ip6__external_skips_link_local_source(self) -> None:
+        """
+        Ensure that for an off-link non-link-local remote covered by a FIB
+        default route the helper skips a link-local host and sources from a
+        global address, since a link-local source cannot reach a global
+        destination.
+
+        Reference: RFC 6724 §5 rule 2 (prefer appropriate scope).
+        Reference: RFC 4007 §6 (a link-local source cannot reach a global destination).
+        """
+
+        host_link_local = SimpleNamespace(address=Ip6Address("fe80::abcd"), network=Ip6Network("fe80::/64"))
+        host_global = SimpleNamespace(
+            address=Ip6Address("2603:808c:2800:4301::7"),
+            network=Ip6Network("2603:808c:2800:4301::/64"),
+        )
+        fake_handler = SimpleNamespace(ip6_host=[host_link_local, host_global])
+        fib: RouteTable[Ip6Address, Ip6Network] = RouteTable()
+        fib.add(
+            route=Route(
+                destination=Ip6Network("::/0"),
+                gateway=Ip6Address("fe80::1"),
+                protocol=RouteProtocol.RA,
+            )
+        )
+
+        with (
+            patch(
+                "pytcp.runtime.socket.socket__bind_helpers.stack.local_ip6_hosts",
+                return_value=tuple(fake_handler.ip6_host),
+            ),
+            patch("pytcp.runtime.socket.socket__bind_helpers.stack.ip6_fib", fib, create=True),
+        ):
+            result = pick_local_ip6_address(remote_ip6_address=Ip6Address("2600::"))
+
+        self.assertEqual(
+            result,
+            Ip6Address("2603:808c:2800:4301::7"),
+            msg="An off-link global remote must source from a global host, never a link-local one.",
+        )
+
     def test__ip_helper__pick_local_ip6__route_prefsrc_preferred(self) -> None:
         """
         Ensure a route's preferred source is used in preference to

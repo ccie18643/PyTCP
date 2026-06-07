@@ -97,6 +97,16 @@ def pick_local_ip6_address(
             if route.prefsrc is not None:
                 return route.prefsrc
             if ip6_hosts:
+                # RFC 6724 §5 rule 2 (prefer appropriate scope): a
+                # link-local source cannot reach a non-link-local
+                # destination (RFC 4007 §6), so never source one for such
+                # a destination — pick the first global / non-link-local
+                # host instead, falling back to the first host only when
+                # every configured address is link-local.
+                if not remote_ip6_address.is_link_local:
+                    for ip6_host in ip6_hosts:
+                        if not ip6_host.address.is_link_local:
+                            return ip6_host.address
                 return ip6_hosts[0].address
 
     return Ip6Address()
