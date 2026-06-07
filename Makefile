@@ -31,8 +31,17 @@ MYPY_PACKAGES := pytcp net_addr net_proto examples_legacy
 #   dangerous-default-value no mutable default args ('= []' / '= {}')
 #   cell-var-from-loop      closure-over-loop-variable bug
 #   useless-super-delegation / super-with-arguments  redundant super() forms
+#   unused-import           genuinely-unused imports AND — uniquely — a
+#                           runtime import used only inside a STRING
+#                           annotation, i.e. an unnecessary quote that
+#                           should be unquoted (typing.md §20). flake8's
+#                           F401 reads inside string annotations so it
+#                           misses this; pylint W0611 does not. It does
+#                           NOT fire on TYPE_CHECKING imports used in
+#                           string annotations (the legit circular-import
+#                           case) or on '__all__' re-exports.
 # Everything else stays off — full pylint is not part of the gate.
-PYLINT_GATE_CHECKS := protected-access,raise-missing-from,dangerous-default-value,cell-var-from-loop,useless-super-delegation,super-with-arguments
+PYLINT_GATE_CHECKS := protected-access,raise-missing-from,dangerous-default-value,cell-var-from-loop,useless-super-delegation,super-with-arguments,unused-import
 PYLINT_GATE_FILES := $(shell find $(PYTCP_PATH) $(NET_ADDR_PATH) $(NET_PROTO_PATH) -name '*.py' -not -path '*/tests/*')
 
 # If any recipe fails, delete its target file. Without this a
