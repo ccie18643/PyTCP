@@ -35,7 +35,7 @@ from abc import ABC
 from dataclasses import dataclass
 from typing import Self, override
 
-from net_proto.lib.buffer import Buffer
+from net_addr import Buffer
 from net_proto.lib.enums import IpProto
 from net_proto.lib.int_checks import is_8_byte_alligned, is_uint13, is_uint32
 from net_proto.lib.proto_struct import ProtoStruct

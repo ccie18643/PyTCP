@@ -39,6 +39,7 @@ from unittest import TestCase
 from unittest.mock import create_autospec, patch
 
 from net_addr import (
+    Buffer,
     Ip4Address,
     Ip4IfAddr,
     Ip4Network,
@@ -47,7 +48,6 @@ from net_addr import (
     Ip6Network,
     MacAddress,
 )
-from net_proto.lib.buffer import Buffer
 from net_proto.lib.packet_rx import PacketRx
 from net_proto.protocols.ethernet.ethernet__assembler import EthernetAssembler
 from pytcp import stack

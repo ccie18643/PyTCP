@@ -32,7 +32,7 @@ ver 3.0.8
 
 from typing import TYPE_CHECKING
 
-from net_proto.lib.buffer import Buffer
+from net_addr import Buffer
 from net_proto.lib.tracker import Tracker
 
 if TYPE_CHECKING:

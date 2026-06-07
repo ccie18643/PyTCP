@@ -48,7 +48,7 @@ pytcp/ipc/ipc__dgram_frame.py
 ver 3.0.8
 """
 
-from net_proto.lib.buffer import Buffer
+from net_addr import Buffer
 from pytcp.ipc.ipc__errors import IpcFrameError
 from pytcp.ipc.ipc__stdlib_socket import stdlib_socket
 

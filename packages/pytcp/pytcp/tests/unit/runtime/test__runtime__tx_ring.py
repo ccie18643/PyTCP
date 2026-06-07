@@ -37,6 +37,7 @@ from unittest import TestCase
 from unittest.mock import MagicMock, patch
 
 import pytcp.runtime.tx_ring as tx_ring_module
+from net_addr import Buffer
 from net_proto import (
     Ethernet8023Assembler,
     EthernetAssembler,
@@ -44,7 +45,6 @@ from net_proto import (
     Ip4FragAssembler,
     Ip6Assembler,
 )
-from net_proto.lib.buffer import Buffer
 from pytcp.lib.tx_status import TxStatus
 from pytcp.runtime.tx_ring import TxRing
 

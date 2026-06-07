@@ -48,7 +48,7 @@ import os
 from dataclasses import dataclass
 from typing import Any, NoReturn
 
-from net_proto.lib.buffer import Buffer
+from net_addr import Buffer
 from net_proto.lib.enums import EtherType, IpProto
 from pytcp.ipc.ipc__client import IpcClient
 from pytcp.ipc.ipc__enums import IpcMessageKind, IpcOp

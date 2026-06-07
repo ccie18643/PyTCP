@@ -34,8 +34,7 @@ import struct
 from dataclasses import dataclass
 from typing import Self
 
-from net_addr import Ip4Address, Ip6Address
-from net_proto.lib.buffer import Buffer
+from net_addr import Buffer, Ip4Address, Ip6Address
 from net_proto.lib.int_checks import is_uint16, is_uint32
 from net_proto.protocols.dns.dns__enums import DnsRecordClass, DnsRecordType
 from net_proto.protocols.dns.dns__errors import DnsIntegrityError

@@ -32,7 +32,7 @@ ver 3.0.8
 
 from typing import override
 
-from net_proto.lib.buffer import Buffer
+from net_addr import Buffer
 from net_proto.lib.packet_rx import PacketRx
 from net_proto.lib.proto_parser import ProtoParser
 from net_proto.protocols.ip6_routing.ip6_routing__base import Ip6Routing

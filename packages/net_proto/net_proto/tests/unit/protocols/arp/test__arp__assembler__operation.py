@@ -33,7 +33,7 @@ ver 3.0.8
 from typing import Any, override
 from unittest import TestCase
 
-from net_addr import Ip4Address, MacAddress
+from net_addr import Buffer, Ip4Address, MacAddress
 from net_proto import (
     ARP__HARDWARE_LEN__ETHERNET,
     ARP__HEADER__LEN,
@@ -45,7 +45,6 @@ from net_proto import (
     EtherType,
     Tracker,
 )
-from net_proto.lib.buffer import Buffer
 from net_proto.tests.lib.parameterized import parameterized_class
 
 

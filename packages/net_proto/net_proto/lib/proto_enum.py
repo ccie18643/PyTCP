@@ -33,7 +33,7 @@ ver 3.0.8
 from enum import Enum
 from typing import Self, override
 
-from net_proto.lib.buffer import Buffer
+from net_addr import Buffer
 
 
 class ProtoEnum(Enum):

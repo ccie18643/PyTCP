@@ -34,6 +34,7 @@ from abc import ABC, abstractmethod
 from typing import ClassVar, Self, override
 
 from net_addr.base import Base
+from net_addr.buffer import Buffer
 from net_addr.errors import IpAddressSanityError, NetAddrError
 
 
@@ -64,7 +65,7 @@ class Address(Base, ABC):
     @abstractmethod
     def __init__(
         self,
-        address: Self | str | bytes | bytearray | memoryview | int | None = None,
+        address: Self | str | Buffer | int | None = None,
         /,
     ) -> None:
         """

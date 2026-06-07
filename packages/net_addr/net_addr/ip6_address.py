@@ -33,6 +33,7 @@ ver 3.0.8
 import socket
 from typing import ClassVar, Self, final, override
 
+from net_addr.buffer import Buffer
 from net_addr.errors import Ip6AddressFormatError, Ip6AddressSanityError, NetAddrError
 from net_addr.ip4_address import Ip4Address
 from net_addr.ip_address import IpAddress
@@ -138,7 +139,7 @@ class Ip6Address(IpAddress):
 
     def __init__(
         self,
-        address: Self | str | bytes | bytearray | memoryview | int | None = None,
+        address: Self | str | Buffer | int | None = None,
         /,
     ) -> None:
         """

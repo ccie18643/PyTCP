@@ -44,6 +44,7 @@ from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, override
 
 from net_addr import (
+    Buffer,
     Ip4Address,
     Ip4IfAddr,
     Ip6Address,
@@ -70,7 +71,6 @@ from net_proto import (
     RawAssembler,
     Tracker,
 )
-from net_proto.lib.buffer import Buffer
 from net_proto.protocols.icmp6.message.mld1.icmp6__mld1__message__report import (
     MldVersion,
 )

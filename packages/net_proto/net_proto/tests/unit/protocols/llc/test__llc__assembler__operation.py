@@ -34,6 +34,7 @@ ver 3.0.8
 from typing import Any, override
 from unittest import TestCase
 
+from net_addr import Buffer
 from net_proto import (
     LLC__HEADER__LEN,
     LlcAssembler,
@@ -42,7 +43,6 @@ from net_proto import (
     LlcSap,
     Tracker,
 )
-from net_proto.lib.buffer import Buffer
 from net_proto.tests.lib.parameterized import parameterized_class
 
 

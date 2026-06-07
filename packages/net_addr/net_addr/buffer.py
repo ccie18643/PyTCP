@@ -25,7 +25,7 @@
 """
 This module contains the Buffer type alias.
 
-net_proto/lib/buffer.py
+net_addr/buffer.py
 
 ver 3.0.8
 """

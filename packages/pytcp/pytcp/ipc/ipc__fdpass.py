@@ -43,7 +43,7 @@ import array
 import os
 import struct
 
-from net_proto.lib.buffer import Buffer
+from net_addr import Buffer
 from pytcp.ipc.ipc__errors import IpcFrameError
 from pytcp.ipc.ipc__frame import (
     IPC__FRAME__LENGTH_PREFIX_LEN,

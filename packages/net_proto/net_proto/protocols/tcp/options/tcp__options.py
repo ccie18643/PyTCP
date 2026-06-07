@@ -33,7 +33,7 @@ ver 3.0.8
 from abc import ABC
 from typing import Self, override
 
-from net_proto.lib.buffer import Buffer
+from net_addr import Buffer
 from net_proto.lib.proto_option import ProtoOptions
 from net_proto.protocols.tcp.options.tcp__option import TcpOption, TcpOptionType
 from net_proto.protocols.tcp.options.tcp__option__accecn0 import (

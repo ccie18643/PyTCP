@@ -41,12 +41,12 @@ from collections.abc import Iterable
 from typing import TYPE_CHECKING, override
 
 from net_addr import (
+    Buffer,
     Ip4Address,
     Ip4AddressFormatError,
     Ip6Address,
     Ip6AddressFormatError,
 )
-from net_proto.lib.buffer import Buffer
 from net_proto.lib.enums import IpProto
 from net_proto.lib.proto_enum import ProtoEnum
 from pytcp import stack

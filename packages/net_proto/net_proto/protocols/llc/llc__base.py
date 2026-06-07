@@ -32,7 +32,7 @@ ver 3.0.8
 
 from typing import override
 
-from net_proto.lib.buffer import Buffer
+from net_addr import Buffer
 from net_proto.lib.proto import Proto
 from net_proto.protocols.llc.llc__header import LlcHeader, LlcHeaderProperties
 

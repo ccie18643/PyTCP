@@ -32,7 +32,7 @@ ver 3.0.8
 
 from unittest import TestCase
 
-from net_proto.lib.buffer import Buffer
+from net_addr import Buffer
 from net_proto.lib.enums import IpProto
 from net_proto.protocols.ip6_routing.ip6_routing__assembler import (
     Ip6RoutingAssembler,

@@ -39,7 +39,7 @@ net_proto/protocols/dns/dns__name.py
 ver 3.0.8
 """
 
-from net_proto.lib.buffer import Buffer
+from net_addr import Buffer
 from net_proto.protocols.dns.dns__errors import DnsIntegrityError
 
 # RFC 1035 §2.3.4 — a label is at most 63 octets, a name at most 255.

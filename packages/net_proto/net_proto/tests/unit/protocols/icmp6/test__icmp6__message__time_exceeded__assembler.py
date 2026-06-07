@@ -33,13 +33,13 @@ ver 3.0.8
 from typing import Any, override
 from unittest import TestCase
 
+from net_addr import Buffer
 from net_proto import (
     Icmp6Assembler,
     Icmp6MessageTimeExceeded,
     Icmp6TimeExceededCode,
     Icmp6Type,
 )
-from net_proto.lib.buffer import Buffer
 from net_proto.tests.lib.parameterized import parameterized_class
 
 

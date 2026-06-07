@@ -34,7 +34,7 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import Self
 
-from net_proto.lib.buffer import Buffer
+from net_addr import Buffer
 
 
 @dataclass(frozen=True, kw_only=True, slots=True)

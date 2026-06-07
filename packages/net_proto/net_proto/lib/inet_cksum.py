@@ -39,7 +39,7 @@ ver 3.0.8
 
 import struct
 
-from net_proto.lib.buffer import Buffer
+from net_addr import Buffer
 
 
 def inet_cksum(*buffers: Buffer, init: int = 0) -> int:

@@ -37,7 +37,7 @@ ver 3.0.8
 from dataclasses import dataclass
 from typing import Self, override
 
-from net_proto.lib.buffer import Buffer
+from net_addr import Buffer
 from net_proto.lib.proto_option import ProtoOption, ProtoOptionType
 
 # RFC 8415 §21.1 — DHCPv6 option TLV fixed prefix. Unlike DHCPv4,

@@ -34,7 +34,7 @@ from abc import abstractmethod
 from dataclasses import dataclass
 from enum import IntEnum
 
-from net_proto.lib.buffer import Buffer
+from net_addr import Buffer
 from net_proto.lib.proto_enum import ProtoEnumByte
 from net_proto.lib.proto_struct import ProtoStruct
 

@@ -41,8 +41,7 @@ pytcp/ipc/ipc__packet_frame.py
 ver 3.0.8
 """
 
-from net_addr import MacAddress
-from net_proto.lib.buffer import Buffer
+from net_addr import Buffer, MacAddress
 from net_proto.lib.enums import EtherType
 from pytcp.ipc.ipc__errors import IpcFrameError
 from pytcp.runtime.socket import PacketType

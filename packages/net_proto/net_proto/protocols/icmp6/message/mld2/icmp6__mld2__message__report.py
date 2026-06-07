@@ -34,8 +34,7 @@ import struct
 from dataclasses import dataclass, field
 from typing import Self, override
 
-from net_addr import IP6__ADDRESS_LEN, Ip6Address
-from net_proto.lib.buffer import Buffer
+from net_addr import IP6__ADDRESS_LEN, Buffer, Ip6Address
 from net_proto.lib.int_checks import is_uint16
 from net_proto.protocols.icmp6.icmp6__errors import (
     Icmp6IntegrityError,

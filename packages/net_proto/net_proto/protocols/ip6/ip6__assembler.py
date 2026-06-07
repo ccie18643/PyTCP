@@ -32,8 +32,7 @@ ver 3.0.8
 
 from typing import override
 
-from net_addr import Ip6Address
-from net_proto.lib.buffer import Buffer
+from net_addr import Buffer, Ip6Address
 from net_proto.lib.enums import IpProto
 from net_proto.lib.proto_assembler import ProtoAssembler
 from net_proto.protocols.icmp6.icmp6__assembler import Icmp6Assembler

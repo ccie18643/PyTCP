@@ -34,9 +34,8 @@ ver 3.0.8
 
 from typing import TYPE_CHECKING
 
-from net_addr import MacAddress
+from net_addr import Buffer, MacAddress
 from net_proto import EthernetParser, PacketRx, PacketValidationError
-from net_proto.lib.buffer import Buffer
 from pytcp import stack
 from pytcp.lib.logger import log
 from pytcp.runtime.socket import PacketType

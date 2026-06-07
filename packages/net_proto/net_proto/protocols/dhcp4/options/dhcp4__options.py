@@ -33,8 +33,7 @@ ver 3.0.8
 from abc import ABC
 from typing import Self, override
 
-from net_addr import Ip4Address, Ip4Mask, Ip4Network
-from net_proto.lib.buffer import Buffer
+from net_addr import Buffer, Ip4Address, Ip4Mask, Ip4Network
 from net_proto.lib.proto_option import ProtoOptions
 from net_proto.protocols.dhcp4.dhcp4__enums import Dhcp4MessageType
 from net_proto.protocols.dhcp4.dhcp4__errors import Dhcp4IntegrityError

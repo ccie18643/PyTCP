@@ -34,7 +34,7 @@ from dataclasses import FrozenInstanceError, dataclass
 from typing import Self, override
 from unittest import TestCase
 
-from net_proto.lib.buffer import Buffer
+from net_addr import Buffer
 from net_proto.lib.proto_enum import ProtoEnumByte
 from net_proto.lib.proto_option import (
     ProtoOption,

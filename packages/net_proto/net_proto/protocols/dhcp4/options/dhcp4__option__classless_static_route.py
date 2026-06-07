@@ -34,8 +34,7 @@ ver 3.0.8
 from dataclasses import dataclass, field
 from typing import Self, override
 
-from net_addr import Ip4Address, Ip4Mask, Ip4Network
-from net_proto.lib.buffer import Buffer
+from net_addr import Buffer, Ip4Address, Ip4Mask, Ip4Network
 from net_proto.protocols.dhcp4.dhcp4__errors import Dhcp4IntegrityError
 from net_proto.protocols.dhcp4.options.dhcp4__option import (
     DHCP4__OPTION__LEN,

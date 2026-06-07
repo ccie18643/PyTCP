@@ -33,7 +33,7 @@ ver 3.0.8
 from dataclasses import dataclass, field
 from typing import Self, override
 
-from net_proto.lib.buffer import Buffer
+from net_addr import Buffer
 from net_proto.protocols.ip4.options.ip4__option import Ip4Option, Ip4OptionType
 
 # The IPv4 Eol (End of Option List) option [RFC 791].

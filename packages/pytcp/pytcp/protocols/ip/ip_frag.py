@@ -34,9 +34,8 @@ import time
 from collections.abc import Iterable, Iterator
 from dataclasses import dataclass, field
 
-from net_addr import Ip4Address, Ip6Address
+from net_addr import Buffer, Ip4Address, Ip6Address
 from net_proto import IpProto
-from net_proto.lib.buffer import Buffer
 
 # RFC 791 §3.1 / RFC 8200 §4.5: Fragment Offset is measured in
 # 8-octet units, so every non-final fragment payload MUST be a

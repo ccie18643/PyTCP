@@ -35,8 +35,7 @@ from abc import ABC
 from dataclasses import dataclass
 from typing import Self, override
 
-from net_addr import MacAddress
-from net_proto.lib.buffer import Buffer
+from net_addr import Buffer, MacAddress
 from net_proto.lib.enums import EtherType
 from net_proto.lib.proto_struct import ProtoStruct
 

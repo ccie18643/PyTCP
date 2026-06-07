@@ -33,8 +33,7 @@ ver 3.0.8
 
 from unittest import TestCase
 
-from net_addr import Ip6Address
-from net_proto.lib.buffer import Buffer
+from net_addr import Buffer, Ip6Address
 from net_proto.protocols.icmp6.icmp6__errors import Icmp6IntegrityError
 from net_proto.protocols.icmp6.message.icmp6__message import Icmp6Type
 from net_proto.protocols.icmp6.message.mld1.icmp6__mld1__message__report import (

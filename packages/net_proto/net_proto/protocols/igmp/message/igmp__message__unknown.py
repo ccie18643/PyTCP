@@ -36,7 +36,7 @@ import struct
 from dataclasses import dataclass
 from typing import Self, override
 
-from net_proto.lib.buffer import Buffer
+from net_addr import Buffer
 from net_proto.lib.int_checks import is_uint16
 from net_proto.protocols.igmp.igmp__errors import IgmpSanityError
 from net_proto.protocols.igmp.message.igmp__message import (

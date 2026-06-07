@@ -37,6 +37,7 @@ import threading
 from collections.abc import Callable
 from typing import override
 
+from net_addr import Buffer
 from net_proto import (
     Ethernet8023Assembler,
     EthernetAssembler,
@@ -44,7 +45,6 @@ from net_proto import (
     Ip4FragAssembler,
     Ip6Assembler,
 )
-from net_proto.lib.buffer import Buffer
 from net_proto.protocols.ethernet.ethernet__header import ETHERNET__HEADER__LEN
 from net_proto.protocols.ethernet_802_3.ethernet_802_3__header import (
     ETHERNET_802_3__HEADER__LEN,

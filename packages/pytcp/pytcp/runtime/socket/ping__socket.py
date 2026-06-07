@@ -47,13 +47,13 @@ from collections.abc import Iterable
 from typing import override
 
 from net_addr import (
+    Buffer,
     Ip4Address,
     Ip4AddressFormatError,
     Ip6Address,
     Ip6AddressFormatError,
 )
 from net_proto import Icmp4MessageEchoRequest, Icmp4Type, Icmp6MessageEchoRequest, Icmp6Type, IpProto
-from net_proto.lib.buffer import Buffer
 from pytcp import stack
 from pytcp.lib.logger import log
 from pytcp.runtime.socket import (

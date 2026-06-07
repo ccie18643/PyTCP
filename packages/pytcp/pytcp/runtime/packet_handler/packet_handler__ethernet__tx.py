@@ -34,7 +34,7 @@ ver 3.0.8
 
 from typing import TYPE_CHECKING
 
-from net_addr import MacAddress
+from net_addr import Buffer, MacAddress
 from net_proto import (
     EthernetAssembler,
     EthernetPayload,
@@ -43,7 +43,6 @@ from net_proto import (
     Ip6Assembler,
     RawAssembler,
 )
-from net_proto.lib.buffer import Buffer
 from pytcp import stack
 from pytcp.lib.logger import log
 from pytcp.lib.tx_status import TxStatus

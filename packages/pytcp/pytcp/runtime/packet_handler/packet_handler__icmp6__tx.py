@@ -35,7 +35,7 @@ ver 3.0.8
 import struct
 from typing import TYPE_CHECKING
 
-from net_addr import Ip6Address
+from net_addr import Buffer, Ip6Address
 from net_proto import (
     Icmp6Assembler,
     Icmp6DestinationUnreachableCode,
@@ -55,7 +55,6 @@ from net_proto import (
     IpProto,
     Tracker,
 )
-from net_proto.lib.buffer import Buffer
 from net_proto.protocols.icmp6.message.mld1.icmp6__mld1__message__report import (
     Icmp6Mld1MessageReport,
     MldVersion,

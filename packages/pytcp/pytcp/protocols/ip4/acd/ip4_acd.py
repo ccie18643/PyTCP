@@ -39,7 +39,7 @@ import random
 import time
 from dataclasses import dataclass
 
-from net_addr import Ip4Address, MacAddress
+from net_addr import Buffer, Ip4Address, MacAddress
 from net_proto import (
     ArpAssembler,
     ArpOperation,
@@ -50,7 +50,6 @@ from net_proto import (
     PacketRx,
     PacketValidationError,
 )
-from net_proto.lib.buffer import Buffer
 from pytcp.lib.logger import log
 from pytcp.protocols.arp import arp__constants
 from pytcp.runtime.socket import ETH_P_ARP, SOCK_RAW, AddressFamily, socket

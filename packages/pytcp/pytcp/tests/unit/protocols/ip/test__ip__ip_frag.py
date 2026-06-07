@@ -35,9 +35,8 @@ from dataclasses import FrozenInstanceError, fields
 from typing import override
 from unittest import TestCase
 
-from net_addr import Ip4Address, Ip6Address
+from net_addr import Buffer, Ip4Address, Ip6Address
 from net_proto import IpProto
-from net_proto.lib.buffer import Buffer
 from pytcp.protocols.ip.ip_frag import (
     ECN__CE,
     ECN__ECT_0,

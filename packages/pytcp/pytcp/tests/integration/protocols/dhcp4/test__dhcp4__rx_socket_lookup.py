@@ -54,8 +54,7 @@ ver 3.0.8
 
 from unittest import TestCase
 
-from net_addr import Ip4Address, Ip4Mask, MacAddress
-from net_proto.lib.buffer import Buffer
+from net_addr import Buffer, Ip4Address, Ip4Mask, MacAddress
 from net_proto.protocols.dhcp4.dhcp4__assembler import Dhcp4Assembler
 from net_proto.protocols.dhcp4.dhcp4__enums import (
     Dhcp4MessageType,

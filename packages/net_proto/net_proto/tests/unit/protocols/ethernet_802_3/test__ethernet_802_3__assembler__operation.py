@@ -38,7 +38,7 @@ ver 3.0.8
 from typing import Any, override
 from unittest import TestCase
 
-from net_addr import MacAddress
+from net_addr import Buffer, MacAddress
 from net_proto import (
     ETHERNET_802_3__HEADER__LEN,
     ETHERNET_802_3__PACKET__MAX_LEN,
@@ -49,7 +49,6 @@ from net_proto import (
     PacketRx,
     RawAssembler,
 )
-from net_proto.lib.buffer import Buffer
 from net_proto.tests.lib.parameterized import parameterized_class
 
 

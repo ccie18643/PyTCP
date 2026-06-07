@@ -32,6 +32,7 @@ ver 3.0.8
 
 from typing import TYPE_CHECKING
 
+from net_addr.buffer import Buffer
 from net_addr.errors import (
     IfAddrError,
     IfAddrFormatError,
@@ -159,6 +160,7 @@ def __dir__() -> list[str]:
 __version__: str = "3.0.8"
 
 __all__ = [
+    "Buffer",
     "ClickTypeIfAddr",
     "ClickTypeIp4Address",
     "ClickTypeIp4IfAddr",

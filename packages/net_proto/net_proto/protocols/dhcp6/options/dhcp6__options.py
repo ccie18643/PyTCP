@@ -33,8 +33,7 @@ ver 3.0.8
 from abc import ABC
 from typing import Self, override
 
-from net_addr import Ip6Address
-from net_proto.lib.buffer import Buffer
+from net_addr import Buffer, Ip6Address
 from net_proto.lib.proto_option import ProtoOptions
 from net_proto.protocols.dhcp6.dhcp6__errors import Dhcp6IntegrityError
 from net_proto.protocols.dhcp6.dhcp6__header import DHCP6__HEADER__LEN

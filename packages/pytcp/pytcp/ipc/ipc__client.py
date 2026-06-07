@@ -40,7 +40,7 @@ import threading
 from types import TracebackType
 from typing import Self
 
-from net_proto.lib.buffer import Buffer
+from net_addr import Buffer
 from pytcp.ipc.ipc__enums import IpcMessageKind, IpcOp
 from pytcp.ipc.ipc__errors import IpcConnectionError
 from pytcp.ipc.ipc__fdpass import recv_frame_with_fd

@@ -38,7 +38,7 @@ ver 3.0.8
 import struct
 from dataclasses import dataclass
 
-from net_addr import Ip4Address, Ip6Address, IpVersion
+from net_addr import Buffer, Ip4Address, Ip6Address, IpVersion
 from net_proto import (
     IP4__HEADER__LEN,
     IP6__HEADER__LEN,
@@ -46,7 +46,6 @@ from net_proto import (
     UDP__HEADER__LEN,
     IpProto,
 )
-from net_proto.lib.buffer import Buffer
 
 # Minimum embedded data length the parser requires to dispatch the
 # inner header. ICMP errors quote the inner IP header plus at least

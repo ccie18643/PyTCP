@@ -33,7 +33,7 @@ ver 3.0.8
 from typing import TypeAliasType, get_args
 from unittest import TestCase
 
-from net_proto.lib.buffer import Buffer
+from net_addr import Buffer
 
 
 class TestNetProtoLibBuffer(TestCase):

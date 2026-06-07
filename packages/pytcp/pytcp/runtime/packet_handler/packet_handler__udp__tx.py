@@ -34,9 +34,8 @@ ver 3.0.8
 
 from typing import TYPE_CHECKING, Any, cast
 
-from net_addr import Ip4Address, Ip6Address
+from net_addr import Buffer, Ip4Address, Ip6Address
 from net_proto import Tracker, UdpAssembler
-from net_proto.lib.buffer import Buffer
 from net_proto.protocols.ip4.options.ip4__options import Ip4Options
 from pytcp.lib.logger import log
 from pytcp.lib.tx_status import TxStatus

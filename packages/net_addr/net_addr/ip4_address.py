@@ -33,6 +33,7 @@ ver 3.0.8
 import socket
 from typing import ClassVar, Self, final, override
 
+from net_addr.buffer import Buffer
 from net_addr.errors import Ip4AddressFormatError, Ip4AddressSanityError, NetAddrError
 from net_addr.ip_address import IpAddress
 from net_addr.ip_version import IpVersion
@@ -58,7 +59,7 @@ class Ip4Address(IpAddress):
 
     def __init__(
         self,
-        address: Self | str | bytes | bytearray | memoryview | int | None = None,
+        address: Self | str | Buffer | int | None = None,
         /,
     ) -> None:
         """

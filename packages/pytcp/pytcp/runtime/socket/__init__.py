@@ -42,8 +42,7 @@ from enum import IntEnum
 from types import TracebackType
 from typing import Any, override
 
-from net_addr import Ip4Address, Ip6Address, IpVersion
-from net_proto.lib.buffer import Buffer
+from net_addr import Buffer, Ip4Address, Ip6Address, IpVersion
 from net_proto.lib.enums import EtherType, IpProto
 from net_proto.protocols.ip4.ip4__errors import Ip4IntegrityError
 from net_proto.protocols.ip4.ip4__header import IP4__HEADER__LEN

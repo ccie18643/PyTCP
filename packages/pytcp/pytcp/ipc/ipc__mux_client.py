@@ -48,7 +48,7 @@ from dataclasses import dataclass, field
 from types import TracebackType
 from typing import Final, Self
 
-from net_proto.lib.buffer import Buffer
+from net_addr import Buffer
 from pytcp.ipc.ipc__client import (
     IPC__CLIENT__DEFAULT_TIMEOUT__SEC,
     IPC__CLIENT__REQ_ID_MASK,

@@ -39,8 +39,7 @@ ver 3.0.8
 from typing import Any
 from unittest import TestCase
 
-from net_addr import Ip4Address, MacAddress
-from net_proto.lib.buffer import Buffer
+from net_addr import Buffer, Ip4Address, MacAddress
 from net_proto.protocols.ethernet.ethernet__assembler import EthernetAssembler
 from net_proto.protocols.ip4.ip4__assembler import Ip4Assembler
 from net_proto.protocols.udp.udp__assembler import UdpAssembler
