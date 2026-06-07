@@ -36,7 +36,31 @@ from typing import override
 from unittest import TestCase
 from unittest.mock import patch
 
+from pytcp import stack
 from pytcp.runtime.subsystem import SUBSYSTEM_SLEEP_TIME__SEC, Subsystem
+
+# Silence the STACK log channel for the whole module: 'Subsystem.stop()'
+# logs 'Stopping <info>' on the 'stack' channel, which leaks from the few
+# lifecycle tests that exercise a real start/stop without patching
+# 'subsystem.log' (unit_testing.md §10a.4). The mock-log tests replace
+# 'log' outright, so they are unaffected by the empty channel set.
+_ORIGINAL_LOG_CHANNEL: set[str] = stack.LOG__CHANNEL
+
+
+def setUpModule() -> None:
+    """
+    Silence stack log output for the duration of this module's tests.
+    """
+
+    stack.LOG__CHANNEL = set()
+
+
+def tearDownModule() -> None:
+    """
+    Restore the production log-channel configuration.
+    """
+
+    stack.LOG__CHANNEL = _ORIGINAL_LOG_CHANNEL
 
 
 class _TestSubsystem(Subsystem):
