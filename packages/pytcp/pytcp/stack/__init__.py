@@ -175,10 +175,15 @@ INTERFACE__TUN__MTU = 1500
 
 # Addresses configuration.
 MAC_ADDRESS: str = "02:00:00:{x}{x}:{x}{x}:{x}{x}"
-IP4_ADDRESS = None
-IP4_GATEWAY = None
-IP6_ADDRESS = None
-IP6_GATEWAY = None
+# Boot-config host address: the canonical 'addr/prefix' string an
+# operator sets before 'init()'; consumed as the argument to
+# 'Ip4IfAddr(...)' / 'Ip6IfAddr(...)' in 'lifecycle.init'. Boot
+# gateway: a concrete address passed straight to
+# 'install_boot_default_routes'.
+IP4_ADDRESS: str | None = None
+IP4_GATEWAY: Ip4Address | None = None
+IP6_ADDRESS: str | None = None
+IP6_GATEWAY: Ip6Address | None = None
 
 # Protocol support configuration.
 IP6__SUPPORT = True

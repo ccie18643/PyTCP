@@ -1835,7 +1835,7 @@ class socket(ABC):
         """
 
         for item in ancdata:
-            if not (isinstance(item, tuple) and len(item) == 3):
+            if len(item) != 3:
                 raise TypeError(
                     "sendmsg(): ancillary data items must be " "(cmsg_level, cmsg_type, cmsg_data) 3-tuples",
                 )

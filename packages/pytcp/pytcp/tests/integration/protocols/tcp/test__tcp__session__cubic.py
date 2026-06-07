@@ -123,7 +123,7 @@ class TestTcpCubicPhase3(TcpTestCase):
     growth using the cubic curve when '_cc_mode == CUBIC'.
     """
 
-    _DEFAULT_CC_MODE = CcMode.RENO
+    _DEFAULT_CC_MODE: CcMode | None = CcMode.RENO
 
     def test__cubic__ca_growth_uses_cubic_curve_when_cc_mode_is_cubic(self) -> None:
         """

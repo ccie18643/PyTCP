@@ -63,8 +63,10 @@ class DnsOpcode(ProtoEnumByte):
                 name = "Notify"
             case DnsOpcode.UPDATE:
                 name = "Update"
+            case _:
+                name = f"{self.value}"
 
-        return f"{self.value}" if self.is_unknown else name
+        return name
 
 
 class DnsResponseCode(ProtoEnumByte):
@@ -98,8 +100,10 @@ class DnsResponseCode(ProtoEnumByte):
                 name = "NotImp"
             case DnsResponseCode.REFUSED:
                 name = "Refused"
+            case _:
+                name = f"{self.value}"
 
-        return f"{self.value}" if self.is_unknown else name
+        return name
 
 
 class DnsRecordType(ProtoEnumWord):
@@ -139,8 +143,10 @@ class DnsRecordType(ProtoEnumWord):
                 name = "TXT"
             case DnsRecordType.AAAA:
                 name = "AAAA"
+            case _:
+                name = f"{self.value}"
 
-        return f"{self.value}" if self.is_unknown else name
+        return name
 
 
 class DnsRecordClass(ProtoEnumWord):
@@ -165,5 +171,7 @@ class DnsRecordClass(ProtoEnumWord):
                 name = "CH"
             case DnsRecordClass.HS:
                 name = "HS"
+            case _:
+                name = f"{self.value}"
 
-        return f"{self.value}" if self.is_unknown else name
+        return name

@@ -44,6 +44,7 @@ import os
 import sys
 import time
 import unittest
+from collections.abc import Callable
 from typing import Any, override
 
 import click
@@ -265,7 +266,10 @@ class TestslideStyleRunner(unittest.TextTestRunner):
     the per-test output is emitted regardless of the caller's flags.
     """
 
-    resultclass = TestslideStyleResult
+    # Keep the base 'TextTestRunner.resultclass' invariant type
+    # ('Callable[..., TextTestResult]') so the narrower concrete
+    # subclass is not a covariant override of the mutable attribute.
+    resultclass: Callable[..., unittest.TextTestResult] = TestslideStyleResult
 
     def __init__(self, *args: object, **kwargs: object) -> None:
         """

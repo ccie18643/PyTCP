@@ -38,7 +38,7 @@ ver 3.0.8
 import os
 import struct
 import threading
-from typing import Any, override
+from typing import Any, assert_never, override
 
 import click
 from examples_legacy.lib.client import Client
@@ -121,6 +121,8 @@ class IcmpEchoClient(Client):
             case IpVersion.IP4:
                 icmp_type = ICMP4__ECHO_REQUEST__TYPE
                 icmp_code = ICMP4__ECHO_REQUEST__CODE
+            case _:
+                assert_never(ip_version)
 
         data = payload(length=message_size)
 

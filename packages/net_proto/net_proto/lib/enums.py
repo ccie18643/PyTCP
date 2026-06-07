@@ -61,8 +61,10 @@ class EtherType(ProtoEnumWord):
                 name = "IPv6"
             case EtherType.RAW:
                 name = "Raw"
+            case _:
+                name = f"0x{self.value:0>4x}"
 
-        return f"0x{self.value:0>4x}" if self.is_unknown else name
+        return name
 
     @staticmethod
     def from_proto(proto: Proto) -> EtherType:
@@ -142,8 +144,10 @@ class IpProto(ProtoEnumByte):
                 name = "IPv6_DestOpts"
             case IpProto.RAW:
                 name = "Raw"
+            case _:
+                name = f"{self.value}"
 
-        return f"{self.value}" if self.is_unknown else name
+        return name
 
     @staticmethod
     def from_proto(proto: Proto) -> IpProto:

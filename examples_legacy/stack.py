@@ -382,7 +382,7 @@ def cli(
         _last_stats = time.monotonic()
         _last_snapshot = _capture_stats_snapshot()
 
-        while any(subsystem.is_alive for subsystem in subsystems if subsystem) or not subsystems:
+        while any(subsystem.is_alive for subsystem in subsystems) or not subsystems:
             time.sleep(1)
             if _remove_requested[0]:
                 _remove_requested[0] = False

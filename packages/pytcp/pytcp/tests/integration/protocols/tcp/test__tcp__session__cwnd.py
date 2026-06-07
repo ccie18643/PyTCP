@@ -90,7 +90,7 @@ class TestTcpCwndPhase1(TcpTestCase):
     vs congestion-avoidance growth-rate distinction.
     """
 
-    _DEFAULT_CC_MODE = CcMode.RENO
+    _DEFAULT_CC_MODE: CcMode | None = CcMode.RENO
 
     def test__cwnd__fields_exist_post_handshake(self) -> None:
         """
@@ -395,7 +395,7 @@ class TestTcpCwndPhase2(TcpTestCase):
     runs unbounded until peer's win clamps it.
     """
 
-    _DEFAULT_CC_MODE = CcMode.RENO
+    _DEFAULT_CC_MODE: CcMode | None = CcMode.RENO
 
     def test__cwnd__rto_sets_ssthresh_to_half_flight_size(self) -> None:
         """
@@ -491,7 +491,7 @@ class TestTcpCwndPhase3(TcpTestCase):
         Step 6: cwnd = ssthresh (deflation on recovery exit)
     """
 
-    _DEFAULT_CC_MODE = CcMode.RENO
+    _DEFAULT_CC_MODE: CcMode | None = CcMode.RENO
 
     def _send_n_segments_and_drain_dupacks(
         self,
@@ -635,7 +635,7 @@ class TestTcpCwndPhase4(TcpTestCase):
     connections (HTTP requests, RPC calls).
     """
 
-    _DEFAULT_CC_MODE = CcMode.RENO
+    _DEFAULT_CC_MODE: CcMode | None = CcMode.RENO
 
     def test__cwnd__post_handshake_initialises_cwnd_to_iw_10(self) -> None:
         """
@@ -721,7 +721,7 @@ class TestTcpCwndNewReno(TcpTestCase):
     already marked.
     """
 
-    _DEFAULT_CC_MODE = CcMode.RENO
+    _DEFAULT_CC_MODE: CcMode | None = CcMode.RENO
 
     def _setup_multi_loss_recovery(
         self,
@@ -832,7 +832,7 @@ class TestTcpCwndNewRenoExtended(TcpTestCase):
         recovery_point check).
     """
 
-    _DEFAULT_CC_MODE = CcMode.RENO
+    _DEFAULT_CC_MODE: CcMode | None = CcMode.RENO
 
     def _drive_handshake(self, *, iss: int, peer_iss: int, sackperm: bool = False) -> TcpSession:
         """Drive handshake; optionally negotiate SACK."""
@@ -1115,7 +1115,7 @@ class TestTcpCwndCrossRfcNewRenoPlusRto(TcpTestCase):
         re-entry, not a continuation.
     """
 
-    _DEFAULT_CC_MODE = CcMode.RENO
+    _DEFAULT_CC_MODE: CcMode | None = CcMode.RENO
 
     def test__cwnd__rto_during_fast_recovery_clears_recovery_point_and_resets_cwnd(self) -> None:
         """
@@ -1229,7 +1229,7 @@ class TestTcpCwndPrr(TcpTestCase):
     pass.
     """
 
-    _DEFAULT_CC_MODE = CcMode.RENO
+    _DEFAULT_CC_MODE: CcMode | None = CcMode.RENO
 
     def _send_n_segments_and_enter_recovery(
         self,

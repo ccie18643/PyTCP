@@ -41,7 +41,17 @@ python_version = "3.14"
 strict = true
 disallow_any_unimported = true
 show_error_codes = true
-enable_error_code = ["explicit-override"]
+enable_error_code = [
+    "explicit-override",
+    "ignore-without-code",
+    "truthy-iterable",
+    "redundant-self",
+    "unused-awaitable",
+    "truthy-bool",
+    "redundant-expr",
+    "possibly-undefined",
+    "mutable-override",
+]
 
 # 'explicit-override' is enforced everywhere, tests included: a
 # fixture hook ('setUp' / 'tearDown' / 'setUpClass' / …) that

@@ -57,6 +57,29 @@ You don't need to remember the flag names — `make lint` is
 the authoritative gate. The list above explains *why* a
 particular rule from this file is enforced.
 
+### 2.1 Extra `enable_error_code` codes
+
+On top of the strict bundle, `pyproject.toml` opts into
+nine extra error codes via `enable_error_code` — each one
+upgrades a latent footgun from silent-pass to build-break:
+
+| Error code | Effect |
+|---|---|
+| `explicit-override` | A method overriding a parent MUST carry `@override` (§11) — enforced everywhere, tests included |
+| `ignore-without-code` | A bare `# type: ignore` is a hard error; the narrow `# type: ignore[code]` form is mandatory (§21) |
+| `truthy-bool` | An object with no `__bool__` / `__len__` used in a boolean context (e.g. `if socket :=` where the type can't be falsy) is flagged |
+| `truthy-iterable` | An always-truthy iterable used as a plain boolean condition is flagged |
+| `redundant-expr` | An `and` / `or` operand that mypy proves constant (always-true / always-false) is flagged |
+| `redundant-self` | A redundant `Self`-typed `self` annotation is flagged |
+| `possibly-undefined` | A name that may be unbound on some control-flow path (e.g. a `match` with no `case _:` default leaving a variable unset) is flagged |
+| `unused-awaitable` | An awaitable whose result is discarded without `await` is flagged |
+| `mutable-override` | A subclass narrowing a mutable base attribute's type (covariant override of a settable field) is flagged — applies to test classes too |
+
+`warn_unreachable` and `disallow_any_decorated` are
+deliberately **not** enabled: they produce false positives
+against the `ProtoEnum` dynamic-`_missing_` `case _:` pattern
+and stdlib decorator machinery.
+
 ## 3. Annotation discipline — what MUST be annotated
 
 | Construct | Annotation requirement |
@@ -1028,7 +1051,10 @@ Acceptable uses:
   ```
   The narrow form `# type: ignore[error-code]` is mandatory
   — bare `# type: ignore` is forbidden because it suppresses
-  every error on the line, not just the intended one.
+  every error on the line, not just the intended one. This is
+  now **mechanically enforced**: the `ignore-without-code`
+  error code (§2.1) makes a bare `# type: ignore` a hard
+  build error, not just a convention.
 
 - **Mypy strict false-positive that has a known issue
   upstream.** Cite the issue:

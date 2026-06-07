@@ -264,10 +264,11 @@ class Icmp6RxHandler:
         )
 
         for socket_id in packet.socket_ids:
-            if socket := cast(
-                UdpSocket,
+            socket = cast(
+                UdpSocket | None,
                 stack.sockets.get(socket_id, None),
-            ):
+            )
+            if socket is not None:
                 __debug__ and log(
                     "icmp6",
                     f"{packet_rx.tracker} - <INFO>Found matching "
@@ -311,7 +312,7 @@ class Icmp6RxHandler:
             remote_port=embedded.remote_port,
         )
 
-        socket = cast(TcpSocket, stack.sockets.get(socket_id, None))
+        socket = cast(TcpSocket | None, stack.sockets.get(socket_id, None))
         if socket is None or (session := socket.tcp_session) is None:
             return
 
@@ -403,7 +404,8 @@ class Icmp6RxHandler:
         )
 
         for socket_id in packet.socket_ids:
-            if socket := cast(UdpSocket, stack.sockets.get(socket_id, None)):
+            socket = cast(UdpSocket | None, stack.sockets.get(socket_id, None))
+            if socket is not None:
                 __debug__ and log(
                     "icmp6",
                     f"{packet_rx.tracker} - <INFO>Found matching UDP socket "
@@ -447,7 +449,7 @@ class Icmp6RxHandler:
             remote_port=embedded.remote_port,
         )
 
-        socket = cast(TcpSocket, stack.sockets.get(socket_id, None))
+        socket = cast(TcpSocket | None, stack.sockets.get(socket_id, None))
         if socket is None or (session := socket.tcp_session) is None:
             return
 
@@ -537,7 +539,8 @@ class Icmp6RxHandler:
         )
 
         for socket_id in packet.socket_ids:
-            if socket := cast(UdpSocket, stack.sockets.get(socket_id, None)):
+            socket = cast(UdpSocket | None, stack.sockets.get(socket_id, None))
+            if socket is not None:
                 __debug__ and log(
                     "icmp6",
                     f"{packet_rx.tracker} - <INFO>Found matching UDP socket "
@@ -581,7 +584,7 @@ class Icmp6RxHandler:
             remote_port=embedded.remote_port,
         )
 
-        socket = cast(TcpSocket, stack.sockets.get(socket_id, None))
+        socket = cast(TcpSocket | None, stack.sockets.get(socket_id, None))
         if socket is None or (session := socket.tcp_session) is None:
             return
 
@@ -646,7 +649,8 @@ class Icmp6RxHandler:
             )
 
             for socket_id in packet.socket_ids:
-                if socket := cast(UdpSocket, stack.sockets.get(socket_id, None)):
+                socket = cast(UdpSocket | None, stack.sockets.get(socket_id, None))
+                if socket is not None:
                     stack.record_classical_pmtu(cast(Ip6Address, embedded.remote_ip), message.mtu)
                     socket.notify_pmtu(
                         next_hop_mtu=message.mtu,
@@ -689,7 +693,7 @@ class Icmp6RxHandler:
             remote_port=embedded.remote_port,
         )
 
-        socket = cast(TcpSocket, stack.sockets.get(socket_id, None))
+        socket = cast(TcpSocket | None, stack.sockets.get(socket_id, None))
         if socket is None or (session := socket.tcp_session) is None:
             return
 

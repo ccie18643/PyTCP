@@ -92,5 +92,7 @@ class Dhcp4MessageType(ProtoEnumByte):
                 name = "Release"
             case Dhcp4MessageType.INFORM:
                 name = "Inform"
+            case _:
+                name = f"{self.value}"
 
-        return f"{self.value}" if self.is_unknown else name
+        return name

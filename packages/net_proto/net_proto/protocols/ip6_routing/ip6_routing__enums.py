@@ -60,5 +60,7 @@ class Ip6RoutingType(ProtoEnumByte):
                 name = "RH3"
             case Ip6RoutingType.RH4:
                 name = "RH4"
+            case _:
+                name = f"{self.value}"
 
-        return f"{self.value}" if self.is_unknown else name
+        return name
