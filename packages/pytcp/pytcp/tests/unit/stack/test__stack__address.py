@@ -51,20 +51,21 @@ if TYPE_CHECKING:
 
 class _FakePacketHandler:
     """
-    Minimal packet-handler stand-in for 'AddressApi' tests —
-    exposes the '_ip4_ifaddr' / '_ip6_ifaddr' lists the API mutates
-    plus the IPv6 solicited-node-multicast join/leave hooks. Using a
-    hand-rolled class avoids the autospec ceremony for a 50-attribute
-    production class.
+    Minimal packet-handler stand-in for 'AddressApi' tests — exposes the
+    public 'assign_*_ifaddr' / 'remove_*_ifaddr' mutators (lock + COW
+    internalized, the no-GIL N1 guard) and 'ip4_ifaddr' / 'ip6_ifaddr'
+    read snapshots the API consumes, plus the IPv6 solicited-node-
+    multicast join/leave hooks. Using a hand-rolled class avoids the
+    autospec ceremony for a 50-attribute production class.
     """
 
     def __init__(self) -> None:
         self._ip4_ifaddr: list[Ip4IfAddr] = []
         self._ip6_ifaddr: list[Ip6IfAddr] = []
-        # The Address API serializes its copy-on-write rebinds of the
-        # ifaddr lists under the interface address-config lock (the
-        # no-GIL N1 guard); the stand-in supplies a real reentrant lock
-        # so the context-managed mutation runs.
+        # The mutators rebind the ifaddr lists copy-on-write under the
+        # interface address-config lock (the no-GIL N1 guard); the
+        # stand-in supplies a real reentrant lock so the context-managed
+        # mutation runs.
         self._lock__addr_config = threading.RLock()
         # Record the solicited-node-multicast groups the API joins /
         # leaves so the v6 tests can assert on SNM management.
@@ -74,13 +75,38 @@ class _FakePacketHandler:
         # 'dad_conflict_callback' delegation can be asserted.
         self.dad_claims: list[tuple[Ip6IfAddr, Callable[[Ip6Address], None] | None]] = []
 
-    def _assign_ip6_multicast(self, ip6_multicast: Ip6Address, /) -> None:
-        self.joined_snm.append(ip6_multicast)
+    @property
+    def ip4_ifaddr(self) -> tuple[Ip4IfAddr, ...]:
+        return tuple(self._ip4_ifaddr)
 
-    def _remove_ip6_multicast(self, ip6_multicast: Ip6Address, /) -> None:
-        self.left_snm.append(ip6_multicast)
+    @property
+    def ip6_ifaddr(self) -> tuple[Ip6IfAddr, ...]:
+        return tuple(self._ip6_ifaddr)
 
-    def _claim_ip6_address_async(
+    def assign_ip4_ifaddr(self, ifaddr: Ip4IfAddr, /) -> None:
+        with self._lock__addr_config:
+            self._ip4_ifaddr = [*self._ip4_ifaddr, ifaddr]
+
+    def remove_ip4_ifaddr(self, address: Ip4Address, /) -> int:
+        with self._lock__addr_config:
+            before = len(self._ip4_ifaddr)
+            self._ip4_ifaddr = [host for host in self._ip4_ifaddr if host.address != address]
+            return before - len(self._ip4_ifaddr)
+
+    def assign_ip6_ifaddr(self, ifaddr: Ip6IfAddr, /) -> None:
+        with self._lock__addr_config:
+            self._ip6_ifaddr = [*self._ip6_ifaddr, ifaddr]
+        self.joined_snm.append(ifaddr.address.solicited_node_multicast)
+
+    def remove_ip6_ifaddr(self, address: Ip6Address, /) -> list[Ip6IfAddr]:
+        with self._lock__addr_config:
+            removed_hosts = [host for host in self._ip6_ifaddr if host.address == address]
+            self._ip6_ifaddr = [host for host in self._ip6_ifaddr if host.address != address]
+        for host in removed_hosts:
+            self.left_snm.append(host.address.solicited_node_multicast)
+        return removed_hosts
+
+    def claim_ip6_address_async(
         self,
         *,
         ip6_host: Ip6IfAddr,

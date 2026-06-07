@@ -94,7 +94,7 @@ class TestIcmp6Nd__SlaacRuntimeClaim__PostBootClaims(NdTestCase):
     """
     With '_ip6_addressing_complete = True' (post-boot), a PI
     for a brand-new prefix triggers a stable-address DAD claim
-    via '_claim_ip6_address_async'. The address ends up in
+    via 'claim_ip6_address_async'. The address ends up in
     '_ip6_ifaddr' once the worker completes.
     """
 

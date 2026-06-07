@@ -34,7 +34,7 @@ The DAD plumbing keys on a per-address slot registry
 ('_icmp6_nd_dad__registry') so multiple addresses can DAD
 concurrently. The RX path looks up the slot
 by inbound NS / NA 'target_address' and signals the right
-Event. '_claim_ip6_address_async' spawns one daemon worker
+Event. 'claim_ip6_address_async' spawns one daemon worker
 thread per claim.
 
 These tests pin the new concurrency invariants:
@@ -46,7 +46,7 @@ These tests pin the new concurrency invariants:
 - Per-address Nonce sets are isolated — a hairpin echo for
   A is dropped, but the same nonce for B counts as a peer
   conflict (it isn't B's nonce).
-- '_claim_ip6_address_async' returns a Thread the caller can
+- 'claim_ip6_address_async' returns a Thread the caller can
   '.join()'; the worker eventually exits with the address
   installed in '_ip6_ifaddr' on success.
 
@@ -237,7 +237,7 @@ class TestIcmp6Nd__AsyncDad__PerTargetRxDispatch(NdTestCase):
 
 class TestIcmp6Nd__AsyncDad__ClaimAsyncReturnsThread(NdTestCase):
     """
-    '_claim_ip6_address_async' spawns a daemon worker thread
+    'claim_ip6_address_async' spawns a daemon worker thread
     and returns the Thread handle. The caller can either
     '.join()' to wait for completion or fire-and-forget.
     """
@@ -252,14 +252,14 @@ class TestIcmp6Nd__AsyncDad__ClaimAsyncReturnsThread(NdTestCase):
 
     def test__icmp6__nd__async_dad__claim_async_returns_daemon_thread(self) -> None:
         """
-        Ensure '_claim_ip6_address_async' returns a started
+        Ensure 'claim_ip6_address_async' returns a started
         daemon Thread.
 
         Reference: PyTCP test infrastructure (no RFC clause).
         """
 
         with sysctl_module.override("icmp6.default.retrans_timer_ms", 50):
-            thread = self._packet_handler._claim_ip6_address_async(ip6_host=_CANDIDATE_HOST)
+            thread = self._packet_handler.claim_ip6_address_async(ip6_host=_CANDIDATE_HOST)
             self.assertIsInstance(thread, threading.Thread, msg="Must return a Thread.")
             self.assertTrue(thread.daemon, msg="Worker thread must be a daemon.")
             self.assertTrue(thread.is_alive() or not thread.is_alive(), msg="Thread must be started.")
@@ -279,7 +279,7 @@ class TestIcmp6Nd__AsyncDad__ClaimAsyncReturnsThread(NdTestCase):
     def test__icmp6__nd__async_dad__claim_async_optimistic_fire_and_forget(self) -> None:
         """
         Ensure under 'icmp6.optimistic_dad=1' the boot caller
-        can fire '_claim_ip6_address_async' and the worker
+        can fire 'claim_ip6_address_async' and the worker
         installs the address as OPTIMISTIC immediately, even
         before the caller eventually '.join()'s.
 
@@ -288,7 +288,7 @@ class TestIcmp6Nd__AsyncDad__ClaimAsyncReturnsThread(NdTestCase):
 
         with sysctl_module.override("icmp6.default.optimistic_dad", 1):
             with sysctl_module.override("icmp6.default.retrans_timer_ms", 200):
-                thread = self._packet_handler._claim_ip6_address_async(ip6_host=_CANDIDATE_HOST)
+                thread = self._packet_handler.claim_ip6_address_async(ip6_host=_CANDIDATE_HOST)
                 # The worker's first action under optimistic=1 is
                 # '_assign_ip6_host'. Poll briefly for it to land
                 # so the test isn't racy on slow runners.

@@ -184,7 +184,7 @@ class TestAddressConfigLocking(NetworkTestCase):
         handler = self._packet_handler
         old = handler._ip6_multicast
 
-        handler._assign_ip6_multicast(_IP6_MCAST)
+        handler.assign_ip6_multicast(_IP6_MCAST)
 
         self.assertIsNot(
             handler._ip6_multicast,

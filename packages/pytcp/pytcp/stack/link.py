@@ -427,34 +427,16 @@ class LinkApi:
 
         handler = self._resolve_handler()
 
-        # Canonical source of truth — the packet handler's
-        # '_interface_mtu' is what the TX paths read for MSS
-        # / fragmentation decisions. TCP MSS / UDP & socket Path-MTU
-        # consumers reach it per-destination via
-        # 'stack.egress_interface_mtu(dst)' (no global denormalization).
-        handler._interface_mtu = mtu
-
-        # TX/RX rings cache the MTU as the writev / read size bound.
-        # Resize the BOUND interface's own rings (not the global
-        # 'stack.{tx,rx}_ring' shims) so 'interface(ifindex).set_mtu'
-        # resizes the named device's rings, not the boot interface's.
-        # Suppressed 'AttributeError' handles two cases without bespoke
-        # harness wiring: (a) 'mock__init' fixtures that skip ring
-        # construction (the attribute is None → skipped), and
-        # (b) 'create_autospec(TxRing, spec_set=True)' mocks the
-        # NetworkTestCase harness installs (spec_set blocks unknown-
-        # attribute writes — '_mtu' is declared on TxRing but the
-        # autospec proxy does not expose it).
-        for ring in (
-            getattr(handler, "_tx_ring", None),
-            getattr(handler, "_rx_ring", None),
-        ):
-            if ring is None:
-                continue
-            try:
-                ring._mtu = mtu
-            except AttributeError:
-                pass
+        # The packet handler's 'set_interface_mtu' mutator is the
+        # canonical write point — it updates '_interface_mtu' (what the
+        # TX paths read for MSS / fragmentation decisions; TCP MSS / UDP &
+        # socket Path-MTU consumers reach it per-destination via
+        # 'stack.egress_interface_mtu(dst)') and resizes the BOUND
+        # interface's own RX / TX rings (their read / writev size bound),
+        # not the global 'stack.{tx,rx}_ring' shims. So
+        # 'interface(ifindex).set_mtu' resizes the named device's state,
+        # not the boot interface's.
+        handler.set_interface_mtu(mtu)
 
     def set_mac_address(self, *, mac_address: MacAddress) -> None:
         """
@@ -504,7 +486,7 @@ class LinkApi:
                 "(multicast bit must be clear and value must be non-zero)."
             )
 
-        handler._mac_unicast = mac_address
+        handler.set_mac_address(mac_address)
 
     @property
     def flags(self) -> frozenset[LinkFlag]:

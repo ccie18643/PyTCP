@@ -120,6 +120,16 @@ class RxRing(Subsystem):
         # Link API a single source of truth for 'stats.rx_bytes'.
         self._link_stats = link_stats
 
+    def set_mtu(self, mtu: int, /) -> None:
+        """
+        Set the read-size MTU bound for this RX ring — the Link API's
+        'set_mtu' mutator resizes the bound interface's own ring through
+        this. Validation (RFC 791 floor, uint16 ceiling) is the Link
+        API's responsibility.
+        """
+
+        self._mtu = mtu
+
     @property
     def queue_full_drop_count(self) -> int:
         """

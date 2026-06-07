@@ -52,11 +52,14 @@ if TYPE_CHECKING:
 
 class _FakeRing:
     """
-    Minimal ring stand-in exposing only the '_mtu' attribute
-    'LinkApi.set_mtu' resizes.
+    Minimal ring stand-in exposing the 'set_mtu' mutator that the packet
+    handler's 'set_interface_mtu' calls to resize the ring.
     """
 
     def __init__(self, *, mtu: int) -> None:
+        self._mtu = mtu
+
+    def set_mtu(self, mtu: int, /) -> None:
         self._mtu = mtu
 
 
@@ -123,6 +126,14 @@ class _FakePacketHandlerL2:
     def link_stats(self) -> LinkStatsCounters:
         return self._link_stats
 
+    def set_interface_mtu(self, mtu: int, /) -> None:
+        self._interface_mtu = mtu
+        self._tx_ring.set_mtu(mtu)
+        self._rx_ring.set_mtu(mtu)
+
+    def set_mac_address(self, mac_address: MacAddress, /) -> None:
+        self._mac_unicast = mac_address
+
 
 class _FakePacketHandlerL3:
     """
@@ -178,6 +189,10 @@ class _FakePacketHandlerL3:
     @property
     def link_stats(self) -> LinkStatsCounters:
         return self._link_stats
+
+    def set_interface_mtu(self, mtu: int, /) -> None:
+        # L3 (TUN) has no rings to resize in this stand-in.
+        self._interface_mtu = mtu
 
 
 class TestLinkApiMacAddress(TestCase):

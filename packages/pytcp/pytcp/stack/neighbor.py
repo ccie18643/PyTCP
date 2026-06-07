@@ -140,7 +140,7 @@ class NeighborApi:
         L3 (a TUN device has no ARP cache).
         """
 
-        return cast("PacketHandlerL2", self._resolve_handler())._arp_cache
+        return cast("PacketHandlerL2", self._resolve_handler()).arp_cache
 
     def _nd_cache_if_any(self) -> "NdCache | None":
         """
@@ -148,7 +148,7 @@ class NeighborApi:
         L3 — the IPv6 sibling of '_arp_cache_if_any'.
         """
 
-        return cast("PacketHandlerL2", self._resolve_handler())._nd_cache
+        return cast("PacketHandlerL2", self._resolve_handler()).nd_cache
 
     def _arp_cache(self) -> "ArpCache":
         """
@@ -181,10 +181,10 @@ class NeighborApi:
         """
 
         if isinstance(ip, Ip6Address):
-            self._nd_cache()._add_permanent_entry(ip, mac)
+            self._nd_cache().add_permanent_entry(ip6_address=ip, mac_address=mac)
             __debug__ and log("stack", f"<lg>Neighbor API</>: added static ND {ip} -> {mac}")
             return
-        self._arp_cache()._add_permanent_entry(ip, mac)
+        self._arp_cache().add_permanent_entry(ip4_address=ip, mac_address=mac)
         __debug__ and log("stack", f"<lg>Neighbor API</>: added static ARP {ip} -> {mac}")
 
     def remove(self, *, ip: Ip4Address | Ip6Address) -> None:
@@ -195,7 +195,7 @@ class NeighborApi:
         """
 
         removed = (
-            self._arp_cache()._remove_entry(ip) if isinstance(ip, Ip4Address) else self._nd_cache()._remove_entry(ip)
+            self._arp_cache().remove_entry(ip) if isinstance(ip, Ip4Address) else self._nd_cache().remove_entry(ip)
         )
         __debug__ and log("stack", f"<lg>Neighbor API</>: removed neighbour {ip} (matched={removed})")
 
@@ -209,7 +209,7 @@ class NeighborApi:
         cache = self._arp_cache_if_any() if family is AddressFamily.INET4 else self._nd_cache_if_any()
         if cache is None:
             return
-        count = cache._flush()
+        count = cache.flush()
         __debug__ and log("stack", f"<lg>Neighbor API</>: flushed {count} {family.name} neighbour(s)")
 
     def list_neighbors(
@@ -232,11 +232,11 @@ class NeighborApi:
         if family in (None, AddressFamily.INET4) and arp_cache is not None:
             snapshots.extend(
                 NeighborSnapshot(address=entry.address, mac_address=entry.mac_address, state=entry.state)
-                for entry in arp_cache._snapshot()
+                for entry in arp_cache.snapshot()
             )
         if family in (None, AddressFamily.INET6) and nd_cache is not None:
             snapshots.extend(
                 NeighborSnapshot(address=entry.address, mac_address=entry.mac_address, state=entry.state)
-                for entry in nd_cache._snapshot()
+                for entry in nd_cache.snapshot()
             )
         return tuple(snapshots)

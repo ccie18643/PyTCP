@@ -259,7 +259,7 @@ class TestPacketHandlerAddressAssignment(TestCase):
         h._send_icmp6_multicast_listener_report = MagicMock()  # type: ignore[method-assign]
 
         addr = Ip6Address("ff02::1:3")
-        h._assign_ip6_multicast(addr)
+        h.assign_ip6_multicast(addr)
 
         self.assertIn(addr, h._ip6_multicast)
         self.assertIn(addr.multicast_mac, h._mac_multicast)
@@ -277,8 +277,8 @@ class TestPacketHandlerAddressAssignment(TestCase):
         h._send_icmp6_multicast_listener_report = MagicMock()  # type: ignore[method-assign]
 
         addr = Ip6Address("ff02::1:3")
-        h._assign_ip6_multicast(addr)
-        h._remove_ip6_multicast(addr)
+        h.assign_ip6_multicast(addr)
+        h.remove_ip6_multicast(addr)
 
         self.assertNotIn(addr, h._ip6_multicast)
         self.assertNotIn(addr.multicast_mac, h._mac_multicast)
@@ -295,7 +295,7 @@ class TestPacketHandlerAddressAssignment(TestCase):
         h._send_icmp6_multicast_listener_report = MagicMock()  # type: ignore[method-assign]
 
         addr = Ip6Address("ff02::1:3")
-        h._assign_ip6_multicast(addr)
+        h.assign_ip6_multicast(addr)
 
         self.assertIn(addr, h._ip6_multicast)
         self.assertFalse(

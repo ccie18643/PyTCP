@@ -72,7 +72,7 @@ class TestStackNeighborApi(TestCase):
         self._nd_cache = NdCache()
         self._handler = cast(
             PacketHandlerL2,
-            SimpleNamespace(_arp_cache=self._arp_cache, _nd_cache=self._nd_cache),
+            SimpleNamespace(arp_cache=self._arp_cache, nd_cache=self._nd_cache),
         )
         self._api = NeighborApi(packet_handler=self._handler)
 
@@ -137,7 +137,7 @@ class TestStackNeighborApi(TestCase):
         Reference: PyTCP test infrastructure (no RFC clause).
         """
 
-        l3_handler = cast(PacketHandlerL2, SimpleNamespace(_arp_cache=None, _nd_cache=None))
+        l3_handler = cast(PacketHandlerL2, SimpleNamespace(arp_cache=None, nd_cache=None))
         l3_api = NeighborApi(packet_handler=l3_handler)
 
         self.assertEqual(
@@ -155,7 +155,7 @@ class TestStackNeighborApi(TestCase):
         Reference: PyTCP test infrastructure (no RFC clause).
         """
 
-        l3_handler = cast(PacketHandlerL2, SimpleNamespace(_arp_cache=None, _nd_cache=None))
+        l3_handler = cast(PacketHandlerL2, SimpleNamespace(arp_cache=None, nd_cache=None))
         l3_api = NeighborApi(packet_handler=l3_handler)
 
         l3_api.flush(family=AddressFamily.INET4)

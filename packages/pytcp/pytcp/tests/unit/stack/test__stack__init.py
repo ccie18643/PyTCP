@@ -784,7 +784,7 @@ class TestStackStopOrdering(TestCase):
         Reference: RFC 3376 §5.1 (host announces leaving on shutdown).
         """
 
-        cast(MagicMock, stack.interfaces[1])._send_igmp_leave_all.side_effect = lambda: self._call_log.append(
+        cast(MagicMock, stack.interfaces[1]).send_igmp_leave_all.side_effect = lambda: self._call_log.append(
             "igmp_leave"
         )
 

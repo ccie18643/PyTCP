@@ -457,7 +457,7 @@ class PacketHandler(Subsystem, ABC):
         # Guards every read / write of the two IPv4 multicast reception-
         # state structures above against concurrent application-thread
         # membership changes and the RX/timer read paths. Reentrant
-        # because the mutators nest ('_mc_ref_acquire' -> '_mc_recompute'
+        # because the mutators nest ('mc_ref_acquire' -> '_mc_recompute'
         # -> '_assign_ip4_multicast' -> '_ip4_multicast_filter_for').
         # GIL atomicity is not relied upon — PyTCP targets free-threaded
         # CPython, where a bare dict RMW racing another thread corrupts.
@@ -503,7 +503,7 @@ class PacketHandler(Subsystem, ABC):
         # window updates the SLAAC tracking table only (the
         # boot loop owns the claim ordering); a PI that
         # arrives AFTER the boot window also spawns a fresh
-        # '_claim_ip6_address_async' worker.
+        # 'claim_ip6_address_async' worker.
         self._ip6_addressing_complete: bool = False
 
         # Assign IP addresses statically.
@@ -769,7 +769,7 @@ class PacketHandler(Subsystem, ABC):
         self.remove_ip6_multicast(ip6_host.address.solicited_node_multicast)
 
     @abstractmethod
-    def _claim_ip6_address_async(
+    def claim_ip6_address_async(
         self,
         *,
         ip6_host: Ip6IfAddr,
@@ -811,28 +811,6 @@ class PacketHandler(Subsystem, ABC):
 
         raise NotImplementedError
 
-    def _assign_ip6_multicast(self, /, ip6_multicast: Ip6Address) -> None:
-        """
-        Compatibility shim delegating to the public 'assign_ip6_multicast'.
-
-        Retained so the address control-plane API ('pytcp.stack.address'),
-        whose protected-access migration is a later plane, keeps a working
-        call target; new callers use the public method.
-        """
-
-        self.assign_ip6_multicast(ip6_multicast)
-
-    def _remove_ip6_multicast(self, /, ip6_multicast: Ip6Address) -> None:
-        """
-        Compatibility shim delegating to the public 'remove_ip6_multicast'.
-
-        Retained so the address control-plane API ('pytcp.stack.address'),
-        whose protected-access migration is a later plane, keeps a working
-        call target; new callers use the public method.
-        """
-
-        self.remove_ip6_multicast(ip6_multicast)
-
     @abstractmethod
     def _assign_ip4_multicast(self, /, ip4_multicast: Ip4Address) -> None:
         """
@@ -849,7 +827,7 @@ class PacketHandler(Subsystem, ABC):
 
         raise NotImplementedError
 
-    def _mc_is_joined(self, group: Ip4Address, /) -> bool:
+    def mc_is_joined(self, group: Ip4Address, /) -> bool:
         """
         Return whether the interface currently listens on IPv4 multicast
         'group'. The materialized filter map is the source of truth and
@@ -874,7 +852,7 @@ class PacketHandler(Subsystem, ABC):
         with self._lock__multicast:
             membership = self._ip4_multicast_refs.get(group)
             merged = Ip4MulticastFilter.merge(membership.contributors() if membership is not None else [])
-            joined = self._mc_is_joined(group)
+            joined = self.mc_is_joined(group)
 
             if merged.has_reception:
                 if not joined:
@@ -891,7 +869,7 @@ class PacketHandler(Subsystem, ABC):
             elif joined:
                 self._remove_ip4_multicast(group)
 
-    def _mc_ref_acquire(self, group: Ip4Address, /) -> None:
+    def mc_ref_acquire(self, group: Ip4Address, /) -> None:
         """
         Acquire the operator hold on IPv4 multicast 'group' (the
         set-once 'ip maddr'-style EXCLUDE{} any-source contributor) and
@@ -906,7 +884,7 @@ class PacketHandler(Subsystem, ABC):
             self._ip4_multicast_refs.setdefault(group, _Ip4GroupMembership()).operator = True
             self._mc_recompute(group)
 
-    def _mc_ref_release(self, group: Ip4Address, /) -> None:
+    def mc_ref_release(self, group: Ip4Address, /) -> None:
         """
         Release the operator hold on IPv4 multicast 'group' and recompute
         the merged interface filter; the group leaves only when no
@@ -928,7 +906,7 @@ class PacketHandler(Subsystem, ABC):
                 del self._ip4_multicast_refs[group]
             self._mc_recompute(group)
 
-    def _mc_set_socket_filter(self, group: Ip4Address, /, *, token: int, source_filter: Ip4MulticastFilter) -> None:
+    def mc_set_socket_filter(self, group: Ip4Address, /, *, token: int, source_filter: Ip4MulticastFilter) -> None:
         """
         Register / replace the source filter socket 'token' holds on IPv4
         multicast 'group' (RFC 3376 §3.1 per-socket state) and recompute
@@ -944,7 +922,7 @@ class PacketHandler(Subsystem, ABC):
             self._ip4_multicast_refs.setdefault(group, _Ip4GroupMembership()).socket_filters[token] = source_filter
             self._mc_recompute(group)
 
-    def _mc_clear_socket_filter(self, group: Ip4Address, /, *, token: int) -> None:
+    def mc_clear_socket_filter(self, group: Ip4Address, /, *, token: int) -> None:
         """
         Drop the source filter socket 'token' held on IPv4 multicast
         'group' (the socket left, per RFC 3376 §3.1 INCLUDE{} delete) and
@@ -985,6 +963,101 @@ class PacketHandler(Subsystem, ABC):
             self._ip4_ifaddr = [host for host in self._ip4_ifaddr if host != ip4_host]
 
         __debug__ and log("stack", f"Removed IPv4 unicast address {ip4_host}")
+
+    def assign_ip4_ifaddr(self, ifaddr: Ip4IfAddr, /) -> None:
+        """
+        Install 'ifaddr' on this interface's IPv4 address list — the
+        Address API's 'add' mutator. Publishes a fresh list reference
+        under '_lock__addr_config' (copy-on-write): the TX worker reads
+        the address list during source-address selection on a different
+        thread, so the writer swaps a whole new list (the reader sees the
+        old or new list whole, never a mid-append state) while the lock
+        serialises this writer against the RX / SLAAC / DAD writers.
+        Targets free-threaded CPython — GIL atomicity is not relied upon.
+        """
+
+        with self._lock__addr_config:
+            self._ip4_ifaddr = [*self._ip4_ifaddr, ifaddr]
+
+    def remove_ip4_ifaddr(self, address: Ip4Address, /) -> int:
+        """
+        Remove every IPv4 host whose '.address' equals 'address' from
+        this interface's address list — the Address API's 'remove'
+        mutator — and return the number of hosts removed. Copy-on-write
+        under '_lock__addr_config' (see 'assign_ip4_ifaddr').
+        """
+
+        with self._lock__addr_config:
+            before = len(self._ip4_ifaddr)
+            self._ip4_ifaddr = [host for host in self._ip4_ifaddr if host.address != address]
+            return before - len(self._ip4_ifaddr)
+
+    def assign_ip6_ifaddr(self, ifaddr: Ip6IfAddr, /) -> None:
+        """
+        Install 'ifaddr' on this interface's IPv6 address list (the
+        non-DAD direct path) and join its solicited-node multicast group
+        (RFC 4291 §2.7.1) — the Address API's 'add' mutator for an IPv6
+        host that has already been DAD-vetted (or opted out of DAD).
+        Copy-on-write under '_lock__addr_config' (see 'assign_ip4_ifaddr');
+        the solicited-node multicast assignment runs outside the address-
+        config lock, mirroring '_assign_ip6_host'.
+        """
+
+        with self._lock__addr_config:
+            self._ip6_ifaddr = [*self._ip6_ifaddr, ifaddr]
+        self.assign_ip6_multicast(ifaddr.address.solicited_node_multicast)
+
+    def remove_ip6_ifaddr(self, address: Ip6Address, /) -> list[Ip6IfAddr]:
+        """
+        Remove every IPv6 host whose '.address' equals 'address' from
+        this interface's address list — the Address API's 'remove'
+        mutator — leave each removed host's solicited-node multicast
+        group, and return the removed hosts (for the caller's log line).
+        Copy-on-write under '_lock__addr_config' (see 'assign_ip4_ifaddr').
+        """
+
+        with self._lock__addr_config:
+            removed_hosts = [host for host in self._ip6_ifaddr if host.address == address]
+            self._ip6_ifaddr = [host for host in self._ip6_ifaddr if host.address != address]
+        for host in removed_hosts:
+            self.remove_ip6_multicast(host.address.solicited_node_multicast)
+        return removed_hosts
+
+    def set_interface_mtu(self, mtu: int, /) -> None:
+        """
+        Set this interface's MTU in bytes — the Link API's 'set_mtu'
+        mutator. '_interface_mtu' is the canonical source of truth the TX
+        paths read for MSS / fragmentation decisions; the per-interface
+        RX / TX rings cache it as the read / writev size bound, so both
+        are updated here. Range validation is the Link API's
+        responsibility.
+
+        The 'getattr' / 'AttributeError' tolerance covers the test
+        fixtures: 'mock__init' handlers that skip ring construction (the
+        ring is None → skipped) and 'create_autospec(TxRing,
+        spec_set=True)' ring mocks (whose proxy does not expose the
+        '_mtu' slot the real 'set_mtu' writes).
+        """
+
+        self._interface_mtu = mtu
+        for ring in (self._tx_ring, self._rx_ring):
+            if ring is None:
+                continue
+            try:
+                ring.set_mtu(mtu)
+            except AttributeError:
+                pass
+
+    def set_mac_address(self, mac_address: MacAddress, /) -> None:
+        """
+        Set this interface's unicast MAC address — the Link API's
+        'set_mac_address' mutator. Valid only on an L2 (TAP) interface
+        with the stack stopped; the Link API enforces those preconditions
+        and the unicast / non-zero validity of 'mac_address' before
+        calling.
+        """
+
+        self._mac_unicast = mac_address
 
     def _log_stack_address_info(self) -> None:
         """
@@ -1430,7 +1503,7 @@ class PacketHandler(Subsystem, ABC):
         # — the stable address is already in '_ip6_ifaddr'.
         if existing is None and self._ip6_addressing_complete:
             ip6_host = Ip6IfAddr((address, Ip6Mask("/64")))
-            self._claim_ip6_address_async(
+            self.claim_ip6_address_async(
                 ip6_host=ip6_host,
                 regenerate=self._make_rfc7217_regenerator(ip6_network=prefix),
             )
@@ -1467,7 +1540,7 @@ class PacketHandler(Subsystem, ABC):
           (regeneration is §18c, not §18b).
         - New entry: generate a random IID via
           'Ip6IfAddr.from_rfc8981_temp', spawn an async DAD
-          claim via '_claim_ip6_address_async', and append
+          claim via 'claim_ip6_address_async', and append
           to '_icmp6_temp_addresses'.
 
         Lifetimes are clamped to TEMP_VALID_LIFETIME /
@@ -1554,7 +1627,7 @@ class PacketHandler(Subsystem, ABC):
         # to the failure path on collision (where retries
         # exhaust before the temp-table entry is left
         # orphaned).
-        self._claim_ip6_address_async(ip6_host=temp_host, regenerate=_regenerate)
+        self.claim_ip6_address_async(ip6_host=temp_host, regenerate=_regenerate)
 
     def get_icmp6_temp_addresses(self) -> list[Icmp6TempAddress]:
         """
@@ -1701,7 +1774,7 @@ class PacketHandler(Subsystem, ABC):
                 f"for prefix {prefix} (existing {newest.address} approaching "
                 "preferred-lifetime expiry)</>",
             )
-            self._claim_ip6_address_async(ip6_host=temp_host, regenerate=_regenerate)
+            self.claim_ip6_address_async(ip6_host=temp_host, regenerate=_regenerate)
 
     def _icmp6_sweep_slaac_addresses(self) -> None:
         """
@@ -2364,10 +2437,11 @@ class PacketHandler(Subsystem, ABC):
                 return Ip4MulticastFilter(Ip4MulticastFilterMode.EXCLUDE)
             return Ip4MulticastFilter.merge(membership.contributors())
 
-    def _send_igmp_leave_all(self) -> None:
+    def send_igmp_leave_all(self) -> None:
         """
         Emit a graceful IGMP Leave for every joined IPv4 multicast group
-        on shutdown (delegates to the IGMP TX sub-handler).
+        on shutdown (delegates to the IGMP TX sub-handler). Public surface
+        for the stack-shutdown lifecycle path.
         """
 
         self._igmp_tx._send_igmp_leave_all()
@@ -3221,7 +3295,7 @@ class PacketHandlerL2(
         return False
 
     @override
-    def _claim_ip6_address_async(
+    def claim_ip6_address_async(
         self,
         *,
         ip6_host: Ip6IfAddr,
@@ -3319,7 +3393,7 @@ class PacketHandlerL2(
         should listen on.
 
         Each address claim spawns a daemon DAD worker thread via
-        '_claim_ip6_address_async'. With 'icmp6.optimistic_dad=0'
+        'claim_ip6_address_async'. With 'icmp6.optimistic_dad=0'
         the boot path '.join()'s every worker (preserving today's
         "address available only after DAD passes" semantic but
         permitting parallel DAD across candidates); with =1 the
@@ -3341,7 +3415,7 @@ class PacketHandlerL2(
             *,
             regenerate: Callable[[], Ip6IfAddr] | None = None,
         ) -> None:
-            thread = self._claim_ip6_address_async(ip6_host=ip6_host, regenerate=regenerate)
+            thread = self.claim_ip6_address_async(ip6_host=ip6_host, regenerate=regenerate)
             if sysctl_iface.get_for_iface("icmp6.optimistic_dad", self._interface_name) == 0:
                 thread.join()
 
@@ -3402,7 +3476,7 @@ class PacketHandlerL2(
         # Open the runtime-claim gate. From here on, any PI
         # arriving at the RX path for a brand-new prefix
         # (existing SLAAC entry is None) triggers an
-        # immediate '_claim_ip6_address_async' for the
+        # immediate 'claim_ip6_address_async' for the
         # stable address. Boot-window PIs only updated the
         # tracking table and relied on the loop above for
         # their claim ordering.
@@ -3621,7 +3695,7 @@ class PacketHandlerL3(
                 handler(packet_rx)
 
     @override
-    def _claim_ip6_address_async(
+    def claim_ip6_address_async(
         self,
         *,
         ip6_host: Ip6IfAddr,

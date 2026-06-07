@@ -84,7 +84,7 @@ class TestIgmpShutdownLeave(NetworkTestCase):
         self._packet_handler._assign_ip4_multicast(Ip4Address("239.2.2.2"))
 
         before = len(self._frames_tx)
-        self._packet_handler._send_igmp_leave_all()
+        self._packet_handler.send_igmp_leave_all()
 
         reports = _igmp_report_frames(self._frames_tx[before:])
         self.assertEqual(len(reports), 1, msg="The shutdown Leave is a single combined Report.")
@@ -108,7 +108,7 @@ class TestIgmpShutdownLeave(NetworkTestCase):
         """
 
         before = len(self._frames_tx)
-        self._packet_handler._send_igmp_leave_all()
+        self._packet_handler.send_igmp_leave_all()
 
         self.assertEqual(
             len(_igmp_report_frames(self._frames_tx[before:])),

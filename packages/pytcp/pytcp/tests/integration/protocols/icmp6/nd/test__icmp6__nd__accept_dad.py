@@ -200,7 +200,7 @@ class TestIcmp6Nd__AcceptDad__TwoDisablesIp6OnFailure(NdTestCase):
             with sysctl_module.override("icmp6.default.max_rtr_solicitation_delay_ms", 0):
                 with sysctl_module.override("icmp6.default.retrans_timer_ms", 200):
                     threading.Timer(0.005, _trigger_conflict).start()
-                    thread = self._packet_handler._claim_ip6_address_async(ip6_host=_CANDIDATE_HOST)
+                    thread = self._packet_handler.claim_ip6_address_async(ip6_host=_CANDIDATE_HOST)
                     thread.join(timeout=5.0)
 
         self.assertFalse(
@@ -231,7 +231,7 @@ class TestIcmp6Nd__AcceptDad__TwoDisablesIp6OnFailure(NdTestCase):
         with sysctl_module.override("icmp6.default.max_rtr_solicitation_delay_ms", 0):
             with sysctl_module.override("icmp6.default.retrans_timer_ms", 200):
                 threading.Timer(0.005, _trigger_conflict).start()
-                thread = self._packet_handler._claim_ip6_address_async(ip6_host=_CANDIDATE_HOST)
+                thread = self._packet_handler.claim_ip6_address_async(ip6_host=_CANDIDATE_HOST)
                 thread.join(timeout=5.0)
 
         self.assertTrue(
@@ -251,7 +251,7 @@ class TestIcmp6Nd__AcceptDad__TwoDisablesIp6OnFailure(NdTestCase):
         with sysctl_module.override("icmp6.default.accept_dad", 2):
             with sysctl_module.override("icmp6.default.max_rtr_solicitation_delay_ms", 0):
                 with sysctl_module.override("icmp6.default.dad_transmits", 0):
-                    thread = self._packet_handler._claim_ip6_address_async(ip6_host=_CANDIDATE_HOST)
+                    thread = self._packet_handler.claim_ip6_address_async(ip6_host=_CANDIDATE_HOST)
                     thread.join(timeout=5.0)
 
         self.assertTrue(
