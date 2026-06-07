@@ -95,6 +95,34 @@ class _FakePacketHandlerL2:
         self._tx_ring: _FakeRing = _FakeRing(mtu=interface_mtu)
         self._rx_ring: _FakeRing = _FakeRing(mtu=interface_mtu)
 
+    @property
+    def interface_layer(self) -> InterfaceLayer:
+        return self._interface_layer
+
+    @property
+    def interface_mtu(self) -> int:
+        return self._interface_mtu
+
+    @property
+    def interface_name(self) -> str | None:
+        return self._interface_name
+
+    @property
+    def mac_unicast(self) -> MacAddress | None:
+        return self._mac_unicast
+
+    @property
+    def packet_stats_rx(self) -> PacketStatsRx:
+        return self._packet_stats_rx
+
+    @property
+    def packet_stats_tx(self) -> PacketStatsTx:
+        return self._packet_stats_tx
+
+    @property
+    def link_stats(self) -> LinkStatsCounters:
+        return self._link_stats
+
 
 class _FakePacketHandlerL3:
     """
@@ -120,6 +148,36 @@ class _FakePacketHandlerL3:
         self._packet_stats_rx = packet_stats_rx if packet_stats_rx is not None else PacketStatsRx()
         self._packet_stats_tx = packet_stats_tx if packet_stats_tx is not None else PacketStatsTx()
         self._link_stats = link_stats if link_stats is not None else LinkStatsCounters()
+
+    @property
+    def interface_layer(self) -> InterfaceLayer:
+        return self._interface_layer
+
+    @property
+    def interface_mtu(self) -> int:
+        return self._interface_mtu
+
+    @property
+    def interface_name(self) -> str | None:
+        return self._interface_name
+
+    @property
+    def mac_unicast(self) -> MacAddress | None:
+        # L3 (TUN) has no Ethernet layer and therefore no MAC,
+        # mirroring 'PacketHandler.mac_unicast' returning None.
+        return None
+
+    @property
+    def packet_stats_rx(self) -> PacketStatsRx:
+        return self._packet_stats_rx
+
+    @property
+    def packet_stats_tx(self) -> PacketStatsTx:
+        return self._packet_stats_tx
+
+    @property
+    def link_stats(self) -> LinkStatsCounters:
+        return self._link_stats
 
 
 class TestLinkApiMacAddress(TestCase):

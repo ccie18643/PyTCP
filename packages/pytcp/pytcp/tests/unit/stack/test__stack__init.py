@@ -2614,12 +2614,12 @@ class TestStackEgressInterfaceMtu(TestCase):
         self._iface_1 = SimpleNamespace(
             ip4_host=[Ip4IfAddr("10.0.1.7/24")],
             ip6_host=[Ip6IfAddr("2001:db8:0:1::7/64")],
-            _interface_mtu=1500,
+            interface_mtu=1500,
         )
         self._iface_2 = SimpleNamespace(
             ip4_host=[Ip4IfAddr("10.0.2.7/24")],
             ip6_host=[Ip6IfAddr("2001:db8:0:2::7/64")],
-            _interface_mtu=9000,
+            interface_mtu=9000,
         )
         self._table = InterfaceTable()
         self._table[1] = cast("PacketHandlerL2", self._iface_1)

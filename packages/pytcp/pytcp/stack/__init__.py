@@ -744,7 +744,7 @@ def egress_interface_mtu(destination: Ip4Address | Ip6Address, /) -> int | None:
     if "ip4_fib" not in globals() or "ip6_fib" not in globals():
         return None
     handler = _egress_handler_via_fib(destination)
-    return handler._interface_mtu if handler is not None else None
+    return handler.interface_mtu if handler is not None else None
 
 
 def egress_interface_name(destination: Ip4Address | Ip6Address, /) -> str | None:
@@ -759,7 +759,7 @@ def egress_interface_name(destination: Ip4Address | Ip6Address, /) -> str | None
     PLPMTUD cold-start path reads this so 'TcpSession.__init__' can
     resolve the per-interface 'tcp.mtu_probing' / 'tcp.base_mss'
     sysctls through 'sysctl_iface.get_for_iface(..., ifname)' without
-    reaching into 'packet_handler._interface_name' directly — keeping
+    reaching into the packet handler's interface name directly — keeping
     the Phase-3 boundary clean.
 
     Resolution mirrors 'egress_interface_mtu' — FIB 'oif', or None.
@@ -768,7 +768,7 @@ def egress_interface_name(destination: Ip4Address | Ip6Address, /) -> str | None
     if "ip4_fib" not in globals() or "ip6_fib" not in globals():
         return None
     handler = _egress_handler_via_fib(destination)
-    return handler._interface_name if handler is not None else None
+    return handler.interface_name if handler is not None else None
 
 
 def select_local_ip6_source(destination: Ip6Address, /) -> Ip6Address:
@@ -776,7 +776,7 @@ def select_local_ip6_source(destination: Ip6Address, /) -> Ip6Address:
     Select the IPv6 source address for a stack-originated packet to
     'destination', honoring the egress interface: resolve the egress
     interface via the FIB, then run RFC 6724 source selection over THAT
-    interface's addresses (its '_select_ip6_source'). Returns the
+    interface's addresses (its 'select_ip6_source'). Returns the
     unspecified address when the routing plane is down, no egress
     interface resolves, or no acceptable source is found.
 
@@ -791,7 +791,7 @@ def select_local_ip6_source(destination: Ip6Address, /) -> Ip6Address:
         return Ip6Address()
     handler = _egress_handler_via_fib(destination)
     if handler is not None:
-        source = handler._ip6_tx._select_ip6_source(ip6__dst=destination)
+        source = handler.select_ip6_source(destination)
         if source is not None:
             return source
     return Ip6Address()
@@ -801,7 +801,7 @@ def select_local_ip4_source(destination: Ip4Address, /) -> Ip4Address:
     """
     Select the IPv4 source address for a stack-originated packet to
     'destination', honoring the egress interface (its
-    '_select_ip4_source'). The IPv4 companion to 'select_local_ip6_source'
+    'select_ip4_source'). The IPv4 companion to 'select_local_ip6_source'
     — see there for the multi-homed rationale. Returns the unspecified
     address when the routing plane is down, no egress interface resolves,
     or no acceptable source is found.
@@ -811,7 +811,7 @@ def select_local_ip4_source(destination: Ip4Address, /) -> Ip4Address:
         return Ip4Address()
     handler = _egress_handler_via_fib(destination)
     if handler is not None:
-        source = handler._ip4_tx._select_ip4_source(ip4__dst=destination)
+        source = handler.select_ip4_source(destination)
         if source is not None:
             return source
     return Ip4Address()

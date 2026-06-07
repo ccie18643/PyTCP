@@ -1123,6 +1123,155 @@ class PacketHandler(Subsystem, ABC):
 
         return self._interface_name
 
+    @property
+    def interface_mtu(self) -> int:
+        """
+        Get the interface MTU in bytes. Read surface for the Link API's
+        'mtu' property and the per-destination 'egress_interface_mtu'
+        helper; the '_interface_mtu' attribute stays the storage.
+        """
+
+        return self._interface_mtu
+
+    @property
+    def interface_layer(self) -> InterfaceLayer:
+        """
+        Get the interface layer (L2 = TAP, L3 = TUN). Read surface for
+        the Link API's 'interface_layer' / 'flags' / stat-aggregation
+        paths; the '_interface_layer' attribute stays the storage.
+        """
+
+        return self._interface_layer
+
+    @property
+    def ifindex(self) -> int:
+        """
+        Get the per-interface index (Linux ifindex). Read surface for the
+        FIB teardown / introspection paths; the '_ifindex' attribute
+        stays the storage.
+        """
+
+        return self._ifindex
+
+    @property
+    def mac_unicast(self) -> MacAddress | None:
+        """
+        Get the interface unicast MAC address, or 'None' on an L3 (TUN)
+        interface that has no Ethernet layer. Read surface for the Link
+        API's 'mac_address' property; the '_mac_unicast' attribute (set
+        only on 'PacketHandlerL2') stays the storage.
+        """
+
+        return getattr(self, "_mac_unicast", None)
+
+    @property
+    def link_stats(self) -> LinkStatsCounters:
+        """
+        Get the live per-interface link-level aggregate counters (bytes /
+        multicast) shared with the RX / TX rings. Read surface for the
+        Link API's 'stats' aggregation; the '_link_stats' attribute stays
+        the storage.
+        """
+
+        return self._link_stats
+
+    @property
+    def ip4_multicast(self) -> list[Ip4Address]:
+        """
+        Get the list of IPv4 multicast groups the interface listens on.
+        Read surface for the Membership API; the derived '_ip4_multicast'
+        view stays the storage.
+        """
+
+        return self._ip4_multicast
+
+    @property
+    def ip4_ifaddr(self) -> tuple[Ip4IfAddr, ...]:
+        """
+        Get a read-only, copy-by-value snapshot of the stack's IPv4
+        interface addresses (the Phase-3 "introspection is read-only"
+        contract). Read surface for the Route / Address APIs; the
+        '_ip4_ifaddr' list stays the storage.
+        """
+
+        return tuple(self._ip4_ifaddr)
+
+    @property
+    def ip6_ifaddr(self) -> tuple[Ip6IfAddr, ...]:
+        """
+        Get a read-only, copy-by-value snapshot of the stack's IPv6
+        interface addresses (the Phase-3 "introspection is read-only"
+        contract). Read surface for the Route / Address APIs; the
+        '_ip6_ifaddr' list stays the storage.
+        """
+
+        return tuple(self._ip6_ifaddr)
+
+    @property
+    def arp_cache(self) -> ArpCache | None:
+        """
+        Get the per-interface ARP cache, or 'None' on an L3 (TUN)
+        interface that has no ARP. Read surface for the Neighbor API; the
+        '_arp_cache' attribute stays the storage.
+        """
+
+        return self._arp_cache
+
+    @property
+    def nd_cache(self) -> NdCache | None:
+        """
+        Get the per-interface ND cache, or 'None' for a standalone
+        unit-test handler with no cache wired. Read surface for the
+        Neighbor API; the '_nd_cache' attribute stays the storage.
+        """
+
+        return self._nd_cache
+
+    @property
+    def dhcp4_client(self) -> Dhcp4Client | None:
+        """
+        Get the per-interface DHCPv4 client, or 'None' when the interface
+        runs no DHCPv4 client. Read surface for the activity-introspection
+        API; the '_dhcp4_client' attribute (set only on 'PacketHandlerL2')
+        stays the storage.
+        """
+
+        return getattr(self, "_dhcp4_client", None)
+
+    @property
+    def dad_states(self) -> dict[Ip6Address, Icmp6DadState]:
+        """
+        Get a copy-by-value snapshot of the RFC 4429 §3.1 Optimistic DAD
+        per-address state map (the Phase-3 "introspection is read-only"
+        contract). Read surface for the activity-introspection API's
+        tentative-address view; the '_icmp6_dad__states' map stays the
+        storage.
+        """
+
+        return dict(self._icmp6_dad__states)
+
+    def select_ip6_source(self, destination: Ip6Address, /) -> Ip6Address | None:
+        """
+        Run RFC 6724 default source-address selection over this
+        interface's IPv6 addresses for a packet bound to 'destination',
+        returning the winner or 'None' when no acceptable source is
+        found. Read surface for 'stack.select_local_ip6_source'; the
+        per-interface IPv6 TX sub-handler does the work.
+        """
+
+        return self._ip6_tx._select_ip6_source(ip6__dst=destination)
+
+    def select_ip4_source(self, destination: Ip4Address, /) -> Ip4Address | None:
+        """
+        Select the IPv4 source address over this interface's IPv4
+        addresses for a packet bound to 'destination', returning the
+        winner or 'None' when no acceptable source is found. Read surface
+        for 'stack.select_local_ip4_source'; the per-interface IPv4 TX
+        sub-handler does the work.
+        """
+
+        return self._ip4_tx._select_ip4_source(ip4__dst=destination)
+
     def _update_icmp6_default_router(
         self,
         *,

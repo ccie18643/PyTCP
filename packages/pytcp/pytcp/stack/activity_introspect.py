@@ -74,7 +74,7 @@ def _dhcp4_state(handler: object, /) -> str | None:
     when the interface runs no DHCPv4 client.
     """
 
-    client = getattr(handler, "_dhcp4_client", None)
+    client = getattr(handler, "dhcp4_client", None)
     if client is None:
         return None
     state = getattr(client, "state", None)
@@ -87,7 +87,7 @@ def _tentative_ip6(handler: object, /) -> tuple[Ip6Address, ...]:
     Detection (TENTATIVE / OPTIMISTIC) — the ones still autoconfiguring.
     """
 
-    dad_states: dict[Ip6Address, Icmp6DadState] = getattr(handler, "_icmp6_dad__states", {})
+    dad_states: dict[Ip6Address, Icmp6DadState] = getattr(handler, "dad_states", {})
     return tuple(address for address, state in dad_states.items() if state in _DAD_IN_PROGRESS)
 
 
@@ -100,7 +100,7 @@ def build_interface_activity(interfaces: Iterable[tuple[int, object]]) -> tuple[
     activities = [
         InterfaceActivity(
             ifindex=ifindex,
-            name=getattr(handler, "_interface_name", None) or "?",
+            name=getattr(handler, "interface_name", None) or "?",
             dhcp4_state=_dhcp4_state(handler),
             tentative_ip6=_tentative_ip6(handler),
         )

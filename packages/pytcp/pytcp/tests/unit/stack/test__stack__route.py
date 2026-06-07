@@ -591,8 +591,8 @@ class TestRouteApiConnectedRoutes(TestCase):
         self._ip6_fib: RouteTable[Ip6Address, Ip6Network] = RouteTable()
         self._route_api = RouteApi(ip4_fib=self._ip4_fib, ip6_fib=self._ip6_fib)
         handler = SimpleNamespace(
-            _ip4_ifaddr=[Ip4IfAddr("192.168.1.145/24")],
-            _ip6_ifaddr=[Ip6IfAddr("2603:808c:2800:4301::5/64")],
+            ip4_ifaddr=(Ip4IfAddr("192.168.1.145/24"),),
+            ip6_ifaddr=(Ip6IfAddr("2603:808c:2800:4301::5/64"),),
         )
         self.enterContext(patch("pytcp.stack.interfaces", {1: handler}, create=True))
 

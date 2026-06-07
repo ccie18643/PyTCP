@@ -291,12 +291,11 @@ class LinkApi:
 
         Returns None on L3 (TUN) interfaces, which have no
         Ethernet layer and therefore no MAC. The packet
-        handler stores '_mac_unicast' only on the L2
-        subclass; the 'getattr' fallback handles the L3
-        case without an isinstance check.
+        handler's 'mac_unicast' read surface returns None on
+        L3 without an isinstance check here.
         """
 
-        return getattr(self._resolve_handler(), "_mac_unicast", None)
+        return self._resolve_handler().mac_unicast
 
     @property
     def mtu(self) -> int:
@@ -305,7 +304,7 @@ class LinkApi:
         'ip link show eth0 | grep mtu' equivalent.
         """
 
-        return self._resolve_handler()._interface_mtu
+        return self._resolve_handler().interface_mtu
 
     @property
     def name(self) -> str | None:
@@ -320,7 +319,7 @@ class LinkApi:
         the name plumbing.
         """
 
-        return self._resolve_handler()._interface_name
+        return self._resolve_handler().interface_name
 
     @property
     def interface_layer(self) -> InterfaceLayer:
@@ -329,7 +328,7 @@ class LinkApi:
         Linux 'ip link show eth0 | grep link/' equivalent.
         """
 
-        return self._resolve_handler()._interface_layer
+        return self._resolve_handler().interface_layer
 
     @property
     def is_running(self) -> bool:
@@ -372,10 +371,10 @@ class LinkApi:
         """
 
         handler = self._resolve_handler()
-        rx = handler._packet_stats_rx
-        tx = handler._packet_stats_tx
-        link = handler._link_stats
-        layer = handler._interface_layer
+        rx = handler.packet_stats_rx
+        tx = handler.packet_stats_tx
+        link = handler.link_stats
+        layer = handler.interface_layer
 
         if layer is InterfaceLayer.L2:
             rx_packets = rx.ethernet__pre_parse + rx.ethernet_802_3__pre_parse
@@ -496,7 +495,7 @@ class LinkApi:
         if stack.stack_running:
             raise RuntimeError("Cannot set MAC address while the stack is running. " "Call 'stack.stop()' first.")
 
-        if handler._interface_layer is not InterfaceLayer.L2:
+        if handler.interface_layer is not InterfaceLayer.L2:
             raise RuntimeError("Cannot set MAC address on L3 (TUN) interface — no Ethernet layer.")
 
         if not mac_address.is_unicast:
@@ -526,4 +525,4 @@ class LinkApi:
         through the returned reference.
         """
 
-        return _FLAGS_BY_LAYER[self._resolve_handler()._interface_layer]
+        return _FLAGS_BY_LAYER[self._resolve_handler().interface_layer]

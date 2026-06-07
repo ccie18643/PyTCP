@@ -172,7 +172,7 @@ class RouteApi:
                 oif=ifindex,
             )
             for ifindex, handler in _stack.interfaces.items()
-            for ifaddr in handler._ip4_ifaddr
+            for ifaddr in handler.ip4_ifaddr
         ]
 
     @staticmethod
@@ -194,7 +194,7 @@ class RouteApi:
                 oif=ifindex,
             )
             for ifindex, handler in _stack.interfaces.items()
-            for ifaddr in handler._ip6_ifaddr
+            for ifaddr in handler.ip6_ifaddr
         ]
 
     def add_route(

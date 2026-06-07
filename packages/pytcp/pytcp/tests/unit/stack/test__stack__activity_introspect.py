@@ -55,9 +55,9 @@ def _handler(
     """
 
     return SimpleNamespace(
-        _interface_name=name,
-        _dhcp4_client=(SimpleNamespace(state=dhcp4_state) if dhcp4_state is not None else None),
-        _icmp6_dad__states=dad if dad is not None else {},
+        interface_name=name,
+        dhcp4_client=(SimpleNamespace(state=dhcp4_state) if dhcp4_state is not None else None),
+        dad_states=dad if dad is not None else {},
     )
 
 
