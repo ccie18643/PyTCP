@@ -177,7 +177,11 @@ Rules for this exception:
 3. The contract is enforced socially (rule + reviewer
    attention) and by convention; PyTCP does not yet run a
    mechanical "no deep imports from outside the subpackage"
-   check.
+   check. Because the split-class files reach across the
+   `_`-prefixed boundary between sibling modules, each carries
+   the file-level dual `# pylint: disable=protected-access` +
+   `# pyright: reportPrivateUsage=false` suppression — see
+   §5.2 for the full protected-access boundary rule.
 4. The carve-out is granted **only** when an encapsulation
    payoff exists: outside code already treats the subpackage
    as a black box, the internal layout is genuinely volatile
@@ -340,6 +344,105 @@ rule is named in parentheses.
   side-effects until first invocation — meaning the registry
   is empty at boot and operator overrides racing the first
   read hit `KeyError`.
+
+### 5.2 Protected-access boundary (no cross-class private reach-through)
+
+§5.1 governs *importing* a `_`-prefixed name; this section
+governs *accessing* a `_`-prefixed attribute or method of
+**another class** at runtime (`other_obj._private`). The
+underscore means "private to the declaring class." Reaching
+across it from a different class is the same classification
+bug as the import case, and it is **MUST-not** in production
+(non-test) source.
+
+**Why this rule needs to be written down: the lint gate does
+not catch it.** mypy — PyTCP's only gated type checker — has
+**no private-usage diagnostic at all**; a single leading
+underscore is pure convention to it, so `obj._foo` from
+outside the class type-checks clean. The only two tools that
+flag cross-class private access are **pylint
+(`protected-access` / `W0212`)** and **Pyright / Pylance
+(`reportPrivateUsage`)** — and pylint is **not** in the
+`make lint` gate (gate = codespell + isort + black + flake8 +
+mypy). So this boundary is unenforced by CI today and rests
+on reviewer attention plus the IDE squiggle. (pylint exempts
+same-class access — `other._x` inside `__eq__` where `other`
+is the same class is fine and is **not** a violation; this
+rule is only about reaching into a *different* class.)
+
+**The three MUST rules:**
+
+1. **A `_`-prefixed method reached from another class →
+   rename it public** (drop the underscore). It was always
+   part of the class's real surface; the underscore was a
+   misclassification. Do not paper over the call site with a
+   suppression.
+
+2. **A `_`-prefixed attribute read from another class →
+   expose a read-only `@property`.** The Linux-`/proc`-style
+   read surface (`handler.interface_mtu`, `handler.ip4_ifaddr`)
+   is the boundary; the `_`-attribute stays the storage.
+
+3. **Read-write only when a sanctioned writer genuinely
+   exists, and via a named mutator method — never a
+   read-write property.** A writable property invites callers
+   to mutate the underlying container in place (breaking any
+   copy-on-write-under-lock invariant — see
+   [`pytcp.md`](pytcp.md)); a `set_mtu()` /
+   `assign_ifaddr()` / `remove_ifaddr()` method keeps the
+   mutation explicit and lockable. Construction-time
+   object-graph wiring (a stack assembler setting a freshly
+   built handler's collaborators) uses an explicit
+   `attach_*(...)` method or constructor parameter, not a
+   reach-in write.
+
+**The one sanctioned exception — a single class split across
+files.** When one logical class is deliberately decomposed
+into several files (the encapsulated-subpackage pattern of
+§2.4.1 — `protocols/tcp/session/`, `protocols/tcp/fsm/`),
+the collaborator / per-state files legitimately operate on
+the shared instance's private state. Those files carry a
+**file-level dual suppression**, placed immediately after
+the copyright block and before the module docstring, that
+silences **both** offending tools:
+
+```python
+################################################################################
+##   ... copyright block ...                                                  ##
+################################################################################
+
+
+# pylint: disable=protected-access
+# pyright: reportPrivateUsage=false
+```
+
+Both lines are **mandatory together** — pylint and Pyright
+flag the same access independently, so suppressing only one
+leaves the other (the IDE squiggle, typically) live. There
+is no repo-level Pyright config; the per-file
+`# pyright: reportPrivateUsage=false` comment is what does
+the work, so it cannot be omitted. (`reportUnusedExpression=false`
+is added on the same line only where the file also has
+bare-expression statements, as the `fsm/` files do.)
+
+**Per-line exceptions are a discuss-first corner case, not a
+default.** When a genuine cross-class reach-through cannot be
+removed (e.g. mirroring a stdlib-internal like
+`sock._decref_socketio()` for drop-in parity), the inline
+form silences both tools on that line:
+
+```python
+result = sock._decref_socketio()  # pylint: disable=protected-access  # pyright: ignore[reportPrivateUsage]
+```
+
+Prefer fixing the boundary (rules 1–3) over an inline
+suppression; raise the case with the maintainer before
+reaching for the comment.
+
+**Tests are exempt.** Cross-class private access in
+`*/tests/` is acceptable (the Phase-3 reach-through markers
+of CLAUDE.md already sanction it); the dual-suppression and
+rename rules above apply to **non-test source only**.
 
 ## 6. Source-file docstrings
 
@@ -514,6 +617,17 @@ typing anti-patterns live in
   consumer needs the name, rename it to public in the source
   module — don't reach across the underscore boundary. (See
   §5.1.)
+- **Accessing a `_`-prefixed attribute / method of another
+  class** (`other_obj._private`) in production source.
+  mypy does not flag it (only pylint `protected-access` +
+  Pyright `reportPrivateUsage` do, and pylint is ungated) —
+  but it is still a MUST-not. Rename the method public, or
+  expose a read-only `@property` (read-write only via a named
+  mutator), per §5.2. The sole exception is a single class
+  deliberately split across files, which carries the
+  file-level dual `# pylint: disable=protected-access` +
+  `# pyright: reportPrivateUsage=false` suppression. Tests are
+  exempt.
 - **`_ = SomeName` at end-of-file** to silence unused-import
   warnings. Just delete the import.
 - **Function-local `from pytcp.lib import foo__constants`
