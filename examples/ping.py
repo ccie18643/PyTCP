@@ -30,29 +30,31 @@ This module contains a ping (ICMP Echo) tool written against the standard
 
 The destination's IP version is auto-detected through 'getaddrinfo', so
 the same invocation pings an IPv4 or IPv6 address / hostname (ICMPv4 Echo
-8/0 or ICMPv6 Echo 128/129). By default it uses a raw ICMP socket (the
-classic mechanism); the '-U' / '--unprivileged' flag switches to the
-Linux unprivileged ICMP datagram socket ('socket(AF_INET*, SOCK_DGRAM,
-IPPROTO_ICMP*)'), where the kernel owns the ICMP id, demuxes replies by
-it, hands back the ICMP message only (no IP header), and reports the reply
-TTL / Hop Limit through an 'IP_TTL' / 'IPV6_HOPLIMIT' control message.
+8/0 or ICMPv6 Echo 128/129). Socket selection mirrors Linux 'ping': by
+default it uses the unprivileged ICMP datagram socket ('socket(AF_INET*,
+SOCK_DGRAM, IPPROTO_ICMP*)') and falls back to a raw socket if that is
+refused; '-e IDENTIFIER' forces a raw socket (a custom id needs SOCK_RAW,
+since the kernel owns the id on a ping socket). On the datagram socket the
+kernel owns the ICMP id, demuxes replies by it, hands back the ICMP
+message only (no IP header), and reports the reply TTL / Hop Limit through
+an 'IP_TTL' / 'IPV6_HOPLIMIT' control message.
 
 The body uses only the official BSD socket interface, so the same program
 runs on the Python standard-library stack or on a PyTCP daemon -- the only
 backend-specific line is the 'socket' import below. It defaults to PyTCP;
 change that one line to 'import socket' to run on the kernel stack.
 
-Stdlib mode: the default raw socket needs root (CAP_NET_RAW); the '-U'
-datagram socket needs the destination within 'net.ipv4.ping_group_range'
-(default: no groups, so run as root or widen the range). PyTCP mode needs
-a running daemon (it owns the TAP interface), e.g.:
+Stdlib mode: the default datagram socket needs the destination within
+'net.ipv4.ping_group_range' (else it falls back to raw, which needs root /
+CAP_NET_RAW). PyTCP mode needs a running daemon (it owns the TAP
+interface), e.g.:
 
     sudo make tap7 && sudo make bridge
     pytcp stack start -i tap7
 
 Usage:
 
-    examples/ping.py [-U] [-c COUNT] [-i INTERVAL] [-W TIMEOUT] [-s SIZE] DESTINATION
+    examples/ping.py [-e ID] [-c COUNT] [-i INTERVAL] [-W TIMEOUT] [-s SIZE] DESTINATION
 
 examples/ping.py
 
@@ -238,6 +240,25 @@ def _recv_one_reply(
     return None
 
 
+def _open_icmp_socket(family: int, /, *, is_ipv6: bool, force_raw: bool) -> tuple[socket.Socket, bool]:
+    """
+    Open the ICMP socket the way Linux 'ping' does: prefer the
+    unprivileged 'SOCK_DGRAM' ping socket (no elevated privilege when the
+    destination is within 'net.ipv4.ping_group_range'), falling back to a
+    'SOCK_RAW' socket. A custom identifier ('-e') forces 'SOCK_RAW', since
+    the kernel owns the id on a ping socket. Returns the socket and whether
+    it is the datagram flavour.
+    """
+
+    proto = socket.IPPROTO_ICMPV6 if is_ipv6 else socket.IPPROTO_ICMP
+    if not force_raw:
+        try:
+            return socket.socket(family, socket.SOCK_DGRAM, proto), True
+        except OSError:
+            pass  # fall back to raw, exactly as 'ping' does
+    return socket.socket(family, socket.SOCK_RAW, proto), False
+
+
 def main() -> None:
     """
     Send ICMP Echo Requests to a destination and report the replies, in
@@ -247,10 +268,12 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="ICMP Echo (ping) over the official socket API.")
     parser.add_argument("destination", help="IPv4 / IPv6 address or hostname to ping.")
     parser.add_argument(
-        "-U",
-        "--unprivileged",
-        action="store_true",
-        help="Use the unprivileged ICMP datagram ('ping') socket instead of a raw socket.",
+        "-e",
+        "--identifier",
+        type=int,
+        default=None,
+        metavar="IDENTIFIER",
+        help="ICMP identifier for the session; implies a raw (SOCK_RAW) socket (like 'ping -e').",
     )
     parser.add_argument(
         "-c", "--count", type=int, default=None, help="Stop after COUNT requests (default: until interrupted)."
@@ -269,18 +292,19 @@ def main() -> None:
     is_ipv6 = family == socket.AF_INET6
     profile = _profile_for(is_ipv6)
 
-    proto = socket.IPPROTO_ICMPV6 if is_ipv6 else socket.IPPROTO_ICMP
-    identifier = os.getpid() & 0xFFFF
+    # A custom identifier (-e) requires a raw socket, since the kernel owns
+    # the id on a SOCK_DGRAM ping socket (Linux 'ping -e' implies SOCK_RAW).
+    identifier = args.identifier if args.identifier is not None else (os.getpid() & 0xFFFF)
+    sock, is_dgram = _open_icmp_socket(family, is_ipv6=is_ipv6, force_raw=args.identifier is not None)
 
     # A v4 raw socket reads the TTL from the prepended IP header; every
-    # other path (v4 ping, and v6 either way — a v6 raw socket carries no
+    # other path (the ping socket, and a v6 raw socket — which carries no
     # IP header) reads it from an IP_TTL / IPV6_HOPLIMIT control message.
-    use_cmsg = args.unprivileged or is_ipv6
+    use_cmsg = is_dgram or is_ipv6
     # Raw sockets see all matching ICMP traffic, so filter replies by our
     # id; a ping socket is demuxed by the kernel, which owns the id.
-    match_identifier = None if args.unprivileged else identifier
+    match_identifier = None if is_dgram else identifier
 
-    sock = socket.socket(family, socket.SOCK_DGRAM if args.unprivileged else socket.SOCK_RAW, proto)
     if use_cmsg:
         recv_ttl_level = socket.IPPROTO_IPV6 if is_ipv6 else socket.IPPROTO_IP
         recv_ttl_opt = socket.IPV6_RECVHOPLIMIT if is_ipv6 else socket.IP_RECVTTL
