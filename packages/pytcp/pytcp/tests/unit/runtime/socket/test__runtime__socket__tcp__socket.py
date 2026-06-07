@@ -633,7 +633,7 @@ class TestTcpSocketSendRecvClose(_TcpSocketTestCase):
         s._remote_port = 80
         session = MagicMock()
         s._tcp_session = session
-        return s, session
+        return s, session  # pyright: ignore[reportReturnType]  # factory __new__ divergence; mypy-clean
 
     def test__tcp_socket__send_requires_destination(self) -> None:
         """
@@ -778,7 +778,7 @@ class TestTcpSocketSendmsg(_TcpSocketTestCase):
         s._remote_port = 80
         session = MagicMock()
         s._tcp_session = session
-        return s, session
+        return s, session  # pyright: ignore[reportReturnType]  # factory __new__ divergence; mypy-clean
 
     def test__tcp_socket__sendmsg_concatenates_buffers(self) -> None:
         """

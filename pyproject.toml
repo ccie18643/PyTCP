@@ -67,6 +67,41 @@ enable_error_code = [
 # mistyped hook name (which would silently never run) is a
 # type error, not a latent state-leak (unit_testing.md §10b.1).
 
+[tool.pyright]
+# VS Code's Pylance and the 'pyright' CLI both read this. It exists to
+# make the editor RESOLVE the editable-installed packages (net_addr /
+# net_proto / pytcp live under packages/<x>/<x>) and the venv, so the
+# editor stops reporting spurious "unresolved import" / "undefined
+# builtin" noise. 'make lint' now runs pyright reading this block (see
+# the Makefile '<<< PYRIGHT' step), so the CLI gate matches exactly what
+# Pylance shows in the editor. mypy strict stays the type authority;
+# pyright/mypy diverge on patterns mypy accepts, so the inference rules
+# below are dialed down to keep pyright from contradicting 'make lint'.
+pythonVersion = "3.14"
+venvPath = "."
+venv = "venv"
+extraPaths = ["packages/net_addr", "packages/net_proto", "packages/pytcp", "."]
+include = [
+    "packages/net_addr/net_addr",
+    "packages/net_proto/net_proto",
+    "packages/pytcp/pytcp",
+    "examples",
+    "examples_legacy",
+    "tests_runner.py",
+]
+exclude = ["**/__pycache__", "**/node_modules", "venv"]
+typeCheckingMode = "basic"
+# Type-inference rules where pyright diverges from mypy (the gate's
+# authority — 'make lint' runs mypy strict) are silenced so the CLI
+# gate and the editor never contradict mypy; resolution / undefined-name
+# / syntax / reportReturnType checks stay ON.
+reportUnusedExpression = "none"      # pervasive `__debug__ and log(...)` short-circuit-logging idiom
+reportArgumentType = "none"         # mypy narrows generics/unions pyright cannot (e.g. route.py Route[A,N] isinstance-narrowing)
+reportAttributeAccessIssue = "none"  # test-side reach-throughs into base-typed sockets/handlers; mypy covers real cases
+reportCallIssue = "none"            # test-side; mypy-covered
+reportAbstractUsage = "none"        # tests deliberately instantiate abstract classes (with `# type: ignore[abstract]`)
+reportPrivateImportUsage = "none"   # net_proto re-export shape pyright disagrees with; mypy's no_implicit_reexport is authority
+
 # This block ONLY affects an ad-hoc 'pylint <file>' run (a developer /
 # IDE invoking pylint directly); it silences the noisy checks so such a
 # run is usable. It does NOT affect 'make lint' — that gate runs

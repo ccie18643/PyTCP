@@ -121,7 +121,7 @@ class TestTcpListener__MultiChild(TcpTestCase):
         stack.sockets[sock.socket_id] = sock
 
         session.tcp_fsm(syscall=SysCall.LISTEN)
-        return sock, session
+        return sock, session  # pyright: ignore[reportReturnType]  # factory __new__ divergence; mypy-clean
 
     def test__listener__accept_queue_is_fifo_and_unbounded_backlog(self) -> None:
         """

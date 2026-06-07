@@ -64,11 +64,15 @@ class LinkSocket(Protocol):
         'timeout' seconds.
         """
 
+        ...
+
     def sendto(self, data: bytes, address: SockAddrLl) -> int:
         """
         Send 'data' as a link-layer frame to the interface named by
         'address'.
         """
+
+        ...
 
 
 class PacketBridge:

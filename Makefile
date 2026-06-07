@@ -120,6 +120,8 @@ lint: venv
 	@PYTHONPATH=$(ROOT_PATH) ./$(VENV)/bin/mypy $(ROOT_FILES)
 	@echo '<<< PYLINT (gate checks)'
 	@PYTHONPATH=$(ROOT_PATH) ./$(VENV)/bin/pylint --disable=all --enable=$(PYLINT_GATE_CHECKS) --score=n $(PYLINT_GATE_FILES)
+	@echo '<<< PYRIGHT'
+	@PYTHONPATH=$(ROOT_PATH) ./$(VENV)/bin/pyright
 
 test__pytcp__integration: venv
 	@echo '<<< UNITTEST PYTCP INTEGRATION'

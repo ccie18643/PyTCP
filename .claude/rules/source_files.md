@@ -463,6 +463,23 @@ rename rules above apply to **non-test source only**.
   ```
   The blank line between the closing `"""` and the first
   statement is mandatory.
+- **`Protocol` / abstract-method stub bodies use an explicit
+  `...` after the docstring** — a docstring-only body
+  implicitly returns `None`, which contradicts a non-`None`
+  return annotation and fails pyright's `reportReturnType`
+  (mypy lets the docstring-only body slide; the `...` stub is
+  the correct, conventional form). The `...` follows the same
+  blank-line rule:
+  ```python
+  def recv(self, bufsize: int, timeout: float) -> bytes:
+      """
+      Receive up to 'bufsize' bytes, blocking up to 'timeout' seconds.
+      """
+
+      ...
+  ```
+  Do not add `...` to a method that already has a real body
+  or a `raise NotImplementedError`.
 - Phrasing:
   - **Classes**: a noun phrase ending in a period.
     `"""The UDP packet header."""`, `"""The UDP protocol base."""`.

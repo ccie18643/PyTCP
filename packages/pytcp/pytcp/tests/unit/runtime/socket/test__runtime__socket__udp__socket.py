@@ -458,7 +458,7 @@ class TestUdpSocketSend(_UdpSocketTestCase):
             ),
         ):
             s.connect(("10.0.0.5", 5353))
-        return s
+        return s  # pyright: ignore[reportReturnType]  # factory __new__ divergence; mypy-clean
 
     def test__udp_socket__send_requires_connect(self) -> None:
         """
@@ -611,7 +611,7 @@ class TestUdpSocketSendmsg(_UdpSocketTestCase):
             ),
         ):
             s.connect(("10.0.0.5", 5353))
-        return s
+        return s  # pyright: ignore[reportReturnType]  # factory __new__ divergence; mypy-clean
 
     def _capture_payload(self) -> dict[str, Any]:
         """

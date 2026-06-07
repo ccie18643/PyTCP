@@ -91,7 +91,7 @@ class TestPacketSocket(TestCase):
             protocol=protocol,
         )
         self.addCleanup(sock.close)
-        return sock
+        return sock  # pyright: ignore[reportReturnType]  # factory __new__ divergence; mypy-clean
 
     def test__packet_socket__family_and_type(self) -> None:
         """

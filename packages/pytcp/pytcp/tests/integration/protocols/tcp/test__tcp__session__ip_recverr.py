@@ -315,7 +315,7 @@ def _make_syn_sent_session(
     session.tcp_fsm(syscall=SysCall.CONNECT)
     test._advance(ms=1)
     assert session.state is FsmState.SYN_SENT
-    return sock, session
+    return sock, session  # pyright: ignore[reportReturnType]  # factory __new__ divergence; mypy-clean
 
 
 # ---------------------------------------------------------------------------

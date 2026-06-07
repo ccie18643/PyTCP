@@ -73,15 +73,21 @@ class DatagramSocket(Protocol):
         blocking up to 'timeout' seconds.
         """
 
+        ...
+
     def sendto(self, data: bytes, address: tuple[str, int]) -> int:
         """
         Send 'data' as a datagram to 'address'.
         """
 
+        ...
+
     def send(self, data: bytes) -> int:
         """
         Send 'data' as a datagram to the connected peer.
         """
+
+        ...
 
 
 class DatagramBridge:

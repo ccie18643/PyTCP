@@ -1019,7 +1019,7 @@ class TestTcpTimestampsPhase1PassiveCrossRfc(TcpTestCase):
         sock._tcp_session = session
         stack.sockets[sock.socket_id] = sock
         session.tcp_fsm(syscall=_SysCall.LISTEN)
-        return sock, session
+        return sock, session  # pyright: ignore[reportReturnType]  # factory __new__ divergence; mypy-clean
 
     def test__ts__passive_open_with_peer_tsopt_emits_syn_ack_with_tsopt(self) -> None:
         """

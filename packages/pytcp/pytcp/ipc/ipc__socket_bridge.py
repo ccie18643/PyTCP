@@ -59,10 +59,14 @@ class BridgedSocket(Protocol):
         Receive up to 'bufsize' bytes, blocking up to 'timeout' seconds.
         """
 
+        ...
+
     def send(self, data: bytes) -> int:
         """
         Send some of 'data', returning the number of bytes accepted.
         """
+
+        ...
 
     def shutdown(self, how: int, /) -> None:
         """

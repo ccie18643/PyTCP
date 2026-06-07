@@ -1054,7 +1054,7 @@ class TestTcpRtoSynFloor(TcpTestCase):
         sock._tcp_session = session
         stack.sockets[sock.socket_id] = sock
         session.tcp_fsm(syscall=SysCall.LISTEN)
-        return sock, session
+        return sock, session  # pyright: ignore[reportReturnType]  # factory __new__ divergence; mypy-clean
 
     def test__rto__passive_open_with_syn_ack_retransmit_floors_rto_at_3000ms(self) -> None:
         """

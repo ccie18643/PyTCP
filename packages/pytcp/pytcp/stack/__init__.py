@@ -261,6 +261,7 @@ STACK__EPHEMERAL_PORT_RANGE__HIGH = 61000
 # per-link MTUs, hard on/off support flags, and logger config
 # are deliberately NOT registered — see §5.1 of that doc for
 # the rationale.
+from pytcp.stack import sysctl  # noqa: E402, F401
 from pytcp.stack.sysctl import get as _sysctl_get  # noqa: E402
 from pytcp.stack.sysctl import is_int_in_range as _sysctl_is_int_in_range  # noqa: E402
 from pytcp.stack.sysctl import is_positive_int as _sysctl_is_positive_int  # noqa: E402

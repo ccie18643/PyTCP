@@ -106,7 +106,7 @@ class TestIcmp4PingSocket(IcmpTestCase):
 
         sock = PingSocket(AddressFamily.INET4, SocketType.DGRAM, IpProto.ICMP4)
         self.addCleanup(sock.close)
-        return sock
+        return sock  # pyright: ignore[reportReturnType]  # factory __new__ divergence; mypy-clean
 
     def test__ping_socket__sendto_emits_echo_request_with_owned_id(self) -> None:
         """

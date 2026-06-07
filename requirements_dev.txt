@@ -5,6 +5,7 @@ flake8-pyproject
 codespell
 isort
 pylint
+pyright
 build
 twine
 ipython

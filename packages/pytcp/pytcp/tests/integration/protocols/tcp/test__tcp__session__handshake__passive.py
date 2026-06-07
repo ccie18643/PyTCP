@@ -144,7 +144,7 @@ class TestTcpPassiveOpen__Handshake(TcpTestCase):
         # Drive LISTEN syscall: state CLOSED -> LISTEN.
         session.tcp_fsm(syscall=SysCall.LISTEN)
 
-        return sock, session
+        return sock, session  # pyright: ignore[reportReturnType]  # factory __new__ divergence; mypy-clean
 
     def _child_socket_id(self) -> SocketId:
         """

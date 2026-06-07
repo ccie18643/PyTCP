@@ -434,7 +434,7 @@ class TestTcpSession__Wscale(TcpTestCase):
         stack.sockets[sock.socket_id] = sock
 
         session.tcp_fsm(syscall=SysCall.LISTEN)
-        return sock, session
+        return sock, session  # pyright: ignore[reportReturnType]  # factory __new__ divergence; mypy-clean
 
     def test__wscale__passive_open_mirrors_peer_wscale_offer(self) -> None:
         """

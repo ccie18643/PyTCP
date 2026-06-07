@@ -164,7 +164,7 @@ class TestIp4RawDelivery(IcmpTestCase):
         self.addCleanup(sock.close)
         if bind:
             sock.bind((str(STACK__IP4_HOST.address), 0))
-        return sock
+        return sock  # pyright: ignore[reportReturnType]  # factory __new__ divergence; mypy-clean
 
     def test__ip4_raw__unbound_socket_receives(self) -> None:
         """

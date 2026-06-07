@@ -80,11 +80,15 @@ class IntrospectableSocket(Protocol):
         Get the socket's address family.
         """
 
+        ...
+
     @property
     def socket_type(self) -> SocketType:
         """
         Get the socket's type.
         """
+
+        ...
 
     @property
     def local_ip_address(self) -> Ip4Address | Ip6Address:
@@ -92,11 +96,15 @@ class IntrospectableSocket(Protocol):
         Get the socket's local IP address.
         """
 
+        ...
+
     @property
     def remote_ip_address(self) -> Ip4Address | Ip6Address:
         """
         Get the socket's remote IP address.
         """
+
+        ...
 
     @property
     def local_port(self) -> int:
@@ -104,11 +112,15 @@ class IntrospectableSocket(Protocol):
         Get the socket's local port.
         """
 
+        ...
+
     @property
     def remote_port(self) -> int:
         """
         Get the socket's remote port.
         """
+
+        ...
 
 
 def _socket_state(sock: IntrospectableSocket, /) -> FsmState | None:

@@ -150,7 +150,7 @@ class TestTcpSession__FastOpen(TcpTestCase):
         sock._tcp_session = session
         stack.sockets[sock.socket_id] = sock
         session.tcp_fsm(syscall=SysCall.LISTEN)
-        return sock, session
+        return sock, session  # pyright: ignore[reportReturnType]  # factory __new__ divergence; mypy-clean
 
     def test__fastopen__server_issues_cookie_on_tfo_request_syn(self) -> None:
         """

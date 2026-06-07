@@ -97,11 +97,15 @@ class ResolverSocket(Protocol):
         Send a datagram to an address.
         """
 
+        ...
+
     def recvfrom(self, bufsize: int, timeout: float, /) -> tuple[bytes, tuple[str, int]]:
         """
         Receive a datagram with its sender address, timing out after
         'timeout' seconds.
         """
+
+        ...
 
     def close(self) -> None:
         """

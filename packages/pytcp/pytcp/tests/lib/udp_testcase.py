@@ -215,7 +215,7 @@ class UdpTestCase(NetworkTestCase):
             sock._remote_port = remote_port
 
         stack.sockets[sock.socket_id] = sock
-        return sock
+        return sock  # pyright: ignore[reportReturnType]  # factory __new__ divergence; mypy-clean
 
     def _drive_udp_rx(self, *, frame: bytes) -> list[bytes]:
         """
