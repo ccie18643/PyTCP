@@ -163,6 +163,17 @@ class Ip6Parser(Ip6[Buffer], ProtoParser):
                 pointer=IP6__POINTER__SRC,
             )
 
+    def reanchor_payload(self, frame: Buffer, /) -> None:
+        """
+        Re-anchor the IPv6 payload onto the post-extension-header frame.
+        """
+
+        # RX-path mutation: after the IPv6 RX handler walks the
+        # extension-header chain it re-anchors the payload onto the
+        # post-chain frame so the downstream transport parser sees the
+        # correct 'payload_len' / 'dlen' for ITS header.
+        self._payload = frame
+
     @property
     def header_bytes(self) -> Buffer:
         """

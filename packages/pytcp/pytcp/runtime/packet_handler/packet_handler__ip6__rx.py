@@ -273,7 +273,7 @@ class Ip6RxHandler:
             # reflects the original IPv6 payload (including the
             # consumed extension headers) and the upper-bound check
             # trips on a chain-walked frame.
-            packet_rx.ip6._payload = packet_rx.frame
+            packet_rx.ip6.reanchor_payload(packet_rx.frame)
 
         # Transport / chain-terminator dispatch. The IpProto ->
         # transport-handler demux goes through the per-interface

@@ -219,7 +219,11 @@ class _SocketIO(io.RawIOBase):
         sock = self._sock
         self._sock = None
         if sock is not None:
-            sock._decref_socketio()
+            # The drop-in mirrors stdlib 'socket.socket._decref_socketio'
+            # by name for 1:1 SocketIO-refcount parity; keep the private
+            # spelling and suppress both protected-access checkers on the
+            # one line (see source_files.md §5.2 per-line corner case).
+            sock._decref_socketio()  # pylint: disable=protected-access  # pyright: ignore[reportPrivateUsage]
 
 
 class _DupDataChannel:
