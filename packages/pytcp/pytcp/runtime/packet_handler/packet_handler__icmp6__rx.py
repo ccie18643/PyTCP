@@ -69,8 +69,6 @@ from pytcp.protocols.icmp.icmp__error_demux import EmbeddedL4, parse_embedded_l4
 from pytcp.protocols.tcp.tcp__icmp_metadata import IcmpCategory, IcmpMetadata
 from pytcp.runtime.socket import AddressFamily, SocketType
 from pytcp.runtime.socket.error_queue import SoEeOrigin
-from pytcp.runtime.socket.raw__metadata import RawMetadata
-from pytcp.runtime.socket.raw__socket import RawSocket
 from pytcp.runtime.socket.socket_id import SocketId
 from pytcp.runtime.socket.tcp__socket import TcpSocket
 from pytcp.runtime.socket.udp__metadata import UdpMetadata
@@ -771,26 +769,10 @@ class Icmp6RxHandler:
             f"{packet_rx.tracker} - Received ICMPv6 Echo Reply packet " f"from {packet_rx.ip6.src}",
         )
 
-        # Create RawMetadata object and try to find matching RAW socket.
-        # The serialized ICMP message bytes are what 'RawSocket' consumes
-        # via its 'raw__data: bytes' field.
-        packet_rx_md = RawMetadata(
-            ip__ver=packet_rx.ip.ver,
-            ip__local_address=packet_rx.ip.dst,
-            ip__remote_address=packet_rx.ip.src,
-            ip__proto=IpProto.ICMP6,
-            raw__data=bytes(packet_rx.icmp6.message),
-        )
-
-        for socket_id in packet_rx_md.socket_ids:
-            if socket := cast(RawSocket, stack.sockets.get(socket_id, None)):
-                self._if._packet_stats_rx.raw__socket_match += 1
-                __debug__ and log(
-                    "raw",
-                    f"{packet_rx_md.tracker} - <INFO>Found matching listening " f"socket [{socket}]</>",
-                )
-                socket.process_raw_packet(packet_rx_md)
-                return
+        # An inbound Echo Reply is delivered to matching RAW sockets by
+        # the IPv6 RX path ('packet_handler__ip6__rx'), which clones the
+        # datagram to every matching raw socket (Linux 'raw6_local_deliver').
+        # The host stack itself has nothing further to do with an Echo Reply.
 
     def __phrx_icmp6__nd_router_solicitation(self, packet_rx: PacketRx) -> None:
         """

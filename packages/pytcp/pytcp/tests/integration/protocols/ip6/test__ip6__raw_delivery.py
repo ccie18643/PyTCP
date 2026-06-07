@@ -39,6 +39,7 @@ ver 3.0.8
 from net_proto import (
     EthernetAssembler,
     Icmp6Assembler,
+    Icmp6MessageEchoReply,
     Icmp6MessageEchoRequest,
     Icmp6Type,
     Ip6Assembler,
@@ -77,6 +78,27 @@ def _echo_request_frame() -> bytes:
                 ip6__dst=STACK__IP6_HOST.address,
                 ip6__payload=Icmp6Assembler(
                     icmp6__message=Icmp6MessageEchoRequest(id=_ECHO_ID, seq=_ECHO_SEQ, data=b"raw-ping"),
+                ),
+            ),
+        )
+    )
+
+
+def _echo_reply_frame() -> bytes:
+    """
+    Build an Ethernet/IPv6/ICMPv6 Echo Reply frame from HOST_A to the
+    stack (the packet a 'ping' tool receives back).
+    """
+
+    return bytes(
+        EthernetAssembler(
+            ethernet__src=HOST_A__MAC_ADDRESS,
+            ethernet__dst=STACK__MAC_ADDRESS,
+            ethernet__payload=Ip6Assembler(
+                ip6__src=HOST_A__IP6_ADDRESS,
+                ip6__dst=STACK__IP6_HOST.address,
+                ip6__payload=Icmp6Assembler(
+                    icmp6__message=Icmp6MessageEchoReply(id=_ECHO_ID, seq=_ECHO_SEQ, data=b"raw-ping"),
                 ),
             ),
         )
@@ -166,6 +188,25 @@ class TestIp6RawDelivery(IcmpTestCase):
             type=int(Icmp6Type.ECHO_REPLY),
             id=_ECHO_ID,
             seq=_ECHO_SEQ,
+        )
+
+    def test__ip6_raw__echo_reply_delivered_exactly_once(self) -> None:
+        """
+        Ensure an inbound ICMPv6 Echo Reply reaches a matching raw socket
+        exactly once -- the IPv6 RX path is the single raw-delivery point,
+        with no redundant second delivery from the ICMP Echo Reply handler.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        sock = self._raw_socket(protocol=IpProto.ICMP6, bind=True)
+
+        self._drive_rx(frame=_echo_reply_frame())
+
+        self.assertEqual(
+            len(sock._packet_rx_md),
+            1,
+            msg="An inbound Echo Reply must be delivered to the raw socket exactly once.",
         )
 
     def test__ip6_raw__match_suppresses_parameter_problem(self) -> None:
