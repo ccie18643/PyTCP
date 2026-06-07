@@ -23,41 +23,54 @@
 
 
 """
-This package contains the per-session TCP machinery.
+This module contains the immutable TCP_INFO snapshot dataclass.
 
-The 'session/' subpackage is an encapsulated unit: 'TcpSession'
-and the read-only 'TcpInfoSnapshot' it returns from
-'TcpSession.tcp_info()' are the public API. The five
-collaborator modules ('tcp__session__timers' / '_tx' / '_ack' /
-'_validate' / '_retransmit'), the 'tcp__session__info' snapshot
-module, and the 'tcp__session' module that holds the class are
-otherwise PRIVATE to this subpackage. Production code outside
-'session/' MUST import only 'TcpSession' / 'TcpInfoSnapshot' and
-MUST do so via this '__init__' shim:
+'TcpInfoSnapshot' is the read-only, copy-by-value introspection
+surface 'TcpSession.tcp_info()' returns. It carries exactly the
+scalars the Linux-shaped 'struct tcp_info' packer
+('pytcp/runtime/socket/tcp__info.py') needs, so the packer never
+reaches into the session's private collaborator objects. Per the
+CLAUDE.md Phase-3 design implications, state introspection is
+read-only and copy-by-value; the snapshot is a frozen dataclass
+taken under the session's own accessors, never a live reference.
 
-    from pytcp.protocols.tcp.session import TcpSession, TcpInfoSnapshot
-
-NEVER:
-
-    from pytcp.protocols.tcp.session.tcp__session import TcpSession
-    from pytcp.protocols.tcp.session.tcp__session__timers import TcpTimerService
-
-(The second form is reserved for the collaborator-seam tests
-in 'tests/integration/protocols/tcp/' which exercise each
-collaborator class directly. Production code does not need it.)
-
-The carve-out granting this '__init__' module non-empty
-content is documented in '.claude/rules/source_files.md' §2.4
-— it is a deliberate exception to the otherwise-uniform
-"every non-top-level '__init__.py' is empty" rule, justified
-by the encapsulation contract above.
-
-pytcp/protocols/tcp/session/__init__.py
+pytcp/protocols/tcp/session/tcp__session__info.py
 
 ver 3.0.8
 """
 
-from pytcp.protocols.tcp.session.tcp__session import TcpSession
-from pytcp.protocols.tcp.session.tcp__session__info import TcpInfoSnapshot
+from dataclasses import dataclass
 
-__all__ = ["TcpInfoSnapshot", "TcpSession"]
+from pytcp.protocols.tcp.tcp__enums import CcMode, FsmState
+
+
+@dataclass(frozen=True, kw_only=True, slots=True)
+class TcpInfoSnapshot:
+    """
+    Read-only, copy-by-value snapshot of the per-session scalars
+    the Linux 'struct tcp_info' packer needs.
+    """
+
+    state: FsmState
+    cc_mode: CcMode
+    retransmit_count: int
+    send_ts: bool
+    send_sack: bool
+    snd_wsc: int
+    rcv_wsc: int
+    ecn_enabled: bool
+    accecn_enabled: bool
+    rto_ms: int
+    srtt_ms: int | None
+    rttvar_ms: int | None
+    snd_mss: int
+    rcv_mss: int
+    snd_una: int
+    snd_nxt: int
+    snd_wnd: int
+    rcv_wnd_max: int
+    cwnd: int
+    ssthresh: int
+    pmtu: int
+    tx_buffer_len: int
+    dsack_received: int

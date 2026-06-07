@@ -1103,16 +1103,10 @@ class TestTcpSocketOptions(_TcpSocketTestCase):
     def test__tcp_socket__connect_propagates_so_keepalive_to_session(self) -> None:
         """
         Ensure 'setsockopt(SO_KEEPALIVE, 1)' followed by 'connect()'
-        propagates the flag to the freshly-constructed TcpSession's
-        '_keepalive_enabled' attribute. Without this propagation,
-        the keep-alive feature has no path from the BSD-socket API
-        to the protocol runtime.
-
-        The test uses 'assertIs(..., True)' rather than 'assertTrue'
-        because the mocked TcpSession is a MagicMock - reading any
-        previously-unset attribute returns a new MagicMock, which
-        is truthy. Identity-checking against the literal 'True'
-        catches both cases.
+        propagates the flag to the freshly-constructed TcpSession
+        via its public 'set_keepalive()' mutator. Without this
+        propagation, the keep-alive feature has no path from the
+        BSD-socket API to the protocol runtime.
 
         Reference: RFC 9293 §3.9 (User/TCP interface).
         """
@@ -1129,20 +1123,21 @@ class TestTcpSocketOptions(_TcpSocketTestCase):
             s.connect(("10.0.0.5", 80))
 
         self.assertIs(
-            self._session_cls.return_value._keepalive.enabled,
+            self._session_cls.return_value.set_keepalive.call_args.kwargs["enabled"],
             True,
             msg=(
-                "connect() must propagate '_so_keepalive' to the new TcpSession's "
-                "'_keepalive_enabled' so RFC 1122 §4.2.3.6 keep-alive arms."
+                "connect() must propagate '_so_keepalive' to the new TcpSession via "
+                "'set_keepalive(enabled=True)' so RFC 1122 §4.2.3.6 keep-alive arms."
             ),
         )
 
     def test__tcp_socket__connect_propagates_default_disable_to_session(self) -> None:
         """
         Ensure connect() without setsockopt sets the new
-        TcpSession's '_keepalive_enabled' to False explicitly
-        (not "leave unset"), preserving the "MUST default to off"
-        invariant via the BSD-socket API.
+        TcpSession's keep-alive flag to False explicitly (not
+        "leave unset") via 'set_keepalive(enabled=False)',
+        preserving the "MUST default to off" invariant via the
+        BSD-socket API.
 
         Reference: RFC 1122 §4.2.3.6 (SO_KEEPALIVE MUST default to off).
         """
@@ -1158,11 +1153,11 @@ class TestTcpSocketOptions(_TcpSocketTestCase):
             s.connect(("10.0.0.5", 80))
 
         self.assertIs(
-            self._session_cls.return_value._keepalive.enabled,
+            self._session_cls.return_value.set_keepalive.call_args.kwargs["enabled"],
             False,
             msg=(
                 "connect() without setsockopt(SO_KEEPALIVE, 1) must explicitly "
-                "set '_keepalive_enabled = False' on the session."
+                "call 'set_keepalive(enabled=False)' on the session."
             ),
         )
 
@@ -1170,8 +1165,8 @@ class TestTcpSocketOptions(_TcpSocketTestCase):
         """
         Ensure 'setsockopt(SO_KEEPALIVE, 1)' followed by 'listen()'
         propagates the flag to the freshly-constructed listening
-        TcpSession's '_keepalive_enabled'. Listener-fork children
-        inherit through the listening session's flag, so a
+        TcpSession via 'set_keepalive(enabled=True)'. Listener-fork
+        children inherit through the listening session's flag, so a
         listening socket that opted in via setsockopt produces
         keep-alive-enabled child sessions for every incoming SYN.
 
@@ -1185,11 +1180,11 @@ class TestTcpSocketOptions(_TcpSocketTestCase):
         s.listen()
 
         self.assertIs(
-            self._session_cls.return_value._keepalive.enabled,
+            self._session_cls.return_value.set_keepalive.call_args.kwargs["enabled"],
             True,
             msg=(
                 "listen() must propagate '_so_keepalive' to the new listening "
-                "TcpSession's '_keepalive_enabled' so accepted children inherit."
+                "TcpSession via 'set_keepalive(enabled=True)' so accepted children inherit."
             ),
         )
 
@@ -1266,9 +1261,9 @@ class TestTcpSocketOptions(_TcpSocketTestCase):
         """
         Ensure setsockopt(IPPROTO_TCP, TCP_KEEP*, ...) followed by
         connect() propagates each override onto the freshly-
-        constructed TcpSession's matching field. Without this, the
-        per-connection override has no path into the protocol
-        runtime.
+        constructed TcpSession via the 'set_keepalive()' mutator.
+        Without this, the per-connection override has no path into
+        the protocol runtime.
 
         Reference: RFC 9293 §3.9 (User/TCP interface).
         """
@@ -1286,20 +1281,21 @@ class TestTcpSocketOptions(_TcpSocketTestCase):
         ):
             s.connect(("10.0.0.5", 80))
 
+        kwargs = self._session_cls.return_value.set_keepalive.call_args.kwargs
         self.assertEqual(
-            self._session_cls.return_value._keepalive.idle_override,
+            kwargs["idle_override"],
             600,
-            msg="connect() must propagate TCP_KEEPIDLE override to session.",
+            msg="connect() must propagate TCP_KEEPIDLE override to session via set_keepalive().",
         )
         self.assertEqual(
-            self._session_cls.return_value._keepalive.interval_override,
+            kwargs["interval_override"],
             75,
-            msg="connect() must propagate TCP_KEEPINTVL override to session.",
+            msg="connect() must propagate TCP_KEEPINTVL override to session via set_keepalive().",
         )
         self.assertEqual(
-            self._session_cls.return_value._keepalive.max_count_override,
+            kwargs["max_count_override"],
             5,
-            msg="connect() must propagate TCP_KEEPCNT override to session.",
+            msg="connect() must propagate TCP_KEEPCNT override to session via set_keepalive().",
         )
 
     def test__tcp_socket__connect_with_data_pre_loads_session_tx_buffer(self) -> None:
@@ -1307,13 +1303,13 @@ class TestTcpSocketOptions(_TcpSocketTestCase):
         Ensure 'TcpSocket.connect(remote, data=b"...")'
         accepts a 'data' kwarg and pre-loads the freshly-
         constructed 'TcpSession' TX buffer with that data
-        before driving the FSM into SYN_SENT. This is the
-        ergonomic entry path for client-side TCP Fast Open:
-        the application supplies data alongside the connect
-        call, and (when a TFO cookie is cached for the
-        peer) the SYN itself carries the data on the wire,
-        eliminating the data RTT of a vanilla 3WHS-then-
-        send sequence.
+        via the public 'preload_tx_buffer()' mutator before
+        driving the FSM into SYN_SENT. This is the ergonomic
+        entry path for client-side TCP Fast Open: the
+        application supplies data alongside the connect call,
+        and (when a TFO cookie is cached for the peer) the SYN
+        itself carries the data on the wire, eliminating the
+        data RTT of a vanilla 3WHS-then-send sequence.
 
         Reference: RFC 7413 §3.1 (client connect-with-data API).
         """
@@ -1329,7 +1325,7 @@ class TestTcpSocketOptions(_TcpSocketTestCase):
         ):
             s.connect(("10.0.0.5", 80), data=early_data)
 
-        self._session_cls.return_value._tx.buffer.extend.assert_called_with(early_data)
+        self._session_cls.return_value.preload_tx_buffer.assert_called_with(early_data)
 
     def test__tcp_socket__getsockopt__tcp_fastopen_default_zero(self) -> None:
         """
@@ -1468,8 +1464,8 @@ class TestTcpSocketOptions(_TcpSocketTestCase):
     def test__tcp_socket__connect_propagates_tcp_nodelay_to_session(self) -> None:
         """
         Ensure setsockopt(TCP_NODELAY, 1) followed by connect()
-        propagates the flag to the freshly-constructed
-        TcpSession's '_tcp_nodelay' attribute.
+        propagates the flag to the freshly-constructed TcpSession
+        via the public 'set_nodelay()' mutator.
 
         Reference: RFC 1122 §4.2.3.4 (TCP_NODELAY socket-API path).
         """
@@ -1485,11 +1481,7 @@ class TestTcpSocketOptions(_TcpSocketTestCase):
         ):
             s.connect(("10.0.0.5", 80))
 
-        self.assertIs(
-            self._session_cls.return_value._tcp_nodelay,
-            True,
-            msg=("connect() must propagate '_tcp_nodelay' to the new " "TcpSession so the Nagle gate can read it."),
-        )
+        self._session_cls.return_value.set_nodelay.assert_called_with(True)
 
     def test__tcp_socket__getsockopt__tcp_user_timeout_default_zero(self) -> None:
         """
@@ -1554,8 +1546,8 @@ class TestTcpSocketOptions(_TcpSocketTestCase):
         """
         Ensure 'setsockopt(TCP_USER_TIMEOUT, 30000)' followed
         by 'connect()' propagates onto the freshly-constructed
-        'TcpSession._user_timeout_ms' so the R2-abort site
-        can consult it.
+        TcpSession via 'set_user_timeout_ms()' so the R2-abort
+        site can consult it.
 
         Reference: Linux net.ipv4.tcp_user_timeout (R2-abort override).
         """
@@ -1573,17 +1565,13 @@ class TestTcpSocketOptions(_TcpSocketTestCase):
         ):
             s.connect(("10.0.0.5", 80))
 
-        self.assertEqual(
-            self._session_cls.return_value._user_timeout_ms,
-            30000,
-            msg="connect() must propagate '_tcp_user_timeout' to TcpSession._user_timeout_ms.",
-        )
+        self._session_cls.return_value.set_user_timeout_ms.assert_called_with(30000)
 
     def test__tcp_socket__listen_propagates_tcp_user_timeout_to_session(self) -> None:
         """
         Ensure 'setsockopt(TCP_USER_TIMEOUT, 30000)' followed
-        by 'listen()' propagates onto the listening session's
-        '_user_timeout_ms' so accepted children inherit it
+        by 'listen()' propagates onto the listening session via
+        'set_user_timeout_ms()' so accepted children inherit it
         through the listener-fork pivot.
 
         Reference: Linux net.ipv4.tcp_user_timeout (R2-abort override).
@@ -1597,11 +1585,7 @@ class TestTcpSocketOptions(_TcpSocketTestCase):
         s._local_port = 40000
         s.listen()
 
-        self.assertEqual(
-            self._session_cls.return_value._user_timeout_ms,
-            30000,
-            msg="listen() must propagate '_tcp_user_timeout' to TcpSession._user_timeout_ms.",
-        )
+        self._session_cls.return_value.set_user_timeout_ms.assert_called_with(30000)
 
     def test__tcp_socket__getsockopt__tcp_maxseg_default_zero(self) -> None:
         """
@@ -1690,7 +1674,7 @@ class TestTcpSocketOptions(_TcpSocketTestCase):
         """
         Ensure 'setsockopt(TCP_MAXSEG, 1200)' followed by
         'connect()' propagates onto the freshly-constructed
-        'TcpSession._maxseg_override' so the SYN-options
+        TcpSession via 'set_maxseg_override()' so the SYN-options
         clamp can consult it.
 
         Reference: Linux TCP_MAXSEG (per-connection SYN MSS clamp).
@@ -1709,11 +1693,7 @@ class TestTcpSocketOptions(_TcpSocketTestCase):
         ):
             s.connect(("10.0.0.5", 80))
 
-        self.assertEqual(
-            self._session_cls.return_value._maxseg_override,
-            1200,
-            msg="connect() must propagate '_tcp_maxseg' to TcpSession._maxseg_override.",
-        )
+        self._session_cls.return_value.set_maxseg_override.assert_called_with(1200)
 
     def test__tcp_socket__getsockopt__ipv6_v6only_default_one(self) -> None:
         """
@@ -1805,8 +1785,8 @@ class TestTcpSocketOptions(_TcpSocketTestCase):
     def test__tcp_socket__listen_propagates_tcp_maxseg_to_session(self) -> None:
         """
         Ensure 'setsockopt(TCP_MAXSEG, 1200)' followed by
-        'listen()' propagates onto the listening session's
-        '_maxseg_override' so the listener-fork pivot pushes
+        'listen()' propagates onto the listening session via
+        'set_maxseg_override()' so the listener-fork pivot pushes
         it into accepted children.
 
         Reference: Linux TCP_MAXSEG (per-connection SYN MSS clamp).
@@ -1820,11 +1800,7 @@ class TestTcpSocketOptions(_TcpSocketTestCase):
         s._local_port = 40000
         s.listen()
 
-        self.assertEqual(
-            self._session_cls.return_value._maxseg_override,
-            1200,
-            msg="listen() must propagate '_tcp_maxseg' to TcpSession._maxseg_override.",
-        )
+        self._session_cls.return_value.set_maxseg_override.assert_called_with(1200)
 
 
 class TestTcpSocketDualStackPresentation(_TcpSocketTestCase):

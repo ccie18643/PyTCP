@@ -316,21 +316,21 @@ class TcpSocket(socket):
             )
         return TcpStatus(
             state=session.state,
-            local_address=session._local_ip_address,
-            local_port=session._local_port,
-            remote_address=session._remote_ip_address,
-            remote_port=session._remote_port,
-            snd_una=session._snd_seq.una,
-            snd_nxt=session._snd_seq.nxt,
-            snd_wnd=session._win.snd_wnd,
-            rcv_nxt=session._rcv_seq.nxt,
-            rcv_wnd=session._rcv_wnd,
-            snd_mss=session._win.snd_mss,
-            rcv_mss=session._win.rcv_mss,
-            snd_wsc=session._win.snd_wsc,
-            rcv_wsc=session._win.rcv_wsc,
-            tx_buffer_len=len(session._tx.buffer),
-            rx_buffer_len=len(session._rx_buffer),
+            local_address=session.local_ip_address,
+            local_port=session.local_port,
+            remote_address=session.remote_ip_address,
+            remote_port=session.remote_port,
+            snd_una=session.snd_una,
+            snd_nxt=session.snd_nxt,
+            snd_wnd=session.snd_wnd,
+            rcv_nxt=session.rcv_nxt,
+            rcv_wnd=session.rcv_wnd,
+            snd_mss=session.snd_mss,
+            rcv_mss=session.rcv_mss,
+            snd_wsc=session.snd_wsc,
+            rcv_wsc=session.rcv_wsc,
+            tx_buffer_len=session.tx_buffer_len,
+            rx_buffer_len=session.rx_buffer_len,
         )
 
     @override
@@ -394,7 +394,7 @@ class TcpSocket(socket):
             # touch the socket field; 'connect()' / 'listen()'
             # propagate at session-construction time.
             if self._tcp_session is not None:
-                self._tcp_session._cc.cc_mode = mode
+                self._tcp_session.set_congestion_control(mode)
             return
         if level == IPPROTO_TCP and optname == TCP_NODELAY:
             flag = bool(value)
@@ -403,7 +403,7 @@ class TcpSocket(socket):
             # '_transmit_data' tick reads the new flag and
             # either gates Nagle on (False) or off (True).
             if self._tcp_session is not None:
-                self._tcp_session._tcp_nodelay = flag
+                self._tcp_session.set_nodelay(flag)
             return
         if isinstance(value, int) and level == IPPROTO_TCP and optname == TCP_USER_TIMEOUT:
             # Linux: positive ms = budget; 0 = no override. A
@@ -417,7 +417,7 @@ class TcpSocket(socket):
             # Mid-connection mutation honoured so the next R2
             # check reads the new budget.
             if self._tcp_session is not None:
-                self._tcp_session._user_timeout_ms = int(value)
+                self._tcp_session.set_user_timeout_ms(int(value))
             return
         if isinstance(value, int) and level == IPPROTO_TCP and optname == TCP_MAXSEG:
             # Linux: positive bytes = clamp; 0 = no clamp.
@@ -434,7 +434,7 @@ class TcpSocket(socket):
             # is refreshed so any future SYN (e.g. RFC 6191
             # ID-reuse re-handshake) consults it.
             if self._tcp_session is not None:
-                self._tcp_session._maxseg_override = int(value)
+                self._tcp_session.set_maxseg_override(int(value))
             return
         raise OSError(
             errno.ENOPROTOOPT,
@@ -482,7 +482,7 @@ class TcpSocket(socket):
             # session's live 'snd_mss'. Pre-connect (no session)
             # falls through to the stored override (or 0).
             if self._tcp_session is not None:
-                return self._tcp_session._win.snd_mss
+                return self._tcp_session.snd_mss
             return self._tcp_maxseg
         if level == IPPROTO_TCP and optname == TCP_INFO:
             # Linux exposes ~50 fields of per-connection state via
@@ -674,38 +674,36 @@ class TcpSocket(socket):
             socket=self,
         )
 
-        # RFC 1122 §4.2.3.6: propagate the SO_KEEPALIVE flag to
-        # the freshly-constructed TcpSession before the FSM
-        # starts firing. The session-internal keep-alive
-        # machinery is gated on '_keepalive_enabled'; without
-        # this hook, 'setsockopt(SO_KEEPALIVE, 1)' would have no
-        # effect.
-        self._tcp_session._keepalive.enabled = self._so_keepalive
-        # Linux-style per-connection keep-alive overrides: copy
-        # over so the session reads the override (or falls back
-        # to the global constant) when arming probes.
-        self._tcp_session._keepalive.idle_override = self._tcp_keepidle
-        self._tcp_session._keepalive.interval_override = self._tcp_keepintvl
-        self._tcp_session._keepalive.max_count_override = self._tcp_keepcnt
+        # RFC 1122 §4.2.3.6: propagate the SO_KEEPALIVE flag (and
+        # the Linux-style per-connection probe overrides) to the
+        # freshly-constructed TcpSession before the FSM starts
+        # firing. Without this hook, 'setsockopt(SO_KEEPALIVE, 1)'
+        # would have no effect.
+        self._tcp_session.set_keepalive(
+            enabled=self._so_keepalive,
+            idle_override=self._tcp_keepidle,
+            interval_override=self._tcp_keepintvl,
+            max_count_override=self._tcp_keepcnt,
+        )
 
         # RFC 9438 §1: propagate the CC algorithm selector to
         # the freshly-constructed TcpSession. Default is
         # CcMode.CUBIC; opt-in to RENO via
         # 'setsockopt(IPPROTO_TCP, TCP_CONGESTION,
         # CcMode.RENO.value)' before 'connect()'.
-        self._tcp_session._cc.cc_mode = self._cc_mode
+        self._tcp_session.set_congestion_control(self._cc_mode)
 
         # RFC 1122 §4.2.3.4: propagate the TCP_NODELAY flag.
         # Default False (Nagle enabled); opt-out for latency-
         # sensitive applications via 'setsockopt(IPPROTO_TCP,
         # TCP_NODELAY, 1)'.
-        self._tcp_session._tcp_nodelay = self._tcp_nodelay
+        self._tcp_session.set_nodelay(self._tcp_nodelay)
 
         # Linux TCP_USER_TIMEOUT / TCP_MAXSEG per-connection
         # overrides — propagate so the FSM's R2 abort and the
         # SYN-options MSS clamp can consult them.
-        self._tcp_session._user_timeout_ms = self._tcp_user_timeout
-        self._tcp_session._maxseg_override = self._tcp_maxseg
+        self._tcp_session.set_user_timeout_ms(self._tcp_user_timeout)
+        self._tcp_session.set_maxseg_override(self._tcp_maxseg)
 
         # RFC 7413 §3.1 connect-with-data: pre-load the
         # session's TX buffer with caller-supplied bytes
@@ -717,7 +715,7 @@ class TcpSocket(socket):
         # send sequence. Empty 'data' (the default) is a
         # no-op; the standard 3WHS path runs unchanged.
         if data:
-            self._tcp_session._tx.buffer.extend(data)
+            self._tcp_session.preload_tx_buffer(data)
 
         __debug__ and log("socket", f"<g>[{self}]</> - Socket attempting connection")
 
@@ -762,36 +760,36 @@ class TcpSocket(socket):
             socket=self,
         )
 
-        # RFC 1122 §4.2.3.6: propagate SO_KEEPALIVE to the
-        # listening TcpSession so accepted children inherit
-        # through the listener-fork pivot in
-        # 'pytcp/protocols/tcp/tcp__fsm__listen.py' (which
+        # RFC 1122 §4.2.3.6: propagate SO_KEEPALIVE (and the
+        # per-connection probe overrides) to the listening
+        # TcpSession so accepted children inherit through the
+        # listener-fork pivot in
+        # 'pytcp/protocols/tcp/fsm/tcp__fsm__listen.py' (which
         # mutates this session in-place into the child).
-        self._tcp_session._keepalive.enabled = self._so_keepalive
-        # Per-connection keep-alive overrides also propagate to
-        # the listening session so each listener-fork child
-        # inherits them from the same source.
-        self._tcp_session._keepalive.idle_override = self._tcp_keepidle
-        self._tcp_session._keepalive.interval_override = self._tcp_keepintvl
-        self._tcp_session._keepalive.max_count_override = self._tcp_keepcnt
+        self._tcp_session.set_keepalive(
+            enabled=self._so_keepalive,
+            idle_override=self._tcp_keepidle,
+            interval_override=self._tcp_keepintvl,
+            max_count_override=self._tcp_keepcnt,
+        )
 
         # RFC 9438 §1: propagate the CC algorithm selector so
         # accepted children inherit through the listener-fork
         # pivot.
-        self._tcp_session._cc.cc_mode = self._cc_mode
+        self._tcp_session.set_congestion_control(self._cc_mode)
 
         # RFC 1122 §4.2.3.4: propagate Nagle disable so
         # accepted children inherit through the listener-fork
         # pivot.
-        self._tcp_session._tcp_nodelay = self._tcp_nodelay
+        self._tcp_session.set_nodelay(self._tcp_nodelay)
 
         # Linux TCP_USER_TIMEOUT / TCP_MAXSEG per-connection
         # overrides — same pattern: the listener-fork pivot
         # mutates the listening session in-place into the
         # accepted child, so the overrides on the listener
         # naturally inherit.
-        self._tcp_session._user_timeout_ms = self._tcp_user_timeout
-        self._tcp_session._maxseg_override = self._tcp_maxseg
+        self._tcp_session.set_user_timeout_ms(self._tcp_user_timeout)
+        self._tcp_session.set_maxseg_override(self._tcp_maxseg)
 
         __debug__ and log(
             "socket",
@@ -974,7 +972,7 @@ class TcpSocket(socket):
             deadline = time.monotonic() + linger[1]
             remaining = deadline - time.monotonic()
             if remaining > 0:
-                self._tcp_session._event__closed.wait(timeout=remaining)
+                self._tcp_session.wait_closed(timeout=remaining)
 
         # '_mark_closed' sets '_closed' for consistency; TCP delivery
         # ('process_tcp_packet') is drained by 'TcpSession._lock__fsm'

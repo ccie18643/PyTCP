@@ -47,6 +47,7 @@ from pytcp.protocols.tcp.fsm import dispatch_packet as tcp_fsm_dispatch_packet
 from pytcp.protocols.tcp.fsm import dispatch_syscall as tcp_fsm_dispatch_syscall
 from pytcp.protocols.tcp.fsm import dispatch_timer as tcp_fsm_dispatch_timer
 from pytcp.protocols.tcp.session.tcp__session__ack import TcpAckProcessor
+from pytcp.protocols.tcp.session.tcp__session__info import TcpInfoSnapshot
 from pytcp.protocols.tcp.session.tcp__session__retransmit import TcpRetransmitter
 from pytcp.protocols.tcp.session.tcp__session__timers import TcpTimerService
 from pytcp.protocols.tcp.session.tcp__session__tx import TcpTxEngine
@@ -821,6 +822,256 @@ class TcpSession:
         """
 
         return self._state
+
+    @property
+    def snd_una(self) -> int:
+        """
+        Get the SND.UNA send-sequence number (RFC 9293 §3.3.1).
+        Read surface for the 'TcpSocket.status()' / TCP_INFO
+        introspection path; the '_snd_seq' collaborator stays the
+        storage.
+        """
+
+        return self._snd_seq.una
+
+    @property
+    def snd_nxt(self) -> int:
+        """
+        Get the SND.NXT send-sequence number (RFC 9293 §3.3.1).
+        Read surface for the 'TcpSocket.status()' / TCP_INFO
+        introspection path; the '_snd_seq' collaborator stays the
+        storage.
+        """
+
+        return self._snd_seq.nxt
+
+    @property
+    def rcv_nxt(self) -> int:
+        """
+        Get the RCV.NXT receive-sequence number (RFC 9293 §3.3.1).
+        Read surface for the 'TcpSocket.status()' introspection
+        path; the '_rcv_seq' collaborator stays the storage.
+        """
+
+        return self._rcv_seq.nxt
+
+    @property
+    def snd_wnd(self) -> int:
+        """
+        Get the current SND.WND send window (RFC 9293 §3.3.1). Read
+        surface for the 'TcpSocket.status()' / TCP_INFO
+        introspection path; the '_win' collaborator stays the
+        storage.
+        """
+
+        return self._win.snd_wnd
+
+    @property
+    def rcv_wnd(self) -> int:
+        """
+        Get the current receive-window advertisement (RFC 9293
+        §3.8.6). Public read surface for the 'TcpSocket.status()'
+        introspection path; delegates to the '_rcv_wnd' helper that
+        subtracts buffered bytes from the configured ceiling.
+        """
+
+        return self._rcv_wnd
+
+    @property
+    def rcv_wnd_max(self) -> int:
+        """
+        Get the configured receive-window ceiling (RFC 9293
+        §3.8.6). Read surface for the TCP_INFO introspection path;
+        the '_win' collaborator stays the storage.
+        """
+
+        return self._win.rcv_wnd_max
+
+    @property
+    def snd_mss(self) -> int:
+        """
+        Get the send-side MSS (RFC 9293 §3.7.1 / RFC 6691). Read
+        surface for the 'TcpSocket.status()' / getsockopt(TCP_MAXSEG)
+        / TCP_INFO introspection path; the '_win' collaborator stays
+        the storage.
+        """
+
+        return self._win.snd_mss
+
+    @property
+    def rcv_mss(self) -> int:
+        """
+        Get the receive-side MSS (RFC 9293 §3.7.1). Read surface for
+        the 'TcpSocket.status()' / TCP_INFO introspection path; the
+        '_win' collaborator stays the storage.
+        """
+
+        return self._win.rcv_mss
+
+    @property
+    def snd_wsc(self) -> int:
+        """
+        Get the send-side window scale factor (RFC 7323 §2). Read
+        surface for the 'TcpSocket.status()' / TCP_INFO
+        introspection path; the '_win' collaborator stays the
+        storage.
+        """
+
+        return self._win.snd_wsc
+
+    @property
+    def rcv_wsc(self) -> int:
+        """
+        Get the receive-side window scale factor (RFC 7323 §2). Read
+        surface for the 'TcpSocket.status()' / TCP_INFO
+        introspection path; the '_win' collaborator stays the
+        storage.
+        """
+
+        return self._win.rcv_wsc
+
+    @property
+    def tx_buffer_len(self) -> int:
+        """
+        Get the number of bytes currently queued in the send
+        buffer. Read surface for the 'TcpSocket.status()' / TCP_INFO
+        introspection path; the '_tx' collaborator stays the
+        storage.
+        """
+
+        return len(self._tx.buffer)
+
+    @property
+    def rx_buffer_len(self) -> int:
+        """
+        Get the number of bytes currently queued in the receive
+        buffer. Read surface for the 'TcpSocket.status()'
+        introspection path; the '_rx_buffer' attribute stays the
+        storage.
+        """
+
+        return len(self._rx_buffer)
+
+    def tcp_info(self) -> TcpInfoSnapshot:
+        """
+        Take an immutable, copy-by-value snapshot of the per-session
+        scalars the Linux-shaped 'struct tcp_info' packer needs.
+
+        Per the CLAUDE.md Phase-3 design implications, this is the
+        read-only introspection surface the TCP_INFO packer
+        ('pytcp/runtime/socket/tcp__info.py') consumes instead of
+        reaching into the session's private collaborator objects.
+        """
+
+        return TcpInfoSnapshot(
+            state=self._state,
+            cc_mode=self._cc.cc_mode,
+            retransmit_count=self._retransmit_count,
+            send_ts=self._ts.send_ts,
+            send_sack=self._advertise.send_sack,
+            snd_wsc=self._win.snd_wsc,
+            rcv_wsc=self._win.rcv_wsc,
+            ecn_enabled=self._ecn.enabled,
+            accecn_enabled=self._accecn.enabled,
+            rto_ms=self._rto_state.rto_ms,
+            srtt_ms=self._rto_state.srtt_ms,
+            rttvar_ms=self._rto_state.rttvar_ms,
+            snd_mss=self._win.snd_mss,
+            rcv_mss=self._win.rcv_mss,
+            snd_una=self._snd_seq.una,
+            snd_nxt=self._snd_seq.nxt,
+            snd_wnd=self._win.snd_wnd,
+            rcv_wnd_max=self._win.rcv_wnd_max,
+            cwnd=self._cc.cwnd,
+            ssthresh=self._cc.ssthresh,
+            pmtu=self._plpmtud_adapter.engine.current_mtu,
+            tx_buffer_len=len(self._tx.buffer),
+            dsack_received=self._dsack_received,
+        )
+
+    def set_congestion_control(self, cc_mode: CcMode, /) -> None:
+        """
+        Set the RFC 9438 §1 congestion-control algorithm selector on
+        the live session. Mutator surface for
+        'setsockopt(IPPROTO_TCP, TCP_CONGESTION)' and the
+        listener-fork inheritance path; the '_cc' collaborator stays
+        the storage.
+        """
+
+        self._cc.cc_mode = cc_mode
+
+    def set_nodelay(self, nodelay: bool, /) -> None:
+        """
+        Set the RFC 1122 §4.2.3.4 Nagle-disable flag on the live
+        session. Mutator surface for 'setsockopt(IPPROTO_TCP,
+        TCP_NODELAY)' and the listener-fork inheritance path; the
+        next '_transmit_data' tick reads the new flag.
+        """
+
+        self._tcp_nodelay = nodelay
+
+    def set_user_timeout_ms(self, user_timeout_ms: int, /) -> None:
+        """
+        Set the TCP_USER_TIMEOUT R2-abort budget (milliseconds; 0 =
+        no override) on the live session. Mutator surface for
+        'setsockopt(IPPROTO_TCP, TCP_USER_TIMEOUT)' and the
+        listener-fork inheritance path; the next R2 check reads the
+        new budget.
+        """
+
+        self._user_timeout_ms = user_timeout_ms
+
+    def set_maxseg_override(self, maxseg_override: int, /) -> None:
+        """
+        Set the TCP_MAXSEG send-MSS clamp (bytes; 0 = no clamp) on
+        the live session. Mutator surface for 'setsockopt(IPPROTO_TCP,
+        TCP_MAXSEG)' and the listener-fork inheritance path; consulted
+        by any future SYN-options MSS clamp.
+        """
+
+        self._maxseg_override = maxseg_override
+
+    def set_keepalive(
+        self,
+        *,
+        enabled: bool,
+        idle_override: int | None,
+        interval_override: int | None,
+        max_count_override: int | None,
+    ) -> None:
+        """
+        Set the RFC 1122 §4.2.3.6 keep-alive flag and the Linux-style
+        per-connection probe overrides on the live session. Mutator
+        surface for the 'TcpSocket.connect()' / 'listen()'
+        propagation path (and the listener-fork inheritance); the
+        '_keepalive' collaborator stays the storage.
+        """
+
+        self._keepalive.enabled = enabled
+        self._keepalive.idle_override = idle_override
+        self._keepalive.interval_override = interval_override
+        self._keepalive.max_count_override = max_count_override
+
+    def preload_tx_buffer(self, data: bytes, /) -> None:
+        """
+        Pre-load the send buffer with caller-supplied bytes before
+        the FSM is driven into SYN_SENT. Mutator surface for the RFC
+        7413 §3.1 connect-with-data (TCP Fast Open) path; the '_tx'
+        collaborator stays the storage.
+        """
+
+        self._tx.buffer.extend(data)
+
+    def wait_closed(self, *, timeout: float) -> None:
+        """
+        Block until the session reaches CLOSED or 'timeout' seconds
+        elapse, whichever comes first. The RX / timer threads advance
+        the FSM and set the close event while this call waits.
+        Read-side surface for the SO_LINGER close path; the
+        '_event__closed' attribute stays the storage.
+        """
+
+        self._event__closed.wait(timeout=timeout)
 
     @property
     def _rcv_wnd(self) -> int:

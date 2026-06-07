@@ -232,15 +232,16 @@ def pack_tcp_info(session: TcpSession | None, /) -> bytes:
             *([0] * 55),  # Every remaining field zero-padded.
         )
 
-    state_byte = _FSM_TO_TCP_INFO_STATE[session.state]
+    info = session.tcp_info()
+    state_byte = _FSM_TO_TCP_INFO_STATE[info.state]
     # 8 fixed u8 fields. Most are zero-filled — PyTCP does not
     # track these counters per-session today.
     ca_state = 0  # PyTCP exposes CcMode (CUBIC / NewReno) not
     #              the Linux open/disorder/CWR/recovery/loss
     #              CA-state machine. Zero-fill until added.
-    retransmits = min(session._retransmit_count, 255)  # u8 ceiling.
+    retransmits = min(info.retransmit_count, 255)  # u8 ceiling.
     probes = 0  # Linux's keep-alive probe counter; PyTCP has
-    #              session._keepalive but the field isn't yet
+    #              a keep-alive state but the field isn't yet
     #              snapshot-exposed here.
     backoff = 0  # PyTCP's RTO backoff counter — not yet tracked
     #              as an int.
@@ -248,37 +249,37 @@ def pack_tcp_info(session: TcpSession | None, /) -> bytes:
     # tcpi_options bit field (RFC 7323 / RFC 2018 / RFC 3168
     # negotiated state).
     options = TcpInfoOption(0)
-    if session._ts.send_ts:  # RFC 7323 §2 TS bilaterally negotiated.
+    if info.send_ts:  # RFC 7323 §2 TS bilaterally negotiated.
         options |= TcpInfoOption.TIMESTAMPS
-    if session._advertise.send_sack:  # RFC 2018 §2 SACK bilateral.
+    if info.send_sack:  # RFC 2018 §2 SACK bilateral.
         options |= TcpInfoOption.SACK
-    if session._win.snd_wsc or session._win.rcv_wsc:
+    if info.snd_wsc or info.rcv_wsc:
         # WSCALE negotiated when either side's wscale is non-zero.
         options |= TcpInfoOption.WSCALE
-    if session._ecn.enabled or session._accecn.enabled:
+    if info.ecn_enabled or info.accecn_enabled:
         # RFC 3168 classic ECN OR RFC 9768 AccECN negotiated.
         options |= TcpInfoOption.ECN
 
     # Pack snd_wscale (low nibble) + rcv_wscale (high nibble).
-    wscale_byte = (session._win.snd_wsc & 0x0F) | ((session._win.rcv_wsc & 0x0F) << 4)
+    wscale_byte = (info.snd_wsc & 0x0F) | ((info.rcv_wsc & 0x0F) << 4)
     # delivery_rate_app_limited:1 + fastopen_client_fail:2 +
     # reserved padding. PyTCP doesn't track either; zero-fill.
     delivery_byte = 0
 
-    rto = session._rto_state.rto_ms * 1000  # Linux uses μs.
+    rto = info.rto_ms * 1000  # Linux uses μs.
     # tcpi_ato — delayed-ACK timeout (μs). Use the live sysctl
     # value so a runtime tune of 'tcp.delayed_ack.delay_ms' is
     # visible here without a session restart.
     from pytcp.protocols.tcp import tcp__constants
 
     ato = tcp__constants.TCP__DELAYED_ACK__DELAY_MS * 1000
-    snd_mss = session._win.snd_mss
-    rcv_mss = session._win.rcv_mss
+    snd_mss = info.snd_mss
+    rcv_mss = info.rcv_mss
 
     # Inflight / loss accounting. PyTCP tracks bytes (not
     # segments) for SND.UNA..SND.NXT; convert via snd_mss for
     # a Linux-shaped segment count.
-    in_flight_bytes = max(0, session._snd_seq.nxt - session._snd_seq.una)
+    in_flight_bytes = max(0, info.snd_nxt - info.snd_una)
     unacked = (in_flight_bytes // snd_mss) if snd_mss > 0 else 0
     sacked = 0  # SACK scoreboard segment count — not yet
     #              snapshot-exposed.
@@ -296,22 +297,22 @@ def pack_tcp_info(session: TcpSession | None, /) -> bytes:
     # PMTU — from the engine's current MTU if active; else 0
     # (consumer-side fallback is to use IP_MTU / IPV6_MTU
     # which PyTCP already exposes).
-    pmtu = session._plpmtud_adapter.engine.current_mtu
+    pmtu = info.pmtu
 
     rcv_ssthresh = 0
-    rtt = (session._rto_state.srtt_ms or 0) * 1000  # μs.
-    rttvar = (session._rto_state.rttvar_ms or 0) * 1000  # μs.
+    rtt = (info.srtt_ms or 0) * 1000  # μs.
+    rttvar = (info.rttvar_ms or 0) * 1000  # μs.
     # Linux 'tcpi_snd_cwnd' / 'tcpi_snd_ssthresh' are in
     # SEGMENTS (MSS-units) per the kernel ABI; PyTCP's
     # 'CcState.cwnd' / '.ssthresh' carry BYTES. Divide so the
     # struct matches Linux units exactly.
-    snd_ssthresh = (session._cc.ssthresh // snd_mss) if snd_mss > 0 else 0
-    snd_cwnd = (session._cc.cwnd // snd_mss) if snd_mss > 0 else 0
-    advmss = session._win.rcv_mss  # Linux uses RX-side MSS here.
+    snd_ssthresh = (info.ssthresh // snd_mss) if snd_mss > 0 else 0
+    snd_cwnd = (info.cwnd // snd_mss) if snd_mss > 0 else 0
+    advmss = info.rcv_mss  # Linux uses RX-side MSS here.
     reordering = 3  # Linux's TCP_FASTRETRANS_THRESH default.
 
     rcv_rtt = 0
-    rcv_space = session._win.rcv_mss
+    rcv_space = info.rcv_mss
 
     total_retrans = 0  # Cumulative — not tracked per-session.
 
@@ -328,7 +329,7 @@ def pack_tcp_info(session: TcpSession | None, /) -> bytes:
     # 'notsent_bytes' — bytes in the application buffer not yet
     # transmitted. Approximated as the tx buffer length minus
     # the amount already in flight; clamp at 0.
-    notsent_bytes = max(0, len(session._tx.buffer) - in_flight_bytes)
+    notsent_bytes = max(0, info.tx_buffer_len - in_flight_bytes)
     min_rtt = rtt  # No min-tracker; current RTT as proxy.
     data_segs_in = 0
     data_segs_out = 0
@@ -343,13 +344,13 @@ def pack_tcp_info(session: TcpSession | None, /) -> bytes:
 
     bytes_sent = 0
     bytes_retrans = 0
-    dsack_dups = session._dsack_received
+    dsack_dups = info.dsack_received
     reord_seen = 0
 
     rcv_ooopack = 0
 
-    snd_wnd = session._win.snd_wnd
-    rcv_wnd = session._win.rcv_wnd_max  # The receive-window ceiling.
+    snd_wnd = info.snd_wnd
+    rcv_wnd = info.rcv_wnd_max  # The receive-window ceiling.
 
     rehash = 0
 
