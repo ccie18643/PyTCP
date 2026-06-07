@@ -117,7 +117,7 @@ class AddressApi:
             "'stack.address.interface(ifindex)' (Linux 'ip addr ... dev <ifX>')."
         )
 
-    def interface(self, ifindex: int, /) -> "AddressApi":
+    def interface(self, ifindex: int, /) -> AddressApi:
         """
         Return an 'AddressApi' bound to the interface registered
         under 'ifindex' — the device selector, Linux 'ip addr … dev

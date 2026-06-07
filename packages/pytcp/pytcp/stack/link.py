@@ -259,7 +259,7 @@ class LinkApi:
             "'stack.link.interface(ifindex)' (Linux 'ip link ... dev <ifX>')."
         )
 
-    def interface(self, ifindex: int, /) -> "LinkApi":
+    def interface(self, ifindex: int, /) -> LinkApi:
         """
         Return a 'LinkApi' bound to the interface registered under
         'ifindex' — the device selector, Linux 'ip link … dev <ifX>'

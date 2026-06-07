@@ -165,7 +165,7 @@ class Ip4Options(ProtoOptions):
                     f"The IPv4 option length must not extend past the header length. Got: {offset=}, {hlen=}",
                 )
 
-    def with_copy_flag(self, copy_flag: bool, /) -> "Ip4Options":
+    def with_copy_flag(self, copy_flag: bool, /) -> Ip4Options:
         """
         Return a new 'Ip4Options' containing only the options whose
         RFC 791 §3.1 copy-on-fragmentation flag matches the supplied

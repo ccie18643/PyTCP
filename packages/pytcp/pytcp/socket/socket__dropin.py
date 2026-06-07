@@ -548,7 +548,7 @@ class Socket:
 
         return self._control_sock().getpeername()
 
-    def dup(self) -> "Socket":
+    def dup(self) -> Socket:
         """
         Duplicate the socket's data channel into an independent socket.
 

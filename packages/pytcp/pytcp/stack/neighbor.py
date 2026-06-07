@@ -122,7 +122,7 @@ class NeighborApi:
             "'stack.neighbor.interface(ifindex)' (Linux 'ip neighbor ... dev <ifX>')."
         )
 
-    def interface(self, ifindex: int, /) -> "NeighborApi":
+    def interface(self, ifindex: int, /) -> NeighborApi:
         """
         Return a 'NeighborApi' bound to the interface registered under
         'ifindex' — the device selector, Linux 'ip neighbor … dev <ifX>'

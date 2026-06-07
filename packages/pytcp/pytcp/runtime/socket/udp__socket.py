@@ -423,7 +423,7 @@ class UdpSocket(socket):
 
         __debug__ and log("socket", f"<g>[{self}]</> - Connected socket")
 
-    def _egress_handler(self, remote_ip_address: "Ip4Address | Ip6Address", /) -> "PacketHandlerL2 | PacketHandlerL3":
+    def _egress_handler(self, remote_ip_address: Ip4Address | Ip6Address, /) -> "PacketHandlerL2 | PacketHandlerL3":
         """
         Resolve the egress packet handler for an outbound datagram. When
         the socket is pinned to an interface via SO_BINDTODEVICE, egress

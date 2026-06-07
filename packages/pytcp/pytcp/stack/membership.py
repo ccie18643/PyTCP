@@ -113,7 +113,7 @@ class MembershipApi:
             "The bare membership tool has no default device; select one via " "'stack.membership.interface(ifindex)'."
         )
 
-    def interface(self, ifindex: int, /) -> "MembershipApi":
+    def interface(self, ifindex: int, /) -> MembershipApi:
         """
         Return a 'MembershipApi' bound to the interface registered under
         'ifindex' — the device selector. Raises 'KeyError' when no
