@@ -1258,6 +1258,7 @@ class socket(ABC):
 
         if cls is socket:
             from pytcp.runtime.socket.packet__socket import PacketSocket
+            from pytcp.runtime.socket.ping__socket import PingSocket
             from pytcp.runtime.socket.raw__socket import RawSocket
             from pytcp.runtime.socket.tcp__socket import TcpSocket
             from pytcp.runtime.socket.udp__socket import UdpSocket
@@ -1278,6 +1279,12 @@ class socket(ABC):
                     return cls.__new__(TcpSocket)
                 case _, SocketType.DGRAM, IpProto.UDP | None:
                     return cls.__new__(UdpSocket)
+                case (
+                    AddressFamily.INET6 | AddressFamily.INET4,
+                    SocketType.DGRAM,
+                    IpProto.ICMP4 | IpProto.ICMP6,
+                ):
+                    return cls.__new__(PingSocket)
                 case _, SocketType.RAW, None:
                     raise OSError(errno.EPROTONOSUPPORT, os.strerror(errno.EPROTONOSUPPORT))
                 case (AddressFamily.INET6 | AddressFamily.INET4, SocketType.RAW, IpProto()):

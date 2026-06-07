@@ -43,6 +43,7 @@ ver 3.0.8
 
 import errno
 import threading
+from collections.abc import Iterable
 from typing import override
 
 from net_addr import (
@@ -64,6 +65,7 @@ from pytcp.runtime.socket import (
     AddressFamily,
     SocketType,
     gaierror,
+    socket,
 )
 from pytcp.runtime.socket.ping__metadata import PingMetadata
 from pytcp.runtime.socket.socket__bind_helpers import pick_local_ip_address
@@ -74,14 +76,16 @@ ICMP__ECHO__HEADER__LEN: int = 8
 ICMP__ECHO__SEQ__OFFSET: int = 6
 
 
-class PingSocket:
+class PingSocket(socket):
     """
     The ICMP Echo ('ping') datagram socket.
     """
 
-    def __init__(
+    _socket_type = SocketType.DGRAM
+
+    def __init__(  # pyright: ignore[reportInconsistentConstructor]
         self,
-        family: AddressFamily,
+        family: AddressFamily = AddressFamily.INET4,
         type: SocketType = SocketType.DGRAM,
         protocol: IpProto | None = None,
     ) -> None:
@@ -93,21 +97,24 @@ class PingSocket:
         assert type is SocketType.DGRAM
         assert protocol in (IpProto.ICMP4, IpProto.ICMP6)
 
+        super().__init__()
+
         self._address_family = family
         self._ip_proto = protocol
         self._recv_ttl = False
 
-        self._local_ip_address: Ip6Address | Ip4Address = (
-            Ip6Address() if family is AddressFamily.INET6 else Ip4Address()
-        )
-        self._remote_ip_address: Ip6Address | Ip4Address = (
-            Ip6Address() if family is AddressFamily.INET6 else Ip4Address()
-        )
+        self._local_ip_address = Ip6Address() if family is AddressFamily.INET6 else Ip4Address()
+        self._remote_ip_address = Ip6Address() if family is AddressFamily.INET6 else Ip4Address()
+        self._remote_port = 0
 
         self._packet_rx_md: list[PingMetadata] = []
         self._packet_rx_md_ready = threading.Semaphore(0)
 
         self._id = self._allocate_echo_id(family)
+        # The ICMP id doubles as the local port (Linux ping sockets put
+        # the id in the address port field); keep them in lockstep so the
+        # inherited 'local_port' / 'socket_id' introspection is honest.
+        self._local_port = self._id
         stack.icmp_echo_sockets[(family, self._id)] = self
 
         __debug__ and log("socket", f"<g>[{self}]</> - Created socket")
@@ -152,6 +159,7 @@ class PingSocket:
 
         return self._local_ip_address.is_unspecified or self._local_ip_address == local_address
 
+    @override
     def bind(self, address: tuple[str, int]) -> None:
         """
         Bind the socket to a local address and, when a non-zero id is
@@ -174,8 +182,10 @@ class PingSocket:
         self._local_ip_address = local_ip_address
         if requested_id:
             self._id = requested_id
+            self._local_port = requested_id
         stack.icmp_echo_sockets[(self._address_family, self._id)] = self
 
+    @override
     def connect(self, address: tuple[str, int]) -> None:
         """
         Set the socket's default peer address for 'send'.
@@ -188,6 +198,7 @@ class PingSocket:
         except (Ip6AddressFormatError, Ip4AddressFormatError) as error:
             raise gaierror("[Errno -2] Name or service not known - [Malformed remote IP address]") from error
 
+    @override
     def getsockname(self) -> tuple[str, int]:
         """
         Get the local address the socket is bound to, with its owned ICMP
@@ -196,6 +207,7 @@ class PingSocket:
 
         return str(self._local_ip_address), self._id
 
+    @override
     def getpeername(self) -> tuple[str, int]:
         """
         Get the connected peer address (raises if no peer is set).
@@ -205,6 +217,7 @@ class PingSocket:
             raise OSError(errno.ENOTCONN, "Transport endpoint is not connected")
         return str(self._remote_ip_address), 0
 
+    @override
     def setsockopt(self, level: int | IpProto, optname: int, value: int | bytes, /) -> None:
         """
         Set a socket option. Supports 'IP_RECVTTL' / 'IPV6_RECVHOPLIMIT',
@@ -215,6 +228,7 @@ class PingSocket:
             self._recv_ttl = bool(value)
             return
 
+    @override
     def getsockopt(self, level: int | IpProto, optname: int, /) -> int | bytes:
         """
         Get a socket option.
@@ -224,6 +238,7 @@ class PingSocket:
             return int(self._recv_ttl)
         return 0
 
+    @override
     def send(self, data: bytes) -> int:
         """
         Send an Echo Request to the connected peer.
@@ -233,6 +248,7 @@ class PingSocket:
             raise OSError(errno.EDESTADDRREQ, "Destination address required - [Socket has no destination address set]")
         return self._send_echo(data, remote_ip_address=self._remote_ip_address)
 
+    @override
     def sendto(self, data: bytes, address: tuple[str, int]) -> int:
         """
         Send an Echo Request to 'address'.
@@ -246,10 +262,11 @@ class PingSocket:
             raise gaierror("[Errno -2] Name or service not known - [Malformed remote IP address]") from error
         return self._send_echo(data, remote_ip_address=remote_ip_address)
 
+    @override
     def sendmsg(
         self,
-        buffers: list[bytes],
-        ancdata: list[tuple[int, int, bytes]] = [],
+        buffers: Iterable[bytes | bytearray | memoryview],
+        ancdata: Iterable[tuple[int, int, bytes | bytearray | memoryview]] = (),
         flags: int = 0,
         address: tuple[str, int] | None = None,
     ) -> int:
@@ -315,8 +332,10 @@ class PingSocket:
             acquired = self._packet_rx_md_ready.acquire(timeout=timeout)
         if not acquired:
             raise TimeoutError("timed out")
+        self._drain_readable()
         return self._packet_rx_md.pop(0)
 
+    @override
     def recv(self, bufsize: int | None = None, timeout: float | None = None) -> bytes:
         """
         Receive the next Echo Reply's ICMP message bytes (no IP header).
@@ -324,6 +343,7 @@ class PingSocket:
 
         return self._next_metadata(timeout=timeout).icmp__data
 
+    @override
     def recvfrom(self, bufsize: int | None = None, timeout: float | None = None) -> tuple[bytes, tuple[str, int]]:
         """
         Receive the next Echo Reply, returning its ICMP message bytes and
@@ -333,6 +353,7 @@ class PingSocket:
         metadata = self._next_metadata(timeout=timeout)
         return metadata.icmp__data, (str(metadata.ip__remote_address), 0)
 
+    @override
     def recvmsg(
         self,
         bufsize: int | None = None,
@@ -359,15 +380,23 @@ class PingSocket:
     def process_echo_reply(self, packet_rx_md: PingMetadata) -> None:
         """
         Enqueue an inbound Echo Reply for the application to receive.
+        Dropped under the close-during-delivery drain when the socket has
+        already been closed.
         """
 
-        self._packet_rx_md.append(packet_rx_md)
-        self._packet_rx_md_ready.release()
+        with self._lock__io:
+            if self._closed:
+                return
+            self._packet_rx_md.append(packet_rx_md)
+            self._packet_rx_md_ready.release()
+        self._signal_readable()
 
+    @override
     def close(self) -> None:
         """
         Close the socket and stop receiving replies.
         """
 
         stack.icmp_echo_sockets.pop((self._address_family, self._id), None)
+        self._mark_closed()
         __debug__ and log("socket", f"<g>[{self}]</> - Closed socket")
