@@ -118,7 +118,7 @@ lint: venv
 	@echo '<<< MYPY'
 	@for pkg in $(MYPY_PACKAGES); do PYTHONPATH=$(ROOT_PATH) ./$(VENV)/bin/mypy -p $$pkg || exit 1; done
 	@PYTHONPATH=$(ROOT_PATH) ./$(VENV)/bin/mypy $(ROOT_FILES)
-	@echo '<<< PYLINT (gate checks)'
+	@echo '<<< PYLINT'
 	@PYTHONPATH=$(ROOT_PATH) ./$(VENV)/bin/pylint --disable=all --enable=$(PYLINT_GATE_CHECKS) --score=n $(PYLINT_GATE_FILES)
 	@echo '<<< PYRIGHT'
 	@PYTHONPATH=$(ROOT_PATH) ./$(VENV)/bin/pyright
