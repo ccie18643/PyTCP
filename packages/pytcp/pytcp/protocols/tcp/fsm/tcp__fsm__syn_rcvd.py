@@ -32,8 +32,6 @@ pytcp/protocols/tcp/fsm/tcp__fsm__syn_rcvd.py
 ver 3.0.8
 """
 
-from __future__ import annotations
-
 from dataclasses import replace
 from typing import TYPE_CHECKING
 

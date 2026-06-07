@@ -32,8 +32,6 @@ pytcp/runtime/packet_handler/__init__.py
 ver 3.0.8
 """
 
-from __future__ import annotations
-
 import random
 import secrets
 import threading

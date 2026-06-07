@@ -43,8 +43,6 @@ pytcp/protocols/tcp/fsm/tcp__fsm.py
 ver 3.0.8
 """
 
-from __future__ import annotations
-
 from collections.abc import Callable
 from typing import TYPE_CHECKING
 

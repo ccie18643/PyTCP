@@ -30,8 +30,6 @@ pytcp/runtime/socket/udp__socket.py
 ver 3.0.8
 """
 
-from __future__ import annotations
-
 import errno
 import os
 import threading

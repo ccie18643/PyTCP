@@ -32,8 +32,6 @@ pytcp/protocols/tcp/fsm/tcp__fsm__close_wait.py
 ver 3.0.8
 """
 
-from __future__ import annotations
-
 from typing import TYPE_CHECKING
 
 from pytcp.lib.logger import log

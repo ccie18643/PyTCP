@@ -30,8 +30,6 @@ pytcp/runtime/socket/socket_id.py
 ver 3.0.8
 """
 
-from __future__ import annotations
-
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
