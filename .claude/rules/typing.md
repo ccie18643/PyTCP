@@ -1034,6 +1034,46 @@ Half-converted files (some annotations quoted, some not)
 are the worst state — they hide which annotations actually
 need lazy evaluation.
 
+### 20.4 Unnecessary string-quoted annotations are FORBIDDEN
+
+A string-quoted annotation — `-> "Foo"`, `x: "Foo"`,
+`class C[T: "Foo"]`, `type X = "Foo | Bar"` — is permitted
+**only** when the name is genuinely unavailable at runtime,
+i.e. it is imported *solely* under `if TYPE_CHECKING:` to
+break a real circular import (§20.1). In **every** other case
+the quotes are **forbidden**:
+
+- If the name is imported at module top (runtime-available),
+  the quotes are pure cruft. PEP 649 (3.14) evaluates
+  annotations lazily, so the forward reference is never
+  needed — **unquote it.** A name being defined later in the
+  same file is *not* a reason to quote either (lazy
+  evaluation handles it).
+- Do not quote "to be safe" or "to match the line above."
+  Quote *only* the names that genuinely cannot be imported at
+  runtime; bare everything else.
+
+```python
+# Forbidden — 'Ip4Wildcard' is a module-top runtime import; the
+# quotes are gratuitous (this was a real bug: it also made pylint's
+# unused-import flag the import as unused — see below).
+def hostmask(self) -> "Ip4Wildcard | Ip6Wildcard": ...
+
+# Good
+def hostmask(self) -> Ip4Wildcard | Ip6Wildcard: ...
+```
+
+**Enforced by `make lint`.** The pylint gate runs
+`unused-import` (W0611), which flags a runtime import used
+**only** inside a string annotation — pylint does not read
+names inside quoted annotations, so such an import reads as
+"unused." flake8's `F401` *does* read string annotations and
+therefore silently misses this; pylint is the backstop. A
+`TYPE_CHECKING`-guarded import used in a string annotation is
+**not** flagged (the legitimate circular-import case), so the
+gate distinguishes the two cleanly and a gratuitous quote
+fails CI.
+
 ## 21. `# type: ignore` policy
 
 `# type: ignore` is **strongly discouraged**. Every
