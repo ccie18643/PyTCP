@@ -53,6 +53,7 @@ from net_addr import (
     Ip6AddressFormatError,
 )
 from net_proto import Icmp4MessageEchoRequest, Icmp4Type, Icmp6MessageEchoRequest, Icmp6Type, IpProto
+from net_proto.lib.buffer import Buffer
 from pytcp import stack
 from pytcp.lib.logger import log
 from pytcp.runtime.socket import (
@@ -265,8 +266,8 @@ class PingSocket(socket):
     @override
     def sendmsg(
         self,
-        buffers: Iterable[bytes | bytearray | memoryview],
-        ancdata: Iterable[tuple[int, int, bytes | bytearray | memoryview]] = (),
+        buffers: Iterable[Buffer],
+        ancdata: Iterable[tuple[int, int, Buffer]] = (),
         flags: int = 0,
         address: tuple[str, int] | None = None,
     ) -> int:

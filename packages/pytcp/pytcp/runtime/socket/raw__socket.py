@@ -43,6 +43,7 @@ from net_addr import (
     Ip6Address,
     Ip6AddressFormatError,
 )
+from net_proto.lib.buffer import Buffer
 from net_proto.lib.enums import IpProto
 from net_proto.lib.inet_cksum import inet_cksum
 from pytcp import stack
@@ -413,8 +414,8 @@ class RawSocket(socket):
     @override
     def sendmsg(
         self,
-        buffers: Iterable[bytes | bytearray | memoryview],
-        ancdata: Iterable[tuple[int, int, bytes | bytearray | memoryview]] = (),
+        buffers: Iterable[Buffer],
+        ancdata: Iterable[tuple[int, int, Buffer]] = (),
         flags: int = 0,
         address: tuple[str, int] | None = None,
     ) -> int:

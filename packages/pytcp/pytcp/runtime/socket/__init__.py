@@ -43,6 +43,7 @@ from types import TracebackType
 from typing import Any, override
 
 from net_addr import Ip4Address, Ip6Address, IpVersion
+from net_proto.lib.buffer import Buffer
 from net_proto.lib.enums import EtherType, IpProto
 from net_proto.protocols.ip4.ip4__errors import Ip4IntegrityError
 from net_proto.protocols.ip4.ip4__header import IP4__HEADER__LEN
@@ -1805,8 +1806,8 @@ class socket(ABC):
 
     def sendmsg(
         self,
-        buffers: Iterable[bytes | bytearray | memoryview],
-        ancdata: Iterable[tuple[int, int, bytes | bytearray | memoryview]] = (),
+        buffers: Iterable[Buffer],
+        ancdata: Iterable[tuple[int, int, Buffer]] = (),
         flags: int = 0,
         address: Any = None,
     ) -> int:
@@ -1822,7 +1823,7 @@ class socket(ABC):
 
     @staticmethod
     def _validate_sendmsg_ancdata(
-        ancdata: Iterable[tuple[int, int, bytes | bytearray | memoryview]],
+        ancdata: Iterable[tuple[int, int, Buffer]],
         /,
     ) -> None:
         """
