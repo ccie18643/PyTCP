@@ -49,6 +49,7 @@ from typing import Any
 from net_addr import Ip4IfAddr, Ip6IfAddr, MacAddress
 from pytcp import stack
 from pytcp.ipc.ipc__server import IpcServer
+from pytcp.lib.logger import log
 
 IPC__DAEMON__SOCKET_NAME: str = "pytcp.sock"
 IPC__DAEMON__PIDFILE_NAME: str = "pytcp.pid"
@@ -166,7 +167,22 @@ def run_daemon(
         # collide).
         single = len(interfaces) == 1
         for interface_name in interfaces:
-            interface_args = _resolve_interface(interface_name, mac_address=mac_address if single else None)
+            try:
+                interface_args = _resolve_interface(interface_name, mac_address=mac_address if single else None)
+            except OSError as error:
+                # Opening the TAP/TUN device failed at the OS boundary
+                # (EBUSY — another process holds it; ENODEV — it does not
+                # exist; EPERM — needs elevated privileges). Report it as
+                # one CRITICAL line and exit gracefully (non-zero) instead
+                # of dumping a raw OSError traceback on the operator.
+                detail = error.strerror or str(error)
+                log(
+                    "stack",
+                    f"<CRIT>Cannot open interface {interface_name}: {detail} (errno {error.errno}). "
+                    f"Another process may already hold it, or it does not exist / requires "
+                    f"elevated privileges. Exiting.</>",
+                )
+                raise SystemExit(1) from None
             iface_ip4_host = ip4_host if single else None
             iface_ip6_host = ip6_host if single else None
             stack.add_interface(

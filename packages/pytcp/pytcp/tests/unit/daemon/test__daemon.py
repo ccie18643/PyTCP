@@ -30,6 +30,7 @@ pytcp/tests/unit/daemon/test__daemon.py
 ver 3.0.8
 """
 
+import errno
 import os
 import tempfile
 from unittest import TestCase
@@ -177,3 +178,45 @@ class TestRunDaemonPidfile(TestCase):
         run_daemon(socket_path=os.path.join(tmp_dir, "s.sock"), interfaces=["tap7"])
 
         stack.start.assert_called_once_with(wait_for_dhcp_bind=False)
+
+
+class TestRunDaemonInterfaceFailure(TestCase):
+    """
+    The 'run_daemon' interface-open failure-handling tests.
+    """
+
+    def test__run_daemon__interface_busy_logs_critical_and_exits(self) -> None:
+        """
+        Ensure a failure to open an interface (e.g. EBUSY — another
+        process already holds the TAP/TUN device) is reported as a single
+        CRITICAL log line and exits the process gracefully with a non-zero
+        status, instead of propagating a raw 'OSError' traceback.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        tmp_dir = self.enterContext(tempfile.TemporaryDirectory())
+
+        stack = self.enterContext(patch("pytcp.daemon.daemon.stack"))
+        stack.initialize_interface__tap.side_effect = OSError(errno.EBUSY, "Device or resource busy")
+        log = self.enterContext(patch("pytcp.daemon.daemon.log"))
+        self.enterContext(patch("pytcp.daemon.daemon.IpcServer", autospec=True))
+        self.enterContext(patch("pytcp.daemon.daemon.signal.signal"))
+
+        with self.assertRaises(SystemExit) as context:
+            run_daemon(socket_path=os.path.join(tmp_dir, "s.sock"), interfaces=["tap7"])
+
+        self.assertEqual(
+            context.exception.code,
+            1,
+            msg="A failure to open an interface must exit with a non-zero status.",
+        )
+        self.assertFalse(
+            stack.start.called,
+            msg="The stack must not be started when an interface cannot be opened.",
+        )
+        critical_messages = [args[0][1] for args in log.call_args_list if "<CRIT>" in args[0][1]]
+        self.assertTrue(
+            critical_messages and any("tap7" in message for message in critical_messages),
+            msg="A CRITICAL log line naming the failed interface must be emitted.",
+        )
