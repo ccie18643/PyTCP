@@ -754,7 +754,7 @@ class PacketHandler(Subsystem, ABC):
 
         __debug__ and log("stack", f"Assigned IPv6 unicast address {ip6_host}")
 
-        self._assign_ip6_multicast(ip6_host.address.solicited_node_multicast)
+        self.assign_ip6_multicast(ip6_host.address.solicited_node_multicast)
 
     def _remove_ip6_host(self, /, ip6_host: Ip6IfAddr) -> None:
         """
@@ -766,7 +766,7 @@ class PacketHandler(Subsystem, ABC):
 
         __debug__ and log("stack", f"Removed IPv6 unicast address {ip6_host}")
 
-        self._remove_ip6_multicast(ip6_host.address.solicited_node_multicast)
+        self.remove_ip6_multicast(ip6_host.address.solicited_node_multicast)
 
     @abstractmethod
     def _claim_ip6_address_async(
@@ -796,7 +796,7 @@ class PacketHandler(Subsystem, ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def _assign_ip6_multicast(self, /, ip6_multicast: Ip6Address) -> None:
+    def assign_ip6_multicast(self, /, ip6_multicast: Ip6Address) -> None:
         """
         Assign IPv6 multicast address to the list stack listens on.
         """
@@ -804,12 +804,34 @@ class PacketHandler(Subsystem, ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def _remove_ip6_multicast(self, /, ip6_multicast: Ip6Address) -> None:
+    def remove_ip6_multicast(self, /, ip6_multicast: Ip6Address) -> None:
         """
         Remove IPv6 multicast address from the list stack listens on.
         """
 
         raise NotImplementedError
+
+    def _assign_ip6_multicast(self, /, ip6_multicast: Ip6Address) -> None:
+        """
+        Compatibility shim delegating to the public 'assign_ip6_multicast'.
+
+        Retained so the address control-plane API ('pytcp.stack.address'),
+        whose protected-access migration is a later plane, keeps a working
+        call target; new callers use the public method.
+        """
+
+        self.assign_ip6_multicast(ip6_multicast)
+
+    def _remove_ip6_multicast(self, /, ip6_multicast: Ip6Address) -> None:
+        """
+        Compatibility shim delegating to the public 'remove_ip6_multicast'.
+
+        Retained so the address control-plane API ('pytcp.stack.address'),
+        whose protected-access migration is a later plane, keeps a working
+        call target; new callers use the public method.
+        """
+
+        self.remove_ip6_multicast(ip6_multicast)
 
     @abstractmethod
     def _assign_ip4_multicast(self, /, ip4_multicast: Ip4Address) -> None:
@@ -1057,6 +1079,17 @@ class PacketHandler(Subsystem, ABC):
         return self._ip6_unicast
 
     @property
+    def ip6_multicast(self) -> list[Ip6Address]:
+        """
+        Get the list of IPv6 multicast groups the interface listens on.
+        Read surface for the socket factory's 'IPV6_JOIN_GROUP' /
+        'IPV6_LEAVE_GROUP' idempotence check; the '_ip6_multicast' list
+        stays the storage.
+        """
+
+        return self._ip6_multicast
+
+    @property
     def ip4_host(self) -> list[Ip4IfAddr]:
         """
         Get the list of stack's IPv4 host addresses.
@@ -1079,6 +1112,16 @@ class PacketHandler(Subsystem, ABC):
         """
 
         return self._ip4_broadcast
+
+    @property
+    def interface_name(self) -> str | None:
+        """
+        Get the interface name this handler serves. Read surface for the
+        socket factory's SO_BINDTODEVICE name match; the
+        '_interface_name' attribute stays the storage.
+        """
+
+        return self._interface_name
 
     def _update_icmp6_default_router(
         self,
@@ -1421,7 +1464,7 @@ class PacketHandler(Subsystem, ABC):
                         self._ip6_ifaddr = [host for host in self._ip6_ifaddr if host != ip6_host]
                         snm = ip6_host.address.solicited_node_multicast
                         if snm in self._ip6_multicast:
-                            self._remove_ip6_multicast(snm)
+                            self.remove_ip6_multicast(snm)
                         break
 
             # Drop from the temp-address table.
@@ -1550,7 +1593,7 @@ class PacketHandler(Subsystem, ABC):
                         self._ip6_ifaddr = [host for host in self._ip6_ifaddr if host != ip6_host]
                         snm = ip6_host.address.solicited_node_multicast
                         if snm in self._ip6_multicast:
-                            self._remove_ip6_multicast(snm)
+                            self.remove_ip6_multicast(snm)
                         break
 
             self._icmp6_slaac_addresses = [a for a in self._icmp6_slaac_addresses if a.valid_until > now]
@@ -2926,7 +2969,7 @@ class PacketHandlerL2(
         solicited_node = ip6_unicast_candidate.solicited_node_multicast
         joined_for_dad = solicited_node not in self._ip6_multicast
         if joined_for_dad:
-            self._assign_ip6_multicast(ip6_multicast=solicited_node)
+            self.assign_ip6_multicast(ip6_multicast=solicited_node)
 
         # RFC 4861 §6.3.4: an RA-advertised Retrans Timer
         # supersedes the operator-configured sysctl default. The
@@ -3002,7 +3045,7 @@ class PacketHandlerL2(
         # half-popped slot.
         self._icmp6_nd_dad__registry.teardown(ip6_unicast_candidate)
         if joined_for_dad:
-            self._remove_ip6_multicast(ip6_unicast_candidate.solicited_node_multicast)
+            self.remove_ip6_multicast(ip6_unicast_candidate.solicited_node_multicast)
         return not conflict
 
     def _claim_ip6_address_optimistic(self, *, ip6_host: Ip6IfAddr) -> bool:
@@ -3154,7 +3197,7 @@ class PacketHandlerL2(
                 thread.join()
 
         # Assign IPv6 All Nodes multicast address.
-        self._assign_ip6_multicast(Ip6Address("ff02::1"))
+        self.assign_ip6_multicast(Ip6Address("ff02::1"))
 
         # Configure Link Local address(es) staticaly.
         for ip6_host in list(self._ip6_ifaddr_candidate):
@@ -3276,7 +3319,7 @@ class PacketHandlerL2(
             self._ip4_support = False
 
     @override
-    def _assign_ip6_multicast(self, /, ip6_multicast: Ip6Address) -> None:
+    def assign_ip6_multicast(self, /, ip6_multicast: Ip6Address) -> None:
         """
         Assign IPv6 multicast address to the list stack listens on.
         """
@@ -3291,7 +3334,7 @@ class PacketHandlerL2(
         self._send_icmp6_multicast_listener_report()
 
     @override
-    def _remove_ip6_multicast(self, /, ip6_multicast: Ip6Address) -> None:
+    def remove_ip6_multicast(self, /, ip6_multicast: Ip6Address) -> None:
         """
         Remove IPv6 multicast address from the list stack listens on.
         """
@@ -3458,7 +3501,7 @@ class PacketHandlerL3(
         should listen on.
         """
 
-        self._assign_ip6_multicast(Ip6Address("ff02::1"))
+        self.assign_ip6_multicast(Ip6Address("ff02::1"))
 
         for ip6_host in list(self._ip6_ifaddr_candidate):
             self._ip6_ifaddr_candidate.remove(ip6_host)
@@ -3495,7 +3538,7 @@ class PacketHandlerL3(
             self._ip4_support = False
 
     @override
-    def _assign_ip6_multicast(self, /, ip6_multicast: Ip6Address) -> None:
+    def assign_ip6_multicast(self, /, ip6_multicast: Ip6Address) -> None:
         """
         Assign IPv6 multicast address to the list stack listens on.
         """
@@ -3508,7 +3551,7 @@ class PacketHandlerL3(
         self._send_icmp6_multicast_listener_report()
 
     @override
-    def _remove_ip6_multicast(self, /, ip6_multicast: Ip6Address) -> None:
+    def remove_ip6_multicast(self, /, ip6_multicast: Ip6Address) -> None:
         """
         Remove IPv6 multicast address from the list stack listens on.
         """

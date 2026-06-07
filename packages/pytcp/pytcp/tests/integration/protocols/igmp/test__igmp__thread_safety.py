@@ -409,7 +409,7 @@ class TestSocketSourceFilterLocking(IcmpTestCase):
         tracking = _TrackingRLock()
         setattr(sock, "_lock__ip4_source_filters", tracking)
 
-        sock._ip4_multicast_source_admits(ifindex=1, group=_GROUP, source=_SOURCE)
+        sock.ip4_multicast_source_admits(ifindex=1, group=_GROUP, source=_SOURCE)
 
         self.assertGreaterEqual(
             tracking.max_depth,

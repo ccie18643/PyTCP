@@ -95,7 +95,7 @@ class UdpRxHandler:
         )
         for socket_id in candidate_md.socket_ids:
             socket = cast(UdpSocket, stack.sockets.get_for_ingress(socket_id, ifindex=self._if._ifindex, default=None))
-            if socket is not None and socket._udp_no_check6_rx:
+            if socket is not None and socket.udp_no_check6_rx:
                 UdpParser(packet_rx, accept_zero_cksum_ip6=True)
                 return True
         return False
@@ -117,7 +117,7 @@ class UdpRxHandler:
         # Delegate to the lock-guarded per-socket source-admit gate so
         # the RX read of the socket's source-filter map is serialized
         # against an application-thread setsockopt under no-GIL.
-        return socket._ip4_multicast_source_admits(
+        return socket.ip4_multicast_source_admits(
             ifindex=self._if._ifindex,
             group=packet_rx.ip4.dst,
             source=packet_rx.ip4.src,

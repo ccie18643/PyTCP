@@ -347,14 +347,14 @@ def _resolve_membership_ifindex(interface_address: Ip4Address, /) -> int | None:
 
     if interface_address.is_unspecified:
         for ifindex, handler in _stack.interfaces.items():
-            if handler._ip4_unicast:
+            if handler.ip4_unicast:
                 return ifindex
         for ifindex, _handler in _stack.interfaces.items():
             return ifindex
         return None
 
     for ifindex, handler in _stack.interfaces.items():
-        if interface_address in handler._ip4_unicast:
+        if interface_address in handler.ip4_unicast:
             return ifindex
 
     return None
@@ -646,7 +646,7 @@ class socket(ABC):
             return
 
         for ifindex, handler in _stack.interfaces.items():
-            if handler._interface_name == name:
+            if handler.interface_name == name:
                 self._bound_interface_name = name
                 self._egress_ifindex = ifindex
                 return
@@ -1041,9 +1041,9 @@ class socket(ABC):
         by parsing the 20-byte 'ipv6_mreq' structure (16-byte
         ipv6mr_multiaddr + 4-byte ipv6mr_interface in host byte
         order) and pushing the membership change to the egress
-        interface's '_ip6_multicast' list. Joining wires the
+        interface's 'ip6_multicast' list. Joining wires the
         outbound MLDv2 Report automatically (the
-        '_assign_ip6_multicast' handler emits it). Joining a
+        'assign_ip6_multicast' handler emits it). Joining a
         group this socket already holds raises EADDRINUSE;
         dropping one it does not hold raises EADDRNOTAVAIL —
         matches Linux's 'ipv6_sock_mc_join' /
@@ -1065,7 +1065,7 @@ class socket(ABC):
         # mirroring the IPv4 'IP_ADD_MEMBERSHIP' INADDR_ANY path.
         if mreq_ifindex == 0:
             for candidate_ifindex, handler in _stack.interfaces.items():
-                if handler._ip6_unicast:
+                if handler.ip6_unicast:
                     mreq_ifindex = candidate_ifindex
                     break
             else:
@@ -1083,7 +1083,7 @@ class socket(ABC):
                         errno.EADDRINUSE,
                         f"Socket already a member of {group} on interface {mreq_ifindex}",
                     )
-                # The handler's '_assign_ip6_multicast' is idempotent
+                # The handler's 'assign_ip6_multicast' is idempotent
                 # at the interface level — multiple sockets joining
                 # the same group keep one membership on the wire.
                 # PyTCP doesn't refcount per-interface IPv6
@@ -1095,8 +1095,8 @@ class socket(ABC):
                 # that for IPv6 is a follow-up. The socket-side
                 # 'EADDRINUSE' check above keeps per-socket
                 # bookkeeping clean.
-                if group not in handler._ip6_multicast:
-                    handler._assign_ip6_multicast(group)
+                if group not in handler.ip6_multicast:
+                    handler.assign_ip6_multicast(group)
                 self._ip6_memberships.add(key)
             else:
                 if key not in self._ip6_memberships:
@@ -1109,7 +1109,7 @@ class socket(ABC):
                 # socket on this stack holds the group. Today the
                 # check is best-effort — see the leave-side comment
                 # above.
-                handler._remove_ip6_multicast(group)
+                handler.remove_ip6_multicast(group)
 
     def _ipproto_ipv6_getsockopt(self, optname: int, /) -> int | None:
         """
@@ -1352,6 +1352,17 @@ class socket(ABC):
         """
 
         return self._address_family
+
+    @property
+    def ipv6_v6only(self) -> bool:
+        """
+        Get the Linux 'IPV6_V6ONLY' flag. The TCP RX packet handler and
+        the bind-conflict helper read this through the public surface to
+        decide whether an AF_INET6 socket also accepts inbound IPv4
+        peers (dual-stack).
+        """
+
+        return self._ipv6_v6only
 
     @property
     def socket_type(self) -> SocketType:
@@ -1598,7 +1609,7 @@ class socket(ABC):
                     pass
             self._ip4_source_filters.clear()
 
-    def _ip4_multicast_source_admits(self, *, ifindex: int, group: Ip4Address, source: Ip4Address) -> bool:
+    def ip4_multicast_source_admits(self, *, ifindex: int, group: Ip4Address, source: Ip4Address) -> bool:
         """
         RFC 3376 §3.1 data-plane source-delivery gate (Linux
         'ip_mc_sf_allow'): admit an inbound IPv4 multicast datagram only

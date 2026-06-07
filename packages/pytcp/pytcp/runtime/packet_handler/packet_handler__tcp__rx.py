@@ -156,9 +156,9 @@ class TcpRxHandler:
                     # in the patterns list or falls through to the
                     # no-listener drop path.
                     if (
-                        tcp_socket._address_family is AddressFamily.INET6
+                        tcp_socket.address_family is AddressFamily.INET6
                         and packet_rx_md.ip__local_address.version is IpVersion.IP4
-                        and tcp_socket._ipv6_v6only
+                        and tcp_socket.ipv6_v6only
                     ):
                         continue
                     self._if._packet_stats_rx.tcp__socket_match_listening__forward_to_socket += 1

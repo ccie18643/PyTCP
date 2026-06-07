@@ -532,6 +532,7 @@ class TestIsAddressInUse(TestCase):
             local_ip_address=local_ip_address,
             local_port=local_port,
             _so_reuseport=reuseport,
+            ipv6_v6only=True,
         )
 
     def test__ip_helper__is_address_in_use__exact_match_returns_true(self) -> None:
@@ -764,7 +765,7 @@ class TestIsAddressInUse(TestCase):
     ) -> SimpleNamespace:
         """
         Build a stub like '_make_socket' but with the extra
-        '_ipv6_v6only' flag the dual-stack conflict logic reads.
+        'ipv6_v6only' flag the dual-stack conflict logic reads.
         """
 
         return SimpleNamespace(
@@ -772,7 +773,7 @@ class TestIsAddressInUse(TestCase):
             type=type,
             local_ip_address=local_ip_address,
             local_port=local_port,
-            _ipv6_v6only=ipv6_v6only,
+            ipv6_v6only=ipv6_v6only,
         )
 
     def test__ip_helper__is_address_in_use__ipv6_v6only_off_blocks_ipv4(self) -> None:
@@ -1048,7 +1049,7 @@ def _open_socket(*, port: int, ifindex: int | None) -> SimpleNamespace:
         family=AddressFamily.INET4,
         local_ip_address=Ip4Address(),
         _so_reuseport=False,
-        _ipv6_v6only=True,
+        ipv6_v6only=True,
         _egress_ifindex=ifindex,
     )
 

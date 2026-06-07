@@ -255,7 +255,7 @@ def is_address_in_use(
             # '::' wildcard with V6ONLY=0 (Linux dual-stack reservation).
             opened_is_dual_stack_ipv6_wildcard = (
                 opened_socket.family is AddressFamily.INET6
-                and not getattr(opened_socket, "_ipv6_v6only", True)
+                and not opened_socket.ipv6_v6only
                 and opened_socket.local_ip_address.is_unspecified
             )
             new_is_dual_stack_ipv6_wildcard = (

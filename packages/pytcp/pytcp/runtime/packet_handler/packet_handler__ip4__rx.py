@@ -231,7 +231,7 @@ class Ip4RxHandler:
             # source filter rejects the datagram's source is skipped — it
             # does not receive the datagram, but delivery to other matching
             # sockets and the transport handler still proceeds.
-            if packet_rx.ip4.dst.is_multicast and not socket._ip4_multicast_source_admits(
+            if packet_rx.ip4.dst.is_multicast and not socket.ip4_multicast_source_admits(
                 ifindex=self._if._ifindex, group=packet_rx.ip4.dst, source=packet_rx.ip4.src
             ):
                 self._if._packet_stats_rx.raw__multicast_source_filtered__drop += 1

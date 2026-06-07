@@ -359,8 +359,8 @@ class TestPacketHandlerTcpRxDualStack(_TcpRxTestBase):
             remote_port=0,
         )
         socket = MagicMock()
-        socket._address_family = AddressFamily.INET6
-        socket._ipv6_v6only = v6only
+        socket.address_family = AddressFamily.INET6
+        socket.ipv6_v6only = v6only
         cast(dict[object, object], stack.sockets)[key] = socket
         return socket
 

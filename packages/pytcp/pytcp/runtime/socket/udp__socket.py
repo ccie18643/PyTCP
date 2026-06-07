@@ -158,6 +158,17 @@ class UdpSocket(socket):
 
         __debug__ and log("socket", f"<g>[{self}]</> - Created socket")
 
+    @property
+    def udp_no_check6_rx(self) -> bool:
+        """
+        Get the RFC 6935 §5 IPv6 zero-checksum receive opt-in flag. The
+        UDP RX packet handler reads this through the public surface to
+        decide whether to retry parsing an inbound IPv6 datagram with
+        'accept_zero_cksum_ip6=True'.
+        """
+
+        return self._udp_no_check6_rx
+
     @override
     def setsockopt(self, level: int | IpProto, optname: int, value: int | bytes, /) -> None:
         """
