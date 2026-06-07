@@ -31,7 +31,15 @@ ignore-words-list = "ect, ether, nd, tha, assertIn, sourc"
 
 [tool.flake8]
 max-line-length = 120
-ignore = ["E203", "E266", "E701", "E704", "W503", "E731", "E741"]
+# Only codes that conflict with black or a mandatory house style are
+# ignored: E203 (black's slice-colon spacing), E266 (the '##' copyright
+# block on every file), E704 (black's inline stub bodies, 'def f(): ...'),
+# W503 (operator-first bit-field packing, source_files.md §8). E701 /
+# E731 / E741 are deliberately NOT ignored — no one-liner compound
+# statements, no 'x = lambda: ...', no ambiguous 'l' / 'I' / 'O' names.
+ignore = ["E203", "E266", "E704", "W503"]
+# 'ip4_fib' / 'ip6_fib' are annotation-only module singletons populated
+# by 'stack.init()'; pyflakes cannot see the indirect assignment.
 per-file-ignores = [
     "packages/pytcp/pytcp/stack/__init__.py:F821",
 ]
