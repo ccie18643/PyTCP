@@ -67,13 +67,19 @@ enable_error_code = [
 # mistyped hook name (which would silently never run) is a
 # type error, not a latent state-leak (unit_testing.md §10b.1).
 
+# This block ONLY affects an ad-hoc 'pylint <file>' run (a developer /
+# IDE invoking pylint directly); it silences the noisy checks so such a
+# run is usable. It does NOT affect 'make lint' — that gate runs
+# 'pylint --disable=all --enable=<explicit checks>' (see the Makefile
+# 'PYLINT_GATE_CHECKS'), whose CLI '--enable' overrides everything here.
+# Do not disable a check the gate enables (e.g. 'dangerous-default-value'),
+# or a local run would miss what the gate then rejects.
 [tool.pylint.master]
 max-line-length = 120
 disable = """
     super-init-not-called,
     no-name-in-module,
     import-error,
-    dangerous-default-value,
     too-many-instance-attributes,
     too-many-public-methods,
     too-many-arguments,
