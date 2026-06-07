@@ -44,7 +44,7 @@ from typing import Self
 from net_proto.lib.enums import EtherType, IpProto
 from pytcp.client.client__activity_introspect import ClientActivityIntrospect
 from pytcp.client.client__address import ClientAddress
-from pytcp.client.client__datagram_socket import ClientRawSocket, ClientUdpSocket
+from pytcp.client.client__datagram_socket import ClientPingSocket, ClientRawSocket, ClientUdpSocket
 from pytcp.client.client__link import ClientLink
 from pytcp.client.client__membership import ClientMembership
 from pytcp.client.client__neighbor import ClientNeighbor
@@ -87,7 +87,7 @@ class ClientStack:
         family: AddressFamily = AddressFamily.INET4,
         type: SocketType = SocketType.STREAM,
         protocol: IpProto | EtherType | int | None = None,
-    ) -> ClientTcpSocket | ClientUdpSocket | ClientRawSocket | ClientPacketSocket:
+    ) -> ClientTcpSocket | ClientUdpSocket | ClientRawSocket | ClientPacketSocket | ClientPingSocket:
         """
         Open a socket on the daemon, returning a client shim whose data
         path is a real selectable descriptor. Mirrors the in-process
@@ -102,6 +102,9 @@ class ClientStack:
             case SocketType.STREAM:
                 return ClientTcpSocket(self._client, family=family)
             case SocketType.DGRAM:
+                if protocol in (IpProto.ICMP4, IpProto.ICMP6):
+                    assert isinstance(protocol, IpProto)
+                    return ClientPingSocket(self._client, family=family, protocol=protocol)
                 return ClientUdpSocket(self._client, family=family)
             case SocketType.RAW:
                 if family is AddressFamily.PACKET:

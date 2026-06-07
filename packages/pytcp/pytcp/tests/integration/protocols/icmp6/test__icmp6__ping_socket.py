@@ -36,6 +36,9 @@ pytcp/tests/integration/protocols/icmp6/test__icmp6__ping_socket.py
 ver 3.0.8
 """
 
+from typing import override
+from unittest.mock import patch
+
 from net_proto import (
     EthernetAssembler,
     Icmp6Assembler,
@@ -85,6 +88,16 @@ class TestIcmp6PingSocket(IcmpTestCase):
     """
     The IPv6 ICMP Echo ('ping') datagram-socket tests.
     """
+
+    @override
+    def setUp(self) -> None:
+        """
+        Build the mocked ICMP runtime and silence the ping socket's
+        'socket'-channel lifecycle logging.
+        """
+
+        super().setUp()
+        self.enterContext(patch("pytcp.runtime.socket.ping__socket.log"))
 
     def _ping_socket(self) -> PingSocket:
         """

@@ -69,6 +69,7 @@ from pytcp.ipc.ipc__socket_rpc import (
 from pytcp.runtime.socket import AddressFamily, SocketType
 from pytcp.runtime.socket import socket as pytcp_socket
 from pytcp.runtime.socket.packet__socket import PacketSocket
+from pytcp.runtime.socket.ping__socket import PingSocket
 from pytcp.runtime.socket.raw__socket import RawSocket
 from pytcp.runtime.socket.tcp__socket import TcpSocket
 from pytcp.runtime.socket.udp__socket import UdpSocket
@@ -102,7 +103,7 @@ class _DaemonSocket:
 
     def __init__(
         self,
-        sock: TcpSocket | UdpSocket | RawSocket,
+        sock: TcpSocket | UdpSocket | RawSocket | PingSocket,
         bridge: SocketBridge | DatagramBridge,
         /,
     ) -> None:
@@ -116,7 +117,7 @@ class _DaemonSocket:
         self._bridge_started = False
 
     @property
-    def socket(self) -> TcpSocket | UdpSocket | RawSocket:
+    def socket(self) -> TcpSocket | UdpSocket | RawSocket | PingSocket:
         """
         Get the underlying daemon-side stack socket.
         """
@@ -389,6 +390,9 @@ class SocketSession:
             case SocketType.STREAM:
                 return self._open_stream(family=family)
             case SocketType.DGRAM:
+                if protocol in (IpProto.ICMP4, IpProto.ICMP6):
+                    assert isinstance(protocol, IpProto)
+                    return self._open_ping(family=family, protocol=protocol)
                 return self._open_dgram(family=family)
             case SocketType.RAW:
                 if family is AddressFamily.PACKET:
@@ -438,6 +442,20 @@ class SocketSession:
 
         data_end, client_end = socket.socketpair(socket.AF_UNIX, socket.SOCK_DGRAM)
         daemon_socket = _DaemonSocket(raw_socket, DatagramBridge(raw_socket, data_end))
+        daemon_socket.start_bridge()
+        return self._register(daemon_socket, client_end)
+
+    def _open_ping(self, *, family: AddressFamily, protocol: IpProto) -> tuple[dict[str, int], socket.socket]:
+        """
+        Create a daemon ICMP Echo ('ping') datagram socket (over a
+        SOCK_DGRAM data bridge, started immediately) — Linux 'SOCK_DGRAM'
+        + 'IPPROTO_ICMP' / 'IPPROTO_ICMPV6'.
+        """
+
+        ping_socket = PingSocket(family, SocketType.DGRAM, protocol)
+
+        data_end, client_end = socket.socketpair(socket.AF_UNIX, socket.SOCK_DGRAM)
+        daemon_socket = _DaemonSocket(ping_socket, DatagramBridge(ping_socket, data_end))
         daemon_socket.start_bridge()
         return self._register(daemon_socket, client_end)
 

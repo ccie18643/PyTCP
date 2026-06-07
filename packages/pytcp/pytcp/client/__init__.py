@@ -34,14 +34,14 @@ control channel through a surface that mirrors the in-process
 as the daemon-side singletons, marshalling each call across the boundary.
 
 'ClientStack.socket()' opens a socket on the daemon and returns a
-'ClientTcpSocket' (STREAM), 'ClientUdpSocket' (DGRAM), 'ClientRawSocket'
-(RAW on an INET family), or 'ClientPacketSocket' (RAW on AF_PACKET) whose
-data path is a real, selectable descriptor. 'wait_for_daemon()' blocks
-until the daemon's control socket is accepting, for clients that race
-startup.
+'ClientTcpSocket' (STREAM), 'ClientUdpSocket' (DGRAM), 'ClientPingSocket'
+(DGRAM + IPPROTO_ICMP / IPPROTO_ICMPV6), 'ClientRawSocket' (RAW on an INET
+family), or 'ClientPacketSocket' (RAW on AF_PACKET) whose data path is a
+real, selectable descriptor. 'wait_for_daemon()' blocks until the daemon's
+control socket is accepting, for clients that race startup.
 
 This is an encapsulated subpackage (source_files.md §2.4.1): the only
-public symbols are 'connect', 'ClientStack', and the four 'Client*Socket'
+public symbols are 'connect', 'ClientStack', and the five 'Client*Socket'
 shims; every other module here ('client__*') is private implementation.
 The per-API proxy objects are reached through 'ClientStack' attributes,
 and a socket shim through 'ClientStack.socket()', never imported directly.
@@ -51,13 +51,14 @@ pytcp/client/__init__.py
 ver 3.0.8
 """
 
-from pytcp.client.client__datagram_socket import ClientRawSocket, ClientUdpSocket
+from pytcp.client.client__datagram_socket import ClientPingSocket, ClientRawSocket, ClientUdpSocket
 from pytcp.client.client__packet_socket import ClientPacketSocket
 from pytcp.client.client__tcp_socket import ClientTcpSocket
 from pytcp.client.client_stack import ClientStack, connect, wait_for_daemon
 
 __all__ = [
     "ClientPacketSocket",
+    "ClientPingSocket",
     "ClientRawSocket",
     "ClientStack",
     "ClientTcpSocket",

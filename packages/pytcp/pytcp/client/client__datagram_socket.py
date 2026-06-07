@@ -267,3 +267,27 @@ class ClientRawSocket(_ClientDatagramBase):
 
         handle, data_fd = open_socket(client, family=family, type_=SocketType.RAW, protocol=protocol)
         super().__init__(client, handle, data_fd, family)
+
+
+class ClientPingSocket(_ClientDatagramBase):
+    """
+    A client-side ICMP Echo ('ping') datagram socket backed by a daemon
+    socket over IPC (Linux 'SOCK_DGRAM' + 'IPPROTO_ICMP' / 'IPPROTO_ICMPV6').
+    """
+
+    def __init__(
+        self,
+        client: IpcClient,
+        /,
+        *,
+        protocol: IpProto,
+        family: AddressFamily = AddressFamily.INET4,
+    ) -> None:
+        """
+        Open a daemon-side ICMP Echo datagram socket for 'protocol'
+        ('IPPROTO_ICMP' / 'IPPROTO_ICMPV6') and adopt its passed
+        SOCK_DGRAM data-channel descriptor.
+        """
+
+        handle, data_fd = open_socket(client, family=family, type_=SocketType.DGRAM, protocol=protocol)
+        super().__init__(client, handle, data_fd, family)

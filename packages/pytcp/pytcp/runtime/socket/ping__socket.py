@@ -188,6 +188,23 @@ class PingSocket:
         except (Ip6AddressFormatError, Ip4AddressFormatError) as error:
             raise gaierror("[Errno -2] Name or service not known - [Malformed remote IP address]") from error
 
+    def getsockname(self) -> tuple[str, int]:
+        """
+        Get the local address the socket is bound to, with its owned ICMP
+        id in the port field (mirroring Linux ping-socket 'getsockname').
+        """
+
+        return str(self._local_ip_address), self._id
+
+    def getpeername(self) -> tuple[str, int]:
+        """
+        Get the connected peer address (raises if no peer is set).
+        """
+
+        if self._remote_ip_address.is_unspecified:
+            raise OSError(errno.ENOTCONN, "Transport endpoint is not connected")
+        return str(self._remote_ip_address), 0
+
     def setsockopt(self, level: int | IpProto, optname: int, value: int | bytes, /) -> None:
         """
         Set a socket option. Supports 'IP_RECVTTL' / 'IPV6_RECVHOPLIMIT',
