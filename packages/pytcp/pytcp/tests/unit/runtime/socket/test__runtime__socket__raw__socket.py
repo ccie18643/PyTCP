@@ -34,13 +34,16 @@ ver 3.0.8
 import errno
 import fcntl
 import select
+import struct
 from types import SimpleNamespace
 from typing import Any
 from unittest import TestCase
 from unittest.mock import patch
 
 from net_addr import Ip4Address, Ip6Address, IpVersion
+from net_proto import Icmp6MessageEchoRequest
 from net_proto.lib.enums import IpProto
+from net_proto.lib.inet_cksum import inet_cksum
 from pytcp.lib.tx_status import TxStatus
 from pytcp.runtime.socket import AddressFamily, SocketType, gaierror
 from pytcp.runtime.socket.raw__metadata import RawMetadata
@@ -1219,3 +1222,61 @@ class TestRawSocketErrnoMapping(_RawSocketTestCase):
             errno.EDESTADDRREQ,
             msg="send-without-destination OSError must carry errno=EDESTADDRREQ.",
         )
+
+
+class TestRawSocketIcmp6Checksum(_RawSocketTestCase):
+    """
+    The IPv6 raw-socket mandatory ICMPv6-checksum tests.
+    """
+
+    def test__raw_socket__icmp6_checksum_auto_computed(self) -> None:
+        """
+        Ensure an IPPROTO_ICMPV6 raw socket fills the mandatory ICMPv6
+        checksum over the IPv6 pseudo-header (the application leaves it
+        zero, since it cannot see the stack-selected source address).
+
+        Reference: RFC 4443 §2.3 (ICMPv6 checksum over the pseudo-header).
+        """
+
+        sock = RawSocket(AddressFamily.INET6, SocketType.RAW, IpProto.ICMP6)
+        self.addCleanup(sock.close)
+
+        local = Ip6Address("2603:808c:2800:4301::7")
+        remote = Ip6Address("2600::")
+        request = bytearray(bytes(Icmp6MessageEchoRequest(id=0x1234, seq=1, data=b"ping-data")))
+        request[2:4] = b"\x00\x00"  # zero the checksum field, as an app would
+
+        result = sock._icmp6_checksummed(bytes(request), local=local, remote=remote)
+
+        self.assertNotEqual(result[2:4], b"\x00\x00", msg="The socket must fill the zeroed ICMPv6 checksum field.")
+        pshdr_sum = sum(
+            struct.unpack(
+                "! 5Q",
+                struct.pack("! 16s 16s L BBBB", bytes(local), bytes(remote), len(result), 0, 0, 0, int(IpProto.ICMP6)),
+            )
+        )
+        self.assertEqual(
+            inet_cksum(result, init=pshdr_sum),
+            0,
+            msg="The filled ICMPv6 checksum must make the pseudo-header-covered sum zero (a valid checksum).",
+        )
+
+    def test__raw_socket__non_icmp6_payload_unchanged(self) -> None:
+        """
+        Ensure a non-ICMPv6 raw socket leaves the application payload
+        untouched (only IPPROTO_ICMPV6 gets the forced checksum).
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        sock = RawSocket(AddressFamily.INET6, SocketType.RAW, IpProto.TCP)
+        self.addCleanup(sock.close)
+
+        payload = b"\x00\x01\x02\x03\x04\x05"
+        result = sock._icmp6_checksummed(
+            payload,
+            local=Ip6Address("2603:808c:2800:4301::7"),
+            remote=Ip6Address("2600::"),
+        )
+
+        self.assertEqual(result, payload, msg="A non-ICMPv6 raw socket must not rewrite the payload.")

@@ -32,6 +32,7 @@ ver 3.0.8
 
 import errno
 import os
+import struct
 import threading
 from collections.abc import Iterable
 from typing import cast, override
@@ -43,6 +44,7 @@ from net_addr import (
     Ip6AddressFormatError,
 )
 from net_proto.lib.enums import IpProto
+from net_proto.lib.inet_cksum import inet_cksum
 from pytcp import stack
 from pytcp.lib.logger import log
 from pytcp.runtime.socket import (
@@ -57,6 +59,14 @@ from pytcp.runtime.socket import (
 )
 from pytcp.runtime.socket.raw__metadata import RawMetadata
 from pytcp.runtime.socket.socket__bind_helpers import pick_local_ip_address
+
+# RFC 4443 §2.3: the ICMPv6 checksum field sits at byte offset 2 of the
+# message and covers the IPv6 pseudo-header. Linux forces IPV6_CHECKSUM on
+# at this offset for every IPPROTO_ICMPV6 raw socket, so the application
+# never supplies it (it cannot — the pseudo-header includes the
+# stack-selected source address).
+ICMP6__CHECKSUM__OFFSET: int = 2
+IP6__PSHDR__STRUCT: str = "! 16s 16s L BBBB"
 
 
 class RawSocket(socket):
@@ -254,6 +264,31 @@ class RawSocket(socket):
 
         __debug__ and log("socket", f"<g>[{self}]</> - Connected socket")
 
+    def _icmp6_checksummed(self, data: bytes, /, *, local: Ip6Address, remote: Ip6Address) -> bytes:
+        """
+        For an ICMPv6 raw socket, compute and inject the mandatory ICMPv6
+        checksum (RFC 4443 §2.3) over the IPv6 pseudo-header, mirroring
+        Linux which forces 'IPV6_CHECKSUM' at offset 2 for every
+        'IPPROTO_ICMPV6' raw socket. The application cannot compute it
+        itself because the pseudo-header includes the stack-selected
+        source address; for any other raw protocol the payload is left
+        untouched.
+        """
+
+        if self._ip_proto is not IpProto.ICMP6 or len(data) < ICMP6__CHECKSUM__OFFSET + 2:
+            return data
+
+        pshdr_sum = sum(
+            struct.unpack(
+                "! 5Q",
+                struct.pack(IP6__PSHDR__STRUCT, bytes(local), bytes(remote), len(data), 0, 0, 0, int(IpProto.ICMP6)),
+            )
+        )
+        buffer = bytearray(data)
+        buffer[ICMP6__CHECKSUM__OFFSET : ICMP6__CHECKSUM__OFFSET + 2] = b"\x00\x00"
+        buffer[ICMP6__CHECKSUM__OFFSET : ICMP6__CHECKSUM__OFFSET + 2] = inet_cksum(buffer, init=pshdr_sum).to_bytes(2)
+        return bytes(buffer)
+
     @override
     def send(self, data: bytes) -> int:
         """
@@ -278,7 +313,11 @@ class RawSocket(socket):
                     ip6__local_address=cast(Ip6Address, self._local_ip_address),
                     ip6__remote_address=cast(Ip6Address, self._remote_ip_address),
                     ip6__next=self._ip_proto,
-                    ip6__payload=data,
+                    ip6__payload=self._icmp6_checksummed(
+                        data,
+                        local=cast(Ip6Address, self._local_ip_address),
+                        remote=cast(Ip6Address, self._remote_ip_address),
+                    ),
                     ip6__hop=self._effective_ip_ttl(),
                     ip6__ecn=self._effective_ip_ecn(),
                     ip6__dscp=self._effective_ip_dscp(),
@@ -328,7 +367,11 @@ class RawSocket(socket):
                     ip6__local_address=cast(Ip6Address, local_ip_address),
                     ip6__remote_address=cast(Ip6Address, remote_ip_address),
                     ip6__next=self._ip_proto,
-                    ip6__payload=data,
+                    ip6__payload=self._icmp6_checksummed(
+                        data,
+                        local=cast(Ip6Address, local_ip_address),
+                        remote=cast(Ip6Address, remote_ip_address),
+                    ),
                     ip6__hop=self._effective_ip_ttl(),
                     ip6__ecn=self._effective_ip_ecn(),
                     ip6__dscp=self._effective_ip_dscp(),
