@@ -185,6 +185,7 @@ class IpOption(IntEnum):
     IP_RECVOPTS = 6  # int 0/1: enable IP_OPTIONS cmsg on recvmsg (RFC 1122 §4.1.3.2)
     IP_RETOPTS = 7  # int 0/1: deprecated alias of IP_RECVOPTS (Linux compat)
     IP_RECVERR = 11  # int 0/1: enable error queue (recvmsg MSG_ERRQUEUE — Linux ip(7))
+    IP_RECVTTL = 12  # int 0/1: enable IP_TTL cmsg on recvmsg (Linux ip(7))
     IP_RECVTOS = 13  # int 0/1: enable IP_TOS cmsg on recvmsg (RFC 1122 §4.1.4 MAY)
     IP_MTU = 14  # int (getsockopt only): effective PMTU for connected peer (RFC 1122 §3.4 GET_MAXSIZES)
     IP_ADD_MEMBERSHIP = 35  # ip_mreq bytes: join an IPv4 multicast group (RFC 1112 / 3376)
@@ -201,6 +202,7 @@ IP_OPTIONS = IpOption.IP_OPTIONS
 IP_RECVOPTS = IpOption.IP_RECVOPTS
 IP_RETOPTS = IpOption.IP_RETOPTS
 IP_RECVERR = IpOption.IP_RECVERR
+IP_RECVTTL = IpOption.IP_RECVTTL
 IP_RECVTOS = IpOption.IP_RECVTOS
 IP_MTU = IpOption.IP_MTU
 IP_ADD_MEMBERSHIP = IpOption.IP_ADD_MEMBERSHIP
@@ -224,6 +226,8 @@ class IpV6Option(IntEnum):
     IPV6_MTU = 24  # int (getsockopt only): effective PMTU for connected peer
     IPV6_RECVERR = 25  # int 0/1: enable IPv6 error queue (recvmsg MSG_ERRQUEUE — Linux ipv6(7))
     IPV6_V6ONLY = 26  # int 0/1: AF_INET6 socket accepts IPv4-mapped peers when 0 (dual-stack)
+    IPV6_RECVHOPLIMIT = 51  # int 0/1: enable IPV6_HOPLIMIT cmsg on recvmsg (RFC 3542 §6.3)
+    IPV6_HOPLIMIT = 52  # int (cmsg only): received IPv6 Hop Limit (RFC 3542 §6.3)
     IPV6_RECVTCLASS = 66  # int 0/1: enable IPV6_TCLASS cmsg on recvmsg (RFC 3542 §6.5)
     IPV6_TCLASS = 67  # int: 8-bit Traffic Class (DSCP+ECN, RFC 2474)
 
@@ -240,6 +244,8 @@ IPV6_DROP_MEMBERSHIP = IpV6Option.IPV6_LEAVE_GROUP
 IPV6_MTU = IpV6Option.IPV6_MTU
 IPV6_RECVERR = IpV6Option.IPV6_RECVERR
 IPV6_V6ONLY = IpV6Option.IPV6_V6ONLY
+IPV6_RECVHOPLIMIT = IpV6Option.IPV6_RECVHOPLIMIT
+IPV6_HOPLIMIT = IpV6Option.IPV6_HOPLIMIT
 IPV6_RECVTCLASS = IpV6Option.IPV6_RECVTCLASS
 IPV6_TCLASS = IpV6Option.IPV6_TCLASS
 

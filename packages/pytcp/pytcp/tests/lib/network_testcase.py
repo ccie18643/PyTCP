@@ -215,6 +215,7 @@ class NetworkTestCase(TestCase):
     _interfaces_snapshot: dict[int, PacketHandlerL2 | PacketHandlerL3]
     _packet_sockets_prior: list[Any]
     _sockets_prior: dict[Any, Any]
+    _icmp_echo_sockets_prior: dict[Any, Any]
     _timer: FakeTimer
     _timer_prior: Timer | None
 
@@ -444,6 +445,11 @@ class NetworkTestCase(TestCase):
         self._sockets_prior = dict(stack.sockets)
         stack.sockets.clear()
 
+        # Snapshot + clear the process-wide ICMP Echo ('ping') socket
+        # registry for the same reason (§5.4 module-state-on-touch).
+        self._icmp_echo_sockets_prior = dict(stack.icmp_echo_sockets)
+        stack.icmp_echo_sockets.clear()
+
     def _add_interface(
         self,
         *,
@@ -550,6 +556,10 @@ class NetworkTestCase(TestCase):
         # Restore the TCP/UDP socket table to its pre-test snapshot.
         stack.sockets.clear()
         stack.sockets.update(self._sockets_prior)
+
+        # Restore the ICMP Echo ('ping') socket registry.
+        stack.icmp_echo_sockets.clear()
+        stack.icmp_echo_sockets.update(self._icmp_echo_sockets_prior)
 
         stack.__dict__.update(self._stack__attr_snapshot)
 

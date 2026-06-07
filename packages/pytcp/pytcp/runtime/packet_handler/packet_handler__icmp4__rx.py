@@ -56,6 +56,7 @@ from pytcp.protocols.icmp.icmp__error_demux import EmbeddedL4, parse_embedded_l4
 from pytcp.protocols.tcp.tcp__icmp_metadata import IcmpCategory, IcmpMetadata
 from pytcp.runtime.socket import AddressFamily, SocketType
 from pytcp.runtime.socket.error_queue import SoEeOrigin
+from pytcp.runtime.socket.ping__metadata import PingMetadata
 from pytcp.runtime.socket.socket_id import SocketId
 from pytcp.runtime.socket.tcp__socket import TcpSocket
 from pytcp.runtime.socket.udp__metadata import UdpMetadata
@@ -126,11 +127,26 @@ class Icmp4RxHandler:
         )
         self._if._packet_stats_rx.icmp4__echo_reply += 1
 
-        # An inbound Echo Reply is delivered to matching RAW sockets by
-        # the IPv4 RX path ('packet_handler__ip4__rx'), which clones the
+        # Demux to a ping socket (Linux 'SOCK_DGRAM' / 'IPPROTO_ICMP') by
+        # the Echo Reply's ICMP id. The owning socket receives the ICMP
+        # message bytes (no IP header) plus the reply's TTL for an
+        # 'IP_TTL' cmsg.
+        message = packet_rx.icmp4.message
+        ping_socket = stack.icmp_echo_sockets.get((AddressFamily.INET4, message.id))
+        if ping_socket is not None and ping_socket.accepts_reply_to(packet_rx.ip4.dst):
+            ping_socket.process_echo_reply(
+                PingMetadata(
+                    ip__ver=packet_rx.ip.ver,
+                    ip__remote_address=packet_rx.ip4.src,
+                    ip__ttl=packet_rx.ip4.ttl,
+                    icmp__data=bytes(message),
+                )
+            )
+
+        # An inbound Echo Reply is also delivered to matching RAW sockets
+        # by the IPv4 RX path ('packet_handler__ip4__rx'), which clones the
         # full IPv4 packet to every matching raw socket (Linux
-        # 'raw_local_deliver'). The host stack itself has nothing further
-        # to do with an Echo Reply.
+        # 'raw_local_deliver').
 
     def __phrx_icmp4__destination_unreachable(self, packet_rx: PacketRx) -> None:
         """

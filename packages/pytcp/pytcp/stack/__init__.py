@@ -68,6 +68,8 @@ if TYPE_CHECKING:
     from pytcp.lib.plpmtud import PmtuSearch
     from pytcp.protocols.ip4.link_local.link_local__client import Ip4LinkLocal
     from pytcp.runtime.fib import RouteTable
+    from pytcp.runtime.socket import AddressFamily
+    from pytcp.runtime.socket.ping__socket import PingSocket
 
 
 assert sys.version_info >= (
@@ -512,6 +514,13 @@ sockets: SocketTable = SocketTable()
 # bound sockets. Module-level singleton (like 'sockets'); snapshotted /
 # cleared / restored by 'NetworkTestCase' per test.
 packet_sockets: PacketSocketTable = PacketSocketTable()
+# ICMP Echo ('ping') datagram-socket registry — Linux 'SOCK_DGRAM +
+# IPPROTO_ICMP / IPPROTO_ICMPV6'. Keyed by '(address family, ICMP id)';
+# the id is unique per family, so the ICMP Echo Reply handler demuxes a
+# reply to its owning socket by id (Linux keeps ping sockets in their own
+# 'ping_table', separate from 'sockets'). Module-level singleton;
+# snapshotted / cleared / restored by 'NetworkTestCase' per test.
+icmp_echo_sockets: dict[tuple[AddressFamily, int], PingSocket] = {}
 # RFC 1191 §3 / RFC 8201 §4 per-destination Path-MTU cache. Keyed
 # by remote IP (v4 or v6); value is the most recently learned next-
 # hop MTU. Populated by ICMP Frag-Needed / Packet-Too-Big handlers
