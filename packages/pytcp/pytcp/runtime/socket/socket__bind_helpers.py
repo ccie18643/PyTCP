@@ -70,46 +70,18 @@ def pick_local_ip6_address(
     remote_ip6_address: Ip6Address,
 ) -> Ip6Address:
     """
-    Pick an appropriate source IPv6 address based on the provided destination IPv6 address.
+    Pick an appropriate source IPv6 address for a stack-originated packet
+    to the destination.
 
-    Selection policy: prefer the address of a local network the destination belongs to;
-    otherwise consult the FIB — if a route covers the destination, use the route's
-    preferred source when set, else the first configured host's address;
-    otherwise return the unspecified address.
+    Egress-aware: delegates to 'stack.select_local_ip6_source', which
+    resolves the egress interface via the FIB and runs RFC 6724 source
+    selection over THAT interface's addresses. This is what keeps a
+    multi-homed host from sourcing a packet with an address the egress
+    interface does not own. Returns the unspecified address when no
+    egress interface or acceptable source resolves.
     """
 
-    ip6_hosts = stack.local_ip6_hosts()
-
-    for ip6_host in ip6_hosts:
-        if remote_ip6_address in ip6_host.network:
-            return ip6_host.address
-
-    # Off-link: the next hop is the FIB's job, not a per-IfAddr
-    # gateway. 'hasattr' guards reduced test contexts with no
-    # Route plane bound (same pattern as the RA chokepoint).
-    ip6_fib = stack.ip6_fib if hasattr(stack, "ip6_fib") else None
-    if ip6_fib is not None:
-        route = ip6_fib.lookup(
-            remote_ip6_address,
-            connected=stack.connected_ip6_networks(),
-        )
-        if route is not None:
-            if route.prefsrc is not None:
-                return route.prefsrc
-            if ip6_hosts:
-                # RFC 6724 §5 rule 2 (prefer appropriate scope): a
-                # link-local source cannot reach a non-link-local
-                # destination (RFC 4007 §6), so never source one for such
-                # a destination — pick the first global / non-link-local
-                # host instead, falling back to the first host only when
-                # every configured address is link-local.
-                if not remote_ip6_address.is_link_local:
-                    for ip6_host in ip6_hosts:
-                        if not ip6_host.address.is_link_local:
-                            return ip6_host.address
-                return ip6_hosts[0].address
-
-    return Ip6Address()
+    return stack.select_local_ip6_source(remote_ip6_address)
 
 
 def pick_local_ip4_address(
@@ -117,36 +89,18 @@ def pick_local_ip4_address(
     remote_ip4_address: Ip4Address,
 ) -> Ip4Address:
     """
-    Pick an appropriate source IPv4 address based on the provided destination IPv4 address.
+    Pick an appropriate source IPv4 address for a stack-originated packet
+    to the destination.
 
-    Selection policy: prefer the address of a local network the destination belongs to;
-    otherwise consult the FIB — if a route covers the destination, use the route's
-    preferred source when set, else the first configured host's address;
-    otherwise return the unspecified address.
+    Egress-aware: delegates to 'stack.select_local_ip4_source', which
+    resolves the egress interface via the FIB and selects a source from
+    THAT interface's addresses, so a multi-homed host never sources a
+    packet with an address the egress interface does not own. Returns the
+    unspecified address when no egress interface or acceptable source
+    resolves.
     """
 
-    ip4_hosts = stack.local_ip4_hosts()
-
-    for ip4_host in ip4_hosts:
-        if remote_ip4_address in ip4_host.network:
-            return ip4_host.address
-
-    # Off-link: the next hop is the FIB's job, not a per-IfAddr
-    # gateway. 'hasattr' guards reduced test contexts with no
-    # Route plane bound (same pattern as the RA chokepoint).
-    ip4_fib = stack.ip4_fib if hasattr(stack, "ip4_fib") else None
-    if ip4_fib is not None:
-        route = ip4_fib.lookup(
-            remote_ip4_address,
-            connected=stack.connected_ip4_networks(),
-        )
-        if route is not None:
-            if route.prefsrc is not None:
-                return route.prefsrc
-            if ip4_hosts:
-                return ip4_hosts[0].address
-
-    return Ip4Address()
+    return stack.select_local_ip4_source(remote_ip4_address)
 
 
 def _ephemeral_port_pool() -> range:

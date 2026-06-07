@@ -34,13 +34,7 @@ from types import SimpleNamespace
 from unittest import TestCase
 from unittest.mock import patch
 
-from net_addr import (
-    Ip4Address,
-    Ip4Network,
-    Ip6Address,
-    Ip6Network,
-)
-from pytcp.runtime.fib import Route, RouteProtocol, RouteTable
+from net_addr import Ip4Address, Ip6Address
 from pytcp.runtime.socket import AddressFamily, SocketType
 from pytcp.runtime.socket.socket__bind_helpers import (
     is_address_in_use,
@@ -54,303 +48,98 @@ from pytcp.runtime.socket.socket__bind_helpers import (
 
 class TestPickLocalIp6Address(TestCase):
     """
-    The 'pick_local_ip6_address()' tests.
+    The 'pick_local_ip6_address()' delegation tests.
     """
 
-    def test__ip_helper__pick_local_ip6__remote_in_local_network(self) -> None:
+    def test__ip_helper__pick_local_ip6__delegates_to_egress_aware_selector(self) -> None:
         """
-        Ensure the helper returns the local host's own address when
-        the remote falls inside a configured local IPv6 network —
-        the first (preferred) on-link branch of the selector.
+        Ensure pick_local_ip6_address() delegates to the egress-aware
+        'stack.select_local_ip6_source', which resolves the egress
+        interface and selects a source from THAT interface's addresses, so
+        a multi-homed host never sources from a non-egress interface.
+
+        Reference: RFC 6724 §5 (egress-interface-scoped source selection).
+        """
+
+        with patch(
+            "pytcp.runtime.socket.socket__bind_helpers.stack.select_local_ip6_source",
+            return_value=Ip6Address("2001:db8::abcd"),
+        ) as select:
+            result = pick_local_ip6_address(remote_ip6_address=Ip6Address("2606:4700::1"))
+
+        select.assert_called_once_with(Ip6Address("2606:4700::1"))
+        self.assertEqual(
+            result,
+            Ip6Address("2001:db8::abcd"),
+            msg="pick_local_ip6_address() must return the egress-aware selector's choice.",
+        )
+
+    def test__ip_helper__pick_local_ip6__unresolved_egress_returns_unspecified(self) -> None:
+        """
+        Ensure pick_local_ip6_address() returns the unspecified address
+        when the egress-aware selector resolves no source (no egress
+        interface / routing plane down).
 
         Reference: PyTCP test infrastructure (no RFC clause).
         """
 
-        local_host = SimpleNamespace(
-            address=Ip6Address("2001:db8::100"),
-            network=Ip6Network("2001:db8::/64"),
-        )
-        fake_handler = SimpleNamespace(ip6_host=[local_host])
-
         with patch(
-            "pytcp.runtime.socket.socket__bind_helpers.stack.local_ip6_hosts", return_value=tuple(fake_handler.ip6_host)
-        ):
-            result = pick_local_ip6_address(remote_ip6_address=Ip6Address("2001:db8::5"))
-
-        self.assertEqual(
-            result,
-            Ip6Address("2001:db8::100"),
-            msg="pick_local_ip6_address() must return the matching local address for an in-network remote.",
-        )
-
-    def test__ip_helper__pick_local_ip6__external_with_default_route_uses_first_host(self) -> None:
-        """
-        Ensure that for an off-link remote covered by a FIB
-        default route (no route prefsrc) the helper returns the
-        first configured host's address.
-
-        Reference: RFC 1122 §3.3.1 (next-hop / source selection for off-link).
-        """
-
-        host_a = SimpleNamespace(address=Ip6Address("fd00::1"), network=Ip6Network("fd00::/8"))
-        host_b = SimpleNamespace(address=Ip6Address("2001:db8::100"), network=Ip6Network("2001:db8::/64"))
-        fake_handler = SimpleNamespace(ip6_host=[host_a, host_b])
-        fib: RouteTable[Ip6Address, Ip6Network] = RouteTable()
-        fib.add(
-            route=Route(
-                destination=Ip6Network("::/0"),
-                gateway=Ip6Address("fe80::1"),
-                protocol=RouteProtocol.RA,
-            )
-        )
-
-        with (
-            patch(
-                "pytcp.runtime.socket.socket__bind_helpers.stack.local_ip6_hosts",
-                return_value=tuple(fake_handler.ip6_host),
-            ),
-            patch("pytcp.runtime.socket.socket__bind_helpers.stack.ip6_fib", fib, create=True),
-        ):
-            result = pick_local_ip6_address(remote_ip6_address=Ip6Address("2606:4700::1"))
-
-        self.assertEqual(
-            result,
-            Ip6Address("fd00::1"),
-            msg="An off-link remote with a default route must use the first host's address.",
-        )
-
-    def test__ip_helper__pick_local_ip6__external_skips_link_local_source(self) -> None:
-        """
-        Ensure that for an off-link non-link-local remote covered by a FIB
-        default route the helper skips a link-local host and sources from a
-        global address, since a link-local source cannot reach a global
-        destination.
-
-        Reference: RFC 6724 §5 rule 2 (prefer appropriate scope).
-        Reference: RFC 4007 §6 (a link-local source cannot reach a global destination).
-        """
-
-        host_link_local = SimpleNamespace(address=Ip6Address("fe80::abcd"), network=Ip6Network("fe80::/64"))
-        host_global = SimpleNamespace(
-            address=Ip6Address("2603:808c:2800:4301::7"),
-            network=Ip6Network("2603:808c:2800:4301::/64"),
-        )
-        fake_handler = SimpleNamespace(ip6_host=[host_link_local, host_global])
-        fib: RouteTable[Ip6Address, Ip6Network] = RouteTable()
-        fib.add(
-            route=Route(
-                destination=Ip6Network("::/0"),
-                gateway=Ip6Address("fe80::1"),
-                protocol=RouteProtocol.RA,
-            )
-        )
-
-        with (
-            patch(
-                "pytcp.runtime.socket.socket__bind_helpers.stack.local_ip6_hosts",
-                return_value=tuple(fake_handler.ip6_host),
-            ),
-            patch("pytcp.runtime.socket.socket__bind_helpers.stack.ip6_fib", fib, create=True),
-        ):
-            result = pick_local_ip6_address(remote_ip6_address=Ip6Address("2600::"))
-
-        self.assertEqual(
-            result,
-            Ip6Address("2603:808c:2800:4301::7"),
-            msg="An off-link global remote must source from a global host, never a link-local one.",
-        )
-
-    def test__ip_helper__pick_local_ip6__route_prefsrc_preferred(self) -> None:
-        """
-        Ensure a route's preferred source is used in preference to
-        the first host when the matched route carries a prefsrc.
-
-        Reference: RFC 1122 §3.3.1 (next-hop / source selection for off-link).
-        """
-
-        host = SimpleNamespace(address=Ip6Address("2001:db8::100"), network=Ip6Network("2001:db8::/64"))
-        fake_handler = SimpleNamespace(ip6_host=[host])
-        fib: RouteTable[Ip6Address, Ip6Network] = RouteTable()
-        fib.add(
-            route=Route(
-                destination=Ip6Network("::/0"),
-                gateway=Ip6Address("fe80::1"),
-                prefsrc=Ip6Address("2001:db8::abcd"),
-                protocol=RouteProtocol.STATIC,
-            )
-        )
-
-        with (
-            patch(
-                "pytcp.runtime.socket.socket__bind_helpers.stack.local_ip6_hosts",
-                return_value=tuple(fake_handler.ip6_host),
-            ),
-            patch("pytcp.runtime.socket.socket__bind_helpers.stack.ip6_fib", fib, create=True),
-        ):
-            result = pick_local_ip6_address(remote_ip6_address=Ip6Address("2606:4700::1"))
-
-        self.assertEqual(
-            result,
-            Ip6Address("2001:db8::abcd"),
-            msg="A route prefsrc must take precedence over the first-host fallback.",
-        )
-
-    def test__ip_helper__pick_local_ip6__no_route_returns_unspecified(self) -> None:
-        """
-        Ensure the helper returns the unspecified '::' address when
-        the remote matches no local network and no FIB route
-        covers it.
-
-        Reference: RFC 1122 §3.3.1 (next-hop / source selection for off-link).
-        """
-
-        orphan = SimpleNamespace(address=Ip6Address("2001:db8::100"), network=Ip6Network("2001:db8::/64"))
-        fake_handler = SimpleNamespace(ip6_host=[orphan])
-        fib: RouteTable[Ip6Address, Ip6Network] = RouteTable()
-
-        with (
-            patch(
-                "pytcp.runtime.socket.socket__bind_helpers.stack.local_ip6_hosts",
-                return_value=tuple(fake_handler.ip6_host),
-            ),
-            patch("pytcp.runtime.socket.socket__bind_helpers.stack.ip6_fib", fib, create=True),
+            "pytcp.runtime.socket.socket__bind_helpers.stack.select_local_ip6_source",
+            return_value=Ip6Address(),
         ):
             result = pick_local_ip6_address(remote_ip6_address=Ip6Address("2606:4700::1"))
 
         self.assertEqual(
             result,
             Ip6Address(),
-            msg="pick_local_ip6_address() must fall back to the unspecified '::' address.",
+            msg="pick_local_ip6_address() must surface the unspecified address when no source resolves.",
         )
 
 
 class TestPickLocalIp4Address(TestCase):
     """
-    The 'pick_local_ip4_address()' tests.
+    The 'pick_local_ip4_address()' delegation tests.
     """
 
-    def test__ip_helper__pick_local_ip4__remote_in_local_network(self) -> None:
+    def test__ip_helper__pick_local_ip4__delegates_to_egress_aware_selector(self) -> None:
         """
-        Ensure the helper returns the matching local host address
-        when the remote is inside a configured IPv4 network.
+        Ensure pick_local_ip4_address() delegates to the egress-aware
+        'stack.select_local_ip4_source'.
 
         Reference: PyTCP test infrastructure (no RFC clause).
         """
 
-        local_host = SimpleNamespace(
-            address=Ip4Address("10.0.0.100"),
-            network=Ip4Network("10.0.0.0/24"),
+        with patch(
+            "pytcp.runtime.socket.socket__bind_helpers.stack.select_local_ip4_source",
+            return_value=Ip4Address("192.0.2.55"),
+        ) as select:
+            result = pick_local_ip4_address(remote_ip4_address=Ip4Address("1.1.1.1"))
+
+        select.assert_called_once_with(Ip4Address("1.1.1.1"))
+        self.assertEqual(
+            result,
+            Ip4Address("192.0.2.55"),
+            msg="pick_local_ip4_address() must return the egress-aware selector's choice.",
         )
-        fake_handler = SimpleNamespace(ip4_host=[local_host])
+
+    def test__ip_helper__pick_local_ip4__unresolved_egress_returns_unspecified(self) -> None:
+        """
+        Ensure pick_local_ip4_address() returns the unspecified address
+        when the egress-aware selector resolves no source.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
 
         with patch(
-            "pytcp.runtime.socket.socket__bind_helpers.stack.local_ip4_hosts", return_value=tuple(fake_handler.ip4_host)
+            "pytcp.runtime.socket.socket__bind_helpers.stack.select_local_ip4_source",
+            return_value=Ip4Address(),
         ):
-            result = pick_local_ip4_address(remote_ip4_address=Ip4Address("10.0.0.5"))
-
-        self.assertEqual(
-            result,
-            Ip4Address("10.0.0.100"),
-            msg="pick_local_ip4_address() must return the matching local address for an in-network remote.",
-        )
-
-    def test__ip_helper__pick_local_ip4__external_with_default_route_uses_first_host(self) -> None:
-        """
-        Ensure that for an off-link remote covered by a FIB
-        default route (no route prefsrc) the helper returns the
-        first configured host's address.
-
-        Reference: RFC 1122 §3.3.1 (next-hop / source selection for off-link).
-        """
-
-        host_a = SimpleNamespace(address=Ip4Address("172.16.0.1"), network=Ip4Network("172.16.0.0/16"))
-        host_b = SimpleNamespace(address=Ip4Address("10.0.0.100"), network=Ip4Network("10.0.0.0/24"))
-        fake_handler = SimpleNamespace(ip4_host=[host_a, host_b])
-        fib: RouteTable[Ip4Address, Ip4Network] = RouteTable()
-        fib.add(
-            route=Route(
-                destination=Ip4Network("0.0.0.0/0"),
-                gateway=Ip4Address("10.0.0.1"),
-                protocol=RouteProtocol.DHCP,
-            )
-        )
-
-        with (
-            patch(
-                "pytcp.runtime.socket.socket__bind_helpers.stack.local_ip4_hosts",
-                return_value=tuple(fake_handler.ip4_host),
-            ),
-            patch("pytcp.runtime.socket.socket__bind_helpers.stack.ip4_fib", fib, create=True),
-        ):
-            result = pick_local_ip4_address(remote_ip4_address=Ip4Address("8.8.8.8"))
-
-        self.assertEqual(
-            result,
-            Ip4Address("172.16.0.1"),
-            msg="An off-link remote with a default route must use the first host's address.",
-        )
-
-    def test__ip_helper__pick_local_ip4__route_prefsrc_preferred(self) -> None:
-        """
-        Ensure a route's preferred source is used in preference to
-        the first host when the matched route carries a prefsrc.
-
-        Reference: RFC 1122 §3.3.1 (next-hop / source selection for off-link).
-        """
-
-        host = SimpleNamespace(address=Ip4Address("10.0.0.100"), network=Ip4Network("10.0.0.0/24"))
-        fake_handler = SimpleNamespace(ip4_host=[host])
-        fib: RouteTable[Ip4Address, Ip4Network] = RouteTable()
-        fib.add(
-            route=Route(
-                destination=Ip4Network("0.0.0.0/0"),
-                gateway=Ip4Address("10.0.0.1"),
-                prefsrc=Ip4Address("10.0.0.200"),
-                protocol=RouteProtocol.STATIC,
-            )
-        )
-
-        with (
-            patch(
-                "pytcp.runtime.socket.socket__bind_helpers.stack.local_ip4_hosts",
-                return_value=tuple(fake_handler.ip4_host),
-            ),
-            patch("pytcp.runtime.socket.socket__bind_helpers.stack.ip4_fib", fib, create=True),
-        ):
-            result = pick_local_ip4_address(remote_ip4_address=Ip4Address("8.8.8.8"))
-
-        self.assertEqual(
-            result,
-            Ip4Address("10.0.0.200"),
-            msg="A route prefsrc must take precedence over the first-host fallback.",
-        )
-
-    def test__ip_helper__pick_local_ip4__no_route_returns_unspecified(self) -> None:
-        """
-        Ensure the helper returns the unspecified '0.0.0.0'
-        address when the remote matches no local network and no
-        FIB route covers it.
-
-        Reference: RFC 1122 §3.3.1 (next-hop / source selection for off-link).
-        """
-
-        orphan = SimpleNamespace(address=Ip4Address("10.0.0.100"), network=Ip4Network("10.0.0.0/24"))
-        fake_handler = SimpleNamespace(ip4_host=[orphan])
-        fib: RouteTable[Ip4Address, Ip4Network] = RouteTable()
-
-        with (
-            patch(
-                "pytcp.runtime.socket.socket__bind_helpers.stack.local_ip4_hosts",
-                return_value=tuple(fake_handler.ip4_host),
-            ),
-            patch("pytcp.runtime.socket.socket__bind_helpers.stack.ip4_fib", fib, create=True),
-        ):
-            result = pick_local_ip4_address(remote_ip4_address=Ip4Address("8.8.8.8"))
+            result = pick_local_ip4_address(remote_ip4_address=Ip4Address("1.1.1.1"))
 
         self.assertEqual(
             result,
             Ip4Address(),
-            msg="pick_local_ip4_address() must fall back to the unspecified '0.0.0.0' address.",
+            msg="pick_local_ip4_address() must surface the unspecified address when no source resolves.",
         )
 
 

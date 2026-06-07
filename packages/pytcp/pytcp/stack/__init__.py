@@ -771,6 +771,52 @@ def egress_interface_name(destination: Ip4Address | Ip6Address, /) -> str | None
     return handler._interface_name if handler is not None else None
 
 
+def select_local_ip6_source(destination: Ip6Address, /) -> Ip6Address:
+    """
+    Select the IPv6 source address for a stack-originated packet to
+    'destination', honoring the egress interface: resolve the egress
+    interface via the FIB, then run RFC 6724 source selection over THAT
+    interface's addresses (its '_select_ip6_source'). Returns the
+    unspecified address when the routing plane is down, no egress
+    interface resolves, or no acceptable source is found.
+
+    Egress-aware selection is what keeps a multi-homed host from sourcing
+    a packet with an address the egress interface does not own — the bug
+    where a global address from interface A was attached to a datagram
+    the FIB egresses on interface B, which B then dropped because it does
+    not own A's address.
+    """
+
+    if "ip4_fib" not in globals() or "ip6_fib" not in globals():
+        return Ip6Address()
+    handler = _egress_handler_via_fib(destination)
+    if handler is not None:
+        source = handler._ip6_tx._select_ip6_source(ip6__dst=destination)
+        if source is not None:
+            return source
+    return Ip6Address()
+
+
+def select_local_ip4_source(destination: Ip4Address, /) -> Ip4Address:
+    """
+    Select the IPv4 source address for a stack-originated packet to
+    'destination', honoring the egress interface (its
+    '_select_ip4_source'). The IPv4 companion to 'select_local_ip6_source'
+    — see there for the multi-homed rationale. Returns the unspecified
+    address when the routing plane is down, no egress interface resolves,
+    or no acceptable source is found.
+    """
+
+    if "ip4_fib" not in globals() or "ip6_fib" not in globals():
+        return Ip4Address()
+    handler = _egress_handler_via_fib(destination)
+    if handler is not None:
+        source = handler._ip4_tx._select_ip4_source(ip4__dst=destination)
+        if source is not None:
+            return source
+    return Ip4Address()
+
+
 def local_ip4_hosts() -> tuple[Ip4IfAddr, ...]:
     """
     Return every configured IPv4 interface address across ALL registered
