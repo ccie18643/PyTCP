@@ -30,7 +30,7 @@ net_proto/tests/unit/protocols/tcp/test__tcp__option__unknown.py
 ver 3.0.8
 """
 
-from typing import Any
+from typing import Any, override
 from unittest import TestCase
 
 from parameterized import parameterized_class  # type: ignore[import-untyped]
@@ -49,6 +49,7 @@ class TestTcpOptionUnknownAsserts(TestCase):
     The unknown TCP option constructor argument assert tests.
     """
 
+    @override
     def setUp(self) -> None:
         """
         Build a valid default kwargs dict for the TCP unknown option
@@ -160,6 +161,7 @@ class TestTcpOptionUnknownAssembler(TestCase):
     The unknown TCP option assembler tests.
     """
 
+    @override
     def setUp(self) -> None:
         """
         Build the unknown TCP option fixture (type=255, data=ASCII hex).

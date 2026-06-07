@@ -32,6 +32,7 @@ ver 3.0.8
 """
 
 from types import SimpleNamespace
+from typing import override
 from unittest import TestCase
 from unittest.mock import MagicMock, patch
 
@@ -49,6 +50,7 @@ class _TcpSessionSyscallFixture(TestCase):
     constructed session ready to exercise syscalls.
     """
 
+    @override
     def setUp(self) -> None:
         """
         Stub every stack dependency that the session touches.
@@ -82,6 +84,7 @@ class _TcpSessionSyscallFixture(TestCase):
         self._log_patch = patch("pytcp.protocols.tcp.session.tcp__session.log")
         self._log_patch.start()
 
+    @override
     def tearDown(self) -> None:
         """
         Remove the stack patches.

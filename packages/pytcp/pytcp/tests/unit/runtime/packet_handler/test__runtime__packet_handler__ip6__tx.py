@@ -31,7 +31,7 @@ ver 3.0.8
 """
 
 from collections.abc import Callable
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING, cast, override
 from unittest import TestCase
 from unittest.mock import create_autospec
 
@@ -205,6 +205,7 @@ class TestPacketHandlerIp6TxValidation(TestCase):
     The source- and destination-address validation branches.
     """
 
+    @override
     def setUp(self) -> None:
         self._handler, self._if = _make_ip6_tx()
 

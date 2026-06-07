@@ -46,6 +46,7 @@ ver 3.0.8
 """
 
 import time
+from typing import override
 from unittest.mock import patch
 
 from net_addr import Ip6Address, Ip6Network, MacAddress
@@ -93,6 +94,7 @@ class TestIcmp6Nd__SlaacPrefix__Install(NdTestCase):
     A non-zero-lifetime PI installs an Icmp6SlaacAddress entry.
     """
 
+    @override
     def tearDown(self) -> None:
         """
         Restore sysctl defaults so per-test overrides don't leak.
@@ -191,6 +193,7 @@ class TestIcmp6Nd__SlaacPrefix__Refresh(NdTestCase):
     A second PI for the same prefix refreshes lifetimes in place.
     """
 
+    @override
     def tearDown(self) -> None:
         """
         Restore sysctl defaults so per-test overrides don't leak.
@@ -265,6 +268,7 @@ class TestIcmp6Nd__SlaacPrefix__MultiplePrefixes(NdTestCase):
     Distinct prefixes in the same RA produce distinct entries.
     """
 
+    @override
     def tearDown(self) -> None:
         """
         Restore sysctl defaults so per-test overrides don't leak.
@@ -316,6 +320,7 @@ class TestIcmp6Nd__SlaacPrefix__ZeroValidLifetimeRemoves(NdTestCase):
     A follow-up PI with valid_lifetime=0 removes the matching entry.
     """
 
+    @override
     def tearDown(self) -> None:
         """
         Restore sysctl defaults so per-test overrides don't leak.
@@ -436,6 +441,7 @@ class TestIcmp6Nd__SlaacPrefix__LazyAgeing(NdTestCase):
     their valid_until deadline.
     """
 
+    @override
     def tearDown(self) -> None:
         """
         Restore sysctl defaults so per-test overrides don't leak.
@@ -494,6 +500,7 @@ class TestIcmp6Nd__SlaacPrefix__SysctlAcceptRaPinfo(NdTestCase):
     (Linux parity).
     """
 
+    @override
     def tearDown(self) -> None:
         """
         Restore sysctl defaults so per-test overrides don't leak.
@@ -551,6 +558,7 @@ class TestIcmp6Nd__SlaacPrefix__IndependentFromRouterLifetime(NdTestCase):
     usefulness as a default router; not to other information").
     """
 
+    @override
     def tearDown(self) -> None:
         """
         Restore sysctl defaults so per-test overrides don't leak.

@@ -30,6 +30,7 @@ pytcp/tests/unit/protocols/ip/test__ip__ip_frag_table.py
 ver 3.0.8
 """
 
+from typing import override
 from unittest import TestCase
 
 from net_addr import Ip4Address, Ip6Address
@@ -93,6 +94,7 @@ class TestIpFragTableAddFragmentIp4(TestCase):
     The 'IpFragTable.add_fragment' tests for the IPv4-shaped flow.
     """
 
+    @override
     def setUp(self) -> None:
         """
         Build a fresh table per test so flow state cannot leak.
@@ -430,6 +432,7 @@ class TestIpFragTableOverlap(TestCase):
     The 'IpFragTable' RFC 5722 §3 overlap-detection tests.
     """
 
+    @override
     def setUp(self) -> None:
         """
         Build a fresh table per test so flow state cannot leak.
@@ -623,6 +626,7 @@ class TestIpFragTableEcnAggregation(TestCase):
     ECN sets).
     """
 
+    @override
     def setUp(self) -> None:
         """
         Build a fresh table + canonical flow-id per test so ECN

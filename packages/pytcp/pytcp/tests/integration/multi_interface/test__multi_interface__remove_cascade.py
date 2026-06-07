@@ -39,7 +39,7 @@ pytcp/tests/integration/multi_interface/test__multi_interface__remove_cascade.py
 ver 3.0.8
 """
 
-from typing import cast
+from typing import cast, override
 from unittest import TestCase
 from unittest.mock import MagicMock, create_autospec
 
@@ -102,6 +102,7 @@ class TestMultiInterfaceRemoveCascade(IcmpTestCase, TestCase):
     The multi-homed-host RTM_DELLINK interface-removal cascade tests.
     """
 
+    @override
     def setUp(self) -> None:
         """
         Bring up the ICMP harness boot interface, mark the stack

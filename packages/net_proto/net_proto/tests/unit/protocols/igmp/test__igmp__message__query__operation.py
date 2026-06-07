@@ -30,7 +30,7 @@ net_proto/tests/unit/protocols/igmp/test__igmp__message__query__operation.py
 ver 3.0.8
 """
 
-from typing import Any
+from typing import Any, override
 from unittest import TestCase
 
 from parameterized import parameterized_class  # type: ignore[import-untyped]
@@ -182,6 +182,7 @@ class TestIgmpMessageQueryParser(TestCase):
     _frame: bytes
     _results: dict[str, Any]
 
+    @override
     def setUp(self) -> None:
         """
         Parse the parametrized IGMP Query frame.

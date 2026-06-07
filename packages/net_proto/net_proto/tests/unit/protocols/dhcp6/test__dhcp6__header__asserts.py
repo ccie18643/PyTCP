@@ -31,7 +31,7 @@ ver 3.0.8
 """
 
 from dataclasses import FrozenInstanceError
-from typing import Any
+from typing import Any, override
 from unittest import TestCase
 
 from net_proto import (
@@ -48,6 +48,7 @@ class TestDhcp6HeaderAsserts(TestCase):
     The DHCPv6 header fields asserts tests.
     """
 
+    @override
     def setUp(self) -> None:
         """
         Create the default arguments for the DHCPv6 header constructor.

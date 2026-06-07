@@ -49,6 +49,7 @@ ver 3.0.8
 """
 
 import time
+from typing import override
 
 from net_addr import Ip6Address, Ip6IfAddr, Ip6Network, MacAddress
 from net_proto import Icmp6NdOptionPi
@@ -98,6 +99,7 @@ class TestIcmp6Nd__SlaacRuntimeClaim__PostBootClaims(NdTestCase):
     '_ip6_ifaddr' once the worker completes.
     """
 
+    @override
     def tearDown(self) -> None:
         """
         Restore sysctl defaults so per-test overrides don't leak.

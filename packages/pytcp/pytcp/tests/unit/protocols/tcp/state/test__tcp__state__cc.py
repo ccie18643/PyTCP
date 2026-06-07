@@ -31,6 +31,7 @@ pytcp/tests/unit/protocols/tcp/state/test__tcp__state__cc.py
 ver 3.0.8
 """
 
+from typing import override
 from unittest import TestCase
 
 from pytcp.protocols.tcp.state.tcp__state__cc import (
@@ -47,6 +48,7 @@ class TestCcState__Defaults(TestCase):
     of 'CcState'.
     """
 
+    @override
     def setUp(self) -> None:
         """
         Construct a default state instance for every test.

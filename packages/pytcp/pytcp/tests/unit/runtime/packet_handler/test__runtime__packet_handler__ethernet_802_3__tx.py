@@ -30,7 +30,7 @@ pytcp/tests/unit/runtime/packet_handler/test__runtime__packet_handler__ethernet_
 ver 3.0.8
 """
 
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING, cast, override
 from unittest import TestCase
 from unittest.mock import create_autospec
 
@@ -98,6 +98,7 @@ class TestPacketHandlerEthernet8023Tx(TestCase):
     The 'Ethernet8023TxHandler._phtx_ethernet_802_3' behaviour tests.
     """
 
+    @override
     def setUp(self) -> None:
         """
         Build the 802.3 TX sub-handler over a stub interface and inject

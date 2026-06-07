@@ -30,7 +30,7 @@ net_proto/tests/unit/protocols/udp/test__udp__assembler__operation.py
 ver 3.0.8
 """
 
-from typing import Any
+from typing import Any, override
 from unittest import TestCase
 from unittest.mock import patch
 
@@ -154,6 +154,7 @@ class TestUdpAssemblerOperation(TestCase):
     _kwargs: dict[str, Any]
     _results: dict[str, Any]
 
+    @override
     def setUp(self) -> None:
         """
         Build the UDP packet assembler from the parametrized kwargs.

@@ -31,6 +31,7 @@ pytcp/tests/unit/protocols/tcp/state/test__tcp__state__rack_tlp.py
 ver 3.0.8
 """
 
+from typing import override
 from unittest import TestCase
 
 from pytcp.protocols.tcp.state.tcp__state__rack_tlp import (
@@ -48,6 +49,7 @@ class TestRackTlpState__Defaults(TestCase):
     of 'RackTlpState'.
     """
 
+    @override
     def setUp(self) -> None:
         """
         Construct a default state instance for every test.

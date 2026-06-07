@@ -35,7 +35,7 @@ import errno
 import fcntl
 import select
 from types import SimpleNamespace
-from typing import Any
+from typing import Any, override
 from unittest import TestCase
 from unittest.mock import patch
 
@@ -87,6 +87,7 @@ class _UdpSocketTestCase(TestCase):
     globals ('sockets', 'packet_handler') and suppresses log output.
     """
 
+    @override
     def setUp(self) -> None:
         """
         Install the module-level stack patches and a fresh, empty
@@ -1347,6 +1348,7 @@ class TestUdpSocketFileno(_UdpSocketTestCase):
             udp__data=memoryview(data),
         )
 
+    @override
     def setUp(self) -> None:
         """
         Build a fresh UDP socket. 'tearDown' closes it before the
@@ -1357,6 +1359,7 @@ class TestUdpSocketFileno(_UdpSocketTestCase):
         super().setUp()
         self._socket = UdpSocket(family=AddressFamily.INET4)
 
+    @override
     def tearDown(self) -> None:
         """
         Close the socket while the 'log' patch is still active, then
@@ -1524,6 +1527,7 @@ class TestUdpSocketNonBlocking(_UdpSocketTestCase):
             udp__data=memoryview(data),
         )
 
+    @override
     def setUp(self) -> None:
         """
         Build a non-blocking UDP socket. tearDown closes it before
@@ -1534,6 +1538,7 @@ class TestUdpSocketNonBlocking(_UdpSocketTestCase):
         self._socket = UdpSocket(family=AddressFamily.INET4)
         self._socket.setblocking(False)
 
+    @override
     def tearDown(self) -> None:
         """
         Close the socket before the parent tears down patches.
@@ -1649,6 +1654,7 @@ class TestUdpSocketRecvBufsize(_UdpSocketTestCase):
             udp__data=memoryview(data),
         )
 
+    @override
     def setUp(self) -> None:
         """
         Build a UDP socket; tearDown closes it before the parent
@@ -1658,6 +1664,7 @@ class TestUdpSocketRecvBufsize(_UdpSocketTestCase):
         super().setUp()
         self._socket = UdpSocket(family=AddressFamily.INET4)
 
+    @override
     def tearDown(self) -> None:
         """
         Close the socket before the parent tears down patches.
@@ -2760,6 +2767,7 @@ class TestUdpSocketSelectorIntegration(_UdpSocketTestCase):
             udp__data=memoryview(data),
         )
 
+    @override
     def setUp(self) -> None:
         """
         Build a UDP socket; tearDown closes it before the parent
@@ -2769,6 +2777,7 @@ class TestUdpSocketSelectorIntegration(_UdpSocketTestCase):
         super().setUp()
         self._socket = UdpSocket(family=AddressFamily.INET4)
 
+    @override
     def tearDown(self) -> None:
         """
         Close the socket before the parent tears down patches.

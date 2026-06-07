@@ -57,7 +57,7 @@ ver 3.0.8
 
 import threading
 import time
-from typing import cast
+from typing import cast, override
 
 from net_addr import Ip6Address, Ip6IfAddr, MacAddress
 from pytcp.protocols.icmp6.nd.nd__router_state import Icmp6DadState
@@ -93,6 +93,7 @@ class TestIcmp6Nd__AsyncDad__ConcurrentClaims(NdTestCase):
     succeed — the per-address slot dicts isolate their state.
     """
 
+    @override
     def tearDown(self) -> None:
         """
         Restore sysctl defaults so per-test overrides don't leak.
@@ -145,6 +146,7 @@ class TestIcmp6Nd__AsyncDad__PerTargetRxDispatch(NdTestCase):
     A signal for A does not affect B.
     """
 
+    @override
     def setUp(self) -> None:
         """
         Pre-populate per-address DAD slots for both candidates
@@ -242,6 +244,7 @@ class TestIcmp6Nd__AsyncDad__ClaimAsyncReturnsThread(NdTestCase):
     '.join()' to wait for completion or fire-and-forget.
     """
 
+    @override
     def tearDown(self) -> None:
         """
         Restore sysctl defaults so per-test overrides don't leak.

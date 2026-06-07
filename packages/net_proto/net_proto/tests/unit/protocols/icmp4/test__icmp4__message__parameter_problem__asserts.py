@@ -31,7 +31,7 @@ net_proto/tests/unit/protocols/icmp4/test__icmp4__message__parameter_problem__as
 ver 3.0.8
 """
 
-from typing import Any
+from typing import Any, override
 from unittest import TestCase
 
 from net_proto import (
@@ -55,6 +55,7 @@ class TestIcmp4MessageParameterProblemAsserts(TestCase):
     tests.
     """
 
+    @override
     def setUp(self) -> None:
         """
         Build a valid kwargs baseline (code=POINTER_INDICATES_ERROR,

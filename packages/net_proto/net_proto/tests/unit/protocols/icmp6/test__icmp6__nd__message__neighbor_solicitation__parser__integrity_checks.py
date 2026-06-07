@@ -32,7 +32,7 @@ ver 3.0.8
 """
 
 from types import SimpleNamespace
-from typing import Any, cast
+from typing import Any, cast, override
 from unittest import TestCase
 
 from parameterized import parameterized_class  # type: ignore[import-untyped]
@@ -185,6 +185,7 @@ class TestIcmp6NdMessageNeighborSolicitationParserIntegrityChecks(TestCase):
     _ip6__dlen: int | None
     _results: dict[str, Any]
 
+    @override
     def setUp(self) -> None:
         """
         Build a PacketRx with the parametrized frame and IPv6 payload length.

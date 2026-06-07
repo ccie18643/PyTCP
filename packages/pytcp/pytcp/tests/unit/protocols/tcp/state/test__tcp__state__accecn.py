@@ -31,6 +31,7 @@ pytcp/tests/unit/protocols/tcp/state/test__tcp__state__accecn.py
 ver 3.0.8
 """
 
+from typing import override
 from unittest import TestCase
 
 from pytcp.protocols.tcp.state.tcp__state__accecn import (
@@ -49,6 +50,7 @@ class TestAccEcnState__Defaults(TestCase):
     of 'AccEcnState'.
     """
 
+    @override
     def setUp(self) -> None:
         """
         Construct a default state instance for every test.

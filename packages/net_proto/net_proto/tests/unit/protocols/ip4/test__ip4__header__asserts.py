@@ -30,7 +30,7 @@ net_proto/tests/unit/protocols/ip4/test__ip4__header__asserts.py
 ver 3.0.8
 """
 
-from typing import Any
+from typing import Any, override
 from unittest import TestCase
 
 from net_addr import Ip4Address
@@ -57,6 +57,7 @@ class TestIp4HeaderAsserts(TestCase):
     The IPv4 header fields asserts tests.
     """
 
+    @override
     def setUp(self) -> None:
         """
         Build a valid default kwargs dict for the IPv4 header constructor

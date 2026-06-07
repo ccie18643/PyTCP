@@ -32,6 +32,7 @@ ver 3.0.8
 """
 
 from dataclasses import FrozenInstanceError
+from typing import override
 from unittest import TestCase
 
 from net_addr import Ip4Address, Ip6Address, IpVersion
@@ -46,6 +47,7 @@ class TestRawMetadataIp4(TestCase):
     The 'RawMetadata' IPv4 socket_ids dispatch tests.
     """
 
+    @override
     def setUp(self) -> None:
         """
         Build a canonical IPv4 raw-metadata envelope carrying an ICMP4

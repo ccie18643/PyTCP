@@ -42,7 +42,7 @@ pytcp/tests/integration/protocols/icmp6/nd/test__icmp6__nd__enhanced_dad.py
 ver 3.0.8
 """
 
-from typing import Any
+from typing import Any, override
 
 from net_addr import Ip6Address, MacAddress
 from net_proto import Icmp6NdMessageNeighborSolicitation
@@ -75,6 +75,7 @@ class TestIcmp6Nd__EnhancedDad__LoopHairpinDropped(NdTestCase):
     probe, not a peer's conflict.
     """
 
+    @override
     def tearDown(self) -> None:
         """
         Restore sysctl defaults so per-test overrides don't leak.
@@ -130,6 +131,7 @@ class TestIcmp6Nd__EnhancedDad__NonMatchingNonceTreatedAsConflict(NdTestCase):
     peer-DAD conflict — the host aborts its claim.
     """
 
+    @override
     def tearDown(self) -> None:
         """
         Restore sysctl defaults so per-test overrides don't leak.
@@ -186,6 +188,7 @@ class TestIcmp6Nd__EnhancedDad__DadProbeIncludesNonce(NdTestCase):
     is registered with the per-address DAD slot.
     """
 
+    @override
     def tearDown(self) -> None:
         """
         Restore sysctl defaults so per-test overrides don't leak.
@@ -240,6 +243,7 @@ class TestIcmp6Nd__EnhancedDad__SysctlDisable(NdTestCase):
     semantics — probes carry no Nonce option.
     """
 
+    @override
     def tearDown(self) -> None:
         """
         Restore sysctl defaults so per-test overrides don't leak.

@@ -31,7 +31,7 @@ net_proto/tests/unit/protocols/dhcp4/test__dhcp4__option__rebinding_time.py
 ver 3.0.8
 """
 
-from typing import Any
+from typing import Any, override
 from unittest import TestCase
 
 from parameterized import parameterized_class  # type: ignore[import-untyped]
@@ -135,6 +135,7 @@ class TestDhcp4OptionRebindingTimeAssembler(TestCase):
     _args: list[Any]
     _results: dict[str, Any]
 
+    @override
     def setUp(self) -> None:
         """
         Build the SUT.

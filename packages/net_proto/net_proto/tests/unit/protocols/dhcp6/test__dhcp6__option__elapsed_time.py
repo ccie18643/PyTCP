@@ -31,6 +31,7 @@ ver 3.0.8
 """
 
 from dataclasses import FrozenInstanceError
+from typing import override
 from unittest import TestCase
 
 from net_proto import (
@@ -91,6 +92,7 @@ class TestDhcp6OptionElapsedTimeAssembler(TestCase):
     The DHCPv6 Elapsed Time option assembler tests.
     """
 
+    @override
     def setUp(self) -> None:
         """
         Build a reference DHCPv6 Elapsed Time option (1234 hundredths).

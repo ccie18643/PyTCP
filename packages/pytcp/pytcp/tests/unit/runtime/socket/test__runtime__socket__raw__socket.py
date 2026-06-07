@@ -36,7 +36,7 @@ import fcntl
 import select
 import struct
 from types import SimpleNamespace
-from typing import Any
+from typing import Any, override
 from unittest import TestCase
 from unittest.mock import patch
 
@@ -88,6 +88,7 @@ class _RawSocketTestCase(TestCase):
     never touched from the unit-test process.
     """
 
+    @override
     def setUp(self) -> None:
         """
         Patch logging, the socket registry, and the packet handler for
@@ -949,6 +950,7 @@ class TestRawSocketFileno(_RawSocketTestCase):
             raw__data=data,
         )
 
+    @override
     def setUp(self) -> None:
         """
         Build a fresh raw socket. 'tearDown' closes it before the
@@ -959,6 +961,7 @@ class TestRawSocketFileno(_RawSocketTestCase):
         super().setUp()
         self._socket = RawSocket(family=AddressFamily.INET4, protocol=IpProto.ICMP4)
 
+    @override
     def tearDown(self) -> None:
         """
         Close the socket while the 'log' patch is still active, then
@@ -1070,6 +1073,7 @@ class TestRawSocketNonBlocking(_RawSocketTestCase):
     The 'RawSocket.setblocking' non-blocking-recv tests.
     """
 
+    @override
     def setUp(self) -> None:
         """
         Build a non-blocking raw socket. tearDown closes it before
@@ -1080,6 +1084,7 @@ class TestRawSocketNonBlocking(_RawSocketTestCase):
         self._socket = RawSocket(family=AddressFamily.INET4, protocol=IpProto.ICMP4)
         self._socket.setblocking(False)
 
+    @override
     def tearDown(self) -> None:
         """
         Close the socket before the parent tears down patches.
@@ -1148,6 +1153,7 @@ class TestRawSocketRecvBufsize(_RawSocketTestCase):
             raw__data=data,
         )
 
+    @override
     def setUp(self) -> None:
         """
         Build a raw socket; tearDown closes it before the parent
@@ -1157,6 +1163,7 @@ class TestRawSocketRecvBufsize(_RawSocketTestCase):
         super().setUp()
         self._socket = RawSocket(family=AddressFamily.INET4, protocol=IpProto.ICMP4)
 
+    @override
     def tearDown(self) -> None:
         """
         Close the socket before the parent tears down patches.

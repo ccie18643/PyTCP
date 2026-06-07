@@ -31,6 +31,7 @@ ver 3.0.8
 """
 
 from dataclasses import FrozenInstanceError
+from typing import override
 from unittest import TestCase
 
 from net_addr import Ip6Address
@@ -104,6 +105,7 @@ class TestDhcp6OptionDnsServersAssembler(TestCase):
     The DHCPv6 DNS Recursive Name Server option assembler tests.
     """
 
+    @override
     def setUp(self) -> None:
         """
         Build a reference DHCPv6 DNS Recursive Name Server option.

@@ -30,7 +30,7 @@ net_proto/tests/unit/protocols/ip6/test__ip6__header__asserts.py
 ver 3.0.8
 """
 
-from typing import Any
+from typing import Any, override
 from unittest import TestCase
 
 from net_addr import Ip6Address, IpVersion
@@ -55,6 +55,7 @@ class TestIp6HeaderAsserts(TestCase):
     The IPv6 header fields asserts tests.
     """
 
+    @override
     def setUp(self) -> None:
         """
         Build a valid default kwargs dict for the IPv6 header constructor

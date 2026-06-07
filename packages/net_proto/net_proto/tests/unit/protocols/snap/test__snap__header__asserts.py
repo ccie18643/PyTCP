@@ -31,7 +31,7 @@ net_proto/tests/unit/protocols/snap/test__snap__header__asserts.py
 ver 3.0.8
 """
 
-from typing import Any
+from typing import Any, override
 from unittest import TestCase
 
 from net_proto import (
@@ -49,6 +49,7 @@ class TestSnapHeaderAsserts(TestCase):
     The SNAP header fields asserts tests.
     """
 
+    @override
     def setUp(self) -> None:
         """
         Build a valid default kwargs dict for the SNAP header

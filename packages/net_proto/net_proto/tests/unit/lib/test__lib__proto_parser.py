@@ -30,7 +30,7 @@ net_proto/tests/unit/lib/test__lib__proto_parser.py
 ver 3.0.8
 """
 
-from typing import Any
+from typing import Any, override
 from unittest import TestCase
 
 from parameterized import parameterized_class  # type: ignore[import-untyped]
@@ -54,24 +54,31 @@ class _ConcreteParser(ProtoParser):
         self._parse()
         self._validate_sanity()
 
+    @override
     def _validate_integrity(self) -> None:
         self.integrity_called = True
 
+    @override
     def _parse(self) -> None:
         self.parse_called = True
 
+    @override
     def _validate_sanity(self) -> None:
         self.sanity_called = True
 
+    @override
     def __len__(self) -> int:
         return len(self._frame)
 
+    @override
     def __str__(self) -> str:
         return f"ConcreteParser({bytes(self._frame)!r})"
 
+    @override
     def __repr__(self) -> str:
         return f"ConcreteParser({bytes(self._frame)!r})"
 
+    @override
     def __buffer__(self, _: int) -> memoryview:
         return memoryview(self._frame)
 
@@ -111,18 +118,23 @@ class TestNetProtoLibProtoParserAbstract(TestCase):
         """
 
         class Partial(ProtoParser):
+            @override
             def _validate_integrity(self) -> None:
                 return None
 
+            @override
             def __len__(self) -> int:
                 return 0
 
+            @override
             def __str__(self) -> str:
                 return ""
 
+            @override
             def __repr__(self) -> str:
                 return ""
 
+            @override
             def __buffer__(self, _: int) -> memoryview:
                 return memoryview(b"")
 
@@ -179,6 +191,7 @@ class TestNetProtoLibProtoParserFrame(TestCase):
     _frame: Buffer
     _results: dict[str, Any]
 
+    @override
     def setUp(self) -> None:
         self._parser = _ConcreteParser(self._frame)
 
@@ -261,24 +274,31 @@ class TestNetProtoLibProtoParserAbstractBodies(TestCase):
         """
 
         class _SuperParser(ProtoParser):
+            @override
             def _validate_integrity(self) -> None:
                 super()._validate_integrity()  # type: ignore[safe-super]
 
+            @override
             def _parse(self) -> None:
                 super()._parse()  # type: ignore[safe-super]
 
+            @override
             def _validate_sanity(self) -> None:
                 super()._validate_sanity()  # type: ignore[safe-super]
 
+            @override
             def __len__(self) -> int:
                 return 0
 
+            @override
             def __str__(self) -> str:
                 return ""
 
+            @override
             def __repr__(self) -> str:
                 return ""
 
+            @override
             def __buffer__(self, _: int) -> memoryview:
                 return memoryview(b"")
 

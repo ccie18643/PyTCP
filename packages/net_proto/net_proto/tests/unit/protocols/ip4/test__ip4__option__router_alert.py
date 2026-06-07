@@ -30,7 +30,7 @@ net_proto/tests/unit/protocols/ip4/test__ip4__option__router_alert.py
 ver 3.0.8
 """
 
-from typing import Any
+from typing import Any, override
 from unittest import TestCase
 
 from parameterized import parameterized_class  # type: ignore[import-untyped]
@@ -138,6 +138,7 @@ class TestIp4OptionRouterAlertAssembler(TestCase):
     _value: int
     _results: dict[str, Any]
 
+    @override
     def setUp(self) -> None:
         """
         Build an Ip4OptionRouterAlert from the parametrized 'value'.

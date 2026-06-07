@@ -37,7 +37,7 @@ ver 3.0.8
 """
 
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, override
 
 from net_addr import Ip4Address, Ip6Address, IpVersion
 from net_proto.lib.enums import EtherType, IpProto
@@ -108,6 +108,7 @@ class UdpTestCase(NetworkTestCase):
     _icmp4_error_rate_limiter_prior: IcmpErrorRateLimiter
     _icmp6_error_rate_limiter_prior: IcmpErrorRateLimiter
 
+    @override
     def setUp(self) -> None:
         """
         Snapshot the stack-global mutable state UDP tests routinely
@@ -156,6 +157,7 @@ class UdpTestCase(NetworkTestCase):
         self._icmp6_error_rate_limiter_prior = stack.icmp6_error_rate_limiter
         stack.icmp6_error_rate_limiter = IcmpErrorRateLimiter()
 
+    @override
     def tearDown(self) -> None:
         """
         Restore the stack-global state captured in 'setUp', then

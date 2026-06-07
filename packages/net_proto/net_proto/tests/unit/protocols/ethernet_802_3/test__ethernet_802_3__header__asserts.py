@@ -31,7 +31,7 @@ ver 3.0.8
 """
 
 from dataclasses import FrozenInstanceError
-from typing import Any
+from typing import Any, override
 from unittest import TestCase
 
 from net_addr import MacAddress
@@ -53,6 +53,7 @@ class TestEthernet8023HeaderAsserts(TestCase):
     The Ethernet 802.3 header fields asserts tests.
     """
 
+    @override
     def setUp(self) -> None:
         """
         Create the default arguments for the Ethernet 802.3 header constructor.
@@ -425,6 +426,7 @@ class TestEthernet8023HeaderProperties(TestCase):
     The Ethernet8023HeaderProperties mixin accessors and setters tests.
     """
 
+    @override
     def setUp(self) -> None:
         """
         Build a fresh host with a known-good Ethernet 802.3 header per test case.

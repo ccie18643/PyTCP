@@ -30,6 +30,7 @@ net_proto/tests/unit/lib/test__lib__proto.py
 ver 3.0.8
 """
 
+from typing import override
 from unittest import TestCase
 
 from net_proto.lib.proto import Proto
@@ -43,15 +44,19 @@ class _SimpleProto(Proto):
     def __init__(self, payload: bytes) -> None:
         self._payload = payload
 
+    @override
     def __len__(self) -> int:
         return len(self._payload)
 
+    @override
     def __str__(self) -> str:
         return f"SimpleProto({self._payload!r})"
 
+    @override
     def __repr__(self) -> str:
         return f"SimpleProto({self._payload!r})"
 
+    @override
     def __buffer__(self, _: int) -> memoryview:
         return memoryview(self._payload)
 
@@ -64,15 +69,19 @@ class _OtherProto(Proto):
     def __init__(self, payload: bytes) -> None:
         self._payload = payload
 
+    @override
     def __len__(self) -> int:
         return len(self._payload)
 
+    @override
     def __str__(self) -> str:
         return f"SimpleProto({self._payload!r})"
 
+    @override
     def __repr__(self) -> str:
         return f"SimpleProto({self._payload!r})"
 
+    @override
     def __buffer__(self, _: int) -> memoryview:
         return memoryview(self._payload)
 
@@ -100,9 +109,11 @@ class TestNetProtoLibProtoAbstract(TestCase):
         """
 
         class Partial(Proto):
+            @override
             def __len__(self) -> int:
                 return 0
 
+            @override
             def __str__(self) -> str:
                 return ""
 
@@ -142,15 +153,19 @@ class TestNetProtoLibProtoAbstract(TestCase):
         """
 
         class _SuperProto(Proto):
+            @override
             def __len__(self) -> int:
                 return super().__len__()  # type: ignore[safe-super]
 
+            @override
             def __str__(self) -> str:
                 return super().__str__()  # type: ignore[safe-super]
 
+            @override
             def __repr__(self) -> str:
                 return super().__repr__()  # type: ignore[safe-super]
 
+            @override
             def __buffer__(self, flags: int) -> memoryview:
                 return super().__buffer__(flags)  # type: ignore[safe-super]
 

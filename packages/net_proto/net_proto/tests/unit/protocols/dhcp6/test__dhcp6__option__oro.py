@@ -31,6 +31,7 @@ ver 3.0.8
 """
 
 from dataclasses import FrozenInstanceError
+from typing import override
 from unittest import TestCase
 
 from net_proto import (
@@ -105,6 +106,7 @@ class TestDhcp6OptionOroAssembler(TestCase):
     The DHCPv6 Option Request option assembler tests.
     """
 
+    @override
     def setUp(self) -> None:
         """
         Build a reference DHCPv6 Option Request option (DNS + domain list).

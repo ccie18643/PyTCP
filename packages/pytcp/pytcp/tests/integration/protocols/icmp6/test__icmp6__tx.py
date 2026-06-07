@@ -37,7 +37,7 @@ pytcp/tests/integration/protocols/icmp6/test__icmp6__tx.py
 ver 3.0.8
 """
 
-from typing import cast
+from typing import cast, override
 
 from net_addr import Ip6Address
 from net_proto import (
@@ -945,6 +945,7 @@ class TestIcmp6Tx__SendMulticastListenerReportEmpty(IcmpTestCase):
     filter set is empty (no MLDv2 report sent).
     """
 
+    @override
     def setUp(self) -> None:
         """
         Reset the stack's multicast list to only ff02::1 so the

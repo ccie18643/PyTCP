@@ -31,7 +31,7 @@ ver 3.0.8
 """
 
 from dataclasses import FrozenInstanceError
-from typing import Any
+from typing import Any, override
 from unittest import TestCase
 
 from net_addr import Ip4Address, MacAddress
@@ -61,6 +61,7 @@ class TestDhcp4HeaderAsserts(TestCase):
     The DHCPv4 header fields asserts tests.
     """
 
+    @override
     def setUp(self) -> None:
         """
         Create the default arguments for the DHCPv4 header constructor.
@@ -448,6 +449,7 @@ class TestDhcp4HeaderDefaults(TestCase):
     The DHCPv4 header immutable default-field tests.
     """
 
+    @override
     def setUp(self) -> None:
         """
         Build a minimal valid DHCPv4 header for inspection.

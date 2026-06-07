@@ -31,7 +31,7 @@ ver 3.0.8
 """
 
 from collections.abc import Callable
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING, cast, override
 from unittest import TestCase
 from unittest.mock import create_autospec, patch
 
@@ -222,6 +222,7 @@ class _Ip4RxTestBase(TestCase):
     Common setUp for the IPv4 RX tests.
     """
 
+    @override
     def setUp(self) -> None:
         """
         Build the stub handler and isolate the stack sockets dict.
@@ -231,6 +232,7 @@ class _Ip4RxTestBase(TestCase):
         self._sockets_patch = patch.object(stack, "sockets", dict[object, object]())
         self._sockets_patch.start()
 
+    @override
     def tearDown(self) -> None:
         """
         Restore the stack sockets dict.
@@ -605,6 +607,7 @@ class TestPacketHandlerIp4RxRawSocketMatch(_Ip4RxTestBase):
         # for any lookup. This guarantees the fastpath fires regardless
         # of which socket_id the metadata yields first.
         class _MatchAllDict(dict[object, object]):
+            @override
             def get(self, key: object, default: object = None) -> object:
                 return fake_socket
 

@@ -275,6 +275,7 @@ class TestSubsystemLifecycle(TestCase):
     The 'Subsystem.start()' / 'Subsystem.stop()' full-lifecycle tests.
     """
 
+    @override
     def setUp(self) -> None:
         """
         Redirect 'pytcp.stack.LOG__OUTPUT' to an in-memory buffer so the
@@ -285,6 +286,7 @@ class TestSubsystemLifecycle(TestCase):
         self._log_patch = patch("pytcp.stack.LOG__OUTPUT", io.StringIO())
         self._log_patch.start()
 
+    @override
     def tearDown(self) -> None:
         """
         Join any subsystem-spawned worker threads before restoring the

@@ -32,7 +32,7 @@ ver 3.0.8
 """
 
 import struct
-from typing import Any
+from typing import Any, override
 from unittest import TestCase
 
 from parameterized import parameterized_class  # type: ignore[import-untyped]
@@ -228,6 +228,7 @@ class TestDhcp4ParserOperation(TestCase):
     _args: list[Any]
     _results: dict[str, Any]
 
+    @override
     def setUp(self) -> None:
         """
         Parse the test frame once per testcase.
@@ -296,6 +297,7 @@ class TestDhcp4ParserHeaderProperties(TestCase):
     a fully-populated DHCPv4 frame.
     """
 
+    @override
     def setUp(self) -> None:
         """
         Parse a frame with every header field set to a distinct non-default
@@ -526,6 +528,7 @@ class TestDhcp4ParserOptionsProperties(TestCase):
     Exercise every Dhcp4OptionsProperties accessor exposed on the parser.
     """
 
+    @override
     def setUp(self) -> None:
         """
         Parse a frame carrying one instance of each option whose value is

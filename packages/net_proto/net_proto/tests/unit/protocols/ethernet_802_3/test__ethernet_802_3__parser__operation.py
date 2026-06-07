@@ -34,7 +34,7 @@ net_proto/tests/unit/protocols/ethernet_802_3/test__ethernet_802_3__parser__oper
 ver 3.0.8
 """
 
-from typing import Any
+from typing import Any, override
 from unittest import TestCase
 
 from parameterized import parameterized_class  # type: ignore[import-untyped]
@@ -168,6 +168,7 @@ class TestEthernet8023ParserOperation(TestCase):
     _frame_rx: bytes
     _results: dict[str, Any]
 
+    @override
     def setUp(self) -> None:
         """
         Parse the parameterized frame into a fresh PacketRx + parser pair.

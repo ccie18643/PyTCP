@@ -46,7 +46,7 @@ pytcp/tests/integration/protocols/icmp6/nd/test__icmp6__nd__dad_initial_delay.py
 ver 3.0.8
 """
 
-from typing import Any
+from typing import Any, override
 from unittest.mock import patch
 
 from net_addr import Ip6Address
@@ -64,6 +64,7 @@ class TestIcmp6Nd__DadInitialDelay__SysctlRegistration(NdTestCase):
     accepts non-negative int; 0 disables.
     """
 
+    @override
     def tearDown(self) -> None:
         """
         Restore sysctl defaults so per-test overrides don't leak.
@@ -130,6 +131,7 @@ class TestIcmp6Nd__DadInitialDelay__BeforeFirstProbe(NdTestCase):
     sysctl to 0 suppresses the call entirely.
     """
 
+    @override
     def tearDown(self) -> None:
         """
         Restore sysctl defaults so per-test overrides don't leak.

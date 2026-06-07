@@ -38,6 +38,7 @@ pytcp/tests/unit/protocols/arp/test__arp__cache.py
 ver 3.0.8
 """
 
+from typing import override
 from unittest import TestCase
 from unittest.mock import MagicMock, create_autospec, patch
 
@@ -56,6 +57,7 @@ class _ArpCacheFixture(TestCase):
     sysctl defaults on tearDown.
     """
 
+    @override
     def setUp(self) -> None:
         """
         Construct cache + log patches.
@@ -67,6 +69,7 @@ class _ArpCacheFixture(TestCase):
         self._subsystem_log_patch.start()
         self._cache = ArpCache()
 
+    @override
     def tearDown(self) -> None:
         """
         Stop log patches and reset sysctl state.

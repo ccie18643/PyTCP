@@ -30,7 +30,7 @@ net_proto/tests/unit/lib/test__lib__enums.py
 ver 3.0.8
 """
 
-from typing import Any
+from typing import Any, override
 from unittest import TestCase
 from unittest.mock import MagicMock
 
@@ -252,15 +252,19 @@ class TestNetProtoLibEnumsEtherTypeFromProtoRaw(TestCase):
         """
 
         class ForeignProto(Proto):
+            @override
             def __len__(self) -> int:
                 return 0
 
+            @override
             def __str__(self) -> str:
                 return ""
 
+            @override
             def __repr__(self) -> str:
                 return ""
 
+            @override
             def __buffer__(self, _: int) -> memoryview:
                 return memoryview(b"")
 
@@ -627,15 +631,19 @@ class TestNetProtoLibEnumsIpProtoFromProtoSpecialCases(TestCase):
         """
 
         class ForeignProto(Proto):
+            @override
             def __len__(self) -> int:
                 return 0
 
+            @override
             def __str__(self) -> str:
                 return ""
 
+            @override
             def __repr__(self) -> str:
                 return ""
 
+            @override
             def __buffer__(self, _: int) -> memoryview:
                 return memoryview(b"")
 

@@ -1129,6 +1129,7 @@ class TestIp4TxNoIp4Support(Ip4TestCase):
     disabled — '_phtx_ip4' must short-circuit before assembly.
     """
 
+    @override
     def setUp(self) -> None:
         """
         Build the standard mock stack, then disable IPv4 protocol

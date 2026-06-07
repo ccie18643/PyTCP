@@ -30,7 +30,7 @@ net_addr/tests/unit/test__ip6_network.py
 ver 3.0.8
 """
 
-from typing import Any
+from typing import Any, override
 from unittest import TestCase
 
 from parameterized import parameterized_class  # type: ignore[import-untyped]
@@ -170,6 +170,7 @@ class TestNetAddrIp6Network(TestCase):
     _kwargs: dict[str, Any]
     _results: dict[str, Any]
 
+    @override
     def setUp(self) -> None:
         """
         Initialize the IPv6 network object with testcase arguments.
@@ -794,6 +795,7 @@ class TestNetAddrIp6NetworkEnumeration(TestCase):
     _network: str
     _results: dict[str, Any]
 
+    @override
     def setUp(self) -> None:
         """
         Build the network under test from its CIDR string.
@@ -986,6 +988,7 @@ class TestNetAddrIp6NetworkWithForms(TestCase):
     _network: str
     _results: dict[str, Any]
 
+    @override
     def setUp(self) -> None:
         """
         Build the network under test from its CIDR string.

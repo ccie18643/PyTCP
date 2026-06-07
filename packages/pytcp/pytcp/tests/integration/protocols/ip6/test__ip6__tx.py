@@ -34,7 +34,7 @@ pytcp/tests/integration/protocols/ip6/test__ip6__tx.py
 ver 3.0.8
 """
 
-from typing import Any
+from typing import Any, override
 
 from parameterized import parameterized_class  # type: ignore[import-untyped]
 
@@ -462,6 +462,7 @@ class TestIp6TxNoIp6Support(Ip6TestCase):
     disabled — '_phtx_ip6' must short-circuit before assembly.
     """
 
+    @override
     def setUp(self) -> None:
         """
         Build the standard mock stack, then disable IPv6 protocol
@@ -567,6 +568,7 @@ class TestIp6TxRfc4291LinkLocalScopeGate(Ip6TestCase):
 
     _LINK_LOCAL_SRC = Ip6Address("fe80::7")
 
+    @override
     def setUp(self) -> None:
         """
         Add a link-local host to '_ip6_ifaddr' / '_ip6_unicast' so

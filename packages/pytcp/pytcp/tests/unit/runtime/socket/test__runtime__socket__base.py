@@ -861,6 +861,7 @@ class TestSocketProperties(TestCase):
     The 'socket' read-only property surface tests.
     """
 
+    @override
     def setUp(self) -> None:
         """
         Build a canonical stub socket for every property assertion.
@@ -1018,6 +1019,7 @@ class TestSocketPlaceholders(TestCase):
     The 'socket' BSD API placeholder tests.
     """
 
+    @override
     def setUp(self) -> None:
         """
         Build a stub socket for exercising the abstract placeholders.
@@ -1170,6 +1172,7 @@ class TestSocketFileno(TestCase):
     The 'socket.fileno' / read-readiness signal-and-drain tests.
     """
 
+    @override
     def setUp(self) -> None:
         """
         Allocate a fresh '_FdSocket' and register cleanup so its OS
@@ -1382,6 +1385,7 @@ class TestSocketBlocking(TestCase):
     The 'socket.setblocking' / 'socket.getblocking' tests.
     """
 
+    @override
     def setUp(self) -> None:
         """
         Build a fresh '_FdSocket' for the blocking-flag matrix and

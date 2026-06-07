@@ -34,6 +34,7 @@ ver 3.0.8
 """
 
 import threading
+from typing import override
 
 from net_addr import Ip6Address, Ip6IfAddr
 from pytcp.stack import sysctl as sysctl_module
@@ -50,6 +51,7 @@ class TestIcmp6Nd__DadConflictCallback(NdTestCase):
     success.
     """
 
+    @override
     def tearDown(self) -> None:
         """
         Restore sysctl defaults so per-test overrides don't leak.

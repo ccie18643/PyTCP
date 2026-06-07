@@ -31,6 +31,7 @@ ver 3.0.8
 """
 
 from dataclasses import FrozenInstanceError
+from typing import override
 from unittest import TestCase
 
 from net_addr import Ip4Address, Ip6Address
@@ -43,6 +44,7 @@ class TestSocketId(TestCase):
     The 'SocketId' dataclass behavior tests.
     """
 
+    @override
     def setUp(self) -> None:
         """
         Build a canonical IPv4 TCP socket identifier used by the tests.

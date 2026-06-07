@@ -30,7 +30,7 @@ net_proto/tests/unit/protocols/tcp/test__tcp__option__accecn1.py
 ver 3.0.8
 """
 
-from typing import Any
+from typing import Any, override
 from unittest import TestCase
 
 from parameterized import parameterized_class  # type: ignore[import-untyped]
@@ -50,6 +50,7 @@ class TestTcpOptionAccecn1Asserts(TestCase):
     The TCP AccECN1 option constructor argument assert tests.
     """
 
+    @override
     def setUp(self) -> None:
         """
         Build a valid default kwargs dict for the TCP AccECN1 option
@@ -265,6 +266,7 @@ class TestTcpOptionAccecn1Assembler(TestCase):
     _kwargs: dict[str, Any]
     _results: dict[str, Any]
 
+    @override
     def setUp(self) -> None:
         """
         Build the TCP AccECN1 option from the parametrized kwargs.

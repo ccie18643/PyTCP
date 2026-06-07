@@ -45,6 +45,7 @@ pytcp/tests/integration/protocols/icmp6/nd/test__icmp6__nd__rs_backoff.py
 ver 3.0.8
 """
 
+from typing import override
 from unittest.mock import patch
 
 from net_proto import EthernetParser, EtherType, Icmp6NdMessageRouterSolicitation, Icmp6Parser, Ip6Parser, PacketRx
@@ -76,6 +77,7 @@ class TestIcmp6Nd__RsBackoff__SendsAllRsWhenNoRa(NdTestCase):
     RSes total — one per loop iteration.
     """
 
+    @override
     def tearDown(self) -> None:
         """
         Restore sysctl defaults so per-test overrides don't leak.
@@ -115,6 +117,7 @@ class TestIcmp6Nd__RsBackoff__StopsOnRaReceipt(NdTestCase):
     short-circuits the retransmit loop.
     """
 
+    @override
     def tearDown(self) -> None:
         """
         Restore sysctl defaults so per-test overrides don't leak.
@@ -165,6 +168,7 @@ class TestIcmp6Nd__RsBackoff__ExponentialBackoffTimings(NdTestCase):
     ±10% randomisation.
     """
 
+    @override
     def tearDown(self) -> None:
         """
         Restore sysctl defaults so per-test overrides don't leak.
@@ -248,6 +252,7 @@ class TestIcmp6Nd__RsBackoff__SysctlKillSwitch(NdTestCase):
     loop entirely (kill switch).
     """
 
+    @override
     def tearDown(self) -> None:
         """
         Restore sysctl defaults so per-test overrides don't leak.

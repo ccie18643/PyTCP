@@ -31,7 +31,7 @@ ver 3.0.8
 """
 
 from collections.abc import Callable
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING, cast, override
 from unittest import TestCase
 from unittest.mock import MagicMock, patch
 
@@ -141,12 +141,14 @@ class _TcpRxTestBase(TestCase):
     Common setUp for the TCP RX tests.
     """
 
+    @override
     def setUp(self) -> None:
         self._if = _StubInterface()
         self._tcp_rx = TcpRxHandler(interface=cast("PacketHandlerL2 | PacketHandlerL3", self._if))
         self._sockets_patch = patch.object(stack, "sockets", dict[object, object]())
         self._sockets_patch.start()
 
+    @override
     def tearDown(self) -> None:
         self._sockets_patch.stop()
 
@@ -208,6 +210,7 @@ class TestPacketHandlerTcpRxDispatch(_TcpRxTestBase):
         fake_socket = MagicMock()
 
         class _MatchAllDict(dict[object, object]):
+            @override
             def get(self, key: object, default: object = None) -> object:
                 return fake_socket
 

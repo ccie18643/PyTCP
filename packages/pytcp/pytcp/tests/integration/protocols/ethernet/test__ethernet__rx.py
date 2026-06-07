@@ -34,6 +34,8 @@ pytcp/tests/integration/protocols/ethernet/test__ethernet__rx.py
 ver 3.0.8
 """
 
+from typing import override
+
 from parameterized import parameterized_class  # type: ignore[import-untyped]
 
 from net_proto.lib.packet_rx import PacketRx
@@ -198,6 +200,7 @@ class TestPacketHandlerEthernetRxNoIp4Support(EthernetTestCase):
     no-protocol-support drop arm instead of dispatching upward.
     """
 
+    @override
     def setUp(self) -> None:
         """
         Build the standard mock stack, then disable IPv4 protocol
@@ -258,6 +261,7 @@ class TestPacketHandlerEthernetRxNoIp6Support(EthernetTestCase):
     no-protocol-support drop arm.
     """
 
+    @override
     def setUp(self) -> None:
         """
         Build the standard mock stack, then disable IPv6 protocol

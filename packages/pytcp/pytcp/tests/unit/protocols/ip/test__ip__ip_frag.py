@@ -32,6 +32,7 @@ ver 3.0.8
 
 import time
 from dataclasses import FrozenInstanceError, fields
+from typing import override
 from unittest import TestCase
 
 from net_addr import Ip4Address, Ip6Address
@@ -54,6 +55,7 @@ class TestIpFragFlowIdIp4(TestCase):
     The 'IpFragFlowId' tests covering the IPv4 address flow.
     """
 
+    @override
     def setUp(self) -> None:
         """
         Build a canonical IPv4 'IpFragFlowId' instance for every test in
@@ -146,6 +148,7 @@ class TestIpFragFlowIdSemantics(TestCase):
     The 'IpFragFlowId' hashability / equality / immutability tests.
     """
 
+    @override
     def setUp(self) -> None:
         """
         Build two equal and one distinct flow-id instance to exercise the
@@ -327,6 +330,7 @@ class TestIpFragDataConstruction(TestCase):
     The 'IpFragData' construction tests.
     """
 
+    @override
     def setUp(self) -> None:
         """
         Build a canonical 'IpFragData' instance with one fragment in the
@@ -427,6 +431,7 @@ class TestIpFragDataReceivedLastFrag(TestCase):
     The 'IpFragData.received_last_frag()' tests.
     """
 
+    @override
     def setUp(self) -> None:
         """
         Build a fresh 'IpFragData' instance per test so mutations in one
@@ -489,6 +494,7 @@ class TestIpFragDataMarkDiscarded(TestCase):
     The 'IpFragData.mark_discarded()' tests.
     """
 
+    @override
     def setUp(self) -> None:
         """
         Build a fresh 'IpFragData' instance with at least one stored

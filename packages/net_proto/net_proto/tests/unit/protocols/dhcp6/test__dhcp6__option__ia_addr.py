@@ -31,6 +31,7 @@ ver 3.0.8
 """
 
 from dataclasses import FrozenInstanceError
+from typing import override
 from unittest import TestCase
 
 from net_addr import Ip6Address
@@ -141,6 +142,7 @@ class TestDhcp6OptionIaAddrAssembler(TestCase):
     The DHCPv6 IA Address option assembler tests.
     """
 
+    @override
     def setUp(self) -> None:
         """
         Build a reference DHCPv6 IA Address option (no sub-options).

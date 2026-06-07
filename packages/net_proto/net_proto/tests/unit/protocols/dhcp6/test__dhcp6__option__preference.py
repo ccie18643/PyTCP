@@ -30,6 +30,7 @@ net_proto/tests/unit/protocols/dhcp6/test__dhcp6__option__preference.py
 ver 3.0.8
 """
 
+from typing import override
 from unittest import TestCase
 
 from net_proto import (
@@ -90,6 +91,7 @@ class TestDhcp6OptionPreferenceAssembler(TestCase):
     The DHCPv6 Preference option assembler tests.
     """
 
+    @override
     def setUp(self) -> None:
         """
         Build a reference DHCPv6 Preference option (255 — the

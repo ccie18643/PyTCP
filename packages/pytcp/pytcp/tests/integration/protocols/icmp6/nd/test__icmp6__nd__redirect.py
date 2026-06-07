@@ -36,6 +36,8 @@ pytcp/tests/integration/protocols/icmp6/nd/test__icmp6__nd__redirect.py
 ver 3.0.8
 """
 
+from typing import override
+
 from net_addr import Ip6Address, MacAddress
 from pytcp.stack import sysctl as sysctl_module
 from pytcp.tests.lib.nd_testcase import NdTestCase
@@ -245,6 +247,7 @@ class TestIcmp6Rx__NdRedirect__AcceptRedirectsZero(NdTestCase):
     contents.
     """
 
+    @override
     def tearDown(self) -> None:
         """
         Restore sysctl defaults so the per-test override does not

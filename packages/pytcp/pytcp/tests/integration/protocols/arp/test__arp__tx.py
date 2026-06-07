@@ -37,7 +37,7 @@ pytcp/tests/integration/protocols/arp/test__arp__tx.py
 ver 3.0.8
 """
 
-from typing import Any
+from typing import Any, override
 
 from parameterized import parameterized_class  # type: ignore[import-untyped]
 
@@ -214,6 +214,7 @@ class TestArpTxNoIp4Support(ArpTestCase):
     The Packet Handler ARP TX no-IPv4-support short-circuit tests.
     """
 
+    @override
     def setUp(self) -> None:
         """
         Build the standard mock stack, then disable IPv4 protocol

@@ -30,7 +30,7 @@ net_proto/tests/unit/protocols/ip4/test__ip4__option__rr.py
 ver 3.0.8
 """
 
-from typing import Any
+from typing import Any, override
 from unittest import TestCase
 
 from parameterized import parameterized_class  # type: ignore[import-untyped]
@@ -178,6 +178,7 @@ class TestIp4OptionRrAssembler(TestCase):
     _route: list[Ip4Address]
     _results: dict[str, Any]
 
+    @override
     def setUp(self) -> None:
         """
         Build an Ip4OptionRr from the parametrized 'pointer' / 'route'.

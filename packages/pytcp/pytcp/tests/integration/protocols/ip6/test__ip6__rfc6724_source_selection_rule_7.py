@@ -41,6 +41,7 @@ ver 3.0.8
 """
 
 import time
+from typing import override
 
 from net_addr import Ip6Address, Ip6IfAddr, Ip6Network
 from pytcp.protocols.icmp6.nd.nd__router_state import (
@@ -107,6 +108,7 @@ class TestRfc6724Rule7TempPreferenceEnabled(Ip6TestCase):
     The 'icmp6.use_tempaddr=2' rule-7 preference tests.
     """
 
+    @override
     def tearDown(self) -> None:
         """
         Restore sysctl defaults so per-test overrides do not
@@ -196,6 +198,7 @@ class TestRfc6724Rule7TempNoPreference(Ip6TestCase):
     The 'icmp6.use_tempaddr=1' rule-7 no-preference tests.
     """
 
+    @override
     def tearDown(self) -> None:
         """
         Restore sysctl defaults so per-test overrides do not
@@ -235,6 +238,7 @@ class TestRfc6724Rule7TempDisabled(Ip6TestCase):
     The 'icmp6.use_tempaddr=0' rule-7 disabled tests.
     """
 
+    @override
     def tearDown(self) -> None:
         """
         Restore sysctl defaults so per-test overrides do not

@@ -30,7 +30,7 @@ net_proto/tests/unit/protocols/ip4/test__ip4__option__eol.py
 ver 3.0.8
 """
 
-from typing import Any
+from typing import Any, override
 from unittest import TestCase
 
 from parameterized import parameterized_class  # type: ignore[import-untyped]
@@ -43,6 +43,7 @@ class TestIp4OptionEolAssembler(TestCase):
     The IPv4 Eol option assembler tests.
     """
 
+    @override
     def setUp(self) -> None:
         """
         Build the IPv4 Eol option; the option takes no constructor args.

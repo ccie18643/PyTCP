@@ -30,7 +30,7 @@ pytcp/tests/unit/runtime/socket/test__runtime__socket__close_drain.py
 ver 3.0.8
 """
 
-from typing import cast
+from typing import cast, override
 from unittest import TestCase
 from unittest.mock import MagicMock, patch
 
@@ -47,6 +47,7 @@ class TestSocketCloseDrainUdp(TestCase):
     The 'UdpSocket' close-during-delivery drain tests.
     """
 
+    @override
     def setUp(self) -> None:
         """
         Silence the socket-module log line for the duration of the test.
@@ -115,6 +116,7 @@ class TestSocketCloseDrainRaw(TestCase):
     The 'RawSocket' close-during-delivery drain tests.
     """
 
+    @override
     def setUp(self) -> None:
         """
         Silence the socket-module log line for the duration of the test.

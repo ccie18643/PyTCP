@@ -30,7 +30,7 @@ net_addr/tests/unit/test__click_types.py
 ver 3.0.8
 """
 
-from typing import assert_type
+from typing import assert_type, override
 from unittest import TestCase
 
 from click import BadParameter
@@ -61,6 +61,7 @@ class TestClickTypeMacAddress(TestCase):
     The ClickTypeMacAddress Click parameter type tests.
     """
 
+    @override
     def setUp(self) -> None:
         self._param = ClickTypeMacAddress()
 
@@ -103,6 +104,7 @@ class TestClickTypeIpAddress(TestCase):
     The ClickTypeIpAddress (IPv6 or IPv4) tests.
     """
 
+    @override
     def setUp(self) -> None:
         self._param = ClickTypeIpAddress()
 
@@ -157,6 +159,7 @@ class TestClickTypeIp6Address(TestCase):
     The ClickTypeIp6Address (IPv6 only) tests.
     """
 
+    @override
     def setUp(self) -> None:
         self._param = ClickTypeIp6Address()
 
@@ -199,6 +202,7 @@ class TestClickTypeIp4Address(TestCase):
     The ClickTypeIp4Address (IPv4 only) tests.
     """
 
+    @override
     def setUp(self) -> None:
         self._param = ClickTypeIp4Address()
 
@@ -241,6 +245,7 @@ class TestClickTypeIpNetwork(TestCase):
     The ClickTypeIpNetwork (IPv6 or IPv4) tests.
     """
 
+    @override
     def setUp(self) -> None:
         self._param = ClickTypeIpNetwork()
 
@@ -295,6 +300,7 @@ class TestClickTypeIp6Network(TestCase):
     The ClickTypeIp6Network (IPv6 only) tests.
     """
 
+    @override
     def setUp(self) -> None:
         self._param = ClickTypeIp6Network()
 
@@ -337,6 +343,7 @@ class TestClickTypeIp4Network(TestCase):
     The ClickTypeIp4Network (IPv4 only) tests.
     """
 
+    @override
     def setUp(self) -> None:
         self._param = ClickTypeIp4Network()
 
@@ -379,6 +386,7 @@ class TestClickTypeIpHost(TestCase):
     The ClickTypeIfAddr (IPv6 or IPv4) tests.
     """
 
+    @override
     def setUp(self) -> None:
         self._param = ClickTypeIfAddr()
 
@@ -433,6 +441,7 @@ class TestClickTypeIp6Host(TestCase):
     The ClickTypeIp6IfAddr (IPv6 only) tests.
     """
 
+    @override
     def setUp(self) -> None:
         self._param = ClickTypeIp6IfAddr()
 
@@ -475,6 +484,7 @@ class TestClickTypeIp4Host(TestCase):
     The ClickTypeIp4IfAddr (IPv4 only) tests.
     """
 
+    @override
     def setUp(self) -> None:
         self._param = ClickTypeIp4IfAddr()
 

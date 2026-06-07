@@ -30,7 +30,7 @@ net_proto/tests/unit/protocols/ip4/test__ip4__assembler__operation.py
 ver 3.0.8
 """
 
-from typing import Any
+from typing import Any, override
 from unittest import TestCase
 
 from parameterized import parameterized_class  # type: ignore[import-untyped]
@@ -292,6 +292,7 @@ class TestIp4AssemblerOperation(TestCase):
     _kwargs: dict[str, Any]
     _results: dict[str, Any]
 
+    @override
     def setUp(self) -> None:
         """
         Build the IPv4 assembler from the parametrized kwargs.
@@ -793,6 +794,7 @@ class TestIp4FragAssemblerOperation(TestCase):
     _kwargs: dict[str, Any]
     _results: dict[str, Any]
 
+    @override
     def setUp(self) -> None:
         """
         Build the IPv4 (Frag) assembler from the parametrized kwargs.

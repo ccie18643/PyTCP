@@ -38,6 +38,8 @@ pytcp/tests/integration/protocols/icmp6/test__icmp6__pmtud.py
 ver 3.0.8
 """
 
+from typing import override
+
 from net_proto import (
     Icmp6Assembler,
     Icmp6MessagePacketTooBig,
@@ -99,6 +101,7 @@ class TestIcmp6Pmtud__PtbWithMatchingUdpSocket(IcmpTestCase):
     the embedded 4-tuple.
     """
 
+    @override
     def setUp(self) -> None:
         """
         Bind a UdpSocket on the stack so the embedded 4-tuple matches.

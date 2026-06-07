@@ -34,6 +34,7 @@ ver 3.0.8
 
 import sys
 import types
+from typing import override
 from unittest import TestCase
 
 from pytcp.stack import sysctl
@@ -63,6 +64,7 @@ class _SysctlFixtureBase(TestCase):
     re-register fresh keys per case.
     """
 
+    @override
     def setUp(self) -> None:
         """
         Snapshot the registry membership and module-level
@@ -73,6 +75,7 @@ class _SysctlFixtureBase(TestCase):
         self._snapshot_finalize = list(sysctl._finalize_validators)
         self._carriers: list[str] = []
 
+    @override
     def tearDown(self) -> None:
         """
         Restore the registry membership / finalize-validator list

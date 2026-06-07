@@ -31,7 +31,7 @@ ver 3.0.8
 """
 
 from dataclasses import FrozenInstanceError, dataclass, fields, is_dataclass
-from typing import Self
+from typing import Self, override
 from unittest import TestCase
 
 from net_proto.lib.buffer import Buffer
@@ -46,16 +46,20 @@ class _ConcreteStruct(ProtoStruct):
 
     value: int
 
+    @override
     def __post_init__(self) -> None:
         assert 0 <= self.value <= 0xFF, f"'value' must be a byte. Got: {self.value}"
 
+    @override
     def __len__(self) -> int:
         return 1
 
+    @override
     def __buffer__(self, _: int) -> memoryview:
         return memoryview(self.value.to_bytes(1, "big"))
 
     @classmethod
+    @override
     def from_buffer(cls, buffer: Buffer, /) -> Self:
         return cls(value=int.from_bytes(buffer[:1], "big"))
 
@@ -97,9 +101,11 @@ class TestNetProtoLibProtoStructAbstract(TestCase):
         class Partial(ProtoStruct):
             tag: int = 0
 
+            @override
             def __post_init__(self) -> None:
                 return None
 
+            @override
             def __len__(self) -> int:
                 return 0
 

@@ -31,7 +31,7 @@ net_proto/tests/unit/protocols/icmp6/test__icmp6__mld2__multicast_address_record
 ver 3.0.8
 """
 
-from typing import Any
+from typing import Any, override
 from unittest import TestCase
 
 from net_addr import Ip6Address
@@ -47,6 +47,7 @@ class TestIcmp6Mld2MulticastAddressRecordAsserts(TestCase):
     tests.
     """
 
+    @override
     def setUp(self) -> None:
         """
         Build a valid kwargs baseline used as the starting point for every

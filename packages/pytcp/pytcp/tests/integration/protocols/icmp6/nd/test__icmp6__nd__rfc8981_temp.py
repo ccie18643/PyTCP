@@ -50,6 +50,7 @@ ver 3.0.8
 """
 
 import time
+from typing import override
 
 from net_addr import Ip6Address, Ip6Network, MacAddress
 from net_proto import Icmp6NdOptionPi
@@ -101,6 +102,7 @@ class TestIcmp6Nd__Rfc8981Temp__SysctlRegistration(NdTestCase):
     are also exposed.
     """
 
+    @override
     def tearDown(self) -> None:
         """
         Restore sysctl defaults so per-test overrides don't leak.
@@ -179,6 +181,7 @@ class TestIcmp6Nd__Rfc8981Temp__MutatorWireState(NdTestCase):
     invariants are pinnable without timing concerns.
     """
 
+    @override
     def tearDown(self) -> None:
         """
         Restore sysctl defaults so per-test overrides don't leak.
@@ -397,6 +400,7 @@ class TestIcmp6Nd__Rfc8981Temp__RxDrivenClaim(NdTestCase):
     §20.1 DAD worker thread completes) in '_ip6_ifaddr'.
     """
 
+    @override
     def tearDown(self) -> None:
         """
         Restore sysctl defaults so per-test overrides don't leak.

@@ -31,7 +31,7 @@ ver 3.0.8
 """
 
 from collections.abc import Callable
-from typing import Any
+from typing import Any, override
 from unittest import TestCase
 
 from parameterized import parameterized_class  # type: ignore[import-untyped]
@@ -249,6 +249,7 @@ class TestNetAddrIp4Network(TestCase):
     _kwargs: dict[str, Any]
     _results: dict[str, Any]
 
+    @override
     def setUp(self) -> None:
         """
         Initialize the IPv4 network object with testcase arguments.
@@ -896,6 +897,7 @@ class TestNetAddrIp4NetworkEnumeration(TestCase):
     _network: str
     _results: dict[str, Any]
 
+    @override
     def setUp(self) -> None:
         """
         Build the network under test from its CIDR string.
@@ -1223,6 +1225,7 @@ class TestNetAddrIp4NetworkWithForms(TestCase):
     _network: str
     _results: dict[str, Any]
 
+    @override
     def setUp(self) -> None:
         """
         Build the network under test from its CIDR string.

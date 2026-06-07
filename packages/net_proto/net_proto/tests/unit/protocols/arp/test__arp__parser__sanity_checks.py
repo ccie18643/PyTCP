@@ -30,7 +30,7 @@ net_proto/tests/unit/protocols/arp/test__arp__parser__sanity_checks.py
 ver 3.0.8
 """
 
-from typing import Any, cast
+from typing import Any, cast, override
 from unittest import TestCase
 
 from parameterized import parameterized_class  # type: ignore[import-untyped]
@@ -287,6 +287,7 @@ class TestArpParserSanityChecks(TestCase):
     _frame_rx: bytes
     _results: dict[str, Any]
 
+    @override
     def setUp(self) -> None:
         """
         Wrap the raw frame in a PacketRx.

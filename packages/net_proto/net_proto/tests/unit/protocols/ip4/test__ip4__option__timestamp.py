@@ -30,7 +30,7 @@ net_proto/tests/unit/protocols/ip4/test__ip4__option__timestamp.py
 ver 3.0.8
 """
 
-from typing import Any
+from typing import Any, override
 from unittest import TestCase
 
 from parameterized import parameterized_class  # type: ignore[import-untyped]
@@ -407,6 +407,7 @@ class TestIp4OptionTimestampAssembler(TestCase):
     _entries: list[Ip4TimestampEntry]
     _results: dict[str, Any]
 
+    @override
     def setUp(self) -> None:
         """
         Build an Ip4OptionTimestamp from the parametrized fields.

@@ -31,7 +31,7 @@ ver 3.0.8
 """
 
 from types import SimpleNamespace
-from typing import Any
+from typing import Any, override
 from unittest import TestCase
 
 from parameterized import parameterized_class  # type: ignore[import-untyped]
@@ -87,6 +87,7 @@ class TestIp6FragParserIntegrityChecks(TestCase):
     _frame_rx: bytes
     _results: dict[str, Any]
 
+    @override
     def setUp(self) -> None:
         """
         Wrap the parametrized frame in a PacketRx and stub the IPv6

@@ -30,7 +30,7 @@ net_proto/tests/unit/protocols/ip4/test__ip4__options.py
 ver 3.0.8
 """
 
-from typing import Any
+from typing import Any, override
 from unittest import TestCase
 
 from parameterized import parameterized_class  # type: ignore[import-untyped]
@@ -121,6 +121,7 @@ class TestIp4OptionsAssembler(TestCase):
     _args: list[Any]
     _results: dict[str, Any]
 
+    @override
     def setUp(self) -> None:
         """
         Build the Ip4Options container from the parametrized option list.
@@ -200,6 +201,7 @@ class TestIp4OptionsSequenceProtocol(TestCase):
     __getitem__, __contains__, __eq__, and index).
     """
 
+    @override
     def setUp(self) -> None:
         """
         Build a mixed Nop/Eol fixture so every protocol method has at

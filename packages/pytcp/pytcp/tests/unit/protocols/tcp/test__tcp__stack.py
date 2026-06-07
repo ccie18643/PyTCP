@@ -145,6 +145,7 @@ class TestTcpStack__Accessors(TestCase):
     The lock-guarded Fast-Open accessor surface tests.
     """
 
+    @override
     def setUp(self) -> None:
         """
         Construct a default state instance for every test.
@@ -339,6 +340,7 @@ class TestTcpStack__Defaults(TestCase):
     of 'TcpStack'.
     """
 
+    @override
     def setUp(self) -> None:
         """
         Construct a default state instance for every test.

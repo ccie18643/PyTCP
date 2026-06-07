@@ -30,7 +30,7 @@ pytcp/tests/unit/runtime/packet_handler/test__runtime__packet_handler__ethernet_
 ver 3.0.8
 """
 
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING, Any, cast, override
 from unittest import TestCase
 
 from parameterized import parameterized_class  # type: ignore[import-untyped]
@@ -277,6 +277,7 @@ class TestPacketHandlerEthernetRx(TestCase):
     _expected_dispatch: list[str]
     _results: dict[str, Any]
 
+    @override
     def setUp(self) -> None:
         """
         Build the stub handler and run the frame through the mixin method.

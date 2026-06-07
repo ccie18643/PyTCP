@@ -34,6 +34,8 @@ pytcp/tests/integration/protocols/ip4/test__ip4__rx.py
 ver 3.0.8
 """
 
+from typing import override
+
 from parameterized import parameterized_class  # type: ignore[import-untyped]
 
 from net_addr import Ip4Address, MacAddress
@@ -1464,6 +1466,7 @@ class TestIp4RxDhcpClientNoUnicast(Ip4TestCase):
     OFFER exchange can complete before address assignment.
     """
 
+    @override
     def setUp(self) -> None:
         """
         Build the standard mock stack, then clear '_ip4_ifaddr' so the
@@ -1529,6 +1532,7 @@ class TestIp4RxMulticast(Ip4TestCase):
 
     _ALL_NODES__IP4__MULTICAST_MAC = MacAddress("01:00:5e:00:00:01")
 
+    @override
     def setUp(self) -> None:
         """
         Join the IPv4 all-nodes multicast Ethernet MAC so the inbound

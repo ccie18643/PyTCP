@@ -33,6 +33,8 @@ pytcp/tests/integration/protocols/icmp4/test__icmp4__echo_options.py
 ver 3.0.8
 """
 
+from typing import override
+
 from net_addr import Ip4Address, MacAddress
 from net_proto import (
     EthernetAssembler,
@@ -87,6 +89,7 @@ class TestIcmp4EchoOptions(IcmpTestCase):
     The IPv4 Echo Reply options-echo behaviour tests.
     """
 
+    @override
     def setUp(self) -> None:
         """
         Opt into 'ip4.default.accept_source_route' so the inbound
@@ -101,6 +104,7 @@ class TestIcmp4EchoOptions(IcmpTestCase):
         self._asr_prior = stack.IP4__ACCEPT_SOURCE_ROUTE["default"]
         stack.IP4__ACCEPT_SOURCE_ROUTE["default"] = True
 
+    @override
     def tearDown(self) -> None:
         """
         Restore the prior 'ip4.default.accept_source_route' so the

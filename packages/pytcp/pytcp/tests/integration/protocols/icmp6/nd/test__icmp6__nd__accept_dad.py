@@ -51,6 +51,7 @@ ver 3.0.8
 
 import threading
 import time
+from typing import override
 
 from net_addr import Ip6Address, Ip6IfAddr
 from pytcp.stack import sysctl as sysctl_module
@@ -67,6 +68,7 @@ class TestIcmp6Nd__AcceptDad__SysctlRegistration(NdTestCase):
     {0, 1, 2}.
     """
 
+    @override
     def tearDown(self) -> None:
         """
         Restore sysctl defaults so per-test overrides don't leak.
@@ -128,6 +130,7 @@ class TestIcmp6Nd__AcceptDad__ZeroSkipsDad(NdTestCase):
     returns True.
     """
 
+    @override
     def tearDown(self) -> None:
         """
         Restore sysctl defaults so per-test overrides don't leak.
@@ -166,6 +169,7 @@ class TestIcmp6Nd__AcceptDad__TwoDisablesIp6OnFailure(NdTestCase):
     worker is the hook point.
     """
 
+    @override
     def tearDown(self) -> None:
         """
         Restore sysctl defaults so per-test overrides don't leak.

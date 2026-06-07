@@ -32,6 +32,7 @@ ver 3.0.8
 """
 
 from types import SimpleNamespace
+from typing import override
 from unittest import TestCase
 from unittest.mock import MagicMock, patch
 
@@ -47,6 +48,7 @@ class _TcpSessionFixture(TestCase):
     session's MSS seed resolves deterministically).
     """
 
+    @override
     def setUp(self) -> None:
         """
         Install the stack patches required to build a 'TcpSession'
@@ -71,6 +73,7 @@ class _TcpSessionFixture(TestCase):
         )
         self._mtu_patch.start()
 
+    @override
     def tearDown(self) -> None:
         """
         Tear down the stack patches.

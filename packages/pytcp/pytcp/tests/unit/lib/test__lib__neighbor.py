@@ -32,6 +32,7 @@ pytcp/tests/unit/lib/test__lib__neighbor.py
 ver 3.0.8
 """
 
+from typing import override
 from unittest import TestCase
 from unittest.mock import patch
 
@@ -60,6 +61,7 @@ class _NeighborCacheFixture(TestCase):
     so per-test overrides do not leak.
     """
 
+    @override
     def setUp(self) -> None:
         """
         Build the cache with spy callbacks for solicit and flush.
@@ -81,6 +83,7 @@ class _NeighborCacheFixture(TestCase):
             flush_callback=self._record_flush,
         )
 
+    @override
     def tearDown(self) -> None:
         """
         Restore sysctl defaults and remove log patches.

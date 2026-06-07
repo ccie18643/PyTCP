@@ -41,6 +41,7 @@ ver 3.0.8
 """
 
 import time
+from typing import override
 
 from net_addr import Ip6Address, Ip6IfAddr, Ip6Network
 from pytcp.protocols.icmp6.nd.nd__router_state import Icmp6SlaacAddress
@@ -68,6 +69,7 @@ class TestRfc6724Rule1SameAddress(Ip6TestCase):
     RFC 6724 §5 rule 1 — prefer same address — tests.
     """
 
+    @override
     def setUp(self) -> None:
         """
         Populate '_ip6_ifaddr' with one stack address whose value
@@ -105,6 +107,7 @@ class TestRfc6724Rule2Scope(Ip6TestCase):
     RFC 6724 §5 rule 2 — prefer appropriate scope — tests.
     """
 
+    @override
     def setUp(self) -> None:
         """
         Populate '_ip6_ifaddr' with one link-local and one global
@@ -246,6 +249,7 @@ class TestRfc6724Rule3Deprecated(Ip6TestCase):
     RFC 6724 §5 rule 3 — avoid deprecated addresses — tests.
     """
 
+    @override
     def setUp(self) -> None:
         """
         Populate '_ip6_ifaddr' with two SLAAC-derived candidates and
@@ -335,6 +339,7 @@ class TestRfc6724Rule8LongestMatch(Ip6TestCase):
     RFC 6724 §5 rule 8 — longest matching prefix — tests.
     """
 
+    @override
     def setUp(self) -> None:
         """
         Populate '_ip6_ifaddr' with three same-scope same-state

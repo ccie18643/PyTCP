@@ -32,7 +32,7 @@ ver 3.0.8
 
 import os
 import queue
-from typing import Any
+from typing import Any, override
 from unittest import TestCase
 from unittest.mock import MagicMock, patch
 
@@ -47,6 +47,7 @@ class _RxRingFixture(TestCase):
     pipe after every test so no file descriptor leaks.
     """
 
+    @override
     def setUp(self) -> None:
         """
         Install the logging patches and open a pipe whose read end
@@ -61,6 +62,7 @@ class _RxRingFixture(TestCase):
         self._read_fd, self._write_fd = os.pipe()
         self._ring = RxRing(fd=self._read_fd, mtu=1500)
 
+    @override
     def tearDown(self) -> None:
         """
         Close the pipe endpoints, release the ring's selector +

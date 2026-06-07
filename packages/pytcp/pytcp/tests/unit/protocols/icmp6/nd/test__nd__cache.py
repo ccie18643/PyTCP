@@ -38,6 +38,7 @@ pytcp/tests/unit/protocols/icmp6/nd/test__nd__cache.py
 ver 3.0.8
 """
 
+from typing import override
 from unittest import TestCase
 from unittest.mock import MagicMock, patch
 
@@ -54,6 +55,7 @@ class _NdCacheFixture(TestCase):
     sysctl defaults on tearDown.
     """
 
+    @override
     def setUp(self) -> None:
         """
         Construct cache + log patches.
@@ -65,6 +67,7 @@ class _NdCacheFixture(TestCase):
         self._subsystem_log_patch.start()
         self._cache = NdCache()
 
+    @override
     def tearDown(self) -> None:
         """
         Stop log patches and reset sysctl state.

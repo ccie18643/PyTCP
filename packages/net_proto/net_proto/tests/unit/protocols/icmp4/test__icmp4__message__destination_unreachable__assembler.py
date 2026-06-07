@@ -30,7 +30,7 @@ net_proto/tests/unit/protocols/icmp4/test__icmp4__message__destination_unreachab
 ver 3.0.8
 """
 
-from typing import Any, cast
+from typing import Any, cast, override
 from unittest import TestCase
 
 from parameterized import parameterized_class  # type: ignore[import-untyped]
@@ -480,6 +480,7 @@ class TestIcmp4MessageDestinationUnreachableAssembler(TestCase):
     _kwargs: dict[str, Any]
     _results: dict[str, Any]
 
+    @override
     def setUp(self) -> None:
         """
         Build an assembler wrapping the parametrized Destination Unreachable

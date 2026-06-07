@@ -35,7 +35,7 @@ net_proto/tests/unit/protocols/ethernet_802_3/test__ethernet_802_3__assembler__o
 ver 3.0.8
 """
 
-from typing import Any
+from typing import Any, override
 from unittest import TestCase
 
 from parameterized import parameterized_class  # type: ignore[import-untyped]
@@ -178,6 +178,7 @@ class TestEthernet8023AssemblerOperation(TestCase):
     _kwargs: dict[str, Any]
     _results: dict[str, Any]
 
+    @override
     def setUp(self) -> None:
         """
         Initialize the Ethernet 802.3 packet assembler with the testcase arguments.

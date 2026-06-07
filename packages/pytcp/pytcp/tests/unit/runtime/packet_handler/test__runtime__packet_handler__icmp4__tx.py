@@ -31,7 +31,7 @@ ver 3.0.8
 """
 
 from collections.abc import Callable
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING, cast, override
 from unittest import TestCase
 
 from net_addr import Ip4Address
@@ -110,6 +110,7 @@ class TestPacketHandlerIcmp4Tx(TestCase):
     The 'Icmp4TxHandler._phtx_icmp4' behaviour tests.
     """
 
+    @override
     def setUp(self) -> None:
         self._if = _StubInterface()
         self._icmp4_tx = Icmp4TxHandler(interface=cast("PacketHandlerL2 | PacketHandlerL3", self._if))

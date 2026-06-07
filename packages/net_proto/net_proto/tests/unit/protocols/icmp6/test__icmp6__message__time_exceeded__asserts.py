@@ -31,7 +31,7 @@ net_proto/tests/unit/protocols/icmp6/test__icmp6__message__time_exceeded__assert
 ver 3.0.8
 """
 
-from typing import Any
+from typing import Any, override
 from unittest import TestCase
 
 from net_proto import (
@@ -52,6 +52,7 @@ class TestIcmp6MessageTimeExceededAsserts(TestCase):
     The ICMPv6 Time Exceeded message constructor argument assert tests.
     """
 
+    @override
     def setUp(self) -> None:
         """
         Build a valid kwargs baseline (code=HOP_LIMIT_EXCEEDED_IN_TRANSIT,

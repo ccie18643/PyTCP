@@ -30,7 +30,7 @@ net_proto/tests/unit/protocols/icmp6/test__icmp6__nd__option__unknown.py
 ver 3.0.8
 """
 
-from typing import Any
+from typing import Any, override
 from unittest import TestCase
 
 from parameterized import parameterized_class  # type: ignore[import-untyped]
@@ -49,6 +49,7 @@ class TestIcmp6NdOptionUnknownAsserts(TestCase):
     The unknown ICMPv6 ND option constructor argument assert tests.
     """
 
+    @override
     def setUp(self) -> None:
         """
         Create the default kwargs for the unknown ICMPv6 ND option
@@ -218,6 +219,7 @@ class TestIcmp6NdOptionUnknownAssembler(TestCase):
     _kwargs: dict[str, Any]
     _results: dict[str, Any]
 
+    @override
     def setUp(self) -> None:
         """
         Build the unknown ICMPv6 ND option from the parametrized kwargs.

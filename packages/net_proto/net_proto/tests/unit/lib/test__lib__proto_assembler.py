@@ -31,6 +31,7 @@ ver 3.0.8
 """
 
 import itertools
+from typing import override
 from unittest import TestCase
 
 from net_proto.lib.buffer import Buffer
@@ -48,18 +49,23 @@ class _ConcreteAssembler(ProtoAssembler):
         self._payload = payload
         self._tracker = Tracker(prefix="TX")
 
+    @override
     def __len__(self) -> int:
         return len(self._payload)
 
+    @override
     def __str__(self) -> str:
         return f"ConcreteAssembler({self._payload!r})"
 
+    @override
     def __repr__(self) -> str:
         return f"ConcreteAssembler({self._payload!r})"
 
+    @override
     def __buffer__(self, _: int) -> memoryview:
         return memoryview(self._payload)
 
+    @override
     def assemble(self, buffers: list[Buffer], /) -> None:
         buffers.append(self._payload)
 
@@ -69,12 +75,14 @@ class _TrackerReset(TestCase):
     Base class resetting the Tracker class-level counters around each test.
     """
 
+    @override
     def setUp(self) -> None:
         self._saved_rx_counter = Tracker._rx_counter
         self._saved_tx_counter = Tracker._tx_counter
         Tracker._rx_counter = itertools.count()
         Tracker._tx_counter = itertools.count()
 
+    @override
     def tearDown(self) -> None:
         Tracker._rx_counter = self._saved_rx_counter
         Tracker._tx_counter = self._saved_tx_counter
@@ -116,15 +124,19 @@ class TestNetProtoLibProtoAssemblerAbstract(_TrackerReset):
         """
 
         class Partial(ProtoAssembler):
+            @override
             def __len__(self) -> int:
                 return 0
 
+            @override
             def __str__(self) -> str:
                 return ""
 
+            @override
             def __repr__(self) -> str:
                 return ""
 
+            @override
             def __buffer__(self, _: int) -> memoryview:
                 return memoryview(b"")
 
@@ -249,18 +261,23 @@ class TestNetProtoLibProtoAssemblerAbstractBody(_TrackerReset):
             def __init__(self) -> None:
                 self._tracker = Tracker(prefix="TX")
 
+            @override
             def __len__(self) -> int:
                 return 0
 
+            @override
             def __str__(self) -> str:
                 return ""
 
+            @override
             def __repr__(self) -> str:
                 return ""
 
+            @override
             def __buffer__(self, _: int) -> memoryview:
                 return memoryview(b"")
 
+            @override
             def assemble(self, buffers: list[Buffer], /) -> None:
                 super().assemble(buffers)  # type: ignore[safe-super]
 

@@ -30,7 +30,7 @@ net_proto/tests/unit/protocols/ip6/test__ip6__assembler__operation.py
 ver 3.0.8
 """
 
-from typing import Any
+from typing import Any, override
 from unittest import TestCase
 
 from parameterized import parameterized_class  # type: ignore[import-untyped]
@@ -236,6 +236,7 @@ class TestIp6AssemblerOperation(TestCase):
     _kwargs: dict[str, Any]
     _results: dict[str, Any]
 
+    @override
     def setUp(self) -> None:
         """
         Build the IPv6 assembler from the parametrized kwargs.

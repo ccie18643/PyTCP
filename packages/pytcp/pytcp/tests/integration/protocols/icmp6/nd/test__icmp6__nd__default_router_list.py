@@ -41,6 +41,7 @@ ver 3.0.8
 """
 
 import time
+from typing import override
 from unittest.mock import patch
 
 from net_addr import Ip6Address, MacAddress
@@ -71,6 +72,7 @@ class TestIcmp6Nd__DefaultRouterList__Add(NdTestCase):
     router list, indexed by the RA's link-local source.
     """
 
+    @override
     def tearDown(self) -> None:
         """
         Restore sysctl defaults so per-test overrides don't leak.
@@ -157,6 +159,7 @@ class TestIcmp6Nd__DefaultRouterList__Refresh(NdTestCase):
     rather than appending a duplicate entry.
     """
 
+    @override
     def tearDown(self) -> None:
         """
         Restore sysctl defaults so per-test overrides don't leak.
@@ -210,6 +213,7 @@ class TestIcmp6Nd__DefaultRouterList__MultipleRouters(NdTestCase):
     RAs from distinct link-local sources install distinct entries.
     """
 
+    @override
     def tearDown(self) -> None:
         """
         Restore sysctl defaults so per-test overrides don't leak.
@@ -263,6 +267,7 @@ class TestIcmp6Nd__DefaultRouterList__ZeroLifetimeRemoves(NdTestCase):
     the entry").
     """
 
+    @override
     def tearDown(self) -> None:
         """
         Restore sysctl defaults so per-test overrides don't leak.
@@ -361,6 +366,7 @@ class TestIcmp6Nd__DefaultRouterList__LazyAgeing(NdTestCase):
     'when the lifetime expires it MUST be removed').
     """
 
+    @override
     def tearDown(self) -> None:
         """
         Restore sysctl defaults so per-test overrides don't leak.
@@ -412,6 +418,7 @@ class TestIcmp6Nd__DefaultRouterList__SysctlAcceptRaDefrtr(NdTestCase):
     learning entirely (Linux parity).
     """
 
+    @override
     def tearDown(self) -> None:
         """
         Restore sysctl defaults so per-test overrides don't leak.
@@ -461,6 +468,7 @@ class TestIcmp6Nd__DefaultRouterList__OptionConstructionPaths(NdTestCase):
     carrying additional options without breaking parsing.
     """
 
+    @override
     def tearDown(self) -> None:
         """
         Restore sysctl defaults so per-test overrides don't leak.

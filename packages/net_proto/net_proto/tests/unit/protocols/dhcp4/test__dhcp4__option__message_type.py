@@ -31,6 +31,7 @@ ver 3.0.8
 """
 
 from dataclasses import FrozenInstanceError
+from typing import override
 from unittest import TestCase
 
 from parameterized import parameterized_class  # type: ignore[import-untyped]
@@ -187,6 +188,7 @@ class TestDhcp4OptionMessageTypeAssembler(TestCase):
     _repr: str
     _bytes: bytes
 
+    @override
     def setUp(self) -> None:
         """
         Initialize the DHCPv4 Message Type option object.

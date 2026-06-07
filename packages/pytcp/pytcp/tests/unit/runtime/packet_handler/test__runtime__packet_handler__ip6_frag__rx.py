@@ -30,7 +30,7 @@ pytcp/tests/unit/runtime/packet_handler/test__runtime__packet_handler__ip6_frag_
 ver 3.0.8
 """
 
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING, cast, override
 from unittest import TestCase
 
 from net_addr import Ip6Address
@@ -145,6 +145,7 @@ class TestPacketHandlerIp6FragRx(TestCase):
     The 'Ip6FragRxHandler._phrx_ip6_frag' behaviour tests.
     """
 
+    @override
     def setUp(self) -> None:
         self._if = _StubInterface()
         self._handler = Ip6FragRxHandler(interface=cast("PacketHandlerL2 | PacketHandlerL3", self._if))

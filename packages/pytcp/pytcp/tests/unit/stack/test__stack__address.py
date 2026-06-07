@@ -764,6 +764,7 @@ class TestAddressApiInterfaceSelector(TestCase):
     The 'AddressApi.interface(ifindex)' device-selector tests.
     """
 
+    @override
     def setUp(self) -> None:
         """
         Register two fake interfaces in a fresh 'stack.interfaces'

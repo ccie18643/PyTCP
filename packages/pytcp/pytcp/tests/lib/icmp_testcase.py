@@ -40,7 +40,7 @@ ver 3.0.8
 """
 
 from dataclasses import dataclass
-from typing import Any, cast
+from typing import Any, cast, override
 from unittest.mock import _patch, patch
 
 from net_addr import Ip4Address, Ip6Address, MacAddress
@@ -182,6 +182,7 @@ class IcmpTestCase(NetworkTestCase):
     _icmp4_error_rate_limiter_prior: IcmpErrorRateLimiter
     _icmp6_error_rate_limiter_prior: IcmpErrorRateLimiter
 
+    @override
     def setUp(self) -> None:
         """
         Install a 'FakeTimer' over 'stack.timer' on top of the parent
@@ -228,6 +229,7 @@ class IcmpTestCase(NetworkTestCase):
 
         self._patches = []
 
+    @override
     def tearDown(self) -> None:
         """
         Stop any 'mock.patch' handle started by '_start_patch', restore

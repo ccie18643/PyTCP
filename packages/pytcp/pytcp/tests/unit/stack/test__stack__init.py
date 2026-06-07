@@ -34,7 +34,7 @@ ver 3.0.8
 
 import os
 import sys
-from typing import cast
+from typing import cast, override
 from unittest import TestCase
 from unittest.mock import MagicMock, create_autospec, patch
 
@@ -356,6 +356,7 @@ class TestStackInitializeInterfaceTap(TestCase):
     The 'initialize_interface__tap' helper tests.
     """
 
+    @override
     def setUp(self) -> None:
         """
         Suppress log output and patch the low-level syscalls that the
@@ -365,6 +366,7 @@ class TestStackInitializeInterfaceTap(TestCase):
         self._log_patch = patch("pytcp.stack.log")
         self._log_patch.start()
 
+    @override
     def tearDown(self) -> None:
         """
         Tear down patches.
@@ -455,6 +457,7 @@ class TestStackInitializeInterfaceTun(TestCase):
     The 'initialize_interface__tun' helper tests.
     """
 
+    @override
     def setUp(self) -> None:
         """
         Suppress log output.
@@ -463,6 +466,7 @@ class TestStackInitializeInterfaceTun(TestCase):
         self._log_patch = patch("pytcp.stack.log")
         self._log_patch.start()
 
+    @override
     def tearDown(self) -> None:
         """
         Tear down patches.
@@ -531,6 +535,7 @@ class TestStackMockInit(TestCase):
     The 'stack.mock__init' helper tests.
     """
 
+    @override
     def setUp(self) -> None:
         """
         Snapshot the module-level singletons so each test can reset
@@ -542,6 +547,7 @@ class TestStackMockInit(TestCase):
         self._sentinel = object()
         self._snapshot = {name: getattr(stack, name, self._sentinel) for name in ("timer", "interfaces")}
 
+    @override
     def tearDown(self) -> None:
         """
         Restore the snapshot of module-level singletons.
@@ -646,6 +652,7 @@ class TestStackStartDhcpBootWait(TestCase):
     The 'stack.start(wait_for_dhcp_bind=...)' DHCPv4 boot-wait tests.
     """
 
+    @override
     def setUp(self) -> None:
         """
         Snapshot the module-level state, install a mocked timer and a
@@ -676,6 +683,7 @@ class TestStackStartDhcpBootWait(TestCase):
         stack.stack_initialized = True
         stack.stack_running = False
 
+    @override
     def tearDown(self) -> None:
         """
         Restore the snapshotted module-level state.
@@ -722,6 +730,7 @@ class TestStackStopOrdering(TestCase):
     The 'stack.stop()' subsystem teardown-order tests.
     """
 
+    @override
     def setUp(self) -> None:
         """
         Snapshot the module-level state and replace each subsystem
@@ -766,6 +775,7 @@ class TestStackStopOrdering(TestCase):
         stack.interfaces = _interfaces
         stack.stack_initialized = True
 
+    @override
     def tearDown(self) -> None:
         """
         Restore the saved module-level subsystems.
@@ -877,6 +887,7 @@ class TestStackInitSharedPacketStats(TestCase):
     The 'stack.init()' shared 'PacketStats' wiring tests.
     """
 
+    @override
     def setUp(self) -> None:
         """
         Snapshot the module-level singletons that 'stack.init()'
@@ -901,6 +912,7 @@ class TestStackInitSharedPacketStats(TestCase):
             )
         }
 
+    @override
     def tearDown(self) -> None:
         """
         Restore the snapshot so subsequent tests start from the same
@@ -1056,6 +1068,7 @@ class TestStackInitArpCacheConfig(TestCase):
     compile-time defaults that the ARP cache loop reads.
     """
 
+    @override
     def setUp(self) -> None:
         """
         Snapshot the module-level singletons 'init()' rebinds so
@@ -1084,6 +1097,7 @@ class TestStackInitArpCacheConfig(TestCase):
             )
         }
 
+    @override
     def tearDown(self) -> None:
         """
         Restore module-level singletons and sysctl defaults.
@@ -1211,6 +1225,7 @@ class TestStackInitControlApis(TestCase):
     daemon when the matching control op resolves 'stack.<api>'.
     """
 
+    @override
     def setUp(self) -> None:
         """
         Snapshot the singletons 'init()' rebinds, then clear the
@@ -1234,6 +1249,7 @@ class TestStackInitControlApis(TestCase):
             if hasattr(stack, name):
                 delattr(stack, name)
 
+    @override
     def tearDown(self) -> None:
         """
         Restore the snapshotted singletons.
@@ -1345,6 +1361,7 @@ class TestStackAddInterface(TestCase):
     The 'add_interface' per-interface construction / registration tests.
     """
 
+    @override
     def setUp(self) -> None:
         """
         Snapshot the module-level interface registry + N=1 back-compat
@@ -1546,6 +1563,7 @@ class TestStackInterfaceLifecycleDynamic(TestCase):
     stack (RTM_NEWLINK / RTM_DELLINK).
     """
 
+    @override
     def setUp(self) -> None:
         """
         Snapshot the interface registry + N=1 shims + running flag,
@@ -1823,6 +1841,7 @@ class TestStackInitZeroInterface(TestCase):
     later via 'add_interface'.
     """
 
+    @override
     def setUp(self) -> None:
         """
         Snapshot the module-level singletons 'stack.init()' rebinds and
@@ -1855,6 +1874,7 @@ class TestStackInitZeroInterface(TestCase):
             )
         }
 
+    @override
     def tearDown(self) -> None:
         """
         Restore the snapshot so subsequent tests start clean.
@@ -2004,6 +2024,7 @@ class TestAddInterfacePerInterfaceSubsystems(TestCase):
     its own client(s), bound to that interface via 'interface(ifindex)'.
     """
 
+    @override
     def setUp(self) -> None:
         """
         Bring the stack core up with a zero-interface 'init()' and
@@ -2050,6 +2071,7 @@ class TestAddInterfacePerInterfaceSubsystems(TestCase):
             p.start()
             self.addCleanup(p.stop)
 
+    @override
     def tearDown(self) -> None:
         """
         Restore the snapshot so subsequent tests start clean.
@@ -2198,6 +2220,7 @@ class TestStackEgressPacketHandler(TestCase):
     destination egresses the local link — the sole interface at N=1.
     """
 
+    @override
     def setUp(self) -> None:
         """
         Snapshot 'stack.interfaces' / FIBs so each test installs its own.
@@ -2287,6 +2310,7 @@ class TestStackLocalAddressIntrospection(TestCase):
     use on a multi-homed host.
     """
 
+    @override
     def setUp(self) -> None:
         """
         Install two fake interfaces, each owning one IPv4/IPv6 host +
@@ -2387,6 +2411,7 @@ class TestStackEgressPacketHandlerFib(TestCase):
     interface on which the gateway is reachable.
     """
 
+    @override
     def setUp(self) -> None:
         """
         Install two interfaces on distinct subnets (ifindex 1 -> 10.0.1.0/24,
@@ -2502,6 +2527,7 @@ class TestStackHasRouteTo(TestCase):
     (Linux parity) when the FIB cannot reach a destination.
     """
 
+    @override
     def setUp(self) -> None:
         """
         Install one interface (10.0.1.0/24) and a fresh IPv4 FIB.
@@ -2662,6 +2688,7 @@ class TestStackEgressInterfaceMtu(TestCase):
     interface the FIB selects for the peer.
     """
 
+    @override
     def setUp(self) -> None:
         """
         Install two interfaces on distinct subnets with distinct MTUs
@@ -2800,6 +2827,7 @@ class TestStackAddInterfaceDhcp4PerInterface(TestCase):
     host.
     """
 
+    @override
     def setUp(self) -> None:
         """
         Build an empty interface registry plus the control-plane APIs the

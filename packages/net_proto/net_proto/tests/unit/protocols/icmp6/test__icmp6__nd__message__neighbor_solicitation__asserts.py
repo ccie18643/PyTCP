@@ -31,7 +31,7 @@ net_proto/tests/unit/protocols/icmp6/test__icmp6__nd__message__neighbor_solicita
 ver 3.0.8
 """
 
-from typing import Any
+from typing import Any, override
 from unittest import TestCase
 
 from net_addr import Ip6Address, MacAddress
@@ -51,6 +51,7 @@ class TestIcmp6NdMessageNeighborSolicitationAsserts(TestCase):
     constructor assert tests.
     """
 
+    @override
     def setUp(self) -> None:
         """
         Create the default arguments for the ICMPv6 ND Neighbor Solicitation

@@ -702,10 +702,12 @@ class TestTxRingDispatchFastPath(_TxRingFixture):
             iterates '.items()'.
             """
 
+            @override
             def get(self, key: Any, default: Any = None) -> Any:
                 get_calls.append(key)
                 return super().get(key, default)
 
+            @override
             def items(self) -> Any:
                 raise AssertionError(
                     "isinstance fallback path entered — real EthernetAssembler should "

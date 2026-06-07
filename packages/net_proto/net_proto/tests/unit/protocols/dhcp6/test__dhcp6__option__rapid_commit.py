@@ -30,6 +30,7 @@ net_proto/tests/unit/protocols/dhcp6/test__dhcp6__option__rapid_commit.py
 ver 3.0.8
 """
 
+from typing import override
 from unittest import TestCase
 
 from net_proto import (
@@ -44,6 +45,7 @@ class TestDhcp6OptionRapidCommitAssembler(TestCase):
     The DHCPv6 Rapid Commit option assembler tests.
     """
 
+    @override
     def setUp(self) -> None:
         """
         Build the zero-length DHCPv6 Rapid Commit option.

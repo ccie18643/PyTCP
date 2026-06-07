@@ -34,7 +34,7 @@ pytcp/tests/integration/protocols/ethernet/test__ethernet__tx.py
 ver 3.0.8
 """
 
-from typing import Any, Literal
+from typing import Any, Literal, override
 
 from parameterized import parameterized_class  # type: ignore[import-untyped]
 
@@ -742,6 +742,7 @@ class TestPacketHandlerEthernetTx(EthernetTestCase):
 
     _frames_tx: list[bytes]
 
+    @override
     def setUp(self) -> None:
         """
         Build fresh per-test 'Ip4IfAddr' and 'Ip6IfAddr' instances so gateway

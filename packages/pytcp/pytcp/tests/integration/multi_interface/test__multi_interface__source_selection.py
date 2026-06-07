@@ -38,6 +38,7 @@ pytcp/tests/integration/multi_interface/test__multi_interface__source_selection.
 ver 3.0.8
 """
 
+from typing import override
 from unittest import TestCase
 
 from net_addr import Ip4Address, Ip4IfAddr, Ip4Network, Ip6Address, Ip6IfAddr, Ip6Network, MacAddress
@@ -61,6 +62,7 @@ class TestMultiInterfaceSourceSelection(IcmpTestCase, TestCase):
     The multi-interface egress-aware source-selection tests.
     """
 
+    @override
     def setUp(self) -> None:
         """
         Add a second interface on a distinct subnet alongside the boot

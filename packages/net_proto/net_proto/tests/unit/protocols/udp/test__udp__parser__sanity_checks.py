@@ -31,6 +31,7 @@ ver 3.0.8
 """
 
 from types import SimpleNamespace
+from typing import override
 from unittest import TestCase
 
 from parameterized import parameterized_class  # type: ignore[import-untyped]
@@ -66,6 +67,7 @@ class TestUdpParserSanityChecks(TestCase):
     _frame_rx: bytes
     _error_message: str
 
+    @override
     def setUp(self) -> None:
         """
         Wrap the parametrized frame in a PacketRx and stub the IP layer

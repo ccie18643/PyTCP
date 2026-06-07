@@ -34,7 +34,7 @@ pytcp/tests/lib/network_testcase.py
 ver 3.0.8
 """
 
-from typing import Any, cast
+from typing import Any, cast, override
 from unittest import TestCase
 from unittest.mock import create_autospec, patch
 
@@ -219,6 +219,7 @@ class NetworkTestCase(TestCase):
     _timer: FakeTimer
     _timer_prior: Timer | None
 
+    @override
     def setUp(self) -> None:
         """
         Prepare the test case.
@@ -534,6 +535,7 @@ class NetworkTestCase(TestCase):
 
         return AddedInterface(handler=handler, frames_tx=frames_tx)
 
+    @override
     def tearDown(self) -> None:
         """
         Restore the stack globals patched in 'setUp' so test-only

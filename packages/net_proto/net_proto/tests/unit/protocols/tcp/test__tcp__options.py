@@ -30,7 +30,7 @@ net_proto/tests/unit/protocols/tcp/test__tcp__options.py
 ver 3.0.8
 """
 
-from typing import Any
+from typing import Any, override
 from unittest import TestCase
 
 from parameterized import parameterized_class  # type: ignore[import-untyped]
@@ -279,6 +279,7 @@ class TestTcpOptionsAssembler(TestCase):
     _args: list[Any]
     _results: dict[str, Any]
 
+    @override
     def setUp(self) -> None:
         """
         Build the TcpOptions container from the parametrized option list.

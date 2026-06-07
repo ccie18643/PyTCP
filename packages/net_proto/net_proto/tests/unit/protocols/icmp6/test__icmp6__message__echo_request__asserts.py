@@ -31,7 +31,7 @@ net_proto/tests/unit/protocols/icmp6/test__icmp6__message__echo_request__asserts
 ver 3.0.8
 """
 
-from typing import Any
+from typing import Any, override
 from unittest import TestCase
 
 from net_proto import (
@@ -49,6 +49,7 @@ class TestIcmp6MessageEchoRequestAsserts(TestCase):
     The ICMPv6 Echo Request message constructor argument assert tests.
     """
 
+    @override
     def setUp(self) -> None:
         """
         Build a valid kwargs baseline used as the starting point for every

@@ -30,7 +30,7 @@ net_proto/tests/unit/protocols/tcp/test__tcp__option__sack.py
 ver 3.0.8
 """
 
-from typing import Any
+from typing import Any, override
 from unittest import TestCase
 
 from parameterized import parameterized_class  # type: ignore[import-untyped]
@@ -264,6 +264,7 @@ class TestTcpOptionSackAssembler(TestCase):
     _blocks: list[TcpSackBlock]
     _results: dict[str, Any]
 
+    @override
     def setUp(self) -> None:
         """
         Build the TCP Sack option from the parametrized block list.

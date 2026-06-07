@@ -41,6 +41,8 @@ pytcp/tests/integration/protocols/icmp6/nd/test__icmp6__nd__rfc7217_slaac.py
 ver 3.0.8
 """
 
+from typing import override
+
 from net_addr import Ip6IfAddr, Ip6Network
 from pytcp.stack import sysctl as sysctl_module
 from pytcp.tests.lib.nd_testcase import NdTestCase
@@ -53,6 +55,7 @@ class TestIcmp6Nd__Rfc7217Slaac__DefaultUsesRfc7217(NdTestCase):
     EUI-64 form.
     """
 
+    @override
     def tearDown(self) -> None:
         """
         Restore sysctl defaults so per-test overrides don't leak.
@@ -110,6 +113,7 @@ class TestIcmp6Nd__Rfc7217Slaac__SysctlZeroFallsBackToEui64(NdTestCase):
     EUI-64 IID derivation (the RFC 4291 §2.5.1 form).
     """
 
+    @override
     def tearDown(self) -> None:
         """
         Restore sysctl defaults so per-test overrides don't leak.

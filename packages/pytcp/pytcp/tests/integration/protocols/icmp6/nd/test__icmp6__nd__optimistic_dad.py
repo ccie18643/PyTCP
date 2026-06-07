@@ -50,6 +50,7 @@ ver 3.0.8
 """
 
 import threading
+from typing import override
 
 from net_addr import Ip6Address, Ip6IfAddr
 from net_proto import (
@@ -97,6 +98,7 @@ class TestIcmp6Nd__OptimisticDad__SysctlRegistration(NdTestCase):
     booleans.
     """
 
+    @override
     def tearDown(self) -> None:
         """
         Restore sysctl defaults so per-test overrides don't leak.
@@ -171,6 +173,7 @@ class TestIcmp6Nd__OptimisticDad__SyncDad__StateLifecycle(NdTestCase):
     after DAD passes.
     """
 
+    @override
     def tearDown(self) -> None:
         """
         Restore sysctl defaults so per-test overrides don't leak.
@@ -236,6 +239,7 @@ class TestIcmp6Nd__OptimisticDad__OptimisticPath__PreClaim(NdTestCase):
     during the wait per RFC 4429 §3.3.
     """
 
+    @override
     def tearDown(self) -> None:
         """
         Restore sysctl defaults so per-test overrides don't leak.
@@ -351,6 +355,7 @@ class TestIcmp6Nd__OptimisticDad__NaOverrideFlag(NdTestCase):
     differential between OPTIMISTIC and VALID source state.
     """
 
+    @override
     def setUp(self) -> None:
         """
         Install the candidate as a regular '_ip6_ifaddr' entry
@@ -435,6 +440,7 @@ class TestIcmp6Nd__OptimisticDad__SysctlOff__NoPreClaim(NdTestCase):
     §5.4 strict semantics.
     """
 
+    @override
     def tearDown(self) -> None:
         """
         Restore sysctl defaults so per-test overrides don't leak.

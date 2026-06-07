@@ -30,7 +30,7 @@ net_proto/tests/unit/protocols/tcp/test__tcp__option__mss.py
 ver 3.0.8
 """
 
-from typing import Any
+from typing import Any, override
 from unittest import TestCase
 
 from parameterized import parameterized_class  # type: ignore[import-untyped]
@@ -144,6 +144,7 @@ class TestTcpOptionMssAssembler(TestCase):
     _mss: int
     _results: dict[str, Any]
 
+    @override
     def setUp(self) -> None:
         """
         Build the TCP Mss option from the parametrized 'mss' value.

@@ -31,6 +31,7 @@ pytcp/tests/unit/protocols/arp/test__arp__constants.py
 ver 3.0.8
 """
 
+from typing import override
 from unittest import TestCase
 
 from pytcp.protocols.arp.arp__constants import (
@@ -210,6 +211,7 @@ class TestArpPolicySysctlValidators(TestCase):
     tests — pin which integer values each policy knob accepts.
     """
 
+    @override
     def tearDown(self) -> None:
         """
         Restore sysctl defaults so a per-test mutation never

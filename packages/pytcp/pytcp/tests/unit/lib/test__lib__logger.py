@@ -32,6 +32,7 @@ ver 3.0.8
 
 import io
 import time
+from typing import override
 from unittest import TestCase
 from unittest.mock import patch
 
@@ -138,6 +139,7 @@ class TestLoggerPlainOutput(TestCase):
     The 'log()' non-debug output-formatting tests.
     """
 
+    @override
     def setUp(self) -> None:
         """
         Build a StringIO sink for each test and patch the three stack
@@ -403,6 +405,7 @@ class TestLoggerInterfaceTag(TestCase):
     The 'log()' per-interface tagging tests.
     """
 
+    @override
     def tearDown(self) -> None:
         """
         Clear the thread-local interface tag so it cannot leak to a

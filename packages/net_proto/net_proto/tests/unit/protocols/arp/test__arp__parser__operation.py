@@ -30,7 +30,7 @@ net_proto/tests/unit/protocols/arp/test__arp__parser__operation.py
 ver 3.0.8
 """
 
-from typing import Any
+from typing import Any, override
 from unittest import TestCase
 
 from parameterized import parameterized_class  # type: ignore[import-untyped]
@@ -163,6 +163,7 @@ class TestArpParserOperation(TestCase):
     _trailing: bytes
     _results: dict[str, Any]
 
+    @override
     def setUp(self) -> None:
         """
         Wrap the raw frame in a PacketRx and parse it.

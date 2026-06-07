@@ -38,7 +38,7 @@ ver 3.0.8
 
 from collections.abc import Iterable
 from dataclasses import dataclass
-from typing import Any, cast
+from typing import Any, cast, override
 from unittest.mock import _patch, patch
 
 from net_addr import Ip4Address, Ip6Address
@@ -162,6 +162,7 @@ class TcpTestCase(NetworkTestCase):
     # class level so every session built via the harness pins Reno.
     _DEFAULT_CC_MODE: CcMode | None = None
 
+    @override
     def setUp(self) -> None:
         """
         Install a 'FakeTimer' over 'stack.timer' on top of the parent
@@ -219,6 +220,7 @@ class TcpTestCase(NetworkTestCase):
 
         self._patches = []
 
+    @override
     def tearDown(self) -> None:
         """
         Stop any 'mock.patch' handle started by '_start_patch', restore

@@ -49,6 +49,7 @@ ver 3.0.8
 """
 
 import threading
+from typing import override
 from unittest.mock import patch
 
 from net_addr import Ip6Address, Ip6IfAddr
@@ -63,6 +64,7 @@ class TestIcmp6Nd__IdgenRetries__SysctlRegistration(NdTestCase):
     int.
     """
 
+    @override
     def tearDown(self) -> None:
         """
         Restore sysctl defaults so per-test overrides don't leak.
@@ -123,6 +125,7 @@ class TestIcmp6Nd__IdgenRetries__WorkerRetryLoop(NdTestCase):
     then gives up.
     """
 
+    @override
     def tearDown(self) -> None:
         """
         Restore sysctl defaults so per-test overrides don't leak.
@@ -303,6 +306,7 @@ class TestIcmp6Nd__IdgenRetries__AcceptDadCompose(NdTestCase):
     intermediate failures during the retry loop.
     """
 
+    @override
     def tearDown(self) -> None:
         """
         Restore sysctl defaults so per-test overrides don't leak.

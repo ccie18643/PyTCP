@@ -34,6 +34,8 @@ pytcp/tests/integration/protocols/udp/test__udp__rx.py
 ver 3.0.8
 """
 
+from typing import override
+
 from parameterized import parameterized_class  # type: ignore[import-untyped]
 
 from net_proto.lib.packet_rx import PacketRx
@@ -486,6 +488,7 @@ class TestUdpRxEchoNativeDisabled(UdpTestCase):
     branch for port-7 traffic.
     """
 
+    @override
     def setUp(self) -> None:
         """
         Build the standard mock stack, then disable native UDP echo.

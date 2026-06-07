@@ -38,6 +38,8 @@ pytcp/tests/integration/protocols/icmp6/nd/test__icmp6__nd__simultaneous_probe.p
 ver 3.0.8
 """
 
+from typing import override
+
 from net_addr import Ip6Address, MacAddress
 from pytcp.tests.lib.nd_testcase import NdTestCase
 from pytcp.tests.lib.network_testcase import (
@@ -61,6 +63,7 @@ class TestIcmp6Rx__NdSimultaneousProbe(NdTestCase):
     probe conflict.
     """
 
+    @override
     def setUp(self) -> None:
         """
         Install the candidate address as the stack's tentative

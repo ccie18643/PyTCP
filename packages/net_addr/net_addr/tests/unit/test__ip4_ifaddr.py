@@ -30,7 +30,7 @@ net_addr/tests/unit/test__ip4_ifaddr.py
 ver 3.0.8
 """
 
-from typing import Any
+from typing import Any, override
 from unittest import TestCase
 
 from parameterized import parameterized_class  # type: ignore[import-untyped]
@@ -143,6 +143,7 @@ class TestNetAddrIp4Host(TestCase):
     _kwargs: dict[str, Any]
     _results: dict[str, Any]
 
+    @override
     def setUp(self) -> None:
         """
         Initialize the IPv4 host object with testcase arguments.

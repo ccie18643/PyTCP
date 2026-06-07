@@ -31,7 +31,7 @@ net_proto/tests/unit/protocols/dhcp4/test__dhcp4__option__classless_static_route
 ver 3.0.8
 """
 
-from typing import Any
+from typing import Any, override
 from unittest import TestCase
 
 from parameterized import parameterized_class  # type: ignore[import-untyped]
@@ -217,6 +217,7 @@ class TestDhcp4OptionClasslessStaticRouteAssembler(TestCase):
     _args: list[Any]
     _results: dict[str, Any]
 
+    @override
     def setUp(self) -> None:
         """
         Initialize the option object with the testcase arguments.

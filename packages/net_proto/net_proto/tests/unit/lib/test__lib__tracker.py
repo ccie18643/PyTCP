@@ -32,6 +32,7 @@ ver 3.0.8
 
 import itertools
 import time
+from typing import override
 from unittest import TestCase
 from unittest.mock import patch
 
@@ -43,6 +44,7 @@ class _TrackerTestBase(TestCase):
     Base class resetting the Tracker class-level counters around each test.
     """
 
+    @override
     def setUp(self) -> None:
         """
         Reset the shared RX/TX serial counters before each test.
@@ -53,6 +55,7 @@ class _TrackerTestBase(TestCase):
         Tracker._rx_counter = itertools.count()
         Tracker._tx_counter = itertools.count()
 
+    @override
     def tearDown(self) -> None:
         """
         Restore the shared RX/TX serial counters after each test.

@@ -31,7 +31,7 @@ ver 3.0.8
 """
 
 from collections.abc import Callable
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING, cast, override
 from unittest import TestCase
 
 from net_addr import Ip6Address, Ip6IfAddr, MacAddress
@@ -142,6 +142,7 @@ class TestPacketHandlerIcmp6Tx(TestCase):
     The 'Icmp6TxHandler._phtx_icmp6' behaviour tests.
     """
 
+    @override
     def setUp(self) -> None:
         self._handler, self._if = _make_icmp6_tx()
 
@@ -185,6 +186,7 @@ class TestPacketHandlerIcmp6TxConvenienceHelpers(TestCase):
     The ICMPv6 convenience-helper tests.
     """
 
+    @override
     def setUp(self) -> None:
         self._handler, self._if = _make_icmp6_tx()
 
@@ -345,6 +347,7 @@ class TestPacketHandlerIcmp6TxNeighborAdvertisement(TestCase):
     helper).
     """
 
+    @override
     def setUp(self) -> None:
         """
         Build a stub handler.
@@ -428,6 +431,7 @@ class TestPacketHandlerIcmp6TxGratuitousNa(TestCase):
     nd_linux_parity §6 (RFC 9131 §3).
     """
 
+    @override
     def setUp(self) -> None:
         """
         Build a stub handler. Restore sysctl defaults at

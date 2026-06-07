@@ -37,7 +37,7 @@ pytcp/tests/integration/protocols/icmp6/test__icmp6__rx.py
 ver 3.0.8
 """
 
-from typing import Any
+from typing import Any, override
 
 from parameterized import parameterized_class  # type: ignore[import-untyped]
 
@@ -922,6 +922,7 @@ class TestIcmp6Rx__RouterSolicitation(IcmpTestCase):
     _ALL_ROUTERS__IP6 = Ip6Address("ff02::2")
     _ALL_ROUTERS__MAC = MacAddress("33:33:00:00:00:02")
 
+    @override
     def setUp(self) -> None:
         """
         Join the all-routers IPv6 and Ethernet multicast groups so the
@@ -983,6 +984,7 @@ class TestIcmp6Rx__Mld2Report(IcmpTestCase):
     _MLD2_ROUTERS__IP6 = Ip6Address("ff02::16")
     _MLD2_ROUTERS__MAC = MacAddress("33:33:00:00:00:16")
 
+    @override
     def setUp(self) -> None:
         """
         Join the MLDv2-routers IPv6 and Ethernet multicast groups.
@@ -1043,6 +1045,7 @@ class TestIcmp6Rx__NaDadMatch(IcmpTestCase):
 
     _CANDIDATE__IP6 = Ip6Address("2001:db8:0:1::5")
 
+    @override
     def setUp(self) -> None:
         """
         Install a DAD candidate on the packet handler so the NA target

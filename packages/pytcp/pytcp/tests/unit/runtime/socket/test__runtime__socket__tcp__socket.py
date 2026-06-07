@@ -37,7 +37,7 @@ import fcntl
 import select
 import struct
 from types import SimpleNamespace
-from typing import Any, cast
+from typing import Any, cast, override
 from unittest import TestCase
 from unittest.mock import MagicMock, patch
 
@@ -86,6 +86,7 @@ class _TcpSocketTestCase(TestCase):
     'TcpSession' constructor so no real FSM thread is spun up.
     """
 
+    @override
     def setUp(self) -> None:
         """
         Install per-test patches on logging, 'stack.sockets', the
@@ -128,6 +129,7 @@ class _TcpSocketTestCase(TestCase):
         self._session_cls = self._session_cls_patch.start()
         self._session_cls.return_value = MagicMock()
 
+    @override
     def tearDown(self) -> None:
         """
         Tear down every per-test patch.
@@ -1982,6 +1984,7 @@ class TestTcpSocketFileno(_TcpSocketTestCase):
     The 'TcpSocket.fileno' / read-readiness signal-and-drain tests.
     """
 
+    @override
     def setUp(self) -> None:
         """
         Build a fresh TCP socket. 'tearDown' closes the eventfd
@@ -1991,6 +1994,7 @@ class TestTcpSocketFileno(_TcpSocketTestCase):
         super().setUp()
         self._socket = TcpSocket(family=AddressFamily.INET4)
 
+    @override
     def tearDown(self) -> None:
         """
         Release the socket's eventfd while the 'log' patch is still
@@ -2151,6 +2155,7 @@ class TestTcpSocketNonBlocking(_TcpSocketTestCase):
     The 'TcpSocket.setblocking' non-blocking-recv / accept tests.
     """
 
+    @override
     def setUp(self) -> None:
         """
         Build a non-blocking TCP socket. tearDown releases the
@@ -2161,6 +2166,7 @@ class TestTcpSocketNonBlocking(_TcpSocketTestCase):
         self._socket = TcpSocket(family=AddressFamily.INET4)
         self._socket.setblocking(False)
 
+    @override
     def tearDown(self) -> None:
         """
         Close the eventfd before the parent tears down patches.

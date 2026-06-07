@@ -38,6 +38,8 @@ pytcp/tests/integration/protocols/icmp4/test__icmp4__pmtud.py
 ver 3.0.8
 """
 
+from typing import override
+
 from net_proto import (
     Icmp4Assembler,
     Icmp4DestinationUnreachableCode,
@@ -104,6 +106,7 @@ class TestIcmp4Pmtud__FragNeededWithMatchingUdpSocket(IcmpTestCase):
     the embedded 4-tuple.
     """
 
+    @override
     def setUp(self) -> None:
         """
         Bind a UdpSocket on the stack so the embedded 4-tuple matches.
