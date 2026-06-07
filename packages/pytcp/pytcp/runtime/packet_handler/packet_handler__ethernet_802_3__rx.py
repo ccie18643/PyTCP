@@ -21,6 +21,8 @@
 ##                                                                            ##
 ################################################################################
 
+# pylint: disable=protected-access
+# pyright: reportPrivateUsage=false
 
 """
 This module contains the packet handler for inbound IEEE

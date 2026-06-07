@@ -21,6 +21,8 @@
 ##                                                                            ##
 ################################################################################
 
+# pylint: disable=protected-access
+# pyright: reportPrivateUsage=false
 
 """
 This module contains packet handler for inbound the IPv6 fragment extension header.

@@ -164,7 +164,7 @@ class SocketTable:
             if not cohort:
                 return default
             eligible = [
-                member for member in cohort if member._egress_ifindex is None or member._egress_ifindex == ifindex
+                member for member in cohort if member.egress_ifindex is None or member.egress_ifindex == ifindex
             ]
             if not eligible:
                 return default

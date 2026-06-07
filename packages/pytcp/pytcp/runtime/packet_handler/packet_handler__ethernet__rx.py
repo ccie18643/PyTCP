@@ -21,6 +21,8 @@
 ##                                                                            ##
 ################################################################################
 
+# pylint: disable=protected-access
+# pyright: reportPrivateUsage=false
 
 """
 This module contains packet handler for the inbound Ethernet II packets.

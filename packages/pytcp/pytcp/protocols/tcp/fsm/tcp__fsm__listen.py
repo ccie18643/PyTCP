@@ -114,7 +114,6 @@ def fsm__listen__packet(session: TcpSession, packet_rx_md: TcpMetadata) -> None:
             # listening process from accept-queue exhaustion -
             # one of the oldest TCP-stack DoS classes -
             # without requiring application changes.
-            # pylint: disable=protected-access
             accept_q_len = len(session._socket._tcp_accept)
             accept_q_cap = session._socket._backlog
             if accept_q_len >= accept_q_cap:
@@ -123,7 +122,6 @@ def fsm__listen__packet(session: TcpSession, packet_rx_md: TcpMetadata) -> None:
                     f"[{session}] - Accept queue full " f"({accept_q_len}/{accept_q_cap}); " "dropping SYN silently",
                 )
                 return
-            # pylint: enable=protected-access
             # Listener fork pattern (RFC 9293 §3.10.7.2). The
             # current 'session' object is the LISTEN-state session.
             # On peer's SYN we mutate it IN PLACE into the new
@@ -164,7 +162,7 @@ def fsm__listen__packet(session: TcpSession, packet_rx_md: TcpMetadata) -> None:
             # RFC 1122 §4.2.3.4: inherit the Nagle disable
             # flag.
             tcp_session._tcp_nodelay = listen_socket._tcp_nodelay
-            session._socket._tcp_session = tcp_session  # pylint: disable=protected-access
+            session._socket._tcp_session = tcp_session
             # Re-bind 'session' to the peer's 4-tuple and create a
             # new TcpSocket that exposes this child session to
             # the application's eventual 'accept()' caller.

@@ -296,7 +296,7 @@ class TestArpCacheFlushCallback(_ArpCacheFixture):
 
         handler = MagicMock(spec=PacketHandlerL2)
         tx_ring = create_autospec(TxRing, spec_set=True)
-        handler._tx_ring = tx_ring
+        handler.tx_ring = tx_ring
         self._cache._owner = handler
         self._cache._flush_packet(eth, mac)
 

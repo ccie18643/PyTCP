@@ -1422,6 +1422,17 @@ class socket(ABC):
 
         return self._remote_port
 
+    @property
+    def egress_ifindex(self) -> int | None:
+        """
+        Get the SO_BINDTODEVICE-pinned egress interface index, or
+        'None' when the socket is not pinned to an interface. Read
+        surface for the RX-path ingress demux ('SocketTable') and the
+        send path; the '_egress_ifindex' attribute stays the storage.
+        """
+
+        return self._egress_ifindex
+
     ###############################
     ##  BSD socket API methods.  ##
     ###############################

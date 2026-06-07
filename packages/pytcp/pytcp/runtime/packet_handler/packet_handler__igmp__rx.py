@@ -21,6 +21,8 @@
 ##                                                                            ##
 ################################################################################
 
+# pylint: disable=protected-access
+# pyright: reportPrivateUsage=false
 
 """
 This module contains the inbound IGMP packet handler for one interface.

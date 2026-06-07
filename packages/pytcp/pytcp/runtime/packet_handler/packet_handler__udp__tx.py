@@ -21,6 +21,8 @@
 ##                                                                            ##
 ################################################################################
 
+# pylint: disable=protected-access
+# pyright: reportPrivateUsage=false
 
 """
 This module contains protocol support for the outbound UDP packets.

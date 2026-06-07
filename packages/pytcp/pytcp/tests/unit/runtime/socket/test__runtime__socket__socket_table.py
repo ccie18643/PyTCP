@@ -67,13 +67,13 @@ def _make_socket(socket_id: SocketId | None = None) -> socket:
 def _make_bound_socket(socket_id: SocketId, *, egress_ifindex: int | None) -> socket:
     """
     Build a stand-in socket carrying a 'socket_id' and the
-    SO_BINDTODEVICE-resolved '_egress_ifindex' (None when unbound) for the
+    SO_BINDTODEVICE-resolved 'egress_ifindex' (None when unbound) for the
     ingress-demux tests. A 'SimpleNamespace' stand-in is used because
-    '_egress_ifindex' is an instance-only attribute an autospec cannot
+    'egress_ifindex' is an instance-only attribute an autospec cannot
     stamp under 'spec_set'.
     """
 
-    return cast(socket, SimpleNamespace(socket_id=socket_id, _egress_ifindex=egress_ifindex))
+    return cast(socket, SimpleNamespace(socket_id=socket_id, egress_ifindex=egress_ifindex))
 
 
 class TestSocketTableBasic(TestCase):

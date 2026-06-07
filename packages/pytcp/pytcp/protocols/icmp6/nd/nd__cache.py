@@ -215,9 +215,9 @@ class NdCache(NeighborCache[Ip6Address, EthernetAssembler]):
         """
 
         assert self._owner is not None, "ND cache must be bound to an interface handler before flushing."
-        assert self._owner._tx_ring is not None, "Owning interface handler must have a TX ring to flush."
+        assert self._owner.tx_ring is not None, "Owning interface handler must have a TX ring to flush."
         packet.dst = mac_address
         # Phase 4: this direct enqueue becomes a ring-handoff TX
         # request once the per-interface TX worker owns the
         # send-out pipeline.
-        self._owner._tx_ring.enqueue(packet)
+        self._owner.tx_ring.enqueue(packet)
