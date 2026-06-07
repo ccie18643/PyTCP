@@ -33,8 +33,6 @@ ver 3.0.8
 from typing import Any, override
 from unittest import TestCase
 
-from parameterized import parameterized_class  # type: ignore[import-untyped]
-
 from net_addr import Ip6Address, MacAddress
 from net_proto import (
     ICMP6__ND__REDIRECT__LEN,
@@ -47,6 +45,7 @@ from net_proto import (
     Icmp6SanityError,
     Icmp6Type,
 )
+from net_proto.tests.lib.parameterized import parameterized_class
 
 # Common fixtures
 _TARGET = Ip6Address("fe80::1")

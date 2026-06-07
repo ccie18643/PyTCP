@@ -40,8 +40,6 @@ from types import SimpleNamespace
 from typing import Any, cast
 from unittest import TestCase
 
-from parameterized import parameterized_class  # type: ignore[import-untyped]
-
 from net_addr import Ip6Address
 from net_proto import (
     EthernetAssembler,
@@ -58,6 +56,7 @@ from net_proto import (
     PacketRx,
     inet_cksum,
 )
+from net_proto.tests.lib.parameterized import parameterized_class
 
 
 def _build_icmp6_frame(*, message: Any, ip6__src: Ip6Address, ip6__dst: Ip6Address) -> bytes:

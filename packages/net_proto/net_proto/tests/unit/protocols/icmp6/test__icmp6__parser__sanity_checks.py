@@ -34,11 +34,10 @@ from types import SimpleNamespace
 from typing import Any, cast, override
 from unittest import TestCase
 
-from parameterized import parameterized_class  # type: ignore[import-untyped]
-
 from net_addr import Ip6Address
 from net_proto import Icmp6Parser, Icmp6SanityError, Ip6Parser, PacketRx
 from net_proto.lib.inet_cksum import inet_cksum
+from net_proto.tests.lib.parameterized import parameterized_class
 
 
 def _with_cksum(frame_no_cksum: bytes) -> bytes:

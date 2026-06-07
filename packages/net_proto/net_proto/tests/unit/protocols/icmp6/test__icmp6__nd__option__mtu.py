@@ -33,14 +33,13 @@ ver 3.0.8
 from typing import Any, override
 from unittest import TestCase
 
-from parameterized import parameterized_class  # type: ignore[import-untyped]
-
 from net_proto import (
     ICMP6__ND__OPTION__MTU__LEN,
     Icmp6IntegrityError,
     Icmp6NdOptionMtu,
     Icmp6NdOptionType,
 )
+from net_proto.tests.lib.parameterized import parameterized_class
 
 
 class TestIcmp6NdOptionMtuAsserts(TestCase):

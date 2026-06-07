@@ -34,11 +34,10 @@ pytcp/tests/integration/protocols/ethernet_802_3/test__ethernet_802_3__rx.py
 ver 3.0.8
 """
 
-from parameterized import parameterized_class  # type: ignore[import-untyped]
-
 from net_proto.lib.packet_rx import PacketRx
 from pytcp.lib.packet_stats import PacketStatsRx, PacketStatsTx
 from pytcp.tests.lib.ethernet_802_3_testcase import Ethernet8023TestCase
+from pytcp.tests.lib.parameterized import parameterized_class
 
 
 @parameterized_class(

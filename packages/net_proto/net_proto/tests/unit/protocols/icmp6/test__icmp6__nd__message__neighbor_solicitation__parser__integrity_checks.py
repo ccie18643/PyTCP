@@ -35,8 +35,6 @@ from types import SimpleNamespace
 from typing import Any, cast, override
 from unittest import TestCase
 
-from parameterized import parameterized_class  # type: ignore[import-untyped]
-
 from net_addr import Ip6Address
 from net_proto import (
     ICMP6__ND__NEIGHBOR_SOLICITATION__LEN,
@@ -45,6 +43,7 @@ from net_proto import (
     Ip6Parser,
     PacketRx,
 )
+from net_proto.tests.lib.parameterized import parameterized_class
 
 # Valid 24-byte NS, target 2001:db8::1 — used as a baseline for the positive
 # boundary test. Checksum computed with pshdr_sum=0.

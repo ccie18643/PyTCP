@@ -34,8 +34,6 @@ ver 3.0.8
 from typing import Any, override
 from unittest import TestCase
 
-from parameterized import parameterized_class  # type: ignore[import-untyped]
-
 from net_addr import Ip4Address, Ip4Mask, Ip4Network
 from net_proto import (
     Dhcp4IntegrityError,
@@ -57,6 +55,7 @@ from net_proto import (
     Dhcp4OptionUnknown,
 )
 from net_proto.protocols.dhcp4.dhcp4__header import DHCP4__HEADER__LEN
+from net_proto.tests.lib.parameterized import parameterized_class
 
 
 @parameterized_class(

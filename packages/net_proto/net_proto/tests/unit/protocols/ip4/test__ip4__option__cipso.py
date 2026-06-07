@@ -34,8 +34,6 @@ ver 3.0.8
 from typing import Any, override
 from unittest import TestCase
 
-from parameterized import parameterized_class  # type: ignore[import-untyped]
-
 from net_proto import (
     IP4__OPTION__CIPSO__DOI_LEN,
     IP4__OPTION__CIPSO__HDR_LEN,
@@ -43,6 +41,7 @@ from net_proto import (
     Ip4OptionCipso,
     Ip4OptionType,
 )
+from net_proto.tests.lib.parameterized import parameterized_class
 
 
 class TestIp4OptionCipsoAsserts(TestCase):

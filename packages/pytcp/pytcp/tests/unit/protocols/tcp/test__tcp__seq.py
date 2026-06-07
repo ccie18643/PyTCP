@@ -35,8 +35,6 @@ ver 3.0.8
 from typing import Any
 from unittest import TestCase
 
-from parameterized import parameterized_class  # type: ignore[import-untyped]
-
 from net_proto.lib.int_checks import UINT_32__MAX
 from pytcp.protocols.tcp.tcp__seq import (
     SEQ32__HALF,
@@ -48,6 +46,7 @@ from pytcp.protocols.tcp.tcp__seq import (
     lt32,
     sub32,
 )
+from pytcp.tests.lib.parameterized import parameterized_class
 
 
 @parameterized_class(

@@ -34,9 +34,8 @@ from types import SimpleNamespace
 from typing import override
 from unittest import TestCase
 
-from parameterized import parameterized_class  # type: ignore[import-untyped]
-
 from net_proto import PacketRx, TcpIntegrityError, TcpParser
+from net_proto.tests.lib.parameterized import parameterized_class
 
 # A valid 24-byte TCP frame used as the baseline for parser-integrity
 # fixtures. Callers perturb exactly one aspect (payload_len, hlen byte,

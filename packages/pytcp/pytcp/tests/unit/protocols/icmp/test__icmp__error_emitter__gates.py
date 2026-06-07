@@ -33,13 +33,12 @@ ver 3.0.8
 from typing import Any
 from unittest import TestCase
 
-from parameterized import parameterized_class  # type: ignore[import-untyped]
-
 from pytcp.protocols.icmp.icmp__error_emitter import (
     IcmpErrorBlockReason,
     IcmpErrorContext,
     should_emit_icmp_error,
 )
+from pytcp.tests.lib.parameterized import parameterized_class
 
 
 class TestShouldEmitIcmpError__Permit(TestCase):

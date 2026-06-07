@@ -33,8 +33,6 @@ ver 3.0.8
 from typing import Any, override
 from unittest import TestCase
 
-from parameterized import parameterized_class  # type: ignore[import-untyped]
-
 from net_addr import Ip6Address, Ip6Mask, Ip6Network
 from net_proto import (
     Icmp6IntegrityError,
@@ -42,6 +40,7 @@ from net_proto import (
     Icmp6NdOptionType,
     Icmp6NdRoutePreference,
 )
+from net_proto.tests.lib.parameterized import parameterized_class
 
 
 class TestIcmp6NdOptionRouteInfoAsserts(TestCase):

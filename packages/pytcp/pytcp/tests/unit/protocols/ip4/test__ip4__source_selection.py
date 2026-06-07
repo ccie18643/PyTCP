@@ -33,13 +33,12 @@ ver 3.0.8
 
 from unittest import TestCase
 
-from parameterized import parameterized_class  # type: ignore[import-untyped]
-
 from net_addr import Ip4Address
 from pytcp.protocols.ip4.ip4__source_selection import (
     common_prefix_len,
     ip4_address_scope,
 )
+from pytcp.tests.lib.parameterized import parameterized_class
 
 
 @parameterized_class(

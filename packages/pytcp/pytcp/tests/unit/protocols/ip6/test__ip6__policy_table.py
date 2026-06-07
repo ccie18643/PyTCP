@@ -33,14 +33,13 @@ ver 3.0.8
 
 from unittest import TestCase
 
-from parameterized import parameterized_class  # type: ignore[import-untyped]
-
 from net_addr import Ip6Address
 from pytcp.protocols.ip6.ip6__policy_table import (
     DEFAULT_POLICY_TABLE,
     PolicyEntry,
     lookup,
 )
+from pytcp.tests.lib.parameterized import parameterized_class
 
 
 @parameterized_class(

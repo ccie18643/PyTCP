@@ -39,8 +39,6 @@ ver 3.0.8
 from typing import Any
 from unittest import TestCase
 
-from parameterized import parameterized_class  # type: ignore[import-untyped]
-
 from net_addr import Ip4Address, MacAddress
 from net_proto.lib.buffer import Buffer
 from net_proto.protocols.ethernet.ethernet__assembler import EthernetAssembler
@@ -55,6 +53,7 @@ from pytcp.tests.lib.network_testcase import (
     STACK__IP4_HOST,
     STACK__MAC_ADDRESS,
 )
+from pytcp.tests.lib.parameterized import parameterized_class
 
 
 def _build_udp4_frame(

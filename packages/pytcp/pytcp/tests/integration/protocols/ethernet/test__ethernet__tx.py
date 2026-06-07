@@ -36,8 +36,6 @@ ver 3.0.8
 
 from typing import Any, Literal, override
 
-from parameterized import parameterized_class  # type: ignore[import-untyped]
-
 from net_addr import Ip4Address, Ip4IfAddr, Ip4Network, Ip6Address, Ip6IfAddr, Ip6Network
 from net_proto import Ip4Assembler, Ip4FragAssembler
 from pytcp import stack
@@ -61,6 +59,7 @@ from pytcp.tests.lib.network_testcase import (
     STACK__IP6_HOST,
     STACK__MAC_ADDRESS,
 )
+from pytcp.tests.lib.parameterized import parameterized_class
 
 # Due to heavy dependency of IPv4/IPv6 protocols on Ethernet mechanisms
 # the Ethernet tests are mostly executed using IPv4/IPv6 packets.

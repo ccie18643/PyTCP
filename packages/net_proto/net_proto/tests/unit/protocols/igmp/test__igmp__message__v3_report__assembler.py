@@ -33,8 +33,6 @@ ver 3.0.8
 from typing import Any, override
 from unittest import TestCase
 
-from parameterized import parameterized_class  # type: ignore[import-untyped]
-
 from net_addr import Ip4Address
 from net_proto.protocols.igmp.message.igmp__message__v3_report import (
     IgmpMessageV3Report,
@@ -43,6 +41,7 @@ from net_proto.protocols.igmp.message.igmp__v3_group_record import (
     IgmpV3GroupRecord,
     IgmpV3RecordType,
 )
+from net_proto.tests.lib.parameterized import parameterized_class
 
 
 @parameterized_class(

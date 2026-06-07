@@ -43,8 +43,6 @@ ver 3.0.8
 from typing import Any
 from unittest import TestCase
 
-from parameterized import parameterized_class  # type: ignore[import-untyped]
-
 from net_proto import (
     ETHERNET_802_3__HEADER__LEN,
     ETHERNET_802_3__PAYLOAD__MAX_LEN,
@@ -52,6 +50,7 @@ from net_proto import (
     Ethernet8023Parser,
     PacketRx,
 )
+from net_proto.tests.lib.parameterized import parameterized_class
 
 
 @parameterized_class(

@@ -32,10 +32,9 @@ ver 3.0.8
 
 from unittest import TestCase
 
-from parameterized import parameterized_class  # type: ignore[import-untyped]
-
 from net_proto.protocols.dns.dns__errors import DnsIntegrityError
 from net_proto.protocols.dns.dns__parser import DnsParser
+from net_proto.tests.lib.parameterized import parameterized_class
 
 
 @parameterized_class(

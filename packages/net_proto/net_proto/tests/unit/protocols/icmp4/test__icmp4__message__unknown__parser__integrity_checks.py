@@ -34,10 +34,9 @@ from types import SimpleNamespace
 from typing import Any, cast, override
 from unittest import TestCase
 
-from parameterized import parameterized_class  # type: ignore[import-untyped]
-
 from net_proto import Icmp4IntegrityError, Icmp4Parser, Icmp4SanityError, Ip4Parser, PacketRx
 from net_proto.protocols.icmp4.message.icmp4__message import ICMP4__HEADER__LEN
+from net_proto.tests.lib.parameterized import parameterized_class
 
 
 def _packet_rx_with_ip4(frame: bytes, *, ip4__payload_len: int | None = None) -> PacketRx:

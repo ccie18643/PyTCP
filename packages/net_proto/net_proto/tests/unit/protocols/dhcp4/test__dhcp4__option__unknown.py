@@ -34,8 +34,6 @@ from dataclasses import FrozenInstanceError
 from typing import Any, override
 from unittest import TestCase
 
-from parameterized import parameterized_class  # type: ignore[import-untyped]
-
 from net_proto import (
     Dhcp4IntegrityError,
     Dhcp4OptionType,
@@ -43,6 +41,7 @@ from net_proto import (
 )
 from net_proto.lib.int_checks import UINT_8__MAX
 from net_proto.protocols.dhcp4.options.dhcp4__option import DHCP4__OPTION__LEN
+from net_proto.tests.lib.parameterized import parameterized_class
 
 
 class TestDhcp4OptionUnknownAsserts(TestCase):

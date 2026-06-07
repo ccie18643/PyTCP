@@ -34,8 +34,6 @@ import threading
 from typing import Any
 from unittest import TestCase
 
-from parameterized import parameterized_class  # type: ignore[import-untyped]
-
 from pytcp.protocols.icmp.icmp__constants import (
     ICMP__ERROR__BURST,
     ICMP__ERROR__RATE_PPS,
@@ -43,6 +41,7 @@ from pytcp.protocols.icmp.icmp__constants import (
 from pytcp.protocols.icmp.icmp__error_emitter import (
     IcmpErrorRateLimiter,
 )
+from pytcp.tests.lib.parameterized import parameterized_class
 
 
 class _TrackingLock:

@@ -34,8 +34,6 @@ ver 3.0.8
 from typing import override
 from unittest import TestCase
 
-from parameterized import parameterized_class  # type: ignore[import-untyped]
-
 from net_addr import Ip4Address
 from net_proto.protocols.igmp.igmp__errors import IgmpSanityError
 from net_proto.protocols.igmp.message.igmp__message import IgmpMessage, IgmpType
@@ -48,6 +46,7 @@ from net_proto.protocols.igmp.message.igmp__message__v2_leave import (
 from net_proto.protocols.igmp.message.igmp__message__v2_report import (
     IgmpMessageV2Report,
 )
+from net_proto.tests.lib.parameterized import parameterized_class
 
 
 @parameterized_class(

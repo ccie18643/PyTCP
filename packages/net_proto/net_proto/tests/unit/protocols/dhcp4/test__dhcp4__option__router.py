@@ -34,14 +34,13 @@ from dataclasses import FrozenInstanceError
 from typing import Any, override
 from unittest import TestCase
 
-from parameterized import parameterized_class  # type: ignore[import-untyped]
-
 from net_addr import Ip4Address
 from net_proto import (
     Dhcp4IntegrityError,
     Dhcp4OptionRouter,
     Dhcp4OptionType,
 )
+from net_proto.tests.lib.parameterized import parameterized_class
 
 
 class TestDhcp4OptionRouterAsserts(TestCase):

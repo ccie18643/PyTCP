@@ -39,8 +39,6 @@ ver 3.0.8
 
 from typing import Any, override
 
-from parameterized import parameterized_class  # type: ignore[import-untyped]
-
 from net_addr import Ip4Address
 from net_proto import ArpOperation
 from pytcp.lib.packet_stats import PacketStatsTx
@@ -54,6 +52,7 @@ from pytcp.tests.lib.arp_testcase import (
     STACK__MAC_ADDRESS,
     ArpTestCase,
 )
+from pytcp.tests.lib.parameterized import parameterized_class
 
 
 @parameterized_class(

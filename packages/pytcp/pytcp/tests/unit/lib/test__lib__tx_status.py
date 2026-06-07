@@ -34,9 +34,8 @@ from enum import IntEnum
 from typing import Any
 from unittest import TestCase
 
-from parameterized import parameterized_class  # type: ignore[import-untyped]
-
 from pytcp.lib.tx_status import TxStatus
+from pytcp.tests.lib.parameterized import parameterized_class
 
 # The canonical roster of TxStatus members in declaration order. If a
 # member is added, removed, or reordered in 'pytcp/lib/tx_status.py'

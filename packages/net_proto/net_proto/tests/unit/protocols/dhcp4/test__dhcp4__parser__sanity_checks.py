@@ -33,10 +33,9 @@ ver 3.0.8
 from typing import Any
 from unittest import TestCase
 
-from parameterized import parameterized_class  # type: ignore[import-untyped]
-
 from net_proto import DHCP4__HEADER__LEN, Dhcp4Parser, Dhcp4SanityError
 from net_proto.protocols.dhcp4.dhcp4__header import DHCP4__HEADER__MAGIC_COOKIE
+from net_proto.tests.lib.parameterized import parameterized_class
 
 # Minimum-valid options block: DHCP Message Type = ACK +
 # Server Identifier (10.0.1.1) + IP Address Lease Time (3600s)

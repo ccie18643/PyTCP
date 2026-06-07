@@ -34,8 +34,6 @@ from dataclasses import FrozenInstanceError
 from typing import Any, override
 from unittest import TestCase
 
-from parameterized import parameterized_class  # type: ignore[import-untyped]
-
 from net_proto import (
     DHCP6__OPTION__LEN,
     UINT_16__MAX,
@@ -43,6 +41,7 @@ from net_proto import (
     Dhcp6OptionType,
     Dhcp6OptionUnknown,
 )
+from net_proto.tests.lib.parameterized import parameterized_class
 
 
 class TestDhcp6OptionUnknownAsserts(TestCase):

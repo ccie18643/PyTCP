@@ -35,11 +35,10 @@ from types import SimpleNamespace
 from typing import Any, cast, override
 from unittest import TestCase
 
-from parameterized import parameterized_class  # type: ignore[import-untyped]
-
 from net_addr import Ip6Address
 from net_proto import Icmp6IntegrityError, Icmp6Parser, Ip6Parser, PacketRx
 from net_proto.protocols.icmp6.message.icmp6__message import ICMP6__HEADER__LEN
+from net_proto.tests.lib.parameterized import parameterized_class
 
 
 def _packet_rx_with_ip6(frame: bytes, *, ip6__dlen: int | None = None) -> PacketRx:

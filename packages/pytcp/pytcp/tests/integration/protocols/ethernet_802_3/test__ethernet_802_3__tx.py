@@ -36,8 +36,6 @@ ver 3.0.8
 
 from typing import Any
 
-from parameterized import parameterized_class  # type: ignore[import-untyped]
-
 from net_proto import RawAssembler
 from pytcp.lib.packet_stats import PacketStatsTx
 from pytcp.lib.tx_status import TxStatus
@@ -47,6 +45,7 @@ from pytcp.tests.lib.network_testcase import (
     MAC__UNSPECIFIED,
     STACK__MAC_ADDRESS,
 )
+from pytcp.tests.lib.parameterized import parameterized_class
 
 
 @parameterized_class(

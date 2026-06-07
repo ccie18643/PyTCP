@@ -33,8 +33,6 @@ ver 3.0.8
 from typing import Any, override
 from unittest import TestCase
 
-from parameterized import parameterized_class  # type: ignore[import-untyped]
-
 from net_addr import Ip4Address
 from net_proto import (
     IP4__OPTION__RR__HDR_LEN,
@@ -43,6 +41,7 @@ from net_proto import (
     Ip4OptionRr,
     Ip4OptionType,
 )
+from net_proto.tests.lib.parameterized import parameterized_class
 
 
 class TestIp4OptionRrAsserts(TestCase):

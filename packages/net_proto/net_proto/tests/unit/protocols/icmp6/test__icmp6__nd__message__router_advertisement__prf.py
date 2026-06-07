@@ -38,8 +38,6 @@ ver 3.0.8
 from typing import Any, cast, override
 from unittest import TestCase
 
-from parameterized import parameterized_class  # type: ignore[import-untyped]
-
 from net_proto import (
     Icmp6Assembler,
     Icmp6NdMessageRouterAdvertisement,
@@ -50,6 +48,7 @@ from net_proto.lib.buffer import Buffer
 from net_proto.protocols.icmp6.message.nd.icmp6__nd__message__router_advertisement import (
     Icmp6NdMessageRouterAdvertisement as Msg,
 )
+from net_proto.tests.lib.parameterized import parameterized_class
 
 
 @parameterized_class(

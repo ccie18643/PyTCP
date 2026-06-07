@@ -33,8 +33,6 @@ ver 3.0.8
 from typing import Any, override
 from unittest import TestCase
 
-from parameterized import parameterized_class  # type: ignore[import-untyped]
-
 from net_addr import (
     Ip4Address,
     Ip4Wildcard,
@@ -43,6 +41,7 @@ from net_addr import (
     Ip6Wildcard,
     IpVersion,
 )
+from net_addr.tests.lib.parameterized import parameterized_class
 
 
 @parameterized_class(

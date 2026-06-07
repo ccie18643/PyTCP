@@ -39,11 +39,10 @@ ver 3.0.8
 
 from typing import Any, override
 
-from parameterized import parameterized_class  # type: ignore[import-untyped]
-
 from net_addr import Ip6Address, MacAddress
 from net_proto import Icmp6Type
 from pytcp.tests.lib.icmp_testcase import IcmpTestCase
+from pytcp.tests.lib.parameterized import parameterized_class
 
 # 64-byte echo data — timestamp prefix + 0x10..0x3f pattern.
 _ECHO_DATA: bytes = (

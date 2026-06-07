@@ -33,9 +33,8 @@ ver 3.0.8
 from typing import Any, override
 from unittest import TestCase
 
-from parameterized import parameterized_class  # type: ignore[import-untyped]
-
 from net_proto import ARP__HEADER__LEN, ArpIntegrityError, ArpParser, PacketRx
+from net_proto.tests.lib.parameterized import parameterized_class
 
 
 @parameterized_class(

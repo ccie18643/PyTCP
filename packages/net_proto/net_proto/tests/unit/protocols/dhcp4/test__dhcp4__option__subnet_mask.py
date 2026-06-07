@@ -34,8 +34,6 @@ from dataclasses import FrozenInstanceError
 from typing import Any, override
 from unittest import TestCase
 
-from parameterized import parameterized_class  # type: ignore[import-untyped]
-
 from net_addr import Ip4Mask
 from net_proto import (
     Dhcp4IntegrityError,
@@ -45,6 +43,7 @@ from net_proto import (
 from net_proto.protocols.dhcp4.options.dhcp4__option__subnet_mask import (
     DHCP4__OPTION__SUBNET_MASK__LEN,
 )
+from net_proto.tests.lib.parameterized import parameterized_class
 
 
 class TestDhcp4OptionSubnetMaskAsserts(TestCase):

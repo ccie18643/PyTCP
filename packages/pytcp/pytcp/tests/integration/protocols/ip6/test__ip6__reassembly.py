@@ -34,11 +34,10 @@ pytcp/tests/integration/protocols/ip6/test__ip6__reassembly.py
 ver 3.0.8
 """
 
-from parameterized import parameterized_class  # type: ignore[import-untyped]
-
 from net_proto.lib.packet_rx import PacketRx
 from pytcp.lib.packet_stats import PacketStatsRx, PacketStatsTx
 from pytcp.tests.lib.ip6_testcase import Ip6TestCase
+from pytcp.tests.lib.parameterized import parameterized_class
 
 
 @parameterized_class(

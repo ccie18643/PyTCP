@@ -35,8 +35,6 @@ import struct
 from typing import Any, override
 from unittest import TestCase
 
-from parameterized import parameterized_class  # type: ignore[import-untyped]
-
 from net_addr import Ip4Address, Ip4Mask, MacAddress
 from net_proto import (
     DHCP4__HEADER__LEN,
@@ -58,6 +56,7 @@ from net_proto import (
 )
 from net_proto.protocols.dhcp4.dhcp4__enums import Dhcp4HardwareType, Dhcp4Operation
 from net_proto.protocols.dhcp4.dhcp4__header import DHCP4__HEADER__MAGIC_COOKIE
+from net_proto.tests.lib.parameterized import parameterized_class
 
 
 def _dhcp4_header(

@@ -33,9 +33,8 @@ ver 3.0.8
 from typing import Any, override
 from unittest import TestCase
 
-from parameterized import parameterized_class  # type: ignore[import-untyped]
-
 from net_proto import Ip4IntegrityError, Ip4Parser, PacketRx
+from net_proto.tests.lib.parameterized import parameterized_class
 
 # Valid 20-byte IPv4 frame used by the positive boundary test.
 # ver=4, hlen=20, dscp=63, ecn=3, plen=20, id=65535, flag_df=1,

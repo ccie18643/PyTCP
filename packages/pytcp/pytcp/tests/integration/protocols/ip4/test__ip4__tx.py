@@ -36,8 +36,6 @@ ver 3.0.8
 
 from typing import Any, override
 
-from parameterized import parameterized_class  # type: ignore[import-untyped]
-
 from net_addr import Ip4Address
 from net_proto import (
     Icmp4Assembler,
@@ -63,6 +61,7 @@ from pytcp.tests.lib.network_testcase import (
     IP4__UNSPECIFIED,
     STACK__IP4_HOST,
 )
+from pytcp.tests.lib.parameterized import parameterized_class
 
 
 @parameterized_class(

@@ -34,9 +34,8 @@ from enum import IntEnum, auto
 from typing import Any
 from unittest import TestCase
 
-from parameterized import parameterized_class  # type: ignore[import-untyped]
-
 from pytcp.lib.name_enum import NameEnum
+from pytcp.tests.lib.parameterized import parameterized_class
 
 
 class _SampleNameEnum(NameEnum):

@@ -33,8 +33,6 @@ ver 3.0.8
 from typing import Any, override
 from unittest import TestCase
 
-from parameterized import parameterized_class  # type: ignore[import-untyped]
-
 from net_proto import (
     TCP__OPTION__WSCALE__LEN,
     TCP__OPTION__WSCALE__MAX_VALUE,
@@ -43,6 +41,7 @@ from net_proto import (
     TcpOptionType,
     TcpOptionWscale,
 )
+from net_proto.tests.lib.parameterized import parameterized_class
 
 
 class TestTcpOptionWscaleAsserts(TestCase):

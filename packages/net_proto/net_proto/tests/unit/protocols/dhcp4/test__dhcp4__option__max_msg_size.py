@@ -34,14 +34,13 @@ ver 3.0.8
 from typing import Any, override
 from unittest import TestCase
 
-from parameterized import parameterized_class  # type: ignore[import-untyped]
-
 from net_proto import (
     UINT_16__MAX,
     Dhcp4IntegrityError,
     Dhcp4OptionMaxMsgSize,
     Dhcp4OptionType,
 )
+from net_proto.tests.lib.parameterized import parameterized_class
 
 
 class TestDhcp4OptionMaxMsgSizeAsserts(TestCase):

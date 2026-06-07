@@ -33,8 +33,6 @@ ver 3.0.8
 from typing import TYPE_CHECKING, Any, cast, override
 from unittest import TestCase
 
-from parameterized import parameterized_class  # type: ignore[import-untyped]
-
 from net_addr import MacAddress
 from net_proto import EtherType
 from net_proto.lib.packet_rx import PacketRx
@@ -44,6 +42,7 @@ from pytcp.runtime.packet_handler.dispatch import DispatchRegistry
 from pytcp.runtime.packet_handler.packet_handler__ethernet__rx import (
     EthernetRxHandler,
 )
+from pytcp.tests.lib.parameterized import parameterized_class
 
 if TYPE_CHECKING:
     from pytcp.runtime.packet_handler import PacketHandlerL2

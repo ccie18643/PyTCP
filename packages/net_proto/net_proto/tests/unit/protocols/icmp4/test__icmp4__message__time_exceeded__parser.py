@@ -35,8 +35,6 @@ from types import SimpleNamespace
 from typing import Any, cast
 from unittest import TestCase
 
-from parameterized import parameterized_class  # type: ignore[import-untyped]
-
 from net_proto import (
     Icmp4MessageTimeExceeded,
     Icmp4Parser,
@@ -44,6 +42,7 @@ from net_proto import (
     Ip4Parser,
     PacketRx,
 )
+from net_proto.tests.lib.parameterized import parameterized_class
 
 
 def _packet_rx_with_ip4(frame: bytes) -> PacketRx:

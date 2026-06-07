@@ -34,8 +34,6 @@ from dataclasses import FrozenInstanceError
 from typing import Any, override
 from unittest import TestCase
 
-from parameterized import parameterized_class  # type: ignore[import-untyped]
-
 from net_proto import (
     UINT_32__MAX,
     UINT_32__MIN,
@@ -43,6 +41,7 @@ from net_proto import (
     Dhcp4OptionLeaseTime,
     Dhcp4OptionType,
 )
+from net_proto.tests.lib.parameterized import parameterized_class
 
 
 class TestDhcp4OptionLeaseTimeAsserts(TestCase):

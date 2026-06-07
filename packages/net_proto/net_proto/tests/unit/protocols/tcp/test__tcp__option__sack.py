@@ -33,8 +33,6 @@ ver 3.0.8
 from typing import Any, override
 from unittest import TestCase
 
-from parameterized import parameterized_class  # type: ignore[import-untyped]
-
 from net_proto import (
     TCP__OPTION__SACK__MAX_BLOCK_NUM,
     TcpIntegrityError,
@@ -43,6 +41,7 @@ from net_proto import (
     TcpSackBlock,
 )
 from net_proto.protocols.tcp.options.tcp__option import TCP__OPTION__LEN
+from net_proto.tests.lib.parameterized import parameterized_class
 
 
 class TestTcpOptionSackAsserts(TestCase):

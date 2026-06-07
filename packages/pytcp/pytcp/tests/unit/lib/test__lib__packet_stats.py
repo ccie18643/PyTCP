@@ -35,9 +35,8 @@ from dataclasses import FrozenInstanceError, dataclass, fields, is_dataclass
 from typing import Any
 from unittest import TestCase
 
-from parameterized import parameterized_class  # type: ignore[import-untyped]
-
 from pytcp.lib.packet_stats import PacketStats, PacketStatsRx, PacketStatsTx
+from pytcp.tests.lib.parameterized import parameterized_class
 
 
 class TestPacketStatsBase(TestCase):

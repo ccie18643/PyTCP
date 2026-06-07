@@ -34,10 +34,9 @@ import itertools
 from typing import Any, override
 from unittest import TestCase
 
-from parameterized import parameterized_class  # type: ignore[import-untyped]
-
 from net_proto.lib.packet_rx import PacketRx
 from net_proto.lib.tracker import Tracker
+from net_proto.tests.lib.parameterized import parameterized_class
 
 
 @parameterized_class(

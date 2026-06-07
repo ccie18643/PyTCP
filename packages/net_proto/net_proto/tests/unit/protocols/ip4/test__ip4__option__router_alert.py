@@ -33,14 +33,13 @@ ver 3.0.8
 from typing import Any, override
 from unittest import TestCase
 
-from parameterized import parameterized_class  # type: ignore[import-untyped]
-
 from net_proto import (
     IP4__OPTION__ROUTER_ALERT__LEN,
     Ip4IntegrityError,
     Ip4OptionRouterAlert,
     Ip4OptionType,
 )
+from net_proto.tests.lib.parameterized import parameterized_class
 
 
 class TestIp4OptionRouterAlertAsserts(TestCase):

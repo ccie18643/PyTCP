@@ -34,14 +34,13 @@ ver 3.0.8
 from typing import Any, override
 from unittest import TestCase
 
-from parameterized import parameterized_class  # type: ignore[import-untyped]
-
 from net_addr import Ip4Address, Ip4Network
 from net_proto import (
     Dhcp4IntegrityError,
     Dhcp4OptionClasslessStaticRoute,
     Dhcp4OptionType,
 )
+from net_proto.tests.lib.parameterized import parameterized_class
 
 
 class TestDhcp4OptionClasslessStaticRouteAsserts(TestCase):

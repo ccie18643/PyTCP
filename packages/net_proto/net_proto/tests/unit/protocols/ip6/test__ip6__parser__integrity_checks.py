@@ -33,9 +33,8 @@ ver 3.0.8
 from typing import Any, override
 from unittest import TestCase
 
-from parameterized import parameterized_class  # type: ignore[import-untyped]
-
 from net_proto import Ip6IntegrityError, Ip6Parser, PacketRx
+from net_proto.tests.lib.parameterized import parameterized_class
 
 # Valid 40-byte IPv6 frame used by the positive boundary test. The
 # parametrized negative fixtures are derived from it by perturbing

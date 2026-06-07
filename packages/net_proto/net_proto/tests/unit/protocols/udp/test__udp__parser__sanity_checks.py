@@ -34,10 +34,9 @@ from types import SimpleNamespace
 from typing import override
 from unittest import TestCase
 
-from parameterized import parameterized_class  # type: ignore[import-untyped]
-
 from net_addr import IpVersion
 from net_proto import PacketRx, UdpParser, UdpSanityError
+from net_proto.tests.lib.parameterized import parameterized_class
 
 
 @parameterized_class(

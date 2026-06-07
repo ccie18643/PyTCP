@@ -34,10 +34,9 @@ from typing import Any, override
 from unittest import TestCase
 from unittest.mock import patch
 
-from parameterized import parameterized_class  # type: ignore[import-untyped]
-
 from net_proto import UDP__HEADER__LEN, Tracker, UdpAssembler, UdpHeader
 from net_proto.lib.buffer import Buffer
+from net_proto.tests.lib.parameterized import parameterized_class
 
 
 @parameterized_class(

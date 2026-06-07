@@ -33,9 +33,8 @@ ver 3.0.8
 from typing import Any
 from unittest import TestCase
 
-from parameterized import parameterized_class  # type: ignore[import-untyped]
-
 from net_proto.protocols.igmp.message.igmp__message import IgmpType
+from net_proto.tests.lib.parameterized import parameterized_class
 
 
 @parameterized_class(

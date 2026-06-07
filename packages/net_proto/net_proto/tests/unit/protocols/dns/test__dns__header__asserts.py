@@ -33,14 +33,13 @@ ver 3.0.8
 from typing import Any
 from unittest import TestCase
 
-from parameterized import parameterized_class  # type: ignore[import-untyped]
-
 from net_proto.lib.int_checks import UINT_16__MAX, UINT_16__MIN
 from net_proto.protocols.dns.dns__enums import DnsOpcode, DnsResponseCode
 from net_proto.protocols.dns.dns__header import (
     DNS__HEADER__LEN,
     DnsHeader,
 )
+from net_proto.tests.lib.parameterized import parameterized_class
 
 _VALID_KWARGS: dict[str, Any] = {
     "id": 0x1234,

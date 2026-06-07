@@ -34,9 +34,8 @@ from types import SimpleNamespace
 from typing import override
 from unittest import TestCase
 
-from parameterized import parameterized_class  # type: ignore[import-untyped]
-
 from net_proto import PacketRx, TcpParser, TcpSanityError
+from net_proto.tests.lib.parameterized import parameterized_class
 
 
 @parameterized_class(

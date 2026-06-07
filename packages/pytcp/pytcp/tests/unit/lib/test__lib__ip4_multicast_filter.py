@@ -33,13 +33,12 @@ ver 3.0.8
 
 from unittest import TestCase
 
-from parameterized import parameterized_class  # type: ignore[import-untyped]
-
 from net_addr import Ip4Address
 from pytcp.lib.ip4_multicast_filter import (
     Ip4MulticastFilter,
     Ip4MulticastFilterMode,
 )
+from pytcp.tests.lib.parameterized import parameterized_class
 
 _A = Ip4Address("10.0.0.1")
 _B = Ip4Address("10.0.0.2")

@@ -35,8 +35,6 @@ from types import SimpleNamespace
 from typing import Any, cast, override
 from unittest import TestCase
 
-from parameterized import parameterized_class  # type: ignore[import-untyped]
-
 from net_addr import Ip6Address
 from net_proto import (
     ICMP6__ND__ROUTER_ADVERTISEMENT__LEN,
@@ -45,6 +43,7 @@ from net_proto import (
     Ip6Parser,
     PacketRx,
 )
+from net_proto.tests.lib.parameterized import parameterized_class
 
 # Valid 16-byte RA, hop=64, flags=0, router_lifetime=0xffff, reachable_time=0,
 # retrans_timer=0 — used as a baseline for the positive boundary test.
