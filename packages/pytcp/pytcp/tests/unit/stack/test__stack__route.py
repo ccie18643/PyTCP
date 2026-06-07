@@ -37,9 +37,31 @@ from unittest import TestCase
 from unittest.mock import patch
 
 from net_addr import Ip4Address, Ip4IfAddr, Ip4Network, Ip6Address, Ip6IfAddr, Ip6Network
+from pytcp import stack
 from pytcp.runtime.fib import Route, RouteProtocol, RouteScope, RouteTable
 from pytcp.runtime.socket import AddressFamily
 from pytcp.stack.route import RouteApi, install_boot_default_routes
+
+# Silence the STACK log channel for the whole module: the Route API logs
+# every default-route install on the 'stack' channel, which otherwise
+# leaks into the test-runner output (unit_testing.md §10a.4).
+_ORIGINAL_LOG_CHANNEL: set[str] = stack.LOG__CHANNEL
+
+
+def setUpModule() -> None:
+    """
+    Silence stack log output for the duration of this module's tests.
+    """
+
+    stack.LOG__CHANNEL = set()
+
+
+def tearDownModule() -> None:
+    """
+    Restore the production log-channel configuration.
+    """
+
+    stack.LOG__CHANNEL = _ORIGINAL_LOG_CHANNEL
 
 
 class TestRouteApiRead(TestCase):

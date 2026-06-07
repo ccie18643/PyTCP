@@ -96,6 +96,30 @@ def _configure_handler_attach_side_effects(handler: MagicMock, /) -> None:
     handler.set_ifindex.side_effect = _set_ifindex
 
 
+# Silence stack log output module-wide. Several tests drive real stack
+# lifecycle / neighbor / DHCPv4 paths that log on the 'stack' channel,
+# which otherwise leaks into the runner output (unit_testing.md §10a.4).
+# The captured original feeds 'test__stack__log_channels_present', which
+# asserts on the production channel set rather than the emptied live one.
+_ORIGINAL_LOG_CHANNEL: set[str] = stack.LOG__CHANNEL
+
+
+def setUpModule() -> None:
+    """
+    Silence stack log output for the duration of this module's tests.
+    """
+
+    stack.LOG__CHANNEL = set()
+
+
+def tearDownModule() -> None:
+    """
+    Restore the production log-channel configuration.
+    """
+
+    stack.LOG__CHANNEL = _ORIGINAL_LOG_CHANNEL
+
+
 class TestStackModuleConstants(TestCase):
     """
     The 'pytcp.stack' module-level constant tests.
@@ -290,7 +314,7 @@ class TestStackModuleConstants(TestCase):
             "socket",
             "tcp-ss",
         }
-        missing = required - stack.LOG__CHANNEL
+        missing = required - _ORIGINAL_LOG_CHANNEL
         self.assertEqual(
             missing,
             set(),

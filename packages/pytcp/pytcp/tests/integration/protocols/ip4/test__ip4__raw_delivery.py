@@ -46,6 +46,7 @@ from net_proto import (
     IpProto,
 )
 from net_proto.protocols.raw.raw__assembler import RawAssembler
+from pytcp import stack
 from pytcp.runtime.socket import AddressFamily, SocketType
 from pytcp.runtime.socket.raw__socket import RawSocket
 from pytcp.tests.lib.icmp_testcase import IcmpTestCase
@@ -55,6 +56,30 @@ from pytcp.tests.lib.network_testcase import (
     STACK__IP4_HOST,
     STACK__MAC_ADDRESS,
 )
+
+# Silence the SOCKET log channel for the whole module: RAW sockets log
+# 'Closed socket' from 'addCleanup(close)' callbacks that fire AFTER the
+# harness tearDown restores LOG__CHANNEL, leaking into the runner output.
+# Module-level silencing spans every per-test cleanup (unit_testing.md
+# §10a.4 / §11).
+_ORIGINAL_LOG_CHANNEL: set[str] = stack.LOG__CHANNEL
+
+
+def setUpModule() -> None:
+    """
+    Silence stack log output for the duration of this module's tests.
+    """
+
+    stack.LOG__CHANNEL = set()
+
+
+def tearDownModule() -> None:
+    """
+    Restore the production log-channel configuration.
+    """
+
+    stack.LOG__CHANNEL = _ORIGINAL_LOG_CHANNEL
+
 
 # An IP protocol with no transport handler, so an inbound datagram is a
 # candidate for the raw-socket path rather than a transport demux.
