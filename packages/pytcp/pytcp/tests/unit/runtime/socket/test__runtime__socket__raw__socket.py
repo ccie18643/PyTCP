@@ -45,7 +45,17 @@ from net_proto import Icmp6MessageEchoRequest
 from net_proto.lib.enums import IpProto
 from net_proto.lib.inet_cksum import inet_cksum
 from pytcp.lib.tx_status import TxStatus
-from pytcp.runtime.socket import AddressFamily, SocketType, gaierror
+from pytcp.runtime.socket import (
+    IP_RECVTTL,
+    IP_TTL,
+    IPPROTO_IP,
+    IPPROTO_IPV6,
+    IPV6_HOPLIMIT,
+    IPV6_RECVHOPLIMIT,
+    AddressFamily,
+    SocketType,
+    gaierror,
+)
 from pytcp.runtime.socket.raw__metadata import RawMetadata
 from pytcp.runtime.socket.raw__socket import RawSocket
 from pytcp.runtime.socket.socket_table import SocketTable
@@ -623,7 +633,7 @@ class TestRawSocketSendmsg(_RawSocketTestCase):
         """
         Ensure recvmsg() returns the stdlib
         '(data, ancdata, msg_flags, address)' quadruple with an empty
-        ancillary-data list — raw sockets carry no cmsgs in PyTCP.
+        ancillary-data list when no TTL-delivery option is enabled.
 
         Reference: PyTCP test infrastructure (no RFC clause).
         """
@@ -640,7 +650,7 @@ class TestRawSocketSendmsg(_RawSocketTestCase):
         self.assertEqual(
             ancdata,
             [],
-            msg="recvmsg() on a raw socket must return an empty ancillary-data list.",
+            msg="recvmsg() with no TTL option set must return an empty ancillary-data list.",
         )
         self.assertEqual(
             msg_flags,
@@ -651,6 +661,63 @@ class TestRawSocketSendmsg(_RawSocketTestCase):
             address,
             ("10.0.0.2", 0),
             msg="recvmsg() must return (remote_ip_str, 0) as the address.",
+        )
+
+    def test__raw_socket__recvmsg_delivers_hop_limit_cmsg_ip6(self) -> None:
+        """
+        Ensure an IPv6 raw socket with 'IPV6_RECVHOPLIMIT' set surfaces
+        the received Hop Limit as an 'IPV6_HOPLIMIT' cmsg — the only way
+        to read it on a v6 raw socket, which carries no IP header.
+
+        Reference: RFC 3542 §6.3 (IPV6_RECVHOPLIMIT / IPV6_HOPLIMIT cmsg).
+        """
+
+        s = RawSocket(family=AddressFamily.INET6, protocol=IpProto.ICMP6)
+        s.setsockopt(IPPROTO_IPV6, IPV6_RECVHOPLIMIT, 1)
+        s.process_raw_packet(
+            RawMetadata(
+                ip__ver=IpVersion.IP6,
+                ip__local_address=Ip6Address("2603:808c:2800:4301::7"),
+                ip__remote_address=Ip6Address("2600::"),
+                ip__proto=IpProto.ICMP6,
+                ip__ttl=48,
+                raw__data=b"icmp6",
+            )
+        )
+
+        _data, ancdata, _flags, _address = s.recvmsg()
+        self.assertEqual(
+            ancdata,
+            [(int(IPPROTO_IPV6), int(IPV6_HOPLIMIT), (48).to_bytes(4, "little"))],
+            msg="recvmsg() must surface the received Hop Limit as an IPV6_HOPLIMIT cmsg.",
+        )
+
+    def test__raw_socket__recvmsg_delivers_ttl_cmsg_ip4(self) -> None:
+        """
+        Ensure an IPv4 raw socket with 'IP_RECVTTL' set surfaces the
+        received TTL as an 'IP_TTL' cmsg.
+
+        Reference: RFC 3542 §6.3 (IP_RECVTTL / IP_TTL cmsg, IPv4 analogue).
+        """
+
+        s = RawSocket(family=AddressFamily.INET4, protocol=IpProto.ICMP4)
+        s.setsockopt(IPPROTO_IP, IP_RECVTTL, 1)
+        s.process_raw_packet(
+            RawMetadata(
+                ip__ver=IpVersion.IP4,
+                ip__local_address=Ip4Address("10.0.0.1"),
+                ip__remote_address=Ip4Address("10.0.0.2"),
+                ip__proto=IpProto.ICMP4,
+                ip__ttl=57,
+                raw__data=b"icmp4",
+            )
+        )
+
+        _data, ancdata, _flags, _address = s.recvmsg()
+        self.assertEqual(
+            ancdata,
+            [(int(IPPROTO_IP), int(IP_TTL), (57).to_bytes(4, "little"))],
+            msg="recvmsg() must surface the received TTL as an IP_TTL cmsg.",
         )
 
 

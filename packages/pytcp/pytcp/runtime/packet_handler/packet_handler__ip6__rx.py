@@ -178,6 +178,7 @@ class Ip6RxHandler:
             ip__local_address=packet_rx.ip.dst,
             ip__remote_address=packet_rx.ip.src,
             ip__proto=packet_rx.ip6.next,
+            ip__ttl=packet_rx.ip6.hop,
             raw__data=bytes(packet_rx.ip6.payload_bytes),  # memoryview: conversion for end-user interface.
             tracker=packet_rx.tracker,
         )

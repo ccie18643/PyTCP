@@ -85,7 +85,6 @@ class _IcmpProfile(NamedTuple):
     echo_request: int  # ICMPv4 8 / ICMPv6 128
     echo_reply: int  # ICMPv4 0 / ICMPv6 129
     compute_checksum: bool  # v4: build it; v6: the stack fills the ICMPv6 checksum
-    raw_has_ip_header: bool  # a v4 raw socket prepends the IP header; a v6 one does not
     ttl_cmsg_level: int  # IPPROTO_IP / IPPROTO_IPV6, as the cmsg carries it
     ttl_cmsg_type: int  # IP_TTL / IPV6_HOPLIMIT, as the cmsg carries it
 
@@ -100,7 +99,6 @@ def _profile_for(is_ipv6: bool, /) -> _IcmpProfile:
             echo_request=128,
             echo_reply=129,
             compute_checksum=False,
-            raw_has_ip_header=False,
             ttl_cmsg_level=int(socket.IPPROTO_IPV6),
             ttl_cmsg_type=int(socket.IPV6_HOPLIMIT),
         )
@@ -108,7 +106,6 @@ def _profile_for(is_ipv6: bool, /) -> _IcmpProfile:
         echo_request=8,
         echo_reply=0,
         compute_checksum=True,
-        raw_has_ip_header=True,
         ttl_cmsg_level=int(socket.IPPROTO_IP),
         ttl_cmsg_type=int(socket.IP_TTL),
     )
@@ -202,25 +199,29 @@ def _recv_one_reply(
     profile: _IcmpProfile,
     /,
     *,
-    unprivileged: bool,
-    identifier: int,
+    use_cmsg: bool,
+    match_identifier: int | None,
     sequence: int,
     timeout: float,
 ) -> tuple[int | None, float] | None:
     """
     Wait up to 'timeout' seconds for our Echo Reply to 'sequence',
-    ignoring unrelated traffic. Return '(ttl, send_time)' on a match (ttl
-    is 'None' when the stack delivered no TTL), or 'None' on timeout.
+    ignoring unrelated traffic. 'use_cmsg' selects the ICMP-only recvmsg
+    path (TTL from the IP_TTL / IPV6_HOPLIMIT cmsg) over the v4-raw
+    recvfrom path (TTL from the prepended IP header). 'match_identifier'
+    filters by reply id in raw mode (None in ping mode, where the kernel
+    owns the id). Return '(ttl, send_time)' on a match (ttl is 'None' when
+    the stack delivered no TTL), or 'None' on timeout.
     """
 
     deadline = time.monotonic() + timeout
     while (remaining := deadline - time.monotonic()) > 0:
         sock.settimeout(remaining)
         try:
-            if unprivileged:
+            if use_cmsg:
                 icmp, ancdata, _flags, _address = sock.recvmsg(2048, 256)
                 parsed = _parse_reply(
-                    icmp, echo_reply=profile.echo_reply, ip_header_in_payload=False, match_identifier=None
+                    icmp, echo_reply=profile.echo_reply, ip_header_in_payload=False, match_identifier=match_identifier
                 )
                 if parsed is not None and parsed[0] == sequence:
                     ttl = _ttl_from_ancdata(ancdata, level=profile.ttl_cmsg_level, kind=profile.ttl_cmsg_type)
@@ -228,10 +229,7 @@ def _recv_one_reply(
             else:
                 packet, _ = sock.recvfrom(2048)
                 parsed = _parse_reply(
-                    packet,
-                    echo_reply=profile.echo_reply,
-                    ip_header_in_payload=profile.raw_has_ip_header,
-                    match_identifier=identifier,
+                    packet, echo_reply=profile.echo_reply, ip_header_in_payload=True, match_identifier=match_identifier
                 )
                 if parsed is not None and parsed[0] == sequence:
                     return parsed[1], parsed[2]
@@ -274,13 +272,19 @@ def main() -> None:
     proto = socket.IPPROTO_ICMPV6 if is_ipv6 else socket.IPPROTO_ICMP
     identifier = os.getpid() & 0xFFFF
 
-    if args.unprivileged:
-        sock = socket.socket(family, socket.SOCK_DGRAM, proto)
+    # A v4 raw socket reads the TTL from the prepended IP header; every
+    # other path (v4 ping, and v6 either way — a v6 raw socket carries no
+    # IP header) reads it from an IP_TTL / IPV6_HOPLIMIT control message.
+    use_cmsg = args.unprivileged or is_ipv6
+    # Raw sockets see all matching ICMP traffic, so filter replies by our
+    # id; a ping socket is demuxed by the kernel, which owns the id.
+    match_identifier = None if args.unprivileged else identifier
+
+    sock = socket.socket(family, socket.SOCK_DGRAM if args.unprivileged else socket.SOCK_RAW, proto)
+    if use_cmsg:
         recv_ttl_level = socket.IPPROTO_IPV6 if is_ipv6 else socket.IPPROTO_IP
         recv_ttl_opt = socket.IPV6_RECVHOPLIMIT if is_ipv6 else socket.IP_RECVTTL
         sock.setsockopt(recv_ttl_level, recv_ttl_opt, 1)
-    else:
-        sock = socket.socket(family, socket.SOCK_RAW, proto)
 
     transmitted = 0
     received = 0
@@ -298,8 +302,8 @@ def main() -> None:
             reply = _recv_one_reply(
                 sock,
                 profile,
-                unprivileged=args.unprivileged,
-                identifier=identifier,
+                use_cmsg=use_cmsg,
+                match_identifier=match_identifier,
                 sequence=sequence,
                 timeout=args.timeout,
             )

@@ -48,8 +48,12 @@ from net_proto.lib.inet_cksum import inet_cksum
 from pytcp import stack
 from pytcp.lib.logger import log
 from pytcp.runtime.socket import (
+    IP_RECVTTL,
+    IP_TTL,
     IPPROTO_IP,
     IPPROTO_IPV6,
+    IPV6_HOPLIMIT,
+    IPV6_RECVHOPLIMIT,
     SO_LINGER,
     SOL_SOCKET,
     AddressFamily,
@@ -98,6 +102,7 @@ class RawSocket(socket):
 
         self._ip_proto = protocol
         self._address_family = family
+        self._recv_ttl = False
         self._packet_rx_md: list[RawMetadata] = []
         self._packet_rx_md_ready = threading.Semaphore(0)
 
@@ -158,6 +163,12 @@ class RawSocket(socket):
         for scalar options and 'bytes' for IP_OPTIONS.
         """
 
+        if optname in (IP_RECVTTL, IPV6_RECVHOPLIMIT):
+            # Make 'recvmsg' surface the received TTL / Hop Limit as an
+            # 'IP_TTL' / 'IPV6_HOPLIMIT' cmsg — the only way to read the
+            # hop limit on an IPv6 raw socket, which carries no IP header.
+            self._recv_ttl = bool(value)
+            return
         if level == SOL_SOCKET and optname == SO_LINGER:
             # Stored on the base; no close-path effect for a
             # connectionless raw socket (matches Linux's no-op).
@@ -182,6 +193,8 @@ class RawSocket(socket):
         'bytes' for IP_OPTIONS.
         """
 
+        if optname in (IP_RECVTTL, IPV6_RECVHOPLIMIT):
+            return int(self._recv_ttl)
         value: int | bytes | None
         if level == SOL_SOCKET and (value := self._sol_socket_getsockopt(optname)) is not None:
             return value
@@ -423,10 +436,11 @@ class RawSocket(socket):
             return self.sendto(payload, address)
         return self.send(payload)
 
-    @override
-    def recv(self, bufsize: int | None = None, timeout: float | None = None) -> bytes:
+    def _next_metadata(self, *, timeout: float | None) -> RawMetadata:
         """
-        Read data from socket.
+        Block until the next inbound raw packet is available (honoring
+        SO_RCVTIMEO and non-blocking mode) and pop its metadata from the
+        RX queue, draining the readability eventfd when the queue empties.
         """
 
         # SO_RCVTIMEO supplies the default if no per-call timeout.
@@ -436,25 +450,31 @@ class RawSocket(socket):
         else:
             acquired = self._packet_rx_md_ready.acquire(timeout=effective_timeout)
 
-        if acquired:
-            data_rx = self._packet_rx_md.pop(0).raw__data
-            # POSIX recv(2) on SOCK_RAW truncates the packet to
-            # 'bufsize' bytes and silently discards the remainder.
-            if bufsize is not None:
-                data_rx = data_rx[:bufsize]
-            if not self._packet_rx_md:
-                self._drain_readable()
-                if self._packet_rx_md:
-                    self._signal_readable()
-            __debug__ and log(
-                "socket",
-                f"<B><g>[{self}]</> - Received {len(data_rx)} bytes of data",
-            )
-            return bytes(data_rx)  # Note: Conversion: memoryview -> bytes
+        if not acquired:
+            if effective_timeout is None and not self._blocking:
+                raise BlockingIOError(errno.EAGAIN, os.strerror(errno.EAGAIN))
+            raise TimeoutError("RAW Socket - Receive operation timed out.")
 
-        if effective_timeout is None and not self._blocking:
-            raise BlockingIOError(errno.EAGAIN, os.strerror(errno.EAGAIN))
-        raise TimeoutError("RAW Socket - Receive operation timed out.")
+        packet_rx_md = self._packet_rx_md.pop(0)
+        if not self._packet_rx_md:
+            self._drain_readable()
+            if self._packet_rx_md:
+                self._signal_readable()
+        return packet_rx_md
+
+    @override
+    def recv(self, bufsize: int | None = None, timeout: float | None = None) -> bytes:
+        """
+        Read data from socket.
+        """
+
+        # POSIX recv(2) on SOCK_RAW truncates the packet to 'bufsize'
+        # bytes and silently discards the remainder.
+        data_rx = self._next_metadata(timeout=timeout).raw__data
+        if bufsize is not None:
+            data_rx = data_rx[:bufsize]
+        __debug__ and log("socket", f"<B><g>[{self}]</> - Received {len(data_rx)} bytes of data")
+        return bytes(data_rx)  # Note: Conversion: memoryview -> bytes
 
     @override
     def recvfrom(self, bufsize: int | None = None, timeout: float | None = None) -> tuple[bytes, tuple[str, int]]:
@@ -462,37 +482,12 @@ class RawSocket(socket):
         Read data from socket.
         """
 
-        # SO_RCVTIMEO supplies the default if no per-call timeout.
-        effective_timeout = timeout if timeout is not None else self._so_rcvtimeo
-        if effective_timeout is None and not self._blocking:
-            acquired = self._packet_rx_md_ready.acquire(blocking=False)
-        else:
-            acquired = self._packet_rx_md_ready.acquire(timeout=effective_timeout)
-
-        if acquired:
-            packet_rx_md = self._packet_rx_md.pop(0)
-            data_rx = packet_rx_md.raw__data
-            if bufsize is not None:
-                data_rx = data_rx[:bufsize]
-            if not self._packet_rx_md:
-                self._drain_readable()
-                if self._packet_rx_md:
-                    self._signal_readable()
-            __debug__ and log(
-                "socket",
-                f"<B><g>[{self}]</> - Received {len(data_rx)} bytes of data",
-            )
-            return (
-                bytes(data_rx),  # Note: Conversion: memoryview -> bytes
-                (
-                    str(packet_rx_md.ip__remote_address),
-                    0,
-                ),
-            )
-
-        if effective_timeout is None and not self._blocking:
-            raise BlockingIOError(errno.EAGAIN, os.strerror(errno.EAGAIN))
-        raise TimeoutError("RAW Socket - Receive operation timed out.")
+        packet_rx_md = self._next_metadata(timeout=timeout)
+        data_rx = packet_rx_md.raw__data
+        if bufsize is not None:
+            data_rx = data_rx[:bufsize]
+        __debug__ and log("socket", f"<B><g>[{self}]</> - Received {len(data_rx)} bytes of data")
+        return bytes(data_rx), (str(packet_rx_md.ip__remote_address), 0)
 
     @override
     def recvmsg(
@@ -504,14 +499,25 @@ class RawSocket(socket):
     ) -> tuple[bytes, list[tuple[int, int, bytes]], int, tuple[str, int] | tuple[str, int, int, int]]:
         """
         Receive a raw packet with ancillary data, mirroring stdlib
-        'socket.recvmsg'. Returns '(data, ancdata, msg_flags,
-        address)'. Raw sockets carry no control messages in PyTCP, so
-        'ancdata' is always empty and 'msg_flags' is 0; 'ancbufsize'
-        and 'flags' are accepted for signature parity and ignored.
+        'socket.recvmsg'. Returns '(data, ancdata, msg_flags, address)'.
+        When 'IP_RECVTTL' / 'IPV6_RECVHOPLIMIT' is enabled the received
+        TTL / Hop Limit rides as an 'IP_TTL' / 'IPV6_HOPLIMIT' cmsg —
+        the only way to read the hop limit on an IPv6 raw socket, which
+        carries no IP header. 'ancbufsize' and 'flags' are accepted for
+        signature parity and ignored.
         """
 
-        data, address = self.recvfrom(bufsize=bufsize, timeout=timeout)
-        return (data, [], 0, address)
+        packet_rx_md = self._next_metadata(timeout=timeout)
+        data_rx = packet_rx_md.raw__data
+        if bufsize is not None:
+            data_rx = data_rx[:bufsize]
+        ancdata: list[tuple[int, int, bytes]] = []
+        if self._recv_ttl:
+            if self._address_family is AddressFamily.INET6:
+                ancdata.append((int(IPPROTO_IPV6), int(IPV6_HOPLIMIT), packet_rx_md.ip__ttl.to_bytes(4, "little")))
+            else:
+                ancdata.append((int(IPPROTO_IP), int(IP_TTL), packet_rx_md.ip__ttl.to_bytes(4, "little")))
+        return bytes(data_rx), ancdata, 0, (str(packet_rx_md.ip__remote_address), 0)
 
     @override
     def close(self) -> None:

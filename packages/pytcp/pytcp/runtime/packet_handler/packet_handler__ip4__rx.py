@@ -206,6 +206,7 @@ class Ip4RxHandler:
             ip__local_address=packet_rx.ip.dst,
             ip__remote_address=packet_rx.ip.src,
             ip__proto=packet_rx.ip4.proto,
+            ip__ttl=packet_rx.ip4.ttl,
             # Linux 'SOCK_RAW' delivers the FULL IPv4 packet (header +
             # payload) to the application on receive -- unlike IPv6 raw,
             # which delivers payload only. Prepend the on-wire IPv4 header

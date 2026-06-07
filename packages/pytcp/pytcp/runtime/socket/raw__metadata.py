@@ -48,6 +48,7 @@ class RawMetadata:
     ip__local_address: Ip6Address | Ip4Address
     ip__remote_address: Ip6Address | Ip4Address
     ip__proto: IpProto
+    ip__ttl: int = 0
 
     raw__data: bytes = bytes()
 
