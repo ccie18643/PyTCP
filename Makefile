@@ -19,30 +19,13 @@ LINT_FILES := $(PYTCP_FILES) $(NET_ADDR_FILES) $(NET_PROTO_FILES) $(EXAMPLES_FIL
 # the 'venv' target), so its name is decoupled from its path here.
 MYPY_PACKAGES := pytcp net_addr net_proto examples_legacy
 
-# The pylint gate runs a small set of checks NOT covered by flake8 / mypy
-# over the three packages' NON-TEST source (tests are exempt — they reach
-# across the private boundary by design, source_files.md §5.2):
-#   protected-access        no cross-class '_private' reach-through (§5.2);
-#                           split-class subpackages (protocols/tcp/fsm,
-#                           protocols/tcp/session, runtime/packet_handler)
-#                           carry their own file-level disable, honored here
-#   raise-missing-from      mandatory exception chaining 'raise X from err'
-#                           (net_proto.md §9.2, python_features.md §10a)
-#   dangerous-default-value no mutable default args ('= []' / '= {}')
-#   cell-var-from-loop      closure-over-loop-variable bug
-#   useless-super-delegation / super-with-arguments  redundant super() forms
-#   unused-import           genuinely-unused imports AND — uniquely — a
-#                           runtime import used only inside a STRING
-#                           annotation, i.e. an unnecessary quote that
-#                           should be unquoted (typing.md §20). flake8's
-#                           F401 reads inside string annotations so it
-#                           misses this; pylint W0611 does not. It does
-#                           NOT fire on TYPE_CHECKING imports used in
-#                           string annotations (the legit circular-import
-#                           case) or on '__all__' re-exports.
-# Everything else stays off — full pylint is not part of the gate.
-PYLINT_GATE_CHECKS := protected-access,raise-missing-from,dangerous-default-value,cell-var-from-loop,useless-super-delegation,super-with-arguments,unused-import
-PYLINT_GATE_FILES := $(shell find $(PYTCP_PATH) $(NET_ADDR_PATH) $(NET_PROTO_PATH) -name '*.py' -not -path '*/tests/*')
+# The entire pylint configuration — which checks fire AND which paths
+# are exempt — lives in pyproject.toml ([tool.pylint.*]: 'disable = all'
+# + a small 'enable' allowlist, and 'ignore-paths' for tests). It is the
+# single source of truth shared with ad-hoc / IDE pylint runs. The gate
+# below just hands pylint the three package roots and lets config decide
+# the rest ('--recursive=y' so pylint walks the tree; tests self-exempt
+# via 'ignore-paths').
 
 # If any recipe fails, delete its target file. Without this a
 # failed (or interrupted) 'venv' build leaves a half-populated
@@ -128,7 +111,7 @@ lint: venv
 	@for pkg in $(MYPY_PACKAGES); do PYTHONPATH=$(ROOT_PATH) ./$(VENV)/bin/mypy -p $$pkg || exit 1; done
 	@PYTHONPATH=$(ROOT_PATH) ./$(VENV)/bin/mypy $(ROOT_FILES)
 	@echo '<<< PYLINT'
-	@PYTHONPATH=$(ROOT_PATH) ./$(VENV)/bin/pylint --disable=all --enable=$(PYLINT_GATE_CHECKS) --score=n $(PYLINT_GATE_FILES)
+	@PYTHONPATH=$(ROOT_PATH) ./$(VENV)/bin/pylint --score=n --recursive=y $(PYTCP_PATH) $(NET_ADDR_PATH) $(NET_PROTO_PATH)
 	@echo '<<< PYRIGHT'
 	@PYTHONPATH=$(ROOT_PATH) ./$(VENV)/bin/pyright
 

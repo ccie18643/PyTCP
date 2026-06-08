@@ -102,42 +102,49 @@ reportCallIssue = "none"            # test-side; mypy-covered
 reportAbstractUsage = "none"        # tests deliberately instantiate abstract classes (with `# type: ignore[abstract]`)
 reportPrivateImportUsage = "none"   # net_proto re-export shape pyright disagrees with; mypy's no_implicit_reexport is authority
 
-# This block ONLY affects an ad-hoc 'pylint <file>' run (a developer /
-# IDE invoking pylint directly); it silences the noisy checks so such a
-# run is usable. It does NOT affect 'make lint' — that gate runs
-# 'pylint --disable=all --enable=<explicit checks>' (see the Makefile
-# 'PYLINT_GATE_CHECKS'), whose CLI '--enable' overrides everything here.
-# Do not disable a check the gate enables (e.g. 'dangerous-default-value'),
-# or a local run would miss what the gate then rejects.
-[tool.pylint.master]
-max-line-length = 120
-disable = """
-    super-init-not-called,
-    no-name-in-module,
-    import-error,
-    too-many-instance-attributes,
-    too-many-public-methods,
-    too-many-arguments,
-    too-many-locals,
-    too-many-branches,
-    too-many-lines,
-    too-many-boolean-expressions,
-    too-many-positional-arguments,
-    too-many-statements,
-    too-many-return-statements,
-    too-few-public-methods,
-    import-outside-toplevel,
-    fixme,
-    multiple-statements,
-    invalid-name,
-    redefined-builtin,
-    superfluous-parens,
-    expression-not-assigned,
-    no-member,
-    too-many-ancestors,
-    redefined-outer-name,
-    global-statement,
-    wrong-import-order,
-    consider-using-with,
-    abstract-class-instantiated
-"""
+# Single source of truth for pylint — every invocation reads this:
+# 'make lint', an ad-hoc 'pylint <file>', and the IDE/Pylance pylint
+# integration all behave identically. The Makefile gate runs 'pylint'
+# with NO check flags, so this config alone decides what fires.
+#
+# The gate is a small allowlist of checks NOT already covered by
+# flake8 / mypy / black; 'disable = all' turns off everything else
+# (pylint's many noisy / opinionated checks the project does not
+# enforce). Enabled checks:
+#   protected-access        no cross-class '_private' reach-through
+#                           (source_files.md §5.2); split-class
+#                           subpackages (protocols/tcp/fsm,
+#                           protocols/tcp/session, runtime/packet_handler)
+#                           carry their own file-level disable, honored here
+#   raise-missing-from      mandatory exception chaining 'raise X from err'
+#                           (net_proto.md §9.2, python_features.md §10a)
+#   dangerous-default-value no mutable default args ('= []' / '= {}')
+#   cell-var-from-loop      closure-over-loop-variable bug
+#   useless-super-delegation / super-with-arguments  redundant super() forms
+#   unused-import           genuinely-unused imports AND — uniquely — a
+#                           runtime import used only inside a STRING
+#                           annotation (an unnecessary quote that should
+#                           be unquoted, typing.md §20); flake8's F401
+#                           reads inside string annotations and misses
+#                           this, pylint W0611 does not. Does NOT fire on
+#                           TYPE_CHECKING imports used in string
+#                           annotations (the legit circular-import case)
+#                           or on '__all__' re-exports.
+#
+# Tests are exempt — they reach across the private boundary by design
+# (source_files.md §5.2) — via 'ignore-paths', so even a direct
+# 'pylint <test_file>' / IDE-opened test file self-exempts.
+[tool.pylint.main]
+ignore-paths = [".*/tests/.*"]
+
+[tool.pylint.messages_control]
+disable = ["all"]
+enable = [
+    "protected-access",
+    "raise-missing-from",
+    "dangerous-default-value",
+    "cell-var-from-loop",
+    "useless-super-delegation",
+    "super-with-arguments",
+    "unused-import",
+]
