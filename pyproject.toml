@@ -189,4 +189,14 @@ enable = [
     # tcp__seq.py (gt32 := lt32(b, a), ge32 := le32(b, a)) carry a
     # line-level '# pylint: disable=arguments-out-of-order'.
     "arguments-out-of-order",
+    # The two below overlap mypy (truthy-bool / call checking) and each
+    # has one pylint-only false positive carrying a line-level disable:
+    #   using-constant-test  socket__dropin.py 'if self.closed:' — an
+    #                        inherited io.IOBase bool property pylint
+    #                        mis-reads as constant.
+    #   not-callable         ipc__remote_error.py 'builtin(...)' — a class
+    #                        verified callable by an issubclass() guard
+    #                        pylint does not narrow through.
+    "using-constant-test",
+    "not-callable",
 ]

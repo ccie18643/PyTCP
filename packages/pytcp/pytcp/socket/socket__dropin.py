@@ -213,7 +213,9 @@ class _SocketIO(io.RawIOBase):
         Close the stream and drop its reference on the wrapped socket.
         """
 
-        if self.closed:
+        # 'closed' is an inherited io.IOBase bool property; pylint
+        # mis-reads it as a constant test.
+        if self.closed:  # pylint: disable=using-constant-test
             return
         super().close()
         sock = self._sock

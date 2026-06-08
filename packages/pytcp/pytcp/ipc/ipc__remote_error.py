@@ -86,6 +86,8 @@ def raise_remote_error(document: dict[str, Any], /) -> NoReturn:
     if module == "builtins":
         builtin = getattr(builtins, error_type, None)
         if isinstance(builtin, type) and issubclass(builtin, Exception):
-            raise (builtin(*args) if args else builtin(message))
+            # 'builtin' is a class (verified callable by the guard above);
+            # pylint does not narrow through 'isinstance'/'issubclass'.
+            raise (builtin(*args) if args else builtin(message))  # pylint: disable=not-callable
 
     raise IpcRemoteError(error_type=error_type, message=message)
