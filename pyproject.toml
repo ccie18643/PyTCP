@@ -199,4 +199,11 @@ enable = [
     #                        pylint does not narrow through.
     "using-constant-test",
     "not-callable",
+    # Flags every broad 'except Exception'. The legitimate uses — daemon
+    # thread-loop guards and IPC/control RPC-dispatch boundaries that
+    # must not let one failure kill the stack (the kernel/syscall-boundary
+    # model) — each carry a line-level disable with rationale; a finalizer
+    # likewise (it may not raise). This keeps broad catches confined to
+    # audited boundaries and rejects new unjustified ones.
+    "broad-exception-caught",
 ]

@@ -383,7 +383,8 @@ class Dhcp4Client(Subsystem):
                     # FSM never observes them as separate states.
                     # Idle on stop event so 'stop()' is responsive.
                     self._event__stop_subsystem.wait(timeout=1.0)
-        except Exception as error:  # noqa: BLE001 — daemon-loop guard must not let the worker thread die
+        # Daemon-loop guard: must not let the worker thread die.
+        except Exception as error:  # pylint: disable=broad-exception-caught
             __debug__ and log(
                 "dhcp4",
                 f"<WARN>DHCPv4 client loop raised {type(error).__name__}: {error}; "

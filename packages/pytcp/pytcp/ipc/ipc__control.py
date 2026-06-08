@@ -155,7 +155,7 @@ def handle_control_call(request: IpcMessage, /) -> IpcMessage:
 
     try:
         value = _invoke(decode_control_request(request.body))
-    except Exception as error:
+    except Exception as error:  # pylint: disable=broad-exception-caught
         # The control boundary forwards any API failure faithfully as a
         # structured RESPONSE_ERROR; the client turns it back into an
         # 'IpcRemoteError'. This is translation, not silent swallowing.

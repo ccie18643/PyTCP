@@ -130,7 +130,11 @@ def _resolve_gateway_mac(lease: "Dhcp4Lease", /) -> MacAddress | None:
         return None
     try:
         mac = arp_cache.find_entry(ip4_address=lease.gateway)
-    except Exception:  # noqa: BLE001 — defensive; missing entry / stale fixture
+    except AssertionError, AttributeError:
+        # Best-effort: 'find_entry' asserts the ARP cache is owner-bound
+        # (an 'AttributeError' under 'python -O'); during very early boot
+        # or in test fixtures it may not be, so degrade to None rather
+        # than propagate the not-yet-wired condition.
         return None
     if mac is None or isinstance(mac, MacAddress):
         return mac

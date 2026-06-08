@@ -226,7 +226,10 @@ class SocketSession:
 
         try:
             value, fd_socket = self._invoke(decode_socket_request(request.body))
-        except Exception as error:
+        # Socket-RPC boundary: translate ANY handler failure into a
+        # structured RESPONSE_ERROR for the client (faithful error
+        # forwarding, not silent swallowing).
+        except Exception as error:  # pylint: disable=broad-exception-caught
             return (
                 IpcMessage(
                     kind=IpcMessageKind.RESPONSE_ERROR,
