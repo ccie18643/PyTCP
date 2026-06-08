@@ -2086,6 +2086,17 @@ class TestNetAddrIp4AddressOrdering(TestCase):
             (a, "<", a, False),
             (c, ">", a, True),
             (a, ">=", a, True),
+            # Both directions / reflexivity for every operator, so a
+            # weakened '<=' (-> '=='), '>' (-> '>='), or '>=' (-> '>')
+            # is caught (the cases above leave each half untested).
+            (a, "<=", b, True),
+            (b, "<=", a, False),
+            (a, ">", a, False),
+            (b, ">", a, True),
+            (a, ">", b, False),
+            (b, ">=", a, True),
+            (a, ">=", b, False),
+            (b, ">=", b, True),
         ]:
             with self.subTest(case=f"{left} {op} {right}"):
                 got = {
@@ -2289,6 +2300,18 @@ class TestNetAddrIp4AddressFormat(TestCase):
             ValueError,
             msg="The unknown-code SanityError must chain the stdlib ValueError as __cause__.",
         )
+
+        # Bad flags on an otherwise-valid presentation code must also
+        # raise: a non-#/_ flag on a radix code (b/x/X), or any flag on
+        # the bare decimal codes (d/n). Pins the per-code flag validation
+        # against an 'and'->'or' relaxation that would accept them.
+        for spec in ("zx", "qb", "#d", ".5d"):
+            with self.subTest(spec=spec):
+                with self.assertRaises(
+                    Ip4AddressSanityError,
+                    msg=f"format spec {spec!r} (bad flag for its code) must raise.",
+                ):
+                    format(Ip4Address("1.2.3.4"), spec)
 
     def test__net_addr__ip4_address__format__string_specs_delegate_to_str(self) -> None:
         """

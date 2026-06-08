@@ -1732,6 +1732,24 @@ class TestNetAddrIp6AddressOrdering(TestCase):
         self.assertTrue(a < b <= b < c, msg="Chained Ip6Address comparisons must hold.")
         self.assertFalse(a < a, msg="An Ip6Address must not be strictly less than itself.")
         self.assertTrue(a >= a, msg="An Ip6Address must be >= itself.")
+        # Both directions / reflexivity for '<=', '>', '>=' so a
+        # weakened '<=' / '>=' (-> 'is not') or '>' (-> '==') is caught
+        # (the chained / reflexive checks above leave each reverse
+        # direction untested).
+        for left, op, right, expected in [
+            (a, "<=", b, True),
+            (b, "<=", a, False),
+            (a, "<=", a, True),
+            (c, ">", a, True),
+            (a, ">", c, False),
+            (a, ">", a, False),
+            (c, ">=", a, True),
+            (a, ">=", c, False),
+            (a, ">=", a, True),
+        ]:
+            with self.subTest(case=f"{left} {op} {right}"):
+                got = {"<=": left <= right, ">": left > right, ">=": left >= right}[op]
+                self.assertEqual(got, expected, msg=f"{left} {op} {right} must be {expected}.")
 
     def test__net_addr__ip6_address__ordering__scope_aware(self) -> None:
         """
