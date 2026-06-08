@@ -38,14 +38,12 @@ pytcp/protocols/arp/arp__cache.py
 ver 3.0.8
 """
 
-from typing import TYPE_CHECKING, override
+from typing import override
 
 from net_addr import Ip4Address, MacAddress
 from net_proto.protocols.ethernet.ethernet__assembler import EthernetAssembler
 from pytcp.lib.neighbor import NeighborCache
-
-if TYPE_CHECKING:
-    from pytcp.runtime.packet_handler import PacketHandlerL2
+from pytcp.runtime.packet_handler_api import ArpCacheOwner
 
 
 class ArpCache(NeighborCache[Ip4Address, EthernetAssembler]):
@@ -68,7 +66,7 @@ class ArpCache(NeighborCache[Ip4Address, EthernetAssembler]):
     # Linux per-ifindex ARP model). Class-level 'None' default
     # (rather than an '__init__' assignment) so 'create_autospec'
     # exposes the attribute as settable for the test harness.
-    _owner: "PacketHandlerL2 | None" = None
+    _owner: ArpCacheOwner | None = None
 
     @override
     def __init__(self) -> None:
@@ -84,7 +82,7 @@ class ArpCache(NeighborCache[Ip4Address, EthernetAssembler]):
             flush_callback=self._flush_packet,
         )
 
-    def attach_owner(self, owner: "PacketHandlerL2", /, *, iface_name: str | None) -> None:
+    def attach_owner(self, owner: ArpCacheOwner, /, *, iface_name: str | None) -> None:
         """
         Bind this cache to its owning interface handler (the
         bidirectional cache <-> handler link) and record the interface
