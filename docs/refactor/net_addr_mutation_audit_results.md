@@ -291,18 +291,19 @@ exclusion.
 
 ## 6. Proposed corrections — analysis-backed (not individually kill-proven)
 
-High-leverage, derived from the §4 survivor concentration. Each closes
-a cluster; none was individually kill-proven (the two above validate
-the method).
+High-leverage, derived from the §4 survivor concentration. Rows marked
+**LANDED** were kill-proven (apply the real survivor → suite stays
+green → fails with the new case) and committed; the rest remain
+proposals.
 
-| Priority | Module / method | Proposed test addition |
-|----------|-----------------|------------------------|
+| Priority | Module / method | Test addition |
+|----------|-----------------|---------------|
 | 1 | `ip_network.py` `summarize` / `_summarize_ints` | Parametrized matrix over ranges with **varied alignment**: a single host, a power-of-two-aligned block, a misaligned range that must split into several CIDRs, an empty/inverted range. Assert the exact returned CIDR list. Kills the 24 L107 alignment-arithmetic mutants. |
-| 2 | `ip_network.py` `__lt__`/`__le__`/`__gt__`/`__ge__` | Add **same-address, different-mask** pairs (`10.0.0.0/24` vs `10.0.0.0/25`) so the mask tiebreak is pinned — currently only different-address pairs are tested, leaving the second tuple element's comparison unkilled. |
+| 2 **LANDED** | `ip_network.py` `__lt__`/`__le__`/`__gt__`/`__ge__` | Added a `total_order_relations` test asserting all four operators in **both directions and reflexively** on a **same-address, different-mask** pair (`10.0.0.0/8` vs `/24`). The old test only asserted the true direction via `<`, leaving the mask tiebreak, reflexivity, and `__le__`/`__gt__`/`__ge__` unkilled. |
 | 3 | `ip_network.py` `address_exclude` | Cases where the excluded network is at the **low edge, high edge, and middle** of the parent, plus exclude-equals-self and exclude-not-contained. Pins the `s1 != other` / `s2 != other` loop. |
 | 4 | `ip_network.py` `subnets` / `supernet` | Assert the exact subnet **list and count** for a multi-bit `prefixlen_diff` (e.g. `/24` → `/26` = 4 subnets) — kills the L407 `new_prefix - prefixlen` arithmetic mutants. |
 | 5 | `ip_network.py` `_merge_spans` (via `summarize`/`collapse`) | Adjacent (`10.0.0.0/25` + `10.0.0.128/25`), overlapping, and gapped span sets — pins the `max(...)`/`+ 1` merge arithmetic. |
-| 6 | `ip_network.py` `__format__` | One case per format spec the method supports (`s`, width, the default) asserting the exact string — kills the L331 `format_spec[-1:] == "s"` cluster. |
+| 6 **LANDED** | `ip_network.py` `__format__` | Added width/alignment cases (`s`, `>20s`, `<20s`, `^18s`) to the `__format__` test — the `format_spec[-1:] == "s"` branch was wholly untested. Kills the slice-position (`[-1:]`→`[1:]`/`[-2:]`/`[-0:]`/`[~1:]`) and `==`→`<` survivors on L331. |
 | 7 | `ip6_ifaddr.py` `from_rfc7217` | One byte-exact golden vector (fixed prefix + MAC + secret + dad_counter → known IID) so the SHA-256-fed arithmetic is pinned. |
 | 8 | `ip6_ifaddr.py` `_is_reserved_iid` | Cases at each RFC 5453 reserved-range edge (Subnet-Router anycast `…:0:0:0:0`, the reserved `…fdff:ffff:ffff:ff80`–`…ffff` block) asserting accept/reject. |
 | 9 | `mac_address.py` (75.3 %) | Review the `__eq__`/multicast/broadcast-bit predicate survivors; add the bit-boundary cases. |

@@ -1171,6 +1171,42 @@ class TestNetAddrIp4NetworkOrdering(TestCase):
         self.assertTrue(b < c, msg="Lower network address must sort before.")
         self.assertEqual(min(c, b, a), a, msg="min() must return the lowest Ip4Network.")
 
+    def test__net_addr__ip4_network__ordering__total_order_relations(self) -> None:
+        """
+        Ensure every ordering operator is pinned in both directions
+        and reflexively, including the prefix-length tiebreak between
+        two networks that share a network address — so a flipped or
+        weakened comparison in any of '<', '<=', '>', '>=' is caught.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        # Same network address, different prefix length: the shorter
+        # prefix (/8) sorts before the longer (/24) via the mask
+        # tiebreak.
+        a = Ip4Network("10.0.0.0/8")
+        b = Ip4Network("10.0.0.0/24")
+
+        # '<' — true direction, false direction, irreflexive.
+        self.assertLess(a, b, msg="Same network, shorter prefix must be strictly less.")
+        self.assertFalse(b < a, msg="'<' must be False in the reverse direction.")
+        self.assertFalse(a < a, msg="'<' must be irreflexive.")
+
+        # '<=' — true direction, false direction, reflexive.
+        self.assertLessEqual(a, b, msg="'<=' must hold in the forward direction.")
+        self.assertFalse(b <= a, msg="'<=' must be False in the reverse direction.")
+        self.assertLessEqual(a, a, msg="'<=' must be reflexive.")
+
+        # '>' — true direction, false direction, irreflexive.
+        self.assertGreater(b, a, msg="Same network, longer prefix must be strictly greater.")
+        self.assertFalse(a > b, msg="'>' must be False in the reverse direction.")
+        self.assertFalse(a > a, msg="'>' must be irreflexive.")
+
+        # '>=' — true direction, false direction, reflexive.
+        self.assertGreaterEqual(b, a, msg="'>=' must hold in the forward direction.")
+        self.assertFalse(a >= b, msg="'>=' must be False in the reverse direction.")
+        self.assertGreaterEqual(a, a, msg="'>=' must be reflexive.")
+
     def test__net_addr__ip4_network__ordering__cross_version_raises(self) -> None:
         """
         Ensure ordering an IPv4 network against an IPv6 network
@@ -1285,6 +1321,19 @@ class TestNetAddrIp4NetworkWithForms(TestCase):
             self._results["with_prefixlen"],
             msg=f"Default format must equal the prefixlen form for: {self._description}",
         )
+
+        # A spec ending in 's' routes through Python's str formatting
+        # for width / alignment, applied to the default (prefixlen)
+        # rendering. A multi-character width spec also pins that only
+        # the final character selects this branch (not the whole spec
+        # or a wrong slice position).
+        for spec in ("s", ">20s", "<20s", "^18s"):
+            with self.subTest(spec=spec):
+                self.assertEqual(
+                    format(self._net, spec),
+                    format(self._results["with_prefixlen"], spec),
+                    msg=f"Width/alignment spec {spec!r} must format the prefixlen string for: {self._description}",
+                )
 
         with self.assertRaises(Ip4NetworkSanityError, msg="An unknown format spec must raise Ip4NetworkSanityError."):
             format(self._net, "zz")
