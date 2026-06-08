@@ -40,7 +40,8 @@ ver 3.0.8
 
 from typing import Protocol
 
-from net_addr import Ip4Address, Ip6Address, MacAddress
+from net_addr import Buffer, Ip4Address, Ip6Address, MacAddress
+from net_proto.protocols.ip4.options.ip4__options import Ip4Options
 from pytcp.runtime.tx_ring import TxRing
 
 
@@ -105,6 +106,34 @@ class NdCacheOwner(Protocol):
     def send_icmp6_neighbor_solicitation_unicast(self, *, icmp6_ns_target_address: Ip6Address) -> None:
         """
         Enqueue a unicast ICMPv6 ND Neighbor Solicitation via the owning handler.
+        """
+
+        ...
+
+
+class UdpEgressOwner(Protocol):
+    """
+    The egress-interface-handler surface the UDP socket requires — the
+    subset of 'PacketHandlerL2' / 'PacketHandlerL3' the socket's send
+    path calls to enqueue an outbound datagram.
+    """
+
+    def send_udp_packet(
+        self,
+        *,
+        ip__local_address: Ip6Address | Ip4Address,
+        ip__remote_address: Ip6Address | Ip4Address,
+        udp__local_port: int,
+        udp__remote_port: int,
+        udp__payload: Buffer = bytes(),
+        udp__no_cksum: bool = False,
+        ip__ttl: int | None = None,
+        ip__ecn: int = 0,
+        ip__dscp: int = 0,
+        ip4__options: Ip4Options | None = None,
+    ) -> None:
+        """
+        Enqueue an outbound UDP datagram via the egress handler.
         """
 
         ...

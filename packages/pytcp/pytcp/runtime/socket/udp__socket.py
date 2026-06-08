@@ -36,7 +36,7 @@ import threading
 import time
 from collections import deque
 from collections.abc import Iterable
-from typing import TYPE_CHECKING, override
+from typing import override
 
 from net_addr import (
     Buffer,
@@ -50,6 +50,7 @@ from net_proto.lib.proto_enum import ProtoEnum
 from pytcp import stack
 from pytcp.lib.logger import log
 from pytcp.protocols.udp.udp__plpmtud_adapter import UdpPlpmtudAdapter
+from pytcp.runtime.packet_handler_api import UdpEgressOwner
 from pytcp.runtime.socket import (
     IP_OPTIONS,
     IP_RECVERR,
@@ -83,9 +84,6 @@ from pytcp.runtime.socket.socket__bind_helpers import (
     pick_local_port,
 )
 from pytcp.runtime.socket.udp__metadata import UdpMetadata
-
-if TYPE_CHECKING:
-    from pytcp.runtime.packet_handler import PacketHandlerL2, PacketHandlerL3
 
 
 class UdpSocket(socket):
@@ -422,7 +420,7 @@ class UdpSocket(socket):
 
         __debug__ and log("socket", f"<g>[{self}]</> - Connected socket")
 
-    def _egress_handler(self, remote_ip_address: Ip4Address | Ip6Address, /) -> "PacketHandlerL2 | PacketHandlerL3":
+    def _egress_handler(self, remote_ip_address: Ip4Address | Ip6Address, /) -> UdpEgressOwner:
         """
         Resolve the egress packet handler for an outbound datagram. When
         the socket is pinned to an interface via SO_BINDTODEVICE, egress
