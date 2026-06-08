@@ -1076,6 +1076,19 @@ class TestNetAddrIp6IfAddrFormat(TestCase):
                 self.assertEqual(format(a, spec), expected, msg=f"format({spec!r}) must be {expected!r}.")
 
         self.assertEqual(f"{a}", "2001:db8::5/64", msg="Default format must equal str().")
+
+        # A spec ending in 's' routes through Python's str formatting
+        # for width / alignment, applied to the default rendering. A
+        # multi-character width spec also pins that only the final
+        # character selects this branch.
+        for spec in ("s", ">22s", "<22s", "^20s"):
+            with self.subTest(spec=spec):
+                self.assertEqual(
+                    format(a, spec),
+                    format("2001:db8::5/64", spec),
+                    msg=f"Width/alignment spec {spec!r} must format the default rendering.",
+                )
+
         with self.assertRaises(Ip6IfAddrSanityError, msg="An unknown format spec must raise Ip6IfAddrSanityError."):
             format(a, "zz")
 
@@ -1290,6 +1303,49 @@ class TestNetAddrIp6IfAddrOrdering(TestCase):
         self.assertTrue(a < b, msg="Same host address, longer-prefix network must sort after.")
         self.assertTrue(b < c, msg="Lower host address must sort before.")
         self.assertEqual(min(c, b, a), a, msg="min() must return the lowest Ip6IfAddr.")
+
+    def test__net_addr__ip6_ifaddr__ordering__total_order_relations(self) -> None:
+        """
+        Ensure every ordering operator is pinned in both directions
+        and reflexively, including the network tiebreak between two
+        interface addresses that share a host address, and that
+        equality rejects a strictly-greater operand in either argument
+        order — so a flipped or weakened comparison in '<', '<=', '>',
+        '>=' or '==' is caught.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        # Same host address, different network: the /65 network sorts
+        # after the /64 via the mask tiebreak.
+        a = Ip6IfAddr("2001:db8::5/64")
+        b = Ip6IfAddr("2001:db8::5/65")
+
+        self.assertLess(a, b, msg="Same host, longer-prefix network must be strictly less.")
+        self.assertFalse(b < a, msg="'<' must be False in the reverse direction.")
+        self.assertFalse(a < a, msg="'<' must be irreflexive.")
+
+        self.assertLessEqual(a, b, msg="'<=' must hold in the forward direction.")
+        self.assertFalse(b <= a, msg="'<=' must be False in the reverse direction.")
+        self.assertLessEqual(a, a, msg="'<=' must be reflexive.")
+
+        self.assertGreater(b, a, msg="Same host, longer-prefix network must be strictly greater.")
+        self.assertFalse(a > b, msg="'>' must be False in the reverse direction.")
+        self.assertFalse(a > a, msg="'>' must be irreflexive.")
+
+        self.assertGreaterEqual(b, a, msg="'>=' must hold in the forward direction.")
+        self.assertFalse(a >= b, msg="'>=' must be False in the reverse direction.")
+        self.assertGreaterEqual(a, a, msg="'>=' must be reflexive.")
+
+        self.assertNotEqual(a, b, msg="Interface addresses differing only by network must not be equal.")
+        self.assertNotEqual(b, a, msg="Inequality must hold with the greater interface address on the left.")
+
+        # Different host address, same network: equality must reject it
+        # in either argument order — pins the host-address comparison in
+        # __eq__ (the network-only pair above leaves it unexercised).
+        higher = Ip6IfAddr("2001:db8::6/64")
+        self.assertNotEqual(higher, a, msg="A higher host address must not equal a lower one (greater on left).")
+        self.assertNotEqual(a, higher, msg="A lower host address must not equal a higher one (lesser on left).")
 
     def test__net_addr__ip6_ifaddr__ordering__scope_consistent_with_equality(self) -> None:
         """
