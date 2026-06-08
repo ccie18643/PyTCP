@@ -581,6 +581,9 @@ class TcpSocket(socket):
                 except Ip4AddressFormatError as error:
                     raise gaierror("[Errno -2] Name or service not known - [Malformed local IP address]") from error
 
+            case _:
+                raise AssertionError(f"unreachable: unsupported address family {self._address_family!r}")
+
         # Sanity check on local port number
         if address[1] not in range(0, 65536):
             raise OverflowError("bind(): port must be 0-65535. - [Port out of range]")

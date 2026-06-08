@@ -244,6 +244,9 @@ class RawSocket(socket):
                 except Ip4AddressFormatError as error:
                     raise gaierror("[Errno -2] Name or service not known - [Malformed local IP address]") from error
 
+            case _:
+                raise AssertionError(f"unreachable: unsupported address family {self._address_family!r}")
+
         stack.sockets.unregister(self)
         self._local_ip_address = local_ip_address
         stack.sockets.register(self)
