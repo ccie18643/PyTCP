@@ -298,7 +298,7 @@ proposals.
 
 | Priority | Module / method | Test addition |
 |----------|-----------------|---------------|
-| 1 | `ip_network.py` `summarize` / `_summarize_ints` | Parametrized matrix over ranges with **varied alignment**: a single host, a power-of-two-aligned block, a misaligned range that must split into several CIDRs, an empty/inverted range. Assert the exact returned CIDR list. Kills the 24 L107 alignment-arithmetic mutants. |
+| 1 **LANDED** | `ip_network.py` `summarize` / `_summarize_ints` | Added two greedy-descent cases per family: a non-aligned range (`10.0.0.1`–`6` / `2001:db8::1`–`6`) forcing decreasing-size blocks through both `min(align, span)` branches, and a zero-origin range (`0.0.0.0`–`6` / `2001:db8::`–`6`) exercising the `lo == 0` alignment branch. The old cases all collapsed to a single aligned block. Kills the 24 L107 + L108/110/111 arithmetic survivors. |
 | 2 **LANDED** | `ip_network.py` `__lt__`/`__le__`/`__gt__`/`__ge__` | Added a `total_order_relations` test asserting all four operators in **both directions and reflexively** on a **same-address, different-mask** pair (`10.0.0.0/8` vs `/24`). The old test only asserted the true direction via `<`, leaving the mask tiebreak, reflexivity, and `__le__`/`__gt__`/`__ge__` unkilled. |
 | 3 | `ip_network.py` `address_exclude` | Cases where the excluded network is at the **low edge, high edge, and middle** of the parent, plus exclude-equals-self and exclude-not-contained. Pins the `s1 != other` / `s2 != other` loop. |
 | 4 | `ip_network.py` `subnets` / `supernet` | Assert the exact subnet **list and count** for a multi-bit `prefixlen_diff` (e.g. `/24` → `/26` = 4 subnets) — kills the L407 `new_prefix - prefixlen` arithmetic mutants. |

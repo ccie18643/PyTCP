@@ -1506,6 +1506,20 @@ class TestNetAddrIp4NetworkSummarize(TestCase):
                 ],
                 ["10.0.0.0/29"],
             ),
+            # Greedy multi-CIDR descent: a non-aligned, non-power-of-two
+            # range forces _summarize_ints to emit decreasing-size
+            # blocks, exercising both the align-limited and span-limited
+            # min() branches.
+            (
+                [Ip4Address(f"10.0.0.{octet}") for octet in range(1, 7)],
+                ["10.0.0.1/32", "10.0.0.2/31", "10.0.0.4/31", "10.0.0.6/32"],
+            ),
+            # A range starting at 0.0.0.0 exercises the 'lo == 0'
+            # alignment branch (align := bits).
+            (
+                [Ip4Address(f"0.0.0.{octet}") for octet in range(0, 7)],
+                ["0.0.0.0/30", "0.0.0.4/31", "0.0.0.6/32"],
+            ),
             ([], []),
         ]
         for items, expected in cases:

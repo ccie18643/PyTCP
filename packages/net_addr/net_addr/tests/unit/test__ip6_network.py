@@ -1229,6 +1229,21 @@ class TestNetAddrIp6NetworkSummarize(TestCase):
                 ["2001:db8::/126"],
             ),
             ([Ip6Network("2001:db8::/64"), Ip6Network("2001:db8:0:2::/64")], ["2001:db8::/64", "2001:db8:0:2::/64"]),
+            # Greedy multi-CIDR descent: a non-aligned, non-power-of-two
+            # range forces _summarize_ints to emit decreasing-size
+            # blocks, exercising both the align-limited and span-limited
+            # min() branches.
+            (
+                [Ip6Address(f"2001:db8::{nibble}") for nibble in range(1, 7)],
+                ["2001:db8::1/128", "2001:db8::2/127", "2001:db8::4/127", "2001:db8::6/128"],
+            ),
+            # A range starting at 2001:db8:: exercises the 'lo == 0'
+            # alignment branch (align := bits) relative to the merged
+            # span origin.
+            (
+                [Ip6Address(f"2001:db8::{nibble}") for nibble in range(0, 7)],
+                ["2001:db8::/126", "2001:db8::4/127", "2001:db8::6/128"],
+            ),
             ([], []),
         ]
         for items, expected in cases:
