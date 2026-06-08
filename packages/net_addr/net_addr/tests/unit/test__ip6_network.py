@@ -356,6 +356,18 @@ class TestNetAddrIp6Network(TestCase):
             "_result": False,
         },
         {
+            "_description": "Ip6IfAddr at network address (lower boundary)",
+            "_network": "2001:db8::/64",
+            "_object": Ip6IfAddr("2001:db8::/64"),
+            "_result": True,
+        },
+        {
+            "_description": "Ip6IfAddr at last address (upper boundary)",
+            "_network": "2001:db8::/64",
+            "_object": Ip6IfAddr("2001:db8::ffff:ffff:ffff:ffff/64"),
+            "_result": True,
+        },
+        {
             "_description": "Unsupported type returns False",
             "_network": "2001:db8::/64",
             "_object": "2001:db8::1",

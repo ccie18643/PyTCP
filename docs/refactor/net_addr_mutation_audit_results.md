@@ -6,9 +6,11 @@ suite (2 617 tests) as the per-mutant test-command, `ulimit -v 3 GB`,
 per-mutant `timeout = 10 s`. Methodology + safety rails: see
 [`net_addr_mutation_audit.md`](net_addr_mutation_audit.md).
 
-**This document proposes corrections only — no fixes were applied, no
-commits, no push.** `net_addr` source is pristine (`git diff --
-packages/net_addr` empty).
+**The two kill-proven corrections in §5 have been landed as tests
+(no production-source change); the §6 cluster corrections remain
+proposals.** `net_addr` *production* source is pristine (`git diff --
+packages/net_addr/net_addr` excluding `tests/` is empty); the only
+changes are the three test files in §5.
 
 ---
 
@@ -216,9 +218,11 @@ new assertion fails → revert + clear `__pycache__`).
   under the mutation vs the correct `2001:db8:aaaa:bbbb:0:ff:fe11:2233`
   → **a test asserting the correct value kills it.**
 
-**Proposed test** — add parametrized cases to
-`TestNetAddrIp6HostFromEui64` in
-`packages/net_addr/net_addr/tests/unit/test__ip6_ifaddr.py`:
+**Landed test** — added to `TestNetAddrIp6HostFromEui64` in
+`packages/net_addr/net_addr/tests/unit/test__ip6_ifaddr.py` (with a
+second `12:34:56:78:9a:bc` in `fe80::/64` →
+`fe80::1034:56ff:fe78:9abc` vector hardening the U/L flip across a
+different leading octet):
 
 ```python
 def test__net_addr__ip6_host__from_eui64__non_degenerate(self) -> None:
@@ -243,41 +247,45 @@ def test__net_addr__ip6_host__from_eui64__non_degenerate(self) -> None:
     )
 ```
 
-Add a second vector (`12:34:56:78:9a:bc` in `fe80::/64` →
-`fe80::1034:56ff:fe78:9abc`) to harden the U/L flip across a different
-first octet. The same non-degenerate-prefix principle applies to the
-`from_rfc7217` tests.
+The same non-degenerate-prefix principle still applies to the
+`from_rfc7217` tests (§6 row 7, not yet landed).
 
-### 5.2 `IpNetwork.__contains__` — boundary addresses — **KILL-PROVEN**
+### 5.2 `IpNetwork.__contains__` — `IfAddr`-branch boundary — **KILL-PROVEN**
 
-**Survivor mutation reproduced:**
-`int(self.address) <= int(other) <= int(self.last)` →
-`… <= int(other) < int(self.last)` (a real `LtE_Lt` survivor on
-`ip_network.py:263`).
+`__contains__` has two range-check branches: a bare-`Address` branch
+(`ip_network.py:263`) and an `IfAddr` branch
+(`ip_network.py:266`, `int(self.address) <= int(other.address) <=
+int(self.last)`). The bare-`Address` branch boundaries are **already
+tested** (`test__ip4_network.py` covers "equals network address" and
+"equals broadcast address"), so its survivors (L263) are all
+equivalent — the `version ==`→`is`/`>=`/`<=` mutants are masked by
+the enum-singleton identity and the address-range check.
 
-- Under the mutation, `Ip4Address("10.0.0.255") in Ip4Network("10.0.0.0/24")`
-  returns **False** (correct: True) — a test asserting the last
-  address is contained **kills it**.
-- A mid-range address (`10.0.0.1`) stays True under the mutation, so
-  the existing tests (which only check mid-range membership) let it
-  survive.
+The genuine, kill-proven gap is the **`IfAddr` branch (L266)**: the
+existing `IfAddr` cases use only a mid-range host (`192.168.1.50/24`),
+so neither the lower nor the upper boundary check on that branch is
+pinned.
 
-**Proposed test** — extend the `__contains__` matrix in
-`packages/net_addr/net_addr/tests/unit/test__ip4_network.py` (and the
-IPv6 sibling) with the two boundary cases:
+**Survivor mutations reproduced** (both verified by running the full
+net_addr suite under the mutation — it stays green, confirming genuine
+survival, then fails under the new cases):
+
+- L266 col 93 `… <= int(self.last)` → `< int(self.last)` (upper).
+- L266 col 71 `int(self.address) <= int(other.address)` → `<` (lower).
+
+**Landed test** — added `IfAddr` boundary cases to the `__contains__`
+matrix in `test__ip4_network.py` and `test__ip6_network.py`:
 
 ```python
-# network address itself (lower boundary) and last/broadcast
-# address (upper boundary) must both be contained.
-{"_member": "10.0.0.0",   "_network": "10.0.0.0/24", "_result": True},
-{"_member": "10.0.0.255", "_network": "10.0.0.0/24", "_result": True},
-# one below / one above are NOT contained.
-{"_member": "9.255.255.255", "_network": "10.0.0.0/24", "_result": False},
-{"_member": "10.0.1.0",      "_network": "10.0.0.0/24", "_result": False},
+{"_description": "Ip4IfAddr at network address (lower boundary)",
+ "_network": "192.168.1.0/24", "_object": Ip4IfAddr("192.168.1.0/24"),   "_result": True},
+{"_description": "Ip4IfAddr at broadcast address (upper boundary)",
+ "_network": "192.168.1.0/24", "_object": Ip4IfAddr("192.168.1.255/24"), "_result": True},
 ```
 
-The lower/upper *exclusion* cases also kill the symmetric
-`int(self.address) <= other` → `<` mutant.
+The network-address (lower) case also kills the col-71 `<=`→`!=`
+(`LtE_NotEq`) survivor; the existing "outside" case already covers
+exclusion.
 
 ---
 

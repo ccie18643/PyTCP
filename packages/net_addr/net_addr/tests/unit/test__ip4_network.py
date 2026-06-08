@@ -449,6 +449,18 @@ class TestNetAddrIp4Network(TestCase):
             "_result": False,
         },
         {
+            "_description": "Ip4IfAddr at network address (lower boundary)",
+            "_network": "192.168.1.0/24",
+            "_object": Ip4IfAddr("192.168.1.0/24"),
+            "_result": True,
+        },
+        {
+            "_description": "Ip4IfAddr at broadcast address (upper boundary)",
+            "_network": "192.168.1.0/24",
+            "_object": Ip4IfAddr("192.168.1.255/24"),
+            "_result": True,
+        },
+        {
             "_description": "Unsupported type returns False",
             "_network": "192.168.1.0/24",
             "_object": "192.168.1.1",

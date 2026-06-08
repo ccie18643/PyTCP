@@ -483,6 +483,40 @@ class TestNetAddrIp6HostFromEui64(TestCase):
             msg="EUI64 address must flip the U/L bit and embed the MAC.",
         )
 
+    def test__net_addr__ip6_host__from_eui64__non_degenerate(self) -> None:
+        """
+        Ensure 'from_eui64()' embeds every MAC octet and every prefix
+        bit — a non-degenerate MAC (bits set in every octet) placed in
+        a fully populated /64 so a corrupted netmask, U/L flip, or
+        field placement changes the resulting address.
+
+        Reference: RFC 4291 §2.5.1 (modified EUI-64 IIDs are 64 bits).
+        """
+
+        # aa:bb:cc:dd:ee:ff is the canonical EUI-64 vector: the U/L bit
+        # flip turns the leading 0xaa into 0xa8 and 0xff:0xfe is inserted
+        # between the two 24-bit MAC halves. The prefix uses all four
+        # leading hextets so a corrupted /64 netmask is observable.
+        self.assertEqual(
+            Ip6IfAddr.from_eui64(
+                mac_address=MacAddress("aa:bb:cc:dd:ee:ff"),
+                ip6_network=Ip6Network("2001:db8:aaaa:bbbb::/64"),
+            ).address,
+            Ip6Address("2001:db8:aaaa:bbbb:a8bb:ccff:fedd:eeff"),
+            msg="from_eui64() must flip the U/L bit, insert ff:fe, and keep the full /64 prefix.",
+        )
+
+        # A second vector with a different leading octet hardens the U/L
+        # flip (0x12 -> 0x10) across a link-local prefix.
+        self.assertEqual(
+            Ip6IfAddr.from_eui64(
+                mac_address=MacAddress("12:34:56:78:9a:bc"),
+                ip6_network=Ip6Network("fe80::/64"),
+            ).address,
+            Ip6Address("fe80::1034:56ff:fe78:9abc"),
+            msg="from_eui64() U/L flip must turn 0x12 into 0x10 and embed the MAC.",
+        )
+
     def test__net_addr__ip6_host__from_eui64__non_64_mask_raises(self) -> None:
         """
         Ensure 'from_eui64()' rejects a network whose mask is not
