@@ -46,6 +46,7 @@ from net_addr import (
     IpVersion,
     MacAddress,
 )
+from net_addr.ip6_ifaddr import _is_reserved_iid
 from net_addr.tests.lib.parameterized import parameterized_class
 
 
@@ -1320,3 +1321,38 @@ class TestNetAddrIp6IfAddrOrdering(TestCase):
 
         with self.assertRaises(TypeError, msg="Ip6IfAddr < Ip4IfAddr must raise TypeError."):
             _ = Ip6IfAddr("2001:db8::5/64") < Ip4IfAddr("10.0.0.5/24")
+
+
+class TestNetAddrIp6ReservedIid(TestCase):
+    """
+    The NetAddr RFC 5453 reserved-IID predicate tests.
+    """
+
+    def test__net_addr__ip6__is_reserved_iid(self) -> None:
+        """
+        Ensure '_is_reserved_iid' flags exactly the RFC 5453 / RFC 2526
+        reserved interface identifiers — the all-zero Subnet-Router
+        Anycast IID and the Reserved Subnet Anycast block
+        (fdff:ffff:ffff:ff80 .. ffff) inclusive — and accepts every
+        IID just outside those bounds. Tested directly with crafted
+        IIDs (the generators only reach this path on a ~7e-18 random
+        hit, so the predicate is pinned at its boundaries here).
+
+        Reference: RFC 5453 (Reserved IPv6 Interface Identifiers).
+        Reference: RFC 2526 §3 (Reserved Subnet Anycast Addresses).
+        """
+
+        for iid, reserved in [
+            (0x0000_0000_0000_0000, True),  # Subnet-Router Anycast (all-zero)
+            (0x0000_0000_0000_0001, False),  # one above the anycast IID
+            (0xFDFF_FFFF_FFFF_FF7F, False),  # one below the reserved block
+            (0xFDFF_FFFF_FFFF_FF80, True),  # reserved block lower bound
+            (0xFDFF_FFFF_FFFF_FFFF, True),  # reserved block upper bound
+            (0xFE00_0000_0000_0000, False),  # one above the reserved block
+        ]:
+            with self.subTest(iid=hex(iid)):
+                self.assertEqual(
+                    _is_reserved_iid(iid),
+                    reserved,
+                    msg=f"_is_reserved_iid({iid:#018x}) must be {reserved}.",
+                )
