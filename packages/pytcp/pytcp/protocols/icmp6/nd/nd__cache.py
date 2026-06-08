@@ -40,14 +40,12 @@ pytcp/protocols/icmp6/nd/nd__cache.py
 ver 3.0.8
 """
 
-from typing import TYPE_CHECKING, override
+from typing import override
 
 from net_addr import Ip6Address, MacAddress
 from net_proto.protocols.ethernet.ethernet__assembler import EthernetAssembler
 from pytcp.lib.neighbor import NeighborCache
-
-if TYPE_CHECKING:
-    from pytcp.runtime.packet_handler import PacketHandlerL2, PacketHandlerL3
+from pytcp.runtime.packet_handler_api import NdCacheOwner
 
 
 class NdCache(NeighborCache[Ip6Address, EthernetAssembler]):
@@ -77,7 +75,7 @@ class NdCache(NeighborCache[Ip6Address, EthernetAssembler]):
     # Class-level 'None' default (rather than an '__init__'
     # assignment) so 'create_autospec' exposes the attribute as
     # settable for the test harness.
-    _owner: "PacketHandlerL2 | PacketHandlerL3 | None" = None
+    _owner: NdCacheOwner | None = None
 
     @override
     def __init__(self) -> None:
@@ -93,7 +91,7 @@ class NdCache(NeighborCache[Ip6Address, EthernetAssembler]):
             flush_callback=self._flush_packet,
         )
 
-    def attach_owner(self, owner: "PacketHandlerL2 | PacketHandlerL3", /, *, iface_name: str | None) -> None:
+    def attach_owner(self, owner: NdCacheOwner, /, *, iface_name: str | None) -> None:
         """
         Bind this cache to its owning interface handler (the
         bidirectional cache <-> handler link) and record the interface

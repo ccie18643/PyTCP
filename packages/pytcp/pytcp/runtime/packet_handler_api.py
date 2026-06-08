@@ -40,7 +40,7 @@ ver 3.0.8
 
 from typing import Protocol
 
-from net_addr import Ip4Address, MacAddress
+from net_addr import Ip4Address, Ip6Address, MacAddress
 from pytcp.runtime.tx_ring import TxRing
 
 
@@ -75,6 +75,36 @@ class ArpCacheOwner(Protocol):
     ) -> None:
         """
         Enqueue a unicast ARP Request via the owning handler.
+        """
+
+        ...
+
+
+class NdCacheOwner(Protocol):
+    """
+    The owning-interface-handler surface the ND cache requires — the
+    subset of 'PacketHandlerL2' / 'PacketHandlerL3' the cache's solicit
+    / flush callbacks call.
+    """
+
+    @property
+    def tx_ring(self) -> TxRing | None:
+        """
+        Get the owning handler's TX ring.
+        """
+
+        ...
+
+    def send_icmp6_neighbor_solicitation(self, *, icmp6_ns_target_address: Ip6Address) -> None:
+        """
+        Enqueue a multicast ICMPv6 ND Neighbor Solicitation via the owning handler.
+        """
+
+        ...
+
+    def send_icmp6_neighbor_solicitation_unicast(self, *, icmp6_ns_target_address: Ip6Address) -> None:
+        """
+        Enqueue a unicast ICMPv6 ND Neighbor Solicitation via the owning handler.
         """
 
         ...
