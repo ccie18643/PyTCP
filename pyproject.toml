@@ -184,4 +184,9 @@ enable = [
     "unbalanced-tuple-unpacking",
     "bad-format-string",
     "format-string-without-interpolation",
+    # Catches positional args whose names look swapped vs the callee's
+    # parameters. The two deliberate modular-comparison swaps in
+    # tcp__seq.py (gt32 := lt32(b, a), ge32 := le32(b, a)) carry a
+    # line-level '# pylint: disable=arguments-out-of-order'.
+    "arguments-out-of-order",
 ]
