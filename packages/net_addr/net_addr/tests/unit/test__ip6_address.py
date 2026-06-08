@@ -2167,10 +2167,16 @@ class TestNetAddrIp6AddressTransitional(TestCase):
             Ip4Address("192.0.2.1"),
             msg="ipv4_mapped must extract the embedded IPv4 address.",
         )
-        self.assertIsNone(
-            Ip6Address("2001:db8::1").ipv4_mapped,
-            msg="ipv4_mapped must be None for a non-mapped address.",
-        )
+        # Both a higher prefix (2001:db8::) and lower ones (::1, ::,
+        # which sit BELOW the ::ffff:0:0/96 prefix) must be None — the
+        # low cases pin the prefix test against a '<='-relaxation that
+        # would treat any sub-prefix address as mapped.
+        for address in ("2001:db8::1", "::1", "::", "::1:0:0"):
+            with self.subTest(address=address):
+                self.assertIsNone(
+                    Ip6Address(address).ipv4_mapped,
+                    msg=f"ipv4_mapped must be None for the non-mapped {address}.",
+                )
 
     def test__net_addr__ip6_address__is_ipv4_mapped_true_for_prefix(self) -> None:
         """
@@ -2269,10 +2275,16 @@ class TestNetAddrIp6AddressTransitional(TestCase):
             Ip4Address("192.0.2.1"),
             msg="sixtofour must extract the embedded IPv4 address.",
         )
-        self.assertIsNone(
-            Ip6Address("2001:db8::1").sixtofour,
-            msg="sixtofour must be None for a non-6to4 address.",
-        )
+        # Both a lower prefix (2001:db8::) and a higher one (2003::,
+        # which sits ABOVE the 2002::/16 prefix) must be None — the high
+        # case pins the prefix test against a '>='-relaxation that would
+        # treat any super-prefix address as 6to4.
+        for address in ("2001:db8::1", "2003::"):
+            with self.subTest(address=address):
+                self.assertIsNone(
+                    Ip6Address(address).sixtofour,
+                    msg=f"sixtofour must be None for the non-6to4 {address}.",
+                )
 
     def test__net_addr__ip6_address__teredo(self) -> None:
         """
@@ -2287,10 +2299,17 @@ class TestNetAddrIp6AddressTransitional(TestCase):
             (Ip4Address("65.54.227.120"), Ip4Address("192.0.2.45")),
             msg="teredo must return the (server, client) IPv4 pair.",
         )
-        self.assertIsNone(
-            Ip6Address("2001:db8::1").teredo,
-            msg="teredo must be None for a non-Teredo address.",
-        )
+        # Both a higher prefix (2001:db8::) and lower ones (2000:ffff::,
+        # 1fff::, which sit BELOW the 2001:0000::/32 prefix) must be
+        # None — the low cases pin the prefix test against a
+        # '<='-relaxation that would treat any sub-prefix address as
+        # Teredo.
+        for address in ("2001:db8::1", "2000:ffff::", "1fff::"):
+            with self.subTest(address=address):
+                self.assertIsNone(
+                    Ip6Address(address).teredo,
+                    msg=f"teredo must be None for the non-Teredo {address}.",
+                )
 
 
 class TestNetAddrIp6AddressScopeId(TestCase):

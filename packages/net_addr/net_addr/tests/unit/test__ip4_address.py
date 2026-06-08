@@ -2138,6 +2138,20 @@ class TestNetAddrIp4AddressArithmetic(TestCase):
         self.assertEqual(a + 0, a, msg="address + 0 must be unchanged.")
         self.assertEqual(a + 256, Ip4Address("10.0.1.10"), msg="address + 256 must carry across octets.")
         self.assertIsInstance(a + 1, Ip4Address, msg="Arithmetic must return an Ip4Address.")
+        # Results landing EXACTLY on the range endpoints (0 and the
+        # all-ones max) are in range and must not raise — pins the
+        # inclusive '<=' bounds (and the '- 1' max constant) against an
+        # off-by-one that would reject the boundary.
+        self.assertEqual(
+            Ip4Address("0.0.0.5") - 5,
+            Ip4Address("0.0.0.0"),
+            msg="A result landing exactly on 0.0.0.0 must be valid.",
+        )
+        self.assertEqual(
+            Ip4Address("255.255.255.250") + 5,
+            Ip4Address("255.255.255.255"),
+            msg="A result landing exactly on 255.255.255.255 must be valid.",
+        )
 
     def test__net_addr__ip4_address__arithmetic__overflow_raises(self) -> None:
         """
