@@ -206,4 +206,9 @@ enable = [
     # likewise (it may not raise). This keeps broad catches confined to
     # audited boundaries and rejects new unjustified ones.
     "broad-exception-caught",
+    # Dead parameters — a class neither mypy nor flake8 flags. The lone
+    # exempt site is the '_phtx_ethernet' TYPE_CHECKING signature-only
+    # stub (carries a line-level disable). A genuinely-ignored param
+    # elsewhere takes a '_' prefix (pylint auto-exempts those).
+    "unused-argument",
 ]

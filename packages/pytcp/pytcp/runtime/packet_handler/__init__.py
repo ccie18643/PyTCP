@@ -252,7 +252,8 @@ class PacketHandler(Subsystem, ABC):
         # see the method; it is 'TYPE_CHECKING'-only so the running
         # 'PacketHandlerL3' is not given a non-functional Ethernet
         # emitter. Drops out once L2/L3 are themselves restructured.
-        def _phtx_ethernet(
+        # Args unused: this is a signature-only typing stub ('...' body).
+        def _phtx_ethernet(  # pylint: disable=unused-argument
             self,
             *,
             ethernet__src: MacAddress = MacAddress(),
