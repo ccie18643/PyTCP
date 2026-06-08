@@ -6,6 +6,7 @@ codespell
 isort
 pylint
 pyright
+import-linter
 build
 twine
 ipython

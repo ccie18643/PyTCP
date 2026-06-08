@@ -212,3 +212,41 @@ enable = [
     # elsewhere takes a '_' prefix (pylint auto-exempts those).
     "unused-argument",
 ]
+
+# import-linter — enforces the architectural import contracts that mypy /
+# pylint / pyright do NOT check. 'make lint' runs it (see the Makefile
+# '<<< IMPORT-LINTER' step). The load-bearing invariant is the three
+# packages' dependency DIRECTION: they ship as three separate PyPI dists
+# (PyTCP-net_addr / PyTCP-net_proto / PyTCP) with a strict chain, so a
+# stray upward import would silently give a published wheel a dependency
+# it must not have. The 'layers' contract lists the packages top-to-bottom:
+# 'pytcp' may import 'net_proto' / 'net_addr'; 'net_proto' may import
+# 'net_addr' but NOT 'pytcp'; 'net_addr' may import neither.
+[tool.importlinter]
+root_packages = ["net_addr", "net_proto", "pytcp"]
+include_external_packages = true
+
+[[tool.importlinter.contracts]]
+name = "Package layering (net_addr < net_proto < pytcp)"
+type = "layers"
+layers = [
+    "pytcp",
+    "net_proto",
+    "net_addr",
+]
+
+# net_addr's selling point is that 'import net_addr' is stdlib-only — the
+# only third-party import is 'click', confined to the opt-in CLI helpers in
+# 'net_addr.click_types' (lazily consumed via the 'PyTCP-net_addr[cli]'
+# extra). This contract keeps it that way: no other net_addr module may
+# import click.
+[[tool.importlinter.contracts]]
+name = "net_addr stays stdlib-only (click confined to click_types)"
+type = "forbidden"
+source_modules = ["net_addr"]
+forbidden_modules = ["click"]
+ignore_imports = [
+    "net_addr.click_types -> click",
+    # Tests are dev-only / not shipped; the click_types test needs click.
+    "net_addr.tests.unit.test__click_types -> click",
+]

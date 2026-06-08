@@ -114,6 +114,8 @@ lint: venv
 	@PYTHONPATH=$(ROOT_PATH) ./$(VENV)/bin/pylint --score=n --recursive=y $(PYTCP_PATH) $(NET_ADDR_PATH) $(NET_PROTO_PATH)
 	@echo '<<< PYRIGHT'
 	@PYTHONPATH=$(ROOT_PATH) ./$(VENV)/bin/pyright
+	@echo '<<< IMPORT-LINTER'
+	@PYTHONPATH=$(ROOT_PATH) ./$(VENV)/bin/lint-imports --config pyproject.toml
 
 test__pytcp__integration: venv
 	@echo '<<< UNITTEST PYTCP INTEGRATION'
