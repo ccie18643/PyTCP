@@ -238,9 +238,16 @@ class TestNetAddrIp4Wildcard(TestCase):
             "_results": {"error_message": "The IPv4 wildcard format is invalid: -1"},
         },
         {
-            "_description": "IPv4 wildcard: wrong-length bytes",
+            "_description": "IPv4 wildcard: wrong-length bytes (too short)",
             "_args": [b"\x00\x00\xff"],
             "_results": {"error_message": "The IPv4 wildcard format is invalid: b'\\x00\\x00\\xff'"},
+        },
+        {
+            # Too-LONG bytes must be rejected too — pins the bytes-length
+            # guard against accepting any length >= 4.
+            "_description": "IPv4 wildcard: wrong-length bytes (too long)",
+            "_args": [b"\x00\x00\x00\x00\x00"],
+            "_results": {"error_message": "The IPv4 wildcard format is invalid: b'\\x00\\x00\\x00\\x00\\x00'"},
         },
         {
             "_description": "IPv4 wildcard: invalid string",
@@ -305,6 +312,14 @@ class TestNetAddrIp4WildcardSemantics(TestCase):
         self.assertEqual(wildcard, wildcard, msg="A wildcard must equal itself.")
         self.assertEqual(wildcard, Ip4Wildcard(255), msg="Wildcards with the same value must be equal.")
         self.assertNotEqual(wildcard, Ip4Wildcard("0.0.255.255"), msg="Different wildcards must not be equal.")
+        # The reverse direction (larger wildcard on the left) pins the
+        # value comparison against an order-relaxed '>=' that would call
+        # a strictly-greater wildcard equal.
+        self.assertNotEqual(
+            Ip4Wildcard("0.0.255.255"),
+            wildcard,
+            msg="Inequality must hold with the larger wildcard on the left.",
+        )
         self.assertNotEqual(wildcard, "0.0.0.255", msg="A wildcard must not equal a foreign type.")
         self.assertNotEqual(
             wildcard,

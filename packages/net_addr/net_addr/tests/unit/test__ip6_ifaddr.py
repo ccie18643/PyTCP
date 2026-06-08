@@ -679,6 +679,49 @@ class TestNetAddrIp6HostFromRfc7217(TestCase):
             msg=f"Different DAD counters must yield different IIDs. Got: {host_0!r} vs {host_1!r}",
         )
 
+    def test__net_addr__ip6_host__from_rfc7217__golden_vector(self) -> None:
+        """
+        Ensure 'from_rfc7217' reproduces a byte-exact known IID for a
+        fixed {prefix, mac, secret, dad} tuple — pinning the whole PRF
+        construction (the F() input assembly, the digest slice, and
+        the prefix/IID combine) which the differential determinism /
+        unlinkability tests leave unconstrained.
+
+        Reference: RFC 7217 §5 (Algorithm Specification).
+        """
+
+        host = Ip6IfAddr.from_rfc7217(
+            ip6_network=Ip6Network("2001:db8:aaaa:bbbb::/64"),
+            mac_address=MacAddress("aa:bb:cc:dd:ee:ff"),
+            secret_key=b"a-fixed-128-bit-secret-key-bytes",
+            dad_counter=0,
+        )
+        self.assertEqual(
+            host.address,
+            Ip6Address("2001:db8:aaaa:bbbb:7860:ab56:5da3:c5a9"),
+            msg="from_rfc7217 must reproduce the exact PRF-derived IID for the fixed golden input.",
+        )
+
+    def test__net_addr__ip6_host__from_rfc7217__minimum_secret_length(self) -> None:
+        """
+        Ensure a secret key of exactly the 16-byte minimum is accepted
+        (the boundary just above the rejection threshold), so the
+        length guard rejects strictly-shorter keys only.
+
+        Reference: RFC 7217 §5 (secret_key length).
+        """
+
+        host = Ip6IfAddr.from_rfc7217(
+            ip6_network=Ip6Network("2001:db8::/64"),
+            mac_address=MacAddress("02:00:00:11:22:33"),
+            secret_key=b"sixteen-byte-key",
+        )
+        self.assertEqual(
+            host.network,
+            Ip6Network("2001:db8::/64"),
+            msg="A 16-byte secret_key (the minimum) must be accepted.",
+        )
+
     def test__net_addr__ip6_host__from_rfc7217__keeps_prefix(self) -> None:
         """
         Ensure the resulting address keeps the source /64
