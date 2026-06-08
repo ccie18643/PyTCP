@@ -443,6 +443,19 @@ class TestTcpSeq__AddSub(TestCase):
             "_hi": UINT_32__MAX,
             "_result": True,
         },
+        {
+            # Far-wrap boundary: 'x' sits at the maximum forward distance
+            # (2**32-1 ahead of 'lo', i.e. one step *before* it), so it is
+            # outside a small forward window. This pins the 32-bit mask
+            # '(x - lo) & UINT_32__MAX' against an off-by-wrap error in the
+            # distance computation, where the masked distance (2**32-1)
+            # would otherwise collapse to 0 and wrongly report 'x' in range.
+            "_description": "'x' at maximum forward distance (2**32-1 ahead of 'lo') is outside a small range.",
+            "_x": UINT_32__MAX,
+            "_lo": 0x0000_0000,
+            "_hi": 0x0000_0010,
+            "_result": False,
+        },
     ]
 )
 class TestTcpSeq__InRange(TestCase):
