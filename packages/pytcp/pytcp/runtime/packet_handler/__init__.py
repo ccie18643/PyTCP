@@ -137,8 +137,6 @@ from .packet_handler__udp__rx import UdpRxHandler
 from .packet_handler__udp__tx import UdpTxHandler
 
 if TYPE_CHECKING:
-    from threading import Semaphore
-
     from pytcp.protocols.arp.arp__cache import ArpCache
     from pytcp.protocols.icmp6.nd.nd__cache import NdCache
 
@@ -333,7 +331,7 @@ class PacketHandler(Subsystem, ABC):
     _lock__addr_config: threading.RLock
     _ip6_frag_table: IpFragTable
     _ip4_frag_table: IpFragTable
-    _ip_configuration_in_progress: Semaphore
+    _ip_configuration_in_progress: threading.Semaphore
     _mac_unicast: MacAddress
     _icmp6_default_routers: list[Icmp6DefaultRouter]
     _icmp6_slaac_addresses: list[Icmp6SlaacAddress]
@@ -351,7 +349,7 @@ class PacketHandler(Subsystem, ABC):
     # already uses.
     _icmp6_nd_dad__registry: DadSlotRegistry[Ip6Address]
     _icmp6_ra__prefixes: list[tuple[Ip6Network, Ip6Address]]
-    _icmp6_ra__event: Semaphore
+    _icmp6_ra__event: threading.Semaphore
     _mld2_query__pending_response_at_ms: int | None
     _mld2_query__handle: TimerHandle | None
     _mld__v1_querier_present_until_ms: int | None
@@ -489,7 +487,7 @@ class PacketHandler(Subsystem, ABC):
         self._ip6_frag_table = IpFragTable(timeout=stack.IP6__FRAG_FLOW_TIMEOUT__S)
 
         # Used for IPv4 and IPv6 address configuration.
-        self._ip_configuration_in_progress: Semaphore = threading.Semaphore(0)
+        self._ip_configuration_in_progress: threading.Semaphore = threading.Semaphore(0)
 
         # RFC 4429 §3.1 Optimistic DAD per-address state map.
         # Populated by the DAD-claim path; consulted by the NA
@@ -2940,7 +2938,7 @@ class PacketHandlerL2(
 
         # Used for the ICMPv6 ND RA address auto configuration.
         self._icmp6_ra__prefixes: list[tuple[Ip6Network, Ip6Address]] = []
-        self._icmp6_ra__event: Semaphore = threading.Semaphore(0)
+        self._icmp6_ra__event: threading.Semaphore = threading.Semaphore(0)
 
         # RFC 3810 §5.1.10 deferred-Report state. Tracks the
         # absolute 'stack.timer.now_ms' at which the next

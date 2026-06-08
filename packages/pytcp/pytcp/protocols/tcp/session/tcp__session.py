@@ -92,8 +92,6 @@ from pytcp.runtime.socket.tcp__metadata import TcpMetadata
 from pytcp.stack import sysctl_iface
 
 if TYPE_CHECKING:
-    from threading import Event, Lock, RLock, Semaphore
-
     from pytcp.runtime.socket.tcp__socket import TcpSocket
 
 
@@ -499,11 +497,11 @@ class TcpSession:
         # call: 'Event' stays set, so a second CONNECT would
         # observe a stale signal; 'Semaphore' counts releases and
         # acquires, naturally consuming the signal.
-        self._event__connect: Semaphore = threading.Semaphore(0)
+        self._event__connect: threading.Semaphore = threading.Semaphore(0)
 
         # Used to inform RECV syscall that there is new data in buffer ready
         # to be picked up.
-        self._event__rx_buffer: Event = threading.Event()
+        self._event__rx_buffer: threading.Event = threading.Event()
 
         # Set when the FSM reaches CLOSED so a blocking lingering
         # close() (SO_LINGER {l_onoff=1, l_linger>0}) wakes as soon as
@@ -516,16 +514,16 @@ class TcpSession:
         # set on the terminal CLOSED state and never cleared, so no
         # lock and no lost/stale-wakeup window. See
         # no_gil_thread_safety_audit.md §5.
-        self._event__closed: Event = threading.Event()
+        self._event__closed: threading.Event = threading.Event()
 
         # Used to ensure that only single event can run FSM at given time.
-        self._lock__fsm: RLock = threading.RLock()
+        self._lock__fsm: threading.RLock = threading.RLock()
 
         # Used to ensure only single event has access to RX buffer at given time.
-        self._lock__rx_buffer: Lock = threading.Lock()
+        self._lock__rx_buffer: threading.Lock = threading.Lock()
 
         # Used to ensure only single event has access to TX buffer at given time.
-        self._lock__tx_buffer: Lock = threading.Lock()
+        self._lock__tx_buffer: threading.Lock = threading.Lock()
 
         # Indicates that CLOSE syscall is in progress, this lets to finish
         # sending data before FIN packet is transmitted.
