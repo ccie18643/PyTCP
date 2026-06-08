@@ -190,8 +190,8 @@ def write_cached_lease(path: str, lease: "Dhcp4Lease", /) -> None:
         # A crash mid-write leaves the prior cache intact.
         fd, tmp_path = tempfile.mkstemp(prefix=".dhcp4_lease.", dir=directory)
         try:
-            with os.fdopen(fd, "w") as fh:
-                json.dump(payload, fh)
+            with os.fdopen(fd, "w", encoding="utf-8") as cache_file:
+                json.dump(payload, cache_file)
             os.replace(tmp_path, path)
         except BaseException:
             # Cleanup the half-written tempfile on any failure.
@@ -229,8 +229,8 @@ def read_cached_lease(path: str, /) -> "Dhcp4Lease | None":
         return None
 
     try:
-        with open(path, "r") as fh:
-            payload = json.load(fh)
+        with open(path, "r", encoding="utf-8") as cache_file:
+            payload = json.load(cache_file)
     except FileNotFoundError:
         return None
     except (OSError, json.JSONDecodeError) as error:

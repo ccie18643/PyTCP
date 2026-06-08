@@ -140,6 +140,8 @@ ignore-paths = [".*/tests/.*"]
 [tool.pylint.messages_control]
 disable = ["all"]
 enable = [
+    # --- Primary gate: high-signal checks NOT covered by flake8 / mypy
+    # / black (see the rationale comment above).
     "protected-access",
     "raise-missing-from",
     "dangerous-default-value",
@@ -147,4 +149,39 @@ enable = [
     "useless-super-delegation",
     "super-with-arguments",
     "unused-import",
+    "unspecified-encoding",
+    # --- Real-bug regression guards: each fires zero times on the
+    # current codebase, so they cost nothing today and exist purely to
+    # reject a future mistake. None overlaps mypy/flake8 (they catch
+    # logic/runtime bugs a type checker structurally cannot — mutating a
+    # container mid-iteration, an always-true 'assert (a, b)' tuple, a
+    # self-assignment, an unreachable branch, a swallowed 'finally'
+    # exception, etc.). Verified clean; if one ever fires it has found a
+    # real defect.
+    "modified-iterating-list",
+    "modified-iterating-dict",
+    "modified-iterating-set",
+    "duplicate-key",
+    "self-assigning-variable",
+    "comparison-with-itself",
+    "comparison-with-callable",
+    "nan-comparison",
+    "assert-on-tuple",
+    "assert-on-string-literal",
+    "lost-exception",
+    "unreachable",
+    "undefined-loop-variable",
+    "function-redefined",
+    "duplicate-bases",
+    "unexpected-special-method-signature",
+    "bad-staticmethod-argument",
+    "eval-used",
+    "exec-used",
+    "used-before-assignment",
+    "return-in-init",
+    "nonexistent-operator",
+    "star-needs-assignment-target",
+    "unbalanced-tuple-unpacking",
+    "bad-format-string",
+    "format-string-without-interpolation",
 ]
