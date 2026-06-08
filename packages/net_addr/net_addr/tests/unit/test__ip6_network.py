@@ -910,6 +910,17 @@ class TestNetAddrIp6NetworkRelations(TestCase):
             ("inner subnet_of outer", inner.subnet_of(outer), True),
             ("outer supernet_of inner", outer.supernet_of(inner), True),
             ("cross-version overlaps", outer.overlaps(Ip4Network("0.0.0.0/0")), False),
+            # Single-address overlap exactly at a block edge: the /128
+            # sits on the last address of the /126. Pins both
+            # 'self.address <= other.last' and 'other.address <=
+            # self.last' at the boundary (a strict '<' would miss it).
+            ("edge /128 overlaps /126", Ip6Network("2001:db8::3/128").overlaps(Ip6Network("2001:db8::/126")), True),
+            ("edge /126 overlaps /128", Ip6Network("2001:db8::/126").overlaps(Ip6Network("2001:db8::3/128")), True),
+            (
+                "adjacent /128 disjoint /126",
+                Ip6Network("2001:db8::4/128").overlaps(Ip6Network("2001:db8::/126")),
+                False,
+            ),
         ]:
             with self.subTest(relation=label):
                 self.assertEqual(
@@ -1145,10 +1156,59 @@ class TestNetAddrIp6NetworkGetitem(TestCase):
             with self.subTest(index=index):
                 self.assertEqual(net[index], expected, msg=f"net[{index}] must be {expected}.")
 
-        for bad in (4, -5):
+        # 4 == count (the first invalid index); 5 / 100 are strictly
+        # past the end so a '<'-vs-'!='/'is not' weakening of the upper
+        # bound is caught.
+        for bad in (4, 5, 100, -5):
             with self.subTest(index=bad):
                 with self.assertRaises(Ip6NetworkSanityError, msg=f"net[{bad}] must raise Ip6NetworkSanityError."):
                     _ = net[bad]
+
+
+class TestNetAddrIp6NetworkNumAddressesEdge(TestCase):
+    """
+    The NetAddr IPv6 network num_addresses default-route edge test.
+    """
+
+    def test__net_addr__ip6_network__num_addresses__default_route(self) -> None:
+        """
+        Ensure 'num_addresses' counts the whole IPv6 space for the
+        ::/0 default route, where the network address is 0 — pinning
+        the subtraction form against a modulo (which would divide by
+        the zero network address).
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        self.assertEqual(
+            Ip6Network("::/0").num_addresses,
+            2**128,
+            msg="num_addresses of ::/0 must be the full 2**128 address space.",
+        )
+
+    def test__net_addr__ip6_network__subnetting_arg_boundaries(self) -> None:
+        """
+        Ensure the subnets / supernet prefix-length boundary
+        arguments raise or succeed exactly at the equal / one-step
+        edges — a subnet must be strictly longer, a supernet strictly
+        shorter, and a positive prefixlen_diff greater than one is
+        honoured.
+
+        Reference: RFC 4632 (Classless Inter-domain Routing).
+        """
+
+        net = Ip6Network("2001:db8::/48")
+        with self.assertRaises(Ip6NetworkSanityError, msg="subnets(new_prefix == prefixlen) must raise."):
+            list(net.subnets(new_prefix=48))
+        with self.assertRaises(Ip6NetworkSanityError, msg="supernet(new_prefix == prefixlen) must raise."):
+            net.supernet(new_prefix=48)
+        with self.assertRaises(Ip6NetworkSanityError, msg="supernet(new_prefix > prefixlen) must raise."):
+            net.supernet(new_prefix=64)
+        self.assertEqual(
+            [str(s) for s in Ip6Network("2001:db8::/48").subnets(prefixlen_diff=2)],
+            ["2001:db8::/50", "2001:db8:0:4000::/50", "2001:db8:0:8000::/50", "2001:db8:0:c000::/50"],
+            msg="subnets(prefixlen_diff=2) must tile a /48 into four /50 blocks.",
+        )
 
 
 class TestNetAddrIp6NetworkAddressExclude(TestCase):
@@ -1243,6 +1303,19 @@ class TestNetAddrIp6NetworkSummarize(TestCase):
             (
                 [Ip6Address(f"2001:db8::{nibble}") for nibble in range(0, 7)],
                 ["2001:db8::/126", "2001:db8::4/127", "2001:db8::6/128"],
+            ),
+            # A one-address GAP (::1 missing) must NOT merge — pins the
+            # '+ 1' adjacency tolerance in _merge_spans against widening.
+            (
+                [Ip6Address("2001:db8::"), Ip6Address("2001:db8::2")],
+                ["2001:db8::/128", "2001:db8::2/128"],
+            ),
+            # A fully contained span (the /126 inside the /64) must keep
+            # the wider span — pins the 'max(prev_hi, hi)' merge against
+            # collapsing to the narrower endpoint.
+            (
+                [Ip6Network("2001:db8::/64"), Ip6Network("2001:db8::/126")],
+                ["2001:db8::/64"],
             ),
             ([], []),
         ]
