@@ -517,6 +517,19 @@ class TestNetAddrIp6HostFromEui64(TestCase):
             msg="from_eui64() U/L flip must turn 0x12 into 0x10 and embed the MAC.",
         )
 
+        # An all-ones top-64 prefix sets every prefix bit, so any
+        # corruption of the /64 netmask (which masks exactly bits
+        # 64-127) changes the result — closing the netmask-arithmetic
+        # mutants a partially-populated prefix leaves unconstrained.
+        self.assertEqual(
+            Ip6IfAddr.from_eui64(
+                mac_address=MacAddress("aa:bb:cc:dd:ee:ff"),
+                ip6_network=Ip6Network("ffff:ffff:ffff:ffff::/64"),
+            ).address,
+            Ip6Address("ffff:ffff:ffff:ffff:a8bb:ccff:fedd:eeff"),
+            msg="from_eui64() must preserve an all-ones /64 prefix exactly.",
+        )
+
     def test__net_addr__ip6_host__from_eui64__non_64_mask_raises(self) -> None:
         """
         Ensure 'from_eui64()' rejects a network whose mask is not
@@ -700,6 +713,21 @@ class TestNetAddrIp6HostFromRfc7217(TestCase):
             host.address,
             Ip6Address("2001:db8:aaaa:bbbb:7860:ab56:5da3:c5a9"),
             msg="from_rfc7217 must reproduce the exact PRF-derived IID for the fixed golden input.",
+        )
+
+        # An all-ones top-64 prefix sets every prefix bit, so any
+        # corruption of the /64 netmask (which masks exactly bits
+        # 64-127) changes the result — closing the netmask-arithmetic
+        # mutants a partially-populated prefix leaves unconstrained.
+        self.assertEqual(
+            Ip6IfAddr.from_rfc7217(
+                ip6_network=Ip6Network("ffff:ffff:ffff:ffff::/64"),
+                mac_address=MacAddress("aa:bb:cc:dd:ee:ff"),
+                secret_key=b"a-fixed-128-bit-secret-key-bytes",
+                dad_counter=0,
+            ).address,
+            Ip6Address("ffff:ffff:ffff:ffff:a6bf:2117:5bda:6d09"),
+            msg="from_rfc7217 must preserve an all-ones /64 prefix exactly.",
         )
 
     def test__net_addr__ip6_host__from_rfc7217__minimum_secret_length(self) -> None:

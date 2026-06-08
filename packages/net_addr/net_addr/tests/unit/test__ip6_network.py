@@ -1310,12 +1310,23 @@ class TestNetAddrIp6NetworkSummarize(TestCase):
                 [Ip6Address("2001:db8::"), Ip6Address("2001:db8::2")],
                 ["2001:db8::/128", "2001:db8::2/128"],
             ),
-            # A fully contained span (the /126 inside the /64) must keep
-            # the wider span — pins the 'max(prev_hi, hi)' merge against
-            # collapsing to the narrower endpoint.
+            # A block contained in the MIDDLE of a wider one (a /90 not
+            # at the /64's start) must keep the wider span — pins the
+            # 'max(prev_hi, hi)' merge against collapsing to the
+            # narrower contained endpoint (a contained-at-start block
+            # would let 'hi' dominate and hide the bug).
             (
-                [Ip6Network("2001:db8::/64"), Ip6Network("2001:db8::/126")],
+                [Ip6Network("2001:db8::/64"), Ip6Network("2001:db8::40:0:0:0/90")],
                 ["2001:db8::/64"],
+            ),
+            # A separate block, a gap, then two adjacent-and-alignable
+            # blocks that merge into a wider aggregate (/63). With the
+            # earlier block already in the merged list, this pins the
+            # merge against the LAST span ('merged[-1]') rather than the
+            # first — and the /63 only forms if the merge happens at all.
+            (
+                [Ip6Network("2001:db8::/64"), Ip6Network("2001:db8:0:2::/64"), Ip6Network("2001:db8:0:3::/64")],
+                ["2001:db8::/64", "2001:db8:0:2::/63"],
             ),
             ([], []),
         ]
