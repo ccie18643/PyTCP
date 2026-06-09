@@ -256,6 +256,36 @@ class TestUdpParserIntegrityBoundary(TestCase):
             msg="Zero-cksum IPv4 frame must pass integrity with cksum=0 preserved on the header.",
         )
 
+    def test__udp__parser__integrity__nonzero_cksum_low_byte_zero_validated(self) -> None:
+        """
+        Ensure a frame whose checksum has a zero low byte but a non-zero
+        high byte is NOT mistaken for the cksum=0 sentinel: the parser
+        must read the full 16-bit checksum word and run validation,
+        rejecting a wrong checksum rather than skipping it.
+
+        Reference: RFC 768 (cksum=0 sentinel is the whole 16-bit field, not its low byte).
+        """
+
+        # UDP wire frame (8 bytes, header-only) with a deliberately wrong
+        # checksum 0xab00 — high byte set, low byte zero. A parser that
+        # read only the low byte would see 0x00 and wrongly skip
+        # validation; reading the full word sees 0xab00 != 0 and rejects.
+        #   Bytes 0-1 : 0x3039 -> sport=12345
+        #   Bytes 2-3 : 0xd431 -> dport=54321
+        #   Bytes 4-5 : 0x0008 -> plen=8
+        #   Bytes 6-7 : 0xab00 -> cksum (intentionally wrong, low byte zero)
+        frame = b"\x30\x39\xd4\x31\x00\x08\xab\x00"
+
+        packet_rx = PacketRx(frame)
+        packet_rx.ip = SimpleNamespace(  # type: ignore[assignment]
+            payload_len=len(frame),
+            pshdr_sum=0,
+            ver=IpVersion.IP4,
+        )
+
+        with self.assertRaises(UdpIntegrityError):
+            UdpParser(packet_rx)
+
 
 class TestUdpParserIntegrityZeroCksumIp6(TestCase):
     """
