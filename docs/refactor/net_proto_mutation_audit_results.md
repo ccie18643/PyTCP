@@ -18,6 +18,7 @@ protocol's own tests plus `tests/unit/lib`; shards run sequentially.
 |-------|--------:|-----------:|----------:|----------------------:|--------------------:|--------|
 | tcp   | 2255    | 78.4 %     | 85.1 %    | ~99 %                 | 21                  | DONE   |
 | ip4   | 3088    | 81.8 %     | 82.4 %    | ~97 %                 | 15                  | DONE   |
+| ip6   | 503     | 72.2 %     | 74.0 %    | ~97 %                 | 3                   | DONE   |
 
 (Updated per shard as the audit proceeds.)
 
@@ -143,3 +144,41 @@ arithmetic-coincidence equivalents.
   bit-field packing (`overflow << 4 | flag`), `@override` removals,
   PEP 604 annotation-`|`, and the dispatch-backstopped `== int(Type)`
   Eq_Is (interned) — the same equivalent classes as tcp.
+
+---
+
+## Shard: ip6
+
+**Baseline:** 363 / 503 = **72.2 % raw**, 140 survivors. **After:**
+372 / 503 = **74.0 % raw** (9 newly killed), ~97 % equivalent-adjusted.
+
+The low absolute raw is dominated by a single equivalent class: ~88
+survivors at `ip6__base.py:54-60` are the assembler's PEP 695 generic
+type-parameter constraint `[P: (Ip6RoutingAssembler | Ip6FragAssembler |
+… | RawAssembler)]` — a PEP 604 union spread across continuation lines,
+never executed at runtime (the same annotation-`|` equivalent class as
+everywhere else, just one big multiline instance).
+
+### Genuine gaps closed (commit `cb4a0dd6`, kill-proven, test-only)
+
+| Module:line | Mutation | Killing test |
+|-------------|----------|--------------|
+| `ip6__parser.py:96` | version `frame[0] >> 4 != 6` → `< 6` / `> 6` | added a ver=7 (>6) integrity case (the only prior case was ver=5) |
+| `ip6__assembler.py:62-64` + `ip6__header.py:77` | default `hop=IP6__DEFAULT_HOP_LIMIT=64`, `dscp/ecn/flow=0` | default-constructed assembler asserts hop==64 (literal), dscp/ecn/flow==0, constant==64 |
+
+### Cross-shard-covered (not a real gap)
+
+- `ip6__header.py:78` `IP6__MIN_MTU = 1280` — no ip6 test pins it, but it
+  is consumed by the ICMPv6 error messages (`packet_too_big`,
+  `time_exceeded`, `parameter_problem`, `destination_unreachable`) for
+  their RFC 4443 data-truncation slice. The icmp6 test suite kills the
+  1280→1281 mutation (verified). The ip6 shard's scope (ip6 + lib tests)
+  simply doesn't reach it — a cross-protocol-constant blind spot of
+  per-shard scoping, not a coverage gap.
+
+### Confirmed equivalent (analysed, not closed)
+
+- `ip6__base.py:54-60` assembler generic-constraint annotation-`|` (~88).
+- `ip6__parser.py:137` `hop == 0` → `<= 0` (hop is uint8 ≥ 0).
+- `@override` removals, dataclass-flag flips, `__str__` length arithmetic,
+  and the `0` checksum/flow slots packed in `__buffer__` then overwritten.
