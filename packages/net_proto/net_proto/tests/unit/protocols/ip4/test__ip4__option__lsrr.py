@@ -410,3 +410,33 @@ class TestIp4OptionLsrrIntegrity(TestCase):
             "[INTEGRITY ERROR][IPv4] The IPv4 Lsrr option pointer must be aligned to the 4-byte slot boundary. Got: 5",
             msg="Unexpected integrity-error message for misaligned pointer.",
         )
+
+
+class TestIp4OptionLsrrWrongType(TestCase):
+    """
+    The IPv4 Loose Source Route option wrong-kind-byte parser tests.
+    """
+
+    def test__ip4__option__lsrr__from_buffer_wrong_type_below_raises(self) -> None:
+        """
+        Ensure 'from_buffer()' asserts the kind byte equals
+        Ip4OptionType.LSRR and rejects a kind byte below it, pinning
+        the equality check against a '<=' relaxation.
+
+        Reference: RFC 791 §3.1 (Loose Source Route option kind byte).
+        """
+
+        with self.assertRaises(AssertionError):
+            Ip4OptionLsrr.from_buffer(b"\x00\x07\x04\x0a\x00\x00\x01")
+
+    def test__ip4__option__lsrr__from_buffer_wrong_type_above_raises(self) -> None:
+        """
+        Ensure 'from_buffer()' rejects a kind byte above
+        Ip4OptionType.LSRR, pinning the equality check against a
+        '>=' relaxation.
+
+        Reference: RFC 791 §3.1 (Loose Source Route option kind byte).
+        """
+
+        with self.assertRaises(AssertionError):
+            Ip4OptionLsrr.from_buffer(b"\xff\x07\x04\x0a\x00\x00\x01")

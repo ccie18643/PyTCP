@@ -403,3 +403,33 @@ class TestIp4OptionRrIntegrity(TestCase):
             ),
             msg="Unexpected integrity-error message for misaligned pointer.",
         )
+
+
+class TestIp4OptionRrWrongType(TestCase):
+    """
+    The IPv4 Record Route option wrong-kind-byte parser tests.
+    """
+
+    def test__ip4__option__rr__from_buffer_wrong_type_below_raises(self) -> None:
+        """
+        Ensure 'from_buffer()' asserts the kind byte equals
+        Ip4OptionType.RR and rejects a kind byte below it, pinning
+        the equality check against a '<=' relaxation.
+
+        Reference: RFC 791 §3.1 (Record Route option kind byte).
+        """
+
+        with self.assertRaises(AssertionError):
+            Ip4OptionRr.from_buffer(b"\x00\x07\x04\x0a\x00\x00\x01")
+
+    def test__ip4__option__rr__from_buffer_wrong_type_above_raises(self) -> None:
+        """
+        Ensure 'from_buffer()' rejects a kind byte above
+        Ip4OptionType.RR, pinning the equality check against a
+        '>=' relaxation.
+
+        Reference: RFC 791 §3.1 (Record Route option kind byte).
+        """
+
+        with self.assertRaises(AssertionError):
+            Ip4OptionRr.from_buffer(b"\xff\x07\x04\x0a\x00\x00\x01")
