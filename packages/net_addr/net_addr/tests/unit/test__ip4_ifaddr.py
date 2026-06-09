@@ -625,8 +625,17 @@ class TestNetAddrIp4IfAddrFormat(TestCase):
                     msg=f"Width/alignment spec {spec!r} must format the default rendering.",
                 )
 
-        with self.assertRaises(Ip4IfAddrSanityError, msg="An unknown format spec must raise Ip4IfAddrSanityError."):
-            format(a, "zz")
+        # Unknown specs must raise the sanity error — including ones
+        # whose final character sorts at or below 's' (e.g. 'zq'), which
+        # a '<='-relaxation of the width-branch test ('[-1:] == "s"')
+        # would mis-route to str formatting (leaking a ValueError).
+        for spec in ("zz", "zq", "qa"):
+            with self.subTest(spec=spec):
+                with self.assertRaises(
+                    Ip4IfAddrSanityError,
+                    msg=f"Unknown format spec {spec!r} must raise Ip4IfAddrSanityError.",
+                ):
+                    format(a, spec)
 
 
 class TestNetAddrIp4IfAddrWhitespace(TestCase):

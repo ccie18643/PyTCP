@@ -1108,8 +1108,17 @@ class TestNetAddrIp6NetworkWithForms(TestCase):
                     msg=f"Width/alignment spec {spec!r} must format the prefixlen string for: {self._description}",
                 )
 
-        with self.assertRaises(Ip6NetworkSanityError, msg="An unknown format spec must raise Ip6NetworkSanityError."):
-            format(self._net, "zz")
+        # Unknown specs must raise the sanity error — including ones
+        # whose final character sorts at or below 's' (e.g. 'zq'), which
+        # a '<='-relaxation of the width-branch test ('[-1:] == "s"')
+        # would mis-route to str formatting (leaking a ValueError).
+        for spec in ("zz", "zq", "qa"):
+            with self.subTest(spec=spec):
+                with self.assertRaises(
+                    Ip6NetworkSanityError,
+                    msg=f"Unknown format spec {spec!r} must raise Ip6NetworkSanityError.",
+                ):
+                    format(self._net, spec)
 
 
 class TestNetAddrIp6NetworkPrefixlen(TestCase):
