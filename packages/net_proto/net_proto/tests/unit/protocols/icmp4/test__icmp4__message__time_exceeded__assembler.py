@@ -268,3 +268,33 @@ class TestIcmp4MessageTimeExceededAssembler(TestCase):
             self._results["__bytes__"],
             msg=f"Unexpected assemble() output for case: {self._description}",
         )
+
+
+class TestIcmp4MessageTimeExceededWithData(TestCase):
+    """
+    The ICMPv4 Time Exceeded with-embedded-data length tests.
+    """
+
+    def test__icmp4__message__time_exceeded__len_with_data(self) -> None:
+        """
+        Ensure 'len()' on a Time Exceeded message carrying embedded data
+        equals the 8-byte message header plus the data length, pinning
+        the 'LEN + len(data)' computation against a '-' corruption that
+        the existing empty-data fixtures cannot catch.
+
+        Reference: RFC 792 (Time Exceeded message length is 8 octets plus embedded data).
+        """
+
+        data = bytes(range(28))
+        message = Icmp4MessageTimeExceeded(code=Icmp4TimeExceededCode.TTL_EXCEEDED_IN_TRANSIT, data=data)
+
+        self.assertEqual(
+            len(message),
+            8 + len(data),
+            msg="Time Exceeded length must be the 8-byte header plus the embedded data length.",
+        )
+        self.assertEqual(
+            len(bytes(Icmp4Assembler(icmp4__message=message))),
+            8 + len(data),
+            msg="Time Exceeded assembled wire length must be 8 + the embedded data length.",
+        )

@@ -652,3 +652,33 @@ class TestIcmp4MessageDestinationUnreachableAssembler__FragmentationNeededMtu(Te
                 f"{cast(Icmp4MessageDestinationUnreachable, assembler.message).mtu!r}."
             ),
         )
+
+
+class TestIcmp4MessageDestinationUnreachableWithData(TestCase):
+    """
+    The ICMPv4 Destination Unreachable with-embedded-data length tests.
+    """
+
+    def test__icmp4__message__destination_unreachable__len_with_data(self) -> None:
+        """
+        Ensure 'len()' on a Destination Unreachable message carrying embedded data
+        equals the 8-byte message header plus the data length, pinning
+        the 'LEN + len(data)' computation against a '-' corruption that
+        the existing empty-data fixtures cannot catch.
+
+        Reference: RFC 792 (Destination Unreachable message length is 8 octets plus embedded data).
+        """
+
+        data = bytes(range(28))
+        message = Icmp4MessageDestinationUnreachable(code=Icmp4DestinationUnreachableCode.PORT, data=data)
+
+        self.assertEqual(
+            len(message),
+            8 + len(data),
+            msg="Destination Unreachable length must be the 8-byte header plus the embedded data length.",
+        )
+        self.assertEqual(
+            len(bytes(Icmp4Assembler(icmp4__message=message))),
+            8 + len(data),
+            msg="Destination Unreachable assembled wire length must be 8 + the embedded data length.",
+        )

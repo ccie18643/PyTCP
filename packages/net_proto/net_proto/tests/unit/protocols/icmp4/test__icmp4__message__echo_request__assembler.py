@@ -308,3 +308,33 @@ class TestIcmp4MessageEchoRequestAssembler(TestCase):
             self._results["__bytes__"],
             msg=f"Unexpected assemble() output for case: {self._description}",
         )
+
+
+class TestIcmp4MessageEchoRequestWithData(TestCase):
+    """
+    The ICMPv4 Echo Request with-embedded-data length tests.
+    """
+
+    def test__icmp4__message__echo_request__len_with_data(self) -> None:
+        """
+        Ensure 'len()' on a Echo Request message carrying embedded data
+        equals the 8-byte message header plus the data length, pinning
+        the 'LEN + len(data)' computation against a '-' corruption that
+        the existing empty-data fixtures cannot catch.
+
+        Reference: RFC 792 (Echo Request message length is 8 octets plus embedded data).
+        """
+
+        data = bytes(range(28))
+        message = Icmp4MessageEchoRequest(id=0x1234, seq=0x5678, data=data)
+
+        self.assertEqual(
+            len(message),
+            8 + len(data),
+            msg="Echo Request length must be the 8-byte header plus the embedded data length.",
+        )
+        self.assertEqual(
+            len(bytes(Icmp4Assembler(icmp4__message=message))),
+            8 + len(data),
+            msg="Echo Request assembled wire length must be 8 + the embedded data length.",
+        )
