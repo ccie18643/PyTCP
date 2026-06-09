@@ -354,6 +354,14 @@ class TestTcpOptionMssParser(TestCase):
             },
         },
         {
+            "_description": "TCP Mss option, declared 'len' over TCP__OPTION__MSS__LEN (buffer present).",
+            "_args": [b"\x02\x05\xff\xff\xff"],
+            "_results": {
+                "error": TcpIntegrityError,
+                "error_message": "[INTEGRITY ERROR][TCP] The TCP Mss option length value must be 4 bytes. Got: 5",
+            },
+        },
+        {
             "_description": "TCP Mss option, declared 'len' exceeds provided buffer size.",
             "_args": [b"\x02\x04\xff"],
             "_results": {

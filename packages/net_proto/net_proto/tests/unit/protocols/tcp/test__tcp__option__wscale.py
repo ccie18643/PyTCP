@@ -383,6 +383,14 @@ class TestTcpOptionWscaleParser(TestCase):
             },
         },
         {
+            "_description": "TCP Wscale option, declared 'len' over TCP__OPTION__WSCALE__LEN (buffer present).",
+            "_args": [b"\x03\x04\x0e\x00"],
+            "_results": {
+                "error": TcpIntegrityError,
+                "error_message": ("[INTEGRITY ERROR][TCP] The TCP Wscale option length value must be 3 bytes. Got: 4"),
+            },
+        },
+        {
             "_description": "TCP Wscale option, declared 'len' exceeds provided buffer size.",
             "_args": [b"\x03\x03"],
             "_results": {

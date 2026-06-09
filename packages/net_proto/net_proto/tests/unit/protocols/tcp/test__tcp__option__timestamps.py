@@ -422,6 +422,16 @@ class TestTcpOptionTimestampsParser(TestCase):
             },
         },
         {
+            "_description": "TCP Timestamps option, declared 'len' over TCP__OPTION__TIMESTAMPS__LEN (buffer present).",
+            "_args": [b"\x08\x0b\x00\x00\x00\x00\x00\x00\x00\x00\x00"],
+            "_results": {
+                "error": TcpIntegrityError,
+                "error_message": (
+                    "[INTEGRITY ERROR][TCP] The TCP Timestamps option length value must be 10 bytes. Got: 11"
+                ),
+            },
+        },
+        {
             "_description": "TCP Timestamps option, declared 'len' exceeds provided buffer size.",
             "_args": [b"\x08\x0a\x00\x00\x00\x00\x00\x00\x00"],
             "_results": {

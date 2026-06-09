@@ -484,6 +484,20 @@ class TestTcpOptionSackParser(TestCase):
             },
         },
         {
+            # len=4 makes the block-data region (len - 2) = 2 bytes, which
+            # is not a multiple of 8. The 'Got: 2' value pins the
+            # 'buffer[1] - TCP__OPTION__LEN' subtraction: a '^' (xor)
+            # corruption would compute 4 ^ 2 = 6 and report 'Got: 6'.
+            "_description": "TCP Sack option, (len - 2) = 2 is not a multiple of 8 (subtraction-pinning frame).",
+            "_args": [b"\x05\x04\xff\xff"],
+            "_results": {
+                "error": TcpIntegrityError,
+                "error_message": (
+                    "[INTEGRITY ERROR][TCP] The TCP Sack option blocks length value " "must be a multiple of 8. Got: 2"
+                ),
+            },
+        },
+        {
             "_description": "TCP Sack option, 5 blocks (one above the 4-block ceiling).",
             # Wire: type=5, len=42 (= 2 + 5*8), then 5 zero-filled 8-byte
             # blocks. The existing length-and-modulo integrity checks

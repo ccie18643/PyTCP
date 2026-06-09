@@ -226,6 +226,16 @@ class TestTcpOptionSackpermParser(TestCase):
                 ),
             },
         },
+        {
+            "_description": "TCP Sackperm option, declared 'len' over TCP__OPTION__SACKPERM__LEN (buffer present).",
+            "_args": [b"\x04\x03\x00"],
+            "_results": {
+                "error": TcpIntegrityError,
+                "error_message": (
+                    "[INTEGRITY ERROR][TCP] The TCP Sackperm option length value must be 2 bytes. Got: 3"
+                ),
+            },
+        },
     ]
 )
 class TestTcpOptionSackpermParserFailures(TestCase):

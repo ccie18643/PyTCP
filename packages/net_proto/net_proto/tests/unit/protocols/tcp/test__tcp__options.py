@@ -34,6 +34,7 @@ from typing import Any, override
 from unittest import TestCase
 
 from net_proto import (
+    TcpAssembler,
     TcpOptionEol,
     TcpOptionMss,
     TcpOptionNop,
@@ -47,6 +48,8 @@ from net_proto import (
     TcpSackBlock,
     TcpTimestamps,
 )
+from net_proto.protocols.tcp.tcp__errors import TcpIntegrityError
+from net_proto.protocols.tcp.tcp__header import TCP__HEADER__LEN, TCP__MIN_MSS
 from net_proto.tests.lib.parameterized import parameterized_class
 
 
@@ -511,4 +514,171 @@ class TestTcpOptionsParser(TestCase):
             tcp_options,
             self._expected,
             msg=f"Unexpected parsed options for case: {self._description}",
+        )
+
+
+class TestTcpOptionsValidateIntegrity(TestCase):
+    """
+    The 'TcpOptions.validate_integrity()' option-walker tests.
+    """
+
+    def test__tcp_options__validate_integrity__case2_len_two_accepted(self) -> None:
+        """
+        Ensure the walker accepts a Case-2 option whose Length byte is
+        exactly 2 (the inclusive minimum, e.g. SACK-Permitted), pinning
+        the 'Length < 2' rejection against a '<= 2' over-rejection.
+
+        Reference: RFC 9293 §3.2 (Case-2 Length covers Kind + Length, i.e. >= 2).
+        """
+
+        # 20-byte header region followed by SACK-Permitted (Kind 4, Len 2).
+        frame = bytes(TCP__HEADER__LEN) + b"\x04\x02"
+
+        TcpOptions.validate_integrity(frame=frame, hlen=TCP__HEADER__LEN + 2)
+
+    def test__tcp_options__validate_integrity__option_filling_hlen_accepted(self) -> None:
+        """
+        Ensure the walker accepts an option whose bytes end exactly at
+        the header-length boundary, pinning the 'offset > hlen' overrun
+        check against a '>= hlen' over-rejection.
+
+        Reference: RFC 9293 §3.2 (an option may extend up to, not past, Data Offset).
+        """
+
+        # 20-byte header + MSS (Kind 2, Len 4) ending exactly at hlen=24.
+        frame = bytes(TCP__HEADER__LEN) + b"\x02\x04\x05\xb4"
+
+        TcpOptions.validate_integrity(frame=frame, hlen=TCP__HEADER__LEN + 4)
+
+    def test__tcp_options__validate_integrity__eol_terminates_walk(self) -> None:
+        """
+        Ensure the walker stops at an EOL (Kind 0) byte and does not
+        interpret the bytes after it, pinning the 'frame[offset] == EOL'
+        terminator detection against a '< EOL' relaxation that would
+        never match and walk into the trailing bytes.
+
+        Reference: RFC 9293 §3.2 (EOL terminates the option list).
+        """
+
+        # 20-byte header + EOL (0x00) + a trailing byte (0x99) that, if
+        # the walk did NOT stop at EOL, would be read as an over-long
+        # option length and raise.
+        frame = bytes(TCP__HEADER__LEN) + b"\x00\x99"
+
+        TcpOptions.validate_integrity(frame=frame, hlen=TCP__HEADER__LEN + 2)
+
+    def test__tcp_options__validate_integrity__case2_len_below_two_raises(self) -> None:
+        """
+        Ensure the walker raises when a Case-2 option carries a Length
+        byte below 2.
+
+        Reference: RFC 9293 §3.2 (Case-2 Length must be at least 2).
+        """
+
+        frame = bytes(TCP__HEADER__LEN) + b"\x04\x01"
+
+        with self.assertRaises(TcpIntegrityError) as error:
+            TcpOptions.validate_integrity(frame=frame, hlen=TCP__HEADER__LEN + 2)
+
+        self.assertEqual(
+            str(error.exception),
+            "[INTEGRITY ERROR][TCP] The TCP option length must be greater than 1. Got: 1.",
+            msg="Unexpected integrity-error message for a Case-2 option length below 2.",
+        )
+
+    def test__tcp_options__validate_integrity__option_past_hlen_raises(self) -> None:
+        """
+        Ensure the walker raises when an option's Length advances the
+        cumulative offset past the header-length boundary.
+
+        Reference: RFC 9293 §3.2 (an option must not extend past Data Offset).
+        """
+
+        # MSS option claiming Len 6 starting at offset 20 would end at
+        # offset 26, past hlen=22.
+        frame = bytes(TCP__HEADER__LEN) + b"\x02\x06\x05\xb4"
+
+        with self.assertRaises(TcpIntegrityError):
+            TcpOptions.validate_integrity(frame=frame, hlen=TCP__HEADER__LEN + 2)
+
+
+class TestTcpOptionsPropertiesDefaults(TestCase):
+    """
+    The 'TcpOptionsProperties' mixin default-value tests (the
+    absent-option fallbacks exposed on the Tcp packet surface).
+    """
+
+    def test__tcp_options__properties__mss_defaults_to_min_mss(self) -> None:
+        """
+        Ensure the 'mss' property returns TCP__MIN_MSS (the literal 536,
+        RFC 879 minimum recommended MSS) when no MSS option is present,
+        pinning both the 'mss is None' absent-option branch and the
+        value of the TCP__MIN_MSS default constant.
+
+        Reference: RFC 9293 §3.7.1 (default MSS when the option is absent).
+        Reference: RFC 879 §1 (default MSS of 536 octets).
+        """
+
+        # The expected value is the literal 536, NOT the imported
+        # TCP__MIN_MSS constant — asserting against the constant would
+        # move with a mutation of its definition and fail to pin it.
+        self.assertEqual(
+            TcpAssembler().mss,
+            536,
+            msg="The 'mss' property must fall back to the literal default MSS 536 when no MSS option is present.",
+        )
+        self.assertEqual(
+            TCP__MIN_MSS,
+            536,
+            msg="TCP__MIN_MSS must be the RFC 879 default of 536 octets.",
+        )
+
+    def test__tcp_options__properties__mss_returns_present_value(self) -> None:
+        """
+        Ensure the 'mss' property returns the option's value when an MSS
+        option is present, pinning the non-absent branch.
+
+        Reference: RFC 9293 §3.7.1 (Maximum Segment Size option — kind 2).
+        """
+
+        assembler = TcpAssembler(tcp__options=TcpOptions(TcpOptionMss(mss=1460)))
+
+        self.assertEqual(
+            assembler.mss,
+            1460,
+            msg="The 'mss' property must return the present MSS option value, not the default.",
+        )
+
+    def test__tcp_options__properties__wscale_defaults_to_zero(self) -> None:
+        """
+        Ensure the 'wscale' property returns 0 when no Window Scale
+        option is present, pinning the 'wscale or 0' absent-option
+        fallback against an 'and 0' relaxation.
+
+        Reference: RFC 7323 §2 (no window scaling when the option is absent).
+        """
+
+        self.assertEqual(
+            TcpAssembler().wscale,
+            0,
+            msg="The 'wscale' property must fall back to 0 when no Window Scale option is present.",
+        )
+
+    def test__tcp_options__properties__wscale_returns_present_value(self) -> None:
+        """
+        Ensure the 'wscale' property returns the option's value when a
+        Window Scale option is present, pinning the truthy branch of the
+        'wscale or 0' fallback.
+
+        Reference: RFC 7323 §2 (Window Scale option — kind 3).
+        """
+
+        # A lone Wscale option is 3 bytes; pad with a Nop so the options
+        # block is 4-byte aligned (the assembler enforces alignment).
+        assembler = TcpAssembler(tcp__options=TcpOptions(TcpOptionWscale(wscale=7), TcpOptionNop()))
+
+        self.assertEqual(
+            assembler.wscale,
+            7,
+            msg="The 'wscale' property must return the present Window Scale option value.",
         )
