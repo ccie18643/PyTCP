@@ -20,6 +20,7 @@ protocol's own tests plus `tests/unit/lib`; shards run sequentially.
 | ip4   | 3088    | 81.8 %     | 82.4 %    | ~97 %                 | 15                  | DONE   |
 | ip6   | 503     | 72.2 %     | 74.0 %    | ~97 %                 | 3                   | DONE   |
 | icmp4 | 1135    | 84.4 %     | 85.4 %    | ~97 %                 | 5                   | DONE   |
+| icmp6 | 5755    | 80.8 %     | 84.2 %    | ~96 %                 | 7                   | DONE   |
 
 (Updated per shard as the audit proceeds.)
 
@@ -210,3 +211,39 @@ everywhere else, just one big multiline instance).
 - `@override` removals, dataclass-flag flips, PEP 604 annotation-`|`, and
   the dispatch-backstopped `== int(Type)` asserts — the same equivalent
   classes as the other shards.
+
+
+---
+
+## Shard: icmp6
+
+**Baseline:** 4649 / 5755 = **80.8 % raw**, 1106 survivors. **After:**
+4843 / 5755 = **84.2 % raw** (194 newly killed — the largest absolute
+kill count of any shard), ~96 % equivalent-adjusted.
+
+icmp6 is the largest shard (it bundles every ND option codec). It carried
+the audit's two biggest **whole-message** gaps.
+
+### Genuine gaps closed (commit `94054977`, kill-proven, test-only)
+
+| Module | Mutation surface | Killing test |
+|--------|------------------|--------------|
+| `icmp6__message__packet_too_big.py` | NO test file existed (175 mutants, 86 surviving) | new `test__icmp6__message__packet_too_big__assembler.py`: code/mtu/data asserts, min-MTU truncation, assembler matrix |
+| `icmp6__mld2__message__query.py` | NO test file existed (240 mutants, 185 surviving — the audit's largest single gap; RX-only) | new `test__icmp6__mld2__message__query__parser.py`: asserts, from_buffer field round-trip, S-flag/QRV bit split, source list, `validate_integrity` bounds |
+| 5 error/echo messages (parameter_problem / time_exceeded / destination_unreachable / echo_request / echo_reply) | `__len__` `ICMP6__X__LEN + len(data)` → `- len(data)` (empty-data fixtures) | with-28-byte-data length tests |
+
+### Documented remaining (lower-value / intricate, not closed)
+
+These are arithmetic / boundary survivors in modules that **already have
+test files**, the same diminishing-returns territory as ip4's
+route-record modulo:
+
+- **MLDv1** (`mld1` report / done / query) — fixture/arithmetic gaps in
+  tested modules (~60 survivors).
+- **ND options** (`dnssl` ~62, `nonce` ~31, `rdnss` ~24, `route_info`
+  ~24, `ra_flags` ~15, `pi` ~8) — TLV length / padding / lifetime
+  arithmetic; a follow-up seam if a deeper pass is wanted.
+- The data-length upper-bound asserts (~64 KB fixtures) and the
+  "max length" error-message arithmetic — same low-value classes as icmp4.
+- The usual equivalents: PEP 604 annotation-`|`, `@override` removals,
+  disjoint bit-packing, dispatch-backstopped `== int(Type)` asserts.
