@@ -605,3 +605,70 @@ class TestTcpOptionAccecn0AbbreviatedForms(TestCase):
                 original = TcpOptionAccecn0(**kwargs)
                 decoded = TcpOptionAccecn0.from_buffer(bytes(original))
                 self.assertEqual(decoded, original, msg=f"Round-trip mismatch for kwargs={kwargs}.")
+
+
+class TestTcpOptionAccecn0IntegrityAndOrdering(TestCase):
+    """
+    The TCP AccECN0 option field-ordering and parser-integrity tests.
+    """
+
+    def test__tcp__option__accecn0__ordering_requires_preceding_fields(self) -> None:
+        """
+        Ensure setting a trailing counter while a required preceding
+        counter is absent is rejected, pinning the field-presence
+        ordering invariant ('and' must not relax to 'or').
+
+        Reference: RFC 9768 §3.2.3 (a present field implies all preceding fields present).
+        """
+
+        with self.assertRaises(AssertionError) as error:
+            TcpOptionAccecn0(ee0b=1, ee1b=3)
+
+        self.assertEqual(
+            str(error.exception),
+            "AccECN0 Length=11 (ee1b set) requires ee0b and eceb to also be set.",
+            msg="Unexpected ordering-invariant assertion message for AccECN0.",
+        )
+
+    def test__tcp__option__accecn0__from_buffer_valid_len_short_buffer_raises(self) -> None:
+        """
+        Ensure 'from_buffer()' rejects a frame whose Length byte is a
+        valid AccECN0 length (11) but exceeds the bytes actually
+        provided, pinning the 'buffer[1] > len(buffer)' bound.
+
+        Reference: RFC 9293 §3.2 (option length must not exceed the buffer).
+        """
+
+        # Length byte declares 11 octets, but only 9 are present.
+        with self.assertRaises(TcpIntegrityError) as error:
+            TcpOptionAccecn0.from_buffer(b"\xac\x0b" + b"\x00" * 7)
+
+        self.assertEqual(
+            str(error.exception),
+            "[INTEGRITY ERROR][TCP] The TCP AccECN0 option length value must be less than or "
+            "equal to the length of provided bytes (9). Got: 11",
+            msg="Unexpected integrity-error message for a valid-length byte over a short buffer.",
+        )
+
+    def test__tcp__option__accecn0__from_buffer_wrong_type_below_raises(self) -> None:
+        """
+        Ensure 'from_buffer()' asserts the kind byte equals ACCECN0
+        and rejects a kind byte below it, pinning the equality check
+        against a '<=' relaxation.
+
+        Reference: RFC 9768 §3.2.3 (AccECN0 option kind).
+        """
+
+        with self.assertRaises(AssertionError):
+            TcpOptionAccecn0.from_buffer(b"\x00\x02")
+
+    def test__tcp__option__accecn0__from_buffer_wrong_type_above_raises(self) -> None:
+        """
+        Ensure 'from_buffer()' rejects a kind byte above ACCECN0,
+        pinning the equality check against a '>=' relaxation.
+
+        Reference: RFC 9768 §3.2.3 (AccECN0 option kind).
+        """
+
+        with self.assertRaises(AssertionError):
+            TcpOptionAccecn0.from_buffer(b"\xff\x02")
