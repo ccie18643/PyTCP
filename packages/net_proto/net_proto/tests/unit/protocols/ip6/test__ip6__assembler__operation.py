@@ -34,7 +34,7 @@ from typing import Any, override
 from unittest import TestCase
 
 from net_addr import Buffer, Ip6Address, IpVersion
-from net_proto import Ip6Assembler, Ip6Header, IpProto, RawAssembler
+from net_proto import IP6__DEFAULT_HOP_LIMIT, Ip6Assembler, Ip6Header, IpProto, RawAssembler
 from net_proto.tests.lib.parameterized import parameterized_class
 
 
@@ -501,3 +501,29 @@ class TestIp6AssemblerOperation(TestCase):
             self._results["payload_len"],
             msg="Ip6Assembler.assemble must append the payload buffer second.",
         )
+
+
+class TestIp6AssemblerDefaults(TestCase):
+    """
+    The IPv6 assembler default-keyword tests.
+    """
+
+    def test__ip6__assembler__default_hop_dscp_ecn_flow(self) -> None:
+        """
+        Ensure a default-constructed Ip6Assembler uses hop limit 64
+        (the RFC-recommended default) and dscp / ecn / flow of 0,
+        pinning the default keyword values and the
+        IP6__DEFAULT_HOP_LIMIT constant against their literals.
+
+        Reference: RFC 8200 §3 (Hop Limit, Traffic Class, Flow Label defaults).
+        """
+
+        assembler = Ip6Assembler()
+
+        # Literals, NOT IP6__DEFAULT_HOP_LIMIT — asserting against the
+        # constant would move with a mutation of its definition.
+        self.assertEqual(assembler.hop, 64, msg="Default Ip6Assembler hop limit must be 64.")
+        self.assertEqual(assembler.dscp, 0, msg="Default Ip6Assembler dscp must be 0.")
+        self.assertEqual(assembler.ecn, 0, msg="Default Ip6Assembler ecn must be 0.")
+        self.assertEqual(assembler.flow, 0, msg="Default Ip6Assembler flow must be 0.")
+        self.assertEqual(IP6__DEFAULT_HOP_LIMIT, 64, msg="IP6__DEFAULT_HOP_LIMIT must be 64.")

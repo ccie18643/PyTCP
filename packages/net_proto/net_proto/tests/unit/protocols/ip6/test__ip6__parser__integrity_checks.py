@@ -90,6 +90,21 @@ _BASELINE_FRAME = (
             },
         },
         {
+            "_description": "Version field is above 6 (ver=7).",
+            # Byte 0 = 0x70 encodes ver=7. A version ABOVE 6 must be
+            # rejected just as a version below 6 is — pinning the 'ver
+            # != 6' check against a '< 6' relaxation that would accept
+            # ver=7. Length equals exactly IP6__HEADER__LEN.
+            "_frame_rx": (
+                b"\x70\x00\x00\x00\x00\x00\xff\x01\x10\x01\x20\x02\x30\x03\x40\x04"
+                b"\x50\x05\x60\x06\x70\x07\x80\x08\xa0\x0a\xb0\x0b\xc0\x0c\xd0\x0d"
+                b"\xe0\x0e\xf0\x0f\x0a\x0a\x0b\x0b"
+            ),
+            "_results": {
+                "error_message": "The 'ver' field must be 6. Got: 7",
+            },
+        },
+        {
             "_description": "Declared dlen disagrees with the frame length (extra payload byte).",
             # 41-byte frame: baseline 40-byte header + 1 trailing byte,
             # but bytes 4-5 (dlen) still read 0x0000. The parser rejects
