@@ -19,6 +19,7 @@ protocol's own tests plus `tests/unit/lib`; shards run sequentially.
 | tcp   | 2255    | 78.4 %     | 85.1 %    | ~99 %                 | 21                  | DONE   |
 | ip4   | 3088    | 81.8 %     | 82.4 %    | ~97 %                 | 15                  | DONE   |
 | ip6   | 503     | 72.2 %     | 74.0 %    | ~97 %                 | 3                   | DONE   |
+| icmp4 | 1135    | 84.4 %     | 85.4 %    | ~97 %                 | 5                   | DONE   |
 
 (Updated per shard as the audit proceeds.)
 
@@ -182,3 +183,30 @@ everywhere else, just one big multiline instance).
 - `ip6__parser.py:137` `hop == 0` → `<= 0` (hop is uint8 ≥ 0).
 - `@override` removals, dataclass-flag flips, `__str__` length arithmetic,
   and the `0` checksum/flow slots packed in `__buffer__` then overwritten.
+
+
+---
+
+## Shard: icmp4
+
+**Baseline:** 958 / 1135 = **84.4 % raw**, 177 survivors. **After:**
+969 / 1135 = **85.4 % raw** (11 newly killed), ~97 % equivalent-adjusted.
+
+### Genuine gaps closed (commit `f2aab3b8`, kill-proven, test-only)
+
+| Module(s) | Mutation | Killing test |
+|-----------|----------|--------------|
+| all 5 message types (parameter_problem / destination_unreachable / time_exceeded / echo_request / echo_reply) | `__len__` `ICMP4__X__LEN + len(data)` → `- len(data)` | with-28-byte-data length test (every prior fixture used `data=b""`, where `8+0 == 8-0`) |
+
+### Confirmed equivalent / lower-value (analysed, not closed)
+
+- Message field defaults (`pointer` / `id` / `seq` = 0) — arbitrary
+  unspecified defaults with no RFC-significant value (unlike the IPv6
+  `hop=64`); the tests pass explicit values so the defaults are unused.
+- The data-length upper-bound asserts (`len(data) <= IP4__PAYLOAD__MAX_LEN
+  - ICMP4__X__LEN`) — would need a ~64 KB fixture for a marginal boundary.
+- The "max length" arithmetic inside the assert-message f-strings and the
+  RFC 1812 embedded-data truncation slice (already covered).
+- `@override` removals, dataclass-flag flips, PEP 604 annotation-`|`, and
+  the dispatch-backstopped `== int(Type)` asserts — the same equivalent
+  classes as the other shards.
