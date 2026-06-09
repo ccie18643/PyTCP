@@ -148,3 +148,33 @@ class TestIcmp6MessageTimeExceededAssembler(TestCase):
 
         self.assertEqual(wire[0], 3, msg="First wire byte must be type=3 (TIME_EXCEEDED).")
         self.assertEqual(wire[1], int(self._results["code"]), msg="Second wire byte must be the code value.")
+
+
+class TestIcmp6MessageTimeExceededWithData(TestCase):
+    """
+    The ICMPv6 Time Exceeded with-embedded-data length tests.
+    """
+
+    def test__icmp6__message__time_exceeded__len_with_data(self) -> None:
+        """
+        Ensure 'len()' on a Time Exceeded message carrying embedded data
+        equals the 8-byte message header plus the data length, pinning
+        the 'LEN + len(data)' computation against a '-' corruption that
+        the existing empty-data fixtures cannot catch.
+
+        Reference: RFC 4443 (Time Exceeded message length is 8 octets plus embedded data).
+        """
+
+        data = bytes(range(28))
+        message = Icmp6MessageTimeExceeded(code=Icmp6TimeExceededCode.HOP_LIMIT_EXCEEDED_IN_TRANSIT, data=data)
+
+        self.assertEqual(
+            len(message),
+            8 + len(data),
+            msg="Time Exceeded length must be the 8-byte header plus the embedded data length.",
+        )
+        self.assertEqual(
+            len(bytes(Icmp6Assembler(icmp6__message=message))),
+            8 + len(data),
+            msg="Time Exceeded assembled wire length must be 8 + the embedded data length.",
+        )

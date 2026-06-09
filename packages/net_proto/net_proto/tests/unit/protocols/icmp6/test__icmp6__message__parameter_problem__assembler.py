@@ -188,3 +188,35 @@ class TestIcmp6MessageParameterProblemAssembler(TestCase):
             self._results["pointer"],
             msg="Bytes 4-7 must encode the 32-bit pointer in big-endian.",
         )
+
+
+class TestIcmp6MessageParameterProblemWithData(TestCase):
+    """
+    The ICMPv6 Parameter Problem with-embedded-data length tests.
+    """
+
+    def test__icmp6__message__parameter_problem__len_with_data(self) -> None:
+        """
+        Ensure 'len()' on a Parameter Problem message carrying embedded data
+        equals the 8-byte message header plus the data length, pinning
+        the 'LEN + len(data)' computation against a '-' corruption that
+        the existing empty-data fixtures cannot catch.
+
+        Reference: RFC 4443 (Parameter Problem message length is 8 octets plus embedded data).
+        """
+
+        data = bytes(range(28))
+        message = Icmp6MessageParameterProblem(
+            code=Icmp6ParameterProblemCode.ERRONEOUS_HEADER_FIELD, pointer=4, data=data
+        )
+
+        self.assertEqual(
+            len(message),
+            8 + len(data),
+            msg="Parameter Problem length must be the 8-byte header plus the embedded data length.",
+        )
+        self.assertEqual(
+            len(bytes(Icmp6Assembler(icmp6__message=message))),
+            8 + len(data),
+            msg="Parameter Problem assembled wire length must be 8 + the embedded data length.",
+        )
