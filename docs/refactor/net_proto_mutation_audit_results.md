@@ -17,6 +17,7 @@ protocol's own tests plus `tests/unit/lib`; shards run sequentially.
 | Shard | Mutants | Raw before | Raw after | Adjusted (equiv-excl) | Genuine gaps closed | Status |
 |-------|--------:|-----------:|----------:|----------------------:|--------------------:|--------|
 | tcp   | 2255    | 78.4 %     | 85.1 %    | ~99 %                 | 21                  | DONE   |
+| ip4   | 3088    | 81.8 %     | 82.4 %    | ~97 %                 | 15                  | DONE   |
 
 (Updated per shard as the audit proceeds.)
 
@@ -105,3 +106,40 @@ every wire-reachable dataclass assert (FastOpen cookie length, SACK block
 count) is mirrored by a typed `raise TcpIntegrityError` in the parser /
 options walker, so the asserts are equivalent-by-backstop rather than
 source gaps. No §9.2 violations to flag.
+
+---
+
+## Shard: ip4
+
+**Baseline:** 2527 / 3088 = **81.8 % raw**, 561 survivors. **After:**
+2545 / 3088 = **82.4 % raw** (18 newly killed), ~97 % equivalent-adjusted.
+
+Unlike tcp, every ip4 option already has a dedicated test file — so no
+whole-file omission. The genuine gaps were narrow (an untested assert
+branch and two degenerate fixtures); a large fraction of survivors are
+arithmetic-coincidence equivalents.
+
+### Genuine gaps closed (commit `5d849d92`, kill-proven, test-only)
+
+| Module(s) | Mutation | Killing test |
+|-----------|----------|--------------|
+| all 6 options (rr/lsrr/ssrr/timestamp/cipso/router_alert) | `buffer[0] == int(Type)` kind assert → `<=` / `>=` | wrong-kind byte below (0x00) and above (0xff) over a valid frame |
+| `ip4__option__timestamp.py:342` | flag=1 timestamp slice `[offset+4:offset+8]` → `[+5:+8]` | from_buffer with a top-byte-set timestamp (0x11223344) |
+| `ip4__option__cipso.py:174,181` | tag-walker `end-offset < TAG_HDR_LEN` / `tag_len < TAG_HDR_LEN` → `<=` | from_buffer with a minimal 2-byte (header-only) tag |
+
+### Confirmed equivalent / lower-value (analysed, not closed)
+
+- **Route-record (rr/lsrr/ssrr) pointer/length modulo arithmetic** — with
+  `POINTER_BASE == SLOT_LEN == 4`, `(p - 4) % 4` ≡ `(p + 4) % 4` and many
+  operator swaps; the existing misaligned-pointer / misaligned-route-data
+  tests cannot distinguish them, and a large share are true equivalents
+  (the base is a multiple of the slot, so add/sub/or/xor of the base
+  leave the mod-4 residue unchanged).
+- **Timestamp `(255 - HDR_LEN) // entry_len` and CIPSO `end - offset`
+  "max entries / remaining" arithmetic inside assert-message f-strings**
+  — the value appears only in the error message text, never in the
+  condition or an asserted output; mutating it is cosmetic.
+- Module-level constant computations (`MIN_LEN = HDR_LEN + …`), disjoint
+  bit-field packing (`overflow << 4 | flag`), `@override` removals,
+  PEP 604 annotation-`|`, and the dispatch-backstopped `== int(Type)`
+  Eq_Is (interned) — the same equivalent classes as tcp.
