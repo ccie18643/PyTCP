@@ -2312,6 +2312,41 @@ class TestNetAddrIp6AddressTransitional(TestCase):
                 )
 
 
+class TestNetAddrIp6AddressZoneable(TestCase):
+    """
+    The NetAddr IPv6 address RFC 4007 zoneable-scope predicate tests.
+    """
+
+    def test__net_addr__ip6_address__is_zoneable(self) -> None:
+        """
+        Ensure '_is_zoneable' is True exactly for link-local unicast,
+        loopback, and multicast with a non-global scope value in the
+        open range (0 < scop < 0xE), and False for the scope endpoints
+        0x0 / 0xE / 0xF and for global unicast — pinning the chained
+        scope-nibble comparison at both its bounds.
+
+        Reference: RFC 4007 §6 (zone identifiers / scope values).
+        """
+
+        for address, zoneable in [
+            ("fe80::1", True),  # link-local unicast
+            ("::1", True),  # loopback (link-local scope)
+            ("2001:db8::1", False),  # global unicast — not zoneable
+            ("ff00::", False),  # multicast scope 0x0 (reserved) — lower endpoint
+            ("ff01::", True),  # multicast scope 0x1 (interface-local) — lower edge
+            ("ff05::", True),  # multicast scope 0x5 (site-local) — mid range
+            ("ff0d::", True),  # multicast scope 0xD — upper edge (still in range)
+            ("ff0e::", False),  # multicast scope 0xE (global) — upper endpoint
+            ("ff0f::", False),  # multicast scope 0xF (reserved)
+        ]:
+            with self.subTest(address=address):
+                self.assertEqual(
+                    Ip6Address(address)._is_zoneable,
+                    zoneable,
+                    msg=f"_is_zoneable for {address} must be {zoneable}.",
+                )
+
+
 class TestNetAddrIp6AddressScopeId(TestCase):
     """
     The NetAddr IPv6 address RFC 4007 scope-identifier tests.

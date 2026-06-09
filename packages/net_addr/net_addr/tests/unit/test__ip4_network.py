@@ -1600,6 +1600,16 @@ class TestNetAddrIp4NetworkSummarize(TestCase):
                 [Ip4Network("10.0.0.0/24"), Ip4Network("10.0.2.0/24"), Ip4Network("10.0.3.0/24")],
                 ["10.0.0.0/24", "10.0.2.0/23"],
             ),
+            # A separate block, a gap, then a WIDE block plus a sub-block
+            # contained in its UPPER half (so the contained span's hi is
+            # strictly below the wide span's hi). With 'merged' already
+            # holding the earlier block, this pins 'max(merged[-1][1],
+            # hi)' against keeping the wrong endpoint ('merged[-1][0]' /
+            # the narrower 'hi') — the wide /22 must survive intact.
+            (
+                [Ip4Network("10.0.0.0/24"), Ip4Network("10.0.4.0/22"), Ip4Network("10.0.5.0/24")],
+                ["10.0.0.0/24", "10.0.4.0/22"],
+            ),
             ([], []),
         ]
         for items, expected in cases:
