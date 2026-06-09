@@ -183,3 +183,4 @@ Every behavioural change opens with one or more **failing tests** that pin the s
 
 - [`rfc_adherence_audit`](.claude/skills/rfc_adherence_audit/SKILL.md) — add or refresh a per-RFC adherence record.
 - [`sysctl_knob`](.claude/skills/sysctl_knob/SKILL.md) — add a runtime-tunable sysctl-backed constant.
+- [`mutation_testing`](.claude/skills/mutation_testing/SKILL.md) — run a cosmic-ray mutation-testing audit of a package, triage survivors (equivalent vs real gap), and close real gaps with kill-proven unit tests.
