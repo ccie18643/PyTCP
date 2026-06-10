@@ -47,16 +47,18 @@ from net_proto import (
 from net_proto.tests.lib.parameterized import parameterized_class
 
 
-def _packet_rx_with_ip6(frame: bytes) -> PacketRx:
+def _packet_rx_with_ip6(frame: bytes, *, ip6__dlen: int | None = None) -> PacketRx:
     """
-    Build a PacketRx with a minimal IPv6 stub.
+    Build a PacketRx with a minimal IPv6 stub. 'ip6__dlen' defaults to the
+    full frame length, or is overridden to model a frame followed by
+    lower-layer padding.
     """
 
     packet_rx = PacketRx(frame)
     packet_rx.ip6 = cast(
         Ip6Parser,
         SimpleNamespace(
-            dlen=len(frame),
+            dlen=len(frame) if ip6__dlen is None else ip6__dlen,
             hop=64,
             src=Ip6Address("2001:db8::1"),
             dst=Ip6Address("2001:db8::2"),
@@ -136,3 +138,40 @@ class TestIcmp6MessageParameterProblemParser(TestCase):
             self._pointer,
             msg=f"Decoded pointer must round-trip for case: {self._description}",
         )
+
+
+class TestIcmp6MessageParameterProblemParserIntegrityBoundary(TestCase):
+    """
+    Boundary tests for the ICMPv6 Parameter Problem integrity validator.
+    """
+
+    def test__icmp6__message__parameter_problem__parser__integrity__minimum_length_accepted(self) -> None:
+        """
+        Ensure the shortest valid Parameter Problem frame (exactly 8
+        bytes — type, code, checksum, pointer) parses without raising an
+        integrity error.
+
+        Reference: RFC 4443 §3.4 (Parameter Problem type 4).
+        """
+
+        # ICMPv6 Parameter Problem at minimum length (8 bytes, valid cksum)
+        frame = b"\x04\x00\xfb\xff\x00\x00\x00\x00"
+
+        Icmp6Parser(_packet_rx_with_ip6(frame))
+
+    def test__icmp6__message__parameter_problem__parser__integrity__trailing_bytes_accepted(self) -> None:
+        """
+        Ensure a frame whose raw length exceeds 'ip6__dlen' (the ICMPv6
+        message is followed by lower-layer padding) still parses: the
+        integrity bound is 'ip6__dlen <= len(frame)', so trailing bytes
+        beyond the declared IPv6 payload are tolerated, not rejected.
+
+        Reference: RFC 4443 §3.4 (Parameter Problem type 4).
+        """
+
+        # Minimum 8-byte Parameter Problem (valid checksum over the 8
+        # octets) followed by 4 octets of lower-layer padding.
+        # ip6__dlen=8 is strictly less than len(frame)=12.
+        frame = b"\x04\x00\xfb\xff\x00\x00\x00\x00" + b"\x00\x00\x00\x00"
+
+        Icmp6Parser(_packet_rx_with_ip6(frame, ip6__dlen=8))
