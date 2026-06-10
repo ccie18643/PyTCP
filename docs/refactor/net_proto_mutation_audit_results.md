@@ -27,6 +27,10 @@ protocol's own tests plus `tests/unit/lib`; shards run sequentially.
 | dhcp4 | 3708    | 76.9 %     | 77.3 %    | ~93 %                 | 11                  | DONE   |
 | dhcp6 | 2407    | 78.4 %     | ~79 %     | ~94 %                 | 4                   | DONE   |
 | dns   | 1116    | 61.2 %     | ~64 %     | ~90 %                 | 2                   | DONE   |
+| ip6_frag | 235  | 91.1 %     | 91.1 %    | ~99 %                 | 0                   | DONE   |
+| ip6_routing | 377 | 59.7 %  | 59.7 %    | ~95 %                 | 0                   | DONE   |
+| ip6_hbh | 1427   | 72.7 %     | 72.7 %    | ~90 %                 | 0 (seam)            | DONE   |
+| ip6_dest_opts | 1070 | 70.2 % | 70.2 %    | ~90 %                 | 0 (seam)            | DONE   |
 
 (Updated per shard as the audit proceeds.)
 
@@ -428,3 +432,40 @@ codec.
   pinning.
 - `aa << 10 |` -> `^` (disjoint-bitpack equivalent); the opcode
   `& 0b1111` -> `& 0b111` mask (no defined opcode reaches bit 3).
+
+
+---
+
+## Shard group: IPv6 extension headers (P1)
+
+| Shard | Raw | Assessment |
+|-------|----:|------------|
+| ip6_frag | 91.1 % | well-tested; the 21 survivors are equivalent (PEP 604 annotation-`|`, `@override`, the `(frag_offset << 3)` disjoint bit-packing) |
+| ip6_routing | 59.7 % | low raw but **mostly-equivalent** — the two real-looking gaps are covered/equivalent (see below) |
+| ip6_hbh | 72.7 % | HBH option-walker — intricate-TLV seam |
+| ip6_dest_opts | 70.2 % | DestOpt option-walker — intricate-TLV seam |
+
+**ip6_routing — verified covered/equivalent, no genuine gap:**
+
+- `(hdr_ext_len + 1) * 8` length formula (`ip6_routing__parser.py:108`) —
+  KILLED; the parser-operation test uses `hdr_ext_len=1` with a non-empty
+  data block + payload, pinning both the `+ 1` and `* 8`.
+- RFC 5095 RH0 hard-drop `routing_type == int(Ip6RoutingType.RH0)`
+  (`:127`) — the `==` → `!=` swap is KILLED (RH0 detection is tested);
+  the `==` → `<=` swap is **equivalent** (RH0 = 0 and `routing_type` is a
+  byte ≥ 0, so `<= 0` ≡ `== 0`).
+- The remaining 152 survivors are the repeated `(hdr_ext_len + 1) * 8`
+  operator-family mutants (most killed; the survivors are
+  equivalent-by-coincidence), the error-class pointer/message attributes,
+  and the `__str__` length arithmetic. Adjusted ~95 %.
+
+**ip6_hbh / ip6_dest_opts — intricate-TLV seam (documented, not closed):**
+
+The survivors concentrate in the RFC 8200 §4.2 option-walker
+(`*__options.py` — 98 / 70), the `__buffer__` / assembler option
+serialization, and the generic `option__unknown.py` handler (45 / 41 —
+exercised indirectly via the options container, no dedicated test file).
+This is the same action-on-unrecognized / option-length / padding-walk
+arithmetic as the ip4-options, dhcp4, and icmp6-ND-option seams — a
+deeper follow-up pass rather than a clean degenerate-fixture or
+wrong-type batch. No genuine quick-win gaps surfaced.
