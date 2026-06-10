@@ -31,6 +31,7 @@ protocol's own tests plus `tests/unit/lib`; shards run sequentially.
 | ip6_routing | 377 | 59.7 %  | 59.7 %    | ~95 %                 | 0                   | DONE   |
 | ip6_hbh | 1427   | 72.7 %     | 72.7 %    | ~90 %                 | 0 (seam)            | DONE   |
 | ip6_dest_opts | 1070 | 70.2 % | 70.2 %    | ~90 %                 | 0 (seam)            | DONE   |
+| igmp  | 1369    | 78.7 %     | 78.7 %    | ~93 %                 | 0 (seam)            | DONE   |
 
 (Updated per shard as the audit proceeds.)
 
@@ -469,3 +470,37 @@ This is the same action-on-unrecognized / option-length / padding-walk
 arithmetic as the ip4-options, dhcp4, and icmp6-ND-option seams — a
 deeper follow-up pass rather than a clean degenerate-fixture or
 wrong-type batch. No genuine quick-win gaps surfaced.
+
+
+---
+
+## Shard: igmp (P1)
+
+**Baseline:** 1077 / 1369 = **78.7 % raw**, 292 survivors. ~93 %
+equivalent-adjusted. No genuine quick-win gap; no test change.
+
+The clean bit-field patterns are **already covered**:
+
+- IGMPv3 Query `s_flag = resv_s_qrv & 0x08` / `qrv = resv_s_qrv & 0x07`
+  (the MLDv2-parallel bit extraction) — KILLED; the query test exercises
+  a v3 frame with distinct S-flag / QRV.
+- The `number_of_records` / `number_of_sources` reads, the
+  `max_resp_code == 0` V1/V2 detection, and the field-bound asserts — all
+  killed.
+- The max-resp-code float-threshold `code < 128` → `<= 128` is
+  **equivalent**: at the exact boundary code=128 the linear value (128)
+  equals the float decode `(0|0x10) << 3` = 128, so the two branches
+  coincide.
+
+**Documented remaining (intricate IGMPv3 record-walk, not closed):**
+
+- `igmp__message__v3_report.py` aux-data-length shift
+  `frame[record_offset+1] << 2` (aux-data-len is in 32-bit words) —
+  survives because the report fixtures carry aux_data_len=0; killable
+  only by a group record with non-zero auxiliary data.
+- The exact-consumption check `record_offset != ip4__payload_len`
+  (trailing-bytes-after-records rejection) — needs a report frame with a
+  trailing byte.
+- `igmp__v3_group_record.py` source-list / aux-data offset arithmetic —
+  the same source-list-length seam as the MLDv2 / classless-static-route
+  options. A Phase-2-relevant deep-TLV follow-up.
