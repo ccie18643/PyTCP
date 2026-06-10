@@ -21,6 +21,7 @@ protocol's own tests plus `tests/unit/lib`; shards run sequentially.
 | ip6   | 503     | 72.2 %     | 74.0 %    | ~97 %                 | 3                   | DONE   |
 | icmp4 | 1135    | 84.4 %     | 85.4 %    | ~97 %                 | 5                   | DONE   |
 | icmp6 | 5755    | 80.8 %     | 84.2 %    | ~96 %                 | 7                   | DONE   |
+| udp   | 280     | 80.7 %     | 81.4 %    | ~97 %                 | 2                   | DONE   |
 
 (Updated per shard as the audit proceeds.)
 
@@ -247,3 +248,32 @@ route-record modulo:
   "max length" error-message arithmetic — same low-value classes as icmp4.
 - The usual equivalents: PEP 604 annotation-`|`, `@override` removals,
   disjoint bit-packing, dispatch-backstopped `== int(Type)` asserts.
+
+
+---
+
+## Shard: udp
+
+**Baseline:** 226 / 280 = **80.7 % raw**, 54 survivors. **After:**
+228 / 280 = **81.4 % raw** (2 newly killed), ~97 % equivalent-adjusted.
+
+udp is the reference protocol and the best-tested codec — almost every
+candidate was already killed. The two genuine survivors were both in the
+checksum-handling paths.
+
+### Genuine gaps closed (commit `68d4e4ed`, kill-proven, test-only)
+
+| Module:line | Mutation | Killing test |
+|-------------|----------|--------------|
+| `udp__parser.py:111` | `raw_cksum = int.from_bytes(frame[6:8])` → `frame[7:8]` | a wrong checksum 0xab00 (high byte set, low byte 0) must be rejected, not mistaken for the cksum=0 sentinel |
+| `udp__assembler.py` (no-cksum branch) | RFC 6935 §5 `udp__no_cksum=True` mode untested | assert the mode emits a literal 0x0000 checksum (+ contrast: default computes non-zero) |
+
+### Confirmed equivalent (analysed, not closed)
+
+- The no-cksum-branch placeholder `header[6:8] = b"\x00\x00"` offset —
+  the cksum field is already 0 from the struct pack, so the re-zero is
+  redundant; shifting the slice leaves the bytes identical.
+- `(cksum or 0xFFFF)` all-ones substitution NumberReplacer — needs a
+  payload that checksums to exactly 0 (impractical to construct).
+- `dport == 0` → `<= 0` (dport is uint16 ≥ 0); PEP 604 annotation-`|`;
+  `@override` removals.
