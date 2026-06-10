@@ -241,6 +241,19 @@ class TestDhcp6OptionStatusCodeParserErrors(TestCase):
             msg="Unexpected wrong-type assert message.",
         )
 
+    def test__dhcp6__option__status_code__wrong_type_above(self) -> None:
+        """
+        Ensure 'from_buffer()' also rejects an option code word ABOVE
+        OPTION_STATUS_CODE, pinning the code-equality assert against a
+        '>=' relaxation (the existing wrong-type case only exercises a
+        code below it).
+
+        Reference: RFC 8415 §21.13 (Status Code option).
+        """
+
+        with self.assertRaises(AssertionError):
+            Dhcp6OptionStatusCode.from_buffer(b"\xff\xff\x00\x02\x00\x17")
+
     def test__dhcp6__option__status_code__missing_status_field(self) -> None:
         """
         Ensure 'from_buffer()' raises Dhcp6IntegrityError when the advertised

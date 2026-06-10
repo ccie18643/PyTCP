@@ -213,6 +213,19 @@ class TestDhcp6OptionElapsedTimeParserErrors(TestCase):
             msg="Unexpected wrong-type assert message.",
         )
 
+    def test__dhcp6__option__elapsed_time__wrong_type_above(self) -> None:
+        """
+        Ensure 'from_buffer()' also rejects an option code word ABOVE
+        OPTION_ELAPSED_TIME, pinning the code-equality assert against a
+        '>=' relaxation (the existing wrong-type case only exercises a
+        code below it).
+
+        Reference: RFC 8415 §21.9 (Elapsed Time option).
+        """
+
+        with self.assertRaises(AssertionError):
+            Dhcp6OptionElapsedTime.from_buffer(b"\xff\xff\x00\x02\x00\x01")
+
     def test__dhcp6__option__elapsed_time__wrong_length(self) -> None:
         """
         Ensure 'from_buffer()' raises Dhcp6IntegrityError when the advertised

@@ -152,6 +152,19 @@ class TestDhcp6OptionRapidCommitParserErrors(TestCase):
             msg="Unexpected wrong-type assert message.",
         )
 
+    def test__dhcp6__option__rapid_commit__wrong_type_above(self) -> None:
+        """
+        Ensure 'from_buffer()' also rejects an option code word ABOVE
+        OPTION_RAPID_COMMIT, pinning the code-equality assert against a
+        '>=' relaxation (the existing wrong-type case only exercises a
+        code below it).
+
+        Reference: RFC 8415 §21.14 (Rapid Commit option).
+        """
+
+        with self.assertRaises(AssertionError):
+            Dhcp6OptionRapidCommit.from_buffer(b"\xff\xff\x00\x00")
+
     def test__dhcp6__option__rapid_commit__nonzero_length(self) -> None:
         """
         Ensure 'from_buffer()' raises Dhcp6IntegrityError when the advertised

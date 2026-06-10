@@ -227,6 +227,19 @@ class TestDhcp6OptionDnsServersParserErrors(TestCase):
             msg="Unexpected wrong-type assert message.",
         )
 
+    def test__dhcp6__option__dns_servers__wrong_type_above(self) -> None:
+        """
+        Ensure 'from_buffer()' also rejects an option code word ABOVE
+        OPTION_DNS_SERVERS, pinning the code-equality assert against a
+        '>=' relaxation (the existing wrong-type case only exercises a
+        code below it).
+
+        Reference: RFC 3646 §3 (DNS Recursive Name Server option).
+        """
+
+        with self.assertRaises(AssertionError):
+            Dhcp6OptionDnsServers.from_buffer(b"\xff\xff\x00\x02\x00\x17")
+
     def test__dhcp6__option__dns_servers__short_length(self) -> None:
         """
         Ensure 'from_buffer()' raises Dhcp6IntegrityError when the advertised

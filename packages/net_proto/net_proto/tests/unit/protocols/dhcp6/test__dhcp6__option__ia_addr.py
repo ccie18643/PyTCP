@@ -294,6 +294,19 @@ class TestDhcp6OptionIaAddrParserErrors(TestCase):
             msg="Unexpected wrong-type assert message.",
         )
 
+    def test__dhcp6__option__ia_addr__wrong_type_above(self) -> None:
+        """
+        Ensure 'from_buffer()' also rejects an option code word ABOVE
+        OPTION_IAADDR, pinning the code-equality assert against a '>='
+        relaxation (the existing wrong-type case only exercises a code
+        below it).
+
+        Reference: RFC 8415 §21.6 (IA Address option).
+        """
+
+        with self.assertRaises(AssertionError):
+            Dhcp6OptionIaAddr.from_buffer(b"\xff\xff\x00\x18" + b"\x00" * 24)
+
     def test__dhcp6__option__ia_addr__data_too_short(self) -> None:
         """
         Ensure 'from_buffer()' raises Dhcp6IntegrityError when the advertised
