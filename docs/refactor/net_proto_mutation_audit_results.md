@@ -586,39 +586,85 @@ marginal, mostly-equivalent gain.
 
 ---
 
-## Re-validation pending (capstone full-from-scratch scan)
+## Capstone re-validation (full-from-scratch, 2026-06-10) — COMPLETE
 
 The net_addr audit's authoritative validation was a single
 **full-from-scratch re-scan after all fixes landed** — it caught an
-"all equivalent" overclaim (a `__format__` `Eq_LtE` gap) and would catch
-an ineffective fixture. net_proto was held to a slightly lower bar:
-per-gap kill-proofs (strong) + survivor-only re-scans on **most** changed
-shards, but (a) **dhcp6 and dns got kill-proofs only, no re-scan**, and
-(b) **no holistic full-from-scratch capstone** was run, and the
-documented "equivalent / intricate-seam" survivors were bucket-triaged,
-not re-validated with a fresh scan + the sharpened skill lens
-(base-coincidence, result-preserving, self-referential-constant,
-whole-file classes added 2026-06-09).
+"all equivalent" overclaim and an ineffective fixture. net_proto was
+originally held to a lower bar (per-gap kill-proofs + survivor-only
+re-scans on most shards; dhcp6/dns got kill-proofs only). This pass
+closes that gap: a **fresh full-from-scratch scan of all 9 changed
+shards**, reconciled against the recorded post-fix raw scores, then a
+re-triage of every residual with the sharpened skill §4/§6 lens.
 
-**Action:** re-run **full-from-scratch** scans of the 9 changed shards
-and reconcile against the recorded post-fix raw scores below. A score
-**below** the recorded number means an ineffective fixture (a test that
-didn't actually kill what it claimed — re-triage and fix). A score
-**at/above** confirms the shard. Then re-triage each shard's residual
-survivors with the updated `mutation_testing` skill §4/§6 classes; any
-"documented-seam / equivalent" survivor that turns out cheaply killable
-is a missed gap to close tests-first. The 5 zero-gap shards (arp,
-ethernet, igmp, ip6_frag/routing/hbh/dest_opts, lib) have **no test
-diffs** — unchanged, no re-scan needed (spot-check optional).
+**Result: every shard reproduced its recorded score (or beat it), so no
+ineffective fixture exists — the original fixtures all hold.** The
+re-triage then surfaced **40 cheaply-killable survivors the original
+bucket-triage had mis-classified as equivalent/seam**, all closed
+tests-first and kill-proven (test-only; net_proto production source
+unchanged; 12935 → 12975 tests).
 
-| Changed shard | Mutants | Recorded post-fix raw | Gaps closed |
-|---|--:|--:|--:|
-| tcp    | 2255 | 85.1 % (1910/2255) | 21 |
-| ip4    | 3088 | 82.4 % (2545/3088) | 15 |
-| ip6    | 503  | 74.0 % (372/503)   | 3  |
-| icmp4  | 1135 | 85.4 % (969/1135)  | 5  |
-| icmp6  | 5755 | 84.2 % (4843/5755) | 7  |
-| udp    | 280  | 81.4 % (228/280)   | 2  |
-| dhcp4  | 3708 | 77.3 % (2865/3708) | 11 |
-| dhcp6  | 2407 | ~79 % (no re-scan — VALIDATE) | 4 |
-| dns    | 1116 | ~64 % (no re-scan — VALIDATE) | 2 |
+| Changed shard | Mutants | Recorded raw | Re-scan raw (verdict) | New gaps |
+|---|--:|--:|--:|--:|
+| udp    | 280  | 81.4 % (228/280)   | 81.4 % (228/280) — exact     | 2 |
+| dns    | 1116 | ~64 % (no re-scan) | **72.8 % (812/1116)** — > baseline | 5 |
+| dhcp6  | 2407 | ~79 % (no re-scan) | **78.6 % (1891/2407)** — matches | 6 |
+| ip6    | 503  | 74.0 % (372/503)   | 74.0 % (372/503) — exact      | 0 |
+| icmp4  | 1135 | 85.4 % (969/1135)  | 85.4 % (969/1135) — exact     | 6 |
+| tcp    | 2255 | 85.1 % (1910/2255) | 85.1 % (1918/2255) — at/above | 7 |
+| ip4    | 3088 | 82.4 % (2545/3088) | 82.4 % (2545/3088) — exact    | 2 |
+| dhcp4  | 3708 | 77.3 % (2865/3708) | 77.3 % (2865/3708) — exact    | 2 |
+| icmp6  | 5755 | 84.2 % (4843/5755) | 84.2 % (4843/5755) — exact    | 9 |
+| **Total** | | | **9/9 confirmed** | **40** |
+
+The 5 zero-diff shards (arp, ethernet, igmp, ip6 ext-headers, lib) were
+unchanged and not re-scanned.
+
+### The two systematic classes the capstone caught
+
+1. **Trailing-padding integrity bound** (udp → icmp4 ×5 → tcp → ip4 →
+   icmp6 ×6). The recurring `<PROTO>__LEN <= <payload_len> <= len(frame)`
+   bound was tested only with `payload_len == len(frame)`, so the second
+   `<=` (the lower-layer-padding tolerance every parser deliberately
+   allows) survived as `LtE_Eq`/`LtE_GtE` everywhere. One
+   `trailing_bytes_accepted` boundary test per message parser pins it
+   (and incidentally the first `<=` at equality, killing the
+   min-length `LtE_Lt`). This single class accounted for ~26 of the 40.
+   Commits: `5ca69dce` (udp), `e8994f8d` (icmp4), `9d3ebdf1` (tcp),
+   `b67b17f5` (ip4), `acea38a7` (icmp6).
+2. **Dispatch-code assert, one direction only.** The
+   `buffer[0] == int(<OptionType>)` kind-byte assert was pinned from
+   only one side: dhcp6 had wrong-type-below but not above (6 options),
+   tcp had above but not below (5 options). Skill §6 says pin both;
+   the missing side was killable. Commits `b4769987` (dhcp6),
+   `9d3ebdf1` (tcp). The `!=`-version of the class (dhcp4 hrlen /
+   magic-cookie below, ip4 version below) is the same one-sided-`!=`
+   gap — commits `bee4c3d9`, `b67b17f5`.
+
+Plus point fixes: dns A/AAAA rdata-length address guard + reserved-label
+message tightening (`423ef5d0`); a brand-new packet_too_big parser
+integrity file (it had no parser test — `acea38a7`).
+
+### Confirmed-equivalent residuals (honest, not closed)
+
+The re-triage **confirmed** these as un-killable, matching the original
+triage: PEP 604 annotation-`|` on lookup-property return unions
+(dominant everywhere), `@override`/`@property` removals, enum-singleton
+`is`, disjoint bit-packing, `== 0`/`<= 0` on non-negative domains, and
+the **base-coincidence** class (dhcp4 options-walk `== END(255)` /
+`== PAD(0)`, ip4 pointer `% SLOT == 0`, timestamp entry-len, router-alert
+`== 0`). Genuinely-killable-but-deferred (intricate boundary frames,
+low value): the icmp6 ND-option walkers (dnssl/rdnss/route_info/nonce),
+MLDv1/MLDv2 record arithmetic, ip4 CIPSO/timestamp deep-TLV, dns
+name-compression pointer boundaries, dhcp4 RFC 3442 classless-static
+-route walk, and inert non-load-bearing enum codepoints (dns NS/CNAME/
+SOA/MX/TXT/opcodes/rcodes — A/AAAA/IN are pinned).
+
+### One validated cross-shard artifact (rail #2)
+
+`IP6__MIN_MTU = 1280` survived the **ip6** shard (no ip6 in-module
+reader) but is **killed** in the **icmp6** shard: the Packet Too Big
+assembler test pins the 1232-octet (`= 1280 - 40 - 8`) min-MTU embedded
+-data truncation cap, so a full non-sharded scan kills the ip6
+definition mutant via icmp6. Not an ip6 gap — cross-shard-covered, as
+the rail-#2 cross-module-constant heuristic predicts.
