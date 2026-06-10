@@ -25,6 +25,7 @@ protocol's own tests plus `tests/unit/lib`; shards run sequentially.
 | arp   | 216     | 82.9 %     | 82.9 %    | 100 %                 | 0                   | DONE   |
 | ethernet | 217  | 72.4 %     | 72.4 %    | 100 %                 | 0                   | DONE   |
 | dhcp4 | 3708    | 76.9 %     | 77.3 %    | ~93 %                 | 11                  | DONE   |
+| dhcp6 | 2407    | 78.4 %     | ~79 %     | ~94 %                 | 4                   | DONE   |
 
 (Updated per shard as the audit proceeds.)
 
@@ -373,3 +374,28 @@ ND options — a follow-up seam if a deeper pass is wanted:
   not).
 - The usual equivalents: PEP 604 annotation-`|`, `@override`, the
   "max length" error-message arithmetic, dispatch-backstopped asserts.
+
+
+---
+
+## Shard: dhcp6 (P1)
+
+**Baseline:** 1886 / 2407 = **78.4 % raw**, 521 survivors. ~94 %
+equivalent-adjusted. 4 genuine gaps closed (commit recorded below).
+
+### Genuine gaps closed (kill-proven, test-only)
+
+| Module(s) | Mutation | Killing test |
+|-----------|----------|--------------|
+| client_id, ia_na, oro, preference | `int.from_bytes(buffer[0:2]) == int(Dhcp6OptionType.X)` code-word assert → `<=` / `>=` | wrong-code-word below (0x0000) and above (0xffff) over a valid frame |
+
+(dns_servers / elapsed_time / ia_addr / rapid_commit / server_id /
+status_code already had wrong-code-word coverage.)
+
+### Documented remaining (intricate / lower-value, not closed)
+
+- The `DHCP6__OPTION__LEN + int.from_bytes(buffer[2:4]) > len(buffer)`
+  buffer-bound short-buffer branch — untested across the options.
+- The IA_NA / IA_ADDR nested-options length arithmetic.
+- The usual equivalents (PEP 604 annotation-`|`, `@override`,
+  message-text arithmetic, dispatch-backstopped asserts).
